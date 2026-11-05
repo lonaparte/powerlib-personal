@@ -431,7 +431,7 @@ def family7 : Family Model7 Requirement 7 2 :=
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
 /-- The LFC translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem translate_eq_linearTable (s : Sentence) :
     connection% (generate (cover (table translate)) {s} =
       Spectral.linearTable {.hurwitz} {.rhpRoot} univ univ (fun a => {.rate a}) s) := by
   unfold TMIO.Statement
@@ -525,7 +525,7 @@ steady state in deviation coordinates). -/
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.6 boxed, at trajectory level: `Δω_a, Δω_b, ΔP_tie → 0`, `ΔP_C,a → ΔP_L,a`,
 `ΔP_C,b → ΔP_L,b` (Hurwitz premise), read from `mem_den_globallyExponentiallyStable`. -/
-private theorem tendsto_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ)
+@[powerlib_domain] private theorem tendsto_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ)
     {x : ℝ → EuclideanSpace ℝ (Fin 5)}
     (hx : IsIntegralCurveOn x (fun _ y => m.plant.inputField u y) (Ici 0)) :
     Tendsto x atTop (𝓝 (steadyState u)) := by
@@ -543,7 +543,7 @@ def constantInputFamily (u : Fin 2 → ℝ) : Family Model Requirement 5 0 :=
 /-- Connection for the forced field at its selected steady state.
 With a Hurwitz state matrix every solution under constant loads converges exponentially to the
 non-interactive steady state. -/
-@[tmio TM] private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
+@[tmio TM, powerlib_domain] private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
     (u : Fin 2 → ℝ) :
     connection% (m ∈ (constantInputFamily u).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -561,7 +561,7 @@ def constantInputFamily7 (u : Fin 2 → ℝ) : Family Model7 Requirement 7 0 :=
 
 /-- Connection for the forced field at its selected steady state.
 The seven-state version of `exponentiallyConvergesTo_of_isHurwitz`. -/
-@[tmio TM] private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
+@[tmio TM, powerlib_domain] private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
     (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ) :
     connection% (m ∈ (constantInputFamily7 u).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement

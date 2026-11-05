@@ -668,7 +668,7 @@ private theorem Certificate.globallyExponentiallyStable {model : Model}
   change Flow.GloballyExponentiallyStable model.field 0
   exact c.quadraticDecay.globallyExponentiallyStable model.field_smooth
 
-@[tmio TM, aesop norm -1 apply (index := [unindexed])] theorem Certificate.mem_den {model : Model}
+@[tmio TM, aesop norm -1 apply (index := [unindexed]), powerlib_foundation] theorem Certificate.mem_den {model : Model}
     (c : Certificate model) :
     connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

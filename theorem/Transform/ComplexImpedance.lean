@@ -181,7 +181,7 @@ variable {R : Type*} [CommRing R]
 def csModel (a b p q c d e f : ℝ) : Linear.Plant 2 2 :=
   ⟨complexSymm a b, complexSymm p q, complexSymm c d, complexSymm e f⟩
 
-@[tmio T] private lemma complexify_complexSymm (a b : ℝ) :
+@[tmio T, powerlib_foundation] private lemma complexify_complexSymm (a b : ℝ) :
     Linear.complexify (complexSymm a b) = complexSymm (a : ℂ) (b : ℂ) :=
   complexSymm_map (algebraMap ℝ ℂ) a b
 

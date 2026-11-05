@@ -599,14 +599,14 @@ private def restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β ≃ Fin 
     ((LinearMap.funLeft ℝ ℝ (e.symm.symm ∘ f ∘ e₁.symm)).toContinuousLinearMap.comp
       (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).toContinuousLinearMap)
 
-private theorem ofLp_restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β ≃ Fin n)
+@[powerlib_foundation] private theorem ofLp_restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β ≃ Fin n)
     (e₁ : α ≃ Fin n') (x : EuclideanSpace ℝ (Fin n)) :
     WithLp.ofLp (restrict f e e₁ x) = (WithLp.ofLp x ∘ e ∘ f) ∘ e₁.symm := rfl
 
 /-- Solutions of the composite project to solutions of the first subsystem under the coupling
 input `u₁ = −Mᵀ y₂ + g₁ u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
+@[powerlib_foundation] private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
     (e₁ : ι₁ ≃ Fin n₁) (e₁' : κ₁ ≃ Fin p₁) {u : ℝ → Fin p → ℝ}
     {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ : ℝ}
     (hx : ((interconnect m₁ m₂ Mc g₁ g₂).toPH e e').plant.system.IsTrajectoryOn u x t₀ t₁) :
@@ -629,7 +629,7 @@ private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι�
 /-- Solutions of the composite project to solutions of the second subsystem under the coupling
 input `u₂ = M y₁ + g₂ u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem interconnect_trajectory_inr {n₂ p₂ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
+@[powerlib_foundation] private theorem interconnect_trajectory_inr {n₂ p₂ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
     (e₂ : ι₂ ≃ Fin n₂) (e₂' : κ₂ ≃ Fin p₂) {u : ℝ → Fin p → ℝ}
     {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ : ℝ}
     (hx : ((interconnect m₁ m₂ Mc g₁ g₂).toPH e e').plant.system.IsTrajectoryOn u x t₀ t₁) :

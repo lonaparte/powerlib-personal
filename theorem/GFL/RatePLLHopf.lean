@@ -82,32 +82,32 @@ open powerlib.Dynamics.Degenerate (hopfN hopfN3 lyapPoly lyapPolyφ lyapPolyw ho
 
 section NormalForm
 
-@[tmio T]
+@[tmio T, powerlib_foundation]
 private theorem coord0_isBigO (b : ℝ) :
     (fun z : Dynamics.State 2 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1 - b * z 0| :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
     exact (le_add_of_nonneg_right (abs_nonneg _)).trans (le_abs_self _))
 
-private theorem coord1_isBigO (b : ℝ) :
+@[powerlib_foundation] private theorem coord1_isBigO (b : ℝ) :
     (fun z : Dynamics.State 2 => z 1 - b * z 0) =O[𝓝 0] fun z => |z 0| + |z 1 - b * z 0| :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
     exact (le_add_of_nonneg_left (abs_nonneg _)).trans (le_abs_self _))
 
-private theorem size_tendsto (b : ℝ) :
+@[powerlib_foundation] private theorem size_tendsto (b : ℝ) :
     Tendsto (fun z : Dynamics.State 2 => |z 0| + |z 1 - b * z 0|) (𝓝 0) (𝓝 0) := by
   have hc : Continuous (fun z : Dynamics.State 2 => |z 0| + |z 1 - b * z 0|) := by fun_prop
   simpa using hc.tendsto 0
 
-private theorem mono_isBigO {f : Dynamics.State 2 → ℝ} (b c : ℝ) (i j k : ℕ) (h : k ≤ i + j)
+@[powerlib_foundation] private theorem mono_isBigO {f : Dynamics.State 2 → ℝ} (b c : ℝ) (i j k : ℕ) (h : k ≤ i + j)
     (hf : ∀ z, f z = c * (z 0 ^ i * (z 1 - b * z 0) ^ j)) :
     f =O[𝓝 0] fun z => (|z 0| + |z 1 - b * z 0|) ^ k := by
   have := ((Dynamics.isBigO_monomial (coord0_isBigO b) (coord1_isBigO b) i j).trans
     (Dynamics.isBigO_pow_of_tendsto (size_tendsto b) h)).const_mul_left c
   exact this.congr_left fun z => (hf z).symm
 
-private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
+@[powerlib_foundation] private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPolyφ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
       fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
   unfold lyapPolyφ
@@ -118,7 +118,7 @@ private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (mono_isBigO b (3 * c₅) 2 1 1 (by norm_num) fun z => by ring)).add
     (mono_isBigO b (4 * c₆) 3 0 1 (by norm_num) fun z => by ring)
 
-private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
+@[powerlib_foundation] private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPolyw q c₀ c₂ c₄ c₅ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
       fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
   unfold lyapPolyw
@@ -129,7 +129,7 @@ private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
     (mono_isBigO b c₅ 3 0 1 (by norm_num) fun z => by ring)
 
 /-- The cubic and quartic part of `lyapPoly` is `O(s³)`. -/
-private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
+@[powerlib_foundation] private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0) -
         1 / 2 * (z 0 ^ 2 + q * (z 1 - b * z 0) ^ 2)) =O[𝓝 0]
       fun z => (|z 0| + |z 1 - b * z 0|) ^ 3 := by
@@ -148,7 +148,7 @@ private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
   ring
 
 /-- `s² ≤ 2(1 + 1/ρ)(φ² + ρw²)` for `ρ > 0`. -/
-private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :
+@[powerlib_foundation] private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :
     (|φ| + |w|) ^ 2 ≤ 2 * (1 + 1 / ρ) * (φ ^ 2 + ρ * w ^ 2) := by
   have h1 : (|φ| + |w|) ^ 2 ≤ 2 * φ ^ 2 + 2 * w ^ 2 := by
     nlinarith [sq_abs φ, sq_abs w, sq_nonneg (|φ| - |w|)]
@@ -161,7 +161,7 @@ private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :
   linarith
 
 /-- The quadratic form `φ² + ρ w²` vanishes only at the origin. -/
-private theorem quad_pos {ρ b : ℝ} (hρ : 0 < ρ) {z : Dynamics.State 2} (hz : z ≠ 0) :
+@[powerlib_foundation] private theorem quad_pos {ρ b : ℝ} (hρ : 0 < ρ) {z : Dynamics.State 2} (hz : z ≠ 0) :
     0 < z 0 ^ 2 + ρ * (z 1 - b * z 0) ^ 2 := by
   by_contra h
   push Not at h
@@ -182,7 +182,7 @@ private theorem quad_pos {ρ b : ℝ} (hρ : 0 < ρ) {z : Dynamics.State 2} (hz 
 variable {A B α β b : ℝ}
 
 /-- The Lie derivative of the normal-form Lyapunov polynomial along a field in normal form. -/
-private theorem hopf_lie_eq {g : Dynamics.State 2 → Dynamics.State 2}
+@[powerlib_foundation] private theorem hopf_lie_eq {g : Dynamics.State 2 → Dynamics.State 2}
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) (z : Dynamics.State 2) :
     fderiv ℝ (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0)) z (g z) =
@@ -199,7 +199,7 @@ private theorem hopf_lie_eq {g : Dynamics.State 2 → Dynamics.State 2}
   simp
 
 /-- Normal form: `V̇ + κ Q² = o(Q²)`, `Q = φ² + (α/A) w²`. -/
-private theorem hopf_lie_isLittleO (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
+@[powerlib_foundation] private theorem hopf_lie_isLittleO (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
     {g : Dynamics.State 2 → Dynamics.State 2}
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -260,7 +260,7 @@ private theorem hopf_lie_isLittleO (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α 
     (by norm_num : 4 < 5)).trans_isBigO hs4)
 
 /-- `W − Q/2 = o(Q/2)`. -/
-private theorem hopfW_isLittleO (hq : 0 < α / A) :
+@[powerlib_foundation] private theorem hopfW_isLittleO (hq : 0 < α / A) :
     (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0) -
         1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2)) =o[𝓝 0]
       fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) := by
@@ -276,7 +276,7 @@ private theorem hopfW_isLittleO (hq : 0 < α / A) :
     ((Dynamics.isLittleO_pow_of_tendsto (size_tendsto b) (by norm_num : 2 < 3)).trans_isBigO hs2)
 
 /-- A field in normal form vanishes at the origin. -/
-private theorem hopf_field_zero {g : Dynamics.State 2 → Dynamics.State 2}
+@[powerlib_foundation] private theorem hopf_field_zero {g : Dynamics.State 2 → Dynamics.State 2}
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) : g 0 = 0 := by
   have h0 := hg0 0
@@ -292,7 +292,7 @@ private theorem hopf_field_zero {g : Dynamics.State 2 → Dynamics.State 2}
 
 /-- **Supercritical boundary.** A `C¹` field in normal form with `κ > 0` is locally
 asymptotically stable at the origin. -/
-private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ : 0 < hopfκ A B β)
+@[powerlib_foundation] private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ : 0 < hopfκ A B β)
     {g : Dynamics.State 2 → Dynamics.State 2} (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -312,7 +312,7 @@ private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ 
 
 /-- **Subcritical boundary.** A `C¹` field in normal form with `κ < 0` is unstable at the
 origin (Chetaev with the same polynomial). -/
-private theorem hopf_unstable (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
+@[powerlib_foundation] private theorem hopf_unstable (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
     (hκ : hopfκ A B β < 0) {g : Dynamics.State 2 → Dynamics.State 2} (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -336,7 +336,7 @@ private theorem hopf_unstable (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
 /-- **Conservative boundary.** With `β = 0` the normal form conserves
 `E = α w²/2 + A(1 − cos φ) − B(φ − sin φ)`, so the origin is not locally asymptotically
 stable. -/
-private theorem hopf_conservative_not_las (hα : α ≠ 0) {g : Dynamics.State 2 → Dynamics.State 2}
+@[powerlib_foundation] private theorem hopf_conservative_not_las (hα : α ≠ 0) {g : Dynamics.State 2 → Dynamics.State 2}
     (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + 0 * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -392,24 +392,24 @@ end NormalForm
 
 section Boundary
 
-private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
+@[powerlib_domain] private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (φ : ℝ) : gridQ p (φ + θ) =
       -(p.V * Real.cos θ) * φ + hopfN (p.V * Real.cos θ) (p.V * Real.sin θ) φ := by
   unfold gridQ hopfN
   rw [Real.sin_add]
   linear_combination -heq
 
-private theorem model_field0 (m : Model) (z : Dynamics.State 2) :
+@[powerlib_domain] private theorem model_field0 (m : Model) (z : Dynamics.State 2) :
     m.field z 0 = (m.params.kp * gridQ m.params (z 0 + m.θ) + m.params.ki * z 1) / m.params.D0 := by
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut]
 
-private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
+@[powerlib_domain] private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
     m.field z 1 = gridQ m.params (z 0 + m.θ) - m.params.Lg * m.field z 0 * m.params.Id := by
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq]
 
 /-- `ẇ = ḣ`: the PLL integrator corrected by the speed-EMF term, `w = x + L_g i_d θ`, is driven by
 the grid q-voltage alone. -/
-private theorem model_hg1 {m : Model}
+@[powerlib_domain] private theorem model_hg1 {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (z : Dynamics.State 2) :
     m.field z 1 - -(m.params.Lg * m.params.Id) * m.field z 0 =
       -(m.params.V * Real.cos m.θ) * z 0 +
@@ -418,7 +418,7 @@ private theorem model_hg1 {m : Model}
   ring
 
 /-- On the boundary (`tr J = 0`) the angle equation is `θ̇ = α w + β N(φ)`. -/
-private theorem model_hg0 {m : Model}
+@[powerlib_domain] private theorem model_hg0 {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id))
     (hD0 : m.params.D0 ≠ 0) (htr : (jac m.params m.θ).trace = 0) (z : Dynamics.State 2) :
     m.field z 0 = m.params.ki / m.params.D0 * (z 1 - -(m.params.Lg * m.params.Id) * z 0) +
@@ -433,7 +433,7 @@ private theorem model_hg0 {m : Model}
   linear_combination (z 0) * htr'
 
 /-- `α / A = det J / A² > 0` on the boundary. -/
-private theorem model_ratio_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
+@[powerlib_domain] private theorem model_ratio_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
     (hdet : 0 < (jac m.params m.θ).det) :
     m.params.V * Real.cos m.θ ≠ 0 ∧ m.params.ki / m.params.D0 ≠ 0 ∧
       0 < m.params.ki / m.params.D0 / (m.params.V * Real.cos m.θ) := by
@@ -459,7 +459,7 @@ private theorem model_ratio_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
   positivity
 
 /-- The sign of the normal-form coefficient: `κ > 0 ↔ k_p k_i < 0`. -/
-private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
+@[powerlib_domain] private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
     (hdet : 0 < (jac m.params m.θ).det) :
     (m.params.kp * m.params.ki < 0 →
       0 < hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
@@ -496,7 +496,7 @@ private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
     nlinarith
 
 /-- Membership through the sound translation. -/
-@[tmio TM] private theorem mem_den_of_meets {m : Model} {s : Sentence}
+@[tmio TM, powerlib_domain] private theorem mem_den_of_meets {m : Model} {s : Sentence}
     (h : ∀ q ∈ translate s, Meets m q) :
     connection% (m ∈ family.den s) := by
   change m ∈ family.den s
@@ -511,7 +511,7 @@ end Boundary
 section Members
 
 /-- States `t e_i` (`t > 0`) accumulate at the origin. -/
-private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dynamics.State 2 → Prop}
+@[powerlib_foundation] private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dynamics.State 2 → Prop}
     (h : ∀ t : ℝ, 0 < t → P (EuclideanSpace.single i (c * t))) :
     ∃ᶠ z in 𝓝 (0 : Dynamics.State 2), P z := by
   rw [Filter.frequently_iff]
@@ -525,7 +525,7 @@ private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dyna
   linarith
 
 /-- An equilibrium of the translated field with a nondegenerate loop is balanced. -/
-private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
+@[powerlib_domain] private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
     m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) := by
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
   have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
@@ -536,7 +536,7 @@ private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
   linarith
 
 /-- With a degenerate loop `D₀ = 0` the angle is frozen. -/
-@[tmio TM] private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
+@[tmio TM, powerlib_domain] private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -555,7 +555,7 @@ private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
 
 /-- A singular Jacobian (`det J = 0`) at a balanced point with `D₀ ≠ 0`: no local asymptotic
 stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0` otherwise). -/
-@[tmio TM] private theorem not_las_of_det_eq_zero {m : Model}
+@[tmio TM, powerlib_domain] private theorem not_las_of_det_eq_zero {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (hdet : (jac m.params m.θ).det = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -642,7 +642,7 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
     nlinarith [sq_pos_of_ne_zero hBne]
 
 /-- A supercritical boundary point (`k_p k_i < 0`) is locally asymptotically stable. -/
-@[tmio TM] private theorem las_of_hopf {m : Model}
+@[tmio TM, powerlib_domain] private theorem las_of_hopf {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) :
@@ -655,7 +655,7 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- A subcritical boundary point (`k_p k_i > 0`) is unstable. -/
-@[tmio TM] private theorem unstable_of_hopf {m : Model}
+@[tmio TM, powerlib_domain] private theorem unstable_of_hopf {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) :
@@ -668,7 +668,7 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- A boundary point without proportional gain (`k_p = 0`) conserves an energy. -/
-@[tmio TM] private theorem not_las_of_hopf_kp_eq_zero {m : Model}
+@[tmio TM, powerlib_domain] private theorem not_las_of_hopf_kp_eq_zero {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hkp : m.params.kp = 0) :
@@ -821,7 +821,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
 `θ* = −π/4`. Balanced (`V sin θ* = −1 = −X_g i_d`), `tr J = 0`, `det J = 1`, `k_p k_i = −1/4`. -/
 def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, 1, 1, -1 / 2, 1 / 2, 1⟩, -(Real.pi / 4)⟩
 
-private theorem supercriticalPLL_data :
+@[powerlib_domain] private theorem supercriticalPLL_data :
     supercriticalPLL.params.V * Real.sin supercriticalPLL.θ =
         -(supercriticalPLL.params.Xg * supercriticalPLL.params.Id) ∧
       supercriticalPLL.params.D0 ≠ 0 ∧ (jac supercriticalPLL.params supercriticalPLL.θ).trace = 0 ∧

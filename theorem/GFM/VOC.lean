@@ -194,7 +194,7 @@ variable (a)
 
 /-- On any interval where `|v|² > 0`, `1/|v|² = κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct}`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
+@[powerlib_domain] private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) {T : ℝ}
     (hpos : ∀ t ∈ Icc 0 T, 0 < normSq (φ t)) :
     ∀ t ∈ Icc 0 T, 1 / normSq (φ t) =
@@ -239,7 +239,7 @@ private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
 /-- Solutions starting away from the origin never reach it, and `|v|²` is given by the explicit
 logistic formula.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
+@[powerlib_domain] private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) ∧ 1 / normSq (φ t) =
       a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
@@ -297,7 +297,7 @@ private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
 
 /-- Every solution with `v(0) ≠ 0` converges in amplitude to the limit-cycle radius.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
+@[powerlib_domain] private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 a.rstar) := by
   have hc : 0 < a.c := by
@@ -341,7 +341,7 @@ private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
 /-- Uniform phase rotation: `v(t) = (|v(t)|/|v(0)|) e^{j ω_s t} v(0)` for every solution with
 `v(0) ≠ 0`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
+@[powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), φ t = ((‖φ t‖ / ‖φ 0‖ : ℝ) : ℂ) * exp (I * a.ωs * t) * φ 0 := by
   have hform := a.normSq_formula h hφ h0
@@ -401,7 +401,7 @@ private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
 
 /-- The circle `|v| = r*` is invariant: a solution starting on it stays on it.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
+@[powerlib_domain] private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0))
     (h0 : ‖φ 0‖ = a.rstar) : ∀ t ∈ Ici (0 : ℝ), ‖φ t‖ = a.rstar := by
   have hc : 0 < a.c := by
@@ -426,7 +426,7 @@ private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
 
 /-- The limit-cycle solutions `r* e^{j(ω_s t + φ₀)}` solve the AHO.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
+@[powerlib_domain] private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
     IsIntegralCurveOn
       (fun t : ℝ => (a.rstar : ℂ) * exp (I * (a.ωs * t + φ₀))) (fun _ v => a.field v) univ := by
   intro t _
@@ -537,7 +537,7 @@ variable {a}
 /-- The energy `|v|² = v_α² + v_β²`. -/
 private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
 
-private theorem hasFDerivAt_energy (x : State 2) :
+@[powerlib_foundation] private theorem hasFDerivAt_energy (x : State 2) :
     HasFDerivAt energy
       ((2 * x 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ) +
         (2 * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
@@ -549,10 +549,10 @@ private theorem hasFDerivAt_energy (x : State 2) :
   apply ContinuousLinearMap.ext; intro v
   simp
 
-private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
+@[powerlib_foundation] private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
   rw [sub_zero, PhasePlane.norm_sq_eq, energy]
 
-private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
+@[powerlib_domain] private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
     fderiv ℝ energy x (a.realField x) ≤ -(-2 * a.c) * energy x := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
@@ -573,14 +573,14 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
   upper_bound x := by rw [energy_eq, one_mul]
   dissipation := dissipation hκ
 
-@[tmio TM] private theorem ges (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
+@[tmio TM, powerlib_domain] private theorem ges (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
     connection% (a ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Flow.GloballyExponentiallyStable a.realField 0
   exact (quadraticDecay hc hκ).globallyExponentiallyStable a.contDiff_realField
 
-@[tmio TM] private theorem les (hc : a.c < 0) :
+@[tmio TM, powerlib_domain] private theorem les (hc : a.c < 0) :
     connection% (a ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -590,7 +590,7 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
     (by rw [realJacobian_zero, Matrix.det_fin_two_of]; nlinarith [sq_nonneg a.ωs, sq_pos_of_neg hc])
 
-@[tmio TM] private theorem unstable_of (hc : 0 < a.c) :
+@[tmio TM, powerlib_domain] private theorem unstable_of (hc : 0 < a.c) :
     connection% (a ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -599,7 +599,7 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
     (a.hasFDerivAt_realField 0).fderiv
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
 
-@[tmio TM] private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
+@[tmio TM, powerlib_domain] private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
     connection% (a ∈ family.den (.flow (.decay r))) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -705,14 +705,14 @@ sign of `κ_v`. -/
 
 /-! ### Boundary witness: cubic damping at `c = 0` -/
 
-private theorem energy_lie (a : AHO) (x : State 2) :
+@[powerlib_domain] private theorem energy_lie (a : AHO) (x : State 2) :
     fderiv ℝ energy x (a.realField x) = 2 * a.c * energy x - 2 * a.κv * energy x ^ 2 := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
     smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   ring
 
-private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
+@[powerlib_foundation] private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
   rw [energy_eq, sub_zero]
   have : 0 < ‖x‖ := norm_pos_iff.mpr hx
   positivity
@@ -727,7 +727,7 @@ def critical : AHO := ⟨0, 1, 1, 1⟩
 
 /-- The energy `|v|²` is a strict global Lyapunov function of the critical AHO: its derivative
 along the field is `−2 |v|⁴`. -/
-private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.realField energy 0 where
+@[powerlib_domain] private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.realField energy 0 where
   hcont := by unfold energy; fun_prop
   hV_c1 := by unfold energy; fun_prop
   hzero := by simp [energy]
@@ -759,7 +759,7 @@ private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.real
     (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos critical.contDiff_realField
       critical_strictLyapunov)
 
-@[tmio M] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
+@[tmio M, powerlib_domain] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   change ¬ critical.c < 0
@@ -800,7 +800,7 @@ stability is not decided by the linearization. -/
 
 /-- With `c = 0` and `κ_v > 0`, `|v|²` is a strict global Lyapunov function (derivative
 `−2 κ_v |v|⁴`). -/
-private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
+@[powerlib_domain] private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
     IsStrictLyapunovFunction a.realField energy 0 where
   hcont := by unfold energy; fun_prop
   hV_c1 := by unfold energy; fun_prop
@@ -823,10 +823,10 @@ private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a
     calc ‖x‖ = Real.sqrt (‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm
       _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
 
-private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
+@[powerlib_foundation] private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
   (hasFDerivAt_energy x).differentiableAt
 
-private theorem seed (ε : ℝ) (hε : 0 < ε) :
+@[powerlib_foundation] private theorem seed (ε : ℝ) (hε : 0 < ε) :
     ‖PhasePlane.mk (ε / 2) 0 - 0‖ < ε ∧ 0 < energy (PhasePlane.mk (ε / 2) 0) := by
   have hne : PhasePlane.mk (ε / 2) 0 ≠ 0 := by
     intro h

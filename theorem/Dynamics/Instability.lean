@@ -338,7 +338,7 @@ local notation "ℝⁿ" => State n
 
 /-- States arbitrarily close to a point of a nontrivial Euclidean space with an eventual
 punctured-neighbourhood property. -/
-@[tmio T] private theorem exists_near_of_eventually (hn : 0 < n) {x_eq : ℝⁿ} {P : ℝⁿ → Prop}
+@[tmio T, powerlib_foundation] private theorem exists_near_of_eventually (hn : 0 < n) {x_eq : ℝⁿ} {P : ℝⁿ → Prop}
     (h : ∀ᶠ x in 𝓝[≠] x_eq, P x) (ε : ℝ) (hε : 0 < ε) :
     ∃ x, ‖x - x_eq‖ < ε ∧ x ≠ x_eq ∧ P x := by
   obtain ⟨r, hr, hP⟩ := exists_radius_of_eventually h

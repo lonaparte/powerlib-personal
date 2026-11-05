@@ -192,7 +192,7 @@ the plane `V_dc V_dc' = q` and `q' = G + H q / V_dc` (`planeQ_lie`). If `H² + 4
 quadratic `λ² − Hλ − G` has a root `λ₊ > 0` on the side `σ = sign H` (or on both sides if
 `G > 0`), and the cone `{σ V_dc > 0, q ≥ μ σ V_dc}` for `μ` slightly above `σH/2` is entered by
 the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_cone`). -/
-@[tmio TM] private theorem modelB_unstable_of_disc_pos {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0)
+@[tmio TM, powerlib_domain] private theorem modelB_unstable_of_disc_pos {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0)
     (hD : 0 < p.planeDisc x) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -302,7 +302,7 @@ reaches the plane at most at its end, after a time `O(‖x(t₀) − x‖)`, so 
 exponential estimate holds although `x` is not an equilibrium
 (`Dynamics.Degenerate.locallyExponentiallyStable_of_spiral`). Implementation evidence for
 `ModelB.mem_den_locallyExponentiallyStable_of_disc_neg`. -/
-@[tmio TM] private theorem modelB_locallyExponentiallyStable_of_disc_neg {x : State 4} (hx : x 2 = 0)
+@[tmio TM, powerlib_domain] private theorem modelB_locallyExponentiallyStable_of_disc_neg {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hI : p.I0 / p.Cdc ≠ 0) (hD : p.planeDisc x < 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -334,7 +334,7 @@ end ModelBParams
 namespace ModelB
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous

@@ -186,7 +186,7 @@ def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.u
   rw [measureReal_def, this, fellerP_apply, Finset.filter_eq' Finset.univ x]
   simp
 
-private theorem ennreal_three_div_nine : (3 : ℝ≥0∞) / 9 = 1 / 3 := by
+@[powerlib_foundation] private theorem ennreal_three_div_nine : (3 : ℝ≥0∞) / 9 = 1 / 3 := by
   rw [ENNReal.div_eq_div_iff (by norm_num) (by norm_num) (by norm_num) (by norm_num)]
   norm_num
 

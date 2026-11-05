@@ -81,7 +81,7 @@ variable (p : SwingParams)
 
 /-- Energy is conserved along every solution of the undamped (`D = 0`) swing equation.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M]
+@[tmio M, powerlib_domain]
 private theorem energy_conserved (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
     {φ : ℝ → State 2} {a : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici a)) :
@@ -106,7 +106,7 @@ private theorem energy_conserved (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
 /-- Sufficiency: if the clearing kinetic energy does not exceed the decelerating area up to the
 unstable angle, the post-fault trajectory never goes beyond `δ_u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem firstSwing_le_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
+@[powerlib_domain] private theorem firstSwing_le_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
     (h0 : φ tc = PhasePlane.mk δc ωc) (hδc : δc ≤ p.deltaU)
@@ -144,7 +144,7 @@ private theorem firstSwing_le_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k
 /-- Necessity: a forward swing (`ω_c > 0`) from the potential well whose kinetic energy exceeds
 the decelerating area goes beyond `δ_u` in finite time.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
+@[powerlib_domain] private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
     (h0 : φ tc = PhasePlane.mk δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc ≤ p.deltaU)
@@ -241,7 +241,7 @@ private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
 potential well `δ_u − 2π < δ_c ≤ δ_u`): the post-fault trajectory never exceeds the unstable
 equilibrium angle iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m) dδ`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem firstSwing_iff (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
+@[powerlib_domain] private theorem firstSwing_iff (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
     (h0 : φ tc = PhasePlane.mk δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc ≤ p.deltaU)
@@ -262,7 +262,7 @@ private theorem firstSwing_iff (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
 the pre-fault equilibrium `(δ₀, 0)` is `ω = (P_m/M)(t − t_f)`,
 `δ = δ₀ + (P_m/(2M))(t − t_f)²`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
+@[powerlib_domain] private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
@@ -310,7 +310,7 @@ private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
 /-- Exact critical clearing time for a bolted fault (`P_e^f ≡ 0`, `D = 0`, `P_m > 0`): the
 during-fault angle reaches `δ_cc ≥ δ₀` exactly at `t = t_f + √(2M(δ_cc − δ₀)/P_m)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem boltedFault_clearingTime (hM : 0 < p.M) (hD : p.D = 0)
+@[powerlib_domain] private theorem boltedFault_clearingTime (hM : 0 < p.M) (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) (hPm : 0 < p.Pm) {φ : ℝ → State 2} {tf T δ₀ δcc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) (hcc : δ₀ ≤ δcc) {t : ℝ} (ht : t ∈ Icc tf T) :
@@ -336,7 +336,7 @@ private theorem boltedFault_clearingTime (hM : 0 < p.M) (hD : p.D = 0)
 on `[δ₀, δ_cc]`, a trajectory starting from `(δ₀, 0)` cannot stay inside the angle window
 `[δ₀, δ_cc]` for longer than `√(2M(δ_cc − δ₀)/(P_m − p_max))`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem time_in_window_le (hM : 0 < p.M) (hD : p.D = 0) {pmax δ₀ δcc : ℝ}
+@[powerlib_domain] private theorem time_in_window_le (hM : 0 < p.M) (hD : p.D = 0) {pmax δ₀ δcc : ℝ}
     (hgap : pmax < p.Pm) (hbound : ∀ δ ∈ Icc δ₀ δcc, p.Pe δ ≤ pmax) {φ : ℝ → State 2}
     {tf T : ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) {t : ℝ} (ht : t ∈ Icc tf T)
@@ -392,7 +392,7 @@ function `φ`, so the stages are glued by continuity of the state, solving the p
 `(−∞, t_f]`, the during-fault field on `[t_f, t_c]` and the post-fault field on `[t_c, ∞)` —
 that rests at `x₀` up to the fault instant.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem exists_faultTrajectory (pre fault post : SwingParams) {x₀ : State 2}
+@[powerlib_domain] private theorem exists_faultTrajectory (pre fault post : SwingParams) {x₀ : State 2}
     (hx₀ : pre.field x₀ = 0) {tf tc : ℝ} (htc : tf ≤ tc) :
     ∃ φ : ℝ → State 2, (tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
@@ -441,7 +441,7 @@ private theorem exists_faultTrajectory (pre fault post : SwingParams) {x₀ : St
 on `Iic tf`, during-fault field on `Icc tf tc`, post-fault field on `Ici tc`) with the same state
 at the fault instant agree at every later time.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem faultTrajectory_unique {pre fault post : SwingParams} {tf tc : ℝ}
+@[powerlib_domain] private theorem faultTrajectory_unique {pre fault post : SwingParams} {tf tc : ℝ}
     {φ ψ : ℝ → State 2}
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
@@ -467,7 +467,7 @@ variable (p : SwingParams)
 
 /-- Energy conservation (`D = 0`) along a solution on a compact time interval.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem energy_conserved_Icc (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
+@[powerlib_domain] private theorem energy_conserved_Icc (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
     {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc a b)) :
     ∀ t ∈ Icc a b, p.energy δ₀ (φ t) = p.energy δ₀ (φ a) := by
@@ -486,7 +486,7 @@ end SwingParams
 /-- Clearing energy: with an undamped during-fault stage started at `(δ₀, 0)`, the kinetic
 energy at clearing equals the accelerating area, `½ M ω(t_c)² = A_acc(δ₀, δ(t_c))`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem clearing_energy {fault : SwingParams} (hM : fault.M ≠ 0)
+@[powerlib_domain] private theorem clearing_energy {fault : SwingParams} (hM : fault.M ≠ 0)
     (hD : fault.D = 0) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)) (htc : tf ≤ tc)
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
@@ -504,7 +504,7 @@ same inertia): if the clearing state lies in the post-fault potential well
 (`δ_u − 2π < δ_c ≤ δ_u`) and moves forward (`ω_c > 0`), the post-fault trajectory never exceeds
 `δ_u` iff `A_acc(δ₀, δ_c) ≤ A_dec(δ_c, δ_u)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem firstSwing_iff_areas {pre fault post : SwingParams}
+@[powerlib_domain] private theorem firstSwing_iff_areas {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hDf : fault.D = 0) (hDp : post.D = 0)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
@@ -525,7 +525,7 @@ private theorem firstSwing_iff_areas {pre fault post : SwingParams}
 post-fault curve be positive on `(δ₀, δ_u)`.  Then the first swing stays below `δ_u` iff the
 fault is cleared within `t_c − t_f ≤ √(2M(δ_cc − δ₀)/P_m)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem boltedFault_firstSwing_iff {pre fault post : SwingParams}
+@[powerlib_domain] private theorem boltedFault_firstSwing_iff {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
     (hDf : fault.D = 0) (hDp : post.D = 0) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {φ : ℝ → State 2} {tf tc δ₀ δcc : ℝ}
@@ -586,7 +586,7 @@ private theorem boltedFault_firstSwing_iff {pre fault post : SwingParams}
 /-- Classical lossless post-fault curve `P_e^post = P_max sin δ` (`k₁ = k₃ = 0`): the positivity
 side condition holds for `δ₀ ≥ 0`, so the bolted-fault critical clearing time is exact.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem boltedFault_firstSwing_iff_classical {pre fault post : SwingParams}
+@[powerlib_domain] private theorem boltedFault_firstSwing_iff_classical {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
     (hDf : fault.D = 0) (hDp : post.D = 0) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
     (hpk₁ : post.k₁ = 0) (hpk₃ : post.k₃ = 0) (hk : 0 < post.k₂) (h : post.Pm < post.k₂)

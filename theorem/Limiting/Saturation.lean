@@ -82,7 +82,7 @@ open powerlib.Dynamics LinearSystems
 /-- `φ_opt = arccos(P₀/P_sat) + arcsin(P₀/P_max)`. -/
 def phiOpt (P0 Psat Pmax : ℝ) : ℝ := Real.arccos (P0 / Psat) + Real.arcsin (P0 / Pmax)
 
-private lemma abs_div_le_one {a b : ℝ} (hb : 0 < b) (h : |a| ≤ b) :
+@[powerlib_foundation] private lemma abs_div_le_one {a b : ℝ} (hb : 0 < b) (h : |a| ≤ b) :
     -1 ≤ a / b ∧ a / b ≤ 1 := by
   have := abs_le.mp h
   constructor
@@ -227,7 +227,7 @@ end SatModel
 def family : Family SatModel Spectral.Requirement 2 0 :=
   Spectral.localFamily SatModel.field SatModel.Stable SatModel.Unstable
 
-private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔
       P.holds (satField m.M m.D m.Pref m.Psat m.φ) (angleState m.δ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : SatModel => satField m.M m.D m.Pref m.Psat m.φ)
@@ -236,7 +236,7 @@ private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
 /-- At an equilibrium `(δ, 0)` with `M, D > 0` and `P_sat sin(δ − φ) < 0` the saturated field is
 locally exponentially stable (Jacobian trace `−D/M < 0`, determinant `−P_sat sin(δ − φ)/M > 0`).
 Implementation evidence for the family's soundness. -/
-@[tmio TM] private theorem satField_les_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio TM, powerlib_domain] private theorem satField_les_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M) (hD : 0 < D)
     (heq : Psat * Real.cos (δ - φ) = Pref) (hsin : Psat * Real.sin (δ - φ) < 0) :
     connection% ((⟨M, D, Pref, Psat, φ, δ⟩ : SatModel) ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -253,7 +253,7 @@ Implementation evidence for the family's soundness. -/
 
 /-- At an equilibrium `(δ, 0)` with `M > 0` and `P_sat sin(δ − φ) > 0` the saturated field is
 unstable (saddle). Implementation evidence for the family's soundness. -/
-@[tmio TM] private theorem satField_unstable_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M)
+@[tmio TM, powerlib_domain] private theorem satField_unstable_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M)
     (heq : Psat * Real.cos (δ - φ) = Pref) (hsin : 0 < Psat * Real.sin (δ - φ)) :
     connection% ((⟨M, D, Pref, Psat, φ, δ⟩ : SatModel) ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -281,7 +281,7 @@ selected equilibrium). -/
   unfold powerlib.TMIO.Statement
   exact Spectral.local_exact_passive _ _ _
 
-private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < Psat) :
+@[powerlib_foundation] private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < Psat) :
     0 < Real.sin (Real.arccos (Pref / Psat)) := by
   have hy : |Pref / Psat| < 1 := by
     rw [abs_div, abs_of_pos hsat, div_lt_one hsat]
@@ -335,7 +335,7 @@ def negativeInertia : SatModel := ⟨-1, -1, 0, 1, 0, Real.pi / 2⟩
   · simp [satJacobian, negativeInertia, Matrix.trace_fin_two_of]
   · simp [satJacobian, negativeInertia, Matrix.det_fin_two_of]
 
-@[tmio M] private theorem negativeInertia_not_stable :
+@[tmio M, powerlib_domain] private theorem negativeInertia_not_stable :
     connection% (negativeInertia ∉ TMIO.realize family.meets {.stable}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Spectral.localFamily, Spectral.Meets]
@@ -387,13 +387,13 @@ connections at the two members. -/
     (f := fun y : Synchronous.Swing.Model => y.p.field) (pt := Synchronous.Swing.Model.point)
     Synchronous.Swing.family_isAutonomous), satField_eq_swing, hpt]
 
-private theorem toSwing_Pe (m : SatModel) :
+@[powerlib_domain] private theorem toSwing_Pe (m : SatModel) :
     m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) := by
   simp only [SatModel.toSwing, Synchronous.SwingParams.Pe, zero_add]
   rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
     Real.sin_add_pi_div_two]
 
-private theorem toSwing_syncCoeff (m : SatModel) :
+@[powerlib_domain] private theorem toSwing_syncCoeff (m : SatModel) :
     m.toSwing.p.syncCoeff m.toSwing.δ = -(m.Psat * Real.sin (m.δ - m.φ)) := by
   simp only [SatModel.toSwing, Synchronous.SwingParams.syncCoeff]
   rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
@@ -401,7 +401,7 @@ private theorem toSwing_syncCoeff (m : SatModel) :
   ring
 
 /-- With positive inertia the swing reading lies in the swing family's context `{inertia}`. -/
-@[tmio M] private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
+@[tmio M, powerlib_domain] private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia}) := show m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia} from
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rw [Set.mem_singleton_iff] at hq
@@ -411,7 +411,7 @@ private theorem toSwing_syncCoeff (m : SatModel) :
 /-- With positive inertia the swing reading meets the swing translation of the local attractive
 sentences (balance, inertia, damping, synchronization) exactly under the saturated stability
 condition: the synchronizing coefficient is `−P_sat sin(δ* − φ)`. -/
-@[tmio TM] private theorem toSwing_mem_realize_iff {m : SatModel} (hM : 0 < m.M) :
+@[tmio TM, powerlib_domain] private theorem toSwing_mem_realize_iff {m : SatModel} (hM : 0 < m.M) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
         (Synchronous.Swing.family.translate (.flow .locallyExponentiallyStable)) ↔
       m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧ m.Psat * Real.sin (m.δ - m.φ) < 0) := by

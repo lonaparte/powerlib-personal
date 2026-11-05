@@ -74,7 +74,7 @@ open Set Filter Topology
 
 variable {n : ℕ}
 
-@[tmio T] private lemma mul_div_add_one_lt {K r : ℝ} (hK : 0 ≤ K) (hr : 0 < r) :
+@[tmio T, powerlib_foundation] private lemma mul_div_add_one_lt {K r : ℝ} (hK : 0 ≤ K) (hr : 0 < r) :
     K * (r / (K + 1)) < r := by
   rw [mul_div_assoc', div_lt_iff₀ (by linarith)]
   nlinarith
@@ -210,33 +210,33 @@ variable {T : State n ≃L[ℝ] State n}
   funext y
   simp
 
-@[tmio T] private lemma transportField_zero_eq_conj (g : State n → State n) :
+@[tmio T, powerlib_foundation] private lemma transportField_zero_eq_conj (g : State n → State n) :
     transportField T 0 g =
       fun y => (T : State n →L[ℝ] State n) (g ((T.symm : State n →L[ℝ] State n) y)) := by
   funext y
   simp
 
-@[tmio T] private lemma symm_apply_coe (x : State n) :
+@[tmio T, powerlib_foundation] private lemma symm_apply_coe (x : State n) :
     (T.symm : State n →L[ℝ] State n) ((T : State n →L[ℝ] State n) x) = x := by
   simp
 
-@[tmio T] private lemma apply_symm_coe (x : State n) :
+@[tmio T, powerlib_foundation] private lemma apply_symm_coe (x : State n) :
     (T : State n →L[ℝ] State n) ((T.symm : State n →L[ℝ] State n) x) = x := by
   simp
 
 /-- A solution of the conjugate field, read back through `T⁻¹`, is a solution of the field. -/
-@[tmio T] private lemma isIntegralCurveOn_back {g : State n → State n} {χ : ℝ → State n} {s : Set ℝ}
+@[tmio T, powerlib_foundation] private lemma isIntegralCurveOn_back {g : State n → State n} {χ : ℝ → State n} {s : Set ℝ}
     (hχ : IsIntegralCurveOn χ (fun _ y => transportField T 0 g y) s) :
     IsIntegralCurveOn (fun t => T.symm (χ t)) (fun _ x => g x) s := by
   have h := isIntegralCurveOn_transport T.symm 0 hχ
   rw [transportField_symm_zero] at h
   simpa only [affineCoord_zero_apply] using h
 
-@[tmio T] private lemma norm_apply_le (x : State n) :
+@[tmio T, powerlib_foundation] private lemma norm_apply_le (x : State n) :
     ‖T x‖ ≤ ‖(T : State n →L[ℝ] State n)‖ * ‖x‖ := by
   simpa using (T : State n →L[ℝ] State n).le_opNorm x
 
-@[tmio T] private lemma tendsto_of_back {χ : ℝ → State n}
+@[tmio T, powerlib_foundation] private lemma tendsto_of_back {χ : ℝ → State n}
     (h : Tendsto (fun t => T.symm (χ t)) atTop (𝓝 0)) : Tendsto χ atTop (𝓝 0) := by
   have h' := ((T.continuous.tendsto 0).comp h)
   simpa [Function.comp_def] using h'
@@ -435,7 +435,7 @@ section Transport
 
 variable (T : State n ≃L[ℝ] State n) (c : State n)
 
-@[tmio T] private lemma transportField_shift (f : State n → State n) (x : State n) :
+@[tmio T, powerlib_foundation] private lemma transportField_shift (f : State n → State n) (x : State n) :
     (fun z => transportField T c f (z + affineCoord T c x)) =
       transportField T 0 (fun z => f (z + x)) := by
   funext z
@@ -599,7 +599,7 @@ def scaleMatrix (η : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, η]
   rw [Matrix.isUnit_iff_isUnit_det]
   simpa [scaleMatrix, Matrix.det_fin_two] using hη
 
-@[tmio T] private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
+@[tmio T, powerlib_foundation] private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
     (scaleMatrix η)⁻¹ = !![1, 0; 0, η⁻¹] := by
   apply Matrix.inv_eq_left_inv
   ext i j
@@ -644,7 +644,7 @@ section TimeScale
   · rfl
   · simp [smul_smul, inv_mul_cancel₀ hc.ne']
 
-@[tmio T] private lemma mul_inv_cancel_time {c : ℝ} (hc : 0 < c) (s : ℝ) :
+@[tmio T, powerlib_foundation] private lemma mul_inv_cancel_time {c : ℝ} (hc : 0 < c) (s : ℝ) :
     c * s * c⁻¹ = s := by
   field_simp
 
@@ -673,7 +673,7 @@ section TimeScale
   have hexp : -a * (c * s - c * s₀) = -(a * c) * (s - s₀) := by ring
   rwa [hexp] at this
 
-@[tmio T] private lemma inv_smul_smul_field {f : State n → State n} {c : ℝ}
+@[tmio T, powerlib_foundation] private lemma inv_smul_smul_field {f : State n → State n} {c : ℝ}
     (hc : 0 < c) : c⁻¹ • (c • f) = f := by
   rw [smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
 
@@ -788,7 +788,7 @@ solution of `c • f` from `t₀`. -/
 
 /-- An exponential estimate `C e^{-a (t - t₀)}` on every solution segment of `f` is the estimate
 `C e^{-c a (s - s₀)}` on every solution segment of `c • f`. -/
-@[tmio T] private lemma bound_timeScale {f : State n → State n} {x : State n} {c C a : ℝ} (hc : 0 < c)
+@[tmio T, powerlib_foundation] private lemma bound_timeScale {f : State n → State n} {x : State n} {c C a : ℝ} (hc : 0 < c)
     (h : ∀ (t₀ t₁ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ t₁ →
       ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖) :
     ∀ (s₀ s₁ : ℝ) (χ : ℝ → State n), IsTrajectoryOn χ (c • f) s₀ s₁ →
@@ -845,7 +845,7 @@ decays at the rate `c a`. -/
   have h' := Conservative.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc] at h'
 
-@[tmio T] private lemma contraction_timeScale {f : State n → State n} {x : State n} {c T ρ : ℝ}
+@[tmio T, powerlib_foundation] private lemma contraction_timeScale {f : State n → State n} {x : State n} {c T ρ : ℝ}
     (hc : 0 < c)
     (h : ∀ (t₀ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ (t₀ + c * T) →
       ‖φ (t₀ + c * T) - x‖ ≤ ρ * ‖φ t₀ - x‖) :

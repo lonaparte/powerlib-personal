@@ -358,7 +358,7 @@ def supercriticalQS : Model :=
 /-! ## The witness is locally asymptotically stable (implementation evidence) -/
 
 /-- `sin x − (x − x³/6) = O(x⁴)`. -/
-private theorem sin_sub_taylor_isBigO :
+@[powerlib_foundation] private theorem sin_sub_taylor_isBigO :
     (fun x : ℝ => Real.sin x - (x - x ^ 3 / 6)) =O[𝓝 0] fun x => x ^ 4 := by
   refine IsBigO.of_bound 1 ?_
   filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with x hx
@@ -370,7 +370,7 @@ private theorem sin_sub_taylor_isBigO :
   linarith
 
 /-- The Lie derivative of `W` along the witness field. -/
-private theorem supercriticalQS_lie (z : Dynamics.State 3) :
+@[powerlib_domain] private theorem supercriticalQS_lie (z : Dynamics.State 3) :
     fderiv ℝ (fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) z
         (supercriticalQS.field z) =
       hopfQS_w4 (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) +
@@ -393,7 +393,7 @@ private theorem supercriticalQS_lie (z : Dynamics.State 3) :
   exact congr (congr (congrArg _ (by ring)) (by ring)) (by ring)
 
 /-- `W = (c₁² + c₂²)/2 + 32 (c₃ − h₂)² + W₃₄(c₁, c₂)`. -/
-private theorem hopfQS_W_eq (c1 c2 c3 : ℝ) :
+@[powerlib_foundation] private theorem hopfQS_W_eq (c1 c2 c3 : ℝ) :
     poly3 hopfQS_W c1 c2 c3 = (c1 ^ 2 + c2 ^ 2) / 2 + 32 * (c3 - hopfQS_h c1 c2) ^ 2 +
       poly3 hopfQS_W34 c1 c2 0 := by
   simp only [hopfQS_W, hopfQS_W34, hopfQS_h, poly3_cons, poly3_nil]
@@ -401,7 +401,7 @@ private theorem hopfQS_W_eq (c1 c2 c3 : ℝ) :
   ring
 
 /-- `w₄ ≤ −((c₁² + c₂²)² + (c₃ − h₂)²)`. -/
-private theorem hopfQS_w4_le (c1 c2 c3 : ℝ) :
+@[powerlib_foundation] private theorem hopfQS_w4_le (c1 c2 c3 : ℝ) :
     hopfQS_w4 c1 c2 c3 ≤ -((c1 ^ 2 + c2 ^ 2) ^ 2 + (c3 - hopfQS_h c1 c2) ^ 2) := by
   set v := c3 - hopfQS_h c1 c2 with hv
   set Q := c1 ^ 2 + c2 ^ 2 with hQ
@@ -435,7 +435,7 @@ private theorem hopfQS_w4_le (c1 c2 c3 : ℝ) :
   nlinarith
 
 /-- `|h₂(c₁, c₂)| ≤ (|c₁| + |c₂|)²`. -/
-private theorem abs_hopfQS_h_le (c1 c2 : ℝ) : |hopfQS_h c1 c2| ≤ (|c1| + |c2|) ^ 2 := by
+@[powerlib_foundation] private theorem abs_hopfQS_h_le (c1 c2 : ℝ) : |hopfQS_h c1 c2| ≤ (|c1| + |c2|) ^ 2 := by
   unfold hopfQS_h
   have h12 : |c1 * c2| = |c1| * |c2| := abs_mul _ _
   have := abs_add_three (13689 * c1 ^ 2 / 65620) (567 * c1 * c2 / 16405) (10522 * c2 ^ 2 / 16405)
@@ -451,7 +451,7 @@ private theorem abs_hopfQS_h_le (c1 c2 : ℝ) : |hopfQS_h c1 c2| ≤ (|c1| + |c2
     (abs_nonneg c2)]
 
 /-- The eigen-coordinates vanish only at the origin. -/
-private theorem hopfQS_eq_zero {z : Dynamics.State 3} (h1 : hopfQS_c1 z = 0)
+@[powerlib_foundation] private theorem hopfQS_eq_zero {z : Dynamics.State 3} (h1 : hopfQS_c1 z = 0)
     (h2 : hopfQS_c2 z = 0) (h3 : hopfQS_c3 z = 0) : z = 0 := by
   obtain ⟨e0, e1, e2⟩ := hopfQS_coords z
   simp only [h1, h2, h3, mul_zero, add_zero, sub_zero] at e0 e1 e2
@@ -474,35 +474,35 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   (hopfQS_c1 z ^ 2 + hopfQS_c2 z ^ 2) / 2 +
     32 * (hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)) ^ 2
 
-private theorem hopfQS_size_nonneg (z : Dynamics.State 3) : 0 ≤ hopfQS_size z := by
+@[powerlib_foundation] private theorem hopfQS_size_nonneg (z : Dynamics.State 3) : 0 ≤ hopfQS_size z := by
   unfold hopfQS_size; positivity
 
-private theorem hopfQS_size_tendsto : Tendsto hopfQS_size (𝓝 0) (𝓝 0) := by
+@[powerlib_foundation] private theorem hopfQS_size_tendsto : Tendsto hopfQS_size (𝓝 0) (𝓝 0) := by
   have hc : Continuous hopfQS_size := by
     unfold hopfQS_size hopfQS_h
     fun_prop
   simpa [hopfQS_size, hopfQS_h] using hc.tendsto 0
 
-private theorem hopfQS_sqrt_sq (z : Dynamics.State 3) :
+@[powerlib_foundation] private theorem hopfQS_sqrt_sq (z : Dynamics.State 3) :
     |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)| =
       Real.sqrt |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)| ^ 2 :=
   (Real.sq_sqrt (abs_nonneg _)).symm
 
-private theorem hopfQS_c1_isBigO : (fun z => hopfQS_c1 z) =O[𝓝 0] hopfQS_size :=
+@[powerlib_foundation] private theorem hopfQS_c1_isBigO : (fun z => hopfQS_c1 z) =O[𝓝 0] hopfQS_size :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, abs_of_nonneg (hopfQS_size_nonneg z)]
     unfold hopfQS_size
     have := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     linarith [abs_nonneg (hopfQS_c2 z)])
 
-private theorem hopfQS_c2_isBigO : (fun z => hopfQS_c2 z) =O[𝓝 0] hopfQS_size :=
+@[powerlib_foundation] private theorem hopfQS_c2_isBigO : (fun z => hopfQS_c2 z) =O[𝓝 0] hopfQS_size :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, abs_of_nonneg (hopfQS_size_nonneg z)]
     unfold hopfQS_size
     have := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     linarith [abs_nonneg (hopfQS_c1 z)])
 
-private theorem hopfQS_c3_isBigO :
+@[powerlib_foundation] private theorem hopfQS_c3_isBigO :
     (fun z => hopfQS_c3 z) =O[𝓝 0] fun z => hopfQS_size z ^ 2 :=
   IsBigO.of_bound 2 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg (hopfQS_size z))]
@@ -517,7 +517,7 @@ private theorem hopfQS_c3_isBigO :
     have hw := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     nlinarith [abs_nonneg (hopfQS_c1 z), abs_nonneg (hopfQS_c2 z)])
 
-private theorem hopfQS_z0_isBigO : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] hopfQS_size := by
+@[powerlib_foundation] private theorem hopfQS_z0_isBigO : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] hopfQS_size := by
   have hc1 : (fun z => hopfQS_c3 z) =O[𝓝 0] hopfQS_size :=
     (hopfQS_c3_isBigO.trans (Dynamics.isBigO_pow_of_tendsto hopfQS_size_tendsto
       (by norm_num : 1 ≤ 2))).congr_right fun z => pow_one _
@@ -525,7 +525,7 @@ private theorem hopfQS_z0_isBigO : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] 
     (hc1.const_mul_left 7)).congr_left fun z => ((hopfQS_coords z).1).symm
 
 /-- The remainder of `Ẇ` is `O(σ⁵)`. -/
-private theorem hopfQS_remainder_isBigO :
+@[powerlib_foundation] private theorem hopfQS_remainder_isBigO :
     (fun z : Dynamics.State 3 => poly3 hopfQS_R (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) +
       (Real.sin (z 0) - (z 0 - z 0 ^ 3 / 6)) *
         poly3 hopfQS_KS (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) +
@@ -552,7 +552,7 @@ private theorem hopfQS_remainder_isBigO :
     ((hc4.mul hKC).congr_right fun z => by ring)
 
 /-- `σ⁴ ≤ 27 ((c₁² + c₂²)² + (c₃ − h₂)²)`. -/
-private theorem hopfQS_size4_isBigO : (fun z => hopfQS_size z ^ 4) =O[𝓝 0] hopfQS_q4 :=
+@[powerlib_foundation] private theorem hopfQS_size4_isBigO : (fun z => hopfQS_size z ^ 4) =O[𝓝 0] hopfQS_q4 :=
   IsBigO.of_bound 27 (Eventually.of_forall fun z => by
     have hq0 : 0 ≤ hopfQS_q4 z := by unfold hopfQS_q4; positivity
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (hopfQS_size_nonneg z) 4),
@@ -578,7 +578,7 @@ private theorem hopfQS_size4_isBigO : (fun z => hopfQS_size z ^ 4) =O[𝓝 0] ho
     rw [← hx, ← hy, ← hw]
     nlinarith [sq_nonneg (x ^ 2), sq_nonneg (y ^ 2), mul_nonneg (sq_nonneg x) (sq_nonneg y)])
 
-private theorem hopfQS_q4_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 < hopfQS_q4 z := by
+@[powerlib_foundation] private theorem hopfQS_q4_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 < hopfQS_q4 z := by
   refine eventually_nhdsWithin_of_forall fun z hz => ?_
   have hz' : z ≠ 0 := hz
   unfold hopfQS_q4
@@ -597,7 +597,7 @@ private theorem hopfQS_q4_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 
     simpa [hopfQS_h] using this
   exact hz' (hopfQS_eq_zero h1 h2 h3)
 
-private theorem hopfQS_q2_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 < hopfQS_q2 z := by
+@[powerlib_foundation] private theorem hopfQS_q2_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 < hopfQS_q2 z := by
   filter_upwards [hopfQS_q4_pos] with z hz
   unfold hopfQS_q4 at hz
   unfold hopfQS_q2
@@ -613,7 +613,7 @@ private theorem hopfQS_q2_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 
   norm_num at hz
 
 /-- `W > 0` on a punctured neighbourhood: `W = q₂ + O(τ³)`, `τ = |c₁| + |c₂|`. -/
-private theorem hopfQS_W_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
+@[powerlib_foundation] private theorem hopfQS_W_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
     0 < poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) := by
   have hτ0 : Tendsto (fun z : Dynamics.State 3 => |hopfQS_c1 z| + |hopfQS_c2 z|) (𝓝 0)
       (𝓝 0) := by
@@ -646,7 +646,7 @@ private theorem hopfQS_W_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
   ring
 
 /-- `Ẇ < 0` on a punctured neighbourhood: `Ẇ ≤ −q₄ + O(σ⁵)`, `σ⁵ = o(q₄)`. -/
-private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
+@[powerlib_domain] private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
     fderiv ℝ (fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) z
       (supercriticalQS.field z) < 0 := by
   refine Dynamics.eventually_neg_of_le_of_isLittleO (q := hopfQS_q4) hopfQS_q4_pos
@@ -660,7 +660,7 @@ private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
   linarith
 
 /-- **The supercritical quasi-static witness is locally asymptotically stable** (a weak focus). -/
-@[tmio TM] private theorem supercriticalQS_las :
+@[tmio TM, powerlib_domain] private theorem supercriticalQS_las :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]

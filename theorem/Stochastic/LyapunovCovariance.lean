@@ -408,7 +408,7 @@ section Controllability
 open scoped Nat
 
 /-- `x ⬝ (M y) = (Mᵀ x) ⬝ y`. -/
-private lemma dot_mulVec_eq {ι : Type*} [Fintype ι] (M : Matrix (Fin n) ι ℝ) (x : Fin n → ℝ)
+@[powerlib_foundation] private lemma dot_mulVec_eq {ι : Type*} [Fintype ι] (M : Matrix (Fin n) ι ℝ) (x : Fin n → ℝ)
     (y : ι → ℝ) :
     x ⬝ᵥ (M *ᵥ y) = (Mᵀ *ᵥ x) ⬝ᵥ y := by
   rw [dotProduct_mulVec, mulVec_transpose]

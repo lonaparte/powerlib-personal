@@ -431,14 +431,14 @@ def family : Family Model Requirement 3 0 :=
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected
 point. -/
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (QuasiStatic.field m.params) (point m.θ m.Id) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => QuasiStatic.field m.params)
     (pt := fun m => point m.θ m.Id) family_isAutonomous
 
 /-- Linearization at the selected point: a Routh–Hurwitz Jacobian gives local exponential
 stability. -/
-@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_three
@@ -446,7 +446,7 @@ stability. -/
     (fderiv_field m.params m.θ 0 m.Id) hs.1 hs.2.1 hs.2.2)
 
 /-- Linearization at the selected point: `det > 0` or `tr > 0` gives instability. -/
-@[tmio TM] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)
@@ -492,7 +492,7 @@ point, moved to the origin), and passivity holds without requirement. -/
 /-! ### Exactness of the local exponential translation -/
 
 /-- With no dispatch gain the Jacobian is singular. -/
-private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) :
+@[powerlib_domain] private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) :
     (jac p θ Id).det = 0 := by
   simp [jac, Matrix.det_fin_three, h]
 
@@ -668,13 +668,13 @@ while the translation asks for an equilibrium. -/
 constant. -/
 def undampedPLL : Model := ⟨⟨1, 0, 0, 1, 0, 0⟩, 0, 0⟩
 
-private theorem undampedPLL_field (z : Dynamics.State 3) :
+@[powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 3) :
     QuasiStatic.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0), 0] := by
   ext i
   fin_cases i <;> simp [QuasiStatic.field, Dynamics.lift, coordField, undampedPLL, vq, power]
 
 /-- The energy `1 − cos θ + x²/2 + i_d²/2`. -/
-private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
+@[powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
     HasFDerivAt (fun y : Dynamics.State 3 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + 1 / 2 * y 2 ^ 2)
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ) +
         z 1 • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 : Dynamics.State 3 →L[ℝ] ℝ) +

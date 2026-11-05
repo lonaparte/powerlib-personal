@@ -376,13 +376,13 @@ section HJB
 variable {H A : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
 
 /-- Chain rule along a trajectory: `d/dt V(t, x(t)) = DV(t, x(t)) (1, ẋ(t))`. -/
-private theorem hasDerivAt_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
+@[powerlib_foundation] private theorem hasDerivAt_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
     (hV : ∀ p, HasFDerivAt V (DV p) p) {x : ℝ → H} {v : H} {t : ℝ} (hx : HasDerivAt x v t) :
     HasDerivAt (fun s => V (s, x s)) (DV (t, x t) (1, v)) t := by
   have hp : HasDerivAt (fun s => (s, x s)) ((1 : ℝ), v) t := (hasDerivAt_id t).prodMk hx
   exact (hV (t, x t)).comp_hasDerivAt t hp
 
-private theorem continuousOn_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
+@[powerlib_foundation] private theorem continuousOn_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
     (hV : ∀ p, HasFDerivAt V (DV p) p) {x : ℝ → H} {T : ℝ} (hxc : ContinuousOn x (Set.Icc 0 T)) :
     ContinuousOn (fun s => V (s, x s)) (Set.Icc 0 T) := by
   have hVc : Continuous V := continuous_iff_continuousAt.mpr fun p => (hV p).continuousAt
@@ -394,7 +394,7 @@ admissible control value `w ∈ Uad` and `t ∈ (0, T)`, with terminal condition
 for every admissible pair (`x` continuous on `[0, T]`, `ẋ = f(t, x, u)` and `u(t) ∈ Uad` on
 `(0, T)`, running cost integrable) `V(0, x(0)) ≤ ∫₀ᵀ L(t, x, u) dt + g(x(T))`.
 (`DV p (1, v)` is `∂ₜV + D_yV · v`.) -/
-theorem hjb_le_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
+@[powerlib_foundation] theorem hjb_le_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
     {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
     (hV : ∀ p, HasFDerivAt V (DV p) p)
     (hHJB : ∀ t ∈ Set.Ioo 0 T, ∀ y, ∀ w ∈ Uad, 0 ≤ DV (t, y) (1, f t y w) + L t y w)
@@ -416,7 +416,7 @@ theorem hjb_le_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g
 /-- **HJB verification, equality along a minimizing pair**: if the HJB expression vanishes along
 `(x, u)` (the control attains the minimum in the Hamiltonian along its own trajectory), the cost of
 `(x, u)` equals `V(0, x(0))`. -/
-theorem hjb_eq_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ}
+@[powerlib_foundation] theorem hjb_eq_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ}
     {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
     (hV : ∀ p, HasFDerivAt V (DV p) p)
     (hterm : ∀ y, V (T, y) = g y)
@@ -441,7 +441,7 @@ theorem hjb_eq_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g
 `min_{w ∈ Uad} [∂ₜV + D_yV · f(t, y, w) + L(t, y, w)] = 0`: the expression is `≥ 0` for all `w`, and
 `= 0` along an admissible pair `(x*, u*)` from `x₀`.  Then `V(0, x₀)` is the **least** cost over all
 admissible pairs from `x₀` — `V(0, x₀)` is the value of the problem and `(x*, u*)` is optimal. -/
-theorem hjb_verification {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
+@[powerlib_foundation] theorem hjb_verification {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
     {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
     (hV : ∀ p, HasFDerivAt V (DV p) p)
     (hHJB : ∀ t ∈ Set.Ioo 0 T, ∀ y, ∀ w ∈ Uad, 0 ≤ DV (t, y) (1, f t y w) + L t y w)
@@ -472,7 +472,7 @@ open Real
 /-- Riccati solution `p(t) = tanh(T − t)` of `ṗ = p² − 1`, `p(T) = 0`. -/
 def lqGain (T t : ℝ) : ℝ := sinh (T - t) / cosh (T - t)
 
-private theorem lqGain_hasDerivAt (T t : ℝ) :
+@[powerlib_foundation] private theorem lqGain_hasDerivAt (T t : ℝ) :
     HasDerivAt (lqGain T) (lqGain T t ^ 2 - 1) t := by
   have hc : cosh (T - t) ≠ 0 := (cosh_pos _).ne'
   have hs : HasDerivAt (fun s => sinh (T - s)) (-cosh (T - t)) t := by
@@ -488,7 +488,7 @@ private theorem lqGain_hasDerivAt (T t : ℝ) :
   field_simp
   linarith
 
-private theorem lqGain_continuous (T : ℝ) : Continuous (lqGain T) :=
+@[powerlib_foundation] private theorem lqGain_continuous (T : ℝ) : Continuous (lqGain T) :=
   continuous_iff_continuousAt.mpr fun t => (lqGain_hasDerivAt T t).continuousAt
 
 /-- `V(t, x) = p(t) x²`. -/
@@ -499,7 +499,7 @@ def lqDValue (T : ℝ) (q : ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ :=
   ((lqGain T q.1 ^ 2 - 1) * q.2 ^ 2) • ContinuousLinearMap.fst ℝ ℝ ℝ +
     (2 * lqGain T q.1 * q.2) • ContinuousLinearMap.snd ℝ ℝ ℝ
 
-private theorem lqValue_hasFDerivAt (T : ℝ) (q : ℝ × ℝ) :
+@[powerlib_foundation] private theorem lqValue_hasFDerivAt (T : ℝ) (q : ℝ × ℝ) :
     HasFDerivAt (lqValue T) (lqDValue T q) q := by
   have h1 : HasFDerivAt (fun r : ℝ × ℝ => lqGain T r.1)
       ((lqGain T q.1 ^ 2 - 1) • ContinuousLinearMap.fst ℝ ℝ ℝ) q :=

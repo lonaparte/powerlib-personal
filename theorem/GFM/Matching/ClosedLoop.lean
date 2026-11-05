@@ -207,7 +207,7 @@ def dissipation (z : State 5) : ℝ :=
 
 end Model
 
-private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x j) :=
+@[powerlib_foundation] private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x j) :=
   Dynamics.contDiff_coord j
 
 /-- Components of the reduced field. Static evidence on the model, not a connection conclusion. -/
@@ -367,7 +367,7 @@ not a connection conclusion. -/
   ext i
   fin_cases i <;> simp [z0, z1, z2, z3, z4]
 
-private theorem dissipation_continuous (m : Model) : Continuous m.dissipation := by
+@[powerlib_domain] private theorem dissipation_continuous (m : Model) : Continuous m.dissipation := by
   have h := fun j => (coord_smooth j).continuous
   have h0 := h 0
   have h1 := h 1
@@ -377,7 +377,7 @@ private theorem dissipation_continuous (m : Model) : Continuous m.dissipation :=
   unfold Model.dissipation
   fun_prop
 
-private theorem energy_smooth (m : Model) : ContDiff ℝ 1 m.energy := by
+@[powerlib_domain] private theorem energy_smooth (m : Model) : ContDiff ℝ 1 m.energy := by
   have h0 := coord_smooth 0
   have h1 := coord_smooth 1
   have h2 := coord_smooth 2
@@ -386,7 +386,7 @@ private theorem energy_smooth (m : Model) : ContDiff ℝ 1 m.energy := by
   unfold Model.energy
   fun_prop
 
-private theorem eq_zero_of_mul_sq {c x : ℝ} (hc : 0 < c) (h : c * x ^ 2 = 0) : x = 0 :=
+@[powerlib_foundation] private theorem eq_zero_of_mul_sq {c x : ℝ} (hc : 0 < c) (h : c * x ^ 2 = 0) : x = 0 :=
   pow_eq_zero_iff (n := 2) (by norm_num) |>.mp ((mul_eq_zero.mp h).resolve_left hc.ne')
 
 /-- The storage is positive definite. Static evidence on the model, not a connection conclusion. -/
@@ -409,26 +409,26 @@ private theorem eq_zero_of_mul_sq {c x : ℝ} (hc : 0 < c) (h : c * x ^ 2 = 0) :
   ext i
   fin_cases i <;> simp [z0, z1, z2, z3, z4]
 
-private theorem energy_nonneg (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
+@[powerlib_domain] private theorem energy_nonneg (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
     (z : State 5) : 0 ≤ m.energy z := by
   unfold Model.energy
   have := sq_nonneg (z 0)
   positivity
 
-private theorem energy_homogeneous (m : Model) (a : ℝ) (z : State 5) :
+@[powerlib_domain] private theorem energy_homogeneous (m : Model) (a : ℝ) (z : State 5) :
     m.energy (a • z) = a ^ 2 * m.energy z := by
   simp only [Model.energy, PiLp.smul_apply, smul_eq_mul]
   ring
 
-private theorem dissipation_homogeneous (m : Model) (a : ℝ) (z : State 5) :
+@[powerlib_domain] private theorem dissipation_homogeneous (m : Model) (a : ℝ) (z : State 5) :
     m.dissipation (a • z) = a ^ 2 * m.dissipation z := by
   simp only [Model.dissipation, PiLp.smul_apply, smul_eq_mul]
   ring
 
-private theorem zeroInput_smooth (m : Model) : ContDiff ℝ 1 m.system.zeroInput :=
+@[powerlib_domain] private theorem zeroInput_smooth (m : Model) : ContDiff ℝ 1 m.system.zeroInput :=
   (field_smooth m 0).comp (contDiff_id.add contDiff_const)
 
-private theorem passive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
+@[powerlib_domain] private theorem passive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
     (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     m.system.PassiveWith m.energy := by
   refine Port.System.passiveWith_of_rate m.system m.energy (energy_nonneg m hCdc hL hC)
@@ -472,7 +472,7 @@ def translate : Sentence → Set Requirement
 /-- The reduced matching closed-loop family. -/
 def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
 
-@[tmio TM] private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
+@[tmio TM, powerlib_domain] private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
     (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -767,7 +767,7 @@ conclusion. -/
 
 /-- Along every stationary-frame solution segment the load phasor `R_θᵀ s_αβ` is constant.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem load_const (m : Model) {X : ℝ → State 8} {a b : ℝ}
+@[powerlib_domain] private theorem load_const (m : Model) {X : ℝ → State 8} {a b : ℝ}
     (hX : IsTrajectoryOn X m.abField a b) :
     ∀ t ∈ Set.Icc a b, rotD (X t 0) (X t 6) (X t 7) = rotD (X a 0) (X a 6) (X a 7) ∧
       rotQ (X t 0) (X t 6) (X t 7) = rotQ (X a 0) (X a 6) (X a 7) := by
@@ -805,7 +805,7 @@ private theorem load_const (m : Model) {X : ℝ → State 8} {a b : ℝ}
 /-- Every stationary-frame solution segment is mapped by `reduce` to a solution segment of the
 reduced model whose load is the initial `R_θᵀ s_αβ`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem reduce_isTrajectoryOn (m : Model) {X : ℝ → State 8} {a b : ℝ}
+@[powerlib_domain] private theorem reduce_isTrajectoryOn (m : Model) {X : ℝ → State 8} {a b : ℝ}
     (hX : IsTrajectoryOn X m.abField a b) :
     IsTrajectoryOn (fun t => reduce (X t))
       (fun y => (m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
@@ -885,7 +885,7 @@ def fullFamily : Family FullModel Spectral.Requirement 8 0 :=
   unfold powerlib.TMIO.Statement
   exact Spectral.local_chain_le_semantics (fun _ h => h.elim) (fun _ h => h.elim)
 
-private theorem full_mem_den_flow {M : FullModel} {P : Flow.Property} :
+@[powerlib_domain] private theorem full_mem_den_flow {M : FullModel} {P : Flow.Property} :
     M ∈ fullFamily.den (.flow P) ↔ P.holds M.p.abField M.point :=
   Spectral.mem_den_flow_iff_shift (f := fun M : FullModel => M.p.abField) (pt := FullModel.point)
     (Spectral.localFamily_isAutonomous _ _ _)
@@ -1068,7 +1068,7 @@ rotating-frame deviation. Static evidence, not a connection conclusion. -/
 /-- On the load-matched set the rotating-frame deviation is at most `(1 + Λ)` times the distance
 to the orbit (`Λ` the Lipschitz constant of the orbit). Implementation evidence (it names the
 orbit `range orbitPoint` of the model, Rules §3a). -/
-private theorem norm_reduce_sub_le (m : Model) (X : State 8)
+@[powerlib_domain] private theorem norm_reduce_sub_le (m : Model) (X : State 8)
     (hD : rotD (X 0) (X 6) (X 7) = m.sd) (hQ : rotQ (X 0) (X 6) (X 7) = m.sq) :
     ‖reduce X - m.point‖ ≤ (1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
       (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))) *
@@ -1097,12 +1097,12 @@ private theorem norm_reduce_sub_le (m : Model) (X : State 8)
   have h5 : Λ * |φ - X 0| ≤ Λ * ‖X - m.orbitPoint φ‖ := mul_le_mul_of_nonneg_left h4 hΛ
   nlinarith
 
-private theorem orbitPoint_continuous (m : Model) : Continuous m.orbitPoint := by
+@[powerlib_domain] private theorem orbitPoint_continuous (m : Model) : Continuous m.orbitPoint := by
   apply (PiLp.continuous_toLp 2 (fun _ : Fin 8 => ℝ)).comp
   refine continuous_pi fun i => ?_
   fin_cases i <;> simp <;> fun_prop
 
-private theorem isClosed_orbit (m : Model) : IsClosed (Set.range m.orbitPoint) := by
+@[powerlib_domain] private theorem isClosed_orbit (m : Model) : IsClosed (Set.range m.orbitPoint) := by
   have e : Set.range m.orbitPoint = {X : State 8 | X = m.orbitPoint (X 0)} := by
     ext X
     constructor
@@ -1124,7 +1124,7 @@ Proof: global exponential stability in the reduced coordinates (`ges`), the redu
 (`reduce_isTrajectoryOn`, `load_const`), and the two-sided comparison `norm_sub_orbitPoint`,
 `norm_reduce_sub_le` through `Dynamics.LaSalle.infDist_le_of_reduction'`.
 Implementation evidence: set attraction is outside the sentence language (Rules §3a). -/
-private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+@[powerlib_domain] private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
     (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
     (hδ : 0 < m.margin) :
     ∃ K a : ℝ, 0 ≤ K ∧ 0 < a ∧ ∀ (t₀ t₁ : ℝ) (X : ℝ → State 8), IsTrajectoryOn X m.abField t₀ t₁ →
@@ -1167,7 +1167,7 @@ private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL
 
 /-- Every forward solution with the model's load phasor converges to the steady-state orbit.
 Implementation evidence (Rules §3a). -/
-private theorem tendsto_infDist_orbit (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+@[powerlib_domain] private theorem tendsto_infDist_orbit (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
     (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
     (hδ : 0 < m.margin) {X : ℝ → State 8} {t₀ : ℝ}
     (hX : IsIntegralCurveOn X (fun _ x => m.abField x) (Set.Ici t₀))
@@ -1187,7 +1187,7 @@ private theorem tendsto_infDist_orbit (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m
 
 /-- The steady-state orbit is invariant: a solution segment starting on it stays on it.
 Implementation evidence (Rules §3a). -/
-private theorem orbit_invariant (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+@[powerlib_domain] private theorem orbit_invariant (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
     (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
     (hδ : 0 < m.margin) {t₀ t₁ : ℝ} {X : ℝ → State 8} (hX : IsTrajectoryOn X m.abField t₀ t₁)
     (h0 : X t₀ ∈ Set.range m.orbitPoint) : ∀ t ∈ Set.Icc t₀ t₁, X t ∈ Set.range m.orbitPoint := by

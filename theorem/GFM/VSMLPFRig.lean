@@ -219,32 +219,32 @@ balanced. Static evidence on the implementation, not a connection conclusion. -/
     ext i
     fin_cases i <;> simp [rigField, Rig.point, hb]
 
-private theorem rig_trace_jacobian (y : Rig) :
+@[powerlib_domain] private theorem rig_trace_jacobian (y : Rig) :
     y.jacobian.trace = -y.design.g.D / y.design.g.M - y.design.g.ωc - 1 / y.τ := by
   simp [Rig.jacobian, Matrix.trace, Fin.sum_univ_four]
   ring
 
-private theorem rig_m2_jacobian (y : Rig) :
+@[powerlib_domain] private theorem rig_m2_jacobian (y : Rig) :
     Criteria.principalMinorSum2Fin4 y.jacobian =
       y.design.g.D / y.design.g.M * y.design.g.ωc + y.design.g.D / y.design.g.M / y.τ +
         y.design.g.ωc / y.τ := by
   simp [Criteria.principalMinorSum2Fin4, Rig.jacobian]
   ring
 
-private theorem rig_m3_jacobian (y : Rig) :
+@[powerlib_domain] private theorem rig_m3_jacobian (y : Rig) :
     Criteria.principalMinorSum3Fin4 y.jacobian =
       -(y.design.g.D / y.design.g.M * y.design.g.ωc / y.τ) := by
   simp [Criteria.principalMinorSum3Fin4, Rig.jacobian]
   ring
 
-private theorem rig_det_jacobian (y : Rig) :
+@[powerlib_domain] private theorem rig_det_jacobian (y : Rig) :
     y.jacobian.det = y.design.g.ωc / y.design.g.M / y.τ * y.design.K := by
   rw [Criteria.det_fin_four]
   simp [Rig.jacobian]
   ring
 
 /-- The third Hurwitz determinant of the platform Jacobian, scaled by `(M τ)³`, is `H`. -/
-private theorem gap_eq (y : Rig) (hM : y.design.g.M ≠ 0) (hτ : y.τ ≠ 0) :
+@[powerlib_domain] private theorem gap_eq (y : Rig) (hM : y.design.g.M ≠ 0) (hτ : y.τ ≠ 0) :
     (y.jacobian.trace * Criteria.principalMinorSum2Fin4 y.jacobian *
         Criteria.principalMinorSum3Fin4 y.jacobian -
       (Criteria.principalMinorSum3Fin4 y.jacobian ^ 2 + y.jacobian.trace ^ 2 * y.jacobian.det)) *
@@ -302,11 +302,11 @@ def rigFamily : Family Rig RigRequirement 4 0 :=
 
 /-! ### Implementation evidence (private) -/
 
-private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
+@[powerlib_domain] private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
     y ∈ rigFamily.den (.flow P) ↔ P.holds (rigField y) y.point :=
   Spectral.mem_den_flow_iff_shift (f := rigField) (pt := Rig.point) rigFamily_isAutonomous
 
-@[tmio TM] private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio TM, powerlib_domain] private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hK : 0 < y.design.K) (hH : 0 < y.H) :
     connection% (y ∈ rigFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -328,7 +328,7 @@ private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
     have hMτ : 0 < (y.design.g.M * y.τ) ^ 3 := by positivity
     nlinarith
 
-@[tmio TM] private theorem rig_unstable_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio TM, powerlib_domain] private theorem rig_unstable_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hl : y.H < 0 ∨ y.design.K < 0) :
     connection% (y ∈ rigFamily.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -466,9 +466,9 @@ def stack : Stack Model Requirement Rig RigRequirement Record 3 0 4 0 :=
   { model := family, impl := rigFamily, realizes := Implementation.ofDesign Rig.design
     produces := {p | Produces p.1 p.2} }
 
-private theorem stack_model : stack.model = family := rfl
+@[powerlib_domain] private theorem stack_model : stack.model = family := rfl
 
-private theorem stack_impl : stack.impl = rigFamily := rfl
+@[powerlib_domain] private theorem stack_impl : stack.impl = rigFamily := rfl
 
 /-- A static check of a record: positive lower bounds and the fast-filter condition at the worst
 corner of the intervals, `K_hi < D_lo ω_lo + D_lo²/M_hi`. -/
@@ -490,19 +490,19 @@ def Record.SlowCheck (v : Record) : Prop :=
 
 /-! ### Implementation evidence (private) -/
 
-@[tmio IO] private theorem mem_produces {y : Rig} {v : Record} :
+@[tmio IO, powerlib_domain] private theorem mem_produces {y : Rig} {v : Record} :
     connection% (v ∈ TMIO.predict stack.produces {y} ↔ v ∈ {v | Produces y v}) := by
   simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
   rfl
 
-@[tmio MI] private theorem mem_realizes {x : Model} {y : Rig} :
+@[tmio MI, powerlib_domain] private theorem mem_realizes {x : Model} {y : Rig} :
     connection% (y ∈ TMIO.predict stack.realizes {x} ↔ y ∈ {y | y.design = x}) := by
   simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
   rfl
 
 /-- The worst-corner fast-filter check places every producer's design in the translation of
 local exponential stability. -/
-@[tmio IO] private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
+@[tmio IO, powerlib_domain] private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
     (hp : Produces y v) :
     connection% (y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable))) := by
   change y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable))
@@ -527,7 +527,7 @@ local exponential stability. -/
 
 /-- The worst-corner slow-filter check places every producer's design in the translation of
 instability. -/
-@[tmio IO] private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowCheck)
+@[tmio IO, powerlib_domain] private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowCheck)
     (hp : Produces y v) :
     connection% (y.design ∈ TMIO.realize Meets (translate (.flow .unstable))) := by
   change y.design ∈ TMIO.realize Meets (translate (.flow .unstable))
@@ -551,7 +551,7 @@ instability. -/
 
 /-- Fast filter and fast delay give the platform Routh condition:
 `H = ω_c ((M e − τ b (K M + τ (D M ω_c² + K D))) + τ b e (1 + τ ω_c))`, `e = D b − K M`. -/
-@[tmio MI] private theorem H_pos_of_fastLag {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio MI, powerlib_domain] private theorem H_pos_of_fastLag {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hK : 0 < y.design.K) (hl : RigMeets y .fastLag) :
     connection% (y ∈ TMIO.realize RigMeets {.routh}) := by
   unfold TMIO.Statement
@@ -584,7 +584,7 @@ instability. -/
 
 /-- A slow design filter puts the platform in the lagged requirement at every positive delay.
 The physical slow-filter hypotheses force `K > 0`, so this requirement is exactly `H < 0`. -/
-@[tmio MI] private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio MI, powerlib_domain] private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hs : y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M < y.design.K) :
     connection% (y ∈ TMIO.realize RigMeets {.lagged}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
@@ -623,7 +623,7 @@ The physical slow-filter hypotheses force `K > 0`, so this requirement is exactl
   exact mul_neg_of_pos_of_neg hω (by linarith)
 
 /-- The worst-corner delay check places every producer in the fast-delay constraint. -/
-@[tmio IO] private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (hl : v.LagCheck)
+@[tmio IO, powerlib_domain] private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (hl : v.LagCheck)
     (hp : Produces y v) : connection% (y ∈ TMIO.realize RigMeets {.fastLag}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
@@ -903,7 +903,7 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
 /-- The platform Routh condition forces the design margin `e = D b − K M > 0`: with `e ≤ 0` every
 term of `H / ω_c = M e + τ b (e − K M) + τ² b (D² ω_c − K M ω_c − K D)` is nonpositive and the
 second is negative. Within positive inertia this is exactly the design fast-filter requirement. -/
-@[tmio MI] private theorem margin_pos_of_H_pos {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio MI, powerlib_domain] private theorem margin_pos_of_H_pos {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hH : 0 < y.H) : connection% (y.design ∈ TMIO.realize Meets {.fastFilter}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   suffices he : 0 < y.design.g.D * y.b - y.design.K * y.design.g.M by

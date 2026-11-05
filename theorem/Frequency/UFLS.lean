@@ -82,7 +82,7 @@ variable {M D K Tg ΔPL f₀ th : ℝ}
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Necessary condition: if after shedding (`ΔP' = ΔP_L − p P⁰`) the frequency eventually stays at or
 above `−Δf_th/f₀`, then `ΔP' ≤ (K_R + D) Δf_th / f₀`. -/
-private theorem postShed_necessary {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
+@[powerlib_domain] private theorem postShed_necessary {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hD : 0 ≤ D) (hKD : 0 < K + D) (hf : 0 < f₀) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔP') y) (Ici 0))
     (hev : ∀ᶠ t in atTop, -(th / f₀) ≤ x t 0) : ΔP' ≤ (K + D) * th / f₀ := by
@@ -99,7 +99,7 @@ private theorem postShed_necessary {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
 The steady-state condition is not sufficient: with an underdamped response there is a threshold
 `Δf_th > 0` with `ΔP' < (K_R + D) Δf_th / f₀` (steady state above the threshold) while the
 frequency of the forward solution from rest still goes below `−Δf_th/f₀` (at the nadir). -/
-private theorem postShed_not_sufficient {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
+@[powerlib_domain] private theorem postShed_not_sufficient {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hD : 0 ≤ D) (hKD : 0 < K + D) (hP : 0 < ΔP') (hf : 0 < f₀)
     (hζ : SwingGovernor.dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔP') y) (Ici 0))
@@ -131,7 +131,7 @@ private theorem postShed_not_sufficient {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 corrected: `ΔP_L = M |ḟ(0⁺)| / f₀` for a load increase `ΔP_L ≥ 0`. -/
-private theorem load_eq_of_rocof (hM : 0 < M) (hf : 0 < f₀) (hP : 0 ≤ ΔPL)
+@[powerlib_domain] private theorem load_eq_of_rocof (hM : 0 < M) (hf : 0 < f₀) (hP : 0 ≤ ΔPL)
     {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) {ρ : ℝ} (hρ : HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) ρ (Ici 0) 0) :

@@ -146,7 +146,7 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
 /-- Solutions correspond one to one: `φ = (θ, v)` solves the matching model on `[a, b]` iff
 `(θ, η v)` solves the matched swing model.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+@[powerlib_domain] private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (φ : ℝ → State 2) (a b : ℝ) :
     IsTrajectoryOn φ (matchingField C G η idc ix) a b ↔
       IsTrajectoryOn (fun t => scaleCoord hη (φ t)) (matchedSwing C G η idc ix) a b := by
@@ -286,7 +286,7 @@ def droopFamily : Family DroopNode Spectral.Requirement 1 1 :=
   Spectral.linearFamily (fun m => droopModel m.C m.G m.K m.vref) (fun m => 0 < m.G / m.C)
     (fun m => m.G / m.C < 0)
 
-@[tmio TM] private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (droopFamily.den (.flow P) = {m | 0 < m.G / m.C}) := show droopFamily.den (.flow P) = {m | 0 < m.G / m.C} from
   Spectral.linear_den (U := fun m : DroopNode => m.G / m.C < 0)
     (fun _ => (droop_isHurwitz_iff _ _ _ _).symm) hP
@@ -380,13 +380,13 @@ own; its content is its semantics. -/
 def swingFamily : Family SwingModel Spectral.Requirement 2 0 :=
   Spectral.localFamily SwingModel.field (fun _ => False) (fun _ => False)
 
-private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
+@[powerlib_domain] private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
     m ∈ matchingFamily.den (.flow P) ↔ P.holds (matchingField m.C m.G m.η m.idc m.ix) m.point :=
   Spectral.mem_den_flow_iff_shift
     (f := fun m : MatchingModel => matchingField m.C m.G m.η m.idc m.ix)
     (pt := MatchingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
 
-private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
+@[powerlib_domain] private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
     m ∈ swingFamily.den (.flow P) ↔ P.holds (swingField m.M m.D m.τ m.Pe) m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : SwingModel => swingField m.M m.D m.τ m.Pe)
     (pt := SwingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
@@ -423,7 +423,7 @@ point `(θ*, η v*)`. -/
 
 /-- Local exponential stability transfers between the matching and swing models.
 Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-@[tmio TM] private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
+@[tmio TM, powerlib_domain] private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
     (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
     connection% ((⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
       (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .locallyExponentiallyStable)) := by
@@ -432,7 +432,7 @@ Implementation evidence, subsumed by the connection comparison `matching_den_eq`
 
 /-- Instability transfers between the matching and swing models.
 Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-@[tmio TM] private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+@[tmio TM, powerlib_domain] private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (x : State 2) :
     connection% ((⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .unstable) ↔
       (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .unstable)) := by

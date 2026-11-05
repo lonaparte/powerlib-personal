@@ -183,7 +183,7 @@ on the implementation, not a connection conclusion. -/
 def equilibrium (iref : ℝ) : ℝ³ :=
   WithLp.toLp 2 ![iref, y.design.R * iref / y.design.Ki, y.τ * (y.design.R * iref) / 2]
 
-private theorem τ_ne_zero {y : DigitalPI} (hT : y.Ts ≠ 0) : y.τ ≠ 0 := by
+@[powerlib_domain] private theorem τ_ne_zero {y : DigitalPI} (hT : y.Ts ≠ 0) : y.τ ≠ 0 := by
   unfold τ
   intro h
   apply hT
@@ -233,25 +233,25 @@ def a1 : ℝ := y.design.R + y.design.Kp - y.design.Ki * y.τ / 2
 /-- `a₀ = Ki`. -/
 def a0 : ℝ := y.design.Ki
 
-private theorem trace_A :
+@[powerlib_domain] private theorem trace_A :
     y.model.A.trace = (y.design.Kp - y.design.R) / y.design.L - 2 / y.τ := by
   simp [model, Matrix.trace_fin_three]
   ring
 
-private theorem principalMinorSum_A : Criteria.principalMinorSum y.model.A =
+@[powerlib_domain] private theorem principalMinorSum_A : Criteria.principalMinorSum y.model.A =
     2 * (y.design.R + y.design.Kp) / (y.τ * y.design.L) - y.design.Ki / y.design.L := by
   simp [model, Criteria.principalMinorSum]
   ring
 
-private theorem det_A : y.model.A.det = -(2 * y.design.Ki / (y.τ * y.design.L)) := by
+@[powerlib_domain] private theorem det_A : y.model.A.det = -(2 * y.design.Ki / (y.τ * y.design.L)) := by
   simp [model, Matrix.det_fin_three]
   ring
 
-private theorem a3_pos {y : DigitalPI} (hL : 0 < y.design.L) (hT : 0 < y.Ts) : 0 < y.a3 := by
+@[powerlib_domain] private theorem a3_pos {y : DigitalPI} (hL : 0 < y.design.L) (hT : 0 < y.Ts) : 0 < y.a3 := by
   unfold a3 τ
   positivity
 
-private theorem neg_trace_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
+@[powerlib_domain] private theorem neg_trace_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
     -y.model.A.trace = y.a2 / y.a3 := by
   have hτ := τ_ne_zero hT
   rw [trace_A]
@@ -259,14 +259,14 @@ private theorem neg_trace_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
   field_simp
   ring
 
-private theorem principalMinorSum_A_eq (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
+@[powerlib_domain] private theorem principalMinorSum_A_eq (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
     Criteria.principalMinorSum y.model.A = y.a1 / y.a3 := by
   have hτ := τ_ne_zero hT
   rw [principalMinorSum_A]
   unfold a1 a3
   field_simp
 
-private theorem neg_det_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
+@[powerlib_domain] private theorem neg_det_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
     -y.model.A.det = y.a0 / y.a3 := by
   have hτ := τ_ne_zero hT
   rw [det_A]
@@ -361,7 +361,7 @@ constant and linear coefficients give `Ki/L > 0` and `(R + Kp)/L > (τ/2) Ki/L`.
 
 /-- A monic real cubic with a negative coefficient or a strict violation of the gap condition has
 a root with positive real part. -/
-private theorem exists_cubic_root_re_pos {c2 c1 c0 : ℝ}
+@[powerlib_foundation] private theorem exists_cubic_root_re_pos {c2 c1 c0 : ℝ}
     (h : c2 < 0 ∨ c1 < 0 ∨ c0 < 0 ∨ c2 * c1 < c0) :
     ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧ 0 < s.re := by
   have hconst : c0 < 0 → ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧
@@ -518,7 +518,7 @@ every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `
     · exact absurd h (not_lt.mpr hL.le)
     · exact Or.inr (Or.inr (Or.inl h))
 
-@[tmio TM] private theorem translate_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem translate_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (generate (cover (table family.translate)) {Sentence.flow P} =
       {.physical, .sampling, .routh}) := by
   unfold TMIO.Statement
@@ -527,7 +527,7 @@ every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `
   · cases P <;> first | rfl | exact hP.elim
   · rfl
 
-@[tmio TM] private theorem design_translate_flow {P : Flow.Property}
+@[tmio TM, powerlib_domain] private theorem design_translate_flow {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (generate (cover (table PIParams.family.translate)) {Sentence.flow P} = {.stable}) := by
   unfold TMIO.Statement
@@ -555,7 +555,7 @@ Routh conditions exclude every strict violation. -/
   · linarith
 
 /-- The platform translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem translate_eq_linearTable (s : Sentence) :
     connection% (generate (cover (table translate)) {s} =
       Spectral.linearTable {.physical, .sampling, .routh}
       {.physical, .sampling, .lagged} Set.univ Set.univ (fun _ => Set.univ) s) := by
@@ -618,9 +618,9 @@ def implementation :
     Implementation PIParams Spectral.Requirement DigitalPI DigitalRequirement 2 1 3 1 :=
   { model := PIParams.family, impl := family, realizes := Implementation.ofDesign design }
 
-private theorem implementation_model : implementation.model = PIParams.family := rfl
+@[powerlib_domain] private theorem implementation_model : implementation.model = PIParams.family := rfl
 
-private theorem implementation_impl : implementation.impl = family := rfl
+@[powerlib_domain] private theorem implementation_impl : implementation.impl = family := rfl
 
 /-- Implementation soundness: within a positive inductance, a positive period and fast sampling,
 a platform whose design satisfies an attractive sentence (or sampled contraction) satisfies it.

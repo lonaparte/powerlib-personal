@@ -78,7 +78,7 @@ open powerlib.Criteria (RouthFin4 RouthViolationFin4)
 namespace ModelB
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous
@@ -88,7 +88,7 @@ private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
 /-- At an equilibrium with positive reference, a strict violation of the 4×4 Routh conditions gives
 instability (a characteristic root in the open right half plane; LeanForControl's linearization
 theorem for the regularized field, transferred through the ball on which it is model B). -/
-@[tmio TM] private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
+@[tmio TM, powerlib_domain] private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
     (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -111,7 +111,7 @@ strictly, model B is unstable. -/
 
 /-- Off the boundary the local Lyapunov and asymptotic sentences are decided by the linearization:
 the Routh conditions give local exponential stability, a strict violation instability. -/
-@[tmio TM] private theorem exactUnder_offBoundary_of {P : Flow.Property}
+@[tmio TM, powerlib_domain] private theorem exactUnder_offBoundary_of {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)) := by
   change family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)
@@ -217,7 +217,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
 
 /-- Near `x*` the coupling term is dominated by the PLL damping: for `‖y − x*‖ < 1/2`,
 `fderiv (centerEnergy σ) y (f y) ≤ 0` for `σ = ±1`. -/
-private theorem centerEnergy_lie_nonpos {σ : ℝ} (hσ : |σ| ≤ 1) {y : State 4}
+@[powerlib_domain] private theorem centerEnergy_lie_nonpos {σ : ℝ} (hσ : |σ| ≤ 1) {y : State 4}
     (hy : ‖y - hopfCenter.x‖ < 1 / 2) :
     fderiv ℝ (centerEnergy σ) y (hopfCenter.p.field y) ≤ 0 := by
   have b0 := (Dynamics.abs_coord_sub_le hopfCenter.x y 0).trans_lt hy
@@ -324,7 +324,7 @@ regularized field, which is model B on the ball of radius `1/4`). -/
 
 /-- Invariants of a block-diagonal Jacobian `[[a, b, 0, 0], [c, 0, 0, 0], [0, 0, d, e],
 [0, 0, −1, 0]]` (PLL block and DC-loop block). -/
-private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : ℝ}
+@[powerlib_foundation] private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : ℝ}
     (e00 : J 0 0 = a) (e01 : J 0 1 = b) (e02 : J 0 2 = 0) (e03 : J 0 3 = 0)
     (e10 : J 1 0 = c) (e11 : J 1 1 = 0) (e12 : J 1 2 = 0) (e13 : J 1 3 = 0)
     (e20 : J 2 0 = 0) (e21 : J 2 1 = 0) (e22 : J 2 2 = d) (e23 : J 2 3 = e)
@@ -344,7 +344,7 @@ private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : �
     simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
     ring
 
-@[tmio M] private theorem hopfCenter_equilibrium :
+@[tmio M, powerlib_domain] private theorem hopfCenter_equilibrium :
     connection% (hopfCenter ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -352,7 +352,7 @@ private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : �
   rw [ModelBParams.field_eq_zero_iff]
   simp [hopfCenter, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
-private theorem hopfCenter_invariants :
+@[powerlib_domain] private theorem hopfCenter_invariants :
     (hopfCenter.p.jacobian hopfCenter.x).trace = -1 ∧
       Criteria.principalMinorSum2Fin4 (hopfCenter.p.jacobian hopfCenter.x) = 2 ∧
       Criteria.principalMinorSum3Fin4 (hopfCenter.p.jacobian hopfCenter.x) = -1 ∧
@@ -376,7 +376,7 @@ private theorem hopfCenter_invariants :
 /-- The Jacobian of the undamped loop, `diag([[−1, 1], [−1, 0]], [[0, 1], [−1, 0]])`, has
 characteristic polynomial `(s² + s + 1)(s² + 1)`: the Hurwitz determinant vanishes, so it is not
 Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
-@[tmio M] private theorem hopfCenter_not_routh :
+@[tmio M, powerlib_domain] private theorem hopfCenter_not_routh :
     connection% (hopfCenter ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -387,7 +387,7 @@ Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
   norm_num at h
 
 /-- ... and not a strict violation either: it lies on the Routh boundary. -/
-private theorem hopfCenter_not_violation :
+@[powerlib_domain] private theorem hopfCenter_not_violation :
     ¬ RouthViolationFin4 (hopfCenter.p.jacobian hopfCenter.x) := by
   obtain ⟨h1, h2, h3, h4⟩ := hopfCenter_invariants
   unfold RouthViolationFin4
@@ -417,7 +417,7 @@ component of the field vanishes (`x / 0 = 0`) and `V_dc` is a first integral; ot
 def cdcZero : Model :=
   ⟨⟨0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
-@[tmio M] private theorem cdcZero_equilibrium :
+@[tmio M, powerlib_domain] private theorem cdcZero_equilibrium :
     connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -425,7 +425,7 @@ def cdcZero : Model :=
   rw [ModelBParams.field_eq_zero_iff]
   simp [cdcZero, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
-private theorem cdcZero_invariants :
+@[powerlib_domain] private theorem cdcZero_invariants :
     (cdcZero.p.jacobian cdcZero.x).trace = -1 ∧
       Criteria.principalMinorSum2Fin4 (cdcZero.p.jacobian cdcZero.x) = 1 ∧
       Criteria.principalMinorSum3Fin4 (cdcZero.p.jacobian cdcZero.x) = 0 ∧
@@ -443,7 +443,7 @@ private theorem cdcZero_invariants :
   obtain ⟨h1, h2, h3, h4⟩ := h
   refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
 
-@[tmio M] private theorem cdcZero_not_routh :
+@[tmio M, powerlib_domain] private theorem cdcZero_not_routh :
     connection% (cdcZero ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -453,7 +453,7 @@ private theorem cdcZero_invariants :
   rw [h4] at h
   exact lt_irrefl _ h
 
-private theorem cdcZero_not_violation : ¬ RouthViolationFin4 (cdcZero.p.jacobian cdcZero.x) := by
+@[powerlib_domain] private theorem cdcZero_not_violation : ¬ RouthViolationFin4 (cdcZero.p.jacobian cdcZero.x) := by
   obtain ⟨h1, h2, h3, h4⟩ := cdcZero_invariants
   unfold RouthViolationFin4
   rw [h1, h2, h3, h4]
@@ -592,13 +592,13 @@ def hopfDamped : Model :=
   field_simp
   ring
 
-private theorem pll_lie_le {s c y : ℝ} (hc : 1 / 2 ≤ c) (hc1 : c ≤ 1) :
+@[powerlib_foundation] private theorem pll_lie_le {s c y : ℝ} (hc : 1 / 2 ≤ c) (hc1 : c ≤ 1) :
     -6 * s ^ 2 + 3 * c * s * y - c * y ^ 2 ≤ -(3 / 2) * s ^ 2 - 1 / 4 * y ^ 2 := by
   nlinarith [mul_nonneg (by linarith : (0:ℝ) ≤ c) (sq_nonneg (3 * s - y)),
     mul_nonneg (by linarith : (0:ℝ) ≤ 1 - c) (sq_nonneg s),
     mul_nonneg (by linarith : (0:ℝ) ≤ c - 1 / 2) (sq_nonneg y)]
 
-private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
+@[powerlib_foundation] private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
     dcQuintic w ξ ≤ 128 * m ^ 5 := by
   have b0 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 5 0)
   have b1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 4 1)
@@ -611,7 +611,7 @@ private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) 
   unfold dcQuintic
   linarith [b0.1, b0.2, b1.1, b1.2, b2.1, b2.2, b3.1, b3.2, b4.1, b4.2, b5.1, b5.2]
 
-private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
+@[powerlib_foundation] private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
     |dcEnergyW w ξ| ≤ 2 * m := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
   have a1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 0)
@@ -628,7 +628,7 @@ private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤
   rw [abs_le]
   constructor <;> nlinarith [a1.1, a1.2, a2.1, a2.2, a3.1, a3.2, a4.1, a4.2, a5.1, a5.2, a6.1, a6.2]
 
-private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200)
+@[powerlib_foundation] private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200)
     (hmS : m ^ 2 ≤ w ^ 2 + ξ ^ 2) :
     1 / 4 * (w ^ 2 + ξ ^ 2) ≤ dcEnergy w ξ := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
@@ -647,7 +647,7 @@ private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (
   nlinarith [c1.1, c2.1, c2.2, c3.1, q1.1, q2.1, q2.2, q3.1, q3.2, q4.1]
 
 /-- The combined Lie-derivative bound of the weakly damped loop. -/
-private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c)
+@[powerlib_foundation] private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c)
     (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
     (1 + w) * (-6 * s ^ 2 + 3 * c * s * y - c * y ^ 2) +
         (-(3 / 2) * (w ^ 2 + ξ ^ 2) ^ 2 + dcQuintic w ξ) +
@@ -693,22 +693,22 @@ private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc :
   nlinarith [sq_nonneg s, sq_nonneg (w ^ 2 + ξ ^ 2)]
 
 /-- Lower bound of the Lyapunov function of the weakly damped loop by a sum of nonnegative parts. -/
-private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
+@[powerlib_foundation] private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
     (3 * (1 - c) - 3 / 2 * s ^ 2) + (s ^ 2 + 1 / 2 * (s - y) ^ 2) + 1 / 4 * (w ^ 2 + ξ ^ 2) ≤
       3 * (1 - c) + 1 / 2 * y ^ 2 - y * s + dcEnergy w ξ := by
   have hE := dcEnergy_ge (le_max_left |w| |ξ|) (le_max_right |w| |ξ|) (max_le hw hξ)
     (SpecialFunctions.sq_max_abs_le w ξ)
   nlinarith
 
-private theorem cos_eq_one_of_sq {c : ℝ} (h : c ^ 2 = 1) (hc : 1 / 2 ≤ c) : c = 1 := by
+@[powerlib_foundation] private theorem cos_eq_one_of_sq {c : ℝ} (h : c ^ 2 = 1) (hc : 1 / 2 ≤ c) : c = 1 := by
   nlinarith
 
-private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c) :
+@[powerlib_foundation] private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c) :
     0 ≤ 3 * (1 - c) - 3 / 2 * s ^ 2 := by
   have hc1 : c ≤ 1 := by nlinarith [sq_nonneg s]
   nlinarith
 
-@[tmio M] private theorem hopfDamped_equilibrium :
+@[tmio M, powerlib_domain] private theorem hopfDamped_equilibrium :
     connection% (hopfDamped ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -717,7 +717,7 @@ private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 
   simp [hopfDamped, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
   norm_num
 
-private theorem hopfDamped_invariants :
+@[powerlib_domain] private theorem hopfDamped_invariants :
     (hopfDamped.p.jacobian hopfDamped.x).trace = -3 ∧
       Criteria.principalMinorSum2Fin4 (hopfDamped.p.jacobian hopfDamped.x) = 4 ∧
       Criteria.principalMinorSum3Fin4 (hopfDamped.p.jacobian hopfDamped.x) = -3 ∧
@@ -741,7 +741,7 @@ private theorem hopfDamped_invariants :
 /-- The Jacobian of the weakly damped loop, `diag([[−3, 1], [−3, 0]], [[0, 1], [−1, 0]])`, with
 characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr² det = tr m₂ m₃ = 36`)
 ... -/
-@[tmio M] private theorem hopfDamped_not_routh :
+@[tmio M, powerlib_domain] private theorem hopfDamped_not_routh :
     connection% (hopfDamped ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -752,7 +752,7 @@ characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr�
   norm_num at h
 
 /-- ... and not a strict violation: it lies on the 4×4 Routh boundary. -/
-private theorem hopfDamped_not_violation :
+@[powerlib_domain] private theorem hopfDamped_not_violation :
     ¬ RouthViolationFin4 (hopfDamped.p.jacobian hopfDamped.x) := by
   obtain ⟨h1, h2, h3, h4⟩ := hopfDamped_invariants
   unfold RouthViolationFin4

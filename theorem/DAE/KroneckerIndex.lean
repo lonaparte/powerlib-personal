@@ -163,7 +163,7 @@ invertible. -/
 
 /-! ## The Weierstrass form -/
 
-private theorem eq_zero_of_forall_mulVec {m n : Type*} [Fintype n] [DecidableEq n]
+@[powerlib_foundation] private theorem eq_zero_of_forall_mulVec {m n : Type*} [Fintype n] [DecidableEq n]
     {M : Matrix m n K} (h : ∀ v, M *ᵥ v = 0) : M = 0 := by
   ext i j
   have := congrFun (h (Pi.single j 1)) i
@@ -232,7 +232,7 @@ array of order `μ` is 1-full iff `N ^ μ = 0`. -/
     · exact congrFun hb0' i
 
 /-- `N ^ μ = 0` for all `μ ≥ ν` and for no smaller `μ` iff `ν` is the nilpotency class. -/
-private theorem pow_eq_zero_iff_class {R : Type*} [MonoidWithZero R] {N : R} (hN : IsNilpotent N)
+@[powerlib_foundation] private theorem pow_eq_zero_iff_class {R : Type*} [MonoidWithZero R] {N : R} (hN : IsNilpotent N)
     (ν : ℕ) : (N ^ ν = 0 ∧ ∀ μ < ν, N ^ μ ≠ 0) ↔ ν = nilpotencyClass N := by
   constructor
   · rintro ⟨h, hmin⟩
@@ -340,7 +340,7 @@ private def jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) : ι → ℝ
   ∑ r ∈ Finset.range (μ + 1),
     if k ≤ r + 1 then (t ^ (r + 1 - k) / ((r + 1 - k).factorial : ℝ)) • w r else 0
 
-private theorem hasDerivAt_monomial (m : ℕ) (t : ℝ) :
+@[powerlib_foundation] private theorem hasDerivAt_monomial (m : ℕ) (t : ℝ) :
     HasDerivAt (fun s : ℝ => s ^ (m + 1) / ((m + 1).factorial : ℝ))
       (t ^ m / (m.factorial : ℝ)) t := by
   have h := (hasDerivAt_pow (m + 1) t).div_const ((m + 1).factorial : ℝ)
@@ -350,7 +350,7 @@ private theorem hasDerivAt_monomial (m : ℕ) (t : ℝ) :
   field_simp
 
 omit [DecidableEq ι] in
-private theorem hasDerivAt_jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) :
+@[powerlib_foundation] private theorem hasDerivAt_jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) :
     HasDerivAt (jetPoly w μ k) (jetPoly w μ (k + 1) t) t := by
   unfold jetPoly
   have : (fun s => ∑ r ∈ Finset.range (μ + 1),
@@ -375,7 +375,7 @@ private theorem hasDerivAt_jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : �
       exact hasDerivAt_const t 0
 
 omit [Fintype ι] [DecidableEq ι] in
-private theorem jetPoly_zero_succ (w : ℕ → ι → ℝ) (μ k : ℕ) (hk : k ≤ μ) :
+@[powerlib_foundation] private theorem jetPoly_zero_succ (w : ℕ → ι → ℝ) (μ k : ℕ) (hk : k ≤ μ) :
     jetPoly w μ (k + 1) 0 = w k := by
   unfold jetPoly
   rw [Finset.sum_eq_single k]
@@ -389,7 +389,7 @@ private theorem jetPoly_zero_succ (w : ℕ → ι → ℝ) (μ k : ℕ) (hk : k 
     exact absurd (Finset.mem_range.mpr (by omega)) hk'
 
 omit [Fintype ι] [DecidableEq ι] in
-private theorem jetPoly_zero_zero (w : ℕ → ι → ℝ) (μ : ℕ) : jetPoly w μ 0 0 = 0 := by
+@[powerlib_foundation] private theorem jetPoly_zero_zero (w : ℕ → ι → ℝ) (μ : ℕ) : jetPoly w μ 0 0 = 0 := by
   unfold jetPoly
   refine Finset.sum_eq_zero fun r _ => ?_
   simp

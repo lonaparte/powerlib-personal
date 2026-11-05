@@ -317,7 +317,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The Hamiltonian is nonincreasing along every solution segment of the reduced field.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem hamiltonian_antitoneOn (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[powerlib_domain] private theorem hamiltonian_antitoneOn (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ p.reducedField a b) :
     AntitoneOn (p.hamiltonian ∘ φ) (Set.Icc a b) := by
@@ -420,7 +420,7 @@ def codeFamily : Family CodeModel PLL.PIPLL.Requirement 2 0 :=
   fun _ => rfl
 
 /-- The code-frame field at a point is the text-frame field at the reflected point. -/
-@[tmio TM] private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
+@[tmio TM, powerlib_domain] private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
     connection% ((⟨p, θ⟩ : CodeModel) ∈ codeFamily.den (.flow P) ↔
       p.pllModel (-θ) ∈ PLL.PIPLL.family.den (.flow P)) := by
   unfold TMIO.Statement

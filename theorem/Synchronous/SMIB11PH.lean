@@ -299,7 +299,7 @@ def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
   simp [smib11_angleAxis]
 
 /-- The rotor-angle axis is a nonzero direction. -/
-private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
+@[powerlib_foundation] private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
   simpa [smib11_angleAxis] using congrArg (fun z : State 11 => z 6) h
 
 /-- `H^tot` is not positive definite (it vanishes along the rotor-angle axis), hence it is no
@@ -378,17 +378,17 @@ def smib11Rel_system (p : SMIB11Params) : Port.System 11 4 :=
 /-! ### The rotor-angle direction at the origin -/
 
 /-- The entries of `J^tot(x)` are `C¹` (constants, `Ψ_d`, `Ψ_q`, `cos δ`, `sin δ`). -/
-private theorem smib11_contDiff_J (p : SMIB11Params) (i j : Fin 11) :
+@[powerlib_domain] private theorem smib11_contDiff_J (p : SMIB11Params) (i j : Fin 11) :
     ContDiff ℝ 1 fun x : State 11 => smib11_J p x i j := by
   fin_cases i <;> fin_cases j <;> simp [smib11_J] <;> fun_prop
 
 /-- `∇H` is the linear map `x ↦ Q x`. -/
-private theorem smib11_dH_eq (p : SMIB11Params) :
+@[powerlib_domain] private theorem smib11_dH_eq (p : SMIB11Params) :
     (smib11 p).dH = Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p) :=
   funext fun _ => rfl
 
 /-- The zero-input field `(J^tot(x) − R^tot) ∇H(x)` of the note's model is `C¹`. -/
-private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
+@[powerlib_domain] private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
     ContDiff ℝ 1 (smib11 p).zeroInputField :=
   (smib11 p).contDiff_zeroInputField (smib11_contDiff_J p) (fun _ _ => contDiff_const)
     (by rw [smib11_dH_eq]; exact ContinuousLinearMap.contDiff _)
@@ -396,7 +396,7 @@ private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
 /-- At the origin the Jacobian `(J^tot(0) − R^tot) Q` of the note's zero-input field kills the
 rotor-angle axis: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero (`∂H/∂δ = 0`). The
 `δ`-dependence of `J^tot` (through `cos δ`, `sin δ`) multiplies `∇H(0) = 0`. -/
-private theorem smib11_fderiv_angleAxis (p : SMIB11Params) :
+@[powerlib_domain] private theorem smib11_fderiv_angleAxis (p : SMIB11Params) :
     fderiv ℝ (smib11 p).zeroInputField 0 (smib11_angleAxis 1) = 0 := by
   have hQ : HasFDerivAt (smib11 p).dH
       (Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p)) 0 := by
@@ -412,7 +412,7 @@ private theorem smib11_fderiv_angleAxis (p : SMIB11Params) :
   simp [smib11_angleAxis, hcol]
 
 /-- The corrected zero-input field is the note's minus the constant frame drift `ω_s e_δ`. -/
-private theorem smib11Rel_zeroInput (p : SMIB11Params) :
+@[powerlib_domain] private theorem smib11Rel_zeroInput (p : SMIB11Params) :
     (smib11Rel_system p).zeroInput =
       fun x => (smib11 p).zeroInputField x - smib11_angleAxis p.ωs :=
   rfl
@@ -508,7 +508,7 @@ def family : Family SMIB11Params SMIB11.Requirement 11 4 :=
 
 /-- The corrected model is passive with storage `H^tot`: the frame drift does no work.
 Implementation evidence for `mem_den_passive`. -/
-private theorem passiveWith (p : SMIB11Params) :
+@[powerlib_domain] private theorem passiveWith (p : SMIB11Params) :
     (smib11Rel_system p).PassiveWith (smib11 p).H :=
   (smib11Rel_system p).passiveWith_of_rate _ (smib11_H_nonneg p)
     (fun x u => fderiv ℝ (smib11 p).H x (smib11Rel_field p x u))

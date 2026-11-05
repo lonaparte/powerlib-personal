@@ -79,7 +79,7 @@ def networkModel (Lg Rg Rl C ω : ℝ) : Plant 4 2 :=
   change (characteristicMatrix ((networkA Lg Rg Rl C ω).reindex _ _) s).det = _
   rw [characteristicMatrix_reindex, Matrix.det_reindex_self]
 
-private lemma charMatrix_blocks (Lg Rg Rl C ω : ℝ) (s : ℂ) :
+@[powerlib_domain] private lemma charMatrix_blocks (Lg Rg Rl C ω : ℝ) (s : ℂ) :
     characteristicMatrix (networkA Lg Rg Rl C ω) s =
       fromBlocks (s • 1 - complexify (-(1 / (Rl * C)) • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
           ω • Transform.J))
@@ -95,7 +95,7 @@ private lemma charMatrix_blocks (Lg Rg Rl C ω : ℝ) (s : ℂ) :
   rw [complexify_fromBlocks, sub_eq_add_neg, fromBlocks_neg, fromBlocks_add]
   simp [sub_eq_add_neg]
 
-private lemma block11 {Rl C ω : ℝ} (hC : C ≠ 0) (s : ℂ) :
+@[powerlib_domain] private lemma block11 {Rl C ω : ℝ} (hC : C ≠ 0) (s : ℂ) :
     (C : ℂ) • (s • 1 - complexify (-(1 / (Rl * C)) • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
       ω • Transform.J)) = Yload Rl C ω s := by
   have hC' : (C : ℂ) ≠ 0 := by exact_mod_cast hC
@@ -103,7 +103,7 @@ private lemma block11 {Rl C ω : ℝ} (hC : C ≠ 0) (s : ℂ) :
   fin_cases i <;> fin_cases j <;>
     simp [Yload, Jc, Transform.J] <;> field_simp <;> ring
 
-private lemma block22 {Lg Rg ω : ℝ} (hL : Lg ≠ 0) (s : ℂ) :
+@[powerlib_domain] private lemma block22 {Lg Rg ω : ℝ} (hL : Lg ≠ 0) (s : ℂ) :
     (Lg : ℂ) • (s • 1 - complexify (-(Rg / Lg) • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
       ω • Transform.J)) = Zoc Lg Rg ω s := by
   have hL' : (Lg : ℂ) ≠ 0 := by exact_mod_cast hL

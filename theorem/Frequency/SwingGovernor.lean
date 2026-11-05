@@ -425,14 +425,14 @@ right half plane. -/
   rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
 
 /-- The attractive sentences and sampled contraction denote the members satisfying `stable`. -/
-@[tmio TM] private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {m | Meets m .stable}) := by
   change family.den (.flow P) = {m | Meets m .stable}
   rw [family_isLinear.den_hurwitz hP]
   ext m
   exact ((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos))
 
-@[tmio TM] private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
+@[tmio TM, powerlib_domain] private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P)) := by
   change m ∈ family.den (.flow P)
@@ -440,7 +440,7 @@ right half plane. -/
   exact h
 
 /-- The swing + governor translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem translate_eq_linearTable (s : Sentence) :
     connection% (generate (cover (table translate)) {s} =
       Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
   unfold TMIO.Statement
@@ -527,7 +527,7 @@ forward solution under a load step are trajectory-level results outside the sent
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5: from rest, the right derivative of `Δω` at `0⁺` is `−ΔP_L / M_eff`. -/
-private theorem rocof {x : ℝ → ℝ²}
+@[powerlib_domain] private theorem rocof {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
@@ -539,7 +539,7 @@ private theorem rocof {x : ℝ → ℝ²}
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 in Hz/s: with `f = f₀ (1 + Δω)` and `M_eff = 2 H_eff`, `ḟ(0⁺) = −ΔP_L f₀ / (2 H_eff)`. -/
-private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
+@[powerlib_domain] private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant (2 * H) D K Tg).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) (-(ΔPL * f₀) / (2 * H)) (Ici 0) 0 := by
@@ -550,7 +550,7 @@ private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.6 boxed: `Δω(t) → Δω^∞ = −ΔP_L/(K_R + D_eff)` along every forward solution under the load
 step, read from the connection theorem `mem_den_globallyExponentiallyStable` and linearity. -/
-private theorem tendsto_freq (m : Model) (hD : 0 ≤ m.D) (hKD : 0 < m.K + m.D) {x : ℝ → ℝ²}
+@[powerlib_domain] private theorem tendsto_freq (m : Model) (hD : 0 ≤ m.D) (hKD : 0 < m.K + m.D) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => m.plant.inputField (load ΔPL) y) (Ici 0)) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (m.K + m.D))) := by
   have hmem := mem_den_globallyExponentiallyStable m hD hKD
@@ -572,7 +572,7 @@ def loadStepFamily (ΔPL : ℝ) : Family Model Requirement 2 0 :=
 §1.6 at the trajectory level: every solution under the load step converges exponentially to the
 quasi-steady state, read from the connection theorem `mem_den_globallyExponentiallyStable` and
 linearity (`Linear.holds_input_iff`). -/
-@[tmio TM] private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D)
+@[tmio TM, powerlib_domain] private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D)
     (hKD : 0 < m.K + m.D) (ΔPL : ℝ) :
     connection% (m ∈ (loadStepFamily ΔPL).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -625,7 +625,7 @@ def fastEig (M D K Tg : ℝ) : ℝ := -(M + D * Tg + Real.sqrt (eigDisc M D K Tg
     simp [plant, twoTimeScale, SingularPerturbation.LinearSP.stateMatrix,
       SingularPerturbation.LinearSP.blockMatrix, h0, h1] <;> ring
 
-private theorem inv_neg_one_fin_one : (!![(-1 : ℝ)])⁻¹ = !![-1] :=
+@[powerlib_foundation] private theorem inv_neg_one_fin_one : (!![(-1 : ℝ)])⁻¹ = !![-1] :=
   Matrix.inv_eq_left_inv (by ext i j; fin_cases i; fin_cases j; simp)
 
 /-- The quasi-steady-state gain is `K_R`: the slow manifold of the reduction is
@@ -653,7 +653,7 @@ private theorem inv_neg_one_fin_one : (!![(-1 : ℝ)])⁻¹ = !![-1] :=
 
 /-! ### Characteristic roots -/
 
-private theorem root_aux (hΔ : 0 ≤ eigDisc M D K Tg) :
+@[powerlib_domain] private theorem root_aux (hΔ : 0 ≤ eigDisc M D K Tg) :
     (M + D * Tg + Real.sqrt (eigDisc M D K Tg)) ^ 2
       - 2 * (M + D * Tg) * (M + D * Tg + Real.sqrt (eigDisc M D K Tg))
       + 4 * M * Tg * (D + K) = 0 := by
@@ -761,12 +761,12 @@ roots: `det(sI − A) = (s − λ_s)(s − λ_f)`. -/
   unfold eigDisc
   fun_prop
 
-private theorem continuous_rootSum :
+@[powerlib_domain] private theorem continuous_rootSum :
     Continuous (fun Tg => M + D * Tg + Real.sqrt (eigDisc M D K Tg)) :=
   (continuous_const.add (continuous_const.mul continuous_id)).add
     (Real.continuous_sqrt.comp continuous_eigDisc)
 
-private theorem rootSum_zero (hM : 0 < M) :
+@[powerlib_domain] private theorem rootSum_zero (hM : 0 < M) :
     M + D * 0 + Real.sqrt (eigDisc M D K 0) = 2 * M := by
   rw [eigDisc_zero, Real.sqrt_sq hM.le]
   ring
@@ -1086,7 +1086,7 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
   exact Spectral.realize_univ_eq_empty_of .stable .unstable fun r (h1 : 0 < r.K + r.D)
     (h2 : r.K + r.D < 0) => absurd (lt_trans h1 h2) (lt_irrefl _)
 
-@[tmio TM] private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
+@[tmio TM, powerlib_domain] private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
     connection% (r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D) := by
   change r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D
   rw [(connection_proof% reducedFamily_isLinear.mem_den_flow)]
@@ -1097,7 +1097,7 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
   rw [hA, Linear.decay_scalar_iff, le_div_iff₀ r.M_pos]
 
 /-- The first-order translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM] private theorem reducedTranslate_eq_linearTable (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem reducedTranslate_eq_linearTable (s : Sentence) :
     connection% (generate (cover (table reducedTranslate)) {s} =
       Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
   unfold TMIO.Statement
@@ -1246,7 +1246,7 @@ deviation, on `[0, T]`:
 `|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
 `|ΔP_m(t) − (−K_R Δω̄(t) + e^{−t/T_g} (ΔP_m(0) + K_R Δω(0)))|² ≤ C T_g² |x(0) − x^∞|²`
 (`x^∞` the quasi-steady state; the second bound includes the governor's initial layer). -/
-private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
+@[powerlib_domain] private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
     ∃ ε₀ > 0, ∃ C : ℝ, ∀ Tg, 0 < Tg → Tg ≤ ε₀ →
       ∀ (x : ℝ → ℝ²) (xbar : ℝ → EuclideanSpace ℝ (Fin 1)),
       (∀ t, HasDerivAt x ((plant M D K Tg).inputField (load ΔPL) (x t)) t) →

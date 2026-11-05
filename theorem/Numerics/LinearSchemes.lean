@@ -161,7 +161,7 @@ for `1 - z ≠ 0`, `‖(1 + z)/(1 - z)‖ < 1` exactly when `Re z < 0`. -/
   constructor <;> intro h <;> linarith
 
 /-- `1 - cA = (-c) A + 1`, the denominator of the implicit schemes in Möbius form. -/
-private lemma one_sub_smul_eq (c : ℝ) :
+@[powerlib_foundation] private lemma one_sub_smul_eq (c : ℝ) :
     (1 : Matrix (Fin n) (Fin n) ℝ) - c • A = (-c) • A + (1 : ℝ) • 1 := by
   rw [neg_smul, one_smul, neg_add_eq_sub]
 
@@ -175,7 +175,7 @@ invertible (`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
     (Criteria.det_smul_sub_ne_zero_of_isHurwitz hA (inv_nonneg.mpr hc.le))
 
 /-- The trapezoidal matrix is the Möbius image `(1 - (h/2) A)⁻¹ (1 + (h/2) A)` of `A`. -/
-private lemma trapezoidal_mobius (hP : IsUnit (1 - (h / 2) • A).det) :
+@[powerlib_foundation] private lemma trapezoidal_mobius (hP : IsUnit (1 - (h / 2) • A).det) :
     ((-(h / 2)) • A + (1 : ℝ) • 1) * trapezoidalMatrix h A = (h / 2) • A + (1 : ℝ) • 1 := by
   rw [← one_sub_smul_eq, trapezoidalMatrix, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hP,
     Matrix.one_mul, one_smul, add_comm]

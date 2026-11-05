@@ -67,7 +67,7 @@ def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -
   simp [characteristicMatrix, dqRLMatrix, det_fin_two]
   ring
 
-private lemma re_eq_zero_of_sq_eq_neg_sq {z : ℂ} {ω : ℝ}
+@[powerlib_foundation] private lemma re_eq_zero_of_sq_eq_neg_sq {z : ℂ} {ω : ℝ}
     (h : z ^ 2 + (ω : ℂ) ^ 2 = 0) : z.re = 0 := by
   have hre := congrArg Complex.re h
   have him := congrArg Complex.im h
@@ -299,7 +299,7 @@ def alphaBeta (m : DqBranch) : DqBranch := ⟨m.R, m.L, 0⟩
 
 end DqBranch
 
-@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {m | 0 < m.R / m.L}) := show family.den (.flow P) = {m | 0 < m.R / m.L} from
   Spectral.linear_den (U := fun m : DqBranch => m.R / m.L < 0)
     (fun m => ((connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans m.isHurwitz_plant_iff).symm) hP

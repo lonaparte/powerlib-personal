@@ -98,16 +98,16 @@ omit [Fintype ι] in
   simp only [Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
   split_ifs <;> simp
 
-private lemma affine_mulVec (N : Matrix ι ι ℂ) (a b : ℂ) (w : ι → ℂ) :
+@[powerlib_foundation] private lemma affine_mulVec (N : Matrix ι ι ℂ) (a b : ℂ) (w : ι → ℂ) :
     (a • N + b • 1) *ᵥ w = a • (N *ᵥ w) + b • w := by
   rw [Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]
 
-private lemma complexify_affine_mulVec {A : Matrix ι ι ℝ} {lam : ℂ} {v : ι → ℂ}
+@[powerlib_foundation] private lemma complexify_affine_mulVec {A : Matrix ι ι ℝ} {lam : ℂ} {v : ι → ℂ}
     (h : complexify A *ᵥ v = lam • v) (α β : ℝ) :
     complexify (α • A + β • 1) *ᵥ v = ((α : ℂ) * lam + β) • v := by
   rw [complexify_affine, affine_mulVec, h, smul_smul, add_smul]
 
-private lemma isUnit_complexify {Q : Matrix ι ι ℝ} (hQ : IsUnit Q.det) : IsUnit (complexify Q) := by
+@[powerlib_foundation] private lemma isUnit_complexify {Q : Matrix ι ι ℝ} (hQ : IsUnit Q.det) : IsUnit (complexify Q) := by
   rw [Matrix.isUnit_iff_isUnit_det]
   have h : (complexify Q).det = algebraMap ℝ ℂ Q.det := by
     rw [RingHom.map_det]

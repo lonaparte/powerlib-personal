@@ -128,7 +128,7 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
       load (ΔPL - shed) := by
   rw [Set.indicator_of_mem (show t ∈ {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ} from h)]
 
-private theorem coord_continuous (i : Fin n) : Continuous (fun y : ℝⁿ => y i) :=
+@[powerlib_foundation] private theorem coord_continuous (i : Fin n) : Continuous (fun y : ℝⁿ => y i) :=
   PiLp.continuous_apply 2 (fun _ : Fin n => ℝ) i
 
 /-! ## Representation of latched trajectories -/
@@ -364,7 +364,7 @@ end Convergence
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Swing + governor plant from rest, underdamped, load increase: if the unprotected nadir is at or
 below `−θ`, the latched relay trips and `Δω → −(ΔP_L − p P⁰)/(K_R + D)`. -/
-private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
+@[powerlib_domain] private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hD : 0 ≤ D) (hKD : 0 < K + D) (_hP : 0 < ΔPL)
     (hζ : SwingGovernor.dampingRatio M D K Tg < 1)
     (hnadir : SwingGovernor.nadirValue M D K Tg ΔPL ≤ -θ) {x : ℝ → EuclideanSpace ℝ (Fin 2)}
@@ -412,7 +412,7 @@ private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Third-order reheat SFR plant under the added stability condition: a latched trajectory that
 trips converges to `Δω = −(ΔP_L − p P⁰)/(K_R + D)`. -/
-private theorem sfr_latched_tendsto {M D K F Tg TR : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
+@[powerlib_domain] private theorem sfr_latched_tendsto {M D K F Tg TR : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hTR : 0 < TR) (hD : 0 ≤ D) (hK : 0 ≤ K) (hKD : 0 < K + D) (hF : Tg / (Tg + TR) ≤ F)
     {x : ℝ → EuclideanSpace ℝ (Fin 3)}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →

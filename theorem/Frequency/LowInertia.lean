@@ -152,7 +152,7 @@ def criticalInertia (ΔPL f₀ rocofMax : ℝ) : ℝ := |ΔPL| * f₀ / (2 * roc
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 at trajectory level: for the two-state swing + governor plant with `M = 2H`, from rest, the
 initial RoCoF `ḟ(0⁺)` (Hz/s, `f = f₀(1 + Δω)`) satisfies `|ḟ(0⁺)| ≤ ḟ_max` iff `H ≥ H_crit`. -/
-private theorem rocof_le_iff_criticalInertia {H D K Tg ΔPL f₀ r ρ : ℝ}
+@[powerlib_domain] private theorem rocof_le_iff_criticalInertia {H D K Tg ΔPL f₀ r ρ : ℝ}
     (hH : 0 < H) (hf : 0 < f₀) (hr : 0 < r) {x : ℝ → EuclideanSpace ℝ (Fin 2)}
     (hx : IsIntegralCurveOn x
       (fun _ y => (SwingGovernor.plant (2 * H) D K Tg).inputField (load ΔPL) y) (Ici 0))

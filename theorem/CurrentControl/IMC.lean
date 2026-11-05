@@ -217,7 +217,7 @@ stable). -/
 
 /-- The copied OUT form does not track: some solution has `i(t) ↛ i*`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem copied_not_tracks (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc) (hKi : 0 < p.Ki)
+@[powerlib_domain] private theorem copied_not_tracks (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc) (hKi : 0 < p.Ki)
     (iref : ℝ) :
     ∃ x : ℝ → ℝ², (∀ t, HasDerivAt x (p.signedField Vdc 1 iref (x t)) t) ∧
       ¬ Tendsto (fun t => x t 0) atTop (𝓝 iref) := by

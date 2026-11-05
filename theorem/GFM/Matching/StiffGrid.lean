@@ -281,7 +281,7 @@ Static evidence on the model, not a connection conclusion. -/
   simp only [Model.N, Model.ω0]
   ring
 
-private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
+@[powerlib_foundation] private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
     (hz : z1 ^ 2 + z2 ^ 2 = N) :
     -G * u ^ 2 - R * (e1 ^ 2 + e2 ^ 2) - B / N * u * (e1 * z1 + e2 * z2) ≤
       -(G - B ^ 2 / (4 * R * N)) * u ^ 2 := by
@@ -365,7 +365,7 @@ model, not a connection conclusion. -/
 @[powerlib_domain] theorem energy_point (m : Model) : m.energy m.point = 0 := by
   simp [Model.energy, Model.point]
 
-private theorem energy_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hk : 0 < m.k)
+@[powerlib_domain] private theorem energy_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hk : 0 < m.k)
     {x : State 4} (hx : |x 0| < 2 * Real.pi) (hne : x ≠ m.point) : 0 < m.energy x := by
   unfold Model.energy
   by_contra hle
@@ -481,20 +481,20 @@ end Model
   simp only [Model.N, Model.ω0]
   ring
 
-private theorem jac_coef (m : Model) (hN : m.N ≠ 0) (hC : m.Cdc ≠ 0) :
+@[powerlib_domain] private theorem jac_coef (m : Model) (hN : m.N ≠ 0) (hC : m.Cdc ≠ 0) :
     m.μ * m.ω0 * m.Ls * (m.μ * m.ustar - m.v0) / (m.N * m.Cdc) + m.μ / m.Cdc * m.q =
       -(m.μ * m.v0 * m.ω0 * m.Ls) / (m.N * m.Cdc) := by
   unfold Model.q
   field_simp
   ring
 
-private theorem sq_add_sq_eq_zero {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
+@[powerlib_foundation] private theorem sq_add_sq_eq_zero {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
   have hx : x ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   have hy : y ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   exact ⟨pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hx,
     pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hy⟩
 
-private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fin 4 → ℂ}
+@[powerlib_foundation] private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fin 4 → ℂ}
     (h : Matrix.mulVec (A.map (algebraMap ℝ ℂ)) v = lam • v) (i : Fin 4) :
     A i 0 * (v 0).re + A i 1 * (v 1).re + A i 2 * (v 2).re + A i 3 * (v 3).re =
         lam.re * (v i).re - lam.im * (v i).im ∧
@@ -814,11 +814,11 @@ def family : Family Model Requirement 4 0 :=
 @[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.translated :=
   fun _ => rfl
 
-private theorem mem_den_flow {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
-@[tmio TM] private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hk : 0 < m.k) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -836,7 +836,7 @@ private theorem mem_den_flow {m : Model} {P : Flow.Property} :
       hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
         (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
 
-@[tmio TM] private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[tmio TM, powerlib_domain] private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement

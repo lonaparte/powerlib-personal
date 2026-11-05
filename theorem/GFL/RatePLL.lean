@@ -508,13 +508,13 @@ def family : Family Model Requirement 2 0 :=
 /-! ### Implementation evidence (private) -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at `(θ*, 0)`. -/
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (RatePLL.field m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => RatePLL.field m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability. -/
-@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two
@@ -522,7 +522,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     (fderiv_field m.params he.2 m.θ 0) hs.1 hs.2)
 
 /-- Linearization at `(θ*, 0)`: an unstable Jacobian gives instability. -/
-@[tmio TM] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)
@@ -574,7 +574,7 @@ the origin), and passivity holds without requirement. -/
 
 /-- With a degenerate algebraic loop `D₀ = 0` the angle is frozen: `θ` is a linear first
 integral of the field, so no point is locally exponentially stable. -/
-private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamics.State 2) :
+@[powerlib_domain] private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamics.State 2) :
     ¬ LocallyExponentiallyStable (RatePLL.field p) x := by
   refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral (contDiff_field p)
     (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0) ?_ fun y => ?_
@@ -584,7 +584,7 @@ private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamic
   · simp [RatePLL.field, Dynamics.lift, coordField, pllOut, hD0]
 
 /-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = −X_g i_d`. -/
-@[tmio M] private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
+@[tmio M, powerlib_domain] private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
     (h : RatePLL.field p (equilibrium θ) = 0) :
     connection% ((⟨p, θ⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -684,7 +684,7 @@ while the translation asks for an equilibrium. -/
 field is the pendulum `θ̇ = x`, `ẋ = −sin θ`. -/
 def undampedPLL : Model := ⟨⟨1, 0, 1, 0, 1, 0⟩, 0⟩
 
-private theorem undampedPLL_field (z : Dynamics.State 2) :
+@[powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 2) :
     RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
   ext i
   fin_cases i <;>
@@ -692,7 +692,7 @@ private theorem undampedPLL_field (z : Dynamics.State 2) :
       Params.Lg]
 
 /-- The pendulum energy `1 − cos θ + x²/2`. -/
-private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
+@[powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
     HasFDerivAt (fun y : Dynamics.State 2 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2)
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
         z 1 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ)) z := by

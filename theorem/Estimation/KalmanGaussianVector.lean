@@ -57,7 +57,7 @@ section Conditioning
 variable {X : Fin n → Ω → ℝ} {Y : Fin p → Ω → ℝ}
 
 /-- `cov[X_i − Σ_l K_il Y_l, W] = cov[X_i, W] − Σ_l K_il cov[Y_l, W]`. -/
-@[tmio T] private lemma cov_sub_comb [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
+@[tmio T, powerlib_foundation] private lemma cov_sub_comb [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
     (hY2 : ∀ j, MemLp (Y j) 2 P) (K : Matrix (Fin n) (Fin p) ℝ) (i : Fin n) {W : Ω → ℝ}
     (hW : MemLp W 2 P) :
     cov[fun ω => X i ω - ∑ l, K i l * Y l ω, W; P] =
@@ -148,7 +148,7 @@ Gaussian vector in `ℝⁿ × ℝᵖ` and `K Σ_YY = Σ_XY` (e.g. `K = Σ_XY Σ_
   ring
 
 /-- Orthogonality of the error: `cov[X_i − Σ_l K_il Y_l, Y_j] = 0` when `K Σ_YY = Σ_XY`. -/
-@[tmio T] private lemma cov_error_meas (hX2 : ∀ i, MemLp (X i) 2 P) (hY2 : ∀ j, MemLp (Y j) 2 P)
+@[tmio T, powerlib_foundation] private lemma cov_error_meas (hX2 : ∀ i, MemLp (X i) 2 P) (hY2 : ∀ j, MemLp (Y j) 2 P)
     [IsFiniteMeasure P] {K : Matrix (Fin n) (Fin p) ℝ}
     (hK : ∀ i j, ∑ l, K i l * cov[Y l, Y j; P] = cov[X i, Y j; P]) (i : Fin n) (j : Fin p) :
     cov[fun ω => X i ω - ∑ l, K i l * Y l ω, Y j; P] = 0 := by
@@ -237,7 +237,7 @@ variable {X : Fin n → Ω → ℝ} {V : Fin p → Ω → ℝ}
 
 /-- Covariance with a measurement coordinate:
 `cov[W, Σ_l H_jl X_l + V_j] = Σ_l H_jl cov[W, X_l] + cov[W, V_j]`. -/
-@[tmio T] private lemma cov_meas_right [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
+@[tmio T, powerlib_foundation] private lemma cov_meas_right [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
     (hV2 : ∀ j, MemLp (V j) 2 P) (H : Matrix (Fin p) (Fin n) ℝ) (j : Fin p) {W : Ω → ℝ}
     (hW : MemLp W 2 P) :
     cov[W, fun ω => ∑ l, H j l * X l ω + V j ω; P] =

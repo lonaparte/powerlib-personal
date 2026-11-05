@@ -212,7 +212,7 @@ connection conclusion. -/
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Every trajectory of the full swing model projects to a trajectory of the reduced field. -/
-private theorem reduce_trajectory (p : Params n)
+@[powerlib_domain] private theorem reduce_trajectory (p : Params n)
     {x : ℝ → (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)} {t : ℝ}
     (hx : HasDerivAt x (fullField p (x t)) t) :
     HasDerivAt (fun s => reduce (x s)) (reducedField p (reduce (x t))) t := by
@@ -325,7 +325,7 @@ def family : Family (Model n) Requirement (n + (n + 1)) 0 :=
 
 /-- A flow sentence of a model is the sentence of the untranslated reduced field at the
 selected point. -/
-private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
@@ -640,7 +640,7 @@ nonnegative and their positive edges connect all machines. -/
 
 /-- Implementation evidence for `mem_den_locallyExponentiallyStable`, at the selected point of
 the untranslated field. -/
-@[tmio TM] private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
+@[tmio TM, powerlib_domain] private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (θ : Fin (n + 1) → ℝ) (heq : ∀ k, p.P k = powerInjection p.B θ k)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach p.B i j) :
@@ -652,14 +652,14 @@ the untranslated field. -/
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_of_angle p θ hangle hconn)))
 
-@[tmio TM] private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
+@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hH : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
     (jacobian m.params m.θ) (reducedField_contDiff m.params)
     (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 
-@[tmio TM] private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
+@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hu : Meets m .jacobianUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)
@@ -795,12 +795,12 @@ def uncoupled : Model 1 :=
   ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
     fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
 
-private theorem uncoupled_point : equilibrium uncoupled.θ = 0 := by
+@[powerlib_domain] private theorem uncoupled_point : equilibrium uncoupled.θ = 0 := by
   apply state_ext
   · intro i; simp [equilibrium, uncoupled]
   · intro k; simp [equilibrium, uncoupled]
 
-private theorem uncoupled_field (z : State (1 + (1 + 1))) :
+@[powerlib_domain] private theorem uncoupled_field (z : State (1 + (1 + 1))) :
     uncoupled.field z = WithLp.toLp 2 ![z 2 - z 1, -z 1, -z 2] := by
   have hz : uncoupled.field z = reducedField uncoupled.params z := by
     simp [Model.field, uncoupled_point]
@@ -882,16 +882,16 @@ def uncoupledN (n : ℕ) : Model (n + 1) :=
   ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
     fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
 
-private theorem uncoupledN_point : equilibrium (uncoupledN n).θ = 0 := by
+@[powerlib_domain] private theorem uncoupledN_point : equilibrium (uncoupledN n).θ = 0 := by
   apply state_ext
   · intro i; simp [equilibrium, uncoupledN]
   · intro k; simp [equilibrium, uncoupledN]
 
-private theorem uncoupledN_field_d (z : State (n + 1 + (n + 1 + 1))) (i : Fin (n + 1)) :
+@[powerlib_domain] private theorem uncoupledN_field_d (z : State (n + 1 + (n + 1 + 1))) (i : Fin (n + 1)) :
     (uncoupledN n).field z (dIdx i) = z (wIdx i.succ) - z (wIdx 0) := by
   simp [Model.field, uncoupledN_point]
 
-private theorem uncoupledN_field_w (z : State (n + 1 + (n + 1 + 1))) (k : Fin (n + 1 + 1)) :
+@[powerlib_domain] private theorem uncoupledN_field_w (z : State (n + 1 + (n + 1 + 1))) (k : Fin (n + 1 + 1)) :
     (uncoupledN n).field z (wIdx k) = - z (wIdx k) := by
   show reducedField _ (z + equilibrium (uncoupledN n).θ) (wIdx k) = _
   rw [uncoupledN_point, add_zero, reducedField_wIdx]
@@ -911,15 +911,15 @@ private def conservedLin (m : ℕ) : State (m + (m + 1)) →ₗ[ℝ] State (m + 
     · intro i; simp; ring
     · intro k; simp
 
-private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1))) (i : Fin m) :
+@[powerlib_foundation] private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1))) (i : Fin m) :
     conservedLin m z (dIdx i) = z (dIdx i) + z (wIdx i.succ) - z (wIdx 0) := by
   simp [conservedLin]
 
-private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1))) (k : Fin (m + 1)) :
+@[powerlib_foundation] private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1))) (k : Fin (m + 1)) :
     conservedLin m z (wIdx k) = z (wIdx k) := by
   simp [conservedLin]
 
-private theorem conservedLin_injective (m : ℕ) : Function.Injective (conservedLin m) := by
+@[powerlib_foundation] private theorem conservedLin_injective (m : ℕ) : Function.Injective (conservedLin m) := by
   intro z w h
   have hw : ∀ k, z (wIdx k) = w (wIdx k) := fun k => by
     have := congrArg (fun y : State (m + (m + 1)) => y (wIdx k)) h
@@ -1000,7 +1000,7 @@ point whose reduced Jacobian is not Hurwitz. -/
 stable point of the `C¹` field is an equilibrium, hence a power-balance point, and the reduced
 Jacobian is always Hurwitz (`jacobian_isHurwitz_zero`), so every equilibrium meets the translation
 (`Spectral.exact_of_equilibrium`, with no degenerate equilibria). -/
-@[tmio TM] private theorem exact_zero {P : Flow.Property}
+@[tmio TM, powerlib_domain] private theorem exact_zero {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% ((family (n := 0)).Exact (.flow P)) := by
   change (family (n := 0)).Exact (.flow P)

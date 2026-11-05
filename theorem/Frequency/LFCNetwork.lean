@@ -812,7 +812,7 @@ every attractive sentence and sampled contraction; this replaces the explicit Hu
 `N`-area model on a radial tie-line graph: if the state matrix is spectrally stable, every
 forward solution under constant loads converges to the non-interactive steady state
 `(Δω, ΔP_tie, ΔP_C) = (0, 0, ΔP_L)`. -/
-private theorem netModel_tendsto [DecidableEq β] (hM : ∀ a, (area a).M ≠ 0)
+@[powerlib_domain] private theorem netModel_tendsto [DecidableEq β] (hM : ∀ a, (area a).M ≠ 0)
     (hKI : ∀ a, (area a).KI ≠ 0) (hT : ∀ ℓ, ωs * T ℓ ≠ 0) (hB : ∑ a, (area a).B ≠ 0)
     (hcol : ∀ ℓ, ∑ a, 𝓑 a ℓ = 0)
     (hconn : ∀ w : α → ℝ, (∀ ℓ, ∑ c, 𝓑 c ℓ * w c = 0) → ∀ a c, w a = w c)

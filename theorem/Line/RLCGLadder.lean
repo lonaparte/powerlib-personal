@@ -302,7 +302,7 @@ conserves no positive definite energy. -/
 /-- With losses, the stored energy strictly decreases along every zero-input solution segment
 that does not start at 0.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem lossyLadder_energy_strictly_decreases
+@[powerlib_domain] private theorem lossyLadder_energy_strictly_decreases
     (hR : 0 < p.R') (hG : 0 < p.G') {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ (ladderPH p N).plant.system.zeroInput a b)
     (ht : t ∈ Set.Ioc a b) (h0 : φ a ≠ 0) :
@@ -326,7 +326,7 @@ private theorem lossyLadder_energy_strictly_decreases
 /-- In the lossless case `R' = G' = 0` the stored energy is constant along every zero-input
 solution segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem losslessLadder_energy_conserved
+@[powerlib_domain] private theorem losslessLadder_energy_conserved
     (hR : p.R' = 0) (hG : p.G' = 0) {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (ladderPH p N).plant.system.zeroInput a b) :
     ∀ t ∈ Set.Icc a b, (model p N).energy (WithLp.ofLp (φ t) ∘ finSumFinEquiv) =

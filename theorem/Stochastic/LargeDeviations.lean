@@ -337,7 +337,7 @@ def quasiPotential (U : (Fin n → ℝ) → ℝ) (gU : (Fin n → ℝ) → Fin n
 /-! ## Upper bound for the quasi-potential of a gradient system -/
 
 /-- The derivative of the smooth transition vanishes outside `(0, 1)`. -/
-private theorem deriv_smoothTransition_eq_zero {t : ℝ} (ht : t ≤ 0 ∨ 1 ≤ t) :
+@[powerlib_foundation] private theorem deriv_smoothTransition_eq_zero {t : ℝ} (ht : t ≤ 0 ∨ 1 ≤ t) :
     deriv Real.smoothTransition t = 0 := by
   rcases ht with ht | ht
   · refine IsLocalMin.deriv_eq_zero (Eventually.of_forall fun y => ?_)
@@ -347,15 +347,15 @@ private theorem deriv_smoothTransition_eq_zero {t : ℝ} (ht : t ≤ 0 ∨ 1 ≤
     rw [Real.smoothTransition.one_of_one_le ht]
     exact Real.smoothTransition.le_one y
 
-private theorem continuous_deriv_smoothTransition : Continuous (deriv Real.smoothTransition) :=
+@[powerlib_foundation] private theorem continuous_deriv_smoothTransition : Continuous (deriv Real.smoothTransition) :=
   (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
 
-private theorem hasDerivAt_smoothTransition (t : ℝ) :
+@[powerlib_foundation] private theorem hasDerivAt_smoothTransition (t : ℝ) :
     HasDerivAt Real.smoothTransition (deriv Real.smoothTransition t) t :=
   ((Real.smoothTransition.contDiff (n := 1)).differentiable (by norm_num) t).hasDerivAt
 
 /-- A uniform bound for the derivative of the smooth transition. -/
-private theorem exists_bound_deriv_smoothTransition :
+@[powerlib_foundation] private theorem exists_bound_deriv_smoothTransition :
     ∃ M, 0 ≤ M ∧ ∀ t, |deriv Real.smoothTransition t| ≤ M := by
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     (continuous_deriv_smoothTransition.continuousOn (s := Icc (0 : ℝ) 1))
@@ -373,7 +373,7 @@ private theorem exists_bound_deriv_smoothTransition :
 /-- **Core estimate**: the explicit path that starts at `xA`, corrects onto the reversed gradient
 orbit `ψ` during `[0, 1]`, follows `ψ` and corrects onto `x` during `[T − 1, T]` has action at most
 `2 (U(x) − U(xA)) + n ε₀²` when the residual is at most `ε₀` on the two correction windows. -/
-private theorem quasiPotential_le_of_window {U : (Fin n → ℝ) → ℝ}
+@[powerlib_foundation] private theorem quasiPotential_le_of_window {U : (Fin n → ℝ) → ℝ}
     {gU : (Fin n → ℝ) → Fin n → ℝ} (hU : Differentiable ℝ U)
     (hgrad : ∀ y v, fderiv ℝ U y v = gU y ⬝ᵥ v) (hgc : Continuous gU)
     {ψ : ℝ → Fin n → ℝ} (hψ : ∀ s, HasDerivAt ψ (gU (ψ s)) s) {xA x : Fin n → ℝ} {a T ε₀ : ℝ}
@@ -619,7 +619,7 @@ def dwGrad (y : Fin 1 → ℝ) : Fin 1 → ℝ := fun _ => y 0 ^ 3 - y 0
 saddle `0` (`s → +∞`): `ψ̇ = ψ³ − ψ = U'(ψ)`. -/
 def dwOrbit (s : ℝ) : Fin 1 → ℝ := fun _ => (√(1 + exp (2 * s)))⁻¹
 
-private theorem dw_hasFDerivAt (y : Fin 1 → ℝ) :
+@[powerlib_foundation] private theorem dw_hasFDerivAt (y : Fin 1 → ℝ) :
     HasFDerivAt dwU ((y 0 ^ 3 - y 0) • ContinuousLinearMap.proj (R := ℝ)
       (φ := fun _ : Fin 1 => ℝ) 0) y := by
   have hp : HasFDerivAt (fun z : Fin 1 → ℝ => z 0)
@@ -629,18 +629,18 @@ private theorem dw_hasFDerivAt (y : Fin 1 → ℝ) :
     convert this using 1; push_cast; ring
   exact hf.comp_hasFDerivAt y hp
 
-private theorem dw_differentiable : Differentiable ℝ dwU := fun y =>
+@[powerlib_foundation] private theorem dw_differentiable : Differentiable ℝ dwU := fun y =>
   (dw_hasFDerivAt y).differentiableAt
 
-private theorem dw_grad (y v : Fin 1 → ℝ) : fderiv ℝ dwU y v = dwGrad y ⬝ᵥ v := by
+@[powerlib_foundation] private theorem dw_grad (y v : Fin 1 → ℝ) : fderiv ℝ dwU y v = dwGrad y ⬝ᵥ v := by
   rw [(dw_hasFDerivAt y).fderiv]
   simp [dwGrad, dotProduct]
 
-private theorem dw_grad_continuous : Continuous dwGrad := by
+@[powerlib_foundation] private theorem dw_grad_continuous : Continuous dwGrad := by
   unfold dwGrad
   exact continuous_pi fun _ => by fun_prop
 
-private theorem dwOrbit_hasDerivAt (s : ℝ) : HasDerivAt dwOrbit (dwGrad (dwOrbit s)) s := by
+@[powerlib_foundation] private theorem dwOrbit_hasDerivAt (s : ℝ) : HasDerivAt dwOrbit (dwGrad (dwOrbit s)) s := by
   rw [hasDerivAt_pi]
   intro _
   set w := 1 + exp (2 * s) with hw
@@ -659,7 +659,7 @@ private theorem dwOrbit_hasDerivAt (s : ℝ) : HasDerivAt dwOrbit (dwGrad (dwOrb
   rw [hw2, hw]
   ring
 
-private theorem dwOrbit_atBot : Tendsto dwOrbit atBot (𝓝 (fun _ => 1)) := by
+@[powerlib_foundation] private theorem dwOrbit_atBot : Tendsto dwOrbit atBot (𝓝 (fun _ => 1)) := by
   rw [tendsto_pi_nhds]
   intro _
   have h1 : Tendsto (fun s : ℝ => 1 + exp (2 * s)) atBot (𝓝 1) := by
@@ -668,7 +668,7 @@ private theorem dwOrbit_atBot : Tendsto dwOrbit atBot (𝓝 (fun _ => 1)) := by
   have h2 := (h1.sqrt).inv₀ (by simp)
   simpa [dwOrbit] using h2
 
-private theorem dwOrbit_atTop : Tendsto dwOrbit atTop (𝓝 (fun _ => 0)) := by
+@[powerlib_foundation] private theorem dwOrbit_atTop : Tendsto dwOrbit atTop (𝓝 (fun _ => 0)) := by
   rw [tendsto_pi_nhds]
   intro _
   have h1 : Tendsto (fun s : ℝ => 1 + exp (2 * s)) atTop atTop := by
@@ -694,30 +694,30 @@ section Cramer
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : ℕ → Ω → ℝ}
 
 /-- Identically distributed summands have the same exponential integrability. -/
-private theorem integrable_exp_iff_of_identDistrib (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ)
+@[powerlib_foundation] private theorem integrable_exp_iff_of_identDistrib (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ)
     (i : ℕ) (t : ℝ) :
     Integrable (fun ω => exp (t * X i ω)) μ ↔ Integrable (fun ω => exp (t * X 0 ω)) μ :=
   ((hid i).comp (measurable_const_mul t).exp).integrable_iff
 
-private theorem mgf_eq_of_identDistrib (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (i : ℕ)
+@[powerlib_foundation] private theorem mgf_eq_of_identDistrib (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (i : ℕ)
     (t : ℝ) : mgf (X i) μ t = mgf (X 0) μ t :=
   ((hid i).comp (measurable_const_mul t).exp).integral_eq
 
-private theorem mgf_sum_eq [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem mgf_sum_eq [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i))
     (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (n : ℕ) (t : ℝ) :
     mgf (∑ i ∈ Finset.range n, X i) μ t = mgf (X 0) μ t ^ n := by
   rw [hindep.mgf_sum hmeas, Finset.prod_congr rfl fun i _ => mgf_eq_of_identDistrib hid i t,
     Finset.prod_const, Finset.card_range]
 
-private theorem cgf_sum_eq [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem cgf_sum_eq [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i))
     (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (n : ℕ) :
     cgf (∑ i ∈ Finset.range n, X i) μ = fun t => n * cgf (X 0) μ t := by
   funext t
   rw [cgf, mgf_sum_eq hindep hmeas hid, Real.log_pow, cgf]
 
-private theorem interior_subset_sum [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem interior_subset_sum [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i))
     (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (n : ℕ) :
     interior (integrableExpSet (X 0) μ) ⊆
@@ -727,7 +727,7 @@ private theorem interior_subset_sum [IsProbabilityMeasure μ] (hindep : iIndepFu
     (integrable_exp_iff_of_identDistrib hid i t).mpr ht
 
 /-- `(Y − c)² e^{θY}` is integrable for `θ` in the interior of the exponential-integrability set. -/
-private theorem integrable_sq_mul_exp {Y : Ω → ℝ} {θ : ℝ}
+@[powerlib_foundation] private theorem integrable_sq_mul_exp {Y : Ω → ℝ} {θ : ℝ}
     (hθ : θ ∈ interior (integrableExpSet Y μ)) (c : ℝ) :
     Integrable (fun ω => (Y ω - c) ^ 2 * exp (θ * Y ω)) μ := by
   have h2 := integrable_pow_mul_exp_of_mem_interior_integrableExpSet hθ 2
@@ -739,7 +739,7 @@ private theorem integrable_sq_mul_exp {Y : Ω → ℝ} {θ : ℝ}
   ring
 
 /-- Tilted second moment of the sum: `E[(S_n − n Λ'(θ))² e^{θ S_n}] = n Λ''(θ) M(θ)ⁿ`. -/
-private theorem tilted_second_moment [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem tilted_second_moment [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (n : ℕ) {θ : ℝ}
     (hθ : θ ∈ interior (integrableExpSet (X 0) μ)) :
     ∫ ω, ((∑ i ∈ Finset.range n, X i) ω - n * deriv (cgf (X 0) μ) θ) ^ 2 *
@@ -762,7 +762,7 @@ private theorem tilted_second_moment [IsProbabilityMeasure μ] (hindep : iIndepF
 /-- **Finite-`n` estimate** (exponential tilting + Chebyshev under the tilted law): with
 `x = Λ'(θ)`, `v = Λ''(θ)`,
 `P(|S_n − n x| < n δ) ≥ e^{−n(θ x + |θ| δ)} M(θ)ⁿ (1 − v/(n δ²))`. -/
-private theorem cramer_core [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem cramer_core [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {θ : ℝ}
     (hθ : θ ∈ interior (integrableExpSet (X 0) μ)) {n : ℕ} (hn : 0 < n) {δ : ℝ} (hδ : 0 < δ) :
     exp (-(n * (θ * deriv (cgf (X 0) μ) θ + |θ| * δ))) * mgf (X 0) μ θ ^ n *
@@ -977,7 +977,7 @@ def cramerRate {Ω : Type*} {mΩ : MeasurableSpace Ω} (Y : Ω → ℝ) (μ : Me
       ((t * deriv (cgf Y μ) θ - cgf Y μ t : ℝ) : EReal)) θ
       (interior_subset (s := integrableExpSet Y μ) hθ) le_rfl
 
-private theorem ereal_le_of_forall_sub_le {a : ℝ} {ℓ : EReal}
+@[powerlib_foundation] private theorem ereal_le_of_forall_sub_le {a : ℝ} {ℓ : EReal}
     (h : ∀ ε : ℝ, 0 < ε → ((a - ε : ℝ) : EReal) ≤ ℓ) : (a : EReal) ≤ ℓ := by
   induction ℓ using EReal.rec with
   | bot => exact absurd (h 1 one_pos) (by rw [le_bot_iff]; exact EReal.coe_ne_bot _)
@@ -1016,7 +1016,7 @@ exposed points are `x = Λ'(θ)` with `θ` interior to the effective domain of `
   linarith
 
 /-- A bounded random variable has all exponential moments. -/
-private theorem integrableExpSet_eq_univ [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : AEMeasurable Y μ)
+@[powerlib_foundation] private theorem integrableExpSet_eq_univ [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : AEMeasurable Y μ)
     {C : ℝ} (hb : ∀ᵐ ω ∂μ, |Y ω| ≤ C) : integrableExpSet Y μ = univ := by
   ext t
   simp only [mem_univ, iff_true]
@@ -1029,7 +1029,7 @@ private theorem integrableExpSet_eq_univ [IsFiniteMeasure μ] {Y : Ω → ℝ} (
     _ ≤ |t| * C := mul_le_mul_of_nonneg_left hω (abs_nonneg t)
 
 /-- If `P(Y > x) > 0`, the tilted mean exceeds `x` for some tilt: `E[(Y − x) e^{θY}] ≥ 0`. -/
-private theorem exists_tilt_ge [IsProbabilityMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y)
+@[powerlib_foundation] private theorem exists_tilt_ge [IsProbabilityMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y)
     {C : ℝ} (hb : ∀ᵐ ω ∂μ, |Y ω| ≤ C) {x : ℝ} (hx : 0 < μ {ω | x < Y ω}) :
     ∃ θ, 0 ≤ ∫ ω, (Y ω - x) * exp (θ * Y ω) ∂μ := by
   -- a level `c > x` with `P(Y > c) > 0`
@@ -1208,7 +1208,7 @@ every interior point of the convex hull of the support is exposed (`exists_deriv
     (le_iSup_of_le hx le_rfl)
 
 /-- `∀ ε > 0, a ≤ r + ε` in `EReal` gives `a ≤ r`. -/
-private theorem ereal_le_of_forall_le_add {a : EReal} {r : ℝ}
+@[powerlib_foundation] private theorem ereal_le_of_forall_le_add {a : EReal} {r : ℝ}
     (h : ∀ ε : ℝ, 0 < ε → a ≤ ((r + ε : ℝ) : EReal)) : a ≤ (r : EReal) := by
   induction a using EReal.rec with
   | bot => exact bot_le
@@ -1218,7 +1218,7 @@ private theorem ereal_le_of_forall_le_add {a : EReal} {r : ℝ}
   | top => exact absurd (h 1 one_pos) (by rw [top_le_iff]; exact EReal.coe_ne_top _)
 
 /-- An `EReal` below every negative real is `⊥`. -/
-private theorem ereal_eq_bot_of_le {a : EReal} (h : ∀ r : ℝ, a ≤ (r : EReal)) : a = ⊥ := by
+@[powerlib_foundation] private theorem ereal_eq_bot_of_le {a : EReal} (h : ∀ r : ℝ, a ≤ (r : EReal)) : a = ⊥ := by
   induction a using EReal.rec with
   | bot => rfl
   | coe s =>
@@ -1229,7 +1229,7 @@ private theorem ereal_eq_bot_of_le {a : EReal} (h : ∀ r : ℝ, a ≤ (r : ERea
 /-- **Upper endpoint of the support** (`P(X₀ > x) = 0`, no boundedness needed): with
 `q = P(X₀ ∈ (x − δ, x])`, `P(S_n/n ∈ G) ≥ qⁿ` (independence) and `I(x) ≥ −log q` (tilts
 `θ → +∞`), so `−I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for `x ∈ G` open. -/
-private theorem cramer_lower_upper_endpoint [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem cramer_lower_upper_endpoint [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ}
     (hG : IsOpen G) {x : ℝ} (hxG : x ∈ G) (hx : μ {ω | x < X 0 ω} = 0) :
     -cramerRate (X 0) μ x ≤
@@ -1359,7 +1359,7 @@ private theorem cramer_lower_upper_endpoint [IsProbabilityMeasure μ] (hindep : 
     exact this
 
 /-- The rate function is invariant under the reflection `(Y, x) ↦ (−Y, −x)`. -/
-private theorem cramerRate_neg (Y : Ω → ℝ) (x : ℝ) :
+@[powerlib_foundation] private theorem cramerRate_neg (Y : Ω → ℝ) (x : ℝ) :
     cramerRate (-Y) μ (-x) = cramerRate Y μ x := by
   have hmem : ∀ t, t ∈ integrableExpSet (-Y) μ ↔ -t ∈ integrableExpSet Y μ := by
     intro t
@@ -1381,7 +1381,7 @@ private theorem cramerRate_neg (Y : Ω → ℝ) (x : ℝ) :
 
 /-- **Lower endpoint of the support** (`P(X₀ < x) = 0`): reflection of
 `cramer_lower_upper_endpoint`. -/
-private theorem cramer_lower_lower_endpoint [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem cramer_lower_lower_endpoint [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ}
     (hG : IsOpen G) {x : ℝ} (hxG : x ∈ G) (hx : μ {ω | X 0 ω < x} = 0) :
     -cramerRate (X 0) μ x ≤
@@ -1430,12 +1430,12 @@ where `I = ∞`) use `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and `I(x)
 /-! ## Cramér lower bound: general (unbounded) i.i.d. summands, by truncation -/
 
 /-- The truncation event `{|Y| ≤ M}` is measurable. -/
-private theorem measurableSet_abs_le {Y : Ω → ℝ} (hY : Measurable Y) (M : ℝ) :
+@[powerlib_foundation] private theorem measurableSet_abs_le {Y : Ω → ℝ} (hY : Measurable Y) (M : ℝ) :
     MeasurableSet {ω | |Y ω| ≤ M} :=
   measurableSet_le (continuous_abs.measurable.comp hY) measurable_const
 
 /-- Exponential moments of `Y − x` on the truncation `{|Y| ≤ M}` are finite. -/
-private theorem integrable_exp_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y)
+@[powerlib_foundation] private theorem integrable_exp_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y)
     (x M t : ℝ) :
     Integrable (fun ω => exp (t * (Y ω - x))) (μ.restrict {ω | |Y ω| ≤ M}) := by
   have hb : ∀ᵐ ω ∂(μ.restrict {ω | |Y ω| ≤ M}), |Y ω - x| ≤ M + |x| := by
@@ -1449,7 +1449,7 @@ private theorem integrable_exp_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY :
   exact ht
 
 /-- Lower bound for the truncated exponential moment from a sub-event. -/
-private theorem le_mgf_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (x : ℝ)
+@[powerlib_foundation] private theorem le_mgf_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (x : ℝ)
     {M t c : ℝ} {E : Set Ω} (hE : MeasurableSet E) (hsub : E ⊆ {ω | |Y ω| ≤ M})
     (hc : ∀ ω ∈ E, c ≤ t * (Y ω - x)) :
     exp c * μ.real E ≤ mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t := by
@@ -1465,7 +1465,7 @@ private theorem le_mgf_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measura
   linarith
 
 /-- Truncated exponential moments increase with the truncation level. -/
-private theorem mgf_trunc_mono [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (x : ℝ)
+@[powerlib_foundation] private theorem mgf_trunc_mono [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (x : ℝ)
     {M M' : ℝ} (h : M ≤ M') (t : ℝ) :
     mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t ≤
       mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M'}) t :=
@@ -1473,7 +1473,7 @@ private theorem mgf_trunc_mono [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measu
     (ae_of_all _ fun _ => (exp_pos _).le) (integrable_exp_trunc hY x M' t)
 
 /-- If `P(Y > x) > 0`, some event `{Y > x + a, |Y| ≤ M}` (`a > 0`) has positive probability. -/
-private theorem exists_trunc_level {Y : Ω → ℝ} {x : ℝ}
+@[powerlib_foundation] private theorem exists_trunc_level {Y : Ω → ℝ} {x : ℝ}
     (hx : 0 < μ {ω | x < Y ω}) :
     ∃ a : ℝ, 0 < a ∧ ∃ M : ℝ, 0 < μ {ω | x + a < Y ω ∧ |Y ω| ≤ M} := by
   have hU : {ω | x < Y ω} = ⋃ k : ℕ, {ω | x + 1 / ((k : ℝ) + 1) < Y ω ∧ |Y ω| ≤ k} := by
@@ -1501,7 +1501,7 @@ private theorem exists_trunc_level {Y : Ω → ℝ} {x : ℝ}
   exact ⟨1 / ((k : ℝ) + 1), by positivity, k, hk⟩
 
 /-- `∀ r, ℓ ≤ r → a ≤ r` in `EReal` gives `a ≤ ℓ`. -/
-private theorem ereal_le_of_forall_coe_ge {a ℓ : EReal} (h : ∀ r : ℝ, ℓ ≤ r → a ≤ r) :
+@[powerlib_foundation] private theorem ereal_le_of_forall_coe_ge {a ℓ : EReal} (h : ∀ r : ℝ, ℓ ≤ r → a ≤ r) :
     a ≤ ℓ := by
   induction ℓ using EReal.rec with
   | bot =>
@@ -1522,7 +1522,7 @@ and every `ε > 0` some `t` has `E[e^{t(Y − x)}; |Y| ≤ M] ≤ e^{r + ε}`, t
 The minimisers stay in a fixed compact interval (both tails of `Y − x` near `x` carry mass), so
 nested compact sublevel sets give one `t` working for every `M`; monotone convergence `M → ∞`
 then gives `E[e^{t(Y − x)}] ≤ e^r`. -/
-private theorem neg_cramerRate_le_of_trunc [IsProbabilityMeasure μ] {Y : Ω → ℝ}
+@[powerlib_foundation] private theorem neg_cramerRate_le_of_trunc [IsProbabilityMeasure μ] {Y : Ω → ℝ}
     (hY : Measurable Y) {x r : ℝ} (hlo : 0 < μ {ω | Y ω < x}) (hhi : 0 < μ {ω | x < Y ω})
     (h : ∀ M : ℝ, 0 < μ {ω | |Y ω| ≤ M} → ∀ ε : ℝ, 0 < ε →
       ∃ t, mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t ≤ exp (r + ε)) :
@@ -1683,7 +1683,7 @@ private theorem neg_cramerRate_le_of_trunc [IsProbabilityMeasure μ] {Y : Ω →
 /-- **Truncation comparison.**  Let `ν` be the law of `X₀` conditioned on `|X₀| ≤ M`,
 `p = P(|X₀| ≤ M)`, and `(Yᵢ)` the coordinates of the product space `ν^{⊗ℕ}`.  Then
 `P(S_n/n ∈ G) ≥ pⁿ ν^{⊗ℕ}(S'_n/n ∈ G)` (restrict to `{|Xᵢ| ≤ M, i < n}`). -/
-private theorem trunc_comparison [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem trunc_comparison [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ}
     (hG : IsOpen G) {M : ℝ} (hp : μ {ω | |X 0 ω| ≤ M} ≠ 0) (n : ℕ) :
     μ {ω | |X 0 ω| ≤ M} ^ n * Measure.infinitePi (fun _ : ℕ => (μ.map (X 0))[|{y : ℝ | |y| ≤ M}])
@@ -1756,7 +1756,7 @@ then for every truncation level `M` with `P(|X₀| ≤ M) > 0` and every `ε > 0
 `E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{r + ε}`: the bounded Cramér lower bound
 (`cramer_lower_bound_of_bounded`) for i.i.d. copies of `X₀` conditioned on `|X₀| ≤ M`, compared
 through `trunc_comparison`, gives `I_ν(x) ≥ log P(|X₀| ≤ M) − r`. -/
-private theorem trunc_exists_tilt [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+@[powerlib_foundation] private theorem trunc_exists_tilt [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ}
     (hG : IsOpen G) {x : ℝ} (hxG : x ∈ G) {M : ℝ} (hp : 0 < μ {ω | |X 0 ω| ≤ M}) {r : ℝ}
     (hℓ : liminf (fun n : ℕ => (((n : ℝ)⁻¹ : ℝ) : EReal) *

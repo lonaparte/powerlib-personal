@@ -112,7 +112,7 @@ nonzero current component. Static evidence on the model, not a connection conclu
 /-- With `Ki < 0` the PI current loop does not track: some solution with a constant reference
 has `i(t) ↛ i*`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem not_tracks_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) (iref : ℝ) :
+@[powerlib_domain] private theorem not_tracks_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) (iref : ℝ) :
     ∃ x : ℝ → ℝ², (∀ t, HasDerivAt x (p.field iref (x t)) t) ∧
       ¬ Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
   have hdet : p.model.A.det < 0 := by

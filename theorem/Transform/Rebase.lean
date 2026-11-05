@@ -332,7 +332,7 @@ def plant (m : Plant n p) (T S : Matrix (Fin n) (Fin n) ℝ) (w : ℝ)
     (Su Ty : Matrix (Fin p) (Fin p) ℝ) : Plant n p :=
   ⟨rebaseMatrix T S w m.A, w⁻¹ • (T * m.B * Su), Ty * m.C * S, Ty * m.D * Su⟩
 
-@[tmio T] private lemma complexify_smul (c : ℝ) {m' n' : Type*} (M : Matrix m' n' ℝ) :
+@[tmio T, powerlib_foundation] private lemma complexify_smul (c : ℝ) {m' n' : Type*} (M : Matrix m' n' ℝ) :
     complexify (c • M) = (c : ℂ) • complexify M := by
   ext i j; simp
 
@@ -454,12 +454,12 @@ def interconnection (ic : Interconnection n₁ n₂ p) (β : Bases n₁ n₂ p) 
 
 variable (ic : Interconnection n₁ n₂ p) (β : Bases n₁ n₂ p)
 
-@[tmio T] private theorem smul_conj {α β' γ δ : Type*} [Fintype β'] [Fintype γ] (c : ℝ)
+@[tmio T, powerlib_foundation] private theorem smul_conj {α β' γ δ : Type*} [Fintype β'] [Fintype γ] (c : ℝ)
     (T : Matrix α β' ℝ) (A : Matrix β' γ ℝ) (S : Matrix γ δ ℝ) :
     c • (T * A * S) = c • T * A * S := by
   rw [Matrix.smul_mul, Matrix.smul_mul]
 
-@[tmio M] theorem interp_interconnection :
+@[tmio M, powerlib_foundation] theorem interp_interconnection :
     interp (interconnection ic β) = Construction.rebase (dims n₁ n₂ p) β.T β.S (interp ic) := by
   funext a b x
   cases x
@@ -471,16 +471,16 @@ variable (ic : Interconnection n₁ n₂ p) (β : Bases n₁ n₂ p)
   · exact smul_conj β.w⁻¹ β.T₂ ic.load.B β.Sv
   · rfl
 
-@[tmio M] theorem closedLoopBlocks_eq :
+@[tmio M, powerlib_foundation] theorem closedLoopBlocks_eq :
     ic.closedLoopBlocks = fromBlocks (eval (dims n₁ n₂ p) (interp ic) a₁₁)
       (eval (dims n₁ n₂ p) (interp ic) a₁₂) (eval (dims n₁ n₂ p) (interp ic) a₂₁)
       (eval (dims n₁ n₂ p) (interp ic) a₂₂) := rfl
 
-@[tmio M] theorem inputBlocks_eq :
+@[tmio M, powerlib_foundation] theorem inputBlocks_eq :
     ic.inputBlocks = fromRows (eval (dims n₁ n₂ p) (interp ic) b₁)
       (eval (dims n₁ n₂ p) (interp ic) b₂) := rfl
 
-@[tmio M] theorem outputBlocks_eq :
+@[tmio M, powerlib_foundation] theorem outputBlocks_eq :
     ic.outputBlocks = fromCols (eval (dims n₁ n₂ p) (interp ic) c₁)
       (eval (dims n₁ n₂ p) (interp ic) c₂) := rfl
 
@@ -614,7 +614,7 @@ bases need inverses. -/
   · intro h s hs
     exact h _ (by simp; positivity)
 
-@[tmio T] private theorem blockCoordinates_inv {T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ}
+@[tmio T, powerlib_foundation] private theorem blockCoordinates_inv {T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ}
     {T₂ S₂ : Matrix (Fin n₂) (Fin n₂) ℝ} (h₁ : S₁ * T₁ = 1) (h₂ : S₂ * T₂ = 1) :
     blockCoordinates S₁ S₂ * blockCoordinates T₁ T₂ = 1 := by
   rw [blockCoordinates_mul, h₁, h₂, blockCoordinates_one]
@@ -641,7 +641,7 @@ base. -/
     simp [Interconnection.changeCoordinates, Plant.changeCoordinates, interconnection, plant,
       rebaseMatrix, ic.load_strictly_proper]
 
-@[tmio T] private theorem complexify_neg_one {κ : Type*} [Fintype κ] [DecidableEq κ] :
+@[tmio T, powerlib_foundation] private theorem complexify_neg_one {κ : Type*} [Fintype κ] [DecidableEq κ] :
     complexify (-1 : Matrix κ κ ℝ) = -1 := by
   rw [complexify_neg]
   unfold complexify

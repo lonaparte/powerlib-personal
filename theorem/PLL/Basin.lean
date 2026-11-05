@@ -94,7 +94,7 @@ open powerlib.Dynamics (State)
 /-- For `c < 2V` the potential-well piece `{|θ| < π, H_s ≤ c}` of the shifted
 port-Hamiltonian energy lies in the region of attraction of the locked equilibrium. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
+@[powerlib_domain] private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) {c : ℝ} (hc : c < 2 * V) :
     ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x ≤ c},
       (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
@@ -179,7 +179,7 @@ private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
 /-- T-pll-ph basin: every state with `|θ| < π` and `H_s < 2V` (below the saddle level) is in
 the region of attraction of the locked equilibrium. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem srf_regionOfAttraction_hamiltonian_lt {V Kp Ki : ℝ} (hV : 0 < V)
+@[powerlib_domain] private theorem srf_regionOfAttraction_hamiltonian_lt {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
     ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x < 2 * V},
       (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
@@ -252,7 +252,7 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
 /-- For `a, b > 0` and `c < b` the well piece `{|θ| < π/2, E ≤ c}` of the pendulum energy lies
 in the region of attraction of `(0, −Δω/b)`. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb : 0 < b)
+@[powerlib_domain] private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb : 0 < b)
     {c : ℝ} (hc : c < b) :
     ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x ≤ c},
       (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
@@ -357,7 +357,7 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
 
 /-- The pendulum-energy estimate below the level `b = V K_i`. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem xi_regionOfAttraction_pendulum_lt {a b Δω : ℝ} (ha : 0 < a)
+@[powerlib_domain] private theorem xi_regionOfAttraction_pendulum_lt {a b Δω : ℝ} (ha : 0 < a)
     (hb : 0 < b) :
     ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x < b},
       (∃ φ : ℝ → State 2, φ 0 = x₀ ∧

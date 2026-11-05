@@ -87,7 +87,7 @@ variable {h V : ℝ → ℝ} {Kp Ki : ℝ}
 
 /-- Bounded forward solutions of the PI-PLL converge to an equilibrium.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem piPLL_tendsto_of_bounded
+@[powerlib_domain] private theorem piPLL_tendsto_of_bounded
     (hKp : 0 < Kp) (hKi : 0 < Ki) {L : NNReal} (hL : LipschitzWith L h)
     (hV : ∀ θ, HasDerivAt V (-h θ) θ)
     (hiso : ∀ θ, h θ = 0 → ∀ᶠ θ' in 𝓝[≠] θ, h θ' ≠ 0)
@@ -404,7 +404,7 @@ variable (p : Params)
 /-- A2: for `K_p, K_i > 0`, `V_g > 0`, every solution of the reduced 2-state PLL model that
 stays bounded for `t ≥ 0` converges to a single equilibrium `(θ*, 0)` with `h(θ*) = 0`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem reduced_tendsto_equilibrium_of_bounded (hwC : p.wC ≠ 0)
+@[powerlib_domain] private theorem reduced_tendsto_equilibrium_of_bounded (hwC : p.wC ≠ 0)
     (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) {φ : ℝ → State 2}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.reducedField x) (Ici 0))
     (hb : Bornology.IsBounded (φ '' Ici 0)) :

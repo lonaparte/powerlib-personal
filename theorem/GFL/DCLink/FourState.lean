@@ -524,13 +524,13 @@ def family : Family Model Requirement 4 0 :=
 /-! ### Implementation evidence (private) -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at `(θ₀, 0, 1, 0)`. -/
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
     (pt := fun m => opPoint m.θ) family_isAutonomous
 
 /-- The quartic Routh conditions give local exponential stability of the physical field. -/
-@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
+@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   change m ∈ family.den (.flow .locallyExponentiallyStable)
   obtain ⟨heq, hC⟩ := he
@@ -543,7 +543,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
       h3 h1 h0 hg))
 
 /-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field. -/
-@[tmio TM] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hn : Meets m .constNeg) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)
@@ -663,7 +663,7 @@ def fieldAngle (_u ud : ℝ) (z : Dynamics.State 4) : Dynamics.State 4 :=
 
 /-- Without capacitance (`C = 0`) the dc-bus voltage is frozen: `V` is a linear first integral
 of the regularized field, so it has no locally exponentially stable point. -/
-private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : Dynamics.State 4) :
+@[powerlib_domain] private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : Dynamics.State 4) :
     ¬ LocallyExponentiallyStable (regField p) x := by
   refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral (contDiff_regField p)
     (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 2) ?_ fun y => ?_
@@ -739,7 +739,7 @@ for an equilibrium. -/
 `ẋ = −sin θ` driving the dc loop `V̇ = cos θ (−(V − 1) − η) / V`, `η̇ = V − 1`. -/
 def undampedPLL : Model := ⟨⟨1, 0, 0, 0, 1, 1, 1, 3 / 2, 0⟩, 0⟩
 
-private theorem undampedPLL_field (y : Dynamics.State 4) :
+@[powerlib_domain] private theorem undampedPLL_field (y : Dynamics.State 4) :
     FourState.field undampedPLL.params y = WithLp.toLp 2 ![y 1, -Real.sin (y 0),
       Real.cos (y 0) * (-(y 2 - 1) - y 3) / y 2, y 2 - 1] := by
   ext i
@@ -750,7 +750,7 @@ private theorem undampedPLL_field (y : Dynamics.State 4) :
 private def lsEnergy (y : Dynamics.State 4) : ℝ :=
   1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + ((y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2)
 
-private theorem lsEnergy_hasFDerivAt (z : Dynamics.State 4) :
+@[powerlib_foundation] private theorem lsEnergy_hasFDerivAt (z : Dynamics.State 4) :
     HasFDerivAt lsEnergy
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 : Dynamics.State 4 →L[ℝ] ℝ) +
         z 1 • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 1 : Dynamics.State 4 →L[ℝ] ℝ) +

@@ -73,14 +73,14 @@ open scoped Real
 
 variable {n : ℕ}
 
-private theorem mem_den_flow_iff_four {m : Model n} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff_four {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- A locally asymptotically stable selected point is a strict, isolated minimum of the potential
 (`mem_den_locallyAsymptoticallyStable_iff`). -/
-private theorem strictMin_of_localAsymptoticStable_four {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[powerlib_domain] private theorem strictMin_of_localAsymptoticStable_four {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
     ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧
@@ -181,7 +181,7 @@ the lines leaving `X`. -/
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_cut`, at the selected point of the
 untranslated field. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_cut {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_cut {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (X : Finset (Fin (n + 1))) (hW : ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j) ≤ 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
@@ -284,7 +284,7 @@ linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` r
   exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_cut hbal X hW hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_zero_cut`. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_zero_cut {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_zero_cut {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (X : Finset (Fin (n + 1))) (hX : ∀ i ∈ X, ∀ j ∉ X, p.B i j * Real.cos (θ i - θ j) = 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
@@ -307,7 +307,7 @@ out local asymptotic stability. -/
   exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_zero_cut hbal X hX hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_flat`. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_flat {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_flat {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (u : Fin (n + 1) → ℝ)
     {k₁ k₂ : Fin (n + 1)} (hne : u k₁ ≠ u k₂)
     (h : ∀ k j, p.B k j * Real.cos (θ k - θ j) * (u k - u j) = 0) :
@@ -347,7 +347,7 @@ off by zero-weight lines, so the model is not locally asymptotically stable. -/
 
 /-- Implementation evidence: at a locally asymptotically stable power-balance point the Hessian
 form is positive semidefinite. -/
-private theorem reducedSwing_hessForm_nonneg_of_localAsymptoticStable {p : Params n}
+@[powerlib_domain] private theorem reducedSwing_hessForm_nonneg_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) (u : Fin (n + 1) → ℝ) :
     0 ≤ hessForm p θ u := by
@@ -361,7 +361,7 @@ private theorem reducedSwing_hessForm_nonneg_of_localAsymptoticStable {p : Param
 
 /-- Implementation evidence: at a locally asymptotically stable power-balance point the cubic
 form vanishes on every null direction of the Hessian form. -/
-private theorem reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable {p : Params n}
+@[powerlib_domain] private theorem reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) (u : Fin (n + 1) → ℝ)
     (h0 : hessForm p θ u = 0) : cubicForm p θ u = 0 := by
@@ -789,7 +789,7 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
 
 /-- Implementation evidence for `not_localAsymptoticStable_four`, at the selected point of the
 untranslated field. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
     (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (h13 : p.B (σ 1) (σ 3) = 0)
     (hsp : p.B (σ 0) (σ 2) = 0 ∨ p.B (σ 0) (σ 3) = 0)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)

@@ -560,24 +560,24 @@ namespace VSMLPF
 
 /-! ### Implementation evidence (private) -/
 
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
     family_isAutonomous
 
-private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
+@[powerlib_domain] private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
     m.g.field m.point = 0 :=
   (m.g.field_eq_zero_iff hp.1.ne' hp.2.2.ne' _).mpr
     ⟨by simp [Model.point], by simp [Model.point],
       by have hb' : m.g.K0 * Real.sin m.δ = m.g.P0 := hb; simpa [Model.point] using hb'⟩
 
-private theorem fderiv_point (m : Model) :
+@[powerlib_domain] private theorem fderiv_point (m : Model) :
     fderiv ℝ m.g.field m.point =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (m.g.jacobian m.δ) := by
   rw [m.g.fderiv_field]
   simp [Model.point]
 
-@[tmio TM] private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
+@[tmio TM, powerlib_domain] private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
     (hK : 0 < m.K) (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -600,7 +600,7 @@ private theorem fderiv_point (m : Model) :
     rw [e1, e2]
     linarith
 
-@[tmio TM] private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
+@[tmio TM, powerlib_domain] private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
     (hs : Meets m .destabilizing) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -748,7 +748,7 @@ def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 
 @[simp, powerlib_domain] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
 
-@[tmio M] private theorem fast_iff (hp : g.Pos) :
+@[tmio M, powerlib_domain] private theorem fast_iff (hp : g.Pos) :
     connection% (atLoading g ∈ TMIO.realize Meets {.fastFilter} ↔ g.K / g.D - g.D / g.M < g.ωc) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.atLoading, VSMLPF.K]
   apply Iff.symm
@@ -760,7 +760,7 @@ def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 
 /-- At the principal loading angle, the destabilizing requirement is exactly the slow-filter
 threshold: `cos (arcsin _) ≥ 0` excludes the negative-synchronization branch. -/
-@[tmio M] private theorem slow_iff (hp : g.Pos) :
+@[tmio M, powerlib_domain] private theorem slow_iff (hp : g.Pos) :
     connection% (atLoading g ∈ TMIO.realize Meets {.destabilizing} ↔
       g.ωc < g.K / g.D - g.D / g.M) := by
   have hK : 0 ≤ g.K := by
@@ -1163,7 +1163,7 @@ def Model.toSwing (m : Model) : Synchronous.Swing.Model := ⟨m.q.swingParams, m
     ring
 
 /-- The operating point is the image of the swing model's. -/
-private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
+@[powerlib_domain] private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
     m.point = Dynamics.affineCoord (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
       (PhasePlane.mk 0 m.q.P0) m.toSwing.point := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
@@ -1188,7 +1188,7 @@ of the two semantics connections at the two members. -/
     _ _ (m.q.field_eq_transport hD hω)
     (point_eq_affineCoord m hD) P
 
-@[tmio TM] private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
   change m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s
   have h := mem_den_iff_swing m hp.1.ne' hp.2.ne' s
@@ -1196,7 +1196,7 @@ of the two semantics connections at the two members. -/
   exact h
 
 /-- The requirements of the swing reading in the loop's terms. -/
-@[tmio M] private theorem swing_meets_iff (m : Model) :
+@[tmio M, powerlib_domain] private theorem swing_meets_iff (m : Model) :
     connection% ((m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced} ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
       (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} ↔ 0 < m.q.D / m.q.ωc) ∧
       (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.damped} ↔ 0 < m.q.D) ∧
@@ -1213,13 +1213,13 @@ of the two semantics connections at the two members. -/
   simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
     Synchronous.SwingParams.syncCoeff]
 
-@[tmio M] private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
+@[tmio M, powerlib_domain] private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
     (hm : m ∈ TMIO.realize Meets A) :
     connection% (m ∈ TMIO.realize Meets {.physical}) :=
   TMIO.realize_antitone Meets (Set.singleton_subset_iff.mpr hA) hm
 
 /-- Positive droop gain and bandwidth give the swing reading positive inertia. -/
-@[tmio M] private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
+@[tmio M, powerlib_domain] private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}
   have hp : Meets m .physical := by
@@ -1237,7 +1237,7 @@ of the two semantics connections at the two members. -/
 
 /-- Within positive droop gain and bandwidth the local requirements are those of the swing
 reading. -/
-@[tmio M] private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
+@[tmio M, powerlib_domain] private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
     connection% (m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
       m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
         {.balanced, .inertia, .damped, .synchronizing}) := by
@@ -1256,7 +1256,7 @@ reading. -/
 
 /-- Within positive droop gain and bandwidth the instability requirements give the swing
 reading's. -/
-@[tmio M] private theorem realize_unstable_toSwing {m : Model}
+@[tmio M, powerlib_domain] private theorem realize_unstable_toSwing {m : Model}
     (hm : m ∈ TMIO.realize Meets {.balanced, .physical, .antiSynchronizing}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}

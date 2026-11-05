@@ -150,7 +150,7 @@ def family : Family Gain Requirement n 0 :=
 
 /-! ## The family -/
 
-@[tmio TM]
+@[tmio TM, powerlib_foundation]
 theorem mem_den_globallyExponentiallyStable (α : Gain) :
     connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

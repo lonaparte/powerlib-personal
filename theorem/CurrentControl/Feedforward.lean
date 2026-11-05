@@ -61,7 +61,7 @@ def lpf (τ : ℝ) : Plant 1 1 := ⟨!![-1 / τ], !![1 / τ], !![1], !![0]⟩
 /-- Same filter, output the uncancelled disturbance `v − ṽ`. -/
 def residual (τ : ℝ) : Plant 1 1 := ⟨!![-1 / τ], !![1 / τ], !![-1], !![1]⟩
 
-private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[powerlib_foundation] private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : 1 + s * τ ≠ 0) : s - ((-1 / τ : ℝ) : ℂ) ≠ 0 := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
   intro h
@@ -268,7 +268,7 @@ namespace LPFLoop
     (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl
 
-@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (lpfFamily.den (.flow P) = {q | q.Stable}) := show lpfFamily.den (.flow P) = {q | q.Stable} from
   Spectral.linear_den (U := Unstable) (fun q => ((connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets] using isHurwitz_iff_stable q)).symm) hP
 
@@ -313,7 +313,7 @@ the attractive denotation of the feedforward family is the PI family's, pulled b
 
 /-- Tracking with low-pass feedforward: `i → i*`, `ṽ → v`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem lpf_tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p.Kp)
+@[powerlib_domain] private theorem lpf_tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p.Kp)
     (hKi : 0 < p.Ki) {τ : ℝ} (hτ : 0 < τ) {iref v : ℝ} {x : ℝ → ℝ³}
     (hx : ∀ t, HasDerivAt x (p.lpfField τ iref v (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧ Tendsto (fun t => x t 2) atTop (𝓝 v) := by

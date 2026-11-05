@@ -40,12 +40,12 @@ open scoped Matrix.Norms.Operator
 variable {n : ℕ} {A : ℝ → Matrix (Fin n) (Fin n) ℝ}
 
 /-- A bound for `‖A‖` (operator norm, as in LeanForControl's Peano–Baker theory) on a segment. -/
-@[tmio T] private lemma exists_opNorm_bound (hA : Continuous A) (a b : ℝ) :
+@[tmio T, powerlib_foundation] private lemma exists_opNorm_bound (hA : Continuous A) (a b : ℝ) :
     ∃ M, ∀ r ∈ uIcc a b, ‖A r‖ ≤ M :=
   isCompact_uIcc.exists_bound_of_continuousOn hA.continuousOn
 
 /-- `Φ(s, a) Φ(a, s) = I` for LeanForControl's state-transition matrix. -/
-@[tmio T] private lemma stm_mul_inv (hA : Continuous A) (s a : ℝ) :
+@[tmio T, powerlib_foundation] private lemma stm_mul_inv (hA : Continuous A) (s a : ℝ) :
     LinearSystems.stateTransitionMatrix A s a * LinearSystems.stateTransitionMatrix A a s = 1 := by
   obtain ⟨M, hM⟩ := exists_opNorm_bound hA a s
   obtain ⟨hunit, hinv⟩ := LinearSystems.stateTransitionMatrix_inv hA hM
@@ -146,7 +146,7 @@ variable {p : ℕ} {C : ℝ → Matrix (Fin p) (Fin n) ℝ} {Q : ℝ → Matrix 
   {R : ℝ → Matrix (Fin p) (Fin p) ℝ}
 
 /-- Continuity of the closed-loop matrix `A − P Cᵀ R⁻¹ C`. -/
-@[tmio T] private lemma closedLoop_continuous (hA : Continuous A) (hC : Continuous C) (hR : Continuous R)
+@[tmio T, powerlib_foundation] private lemma closedLoop_continuous (hA : Continuous A) (hC : Continuous C) (hR : Continuous R)
     (hRu : ∀ t, IsUnit (R t).det) {P : ℝ → Matrix (Fin n) (Fin n) ℝ} (hPc : Continuous P) :
     Continuous fun t => A t - P t * (C t)ᵀ * (R t)⁻¹ * C t := by
   have hRi : Continuous fun t => (R t)⁻¹ := by

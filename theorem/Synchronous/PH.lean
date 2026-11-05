@@ -245,7 +245,7 @@ so T-ph §1.1 structural assumption 3 fails for (1.12). -/
 /-- Dissipation inequality without any lower bound on `H`, `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω`, on
 every solution segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem classicalSM_integral_dissipation (p : ClassicalSMParams)
+@[powerlib_domain] private theorem classicalSM_integral_dissipation (p : ClassicalSMParams)
     {u : ℝ → (Fin 1 → ℝ)} {x : ℝ → State 2} {t₀ t₁ : ℝ}
     (hx : (classicalSM p).system.IsTrajectoryOn u x t₀ t₁) (hle : t₀ ≤ t₁)
     (hsupply : IntervalIntegrable (fun τ => (classicalSM p).supply (x τ) (u τ))
@@ -487,7 +487,7 @@ def family : Family Model Requirement 2 1 :=
 @[powerlib_domain] theorem family_isNonlinearPH :
     family.IsNonlinearPH fun m => (classicalSM m.p).shift m.point := fun _ => rfl
 
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (classicalSM m.p).zeroInputField m.point :=
   family_isNonlinearPH.mem_den_flow_shift
 
@@ -503,10 +503,10 @@ language is inconsistent. -/
 
 /-! #### Equivalence with the swing family -/
 
-private theorem toSwing_Pe (m : Model) : m.toSwing.p.Pe m.toSwing.δ = m.p.b * Real.sin m.δs := by
+@[powerlib_domain] private theorem toSwing_Pe (m : Model) : m.toSwing.p.Pe m.toSwing.δ = m.p.b * Real.sin m.δs := by
   simp [Model.toSwing, ClassicalSMParams.toSwing, SwingParams.Pe]
 
-private theorem toSwing_syncCoeff (m : Model) :
+@[powerlib_domain] private theorem toSwing_syncCoeff (m : Model) :
     m.toSwing.p.syncCoeff m.toSwing.δ = m.p.b * Real.cos m.δs := by
   simp [Model.toSwing, ClassicalSMParams.toSwing, SwingParams.syncCoeff]
 
@@ -611,7 +611,7 @@ translation is exact on the image of `toSwing`. -/
 
 /-- Every swing reading has positive inertia and a curved power-angle curve (`k₂ = b > 0`): it
 lies in the swing family's context `{inertia, curved}`. -/
-@[tmio M] private theorem toSwing_mem_context (m : Model) :
+@[tmio M, powerlib_domain] private theorem toSwing_mem_context (m : Model) :
     connection% (m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved}) := show m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved} from
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rcases hq with rfl | rfl
@@ -622,7 +622,7 @@ lies in the swing family's context `{inertia, curved}`. -/
 is exact for the classical machine (`Spectral.exact_of_hub`): every swing reading lies in that
 context, and on every flow sentence the reading (`mem_den_flow_iff_swing`) and the requirement
 correspondence (`realize_translate_flow_eq_preimage`) hold. -/
-@[tmio TM] private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Property}
+@[tmio TM, powerlib_domain] private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Property}
     (hΔ : Δ ⊆ {.inertia, .curved}) (h : Swing.family.ExactUnder Δ (.flow P)) :
     connection% (family.Exact (.flow P)) := by
   change family.Exact (.flow P)
@@ -792,7 +792,7 @@ private def spin (m : Model) (ω₀ t : ℝ) : State 2 := WithLp.toLp 2 ![ω₀ 
 private def spinInput (m : Model) (ω₀ t : ℝ) : Fin 1 → ℝ :=
   fun _ => -m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀
 
-private theorem spin_hasDerivAt (m : Model) (ω₀ t : ℝ) :
+@[powerlib_domain] private theorem spin_hasDerivAt (m : Model) (ω₀ t : ℝ) :
     HasDerivAt (spin m ω₀) (WithLp.toLp 2 ![ω₀, 0]) t := by
   have h := ((hasDerivAt_id t).smul_const (WithLp.toLp 2 ![ω₀, (0 : ℝ)] : State 2)).const_add
     (WithLp.toLp 2 ![0, m.p.M * ω₀] : State 2)
@@ -802,7 +802,7 @@ private theorem spin_hasDerivAt (m : Model) (ω₀ t : ℝ) :
     fin_cases i <;> simp [spin, mul_comm]
   · simp
 
-private theorem spin_field (m : Model) (ω₀ t : ℝ) :
+@[powerlib_domain] private theorem spin_field (m : Model) (ω₀ t : ℝ) :
     m.toPH.system.field (spin m ω₀ t) (spinInput m ω₀ t) = WithLp.toLp 2 ![ω₀, 0] := by
   apply WithLp.ofLp_injective 2
   change WithLp.ofLp ((classicalSM m.p).field (spin m ω₀ t + m.point) (spinInput m ω₀ t)) = _
@@ -816,7 +816,7 @@ private theorem spin_field (m : Model) (ω₀ t : ℝ) :
     field_simp
     ring_nf
 
-private theorem spin_supply (m : Model) (ω₀ t : ℝ) :
+@[powerlib_domain] private theorem spin_supply (m : Model) (ω₀ t : ℝ) :
     m.toPH.system.supply (spin m ω₀ t) (spinInput m ω₀ t) =
       ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀) := by
   change (classicalSM m.p).supply (spin m ω₀ t + m.point) (spinInput m ω₀ t) = _
@@ -1155,7 +1155,7 @@ electromagnetic-torque terms cancel. -/
 
 /-- Along every solution segment the energy balance of §1.13 holds pointwise in time.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem syncMachine7_trajectory_energy_derivative (p : SyncMachine7Params)
+@[powerlib_domain] private theorem syncMachine7_trajectory_energy_derivative (p : SyncMachine7Params)
     {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → State 7} {t₀ t₁ t : ℝ}
     (hx : (syncMachine7 p).system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => (syncMachine7 p).H (x τ))
@@ -1166,24 +1166,24 @@ private theorem syncMachine7_trajectory_energy_derivative (p : SyncMachine7Param
 /-! ### The rotor-angle direction at the origin -/
 
 /-- The entries of `J(x)` are `C¹` (constants and the flux coordinates `Ψ_d`, `Ψ_q`). -/
-private theorem syncMachine7_contDiff_J (i j : Fin 7) :
+@[powerlib_domain] private theorem syncMachine7_contDiff_J (i j : Fin 7) :
     ContDiff ℝ 1 fun x : State 7 => syncMachine7_J x i j := by
   fin_cases i <;> fin_cases j <;> simp [syncMachine7_J] <;> fun_prop
 
 /-- `∇H` is the linear map `x ↦ Q x`. -/
-private theorem syncMachine7_dH_eq (p : SyncMachine7Params) :
+@[powerlib_domain] private theorem syncMachine7_dH_eq (p : SyncMachine7Params) :
     (syncMachine7 p).dH = Matrix.toEuclideanCLM (n := Fin 7) (𝕜 := ℝ) (syncMachine7_Q p) :=
   funext fun _ => rfl
 
 /-- The zero-input field `(J(x) − R) ∇H(x)` is `C¹`. -/
-private theorem syncMachine7_contDiff_zeroInputField (p : SyncMachine7Params) :
+@[powerlib_domain] private theorem syncMachine7_contDiff_zeroInputField (p : SyncMachine7Params) :
     ContDiff ℝ 1 (syncMachine7 p).zeroInputField :=
   (syncMachine7 p).contDiff_zeroInputField syncMachine7_contDiff_J (fun _ _ => contDiff_const)
     (by rw [syncMachine7_dH_eq]; exact ContinuousLinearMap.contDiff _)
 
 /-- At the origin the Jacobian `(J(0) − R) Q` of the zero-input field kills the rotor-angle
 direction `e_δ`: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero (`∂H/∂δ = 0`). -/
-private theorem syncMachine7_fderiv_angle (p : SyncMachine7Params) :
+@[powerlib_domain] private theorem syncMachine7_fderiv_angle (p : SyncMachine7Params) :
     fderiv ℝ (syncMachine7 p).zeroInputField 0 (EuclideanSpace.single 6 1) = 0 := by
   have hQ : HasFDerivAt (syncMachine7 p).dH
       (Matrix.toEuclideanCLM (n := Fin 7) (𝕜 := ℝ) (syncMachine7_Q p)) 0 := by

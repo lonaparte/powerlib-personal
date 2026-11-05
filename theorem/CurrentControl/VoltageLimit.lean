@@ -269,7 +269,7 @@ voltages in `[0, V_dc]` iff `ρ ≤ V_max` (`Drives.Modulation.maxCircle_radius_
 /-! ### Implementation evidence (private) -/
 
 /-- With headroom, near the operating point the limit is inactive. -/
-private theorem field_eventuallyEq_design (hh : |y.design.R * y.iref| < y.Vmax) :
+@[powerlib_domain] private theorem field_eventuallyEq_design (hh : |y.design.R * y.iref| < y.Vmax) :
     y.field =ᶠ[𝓝 0] fun z => y.design.field y.iref (z + y.point) := by
   have hc := (continuous_abs.comp y.continuous_control_shift).tendsto 0
   have h0 : |y.design.control y.iref (0 + y.point)| < y.Vmax := by
@@ -286,7 +286,7 @@ unsaturated design field. Static evidence on the implementation, not a connectio
 
 /-- At an equilibrium the unsaturated design field about the operating point is the linear
 zero-input field of the design plant. -/
-private theorem designField_shift_of_zero (h0 : y.design.field y.iref y.point = 0) :
+@[powerlib_domain] private theorem designField_shift_of_zero (h0 : y.design.field y.iref y.point = 0) :
     (fun z => y.design.field y.iref (z + y.point)) =
       affineLinearVectorField y.design.model.A 0 := by
   have he : IsEquilibrium (y.design.model.inputField fun _ => y.iref) y.point := by
@@ -297,7 +297,7 @@ private theorem designField_shift_of_zero (h0 : y.design.field y.iref y.point = 
   rw [← congrFun h z]
   exact (y.design.model_field _ _).symm
 
-private theorem designField_shift (hKi : y.design.Ki ≠ 0) :
+@[powerlib_domain] private theorem designField_shift (hKi : y.design.Ki ≠ 0) :
     (fun z => y.design.field y.iref (z + y.point)) =
       affineLinearVectorField y.design.model.A 0 := by
   refine y.designField_shift_of_zero ?_
@@ -307,7 +307,7 @@ private theorem designField_shift (hKi : y.design.Ki ≠ 0) :
 
 /-- With headroom and integral action, near the operating point the platform field is the design's
 linear zero-input field. -/
-private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
+@[powerlib_domain] private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     y.field =ᶠ[𝓝 0] affineLinearVectorField y.design.model.A 0 := by
   rw [← y.designField_shift hKi]
@@ -315,7 +315,7 @@ private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
 
 /-- A design loop with `(R + Kp)/L ≥ 0` and `Ki/L > 0` is Lyapunov stable: the energy
 `i² + (Ki/L) ξ²` does not increase (`d/dt = −2 (R + Kp)/L · i²`). -/
-@[tmio TM] private theorem lyapunovStable_of_nonneg (p : PIParams) (ha : 0 ≤ (p.R + p.Kp) / p.L)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_nonneg (p : PIParams) (ha : 0 ≤ (p.R + p.Kp) / p.L)
     (hb : 0 < p.Ki / p.L) :
     connection% (p ∈ PIParams.family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -407,14 +407,14 @@ def family : Family LimitedPI LimitRequirement 2 0 :=
 
 /-! ### Implementation evidence (private) -/
 
-private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki ≠ 0 := by
+@[powerlib_domain] private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki ≠ 0 := by
   intro h0
   have := h.2
   rw [h0, zero_div] at this
   exact lt_irrefl _ this
 
 /-- Within headroom a stable design makes the platform locally exponentially stable. -/
-@[tmio MI] private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
+@[tmio MI, powerlib_domain] private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     connection% (y ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -428,7 +428,7 @@ private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki �
 /-- Within headroom an unstable design makes the platform unstable: near the operating point the
 platform is the affine design field, unstable at a root in the right half plane or because the
 point is not an equilibrium. -/
-@[tmio MI] private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.design)
+@[tmio MI, powerlib_domain] private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.design)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -445,7 +445,7 @@ point is not an equilibrium. -/
 /-- Within headroom local asymptotic and local exponential stability of the platform hold exactly
 for a stable design: near the operating point the platform is the design's affine loop, so these
 sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_inputField`). -/
-@[tmio MI] private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.iref| < y.Vmax)
+@[tmio MI, powerlib_domain] private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.iref| < y.Vmax)
     {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (y ∈ family.den (.flow P) ↔ PIParams.Stable y.design) := by
@@ -459,7 +459,7 @@ sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_
   exact ⟨And.right, fun hs => ⟨y.design.isEquilibrium (ki_ne_of_stable hs) y.iref, hs⟩⟩
 
 /-- With overload and integral action, near the operating point the saturation is constant. -/
-private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki ≠ 0)
+@[powerlib_domain] private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki ≠ 0)
     (ho : y.Vmax < |y.design.R * y.iref|) :
     y.field =ᶠ[𝓝 0] fun z => WithLp.toLp 2
       ![(-y.design.R * (z + y.point) 0 + sat y.Vmax (y.design.R * y.iref)) / y.design.L,
@@ -470,7 +470,7 @@ private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki �
   simp only [field, limitedField, applied, hz]
 
 /-- With overload the operating point is not an equilibrium: the platform is unstable. -/
-@[tmio TM] private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
+@[tmio TM, powerlib_domain] private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
     (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -491,7 +491,7 @@ private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki �
 `|di/dt| ≤ (|R|/|L|) |i − i*| + (|R i*| + |V_max|)/|L|` and stays below a bound `B` on `[0, T]`
 (Grönwall), so the integrator moves by at most `B T`; an exponential estimate with constants
 `C, a` halves the distance by `T = log (2C)/a`, which fails for `ξ₀ = 2 B T + 1`. -/
-@[tmio TM] private theorem not_globallyExponentiallyStable (y : LimitedPI) :
+@[tmio TM, powerlib_domain] private theorem not_globallyExponentiallyStable (y : LimitedPI) :
     connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -737,9 +737,9 @@ def implementation :
     Implementation PIParams Spectral.Requirement LimitedPI LimitRequirement 2 1 2 0 :=
   { model := PIParams.family, impl := family, realizes := Implementation.ofDesign design }
 
-private theorem implementation_model : implementation.model = PIParams.family := rfl
+@[powerlib_domain] private theorem implementation_model : implementation.model = PIParams.family := rfl
 
-private theorem implementation_impl : implementation.impl = family := rfl
+@[powerlib_domain] private theorem implementation_impl : implementation.impl = family := rfl
 
 /-- Within integral action and headroom, Lyapunov stability, local asymptotic and local
 exponential stability and instability are realized exactly, for every sign of `L`: near the
@@ -801,7 +801,7 @@ def nominal : PIParams := ⟨1, 1, 1, 1⟩
 `V_max = 1/√3`. -/
 def overloaded : LimitedPI := ⟨nominal, 1, 1⟩
 
-@[tmio M] private theorem overloaded_overload :
+@[tmio M, powerlib_domain] private theorem overloaded_overload :
     connection% (overloaded ∈ TMIO.realize Meets {.overload}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   simp only [Vmax, overloaded, nominal, one_mul, abs_one]
@@ -893,7 +893,7 @@ platform satisfies it. -/
 with `V_dc = 3` (`|R i*| = 1 < √3 = V_max`). -/
 def drifting : LimitedPI := ⟨⟨1, 1, 0, 0⟩, 1, 3⟩
 
-private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifting.Vmax := by
+@[powerlib_domain] private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifting.Vmax := by
   simp only [Vmax, drifting, one_mul, abs_one]
   rw [lt_div_iff₀ (by positivity), one_mul, Real.sqrt_lt' (by norm_num)]
   norm_num
@@ -943,7 +943,7 @@ an equilibrium (the steady voltage `R i* = 1` is never commanded). -/
   have h0 := congrArg (fun z : ℝ² => z 0) h
   simp [drifting, PIParams.field, PIParams.control, point, PIParams.equilibrium] at h0
 
-@[tmio M] private theorem drifting_mem_context :
+@[tmio M, powerlib_domain] private theorem drifting_mem_context :
     connection% (drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}) := by
   change drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}
   rw [implementation_impl, (connection_proof% TMIO.mem_realize)]

@@ -47,11 +47,11 @@ section Shift
       IsIntegralCurveOn φ (fun _ x => f x) s := by
   simp only [IsIntegralCurveOn, sub_add_cancel, hasDerivWithinAt_sub_const_iff]
 
-@[tmio T] private theorem forall_curve_shift {e : ℝⁿ} {Q : (ℝ → ℝⁿ) → Prop} :
+@[tmio T, powerlib_foundation] private theorem forall_curve_shift {e : ℝⁿ} {Q : (ℝ → ℝⁿ) → Prop} :
     (∀ ψ : ℝ → ℝⁿ, Q ψ) ↔ ∀ φ : ℝ → ℝⁿ, Q (fun t => φ t - e) :=
   ⟨fun h φ => h _, fun h ψ => by simpa using h (fun t => ψ t + e)⟩
 
-@[tmio T] private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
+@[tmio T, powerlib_foundation] private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
     Tendsto (fun t => φ t - e) atTop (𝓝 0) ↔ Tendsto φ atTop (𝓝 e) := by
   have h := tendsto_sub_const_iff (f := φ) (l := atTop) e (c := e)
   rwa [sub_self] at h

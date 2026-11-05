@@ -86,7 +86,7 @@ def covFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (T : Ω �
     ((T ω i - meanFin pmf θ T i) * (T ω j - meanFin pmf θ T j))
 
 /-- Gram form `X diag(q) Yᵀ`. -/
-@[tmio T] private lemma mul_diagonal_mul_transpose_apply {a b : Type*} (X : Matrix a Ω ℝ)
+@[tmio T, powerlib_foundation] private lemma mul_diagonal_mul_transpose_apply {a b : Type*} (X : Matrix a Ω ℝ)
     (Y : Matrix b Ω ℝ) (q : Ω → ℝ) (i : a) (j : b) [DecidableEq Ω] :
     (X * diagonal q * Yᵀ) i j = ∑ ω, q ω * (X i ω * Y j ω) := by
   rw [Matrix.mul_apply]

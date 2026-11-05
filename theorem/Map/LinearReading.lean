@@ -64,7 +64,7 @@ namespace Map
 /-! ## Linear maps -/
 
 /-- The iterates of a continuous linear map commute with scalar multiplication. -/
-private theorem iterate_smul (L : ℝⁿ →L[ℝ] ℝⁿ) (c : ℝ) (y : ℝⁿ) (k : ℕ) :
+@[powerlib_foundation] private theorem iterate_smul (L : ℝⁿ →L[ℝ] ℝⁿ) (c : ℝ) (y : ℝⁿ) (k : ℕ) :
     (⇑L)^[k] (c • y) = c • (⇑L)^[k] y := by
   induction k with
   | zero => rfl
@@ -167,7 +167,7 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
   linarith [hbound k, mul_lt_mul_of_pos_right hk hN0]
 
 /-- Convergence of every orbit of the linear map of `Φ` is Schur stability of `Φ`. -/
-private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}
+@[powerlib_foundation] private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : ∀ y : ℝⁿ, Tendsto (fun k : ℕ => (⇑(op Φ))^[k] y) atTop (𝓝 0)) :
     LTI.SchurStable Φ := by
   refine (LTI.asymptoticallyStable_iff_schurStable ⟨Φ⟩).mp fun x hx => ?_

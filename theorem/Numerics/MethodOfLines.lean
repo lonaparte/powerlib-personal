@@ -68,7 +68,7 @@ node `k` carries `w_{k−1}` for `1 ≤ k ≤ M`, and `0` otherwise. -/
 def gridExt {M : ℕ} (w : Fin M → ℝ) (k : ℕ) : ℝ :=
   if h : 1 ≤ k ∧ k ≤ M then w ⟨k - 1, by omega⟩ else 0
 
-private lemma sum_shift {M : ℕ} (w : Fin M → ℝ) (k : ℕ) :
+@[powerlib_foundation] private lemma sum_shift {M : ℕ} (w : Fin M → ℝ) (k : ℕ) :
     ∑ j : Fin M, (if (j : ℕ) + 1 = k then w j else 0) = gridExt w k := by
   unfold gridExt
   split_ifs with h

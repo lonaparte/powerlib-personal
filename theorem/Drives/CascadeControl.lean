@@ -268,7 +268,7 @@ are uniform constants `K, rate > 0` such that every closed-loop trajectory satis
 `‖(i(t) − i*, ξ(t) − i*/α)‖ ≤ K e^{−rate t} ‖(i(0) − i*, ξ(0) − i*/α)‖` for `t ≥ 0`;
 in particular `|i(t) − i*|` obeys the same bound.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem imcLoop_exponentiallyStable_tracking (L R α iref : ℝ) (hL : 0 < L)
+@[powerlib_domain] private theorem imcLoop_exponentiallyStable_tracking (L R α iref : ℝ) (hL : 0 < L)
     (hR : 0 < R) (hα : 0 < α) :
     ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝ²,
       (∀ t, HasDerivAt x (imcField L R α iref (x t)) t) → ∀ t, 0 ≤ t →
@@ -299,7 +299,7 @@ private theorem imcLoop_exponentiallyStable_tracking (L R α iref : ℝ) (hL : 0
 
 /-- Every closed-loop current converges to the reference.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem imcLoop_current_tendsto (L R α iref : ℝ) (hL : 0 < L) (hR : 0 < R)
+@[powerlib_domain] private theorem imcLoop_current_tendsto (L R α iref : ℝ) (hL : 0 < L) (hR : 0 < R)
     (hα : 0 < α) {x : ℝ → ℝ²} (hx : ∀ t, HasDerivAt x (imcField L R α iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
   obtain ⟨K, hK, rate, hrate, hbound⟩ := imcLoop_exponentiallyStable_tracking L R α iref hL hR hα

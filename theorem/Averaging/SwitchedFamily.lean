@@ -159,7 +159,7 @@ there is a switching period `T₀ > 0` below which every switched system satisfi
 
 /-- Commuting topologies: the switched system is the exact sampling of its averaged model with the
 switching period. -/
-private theorem system_eq_sampled {y : Switched n} (h : Commute y.A₁ y.A₂) :
+@[powerlib_foundation] private theorem system_eq_sampled {y : Switched n} (h : Commute y.A₁ y.A₂) :
     switchedFamily.system y = LTI.sampledFamily.system ⟨y.average, y.T, y.pos⟩ := by
   simp only [switchedFamily, LTI.sampledFamily, Switched.step, LTI.Sampled.step,
     periodMap_eq_exp_of_commute _ _ h]
@@ -187,7 +187,7 @@ with the switching period, read through its design at every sentence (`LTI.sampl
   rw [← h, (connection_proof% Family.mem_den), (connection_proof% Family.mem_den), system_eq_sampled hc]
 
 /-- Square matrices of size at most one commute. -/
-private theorem commute_of_le_one (hn : n ≤ 1) (A B : Matrix (Fin n) (Fin n) ℝ) :
+@[powerlib_foundation] private theorem commute_of_le_one (hn : n ≤ 1) (A B : Matrix (Fin n) (Fin n) ℝ) :
     Commute A B := by
   have := Fin.subsingleton_iff_le_one.mpr hn
   show A * B = B * A

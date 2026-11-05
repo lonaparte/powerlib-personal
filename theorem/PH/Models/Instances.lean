@@ -117,7 +117,7 @@ def dcLinkPH (C : ℝ) (hC : 0 < C) : Port.PortHamiltonian 1 2 :=
 
 /-- Along a solution segment of a lossless linear pH plant the stored energy has the supplied
 power as derivative. -/
-private theorem hasDerivWithinAt_storage_of_lossless {n p : ℕ} (h : Port.PortHamiltonian n p)
+@[powerlib_foundation] private theorem hasDerivWithinAt_storage_of_lossless {n p : ℕ} (h : Port.PortHamiltonian n p)
     (hR : h.R = 0) {u : ℝ → Fin p → ℝ} {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ t : ℝ}
     (hx : h.plant.system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => h.kyp.storage (x τ)) (h.plant.system.supply (x t) (u t))
@@ -130,7 +130,7 @@ private theorem hasDerivWithinAt_storage_of_lossless {n p : ℕ} (h : Port.PortH
 /-- The DC link is lossless, so along every solution segment the energy change equals the
 integral of the port power `V_dc (i_in − i_out)` (equality, not only the passivity inequality).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem dcLink_energy_balance (C : ℝ) (hC : 0 < C)
+@[powerlib_domain] private theorem dcLink_energy_balance (C : ℝ) (hC : 0 < C)
     {u : ℝ → (Fin 2 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ} (hle : t₀ ≤ t₁)
     (hx : (dcLinkPH C hC).plant.system.IsTrajectoryOn u x t₀ t₁)
     (hint : IntervalIntegrable (fun τ => (x τ 0 / C) * (u τ 0 - u τ 1)) volume t₀ t₁) :
@@ -234,7 +234,7 @@ def dqLCPH (p : DqLCParams) : Port.PortHamiltonian 4 4 :=
 
 /-- Along every solution segment, `d/dt H = P_src − P_conv`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
+@[powerlib_domain] private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
     {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 4)} {t₀ t₁ t : ℝ}
     (hx : (dqLCPH p).plant.system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => (dqLC p).energy (WithLp.ofLp (x τ)))

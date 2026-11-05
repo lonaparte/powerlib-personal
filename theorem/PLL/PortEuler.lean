@@ -90,7 +90,7 @@ for port systems (`Numerics.eulerPorts_sound_small_step_local`). -/
 private def unitModel : Model := ⟨1, 1, 1, 0, 0, zero_le_one⟩
 
 /-- At the centred state `(π/2 − θ*, 0)` the phase is `π/2` and the output is `−V`. -/
-private theorem output_quarter (m : Model) :
+@[powerlib_domain] private theorem output_quarter (m : Model) :
     (m.toPH.shift m.point).output (PhasePlane.mk (Real.pi / 2 - m.θ) 0) = ![-m.V] := by
   rw [PH.NonlinearModel.shift_output, Model.toPH, pllPH_output]
   simp [srfPD, Model.point]

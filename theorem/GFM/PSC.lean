@@ -170,12 +170,12 @@ def family : Family Model Requirement 1 0 :=
 @[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.c.field (embed m.δ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.c.field) (pt := fun m => embed m.δ)
     family_isAutonomous
 
-@[tmio TM] private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stableSlope) :
+@[tmio TM, powerlib_domain] private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stableSlope) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -186,7 +186,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
   · rw [(m.c.hasDerivAt_rhs m.δ).deriv]
     linarith
 
-@[tmio TM] private theorem unstable_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .unstableSlope) :
+@[tmio TM, powerlib_domain] private theorem unstable_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .unstableSlope) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -328,21 +328,21 @@ Static evidence on the model, not a connection conclusion. -/
   rw [rhs, ← hb, hs]
   ring
 
-private theorem hasFDerivAt_coord (k : ℝ) (z : State 1) :
+@[powerlib_foundation] private theorem hasFDerivAt_coord (k : ℝ) (z : State 1) :
     HasFDerivAt (fun y : State 1 => k * y 0) (k • NormalForm.coordCLM) z :=
   (NormalForm.coordCLM.hasFDerivAt (x := z)).const_mul k
 
-private theorem fderiv_coord_apply (k : ℝ) (z v : State 1) :
+@[powerlib_foundation] private theorem fderiv_coord_apply (k : ℝ) (z v : State 1) :
     fderiv ℝ (fun y : State 1 => k * y 0) z v = k * v 0 := by
   rw [(hasFDerivAt_coord k z).fderiv]
   rfl
 
-private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embed δ₀‖ = |s| := by
+@[powerlib_foundation] private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embed δ₀‖ = |s| := by
   rw [NormalForm.embed_sub, NormalForm.norm_embed, add_sub_cancel_left]
 
 /-- With a vanishing scalar field every state is an equilibrium: no point is locally
 asymptotically stable. -/
-@[tmio TM] private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : ℝ) :
+@[tmio TM, powerlib_domain] private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : ℝ) :
     connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -356,7 +356,7 @@ asymptotically stable. -/
 
 /-- A balanced fold angle with `K_p P_max ≠ 0` is not locally asymptotically stable: the
 coordinate `−k δ` never increases along the field and is below its value at `δ₀` on one side. -/
-@[tmio TM] private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+@[tmio TM, powerlib_domain] private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
     connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
@@ -385,7 +385,7 @@ coordinate `−k δ` never increases along the field and is below its value at `
 /-- A balanced fold angle with `K_p P_max ≠ 0` is unstable (Chetaev's theorem with the
 coordinate `k (δ − δ₀)`, which grows at the rate `k² (1 − cos(δ − δ₀)) > 0` where it is
 positive). -/
-@[tmio TM] private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+@[tmio TM, powerlib_domain] private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
     connection% ((⟨c, δ₀⟩ : Model) ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement

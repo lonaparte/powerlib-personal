@@ -60,7 +60,7 @@ namespace NonlinearModel
 
 variable (M : NonlinearModel n m)
 
-private lemma field_apply (x : State n) (u : Fin m → ℝ) (i : Fin n) :
+@[powerlib_foundation] private lemma field_apply (x : State n) (u : Fin m → ℝ) (i : Fin n) :
     M.field x u i =
       ∑ j, (M.J x i j - M.R x i j) * M.dH x j + ∑ j, M.g x i j * u j := by
   simp [field, mulVec, dotProduct]

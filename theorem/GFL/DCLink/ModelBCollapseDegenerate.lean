@@ -88,7 +88,7 @@ variable (p : ModelBParams)
   ext i
   fin_cases i <;> simp
 
-private theorem continuousAt_field_sub_single (x : State 4) :
+@[powerlib_domain] private theorem continuousAt_field_sub_single (x : State 4) :
     ContinuousAt (fun y => p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ)) x := by
   have h : (fun y => p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ)) =
       fun y : State 4 => (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) :=
@@ -96,7 +96,7 @@ private theorem continuousAt_field_sub_single (x : State 4) :
   rw [h]
   exact p.contDiff_field_offDC.continuous.continuousAt
 
-private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p.planeQ y := by
+@[powerlib_domain] private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p.planeQ y := by
   rw [p.field_two_eq_planeQ_div hy]
   field_simp
 
@@ -105,7 +105,7 @@ private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p
 double root `H/2`; on the side `σ = sign H` a shrinking cone traps solutions moving away from the
 plane (`Dynamics.Degenerate.unstable_of_degenerate_node`). Implementation evidence for
 `ModelB.mem_den_unstable_of_disc_eq_zero`. -/
-@[tmio TM] private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
+@[tmio TM, powerlib_domain] private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hD : p.planeDisc x = 0) (hH : p.planeH x ≠ 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -123,7 +123,7 @@ plane (`Dynamics.Degenerate.unstable_of_degenerate_node`). Implementation eviden
 `x` with `V_dc = 0`, `P(x) = 0`, `H(x) = G(x) = 0` and `(f₀, f₁, f₃)(x) ≠ 0`, the local
 exponential estimate fails (`Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent`).
 Implementation evidence for `ModelB.not_mem_den_locallyExponentiallyStable_of_nilpotent`. -/
-@[tmio TM] private theorem modelB_not_locallyExponentiallyStable_of_nilpotent {x : State 4} (hx : x 2 = 0)
+@[tmio TM, powerlib_domain] private theorem modelB_not_locallyExponentiallyStable_of_nilpotent {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hH : p.planeH x = 0) (hG : p.planeG x = 0)
     (hF : p.field x 0 ≠ 0 ∨ p.field x 1 ≠ 0 ∨ p.field x 3 ≠ 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∉ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
@@ -153,7 +153,7 @@ end ModelBParams
 namespace ModelB
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous

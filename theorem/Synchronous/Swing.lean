@@ -552,7 +552,7 @@ synchronizing coefficient stays positive. -/
 /-- Every initial state has a solution on the whole forward time ray. Implementation evidence:
 forward completeness is not a sentence; it is the generic `Flow.forwardComplete_of_lipschitzWith`
 applied to the public bound `lipschitzWith_field`. -/
-private theorem forwardComplete : Flow.ForwardComplete p.field :=
+@[powerlib_domain] private theorem forwardComplete : Flow.ForwardComplete p.field :=
   Flow.forwardComplete_of_lipschitzWith p.lipschitzWith_field
 
 /-! ## Overdamping threshold (static) -/
@@ -624,7 +624,7 @@ def family : Family Model Requirement 2 0 :=
 /-! ### Implementation evidence (private) -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected point. -/
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.point)
     family_isAutonomous
@@ -637,7 +637,7 @@ variable (p : SwingParams)
 
 /-- An equilibrium with positive synchronizing coefficient (`k₂ cos(δ₀ − k₃) > 0`) is locally
 exponentially stable when `M > 0` and `D > 0`. -/
-@[tmio TM] private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
+@[tmio TM, powerlib_domain] private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
     (hD : 0 < p.D) {x : State 2} (heq : p.field x = 0) (hK : 0 < p.syncCoeff (x 0)) :
     connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -656,7 +656,7 @@ exponentially stable when `M > 0` and `D > 0`. -/
 
 /-- An equilibrium with negative synchronizing coefficient is unstable (saddle), for every
 damping `D` (`M > 0`). -/
-@[tmio TM] private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
+@[tmio TM, powerlib_domain] private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
     (heq : p.field x = 0) (hK : p.syncCoeff (x 0) < 0) :
     connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -674,7 +674,7 @@ damping `D` (`M > 0`). -/
 
 /-- An equilibrium with negative damping is unstable (positive trace), for every synchronizing
 coefficient (`M > 0`). -/
-@[tmio TM] private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
+@[tmio TM, powerlib_domain] private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
     (heq : p.field x = 0) (hD : p.D < 0) :
     connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -694,7 +694,7 @@ coefficient (`M > 0`). -/
 /-- With nonnegative damping (in particular `D = 0`, the conservative swing equation), every
 equilibrium with positive synchronizing coefficient is Lyapunov stable: the energy
 `½ M ω² + U(δ)` is a local Lyapunov function (`M > 0`). Implementation evidence. -/
-@[tmio TM] private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
     {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
     connection% ((⟨p, x₀ 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -737,31 +737,31 @@ end SwingParams
 
 namespace Swing
 
-private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm) :
+@[powerlib_domain] private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm) :
     m.p.field m.point = 0 :=
   (m.p.field_eq_zero_iff hM.ne' _).mpr ⟨by simp, by simpa using hb⟩
 
 /-- An equilibrium at the selected point is a balanced angle. -/
-@[tmio M] private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.point = 0) :
+@[tmio M, powerlib_domain] private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.point = 0) :
     connection% (m ∈ TMIO.realize Meets {.balanced}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   simpa using ((m.p.field_eq_zero_iff hM _).mp heq).2
 
-@[tmio TM] private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
+@[tmio TM, powerlib_domain] private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
   exact (mem_den_flow_iff.mp (m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
 
-@[tmio TM] private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
+@[tmio TM, powerlib_domain] private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
   exact (mem_den_flow_iff.mp (m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
 
-@[tmio TM] private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
+@[tmio TM, powerlib_domain] private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -956,12 +956,12 @@ conclusion. -/
       _ = 0 := by rw [hs, hK']; ring
   exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
 
-private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
+@[powerlib_domain] private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
     ‖PhasePlane.mk (m.δ + s) t - m.point‖ ≤ |s| + |t| := by
   refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
   simp [Model.point]
 
-private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :
+@[powerlib_domain] private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :
     p.energy δ₀ (PhasePlane.mk (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
   simp [SwingParams.energy]
 
@@ -970,7 +970,7 @@ damping and a positive synchronizing coefficient. Negative damping or synchroniz
 an undamped machine conserves its energy; a flat power-angle curve has a continuum of
 equilibria; and at a fold of the curve the dissipated energy takes negative values next to
 `(δ*, 0)`. -/
-@[tmio TM] private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
+@[tmio TM, powerlib_domain] private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
     (hlas : m ∈ family.den (.flow .locallyAsymptoticallyStable)) :
     connection% (m ∈ TMIO.realize Meets {.damped, .synchronizing}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff,
@@ -1127,7 +1127,7 @@ Static evidence on the model, not a connection conclusion. -/
   rw [show δ₀ + s - p.k₃ = (δ₀ - p.k₃) + s by ring, Real.sin_add, ← hb]
   linear_combination (-Real.sin s) * hK'
 
-private theorem cos_lt_one_of_abs_le_one {s : ℝ} (hs : s ≠ 0) (h : |s| ≤ 1) :
+@[powerlib_foundation] private theorem cos_lt_one_of_abs_le_one {s : ℝ} (hs : s ≠ 0) (h : |s| ≤ 1) :
     Real.cos s < 1 := by
   refine lt_of_le_of_ne (Real.cos_le_one _) fun hc => hs ?_
   refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp hc
@@ -1136,7 +1136,7 @@ private theorem cos_lt_one_of_abs_le_one {s : ℝ} (hs : s ≠ 0) (h : |s| ≤ 1
 
 /-- At a fold of the power-angle curve the energy takes values below its value at `(δ*, 0)`
 arbitrarily close to it (on the side where the accelerating power pushes). -/
-private theorem fold_seeds {m : Model} (hb : m.p.Pe m.δ = m.p.Pm)
+@[powerlib_domain] private theorem fold_seeds {m : Model} (hb : m.p.Pe m.δ = m.p.Pm)
     (hK : m.p.syncCoeff m.δ = 0) (ha : m.p.Pm - m.p.k₁ ≠ 0) :
     ∀ ε > 0, ∃ x, ‖x - m.point‖ < ε ∧ m.p.energy m.δ x < m.p.energy m.δ m.point := by
   intro ε hε
@@ -1338,7 +1338,7 @@ is Hurwitz. -/
   · rw [SwingParams.trace_jacobian]; norm_num [negativeInertia]
   · rw [SwingParams.det_jacobian]; norm_num [negativeInertia, SwingParams.syncCoeff]
 
-@[tmio M] private theorem negativeInertia_not_meets : connection% (negativeInertia ∉ TMIO.realize Meets {.inertia}) := by
+@[tmio M, powerlib_domain] private theorem negativeInertia_not_meets : connection% (negativeInertia ∉ TMIO.realize Meets {.inertia}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   norm_num [Meets, negativeInertia]
@@ -1399,7 +1399,7 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
 @[powerlib_domain] theorem family_isLinear : family.IsLinear plant := fun _ => rfl
 
 /-- The translation is the linear table (`Spectral.linearTable`). -/
-@[tmio TM] private theorem translate_eq (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem translate_eq (s : Sentence) :
     connection% (TMIO.generate (TMIO.cover (TMIO.table family.translate)) {s} =
       Spectral.linearTable {.inertia, .damped, .synchronizing}
         {.inertia, .destabilizing} {.inertia, .synchronizing, .undamped} ∅ (fun _ => Set.univ) s) := by
@@ -1410,7 +1410,7 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
   · rfl
   · rfl
 
-@[tmio TM] private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
+@[tmio TM, powerlib_domain] private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
       0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
   unfold TMIO.Statement
@@ -1418,7 +1418,7 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
     (Or.inl trivial))]
   exact m.p.isHurwitz_jacobian_iff hM m.δ
 
-@[tmio M] private theorem mem_realize_stable {m : Model} :
+@[tmio M, powerlib_domain] private theorem mem_realize_stable {m : Model} :
     connection% (m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
       0 < m.p.M ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
   change m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
@@ -1428,7 +1428,7 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
   rfl
 
 /-- The energy matrix `diag(K, M)` is conserved by the undamped linearization. -/
-private theorem conserved {m : Model} (hD : m.p.D = 0) (hM : m.p.M ≠ 0) :
+@[powerlib_domain] private theorem conserved {m : Model} (hD : m.p.D = 0) (hM : m.p.M ≠ 0) :
     (plant m).Aᵀ * !![m.p.syncCoeff m.δ, 0; 0, m.p.M] +
       !![m.p.syncCoeff m.δ, 0; 0, m.p.M] * (plant m).A = 0 := by
   ext i j
@@ -1438,7 +1438,7 @@ private theorem conserved {m : Model} (hD : m.p.D = 0) (hM : m.p.M ≠ 0) :
 
 /-- A destabilizing sign gives a characteristic root in the open right half plane: `K < 0` makes
 `det J < 0` (a positive real eigenvalue), `D < 0` makes `tr J > 0`. -/
-private theorem exists_root {m : Model} (hM : 0 < m.p.M)
+@[powerlib_domain] private theorem exists_root {m : Model} (hM : 0 < m.p.M)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant m).A s).det = 0 ∧ 0 < s.re := by
   rcases hs with hK | hD

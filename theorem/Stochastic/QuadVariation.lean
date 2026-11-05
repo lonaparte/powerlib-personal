@@ -386,14 +386,14 @@ def greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : �
   if i % 2 = 1 ∧ 0 < incr B (dyadic T k) (i - 1) ω * incr B (dyadic T k) i ω then
     dyadic T k (i - 1) else dyadic T k i
 
-theorem greedyPartition_le (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
+@[powerlib_foundation] theorem greedyPartition_le (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
     greedyPartition B T k ω i ≤ dyadic T k i := by
   unfold greedyPartition
   split_ifs
   · exact dyadic_monotone T k (Nat.sub_le i 1)
   · exact le_rfl
 
-theorem dyadic_pred_le_greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
+@[powerlib_foundation] theorem dyadic_pred_le_greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
     dyadic T k (i - 1) ≤ greedyPartition B T k ω i := by
   unfold greedyPartition
   split_ifs
@@ -432,7 +432,7 @@ at most `T / 2^k`. -/
     linarith
 
 /-- Splitting a sum over `range (2n)` into consecutive pairs. -/
-theorem sum_range_two_mul (f : ℕ → ℝ) (n : ℕ) :
+@[powerlib_foundation] theorem sum_range_two_mul (f : ℕ → ℝ) (n : ℕ) :
     ∑ i ∈ range (2 * n), f i = ∑ j ∈ range n, (f (2 * j) + f (2 * j + 1)) := by
   induction n with
   | zero => simp
@@ -478,12 +478,12 @@ dyadic half-increments. -/
 /-- `m = E[Z⁺]` for a standard normal `Z` (`m = 1/√(2π)`, not needed here). -/
 def posPartMean : ℝ := ∫ x, max x 0 ∂(gaussianReal 0 1)
 
-theorem hasLaw_neg_gaussian (v : ℝ≥0) :
+@[powerlib_foundation] theorem hasLaw_neg_gaussian (v : ℝ≥0) :
     HasLaw (fun x : ℝ => -x) (gaussianReal 0 v) (gaussianReal 0 v) where
   aemeasurable := by fun_prop
   map_eq := by rw [gaussianReal_map_neg, neg_zero]
 
-theorem hasLaw_sqrt_mul_gaussian (v : ℝ≥0) :
+@[powerlib_foundation] theorem hasLaw_sqrt_mul_gaussian (v : ℝ≥0) :
     HasLaw (fun x : ℝ => √(v : ℝ) * x) (gaussianReal 0 v) (gaussianReal 0 1) where
   aemeasurable := by fun_prop
   map_eq := by
@@ -493,7 +493,7 @@ theorem hasLaw_sqrt_mul_gaussian (v : ℝ≥0) :
 
 omit [IsProbabilityMeasure P] in
 /-- `E[X⁺] = √v · m` for `X ∼ N(0, v)`. -/
-theorem integral_posPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[powerlib_foundation] theorem integral_posPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : ∫ ω, max (X ω) 0 ∂P = √(v : ℝ) * posPartMean := by
   have h1 := hX.integral_comp (f := fun x : ℝ => max x 0) (by fun_prop)
   have h2 := (hasLaw_sqrt_mul_gaussian v).integral_comp (f := fun x : ℝ => max x 0) (by fun_prop)
@@ -507,12 +507,12 @@ theorem integral_posPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
 
 omit [IsProbabilityMeasure P] in
 /-- `E[X⁻] = √v · m` for `X ∼ N(0, v)`. -/
-theorem integral_negPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[powerlib_foundation] theorem integral_negPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : ∫ ω, max (-X ω) 0 ∂P = √(v : ℝ) * posPartMean :=
   integral_posPart_of_hasLaw ((hasLaw_neg_gaussian v).fun_comp hX)
 
 /-- `m = E[Z⁺] > 0`. -/
-theorem posPartMean_pos : 0 < posPartMean := by
+@[powerlib_foundation] theorem posPartMean_pos : 0 < posPartMean := by
   have hint : Integrable (fun x : ℝ => max x 0) (gaussianReal 0 1) := by
     have := integrable_pow_gaussianReal 0 1 1
     simpa using this.pos_part
@@ -545,7 +545,7 @@ theorem posPartMean_pos : 0 < posPartMean := by
 /-! ### Mean and variance of the greedy quadratic sum -/
 
 omit [IsProbabilityMeasure P] in
-theorem incr_dyadic_hasLaw (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k i : ℕ) :
+@[powerlib_foundation] theorem incr_dyadic_hasLaw (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k i : ℕ) :
     HasLaw (incr B (dyadic T k) i) (gaussianReal 0 (T / 2 ^ (k + 1))) P := by
   have h := incr_hasLaw hB (dyadic_monotone T k) i
   have e : dyadic T k (i + 1) - dyadic T k i = T / 2 ^ (k + 1) := by
@@ -554,13 +554,13 @@ theorem incr_dyadic_hasLaw (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k i : ℕ
   rwa [e] at h
 
 omit [IsProbabilityMeasure P] in
-theorem incr_dyadic_indep (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k : ℕ) :
+@[powerlib_foundation] theorem incr_dyadic_indep (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k : ℕ) :
     iIndepFun (fun i => incr B (dyadic T k) i) P :=
   hB.hasIndepIncrements.nat (dyadic_monotone T k)
 
 omit [IsProbabilityMeasure P] in
 /-- One merged block has mean `2v(1 + 2m²)`, `v = T / 2^(k+1)`. -/
-theorem integral_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
+@[powerlib_foundation] theorem integral_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
     ∫ ω, mergeSq (incr B (dyadic T k) (2 * j) ω) (incr B (dyadic T k) (2 * j + 1) ω) ∂P =
       2 * ((T / 2 ^ (k + 1) : ℝ≥0) : ℝ) * (1 + 2 * posPartMean ^ 2) := by
   set a := incr B (dyadic T k) (2 * j) with hadef
@@ -608,7 +608,7 @@ theorem integral_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) 
 
 omit [IsProbabilityMeasure P] in
 /-- Each merged block is in `L²`. -/
-theorem memLp_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
+@[powerlib_foundation] theorem memLp_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
     MemLp (fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
       (incr B (dyadic T k) (2 * j + 1) ω)) 2 P := by
   have ha := incr_dyadic_hasLaw hB T k (2 * j)
@@ -622,7 +622,7 @@ theorem memLp_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
   exact mergeSq_le _ _
 
 /-- `Var(block) ≤ 48 v²`. -/
-theorem variance_mergeSq_le (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
+@[powerlib_foundation] theorem variance_mergeSq_le (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
     variance (fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
       (incr B (dyadic T k) (2 * j + 1) ω)) P ≤ 48 * ((T / 2 ^ (k + 1) : ℝ≥0) : ℝ) ^ 2 := by
   set a := incr B (dyadic T k) (2 * j)
@@ -651,7 +651,7 @@ theorem variance_mergeSq_le (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : �
         ring
 
 /-- The greedy quadratic sum as a function of `ω`. -/
-theorem greedyQV_eq_sum (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) :
+@[powerlib_foundation] theorem greedyQV_eq_sum (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) :
     (fun ω => qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω) =
       ∑ j ∈ range (2 ^ k), fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
         (incr B (dyadic T k) (2 * j + 1) ω) := by

@@ -457,7 +457,7 @@ def fluxCertificate (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq ωsl
 /-- Exact decay rate `1/T_r` with constant `1` on every solution segment, for every initial flux.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a);
 its sentence form is `ifocFlux_decay`. -/
-private theorem ifocFlux_norm_bound (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr)
+@[powerlib_domain] private theorem ifocFlux_norm_bound (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr)
     (isd isq ωsl : ℝ) {ψ : ℝ → State2} {a b t : ℝ}
     (hψ : IsTrajectoryOn ψ (fluxField p isd isq ωsl) a b) (ht : t ∈ Set.Icc a b) :
     ‖ψ t - fluxEquilibrium p isd isq ωsl‖ ≤
@@ -568,13 +568,13 @@ def family : Family Drive Requirement 2 0 :=
 @[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Drive.field :=
   fun _ => rfl
 
-private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
     d ∈ family.den (.flow P) ↔
       P.holds (fluxField d.p d.isd d.isq d.ωsl) (fluxEquilibrium d.p d.isd d.isq d.ωsl) :=
   Spectral.mem_den_flow_iff_shift (f := fun d : Drive => fluxField d.p d.isd d.isq d.ωsl)
     (pt := fun d => fluxEquilibrium d.p d.isd d.isq d.ωsl) family_isAutonomous
 
-@[tmio TM] private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
+@[tmio TM, powerlib_domain] private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
@@ -583,7 +583,7 @@ private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
   exact (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).globallyExponentiallyStable
     (fluxField_smooth d.p d.isd d.isq d.ωsl)
 
-@[tmio TM] private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
+@[tmio TM, powerlib_domain] private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow (.decay (1 / d.p.Tr)))) := by
   unfold TMIO.Statement
   apply mem_den_flow.mpr
@@ -723,7 +723,7 @@ conclusion. -/
 
 /-- The translated rotor-flux field has the constant Jacobian `fluxMatrix`
 (`1/T_r = r_r/L_r`, without sign conditions). -/
-private theorem field_hasFDerivAt (d : Drive) (z : State2) :
+@[powerlib_domain] private theorem field_hasFDerivAt (d : Drive) (z : State2) :
     HasFDerivAt d.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)) z := by
   set e := fluxEquilibrium d.p d.isd d.isq d.ωsl
   set k := d.p.rr / d.p.Lr with hk
@@ -750,7 +750,7 @@ private theorem field_hasFDerivAt (d : Drive) (z : State2) :
 
 /-- Once the origin is an equilibrium, the translated field is the linear field of
 `fluxMatrix`. -/
-private theorem field_eq_linear (d : Drive) (h0 : d.field 0 = 0) :
+@[powerlib_domain] private theorem field_eq_linear (d : Drive) (h0 : d.field 0 = 0) :
     d.field = LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 := by
   set T := Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)
   have h : d.field = fun z => T z :=
@@ -762,7 +762,7 @@ private theorem field_eq_linear (d : Drive) (h0 : d.field 0 = 0) :
 
 /-- Two drives whose rotors have the same ratio `r_r / L_r` (hence the same `T_r`), the same
 `L_m`, and the same commands have the same translated field. -/
-private theorem field_congr {d d' : Drive} (hk : d'.p.rr / d'.p.Lr = d.p.rr / d.p.Lr)
+@[powerlib_domain] private theorem field_congr {d d' : Drive} (hk : d'.p.rr / d'.p.Lr = d.p.rr / d.p.Lr)
     (hT : d'.p.Tr = d.p.Tr) (hm : d'.p.Lm = d.p.Lm) (hd : d'.isd = d.isd) (hq : d'.isq = d.isq)
     (hω : d'.ωsl = d.ωsl) : d'.field = d.field := by
   funext z
@@ -817,7 +817,7 @@ strictly stronger (`not_exact`). -/
 /-- With `r_r / L_r = 0` (so `T_r = 0` and `ψ_eq = L_m i_s`) the selected point is an equilibrium of
 the rotor-flux field — which is then the rotation `(ω_sl ψ_q, −ω_sl ψ_d)` — exactly when
 `ω_sl L_m i_s = 0`. -/
-private theorem field_zero_iff_of_ratio_zero {d : Drive} (hk : d.p.rr / d.p.Lr = 0) :
+@[powerlib_domain] private theorem field_zero_iff_of_ratio_zero {d : Drive} (hk : d.p.rr / d.p.Lr = 0) :
     d.field 0 = 0 ↔ d.ωsl * d.p.Lm * d.isd = 0 ∧ d.ωsl * d.p.Lm * d.isq = 0 := by
   have hT : d.p.Tr = 0 := by
     rcases div_eq_zero_iff.mp hk with h | h <;> simp [Params.Tr, h]
@@ -840,7 +840,7 @@ private theorem field_zero_iff_of_ratio_zero {d : Drive} (hk : d.p.rr / d.p.Lr =
 
 /-- The quadratic form of `fluxMatrix`: `⟨z, A z⟩ = −(r_r / L_r) ‖z‖²` (the rotation is
 skew). -/
-private theorem inner_fluxMatrix (d : Drive) (z : State2) :
+@[powerlib_domain] private theorem inner_fluxMatrix (d : Drive) (z : State2) :
     inner ℝ z (LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 z) =
       -(d.p.rr / d.p.Lr) * (z 0 ^ 2 + z 1 ^ 2) := by
   simp [LinearSystems.affineLinearVectorField, fluxMatrix, Matrix.ofLp_toEuclideanCLM,

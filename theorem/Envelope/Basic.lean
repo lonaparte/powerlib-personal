@@ -343,13 +343,13 @@ safe sets are exactly its supersets. -/
 /-- The unit vector of the scalar state. -/
 def e₁ : EuclideanSpace ℝ (Fin 1) := EuclideanSpace.single 0 1
 
-@[simp] theorem smul_e₁_apply (a : ℝ) : (a • e₁) 0 = a := by
+@[simp, powerlib_foundation] theorem smul_e₁_apply (a : ℝ) : (a • e₁) 0 = a := by
   simp [e₁]
 
 /-- The scalar drift `ẋ = c`. -/
 def drift (c : ℝ) : Port.System 1 1 := ⟨fun _ _ => c • e₁, fun _ _ => 0⟩
 
-theorem hasDerivAt_line (c τ : ℝ) : HasDerivAt (fun τ : ℝ => (c * τ) • e₁) (c • e₁) τ := by
+@[powerlib_foundation] theorem hasDerivAt_line (c τ : ℝ) : HasDerivAt (fun τ : ℝ => (c * τ) • e₁) (c • e₁) τ := by
   simpa using ((hasDerivAt_id τ).const_mul c).smul_const e₁
 
 /-- The solution of the drift `ẋ = c` from the origin is `τ ↦ c τ`. -/
@@ -389,7 +389,7 @@ def below : Set (EuclideanSpace ℝ (Fin 1)) := {y | y 0 < 1 / 2}
 
 def above : Set (EuclideanSpace ℝ (Fin 1)) := {y | -1 / 2 < y 0}
 
-theorem exceeds_below_iff (c : ℝ) : (drift c).Exceeds {0} below ⊤ ↔ 0 < c := by
+@[powerlib_foundation] theorem exceeds_below_iff (c : ℝ) : (drift c).Exceeds {0} below ⊤ ↔ 0 < c := by
   rw [drift_exceeds_iff]
   simp only [below, mem_ofPred_eq, smul_e₁_apply, not_lt, ENNReal.ofReal_lt_top, true_and]
   constructor
@@ -399,7 +399,7 @@ theorem exceeds_below_iff (c : ℝ) : (drift c).Exceeds {0} below ⊤ ↔ 0 < c 
   · intro hc
     exact ⟨1 / c, by positivity, by rw [mul_one_div_cancel hc.ne']; norm_num⟩
 
-theorem exceeds_above_iff (c : ℝ) : (drift c).Exceeds {0} above ⊤ ↔ c < 0 := by
+@[powerlib_foundation] theorem exceeds_above_iff (c : ℝ) : (drift c).Exceeds {0} above ⊤ ↔ c < 0 := by
   rw [drift_exceeds_iff]
   simp only [above, mem_ofPred_eq, smul_e₁_apply, not_lt, ENNReal.ofReal_lt_top, true_and]
   constructor
@@ -416,7 +416,7 @@ theorem exceeds_above_iff (c : ℝ) : (drift c).Exceeds {0} above ⊤ ↔ c < 0 
   obtain ⟨x, t, ht, hT, hS, hx, hA⟩ := he
   exact ⟨x, t, ht, hT, hS, hx, fun h' => hA (h h')⟩
 
-theorem twoPoint_apply (E : Set Sample) :
+@[powerlib_foundation] theorem twoPoint_apply (E : Set Sample) :
     twoPoint E = 2⁻¹ * (E.indicator 1 (constSample 1) + E.indicator 1 (constSample (-1))) := by
   simp [twoPoint, Measure.dirac_apply, mul_add]
 

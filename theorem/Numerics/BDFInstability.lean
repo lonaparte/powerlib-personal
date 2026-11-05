@@ -231,7 +231,7 @@ def bdfPoly (k : ℕ) : ℂ[X] :=
     (bdfPoly k).eval z = bdfRhoSum k z := by
   simp [bdfPoly, bdfRhoSum, eval_finsetSum]
 
-private theorem bdfPoly_term (k j : ℕ) (hj : j < k) :
+@[powerlib_foundation] private theorem bdfPoly_term (k j : ℕ) (hj : j < k) :
     ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).Monic ∧
       ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).natDegree = k := by
   have h1 : ((X : ℂ[X]) - 1).Monic := by simpa using monic_X_sub_C (1 : ℂ)
@@ -343,7 +343,7 @@ def bdfLMM (k : ℕ) : LMM k :=
 
 /-! ## The top coefficients of `bdfRhoSum k` and the uniform bound for `k ≥ 19` -/
 
-private theorem bdfTerm_coeff (k j d : ℕ) :
+@[powerlib_foundation] private theorem bdfTerm_coeff (k j d : ℕ) :
     ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).coeff d =
       if k - 1 - j ≤ d then
         (-1 : ℂ) ^ (j + 1 - (d - (k - 1 - j))) * ((j + 1).choose (d - (k - 1 - j)) : ℂ)
@@ -409,7 +409,7 @@ private theorem bdfTerm_coeff (k j d : ℕ) :
   simp only [bdfHarmonic, Finset.sum_range_succ]
 
 /-- `7/2 ≤ H_k < (3k - 7)/14` for every `k ≥ 19`. -/
-private theorem bdfHarmonic_bounds (n : ℕ) :
+@[powerlib_foundation] private theorem bdfHarmonic_bounds (n : ℕ) :
     7 / 2 ≤ bdfHarmonic (n + 19) ∧
       bdfHarmonic (n + 19) < (3 * ((n + 19 : ℕ) : ℚ) - 7) / 14 := by
   induction n with
@@ -466,7 +466,7 @@ outside the closed unit disk. The second power sum of its roots is
 /-! ## Witnesses, `7 ≤ k ≤ 18` -/
 
 /-- Witness value of `bdfRhoSum 7` at `w = 1/16 + 31/32 i`. -/
-private theorem bdfRhoSum_witness_7 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_7 :
     bdfRhoSum 7 (((1 / 16 : ℝ) : ℂ)
         + ((31 / 32 : ℝ) : ℂ) * Complex.I) = (((-2361592692043 / 7215545057280 : ℝ) : ℝ) : ℂ)
         + (((-1607795559683 / 14431090114560 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -479,7 +479,7 @@ private theorem bdfRhoSum_witness_7 :
       + (9987078922293 / 4810363371520 : ℂ) * Complex.I ^ 5) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 7` at `w = 1/16 + 31/32 i`. -/
-private theorem bdfRevSum_witness_7 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_7 :
     bdfRevSum 7 (((1 / 16 : ℝ) : ℂ)
         + ((31 / 32 : ℝ) : ℂ) * Complex.I) = (((-33749728583 / 360777252864 : ℝ) : ℝ) : ℂ)
         + (((79205805101 / 3607772528640 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -492,7 +492,7 @@ private theorem bdfRevSum_witness_7 :
       - (27512614111 / 240518168576 : ℂ) * Complex.I ^ 5) * Complex.I_sq
 
 /-- BDF7: `bdfRhoSum 7` has a root of modulus `> 1` (numerically `≈ 1.0222`). -/
-private theorem bdfRhoSum_exists_root_7 : ∃ ζ : ℂ, bdfRhoSum 7 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_7 : ∃ ζ : ℂ, bdfRhoSum 7 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((1 / 16 : ℝ) : ℂ)
       + ((31 / 32 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -500,7 +500,7 @@ private theorem bdfRhoSum_exists_root_7 : ∃ ζ : ℂ, bdfRhoSum 7 ζ = 0 ∧ 1
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 8` at `w = 0 + 3/4 i`. -/
-private theorem bdfRhoSum_witness_8 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_8 :
     bdfRhoSum 8 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((15001241 / 18350080 : ℝ) : ℝ) : ℂ)
         + (((36273 / 71680 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -511,7 +511,7 @@ private theorem bdfRhoSum_witness_8 :
       + (4992921 / 18350080 : ℂ) * Complex.I ^ 6) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 8` at `w = 0 + 3/4 i`. -/
-private theorem bdfRevSum_witness_8 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_8 :
     bdfRevSum 8 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((-8038909 / 18350080 : ℝ) : ℝ) : ℂ)
         + (((-45177 / 71680 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -522,7 +522,7 @@ private theorem bdfRevSum_witness_8 :
       + (6561 / 524288 : ℂ) * Complex.I ^ 6) * Complex.I_sq
 
 /-- BDF8: `bdfRhoSum 8` has a root of modulus `> 1` (numerically `≈ 1.1839`). -/
-private theorem bdfRhoSum_exists_root_8 : ∃ ζ : ℂ, bdfRhoSum 8 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_8 : ∃ ζ : ℂ, bdfRhoSum 8 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((0 : ℝ) : ℂ)
       + ((3 / 4 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -530,7 +530,7 @@ private theorem bdfRhoSum_exists_root_8 : ∃ ζ : ℂ, bdfRhoSum 8 ζ = 0 ∧ 1
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 9` at `w = 0 + 3/4 i`. -/
-private theorem bdfRhoSum_witness_9 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_9 :
     bdfRhoSum 9 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((-22900403 / 20643840 : ℝ) : ℝ) : ℂ)
         + (((16316883 / 73400320 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -542,7 +542,7 @@ private theorem bdfRhoSum_witness_9 :
       + (15591123 / 73400320 : ℂ) * Complex.I ^ 7) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 9` at `w = 0 + 3/4 i`. -/
-private theorem bdfRevSum_witness_9 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_9 :
     bdfRevSum 9 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((48173299 / 165150720 : ℝ) : ℝ) : ℂ)
         + (((-2196801 / 9175040 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -553,7 +553,7 @@ private theorem bdfRevSum_witness_9 :
       + (59049 / 524288 : ℂ) * Complex.I ^ 6 - (2187 / 262144 : ℂ) * Complex.I ^ 7) * Complex.I_sq
 
 /-- BDF9: `bdfRhoSum 9` has a root of modulus `> 1` (numerically `≈ 1.3475`). -/
-private theorem bdfRhoSum_exists_root_9 : ∃ ζ : ℂ, bdfRhoSum 9 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_9 : ∃ ζ : ℂ, bdfRhoSum 9 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((0 : ℝ) : ℂ)
       + ((3 / 4 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -561,7 +561,7 @@ private theorem bdfRhoSum_exists_root_9 : ∃ ζ : ℂ, bdfRhoSum 9 ζ = 0 ∧ 1
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 10` at `w = -1/16 + 11/16 i`. -/
-private theorem bdfRhoSum_witness_10 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_10 :
     bdfRhoSum 10 (((-1 / 16 : ℝ) : ℂ)
         + ((11 / 16 : ℝ) : ℂ) * Complex.I) = (((5885868387253 / 4329327034368 : ℝ) : ℝ) : ℂ)
         + (((-314770770259 / 1924145348608 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -577,7 +577,7 @@ private theorem bdfRhoSum_witness_10 :
       + (191444130979981 / 2770769301995520 : ℂ) * Complex.I ^ 8) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 10` at `w = -1/16 + 11/16 i`. -/
-private theorem bdfRevSum_witness_10 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_10 :
     bdfRevSum 10 (((-1 / 16 : ℝ) : ℂ)
         + ((11 / 16 : ℝ) : ℂ) * Complex.I) = (((1753318992427 / 5411658792960 : ℝ) : ℝ) : ℂ)
         + (((4924574669531 / 21646635171840 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -593,7 +593,7 @@ private theorem bdfRevSum_witness_10 :
       + (25937424601 / 10995116277760 : ℂ) * Complex.I ^ 8) * Complex.I_sq
 
 /-- BDF10: `bdfRhoSum 10` has a root of modulus `> 1` (numerically `≈ 1.5127`). -/
-private theorem bdfRhoSum_exists_root_10 : ∃ ζ : ℂ, bdfRhoSum 10 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_10 : ∃ ζ : ℂ, bdfRhoSum 10 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 16 : ℝ) : ℂ)
       + ((11 / 16 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -601,7 +601,7 @@ private theorem bdfRhoSum_exists_root_10 : ∃ ζ : ℂ, bdfRhoSum 10 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 11` at `w = -1/8 + 5/8 i`. -/
-private theorem bdfRhoSum_witness_11 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_11 :
     bdfRhoSum 11 (((-1 / 8 : ℝ) : ℂ)
         + ((5 / 8 : ℝ) : ℂ) * Complex.I) = (((-13988248765669 / 7441030840320 : ℝ) : ℝ) : ℂ)
         + (((-121204617607 / 496068722688 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -618,7 +618,7 @@ private theorem bdfRhoSum_witness_11 :
       + (817490234375 / 47622597378048 : ℂ) * Complex.I ^ 9) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 11` at `w = -1/8 + 5/8 i`. -/
-private theorem bdfRevSum_witness_11 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_11 :
     bdfRevSum 11 (((-1 / 8 : ℝ) : ℂ)
         + ((5 / 8 : ℝ) : ℂ) * Complex.I) = (((580735175 / 62008590336 : ℝ) : ℝ) : ℂ)
         + (((208965783085 / 186025771008 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -635,7 +635,7 @@ private theorem bdfRevSum_witness_11 :
       - (48828125 / 94489280512 : ℂ) * Complex.I ^ 9) * Complex.I_sq
 
 /-- BDF11: `bdfRhoSum 11` has a root of modulus `> 1` (numerically `≈ 1.6791`). -/
-private theorem bdfRhoSum_exists_root_11 : ∃ ζ : ℂ, bdfRhoSum 11 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_11 : ∃ ζ : ℂ, bdfRhoSum 11 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((5 / 8 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -643,7 +643,7 @@ private theorem bdfRhoSum_exists_root_11 : ∃ ζ : ℂ, bdfRhoSum 11 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 12` at `w = -1/8 + 1/2 i`. -/
-private theorem bdfRhoSum_witness_12 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_12 :
     bdfRhoSum 12 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((1664116889863013 / 1904903895121920 : ℝ) : ℝ) : ℂ)
         + (((106918075135969 / 119056493445120 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -659,7 +659,7 @@ private theorem bdfRhoSum_witness_12 :
       + (86021 / 113541120 : ℂ) * Complex.I ^ 10) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 12` at `w = -1/8 + 1/2 i`. -/
-private theorem bdfRevSum_witness_12 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_12 :
     bdfRevSum 12 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((-321331755101983 / 317483982520320 : ℝ) : ℝ) : ℂ)
         + (((-5447662453529 / 59528246722560 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -674,7 +674,7 @@ private theorem bdfRevSum_witness_12 :
       + (1 / 49152 : ℂ) * Complex.I ^ 10) * Complex.I_sq
 
 /-- BDF12: `bdfRhoSum 12` has a root of modulus `> 1` (numerically `≈ 1.8464`). -/
-private theorem bdfRhoSum_exists_root_12 : ∃ ζ : ℂ, bdfRhoSum 12 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_12 : ∃ ζ : ℂ, bdfRhoSum 12 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((1 / 2 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -682,7 +682,7 @@ private theorem bdfRhoSum_exists_root_12 : ∃ ζ : ℂ, bdfRhoSum 12 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 13` at `w = -1/8 + 1/2 i`. -/
-private theorem bdfRhoSum_witness_13 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_13 :
     bdfRhoSum 13 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((-87104163692410019 / 66036668364226560 : ℝ) : ℝ) : ℂ)
         + (((-2408917654485409 / 4502500115742720 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -700,7 +700,7 @@ private theorem bdfRhoSum_witness_13 :
       + (1145993 / 2952069120 : ℂ) * Complex.I ^ 11) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 13` at `w = -1/8 + 1/2 i`. -/
-private theorem bdfRevSum_witness_13 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_13 :
     bdfRevSum 13 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((-2074495091156363 / 8254583545528320 : ℝ) : ℝ) : ℂ)
         + (((4754927337394019 / 6190937659146240 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -716,7 +716,7 @@ private theorem bdfRevSum_witness_13 :
       + (29 / 98304 : ℂ) * Complex.I ^ 10 - (1 / 106496 : ℂ) * Complex.I ^ 11) * Complex.I_sq
 
 /-- BDF13: `bdfRhoSum 13` has a root of modulus `> 1` (numerically `≈ 2.0145`). -/
-private theorem bdfRhoSum_exists_root_13 : ∃ ζ : ℂ, bdfRhoSum 13 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_13 : ∃ ζ : ℂ, bdfRhoSum 13 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((1 / 2 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -724,7 +724,7 @@ private theorem bdfRhoSum_exists_root_13 : ∃ ζ : ℂ, bdfRhoSum 13 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 14` at `w = -1/8 + 1/2 i`. -/
-private theorem bdfRhoSum_witness_14 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_14 :
     bdfRhoSum 14 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ)
         * Complex.I) = (((2577393164230952741 / 1584880040741437440 : ℝ) : ℝ) : ℂ)
@@ -744,7 +744,7 @@ private theorem bdfRhoSum_witness_14 :
       + (1171733 / 5904138240 : ℂ) * Complex.I ^ 12) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 14` at `w = -1/8 + 1/2 i`. -/
-private theorem bdfRevSum_witness_14 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_14 :
     bdfRevSum 14 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((124484009038522417 / 132073336728453120 : ℝ) : ℝ) : ℂ)
         + (((65017173277104187 / 49527501273169920 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -762,7 +762,7 @@ private theorem bdfRevSum_witness_14 :
       + (1 / 229376 : ℂ) * Complex.I ^ 12) * Complex.I_sq
 
 /-- BDF14: `bdfRhoSum 14` has a root of modulus `> 1` (numerically `≈ 2.1833`). -/
-private theorem bdfRhoSum_exists_root_14 : ∃ ζ : ℂ, bdfRhoSum 14 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_14 : ∃ ζ : ℂ, bdfRhoSum 14 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((1 / 2 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -770,7 +770,7 @@ private theorem bdfRhoSum_exists_root_14 : ∃ ζ : ℂ, bdfRhoSum 14 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 15` at `w = -1/8 + 7/16 i`. -/
-private theorem bdfRhoSum_witness_15 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_15 :
     bdfRhoSum 15 (((-1 / 8 : ℝ) : ℂ)
         + ((7 / 16 : ℝ) : ℂ)
         * Complex.I) = (((-269254480822623171774889 / 207733396700061688135680 : ℝ) : ℝ) : ℂ)
@@ -792,7 +792,7 @@ private theorem bdfRhoSum_witness_15 :
       + (810989986920701693 / 59352399057160482324480 : ℂ) * Complex.I ^ 13) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 15` at `w = -1/8 + 7/16 i`. -/
-private theorem bdfRevSum_witness_15 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_15 :
     bdfRevSum 15 (((-1 / 8 : ℝ) : ℂ)
         + ((7 / 16 : ℝ) : ℂ)
         * Complex.I) = (((209135618141690837237 / 1731111639167180734464 : ℝ) : ℝ) : ℂ)
@@ -814,7 +814,7 @@ private theorem bdfRevSum_witness_15 :
       - (4747561509943 / 17293822569102704640 : ℂ) * Complex.I ^ 13) * Complex.I_sq
 
 /-- BDF15: `bdfRhoSum 15` has a root of modulus `> 1` (numerically `≈ 2.3525`). -/
-private theorem bdfRhoSum_exists_root_15 : ∃ ζ : ℂ, bdfRhoSum 15 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_15 : ∃ ζ : ℂ, bdfRhoSum 15 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((7 / 16 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -822,7 +822,7 @@ private theorem bdfRhoSum_exists_root_15 : ∃ ζ : ℂ, bdfRhoSum 15 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 16` at `w = -1/8 + 3/8 i`. -/
-private theorem bdfRhoSum_witness_16 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_16 :
     bdfRhoSum 16 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ) * Complex.I) = (((14183666647489035 / 17609778230460416 : ℝ) : ℝ) : ℂ)
         + (((5784224770515 / 7146825580544 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -844,7 +844,7 @@ private theorem bdfRhoSum_witness_16 :
       + (11653986163671 / 22540516134989332480 : ℂ) * Complex.I ^ 14) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 16` at `w = -1/8 + 3/8 i`. -/
-private theorem bdfRevSum_witness_16 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_16 :
     bdfRevSum 16 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ) * Complex.I) = (((-74202892475821587 / 88048891152302080 : ℝ) : ℝ) : ℂ)
         + (((1101950313453537 / 2751527848509440 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -866,7 +866,7 @@ private theorem bdfRevSum_witness_16 :
       + (43046721 / 4503599627370496 : ℂ) * Complex.I ^ 14) * Complex.I_sq
 
 /-- BDF16: `bdfRhoSum 16` has a root of modulus `> 1` (numerically `≈ 2.5222`). -/
-private theorem bdfRhoSum_exists_root_16 : ∃ ζ : ℂ, bdfRhoSum 16 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_16 : ∃ ζ : ℂ, bdfRhoSum 16 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((3 / 8 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -874,7 +874,7 @@ private theorem bdfRhoSum_exists_root_16 : ∃ ζ : ℂ, bdfRhoSum 16 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 17` at `w = -1/8 + 3/8 i`. -/
-private theorem bdfRhoSum_witness_17 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_17 :
     bdfRhoSum 17 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ)
         * Complex.I) = (((-2723246982475835499 / 2394929839342616576 : ℝ) : ℝ) : ℂ)
@@ -898,7 +898,7 @@ private theorem bdfRhoSum_witness_17 :
       + (604694838600261 / 3065510194358549217280 : ℂ) * Complex.I ^ 15) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 17` at `w = -1/8 + 3/8 i`. -/
-private theorem bdfRevSum_witness_17 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_17 :
     bdfRevSum 17 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ)
         * Complex.I) = (((-164414279647388889 / 1496831149589135360 : ℝ) : ℝ) : ℂ)
@@ -922,7 +922,7 @@ private theorem bdfRevSum_witness_17 :
       - (129140163 / 38280596832649216 : ℂ) * Complex.I ^ 15) * Complex.I_sq
 
 /-- BDF17: `bdfRhoSum 17` has a root of modulus `> 1` (numerically `≈ 2.6923`). -/
-private theorem bdfRhoSum_exists_root_17 : ∃ ζ : ℂ, bdfRhoSum 17 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_17 : ∃ ζ : ℂ, bdfRhoSum 17 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((3 / 8 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -930,7 +930,7 @@ private theorem bdfRhoSum_exists_root_17 : ∃ ζ : ℂ, bdfRhoSum 17 ζ = 0 ∧
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 18` at `w = -3/32 + 11/32 i`. -/
-private theorem bdfRhoSum_witness_18 :
+@[powerlib_foundation] private theorem bdfRhoSum_witness_18 :
     bdfRhoSum 18 (((-3 / 32 : ℝ) : ℂ)
         + ((11 / 32 : ℝ) : ℂ)
         * Complex.I) =
@@ -958,7 +958,7 @@ private theorem bdfRhoSum_witness_18 :
       * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 18` at `w = -3/32 + 11/32 i`. -/
-private theorem bdfRevSum_witness_18 :
+@[powerlib_foundation] private theorem bdfRevSum_witness_18 :
     bdfRevSum 18 (((-3 / 32 : ℝ) : ℂ)
         + ((11 / 32 : ℝ) : ℂ)
         * Complex.I) =
@@ -985,7 +985,7 @@ private theorem bdfRevSum_witness_18 :
       + (5559917313492231481 / 22282920707136844948184236032 : ℂ) * Complex.I ^ 16) * Complex.I_sq
 
 /-- BDF18: `bdfRhoSum 18` has a root of modulus `> 1` (numerically `≈ 2.8628`). -/
-private theorem bdfRhoSum_exists_root_18 : ∃ ζ : ℂ, bdfRhoSum 18 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_18 : ∃ ζ : ℂ, bdfRhoSum 18 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-3 / 32 : ℝ) : ℂ)
       + ((11 / 32 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -995,7 +995,7 @@ private theorem bdfRhoSum_exists_root_18 : ∃ ζ : ℂ, bdfRhoSum 18 ζ = 0 ∧
 /-! ## BDF`k` is not zero-stable for every `k ≥ 7` -/
 
 /-- `7 ≤ k ≤ 18`: one Schur–Cohn witness per `k`. -/
-private theorem bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen {k : ℕ} (hk : 7 ≤ k)
+@[powerlib_foundation] private theorem bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen {k : ℕ} (hk : 7 ≤ k)
     (hk' : k ≤ 18) : ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
   interval_cases k
   · exact bdfRhoSum_exists_root_7

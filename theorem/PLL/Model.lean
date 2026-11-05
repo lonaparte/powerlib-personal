@@ -193,12 +193,12 @@ Static evidence on the model, not a connection conclusion. -/
   rw [srf_h]
   rfl
 
-private theorem srf_h_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
+@[powerlib_domain] private theorem srf_h_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
     (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = 0 := by
   change -V * Real.sin (2 * k * Real.pi) = 0
   rw [Real.sin_eq_zero_iff.mpr ⟨2 * k, by push_cast; ring⟩, mul_zero]
 
-private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
+@[powerlib_domain] private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
     deriv (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = -V := by
   rw [PIPLL.srf_deriv, cos_two_int_mul_pi, mul_one]
 
@@ -240,7 +240,7 @@ private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
 
 /-- A flow sentence of a PI-PLL family member is the sentence of its untranslated field at the
 selected point. -/
-private theorem mem_den_flow_iff {m : PIPLL.Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : PIPLL.Model} {P : Flow.Property} :
     m ∈ PIPLL.family.den (.flow P) ↔
       P.holds (piPLLField m.h m.Kp m.Ki m.δω) (PhasePlane.mk m.θ (m.δω / m.Ki)) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : PIPLL.Model => piPLLField m.h m.Kp m.Ki m.δω)

@@ -217,7 +217,7 @@ open Set Filter Topology Metric
     (hasDerivWithinAt_const t (Icc a b) c).congr (fun τ hτ => hc τ hτ) (hc t ht)
   exact (uniqueDiffOn_Icc hab t ht).eq_deriv _ hF h0
 
-@[tmio T] private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
     HasDerivAt (fun τ => Real.exp (c * (τ - t₀))) (c * Real.exp (c * (t - t₀))) t := by
   have h := (Real.hasDerivAt_exp (c * (t - t₀))).comp t
     (((hasDerivAt_id t).sub_const t₀).const_mul c)

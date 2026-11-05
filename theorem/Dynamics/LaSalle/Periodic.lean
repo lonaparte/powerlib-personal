@@ -209,7 +209,7 @@ length that stays in `E` starts in `M`, then every positively invariant subset o
 
 /-! ## Angles -/
 
-@[tmio T] private theorem abs_sin_sub_int_mul_pi (x : ℝ) (j : ℤ) :
+@[tmio T, powerlib_foundation] private theorem abs_sin_sub_int_mul_pi (x : ℝ) (j : ℤ) :
     |Real.sin (x - j * Real.pi)| = |Real.sin x| := by
   rw [Real.sin_sub_int_mul_pi, abs_mul, abs_neg_one_zpow, one_mul]
 

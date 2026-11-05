@@ -62,7 +62,7 @@ namespace VSMLPF
 open Set Matrix
 open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext toEuclideanCLM_apply3)
 
-private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
     family_isAutonomous
@@ -99,7 +99,7 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
   ring
 
 /-- Components of the translated field. -/
-private theorem field_apply (m : Model) (z : State 3) :
+@[powerlib_domain] private theorem field_apply (m : Model) (z : State 3) :
     m.field z 0 = z 1 ∧ m.field z 1 = (-z 2 - m.g.D * z 1) / m.g.M ∧
       m.field z 2 = m.g.ωc * (m.g.K0 * Real.sin (z 0 + m.δ) - z 2 - m.g.P0) := by
   simp only [Model.field, VSMLPF.field_apply_zero, VSMLPF.field_apply_one, VSMLPF.field_apply_two,
@@ -107,13 +107,13 @@ private theorem field_apply (m : Model) (z : State 3) :
   exact ⟨by ring, by ring, by ring⟩
 
 /-- At a balanced angle the restoring power is `K₀ sin(x + δ*) − P₀ = K sin x + P₀ (cos x − 1)`. -/
-private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x : ℝ) :
+@[powerlib_domain] private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x : ℝ) :
     m.g.K0 * Real.sin (x + m.δ) - m.g.P0 = m.K * Real.sin x + m.g.P0 * (Real.cos x - 1) := by
   rw [Real.sin_add, ← hb, Model.K]
   ring
 
 /-- The boundary loop in Hopf coordinates (local asymptotic stability). -/
-@[tmio TM] private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc)
+@[tmio TM, powerlib_domain] private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc)
     (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
@@ -202,7 +202,7 @@ private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x 
     linarith
 
 /-- `‖(0, 0, t)‖ = |t|`. -/
-private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
+@[powerlib_foundation] private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
   have h : ‖mk3 0 0 t‖ ^ 2 = t ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
     simp
@@ -211,7 +211,7 @@ private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
 
 /-- With `K = 0` at a balanced angle, `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the
 rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is not attractive. -/
-@[tmio TM] private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
+@[tmio TM, powerlib_domain] private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
     (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement

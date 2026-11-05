@@ -112,7 +112,7 @@ open powerlib.Dynamics LinearSystems
 
 /-! ## Scalar helpers -/
 
-private lemma eigenpair_fin_one (a : ℝ) :
+@[powerlib_foundation] private lemma eigenpair_fin_one (a : ℝ) :
     (!![a] : Matrix (Fin 1) (Fin 1) ℝ).map (algebraMap ℝ ℂ) *ᵥ (fun _ => (1 : ℂ)) =
       (a : ℂ) • (fun _ => (1 : ℂ)) := by
   ext i
@@ -199,7 +199,7 @@ end OpenLoop
 def openFamily : Family OpenLoop Spectral.Requirement 1 0 :=
   Spectral.localFamily OpenLoop.field OpenLoop.Stable OpenLoop.Unstable
 
-private theorem open_mem_den_flow {m : OpenLoop} {P : Flow.Property} :
+@[powerlib_domain] private theorem open_mem_den_flow {m : OpenLoop} {P : Flow.Property} :
     m ∈ openFamily.den (.flow P) ↔
       P.holds (openField m.C (-(m.P / m.V0)) m.P) (dcState m.V0) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : OpenLoop => openField m.C (-(m.P / m.V0)) m.P)
@@ -207,7 +207,7 @@ private theorem open_mem_den_flow {m : OpenLoop} {P : Flow.Property} :
 
 /-- Rectifier (`I_dc0 = P/V0 > 0`): the open-loop DC voltage is locally exponentially
 stable. Implementation evidence for `openLoop_mem_den_locallyExponentiallyStable`. -/
-@[tmio TM] private theorem openLoop_locallyExponentiallyStable {C P V0 : ℝ} (hC : 0 < C)
+@[tmio TM, powerlib_domain] private theorem openLoop_locallyExponentiallyStable {C P V0 : ℝ} (hC : 0 < C)
     (hV : 0 < V0) (hP : 0 < P / V0) :
     connection% (((⟨C, P, V0⟩ : OpenLoop) ∈ openFamily.den (.flow .locallyExponentiallyStable))) := by
   unfold TMIO.Statement
@@ -220,7 +220,7 @@ stable. Implementation evidence for `openLoop_mem_den_locallyExponentiallyStable
 
 /-- Inverter (`I_dc0 = P/V0 < 0`, constant-power load on the DC side): the open-loop DC
 voltage is unstable. Implementation evidence for `openLoop_mem_den_unstable`. -/
-@[tmio TM] private theorem openLoop_unstable {C P V0 : ℝ} (hC : 0 < C) (hV : 0 < V0)
+@[tmio TM, powerlib_domain] private theorem openLoop_unstable {C P V0 : ℝ} (hC : 0 < C) (hV : 0 < V0)
     (hP : P / V0 < 0) :
     connection% (((⟨C, P, V0⟩ : OpenLoop) ∈ openFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -404,7 +404,7 @@ end DCParams
 def closedFamily : Family DCParams Spectral.Requirement 2 0 :=
   Spectral.localFamily DCParams.shiftedField DCParams.Stable DCParams.Unstable
 
-private theorem closed_mem_den_flow {p : DCParams} {P : Flow.Property} :
+@[powerlib_domain] private theorem closed_mem_den_flow {p : DCParams} {P : Flow.Property} :
     p ∈ closedFamily.den (.flow P) ↔ P.holds p.closedField p.eqState :=
   Spectral.mem_den_flow_iff_shift (f := DCParams.closedField) (pt := DCParams.eqState)
     (Spectral.localFamily_isAutonomous _ _ _)
@@ -416,7 +416,7 @@ variable (p : DCParams)
 /-- The nonlinear DC-voltage loop is locally exponentially stable at `(V_dc*, ζ0)` when
 `Kp > −I_dc0/V_d` and `Ki > 0`. Implementation evidence for
 `closedLoop_mem_den_locallyExponentiallyStable`. -/
-@[tmio TM] private theorem closedLoop_locallyExponentiallyStable (hVd : 0 < p.Vd)
+@[tmio TM, powerlib_domain] private theorem closedLoop_locallyExponentiallyStable (hVd : 0 < p.Vd)
     (hV : 0 < p.Vref) (hC : 0 < p.C) (hkp : -(p.Idc0 / p.Vd) < p.Kp) (hki : 0 < p.Ki) :
     connection% ((p ∈ closedFamily.den (.flow .locallyExponentiallyStable))) := by
   unfold TMIO.Statement
@@ -428,7 +428,7 @@ variable (p : DCParams)
 
 /-- `Kp < −I_dc0/V_d` (insufficient proportional gain in inverter mode): unstable.
 Implementation evidence for `closedLoop_mem_den_unstable_of_kp`. -/
-@[tmio TM] private theorem closedLoop_unstable_of_kp (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] private theorem closedLoop_unstable_of_kp (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : p.Ki ≠ 0) (hkp : p.Kp < -(p.Idc0 / p.Vd)) :
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -449,7 +449,7 @@ Implementation evidence for `closedLoop_mem_den_unstable_of_kp`. -/
 
 /-- `Ki < 0`: unstable (saddle). Implementation evidence for
 `closedLoop_mem_den_unstable_of_ki`. -/
-@[tmio TM] private theorem closedLoop_unstable_of_ki (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] private theorem closedLoop_unstable_of_ki (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hki : p.Ki < 0) :
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -618,7 +618,7 @@ negative-capacitance node is locally exponentially stable without `C > 0`. -/
   norm_num [negativeCapacitance] at this
 
 /-- With no integral gain the integrator direction is killed by the Jacobian. -/
-private theorem closed_fderiv_ki_zero {p : DCParams} (hKi : p.Ki = 0) (hV : 0 < p.Vref) :
+@[powerlib_domain] private theorem closed_fderiv_ki_zero {p : DCParams} (hKi : p.Ki = 0) (hV : 0 < p.Vref) :
     fderiv ℝ p.closedField p.eqState (EuclideanSpace.single 1 1) = 0 := by
   have hx : p.eqState ∈ posDC 2 := by simpa [posDC, DCParams.eqState] using hV
   have hdiff : DifferentiableAt ℝ p.closedField p.eqState :=
@@ -701,7 +701,7 @@ negative-capacitance loop is locally exponentially stable without `C > 0`. -/
 
 /-- With no AC power (`P = 0`) the open-loop node has no dynamics: every voltage is an
 equilibrium. -/
-private theorem openField_P_zero {C P V0 : ℝ} (hP : P / V0 = 0) (hV : 0 < V0) (x : State 1) :
+@[powerlib_domain] private theorem openField_P_zero {C P V0 : ℝ} (hP : P / V0 = 0) (hV : 0 < V0) (x : State 1) :
     openField C (-(P / V0)) P x = 0 := by
   have hP0 : P = 0 := by
     rcases div_eq_zero_iff.mp hP with h | h
@@ -768,7 +768,7 @@ Lyapunov translation is not exact even within the physical range. -/
     · rw [open_mem_den_flow]
       exact ((open_mem_den_flow.mp (openLoop_locallyExponentiallyStable hC hV hP))).lyapunovStable
 
-@[tmio TM] private theorem open_les_of {m : OpenLoop} (h : OpenLoop.Stable m) :
+@[tmio TM, powerlib_domain] private theorem open_les_of {m : OpenLoop} (h : OpenLoop.Stable m) :
     connection% ((m ∈ openFamily.den (.flow .locallyExponentiallyStable))) := by
   unfold TMIO.Statement
   apply (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.mpr
@@ -793,7 +793,7 @@ node; within the physical range, the node with no AC power). -/
   unfold powerlib.TMIO.Statement at h
   exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => ((Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.mp (open_les_of hm))) h (Or.inl rfl)
 
-@[tmio TM] private theorem closed_les_of {p : DCParams} (h : DCParams.Stable p) :
+@[tmio TM, powerlib_domain] private theorem closed_les_of {p : DCParams} (h : DCParams.Stable p) :
     connection% ((p ∈ closedFamily.den (.flow .locallyExponentiallyStable))) := by
   unfold TMIO.Statement
   apply (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.mpr
@@ -897,12 +897,12 @@ def centerEnergy (x : State 2) : ℝ :=
     have : 0 ≤ p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2 := by positivity
     linarith
 
-private theorem eqState_mem (hV : 0 < p.Vref) : p.eqState ∈ posDC 2 := by
+@[powerlib_domain] private theorem eqState_mem (hV : 0 < p.Vref) : p.eqState ∈ posDC 2 := by
   simpa [posDC, eqState] using hV
 
 /-- On the boundary the loop is Lyapunov stable: the energy is conserved and has a strict
 minimum. -/
-@[tmio TM] private theorem closed_lyapunovStable_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] private theorem closed_lyapunovStable_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : 0 < p.Ki) (hkp : p.Kp = -(p.Idc0 / p.Vd)) :
     connection% ((p ∈ closedFamily.den (.flow .lyapunovStable))) := by
   unfold TMIO.Statement
@@ -917,7 +917,7 @@ minimum. -/
 
 /-- On the boundary the loop is not locally asymptotically stable: the conserved energy keeps
 every nearby solution on its level. -/
-@[tmio TM] private theorem closed_not_las_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] private theorem closed_not_las_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : 0 < p.Ki) (hkp : p.Kp = -(p.Idc0 / p.Vd)) :
     connection% (¬ (p ∈ closedFamily.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
@@ -947,14 +947,14 @@ every nearby solution on its level. -/
 /-! ### No integral gain -/
 
 /-- With no integral gain the field does not depend on `ζ`. -/
-private theorem closedField_ki_zero_shift (hKi : p.Ki = 0) (x : State 2) (t : ℝ) :
+@[powerlib_domain] private theorem closedField_ki_zero_shift (hKi : p.Ki = 0) (x : State 2) (t : ℝ) :
     p.closedField (x + t • EuclideanSpace.single 1 1) = p.closedField x := by
   ext i
   fin_cases i <;> simp [closedField, idRef, hKi]
 
 /-- With no integral gain the loop is not locally asymptotically stable: either the operating
 point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
-@[tmio TM] private theorem closed_not_las_ki_zero (hV : 0 < p.Vref) (hKi : p.Ki = 0) :
+@[tmio TM, powerlib_domain] private theorem closed_not_las_ki_zero (hV : 0 < p.Vref) (hKi : p.Ki = 0) :
     connection% (¬ (p ∈ closedFamily.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
@@ -976,7 +976,7 @@ point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
 
 /-- With no integral gain and `i_ff = I_d0` the DC equation is
 `dV_dc/dt = −V_d (I_d0 + V_dc* Kp)(V_dc − V_dc*)/(V_dc* C V_dc)`. -/
-private theorem closedField_zero_ki (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hV : p.Vref ≠ 0)
+@[powerlib_domain] private theorem closedField_zero_ki (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hV : p.Vref ≠ 0)
     (hC : p.C ≠ 0) {x : State 2} (hx : x 0 ≠ 0) :
     p.closedField x 0 =
       -(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) / (p.Vref * p.C * x 0) := by
@@ -984,10 +984,10 @@ private theorem closedField_zero_ki (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hV :
   field_simp
   ring
 
-private theorem closedField_one (x : State 2) : p.closedField x 1 = x 0 - p.Vref := by
+@[powerlib_domain] private theorem closedField_one (x : State 2) : p.closedField x 1 = x 0 - p.Vref := by
   simp [closedField]
 
-private theorem eqState_one_ki_zero (hKi : p.Ki = 0) : p.eqState 1 = 0 := by
+@[powerlib_domain] private theorem eqState_one_ki_zero (hKi : p.Ki = 0) : p.eqState 1 = 0 := by
   simp [eqState, hKi]
 
 /-- The Lyapunov function of the loop without integral gain: `ζ + γ (V_dc* v + v²/2)` is
@@ -995,7 +995,7 @@ conserved, `v²` decays. -/
 private def driftEnergy (γ : ℝ) (x : State 2) : ℝ :=
   (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) ^ 2 + (x 0 - p.Vref) ^ 2
 
-private theorem hasFDerivAt_driftEnergy (γ : ℝ) (x : State 2) :
+@[powerlib_domain] private theorem hasFDerivAt_driftEnergy (γ : ℝ) (x : State 2) :
     HasFDerivAt (p.driftEnergy γ)
       ((2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) *
           (γ * (p.Vref + (x 0 - p.Vref))) + 2 * (x 0 - p.Vref)) • Dynamics.coord 0 +
@@ -1013,7 +1013,7 @@ private theorem hasFDerivAt_driftEnergy (γ : ℝ) (x : State 2) :
 
 /-- Without integral gain, with `i_ff = I_d0` and `Kp > −I_dc0/V_d`, the loop is Lyapunov
 stable. -/
-@[tmio TM] private theorem closed_lyapunovStable_ki_zero (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] private theorem closed_lyapunovStable_ki_zero (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hβ : 0 < p.Id0 + p.Vref * p.Kp) :
     connection% ((p ∈ closedFamily.den (.flow .lyapunovStable))) := by
   unfold TMIO.Statement
@@ -1073,7 +1073,7 @@ stable. -/
 
 /-- Without integral gain, with `i_ff = I_d0` and `Kp < −I_dc0/V_d`, the voltage error grows:
 unstable (Chetaev's function `v²`). -/
-@[tmio TM] private theorem closed_unstable_ki_zero_lt (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] private theorem closed_unstable_ki_zero_lt (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hβ : p.Id0 + p.Vref * p.Kp < 0) :
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -1110,7 +1110,7 @@ unstable (Chetaev's function `v²`). -/
 
 /-- Without integral gain, with `i_ff = I_d0` and `Kp = −I_dc0/V_d`, the voltage error stays
 constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
-@[tmio TM] private theorem closed_unstable_ki_zero_eq (hV : 0 < p.Vref) (hC : 0 < p.C) (hKi : p.Ki = 0)
+@[tmio TM, powerlib_domain] private theorem closed_unstable_ki_zero_eq (hV : 0 < p.Vref) (hC : 0 < p.C) (hKi : p.Ki = 0)
     (hff : p.iff = p.Id0) (hβ : p.Id0 + p.Vref * p.Kp = 0) :
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -1144,7 +1144,7 @@ constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
 
 /-- Without integral gain the operating point is an equilibrium exactly when the feedforward
 matches the operating current, `i_ff = I_d0`. -/
-private theorem closedField_eqState_ki_zero (hKi : p.Ki = 0) (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
+@[powerlib_domain] private theorem closedField_eqState_ki_zero (hKi : p.Ki = 0) (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
     (hC : p.C ≠ 0) : p.closedField p.eqState = 0 ↔ p.iff = p.Id0 := by
   constructor
   · intro h
@@ -1166,7 +1166,7 @@ private theorem closedField_eqState_ki_zero (hKi : p.Ki = 0) (hVd : p.Vd ≠ 0) 
     · simp [closedField, eqState]
 
 /-- `Kp` against the boundary `−I_dc0/V_d`: the sign of `I_d0 + V_dc* Kp`. -/
-private theorem kp_sub_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
+@[powerlib_domain] private theorem kp_sub_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
     p.Vd * p.Kp + p.Idc0 = p.Vd / p.Vref * (p.Id0 + p.Vref * p.Kp) ∧
       (-(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0) ∧
       (-(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0) := by
@@ -1181,7 +1181,7 @@ private theorem kp_sub_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
 
 end DCParams
 
-@[tmio TM] private theorem closed_las_iff (p : DCParams) (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
+@[tmio TM, powerlib_domain] private theorem closed_las_iff (p : DCParams) (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
     connection% ((p ∈ closedFamily.den (.flow .locallyAsymptoticallyStable)) ↔ -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
@@ -1199,7 +1199,7 @@ end DCParams
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
       ((closed_mem_den_flow.mp (p.closedLoop_locallyExponentiallyStable hVd hV hC hkp hki)))
 
-@[tmio TM] private theorem closed_ls_iff (p : DCParams) (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
+@[tmio TM, powerlib_domain] private theorem closed_ls_iff (p : DCParams) (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
     connection% ((p ∈ closedFamily.den (.flow .lyapunovStable)) ↔ (0 < p.Ki ∧ -(p.Idc0 / p.Vd) ≤ p.Kp) ∨
       (p.Ki = 0 ∧ p.iff = p.Id0 ∧ -(p.Idc0 / p.Vd) < p.Kp)) := by
   unfold TMIO.Statement
@@ -1261,7 +1261,7 @@ voltage error is frozen and the integrator drifts; with `Kp < −I_dc0/V_d` the 
 `Kp = −I_dc0/V_d`). -/
 def centerLoop : DCParams := ⟨1, 1, 1, 0, 1, 0, 0⟩
 
-private theorem centerLoop_boundary :
+@[powerlib_domain] private theorem centerLoop_boundary :
     centerLoop.Kp = -(centerLoop.Idc0 / centerLoop.Vd) := by
   norm_num [centerLoop, DCParams.Idc0]
 
@@ -1282,7 +1282,7 @@ private theorem centerLoop_boundary :
   exact (fun h => (centerLoop.closed_not_las_boundary (by norm_num [centerLoop]) (by norm_num [centerLoop])
     (by norm_num [centerLoop]) (by norm_num [centerLoop]) centerLoop_boundary) (closed_mem_den_flow.mpr h))
 
-@[tmio TM] private theorem closed_realize_stable :
+@[tmio TM, powerlib_domain] private theorem closed_realize_stable :
     connection% (TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
       {p : DCParams | DCParams.Stable p}) := by
   change TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =

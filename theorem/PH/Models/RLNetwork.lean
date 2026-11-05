@@ -303,7 +303,7 @@ private def scaleCLM (c : Fin m → ℝ) :
     EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m) :=
   Matrix.toEuclideanCLM (n := Fin m) (𝕜 := ℝ) (diagonal c)
 
-private theorem ofLp_scaleCLM (c : Fin m → ℝ) (x : EuclideanSpace ℝ (Fin m)) :
+@[powerlib_foundation] private theorem ofLp_scaleCLM (c : Fin m → ℝ) (x : EuclideanSpace ℝ (Fin m)) :
     WithLp.ofLp (scaleCLM c x) = fun j => c j * WithLp.ofLp x j := by
   simp only [scaleCLM, Matrix.ofLp_toEuclideanCLM]
   funext j
@@ -312,7 +312,7 @@ private theorem ofLp_scaleCLM (c : Fin m → ℝ) (x : EuclideanSpace ℝ (Fin m
 /-- Rescaling any solution segment of the original network gives a solution segment of the
 rescaled network driven by the same node potentials, with identical node currents.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem rlNetwork_scale_trajectory (p : RLBranchParams (Fin m))
+@[powerlib_domain] private theorem rlNetwork_scale_trajectory (p : RLBranchParams (Fin m))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) (c : Fin m → ℝ) (hc : ∀ j, c j ≠ 0)
     {u : ℝ → Fin k → ℝ} {x : ℝ → EuclideanSpace ℝ (Fin m)} {t₀ t₁ : ℝ}
     (hx : (rlNetworkPH p 𝓑).plant.system.IsTrajectoryOn u x t₀ t₁) :

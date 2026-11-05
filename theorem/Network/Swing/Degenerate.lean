@@ -488,14 +488,14 @@ along the reachable directions are the power-balance points. -/
 
 /-! ## Necessary conditions for local asymptotic stability -/
 
-private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- A Lyapunov stable selected point of the `C¹` reduced field is an equilibrium, hence a
 power-balance point. -/
-@[tmio TM] private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio TM, powerlib_domain] private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : LyapunovStable (reducedField p) (equilibrium θ)) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
@@ -506,7 +506,7 @@ power-balance point. -/
 reduced field (`reducedField_eq_mechanical`). At a power-balance point, relative-angle
 displacements arbitrarily close to it with a lower potential rule out local asymptotic
 stability. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hseed : ∀ ε > 0, ∃ v : Fin n → ℝ, ‖angleState v‖ < ε ∧
       potential p (θ + ground v) < potential p θ) :
@@ -526,7 +526,7 @@ stability. -/
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line` on the
 reduced field. If the network stays power balanced along the relative-angle displacements `t • v`
 (`v ≠ 0`), every point of that line is an equilibrium. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_balance_line {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_balance_line {p : Params n}
     {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ} (hv : v ≠ 0)
     (hline : ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k) :
     connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
@@ -926,7 +926,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_forms`, at the selected point of the
 untranslated field. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ)
     (h : hessForm p θ (ground v) < 0 ∨
       (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0)) :
@@ -1016,7 +1016,7 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
   rfl
 
 /-- Two machines: the forms in the direction of the second machine. -/
-private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
+@[powerlib_domain] private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
     hessForm p θ w = 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1)) * w 1 ^ 2 := by
   simp only [hessForm, Fin.sum_univ_succ, Fin.sum_univ_zero, hw]
   simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero, zero_pow two_ne_zero,
@@ -1024,7 +1024,7 @@ private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w
   rw [p.B_symm 1 0, show θ 1 - θ 0 = -(θ 0 - θ 1) by ring, Real.cos_neg]
   ring
 
-private theorem cubicForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
+@[powerlib_domain] private theorem cubicForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
     cubicForm p θ w = -2 * (p.B 0 1 * Real.sin (θ 0 - θ 1)) * w 1 ^ 3 := by
   simp only [cubicForm, Fin.sum_univ_succ, Fin.sum_univ_zero, hw]
   simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero,
@@ -1032,7 +1032,7 @@ private theorem cubicForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : 
   rw [p.B_symm 1 0, show θ 1 - θ 0 = -(θ 0 - θ 1) by ring, Real.sin_neg]
   ring
 
-private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
+@[powerlib_domain] private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
     (θ : Fin (1 + 1) → ℝ) (k : Fin (1 + 1)) : powerInjection p.B θ k = 0 := by
   have hB' : p.B 1 0 = 0 := by rw [p.B_symm]; exact hB
   simp only [powerInjection, Fin.sum_univ_succ, Fin.sum_univ_zero]
@@ -1042,7 +1042,7 @@ private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
 
 /-- Implementation evidence for `not_localAsymptoticStable_two`, at the selected point of the
 untranslated field. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     connection% (¬ ((⟨p, θ⟩ : Model 1) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
@@ -1288,7 +1288,7 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
     have := mul_neg_of_pos_of_neg w₃ h3
     linarith
 
-private theorem hessForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
+@[powerlib_domain] private theorem hessForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
     hessForm p θ (ground ![s, t]) = 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1) * s ^ 2 +
       p.B 0 2 * Real.cos (θ 0 - θ 2) * t ^ 2 + p.B 1 2 * Real.cos (θ 1 - θ 2) * (s - t) ^ 2) := by
   simp only [hessForm, Fin.sum_univ_succ, Fin.sum_univ_zero, ground]
@@ -1298,7 +1298,7 @@ private theorem hessForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : 
   simp only [Real.cos_neg]
   ring
 
-private theorem cubicForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
+@[powerlib_domain] private theorem cubicForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
     cubicForm p θ (ground ![s, t]) = 2 * (-(p.B 0 1 * Real.sin (θ 0 - θ 1)) * s ^ 3 -
       p.B 0 2 * Real.sin (θ 0 - θ 2) * t ^ 3 + p.B 1 2 * Real.sin (θ 1 - θ 2) * (s - t) ^ 3) := by
   simp only [cubicForm, Fin.sum_univ_succ, Fin.sum_univ_zero, ground]
@@ -1308,16 +1308,16 @@ private theorem cubicForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t :
   simp only [Real.sin_neg]
   ring
 
-private theorem B_eq_zero_of {B φ : ℝ} (hB : 0 ≤ B) (hc : B * Real.cos φ = 0)
+@[powerlib_foundation] private theorem B_eq_zero_of {B φ : ℝ} (hB : 0 ≤ B) (hc : B * Real.cos φ = 0)
     (hs : B * Real.sin φ = 0) : B = 0 := by
   have := Real.sin_sq_add_cos_sq φ
   nlinarith [sq_nonneg B]
 
-private theorem pos_of_mul_cos_ne {B φ : ℝ} (hB : 0 ≤ B) (h : B * Real.cos φ ≠ 0) : 0 < B :=
+@[powerlib_foundation] private theorem pos_of_mul_cos_ne {B φ : ℝ} (hB : 0 ≤ B) (h : B * Real.cos φ ≠ 0) : 0 < B :=
   lt_of_le_of_ne hB fun h0 => h (by rw [← h0, zero_mul])
 
 /-- The grounded vector `(0, u₁, u₂)`. -/
-private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
+@[powerlib_foundation] private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
     u = ground ![u 1, u 2] := by
   funext k
   fin_cases k
@@ -1327,7 +1327,7 @@ private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
 
 /-- Implementation evidence for `not_localAsymptoticStable_three`, at the selected point of the
 untranslated field. -/
-@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
+@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
     (θ : Fin (2 + 1) → ℝ) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     connection% (¬ ((⟨p, θ⟩ : Model 2) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
@@ -1593,7 +1593,7 @@ field. -/
 the reduced field (`reducedField_eq_mechanical`). At a power-balance point whose relative angles
 are a strict local minimum of the potential and an isolated power-balance point, the reduced swing
 field is locally asymptotically stable, whatever its linearization. -/
-@[tmio TM] private theorem reducedSwing_localAsymptoticStable_of_strictMin {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_localAsymptoticStable_of_strictMin {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) {r : ℝ} (hr : 0 < r)
     (hmin : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r → potential p θ < potential p (θ + ground v))
     (hcrit : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
@@ -1654,7 +1654,7 @@ vanishes). -/
 /-- Implementation evidence: `Dynamics.Mechanical.strictMin_of_localAsymptoticStable` on the
 reduced field. The selected point of a locally asymptotically stable network is a strict, isolated
 minimum of the potential. -/
-private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
+@[powerlib_domain] private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
     ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧

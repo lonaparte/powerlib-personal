@@ -479,7 +479,7 @@ inconsistent. -/
   have h2 : 0 < m.V * m.Ki := h .integral
   rcases (h .negativeGain : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) with h3 | h3 <;> linarith
 
-@[tmio TM] private theorem isHurwitz_plant_iff (m : Model) :
+@[tmio TM, powerlib_domain] private theorem isHurwitz_plant_iff (m : Model) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -489,7 +489,7 @@ inconsistent. -/
 /-- The translation is the linear table: both positive loop gains for Lyapunov stability, the
 attractive sentences and sampled contraction, a negative loop gain for instability, the whole
 language for decay rates, conservation and passivity. -/
-@[tmio TM] private theorem translate_eq (s : Sentence) :
+@[tmio TM, powerlib_domain] private theorem translate_eq (s : Sentence) :
     connection% (TMIO.generate (TMIO.cover (TMIO.table family.translate)) {s} =
       Spectral.linearTable {.proportional, .integral} {.negativeGain}
       Set.univ Set.univ (fun _ => Set.univ) s) := by
@@ -501,7 +501,7 @@ language for decay rates, conservation and passivity. -/
   · rfl
 
 /-- Both positive loop gains are the Hurwitz property of the state matrix. -/
-@[tmio M] private theorem mem_realize_iff_isHurwitz (m : Model) :
+@[tmio M, powerlib_domain] private theorem mem_realize_iff_isHurwitz (m : Model) :
     connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
   change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
@@ -509,7 +509,7 @@ language for decay rates, conservation and passivity. -/
   rfl
 
 /-- A negative loop gain gives a characteristic root in the open right half plane. -/
-private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
+@[powerlib_domain] private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
   rcases h with h | h

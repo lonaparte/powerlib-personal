@@ -73,7 +73,7 @@ section Uniqueness
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Forward half: on `[s, t]`. -/
-@[tmio T] private lemma eq_zero_forward {f f' : ℝ → E} {c : ℝ → ℝ} (hc : Continuous c)
+@[tmio T, powerlib_foundation] private lemma eq_zero_forward {f f' : ℝ → E} {c : ℝ → ℝ} (hc : Continuous c)
     (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t, ‖f' t‖ ≤ c t * ‖f t‖) {s : ℝ} (hs : f s = 0)
     {t : ℝ} (hst : s ≤ t) : f t = 0 := by
   obtain ⟨C, hC⟩ := (isCompact_Icc (a := s) (b := t)).exists_bound_of_continuousOn hc.continuousOn
@@ -172,7 +172,7 @@ private def congrCLM (C : Matrix (Fin n) (Fin n) ℝ) :
       map_add' := fun M N => by simp [Matrix.mul_add, Matrix.add_mul]
       map_smul' := fun c M => by simp }
 
-@[tmio T] private lemma congrCLM_apply (C M : Matrix (Fin n) (Fin n) ℝ) : congrCLM C M = C * M * Cᵀ := rfl
+@[tmio T, powerlib_foundation] private lemma congrCLM_apply (C M : Matrix (Fin n) (Fin n) ℝ) : congrCLM C M = C * M * Cᵀ := rfl
 
 /-- Transposition as a continuous linear map. -/
 private def transposeCLM : Matrix (Fin n) (Fin n) ℝ →L[ℝ] Matrix (Fin n) (Fin n) ℝ :=
@@ -183,7 +183,7 @@ private def transposeCLM : Matrix (Fin n) (Fin n) ℝ →L[ℝ] Matrix (Fin n) (
 
 /-- Factorization through the base point:
 `P(z) = Φ(z, t₀) [P₀ + ∫_{t₀}^z Φ(t₀, τ) Q(τ) Φ(t₀, τ)ᵀ dτ] Φ(z, t₀)ᵀ`. -/
-@[tmio T] private lemma ltvCov_eq (hA : Continuous A) (hQ : Continuous Q)
+@[tmio T, powerlib_foundation] private lemma ltvCov_eq (hA : Continuous A) (hQ : Continuous Q)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     (P₀ : Matrix (Fin n) (Fin n) ℝ) (t₀ z : ℝ) :
     ltvCov Φ Q P₀ t₀ z = Φ z t₀ * (P₀ + ∫ τ in t₀..z, Φ t₀ τ * Q τ * (Φ t₀ τ)ᵀ) * (Φ z t₀)ᵀ := by

@@ -324,11 +324,11 @@ end PIParams
 
 namespace PIParams
 
-@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {p | Stable p}) := show family.den (.flow P) = {p | Stable p} from
   Spectral.linear_den (U := Unstable) (fun p => ((isHurwitz_iff_div p).symm.trans (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))) hP
 
-@[tmio TM] private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (refFamily.den (.flow P) = {q | RefStable q}) := show refFamily.den (.flow P) = {q | RefStable q} from
   Spectral.linear_den (U := RefUnstable) (fun q => ((q.1.refFeedback_isHurwitz_iff_div q.2).symm.trans (refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))))
     hP
@@ -410,7 +410,7 @@ iff `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`. -/
 /-- Reference tracking: with a constant reference, every solution converges to
 `(i*, R i*/Ki)`; in particular the current error vanishes.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p.Kp)
+@[powerlib_domain] private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p.Kp)
     (hKi : 0 < p.Ki) {iref : ℝ} {x : ℝ → ℝ²} (hx : ∀ t, HasDerivAt x (p.field iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧
       Tendsto (fun t => x t 1) atTop (𝓝 (p.R * iref / p.Ki)) := by

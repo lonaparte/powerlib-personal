@@ -131,11 +131,11 @@ section Quantile
 
 variable {μ : Measure ℝ} {u : ℝ}
 
-private theorem quantile_set_nonempty (hu1 : u < 1) : {x | u ≤ cdf μ x}.Nonempty := by
+@[powerlib_foundation] private theorem quantile_set_nonempty (hu1 : u < 1) : {x | u ≤ cdf μ x}.Nonempty := by
   obtain ⟨x, hx⟩ := ((tendsto_order.1 (tendsto_cdf_atTop (μ := μ))).1 u hu1).exists
   exact ⟨x, hx.le⟩
 
-private theorem quantile_set_bddBelow (hu0 : 0 < u) : BddBelow {x | u ≤ cdf μ x} := by
+@[powerlib_foundation] private theorem quantile_set_bddBelow (hu0 : 0 < u) : BddBelow {x | u ≤ cdf μ x} := by
   obtain ⟨x₀, hx₀⟩ := eventually_atBot.mp ((tendsto_order.1 (tendsto_cdf_atBot (μ := μ))).2 u hu0)
   refine ⟨x₀, fun y hy => ?_⟩
   by_contra h

@@ -158,7 +158,7 @@ section TaylorBounds
 variable {F : ℝ → ℝ} {δ0 F' C h0 : ℝ}
 
 /-- Pointwise remainder along the swing. -/
-private theorem swing_remainder (hC : 0 ≤ C)
+@[powerlib_foundation] private theorem swing_remainder (hC : 0 ≤ C)
     (hT : ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - F' * h| ≤ C * h ^ 2) {dh : ℝ} (hdh : |dh| ≤ h0)
     (φ : ℝ) : |F (δ0 + dh * Real.cos φ) - F δ0 - F' * (dh * Real.cos φ)| ≤ C * dh ^ 2 := by
   have hcos := Real.abs_cos_le_one φ

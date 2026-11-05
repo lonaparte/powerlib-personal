@@ -172,14 +172,14 @@ Behavioural statements at the selected point of the untranslated field, used as 
 helpers; the public conclusions are the connection statements below. -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected point. -/
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => piPLLField m.h m.Kp m.Ki m.δω)
     (pt := Model.point) family_isAutonomous
 
 /-- At an equilibrium with both slope-gain products negative (`K_p g < 0`, `K_i g < 0`) the
 untranslated field is locally exponentially stable. -/
-@[tmio TM] private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
+@[tmio TM, powerlib_domain] private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
     {Kp Ki δω θ g : ℝ} (hh : ContDiff ℝ 1 h) (hzero : h θ = 0) (hderiv : HasDerivAt h g θ)
     (hKpg : Kp * g < 0) (hKig : Ki * g < 0) :
     connection% ((⟨h, Kp, Ki, δω, θ, hh⟩ : Model) ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -199,7 +199,7 @@ untranslated field is locally exponentially stable. -/
 
 /-- At an equilibrium (no hypothesis `K_i ≠ 0` needed), a negative determinant or a positive
 trace of the Jacobian gives instability. -/
-@[tmio TM] private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ}
+@[tmio TM, powerlib_domain] private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ}
     (hh : ContDiff ℝ 1 h) (heq : piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0)
     (hderiv : HasDerivAt h g θ) (hg : 0 < Ki * g ∨ 0 < Kp * g) :
     connection% ((⟨h, Kp, Ki, δω, θ, hh⟩ : Model) ∈ family.den (.flow .unstable)) := by
@@ -216,13 +216,13 @@ trace of the Jacobian gives instability. -/
     rw [piPLLJacobian_trace]
     exact htr
 
-@[tmio TM] private theorem les_of_meets {m : Model} (hp : Meets m .phaseLocked)
+@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (hp : Meets m .phaseLocked)
     (hs : Meets m .slopeStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (piPLL_locallyExponentiallyStable_of_mul_neg m.smooth hp.1
     (m.hasDerivAt m.θ) hs.1 hs.2)))
 
-@[tmio TM] private theorem unstable_of_meets {m : Model} (hp : Meets m .phaseLocked)
+@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (hp : Meets m .phaseLocked)
     (hs : Meets m .slopeUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := show m ∈ family.den (.flow .unstable) from
   mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (piPLL_unstable_of_slope m.smooth (piPLLField_point_eq_zero_iff.mpr hp)
@@ -389,7 +389,7 @@ linearization (a centre) decides nothing. Implementation evidence; the public co
 /-- The detector potential about the selected phase, `U(θ) = −∫_{θ*}^{θ} h`. -/
 private def potential (m : Model) (θ : ℝ) : ℝ := -∫ s in m.θ..θ, m.h s
 
-private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
+@[powerlib_domain] private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
     HasDerivAt (potential m) (-m.h θ) θ :=
   (m.smooth.continuous.integral_hasStrictDerivAt m.θ θ).hasDerivAt.neg
 
@@ -397,7 +397,7 @@ private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
 private def energy (m : Model) (x : ℝ²) : ℝ :=
   potential m (x 0) + m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2
 
-private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
+@[powerlib_domain] private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
     HasFDerivAt (energy m)
       ((-m.h (x 0)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
         (m.Ki * (x 1 - m.δω / m.Ki)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) x := by
@@ -411,7 +411,7 @@ private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
   ring
 
 /-- The energy decreases at the damping rate: `Ė = −K_p h(θ)²` (`K_i ≠ 0`). -/
-private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
+@[powerlib_domain] private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
     fderiv ℝ (energy m) x (piPLLField m.h m.Kp m.Ki m.δω x) = -(m.Kp * m.h (x 0) ^ 2) := by
   rw [(hasFDerivAt_energy m x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
@@ -421,7 +421,7 @@ private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
 
 /-- Near a zero `θ*` of `h` where the slope stays negative the potential is positive off `θ*`:
 `h > 0` before `θ*` and `h < 0` after it. -/
-private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
+@[powerlib_domain] private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
     (hr : ∀ θ, |θ - m.θ| < r → deriv m.h θ < 0) {θ : ℝ} (hθ : |θ - m.θ| < r) (hne : θ ≠ m.θ) :
     0 < potential m θ := by
   have hanti : StrictAntiOn m.h (Set.Ioo (m.θ - r) (m.θ + r)) := by
@@ -446,7 +446,7 @@ private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
 
 /-- At a zero of `h` with negative slope, `K_p ≥ 0` and `K_i > 0`, the untranslated field is
 Lyapunov stable at the selected point (the PLL energy, LeanForControl's `lyapunov_stable`). -/
-@[tmio TM] private theorem lyapunovStable_of_slope {m : Model} (hzero : m.h m.θ = 0) (hKp : 0 ≤ m.Kp)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_slope {m : Model} (hzero : m.h m.θ = 0) (hKp : 0 ≤ m.Kp)
     (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -613,7 +613,7 @@ loses lock. -/
 
 /-- The ramp model meets the local requirements exactly at a locked phase with both slope-gain
 products negative. -/
-@[tmio M] private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
+@[tmio M, powerlib_domain] private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
     connection% (m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔
       m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0) := by
   change m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔

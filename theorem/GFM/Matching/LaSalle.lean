@@ -175,7 +175,7 @@ end Model
 def cyl (x : State 4) : State 5 :=
   WithLp.toLp 2 ![Real.cos (x 0), Real.sin (x 0), x 1, x 2, x 3]
 
-private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
+@[powerlib_foundation] private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
   Dynamics.contDiff_coord j
 
 /-- The cylinder field at the image of a state is the cylinder image of the closed loop.
@@ -287,7 +287,7 @@ Static evidence on the model, not a connection conclusion. -/
 @[powerlib_domain] theorem cQ_cos_sin (m : Model) (θ : ℝ) :
     m.cQ (Real.cos θ) (Real.sin θ) = m.iHatQ θ := rfl
 
-private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
+@[powerlib_foundation] private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
   have h0 := proj_contDiff (n := 5) 0
   have h1 := proj_contDiff (n := 5) 1
   fun_prop
@@ -322,7 +322,7 @@ conclusion. -/
   rw [cylLie_cyl]
   simpa using energy_lie_le m hR hL hC x
 
-private theorem N_pos (m : Model) (hR : 0 < m.Rs) : 0 < m.N := by
+@[powerlib_domain] private theorem N_pos (m : Model) (hR : 0 < m.Rs) : 0 < m.N := by
   unfold Model.N
   have := sq_nonneg m.ω0
   positivity
@@ -550,17 +550,17 @@ connection conclusion. -/
   convert (((Real.hasDerivAt_cos θ).const_sub 1).const_mul m.k).const_add (m.potential 0) using 1
   ring
 
-private theorem k_ne_zero (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem k_ne_zero (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : m.μ * m.ustar * m.v0 ≠ 0) : m.k ≠ 0 := by
   unfold Model.k
   have : m.Ls * m.μ * m.ustar * m.v0 = m.Ls * (m.μ * m.ustar * m.v0) := by ring
   rw [this]
   exact div_ne_zero (mul_ne_zero hL.ne' hs) (N_pos m hR).ne'
 
-private theorem iHatD_continuous (m : Model) : Continuous m.iHatD :=
+@[powerlib_domain] private theorem iHatD_continuous (m : Model) : Continuous m.iHatD :=
   continuous_iff_continuousAt.2 fun θ => (hasDerivAt_iHatD m θ).continuousAt
 
-private theorem iHatQ_continuous (m : Model) : Continuous m.iHatQ :=
+@[powerlib_domain] private theorem iHatQ_continuous (m : Model) : Continuous m.iHatQ :=
   continuous_iff_continuousAt.2 fun θ => (hasDerivAt_iHatQ m θ).continuousAt
 
 /-- **LaSalle set at `margin = 0`.** A solution segment of positive length of the cylinder field
@@ -568,7 +568,7 @@ that stays on the cylinder where `dH/dt = 0` starts at `{s = 0, ũ = 0, ĩ = 0}`
 motion is a negatively damped pendulum `C_dc ũ' = g ũ − κ s`, `θ' = η ũ` of constant energy
 `a ũ²/2 + k(1 − cos θ)`; where `ũ ≠ 0` the two force `a g ũ = (a − C_dc) κ s` and then
 `cos θ = const`, contradicting `θ' = η ũ ≠ 0`. -/
-private theorem margin_zero_segment (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem margin_zero_segment (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η ≠ 0) (hs : m.μ * m.ustar * m.v0 ≠ 0) (hm : m.margin = 0) {T : ℝ}
     {ψ : ℝ → State 5} (hT : 0 < T) (hψ : IsTrajectoryOn ψ m.cylField 0 T)
     (hE : ∀ t ∈ Icc 0 T, ψ t 0 ^ 2 + ψ t 1 ^ 2 = 1 ∧
@@ -705,7 +705,7 @@ they instantiate are the public foundation results of `theorem.Dynamics.LaSalle.
 
 /-- The image of every forward solution on the cylinder converges to the set
 `{s = 0, u = u*, i = î(c, s)}`. -/
-private theorem tendsto_cyl (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem tendsto_cyl (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η ≠ 0) (hs : m.μ * m.ustar * m.v0 ≠ 0) (hδ : 0 ≤ m.margin) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     Tendsto (fun t => cyl (φ t)) atTop (𝓝ˢ {y : State 5 | y 1 = 0 ∧ y 2 = m.ustar ∧
@@ -747,7 +747,7 @@ private theorem tendsto_cyl (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0
 source's strict condition `margin > 0`, with `C_dc, L_s, R_s > 0`, `η ≠ 0` and `μ u* v₀ ≠ 0`,
 every forward solution of the stiff-grid closed loop converges to **one** equilibrium
 `(j π, u*_dc, î_dq(j π))`, `j ∈ ℤ`. -/
-private theorem tendsto_equilibrium (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem tendsto_equilibrium (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η ≠ 0) (hs : m.μ * m.ustar * m.v0 ≠ 0) (hδ : 0 ≤ m.margin) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     ∃ j : ℤ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![j * Real.pi, m.ustar,
@@ -794,7 +794,7 @@ private theorem tendsto_equilibrium (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
 
 /-- The source's statement: every forward solution converges to the set
 `{ũ_dc = 0, ∇S(θ_dq) = 0, ĩ_dq = 0}` (with `∇S = deriv potential`). -/
-private theorem tendsto_critical (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem tendsto_critical (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η ≠ 0) (hs : m.μ * m.ustar * m.v0 ≠ 0) (hδ : 0 ≤ m.margin) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     Tendsto φ atTop (𝓝ˢ {x : State 4 | x 1 = m.ustar ∧ deriv m.potential (x 0) = 0 ∧
@@ -806,7 +806,7 @@ private theorem tendsto_critical (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (h
 
 /-- A forward solution on `[0, ∞)` from every state (with `margin ≥ 0`): the cylinder solution
 from `cyl x₀` stays in a compact energy sublevel set, and its angle is lifted back. -/
-private theorem exists_solution (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem exists_solution (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hδ : 0 ≤ m.margin) (x₀ : State 4) :
     ∃ φ : ℝ → State 4, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0) := by
   set c := m.cylEnergy (cyl x₀)
@@ -856,7 +856,7 @@ private theorem exists_solution (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR
       rw [hF] at h
       simpa using h
 
-private theorem energy_ge (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (x : State 4) :
+@[powerlib_domain] private theorem energy_ge (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (x : State 4) :
     m.k * (1 - Real.cos (x 0)) ≤ m.energy x := by
   unfold Model.energy
   have h1 : 0 ≤ m.Cdc / 2 * (x 1 - m.ustar) ^ 2 := by positivity
@@ -869,7 +869,7 @@ private theorem energy_ge (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (x : Stat
 `H − S(0) = 2k`), the window `{|θ_dq| < π, H − S(0) < 2k}` — the part below the saddle level of
 the energy well around the operating point — lies in its region of attraction: from every such
 initial state a forward solution exists, and every forward solution converges to `x*`. -/
-private theorem basin (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem basin (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η ≠ 0) (hs : 0 < m.μ * m.ustar * m.v0) (hδ : 0 ≤ m.margin) :
     ∀ x₀ ∈ {x : State 4 | |x 0| < Real.pi ∧ m.energy x < 2 * m.k},
       (∃ φ : ℝ → State 4, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) ∧
@@ -943,7 +943,7 @@ private theorem basin (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.R
 /-- **Boundary: `η ≠ 0` is necessary.** Without matching gain (`η = 0`, so `ω₀ = 0` and no
 synchronizing torque `κ = η k`), every `(θ, u*, î(θ))` is an equilibrium; for `μ u* v₀ ≠ 0` the one
 at `θ = π/2` has `∇S ≠ 0`, so the constant solution there does not converge to the source's set. -/
-private theorem not_tendsto_critical_of_eta_eq_zero (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem not_tendsto_critical_of_eta_eq_zero (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η = 0) (hs : m.μ * m.ustar * m.v0 ≠ 0) :
     ∃ φ : ℝ → State 4, IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0) ∧
       ¬ Tendsto φ atTop (𝓝ˢ {x : State 4 | x 1 = m.ustar ∧ deriv m.potential (x 0) = 0 ∧
@@ -993,7 +993,7 @@ private theorem not_tendsto_critical_of_eta_eq_zero (m : Model) (hL : 0 < m.Ls) 
 
 /-! ## Connection conclusions -/
 
-private theorem mem_den_flow' {m : Model} {P : Flow.Property} :
+@[powerlib_domain] private theorem mem_den_flow' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point)
     (show family.IsAutonomous Model.translated from fun _ => rfl)
@@ -1150,7 +1150,7 @@ conclusion. -/
         gcongr
     _ = _ := by ring
 
-private theorem quad_nonneg {a b u e1 e2 w1 w2 : ℝ} (ha : 0 < a) (hab : w1 ^ 2 + w2 ^ 2 ≤ a * b) :
+@[powerlib_foundation] private theorem quad_nonneg {a b u e1 e2 w1 w2 : ℝ} (ha : 0 < a) (hab : w1 ^ 2 + w2 ^ 2 ≤ a * b) :
     0 ≤ a * u ^ 2 + b * (e1 ^ 2 + e2 ^ 2) + 2 * u * (e1 * w1 + e2 * w2) := by
   have h : a * (a * u ^ 2 + b * (e1 ^ 2 + e2 ^ 2) + 2 * u * (e1 * w1 + e2 * w2)) =
       (a * u + (e1 * w1 + e2 * w2)) ^ 2 + (a * b - (w1 ^ 2 + w2 ^ 2)) * (e1 ^ 2 + e2 ^ 2) +
@@ -1291,7 +1291,7 @@ the model, not a connection conclusion. -/
 
 /-- Exponential decay of the energy along every solution segment (no synchronizing torque,
 `margin > 0`). Implementation evidence. -/
-private theorem energy_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem energy_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) {t₀ t₁ : ℝ} {φ : ℝ → State 4}
     (hφ : IsTrajectoryOn φ m.field t₀ t₁) :
     ∀ t ∈ Icc t₀ t₁, m.energy (φ t) ≤ Real.exp (-m.noSyncRate * (t - t₀)) * m.energy (φ t₀) :=
@@ -1300,7 +1300,7 @@ private theorem energy_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 
     (fun t _ => energy_lie_le_noSyncRate m hC hL hR hs hδ (φ t))
 
 /-- The coordinates `ũ, ĩ_d, ĩ_q` decay like `e^{−(rate/2)(t − t₀)}` along every segment. -/
-private theorem coord_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[powerlib_domain] private theorem coord_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) {t₀ t₁ : ℝ} {φ : ℝ → State 4}
     (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l) (hE : m.energy (φ t₀) ≤ E) :
     ∀ t ∈ Icc t₀ t₁,
@@ -1332,7 +1332,7 @@ private theorem coord_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0
           mul_le_mul_of_nonneg_left hd' hLp
       _ = _ := by ring
 
-private theorem hasDerivWithinAt_angle (m : Model) {φ : ℝ → State 4} {s : Set ℝ} {t : ℝ}
+@[powerlib_domain] private theorem hasDerivWithinAt_angle (m : Model) {φ : ℝ → State 4} {s : Set ℝ} {t : ℝ}
     (h : HasDerivWithinAt φ (m.field (φ t)) s t) :
     HasDerivWithinAt (fun τ => φ τ 0) (m.η * (φ t 1 - m.ustar)) s t := by
   have h0 := Dynamics.HasDerivWithinAt.euclidean_coord h 0
@@ -1343,7 +1343,7 @@ private theorem hasDerivWithinAt_angle (m : Model) {φ : ℝ → State 4} {s : S
 /-- **No synchronizing torque, `margin > 0`: every forward solution converges to an equilibrium**
 `(θ∞, u*, î(θ∞))` of the continuum `{(θ, u*, î(θ))}`: `ũ_dc, ĩ_dq → 0` exponentially and the angle
 settles (`θ' = η ũ` is integrable), it does not drift. -/
-private theorem tendsto_equilibrium_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[powerlib_domain] private theorem tendsto_equilibrium_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     ∃ θ : ℝ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ])) := by
@@ -1388,7 +1388,7 @@ private theorem tendsto_equilibrium_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL 
 
 /-- Lyapunov stability without synchronizing torque (`margin > 0`): the angle moves by at most a
 multiple of the initial deviation. -/
-@[tmio TM] private theorem lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -1528,7 +1528,7 @@ multiple of the initial deviation. -/
 
 /-! ### Family conclusions without synchronizing torque -/
 
-private theorem point_apply (m : Model) :
+@[powerlib_domain] private theorem point_apply (m : Model) :
     m.point 0 = 0 ∧ m.point 1 = m.ustar ∧ m.point 2 = m.iHatD 0 ∧ m.point 3 = m.iHatQ 0 := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> simp [Model.point]
 
@@ -1626,7 +1626,7 @@ def noSyncModel : Model :=
 
 /-- With `μ = 0` and `margin = 0` the DC error is conserved along every forward solution:
 `C_dc ũ' = −(G_dc + K_p) ũ = 0`. -/
-private theorem utilde_const_of_mu_eq_zero (m : Model) (hμ : m.μ = 0) (hm : m.margin = 0)
+@[powerlib_domain] private theorem utilde_const_of_mu_eq_zero (m : Model) (hμ : m.μ = 0) (hm : m.margin = 0)
     {φ : ℝ → State 4} (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     ∀ t, 0 ≤ t → φ t 1 = φ 0 1 := by
   have hGK : m.Gdc + m.Kp = 0 := by
@@ -1649,7 +1649,7 @@ private theorem utilde_const_of_mu_eq_zero (m : Model) (hμ : m.μ = 0) (hm : m.
 
 /-- With `μ = 0`, `margin = 0` and `R_s > 0`, for every `a` and `θ₀` the drifting motion
 `(θ₀ + η a t, u* + a, î(θ₀))` is a solution: the angle drifts linearly whenever `η a ≠ 0`. -/
-private theorem drift_isIntegralCurveOn (m : Model) (hR : 0 < m.Rs) (hμ : m.μ = 0)
+@[powerlib_domain] private theorem drift_isIntegralCurveOn (m : Model) (hR : 0 < m.Rs) (hμ : m.μ = 0)
     (hm : m.margin = 0) (a θ₀ : ℝ) :
     IsIntegralCurveOn (fun t => WithLp.toLp 2 ![θ₀ + m.η * a * t, m.ustar + a, m.iHatD θ₀,
       m.iHatQ θ₀]) (fun _ x => m.field x) univ := by
@@ -1697,7 +1697,7 @@ private theorem drift_isIntegralCurveOn (m : Model) (hR : 0 < m.Rs) (hμ : m.μ 
 
 /-- **Counterexample (no modulation, `margin = 0`).** The drifting solution with `ũ_dc ≡ 1` never
 approaches the source's set `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`. -/
-private theorem not_tendsto_critical_of_mu_eq_zero (m : Model) (hR : 0 < m.Rs) (hμ : m.μ = 0)
+@[powerlib_domain] private theorem not_tendsto_critical_of_mu_eq_zero (m : Model) (hR : 0 < m.Rs) (hμ : m.μ = 0)
     (hm : m.margin = 0) :
     ∃ φ : ℝ → State 4, IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0) ∧
       (∀ t, φ t 1 = m.ustar + 1) ∧
@@ -1763,7 +1763,7 @@ solution segment of positive length staying on the cylinder where `dH/dt = 0` st
 `ũ = 0, ĩ = 0`. If `μ ω₀ L_s ≠ 0` the energy is `a ũ²/2` there and `C_dc ũ' = g ũ` (`g > 0`), so
 `ũ ≠ 0` cannot keep the energy constant; if `ω₀ = 0` the set is `ĩ = 0` and keeping `ĩ_d, ĩ_q ≡ 0`
 forces `μ ũ (s/L_s − u*η c/R_s) = 0 = μ ũ (c/L_s + u*η s/R_s)`, hence `μ ũ (c² + s²)/L_s = 0`. -/
-private theorem no_sync_margin_zero_segment (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[powerlib_domain] private theorem no_sync_margin_zero_segment (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0) (hm : m.margin = 0) {T : ℝ}
     {ψ : ℝ → State 5} (hT : 0 < T) (hψ : IsTrajectoryOn ψ m.cylField 0 T)
     (hE : ∀ t ∈ Icc 0 T, ψ t 0 ^ 2 + ψ t 1 ^ 2 = 1 ∧
@@ -1887,7 +1887,7 @@ private theorem no_sync_margin_zero_segment (m : Model) (hC : 0 < m.Cdc) (hL : 0
 /-- **Modulation without synchronizing torque at `margin = 0`** (`μ ≠ 0`, `u* v₀ = 0`): every
 forward solution has `ũ_dc → 0` and `ĩ_dq → 0` (uniformly in the angle), by LaSalle on the
 cylinder. -/
-private theorem tendsto_error_of_no_sync_margin_zero (m : Model) (hC : 0 < m.Cdc)
+@[powerlib_domain] private theorem tendsto_error_of_no_sync_margin_zero (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
     (hm : m.margin = 0) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
@@ -2031,7 +2031,7 @@ evidence on the model, not a connection conclusion. -/
 
 /-- The reduction carries solutions to solutions of the reduced field (`κ = 0`). Implementation
 evidence. -/
-private theorem red_isIntegralCurveOn (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0) (hκ : m.κ = 0)
+@[powerlib_domain] private theorem red_isIntegralCurveOn (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0) (hκ : m.κ = 0)
     {φ : ℝ → State 4} {s : Set ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) s) :
     IsIntegralCurveOn (fun t => m.red (φ t)) (fun _ z => m.redField z) s := by
   intro t ht
@@ -2137,7 +2137,7 @@ conclusion. -/
       field_simp
       ring
 
-private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0) (he : e < 0) (hbc2 : b * c2 < 0)
+@[powerlib_foundation] private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0) (he : e < 0) (hbc2 : b * c2 < 0)
     (hbc1 : b * c1 * f ≤ 0) (hdet : a * (e ^ 2 + f ^ 2) - b * c1 * f - b * e * c2 < 0) :
     LinearSystems.IsHurwitz !![a, 0, b; c1, e, f; c2, -f, e] := by
   rw [Criteria.isHurwitz_fin_three_iff]
@@ -2236,7 +2236,7 @@ converges to one equilibrium** `(θ∞, u*, î(θ∞))`. LaSalle on the cylinder
 the rotation-reduced error `(ũ, R_θᵀ ĩ)` solves an autonomous system whose linearization is Hurwitz
 (`redJac_isHurwitz`), so once it is small it decays exponentially and `θ' = η ũ` is integrable.
 Implementation evidence (Rules §3a). -/
-private theorem tendsto_equilibrium_of_no_sync_margin_zero (m : Model) (hC : 0 < m.Cdc)
+@[powerlib_domain] private theorem tendsto_equilibrium_of_no_sync_margin_zero (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
     (hm : m.margin = 0) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
@@ -2320,7 +2320,7 @@ the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L
 `margin = 0`, the DC error are conserved, the current error decays), so `⟨z, z'⟩ ≤ 0` and the
 operating point is Lyapunov stable (`Dynamics.lyapunovStable_of_inner_nonpos`). Implementation
 evidence. -/
-@[tmio TM] private theorem lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -2364,7 +2364,7 @@ evidence. -/
 
 /-- The reduced error `red x = (ũ, R_θᵀ ĩ)` and the errors `(ũ, ĩ)` control each other.
 Implementation evidence (it names the model's reduction only; kept private with its users). -/
-private theorem red_bounds (m : Model) (x : State 4) :
+@[powerlib_domain] private theorem red_bounds (m : Model) (x : State 4) :
     |x 1 - m.ustar| ≤ ‖m.red x‖ ∧ |x 2 - m.iHatD (x 0)| ≤ 2 * ‖m.red x‖ ∧
       |x 3 - m.iHatQ (x 0)| ≤ 2 * ‖m.red x‖ ∧
       ‖m.red x‖ ≤ |x 1 - m.ustar| + 2 * (|x 2 - m.iHatD (x 0)| + |x 3 - m.iHatQ (x 0)|) := by
@@ -2412,7 +2412,7 @@ private theorem red_bounds (m : Model) (x : State 4) :
 /-- **Lyapunov stability without synchronizing torque, with modulation** (`μ ≠ 0`, `margin ≥ 0`):
 the rotation-reduced error is locally exponentially stable and the angle moves by at most a
 multiple of the initial error. Implementation evidence. -/
-@[tmio TM] private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.Cdc)
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
     (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by

@@ -143,7 +143,7 @@ every forward solution starting in a compact positively invariant set converges 
 
 /-- Zero-state detectability transported to the closed loop: a closed-loop solution along which
 `V̇` vanishes stays in `{y = 0}`, where the closed loop is the unforced system. -/
-@[tmio T] private theorem closedLoop_detectable
+@[tmio T, powerlib_foundation] private theorem closedLoop_detectable
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}

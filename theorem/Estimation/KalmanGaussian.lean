@@ -73,7 +73,7 @@ omit [MeasurableSpace Ω] in
 
 /-- The scalar model is the vector model with `n = p = 1`: `(X, Y)` is a Gaussian vector of
 `ℝ¹ × ℝ¹`. -/
-@[tmio T] private theorem hasGaussianLaw_fin_one (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] private theorem hasGaussianLaw_fin_one (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P) :
     HasGaussianLaw (fun ω => (fun _ : Fin 1 => X ω, fun _ : Fin 1 => h * X ω + V ω)) P := by
   have hJ : HasGaussianLaw (fun ω => (X ω, V ω)) P :=
@@ -86,7 +86,7 @@ omit [MeasurableSpace Ω] in
   ext <;> simp [L]
 
 /-- In the one-dimensional vector model the scalar gain solves `K Σ_YY = Σ_XY`. -/
-@[tmio T] private theorem gain_fin_one (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] private theorem gain_fin_one (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (i _j : Fin 1) :
     ∑ l, (Matrix.of fun _ _ => kgain p h r : Matrix (Fin 1) (Fin 1) ℝ) i l *
@@ -104,7 +104,7 @@ omit [MeasurableSpace Ω] in
   linear_combination kgain_spec (p := p) (r := r) hS
 
 /-- The σ-algebra of the measurement does not depend on reading it as a vector of `ℝ¹`. -/
-@[tmio T] private theorem comap_fin_one (Y : Ω → ℝ) :
+@[tmio T, powerlib_foundation] private theorem comap_fin_one (Y : Ω → ℝ) :
     MeasurableSpace.comap (fun ω (_ : Fin 1) => Y ω) inferInstance =
       MeasurableSpace.comap Y inferInstance := by
   apply le_antisymm
@@ -116,7 +116,7 @@ omit [MeasurableSpace Ω] in
     exact MeasurableSpace.comap_mono (measurable_pi_apply 0).comap_le
 
 /-- The means of the state and of the measurement. -/
-@[tmio T] private theorem integral_state_meas (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] private theorem integral_state_meas (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) :
     ∫ ω, X ω ∂P = m ∧ ∫ ω, (h * X ω + V ω) ∂P = h * m := by
   have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure

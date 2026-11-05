@@ -133,7 +133,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Along every input/state solution on a time set `s` (input `u(t) = (δω(t))`):
 `d/dt H(x(t)) = −K_p h(θ(t))² + h(θ(t)) δω(t)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem gflPH_trajectory_energy {u : ℝ → (Fin 1 → ℝ)} {x : ℝ → State 2} {s : Set ℝ}
+@[powerlib_domain] private theorem gflPH_trajectory_energy {u : ℝ → (Fin 1 → ℝ)} {x : ℝ → State 2} {s : Set ℝ}
     (hx : IsIntegralCurveOn x (fun t y => (gflPHModel h V hV Kp Ki hKp).field y (u t)) s)
     {t : ℝ} (ht : t ∈ s) :
     HasDerivWithinAt (fun τ => (gflPHModel h V hV Kp Ki hKp).H (x τ))
@@ -270,7 +270,7 @@ Static evidence on the model, not a connection conclusion. -/
 statement of `T-ph` (1.4) is not available for the form-B GFL PLL with `c₀ ≠ 0`.
 Implementation evidence: a statement about the particular storages `H − c`, outside the sentence
 language (Rules §3a). -/
-private theorem formB_not_passiveWithStorage {ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ}
+@[powerlib_domain] private theorem formB_not_passiveWithStorage {ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ}
     {hKp : 0 ≤ Kp} (hωC : ωg * Cf ≠ 0) (hc₀ : c₀ ≠ 0) (c : ℝ) :
     ¬ (formBPHModel ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki hKp).system.PassiveWith
       (fun x => (formBPHModel ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki hKp).H x - c) := by

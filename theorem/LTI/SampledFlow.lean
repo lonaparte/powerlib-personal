@@ -70,13 +70,13 @@ namespace LTI
     smul_smul]
 
 /-- The solution of `ẋ = A x` through `x₀` at `t₀` is the flow `e^{(t - t₀) A} x₀`. -/
-private theorem solution_zero (A : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
+@[powerlib_foundation] private theorem solution_zero (A : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
     Linear.solution A 0 t₀ x₀ t = Map.op (exp ((t - t₀) • A)) x₀ := by
   rw [op_exp_smul]
   simp [Linear.solution]
 
 /-- The flow is continuous in time. -/
-private theorem continuous_op_exp (A : Matrix (Fin n) (Fin n) ℝ) :
+@[powerlib_foundation] private theorem continuous_op_exp (A : Matrix (Fin n) (Fin n) ℝ) :
     Continuous fun s : ℝ => Map.op (exp (s • A)) := by
   simp_rw [op_exp_smul]
   exact continuous_iff_continuousAt.2 fun t =>
@@ -89,12 +89,12 @@ private theorem continuous_op_exp (A : Matrix (Fin n) (Fin n) ℝ) :
   exact Linear.op_mul_apply _ _ y
 
 /-- The solution from `y` at time zero is a solution segment on every interval. -/
-private theorem isTrajectoryOn_solution (A : Matrix (Fin n) (Fin n) ℝ) (y : ℝⁿ) (t₁ : ℝ) :
+@[powerlib_foundation] private theorem isTrajectoryOn_solution (A : Matrix (Fin n) (Fin n) ℝ) (y : ℝⁿ) (t₁ : ℝ) :
     IsTrajectoryOn (Linear.solution A 0 0 y) (affineLinearVectorField A 0) 0 t₁ :=
   fun t _ => (Linear.solution_hasDerivAt A 0 0 y t).hasDerivWithinAt
 
 /-- Sampled at `k T`, the solution from `y` is the `k`-th iterate of the sampled map. -/
-private theorem solution_mul (A : Matrix (Fin n) (Fin n) ℝ) (T : ℝ) (y : ℝⁿ) (k : ℕ) :
+@[powerlib_foundation] private theorem solution_mul (A : Matrix (Fin n) (Fin n) ℝ) (T : ℝ) (y : ℝⁿ) (k : ℕ) :
     Linear.solution A 0 0 y (k * T) = (⇑(Map.op (exp (T • A))))^[k] y := by
   rw [solution_zero, iterate_op_exp, sub_zero]
 

@@ -119,7 +119,7 @@ def model : Plant 4 2 :=
   simp only [ΔL]
   ring
 
-private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
+@[powerlib_domain] private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
     (h : (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     -(a : ℂ) * v 0 + b * v 1 + c * v 2 = μ * v 0 ∧
       -(b : ℂ) * v 0 - a * v 1 + c * v 3 = μ * v 1 ∧ -v 0 = μ * v 2 ∧ -v 1 = μ * v 3 := by
@@ -177,7 +177,7 @@ private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
   · linear_combination Complex.I * hs + (-b * s) * Complex.I_sq
   · ring
 
-private lemma eigenvector_ne_zero (s : ℂ) :
+@[powerlib_foundation] private lemma eigenvector_ne_zero (s : ℂ) :
     (![s, -Complex.I * s, -1, Complex.I] : Fin 4 → ℂ) ≠ 0 := by
   intro h0
   have := congrFun h0 2
@@ -216,13 +216,13 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
       (eigenvector_ne_zero _) (eigenpair_of_root hs₂), ?_⟩
     linarith
 
-private lemma characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
+@[powerlib_domain] private lemma characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
     characteristicMatrix (stateMatrix a b c) s =
       !![s + a, -b, -c, 0; b, s + a, 0, -c; 1, 0, s, 0; 0, 1, 0, s] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [characteristicMatrix, stateMatrix]
 
-private lemma det_four (a b c s : ℂ) :
+@[powerlib_foundation] private lemma det_four (a b c s : ℂ) :
     (!![s + a, -b, -c, 0; b, s + a, 0, -c; 1, 0, s, 0; 0, 1, 0, s] :
       Matrix (Fin 4) (Fin 4) ℂ).det =
       (s ^ 2 + (a + b * Complex.I) * s + c) * (s ^ 2 + (a - b * Complex.I) * s + c) := by
@@ -314,7 +314,7 @@ def family : Family MismatchParams Spectral.Requirement 4 2 :=
   rw [stateMatrix_isHurwitz_iff]
   rfl
 
-@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {p | p.Stable}) := show family.den (.flow P) = {p | p.Stable} from
   Spectral.linear_den (U := Unstable) (fun p => (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff_stable p))).symm) hP
 
@@ -359,7 +359,7 @@ mismatched family is the PI family's, pulled back along `base`. -/
 
 /-- Reference tracking of the mismatched loop: both currents converge to their references.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem tracks_reference (hL : 0 < p.base.L)
+@[powerlib_domain] private theorem tracks_reference (hL : 0 < p.base.L)
     (hR : 0 < p.base.R + p.base.Kp) (hKi : 0 < p.base.Ki) (v iref : Fin 2 → ℝ)
     {x : ℝ → ℝ⁴} (hx : ∀ t, HasDerivAt x (p.field v iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 (iref 0)) ∧

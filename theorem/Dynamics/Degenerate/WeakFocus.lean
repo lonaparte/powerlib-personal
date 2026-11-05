@@ -155,7 +155,7 @@ end Deriv
 
 /-! ### Bounds of homogeneous polynomials -/
 
-@[tmio T] private theorem abs_mono_le {a b c N : ℝ} (ha : |a| ≤ N) (hb : |b| ≤ N) (hc : |c| ≤ N)
+@[tmio T, powerlib_foundation] private theorem abs_mono_le {a b c N : ℝ} (ha : |a| ≤ N) (hb : |b| ≤ N) (hc : |c| ≤ N)
     (i j k : ℕ) : |a ^ i * b ^ j * c ^ k| ≤ N ^ (i + j + k) := by
   have hN : 0 ≤ N := (abs_nonneg a).trans ha
   rw [pow_add, pow_add, abs_mul, abs_mul, abs_pow, abs_pow, abs_pow]
@@ -181,7 +181,7 @@ end Deriv
           gcongr
       _ = (|t.1| + (l.map fun t => |t.1|).sum) * N ^ d := by ring
 
-@[tmio T] private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N) (hw : |w| ≤ N)
+@[tmio T, powerlib_foundation] private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N) (hw : |w| ≤ N)
     (hdv : |dv| ≤ 1) {m p q d : ℕ} (hd : m + p + q = d + 1) :
     |(m : ℝ) * x ^ (m - 1) * y ^ p * w ^ q * dv| ≤ (m : ℝ) * N ^ d := by
   have hN : 0 ≤ N := (abs_nonneg x).trans hx
@@ -483,7 +483,7 @@ to `−2 λ h₂² − κ / (4 H² λ (H + λ²)² (4H + λ²)) (H a² + b²)²`
   have q4 := mul_le_mul_of_nonneg_right hμ2 (sq_nonneg u)
   linarith
 
-@[tmio T] private theorem poly3_zero {l : List (ℝ × ℕ × ℕ × ℕ)} {d : ℕ} (hd : 0 < d)
+@[tmio T, powerlib_foundation] private theorem poly3_zero {l : List (ℝ × ℕ × ℕ × ℕ)} {d : ℕ} (hd : 0 < d)
     (hl : ∀ t ∈ l, t.2.1 + t.2.2.1 + t.2.2.2 = d) : poly3 l 0 0 0 = 0 := by
   have h := abs_poly3_le l d hl (a := 0) (b := 0) (c := 0) (N := 0) (by simp) (by simp) (by simp)
   rw [zero_pow hd.ne', mul_zero] at h

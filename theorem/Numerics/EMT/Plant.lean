@@ -115,7 +115,7 @@ when its resistance is positive. -/
 /-- Discretized RL model, trapezoidal rule: for `R > 0` and every `h > 0` the implicit step
 is uniquely solvable and every discrete trajectory decays geometrically.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support
+@[powerlib_domain] private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
     (∀ initial, ∃! x, IsTrapezoidalTrajectory (rlField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (rlField m) h x →
@@ -133,7 +133,7 @@ private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_trajectory
 /-- Discretized RL model, backward Euler: for `R > 0` and every `h > 0` the implicit step is
 uniquely solvable and every discrete trajectory decays geometrically.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem rlPlant_backwardEulerDiscretization_exponentiallyStable_trajectory_support
+@[powerlib_domain] private theorem rlPlant_backwardEulerDiscretization_exponentiallyStable_trajectory_support
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
     (∀ initial, ∃! x, IsBackwardEulerTrajectory (rlField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (rlField m) h x →
@@ -153,7 +153,7 @@ when the resistance is positive (every trajectory of the trapezoidal recursion s
 `‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`): the trapezoidal rule neither creates nor
 removes stability of this plant.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajectory_support
+@[powerlib_domain] private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajectory_support
     (m : RL.Impedance) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
@@ -172,7 +172,7 @@ private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajec
 /-- The trapezoidal recursion of `rlMatrix` is exactly the trajectory predicate of the
 discretized RL field.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem rlPlant_isTrapezoidalTrajectory_iff (m : RL.Impedance)
+@[powerlib_domain] private theorem rlPlant_isTrapezoidalTrajectory_iff (m : RL.Impedance)
     {h : ℝ} (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) (x : ℕ → Fin 1 → ℝ) :
     IsTrapezoidalTrajectory (rlField m) h x ↔
       ∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h (rlMatrix m)⟩ (x k) := by
@@ -224,7 +224,7 @@ Read through the existing family endpoint. -/
 `h > 0` the implicit step is uniquely solvable and every discrete trajectory (zero terminal
 voltage perturbations) decays geometrically.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support
+@[powerlib_domain] private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support
     (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
     (∀ initial, ∃! x, IsTrapezoidalTrajectory (lclField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (lclField m) h x →
@@ -238,7 +238,7 @@ private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_traj
 `h > 0` the implicit step is uniquely solvable and every discrete trajectory decays
 geometrically.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable_trajectory_support
+@[powerlib_domain] private theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable_trajectory_support
     (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
     (∀ initial, ∃! x, IsBackwardEulerTrajectory (lclField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (lclField m) h x →
@@ -253,7 +253,7 @@ decays geometrically (every trajectory of the trapezoidal recursion satisfies
 `‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`) exactly when the plant is damped
 (`R₁ ≠ 0 ∨ R₂ ≠ 0`).
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajectory_support
+@[powerlib_domain] private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajectory_support
     (m : LCL.Circuit) (hp : m.Passive) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
@@ -273,7 +273,7 @@ private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff_
 /-- Constant terminal voltages: every trapezoidal trajectory of the discretized LCL model
 converges geometrically to any equilibrium of the continuous field.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem idealLCLPlant_trapezoidal_deviation_decay_trajectory_support
+@[powerlib_domain] private theorem idealLCLPlant_trapezoidal_deviation_decay_trajectory_support
     (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) (u vg : ℝ) :
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ (xeq : Fin 3 → ℝ), lclInputField m u vg xeq = 0 →
       ∀ x, IsTrapezoidalTrajectory (lclInputField m u vg) h x →
@@ -293,7 +293,7 @@ private theorem idealLCLPlant_trapezoidal_deviation_decay_trajectory_support
 /-- Constant terminal voltage: every trapezoidal trajectory of the discretized RL model
 converges geometrically to any equilibrium of the continuous field.
 Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-private theorem rlPlant_trapezoidal_deviation_decay_trajectory_support
+@[powerlib_domain] private theorem rlPlant_trapezoidal_deviation_decay_trajectory_support
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) (v : ℝ) :
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ (xeq : Fin 1 → ℝ), rlInputField m v xeq = 0 →
       ∀ x, IsTrapezoidalTrajectory (rlInputField m v) h x →
@@ -471,7 +471,7 @@ def lclTrapezoidalDeviation :
   implicitRealization .trapezoidal LCL.family LCL.Circuit.plant LCLDeviation.design LCLDeviation.h
 
 /-- The affine RL recursion is exactly the homogeneous implicit recursion in deviations. -/
-private theorem rlDeviation_trajectory_iff (y : RLDeviation) (x : ℕ → Fin 1 → ℝ) :
+@[powerlib_domain] private theorem rlDeviation_trajectory_iff (y : RLDeviation) (x : ℕ → Fin 1 → ℝ) :
     IsTrapezoidalTrajectory (rlInputField y.design y.voltage) y.h x ↔
       IsTrapezoidalTrajectory (rlField y.design) y.h (fun j => x j - y.equilibrium) := by
   have hf : ∀ j, rlField y.design (x j - y.equilibrium) =
@@ -488,7 +488,7 @@ private theorem rlDeviation_trajectory_iff (y : RLDeviation) (x : ℕ → Fin 1 
     linear_combination (norm := module) hj
 
 /-- The affine LCL recursion is exactly the homogeneous implicit recursion in deviations. -/
-private theorem lclDeviation_trajectory_iff (y : LCLDeviation) (x : ℕ → Fin 3 → ℝ) :
+@[powerlib_domain] private theorem lclDeviation_trajectory_iff (y : LCLDeviation) (x : ℕ → Fin 3 → ℝ) :
     IsTrapezoidalTrajectory
       (lclInputField y.design y.converterVoltage y.gridVoltage) y.h x ↔
       IsTrapezoidalTrajectory (lclField y.design) y.h (fun j => x j - y.equilibrium) := by
@@ -506,7 +506,7 @@ private theorem lclDeviation_trajectory_iff (y : LCLDeviation) (x : ℕ → Fin 
     linear_combination (norm := module) hj
 
 /-- The actual affine RL recursion, written in the Euclidean coordinates used by the family. -/
-private theorem rlDeviation_step_iff (y : RLDeviation)
+@[powerlib_domain] private theorem rlDeviation_step_iff (y : RLDeviation)
     (hw : IsUnit (1 - (y.h / 2) • y.design.plant.A).det) (x : ℕ → Fin 1 → ℝ) :
     IsTrapezoidalTrajectory (rlInputField y.design y.voltage) y.h x ↔
       ∀ k, WithLp.toLp 2 (x (k + 1) - y.equilibrium) =
@@ -522,7 +522,7 @@ private theorem rlDeviation_step_iff (y : RLDeviation)
   exact (WithLp.toLp_injective 2).eq_iff.symm
 
 /-- The actual affine LCL recursion, written in the Euclidean coordinates used by the family. -/
-private theorem lclDeviation_step_iff (y : LCLDeviation)
+@[powerlib_domain] private theorem lclDeviation_step_iff (y : LCLDeviation)
     (hw : IsUnit (1 - (y.h / 2) • y.design.plant.A).det) (x : ℕ → Fin 3 → ℝ) :
     IsTrapezoidalTrajectory
       (lclInputField y.design y.converterVoltage y.gridVoltage) y.h x ↔

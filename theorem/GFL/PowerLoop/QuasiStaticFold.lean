@@ -138,12 +138,12 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
 section FoldLocal
 
 /-- The size function `s = |z₀| + |z₁| + |z₂|`. -/
-private theorem size3_tendsto :
+@[powerlib_foundation] private theorem size3_tendsto :
     Tendsto (fun z : Dynamics.State 3 => |z 0| + |z 1| + |z 2|) (𝓝 0) (𝓝 0) := by
   have hc : Continuous (fun z : Dynamics.State 3 => |z 0| + |z 1| + |z 2|) := by fun_prop
   simpa using hc.tendsto 0
 
-private theorem coord3_isBigO (i : Fin 3) :
+@[powerlib_foundation] private theorem coord3_isBigO (i : Fin 3) :
     (fun z : Dynamics.State 3 => z i) =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ 1 :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, pow_one]
@@ -153,19 +153,19 @@ private theorem coord3_isBigO (i : Fin 3) :
     refine le_trans ?_ (le_abs_self _)
     fin_cases i <;> simp <;> linarith)
 
-private theorem mul3_isBigO {f g : Dynamics.State 3 → ℝ} {a b k : ℕ}
+@[powerlib_foundation] private theorem mul3_isBigO {f g : Dynamics.State 3 → ℝ} {a b k : ℕ}
     (hf : f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ a)
     (hg : g =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ b) (hk : k ≤ a + b) :
     (fun z => f z * g z) =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
   ((hf.mul hg).congr_right fun _ => (pow_add _ _ _).symm).trans
     (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
 
-private theorem mono3_isBigO {f : Dynamics.State 3 → ℝ} {a k : ℕ}
+@[powerlib_foundation] private theorem mono3_isBigO {f : Dynamics.State 3 → ℝ} {a k : ℕ}
     (hf : f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ a) (hk : k ≤ a) :
     f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
   hf.trans (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
 
-private theorem trig3_isBigO :
+@[powerlib_foundation] private theorem trig3_isBigO :
     ((fun z : Dynamics.State 3 => 1 - Real.cos (z 0)) =O[𝓝 0]
         fun z => (|z 0| + |z 1| + |z 2|) ^ 2) ∧
     ((fun z : Dynamics.State 3 => Real.sin (z 0) - z 0) =O[𝓝 0]
@@ -191,7 +191,7 @@ variable {A B Xg kp ki κ : ℝ}
 
 /-- The fold Lie derivative: `U̇ = Φ + D` with the negative definite quadratic form `Φ` and a
 remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
-private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
+@[powerlib_foundation] private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
     {g : Dynamics.State 3 → Dynamics.State 3}
     (hg0 : ∀ z, g z 0 =
       kp * (-A * Real.sin (z 0) + B * (1 - Real.cos (z 0)) + Xg * z 2) + ki * z 1)
@@ -224,7 +224,7 @@ private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
     κ ^ 2 * z 1 * A * Real.sin (z 0)) * hAB
 
 /-- The fold remainder is `O(s³)`. -/
-private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
+@[powerlib_foundation] private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
     (fun z : Dynamics.State 3 =>
       -κ * (2 * A ^ 2 * (1 - Real.cos (z 0) - z 0 ^ 2 / 2) +
           B * Xg * (z 2 * (1 - Real.cos (z 0))) + A * Xg * (z 2 * (Real.sin (z 0) - z 0))) +
@@ -280,7 +280,7 @@ private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
     (by norm_num))).add (mul3_isBigO s1 d1 (by norm_num))).add (mul3_isBigO s2 d2 (by norm_num))
 
 /-- `s² ≤ (3/c)(κA²z₀² + 2k_i(k_p+κ)z₁² + κ(X_g z₂)²)`. -/
-private theorem fold_size_isBigO (hA : A ≠ 0) (hκ : 0 < κ) (hk : 0 < ki * (kp + κ))
+@[powerlib_foundation] private theorem fold_size_isBigO (hA : A ≠ 0) (hκ : 0 < κ) (hk : 0 < ki * (kp + κ))
     (hXg : Xg ≠ 0) :
     (fun z : Dynamics.State 3 => (|z 0| + |z 1| + |z 2|) ^ 2) =O[𝓝 0]
       fun z => κ * A ^ 2 * z 0 ^ 2 + 2 * ki * (kp + κ) * z 1 ^ 2 + κ * (Xg * z 2) ^ 2 := by
@@ -308,7 +308,7 @@ private theorem fold_size_isBigO (hA : A ≠ 0) (hκ : 0 < κ) (hk : 0 < ki * (k
 /-- **Saddle-node instability.** A `C¹` field with the fold structure (`A ≠ 0`, `B² = A²`,
 `X_g ≠ 0`, `κ > 0`, `k_i(k_p + κ) > 0`) is unstable at the origin: the fold function decreases
 strictly on a punctured neighbourhood and is negative along the ray `t (B, 0, AB/X_g)`. -/
-private theorem fold_unstable (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2) (hκ : 0 < κ)
+@[powerlib_foundation] private theorem fold_unstable (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2) (hκ : 0 < κ)
     (hk : 0 < ki * (kp + κ)) (hXg : Xg ≠ 0) {g : Dynamics.State 3 → Dynamics.State 3}
     (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 =
@@ -391,19 +391,19 @@ section Members
 @[powerlib_domain] theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
   (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
 
-private theorem model_field0 (m : Model) (z : Dynamics.State 3) :
+@[powerlib_domain] private theorem model_field0 (m : Model) (z : Dynamics.State 3) :
     m.field z 0 = m.params.kp * vq m.params (z 0 + m.θ) (z 2 + m.Id) + m.params.ki * z 1 := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-private theorem model_field1 (m : Model) (z : Dynamics.State 3) :
+@[powerlib_domain] private theorem model_field1 (m : Model) (z : Dynamics.State 3) :
     m.field z 1 = vq m.params (z 0 + m.θ) (z 2 + m.Id) := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-private theorem model_field2 (m : Model) (z : Dynamics.State 3) :
+@[powerlib_domain] private theorem model_field2 (m : Model) (z : Dynamics.State 3) :
     m.field z 2 = m.params.kP * (m.params.Pref - power m.params (z 0 + m.θ) (z 2 + m.Id)) := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
+@[powerlib_domain] private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
     (φ ι : ℝ) : vq p (φ + θ) (ι + Id) =
       -(p.V * Real.cos θ) * Real.sin φ + p.V * Real.sin θ * (1 - Real.cos φ) + -p.Xg * ι := by
   unfold vq
@@ -436,7 +436,7 @@ private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * 
 
 /-- **Saddle-node.** With positive gains, at a balanced point on the fold `cos 2θ* = 0` with
 `V cos θ* > 0` the translated field is unstable. -/
-@[tmio TM] private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
+@[tmio TM, powerlib_domain] private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hkp : 0 < m.params.kp) (hki : 0 < m.params.ki) (hkP : 0 < m.params.kP)
     (hA : 0 < m.params.V * Real.cos m.θ) (hc2 : Real.cos (2 * m.θ) = 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -459,7 +459,7 @@ private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * 
     (fun z => (model_fold_form heq z).2.2)
 
 /-- Membership through the sound translation. -/
-@[tmio TM] private theorem mem_den_of_meets {m : Model} {s : Sentence}
+@[tmio TM, powerlib_domain] private theorem mem_den_of_meets {m : Model} {s : Sentence}
     (h : ∀ q ∈ translate s, Meets m q) :
     connection% (m ∈ family.den s) := by
   change m ∈ family.den s
@@ -467,14 +467,14 @@ private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * 
   unfold powerlib.TMIO.Statement at hs
   exact (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
 
-private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
+@[powerlib_foundation] private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
     (h : ∃ᶠ z in 𝓝 (0 : Dynamics.State 3), P z) (ε : ℝ) (hε : 0 < ε) :
     ∃ x, ‖x - 0‖ < ε ∧ P x := by
   obtain ⟨x, hP, hx⟩ := (h.and_eventually (Metric.ball_mem_nhds 0 hε)).exists
   exact ⟨x, by rw [← dist_eq_norm]; exact hx, hP⟩
 
 /-- A dead grid (`V = 0`) with `k_i > 0`: the integrator or the current drifts linearly. -/
-@[tmio TM] private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
+@[tmio TM, powerlib_domain] private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hki : 0 < m.params.ki) (hV : m.params.V = 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -539,7 +539,7 @@ private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
 /-- With positive gains a Lyapunov stable equilibrium has a strict Routh–Hurwitz Jacobian: every
 other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 0` or
 `cos 2θ* < 0`, `det J > 0`; the fold `cos 2θ* = 0`). -/
-@[tmio TM] private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
+@[tmio TM, powerlib_domain] private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
     (heq : IsEq m.params m.θ m.Id) (h : LyapunovStable m.field 0) :
     connection% (m ∈ TMIO.realize Meets {.jacobianStable}) := by
   unfold TMIO.Statement
@@ -613,7 +613,7 @@ other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 
 /-- Within positive gains the translations of Lyapunov and local asymptotic stability,
 `{equilibrium, jacobianStable}`, are exact: a Lyapunov stable point of the `C¹` field is an
 equilibrium, and the strict Routh–Hurwitz guard decides (`Spectral.exactUnder_of_equilibrium`). -/
-@[tmio TM] private theorem exactUnder_of_routh {P : Flow.Property}
+@[tmio TM, powerlib_domain] private theorem exactUnder_of_routh {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (family.ExactUnder {.positiveGains} (.flow P)) := by
   change family.ExactUnder {.positiveGains} (.flow P)

@@ -144,7 +144,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- `x(t) = (cos t, sin t)` is an unforced solution of the lossless loop on every segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-private theorem losslessLC_trajectory (t₀ t₁ : ℝ) :
+@[powerlib_domain] private theorem losslessLC_trajectory (t₀ t₁ : ℝ) :
     IsTrajectoryOn (fun t => WithLp.toLp 2 ![Real.cos t, Real.sin t])
       losslessLC.plant.system.zeroInput t₀ t₁ := by
   intro t _
