@@ -60,19 +60,19 @@ namespace Params
 
 variable (p : Params)
 
-@[tmio M, powerlib_foundation] theorem amp_pos (hVg : 0 < p.Vg) (hΔ : p.Δ ≠ 0) : 0 < p.amp :=
+@[tmio M, powerlib_domain] theorem amp_pos (hVg : 0 < p.Vg) (hΔ : p.Δ ≠ 0) : 0 < p.amp :=
   div_pos hVg (p.sqrt_Δ_pos hΔ)
 
 /-- Zeros of `h` (equivalently, the angles of equilibria) in the window `[a, a + 2π)`. -/
 def hZeros (a : ℝ) : Set ℝ := {θ | θ ∈ Ico a (a + 2 * π) ∧ p.h θ = 0}
 
-@[powerlib_foundation] theorem hZeros_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (a : ℝ) :
+@[powerlib_domain] theorem hZeros_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (a : ℝ) :
     p.hZeros a = sinusoidZeros p.c0 p.amp p.phase a := by
   ext θ
   simp only [hZeros, sinusoidZeros, Set.mem_ofPred_eq, p.h_eq_polar hwC hΔ]
 
 /-- At most two equilibrium angles per period, whatever the operating point. -/
-@[powerlib_foundation] theorem ncard_equilibria_le_two (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[powerlib_domain] theorem ncard_equilibria_le_two (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (a : ℝ) : (p.hZeros a).ncard ≤ 2 := by
   rw [p.hZeros_eq hwC hΔ]
   rcases lt_trichotomy |p.c0| p.amp with h | h | h
@@ -83,7 +83,7 @@ def hZeros (a : ℝ) : Set ℝ := {θ | θ ∈ Ico a (a + 2 * π) ∧ p.h θ = 0
 /-- A4, `|c₀| < A`: in every period window the reduced PLL model has exactly two equilibria
 `(θ_s, 0)` and `(θ_u, 0)` (the count and the explicit pair).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem two_equilibria_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[powerlib_domain] theorem two_equilibria_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hc : |p.c0| < p.amp) (a : ℝ) :
     (p.hZeros a).ncard = 2 ∧
       p.hZeros a = {stableRoot p.c0 p.amp p.phase a, saddleRoot p.c0 p.amp p.phase a} := by
@@ -113,7 +113,7 @@ locally exponentially stable and `(θ_u, 0)` is unstable. -/
 /-- A4, `|c₀| = A` (saddle-node): exactly one equilibrium per period, at which the Jacobian is the
 nonzero nilpotent `[[0, K_i], [0, 0]]`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem fold_equilibrium_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[powerlib_domain] theorem fold_equilibrium_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
     (p.hZeros a).ncard = 1 ∧ p.hZeros a = {stableRoot p.c0 p.amp p.phase a} ∧
       p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) = 0 ∧
@@ -130,20 +130,20 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- A4, `|c₀| > A`: the reduced PLL model has no equilibrium (loss of synchronism).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem no_equilibrium (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
+@[powerlib_domain] theorem no_equilibrium (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
     (hKi : p.Ki ≠ 0) (hc : p.amp < |p.c0|) (y : State 2) : p.reducedField y ≠ 0 := by
   rw [Ne, p.reducedField_eq_zero_iff hKi, p.h_eq_polar hwC hΔ]
   exact fun h => SpecialFunctions.sinusoid_ne_zero_of_lt (p.amp_pos hVg hΔ).le hc (y 0) h.1
 
 /-- Existence of a PLL equilibrium angle: `(∃ θ, h θ = 0) ↔ |c₀| ≤ A`. -/
-@[powerlib_foundation] theorem exists_h_zero_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[powerlib_domain] theorem exists_h_zero_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     (∃ θ, p.h θ = 0) ↔ |p.c0| ≤ p.amp := by
   simp only [p.h_eq_polar hwC hΔ]
   exact SpecialFunctions.exists_sinusoid_zero_iff (p.amp_pos hVg hΔ)
 
 /-- A3 + A4: the complete 10-state field has an equilibrium iff `|c₀| ≤ A`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field10_exists_equilibrium_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
+@[powerlib_domain] theorem field10_exists_equilibrium_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0)
     (hVg : 0 < p.Vg) : (∃ x, p.field10 x = 0) ↔ |p.c0| ≤ p.amp := by
   rw [← p.exists_h_zero_iff hwC hΔ hVg]
@@ -159,20 +159,20 @@ Static evidence on the model, not a connection conclusion. -/
 /-- `N = Δ i_d* − ((1 − b) i_d* + a i_q*)`, so that `c₀ = N/(Δ ω_g C_f)`. -/
 def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
 
-@[powerlib_foundation] theorem c0_eq_snNumerator (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
+@[powerlib_domain] theorem c0_eq_snNumerator (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.c0 = p.snNumerator / (p.Δ * p.wC) := by
   rw [c0, snNumerator]; field_simp
 
-@[powerlib_foundation] private lemma sq_c0_mul (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
+@[powerlib_domain] private lemma sq_c0_mul (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.c0 ^ 2 * (p.Δ ^ 2 * p.wC ^ 2) = p.snNumerator ^ 2 := by
   rw [p.c0_eq_snNumerator hwC hΔ]; field_simp
 
-@[powerlib_foundation] private lemma sq_amp_mul (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
+@[powerlib_domain] private lemma sq_amp_mul (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.amp ^ 2 * (p.Δ ^ 2 * p.wC ^ 2) = (p.wC * p.Vg) ^ 2 * p.Δ := by
   have hs := p.sqrt_Δ_pos hΔ
   rw [amp, div_pow, Real.sq_sqrt p.Δ_nonneg]; field_simp
 
-@[powerlib_foundation] private lemma abs_c0_cmp (_hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[powerlib_domain] private lemma abs_c0_cmp (_hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     (|p.c0| < p.amp ↔ p.c0 ^ 2 < p.amp ^ 2) ∧ (|p.c0| = p.amp ↔ p.c0 ^ 2 = p.amp ^ 2) := by
   have hA := p.amp_pos hVg hΔ
   constructor
@@ -180,7 +180,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
   · rw [sq_eq_sq_iff_abs_eq_abs, abs_of_pos hA]
 
 /-- Saddle-node surface `Σ_SN`: `|c₀| = A ⇔ N² = (ω_g C_f V_g)² Δ`. -/
-@[powerlib_foundation] theorem snSurface_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[powerlib_domain] theorem snSurface_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     |p.c0| = p.amp ↔ p.snNumerator ^ 2 = (p.wC * p.Vg) ^ 2 * p.Δ := by
   have hD : 0 < p.Δ ^ 2 * p.wC ^ 2 := by
     have := p.Δ_pos hΔ; positivity
@@ -190,7 +190,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
   · intro h; exact mul_right_cancel₀ hD.ne' h
 
 /-- Interior of the existence region: `|c₀| < A ⇔ N² < (ω_g C_f V_g)² Δ`. -/
-@[powerlib_foundation] theorem snInterior_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[powerlib_domain] theorem snInterior_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     |p.c0| < p.amp ↔ p.snNumerator ^ 2 < (p.wC * p.Vg) ^ 2 * p.Δ := by
   have hD : 0 < p.Δ ^ 2 * p.wC ^ 2 := by
     have := p.Δ_pos hΔ; positivity
@@ -199,7 +199,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
 
 /-- Existence of a PLL equilibrium in explicit parameters: `N² ≤ (ω_g C_f V_g)² Δ`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field10_exists_equilibrium_iff_explicit (hLf : p.Lf ≠ 0)
+@[powerlib_domain] theorem field10_exists_equilibrium_iff_explicit (hLf : p.Lf ≠ 0)
     (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0)
     (hKi : p.Ki ≠ 0) (hVg : 0 < p.Vg) :
     (∃ x, p.field10 x = 0) ↔ p.snNumerator ^ 2 ≤ (p.wC * p.Vg) ^ 2 * p.Δ := by

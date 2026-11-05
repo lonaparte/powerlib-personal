@@ -79,7 +79,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
 /-- The centred zero-input field is `C¹` near the origin: it is the SRF-PLL field with offset
 `K_i η*`, translated to the selected point. The smoothness hypothesis of the generic Euler laws
 for port systems (`Numerics.eulerPorts_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_zeroInput (m : Model) :
+@[powerlib_domain] theorem contDiffAt_zeroInput (m : Model) :
     ContDiffAt ℝ 1 (m.toPH.shift m.point).system.zeroInput 0 := by
   change ContDiffAt ℝ 1 (fun z => m.toPH.zeroInputField (z + m.point)) 0
   rw [show m.toPH.zeroInputField = srfField m.V m.Kp m.Ki (m.Ki * m.ηs) from

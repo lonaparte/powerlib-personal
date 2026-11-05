@@ -96,10 +96,10 @@ def rhs (δ : ℝ) : ℝ := c.Kp * (c.Pstar - c.Pmax * Real.sin δ)
 /-- The one-dimensional PSC field on `State 1`. -/
 def field : State 1 → State 1 := lift c.rhs
 
-@[tmio M, powerlib_foundation] theorem rhs_contDiff {k : WithTop ℕ∞} : ContDiff ℝ k c.rhs := by
+@[tmio M, powerlib_domain] theorem rhs_contDiff {k : WithTop ℕ∞} : ContDiff ℝ k c.rhs := by
   unfold rhs; fun_prop
 
-@[powerlib_foundation] theorem hasDerivAt_rhs (δ : ℝ) :
+@[powerlib_domain] theorem hasDerivAt_rhs (δ : ℝ) :
     HasDerivAt c.rhs (-(c.Kp * c.Pmax * Real.cos δ)) δ := by
   unfold rhs
   have h := ((Real.hasDerivAt_sin δ).const_mul c.Pmax).const_sub c.Pstar |>.const_mul c.Kp
@@ -108,13 +108,13 @@ def field : State 1 → State 1 := lift c.rhs
 
 /-- Equilibria: `δ₀` is an equilibrium iff `P_max sin δ₀ = P*` (`K_p ≠ 0`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_eq_zero_iff (hK : c.Kp ≠ 0) (δ : ℝ) :
+@[powerlib_domain] theorem field_eq_zero_iff (hK : c.Kp ≠ 0) (δ : ℝ) :
     c.field (embed δ) = 0 ↔ c.Pmax * Real.sin δ = c.Pstar := by
   rw [field, NormalForm.lift_eq_zero_iff, rhs, mul_eq_zero, or_iff_right hK, sub_eq_zero, eq_comm]
 
 /-- Equilibria exist iff `|P*| ≤ P_max` (`K_p ≠ 0`, `P_max > 0`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem exists_equilibrium_iff (hK : c.Kp ≠ 0) (hP : 0 < c.Pmax) :
+@[powerlib_domain] theorem exists_equilibrium_iff (hK : c.Kp ≠ 0) (hP : 0 < c.Pmax) :
     (∃ x, c.field x = 0) ↔ |c.Pstar| ≤ c.Pmax := by
   rw [← SpecialFunctions.exists_sinusoid_zero_iff (φ := 0) hP]
   constructor
@@ -167,7 +167,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 1 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
@@ -199,7 +199,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- The whole requirement language is inconsistent: the slope cannot be both negative and
 positive. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of .stableSlope .unstableSlope fun m h1 h2 => ?_
@@ -297,7 +297,7 @@ without requirement. -/
 `θ_g(t) = ω₁ t + θ_{g0}`: `θ̇ = ω₁ + K_p (P* − P_max sin(θ − θ_g))` at time `t` iff the relative
 angle `δ = θ − θ_g` satisfies `δ̇ = K_p (P* − P_max sin δ)` at `t` (the scalar field `rhs` that
 `field` lifts). -/
-@[powerlib_foundation] theorem absoluteAngle_iff (ω₁ θg0 : ℝ) (θ : ℝ → ℝ) (t : ℝ) :
+@[powerlib_domain] theorem absoluteAngle_iff (ω₁ θg0 : ℝ) (θ : ℝ → ℝ) (t : ℝ) :
     HasDerivAt θ (ω₁ + c.Kp * (c.Pstar - c.Pmax * Real.sin (θ t - (ω₁ * t + θg0)))) t ↔
       HasDerivAt (fun s => θ s - (ω₁ * s + θg0)) (c.rhs (θ t - (ω₁ * t + θg0))) t := by
   have hg : HasDerivAt (fun s => ω₁ * s + θg0) ω₁ t := by
@@ -317,7 +317,7 @@ angle `δ = θ − θ_g` satisfies `δ̇ = K_p (P* − P_max sin δ)` at `t` (th
 /-- At a balanced fold angle (`cos δ₀ = 0`) the scalar field is `k (1 − cos(δ − δ₀))` with
 `k = K_p P_max sin δ₀`: it has one sign on both sides of `δ₀`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem rhs_eq_fold {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+@[powerlib_domain] theorem rhs_eq_fold {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (z : ℝ) :
     c.rhs z = c.Kp * c.Pmax * Real.sin δ₀ * (1 - Real.cos (z - δ₀)) := by
   have hs : Real.sin z = Real.sin δ₀ * Real.cos (z - δ₀) := by

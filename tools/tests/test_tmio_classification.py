@@ -59,6 +59,46 @@ class TMIOClassificationTests(unittest.TestCase):
             {"T": 1, "M": 1, "TM": 1, "MI": 1, "IO": 1},
         )
 
+    def test_all_metadata_tmio_pairs_in_both_orders(self) -> None:
+        allowed = {'foundation': {'T', 'M', 'TM'}, 'domain': {'M', 'TM', 'MI', 'IO'}}
+        for metadata in ('foundation', 'domain'):
+            for kind in classification.KINDS:
+                for reverse in (False, True):
+                    for private in ('', 'private '):
+                        with self.subTest(metadata=metadata, kind=kind, reverse=reverse, private=private):
+                            attrs = [f'powerlib_{metadata}', f'tmio {kind}']
+                            if reverse:
+                                attrs.reverse()
+                            self.write(self.claim('baseline', 'TM') +
+                                       '@[' + ', '.join(attrs) + '] ' + private +
+                                       'theorem ordinary : True := by trivial\n')
+                            if kind in allowed[metadata]:
+                                self.assertEqual(classification.validate(self.root)['TM'], 1)
+                            else:
+                                with self.assertRaisesRegex(classification.ClassificationError,
+                                                            f'incompatible powerlib_{metadata}'):
+                                    classification.validate(self.root)
+
+    def test_connection_does_not_determine_metadata(self) -> None:
+        self.write(
+            '@[tmio TM, powerlib_foundation] theorem generic : connection% (True) := by trivial\n'
+            '@[tmio M, powerlib_domain] theorem model : True := by trivial\n'
+            '@[powerlib_domain] private theorem helper : True := by trivial\n'
+            + self.claim('unclassified_connection', 'MI'))
+        entries = classification.scan_theorems(self.root)
+        self.assertEqual(entries['generic']['powerlib_kinds'], ['foundation'])
+        self.assertEqual(entries['model']['powerlib_kinds'], ['domain'])
+        self.assertEqual(entries['unclassified_connection']['powerlib_kinds'], [])
+        self.assertEqual(classification.validate(self.root)['MI'], 1)
+
+    def test_comments_and_tactic_arguments_do_not_supply_metadata(self) -> None:
+        self.write(self.claim('baseline', 'TM') +
+                   '-- @[powerlib_foundation]\n'
+                   '@[tmio MI, aesop safe (rule_sets := [powerlib_foundation])]\n'
+                   'theorem helper : True := by trivial\n')
+        self.assertEqual(classification.scan_theorems(self.root)['helper']['powerlib_kinds'], [])
+        classification.validate(self.root)
+
     def test_missing_attribute_is_rejected(self) -> None:
         self.write(self.claim("missing"))
         self.assertEqual(classification.scan_connections(self.root)["missing"]["kinds"], [])

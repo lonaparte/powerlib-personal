@@ -168,7 +168,7 @@ theorem mem_den_globallyExponentiallyStable (α : Gain) :
 semantics connection. Every model satisfies the stability sentences, sampled contraction and
 passivity; none is unstable or conservative; and a model decays at the rate `a` exactly when
 `a ≤ α`, since small solutions decay no faster than at the rate `α + ‖x₀‖²`. -/
-@[tmio TM, powerlib_domain] theorem chain_eq_semantics (hn : 0 < n) :
+@[tmio TM, powerlib_foundation] theorem chain_eq_semantics (hn : 0 < n) :
     connection% ((family (n := n)).chain = (family (n := n)).semantics) := by
   unfold powerlib.TMIO.Statement
   have hges : ∀ α : Gain, Flow.GloballyExponentiallyStable (field (n := n) α.1) 0 :=

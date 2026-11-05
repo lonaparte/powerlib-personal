@@ -74,7 +74,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 
 /-- The translated swing field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 m.field :=
+@[powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 m.field :=
   (m.p.contDiff_field (k := 1)).comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the swing family is not sound.** A

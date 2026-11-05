@@ -186,17 +186,17 @@ omit p in
         · by_cases h' : j.val = k.val + 1 <;> simp [hj, h']
     _ = _ := by rw [Finset.sum_sub_distrib, Finset.sum_ite_eq']; simp
 
-@[powerlib_foundation] theorem gradient_inl (x : Idx N → ℝ) (k : Fin N) :
+@[powerlib_domain] theorem gradient_inl (x : Idx N → ℝ) (k : Fin N) :
     (model p N).gradient x (.inl k) = current p N x k := by
   simp [DiagonalPH.gradient, model, current]; ring
 
-@[powerlib_foundation] theorem gradient_inr (x : Idx N → ℝ) (k : Fin N) :
+@[powerlib_domain] theorem gradient_inr (x : Idx N → ℝ) (k : Fin N) :
     (model p N).gradient x (.inr k) = voltage p N x k := by
   simp [DiagonalPH.gradient, model, voltage]; ring
 
 /-- KVL of cell `k`: `φ̇_k = v_left - v_k - R'Δx i_k`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_flux (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) :
+@[powerlib_domain] theorem field_flux (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) :
     (model p N).field x u (.inl k) =
       leftVoltage p N x u k - voltage p N x k - p.R' * p.Δx * current p N x k := by
   simp only [DiagonalPH.field, sub_mulVec, Pi.add_apply, Pi.sub_apply, mulVec,
@@ -209,7 +209,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- KCL of node `k`: `q̇_k = i_k - i_right - G'Δx v_k`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_charge (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) :
+@[powerlib_domain] theorem field_charge (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) :
     (model p N).field x u (.inr k) =
       current p N x k - rightCurrent p N x u k - p.G' * p.Δx * voltage p N x k := by
   simp only [DiagonalPH.field, sub_mulVec, Pi.add_apply, Pi.sub_apply, mulVec,
@@ -223,7 +223,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Port supply: `v₁ i_0 - i₂ v_{N-1}`, the electrical power entering the ladder.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem supply_eq (n : ℕ) (x : Idx (n + 1) → ℝ) (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem supply_eq (n : ℕ) (x : Idx (n + 1) → ℝ) (u : Fin 2 → ℝ) :
     (model p (n + 1)).supply x u =
       u 0 * current p (n + 1) x 0 - u 1 * voltage p (n + 1) x (Fin.last n) := by
   simp only [DiagonalPH.supply, DiagonalPH.output, mulVec,
@@ -264,13 +264,13 @@ def ladderPH : Port.PortHamiltonian (N + N) 2 :=
     connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
 
-@[powerlib_foundation] theorem damping_pos (hR : 0 < p.R') (hG : 0 < p.G') (a : Idx N) :
+@[powerlib_domain] theorem damping_pos (hR : 0 < p.R') (hG : 0 < p.G') (a : Idx N) :
     0 < (model p N).d a := by
   rcases a with _ | _
   · exact mul_pos hR p.Δx_pos
   · exact mul_pos hG p.Δx_pos
 
-@[powerlib_foundation] theorem ladderPH_dissipation_pos (hR : 0 < p.R') (hG : 0 < p.G') :
+@[powerlib_domain] theorem ladderPH_dissipation_pos (hR : 0 < p.R') (hG : 0 < p.G') :
     ∀ x : Fin (N + N) → ℝ, x ≠ 0 → 0 < x ⬝ᵥ ((ladderPH p N).R *ᵥ x) :=
   (model p N).toPH_dissipation_pos _ _ (damping_pos p N hR hG)
 

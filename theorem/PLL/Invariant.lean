@@ -60,7 +60,7 @@ open powerlib.PLL.PIPLL (srf)
 
 /-- First-order `(θ, ξ)` system ⇒ second-order pendulum: along any solution of `xiField`,
 `θ̇ = Δω − a sin θ + b ξ` and `θ̈ = −a cos θ · θ̇ − b sin θ`. -/
-@[tmio M, powerlib_foundation] theorem xiField_pendulum {a b Δω : ℝ} {φ : ℝ → State 2}
+@[tmio M, powerlib_domain] theorem xiField_pendulum {a b Δω : ℝ} {φ : ℝ → State 2}
     (hφ : ∀ t, HasDerivAt φ (xiField a b Δω (φ t)) t) (t : ℝ) :
     HasDerivAt (fun τ => φ τ 0) (Δω - a * Real.sin (φ t 0) + b * φ t 1) t ∧
       HasDerivAt (fun τ => Δω - a * Real.sin (φ τ 0) + b * φ τ 1)
@@ -94,7 +94,7 @@ open powerlib.PLL.PIPLL (srf)
 
 /-- The `(θ_err, ξ)` field is the untranslated field of the unit-amplitude SRF family member with
 gains `(a, b)` and offset `−Δω`. -/
-@[powerlib_foundation] theorem xi_piPLLField (a b Δω θ : ℝ) :
+@[powerlib_domain] theorem xi_piPLLField (a b Δω θ : ℝ) :
     piPLLField (srf 1 a b (-Δω) θ).h a b (-Δω) = xiField a b Δω := by
   rw [srf_piPLLField, xiField_eq_srfField]
 

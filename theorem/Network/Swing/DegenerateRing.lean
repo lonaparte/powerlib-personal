@@ -673,7 +673,7 @@ theorem degenerate_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
 
 /-- A null vector of the linearization weights (a grounded direction `v ≠ 0` with
 `∑ⱼ Wₖⱼ (vₖ − vⱼ) = 0` at every machine) is a zero eigenvector of the reduced Jacobian. -/
-@[tmio M, powerlib_foundation] theorem not_isHurwitz_of_kernel {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem not_isHurwitz_of_kernel {p : Params n} {θ : Fin (n + 1) → ℝ}
     {v : Fin n → ℝ} (hv : v ≠ 0)
     (hker : ∀ k, ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) = 0) :
     connection% ((⟨p, θ⟩ : Model n) ∉ TMIO.realize Meets {.jacobianStable}) := by
@@ -705,7 +705,7 @@ theorem degenerate_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
 
 /-- **A degenerate witness for every number of machines `n + 5`.** Power balance, a strict isolated
 minimum of the potential, and a null vector of the linearization weights. -/
-@[powerlib_foundation] theorem exists_degenerate (n : ℕ) :
+@[powerlib_domain] theorem exists_degenerate (n : ℕ) :
     ∃ p : Params (n + 4), ∃ θ : Fin (n + 4 + 1) → ℝ,
       (∀ k, p.P k = powerInjection p.B θ k) ∧
       (∃ r > 0, ∀ v : Fin (n + 4) → ℝ, v ≠ 0 → ‖v‖ < r →
@@ -737,7 +737,7 @@ isolated minimum of the network potential (LaSalle), although the linearization 
 
 /-- The reduced Jacobian of the five-machine ring is not Hurwitz (zero eigenvalue along the null
 direction `(9, 6, 4, 2)` of the Hessian). Static evidence on the model. -/
-@[tmio M, powerlib_foundation] theorem ring5_not_isHurwitz :
+@[tmio M, powerlib_domain] theorem ring5_not_isHurwitz :
     connection% (ring5 ∉ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets, ring5]
   change ¬ LinearSystems.IsHurwitz (jacobian ring5.params ring5.θ)

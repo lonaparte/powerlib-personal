@@ -121,7 +121,7 @@ def fullField (p : Params n) (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)
     (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ) :=
   (x.2, fun k => (p.P k - p.D k * x.2 k - powerInjection p.B x.1 k) / p.M k)
 
-@[tmio M, powerlib_foundation] theorem powerInjection_add_const (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+@[tmio M, powerlib_domain] theorem powerInjection_add_const (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
     (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     powerInjection B (fun k => θ k + c) = powerInjection B θ := by
   funext k
@@ -130,7 +130,7 @@ def fullField (p : Params n) (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)
 /-- The full model has the equilibrium continuum `(θ* + c𝟙, 0)`: its linearization has a
 zero eigenvalue along `𝟙`, so it cannot be exponentially stable in full coordinates. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem fullField_equilibrium_shift (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[powerlib_domain] theorem fullField_equilibrium_shift (p : Params n) (θ : Fin (n + 1) → ℝ)
     (heq : ∀ k, p.P k = powerInjection p.B θ k) (c : ℝ) :
     fullField p ((fun k => θ k + c), 0) = 0 := by
   simp only [fullField, powerInjection_add_const, ← heq]
@@ -164,11 +164,11 @@ def reducedField (p : Params n) (z : State (n + (n + 1))) : State (n + (n + 1)) 
     (fun i => z (wIdx i.succ) - z (wIdx 0))
     (fun k => (p.P k - p.D k * z (wIdx k) - powerInjection p.B (angleMap z) k) / p.M k) r
 
-@[simp, powerlib_foundation] theorem reducedField_dIdx (p : Params n) (z : State (n + (n + 1)))
+@[simp, powerlib_domain] theorem reducedField_dIdx (p : Params n) (z : State (n + (n + 1)))
     (i : Fin n) : reducedField p z (dIdx i) = z (wIdx i.succ) - z (wIdx 0) := by
   simp [reducedField]
 
-@[simp, powerlib_foundation] theorem reducedField_wIdx (p : Params n) (z : State (n + (n + 1)))
+@[simp, powerlib_domain] theorem reducedField_wIdx (p : Params n) (z : State (n + (n + 1)))
     (k : Fin (n + 1)) : reducedField p z (wIdx k) =
       (p.P k - p.D k * z (wIdx k) - powerInjection p.B (angleMap z) k) / p.M k := by
   simp [reducedField]
@@ -201,7 +201,7 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
 
 /-- The reduction intertwines the full and the reduced field. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem reducedField_reduce (p : Params n)
+@[powerlib_domain] theorem reducedField_reduce (p : Params n)
     (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
     reducedField p (reduce x) = reduce (fullField p x) := by
   apply state_ext
@@ -244,7 +244,7 @@ def equilibrium (θ : Fin (n + 1) → ℝ) : State (n + (n + 1)) := reduce (θ, 
 
 /-- The synchronous point is an equilibrium of the reduced field. Static evidence on the model,
 not a connection conclusion. -/
-@[powerlib_foundation] theorem reducedField_equilibrium (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[powerlib_domain] theorem reducedField_equilibrium (p : Params n) (θ : Fin (n + 1) → ℝ)
     (heq : ∀ k, p.P k = powerInjection p.B θ k) :
     reducedField p (equilibrium θ) = 0 := by
   rw [equilibrium, reducedField_reduce]
@@ -320,7 +320,7 @@ selected point. -/
 def family : Family (Model n) Requirement (n + (n + 1)) 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous :
+@[powerlib_domain] theorem family_isAutonomous :
     (family (n := n)).IsAutonomous Model.field := fun _ => rfl
 
 /-- A flow sentence of a model is the sentence of the untranslated reduced field at the
@@ -330,26 +330,26 @@ private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
-@[simp, powerlib_foundation] theorem jacobian_dd (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[simp, powerlib_domain] theorem jacobian_dd (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i i' : Fin n) : jacobian p θ (dIdx i) (dIdx i') = 0 := by
   simp [jacobian, jacobianBlocks]
 
-@[simp, powerlib_foundation] theorem jacobian_dw (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[simp, powerlib_domain] theorem jacobian_dw (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i : Fin n) (k : Fin (n + 1)) : jacobian p θ (dIdx i) (wIdx k) =
       (if k = i.succ then 1 else 0) - (if k = 0 then 1 else 0) := by
   simp [jacobian, jacobianBlocks]
 
-@[simp, powerlib_foundation] theorem jacobian_wd (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[simp, powerlib_domain] theorem jacobian_wd (p : Params n) (θ : Fin (n + 1) → ℝ)
     (k : Fin (n + 1)) (i : Fin n) : jacobian p θ (wIdx k) (dIdx i) =
       -(laplacian (flowWeights p.B θ) k i.succ) / p.M k := by
   simp [jacobian, jacobianBlocks]
 
-@[simp, powerlib_foundation] theorem jacobian_ww (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[simp, powerlib_domain] theorem jacobian_ww (p : Params n) (θ : Fin (n + 1) → ℝ)
     (k k' : Fin (n + 1)) : jacobian p θ (wIdx k) (wIdx k') =
       if k = k' then -(p.D k / p.M k) else 0 := by
   simp [jacobian, jacobianBlocks]
 
-@[powerlib_foundation] theorem flowWeights_angleMap_equilibrium (p : Params n)
+@[powerlib_domain] theorem flowWeights_angleMap_equilibrium (p : Params n)
     (θ : Fin (n + 1) → ℝ) :
     flowWeights p.B (angleMap (equilibrium θ)) = flowWeights p.B θ := by
   ext i j
@@ -360,7 +360,7 @@ private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
     ∑ r, f r = ∑ i : Fin n, f (dIdx i) + ∑ k : Fin (n + 1), f (wIdx k) :=
   Fin.sum_univ_add f
 
-@[powerlib_foundation] theorem laplacian_angleMap (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[powerlib_domain] theorem laplacian_angleMap (p : Params n) (θ : Fin (n + 1) → ℝ)
     (v : State (n + (n + 1))) (k : Fin (n + 1)) :
     (laplacian (flowWeights p.B θ) *ᵥ angleMap v) k =
       ∑ i : Fin n, laplacian (flowWeights p.B θ) k i.succ * v (dIdx i) := by
@@ -368,7 +368,7 @@ private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
     angleMap_succ]
 
 /-- The Jacobian of the reduced field at the synchronous equilibrium. -/
-@[powerlib_foundation] theorem hasFDerivAt_reducedField (p : Params n) (θ : Fin (n + 1) → ℝ) :
+@[powerlib_domain] theorem hasFDerivAt_reducedField (p : Params n) (θ : Fin (n + 1) → ℝ) :
     HasFDerivAt (reducedField p)
       (Matrix.toEuclideanCLM (n := Fin (n + (n + 1))) (𝕜 := ℝ) (jacobian p θ)) (equilibrium θ) := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
@@ -435,7 +435,7 @@ private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
   have hre0 : μ.re = 0 := by nlinarith [mul_nonneg hm.le (mul_nonneg hnn hnn)]
   exact hμ (Complex.ext hre0 him0)
 
-@[powerlib_foundation] theorem flowWeights_symm (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[powerlib_domain] theorem flowWeights_symm (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i j : Fin (n + 1)) :
     flowWeights p.B θ i j = flowWeights p.B θ j i := by
   simp only [flowWeights, of_apply, p.B_symm i j]
@@ -443,7 +443,7 @@ private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
 
 /-- The reduced swing Jacobian is Hurwitz when the linearization weights are
 nonnegative and their positive edges connect all machines. -/
-@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem jacobian_isHurwitz (p : Params n) (θ : Fin (n + 1) → ℝ)
     (hWnn : ∀ i j, 0 ≤ flowWeights p.B θ i j) (hconn : ∀ i j, Reach (flowWeights p.B θ) i j) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
@@ -592,7 +592,7 @@ nonnegative and their positive edges connect all machines. -/
 
 /-! ## Local exponential stability -/
 
-@[powerlib_foundation] theorem reducedField_contDiff (p : Params n) :
+@[powerlib_domain] theorem reducedField_contDiff (p : Params n) :
     ContDiff ℝ 1 (reducedField p) := by
   rw [contDiff_euclidean]
   intro r
@@ -617,7 +617,7 @@ nonnegative and their positive edges connect all machines. -/
         ((contDiff_apply ℝ ℝ j).comp angleMap.contDiff)
 
 /-- The angle condition on a connected coupling graph makes the reduced Jacobian Hurwitz. -/
-@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz_of_angle (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem jacobian_isHurwitz_of_angle (p : Params n) (θ : Fin (n + 1) → ℝ)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach p.B i j) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
@@ -671,7 +671,7 @@ the untranslated field. -/
 
 /-- No model has both a Hurwitz reduced Jacobian (angle condition on a connected graph) and an
 unstable one: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize (Meets (n := n)) Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -707,7 +707,7 @@ holds without requirement. -/
 /-- An equilibrium of the reduced field at the selected point is a power-balance point (the
 converse of `reducedField_equilibrium`). Read through the existing family endpoint.
  -/
-@[tmio M, powerlib_foundation] theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : reducedField p (equilibrium θ) = 0) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
@@ -846,7 +846,7 @@ force (the reduced Jacobian has a zero column). -/
 
 /-- The reduced Jacobian of two uncoupled machines is not Hurwitz: the relative angle is not
 restored (zero column). Read through the existing family endpoint. -/
-@[tmio M, powerlib_foundation] theorem uncoupled_not_isHurwitz :
+@[tmio M, powerlib_domain] theorem uncoupled_not_isHurwitz :
     connection% (uncoupled ∉ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
   change ¬ LinearSystems.IsHurwitz (jacobian uncoupled.params uncoupled.θ)
@@ -952,7 +952,7 @@ energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increas
 
 /-- The reduced Jacobian of `n + 2` uncoupled machines is not Hurwitz (the column of `δ₀` is zero).
 Read through the existing family endpoint. -/
-@[tmio M, powerlib_foundation] theorem uncoupledN_not_isHurwitz :
+@[tmio M, powerlib_domain] theorem uncoupledN_not_isHurwitz :
     connection% (uncoupledN n ∉ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
   change ¬ LinearSystems.IsHurwitz (jacobian (uncoupledN n).params (uncoupledN n).θ)
@@ -985,7 +985,7 @@ point whose reduced Jacobian is not Hurwitz. -/
 
 /-- The reduced Jacobian of a single machine (`n = 0`, the frequency alone) is Hurwitz. Read through the existing family endpoint.
  -/
-@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz_zero (p : Params 0) (θ : Fin 1 → ℝ) :
+@[tmio M, powerlib_domain] theorem jacobian_isHurwitz_zero (p : Params 0) (θ : Fin 1 → ℝ) :
     connection% ((⟨p, θ⟩ : Model 0) ∈ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
   change LinearSystems.IsHurwitz (jacobian p θ)

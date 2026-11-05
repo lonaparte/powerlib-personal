@@ -76,21 +76,21 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
       0, m.g.ωc, -(1 / m.g.M);
       m.g.D * m.g.ωc / m.g.M, -(m.g.D / m.g.M), -(1 / m.g.M)]
 
-@[tmio M, simp, powerlib_foundation] theorem hopfCoord_apply_zero (m : Model) (z : State 3) :
+@[tmio M, simp, powerlib_domain] theorem hopfCoord_apply_zero (m : Model) (z : State 3) :
     hopfCoord m z 0 = (m.g.ωc + m.g.D / m.g.M) * z 0 + z 1 := by
   simp [hopfCoord, toEuclideanCLM_apply3]
 
-@[simp, powerlib_foundation] theorem hopfCoord_apply_one (m : Model) (z : State 3) :
+@[simp, powerlib_domain] theorem hopfCoord_apply_one (m : Model) (z : State 3) :
     hopfCoord m z 1 = m.g.ωc * z 1 - z 2 / m.g.M := by
   simp [hopfCoord, toEuclideanCLM_apply3]; ring
 
-@[simp, powerlib_foundation] theorem hopfCoord_apply_two (m : Model) (z : State 3) :
+@[simp, powerlib_domain] theorem hopfCoord_apply_two (m : Model) (z : State 3) :
     hopfCoord m z 2 = m.g.D * m.g.ωc / m.g.M * z 0 - m.g.D / m.g.M * z 1 - z 2 / m.g.M := by
   simp [hopfCoord, toEuclideanCLM_apply3]; ring
 
 /-- The angle deviation is recovered from the Hopf coordinates:
 `(λ a − b + c)/(H + λ²) = δ − δ*`. -/
-@[powerlib_foundation] theorem hopfCoord_angle (m : Model) (hM : 0 < m.g.M) (hD : 0 < m.g.D)
+@[powerlib_domain] theorem hopfCoord_angle (m : Model) (hM : 0 < m.g.M) (hD : 0 < m.g.D)
     (hω : 0 < m.g.ωc) (z : State 3) :
     ((m.g.ωc + m.g.D / m.g.M) * hopfCoord m z 0 - hopfCoord m z 1 + hopfCoord m z 2) /
       (m.g.D * m.g.ωc / m.g.M + (m.g.ωc + m.g.D / m.g.M) ^ 2) = z 0 := by

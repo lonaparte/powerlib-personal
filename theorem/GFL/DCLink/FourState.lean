@@ -170,14 +170,14 @@ def IsEq (θ0 : ℝ) : Prop :=
 /-- `v_{d0} = V₀ cos θ₀` -/
 def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
 
-@[tmio M, powerlib_foundation] theorem field_eq_regField {y : Dynamics.State 4}
+@[tmio M, powerlib_domain] theorem field_eq_regField {y : Dynamics.State 4}
     (hy : 1 / 2 ≤ WithLp.ofLp y 2) : field p y = regField p y := by
   simp only [field, regField, Dynamics.lift]
   congr 1
   ext i
   fin_cases i <;> simp [coordField, regCoordField, Dynamics.invExt_eq hy, div_eq_mul_inv]
 
-@[powerlib_foundation] theorem field_eq_regField_of_near {θ0 : ℝ} {y : Dynamics.State 4}
+@[powerlib_domain] theorem field_eq_regField_of_near {θ0 : ℝ} {y : Dynamics.State 4}
     (hy : ‖y - opPoint θ0‖ < 1 / 2) : field p y = regField p y := by
   apply field_eq_regField
   have h := Dynamics.abs_coord_sub_le (opPoint θ0) y 2
@@ -187,7 +187,7 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
   show 1 / 2 ≤ y 2
   linarith
 
-@[powerlib_foundation] theorem isEq_iff (hC : p.C ≠ 0) (θ0 : ℝ) :
+@[powerlib_domain] theorem isEq_iff (hC : p.C ≠ 0) (θ0 : ℝ) :
     field p (opPoint θ0) = 0 ↔ IsEq p θ0 := by
   constructor
   · intro h
@@ -211,20 +211,20 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
     · simp [coordField, idc, Params.γ, h2]; field_simp; ring
     · simp [coordField]
 
-@[powerlib_foundation] theorem regField_opPoint {θ0 : ℝ} (hC : p.C ≠ 0) (h : IsEq p θ0) :
+@[powerlib_domain] theorem regField_opPoint {θ0 : ℝ} (hC : p.C ≠ 0) (h : IsEq p θ0) :
     regField p (opPoint θ0) = 0 := by
   rw [← field_eq_regField p (by simp [opPoint]; norm_num)]
   exact (isEq_iff p hC θ0).2 h
 
 /-- Principal equilibrium branch: `θ₀ = arcsin(−X_g i_{d0}/V₀)`, `|X_g i_{d0}| < V₀`. -/
-@[powerlib_foundation] theorem principal_branch (hV0 : 0 < p.V0)
+@[powerlib_domain] theorem principal_branch (hV0 : 0 < p.V0)
     (hlt : |p.Xg * p.id0| < p.V0) :
     p.V0 * Real.sin (Real.arcsin (-(p.Xg * p.id0) / p.V0)) = -(p.Xg * p.id0) ∧
       0 < Real.cos (Real.arcsin (-(p.Xg * p.id0) / p.V0)) := by
   have hc : |-(p.Xg * p.id0)| < p.V0 := by rwa [abs_neg]
   exact ⟨SpecialFunctions.mul_sin_arcsin_div hc.le hV0, SpecialFunctions.cos_arcsin_div_pos hc hV0⟩
 
-@[powerlib_foundation] theorem contDiff_regField : ContDiff ℝ 1 (regField p) := by
+@[powerlib_domain] theorem contDiff_regField : ContDiff ℝ 1 (regField p) := by
   have hinv : ContDiff ℝ 1 Dynamics.invExt := Dynamics.contDiff_invExt
   apply Dynamics.contDiff_lift
   apply contDiff_pi.2
@@ -261,11 +261,11 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
        -p.γ * vd0 p θ0 * p.kiv;
      0, 0, 1, 0]
 
-@[powerlib_foundation] theorem jacGen_opPoint (θ0 : ℝ) : jacGen p θ0 1 0 = A0 p θ0 := by
+@[powerlib_domain] theorem jacGen_opPoint (θ0 : ℝ) : jacGen p θ0 1 0 = A0 p θ0 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [jacGen, A0, vd0, idc] <;> first | ring1 | (left; ring1)
 
-@[powerlib_foundation] theorem hasFDerivAt_regCoordField {y : Fin 4 → ℝ} (hy : 1 / 2 < y 2) :
+@[powerlib_domain] theorem hasFDerivAt_regCoordField {y : Fin 4 → ℝ} (hy : 1 / 2 < y 2) :
     HasFDerivAt (regCoordField p)
       (Matrix.toLin' (jacGen p (y 0) (y 2) (y 3))).toContinuousLinearMap y := by
   have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 4) y
@@ -306,7 +306,7 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
     simp [jacGen, dotProduct, Fin.sum_univ_four]
 
 /-- `A₀` is the Jacobian of the (regularized) field at the operating point. -/
-@[powerlib_foundation] theorem fderiv_regField_opPoint (θ0 : ℝ) :
+@[powerlib_domain] theorem fderiv_regField_opPoint (θ0 : ℝ) :
     fderiv ℝ (regField p) (opPoint θ0) =
       Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (A0 p θ0) := by
   have := hasFDerivAt_regCoordField p (y := ![θ0, 0, 1, 0]) (by simp; norm_num)
@@ -314,7 +314,7 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
   exact Dynamics.fderiv_lift (by simpa [opPoint] using this)
 
 /-- The physical field has the same Jacobian `A₀` at the operating point. -/
-@[powerlib_foundation] theorem fderiv_field_opPoint (θ0 : ℝ) :
+@[powerlib_domain] theorem fderiv_field_opPoint (θ0 : ℝ) :
     fderiv ℝ (field p) (opPoint θ0) =
       Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (A0 p θ0) := by
   rw [← fderiv_regField_opPoint]
@@ -340,19 +340,19 @@ def b1 (θ0 : ℝ) : Fin 4 → ℝ :=
   ![-p.kp * p.V0 * Real.sin θ0, -p.V0 * Real.sin θ0, Pabs p θ0 1 0 / p.C, 0]
 
 /-- The Jacobian at `z₀` is exactly affine in the modulation depth: `A₀ + ε A₁`. -/
-@[powerlib_foundation] theorem jac_modulated (θ0 ε : ℝ) :
+@[powerlib_domain] theorem jac_modulated (θ0 ε : ℝ) :
     jacGen (modulated p ε) θ0 1 0 = A0 p θ0 + ε • A1 p θ0 := by
   rw [jacGen_opPoint]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [A0, A1, modulated, vd0, Params.γ] <;> ring
 
-@[powerlib_foundation] theorem hasDerivAt_jac_modulated (θ0 : ℝ) (i j : Fin 4) :
+@[powerlib_domain] theorem hasDerivAt_jac_modulated (θ0 : ℝ) (i j : Fin 4) :
     HasDerivAt (fun ε => jacGen (modulated p ε) θ0 1 0 i j) (A1 p θ0 i j) 0 := by
   simp only [jac_modulated, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
   simpa using ((hasDerivAt_id (0 : ℝ)).mul_const (A1 p θ0 i j)).const_add (A0 p θ0 i j)
 
 /-- At an equilibrium, the modulated field at `z₀` is exactly `ε b₁`. -/
-@[powerlib_foundation] theorem coordField_modulated (hC : p.C ≠ 0) {θ0 : ℝ} (h : IsEq p θ0)
+@[powerlib_domain] theorem coordField_modulated (hC : p.C ≠ 0) {θ0 : ℝ} (h : IsEq p θ0)
     (ε : ℝ) : coordField (modulated p ε) ![θ0, 0, 1, 0] = ε • b1 p θ0 := by
   obtain ⟨h1, h2⟩ := h
   ext i
@@ -380,13 +380,13 @@ def Ldc (θ0 : ℝ) (s : ℂ) : ℂ := s ^ 2 + (twoAlphaCl p θ0 : ℂ) * s + (o
 def Γc : ℝ := p.γ * p.Xg ^ 2 * p.id0 ^ 2
 
 /-- `2α_cl` and `ω_cl²` are the negated dc-block entries of `A₀`. -/
-@[powerlib_foundation] theorem dcBlock_closed_forms (θ0 : ℝ) :
+@[powerlib_domain] theorem dcBlock_closed_forms (θ0 : ℝ) :
     twoAlphaCl p θ0 = -A0 p θ0 2 2 ∧ omegaClSq p θ0 = -A0 p θ0 2 3 := by
   simp [twoAlphaCl, omegaClSq, A0]
 
 /-- Characteristic equation of the source:
 `det(λI − A₀) = L_PLL(λ) L_dc(λ) − Γ (k_p λ + k_i)(k_pv λ + k_iv)`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_A0 {θ0 : ℝ}
+@[powerlib_domain] theorem det_characteristicMatrix_A0 {θ0 : ℝ}
     (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (s : ℂ) :
     (Linear.characteristicMatrix (A0 p θ0) s).det =
       LPLL p θ0 s * Ldc p θ0 s -
@@ -402,7 +402,7 @@ def Γc : ℝ := p.γ * p.Xg ^ 2 * p.id0 ^ 2
   ring
 
 /-- Same, with `L_dc` written through the closed forms (`charpoly(A₀)` form of the source). -/
-@[powerlib_foundation] theorem det_characteristicMatrix_A0_closed {θ0 : ℝ}
+@[powerlib_domain] theorem det_characteristicMatrix_A0_closed {θ0 : ℝ}
     (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (s : ℂ) :
     (Linear.characteristicMatrix (A0 p θ0) s).det =
       LPLL p θ0 s * (s ^ 2 + (twoAlphaCl p θ0 : ℂ) * s + (omegaClSq p θ0 : ℂ)) -
@@ -410,7 +410,7 @@ def Γc : ℝ := p.γ * p.Xg ^ 2 * p.id0 ^ 2
   det_characteristicMatrix_A0 p h s
 
 /-- Exact decoupling at `Γ = 0`: the characteristic polynomial factors as `L_PLL · L_dc`. -/
-@[powerlib_foundation] theorem decoupled_of_Gamma_zero {θ0 : ℝ}
+@[powerlib_domain] theorem decoupled_of_Gamma_zero {θ0 : ℝ}
     (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (hΓ : Γc p = 0) (s : ℂ) :
     (Linear.characteristicMatrix (A0 p θ0) s).det = LPLL p θ0 s * Ldc p θ0 s := by
   rw [det_characteristicMatrix_A0 p h, hΓ]
@@ -428,7 +428,7 @@ def a1 (θ0 : ℝ) : ℝ := twoAlphaCl p θ0 * (p.ki * vd0 p θ0) + omegaClSq p 
 /-- `a₀` -/
 def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * p.kiv
 
-@[powerlib_foundation] theorem det_characteristicMatrix_A0_quartic {θ0 : ℝ}
+@[powerlib_domain] theorem det_characteristicMatrix_A0_quartic {θ0 : ℝ}
     (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (s : ℂ) :
     (Linear.characteristicMatrix (A0 p θ0) s).det =
       s ^ 4 + (a3 p θ0 : ℂ) * s ^ 3 + (a2 p θ0 : ℂ) * s ^ 2 + (a1 p θ0 : ℂ) * s +
@@ -439,7 +439,7 @@ def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * 
   ring
 
 /-- `a₀ = det A₀ = γ k_i k_iv V₀² cos 2θ₀`. -/
-@[powerlib_foundation] theorem a0_eq {θ0 : ℝ} (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) :
+@[powerlib_domain] theorem a0_eq {θ0 : ℝ} (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) :
     a0 p θ0 = p.γ * p.ki * p.kiv * p.V0 ^ 2 * Real.cos (2 * θ0) := by
   have hc : Real.cos (2 * θ0) = Real.cos θ0 ^ 2 - Real.sin θ0 ^ 2 := by
     rw [Real.cos_two_mul]; have := Real.sin_sq_add_cos_sq θ0; linarith
@@ -447,7 +447,7 @@ def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * 
   simp only [a0, omegaClSq, Γc, vd0, hc]
   linear_combination (-(p.γ * p.ki * p.kiv)) * hs
 
-@[powerlib_foundation] theorem det_A0 {θ0 : ℝ} (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) :
+@[powerlib_domain] theorem det_A0 {θ0 : ℝ} (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) :
     (A0 p θ0).det = p.γ * p.ki * p.kiv * p.V0 ^ 2 * Real.cos (2 * θ0) := by
   have h1 := det_characteristicMatrix_A0_quartic p h 0
   rw [Criteria.det_characteristicMatrix_fin_four] at h1
@@ -456,7 +456,7 @@ def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * 
   exact_mod_cast h1
 
 /-- The Routh condition `a₀ > 0` already encodes `cos 2θ₀ > 0`. -/
-@[powerlib_foundation] theorem cos_two_mul_pos_of_a0_pos (hC : 0 < p.C) (hki : 0 < p.ki)
+@[powerlib_domain] theorem cos_two_mul_pos_of_a0_pos (hC : 0 < p.C) (hki : 0 < p.ki)
     (hkiv : 0 < p.kiv) {θ0 : ℝ} (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0))
     (h0 : 0 < a0 p θ0) : 0 < Real.cos (2 * θ0) := by
   rw [a0_eq p h] at h0
@@ -518,7 +518,7 @@ selected operating point. -/
 def family : Family Model Requirement 4 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
@@ -558,7 +558,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 /-! ### Soundness of the translation -/
 
 /-- No model has `a₀ > 0` and `a₀ < 0`: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of .routh .constNeg fun m hr hn => ?_
@@ -644,17 +644,17 @@ def fieldAngle (_u ud : ℝ) (z : Dynamics.State 4) : Dynamics.State 4 :=
   field p z - ud • WithLp.toLp 2 ![1, 0, 0, 0]
 
 /-- `f_u = 0`, `f_{u̇} = −e_θ`: the input is purely additive. -/
-@[powerlib_foundation] theorem fieldAngle_indep_angle (u u' ud : ℝ) :
+@[powerlib_domain] theorem fieldAngle_indep_angle (u u' ud : ℝ) :
     fieldAngle p u ud = fieldAngle p u' ud := rfl
 
 /-- `A₁^GFL = 0`: the state Jacobian does not depend on the grid-angle input. -/
-@[powerlib_foundation] theorem fderiv_fieldAngle (u ud : ℝ) (z : Dynamics.State 4) :
+@[powerlib_domain] theorem fderiv_fieldAngle (u ud : ℝ) (z : Dynamics.State 4) :
     fderiv ℝ (fieldAngle p u ud) z = fderiv ℝ (field p) z := by
   unfold fieldAngle
   exact fderiv_sub_const _
 
 /-- The derivative of the state Jacobian with respect to the grid angle is zero. -/
-@[powerlib_foundation] theorem hasDerivAt_jacobian_angle (ud : ℝ) (z : Dynamics.State 4)
+@[powerlib_domain] theorem hasDerivAt_jacobian_angle (ud : ℝ) (z : Dynamics.State 4)
     (u : ℝ) : HasDerivAt (fun u => fderiv ℝ (fieldAngle p u ud) z) 0 u := by
   show HasDerivAt (fun _ : ℝ => fderiv ℝ (fieldAngle p 0 ud) z) 0 u
   exact hasDerivAt_const u _

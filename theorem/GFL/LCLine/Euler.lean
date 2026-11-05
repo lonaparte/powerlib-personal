@@ -81,7 +81,7 @@ def codeEuler : Implementation CodeModel PLL.PIPLL.Requirement CodeEuler PLL.PIP
 /-- The translated code-frame field is `C¹`: the reflection of the reduced field, whose
 phase-detector characteristic `h` is `C¹` for every parameter set. The smoothness hypothesis of the
 generic Euler laws (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem code_contDiff_field (m : CodeModel) :
+@[powerlib_domain] theorem code_contDiff_field (m : CodeModel) :
     ContDiff ℝ 1 (CodeModel.field m) := by
   have h : ContDiff ℝ 1 m.params.codeField := by
     rw [Params.codeField_eq_transport, Params.reducedField_eq]

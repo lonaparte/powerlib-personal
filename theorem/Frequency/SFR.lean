@@ -139,7 +139,7 @@ def routhQuantity (M D K F Tg TR : ℝ) : ℝ :=
 
 variable {M D K F Tg TR ΔPL : ℝ}
 
-@[tmio M, simp, powerlib_foundation] theorem steadyState_zero (D K ΔPL : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem steadyState_zero (D K ΔPL : ℝ) :
     steadyState D K ΔPL 0 = -ΔPL / (K + D) := rfl
 
 @[powerlib_foundation] theorem field_apply (x : ℝ³) :
@@ -304,11 +304,11 @@ def translate : Sentence → Set Requirement
 frequency deviation out). -/
 def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- Routh–Hurwitz for the corrected SFR plant: for `M, T_g, T_R > 0` it is Hurwitz iff
 `a₂ > 0`, `a₀ = K_R + D > 0` and `a₂ a₁ > a₃ a₀`. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (hM : 0 < M) (hTg : 0 < Tg) (hTR : 0 < TR) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hM : 0 < M) (hTg : 0 < Tg) (hTR : 0 < TR) :
     connection% ((⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable) ↔
       0 < coeff2 M D Tg TR ∧ 0 < coeff0 D K ∧ 0 < routhQuantity M D K F Tg TR) := by
   unfold TMIO.Statement
@@ -327,7 +327,7 @@ def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, 
     div_pos_iff_of_pos_right h3]
 
 /-- Added stability condition: `F ≥ T_g/(T_g + T_R)` with `D, K_R ≥ 0`, `K_R + D > 0`. -/
-@[tmio M, powerlib_foundation] theorem routh_of_hp_fraction (hM : 0 < M) (hTg : 0 < Tg)
+@[tmio M, powerlib_domain] theorem routh_of_hp_fraction (hM : 0 < M) (hTg : 0 < Tg)
     (hTR : 0 < TR) (hD : 0 ≤ D) (hK : 0 ≤ K) (hKD : 0 < K + D) (hF : Tg / (Tg + TR) ≤ F) :
     connection% ((⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model) ∈ realize Meets {.stable}) := by
   unfold TMIO.Statement
@@ -347,7 +347,7 @@ def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, 
   linarith
 
 /-- Added stability condition, matrix form. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_of_hp_fraction (hM : 0 < M) (hTg : 0 < Tg)
+@[tmio TM, powerlib_domain] theorem isHurwitz_of_hp_fraction (hM : 0 < M) (hTg : 0 < Tg)
     (hTR : 0 < TR) (hD : 0 ≤ D) (hK : 0 ≤ K) (hKD : 0 < K + D) (hF : Tg / (Tg + TR) ≤ F) :
     connection% ((⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -422,7 +422,7 @@ connection conclusion. -/
 /-! ## The family -/
 
 /-- No model is both stable and unstable: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -637,7 +637,7 @@ the field satisfies `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v`, i.e. `G_turb`
 def reducedModel (M D K F TR : ℝ) (hM : 0 < M) (hTR : 0 < TR) : SwingGovernor.Model :=
   ⟨M, D + F * K, (1 - F) * K, TR, hM, hTR⟩
 
-@[powerlib_foundation] theorem reducedModel_plant (hM : 0 < M) (hTR : 0 < TR) :
+@[powerlib_domain] theorem reducedModel_plant (hM : 0 < M) (hTR : 0 < TR) :
     (reducedModel M D K F TR hM hTR).plant = reducedPlant M D K F TR := rfl
 
 /-- The reduced SFR model (`0 ≤ D + F K_R`, `0 < K_R + D`) is globally exponentially stable as a

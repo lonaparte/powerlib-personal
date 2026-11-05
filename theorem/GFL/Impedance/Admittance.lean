@@ -148,17 +148,17 @@ def B : Matrix (Fin 10) (Fin 2) ℝ := Matrix.of fun i j => p.lin 0 (unitVec j) 
 section LinAlg
 variable {K : Type*} [Field K] [Algebra ℝ K]
 
-@[tmio M, powerlib_foundation] theorem lin_add (x y : Fin 10 → K) (u v : Fin 2 → K) :
+@[tmio M, powerlib_domain] theorem lin_add (x y : Fin 10 → K) (u v : Fin 2 → K) :
     p.lin (x + y) (u + v) = p.lin x u + p.lin y v := by
   ext i
   fin_cases i <;> simp [lin, duty, iref, epq, ipll, vpll] <;> ring
 
-@[powerlib_foundation] theorem lin_smul (c : K) (x : Fin 10 → K) (u : Fin 2 → K) :
+@[powerlib_domain] theorem lin_smul (c : K) (x : Fin 10 → K) (u : Fin 2 → K) :
     p.lin (c • x) (c • u) = c • p.lin x u := by
   ext i
   fin_cases i <;> simp [lin, duty, iref, epq, ipll, vpll] <;> ring
 
-@[powerlib_foundation] theorem lin_algebraMap (x : Fin 10 → ℝ) (u : Fin 2 → ℝ) (i : Fin 10) :
+@[powerlib_domain] theorem lin_algebraMap (x : Fin 10 → ℝ) (u : Fin 2 → ℝ) (i : Fin 10) :
     algebraMap ℝ K (p.lin x u i) =
       p.lin (fun j => algebraMap ℝ K (x j)) (fun j => algebraMap ℝ K (u j)) i := by
   fin_cases i <;> simp [lin, duty, iref, epq, ipll, vpll, map_ofNat]
@@ -183,7 +183,7 @@ def linU : (Fin 2 → K) →ₗ[K] (Fin 10 → K) where
     have := p.lin_smul c 0 u
     rwa [smul_zero] at this
 
-@[powerlib_foundation] theorem lin_eq_mulVec (x : Fin 10 → K) (u : Fin 2 → K) :
+@[powerlib_domain] theorem lin_eq_mulVec (x : Fin 10 → K) (u : Fin 2 → K) :
     p.lin x u = (p.A.map (algebraMap ℝ K)) *ᵥ x + (p.B.map (algebraMap ℝ K)) *ᵥ u := by
   have h1 : p.lin x u = p.linX x + p.linU u := by
     have := p.lin_add x 0 0 u
@@ -220,7 +220,7 @@ def gflOutput : Matrix (Fin 2) (Fin 10) ℝ := Matrix.of fun i j => if (j : ℕ)
 def GFLParams.model (p : GFLParams) : Plant 10 2 := ⟨p.A, p.B, gflOutput, 0⟩
 
 /-- The realization is strictly proper. -/
-@[powerlib_foundation] theorem GFLParams.model_D (p : GFLParams) : p.model.D = 0 := rfl
+@[powerlib_domain] theorem GFLParams.model_D (p : GFLParams) : p.model.D = 0 := rfl
 
 namespace GFLParams
 
@@ -231,7 +231,7 @@ variable (p : GFLParams)
 /-- Padé(1,1) delay, written `2/(1 + a s) − 1`. -/
 def Gdel (s : ℂ) : ℂ := 2 / (1 + p.a * s) - 1
 
-@[powerlib_foundation] theorem Gdel_eq {s : ℂ} (h : 1 + (p.a : ℂ) * s ≠ 0) :
+@[powerlib_domain] theorem Gdel_eq {s : ℂ} (h : 1 + (p.a : ℂ) * s ≠ 0) :
     p.Gdel s = (1 - p.a * s) / (1 + p.a * s) := by
   unfold Gdel
   field_simp
@@ -279,7 +279,7 @@ def Ygfl (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     ((Zoc p.L p.R p.ω s)⁻¹ + Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Theta s))
 
 /-- The closed form solves the port equation `Z_oc Y + V_dc G_del (Φ Y + Θ) = I`. -/
-@[powerlib_foundation] theorem Ygfl_spec {s : ℂ} (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
+@[powerlib_domain] theorem Ygfl_spec {s : ℂ} (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
     (hP : (1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0) :
     Zoc p.L p.R p.ω s * p.Ygfl s +
       ((p.Vdc : ℂ) * p.Gdel s) • (p.Phi s * p.Ygfl s + p.Theta s) = 1 := by
@@ -336,27 +336,27 @@ def resp : Fin 10 → ℂ :=
     (s + p.V0 0 * p.Kpl) * p.rθ s c - p.Kpl * unitVec c 1, p.rcc Y s c 0 / s,
     p.rcc Y s c 1 / s, p.rep Y s c 0 / s, p.rep Y s c 1 / s]
 
-@[powerlib_foundation] theorem ipll_resp :
+@[powerlib_domain] theorem ipll_resp :
     p.ipll (p.resp Y s c) = p.rip Y s c := by
   ext k
   fin_cases k <;> simp [ipll, resp, rip]
 
-@[powerlib_foundation] theorem vpll_resp :
+@[powerlib_domain] theorem vpll_resp :
     p.vpll (p.resp Y s c) (unitVec c) = p.rvp s c := by
   ext k
   fin_cases k <;> simp [vpll, resp, rvp]
 
-@[powerlib_foundation] theorem epq_resp :
+@[powerlib_domain] theorem epq_resp :
     p.epq (p.resp Y s c) (unitVec c) = p.rep Y s c := by
   ext k
   fin_cases k <;> simp [epq, ipll_resp, vpll_resp, rep]
 
-@[powerlib_foundation] theorem iref_sub_resp (k : Fin 2) :
+@[powerlib_domain] theorem iref_sub_resp (k : Fin 2) :
     p.iref (p.resp Y s c) (unitVec c) k - p.ipll (p.resp Y s c) k = p.rcc Y s c k := by
   simp only [iref, epq_resp, ipll_resp]
   fin_cases k <;> simp [rcc, Gcpq, resp] <;> ring
 
-@[powerlib_foundation] theorem duty_resp :
+@[powerlib_domain] theorem duty_resp :
     p.duty (p.resp Y s c) (unitVec c) = p.rd Y s c := by
   ext k
   fin_cases k
@@ -370,7 +370,7 @@ def resp : Fin 10 → ℂ :=
     ring
 
 /-- The `(k, c)` entry of `Φ Y + Θ` is the duty response. -/
-@[powerlib_foundation] theorem phiY_theta (k : Fin 2) :
+@[powerlib_domain] theorem phiY_theta (k : Fin 2) :
     (p.Phi s * Y + p.Theta s) k c = p.rd Y s c k := by
   fin_cases k <;> fin_cases c <;>
     simp [Phi, Theta, GiPQ, GvPQ, Gi, Gv, Gvpll, Gipll, Gdpll, Gdei, Jc, Matrix.mul_apply,
@@ -383,7 +383,7 @@ end Resp
   simp [unitVec, Matrix.one_apply, eq_comm]
 
 /-- If `Y` solves the port equation, `resp` solves `s x = lin x e_c`. -/
-@[powerlib_foundation] theorem resp_lin {Y : Matrix (Fin 2) (Fin 2) ℂ} {s : ℂ} (hs : s ≠ 0)
+@[powerlib_domain] theorem resp_lin {Y : Matrix (Fin 2) (Fin 2) ℂ} {s : ℂ} (hs : s ≠ 0)
     (ha : p.a ≠ 0) (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
     (hY : Zoc p.L p.R p.ω s * Y + ((p.Vdc : ℂ) * p.Gdel s) • (p.Phi s * Y + p.Theta s) = 1)
@@ -441,7 +441,7 @@ end Resp
     field_simp
 
 /-- The 10-state realization has exactly the closed-form GFL port admittance. -/
-@[powerlib_foundation] theorem transfer_eq_Ygfl {s : ℂ} (hs : s ≠ 0) (ha : p.a ≠ 0)
+@[powerlib_domain] theorem transfer_eq_Ygfl {s : ℂ} (hs : s ≠ 0) (ha : p.a ≠ 0)
     (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
     (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
@@ -473,7 +473,7 @@ def gflOnNetwork (Lg Rg Rl C : ℝ) : Circuits.Interconnection 4 10 2 :=
   withNetwork Lg Rg Rl C p.ω p.model p.model_D
 
 /-- Return difference of the GFL–grid interconnection: `det (I + Z_ext Y_gfl)`. -/
-@[powerlib_foundation] theorem gflOnNetwork_returnDifference {Lg Rg Rl C : ℝ} (hC : C ≠ 0)
+@[powerlib_domain] theorem gflOnNetwork_returnDifference {Lg Rg Rl C : ℝ} (hC : C ≠ 0)
     (hLg : Lg ≠ 0) {s : ℂ}
     (hMn : (characteristicMatrix (networkModel Lg Rg Rl C p.ω).A s).det ≠ 0)
     (hZn : (Zoc Lg Rg p.ω s).det ≠ 0) (hs : s ≠ 0) (ha : p.a ≠ 0)

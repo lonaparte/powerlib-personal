@@ -204,12 +204,12 @@ output `i`). -/
 def family : Family IMCLoop Spectral.Requirement 2 1 :=
   Spectral.linearFamily IMCLoop.plant IMCLoop.Stable IMCLoop.Unstable
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear IMCLoop.plant :=
+@[powerlib_domain] theorem family_isLinear : family.IsLinear IMCLoop.plant :=
   Spectral.linearFamily_isLinear _ _ _
 
 /-- Hurwitz criterion of the IMC loop: the monic characteristic coefficients `α + R/L` and
 `Rα/L` are positive. An exact condition on the family denotation. -/
-@[tmio TM, powerlib_foundation] theorem imcModel_isHurwitz_iff (L R α : ℝ) :
+@[tmio TM, powerlib_domain] theorem imcModel_isHurwitz_iff (L R α : ℝ) :
     connection% ((⟨L, R, α⟩ : IMCLoop) ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < α + R / L ∧ 0 < R * α / L) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -222,7 +222,7 @@ def family : Family IMCLoop Spectral.Requirement 2 1 :=
 /-- The IMC loop is the converter PI loop with IMC tuning: for `L ≠ 0` its plant is the plant of
 `CurrentControl.imc L R α` (`K_p = Lα`, `K_i = Rα`). Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem imcModel_eq (L R α : ℝ) (hL : L ≠ 0) :
+@[powerlib_domain] theorem imcModel_eq (L R α : ℝ) (hL : L ≠ 0) :
     imcModel L R α = (CurrentControl.imc L R α).model := by
   ext i j <;> fin_cases i <;> fin_cases j <;>
     simp [imcModel, siso2, CurrentControl.PIParams.model, CurrentControl.imc] <;> field_simp

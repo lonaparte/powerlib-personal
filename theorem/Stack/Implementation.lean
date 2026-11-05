@@ -102,7 +102,7 @@ def RealizationExactUnder (Δ : Set R) (s : Sentence) : Prop :=
 /-- Realization soundness without constraints is the implementation semantics lying below the
 composite through the realized models at the sentence: its generated value is a larger family
 of implementations. -/
-@[tmio MI, powerlib_foundation] theorem realizationSoundUnder_empty_iff_generate {s : Sentence} :
+@[tmio T, powerlib_foundation] theorem realizationSoundUnder_empty_iff_generate {s : Sentence} :
     connection% (certify I.realizes (I.model.den s) ⊆ I.impl.den s ↔
       generate I.impl.semantics {s} ≤ generate I.uTI {s}) := by
   unfold TMIO.Statement
@@ -111,7 +111,7 @@ of implementations. -/
 
 /-- Realization completeness without constraints is the reverse order of the two generated
 values. -/
-@[tmio MI, powerlib_foundation] theorem realizationCompleteUnder_empty_iff_generate {s : Sentence} :
+@[tmio T, powerlib_foundation] theorem realizationCompleteUnder_empty_iff_generate {s : Sentence} :
     connection% (I.impl.den s ⊆ certify I.realizes (I.model.den s) ↔
       generate I.uTI {s} ≤ generate I.impl.semantics {s}) := by
   unfold TMIO.Statement
@@ -119,7 +119,7 @@ values. -/
   rfl
 
 /-- Exactness is soundness and completeness. -/
-@[tmio MI, powerlib_foundation] theorem realizationExactUnder_iff {Δ : Set R} {s : Sentence} :
+@[tmio T, powerlib_foundation] theorem realizationExactUnder_iff {Δ : Set R} {s : Sentence} :
     connection% (I.RealizationExactUnder Δ s ↔
       I.RealizationSoundUnder Δ s ∧ I.RealizationCompleteUnder Δ s) := by
   change I.RealizationExactUnder Δ s ↔
@@ -131,34 +131,34 @@ values. -/
     exact Set.Subset.antisymm (fun y hy => ⟨hs hy, hy.2⟩) (fun y hy => ⟨hc hy, hy.2⟩)
 
 variable {I} in
-@[tmio MI, powerlib_foundation] theorem RealizationExactUnder.soundUnder {Δ : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem RealizationExactUnder.soundUnder {Δ : Set R} {s : Sentence}
     (h : I.RealizationExactUnder Δ s) :
     connection% (I.RealizationSoundUnder Δ s) := show I.RealizationSoundUnder Δ s from
   (I.realizationExactUnder_iff.mp h).1
 
 variable {I} in
-@[tmio MI, powerlib_foundation] theorem RealizationExactUnder.completeUnder {Δ : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem RealizationExactUnder.completeUnder {Δ : Set R} {s : Sentence}
     (h : I.RealizationExactUnder Δ s) :
     connection% (I.RealizationCompleteUnder Δ s) := show I.RealizationCompleteUnder Δ s from
   (I.realizationExactUnder_iff.mp h).2
 
 variable {I} in
 /-- Soundness survives more constraints. -/
-@[tmio MI, powerlib_foundation] theorem RealizationSoundUnder.mono {Δ Δ' : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem RealizationSoundUnder.mono {Δ Δ' : Set R} {s : Sentence}
     (h : I.RealizationSoundUnder Δ s) (hΔ : Δ ⊆ Δ') :
     connection% (I.RealizationSoundUnder Δ' s) := show I.RealizationSoundUnder Δ' s from
   fun _ hy => h ⟨hy.1, realize_antitone _ hΔ hy.2⟩
 
 variable {I} in
 /-- Completeness survives more constraints. -/
-@[tmio MI, powerlib_foundation] theorem RealizationCompleteUnder.mono {Δ Δ' : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem RealizationCompleteUnder.mono {Δ Δ' : Set R} {s : Sentence}
     (h : I.RealizationCompleteUnder Δ s) (hΔ : Δ ⊆ Δ') :
     connection% (I.RealizationCompleteUnder Δ' s) := show I.RealizationCompleteUnder Δ' s from
   fun _ hy => h ⟨hy.1, realize_antitone _ hΔ hy.2⟩
 
 variable {I} in
 /-- Exactness survives more constraints. -/
-@[tmio MI, powerlib_foundation] theorem RealizationExactUnder.mono {Δ Δ' : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem RealizationExactUnder.mono {Δ Δ' : Set R} {s : Sentence}
     (h : I.RealizationExactUnder Δ s) (hΔ : Δ ⊆ Δ') :
     connection% (I.RealizationExactUnder Δ' s) := show I.RealizationExactUnder Δ' s from
   I.realizationExactUnder_iff.mpr ⟨h.soundUnder.mono hΔ, h.completeUnder.mono hΔ⟩
@@ -168,7 +168,7 @@ of `s` is exact within the model context `ΔM`, the implementation translation o
 the constraints `Δ` place every realized model in `ΔM`, and an implementation within `Δ` whose
 realized models meet the translation of `s` and `ΔM` meets its own translation of `s`, then `s`
 is realized soundly within `Δ`. -/
-@[tmio MI, powerlib_foundation] theorem realizationSoundUnder_of_requirements {ΔM : Set Q} {Δ : Set R}
+@[tmio T, powerlib_foundation] theorem realizationSoundUnder_of_requirements {ΔM : Set Q} {Δ : Set R}
     {s : Sentence} (hM : I.model.ExactUnder ΔM s) (hI : I.impl.Sound s)
     (hctx : realize I.impl.meets Δ ⊆ certify I.realizes (realize I.model.meets ΔM))
     (hreq : certify I.realizes (realize I.model.meets (I.model.translate s ∪ ΔM)) ∩
@@ -183,7 +183,7 @@ is realized soundly within `Δ`. -/
   exact ⟨(mem_certify _ _ _).mp hd x hx, (mem_certify _ _ _).mp (hctx hΔ) x hx⟩
 
 /-- With an exact model translation the model context can be dropped. -/
-@[tmio MI, powerlib_foundation] theorem realizationSoundUnder_of_exact {Δ : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem realizationSoundUnder_of_exact {Δ : Set R} {s : Sentence}
     (hM : I.model.Exact s) (hI : I.impl.Sound s)
     (hreq : certify I.realizes (realize I.model.meets (I.model.translate s)) ∩
       realize I.impl.meets Δ ⊆ realize I.impl.meets (I.impl.translate s)) :
@@ -198,7 +198,7 @@ is realized soundly within `Δ`. -/
 implementation translation within the constraints, a sound model translation, and an
 implementation meeting its translation within the constraints realizing only models meeting
 theirs. -/
-@[tmio MI, powerlib_foundation] theorem realizationCompleteUnder_of_requirements {Δ : Set R}
+@[tmio T, powerlib_foundation] theorem realizationCompleteUnder_of_requirements {Δ : Set R}
     {s : Sentence} (hI : I.impl.ExactUnder Δ s) (hM : I.model.Sound s)
     (hreq : realize I.impl.meets (I.impl.translate s ∪ Δ) ⊆
       certify I.realizes (realize I.model.meets (I.model.translate s))) :
@@ -238,7 +238,7 @@ def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
 
 /-- Certification against the realization of an implementation built from a design map
 (typically `h := rfl`). -/
-@[tmio MI, powerlib_foundation] theorem certify_realizes_of_design {I : Implementation X Q Y R n p m q}
+@[tmio T, powerlib_foundation] theorem certify_realizes_of_design {I : Implementation X Q Y R n p m q}
     {design : Y → X} (h : I.realizes = ofDesign design) (P : Set X) :
     connection% (certify I.realizes P = design ⁻¹' P) := by
   change certify I.realizes P = design ⁻¹' P
@@ -246,7 +246,7 @@ def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
 
 /-- A realization by a design map is exact at `s` within `Δ` when, within `Δ`, the implementation
 family's denotation of `s` is the model family's pulled back along the design map. -/
-@[tmio MI, powerlib_foundation] theorem realizationExactUnder_of_design
+@[tmio T, powerlib_foundation] theorem realizationExactUnder_of_design
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {Δ : Set R} {s : Sentence}
     (hden : I.impl.den s ∩ realize I.impl.meets Δ =
@@ -258,7 +258,7 @@ family's denotation of `s` is the model family's pulled back along the design ma
 
 /-- A realization by a design map is exact at `s`, without constraints, when the implementation
 family's denotation of `s` is the model family's pulled back along the design map. -/
-@[tmio MI, powerlib_foundation] theorem realizationExactUnder_of_den_eq_preimage
+@[tmio T, powerlib_foundation] theorem realizationExactUnder_of_den_eq_preimage
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {s : Sentence} (hden : I.impl.den s = design ⁻¹' I.model.den s) :
     connection% (I.RealizationExactUnder ∅ s) := by
@@ -269,7 +269,7 @@ family's denotation of `s` is the model family's pulled back along the design ma
 /-- Realization soundness for a design map, with pointwise obligations: within `Δ` the design
 meets the model context, and an implementation within `Δ` whose design meets the model
 translation of `s` and the context meets its own translation of `s`. -/
-@[tmio MI, powerlib_foundation] theorem realizationSoundUnder_of_design
+@[tmio T, powerlib_foundation] theorem realizationSoundUnder_of_design
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {ΔM : Set Q} {Δ : Set R} {s : Sentence} (hM : I.model.ExactUnder ΔM s) (hI : I.impl.Sound s)
     (hctx : ∀ y ∈ realize I.impl.meets Δ, design y ∈ realize I.model.meets ΔM)
@@ -286,7 +286,7 @@ translation of `s` and the context meets its own translation of `s`. -/
 
 /-- A witness against realization soundness for a design map: an implementation within the
 constraints whose design satisfies `s` and which does not. -/
-@[tmio MI, powerlib_foundation] theorem not_realizationSoundUnder_of_design
+@[tmio T, powerlib_foundation] theorem not_realizationSoundUnder_of_design
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {Δ : Set R} {s : Sentence} {y : Y} (hd : design y ∈ I.model.den s)
     (hΔ : y ∈ realize I.impl.meets Δ) (hy : y ∉ I.impl.den s) :
@@ -295,7 +295,7 @@ constraints whose design satisfies `s` and which does not. -/
 
 /-- A witness against realization completeness for a design map: an implementation within the
 constraints satisfying `s` whose design does not. -/
-@[tmio MI, powerlib_foundation] theorem not_realizationCompleteUnder_of_design
+@[tmio T, powerlib_foundation] theorem not_realizationCompleteUnder_of_design
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {Δ : Set R} {s : Sentence} {y : Y} (hy : y ∈ I.impl.den s)
     (hΔ : y ∈ realize I.impl.meets Δ) (hd : design y ∉ I.model.den s) :

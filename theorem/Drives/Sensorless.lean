@@ -245,7 +245,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Stationary-frame current model (`ω_e = 0`):
 `dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r`. -/
-@[powerlib_foundation] theorem currentModel_stationary (p : InductionMachine.Params)
+@[powerlib_domain] theorem currentModel_stationary (p : InductionMachine.Params)
     (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0) (ωr : ℝ) (is ir dψr : ℂ)
     (h : InductionMachine.RotorVoltageEquation p 0 ωr ir (InductionMachine.rotorFlux p is ir) dψr) :
     dψr = (p.Lm / p.Tr : ℝ) * is -

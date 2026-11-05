@@ -320,7 +320,7 @@ def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
 def supercriticalQS : Model :=
   ⟨⟨Real.sqrt 5, 1, -1 / 4, 21 / 4, 4 / 3, -3⟩, Real.arctan (1 / 2), -1⟩
 
-@[powerlib_foundation] theorem supercriticalQS_trig :
+@[powerlib_domain] theorem supercriticalQS_trig :
     supercriticalQS.params.V * Real.cos supercriticalQS.θ = 2 ∧
       supercriticalQS.params.V * Real.sin supercriticalQS.θ = 1 := by
   have h5 : Real.sqrt 5 * Real.sqrt 5 = 5 := Real.mul_self_sqrt (by norm_num)
@@ -331,7 +331,7 @@ def supercriticalQS : Model :=
   simp only [supercriticalQS, Real.cos_arctan, Real.sin_arctan, hs]
   constructor <;> field_simp
 
-@[tmio M, powerlib_foundation] theorem supercriticalQS_isEq :
+@[tmio M, powerlib_domain] theorem supercriticalQS_isEq :
     connection% (supercriticalQS ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -342,7 +342,7 @@ def supercriticalQS : Model :=
   · unfold power; rw [hc]; simp [supercriticalQS]
 
 /-- The translated field of the witness, `S = sin φ`, `C = cos φ`. -/
-@[powerlib_foundation] theorem supercriticalQS_field (z : Dynamics.State 3) :
+@[powerlib_domain] theorem supercriticalQS_field (z : Dynamics.State 3) :
     supercriticalQS.field z 0 = -1 / 4 * (-2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2) +
         21 / 4 * z 1 ∧
       supercriticalQS.field z 1 = -2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2 ∧
@@ -686,7 +686,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
 
 /-- The witness Jacobian is on the Hopf boundary: `a₂ = 7/2`, `a₁ = 9`, `a₀ = 63/2 = a₂a₁`, so
 `tr J · m₂(J) = det J` and the strict Routh–Hurwitz condition fails. -/
-@[powerlib_foundation] theorem supercriticalQS_routh_boundary :
+@[powerlib_domain] theorem supercriticalQS_routh_boundary :
     (jac supercriticalQS.params supercriticalQS.θ supercriticalQS.Id).trace *
         Criteria.principalMinorSum
           (jac supercriticalQS.params supercriticalQS.θ supercriticalQS.Id) =

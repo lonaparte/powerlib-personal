@@ -104,18 +104,21 @@ for a symbolic resistance estimate. Its constraint calculations belong to M and
 its sentence criteria to T–M. A genuine I–O reading would additionally require an
 implementation and a justified production interface; that connection is not claimed.
 
-The generic/engineering dependency partition and foundation/domain presentation
-metadata remain independent. Generic modules can contain T–M or M–I relations;
-engineering directories can contain general T lemmas. Classify the complete
+The generic/engineering dependency partition does not determine theorem metadata.
+Generic modules can contain engineering instances; engineering directories can contain
+general T lemmas. Foundation permits T, M and TM; domain permits M, TM, MI and IO.
+M and TM may belong to either class according to whether the selected object is a
+mathematical model or an engineering model. Classify the complete
 statement and its hypotheses, not just the directory or the type of one endpoint.
 
 The semantic layer reads three kinds of systems (`Behaviour`): continuous-time systems with ports
 (`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`), discrete-time systems with ports
 (`theorem/Map/Defs.lean`), and random continuous-time systems with an operating envelope
 (`theorem/Port/Defs.lean`, `disturbed`). A digital controller, a sampled-data loop read at its sampling instants
-(`LTI/Sampling`), the period map of a switched converter (`Averaging/SwitchedStability`) and a
-numerical integration scheme (`Numerics/EMT`) are discrete-time implementation families of
-continuous-time models. Hybrid behaviour (state-dependent switching) is not yet read; see
+(`LTI/Sampling`), and the period map of a switched converter (`Averaging/SwitchedStability`)
+can describe discrete-time engineering implementations. A generic numerical integration or
+sampling scheme is a mathematical model; its interpretation does not alone establish MI.
+Hybrid behaviour (state-dependent switching) is not yet read; see
 [ImplementationLayer.md](ImplementationLayer.md).
 
 ## Source attributes and queries
@@ -133,8 +136,10 @@ place a new `@[tmio TM]` block before another `@[...]` block.
 
 `theorem/TMIO/KnowledgeKind.lean` defines the attribute and checks its theorem
 target, allowed kind and unique assignment. These checks do not decide whether
-the chosen kind correctly describes the mathematics. Foundation/domain metadata
-and the kernel-checked `connection%` admission contract remain independent.
+the chosen kind correctly describes the mathematics. `theorem/Attributes.lean` additionally
+rejects foundation + MI/IO and domain + T at module boundaries and in environment audits,
+including private theorems and delayed attributes. M/TM are valid with either metadata label.
+Neither metadata label requires or follows from a kernel-checked `connection%` statement.
 
 The queries below compute current coverage and category counts from the attributes,
 including reviewed private helpers and ordinary theorems. No separate count or

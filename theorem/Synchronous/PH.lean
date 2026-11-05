@@ -178,7 +178,7 @@ def classicalSM_H (p : ClassicalSMParams) (x : State 2) : ℝ :=
 def classicalSM_dH (p : ClassicalSMParams) (x : State 2) : State 2 :=
   WithLp.toLp 2 ![p.b * Real.sin (x 0) - p.Pm, x 1 / p.M]
 
-@[tmio M, powerlib_foundation] theorem classicalSM_hasGradientAt (p : ClassicalSMParams) (x : State 2) :
+@[tmio M, powerlib_domain] theorem classicalSM_hasGradientAt (p : ClassicalSMParams) (x : State 2) :
     HasGradientAt (classicalSM_H p) (classicalSM_dH p x) x := by
   have h1 := (((smCoord 1).hasFDerivAt (x := x)).pow 2).const_mul (1 / (2 * p.M))
   have h0 := ((smCoord 0).hasFDerivAt (x := x)).const_mul p.Pm
@@ -201,7 +201,7 @@ def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
   hasGradient := classicalSM_hasGradientAt p
 
 /-- (1.12) reproduces the swing equation: `δ̇ = p / M`, `ṗ = P_m − b sin δ − D (p / M) + u`. -/
-@[powerlib_foundation] theorem classicalSM_field (p : ClassicalSMParams) (x : State 2)
+@[powerlib_domain] theorem classicalSM_field (p : ClassicalSMParams) (x : State 2)
     (u : Fin 1 → ℝ) :
     WithLp.ofLp ((classicalSM p).field x u) =
       ![x 1 / p.M, p.Pm - p.b * Real.sin (x 0) - p.D * (x 1 / p.M) + u 0] := by
@@ -212,14 +212,14 @@ def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
   ring
 
 /-- The damping power is `D ω²` with `ω = p / M` (`R₂₂ = D`, no `M⁻²` factor). -/
-@[powerlib_foundation] theorem classicalSM_dampingPower (p : ClassicalSMParams) (x : State 2) :
+@[powerlib_domain] theorem classicalSM_dampingPower (p : ClassicalSMParams) (x : State 2) :
     (classicalSM p).dampingPower x = p.D * (x 1 / p.M) ^ 2 := by
   simp [NonlinearModel.dampingPower, classicalSM, classicalSM_dH, Matrix.diagonal_vec2,
     Matrix.vecHead, Matrix.vecTail]
   ring
 
 /-- Energy balance of the classical machine: `Ḣ = u ω − D ω²`. -/
-@[powerlib_foundation] theorem classicalSM_power_balance (p : ClassicalSMParams) (x : State 2)
+@[powerlib_domain] theorem classicalSM_power_balance (p : ClassicalSMParams) (x : State 2)
     (u : Fin 1 → ℝ) :
     fderiv ℝ (classicalSM p).H x ((classicalSM p).field x u) =
       u 0 * (x 1 / p.M) - p.D * (x 1 / p.M) ^ 2 := by
@@ -229,7 +229,7 @@ def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
 
 /-- Correction: the classical-machine Hamiltonian is unbounded below whenever `P_m ≠ 0`,
 so T-ph §1.1 structural assumption 3 fails for (1.12). -/
-@[powerlib_foundation] theorem classicalSM_hamiltonian_not_bddBelow (p : ClassicalSMParams)
+@[powerlib_domain] theorem classicalSM_hamiltonian_not_bddBelow (p : ClassicalSMParams)
     (hPm : p.Pm ≠ 0) : ¬ BddBelow (Set.range (classicalSM p).H) := by
   rintro ⟨c, hc⟩
   set δ : ℝ := (p.b - c + 1) / p.Pm
@@ -255,7 +255,7 @@ private theorem classicalSM_integral_dissipation (p : ClassicalSMParams)
   (classicalSM p).integral_dissipation hx hle hsupply
 
 /-- Equilibria of the unforced classical machine: `b sin δ = P_m` and `p = 0`. -/
-@[powerlib_foundation] theorem classicalSM_isEquilibrium_iff (p : ClassicalSMParams) (x : State 2) :
+@[powerlib_domain] theorem classicalSM_isEquilibrium_iff (p : ClassicalSMParams) (x : State 2) :
     IsEquilibrium (classicalSM p).zeroInputField x ↔
       p.b * Real.sin (x 0) = p.Pm ∧ x 1 = 0 := by
   have hM := p.M_pos.ne'
@@ -286,7 +286,7 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
 
 /-- The potential `−P_m (δ − δ*) − b (cos δ − cos δ*)` is positive on `|δ| < π/2`,
 `δ ≠ δ*`, when `b sin δ* = P_m` and `|δ*| < π/2`. -/
-@[powerlib_foundation] theorem classicalSM_potential_pos (p : ClassicalSMParams) {δs δ : ℝ}
+@[powerlib_domain] theorem classicalSM_potential_pos (p : ClassicalSMParams) {δs δ : ℝ}
     (hδs : δs ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)) (heq : p.b * Real.sin δs = p.Pm)
     (hδ : δ ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)) (hne : δ ≠ δs) :
     0 < -p.Pm * (δ - δs) - p.b * (Real.cos δ - Real.cos δs) := by
@@ -323,7 +323,7 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     linarith
 
 /-- `(δ*, 0)` with `b sin δ* = P_m`, `|δ*| < π/2` is a strict local minimum of `H`. -/
-@[powerlib_foundation] theorem classicalSM_isStrictLocalMin (p : ClassicalSMParams) {δs : ℝ}
+@[powerlib_domain] theorem classicalSM_isStrictLocalMin (p : ClassicalSMParams) {δs : ℝ}
     (hδs : δs ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)) (heq : p.b * Real.sin δs = p.Pm) :
     (classicalSM p).IsStrictLocalMin (classicalSM_equilibrium δs) := by
   have hopen : IsOpen {x : State 2 | x 0 ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)} :=
@@ -356,7 +356,7 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     have : 0 ≤ 1 / (2 * p.M) * x 1 ^ 2 := by positivity
     linarith
 
-@[powerlib_foundation] theorem classicalSM_contDiff_dH (p : ClassicalSMParams) :
+@[powerlib_domain] theorem classicalSM_contDiff_dH (p : ClassicalSMParams) :
     ContDiff ℝ 1 (classicalSM p).dH := by
   rw [contDiff_euclidean]
   intro i
@@ -368,7 +368,7 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
       (smCoord (n := 2) 1).contDiff.mul (contDiff_const (c := p.M⁻¹))
 
 /-- The Hessian of `H` at `(δ, p)`: `diag(b cos δ, 1/M)`. -/
-@[powerlib_foundation] theorem classicalSM_hasFDerivAt_dH (p : ClassicalSMParams) (x : State 2) :
+@[powerlib_domain] theorem classicalSM_hasFDerivAt_dH (p : ClassicalSMParams) (x : State 2) :
     HasFDerivAt (classicalSM p).dH
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![p.b * Real.cos (x 0), 0; 0, 1 / p.M]) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_piLp]
@@ -392,7 +392,7 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
 
 /-- Linearization of the unforced classical machine at `(δ*, 0)`:
 `A = (J − R) ∇²H = !![0, 1/M; −b cos δ*, −D/M]`. -/
-@[powerlib_foundation] theorem classicalSM_linearization (p : ClassicalSMParams) (δs : ℝ) :
+@[powerlib_domain] theorem classicalSM_linearization (p : ClassicalSMParams) (δs : ℝ) :
     ((classicalSM p).J (classicalSM_equilibrium δs) -
       (classicalSM p).R (classicalSM_equilibrium δs)) *
         !![p.b * Real.cos δs, 0; 0, 1 / p.M] =
@@ -412,7 +412,7 @@ def ClassicalSMParams.toSwing (p : ClassicalSMParams) : SwingParams := ⟨p.M, p
 /-- Under zero input the pH field is the swing field of `toSwing` in the momentum coordinates
 `(δ, p) = (δ, M ω)`: `f_pH = T ∘ f_swing ∘ T⁻¹` with `T = diag(1, M)` (`Dynamics.scaleCoord`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem classicalSM_zeroInputField_eq_transport (p : ClassicalSMParams) :
+@[powerlib_domain] theorem classicalSM_zeroInputField_eq_transport (p : ClassicalSMParams) :
     (classicalSM p).zeroInputField =
       Dynamics.transportField (Dynamics.scaleCoord p.M_pos.ne') 0 p.toSwing.field := by
   funext x
@@ -484,7 +484,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 1 :=
   ⟨fun m => m.toPH.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isNonlinearPH :
+@[powerlib_domain] theorem family_isNonlinearPH :
     family.IsNonlinearPH fun m => (classicalSM m.p).shift m.point := fun _ => rfl
 
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
@@ -493,7 +493,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- No model is both damped on the stable side and on the unstable branch: the whole requirement
 language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -548,7 +548,7 @@ translation. On the image of `toSwing` positive inertia and nonnegative damping 
 `locked` is `balanced`, `stableBranch` is `synchronizing` (`b > 0`), `damped` is `damped` with
 `synchronizing`, `unstableBranch` is `destabilizing` (`D ≥ 0`); the global sentences, decay rates,
 sampled contraction and conservation have the empty space on both sides. -/
-@[tmio TM, powerlib_foundation] theorem realize_translate_flow_eq_preimage :
+@[tmio TM, powerlib_domain] theorem realize_translate_flow_eq_preimage :
     connection% (∀ P : Flow.Property, TMIO.realize family.meets (family.translate (.flow P)) =
       Model.toSwing ⁻¹' TMIO.realize Swing.family.meets (Swing.family.translate (.flow P))) := by
   unfold powerlib.TMIO.Statement
@@ -723,7 +723,7 @@ reading has positive inertia (`Spectral.exact_of_hub`). -/
 /-- At a fold of the machine (`b sin δ* = P_m`, `cos δ* = 0`) the Hamiltonian relative to
 `(δ*, 0)` is `p² / (2M) − P_m (s − sin s)` at `(δ* + s, p)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem classicalSM_H_fold (p : ClassicalSMParams) {δs : ℝ}
+@[powerlib_domain] theorem classicalSM_H_fold (p : ClassicalSMParams) {δs : ℝ}
     (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) (s w : ℝ) :
     classicalSM_H p (WithLp.toLp 2 ![δs + s, w]) - classicalSM_H p (classicalSM_equilibrium δs) =
       1 / (2 * p.M) * w ^ 2 - p.Pm * (s - Real.sin s) := by
@@ -734,7 +734,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- At a fold the accelerating power is `P_m (1 − cos s)` at `δ* + s`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem classicalSM_accel_fold (p : ClassicalSMParams) {δs : ℝ}
+@[powerlib_domain] theorem classicalSM_accel_fold (p : ClassicalSMParams) {δs : ℝ}
     (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) (s : ℝ) :
     p.Pm - p.b * Real.sin (δs + s) = p.Pm * (1 - Real.cos s) := by
   rw [Real.sin_add, hcos, ← heq]
@@ -1003,7 +1003,7 @@ def syncMachine7_Q (p : SyncMachine7Params) : Matrix (Fin 7) (Fin 7) ℝ :=
     if h : i.val < 5 ∧ j.val < 5 then p.Γ ⟨i.val, h.1⟩ ⟨j.val, h.2⟩
     else if i = 5 ∧ j = 5 then 1 / p.M else 0
 
-@[powerlib_foundation] theorem syncMachine7_Q_symm (p : SyncMachine7Params) :
+@[powerlib_domain] theorem syncMachine7_Q_symm (p : SyncMachine7Params) :
     (syncMachine7_Q p)ᵀ = syncMachine7_Q p := by
   have hs : ∀ a b : Fin 5, p.Γ b a = p.Γ a b := fun a b => by
     simpa using congrFun (congrFun p.Γ_posDef.isHermitian.eq a) b
@@ -1021,7 +1021,7 @@ def syncMachine7_current (p : SyncMachine7Params) (x : State 7) : Fin 5 → ℝ 
 def syncMachine7_speed (p : SyncMachine7Params) (x : State 7) : ℝ := x 5 / p.M
 
 /-- `Q x = (i, ω_r, 0)`. -/
-@[powerlib_foundation] theorem syncMachine7_Q_mulVec (p : SyncMachine7Params) (x : State 7) :
+@[powerlib_domain] theorem syncMachine7_Q_mulVec (p : SyncMachine7Params) (x : State 7) :
     syncMachine7_Q p *ᵥ WithLp.ofLp x =
       ![syncMachine7_current p x 0, syncMachine7_current p x 1, syncMachine7_current p x 2,
         syncMachine7_current p x 3, syncMachine7_current p x 4, syncMachine7_speed p x, 0] := by
@@ -1070,7 +1070,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
   hasGradient := hasGradientAt_quadraticEnergy (syncMachine7_Q_symm p)
 
 /-- The co-energy is `∇H = (i_d, i_q, i_f, i_kd, i_kq, ω_r, 0)`. -/
-@[powerlib_foundation] theorem syncMachine7_dH (p : SyncMachine7Params) (x : State 7) :
+@[powerlib_domain] theorem syncMachine7_dH (p : SyncMachine7Params) (x : State 7) :
     WithLp.ofLp ((syncMachine7 p).dH x) =
       ![syncMachine7_current p x 0, syncMachine7_current p x 1, syncMachine7_current p x 2,
         syncMachine7_current p x 3, syncMachine7_current p x 4, syncMachine7_speed p x, 0] :=
@@ -1080,7 +1080,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
 `Ψ̇_d = −r_s i_d + ω_r Ψ_q + v_d`, `Ψ̇_q = −r_s i_q − ω_r Ψ_d + v_q`, `Ψ̇_f = −r_f i_f + v_f`,
 `Ψ̇_kd = −r_kd i_kd`, `Ψ̇_kq = −r_kq i_kq`, `ṗ = (i_q Ψ_d − i_d Ψ_q) + T_m^ext − D ω_r`,
 `δ̇ = ω_r`. -/
-@[powerlib_foundation] theorem syncMachine7_field (p : SyncMachine7Params) (x : State 7)
+@[powerlib_domain] theorem syncMachine7_field (p : SyncMachine7Params) (x : State 7)
     (u : Fin 4 → ℝ) :
     WithLp.ofLp ((syncMachine7 p).field x u) =
       ![-p.rs * syncMachine7_current p x 0 + syncMachine7_speed p x * x 1 + u 0,
@@ -1099,7 +1099,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
   all_goals ring
 
 /-- Damping power `r_s(i_d² + i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r²`. -/
-@[powerlib_foundation] theorem syncMachine7_dampingPower (p : SyncMachine7Params) (x : State 7) :
+@[powerlib_domain] theorem syncMachine7_dampingPower (p : SyncMachine7Params) (x : State 7) :
     (syncMachine7 p).dampingPower x =
       p.rs * (syncMachine7_current p x 0 ^ 2 + syncMachine7_current p x 1 ^ 2) +
         p.rf * syncMachine7_current p x 2 ^ 2 + p.rkd * syncMachine7_current p x 3 ^ 2 +
@@ -1110,7 +1110,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
   ring
 
 /-- Port power `v_d i_d + v_q i_q + v_f i_f + T_m^ext ω_r` (IN-positive). -/
-@[powerlib_foundation] theorem syncMachine7_supply (p : SyncMachine7Params) (x : State 7)
+@[powerlib_domain] theorem syncMachine7_supply (p : SyncMachine7Params) (x : State 7)
     (u : Fin 4 → ℝ) :
     (syncMachine7 p).supply x u =
       u 0 * syncMachine7_current p x 0 + u 1 * syncMachine7_current p x 1 +
@@ -1122,7 +1122,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
 /-- Energy balance of §1.13: `Ḣ = (v_d i_d + v_q i_q + v_f i_f + T_m ω_r) −
 (r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r²)`; the speed-voltage and
 electromagnetic-torque terms cancel. -/
-@[powerlib_foundation] theorem syncMachine7_power_balance (p : SyncMachine7Params) (x : State 7)
+@[powerlib_domain] theorem syncMachine7_power_balance (p : SyncMachine7Params) (x : State 7)
     (u : Fin 4 → ℝ) :
     fderiv ℝ (syncMachine7 p).H x ((syncMachine7 p).field x u) =
       (u 0 * syncMachine7_current p x 0 + u 1 * syncMachine7_current p x 1 +
@@ -1133,7 +1133,7 @@ electromagnetic-torque terms cancel. -/
   rw [NonlinearModel.power_balance, syncMachine7_supply, syncMachine7_dampingPower]
 
 /-- `H = ½ Ψᵀ Γ Ψ + p² / (2M)`: magnetic plus kinetic energy, independent of `δ`. -/
-@[powerlib_foundation] theorem syncMachine7_H (p : SyncMachine7Params) (x : State 7) :
+@[powerlib_domain] theorem syncMachine7_H (p : SyncMachine7Params) (x : State 7) :
     (syncMachine7 p).H x =
       (1 / 2 : ℝ) * (syncMachine7_flux x ⬝ᵥ (p.Γ *ᵥ syncMachine7_flux x)) +
         x 5 ^ 2 / (2 * p.M) := by
@@ -1145,7 +1145,7 @@ electromagnetic-torque terms cancel. -/
   ring
 
 /-- The Hamiltonian is nonnegative (`Γ ≻ 0`, `M > 0`). -/
-@[powerlib_foundation] theorem syncMachine7_H_nonneg (p : SyncMachine7Params) (x : State 7) :
+@[powerlib_domain] theorem syncMachine7_H_nonneg (p : SyncMachine7Params) (x : State 7) :
     0 ≤ (syncMachine7 p).H x := by
   rw [syncMachine7_H]
   have h := p.Γ_posDef.posSemidef.dotProduct_mulVec_nonneg (syncMachine7_flux x)
@@ -1220,10 +1220,10 @@ def translate : Sentence → Set Requirement
 def family : Family SyncMachine7Params Requirement 7 4 :=
   ⟨fun p => (syncMachine7 p).system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isNonlinearPH : family.IsNonlinearPH syncMachine7 :=
+@[powerlib_domain] theorem family_isNonlinearPH : family.IsNonlinearPH syncMachine7 :=
   fun _ => rfl
 
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible

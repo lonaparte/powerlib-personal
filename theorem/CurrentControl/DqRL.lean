@@ -56,7 +56,7 @@ open powerlib.Transform (J park rot)
 /-- Zero-input dq-frame state matrix `−(R/L) I − ω J` of one R–L branch. -/
 def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -ω, -(R / L)]
 
-@[tmio M, powerlib_foundation] theorem dqRLMatrix_eq (R L ω : ℝ) :
+@[tmio M, powerlib_domain] theorem dqRLMatrix_eq (R L ω : ℝ) :
     dqRLMatrix R L ω = -(R / L) • (1 : Matrix (Fin 2) (Fin 2) ℝ) - ω • J := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [dqRLMatrix, J]
 
@@ -279,7 +279,7 @@ def family : Family DqBranch Spectral.Requirement 2 2 :=
 
 namespace DqBranch
 
-@[tmio TM, powerlib_foundation] theorem isHurwitz_plant_iff (m : DqBranch) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_plant_iff (m : DqBranch) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.R / m.L) := by
   unfold TMIO.Statement
   rw [(connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -287,7 +287,7 @@ namespace DqBranch
   change IsHurwitz (dqRLMatrix m.R m.L m.ω) ↔ _
   exact isHurwitz_dqRLMatrix_iff m.R m.L m.ω
 
-@[powerlib_foundation] theorem exists_root_of_neg (m : DqBranch) (h : m.R / m.L < 0) :
+@[powerlib_domain] theorem exists_root_of_neg (m : DqBranch) (h : m.R / m.L < 0) :
     ∃ s : ℂ, (characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   refine ⟨_, dqRL_root m.R m.L m.ω, ?_⟩
   simp only [Complex.add_re, Complex.neg_re, Complex.ofReal_re, Complex.mul_re,

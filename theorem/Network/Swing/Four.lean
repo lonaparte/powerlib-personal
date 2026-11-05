@@ -124,7 +124,7 @@ set_option linter.unusedSimpArgs false in
 /-- Turning a group `X` of machines rigidly by `t` changes the potential by
 `W (1 − cos t) + K (sin t − t)`, with `W` the total linearization weight and `K` the total flow of
 the lines leaving `X`. -/
-@[tmio M, powerlib_foundation] theorem potential_add_groupIndicator {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem potential_add_groupIndicator {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (X : Finset (Fin (n + 1))) (t : ℝ) :
     potential p (θ + t • groupIndicator X) - potential p θ =
       (∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j)) * (1 - Real.cos t) +
@@ -155,7 +155,7 @@ the lines leaving `X`. -/
 
 /-- The Hessian form of a rigid turn of a group `X` is twice the total linearization weight of
 the lines leaving `X`. -/
-@[powerlib_foundation] theorem hessForm_groupIndicator (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[powerlib_domain] theorem hessForm_groupIndicator (p : Params n) (θ : Fin (n + 1) → ℝ)
     (X : Finset (Fin (n + 1))) :
     hessForm p θ (groupIndicator X) =
       2 * ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j) := by
@@ -341,7 +341,7 @@ off by zero-weight lines, so the model is not locally asymptotically stable. -/
   rw [mem_den_flow_iff_four]
   exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_flat hbal u hne h) (mem_den_flow_iff_four.mpr hFlowConnection))
 
-@[powerlib_foundation] theorem cubicForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
+@[powerlib_domain] theorem cubicForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
     (c : ℝ) : cubicForm p θ (fun k => u k + c) = cubicForm p θ u := by
   simp [cubicForm]
 
@@ -686,7 +686,7 @@ def weightOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4))
 def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (i j : Fin 4) : ℝ :=
   p.B (σ i) (σ j) * Real.sin (θ (σ i) - θ (σ j))
 
-@[powerlib_foundation] theorem hessForm_four (p : Params 3) (θ u : Fin (3 + 1) → ℝ)
+@[powerlib_domain] theorem hessForm_four (p : Params 3) (θ u : Fin (3 + 1) → ℝ)
     (σ : Equiv.Perm (Fin 4)) :
     hessForm p θ u = 2 * (weightOf p θ σ 0 1 * (u (σ 0) - u (σ 1)) ^ 2 +
       weightOf p θ σ 0 2 * (u (σ 0) - u (σ 2)) ^ 2 + weightOf p θ σ 0 3 * (u (σ 0) - u (σ 3)) ^ 2 +
@@ -700,7 +700,7 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
   rw [p.B_symm, show θ (σ j) - θ (σ i) = -(θ (σ i) - θ (σ j)) by ring, Real.cos_neg]
   ring
 
-@[powerlib_foundation] theorem cubicForm_four (p : Params 3) (θ u : Fin (3 + 1) → ℝ)
+@[powerlib_domain] theorem cubicForm_four (p : Params 3) (θ u : Fin (3 + 1) → ℝ)
     (σ : Equiv.Perm (Fin 4)) :
     cubicForm p θ u = 2 * (flowOf p θ σ 0 1 * (u (σ 0) - u (σ 1)) ^ 3 +
       flowOf p θ σ 0 2 * (u (σ 0) - u (σ 2)) ^ 3 + flowOf p θ σ 0 3 * (u (σ 0) - u (σ 3)) ^ 3 +
@@ -714,24 +714,24 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
   rw [p.B_symm, show θ (σ j) - θ (σ i) = -(θ (σ i) - θ (σ j)) by ring, Real.sin_neg]
   ring
 
-@[powerlib_foundation] theorem weightOf_swap (p : Params 3) (θ : Fin (3 + 1) → ℝ)
+@[powerlib_domain] theorem weightOf_swap (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (σ : Equiv.Perm (Fin 4)) (i j : Fin 4) :
     p.B (σ j) (σ i) * Real.cos (θ (σ j) - θ (σ i)) = weightOf p θ σ i j := by
   rw [weightOf, p.B_symm, show θ (σ j) - θ (σ i) = -(θ (σ i) - θ (σ j)) by ring, Real.cos_neg]
 
-@[powerlib_foundation] theorem flowOf_swap (p : Params 3) (θ : Fin (3 + 1) → ℝ)
+@[powerlib_domain] theorem flowOf_swap (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (σ : Equiv.Perm (Fin 4)) (i j : Fin 4) :
     p.B (σ j) (σ i) * Real.sin (θ (σ j) - θ (σ i)) = -flowOf p θ σ i j := by
   rw [flowOf, p.B_symm, show θ (σ j) - θ (σ i) = -(θ (σ i) - θ (σ j)) by ring, Real.sin_neg]
   ring
 
-@[powerlib_foundation] theorem B_pos_of_weightOf_ne (p : Params 3) (θ : Fin (3 + 1) → ℝ)
+@[powerlib_domain] theorem B_pos_of_weightOf_ne (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (σ : Equiv.Perm (Fin 4)) {i j : Fin 4} (h : weightOf p θ σ i j ≠ 0) :
     0 < p.B (σ i) (σ j) :=
   lt_of_le_of_ne (p.B_nonneg _ _) fun h0 => h (by rw [weightOf, ← h0, zero_mul])
 
 /-- No linearized flow on the six labelled lines means no linearized flow on any line. -/
-@[powerlib_foundation] theorem flat_of_labelled {p : Params 3} {θ u : Fin (3 + 1) → ℝ}
+@[powerlib_domain] theorem flat_of_labelled {p : Params 3} {θ u : Fin (3 + 1) → ℝ}
     {σ : Equiv.Perm (Fin 4)} (h01 : weightOf p θ σ 0 1 * (u (σ 0) - u (σ 1)) = 0)
     (h02 : weightOf p θ σ 0 2 * (u (σ 0) - u (σ 2)) = 0)
     (h03 : weightOf p θ σ 0 3 * (u (σ 0) - u (σ 3)) = 0)

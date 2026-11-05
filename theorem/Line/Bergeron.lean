@@ -71,19 +71,19 @@ def c : ℝ := 1 / Real.sqrt (p.L * p.C)
 /-- Characteristic (surge) impedance `Z_c = √(L'/C')`. -/
 def Zc : ℝ := Real.sqrt (p.L / p.C)
 
-@[tmio M, powerlib_foundation] theorem c_pos : 0 < p.c :=
+@[tmio M, powerlib_domain] theorem c_pos : 0 < p.c :=
   one_div_pos.mpr (Real.sqrt_pos.mpr (mul_pos p.L_pos p.C_pos))
 
-@[powerlib_foundation] theorem Zc_pos : 0 < p.Zc := Real.sqrt_pos.mpr (div_pos p.L_pos p.C_pos)
+@[powerlib_domain] theorem Zc_pos : 0 < p.Zc := Real.sqrt_pos.mpr (div_pos p.L_pos p.C_pos)
 
-@[powerlib_foundation] theorem c_sq_mul : p.c ^ 2 * (p.L * p.C) = 1 := by
+@[powerlib_domain] theorem c_sq_mul : p.c ^ 2 * (p.L * p.C) = 1 := by
   have h := Real.sq_sqrt (mul_pos p.L_pos p.C_pos).le
   have hs : Real.sqrt (p.L * p.C) ≠ 0 := (Real.sqrt_pos.mpr (mul_pos p.L_pos p.C_pos)).ne'
   rw [c, div_pow, one_pow, h]
   exact div_mul_cancel₀ 1 (mul_pos p.L_pos p.C_pos).ne'
 
 /-- `c · Z_c · C' = 1`. -/
-@[powerlib_foundation] theorem c_mul_Zc_mul_C : p.c * p.Zc * p.C = 1 := by
+@[powerlib_domain] theorem c_mul_Zc_mul_C : p.c * p.Zc * p.C = 1 := by
   have hL := p.L_pos; have hC := p.C_pos
   rw [c, Zc, Real.sqrt_mul hL.le, Real.sqrt_div hL.le]
   have h1 : 0 < Real.sqrt p.L := Real.sqrt_pos.mpr hL
@@ -93,7 +93,7 @@ def Zc : ℝ := Real.sqrt (p.L / p.C)
   nlinarith [h3]
 
 /-- `c · L' = Z_c`. -/
-@[powerlib_foundation] theorem c_mul_L : p.c * p.L = p.Zc := by
+@[powerlib_domain] theorem c_mul_L : p.c * p.L = p.Zc := by
   have hL := p.L_pos; have hC := p.C_pos
   rw [c, Zc, Real.sqrt_mul hL.le, Real.sqrt_div hL.le]
   have h1 : 0 < Real.sqrt p.L := Real.sqrt_pos.mpr hL
@@ -106,7 +106,7 @@ variable {p}
 variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
 
 /-- Forward Riemann invariant: `v + Z_c i` is constant along `x - ct = const`. -/
-@[powerlib_foundation] theorem forward_invariant
+@[powerlib_domain] theorem forward_invariant
     (h : IsTelegrapherSolution p.L p.C 0 0 a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ + (b - a) / p.c) + p.Zc * i (b, t₀ + (b - a) / p.c) =
       v (a, t₀) + p.Zc * i (a, t₀) := by
@@ -141,7 +141,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
   exact key
 
 /-- Backward Riemann invariant: `v - Z_c i` is constant along `x + ct = const`. -/
-@[powerlib_foundation] theorem backward_invariant
+@[powerlib_domain] theorem backward_invariant
     (h : IsTelegrapherSolution p.L p.C 0 0 a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ - (b - a) / p.c) - p.Zc * i (b, t₀ - (b - a) / p.c) =
       v (a, t₀) - p.Zc * i (a, t₀) := by
@@ -191,7 +191,7 @@ def i₂ (ℓ : ℝ) (i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ := -i (ℓ, t)
 
 /-- **Bergeron relation, forward wave** (inflow convention at both ends):
 `v₂(t) - Z_c i₂(t) = v₁(t - τ) + Z_c i₁(t - τ)` for every C¹ lossless solution. -/
-@[powerlib_foundation] theorem bergeron_forward {ℓ : ℝ}
+@[powerlib_domain] theorem bergeron_forward {ℓ : ℝ}
     (h : IsTelegrapherSolution p.L p.C 0 0 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v₂ ℓ v t - p.Zc * i₂ ℓ i t = v₁ v (t - τ p ℓ) + p.Zc * i₁ i (t - τ p ℓ) := by
   have := forward_invariant h hℓ (t - τ p ℓ)
@@ -201,7 +201,7 @@ def i₂ (ℓ : ℝ) (i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ := -i (ℓ, t)
 
 /-- **Bergeron relation, backward wave** (inflow convention at both ends):
 `v₁(t) - Z_c i₁(t) = v₂(t - τ) + Z_c i₂(t - τ)`. -/
-@[powerlib_foundation] theorem bergeron_backward {ℓ : ℝ}
+@[powerlib_domain] theorem bergeron_backward {ℓ : ℝ}
     (h : IsTelegrapherSolution p.L p.C 0 0 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v₁ v t - p.Zc * i₁ i t = v₂ ℓ v (t - τ p ℓ) + p.Zc * i₂ ℓ i (t - τ p ℓ) := by
   have := backward_invariant h hℓ t
@@ -219,7 +219,7 @@ def history₁ (ℓ : ℝ) (v i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ :=
 
 /-- EMTP companion form: each end is a conductance `1/Z_c` in parallel with a history
 current source, `iₖ(t) = vₖ(t)/Z_c - eₖ(t)/Z_c`. -/
-@[powerlib_foundation] theorem bergeron_companion {ℓ : ℝ}
+@[powerlib_domain] theorem bergeron_companion {ℓ : ℝ}
     (h : IsTelegrapherSolution p.L p.C 0 0 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     i₁ i t = v₁ v t / p.Zc - history₁ (p := p) ℓ v i t / p.Zc ∧
       i₂ ℓ i t = v₂ ℓ v t / p.Zc - history₂ (p := p) ℓ v i t / p.Zc := by
@@ -231,7 +231,7 @@ current source, `iₖ(t) = vₖ(t)/Z_c - eₖ(t)/Z_c`. -/
   · rw [history₂]; field_simp; linarith
 
 /-- The same forward relation in the through convention (`i(ℓ, t)` along `+x`). -/
-@[powerlib_foundation] theorem bergeron_forward_through {ℓ : ℝ}
+@[powerlib_domain] theorem bergeron_forward_through {ℓ : ℝ}
     (h : IsTelegrapherSolution p.L p.C 0 0 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v (ℓ, t) + p.Zc * i (ℓ, t) = v (0, t - τ p ℓ) + p.Zc * i (0, t - τ p ℓ) := by
   have := bergeron_forward h hℓ t
@@ -248,7 +248,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
   (f (q.1 - p.c * q.2) - g (q.1 + p.c * q.2)) / p.Zc
 
 /-- Travelling waves solve the lossless telegrapher equations on every strip. -/
-@[powerlib_foundation] theorem travelling_isSolution {f g f' g' : ℝ → ℝ}
+@[powerlib_domain] theorem travelling_isSolution {f g f' g' : ℝ → ℝ}
     (hf : ∀ y, HasDerivAt f (f' y) y) (hg : ∀ y, HasDerivAt g (g' y) y) (a b : ℝ) :
     IsTelegrapherSolution p.L p.C 0 0 a b (travellingV p f g) (travellingI p f g) := by
   have hZ := p.Zc_pos.ne'
@@ -285,7 +285,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
     linear_combination (g' (q.1 + p.c * q.2) - f' (q.1 - p.c * q.2)) * h1
 
 /-- Riemann invariants of a travelling-wave pair: `v ± Z_c i = 2f(x - ct)`, `2g(x + ct)`. -/
-@[powerlib_foundation] theorem travelling_invariants (f g : ℝ → ℝ) (q : ℝ × ℝ) :
+@[powerlib_domain] theorem travelling_invariants (f g : ℝ → ℝ) (q : ℝ × ℝ) :
     travellingV p f g q + p.Zc * travellingI p f g q = 2 * f (q.1 - p.c * q.2) ∧
       travellingV p f g q - p.Zc * travellingI p f g q = 2 * g (q.1 + p.c * q.2) := by
   have hZ := p.Zc_pos.ne'
@@ -293,7 +293,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
 
 /-- **Every C¹ solution of the lossless telegrapher equations on the plane is a
 travelling-wave pair**, with `f(ξ) = (v + Z_c i)(ξ, 0)/2`, `g(η) = (v - Z_c i)(η, 0)/2`. -/
-@[powerlib_foundation] theorem eq_travelling
+@[powerlib_domain] theorem eq_travelling
     (h : ∀ a b, IsTelegrapherSolution p.L p.C 0 0 a b v i) (q : ℝ × ℝ) :
     v q = travellingV p (fun ξ => (v (ξ, 0) + p.Zc * i (ξ, 0)) / 2)
         (fun η => (v (η, 0) - p.Zc * i (η, 0)) / 2) q ∧

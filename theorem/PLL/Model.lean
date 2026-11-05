@@ -86,7 +86,7 @@ def srfPD (V θ : ℝ) : ℝ := -(V * Real.sin θ)
 `θ̃̇ = K_p h(θ̃) + K_i η − δω`, `η̇ = h(θ̃)`, `h = −V sin`, `δω = ω_g − ω_s`. -/
 def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) Kp Ki δω
 
-@[tmio M, simp, powerlib_foundation] theorem srfField_apply_zero (V Kp Ki δω : ℝ) (x : State 2) :
+@[tmio M, simp, powerlib_domain] theorem srfField_apply_zero (V Kp Ki δω : ℝ) (x : State 2) :
     srfField V Kp Ki δω x 0 = -δω - Kp * V * Real.sin (x 0) + Ki * x 1 := by
   simp [srfField, srfPD]; ring
 
@@ -183,12 +183,12 @@ Static evidence on the model, not a connection conclusion. -/
   rw [piPLLJacobian_inPhase, isHurwitz_linA_iff]
 
 /-- The detector of the SRF family member is the SRF characteristic `srfPD V`. -/
-@[powerlib_foundation] theorem srf_h (V Kp Ki δω θ : ℝ) : (srf V Kp Ki δω θ).h = srfPD V := by
+@[powerlib_domain] theorem srf_h (V Kp Ki δω θ : ℝ) : (srf V Kp Ki δω θ).h = srfPD V := by
   funext x
   simp [srf, srfPD]
 
 /-- The untranslated field of the SRF family member is the canonical SRF-PLL field. -/
-@[powerlib_foundation] theorem srf_piPLLField (V Kp Ki δω θ : ℝ) :
+@[powerlib_domain] theorem srf_piPLLField (V Kp Ki δω θ : ℝ) :
     piPLLField (srf V Kp Ki δω θ).h Kp Ki δω = srfField V Kp Ki δω := by
   rw [srf_h]
   rfl

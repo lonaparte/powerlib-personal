@@ -129,7 +129,7 @@ Static evidence on the model, not a connection conclusion. -/
 def trigModel (a b c d e Kp Ki δω θ : ℝ) : PIPLL.Model :=
   ⟨trigPD a b c d e, Kp, Ki, δω, θ, contDiff_trigPD a b c d e⟩
 
-@[powerlib_foundation] theorem trigModel_deriv (a b c d e Kp Ki δω θ : ℝ) :
+@[powerlib_domain] theorem trigModel_deriv (a b c d e Kp Ki δω θ : ℝ) :
     deriv (trigModel a b c d e Kp Ki δω θ).h (trigModel a b c d e Kp Ki δω θ).θ =
       trigPDDeriv a b c d θ :=
   (hasDerivAt_trigPD a b c d e θ).deriv

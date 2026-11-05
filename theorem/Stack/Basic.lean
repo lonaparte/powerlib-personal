@@ -124,10 +124,10 @@ def certifiedOrganized (Φ : Set Sentence) : Set V := ofDual (generate S.organiz
 some record of `D`. -/
 def truth (D : Set V) : Set Sentence := S.impl.semantics (possibly S.produces (toDual D))
 
-@[tmio IO, powerlib_foundation] theorem infer_eq (D : Set V) :
+@[tmio T, powerlib_foundation] theorem infer_eq (D : Set V) :
     connection% (S.infer D = S.model.semantics (possibly S.realizes (possibly S.produces (toDual D)))) := show S.infer D = S.model.semantics (possibly S.realizes (possibly S.produces (toDual D))) from rfl
 
-@[tmio IO, simp, powerlib_foundation] theorem mem_infer {D : Set V} {s : Sentence} :
+@[tmio T, simp, powerlib_foundation] theorem mem_infer {D : Set V} {s : Sentence} :
     connection% (s ∈ S.infer D ↔
       ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → ∀ x, (x, y) ∈ S.realizes → x ∈ S.model.den s) := by
   change s ∈ S.infer D ↔
@@ -140,7 +140,7 @@ def truth (D : Set V) : Set Sentence := S.impl.semantics (possibly S.produces (t
   · rintro h x ⟨y, ⟨v, hv, hy⟩, hx⟩
     exact h v hv y hy x hx
 
-@[tmio IO, simp, powerlib_foundation] theorem mem_truth {D : Set V} {s : Sentence} :
+@[tmio T, simp, powerlib_foundation] theorem mem_truth {D : Set V} {s : Sentence} :
     connection% (s ∈ S.truth D ↔ ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → y ∈ S.impl.den s) := by
   change s ∈ S.truth D ↔ ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → y ∈ S.impl.den s
   rw [truth, Family.semantics, (connection_proof% mem_satisfaction)]
@@ -153,7 +153,7 @@ def truth (D : Set V) : Set Sentence := S.impl.semantics (possibly S.produces (t
 
 /-- The generated whole forward map: denote, certify against the realized models, certify the
 records. -/
-@[tmio IO, powerlib_foundation] theorem certified_eq (Φ : Set Sentence) :
+@[tmio T, powerlib_foundation] theorem certified_eq (Φ : Set Sentence) :
     connection% (S.certified Φ = certify S.produces (certify S.realizes (realize S.model.Holds Φ))) := by
   change S.certified Φ = certify S.produces (certify S.realizes (realize S.model.Holds Φ))
   unfold certified
@@ -162,7 +162,7 @@ records. -/
   rw [congrFun (generate_possibly S.produces), congrFun (generate_possibly S.realizes)]
   rfl
 
-@[tmio IO, simp, powerlib_foundation] theorem mem_certified {Φ : Set Sentence} {v : V} :
+@[tmio T, simp, powerlib_foundation] theorem mem_certified {Φ : Set Sentence} {v : V} :
     connection% (v ∈ S.certified Φ ↔
       ∀ y, (y, v) ∈ S.produces → ∀ x, (x, y) ∈ S.realizes → ∀ s ∈ Φ, x ∈ S.model.den s) := by
   change v ∈ S.certified Φ ↔
@@ -172,7 +172,7 @@ records. -/
 
 /-- The generated whole forward map of the organized seed: translate, realize the translation,
 certify against the realized models, certify the records. -/
-@[tmio IO, powerlib_foundation] theorem certifiedOrganized_eq (Φ : Set Sentence) :
+@[tmio T, powerlib_foundation] theorem certifiedOrganized_eq (Φ : Set Sentence) :
     connection% (S.certifiedOrganized Φ = certify S.produces
       (certify S.realizes (realize S.model.meets ((table S.model.translate).image Φ)))) := by
   change S.certifiedOrganized Φ = certify S.produces
@@ -190,19 +190,19 @@ certify against the realized models, certify the records. -/
 
 /-- The whole-chain Galois connection of the stack (`Seed.gc_whole`): a set of records supports
 a set of sentences exactly when every record is certified for them. -/
-@[tmio IO, powerlib_foundation] theorem subset_certified_iff (D : Set V) (Φ : Set Sentence) :
+@[tmio T, powerlib_foundation] theorem subset_certified_iff (D : Set V) (Φ : Set Sentence) :
     connection% (D ⊆ S.certified Φ ↔ Φ ⊆ S.infer D) := by
   unfold powerlib.TMIO.Statement
   have h := S.seed.gc_whole Φ (toDual D)
   exact h
 
 /-- More records support fewer sentences. -/
-@[tmio IO, powerlib_foundation] theorem infer_antitone {D E : Set V} (h : D ⊆ E) :
+@[tmio T, powerlib_foundation] theorem infer_antitone {D E : Set V} (h : D ⊆ E) :
     connection% (S.infer E ⊆ S.infer D) := show S.infer E ⊆ S.infer D from
   fun _ hs => S.mem_infer.mpr fun v hv => S.mem_infer.mp hs v (h hv)
 
 /-- More sentences certify fewer records. -/
-@[tmio IO, powerlib_foundation] theorem certified_antitone {Φ Ψ : Set Sentence} (h : Φ ⊆ Ψ) :
+@[tmio T, powerlib_foundation] theorem certified_antitone {Φ Ψ : Set Sentence} (h : Φ ⊆ Ψ) :
     connection% (S.certified Ψ ⊆ S.certified Φ) := show S.certified Ψ ⊆ S.certified Φ from
   (gc_generate S.seed.uTO).monotone_l h
 
@@ -216,7 +216,7 @@ a set of sentences exactly when every record is certified for them. -/
 satisfying `s` may produce. -/
 def predicted (s : Sentence) : Set V := predict S.produces (S.impl.den s)
 
-@[tmio IO, powerlib_foundation] theorem mem_predicted {s : Sentence} {v : V} :
+@[tmio T, powerlib_foundation] theorem mem_predicted {s : Sentence} {v : V} :
     connection% (v ∈ S.predicted s ↔ ∃ y, y ∈ S.impl.den s ∧ (y, v) ∈ S.produces) := by
   change v ∈ S.predicted s ↔ ∃ y, y ∈ S.impl.den s ∧ (y, v) ∈ S.produces
   rw [predicted, predict_eq_image]
@@ -225,7 +225,7 @@ def predicted (s : Sentence) : Set V := predict S.produces (S.impl.den s)
 /-- Data-driven conclusions become conclusions about the producing implementation: under
 realization soundness, an implementation within the constraints that may produce a record of
 `D` satisfies every sentence inferred from `D`. -/
-@[tmio IO, powerlib_foundation] theorem infer_true {Δ : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem infer_true {Δ : Set R} {s : Sentence}
     (hS : S.RealizationSoundUnder Δ s) {D : Set V} (hs : s ∈ S.infer D) {v : V} (hv : v ∈ D)
     {y : Y} (hy : (y, v) ∈ S.produces) (hΔ : y ∈ realize S.impl.meets Δ) :
     connection% (y ∈ S.impl.den s) := by
@@ -235,7 +235,7 @@ realization soundness, an implementation within the constraints that may produce
 /-- When the records are certified for the constraints (every possible producer lies within
 `Δ`; the generated observation map at the constraint space), the inferred sentences with sound
 realization are true sentences of the implementations. -/
-@[tmio IO, powerlib_foundation] theorem infer_subset_truth {Δ : Set R} {D : Set V}
+@[tmio T, powerlib_foundation] theorem infer_subset_truth {Δ : Set R} {D : Set V}
     (hΔ : D ⊆ certify S.produces (realize S.impl.meets Δ))
     {s : Sentence} (hS : S.RealizationSoundUnder Δ s) (hs : s ∈ S.infer D) :
     connection% (s ∈ S.truth D) := show s ∈ S.truth D from
@@ -244,7 +244,7 @@ realization are true sentences of the implementations. -/
 
 /-- Conversely, under realization completeness, a sentence true of every possible producer of
 records certified for the constraints is inferred from them. -/
-@[tmio IO, powerlib_foundation] theorem mem_infer_of_truth {Δ : Set R} {D : Set V}
+@[tmio T, powerlib_foundation] theorem mem_infer_of_truth {Δ : Set R} {D : Set V}
     (hΔ : D ⊆ certify S.produces (realize S.impl.meets Δ))
     {s : Sentence} (hS : S.RealizationCompleteUnder Δ s) (hs : s ∈ S.truth D) :
     connection% (s ∈ S.infer D) := show s ∈ S.infer D from
@@ -254,7 +254,7 @@ records certified for the constraints is inferred from them. -/
 
 /-- A record outside the records predicted by `s` refutes `s` for every implementation that may
 produce it. -/
-@[tmio IO, powerlib_foundation] theorem refutes {s : Sentence} {y : Y} {v : V} (hy : (y, v) ∈ S.produces)
+@[tmio T, powerlib_foundation] theorem refutes {s : Sentence} {y : Y} {v : V} (hy : (y, v) ∈ S.produces)
     (hv : v ∉ S.predicted s) :
     connection% (y ∉ S.impl.den s) := show y ∉ S.impl.den s from
   fun hs => hv (S.mem_predicted.mpr ⟨y, hs, hy⟩)
@@ -262,7 +262,7 @@ produce it. -/
 /-- Refutation runs back through the realization edge: under realization soundness, a record
 refuting `s` for an implementation within the constraints exhibits a realized model violating
 `s`. -/
-@[tmio IO, powerlib_foundation] theorem refutes_realized {Δ : Set R} {s : Sentence}
+@[tmio T, powerlib_foundation] theorem refutes_realized {Δ : Set R} {s : Sentence}
     (hS : S.RealizationSoundUnder Δ s) {y : Y} {v : V} (hy : (y, v) ∈ S.produces)
     (hΔ : y ∈ realize S.impl.meets Δ) (hv : v ∉ S.predicted s) :
     connection% (∃ x : {x // (x, y) ∈ S.realizes}, x.val ∉ S.model.den s) := by
@@ -277,7 +277,7 @@ refuting `s` for an implementation within the constraints exhibits a realized mo
 
 /-! ## The organized seed against the semantic seed -/
 
-@[tmio IO, powerlib_foundation] theorem mem_inferOrganized {D : Set V} {s : Sentence} :
+@[tmio T, powerlib_foundation] theorem mem_inferOrganized {D : Set V} {s : Sentence} :
     connection% (s ∈ S.inferOrganized D ↔ ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → ∀ x, (x, y) ∈ S.realizes →
       x ∈ realize S.model.meets (S.model.translate s)) := by
   change s ∈ S.inferOrganized D ↔ ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → ∀ x, (x, y) ∈ S.realizes →
@@ -294,13 +294,13 @@ refuting `s` for an implementation within the constraints exhibits a realized mo
     exact h v hv y hy x hx
 
 /-- A sentence inferred through a sound translation is inferred. -/
-@[tmio IO, powerlib_foundation] theorem mem_infer_of_organized {s : Sentence} (h : S.model.Sound s)
+@[tmio T, powerlib_foundation] theorem mem_infer_of_organized {s : Sentence} (h : S.model.Sound s)
     {D : Set V} (hs : s ∈ S.inferOrganized D) :
     connection% (s ∈ S.infer D) := show s ∈ S.infer D from
   S.mem_infer.mpr fun v hv y hy x hx => h (S.mem_inferOrganized.mp hs v hv y hy x hx)
 
 /-- Records certified through sound translations are certified. -/
-@[tmio IO, powerlib_foundation] theorem certifiedOrganized_subset {Φ : Set Sentence}
+@[tmio T, powerlib_foundation] theorem certifiedOrganized_subset {Φ : Set Sentence}
     (h : ∀ s ∈ Φ, S.model.Sound s) :
     connection% (S.certifiedOrganized Φ ⊆ S.certified Φ) := by
   change S.certifiedOrganized Φ ⊆ S.certified Φ

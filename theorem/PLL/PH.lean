@@ -116,7 +116,7 @@ def pllR (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := Matrix.diagonal ![Kp, 0]
 /-- Input matrix `B = (−1, 0)ᵀ` (frequency offset enters the `θ` equation). -/
 def pllB : Matrix (Fin 2) (Fin 1) ℝ := !![-1; 0]
 
-@[tmio M, powerlib_foundation] theorem hasGradientAt_pllHamiltonian (V Ki ηs : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] theorem hasGradientAt_pllHamiltonian (V Ki ηs : ℝ) (x : State 2) :
     HasGradientAt (pllHamiltonian V Ki ηs) (pllGradient V Ki ηs x) x := by
   set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
   set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
@@ -376,12 +376,12 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 1 :=
   ⟨fun m => (m.toPH.shift m.point).system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isNonlinearPH :
+@[powerlib_domain] theorem family_isNonlinearPH :
     family.IsNonlinearPH (fun m => m.toPH.shift m.point) := fun _ => rfl
 
 /-- No model is at a well bottom and at an anti-phase point: the whole requirement language is
 inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_

@@ -103,7 +103,7 @@ def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+@[powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   (NormalForm.lift_contDiff m.c.rhs_contDiff).comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the PSC models is not sound.** A locally
@@ -144,7 +144,7 @@ def euler : Implementation Model Requirement Euler Requirement 3 0 3 0 :=
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+@[powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the VSM + power-filter models is not
@@ -183,7 +183,7 @@ def rigEuler : Implementation Rig RigRequirement RigEuler RigRequirement 4 0 4 0
 
 /-- The translated platform field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem rig_contDiff_field (m : Rig) : ContDiff ℝ 1 (Rig.field m) :=
+@[powerlib_domain] theorem rig_contDiff_field (m : Rig) : ContDiff ℝ 1 (Rig.field m) :=
   (contDiff_rigField m).comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the platform models is not sound.** A
@@ -231,7 +231,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+@[powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   m.q.contDiff_field.comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the droop + LPF models is not sound.** A
@@ -311,7 +311,7 @@ def vsmEuler : Implementation VSMModel VSMRequirement VSMEuler VSMRequirement 2 
 /-- The translated VSM field is `C¹` near the origin when the power map is `C¹` near the selected
 angle: the smoothness hypothesis of the local generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem vsm_contDiffAt_field {m : VSMModel}
+@[powerlib_domain] theorem vsm_contDiffAt_field {m : VSMModel}
     (hs : ContDiffAt ℝ 1 m.P (m.point 0)) :
     ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := m.vector) (x₀ := m.point) ?_
@@ -361,7 +361,7 @@ def droopEuler : Implementation DroopModel VSMRequirement DroopEuler VSMRequirem
 /-- The translated droop + LPF field is `C¹` near the origin when the power map is `C¹` near the
 selected angle: the smoothness hypothesis of the local generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem droop_contDiffAt_field {m : DroopModel}
+@[powerlib_domain] theorem droop_contDiffAt_field {m : DroopModel}
     (hs : ContDiffAt ℝ 1 m.d.P (m.point 0)) :
     ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := m.d.droopField) (x₀ := m.point) ?_

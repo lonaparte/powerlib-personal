@@ -432,7 +432,7 @@ def family : Family Model Requirement 2 0 :=
   exact fun x hx => phLaSalle_counterexample_unique_min x hx
 
 /-- A unique global minimizer of `H` is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (h : Meets m .uniqueMin) :
+@[tmio TM, powerlib_foundation] theorem mem_den_lyapunovStable (m : Model) (h : Meets m .uniqueMin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine family_isNonlinearPH.mem_den_lyapunovStable_shift
@@ -440,13 +440,13 @@ def family : Family Model Requirement 2 0 :=
   exact eventually_nhdsWithin_of_forall fun x hx => h x hx
 
 /-- The counterexample is passive at every point: `H ≥ −8/3`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_passive (m : Model) :
+@[tmio TM, powerlib_foundation] theorem mem_den_passive (m : Model) :
     connection% (m ∈ family.den .passive) :=
   family_isNonlinearPH.mem_den_passive
     (phLaSalle_counterexample.bddBelow_range_shift_H.mpr
       ⟨-(8 / 3), by rintro _ ⟨x, rfl⟩; exact phLaSalle_H_lowerBound x⟩)
 
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_foundation] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   refine Family.exact_of_translate_eq_empty rfl ?_
   ext m
@@ -454,7 +454,7 @@ def family : Family Model Requirement 2 0 :=
   exact mem_den_passive m
 
 /-- Every translation of the counterexample family is sound. -/
-@[tmio TM, powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
@@ -470,7 +470,7 @@ def family : Family Model Requirement 2 0 :=
 /-- Refutation of the T-ph §1.2 corollary: the counterexample satisfies "argmin H = {x*}" and
 "R ≻ 0 on ∇H ≠ 0" (`meets_uniqueMin`, `phLaSalle_counterexample_damping_pos`), yet `x*` is not
 globally asymptotically stable: the second critical point `(1, 0)` is an equilibrium. -/
-@[tmio TM, powerlib_domain] theorem not_mem_den_globallyAsymptoticallyStable :
+@[tmio TM, powerlib_foundation] theorem not_mem_den_globallyAsymptoticallyStable :
     connection% ((⟨phLaSalle_xs⟩ : Model) ∉
       family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -491,7 +491,7 @@ globally asymptotically stable: the second critical point `(1, 0)` is an equilib
   norm_num [phLaSalle_xo, phLaSalle_xs] at this
 
 /-- The note's hypothesis does not translate global asymptotic stability soundly. -/
-@[tmio TM, powerlib_domain] theorem uniqueMin_not_sound_globallyAsymptoticallyStable :
+@[tmio TM, powerlib_foundation] theorem uniqueMin_not_sound_globallyAsymptoticallyStable :
     connection% (¬ ∀ m : Model, m ∈ TMIO.realize Meets {.uniqueMin} →
       m ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement

@@ -379,7 +379,7 @@ def RationalCircuit.matrix (r : RationalCircuit) : Matrix (Fin 3) (Fin 3) ℚ :=
      0, 1 / r.secondInductance, -(r.secondResistance / r.secondInductance)]
 
 /-- The exact rational matrix is the circuit's plant matrix. -/
-@[tmio M, powerlib_foundation] theorem RationalCircuit.real_matrix (r : RationalCircuit) :
+@[tmio M, powerlib_domain] theorem RationalCircuit.real_matrix (r : RationalCircuit) :
     Linear.Synthesis.real r.matrix = r.circuit.plant.A := by
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -400,7 +400,7 @@ generic synthesizer run on the exact rational plant matrix. -/
 def rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2 :=
   family.extend RationalCircuit.circuit fun r _ => Linear.Synthesis.accepts r.matrix = true
 
-@[tmio M, powerlib_foundation] theorem rationalFamily_isLinear :
+@[tmio M, powerlib_domain] theorem rationalFamily_isLinear :
     rationalFamily.IsLinear (Circuit.plant ∘ RationalCircuit.circuit) :=
   family_isLinear.extend _ _
 

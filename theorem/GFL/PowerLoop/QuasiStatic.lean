@@ -149,7 +149,7 @@ def jac (θ Id : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 /-- Transmission limit `P_SN = 3V²/(4X_g)`. -/
 def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
 
-@[tmio M, powerlib_foundation] theorem field_point_eq_zero {θ Id : ℝ} (h : IsEq p θ Id) :
+@[tmio M, powerlib_domain] theorem field_point_eq_zero {θ Id : ℝ} (h : IsEq p θ Id) :
     field p (point θ Id) = 0 := by
   obtain ⟨h1, h2⟩ := h
   have hq : vq p θ Id = 0 := by unfold vq; linarith
@@ -157,13 +157,13 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
   ext i
   fin_cases i <;> simp [coordField, hq, ← h2]
 
-@[powerlib_foundation] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
+@[powerlib_domain] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
   apply Dynamics.contDiff_lift
   apply contDiff_pi.2
   intro i
   fin_cases i <;> simp [coordField, vq, power] <;> fun_prop
 
-@[powerlib_foundation] theorem hasFDerivAt_coordField (y : Fin 3 → ℝ) :
+@[powerlib_domain] theorem hasFDerivAt_coordField (y : Fin 3 → ℝ) :
     HasFDerivAt (coordField p) (Matrix.toLin' (jac p (y 0) (y 2))).toContinuousLinearMap y := by
   have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 3) y
   have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 3) y
@@ -188,7 +188,7 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
     simp [jac, dotProduct, Fin.sum_univ_three]
     ring
 
-@[powerlib_foundation] theorem fderiv_field (θ x Id : ℝ) :
+@[powerlib_domain] theorem fderiv_field (θ x Id : ℝ) :
     fderiv ℝ (field p) (WithLp.toLp 2 ![θ, x, Id]) =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (jac p θ Id) := by
   have := hasFDerivAt_coordField p ![θ, x, Id]
@@ -221,7 +221,7 @@ def currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Matrix.diagonal ![1, 1, -1]
 by the reversal of the current coordinate (`i_d = −I_d`), with the power reference reversed
 (`P_ref = −P_ref,exp`); the dispatch law keeps its form since both sides of `İ_d = k_P(P_ref − P)`
 change sign. -/
-@[powerlib_foundation] theorem field_eq_transport_literatureField :
+@[powerlib_domain] theorem field_eq_transport_literatureField :
     field p = Dynamics.transportField (Dynamics.matrixCoord currentReversal currentReversal_isUnit)
       0 (literatureField { p with Pref := -p.Pref }) := by
   have hinv : currentReversal⁻¹ = currentReversal :=
@@ -237,7 +237,7 @@ change sign. -/
 
 /-! ## Equilibria and the transmission limit -/
 
-@[powerlib_foundation] theorem power_of_isEq {θ Id : ℝ} (hX : p.Xg ≠ 0)
+@[powerlib_domain] theorem power_of_isEq {θ Id : ℝ} (hX : p.Xg ≠ 0)
     (h : -(p.Xg * Id) = p.V * Real.sin θ) :
     power p θ Id = -(PSN p * Real.sin (2 * θ)) := by
   have hId : Id = -(p.V * Real.sin θ / p.Xg) := by field_simp; linarith
@@ -249,7 +249,7 @@ change sign. -/
 absorbed reference; the zeros of the sinusoid `−P_ref − P_SN sin 2θ`,
 `SpecialFunctions.exists_sinusoid_zero_iff`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem equilibrium_exists_iff (hX : 0 < p.Xg)
+@[powerlib_domain] theorem equilibrium_exists_iff (hX : 0 < p.Xg)
     (hkP : p.kP ≠ 0) :
     (∃ z : Dynamics.State 3, field p z = 0) ↔ |p.Pref| ≤ PSN p := by
   have hPSN : 0 ≤ PSN p := by unfold PSN; positivity
@@ -284,7 +284,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- On the branch `|θ| < π/2` the exported power `−P = P_SN sin 2θ` (`power_of_isEq`) reaches
 `P_SN` exactly at the fold angle `θ = π/4`. -/
-@[powerlib_foundation] theorem power_eq_PSN_iff (hX : 0 < p.Xg) (hV : p.V ≠ 0) {θ : ℝ}
+@[powerlib_domain] theorem power_eq_PSN_iff (hX : 0 < p.Xg) (hV : p.V ≠ 0) {θ : ℝ}
     (hθ : θ ∈ Set.Ioo (-(Real.pi / 2)) (Real.pi / 2)) :
     PSN p * Real.sin (2 * θ) = PSN p ↔ θ = Real.pi / 4 := by
   have hpos : 0 < PSN p := by unfold PSN; positivity
@@ -316,18 +316,18 @@ def a1 (θ : ℝ) : ℝ :=
 /-- `a₀ = (3/2)V² k_P k_i cos 2θ` -/
 def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
 
-@[powerlib_foundation] theorem trace_jac (θ Id : ℝ) : (jac p θ Id).trace = -a2 p θ := by
+@[powerlib_domain] theorem trace_jac (θ Id : ℝ) : (jac p θ Id).trace = -a2 p θ := by
   simp [jac, Matrix.trace_fin_three, a2]
   ring
 
-@[powerlib_foundation] theorem principalMinorSum_jac {θ Id : ℝ}
+@[powerlib_domain] theorem principalMinorSum_jac {θ Id : ℝ}
     (h : -(p.Xg * Id) = p.V * Real.sin θ) : Criteria.principalMinorSum (jac p θ Id) = a1 p θ := by
   simp [jac, Criteria.principalMinorSum, a1, Real.cos_two_mul]
   have := Real.sin_sq_add_cos_sq θ
   linear_combination (-(3 / 2) * p.kp * p.kP * p.V * Real.sin θ) * h +
     (-(3 / 2) * p.kp * p.kP * p.V ^ 2) * this
 
-@[powerlib_foundation] theorem det_jac {θ Id : ℝ} (h : -(p.Xg * Id) = p.V * Real.sin θ) :
+@[powerlib_domain] theorem det_jac {θ Id : ℝ} (h : -(p.Xg * Id) = p.V * Real.sin θ) :
     (jac p θ Id).det = -a0 p θ := by
   simp [jac, Matrix.det_fin_three, a0, Real.cos_two_mul]
   have := Real.sin_sq_add_cos_sq θ
@@ -335,7 +335,7 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
     (3 / 2 * p.ki * p.kP * p.V ^ 2) * this
 
 /-- The characteristic polynomial of the Jacobian at an equilibrium. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_jac {θ Id : ℝ}
+@[powerlib_domain] theorem det_characteristicMatrix_jac {θ Id : ℝ}
     (h : -(p.Xg * Id) = p.V * Real.sin θ) (s : ℂ) :
     (Linear.characteristicMatrix (jac p θ Id) s).det =
       s ^ 3 + (a2 p θ : ℂ) * s ^ 2 + (a1 p θ : ℂ) * s + (a0 p θ : ℂ) := by
@@ -345,7 +345,7 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
   ring
 
 /-- The Hurwitz-determinant identity of the source. -/
-@[powerlib_foundation] theorem a2_mul_a1_sub_a0 (θ : ℝ) :
+@[powerlib_domain] theorem a2_mul_a1_sub_a0 (θ : ℝ) :
     a2 p θ * a1 p θ - a0 p θ = p.V ^ 2 / 4 *
       ((9 * p.V * p.kP ^ 2 * p.kp + 6 * p.V * p.kP * p.kp ^ 2) * Real.cos θ *
           Real.cos (2 * θ) +
@@ -356,7 +356,7 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
   rw [h2]
   ring
 
-@[powerlib_foundation] theorem a2_mul_a1_sub_a0_pos (hV : 0 < p.V) (hkp : 0 < p.kp)
+@[powerlib_domain] theorem a2_mul_a1_sub_a0_pos (hV : 0 < p.V) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (hcos2 : 0 ≤ Real.cos (2 * θ)) : a0 p θ < a2 p θ * a1 p θ := by
   have h := a2_mul_a1_sub_a0 p θ
@@ -424,7 +424,7 @@ operating point. -/
 def family : Family Model Requirement 3 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
@@ -463,7 +463,7 @@ stability. -/
 
 /-- No model has both a Routh–Hurwitz Jacobian and `det > 0` or `tr > 0`: the whole requirement
 language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of .jacobianStable .jacobianUnstable fun m hs hu => ?_
@@ -498,7 +498,7 @@ private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) 
 
 /-- An equilibrium of the field at `(θ*, 0, i_d*)` with a nonzero dispatch gain is an `IsEq`
 point. -/
-@[tmio M, powerlib_foundation] theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
+@[tmio M, powerlib_domain] theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
     (h : field p (point θ Id) = 0) :
     connection% ((⟨p, θ, Id⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
@@ -609,7 +609,7 @@ equilibrium is unstable (fold side of the branch). -/
 
 /-- No Hopf pair: for positive gains and `cos θ > 0`, the Jacobian at an equilibrium never has
 a nonzero purely imaginary eigenvalue. -/
-@[powerlib_foundation] theorem no_imaginary_eigenvalue (hV : 0 < p.V) (hkp : 0 < p.kp)
+@[powerlib_domain] theorem no_imaginary_eigenvalue (hV : 0 < p.V) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
     (hcos : 0 < Real.cos θ) (ω : ℝ) (hω : ω ≠ 0) :
     (Linear.characteristicMatrix (jac p θ Id) (Complex.I * ω)).det ≠ 0 := by

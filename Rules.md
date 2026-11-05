@@ -110,8 +110,8 @@ conclusion specific to its measured values. Mathematical constants, normalized
 models, and exact witnesses or certificates needed to prove general results are
 not measurement records and are reviewed according to their mathematical role.
 
-The generic/engineering module partition and foundation/domain metadata are
-independent of these five kinds. Supporting definitions, private proofs and
+The generic/engineering module partition does not determine these five kinds.
+Foundation/domain metadata has the compatibility constraints in §3. Supporting definitions, private proofs and
 metaprogramming infrastructure support admitted units rather than forming a
 sixth knowledge kind.
 
@@ -139,15 +139,31 @@ every explicit attribute, including one on an ordinary or private theorem, is ch
 
 *Applies M3 and M5.*
 
-Foundation results include algebraic identities, conversion involutions,
-representation equivalences, transport laws, and auxiliary lemmas. They may
-be proved manually and are checked by the Lean kernel; an Agda scaffold may have
-established the same fact first (§1). Not every lemma requires synthesis.
+Foundation results state mathematics or general semantic laws without selecting
+an engineering object. They include mathematical models and their interpretations,
+as well as algebra, analysis, representation equivalences and generic connection laws.
+Having a possible engineering application does not make a result domain.
 
-Domain results express engineering conclusions about power systems or power
-electronics, such as small-signal stability, impedance stability, or closed-loop
-exponential stability. They require final Lean theorems about the formalized
-system. Foundation evidence must not be presented as a domain conclusion.
+Domain results are statements about a selected engineering model, implementation
+or observation interface: for example an RL circuit, a converter controller or a
+machine model. They include that model's parameter identities, representation
+conversions and auxiliary lemmas as well as its stability and passivity conclusions.
+Being private, auxiliary or algebraically simple does not make such a result foundation.
+Classify the proposition and the definitions of its objects, not its proof method,
+file path or use of `connection%`. Both classes require kernel-checked Lean proofs.
+
+The allowed explicit pairs are:
+
+| Metadata | T | M | TM | MI | IO |
+|---|---|---|---|---|---|
+| `powerlib_foundation` | yes | yes | yes | no | no |
+| `powerlib_domain` | no | yes | yes | yes | yes |
+
+M and TM occur in both classes: mathematical models and their interpretations can
+be foundation; engineering models and their interpretations are domain. Generic
+laws about arbitrary realization or observation relations are T/foundation; naming
+an `Implementation` or discretizing an arbitrary mathematical system does not by
+itself establish an engineering I endpoint.
 
 `@[powerlib_foundation]` and `@[powerlib_domain]` are optional discovery and
 presentation metadata. They do not grant admission or exempt a declaration from
@@ -155,7 +171,15 @@ checking. Only an explicit annotation assigns one of these classifications: a ty
 `TMIO.Statement` neither implies domain nor overrides foundation. Unannotated
 connection statements remain unclassified in this registry; connection discovery
 and admission still inspect their types independently. Simp, ext and Aesop
-registration remain independent decisions.
+registration remain independent decisions. Conversely, a domain label does not
+require a connection wrapper. Public model behaviour is still subject to the
+structural admission rules in §3a regardless of either metadata label.
+
+`theorem/Attributes.lean` rejects incompatible explicit pairs at module boundaries,
+after delayed attributes, including private declarations. The mandatory build and
+`#tmio_check` also audit pairs in the imported environment. The source preflight
+rejects incompatible inline pairs before compilation. These checks enforce the
+matrix; they do not infer missing tags or prove a semantic classification correct.
 
 Generic static lemmas, semantic implications and certificate arithmetic are
 foundation results. Generic connection laws — laws about arbitrary families stated
@@ -163,10 +187,11 @@ as connections, such as the explicit Euler template or the hub transfer laws —
 remain foundation results. These connection statements retain their generic
 family parameters and are stated once; an instance applies
 them to its family's static evidence (autonomy, smoothness of its field) and
-publishes only what carries its own content. A model family's public engineering
-conclusion must be a domain theorem on a connection: an evaluation of its
-generated space, a comparison of connections, or a boundary witness. Relabeling
-such a conclusion as foundation does not complete its public domain interface.
+publishes only what carries its own content. A model family's public behavioural
+conclusion must use a connection: an evaluation of its generated space, a comparison
+of connections, or a boundary witness. Static domain model identities do not need
+that wrapper. Relabeling a behavioural conclusion as foundation does not bypass
+the structural admission check.
 
 ## 3a. Generated connections and public conclusions
 

@@ -119,25 +119,25 @@ def field10 (x : State 10) : State 10 :=
     vccQ x,
     p.Kp * vccQ x + p.Ki * x 8]
 
-@[simp, powerlib_foundation] theorem field10_0 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_0 (x : State 10) :
     p.field10 x 0 = (x 2 - p.uD x - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf := rfl
-@[simp, powerlib_foundation] theorem field10_1 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_1 (x : State 10) :
     p.field10 x 1 = (x 3 - p.uQ x - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf := rfl
-@[simp, powerlib_foundation] theorem field10_2 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_2 (x : State 10) :
     p.field10 x 2 = (x 4 - x 0 + p.ωg * p.Cf * x 3) / p.Cf := rfl
-@[simp, powerlib_foundation] theorem field10_3 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_3 (x : State 10) :
     p.field10 x 3 = (x 5 - x 1 - p.ωg * p.Cf * x 2) / p.Cf := rfl
-@[simp, powerlib_foundation] theorem field10_4 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_4 (x : State 10) :
     p.field10 x 4 = (p.Vg - x 2 - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg := rfl
-@[simp, powerlib_foundation] theorem field10_5 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_5 (x : State 10) :
     p.field10 x 5 = (-x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4) / p.Lg := rfl
-@[simp, powerlib_foundation] theorem field10_6 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_6 (x : State 10) :
     p.field10 x 6 = p.idRef - icD x := rfl
-@[simp, powerlib_foundation] theorem field10_7 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_7 (x : State 10) :
     p.field10 x 7 = p.iqRef - icQ x := rfl
-@[simp, powerlib_foundation] theorem field10_8 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_8 (x : State 10) :
     p.field10 x 8 = vccQ x := rfl
-@[simp, powerlib_foundation] theorem field10_9 (x : State 10) :
+@[simp, powerlib_domain] theorem field10_9 (x : State 10) :
     p.field10 x 9 = p.Kp * vccQ x + p.Ki * x 8 := rfl
 
 /-! ### The OUT-positive form of the source (conventions §D8) -/
@@ -188,7 +188,7 @@ variable (p : Params)
 
 /-- §D8 boundary translation: the IN-positive 10-state field is the OUT-positive source field
 transported by the reversal of the six current coordinates, with the references reversed. -/
-@[powerlib_foundation] theorem field10_eq_transport_literatureField10 :
+@[powerlib_domain] theorem field10_eq_transport_literatureField10 :
     p.field10 = Dynamics.transportField
       (Dynamics.matrixCoord currentReversal10 currentReversal10_isUnit) 0
       ({ p with idRef := -p.idRef, iqRef := -p.iqRef } : Params).literatureField10 := by
@@ -212,18 +212,18 @@ def qssState (θ η : ℝ) : State 10 :=
   WithLp.toLp 2 ![p.iD θ, p.iQ θ, p.vcD θ p.Vg 0, p.vcQ θ p.Vg 0, p.igD θ p.Vg 0,
     p.igQ θ p.Vg 0, p.Rf * p.idRef / p.Kicc, p.Rf * p.iqRef / p.Kicc, η, θ]
 
-@[simp, powerlib_foundation] theorem qssState_8 (θ η : ℝ) : p.qssState θ η 8 = η := rfl
-@[simp, powerlib_foundation] theorem qssState_9 (θ η : ℝ) : p.qssState θ η 9 = θ := rfl
+@[simp, powerlib_domain] theorem qssState_8 (θ η : ℝ) : p.qssState θ η 8 = η := rfl
+@[simp, powerlib_domain] theorem qssState_9 (θ η : ℝ) : p.qssState θ η 9 = θ := rfl
 
 /-- On the quasi-steady set the PLL input is exactly `h(θ)`. -/
-@[powerlib_foundation] theorem vccQ_qssState (θ η : ℝ) : vccQ (p.qssState θ η) = p.h θ := rfl
+@[powerlib_domain] theorem vccQ_qssState (θ η : ℝ) : vccQ (p.qssState θ η) = p.h θ := rfl
 
 /-- The fast rows `0 … 7` (current, capacitor, line, current-loop integrators). -/
 def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 x i = 0
 
 /-- `reduction-pipeline.md` §2–§4 as an exact algebraic statement: the eight fast rows of the
 10-state field vanish iff the state is on the explicit quasi-steady set. -/
-@[powerlib_foundation] theorem fastAtRest_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0)
+@[powerlib_domain] theorem fastAtRest_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0)
     (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (x : State 10) :
     p.FastAtRest x ↔ x = p.qssState (x 9) (x 8) := by
   set θ := x 9 with hθ
@@ -349,7 +349,7 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
 exactly the quasi-steady states `qssState θ* 0` with `h(θ*) = 0`. This is an exact statement;
 it does not depend on any time-scale separation.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field10_eq_zero_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
+@[powerlib_domain] theorem field10_eq_zero_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0)
     (x : State 10) :
     p.field10 x = 0 ↔ ∃ θ, p.h θ = 0 ∧ x = p.qssState θ 0 := by
@@ -378,7 +378,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The equilibrium set of the 10-state field as an image of the zero set of `h`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field10_equilibria_eq (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
+@[powerlib_domain] theorem field10_equilibria_eq (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0) :
     {x : State 10 | p.field10 x = 0} = (fun θ => p.qssState θ 0) '' {θ | p.h θ = 0} := by
   ext x
@@ -397,7 +397,7 @@ def reducedField (y : State 2) : State 2 :=
   WithLp.toLp 2 ![p.field10 (p.qssState (y 0) (y 1)) 9, p.field10 (p.qssState (y 0) (y 1)) 8]
 
 /-- The reduced field is `θ̇_e = K_p h(θ_e) + K_i η`, `η̇ = h(θ_e)`. -/
-@[powerlib_foundation] theorem reducedField_apply (y : State 2) :
+@[powerlib_domain] theorem reducedField_apply (y : State 2) :
     p.reducedField y = WithLp.toLp 2 ![p.Kp * p.h (y 0) + p.Ki * y 1, p.h (y 0)] := rfl
 
 end Params

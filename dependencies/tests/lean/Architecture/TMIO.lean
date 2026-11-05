@@ -110,7 +110,7 @@ run_cmd do
     unless proof.getUsedConstants.contains source do
       throwError "TMIO consumer did not directly reuse {source}: {consumer}"
   -- The core makes no engineering claim: every TMIO theorem is a foundation theorem and passes
-  -- the transitive axiom audit. Domain conclusions live with the families.
+  -- the transitive axiom audit. A family may describe mathematics or an engineering model.
   let mut foundations : Nat := 0
   for name in powerlib.Registry.theoremNames env do
     unless (`powerlib.TMIO).isPrefixOf name || (`TMIOConsumers).isPrefixOf name do
@@ -121,23 +121,8 @@ run_cmd do
     for axiomName in powerlib.Search.declarationAxioms env name do
       unless powerlib.Search.allowedAxiom axiomName do
         throwError "TMIO theorem used an unapproved axiom: {name}: {axiomName}"
-  for name in #[`powerlib.Circuits.RL.chain_eq_semantics, `powerlib.Circuits.RL.certified_readings,
-      `powerlib.Circuits.RL.closure_resistance,
-      `powerlib.Circuits.LCL.chain_le_semantics, `powerlib.Circuits.LCL.exact_hurwitz,
-      `powerlib.Circuits.LCL.exactUnder_conservative, `powerlib.Circuits.LCL.realize_passive_damped,
-      `powerlib.Circuits.LCL.exact_passive,
-      `powerlib.Circuits.LCL.not_exact_lyapunovStable, `powerlib.Circuits.LCL.not_exact_conservative,
-      `powerlib.Circuits.Interconnection.exactUnder_hurwitz,
-      `powerlib.Circuits.Interconnection.portData_not_certified,
-      `powerlib.Circuits.Interconnection.portData_certified,
-      `powerlib.Circuits.Interconnection.soundUnder, `powerlib.Nonlinear.Cubic.chain_eq_semantics,
-      `powerlib.Nonlinear.Polynomial2.not_exact_asymptotic] do
-    unless powerlib.Registry.kindOf? env name == some .domain do
-      throwError "A family conclusion is not a classified domain theorem: {name}"
-  -- Connection shape does not override explicit presentation metadata.
-  unless powerlib.Registry.kindOf? env `powerlib.Circuits.RL.certified_records ==
-      some .foundation do
-    throwError "A connection overrode its explicit foundation classification"
+  -- ConnectionAdmission tests metadata preservation using dedicated fixtures. Do not infer
+  -- domain from a family/connection or maintain a second classification list here.
   for name in #[`powerlib.TMIO.generate, `powerlib.TMIO.realize, `powerlib.TMIO.Seed,
       `powerlib.TMIO.relationalSeed, `powerlib.TMIO.transport, `powerlib.TMIO.ExactUnder,
       `powerlib.Family.chain, `powerlib.Family.semantics, `powerlib.Family.Exact] do
@@ -200,18 +185,19 @@ def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
 end PlacementFixture
 
 open Lean Elab Command in
+set_option maxHeartbeats 0 in
 run_cmd do
-  let env ← getEnv
+  let connections ← powerlib.Knowledge.entriesInEnvironment
   liftTermElabM do
     let ctx ← powerlib.Architecture.context
     let mut placed : Nat := 0
-    for name in powerlib.Registry.theoremNames env (some .domain) do
-      let some i := env.getModuleIdxFor? name | continue
-      unless powerlib.Registry.isFirstPartyModule env.header.moduleNames[i.toNat]! do continue
-      if let some reason ← powerlib.Architecture.rejection ctx (← getConstInfo name).type then
-        throwError "Domain theorem failed connection admission: {name}: {reason}"
+    -- Check placement from actual typed connections. Semantics checks their complete
+    -- behavioural admission; the mandatory package audit also checks every declaration.
+    for entry in connections do
+      unless ← powerlib.Architecture.conclusionOnConnection (← getConstInfo entry.name).type do
+        throwError "Typed connection lacks a generated endpoint: {entry.name}"
       placed := placed + 1
-    if placed == 0 then throwError "The placement audit found no domain theorem"
+    if placed == 0 then throwError "The placement audit found no typed connection"
     for name in #[`PlacementFixture.offConnection, `PlacementFixture.phantomFamily,
         `PlacementFixture.irrelevantHypothesis, ``PlacementFixture.directHolds,
         ``PlacementFixture.transitiveHolds, `PlacementFixture.unrelatedConjunct,
@@ -222,4 +208,4 @@ run_cmd do
     if let some reason ← powerlib.Architecture.rejection ctx
         (← getConstInfo `PlacementFixture.onConnection).type then
       throwError "The architecture audit rejected its positive control: {reason}"
-    logInfo m!"POWERLIB_PLACEMENT_OK: {placed} first-party domain theorems; 9 negative controls"
+    logInfo m!"POWERLIB_PLACEMENT_OK: {placed} first-party typed connections; 9 negative controls"

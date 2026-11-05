@@ -96,7 +96,7 @@ determinant of its state matrix negative (a real saddle mode). -/
 
 /-- In the state matrix of the PI loop, a real eigenvector of a positive eigenvalue has a
 nonzero current component. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem first_ne_zero {r : ℝ} (hr : 0 < r) {v : Fin 2 → ℝ}
+@[powerlib_domain] theorem first_ne_zero {r : ℝ} (hr : 0 < r) {v : Fin 2 → ℝ}
     (hv : v ≠ 0) (h : p.model.A *ᵥ v = r • v) : v 0 ≠ 0 := by
   intro h0
   have h1 := congrFun h 1

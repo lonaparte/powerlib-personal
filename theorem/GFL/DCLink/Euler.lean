@@ -106,7 +106,7 @@ def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
 /-- The translated field is `C¹` near the origin: near the operating point (`V = 1`) the physical
 field is the smooth `regField`. The smoothness hypothesis of the local generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_modelField (m : Model) : ContDiffAt ℝ 1 m.field 0 := by
+@[powerlib_domain] theorem contDiffAt_modelField (m : Model) : ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := FourState.field m.params) (x₀ := opPoint m.θ)
     ((contDiff_regField m.params).contDiffAt.congr_of_eventuallyEq ?_)
   filter_upwards [Metric.ball_mem_nhds (opPoint m.θ) (by norm_num : (0 : ℝ) < 1 / 2)] with y hy
@@ -168,7 +168,7 @@ def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
 /-- The translated carrier field is `C¹` near the origin when the selected point has
 `V_dc ≠ 0`: the smoothness hypothesis of the local generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_modelField {m : Model} (hV : m.point 2 ≠ 0) :
+@[powerlib_domain] theorem contDiffAt_modelField {m : Model} (hV : m.point 2 ≠ 0) :
     ContDiffAt ℝ 1 m.field 0 :=
   Numerics.contDiffAt_shift (g := m.params.carrierField m.s) (x₀ := m.point)
     ((m.params.carrierField_contDiffOn m.s).contDiffAt
@@ -220,7 +220,7 @@ def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
 
 /-- The translated field is `C¹` near the origin when the selected state has `V_dc ≠ 0`: the
 smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_modelField {m : Model} (hV : m.x 2 ≠ 0) :
+@[powerlib_domain] theorem contDiffAt_modelField {m : Model} (hV : m.x 2 ≠ 0) :
     ContDiffAt ℝ 1 m.field 0 :=
   Numerics.contDiffAt_shift (g := m.p.field) (x₀ := m.x)
     (m.p.field_contDiffOn.contDiffAt (ModelBParams.isOpen_nonzeroVdc.mem_nhds hV))
@@ -263,7 +263,7 @@ def euler : Implementation CascadeParams Spectral.Requirement Euler Spectral.Req
 
 /-- The translated field is `C¹` near the origin when the operating voltage is positive: the
 smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_shiftedField {p : CascadeParams} (hV : 0 < p.V0) :
+@[powerlib_domain] theorem contDiffAt_shiftedField {p : CascadeParams} (hV : 0 < p.V0) :
     ContDiffAt ℝ 1 p.shiftedField 0 :=
   Numerics.contDiffAt_shift (g := p.field p.Id0) (x₀ := p.eqState)
     ((p.field_contDiffOn _).contDiffAt
@@ -308,7 +308,7 @@ def euler : Implementation OpenLoop Spectral.Requirement Euler Spectral.Requirem
 
 /-- The translated field is `C¹` near the origin when the operating voltage is positive: the
 smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_field {m : OpenLoop} (hV : 0 < m.V0) :
+@[powerlib_domain] theorem contDiffAt_field {m : OpenLoop} (hV : 0 < m.V0) :
     ContDiffAt ℝ 1 m.field 0 :=
   Numerics.contDiffAt_shift (g := openField m.C (-(m.P / m.V0)) m.P) (x₀ := dcState m.V0)
     ((openField_contDiffOn _ _ _).contDiffAt
@@ -353,7 +353,7 @@ def euler : Implementation DCParams Spectral.Requirement Euler Spectral.Requirem
 
 /-- The translated field is `C¹` near the origin when the voltage reference is positive: the
 smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_shiftedField {p : DCParams} (hV : 0 < p.Vref) :
+@[powerlib_domain] theorem contDiffAt_shiftedField {p : DCParams} (hV : 0 < p.Vref) :
     ContDiffAt ℝ 1 p.shiftedField 0 :=
   Numerics.contDiffAt_shift (g := p.closedField) (x₀ := p.eqState)
     (p.closedField_contDiffOn.contDiffAt

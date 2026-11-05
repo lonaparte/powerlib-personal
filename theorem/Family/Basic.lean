@@ -233,7 +233,7 @@ variable (F)
 
 /-- With an exact translation, the certified observations of a sentence, generated along the
 whole chain, are those whose every possible source satisfies it. -/
-@[tmio IO, powerlib_foundation] theorem certified (obs : SetRel X V) {s : Sentence} (h : F.Exact s) :
+@[tmio T, powerlib_foundation] theorem certified (obs : SetRel X V) {s : Sentence} (h : F.Exact s) :
     connection% (ofDual (generate (F.seed obs).uTO {s}) = certify obs (F.den s)) := by
   change ofDual (generate (F.seed obs).uTO {s}) = certify obs (F.den s)
   rw [seed, relationalSeed_whole, ← generate_cover, image_table_singleton]
@@ -243,7 +243,7 @@ variable {F}
 
 /-- An observation certified for sentences with sound translations proves them for every complete
 system that may produce it. -/
-@[tmio IO, powerlib_foundation] theorem certifies {obs : SetRel X V} {Φ : Set Sentence}
+@[tmio T, powerlib_foundation] theorem certifies {obs : SetRel X V} {Φ : Set Sentence}
     (hs : ∀ s ∈ Φ, F.Sound s) {v : V} (hv : v ∈ ofDual (generate (F.seed obs).uTO Φ)) {x : X}
     (hx : (x, v) ∈ obs) :
     connection% (∀ s ∈ Φ, x ∈ F.den s) := show ∀ s ∈ Φ, x ∈ F.den s from
@@ -252,7 +252,7 @@ system that may produce it. -/
 
 /-- An observation outside the possible observations of a sentence's models refutes the sentence
 for every complete system that may produce it. -/
-@[tmio IO, powerlib_foundation] theorem refutes {obs : SetRel X V} {s : Sentence} {v : V}
+@[tmio T, powerlib_foundation] theorem refutes {obs : SetRel X V} {s : Sentence} {v : V}
     (hv : v ∉ predict obs (F.den s)) {x : X} (hx : (x, v) ∈ obs) :
     connection% (x ∉ F.den s) := by
   change x ∉ F.den s

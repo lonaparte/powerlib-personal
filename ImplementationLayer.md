@@ -153,8 +153,10 @@ state-space averaging and KBM averaging.
 
 ### 3.5 Bridges
 
-Bridges relate a continuous model to its discrete or switched implementation and are generic
-mathematics, independent of the semantic decision:
+Generic bridges compare continuous, discrete and switched mathematical models and their
+interpretations. These are foundation T/M/TM results according to the statement; the use of
+the `Implementation` interface alone does not make them MI. An engineering instance can use
+such a bridge to justify an M–I relation to its selected implementation:
 
 | Bridge | Status |
 | --- | --- |

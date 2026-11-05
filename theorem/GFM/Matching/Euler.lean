@@ -114,7 +114,7 @@ def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step`). -/
-@[powerlib_foundation] theorem contDiff_modelField (m : Model) :
+@[powerlib_domain] theorem contDiff_modelField (m : Model) :
     ContDiff ℝ 1 (Model.translated m) :=
   (field_contDiff m).comp (contDiff_id.add contDiff_const)
 
@@ -162,7 +162,7 @@ def matchingEuler :
 /-- The translated matching field is `C¹` near the origin when the load law is `C¹` near the
 selected point: the smoothness hypothesis of the local generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem matching_contDiffAt_field {m : MatchingModel}
+@[powerlib_domain] theorem matching_contDiffAt_field {m : MatchingModel}
     (hs : ContDiffAt ℝ 1 (Function.uncurry m.ix) (m.θ, m.v)) : ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := matchingField m.C m.G m.η m.idc m.ix) (x₀ := m.point) ?_
   have hpt : (m.point 0, m.point 1) = (m.θ, m.v) := by simp [MatchingModel.point]
@@ -226,7 +226,7 @@ def swingEuler :
 /-- The translated swing field is `C¹` near the origin when the power law is `C¹` near the
 selected point: the smoothness hypothesis of the local generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
-@[powerlib_foundation] theorem swing_contDiffAt_field {m : SwingModel}
+@[powerlib_domain] theorem swing_contDiffAt_field {m : SwingModel}
     (hs : ContDiffAt ℝ 1 (Function.uncurry m.Pe) (m.θ, m.ω)) : ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := swingField m.M m.D m.τ m.Pe) (x₀ := m.point) ?_
   have hpt : (m.point 0, m.point 1) = (m.θ, m.ω) := by simp [SwingModel.point]
@@ -288,7 +288,7 @@ def fullEuler :
 
 /-- The translated stationary-frame field is `C¹`: the smoothness hypothesis of the generic Euler
 laws (`Numerics.euler_sound_small_step`), which hold vacuously for this family. -/
-@[powerlib_foundation] theorem full_contDiff_field (M : FullModel) : ContDiff ℝ 1 M.field :=
+@[powerlib_domain] theorem full_contDiff_field (M : FullModel) : ContDiff ℝ 1 M.field :=
   (abField_smooth M.p).comp (contDiff_id.add contDiff_const)
 
 /-- **The Euler realization of the stationary-frame models is sound without a step constraint,

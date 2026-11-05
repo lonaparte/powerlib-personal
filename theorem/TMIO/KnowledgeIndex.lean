@@ -1,4 +1,4 @@
-import theorem.TMIO.KnowledgeKind
+import theorem.Attributes
 
 /-! # Queries over attributed theorems and connections
 
@@ -139,6 +139,7 @@ syntax (name := tmioCheck) "#tmio_check" : command
 
 elab_rules : command
   | `(#tmio_check) => do
+    Registry.auditCompatibilityInEnvironment
     auditEnvironment
 
 end powerlib.Knowledge

@@ -82,12 +82,12 @@ def rlField (m : RL.Impedance) : (Fin 1 → ℝ) → (Fin 1 → ℝ) := rlInputF
 /-- State matrix of the RL field: the state matrix of the RL family's plant. -/
 def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
 
-@[tmio M, powerlib_foundation] theorem rlMatrix_eq (m : RL.Impedance) :
+@[tmio M, powerlib_domain] theorem rlMatrix_eq (m : RL.Impedance) :
     rlMatrix m = !![-(m.resistance / m.inductance.val)] :=
   RL.plant_A m
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem rlField_eq_linearField (m : RL.Impedance) :
+@[powerlib_domain] theorem rlField_eq_linearField (m : RL.Impedance) :
     rlField m = linearField (rlMatrix m) := by
   funext x
   have h0 : (![0] : Fin 1 → ℝ) = 0 := by
@@ -97,7 +97,7 @@ def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
   simp [rlField, rlInputField, rlMatrix, linearField, h0]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem rlInputField_sub (m : RL.Impedance) (v : ℝ)
+@[powerlib_domain] theorem rlInputField_sub (m : RL.Impedance) (v : ℝ)
     (x e : Fin 1 → ℝ) : rlInputField m v x - rlInputField m v e = rlField m (x - e) := by
   rw [rlField_eq_linearField]
   simp only [rlInputField, linearField, rlMatrix, mulVec_sub]
@@ -105,7 +105,7 @@ def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
 
 /-- The forward semantics of a single RL branch contains global exponential stability exactly
 when its resistance is positive. -/
-@[tmio TM, powerlib_foundation] theorem rlMatrix_isHurwitz_iff (m : RL.Impedance) :
+@[tmio TM, powerlib_domain] theorem rlMatrix_isHurwitz_iff (m : RL.Impedance) :
     connection% ((Sentence.flow .globallyExponentiallyStable) ∈
       RL.family.semantics (OrderDual.toDual {m}) ↔ 0 < m.resistance) := by
   simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
@@ -191,7 +191,7 @@ def lclInputField (m : LCL.Circuit) (u vg : ℝ) (x : Fin 3 → ℝ) : Fin 3 →
 def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInputField m 0 0
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem lclField_eq_linearField (m : LCL.Circuit) :
+@[powerlib_domain] theorem lclField_eq_linearField (m : LCL.Circuit) :
     lclField m = linearField m.plant.A := by
   funext x
   have h0 : (![0, 0] : Fin 2 → ℝ) = 0 := by
@@ -200,7 +200,7 @@ def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInput
   simp [lclField, lclInputField, linearField, h0]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem lclInputField_sub (m : LCL.Circuit) (u vg : ℝ)
+@[powerlib_domain] theorem lclInputField_sub (m : LCL.Circuit) (u vg : ℝ)
     (x e : Fin 3 → ℝ) : lclInputField m u vg x - lclInputField m u vg e = lclField m (x - e) := by
   rw [lclField_eq_linearField]
   simp only [lclInputField, linearField, mulVec_sub]
@@ -208,7 +208,7 @@ def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInput
 
 /-- A passive, damped LCL plant has a Hurwitz state matrix.
 Read through the existing family endpoint. -/
-@[tmio TM, powerlib_foundation] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
+@[tmio TM, powerlib_domain] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
     connection% (m ∈ LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement

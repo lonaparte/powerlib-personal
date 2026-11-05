@@ -102,13 +102,13 @@ def gain (v : ℂ) : ℝ := a.c - a.κv * normSq v
 /-- No-load AHO field `v̇ = (j ω_s + c − κ_v |v|²) v`. -/
 def field (v : ℂ) : ℂ := (I * a.ωs + (a.gain v : ℂ)) * v
 
-@[tmio M, powerlib_foundation] theorem aho_re (v : ℂ) :
+@[tmio M, powerlib_domain] theorem aho_re (v : ℂ) :
     (a.field v).re = -a.σ * v.re - a.ωs * v.im + a.κv * (a.vstar ^ 2 - normSq v) * v.re := by
   simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
     Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
   simp only [gain, c]; ring
 
-@[powerlib_foundation] theorem aho_im (v : ℂ) :
+@[powerlib_domain] theorem aho_im (v : ℂ) :
     (a.field v).im = a.ωs * v.re - a.σ * v.im + a.κv * (a.vstar ^ 2 - normSq v) * v.im := by
   simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
     Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
@@ -139,25 +139,25 @@ def Meets (a : AHO) : Requirement → Prop
 
 variable {a}
 
-@[tmio M, powerlib_foundation] theorem Admissible.c_pos (h : a.Admissible) :
+@[tmio M, powerlib_domain] theorem Admissible.c_pos (h : a.Admissible) :
     connection% (a ∈ TMIO.realize Meets {.growing}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, c]
   linarith [h.gap]
 
-@[powerlib_foundation] theorem Admissible.rstar_sq (h : a.Admissible) :
+@[powerlib_domain] theorem Admissible.rstar_sq (h : a.Admissible) :
     a.rstar ^ 2 = a.c / a.κv := by
   have hk := h.κv
   rw [rstar, Real.sq_sqrt]
   · simp only [c]; field_simp
   · rw [sub_nonneg, div_le_iff₀ hk]; linarith [h.gap]
 
-@[powerlib_foundation] theorem Admissible.rstar_pos (h : a.Admissible) : 0 < a.rstar := by
+@[powerlib_domain] theorem Admissible.rstar_pos (h : a.Admissible) : 0 < a.rstar := by
   apply Real.sqrt_pos.mpr
   rw [sub_pos, div_lt_iff₀ h.κv]; linarith [h.gap]
 
 /-- `r*` is the unique positive zero of the radial field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem radial_zero_iff (h : a.Admissible) {r : ℝ} (hr : 0 < r) :
+@[powerlib_domain] theorem radial_zero_iff (h : a.Admissible) {r : ℝ} (hr : 0 < r) :
     (a.κv * (a.vstar ^ 2 - r ^ 2) - a.σ) * r = 0 ↔ r = a.rstar := by
   have hk := h.κv
   rw [mul_eq_zero, or_iff_left hr.ne']
@@ -174,7 +174,7 @@ Static evidence on the model, not a connection conclusion. -/
 variable (a)
 
 /-- `d|v|²/dt = 2 (c − κ_v |v|²) |v|²` along the field. -/
-@[powerlib_foundation] theorem hasDerivWithinAt_normSq {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
+@[powerlib_domain] theorem hasDerivWithinAt_normSq {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
     (hφ : HasDerivWithinAt φ (a.field (φ t)) s t) :
     HasDerivWithinAt (fun τ => normSq (φ τ))
       (2 * a.gain (φ t) * normSq (φ t)) s t := by
@@ -324,7 +324,7 @@ private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
   exact (Real.continuous_sqrt.tendsto _).comp hy
 
 /-- `d‖v‖/dt = gain · ‖v‖` along the field (away from the origin). -/
-@[powerlib_foundation] theorem hasDerivWithinAt_norm {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
+@[powerlib_domain] theorem hasDerivWithinAt_norm {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
     (hφ : HasDerivWithinAt φ (a.field (φ t)) s t) (hne : φ t ≠ 0) :
     HasDerivWithinAt (fun τ => ‖φ τ‖) (a.gain (φ t) * ‖φ t‖) s t := by
   have hy := a.hasDerivWithinAt_normSq hφ
@@ -460,7 +460,7 @@ def realField (x : State 2) : State 2 :=
 
 /-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
 `v = v_α + j v_β`. -/
-@[powerlib_foundation] theorem realField_eq (x : State 2) :
+@[powerlib_domain] theorem realField_eq (x : State 2) :
     a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp only [realField, PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
@@ -473,12 +473,12 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![a.c - a.κv * (3 * x 0 ^ 2 + x 1 ^ 2), -a.ωs - 2 * a.κv * x 0 * x 1;
      a.ωs - 2 * a.κv * x 0 * x 1, a.c - a.κv * (x 0 ^ 2 + 3 * x 1 ^ 2)]
 
-@[powerlib_foundation] theorem contDiff_realField : ContDiff ℝ 1 a.realField := by
+@[powerlib_domain] theorem contDiff_realField : ContDiff ℝ 1 a.realField := by
   rw [contDiff_euclidean]
   intro i
   fin_cases i <;> simp [realField] <;> fun_prop
 
-@[powerlib_foundation] theorem hasFDerivAt_realField (x : State 2) :
+@[powerlib_domain] theorem hasFDerivAt_realField (x : State 2) :
     HasFDerivAt a.realField (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (a.realJacobian x)) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -500,10 +500,10 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
       simp [realJacobian, PhasePlane.toEuclideanCLM_apply_one]
       ring
 
-@[simp, powerlib_foundation] theorem realField_zero : a.realField 0 = 0 := by
+@[simp, powerlib_domain] theorem realField_zero : a.realField 0 = 0 := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [realField]
 
-@[powerlib_foundation] theorem realJacobian_zero :
+@[powerlib_domain] theorem realJacobian_zero :
     a.realJacobian 0 = !![a.c, -a.ωs; a.ωs, a.c] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [realJacobian]
@@ -527,7 +527,7 @@ def translate : Sentence → Set Requirement
 def family : Family AHO Requirement 2 0 :=
   ⟨fun a => Port.System.autonomous a.realField, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous AHO.realField :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous AHO.realField :=
   fun _ => rfl
 
 variable {a}
@@ -613,7 +613,7 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
 /-! ### Soundness of the translation -/
 
 /-- The whole requirement language is inconsistent: the origin cannot both grow and decay. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun a h => ?_
@@ -722,7 +722,7 @@ and the amplitude obeys the cubic damping `ṙ = −r³`. -/
 def critical : AHO := ⟨0, 1, 1, 1⟩
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem critical_c : critical.c = 0 := by
+@[powerlib_domain] theorem critical_c : critical.c = 0 := by
   simp [critical, AHO.c]
 
 /-- The energy `|v|²` is a strict global Lyapunov function of the critical AHO: its derivative
@@ -907,7 +907,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
 /-- Polar decomposition of the loaded AHO `v̇ = (jω_s − σ + κ_v(v*² − r²)) v − κ_i i`:
 with `v = r e^{jϕ}`, `ṙ = (κ_v(v*² − r²) − σ) r − Re(κ_i i e^{−jϕ})` and
 `ϕ̇ = ω_s − Im(κ_i i e^{−jϕ}) / r`. -/
-@[powerlib_foundation] theorem polar_decomposition {r ϕ : ℝ → ℝ} {r' ϕ' : ℝ} {t κi : ℝ} {i : ℂ}
+@[powerlib_domain] theorem polar_decomposition {r ϕ : ℝ → ℝ} {r' ϕ' : ℝ} {t κi : ℝ} {i : ℂ}
     (hr : HasDerivAt r r' t) (hϕ : HasDerivAt ϕ ϕ' t) (hr0 : 0 < r t)
     (hv : HasDerivAt (fun τ => (r τ : ℂ) * exp (ϕ τ * I))
       ((I * a.ωs - a.σ + (a.κv * (a.vstar ^ 2 - r t ^ 2) : ℝ)) * ((r t : ℂ) * exp (ϕ t * I))

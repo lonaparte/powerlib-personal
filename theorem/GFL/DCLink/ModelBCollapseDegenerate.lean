@@ -64,25 +64,25 @@ namespace ModelBParams
 
 variable (p : ModelBParams)
 
-@[tmio M, powerlib_foundation] theorem contDiff_planeG : ContDiff ℝ 1 p.planeG := by
+@[tmio M, powerlib_domain] theorem contDiff_planeG : ContDiff ℝ 1 p.planeG := by
   show ContDiff ℝ 1 fun y : State 4 => 3 / 2 * (p.dP0 y *
     (p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1) +
       p.dP3 y * (p.VdcRef - y 2)) / p.Cdc
   unfold dP0 dP3 vgq vgd idRef
   fun_prop
 
-@[powerlib_foundation] theorem contDiff_planeH : ContDiff ℝ 1 p.planeH := by
+@[powerlib_domain] theorem contDiff_planeH : ContDiff ℝ 1 p.planeH := by
   unfold planeH dP2 vgd idRef
   fun_prop
 
 /-- `∂q/∂V_dc = H` everywhere. -/
-@[powerlib_foundation] theorem fderiv_planeQ_single (y : State 4) :
+@[powerlib_domain] theorem fderiv_planeQ_single (y : State 4) :
     fderiv ℝ p.planeQ y (EuclideanSpace.single 2 1) = p.planeH y := by
   rw [(p.hasFDerivAt_planeQ y).fderiv, row4_apply]
   simp [planeH]
 
 /-- The field without its DC-link component is the smooth field `(f₀, f₁, 0, f₃)`. -/
-@[powerlib_foundation] theorem field_sub_single (y : State 4) :
+@[powerlib_domain] theorem field_sub_single (y : State 4) :
     p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ) =
       (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) := by
   ext i

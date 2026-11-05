@@ -180,7 +180,7 @@ private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : St
 
 /-- The cylinder field at the image of a state is the cylinder image of the closed loop.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem cylField_cyl (m : Model) (x : State 4) :
+@[tmio M, powerlib_domain] theorem cylField_cyl (m : Model) (x : State 4) :
     m.cylField (cyl x) = WithLp.toLp 2 ![-Real.sin (x 0) * m.field x 0,
       Real.cos (x 0) * m.field x 0, m.field x 1, m.field x 2, m.field x 3] := by
   ext i
@@ -230,19 +230,19 @@ conclusion. -/
 
 /-- `D cyl x (field x) = cylField (cyl x)`: the cylinder map is a semiconjugacy.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem fderiv_cyl_field (m : Model) (x : State 4) :
+@[powerlib_domain] theorem fderiv_cyl_field (m : Model) (x : State 4) :
     fderiv ℝ cyl x (m.field x) = m.cylField (cyl x) := by
   rw [Dynamics.fderiv_apply_eq_of_hasDerivAt_line
     ((cyl_contDiff.differentiable (by norm_num)) x) (hasDerivAt_cyl_line x _), cylField_cyl]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_eq_cylEnergy (m : Model) :
+@[powerlib_domain] theorem energy_eq_cylEnergy (m : Model) :
     m.energy = fun x => m.cylEnergy (cyl x) := by
   funext x
   simp [Model.energy, Model.cylEnergy, cyl, Model.iHatD, Model.iHatQ, Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cylEnergy_contDiff (m : Model) : ContDiff ℝ 1 m.cylEnergy := by
+@[powerlib_domain] theorem cylEnergy_contDiff (m : Model) : ContDiff ℝ 1 m.cylEnergy := by
   have h0 := proj_contDiff (n := 5) 0
   have h1 := proj_contDiff (n := 5) 1
   have h2 := proj_contDiff (n := 5) 2
@@ -252,7 +252,7 @@ Static evidence on the model, not a connection conclusion. -/
   fun_prop
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cylField_contDiff (m : Model) : ContDiff ℝ 1 m.cylField := by
+@[powerlib_domain] theorem cylField_contDiff (m : Model) : ContDiff ℝ 1 m.cylField := by
   have h0 := proj_contDiff (n := 5) 0
   have h1 := proj_contDiff (n := 5) 1
   have h2 := proj_contDiff (n := 5) 2
@@ -264,7 +264,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The Lie derivative of the cylinder energy at the image of a state is that of `H − S(0)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cylLie_cyl (m : Model) (x : State 4) :
+@[powerlib_domain] theorem cylLie_cyl (m : Model) (x : State 4) :
     fderiv ℝ m.cylEnergy (cyl x) (m.cylField (cyl x)) = fderiv ℝ m.energy x (m.field x) := by
   have e : m.energy = m.cylEnergy ∘ cyl := energy_eq_cylEnergy m
   rw [e, fderiv_comp x ((cylEnergy_contDiff m).differentiable (by norm_num) _)
@@ -280,11 +280,11 @@ Static evidence on the model, not a connection conclusion. -/
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [cyl]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cD_cos_sin (m : Model) (θ : ℝ) :
+@[powerlib_domain] theorem cD_cos_sin (m : Model) (θ : ℝ) :
     m.cD (Real.cos θ) (Real.sin θ) = m.iHatD θ := rfl
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cQ_cos_sin (m : Model) (θ : ℝ) :
+@[powerlib_domain] theorem cQ_cos_sin (m : Model) (θ : ℝ) :
     m.cQ (Real.cos θ) (Real.sin θ) = m.iHatQ θ := rfl
 
 private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
@@ -294,7 +294,7 @@ private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y
 
 /-- The circle `c² + s² = 1` is a first integral of the cylinder field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem fderiv_circle_cylField (m : Model) (y : State 5) :
+@[powerlib_domain] theorem fderiv_circle_cylField (m : Model) (y : State 5) :
     fderiv ℝ (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) y (m.cylField y) = 0 := by
   let p : Fin 5 → State 5 →L[ℝ] ℝ := fun j => PiLp.proj 2 (fun _ : Fin 5 => ℝ) j
   have hp : ∀ j, HasFDerivAt (fun x : State 5 => x j) (p j) y := fun j => (p j).hasFDerivAt
@@ -315,7 +315,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- On the cylinder `dH/dt ≤ −margin ũ²`. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem cylLie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
+@[powerlib_domain] theorem cylLie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1) :
     fderiv ℝ m.cylEnergy y (m.cylField y) ≤ -m.margin * (y 2 - m.ustar) ^ 2 := by
   obtain ⟨x, rfl⟩ := exists_cyl_eq hy
@@ -329,7 +329,7 @@ private theorem N_pos (m : Model) (hR : 0 < m.Rs) : 0 < m.N := by
 
 /-- On the cylinder, with `margin > 0`, `dH/dt = 0` only where `ũ_dc = 0` and `ĩ_dq = 0`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cylLie_eq_zero (m : Model) (hR : 0 < m.Rs) (hL : 0 < m.Ls)
+@[powerlib_domain] theorem cylLie_eq_zero (m : Model) (hR : 0 < m.Rs) (hL : 0 < m.Ls)
     (hC : 0 < m.Cdc) (hδ : 0 < m.margin) {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1)
     (h0 : fderiv ℝ m.cylEnergy y (m.cylField y) = 0) :
     y 2 = m.ustar ∧ y 3 = m.cD (y 0) (y 1) ∧ y 4 = m.cQ (y 0) (y 1) := by
@@ -359,7 +359,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- On the set `ũ_dc = 0`, `ĩ_dq = 0` the DC row of the cylinder field is `−κ s / C_dc`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cylField_two_of_mem (m : Model) {y : State 5}
+@[powerlib_domain] theorem cylField_two_of_mem (m : Model) {y : State 5}
     (h2 : y 2 = m.ustar) (h3 : y 3 = m.cD (y 0) (y 1)) (h4 : y 4 = m.cQ (y 0) (y 1)) :
     m.cylField y 2 = -(m.κ * y 1) / m.Cdc := by
   simp only [Model.cylField, PiLp.toLp_apply, Matrix.cons_val_two, Matrix.head_cons,
@@ -369,7 +369,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- `î_d² + î_q² = ‖μ u* (−s, c) − v₀ e₂‖² / N` on the cylinder coordinates.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cD_sq_add_cQ_sq (m : Model) (hN : m.N ≠ 0) (c s : ℝ) :
+@[powerlib_domain] theorem cD_sq_add_cQ_sq (m : Model) (hN : m.N ≠ 0) (c s : ℝ) :
     m.cD c s ^ 2 + m.cQ c s ^ 2 =
       ((m.μ * m.ustar * s) ^ 2 + (m.v0 - m.μ * m.ustar * c) ^ 2) / m.N := by
   have hZ : (m.Rs * (m.μ * m.ustar * s) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * c)) ^ 2 +
@@ -382,7 +382,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The sublevel sets of the energy on the cylinder are compact.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem isCompact_cylSublevel (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[powerlib_domain] theorem isCompact_cylSublevel (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (c : ℝ) :
     IsCompact {y : State 5 | y 0 ^ 2 + y 1 ^ 2 = 1 ∧ m.cylEnergy y ≤ c} := by
   apply Metric.isCompact_of_isClosed_isBounded
@@ -444,7 +444,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- On the cylinder, with `margin = 0`, `dH/dt = 0` only where
 `2 R_s N ĩ + μ ω₀ L_s ũ z(θ) = 0`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cylLie_eq_zero_of_margin_eq_zero (m : Model) (hR : 0 < m.Rs)
+@[powerlib_domain] theorem cylLie_eq_zero_of_margin_eq_zero (m : Model) (hR : 0 < m.Rs)
     (hL : 0 < m.Ls) (hC : 0 < m.Cdc) (hm : m.margin = 0) {y : State 5}
     (hy : y 0 ^ 2 + y 1 ^ 2 = 1)
     (h0 : fderiv ℝ m.cylEnergy y (m.cylField y) = 0) :
@@ -495,7 +495,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- On the set `ĩ = −c ũ z(θ)` of the cylinder (`c = μω₀L_s/(2R_sN)`), the energy is a pendulum
 energy `a ũ²/2 + k(1 − cos θ)` with `a = C_dc + L_s c² N`. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem cylEnergy_of_rel (m : Model) {y : State 5}
+@[powerlib_domain] theorem cylEnergy_of_rel (m : Model) {y : State 5}
     (hy : y 0 ^ 2 + y 1 ^ 2 = 1)
     (h3 : y 3 - m.cD (y 0) (y 1) = -(m.μ * m.ω0 * m.Ls / (2 * m.Rs * m.N)) * (y 2 - m.ustar) *
         (m.Rs * y 0 + m.ω0 * m.Ls * y 1))
@@ -514,7 +514,7 @@ connection conclusion. -/
 /-- On the same set, with `margin = 0`, the DC row is `C_dc ũ' = g ũ − κ s`,
 `g = (μω₀L_s)²/(4R_sN)`: a pendulum with negative damping. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem cylField_two_of_rel (m : Model) (hC : m.Cdc ≠ 0) (hm : m.margin = 0)
+@[powerlib_domain] theorem cylField_two_of_rel (m : Model) (hC : m.Cdc ≠ 0) (hm : m.margin = 0)
     {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1)
     (h3 : y 3 - m.cD (y 0) (y 1) = -(m.μ * m.ω0 * m.Ls / (2 * m.Rs * m.N)) * (y 2 - m.ustar) *
         (m.Rs * y 0 + m.ω0 * m.Ls * y 1))
@@ -540,7 +540,7 @@ connection conclusion. -/
     (2 * ((m.μ * m.ω0 * m.Ls) ^ 2 / (4 * m.Rs * m.N)) * (y 2 - m.ustar)) * hy
 
 /-- `∇S(θ) = k sin θ`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem hasDerivAt_potential (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem hasDerivAt_potential (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
     HasDerivAt m.potential (m.k * Real.sin θ) θ := by
   have e : m.potential = fun θ => m.potential 0 + m.k * (1 - Real.cos θ) := by
     funext θ
@@ -1034,7 +1034,7 @@ def boundaryModel : Model :=
   { Cdc := 1, Gdc := 1 / 8, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 1, Rs := 1, Ls := 1 }
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem boundaryModel_margin : boundaryModel.margin = 0 := by
+@[powerlib_domain] theorem boundaryModel_margin : boundaryModel.margin = 0 := by
   simp [Model.margin, Model.N, Model.ω0, boundaryModel]
   norm_num
 
@@ -1071,7 +1071,7 @@ Then `k = κ = 0`: the potential `S` is constant, every `(θ, u*, î(θ))` is an
 
 /-- Without synchronizing torque (`μ u* v₀ = 0`) the potential stiffness vanishes. Static evidence
 on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem k_eq_zero_of_no_sync (m : Model) (hs : m.μ * m.ustar * m.v0 = 0) :
+@[powerlib_domain] theorem k_eq_zero_of_no_sync (m : Model) (hs : m.μ * m.ustar * m.v0 = 0) :
     m.k = 0 := by
   unfold Model.k
   rw [show m.Ls * m.μ * m.ustar * m.v0 = m.Ls * (m.μ * m.ustar * m.v0) by ring, hs, mul_zero,
@@ -1079,13 +1079,13 @@ on the model, not a connection conclusion. -/
 
 /-- Without synchronizing torque the synchronizing-torque gain vanishes. Static evidence on the
 model, not a connection conclusion. -/
-@[powerlib_foundation] theorem kappa_eq_zero_of_no_sync (m : Model)
+@[powerlib_domain] theorem kappa_eq_zero_of_no_sync (m : Model)
     (hs : m.μ * m.ustar * m.v0 = 0) : m.κ = 0 := by
   rw [← eta_mul_k, k_eq_zero_of_no_sync m hs, mul_zero]
 
 /-- With `κ = 0` every `(θ, u*, î(θ))` is an equilibrium (a circle of equilibria). Static evidence
 on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_eq_zero_of_kappa_eq_zero (m : Model) (hN : m.N ≠ 0)
+@[powerlib_domain] theorem field_eq_zero_of_kappa_eq_zero (m : Model) (hN : m.N ≠ 0)
     (hκ : m.κ = 0) (θ : ℝ) :
     m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 := by
   ext i
@@ -1110,7 +1110,7 @@ on the model, not a connection conclusion. -/
 
 /-- The internal model is Lipschitz in the angle. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem abs_iHatD_sub_le (m : Model) (hN : 0 < m.N) (θ : ℝ) :
+@[powerlib_domain] theorem abs_iHatD_sub_le (m : Model) (hN : 0 < m.N) (θ : ℝ) :
     |m.iHatD θ - m.iHatD 0| ≤
       (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) / m.N * |θ| := by
   have e : m.iHatD θ - m.iHatD 0 = (m.Rs * (m.μ * m.ustar) * Real.sin θ +
@@ -1131,7 +1131,7 @@ conclusion. -/
 
 /-- The internal model is Lipschitz in the angle. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem abs_iHatQ_sub_le (m : Model) (hN : 0 < m.N) (θ : ℝ) :
+@[powerlib_domain] theorem abs_iHatQ_sub_le (m : Model) (hN : 0 < m.N) (θ : ℝ) :
     |m.iHatQ θ - m.iHatQ 0| ≤
       (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) / m.N * |θ| := by
   have e : m.iHatQ θ - m.iHatQ 0 = (-(m.ω0 * m.Ls * (m.μ * m.ustar)) * Real.sin θ +
@@ -1164,7 +1164,7 @@ private theorem quad_nonneg {a b u e1 e2 w1 w2 : ℝ} (ha : 0 < a) (hab : w1 ^ 2
 /-- With `margin > 0` the dissipation is uniformly positive definite in `(ũ_dc, ĩ_dq)`:
 `dH/dt ≤ −ε (ũ² + ‖ĩ‖²)`, `ε = R_s margin/(G_dc + K_p + R_s)` (for every `μ u* v₀`). Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_lie_le_sq (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
+@[powerlib_domain] theorem energy_lie_le_sq (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) (hδ : 0 < m.margin) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) ≤ -(m.Rs * m.margin / (m.Gdc + m.Kp + m.Rs)) *
       ((x 1 - m.ustar) ^ 2 + ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) := by
@@ -1214,7 +1214,7 @@ def Model.noSyncRate (m : Model) : ℝ :=
   2 * (m.Rs * m.margin / (m.Gdc + m.Kp + m.Rs)) / (m.Cdc + m.Ls)
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem noSyncRate_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[powerlib_domain] theorem noSyncRate_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hδ : 0 < m.margin) : 0 < m.noSyncRate := by
   have hP : m.margin ≤ m.Gdc + m.Kp := by
     have : 0 ≤ m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 / (4 * m.Rs * m.N) := by
@@ -1228,7 +1228,7 @@ def Model.noSyncRate (m : Model) : ℝ :=
 
 /-- Without synchronizing torque the energy is the quadratic `C_dc ũ²/2 + L_s ‖ĩ‖²/2`. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_eq_of_no_sync (m : Model) (hs : m.μ * m.ustar * m.v0 = 0)
+@[powerlib_domain] theorem energy_eq_of_no_sync (m : Model) (hs : m.μ * m.ustar * m.v0 = 0)
     (x : State 4) :
     m.energy x = m.Cdc / 2 * (x 1 - m.ustar) ^ 2 +
       m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2) := by
@@ -1236,7 +1236,7 @@ evidence on the model, not a connection conclusion. -/
 
 /-- Without synchronizing torque and with `margin > 0`, `dH/dt ≤ −noSyncRate · H`. Static evidence
 on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_lie_le_noSyncRate (m : Model) (hC : 0 < m.Cdc)
+@[powerlib_domain] theorem energy_lie_le_noSyncRate (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
     (x : State 4) :
     fderiv ℝ m.energy x (m.field x) ≤ -m.noSyncRate * m.energy x := by
@@ -1267,7 +1267,7 @@ on the model, not a connection conclusion. -/
 
 /-- Without synchronizing torque each error coordinate is bounded by the energy. Static evidence on
 the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem sq_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[powerlib_domain] theorem sq_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
     (x 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy x ∧
       (x 2 - m.iHatD (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x ∧
@@ -1593,7 +1593,7 @@ def noSyncModel : Model :=
   { Cdc := 1, Gdc := 1, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 0, Rs := 1, Ls := 1 }
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem noSyncModel_margin : noSyncModel.margin = 7 / 8 := by
+@[powerlib_domain] theorem noSyncModel_margin : noSyncModel.margin = 7 / 8 := by
   simp [Model.margin, Model.N, Model.ω0, noSyncModel]
   norm_num
 
@@ -1958,7 +1958,7 @@ end Model
 
 /-- Rotated internal model and its slope. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem red_identity_aux (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem red_identity_aux (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
     Real.cos θ * m.iHatD θ + Real.sin θ * m.iHatQ θ =
         (m.ω0 * m.Ls * m.v0 * Real.cos θ + m.Rs * m.v0 * Real.sin θ -
           m.ω0 * m.Ls * (m.μ * m.ustar)) / m.N ∧
@@ -1986,7 +1986,7 @@ conclusion. -/
 
 /-- The chain rule for `red` along the closed loop equals the reduced field (with `κ = 0`). Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem red_field_identity (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
+@[powerlib_domain] theorem red_field_identity (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
     (hκ : m.κ = 0) (x : State 4) :
     m.field x 1 = m.redField (m.red x) 0 ∧
     -Real.sin (x 0) * m.field x 0 * (x 2 - m.iHatD (x 0)) +
@@ -2075,7 +2075,7 @@ def Model.redJac (m : Model) : Matrix (Fin 3) (Fin 3) ℝ :=
      -(m.μ * m.Rs ^ 2 / (m.N * m.Ls)), -m.ω0, -m.Rs / m.Ls]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem redField_contDiff (m : Model) : ContDiff ℝ 1 m.redField := by
+@[powerlib_domain] theorem redField_contDiff (m : Model) : ContDiff ℝ 1 m.redField := by
   have h0 := proj_contDiff (n := 3) 0
   have h1 := proj_contDiff (n := 3) 1
   have h2 := proj_contDiff (n := 3) 2
@@ -2084,13 +2084,13 @@ def Model.redJac (m : Model) : Matrix (Fin 3) (Fin 3) ℝ :=
   fin_cases i <;> simp [Model.redField] <;> fun_prop
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem redField_zero (m : Model) : m.redField 0 = 0 := by
+@[powerlib_domain] theorem redField_zero (m : Model) : m.redField 0 = 0 := by
   ext i
   fin_cases i <;> simp [Model.redField]
 
 /-- The Jacobian of the reduced field at the origin. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem hasFDerivAt_redField_zero (m : Model) (hL : m.Ls ≠ 0) :
+@[powerlib_domain] theorem hasFDerivAt_redField_zero (m : Model) (hL : m.Ls ≠ 0) :
     HasFDerivAt m.redField (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) m.redJac) 0 := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -2160,7 +2160,7 @@ private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0) (he : e < 0) 
 (Routh–Hurwitz: `tr < 0`, `det < 0`, `tr · Σ minors < det`; at `margin = 0` the determinant is
 `−μ²(X² − 3R_s²X + 4R_s⁴)/(4R_s C_dc L_s² N) < 0`, `X = ω₀²L_s²`). Static evidence on the model,
 not a connection conclusion. -/
-@[powerlib_foundation] theorem redJac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[powerlib_domain] theorem redJac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hδ : 0 ≤ m.margin) : LinearSystems.IsHurwitz m.redJac := by
   have hN := N_pos m hR
   have hP : m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 ≤ 4 * m.Rs * m.N * (m.Gdc + m.Kp) := by

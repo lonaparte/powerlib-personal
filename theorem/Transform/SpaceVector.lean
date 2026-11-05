@@ -105,7 +105,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
   ⟨2 / 3 * Vdc * Real.cos ((k - 1 : ℝ) * Real.pi / 3),
     2 / 3 * Vdc * Real.sin ((k - 1 : ℝ) * Real.pi / 3)⟩
 
-@[tmio M, powerlib_foundation] theorem inverterVector_zero (Vdc : ℝ) :
+@[tmio M, powerlib_domain] theorem inverterVector_zero (Vdc : ℝ) :
     inverterVector Vdc false false false = 0 ∧ inverterVector Vdc true true true = 0 := by
   refine ⟨?_, ?_⟩
   · apply Complex.ext <;> simp [inverterVector]
@@ -114,7 +114,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
 
 /-- The six active switching states produce the regular hexagon of vectors
 `(2/3) V_dc e^{j(k-1)π/3}` (Takahashi–Noguchi numbering). -/
-@[tmio M, powerlib_foundation] theorem inverterVector_active (Vdc : ℝ) :
+@[tmio M, powerlib_domain] theorem inverterVector_active (Vdc : ℝ) :
     inverterVector Vdc true false false = activeVector Vdc 1 ∧
     inverterVector Vdc true true false = activeVector Vdc 2 ∧
     inverterVector Vdc false true false = activeVector Vdc 3 ∧
@@ -186,7 +186,7 @@ def torque (np : ℝ) (ψ i : ℂ) : ℝ := 3 / 2 * np * (conj ψ * i).im
 
 /-- `T_e · Ω_m` equals the amplitude-invariant speed-voltage power `(3/2) ω Im(conj ψ · i)`,
 where `Ω_m = ω / np` is the mechanical speed. -/
-@[tmio T, powerlib_foundation] theorem torque_mul_mechanicalSpeed (np ω : ℝ) (hnp : np ≠ 0) (ψ i : ℂ) :
+@[tmio M, powerlib_domain] theorem torque_mul_mechanicalSpeed (np ω : ℝ) (hnp : np ≠ 0) (ψ i : ℂ) :
     torque np ψ i * (ω / np) = 3 / 2 * ω * (conj ψ * i).im := by
   unfold torque
   field_simp

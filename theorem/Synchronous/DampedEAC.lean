@@ -112,7 +112,7 @@ private theorem energy_antitoneOn (hM : p.M ≠ 0) (hD : 0 ≤ p.D) (δ₀ : ℝ
     nlinarith [sq_nonneg (φ t 1)]
 
 /-- `U(δ − 2π) = U(δ) + 2π (P_m − k₁)`. -/
-@[tmio M, powerlib_foundation] theorem potential_sub_two_pi (δ₀ δ : ℝ) :
+@[tmio M, powerlib_domain] theorem potential_sub_two_pi (δ₀ δ : ℝ) :
     p.potential δ₀ (δ - 2 * Real.pi) = p.potential δ₀ δ + 2 * Real.pi * (p.Pm - p.k₁) := by
   have : Real.cos (δ - 2 * Real.pi - p.k₃) = Real.cos (δ - p.k₃) := by
     rw [show δ - 2 * Real.pi - p.k₃ = (δ - p.k₃) - 2 * Real.pi by ring, Real.cos_sub_two_pi]
@@ -163,18 +163,18 @@ private theorem firstSwing_le_deltaU_of_damping (hM : 0 < p.M) (hD : 0 ≤ p.D)
 /-- Open angular window of the potential well around `δ_s`: `δ_u − 2π < δ < δ_u`. -/
 def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.deltaU}
 
-@[powerlib_foundation] theorem isOpen_wellWindow : IsOpen p.wellWindow :=
+@[powerlib_domain] theorem isOpen_wellWindow : IsOpen p.wellWindow :=
   (isOpen_lt continuous_const (Dynamics.contDiff_coord (k := 0) 0).continuous).inter
     (isOpen_lt (Dynamics.contDiff_coord (k := 0) 0).continuous continuous_const)
 
 /-- The energy dominates the potential (`M > 0`). -/
-@[powerlib_foundation] theorem potential_le_energy (hM : 0 < p.M) (δ₀ : ℝ) (x : State 2) :
+@[powerlib_domain] theorem potential_le_energy (hM : 0 < p.M) (δ₀ : ℝ) (x : State 2) :
     p.potential δ₀ (x 0) ≤ p.energy δ₀ x := by
   have : 0 ≤ p.M / 2 * x 1 ^ 2 := by positivity
   simp only [energy]; linarith
 
 /-- Energy sublevel sets of the well below both saddle levels are compact. -/
-@[powerlib_foundation] theorem isCompact_wellSublevel (hM : 0 < p.M) {c : ℝ}
+@[powerlib_domain] theorem isCompact_wellSublevel (hM : 0 < p.M) {c : ℝ}
     (hc1 : c < p.potential p.deltaS p.deltaU)
     (hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi)) :
     IsCompact {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c} := by
@@ -220,7 +220,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
     linarith [Dynamics.norm_le_abs_add_abs_two x]
 
 /-- Inside the well window the only equilibrium is `(δ_s, 0)`. -/
-@[powerlib_foundation] theorem eq_deltaS_of_field_eq_zero (hM : p.M ≠ 0) (hk : 0 < p.k₂)
+@[powerlib_domain] theorem eq_deltaS_of_field_eq_zero (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {x : State 2} (hx : x ∈ p.wellWindow) (hf : p.field x = 0) :
     x = PhasePlane.mk p.deltaS 0 := by
   obtain ⟨h1, n, hn⟩ := (p.field_eq_zero_iff_branches hM hk h.le x).mp hf

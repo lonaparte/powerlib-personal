@@ -109,7 +109,7 @@ def closedLoopTF (V Kp Ki : ℝ) (s : ℂ) : ℂ :=
 /-- `G_pll(s) = (K_p s + K_i) / (s² + V K_p s + V K_i)`. -/
 def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V Kp Ki s
 
-@[tmio M, powerlib_foundation] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
     Linear.characteristicMatrix (linA V Kp Ki) s = !![s + V * Kp, -(Ki : ℂ); V, s] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, linA]
@@ -434,7 +434,7 @@ def Model.plant (m : Model) : Linear.Plant 2 1 :=
   | .admittance Id0 => admittanceModel m.V m.Kp m.Ki Id0
 
 /-- Every channel has the state matrix `linA`. -/
-@[powerlib_foundation] theorem Model.plant_A (m : Model) : m.plant.A = linA m.V m.Kp m.Ki := by
+@[powerlib_domain] theorem Model.plant_A (m : Model) : m.plant.A = linA m.V m.Kp m.Ki := by
   rcases m with ⟨V, Kp, Ki, c⟩
   cases c <;> rfl
 
@@ -467,11 +467,11 @@ def translate : Sentence → Set Requirement
 /-- The linearized SRF-PLL family: every model read as the port system of its channel's plant. -/
 def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- No model has both positive loop gains and a negative one: the whole requirement language is
 inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -557,7 +557,7 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
 /-- The phase channel without loop gains (`V = 0`, `K_i = 0`): the state matrix is zero. -/
 def frozen : Model := ⟨0, 0, 0, .phase⟩
 
-@[powerlib_foundation] theorem frozen_plant_A : frozen.plant.A = 0 := by
+@[powerlib_domain] theorem frozen_plant_A : frozen.plant.A = 0 := by
   rw [Model.plant_A]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [frozen, linA]

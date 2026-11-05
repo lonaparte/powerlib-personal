@@ -109,7 +109,7 @@ def convCurrentD (θ : ℝ) : ℝ := Real.cos θ * p.idRef - Real.sin θ * p.iqR
 def convCurrentQ (θ : ℝ) : ℝ := Real.sin θ * p.idRef + Real.cos θ * p.iqRef
 
 /-- The current-loop contribution to `ω_g C_f v_cq^c` is the constant `i_d*` (§1.7 (a)). -/
-@[tmio M, powerlib_foundation] theorem cc_projection (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem cc_projection (θ : ℝ) :
     Real.sin θ * p.convCurrentQ θ + Real.cos θ * p.convCurrentD θ = p.idRef := by
   simp only [convCurrentD, convCurrentQ]
   linear_combination p.idRef * Real.sin_sq_add_cos_sq θ
@@ -148,7 +148,7 @@ def capVoltageD (θ : ℝ) : ℝ := (p.lineCurrentQ θ - p.convCurrentQ θ) / (p
 def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)
 
 /-- Unique solvability of the quasi-steady equations (premises `ω_g C_f ≠ 0`, `Δ ≠ 0`). -/
-@[powerlib_foundation] theorem quasiSteady_iff (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0)
+@[powerlib_domain] theorem quasiSteady_iff (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0)
     (θ vcd vcq igd igq : ℝ) :
     p.QuasiSteady θ vcd vcq igd igq ↔
       igd = p.lineCurrentD θ ∧ igq = p.lineCurrentQ θ ∧
@@ -214,20 +214,20 @@ def αq : ℝ := p.lineX * p.Vg / p.lineDet
 def βq : ℝ := (p.lineX * p.idRef + p.Rg * p.iqRef) / (p.ωg * p.Cf * p.lineDet)
 def γq : ℝ := (p.lineX * p.iqRef - p.Rg * p.idRef) / (p.ωg * p.Cf * p.lineDet)
 
-@[powerlib_foundation] theorem lineCurrentD_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem lineCurrentD_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
     p.lineCurrentD θ = p.αd + p.βd * Real.sin θ + p.γd * Real.cos θ := by
   simp only [lineCurrentD, driveA, driveB, convCurrentD, convCurrentQ, αd, βd, γd]
   field_simp
   ring
 
-@[powerlib_foundation] theorem lineCurrentQ_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem lineCurrentQ_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
     p.lineCurrentQ θ = p.αq + p.βq * Real.sin θ + p.γq * Real.cos θ := by
   simp only [lineCurrentQ, driveA, driveB, convCurrentD, convCurrentQ, αq, βq, γq]
   field_simp
   ring
 
 /-- Rotational structure of the exact line solution: `γ_q = −β_d`, `γ_d = β_q`. -/
-@[powerlib_foundation] theorem lineCurrent_rotational : p.γq = -p.βd ∧ p.γd = p.βq := by
+@[powerlib_domain] theorem lineCurrent_rotational : p.γq = -p.βd ∧ p.γd = p.βq := by
   constructor
   · simp only [γq, βd]
     ring
@@ -236,7 +236,7 @@ def γq : ℝ := (p.lineX * p.iqRef - p.Rg * p.idRef) / (p.ωg * p.Cf * p.lineDe
 
 /-- Hence the double-angle coefficients of §1.7 vanish: `c₃ = (γ_q + β_d)/2 = 0`,
 `c₄ = (γ_d − β_q)/2 = 0`. -/
-@[powerlib_foundation] theorem doubleAngle_coefficients_zero :
+@[powerlib_domain] theorem doubleAngle_coefficients_zero :
     (p.γq + p.βd) / 2 = 0 ∧ (p.γd - p.βq) / 2 = 0 := by
   obtain ⟨h1, h2⟩ := p.lineCurrent_rotational
   rw [h1, h2]
@@ -249,7 +249,7 @@ end FormBParams
 `−sin θ (i_gq − i_q) + cos θ (i_d − i_gd) = c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ`,
 `c₀ = i_d* − (β_q + γ_d)/2`, `c₁ = −α_q`, `c₂ = −α_d`, `c₃ = −(γ_q + β_d)/2`,
 `c₄ = −(γ_d − β_q)/2`. -/
-@[powerlib_foundation] theorem pllInput_expansion (p : FormBParams)
+@[powerlib_domain] theorem pllInput_expansion (p : FormBParams)
     (αd βd γd αq βq γq θ : ℝ) :
     -Real.sin θ * ((αq + βq * Real.sin θ + γq * Real.cos θ) - p.convCurrentQ θ) +
         Real.cos θ * (p.convCurrentD θ - (αd + βd * Real.sin θ + γd * Real.cos θ)) =
@@ -269,7 +269,7 @@ def formBChar (θ : ℝ) : ℝ :=
   1 / (p.ωg * p.Cf) * ((p.idRef - p.βq) - p.αq * Real.sin θ - p.αd * Real.cos θ)
 
 /-- Along the quasi-steady manifold the PLL input is exactly `formBChar θ` (no `2θ` terms). -/
-@[powerlib_foundation] theorem pllInput_of_quasiSteady (hωC : p.ωg * p.Cf ≠ 0)
+@[powerlib_domain] theorem pllInput_of_quasiSteady (hωC : p.ωg * p.Cf ≠ 0)
     (hΔ : p.lineDet ≠ 0) {θ vcd vcq igd igq : ℝ} (h : p.QuasiSteady θ vcd vcq igd igq) :
     formBPllInput θ vcd vcq = p.formBChar θ := by
   obtain ⟨hgd, hgq, hvd, hvq⟩ := (p.quasiSteady_iff hωC hΔ θ vcd vcq igd igq).mp h
@@ -287,19 +287,19 @@ def formBChar (θ : ℝ) : ℝ :=
 
 /-- `formBChar` as a trigonometric polynomial (coefficients in `trigPoly2` order:
 constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
-@[powerlib_foundation] theorem formBChar_eq_trigPoly2 :
+@[powerlib_domain] theorem formBChar_eq_trigPoly2 :
     p.formBChar = SpecialFunctions.trigPoly2 ((p.idRef - p.βq) / (p.ωg * p.Cf))
       (-p.αd / (p.ωg * p.Cf)) (-p.αq / (p.ωg * p.Cf)) 0 0 := by
   funext θ
   simp only [formBChar, SpecialFunctions.trigPoly2]
   ring
 
-@[powerlib_foundation] theorem contDiff_formBChar : ContDiff ℝ 1 p.formBChar := by
+@[powerlib_domain] theorem contDiff_formBChar : ContDiff ℝ 1 p.formBChar := by
   rw [formBChar_eq_trigPoly2]
   exact SpecialFunctions.contDiff_trigPoly2 _ _ _ _ _
 
 /-- With `V_g ≠ 0` (and `Δ ≠ 0`, `ω_g C_f ≠ 0`) the characteristic is not identically zero. -/
-@[powerlib_foundation] theorem formBChar_coeffs_ne_zero (hωC : p.ωg * p.Cf ≠ 0)
+@[powerlib_domain] theorem formBChar_coeffs_ne_zero (hωC : p.ωg * p.Cf ≠ 0)
     (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) :
     ¬ ((p.idRef - p.βq) / (p.ωg * p.Cf) = 0 ∧ -p.αd / (p.ωg * p.Cf) = 0 ∧
       -p.αq / (p.ωg * p.Cf) = 0) := by
@@ -325,7 +325,7 @@ end FormBParams
 /-- The reduced form-B GFL-PLL `θ̇ = K_p h_B(θ) + K_i η − δω`, `η̇ = h_B(θ)` (with `h_B` the exact
 quasi-steady characteristic) has at most two equilibria with `θ` in any window `[a, a + 2π)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem formB_equilibria_ncard_le_two (p : FormBParams) {Kp Ki δω : ℝ}
+@[powerlib_domain] theorem formB_equilibria_ncard_le_two (p : FormBParams) {Kp Ki δω : ℝ}
     (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) (hKi : Ki ≠ 0) (a : ℝ) :
     {x : ℝ² | piPLLField p.formBChar Kp Ki δω x = 0 ∧
       x 0 ∈ Ico a (a + 2 * Real.pi)}.ncard ≤ 2 := by

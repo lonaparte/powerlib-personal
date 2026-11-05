@@ -132,13 +132,13 @@ def lineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; p.a, 1 - p.b]
 /-- The matrix printed in `reduction-pipeline.md` §4 (wrong (2,1) entry). -/
 def noteLineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; -p.a, 1 - p.b]
 
-@[tmio M, powerlib_foundation] theorem det_lineMatrix : p.lineMatrix.det = p.Δ := by
+@[tmio M, powerlib_domain] theorem det_lineMatrix : p.lineMatrix.det = p.Δ := by
   simp [lineMatrix, Δ, Matrix.det_fin_two]; ring
 
-@[powerlib_foundation] theorem Δ_nonneg : 0 ≤ p.Δ := by
+@[powerlib_domain] theorem Δ_nonneg : 0 ≤ p.Δ := by
   unfold Δ; positivity
 
-@[powerlib_foundation] theorem Δ_pos (h : p.Δ ≠ 0) : 0 < p.Δ :=
+@[powerlib_domain] theorem Δ_pos (h : p.Δ ≠ 0) : 0 < p.Δ :=
   lt_of_le_of_ne p.Δ_nonneg (Ne.symm h)
 
 /-! ### Step 1: current loop at rest -/
@@ -151,7 +151,7 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
 
 /-- `reduction-pipeline.md` §2: the current-loop integrators are at rest
 (`ξ̇^c = i* − T(θ) i = 0`) iff `i = T(−θ) i*`. -/
-@[powerlib_foundation] theorem current_qss_iff (θ id iq : ℝ) :
+@[powerlib_domain] theorem current_qss_iff (θ id iq : ℝ) :
     (p.idRef - parkD θ id iq = 0 ∧ p.iqRef - parkQ θ id iq = 0) ↔
       (id = p.iD θ ∧ iq = p.iQ θ) := by
   constructor
@@ -165,24 +165,24 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
     simp [iD, iQ]
 
 /-- `sin θ · i_q + cos θ · i_d = i_d*` on `i = T(−θ) i*`. -/
-@[powerlib_foundation] theorem sin_iQ_add_cos_iD (θ : ℝ) :
+@[powerlib_domain] theorem sin_iQ_add_cos_iD (θ : ℝ) :
     sin θ * p.iQ θ + cos θ * p.iD θ = p.idRef := by
   unfold iQ iD iparkQ iparkD; linear_combination p.idRef * sin_sq_add_cos_sq θ
 
 /-- `cos θ · i_q − sin θ · i_d = i_q*` on `i = T(−θ) i*`. -/
-@[powerlib_foundation] theorem cos_iQ_sub_sin_iD (θ : ℝ) :
+@[powerlib_domain] theorem cos_iQ_sub_sin_iD (θ : ℝ) :
     cos θ * p.iQ θ - sin θ * p.iD θ = p.iqRef := by
   unfold iQ iD iparkQ iparkD; linear_combination p.iqRef * sin_sq_add_cos_sq θ
 
 /-- The current part of `ω_g C_f v_cq^c`: `sin θ · i_q + cos θ · i_d ≡ i_d*` (no double-angle
 term). -/
-@[powerlib_foundation] theorem current_part (θ : ℝ) :
+@[powerlib_domain] theorem current_part (θ : ℝ) :
     -sin θ * (-p.iQ θ) + cos θ * p.iD θ = p.idRef := by
   linear_combination p.sin_iQ_add_cos_iD θ
 
 /-- Correction: the double-angle form printed in `reduced-2d-equation.md` §1 (here with the
 IN-positive currents) is false as soon as `i_d* ≠ 0` (it fails at `θ = π/2`). -/
-@[powerlib_foundation] theorem current_part_ne_doubleAngle (hid : p.idRef ≠ 0) :
+@[powerlib_domain] theorem current_part_ne_doubleAngle (hid : p.idRef ≠ 0) :
     ¬ ∀ θ : ℝ, -sin θ * (-p.iQ θ) + cos θ * p.iD θ =
       p.idRef * cos (2 * θ) + p.iqRef * sin (2 * θ) := by
   intro h
@@ -199,7 +199,7 @@ IN-positive currents) is false as soon as `i_d* ≠ 0` (it fails at `θ = π/2`)
 equations `C_f v̇_c = i_g − i − ω_g C_f J v_c = 0` and the line equations
 `L_g i̇_g = E − v_c − R_g i_g − ω_g L_g J i_g = 0` hold iff `v_c` is given by the capacitor formula
 and `i_g` solves the corrected line system. -/
-@[powerlib_foundation] theorem lc_line_qss_iff (hwC : p.wC ≠ 0) (Ed Eq id iq vcd vcq igd igq : ℝ) :
+@[powerlib_domain] theorem lc_line_qss_iff (hwC : p.wC ≠ 0) (Ed Eq id iq vcd vcq igd igq : ℝ) :
     (igd - id + p.wC * vcq = 0 ∧ igq - iq - p.wC * vcd = 0 ∧
       Ed - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
       Eq - vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0) ↔
@@ -237,7 +237,7 @@ and `i_g` solves the corrected line system. -/
 
 /-- Correction witness: the line system with the note's (2,1) entry `−a`, together with the
 capacitor and line equations, forces `a · i_gd = 0`. -/
-@[powerlib_foundation] theorem noteLineSystem_forces (hwC : p.wC ≠ 0)
+@[powerlib_domain] theorem noteLineSystem_forces (hwC : p.wC ≠ 0)
     (Ed Eq id iq vcd vcq igd igq : ℝ)
     (hqss : igd - id + p.wC * vcq = 0 ∧ igq - iq - p.wC * vcd = 0 ∧
       Ed - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
@@ -258,7 +258,7 @@ def solD (id iq Ed Eq : ℝ) : ℝ :=
 def solQ (id iq Ed Eq : ℝ) : ℝ :=
   (-p.a * (id - p.wC * Eq) + (1 - p.b) * (iq + p.wC * Ed)) / p.Δ
 
-@[powerlib_foundation] theorem lineMatrix_mulVec_iff (hΔ : p.Δ ≠ 0) (id iq Ed Eq igd igq : ℝ) :
+@[powerlib_domain] theorem lineMatrix_mulVec_iff (hΔ : p.Δ ≠ 0) (id iq Ed Eq igd igq : ℝ) :
     p.lineMatrix *ᵥ ![igd, igq] = ![id - p.wC * Eq, iq + p.wC * Ed] ↔
       (igd = p.solD id iq Ed Eq ∧ igq = p.solQ id iq Ed Eq) := by
   have hΔ' : (1 - p.b) ^ 2 + p.a ^ 2 ≠ 0 := hΔ
@@ -311,7 +311,7 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
 
 /-- Closed form of `h` with a general grid EMF:
 `h_E(θ) = c₀ + [(1 − b)(cos θ E_q − sin θ E_d) − a(cos θ E_d + sin θ E_q)]/Δ`. -/
-@[powerlib_foundation] theorem hE_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ Ed Eq : ℝ) :
+@[powerlib_domain] theorem hE_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ Ed Eq : ℝ) :
     p.hE θ Ed Eq = p.c0 +
       ((1 - p.b) * (cos θ * Eq - sin θ * Ed) - p.a * (cos θ * Ed + sin θ * Eq)) / p.Δ := by
   have L1 := p.sin_iQ_add_cos_iD θ
@@ -325,19 +325,19 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
     (v * ((1 - p.b) * (cos θ * Eq - sin θ * Ed) - p.a * (cos θ * Ed + sin θ * Eq))) * hu
 
 /-- Closed form of the PLL error signal: `h(θ) = c₀ − (V_g/Δ)((1 − b) sin θ + a cos θ)`. -/
-@[powerlib_foundation] theorem h_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem h_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     p.h θ = p.c0 - p.Vg / p.Δ * ((1 - p.b) * sin θ + p.a * cos θ) := by
   rw [h, p.hE_eq hwC hΔ]
   ring
 
-@[powerlib_foundation] theorem sqrt_Δ_mul_self : √p.Δ * √p.Δ = p.Δ :=
+@[powerlib_domain] theorem sqrt_Δ_mul_self : √p.Δ * √p.Δ = p.Δ :=
   Real.mul_self_sqrt p.Δ_nonneg
 
-@[powerlib_foundation] theorem sqrt_Δ_pos (hΔ : p.Δ ≠ 0) : 0 < √p.Δ :=
+@[powerlib_domain] theorem sqrt_Δ_pos (hΔ : p.Δ ≠ 0) : 0 < √p.Δ :=
   Real.sqrt_pos.mpr (p.Δ_pos hΔ)
 
 /-- `cos φ = (1 − b)/√Δ`. -/
-@[powerlib_foundation] theorem cos_phase (hΔ : p.Δ ≠ 0) : cos p.phase = (1 - p.b) / √p.Δ := by
+@[powerlib_domain] theorem cos_phase (hΔ : p.Δ ≠ 0) : cos p.phase = (1 - p.b) / √p.Δ := by
   have hz : (⟨1 - p.b, p.a⟩ : ℂ) ≠ 0 := by
     intro hz
     apply hΔ
@@ -348,59 +348,59 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
   dsimp only; rw [sq, sq]
 
 /-- `sin φ = a/√Δ`. -/
-@[powerlib_foundation] theorem sin_phase : sin p.phase = p.a / √p.Δ := by
+@[powerlib_domain] theorem sin_phase : sin p.phase = p.a / √p.Δ := by
   rw [phase, Complex.sin_arg, Complex.norm_def, Complex.normSq_mk, Δ]
   dsimp only; rw [sq, sq]
 
 /-- `(1 − b) sin θ + a cos θ = √Δ · sin(θ + φ)`. -/
-@[powerlib_foundation] theorem sinusoid_eq (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem sinusoid_eq (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     (1 - p.b) * sin θ + p.a * cos θ = √p.Δ * sin (θ + p.phase) := by
   have hs := p.sqrt_Δ_pos hΔ
   rw [sin_add, p.cos_phase hΔ, p.sin_phase]
   field_simp
 
 /-- `(1 − b) cos θ − a sin θ = √Δ · cos(θ + φ)`. -/
-@[powerlib_foundation] theorem cosinusoid_eq (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem cosinusoid_eq (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     (1 - p.b) * cos θ - p.a * sin θ = √p.Δ * cos (θ + p.phase) := by
   have hs := p.sqrt_Δ_pos hΔ
   rw [cos_add, p.cos_phase hΔ, p.sin_phase]
   field_simp
 
 /-- `(V_g/Δ) √Δ = A`. -/
-@[powerlib_foundation] theorem amp_eq (hΔ : p.Δ ≠ 0) : p.Vg / p.Δ * √p.Δ = p.amp := by
+@[powerlib_domain] theorem amp_eq (hΔ : p.Δ ≠ 0) : p.Vg / p.Δ * √p.Δ = p.amp := by
   have hs := p.sqrt_Δ_pos hΔ
   rw [amp, div_mul_eq_mul_div, div_eq_div_iff hΔ hs.ne', mul_assoc,
     Real.mul_self_sqrt p.Δ_nonneg]
 
 /-- Polar closed form: `h(θ) = c₀ − A sin(θ + φ)`, `A = V_g/√Δ`, `φ = atan2(a, 1 − b)`. -/
-@[powerlib_foundation] theorem h_eq_polar (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem h_eq_polar (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     p.h θ = p.c0 - p.amp * sin (θ + p.phase) := by
   rw [p.h_eq hwC hΔ, p.sinusoid_eq hΔ, ← p.amp_eq hΔ]
   ring
 
-@[powerlib_foundation] theorem h_funext (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
+@[powerlib_domain] theorem h_funext (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.h = fun θ => p.c0 - p.amp * sin (θ + p.phase) :=
   funext (p.h_eq_polar hwC hΔ)
 
 /-- `h′(θ) = −A cos(θ + φ)`. -/
-@[powerlib_foundation] theorem hasDerivAt_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem hasDerivAt_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     HasDerivAt p.h (-(p.amp * cos (θ + p.phase))) θ := by
   rw [p.h_funext hwC hΔ]
   have h1 : HasDerivAt (fun θ : ℝ => θ + p.phase) 1 θ := (hasDerivAt_id θ).add_const _
   have h2 := (h1.sin).const_mul p.amp
   simpa using h2.const_sub p.c0
 
-@[powerlib_foundation] theorem deriv_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem deriv_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     deriv p.h θ = -(p.amp * cos (θ + p.phase)) :=
   (p.hasDerivAt_h hwC hΔ θ).deriv
 
 /-- `h′(θ) = −(V_g/Δ)((1 − b) cos θ − a sin θ)`. -/
-@[powerlib_foundation] theorem deriv_h_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem deriv_h_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     deriv p.h θ = -(p.Vg / p.Δ * ((1 - p.b) * cos θ - p.a * sin θ)) := by
   rw [p.deriv_h hwC hΔ, p.cosinusoid_eq hΔ, ← p.amp_eq hΔ]
   ring
 
-@[powerlib_foundation] theorem contDiff_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) {k : WithTop ℕ∞} :
+@[powerlib_domain] theorem contDiff_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) {k : WithTop ℕ∞} :
     ContDiff ℝ k p.h := by
   rw [p.h_funext hwC hΔ]
   fun_prop
@@ -409,13 +409,13 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
 
 /-- Rotating the grid EMF by `α` is the same as shifting the PLL angle by `α`:
 `h_{V_g e^{jα}}(θ) = h(θ − α)`. -/
-@[powerlib_foundation] theorem hE_rotate (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ α : ℝ) :
+@[powerlib_domain] theorem hE_rotate (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ α : ℝ) :
     p.hE θ (p.Vg * cos α) (p.Vg * sin α) = p.h (θ - α) := by
   rw [p.hE_eq hwC hΔ, p.h_eq hwC hΔ, sin_sub, cos_sub]
   ring
 
 /-- `h_E` is affine in the q-axis EMF; its slope is `((1 − b) cos θ − a sin θ)/Δ`. -/
-@[powerlib_foundation] theorem hasDerivAt_hE_q (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ Ed e : ℝ) :
+@[powerlib_domain] theorem hasDerivAt_hE_q (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ Ed e : ℝ) :
     HasDerivAt (fun Eq => p.hE θ Ed Eq) (((1 - p.b) * cos θ - p.a * sin θ) / p.Δ) e := by
   have hf : (fun Eq => p.hE θ Ed Eq) = fun Eq =>
       (p.c0 + ((1 - p.b) * (-(sin θ * Ed)) - p.a * (cos θ * Ed)) / p.Δ) +
@@ -427,14 +427,14 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
 
 /-- Gauge identity (`sn-critical-scaling.md` §3), exact: the q-axis EMF sensitivity of the PLL
 error signal is `σ_q = ∂h/∂E_q = −h′(θ)/V_g` (text convention; `= g/V_g` with `g = −h′`). -/
-@[powerlib_foundation] theorem sigma_q_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : p.Vg ≠ 0) (θ : ℝ) :
+@[powerlib_domain] theorem sigma_q_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : p.Vg ≠ 0) (θ : ℝ) :
     HasDerivAt (fun Eq => p.hE θ p.Vg Eq) (-deriv p.h θ / p.Vg) 0 := by
   convert p.hasDerivAt_hE_q hwC hΔ θ p.Vg 0 using 1
   rw [p.deriv_h_eq hwC hΔ]
   field_simp
 
 /-- The d-axis EMF sensitivity `σ_d = ∂h/∂E_d = −((1 − b) sin θ + a cos θ)/Δ`. -/
-@[powerlib_foundation] theorem hasDerivAt_hE_d (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ e : ℝ) :
+@[powerlib_domain] theorem hasDerivAt_hE_d (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ e : ℝ) :
     HasDerivAt (fun Ed => p.hE θ Ed 0) (-((1 - p.b) * sin θ + p.a * cos θ) / p.Δ) e := by
   have hf : (fun Ed => p.hE θ Ed 0) = fun Ed =>
       p.c0 + (-((1 - p.b) * sin θ + p.a * cos θ) / p.Δ) * Ed := by
@@ -445,7 +445,7 @@ error signal is `σ_q = ∂h/∂E_q = −h′(θ)/V_g` (text convention; `= g/V_
 
 /-- At every zero of `h` (every PLL equilibrium) the amplitude sensitivity is `σ_d = −c₀/V_g`;
 in particular it stays finite at the saddle-node. -/
-@[powerlib_foundation] theorem sigma_d_at_zero (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : p.Vg ≠ 0)
+@[powerlib_domain] theorem sigma_d_at_zero (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : p.Vg ≠ 0)
     {θ : ℝ} (hθ : p.h θ = 0) :
     HasDerivAt (fun Ed => p.hE θ Ed 0) (-p.c0 / p.Vg) p.Vg := by
   convert p.hasDerivAt_hE_d hwC hΔ θ p.Vg using 1

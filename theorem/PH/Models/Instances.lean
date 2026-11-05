@@ -83,7 +83,7 @@ def dcLink (C : ℝ) (hC : 0 < C) : DiagonalPH (Fin 1) (Fin 2) where
 
 /-- The pH field is `C_dc V̇_dc = i_in − i_out`, written for the charge `q = C_dc V_dc`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem dcLink_field (C : ℝ) (hC : 0 < C) (x : Fin 1 → ℝ) (u : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem dcLink_field (C : ℝ) (hC : 0 < C) (x : Fin 1 → ℝ) (u : Fin 2 → ℝ) :
     (dcLink C hC).field x u = ![u 0 - u 1] := by
   ext i
   fin_cases i
@@ -194,7 +194,7 @@ def dqLC_kirchhoffField (p : DqLCParams) (x u : Fin 4 → ℝ) : Fin 4 → ℝ :
 
 /-- The pH field reproduces the dq LC rate equations exactly.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem dqLC_field_eq_kirchhoff (p : DqLCParams) (x u : Fin 4 → ℝ) :
+@[powerlib_domain] theorem dqLC_field_eq_kirchhoff (p : DqLCParams) (x u : Fin 4 → ℝ) :
     (dqLC p).field x u = dqLC_kirchhoffField p x u := by
   have hL := p.L_pos.ne'
   have hC := p.C_pos.ne'
@@ -206,7 +206,7 @@ Static evidence on the model, not a connection conclusion. -/
   all_goals ring
 
 /-- The pH energy in physical coordinates: `H = ½ L_f |I|² + ½ C_f |V|²`. -/
-@[powerlib_foundation] theorem dqLC_energy (p : DqLCParams) (Id Iq Vd Vq : ℝ) :
+@[powerlib_domain] theorem dqLC_energy (p : DqLCParams) (Id Iq Vd Vq : ℝ) :
     (dqLC p).energy ![p.L * Id, p.L * Iq, p.C * Vd, p.C * Vq] =
       p.L * (Id ^ 2 + Iq ^ 2) / 2 + p.C * (Vd ^ 2 + Vq ^ 2) / 2 := by
   have hL := p.L_pos.ne'
@@ -219,7 +219,7 @@ Static evidence on the model, not a connection conclusion. -/
 (`P_src = V_d I_d^src + V_q I_q^src`, `P_conv = V_d^conv I_d + V_q^conv I_q`);
 the frame-rotation terms cancel.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem dqLC_power_balance (p : DqLCParams) (x u : Fin 4 → ℝ) :
+@[powerlib_domain] theorem dqLC_power_balance (p : DqLCParams) (x u : Fin 4 → ℝ) :
     (dqLC p).gradient x ⬝ᵥ (dqLC p).field x u =
       ((x 2 / p.C) * u 2 + (x 3 / p.C) * u 3) - (u 0 * (x 0 / p.L) + u 1 * (x 1 / p.L)) := by
   rw [DiagonalPH.power_balance]

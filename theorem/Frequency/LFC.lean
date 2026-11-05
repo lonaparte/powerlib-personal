@@ -148,7 +148,7 @@ def steadyState (u : Fin 2 → ℝ) : EuclideanSpace ℝ (Fin 5) := WithLp.toLp 
 
 variable {a b : Area} {ωs T : ℝ}
 
-@[powerlib_foundation] theorem field_apply (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem field_apply (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
     (plant a b ωs T).inputField u x =
       WithLp.toLp 2 ![-(a.D + a.K) / a.M * x 0 + -1 / a.M * x 2 + 1 / a.M * x 3 + -1 / a.M * u 0,
         -(b.D + b.K) / b.M * x 1 + 1 / b.M * x 2 + 1 / b.M * x 4 + -1 / b.M * u 1,
@@ -162,7 +162,7 @@ variable {a b : Area} {ωs T : ℝ}
 
 /-- Area `a` swing (§1.1 with §1.3, `T_g → 0`): `M_a Δω̇_a = ΔP_m,a − ΔP_L,a − D_a Δω_a − ΔP_tie,ab`
 with `ΔP_m,a = ΔP_C,a − K_R,a Δω_a`. -/
-@[powerlib_foundation] theorem field_swing_a (ha : a.M ≠ 0) (x : EuclideanSpace ℝ (Fin 5))
+@[powerlib_domain] theorem field_swing_a (ha : a.M ≠ 0) (x : EuclideanSpace ℝ (Fin 5))
     (u : Fin 2 → ℝ) :
     a.M * (plant a b ωs T).inputField u x 0 = (x 3 - a.K * x 0) - u 0 - a.D * x 0 - x 2 := by
   rw [field_apply]
@@ -171,7 +171,7 @@ with `ΔP_m,a = ΔP_C,a − K_R,a Δω_a`. -/
   ring
 
 /-- Area `b` swing: its net export is `−ΔP_tie,ab`. -/
-@[powerlib_foundation] theorem field_swing_b (hb : b.M ≠ 0) (x : EuclideanSpace ℝ (Fin 5))
+@[powerlib_domain] theorem field_swing_b (hb : b.M ≠ 0) (x : EuclideanSpace ℝ (Fin 5))
     (u : Fin 2 → ℝ) :
     b.M * (plant a b ωs T).inputField u x 1 = (x 4 - b.K * x 1) - u 1 - b.D * x 1 - (-x 2) := by
   rw [field_apply]
@@ -180,7 +180,7 @@ with `ΔP_m,a = ΔP_C,a − K_R,a Δω_a`. -/
   ring
 
 /-- Tie-line row: `ΔṖ_tie,ab = ω_s T (Δω_a − Δω_b)`. -/
-@[powerlib_foundation] theorem field_tie (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem field_tie (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
     (plant a b ωs T).inputField u x 2 = ωs * T * (x 0 - x 1) := by
   rw [field_apply]
   simp only [Fin.isValue, Matrix.cons_val_two, Matrix.tail_cons,
@@ -188,14 +188,14 @@ with `ΔP_m,a = ΔP_C,a − K_R,a Δω_a`. -/
   ring
 
 /-- AGC of area `a`: `ΔṖ_C,a = −K_I,a ACE_a`, `ACE_a = ΔP_tie,ab + B_a Δω_a`. -/
-@[powerlib_foundation] theorem field_agc_a (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem field_agc_a (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
     (plant a b ωs T).inputField u x 3 = -a.KI * (x 2 + a.B * x 0) := by
   rw [field_apply]
   simp [Matrix.cons_val]
   ring
 
 /-- AGC of area `b`: `ΔṖ_C,b = −K_I,b ACE_b`, `ACE_b = −ΔP_tie,ab + B_b Δω_b` (§1.4 sign flip). -/
-@[powerlib_foundation] theorem field_agc_b (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem field_agc_b (x : EuclideanSpace ℝ (Fin 5)) (u : Fin 2 → ℝ) :
     (plant a b ωs T).inputField u x 4 = -b.KI * (-x 2 + b.B * x 1) := by
   rw [field_apply]
   simp [Matrix.cons_val]
@@ -203,7 +203,7 @@ with `ΔP_m,a = ΔP_C,a − K_R,a Δω_a`. -/
 
 /-- The steady state is an equilibrium of every constant load, for every parameter value. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem steadyState_isEquilibrium (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem steadyState_isEquilibrium (u : Fin 2 → ℝ) :
     IsEquilibrium ((plant a b ωs T).inputField u) (steadyState u) := by
   unfold IsEquilibrium
   rw [field_apply]
@@ -212,7 +212,7 @@ evidence on the model, not a connection conclusion. -/
 /-- §1.6 (non-interactive control): for `B_a + B_b ≠ 0`, `K_I,a, K_I,b ≠ 0`, `ω_s T ≠ 0`, the
 unique equilibrium for constant loads `u = (ΔP_L,a, ΔP_L,b)` is `(0, 0, 0, ΔP_L,a, ΔP_L,b)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem isEquilibrium_iff (ha : a.M ≠ 0) (hb : b.M ≠ 0)
+@[powerlib_domain] theorem isEquilibrium_iff (ha : a.M ≠ 0) (hb : b.M ≠ 0)
     (hKa : a.KI ≠ 0) (hKb : b.KI ≠ 0) (hT : ωs * T ≠ 0) (hB : a.B + b.B ≠ 0)
     (u : Fin 2 → ℝ) (e : EuclideanSpace ℝ (Fin 5)) :
     IsEquilibrium ((plant a b ωs T).inputField u) e ↔ e = steadyState u := by
@@ -270,7 +270,7 @@ def plant7 (a b : Area) (ωs T : ℝ) : Linear.Plant 7 2 where
 def steadyState7 (u : Fin 2 → ℝ) : EuclideanSpace ℝ (Fin 7) :=
   WithLp.toLp 2 ![0, 0, 0, u 0, u 1, u 0, u 1]
 
-@[powerlib_foundation] theorem plant7_field_apply (x : EuclideanSpace ℝ (Fin 7)) (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem plant7_field_apply (x : EuclideanSpace ℝ (Fin 7)) (u : Fin 2 → ℝ) :
     (plant7 a b ωs T).inputField u x =
       WithLp.toLp 2 ![-a.D / a.M * x 0 + -1 / a.M * x 2 + 1 / a.M * x 5 + -1 / a.M * u 0,
         -b.D / b.M * x 1 + 1 / b.M * x 2 + 1 / b.M * x 6 + -1 / b.M * u 1,
@@ -285,7 +285,7 @@ def steadyState7 (u : Fin 2 → ℝ) : EuclideanSpace ℝ (Fin 7) :=
     simp [plant7, dotProduct, Fin.sum_univ_seven, Fin.sum_univ_two]
 
 /-- Governor rows of `plant7`: `T_g ΔṖ_m = −ΔP_m − K_R Δω + ΔP_C` (§1.3). -/
-@[powerlib_foundation] theorem plant7_field_governor (ha : a.Tg ≠ 0) (hb : b.Tg ≠ 0)
+@[powerlib_domain] theorem plant7_field_governor (ha : a.Tg ≠ 0) (hb : b.Tg ≠ 0)
     (x : EuclideanSpace ℝ (Fin 7)) (u : Fin 2 → ℝ) :
     a.Tg * (plant7 a b ωs T).inputField u x 5 = -x 5 - a.K * x 0 + x 3 ∧
       b.Tg * (plant7 a b ωs T).inputField u x 6 = -x 6 - b.K * x 1 + x 4 := by
@@ -295,7 +295,7 @@ def steadyState7 (u : Fin 2 → ℝ) : EuclideanSpace ℝ (Fin 7) :=
 
 /-- The steady state is an equilibrium of every constant load, for every parameter value. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem plant7_steadyState_isEquilibrium (u : Fin 2 → ℝ) :
+@[powerlib_domain] theorem plant7_steadyState_isEquilibrium (u : Fin 2 → ℝ) :
     IsEquilibrium ((plant7 a b ωs T).inputField u) (steadyState7 u) := by
   unfold IsEquilibrium
   rw [plant7_field_apply]
@@ -304,7 +304,7 @@ evidence on the model, not a connection conclusion. -/
 /-- The seven-state version of §1.6: unique equilibrium
 `(0, 0, 0, ΔP_L,a, ΔP_L,b, ΔP_L,a, ΔP_L,b)`. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem plant7_isEquilibrium_iff (ha : a.M ≠ 0) (hb : b.M ≠ 0)
+@[powerlib_domain] theorem plant7_isEquilibrium_iff (ha : a.M ≠ 0) (hb : b.M ≠ 0)
     (hga : a.Tg ≠ 0) (hgb : b.Tg ≠ 0) (hKa : a.KI ≠ 0) (hKb : b.KI ≠ 0) (hT : ωs * T ≠ 0)
     (hB : a.B + b.B ≠ 0) (u : Fin 2 → ℝ) (e : EuclideanSpace ℝ (Fin 7)) :
     IsEquilibrium ((plant7 a b ωs T).inputField u) e ↔ e = steadyState7 u := by
@@ -407,9 +407,9 @@ def family : Family Model Requirement 5 2 :=
 def family7 : Family Model7 Requirement 7 2 :=
   ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
-@[powerlib_foundation] theorem family7_isLinear : family7.IsLinear Model7.plant := fun _ => rfl
+@[powerlib_domain] theorem family7_isLinear : family7.IsLinear Model7.plant := fun _ => rfl
 
 /-- A matrix is not both Hurwitz and with a right-half-plane root. -/
 @[powerlib_foundation] theorem meetsMatrix_univ {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
@@ -419,13 +419,13 @@ def family7 : Family Model7 Requirement 7 2 :=
   linarith
 
 /-- No five-state model meets every requirement. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
 /-- No seven-state model meets every requirement. -/
-@[tmio M, powerlib_foundation] theorem realize_univ7 :
+@[tmio M, powerlib_domain] theorem realize_univ7 :
     connection% (realize family7.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h

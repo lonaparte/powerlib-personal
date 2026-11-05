@@ -22,6 +22,12 @@ theorem passive (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
 @[powerlib_domain] theorem domain_connection (m : Circuits.RL.Impedance)
     (h : 0 ≤ m.resistance) : connection% (m ∈ Circuits.RL.family.den .passive) := passive m h
 
+-- Domain is a semantic classification: a static engineering model identity needs no
+-- connection wrapper. Behavioural admission remains a separate structural check.
+@[tmio M, powerlib_domain] theorem domain_model_identity (m : Circuits.RL.Impedance) :
+    (Circuits.RL.toStateSpace m).inputGain.val = (m.inductance.val)⁻¹ :=
+  Circuits.RL.toStateSpace_inputGain m
+
 -- Private fixtures are implementation evidence, never public results.
 @[powerlib_foundation] private theorem raw (m : Circuits.RL.Impedance)
     (h : 0 ≤ m.resistance) : m.plant.system.Passive :=
@@ -173,7 +179,7 @@ run_cmd do
         ``genericConstructedAmbientInput] do
       if (← Architecture.publicTypeRejection ctx models (← getConstInfo name).type).isNone then
         throwError "Public admission accepted its rejection fixture: {name}"
-    for name in #[``passive, ``foundation_connection, ``domain_connection, ``genericPassive,
+    for name in #[``passive, ``foundation_connection, ``domain_connection, ``domain_model_identity, ``genericPassive,
         ``genericFlowInterface, ``genericReachInterface, ``allTypeClaim, ``conditionIff,
         ``guardedExists, ``Spectral.local_chain_le_semantics,
         ``Spectral.local_exact_locallyExponentiallyStable,

@@ -151,7 +151,7 @@ def dampingRatio (M D K Tg : ℝ) : ℝ := (M + D * Tg) / (2 * Real.sqrt (M * Tg
 
 variable {M D K Tg ΔPL : ℝ}
 
-@[tmio M, simp, powerlib_foundation] theorem steadyState_zero (D K ΔPL : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem steadyState_zero (D K ΔPL : ℝ) :
     steadyState D K ΔPL 0 = -ΔPL / (K + D) := rfl
 
 @[simp, powerlib_foundation] theorem steadyState_one (D K ΔPL : ℝ) :
@@ -356,11 +356,11 @@ def translate : Sentence → Set Requirement
 deviation in, frequency deviation out). -/
 def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- For `0 < M`, `0 < T_g`: Hurwitz iff `0 < M + D T_g` (trace) and `0 < K_R + D`
 (determinant). -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (hM : 0 < M) (hTg : 0 < Tg) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hM : 0 < M) (hTg : 0 < Tg) :
     connection% ((⟨M, D, K, Tg, hM, hTg⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < M + D * Tg ∧ 0 < K + D) := by
   unfold TMIO.Statement
   rw [(connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -377,7 +377,7 @@ def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, 
     div_pos_iff_of_pos_right (mul_pos hM hTg)]
 
 /-- For `0 < M`, `0 < T_g`, `0 ≤ D`: Hurwitz iff `0 < K_R + D`. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_of_nonneg (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff_of_nonneg (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D) :
     connection% ((⟨M, D, K, Tg, hM, hTg⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < K + D) := by
   unfold TMIO.Statement
   rw [(connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -417,7 +417,7 @@ right half plane. -/
 /-! ## The family -/
 
 /-- No model is both stable and unstable: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -976,11 +976,11 @@ in, frequency deviation out). -/
 def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
   ⟨fun r => r.plant.system, ReducedMeets, reducedTranslate⟩
 
-@[powerlib_foundation] theorem reducedFamily_isLinear :
+@[powerlib_domain] theorem reducedFamily_isLinear :
     reducedFamily.IsLinear ReducedModel.plant := fun _ => rfl
 
 /-- The first-order model is Hurwitz iff `0 < K_R + D`. -/
-@[tmio TM, powerlib_foundation] theorem reduced_isHurwitz_iff (hM : 0 < M) :
+@[tmio TM, powerlib_domain] theorem reduced_isHurwitz_iff (hM : 0 < M) :
     connection% ((⟨M, D, K, hM⟩ : ReducedModel) ∈ reducedFamily.den (.flow .globallyExponentiallyStable) ↔ 0 < K + D) := by
   unfold TMIO.Statement
   rw [(connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -990,7 +990,7 @@ def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
 
 /-- **Stability is inherited from the first-order model** whenever `0 < M + D T_g` (in particular
 for every `T_g` when `0 ≤ D`, and for every small `T_g`). -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_reduced (hM : 0 < M) (hTg : 0 < Tg)
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff_reduced (hM : 0 < M) (hTg : 0 < Tg)
     (h : 0 < M + D * Tg) :
     connection% ((⟨M, D, K, Tg, hM, hTg⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable) ↔ (⟨M, D, K, hM⟩ : ReducedModel) ∈ reducedFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -1012,7 +1012,7 @@ for every `T_g` when `0 ≤ D`, and for every small `T_g`). -/
 
 /-- The rate margin of the swing + governor model: `A + aI` Hurwitz iff
 `T_g (2 a M − D) < M` and `0 < K_R + D − a M + a T_g (a M − D)`. -/
-@[tmio M, powerlib_foundation] theorem rateMargin_iff (hM : 0 < M) (hTg : 0 < Tg) (a : ℝ) :
+@[tmio M, powerlib_domain] theorem rateMargin_iff (hM : 0 < M) (hTg : 0 < Tg) (a : ℝ) :
     connection% ((⟨M, D, K, Tg, hM, hTg⟩ : Model) ∈ realize Meets {.rate a} ↔
       Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D)) := by
   unfold TMIO.Statement
@@ -1076,11 +1076,11 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
 
 /-! ### The first-order family and the connection conclusions of the limit -/
 
-@[powerlib_foundation] theorem reduce_plant (m : Model) :
+@[powerlib_domain] theorem reduce_plant (m : Model) :
     m.reduce.plant = reducedPlant m.M m.D m.K := rfl
 
 /-- No first-order model is both stable and unstable. -/
-@[tmio M, powerlib_foundation] theorem reduced_realize_univ :
+@[tmio M, powerlib_domain] theorem reduced_realize_univ :
     connection% (realize ReducedMeets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of .stable .unstable fun r (h1 : 0 < r.K + r.D)

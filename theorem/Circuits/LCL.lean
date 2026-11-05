@@ -100,14 +100,14 @@ def toCircuit (m : StateSpace) : Circuit :=
       m.capacitorGain)
   ⟨⟨y.1.1.1, y.1.1.2⟩, ⟨y.1.2.1, y.1.2.2⟩, y.2⟩
 
-@[tmio M, simp, powerlib_foundation] theorem circuit_roundtrip (m : Circuit) :
+@[tmio M, simp, powerlib_domain] theorem circuit_roundtrip (m : Circuit) :
     toCircuit (toStateSpace m) = m := by
   apply Circuit.ext
   · exact RL.impedance_roundtrip m.first
   · exact RL.impedance_roundtrip m.second
   · exact RL.reciprocal_involutive m.capacitance
 
-@[tmio M, simp, powerlib_foundation] theorem state_roundtrip (m : StateSpace) :
+@[tmio M, simp, powerlib_domain] theorem state_roundtrip (m : StateSpace) :
     toStateSpace (toCircuit m) = m := by
   apply StateSpace.ext
   · exact RL.state_roundtrip m.first
@@ -135,7 +135,7 @@ def StateSpace.plant (m : StateSpace) : Linear.Plant 3 2 where
 /-- The plant of the circuit representation, through the conversion. -/
 def Circuit.plant (m : Circuit) : Linear.Plant 3 2 := (toStateSpace m).plant
 
-@[tmio M, simp, powerlib_foundation] theorem plant_toCircuit (m : StateSpace) :
+@[tmio M, simp, powerlib_domain] theorem plant_toCircuit (m : StateSpace) :
     (toCircuit m).plant = m.plant := by
   simp [Circuit.plant]
 
@@ -158,12 +158,12 @@ def Circuit.frequency (m : Circuit) (s : ℂ) : ℂ :=
 /-- All poles in the open left half plane. -/
 def Circuit.Stable (m : Circuit) : Prop := ∀ s : ℂ, m.frequency s = 0 → s.re < 0
 
-@[tmio M, powerlib_foundation] theorem a3_pos (m : Circuit) : 0 < m.a3 :=
+@[tmio M, powerlib_domain] theorem a3_pos (m : Circuit) : 0 < m.a3 :=
   mul_pos (mul_pos m.first.inductance.property m.second.inductance.property)
     m.capacitance.property
 
 /-- The characteristic polynomial of the plant is the pole polynomial over `a₃`. -/
-@[tmio M, powerlib_foundation] theorem det_characteristicMatrix (m : Circuit) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix (m : Circuit) (s : ℂ) :
     (Linear.characteristicMatrix m.plant.A s).det = m.frequency s / (m.a3 : ℂ) := by
   have hL1 : (m.first.inductance.val : ℂ) ≠ 0 := by
     exact_mod_cast ne_of_gt m.first.inductance.property
@@ -222,10 +222,10 @@ def translate : Sentence → Set Requirement
 and the translation table. -/
 def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[tmio M, powerlib_foundation] theorem family_isLinear : family.IsLinear Circuit.plant := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Circuit.plant := fun _ => rfl
 
 /-- The plant is Hurwitz exactly when all poles lie in the open left half plane. -/
-@[tmio TM, simp high, powerlib_foundation] theorem isHurwitz_iff_stable (m : Circuit) :
+@[tmio TM, simp high, powerlib_domain] theorem isHurwitz_iff_stable (m : Circuit) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ m ∈ TMIO.realize Meets {.poleStable}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -237,7 +237,7 @@ def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets
 
 /-! ## Routh–Hurwitz and passivity -/
 
-@[tmio M, powerlib_foundation] theorem hurwitz_gap (m : Circuit) : m.a2 * m.a1 - m.a3 * m.a0 =
+@[tmio M, powerlib_domain] theorem hurwitz_gap (m : Circuit) : m.a2 * m.a1 - m.a3 * m.a0 =
     m.capacitance.val * (m.first.resistance * m.second.inductance.val ^ 2 +
       m.second.resistance * m.first.inductance.val ^ 2 +
       m.capacitance.val * m.first.resistance * m.second.resistance *
@@ -246,7 +246,7 @@ def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets
   dsimp [Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
   ring
 
-@[tmio M, powerlib_foundation, aesop unsafe 70% forward (immediate := [h])]
+@[tmio M, powerlib_domain, aesop unsafe 70% forward (immediate := [h])]
 theorem stable_of_routhHurwitz (m : Circuit) (h : m.RouthHurwitz) :
     connection% (m ∈ TMIO.realize Meets {.poleStable}) := by
   unfold TMIO.Statement
@@ -254,7 +254,7 @@ theorem stable_of_routhHurwitz (m : Circuit) (h : m.RouthHurwitz) :
   exact fun s hs => Criteria.cubic_hurwitz m.a3 m.a2 m.a1 m.a0 (a3_pos m) h.1 h.2.1 h.2.2.1 h.2.2.2 s
     hs
 
-@[tmio M, powerlib_foundation, aesop unsafe 70% forward (immediate := [hp, hd])]
+@[tmio M, powerlib_domain, aesop unsafe 70% forward (immediate := [hp, hd])]
 theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
     (hd : m.Damped) :
     connection% (m ∈ TMIO.realize Meets {.routhHurwitz}) := by
@@ -279,7 +279,7 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
   exact ⟨h2, h1, h0, hg⟩
 
 /-- With passive resistances, pole stability is exactly damping. -/
-@[tmio M, powerlib_foundation] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) :
+@[tmio M, powerlib_domain] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) :
     connection% (m ∈ TMIO.realize Meets {.poleStable} ↔ m ∈ TMIO.realize Meets {.damped}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -297,20 +297,20 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
 
 /-! ## Behaviour -/
 
-@[tmio M, simp, powerlib_foundation] theorem toStateSpace_first (m : Circuit) :
+@[tmio M, simp, powerlib_domain] theorem toStateSpace_first (m : Circuit) :
     (toStateSpace m).first = RL.toStateSpace m.first := rfl
 
-@[tmio M, simp, powerlib_foundation] theorem toStateSpace_second (m : Circuit) :
+@[tmio M, simp, powerlib_domain] theorem toStateSpace_second (m : Circuit) :
     (toStateSpace m).second = RL.toStateSpace m.second := rfl
 
-@[tmio M, simp, powerlib_foundation] theorem toStateSpace_capacitorGain (m : Circuit) :
+@[tmio M, simp, powerlib_domain] theorem toStateSpace_capacitorGain (m : Circuit) :
     (toStateSpace m).capacitorGain.val = (m.capacitance.val)⁻¹ := rfl
 
 /-- The physical energy matrix `diag(L₁, C, L₂)`. -/
 def energyMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
   !![m.first.inductance.val, 0, 0; 0, m.capacitance.val, 0; 0, 0, m.second.inductance.val]
 
-@[tmio M, powerlib_foundation] theorem energy_identity (m : Circuit) :
+@[tmio M, powerlib_domain] theorem energy_identity (m : Circuit) :
     m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A =
       !![-2 * m.first.resistance, 0, 0; 0, 0, 0; 0, 0, -2 * m.second.resistance] := by
   have hL1 := m.first.inductance.property.ne'
@@ -347,7 +347,7 @@ def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant where
         inv_mul_cancel₀ hL1, inv_mul_cancel₀ hL2]
   feedthrough u := by simp [Circuit.plant, StateSpace.plant]
 
-@[tmio M, powerlib_foundation] theorem energy_pos (m : Circuit) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
+@[tmio M, powerlib_domain] theorem energy_pos (m : Circuit) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
     0 < x ⬝ᵥ (energyMatrix m *ᵥ x) := by
   have hL1 := m.first.inductance.property
   have hL2 := m.second.inductance.property
@@ -371,14 +371,14 @@ def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant where
       mul_nonneg hC.le (mul_self_nonneg (x 1))]
 
 /-- With both resistances zero the plant conserves the physical energy. -/
-@[tmio M, powerlib_foundation] theorem energy_lossless (m : Circuit) (h1 : m.first.resistance = 0)
+@[tmio M, powerlib_domain] theorem energy_lossless (m : Circuit) (h1 : m.first.resistance = 0)
     (h2 : m.second.resistance = 0) :
     m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A = 0 := by
   rw [energy_identity, h1, h2]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
-@[tmio M, powerlib_foundation] theorem energyMatrix_symmetric (m : Circuit) :
+@[tmio M, powerlib_domain] theorem energyMatrix_symmetric (m : Circuit) :
     (energyMatrix m)ᵀ = energyMatrix m := by
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
@@ -387,7 +387,7 @@ def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant where
 
 /-- No circuit has both all poles in the open left half plane and one in the open right half
 plane: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   ext m
@@ -631,14 +631,14 @@ def balancedCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨-1, ⟨1, one_
 /-- The energy `xᵀ Q x` conserved by the balanced circuit. -/
 def balancedEnergy : Matrix (Fin 3) (Fin 3) ℝ := !![2, 2, 1; 2, 3, 2; 1, 2, 2]
 
-@[tmio M, powerlib_foundation] theorem negativeCircuit_routhHurwitz :
+@[tmio M, powerlib_domain] theorem negativeCircuit_routhHurwitz :
     connection% (negativeCircuit ∈ TMIO.realize Meets {.routhHurwitz}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   norm_num [Circuit.RouthHurwitz, negativeCircuit, Circuit.a3, Circuit.a2, Circuit.a1,
     Circuit.a0]
 
-@[tmio M, powerlib_foundation] theorem balancedEnergy_conserved :
+@[tmio M, powerlib_domain] theorem balancedEnergy_conserved :
     balancedCircuit.plant.Aᵀ * balancedEnergy + balancedEnergy * balancedCircuit.plant.A = 0 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -700,7 +700,7 @@ nontrivial Jordan chain at zero, while its frequency polynomial is `2 s³`. -/
 def jordanCircuit : Circuit :=
   ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨-1, ⟨1, one_pos⟩⟩, ⟨2, by norm_num⟩⟩
 
-@[tmio M, powerlib_foundation] theorem jordanCircuit_frequency (s : ℂ) :
+@[tmio M, powerlib_domain] theorem jordanCircuit_frequency (s : ℂ) :
     jordanCircuit.frequency s = 2 * s ^ 3 := by
   norm_num [Circuit.frequency, Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0, jordanCircuit]
 

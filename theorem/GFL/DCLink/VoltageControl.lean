@@ -269,12 +269,12 @@ def closedField (x : State 2) : State 2 :=
 /-- Equilibrium `(V_dc*, ζ0)` with `i_ff − Ki ζ0 = I_d0`. -/
 def eqState : State 2 := WithLp.toLp 2 ![p.Vref, (p.iff - p.Id0) / p.Ki]
 
-@[powerlib_foundation] theorem idRef_eqState (hKi : p.Ki ≠ 0) : p.idRef p.eqState = p.Id0 := by
+@[powerlib_domain] theorem idRef_eqState (hKi : p.Ki ≠ 0) : p.idRef p.eqState = p.Id0 := by
   simp [idRef, eqState]
   field_simp
   ring
 
-@[powerlib_foundation] theorem closedField_eqState (hKi : p.Ki ≠ 0) (_hV : p.Vref ≠ 0) :
+@[powerlib_domain] theorem closedField_eqState (hKi : p.Ki ≠ 0) (_hV : p.Vref ≠ 0) :
     p.closedField p.eqState = 0 := by
   ext i
   fin_cases i
@@ -294,7 +294,7 @@ def b : ℝ := p.Idc0 / (p.Vref * p.C)
 /-- Jacobian matrix of the closed loop at the equilibrium. -/
 def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.Ki); 1, 0]
 
-@[powerlib_foundation] theorem closedField_contDiffOn :
+@[powerlib_domain] theorem closedField_contDiffOn :
     ContDiffOn ℝ 1 p.closedField (posDC 2) := by
   rw [contDiffOn_euclidean]
   intro i
@@ -313,7 +313,7 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
     exact ((Dynamics.contDiff_coord 0).sub contDiff_const).contDiffOn
 
 /-- The Jacobian of the nonlinear closed loop, computed with `fderiv`. -/
-@[powerlib_foundation] theorem closedJacobian (hKi : p.Ki ≠ 0) (hV : p.Vref ≠ 0)
+@[powerlib_domain] theorem closedJacobian (hKi : p.Ki ≠ 0) (hV : p.Vref ≠ 0)
     (hC : p.C ≠ 0) :
     fderiv ℝ p.closedField p.eqState =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) p.jacobian := by
@@ -352,15 +352,15 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
       ring
     · simp [jacobian, Fin.sum_univ_two]
 
-@[powerlib_foundation] theorem jacobian_trace : p.jacobian.trace = -(p.a * p.Kp + p.b) := by
+@[powerlib_domain] theorem jacobian_trace : p.jacobian.trace = -(p.a * p.Kp + p.b) := by
   simp [jacobian, Matrix.trace_fin_two]
 
-@[powerlib_foundation] theorem jacobian_det : p.jacobian.det = p.a * p.Ki := by
+@[powerlib_domain] theorem jacobian_det : p.jacobian.det = p.a * p.Ki := by
   simp [jacobian, Matrix.det_fin_two]
 
 /-- Closed-loop Routh–Hurwitz (§1.4 boxed): `Kp > −I_dc0/V_d ∧ Ki > 0`. Static evidence on the
 model, not a connection conclusion. -/
-@[powerlib_foundation] theorem closed_isHurwitz_iff (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[powerlib_domain] theorem closed_isHurwitz_iff (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) :
     LinearSystems.IsHurwitz p.jacobian ↔ -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki := by
   rw [Criteria.isHurwitz_fin_two_iff, jacobian_trace, jacobian_det]
@@ -467,7 +467,7 @@ Implementation evidence for `closedLoop_mem_den_unstable_of_kp`. -/
 def smallSignal : Linear.Plant 2 1 :=
   ⟨p.jacobian, !![p.a * p.Kp; -1], !![1, 0], !![0]⟩
 
-@[powerlib_foundation] theorem smallSignal_transfer {s : ℂ}
+@[powerlib_domain] theorem smallSignal_transfer {s : ℂ}
     (hs : s ^ 2 + (p.a * p.Kp + p.b) * s + p.a * p.Ki ≠ 0) :
     Linear.transfer p.smallSignal s 0 0 =
       p.a * (p.Kp * s + p.Ki) / (s ^ 2 + (p.a * p.Kp + p.b) * s + p.a * p.Ki) := by
@@ -482,7 +482,7 @@ def smallSignal : Linear.Plant 2 1 :=
   ring
 
 /-- Standard second-order form: `ω_n² = a Ki`, `2 ζ ω_n = a Kp + b`. -/
-@[powerlib_foundation] theorem naturalFrequency_damping (hdet : 0 < p.a * p.Ki) :
+@[powerlib_domain] theorem naturalFrequency_damping (hdet : 0 < p.a * p.Ki) :
     let ωn := Real.sqrt (p.a * p.Ki)
     let ζ := (p.a * p.Kp + p.b) / (2 * ωn)
     ωn ^ 2 = p.a * p.Ki ∧ 2 * ζ * ωn = p.a * p.Kp + p.b := by
@@ -838,7 +838,7 @@ def centerEnergy (x : State 2) : ℝ :=
   p.Vref / 2 * (x 0 - p.Vref) ^ 2 + 1 / 3 * (x 0 - p.Vref) ^ 3 +
     p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2
 
-@[powerlib_foundation] theorem hasFDerivAt_centerEnergy (x : State 2) :
+@[powerlib_domain] theorem hasFDerivAt_centerEnergy (x : State 2) :
     HasFDerivAt p.centerEnergy
       ((p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2) • Dynamics.coord 0 +
         (p.Vd * p.Ki / p.C * (x 1 - (p.iff - p.Id0) / p.Ki)) • Dynamics.coord 1) x := by
@@ -853,7 +853,7 @@ def centerEnergy (x : State 2) : ℝ :=
     field_simp
 
 /-- On the boundary `Kp = −I_dc0/V_d` the energy is conserved on `V_dc ≠ 0`. -/
-@[powerlib_foundation] theorem centerEnergy_lie (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
+@[powerlib_domain] theorem centerEnergy_lie (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
     (hKi : p.Ki ≠ 0) (hkp : p.Kp = -(p.Idc0 / p.Vd)) {x : State 2} (hx : x 0 ≠ 0) :
     fderiv ℝ p.centerEnergy x (p.closedField x) = 0 := by
   rw [(p.hasFDerivAt_centerEnergy x).fderiv]
@@ -865,7 +865,7 @@ def centerEnergy (x : State 2) : ℝ :=
   ring
 
 /-- The boundary energy is positive away from the equilibrium on `V_dc > 0`. -/
-@[powerlib_foundation] theorem centerEnergy_pos (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[powerlib_domain] theorem centerEnergy_pos (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : 0 < p.Ki) {x : State 2} (hx : 0 < x 0) (hne : x ≠ p.eqState) :
     0 < p.centerEnergy x := by
   have hk : 0 < p.Vd * p.Ki / (2 * p.C) := by positivity

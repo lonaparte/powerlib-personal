@@ -388,7 +388,7 @@ end FoldLocal
 section Members
 
 /-- The translated field is `C¹`. -/
-@[powerlib_foundation] theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
+@[powerlib_domain] theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
   (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
 
 private theorem model_field0 (m : Model) (z : Dynamics.State 3) :
@@ -413,7 +413,7 @@ private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * 
 /-- The translated field of a balanced model, with `A = V cos θ*`, `B = V sin θ*`, `ι = i_d − i_d*`:
 `φ̇ = k_p v + k_i x`, `ẋ = v`, `−X_g i̇_d = (3/2)k_P (AB − (A cos φ − B sin φ)(−X_g ι + B))` where
 `v = −A sin φ + B(1 − cos φ) − X_g ι`. -/
-@[powerlib_foundation] theorem model_fold_form {m : Model} (heq : IsEq m.params m.θ m.Id)
+@[powerlib_domain] theorem model_fold_form {m : Model} (heq : IsEq m.params m.θ m.Id)
     (z : Dynamics.State 3) :
     m.field z 0 = m.params.kp * (-(m.params.V * Real.cos m.θ) * Real.sin (z 0) +
         m.params.V * Real.sin m.θ * (1 - Real.cos (z 0)) + -m.params.Xg * z 2) +

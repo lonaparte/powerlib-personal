@@ -64,7 +64,7 @@ variable (p : SwingParams)
 /-! ## Closed-form areas -/
 
 /-- `∫_a^b P_e = k₁ (b − a) + k₂ (cos(a − k₃) − cos(b − k₃))`. -/
-@[tmio M, powerlib_foundation] theorem integral_Pe (a b : ℝ) :
+@[tmio M, powerlib_domain] theorem integral_Pe (a b : ℝ) :
     ∫ s in a..b, p.Pe s = p.k₁ * (b - a) + p.k₂ * (Real.cos (a - p.k₃) - Real.cos (b - p.k₃)) := by
   have h2 : IntervalIntegrable (fun s => p.k₂ * Real.sin (s - p.k₃)) MeasureTheory.volume a b :=
     (by fun_prop : Continuous fun s => p.k₂ * Real.sin (s - p.k₃)).intervalIntegrable _ _
@@ -75,7 +75,7 @@ variable (p : SwingParams)
   ring
 
 /-- The potential is the area under `P_e − P_m`: `U_{δ₀}(δ) = ∫_{δ₀}^{δ} (P_e − P_m)`. -/
-@[powerlib_foundation] theorem potential_eq_integral (δ₀ δ : ℝ) :
+@[powerlib_domain] theorem potential_eq_integral (δ₀ δ : ℝ) :
     p.potential δ₀ δ = ∫ s in δ₀..δ, (p.Pe s - p.Pm) := by
   have h1 : IntervalIntegrable p.Pe MeasureTheory.volume δ₀ δ :=
     (by unfold Pe; fun_prop : Continuous p.Pe).intervalIntegrable _ _
@@ -89,7 +89,7 @@ def Aacc (δ₀ x : ℝ) : ℝ := ∫ s in δ₀..x, (p.Pm - p.Pe s)
 /-- Decelerating area `A_dec(x) = ∫_{x}^{δ_max} (P_e − P_m)` of a (post-fault) stage. -/
 def Adec (x δmax : ℝ) : ℝ := ∫ s in x..δmax, (p.Pe s - p.Pm)
 
-@[powerlib_foundation] theorem Aacc_eq (δ₀ x : ℝ) :
+@[powerlib_domain] theorem Aacc_eq (δ₀ x : ℝ) :
     p.Aacc δ₀ x = (p.Pm - p.k₁) * (x - δ₀) +
       p.k₂ * (Real.cos (x - p.k₃) - Real.cos (δ₀ - p.k₃)) := by
   have h1 : IntervalIntegrable p.Pe MeasureTheory.volume δ₀ x :=
@@ -98,7 +98,7 @@ def Adec (x δmax : ℝ) : ℝ := ∫ s in x..δmax, (p.Pe s - p.Pm)
   simp only [smul_eq_mul]
   ring
 
-@[powerlib_foundation] theorem Adec_eq (x δmax : ℝ) :
+@[powerlib_domain] theorem Adec_eq (x δmax : ℝ) :
     p.Adec x δmax = p.k₂ * (Real.cos (x - p.k₃) - Real.cos (δmax - p.k₃)) -
       (p.Pm - p.k₁) * (δmax - x) := by
   rw [Adec, ← potential_eq_integral, potential]
@@ -110,7 +110,7 @@ end SwingParams
 def eacG (f q : SwingParams) (δ₀ δmax x : ℝ) : ℝ := f.Aacc δ₀ x - q.Adec x δmax
 
 /-- `g′(x) = P_e^post(x) − P_e^f(x)` when both stages share `P_m`. -/
-@[powerlib_foundation] theorem hasDerivAt_eacG (f q : SwingParams) (hPm : f.Pm = q.Pm)
+@[powerlib_domain] theorem hasDerivAt_eacG (f q : SwingParams) (hPm : f.Pm = q.Pm)
     (δ₀ δmax x : ℝ) : HasDerivAt (eacG f q δ₀ δmax) (q.Pe x - f.Pe x) x := by
   have hfun : eacG f q δ₀ δmax = fun y =>
       ((f.Pm - f.k₁) * (y - δ₀) + f.k₂ * (Real.cos (y - f.k₃) - Real.cos (δ₀ - f.k₃))) -
@@ -130,7 +130,7 @@ def eacG (f q : SwingParams) (δ₀ δmax x : ℝ) : ℝ := f.Aacc δ₀ x - q.A
 
 /-- Uniqueness of the critical clearing angle: where the post-fault curve lies strictly above
 the during-fault curve, `g` is strictly increasing, so it has at most one zero. -/
-@[powerlib_foundation] theorem eacG_root_unique (f q : SwingParams) (hPm : f.Pm = q.Pm)
+@[powerlib_domain] theorem eacG_root_unique (f q : SwingParams) (hPm : f.Pm = q.Pm)
     {δ₀ δmax a b : ℝ} (hgap : ∀ x ∈ Ioo a b, f.Pe x < q.Pe x) {x y : ℝ}
     (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) (hgx : eacG f q δ₀ δmax x = 0)
     (hgy : eacG f q δ₀ δmax y = 0) : x = y := by
@@ -144,7 +144,7 @@ the during-fault curve, `g` is strictly increasing, so it has at most one zero. 
   exact hmono.injOn hx hy (hgx.trans hgy.symm)
 
 /-- Existence of the critical clearing angle by the intermediate value theorem. -/
-@[powerlib_foundation] theorem exists_eacG_root (f q : SwingParams) (hPm : f.Pm = q.Pm)
+@[powerlib_domain] theorem exists_eacG_root (f q : SwingParams) (hPm : f.Pm = q.Pm)
     {δ₀ δmax a b : ℝ} (hab : a ≤ b) (ha : eacG f q δ₀ δmax a ≤ 0)
     (hb : 0 ≤ eacG f q δ₀ δmax b) : ∃ x ∈ Icc a b, eacG f q δ₀ δmax x = 0 :=
   intermediate_value_Icc hab
@@ -157,21 +157,21 @@ variable (p : SwingParams)
 /-! ## Trajectory calculus for the swing field -/
 
 /-- Coordinate derivatives along a solution, at interior points of the time set. -/
-@[powerlib_foundation] theorem coord_hasDerivAt {φ : ℝ → State 2} {s : Set ℝ} {t : ℝ}
+@[powerlib_domain] theorem coord_hasDerivAt {φ : ℝ → State 2} {s : Set ℝ} {t : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) s) (ht : t ∈ s) (hs : s ∈ 𝓝 t)
     (j : Fin 2) : HasDerivAt (fun τ => φ τ j) (p.field (φ t) j) t := by
   have h := ((hφ t ht).hasDerivAt hs)
   have := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t h
   simpa [Function.comp_def] using this
 
-@[powerlib_foundation] theorem coord_continuousOn {φ : ℝ → State 2} {s : Set ℝ}
+@[powerlib_domain] theorem coord_continuousOn {φ : ℝ → State 2} {s : Set ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) s) (j : Fin 2) :
     ContinuousOn (fun τ => φ τ j) s :=
   ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
     hφ.continuousOn
 
 /-- A constant curve at an equilibrium is a solution. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_const {x : State 2} (hx : p.field x = 0)
+@[powerlib_domain] theorem isIntegralCurveOn_const {x : State 2} (hx : p.field x = 0)
     (s : Set ℝ) : IsIntegralCurveOn (fun _ => x) (fun _ y => p.field y) s := by
   intro t _
   show HasDerivWithinAt _ (p.field x) s t
@@ -180,13 +180,13 @@ variable (p : SwingParams)
 
 /-! ## Sign of `P_e − P_m` between the equilibria -/
 
-@[powerlib_foundation] theorem arcsin_loadRatio_mem (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
+@[powerlib_domain] theorem arcsin_loadRatio_mem (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     Real.arcsin p.loadRatio ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2) := by
   have ha := abs_lt.mp (p.abs_loadRatio_lt hk h)
   exact ⟨Real.neg_pi_div_two_lt_arcsin.mpr ha.1, Real.arcsin_lt_pi_div_two.mpr ha.2⟩
 
 /-- `P_e > P_m` strictly between `δ_s` and `δ_u`. -/
-@[powerlib_foundation] theorem Pm_lt_Pe_of_mem (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂)
+@[powerlib_domain] theorem Pm_lt_Pe_of_mem (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂)
     {δ : ℝ} (hδ : δ ∈ Ioo p.deltaS p.deltaU) : p.Pm < p.Pe δ := by
   obtain ⟨hy1, hy2⟩ := p.arcsin_loadRatio_mem hk h
   have hs := p.sin_loadRatio hk h.le
@@ -203,7 +203,7 @@ variable (p : SwingParams)
   linarith
 
 /-- `P_e < P_m` strictly between `δ_u − 2π` and `δ_s`. -/
-@[powerlib_foundation] theorem Pe_lt_Pm_of_mem (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂)
+@[powerlib_domain] theorem Pe_lt_Pm_of_mem (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂)
     {δ : ℝ} (hδ : δ ∈ Ioo (p.deltaU - 2 * Real.pi) p.deltaS) : p.Pe δ < p.Pm := by
   obtain ⟨hy1, hy2⟩ := p.arcsin_loadRatio_mem hk h
   have hs := p.sin_loadRatio hk h.le
@@ -223,19 +223,19 @@ variable (p : SwingParams)
     exact mul_neg_of_pos_of_neg hk this
   linarith
 
-@[powerlib_foundation] theorem deltaS_lt_deltaU (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
+@[powerlib_domain] theorem deltaS_lt_deltaU (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     p.deltaS < p.deltaU := by
   obtain ⟨_, hy2⟩ := p.arcsin_loadRatio_mem hk h
   simp only [deltaS, deltaU]; linarith
 
-@[powerlib_foundation] theorem deltaU_sub_two_pi_lt_deltaS (hk : 0 < p.k₂)
+@[powerlib_domain] theorem deltaU_sub_two_pi_lt_deltaS (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) : p.deltaU - 2 * Real.pi < p.deltaS := by
   obtain ⟨hy1, _⟩ := p.arcsin_loadRatio_mem hk h
   simp only [deltaS, deltaU]; linarith
 
 /-- In the potential well `(δ_u − 2π, δ_u]`, the potential on `[δ_c, δ_u]` is bounded by its
 values at the endpoints. -/
-@[powerlib_foundation] theorem potential_le_max (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂)
+@[powerlib_domain] theorem potential_le_max (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂)
     {δ₀ δc δ : ℝ} (hc : p.deltaU - 2 * Real.pi < δc) (hδ : δ ∈ Icc δc p.deltaU) :
     p.potential δ₀ δ ≤ max (p.potential δ₀ δc) (p.potential δ₀ p.deltaU) := by
   have hcont : ∀ u v, ContinuousOn (p.potential δ₀) (Icc u v) := fun u v =>
@@ -258,13 +258,13 @@ values at the endpoints. -/
     exact (hanti ⟨le_rfl, (hδ.1.trans hs.le)⟩ ⟨hδ.1, hs.le⟩ hδ.1).trans (le_max_left _ _)
 
 /-- The accelerating area is minus the potential: `A_acc(δ₀, x) = −U_{δ₀}(x)`. -/
-@[powerlib_foundation] theorem Aacc_eq_neg_potential (δ₀ x : ℝ) :
+@[powerlib_domain] theorem Aacc_eq_neg_potential (δ₀ x : ℝ) :
     p.Aacc δ₀ x = -p.potential δ₀ x := by
   rw [Aacc_eq, potential]
   ring
 
 /-- `A_dec(x, δ_max) = U_{δ₀}(δ_max) − U_{δ₀}(x)` for any reference angle `δ₀`. -/
-@[powerlib_foundation] theorem Adec_eq_potential_sub (δ₀ x δmax : ℝ) :
+@[powerlib_domain] theorem Adec_eq_potential_sub (δ₀ x δmax : ℝ) :
     p.Adec x δmax = p.potential δ₀ δmax - p.potential δ₀ x := by
   rw [Adec_eq, potential, potential]
   ring

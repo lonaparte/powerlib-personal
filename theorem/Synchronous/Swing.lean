@@ -162,10 +162,10 @@ def accel (δ ω : ℝ) : ℝ := (p.Pm - p.Pe δ - p.D * ω) / p.M
 /-- The full nonlinear swing vector field on `(δ, ω)`. -/
 def field (x : State 2) : State 2 := PhasePlane.mk (x 1) (p.accel (x 0) (x 1))
 
-@[tmio M, simp, powerlib_foundation] theorem field_apply_zero (x : State 2) : p.field x 0 = x 1 := by
+@[tmio M, simp, powerlib_domain] theorem field_apply_zero (x : State 2) : p.field x 0 = x 1 := by
   simp [field]
 
-@[simp, powerlib_foundation] theorem field_apply_one (x : State 2) :
+@[simp, powerlib_domain] theorem field_apply_one (x : State 2) :
     p.field x 1 = p.accel (x 0) (x 1) := by
   simp [field]
 
@@ -226,7 +226,7 @@ variable (p : SwingParams)
 def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; -p.syncCoeff δ / p.M, -p.D / p.M]
 
-@[powerlib_foundation] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k p.field := by
+@[powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k p.field := by
   rw [contDiff_euclidean]
   intro i
   fin_cases i
@@ -234,7 +234,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   · simp only [Fin.mk_one, Fin.isValue, field_apply_one, accel, Pe]
     fun_prop
 
-@[powerlib_foundation] theorem hasFDerivAt_field (x : State 2) :
+@[powerlib_domain] theorem hasFDerivAt_field (x : State 2) :
     HasFDerivAt p.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (p.jacobian (x 0))) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -258,15 +258,15 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
         Fin.sum_univ_two]
       ring
 
-@[powerlib_foundation] theorem fderiv_field (x : State 2) :
+@[powerlib_domain] theorem fderiv_field (x : State 2) :
     fderiv ℝ p.field x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (p.jacobian (x 0)) :=
   (p.hasFDerivAt_field x).fderiv
 
-@[simp, powerlib_foundation] theorem trace_jacobian (δ : ℝ) :
+@[simp, powerlib_domain] theorem trace_jacobian (δ : ℝ) :
     (p.jacobian δ).trace = -p.D / p.M := by
   simp [jacobian, Matrix.trace_fin_two]
 
-@[simp, powerlib_foundation] theorem det_jacobian (δ : ℝ) :
+@[simp, powerlib_domain] theorem det_jacobian (δ : ℝ) :
     (p.jacobian δ).det = p.syncCoeff δ / p.M := by
   simp [jacobian, Matrix.det_fin_two]
   ring
@@ -275,7 +275,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Equilibria of the full field: zero frequency deviation and power balance.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_eq_zero_iff (hM : p.M ≠ 0) (x : State 2) :
+@[powerlib_domain] theorem field_eq_zero_iff (hM : p.M ≠ 0) (x : State 2) :
     p.field x = 0 ↔ x 1 = 0 ∧ p.Pe (x 0) = p.Pm := by
   constructor
   · intro h
@@ -294,7 +294,7 @@ Static evidence on the model, not a connection conclusion. -/
 `|P_m − k₁| ≤ k₂` (`k₂ > 0`): the zeros of the sinusoid `P_m − k₁ − k₂ sin(δ − k₃)`
 (`SpecialFunctions.exists_sinusoid_zero_iff`). Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem exists_equilibrium_iff (hM : p.M ≠ 0) (hk : 0 < p.k₂) :
+@[powerlib_domain] theorem exists_equilibrium_iff (hM : p.M ≠ 0) (hk : 0 < p.k₂) :
     (∃ x, p.field x = 0) ↔ |p.Pm - p.k₁| ≤ p.k₂ := by
   rw [← SpecialFunctions.exists_sinusoid_zero_iff (φ := -p.k₃) hk]
   constructor
@@ -319,46 +319,46 @@ def deltaS : ℝ := Real.arcsin p.loadRatio + p.k₃
 /-- Closed-form unstable equilibrium angle `δ_u = π − arcsin a + k₃`. -/
 def deltaU : ℝ := Real.pi - Real.arcsin p.loadRatio + p.k₃
 
-@[powerlib_foundation] theorem abs_loadRatio_le (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
+@[powerlib_domain] theorem abs_loadRatio_le (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
     |p.loadRatio| ≤ 1 := by
   rw [loadRatio, abs_div, abs_of_pos hk, div_le_one hk]; exact h
 
-@[powerlib_foundation] theorem abs_loadRatio_lt (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
+@[powerlib_domain] theorem abs_loadRatio_lt (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     |p.loadRatio| < 1 := by
   rw [loadRatio, abs_div, abs_of_pos hk, div_lt_one hk]; exact h
 
-@[powerlib_foundation] theorem sin_loadRatio (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
+@[powerlib_domain] theorem sin_loadRatio (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
     p.k₂ * Real.sin (Real.arcsin p.loadRatio) = p.Pm - p.k₁ :=
   SpecialFunctions.mul_sin_arcsin_div h hk
 
-@[tmio M, powerlib_foundation] theorem Pe_deltaS (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
+@[tmio M, powerlib_domain] theorem Pe_deltaS (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
     connection% ((⟨p, p.deltaS⟩ : Swing.Model) ∈ TMIO.realize Swing.Meets {.balanced}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Swing.Meets]
   have := p.sin_loadRatio hk h
   simp only [Pe, deltaS, add_sub_cancel_right]; linarith
 
-@[tmio M, powerlib_foundation] theorem Pe_deltaU (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
+@[tmio M, powerlib_domain] theorem Pe_deltaU (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
     connection% ((⟨p, p.deltaU⟩ : Swing.Model) ∈ TMIO.realize Swing.Meets {.balanced}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Swing.Meets]
   have := p.sin_loadRatio hk h
   simp only [Pe, deltaU, add_sub_cancel_right, Real.sin_pi_sub]; linarith
 
 /-- `cos(δ_s − k₃) = √(1 − a²) > 0` strictly inside the loadability limit. -/
-@[tmio M, powerlib_foundation] theorem syncCoeff_deltaS_pos (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
+@[tmio M, powerlib_domain] theorem syncCoeff_deltaS_pos (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     connection% ((⟨p, p.deltaS⟩ : Swing.Model) ∈ TMIO.realize Swing.Meets {.synchronizing}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Swing.Meets]
   simp only [syncCoeff, deltaS, add_sub_cancel_right]
   exact mul_pos hk (SpecialFunctions.cos_arcsin_div_pos h hk)
 
 /-- `cos(δ_u − k₃) = −√(1 − a²) < 0` strictly inside the loadability limit. -/
-@[powerlib_foundation] theorem syncCoeff_deltaU_neg (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
+@[powerlib_domain] theorem syncCoeff_deltaU_neg (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     p.syncCoeff p.deltaU < 0 := by
   simp only [syncCoeff, deltaU, add_sub_cancel_right]
   exact mul_neg_of_pos_of_neg hk (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hk)
 
 /-- The equilibrium set: `ω = 0` and `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}` (two equilibria per
 period of the power-angle curve). Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_eq_zero_iff_branches (hM : p.M ≠ 0) (hk : 0 < p.k₂)
+@[powerlib_domain] theorem field_eq_zero_iff_branches (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| ≤ p.k₂) (x : State 2) :
     p.field x = 0 ↔ x 1 = 0 ∧
       ∃ n : ℤ, x 0 = p.deltaS + 2 * n * Real.pi ∨ x 0 = p.deltaU + 2 * n * Real.pi := by
@@ -386,13 +386,13 @@ period of the power-angle curve). Static evidence on the model, not a connection
     · exact ⟨n, Or.inr (by simp only [deltaU] at hn; linarith)⟩
 
 /-- `(δ_s, 0)` is an equilibrium. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_mkState_deltaS (hM : p.M ≠ 0) (hk : 0 < p.k₂)
+@[powerlib_domain] theorem field_mkState_deltaS (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (PhasePlane.mk p.deltaS 0) = 0 :=
   (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa only [TMIO.Statement, TMIO.mem_realize,
       Set.mem_singleton_iff, forall_eq, Swing.Meets, PhasePlane.mk_apply_zero] using p.Pe_deltaS hk h⟩
 
 /-- `(δ_u, 0)` is an equilibrium. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_mkState_deltaU (hM : p.M ≠ 0) (hk : 0 < p.k₂)
+@[powerlib_domain] theorem field_mkState_deltaU (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (PhasePlane.mk p.deltaU 0) = 0 :=
   (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa only [TMIO.Statement, TMIO.mem_realize,
       Set.mem_singleton_iff, forall_eq, Swing.Meets, PhasePlane.mk_apply_zero] using p.Pe_deltaU hk h⟩
@@ -400,7 +400,7 @@ period of the power-angle curve). Static evidence on the model, not a connection
 /-! ## Linearization (static) -/
 
 /-- `M · det(sI − J) = M s² + D s + K`, `K = k₂ cos(δ₀ − k₃)`. -/
-@[powerlib_foundation] theorem characteristic_polynomial (hM : p.M ≠ 0) (δ₀ : ℝ) (s : ℂ) :
+@[powerlib_domain] theorem characteristic_polynomial (hM : p.M ≠ 0) (δ₀ : ℝ) (s : ℂ) :
     (p.M : ℂ) * (Linear.characteristicMatrix (p.jacobian δ₀) s).det =
       (p.M : ℂ) * s ^ 2 + (p.D : ℂ) * s + (p.syncCoeff δ₀ : ℂ) := by
   rw [Criteria.det_characteristicMatrix_fin_two, trace_jacobian, det_jacobian]
@@ -411,7 +411,7 @@ period of the power-angle curve). Static evidence on the model, not a connection
 
 /-- The linearization is Hurwitz iff all coefficients of `M s² + D s + K` are positive
 (`M > 0`). -/
-@[powerlib_foundation] theorem isHurwitz_jacobian_iff (hM : 0 < p.M) (δ₀ : ℝ) :
+@[powerlib_domain] theorem isHurwitz_jacobian_iff (hM : 0 < p.M) (δ₀ : ℝ) :
     LinearSystems.IsHurwitz (p.jacobian δ₀) ↔ 0 < p.D ∧ 0 < p.syncCoeff δ₀ := by
   rw [Criteria.isHurwitz_fin_two_iff, trace_jacobian, det_jacobian, neg_div,
     neg_lt_zero, div_pos_iff_of_pos_right hM, div_pos_iff_of_pos_right hM]
@@ -430,7 +430,7 @@ def potential (δ₀ δ : ℝ) : ℝ :=
 /-- Kinetic plus potential energy `W(δ, ω) = ½ M ω² + U(δ)`. -/
 def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential δ₀ (x 0)
 
-@[powerlib_foundation] theorem hasDerivAt_potential (δ₀ δ : ℝ) :
+@[powerlib_domain] theorem hasDerivAt_potential (δ₀ δ : ℝ) :
     HasDerivAt (p.potential δ₀) (p.Pe δ - p.Pm) δ := by
   have h := (((hasDerivAt_id δ).sub_const δ₀).const_mul (-(p.Pm - p.k₁))).sub
     ((((Real.hasDerivAt_cos (δ - p.k₃)).comp δ ((hasDerivAt_id δ).sub_const p.k₃)).sub_const
@@ -439,15 +439,15 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential 
   · funext y; simp [potential]
   · simp [Pe]; ring
 
-@[simp, powerlib_foundation] theorem potential_self (δ₀ : ℝ) : p.potential δ₀ δ₀ = 0 := by
+@[simp, powerlib_domain] theorem potential_self (δ₀ : ℝ) : p.potential δ₀ δ₀ = 0 := by
   simp [potential]
 
-@[powerlib_foundation] theorem contDiff_energy (δ₀ : ℝ) {k : WithTop ℕ∞} :
+@[powerlib_domain] theorem contDiff_energy (δ₀ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (p.energy δ₀) := by
   unfold energy potential
   fun_prop
 
-@[powerlib_foundation] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
+@[powerlib_domain] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
     HasFDerivAt (p.energy δ₀)
       ((p.M * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
         (p.Pe (x 0) - p.Pm) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ))
@@ -463,7 +463,7 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential 
   ring
 
 /-- Lie derivative of the energy along the full nonlinear field: `Ẇ = −D ω²`. -/
-@[powerlib_foundation] theorem energy_lie (hM : p.M ≠ 0) (δ₀ : ℝ) (x : State 2) :
+@[powerlib_domain] theorem energy_lie (hM : p.M ≠ 0) (δ₀ : ℝ) (x : State 2) :
     fderiv ℝ (p.energy δ₀) x (p.field x) = -p.D * x 1 ^ 2 := by
   rw [(p.hasFDerivAt_energy δ₀ x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
@@ -473,7 +473,7 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential 
 
 /-- The potential is positive on a punctured neighbourhood of an equilibrium angle where the
 synchronizing coefficient stays positive. -/
-@[powerlib_foundation] theorem potential_pos {δ₀ r δ : ℝ} (hbal : p.Pe δ₀ = p.Pm)
+@[powerlib_domain] theorem potential_pos {δ₀ r δ : ℝ} (hbal : p.Pe δ₀ = p.Pm)
     (hr : ∀ θ, |θ - δ₀| < r → 0 < p.syncCoeff θ) (hδ : |δ - δ₀| < r) (hne : δ ≠ δ₀) :
     0 < p.potential δ₀ δ := by
   set g : ℝ → ℝ := fun θ => p.Pe θ - p.Pm with hg
@@ -521,7 +521,7 @@ synchronizing coefficient stays positive. -/
 /-! ## Global existence of solutions -/
 
 /-- The swing field is globally Lipschitz (`sin` is `1`-Lipschitz). -/
-@[powerlib_foundation] theorem lipschitzWith_field :
+@[powerlib_domain] theorem lipschitzWith_field :
     LipschitzWith ⟨1 + |p.D / p.M| + |p.k₂ / p.M|, by positivity⟩ p.field := by
   apply LipschitzWith.of_dist_le_mul
   intro x y
@@ -559,7 +559,7 @@ private theorem forwardComplete : Flow.ForwardComplete p.field :=
 
 /-- At an equilibrium, all eigenvalues of the linearization are real (overdamped or critically
 damped local response) iff `D² ≥ 4 M K`, `K = k₂ cos(δ₀ − k₃)` (`M > 0`). -/
-@[powerlib_foundation] theorem eigenvalues_real_iff (hM : 0 < p.M) (δ₀ : ℝ) :
+@[powerlib_domain] theorem eigenvalues_real_iff (hM : 0 < p.M) (δ₀ : ℝ) :
     (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →
         (p.jacobian δ₀).map (algebraMap ℝ ℂ) *ᵥ v = μ • v → μ.im = 0) ↔
       4 * p.M * p.syncCoeff δ₀ ≤ p.D ^ 2 := by
@@ -587,14 +587,14 @@ def Model.point (m : Model) : State 2 := PhasePlane.mk m.δ 0
 /-- The swing field translated so that the selected point is the origin. -/
 def Model.field (m : Model) (z : State 2) : State 2 := m.p.field (z + m.point)
 
-@[simp, powerlib_foundation] theorem Model.point_zero (m : Model) : m.point 0 = m.δ := by
+@[simp, powerlib_domain] theorem Model.point_zero (m : Model) : m.point 0 = m.δ := by
   simp [Model.point]
 
-@[simp, powerlib_foundation] theorem Model.point_one (m : Model) : m.point 1 = 0 := by
+@[simp, powerlib_domain] theorem Model.point_one (m : Model) : m.point 1 = 0 := by
   simp [Model.point]
 
 /-- The Jacobian of the nonlinear field at the selected point is the Jacobian at `δ*`. -/
-@[powerlib_foundation] theorem Model.fderiv_point (m : Model) :
+@[powerlib_domain] theorem Model.fderiv_point (m : Model) :
     fderiv ℝ m.p.field m.point =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (m.p.jacobian m.δ) := by
   rw [m.p.fderiv_field, Model.point_zero]
@@ -618,7 +618,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
@@ -773,7 +773,7 @@ private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m
 
 /-- No model is both damped and synchronizing while having a destabilizing sign: the whole
 requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -928,7 +928,7 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
 /-- At a balanced angle with zero synchronizing coefficient the potential is
 `U(δ* + s) = −(P_m − k₁)(s − sin s)`: a fold of the power-angle curve (`P_m − k₁ = ±k₂ ≠ 0`) or a
 flat curve (`k₂ = 0`). Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem potential_fold (p : SwingParams) {δ₀ : ℝ} (hb : p.Pe δ₀ = p.Pm)
+@[powerlib_domain] theorem potential_fold (p : SwingParams) {δ₀ : ℝ} (hb : p.Pe δ₀ = p.Pm)
     (hK : p.syncCoeff δ₀ = 0) (s : ℝ) :
     p.potential δ₀ (δ₀ + s) = -(p.Pm - p.k₁) * (s - Real.sin s) := by
   have hc : Real.cos (δ₀ + s - p.k₃) =
@@ -942,7 +942,7 @@ flat curve (`k₂ = 0`). Static evidence on the model, not a connection conclusi
 /-- With zero synchronizing coefficient and no load offset (`P_m = k₁`) at a balanced angle the
 power-angle curve is flat: `k₂ = 0`. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem k₂_eq_zero_of_flat (p : SwingParams) {δ₀ : ℝ}
+@[powerlib_domain] theorem k₂_eq_zero_of_flat (p : SwingParams) {δ₀ : ℝ}
     (hb : p.Pe δ₀ = p.Pm) (hK : p.syncCoeff δ₀ = 0) (ha : p.Pm - p.k₁ = 0) : p.k₂ = 0 := by
   have hK' : p.k₂ * Real.cos (δ₀ - p.k₃) = 0 := hK
   have hs : p.k₂ * Real.sin (δ₀ - p.k₃) = 0 := by
@@ -1119,7 +1119,7 @@ positive inertia and is Lyapunov stable, but its synchronizing coefficient is ze
 /-- At a balanced angle with zero synchronizing coefficient the accelerating power is
 `P_m − P_e(δ* + s) = (P_m − k₁)(1 − cos s)`, of one sign on both sides of `δ*`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem Pe_fold (p : SwingParams) {δ₀ : ℝ} (hb : p.Pe δ₀ = p.Pm)
+@[powerlib_domain] theorem Pe_fold (p : SwingParams) {δ₀ : ℝ} (hb : p.Pe δ₀ = p.Pm)
     (hK : p.syncCoeff δ₀ = 0) (s : ℝ) :
     p.Pm - p.Pe (δ₀ + s) = (p.Pm - p.k₁) * (1 - Real.cos s) := by
   have hK' : p.k₂ * Real.cos (δ₀ - p.k₃) = 0 := hK
@@ -1377,7 +1377,7 @@ def plant (m : Model) : Linear.Plant 2 0 := ⟨m.p.jacobian m.δ, 0, 0, 0⟩
 
 /-- The Jacobian of the nonlinear field at the selected point is the state matrix of the
 linearized plant. -/
-@[powerlib_foundation] theorem fderiv_point_eq_plant (m : Model) :
+@[powerlib_domain] theorem fderiv_point_eq_plant (m : Model) :
     fderiv ℝ m.p.field m.point = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (plant m).A :=
   m.fderiv_point
 
@@ -1396,7 +1396,7 @@ def translate : Sentence → Set Requirement
 /-- The linearized swing family. -/
 def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear plant := fun _ => rfl
+@[powerlib_domain] theorem family_isLinear : family.IsLinear plant := fun _ => rfl
 
 /-- The translation is the linear table (`Spectral.linearTable`). -/
 @[tmio TM] private theorem translate_eq (s : Sentence) :
@@ -1451,7 +1451,7 @@ private theorem exists_root {m : Model} (hM : 0 < m.p.M)
           exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
 
 /-- The decay requirement is the whole language: damped and undamped are inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) :=
   Swing.realize_univ
 

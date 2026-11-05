@@ -62,7 +62,7 @@ open Matrix
 /-- Slow-manifold branch `θ*(ξ) = arcsin((Δω + b ξ)/a)`. -/
 def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
 
-@[tmio M, powerlib_foundation] theorem slowAngle_spec {a b Δω ξ : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_domain] theorem slowAngle_spec {a b Δω ξ : ℝ} (ha : 0 < a)
     (hdom : |Δω + b * ξ| < a) :
     Δω - a * Real.sin (slowAngle a b Δω ξ) + b * ξ = 0 ∧
       |slowAngle a b Δω ξ| < Real.pi / 2 ∧
@@ -143,11 +143,11 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 1 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-- The whole requirement language is inconsistent. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_

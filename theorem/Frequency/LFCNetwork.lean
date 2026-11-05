@@ -159,11 +159,11 @@ def netFamily :
     Family (NetModel α β) Requirement (Fintype.card (α ⊕ (β ⊕ α))) (Fintype.card α) :=
   ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
 
-@[powerlib_foundation] theorem netFamily_isLinear :
+@[powerlib_domain] theorem netFamily_isLinear :
     (netFamily α β).IsLinear NetModel.plant := fun _ => rfl
 
 /-- The transported state matrix is Hurwitz exactly when `netA` is spectrally stable. -/
-@[powerlib_foundation] theorem netModel_isHurwitz_iff [DecidableEq β] (m : NetModel α β) :
+@[powerlib_domain] theorem netModel_isHurwitz_iff [DecidableEq β] (m : NetModel α β) :
     IsHurwitz m.plant.A ↔ Linear.SpectrallyStable (netA m.area m.ωs m.T m.𝓑) :=
   (Linear.spectrallyStable_iff_isHurwitz _).symm.trans (Linear.spectrallyStable_reindex _ _)
 
@@ -171,7 +171,7 @@ def netFamily :
 variable {area : α → Area} {ωs : ℝ} {T : β → ℝ} {𝓑 : Matrix α β ℝ}
 
 /-- Swing row of area `a`. -/
-@[powerlib_foundation] theorem netField_freq (x : α ⊕ (β ⊕ α) → ℝ) (u : α → ℝ) (a : α) :
+@[powerlib_domain] theorem netField_freq (x : α ⊕ (β ⊕ α) → ℝ) (u : α → ℝ) (a : α) :
     netField area ωs T 𝓑 x u (.inl a) =
       (-((area a).D + (area a).K) * x (.inl a) - ∑ ℓ, 𝓑 a ℓ * x (.inr (.inl ℓ)) +
         x (.inr (.inr a)) - u a) / (area a).M := by
@@ -186,7 +186,7 @@ variable {area : α → Area} {ωs : ℝ} {T : β → ℝ} {𝓑 : Matrix α β 
   ring
 
 /-- Tie-line rows: `ΔṖ_tie,ℓ = ω_s T_ℓ (𝓑ᵀ Δω)_ℓ`. -/
-@[powerlib_foundation] theorem netField_tie (x : α ⊕ (β ⊕ α) → ℝ) (u : α → ℝ) (ℓ : β) :
+@[powerlib_domain] theorem netField_tie (x : α ⊕ (β ⊕ α) → ℝ) (u : α → ℝ) (ℓ : β) :
     netField area ωs T 𝓑 x u (.inr (.inl ℓ)) =
       ωs * T ℓ * ∑ c, 𝓑 c ℓ * x (.inl c) := by
   simp only [netField, Pi.add_apply, mulVec, dotProduct,
@@ -195,7 +195,7 @@ variable {area : α → Area} {ωs : ℝ} {T : β → ℝ} {𝓑 : Matrix α β 
   exact Finset.sum_congr rfl fun c _ => by ring
 
 /-- AGC rows: `ΔṖ_C,a = −K_I,a ((𝓑 ΔP_tie)_a + B_a Δω_a)`. -/
-@[powerlib_foundation] theorem netField_agc (x : α ⊕ (β ⊕ α) → ℝ) (u : α → ℝ) (a : α) :
+@[powerlib_domain] theorem netField_agc (x : α ⊕ (β ⊕ α) → ℝ) (u : α → ℝ) (a : α) :
     netField area ωs T 𝓑 x u (.inr (.inr a)) =
       -(area a).KI * (∑ ℓ, 𝓑 a ℓ * x (.inr (.inl ℓ)) + (area a).B * x (.inl a)) := by
   simp only [netField, Pi.add_apply, mulVec, dotProduct,
@@ -208,7 +208,7 @@ variable {area : α → Area} {ωs : ℝ} {T : β → ℝ} {𝓑 : Matrix α β 
 
 /-- §1.6 for `N` areas (non-interactive control) under connectivity of the tie-line graph.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem netModel_isEquilibrium_iff (hM : ∀ a, (area a).M ≠ 0)
+@[powerlib_domain] theorem netModel_isEquilibrium_iff (hM : ∀ a, (area a).M ≠ 0)
     (hKI : ∀ a, (area a).KI ≠ 0) (hT : ∀ ℓ, ωs * T ℓ ≠ 0) (hB : ∑ a, (area a).B ≠ 0)
     (hcol : ∀ ℓ, ∑ a, 𝓑 a ℓ = 0)
     (hconn : ∀ w : α → ℝ, (∀ ℓ, ∑ c, 𝓑 c ℓ * w c = 0) → ∀ a c, w a = w c)
@@ -266,7 +266,7 @@ def netSteadyState (u : α → ℝ) : α ⊕ (β ⊕ α) → ℝ :=
 
 /-- The steady state `(0, 0, ΔP_L)` is an equilibrium of every constant load, for every
 parameter value. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem netSteadyState_isEquilibrium (u : α → ℝ) :
+@[powerlib_domain] theorem netSteadyState_isEquilibrium (u : α → ℝ) :
     netField area ωs T 𝓑 (netSteadyState u) u = 0 := by
   funext i
   rcases i with a | ℓ | a
@@ -276,7 +276,7 @@ parameter value. Static evidence on the model, not a connection conclusion. -/
 
 /-- Radial tie-line graph (`ker 𝓑 = 0`): the unique equilibrium is `(0, 0, ΔP_L)`. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem isEquilibrium_iff_of_ker (hM : ∀ a, (area a).M ≠ 0)
+@[powerlib_domain] theorem isEquilibrium_iff_of_ker (hM : ∀ a, (area a).M ≠ 0)
     (hKI : ∀ a, (area a).KI ≠ 0) (hT : ∀ ℓ, ωs * T ℓ ≠ 0) (hB : ∑ a, (area a).B ≠ 0)
     (hcol : ∀ ℓ, ∑ a, 𝓑 a ℓ = 0)
     (hconn : ∀ w : α → ℝ, (∀ ℓ, ∑ c, 𝓑 c ℓ * w c = 0) → ∀ a c, w a = w c)
@@ -322,7 +322,7 @@ omit [Fintype β] in
 
 /-- §1.6 for `N` areas on a connected tie-line graph with signed incidence matrix. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem signedIncidence_isEquilibrium_iff {tail head : β → α}
+@[powerlib_domain] theorem signedIncidence_isEquilibrium_iff {tail head : β → α}
     (hconn : TieConnected tail head) (hM : ∀ a, (area a).M ≠ 0)
     (hKI : ∀ a, (area a).KI ≠ 0) (hT : ∀ ℓ, ωs * T ℓ ≠ 0) (hB : ∑ a, (area a).B ≠ 0)
     (u : α → ℝ) (e : α ⊕ (β ⊕ α) → ℝ) :
@@ -336,7 +336,7 @@ evidence on the model, not a connection conclusion. -/
 /-! ## Meshed tie-line graphs: circulating flows -/
 
 /-- A kernel vector `p` of `𝓑` (a circulating flow) is a zero mode of the state matrix. -/
-@[powerlib_foundation] theorem netA_mulVec_circulation {p : β → ℝ} (hp : 𝓑 *ᵥ p = 0) :
+@[powerlib_domain] theorem netA_mulVec_circulation {p : β → ℝ} (hp : 𝓑 *ᵥ p = 0) :
     netA area ωs T 𝓑 *ᵥ Sum.elim 0 (Sum.elim p 0) = 0 := by
   have hp' : ∀ a, ∑ ℓ, 𝓑 a ℓ * p ℓ = 0 := fun a => by
     simpa [mulVec, dotProduct] using congrFun hp a
@@ -359,7 +359,7 @@ evidence on the model, not a connection conclusion. -/
 /-- Correction: if the tie-line graph has a loop (a nonzero `p` with `𝓑 p = 0`), the
 line-flow realization never belongs to the family denotation of global exponential
 stability, whatever the gains. -/
-@[tmio TM, powerlib_foundation] theorem netModel_not_spectrallyStable [DecidableEq β] {p : β → ℝ}
+@[tmio TM, powerlib_domain] theorem netModel_not_spectrallyStable [DecidableEq β] {p : β → ℝ}
     (hp0 : p ≠ 0) (hp : 𝓑 *ᵥ p = 0) :
     connection% ((⟨area, ωs, T, 𝓑⟩ : NetModel α β) ∉ (netFamily α β).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -395,7 +395,7 @@ incidence matrix. -/
 
 /-- Three areas in a ring (`1 → 2 → 3 → 1`): the line-flow LFC model is not spectrally stable
 for any parameters. A negative membership in the family denotation. -/
-@[tmio TM, powerlib_foundation] theorem triangle_not_spectrallyStable (area : Fin 3 → Area) (ωs : ℝ)
+@[tmio TM, powerlib_domain] theorem triangle_not_spectrallyStable (area : Fin 3 → Area) (ωs : ℝ)
     (T : Fin 3 → ℝ) :
     connection% ((⟨area, ωs, T, Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0]⟩ : NetModel (Fin 3) (Fin 3)) ∉ (netFamily (Fin 3) (Fin 3)).den (.flow .globallyExponentiallyStable)) :=
   netModel_not_spectrallyStable (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
@@ -421,26 +421,26 @@ def netDiss (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
   ∑ a, ((netXi area z a - netGap area a * z (.inl a)) ^ 2 +
     netGap area a * (area a).B * z (.inl a) ^ 2) / (netGap area a + (area a).B)
 
-@[powerlib_foundation] theorem netA_mulVec_freq (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+@[powerlib_domain] theorem netA_mulVec_freq (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
     (netA area ωs T 𝓑 *ᵥ z) (.inl a) =
       (-((area a).D + (area a).K) * z (.inl a) - ∑ ℓ, 𝓑 a ℓ * z (.inr (.inl ℓ)) +
         z (.inr (.inr a))) / (area a).M := by
   have h := netField_freq (area := area) (ωs := ωs) (T := T) (𝓑 := 𝓑) z 0 a
   simpa [netField] using h
 
-@[powerlib_foundation] theorem netA_mulVec_tie (z : α ⊕ (β ⊕ α) → ℝ) (ℓ : β) :
+@[powerlib_domain] theorem netA_mulVec_tie (z : α ⊕ (β ⊕ α) → ℝ) (ℓ : β) :
     (netA area ωs T 𝓑 *ᵥ z) (.inr (.inl ℓ)) = ωs * T ℓ * ∑ c, 𝓑 c ℓ * z (.inl c) := by
   have h := netField_tie (area := area) (ωs := ωs) (T := T) (𝓑 := 𝓑) z 0 ℓ
   simpa [netField] using h
 
-@[powerlib_foundation] theorem netA_mulVec_agc (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+@[powerlib_domain] theorem netA_mulVec_agc (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
     (netA area ωs T 𝓑 *ᵥ z) (.inr (.inr a)) =
       -(area a).KI * (∑ ℓ, 𝓑 a ℓ * z (.inr (.inl ℓ)) + (area a).B * z (.inl a)) := by
   have h := netField_agc (area := area) (ωs := ωs) (T := T) (𝓑 := 𝓑) z 0 a
   simpa [netField] using h
 
 /-- AGC deviation of `A z`: `ξ(A z) = K_I (g − B) ω − K_I ξ`. -/
-@[powerlib_foundation] theorem netXi_mulVec (hM : ∀ a, (area a).M ≠ 0) (z : α ⊕ (β ⊕ α) → ℝ)
+@[powerlib_domain] theorem netXi_mulVec (hM : ∀ a, (area a).M ≠ 0) (z : α ⊕ (β ⊕ α) → ℝ)
     (a : α) :
     netXi area (netA area ωs T 𝓑 *ᵥ z) a =
       (area a).KI * (netGap area a - (area a).B) * z (.inl a) - (area a).KI * netXi area z a := by
@@ -449,7 +449,7 @@ def netDiss (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
   ring
 
 /-- **Energy identity**: `E(z, A z) = −Diss(z)` for every state vector `z`. -/
-@[powerlib_foundation] theorem netEnergy_mulVec (hM : ∀ a, (area a).M ≠ 0)
+@[powerlib_domain] theorem netEnergy_mulVec (hM : ∀ a, (area a).M ≠ 0)
     (hK : ∀ a, (area a).KI ≠ 0) (hgB : ∀ a, netGap area a + (area a).B ≠ 0)
     (hw : ∀ ℓ, ωs * T ℓ ≠ 0) (z : α ⊕ (β ⊕ α) → ℝ) :
     netEnergy area ωs T z (netA area ωs T 𝓑 *ᵥ z) = -netDiss area z := by
@@ -476,20 +476,20 @@ def netDiss (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
   ring
 
 omit [Fintype α] [DecidableEq α] [Fintype β] in
-@[powerlib_foundation] theorem netXi_combo (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+@[powerlib_domain] theorem netXi_combo (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
     netXi area (c • z₁ + d • z₂) a = c * netXi area z₁ a + d * netXi area z₂ a := by
   simp only [netXi, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
 omit [Fintype α] [DecidableEq α] [Fintype β] in
-@[powerlib_foundation] theorem netXi_sub (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+@[powerlib_domain] theorem netXi_sub (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
     netXi area (c • z₁ - d • z₂) a = c * netXi area z₁ a - d * netXi area z₂ a := by
   simp only [netXi, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
 omit [DecidableEq α] in
 /-- The storage is linear in its second argument. -/
-@[powerlib_foundation] theorem netEnergy_combo (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+@[powerlib_domain] theorem netEnergy_combo (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
     netEnergy area ωs T z (c • z₁ + d • z₂) =
       c * netEnergy area ωs T z z₁ + d * netEnergy area ωs T z z₂ := by
   unfold netEnergy
@@ -515,7 +515,7 @@ omit [DecidableEq α] in
   ring
 
 omit [DecidableEq α] in
-@[powerlib_foundation] theorem netEnergy_sub (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+@[powerlib_domain] theorem netEnergy_sub (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
     netEnergy area ωs T z (c • z₁ - d • z₂) =
       c * netEnergy area ωs T z z₁ - d * netEnergy area ωs T z z₂ := by
   rw [sub_eq_add_neg, ← neg_smul, netEnergy_combo]
@@ -523,7 +523,7 @@ omit [DecidableEq α] in
 
 omit [DecidableEq α] in
 /-- The storage is symmetric. -/
-@[powerlib_foundation] theorem netEnergy_comm (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+@[powerlib_domain] theorem netEnergy_comm (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
     netEnergy area ωs T z₁ z₂ = netEnergy area ωs T z₂ z₁ := by
   simp only [netEnergy]
   congr 1
@@ -534,7 +534,7 @@ omit [DecidableEq α] in
 
 omit [DecidableEq α] in
 /-- The storage is nonnegative under positive inertia, AGC gain, `g + B` and line coefficients. -/
-@[powerlib_foundation] theorem netEnergy_nonneg (hM : ∀ a, 0 ≤ (area a).M)
+@[powerlib_domain] theorem netEnergy_nonneg (hM : ∀ a, 0 ≤ (area a).M)
     (hK : ∀ a, 0 < (area a).KI) (hgB : ∀ a, 0 < netGap area a + (area a).B)
     (hw : ∀ ℓ, 0 < ωs * T ℓ) (z : α ⊕ (β ⊕ α) → ℝ) : 0 ≤ netEnergy area ωs T z z := by
   unfold netEnergy
@@ -546,7 +546,7 @@ omit [DecidableEq α] in
 
 omit [Fintype α] [DecidableEq α] [Fintype β] in
 /-- The dissipation is nonnegative under `g ≥ 0`, `B > 0`. -/
-@[powerlib_foundation] theorem netDiss_term_nonneg (hg : ∀ a, 0 ≤ netGap area a)
+@[powerlib_domain] theorem netDiss_term_nonneg (hg : ∀ a, 0 ≤ netGap area a)
     (hB : ∀ a, 0 < (area a).B) (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
     0 ≤ ((netXi area z a - netGap area a * z (.inl a)) ^ 2 +
       netGap area a * (area a).B * z (.inl a) ^ 2) / (netGap area a + (area a).B) := by
@@ -555,7 +555,7 @@ omit [Fintype α] [DecidableEq α] [Fintype β] in
 
 omit [DecidableEq α] [Fintype β] in
 /-- A vanishing dissipation forces `ξ = 0` and `g ω = 0` in every area. -/
-@[powerlib_foundation] theorem netDiss_eq_zero (hg : ∀ a, 0 ≤ netGap area a)
+@[powerlib_domain] theorem netDiss_eq_zero (hg : ∀ a, 0 ≤ netGap area a)
     (hB : ∀ a, 0 < (area a).B) {z : α ⊕ (β ⊕ α) → ℝ} (h : netDiss area z = 0) (a : α) :
     netXi area z a = 0 ∧ netGap area a * z (.inl a) = 0 := by
   have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun a _ => netDiss_term_nonneg hg hB z a).mp h a
@@ -584,7 +584,7 @@ omit [DecidableEq α] [Fintype β] in
 B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, every line has `ω_s T_ℓ > 0`, and `𝓑` has trivial
 kernel (radial graph), the line-flow state matrix is spectrally stable — for every tie-line
 strength and every radial topology. -/
-@[tmio TM, powerlib_foundation] theorem netA_spectrallyStable_of_gain [DecidableEq β]
+@[tmio TM, powerlib_domain] theorem netA_spectrallyStable_of_gain [DecidableEq β]
     (hM : ∀ a, 0 < (area a).M) (hK : ∀ a, 0 < (area a).KI) (hB : ∀ a, 0 < (area a).B)
     (hgain : ∀ a, (area a).KI * (area a).M ≤ (area a).D + (area a).K)
     (hw : ∀ ℓ, 0 < ωs * T ℓ) (hker : ∀ p : β → ℝ, 𝓑 *ᵥ p = 0 → p = 0) :
@@ -691,7 +691,7 @@ def twoAreaEquiv : Fin 2 ⊕ (Fin 1 ⊕ Fin 2) ≃ Fin 5 where
 /-- The two-area state matrix of `Frequency.LFC.plant` is the line-flow `N`-area matrix of the two
 areas and the single line `a → b` (`𝓑 = (1, −1)ᵀ`), relabelled. Static evidence on the model, not
 a connection conclusion. -/
-@[powerlib_foundation] theorem plant_A_eq_reindex (a b : Area) (ωs T : ℝ) :
+@[powerlib_domain] theorem plant_A_eq_reindex (a b : Area) (ωs T : ℝ) :
     (plant a b ωs T).A =
       (netA ![a, b] ωs (fun _ : Fin 1 => T) !![1; -1]).reindex twoAreaEquiv twoAreaEquiv := by
   ext i j
@@ -700,7 +700,7 @@ a connection conclusion. -/
 
 /-- **Gain condition, two areas.** With `M, K_I, B > 0` in both areas, `ω_s T > 0` and
 `K_I M ≤ D + K_R` in both areas, the five-state LFC matrix is Hurwitz. -/
-@[tmio TM, powerlib_foundation] theorem plant_isHurwitz_of_gain {a b : Area} {ωs T : ℝ}
+@[tmio TM, powerlib_domain] theorem plant_isHurwitz_of_gain {a b : Area} {ωs T : ℝ}
     (hMa : 0 < a.M) (hMb : 0 < b.M) (hKa : 0 < a.KI) (hKb : 0 < b.KI) (hBa : 0 < a.B)
     (hBb : 0 < b.B) (hga : a.KI * a.M ≤ a.D + a.K) (hgb : b.KI * b.M ≤ b.D + b.K)
     (hw : 0 < ωs * T) :

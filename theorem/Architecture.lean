@@ -449,7 +449,7 @@ def context (owners : Array Name := #[]) : MetaM Ctx := do
   let behaviour ← IO.mkRef {}
   return {time, spaces, signals, contains, behaviour, owners}
 
-/-- A public domain contract is a connection conclusion with no direct or aliased behaviour.
+/-- A public typed connection has no direct or aliased behaviour outside its endpoints.
 This function is also used on intentionally rejected foundation fixtures. -/
 def rejection (ctx : Ctx) (type : Expr) : MetaM (Option String) := do
   unless ← conclusionOnConnection type do
@@ -692,8 +692,6 @@ def declarationRejection (ctx : Ctx) (models : Array (Nat × Expr)) (name : Name
   let info ← getConstInfo name
   unless ← isProp info.type do return none
   if isPrivateName name then return none
-  if (← statement? info.type).isNone && Registry.kindOf? (← getEnv) name == some .domain then
-    return some "domain publication requires a typed connection Statement"
   publicTypeRejection ctx models info.type
 
 /-- Module feedback applies the same structural generic/model distinction as the complete

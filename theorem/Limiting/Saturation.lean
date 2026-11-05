@@ -93,7 +93,7 @@ private lemma abs_div_le_one {a b : ℝ} (hb : 0 < b) (h : |a| ≤ b) :
 
 /-- With `|P₀| ≤ min(P_sat, P_max)` the unsaturated and saturated curves intersect at the
 pre-fault operating point `(arcsin(P₀/P_max), P₀)` when `φ = φ_opt`. -/
-@[tmio M, powerlib_foundation] theorem phiOpt_intersection {P0 Psat Pmax : ℝ} (hsat : 0 < Psat)
+@[tmio M, powerlib_domain] theorem phiOpt_intersection {P0 Psat Pmax : ℝ} (hsat : 0 < Psat)
     (hmax : 0 < Pmax) (h1 : |P0| ≤ Psat) (h2 : |P0| ≤ Pmax) :
     Pmax * Real.sin (Real.arcsin (P0 / Pmax)) = P0 ∧
       Psat * Real.cos (Real.arcsin (P0 / Pmax) - phiOpt P0 Psat Pmax) = P0 := by
@@ -361,7 +361,7 @@ def SatModel.toSwing (m : SatModel) : Synchronous.Swing.Model :=
 
 /-- The saturated field is the swing field of `toSwing`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem satField_eq_swing (m : SatModel) :
+@[powerlib_domain] theorem satField_eq_swing (m : SatModel) :
     satField m.M m.D m.Pref m.Psat m.φ = m.toSwing.p.field := by
   funext x
   ext i

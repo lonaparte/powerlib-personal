@@ -106,7 +106,7 @@ def model : Plant 4 2 :=
     !![1, 0, 0, 0; 0, 1, 0, 0], 0⟩
 
 /-- The plant is the physical loop for every PCC voltage `v` (exact cancellation). -/
-@[tmio M, powerlib_foundation] theorem model_field (hL : p.base.L ≠ 0) (v iref : Fin 2 → ℝ)
+@[tmio M, powerlib_domain] theorem model_field (hL : p.base.L ≠ 0) (v iref : Fin 2 → ℝ)
     (x : ℝ⁴) : p.model.inputField iref x = p.field v iref x := by
   ext j
   fin_cases j <;>
@@ -114,7 +114,7 @@ def model : Plant 4 2 :=
       Matrix.mulVec, dotProduct, Fin.sum_univ_four, Fin.sum_univ_two] <;> field_simp <;> ring
 
 /-- Mismatch residual in the L-equation (case A): `ω L i_q − ω L̂ i_q = ω ΔL i_q`. -/
-@[powerlib_foundation] theorem residual_d (iq : ℝ) :
+@[powerlib_domain] theorem residual_d (iq : ℝ) :
     p.ω * p.base.L * iq - p.ω * p.Lhat * iq = p.ω * p.ΔL * iq := by
   simp only [ΔL]
   ring
@@ -244,7 +244,7 @@ private lemma det_four (a b c s : ℂ) :
 
 /-- Characteristic polynomial: `det(sI − A) = p(s) p̄(s) / L²` with
 `p(s) = L s² + (R + Kp + j ω ΔL) s + Ki`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix (hL : p.base.L ≠ 0) (s : ℂ) :
+@[powerlib_domain] theorem det_characteristicMatrix (hL : p.base.L ≠ 0) (s : ℂ) :
     (characteristicMatrix p.model.A s).det =
       ((p.base.L : ℂ) * s ^ 2 + (p.base.R + p.base.Kp + p.ω * p.ΔL * Complex.I) * s +
           p.base.Ki) *
@@ -262,7 +262,7 @@ def equilibrium (iref : Fin 2 → ℝ) : ℝ⁴ :=
   WithLp.toLp 2 ![iref 0, iref 1, (p.base.R * iref 0 - p.ω * p.ΔL * iref 1) / p.base.Ki,
     (p.base.R * iref 1 + p.ω * p.ΔL * iref 0) / p.base.Ki]
 
-@[powerlib_foundation] theorem isEquilibrium (hL : p.base.L ≠ 0) (hKi : p.base.Ki ≠ 0)
+@[powerlib_domain] theorem isEquilibrium (hL : p.base.L ≠ 0) (hKi : p.base.Ki ≠ 0)
     (iref : Fin 2 → ℝ) : IsEquilibrium (p.model.inputField iref) (p.equilibrium iref) := by
   ext j
   fin_cases j <;>
@@ -274,7 +274,7 @@ def equilibrium (iref : Fin 2 → ℝ) : ℝ⁴ :=
 
 /-- Every equilibrium has zero current error `i = i*`, whatever the mismatch. Static evidence on
 the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem equilibrium_current {iref : Fin 2 → ℝ} {e : ℝ⁴}
+@[powerlib_domain] theorem equilibrium_current {iref : Fin 2 → ℝ} {e : ℝ⁴}
     (he : IsEquilibrium (p.model.inputField iref) e) : e 0 = iref 0 ∧ e 1 = iref 1 := by
   have h2 := congrArg (fun z : ℝ⁴ => z 2) he
   have h3 := congrArg (fun z : ℝ⁴ => z 3) he
@@ -295,18 +295,18 @@ plant. -/
 def family : Family MismatchParams Spectral.Requirement 4 2 :=
   Spectral.linearFamily model Stable Unstable
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear model :=
+@[powerlib_domain] theorem family_isLinear : family.IsLinear model :=
   Spectral.linearFamily_isLinear _ _ _
 
 /-- The mismatched loop is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`, for every `ω` and `ΔL`. Read through the family denotation. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (hL : 0 < p.base.L) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.base.L) :
     connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.base.R + p.base.Kp ∧ 0 < p.base.Ki) := by
   unfold TMIO.Statement
   rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
   change IsHurwitz (stateMatrix _ _ _) ↔ _
   rw [stateMatrix_isHurwitz_iff, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_stable :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff_stable :
     connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔ p.Stable) := by
   unfold TMIO.Statement
   rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]

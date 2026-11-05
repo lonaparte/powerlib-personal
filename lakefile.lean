@@ -50,6 +50,7 @@ target powerlib pkg : Unit := do
       String.intercalate ", " names.toList ++ "]\n"
     -- Audit the actual Lake module inventory, including newly added modules not
     -- yet imported by the public umbrella. Categories come from source attributes.
+    text := text ++ "run_cmd powerlib.Registry.auditCompatibilityInEnvironment\n"
     text := text ++ "run_cmd powerlib.Knowledge.auditEnvironment\n"
     -- The collected jobs trace every built module, including the checker.
     -- Also trace the inventory itself, so adding or removing a module reruns

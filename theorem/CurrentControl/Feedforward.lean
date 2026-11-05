@@ -134,7 +134,7 @@ def ffField (vff v iref : ℝ) (x : ℝ²) : ℝ² :=
   WithLp.toLp 2 ![(v - (-p.control iref x + vff) - p.R * x 0) / p.L, iref - x 0]
 
 /-- With `v^ff = v` the PCC voltage disappears from the closed loop. -/
-@[powerlib_foundation] theorem idealFeedforward_field (v iref : ℝ) (x : ℝ²) :
+@[powerlib_domain] theorem idealFeedforward_field (v iref : ℝ) (x : ℝ²) :
     p.ffField v v iref x = p.field iref x := by
   ext j
   fin_cases j <;> simp [ffField, field]
@@ -152,7 +152,7 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
   ⟨!![-(p.R + p.Kp) / p.L, p.Ki / p.L, -1 / p.L; -1, 0, 0; 0, 0, -1 / τ],
     !![p.Kp / p.L, 1 / p.L; 1, 0; 0, 1 / τ], !![1, 0, 0; 0, 0, 1], 0⟩
 
-@[powerlib_foundation] theorem lpfModel_field (τ iref v : ℝ) (x : ℝ³) :
+@[powerlib_domain] theorem lpfModel_field (τ iref v : ℝ) (x : ℝ³) :
     (p.lpfModel τ).inputField ![iref, v] x = p.lpfField τ iref v x := by
   ext j
   fin_cases j <;>
@@ -160,7 +160,7 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
       Fin.sum_univ_three] <;> ring
 
 /-- Block-triangular characteristic polynomial: PI loop times `(s + 1/τ)`. -/
-@[powerlib_foundation] theorem lpf_det_characteristicMatrix (τ : ℝ) (s : ℂ) :
+@[powerlib_domain] theorem lpf_det_characteristicMatrix (τ : ℝ) (s : ℂ) :
     (characteristicMatrix (p.lpfModel τ).A s).det =
       (characteristicMatrix p.model.A s).det * (s + ((1 / τ : ℝ) : ℂ)) := by
   simp only [model, LTI.det_characteristicMatrix_of]
@@ -168,7 +168,7 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
   ring
 
 /-- Spectrum: the PI-loop roots together with `−1/τ`. -/
-@[powerlib_foundation] theorem characteristic_root_iff (τ : ℝ) (s : ℂ) :
+@[powerlib_domain] theorem characteristic_root_iff (τ : ℝ) (s : ℂ) :
     (characteristicMatrix (p.lpfModel τ).A s).det = 0 ↔
       (characteristicMatrix p.model.A s).det = 0 ∨ s = ((-1 / τ : ℝ) : ℂ) := by
   rw [p.lpf_det_characteristicMatrix, mul_eq_zero]
@@ -179,7 +179,7 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
 
 /-- A right-half-plane root of the PI loop or a negative time constant gives a right-half-plane
 root of the feedforward loop. -/
-@[powerlib_foundation] theorem lpf_exists_root_of_unstable {τ : ℝ}
+@[powerlib_domain] theorem lpf_exists_root_of_unstable {τ : ℝ}
     (h : ((p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0) ∨ τ < 0) :
     ∃ s : ℂ, (characteristicMatrix (p.lpfModel τ).A s).det = 0 ∧ 0 < s.re := by
   rcases h with h | h
@@ -192,7 +192,7 @@ root of the feedforward loop. -/
 /-- Equilibrium for constant `i*`, `v`: `(i*, R i*/Ki, v)`. -/
 def lpfEquilibrium (iref v : ℝ) : ℝ³ := WithLp.toLp 2 ![iref, p.R * iref / p.Ki, v]
 
-@[powerlib_foundation] theorem lpf_isEquilibrium (hKi : p.Ki ≠ 0) (τ iref v : ℝ) :
+@[powerlib_domain] theorem lpf_isEquilibrium (hKi : p.Ki ≠ 0) (τ iref v : ℝ) :
     IsEquilibrium ((p.lpfModel τ).inputField ![iref, v]) (p.lpfEquilibrium iref v) := by
   rw [IsEquilibrium, lpfModel_field]
   ext j
@@ -224,7 +224,7 @@ def Unstable (q : LPFLoop) : Prop := q.pi.Unstable ∨ q.τ < 0
 def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
   Spectral.linearFamily plant Stable Unstable
 
-@[powerlib_foundation] theorem lpfFamily_isLinear : lpfFamily.IsLinear plant :=
+@[powerlib_domain] theorem lpfFamily_isLinear : lpfFamily.IsLinear plant :=
   Spectral.linearFamily_isLinear _ _ _
 
 end LPFLoop
@@ -232,7 +232,7 @@ end LPFLoop
 namespace PIParams
 
 /-- The low-pass feedforward loop is Hurwitz iff the PI loop is and `τ > 0`. A comparison of the two family denotations. -/
-@[tmio TM, powerlib_foundation] theorem lpf_isHurwitz_iff (p : PIParams) (τ : ℝ) :
+@[tmio TM, powerlib_domain] theorem lpf_isHurwitz_iff (p : PIParams) (τ : ℝ) :
     connection% ((⟨p, τ⟩ : LPFLoop) ∈ LPFLoop.lpfFamily.den (.flow .globallyExponentiallyStable) ↔
       p ∈ PIParams.family.den (.flow .globallyExponentiallyStable) ∧
         (⟨p, τ⟩ : LPFLoop) ∈ {q : LPFLoop | 0 < q.τ}) := by
@@ -256,7 +256,7 @@ end PIParams
 
 namespace LPFLoop
 
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_stable (q : LPFLoop) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff_stable (q : LPFLoop) :
     connection% (q ∈ lpfFamily.den (.flow .globallyExponentiallyStable) ↔ q ∈ TMIO.realize lpfFamily.meets {.stable}) := by
   unfold TMIO.Statement
   rw [(connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]

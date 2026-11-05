@@ -159,7 +159,7 @@ def rigField (y : Rig) (x : State 4) : State 4 :=
 def Rig.field (y : Rig) (z : State 4) : State 4 := rigField y (z + y.point)
 
 /-- Static evidence on the implementation, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem contDiff_rigField (y : Rig) {k : WithTop ℕ∞} :
+@[tmio M, powerlib_domain] theorem contDiff_rigField (y : Rig) {k : WithTop ℕ∞} :
     ContDiff ℝ k (rigField y) := by
   rw [contDiff_euclidean]
   intro i
@@ -167,7 +167,7 @@ def Rig.field (y : Rig) (z : State 4) : State 4 := rigField y (z + y.point)
 
 /-- The Jacobian of the platform at its operating point is `Rig.jacobian`. Static evidence on the
 implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem hasFDerivAt_rigField (y : Rig) :
+@[powerlib_domain] theorem hasFDerivAt_rigField (y : Rig) :
     HasFDerivAt (rigField y) (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) y.jacobian) y.point := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -204,7 +204,7 @@ implementation, not a connection conclusion. -/
 
 /-- The operating point is an equilibrium of the platform exactly when the design angle is
 balanced. Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem rigField_point_eq_zero_iff (y : Rig) (hω : y.design.g.ωc ≠ 0) :
+@[powerlib_domain] theorem rigField_point_eq_zero_iff (y : Rig) (hω : y.design.g.ωc ≠ 0) :
     rigField y y.point = 0 ↔ Meets y.design .balanced := by
   show _ ↔ y.design.g.K0 * Real.sin y.design.δ = y.design.g.P0
   constructor
@@ -297,7 +297,7 @@ def rigTranslate : Sentence → Set RigRequirement
 def rigFamily : Family Rig RigRequirement 4 0 :=
   ⟨fun y => Port.System.autonomous y.field, RigMeets, rigTranslate⟩
 
-@[powerlib_foundation] theorem rigFamily_isAutonomous : rigFamily.IsAutonomous Rig.field :=
+@[powerlib_domain] theorem rigFamily_isAutonomous : rigFamily.IsAutonomous Rig.field :=
   fun _ => rfl
 
 /-! ### Implementation evidence (private) -/

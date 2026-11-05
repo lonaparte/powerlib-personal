@@ -35,19 +35,22 @@ requirements, and [Architecture.md](Architecture.md) for generated connections,
 admission and proved completion boundaries. [Layers.md](Layers.md) defines T and M
 knowledge nodes, T–M/M–I/I–O relations, their endpoints and classification queries.
 
-Public model results use `connection% (ordinary proposition)`. The resulting
+Public model behavioural results use `connection% (ordinary proposition)`. The resulting
 `TMIO.Statement` carries a kernel-checked certificate that the conclusion evaluates
 or compares generated connections. Each public typed connection theorem in
 `theorem/` also carries exactly one `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`,
 `@[tmio MI]` or `@[tmio IO]` attribute. These source attributes are the only
 classification source; no separate catalog or handwritten theorem-to-kind list is
-maintained. The current review covers 2,925 theorems, including all 1,043 public
-connections and 1,882 ordinary theorems; 111 classified helpers are private.
-The remaining 4,959 theorems are unclassified. Labels record individual statement
+maintained. The queries below report current coverage, including private helpers.
+Labels record individual statement
 reviews; a module's role does not supply a default class for its declarations.
-Foundation/domain annotations remain optional, independent presentation metadata.
+Foundation/domain annotations remain optional. Foundation permits T/M/TM; domain
+permits M/TM/MI/IO. Both M and TM can belong to either class, according to the
+statement's mathematical or engineering content. Connection structure does not
+assign domain, and static domain model identities need no connection wrapper.
 The attribute checks enforce theorem targets, allowed kinds and unique assignment;
-they do not prove semantic classification or change mathematical admission.
+module and environment audits reject incompatible explicit pairs. These checks
+do not prove semantic classification or change mathematical admission.
 Use one attribute block per declaration, such as `@[tmio TM, powerlib_domain]`.
 
 For source queries without starting Lean or building dependencies, run:

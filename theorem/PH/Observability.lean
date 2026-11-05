@@ -117,7 +117,7 @@ def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
 def losslessLC : Port.PortHamiltonian 2 1 :=
   toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one
 
-@[powerlib_foundation] theorem losslessLC_plant :
+@[powerlib_domain] theorem losslessLC_plant :
     losslessLC.plant = linearLTIModel losslessJ 0 losslessG 1 := rfl
 
 /-- The lossless loop is passive (storage `H = ½ |x|²`). -/
@@ -132,7 +132,7 @@ def losslessLC : Port.PortHamiltonian 2 1 :=
 
 /-- The lossless loop is (zero-state) observable from the loop current.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem losslessLC_observable :
+@[powerlib_domain] theorem losslessLC_observable :
     LinearSystems.IsObservable (linearLTIModel losslessJ 0 losslessG 1).A
       (linearLTIModel losslessJ 0 losslessG 1).C := by
   intro x hx
@@ -180,7 +180,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The lossless loop lies outside the locally asymptotically stable denotation,
 equivalently its state matrix is not Hurwitz (trace zero). -/
-@[tmio TM, powerlib_foundation] theorem losslessLC_not_isHurwitz :
+@[tmio TM, powerlib_domain] theorem losslessLC_not_isHurwitz :
     connection% (losslessLC ∉
       Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
@@ -200,7 +200,7 @@ equivalently its state matrix is not Hurwitz (trace zero). -/
 
 /-- Correction of T-ph Part 2: passivity together with zero-state observability does **not**
 give asymptotic stability, on the semantics connection of the linear port-Hamiltonian family. -/
-@[tmio TM, powerlib_domain] theorem passive_observable_not_asymptotic :
+@[tmio TM, powerlib_foundation] theorem passive_observable_not_asymptotic :
     connection% (¬ ∀ h : Port.PortHamiltonian 2 1,
       h ∈ Port.PortHamiltonian.family.den .passive →
         LinearSystems.IsObservable h.plant.A h.plant.C →
@@ -296,7 +296,7 @@ def phOutputFeedback (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fin
 
 /-- Damping injection `u = −k y` (`k > 0`) on an observable linear pH system: the unforced
 closed loop `ẋ = (J − (R + k g gᵀ)) Q x` is globally exponentially stable. -/
-@[tmio TM, powerlib_domain] theorem phOutputFeedback_mem_den_globallyExponentiallyStable (hJ : Jᵀ = -J)
+@[tmio TM, powerlib_foundation] theorem phOutputFeedback_mem_den_globallyExponentiallyStable (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) (hk : 0 < k)
     (hobs : LinearSystems.IsObservable (linearStateMatrix J R Q) (gᵀ * Q)) :
     connection% (phOutputFeedback J R g Q k hJ hR hQ hk.le ∈

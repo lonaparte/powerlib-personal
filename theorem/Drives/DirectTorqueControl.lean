@@ -80,7 +80,7 @@ open powerlib.Transform.SpaceVector
 /-- **Load-angle torque of the induction machine.** With
 `ψ_s = |ψ_s| e^{jθ_s}`, `ψ_r = |ψ_r| e^{jθ_r}`:
 `T_e = (3/2) np (L_m/(σ L_s L_r)) |ψ_s| |ψ_r| sin(θ_s − θ_r)`. -/
-@[powerlib_foundation] theorem torque_loadAngle_IM (p : InductionMachine.Params) (hLr : p.Lr ≠ 0)
+@[powerlib_domain] theorem torque_loadAngle_IM (p : InductionMachine.Params) (hLr : p.Lr ≠ 0)
     (hσ : p.sigma * p.Ls ≠ 0) (np : ℝ) (is ir : ℂ) (ρs θs ρr θr : ℝ)
     (hs : InductionMachine.statorFlux p is ir = ⟨ρs * Real.cos θs, ρs * Real.sin θs⟩)
     (hr : InductionMachine.rotorFlux p is ir = ⟨ρr * Real.cos θr, ρr * Real.sin θr⟩) :

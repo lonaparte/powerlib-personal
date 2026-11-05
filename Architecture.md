@@ -123,16 +123,18 @@ Coordinates, per-unit bases and the current direction are then instances, not se
 `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`, `@[tmio MI]` and `@[tmio IO]`.
 Each reviewed public connection theorem has exactly one. The attributes are the
 sole classification source; queries rebuild their index without a separate
-catalog or handwritten theorem-to-kind regression list. The current source coverage
-is 2,925 theorems in 405 modules (T 1,701, M 335, T–M 760, M–I 102, I–O 27), including
-111 private helpers. All 1,043 public connections remain covered; 1,882 ordinary
-theorems have been individually reviewed and annotated. The remaining 4,959
-theorems are unclassified. Reviewing a module does not classify every theorem in it.
+catalog or handwritten theorem-to-kind regression list. Compute current coverage
+with the queries below. Reviewing a module does not classify every theorem in it.
 
 The attribute implementation rejects non-theorem targets, unknown kinds and
 second assignments. It records a reviewed semantic judgment; it does not infer
-or prove that judgment. Foundation/domain metadata, mathematical admission and
-the kernel's proof checking remain independent.
+or prove that judgment. `theorem/Attributes.lean` enforces the compatibility matrix:
+foundation accepts T/M/TM, and domain accepts M/TM/MI/IO. It checks both attribute
+orders and delayed assignments at module boundaries, including private theorems;
+the mandatory build and `#tmio_check` check imported pairs as well. Missing metadata
+remains optional. These necessary constraints do not prove the semantic judgment.
+Connection structure neither assigns domain nor follows from a domain label.
+Structural admission and the kernel's proof checking still apply independently.
 Existing attributes and `tmio` share a single `@[...]` block; the source preflight
 also rejects consecutive blocks, which Lean's declaration parser does not accept.
 

@@ -90,7 +90,7 @@ def planeH (y : State 4) : ℝ := (p.I0 + 3 / 2 * p.dP2 y) / p.Cdc
 `V_dc V_dc' = q`, `q' = G + H q / V_dc` near the plane. -/
 def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
 
-@[tmio M, powerlib_foundation] theorem hasFDerivAt_planeQ (y : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_planeQ (y : State 4) :
     HasFDerivAt p.planeQ (row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc)
       (3 / 2 * p.dP3 y / p.Cdc)) y := by
   have h := (((Dynamics.hasFDerivAt_coord 2 y).const_mul p.I0).add
@@ -101,17 +101,17 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
     ring
   · simp [planeQ, div_eq_mul_inv]
 
-@[powerlib_foundation] theorem contDiff_planeQ : ContDiff ℝ 1 p.planeQ := by
+@[powerlib_domain] theorem contDiff_planeQ : ContDiff ℝ 1 p.planeQ := by
   unfold planeQ
   exact ((contDiff_const.mul (Dynamics.contDiff_coord 2)).add
     (contDiff_const.mul p.contDiff_pccP)).div_const _
 
-@[powerlib_foundation] theorem planeQ_eq_zero {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0) :
+@[powerlib_domain] theorem planeQ_eq_zero {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0) :
     p.planeQ x = 0 := by
   simp [planeQ, hx, hP]
 
 /-- Off the plane the DC-link component of the field is `q / V_dc`. -/
-@[powerlib_foundation] theorem field_two_eq_planeQ_div {y : State 4} (hy : y 2 ≠ 0) :
+@[powerlib_domain] theorem field_two_eq_planeQ_div {y : State 4} (hy : y 2 ≠ 0) :
     p.field y 2 = p.planeQ y / y 2 := by
   have h : p.field y 2 = (p.I0 + 3 * p.pccP y / (2 * y 2)) / p.Cdc := by
     simp [field, pccP]
@@ -119,26 +119,26 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
   field_simp
 
 /-- `dq/dt = G + H q / V_dc` off the plane. -/
-@[powerlib_foundation] theorem planeQ_lie {y : State 4} (hy : y 2 ≠ 0) :
+@[powerlib_domain] theorem planeQ_lie {y : State 4} (hy : y 2 ≠ 0) :
     fderiv ℝ p.planeQ y (p.field y) = p.planeG y + p.planeH y * (p.planeQ y / y 2) := by
   rw [(p.hasFDerivAt_planeQ y).fderiv, ← p.field_two_eq_planeQ_div hy]
   simp only [row4_apply, planeG, planeH]
   ring
 
-@[powerlib_foundation] theorem continuous_planeG : Continuous p.planeG := by
+@[powerlib_domain] theorem continuous_planeG : Continuous p.planeG := by
   show Continuous fun y : State 4 => 3 / 2 * (p.dP0 y *
     (p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1) +
       p.dP3 y * (p.VdcRef - y 2)) / p.Cdc
   unfold dP0 dP3 vgq vgd idRef
   fun_prop
 
-@[powerlib_foundation] theorem continuous_planeH : Continuous p.planeH := by
+@[powerlib_domain] theorem continuous_planeH : Continuous p.planeH := by
   unfold planeH dP2 vgd idRef
   fun_prop
 
 /-- A `C¹` field equal to model B on the half space `σ V_dc ≥ s` (`σ = ±1`, `s > 0`): the
 denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
-@[powerlib_foundation] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
+@[powerlib_domain] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
     {s : ℝ} (hs : 0 < s) :
     ∃ g : State 4 → State 4, ContDiff ℝ 1 g ∧
       ∀ y : State 4, s ≤ σ * y 2 → g y = p.field y := by

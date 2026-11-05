@@ -114,7 +114,7 @@ telegrapher operator is `1/c²` times the factored operator. -/
 
 /-- **Distortionless line**: attenuated travelling waves `e^{−τ_d t}(f(x − ct) ± g(x + ct))`
 solve the lossy telegrapher equations with `R' = τ_d L'`, `G' = τ_d C'`. -/
-@[powerlib_foundation] theorem distortionless_isSolution (p : LosslessLine) (τ : ℝ)
+@[powerlib_domain] theorem distortionless_isSolution (p : LosslessLine) (τ : ℝ)
     {f g f' g' : ℝ → ℝ} (hf : ∀ y, HasDerivAt f (f' y) y) (hg : ∀ y, HasDerivAt g (g' y) y)
     (a b : ℝ) :
     IsTelegrapherSolution p.L p.C (τ * p.L) (τ * p.C) a b

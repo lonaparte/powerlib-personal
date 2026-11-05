@@ -166,7 +166,7 @@ the Routh conditions hold (a strict violation gives instability). -/
 def hopfCenter : Model :=
   ⟨⟨0, 0, 1, 1, 3 / 2, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
-@[tmio M, powerlib_foundation] theorem hopfCenter_field (y : State 4) (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem hopfCenter_field (y : State 4) (hy : y 2 ≠ 0) :
     hopfCenter.p.field y = WithLp.toLp 2 ![-Real.sin (y 0) + y 1, -Real.sin (y 0),
       Real.cos (y 0) * y 3 / y 2, 1 - y 2] := by
   ext i
@@ -205,7 +205,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
 
 /-- The Lie derivative of the energy along the undamped loop:
 `−sin² Δθ − σ (V_dc − 1) ξ_v (1 − cos Δθ)`. -/
-@[powerlib_foundation] theorem centerEnergy_lie (σ : ℝ) (y : State 4) (hy : y 2 ≠ 0) :
+@[powerlib_domain] theorem centerEnergy_lie (σ : ℝ) (y : State 4) (hy : y 2 ≠ 0) :
     fderiv ℝ (centerEnergy σ) y (hopfCenter.p.field y) =
       -Real.sin (y 0) ^ 2 - σ * ((y 2 - 1) * y 3 * (1 - Real.cos (y 0))) := by
   rw [(hasFDerivAt_centerEnergy σ y).fderiv, hopfCenter_field y hy]
@@ -213,7 +213,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
   field_simp
   ring
 
-@[powerlib_foundation] theorem hopfCenter_x : hopfCenter.x = WithLp.toLp 2 ![0, 0, 1, 0] := rfl
+@[powerlib_domain] theorem hopfCenter_x : hopfCenter.x = WithLp.toLp 2 ![0, 0, 1, 0] := rfl
 
 /-- Near `x*` the coupling term is dominated by the PLL damping: for `‖y − x*‖ < 1/2`,
 `fderiv (centerEnergy σ) y (f y) ≤ 0` for `σ = ±1`. -/
@@ -562,10 +562,10 @@ The PLL is decoupled and damped; the DC loop has a Hopf-type linearization (pure
 def hopfDamped : Model :=
   ⟨⟨0, 0, 1, 1, 3 / 2, -3 / 2, 1, -1, 1, 3, 2, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 1 / 2]⟩
 
-@[powerlib_foundation] theorem hopfDamped_x : hopfDamped.x = WithLp.toLp 2 ![0, 0, 1, 1 / 2] :=
+@[powerlib_domain] theorem hopfDamped_x : hopfDamped.x = WithLp.toLp 2 ![0, 0, 1, 1 / 2] :=
   rfl
 
-@[powerlib_foundation] theorem hopfDamped_field (y : State 4) (hy : y 2 ≠ 0) :
+@[powerlib_domain] theorem hopfDamped_field (y : State 4) (hy : y 2 ≠ 0) :
     hopfDamped.p.field y = WithLp.toLp 2 ![-3 * Real.sin (y 0) + y 1, -3 * Real.sin (y 0),
       -1 + (3 * Real.cos (y 0) - 2 * (y 2 - 1 + y 3)) * (y 2 - 1 + y 3) / y 2, 1 - y 2] := by
   ext i
@@ -579,7 +579,7 @@ def hopfDamped : Model :=
 
 /-- The Lie derivative of `dampedEnergy`, multiplied by `V_dc`, as a polynomial in
 `s = sin Δθ`, `c = cos Δθ`, `x_pll`, `w = V_dc − 1`, `ξ = ξ_v − 1/2`. -/
-@[powerlib_foundation] theorem dampedEnergy_lie (y : State 4) (hy : y 2 ≠ 0) :
+@[powerlib_domain] theorem dampedEnergy_lie (y : State 4) (hy : y 2 ≠ 0) :
     y 2 * fderiv ℝ dampedEnergy y (hopfDamped.p.field y) =
       y 2 * (-6 * Real.sin (y 0) ^ 2 + 3 * Real.cos (y 0) * Real.sin (y 0) * y 1 -
           Real.cos (y 0) * y 1 ^ 2) +
@@ -887,7 +887,7 @@ boundary. Off the boundary the translation is exact
 /-! ## The witnesses lie on the Routh boundary -/
 
 /-- The three boundary witnesses are equilibria with positive DC-voltage reference. -/
-@[tmio M, powerlib_foundation] theorem boundaryWitnesses_mem_realize :
+@[tmio M, powerlib_domain] theorem boundaryWitnesses_mem_realize :
     connection% ({hopfCenter, hopfDamped, cdcZero} ⊆
       TMIO.realize Meets {.equilibrium, .positiveReference}) := by
   unfold powerlib.TMIO.Statement
@@ -905,7 +905,7 @@ boundary. Off the boundary the translation is exact
 
 /-- None of the three boundary witnesses is off the 4×4 Routh boundary: their Jacobians neither
 meet the Routh conditions nor violate them strictly. -/
-@[tmio M, powerlib_foundation] theorem boundaryWitnesses_not_mem_realize_offBoundary :
+@[tmio M, powerlib_domain] theorem boundaryWitnesses_not_mem_realize_offBoundary :
     connection% ({hopfCenter, hopfDamped, cdcZero} ⊆
       (TMIO.realize Meets {.offBoundary})ᶜ) := by
   unfold powerlib.TMIO.Statement

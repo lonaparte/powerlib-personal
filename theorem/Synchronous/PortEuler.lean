@@ -110,7 +110,7 @@ private theorem family_isPort : family.IsPort fun m => m.toPH.system :=
 /-- The centred zero-input field of a classical machine is `C¹` near the origin: the smoothness
 hypothesis of the generic Euler laws for port systems
 (`Numerics.eulerPorts_sound_small_step_local`). -/
-@[powerlib_foundation] theorem contDiffAt_zeroInput (m : Model) :
+@[powerlib_domain] theorem contDiffAt_zeroInput (m : Model) :
     ContDiffAt ℝ 1 m.toPH.system.zeroInput 0 :=
   Numerics.contDiffAt_shift (g := (classicalSM m.p).zeroInputField) (x₀ := m.point)
     ((classicalSM m.p).contDiff_zeroInputField (fun _ _ => contDiff_const)
@@ -177,7 +177,7 @@ namespace powerlib.Synchronous
 /-- Vacuous soundness: when no model of a family of port systems is locally exponentially stable,
 no Euler implementation is certified for it, so the realization is sound without a step
 constraint. -/
-@[tmio MI] private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
+@[tmio T, powerlib_foundation] private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
     {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}
     (h : ∀ x, x ∉ F.den (.flow .locallyExponentiallyStable)) :
     connection% ((Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅

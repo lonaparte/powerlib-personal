@@ -371,7 +371,7 @@ namespace Params
 variable (p : Params)
 
 /-- `h(θ) = c₀ − A sin(θ + φ)` is `A`-Lipschitz. -/
-@[tmio M, powerlib_foundation] theorem lipschitzWith_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[tmio M, powerlib_domain] theorem lipschitzWith_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     LipschitzWith ⟨p.amp, (p.amp_pos hVg hΔ).le⟩ p.h := by
   refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [Real.dist_eq, Real.dist_eq, p.h_eq_polar hwC hΔ, p.h_eq_polar hwC hΔ]
@@ -386,7 +386,7 @@ variable (p : Params)
         rw [show y + p.phase - (x + p.phase) = -(x - y) by ring, abs_neg]
 
 /-- The zeros of `h` are isolated (at most two per period, `V_g > 0`). -/
-@[powerlib_foundation] theorem h_zero_isolated (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
+@[powerlib_domain] theorem h_zero_isolated (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
     (θ : ℝ) : ∀ᶠ θ' in 𝓝[≠] θ, p.h θ' ≠ 0 := by
   set Z := SpecialFunctions.sinusoidZeros p.c0 p.amp p.phase (θ - π)
   have hfin : Z.Finite :=
@@ -416,7 +416,7 @@ private theorem reduced_tendsto_equilibrium_of_bounded (hwC : p.wC ≠ 0)
 /-- A1, node / focus: at a point with slope `g = h′(θ*) = −A cos(θ* + φ) < 0` the Jacobian of the
 reduced field (computed with `fderiv`) is `[[K_p g, K_i], [g, 0]]`, and all its eigenvalues are
 real (stable node) iff `|g| ≥ 4 K_i / K_p²`; otherwise it has a non-real pair (stable focus). -/
-@[powerlib_foundation] theorem reduced_node_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : p.Kp ≠ 0)
+@[powerlib_domain] theorem reduced_node_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : p.Kp ≠ 0)
     {θ η : ℝ} (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
     fderiv ℝ p.reducedField (PhasePlane.mk θ η) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)

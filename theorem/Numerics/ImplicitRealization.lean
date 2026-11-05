@@ -107,7 +107,7 @@ variable {F : Family X Q n p} {plant : X → Linear.Plant n p}
   {design : Y → X} {step : Y → ℝ}
 
 /-- Positive-step implicit discretizations preserve every attractive design sentence. -/
-@[tmio MI, powerlib_foundation] theorem implicit_mem_den_of_design
+@[tmio TM, powerlib_foundation] theorem implicit_mem_den_of_design
     (method : ImplicitMethod) (hF : F.IsLinear plant) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) {y : Y} (hh : 0 < step y)
     (hy : design y ∈ F.den (.flow P)) :
@@ -120,7 +120,7 @@ variable {F : Family X Q n p} {plant : X → Linear.Plant n p}
   | backwardEuler => exact backwardEuler_schurStable_of_isHurwitz hA hh
 
 /-- Stability of the continuous design ensures that the implicit equation has a unique step. -/
-@[tmio MI, powerlib_foundation] theorem implicit_mem_wellPosed_of_design
+@[tmio TM, powerlib_foundation] theorem implicit_mem_wellPosed_of_design
     (method : ImplicitMethod) (hF : F.IsLinear plant) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) {y : Y} (hh : 0 < step y)
     (hy : design y ∈ F.den (.flow P)) :
@@ -135,7 +135,7 @@ variable {F : Family X Q n p} {plant : X → Linear.Plant n p}
 
 /-- The well-posed trapezoidal implementation and its design satisfy the same attractive
 sentence. This is a comparison of two relative roles, not just the platform's own criterion. -/
-@[tmio MI, powerlib_foundation] theorem trapezoidal_mem_den_iff_design
+@[tmio TM, powerlib_foundation] theorem trapezoidal_mem_den_iff_design
     (hF : F.IsLinear plant) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive)
     {y : Y} (hh : 0 < step y)
     (hw : ImplicitMethod.trapezoidal.WellPosed (step y) (plant (design y)).A) :
@@ -147,7 +147,7 @@ sentence. This is a comparison of two relative roles, not just the platform's ow
   exact (trapezoidal_schurStable_iff_isHurwitz hh hw).trans (hF.mem_den_hurwitz hP).symm
 
 /-- Trapezoidal realization is exact where the step is positive and well posed. -/
-@[tmio MI, powerlib_foundation] theorem trapezoidal_realizationExactUnder
+@[tmio TM, powerlib_foundation] theorem trapezoidal_realizationExactUnder
     (hF : F.IsLinear plant) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% ((implicitRealization .trapezoidal F plant design step).RealizationExactUnder
       {.positiveStep, .wellPosed} (.flow P)) := by
@@ -166,7 +166,7 @@ sentence. This is a comparison of two relative roles, not just the platform's ow
 
 /-- Backward Euler realizes attractive sentences soundly at every positive step. No converse
 is claimed: backward Euler may damp a design with unstable continuous eigenvalues. -/
-@[tmio MI, powerlib_foundation] theorem backwardEuler_realizationSoundUnder
+@[tmio TM, powerlib_foundation] theorem backwardEuler_realizationSoundUnder
     (hF : F.IsLinear plant) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% ((implicitRealization .backwardEuler F plant design step).RealizationSoundUnder
       {.positiveStep} (.flow P)) := by

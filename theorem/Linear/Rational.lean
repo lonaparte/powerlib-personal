@@ -94,7 +94,7 @@ def family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0 :=
 
 /-- The Hurwitz property is the exact translation of the attractive sentences and sampled
 contraction. -/
-@[tmio TM, powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_foundation] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((family (n := n)).Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -111,7 +111,7 @@ contraction. -/
 /-- Every translation is sound: the Hurwitz property proves Lyapunov stability, the attractive
 sentences and sampled contraction, a right-half-plane root proves instability, and a plant without
 ports is passive. -/
-@[tmio TM, powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics :
     connection% (∀ P, (family (n := n)).chain P ≤ (family (n := n)).semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s A hA => ?_
@@ -140,7 +140,7 @@ ports is passive. -/
 
 /-- Acceptance by the synthesizer entails the Hurwitz property: the accepted proposal is a
 kernel-checked certificate. -/
-@[tmio M, powerlib_domain] theorem realize_accepted :
+@[tmio M, powerlib_foundation] theorem realize_accepted :
     connection% (realize (Meets (n := n)) {.accepted} ⊆ realize Meets {.hurwitz}) := by
   unfold powerlib.TMIO.Statement
   intro A hA
@@ -149,7 +149,7 @@ kernel-checked certificate. -/
 
 /-- Acceptance is an exact requirement for the attractive sentences and sampled contraction:
 the executable synthesizer is complete, not merely sound. -/
-@[tmio TM, powerlib_domain] theorem accepted_eq_den {P : Flow.Property}
+@[tmio TM, powerlib_foundation] theorem accepted_eq_den {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (realize (Meets (n := n)) {.accepted} = family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement

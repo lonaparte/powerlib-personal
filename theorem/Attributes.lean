@@ -13,6 +13,9 @@ Scope.
   different classification is an error), and only theorems can be classified.
 * Classification comes only from the explicit attributes. A typed `TMIO.Statement` (a
   connection statement) does not imply either classification or override an explicit one.
+* Explicit pairs must be compatible: foundation permits T/M/TM; domain permits M/TM/MI/IO.
+  A module-boundary linter checks both attribute orders and delayed assignments, including
+  private theorems. The environment audit also checks imported declarations.
 * Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `example`
   and `powerlib`, plus sources of an isolated integration profile under
   `dependencies/integrations`; imported upstream declarations and downstream modules are not
@@ -85,6 +88,34 @@ def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array
     if kind.isNone || kind == kindOf? env name then
       names := names.push name
   return names.qsort Name.quickLt
+
+/-- Necessary compatibility, not an inference of either semantic classification. -/
+def TheoremKind.allowsTMIO : TheoremKind → Knowledge.Kind → Bool
+  | .foundation, .MI | .foundation, .IO | .domain, .T => false
+  | _, _ => true
+
+/-- Missing metadata remains optional; only an explicitly incompatible pair is rejected. -/
+def compatibilityError? (env : Environment) (name : Name) : Option String := do
+  let classification ← kindOf? env name
+  let knowledge ← Knowledge.kindOf? env name
+  if classification.allowsTMIO knowledge then none
+  else some s!"Incompatible PowerLib classifications on {privateToUserName name}: powerlib_{classification.label} with tmio {knowledge.label}"
+
+/-- Check supplied declarations regardless of visibility or connection syntax. -/
+def auditCompatibility (names : Array Name) : Elab.Command.CommandElabM Unit := do
+  let env ← getEnv
+  for name in names do
+    if let some reason := compatibilityError? env name then
+      throwError "{reason}"
+
+/-- Check all explicitly classified declarations in the actual environment, including private
+and current-module declarations. No metadata is inferred from connection structure. -/
+def auditCompatibilityInEnvironment : Elab.Command.CommandElabM Unit := do
+  let env ← getEnv
+  let names := theoremNames env
+  auditCompatibility names
+  let paired := names.filter (fun name => (Knowledge.kindOf? env name).isSome)
+  logInfo m!"POWERLIB_CLASSIFICATION_COMPATIBILITY_OK: {paired.size} explicit pairs"
 
 end powerlib.Registry
 
@@ -162,6 +193,13 @@ def classificationLinter : ModuleLinter where
     if ← isFirstPartySource then
       auditAuthoredTheorems commands
 
--- Classification is optional search metadata, never an admission exemption.
+/-- Run after all commands so attribute order and later assignments cannot bypass the check.
+This does not enable the separate, opt-in audit requiring every theorem to have metadata. -/
+def compatibilityLinter : ModuleLinter where
+  run commands := do
+    if ← isFirstPartySource then
+      auditCompatibility (← authoredTheorems commands)
+
+initialize addModuleLinter compatibilityLinter
 
 end powerlib.Registry

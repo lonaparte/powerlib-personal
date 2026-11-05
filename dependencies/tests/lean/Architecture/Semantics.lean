@@ -148,6 +148,7 @@ end SemanticFixture
 end
 
 open SemanticAudit in
+set_option maxHeartbeats 0 in
 run_meta do
   let (times, spaces) ← readSemantics
   let #[time] := times | throwError "The semantic layer does not determine one time axis: {times}"
@@ -195,25 +196,31 @@ run_meta do
       ``SemanticFixture.fixedPoint] do
     if let some reason ← scanDecl ctx (outside ctx) c then
       throwError "The audit rejected a non-behavioural definition: {c}: {reason}"
-  -- No bypass: a domain theorem of the library reaches behaviour only through a denotation, never
-  -- by naming a behavioural notion of the semantic layer or of the ambient libraries.
-  let mut domains : Nat := 0
+  -- No bypass: inspect actual public typed connections, independently of metadata. Generic
+  -- semantic bridges and engineering instances follow their respective structural rules.
+  let models ← powerlib.Architecture.modelTypes
+  let mut connections : Nat := 0
   let mut bypasses : Array String := #[]
-  for name in powerlib.Registry.theoremNames env (some .domain) do
-    let some i := env.getModuleIdxFor? name | continue
-    unless powerlib.Registry.isFirstPartyModule env.header.moduleNames[i.toNat]! do continue
-    domains := domains + 1
-    if let some reason ← powerlib.Architecture.rejection ctx (← getConstInfo name).type then
-      bypasses := bypasses.push s!"{name}: {reason}"
+  for i in [:env.header.moduleNames.size] do
+    unless env.header.moduleNames[i]!.getRoot == `theorem do continue
+    for name in env.header.moduleData[i]!.constNames do
+      if isPrivateName name then continue
+      let info ← getConstInfo name
+      unless info.isTheorem && (declRangeExt.find? env name).isSome do continue
+      if (← powerlib.Architecture.statement? info.type).isNone then continue
+      connections := connections + 1
+      if let some reason ← powerlib.Architecture.publicTypeRejection ctx models info.type then
+        bypasses := bypasses.push s!"{name}: {reason}"
+  if connections == 0 then throwError "The semantic audit found no typed connection"
   unless bypasses.isEmpty do
-    throwError "Domain theorems naming behaviour directly:\n{"\n".intercalate bypasses.toList}"
+    throwError "Typed connections bypassing semantic admission:\n{"\n".intercalate bypasses.toList}"
   for c in #[``SemanticFixture.bypass, ``SemanticFixture.bypassMap] do
     let used := (← getConstInfo c).type.getUsedConstants
     unless ← used.anyM fun d => return (← (classify ctx).const d).isSome do
       throwError "The bypass audit accepted a statement naming behaviour directly: {c}"
   logInfo m!"POWERLIB_SINGLE_SEMANTICS_OK: time {time}; signal spaces {spaces.map (·.2)}; \
-    {decls.size} declarations; notions {notions.qsort Name.quickLt}; {domains} domain theorems \
-    reach behaviour through denotations"
+    {decls.size} declarations; notions {notions.qsort Name.quickLt}; {connections} typed connections \
+    pass semantic admission"
 
 noncomputable section
 

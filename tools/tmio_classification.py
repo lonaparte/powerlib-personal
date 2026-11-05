@@ -18,6 +18,10 @@ from collections import Counter
 from pathlib import Path
 
 KINDS = ('T', 'M', 'TM', 'MI', 'IO')
+ALLOWED_PAIRS = {
+    'foundation': frozenset(('T', 'M', 'TM')),
+    'domain': frozenset(('M', 'TM', 'MI', 'IO')),
+}
 MODIFIERS = r'(?:(?:private|protected|noncomputable|unsafe|partial)\s+)*'
 DECLARATION = re.compile(r'^[ \t]*(?P<mods>' + MODIFIERS +
                          r')(?P<kind>theorem|lemma)\s+(?P<name>[^\s({:]+)', re.M)
@@ -80,7 +84,7 @@ def attributes(code: str) -> tuple[str, list[tuple[int, int, str]]]:
     return ''.join(masked), spans
 
 
-def attribute_kinds(body: str) -> list[str]:
+def attribute_items(body: str) -> list[str]:
     items, depth, start = [], 0, 0
     for index, char in enumerate(body):
         if char in '([{':
@@ -90,7 +94,11 @@ def attribute_kinds(body: str) -> list[str]:
         elif char == ',' and depth == 0:
             items.append(body[start:index].strip()); start = index + 1
     items.append(body[start:].strip())
-    return [item[4:].strip() for item in items if re.match(r'tmio\b', item)]
+    return items
+
+
+def attribute_kinds(body: str) -> list[str]:
+    return [item[4:].strip() for item in attribute_items(body) if re.match(r'tmio\b', item)]
 
 
 def scan_theorems(root: Path) -> dict[str, dict]:
@@ -134,7 +142,7 @@ def scan_theorems(root: Path) -> dict[str, dict]:
                 name = name.removeprefix('_root_.')
             elif namespace:
                 name = namespace + '.' + name
-            kinds, before, block_count = [], match.start('kind'), 0
+            kinds, metadata, before, block_count = [], [], match.start('kind'), 0
             for start, end, body in reversed(spans):
                 if end > before:
                     continue
@@ -143,6 +151,8 @@ def scan_theorems(root: Path) -> dict[str, dict]:
                     break
                 block_count += 1
                 kinds[:0] = attribute_kinds(body)
+                metadata[:0] = [item.removeprefix('powerlib_') for item in attribute_items(body)
+                                if item in ('powerlib_foundation', 'powerlib_domain')]
                 before = start
             relative = path.relative_to(root).as_posix()
             module = relative[:-5].replace('/', '.')
@@ -153,7 +163,8 @@ def scan_theorems(root: Path) -> dict[str, dict]:
             if key in found:
                 raise ClassificationError(f'Duplicate source theorem: {name}')
             found[key] = {'name':name,'module':module,'path':relative,'line':line,
-                          'kinds':kinds,'private':private,'connection':connection,
+                          'kinds':kinds,'powerlib_kinds':metadata,
+                          'private':private,'connection':connection,
                           'attribute_block_count':block_count}
     return found
 
@@ -185,6 +196,11 @@ def validate(root: Path) -> dict[str, int]:
                           f'expected exactly one @[tmio ...], found {kinds}')
         elif kinds[0] not in KINDS:
             errors.append(f'{entry["name"]}: invalid tmio kind {kinds[0]}; expected {KINDS}')
+        else:
+            for metadata in entry['powerlib_kinds']:
+                if kinds[0] not in ALLOWED_PAIRS[metadata]:
+                    errors.append(f'{entry["path"]}:{entry["line"]} {entry["name"]}: '
+                                  f'incompatible powerlib_{metadata} with tmio {kinds[0]}')
     if errors:
         raise ClassificationError('\n'.join(errors))
     counts = Counter(e['kinds'][0] for e in entries.values())
@@ -206,6 +222,9 @@ def main() -> int:
             all_counts = Counter(e['kinds'][0] for e in classified.values())
             print(f'POWERLIB_TMIO_TAGS_OK: {len(classified)} classified theorems; ' +
                   ', '.join(f'{kind} {all_counts[kind]}' for kind in KINDS))
+            pairs = sum(bool(e['powerlib_kinds']) for e in classified.values())
+            print(f'POWERLIB_CLASSIFICATION_PAIRS_SOURCE_OK: {pairs} inline pairs; '
+                  'Lean also checks delayed assignments and imported declarations')
         elif args.command == 'list':
             if args.query not in KINDS:
                 raise ClassificationError('list requires T, M, TM, MI or IO')

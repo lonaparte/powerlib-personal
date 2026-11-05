@@ -162,23 +162,23 @@ def vg (s : ℝ) (x : State 4) : ℂ :=
 /-- Active power from the complex power `S̄ = V̄ Ī*`: `P_ac = (3/2) Re{v_g ī}`. -/
 def Pac (s : ℝ) (x : State 4) : ℝ := 3 / 2 * (q.vg s x * (starRingEnd ℂ) (q.cur x)).re
 
-@[tmio M, powerlib_foundation] theorem vg_re (s : ℝ) (x : State 4) :
+@[tmio M, powerlib_domain] theorem vg_re (s : ℝ) (x : State 4) :
     (q.vg s x).re = q.V * cos (x 0) + s * q.Xg * q.Iq := by
   simp [vg, cur, Complex.exp_re, Complex.exp_im, Complex.mul_re, Complex.mul_im]
 
-@[powerlib_foundation] theorem vg_im (s : ℝ) (x : State 4) :
+@[powerlib_domain] theorem vg_im (s : ℝ) (x : State 4) :
     (q.vg s x).im = -(q.V * sin (x 0)) - s * q.Xg * q.idr x := by
   simp [vg, cur, Complex.exp_re, Complex.exp_im, Complex.mul_re, Complex.mul_im]
 
 /-- `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)`, for either sign of the drop. -/
-@[powerlib_foundation] theorem Pac_eq (s : ℝ) (x : State 4) :
+@[powerlib_domain] theorem Pac_eq (s : ℝ) (x : State 4) :
     q.Pac s x = 3 / 2 * (q.V * cos (x 0) * q.idr x - q.V * sin (x 0) * q.Iq) := by
   rw [Pac, Complex.mul_re, vg_re, vg_im]
   simp [cur]
   ring
 
 /-- `P_ac` is invariant under the IN/OUT flip of the reactance drop. -/
-@[powerlib_foundation] theorem Pac_flip_invariant (x : State 4) : q.Pac 1 x = q.Pac (-1) x := by
+@[powerlib_domain] theorem Pac_flip_invariant (x : State 4) : q.Pac 1 x = q.Pac (-1) x := by
   rw [Pac_eq, Pac_eq]
 
 /-- The carrier field with drop sign `s` (`s = 1`: the IN-positive `basin-guard` carrier). -/
@@ -220,7 +220,7 @@ namespace CarrierParams
 variable (q : CarrierParams)
 
 /-- `I_q* = 0`: for every drop sign `s`, `F_{−s} ∘ S = S ∘ F_s`. -/
-@[powerlib_foundation] theorem carrierField_reflect_sign (hIq : q.Iq = 0) (s : ℝ) (x : State 4) :
+@[powerlib_domain] theorem carrierField_reflect_sign (hIq : q.Iq = 0) (s : ℝ) (x : State 4) :
     q.carrierField (-s) (carrierReflect x) = carrierReflect (q.carrierField s x) := by
   rw [carrierReflect_apply, carrierReflect_apply]
   have hidr : q.idr (WithLp.toLp 2 ![-(x 0), -(x 1), x 2, x 3]) = q.idr x := by
@@ -231,13 +231,13 @@ variable (q : CarrierParams)
     simp [carrierField, vg_im, Pac_eq, hidr, hIq, sin_neg, cos_neg] <;> ring
 
 /-- `I_q* = 0`: `F_{s=−1} ∘ S = S ∘ F_{s=1}`. -/
-@[powerlib_foundation] theorem carrierField_reflect (hIq : q.Iq = 0) (x : State 4) :
+@[powerlib_domain] theorem carrierField_reflect (hIq : q.Iq = 0) (x : State 4) :
     q.carrierField (-1) (carrierReflect x) = carrierReflect (q.carrierField 1 x) :=
   q.carrierField_reflect_sign hIq 1 x
 
 /-- `I_q* = 0`: for every drop sign `s`, the writing with `−s` is the one with `s` transported
 by `S`. -/
-@[powerlib_foundation] theorem carrierField_neg_sign_eq_transport (hIq : q.Iq = 0) (s : ℝ) :
+@[powerlib_domain] theorem carrierField_neg_sign_eq_transport (hIq : q.Iq = 0) (s : ℝ) :
     q.carrierField (-s) = Dynamics.transportField carrierReflect 0 (q.carrierField s) := by
   funext y
   have hy : y = Dynamics.affineCoord carrierReflect 0 (carrierReflect.symm y) := by
@@ -248,20 +248,20 @@ by `S`. -/
   exact q.carrierField_reflect_sign hIq s _
 
 /-- `I_q* = 0`: the flipped writing is the IN-positive carrier transported by `S`. -/
-@[powerlib_foundation] theorem carrierField_neg_eq_transport (hIq : q.Iq = 0) :
+@[powerlib_domain] theorem carrierField_neg_eq_transport (hIq : q.Iq = 0) :
     q.carrierField (-1) = Dynamics.transportField carrierReflect 0 (q.carrierField 1) :=
   q.carrierField_neg_sign_eq_transport hIq 1
 
 /-- `I_q* = 0`: equilibria correspond under `S`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem carrier_equilibrium_iff (hIq : q.Iq = 0) (x : State 4) :
+@[powerlib_domain] theorem carrier_equilibrium_iff (hIq : q.Iq = 0) (x : State 4) :
     q.carrierField (-1) (carrierReflect x) = 0 ↔ q.carrierField 1 x = 0 := by
   rw [q.carrierField_reflect hIq]
   exact carrierReflect.map_eq_zero_iff
 
 /-- `I_q* = 0`: if the IN-positive carrier has Jacobian `A` at `x`, the flipped writing has
 Jacobian `S A S` at `S x`, with the same characteristic polynomial (same spectrum). -/
-@[powerlib_foundation] theorem carrier_jacobian_charpoly (hIq : q.Iq = 0) {x : State 4}
+@[powerlib_domain] theorem carrier_jacobian_charpoly (hIq : q.Iq = 0) {x : State 4}
     (A : Matrix (Fin 4) (Fin 4) ℝ) (hf : DifferentiableAt ℝ (q.carrierField 1) x)
     (hJac : fderiv ℝ (q.carrierField 1) x = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A) :
     fderiv ℝ (q.carrierField (-1)) (carrierReflect x) =
@@ -287,7 +287,7 @@ def pt (θ xp v ξ : ℝ) : State 4 := WithLp.toLp 2 ![θ, xp, v, ξ]
 
 /-- Partial derivative of the DC-node row along `V_dc` at `V_dc = 1` (the Jacobian entry `A[2,2]`):
 `−(3/(2C)) (V cos θ_e (K_p^dvc + I_d0) − V sin θ_e I_q*)`, `I_d0 = K_i^dvc ξ = i_d*|_{V_dc=1}`. -/
-@[powerlib_foundation] theorem dcNode_partial_Vdc (s θ xp ξ : ℝ) :
+@[powerlib_domain] theorem dcNode_partial_Vdc (s θ xp ξ : ℝ) :
     HasDerivAt (fun v => q.carrierField s (pt θ xp v ξ) 2)
       (-(3 / 2 * (q.V * cos θ * (q.Kpv + q.Kiv * ξ) - q.V * sin θ * q.Iq)) / q.C) 1 := by
   set α := 3 / 2 * (q.V * cos θ * (q.Kpv + q.Kiv * ξ) - q.V * sin θ * q.Iq)
@@ -309,7 +309,7 @@ def pt (θ xp v ξ : ℝ) : State 4 := WithLp.toLp 2 ![θ, xp, v, ξ]
 
 /-- `I_q* = 0`, `V cos θ_e ≠ 0`, `C ≠ 0`: the DC-node diagonal entry vanishes iff
 `K_p^dvc = −I_d0`, whatever `X_g` and `C`. -/
-@[powerlib_foundation] theorem dcNode_partial_Vdc_eq_zero_iff (hIq : q.Iq = 0) {θ ξ : ℝ}
+@[powerlib_domain] theorem dcNode_partial_Vdc_eq_zero_iff (hIq : q.Iq = 0) {θ ξ : ℝ}
     (hcos : q.V * cos θ ≠ 0) (hC : q.C ≠ 0) :
     -(3 / 2 * (q.V * cos θ * (q.Kpv + q.Kiv * ξ) - q.V * sin θ * q.Iq)) / q.C = 0 ↔
       q.Kpv = -(q.Kiv * ξ) := by
@@ -324,7 +324,7 @@ def pt (θ xp v ξ : ℝ) : State 4 := WithLp.toLp 2 ![θ, xp, v, ξ]
 
 /-- At every equilibrium of the carrier, `V_dc = 1`, so the value `i_d*|_{V_dc=1} = K_i^dvc ξ`
 is the operating current `I_d0`. -/
-@[powerlib_foundation] theorem equilibrium_Vdc (s : ℝ) {x : State 4}
+@[powerlib_domain] theorem equilibrium_Vdc (s : ℝ) {x : State 4}
     (hx : q.carrierField s x = 0) : x 2 = 1 ∧ q.idr x = q.Kiv * x 3 := by
   have h3 := congrArg (fun y : State 4 => y 3) hx
   simp [carrierField] at h3
@@ -374,7 +374,7 @@ def fourStateParams (s ξ : ℝ) : FourState.Params :=
 
 /-- The carrier field is `C¹` where `V_dc ≠ 0`. Static evidence on the model, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem carrierField_contDiffOn (s : ℝ) :
+@[powerlib_domain] theorem carrierField_contDiffOn (s : ℝ) :
     ContDiffOn ℝ 1 (q.carrierField s) {x : State 4 | x 2 ≠ 0} := by
   rw [contDiffOn_euclidean]
   intro i
@@ -405,7 +405,7 @@ conclusion. -/
 /-- `I_q* = 0`, `K_i^pll x_p* = 0`: the carrier with drop sign `s` is the four-state GFL field of
 `fourStateParams s ξ*` in the coordinates `(θ_e, x_p, V_dc, ξ) = (θ, x + x_p*, V, ξ* − η)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem carrierField_eq_transport (hIq : q.Iq = 0) (s xp ξ : ℝ)
+@[powerlib_domain] theorem carrierField_eq_transport (hIq : q.Iq = 0) (s xp ξ : ℝ)
     (hx : q.Kip * xp = 0) :
     q.carrierField s = Dynamics.transportField integratorFlip (WithLp.toLp 2 ![0, xp, 0, ξ])
       (FourState.field (q.fourStateParams s ξ)) := by
@@ -422,7 +422,7 @@ Static evidence on the model, not a connection conclusion. -/
   · ring
 
 /-- At an equilibrium of the carrier `V_dc = 1` and `K_i^pll x_p = 0`. -/
-@[powerlib_foundation] theorem equilibrium_Kip_xp (s : ℝ) {x : State 4}
+@[powerlib_domain] theorem equilibrium_Kip_xp (s : ℝ) {x : State 4}
     (hx : q.carrierField s x = 0) : x 2 = 1 ∧ q.Kip * x 1 = 0 := by
   have h0 := congrArg (fun y : State 4 => y 0) hx
   have h1 := congrArg (fun y : State 4 => y 1) hx
@@ -503,11 +503,11 @@ operating point. -/
 def family : Family Model Requirement 4 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-- No model meets the requirement language. -/
-@[tmio M, powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_

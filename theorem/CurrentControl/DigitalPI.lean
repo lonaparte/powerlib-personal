@@ -163,7 +163,7 @@ def model : Plant 3 1 :=
 
 /-- The platform field written out: `dz/dt = −(2/τ) z + u`, `v = (4/τ) z − u`. Static evidence
 on the implementation, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem field_apply (iref : ℝ) (x : ℝ³) :
+@[tmio M, powerlib_domain] theorem field_apply (iref : ℝ) (x : ℝ³) :
     y.field iref x = WithLp.toLp 2
       ![(-y.design.R * x 0 + (4 / y.τ * x 2 - y.control iref x)) / y.design.L, iref - x 0,
         -2 / y.τ * x 2 + y.control iref x] := by
@@ -171,7 +171,7 @@ on the implementation, not a connection conclusion. -/
   ring_nf
 
 /-- The plant is exactly the platform field. -/
-@[powerlib_foundation] theorem model_field (iref : ℝ) (x : ℝ³) :
+@[powerlib_domain] theorem model_field (iref : ℝ) (x : ℝ³) :
     y.model.inputField (fun _ => iref) x = y.field iref x := by
   rw [field_apply]
   ext j
@@ -189,7 +189,7 @@ private theorem τ_ne_zero {y : DigitalPI} (hT : y.Ts ≠ 0) : y.τ ≠ 0 := by
   apply hT
   linarith
 
-@[powerlib_foundation] theorem isEquilibrium (hKi : y.design.Ki ≠ 0) (hT : y.Ts ≠ 0)
+@[powerlib_domain] theorem isEquilibrium (hKi : y.design.Ki ≠ 0) (hT : y.Ts ≠ 0)
     (iref : ℝ) : IsEquilibrium (y.model.inputField fun _ => iref) (y.equilibrium iref) := by
   have hτ := τ_ne_zero hT
   have hu : y.control iref (y.equilibrium iref) = y.design.R * iref := by
@@ -212,7 +212,7 @@ private theorem τ_ne_zero {y : DigitalPI} (hT : y.Ts ≠ 0) : y.τ ≠ 0 := by
 
 /-- Every equilibrium of the platform for a constant reference has zero current error `i = i*`.
 Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem equilibrium_current {iref : ℝ} {e : ℝ³}
+@[powerlib_domain] theorem equilibrium_current {iref : ℝ} {e : ℝ³}
     (he : IsEquilibrium (y.model.inputField fun _ => iref) e) : e 0 = iref := by
   rw [IsEquilibrium, model_field, field_apply] at he
   have h := congrArg (fun z : ℝ³ => z 1) he
@@ -276,7 +276,7 @@ private theorem neg_det_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
 /-- The characteristic polynomial of the platform:
 `det (sI − A) = (a₃ s³ + a₂ s² + a₁ s + a₀)/a₃`. Static evidence on the implementation, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem det_characteristicMatrix (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0)
+@[powerlib_domain] theorem det_characteristicMatrix (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0)
     (s : ℂ) :
     (characteristicMatrix y.model.A s).det =
       ((y.a3 : ℂ) * s ^ 3 + y.a2 * s ^ 2 + y.a1 * s + y.a0) / y.a3 := by
@@ -292,7 +292,7 @@ connection conclusion. -/
 /-- The characteristic polynomial is the return difference of the design loop closed through the
 Padé(1,1) delay: `(L s + R) s (1 + τ s/2) + (Kp s + Ki)(1 − τ s/2)`, over `a₃`. Static evidence on
 the implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_pade (hL : y.design.L ≠ 0)
+@[powerlib_domain] theorem det_characteristicMatrix_pade (hL : y.design.L ≠ 0)
     (hT : y.Ts ≠ 0) (s : ℂ) :
     (characteristicMatrix y.model.A s).det =
       (((y.design.L : ℂ) * s + y.design.R) * s * Delay.pade11Den y.τ s +
@@ -307,26 +307,26 @@ the implementation, not a connection conclusion. -/
 
 /-- The delay block of the platform has the Padé(1,1) transfer function `Delay.pade11 τ`. Static
 evidence on the implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem transfer_delay (hT : y.Ts ≠ 0) {s : ℂ} (hs : s ≠ -2 / y.τ) :
+@[powerlib_domain] theorem transfer_delay (hT : y.Ts ≠ 0) {s : ℂ} (hs : s ≠ -2 / y.τ) :
     Linear.transfer (Delay.pade11Model y.τ) s = !![Delay.pade11 y.τ s] :=
   Delay.transfer_pade11Model (τ_ne_zero hT) hs
 
 /-- One period of computation delay and the half-period hold make up the delay `τ`. -/
-@[powerlib_foundation] theorem pureDelay_τ (s : ℂ) :
+@[powerlib_domain] theorem pureDelay_τ (s : ℂ) :
     Delay.pureDelay y.Ts s * Delay.pureDelay (y.Ts / 2) s = Delay.pureDelay y.τ s := by
   rw [← Delay.pureDelay_add, τ]
   congr 1
   ring
 
 /-- The same total as three half-period delays (sampling, computation, PWM). -/
-@[powerlib_foundation] theorem pureDelay_τ_halves (s : ℂ) :
+@[powerlib_domain] theorem pureDelay_τ_halves (s : ℂ) :
     Delay.pureDelay (y.Ts / 2) s * Delay.pureDelay (y.Ts / 2) s * Delay.pureDelay (y.Ts / 2) s =
       Delay.pureDelay y.τ s :=
   Delay.pureDelay_three_half_periods y.Ts s
 
 /-- On the imaginary axis the one-step delay followed by the zero-order hold is the delay `τ`
 times the real factor `Tₛ sinc (ω Tₛ / 2)`. -/
-@[powerlib_foundation] theorem computation_zoh_jω (ω : ℝ) :
+@[powerlib_domain] theorem computation_zoh_jω (ω : ℝ) :
     Delay.pureDelay y.Ts (ω * Complex.I) * Delay.zoh y.Ts (ω * Complex.I) =
       Delay.pureDelay y.τ (ω * Complex.I) * (y.Ts * (Real.sinc (ω * y.Ts / 2) : ℂ)) := by
   rw [Delay.zoh_jω_eq_halfDelay, ← mul_assoc, pureDelay_τ]
@@ -335,7 +335,7 @@ times the real factor `Tₛ sinc (ω Tₛ / 2)`. -/
 
 /-- For every positive period and every inductance, a Hurwitz platform has a stable design: the
 constant and linear coefficients give `Ki/L > 0` and `(R + Kp)/L > (τ/2) Ki/L`. Read through the existing requirement satisfaction. -/
-@[tmio MI, powerlib_foundation] theorem design_stable_of_isHurwitz {y : DigitalPI} (hT : 0 < y.Ts)
+@[tmio MI, powerlib_domain] theorem design_stable_of_isHurwitz {y : DigitalPI} (hT : 0 < y.Ts)
     (h : IsHurwitz y.model.A) :
     connection% (y.design ∈ TMIO.realize PIParams.family.meets {.stable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, PIParams.family, Spectral.linearFamily, Spectral.Meets]
@@ -384,7 +384,7 @@ private theorem exists_cubic_root_re_pos {c2 c1 c0 : ℝ}
 
 /-- A strict violation of the platform Routh conditions gives a characteristic root in the open
 right half plane. Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem exists_root_of_lagged {y : DigitalPI} (hL : 0 < y.design.L)
+@[powerlib_domain] theorem exists_root_of_lagged {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (h : y.a2 < 0 ∨ y.a1 < 0 ∨ y.a0 < 0 ∨ y.a2 * y.a1 < y.a3 * y.a0) :
     ∃ s : ℂ, (characteristicMatrix y.model.A s).det = 0 ∧ 0 < s.re := by
   have ha3 := a3_pos hL hT
@@ -449,10 +449,10 @@ def translate : Sentence → Set DigitalRequirement
 def family : Family DigitalPI DigitalRequirement 3 1 :=
   ⟨fun y => y.model.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear model := fun _ => rfl
+@[powerlib_domain] theorem family_isLinear : family.IsLinear model := fun _ => rfl
 
 /-- Routh–Hurwitz for the platform with `L > 0`, `Tₛ > 0`. Read through the platform family denotation. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts) :
     connection% (y ∈ family.den (.flow .globallyExponentiallyStable) ↔
       0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1) := by
   unfold TMIO.Statement
@@ -471,7 +471,7 @@ def family : Family DigitalPI DigitalRequirement 3 1 :=
 
 /-- Fast sampling against a stable design gives the platform Routh conditions:
 `a₂ > L/2`, `a₁ ≥ 3 (R + Kp)/4` and `a₃ a₀ ≤ L (R + Kp)/4 < (L/2)(3 (R + Kp)/4)`. Read through the existing requirement satisfaction. -/
-@[tmio MI, powerlib_foundation] theorem routh_of_fastSampling {y : DigitalPI} (hL : 0 < y.design.L)
+@[tmio MI, powerlib_domain] theorem routh_of_fastSampling {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (hs : PIParams.Stable y.design)
     (hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
       3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp) :
@@ -499,7 +499,7 @@ def family : Family DigitalPI DigitalRequirement 3 1 :=
 
 /-- A statically unstable design gives a strict violation of the platform Routh conditions, for
 every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `a₁ < 0`. Read through the existing requirement satisfaction. -/
-@[tmio MI, powerlib_foundation] theorem lagged_of_unstable {y : DigitalPI} (hL : 0 < y.design.L)
+@[tmio MI, powerlib_domain] theorem lagged_of_unstable {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (hu : PIParams.Unstable y.design) :
     connection% (y ∈ TMIO.realize Meets {.lagged}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -709,7 +709,7 @@ def imcTuned (L R ωb Ts : ℝ) : DigitalPI := ⟨imc L R ωb, Ts⟩
 
 /-- The platform Routh conditions of the IMC-tuned loop, with `L, R, Tₛ > 0`: `0 < ω_b` and
 `3 ω_b Tₛ < 4`, via `a₂ a₁ − a₃ a₀ = β (L² ω_b + R a₂)` with `β = 1 − ω_b τ/2`. Read through the existing requirement satisfaction. -/
-@[tmio M, powerlib_foundation] theorem imcTuned_routh_iff {L R ωb Ts : ℝ} (hL : 0 < L) (hR : 0 < R)
+@[tmio M, powerlib_domain] theorem imcTuned_routh_iff {L R ωb Ts : ℝ} (hL : 0 < L) (hR : 0 < R)
     (hT : 0 < Ts) :
     connection% (imcTuned L R ωb Ts ∈ TMIO.realize Meets {.routh} ↔ 0 < ωb ∧ 3 * ωb * Ts < 4) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
