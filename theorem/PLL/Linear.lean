@@ -434,7 +434,7 @@ def Model.plant (m : Model) : Linear.Plant 2 1 :=
   | .admittance Id0 => admittanceModel m.V m.Kp m.Ki Id0
 
 /-- Every channel has the state matrix `linA`. -/
-@[powerlib_domain] theorem Model.plant_A (m : Model) : m.plant.A = linA m.V m.Kp m.Ki := by
+@[tmio M, powerlib_domain] theorem Model.plant_A (m : Model) : m.plant.A = linA m.V m.Kp m.Ki := by
   rcases m with ⟨V, Kp, Ki, c⟩
   cases c <;> rfl
 
@@ -467,7 +467,7 @@ def translate : Sentence → Set Requirement
 /-- The linearized SRF-PLL family: every model read as the port system of its channel's plant. -/
 def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- No model has both positive loop gains and a negative one: the whole requirement language is
 inconsistent. -/
@@ -509,7 +509,7 @@ language for decay rates, conservation and passivity. -/
   rfl
 
 /-- A negative loop gain gives a characteristic root in the open right half plane. -/
-@[powerlib_domain] private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
+@[tmio M, powerlib_domain] private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
   rcases h with h | h
@@ -557,7 +557,7 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
 /-- The phase channel without loop gains (`V = 0`, `K_i = 0`): the state matrix is zero. -/
 def frozen : Model := ⟨0, 0, 0, .phase⟩
 
-@[powerlib_domain] theorem frozen_plant_A : frozen.plant.A = 0 := by
+@[tmio M, powerlib_domain] theorem frozen_plant_A : frozen.plant.A = 0 := by
   rw [Model.plant_A]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [frozen, linA]

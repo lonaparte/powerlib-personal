@@ -104,13 +104,13 @@ def eulerFamily : Family Euler Requirement 2 1 :=
 def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
   Numerics.eulerPorts family (fun m => m.toPH.system) Euler.design Euler.h
 
-@[powerlib_domain] private theorem family_isPort : family.IsPort fun m => m.toPH.system :=
+@[tmio M, powerlib_domain] private theorem family_isPort : family.IsPort fun m => m.toPH.system :=
   family_isNonlinearPH.isPort
 
 /-- The centred zero-input field of a classical machine is `C¹` near the origin: the smoothness
 hypothesis of the generic Euler laws for port systems
 (`Numerics.eulerPorts_sound_small_step_local`). -/
-@[powerlib_domain] theorem contDiffAt_zeroInput (m : Model) :
+@[tmio M, powerlib_domain] theorem contDiffAt_zeroInput (m : Model) :
     ContDiffAt ℝ 1 m.toPH.system.zeroInput 0 :=
   Numerics.contDiffAt_shift (g := (classicalSM m.p).zeroInputField) (x₀ := m.point)
     ((classicalSM m.p).contDiff_zeroInputField (fun _ _ => contDiff_const)
@@ -120,7 +120,7 @@ hypothesis of the generic Euler laws for port systems
 private def unitModel : Model := ⟨⟨1, 1, 1, 0, one_pos, zero_le_one, one_pos⟩, 0⟩
 
 /-- The speed output at the centred state `(0, 1)` is `1/M`. -/
-@[powerlib_domain] private theorem output_unit (m : Model) :
+@[tmio M, powerlib_domain] private theorem output_unit (m : Model) :
     m.toPH.output (WithLp.toLp 2 ![0, 1]) = ![1 / m.p.M] := by
   rw [Model.toPH, NonlinearModel.shift_output]
   funext i
@@ -128,7 +128,7 @@ private def unitModel : Model := ⟨⟨1, 1, 1, 0, one_pos, zero_le_one, one_pos
   simp [Model.point, classicalSM_equilibrium, NonlinearModel.output, classicalSM, classicalSM_dH,
     Matrix.mulVec, dotProduct]
 
-@[powerlib_domain] private theorem output_unit_ne_zero (m : Model) : ![1 / m.p.M] ≠ 0 := by
+@[tmio M, powerlib_domain] private theorem output_unit_ne_zero (m : Model) : ![1 / m.p.M] ≠ 0 := by
   intro h
   have := congrFun h 0
   simp [m.p.M_pos.ne'] at this
@@ -225,7 +225,7 @@ the family has no step threshold to state. -/
   exact hn
 
 /-- The output at the unit momentum has the speed component `1/M`. -/
-@[powerlib_domain] private theorem output_ne_zero (p : SyncMachine7Params) :
+@[tmio M, powerlib_domain] private theorem output_ne_zero (p : SyncMachine7Params) :
     (syncMachine7 p).output (WithLp.toLp 2 ![0, 0, 0, 0, 0, 1, 0]) ≠ 0 := by
   intro h
   have h3 := congrFun h 3
@@ -262,7 +262,7 @@ end powerlib.Synchronous.SyncMachine7
 namespace powerlib.Synchronous
 
 /-- The output of the 11-state system at the unit momentum has the speed component `1/M`. -/
-@[powerlib_domain] private theorem smib11_output_ne_zero (p : SMIB11Params) :
+@[tmio M, powerlib_domain] private theorem smib11_output_ne_zero (p : SMIB11Params) :
     (smib11 p).output (WithLp.toLp 2 ![0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]) ≠ 0 := by
   intro h
   have h1 := congrFun h 1

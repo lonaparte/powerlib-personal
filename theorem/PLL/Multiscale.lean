@@ -143,7 +143,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 1 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-- The whole requirement language is inconsistent. -/

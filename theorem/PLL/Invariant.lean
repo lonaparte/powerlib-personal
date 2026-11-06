@@ -94,7 +94,7 @@ open powerlib.PLL.PIPLL (srf)
 
 /-- The `(θ_err, ξ)` field is the untranslated field of the unit-amplitude SRF family member with
 gains `(a, b)` and offset `−Δω`. -/
-@[powerlib_domain] theorem xi_piPLLField (a b Δω θ : ℝ) :
+@[tmio M, powerlib_domain] theorem xi_piPLLField (a b Δω θ : ℝ) :
     piPLLField (srf 1 a b (-Δω) θ).h a b (-Δω) = xiField a b Δω := by
   rw [srf_piPLLField, xiField_eq_srfField]
 

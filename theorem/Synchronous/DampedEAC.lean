@@ -96,7 +96,7 @@ variable (p : SwingParams)
 
 /-- With `D ≥ 0` the energy is non-increasing along every solution on a convex time set.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem energy_antitoneOn (hM : p.M ≠ 0) (hD : 0 ≤ p.D) (δ₀ : ℝ)
+@[tmio TM, powerlib_domain] private theorem energy_antitoneOn (hM : p.M ≠ 0) (hD : 0 ≤ p.D) (δ₀ : ℝ)
     {φ : ℝ → State 2} {s : Set ℝ} (hs : Convex ℝ s)
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) s) :
     AntitoneOn (fun t => p.energy δ₀ (φ t)) s := by
@@ -123,7 +123,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 kinetic energy does not exceed `∫_{δ_c}^{δ_u} (P_e − P_m)`, the post-fault trajectory never goes
 beyond `δ_u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem firstSwing_le_deltaU_of_damping (hM : 0 < p.M) (hD : 0 ≤ p.D)
+@[tmio TM, powerlib_domain] private theorem firstSwing_le_deltaU_of_damping (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
     (h0 : φ tc = PhasePlane.mk δc ωc) (hδc : δc ≤ p.deltaU)
@@ -163,18 +163,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Open angular window of the potential well around `δ_s`: `δ_u − 2π < δ < δ_u`. -/
 def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.deltaU}
 
-@[powerlib_domain] theorem isOpen_wellWindow : IsOpen p.wellWindow :=
+@[tmio M, powerlib_domain] theorem isOpen_wellWindow : IsOpen p.wellWindow :=
   (isOpen_lt continuous_const (Dynamics.contDiff_coord (k := 0) 0).continuous).inter
     (isOpen_lt (Dynamics.contDiff_coord (k := 0) 0).continuous continuous_const)
 
 /-- The energy dominates the potential (`M > 0`). -/
-@[powerlib_domain] theorem potential_le_energy (hM : 0 < p.M) (δ₀ : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] theorem potential_le_energy (hM : 0 < p.M) (δ₀ : ℝ) (x : State 2) :
     p.potential δ₀ (x 0) ≤ p.energy δ₀ x := by
   have : 0 ≤ p.M / 2 * x 1 ^ 2 := by positivity
   simp only [energy]; linarith
 
 /-- Energy sublevel sets of the well below both saddle levels are compact. -/
-@[powerlib_domain] theorem isCompact_wellSublevel (hM : 0 < p.M) {c : ℝ}
+@[tmio M, powerlib_domain] theorem isCompact_wellSublevel (hM : 0 < p.M) {c : ℝ}
     (hc1 : c < p.potential p.deltaS p.deltaU)
     (hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi)) :
     IsCompact {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c} := by
@@ -220,7 +220,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
     linarith [Dynamics.norm_le_abs_add_abs_two x]
 
 /-- Inside the well window the only equilibrium is `(δ_s, 0)`. -/
-@[powerlib_domain] theorem eq_deltaS_of_field_eq_zero (hM : p.M ≠ 0) (hk : 0 < p.k₂)
+@[tmio M, powerlib_domain] theorem eq_deltaS_of_field_eq_zero (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {x : State 2} (hx : x ∈ p.wellWindow) (hf : p.field x = 0) :
     x = PhasePlane.mk p.deltaS 0 := by
   obtain ⟨h1, n, hn⟩ := (p.field_eq_zero_iff_branches hM hk h.le x).mp hf
@@ -261,7 +261,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
 sublevel set of the well window below both saddle levels lies in the region of attraction of
 `(δ_s, 0)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
+@[tmio TM, powerlib_domain] private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) {c : ℝ}
     (hc1 : c < p.potential p.deltaS p.deltaU)
     (hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi)) :
@@ -300,7 +300,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 `P_m ≥ k₁`): a post-fault trajectory whose clearing state lies in the well window with
 `½ M ω_c² < ∫_{δ_c}^{δ_u} (P_e − P_m)` converges to `(δ_s, 0)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem tendsto_of_firstSwing_margin (hM : 0 < p.M) (hD : 0 < p.D)
+@[tmio TM, powerlib_domain] private theorem tendsto_of_firstSwing_margin (hM : 0 < p.M) (hD : 0 < p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) (hPk : p.k₁ ≤ p.Pm) {φ : ℝ → State 2}
     {tc δc ωc : ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
     (h0 : φ tc = PhasePlane.mk δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc < p.deltaU)
@@ -324,7 +324,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`,
 `ω = (P_m/D)(1 − e^{−D(t−t_f)/M})`, `δ = δ₀ + (P_m/D)((t − t_f) − (M/D)(1 − e^{−D(t−t_f)/M}))`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
+@[tmio M, powerlib_domain] private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
@@ -412,7 +412,7 @@ end SwingParams
 /-- With damping `D ≥ 0` in the fault stage the clearing kinetic energy is at most the
 (undamped) accelerating area: `½ M ω(t_c)² ≤ A_acc(δ₀, δ(t_c))`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem clearing_energy_le {fault : SwingParams} (hM : 0 < fault.M)
+@[tmio TM, powerlib_domain] private theorem clearing_energy_le {fault : SwingParams} (hM : 0 < fault.M)
     (hD : 0 ≤ fault.D) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)) (htc : tf ≤ tc)
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
@@ -429,7 +429,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 post-fault stages (same inertia), `A_acc(δ₀, δ_c) ≤ A_dec(δ_c, δ_u)` (undamped areas) and
 `δ_c ≤ δ_u` imply that the post-fault trajectory never exceeds `δ_u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem faultTrajectory_firstSwing_of_areas {pre fault post : SwingParams}
+@[tmio TM, powerlib_domain] private theorem faultTrajectory_firstSwing_of_areas {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hDf : 0 ≤ fault.D) (hDp : 0 ≤ post.D)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
@@ -449,7 +449,7 @@ fault stage, `D > 0` post-fault, `P_m ≥ k₁`, a clearing angle inside the wel
 `A_acc(δ₀, δ_c) < A_dec(δ_c, δ_u)`, the trajectory converges to the post-fault stable
 equilibrium `(δ_s, 0)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem faultTrajectory_tendsto_of_areas {pre fault post : SwingParams}
+@[tmio TM, powerlib_domain] private theorem faultTrajectory_tendsto_of_areas {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hDf : 0 ≤ fault.D) (hDp : 0 < post.D)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) (hPk : post.k₁ ≤ post.Pm)
     {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
@@ -471,7 +471,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 every clearing time `t_c − t_f ≤ √(2M(δ_cc − δ₀)/P_m) + ε` the clearing angle satisfies
 `δ₀ ≤ δ(t_c) < δ_cc` and the undamped areas have a strict margin `A_acc < A_dec`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem boltedFault_damped_clearingAngle {fault post : SwingParams}
+@[tmio TM, powerlib_domain] private theorem boltedFault_damped_clearingAngle {fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
     (hDf : 0 < fault.D) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0) {δ₀ δcc : ℝ}
     (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
@@ -587,7 +587,7 @@ below `δ_u` exactly for `t_c − t_f ≤ t_cc^EAC = √(2M(δ_cc − δ₀)/P_m
 clearing time `t_c − t_f ≤ t_cc^EAC + ε` keeps the first swing below `δ_u`, so the true critical
 clearing time is at least `t_cc^EAC + ε > t_cc^EAC`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem boltedFault_damped_firstSwing {pre fault post : SwingParams}
+@[tmio TM, powerlib_domain] private theorem boltedFault_damped_firstSwing {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
     (hDf : 0 < fault.D) (hDp : 0 ≤ post.D) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {δ₀ δcc : ℝ}
@@ -613,7 +613,7 @@ hypotheses of `boltedFault_damped_firstSwing` with `D > 0` post-fault, `P_m ≥ 
 `t_c − t_f ≤ √(2M(δ_cc − δ₀)/P_m) + ε` gives convergence to the post-fault stable equilibrium
 `(δ_s, 0)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem boltedFault_damped_tendsto {pre fault post : SwingParams}
+@[tmio TM, powerlib_domain] private theorem boltedFault_damped_tendsto {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
     (hDf : 0 < fault.D) (hDp : 0 < post.D) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) (hPk : post.k₁ ≤ post.Pm)

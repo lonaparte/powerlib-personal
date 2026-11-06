@@ -101,17 +101,17 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
     ring
   · simp [planeQ, div_eq_mul_inv]
 
-@[powerlib_domain] theorem contDiff_planeQ : ContDiff ℝ 1 p.planeQ := by
+@[tmio M, powerlib_domain] theorem contDiff_planeQ : ContDiff ℝ 1 p.planeQ := by
   unfold planeQ
   exact ((contDiff_const.mul (Dynamics.contDiff_coord 2)).add
     (contDiff_const.mul p.contDiff_pccP)).div_const _
 
-@[powerlib_domain] theorem planeQ_eq_zero {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0) :
+@[tmio M, powerlib_domain] theorem planeQ_eq_zero {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0) :
     p.planeQ x = 0 := by
   simp [planeQ, hx, hP]
 
 /-- Off the plane the DC-link component of the field is `q / V_dc`. -/
-@[powerlib_domain] theorem field_two_eq_planeQ_div {y : State 4} (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem field_two_eq_planeQ_div {y : State 4} (hy : y 2 ≠ 0) :
     p.field y 2 = p.planeQ y / y 2 := by
   have h : p.field y 2 = (p.I0 + 3 * p.pccP y / (2 * y 2)) / p.Cdc := by
     simp [field, pccP]
@@ -119,26 +119,26 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
   field_simp
 
 /-- `dq/dt = G + H q / V_dc` off the plane. -/
-@[powerlib_domain] theorem planeQ_lie {y : State 4} (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem planeQ_lie {y : State 4} (hy : y 2 ≠ 0) :
     fderiv ℝ p.planeQ y (p.field y) = p.planeG y + p.planeH y * (p.planeQ y / y 2) := by
   rw [(p.hasFDerivAt_planeQ y).fderiv, ← p.field_two_eq_planeQ_div hy]
   simp only [row4_apply, planeG, planeH]
   ring
 
-@[powerlib_domain] theorem continuous_planeG : Continuous p.planeG := by
+@[tmio M, powerlib_domain] theorem continuous_planeG : Continuous p.planeG := by
   show Continuous fun y : State 4 => 3 / 2 * (p.dP0 y *
     (p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1) +
       p.dP3 y * (p.VdcRef - y 2)) / p.Cdc
   unfold dP0 dP3 vgq vgd idRef
   fun_prop
 
-@[powerlib_domain] theorem continuous_planeH : Continuous p.planeH := by
+@[tmio M, powerlib_domain] theorem continuous_planeH : Continuous p.planeH := by
   unfold planeH dP2 vgd idRef
   fun_prop
 
 /-- A `C¹` field equal to model B on the half space `σ V_dc ≥ s` (`σ = ±1`, `s > 0`): the
 denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
-@[powerlib_domain] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
+@[tmio M, powerlib_domain] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
     {s : ℝ} (hs : 0 < s) :
     ∃ g : State 4 → State 4, ContDiff ℝ 1 g ∧
       ∀ y : State 4, s ≤ σ * y 2 → g y = p.field y := by
@@ -334,7 +334,7 @@ end ModelBParams
 namespace ModelB
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous

@@ -108,7 +108,7 @@ def field (v : ℂ) : ℂ := (I * a.ωs + (a.gain v : ℂ)) * v
     Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
   simp only [gain, c]; ring
 
-@[powerlib_domain] theorem aho_im (v : ℂ) :
+@[tmio M, powerlib_domain] theorem aho_im (v : ℂ) :
     (a.field v).im = a.ωs * v.re - a.σ * v.im + a.κv * (a.vstar ^ 2 - normSq v) * v.im := by
   simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
     Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
@@ -144,20 +144,20 @@ variable {a}
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, c]
   linarith [h.gap]
 
-@[powerlib_domain] theorem Admissible.rstar_sq (h : a.Admissible) :
+@[tmio M, powerlib_domain] theorem Admissible.rstar_sq (h : a.Admissible) :
     a.rstar ^ 2 = a.c / a.κv := by
   have hk := h.κv
   rw [rstar, Real.sq_sqrt]
   · simp only [c]; field_simp
   · rw [sub_nonneg, div_le_iff₀ hk]; linarith [h.gap]
 
-@[powerlib_domain] theorem Admissible.rstar_pos (h : a.Admissible) : 0 < a.rstar := by
+@[tmio M, powerlib_domain] theorem Admissible.rstar_pos (h : a.Admissible) : 0 < a.rstar := by
   apply Real.sqrt_pos.mpr
   rw [sub_pos, div_lt_iff₀ h.κv]; linarith [h.gap]
 
 /-- `r*` is the unique positive zero of the radial field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem radial_zero_iff (h : a.Admissible) {r : ℝ} (hr : 0 < r) :
+@[tmio M, powerlib_domain] theorem radial_zero_iff (h : a.Admissible) {r : ℝ} (hr : 0 < r) :
     (a.κv * (a.vstar ^ 2 - r ^ 2) - a.σ) * r = 0 ↔ r = a.rstar := by
   have hk := h.κv
   rw [mul_eq_zero, or_iff_left hr.ne']
@@ -174,7 +174,7 @@ Static evidence on the model, not a connection conclusion. -/
 variable (a)
 
 /-- `d|v|²/dt = 2 (c − κ_v |v|²) |v|²` along the field. -/
-@[powerlib_domain] theorem hasDerivWithinAt_normSq {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
+@[tmio M, powerlib_domain] theorem hasDerivWithinAt_normSq {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
     (hφ : HasDerivWithinAt φ (a.field (φ t)) s t) :
     HasDerivWithinAt (fun τ => normSq (φ τ))
       (2 * a.gain (φ t) * normSq (φ t)) s t := by
@@ -194,7 +194,7 @@ variable (a)
 
 /-- On any interval where `|v|² > 0`, `1/|v|² = κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct}`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio M, powerlib_domain] private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) {T : ℝ}
     (hpos : ∀ t ∈ Icc 0 T, 0 < normSq (φ t)) :
     ∀ t ∈ Icc 0 T, 1 / normSq (φ t) =
@@ -239,7 +239,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Solutions starting away from the origin never reach it, and `|v|²` is given by the explicit
 logistic formula.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) ∧ 1 / normSq (φ t) =
       a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
@@ -297,7 +297,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- Every solution with `v(0) ≠ 0` converges in amplitude to the limit-cycle radius.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 a.rstar) := by
   have hc : 0 < a.c := by
@@ -324,7 +324,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   exact (Real.continuous_sqrt.tendsto _).comp hy
 
 /-- `d‖v‖/dt = gain · ‖v‖` along the field (away from the origin). -/
-@[powerlib_domain] theorem hasDerivWithinAt_norm {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
+@[tmio M, powerlib_domain] theorem hasDerivWithinAt_norm {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
     (hφ : HasDerivWithinAt φ (a.field (φ t)) s t) (hne : φ t ≠ 0) :
     HasDerivWithinAt (fun τ => ‖φ τ‖) (a.gain (φ t) * ‖φ t‖) s t := by
   have hy := a.hasDerivWithinAt_normSq hφ
@@ -341,7 +341,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Uniform phase rotation: `v(t) = (|v(t)|/|v(0)|) e^{j ω_s t} v(0)` for every solution with
 `v(0) ≠ 0`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio M, powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), φ t = ((‖φ t‖ / ‖φ 0‖ : ℝ) : ℂ) * exp (I * a.ωs * t) * φ 0 := by
   have hform := a.normSq_formula h hφ h0
@@ -401,7 +401,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- The circle `|v| = r*` is invariant: a solution starting on it stays on it.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0))
     (h0 : ‖φ 0‖ = a.rstar) : ∀ t ∈ Ici (0 : ℝ), ‖φ t‖ = a.rstar := by
   have hc : 0 < a.c := by
@@ -426,7 +426,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- The limit-cycle solutions `r* e^{j(ω_s t + φ₀)}` solve the AHO.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
+@[tmio M, powerlib_domain] private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
     IsIntegralCurveOn
       (fun t : ℝ => (a.rstar : ℂ) * exp (I * (a.ωs * t + φ₀))) (fun _ v => a.field v) univ := by
   intro t _
@@ -460,7 +460,7 @@ def realField (x : State 2) : State 2 :=
 
 /-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
 `v = v_α + j v_β`. -/
-@[powerlib_domain] theorem realField_eq (x : State 2) :
+@[tmio M, powerlib_domain] theorem realField_eq (x : State 2) :
     a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp only [realField, PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
@@ -473,12 +473,12 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![a.c - a.κv * (3 * x 0 ^ 2 + x 1 ^ 2), -a.ωs - 2 * a.κv * x 0 * x 1;
      a.ωs - 2 * a.κv * x 0 * x 1, a.c - a.κv * (x 0 ^ 2 + 3 * x 1 ^ 2)]
 
-@[powerlib_domain] theorem contDiff_realField : ContDiff ℝ 1 a.realField := by
+@[tmio M, powerlib_domain] theorem contDiff_realField : ContDiff ℝ 1 a.realField := by
   rw [contDiff_euclidean]
   intro i
   fin_cases i <;> simp [realField] <;> fun_prop
 
-@[powerlib_domain] theorem hasFDerivAt_realField (x : State 2) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_realField (x : State 2) :
     HasFDerivAt a.realField (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (a.realJacobian x)) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -500,10 +500,10 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
       simp [realJacobian, PhasePlane.toEuclideanCLM_apply_one]
       ring
 
-@[simp, powerlib_domain] theorem realField_zero : a.realField 0 = 0 := by
+@[tmio M, simp, powerlib_domain] theorem realField_zero : a.realField 0 = 0 := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [realField]
 
-@[powerlib_domain] theorem realJacobian_zero :
+@[tmio M, powerlib_domain] theorem realJacobian_zero :
     a.realJacobian 0 = !![a.c, -a.ωs; a.ωs, a.c] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [realJacobian]
@@ -527,7 +527,7 @@ def translate : Sentence → Set Requirement
 def family : Family AHO Requirement 2 0 :=
   ⟨fun a => Port.System.autonomous a.realField, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous AHO.realField :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous AHO.realField :=
   fun _ => rfl
 
 variable {a}
@@ -552,7 +552,7 @@ private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
 @[powerlib_foundation] private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
   rw [sub_zero, PhasePlane.norm_sq_eq, energy]
 
-@[powerlib_domain] private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
+@[tmio M, powerlib_domain] private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
     fderiv ℝ energy x (a.realField x) ≤ -(-2 * a.c) * energy x := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
@@ -705,7 +705,7 @@ sign of `κ_v`. -/
 
 /-! ### Boundary witness: cubic damping at `c = 0` -/
 
-@[powerlib_domain] private theorem energy_lie (a : AHO) (x : State 2) :
+@[tmio M, powerlib_domain] private theorem energy_lie (a : AHO) (x : State 2) :
     fderiv ℝ energy x (a.realField x) = 2 * a.c * energy x - 2 * a.κv * energy x ^ 2 := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
@@ -722,12 +722,12 @@ and the amplitude obeys the cubic damping `ṙ = −r³`. -/
 def critical : AHO := ⟨0, 1, 1, 1⟩
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem critical_c : critical.c = 0 := by
+@[tmio M, powerlib_domain] theorem critical_c : critical.c = 0 := by
   simp [critical, AHO.c]
 
 /-- The energy `|v|²` is a strict global Lyapunov function of the critical AHO: its derivative
 along the field is `−2 |v|⁴`. -/
-@[powerlib_domain] private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.realField energy 0 where
+@[tmio M, powerlib_domain] private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.realField energy 0 where
   hcont := by unfold energy; fun_prop
   hV_c1 := by unfold energy; fun_prop
   hzero := by simp [energy]
@@ -800,7 +800,7 @@ stability is not decided by the linearization. -/
 
 /-- With `c = 0` and `κ_v > 0`, `|v|²` is a strict global Lyapunov function (derivative
 `−2 κ_v |v|⁴`). -/
-@[powerlib_domain] private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
+@[tmio M, powerlib_domain] private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
     IsStrictLyapunovFunction a.realField energy 0 where
   hcont := by unfold energy; fun_prop
   hV_c1 := by unfold energy; fun_prop
@@ -907,7 +907,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
 /-- Polar decomposition of the loaded AHO `v̇ = (jω_s − σ + κ_v(v*² − r²)) v − κ_i i`:
 with `v = r e^{jϕ}`, `ṙ = (κ_v(v*² − r²) − σ) r − Re(κ_i i e^{−jϕ})` and
 `ϕ̇ = ω_s − Im(κ_i i e^{−jϕ}) / r`. -/
-@[powerlib_domain] theorem polar_decomposition {r ϕ : ℝ → ℝ} {r' ϕ' : ℝ} {t κi : ℝ} {i : ℂ}
+@[tmio M, powerlib_domain] theorem polar_decomposition {r ϕ : ℝ → ℝ} {r' ϕ' : ℝ} {t κi : ℝ} {i : ℂ}
     (hr : HasDerivAt r r' t) (hϕ : HasDerivAt ϕ ϕ' t) (hr0 : 0 < r t)
     (hv : HasDerivAt (fun τ => (r τ : ℂ) * exp (ϕ τ * I))
       ((I * a.ωs - a.σ + (a.κv * (a.vstar ^ 2 - r t ^ 2) : ℝ)) * ((r t : ℂ) * exp (ϕ t * I))

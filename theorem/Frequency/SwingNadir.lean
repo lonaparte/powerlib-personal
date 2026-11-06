@@ -397,7 +397,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Every forward solution from rest is the closed form `respC` on `t ≥ 0`. -/
-@[powerlib_domain] private theorem trajectory_freq_eq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] private theorem trajectory_freq_eq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) {t : ℝ} (ht : 0 ≤ t) :
@@ -410,7 +410,7 @@ Every forward solution from rest is the closed form `respC` on `t ≥ 0`. -/
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.7 frequency nadir, exact: first critical time, strict decrease before it, global minimum over
 `t ≥ 0`, and the closed-form value. -/
-@[powerlib_domain] private theorem nadir (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D) (hKD : 0 < K + D)
+@[tmio TM, powerlib_domain] private theorem nadir (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D) (hKD : 0 < K + D)
     (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) :
@@ -439,7 +439,7 @@ Every forward solution from rest is the closed form `respC` on `t ≥ 0`. -/
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Successive extrema: at `t_nadir + kπ/ω_d` the frequency derivative vanishes and the deviation
 from the quasi-steady state is multiplied by `(−e^{−σπ/ω_d})^k`. -/
-@[powerlib_domain] private theorem nadir_successive (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio TM, powerlib_domain] private theorem nadir_successive (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) (k : ℕ) :

@@ -41,17 +41,17 @@ variable (p : FourState.Params)
       (fieldAngle p u ud z) 3 = z 2 - 1 := by
   refine ⟨?_, ?_, ?_⟩ <;> simp [fieldAngle, field, Dynamics.lift, coordField]
 
-@[powerlib_domain] private theorem hasDerivAt_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[tmio M, powerlib_domain] private theorem hasDerivAt_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) (t : ℝ) :
     HasDerivAt (fun s => φ s i) (fieldAngle p (θg t) (θgd t) (φ t) i) t := by
   exact (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp_hasDerivAt t (hφ t)
 
-@[powerlib_domain] private theorem continuous_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[tmio M, powerlib_domain] private theorem continuous_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) :
     Continuous fun s => φ s i :=
   continuous_iff_continuousAt.2 fun t => (hasDerivAt_coord p hφ i t).continuousAt
 
-@[powerlib_domain] private theorem continuous_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[tmio M, powerlib_domain] private theorem continuous_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) :
     Continuous fun s => vq p (φ s 0) (φ s 2) (φ s 3) := by
   have h0 := continuous_coord p hφ 0
@@ -62,7 +62,7 @@ variable (p : FourState.Params)
       (continuous_const.mul h3)))
 
 /-- `⟨V⟩ = 1`: `∫₀ᵀ (V − 1) dt = 0` on a returning solution. -/
-@[powerlib_domain] private theorem integral_V_sub_one {φ : ℝ → Dynamics.State 4}
+@[tmio TM, powerlib_domain] private theorem integral_V_sub_one {φ : ℝ → Dynamics.State 4}
     {θg θgd : ℝ → ℝ} (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t)
     {T : ℝ} (hT : φ T = φ 0) :
     ∫ t in (0 : ℝ)..T, (φ t 2 - 1) = 0 := by
@@ -74,7 +74,7 @@ variable (p : FourState.Params)
     (((continuous_coord p hφ 2).sub continuous_const).intervalIntegrable _ _), hT, sub_self]
 
 /-- `⟨v_q⟩ = 0`: `∫₀ᵀ v_q dt = 0` on a returning solution. -/
-@[powerlib_domain] private theorem integral_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[tmio TM, powerlib_domain] private theorem integral_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) {T : ℝ} (hT : φ T = φ 0) :
     ∫ t in (0 : ℝ)..T, vq p (φ t 0) (φ t 2) (φ t 3) = 0 := by
   have hd : ∀ t ∈ Set.uIcc 0 T,
@@ -86,7 +86,7 @@ variable (p : FourState.Params)
     sub_self]
 
 /-- `k_i ⟨x⟩ = 0`: `k_i ∫₀ᵀ x dt = 0` on a returning solution with returning grid angle. -/
-@[powerlib_domain] private theorem ki_mul_integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[tmio TM, powerlib_domain] private theorem ki_mul_integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t)
     (hθg : ∀ t, HasDerivAt θg (θgd t) t) (hθgd : Continuous θgd) {T : ℝ} (hT : φ T = φ 0)
     (hTg : θg T = θg 0) :
@@ -113,7 +113,7 @@ variable (p : FourState.Params)
   linarith
 
 /-- `⟨x⟩ = 0` when `k_i ≠ 0`. -/
-@[powerlib_domain] private theorem integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[tmio TM, powerlib_domain] private theorem integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t)
     (hθg : ∀ t, HasDerivAt θg (θgd t) t) (hθgd : Continuous θgd) (hki : p.ki ≠ 0) {T : ℝ}
     (hT : φ T = φ 0) (hTg : θg T = θg 0) :

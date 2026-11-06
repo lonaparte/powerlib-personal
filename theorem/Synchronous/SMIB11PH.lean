@@ -148,7 +148,7 @@ def smib11_current (p : SMIB11Params) (x : State 11) : Fin 5 → ℝ := p.Γ *�
 def smib11_speed (p : SMIB11Params) (x : State 11) : ℝ := x 5 / p.M
 
 /-- `Q x = ∇H = (i, ω_r, 0, q_D/C, q_Q/C, φ_D/L_l, φ_Q/L_l)`. -/
-@[powerlib_domain] theorem smib11_Q_mulVec (p : SMIB11Params) (x : State 11) :
+@[tmio M, powerlib_domain] theorem smib11_Q_mulVec (p : SMIB11Params) (x : State 11) :
     smib11_Q p *ᵥ WithLp.ofLp x =
       ![smib11_current p x 0, smib11_current p x 1, smib11_current p x 2,
         smib11_current p x 3, smib11_current p x 4, smib11_speed p x, 0,
@@ -198,7 +198,7 @@ def smib11 (p : SMIB11Params) : NonlinearModel 11 4 where
       simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg, p.rl_nonneg])
   hasGradient := hasGradientAt_quadraticEnergy (smib11_Q_symm p)
 
-@[powerlib_domain] theorem smib11_dH (p : SMIB11Params) (x : State 11) :
+@[tmio M, powerlib_domain] theorem smib11_dH (p : SMIB11Params) (x : State 11) :
     WithLp.ofLp ((smib11 p).dH x) =
       ![smib11_current p x 0, smib11_current p x 1, smib11_current p x 2,
         smib11_current p x 3, smib11_current p x 4, smib11_speed p x, 0,
@@ -207,7 +207,7 @@ def smib11 (p : SMIB11Params) : NonlinearModel 11 4 where
 
 /-- The pH field reproduces the eleven state equations of §1.5.1 (with `δ̇ = ω_r` as in the
 note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
-@[powerlib_domain] theorem smib11_field (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) :
+@[tmio M, powerlib_domain] theorem smib11_field (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) :
     WithLp.ofLp ((smib11 p).field x u) =
       ![-p.rs * smib11_current p x 0 + smib11_speed p x * x 1 +
           (Real.cos (x 6) * (x 7 / p.C) + Real.sin (x 6) * (x 8 / p.C)),
@@ -234,7 +234,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
   all_goals field_simp
   all_goals ring
 
-@[powerlib_domain] theorem smib11_dampingPower (p : SMIB11Params) (x : State 11) :
+@[tmio M, powerlib_domain] theorem smib11_dampingPower (p : SMIB11Params) (x : State 11) :
     (smib11 p).dampingPower x =
       p.rs * (smib11_current p x 0 ^ 2 + smib11_current p x 1 ^ 2) +
         p.rf * smib11_current p x 2 ^ 2 + p.rkd * smib11_current p x 3 ^ 2 +
@@ -244,7 +244,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
   simp [smib11, smib11_R, mulVec, dotProduct, Fin.sum_univ_succ, Matrix.diagonal_apply]
   ring
 
-@[powerlib_domain] theorem smib11_supply (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) :
+@[tmio M, powerlib_domain] theorem smib11_supply (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) :
     (smib11 p).supply x u =
       u 0 * smib11_current p x 2 + u 1 * smib11_speed p x -
         u 2 * (x 9 / p.Ll) - u 3 * (x 10 / p.Ll) := by
@@ -254,7 +254,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
 
 /-- Energy balance of §1.5.1: `Ḣ = (v_f i_f + T_m ω_r − V_D^∞ I_D − V_Q^∞ I_Q) −
 (r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r² + r_l(I_D² + I_Q²))`. -/
-@[powerlib_domain] theorem smib11_power_balance (p : SMIB11Params) (x : State 11)
+@[tmio M, powerlib_domain] theorem smib11_power_balance (p : SMIB11Params) (x : State 11)
     (u : Fin 4 → ℝ) :
     fderiv ℝ (smib11 p).H x ((smib11 p).field x u) =
       (u 0 * smib11_current p x 2 + u 1 * smib11_speed p x -
@@ -266,7 +266,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
   rw [NonlinearModel.power_balance, smib11_supply, smib11_dampingPower]
 
 /-- `H^tot` is the block sum of the machine, node-capacitor and link energies (§1.4). -/
-@[powerlib_domain] theorem smib11_H (p : SMIB11Params) (x : State 11) :
+@[tmio M, powerlib_domain] theorem smib11_H (p : SMIB11Params) (x : State 11) :
     (smib11 p).H x =
       ((1 / 2 : ℝ) * (smib11_flux x ⬝ᵥ (p.Γ *ᵥ smib11_flux x)) + x 5 ^ 2 / (2 * p.M)) +
         (x 7 ^ 2 + x 8 ^ 2) / (2 * p.C) + (x 9 ^ 2 + x 10 ^ 2) / (2 * p.Ll) := by
@@ -276,7 +276,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
   simp [smib11_current, smib11_flux, smib11_speed, dotProduct, Fin.sum_univ_succ]
   ring
 
-@[powerlib_domain] theorem smib11_H_nonneg (p : SMIB11Params) (x : State 11) :
+@[tmio M, powerlib_domain] theorem smib11_H_nonneg (p : SMIB11Params) (x : State 11) :
     0 ≤ (smib11 p).H x := by
   rw [smib11_H]
   have h := p.Γ_posDef.posSemidef.dotProduct_mulVec_nonneg (smib11_flux x)
@@ -290,7 +290,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
 def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
 
 /-- `H` vanishes along the rotor-angle axis: it does not depend on `δ`. -/
-@[powerlib_domain] theorem smib11_H_angleAxis (p : SMIB11Params) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem smib11_H_angleAxis (p : SMIB11Params) (θ : ℝ) :
     (smib11 p).H (smib11_angleAxis θ) = 0 := by
   have hflux : smib11_flux (smib11_angleAxis θ) = 0 := by
     ext i
@@ -304,7 +304,7 @@ def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
 
 /-- `H^tot` is not positive definite (it vanishes along the rotor-angle axis), hence it is no
 quadratic storage. -/
-@[powerlib_domain] theorem smib11_no_quadraticStorage (p : SMIB11Params) :
+@[tmio M, powerlib_domain] theorem smib11_no_quadraticStorage (p : SMIB11Params) :
     ¬ ∀ x : State 11, x ≠ 0 → 0 < (smib11 p).H x := by
   intro hpos
   have h := hpos _ smib11_angleAxis_one_ne_zero
@@ -313,7 +313,7 @@ quadratic storage. -/
 
 /-- Correction: with the note's `δ̇ = ω_r`, every equilibrium (for any constant input) has
 `ω_r = 0`. -/
-@[powerlib_domain] theorem smib11_speed_eq_zero_of_equilibrium (p : SMIB11Params)
+@[tmio M, powerlib_domain] theorem smib11_speed_eq_zero_of_equilibrium (p : SMIB11Params)
     (x : State 11) (u : Fin 4 → ℝ) (h : (smib11 p).field x u = 0) : smib11_speed p x = 0 := by
   have h' := congrFun (congrArg WithLp.ofLp h) 6
   rw [smib11_field] at h'
@@ -321,7 +321,7 @@ quadratic storage. -/
 
 /-- Correction: synchronous operation `ω_r = ω_s ≠ 0` is never an equilibrium of the
 note's ODE. -/
-@[powerlib_domain] theorem smib11_not_equilibrium_of_synchronous (p : SMIB11Params)
+@[tmio M, powerlib_domain] theorem smib11_not_equilibrium_of_synchronous (p : SMIB11Params)
     (hωs : p.ωs ≠ 0) (x : State 11) (hx : smib11_speed p x = p.ωs) (u : Fin 4 → ℝ) :
     (smib11 p).field x u ≠ 0 := fun h =>
   hωs (hx ▸ smib11_speed_eq_zero_of_equilibrium p x u h)
@@ -332,26 +332,26 @@ note's ODE. -/
 def smib11Rel_field (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) : State 11 :=
   (smib11 p).field x u - smib11_angleAxis p.ωs
 
-@[powerlib_domain] theorem smib11Rel_field_angle (p : SMIB11Params) (x : State 11)
+@[tmio M, powerlib_domain] theorem smib11Rel_field_angle (p : SMIB11Params) (x : State 11)
     (u : Fin 4 → ℝ) : smib11Rel_field p x u 6 = smib11_speed p x - p.ωs := by
   have h := congrFun (smib11_field p x u) 6
   simp only [smib11Rel_field, PiLp.sub_apply]
   rw [show (smib11 p).field x u 6 = WithLp.ofLp ((smib11 p).field x u) 6 from rfl, h]
   simp [smib11_angleAxis]
 
-@[powerlib_domain] theorem smib11Rel_field_other (p : SMIB11Params) (x : State 11)
+@[tmio M, powerlib_domain] theorem smib11Rel_field_other (p : SMIB11Params) (x : State 11)
     (u : Fin 4 → ℝ) (i : Fin 11) (hi : i ≠ 6) :
     smib11Rel_field p x u i = (smib11 p).field x u i := by
   simp [smib11Rel_field, smib11_angleAxis, hi]
 
 /-- The frame drift does no work: `∂H/∂δ = 0`. -/
-@[powerlib_domain] theorem smib11_fderiv_H_angleAxis (p : SMIB11Params) (x : State 11)
+@[tmio M, powerlib_domain] theorem smib11_fderiv_H_angleAxis (p : SMIB11Params) (x : State 11)
     (θ : ℝ) : fderiv ℝ (smib11 p).H x (smib11_angleAxis θ) = 0 := by
   rw [NonlinearModel.fderiv_H_apply, smib11_dH]
   simp [smib11_angleAxis, dotProduct]
 
 /-- Energy balance of the corrected model: identical to `smib11_power_balance`. -/
-@[powerlib_domain] theorem smib11Rel_power_balance (p : SMIB11Params) (x : State 11)
+@[tmio M, powerlib_domain] theorem smib11Rel_power_balance (p : SMIB11Params) (x : State 11)
     (u : Fin 4 → ℝ) :
     fderiv ℝ (smib11 p).H x (smib11Rel_field p x u) =
       (smib11 p).supply x u - (smib11 p).dampingPower x := by
@@ -362,11 +362,11 @@ def smib11Rel_field (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) : Stat
 def smib11Rel_system (p : SMIB11Params) : Port.System 11 4 :=
   ⟨smib11Rel_field p, fun x _ => (smib11 p).output x⟩
 
-@[powerlib_domain] theorem smib11Rel_system_supply (p : SMIB11Params) (x : State 11)
+@[tmio M, powerlib_domain] theorem smib11Rel_system_supply (p : SMIB11Params) (x : State 11)
     (u : Fin 4 → ℝ) : (smib11Rel_system p).supply x u = (smib11 p).supply x u := rfl
 
 /-- In the corrected model every equilibrium runs at synchronous speed `ω_r = ω_s`. -/
-@[powerlib_domain] theorem smib11Rel_speed_eq_of_equilibrium (p : SMIB11Params)
+@[tmio M, powerlib_domain] theorem smib11Rel_speed_eq_of_equilibrium (p : SMIB11Params)
     (x : State 11) (u : Fin 4 → ℝ) (h : smib11Rel_field p x u = 0) :
     smib11_speed p x = p.ωs := by
   have h' := congrArg (fun z : State 11 => z 6) h
@@ -378,17 +378,17 @@ def smib11Rel_system (p : SMIB11Params) : Port.System 11 4 :=
 /-! ### The rotor-angle direction at the origin -/
 
 /-- The entries of `J^tot(x)` are `C¹` (constants, `Ψ_d`, `Ψ_q`, `cos δ`, `sin δ`). -/
-@[powerlib_domain] private theorem smib11_contDiff_J (p : SMIB11Params) (i j : Fin 11) :
+@[tmio M, powerlib_domain] private theorem smib11_contDiff_J (p : SMIB11Params) (i j : Fin 11) :
     ContDiff ℝ 1 fun x : State 11 => smib11_J p x i j := by
   fin_cases i <;> fin_cases j <;> simp [smib11_J] <;> fun_prop
 
 /-- `∇H` is the linear map `x ↦ Q x`. -/
-@[powerlib_domain] private theorem smib11_dH_eq (p : SMIB11Params) :
+@[tmio M, powerlib_domain] private theorem smib11_dH_eq (p : SMIB11Params) :
     (smib11 p).dH = Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p) :=
   funext fun _ => rfl
 
 /-- The zero-input field `(J^tot(x) − R^tot) ∇H(x)` of the note's model is `C¹`. -/
-@[powerlib_domain] private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
+@[tmio M, powerlib_domain] private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
     ContDiff ℝ 1 (smib11 p).zeroInputField :=
   (smib11 p).contDiff_zeroInputField (smib11_contDiff_J p) (fun _ _ => contDiff_const)
     (by rw [smib11_dH_eq]; exact ContinuousLinearMap.contDiff _)
@@ -396,7 +396,7 @@ def smib11Rel_system (p : SMIB11Params) : Port.System 11 4 :=
 /-- At the origin the Jacobian `(J^tot(0) − R^tot) Q` of the note's zero-input field kills the
 rotor-angle axis: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero (`∂H/∂δ = 0`). The
 `δ`-dependence of `J^tot` (through `cos δ`, `sin δ`) multiplies `∇H(0) = 0`. -/
-@[powerlib_domain] private theorem smib11_fderiv_angleAxis (p : SMIB11Params) :
+@[tmio M, powerlib_domain] private theorem smib11_fderiv_angleAxis (p : SMIB11Params) :
     fderiv ℝ (smib11 p).zeroInputField 0 (smib11_angleAxis 1) = 0 := by
   have hQ : HasFDerivAt (smib11 p).dH
       (Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p)) 0 := by
@@ -412,7 +412,7 @@ rotor-angle axis: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero 
   simp [smib11_angleAxis, hcol]
 
 /-- The corrected zero-input field is the note's minus the constant frame drift `ω_s e_δ`. -/
-@[powerlib_domain] private theorem smib11Rel_zeroInput (p : SMIB11Params) :
+@[tmio M, powerlib_domain] private theorem smib11Rel_zeroInput (p : SMIB11Params) :
     (smib11Rel_system p).zeroInput =
       fun x => (smib11 p).zeroInputField x - smib11_angleAxis p.ωs :=
   rfl
@@ -439,7 +439,7 @@ def translate : Sentence → Set Requirement
 def family : Family SMIB11Params Requirement 11 4 :=
   ⟨fun p => (smib11 p).system, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isNonlinearPH : family.IsNonlinearPH smib11 :=
+@[tmio M, powerlib_domain] theorem family_isNonlinearPH : family.IsNonlinearPH smib11 :=
   fun _ => rfl
 
 @[tmio M, powerlib_domain] theorem realize_univ :
@@ -508,7 +508,7 @@ def family : Family SMIB11Params SMIB11.Requirement 11 4 :=
 
 /-- The corrected model is passive with storage `H^tot`: the frame drift does no work.
 Implementation evidence for `mem_den_passive`. -/
-@[powerlib_domain] private theorem passiveWith (p : SMIB11Params) :
+@[tmio TM, powerlib_domain] private theorem passiveWith (p : SMIB11Params) :
     (smib11Rel_system p).PassiveWith (smib11 p).H :=
   (smib11Rel_system p).passiveWith_of_rate _ (smib11_H_nonneg p)
     (fun x u => fderiv ℝ (smib11 p).H x (smib11Rel_field p x u))

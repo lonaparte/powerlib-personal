@@ -106,7 +106,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The collocated output is the loop current `i = φ / L`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem seriesRLC_output (p : SeriesRLCParams) (x : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem seriesRLC_output (p : SeriesRLCParams) (x : Fin 2 → ℝ) :
     (seriesRLC p).output x = ![x 0 / p.L] := by
   ext i
   fin_cases i
@@ -115,14 +115,14 @@ Static evidence on the model, not a connection conclusion. -/
   ring
 
 /-- The pH energy is the circuit energy `φ²/(2L) + q²/(2C)`. -/
-@[powerlib_domain] theorem seriesRLC_energy (p : SeriesRLCParams) (x : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem seriesRLC_energy (p : SeriesRLCParams) (x : Fin 2 → ℝ) :
     (seriesRLC p).energy x = x 0 ^ 2 / (2 * p.L) + x 1 ^ 2 / (2 * p.C) := by
   simp [DiagonalPH.energy, seriesRLC, Fin.sum_univ_two]
   ring
 
 /-- Energy balance (1.2) for the loop: `Ḣ = u i − r i²`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem seriesRLC_power_balance (p : SeriesRLCParams)
+@[tmio M, powerlib_domain] theorem seriesRLC_power_balance (p : SeriesRLCParams)
     (x : Fin 2 → ℝ) (u : Fin 1 → ℝ) :
     (seriesRLC p).gradient x ⬝ᵥ (seriesRLC p).field x u =
       u 0 * (x 0 / p.L) - p.r * (x 0 / p.L) ^ 2 := by
@@ -141,7 +141,7 @@ def seriesRLCPH (p : SeriesRLCParams) : Port.PortHamiltonian 2 1 :=
 
 /-- The state field of the plant is the Kirchhoff field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem seriesRLCPH_field (p : SeriesRLCParams)
+@[tmio M, powerlib_domain] theorem seriesRLCPH_field (p : SeriesRLCParams)
     (x : EuclideanSpace ℝ (Fin 2)) (u : Fin 1 → ℝ) :
     WithLp.ofLp ((seriesRLCPH p).plant.system.field x u) =
       seriesRLC_kirchhoffField p (WithLp.ofLp x) u := by
@@ -150,7 +150,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The state matrix `(J − R) Q` of the loop.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem seriesRLCPH_stateMatrix (p : SeriesRLCParams) :
+@[tmio M, powerlib_domain] theorem seriesRLCPH_stateMatrix (p : SeriesRLCParams) :
     (seriesRLCPH p).plant.A = !![-(p.r / p.L), -(1 / p.C); 1 / p.L, 0] := by
   rw [seriesRLCPH, DiagonalPH.toPH_plant]
   ext i j

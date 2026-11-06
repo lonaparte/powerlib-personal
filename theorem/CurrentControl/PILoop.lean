@@ -116,7 +116,7 @@ def model : Plant 2 1 :=
 /-- The equilibrium for a constant reference: `i = i*`, `ξ = R i*/Ki`. -/
 def equilibrium (iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, p.R * iref / p.Ki]
 
-@[powerlib_domain] theorem isEquilibrium (hKi : p.Ki ≠ 0) (iref : ℝ) :
+@[tmio M, powerlib_domain] theorem isEquilibrium (hKi : p.Ki ≠ 0) (iref : ℝ) :
     IsEquilibrium (p.model.inputField fun _ => iref) (p.equilibrium iref) := by
   rw [IsEquilibrium, model_field]
   ext j
@@ -126,7 +126,7 @@ def equilibrium (iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, p.R * iref / p.Ki]
 
 /-- Every equilibrium of the closed loop has zero tracking error `i = i*`. Static evidence on
 the model, not a connection conclusion. -/
-@[powerlib_domain] theorem equilibrium_current {iref : ℝ} {e : ℝ²}
+@[tmio M, powerlib_domain] theorem equilibrium_current {iref : ℝ} {e : ℝ²}
     (he : IsEquilibrium (p.model.inputField fun _ => iref) e) : e 0 = iref := by
   rw [IsEquilibrium, model_field] at he
   have h := congrArg (fun z : ℝ² => z 1) he
@@ -134,7 +134,7 @@ the model, not a connection conclusion. -/
   linarith
 
 /-- Characteristic determinant: `det (sI − A) = (L s² + (R + Kp) s + Ki)/L`. -/
-@[powerlib_domain] theorem det_characteristicMatrix (hL : p.L ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix (hL : p.L ≠ 0) (s : ℂ) :
     (characteristicMatrix p.model.A s).det =
       ((p.L : ℂ) * s ^ 2 + (p.R + p.Kp) * s + p.Ki) / p.L := by
   have hL' : (p.L : ℂ) ≠ 0 := by exact_mod_cast hL
@@ -154,7 +154,7 @@ plant (input `i*`, output `i`). -/
 def family : Family PIParams Spectral.Requirement 2 1 :=
   Spectral.linearFamily model Stable Unstable
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear model :=
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear model :=
   Spectral.linearFamily_isLinear _ _ _
 
 /-- Routh–Hurwitz for the PI loop, for every inductance: the monic characteristic coefficients
@@ -180,7 +180,7 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
   rw [(connection_proof% isHurwitz_iff_div), div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
-@[powerlib_domain] theorem exists_root_of_unstable
+@[tmio M, powerlib_domain] theorem exists_root_of_unstable
     (h : (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0) :
     ∃ s : ℂ, (characteristicMatrix p.model.A s).det = 0 ∧ 0 < s.re := by
   change ∃ s : ℂ, (characteristicMatrix !![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] s).det = 0 ∧
@@ -195,7 +195,7 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
 
 /-- Closed-loop reference-to-current transfer function. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_domain] theorem transfer_eq (hL : p.L ≠ 0) {s : ℂ}
+@[tmio M, powerlib_domain] theorem transfer_eq (hL : p.L ≠ 0) {s : ℂ}
     (hs : (p.L : ℂ) * s ^ 2 + (p.R + p.Kp) * s + p.Ki ≠ 0) :
     transfer p.model s 0 0 =
       ((p.Kp : ℂ) * s + p.Ki) / ((p.L : ℂ) * s ^ 2 + (p.R + p.Kp) * s + p.Ki) := by
@@ -224,14 +224,14 @@ def withGain (Vdc : ℝ) : PIParams := ⟨p.L, p.R, Vdc * p.Kp, Vdc * p.Ki⟩
 def dutyField (Vdc iref : ℝ) (x : ℝ²) : ℝ² :=
   WithLp.toLp 2 ![(-p.R * x 0 + Vdc * p.control iref x) / p.L, iref - x 0]
 
-@[powerlib_domain] theorem dutyField_eq (Vdc iref : ℝ) (x : ℝ²) :
+@[tmio M, powerlib_domain] theorem dutyField_eq (Vdc iref : ℝ) (x : ℝ²) :
     p.dutyField Vdc iref x = (p.withGain Vdc).field iref x := by
   ext j
   fin_cases j <;> simp [dutyField, field, control, withGain]
   ring
 
 /-- Characteristic polynomial of the duty-cycle loop: `L s² + (R + V_dc Kp) s + V_dc Ki`. -/
-@[powerlib_domain] theorem withGain_det_characteristicMatrix (hL : p.L ≠ 0) (Vdc : ℝ)
+@[tmio M, powerlib_domain] theorem withGain_det_characteristicMatrix (hL : p.L ≠ 0) (Vdc : ℝ)
     (s : ℂ) :
     (characteristicMatrix (p.withGain Vdc).model.A s).det =
       ((p.L : ℂ) * s ^ 2 + (p.R + Vdc * p.Kp) * s + Vdc * p.Ki) / p.L := by
@@ -248,7 +248,7 @@ def refFeedbackModel (κ : ℝ) : Plant 2 1 :=
   ⟨!![-(p.R + p.Kp * (1 - κ)) / p.L, p.Ki / p.L; -(1 - κ), 0], !![p.Kp / p.L; 1],
     !![1, 0], !![0]⟩
 
-@[powerlib_domain] theorem refFeedbackModel_field (κ r : ℝ) (x : ℝ²) :
+@[tmio M, powerlib_domain] theorem refFeedbackModel_field (κ r : ℝ) (x : ℝ²) :
     (p.refFeedbackModel κ).inputField (fun _ => r) x = p.refFeedbackField κ r x := by
   ext j
   fin_cases j <;>
@@ -270,7 +270,7 @@ def RefUnstable (q : PIParams × ℝ) : Prop :=
 def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
   Spectral.linearFamily (fun q => q.1.refFeedbackModel q.2) RefStable RefUnstable
 
-@[powerlib_domain] theorem refFamily_isLinear :
+@[tmio M, powerlib_domain] theorem refFamily_isLinear :
     refFamily.IsLinear fun q => q.1.refFeedbackModel q.2 :=
   Spectral.linearFamily_isLinear _ _ _
 
@@ -296,7 +296,7 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
   unfold TMIO.Statement
   rw [(connection_proof% refFeedback_isHurwitz_iff_div), div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
-@[powerlib_domain] theorem refFeedback_exists_root_of_unstable {κ : ℝ}
+@[tmio M, powerlib_domain] theorem refFeedback_exists_root_of_unstable {κ : ℝ}
     (h : (p.R + p.Kp * (1 - κ)) / p.L < 0 ∨ p.Ki * (1 - κ) / p.L < 0) :
     ∃ s : ℂ, (characteristicMatrix (p.refFeedbackModel κ).A s).det = 0 ∧ 0 < s.re := by
   change ∃ s : ℂ, (characteristicMatrix
@@ -410,7 +410,7 @@ iff `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`. -/
 /-- Reference tracking: with a constant reference, every solution converges to
 `(i*, R i*/Ki)`; in particular the current error vanishes.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p.Kp)
+@[tmio TM, powerlib_domain] private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p.Kp)
     (hKi : 0 < p.Ki) {iref : ℝ} {x : ℝ → ℝ²} (hx : ∀ t, HasDerivAt x (p.field iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧
       Tendsto (fun t => x t 1) atTop (𝓝 (p.R * iref / p.Ki)) := by

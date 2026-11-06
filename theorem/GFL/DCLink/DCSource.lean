@@ -90,7 +90,7 @@ def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
 
 /-- The constant-current `A₃₃` is the `(V, V)` entry of the four-state `A₀`
 (`η = 0`, `P = −(3/2) v_{d0} i_{d0}`). -/
-@[powerlib_domain] theorem a33_constCurrent_eq_A0 (p : FourState.Params) (θ0 : ℝ) :
+@[tmio M, powerlib_domain] theorem a33_constCurrent_eq_A0 (p : FourState.Params) (θ0 : ℝ) :
     (-1.5 * FourState.vd0 p θ0 * p.kpv +
         -loopPower (FourState.vd0 p θ0) p.id0 p.kpv p.kiv 0 1) / p.C =
       FourState.A0 p θ0 2 2 := by

@@ -62,7 +62,7 @@ namespace VSMLPF
 open Set Matrix
 open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext toEuclideanCLM_apply3)
 
-@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
     family_isAutonomous
@@ -80,17 +80,17 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
     hopfCoord m z 0 = (m.g.ωc + m.g.D / m.g.M) * z 0 + z 1 := by
   simp [hopfCoord, toEuclideanCLM_apply3]
 
-@[simp, powerlib_domain] theorem hopfCoord_apply_one (m : Model) (z : State 3) :
+@[tmio M, simp, powerlib_domain] theorem hopfCoord_apply_one (m : Model) (z : State 3) :
     hopfCoord m z 1 = m.g.ωc * z 1 - z 2 / m.g.M := by
   simp [hopfCoord, toEuclideanCLM_apply3]; ring
 
-@[simp, powerlib_domain] theorem hopfCoord_apply_two (m : Model) (z : State 3) :
+@[tmio M, simp, powerlib_domain] theorem hopfCoord_apply_two (m : Model) (z : State 3) :
     hopfCoord m z 2 = m.g.D * m.g.ωc / m.g.M * z 0 - m.g.D / m.g.M * z 1 - z 2 / m.g.M := by
   simp [hopfCoord, toEuclideanCLM_apply3]; ring
 
 /-- The angle deviation is recovered from the Hopf coordinates:
 `(λ a − b + c)/(H + λ²) = δ − δ*`. -/
-@[powerlib_domain] theorem hopfCoord_angle (m : Model) (hM : 0 < m.g.M) (hD : 0 < m.g.D)
+@[tmio M, powerlib_domain] theorem hopfCoord_angle (m : Model) (hM : 0 < m.g.M) (hD : 0 < m.g.D)
     (hω : 0 < m.g.ωc) (z : State 3) :
     ((m.g.ωc + m.g.D / m.g.M) * hopfCoord m z 0 - hopfCoord m z 1 + hopfCoord m z 2) /
       (m.g.D * m.g.ωc / m.g.M + (m.g.ωc + m.g.D / m.g.M) ^ 2) = z 0 := by
@@ -99,7 +99,7 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
   ring
 
 /-- Components of the translated field. -/
-@[powerlib_domain] private theorem field_apply (m : Model) (z : State 3) :
+@[tmio M, powerlib_domain] private theorem field_apply (m : Model) (z : State 3) :
     m.field z 0 = z 1 ∧ m.field z 1 = (-z 2 - m.g.D * z 1) / m.g.M ∧
       m.field z 2 = m.g.ωc * (m.g.K0 * Real.sin (z 0 + m.δ) - z 2 - m.g.P0) := by
   simp only [Model.field, VSMLPF.field_apply_zero, VSMLPF.field_apply_one, VSMLPF.field_apply_two,
@@ -107,7 +107,7 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
   exact ⟨by ring, by ring, by ring⟩
 
 /-- At a balanced angle the restoring power is `K₀ sin(x + δ*) − P₀ = K sin x + P₀ (cos x − 1)`. -/
-@[powerlib_domain] private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x : ℝ) :
+@[tmio M, powerlib_domain] private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x : ℝ) :
     m.g.K0 * Real.sin (x + m.δ) - m.g.P0 = m.K * Real.sin x + m.g.P0 * (Real.cos x - 1) := by
   rw [Real.sin_add, ← hb, Model.K]
   ring

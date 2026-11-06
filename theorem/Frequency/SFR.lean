@@ -304,7 +304,7 @@ def translate : Sentence → Set Requirement
 frequency deviation out). -/
 def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- Routh–Hurwitz for the corrected SFR plant: for `M, T_g, T_R > 0` it is Hurwitz iff
 `a₂ > 0`, `a₀ = K_R + D > 0` and `a₂ a₁ > a₃ a₀`. -/
@@ -637,7 +637,7 @@ the field satisfies `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v`, i.e. `G_turb`
 def reducedModel (M D K F TR : ℝ) (hM : 0 < M) (hTR : 0 < TR) : SwingGovernor.Model :=
   ⟨M, D + F * K, (1 - F) * K, TR, hM, hTR⟩
 
-@[powerlib_domain] theorem reducedModel_plant (hM : 0 < M) (hTR : 0 < TR) :
+@[tmio M, powerlib_domain] theorem reducedModel_plant (hM : 0 < M) (hTR : 0 < TR) :
     (reducedModel M D K F TR hM hTR).plant = reducedPlant M D K F TR := rfl
 
 /-- The reduced SFR model (`0 ≤ D + F K_R`, `0 < K_R + D`) is globally exponentially stable as a
@@ -700,7 +700,7 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.7: from rest, `Δω̇(0⁺) = −ΔP_L/M` (the turbine zero does not change the initial slope). -/
-@[powerlib_domain] private theorem rocof {x : ℝ → ℝ³}
+@[tmio M, powerlib_domain] private theorem rocof {x : ℝ → ℝ³}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K F Tg TR).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
@@ -713,7 +713,7 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.7 with the added sufficient condition `F ≥ T_g/(T_g + T_R)`: `Δω(t) → −ΔP_L/(K_R + D)` along
 every forward solution under the load step. -/
-@[powerlib_domain] private theorem tendsto_freq (hM : 0 < M) (hTg : 0 < Tg) (hTR : 0 < TR)
+@[tmio TM, powerlib_domain] private theorem tendsto_freq (hM : 0 < M) (hTg : 0 < Tg) (hTR : 0 < TR)
     (hD : 0 ≤ D) (hK : 0 ≤ K) (hKD : 0 < K + D) (hF : Tg / (Tg + TR) ≤ F) {x : ℝ → ℝ³}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K F Tg TR).inputField (load ΔPL) y)
       (Ici 0)) :
@@ -728,7 +728,7 @@ every forward solution under the load step. -/
 `Δω` decreases strictly up to `t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d > 0`, attains its minimum
 over `t ≥ 0` there, and the minimum is
 `−ΔP_L/(K_R + D)·[1 + √(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}]`. -/
-@[powerlib_domain] private theorem reduced_nadir (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
+@[tmio TM, powerlib_domain] private theorem reduced_nadir (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
     (hKD : 0 < K + D) (hP : 0 < ΔPL)
     (hζ : SwingGovernor.dampingRatio M (D + F * K) ((1 - F) * K) TR < 1)
     {x : ℝ → EuclideanSpace ℝ (Fin 2)}
@@ -778,7 +778,7 @@ over `t ≥ 0` there, and the minimum is
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Reduced model: from rest, `Δω̇(0⁺) = −ΔP_L/M` (§1.7). -/
-@[powerlib_domain] private theorem reduced_rocof {x : ℝ → EuclideanSpace ℝ (Fin 2)}
+@[tmio M, powerlib_domain] private theorem reduced_rocof {x : ℝ → EuclideanSpace ℝ (Fin 2)}
     (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
@@ -790,7 +790,7 @@ Reduced model: from rest, `Δω̇(0⁺) = −ΔP_L/M` (§1.7). -/
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Reduced model: `Δω → −ΔP_L/(K_R + D)` along every forward solution (`0 ≤ D + F K_R`). -/
-@[powerlib_domain] private theorem reduced_tendsto_freq (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
+@[tmio TM, powerlib_domain] private theorem reduced_tendsto_freq (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
     (hKD : 0 < K + D) {x : ℝ → EuclideanSpace ℝ (Fin 2)}
     (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
       (Ici 0)) :

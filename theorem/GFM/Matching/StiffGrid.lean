@@ -203,7 +203,7 @@ end Model
   · ring
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem hasDerivAt_iHatQ (m : Model) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_iHatQ (m : Model) (θ : ℝ) :
     HasDerivAt m.iHatQ
       (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) θ := by
   have h := (((Real.hasDerivAt_sin θ).const_mul (m.μ * m.ustar)).const_mul (-(m.ω0 * m.Ls))).add
@@ -214,7 +214,7 @@ end Model
   · ring
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem energy_differentiable (m : Model) : Differentiable ℝ m.energy := by
+@[tmio M, powerlib_domain] theorem energy_differentiable (m : Model) : Differentiable ℝ m.energy := by
   have h := fun j : Fin 4 => (PiLp.proj 2 (fun _ : Fin 4 => ℝ) j : State 4 →L[ℝ] ℝ).differentiable
   have h0 : Differentiable ℝ (fun x : State 4 => x 0) := h 0
   have h1 : Differentiable ℝ (fun x : State 4 => x 1) := h 1
@@ -226,7 +226,7 @@ end Model
   fun_prop
 
 /-- The derivative of the energy. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem fderiv_energy (m : Model) (x v : State 4) :
+@[tmio M, powerlib_domain] theorem fderiv_energy (m : Model) (x v : State 4) :
     fderiv ℝ m.energy x v =
       m.Cdc * (x 1 - m.ustar) * v 1 + m.k * Real.sin (x 0) * v 0 +
         m.Ls * ((x 2 - m.iHatD (x 0)) *
@@ -265,7 +265,7 @@ end Model
 /-- The energy balance of the source's appendix:
 `dH/dt = −(G_dc+K_p) ũ² − R_s ‖ĩ‖² − ũ ĩᵀ T(θ)`, `T(θ) = (μ ω₀ L_s/N) Z_sᵀ (cos θ, sin θ)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem energy_lie (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
+@[tmio M, powerlib_domain] theorem energy_lie (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) =
       -(m.Gdc + m.Kp) * (x 1 - m.ustar) ^ 2 -
@@ -307,7 +307,7 @@ Static evidence on the model, not a connection conclusion. -/
   linarith
 
 /-- With `R_s > 0`, `dH/dt ≤ −margin ũ²`. An equivalent form of the damping requirement. -/
-@[powerlib_domain] theorem energy_lie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
+@[tmio M, powerlib_domain] theorem energy_lie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) ≤ -m.margin * (x 1 - m.ustar) ^ 2 := by
   have hN : 0 < m.N := by
@@ -330,7 +330,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Every `θ_dq` with `sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`; for
 `θ_dq = π` it is the saddle of `S` contained in the source's LaSalle set. Static evidence on the
 model, not a connection conclusion. -/
-@[powerlib_domain] theorem field_eq_zero_of_sin_eq_zero (m : Model) (hN : m.N ≠ 0) {θ : ℝ}
+@[tmio M, powerlib_domain] theorem field_eq_zero_of_sin_eq_zero (m : Model) (hN : m.N ≠ 0) {θ : ℝ}
     (hθ : Real.sin θ = 0) :
     m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 := by
   ext i
@@ -352,20 +352,20 @@ model, not a connection conclusion. -/
     ring
 
 /-- The operating point is an equilibrium. An equivalent form of the damping requirement. -/
-@[powerlib_domain] theorem field_point (m : Model) (hN : m.N ≠ 0) : m.field m.point = 0 := by
+@[tmio M, powerlib_domain] theorem field_point (m : Model) (hN : m.N ≠ 0) : m.field m.point = 0 := by
   simpa [Model.point] using field_eq_zero_of_sin_eq_zero m hN (θ := 0) Real.sin_zero
 
 /-- The closed loop is `2π`-periodic in `θ_dq`. An equivalent form of the damping requirement. -/
-@[powerlib_domain] theorem field_add_two_pi (m : Model) (θ u id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem field_add_two_pi (m : Model) (θ u id iq : ℝ) :
     m.field (WithLp.toLp 2 ![θ + 2 * Real.pi, u, id, iq]) =
       m.field (WithLp.toLp 2 ![θ, u, id, iq]) := by
   simp [Model.field, Model.idc, Model.ixHat, Model.iHatD, Model.iHatQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem energy_point (m : Model) : m.energy m.point = 0 := by
+@[tmio M, powerlib_domain] theorem energy_point (m : Model) : m.energy m.point = 0 := by
   simp [Model.energy, Model.point]
 
-@[powerlib_domain] private theorem energy_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hk : 0 < m.k)
+@[tmio M, powerlib_domain] private theorem energy_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hk : 0 < m.k)
     {x : State 4} (hx : |x 0| < 2 * Real.pi) (hne : x ≠ m.point) : 0 < m.energy x := by
   unfold Model.energy
   by_contra hle
@@ -399,7 +399,7 @@ model, not a connection conclusion. -/
 
 /-- The source's potential (16): `S(θ) = L_s (μ²u*² − 2μu*v₀ cos θ + v₀²)/(2N)`. Static evidence
 on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem potential_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem potential_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
     m.potential θ = m.Ls / (2 * m.N) *
       (m.μ ^ 2 * m.ustar ^ 2 - 2 * m.μ * m.ustar * m.v0 * Real.cos θ + m.v0 ^ 2) := by
   have hw : (m.μ * m.ustar * Real.sin θ) ^ 2 + (m.v0 - m.μ * m.ustar * Real.cos θ) ^ 2 =
@@ -417,7 +417,7 @@ on the model, not a connection conclusion. -/
   field_simp
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem potential_sub_potential_zero (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem potential_sub_potential_zero (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
     m.potential θ - m.potential 0 = m.k * (1 - Real.cos θ) := by
   rw [potential_eq m hN, potential_eq m hN, Real.cos_zero, Model.k]
   field_simp
@@ -425,7 +425,7 @@ on the model, not a connection conclusion. -/
 
 /-- `η ∇S = κ sin θ`: the synchronizing term of the control (18) is the gradient of the
 potential. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem eta_mul_k (m : Model) : m.η * m.k = m.κ := by
+@[tmio M, powerlib_domain] theorem eta_mul_k (m : Model) : m.η * m.k = m.κ := by
   simp only [Model.k, Model.κ, Model.ω0]
   ring
 
@@ -471,7 +471,7 @@ end Model
 /-- Energy balance of the linearization:
 `B(x, J x) = −2 (g δu² + R_s ‖δĩ‖² + (μω₀L_s/N) δu δĩᵀ Z_sᵀ e₁)`,
 `δĩ = δi − î'(0) δθ`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem linDot_eq (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
+@[tmio M, powerlib_domain] theorem linDot_eq (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) (a b c d : ℝ) :
     m.linDot a b c d = -2 * ((m.Gdc + m.Kp) * b ^ 2 +
       m.Rs * ((c - m.p * a) ^ 2 + (d - m.q * a) ^ 2) +
@@ -481,7 +481,7 @@ end Model
   simp only [Model.N, Model.ω0]
   ring
 
-@[powerlib_domain] private theorem jac_coef (m : Model) (hN : m.N ≠ 0) (hC : m.Cdc ≠ 0) :
+@[tmio M, powerlib_domain] private theorem jac_coef (m : Model) (hN : m.N ≠ 0) (hC : m.Cdc ≠ 0) :
     m.μ * m.ω0 * m.Ls * (m.μ * m.ustar - m.v0) / (m.N * m.Cdc) + m.μ / m.Cdc * m.q =
       -(m.μ * m.v0 * m.ω0 * m.Ls) / (m.N * m.Cdc) := by
   unfold Model.q
@@ -512,7 +512,7 @@ end Model
 the quadratic energy gives `2 Re λ (E(v_r) + E(v_i)) = B(v_r, J v_r) + B(v_i, J v_i) ≤ 0`; on the
 boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC row then forces
 `κ δθ = 0`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem jac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio M, powerlib_domain] theorem jac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
     LinearSystems.IsHurwitz m.jac := by
   intro lam v hv hev
@@ -655,7 +655,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
       rw [hdi, hai, mul_zero]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field_contDiff (m : Model) : ContDiff ℝ 1 m.field := by
+@[tmio M, powerlib_domain] theorem field_contDiff (m : Model) : ContDiff ℝ 1 m.field := by
   have hd : ContDiff ℝ 1 m.iHatD := by
     unfold Model.iHatD
     fun_prop
@@ -667,7 +667,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
   fin_cases i <;> simp [Model.field, Model.idc, Model.ixHat] <;> fun_prop
 
 /-- Entries of the Jacobian applied to a vector. An equivalent form of the damping requirement. -/
-@[powerlib_domain] theorem jac_apply (m : Model) (v : State 4) :
+@[tmio M, powerlib_domain] theorem jac_apply (m : Model) (v : State 4) :
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 0 = m.η * v 1 ∧
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 1 =
       m.μ * m.ω0 * m.Ls * (m.μ * m.ustar - m.v0) / (m.N * m.Cdc) * v 0 -
@@ -682,7 +682,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
 
 /-- The derivative of the closed loop at the operating point is `jac`. Static evidence on the
 model, not a connection conclusion. -/
-@[powerlib_domain] theorem hasFDerivAt_field_point (m : Model) (hL : m.Ls ≠ 0) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field_point (m : Model) (hL : m.Ls ≠ 0) :
     HasFDerivAt m.field (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac) m.point := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -811,10 +811,10 @@ def family : Family Model Requirement 4 0 :=
   ⟨fun m => Port.System.autonomous m.translated, Meets, translate⟩
 
 /-- The stiff-grid family is the family of the translated autonomous fields. -/
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.translated :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.translated :=
   fun _ => rfl
 
-@[powerlib_domain] private theorem mem_den_flow {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
@@ -862,7 +862,7 @@ def family : Family Model Requirement 4 0 :=
 
 /-- The synchronizing coefficient is positive (`L_s, R_s > 0`, `μ u* v₀ > 0`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[tmio M, powerlib_domain] theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : 0 < m.μ * m.ustar * m.v0) : 0 < m.k := by
   have hN : 0 < m.N := by
     unfold Model.N

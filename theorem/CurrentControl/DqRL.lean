@@ -287,7 +287,7 @@ namespace DqBranch
   change IsHurwitz (dqRLMatrix m.R m.L m.ω) ↔ _
   exact isHurwitz_dqRLMatrix_iff m.R m.L m.ω
 
-@[powerlib_domain] theorem exists_root_of_neg (m : DqBranch) (h : m.R / m.L < 0) :
+@[tmio M, powerlib_domain] theorem exists_root_of_neg (m : DqBranch) (h : m.R / m.L < 0) :
     ∃ s : ℂ, (characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   refine ⟨_, dqRL_root m.R m.L m.ω, ?_⟩
   simp only [Complex.add_re, Complex.neg_re, Complex.ofReal_re, Complex.mul_re,

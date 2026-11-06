@@ -126,35 +126,35 @@ def Ar (e : Fin 5) : ℝ := amp (Wr e) (fr e)
 /-- Ring coupling matrix: line `e` joins machines `e` and `e + 1` (mod 5). -/
 def Br (i j : Fin 5) : ℝ := if j = i + 1 then Ar i else if i = j + 1 then Ar j else 0
 
-@[powerlib_domain] theorem wr_ne (k : Fin 5) : wr k ≠ 0 := by
+@[tmio M, powerlib_domain] theorem wr_ne (k : Fin 5) : wr k ≠ 0 := by
   fin_cases k <;> simp [wr, Complex.ext_iff]
 
-@[powerlib_domain] theorem lamr_pos (e : Fin 5) : 0 < lamr e := by
+@[tmio M, powerlib_domain] theorem lamr_pos (e : Fin 5) : 0 < lamr e := by
   fin_cases e <;> simp [lamr]
 
-@[powerlib_domain] theorem wr_conj (e : Fin 5) : wr e * conj (wr (e + 1)) = (lamr e : ℂ) * zr e := by
+@[tmio M, powerlib_domain] theorem wr_conj (e : Fin 5) : wr e * conj (wr (e + 1)) = (lamr e : ℂ) * zr e := by
   fin_cases e <;> simp [wr, lamr, zr, Wr, fr, Complex.ext_iff] <;> norm_num
 
-@[powerlib_domain] theorem norm_zr (e : Fin 5) : ‖zr e‖ = Ar e := by
+@[tmio M, powerlib_domain] theorem norm_zr (e : Fin 5) : ‖zr e‖ = Ar e := by
   rw [Complex.norm_eq_sqrt_sq_add_sq]; rfl
 
 /-- `Bₑ cos(θₑ − θₑ₊₁) = Wₑ`, `Bₑ sin(θₑ − θₑ₊₁) = fₑ`. -/
-@[powerlib_domain] theorem line_trig (e : Fin 5) :
+@[tmio M, powerlib_domain] theorem line_trig (e : Fin 5) :
     Ar e * Real.cos (θr e - θr (e + 1)) = Wr e ∧ Ar e * Real.sin (θr e - θr (e + 1)) = fr e := by
   have h := norm_mul_cos_arg_sub (wr_ne e) (wr_ne (e + 1)) (lamr_pos e) (wr_conj e)
   rw [norm_zr] at h
   exact h
 
-@[powerlib_domain] theorem Ar_nonneg (e : Fin 5) : 0 ≤ Ar e := Real.sqrt_nonneg _
+@[tmio M, powerlib_domain] theorem Ar_nonneg (e : Fin 5) : 0 ≤ Ar e := Real.sqrt_nonneg _
 
-@[powerlib_domain] theorem Br_symm (i j : Fin 5) : Br i j = Br j i := by
+@[tmio M, powerlib_domain] theorem Br_symm (i j : Fin 5) : Br i j = Br j i := by
   fin_cases i <;> fin_cases j <;> simp [Br]
 
-@[powerlib_domain] theorem Br_nonneg (i j : Fin 5) : 0 ≤ Br i j := by
+@[tmio M, powerlib_domain] theorem Br_nonneg (i j : Fin 5) : 0 ≤ Br i j := by
   unfold Br; split_ifs <;> first | exact Ar_nonneg _ | exact le_rfl
 
 /-- A sum against the ring coupling has two terms. -/
-@[powerlib_domain] theorem sum_Br (F : Fin 5 → ℝ) (k : Fin 5) :
+@[tmio M, powerlib_domain] theorem sum_Br (F : Fin 5 → ℝ) (k : Fin 5) :
     ∑ j, Br k j * F j = Ar k * F (k + 1) + Ar (k - 1) * F (k - 1) := by
   have h41 : (-1 : Fin 5) = 4 := rfl
   fin_cases k <;> simp [Br, Fin.sum_univ_five, h41] <;> ring
@@ -223,26 +223,26 @@ def Br (i j : Fin 5) : ℝ := if j = i + 1 then Ar i else if i = j + 1 then Ar j
     exact pos_of_mul_pos_left hP hB.le
   linarith
 
-@[powerlib_domain] theorem edgeQ_ring0 (μ : ℝ) : edgeQ (Wr 0) (fr 0) μ = 144 + 8 * μ - μ ^ 2 := by
+@[tmio M, powerlib_domain] theorem edgeQ_ring0 (μ : ℝ) : edgeQ (Wr 0) (fr 0) μ = 144 + 8 * μ - μ ^ 2 := by
   simp [edgeQ, Wr, fr]; ring
-@[powerlib_domain] theorem edgeQ_ring1 (μ : ℝ) : edgeQ (Wr (Fin.succ (0 : Fin 4))) (fr (Fin.succ (0 : Fin 4))) μ =
+@[tmio M, powerlib_domain] theorem edgeQ_ring1 (μ : ℝ) : edgeQ (Wr (Fin.succ (0 : Fin 4))) (fr (Fin.succ (0 : Fin 4))) μ =
     1296 + 72 * μ - μ ^ 2 := by
   simp [edgeQ, Wr, fr]; ring
-@[powerlib_domain] theorem edgeQ_ring2 (μ : ℝ) : edgeQ (Wr (Fin.succ (1 : Fin 4))) (fr (Fin.succ (1 : Fin 4))) μ =
+@[tmio M, powerlib_domain] theorem edgeQ_ring2 (μ : ℝ) : edgeQ (Wr (Fin.succ (1 : Fin 4))) (fr (Fin.succ (1 : Fin 4))) μ =
     2916 + 216 * μ - μ ^ 2 := by
   simp [edgeQ, Wr, fr]; ring
-@[powerlib_domain] theorem edgeQ_ring3 (μ : ℝ) : edgeQ (Wr (Fin.succ (2 : Fin 4))) (fr (Fin.succ (2 : Fin 4))) μ =
+@[tmio M, powerlib_domain] theorem edgeQ_ring3 (μ : ℝ) : edgeQ (Wr (Fin.succ (2 : Fin 4))) (fr (Fin.succ (2 : Fin 4))) μ =
     2916 + 216 * μ - μ ^ 2 := by
   simp [edgeQ, Wr, fr]
   ring
-@[powerlib_domain] theorem edgeQ_ring4 (μ : ℝ) : edgeQ (Wr (Fin.succ (3 : Fin 4))) (fr (Fin.succ (3 : Fin 4))) μ =
+@[tmio M, powerlib_domain] theorem edgeQ_ring4 (μ : ℝ) : edgeQ (Wr (Fin.succ (3 : Fin 4))) (fr (Fin.succ (3 : Fin 4))) μ =
     2916 + 54 * μ - μ ^ 2 := by
   simp [edgeQ, Wr, fr]
   ring
 
 /-- **The flow-shift inequality** `∑ᵢ 1/√qᵢ(μ) < 1/√q₀(μ)` for `0 < |μ| ≤ 1/2`: AM–GM bounds of
 `1/√q` by rational functions tangent at `μ = 0`, and an exact factorization of the difference. -/
-@[powerlib_domain] theorem ring_gamma {μ : ℝ} (hμ0 : μ ≠ 0) (hμ : |μ| ≤ 1 / 2) :
+@[tmio M, powerlib_domain] theorem ring_gamma {μ : ℝ} (hμ0 : μ ≠ 0) (hμ : |μ| ≤ 1 / 2) :
     ∑ i : Fin 4, 1 / √(edgeQ (Wr i.succ) (fr i.succ) μ) < 1 / √(edgeQ (Wr 0) (fr 0) μ) := by
   have hb := abs_le.mp hμ
   rw [Fin.sum_univ_four, edgeQ_ring1, edgeQ_ring2, edgeQ_ring3, edgeQ_ring4, edgeQ_ring0]
@@ -307,7 +307,7 @@ def params : Params 4 where
   B_symm := Br_symm
   B_nonneg := Br_nonneg
 
-@[powerlib_domain] theorem line_trig' (k : Fin 5) :
+@[tmio M, powerlib_domain] theorem line_trig' (k : Fin 5) :
     Ar (k - 1) * Real.cos (θr k - θr (k - 1)) = Wr (k - 1) ∧
       Ar (k - 1) * Real.sin (θr k - θr (k - 1)) = -fr (k - 1) := by
   have h := line_trig (k - 1)
@@ -324,7 +324,7 @@ def params : Params 4 where
   rw [sum_Br (fun j => Real.sin (θr k - θr j)) k, (line_trig k).2, (line_trig' k).2]
   ring
 
-@[powerlib_domain] theorem potential_ring (u : Fin (4 + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem potential_ring (u : Fin (4 + 1) → ℝ) :
     potential params (θr + u) - potential params θr =
       ∑ e : Fin 5, edgeG (Wr e) (fr e) (u e - u (e + 1)) := by
   rw [potential_add_sub (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (balance)) u]
@@ -347,7 +347,7 @@ def params : Params 4 where
   rw [hshift]
   ring
 
-@[powerlib_domain] theorem flow_ring (u : Fin (4 + 1) → ℝ) (k : Fin 5) :
+@[tmio M, powerlib_domain] theorem flow_ring (u : Fin (4 + 1) → ℝ) (k : Fin 5) :
     powerInjection params.B (θr + u) k =
       (fr k + edgeD (Wr k) (fr k) (u k - u (k + 1))) -
         (fr (k - 1) + edgeD (Wr (k - 1)) (fr (k - 1)) (u (k - 1) - u k)) := by
@@ -361,7 +361,7 @@ def params : Params 4 where
     Real.sin_neg, mul_neg, mul_sin_add (line_trig (k - 1)).1 (line_trig (k - 1)).2]
   ring
 
-@[powerlib_domain] theorem crit_ring {u : Fin (4 + 1) → ℝ} (h : ∀ k, params.P k = powerInjection params.B (θr + u) k) :
+@[tmio M, powerlib_domain] theorem crit_ring {u : Fin (4 + 1) → ℝ} (h : ∀ k, params.P k = powerInjection params.B (θr + u) k) :
     ∀ e : Fin 5, edgeD (Wr e) (fr e) (u e - u (e + 1)) = edgeD (Wr 0) (fr 0) (u 0 - u (0 + 1)) := by
   have hk : ∀ k : Fin 5, edgeD (Wr k) (fr k) (u k - u (k + 1)) =
       edgeD (Wr (k - 1)) (fr (k - 1)) (u (k - 1) - u k) := by
@@ -378,7 +378,7 @@ def params : Params 4 where
   intro e
   fin_cases e <;> norm_num <;> linarith
 
-@[powerlib_domain] theorem kernel_ring : ∀ k : Fin (4 + 1),
+@[tmio M, powerlib_domain] theorem kernel_ring : ∀ k : Fin (4 + 1),
     ∑ j, flowWeights params.B θr k j * (ground ![9, 6, 4, 2] k - ground ![9, 6, 4, 2] j) = 0 := by
   intro k
   have e : ∀ j, flowWeights params.B θr k j * (ground ![9, 6, 4, 2] k - ground ![9, 6, 4, 2] j) =
@@ -389,7 +389,7 @@ def params : Params 4 where
   have h41 : (-1 : Fin 5) = 4 := rfl
   fin_cases k <;> simp [ground, Wr, h41] <;> norm_num
 
-@[powerlib_domain] theorem hq_ring (e : Fin (4 + 1)) (μ : ℝ) (hμ : |μ| ≤ 1 / 2) : 0 < edgeQ (Wr e) (fr e) μ := by
+@[tmio M, powerlib_domain] theorem hq_ring (e : Fin (4 + 1)) (μ : ℝ) (hμ : |μ| ≤ 1 / 2) : 0 < edgeQ (Wr e) (fr e) μ := by
   have hb := abs_le.mp hμ
   fin_cases e <;> simp [edgeQ, Wr, fr] <;> nlinarith
 
@@ -399,7 +399,7 @@ def params : Params 4 where
   · rw [ground_succ, ← Real.norm_eq_abs]; exact norm_le_pi_norm v i
 
 /-- **The ring potential has a strict isolated minimum at the selected angles.** -/
-@[powerlib_domain] theorem ring_strictMin : ∃ r > 0, ∀ v : Fin 4 → ℝ, v ≠ 0 → ‖v‖ < r →
+@[tmio M, powerlib_domain] theorem ring_strictMin : ∃ r > 0, ∀ v : Fin 4 → ℝ, v ≠ 0 → ‖v‖ < r →
     potential params θr < potential params (θr + ground v) ∧
       ¬ ∀ k, params.P k = powerInjection params.B (θr + ground v) k := by
   obtain ⟨rc, hrc, hcyc⟩ := CycleMinimum.cycle_strictMin (m := 4) (W := Wr) (f := fr)
@@ -475,7 +475,7 @@ def addLeaf (p : Params n) : Params (n + 1) where
 /-- The leaf machine sits at the angle of machine `0`. -/
 def leafAngle (θ : Fin (n + 1) → ℝ) : Fin (n + 2) → ℝ := Fin.snoc (α := fun _ => ℝ) θ (θ 0)
 
-@[powerlib_domain] theorem powerInjection_leaf_c (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (φ : Fin (n + 2) → ℝ)
+@[tmio M, powerlib_domain] theorem powerInjection_leaf_c (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (φ : Fin (n + 2) → ℝ)
     (k : Fin (n + 1)) :
     powerInjection (leafB B) φ k.castSucc = powerInjection B (fun j => φ j.castSucc) k +
       (if k = 0 then Real.sin (φ k.castSucc - φ (Fin.last _)) else 0) := by
@@ -484,7 +484,7 @@ def leafAngle (θ : Fin (n + 1) → ℝ) : Fin (n + 2) → ℝ := Fin.snoc (α :
   simp only [leafB_cc, leafB_cl]
   split_ifs <;> simp
 
-@[powerlib_domain] theorem powerInjection_leaf_l (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (φ : Fin (n + 2) → ℝ) :
+@[tmio M, powerlib_domain] theorem powerInjection_leaf_l (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (φ : Fin (n + 2) → ℝ) :
     powerInjection (leafB B) φ (Fin.last _) =
       Real.sin (φ (Fin.last _) - φ (0 : Fin (n + 1)).castSucc) := by
   unfold powerInjection
@@ -493,7 +493,7 @@ def leafAngle (θ : Fin (n + 1) → ℝ) : Fin (n + 2) → ℝ := Fin.snoc (α :
   rw [Finset.sum_ite_eq' Finset.univ (0 : Fin (n + 1))]
   simp
 
-@[powerlib_domain] theorem potential_leaf (p : Params n) (φ : Fin (n + 2) → ℝ) :
+@[tmio M, powerlib_domain] theorem potential_leaf (p : Params n) (φ : Fin (n + 2) → ℝ) :
     potential (addLeaf p) φ = potential p (fun j => φ j.castSucc) -
       Real.cos (φ (0 : Fin (n + 1)).castSucc - φ (Fin.last _)) := by
   have hP : ∑ k, (addLeaf p).P k * φ k = ∑ k : Fin (n + 1), p.P k * φ k.castSucc := by
@@ -551,7 +551,7 @@ def leafAngle (θ : Fin (n + 1) → ℝ) : Fin (n + 2) → ℝ := Fin.snoc (α :
 to a new machine at the same angle, without power, keeps power balance, the strict isolated
 minimum of the potential (the new relative angle adds `1 − cos y`), and a null vector of the
 linearization weights (extended by `0`). -/
-@[powerlib_domain] theorem degenerate_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem degenerate_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hmin : ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧
@@ -705,7 +705,7 @@ linearization weights (extended by `0`). -/
 
 /-- **A degenerate witness for every number of machines `n + 5`.** Power balance, a strict isolated
 minimum of the potential, and a null vector of the linearization weights. -/
-@[powerlib_domain] theorem exists_degenerate (n : ℕ) :
+@[tmio M, powerlib_domain] theorem exists_degenerate (n : ℕ) :
     ∃ p : Params (n + 4), ∃ θ : Fin (n + 4 + 1) → ℝ,
       (∀ k, p.P k = powerInjection p.B θ k) ∧
       (∃ r > 0, ∀ v : Fin (n + 4) → ℝ, v ≠ 0 → ‖v‖ < r →

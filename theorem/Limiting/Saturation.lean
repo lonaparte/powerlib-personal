@@ -227,7 +227,7 @@ end SatModel
 def family : Family SatModel Spectral.Requirement 2 0 :=
   Spectral.localFamily SatModel.field SatModel.Stable SatModel.Unstable
 
-@[powerlib_domain] private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔
       P.holds (satField m.M m.D m.Pref m.Psat m.φ) (angleState m.δ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : SatModel => satField m.M m.D m.Pref m.Psat m.φ)
@@ -361,7 +361,7 @@ def SatModel.toSwing (m : SatModel) : Synchronous.Swing.Model :=
 
 /-- The saturated field is the swing field of `toSwing`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem satField_eq_swing (m : SatModel) :
+@[tmio M, powerlib_domain] theorem satField_eq_swing (m : SatModel) :
     satField m.M m.D m.Pref m.Psat m.φ = m.toSwing.p.field := by
   funext x
   ext i
@@ -387,13 +387,13 @@ connections at the two members. -/
     (f := fun y : Synchronous.Swing.Model => y.p.field) (pt := Synchronous.Swing.Model.point)
     Synchronous.Swing.family_isAutonomous), satField_eq_swing, hpt]
 
-@[powerlib_domain] private theorem toSwing_Pe (m : SatModel) :
+@[tmio M, powerlib_domain] private theorem toSwing_Pe (m : SatModel) :
     m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) := by
   simp only [SatModel.toSwing, Synchronous.SwingParams.Pe, zero_add]
   rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
     Real.sin_add_pi_div_two]
 
-@[powerlib_domain] private theorem toSwing_syncCoeff (m : SatModel) :
+@[tmio M, powerlib_domain] private theorem toSwing_syncCoeff (m : SatModel) :
     m.toSwing.p.syncCoeff m.toSwing.δ = -(m.Psat * Real.sin (m.δ - m.φ)) := by
   simp only [SatModel.toSwing, Synchronous.SwingParams.syncCoeff]
   rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,

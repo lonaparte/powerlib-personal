@@ -79,7 +79,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
 /-- The centred zero-input field is `C¹` near the origin: it is the SRF-PLL field with offset
 `K_i η*`, translated to the selected point. The smoothness hypothesis of the generic Euler laws
 for port systems (`Numerics.eulerPorts_sound_small_step_local`). -/
-@[powerlib_domain] theorem contDiffAt_zeroInput (m : Model) :
+@[tmio M, powerlib_domain] theorem contDiffAt_zeroInput (m : Model) :
     ContDiffAt ℝ 1 (m.toPH.shift m.point).system.zeroInput 0 := by
   change ContDiffAt ℝ 1 (fun z => m.toPH.zeroInputField (z + m.point)) 0
   rw [show m.toPH.zeroInputField = srfField m.V m.Kp m.Ki (m.Ki * m.ηs) from
@@ -90,7 +90,7 @@ for port systems (`Numerics.eulerPorts_sound_small_step_local`). -/
 private def unitModel : Model := ⟨1, 1, 1, 0, 0, zero_le_one⟩
 
 /-- At the centred state `(π/2 − θ*, 0)` the phase is `π/2` and the output is `−V`. -/
-@[powerlib_domain] private theorem output_quarter (m : Model) :
+@[tmio M, powerlib_domain] private theorem output_quarter (m : Model) :
     (m.toPH.shift m.point).output (PhasePlane.mk (Real.pi / 2 - m.θ) 0) = ![-m.V] := by
   rw [PH.NonlinearModel.shift_output, Model.toPH, pllPH_output]
   simp [srfPD, Model.point]

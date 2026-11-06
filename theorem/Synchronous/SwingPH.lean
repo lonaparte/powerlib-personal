@@ -96,7 +96,7 @@ def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
       Fin.sum_univ_two] <;> field_simp
 
 /-- The pH state matrix is the swing Jacobian conjugated by the momentum coordinates. -/
-@[powerlib_domain] theorem stateMatrix_eq_conj (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
+@[tmio M, powerlib_domain] theorem stateMatrix_eq_conj (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) :
     (p.linearPH δ₀ hM hD hK).plant.A =
       p.momentumCoord * p.jacobian δ₀ * !![1, 0; 0, 1 / p.M] := by
@@ -108,7 +108,7 @@ def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
 
 /-- The pH field reproduces the linearized swing equation:
 `d(Δδ)/dt = Δω`, `d(M Δω)/dt = −K Δδ − D Δω + u` with `x = (Δδ, M Δω)`. -/
-@[powerlib_domain] theorem linearPH_field (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
+@[tmio M, powerlib_domain] theorem linearPH_field (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) (x : State 2) (u : Fin 1 → ℝ) :
     (p.linearPH δ₀ hM hD hK).plant.system.field x u =
       PhasePlane.mk (x 1 / p.M) (-p.syncCoeff δ₀ * x 0 - p.D * (x 1 / p.M) + u 0) := by

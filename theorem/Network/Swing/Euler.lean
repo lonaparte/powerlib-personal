@@ -75,7 +75,7 @@ def euler : Implementation (Model n) Requirement (Euler n) Requirement (n + (n +
 
 /-- The translated field of a swing-network model is `C¹`: the smoothness hypothesis of the generic
 Euler laws (`Numerics.euler_sound_small_step`). -/
-@[powerlib_domain] theorem contDiff_modelField (m : Model n) : ContDiff ℝ 1 (Model.field m) :=
+@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model n) : ContDiff ℝ 1 (Model.field m) :=
   (reducedField_contDiff m.params).comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the swing-network models is not sound.** A

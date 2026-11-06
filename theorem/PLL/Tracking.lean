@@ -92,7 +92,7 @@ trajectory of `frequencyModel V K_p K_i` under the input `t ↦ ![w t]`). -/
 /-- Phase step (constant grid-angle deviation `Δφ` from `t = 0`): every forward trajectory of
 the phase model has `Δθ̂ → Δφ` (zero steady-state phase error).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem phaseStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
+@[tmio TM, powerlib_domain] private theorem phaseStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (Δφ : ℝ) {x : ℝ → Fin 2 → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((phaseModel V Kp Ki).A *ᵥ x t + (phaseModel V Kp Ki).B *ᵥ ![Δφ]) (Ici 0) t) :
@@ -114,7 +114,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Frequency step `w ≡ c`: `θ̃ → 0`, `η → c / K_i`, and the frequency-estimate error
 `Δω̂ − w → 0`, for every forward trajectory. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem frequencyStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
+@[tmio TM, powerlib_domain] private theorem frequencyStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (c : ℝ) {x : ℝ → Fin 2 → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![c]) (Ici 0) t) :
@@ -167,7 +167,7 @@ for `w = ρ t`. -/
 /-- Frequency ramp `w = ρ t` (constant ROCOF): `θ̃ → −ρ/(V K_i)` and the frequency estimate
 tracks the ramp (`Δω̂ − w → 0`), for every forward trajectory. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem frequencyRamp_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
+@[tmio TM, powerlib_domain] private theorem frequencyRamp_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (ρ : ℝ) {x : ℝ → Fin 2 → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) :
@@ -193,7 +193,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- The table value `+ρ/(V K_i)` of T-pll-dynamics §1.4 is not the steady-state phase error:
 the particular trajectory has the constant phase error `−ρ/(V K_i) ≠ ρ/(V K_i)` (`ρ ≠ 0`). 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem frequencyRamp_limit_ne_note {V Kp Ki ρ : ℝ} (hVKp : 0 < V * Kp)
+@[tmio TM, powerlib_domain] private theorem frequencyRamp_limit_ne_note {V Kp Ki ρ : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (hρ : ρ ≠ 0) :
     ∃ x : ℝ → Fin 2 → ℝ, (∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
         ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) ∧
@@ -242,7 +242,7 @@ for `w = α t²`. -/
 /-- Second-order frequency ramp `w = α t²` (`α ≠ 0`): the phase error is unbounded,
 `|θ̃(t)| → ∞`, for every forward trajectory (the type-2 loop cannot track it). 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem frequencyQuadratic_unbounded {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
+@[tmio TM, powerlib_domain] private theorem frequencyQuadratic_unbounded {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) {α : ℝ} (hα : α ≠ 0) {x : ℝ → Fin 2 → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![α * t ^ 2]) (Ici 0) t) :

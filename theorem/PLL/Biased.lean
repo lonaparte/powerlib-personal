@@ -105,7 +105,7 @@ Static evidence on the model, not a connection conclusion. -/
 def biasedModel (V μ Kp Ki δω θ : ℝ) : PIPLL.Model :=
   ⟨biasedPD V μ, Kp, Ki, δω, θ, contDiff_biasedPD V μ⟩
 
-@[powerlib_domain] theorem biasedModel_deriv (V μ Kp Ki δω θ : ℝ) :
+@[tmio M, powerlib_domain] theorem biasedModel_deriv (V μ Kp Ki δω θ : ℝ) :
     deriv (biasedModel V μ Kp Ki δω θ).h (biasedModel V μ Kp Ki δω θ).θ =
       -(V * Real.cos θ) :=
   (hasDerivAt_biasedPD V μ θ).deriv

@@ -87,7 +87,7 @@ variable {h V : ℝ → ℝ} {Kp Ki : ℝ}
 
 /-- Bounded forward solutions of the PI-PLL converge to an equilibrium.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem piPLL_tendsto_of_bounded
+@[tmio TM, powerlib_domain] private theorem piPLL_tendsto_of_bounded
     (hKp : 0 < Kp) (hKi : 0 < Ki) {L : NNReal} (hL : LipschitzWith L h)
     (hV : ∀ θ, HasDerivAt V (-h θ) θ)
     (hiso : ∀ θ, h θ = 0 → ∀ᶠ θ' in 𝓝[≠] θ, h θ' ≠ 0)
@@ -386,7 +386,7 @@ variable (p : Params)
         rw [show y + p.phase - (x + p.phase) = -(x - y) by ring, abs_neg]
 
 /-- The zeros of `h` are isolated (at most two per period, `V_g > 0`). -/
-@[powerlib_domain] theorem h_zero_isolated (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
+@[tmio M, powerlib_domain] theorem h_zero_isolated (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
     (θ : ℝ) : ∀ᶠ θ' in 𝓝[≠] θ, p.h θ' ≠ 0 := by
   set Z := SpecialFunctions.sinusoidZeros p.c0 p.amp p.phase (θ - π)
   have hfin : Z.Finite :=
@@ -404,7 +404,7 @@ variable (p : Params)
 /-- A2: for `K_p, K_i > 0`, `V_g > 0`, every solution of the reduced 2-state PLL model that
 stays bounded for `t ≥ 0` converges to a single equilibrium `(θ*, 0)` with `h(θ*) = 0`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem reduced_tendsto_equilibrium_of_bounded (hwC : p.wC ≠ 0)
+@[tmio TM, powerlib_domain] private theorem reduced_tendsto_equilibrium_of_bounded (hwC : p.wC ≠ 0)
     (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) {φ : ℝ → State 2}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.reducedField x) (Ici 0))
     (hb : Bornology.IsBounded (φ '' Ici 0)) :
@@ -416,7 +416,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- A1, node / focus: at a point with slope `g = h′(θ*) = −A cos(θ* + φ) < 0` the Jacobian of the
 reduced field (computed with `fderiv`) is `[[K_p g, K_i], [g, 0]]`, and all its eigenvalues are
 real (stable node) iff `|g| ≥ 4 K_i / K_p²`; otherwise it has a non-real pair (stable focus). -/
-@[powerlib_domain] theorem reduced_node_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : p.Kp ≠ 0)
+@[tmio M, powerlib_domain] theorem reduced_node_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : p.Kp ≠ 0)
     {θ η : ℝ} (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
     fderiv ℝ p.reducedField (PhasePlane.mk θ η) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)

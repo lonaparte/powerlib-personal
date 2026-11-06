@@ -117,7 +117,7 @@ def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
 def losslessLC : Port.PortHamiltonian 2 1 :=
   toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one
 
-@[powerlib_domain] theorem losslessLC_plant :
+@[tmio M, powerlib_domain] theorem losslessLC_plant :
     losslessLC.plant = linearLTIModel losslessJ 0 losslessG 1 := rfl
 
 /-- The lossless loop is passive (storage `H = ½ |x|²`). -/
@@ -132,7 +132,7 @@ def losslessLC : Port.PortHamiltonian 2 1 :=
 
 /-- The lossless loop is (zero-state) observable from the loop current.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem losslessLC_observable :
+@[tmio M, powerlib_domain] theorem losslessLC_observable :
     LinearSystems.IsObservable (linearLTIModel losslessJ 0 losslessG 1).A
       (linearLTIModel losslessJ 0 losslessG 1).C := by
   intro x hx
@@ -144,7 +144,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- `x(t) = (cos t, sin t)` is an unforced solution of the lossless loop on every segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem losslessLC_trajectory (t₀ t₁ : ℝ) :
+@[tmio M, powerlib_domain] private theorem losslessLC_trajectory (t₀ t₁ : ℝ) :
     IsTrajectoryOn (fun t => WithLp.toLp 2 ![Real.cos t, Real.sin t])
       losslessLC.plant.system.zeroInput t₀ t₁ := by
   intro t _

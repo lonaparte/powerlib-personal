@@ -114,12 +114,12 @@ def model : Plant 4 2 :=
       Matrix.mulVec, dotProduct, Fin.sum_univ_four, Fin.sum_univ_two] <;> field_simp <;> ring
 
 /-- Mismatch residual in the L-equation (case A): `ω L i_q − ω L̂ i_q = ω ΔL i_q`. -/
-@[powerlib_domain] theorem residual_d (iq : ℝ) :
+@[tmio M, powerlib_domain] theorem residual_d (iq : ℝ) :
     p.ω * p.base.L * iq - p.ω * p.Lhat * iq = p.ω * p.ΔL * iq := by
   simp only [ΔL]
   ring
 
-@[powerlib_domain] private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
+@[tmio M, powerlib_domain] private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
     (h : (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     -(a : ℂ) * v 0 + b * v 1 + c * v 2 = μ * v 0 ∧
       -(b : ℂ) * v 0 - a * v 1 + c * v 3 = μ * v 1 ∧ -v 0 = μ * v 2 ∧ -v 1 = μ * v 3 := by
@@ -216,7 +216,7 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
       (eigenvector_ne_zero _) (eigenpair_of_root hs₂), ?_⟩
     linarith
 
-@[powerlib_domain] private lemma characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] private lemma characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
     characteristicMatrix (stateMatrix a b c) s =
       !![s + a, -b, -c, 0; b, s + a, 0, -c; 1, 0, s, 0; 0, 1, 0, s] := by
   ext i j
@@ -244,7 +244,7 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
 
 /-- Characteristic polynomial: `det(sI − A) = p(s) p̄(s) / L²` with
 `p(s) = L s² + (R + Kp + j ω ΔL) s + Ki`. -/
-@[powerlib_domain] theorem det_characteristicMatrix (hL : p.base.L ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix (hL : p.base.L ≠ 0) (s : ℂ) :
     (characteristicMatrix p.model.A s).det =
       ((p.base.L : ℂ) * s ^ 2 + (p.base.R + p.base.Kp + p.ω * p.ΔL * Complex.I) * s +
           p.base.Ki) *
@@ -262,7 +262,7 @@ def equilibrium (iref : Fin 2 → ℝ) : ℝ⁴ :=
   WithLp.toLp 2 ![iref 0, iref 1, (p.base.R * iref 0 - p.ω * p.ΔL * iref 1) / p.base.Ki,
     (p.base.R * iref 1 + p.ω * p.ΔL * iref 0) / p.base.Ki]
 
-@[powerlib_domain] theorem isEquilibrium (hL : p.base.L ≠ 0) (hKi : p.base.Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem isEquilibrium (hL : p.base.L ≠ 0) (hKi : p.base.Ki ≠ 0)
     (iref : Fin 2 → ℝ) : IsEquilibrium (p.model.inputField iref) (p.equilibrium iref) := by
   ext j
   fin_cases j <;>
@@ -274,7 +274,7 @@ def equilibrium (iref : Fin 2 → ℝ) : ℝ⁴ :=
 
 /-- Every equilibrium has zero current error `i = i*`, whatever the mismatch. Static evidence on
 the model, not a connection conclusion. -/
-@[powerlib_domain] theorem equilibrium_current {iref : Fin 2 → ℝ} {e : ℝ⁴}
+@[tmio M, powerlib_domain] theorem equilibrium_current {iref : Fin 2 → ℝ} {e : ℝ⁴}
     (he : IsEquilibrium (p.model.inputField iref) e) : e 0 = iref 0 ∧ e 1 = iref 1 := by
   have h2 := congrArg (fun z : ℝ⁴ => z 2) he
   have h3 := congrArg (fun z : ℝ⁴ => z 3) he
@@ -295,7 +295,7 @@ plant. -/
 def family : Family MismatchParams Spectral.Requirement 4 2 :=
   Spectral.linearFamily model Stable Unstable
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear model :=
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear model :=
   Spectral.linearFamily_isLinear _ _ _
 
 /-- The mismatched loop is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`, for every `ω` and `ΔL`. Read through the family denotation. -/
@@ -359,7 +359,7 @@ mismatched family is the PI family's, pulled back along `base`. -/
 
 /-- Reference tracking of the mismatched loop: both currents converge to their references.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem tracks_reference (hL : 0 < p.base.L)
+@[tmio TM, powerlib_domain] private theorem tracks_reference (hL : 0 < p.base.L)
     (hR : 0 < p.base.R + p.base.Kp) (hKi : 0 < p.base.Ki) (v iref : Fin 2 → ℝ)
     {x : ℝ → ℝ⁴} (hx : ∀ t, HasDerivAt x (p.field v iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 (iref 0)) ∧

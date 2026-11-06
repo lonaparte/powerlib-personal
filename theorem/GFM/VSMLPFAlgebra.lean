@@ -55,13 +55,13 @@ variable (g : VSMLPF)
 
 /-- The synchronizing coefficient is the slope of the power-angle curve at `δ₀`:
 `K = K₀ cos δ₀ = ∂(K₀ sin δ)/∂δ |_{δ₀}`. -/
-@[powerlib_domain] theorem K_eq_deriv :
+@[tmio M, powerlib_domain] theorem K_eq_deriv :
     HasDerivAt (fun x => g.K0 * Real.sin x) g.K g.δ0 :=
   (Real.hasDerivAt_sin g.δ0).const_mul g.K0
 
 /-- With `K₀ = E V_g / X_g`, equilibria exist iff `|P₀| ≤ E V_g / X_g`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem exists_equilibrium_iff_EVX {E Vg Xg : ℝ} (hK0 : g.K0 = E * Vg / Xg)
+@[tmio M, powerlib_domain] theorem exists_equilibrium_iff_EVX {E Vg Xg : ℝ} (hK0 : g.K0 = E * Vg / Xg)
     (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hpos : 0 < E * Vg / Xg) :
     (∃ x, g.field x = 0) ↔ |g.P0| ≤ E * Vg / Xg := by
   rw [← hK0]
@@ -72,7 +72,7 @@ def twoAlphaRed : ℝ := g.D / g.M - g.K / (g.M * g.ωc)
 
 /-- Exact first-order filter expansion of the `u → δ` denominator:
 `[(s + ω_c)(M s² + D s) + ω_c K] / (M (s + ω_c)) = s² + 2α_red s + K/M + K s²/(M ω_c (s + ω_c))`. -/
-@[powerlib_domain] theorem texact_denominator_expansion (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
+@[tmio M, powerlib_domain] theorem texact_denominator_expansion (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
     {s : ℂ} (hs : s + (g.ωc : ℂ) ≠ 0) :
     ((s + (g.ωc : ℂ)) * ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s) + (g.ωc : ℂ) * (g.K : ℂ)) /
         ((g.M : ℂ) * (s + (g.ωc : ℂ))) =
@@ -89,7 +89,7 @@ variable {g}
 
 /-- `2α_red > 0 ⇔ r_c < 2 ζ_sw` with `r_c = √(K/M)/ω_c`, `ζ_sw = D/(2√(MK))`
 (`M, K, ω_c > 0`). -/
-@[powerlib_domain] theorem twoAlphaRed_pos_iff (hM : 0 < g.M) (hK : 0 < g.K) (hω : 0 < g.ωc) :
+@[tmio M, powerlib_domain] theorem twoAlphaRed_pos_iff (hM : 0 < g.M) (hK : 0 < g.K) (hω : 0 < g.ωc) :
     0 < g.twoAlphaRed ↔
       Real.sqrt (g.K / g.M) / g.ωc < 2 * (g.D / (2 * Real.sqrt (g.M * g.K))) := by
   have hs : 0 < Real.sqrt (g.M * g.K) := Real.sqrt_pos.mpr (mul_pos hM hK)
@@ -107,7 +107,7 @@ variable {g}
 
 /-- The zero of `α_red` is `ω_c = K/D`; it differs from the exact Routh–Hurwitz (Hopf) boundary
 `ω_c* = K/D − D/M` by `D/M`. -/
-@[powerlib_domain] theorem twoAlphaRed_eq_zero_iff (hM : 0 < g.M) (hD : 0 < g.D)
+@[tmio M, powerlib_domain] theorem twoAlphaRed_eq_zero_iff (hM : 0 < g.M) (hD : 0 < g.D)
     (hω : 0 < g.ωc) :
     g.twoAlphaRed = 0 ↔ g.ωc = g.K / g.D := by
   rw [twoAlphaRed, sub_eq_zero, div_eq_div_iff hM.ne' (mul_pos hM hω).ne',
@@ -135,7 +135,7 @@ def jacobianU' (u : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 /-- `f_xuu = −(A₀)_{P_f δ} e_{P_f} e_δᵀ`, `A₀ = J(δ₀)`. -/
 def fxuu : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; -(g.jacobian g.δ0 2 0), 0, 0]
 
-@[powerlib_domain] theorem hasDerivAt_jacobian_entry (u : ℝ) (i j : Fin 3) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_jacobian_entry (u : ℝ) (i j : Fin 3) :
     HasDerivAt (fun v => g.jacobian (g.δ0 - v) i j) (g.jacobianU' u i j) u := by
   have h1 : HasDerivAt (fun v : ℝ => g.δ0 - v) (-1) u := by
     simpa using (hasDerivAt_id u).const_sub g.δ0
@@ -148,7 +148,7 @@ def fxuu : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; -(g.jacobian g.δ0
 
 /-- **Mixed tensor `f_xuu`**: `∂²/∂u² J(δ₀ − u) |_{u=0} = −(A₀)_{P_f δ} e_{P_f} e_δᵀ`
 (entrywise). -/
-@[powerlib_domain] theorem iteratedDeriv_jacobian_u (i j : Fin 3) :
+@[tmio M, powerlib_domain] theorem iteratedDeriv_jacobian_u (i j : Fin 3) :
     iteratedDeriv 2 (fun u => g.jacobian (g.δ0 - u) i j) 0 = g.fxuu i j := by
   have hd : deriv (fun u => g.jacobian (g.δ0 - u) i j) = fun u => g.jacobianU' u i j :=
     funext fun u => (g.hasDerivAt_jacobian_entry u i j).deriv
@@ -166,7 +166,7 @@ def fxuu : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; -(g.jacobian g.δ0
 
 /-- On the Routh–Hurwitz boundary `ω_c = K/D − D/M` both `±j ω_H`, `ω_H² = K/M − D²/M²`, are
 eigenvalues of the Jacobian at the loading equilibrium. -/
-@[powerlib_domain] theorem boundary_eigenpairs (hM : g.M ≠ 0) (hD : g.D ≠ 0)
+@[tmio M, powerlib_domain] theorem boundary_eigenpairs (hM : g.M ≠ 0) (hD : g.D ≠ 0)
     (hωc : g.ωc = g.K / g.D - g.D / g.M) {ωH : ℝ}
     (hH : ωH ^ 2 = g.K / g.M - g.D ^ 2 / g.M ^ 2) :
     (∃ v : Fin 3 → ℂ, v ≠ 0 ∧

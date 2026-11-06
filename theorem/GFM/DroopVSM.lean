@@ -112,7 +112,7 @@ def coordMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1 / d.KR]
   fin_cases i <;> fin_cases j <;> simp [coordMatrix, Matrix.mul_apply, Fin.sum_univ_two]
   field_simp
 
-@[powerlib_domain] theorem coordMatrix_isUnit (hK : d.KR ≠ 0) : IsUnit d.coordMatrix := by
+@[tmio M, powerlib_domain] theorem coordMatrix_isUnit (hK : d.KR ≠ 0) : IsUnit d.coordMatrix := by
   rw [Matrix.isUnit_iff_isUnit_det]
   simp [coordMatrix, Matrix.det_fin_two, hK]
 
@@ -124,7 +124,7 @@ def coord (hK : d.KR ≠ 0) : State 2 ≃L[ℝ] State 2 :=
 def offset : State 2 := PhasePlane.mk 0 (d.ωs + d.Pref / d.KR)
 
 /-- The new coordinates: `θ` and the droop frequency `ω = ω_s − (P_f − P_ref)/K_R`. -/
-@[powerlib_domain] theorem affineCoord_apply (hK : d.KR ≠ 0) (x : State 2) :
+@[tmio M, powerlib_domain] theorem affineCoord_apply (hK : d.KR ≠ 0) (x : State 2) :
     Dynamics.affineCoord (d.coord hK) d.offset x =
       PhasePlane.mk (x 0) (d.ωs - (x 1 - d.Pref) / d.KR) := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
@@ -135,7 +135,7 @@ def offset : State 2 := PhasePlane.mk 0 (d.ωs + d.Pref / d.KR)
 /-- **Large-signal equivalence.** In the coordinates `(θ, ω)` the droop + LPF field is
 exactly the VSM field with `M = τ_p K_R`, `D = K_R`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem vsmField_eq_transport (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) :
+@[tmio M, powerlib_domain] theorem vsmField_eq_transport (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) :
     d.vsmField (d.τp * d.KR) d.KR = Dynamics.transportField (d.coord hK) d.offset d.droopField := by
   funext y
   have hinv : ∀ z : State 2, (d.coord hK).symm z = PhasePlane.mk (z 0) (-d.KR * z 1) := by
@@ -156,7 +156,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Trajectories of droop + LPF map to trajectories of the VSM (`M = τ_p K_R`, `D = K_R`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem isTrajectoryOn_vsm_of_droop (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0)
+@[tmio M, powerlib_domain] private theorem isTrajectoryOn_vsm_of_droop (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0)
     {φ : ℝ → State 2} {a b : ℝ} (hφ : IsTrajectoryOn φ d.droopField a b) :
     IsTrajectoryOn (fun t => Dynamics.affineCoord (d.coord hK) d.offset (φ t))
       (d.vsmField (d.τp * d.KR) d.KR) a b := by
@@ -165,7 +165,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- Trajectories of the VSM map back to trajectories of droop + LPF.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem isTrajectoryOn_droop_of_vsm (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0)
+@[tmio M, powerlib_domain] private theorem isTrajectoryOn_droop_of_vsm (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0)
     {χ : ℝ → State 2} {a b : ℝ}
     (hχ : IsTrajectoryOn χ (d.vsmField (d.τp * d.KR) d.KR) a b) :
     IsTrajectoryOn
@@ -176,7 +176,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rwa [Dynamics.transportField_symm_transportField] at h
 
 /-- Equilibria correspond. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem equilibrium_iff (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) (x : State 2) :
+@[tmio M, powerlib_domain] theorem equilibrium_iff (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) (x : State 2) :
     d.vsmField (d.τp * d.KR) d.KR (Dynamics.affineCoord (d.coord hK) d.offset x) = 0 ↔
       d.droopField x = 0 := by
   rw [d.vsmField_eq_transport hK hτ]
@@ -184,7 +184,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- On an infinite bus in the synchronous frame (`P = K₀ sin θ`, `ω_s = 0`) the VSM image of
 droop + LPF is the canonical swing model `M = τ_p K_R`, `D = K_R`, `P_m = P_ref`. -/
-@[powerlib_domain] theorem vsmField_infiniteBus (K0 : ℝ) (hP : d.P = fun θ => K0 * Real.sin θ)
+@[tmio M, powerlib_domain] theorem vsmField_infiniteBus (K0 : ℝ) (hP : d.P = fun θ => K0 * Real.sin θ)
     (hω : d.ωs = 0) :
     d.vsmField (d.τp * d.KR) d.KR =
       (⟨d.τp * d.KR, d.KR, d.Pref, 0, K0, 0⟩ : Synchronous.SwingParams).field := by
@@ -244,7 +244,7 @@ def field (m : VSMModel) (z : State 2) : State 2 := m.vector (z + m.point)
 def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; -deriv m.P θ / m.M, -m.D / m.M]
 
-@[powerlib_domain] theorem contDiff_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P) :
+@[tmio M, powerlib_domain] theorem contDiff_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P) :
     ContDiff ℝ 1 m.vector := by
   rw [contDiff_euclidean]
   intro i
@@ -256,7 +256,7 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     exact (((contDiff_const.sub hP).sub (contDiff_const.mul
       ((Dynamics.contDiff_coord 1).sub contDiff_const))).div_const _)
 
-@[powerlib_domain] theorem hasFDerivAt_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P)
+@[tmio M, powerlib_domain] theorem hasFDerivAt_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P)
     (x : State 2) :
     HasFDerivAt m.vector (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (m.jacobian (x 0))) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
@@ -282,7 +282,7 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
       simp [jacobian, PhasePlane.toEuclideanCLM_apply_one]
       ring
 
-@[powerlib_domain] theorem vector_eq_zero_iff (m : VSMModel) (hM : m.M ≠ 0) (x : State 2) :
+@[tmio M, powerlib_domain] theorem vector_eq_zero_iff (m : VSMModel) (hM : m.M ≠ 0) (x : State 2) :
     m.vector x = 0 ↔ x 1 = 0 ∧ m.P (x 0) = m.Pref + m.D * m.ωs := by
   constructor
   · intro h
@@ -338,15 +338,15 @@ def vsmTranslate : Sentence → Set VSMRequirement
 def vsmFamily : Family VSMModel VSMRequirement 2 0 :=
   ⟨fun m => Port.System.autonomous m.field, vsmMeets, vsmTranslate⟩
 
-@[powerlib_domain] theorem vsmFamily_isAutonomous : vsmFamily.IsAutonomous VSMModel.field :=
+@[tmio M, powerlib_domain] theorem vsmFamily_isAutonomous : vsmFamily.IsAutonomous VSMModel.field :=
   fun _ => rfl
 
-@[powerlib_domain] private theorem vsm_mem_den_flow_iff {m : VSMModel} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem vsm_mem_den_flow_iff {m : VSMModel} {P : Flow.Property} :
     m ∈ vsmFamily.den (.flow P) ↔ P.holds m.vector m.point :=
   Spectral.mem_den_flow_iff_shift (f := VSMModel.vector) (pt := VSMModel.point)
     vsmFamily_isAutonomous
 
-@[powerlib_domain] private theorem vsm_point_eq_zero {m : VSMModel} (hM : 0 < m.M) (hb : vsmMeets m .balanced) :
+@[tmio M, powerlib_domain] private theorem vsm_point_eq_zero {m : VSMModel} (hM : 0 < m.M) (hb : vsmMeets m .balanced) :
     m.vector m.point = 0 :=
   (m.vector_eq_zero_iff hM.ne' _).mpr hb
 
@@ -495,7 +495,7 @@ def toVSM (m : DroopModel) : VSMModel :=
   ⟨m.d.τp * m.d.KR, m.d.KR, m.d.Pref, m.d.ωs, m.d.P,
     Dynamics.affineCoord (m.d.coord m.KR_ne) m.d.offset m.point⟩
 
-@[powerlib_domain] theorem toVSM_vector (m : DroopModel) :
+@[tmio M, powerlib_domain] theorem toVSM_vector (m : DroopModel) :
     m.toVSM.vector = m.d.vsmField (m.d.τp * m.d.KR) m.d.KR := rfl
 
 end DroopModel
@@ -505,7 +505,7 @@ state; its requirements are those of its VSM image, with the same translation. -
 def droopFamily : Family DroopModel VSMRequirement 2 0 :=
   ⟨fun m => Port.System.autonomous m.field, fun m q => vsmMeets m.toVSM q, vsmTranslate⟩
 
-@[powerlib_domain] theorem droopFamily_isAutonomous :
+@[tmio M, powerlib_domain] theorem droopFamily_isAutonomous :
     droopFamily.IsAutonomous DroopModel.field := fun _ => rfl
 
 /-- Every flow sentence of a droop + LPF model is the same sentence of its VSM image. -/

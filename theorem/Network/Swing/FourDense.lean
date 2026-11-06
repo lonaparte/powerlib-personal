@@ -1132,14 +1132,14 @@ theorem exists_sorted_lift (θ : Fin 4 → ℝ) : ∃ (σ : Equiv.Perm (Fin 4)) 
 
 /-! ## The model: four machines with five or six lines (implementation evidence) -/
 
-@[powerlib_domain] private theorem mem_den_flow_iff_dense {m : Model n} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff_dense {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- **A cut of the labelled machines has positive weight at a locally asymptotically stable point.**
 `c` is the indicator (in labelled order) of a nonempty proper group of machines. -/
-@[powerlib_domain] private theorem cut_pos_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
+@[tmio TM, powerlib_domain] private theorem cut_pos_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) (σ : Equiv.Perm (Fin 4))
     (c : Fin 4 → ℝ) (hc : ∀ k, c k = 0 ∨ c k = 1) {i₀ j₀ : Fin 4} (hi : c i₀ = 1)
@@ -1164,7 +1164,7 @@ theorem exists_sorted_lift (θ : Fin 4 → ℝ) : ∃ (σ : Equiv.Perm (Fin 4)) 
 
 /-- The Hessian form in labelled coordinates is positive semidefinite at a locally asymptotically
 stable power-balance point. -/
-@[powerlib_domain] private theorem labelled_nonneg_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
+@[tmio TM, powerlib_domain] private theorem labelled_nonneg_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) (σ : Equiv.Perm (Fin 4))
     (g₀ g₁ g₂ g₃ : ℝ) :
@@ -1181,7 +1181,7 @@ stable power-balance point. -/
 
 /-- A non-Hurwitz reduced Jacobian at a locally asymptotically stable point leaves a non-constant
 null direction of the Hessian form with zero cubic form. -/
-@[powerlib_domain] private theorem exists_null_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
+@[tmio TM, powerlib_domain] private theorem exists_null_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ))
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :

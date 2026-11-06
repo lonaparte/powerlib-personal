@@ -104,18 +104,18 @@ variable (p : Params)
 
 /-- Equilibria of the reduced model: `(θ*, 0)` with `h(θ*) = 0`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem reducedField_eq_zero_iff (hKi : p.Ki ≠ 0) (y : State 2) :
+@[tmio M, powerlib_domain] theorem reducedField_eq_zero_iff (hKi : p.Ki ≠ 0) (y : State 2) :
     p.reducedField y = 0 ↔ p.h (y 0) = 0 ∧ y 1 = 0 := by
   rw [reducedField_eq, piPLLField_eq_zero_iff hKi, zero_div]
 
-@[powerlib_domain] theorem contDiff_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
+@[tmio M, powerlib_domain] theorem contDiff_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     ContDiff ℝ 1 p.reducedField := by
   rw [reducedField_eq]
   exact contDiff_piPLLField (p.contDiff_h hwC hΔ)
 
 /-- The Jacobian of the reduced field, computed with `fderiv`:
 `[[K_p h′(θ), K_i], [h′(θ), 0]]`, `h′(θ) = −A cos(θ + φ)`. -/
-@[powerlib_domain] theorem fderiv_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ η : ℝ) :
+@[tmio M, powerlib_domain] theorem fderiv_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ η : ℝ) :
     fderiv ℝ p.reducedField (PhasePlane.mk θ η) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         (piPLLJacobian p.Kp p.Ki (-(p.amp * cos (θ + p.phase)))) := by
@@ -124,7 +124,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- `h` is smooth for every parameter set (a trigonometric polynomial with constant
 coefficients); the polar form `contDiff_h` needs `ω_g C_f ≠ 0`, `Δ ≠ 0`. -/
-@[powerlib_domain] theorem contDiff_h_one : ContDiff ℝ 1 p.h := by
+@[tmio M, powerlib_domain] theorem contDiff_h_one : ContDiff ℝ 1 p.h := by
   unfold Params.h Params.hE parkQ Params.vcD Params.vcQ Params.igD Params.igQ Params.solD
     Params.solQ Params.iD Params.iQ iparkD iparkQ
   fun_prop
@@ -135,12 +135,12 @@ def pllModel (θ : ℝ) : PLL.PIPLL.Model := ⟨p.h, p.Kp, p.Ki, 0, θ, p.contDi
 
 /-- The system map of the PI-PLL family reads the member `p.pllModel θ*` as the reduced field
 translated so that `(θ*, 0)` is the origin. -/
-@[powerlib_domain] theorem pllModel_field (θ : ℝ) (z : State 2) :
+@[tmio M, powerlib_domain] theorem pllModel_field (θ : ℝ) (z : State 2) :
     (p.pllModel θ).field z = p.reducedField (z + PhasePlane.mk θ 0) := by
   simp only [PLL.PIPLL.Model.field, PLL.PIPLL.Model.point, pllModel, zero_div]
   rw [reducedField_eq]
 
-@[powerlib_domain] theorem deriv_pllModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem deriv_pllModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     deriv (p.pllModel θ).h (p.pllModel θ).θ = -(p.amp * cos (θ + p.phase)) :=
   p.deriv_h hwC hΔ θ
 
@@ -172,7 +172,7 @@ stable for the reduced 2-state PLL model. -/
 /-- A1: at an equilibrium with `h′(θ*) = 0` (fold), the Jacobian of the reduced field is the
 nonzero nilpotent `[[0, K_i], [0, 0]]` (`K_i ≠ 0`); the equilibrium is not hyperbolic.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem reduced_jacobian_nilpotent (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem reduced_jacobian_nilpotent (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : p.Ki ≠ 0) {θ : ℝ} (hθ : p.h θ = 0) (hslope : p.amp * cos (θ + p.phase) = 0) :
     p.reducedField (PhasePlane.mk θ 0) = 0 ∧
       fderiv ℝ p.reducedField (PhasePlane.mk θ 0) =
@@ -192,7 +192,7 @@ Static evidence on the model, not a connection conclusion. -/
 (`V = −∫ h` up to a constant; the tilted washboard). -/
 def pot (θ : ℝ) : ℝ := -(p.c0 * θ) - p.amp * cos (θ + p.phase)
 
-@[powerlib_domain] theorem hasDerivAt_pot (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_pot (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     HasDerivAt p.pot (-p.h θ) θ := by
   have h1 : HasDerivAt (fun θ : ℝ => θ + p.phase) 1 θ := (hasDerivAt_id θ).add_const _
   have h2 := ((hasDerivAt_id θ).const_mul p.c0).neg.sub ((h1.cos).const_mul p.amp)
@@ -207,7 +207,7 @@ def hamiltonian (y : State 2) : ℝ := p.Ki / 2 * y 1 ^ 2 + p.pot (y 0)
 /-- Gradient `∇H = (−h(θ), K_i η)`. -/
 def gradH (y : State 2) : State 2 := WithLp.toLp 2 ![-p.h (y 0), p.Ki * y 1]
 
-@[powerlib_domain] theorem hasGradientAt_hamiltonian (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem hasGradientAt_hamiltonian (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (y : State 2) : HasGradientAt p.hamiltonian (p.gradH y) y := by
   set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
   set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
@@ -254,7 +254,7 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
   hasGradient := p.hasGradientAt_hamiltonian hwC hΔ
 
 /-- The input field of the port-Hamiltonian model is the PI-PLL field with drift `δω_g = u`. -/
-@[powerlib_domain] theorem pHModel_field (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
+@[tmio M, powerlib_domain] theorem pHModel_field (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
     (y : State 2) (u : Fin 1 → ℝ) :
     (p.pHModel hwC hΔ hKp).field y u = piPLLField p.h p.Kp p.Ki (u 0) y := by
   have hg : WithLp.ofLp (p.gradH y) = ![-p.h (y 0), p.Ki * y 1] := rfl
@@ -263,13 +263,13 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
   ext i; fin_cases i <;> simp; ring
 
 /-- `(J − R)∇H` is exactly the reduced field. -/
-@[powerlib_domain] theorem pHModel_zeroInputField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem pHModel_zeroInputField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) : (p.pHModel hwC hΔ hKp).zeroInputField = p.reducedField := by
   funext y
   rw [PH.NonlinearModel.zeroInputField, pHModel_field, reducedField_eq]
   rfl
 
-@[powerlib_domain] theorem pHModel_dampingPower (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem pHModel_dampingPower (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) (y : State 2) :
     (p.pHModel hwC hΔ hKp).dampingPower y = p.Kp * p.h (y 0) ^ 2 := by
   have hg : WithLp.ofLp (p.gradH y) = ![-p.h (y 0), p.Ki * y 1] := rfl
@@ -277,7 +277,7 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
   simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   ring
 
-@[powerlib_domain] theorem pHModel_output (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
+@[tmio M, powerlib_domain] theorem pHModel_output (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
     (y : State 2) : (p.pHModel hwC hΔ hKp).output y 0 = p.h (y 0) := by
   have hg : WithLp.ofLp (p.gradH y) = ![-p.h (y 0), p.Ki * y 1] := rfl
   simp only [PH.NonlinearModel.output, pHModel, hg]
@@ -286,7 +286,7 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
 /-- Energy balance of the reduced PLL (`reduced-2d-equation.md` §4):
 `Ḣ = −K_p h(θ)² ≤ 0` along the reduced field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem reduced_energy_rate (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
+@[tmio M, powerlib_domain] theorem reduced_energy_rate (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
     (y : State 2) :
     fderiv ℝ p.hamiltonian y (p.reducedField y) = -(p.Kp * p.h (y 0) ^ 2) := by
   have h := (p.pHModel hwC hΔ hKp).zeroInput_power_balance y
@@ -295,7 +295,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- `Ḣ ≤ 0` along the reduced field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem reduced_energy_rate_nonpos (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem reduced_energy_rate_nonpos (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) (y : State 2) : fderiv ℝ p.hamiltonian y (p.reducedField y) ≤ 0 := by
   rw [p.reduced_energy_rate hwC hΔ hKp]
   have := mul_nonneg hKp (sq_nonneg (p.h (y 0)))
@@ -303,7 +303,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- With a constant grid-frequency drift `δω_g` as port input: `Ḣ = h(θ) δω_g − K_p h(θ)²`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem energy_rate_with_drift (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem energy_rate_with_drift (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) (δω : ℝ) (y : State 2) :
     fderiv ℝ p.hamiltonian y (piPLLField p.h p.Kp p.Ki δω y) =
       p.h (y 0) * δω - p.Kp * p.h (y 0) ^ 2 := by
@@ -317,7 +317,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The Hamiltonian is nonincreasing along every solution segment of the reduced field.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem hamiltonian_antitoneOn (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio TM, powerlib_domain] private theorem hamiltonian_antitoneOn (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ p.reducedField a b) :
     AntitoneOn (p.hamiltonian ∘ φ) (Set.Icc a b) := by
@@ -341,7 +341,7 @@ def hCode (θ : ℝ) : ℝ :=
     cos θ * ((p.codeID θ - p.solD (p.codeID θ) (p.codeIQ θ) p.Vg 0) / p.wC)
 
 /-- Exact form of "numerically `h_code(θ) = h_text(−θ)`". -/
-@[powerlib_domain] theorem hCode_eq (θ : ℝ) : p.hCode θ = p.h (-θ) := by
+@[tmio M, powerlib_domain] theorem hCode_eq (θ : ℝ) : p.hCode θ = p.h (-θ) := by
   have e1 : p.codeID θ = p.iD (-θ) := by simp [codeID, iD, iparkD]
   have e2 : p.codeIQ θ = p.iQ (-θ) := by simp [codeIQ, iQ, iparkQ]
   simp only [hCode, e1, e2, h, hE, parkQ, vcD, vcQ, igD, igQ, sin_neg, cos_neg]
@@ -372,7 +372,7 @@ namespace Params
 variable (p : Params)
 
 /-- The two frames are conjugate: `F_code ∘ S = S ∘ F_text` with `S(θ, η) = (−θ, η)`. -/
-@[powerlib_domain] theorem codeField_reflect (y : State 2) :
+@[tmio M, powerlib_domain] theorem codeField_reflect (y : State 2) :
     p.codeField (reflect y) = reflect (p.reducedField y) := by
   rw [reflect_apply, reflect_apply, PhasePlane.ext_iff']
   simp [codeField, reducedField_apply, hCode_eq]
@@ -380,7 +380,7 @@ variable (p : Params)
 
 /-- `decisions.md` §D1.4, corrected: the code-frame field is the text-frame reduced field
 transported by the reflection `(θ, η) ↦ (−θ, η)`. -/
-@[powerlib_domain] theorem codeField_eq_transport :
+@[tmio M, powerlib_domain] theorem codeField_eq_transport :
     p.codeField = Dynamics.transportField reflect 0 p.reducedField := by
   funext y
   have hy : y = Dynamics.affineCoord reflect 0 (reflect.symm y) := by
@@ -416,7 +416,7 @@ def codeFamily : Family CodeModel PLL.PIPLL.Requirement 2 0 :=
   ⟨fun m => Port.System.autonomous m.field, fun m q => PLL.PIPLL.Meets m.toText q,
     PLL.PIPLL.translate⟩
 
-@[powerlib_domain] theorem codeFamily_isAutonomous : codeFamily.IsAutonomous CodeModel.field :=
+@[tmio M, powerlib_domain] theorem codeFamily_isAutonomous : codeFamily.IsAutonomous CodeModel.field :=
   fun _ => rfl
 
 /-- The code-frame field at a point is the text-frame field at the reflected point. -/
@@ -486,7 +486,7 @@ variable (p : Params)
 def tableMap (y : State 2) : State 2 := PhasePlane.mk (y 0) (-(y 1))
 
 /-- The table's map conjugates the two fields iff `h` is odd. -/
-@[powerlib_domain] theorem tableMap_conj_iff :
+@[tmio M, powerlib_domain] theorem tableMap_conj_iff :
     (∀ y, p.codeField (tableMap y) = tableMap (p.reducedField y)) ↔
       ∀ θ, p.h (-θ) = -p.h θ := by
   constructor
@@ -498,7 +498,7 @@ def tableMap (y : State 2) : State 2 := PhasePlane.mk (y 0) (-(y 1))
     simp [codeField, tableMap, reducedField_apply, hCode_eq, H]
 
 /-- For the closed-form `h`, oddness holds iff `c₀ = 0 ∧ A sin φ = 0`. -/
-@[powerlib_domain] theorem h_odd_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
+@[tmio M, powerlib_domain] theorem h_odd_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     (∀ θ, p.h (-θ) = -p.h θ) ↔ p.c0 = 0 ∧ p.amp * sin p.phase = 0 := by
   simp only [p.h_eq_polar hwC hΔ]
   constructor

@@ -442,7 +442,7 @@ def weakFocus : Model := ⟨⟨1, 1, 0, 1, 2, 0, 1, 3 / 2, 0⟩, 0⟩
 
 /-- The translated field of the weak focus: `θ̇ = −sin θ + η + 2x`, `ẋ = −sin θ + η`,
 `u̇ = −cos θ · η / (1 + u)`, `η̇ = u`. -/
-@[powerlib_domain] private theorem weakFocus_field (z : Dynamics.State 4) :
+@[tmio M, powerlib_domain] private theorem weakFocus_field (z : Dynamics.State 4) :
     weakFocus.field z = WithLp.toLp 2 ![-Real.sin (z 0) + z 3 + 2 * z 1, -Real.sin (z 0) + z 3,
       -(Real.cos (z 0) * z 3 * (z 2 + 1)⁻¹), z 2] := by
   ext i
@@ -563,18 +563,18 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
 
 /-! ## The Routh boundary: necessary conditions and inexpressibility -/
 
-@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
     (pt := fun m => opPoint m.θ) family_isAutonomous
 
-@[powerlib_domain] private theorem lyapunovStable_regField {p : Params} {θ0 : ℝ}
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_regField {p : Params} {θ0 : ℝ}
     (h : LyapunovStable (FourState.field p) (opPoint θ0)) :
     LyapunovStable (regField p) (opPoint θ0) :=
   Dynamics.lyapunovStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun _ hy => (field_eq_regField_of_near p hy).symm) h
 
-@[powerlib_domain] private theorem localAsymptoticStable_regField {p : Params} {θ0 : ℝ}
+@[tmio TM, powerlib_domain] private theorem localAsymptoticStable_regField {p : Params} {θ0 : ℝ}
     (h : LocalAsymptoticStable (FourState.field p) (opPoint θ0)) :
     LocalAsymptoticStable (regField p) (opPoint θ0) := by
   obtain ⟨hLS, c, hc, hconv⟩ := h
@@ -599,7 +599,7 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
 /-- With no capacitance the dc-bus voltage is frozen while the dc integrator integrates its
 deviation: `W = (V − 1) η` has `Ẇ = (V − 1)²` (Chetaev), so the regularized field is unstable at
 every operating point. -/
-@[powerlib_domain] private theorem unstable_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (θ0 : ℝ) :
+@[tmio TM, powerlib_domain] private theorem unstable_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (θ0 : ℝ) :
     Unstable (regField p) (opPoint θ0) := by
   have c2 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 2) := contDiff_piLp_apply 2
   have c3 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 3) := contDiff_piLp_apply 2

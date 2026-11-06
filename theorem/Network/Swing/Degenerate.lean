@@ -110,7 +110,7 @@ def energy (p : Params n) (z : State (n + (n + 1))) : ℝ :=
   linarith
 
 /-- `∑ₖ ∑ⱼ Bₖⱼ sin(θₖ − θⱼ)(vₖ − vⱼ) = 2 ∑ₖ Pₖ(θ) vₖ`. -/
-@[powerlib_domain] theorem sum_sin_mul_sub (p : Params n) (θ v : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem sum_sin_mul_sub (p : Params n) (θ v : Fin (n + 1) → ℝ) :
     ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * (v k - v j) =
       2 * ∑ k, powerInjection p.B θ k * v k := by
   have h1 : ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * v j =
@@ -129,11 +129,11 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
   ∑ k, (powerInjection p.B θ k - p.P k) • ContinuousLinearMap.proj (R := ℝ)
     (φ := fun _ : Fin (n + 1) => ℝ) k
 
-@[powerlib_domain] theorem potentialGrad_apply (p : Params n) (θ v : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem potentialGrad_apply (p : Params n) (θ v : Fin (n + 1) → ℝ) :
     potentialGrad p θ v = ∑ k, (powerInjection p.B θ k - p.P k) * v k := by
   simp [potentialGrad]
 
-@[powerlib_domain] theorem hasFDerivAt_potential (p : Params n) (θ : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_potential (p : Params n) (θ : Fin (n + 1) → ℝ) :
     HasFDerivAt (potential p) (potentialGrad p θ) θ := by
   have hlin : HasFDerivAt (fun φ : Fin (n + 1) → ℝ => ∑ k, p.P k * φ k)
       (∑ k, p.P k • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) k) θ := by
@@ -165,7 +165,7 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
   simp only [sub_mul, Finset.sum_sub_distrib]
   linarith
 
-@[powerlib_domain] theorem potential_contDiff (p : Params n) {N : WithTop ℕ∞} :
+@[tmio M, powerlib_domain] theorem potential_contDiff (p : Params n) {N : WithTop ℕ∞} :
     ContDiff ℝ N (potential p) := by
   unfold potential
   apply ContDiff.sub
@@ -174,7 +174,7 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
     exact ContDiff.sum fun k _ => ContDiff.sum fun j _ => contDiff_const.mul
       (Real.contDiff_cos.comp ((contDiff_apply ℝ ℝ k).sub (contDiff_apply ℝ ℝ j)))
 
-@[powerlib_domain] theorem energy_contDiff (p : Params n) : ContDiff ℝ 1 (energy p) := by
+@[tmio M, powerlib_domain] theorem energy_contDiff (p : Params n) : ContDiff ℝ 1 (energy p) := by
   unfold energy
   apply ContDiff.add
   · apply ContDiff.div_const
@@ -182,7 +182,7 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
   · exact (potential_contDiff p).comp angleMap.contDiff
 
 /-- The absolute angles move with the frequency differences: `(angleMap ż)ₖ = ωₖ − ω₀`. -/
-@[powerlib_domain] theorem angleMap_reducedField (p : Params n) (z : State (n + (n + 1)))
+@[tmio M, powerlib_domain] theorem angleMap_reducedField (p : Params n) (z : State (n + (n + 1)))
     (k : Fin (n + 1)) : angleMap (reducedField p z) k = z (wIdx k) - z (wIdx 0) := by
   refine Fin.cases ?_ (fun i => ?_) k
   · simp
@@ -193,12 +193,12 @@ def energyGrad (p : Params n) (z : State (n + (n + 1))) : State (n + (n + 1)) �
   (∑ k, (p.M k * z (wIdx k)) • PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (n + (n + 1)) => ℝ) (wIdx k)) +
     (potentialGrad p (angleMap z)).comp angleMap
 
-@[powerlib_domain] theorem energyGrad_apply (p : Params n) (z v : State (n + (n + 1))) :
+@[tmio M, powerlib_domain] theorem energyGrad_apply (p : Params n) (z v : State (n + (n + 1))) :
     energyGrad p z v = ∑ k, p.M k * z (wIdx k) * v (wIdx k) +
       ∑ k, (powerInjection p.B (angleMap z) k - p.P k) * angleMap v k := by
   simp [energyGrad, potentialGrad_apply]
 
-@[powerlib_domain] theorem hasFDerivAt_energy (p : Params n) (z : State (n + (n + 1))) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_energy (p : Params n) (z : State (n + (n + 1))) :
     HasFDerivAt (energy p) (energyGrad p z) z := by
   have hkin : HasFDerivAt (fun y : State (n + (n + 1)) => (∑ k, p.M k * y (wIdx k) ^ 2) / 2)
       (∑ k, (p.M k * z (wIdx k)) • PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (n + (n + 1)) => ℝ)
@@ -223,7 +223,7 @@ def energyGrad (p : Params n) (z : State (n + (n + 1))) : State (n + (n + 1)) �
 
 /-- **Energy balance.** Along the reduced swing field the energy changes at the rate
 `−∑ₖ Dₖ ωₖ² + ω₀ ∑ₖ Pₖ`; at a power-balance point `∑ₖ Pₖ = 0`, so the energy dissipates. -/
-@[powerlib_domain] theorem lie_energy (p : Params n) (z : State (n + (n + 1))) :
+@[tmio M, powerlib_domain] theorem lie_energy (p : Params n) (z : State (n + (n + 1))) :
     fderiv ℝ (energy p) z (reducedField p z) =
       -(∑ k, p.D k * z (wIdx k) ^ 2) + z (wIdx 0) * ∑ k, p.P k := by
   rw [(hasFDerivAt_energy p z).fderiv, energyGrad_apply]
@@ -296,7 +296,7 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
     equilibrium θ (wIdx k) = 0 := by
   simp [equilibrium]
 
-@[powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
+@[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     potential p (fun k => θ k + c) = potential p θ - c * ∑ k, p.P k := by
   simp only [potential, add_sub_add_right_eq_sub]
   rw [show ∑ k, p.P k * (θ k + c) = ∑ k, p.P k * θ k + c * ∑ k, p.P k by
@@ -305,12 +305,12 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
   ring
 
 /-- Total power vanishes at a power-balance point. -/
-@[powerlib_domain] theorem sum_P_of_balance {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem sum_P_of_balance {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) : ∑ k, p.P k = 0 := by
   rw [Finset.sum_congr rfl fun k _ => hbal k, sum_powerInjection]
 
 /-- The energy at an angle-only displacement of the selected point is the potential there. -/
-@[powerlib_domain] theorem energy_equilibrium_add_angleState {p : Params n}
+@[tmio M, powerlib_domain] theorem energy_equilibrium_add_angleState {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ) :
     energy p (equilibrium θ + angleState v) = potential p (θ + ground v) := by
   have hz : ∀ k, (equilibrium θ + angleState v) (wIdx k) = 0 := fun k => by
@@ -323,7 +323,7 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
   rw [energy, ha, potential_add_const, sum_P_of_balance hbal]
   simp [hz]
 
-@[powerlib_domain] theorem energy_equilibrium {p : Params n}
+@[tmio M, powerlib_domain] theorem energy_equilibrium {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) :
     energy p (equilibrium θ) = potential p θ := by
   have := energy_equilibrium_add_angleState hbal (0 : Fin n → ℝ)
@@ -331,7 +331,7 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
   rwa [h0, add_zero, ground_zero_vec, add_zero] at this
 
 /-- The energy does not increase along the reduced field at a power-balance point. -/
-@[powerlib_domain] theorem lie_energy_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem lie_energy_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (z : State (n + (n + 1))) :
     fderiv ℝ (energy p) z (reducedField p z) ≤ 0 := by
   rw [lie_energy, sum_P_of_balance hbal, mul_zero, add_zero, neg_nonpos]
@@ -394,29 +394,29 @@ def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ -
 
 /-- At a power-balance point the potential in relative angles, about the relative angles of
 `θ`, is the network potential of the displaced profile. -/
-@[powerlib_domain] theorem potential_ground_relAngles_add {p : Params n}
+@[tmio M, powerlib_domain] theorem potential_ground_relAngles_add {p : Params n}
     (hP : ∑ k, p.P k = 0) (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
     potential p (ground (relAngles θ + v)) = potential p (θ + ground v) := by
   rw [ground_relAngles_add, potential_add_const, hP, mul_zero, sub_zero]
 
-@[powerlib_domain] theorem potential_ground_relAngles {p : Params n}
+@[tmio M, powerlib_domain] theorem potential_ground_relAngles {p : Params n}
     (hP : ∑ k, p.P k = 0) (θ : Fin (n + 1) → ℝ) :
     potential p (ground (relAngles θ)) = potential p θ := by
   simpa [ground_zero_vec] using potential_ground_relAngles_add hP θ 0
 
-@[powerlib_domain] theorem hasFDerivAt_potential_comp_ground (p : Params n)
+@[tmio M, powerlib_domain] theorem hasFDerivAt_potential_comp_ground (p : Params n)
     (q : Fin n → ℝ) :
     HasFDerivAt (fun q => potential p (ground q))
       ((potentialGrad p (ground q)).comp groundCLM) q :=
   (hasFDerivAt_potential p (groundCLM q)).comp q groundCLM.hasFDerivAt
 
-@[powerlib_domain] theorem potential_comp_ground_contDiff (p : Params n) :
+@[tmio M, powerlib_domain] theorem potential_comp_ground_contDiff (p : Params n) :
     ContDiff ℝ 2 (fun q : Fin n → ℝ => potential p (ground q)) :=
   (potential_contDiff p).comp groundCLM.contDiff
 
 /-- The generalized force of the potential in relative angles: at a network with zero total
 power, `dU(q)(relRate w) = ∑ₖ (Pₖ(θ) − Pₖ) wₖ` with `θ = ground q`. -/
-@[powerlib_domain] theorem fderiv_potential_comp_ground_relRate {p : Params n}
+@[tmio M, powerlib_domain] theorem fderiv_potential_comp_ground_relRate {p : Params n}
     (hP : ∑ k, p.P k = 0) (q : Fin n → ℝ) (w : Fin (n + 1) → ℝ) :
     fderiv ℝ (fun q => potential p (ground q)) q (relRate w) =
       ∑ k, (powerInjection p.B (ground q) k - p.P k) * w k := by
@@ -435,7 +435,7 @@ power, `dU(q)(relRate w) = ∑ₖ (Pₖ(θ) − Pₖ) wₖ` with `θ = ground q`
 `relRate` the velocity-to-position map, inertias as masses, dampings, and the network potential
 in relative angles `q ↦ U(ground q)`. Static identity: the dynamics results of
 `theorem/Dynamics/Mechanical.lean` apply to the swing network at every power-balance point. -/
-@[powerlib_domain] theorem reducedField_eq_mechanical {p : Params n}
+@[tmio M, powerlib_domain] theorem reducedField_eq_mechanical {p : Params n}
     (hP : ∑ k, p.P k = 0) :
     reducedField p =
       Dynamics.Mechanical.field relRate p.M p.D (fun q => potential p (ground q)) := by
@@ -459,7 +459,7 @@ in relative angles `q ↦ U(ground q)`. Static identity: the dynamics results of
 
 /-- At a network with zero total power, the critical points of the potential in relative angles
 along the reachable directions are the power-balance points. -/
-@[powerlib_domain] theorem critical_iff_balance {p : Params n} (hP : ∑ k, p.P k = 0)
+@[tmio M, powerlib_domain] theorem critical_iff_balance {p : Params n} (hP : ∑ k, p.P k = 0)
     (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
     (fderiv ℝ (fun q => potential p (ground q)) (relAngles θ + v)).comp relRate = 0 ↔
       ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
@@ -480,7 +480,7 @@ along the reachable directions are the power-balance points. -/
       _root_.zero_apply]
     simp [← h]
 
-@[powerlib_domain] theorem critical_iff_balance_zero {p : Params n} (hP : ∑ k, p.P k = 0)
+@[tmio M, powerlib_domain] theorem critical_iff_balance_zero {p : Params n} (hP : ∑ k, p.P k = 0)
     (θ : Fin (n + 1) → ℝ) :
     (fderiv ℝ (fun q => potential p (ground q)) (relAngles θ)).comp relRate = 0 ↔
       ∀ k, p.P k = powerInjection p.B θ k := by
@@ -488,7 +488,7 @@ along the reachable directions are the power-balance points. -/
 
 /-! ## Necessary conditions for local asymptotic stability -/
 
-@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
@@ -546,7 +546,7 @@ def edgeIncrement (φ x : ℝ) : ℝ := Real.cos φ - Real.cos (φ + x) - x * Re
 
 /-- **Edge form of the potential.** At a power-balance point
 `U(θ + u) − U(θ) = ½ ∑ₖ ∑ⱼ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`. -/
-@[powerlib_domain] theorem potential_add_sub {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem potential_add_sub {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (u : Fin (n + 1) → ℝ) :
     potential p (θ + u) - potential p θ =
       (∑ k, ∑ j, p.B k j * edgeIncrement (θ k - θ j) (u k - u j)) / 2 := by
@@ -673,7 +673,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 /-- **Taylor seeds below the potential.** At a power-balance point, a direction `u` with
 `A₂(u) < 0`, or with `A₂(u) = 0` and `A₃(u) ≠ 0`, gives points `θ + t u` with arbitrarily small
 `t ≠ 0` and a lower potential. -/
-@[powerlib_domain] theorem exists_potential_lt {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem exists_potential_lt {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (u : Fin (n + 1) → ℝ)
     (h : hessForm p θ u < 0 ∨ (hessForm p θ u = 0 ∧ cubicForm p θ u ≠ 0)) {ε : ℝ} (hε : 0 < ε) :
     ∃ t : ℝ, t ≠ 0 ∧ |t| < ε ∧ potential p (θ + t • u) < potential p θ := by
@@ -729,11 +729,11 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 
 /-! ## A Hurwitz test with signed linearization weights -/
 
-@[powerlib_domain] theorem hessForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ) (c : ℝ) :
+@[tmio M, powerlib_domain] theorem hessForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ) (c : ℝ) :
     hessForm p θ (fun k => u k + c) = hessForm p θ u := by
   simp [hessForm]
 
-@[powerlib_domain] theorem hessForm_nonneg_of_pos {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem hessForm_nonneg_of_pos {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u)
     (v : Fin (n + 1) → ℝ) : 0 ≤ hessForm p θ v := by
   rw [← hessForm_add_const p θ v (-v 0)]
@@ -741,13 +741,13 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
   · rw [h]; simp [hessForm]
   · exact (hpos _ (by simp) h).le
 
-@[powerlib_domain] theorem eq_zero_of_hessForm_eq_zero {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem eq_zero_of_hessForm_eq_zero {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u)
     {v : Fin (n + 1) → ℝ} (h0 : v 0 = 0) (h : hessForm p θ v = 0) : v = 0 := by
   by_contra hne
   exact (hpos v h0 hne).ne' h
 
-@[powerlib_domain] theorem sum_normSq_eq_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem sum_normSq_eq_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
     (u : Fin (n + 1) → ℂ) :
     ∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (u i - u j) =
       hessForm p θ (fun k => (u k).re) + hessForm p θ (fun k => (u k).im) := by
@@ -959,7 +959,7 @@ the model is not in the denotation of the local asymptotic sentence. -/
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
-@[powerlib_domain] theorem exists_hessForm_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem exists_hessForm_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     ∃ u : Fin (n + 1) → ℝ, u 0 = 0 ∧ u ≠ 0 ∧ hessForm p θ u ≤ 0 := by
   by_contra hne
@@ -1016,7 +1016,7 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
   rfl
 
 /-- Two machines: the forms in the direction of the second machine. -/
-@[powerlib_domain] private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
+@[tmio M, powerlib_domain] private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
     hessForm p θ w = 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1)) * w 1 ^ 2 := by
   simp only [hessForm, Fin.sum_univ_succ, Fin.sum_univ_zero, hw]
   simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero, zero_pow two_ne_zero,
@@ -1024,7 +1024,7 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
   rw [p.B_symm 1 0, show θ 1 - θ 0 = -(θ 0 - θ 1) by ring, Real.cos_neg]
   ring
 
-@[powerlib_domain] private theorem cubicForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
+@[tmio M, powerlib_domain] private theorem cubicForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
     cubicForm p θ w = -2 * (p.B 0 1 * Real.sin (θ 0 - θ 1)) * w 1 ^ 3 := by
   simp only [cubicForm, Fin.sum_univ_succ, Fin.sum_univ_zero, hw]
   simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero,
@@ -1032,7 +1032,7 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
   rw [p.B_symm 1 0, show θ 1 - θ 0 = -(θ 0 - θ 1) by ring, Real.sin_neg]
   ring
 
-@[powerlib_domain] private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
+@[tmio M, powerlib_domain] private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
     (θ : Fin (1 + 1) → ℝ) (k : Fin (1 + 1)) : powerInjection p.B θ k = 0 := by
   have hB' : p.B 1 0 = 0 := by rw [p.B_symm]; exact hB
   simp only [powerInjection, Fin.sum_univ_succ, Fin.sum_univ_zero]
@@ -1288,7 +1288,7 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
     have := mul_neg_of_pos_of_neg w₃ h3
     linarith
 
-@[powerlib_domain] private theorem hessForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
+@[tmio M, powerlib_domain] private theorem hessForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
     hessForm p θ (ground ![s, t]) = 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1) * s ^ 2 +
       p.B 0 2 * Real.cos (θ 0 - θ 2) * t ^ 2 + p.B 1 2 * Real.cos (θ 1 - θ 2) * (s - t) ^ 2) := by
   simp only [hessForm, Fin.sum_univ_succ, Fin.sum_univ_zero, ground]
@@ -1298,7 +1298,7 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
   simp only [Real.cos_neg]
   ring
 
-@[powerlib_domain] private theorem cubicForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
+@[tmio M, powerlib_domain] private theorem cubicForm_three (p : Params 2) (θ : Fin (2 + 1) → ℝ) (s t : ℝ) :
     cubicForm p θ (ground ![s, t]) = 2 * (-(p.B 0 1 * Real.sin (θ 0 - θ 1)) * s ^ 3 -
       p.B 0 2 * Real.sin (θ 0 - θ 2) * t ^ 3 + p.B 1 2 * Real.sin (θ 1 - θ 2) * (s - t) ^ 3) := by
   simp only [cubicForm, Fin.sum_univ_succ, Fin.sum_univ_zero, ground]
@@ -1556,7 +1556,7 @@ which contradicts the positive Hessian along it. -/
 
 /-- The energy relative to the selected point, at a displacement `w`: kinetic energy of `w` plus
 the potential increment of its relative angles. -/
-@[powerlib_domain] theorem energy_equilibrium_add {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_domain] theorem energy_equilibrium_add {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (w : State (n + (n + 1))) :
     energy p (equilibrium θ + w) - energy p (equilibrium θ) =
       (∑ k, p.M k * w (wIdx k) ^ 2) / 2 +
@@ -1573,7 +1573,7 @@ the potential increment of its relative angles. -/
 
 /-- A relative-angle displacement that keeps power balance is an equilibrium of the reduced
 field. -/
-@[powerlib_domain] theorem reducedField_equilibrium_add_angleState {p : Params n}
+@[tmio M, powerlib_domain] theorem reducedField_equilibrium_add_angleState {p : Params n}
     {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ}
     (hv : ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
     reducedField p (equilibrium θ + angleState v) = 0 := by
@@ -1620,7 +1620,7 @@ def angleStateCLM : (Fin n → ℝ) →L[ℝ] State (n + (n + 1)) :=
 @[simp, powerlib_foundation] theorem angleStateCLM_apply (v : Fin n → ℝ) :
     angleStateCLM v = angleState v := rfl
 
-@[powerlib_domain] theorem hasFDerivAt_potential_ground (p : Params n)
+@[tmio M, powerlib_domain] theorem hasFDerivAt_potential_ground (p : Params n)
     (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
     HasFDerivAt (fun v => potential p (θ + ground v))
       ((potentialGrad p (θ + ground v)).comp groundCLM) v := by
@@ -1654,7 +1654,7 @@ vanishes). -/
 /-- Implementation evidence: `Dynamics.Mechanical.strictMin_of_localAsymptoticStable` on the
 reduced field. The selected point of a locally asymptotically stable network is a strict, isolated
 minimum of the potential. -/
-@[powerlib_domain] private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
+@[tmio TM, powerlib_domain] private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
     ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧

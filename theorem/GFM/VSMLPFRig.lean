@@ -167,7 +167,7 @@ def Rig.field (y : Rig) (z : State 4) : State 4 := rigField y (z + y.point)
 
 /-- The Jacobian of the platform at its operating point is `Rig.jacobian`. Static evidence on the
 implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem hasFDerivAt_rigField (y : Rig) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_rigField (y : Rig) :
     HasFDerivAt (rigField y) (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) y.jacobian) y.point := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -204,7 +204,7 @@ implementation, not a connection conclusion. -/
 
 /-- The operating point is an equilibrium of the platform exactly when the design angle is
 balanced. Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem rigField_point_eq_zero_iff (y : Rig) (hω : y.design.g.ωc ≠ 0) :
+@[tmio M, powerlib_domain] theorem rigField_point_eq_zero_iff (y : Rig) (hω : y.design.g.ωc ≠ 0) :
     rigField y y.point = 0 ↔ Meets y.design .balanced := by
   show _ ↔ y.design.g.K0 * Real.sin y.design.δ = y.design.g.P0
   constructor
@@ -219,32 +219,32 @@ balanced. Static evidence on the implementation, not a connection conclusion. -/
     ext i
     fin_cases i <;> simp [rigField, Rig.point, hb]
 
-@[powerlib_domain] private theorem rig_trace_jacobian (y : Rig) :
+@[tmio M, powerlib_domain] private theorem rig_trace_jacobian (y : Rig) :
     y.jacobian.trace = -y.design.g.D / y.design.g.M - y.design.g.ωc - 1 / y.τ := by
   simp [Rig.jacobian, Matrix.trace, Fin.sum_univ_four]
   ring
 
-@[powerlib_domain] private theorem rig_m2_jacobian (y : Rig) :
+@[tmio M, powerlib_domain] private theorem rig_m2_jacobian (y : Rig) :
     Criteria.principalMinorSum2Fin4 y.jacobian =
       y.design.g.D / y.design.g.M * y.design.g.ωc + y.design.g.D / y.design.g.M / y.τ +
         y.design.g.ωc / y.τ := by
   simp [Criteria.principalMinorSum2Fin4, Rig.jacobian]
   ring
 
-@[powerlib_domain] private theorem rig_m3_jacobian (y : Rig) :
+@[tmio M, powerlib_domain] private theorem rig_m3_jacobian (y : Rig) :
     Criteria.principalMinorSum3Fin4 y.jacobian =
       -(y.design.g.D / y.design.g.M * y.design.g.ωc / y.τ) := by
   simp [Criteria.principalMinorSum3Fin4, Rig.jacobian]
   ring
 
-@[powerlib_domain] private theorem rig_det_jacobian (y : Rig) :
+@[tmio M, powerlib_domain] private theorem rig_det_jacobian (y : Rig) :
     y.jacobian.det = y.design.g.ωc / y.design.g.M / y.τ * y.design.K := by
   rw [Criteria.det_fin_four]
   simp [Rig.jacobian]
   ring
 
 /-- The third Hurwitz determinant of the platform Jacobian, scaled by `(M τ)³`, is `H`. -/
-@[powerlib_domain] private theorem gap_eq (y : Rig) (hM : y.design.g.M ≠ 0) (hτ : y.τ ≠ 0) :
+@[tmio M, powerlib_domain] private theorem gap_eq (y : Rig) (hM : y.design.g.M ≠ 0) (hτ : y.τ ≠ 0) :
     (y.jacobian.trace * Criteria.principalMinorSum2Fin4 y.jacobian *
         Criteria.principalMinorSum3Fin4 y.jacobian -
       (Criteria.principalMinorSum3Fin4 y.jacobian ^ 2 + y.jacobian.trace ^ 2 * y.jacobian.det)) *
@@ -297,12 +297,12 @@ def rigTranslate : Sentence → Set RigRequirement
 def rigFamily : Family Rig RigRequirement 4 0 :=
   ⟨fun y => Port.System.autonomous y.field, RigMeets, rigTranslate⟩
 
-@[powerlib_domain] theorem rigFamily_isAutonomous : rigFamily.IsAutonomous Rig.field :=
+@[tmio M, powerlib_domain] theorem rigFamily_isAutonomous : rigFamily.IsAutonomous Rig.field :=
   fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
 
-@[powerlib_domain] private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
     y ∈ rigFamily.den (.flow P) ↔ P.holds (rigField y) y.point :=
   Spectral.mem_den_flow_iff_shift (f := rigField) (pt := Rig.point) rigFamily_isAutonomous
 
@@ -466,9 +466,9 @@ def stack : Stack Model Requirement Rig RigRequirement Record 3 0 4 0 :=
   { model := family, impl := rigFamily, realizes := Implementation.ofDesign Rig.design
     produces := {p | Produces p.1 p.2} }
 
-@[powerlib_domain] private theorem stack_model : stack.model = family := rfl
+@[tmio M, powerlib_domain] private theorem stack_model : stack.model = family := rfl
 
-@[powerlib_domain] private theorem stack_impl : stack.impl = rigFamily := rfl
+@[tmio M, powerlib_domain] private theorem stack_impl : stack.impl = rigFamily := rfl
 
 /-- A static check of a record: positive lower bounds and the fast-filter condition at the worst
 corner of the intervals, `K_hi < D_lo ω_lo + D_lo²/M_hi`. -/

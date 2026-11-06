@@ -171,7 +171,7 @@ on the implementation, not a connection conclusion. -/
   ring_nf
 
 /-- The plant is exactly the platform field. -/
-@[powerlib_domain] theorem model_field (iref : ℝ) (x : ℝ³) :
+@[tmio M, powerlib_domain] theorem model_field (iref : ℝ) (x : ℝ³) :
     y.model.inputField (fun _ => iref) x = y.field iref x := by
   rw [field_apply]
   ext j
@@ -183,13 +183,13 @@ on the implementation, not a connection conclusion. -/
 def equilibrium (iref : ℝ) : ℝ³ :=
   WithLp.toLp 2 ![iref, y.design.R * iref / y.design.Ki, y.τ * (y.design.R * iref) / 2]
 
-@[powerlib_domain] private theorem τ_ne_zero {y : DigitalPI} (hT : y.Ts ≠ 0) : y.τ ≠ 0 := by
+@[tmio M, powerlib_domain] private theorem τ_ne_zero {y : DigitalPI} (hT : y.Ts ≠ 0) : y.τ ≠ 0 := by
   unfold τ
   intro h
   apply hT
   linarith
 
-@[powerlib_domain] theorem isEquilibrium (hKi : y.design.Ki ≠ 0) (hT : y.Ts ≠ 0)
+@[tmio M, powerlib_domain] theorem isEquilibrium (hKi : y.design.Ki ≠ 0) (hT : y.Ts ≠ 0)
     (iref : ℝ) : IsEquilibrium (y.model.inputField fun _ => iref) (y.equilibrium iref) := by
   have hτ := τ_ne_zero hT
   have hu : y.control iref (y.equilibrium iref) = y.design.R * iref := by
@@ -212,7 +212,7 @@ def equilibrium (iref : ℝ) : ℝ³ :=
 
 /-- Every equilibrium of the platform for a constant reference has zero current error `i = i*`.
 Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem equilibrium_current {iref : ℝ} {e : ℝ³}
+@[tmio M, powerlib_domain] theorem equilibrium_current {iref : ℝ} {e : ℝ³}
     (he : IsEquilibrium (y.model.inputField fun _ => iref) e) : e 0 = iref := by
   rw [IsEquilibrium, model_field, field_apply] at he
   have h := congrArg (fun z : ℝ³ => z 1) he
@@ -233,25 +233,25 @@ def a1 : ℝ := y.design.R + y.design.Kp - y.design.Ki * y.τ / 2
 /-- `a₀ = Ki`. -/
 def a0 : ℝ := y.design.Ki
 
-@[powerlib_domain] private theorem trace_A :
+@[tmio M, powerlib_domain] private theorem trace_A :
     y.model.A.trace = (y.design.Kp - y.design.R) / y.design.L - 2 / y.τ := by
   simp [model, Matrix.trace_fin_three]
   ring
 
-@[powerlib_domain] private theorem principalMinorSum_A : Criteria.principalMinorSum y.model.A =
+@[tmio M, powerlib_domain] private theorem principalMinorSum_A : Criteria.principalMinorSum y.model.A =
     2 * (y.design.R + y.design.Kp) / (y.τ * y.design.L) - y.design.Ki / y.design.L := by
   simp [model, Criteria.principalMinorSum]
   ring
 
-@[powerlib_domain] private theorem det_A : y.model.A.det = -(2 * y.design.Ki / (y.τ * y.design.L)) := by
+@[tmio M, powerlib_domain] private theorem det_A : y.model.A.det = -(2 * y.design.Ki / (y.τ * y.design.L)) := by
   simp [model, Matrix.det_fin_three]
   ring
 
-@[powerlib_domain] private theorem a3_pos {y : DigitalPI} (hL : 0 < y.design.L) (hT : 0 < y.Ts) : 0 < y.a3 := by
+@[tmio M, powerlib_domain] private theorem a3_pos {y : DigitalPI} (hL : 0 < y.design.L) (hT : 0 < y.Ts) : 0 < y.a3 := by
   unfold a3 τ
   positivity
 
-@[powerlib_domain] private theorem neg_trace_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
+@[tmio M, powerlib_domain] private theorem neg_trace_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
     -y.model.A.trace = y.a2 / y.a3 := by
   have hτ := τ_ne_zero hT
   rw [trace_A]
@@ -259,14 +259,14 @@ def a0 : ℝ := y.design.Ki
   field_simp
   ring
 
-@[powerlib_domain] private theorem principalMinorSum_A_eq (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
+@[tmio M, powerlib_domain] private theorem principalMinorSum_A_eq (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
     Criteria.principalMinorSum y.model.A = y.a1 / y.a3 := by
   have hτ := τ_ne_zero hT
   rw [principalMinorSum_A]
   unfold a1 a3
   field_simp
 
-@[powerlib_domain] private theorem neg_det_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
+@[tmio M, powerlib_domain] private theorem neg_det_A (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0) :
     -y.model.A.det = y.a0 / y.a3 := by
   have hτ := τ_ne_zero hT
   rw [det_A]
@@ -276,7 +276,7 @@ def a0 : ℝ := y.design.Ki
 /-- The characteristic polynomial of the platform:
 `det (sI − A) = (a₃ s³ + a₂ s² + a₁ s + a₀)/a₃`. Static evidence on the implementation, not a
 connection conclusion. -/
-@[powerlib_domain] theorem det_characteristicMatrix (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0)
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix (hL : y.design.L ≠ 0) (hT : y.Ts ≠ 0)
     (s : ℂ) :
     (characteristicMatrix y.model.A s).det =
       ((y.a3 : ℂ) * s ^ 3 + y.a2 * s ^ 2 + y.a1 * s + y.a0) / y.a3 := by
@@ -292,7 +292,7 @@ connection conclusion. -/
 /-- The characteristic polynomial is the return difference of the design loop closed through the
 Padé(1,1) delay: `(L s + R) s (1 + τ s/2) + (Kp s + Ki)(1 − τ s/2)`, over `a₃`. Static evidence on
 the implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem det_characteristicMatrix_pade (hL : y.design.L ≠ 0)
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix_pade (hL : y.design.L ≠ 0)
     (hT : y.Ts ≠ 0) (s : ℂ) :
     (characteristicMatrix y.model.A s).det =
       (((y.design.L : ℂ) * s + y.design.R) * s * Delay.pade11Den y.τ s +
@@ -307,26 +307,26 @@ the implementation, not a connection conclusion. -/
 
 /-- The delay block of the platform has the Padé(1,1) transfer function `Delay.pade11 τ`. Static
 evidence on the implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem transfer_delay (hT : y.Ts ≠ 0) {s : ℂ} (hs : s ≠ -2 / y.τ) :
+@[tmio M, powerlib_domain] theorem transfer_delay (hT : y.Ts ≠ 0) {s : ℂ} (hs : s ≠ -2 / y.τ) :
     Linear.transfer (Delay.pade11Model y.τ) s = !![Delay.pade11 y.τ s] :=
   Delay.transfer_pade11Model (τ_ne_zero hT) hs
 
 /-- One period of computation delay and the half-period hold make up the delay `τ`. -/
-@[powerlib_domain] theorem pureDelay_τ (s : ℂ) :
+@[tmio M, powerlib_domain] theorem pureDelay_τ (s : ℂ) :
     Delay.pureDelay y.Ts s * Delay.pureDelay (y.Ts / 2) s = Delay.pureDelay y.τ s := by
   rw [← Delay.pureDelay_add, τ]
   congr 1
   ring
 
 /-- The same total as three half-period delays (sampling, computation, PWM). -/
-@[powerlib_domain] theorem pureDelay_τ_halves (s : ℂ) :
+@[tmio M, powerlib_domain] theorem pureDelay_τ_halves (s : ℂ) :
     Delay.pureDelay (y.Ts / 2) s * Delay.pureDelay (y.Ts / 2) s * Delay.pureDelay (y.Ts / 2) s =
       Delay.pureDelay y.τ s :=
   Delay.pureDelay_three_half_periods y.Ts s
 
 /-- On the imaginary axis the one-step delay followed by the zero-order hold is the delay `τ`
 times the real factor `Tₛ sinc (ω Tₛ / 2)`. -/
-@[powerlib_domain] theorem computation_zoh_jω (ω : ℝ) :
+@[tmio M, powerlib_domain] theorem computation_zoh_jω (ω : ℝ) :
     Delay.pureDelay y.Ts (ω * Complex.I) * Delay.zoh y.Ts (ω * Complex.I) =
       Delay.pureDelay y.τ (ω * Complex.I) * (y.Ts * (Real.sinc (ω * y.Ts / 2) : ℂ)) := by
   rw [Delay.zoh_jω_eq_halfDelay, ← mul_assoc, pureDelay_τ]
@@ -384,7 +384,7 @@ a root with positive real part. -/
 
 /-- A strict violation of the platform Routh conditions gives a characteristic root in the open
 right half plane. Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem exists_root_of_lagged {y : DigitalPI} (hL : 0 < y.design.L)
+@[tmio M, powerlib_domain] theorem exists_root_of_lagged {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (h : y.a2 < 0 ∨ y.a1 < 0 ∨ y.a0 < 0 ∨ y.a2 * y.a1 < y.a3 * y.a0) :
     ∃ s : ℂ, (characteristicMatrix y.model.A s).det = 0 ∧ 0 < s.re := by
   have ha3 := a3_pos hL hT
@@ -449,7 +449,7 @@ def translate : Sentence → Set DigitalRequirement
 def family : Family DigitalPI DigitalRequirement 3 1 :=
   ⟨fun y => y.model.system, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear model := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear model := fun _ => rfl
 
 /-- Routh–Hurwitz for the platform with `L > 0`, `Tₛ > 0`. Read through the platform family denotation. -/
 @[tmio TM, powerlib_domain] theorem isHurwitz_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts) :
@@ -618,9 +618,9 @@ def implementation :
     Implementation PIParams Spectral.Requirement DigitalPI DigitalRequirement 2 1 3 1 :=
   { model := PIParams.family, impl := family, realizes := Implementation.ofDesign design }
 
-@[powerlib_domain] private theorem implementation_model : implementation.model = PIParams.family := rfl
+@[tmio M, powerlib_domain] private theorem implementation_model : implementation.model = PIParams.family := rfl
 
-@[powerlib_domain] private theorem implementation_impl : implementation.impl = family := rfl
+@[tmio M, powerlib_domain] private theorem implementation_impl : implementation.impl = family := rfl
 
 /-- Implementation soundness: within a positive inductance, a positive period and fast sampling,
 a platform whose design satisfies an attractive sentence (or sampled contraction) satisfies it.

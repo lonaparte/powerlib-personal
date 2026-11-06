@@ -150,13 +150,13 @@ def jacobian (δ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 @[tmio M, simp, powerlib_domain] theorem field_apply_zero (x : State 3) : g.field x 0 = x 1 := by
   simp [field]
 
-@[simp, powerlib_domain] theorem field_apply_one (x : State 3) :
+@[tmio M, simp, powerlib_domain] theorem field_apply_one (x : State 3) :
     g.field x 1 = (g.P0 - x 2 - g.D * x 1) / g.M := by simp [field]
 
-@[simp, powerlib_domain] theorem field_apply_two (x : State 3) :
+@[tmio M, simp, powerlib_domain] theorem field_apply_two (x : State 3) :
     g.field x 2 = g.ωc * (g.K0 * Real.sin (x 0) - x 2) := by simp [field]
 
-@[powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k g.field := by
+@[tmio M, powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k g.field := by
   rw [contDiff_euclidean]
   intro i
   fin_cases i
@@ -164,7 +164,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
   · simp only [Fin.mk_one, Fin.isValue, field_apply_one]; fun_prop
   · simp only [Fin.reduceFinMk, Fin.isValue, field_apply_two]; fun_prop
 
-@[powerlib_domain] theorem hasFDerivAt_field (x : State 3) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field (x : State 3) :
     HasFDerivAt g.field (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (g.jacobian (x 0))) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -194,24 +194,24 @@ def jacobian (δ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
     simp [jacobian, toEuclideanCLM_apply3]
     ring
 
-@[powerlib_domain] theorem fderiv_field (x : State 3) :
+@[tmio M, powerlib_domain] theorem fderiv_field (x : State 3) :
     fderiv ℝ g.field x = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (g.jacobian (x 0)) :=
   (g.hasFDerivAt_field x).fderiv
 
-@[simp, powerlib_domain] theorem trace_jacobian (δ : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem trace_jacobian (δ : ℝ) :
     (g.jacobian δ).trace = -g.D / g.M - g.ωc := by
   simp [jacobian, Matrix.trace_fin_three]; ring
 
-@[simp, powerlib_domain] theorem det_jacobian (δ : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem det_jacobian (δ : ℝ) :
     (g.jacobian δ).det = -(g.ωc * (g.K0 * Real.cos δ)) / g.M := by
   simp [jacobian, Matrix.det_fin_three]; ring
 
-@[simp, powerlib_domain] theorem principalMinorSum_jacobian (δ : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem principalMinorSum_jacobian (δ : ℝ) :
     Criteria.principalMinorSum (g.jacobian δ) = g.D * g.ωc / g.M := by
   simp [Criteria.principalMinorSum, jacobian]; ring
 
 /-- `M · det(sI − J) = M s³ + (D + M ω_c) s² + D ω_c s + ω_c K₀ cos δ`. -/
-@[powerlib_domain] theorem characteristic_polynomial (hM : g.M ≠ 0) (δ : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem characteristic_polynomial (hM : g.M ≠ 0) (δ : ℝ) (s : ℂ) :
     (g.M : ℂ) * (Linear.characteristicMatrix (g.jacobian δ) s).det =
       (g.M : ℂ) * s ^ 3 + ((g.D + g.M * g.ωc : ℝ) : ℂ) * s ^ 2 + ((g.D * g.ωc : ℝ) : ℂ) * s +
         ((g.ωc * (g.K0 * Real.cos δ) : ℝ) : ℂ) := by
@@ -226,7 +226,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 /-- Equilibria: `ω = 0`, `P_f = P₀` and `K₀ sin δ = P₀`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field_eq_zero_iff (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (x : State 3) :
+@[tmio M, powerlib_domain] theorem field_eq_zero_iff (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (x : State 3) :
     g.field x = 0 ↔ x 1 = 0 ∧ x 2 = g.P0 ∧ g.K0 * Real.sin (x 0) = g.P0 := by
   constructor
   · intro h
@@ -243,7 +243,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Equilibria exist iff `|P₀| ≤ K₀ = E V_g / X_g`: the zeros of the sinusoid `P₀ − K₀ sin δ`
 (`SpecialFunctions.exists_sinusoid_zero_iff`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem exists_equilibrium_iff (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
+@[tmio M, powerlib_domain] theorem exists_equilibrium_iff (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
     (hK0 : 0 < g.K0) : (∃ x, g.field x = 0) ↔ |g.P0| ≤ g.K0 := by
   rw [← SpecialFunctions.exists_sinusoid_zero_iff (φ := 0) hK0]
   constructor
@@ -310,7 +310,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 3 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-- The loading angle balances the power: `K₀ sin δ₀ = P₀` (`|P₀| ≤ K₀`).
@@ -323,7 +323,7 @@ Satisfaction of the power-balance requirement. -/
 
 /-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field_equilibrium (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hK0 : 0 < g.K0)
+@[tmio M, powerlib_domain] theorem field_equilibrium (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hK0 : 0 < g.K0)
     (h : |g.P0| ≤ g.K0) : g.field g.equilibrium = 0 :=
   (g.field_eq_zero_iff hM hω _).mpr ⟨by simp [equilibrium], by simp [equilibrium], by
     rw [equilibrium, mk3_zero]; exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K] using (g.sin_δ0 hK0 h))⟩
@@ -353,7 +353,7 @@ variable (g)
 
 /-- At the Routh boundary `ω_c = K/D − D/M` the characteristic polynomial has the purely
 imaginary root `j ω_H`, `ω_H² = K/M − D²/M²`. -/
-@[powerlib_domain] theorem det_characteristicMatrix_boundary (hM : g.M ≠ 0) (hD : g.D ≠ 0)
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix_boundary (hM : g.M ≠ 0) (hD : g.D ≠ 0)
     (hωc : g.ωc = g.K / g.D - g.D / g.M) {ωH : ℝ}
     (hH : ωH ^ 2 = g.K / g.M - g.D ^ 2 / g.M ^ 2) :
     (Linear.characteristicMatrix (g.jacobian g.δ0) ((ωH : ℂ) * Complex.I)).det = 0 := by
@@ -396,7 +396,7 @@ def Tred (s : ℂ) : ℂ := (g.K : ℂ) / ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s
 
 /-- `T_exact(2jω₀) = 1 / (−3 − 8 ζ r_c + j(4ζ − 8 r_c))` with `ω₀ = √(K/M)`,
 `ζ = D / (2√(MK))`, `r_c = ω₀/ω_c`. -/
-@[powerlib_domain] theorem Texact_two_j_omega0 (hM : 0 < g.M) (hK : 0 < g.K)
+@[tmio M, powerlib_domain] theorem Texact_two_j_omega0 (hM : 0 < g.M) (hK : 0 < g.K)
     (hω : 0 < g.ωc) :
     g.Texact (2 * Complex.I * (Real.sqrt (g.K / g.M) : ℂ)) =
       1 / (((-3 - 8 * (g.D / (2 * Real.sqrt (g.M * g.K))) *
@@ -429,7 +429,7 @@ def Tred (s : ℂ) : ℂ := (g.K : ℂ) / ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s
   rw [Texact, hden, div_mul_cancel_left₀ hne, one_div]
 
 /-- `T_red(2jω₀) = 1 / (−3 + 4 j ζ)`, `ζ = D / (2√(MK))`. -/
-@[powerlib_domain] theorem Tred_two_j_omega0 (hM : 0 < g.M) (hK : 0 < g.K) :
+@[tmio M, powerlib_domain] theorem Tred_two_j_omega0 (hM : 0 < g.M) (hK : 0 < g.K) :
     g.Tred (2 * Complex.I * (Real.sqrt (g.K / g.M) : ℂ)) =
       1 / (-3 + 4 * Complex.I * ((g.D / (2 * Real.sqrt (g.M * g.K)) : ℝ) : ℂ)) := by
   have hsM0 : 0 < Real.sqrt g.M := Real.sqrt_pos.mpr hM
@@ -458,12 +458,12 @@ def Tred (s : ℂ) : ℂ := (g.K : ℂ) / ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s
 /-- The field with grid-angle perturbation `u`: `Ṗ_f = ω_c (K₀ sin(δ − u) − P_f)`. -/
 def fieldU (u : ℝ) (x : State 3) : State 3 := g.field (x - mk3 u 0 0)
 
-@[powerlib_domain] theorem fieldU_apply_two (u : ℝ) (x : State 3) :
+@[tmio M, powerlib_domain] theorem fieldU_apply_two (u : ℝ) (x : State 3) :
     g.fieldU u x 2 = g.ωc * (g.K0 * Real.sin (x 0 - u) - x 2) := by
   simp [fieldU]
 
 /-- The Jacobian of the perturbed field is `J(δ − u)`. -/
-@[powerlib_domain] theorem fderiv_fieldU (u : ℝ) (x : State 3) :
+@[tmio M, powerlib_domain] theorem fderiv_fieldU (u : ℝ) (x : State 3) :
     fderiv ℝ (g.fieldU u) x =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (g.jacobian (x 0 - u)) := by
   have h := (g.hasFDerivAt_field (x - mk3 u 0 0)).comp x
@@ -475,7 +475,7 @@ def fieldU (u : ℝ) (x : State 3) : State 3 := g.field (x - mk3 u 0 0)
 /-- `A₁ = ∂J/∂u |_{u=0} = ω_c P₀ e_{P_f} e_δᵀ` (entrywise), at the loading equilibrium. -/
 def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
 
-@[powerlib_domain] theorem hasDerivAt_jacobian_u (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0)
+@[tmio M, powerlib_domain] theorem hasDerivAt_jacobian_u (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0)
     (i j : Fin 3) :
     HasDerivAt (fun u => g.jacobian (g.δ0 - u) i j) (g.A1 i j) 0 := by
   have hsin : g.K0 * Real.sin g.δ0 = g.P0 := (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K] using (g.sin_δ0 hK0 h))
@@ -489,7 +489,7 @@ def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
     first | exact hasDerivAt_const _ _ | exact key
 
 /-- Correction: `A₁ ≠ 0` iff `P₀ ≠ 0` (for `ω_c ≠ 0`). -/
-@[powerlib_domain] theorem A1_ne_zero_iff (hω : g.ωc ≠ 0) : g.A1 ≠ 0 ↔ g.P0 ≠ 0 := by
+@[tmio M, powerlib_domain] theorem A1_ne_zero_iff (hω : g.ωc ≠ 0) : g.A1 ≠ 0 ↔ g.P0 ≠ 0 := by
   constructor
   · intro hA hP
     apply hA
@@ -507,7 +507,7 @@ def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
 /-- Along a `T`-periodic solution of the forced three-state model with a continuous grid-angle
 signal `u`, the averaged filtered power and the averaged electrical power both equal `P₀`:
 `∫₀ᵀ P_f = P₀ T` and `∫₀ᵀ K₀ sin(δ − u) = P₀ T`. -/
-@[powerlib_domain] theorem periodic_time_averages (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
+@[tmio TM, powerlib_domain] theorem periodic_time_averages (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
     {u δ ω Pf : ℝ → ℝ} (hu : Continuous u) {T : ℝ}
     (hδ : ∀ t, HasDerivAt δ (ω t) t)
     (hωd : ∀ t, HasDerivAt ω ((g.P0 - Pf t - g.D * ω t) / g.M) t)
@@ -560,18 +560,18 @@ namespace VSMLPF
 
 /-! ### Implementation evidence (private) -/
 
-@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
     family_isAutonomous
 
-@[powerlib_domain] private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
+@[tmio M, powerlib_domain] private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
     m.g.field m.point = 0 :=
   (m.g.field_eq_zero_iff hp.1.ne' hp.2.2.ne' _).mpr
     ⟨by simp [Model.point], by simp [Model.point],
       by have hb' : m.g.K0 * Real.sin m.δ = m.g.P0 := hb; simpa [Model.point] using hb'⟩
 
-@[powerlib_domain] private theorem fderiv_point (m : Model) :
+@[tmio M, powerlib_domain] private theorem fderiv_point (m : Model) :
     fderiv ℝ m.g.field m.point =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (m.g.jacobian m.δ) := by
   rw [m.g.fderiv_field]
@@ -746,7 +746,7 @@ def atLoading (g : VSMLPF) : Model := ⟨g, g.δ0⟩
 /-- The model read about the second equilibrium angle `π − δ₀`. -/
 def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 
-@[simp, powerlib_domain] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
+@[tmio M, simp, powerlib_domain] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
 
 @[tmio M, powerlib_domain] private theorem fast_iff (hp : g.Pos) :
     connection% (atLoading g ∈ TMIO.realize Meets {.fastFilter} ↔ g.K / g.D - g.D / g.M < g.ωc) := by
@@ -956,7 +956,7 @@ def swingReduced (M D P K0 : ℝ) : Synchronous.SwingParams := ⟨M, D, P, 0, K0
 linearization at the loading angle `δ_s = arcsin(P/K₀)` has only real eigenvalues (no
 oscillatory precursor) iff `P/K₀ ≥ √(1 − ζ₀⁴)`; so the fraction of the load range `[0, K₀)`
 without an oscillatory mode is `B = 1 − √(1 − ζ₀⁴)` (for `ζ₀ ≤ 1`). -/
-@[powerlib_domain] theorem swingReduced_eigenvalues_real_iff {M D P K0 : ℝ} (hM : 0 < M)
+@[tmio M, powerlib_domain] theorem swingReduced_eigenvalues_real_iff {M D P K0 : ℝ} (hM : 0 < M)
     (hK0 : 0 < K0) (hP : 0 ≤ P) (hPK : P < K0) :
     (∀ (μ : ℂ) (w : Fin 2 → ℂ), w ≠ 0 →
         ((swingReduced M D P K0).jacobian (swingReduced M D P K0).deltaS).map
@@ -1045,12 +1045,12 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 def equilibrium : State 2 := PhasePlane.mk (Real.arcsin (q.P0 / q.K0)) q.P0
 
-@[powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k q.field := by
+@[tmio M, powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k q.field := by
   rw [contDiff_euclidean]
   intro i
   fin_cases i <;> simp [field] <;> fun_prop
 
-@[powerlib_domain] theorem hasFDerivAt_field (x : State 2) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field (x : State 2) :
     HasFDerivAt q.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (q.jacobian (x 0))) x := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
   intro i
@@ -1075,7 +1075,7 @@ def equilibrium : State 2 := PhasePlane.mk (Real.arcsin (q.P0 / q.K0)) q.P0
 
 /-- Equilibria of droop + LPF: `P_f = P₀` and `K₀ sin δ = P₀`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field_eq_zero_iff (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) (x : State 2) :
+@[tmio M, powerlib_domain] theorem field_eq_zero_iff (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) (x : State 2) :
     q.field x = 0 ↔ x 1 = q.P0 ∧ q.K0 * Real.sin (x 0) = q.P0 := by
   constructor
   · intro h
@@ -1134,7 +1134,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-! ### The swing reading -/
@@ -1149,7 +1149,7 @@ def Model.toSwing (m : Model) : Synchronous.Swing.Model := ⟨m.q.swingParams, m
 /-- **Large-signal equivalence.** In the coordinates `P_f = P₀ − D ω` the swing field of
 `swingParams` is the droop + LPF field (`D, ω_c ≠ 0`): the loop is the swing equation
 `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field_eq_transport (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) :
+@[tmio M, powerlib_domain] theorem field_eq_transport (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) :
     q.field = Dynamics.transportField (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
       (PhasePlane.mk 0 q.P0) q.swingParams.field := by
   funext y
@@ -1163,7 +1163,7 @@ def Model.toSwing (m : Model) : Synchronous.Swing.Model := ⟨m.q.swingParams, m
     ring
 
 /-- The operating point is the image of the swing model's. -/
-@[powerlib_domain] private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
+@[tmio M, powerlib_domain] private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
     m.point = Dynamics.affineCoord (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
       (PhasePlane.mk 0 m.q.P0) m.toSwing.point := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
@@ -1335,7 +1335,7 @@ def atLoading : Model := ⟨q, Real.arcsin (q.P0 / q.K0)⟩
 /-- The model read about the second equilibrium angle `π − arcsin(P₀/K₀)`. -/
 def atAntiLoading : Model := ⟨q, Real.pi - Real.arcsin (q.P0 / q.K0)⟩
 
-@[powerlib_domain] theorem atLoading_point : q.atLoading.point = q.equilibrium := rfl
+@[tmio M, powerlib_domain] theorem atLoading_point : q.atLoading.point = q.equilibrium := rfl
 
 /-- For every `D, ω_c, K₀ > 0` and `|P₀| < K₀` the loading equilibrium of droop + LPF is
 locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): no Hopf boundary. -/
@@ -1446,11 +1446,11 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
   (q.P0 - x 1) ^ 2 / (2 * q.D * q.ωc) +
     (q.K0 * (Real.cos δ₀ - Real.cos (x 0)) - q.P0 * (x 0 - δ₀))
 
-@[powerlib_domain] theorem contDiff_energy (δ₀ : ℝ) : ContDiff ℝ 1 (q.energy δ₀) := by
+@[tmio M, powerlib_domain] theorem contDiff_energy (δ₀ : ℝ) : ContDiff ℝ 1 (q.energy δ₀) := by
   unfold energy
   fun_prop
 
-@[powerlib_domain] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
     HasFDerivAt (q.energy δ₀)
       ((-(q.P0 - x 1) / (q.D * q.ωc)) •
           (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
@@ -1472,7 +1472,7 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
     ring
 
 /-- Lie derivative of the energy along the field: `Ė = −(P₀ − P_f)² / D` (`D, ω_c ≠ 0`). -/
-@[powerlib_domain] theorem energy_lie (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) (δ₀ : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] theorem energy_lie (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) (δ₀ : ℝ) (x : State 2) :
     fderiv ℝ (q.energy δ₀) x (q.field x) = -((q.P0 - x 1) ^ 2 / q.D) := by
   rw [(q.hasFDerivAt_energy δ₀ x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply, smul_eq_mul, field,
@@ -1482,7 +1482,7 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
 
 /-- At a balanced fold angle (`cos δ* = 0`) the energy at `(δ* + s, P₀)` is `−P₀ (s − sin s)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem energy_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
+@[tmio M, powerlib_domain] theorem energy_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
     (hcos : Real.cos δ₀ = 0) (s : ℝ) :
     q.energy δ₀ (PhasePlane.mk (δ₀ + s) q.P0) = -q.P0 * (s - Real.sin s) := by
   simp only [energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, sub_self]
@@ -1492,7 +1492,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- At a balanced fold angle the restoring power is `P₀ − K₀ sin(δ* + s) = P₀ (1 − cos s)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem restoring_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
+@[tmio M, powerlib_domain] theorem restoring_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
     (hcos : Real.cos δ₀ = 0) (s : ℝ) :
     q.P0 - q.K0 * Real.sin (δ₀ + s) = q.P0 * (1 - Real.cos s) := by
   rw [Real.sin_add, hcos, ← hb]

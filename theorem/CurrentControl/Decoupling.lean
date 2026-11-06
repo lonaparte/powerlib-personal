@@ -96,7 +96,7 @@ determinant of its state matrix negative (a real saddle mode). -/
 
 /-- In the state matrix of the PI loop, a real eigenvector of a positive eigenvalue has a
 nonzero current component. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem first_ne_zero {r : ℝ} (hr : 0 < r) {v : Fin 2 → ℝ}
+@[tmio M, powerlib_domain] theorem first_ne_zero {r : ℝ} (hr : 0 < r) {v : Fin 2 → ℝ}
     (hv : v ≠ 0) (h : p.model.A *ᵥ v = r • v) : v 0 ≠ 0 := by
   intro h0
   have h1 := congrFun h 1
@@ -112,7 +112,7 @@ nonzero current component. Static evidence on the model, not a connection conclu
 /-- With `Ki < 0` the PI current loop does not track: some solution with a constant reference
 has `i(t) ↛ i*`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem not_tracks_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) (iref : ℝ) :
+@[tmio TM, powerlib_domain] private theorem not_tracks_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) (iref : ℝ) :
     ∃ x : ℝ → ℝ², (∀ t, HasDerivAt x (p.field iref (x t)) t) ∧
       ¬ Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
   have hdet : p.model.A.det < 0 := by

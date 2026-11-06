@@ -70,7 +70,7 @@ def syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω : ℝ) (t : ℝ) : (Fin N → �
 uniform rotation `(ω·1, 0)` — iff the filtered powers equal the network powers and every unit's
 droop frequency equals the common frequency `ω`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem relativeEquilibrium_iff (hτ : ∀ k, m.τ k ≠ 0) (θ₀ Pf₀ : Fin N → ℝ)
+@[tmio M, powerlib_domain] theorem relativeEquilibrium_iff (hτ : ∀ k, m.τ k ≠ 0) (θ₀ Pf₀ : Fin N → ℝ)
     (ω : ℝ) :
     m.field (θ₀, Pf₀) = ((fun _ => ω), (0 : Fin N → ℝ)) ↔
       (∀ k, Pf₀ k = m.P θ₀ k) ∧ ∀ k, m.ωs - (Pf₀ k - m.Pstar k) / m.KR k = ω := by
@@ -81,7 +81,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- A uniformly rotating curve is a solution iff the filtered powers equal the network powers
 and every unit's droop frequency equals the common frequency `ω`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem synchronous_solution_iff (hτ : ∀ k, m.τ k ≠ 0)
+@[tmio TM, powerlib_domain] private theorem synchronous_solution_iff (hτ : ∀ k, m.τ k ≠ 0)
     (hshift : ∀ θ c, m.P (fun k => θ k + c) = m.P θ) (θ₀ Pf₀ : Fin N → ℝ) (ω : ℝ) :
     (∀ t, HasDerivAt (syncCurve θ₀ Pf₀ ω) (m.field (syncCurve θ₀ Pf₀ ω t)) t) ↔
       (∀ k, Pf₀ k = m.P θ₀ k) ∧ ∀ k, m.ωs - (Pf₀ k - m.Pstar k) / m.KR k = ω := by
@@ -110,7 +110,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- In a synchronous steady state (a relative equilibrium) every unit shares
 `ΔP_k = P_k − P*_k = −K_{R,k} (ω − ω_s)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem synchronous_sharing (hτ : ∀ k, m.τ k ≠ 0) (hK : ∀ k, m.KR k ≠ 0)
+@[tmio M, powerlib_domain] theorem synchronous_sharing (hτ : ∀ k, m.τ k ≠ 0) (hK : ∀ k, m.KR k ≠ 0)
     {θ₀ Pf₀ : Fin N → ℝ} {ω : ℝ}
     (hsync : m.field (θ₀, Pf₀) = ((fun _ => ω), (0 : Fin N → ℝ))) :
     ∀ k, m.P θ₀ k - m.Pstar k = -m.KR k * (ω - m.ωs) := by
@@ -125,7 +125,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- The common frequency of any synchronous steady state is
 `ω = ω_s − (P_L − Σ P*_k)/Σ K_{R,k}` when the network delivers the constant total load `P_L`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem synchronous_frequency (hτ : ∀ k, m.τ k ≠ 0) (hK : ∀ k, m.KR k ≠ 0)
+@[tmio M, powerlib_domain] theorem synchronous_frequency (hτ : ∀ k, m.τ k ≠ 0) (hK : ∀ k, m.KR k ≠ 0)
     {PL : ℝ}
     (hload : ∀ θ, ∑ k, m.P θ k = PL) (hsum : ∑ k, m.KR k ≠ 0) {θ₀ Pf₀ : Fin N → ℝ} {ω : ℝ}
     (hsync : m.field (θ₀, Pf₀) = ((fun _ => ω), (0 : Fin N → ℝ))) :
@@ -137,7 +137,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Proportional (per-rating) sharing in a synchronous steady state off nominal frequency holds
 iff the droop gains are proportional to the ratings.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem synchronous_proportionalSharing_iff (hτ : ∀ k, m.τ k ≠ 0)
+@[tmio M, powerlib_domain] theorem synchronous_proportionalSharing_iff (hτ : ∀ k, m.τ k ≠ 0)
     (hK : ∀ k, m.KR k ≠ 0) (S : Fin N → ℝ)
     (hS : ∀ k, S k ≠ 0) {θ₀ Pf₀ : Fin N → ℝ} {ω : ℝ} (hω : ω ≠ m.ωs)
     (hsync : m.field (θ₀, Pf₀) = ((fun _ => ω), (0 : Fin N → ℝ))) :

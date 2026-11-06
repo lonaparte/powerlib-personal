@@ -145,7 +145,7 @@ def uSol (θ x id iq ξq : ℝ) : ℝ := q.kp * q.vqSol θ id iq ξq + q.ki * x
 
 /-- The algebraic loop of the six-state carrier has the unique explicit solution: `v_q` does
 not contain `u` (speed-EMF cancellation), so `u` follows without any `D₀` factor. -/
-@[powerlib_domain] theorem loopRel_iff (hLf : q.Lf ≠ 0)
+@[tmio M, powerlib_domain] theorem loopRel_iff (hLf : q.Lf ≠ 0)
     (θ x id iq ξd ξq vd vq ed eq did diq u : ℝ) :
     q.LoopRel θ x id iq ξd ξq vd vq ed eq did diq u ↔
       u = q.uSol θ x id iq ξq ∧ vq = q.vqSol θ id iq ξq ∧ vd = q.vdSol θ id iq ξd ∧
@@ -187,7 +187,7 @@ def ccField (y : Fin 6 → ℝ) : Fin 6 → ℝ :=
     q.idRef - y 2, q.iqRef - y 3]
 
 /-- The field rows are the derivatives determined by the loop relations. -/
-@[powerlib_domain] theorem ccField_spec (hLf : q.Lf ≠ 0) (y : Fin 6 → ℝ) :
+@[tmio M, powerlib_domain] theorem ccField_spec (hLf : q.Lf ≠ 0) (y : Fin 6 → ℝ) :
     ∃ vd ed eq, q.LoopRel (y 0) (y 1) (y 2) (y 3) (y 4) (y 5) vd (q.ccField y 1) ed eq
       (q.ccField y 2) (q.ccField y 3) (q.ccField y 0) := by
   refine ⟨q.vdSol (y 0) (y 2) (y 3) (y 4),
@@ -202,7 +202,7 @@ def bwTuned (ζc ωcc : ℝ) : CCParams :=
 
 /-- Under bandwidth-normalized tuning the closed-loop six-state field does not depend on `L_f`
 (`L_f ≠ 0`): the stability parameters are `ω_cc, ζ_c`, not `L_f`. -/
-@[powerlib_domain] theorem ccField_bwTuned_indep_Lf (ζc ωcc L L' : ℝ) (hL : L ≠ 0)
+@[tmio M, powerlib_domain] theorem ccField_bwTuned_indep_Lf (ζc ωcc L L' : ℝ) (hL : L ≠ 0)
     (hL' : L' ≠ 0) :
     (({ q with Lf := L } : CCParams).bwTuned ζc ωcc).ccField =
       (({ q with Lf := L' } : CCParams).bwTuned ζc ωcc).ccField := by
@@ -247,7 +247,7 @@ def ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Matrix.diagonal ![1, 1, -1, -1, -
 
 /-- §D8 boundary translation of the six-state carrier: its field is the OUT-positive source field
 transported by the reversal of `(i_d, i_q, ξ_d, ξ_q)`, with the current references reversed. -/
-@[powerlib_domain] theorem lift_ccField_eq_transport (q : CCParams) :
+@[tmio M, powerlib_domain] theorem lift_ccField_eq_transport (q : CCParams) :
     Dynamics.lift q.ccField =
       Dynamics.transportField (Dynamics.matrixCoord ccReversal ccReversal_isUnit) 0
         (Dynamics.lift
@@ -274,7 +274,7 @@ def RateRel (p : RatePLL.Params) (Rg iq θ x vq u : ℝ) : Prop :=
 
 /-- Solution of the `D₀` loop with `R_g`, `i_q`: `D₀ u = k_p(−V sin θ − R_g i_q − X_g i_d) + k_i x`;
 `D₀ = 1 + k_p L_g i_d` contains neither `R_g` nor `i_q`. -/
-@[powerlib_domain] theorem rateRel_iff (p : RatePLL.Params) (hD0 : p.D0 ≠ 0)
+@[tmio M, powerlib_domain] theorem rateRel_iff (p : RatePLL.Params) (hD0 : p.D0 ≠ 0)
     (Rg iq θ x vq u : ℝ) :
     RateRel p Rg iq θ x vq u ↔
       u = (p.kp * (RatePLL.gridQ p θ - Rg * iq) + p.ki * x) / p.D0 ∧
@@ -296,7 +296,7 @@ def RateRel (p : RatePLL.Params) (Rg iq θ x vq u : ℝ) : Prop :=
 
 /-- At `i_q = 0` the carrier is exactly insensitive to `R_g`: for every `R_g` the loop solution is
 the one of the `R_g`-free model `RatePLL` (`θ̇ = pllOut`, `v_q = RatePLL.vq`). -/
-@[powerlib_domain] theorem rateRel_iq_zero_iff (p : RatePLL.Params) (hD0 : p.D0 ≠ 0)
+@[tmio M, powerlib_domain] theorem rateRel_iq_zero_iff (p : RatePLL.Params) (hD0 : p.D0 ≠ 0)
     (Rg θ x vq u : ℝ) :
     RateRel p Rg 0 θ x vq u ↔ u = RatePLL.pllOut p θ x ∧ vq = RatePLL.vq p θ x := by
   rw [rateRel_iff p hD0]
@@ -404,7 +404,7 @@ def VdSol (θ x V η : ℝ) : ℝ :=
 
 /-- The two algebraic loops are solved sequentially: first `D₀` gives `u`, then `D₁` gives
 `i̇_d`; `i_q` enters neither loop factor. -/
-@[powerlib_domain] theorem rel_iff (θ x V η : ℝ) (hD0 : d.D0 V η ≠ 0) (hD1 : d.D1 V η ≠ 0)
+@[tmio M, powerlib_domain] theorem rel_iff (θ x V η : ℝ) (hD0 : d.D0 V η ≠ 0) (hD1 : d.D1 V η ≠ 0)
     (hV : V ≠ 0) (hC : d.C ≠ 0) (u vd vq P Vd did : ℝ) :
     d.Rel θ x V η u vd vq P Vd did ↔
       u = d.uSol θ x V η ∧ vq = d.vqSol θ x V η ∧ did = d.didSol θ x V η ∧
@@ -477,7 +477,7 @@ def coordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
 def field : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift d.coordField
 
 /-- The rows of `coordField` solve the loop relations (where `D₀, D₁, V, C ≠ 0`). -/
-@[powerlib_domain] theorem coordField_spec (y : Fin 4 → ℝ) (hD0 : d.D0 (y 2) (y 3) ≠ 0)
+@[tmio M, powerlib_domain] theorem coordField_spec (y : Fin 4 → ℝ) (hD0 : d.D0 (y 2) (y 3) ≠ 0)
     (hD1 : d.D1 (y 2) (y 3) ≠ 0) (hV : y 2 ≠ 0) (hC : d.C ≠ 0) :
     ∃ vd P did, d.Rel (y 0) (y 1) (y 2) (y 3) (d.coordField y 0) vd (d.coordField y 1) P
       (d.coordField y 2) did := by
@@ -498,62 +498,62 @@ three flags flipped, `s_L = −1`, `s_P = 1`, `s_K = −1`. -/
 def inConv : DCParams := { d with id0 := -d.id0, iq := -d.iq, sL := -1, sP := 1, sK := -1 }
 
 
-@[powerlib_domain] theorem idRef_inConv (V η : ℝ) :
+@[tmio M, powerlib_domain] theorem idRef_inConv (V η : ℝ) :
     d.inConv.idRef V η = -d.outConv.idRef V η := by
   simp [idRef, inConv, outConv]; ring
 
-@[powerlib_domain] theorem D0_inConv (V η : ℝ) : d.inConv.D0 V η = d.outConv.D0 V η := by
+@[tmio M, powerlib_domain] theorem D0_inConv (V η : ℝ) : d.inConv.D0 V η = d.outConv.D0 V η := by
   simp only [D0, idRef_inConv]; simp [inConv, outConv]
 
 /-- `D₁` is a direction-convention invariant: the complete translation gives the same `D₁`. -/
-@[powerlib_domain] theorem D1_inConv (V η : ℝ) : d.inConv.D1 V η = d.outConv.D1 V η := by
+@[tmio M, powerlib_domain] theorem D1_inConv (V η : ℝ) : d.inConv.D1 V η = d.outConv.D1 V η := by
   simp only [D1, idRef_inConv]
   rw [← loopFactor_flip_all]
   simp [inConv, outConv]
 
 /-- With the OUT-positive flags, evaluating `D₁` at the negated current (translating only the
 current) gives `2 − D₁`, which is `< 1` whenever the true `D₁ > 1`. -/
-@[powerlib_domain] theorem D1_currentOnly (V id : ℝ) :
+@[tmio M, powerlib_domain] theorem D1_currentOnly (V id : ℝ) :
     loopFactor 1 (-1) 1 d.kpv d.Lg d.C V (-id) = 2 - loopFactor 1 (-1) 1 d.kpv d.Lg d.C V id :=
   loopFactor_flip_current _ _ _ _ _ _ _ _
 
 /-- `D₁` does not depend on the q-axis current. -/
-@[powerlib_domain] theorem D1_indep_iq (a b V η : ℝ) :
+@[tmio M, powerlib_domain] theorem D1_indep_iq (a b V η : ℝ) :
     ({ d with iq := a } : DCParams).D1 V η = ({ d with iq := b } : DCParams).D1 V η := rfl
 
-@[powerlib_domain] theorem uSol_inConv (θ x V η : ℝ) :
+@[tmio M, powerlib_domain] theorem uSol_inConv (θ x V η : ℝ) :
     d.inConv.uSol θ x V η = d.outConv.uSol θ x V η := by
   simp only [uSol, D0_inConv, idRef_inConv]; simp [inConv, outConv]; ring
 
-@[powerlib_domain] theorem vqSol_inConv (θ x V η : ℝ) :
+@[tmio M, powerlib_domain] theorem vqSol_inConv (θ x V η : ℝ) :
     d.inConv.vqSol θ x V η = d.outConv.vqSol θ x V η := by
   simp only [vqSol, uSol_inConv, idRef_inConv]; simp [inConv, outConv]; ring
 
-@[powerlib_domain] theorem vdStat_inConv (θ x V η : ℝ) :
+@[tmio M, powerlib_domain] theorem vdStat_inConv (θ x V η : ℝ) :
     d.inConv.vdStat θ x V η = d.outConv.vdStat θ x V η := by
   simp only [vdStat, uSol_inConv, idRef_inConv]; simp [inConv, outConv]; ring
 
-@[powerlib_domain] theorem PStat_inConv (θ x V η : ℝ) :
+@[tmio M, powerlib_domain] theorem PStat_inConv (θ x V η : ℝ) :
     d.inConv.PStat θ x V η = -d.outConv.PStat θ x V η := by
   simp only [PStat, vdStat_inConv, vqSol_inConv, idRef_inConv]; simp [inConv, outConv]; ring
 
-@[powerlib_domain] theorem didSol_inConv (θ x V η : ℝ) :
+@[tmio M, powerlib_domain] theorem didSol_inConv (θ x V η : ℝ) :
     d.inConv.didSol θ x V η = -d.outConv.didSol θ x V η := by
   simp only [didSol, PStat_inConv, D1_inConv]; simp [inConv, outConv]; ring
 
-@[powerlib_domain] theorem VdSol_inConv (θ x V η : ℝ) :
+@[tmio M, powerlib_domain] theorem VdSol_inConv (θ x V η : ℝ) :
     d.inConv.VdSol θ x V η = d.outConv.VdSol θ x V η := by
   simp only [VdSol, PStat_inConv, didSol_inConv, idRef_inConv]; simp [inConv, outConv]; ring
 
 /-- The reduced four-state field is literally the same in both conventions (no state is a
 current), so its Jacobian agrees entry by entry at every point. -/
-@[powerlib_domain] theorem field_inConv : d.inConv.field = d.outConv.field := by
+@[tmio M, powerlib_domain] theorem field_inConv : d.inConv.field = d.outConv.field := by
   have : d.inConv.coordField = d.outConv.coordField := by
     funext y
     simp only [coordField, uSol_inConv, vqSol_inConv, VdSol_inConv]
   simp only [field, this]
 
-@[powerlib_domain] theorem fderiv_field_inConv (z : Dynamics.State 4) :
+@[tmio M, powerlib_domain] theorem fderiv_field_inConv (z : Dynamics.State 4) :
     fderiv ℝ d.inConv.field z = fderiv ℝ d.outConv.field z := by
   rw [field_inConv]
 
@@ -567,7 +567,7 @@ def qAbs (p : FourState.Params) (θ V η : ℝ) : ℝ :=
 
 /-- `P_abs = (3/2) Re(V̄ Ī*)`, `Q_abs = (3/2) Im(V̄ Ī*)` with `V̄ = V₀ cos θ + j v_q`,
 `Ī = i_d + j 0` (`conventions.md` §D0, IN-positive). -/
-@[powerlib_domain] theorem fourState_power (p : FourState.Params) (θ V η : ℝ) :
+@[tmio M, powerlib_domain] theorem fourState_power (p : FourState.Params) (θ V η : ℝ) :
     FourState.Pabs p θ V η = (3 / 2 : ℝ) * (((⟨p.V0 * cos θ, FourState.vq p θ V η⟩ : ℂ) *
       (starRingEnd ℂ) ⟨FourState.idc p V η, 0⟩).re) ∧
     qAbs p θ V η = (3 / 2 : ℝ) * (((⟨p.V0 * cos θ, FourState.vq p θ V η⟩ : ℂ) *

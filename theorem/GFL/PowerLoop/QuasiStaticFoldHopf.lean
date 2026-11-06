@@ -320,7 +320,7 @@ def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
 def supercriticalQS : Model :=
   ⟨⟨Real.sqrt 5, 1, -1 / 4, 21 / 4, 4 / 3, -3⟩, Real.arctan (1 / 2), -1⟩
 
-@[powerlib_domain] theorem supercriticalQS_trig :
+@[tmio M, powerlib_domain] theorem supercriticalQS_trig :
     supercriticalQS.params.V * Real.cos supercriticalQS.θ = 2 ∧
       supercriticalQS.params.V * Real.sin supercriticalQS.θ = 1 := by
   have h5 : Real.sqrt 5 * Real.sqrt 5 = 5 := Real.mul_self_sqrt (by norm_num)
@@ -342,7 +342,7 @@ def supercriticalQS : Model :=
   · unfold power; rw [hc]; simp [supercriticalQS]
 
 /-- The translated field of the witness, `S = sin φ`, `C = cos φ`. -/
-@[powerlib_domain] theorem supercriticalQS_field (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem supercriticalQS_field (z : Dynamics.State 3) :
     supercriticalQS.field z 0 = -1 / 4 * (-2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2) +
         21 / 4 * z 1 ∧
       supercriticalQS.field z 1 = -2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2 ∧
@@ -370,7 +370,7 @@ def supercriticalQS : Model :=
   linarith
 
 /-- The Lie derivative of `W` along the witness field. -/
-@[powerlib_domain] private theorem supercriticalQS_lie (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] private theorem supercriticalQS_lie (z : Dynamics.State 3) :
     fderiv ℝ (fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) z
         (supercriticalQS.field z) =
       hopfQS_w4 (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) +
@@ -646,7 +646,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   ring
 
 /-- `Ẇ < 0` on a punctured neighbourhood: `Ẇ ≤ −q₄ + O(σ⁵)`, `σ⁵ = o(q₄)`. -/
-@[powerlib_domain] private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
+@[tmio M, powerlib_domain] private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
     fderiv ℝ (fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) z
       (supercriticalQS.field z) < 0 := by
   refine Dynamics.eventually_neg_of_le_of_isLittleO (q := hopfQS_q4) hopfQS_q4_pos
@@ -686,7 +686,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
 
 /-- The witness Jacobian is on the Hopf boundary: `a₂ = 7/2`, `a₁ = 9`, `a₀ = 63/2 = a₂a₁`, so
 `tr J · m₂(J) = det J` and the strict Routh–Hurwitz condition fails. -/
-@[powerlib_domain] theorem supercriticalQS_routh_boundary :
+@[tmio M, powerlib_domain] theorem supercriticalQS_routh_boundary :
     (jac supercriticalQS.params supercriticalQS.θ supercriticalQS.Id).trace *
         Criteria.principalMinorSum
           (jac supercriticalQS.params supercriticalQS.θ supercriticalQS.Id) =

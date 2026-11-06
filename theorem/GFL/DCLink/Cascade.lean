@@ -157,12 +157,12 @@ def field (r : ℝ) (x : State 3) : State 3 :=
 /-- Operating point `(I_d0, R I_d0/Ki, V0)`. -/
 def eqState : State 3 := WithLp.toLp 2 ![p.Id0, p.pi.R * p.Id0 / p.pi.Ki, p.V0]
 
-@[powerlib_domain] theorem vconv_eqState (hKi : p.pi.Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem vconv_eqState (hKi : p.pi.Ki ≠ 0) :
     p.vconv p.Id0 p.eqState = p.Vd0 - p.pi.R * p.Id0 := by
   simp [vconv, eqState]
   field_simp
 
-@[powerlib_domain] theorem field_eqState (hKi : p.pi.Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem field_eqState (hKi : p.pi.Ki ≠ 0) :
     p.field p.Id0 p.eqState = 0 := by
   have hv := p.vconv_eqState hKi
   ext i
@@ -199,7 +199,7 @@ def posV : Set (State 3) := {x | 0 < x 2}
 @[powerlib_foundation] theorem isOpen_posV : IsOpen posV :=
   isOpen_lt continuous_const ((EuclideanSpace.proj (2 : Fin 3)).continuous)
 
-@[powerlib_domain] theorem field_contDiffOn (r : ℝ) : ContDiffOn ℝ 1 (p.field r) posV := by
+@[tmio M, powerlib_domain] theorem field_contDiffOn (r : ℝ) : ContDiffOn ℝ 1 (p.field r) posV := by
   rw [contDiffOn_euclidean]
   intro i
   fin_cases i
@@ -221,7 +221,7 @@ def posV : Set (State 3) := {x | 0 < x 2}
 
 /-- The state matrix is the Jacobian of the nonlinear plant at `eqState` whenever the bridge
 voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I_d0 = 0`). -/
-@[powerlib_domain] private theorem jacobian_eq_of_vconv (hv0 : p.vconv p.Id0 p.eqState = p.Vd0 - p.pi.R * p.Id0)
+@[tmio M, powerlib_domain] private theorem jacobian_eq_of_vconv (hv0 : p.vconv p.Id0 p.eqState = p.Vd0 - p.pi.R * p.Id0)
     (hV : p.V0 ≠ 0) :
     fderiv ℝ (p.field p.Id0) p.eqState =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) p.stateMatrix := by
@@ -278,13 +278,13 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
       ring
 
 /-- The state matrix is the Jacobian of the nonlinear plant at the operating point. -/
-@[powerlib_domain] theorem jacobian_eq (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) :
+@[tmio M, powerlib_domain] theorem jacobian_eq (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) :
     fderiv ℝ (p.field p.Id0) p.eqState =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) p.stateMatrix :=
   p.jacobian_eq_of_vconv (p.vconv_eqState hKi) hV
 
 /-- The input matrix is the derivative of the plant in the reference `i_d*`. -/
-@[powerlib_domain] theorem input_hasDerivAt (hKi : p.pi.Ki ≠ 0) (k : Fin 3) :
+@[tmio M, powerlib_domain] theorem input_hasDerivAt (hKi : p.pi.Ki ≠ 0) (k : Fin 3) :
     HasDerivAt (fun r => p.field r p.eqState k) (p.model.B k 0) p.Id0 := by
   have hv := p.vconv_eqState hKi
   fin_cases k
@@ -313,7 +313,7 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
 /-! ## Spectrum and exponential stability -/
 
 /-- Block-triangular characteristic polynomial: the current loop times `(s + I_dc0/(C V0))`. -/
-@[powerlib_domain] theorem det_characteristicMatrix (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix (s : ℂ) :
     (Linear.characteristicMatrix p.stateMatrix s).det =
       (Linear.characteristicMatrix p.pi.model.A s).det *
         (s + ((p.Idc0 / (p.C * p.V0) : ℝ) : ℂ)) := by
@@ -321,7 +321,7 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
   simp [Linear.characteristicMatrix, stateMatrix, Matrix.det_fin_three]
   ring
 
-@[powerlib_domain] theorem characteristic_root_iff (s : ℂ) :
+@[tmio M, powerlib_domain] theorem characteristic_root_iff (s : ℂ) :
     (Linear.characteristicMatrix p.stateMatrix s).det = 0 ↔
       (Linear.characteristicMatrix p.pi.model.A s).det = 0 ∨
         s = ((-(p.Idc0 / (p.C * p.V0)) : ℝ) : ℂ) := by
@@ -332,7 +332,7 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
   rfl
 
 /-- Hurwitz iff the current loop is Hurwitz and the DC node pole `−I_dc0/(C V0)` is stable. -/
-@[powerlib_domain] theorem isHurwitz_iff_pi :
+@[tmio M, powerlib_domain] theorem isHurwitz_iff_pi :
     LinearSystems.IsHurwitz p.stateMatrix ↔
       LinearSystems.IsHurwitz p.pi.model.A ∧ 0 < p.Idc0 / (p.C * p.V0) := by
   simp only [Criteria.isHurwitz_iff_characteristic_roots, p.characteristic_root_iff]
@@ -349,7 +349,7 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
 
 /-- With `L, C, V0 > 0`: Hurwitz iff `R + Kp > 0`, `Ki > 0` and `I_dc0 > 0` (rectifier). Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
+@[tmio M, powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
     LinearSystems.IsHurwitz p.stateMatrix ↔
       (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0 := by
   rw [p.isHurwitz_iff_pi,
@@ -375,7 +375,7 @@ end CascadeParams
 def family : Family CascadeParams Spectral.Requirement 3 0 :=
   Spectral.localFamily CascadeParams.shiftedField CascadeParams.Stable CascadeParams.Unstable
 
-@[powerlib_domain] private theorem mem_den_flow {p : CascadeParams} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow {p : CascadeParams} {P : Flow.Property} :
     p ∈ family.den (.flow P) ↔ P.holds (p.field p.Id0) p.eqState :=
   Spectral.mem_den_flow_iff_shift (f := fun p : CascadeParams => p.field p.Id0)
     (pt := CascadeParams.eqState) (Spectral.localFamily_isAutonomous _ _ _)
@@ -397,7 +397,7 @@ stable at the operating point (`i_d* = I_d0` held constant). Implementation evid
     (p.field_eqState hKi.ne') (p.jacobian_eq hKi.ne' hV.ne')
     ((p.isHurwitz_iff hL hC hV).2 ⟨⟨hR, hKi⟩, hI⟩)
 
-@[powerlib_domain] private lemma stateMatrix_eigen :
+@[tmio M, powerlib_domain] private lemma stateMatrix_eigen :
     p.stateMatrix.map (algebraMap ℝ ℂ) *ᵥ ![0, 0, 1] =
       (((-(p.Idc0 / (p.C * p.V0))) : ℝ) : ℂ) • ![0, 0, 1] := by
   ext i
@@ -422,7 +422,7 @@ tuning — the inner loop does not move the DC-node pole. Implementation evidenc
 
 /-- Closed form of `ΔV_dc/Δi_d*`: bridge-power factor × current loop × DC node. Static evidence
 on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem transfer_eq (hL : p.pi.L ≠ 0) (hC : p.C ≠ 0) (hV : p.V0 ≠ 0) {s : ℂ}
+@[tmio M, powerlib_domain] theorem transfer_eq (hL : p.pi.L ≠ 0) (hC : p.C ≠ 0) (hV : p.V0 ≠ 0) {s : ℂ}
     (hs1 : (p.pi.L : ℂ) * s ^ 2 + (p.pi.R + p.pi.Kp) * s + p.pi.Ki ≠ 0)
     (hs2 : (p.C : ℂ) * p.V0 * s + p.Idc0 ≠ 0) :
     Linear.transfer p.model s 0 0 =
@@ -460,7 +460,7 @@ on the model, not a connection conclusion. -/
   simp [hX, model, Matrix.mul_apply, Fin.sum_univ_three]
 
 /-- The transfer vanishes exactly at the bridge-power zero and the PI zero (off the poles). -/
-@[powerlib_domain] theorem transfer_eq_zero_iff (hL : p.pi.L ≠ 0) (hC : p.C ≠ 0)
+@[tmio M, powerlib_domain] theorem transfer_eq_zero_iff (hL : p.pi.L ≠ 0) (hC : p.C ≠ 0)
     (hV : p.V0 ≠ 0) {s : ℂ}
     (hs1 : (p.pi.L : ℂ) * s ^ 2 + (p.pi.R + p.pi.Kp) * s + p.pi.Ki ≠ 0)
     (hs2 : (p.C : ℂ) * p.V0 * s + p.Idc0 ≠ 0) :
@@ -479,14 +479,14 @@ def LinStable : Prop := p.pi.Stable ∧ 0 < p.Idc0 / (p.C * p.V0)
 DC-node coefficient. -/
 def LinUnstable : Prop := p.pi.Unstable ∨ p.Idc0 / (p.C * p.V0) < 0
 
-@[powerlib_domain] theorem isHurwitz_iff_linStable :
+@[tmio M, powerlib_domain] theorem isHurwitz_iff_linStable :
     IsHurwitz p.model.A ↔ p.LinStable := by
   change IsHurwitz p.stateMatrix ↔ _
   rw [p.isHurwitz_iff_pi, ← (connection_proof% CurrentControl.PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
     (connection_proof% CurrentControl.PIParams.isHurwitz_iff_div)]
   rfl
 
-@[powerlib_domain] theorem exists_root_of_linUnstable (h : p.LinUnstable) :
+@[tmio M, powerlib_domain] theorem exists_root_of_linUnstable (h : p.LinUnstable) :
     ∃ s : ℂ, (Linear.characteristicMatrix p.model.A s).det = 0 ∧ 0 < s.re := by
   change ∃ s : ℂ, (Linear.characteristicMatrix p.stateMatrix s).det = 0 ∧ 0 < s.re
   rcases h with h | h
@@ -504,7 +504,7 @@ plant (input `Δi_d*`, output `ΔV_dc`). -/
 def linearizedFamily : Family CascadeParams Spectral.Requirement 3 1 :=
   Spectral.linearFamily CascadeParams.model CascadeParams.LinStable CascadeParams.LinUnstable
 
-@[powerlib_domain] theorem linearizedFamily_isLinear :
+@[tmio M, powerlib_domain] theorem linearizedFamily_isLinear :
     linearizedFamily.IsLinear CascadeParams.model :=
   Spectral.linearFamily_isLinear _ _ _
 
@@ -593,7 +593,7 @@ the inner loop does not move the DC-node pole. -/
 /-! ## Exactness within the physical range -/
 
 /-- With no integral gain the integrator direction is killed by the Jacobian. -/
-@[powerlib_domain] private theorem cascade_fderiv_ki_zero {p : CascadeParams} (hKi : p.pi.Ki = 0) (hV : 0 < p.V0) :
+@[tmio M, powerlib_domain] private theorem cascade_fderiv_ki_zero {p : CascadeParams} (hKi : p.pi.Ki = 0) (hV : 0 < p.V0) :
     fderiv ℝ (p.field p.Id0) p.eqState (EuclideanSpace.single 1 1) = 0 := by
   have hx : p.eqState ∈ CascadeParams.posV := by
     simpa [CascadeParams.posV, CascadeParams.eqState] using hV
@@ -721,7 +721,7 @@ variable (p : CascadeParams)
 def loopEnergy (x : State 3) : ℝ :=
   p.pi.L / 2 * (x 0 - p.Id0) ^ 2 + p.pi.Ki / 2 * (x 1 - p.pi.R * p.Id0 / p.pi.Ki) ^ 2
 
-@[powerlib_domain] theorem hasFDerivAt_loopEnergy (x : State 3) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_loopEnergy (x : State 3) :
     HasFDerivAt p.loopEnergy
       ((p.pi.L * (x 0 - p.Id0)) • Dynamics.coord 0 +
         (p.pi.Ki * (x 1 - p.pi.R * p.Id0 / p.pi.Ki)) • Dynamics.coord 1) x := by
@@ -735,7 +735,7 @@ def loopEnergy (x : State 3) : ℝ :=
     ring
 
 /-- The current-loop energy decays at the rate `(R + Kp) e²`. -/
-@[powerlib_domain] theorem loopEnergy_lie (hL : p.pi.L ≠ 0) (hKi : p.pi.Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem loopEnergy_lie (hL : p.pi.L ≠ 0) (hKi : p.pi.Ki ≠ 0)
     (x : State 3) :
     fderiv ℝ p.loopEnergy x (p.field p.Id0 x) = -(p.pi.R + p.pi.Kp) * (x 0 - p.Id0) ^ 2 := by
   rw [(p.hasFDerivAt_loopEnergy x).fderiv]
@@ -744,12 +744,12 @@ def loopEnergy (x : State 3) : ℝ :=
   field_simp
   ring
 
-@[powerlib_domain] theorem loopEnergy_nonneg (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki)
+@[tmio M, powerlib_domain] theorem loopEnergy_nonneg (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki)
     (x : State 3) : 0 ≤ p.loopEnergy x := by
   unfold loopEnergy
   positivity
 
-@[powerlib_domain] private theorem eqState_mem (hV : 0 < p.V0) : p.eqState ∈ posV := by
+@[tmio M, powerlib_domain] private theorem eqState_mem (hV : 0 < p.V0) : p.eqState ∈ posV := by
   simpa [posV, eqState] using hV
 
 /-- A Hurwitz-violating current loop (`Ki ≠ 0`) makes the cascade unstable. -/
@@ -765,7 +765,7 @@ def loopEnergy (x : State 3) : ℝ :=
     (p.field_contDiffOn _) (p.field_eqState hKi) (p.jacobian_eq hKi hV.ne') ⟨s, v, hv, heig, hre⟩
 
 /-- With no integral gain the field does not depend on `ξ`. -/
-@[powerlib_domain] private theorem field_ki_zero_shift (hKi : p.pi.Ki = 0) (x : State 3) (t : ℝ) :
+@[tmio M, powerlib_domain] private theorem field_ki_zero_shift (hKi : p.pi.Ki = 0) (x : State 3) (t : ℝ) :
     p.field p.Id0 (x + t • EuclideanSpace.single 1 1) = p.field p.Id0 x := by
   ext i
   fin_cases i <;> simp [field, vconv, hKi]
@@ -792,7 +792,7 @@ def loopEnergy (x : State 3) : ℝ :=
       (p.field_contDiffOn _) h.1)
 
 /-- With `I_dc0 = 0` every DC voltage is an equilibrium voltage. -/
-@[powerlib_domain] private theorem field_idc_zero (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) (hI : p.Idc0 = 0) (t : ℝ) :
+@[tmio M, powerlib_domain] private theorem field_idc_zero (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) (hI : p.Idc0 = 0) (t : ℝ) :
     p.field p.Id0 (p.eqState + t • EuclideanSpace.single 2 1) = 0 := by
   have hP : (p.Vd0 - p.pi.R * p.Id0) * p.Id0 = 0 := by
     have : p.Idc0 * p.V0 = (p.Vd0 - p.pi.R * p.Id0) * p.Id0 := by
@@ -856,10 +856,10 @@ def storage (x : State 3) : ℝ :=
     1 / (2 * (p.pi.R + p.pi.Kp)) * (-(p.pi.Kp * p.pi.L) * (x 0 - p.Id0) ^ 2 +
       p.pi.Ki * p.pi.R * (x 1 - p.pi.R * p.Id0 / p.pi.Ki) ^ 2)
 
-@[powerlib_domain] theorem contDiff_storage : ContDiff ℝ 1 p.storage := by
+@[tmio M, powerlib_domain] theorem contDiff_storage : ContDiff ℝ 1 p.storage := by
   unfold storage; fun_prop
 
-@[powerlib_domain] theorem storage_lie (hL : p.pi.L ≠ 0) (hKi : p.pi.Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem storage_lie (hL : p.pi.L ≠ 0) (hKi : p.pi.Ki ≠ 0)
     (hR : p.pi.R + p.pi.Kp ≠ 0) (hC : p.C ≠ 0) (hV : p.V0 ≠ 0) {x : State 3} (hx : x 2 ≠ 0) :
     fderiv ℝ p.storage x (p.field p.Id0 x) = -(p.Idc0 * (x 2 - p.V0)) := by
   have h0 := (Dynamics.hasFDerivAt_coord 0 x).sub_const p.Id0
@@ -886,10 +886,10 @@ def centerStorage (x : State 3) : ℝ :=
     p.pi.Ki / 2 * (x 1 - p.pi.R * p.Id0 / p.pi.Ki) ^ 2 +
     p.pi.Kp / 2 * ((x 0 - p.Id0) * (x 1 - p.pi.R * p.Id0 / p.pi.Ki))
 
-@[powerlib_domain] theorem contDiff_centerStorage : ContDiff ℝ 1 p.centerStorage := by
+@[tmio M, powerlib_domain] theorem contDiff_centerStorage : ContDiff ℝ 1 p.centerStorage := by
   unfold centerStorage; fun_prop
 
-@[powerlib_domain] theorem centerStorage_lie (hL : p.pi.L ≠ 0) (hKi : p.pi.Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem centerStorage_lie (hL : p.pi.L ≠ 0) (hKi : p.pi.Ki ≠ 0)
     (hR : p.pi.R + p.pi.Kp = 0) (hC : p.C ≠ 0) (hV : p.V0 ≠ 0) {x : State 3} (hx : x 2 ≠ 0) :
     fderiv ℝ p.centerStorage x (p.field p.Id0 x) =
       -(p.Idc0 * (x 2 - p.V0)) + p.pi.Kp / p.pi.L * p.loopEnergy x := by
@@ -911,7 +911,7 @@ def centerStorage (x : State 3) : ℝ :=
 
 /-- An energy `(S − S(x*))² + L e²/2 + Ki η²/2`, with `S` reducing to `C V²/2` up to a constant on
 `e = η = 0`, is positive away from the operating point on `V_dc > 0`. -/
-@[powerlib_domain] private theorem sq_add_loopEnergy_pos (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki) (hC : 0 < p.C)
+@[tmio M, powerlib_domain] private theorem sq_add_loopEnergy_pos (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki) (hC : 0 < p.C)
     (hV : 0 < p.V0) {S : State 3 → ℝ}
     (hS : ∀ x : State 3, x 0 = p.Id0 → x 1 = p.pi.R * p.Id0 / p.pi.Ki →
       S x - S p.eqState = p.C / 2 * (x 2 ^ 2 - p.V0 ^ 2))
@@ -1173,7 +1173,7 @@ unstable: the current-loop energy is conserved and `Kp · centerStorage` grows a
 /-! ### No integral gain -/
 
 /-- With no integral gain the operating point is an equilibrium iff `R I_d0 = 0`. -/
-@[powerlib_domain] private theorem field_eqState_ki_zero (hKi : p.pi.Ki = 0) (hL : p.pi.L ≠ 0) (hV : p.V0 ≠ 0) :
+@[tmio M, powerlib_domain] private theorem field_eqState_ki_zero (hKi : p.pi.Ki = 0) (hL : p.pi.L ≠ 0) (hV : p.V0 ≠ 0) :
     p.field p.Id0 p.eqState = 0 ↔ p.pi.R * p.Id0 = 0 := by
   constructor
   · intro h
@@ -1193,18 +1193,18 @@ unstable: the current-loop energy is conserved and `Kp · centerStorage` grows a
       left
       linear_combination p.Id0 * h
 
-@[powerlib_domain] private theorem vconv_eqState_ki_zero (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0) :
+@[tmio M, powerlib_domain] private theorem vconv_eqState_ki_zero (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0) :
     p.vconv p.Id0 p.eqState = p.Vd0 - p.pi.R * p.Id0 := by
   simp [vconv, eqState, hKi, h]
 
 /-- With no integral gain and `R I_d0 = 0` the current error obeys `L e' = −(R + Kp) e`. -/
-@[powerlib_domain] private theorem field_zero_ki (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0) (hL : p.pi.L ≠ 0)
+@[tmio M, powerlib_domain] private theorem field_zero_ki (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0) (hL : p.pi.L ≠ 0)
     (x : State 3) : p.field p.Id0 x 0 = -(p.pi.R + p.pi.Kp) * (x 0 - p.Id0) / p.pi.L := by
   simp only [field, PiLp.toLp_apply, Matrix.cons_val_zero, hKi, zero_mul, add_zero]
   field_simp
   linear_combination (-1 : ℝ) * h
 
-@[powerlib_domain] private theorem field_one (x : State 3) : p.field p.Id0 x 1 = -(x 0 - p.Id0) := by
+@[tmio M, powerlib_domain] private theorem field_one (x : State 3) : p.field p.Id0 x 1 = -(x 0 - p.Id0) := by
   simp [field]
 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp < 0`: the current error grows (Chetaev's function `e²`). -/
@@ -1301,10 +1301,10 @@ def driftStorage (x : State 3) : ℝ :=
   p.C / 2 * x 2 ^ 2 + p.pi.L * (p.Vd0 + p.pi.Kp * p.Id0) / (p.pi.R + p.pi.Kp) * (x 0 - p.Id0) +
     p.pi.L * p.pi.Kp / (2 * (p.pi.R + p.pi.Kp)) * (x 0 - p.Id0) ^ 2
 
-@[powerlib_domain] theorem contDiff_driftStorage : ContDiff ℝ 1 p.driftStorage := by
+@[tmio M, powerlib_domain] theorem contDiff_driftStorage : ContDiff ℝ 1 p.driftStorage := by
   unfold driftStorage; fun_prop
 
-@[powerlib_domain] theorem driftStorage_lie (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0)
+@[tmio M, powerlib_domain] theorem driftStorage_lie (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0)
     (hL : p.pi.L ≠ 0) (hR : p.pi.R + p.pi.Kp ≠ 0) (hC : p.C ≠ 0) (hV : p.V0 ≠ 0) {x : State 3}
     (hx : x 2 ≠ 0) :
     fderiv ℝ p.driftStorage x (p.field p.Id0 x) = -(p.Idc0 * (x 2 - p.V0)) := by

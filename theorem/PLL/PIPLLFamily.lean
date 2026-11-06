@@ -127,7 +127,7 @@ def Model.point (m : Model) : ℝ² := PhasePlane.mk m.θ (m.δω / m.Ki)
 /-- The PI-PLL field translated so that the selected point is the origin. -/
 def Model.field (m : Model) (z : ℝ²) : ℝ² := piPLLField m.h m.Kp m.Ki m.δω (z + m.point)
 
-@[powerlib_domain] theorem Model.hasDerivAt (m : Model) (x : ℝ) :
+@[tmio M, powerlib_domain] theorem Model.hasDerivAt (m : Model) (x : ℝ) :
     HasDerivAt m.h (deriv m.h x) x :=
   ((m.smooth.differentiable one_ne_zero) x).hasDerivAt
 
@@ -172,7 +172,7 @@ Behavioural statements at the selected point of the untranslated field, used as 
 helpers; the public conclusions are the connection statements below. -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected point. -/
-@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => piPLLField m.h m.Kp m.Ki m.δω)
     (pt := Model.point) family_isAutonomous
@@ -389,7 +389,7 @@ linearization (a centre) decides nothing. Implementation evidence; the public co
 /-- The detector potential about the selected phase, `U(θ) = −∫_{θ*}^{θ} h`. -/
 private def potential (m : Model) (θ : ℝ) : ℝ := -∫ s in m.θ..θ, m.h s
 
-@[powerlib_domain] private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
+@[tmio M, powerlib_domain] private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
     HasDerivAt (potential m) (-m.h θ) θ :=
   (m.smooth.continuous.integral_hasStrictDerivAt m.θ θ).hasDerivAt.neg
 
@@ -397,7 +397,7 @@ private def potential (m : Model) (θ : ℝ) : ℝ := -∫ s in m.θ..θ, m.h s
 private def energy (m : Model) (x : ℝ²) : ℝ :=
   potential m (x 0) + m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2
 
-@[powerlib_domain] private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
+@[tmio M, powerlib_domain] private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
     HasFDerivAt (energy m)
       ((-m.h (x 0)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
         (m.Ki * (x 1 - m.δω / m.Ki)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) x := by
@@ -411,7 +411,7 @@ private def energy (m : Model) (x : ℝ²) : ℝ :=
   ring
 
 /-- The energy decreases at the damping rate: `Ė = −K_p h(θ)²` (`K_i ≠ 0`). -/
-@[powerlib_domain] private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
+@[tmio M, powerlib_domain] private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
     fderiv ℝ (energy m) x (piPLLField m.h m.Kp m.Ki m.δω x) = -(m.Kp * m.h (x 0) ^ 2) := by
   rw [(hasFDerivAt_energy m x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
@@ -421,7 +421,7 @@ private def energy (m : Model) (x : ℝ²) : ℝ :=
 
 /-- Near a zero `θ*` of `h` where the slope stays negative the potential is positive off `θ*`:
 `h > 0` before `θ*` and `h < 0` after it. -/
-@[powerlib_domain] private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
+@[tmio M, powerlib_domain] private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
     (hr : ∀ θ, |θ - m.θ| < r → deriv m.h θ < 0) {θ : ℝ} (hθ : |θ - m.θ| < r) (hne : θ ≠ m.θ) :
     0 < potential m θ := by
   have hanti : StrictAntiOn m.h (Set.Ioo (m.θ - r) (m.θ + r)) := by
@@ -494,7 +494,7 @@ energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at 
 def srf (V Kp Ki δω θ : ℝ) : Model :=
   ⟨fun x => -V * Real.sin x, Kp, Ki, δω, θ, contDiff_const.mul Real.contDiff_sin⟩
 
-@[powerlib_domain] theorem srf_deriv (V Kp Ki δω θ : ℝ) :
+@[tmio M, powerlib_domain] theorem srf_deriv (V Kp Ki δω θ : ℝ) :
     deriv (srf V Kp Ki δω θ).h (srf V Kp Ki δω θ).θ = -V * Real.cos θ :=
   ((Real.hasDerivAt_sin θ).const_mul (-V)).deriv
 
@@ -551,7 +551,7 @@ def Model.ramp (m : Model) (ρ : ℝ) : Model :=
   ⟨fun θ => m.h θ - ρ / m.Ki, m.Kp, m.Ki, 0, m.θ, m.smooth.sub contDiff_const⟩
 
 /-- The tilted detector `h − ρ/K_i` has the slope of `h`. -/
-@[simp, powerlib_domain] theorem Model.ramp_deriv (m : Model) (ρ θ : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem Model.ramp_deriv (m : Model) (ρ θ : ℝ) :
     deriv (m.ramp ρ).h θ = deriv m.h θ :=
   deriv_sub_const _
 
@@ -560,7 +560,7 @@ def Model.ramp (m : Model) (ρ : ℝ) : Model :=
 `z = (θ − θ*, η̂)`, `η̂ = η − (δω + ρ t)/K_i + K_p ρ/K_i²`, solves `ż = f(z)` at `t` for the field
 `f` of the ramp model `m.ramp ρ` — the state of the family, translated to the selected point
 `(θ*, 0)` — written componentwise. -/
-@[powerlib_domain] theorem ramp_hasDerivAt_iff (m : Model) (ρ : ℝ) (hKi : m.Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem ramp_hasDerivAt_iff (m : Model) (ρ : ℝ) (hKi : m.Ki ≠ 0)
     (θ η : ℝ → ℝ) (t : ℝ) :
     (HasDerivAt θ (m.Kp * m.h (θ t) + m.Ki * η t - (m.δω + ρ * t)) t ∧
         HasDerivAt η (m.h (θ t)) t) ↔
@@ -650,7 +650,7 @@ model is decided in the same way (`mem_den_las_iff_of_nondegenerate`). -/
 /-- The linear detector `h(θ) = −θ` with `K_p = K_i = 1`, `δω = 0`, `θ* = 0`. -/
 def linearModel : Model := ⟨fun x => -x, 1, 1, 0, 0, contDiff_id.neg⟩
 
-@[powerlib_domain] theorem linearModel_field :
+@[tmio M, powerlib_domain] theorem linearModel_field :
     linearModel.field = LinearSystems.affineLinearVectorField !![-1, 1; -1, 0] 0 := by
   funext z
   ext i
@@ -681,12 +681,12 @@ is empty while the linear detector satisfies the sentence. -/
 slope `h'(0) = 0`, where the Jacobian is nilpotent and the linearization decides nothing. -/
 def cubicDetector : Model := ⟨fun x => -x ^ 3, 1, 1, 0, 0, (contDiff_id.pow 3).neg⟩
 
-@[powerlib_domain] theorem cubicDetector_field (z : ℝ²) :
+@[tmio M, powerlib_domain] theorem cubicDetector_field (z : ℝ²) :
     cubicDetector.field z = WithLp.toLp 2 ![-(z 0) ^ 3 + z 1, -(z 0) ^ 3] := by
   ext i
   fin_cases i <;> simp [cubicDetector, Model.field, Model.point]
 
-@[powerlib_domain] theorem cubicDetector_slope : deriv cubicDetector.h cubicDetector.θ = 0 := by
+@[tmio M, powerlib_domain] theorem cubicDetector_slope : deriv cubicDetector.h cubicDetector.θ = 0 := by
   have h := (hasDerivAt_pow 3 (0 : ℝ)).neg
   exact h.deriv.trans (by norm_num)
 
@@ -704,7 +704,7 @@ def cubicEnergy (z : ℝ²) : ℝ := 1 / 4 * (z 0) ^ 4 + 1 / 2 * (z 1) ^ 2
   simp
   ring
 
-@[powerlib_domain] theorem cubicEnergy_lie (z : ℝ²) :
+@[tmio M, powerlib_domain] theorem cubicEnergy_lie (z : ℝ²) :
     fderiv ℝ cubicEnergy z (cubicDetector.field z) = -(z 0) ^ 6 := by
   rw [(cubicEnergy_hasFDerivAt z).fderiv, cubicDetector_field]
   simp

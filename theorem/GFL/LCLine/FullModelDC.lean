@@ -96,15 +96,15 @@ variable (p : Params) (d : DCParams)
 /-- The same converter with the d-axis current reference replaced by `i`. -/
 def withId (i : ℝ) : Params := { p with idRef := i }
 
-@[simp, powerlib_domain] theorem withId_a (i : ℝ) : (p.withId i).a = p.a := rfl
-@[simp, powerlib_domain] theorem withId_b (i : ℝ) : (p.withId i).b = p.b := rfl
-@[simp, powerlib_domain] theorem withId_Δ (i : ℝ) : (p.withId i).Δ = p.Δ := rfl
-@[simp, powerlib_domain] theorem withId_wC (i : ℝ) : (p.withId i).wC = p.wC := rfl
-@[simp, powerlib_domain] theorem withId_Vg (i : ℝ) : (p.withId i).Vg = p.Vg := rfl
-@[simp, powerlib_domain] theorem withId_idRef (i : ℝ) : (p.withId i).idRef = i := rfl
-@[simp, powerlib_domain] theorem withId_iqRef (i : ℝ) : (p.withId i).iqRef = p.iqRef := rfl
-@[simp, powerlib_domain] theorem withId_Rf (i : ℝ) : (p.withId i).Rf = p.Rf := rfl
-@[simp, powerlib_domain] theorem withId_Rg (i : ℝ) : (p.withId i).Rg = p.Rg := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_a (i : ℝ) : (p.withId i).a = p.a := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_b (i : ℝ) : (p.withId i).b = p.b := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_Δ (i : ℝ) : (p.withId i).Δ = p.Δ := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_wC (i : ℝ) : (p.withId i).wC = p.wC := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_Vg (i : ℝ) : (p.withId i).Vg = p.Vg := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_idRef (i : ℝ) : (p.withId i).idRef = i := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_iqRef (i : ℝ) : (p.withId i).iqRef = p.iqRef := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_Rf (i : ℝ) : (p.withId i).Rf = p.Rf := rfl
+@[tmio M, simp, powerlib_domain] theorem withId_Rg (i : ℝ) : (p.withId i).Rg = p.Rg := rfl
 
 /-- The first ten coordinates. -/
 def proj10 (x : State 13) : State 10 :=
@@ -128,17 +128,17 @@ def field13 (x : State 13) : State 13 :=
     else d.wf * (x 10 - x 12)
 
 /-- Rows `0 … 9` of the 13-state field are the 10-state field with `i_d* := i_d*(x)`. -/
-@[powerlib_domain] theorem field13_apply_lt (x : State 13) (i : Fin 10) :
+@[tmio M, powerlib_domain] theorem field13_apply_lt (x : State 13) (i : Fin 10) :
     p.field13 d x (Fin.castLE (by norm_num) i) = (p.withId (idStar d x)).field10 (proj10 x) i := by
   simp [field13, i.isLt]
 
-@[simp, powerlib_domain] theorem field13_10 (x : State 13) :
+@[tmio M, simp, powerlib_domain] theorem field13_10 (x : State 13) :
     p.field13 d x 10 = (d.Pdc + p.Pbr d x) / (d.Cdc * x 10) := by
   simp [field13]
-@[simp, powerlib_domain] theorem field13_11 (x : State 13) :
+@[tmio M, simp, powerlib_domain] theorem field13_11 (x : State 13) :
     p.field13 d x 11 = x 12 - d.vref := by
   simp [field13]
-@[simp, powerlib_domain] theorem field13_12 (x : State 13) :
+@[tmio M, simp, powerlib_domain] theorem field13_12 (x : State 13) :
     p.field13 d x 12 = d.wf * (x 10 - x 12) := by
   simp [field13]
 
@@ -149,14 +149,14 @@ def PbrAlg (θ : ℝ) : ℝ :=
   3 / 2 * ((p.vcD θ p.Vg 0 * p.iD θ + p.vcQ θ p.Vg 0 * p.iQ θ) -
     p.Rf * (p.idRef ^ 2 + p.iqRef ^ 2))
 
-@[powerlib_domain] theorem icD_qssState (θ η : ℝ) : icD (p.qssState θ η) = p.idRef := by
+@[tmio M, powerlib_domain] theorem icD_qssState (θ η : ℝ) : icD (p.qssState θ η) = p.idRef := by
   simp [icD, qssState, iD, iQ]
 
-@[powerlib_domain] theorem icQ_qssState (θ η : ℝ) : icQ (p.qssState θ η) = p.iqRef := by
+@[tmio M, powerlib_domain] theorem icQ_qssState (θ η : ℝ) : icQ (p.qssState θ η) = p.iqRef := by
   simp [icQ, qssState, iD, iQ]
 
 /-- `P_br = (3/2) u^c · i^c` evaluated on the quasi-steady set (`K_i^cc ≠ 0`). -/
-@[powerlib_domain] theorem bridgePower_qss (hKicc : p.Kicc ≠ 0) (θ η : ℝ) :
+@[tmio M, powerlib_domain] theorem bridgePower_qss (hKicc : p.Kicc ≠ 0) (θ η : ℝ) :
     3 / 2 * (p.ucD (p.qssState θ η) * icD (p.qssState θ η) +
       p.ucQ (p.qssState θ η) * icQ (p.qssState θ η)) = p.PbrAlg θ := by
   have h6 : p.Kicc * p.qssState θ η 6 = p.Rf * p.idRef := by
@@ -172,7 +172,7 @@ def PbrAlg (θ : ℝ) : ℝ :=
   ring
 
 /-- Closed form of the quasi-steady absorbed bridge power. -/
-@[powerlib_domain] theorem PbrAlg_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem PbrAlg_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     p.PbrAlg θ = 3 / 2 * (-(p.Rf + p.Rg / p.Δ) * (p.idRef ^ 2 + p.iqRef ^ 2) +
       p.Vg / p.Δ * (p.idRef * ((1 - p.b) * cos θ - p.a * sin θ) -
         p.iqRef * ((1 - p.b) * sin θ + p.a * cos θ))) := by
@@ -206,7 +206,7 @@ def pbrC (θ : ℝ) : ℝ :=
 
 /-- The bridge power is a quadratic polynomial in `i_d*` (degree exactly two iff
 `R_f + R_g/Δ ≠ 0`). -/
-@[powerlib_domain] theorem PbrAlg_quadratic (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ i : ℝ) :
+@[tmio M, powerlib_domain] theorem PbrAlg_quadratic (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ i : ℝ) :
     (p.withId i).PbrAlg θ = p.pbrA * (i * i) + p.pbrB θ * i + p.pbrC θ := by
   rw [(p.withId i).PbrAlg_eq hwC hΔ]
   simp only [withId_a, withId_b, withId_Δ, withId_Vg, withId_idRef, withId_iqRef, withId_Rf,
@@ -224,7 +224,7 @@ def rootMinus (θ : ℝ) : ℝ := (-p.pbrB θ - √(p.pbrDisc d θ)) / (2 * p.pb
 /-- Power balance in `i_d*` at fixed `θ` (the bridge absorbs `−P_dc`, i.e. exports the DC
 injection): no real solution if the discriminant is negative, otherwise exactly the two
 branches. -/
-@[powerlib_domain] theorem PbrAlg_eq_Pdc_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem PbrAlg_eq_Pdc_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hA : p.pbrA ≠ 0) (θ i : ℝ) :
     (p.withId i).PbrAlg θ = -d.Pdc ↔
       0 ≤ p.pbrDisc d θ ∧ (i = p.rootPlus d θ ∨ i = p.rootMinus d θ) := by
@@ -249,19 +249,19 @@ def qss13 (θ i : ℝ) : State 13 :=
     if h : (j : ℕ) < 10 then (p.withId i).qssState θ 0 ⟨j, h⟩
     else if (j : ℕ) = 11 then -i / d.Kidc else d.vref
 
-@[powerlib_domain] theorem proj10_qss13 (θ i : ℝ) :
+@[tmio M, powerlib_domain] theorem proj10_qss13 (θ i : ℝ) :
     proj10 (p.qss13 d θ i) = (p.withId i).qssState θ 0 := by
   rw [state10_ext_iff]; intro j
   simp [proj10, qss13]
 
-@[powerlib_domain] theorem qss13_10 (θ i : ℝ) : p.qss13 d θ i 10 = d.vref := by
+@[tmio M, powerlib_domain] theorem qss13_10 (θ i : ℝ) : p.qss13 d θ i 10 = d.vref := by
   simp [qss13]
-@[powerlib_domain] theorem qss13_11 (θ i : ℝ) : p.qss13 d θ i 11 = -i / d.Kidc := by
+@[tmio M, powerlib_domain] theorem qss13_11 (θ i : ℝ) : p.qss13 d θ i 11 = -i / d.Kidc := by
   simp [qss13]
-@[powerlib_domain] theorem qss13_12 (θ i : ℝ) : p.qss13 d θ i 12 = d.vref := by
+@[tmio M, powerlib_domain] theorem qss13_12 (θ i : ℝ) : p.qss13 d θ i 12 = d.vref := by
   simp [qss13]
 
-@[powerlib_domain] theorem idStar_qss13 (hKidc : d.Kidc ≠ 0) (θ i : ℝ) :
+@[tmio M, powerlib_domain] theorem idStar_qss13 (hKidc : d.Kidc ≠ 0) (θ i : ℝ) :
     idStar d (p.qss13 d θ i) = i := by
   rw [idStar, p.qss13_11, p.qss13_12]
   field_simp; ring
@@ -281,7 +281,7 @@ def qss13 (θ i : ℝ) : State 13 :=
 constant-power quasi-steady states: `h(θ, i) = 0` and `P_br(θ, i) = −P_dc`, with
 `v_dc = v_f = v_dc^ref` and `ξ_dc = −i/K_i^dc`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field13_eq_zero_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
+@[tmio M, powerlib_domain] theorem field13_eq_zero_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0)
     (hKidc : d.Kidc ≠ 0) (hwf : d.wf ≠ 0) (hCdc : d.Cdc ≠ 0) (hvref : d.vref ≠ 0)
     (x : State 13) :
@@ -341,7 +341,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Existence of a constant-power equilibrium, as the union of the two branches of the power
 balance (the domain where the discriminant is negative contributes nothing).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem field13_exists_equilibrium_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
+@[tmio M, powerlib_domain] theorem field13_exists_equilibrium_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0)
     (hKidc : d.Kidc ≠ 0) (hwf : d.wf ≠ 0) (hCdc : d.Cdc ≠ 0) (hvref : d.vref ≠ 0)
     (hA : p.pbrA ≠ 0) :
@@ -400,7 +400,7 @@ def currentReversal13 : Matrix (Fin 13) (Fin 13) ℝ :=
 /-- §D8 boundary translation: the IN-positive 13-state field is the OUT-positive source field
 transported by the reversal of the current coordinates, with the frozen q-axis reference reversed
 (the d-axis reference is endogenous and reverses with the state). -/
-@[powerlib_domain] theorem Params.field13_eq_transport_literatureField13 (p : Params)
+@[tmio M, powerlib_domain] theorem Params.field13_eq_transport_literatureField13 (p : Params)
     (d : DCParams) :
     p.field13 d = Dynamics.transportField
       (Dynamics.matrixCoord currentReversal13 currentReversal13_isUnit) 0

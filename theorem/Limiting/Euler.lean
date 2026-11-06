@@ -72,7 +72,7 @@ def euler : Implementation SatModel Spectral.Requirement Euler Spectral.Requirem
 
 /-- The translated field of a saturated GFM model is `C¹`: the smoothness hypothesis of the
 generic Euler laws (`Numerics.euler_sound_small_step`). -/
-@[powerlib_domain] theorem contDiff_modelField (m : SatModel) :
+@[tmio M, powerlib_domain] theorem contDiff_modelField (m : SatModel) :
     ContDiff ℝ 1 (SatModel.field m) :=
   (satField_contDiff _ _ _ _ _).comp (contDiff_id.add contDiff_const)
 

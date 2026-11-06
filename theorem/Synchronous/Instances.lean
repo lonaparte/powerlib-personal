@@ -98,10 +98,10 @@ structure Pos : Prop where
 
 variable {v}
 
-@[powerlib_domain] theorem Pos.M (h : v.Pos) : 0 < v.toSwing.M :=
+@[tmio M, powerlib_domain] theorem Pos.M (h : v.Pos) : 0 < v.toSwing.M :=
   show 0 < 2 * v.H / v.ωs from div_pos (mul_pos two_pos h.H) h.ωs
 
-@[powerlib_domain] theorem Pos.Pmax (h : v.Pos) : 0 < v.Pmax :=
+@[tmio M, powerlib_domain] theorem Pos.Pmax (h : v.Pos) : 0 < v.Pmax :=
   show 0 < v.E * v.Vg / v.Xg from div_pos (mul_pos h.E h.Vg) h.Xg
 
 variable (v)
@@ -119,11 +119,11 @@ def atLoading : Swing.Model := ⟨v.toSwing, Real.arcsin (v.Pref / v.Pmax)⟩
 /-- The VSG read about the second equilibrium angle `π − δ₀`. -/
 def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref / v.Pmax)⟩
 
-@[powerlib_domain] theorem deltaS_toSwing :
+@[tmio M, powerlib_domain] theorem deltaS_toSwing :
     v.toSwing.deltaS = Real.arcsin (v.Pref / v.Pmax) := by
   simp [SwingParams.deltaS, SwingParams.loadRatio, toSwing]
 
-@[powerlib_domain] theorem deltaU_toSwing :
+@[tmio M, powerlib_domain] theorem deltaU_toSwing :
     v.toSwing.deltaU = Real.pi - Real.arcsin (v.Pref / v.Pmax) := by
   simp [SwingParams.deltaU, SwingParams.loadRatio, toSwing]
 
@@ -161,7 +161,7 @@ stable (energy function). -/
 
 /-- Corrected per-unit characteristic polynomial (T-vsg-control §1.10):
 `ω_s · M · det(sI − J) = 2H s² + D_p s + ω_s K_E`. -/
-@[powerlib_domain] theorem characteristic_polynomial (h : v.Pos) (δ₀ : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem characteristic_polynomial (h : v.Pos) (δ₀ : ℝ) (s : ℂ) :
     (v.ωs : ℂ) * ((v.toSwing.M : ℂ) *
         (Linear.characteristicMatrix (v.toSwing.jacobian δ₀) s).det) =
       2 * (v.H : ℂ) * s ^ 2 + (v.Dp : ℂ) * s + (v.ωs : ℂ) * (v.KE δ₀ : ℂ) := by
@@ -185,7 +185,7 @@ stable (energy function). -/
 
 /-- Natural frequency of the corrected linearization: `ω_n² = ω_s K_E / (2H)` equals
 `det J`. -/
-@[powerlib_domain] theorem naturalFrequency_sq (h : v.Pos) (δ₀ : ℝ) :
+@[tmio M, powerlib_domain] theorem naturalFrequency_sq (h : v.Pos) (δ₀ : ℝ) :
     (v.toSwing.jacobian δ₀).det = v.ωs * v.KE δ₀ / (2 * v.H) := by
   rw [SwingParams.det_jacobian]
   simp only [toSwing, SwingParams.syncCoeff, KE, sub_zero]
@@ -194,7 +194,7 @@ stable (energy function). -/
 
 /-- Damping ratio of the corrected linearization: `(tr J)² / (4 det J) = ζ²` with
 `ζ = D_p / (2 √(2H ω_s K_E))`. -/
-@[powerlib_domain] theorem dampingRatio_sq (h : v.Pos) (δ₀ : ℝ) (hK : 0 < v.KE δ₀) :
+@[tmio M, powerlib_domain] theorem dampingRatio_sq (h : v.Pos) (δ₀ : ℝ) (hK : 0 < v.KE δ₀) :
     (v.toSwing.jacobian δ₀).trace ^ 2 / (4 * (v.toSwing.jacobian δ₀).det) =
       (v.Dp / (2 * Real.sqrt (2 * v.H * v.ωs * v.KE δ₀))) ^ 2 := by
   rw [SwingParams.trace_jacobian, v.naturalFrequency_sq h, div_pow (v.Dp), mul_pow,
@@ -259,7 +259,7 @@ def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
 (damping-class-dichotomy §3): with `μ = 1 − P_m/P_max ∈ (0, 1]`, all eigenvalues of the
 linearization at `δ_s` are real iff `D² ≥ 4 M P_max √(μ (2 − μ))`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem eigenvalues_real_iff (hM : 0 < m.M) :
+@[tmio M, powerlib_domain] theorem eigenvalues_real_iff (hM : 0 < m.M) :
     (∀ (μ : ℂ) (w : Fin 2 → ℂ), w ≠ 0 →
         (m.toSwing.jacobian m.toSwing.deltaS).map (algebraMap ℝ ℂ) *ᵥ w = μ • w → μ.im = 0) ↔
       4 * m.M * m.Pmax * Real.sqrt ((1 - m.Pm / m.Pmax) * (2 - (1 - m.Pm / m.Pmax))) ≤
@@ -329,7 +329,7 @@ def toSwing : SwingParams :=
     m.θg + Real.pi / 2 - m.φ⟩
 
 /-- The power-angle curve of the post-fault model is the real part of the complex power. -/
-@[powerlib_domain] theorem Pe_eq_complexPower (hr : 0 < m.r) (δ : ℝ) :
+@[tmio M, powerlib_domain] theorem Pe_eq_complexPower (hr : 0 < m.r) (δ : ℝ) :
     m.toSwing.Pe δ =
       ((m.E' : ℂ) * Complex.exp (δ * Complex.I) *
         (starRingEnd ℂ) (((m.E' : ℂ) * Complex.exp (δ * Complex.I) -

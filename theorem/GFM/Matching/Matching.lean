@@ -146,7 +146,7 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
 /-- Solutions correspond one to one: `φ = (θ, v)` solves the matching model on `[a, b]` iff
 `(θ, η v)` solves the matched swing model.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+@[tmio M, powerlib_domain] private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (φ : ℝ → State 2) (a b : ℝ) :
     IsTrajectoryOn φ (matchingField C G η idc ix) a b ↔
       IsTrajectoryOn (fun t => scaleCoord hη (φ t)) (matchedSwing C G η idc ix) a b := by
@@ -380,13 +380,13 @@ own; its content is its semantics. -/
 def swingFamily : Family SwingModel Spectral.Requirement 2 0 :=
   Spectral.localFamily SwingModel.field (fun _ => False) (fun _ => False)
 
-@[powerlib_domain] private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
     m ∈ matchingFamily.den (.flow P) ↔ P.holds (matchingField m.C m.G m.η m.idc m.ix) m.point :=
   Spectral.mem_den_flow_iff_shift
     (f := fun m : MatchingModel => matchingField m.C m.G m.η m.idc m.ix)
     (pt := MatchingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
 
-@[powerlib_domain] private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
     m ∈ swingFamily.den (.flow P) ↔ P.holds (swingField m.M m.D m.τ m.Pe) m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : SwingModel => swingField m.M m.D m.τ m.Pe)
     (pt := SwingModel.point) (Spectral.localFamily_isAutonomous _ _ _)

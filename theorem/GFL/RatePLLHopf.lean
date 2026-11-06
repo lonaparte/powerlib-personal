@@ -392,24 +392,24 @@ end NormalForm
 
 section Boundary
 
-@[powerlib_domain] private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
+@[tmio M, powerlib_domain] private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (φ : ℝ) : gridQ p (φ + θ) =
       -(p.V * Real.cos θ) * φ + hopfN (p.V * Real.cos θ) (p.V * Real.sin θ) φ := by
   unfold gridQ hopfN
   rw [Real.sin_add]
   linear_combination -heq
 
-@[powerlib_domain] private theorem model_field0 (m : Model) (z : Dynamics.State 2) :
+@[tmio M, powerlib_domain] private theorem model_field0 (m : Model) (z : Dynamics.State 2) :
     m.field z 0 = (m.params.kp * gridQ m.params (z 0 + m.θ) + m.params.ki * z 1) / m.params.D0 := by
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut]
 
-@[powerlib_domain] private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
+@[tmio M, powerlib_domain] private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
     m.field z 1 = gridQ m.params (z 0 + m.θ) - m.params.Lg * m.field z 0 * m.params.Id := by
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq]
 
 /-- `ẇ = ḣ`: the PLL integrator corrected by the speed-EMF term, `w = x + L_g i_d θ`, is driven by
 the grid q-voltage alone. -/
-@[powerlib_domain] private theorem model_hg1 {m : Model}
+@[tmio M, powerlib_domain] private theorem model_hg1 {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (z : Dynamics.State 2) :
     m.field z 1 - -(m.params.Lg * m.params.Id) * m.field z 0 =
       -(m.params.V * Real.cos m.θ) * z 0 +
@@ -418,7 +418,7 @@ the grid q-voltage alone. -/
   ring
 
 /-- On the boundary (`tr J = 0`) the angle equation is `θ̇ = α w + β N(φ)`. -/
-@[powerlib_domain] private theorem model_hg0 {m : Model}
+@[tmio M, powerlib_domain] private theorem model_hg0 {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id))
     (hD0 : m.params.D0 ≠ 0) (htr : (jac m.params m.θ).trace = 0) (z : Dynamics.State 2) :
     m.field z 0 = m.params.ki / m.params.D0 * (z 1 - -(m.params.Lg * m.params.Id) * z 0) +
@@ -433,7 +433,7 @@ the grid q-voltage alone. -/
   linear_combination (z 0) * htr'
 
 /-- `α / A = det J / A² > 0` on the boundary. -/
-@[powerlib_domain] private theorem model_ratio_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
+@[tmio M, powerlib_domain] private theorem model_ratio_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
     (hdet : 0 < (jac m.params m.θ).det) :
     m.params.V * Real.cos m.θ ≠ 0 ∧ m.params.ki / m.params.D0 ≠ 0 ∧
       0 < m.params.ki / m.params.D0 / (m.params.V * Real.cos m.θ) := by
@@ -459,7 +459,7 @@ the grid q-voltage alone. -/
   positivity
 
 /-- The sign of the normal-form coefficient: `κ > 0 ↔ k_p k_i < 0`. -/
-@[powerlib_domain] private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
+@[tmio M, powerlib_domain] private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
     (hdet : 0 < (jac m.params m.θ).det) :
     (m.params.kp * m.params.ki < 0 →
       0 < hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
@@ -525,7 +525,7 @@ section Members
   linarith
 
 /-- An equilibrium of the translated field with a nondegenerate loop is balanced. -/
-@[powerlib_domain] private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
+@[tmio M, powerlib_domain] private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
     m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) := by
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
   have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
@@ -821,7 +821,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
 `θ* = −π/4`. Balanced (`V sin θ* = −1 = −X_g i_d`), `tr J = 0`, `det J = 1`, `k_p k_i = −1/4`. -/
 def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, 1, 1, -1 / 2, 1 / 2, 1⟩, -(Real.pi / 4)⟩
 
-@[powerlib_domain] private theorem supercriticalPLL_data :
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_data :
     supercriticalPLL.params.V * Real.sin supercriticalPLL.θ =
         -(supercriticalPLL.params.Xg * supercriticalPLL.params.Id) ∧
       supercriticalPLL.params.D0 ≠ 0 ∧ (jac supercriticalPLL.params supercriticalPLL.θ).trace = 0 ∧

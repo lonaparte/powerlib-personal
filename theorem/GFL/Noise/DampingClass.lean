@@ -118,7 +118,7 @@ def swingPH (hD : 0 ≤ s.D) : PH.NonlinearModel 2 1 where
   dissipation_posSemidef _ := posSemidef_RA hD
   hasGradient := s.hasGradientAt_hamiltonian
 
-@[powerlib_domain] theorem swingPH_zeroInputField (hD : 0 ≤ s.D) :
+@[tmio M, powerlib_domain] theorem swingPH_zeroInputField (hD : 0 ≤ s.D) :
     (s.swingPH hD).zeroInputField = s.field := by
   funext x
   have hg : WithLp.ofLp (s.gradH x) = ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1] := rfl
@@ -127,7 +127,7 @@ def swingPH (hD : 0 ≤ s.D) : PH.NonlinearModel 2 1 where
   ext i; fin_cases i <;> simp [Matrix.vecHead, Matrix.vecTail]; ring
 
 /-- Class-A energy balance: `Ḣ = −D (p/M)²`. -/
-@[powerlib_domain] theorem swing_energy_rate (hD : 0 ≤ s.D) (x : State 2) :
+@[tmio M, powerlib_domain] theorem swing_energy_rate (hD : 0 ≤ s.D) (x : State 2) :
     fderiv ℝ s.hamiltonian x (s.field x) = -(s.D * (s.M⁻¹ * x 1) ^ 2) := by
   have h := (s.swingPH hD).zeroInput_power_balance x
   have hH : (s.swingPH hD).H = s.hamiltonian := rfl
@@ -147,10 +147,10 @@ def RA (D : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 0; 0, D]
 /-- Class-B dissipation matrix `R_B = diag(K_p, 0)`. -/
 def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 
-@[powerlib_domain] theorem swingPH_R (s : SwingParams) (hD : 0 ≤ s.D) (x : State 2) :
+@[tmio M, powerlib_domain] theorem swingPH_R (s : SwingParams) (hD : 0 ≤ s.D) (x : State 2) :
     (s.swingPH hD).R x = RA s.D := rfl
 
-@[powerlib_domain] theorem pHModel_R (p : Params) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio M, powerlib_domain] theorem pHModel_R (p : Params) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) (y : State 2) : (p.pHModel hwC hΔ hKp).R y = RB p.Kp := rfl
 
 /-- Grid-frequency noise in class B, `B = (−ε, 0)ᵀ`: `B Bᵀ = 2 T R_B` with `T = ε²/(2K_p)`. -/
@@ -208,7 +208,7 @@ def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, M⁻¹; -
   simp [classAJacobian, Matrix.det_fin_two]; ring
 
 /-- The class-A Jacobian is the derivative of the swing field. -/
-@[powerlib_domain] theorem SwingParams.hasFDerivAt_field (s : SwingParams) (x : State 2) :
+@[tmio M, powerlib_domain] theorem SwingParams.hasFDerivAt_field (s : SwingParams) (x : State 2) :
     HasFDerivAt s.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
       (classAJacobian s.M s.D (s.Pmax * cos (x 0)))) x := by
   set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0

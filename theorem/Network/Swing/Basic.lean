@@ -130,7 +130,7 @@ def fullField (p : Params n) (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)
 /-- The full model has the equilibrium continuum `(θ* + c𝟙, 0)`: its linearization has a
 zero eigenvalue along `𝟙`, so it cannot be exponentially stable in full coordinates. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem fullField_equilibrium_shift (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem fullField_equilibrium_shift (p : Params n) (θ : Fin (n + 1) → ℝ)
     (heq : ∀ k, p.P k = powerInjection p.B θ k) (c : ℝ) :
     fullField p ((fun k => θ k + c), 0) = 0 := by
   simp only [fullField, powerInjection_add_const, ← heq]
@@ -164,11 +164,11 @@ def reducedField (p : Params n) (z : State (n + (n + 1))) : State (n + (n + 1)) 
     (fun i => z (wIdx i.succ) - z (wIdx 0))
     (fun k => (p.P k - p.D k * z (wIdx k) - powerInjection p.B (angleMap z) k) / p.M k) r
 
-@[simp, powerlib_domain] theorem reducedField_dIdx (p : Params n) (z : State (n + (n + 1)))
+@[tmio M, simp, powerlib_domain] theorem reducedField_dIdx (p : Params n) (z : State (n + (n + 1)))
     (i : Fin n) : reducedField p z (dIdx i) = z (wIdx i.succ) - z (wIdx 0) := by
   simp [reducedField]
 
-@[simp, powerlib_domain] theorem reducedField_wIdx (p : Params n) (z : State (n + (n + 1)))
+@[tmio M, simp, powerlib_domain] theorem reducedField_wIdx (p : Params n) (z : State (n + (n + 1)))
     (k : Fin (n + 1)) : reducedField p z (wIdx k) =
       (p.P k - p.D k * z (wIdx k) - powerInjection p.B (angleMap z) k) / p.M k := by
   simp [reducedField]
@@ -201,7 +201,7 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
 
 /-- The reduction intertwines the full and the reduced field. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_domain] theorem reducedField_reduce (p : Params n)
+@[tmio M, powerlib_domain] theorem reducedField_reduce (p : Params n)
     (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
     reducedField p (reduce x) = reduce (fullField p x) := by
   apply state_ext
@@ -212,7 +212,7 @@ connection conclusion. -/
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Every trajectory of the full swing model projects to a trajectory of the reduced field. -/
-@[powerlib_domain] private theorem reduce_trajectory (p : Params n)
+@[tmio M, powerlib_domain] private theorem reduce_trajectory (p : Params n)
     {x : ℝ → (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)} {t : ℝ}
     (hx : HasDerivAt x (fullField p (x t)) t) :
     HasDerivAt (fun s => reduce (x s)) (reducedField p (reduce (x t))) t := by
@@ -244,7 +244,7 @@ def equilibrium (θ : Fin (n + 1) → ℝ) : State (n + (n + 1)) := reduce (θ, 
 
 /-- The synchronous point is an equilibrium of the reduced field. Static evidence on the model,
 not a connection conclusion. -/
-@[powerlib_domain] theorem reducedField_equilibrium (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem reducedField_equilibrium (p : Params n) (θ : Fin (n + 1) → ℝ)
     (heq : ∀ k, p.P k = powerInjection p.B θ k) :
     reducedField p (equilibrium θ) = 0 := by
   rw [equilibrium, reducedField_reduce]
@@ -320,36 +320,36 @@ selected point. -/
 def family : Family (Model n) Requirement (n + (n + 1)) 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous :
+@[tmio M, powerlib_domain] theorem family_isAutonomous :
     (family (n := n)).IsAutonomous Model.field := fun _ => rfl
 
 /-- A flow sentence of a model is the sentence of the untranslated reduced field at the
 selected point. -/
-@[powerlib_domain] private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
-@[simp, powerlib_domain] theorem jacobian_dd (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, simp, powerlib_domain] theorem jacobian_dd (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i i' : Fin n) : jacobian p θ (dIdx i) (dIdx i') = 0 := by
   simp [jacobian, jacobianBlocks]
 
-@[simp, powerlib_domain] theorem jacobian_dw (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, simp, powerlib_domain] theorem jacobian_dw (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i : Fin n) (k : Fin (n + 1)) : jacobian p θ (dIdx i) (wIdx k) =
       (if k = i.succ then 1 else 0) - (if k = 0 then 1 else 0) := by
   simp [jacobian, jacobianBlocks]
 
-@[simp, powerlib_domain] theorem jacobian_wd (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, simp, powerlib_domain] theorem jacobian_wd (p : Params n) (θ : Fin (n + 1) → ℝ)
     (k : Fin (n + 1)) (i : Fin n) : jacobian p θ (wIdx k) (dIdx i) =
       -(laplacian (flowWeights p.B θ) k i.succ) / p.M k := by
   simp [jacobian, jacobianBlocks]
 
-@[simp, powerlib_domain] theorem jacobian_ww (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, simp, powerlib_domain] theorem jacobian_ww (p : Params n) (θ : Fin (n + 1) → ℝ)
     (k k' : Fin (n + 1)) : jacobian p θ (wIdx k) (wIdx k') =
       if k = k' then -(p.D k / p.M k) else 0 := by
   simp [jacobian, jacobianBlocks]
 
-@[powerlib_domain] theorem flowWeights_angleMap_equilibrium (p : Params n)
+@[tmio M, powerlib_domain] theorem flowWeights_angleMap_equilibrium (p : Params n)
     (θ : Fin (n + 1) → ℝ) :
     flowWeights p.B (angleMap (equilibrium θ)) = flowWeights p.B θ := by
   ext i j
@@ -360,7 +360,7 @@ selected point. -/
     ∑ r, f r = ∑ i : Fin n, f (dIdx i) + ∑ k : Fin (n + 1), f (wIdx k) :=
   Fin.sum_univ_add f
 
-@[powerlib_domain] theorem laplacian_angleMap (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem laplacian_angleMap (p : Params n) (θ : Fin (n + 1) → ℝ)
     (v : State (n + (n + 1))) (k : Fin (n + 1)) :
     (laplacian (flowWeights p.B θ) *ᵥ angleMap v) k =
       ∑ i : Fin n, laplacian (flowWeights p.B θ) k i.succ * v (dIdx i) := by
@@ -368,7 +368,7 @@ selected point. -/
     angleMap_succ]
 
 /-- The Jacobian of the reduced field at the synchronous equilibrium. -/
-@[powerlib_domain] theorem hasFDerivAt_reducedField (p : Params n) (θ : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_reducedField (p : Params n) (θ : Fin (n + 1) → ℝ) :
     HasFDerivAt (reducedField p)
       (Matrix.toEuclideanCLM (n := Fin (n + (n + 1))) (𝕜 := ℝ) (jacobian p θ)) (equilibrium θ) := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
@@ -435,7 +435,7 @@ selected point. -/
   have hre0 : μ.re = 0 := by nlinarith [mul_nonneg hm.le (mul_nonneg hnn hnn)]
   exact hμ (Complex.ext hre0 him0)
 
-@[powerlib_domain] theorem flowWeights_symm (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_domain] theorem flowWeights_symm (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i j : Fin (n + 1)) :
     flowWeights p.B θ i j = flowWeights p.B θ j i := by
   simp only [flowWeights, of_apply, p.B_symm i j]
@@ -592,7 +592,7 @@ nonnegative and their positive edges connect all machines. -/
 
 /-! ## Local exponential stability -/
 
-@[powerlib_domain] theorem reducedField_contDiff (p : Params n) :
+@[tmio M, powerlib_domain] theorem reducedField_contDiff (p : Params n) :
     ContDiff ℝ 1 (reducedField p) := by
   rw [contDiff_euclidean]
   intro r
@@ -795,12 +795,12 @@ def uncoupled : Model 1 :=
   ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
     fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
 
-@[powerlib_domain] private theorem uncoupled_point : equilibrium uncoupled.θ = 0 := by
+@[tmio M, powerlib_domain] private theorem uncoupled_point : equilibrium uncoupled.θ = 0 := by
   apply state_ext
   · intro i; simp [equilibrium, uncoupled]
   · intro k; simp [equilibrium, uncoupled]
 
-@[powerlib_domain] private theorem uncoupled_field (z : State (1 + (1 + 1))) :
+@[tmio M, powerlib_domain] private theorem uncoupled_field (z : State (1 + (1 + 1))) :
     uncoupled.field z = WithLp.toLp 2 ![z 2 - z 1, -z 1, -z 2] := by
   have hz : uncoupled.field z = reducedField uncoupled.params z := by
     simp [Model.field, uncoupled_point]
@@ -882,16 +882,16 @@ def uncoupledN (n : ℕ) : Model (n + 1) :=
   ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
     fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
 
-@[powerlib_domain] private theorem uncoupledN_point : equilibrium (uncoupledN n).θ = 0 := by
+@[tmio M, powerlib_domain] private theorem uncoupledN_point : equilibrium (uncoupledN n).θ = 0 := by
   apply state_ext
   · intro i; simp [equilibrium, uncoupledN]
   · intro k; simp [equilibrium, uncoupledN]
 
-@[powerlib_domain] private theorem uncoupledN_field_d (z : State (n + 1 + (n + 1 + 1))) (i : Fin (n + 1)) :
+@[tmio M, powerlib_domain] private theorem uncoupledN_field_d (z : State (n + 1 + (n + 1 + 1))) (i : Fin (n + 1)) :
     (uncoupledN n).field z (dIdx i) = z (wIdx i.succ) - z (wIdx 0) := by
   simp [Model.field, uncoupledN_point]
 
-@[powerlib_domain] private theorem uncoupledN_field_w (z : State (n + 1 + (n + 1 + 1))) (k : Fin (n + 1 + 1)) :
+@[tmio M, powerlib_domain] private theorem uncoupledN_field_w (z : State (n + 1 + (n + 1 + 1))) (k : Fin (n + 1 + 1)) :
     (uncoupledN n).field z (wIdx k) = - z (wIdx k) := by
   show reducedField _ (z + equilibrium (uncoupledN n).θ) (wIdx k) = _
   rw [uncoupledN_point, add_zero, reducedField_wIdx]

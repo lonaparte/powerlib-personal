@@ -130,7 +130,7 @@ power as derivative. -/
 /-- The DC link is lossless, so along every solution segment the energy change equals the
 integral of the port power `V_dc (i_in − i_out)` (equality, not only the passivity inequality).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem dcLink_energy_balance (C : ℝ) (hC : 0 < C)
+@[tmio TM, powerlib_domain] private theorem dcLink_energy_balance (C : ℝ) (hC : 0 < C)
     {u : ℝ → (Fin 2 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ} (hle : t₀ ≤ t₁)
     (hx : (dcLinkPH C hC).plant.system.IsTrajectoryOn u x t₀ t₁)
     (hint : IntervalIntegrable (fun τ => (x τ 0 / C) * (u τ 0 - u τ 1)) volume t₀ t₁) :
@@ -194,7 +194,7 @@ def dqLC_kirchhoffField (p : DqLCParams) (x u : Fin 4 → ℝ) : Fin 4 → ℝ :
 
 /-- The pH field reproduces the dq LC rate equations exactly.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem dqLC_field_eq_kirchhoff (p : DqLCParams) (x u : Fin 4 → ℝ) :
+@[tmio M, powerlib_domain] theorem dqLC_field_eq_kirchhoff (p : DqLCParams) (x u : Fin 4 → ℝ) :
     (dqLC p).field x u = dqLC_kirchhoffField p x u := by
   have hL := p.L_pos.ne'
   have hC := p.C_pos.ne'
@@ -206,7 +206,7 @@ Static evidence on the model, not a connection conclusion. -/
   all_goals ring
 
 /-- The pH energy in physical coordinates: `H = ½ L_f |I|² + ½ C_f |V|²`. -/
-@[powerlib_domain] theorem dqLC_energy (p : DqLCParams) (Id Iq Vd Vq : ℝ) :
+@[tmio M, powerlib_domain] theorem dqLC_energy (p : DqLCParams) (Id Iq Vd Vq : ℝ) :
     (dqLC p).energy ![p.L * Id, p.L * Iq, p.C * Vd, p.C * Vq] =
       p.L * (Id ^ 2 + Iq ^ 2) / 2 + p.C * (Vd ^ 2 + Vq ^ 2) / 2 := by
   have hL := p.L_pos.ne'
@@ -219,7 +219,7 @@ Static evidence on the model, not a connection conclusion. -/
 (`P_src = V_d I_d^src + V_q I_q^src`, `P_conv = V_d^conv I_d + V_q^conv I_q`);
 the frame-rotation terms cancel.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem dqLC_power_balance (p : DqLCParams) (x u : Fin 4 → ℝ) :
+@[tmio M, powerlib_domain] theorem dqLC_power_balance (p : DqLCParams) (x u : Fin 4 → ℝ) :
     (dqLC p).gradient x ⬝ᵥ (dqLC p).field x u =
       ((x 2 / p.C) * u 2 + (x 3 / p.C) * u 3) - (u 0 * (x 0 / p.L) + u 1 * (x 1 / p.L)) := by
   rw [DiagonalPH.power_balance]
@@ -234,7 +234,7 @@ def dqLCPH (p : DqLCParams) : Port.PortHamiltonian 4 4 :=
 
 /-- Along every solution segment, `d/dt H = P_src − P_conv`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
+@[tmio M, powerlib_domain] private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
     {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 4)} {t₀ t₁ t : ℝ}
     (hx : (dqLCPH p).plant.system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => (dqLC p).energy (WithLp.ofLp (x τ)))

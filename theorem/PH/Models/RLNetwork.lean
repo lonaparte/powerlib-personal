@@ -108,7 +108,7 @@ def rlNetwork (p : RLBranchParams β) (𝓑 : Matrix ν β ℝ) : DiagonalPH β 
 omit [DecidableEq ν] in
 /-- Branch equations: `φ̇_k = (𝓑ᵀ v)_k − r_k φ_k / L_k`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlNetwork_field (p : RLBranchParams β) (𝓑 : Matrix ν β ℝ)
+@[tmio M, powerlib_domain] theorem rlNetwork_field (p : RLBranchParams β) (𝓑 : Matrix ν β ℝ)
     (φ : β → ℝ) (v : ν → ℝ) (k : β) :
     (rlNetwork p 𝓑).field φ v k = (𝓑ᵀ *ᵥ v) k - p.r k * (φ k / p.L k) := by
   simp [DiagonalPH.field, rlNetwork, DiagonalPH.gradient, mulVec_diagonal]
@@ -117,7 +117,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- With the signed incidence matrix the branch equation is KVL around the branch:
 `φ̇_k = v(tail k) − v(head k) − r_k i_k`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlNetwork_field_signedIncidence (p : RLBranchParams β)
+@[tmio M, powerlib_domain] theorem rlNetwork_field_signedIncidence (p : RLBranchParams β)
     (tail head : β → ν) (φ : β → ℝ) (v : ν → ℝ) (k : β) :
     (rlNetwork p (signedIncidence tail head)).field φ v k =
       v (tail k) - v (head k) - p.r k * (φ k / p.L k) := by
@@ -126,7 +126,7 @@ Static evidence on the model, not a connection conclusion. -/
 omit [DecidableEq β] [Fintype ν] [DecidableEq ν] in
 /-- The collocated output is the node current injection `i_node = 𝓑 i_br`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlNetwork_output (p : RLBranchParams β) (𝓑 : Matrix ν β ℝ)
+@[tmio M, powerlib_domain] theorem rlNetwork_output (p : RLBranchParams β) (𝓑 : Matrix ν β ℝ)
     (φ : β → ℝ) :
     (rlNetwork p 𝓑).output φ = 𝓑 *ᵥ fun k => φ k / p.L k := by
   simp only [DiagonalPH.output, rlNetwork, transpose_transpose]
@@ -138,7 +138,7 @@ Static evidence on the model, not a connection conclusion. -/
 omit [DecidableEq ν] in
 /-- Energy check of note §1.6.bis: `Ḣ = i_nodeᵀ v_node − Σ r_k i_k²`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlNetwork_power_balance (p : RLBranchParams β)
+@[tmio M, powerlib_domain] theorem rlNetwork_power_balance (p : RLBranchParams β)
     (𝓑 : Matrix ν β ℝ) (φ : β → ℝ) (v : ν → ℝ) :
     (rlNetwork p 𝓑).gradient φ ⬝ᵥ (rlNetwork p 𝓑).field φ v =
       v ⬝ᵥ (𝓑 *ᵥ fun k => φ k / p.L k) - ∑ k, p.r k * (φ k / p.L k) ^ 2 := by
@@ -192,7 +192,7 @@ def RLBranchParams.scale (p : RLBranchParams β) (c : β → ℝ) (hc : ∀ k, c
 omit [DecidableEq ν] in
 /-- Rescaled branch states obey the rescaled network's equations:
 the field of `(c² L, c² r, 𝓑 diag c)` at `c φ` is `c` times the original field. -/
-@[powerlib_domain] theorem rlNetwork_scale_field (p : RLBranchParams β)
+@[tmio M, powerlib_domain] theorem rlNetwork_scale_field (p : RLBranchParams β)
     (𝓑 : Matrix ν β ℝ) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) (φ : β → ℝ) (v : ν → ℝ) (k : β) :
     (rlNetwork (p.scale c hc) (𝓑 * diagonal c)).field (fun j => c j * φ j) v k =
       c k * (rlNetwork p 𝓑).field φ v k := by
@@ -205,7 +205,7 @@ the field of `(c² L, c² r, 𝓑 diag c)` at `c φ` is `c` times the original f
 
 omit [Fintype ν] [DecidableEq ν] in
 /-- The rescaled network has the same node port behaviour. -/
-@[powerlib_domain] theorem rlNetwork_scale_output (p : RLBranchParams β)
+@[tmio M, powerlib_domain] theorem rlNetwork_scale_output (p : RLBranchParams β)
     (𝓑 : Matrix ν β ℝ) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) (φ : β → ℝ) :
     (rlNetwork (p.scale c hc) (𝓑 * diagonal c)).output (fun j => c j * φ j) =
       (rlNetwork p 𝓑).output φ := by
@@ -220,7 +220,7 @@ omit [Fintype ν] [DecidableEq ν] in
 
 omit [Fintype ν] [DecidableEq ν] in
 /-- The rescaled network stores the same energy. -/
-@[powerlib_domain] theorem rlNetwork_scale_energy (p : RLBranchParams β)
+@[tmio M, powerlib_domain] theorem rlNetwork_scale_energy (p : RLBranchParams β)
     (𝓑 : Matrix ν β ℝ) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) (φ : β → ℝ) :
     (rlNetwork (p.scale c hc) (𝓑 * diagonal c)).energy (fun j => c j * φ j) =
       (rlNetwork p 𝓑).energy φ := by
@@ -233,7 +233,7 @@ omit [Fintype ν] [DecidableEq ν] in
 
 omit [Fintype ν] [DecidableEq ν] in
 /-- The rescaling is a change of state coordinates `T = diag c`, `S = diag c⁻¹` of the data. -/
-@[powerlib_domain] theorem rlNetwork_scale_similar_data (p : RLBranchParams β)
+@[tmio M, powerlib_domain] theorem rlNetwork_scale_similar_data (p : RLBranchParams β)
     (𝓑 : Matrix ν β ℝ) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) :
     (rlNetwork (p.scale c hc) (𝓑 * diagonal c)).stateMatrix =
         diagonal c * (rlNetwork p 𝓑).stateMatrix * diagonal c⁻¹ ∧
@@ -312,7 +312,7 @@ private def scaleCLM (c : Fin m → ℝ) :
 /-- Rescaling any solution segment of the original network gives a solution segment of the
 rescaled network driven by the same node potentials, with identical node currents.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem rlNetwork_scale_trajectory (p : RLBranchParams (Fin m))
+@[tmio M, powerlib_domain] private theorem rlNetwork_scale_trajectory (p : RLBranchParams (Fin m))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) (c : Fin m → ℝ) (hc : ∀ j, c j ≠ 0)
     {u : ℝ → Fin k → ℝ} {x : ℝ → EuclideanSpace ℝ (Fin m)} {t₀ t₁ : ℝ}
     (hx : (rlNetworkPH p 𝓑).plant.system.IsTrajectoryOn u x t₀ t₁) :
@@ -362,7 +362,7 @@ def rlcNetwork (p : RLBranchParams β) (q : NodeParams ν) (𝓑 : Matrix ν β 
 
 /-- Branch equations with node capacitors: `φ̇_k = (𝓑ᵀ v)_k − r_k i_k`, `v = q / C`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlcNetwork_field_branch (p : RLBranchParams β) (q : NodeParams ν)
+@[tmio M, powerlib_domain] theorem rlcNetwork_field_branch (p : RLBranchParams β) (q : NodeParams ν)
     (𝓑 : Matrix ν β ℝ) (x : β ⊕ ν → ℝ) (u : ν → ℝ) (k : β) :
     (rlcNetwork p q 𝓑).field x u (Sum.inl k) =
       (𝓑ᵀ *ᵥ fun i => x (Sum.inr i) / q.C i) k - p.r k * (x (Sum.inl k) / p.L k) := by
@@ -377,7 +377,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Node equations (KCL with capacitor and shunt): `q̇_j = u_j − (𝓑 i_br)_j − G_j v_j`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlcNetwork_field_node (p : RLBranchParams β) (q : NodeParams ν)
+@[tmio M, powerlib_domain] theorem rlcNetwork_field_node (p : RLBranchParams β) (q : NodeParams ν)
     (𝓑 : Matrix ν β ℝ) (x : β ⊕ ν → ℝ) (u : ν → ℝ) (j : ν) :
     (rlcNetwork p q 𝓑).field x u (Sum.inr j) =
       u j - (𝓑 *ᵥ fun k => x (Sum.inl k) / p.L k) j - q.G j * (x (Sum.inr j) / q.C j) := by
@@ -392,7 +392,7 @@ Static evidence on the model, not a connection conclusion. -/
 omit [DecidableEq β] in
 /-- The collocated output is the node voltage `v_j = q_j / C_j`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlcNetwork_output (p : RLBranchParams β) (q : NodeParams ν)
+@[tmio M, powerlib_domain] theorem rlcNetwork_output (p : RLBranchParams β) (q : NodeParams ν)
     (𝓑 : Matrix ν β ℝ) (x : β ⊕ ν → ℝ) :
     (rlcNetwork p q 𝓑).output x = fun j => x (Sum.inr j) / q.C j := by
   ext j
@@ -402,7 +402,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Power balance with node capacitors: `Ḣ = Σ u_j v_j − Σ r_k i_k² − Σ G_j v_j²`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem rlcNetwork_power_balance (p : RLBranchParams β) (q : NodeParams ν)
+@[tmio M, powerlib_domain] theorem rlcNetwork_power_balance (p : RLBranchParams β) (q : NodeParams ν)
     (𝓑 : Matrix ν β ℝ) (x : β ⊕ ν → ℝ) (u : ν → ℝ) :
     (rlcNetwork p q 𝓑).gradient x ⬝ᵥ (rlcNetwork p q 𝓑).field x u =
       ∑ j, u j * (x (Sum.inr j) / q.C j) - ∑ k, p.r k * (x (Sum.inl k) / p.L k) ^ 2 -

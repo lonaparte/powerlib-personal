@@ -78,7 +78,7 @@ open powerlib.Criteria (RouthFin4 RouthViolationFin4)
 namespace ModelB
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-@[powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous
@@ -205,7 +205,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
 
 /-- The Lie derivative of the energy along the undamped loop:
 `−sin² Δθ − σ (V_dc − 1) ξ_v (1 − cos Δθ)`. -/
-@[powerlib_domain] theorem centerEnergy_lie (σ : ℝ) (y : State 4) (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem centerEnergy_lie (σ : ℝ) (y : State 4) (hy : y 2 ≠ 0) :
     fderiv ℝ (centerEnergy σ) y (hopfCenter.p.field y) =
       -Real.sin (y 0) ^ 2 - σ * ((y 2 - 1) * y 3 * (1 - Real.cos (y 0))) := by
   rw [(hasFDerivAt_centerEnergy σ y).fderiv, hopfCenter_field y hy]
@@ -213,11 +213,11 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
   field_simp
   ring
 
-@[powerlib_domain] theorem hopfCenter_x : hopfCenter.x = WithLp.toLp 2 ![0, 0, 1, 0] := rfl
+@[tmio M, powerlib_domain] theorem hopfCenter_x : hopfCenter.x = WithLp.toLp 2 ![0, 0, 1, 0] := rfl
 
 /-- Near `x*` the coupling term is dominated by the PLL damping: for `‖y − x*‖ < 1/2`,
 `fderiv (centerEnergy σ) y (f y) ≤ 0` for `σ = ±1`. -/
-@[powerlib_domain] private theorem centerEnergy_lie_nonpos {σ : ℝ} (hσ : |σ| ≤ 1) {y : State 4}
+@[tmio M, powerlib_domain] private theorem centerEnergy_lie_nonpos {σ : ℝ} (hσ : |σ| ≤ 1) {y : State 4}
     (hy : ‖y - hopfCenter.x‖ < 1 / 2) :
     fderiv ℝ (centerEnergy σ) y (hopfCenter.p.field y) ≤ 0 := by
   have b0 := (Dynamics.abs_coord_sub_le hopfCenter.x y 0).trans_lt hy
@@ -352,7 +352,7 @@ regularized field, which is model B on the ball of radius `1/4`). -/
   rw [ModelBParams.field_eq_zero_iff]
   simp [hopfCenter, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
-@[powerlib_domain] private theorem hopfCenter_invariants :
+@[tmio M, powerlib_domain] private theorem hopfCenter_invariants :
     (hopfCenter.p.jacobian hopfCenter.x).trace = -1 ∧
       Criteria.principalMinorSum2Fin4 (hopfCenter.p.jacobian hopfCenter.x) = 2 ∧
       Criteria.principalMinorSum3Fin4 (hopfCenter.p.jacobian hopfCenter.x) = -1 ∧
@@ -387,7 +387,7 @@ Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
   norm_num at h
 
 /-- ... and not a strict violation either: it lies on the Routh boundary. -/
-@[powerlib_domain] private theorem hopfCenter_not_violation :
+@[tmio M, powerlib_domain] private theorem hopfCenter_not_violation :
     ¬ RouthViolationFin4 (hopfCenter.p.jacobian hopfCenter.x) := by
   obtain ⟨h1, h2, h3, h4⟩ := hopfCenter_invariants
   unfold RouthViolationFin4
@@ -425,7 +425,7 @@ def cdcZero : Model :=
   rw [ModelBParams.field_eq_zero_iff]
   simp [cdcZero, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
-@[powerlib_domain] private theorem cdcZero_invariants :
+@[tmio M, powerlib_domain] private theorem cdcZero_invariants :
     (cdcZero.p.jacobian cdcZero.x).trace = -1 ∧
       Criteria.principalMinorSum2Fin4 (cdcZero.p.jacobian cdcZero.x) = 1 ∧
       Criteria.principalMinorSum3Fin4 (cdcZero.p.jacobian cdcZero.x) = 0 ∧
@@ -453,7 +453,7 @@ def cdcZero : Model :=
   rw [h4] at h
   exact lt_irrefl _ h
 
-@[powerlib_domain] private theorem cdcZero_not_violation : ¬ RouthViolationFin4 (cdcZero.p.jacobian cdcZero.x) := by
+@[tmio M, powerlib_domain] private theorem cdcZero_not_violation : ¬ RouthViolationFin4 (cdcZero.p.jacobian cdcZero.x) := by
   obtain ⟨h1, h2, h3, h4⟩ := cdcZero_invariants
   unfold RouthViolationFin4
   rw [h1, h2, h3, h4]
@@ -562,10 +562,10 @@ The PLL is decoupled and damped; the DC loop has a Hopf-type linearization (pure
 def hopfDamped : Model :=
   ⟨⟨0, 0, 1, 1, 3 / 2, -3 / 2, 1, -1, 1, 3, 2, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 1 / 2]⟩
 
-@[powerlib_domain] theorem hopfDamped_x : hopfDamped.x = WithLp.toLp 2 ![0, 0, 1, 1 / 2] :=
+@[tmio M, powerlib_domain] theorem hopfDamped_x : hopfDamped.x = WithLp.toLp 2 ![0, 0, 1, 1 / 2] :=
   rfl
 
-@[powerlib_domain] theorem hopfDamped_field (y : State 4) (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem hopfDamped_field (y : State 4) (hy : y 2 ≠ 0) :
     hopfDamped.p.field y = WithLp.toLp 2 ![-3 * Real.sin (y 0) + y 1, -3 * Real.sin (y 0),
       -1 + (3 * Real.cos (y 0) - 2 * (y 2 - 1 + y 3)) * (y 2 - 1 + y 3) / y 2, 1 - y 2] := by
   ext i
@@ -579,7 +579,7 @@ def hopfDamped : Model :=
 
 /-- The Lie derivative of `dampedEnergy`, multiplied by `V_dc`, as a polynomial in
 `s = sin Δθ`, `c = cos Δθ`, `x_pll`, `w = V_dc − 1`, `ξ = ξ_v − 1/2`. -/
-@[powerlib_domain] theorem dampedEnergy_lie (y : State 4) (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem dampedEnergy_lie (y : State 4) (hy : y 2 ≠ 0) :
     y 2 * fderiv ℝ dampedEnergy y (hopfDamped.p.field y) =
       y 2 * (-6 * Real.sin (y 0) ^ 2 + 3 * Real.cos (y 0) * Real.sin (y 0) * y 1 -
           Real.cos (y 0) * y 1 ^ 2) +
@@ -717,7 +717,7 @@ def hopfDamped : Model :=
   simp [hopfDamped, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
   norm_num
 
-@[powerlib_domain] private theorem hopfDamped_invariants :
+@[tmio M, powerlib_domain] private theorem hopfDamped_invariants :
     (hopfDamped.p.jacobian hopfDamped.x).trace = -3 ∧
       Criteria.principalMinorSum2Fin4 (hopfDamped.p.jacobian hopfDamped.x) = 4 ∧
       Criteria.principalMinorSum3Fin4 (hopfDamped.p.jacobian hopfDamped.x) = -3 ∧
@@ -752,7 +752,7 @@ characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr�
   norm_num at h
 
 /-- ... and not a strict violation: it lies on the 4×4 Routh boundary. -/
-@[powerlib_domain] private theorem hopfDamped_not_violation :
+@[tmio M, powerlib_domain] private theorem hopfDamped_not_violation :
     ¬ RouthViolationFin4 (hopfDamped.p.jacobian hopfDamped.x) := by
   obtain ⟨h1, h2, h3, h4⟩ := hopfDamped_invariants
   unfold RouthViolationFin4

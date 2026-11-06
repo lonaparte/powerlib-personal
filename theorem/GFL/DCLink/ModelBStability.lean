@@ -206,14 +206,14 @@ def regField (x : State 4) : State 4 :=
   exacts [h0, h1, h2, h3]
 
 /-- On the half-space `V_dc > 3 V_dc*/4` the regularized field is model B. -/
-@[powerlib_domain] theorem field_eq_regField {y : State 4} (hV : 0 < p.VdcRef)
+@[tmio M, powerlib_domain] theorem field_eq_regField {y : State 4} (hV : 0 < p.VdcRef)
     (hy : 3 * p.VdcRef / 4 ≤ y 2) : p.field y = p.regField y := by
   unfold field regField
   rw [Dynamics.regDen_eq hV hy]
 
 /-- Every point of the ball of radius `V_dc*/4` around a state with `V_dc = V_dc*` lies in the
 half-space where the two fields agree. -/
-@[powerlib_domain] theorem field_eq_regField_of_mem_ball (hV : 0 < p.VdcRef) {x y : State 4}
+@[tmio M, powerlib_domain] theorem field_eq_regField_of_mem_ball (hV : 0 < p.VdcRef) {x y : State 4}
     (hx : x 2 = p.VdcRef) (hy : y ∈ Metric.ball x (p.VdcRef / 4)) :
     p.field y = p.regField y := by
   apply p.field_eq_regField hV
@@ -248,7 +248,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
       3 * p.kiv * (vd - p.Rg * id - p.Xg * p.iq0) / (2 * V * p.Cdc);
     0, 0, -1, 0]
 
-@[powerlib_domain] theorem hasFDerivAt_idRef (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_idRef (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.idRef (y 2) (y 3)) (row4 0 0 (-p.kpv) p.kiv) x := by
   have h := (((Dynamics.hasFDerivAt_coord 2 x).const_sub p.VdcRef).const_mul p.kpv).add
     ((Dynamics.hasFDerivAt_coord 3 x).const_mul p.kiv)
@@ -256,7 +256,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
   ext v
   simp [row4]
 
-@[powerlib_domain] theorem hasFDerivAt_vgq (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_vgq (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.vgq (y 0) (p.idRef (y 2) (y 3)))
       (row4 (-p.Vg * Real.cos (x 0)) 0 (p.Xg * p.kpv) (-(p.Xg * p.kiv))) x := by
   have hs := (Real.hasDerivAt_sin (x 0)).comp_hasFDerivAt x (Dynamics.hasFDerivAt_coord 0 x)
@@ -267,7 +267,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
   simp [row4]
   ring
 
-@[powerlib_domain] theorem hasFDerivAt_vgd (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_vgd (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.vgd (y 0) (p.idRef (y 2) (y 3)))
       (row4 (-p.Vg * Real.sin (x 0)) 0 (p.Rg * p.kpv) (-(p.Rg * p.kiv))) x := by
   have hc := (Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x (Dynamics.hasFDerivAt_coord 0 x)
@@ -278,7 +278,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
   simp [row4]
   ring
 
-@[powerlib_domain] theorem hasFDerivAt_pccP (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_pccP (x : State 4) :
     HasFDerivAt p.pccP
       (row4 (-p.Vg * Real.sin (x 0) * p.idRef (x 2) (x 3) - p.Vg * Real.cos (x 0) * p.iq0) 0
         (p.kpv * (p.Rg * p.idRef (x 2) (x 3) - p.vgd (x 0) (p.idRef (x 2) (x 3)) +
@@ -292,7 +292,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
   simp [row4]
   ring
 
-@[powerlib_domain] theorem hasFDerivAt_field_zero (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field_zero (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.field y 0)
       (row4 (p.kp * (-p.Vg * Real.cos (x 0))) p.ki (p.kp * (p.Xg * p.kpv))
         (p.kp * (-(p.Xg * p.kiv)))) x := by
@@ -304,13 +304,13 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
     ring
   · simp [field]
 
-@[powerlib_domain] theorem hasFDerivAt_field_one (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field_one (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.field y 1)
       (row4 (-p.Vg * Real.cos (x 0)) 0 (p.Xg * p.kpv) (-(p.Xg * p.kiv))) x := by
   refine (p.hasFDerivAt_vgq x).congr_of_eventuallyEq (Eventually.of_forall fun y => ?_)
   simp [field]
 
-@[powerlib_domain] theorem hasFDerivAt_field_two {x : State 4} (hx : x 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field_two {x : State 4} (hx : x 2 ≠ 0) :
     HasFDerivAt (fun y : State 4 => p.field y 2)
       (row4 (3 * (-p.Vg * Real.sin (x 0) * p.idRef (x 2) (x 3) - p.Vg * Real.cos (x 0) * p.iq0) /
           (2 * x 2 * p.Cdc)) 0
@@ -333,7 +333,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
       ring
   · simp [field, pccP, div_eq_mul_inv]
 
-@[powerlib_domain] theorem hasFDerivAt_field_three (x : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field_three (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.field y 3) (row4 0 0 (-1) 0) x := by
   have h := (Dynamics.hasFDerivAt_coord 2 x).const_sub p.VdcRef
   refine (h.congr_fderiv ?_).congr_of_eventuallyEq (Eventually.of_forall fun y => ?_)
@@ -343,7 +343,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
 
 /-- The Jacobian of model B, computed from the field: `D field (x) = jacobian x` wherever
 `V_dc ≠ 0`. -/
-@[powerlib_domain] theorem hasFDerivAt_field {x : State 4} (hx : x 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field {x : State 4} (hx : x 2 ≠ 0) :
     HasFDerivAt p.field (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (p.jacobian x)) x := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components (p.jacobian x)
     (fun i => row4 (p.jacobian x i 0) (p.jacobian x i 1) (p.jacobian x i 2) (p.jacobian x i 3))
@@ -357,20 +357,20 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
   · intro i v
     simp [Fin.sum_univ_four]
 
-@[powerlib_domain] theorem fderiv_field {x : State 4} (hx : x 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem fderiv_field {x : State 4} (hx : x 2 ≠ 0) :
     fderiv ℝ p.field x = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (p.jacobian x) :=
   (p.hasFDerivAt_field hx).fderiv
 
 /-! ## Local stability of model B equilibria -/
 
 /-- Every equilibrium has `V_dc = V_dc*`. -/
-@[powerlib_domain] theorem equilibrium_Vdc {x : State 4} (hx : p.field x = 0) :
+@[tmio M, powerlib_domain] theorem equilibrium_Vdc {x : State 4} (hx : p.field x = 0) :
     x 2 = p.VdcRef := by
   obtain ⟨-, -, -, h3⟩ := (p.field_eq_zero_iff x).mp hx
   linarith
 
 /-- Near an equilibrium the regularized field has the same equilibrium and Jacobian. -/
-@[powerlib_domain] theorem regField_equilibrium_jacobian (hV : 0 < p.VdcRef) {x : State 4}
+@[tmio M, powerlib_domain] theorem regField_equilibrium_jacobian (hV : 0 < p.VdcRef) {x : State 4}
     (hx : p.field x = 0) :
     p.regField x = 0 ∧
       fderiv ℝ p.regField x = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (p.jacobian x) := by
@@ -436,11 +436,11 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 4 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous
@@ -567,7 +567,7 @@ def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
   isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous continuous_const
 
 /-- Model B is `C¹` on `V_dc ≠ 0` (both signs of the DC-link voltage). -/
-@[powerlib_domain] theorem field_contDiffOn : ContDiffOn ℝ 1 p.field nonzeroVdc := by
+@[tmio M, powerlib_domain] theorem field_contDiffOn : ContDiffOn ℝ 1 p.field nonzeroVdc := by
   rw [contDiffOn_euclidean]
   intro i
   fin_cases i
@@ -620,7 +620,7 @@ Read through the existing family endpoint. -/
 
 /-- Off the singular plane, `2 V_dc` times the DC-link component of the field is the smooth
 function `(2 I₀ V_dc + 3 P) / C_dc`. Static evidence on the model. -/
-@[powerlib_domain] theorem two_mul_field_two {y : State 4} (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_domain] theorem two_mul_field_two {y : State 4} (hy : y 2 ≠ 0) :
     2 * y 2 * p.field y 2 = (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc := by
   have h : p.field y 2 = (p.I0 + 3 * p.pccP y / (2 * y 2)) / p.Cdc := by
     simp [field, pccP]
@@ -630,16 +630,16 @@ function `(2 I₀ V_dc + 3 P) / C_dc`. Static evidence on the model. -/
   field_simp
 
 /-- On the singular plane the DC-link component of the field is `I₀ / C_dc` (`x / 0 = 0`). -/
-@[powerlib_domain] theorem field_two_of_Vdc_eq_zero {y : State 4} (hy : y 2 = 0) :
+@[tmio M, powerlib_domain] theorem field_two_of_Vdc_eq_zero {y : State 4} (hy : y 2 = 0) :
     p.field y 2 = p.I0 / p.Cdc := by
   simp [field, hy]
 
-@[powerlib_domain] theorem contDiff_pccP : ContDiff ℝ 1 p.pccP := by
+@[tmio M, powerlib_domain] theorem contDiff_pccP : ContDiff ℝ 1 p.pccP := by
   unfold pccP vgd vgq idRef
   fun_prop
 
 /-- The components of model B other than the DC-link voltage are smooth on the whole space. -/
-@[powerlib_domain] theorem contDiff_field_offDC :
+@[tmio M, powerlib_domain] theorem contDiff_field_offDC :
     ContDiff ℝ 1 (fun y : State 4 => (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] :
       State 4)) := by
   apply Dynamics.contDiff_of_components
@@ -658,7 +658,7 @@ function `(2 I₀ V_dc + 3 P) / C_dc`. Static evidence on the model. -/
 
 /-- With `C_dc = 0` the DC-link component vanishes (`x / 0 = 0`) and model B is smooth on the
 whole space. -/
-@[powerlib_domain] theorem contDiff_field_of_Cdc_eq_zero (hC : p.Cdc = 0) :
+@[tmio M, powerlib_domain] theorem contDiff_field_of_Cdc_eq_zero (hC : p.Cdc = 0) :
     ContDiff ℝ 1 p.field := by
   have h : p.field = fun y : State 4 =>
       (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) := by

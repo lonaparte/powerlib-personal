@@ -71,24 +71,24 @@ variable (p : ModelBParams)
   unfold dP0 dP3 vgq vgd idRef
   fun_prop
 
-@[powerlib_domain] theorem contDiff_planeH : ContDiff ℝ 1 p.planeH := by
+@[tmio M, powerlib_domain] theorem contDiff_planeH : ContDiff ℝ 1 p.planeH := by
   unfold planeH dP2 vgd idRef
   fun_prop
 
 /-- `∂q/∂V_dc = H` everywhere. -/
-@[powerlib_domain] theorem fderiv_planeQ_single (y : State 4) :
+@[tmio M, powerlib_domain] theorem fderiv_planeQ_single (y : State 4) :
     fderiv ℝ p.planeQ y (EuclideanSpace.single 2 1) = p.planeH y := by
   rw [(p.hasFDerivAt_planeQ y).fderiv, row4_apply]
   simp [planeH]
 
 /-- The field without its DC-link component is the smooth field `(f₀, f₁, 0, f₃)`. -/
-@[powerlib_domain] theorem field_sub_single (y : State 4) :
+@[tmio M, powerlib_domain] theorem field_sub_single (y : State 4) :
     p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ) =
       (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) := by
   ext i
   fin_cases i <;> simp
 
-@[powerlib_domain] private theorem continuousAt_field_sub_single (x : State 4) :
+@[tmio M, powerlib_domain] private theorem continuousAt_field_sub_single (x : State 4) :
     ContinuousAt (fun y => p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ)) x := by
   have h : (fun y => p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ)) =
       fun y : State 4 => (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) :=
@@ -96,7 +96,7 @@ variable (p : ModelBParams)
   rw [h]
   exact p.contDiff_field_offDC.continuous.continuousAt
 
-@[powerlib_domain] private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p.planeQ y := by
+@[tmio M, powerlib_domain] private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p.planeQ y := by
   rw [p.field_two_eq_planeQ_div hy]
   field_simp
 
@@ -153,7 +153,7 @@ end ModelBParams
 namespace ModelB
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-@[powerlib_domain] private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
     family_isAutonomous

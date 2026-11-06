@@ -104,7 +104,7 @@ def noteStep (p : Params) (Ts ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :=
     (1 - p.rs * Ts / p.Lq) * x 1 + Ts / p.Lq * (u 1 - ω * p.Ld * x 0 - ω * p.ψf)]
 
 /-- **Correction**: the note's "ZOH or trapezoidal" discrete model is the forward-Euler step. -/
-@[powerlib_domain] theorem eulerStep_eq_note (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
+@[tmio M, powerlib_domain] theorem eulerStep_eq_note (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
     (Ts ω : ℝ) (x u : Fin 2 → ℝ) : eulerStep p Ts ω x u = noteStep p Ts ω x u := by
   ext j
   fin_cases j
@@ -126,7 +126,7 @@ def Bd (p : Params) (Ts : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- Back-EMF affine term `d_0(ω) = (0, −T_s ω ψ_f / L_q)`. -/
 def d0 (p : Params) (Ts ω : ℝ) : Fin 2 → ℝ := ![0, -(Ts * ω * p.ψf / p.Lq)]
 
-@[powerlib_domain] theorem eulerStep_eq_affine (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
+@[tmio M, powerlib_domain] theorem eulerStep_eq_affine (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
     (Ts ω : ℝ) (x u : Fin 2 → ℝ) :
     eulerStep p Ts ω x u = Ad p Ts ω *ᵥ x + Bd p Ts *ᵥ u + d0 p Ts ω := by
   ext j
@@ -146,7 +146,7 @@ def deadbeat (p : Params) (Ts ω : ℝ) (x xref : Fin 2 → ℝ) : Fin 2 → ℝ
     p.Lq / Ts * (xref 1 - x 1) + p.rs * x 1 + ω * p.Ld * x 0 + ω * p.ψf]
 
 /-- The explicit law is `B_d⁻¹(i* − A_d i − d_0)`: `B_d u = i* − A_d i − d_0`. -/
-@[powerlib_domain] theorem Bd_mulVec_deadbeat (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
+@[tmio M, powerlib_domain] theorem Bd_mulVec_deadbeat (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
     (Ts ω : ℝ) (hTs : Ts ≠ 0) (x xref : Fin 2 → ℝ) :
     Bd p Ts *ᵥ deadbeat p Ts ω x xref = xref - Ad p Ts ω *ᵥ x - d0 p Ts ω := by
   ext j
@@ -160,7 +160,7 @@ def deadbeat (p : Params) (Ts ω : ℝ) (x xref : Fin 2 → ℝ) : Fin 2 → ℝ
     ring
 
 /-- One deadbeat step reaches the reference exactly on the Euler model. -/
-@[powerlib_domain] theorem eulerStep_deadbeat (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
+@[tmio M, powerlib_domain] theorem eulerStep_deadbeat (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
     (Ts ω : ℝ) (hTs : Ts ≠ 0) (x xref : Fin 2 → ℝ) :
     eulerStep p Ts ω x (deadbeat p Ts ω x xref) = xref := by
   rw [eulerStep_eq_affine p hd hq, Bd_mulVec_deadbeat p hd hq Ts ω hTs]
@@ -170,7 +170,7 @@ def deadbeat (p : Params) (Ts ω : ℝ) (x xref : Fin 2 → ℝ) : Fin 2 → ℝ
 model and the controller applies the deadbeat voltage for the next reference sample, the
 current equals the reference at every sample after the first.
 Implementation evidence: discrete-time result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem deadbeat_tracks_next_sample (p : Params) (hd : p.Ld ≠ 0)
+@[tmio TM, powerlib_domain] private theorem deadbeat_tracks_next_sample (p : Params) (hd : p.Ld ≠ 0)
     (hq : p.Lq ≠ 0) (Ts : ℝ) (hTs : Ts ≠ 0) (ω : ℕ → ℝ) (iref x u : ℕ → Fin 2 → ℝ)
     (hplant : ∀ k, x (k + 1) = eulerStep p Ts (ω k) (x k) (u k))
     (hctrl : ∀ k, u k = deadbeat p Ts (ω k) (x k) (iref (k + 1))) :
@@ -183,7 +183,7 @@ sample `k`; the controller computes the next voltage at sample `k` from the mode
 `î[k+1] = f(i[k], u[k])` and the reference two samples ahead. Then the current equals the
 reference at every sample `k + 2`.
 Implementation evidence: discrete-time result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem deadbeat_delayCompensated_tracks (p : Params) (hd : p.Ld ≠ 0)
+@[tmio TM, powerlib_domain] private theorem deadbeat_delayCompensated_tracks (p : Params) (hd : p.Ld ≠ 0)
     (hq : p.Lq ≠ 0) (Ts : ℝ) (hTs : Ts ≠ 0) (ω : ℕ → ℝ) (iref x u : ℕ → Fin 2 → ℝ)
     (hplant : ∀ k, x (k + 1) = eulerStep p Ts (ω k) (x k) (u k))
     (hctrl : ∀ k, u (k + 1) =

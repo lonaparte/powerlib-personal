@@ -169,13 +169,13 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i
   fin_cases i <;> simp [coordField, vq, pllOut, hq]
 
-@[powerlib_domain] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
+@[tmio M, powerlib_domain] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
   apply Dynamics.contDiff_lift
   apply contDiff_pi.2
   intro i
   fin_cases i <;> simp [coordField, vq, pllOut, gridQ] <;> fun_prop
 
-@[powerlib_domain] theorem hasFDerivAt_coordField (hD0 : p.D0 ≠ 0) (y : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_coordField (hD0 : p.D0 ≠ 0) (y : Fin 2 → ℝ) :
     HasFDerivAt (coordField p) (Matrix.toLin' (jac p (y 0))).toContinuousLinearMap y := by
   have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 2) y
   have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 2) y
@@ -198,7 +198,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     rw [hD]
     ring
 
-@[powerlib_domain] theorem fderiv_field (hD0 : p.D0 ≠ 0) (θ x : ℝ) :
+@[tmio M, powerlib_domain] theorem fderiv_field (hD0 : p.D0 ≠ 0) (θ x : ℝ) :
     fderiv ℝ (field p) (WithLp.toLp 2 ![θ, x]) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jac p θ) := by
   have := hasFDerivAt_coordField p hD0 ![θ, x]
@@ -206,7 +206,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Jacobian at an equilibrium in the source form
 `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]`. -/
-@[powerlib_domain] theorem jacobian_eq {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
+@[tmio M, powerlib_domain] theorem jacobian_eq {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     jac p θ = !![-p.kp * p.V * Real.cos θ / p.D0, p.ki / p.D0;
       -p.V * Real.cos θ / p.D0, p.ki * (p.V * Real.sin θ / p.ωs) / p.D0] := by
   have : p.Lg * p.Id = -(p.V * Real.sin θ / p.ωs) := by
@@ -214,12 +214,12 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     ring
   simp only [jac, mul_assoc, this, mul_neg, neg_neg]
 
-@[powerlib_domain] theorem trace_jac (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem trace_jac (θ : ℝ) :
     (jac p θ).trace = (-p.kp * p.V * Real.cos θ - p.ki * p.Lg * p.Id) / p.D0 := by
   rw [jac, Matrix.trace_fin_two_of]
   ring
 
-@[powerlib_domain] theorem det_jac (hD0 : p.D0 ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem det_jac (hD0 : p.D0 ≠ 0) (θ : ℝ) :
     (jac p θ).det = p.ki * p.V * Real.cos θ / p.D0 := by
   rw [jac, Matrix.det_fin_two_of]
   have hD : p.D0 = 1 + p.kp * p.Lg * p.Id := rfl
@@ -227,13 +227,13 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rw [hD]
   ring
 
-@[powerlib_domain] theorem det_jac_pos (hD0 : 0 < p.D0) (hV : 0 < p.V) (hki : 0 < p.ki)
+@[tmio M, powerlib_domain] theorem det_jac_pos (hD0 : 0 < p.D0) (hV : 0 < p.V) (hki : 0 < p.ki)
     {θ : ℝ} (hcos : 0 < Real.cos θ) : 0 < (jac p θ).det := by
   rw [det_jac p hD0.ne']
   positivity
 
 /-- At an equilibrium, `tr J = (V/ω_s)(k_i sin θ − ω_s k_p cos θ) / D₀`. -/
-@[powerlib_domain] theorem trace_jac_eq (hωs : p.ωs ≠ 0) {θ : ℝ}
+@[tmio M, powerlib_domain] theorem trace_jac_eq (hωs : p.ωs ≠ 0) {θ : ℝ}
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     (jac p θ).trace =
       p.V / p.ωs * (p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ) / p.D0 := by
@@ -243,7 +243,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ring
 
 /-- At an equilibrium, `tr J < 0 ↔ tan θ < ω_s k_p / k_i`. -/
-@[powerlib_domain] theorem trace_jac_neg_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
+@[tmio M, powerlib_domain] theorem trace_jac_neg_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     (jac p θ).trace < 0 ↔ Real.tan θ < p.ωs * p.kp / p.ki := by
@@ -260,7 +260,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     exact div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg hVw (by linarith)) hD0
 
 /-- At an equilibrium, `tr J > 0 ↔ tan θ > ω_s k_p / k_i`. -/
-@[powerlib_domain] theorem trace_jac_pos_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
+@[tmio M, powerlib_domain] theorem trace_jac_pos_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     0 < (jac p θ).trace ↔ p.ωs * p.kp / p.ki < Real.tan θ := by
@@ -278,7 +278,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     exact div_pos (mul_pos hVw (by linarith)) hD0
 
 /-- The Jacobian is Hurwitz exactly below the boundary angle. -/
-@[powerlib_domain] theorem isHurwitz_jac_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
+@[tmio M, powerlib_domain] theorem isHurwitz_jac_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     LinearSystems.IsHurwitz (jac p θ) ↔ Real.tan θ < p.ωs * p.kp / p.ki := by
@@ -286,7 +286,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   exact ⟨fun h => h.1, fun h => ⟨h, det_jac_pos p hD0 hV hki hcos⟩⟩
 
 /-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has the imaginary pair `± j√det`. -/
-@[powerlib_domain] theorem imaginary_pair_at_boundary (hD0 : 0 < p.D0) (hV : 0 < p.V)
+@[tmio M, powerlib_domain] theorem imaginary_pair_at_boundary (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     (jac p θ).trace = 0 ∧ 0 < (jac p θ).det ∧
@@ -319,7 +319,7 @@ def literatureField : Dynamics.State 2 → Dynamics.State 2 :=
 
 /-- §D8 boundary translation: the IN-positive field at the current `i_d` is the OUT-positive
 source field at `I_d = −i_d`. -/
-@[powerlib_domain] theorem field_eq_literatureField :
+@[tmio M, powerlib_domain] theorem field_eq_literatureField :
     field p = literatureField { p with Id := -p.Id } := by
   funext y
   apply WithLp.ofLp_injective
@@ -331,7 +331,7 @@ source field at `I_d = −i_d`. -/
 /-! ## Damping-ratio comparison and `X_g` elimination -/
 
 /-- At an equilibrium the loop factor is `D₀ = 1 − k_p V sin θ / ω_s`. -/
-@[powerlib_domain] theorem D0_eq_of_equilibrium {θ : ℝ}
+@[tmio M, powerlib_domain] theorem D0_eq_of_equilibrium {θ : ℝ}
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     p.D0 = 1 - p.kp * p.V * Real.sin θ / p.ωs := by
   rw [Params.D0, Params.Lg, mul_assoc p.kp, div_mul_eq_mul_div]
@@ -345,7 +345,7 @@ def zetaQS (θ : ℝ) : ℝ := p.kp / 2 * Real.sqrt (p.V * Real.cos θ / p.ki)
 
 /-- The rate-coupled damping ratio equals the quasi-static closed form times
 `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`, `D₀ = 1 − k_p V sin θ / ω_s`. -/
-@[powerlib_domain] theorem zeta_ratio (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp)
+@[tmio M, powerlib_domain] theorem zeta_ratio (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     dampingRatio (jac p θ) =
@@ -382,7 +382,7 @@ def zetaQS (θ : ℝ) : ℝ := p.kp / 2 * Real.sqrt (p.V * Real.cos θ / p.ki)
 /-- At an equilibrium angle the Jacobian depends on `(V, ω_s, k_p, k_i, θ)` only: two
 parameter sets that differ in `X_g` (with `I_d` re-solved to keep `θ` an equilibrium) have the
 same Jacobian. -/
-@[powerlib_domain] theorem jacobian_indep_Xg (q : Params) (hV : p.V = q.V)
+@[tmio M, powerlib_domain] theorem jacobian_indep_Xg (q : Params) (hV : p.V = q.V)
     (hωs : p.ωs = q.ωs) (hkp : p.kp = q.kp) (hki : p.ki = q.ki) {θ : ℝ}
     (hp : p.V * Real.sin θ = -(p.Xg * p.Id)) (hq : q.V * Real.sin θ = -(q.Xg * q.Id)) :
     jac p θ = jac q θ := by
@@ -409,7 +409,7 @@ def epsFrozen (Vg θ : ℝ) : ℝ := Vg + p.ki * p.Lg * p.Id / (p.kp * Real.cos 
 
 /-- The frozen Jacobian at the fixed angle `θ` and grid amplitude `V'` is Hurwitz iff
 `V' > −k_i L_g i_d / (k_p cos θ)` (when `L_g i_d ≤ 0`, an exporting converter). -/
-@[powerlib_domain] theorem frozen_isHurwitz_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
+@[tmio M, powerlib_domain] theorem frozen_isHurwitz_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : p.Lg * p.Id ≤ 0) (V' : ℝ) :
     LinearSystems.IsHurwitz (jac (withV p V') θ) ↔
       -(p.ki * p.Lg * p.Id / (p.kp * Real.cos θ)) < V' := by
@@ -437,7 +437,7 @@ def epsFrozen (Vg θ : ℝ) : ℝ := Vg + p.ki * p.Lg * p.Id / (p.kp * Real.cos 
 the frozen Jacobian is Hurwitz at every instant iff `ε < ε_frozen`.  Frozen-time Hurwitz
 stability is a property of a family of constant matrices; it does not imply stability of the
 periodic linear time-varying system. -/
-@[powerlib_domain] theorem frozen_hurwitz_forall_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
+@[tmio M, powerlib_domain] theorem frozen_hurwitz_forall_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : p.Lg * p.Id ≤ 0)
     {Vg ε ωp : ℝ} (hε : 0 ≤ ε) (hωp : ωp ≠ 0) :
     (∀ t : ℝ, LinearSystems.IsHurwitz (jac (withV p (Vg + ε * Real.cos (ωp * t))) θ)) ↔
@@ -467,7 +467,7 @@ def Model.field (m : Model) (z : Dynamics.State 2) : Dynamics.State 2 :=
   RatePLL.field m.params (z + equilibrium m.θ)
 
 /-- The translated field is `C¹`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem Model.field_contDiff (m : Model) : ContDiff ℝ 1 m.field :=
+@[tmio M, powerlib_domain] theorem Model.field_contDiff (m : Model) : ContDiff ℝ 1 m.field :=
   (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
 
 /-- Requirements on the rate-coupled PLL models, all static. -/
@@ -502,13 +502,13 @@ point. -/
 def family : Family Model Requirement 2 0 :=
   ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at `(θ*, 0)`. -/
-@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (RatePLL.field m.params) (equilibrium m.θ) :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => RatePLL.field m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
@@ -574,7 +574,7 @@ the origin), and passivity holds without requirement. -/
 
 /-- With a degenerate algebraic loop `D₀ = 0` the angle is frozen: `θ` is a linear first
 integral of the field, so no point is locally exponentially stable. -/
-@[powerlib_domain] private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamics.State 2) :
+@[tmio TM, powerlib_domain] private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamics.State 2) :
     ¬ LocallyExponentiallyStable (RatePLL.field p) x := by
   refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral (contDiff_field p)
     (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0) ?_ fun y => ?_
@@ -684,7 +684,7 @@ while the translation asks for an equilibrium. -/
 field is the pendulum `θ̇ = x`, `ẋ = −sin θ`. -/
 def undampedPLL : Model := ⟨⟨1, 0, 1, 0, 1, 0⟩, 0⟩
 
-@[powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 2) :
+@[tmio M, powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 2) :
     RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
   ext i
   fin_cases i <;>

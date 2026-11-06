@@ -291,7 +291,7 @@ local minimum at `(θ*, η*)`. -/
 integral, constant along every solution segment (T-invariant-coordinates §1.1 / §1.4: a strict
 invariant exactly when the dissipation vanishes).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem pllPH_lossless_firstIntegral {V Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ)
+@[tmio TM, powerlib_domain] private theorem pllPH_lossless_firstIntegral {V Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ)
     {φ : ℝ → State 2} {a b : ℝ} (hφ : IsTrajectoryOn φ (srfField V 0 Ki δω) a b) :
     ∀ t ∈ Set.Icc a b,
       pllHamiltonian V Ki (δω / Ki) (φ t) = pllHamiltonian V Ki (δω / Ki) (φ a) :=
@@ -376,7 +376,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 1 :=
   ⟨fun m => (m.toPH.shift m.point).system, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isNonlinearPH :
+@[tmio M, powerlib_domain] theorem family_isNonlinearPH :
     family.IsNonlinearPH (fun m => m.toPH.shift m.point) := fun _ => rfl
 
 /-- No model is at a well bottom and at an anti-phase point: the whole requirement language is
@@ -390,7 +390,7 @@ inconsistent. -/
   linarith
 
 /-- A flow sentence of a model is the sentence of the SRF-PLL with offset `K_i η*` at `(θ*, η*)`. -/
-@[powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (srfField m.V m.Kp m.Ki (m.Ki * m.ηs)) m.point := by
   rw [(connection_proof% family_isNonlinearPH.mem_den_flow_shift)]
   change P.holds (pllPH m.V m.Kp m.Ki m.ηs m.damping).zeroInputField m.point ↔ _
@@ -432,7 +432,7 @@ for `K_i = 0` both fields ignore the integrator state, so the selected points `(
     simp [toSRF, srf, PIPLL.Model.field, PIPLL.Model.point, Model.point, hKi, mul_assoc]
 
 /-- The slope of the SRF member: `h'(θ*) = −V cos θ*`. -/
-@[powerlib_domain] private theorem toSRF_deriv (m : Model) :
+@[tmio M, powerlib_domain] private theorem toSRF_deriv (m : Model) :
     deriv (toSRF m).h (toSRF m).θ = -m.V * Real.cos m.θ :=
   PIPLL.srf_deriv _ _ _ _ _
 
@@ -650,7 +650,7 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
 
 /-- The Hamiltonian with set point `η*` decreases at the damping rate `K_p h(θ)²` along the
 SRF-PLL with offset `K_i η*`. -/
-@[powerlib_domain] private theorem hamiltonian_lie (m : Model) (x : State 2) :
+@[tmio M, powerlib_domain] private theorem hamiltonian_lie (m : Model) (x : State 2) :
     fderiv ℝ (pllHamiltonian m.V m.Ki m.ηs) x (srfField m.V m.Kp m.Ki (m.Ki * m.ηs) x) =
       -(m.Kp * srfPD m.V (x 0) ^ 2) := by
   have h := (pllPH m.V m.Kp m.Ki m.ηs m.damping).zeroInput_power_balance x

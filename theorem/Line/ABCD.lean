@@ -74,11 +74,11 @@ variable (p : Params)
 @[tmio M, powerlib_domain] theorem gamma_sq : p.γ ^ 2 = p.Z * p.Y := by
   rw [p.hZ, p.hγ]; ring
 
-@[powerlib_domain] theorem Zc_sq_mul_Y : p.Zc ^ 2 * p.Y = p.Z := by
+@[tmio M, powerlib_domain] theorem Zc_sq_mul_Y : p.Zc ^ 2 * p.Y = p.Z := by
   rw [p.hZ, p.hγ]; ring
 
 /-- Parameters exist for every line with `Z ≠ 0`, `Y ≠ 0` (principal square root). -/
-@[powerlib_domain] theorem exists_params {Z Y : ℂ} (hZ : Z ≠ 0) (hY : Y ≠ 0) :
+@[tmio M, powerlib_domain] theorem exists_params {Z Y : ℂ} (hZ : Z ≠ 0) (hY : Y ≠ 0) :
     ∃ q : Params, q.Z = Z ∧ q.Y = Y ∧ q.Zc = (Z / Y) ^ ((2 : ℂ)⁻¹) := by
   have hsq : ((Z / Y) ^ ((2 : ℂ)⁻¹)) ^ 2 = Z / Y := cpow_ofNat_inv_pow (Z / Y) 2
   have hne : (Z / Y) ^ ((2 : ℂ)⁻¹) ≠ 0 := by
@@ -111,7 +111,7 @@ def current (V₀ I₀ : ℂ) (x : ℝ) : ℂ := I₀ * cosh (p.γ * x) - V₀ /
   simpa [Function.comp_def, mul_comm] using this
 
 /-- The propagation profiles solve `V' = -Z I`, `I' = -Y V`. -/
-@[powerlib_domain] theorem propagation_solves (V₀ I₀ : ℂ) (x : ℝ) :
+@[tmio M, powerlib_domain] theorem propagation_solves (V₀ I₀ : ℂ) (x : ℝ) :
     HasDerivAt (voltage p V₀ I₀) (-p.Z * current p V₀ I₀ x) x ∧
       HasDerivAt (current p V₀ I₀) (-p.Y * voltage p V₀ I₀ x) x := by
   have hc := hasDerivAt_cosh_mul p.γ x
@@ -124,12 +124,12 @@ def current (V₀ I₀ : ℂ) (x : ℝ) : ℂ := I₀ * cosh (p.γ * x) - V₀ /
   · refine ((hc.const_mul I₀).sub (hs.const_mul (V₀ / p.Zc))).congr_deriv ?_
     rw [hY]; simp only [voltage]; field_simp; ring
 
-@[powerlib_domain] theorem propagation_zero (V₀ I₀ : ℂ) :
+@[tmio M, powerlib_domain] theorem propagation_zero (V₀ I₀ : ℂ) :
     voltage p V₀ I₀ 0 = V₀ ∧ current p V₀ I₀ 0 = I₀ := by
   simp [voltage, current]
 
 /-- Uniqueness: every solution of the line ODE is the propagation of its sending-end data. -/
-@[powerlib_domain] theorem eq_propagation {V I : ℝ → ℂ}
+@[tmio M, powerlib_domain] theorem eq_propagation {V I : ℝ → ℂ}
     (hV : ∀ x, HasDerivAt V (-p.Z * I x) x) (hI : ∀ x, HasDerivAt I (-p.Y * V x) x) (x : ℝ) :
     V x = voltage p (V 0) (I 0) x ∧ I x = current p (V 0) (I 0) x := by
   let F : ℂ × ℂ →L[ℝ] ℂ × ℂ :=
@@ -163,7 +163,7 @@ def chain (ℓ : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 
 /-- **ABCD relation**: the sending-end quantities are the chain matrix applied to the
 receiving-end quantities (`I₂` leaving end 2). -/
-@[powerlib_domain] theorem chain_relation (V₀ I₀ : ℂ) (ℓ : ℝ) :
+@[tmio M, powerlib_domain] theorem chain_relation (V₀ I₀ : ℂ) (ℓ : ℝ) :
     ![V₀, I₀] = chain p ℓ *ᵥ ![voltage p V₀ I₀ ℓ, current p V₀ I₀ ℓ] := by
   have hinv : p.Zc * p.Zc⁻¹ = 1 := mul_inv_cancel₀ p.Zc_ne
   have h := Complex.cosh_sq_sub_sinh_sq (p.γ * ℓ)
@@ -179,24 +179,24 @@ receiving-end quantities (`I₂` leaving end 2). -/
     linear_combination -I₀ * h + I₀ * sinh (p.γ * ℓ) ^ 2 * hinv
 
 /-- `det T = 1` (reciprocity). -/
-@[powerlib_domain] theorem det_chain (ℓ : ℂ) : (chain p ℓ).det = 1 := by
+@[tmio M, powerlib_domain] theorem det_chain (ℓ : ℂ) : (chain p ℓ).det = 1 := by
   have hinv : p.Zc * p.Zc⁻¹ = 1 := mul_inv_cancel₀ p.Zc_ne
   rw [chain, det_fin_two_of, div_eq_mul_inv]
   linear_combination Complex.cosh_sq_sub_sinh_sq (p.γ * ℓ) - sinh (p.γ * ℓ) ^ 2 * hinv
 
 /-- `A = D` (symmetric two-port). -/
-@[powerlib_domain] theorem chain_A_eq_D (ℓ : ℂ) : chain p ℓ 0 0 = chain p ℓ 1 1 := by
+@[tmio M, powerlib_domain] theorem chain_A_eq_D (ℓ : ℂ) : chain p ℓ 0 0 = chain p ℓ 1 1 := by
   simp [chain]
 
 /-- `B · C = sinh²(γℓ)`. -/
-@[powerlib_domain] theorem chain_B_mul_C (ℓ : ℂ) :
+@[tmio M, powerlib_domain] theorem chain_B_mul_C (ℓ : ℂ) :
     chain p ℓ 0 1 * chain p ℓ 1 0 = sinh (p.γ * ℓ) ^ 2 := by
   have hZc := p.Zc_ne
   simp [chain]
   field_simp
 
 /-- Cascade of two sections of the same line: `T(ℓ₁) T(ℓ₂) = T(ℓ₁ + ℓ₂)`. -/
-@[powerlib_domain] theorem chain_mul (ℓ₁ ℓ₂ : ℂ) :
+@[tmio M, powerlib_domain] theorem chain_mul (ℓ₁ ℓ₂ : ℂ) :
     chain p ℓ₁ * chain p ℓ₂ = chain p (ℓ₁ + ℓ₂) := by
   have hZc := p.Zc_ne
   rw [chain, chain, chain, mul_add, Complex.cosh_add, Complex.sinh_add]
@@ -213,14 +213,14 @@ receiving-end quantities (`I₂` leaving end 2). -/
 /-! ## Short- and open-circuit impedances -/
 
 /-- Short-circuit input impedance: with `V₂ = 0`, `V₁ = Z_c tanh(γℓ) I₁`. -/
-@[powerlib_domain] theorem shortCircuit (ℓ : ℂ) (I₂ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
+@[tmio M, powerlib_domain] theorem shortCircuit (ℓ : ℂ) (I₂ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
     (chain p ℓ *ᵥ ![0, I₂]) 0 = p.Zc * tanh (p.γ * ℓ) * (chain p ℓ *ᵥ ![0, I₂]) 1 := by
   simp [chain, mulVec, dotProduct, Fin.sum_univ_two, Complex.tanh_eq_sinh_div_cosh]
   field_simp
 
 /-- Open-circuit input impedance: with `I₂ = 0`, `sinh(γℓ) V₁ = Z_c cosh(γℓ) I₁`
 (`Z_oc = Z_c coth γℓ` when `sinh γℓ ≠ 0`). -/
-@[powerlib_domain] theorem openCircuit (ℓ : ℂ) (V₂ : ℂ) :
+@[tmio M, powerlib_domain] theorem openCircuit (ℓ : ℂ) (V₂ : ℂ) :
     sinh (p.γ * ℓ) * (chain p ℓ *ᵥ ![V₂, 0]) 0 =
       p.Zc * cosh (p.γ * ℓ) * (chain p ℓ *ᵥ ![V₂, 0]) 1 := by
   have hZc := p.Zc_ne
@@ -233,20 +233,20 @@ def Zsc (ℓ : ℂ) : ℂ := p.Zc * tanh (p.γ * ℓ)
 def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
 
 /-- Parameter identification: `Z_sc Z_oc = Z_c²`. -/
-@[powerlib_domain] theorem Zsc_mul_Zoc (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0)
+@[tmio M, powerlib_domain] theorem Zsc_mul_Zoc (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0)
     (hs : sinh (p.γ * ℓ) ≠ 0) : Zsc p ℓ * Zoc p ℓ = p.Zc ^ 2 := by
   simp only [Zsc, Zoc, Complex.tanh_eq_sinh_div_cosh]
   field_simp
 
 /-- `Z_sc / Z_oc = tanh²(γℓ)`. -/
-@[powerlib_domain] theorem Zsc_div_Zoc (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0)
+@[tmio M, powerlib_domain] theorem Zsc_div_Zoc (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0)
     (hs : sinh (p.γ * ℓ) ≠ 0) : Zsc p ℓ / Zoc p ℓ = tanh (p.γ * ℓ) ^ 2 := by
   have hZc := p.Zc_ne
   simp only [Zsc, Zoc, Complex.tanh_eq_sinh_div_cosh]
   field_simp
 
 /-- With `ρ = Z_sc/Z_c = tanh γℓ`: `exp(2γℓ) = (1+ρ)/(1-ρ)`. -/
-@[powerlib_domain] theorem exp_two_mul_gammaL (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
+@[tmio M, powerlib_domain] theorem exp_two_mul_gammaL (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
     1 - Zsc p ℓ / p.Zc ≠ 0 ∧
       exp (2 * (p.γ * ℓ)) = (1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc) := by
   have hZc := p.Zc_ne
@@ -264,7 +264,7 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
   ring_nf
 
 /-- Correction to `γℓ = ½ ln((1+ρ)/(1-ρ))`: the identity holds modulo `iπℤ`. -/
-@[powerlib_domain] theorem two_mul_gammaL_eq_log_add (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
+@[tmio M, powerlib_domain] theorem two_mul_gammaL_eq_log_add (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
     ∃ k : ℤ, 2 * (p.γ * ℓ) =
       log ((1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc)) + k * (2 * Real.pi * I) := by
   obtain ⟨-, h⟩ := exp_two_mul_gammaL p ℓ hc
@@ -285,7 +285,7 @@ def piChain (Zs Ysh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   fin_cases i <;> fin_cases j <;> simp [piChain, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
 /-- **Exact Π equivalent** (one frequency): `Z_s = Z_c sinh γℓ`, `Y_sh = tanh(γℓ/2)/Z_c`. -/
-@[powerlib_domain] theorem piChain_exact (ℓ : ℂ) (hc : cosh (p.γ * ℓ / 2) ≠ 0) :
+@[tmio M, powerlib_domain] theorem piChain_exact (ℓ : ℂ) (hc : cosh (p.γ * ℓ / 2) ≠ 0) :
     piChain (p.Zc * sinh (p.γ * ℓ)) (tanh (p.γ * ℓ / 2) / p.Zc) = chain p ℓ := by
   have hZc := p.Zc_ne
   have hs : sinh (p.γ * ℓ) = 2 * sinh (p.γ * ℓ / 2) * cosh (p.γ * ℓ / 2) := by
@@ -301,7 +301,7 @@ def piChain (Zs Ysh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   · linear_combination -hsq
 
 /-- Short-line limit of the exact series branch: `Z_s(ℓ) = Z_c sinh γℓ = Zℓ + o(ℓ)`. -/
-@[powerlib_domain] theorem piSeries_shortLine :
+@[tmio M, powerlib_domain] theorem piSeries_shortLine :
     HasDerivAt (fun ℓ : ℂ => p.Zc * sinh (p.γ * ℓ)) p.Z 0 := by
   have h := ((Complex.hasDerivAt_sinh (p.γ * 0)).comp (0 : ℂ)
     ((hasDerivAt_id (0 : ℂ)).const_mul p.γ)).const_mul p.Zc
@@ -310,7 +310,7 @@ def piChain (Zs Ysh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   exact h
 
 /-- Short-line limit of the exact shunt branch: `Y_sh(ℓ) = tanh(γℓ/2)/Z_c = (Y/2)ℓ + o(ℓ)`. -/
-@[powerlib_domain] theorem piShunt_shortLine :
+@[tmio M, powerlib_domain] theorem piShunt_shortLine :
     HasDerivAt (fun ℓ : ℂ => tanh (p.γ * ℓ / 2) / p.Zc) (p.Y / 2) 0 := by
   have hZc := p.Zc_ne
   have harg : HasDerivAt (fun ℓ : ℂ => p.γ * ℓ / 2) (p.γ / 2) 0 := by
@@ -334,7 +334,7 @@ def inputDen (ℓ ZL : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) + ZL * sinh (p.γ 
 
 /-- Port relation with a load `V₂ = Z_L I₂`:
 `V₁ (Z_c cosh γℓ + Z_L sinh γℓ) = Z_c (Z_L cosh γℓ + Z_c sinh γℓ) I₁`. -/
-@[powerlib_domain] theorem input_relation (ℓ ZL I₂ : ℂ) :
+@[tmio M, powerlib_domain] theorem input_relation (ℓ ZL I₂ : ℂ) :
     (chain p ℓ *ᵥ ![ZL * I₂, I₂]) 0 * inputDen p ℓ ZL =
       p.Zc * (ZL * cosh (p.γ * ℓ) + p.Zc * sinh (p.γ * ℓ)) * (chain p ℓ *ᵥ ![ZL * I₂, I₂]) 1 := by
   have hinv : p.Zc * p.Zc⁻¹ = 1 := mul_inv_cancel₀ p.Zc_ne
@@ -345,7 +345,7 @@ def inputDen (ℓ ZL : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) + ZL * sinh (p.γ 
     hinv
 
 /-- `Z_in = Z_c (Z_L + Z_c tanh γℓ)/(Z_c + Z_L tanh γℓ)` wherever both sides are defined. -/
-@[powerlib_domain] theorem inputImpedance_tanh (ℓ ZL : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
+@[tmio M, powerlib_domain] theorem inputImpedance_tanh (ℓ ZL : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
     p.Zc * (ZL * cosh (p.γ * ℓ) + p.Zc * sinh (p.γ * ℓ)) / inputDen p ℓ ZL =
       p.Zc * (ZL + p.Zc * tanh (p.γ * ℓ)) / (p.Zc + ZL * tanh (p.γ * ℓ)) := by
   simp only [inputDen, Complex.tanh_eq_sinh_div_cosh]
@@ -357,7 +357,7 @@ def inputDen (ℓ ZL : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) + ZL * sinh (p.γ 
 
 /-- Correction: with a short-circuited far end (`Z_L = 0`) the poles of `Z_in` are exactly the
 quarter-wave set `γℓ = (2k+1)πi/2`. -/
-@[powerlib_domain] theorem shorted_denominator_zero_iff (ℓ : ℂ) :
+@[tmio M, powerlib_domain] theorem shorted_denominator_zero_iff (ℓ : ℂ) :
     inputDen p ℓ 0 = 0 ↔ ∃ k : ℤ, p.γ * ℓ = (2 * k + 1) * Real.pi / 2 * I := by
   simp only [inputDen, zero_mul, add_zero, mul_eq_zero, p.Zc_ne, false_or]
   rw [← Complex.cos_mul_I, Complex.cos_eq_zero_iff]
@@ -384,7 +384,7 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
 
 /-- Correction: a matched load `Z_L = Z_c` produces no pole: the denominator is
 `Z_c e^{γℓ} ≠ 0` and `V₁ = Z_c I₁` at every frequency. -/
-@[powerlib_domain] theorem matched_inputImpedance (ℓ I₂ : ℂ) :
+@[tmio M, powerlib_domain] theorem matched_inputImpedance (ℓ I₂ : ℂ) :
     inputDen p ℓ p.Zc = p.Zc * exp (p.γ * ℓ) ∧
       (chain p ℓ *ᵥ ![p.Zc * I₂, I₂]) 0 = p.Zc * (chain p ℓ *ᵥ ![p.Zc * I₂, I₂]) 1 := by
   have hden : inputDen p ℓ p.Zc = p.Zc * exp (p.γ * ℓ) := by

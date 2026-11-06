@@ -356,7 +356,7 @@ def translate : Sentence → Set Requirement
 deviation in, frequency deviation out). -/
 def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- For `0 < M`, `0 < T_g`: Hurwitz iff `0 < M + D T_g` (trace) and `0 < K_R + D`
 (determinant). -/
@@ -527,7 +527,7 @@ forward solution under a load step are trajectory-level results outside the sent
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5: from rest, the right derivative of `Δω` at `0⁺` is `−ΔP_L / M_eff`. -/
-@[powerlib_domain] private theorem rocof {x : ℝ → ℝ²}
+@[tmio M, powerlib_domain] private theorem rocof {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
@@ -539,7 +539,7 @@ forward solution under a load step are trajectory-level results outside the sent
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 in Hz/s: with `f = f₀ (1 + Δω)` and `M_eff = 2 H_eff`, `ḟ(0⁺) = −ΔP_L f₀ / (2 H_eff)`. -/
-@[powerlib_domain] private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
+@[tmio M, powerlib_domain] private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant (2 * H) D K Tg).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) (-(ΔPL * f₀) / (2 * H)) (Ici 0) 0 := by
@@ -550,7 +550,7 @@ forward solution under a load step are trajectory-level results outside the sent
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.6 boxed: `Δω(t) → Δω^∞ = −ΔP_L/(K_R + D_eff)` along every forward solution under the load
 step, read from the connection theorem `mem_den_globallyExponentiallyStable` and linearity. -/
-@[powerlib_domain] private theorem tendsto_freq (m : Model) (hD : 0 ≤ m.D) (hKD : 0 < m.K + m.D) {x : ℝ → ℝ²}
+@[tmio TM, powerlib_domain] private theorem tendsto_freq (m : Model) (hD : 0 ≤ m.D) (hKD : 0 < m.K + m.D) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => m.plant.inputField (load ΔPL) y) (Ici 0)) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (m.K + m.D))) := by
   have hmem := mem_den_globallyExponentiallyStable m hD hKD
@@ -653,7 +653,7 @@ def fastEig (M D K Tg : ℝ) : ℝ := -(M + D * Tg + Real.sqrt (eigDisc M D K Tg
 
 /-! ### Characteristic roots -/
 
-@[powerlib_domain] private theorem root_aux (hΔ : 0 ≤ eigDisc M D K Tg) :
+@[tmio M, powerlib_domain] private theorem root_aux (hΔ : 0 ≤ eigDisc M D K Tg) :
     (M + D * Tg + Real.sqrt (eigDisc M D K Tg)) ^ 2
       - 2 * (M + D * Tg) * (M + D * Tg + Real.sqrt (eigDisc M D K Tg))
       + 4 * M * Tg * (D + K) = 0 := by
@@ -761,12 +761,12 @@ roots: `det(sI − A) = (s − λ_s)(s − λ_f)`. -/
   unfold eigDisc
   fun_prop
 
-@[powerlib_domain] private theorem continuous_rootSum :
+@[tmio M, powerlib_domain] private theorem continuous_rootSum :
     Continuous (fun Tg => M + D * Tg + Real.sqrt (eigDisc M D K Tg)) :=
   (continuous_const.add (continuous_const.mul continuous_id)).add
     (Real.continuous_sqrt.comp continuous_eigDisc)
 
-@[powerlib_domain] private theorem rootSum_zero (hM : 0 < M) :
+@[tmio M, powerlib_domain] private theorem rootSum_zero (hM : 0 < M) :
     M + D * 0 + Real.sqrt (eigDisc M D K 0) = 2 * M := by
   rw [eigDisc_zero, Real.sqrt_sq hM.le]
   ring
@@ -976,7 +976,7 @@ in, frequency deviation out). -/
 def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
   ⟨fun r => r.plant.system, ReducedMeets, reducedTranslate⟩
 
-@[powerlib_domain] theorem reducedFamily_isLinear :
+@[tmio M, powerlib_domain] theorem reducedFamily_isLinear :
     reducedFamily.IsLinear ReducedModel.plant := fun _ => rfl
 
 /-- The first-order model is Hurwitz iff `0 < K_R + D`. -/
@@ -1076,7 +1076,7 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
 
 /-! ### The first-order family and the connection conclusions of the limit -/
 
-@[powerlib_domain] theorem reduce_plant (m : Model) :
+@[tmio M, powerlib_domain] theorem reduce_plant (m : Model) :
     m.reduce.plant = reducedPlant m.M m.D m.K := rfl
 
 /-- No first-order model is both stable and unstable. -/
@@ -1246,7 +1246,7 @@ deviation, on `[0, T]`:
 `|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
 `|ΔP_m(t) − (−K_R Δω̄(t) + e^{−t/T_g} (ΔP_m(0) + K_R Δω(0)))|² ≤ C T_g² |x(0) − x^∞|²`
 (`x^∞` the quasi-steady state; the second bound includes the governor's initial layer). -/
-@[powerlib_domain] private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
+@[tmio TM, powerlib_domain] private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
     ∃ ε₀ > 0, ∃ C : ℝ, ∀ Tg, 0 < Tg → Tg ≤ ε₀ →
       ∀ (x : ℝ → ℝ²) (xbar : ℝ → EuclideanSpace ℝ (Fin 1)),
       (∀ t, HasDerivAt x ((plant M D K Tg).inputField (load ΔPL) (x t)) t) →

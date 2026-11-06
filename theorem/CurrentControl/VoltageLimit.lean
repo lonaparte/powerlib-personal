@@ -194,25 +194,25 @@ def point : ℝ² := y.design.equilibrium y.iref
 /-- The platform field translated so that the operating point is the origin. -/
 def field (z : ℝ²) : ℝ² := y.limitedField (z + y.point)
 
-@[simp, powerlib_domain] theorem point_zero : y.point 0 = y.iref := by
+@[tmio M, simp, powerlib_domain] theorem point_zero : y.point 0 = y.iref := by
   simp [point, PIParams.equilibrium]
 
-@[simp, powerlib_domain] theorem point_one :
+@[tmio M, simp, powerlib_domain] theorem point_one :
     y.point 1 = y.design.R * y.iref / y.design.Ki := by
   simp [point, PIParams.equilibrium]
 
 /-- The command at the operating point. Static evidence on the implementation. -/
-@[powerlib_domain] theorem control_point :
+@[tmio M, powerlib_domain] theorem control_point :
     y.design.control y.iref y.point = y.design.Ki * (y.design.R * y.iref / y.design.Ki) := by
   simp [PIParams.control]
 
 /-- With integral action the command at the operating point is the steady voltage `R i*`. Static
 evidence on the implementation. -/
-@[powerlib_domain] theorem control_point_of_ne (hKi : y.design.Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem control_point_of_ne (hKi : y.design.Ki ≠ 0) :
     y.design.control y.iref y.point = y.design.R * y.iref := by
   rw [control_point, mul_div_cancel₀ _ hKi]
 
-@[powerlib_domain] theorem abs_control_point_le :
+@[tmio M, powerlib_domain] theorem abs_control_point_le :
     |y.design.control y.iref y.point| ≤ |y.design.R * y.iref| := by
   by_cases hKi : y.design.Ki = 0
   · rw [control_point, hKi, zero_mul, abs_zero]
@@ -221,18 +221,18 @@ evidence on the implementation. -/
 
 /-- Wherever the command is in range the platform field is the design field. Static evidence on
 the implementation. -/
-@[powerlib_domain] theorem limitedField_eq_of_abs_le {x : ℝ²}
+@[tmio MI, powerlib_domain] theorem limitedField_eq_of_abs_le {x : ℝ²}
     (h : |y.design.control y.iref x| ≤ y.Vmax) :
     y.limitedField x = y.design.field y.iref x := by
   simp only [limitedField, applied, sat_of_abs_le h, PIParams.field]
 
-@[powerlib_domain] theorem continuous_control_shift :
+@[tmio M, powerlib_domain] theorem continuous_control_shift :
     Continuous fun z : ℝ² => y.design.control y.iref (z + y.point) := by
   unfold PIParams.control
   fun_prop
 
 /-- The unsaturated design field about the operating point is smooth. -/
-@[powerlib_domain] theorem contDiff_designField :
+@[tmio M, powerlib_domain] theorem contDiff_designField :
     ContDiff ℝ 1 (fun z => y.design.field y.iref (z + y.point)) := by
   rw [contDiff_euclidean]
   intro i
@@ -241,7 +241,7 @@ the implementation. -/
 /-! ### The modulation range (static evidence) -/
 
 /-- With `V_dc ≥ 0` the applied voltage lies in the linear range. -/
-@[powerlib_domain] theorem abs_applied_le (hV : 0 ≤ y.Vdc) (x : ℝ²) :
+@[tmio M, powerlib_domain] theorem abs_applied_le (hV : 0 ≤ y.Vdc) (x : ℝ²) :
     |y.applied x| ≤ y.Vmax := by
   have h := abs_sat_le y.Vmax (y.design.control y.iref x)
   have hm : 0 ≤ y.Vmax := div_nonneg hV (Real.sqrt_nonneg 3)
@@ -249,7 +249,7 @@ the implementation. -/
 
 /-- Every voltage the platform applies, as the space vector `sat(u) e^{jθ}` at any frame angle
 `θ`, is produced by leg voltages in `[0, V_dc]` (`Drives.Modulation.svpwm_linearRange`). -/
-@[powerlib_domain] theorem applied_synthesizable (hV : 0 ≤ y.Vdc) (x : ℝ²) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem applied_synthesizable (hV : 0 ≤ y.Vdc) (x : ℝ²) (θ : ℝ) :
     ∃ xa xb xc : ℝ, xa ∈ Icc 0 y.Vdc ∧ xb ∈ Icc 0 y.Vdc ∧ xc ∈ Icc 0 y.Vdc ∧
       Transform.SpaceVector.clarke xa xb xc =
         (y.applied x : ℂ) * Complex.exp (θ * Complex.I) := by
@@ -260,7 +260,7 @@ the implementation. -/
 /-- `V_max` is the largest synthesizable circle: every vector of modulus `ρ ≥ 0` is produced by leg
 voltages in `[0, V_dc]` iff `ρ ≤ V_max` (`Drives.Modulation.maxCircle_radius_le`,
 `Drives.Modulation.svpwm_linearRange`). -/
-@[powerlib_domain] theorem circle_synthesizable_iff {ρ : ℝ} (hρ : 0 ≤ ρ) :
+@[tmio M, powerlib_domain] theorem circle_synthesizable_iff {ρ : ℝ} (hρ : 0 ≤ ρ) :
     (∀ u : ℂ, ‖u‖ = ρ → ∃ xa xb xc : ℝ, xa ∈ Icc 0 y.Vdc ∧ xb ∈ Icc 0 y.Vdc ∧
       xc ∈ Icc 0 y.Vdc ∧ Transform.SpaceVector.clarke xa xb xc = u) ↔ ρ ≤ y.Vmax :=
   ⟨Drives.Modulation.maxCircle_radius_le _ ρ hρ,
@@ -269,7 +269,7 @@ voltages in `[0, V_dc]` iff `ρ ≤ V_max` (`Drives.Modulation.maxCircle_radius_
 /-! ### Implementation evidence (private) -/
 
 /-- With headroom, near the operating point the limit is inactive. -/
-@[powerlib_domain] private theorem field_eventuallyEq_design (hh : |y.design.R * y.iref| < y.Vmax) :
+@[tmio MI, powerlib_domain] private theorem field_eventuallyEq_design (hh : |y.design.R * y.iref| < y.Vmax) :
     y.field =ᶠ[𝓝 0] fun z => y.design.field y.iref (z + y.point) := by
   have hc := (continuous_abs.comp y.continuous_control_shift).tendsto 0
   have h0 : |y.design.control y.iref (0 + y.point)| < y.Vmax := by
@@ -280,13 +280,13 @@ voltages in `[0, V_dc]` iff `ρ ≤ V_max` (`Drives.Modulation.maxCircle_radius_
 
 /-- With headroom the platform field is `C¹` near the operating point, where it is the
 unsaturated design field. Static evidence on the implementation, not a connection conclusion. -/
-@[powerlib_domain] theorem contDiffAt_field (hh : |y.design.R * y.iref| < y.Vmax) :
+@[tmio M, powerlib_domain] theorem contDiffAt_field (hh : |y.design.R * y.iref| < y.Vmax) :
     ContDiffAt ℝ 1 y.field 0 :=
   y.contDiff_designField.contDiffAt.congr_of_eventuallyEq (y.field_eventuallyEq_design hh)
 
 /-- At an equilibrium the unsaturated design field about the operating point is the linear
 zero-input field of the design plant. -/
-@[powerlib_domain] private theorem designField_shift_of_zero (h0 : y.design.field y.iref y.point = 0) :
+@[tmio M, powerlib_domain] private theorem designField_shift_of_zero (h0 : y.design.field y.iref y.point = 0) :
     (fun z => y.design.field y.iref (z + y.point)) =
       affineLinearVectorField y.design.model.A 0 := by
   have he : IsEquilibrium (y.design.model.inputField fun _ => y.iref) y.point := by
@@ -297,7 +297,7 @@ zero-input field of the design plant. -/
   rw [← congrFun h z]
   exact (y.design.model_field _ _).symm
 
-@[powerlib_domain] private theorem designField_shift (hKi : y.design.Ki ≠ 0) :
+@[tmio M, powerlib_domain] private theorem designField_shift (hKi : y.design.Ki ≠ 0) :
     (fun z => y.design.field y.iref (z + y.point)) =
       affineLinearVectorField y.design.model.A 0 := by
   refine y.designField_shift_of_zero ?_
@@ -307,7 +307,7 @@ zero-input field of the design plant. -/
 
 /-- With headroom and integral action, near the operating point the platform field is the design's
 linear zero-input field. -/
-@[powerlib_domain] private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
+@[tmio MI, powerlib_domain] private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     y.field =ᶠ[𝓝 0] affineLinearVectorField y.design.model.A 0 := by
   rw [← y.designField_shift hKi]
@@ -403,11 +403,11 @@ def translate : Sentence → Set LimitRequirement
 def family : Family LimitedPI LimitRequirement 2 0 :=
   ⟨fun y => Port.System.autonomous y.field, Meets, translate⟩
 
-@[powerlib_domain] theorem family_isAutonomous : family.IsAutonomous field := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous field := fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
 
-@[powerlib_domain] private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki ≠ 0 := by
+@[tmio M, powerlib_domain] private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki ≠ 0 := by
   intro h0
   have := h.2
   rw [h0, zero_div] at this
@@ -459,7 +459,7 @@ sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_
   exact ⟨And.right, fun hs => ⟨y.design.isEquilibrium (ki_ne_of_stable hs) y.iref, hs⟩⟩
 
 /-- With overload and integral action, near the operating point the saturation is constant. -/
-@[powerlib_domain] private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki ≠ 0)
+@[tmio M, powerlib_domain] private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki ≠ 0)
     (ho : y.Vmax < |y.design.R * y.iref|) :
     y.field =ᶠ[𝓝 0] fun z => WithLp.toLp 2
       ![(-y.design.R * (z + y.point) 0 + sat y.Vmax (y.design.R * y.iref)) / y.design.L,
@@ -737,9 +737,9 @@ def implementation :
     Implementation PIParams Spectral.Requirement LimitedPI LimitRequirement 2 1 2 0 :=
   { model := PIParams.family, impl := family, realizes := Implementation.ofDesign design }
 
-@[powerlib_domain] private theorem implementation_model : implementation.model = PIParams.family := rfl
+@[tmio M, powerlib_domain] private theorem implementation_model : implementation.model = PIParams.family := rfl
 
-@[powerlib_domain] private theorem implementation_impl : implementation.impl = family := rfl
+@[tmio M, powerlib_domain] private theorem implementation_impl : implementation.impl = family := rfl
 
 /-- Within integral action and headroom, Lyapunov stability, local asymptotic and local
 exponential stability and instability are realized exactly, for every sign of `L`: near the
@@ -893,7 +893,7 @@ platform satisfies it. -/
 with `V_dc = 3` (`|R i*| = 1 < √3 = V_max`). -/
 def drifting : LimitedPI := ⟨⟨1, 1, 0, 0⟩, 1, 3⟩
 
-@[powerlib_domain] private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifting.Vmax := by
+@[tmio M, powerlib_domain] private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifting.Vmax := by
   simp only [Vmax, drifting, one_mul, abs_one]
   rw [lt_div_iff₀ (by positivity), one_mul, Real.sqrt_lt' (by norm_num)]
   norm_num

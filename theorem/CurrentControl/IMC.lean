@@ -69,7 +69,7 @@ variable {L R ωb : ℝ}
 @[tmio T, powerlib_foundation] theorem imc_charPoly (L R ωb : ℝ) (s : ℂ) :
     (L : ℂ) * s ^ 2 + (R + L * ωb) * s + R * ωb = (L * s + R) * (s + ωb) := by ring
 
-@[powerlib_domain] theorem imc_det_characteristicMatrix (hL : L ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem imc_det_characteristicMatrix (hL : L ≠ 0) (s : ℂ) :
     (characteristicMatrix (imc L R ωb).model.A s).det =
       ((L : ℂ) * s + R) * (s + ωb) / L := by
   rw [PIParams.det_characteristicMatrix _ hL]
@@ -79,7 +79,7 @@ variable {L R ωb : ℝ}
 
 /-- The cancelled plant pole `−R/L` is still a characteristic root of the closed loop. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem imc_cancelled_pole_root (hL : L ≠ 0) :
+@[tmio M, powerlib_domain] theorem imc_cancelled_pole_root (hL : L ≠ 0) :
     (characteristicMatrix (imc L R ωb).model.A ((-R / L : ℝ) : ℂ)).det = 0 := by
   have hL' : (L : ℂ) ≠ 0 := by exact_mod_cast hL
   rw [imc_det_characteristicMatrix hL]
@@ -88,7 +88,7 @@ evidence on the model, not a connection conclusion. -/
   ring
 
 /-- The PI zero sits on the plant pole: `Kp (−R/L) + Ki = 0`. -/
-@[powerlib_domain] theorem imc_numerator_root (hL : L ≠ 0) :
+@[tmio M, powerlib_domain] theorem imc_numerator_root (hL : L ≠ 0) :
     (imc L R ωb).Kp * (-R / L) + (imc L R ωb).Ki = 0 := by
   simp only [imc]
   field_simp
@@ -96,7 +96,7 @@ evidence on the model, not a connection conclusion. -/
 
 /-- Exact IMC closed-loop transfer: `ω_b/(s + ω_b)` off the roots `−R/L`, `−ω_b`. Static
 evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem imc_transfer_eq (hL : L ≠ 0) {s : ℂ} (h1 : (L : ℂ) * s + R ≠ 0)
+@[tmio M, powerlib_domain] theorem imc_transfer_eq (hL : L ≠ 0) {s : ℂ} (h1 : (L : ℂ) * s + R ≠ 0)
     (h2 : s + ωb ≠ 0) :
     transfer (imc L R ωb).model s 0 0 = ωb / (s + ωb) := by
   have hs : ((imc L R ωb).L : ℂ) * s ^ 2 + ((imc L R ωb).R + (imc L R ωb).Kp) * s +
@@ -153,21 +153,21 @@ def signedField (Vdc σ iref : ℝ) (x : ℝ²) : ℝ² :=
   WithLp.toLp 2 ![(-p.R * x 0 - Vdc * (σ * p.control iref x)) / p.L, iref - x 0]
 
 /-- `σ = −1` (`−G_ci ε`): the PI loop with gains `V_dc Kp`, `V_dc Ki`. -/
-@[powerlib_domain] theorem signedField_correct (Vdc iref : ℝ) (x : ℝ²) :
+@[tmio M, powerlib_domain] theorem signedField_correct (Vdc iref : ℝ) (x : ℝ²) :
     p.signedField Vdc (-1) iref x = (p.withGain Vdc).field iref x := by
   ext j
   fin_cases j <;> simp [signedField, field, control, withGain]
   ring
 
 /-- `σ = +1` (`+G_ci ε` copied from OUT literature): gains `−V_dc Kp`, `−V_dc Ki`. -/
-@[powerlib_domain] theorem signedField_copied (Vdc iref : ℝ) (x : ℝ²) :
+@[tmio M, powerlib_domain] theorem signedField_copied (Vdc iref : ℝ) (x : ℝ²) :
     p.signedField Vdc 1 iref x = (p.withGain (-Vdc)).field iref x := by
   ext j
   fin_cases j <;> simp [signedField, field, control, withGain]
   ring
 
 /-- Characteristic polynomial of the copied form: `L s² + (R − V_dc Kp) s − V_dc Ki`. -/
-@[powerlib_domain] theorem copied_det_characteristicMatrix (hL : p.L ≠ 0) (Vdc : ℝ)
+@[tmio M, powerlib_domain] theorem copied_det_characteristicMatrix (hL : p.L ≠ 0) (Vdc : ℝ)
     (s : ℂ) :
     (characteristicMatrix (p.withGain (-Vdc)).model.A s).det =
       ((p.L : ℂ) * s ^ 2 + (p.R - Vdc * p.Kp) * s - Vdc * p.Ki) / p.L := by
@@ -177,7 +177,7 @@ def signedField (Vdc σ iref : ℝ) (x : ℝ²) : ℝ² :=
 
 /-- The copied form has a negative state-matrix determinant. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_domain] theorem copied_det_neg (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
+@[tmio M, powerlib_domain] theorem copied_det_neg (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
     (hKi : 0 < p.Ki) : (p.withGain (-Vdc)).model.A.det < 0 := by
   change (!![-(p.R + -Vdc * p.Kp) / p.L, -Vdc * p.Ki / p.L; -1, 0] :
     Matrix (Fin 2) (Fin 2) ℝ).det < 0
@@ -189,7 +189,7 @@ connection conclusion. -/
 
 /-- The copied OUT form has a positive real closed-loop characteristic root. Static evidence on
 the model, not a connection conclusion. -/
-@[powerlib_domain] theorem copied_exists_pos_root (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
+@[tmio M, powerlib_domain] theorem copied_exists_pos_root (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
     (hKi : 0 < p.Ki) :
     ∃ r : ℝ, 0 < r ∧ (characteristicMatrix (p.withGain (-Vdc)).model.A r).det = 0 := by
   obtain ⟨r, hr, v, hv, heig⟩ :=
@@ -217,7 +217,7 @@ stable). -/
 
 /-- The copied OUT form does not track: some solution has `i(t) ↛ i*`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem copied_not_tracks (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc) (hKi : 0 < p.Ki)
+@[tmio TM, powerlib_domain] private theorem copied_not_tracks (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc) (hKi : 0 < p.Ki)
     (iref : ℝ) :
     ∃ x : ℝ → ℝ², (∀ t, HasDerivAt x (p.signedField Vdc 1 iref (x t)) t) ∧
       ¬ Tendsto (fun t => x t 0) atTop (𝓝 iref) := by

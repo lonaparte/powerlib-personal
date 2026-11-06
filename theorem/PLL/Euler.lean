@@ -79,7 +79,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 
 /-- The translated field of a PI-PLL model is `C¹`: the smoothness hypothesis of the generic Euler
 laws (`Numerics.euler_sound_small_step`). -/
-@[powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   (contDiff_piPLLField m.smooth).comp (contDiff_id.add contDiff_const)
 
 /-- **Without a step constraint the Euler realization of the PI-PLL models is not sound.** A locally
@@ -121,7 +121,7 @@ def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
 
 /-- The field of a reduced slow PLL model is `C¹` (it is linear): the smoothness hypothesis of the
 generic Euler laws (`Numerics.euler_sound_small_step`). -/
-@[powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   Linear.affine_contDiff _ _
 
 /-- **Without a step constraint the Euler realization of the reduced slow PLL models is not

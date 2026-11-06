@@ -204,7 +204,7 @@ output `i`). -/
 def family : Family IMCLoop Spectral.Requirement 2 1 :=
   Spectral.linearFamily IMCLoop.plant IMCLoop.Stable IMCLoop.Unstable
 
-@[powerlib_domain] theorem family_isLinear : family.IsLinear IMCLoop.plant :=
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear IMCLoop.plant :=
   Spectral.linearFamily_isLinear _ _ _
 
 /-- Hurwitz criterion of the IMC loop: the monic characteristic coefficients `α + R/L` and
@@ -222,7 +222,7 @@ def family : Family IMCLoop Spectral.Requirement 2 1 :=
 /-- The IMC loop is the converter PI loop with IMC tuning: for `L ≠ 0` its plant is the plant of
 `CurrentControl.imc L R α` (`K_p = Lα`, `K_i = Rα`). Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_domain] theorem imcModel_eq (L R α : ℝ) (hL : L ≠ 0) :
+@[tmio M, powerlib_domain] theorem imcModel_eq (L R α : ℝ) (hL : L ≠ 0) :
     imcModel L R α = (CurrentControl.imc L R α).model := by
   ext i j <;> fin_cases i <;> fin_cases j <;>
     simp [imcModel, siso2, CurrentControl.PIParams.model, CurrentControl.imc] <;> field_simp
@@ -268,7 +268,7 @@ are uniform constants `K, rate > 0` such that every closed-loop trajectory satis
 `‖(i(t) − i*, ξ(t) − i*/α)‖ ≤ K e^{−rate t} ‖(i(0) − i*, ξ(0) − i*/α)‖` for `t ≥ 0`;
 in particular `|i(t) − i*|` obeys the same bound.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem imcLoop_exponentiallyStable_tracking (L R α iref : ℝ) (hL : 0 < L)
+@[tmio TM, powerlib_domain] private theorem imcLoop_exponentiallyStable_tracking (L R α iref : ℝ) (hL : 0 < L)
     (hR : 0 < R) (hα : 0 < α) :
     ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝ²,
       (∀ t, HasDerivAt x (imcField L R α iref (x t)) t) → ∀ t, 0 ≤ t →
@@ -299,7 +299,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- Every closed-loop current converges to the reference.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_domain] private theorem imcLoop_current_tendsto (L R α iref : ℝ) (hL : 0 < L) (hR : 0 < R)
+@[tmio TM, powerlib_domain] private theorem imcLoop_current_tendsto (L R α iref : ℝ) (hL : 0 < L) (hR : 0 < R)
     (hα : 0 < α) {x : ℝ → ℝ²} (hx : ∀ t, HasDerivAt x (imcField L R α iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
   obtain ⟨K, hK, rate, hrate, hbound⟩ := imcLoop_exponentiallyStable_tracking L R α iref hL hR hα

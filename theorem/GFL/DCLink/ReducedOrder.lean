@@ -149,7 +149,7 @@ def field (x : State 4) : State 4 :=
     (p.I0 + 3 * (p.vgd (x 0) id * id + p.vgq (x 0) id * p.iq0) / (2 * x 2)) / p.Cdc,
     p.VdcRef - x 2]
 
-@[powerlib_domain] theorem field_eq_zero_iff (x : State 4) :
+@[tmio M, powerlib_domain] theorem field_eq_zero_iff (x : State 4) :
     p.field x = 0 ↔
       p.ωs - p.ωg + p.kp * p.vgq (x 0) (p.idRef (x 2) (x 3)) + p.ki * x 1 = 0 ∧
       p.vgq (x 0) (p.idRef (x 2) (x 3)) = 0 ∧
@@ -175,7 +175,7 @@ def field (x : State 4) : State 4 :=
 /-- Necessary equilibrium conditions (`k_i ≠ 0`): `v_q = 0`, `V_dc = V_dc*`,
 `x_pll = (ω_g − ω_s)/k_i`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem equilibrium_necessary (hki : p.ki ≠ 0) {x : State 4}
+@[tmio M, powerlib_domain] theorem equilibrium_necessary (hki : p.ki ≠ 0) {x : State 4}
     (hx : p.field x = 0) :
     p.vgq (x 0) (p.idRef (x 2) (x 3)) = 0 ∧ x 2 = p.VdcRef ∧ x 1 = (p.ωg - p.ωs) / p.ki := by
   obtain ⟨h0, h1, -, h3⟩ := (p.field_eq_zero_iff x).mp hx
@@ -199,7 +199,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- With `R_g = 0` and `i_q0 = 0`, every equilibrium satisfies the power-angle relation
 `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ` (`C_dc ≠ 0`, `V_dc* ≠ 0`, `X_g ≠ 0`, `k_i ≠ 0`).
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem equilibrium_powerAngle (hki : p.ki ≠ 0) (hC : p.Cdc ≠ 0)
+@[tmio M, powerlib_domain] theorem equilibrium_powerAngle (hki : p.ki ≠ 0) (hC : p.Cdc ≠ 0)
     (hV : p.VdcRef ≠ 0) (hX : p.Xg ≠ 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) {x : State 4}
     (hx : p.field x = 0) :
     p.I0 * p.VdcRef = 3 * p.Vg ^ 2 / (4 * p.Xg) * Real.sin (2 * x 0) ∧
@@ -218,7 +218,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Existence of an equilibrium of model B (`R_g = 0`, `i_q0 = 0`, `X_g > 0`, `V_dc* > 0`,
 `V_g ≠ 0`, nonzero `C_dc`, `k_i`, `k_iv`): iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem exists_equilibrium_iff (hki : p.ki ≠ 0) (hkiv : p.kiv ≠ 0)
+@[tmio M, powerlib_domain] theorem exists_equilibrium_iff (hki : p.ki ≠ 0) (hkiv : p.kiv ≠ 0)
     (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef) (hX : 0 < p.Xg) (hVg : p.Vg ≠ 0) (hR : p.Rg = 0)
     (hq : p.iq0 = 0) :
     (∃ x, p.field x = 0) ↔ |p.I0| * p.VdcRef ≤ 3 * p.Vg ^ 2 / (4 * p.Xg) := by
@@ -267,7 +267,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Fold of model B (`R_g = 0`, `i_q0 = 0`): at an equilibrium on the existence boundary
 `|I₀| V_dc* = 3 V_g² / (4 X_g)` the d-axis current satisfies `|X_g i_d| = |V_g| / √2`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_domain] theorem fold_current (hki : p.ki ≠ 0) (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef)
+@[tmio M, powerlib_domain] theorem fold_current (hki : p.ki ≠ 0) (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef)
     (hX : 0 < p.Xg) (hVg : p.Vg ≠ 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) {x : State 4}
     (hx : p.field x = 0) (hfold : |p.I0| * p.VdcRef = 3 * p.Vg ^ 2 / (4 * p.Xg)) :
     |p.Xg * p.idRef (x 2) (x 3)| = |p.Vg| / Real.sqrt 2 := by

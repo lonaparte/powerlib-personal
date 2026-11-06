@@ -388,22 +388,22 @@ end FoldLocal
 section Members
 
 /-- The translated field is `C¹`. -/
-@[powerlib_domain] theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
+@[tmio M, powerlib_domain] theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
   (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
 
-@[powerlib_domain] private theorem model_field0 (m : Model) (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] private theorem model_field0 (m : Model) (z : Dynamics.State 3) :
     m.field z 0 = m.params.kp * vq m.params (z 0 + m.θ) (z 2 + m.Id) + m.params.ki * z 1 := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-@[powerlib_domain] private theorem model_field1 (m : Model) (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] private theorem model_field1 (m : Model) (z : Dynamics.State 3) :
     m.field z 1 = vq m.params (z 0 + m.θ) (z 2 + m.Id) := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-@[powerlib_domain] private theorem model_field2 (m : Model) (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] private theorem model_field2 (m : Model) (z : Dynamics.State 3) :
     m.field z 2 = m.params.kP * (m.params.Pref - power m.params (z 0 + m.θ) (z 2 + m.Id)) := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-@[powerlib_domain] private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
+@[tmio M, powerlib_domain] private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
     (φ ι : ℝ) : vq p (φ + θ) (ι + Id) =
       -(p.V * Real.cos θ) * Real.sin φ + p.V * Real.sin θ * (1 - Real.cos φ) + -p.Xg * ι := by
   unfold vq
@@ -413,7 +413,7 @@ section Members
 /-- The translated field of a balanced model, with `A = V cos θ*`, `B = V sin θ*`, `ι = i_d − i_d*`:
 `φ̇ = k_p v + k_i x`, `ẋ = v`, `−X_g i̇_d = (3/2)k_P (AB − (A cos φ − B sin φ)(−X_g ι + B))` where
 `v = −A sin φ + B(1 − cos φ) − X_g ι`. -/
-@[powerlib_domain] theorem model_fold_form {m : Model} (heq : IsEq m.params m.θ m.Id)
+@[tmio M, powerlib_domain] theorem model_fold_form {m : Model} (heq : IsEq m.params m.θ m.Id)
     (z : Dynamics.State 3) :
     m.field z 0 = m.params.kp * (-(m.params.V * Real.cos m.θ) * Real.sin (z 0) +
         m.params.V * Real.sin m.θ * (1 - Real.cos (z 0)) + -m.params.Xg * z 2) +
