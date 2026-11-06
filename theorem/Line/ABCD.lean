@@ -279,7 +279,7 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
 def piChain (Zs Ysh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![1, 0; Ysh, 1] * !![1, Zs; 0, 1] * !![1, 0; Ysh, 1]
 
-@[tmio M, powerlib_foundation] theorem piChain_eq (Zs Ysh : ℂ) :
+@[tmio M, powerlib_domain] theorem piChain_eq (Zs Ysh : ℂ) :
     piChain Zs Ysh = !![1 + Zs * Ysh, Zs; Ysh * (2 + Zs * Ysh), 1 + Zs * Ysh] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [piChain, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
@@ -477,7 +477,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   norm_num
 
 /-- DC values on the principal branch: `Z_c(0) = √(R'/G')`, `γ(0) = √(R'G')`. -/
-@[tmio M, powerlib_foundation] theorem ZcOf_zero {L C R G : ℝ} (hR : 0 ≤ R) (hG : 0 < G) :
+@[tmio M, powerlib_domain] theorem ZcOf_zero {L C R G : ℝ} (hR : 0 ≤ R) (hG : 0 < G) :
     ZcOf L C R G 0 = (Real.sqrt (R / G) : ℂ) ∧ gammaOf L C R G 0 = (Real.sqrt (R * G) : ℂ) := by
   have h1 : ZcOf L C R G 0 = (Real.sqrt (R / G) : ℂ) := by
     rw [ZcOf]
@@ -513,7 +513,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   field_simp
 
 /-- High-frequency limit on the principal branch: `Z_c(s) → √(L'/C')` as `|s| → ∞`. -/
-@[tmio M, powerlib_foundation] theorem ZcOf_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
+@[tmio M, powerlib_domain] theorem ZcOf_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
     Filter.Tendsto (ZcOf L C R G) (Bornology.cobounded ℂ) (nhds (Real.sqrt (L / C) : ℂ)) := by
   have hslit : ((L / C : ℝ) : ℂ) ∈ Complex.slitPlane :=
     Complex.ofReal_mem_slitPlane.mpr (div_pos hL hC)
@@ -524,7 +524,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
 
 /-- High-frequency limit of the propagation constant on the same branch:
 `γ(s)/s → √(L'C')`. -/
-@[tmio M, powerlib_foundation] theorem gammaOf_div_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
+@[tmio M, powerlib_domain] theorem gammaOf_div_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
     Filter.Tendsto (fun s => gammaOf L C R G s / s) (Bornology.cobounded ℂ)
       (nhds (Real.sqrt (L * C) : ℂ)) := by
   have hlim : Filter.Tendsto (fun s : ℂ => ZcOf L C R G s * (G * s⁻¹ + C)) (Bornology.cobounded ℂ)

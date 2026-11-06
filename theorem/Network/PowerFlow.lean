@@ -4,7 +4,7 @@ import theorem.Network.WeightedLaplacian
 
 /-! # Power flow: the lossless injection map, two-bus line powers, the decoupling rotation
 
-Static foundation: the lossless active-power injection map of a network, and identities and
+Static model algebra: the lossless active-power injection map of a network, and identities and
 derivatives of the complex power `S̄ = V̄ Ī*` carried by one line between two voltage phasors.
 No model family is defined and no behavioural sentence is stated.
 
@@ -123,7 +123,7 @@ def lineP (V R X : ℝ) (δ E : ℝ) : ℝ :=
 def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   (X * (E ^ 2 - E * V * Real.cos δ) - R * E * V * Real.sin δ) / (R ^ 2 + X ^ 2)
 
-@[tmio M, powerlib_foundation] theorem lineP_deriv_delta (V R X : ℝ) :
+@[tmio M, powerlib_domain] theorem lineP_deriv_delta (V R X : ℝ) :
     HasDerivAt (fun δ => lineP V R X δ V) (X * V ^ 2 / (R ^ 2 + X ^ 2)) 0 := by
   have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul R).add
     ((Real.hasDerivAt_sin 0).const_mul (X * V * V)) |>.div_const (R ^ 2 + X ^ 2)
@@ -131,7 +131,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   · funext δ; simp only [lineP, Pi.add_apply]
   · simp; ring
 
-@[tmio M, powerlib_foundation] theorem lineP_deriv_E (V R X : ℝ) :
+@[tmio M, powerlib_domain] theorem lineP_deriv_E (V R X : ℝ) :
     HasDerivAt (fun E => lineP V R X 0 E) (R * V / (R ^ 2 + X ^ 2)) V := by
   have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul R)
     |>.div_const (R ^ 2 + X ^ 2)
@@ -139,7 +139,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   · funext E; simp [lineP]
   · simp; ring
 
-@[tmio M, powerlib_foundation] theorem lineQ_deriv_delta (V R X : ℝ) :
+@[tmio M, powerlib_domain] theorem lineQ_deriv_delta (V R X : ℝ) :
     HasDerivAt (fun δ => lineQ V R X δ V) (-(R * V ^ 2) / (R ^ 2 + X ^ 2)) 0 := by
   have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul X).sub
     ((Real.hasDerivAt_sin 0).const_mul (R * V * V)) |>.div_const (R ^ 2 + X ^ 2)
@@ -147,7 +147,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   · funext δ; simp only [lineQ, Pi.sub_apply]
   · simp; ring
 
-@[tmio M, powerlib_foundation] theorem lineQ_deriv_E (V R X : ℝ) :
+@[tmio M, powerlib_domain] theorem lineQ_deriv_E (V R X : ℝ) :
     HasDerivAt (fun E => lineQ V R X 0 E) (X * V / (R ^ 2 + X ^ 2)) V := by
   have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul X)
     |>.div_const (R ^ 2 + X ^ 2)

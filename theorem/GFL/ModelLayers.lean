@@ -9,7 +9,7 @@ Port current IN-positive (work-sync conventions §D1); active power absorbed-pos
 every layer (the dc carrier also keeps the OUT-positive writing as sign flags, `outConv`).
 Scaffold: `theorem/CurrentDirection.agda`.
 
-Foundation module: algebraic identities about the model layers of the GFL side of
+Algebraic identities about the model layers of the GFL side of
 `gfl-gfm-stability-tree`. Each layer is written as its defining relations (KVL of filter and line
 in the PLL frame, current loop, PLL, dc balance); the statements solve those relations exactly.
 No time-scale (Tikhonov) or convergence statement is made: the note's numerical claims
@@ -313,12 +313,12 @@ def loopFactor (sL sP sK kpv Lg C V id : ℝ) : ℝ :=
   1 - sK * sP * sL * (3 / 2 * kpv * Lg * id) / (C * V)
 
 /-- Flipping all four signs (`i_d`, `s_L`, `s_P`, `s_K`) leaves `D₁` unchanged. -/
-@[tmio M, powerlib_foundation] theorem loopFactor_flip_all (sL sP sK kpv Lg C V id : ℝ) :
+@[tmio M, powerlib_domain] theorem loopFactor_flip_all (sL sP sK kpv Lg C V id : ℝ) :
     loopFactor (-sL) (-sP) (-sK) kpv Lg C V (-id) = loopFactor sL sP sK kpv Lg C V id := by
   unfold loopFactor; ring
 
 /-- Flipping only the current gives `2 − D₁`. -/
-@[tmio M, powerlib_foundation] theorem loopFactor_flip_current (sL sP sK kpv Lg C V id : ℝ) :
+@[tmio M, powerlib_domain] theorem loopFactor_flip_current (sL sP sK kpv Lg C V id : ℝ) :
     loopFactor sL sP sK kpv Lg C V (-id) = 2 - loopFactor sL sP sK kpv Lg C V id := by
   unfold loopFactor; ring
 

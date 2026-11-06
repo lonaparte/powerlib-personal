@@ -62,7 +62,7 @@ def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -
 
 /-! ## Spectrum -/
 
-@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_dqRL (R L ω : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix_dqRL (R L ω : ℝ) (s : ℂ) :
     (characteristicMatrix (dqRLMatrix R L ω) s).det = (s + (R / L : ℝ)) ^ 2 + (ω : ℂ) ^ 2 := by
   simp [characteristicMatrix, dqRLMatrix, det_fin_two]
   ring
@@ -79,7 +79,7 @@ def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -
     nlinarith [sq_nonneg z.re, sq_nonneg ω]
 
 /-- The eigenvalue `−R/L + jω` of the dq state matrix. -/
-@[tmio T, powerlib_foundation] theorem dqRL_root (R L ω : ℝ) :
+@[tmio M, powerlib_domain] theorem dqRL_root (R L ω : ℝ) :
     (characteristicMatrix (dqRLMatrix R L ω) (-(R / L : ℝ) + ω * Complex.I)).det = 0 := by
   rw [det_characteristicMatrix_dqRL]
   ring_nf
@@ -87,7 +87,7 @@ def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -
   ring
 
 /-- The dq state matrix is spectrally stable iff `R/L > 0` (eigenvalues `−R/L ± jω`). -/
-@[tmio TM, powerlib_foundation] theorem spectrallyStable_dqRLMatrix_iff (R L ω : ℝ) :
+@[tmio TM, powerlib_domain] theorem spectrallyStable_dqRLMatrix_iff (R L ω : ℝ) :
     SpectrallyStable (dqRLMatrix R L ω) ↔ 0 < R / L := by
   constructor
   · intro h
@@ -101,7 +101,7 @@ def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -
 
 /-- The dq state matrix is Hurwitz iff `R/L > 0`, at every frame speed. Static evidence on the
 model, not a connection conclusion. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_dqRLMatrix_iff (R L ω : ℝ) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_dqRLMatrix_iff (R L ω : ℝ) :
     IsHurwitz (dqRLMatrix R L ω) ↔ 0 < R / L := by
   rw [← spectrallyStable_iff_isHurwitz, spectrallyStable_dqRLMatrix_iff]
 
@@ -115,7 +115,7 @@ def dqImpedance (R L ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![s * L + R, -(ω * L); ω * L, s * L + R]
 
 /-- The plant's field is the dq KVL `L i' = v − R i − ωL J i` of `T-park-transformation.md` §1.4. -/
-@[tmio T, powerlib_foundation] theorem dqRLPlant_field (R L ω : ℝ) (x : EuclideanSpace ℝ (Fin 2))
+@[tmio M, powerlib_domain] theorem dqRLPlant_field (R L ω : ℝ) (x : EuclideanSpace ℝ (Fin 2))
     (v : Fin 2 → ℝ) :
     WithLp.ofLp ((dqRLPlant R L ω).inputField v x) =
       L⁻¹ • (v - R • WithLp.ofLp x) - ω • (J *ᵥ WithLp.ofLp x) := by
@@ -123,7 +123,7 @@ def dqImpedance (R L ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     simp [dqRLPlant, Plant.inputField, op, dqRLMatrix, J, Matrix.mulVec, dotProduct,
       Fin.sum_univ_two] <;> ring
 
-@[tmio T, powerlib_foundation] theorem characteristicMatrix_dqRL_eq {R L : ℝ} (hL : L ≠ 0) (ω : ℝ)
+@[tmio M, powerlib_domain] theorem characteristicMatrix_dqRL_eq {R L : ℝ} (hL : L ≠ 0) (ω : ℝ)
     (s : ℂ) : characteristicMatrix (dqRLMatrix R L ω) s = (L⁻¹ : ℂ) • dqImpedance R L ω s := by
   have hL' : (L : ℂ) ≠ 0 := by exact_mod_cast hL
   ext i j; fin_cases i <;> fin_cases j <;>
@@ -131,7 +131,7 @@ def dqImpedance (R L ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     field_simp
 
 /-- The dq admittance of the plant inverts the dq impedance wherever `s` is not a pole. -/
-@[tmio T, powerlib_foundation] theorem transfer_dqRLPlant_mul_dqImpedance {R L : ℝ} (hL : L ≠ 0)
+@[tmio M, powerlib_domain] theorem transfer_dqRLPlant_mul_dqImpedance {R L : ℝ} (hL : L ≠ 0)
     (ω : ℝ) {s : ℂ} (hs : (characteristicMatrix (dqRLMatrix R L ω) s).det ≠ 0) :
     transfer (dqRLPlant R L ω) s * dqImpedance R L ω s = 1 := by
   have hL' : (L : ℂ) ≠ 0 := by exact_mod_cast hL
@@ -160,7 +160,7 @@ the statements below:
 
 /-- Park maps αβ-frame RL trajectories to dq-frame RL trajectories, for any differentiable
 frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
-@[tmio M, powerlib_foundation] theorem dqRL_of_alphaBetaRL {R L : ℝ} {θ ω : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem dqRL_of_alphaBetaRL {R L : ℝ} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
     (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) :
     ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
@@ -171,7 +171,7 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
   rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
 
 /-- Inverse direction: rotating a dq-frame trajectory back gives an αβ-frame trajectory. -/
-@[tmio M, powerlib_foundation] theorem alphaBetaRL_of_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem alphaBetaRL_of_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
     (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t) :
     ∀ t, HasDerivAt (fun t => rot (θ t) *ᵥ i t)
@@ -181,7 +181,7 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
   rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
 
 /-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`. -/
-@[tmio M, powerlib_foundation] theorem alphaBetaRL_iff_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem alphaBetaRL_iff_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) (v i : ℝ → Fin 2 → ℝ) :
     (∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) ↔
       ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
@@ -195,7 +195,7 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
 /-! ## Amplitude–phase coordinates of a dq current (`T-invariant-coordinates.md` §1.3) -/
 
 /-- Squared-amplitude balance of the dq R–L filter: the frame-rotation terms cancel. -/
-@[tmio M, powerlib_foundation] theorem hasDerivAt_half_sq_amplitude {L R : ℝ} (hL : L ≠ 0)
+@[tmio M, powerlib_domain] theorem hasDerivAt_half_sq_amplitude {L R : ℝ} (hL : L ≠ 0)
     {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
     (hd : HasDerivAt Id ((Vd t - Vcd t - R * Id t + ω t * L * Iq t) / L) t)
     (hq : HasDerivAt Iq ((Vq t - Vcq t - R * Iq t - ω t * L * Id t) / L) t) :
@@ -238,7 +238,7 @@ phase differs locally by a constant). -/
 
 /-- Phase dynamics of the dq R–L filter:
 `φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω`. -/
-@[tmio M, powerlib_foundation] theorem hasDerivAt_phase {L R : ℝ} (hL : L ≠ 0)
+@[tmio M, powerlib_domain] theorem hasDerivAt_phase {L R : ℝ} (hL : L ≠ 0)
     {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
     (hd : HasDerivAt Id ((Vd t - Vcd t - R * Id t + ω t * L * Iq t) / L) t)
     (hq : HasDerivAt Iq ((Vq t - Vcq t - R * Iq t - ω t * L * Id t) / L) t)

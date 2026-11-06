@@ -5,7 +5,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-! # Closed-form current-limiting design formulas
 
-All statements are algebraic or trigonometric facts (foundation) about the formulas of work-sync
+All statements are algebraic or trigonometric facts about the formulas of work-sync
 T-current-limiting / T-gfm-control §1.10; none asserts stability of a converter.
 
 Model boundary.
@@ -67,7 +67,7 @@ def currentMag (E V R X δ : ℝ) : ℝ :=
   ring
 
 /-- Law of cosines for the current magnitude. -/
-@[tmio M, powerlib_foundation] theorem currentMag_sq (R X E V δ : ℝ) :
+@[tmio M, powerlib_domain] theorem currentMag_sq (R X E V δ : ℝ) :
     currentMag E V R X δ ^ 2 = (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / (R ^ 2 + X ^ 2) := by
   rw [currentMag, div_pow, currentMag_sq_num, normZ_sq]
 
@@ -75,11 +75,11 @@ def currentMag (E V R X δ : ℝ) : ℝ :=
 def deltaExit (E V R X Imax : ℝ) : ℝ :=
   Real.arccos ((E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
 
-@[tmio M, powerlib_foundation] private lemma currentMag_nonneg (E V R X δ : ℝ) :
+@[tmio M, powerlib_domain] private lemma currentMag_nonneg (E V R X δ : ℝ) :
     0 ≤ currentMag E V R X δ := div_nonneg (norm_nonneg _) (norm_nonneg _)
 
 /-- At `δ_exit` the current is exactly `I_max` (under the `arccos` domain premise). -/
-@[tmio M, powerlib_foundation] theorem deltaExit_current {E V R X Imax : ℝ} (hE : 0 < E) (hV : 0 < V)
+@[tmio M, powerlib_domain] theorem deltaExit_current {E V R X Imax : ℝ} (hE : 0 < E) (hV : 0 < V)
     (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
     (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
     (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1) :
@@ -101,7 +101,7 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
   constructor <;> rintro ⟨a, b⟩ <;> constructor <;> nlinarith
 
 /-- On `[0, π]` the current is below `I_max` iff `δ < δ_exit`. -/
-@[tmio TM, powerlib_foundation] theorem current_lt_iff {E V R X Imax δ : ℝ} (hE : 0 < E) (hV : 0 < V)
+@[tmio TM, powerlib_domain] theorem current_lt_iff {E V R X Imax δ : ℝ} (hE : 0 < E) (hV : 0 < V)
     (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
     (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
     (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1)
@@ -124,7 +124,7 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
     rwa [Real.cos_arccos hdom1 hdom2] at h'
 
 /-- If `I_max |Z| > E + V` the current limit is never reached: no exit angle exists. -/
-@[tmio M, powerlib_foundation] theorem current_lt_of_large_limit {E V R X Imax : ℝ} (hE : 0 ≤ E)
+@[tmio M, powerlib_domain] theorem current_lt_of_large_limit {E V R X Imax : ℝ} (hE : 0 ≤ E)
     (hV : 0 ≤ V) (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
     (h : (E + V) ^ 2 < Imax ^ 2 * (R ^ 2 + X ^ 2)) (δ : ℝ) :
     currentMag E V R X δ < Imax := by
@@ -146,11 +146,11 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
 /-- Fault-mode reactive reference for `V_pu ≤ 0.9`. -/
 def qStar (S Vpu : ℝ) : ℝ := if Vpu ≤ 1 / 2 then S else 2 * S * (1 - Vpu)
 
-@[tmio M, powerlib_foundation] theorem qStar_half (S : ℝ) : qStar S (1 / 2) = 2 * S * (1 - 1 / 2) := by
+@[tmio M, powerlib_domain] theorem qStar_half (S : ℝ) : qStar S (1 / 2) = 2 * S * (1 - 1 / 2) := by
   simp [qStar]
   ring
 
-@[tmio M, powerlib_foundation] theorem qStar_bounds {S Vpu : ℝ} (hS : 0 ≤ S) (hV : Vpu ≤ 9 / 10) :
+@[tmio M, powerlib_domain] theorem qStar_bounds {S Vpu : ℝ} (hS : 0 ≤ S) (hV : Vpu ≤ 9 / 10) :
     0 ≤ qStar S Vpu ∧ qStar S Vpu ≤ S := by
   unfold qStar
   split_ifs with h
@@ -159,7 +159,7 @@ def qStar (S Vpu : ℝ) : ℝ := if Vpu ≤ 1 / 2 then S else 2 * S * (1 - Vpu)
     constructor <;> nlinarith
 
 /-- `S_new = V_pu S_n`, `P* = √(S_new² − Q*²)`: a real solution with `P*² + Q*² = S_new²`. -/
-@[tmio M, powerlib_foundation] theorem snew_circle {Sn Vpu : ℝ} (hSn : 0 ≤ Sn) (hV0 : 0 ≤ Vpu)
+@[tmio M, powerlib_domain] theorem snew_circle {Sn Vpu : ℝ} (hSn : 0 ≤ Sn) (hV0 : 0 ≤ Vpu)
     (hV : Vpu ≤ 9 / 10) :
     let S := Vpu * Sn
     0 ≤ Real.sqrt (S ^ 2 - qStar S Vpu ^ 2) ∧

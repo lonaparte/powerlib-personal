@@ -26,7 +26,7 @@ The IMC current-loop family:
 Source: work-sync `theory/T-field-oriented-control.md` §1.5 (IMC tuning), §1.8 (speed loop),
 §1.9 (forward Euler, complex-vector form); `theory/T-gfl-control.md` (same IMC rule).
 
-Results (foundation).
+Results (generic SISO theory and drive-model identities).
 * `siso2_transfer`: transfer function of a two-state SISO realization (adjugate formula).
 * `imcModel_transfer`: the IMC closed loop is **exactly** `α/(s + α)` at every `s` that is not
   a closed-loop eigenvalue (`s ≠ −α`, `s ≠ −R/L`); the plant pole `−R/L` is cancelled by the
@@ -122,7 +122,7 @@ def imcModel (L R α : ℝ) : Plant 2 1 :=
   siso2 (-(α + R / L)) (R * α / L) (-1) 0 α 1 1 0
 
 /-- The closed-loop field is exactly the plant's field with input `i*`. -/
-@[tmio M, powerlib_foundation] theorem imcField_eq_model (L R α iref : ℝ) (hL : L ≠ 0) (x : ℝ²) :
+@[tmio M, powerlib_domain] theorem imcField_eq_model (L R α iref : ℝ) (hL : L ≠ 0) (x : ℝ²) :
     imcField L R α iref x = (imcModel L R α).inputField (fun _ => iref) x := by
   ext j
   fin_cases j
@@ -136,7 +136,7 @@ def imcModel (L R α : ℝ) : Plant 2 1 :=
 
 /-- **The IMC current loop is exactly first order**: `i(s)/i*(s) = α/(s + α)` at every `s`
 that is not a closed-loop eigenvalue. -/
-@[tmio M, powerlib_foundation] theorem imcModel_transfer (L R α : ℝ) (s : ℂ)
+@[tmio M, powerlib_domain] theorem imcModel_transfer (L R α : ℝ) (s : ℂ)
     (h1 : s + α ≠ 0) (h2 : s + (R / L : ℝ) ≠ 0) :
     transfer (imcModel L R α) s 0 0 = α / (s + α) := by
   have hdet : ((s - ((-(α + R / L) : ℝ) : ℂ)) * (s - ((0 : ℝ) : ℂ)) -
@@ -152,11 +152,11 @@ that is not a closed-loop eigenvalue. -/
   ring
 
 /-- Closed-loop state matrix `[[−(α + R/L), Rα/L], [−1, 0]]`. -/
-@[tmio M, powerlib_foundation] theorem imcModel_A (L R α : ℝ) :
+@[tmio M, powerlib_domain] theorem imcModel_A (L R α : ℝ) :
     (imcModel L R α).A = !![-(α + R / L), R * α / L; -1, 0] := rfl
 
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
-@[tmio M, powerlib_foundation] theorem imcModel_exists_root (L R α : ℝ)
+@[tmio M, powerlib_domain] theorem imcModel_exists_root (L R α : ℝ)
     (h : α + R / L < 0 ∨ R * α / L < 0) :
     ∃ s : ℂ, (characteristicMatrix (imcModel L R α).A s).det = 0 ∧ 0 < s.re := by
   rw [imcModel_A]
@@ -171,7 +171,7 @@ that is not a closed-loop eigenvalue. -/
 /-- Closed-loop equilibrium `(i*, i*/α)`. -/
 def imcEquilibrium (α iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, iref / α]
 
-@[tmio M, powerlib_foundation] theorem imc_isEquilibrium (L R α iref : ℝ) (hL : L ≠ 0) (hα : α ≠ 0) :
+@[tmio M, powerlib_domain] theorem imc_isEquilibrium (L R α iref : ℝ) (hL : L ≠ 0) (hα : α ≠ 0) :
     IsEquilibrium ((imcModel L R α).inputField fun _ => iref) (imcEquilibrium α iref) := by
   rw [IsEquilibrium, ← imcField_eq_model L R α iref hL]
   ext j
@@ -333,7 +333,7 @@ output `u`. -/
 def speedLoopModel (J Kt Kp Ki : ℝ) : Plant 2 1 :=
   siso2 (-(Kt * Kp / J)) (Kt * Ki / J) (-1) 0 (Kt * Kp / J) 1 1 0
 
-@[tmio M, powerlib_foundation] theorem speedLoop_transfer (J Kt Kp Ki : ℝ) (hJ : J ≠ 0) (s : ℂ)
+@[tmio M, powerlib_domain] theorem speedLoop_transfer (J Kt Kp Ki : ℝ) (hJ : J ≠ 0) (s : ℂ)
     (hden : (J : ℂ) * s ^ 2 + Kt * Kp * s + Kt * Ki ≠ 0) :
     transfer (speedLoopModel J Kt Kp Ki) s 0 0 =
       Kt * (Kp * s + Ki) / (J * s ^ 2 + Kt * Kp * s + Kt * Ki) := by

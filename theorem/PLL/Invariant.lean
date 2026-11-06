@@ -36,8 +36,8 @@ No new family: the `(θ_err, ξ)` model with gains `(a, b)`
 and offset `Δω`, read about `θ*`, is the member `PLL.PIPLL.srf 1 a b (−Δω) θ*` of the PI-PLL
 family (`xi_piPLLField`; its selected point is `(θ*, −Δω / b)`). The two local-stability results
 are connection statements on that family (`xi_mem_den_locallyExponentiallyStable`,
-`xi_mem_den_unstable_antiPhase`). Everything else is foundation: the pendulum form holds for
-the stated (generic) signals and fields.
+`xi_mem_den_unstable_antiPhase`). The pendulum form is domain evidence for
+the stated PLL fields and their signals.
 -/
 
 noncomputable section
@@ -77,7 +77,7 @@ open powerlib.PLL.PIPLL (srf)
 
 /-- Second-order pendulum ⇒ first-order system (`b ≠ 0`): a solution `θ` of
 `θ̈ + a cos θ · θ̇ + b sin θ = 0` with `ξ := (θ̇ − Δω + a sin θ)/b` solves `xiField a b Δω`. -/
-@[tmio M, powerlib_foundation] theorem pendulum_xiField {a b Δω : ℝ} (hb : b ≠ 0) {θ θ' : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem pendulum_xiField {a b Δω : ℝ} (hb : b ≠ 0) {θ θ' : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (θ' t) t)
     (hθ' : ∀ t, HasDerivAt θ' (-(a * Real.cos (θ t) * θ' t) - b * Real.sin (θ t)) t) (t : ℝ) :
     HasDerivAt (fun τ => PhasePlane.mk (θ τ) ((θ' τ - Δω + a * Real.sin (θ τ)) / b))

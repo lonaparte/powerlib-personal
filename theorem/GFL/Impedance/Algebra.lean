@@ -3,7 +3,7 @@ import theorem.Attributes
 
 /-! # dq impedance algebra of the GFL port
 
-Algebraic identities (foundation) of the dq impedances of the GFL port, with a Correction of the
+Algebraic model identities of the dq impedances of the GFL port, with a Correction of the
 note's load model.
 
 Model boundary.
@@ -55,13 +55,13 @@ def Zoc (L R ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Zoc, Jc]
 
-@[tmio M, powerlib_foundation] theorem det_Zoc (L R ω : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_Zoc (L R ω : ℝ) (s : ℂ) :
     (Zoc L R ω s).det = (s * L + R) ^ 2 + (ω * L) ^ 2 := by
   rw [Zoc_eq, Matrix.det_fin_two_of]
   ring
 
 /-- Closed-form inverse of `Z_oc`. -/
-@[tmio M, powerlib_foundation] theorem Zoc_inv {L R ω : ℝ} {s : ℂ}
+@[tmio M, powerlib_domain] theorem Zoc_inv {L R ω : ℝ} {s : ℂ}
     (h : (s * L + R) ^ 2 + (ω * L : ℂ) ^ 2 ≠ 0) :
     (Zoc L R ω s)⁻¹ =
       ((s * L + R) ^ 2 + (ω * L : ℂ) ^ 2)⁻¹ • !![s * L + R, ω * L; -(ω * L), s * L + R] := by
@@ -76,7 +76,7 @@ def Zoc (L R ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 /-- `G_id = −V_dc Z_oc⁻¹`. -/
 def Gid (L R ω Vdc : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := -((Vdc : ℂ) • (Zoc L R ω s)⁻¹)
 
-@[tmio M, powerlib_foundation] theorem Gid_eq {L R ω Vdc : ℝ} {s : ℂ}
+@[tmio M, powerlib_domain] theorem Gid_eq {L R ω Vdc : ℝ} {s : ℂ}
     (h : (s * L + R) ^ 2 + (ω * L : ℂ) ^ 2 ≠ 0) :
     Gid L R ω Vdc s =
       -((Vdc : ℂ) / ((s * L + R) ^ 2 + (ω * L) ^ 2)) •
@@ -114,7 +114,7 @@ def Yload (Rl C ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 def YloadNote (Rl C : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   (1 / Rl + s * C) • (1 : Matrix (Fin 2) (Fin 2) ℂ)
 
-@[tmio M, powerlib_foundation] theorem noteLoad_ne {Rl C ω : ℝ} (h : ω * C ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem noteLoad_ne {Rl C ω : ℝ} (h : ω * C ≠ 0) (s : ℂ) :
     YloadNote Rl C s ≠ Yload Rl C ω s := by
   intro heq
   have := congrFun (congrFun heq 1) 0
@@ -126,7 +126,7 @@ def Zext (Lg Rg Rl C ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   ((Zoc Lg Rg ω s)⁻¹ + Yload Rl C ω s)⁻¹
 
 /-- Parallel-connection identity `(Z⁻¹ + Y)⁻¹ = Z (I + Y Z)⁻¹` for invertible `Z`. -/
-@[tmio M, powerlib_foundation] theorem Zext_eq {Lg Rg Rl C ω : ℝ} {s : ℂ}
+@[tmio M, powerlib_domain] theorem Zext_eq {Lg Rg Rl C ω : ℝ} {s : ℂ}
     (hZ : IsUnit (Zoc Lg Rg ω s).det) :
     Zext Lg Rg Rl C ω s = Zoc Lg Rg ω s * (1 + Yload Rl C ω s * Zoc Lg Rg ω s)⁻¹ := by
   set Z := Zoc Lg Rg ω s

@@ -3,7 +3,7 @@ import dependencies.Mathlib
 
 /-! # Filter power balance and the rectifier right-half-plane zero
 
-These are identities (foundation), not stability statements about a closed loop.
+These are domain model identities, not stability statements about a closed loop.
 
 Model boundary.
 One series R–L filter between the PCC and the converter bridge, dq frame rotating at
@@ -67,7 +67,7 @@ def bridgePower (Vd0 R L id iq did diq : ℝ) : ℝ :=
   Vd0 * id - R * (id ^ 2 + iq ^ 2) - L * (id * did + iq * diq)
 
 /-- `P_bridge` from the KVL with `v_q = 0`: `v^conv · i = v_d i_d − R|i|² − L i · i'`. -/
-@[tmio M, powerlib_foundation] theorem bridgePower_of_kvl {L R ω Vd0 id iq did diq vcd vcq : ℝ}
+@[tmio M, powerlib_domain] theorem bridgePower_of_kvl {L R ω Vd0 id iq did diq vcd vcq : ℝ}
     (kvl_d : L * did = Vd0 - vcd - R * id + ω * L * iq)
     (kvl_q : L * diq = 0 - vcq - R * iq - ω * L * id) :
     vcd * id + vcq * iq = bridgePower Vd0 R L id iq did diq := by
@@ -75,7 +75,7 @@ def bridgePower (Vd0 R L id iq did diq : ℝ) : ℝ :=
   linear_combination id * kvl_d + iq * kvl_q
 
 /-- Exact perturbation expansion around `(I_d0, 0)` with zero operating derivatives. -/
-@[tmio M, powerlib_foundation] theorem bridgePower_expansion (Vd0 R L Id0 δd δq δd' δq' : ℝ) :
+@[tmio M, powerlib_domain] theorem bridgePower_expansion (Vd0 R L Id0 δd δq δd' δq' : ℝ) :
     bridgePower Vd0 R L (Id0 + δd) δq δd' δq' - bridgePower Vd0 R L Id0 0 0 0 =
       ((Vd0 - 2 * R * Id0) * δd - L * Id0 * δd') -
         (R * (δd ^ 2 + δq ^ 2) + L * (δd * δd' + δq * δq')) := by
@@ -85,12 +85,12 @@ def bridgePower (Vd0 R L id iq did diq : ℝ) : ℝ :=
 /-- Linear part `ΔP_b/ΔI_d = (V_d0 − 2 R I_d0) − s L I_d0`, `R = 0`: `V_d0 − s L I_d0`. -/
 def bridgeTransfer (Vd0 R L Id0 : ℝ) (s : ℂ) : ℂ := (Vd0 - 2 * R * Id0) - s * L * Id0
 
-@[tmio M, powerlib_foundation] theorem bridgeTransfer_R_zero (Vd0 L Id0 : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem bridgeTransfer_R_zero (Vd0 L Id0 : ℝ) (s : ℂ) :
     bridgeTransfer Vd0 0 L Id0 s = Vd0 - s * L * Id0 := by
   simp [bridgeTransfer]
 
 /-- The zero of `V_d0 − s L I_d0` is `s_z = V_d0/(L I_d0)`. -/
-@[tmio M, powerlib_foundation] theorem bridgeZero_eq {Vd0 L Id0 : ℝ} (hL : L ≠ 0) (hI : Id0 ≠ 0)
+@[tmio M, powerlib_domain] theorem bridgeZero_eq {Vd0 L Id0 : ℝ} (hL : L ≠ 0) (hI : Id0 ≠ 0)
     (s : ℂ) : bridgeTransfer Vd0 0 L Id0 s = 0 ↔ s = ((Vd0 / (L * Id0) : ℝ) : ℂ) := by
   have hLI : ((L : ℂ) * Id0) ≠ 0 := by exact_mod_cast mul_ne_zero hL hI
   rw [bridgeTransfer_R_zero]
@@ -103,7 +103,7 @@ def bridgeTransfer (Vd0 R L Id0 : ℝ) (s : ℂ) : ℂ := (Vd0 - 2 * R * Id0) - 
     rw [h, mul_assoc, div_mul_cancel₀ _ hLI, sub_self]
 
 /-- With `R ≠ 0` the zero is `(V_d0 − 2 R I_d0)/(L I_d0)`. -/
-@[tmio M, powerlib_foundation] theorem bridgeZero_with_R {Vd0 R L Id0 : ℝ} (hL : L ≠ 0) (hI : Id0 ≠ 0)
+@[tmio M, powerlib_domain] theorem bridgeZero_with_R {Vd0 R L Id0 : ℝ} (hL : L ≠ 0) (hI : Id0 ≠ 0)
     (s : ℂ) :
     bridgeTransfer Vd0 R L Id0 s = 0 ↔ s = (((Vd0 - 2 * R * Id0) / (L * Id0) : ℝ) : ℂ) := by
   have hLI : ((L : ℂ) * Id0) ≠ 0 := by exact_mod_cast mul_ne_zero hL hI

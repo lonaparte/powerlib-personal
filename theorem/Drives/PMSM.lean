@@ -168,7 +168,7 @@ variable {ψf ΔL I : ℝ}
 /-- Lagrange-multiplier certificate: if `(x₀, y₀)` is on the circle `x₀² + y₀² = I²` and
 `∇T = 2λ (x₀, y₀)` there, the torque gap to any current is an explicit quadratic form plus the
 multiplier times the slack. -/
-@[tmio T, powerlib_foundation] theorem gap_identity (ψf ΔL I x₀ y₀ μ x y : ℝ)
+@[tmio M, powerlib_domain] theorem gap_identity (ψf ΔL I x₀ y₀ μ x y : ℝ)
     (hc : x₀ ^ 2 + y₀ ^ 2 = I ^ 2) (h1 : 2 * μ * x₀ = -(ΔL * y₀))
     (h2 : 2 * μ * y₀ = ψf - ΔL * x₀) :
     reducedTorque ψf ΔL x₀ y₀ - reducedTorque ψf ΔL x y =

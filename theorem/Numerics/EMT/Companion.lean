@@ -97,7 +97,7 @@ def Positive : Element → Prop
   | inductor L => 0 < L
   | capacitor C => 0 < C
 
-@[tmio M, powerlib_foundation] theorem stepLaw_iff_companion {h : ℝ} (hh : h ≠ 0) (e : Element)
+@[tmio M, powerlib_domain] theorem stepLaw_iff_companion {h : ℝ} (hh : h ≠ 0) (e : Element)
     (he : e.Valid) (i₀ v₀ i₁ v₁ : ℝ) :
     e.StepLaw h i₀ v₀ i₁ v₁ ↔ i₁ = e.conductance h * v₁ + e.history h i₀ v₀ := by
   cases e with
@@ -112,14 +112,14 @@ def Positive : Element → Prop
     simp only [StepLaw, conductance, history]
     rw [capacitor_companion_iff (h := h) he hh, sub_eq_add_neg]
 
-@[tmio M, powerlib_foundation] theorem conductance_pos {h : ℝ} (hh : 0 < h) (e : Element)
+@[tmio M, powerlib_domain] theorem conductance_pos {h : ℝ} (hh : 0 < h) (e : Element)
     (he : e.Positive) : 0 < e.conductance h := by
   cases e with
   | resistor R => exact one_div_pos.mpr he
   | inductor L => exact div_pos hh (mul_pos two_pos he)
   | capacitor C => exact div_pos (mul_pos two_pos he) hh
 
-@[tmio M, powerlib_foundation] theorem Positive.valid {e : Element} (he : e.Positive) : e.Valid := by
+@[tmio M, powerlib_domain] theorem Positive.valid {e : Element} (he : e.Positive) : e.Valid := by
   cases e with
   | resistor R => exact ne_of_gt he
   | inductor L => exact ne_of_gt he
@@ -240,7 +240,7 @@ new step) is exactly a solution of the companion nodal equations (the constant m
 the new node voltages equals the injections minus the history sources, and branch currents follow
 the companion law). Discrete trajectories are written out, not defined: discrete behaviour is
 defined only in the semantic layer. -/
-@[tmio M, powerlib_foundation] theorem trapezoidalNetwork_iff_companion {h : ℝ} (hh : h ≠ 0)
+@[tmio M, powerlib_domain] theorem trapezoidalNetwork_iff_companion {h : ℝ} (hh : h ≠ 0)
     (e : β → Element) (he : ∀ b, (e b).Valid) (p q : β → Terminal N) (V : ℕ → Fin N → ℝ)
     (I : ℕ → β → ℝ) (J : ℕ → Fin N → ℝ) :
     (∀ n, (∀ b, (e b).StepLaw h (I n b) (incidence p q b ⬝ᵥ V n) (I (n + 1) b)
@@ -265,7 +265,7 @@ defined only in the semantic layer. -/
 
 /-- Positive `R, L, C`, `h > 0` and ground connectivity: the EMT nodal matrix is positive
 definite, hence every implicit step has a unique solution. -/
-@[tmio M, powerlib_foundation] theorem network_nodalMatrix_posDef {h : ℝ} (hh : 0 < h)
+@[tmio M, powerlib_domain] theorem network_nodalMatrix_posDef {h : ℝ} (hh : 0 < h)
     (e : β → Element) (he : ∀ b, (e b).Positive) (p q : β → Terminal N)
     (hconn : ∀ i : Fin N, Relation.ReflTransGen
       (fun s t => ∃ b, (s = p b ∧ t = q b) ∨ (s = q b ∧ t = p b)) (.node i) .ground) :

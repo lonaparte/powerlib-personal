@@ -299,7 +299,7 @@ def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
   simp [smib11_angleAxis]
 
 /-- The rotor-angle axis is a nonzero direction. -/
-@[tmio M, powerlib_foundation] private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
+@[tmio M, powerlib_domain] private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
   simpa [smib11_angleAxis] using congrArg (fun z : State 11 => z 6) h
 
 /-- `H^tot` is not positive definite (it vanishes along the rotor-angle axis), hence it is no

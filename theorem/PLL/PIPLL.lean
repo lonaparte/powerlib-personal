@@ -4,7 +4,7 @@ import theorem.Linear.EigenMap
 
 /-! # PI phase-locked loop with a general phase-detector characteristic: the static model
 
-Static foundation of the PI-PLL model. This module contains the vector field, its Jacobian and
+Static domain identities of the PI-PLL model. This module contains the vector field, its Jacobian and
 the equilibrium set; it states no behaviour. The behavioural (connection) conclusions are made in
 `theorem/PLL/PIPLLFamily.lean`, through the family's system map.
 
@@ -76,13 +76,13 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
 @[tmio M, simp, powerlib_domain] theorem piPLLField_apply_zero (h : ℝ → ℝ) (Kp Ki δω : ℝ)
     (x : ℝ²) : piPLLField h Kp Ki δω x 0 = Kp * h (x 0) + Ki * x 1 - δω := rfl
 
-@[tmio M, simp, powerlib_foundation] theorem piPLLField_apply_one (h : ℝ → ℝ) (Kp Ki δω : ℝ)
+@[tmio M, simp, powerlib_domain] theorem piPLLField_apply_one (h : ℝ → ℝ) (Kp Ki δω : ℝ)
     (x : ℝ²) : piPLLField h Kp Ki δω x 1 = h (x 0) := rfl
 
 /-! ## Smoothness and Jacobian (derived from the field) -/
 
 /-- The field is `C¹` on all of `ℝ²` when `h` is `C¹` on `ℝ`. -/
-@[tmio M, powerlib_foundation] theorem contDiff_piPLLField {h : ℝ → ℝ} {Kp Ki δω : ℝ}
+@[tmio M, powerlib_domain] theorem contDiff_piPLLField {h : ℝ → ℝ} {Kp Ki δω : ℝ}
     (hh : ContDiff ℝ 1 h) : ContDiff ℝ 1 (piPLLField h Kp Ki δω) := by
   have hc0 : ContDiff ℝ 1 (fun y : ℝ² => y 0) :=
     (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).contDiff
@@ -99,7 +99,7 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
 
 /-- Fréchet derivative of the field at any point `x`, from `h'(x 0) = g`. -/
-@[tmio M, powerlib_foundation] theorem hasFDerivAt_piPLLField {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
+@[tmio M, powerlib_domain] theorem hasFDerivAt_piPLLField {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
     {x : ℝ²} (hh : HasDerivAt h g (x 0)) :
     HasFDerivAt (piPLLField h Kp Ki δω)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki g)) x := by
@@ -138,34 +138,34 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
   · simp [piPLLJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- The Jacobian of the field (as computed by `fderiv`). -/
-@[tmio M, powerlib_foundation] theorem fderiv_piPLLField {h : ℝ → ℝ} {Kp Ki δω g : ℝ} {x : ℝ²}
+@[tmio M, powerlib_domain] theorem fderiv_piPLLField {h : ℝ → ℝ} {Kp Ki δω g : ℝ} {x : ℝ²}
     (hh : HasDerivAt h g (x 0)) :
     fderiv ℝ (piPLLField h Kp Ki δω) x =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki g) :=
   (hasFDerivAt_piPLLField hh).fderiv
 
-@[tmio M, simp, powerlib_foundation] theorem piPLLJacobian_trace (Kp Ki g : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem piPLLJacobian_trace (Kp Ki g : ℝ) :
     (piPLLJacobian Kp Ki g).trace = Kp * g := by
   simp [piPLLJacobian, Matrix.trace_fin_two]
 
-@[tmio M, simp, powerlib_foundation] theorem piPLLJacobian_det (Kp Ki g : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem piPLLJacobian_det (Kp Ki g : ℝ) :
     (piPLLJacobian Kp Ki g).det = -(Ki * g) := by
   simp [piPLLJacobian, Matrix.det_fin_two]
 
 /-- Structural identity: trace and determinant are both proportional to `g`,
 `K_i · tr J + K_p · det J = 0` for every `g`. -/
-@[tmio M, powerlib_foundation] theorem piPLLJacobian_trace_det_relation (Kp Ki g : ℝ) :
+@[tmio M, powerlib_domain] theorem piPLLJacobian_trace_det_relation (Kp Ki g : ℝ) :
     Ki * (piPLLJacobian Kp Ki g).trace + Kp * (piPLLJacobian Kp Ki g).det = 0 := by
   simp only [piPLLJacobian_trace, piPLLJacobian_det]
   ring
 
 /-- Hurwitz test of the Jacobian: `IsHurwitz ↔ K_p g < 0 ∧ K_i g < 0`. -/
-@[tmio TM, powerlib_foundation] theorem piPLLJacobian_isHurwitz_iff (Kp Ki g : ℝ) :
+@[tmio TM, powerlib_domain] theorem piPLLJacobian_isHurwitz_iff (Kp Ki g : ℝ) :
     LinearSystems.IsHurwitz (piPLLJacobian Kp Ki g) ↔ Kp * g < 0 ∧ Ki * g < 0 := by
   rw [Criteria.isHurwitz_fin_two_iff, piPLLJacobian_trace, piPLLJacobian_det, neg_pos]
 
 /-- With positive gains the Jacobian is Hurwitz exactly when `g = h'(θ*) < 0`. -/
-@[tmio TM, powerlib_foundation] theorem piPLLJacobian_isHurwitz_iff_of_pos {Kp Ki : ℝ} (hKp : 0 < Kp)
+@[tmio TM, powerlib_domain] theorem piPLLJacobian_isHurwitz_iff_of_pos {Kp Ki : ℝ} (hKp : 0 < Kp)
     (hKi : 0 < Ki) (g : ℝ) :
     LinearSystems.IsHurwitz (piPLLJacobian Kp Ki g) ↔ g < 0 := by
   rw [piPLLJacobian_isHurwitz_iff]
@@ -178,25 +178,25 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
     exact ⟨mul_neg_of_pos_of_neg hKp hg, mul_neg_of_pos_of_neg hKi hg⟩
 
 /-- At `g = 0` the Jacobian is `[[0, K_i], [0, 0]]`, which squares to zero. -/
-@[tmio M, powerlib_foundation] theorem piPLLJacobian_zero_sq (Kp Ki : ℝ) :
+@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_sq (Kp Ki : ℝ) :
     (piPLLJacobian Kp Ki 0) ^ 2 = 0 := by
   rw [Criteria.sq_eq_zero_iff_trace_det_eq_zero_fin_two]
   simp
 
-@[tmio M, powerlib_foundation] theorem piPLLJacobian_zero_ne_zero {Kp Ki : ℝ} (hKi : Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_ne_zero {Kp Ki : ℝ} (hKi : Ki ≠ 0) :
     piPLLJacobian Kp Ki 0 ≠ 0 := by
   intro h
   have := congrFun (congrFun h 0) 1
   simp [piPLLJacobian] at this
   exact hKi this
 
-@[tmio M, powerlib_foundation] theorem piPLLJacobian_zero_isNilpotent (Kp Ki : ℝ) :
+@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_isNilpotent (Kp Ki : ℝ) :
     IsNilpotent (piPLLJacobian Kp Ki 0) :=
   ⟨2, piPLLJacobian_zero_sq Kp Ki⟩
 
 /-- Every (complex) eigenvalue of the `g = 0` Jacobian is zero: `J² = 0`, so `μ² v = J² v = 0`
 (`Linear.mulVec_pow_of_eigen`). -/
-@[tmio M, powerlib_foundation] theorem piPLLJacobian_zero_eigenvalue_eq_zero (Kp Ki : ℝ) {μ : ℂ}
+@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_eigenvalue_eq_zero (Kp Ki : ℝ) {μ : ℂ}
     {v : Fin 2 → ℂ} (hv : v ≠ 0)
     (heig : (piPLLJacobian Kp Ki 0).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) : μ = 0 := by
   have h2 := Linear.mulVec_pow_of_eigen heig 2
@@ -211,7 +211,7 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
 
 /-- Equilibrium equations: for `K_i ≠ 0`, `f(x) = 0 ↔ h(θ) = 0 ∧ η = δω / K_i`.
 Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLLField_eq_zero_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem piPLLField_eq_zero_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
     (x : ℝ²) : piPLLField h Kp Ki δω x = 0 ↔ h (x 0) = 0 ∧ x 1 = δω / Ki := by
   rw [PhasePlane.ext_iff']
   simp only [piPLLField_apply_zero, piPLLField_apply_one, PiLp.zero_apply]
@@ -229,7 +229,7 @@ Static evidence, not a connection conclusion. -/
 
 /-- `K_i = 0` (no integrator): equilibria exist only for `δω = 0`.
 Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLLField_eq_zero_iff_of_Ki_eq_zero {h : ℝ → ℝ} {Kp δω : ℝ}
+@[tmio M, powerlib_domain] theorem piPLLField_eq_zero_iff_of_Ki_eq_zero {h : ℝ → ℝ} {Kp δω : ℝ}
     (x : ℝ²) : piPLLField h Kp 0 δω x = 0 ↔ h (x 0) = 0 ∧ δω = 0 := by
   rw [PhasePlane.ext_iff']
   simp only [piPLLField_apply_zero, piPLLField_apply_one, PiLp.zero_apply]
@@ -242,14 +242,14 @@ Static evidence, not a connection conclusion. -/
     exact ⟨by ring, rfl⟩
 
 /-- The equilibrium predicate at `(θ, η)`. Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLL_isEquilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem piPLL_isEquilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
     (θ η : ℝ) :
     IsEquilibrium (piPLLField h Kp Ki δω) (PhasePlane.mk θ η) ↔ h θ = 0 ∧ η = δω / Ki :=
   piPLLField_eq_zero_iff hKi (PhasePlane.mk θ η)
 
 /-- The equilibrium set, for every constant `δω` (`K_i ≠ 0`):
 `{x | f x = 0} = {(θ*, δω / K_i) : h(θ*) = 0}`. Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLL_equilibria_eq {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem piPLL_equilibria_eq {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0) :
     {x : ℝ² | piPLLField h Kp Ki δω x = 0} =
       (fun θ => PhasePlane.mk θ (δω / Ki)) '' {θ | h θ = 0} := by
   ext x
@@ -262,7 +262,7 @@ Static evidence, not a connection conclusion. -/
 
 /-- Existence of an equilibrium does not depend on the constant frequency offset `δω`.
 Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLL_exists_equilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ}
+@[tmio M, powerlib_domain] theorem piPLL_exists_equilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ}
     (hKi : Ki ≠ 0) : (∃ x, piPLLField h Kp Ki δω x = 0) ↔ ∃ θ, h θ = 0 := by
   constructor
   · rintro ⟨x, hx⟩
@@ -273,7 +273,7 @@ Static evidence, not a connection conclusion. -/
 /-- At the selected point `(θ, δω / K_i)` (Lean's `δω / 0 = 0` when `K_i = 0`) the field vanishes
 exactly when `h(θ) = 0` and the integrator can absorb the offset (`K_i ≠ 0`) or there is no offset.
 Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLLField_point_eq_zero_iff {h : ℝ → ℝ} {Kp Ki δω θ : ℝ} :
+@[tmio M, powerlib_domain] theorem piPLLField_point_eq_zero_iff {h : ℝ → ℝ} {Kp Ki δω θ : ℝ} :
     piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0 ↔ h θ = 0 ∧ (Ki ≠ 0 ∨ δω = 0) := by
   by_cases hKi : Ki = 0
   · subst hKi
@@ -289,7 +289,7 @@ the nonzero nilpotent matrix `[[0, K_i], [0, 0]]` — a double zero eigenvalue w
 block. The equilibrium is not hyperbolic, and the linearization theorems decide nothing there.
 This is a statement about the linearization only, not a stability conclusion: static evidence,
 not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem piPLL_jacobian_nilpotent_of_deriv_zero {h : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem piPLL_jacobian_nilpotent_of_deriv_zero {h : ℝ → ℝ}
     {Kp Ki δω θ : ℝ} (hzero : h θ = 0) (hderiv : HasDerivAt h 0 θ) (hKi : Ki ≠ 0) :
     piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0 ∧
       fderiv ℝ (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
@@ -308,7 +308,7 @@ equilibria. Counterexample: `h = −sin`, `K_p = K_i = 1`, `|h| ≤ 1`, `δω = 
 conclusion; `PIPLL.frequencyDriftBoundary_refuted` (requirement connection) and
 `PIPLL.frequencyDriftBoundary_stable` (semantics connection: the point is even locally
 exponentially stable) in `PIPLLFamily` are the connection forms. -/
-@[tmio M, powerlib_foundation] theorem piPLL_frequencyDriftBoundary_refuted :
+@[tmio M, powerlib_domain] theorem piPLL_frequencyDriftBoundary_refuted :
     ¬ (∀ (h : ℝ → ℝ) (Kp Ki δω M : ℝ), 0 < Kp → 0 < Ki → (∀ θ, |h θ| ≤ M) →
         Kp * M < |δω| → ¬ ∃ x, piPLLField h Kp Ki δω x = 0) := by
   intro H

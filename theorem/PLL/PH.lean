@@ -145,7 +145,7 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
   hasGradient := hasGradientAt_pllHamiltonian V Ki ηs
 
 /-- T-pll-ph (1.3): `(J − R)∇H + B u` is the SRF-PLL field with frequency offset `u`. -/
-@[tmio M, powerlib_foundation] theorem pllPH_field {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (x : State 2) (u : ℝ) :
+@[tmio M, powerlib_domain] theorem pllPH_field {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (x : State 2) (u : ℝ) :
     (pllPH V Kp Ki 0 hKp).field x ![u] = srfField V Kp Ki u x := by
   rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, PhasePlane.mk,
@@ -153,21 +153,21 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
   ring
 
 /-- The collocated output is the phase-detector characteristic `y = h(θ) = −V sin θ`. -/
-@[tmio M, powerlib_foundation] theorem pllPH_output {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2) :
+@[tmio M, powerlib_domain] theorem pllPH_output {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2) :
     (pllPH V Kp Ki ηs hKp).output x = ![srfPD V (x 0)] := by
   ext i; fin_cases i
   simp [PH.NonlinearModel.output, pllPH, pllB, pllGradient, PhasePlane.mk, srfPD, Matrix.mulVec,
     dotProduct, Fin.sum_univ_two]
 
 /-- Damping power `∇Hᵀ R ∇H = K_p h(θ)²`. -/
-@[tmio M, powerlib_foundation] theorem pllPH_dampingPower {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2) :
+@[tmio M, powerlib_domain] theorem pllPH_dampingPower {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2) :
     (pllPH V Kp Ki ηs hKp).dampingPower x = Kp * srfPD V (x 0) ^ 2 := by
   simp [PH.NonlinearModel.dampingPower, pllPH, pllR, pllGradient, PhasePlane.mk, srfPD,
     Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.diagonal_apply]
   ring
 
 /-- Energy balance (T-pll-ph §1.2): `Ḣ = u·h(θ) − K_p h(θ)²` along the SRF-PLL field. -/
-@[tmio M, powerlib_foundation] theorem pllPH_power_balance {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
+@[tmio M, powerlib_domain] theorem pllPH_power_balance {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
     (u : ℝ) :
     fderiv ℝ (pllHamiltonian V Ki 0) x (srfField V Kp Ki u x) =
       u * srfPD V (x 0) - Kp * srfPD V (x 0) ^ 2 := by
@@ -177,7 +177,7 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
   rw [h, PH.NonlinearModel.supply, pllPH_output]
   simp [dotProduct]
 
-@[tmio M, powerlib_foundation] theorem pllHamiltonian_nonneg {V Ki : ℝ} (hV : 0 ≤ V) (hKi : 0 ≤ Ki)
+@[tmio M, powerlib_domain] theorem pllHamiltonian_nonneg {V Ki : ℝ} (hV : 0 ≤ V) (hKi : 0 ≤ Ki)
     (ηs : ℝ) (x : State 2) : 0 ≤ pllHamiltonian V Ki ηs x := by
   unfold pllHamiltonian
   have h1 : 0 ≤ 1 - Real.cos (x 0) := by linarith [Real.cos_le_one (x 0)]
@@ -185,7 +185,7 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
 
 /-- With the integrator set point `η*`, `(J − R)∇H + B u` is the SRF-PLL field with frequency
 offset `K_i η* + u`. -/
-@[tmio M, powerlib_foundation] theorem pllPH_field_input {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
+@[tmio M, powerlib_domain] theorem pllPH_field_input {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
     (u : ℝ) : (pllPH V Kp Ki ηs hKp).field x ![u] = srfField V Kp Ki (Ki * ηs + u) x := by
   rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, PhasePlane.mk,
@@ -194,7 +194,7 @@ offset `K_i η* + u`. -/
 
 /-- Under zero input the pH system with set point `η*` is the SRF-PLL with the constant offset
 `K_i η*`. -/
-@[tmio M, powerlib_foundation] theorem pllPH_zeroInputField {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) :
+@[tmio M, powerlib_domain] theorem pllPH_zeroInputField {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) :
     (pllPH V Kp Ki ηs hKp).zeroInputField = srfField V Kp Ki (Ki * ηs) := by
   funext x
   rw [PhasePlane.ext_iff']
@@ -206,7 +206,7 @@ offset `K_i η* + u`. -/
 
 /-- For a constant offset `δω` (`K_i ≠ 0`) the closed loop is the zero-input pH system with
 the shifted Hamiltonian (`η* = δω/K_i`). -/
-@[tmio M, powerlib_foundation] theorem pllPH_shifted_zeroInputField {V Kp Ki : ℝ} (hKp : 0 ≤ Kp)
+@[tmio M, powerlib_domain] theorem pllPH_shifted_zeroInputField {V Kp Ki : ℝ} (hKp : 0 ≤ Kp)
     (hKi : Ki ≠ 0) (δω : ℝ) :
     (pllPH V Kp Ki (δω / Ki) hKp).zeroInputField = srfField V Kp Ki δω := by
   funext x
@@ -218,7 +218,7 @@ the shifted Hamiltonian (`η* = δω/K_i`). -/
 
 /-- Lie derivative of the shifted Hamiltonian along the SRF-PLL with constant offset:
 `Ḣ_s = −K_p h(θ)² ≤ 0`. -/
-@[tmio M, powerlib_foundation] theorem pllHamiltonian_shifted_lie {V Kp Ki : ℝ} (hKp : 0 ≤ Kp)
+@[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_lie {V Kp Ki : ℝ} (hKp : 0 ≤ Kp)
     (hKi : Ki ≠ 0) (δω : ℝ) (x : State 2) :
     fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) =
       -(Kp * srfPD V (x 0) ^ 2) := by
@@ -230,7 +230,7 @@ the shifted Hamiltonian (`η* = δω/K_i`). -/
 (`V, K_p, K_i > 0`): nonnegative, zero at the equilibrium and nonincreasing along the field.
 Static evidence on the model, not a connection conclusion; Lyapunov stability itself is
 `PLLPH.mem_den_lyapunovStable`. -/
-@[tmio TM, powerlib_foundation] theorem pllHamiltonian_shifted_lyapunovFunction {V Kp Ki : ℝ} (hV : 0 < V)
+@[tmio TM, powerlib_domain] theorem pllHamiltonian_shifted_lyapunovFunction {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 ≤ Kp) (hKi : 0 < Ki) (δω : ℝ) :
     (∀ x, 0 ≤ pllHamiltonian V Ki (δω / Ki) x) ∧
       pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 ∧
@@ -240,7 +240,7 @@ Static evidence on the model, not a connection conclusion; Lyapunov stability it
 
 /-- At a well bottom `cos θ* = 1` (`V, K_i > 0`) the Hamiltonian with set point `η*` has a strict
 local minimum at `(θ*, η*)`. -/
-@[tmio M, powerlib_foundation] theorem pllPH_isStrictLocalMin {V Kp Ki ηs θ : ℝ} (hKp : 0 ≤ Kp)
+@[tmio M, powerlib_domain] theorem pllPH_isStrictLocalMin {V Kp Ki ηs θ : ℝ} (hKp : 0 ≤ Kp)
     (hV : 0 < V) (hKi : 0 < Ki) (hθ : Real.cos θ = 1) :
     (pllPH V Kp Ki ηs hKp).IsStrictLocalMin (PhasePlane.mk θ ηs) := by
   have hsθ : Real.sin θ = 0 := by
@@ -302,7 +302,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-! ## Structure -/
 
 /-- The dissipation acts on one channel only: `rank R = 1` for `K_p ≠ 0`. -/
-@[tmio M, powerlib_foundation] theorem pllR_rank {Kp : ℝ} (hKp : Kp ≠ 0) : (pllR Kp).rank = 1 := by
+@[tmio M, powerlib_domain] theorem pllR_rank {Kp : ℝ} (hKp : Kp ≠ 0) : (pllR Kp).rank = 1 := by
   rw [pllR, Matrix.rank_diagonal]
   rw [Fintype.card_eq_one_iff]
   refine ⟨⟨0, by simpa using hKp⟩, ?_⟩
@@ -312,7 +312,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   · simp at hi
 
 /-- The input matrix does not depend on the state. -/
-@[tmio M, powerlib_foundation] theorem pllPH_input_const {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x y : State 2) :
+@[tmio M, powerlib_domain] theorem pllPH_input_const {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x y : State 2) :
     (pllPH V Kp Ki ηs hKp).g x = (pllPH V Kp Ki ηs hKp).g y := rfl
 
 

@@ -2,7 +2,7 @@ import theorem.Dynamics.Locality
 
 /-! # Algebra of the GFL/GFM tuning-knob comparison (§17)
 
-Foundation layer: polynomial and calculus identities used by the GFL/GFM parametric-contrast
+Polynomial and calculus identities used by the GFL/GFM parametric-contrast
 note.  None of these is an engineering conclusion by itself.
 
 Model boundary.
@@ -191,10 +191,10 @@ def emfPCC (E0 mq Qref V X δ : ℝ) : ℝ :=
 def IsEmfInternal (E0 mq Qref V X δ E : ℝ) : Prop :=
   mq / X * E ^ 2 + (1 - mq * V * Real.cos δ / X) * E - (E0 + mq * Qref) = 0
 
-@[tmio M, powerlib_foundation] theorem emfPCC_zero (E0 Qref V X δ : ℝ) : emfPCC E0 0 Qref V X δ = E0 := by
+@[tmio M, powerlib_domain] theorem emfPCC_zero (E0 Qref V X δ : ℝ) : emfPCC E0 0 Qref V X δ = E0 := by
   simp [emfPCC]
 
-@[tmio M, powerlib_foundation] theorem isEmfInternal_zero_iff (E0 Qref V X δ E : ℝ) :
+@[tmio M, powerlib_domain] theorem isEmfInternal_zero_iff (E0 Qref V X δ E : ℝ) :
     IsEmfInternal E0 0 Qref V X δ E ↔ E = E0 := by
   simp [IsEmfInternal, sub_eq_zero]
 
@@ -205,7 +205,7 @@ def gfmField (E : ℝ → ℝ) (M D ωc Pref V X : ℝ) (y : Fin 3 → ℝ) : Fi
 
 /-- `K_q = 0`: the field (hence its Jacobian and spectrum at any point) is independent of
 `Q_ref`, for the PCC-sensing law; the internal-sensing law has the unique solution `E₀`. -/
-@[tmio M, powerlib_foundation] theorem gfm_field_indep_Qref (E0 M D ωc Pref V X Qref Qref' : ℝ) :
+@[tmio M, powerlib_domain] theorem gfm_field_indep_Qref (E0 M D ωc Pref V X Qref Qref' : ℝ) :
     gfmField (emfPCC E0 0 Qref V X) M D ωc Pref V X =
       gfmField (emfPCC E0 0 Qref' V X) M D ωc Pref V X := by
   funext y

@@ -2,7 +2,7 @@ import theorem.GFL.DCLink.FourState
 
 /-! # dc-source stiffness convention (switch W9)
 
-Derivative identities (foundation) of the dc-bus right-hand side for two ideal dc sources.
+Derivative identities (domain) of the dc-bus right-hand side for two ideal dc sources.
 
 Model boundary.
 The dc bus `C V̇ = (source) + P_abs(V)/V` is linearized at `V = 1` for two ideal dc sources:
@@ -62,7 +62,7 @@ namespace powerlib.GFL.DCLink.DCSource
 def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
   3 / 2 * vd0 * (id0 - kpv * (V - 1) - kiv * η)
 
-@[tmio M, powerlib_foundation] theorem hasDerivAt_loopPower (vd0 id0 kpv kiv η : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_loopPower (vd0 id0 kpv kiv η : ℝ) :
     HasDerivAt (loopPower vd0 id0 kpv kiv η) (-(3 / 2) * vd0 * kpv) 1 := by
   have := (((hasDerivAt_id (1 : ℝ)).sub_const 1).const_mul kpv).const_sub id0
     |>.sub_const (kiv * η) |>.const_mul (3 / 2 * vd0)
@@ -71,7 +71,7 @@ def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
   · simp
 
 /-- W9, constant-current source: `A₃₃ = (−1.5 v_{d0} k_pv + P)/C`, `P = −P_abs(1)`. -/
-@[tmio M, powerlib_foundation] theorem a33_constCurrent (vd0 id0 kpv kiv η I0 C : ℝ) :
+@[tmio M, powerlib_domain] theorem a33_constCurrent (vd0 id0 kpv kiv η I0 C : ℝ) :
     HasDerivAt (fun V => (I0 + loopPower vd0 id0 kpv kiv η V / V) / C)
       ((-1.5 * vd0 * kpv + -loopPower vd0 id0 kpv kiv η 1) / C) 1 := by
   have := hasDerivAt_constCurrent I0 C (hasDerivAt_loopPower vd0 id0 kpv kiv η)
@@ -80,7 +80,7 @@ def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
 
 /-- W9, constant-power source: `A₃₃ = −1.5 v_{d0} k_pv / C` (at the equilibrium
 `P₀ = P = −P_abs(1)`). -/
-@[tmio M, powerlib_foundation] theorem a33_constPower (vd0 id0 kpv kiv η C : ℝ) (hC : C ≠ 0) :
+@[tmio M, powerlib_domain] theorem a33_constPower (vd0 id0 kpv kiv η C : ℝ) (hC : C ≠ 0) :
     HasDerivAt (fun V => (-loopPower vd0 id0 kpv kiv η 1 + loopPower vd0 id0 kpv kiv η V) /
         (C * V)) (-1.5 * vd0 * kpv / C) 1 := by
   have := hasDerivAt_constPower (-loopPower vd0 id0 kpv kiv η 1) C hC

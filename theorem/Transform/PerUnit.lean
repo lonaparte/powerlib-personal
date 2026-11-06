@@ -4,7 +4,7 @@ import theorem.Transform.ParkABC
 
 /-! # Per-unit bases and per-unit identities
 
-Exact SI ↔ per-unit identities (foundation).
+Exact SI ↔ per-unit identities, including electrical-model conversions and algebraic helpers.
 
 Scope.
 All statements are exact identities between SI quantities and per-unit quantities for
@@ -223,7 +223,7 @@ def puCapacitance (ωB Zb C : ℝ) : ℝ := ωB * C * Zb
   unfold puCapacitance; field_simp
 
 /-- Convention (A) inductor law: `v = L i̇ ⇔ v̂ = L̂ ω_B⁻¹ (d/dt) î` (time in seconds). -/
-@[tmio M, powerlib_foundation] theorem inductor_pu_conventionA_iff {ωB Vb Ib L : ℝ} (hω : ωB ≠ 0)
+@[tmio M, powerlib_domain] theorem inductor_pu_conventionA_iff {ωB Vb Ib L : ℝ} (hω : ωB ≠ 0)
     (hV : Vb ≠ 0) (hI : Ib ≠ 0) {i : ℝ → ℝ} {i' v t : ℝ} (hi : HasDerivAt i i' t) :
     v = L * i' ↔
       ∃ ihat', HasDerivAt (fun s => i s / Ib) ihat' t ∧
@@ -240,7 +240,7 @@ def puCapacitance (ωB Zb C : ℝ) : ℝ := ωB * C * Zb
 
 /-- Convention (B) inductor law: with per-unit time `τ = ω_B t` and `î(τ) = i(τ/ω_B)/I_B`,
 `v = L i̇ ⇔ v̂ = L̂ dî/dτ`. -/
-@[tmio M, powerlib_foundation] theorem inductor_pu_conventionB_iff {ωB Vb Ib L : ℝ} (hω : ωB ≠ 0)
+@[tmio M, powerlib_domain] theorem inductor_pu_conventionB_iff {ωB Vb Ib L : ℝ} (hω : ωB ≠ 0)
     (hV : Vb ≠ 0) (hI : Ib ≠ 0) {i : ℝ → ℝ} {i' v τ : ℝ} (hi : HasDerivAt i i' (τ / ωB)) :
     v = L * i' ↔
       ∃ ihat', HasDerivAt (fun σ => i (σ / ωB) / Ib) ihat' τ ∧
@@ -275,7 +275,7 @@ def puCapacitance (ωB Zb C : ℝ) : ℝ := ωB * C * Zb
   `(2H/ω_s) ω̇ = P̂_m − P̂_e − D̂ (ω − ω_s)/ω_s` at every instant.
 * Form 2 (per-unit speed `ω̂`, per-unit powers): `2H dω̂/dt = P̂_m − P̂_e − D̂ (ω̂ − 1)` at
   every instant. -/
-@[tmio M, powerlib_foundation] theorem swingPowerSI_iff_swingPowerPU {H D ωs : ℝ} (hω : ωs ≠ 0)
+@[tmio M, powerlib_domain] theorem swingPowerSI_iff_swingPowerPU {H D ωs : ℝ} (hω : ωs ≠ 0)
     (Pm Pe ω : ℝ → ℝ) :
     (∀ t, HasDerivAt ω (ωs / (2 * H) * (Pm t - Pe t - D * ((ω t - ωs) / ωs))) t) ↔
       ∀ t, HasDerivAt (fun t => ω t / ωs)
@@ -298,7 +298,7 @@ accelerating torque; otherwise they are different equations.
 
 * Torque form (§1.8): `2H dω̂/dt = T̂_m − T̂_e − D̂ (ω̂ − 1)` at every instant (hypothesis `h`).
 * Power form (§1.9 form 2): `2H dω̂/dt = P̂_m − P̂_e − D̂ (ω̂ − 1)` with `P̂ = ω̂ T̂`. -/
-@[tmio M, powerlib_foundation] theorem swingTorque_iff_swingPower {H D : ℝ} (hH : H ≠ 0)
+@[tmio M, powerlib_domain] theorem swingTorque_iff_swingPower {H D : ℝ} (hH : H ≠ 0)
     {Tm Te w : ℝ → ℝ} (h : ∀ t, HasDerivAt w (1 / (2 * H) * (Tm t - Te t - D * (w t - 1))) t) :
     (∀ t, HasDerivAt w (1 / (2 * H) * (w t * Tm t - w t * Te t - D * (w t - 1))) t) ↔
       ∀ t, (w t - 1) * (Tm t - Te t) = 0 := by
@@ -325,7 +325,7 @@ def puField (Xb zb ωB : ℝ) (x : ℝ → ℝ → ℝ) : ℝ → ℝ → ℝ :=
 
 /-- Per-unit scaling maps a telegrapher solution for `(R', L', G', C')` to a telegrapher
 solution for `(R' z_B I_B / V_B, ω_B L' z_B I_B / V_B, G' z_B V_B / I_B, ω_B C' z_B V_B / I_B)`. -/
-@[tmio M, powerlib_foundation] private lemma telegrapher_pu_of {R L G C zb ωB Vb Ib : ℝ} (hz : zb ≠ 0)
+@[tmio M, powerlib_domain] private lemma telegrapher_pu_of {R L G C zb ωB Vb Ib : ℝ} (hz : zb ≠ 0)
     (hω : ωB ≠ 0) (hV : Vb ≠ 0) (hI : Ib ≠ 0) {v i : ℝ → ℝ → ℝ}
     (h : ∀ z t, ∃ vz vt iz it : ℝ,
       HasDerivAt (fun z' => v z' t) vz z ∧ HasDerivAt (fun t' => v z t') vt t ∧
@@ -358,7 +358,7 @@ telegrapher solutions to telegrapher solutions with the §1.10 per-unit line par
 (`Z_B = V_B / I_B`), and back: the per-unit telegrapher equation has the same form. Both sides
 are the telegrapher condition of the section header, for `(v, i)` and for the per-unit fields
 `(v̂, î) = (puField V_B z_B ω_B v, puField I_B z_B ω_B i)`. -/
-@[tmio M, powerlib_foundation] theorem telegrapher_pu_iff {R L G C zb ωB Vb Ib : ℝ} (hz : zb ≠ 0)
+@[tmio M, powerlib_domain] theorem telegrapher_pu_iff {R L G C zb ωB Vb Ib : ℝ} (hz : zb ≠ 0)
     (hω : ωB ≠ 0) (hV : Vb ≠ 0) (hI : Ib ≠ 0) (v i : ℝ → ℝ → ℝ) :
     (∀ z t, ∃ vz vt iz it : ℝ,
       HasDerivAt (fun z' => v z' t) vz z ∧ HasDerivAt (fun t' => v z t') vt t ∧

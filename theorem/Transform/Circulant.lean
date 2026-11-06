@@ -3,7 +3,7 @@ import Mathlib.LinearAlgebra.Matrix.Circulant
 
 /-! # Cyclically symmetric three-phase lines: constant Clarke modal decoupling
 
-Frequency-domain modal algebra (foundation) of cyclically symmetric three-phase lines.
+Frequency-domain modal algebra of cyclically symmetric three-phase lines.
 
 Model boundary.
 A three-phase line (no ground wires) whose per-unit-length matrices `R', L', G', C'` are 3 × 3,
@@ -58,18 +58,18 @@ def symCirc {R : Type*} [Ring R] (a b : R) : Matrix (Fin 3) (Fin 3) R := circula
 /-- The complexified power-invariant Clarke matrix. -/
 def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)
 
-@[tmio T, powerlib_foundation] theorem clarkeC_mul_transpose : clarkeC * clarkeCᵀ = 1 := by
+@[tmio M, powerlib_domain] theorem clarkeC_mul_transpose : clarkeC * clarkeCᵀ = 1 := by
   have h := clarkePI_mul_transpose
   have : (clarkePI * clarkePIᵀ).map (algebraMap ℝ ℂ) = (1 : Matrix (Fin 3) (Fin 3) ℝ).map
       (algebraMap ℝ ℂ) := by rw [h]
   rw [Matrix.map_mul, Matrix.transpose_map, Matrix.map_one _ (map_zero _) (map_one _)] at this
   exact this
 
-@[tmio T, powerlib_foundation] theorem clarkeC_transpose_mul : clarkeCᵀ * clarkeC = 1 :=
+@[tmio M, powerlib_domain] theorem clarkeC_transpose_mul : clarkeCᵀ * clarkeC = 1 :=
   mul_eq_one_comm.mp clarkeC_mul_transpose
 
 /-- The all-ones matrix is mapped to `diag(0, 0, 3)` (only the zero sequence sees it). -/
-@[tmio T, powerlib_foundation] theorem clarkePI_ones :
+@[tmio M, powerlib_domain] theorem clarkePI_ones :
     clarkePI * Matrix.of (fun _ _ => (1 : ℝ)) * clarkePIᵀ = diagonal ![0, 0, 3] := by
   have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
   have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
@@ -81,7 +81,7 @@ def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)
     first | ring1 | (field_simp; nlinarith [h3, h2])
 
 /-- **Constant modal decoupling**: `T · symCirc a b · Tᵀ = diag(a − b, a − b, a + 2b)`. -/
-@[tmio T, powerlib_foundation] theorem clarkePI_diagonalizes (a b : ℂ) :
+@[tmio M, powerlib_domain] theorem clarkePI_diagonalizes (a b : ℂ) :
     clarkeC * symCirc a b * clarkeCᵀ = diagonal ![a - b, a - b, a + 2 * b] := by
   have hJ : clarkeC * Matrix.of (fun _ _ => (1 : ℂ)) * clarkeCᵀ = diagonal ![0, 0, 3] := by
     have := congrArg (Matrix.map · (algebraMap ℝ ℂ)) clarkePI_ones
@@ -101,7 +101,7 @@ def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)
 /-- Modal form of `ZY` for symmetric circulant `Z = symCirc z_s z_m`, `Y = symCirc y_s y_m`:
 the same constant `T` diagonalises `ZY`, with modal `γ_k²` equal to `(z_s − z_m)(y_s − y_m)`
 (aerial, twice) and `(z_s + 2z_m)(y_s + 2y_m)` (ground). -/
-@[tmio T, powerlib_foundation] theorem modal_ZY (zs zm ys ym : ℂ) :
+@[tmio M, powerlib_domain] theorem modal_ZY (zs zm ys ym : ℂ) :
     clarkeC * (symCirc zs zm * symCirc ys ym) * clarkeCᵀ =
       diagonal ![(zs - zm) * (ys - ym), (zs - zm) * (ys - ym), (zs + 2 * zm) * (ys + 2 * ym)] := by
   have hsplit : clarkeC * (symCirc zs zm * symCirc ys ym) * clarkeCᵀ =

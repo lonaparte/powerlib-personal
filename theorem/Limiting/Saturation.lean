@@ -124,7 +124,7 @@ def satField (M D Pref Psat φ : ℝ) (x : State 2) : State 2 :=
 /-- The state `(δ, 0)`. -/
 def angleState (δ : ℝ) : State 2 := WithLp.toLp 2 ![δ, 0]
 
-@[tmio M, powerlib_foundation] theorem satField_eq_zero_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
+@[tmio M, powerlib_domain] theorem satField_eq_zero_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
     (x : State 2) :
     satField M D Pref Psat φ x = 0 ↔ x 1 = 0 ∧ Psat * Real.cos (x 0 - φ) = Pref := by
   constructor
@@ -141,7 +141,7 @@ def angleState (δ : ℝ) : State 2 := WithLp.toLp 2 ![δ, 0]
 
 /-- In saturation an equilibrium exists iff `|P_ref| ≤ P_sat`. Static evidence on the model,
 not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem saturated_equilibrium_exists_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
+@[tmio M, powerlib_domain] theorem saturated_equilibrium_exists_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
     (hsat : 0 ≤ Psat) :
     (∃ x : State 2, satField M D Pref Psat φ x = 0) ↔ |Pref| ≤ Psat := by
   simp only [satField_eq_zero_iff hM]
@@ -165,13 +165,13 @@ not a connection conclusion. -/
 def satJacobian (M D Psat φ δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; Psat * Real.sin (δ - φ) / M, -D / M]
 
-@[tmio M, powerlib_foundation] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
+@[tmio M, powerlib_domain] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
     ContDiff ℝ 1 (satField M D Pref Psat φ) := by
   apply Dynamics.contDiff_of_components
   intro i
   fin_cases i <;> simp [satField] <;> fun_prop
 
-@[tmio M, powerlib_foundation] theorem satField_fderiv (M D Pref Psat φ δ : ℝ) :
+@[tmio M, powerlib_domain] theorem satField_fderiv (M D Pref Psat φ δ : ℝ) :
     fderiv ℝ (satField M D Pref Psat φ) (angleState δ) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (satJacobian M D Psat φ δ) := by
   set x := angleState δ

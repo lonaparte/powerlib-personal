@@ -45,7 +45,7 @@ implementation evidence. Their models are the SRF members of the PI-PLL family
 (`PLL.PIPLL.srf V K_p K_i δω 0`, and `srf 1 a b (−Δω) 0` in `(θ, ξ)` coordinates); the local
 sentences about these equilibria are connection statements in `theorem/PLL/Model.lean`,
 `theorem/PLL/Invariant.lean` and `theorem/PLL/PH.lean`. The pendulum-energy identities are
-foundation.
+domain model evidence.
 
 Correction (T-invariant-coordinates, LaSalle paragraph): the note says that `V̇ ≤ 0` on
 `|θ_err| < π/2` "gives a hard lower bound of the global basin". A sign condition on a strip is
@@ -85,7 +85,7 @@ open powerlib.Dynamics (State)
 
 /-! ## 1. Port-Hamiltonian energy -/
 
-@[tmio M, powerlib_foundation] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
+@[tmio M, powerlib_domain] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
     ContDiff ℝ 1 (pllHamiltonian V Ki ηs) := by
   unfold pllHamiltonian
   exact (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0)))).add
@@ -199,13 +199,13 @@ def xiRate (a b Δω : ℝ) (x : State 2) : ℝ := Δω - a * Real.sin (x 0) + b
 def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   xiRate a b Δω x ^ 2 / 2 + b * (1 - Real.cos (x 0))
 
-@[tmio M, powerlib_foundation] private lemma contDiff_xiRate (a b Δω : ℝ) :
+@[tmio M, powerlib_domain] private lemma contDiff_xiRate (a b Δω : ℝ) :
     ContDiff ℝ 1 (xiRate a b Δω) := by
   unfold xiRate
   exact (contDiff_const.sub (contDiff_const.mul (Real.contDiff_sin.comp (contDiff_coord 0)))).add
     (contDiff_const.mul (contDiff_coord 1))
 
-@[tmio M, powerlib_foundation] private lemma hasFDerivAt_xiRate (a b Δω : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] private lemma hasFDerivAt_xiRate (a b Δω : ℝ) (x : State 2) :
     HasFDerivAt (xiRate a b Δω)
       ((-(a * Real.cos (x 0))) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ) +
         b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ)) x := by
@@ -239,13 +239,13 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   simp [xiField, xiRate]
   ring
 
-@[tmio M, powerlib_foundation] private lemma contDiff_pendulumEnergy (a b Δω : ℝ) :
+@[tmio M, powerlib_domain] private lemma contDiff_pendulumEnergy (a b Δω : ℝ) :
     ContDiff ℝ 1 (pendulumEnergy a b Δω) := by
   unfold pendulumEnergy
   exact (((contDiff_xiRate a b Δω).pow 2).div_const 2).add
     (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0))))
 
-@[tmio M, powerlib_foundation] private lemma contDiff_xiField (a b Δω : ℝ) :
+@[tmio M, powerlib_domain] private lemma contDiff_xiField (a b Δω : ℝ) :
     ContDiff ℝ 1 (xiField a b Δω) := by
   rw [xiField_eq_srfField]; exact contDiff_srfField _ _ _ _
 

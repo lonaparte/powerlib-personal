@@ -95,7 +95,7 @@ variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki : ℝ
 
 /-- `(J − R) ∇H + B δω` equals the PI-PLL field: T-gfl-ph (1.1) ⇔ (1.2).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem gflPH_field (x : State 2) (δω : ℝ) :
+@[tmio M, powerlib_domain] theorem gflPH_field (x : State 2) (δω : ℝ) :
     (gflPHModel h V hV Kp Ki hKp).field x ![δω] = piPLLField h Kp Ki δω x := by
   rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.field, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
@@ -103,19 +103,19 @@ Static evidence on the model, not a connection conclusion. -/
   constructor
 
 /-- The output is the phase-detector signal `y = h(θ)`. -/
-@[tmio M, powerlib_foundation] theorem gflPH_output (x : State 2) :
+@[tmio M, powerlib_domain] theorem gflPH_output (x : State 2) :
     (gflPHModel h V hV Kp Ki hKp).output x = ![h (x 0)] := by
   ext i
   fin_cases i
   simp [PH.NonlinearModel.output, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two]
 
-@[tmio M, powerlib_foundation] theorem gflPH_supply (x : State 2) (δω : ℝ) :
+@[tmio M, powerlib_domain] theorem gflPH_supply (x : State 2) (δω : ℝ) :
     (gflPHModel h V hV Kp Ki hKp).supply x ![δω] = h (x 0) * δω := by
   simp [PH.NonlinearModel.supply, gflPH_output, dotProduct]
   ring
 
-@[tmio M, powerlib_foundation] theorem gflPH_dampingPower (x : State 2) :
+@[tmio M, powerlib_domain] theorem gflPH_dampingPower (x : State 2) :
     (gflPHModel h V hV Kp Ki hKp).dampingPower x = Kp * h (x 0) ^ 2 := by
   simp [PH.NonlinearModel.dampingPower, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two, Matrix.diagonal]
@@ -123,7 +123,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Energy balance `Ḣ = −K_p h² + h δω` (T-gfl-ph §1.2), pointwise.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem gflPH_power_balance (x : State 2) (δω : ℝ) :
+@[tmio M, powerlib_domain] theorem gflPH_power_balance (x : State 2) (δω : ℝ) :
     fderiv ℝ (gflPHModel h V hV Kp Ki hKp).H x (piPLLField h Kp Ki δω x) =
       -(Kp * h (x 0) ^ 2) + h (x 0) * δω := by
   rw [← gflPH_field (hV := hV) (hKp := hKp), PH.NonlinearModel.power_balance, gflPH_supply,
@@ -161,7 +161,7 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
     c₃ / 2 * (Real.cos (2 * θ) - 1) - c₄ / 2 * Real.sin (2 * θ))
 
 /-- (1.4) is a primitive of `−h`. -/
-@[tmio M, powerlib_foundation] theorem hasDerivAt_formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ θ : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ θ : ℝ) :
     HasDerivAt (formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄) (-formBH ωg Cf c₀ c₁ c₂ c₃ c₄ θ) θ := by
   have h2 : HasDerivAt (fun t : ℝ => 2 * t) 2 θ := by
     simpa using (hasDerivAt_id θ).const_mul (2 : ℝ)
@@ -175,17 +175,17 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
   simp only [formBH]
   ring
 
-@[tmio M, powerlib_foundation] theorem formBPotential_zero (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
+@[tmio M, powerlib_domain] theorem formBPotential_zero (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
     formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ 0 = 0 := by
   simp [formBPotential]
 
-@[tmio M, powerlib_foundation] theorem continuous_formBH (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
+@[tmio M, powerlib_domain] theorem continuous_formBH (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
     Continuous (formBH ωg Cf c₀ c₁ c₂ c₃ c₄) := by
   unfold formBH
   fun_prop
 
 /-- (1.4) equals `−∫₀^θ h`. -/
-@[tmio M, powerlib_foundation] theorem formBPotential_eq_neg_integral (ωg Cf c₀ c₁ c₂ c₃ c₄ θ : ℝ) :
+@[tmio M, powerlib_domain] theorem formBPotential_eq_neg_integral (ωg Cf c₀ c₁ c₂ c₃ c₄ θ : ℝ) :
     formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ θ =
       -∫ t in (0 : ℝ)..θ, formBH ωg Cf c₀ c₁ c₂ c₃ c₄ t := by
   have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt
@@ -196,7 +196,7 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
   linarith
 
 /-- Bare-PLL degeneration, corrected: `c₁ = −V_g ω_g C_f` (others zero) gives `h = −V_g sin θ`. -/
-@[tmio M, powerlib_foundation] theorem formBH_barePLL {ωg Cf Vg : ℝ} (hωC : ωg * Cf ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem formBH_barePLL {ωg Cf Vg : ℝ} (hωC : ωg * Cf ≠ 0) (θ : ℝ) :
     formBH ωg Cf 0 (-(Vg * ωg * Cf)) 0 0 0 θ = -Vg * Real.sin θ := by
   have hω : ωg ≠ 0 := left_ne_zero_of_mul hωC
   have hC : Cf ≠ 0 := right_ne_zero_of_mul hωC
@@ -205,7 +205,7 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
   ring
 
 /-- The note's choice `c₁ = −V_g` gives `h = −V_g sin θ / (ω_g C_f)`. -/
-@[tmio M, powerlib_foundation] theorem formBH_barePLL_note (ωg Cf Vg θ : ℝ) :
+@[tmio M, powerlib_domain] theorem formBH_barePLL_note (ωg Cf Vg θ : ℝ) :
     formBH ωg Cf 0 (-Vg) 0 0 0 θ = -Vg * Real.sin θ / (ωg * Cf) := by
   simp only [formBH]
   ring
@@ -217,7 +217,7 @@ def formBPHModel (ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ) (hKp : 0 ≤ Kp) 
 
 /-- For `c₀ ≠ 0` the form-B Hamiltonian is unbounded below (it contains `−c₀θ/(ω_g C_f)`).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem formBHamiltonian_not_bddBelow {ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ}
+@[tmio M, powerlib_domain] theorem formBHamiltonian_not_bddBelow {ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ}
     {hKp : 0 ≤ Kp} (hωC : ωg * Cf ≠ 0) (hc₀ : c₀ ≠ 0) :
     ¬ ∃ c, ∀ x, c ≤ (formBPHModel ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki hKp).H x := by
   rintro ⟨c, hc⟩

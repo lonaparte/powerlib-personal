@@ -110,6 +110,10 @@ general T lemmas. Foundation permits T, M and TM; domain permits M, TM, MI and I
 M and TM may belong to either class according to whether the selected object is a
 mathematical model or an engineering model. Classify the complete
 statement and its hypotheses, not just the directory or the type of one endpoint.
+In particular, general coordinate-change laws are foundation, while properties of
+the chosen abc/αβ/dq Clarke and Park transforms are domain. Quantifying over arbitrary
+vectors does not make a theorem about one selected electrical transform generic.
+Their model formulas belong to M; an M–I claim needs an actual realization relation.
 
 The semantic layer reads three kinds of systems (`Behaviour`): continuous-time systems with ports
 (`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`), discrete-time systems with ports

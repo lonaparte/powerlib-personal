@@ -47,7 +47,7 @@ Results.
   `β²/(2DM)`, and its variance function tends to it for `D, M > 0`.
 
 Family and connection conclusions.
-* None: everything here is a statement about deterministic moment objects (foundation), not a
+* None: everything here is a statement about deterministic moment objects, not a
   stochastic stability theorem.
 
 Correction (§1.5, eq. (1.12)).
@@ -61,7 +61,7 @@ Scope notes (Rules §3).
   equation `A P + P Aᵀ + Σ Σᵀ = 0`, the differential Lyapunov equation `Ṗ = A P + P Aᵀ + Σ Σᵀ`,
   the mean `e^{tA} m₀` and the lag function `C(τ) = e^{τA} P∞`. That these are the moments /
   autocovariance of the Itô solution of (1.5) is **not** proved (Itô calculus is out of scope);
-  these are foundation results, not stochastic stability theorems.
+  the swing-specific moment formulas are domain results; stochastic stability is not claimed.
 -/
 
 noncomputable section
@@ -98,7 +98,7 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ring
 
 /-- `A` is Hurwitz for `M, D, k > 0`. -/
-@[tmio TM, powerlib_foundation] theorem swingA_isHurwitz {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio TM, powerlib_domain] theorem swingA_isHurwitz {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
     (hk : 0 < k) : LinearSystems.IsHurwitz (swingA M D k) := by
   rw [swingA, powerlib.Criteria.isHurwitz_fin_two_of_iff]
   constructor
@@ -108,7 +108,7 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     nlinarith
 
 /-- (1.8)–(1.9) solve the covariance Lyapunov equation (1.7). -/
-@[tmio M, powerlib_foundation] theorem swingCov_solves {M D k : ℝ} (hM : M ≠ 0) (hD : D ≠ 0)
+@[tmio M, powerlib_domain] theorem swingCov_solves {M D k : ℝ} (hM : M ≠ 0) (hD : D ≠ 0)
     (hk : k ≠ 0) (sω sv : ℝ) :
     SolvesCovLyapunov (swingA M D k) (swingCov M D k (sω ^ 2 + sv ^ 2))
       (swingNoise M sω sv * (swingNoise M sω sv)ᵀ) := by
@@ -120,7 +120,7 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   fin_cases i <;> fin_cases j <;> simp [swingA, swingCov] <;> field_simp <;> ring
 
 /-- Uniqueness: every solution of (1.7) is the closed form (1.8)–(1.9). -/
-@[tmio M, powerlib_foundation] theorem swingCov_unique {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio M, powerlib_domain] theorem swingCov_unique {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
     (hk : 0 < k) (sω sv : ℝ) {P : Matrix (Fin 2) (Fin 2) ℝ}
     (hP : SolvesCovLyapunov (swingA M D k) P (swingNoise M sω sv * (swingNoise M sω sv)ᵀ)) :
     P = swingCov M D k (sω ^ 2 + sv ^ 2) :=
@@ -128,13 +128,13 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     (swingCov_solves hM.ne' hD.ne' hk.ne' sω sv)
 
 /-- Entries of the stationary covariance: `p₁₂ = 0`, `Var ω̃ = s²/(2MD)`, `Var δ̃ = s²/(2Dk)`. -/
-@[tmio M, powerlib_foundation] theorem swingCov_entries (M D k s2 : ℝ) :
+@[tmio M, powerlib_domain] theorem swingCov_entries (M D k s2 : ℝ) :
     swingCov M D k s2 0 1 = 0 ∧ swingCov M D k s2 1 0 = 0 ∧
       swingCov M D k s2 1 1 = s2 / (2 * M * D) ∧ swingCov M D k s2 0 0 = s2 / (2 * D * k) := by
   simp [swingCov]
 
 /-- `Var δ̃ = Var ω̃ / ω_n²`, `ω_n² = k/M` ((1.9)). -/
-@[tmio M, powerlib_foundation] theorem swingCov_angle_eq {M D k : ℝ} (hM : M ≠ 0) (hk : k ≠ 0)
+@[tmio M, powerlib_domain] theorem swingCov_angle_eq {M D k : ℝ} (hM : M ≠ 0) (hk : k ≠ 0)
     (s2 : ℝ) : swingCov M D k s2 0 0 = swingCov M D k s2 1 1 / (k / M) := by
   simp only [swingCov, of_apply, cons_val', cons_val_zero, empty_val', cons_val_fin_one,
     cons_val_one]
@@ -143,7 +143,7 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   field_simp
 
 /-- The stationary covariance is positive definite when the total noise power is positive. -/
-@[tmio M, powerlib_foundation] theorem swingCov_posDef {M D k s2 : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio M, powerlib_domain] theorem swingCov_posDef {M D k s2 : ℝ} (hM : 0 < M) (hD : 0 < D)
     (hk : 0 < k) (hs : 0 < s2) : (swingCov M D k s2).PosDef := by
   have h1 : 0 < s2 / (2 * D * k) := by positivity
   have h2 : 0 < s2 / (2 * M * D) := by positivity
@@ -156,7 +156,7 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Every solution of the differential Lyapunov equation (1.11) converges entrywise to the
 stationary covariance (1.8)–(1.9). -/
-@[tmio TM, powerlib_foundation] theorem swing_cov_tendsto {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio TM, powerlib_domain] theorem swing_cov_tendsto {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
     (hk : 0 < k) (sω sv : ℝ) {P : ℝ → Matrix (Fin 2) (Fin 2) ℝ}
     (hP : ∀ t, HasDerivAt P (swingA M D k * P t + P t * (swingA M D k)ᵀ +
       swingNoise M sω sv * (swingNoise M sω sv)ᵀ) t) (i j : Fin 2) :
@@ -166,7 +166,7 @@ stationary covariance (1.8)–(1.9). -/
   exact covSol_tendsto_entry (swingA_isHurwitz hM hD hk) i j
 
 /-- The mean `e^{tA} m₀` of (1.11) tends to `0`. -/
-@[tmio TM, powerlib_foundation] theorem swing_mean_tendsto {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio TM, powerlib_domain] theorem swing_mean_tendsto {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
     (hk : 0 < k) (m₀ : Fin 2 → ℝ) :
     Tendsto (fun t : ℝ => NormedSpace.exp (t • swingA M D k) *ᵥ m₀) atTop (𝓝 0) := by
   have hE := tendsto_norm_exp_smul_zero (swingA_isHurwitz hM hD hk)
@@ -181,7 +181,7 @@ stationary covariance (1.8)–(1.9). -/
 /-! ## Lag covariance of the speed (§1.5) -/
 
 /-- `B = A + (D/2M) I` squares to `−ω_d² I` with `ω_d² = k/M − D²/(4M²)`. -/
-@[tmio M, powerlib_foundation] theorem swingA_shift_sq {M D k : ℝ} (hM : M ≠ 0) :
+@[tmio M, powerlib_domain] theorem swingA_shift_sq {M D k : ℝ} (hM : M ≠ 0) :
     (swingA M D k + (D / (2 * M)) • (1 : Matrix (Fin 2) (Fin 2) ℝ)) *
         (swingA M D k + (D / (2 * M)) • (1 : Matrix (Fin 2) (Fin 2) ℝ)) =
       -(k / M - (D / (2 * M)) ^ 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
@@ -192,7 +192,7 @@ stationary covariance (1.8)–(1.9). -/
 /-- **Speed lag covariance (§1.5, boxed)**, underdamped `D² < 4 M k`:
 `(e^{τA} P∞)_{ωω} = Var(ω̃) e^{−aτ} [cos(ω_d τ) − (a/ω_d) sin(ω_d τ)]`, `a = ζω_n = D/(2M)`,
 `ω_d = √(k/M − a²)`. -/
-@[tmio M, powerlib_foundation] theorem swing_lagCov_speed {M D k : ℝ} (hM : 0 < M)
+@[tmio M, powerlib_domain] theorem swing_lagCov_speed {M D k : ℝ} (hM : 0 < M)
     (hund : (D / (2 * M)) ^ 2 < k / M) (s2 τ : ℝ) :
     (NormedSpace.exp (τ • swingA M D k) * swingCov M D k s2) 1 1 =
       swingCov M D k s2 1 1 * (Real.exp (-(D / (2 * M)) * τ) *

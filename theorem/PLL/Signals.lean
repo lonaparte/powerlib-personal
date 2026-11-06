@@ -4,9 +4,9 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-! # SRF-PLL phase detector and pre-filters: signal-level identities
 
-All results here are coordinate / signal identities (foundation layer). They describe what
-the SRF-PLL phase detector and its pre-filters compute from a *given* voltage signal; they
-make no stability claim about any closed loop.
+Results include domain identities for the chosen electrical frames and phase detector,
+and foundation results for generic signal operations and the SOGI filter model. They describe
+responses to given signals; no closed-loop stability claim is made.
 
 Model boundary.
 Continuous time, ideal signals (no sampling, quantization, PWM, noise model, or measurement
@@ -88,7 +88,7 @@ def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.
 
 /-- Park projection of the grid voltage onto the PLL frame `θ̂`:
 `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/
-@[tmio M, powerlib_foundation] theorem park_gridAlphaBeta (V θg θh : ℝ) :
+@[tmio M, powerlib_domain] theorem park_gridAlphaBeta (V θg θh : ℝ) :
     park θh *ᵥ gridAlphaBeta V θg =
       ![V * Real.cos (θg - θh), V * Real.sin (θg - θh)] := by
   ext i; fin_cases i <;> simp [gridAlphaBeta, Real.cos_sub, Real.sin_sub] <;> ring
@@ -97,14 +97,14 @@ def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.
 def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg) 1
 
 /-- Phase-detector characteristic `V_q = −V sin θ̃`, `θ̃ = θ̂ − θ_g`. -/
-@[tmio M, simp, powerlib_foundation] theorem phaseDetector_eq (V θg θh : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem phaseDetector_eq (V θg θh : ℝ) :
     phaseDetector V θg θh = -(V * Real.sin (θh - θg)) := by
   rw [phaseDetector, park_gridAlphaBeta]
   simp only [Matrix.cons_val_one, Matrix.cons_val_zero]
   rw [show θg - θh = -(θh - θg) by ring, Real.sin_neg]; ring
 
 /-- Projecting a grid-frame vector into the PLL frame: `park θ̂ · rot θ_g = park(θ̂ − θ_g)`. -/
-@[tmio T, powerlib_foundation] theorem park_rot_mulVec (θh θg : ℝ) (vg : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem park_rot_mulVec (θh θg : ℝ) (vg : Fin 2 → ℝ) :
     park θh *ᵥ (rot θg *ᵥ vg) = park (θh - θg) *ᵥ vg := by
   rw [Matrix.mulVec_mulVec, Transform.park_eq_rot_neg, Transform.park_eq_rot_neg,
     ← Transform.rot_add]
@@ -112,7 +112,7 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
 
 /-- Perturbation projection (T-pll-dynamics §1.2, boxed): grid-frame voltage
 `(V + δv_d, δv_q)` seen on the q axis of a PLL frame advanced by `θ_e`. -/
-@[tmio T, powerlib_foundation] theorem perturbed_q (V θe δd δq : ℝ) :
+@[tmio M, powerlib_domain] theorem perturbed_q (V θe δd δq : ℝ) :
     (park θe *ᵥ ![V + δd, δq]) 1 =
       -(V * Real.sin θe) + (-(Real.sin θe) * δd + Real.cos θe * δq) := by
   simp; ring
@@ -130,17 +130,17 @@ def posSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, A * Real.sin α]
 /-- Negative-sequence component `A (cos α, −sin α)` (clockwise rotation). -/
 def negSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, -(A * Real.sin α)]
 
-@[tmio T, powerlib_foundation] theorem park_posSeq_q (A α θh : ℝ) :
+@[tmio M, powerlib_domain] theorem park_posSeq_q (A α θh : ℝ) :
     (park θh *ᵥ posSeq A α) 1 = A * Real.sin (α - θh) := by
   simp [posSeq, Real.sin_sub]; ring
 
-@[tmio T, powerlib_foundation] theorem park_negSeq_q (A α θh : ℝ) :
+@[tmio M, powerlib_domain] theorem park_negSeq_q (A α θh : ℝ) :
     (park θh *ᵥ negSeq A α) 1 = -(A * Real.sin (α + θh)) := by
   simp [negSeq, Real.sin_add]; ring
 
 /-- q-axis PLL-frame voltage of `V⁺` positive sequence at `θ_g` plus `V⁻` negative sequence
 at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (corrected §1.6). -/
-@[tmio T, powerlib_foundation] theorem park_unbalanced_q (Vp Vn θg θh φn : ℝ) :
+@[tmio M, powerlib_domain] theorem park_unbalanced_q (Vp Vn θg θh φn : ℝ) :
     (park θh *ᵥ (posSeq Vp θg + negSeq Vn (θg + φn))) 1 =
       -(Vp * Real.sin (θh - θg)) - Vn * Real.sin (θg + θh + φn) := by
   rw [Matrix.mulVec_add, Pi.add_apply, park_posSeq_q, park_negSeq_q,
@@ -148,23 +148,23 @@ at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (c
   ring
 
 /-- Locked PLL (`θ̂ = θ_g`): the negative sequence produces a double-frequency `V_q` term. -/
-@[tmio T, powerlib_foundation] theorem park_unbalanced_q_locked (Vp Vn θg φn : ℝ) :
+@[tmio M, powerlib_domain] theorem park_unbalanced_q_locked (Vp Vn θg φn : ℝ) :
     (park θg *ᵥ (posSeq Vp θg + negSeq Vn (θg + φn))) 1 =
       -(Vn * Real.sin (2 * θg + φn)) := by
   rw [park_unbalanced_q]; ring_nf; simp
 
 /-- Locked PLL: an `h`-th harmonic positive-sequence component gives a `(h − 1)θ_g` term. -/
-@[tmio T, powerlib_foundation] theorem park_posSeq_harmonic_locked (A h φ θg : ℝ) :
+@[tmio M, powerlib_domain] theorem park_posSeq_harmonic_locked (A h φ θg : ℝ) :
     (park θg *ᵥ posSeq A (h * θg + φ)) 1 = A * Real.sin ((h - 1) * θg + φ) := by
   rw [park_posSeq_q]; ring_nf
 
 /-- Locked PLL: an `h`-th harmonic negative-sequence component gives a `(h + 1)θ_g` term. -/
-@[tmio T, powerlib_foundation] theorem park_negSeq_harmonic_locked (A h φ θg : ℝ) :
+@[tmio M, powerlib_domain] theorem park_negSeq_harmonic_locked (A h φ θg : ℝ) :
     (park θg *ᵥ negSeq A (h * θg + φ)) 1 = -(A * Real.sin ((h + 1) * θg + φ)) := by
   rw [park_negSeq_q]; ring_nf
 
 /-- The note's negative-sequence term `V⁻ sin(2θ_g − θ̂ + φ⁻)` is not the q-axis voltage. -/
-@[tmio T, powerlib_foundation] theorem not_note_negSeq_formula {Vn : ℝ} (hVn : Vn ≠ 0) :
+@[tmio M, powerlib_domain] theorem not_note_negSeq_formula {Vn : ℝ} (hVn : Vn ≠ 0) :
     ¬ ∀ θg θh φn : ℝ, (park θh *ᵥ negSeq Vn (θg + φn)) 1 =
       Vn * Real.sin (2 * θg - θh + φn) := by
   intro h
@@ -182,7 +182,7 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
 
 /-- Positive-frame (`dq^{+1}`) components: `V^{++} = V⁺ + park(2θ̂) V⁻`
 (Rodríguez et al. 2007, eq. (3)). -/
-@[tmio T, powerlib_foundation] theorem ddsrf_positiveFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem ddsrf_positiveFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn = Vp + park (2 * θh) *ᵥ Vn := by
   rw [unbalancedAlphaBeta, Matrix.mulVec_add, Transform.park_mulVec_rot_mulVec,
     Matrix.mulVec_mulVec, Transform.park_eq_rot_neg θh, ← Transform.rot_add,
@@ -190,7 +190,7 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
   congr 3; ring
 
 /-- Componentwise form of `ddsrf_positiveFrame`. -/
-@[tmio T, powerlib_foundation] theorem ddsrf_positiveFrame_apply (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem ddsrf_positiveFrame_apply (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn =
       ![Vp 0 + Real.cos (2 * θh) * Vn 0 + Real.sin (2 * θh) * Vn 1,
         Vp 1 + Real.cos (2 * θh) * Vn 1 - Real.sin (2 * θh) * Vn 0] := by
@@ -198,7 +198,7 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
   ext i; fin_cases i <;> simp <;> ring
 
 /-- Negative-frame (`dq^{−1}`) components: `V^{−−} = V⁻ + rot(2θ̂) V⁺`. -/
-@[tmio T, powerlib_foundation] theorem ddsrf_negativeFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem ddsrf_negativeFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park (-θh) *ᵥ unbalancedAlphaBeta θh Vp Vn = Vn + rot (2 * θh) *ᵥ Vp := by
   rw [unbalancedAlphaBeta, Matrix.mulVec_add, Transform.park_mulVec_rot_mulVec,
     Matrix.mulVec_mulVec, Transform.park_eq_rot_neg (-θh), ← Transform.rot_add, add_comm]
@@ -206,18 +206,18 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
 
 /-- Exact DDSRF decoupling: subtracting `park(2θ̂)` of the negative-sequence estimate from the
 positive-frame voltage leaves the true positive sequence when the estimate is exact. -/
-@[tmio T, powerlib_foundation] theorem ddsrf_decoupled (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem ddsrf_decoupled (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn - park (2 * θh) *ᵥ Vn = Vp := by
   rw [ddsrf_positiveFrame, add_sub_cancel_right]
 
 /-- Decoupling error with an estimate `V̄⁻`: the residual is `park(2θ̂)(V⁻ − V̄⁻)`. -/
-@[tmio T, powerlib_foundation] theorem ddsrf_decoupling_error (θh : ℝ) (Vp Vn Vnbar : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem ddsrf_decoupling_error (θh : ℝ) (Vp Vn Vnbar : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn - park (2 * θh) *ᵥ Vnbar =
       Vp + park (2 * θh) *ᵥ (Vn - Vnbar) := by
   rw [ddsrf_positiveFrame, Matrix.mulVec_sub]; abel
 
 /-- The note's q row `V_q^{++} = V_q⁺ − cos(2θ̂) V_q⁻ + sin(2θ̂) V_d⁻` is false. -/
-@[tmio T, powerlib_foundation] theorem not_note_ddsrf_q_row :
+@[tmio M, powerlib_domain] theorem not_note_ddsrf_q_row :
     ¬ ∀ (θh : ℝ) (Vp Vn : Fin 2 → ℝ), (park θh *ᵥ unbalancedAlphaBeta θh Vp Vn) 1 =
       Vp 1 - Real.cos (2 * θh) * Vn 1 + Real.sin (2 * θh) * Vn 0 := by
   intro h

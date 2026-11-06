@@ -5,7 +5,7 @@ import theorem.Drives.PMSM
 
 /-! # Direct torque control: flux estimation, load-angle torque, switching geometry
 
-Static foundation for direct torque control: the voltage-model flux estimate, the load-angle
+Static identities for direct torque control: the voltage-model flux estimate, the load-angle
 torque formulas and the geometry of the switching table.  No closed-loop claim is made.
 
 Model boundary.
@@ -105,7 +105,7 @@ open powerlib.Transform.SpaceVector
 /-- **Load-angle torque of the PMSM** (rotor frame): if the stator flux
 `ψ_s = (L_d i_d + ψ_f) + j L_q i_q` equals `ρ e^{jδ}`, then
 `T_e = (3/2) np (ψ_f ρ sin δ / L_d + ρ² (L_d − L_q) sin 2δ / (2 L_d L_q))`. -/
-@[tmio M, powerlib_foundation] theorem torque_loadAngle_PMSM (np ψf Ld Lq id iq ρ δ : ℝ) (hd : Ld ≠ 0)
+@[tmio M, powerlib_domain] theorem torque_loadAngle_PMSM (np ψf Ld Lq id iq ρ δ : ℝ) (hd : Ld ≠ 0)
     (hq : Lq ≠ 0) (h1 : Ld * id + ψf = ρ * Real.cos δ) (h2 : Lq * iq = ρ * Real.sin δ) :
     PMSM.torque np ψf Ld Lq id iq =
       3 / 2 * np * (ψf * ρ * Real.sin δ / Ld +

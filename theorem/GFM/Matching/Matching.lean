@@ -131,7 +131,7 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
   swingField (C / η ^ 2) (G / η ^ 2) (idc / η) (fun θ ω => ix θ (ω / η) / η)
 
 /-- The swing field is the matching field in the coordinates `(θ, η v)`. -/
-@[tmio M, powerlib_foundation] theorem matching_eq_swing {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+@[tmio M, powerlib_domain] theorem matching_eq_swing {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) :
     transportField (scaleCoord hη) 0 (matchingField C G η idc ix) =
       matchedSwing C G η idc ix := by
@@ -166,7 +166,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     simpa only [affineCoord_symm_affineCoord] using h2
 
 /-- Equilibria correspond. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem matching_equilibrium_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+@[tmio M, powerlib_domain] theorem matching_equilibrium_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (x : State 2) :
     matchedSwing C G η idc ix (scaleCoord hη x) = 0 ↔ matchingField C G η idc ix x = 0 := by
   rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
@@ -185,7 +185,7 @@ frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/�
 
 /-- Exact frequency derivative of the matching law: `ω' = η v' = η (i_dc − i_x − G v)/C`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem matching_frequency_derivative {C G η idc : ℝ} (ix : ℝ → ℝ → ℝ)
+@[tmio M, powerlib_domain] theorem matching_frequency_derivative {C G η idc : ℝ} (ix : ℝ → ℝ → ℝ)
     (x : State 2) :
     η * (matchingField C G η idc ix x) 1 = η * ((idc - ix (x 0) (x 1) - G * x 1) / C) := by
   simp [matchingField]
@@ -228,7 +228,7 @@ Static evidence on the model, not a connection conclusion. -/
 def droopModel (C G K vref : ℝ) : Linear.Plant 1 1 :=
   ⟨!![-G / C], !![-(3 / 2) / (C * vref)], !![K], !![0]⟩
 
-@[tmio M, powerlib_foundation] theorem droop_transfer {C G K vref : ℝ} (hC : C ≠ 0) (hv : vref ≠ 0)
+@[tmio M, powerlib_domain] theorem droop_transfer {C G K vref : ℝ} (hC : C ≠ 0) (hv : vref ≠ 0)
     {s : ℂ} (hs : (C : ℂ) * s + G ≠ 0) :
     Linear.transfer (droopModel C G K vref) s 0 0 = -(3 / 2) * K / (vref * (C * s + G)) := by
   have hC' : (C : ℂ) ≠ 0 := by exact_mod_cast hC
@@ -250,7 +250,7 @@ def droopModel (C G K vref : ℝ) : Linear.Plant 1 1 :=
   ring
 
 /-- DC gain `Δω/ΔP_export (0) = −(3/2) K/(G v*)` (needs `G ≠ 0`). -/
-@[tmio M, powerlib_foundation] theorem droop_dcGain {C G K vref : ℝ} (hC : C ≠ 0) (hv : vref ≠ 0)
+@[tmio M, powerlib_domain] theorem droop_dcGain {C G K vref : ℝ} (hC : C ≠ 0) (hv : vref ≠ 0)
     (hG : G ≠ 0) :
     Linear.transfer (droopModel C G K vref) 0 0 0 = -(3 / 2) * K / (G * vref) := by
   have hG' : (G : ℂ) ≠ 0 := by exact_mod_cast hG
@@ -260,12 +260,12 @@ def droopModel (C G K vref : ℝ) : Linear.Plant 1 1 :=
 
 /-- The droop node is Hurwitz iff `G/C > 0`. Static evidence on the model, not a connection
 conclusion. -/
-@[tmio TM, powerlib_foundation] theorem droop_isHurwitz_iff (C G K vref : ℝ) :
+@[tmio TM, powerlib_domain] theorem droop_isHurwitz_iff (C G K vref : ℝ) :
     IsHurwitz (droopModel C G K vref).A ↔ 0 < G / C := by
   change IsHurwitz !![-G / C] ↔ _
   rw [Linear.isHurwitz_one_iff, neg_div, neg_lt_zero]
 
-@[tmio M, powerlib_foundation] theorem droop_exists_root {C G K vref : ℝ} (h : G / C < 0) :
+@[tmio M, powerlib_domain] theorem droop_exists_root {C G K vref : ℝ} (h : G / C < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (droopModel C G K vref).A s).det = 0 ∧ 0 < s.re := by
   refine ⟨((-G / C : ℝ) : ℂ), ?_, ?_⟩
   · simp [Linear.characteristicMatrix, droopModel, Matrix.det_unique]
@@ -493,7 +493,7 @@ damping and synchronizing coefficient `k₂ cos(θ* − k₃) > 0`. -/
 
 /-- With a load law `2π`-periodic in the modulation angle, the matching field is `2π`-periodic
 in `θ`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem matchingField_add_two_pi {C G η idc : ℝ} {ix : ℝ → ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem matchingField_add_two_pi {C G η idc : ℝ} {ix : ℝ → ℝ → ℝ}
     (hper : ∀ θ v, ix (θ + 2 * Real.pi) v = ix θ v) (θ v : ℝ) :
     matchingField C G η idc ix (WithLp.toLp 2 ![θ + 2 * Real.pi, v]) =
       matchingField C G η idc ix (WithLp.toLp 2 ![θ, v]) := by

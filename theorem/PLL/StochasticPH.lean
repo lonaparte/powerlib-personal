@@ -11,7 +11,7 @@ State `(θ_e, η)` of the SRF-PLL (phase error, PI integrator), Hamiltonian
 1×2 row `σ_v(θ_e)`: `dθ_e ∋ K_p σ_v dW_v`, `dη ∋ σ_v dW_v`.  The form-B specialization is the
 quasi-steady line + LC algebra of T-gfl-dynamics §1.6 (inner current loop and outer loops frozen,
 `ω_g` constant); the grid-voltage perturbation replaces `V_g` by `V_g + ξ_d` and `0` by `ξ_q`.
-Everything here is **foundation**: the Itô correction is the algebraic expression
+These are algebraic identities of the selected PLL models and supporting signal lemmas. The correction is
 `½ tr(h hᵀ ∇²𝓗)` at a state (see `SPH.itoCorrection`); no SDE solution, Itô formula,
 escape rate or stability claim is made (Rules §3).
 
@@ -196,12 +196,12 @@ def pllNoiseFreq (Kp : ℝ) (σv : Fin 2 → ℝ) (σω : ℝ) : Matrix (Fin 2) 
 /-! ## Grid-voltage disturbance: Park projection (T-grid-disturbance-stochastic §1.2.a) -/
 
 /-- The `q` component of the Park-rotated grid disturbance is `σ_v^bare(θ) ⬝ ξ`. -/
-@[tmio T, powerlib_foundation] theorem park_q_eq_sigmaBare (θ : ℝ) (ξ : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem park_q_eq_sigmaBare (θ : ℝ) (ξ : Fin 2 → ℝ) :
     (powerlib.Transform.park θ *ᵥ ξ) 1 = sigmaBare θ ⬝ᵥ ξ := by
   simp [sigmaBare, dotProduct, Fin.sum_univ_two]
 
 /-- Isotropic disturbance covariance `s I` is invariant under the Park rotation. -/
-@[tmio T, powerlib_foundation] theorem park_isotropic_cov (θ s : ℝ) :
+@[tmio M, powerlib_domain] theorem park_isotropic_cov (θ s : ℝ) :
     powerlib.Transform.park θ * (s • (1 : Matrix (Fin 2) (Fin 2) ℝ)) *
       (powerlib.Transform.park θ)ᵀ = s • 1 := by
   rw [show (powerlib.Transform.park θ)ᵀ = powerlib.Transform.rot θ by
@@ -234,7 +234,7 @@ def lineMatrix (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-R, X; -X, -R]
 def lineDrive (C ω Vg : ℝ) (idq : Fin 2 → ℝ) : Fin 2 → ℝ :=
   ![Vg - idq 1 / (ω * C), idq 0 / (ω * C)]
 
-@[tmio M, powerlib_foundation] theorem lineResidual_eq_zero_iff {R L C ω Vg : ℝ}
+@[tmio M, powerlib_domain] theorem lineResidual_eq_zero_iff {R L C ω Vg : ℝ}
     (idq ig ξ : Fin 2 → ℝ) :
     lineResidual R L C ω Vg idq ig ξ = 0 ↔
       lineMatrix R (lineX L C ω) *ᵥ ig = lineDrive C ω Vg idq + ξ := by
@@ -256,7 +256,7 @@ def lineDrive (C ω Vg : ℝ) (idq : Fin 2 → ℝ) : Fin 2 → ℝ :=
     · simp [lineResidual]; linear_combination h0
     · simp [lineResidual]; linear_combination h1
 
-@[tmio M, powerlib_foundation] theorem lineMatrix_det (R X : ℝ) : (lineMatrix R X).det = R ^ 2 + X ^ 2 := by
+@[tmio M, powerlib_domain] theorem lineMatrix_det (R X : ℝ) : (lineMatrix R X).det = R ^ 2 + X ^ 2 := by
   simp [lineMatrix, det_fin_two]; ring
 
 /-- Line sensitivity `G = M⁻¹`. -/
@@ -264,7 +264,7 @@ def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹
 
 /-- Superposition: for a lossy line (`R ≠ 0`) the unique solution splits as
 `i_g = M⁻¹ r + G ξ` with `G = M⁻¹` independent of `θ_e` and of `ξ`. -/
-@[tmio M, powerlib_foundation] theorem lineSolution_split {R L C ω Vg : ℝ} (hR : R ≠ 0)
+@[tmio M, powerlib_domain] theorem lineSolution_split {R L C ω Vg : ℝ} (hR : R ≠ 0)
     (idq ig ξ : Fin 2 → ℝ) :
     lineResidual R L C ω Vg idq ig ξ = 0 ↔
       ig = lineG R (lineX L C ω) *ᵥ lineDrive C ω Vg idq + lineG R (lineX L C ω) *ᵥ ξ := by
@@ -287,7 +287,7 @@ def gflSigma (C ω θ : ℝ) (G : Matrix (Fin 2) (Fin 2) ℝ) : Fin 2 → ℝ :=
 /-- **σ_v closed form (T-gfl-sph (1.1)).** Along the line solution, the PLL input splits into
 its noise-free value plus `ωC σ_v(θ) ⬝ ξ`, with the `θ_e`-dependence of the noise channel only
 through the Park factors `(sin θ, cos θ)`. -/
-@[tmio M, powerlib_foundation] theorem pllInput_noise_split {R L C ω Vg : ℝ} (hωC : ω * C ≠ 0)
+@[tmio M, powerlib_domain] theorem pllInput_noise_split {R L C ω Vg : ℝ} (hωC : ω * C ≠ 0)
     (θ : ℝ) (idq ξ : Fin 2 → ℝ) :
     let G := lineG R (lineX L C ω)
     pllInput θ idq (G *ᵥ lineDrive C ω Vg idq + G *ᵥ ξ)
@@ -300,7 +300,7 @@ through the Park factors `(sin θ, cos θ)`. -/
   ring
 
 /-- `σ_v σ_vᵀ = (ωC)⁻² (sin²θ ‖G_q‖² + 2 sin θ cos θ ⟨G_q, G_d⟩ + cos²θ ‖G_d‖²)`. -/
-@[tmio M, powerlib_foundation] theorem gflSigma_sq (C ω θ : ℝ) (G : Matrix (Fin 2) (Fin 2) ℝ) :
+@[tmio M, powerlib_domain] theorem gflSigma_sq (C ω θ : ℝ) (G : Matrix (Fin 2) (Fin 2) ℝ) :
     gflSigma C ω θ G ⬝ᵥ gflSigma C ω θ G
       = (1 / (ω * C)) ^ 2 * (sin θ ^ 2 * (G 1 ⬝ᵥ G 1) + 2 * sin θ * cos θ * (G 1 ⬝ᵥ G 0)
           + cos θ ^ 2 * (G 0 ⬝ᵥ G 0)) := by
@@ -308,7 +308,7 @@ through the Park factors `(sin θ, cos θ)`. -/
   ring
 
 /-- Form-B Itô correction: `Δ_Itô = ½ σ_v σ_vᵀ (K_p² 𝒱'' + K_i)` with the closed-form `σ_v`. -/
-@[tmio M, powerlib_foundation] theorem gflIto (Kp Ki V2 C ω θ : ℝ) (G : Matrix (Fin 2) (Fin 2) ℝ) :
+@[tmio M, powerlib_domain] theorem gflIto (Kp Ki V2 C ω θ : ℝ) (G : Matrix (Fin 2) (Fin 2) ℝ) :
     itoCorrection (pllNoise Kp (gflSigma C ω θ G)) (pllHess V2 Ki)
       = (1 / 2 : ℝ) * ((1 / (ω * C)) ^ 2 * (sin θ ^ 2 * (G 1 ⬝ᵥ G 1)
           + 2 * sin θ * cos θ * (G 1 ⬝ᵥ G 0) + cos θ ^ 2 * (G 0 ⬝ᵥ G 0)))

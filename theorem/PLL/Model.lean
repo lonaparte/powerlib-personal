@@ -22,7 +22,7 @@ Model boundary.
   `δω = ω_g − ω_s`). It is *literally* the general PI-PLL `PLL.piPLLField h K_p K_i δω` of
   `theorem/PLL/PIPLL.lean` with `h = srfPD V = −V sin`; all equilibrium and linearization
   results below are instantiations of that module (not re-proved).
-* Coordinate versions (vector-field conjugacies, foundation):
+* Coordinate versions (vector-field conjugacies, domain):
   - physical `(θ̂, η)` ↔ error `(θ̃, η)` along trajectories (`physical_iff_error`):
     the non-autonomous physical loop becomes autonomous in error coordinates;
   - `(θ_err, ξ)`, `ξ = η / V` (T-invariant-coordinates §1.2, T-gfl-multiscale §1.3:
@@ -64,7 +64,7 @@ invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V
 invariance: `theorem/PLLAmplitude.agda`. The equilibrium sets
 (`srfField_eq_zero_iff`, `srf_equilibria_eq`, `srf_exists_equilibrium`,
 `measField_eq_zero_iff`) are static evidence on the model, not connection conclusions; the
-coordinate conjugacies are foundation.
+coordinate conjugacies are domain model identities.
 
 Sign note: `T-pll-dynamics` §1.3 writes the linearized error equation with
 `Δθ̃̇ = −Δω_g − V(K_p Δθ̃ + K_i ξ)`, `ξ̇ = Δθ̃` (normalized integrator `ξ = −η / V`); this module
@@ -90,35 +90,35 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
     srfField V Kp Ki δω x 0 = -δω - Kp * V * Real.sin (x 0) + Ki * x 1 := by
   simp [srfField, srfPD]; ring
 
-@[tmio M, simp, powerlib_foundation] theorem srfField_apply_one (V Kp Ki δω : ℝ) (x : State 2) :
+@[tmio M, simp, powerlib_domain] theorem srfField_apply_one (V Kp Ki δω : ℝ) (x : State 2) :
     srfField V Kp Ki δω x 1 = -(V * Real.sin (x 0)) := by
   simp [srfField, srfPD]
 
 /-- The phase detector of `theorem/PLL/Signals.lean` in error coordinates. -/
-@[tmio M, powerlib_foundation] theorem srfPD_sub (V θg θh : ℝ) :
+@[tmio M, powerlib_domain] theorem srfPD_sub (V θg θh : ℝ) :
     srfPD V (θh - θg) = phaseDetector V θg θh := by
   rw [phaseDetector_eq, srfPD]
 
-@[tmio M, powerlib_foundation] theorem hasDerivAt_srfPD (V θ : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_srfPD (V θ : ℝ) :
     HasDerivAt (srfPD V) (-(V * Real.cos θ)) θ :=
   ((Real.hasDerivAt_sin θ).const_mul V).neg
 
-@[tmio M, powerlib_foundation] theorem contDiff_srfPD (V : ℝ) : ContDiff ℝ 1 (srfPD V) :=
+@[tmio M, powerlib_domain] theorem contDiff_srfPD (V : ℝ) : ContDiff ℝ 1 (srfPD V) :=
   (contDiff_const.mul Real.contDiff_sin).neg
 
-@[tmio M, powerlib_foundation] theorem contDiff_srfField (V Kp Ki δω : ℝ) :
+@[tmio M, powerlib_domain] theorem contDiff_srfField (V Kp Ki δω : ℝ) :
     ContDiff ℝ 1 (srfField V Kp Ki δω) :=
   contDiff_piPLLField (contDiff_srfPD V)
 
 /-- Jacobian of the SRF-PLL field at any state: `[[−K_p V cos θ̃, K_i], [−V cos θ̃, 0]]`. -/
-@[tmio M, powerlib_foundation] theorem fderiv_srfField (V Kp Ki δω : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] theorem fderiv_srfField (V Kp Ki δω : ℝ) (x : State 2) :
     fderiv ℝ (srfField V Kp Ki δω) x =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         (piPLLJacobian Kp Ki (-(V * Real.cos (x 0)))) :=
   fderiv_piPLLField (hasDerivAt_srfPD V (x 0))
 
 /-- At an in-phase point (`cos θ̃ = 1`) the Jacobian is the linear-model matrix `linA`. -/
-@[tmio M, powerlib_foundation] theorem piPLLJacobian_inPhase (V Kp Ki : ℝ) :
+@[tmio M, powerlib_domain] theorem piPLLJacobian_inPhase (V Kp Ki : ℝ) :
     piPLLJacobian Kp Ki (-(V * 1)) = linA V Kp Ki := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [piPLLJacobian, linA, mul_comm]
 
@@ -135,14 +135,14 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
 /-- Linearization chain: the Jacobian of the nonlinear SRF-PLL at any in-phase point
 `(2kπ, η)` is `linA V K_p K_i`, the state matrix of `phaseModel`, `frequencyModel` and
 `portModel`. -/
-@[tmio M, powerlib_foundation] theorem srf_fderiv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) (η : ℝ) :
+@[tmio M, powerlib_domain] theorem srf_fderiv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) (η : ℝ) :
     fderiv ℝ (srfField V Kp Ki δω) (PhasePlane.mk (2 * k * Real.pi) η) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linA V Kp Ki) := by
   rw [fderiv_srfField, PhasePlane.mk_apply_zero, cos_two_int_mul_pi, piPLLJacobian_inPhase]
 
 /-! ## Equilibria -/
 
-@[tmio M, powerlib_foundation] theorem srfPD_eq_zero_iff {V : ℝ} (hV : V ≠ 0) (θ : ℝ) :
+@[tmio M, powerlib_domain] theorem srfPD_eq_zero_iff {V : ℝ} (hV : V ≠ 0) (θ : ℝ) :
     srfPD V θ = 0 ↔ ∃ k : ℤ, θ = k * Real.pi := by
   rw [srfPD, neg_eq_zero, mul_eq_zero, or_iff_right hV, Real.sin_eq_zero_iff]
   constructor
@@ -152,14 +152,14 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
 /-- Equilibria of the SRF-PLL (`V ≠ 0`, `K_i ≠ 0`): `θ̃ = kπ`, `η = δω / K_i`, for every
 constant frequency offset `δω`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem srfField_eq_zero_iff {V Kp Ki δω : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem srfField_eq_zero_iff {V Kp Ki δω : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0)
     (x : State 2) :
     srfField V Kp Ki δω x = 0 ↔ (∃ k : ℤ, x 0 = k * Real.pi) ∧ x 1 = δω / Ki := by
   rw [srfField, piPLLField_eq_zero_iff hKi, srfPD_eq_zero_iff hV]
 
 /-- The equilibrium set is `{(kπ, δω / K_i) : k ∈ ℤ}`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem srf_equilibria_eq {V Kp Ki δω : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem srf_equilibria_eq {V Kp Ki δω : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0) :
     {x : State 2 | srfField V Kp Ki δω x = 0} =
       Set.range (fun k : ℤ => PhasePlane.mk (k * Real.pi) (δω / Ki)) := by
   rw [srfField, piPLL_equilibria_eq hKi]
@@ -171,14 +171,14 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- An equilibrium exists for every constant frequency offset (integrator action).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem srf_exists_equilibrium (V Kp δω : ℝ) {Ki : ℝ} (hKi : Ki ≠ 0) :
+@[tmio M, powerlib_domain] theorem srf_exists_equilibrium (V Kp δω : ℝ) {Ki : ℝ} (hKi : Ki ≠ 0) :
     srfField V Kp Ki δω (PhasePlane.mk 0 (δω / Ki)) = 0 :=
   (piPLLField_eq_zero_iff hKi _).mpr ⟨by simp [srfPD], rfl⟩
 
 /-! ## Local stability (instantiation of `PLL.PIPLL`) -/
 
 /-- The Jacobian at an in-phase equilibrium is Hurwitz iff `V K_p > 0 ∧ V K_i > 0`. -/
-@[tmio TM, powerlib_foundation] theorem srf_inPhase_jacobian_isHurwitz_iff (V Kp Ki : ℝ) :
+@[tmio TM, powerlib_domain] theorem srf_inPhase_jacobian_isHurwitz_iff (V Kp Ki : ℝ) :
     LinearSystems.IsHurwitz (piPLLJacobian Kp Ki (-(V * 1))) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
   rw [piPLLJacobian_inPhase, isHurwitz_linA_iff]
 
@@ -256,7 +256,7 @@ def physicalField (V Kp Ki ωs θg : ℝ) (x : State 2) : State 2 :=
 /-- Phase-error coordinates `(θ̂, η) ↦ (θ̂ − θ_g, η)`. -/
 def errorCoord (θg : ℝ) (x : State 2) : State 2 := x - PhasePlane.mk θg 0
 
-@[tmio M, powerlib_foundation] private lemma physicalField_sub (V Kp Ki ωs ωg θg : ℝ) (x : State 2) :
+@[tmio M, powerlib_domain] private lemma physicalField_sub (V Kp Ki ωs ωg θg : ℝ) (x : State 2) :
     physicalField V Kp Ki ωs θg x - PhasePlane.mk ωg 0 =
       srfField V Kp Ki (ωg - ωs) (errorCoord θg x) := by
   rw [PhasePlane.ext_iff']
@@ -266,7 +266,7 @@ def errorCoord (θg : ℝ) (x : State 2) : State 2 := x - PhasePlane.mk θg 0
 /-- The physical SRF-PLL driven by the grid angle `θ_g(t) = θ₀ + ω_g t` and the autonomous
 error field describe the same solutions: `x` solves the physical loop on `s` iff
 `t ↦ (θ̂(t) − θ_g(t), η(t))` solves `srfField V K_p K_i (ω_g − ω_s)` on `s`. -/
-@[tmio M, powerlib_foundation] theorem physical_iff_error (V Kp Ki ωs θ₀ ωg : ℝ) (x : ℝ → State 2)
+@[tmio M, powerlib_domain] theorem physical_iff_error (V Kp Ki ωs θ₀ ωg : ℝ) (x : ℝ → State 2)
     (s : Set ℝ) :
     IsIntegralCurveOn x (fun t y => physicalField V Kp Ki ωs (θ₀ + ωg * t) y) s ↔
       IsIntegralCurveOn (fun t => errorCoord (θ₀ + ωg * t) (x t))
@@ -304,7 +304,7 @@ def xiField (a b Δω : ℝ) (x : State 2) : State 2 :=
   WithLp.toLp 2 ![Δω - a * Real.sin (x 0) + b * x 1, -Real.sin (x 0)]
 
 /-- The `(θ_err, ξ)` field is the canonical field at unit amplitude with gains `a, b`. -/
-@[tmio M, powerlib_foundation] theorem xiField_eq_srfField (a b Δω : ℝ) :
+@[tmio M, powerlib_domain] theorem xiField_eq_srfField (a b Δω : ℝ) :
     xiField a b Δω = srfField 1 a b (-Δω) := by
   funext x
   rw [PhasePlane.ext_iff']
@@ -334,7 +334,7 @@ def scaleSecond (c : ℝ) (hc : c ≠ 0) : State 2 ≃L[ℝ] State 2 :=
 
 /-- Vector-field conjugacy `ξ = η / V`: the SRF-PLL of amplitude `V` and gains `(K_p, K_i)` is
 the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
-@[tmio M, powerlib_foundation] theorem transport_scale_srfField {V : ℝ} (hV : V ≠ 0) (Kp Ki δω : ℝ) :
+@[tmio M, powerlib_domain] theorem transport_scale_srfField {V : ℝ} (hV : V ≠ 0) (Kp Ki δω : ℝ) :
     Dynamics.transportField (scaleSecond V⁻¹ (inv_ne_zero hV)) 0 (srfField V Kp Ki δω) =
       srfField 1 (V * Kp) (V * Ki) δω := by
   funext y
@@ -343,7 +343,7 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
   field_simp
 
 /-- Trajectory form of the same conjugacy (T-invariant-coordinates `ξ := ∫V_q / V_g`). -/
-@[tmio M, powerlib_foundation] theorem srf_iff_xi {V : ℝ} (hV : V ≠ 0) (Kp Ki δω : ℝ)
+@[tmio M, powerlib_domain] theorem srf_iff_xi {V : ℝ} (hV : V ≠ 0) (Kp Ki δω : ℝ)
     (x : ℝ → State 2) (s : Set ℝ) :
     IsIntegralCurveOn x (fun _ y => srfField V Kp Ki δω y) s ↔
       IsIntegralCurveOn (fun t => PhasePlane.mk (x t 0) (x t 1 / V))
@@ -392,7 +392,7 @@ def measField (V Kp Ki ωg : ℝ) (y : State 2) : State 2 :=
   WithLp.toLp 2 ![Kp * srfPD V (y 0) + y 1 - ωg, Ki * srfPD V (y 0)]
 
 /-- `x_I = ω_s + K_i η` is an affine conjugacy between the canonical field and `measField`. -/
-@[tmio M, powerlib_foundation] theorem transport_meas_srfField {Ki : ℝ} (hKi : Ki ≠ 0) (V Kp ωs ωg : ℝ) :
+@[tmio M, powerlib_domain] theorem transport_meas_srfField {Ki : ℝ} (hKi : Ki ≠ 0) (V Kp ωs ωg : ℝ) :
     Dynamics.transportField (scaleSecond Ki hKi) (PhasePlane.mk 0 ωs)
         (srfField V Kp Ki (ωg - ωs)) = measField V Kp Ki ωg := by
   funext y
@@ -404,7 +404,7 @@ def measField (V Kp Ki ωg : ℝ) (y : State 2) : State 2 :=
 /-- Equilibria in the `(e_θ, x_I)` coordinates: `h(e_θ) = 0` and `x_I = ω_g`, i.e. the
 frequency estimate `ω̂ = x_I` equals the grid frequency (zero steady-state frequency error).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem measField_eq_zero_iff {V Kp Ki ωg : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem measField_eq_zero_iff {V Kp Ki ωg : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0)
     (y : State 2) :
     measField V Kp Ki ωg y = 0 ↔ (∃ k : ℤ, y 0 = k * Real.pi) ∧ y 1 = ωg := by
   rw [PhasePlane.ext_iff']

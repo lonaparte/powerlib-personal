@@ -4,7 +4,7 @@ import theorem.SpecialFunctions.Sinusoid
 
 /-! # GFL reduced-order models with DC link: algebra and model-B equilibria
 
-Algebraic identities of the GFL reduced-order models (foundation) and the equilibrium set of
+Algebraic identities of the GFL reduced-order models and the equilibrium set of
 model B.
 
 Model boundary.
@@ -46,7 +46,7 @@ Family and connection conclusions.
 This module states no behaviour and defines no family. The equilibrium results of model B
 (`equilibrium_necessary`, `equilibrium_powerAngle`, `exists_equilibrium_iff`, `fold_current`) are
 algebraic facts about the zero set of `ModelBParams.field`; they are static evidence on the model,
-not connection conclusions, and are labelled foundation. The model-B family and its connection
+domain identities that do not require connection wrappers. The model-B family and its connection
 conclusions (local stability through the Jacobian, 4×4 Routh–Hurwitz) are in
 `theorem/GFL/DCLink/ModelBStability.lean`.
 
@@ -88,14 +88,14 @@ KVL is `L_f i̇_d = v_gd − V_d^conv − R_f i_d + ω̂ L_f i_q`. -/
   ring
 
 /-- q-axis closed loop: residual `−ω̂ ΔL_f i_d`. -/
-@[tmio M, powerlib_foundation] theorem closedLoop_q (kp ki ξq id iq iqRef vgq vffq ωhat Lf Lhat Rf : ℝ) :
+@[tmio M, powerlib_domain] theorem closedLoop_q (kp ki ξq id iq iqRef vgq vffq ωhat Lf Lhat Rf : ℝ) :
     vgq - bridgeVoltageQ kp ki ξq iq iqRef vffq ωhat Lhat id - Rf * iq - ωhat * Lf * id =
       kp * (iqRef - iq) - ki * ξq + (vgq - vffq) - ωhat * (Lf - Lhat) * id - Rf * iq := by
   unfold bridgeVoltageQ
   ring
 
 /-- d–q duality: the decoupling terms cancel in `P_bridge = (3/2)(V_d^conv i_d + V_q^conv i_q)`. -/
-@[tmio M, powerlib_foundation] theorem bridgePower_decoupling_cancel
+@[tmio M, powerlib_domain] theorem bridgePower_decoupling_cancel
     (kp ki ξd ξq id iq idRef iqRef vffd vffq ωhat Lhat : ℝ) :
     (3 / 2 : ℝ) * (bridgeVoltageD kp ki ξd id idRef vffd ωhat Lhat iq * id +
         bridgeVoltageQ kp ki ξq iq iqRef vffq ωhat Lhat id * iq) =

@@ -4,7 +4,7 @@ import theorem.Stochastic.SPH
 
 /-! # Itô correction of the synchronous-machine SPHS
 
-Static foundation: the Itô correction `½ tr(Σ Σᵀ ∇²H)` of the seven-state synchronous-machine
+Static model algebra: the Itô correction `½ tr(Σ Σᵀ ∇²H)` of the seven-state synchronous-machine
 pH model under sparse, state-independent terminal and torque noise.
 
 Model boundary.
@@ -74,20 +74,20 @@ def smNoise (σvd σvq σT : ℝ) : Matrix (Fin 7) (Fin 3) ℝ :=
 /-- **SM Itô correction (1.5)**: only the three diagonal Hessian entries enter; in particular
 it is independent of the electrical potential `V_el(δ)` and of the state when the Hessian
 entries are constant. -/
-@[tmio M, powerlib_foundation] theorem smIto (σvd σvq σT : ℝ) (K : Matrix (Fin 7) (Fin 7) ℝ) :
+@[tmio M, powerlib_domain] theorem smIto (σvd σvq σT : ℝ) (K : Matrix (Fin 7) (Fin 7) ℝ) :
     itoCorrection (smNoise σvd σvq σT) K
       = (1 / 2 : ℝ) * (σvd ^ 2 * K 0 0 + σvq ^ 2 * K 1 1 + σT ^ 2 * K 5 5) := by
   rw [smNoise, itoCorrection_sparseNoise, Fin.sum_univ_three]
   simp
 
 /-- `Δ_Itô^SM ≥ 0` whenever the Hessian is positive semidefinite (convex `H`). -/
-@[tmio M, powerlib_foundation] theorem smIto_nonneg (σvd σvq σT : ℝ) {K : Matrix (Fin 7) (Fin 7) ℝ}
+@[tmio M, powerlib_domain] theorem smIto_nonneg (σvd σvq σT : ℝ) {K : Matrix (Fin 7) (Fin 7) ℝ}
     (hK : K.PosSemidef) : 0 ≤ itoCorrection (smNoise σvd σvq σT) K :=
   itoCorrection_nonneg _ hK
 
 /-- `Δ_Itô^SM ≥ 0` from the three diagonal entries alone (they are the only ones that enter);
 e.g. `(L⁻¹)_{dd} > 0`, `(L⁻¹)_{qq} > 0` for `L ≻ 0` and `1/M > 0`. -/
-@[tmio M, powerlib_foundation] theorem smIto_nonneg_of_diag (σvd σvq σT : ℝ) {K : Matrix (Fin 7) (Fin 7) ℝ}
+@[tmio M, powerlib_domain] theorem smIto_nonneg_of_diag (σvd σvq σT : ℝ) {K : Matrix (Fin 7) (Fin 7) ℝ}
     (h0 : 0 ≤ K 0 0) (h1 : 0 ≤ K 1 1) (h5 : 0 ≤ K 5 5) :
     0 ≤ itoCorrection (smNoise σvd σvq σT) K := by
   rw [smIto]; positivity
@@ -98,7 +98,7 @@ e.g. `(L⁻¹)_{dd} > 0`, `(L⁻¹)_{qq} > 0` for `L ≻ 0` and `1/M > 0`. -/
 def qBlock (Lq Laq Lkq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Lq, Laq; Laq, Lkq]
 
 /-- Schur complement: `(L_qblock⁻¹)_{qq} = 1/(L_q − L_aq²/L_kqkq)`. -/
-@[tmio M, powerlib_foundation] theorem qBlock_inv_00 {Lq Laq Lkq : ℝ} (hk : Lkq ≠ 0)
+@[tmio M, powerlib_domain] theorem qBlock_inv_00 {Lq Laq Lkq : ℝ} (hk : Lkq ≠ 0)
     (hdet : Lq * Lkq - Laq ^ 2 ≠ 0) :
     (qBlock Lq Laq Lkq)⁻¹ 0 0 = 1 / (Lq - Laq ^ 2 / Lkq) := by
   rw [qBlock, inv_def, det_fin_two_of, adjugate_fin_two_of]
@@ -108,7 +108,7 @@ def qBlock (Lq Laq Lkq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Lq, Laq; Laq, L
   field_simp
 
 /-- Correction: `(L⁻¹)_{qq} = 1/L_q` holds iff the q damper is decoupled (`L_aq = 0`). -/
-@[tmio M, powerlib_foundation] theorem qBlock_inv_00_eq_inv_Lq_iff {Lq Laq Lkq : ℝ}
+@[tmio M, powerlib_domain] theorem qBlock_inv_00_eq_inv_Lq_iff {Lq Laq Lkq : ℝ}
     (hk : 0 < Lkq) (hdet : 0 < Lq * Lkq - Laq ^ 2) :
     (qBlock Lq Laq Lkq)⁻¹ 0 0 = 1 / Lq ↔ Laq = 0 := by
   rw [qBlock_inv_00 hk.ne' hdet.ne']

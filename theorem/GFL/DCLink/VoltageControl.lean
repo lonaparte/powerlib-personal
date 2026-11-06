@@ -134,13 +134,13 @@ def openField (C isrc P : ℝ) (x : State 1) : State 1 :=
 /-- Equilibrium state `V_dc = V0`. -/
 def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
 
-@[tmio M, powerlib_foundation] theorem openField_eq_zero {C P V0 : ℝ} (_hV : V0 ≠ 0) :
+@[tmio M, powerlib_domain] theorem openField_eq_zero {C P V0 : ℝ} (_hV : V0 ≠ 0) :
     openField C (-(P / V0)) P (dcState V0) = 0 := by
   ext i
   fin_cases i
   simp [openField, dcState]
 
-@[tmio M, powerlib_foundation] theorem openField_contDiffOn (C isrc P : ℝ) :
+@[tmio M, powerlib_domain] theorem openField_contDiffOn (C isrc P : ℝ) :
     ContDiffOn ℝ 1 (openField C isrc P) (posDC 1) := by
   rw [contDiffOn_euclidean]
   intro i
@@ -153,7 +153,7 @@ def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
   exact (ne_of_gt hx)
 
 /-- Open-loop Jacobian `−P/(C V0²) = −I_dc0/(C V0)`. -/
-@[tmio M, powerlib_foundation] theorem openJacobian {C isrc P V0 : ℝ} (hV : V0 ≠ 0) :
+@[tmio M, powerlib_domain] theorem openJacobian {C isrc P V0 : ℝ} (hV : V0 ≠ 0) :
     fderiv ℝ (openField C isrc P) (dcState V0) =
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![-(P / V0) / (C * V0)] := by
   have hx : (dcState V0) 0 ≠ 0 := by simpa [dcState] using hV

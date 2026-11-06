@@ -152,6 +152,13 @@ Being private, auxiliary or algebraically simple does not make such a result fou
 Classify the proposition and the definitions of its objects, not its proof method,
 file path or use of `connection%`. Both classes require kernel-checked Lean proofs.
 
+General coordinate-change theory is foundation. A chosen electrical transform,
+such as Clarke or Park with fixed abc/αβ/dq axes, signs and normalization, is a
+domain object: its inverse, derivative, orthogonality and power identities remain
+domain even when quantified over arbitrary angles and vectors. The inverse Park
+rotation has the same status. General change-of-basis laws remain foundation.
+A concrete coordinate formula alone does not establish an M–I realization relation.
+
 The allowed explicit pairs are:
 
 | Metadata | T | M | TM | MI | IO |

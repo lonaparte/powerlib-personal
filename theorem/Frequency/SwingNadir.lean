@@ -26,7 +26,7 @@ Results.
 * `nadir` (implementation evidence, private): `0 < t_nadir`; `Δω` is strictly decreasing on
   `[0, t_nadir]`; `Δω(t_nadir)` is the minimum of `Δω` over all `t ≥ 0`; and it equals
   `nadirValue`.
-* `nadirValue_lt` (foundation): the nadir lies strictly below the quasi-steady state
+* `nadirValue_lt` (domain): the nadir lies strictly below the quasi-steady state
   `−ΔP_L/(K_R + D)` (overshoot is unavoidable in the underdamped case).
 * `nadir_successive` (implementation evidence, private): at `t_nadir + kπ/ω_d` the derivative
   vanishes again and the deviation from the quasi-steady state is multiplied by
@@ -36,7 +36,7 @@ Family and connection conclusions.
 * This module adds no family: the model is the swing + governor family of
   `Frequency.SwingGovernor`. The scalar core (`respC`, `rateC`, `tCrit`, …), the closed-form
   identity `osc2_freq` (the first component of the explicit solution from rest is `respC`, a
-  static identity of closed forms), `respC_nadirTime` and `nadirValue_lt` are foundation.
+  static identity of closed forms), `respC_nadirTime` and `nadirValue_lt` are domain model identities.
 * The nadir statements quantify over forward solutions and their extrema in time, which the
   sentence language does not express: `trajectory_freq_eq`, `nadir` and `nadir_successive` are
   private implementation evidence (Rules §3a). Modules that need a nadir of a forward solution
@@ -297,13 +297,13 @@ def nadirValue (M D K Tg ΔPL : ℝ) : ℝ :=
 
 variable {M D K Tg ΔPL : ℝ}
 
-@[tmio M, powerlib_foundation] theorem dampingRatio_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem dampingRatio_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) : 0 < dampingRatio M D K Tg := by
   unfold dampingRatio
   have : 0 < M * Tg * (D + K) := mul_pos (mul_pos hM hTg) (by linarith)
   exact div_pos (by nlinarith) (by positivity)
 
-@[tmio M, powerlib_foundation] theorem decayRate_eq (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
+@[tmio M, powerlib_domain] theorem decayRate_eq (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
     decayRate M D K Tg = (M + D * Tg) / (2 * (M * Tg)) := by
   have h := two_mul_dampingRatio_mul_natFreq hM hTg (by linarith : 0 < D + K)
   unfold decayRate
@@ -311,19 +311,19 @@ variable {M D K Tg ΔPL : ℝ}
     (2 * dampingRatio M D K Tg * natFreq M D K Tg) / 2 by ring, h]
   field_simp
 
-@[tmio M, powerlib_foundation] theorem decayRate_nonneg (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem decayRate_nonneg (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) : 0 ≤ decayRate M D K Tg := by
   rw [decayRate_eq hM hTg hKD]
   have : 0 ≤ D * Tg := mul_nonneg hD hTg.le
   positivity
 
-@[tmio M, powerlib_foundation] theorem dampedFreq_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem dampedFreq_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) : 0 < dampedFreq M D K Tg := by
   have hz := dampingRatio_pos hM hTg hD hKD
   exact mul_pos (natFreq_pos hM hTg (by linarith))
     (Real.sqrt_pos.2 (by nlinarith))
 
-@[tmio M, powerlib_foundation] theorem decayRate_sq_add_dampedFreq_sq (hM : 0 < M) (hTg : 0 < Tg)
+@[tmio M, powerlib_domain] theorem decayRate_sq_add_dampedFreq_sq (hM : 0 < M) (hTg : 0 < Tg)
     (hD : 0 ≤ D) (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
     decayRate M D K Tg ^ 2 + dampedFreq M D K Tg ^ 2 = natFreq M D K Tg ^ 2 := by
   have hz := dampingRatio_pos hM hTg hD hKD
@@ -331,26 +331,26 @@ variable {M D K Tg ΔPL : ℝ}
   rw [mul_pow, mul_pow, Real.sq_sqrt (by nlinarith)]
   ring
 
-@[tmio M, powerlib_foundation] theorem trace_A (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
+@[tmio M, powerlib_domain] theorem trace_A (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
     (plant M D K Tg).A.trace = -2 * decayRate M D K Tg := by
   rw [decayRate_eq hM hTg hKD, trace_plant]
   field_simp
   ring
 
-@[tmio M, powerlib_foundation] theorem det_A (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem det_A (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
     (plant M D K Tg).A.det = decayRate M D K Tg ^ 2 + dampedFreq M D K Tg ^ 2 := by
   rw [decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ, natFreq_sq hM hTg (by linarith),
     det_plant hM.ne' hTg.ne']
   ring
 
-@[tmio M, powerlib_foundation] theorem A_mulVec (v : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem A_mulVec (v : Fin 2 → ℝ) :
     (plant M D K Tg).A *ᵥ v = ![-D / M * v 0 + 1 / M * v 1, -K / Tg * v 0 + -1 / Tg * v 1] := by
   ext i; fin_cases i <;> simp [plant, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- The first component of the explicit solution from rest under the load step is the scalar
 closed form `respC`. A static identity of closed forms. -/
-@[tmio M, powerlib_foundation] theorem osc2_freq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem osc2_freq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) (t : ℝ) :
     (steadyState D K ΔPL + WithLp.toLp 2 (LTI.osc2 (plant M D K Tg).A (decayRate M D K Tg)
       (dampedFreq M D K Tg) (WithLp.ofLp (0 - steadyState D K ΔPL)) t)) 0 =
@@ -366,7 +366,7 @@ closed form `respC`. A static identity of closed forms. -/
   ring
 
 /-- The closed form at the nadir time is the nadir value. -/
-@[tmio M, powerlib_foundation] theorem respC_nadirTime (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem respC_nadirTime (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
     respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg (nadirTime M D K Tg) =
       nadirValue M D K Tg ΔPL := by
@@ -378,7 +378,7 @@ closed form `respC`. A static identity of closed forms. -/
   ring
 
 /-- The nadir is strictly below the quasi-steady state `−ΔP_L/(K_R + D)`. -/
-@[tmio M, powerlib_foundation] theorem nadirValue_lt (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_domain] theorem nadirValue_lt (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1) :
     nadirValue M D K Tg ΔPL < -ΔPL / (K + D) := by
   have hωd := dampedFreq_pos hM hTg hD hKD hζ

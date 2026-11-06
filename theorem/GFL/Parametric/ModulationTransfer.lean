@@ -8,7 +8,7 @@ import theorem.SpecialFunctions.Elementary
 
 /-! # Network modulation transfer: Thévenin map of a GFM–grid node seen by GFL branches
 
-Quasi-static phasor algebra (foundation) of the network node shared by a GFM unit, the grid and
+Quasi-static phasor algebra of the network node shared by a GFM unit, the grid and
 GFL branches.
 
 Model boundary.
@@ -88,7 +88,7 @@ def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
     1 - beta X2 X3 = X2 / (X2 + X3) := by
   unfold beta; field_simp; ring
 
-@[tmio M, powerlib_foundation] theorem vth_eq {X2 X3 E Vinf : ℝ} (h : X2 + X3 ≠ 0) (δ : ℝ) :
+@[tmio M, powerlib_domain] theorem vth_eq {X2 X3 E Vinf : ℝ} (h : X2 + X3 ≠ 0) (δ : ℝ) :
     vth X2 X3 E Vinf δ = (X3 * E * exp (δ * I) + X2 * Vinf) / (X2 + X3) := by
   have h' : (X2 : ℂ) + X3 ≠ 0 := by exact_mod_cast h
   unfold vth aV bV beta
@@ -104,7 +104,7 @@ variable {N : ℕ}
 def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
   (∑ k, Icur k) + (Vc - E * exp (δ * I)) / (I * X2) + (Vc - Vinf) / (I * X3) = 0
 
-@[tmio M, powerlib_foundation] theorem kcl_iff {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
+@[tmio M, powerlib_domain] theorem kcl_iff {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
     (h : X2 + X3 ≠ 0) (δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) :
     KCL X2 X3 E Vinf δ Vc Icur ↔
       Vc = vth X2 X3 E Vinf δ - I * Xeq X2 X3 * ∑ k, Icur k := by
@@ -135,7 +135,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
     linear_combination hv'
 
 /-- Terminal voltages of the GFL branches: `V = V_th 𝟙 − j[diag(X₁) + X_eq 𝟙𝟙ᵀ] I`. -/
-@[tmio M, powerlib_foundation] theorem terminal_voltages {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
+@[tmio M, powerlib_domain] theorem terminal_voltages {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
     (h : X2 + X3 ≠ 0) (δ : ℝ) (X1 : Fin N → ℝ) (Vc : ℂ) (Icur V : Fin N → ℂ)
     (hkcl : KCL X2 X3 E Vinf δ Vc Icur) (hbr : ∀ i, V i = Vc - I * X1 i * Icur i) :
     V = (fun _ => vth X2 X3 E Vinf δ) -
@@ -152,7 +152,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
   ring
 
 /-- One GFL branch: `V_GFL = V_th − j X_g I_in`. -/
-@[tmio M, powerlib_foundation] theorem single_branch {X1 X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
+@[tmio M, powerlib_domain] theorem single_branch {X1 X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
     (h : X2 + X3 ≠ 0) (δ : ℝ) (Vc Iin Vgfl : ℂ)
     (hkcl : KCL X2 X3 E Vinf δ Vc (fun _ : Fin 1 => Iin)) (hbr : Vgfl = Vc - I * X1 * Iin) :
     Vgfl = vth X2 X3 E Vinf δ - I * Xg X1 X2 X3 * Iin := by
@@ -165,7 +165,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 /-! ## Magnitude and phase channels -/
 
 /-- `V(δ) = |V_th(δ)| = √(a_V² + b_V² + 2a_V b_V cos δ)`. -/
-@[tmio M, powerlib_foundation] theorem norm_vth (X2 X3 E Vinf δ : ℝ) :
+@[tmio M, powerlib_domain] theorem norm_vth (X2 X3 E Vinf δ : ℝ) :
     ‖vth X2 X3 E Vinf δ‖ =
       Real.sqrt (aV X2 X3 E ^ 2 + bV X2 X3 Vinf ^ 2 +
         2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) := by
@@ -173,7 +173,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
   rfl
 
 /-- Amplitude channel: `dV/dδ = −a_V b_V sin δ / V` wherever `V(δ) ≠ 0`. -/
-@[tmio M, powerlib_foundation] theorem hasDerivAt_norm_vth (X2 X3 E Vinf δ : ℝ)
+@[tmio M, powerlib_domain] theorem hasDerivAt_norm_vth (X2 X3 E Vinf δ : ℝ)
     (hV : ‖vth X2 X3 E Vinf δ‖ ≠ 0) :
     HasDerivAt (fun d => ‖vth X2 X3 E Vinf d‖)
       (-(aV X2 X3 E * bV X2 X3 Vinf * Real.sin δ) / ‖vth X2 X3 E Vinf δ‖) δ := by
@@ -200,7 +200,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 /-- Phase channel: for the principal argument `θ_s = arg V_th`,
 `dθ_s/dδ = (a_V² + a_V b_V cos δ)/(a_V² + b_V² + 2a_V b_V cos δ)` (premise: `V_th(δ)` lies in the
 slit plane; elsewhere the same formula holds for any continuous phase lift). -/
-@[tmio M, powerlib_foundation] theorem hasDerivAt_arg_vth (X2 X3 E Vinf δ : ℝ)
+@[tmio M, powerlib_domain] theorem hasDerivAt_arg_vth (X2 X3 E Vinf δ : ℝ)
     (hslit : vth X2 X3 E Vinf δ ∈ slitPlane) :
     HasDerivAt (fun d => arg (vth X2 X3 E Vinf d))
       ((aV X2 X3 E ^ 2 + aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) /
@@ -295,11 +295,11 @@ open powerlib.ParametricResonance (swingMean harmonicRatio harmonicRatio_one_isB
 
 /-! ### The Thévenin amplitude map -/
 
-@[tmio M, powerlib_foundation] theorem continuous_norm_vth (X2 X3 E Vinf : ℝ) :
+@[tmio M, powerlib_domain] theorem continuous_norm_vth (X2 X3 E Vinf : ℝ) :
     Continuous fun δ => ‖vth X2 X3 E Vinf δ‖ := by
   unfold vth; fun_prop
 
-@[tmio M, powerlib_foundation] theorem contDiffAt_norm_vth {X2 X3 E Vinf δ0 : ℝ}
+@[tmio M, powerlib_domain] theorem contDiffAt_norm_vth {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) :
     ContDiffAt ℝ 2 (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 := by
   have hfun : (fun δ => ‖vth X2 X3 E Vinf δ‖) = fun δ => Real.sqrt (aV X2 X3 E ^ 2 +
@@ -314,7 +314,7 @@ with `V₀ = |V_th(δ₀)| > 0` and `a_V, b_V ≥ 0`, the fundamental modulation
 `ε_V = 2|V₁|/V̄` of the amplitude under `δ = δ₀ + δ̂ cos(ω_p t)` satisfies
 `ε_V − κ_δ δ̂ = O(δ̂²)` as `δ̂ → 0⁺`, `κ_δ = a_V b_V |sin δ₀| / V₀²` — at the level of the actual
 Fourier coefficients `V̄`, `V₁`, not only of the derivative `dV/dδ`. -/
-@[tmio M, powerlib_foundation] theorem epsV_isBigO {X2 X3 E Vinf δ0 : ℝ}
+@[tmio M, powerlib_domain] theorem epsV_isBigO {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) (ha : 0 ≤ aV X2 X3 E) (hb : 0 ≤ bV X2 X3 Vinf) :
     (fun dh => harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh 1 -
       aV X2 X3 E * bV X2 X3 Vinf * |Real.sin δ0| / ‖vth X2 X3 E Vinf δ0‖ ^ 2 * dh)
@@ -330,7 +330,7 @@ Fourier coefficients `V̄`, `V₁`, not only of the derivative `dV/dδ`. -/
   rwa [hk] at h
 
 /-- Higher harmonics of the Thévenin amplitude are second order: `ε_n = O(δ̂²)`, `n ≥ 2`. -/
-@[tmio M, powerlib_foundation] theorem epsN_isBigO {X2 X3 E Vinf δ0 : ℝ}
+@[tmio M, powerlib_domain] theorem epsN_isBigO {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) {n : ℕ} (hn : 2 ≤ n) :
     (fun dh => harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh n) =O[𝓝 0]
       (fun dh => dh ^ 2) :=
@@ -339,14 +339,14 @@ Fourier coefficients `V̄`, `V₁`, not only of the derivative `dV/dδ`. -/
 
 /-- Finite swing about `δ₀ = 0`: every odd harmonic of the Thévenin amplitude vanishes, for every
 amplitude `δ̂` (the fundamental channel is closed; only even harmonics remain). -/
-@[tmio M, powerlib_foundation] theorem epsN_odd_eq_zero_at_zero (X2 X3 E Vinf dh : ℝ) (k : ℕ) :
+@[tmio M, powerlib_domain] theorem epsN_odd_eq_zero_at_zero (X2 X3 E Vinf dh : ℝ) (k : ℕ) :
     harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) 0 dh (2 * k + 1) = 0 :=
   harmonicRatio_odd_eq_zero (continuous_norm_vth X2 X3 E Vinf)
     (fun h => by rw [norm_vth, norm_vth, zero_add, zero_sub, Real.cos_neg]) dh k
 
 /-- Finite swing, every amplitude: `0 ≤ ε_n ≤ 2` for the Thévenin amplitude whenever its mean is
 positive. -/
-@[tmio M, powerlib_foundation] theorem epsN_le_two {X2 X3 E Vinf δ0 dh : ℝ}
+@[tmio M, powerlib_domain] theorem epsN_le_two {X2 X3 E Vinf δ0 dh : ℝ}
     (hm : 0 < swingMean (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh) (n : ℕ) :
     0 ≤ harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh n ∧
       harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh n ≤ 2 :=

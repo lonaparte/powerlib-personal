@@ -8,7 +8,7 @@ import theorem.Transform.Park
 
 /-! # Sensorless machine control: observer algebra
 
-Static foundation for sensorless control: back-EMF angle recovery, sliding-mode observer
+Static identities for sensorless control: back-EMF angle recovery, sliding-mode observer
 inequalities, high-frequency injection demodulation, induction-machine flux models and the
 angle-tracking loop.  No closed-loop observer convergence is claimed.
 
@@ -73,7 +73,7 @@ open powerlib.Transform (rot rot_neg_mul_rot)
 def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * Real.cos θ⟩
 
 /-- `atan2(−e_α, e_β) = arg(e_β − j e_α)` recovers the rotor angle for `ωψ_f > 0`. -/
-@[tmio M, powerlib_foundation] theorem angle_of_backEMF (ω ψf θ : ℝ) (hpos : 0 < ω * ψf)
+@[tmio M, powerlib_domain] theorem angle_of_backEMF (ω ψf θ : ℝ) (hpos : 0 < ω * ψf)
     (hθ : θ ∈ Set.Ioc (-Real.pi) Real.pi) :
     Complex.arg ⟨(backEMF ω ψf θ).im, -(backEMF ω ψf θ).re⟩ = θ := by
   have h : (⟨(backEMF ω ψf θ).im, -(backEMF ω ψf θ).re⟩ : ℂ) =
@@ -82,7 +82,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   rw [h, Complex.arg_real_mul _ hpos, Complex.arg_cos_add_sin_mul_I hθ]
 
 /-- `‖e‖ = |ω| |ψ_f|`: the back-EMF magnitude gives the speed magnitude only. -/
-@[tmio M, powerlib_foundation] theorem norm_backEMF (ω ψf θ : ℝ) :
+@[tmio M, powerlib_domain] theorem norm_backEMF (ω ψf θ : ℝ) :
     ‖backEMF ω ψf θ‖ = |ω| * |ψf| := by
   have h : ‖backEMF ω ψf θ‖ ^ 2 = (|ω| * |ψf|) ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply]
@@ -92,7 +92,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   exact (pow_left_inj₀ (norm_nonneg _) (by positivity) (by norm_num)).mp h
 
 /-- The note's `arctan(−e_α/e_β)` misses the angle whenever `cos θ < 0`. -/
-@[tmio M, powerlib_foundation] theorem arctan_formula_wrong (ω ψf θ : ℝ) (hcos : Real.cos θ < 0) :
+@[tmio M, powerlib_domain] theorem arctan_formula_wrong (ω ψf θ : ℝ) (hcos : Real.cos θ < 0) :
     Real.arctan (-(backEMF ω ψf θ).re / (backEMF ω ψf θ).im) ≠ θ := by
   intro h
   have h1 := Real.neg_pi_div_two_lt_arctan (-(backEMF ω ψf θ).re / (backEMF ω ψf θ).im)
@@ -162,7 +162,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
 def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rot Δ * !![1 / Ld, 0; 0, 1 / Lq] * rot (-Δ)
 
-@[tmio M, powerlib_foundation] theorem estInvInductance_eq (Δ Ld Lq : ℝ) :
+@[tmio M, powerlib_domain] theorem estInvInductance_eq (Δ Ld Lq : ℝ) :
     estInvInductance Δ Ld Lq =
       !![(1 / Ld + 1 / Lq) / 2 + (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * Δ),
           (1 / Ld - 1 / Lq) / 2 * Real.sin (2 * Δ);
@@ -180,7 +180,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Frame relation: `ψ_dq = diag(L_d, L_q) i_dq`, `ψ̂ = R(Δθ) ψ_dq`, `î = R(Δθ) i_dq` give
 `î = Γ̂ ψ̂` with `Γ̂ = estInvInductance`. -/
-@[tmio M, powerlib_foundation] theorem estCurrent_eq (Δ Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
+@[tmio M, powerlib_domain] theorem estCurrent_eq (Δ Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
     (i : Fin 2 → ℝ) :
     rot Δ *ᵥ i = estInvInductance Δ Ld Lq *ᵥ (rot Δ *ᵥ (!![Ld, 0; 0, Lq] *ᵥ i)) := by
   have hdiag : !![1 / Ld, 0; 0, 1 / Lq] * !![Ld, 0; 0, Lq] = (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
@@ -203,7 +203,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   field_simp
 
 /-- HF current response in the estimated frame: `î = Γ̂ (ψ̂_d, 0)`. -/
-@[tmio M, powerlib_foundation] theorem hf_current (Δ Ld Lq Vh ωh t : ℝ) :
+@[tmio M, powerlib_domain] theorem hf_current (Δ Ld Lq Vh ωh t : ℝ) :
     estInvInductance Δ Ld Lq *ᵥ ![Vh / ωh * Real.sin (ωh * t), 0] =
       ![Vh / ωh * ((1 / Ld + 1 / Lq) / 2 + (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * Δ)) *
           Real.sin (ωh * t),
