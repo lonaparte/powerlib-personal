@@ -14,11 +14,11 @@ Scope.
   is defined.
 
 Source: elementary analysis, used by the swing-equation damping estimates
-(`theorem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
-(`theorem/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
+(`theorem/PowerSystem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
+(`theorem/GridConverter/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
 (`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
-(`theorem/GFL/Parametric/ModulationTransfer.lean`) and the SFR nadir-time correction
-(`theorem/Frequency/SFR.lean`).
+(`theorem/GridConverter/GFL/Parametric/ModulationTransfer.lean`) and the SFR nadir-time correction
+(`theorem/PowerSystem/Frequency/SFR.lean`).
 
 Results.
 * Exponential: `exp_neg_lt_quadratic` (`e^{−u} < 1 − u + u²/2` for `u > 0`, by strict

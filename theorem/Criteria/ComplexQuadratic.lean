@@ -21,8 +21,8 @@ Results.
   `(Re α)² Re β + Re α Im α Im β − (Im β)² = Re s₁ · Re s₂ · ((Re s₁ + Re s₂)² + (Im s₁ − Im s₂)²)`
   (`vieta_discriminant`).
 * `complexQuadratic_realConst_roots_re_neg_iff`: special case used for the decoupled current loop
-  with inductance mismatch (`theorem/CurrentControl/Mismatch.lean`): if `β = c` is real then the
-  condition is `Re α > 0 ∧ c > 0`, independently of `Im α`.
+  with inductance mismatch (`theorem/GridConverter/CurrentControl/Mismatch.lean`): if `β = c` is
+  real then the condition is `Re α > 0 ∧ c > 0`, independently of `Im α`.
 -/
 
 noncomputable section

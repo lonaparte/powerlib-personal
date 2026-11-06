@@ -42,8 +42,8 @@ Results.
 * Related results elsewhere: frame rotation (T-power-system-ph §1.2, `v·i` is frame invariant)
   is `Transform.frameRotation_power_invariant` in `theorem/Transform/Park.lean`; Kron reduction
   (§1.7) is `Network.kron_current`, `Network.kron_power`, `Network.kron_posSemidef` in
-  `theorem/Network/WeightedLaplacian.lean`; the state dimension (§1.8, `7N + ℓ + n_C`) is
-  `Synchronous.powerSystem_state_dim` in `theorem/Synchronous/SMIB11PH.lean`.
+  `theorem/PowerSystem/Network/WeightedLaplacian.lean`; the state dimension (§1.8, `7N + ℓ + n_C`)
+  is `Synchronous.powerSystem_state_dim` in `theorem/PowerSystem/Synchronous/SMIB11PH.lean`.
 
 Family and connection conclusions.
 * No new family is introduced: every numbered model is a member of the linear port-Hamiltonian

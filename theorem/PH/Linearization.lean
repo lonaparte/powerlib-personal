@@ -40,8 +40,8 @@ Family and connection conclusions.
 * No family: `NonlinearModel` is the generic framework of `theorem/PH/Nonlinear.lean`, which no
   family takes as its model type. The two stability theorems above are generic implications for
   every nonlinear pH system (foundation). Concrete families built on `NonlinearModel` (for
-  example the classical machine in `theorem/Synchronous/PH.lean`) publish their connection
-  conclusions through `Family.IsNonlinearPH.mem_den_flow_shift`.
+  example the classical machine in `theorem/PowerSystem/Synchronous/PH.lean`) publish their
+  connection conclusions through `Family.IsNonlinearPH.mem_den_flow_shift`.
 
 Correction.
 * §1.10 requires `Q ≻ 0` to call (1.15) the linearization; the Jacobian identity holds for any

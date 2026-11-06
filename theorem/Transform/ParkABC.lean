@@ -23,7 +23,7 @@ Results.
 * `park_power_invariant`: `(T_P v)·(T_P i) = v·i`.
 
 The synchronous-machine stator model built on this transform is
-`theorem/Synchronous/ParkModel.lean`.
+`theorem/PowerSystem/Synchronous/ParkModel.lean`.
 
 Correction (§1.4): "`Ṫ_P⁻¹ T_P = ω J`" has the product in the wrong order:
 `T_P · d(T_P⁻¹)/dt = ω J₀` holds, `d(T_P⁻¹)/dt · T_P` does not

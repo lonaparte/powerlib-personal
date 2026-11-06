@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.Numerics.EulerDiscretization where
--- Lean modules: theorem.Numerics.EulerRealization theorem.Synchronous.SwingEuler theorem.GFM.Euler theorem.GFM.Matching.Euler theorem.GFL.Euler theorem.GFL.PowerLoop.Euler theorem.GFL.LCLine.Euler theorem.GFL.DCLink.Euler theorem.CurrentControl.Euler theorem.Network.Swing.Euler theorem.Drives.Euler theorem.PLL.Euler theorem.Limiting.Euler
+-- Lean modules: theorem.Numerics.EulerRealization theorem.PowerSystem.Synchronous.SwingEuler theorem.GridConverter.GFM.Euler theorem.GridConverter.GFM.Matching.Euler theorem.GridConverter.GFL.Euler theorem.GridConverter.GFL.PowerLoop.Euler theorem.GridConverter.GFL.LCLine.Euler theorem.GridConverter.GFL.DCLink.Euler theorem.GridConverter.CurrentControl.Euler theorem.PowerSystem.Network.Swing.Euler theorem.Drives.Euler theorem.GridConverter.PLL.Euler theorem.GridConverter.GFM.Limiting.Euler
 
 -- Scaffold of the explicit Euler implementation of a model: the model is a field `f` with a
 -- selected point `x*`; its implementation with step `h > 0` is the discrete system
@@ -25,11 +25,13 @@ module theorem.Numerics.EulerDiscretization where
 -- (`euler_certified_small_step`), `not-sound-large-step` is
 -- `Numerics.not_euler_realizationSoundUnder_of_large_step_local`
 -- (`not_euler_realizationSoundUnder_of_large_step`). A family uses them through its autonomy and
--- the public smoothness lemma of its field; the `Euler` modules of `Synchronous`, `GFM`,
--- `GFM/Matching`, `GFL`, `GFL/PowerLoop`, `GFL/LCLine`, `GFL/DCLink`, `CurrentControl`,
--- `Network/Swing`, `Drives`, `PLL` and `Limiting` define each family's Euler implementation and
--- state its `not_euler_realizationSoundUnder` with the family's own locally exponentially stable
--- witness (and, for the full matching loop, which has none, the vacuous soundness). Nothing here is
+-- the public smoothness lemma of its field; the `Euler` modules of `PowerSystem/Synchronous`,
+-- `GridConverter/GFM`, `GridConverter/GFM/Matching`, `GridConverter/GFM/Limiting`,
+-- `GridConverter/GFL`, `GridConverter/GFL/PowerLoop`, `GridConverter/GFL/LCLine`,
+-- `GridConverter/GFL/DCLink`, `GridConverter/CurrentControl`, `GridConverter/PLL`,
+-- `PowerSystem/Network/Swing` and `Drives` define each family's Euler implementation and state its
+-- `not_euler_realizationSoundUnder` with the family's own locally exponentially stable witness
+-- (and, for the full matching loop, which has none, the vacuous soundness). Nothing here is
 -- exported.
 
 open import Cubical.Foundations.Prelude

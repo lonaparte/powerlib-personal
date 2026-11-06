@@ -67,9 +67,9 @@ directly in it) or a single module.
   engineering.
 * `Transform`: coordinate transformations and unit bases (Clarke, Park, space vectors, complex
   power in dq, per-unit scaling, circulant line matrices) are identities, not models.
-* `Network`: only the graph and node-network modules (weighted Laplacians, synchronization of
-  identical nodes, linear node networks); the power-flow and frequency-divider modules and
-  `Network/Swing/` are models.
+* `PowerSystem/Network`: only the graph and node-network modules (weighted Laplacians,
+  synchronization of identical nodes, linear node networks); the power-flow and frequency-divider
+  modules and `PowerSystem/Network/Swing/` are models.
 * `Numerics`: numerical methods; the EMT discretizations of circuit models in `Numerics/EMT/`
   are models.
 * `PH`: generic port-Hamiltonian theory, including the mathematical counterexample family of
@@ -80,15 +80,15 @@ directly in it) or a single module.
 def genericEntries : Array Name := #[
   `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch, `theorem.Asymptotics,
   `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Circuits.Interconnection,
-  `theorem.Criteria, `theorem.DAE, `theorem.Delay, `theorem.Dynamics,
-  `theorem.Dynamics.Degenerate, `theorem.Dynamics.LaSalle, `theorem.Envelope, `theorem.Estimation,
-  `theorem.Family, `theorem.Flow, `theorem.Information, `theorem.LTI, `theorem.Linear,
-  `theorem.LinearAlgebra, `theorem.Map, `theorem.Modal, `theorem.Network.LinearSync,
-  `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian, `theorem.Nonlinear,
-  `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH, `theorem.ParametricResonance,
-  `theorem.Periodic, `theorem.PhasePlane, `theorem.Port, `theorem.Potential,
-  `theorem.SingularPerturbation, `theorem.SpecialFunctions, `theorem.Spectral, `theorem.Stack,
-  `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
+  `theorem.Criteria, `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
+  `theorem.Dynamics.LaSalle, `theorem.Envelope, `theorem.Estimation, `theorem.Family, `theorem.Flow,
+  `theorem.Information, `theorem.LTI, `theorem.Linear, `theorem.LinearAlgebra, `theorem.Map,
+  `theorem.Modal, `theorem.PowerSystem.Network.LinearSync,
+  `theorem.PowerSystem.Network.Synchronization, `theorem.PowerSystem.Network.WeightedLaplacian,
+  `theorem.Nonlinear, `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH,
+  `theorem.ParametricResonance, `theorem.Periodic, `theorem.PhasePlane, `theorem.Port,
+  `theorem.Potential, `theorem.SingularPerturbation, `theorem.SpecialFunctions, `theorem.Spectral,
+  `theorem.Stack, `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
   `theorem.generated.ImpedanceInterconnection]
 
 /-- Engineering models of power electronics and power systems: model families, their connection
@@ -96,13 +96,16 @@ conclusions and the static evidence about them, including the circuit models of 
 branch, LCL filter) and their generated parameter conversions. -/
 def engineeringEntries : Array Name := #[
   `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis, `theorem.Circuits.PortEuler,
-  `theorem.Circuits.RL, `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion, `theorem.generated.LCLConversion,
-  `theorem.CurrentControl, `theorem.Drives, `theorem.Frequency,
-  `theorem.GFL, `theorem.GFL.DCLink, `theorem.GFL.Impedance, `theorem.GFL.LCLine,
-  `theorem.GFL.Noise, `theorem.GFL.Parametric, `theorem.GFL.PowerLoop,
-  `theorem.GFM, `theorem.GFM.Matching, `theorem.Limiting, `theorem.Line,
-  `theorem.Network.FrequencyDivider, `theorem.Network.PowerFlow, `theorem.Network.Swing,
-  `theorem.Numerics.EMT, `theorem.Circuits.PH, `theorem.PLL, `theorem.Synchronous]
+  `theorem.Circuits.RL, `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion,
+  `theorem.generated.LCLConversion, `theorem.GridConverter.CurrentControl, `theorem.Drives,
+  `theorem.PowerSystem.Frequency, `theorem.GridConverter.GFL, `theorem.GridConverter.GFL.DCLink,
+  `theorem.GridConverter.GFL.Impedance, `theorem.GridConverter.GFL.LCLine,
+  `theorem.GridConverter.GFL.Noise, `theorem.GridConverter.GFL.Parametric,
+  `theorem.GridConverter.GFL.PowerLoop, `theorem.GridConverter.GFM,
+  `theorem.GridConverter.GFM.Matching, `theorem.GridConverter.GFM.Limiting, `theorem.Circuits.Line,
+  `theorem.PowerSystem.Network.FrequencyDivider, `theorem.PowerSystem.Network.PowerFlow,
+  `theorem.PowerSystem.Network.Swing, `theorem.Numerics.EMT, `theorem.Circuits.PH,
+  `theorem.GridConverter.PLL, `theorem.PowerSystem.Synchronous]
 
 /-- The registrations of a module: its own name in any table, or its directory in the generic
 or engineering table. -/

@@ -5,6 +5,12 @@ in Git; working statistics, build receipts and development plans are not kept he
 
 ## 2026-11-06
 
+- Grouped the engineering sources by equipment class: `GridConverter/` (`GFL`,
+  `GFM` with current limiting under `GFM/Limiting`, `PLL`, `CurrentControl`),
+  `PowerSystem/` (`Synchronous`, `Network`, `Frequency`), and `Circuits/Line`
+  for lines and cables. Updated imports, scaffold module names and references
+  while preserving public declaration namespaces.
+
 - Consolidated the layer and implementation-interface documentation into
   `Architecture.md`, moved normative requirements into `Rules.md`, and removed
   the separate `Layers.md` and `ImplementationLayer.md` documents.

@@ -19,8 +19,8 @@ Scope.
 * The PSD is a real-analysis identity about the autocovariance *function*.
 * None of these is a stochastic stability conclusion.
 * The noisy-swing specialisation of §2.2.2 (`M dΔω = -DΔω dt + β dW`, stationary variance
-  `β²/(2DM)`) is in `theorem/Frequency/StochasticCOI.lean` (`Frequency.FreqCov.swing_ouStatVar`,
-  `Frequency.FreqCov.swing_ouVar_tendsto`).
+  `β²/(2DM)`) is in `theorem/PowerSystem/Frequency/StochasticCOI.lean`
+  (`Frequency.FreqCov.swing_ouStatVar`, `Frequency.FreqCov.swing_ouVar_tendsto`).
 
 Source: work-sync theory/T-sde-systems.md §1.8.1 (scalar OU mean / variance, limit
 `σ²/(2θ)`), §1.8.3 (stationary autocovariance `e^{-θ|τ|}σ∞²` and PSD `σ²/(θ²+ω²)`).

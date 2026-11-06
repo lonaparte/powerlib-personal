@@ -12,8 +12,8 @@ their minimum, and their two-sided fold asymptotics.
 
 Scope.
 * `V` is an antiderivative of `−(c − A sin(θ + φ))`; for the reduced GFL-PLL model
-  (`theorem/GFL/LCLine/Reduced2D.lean`) it is the potential part of the Hamiltonian with
-  `c = c₀`. For `A > 0`, `|c| < A`, write `s = c/A`, `ψ_s = arcsin s` and
+  (`theorem/GridConverter/GFL/LCLine/Reduced2D.lean`) it is the potential part of the Hamiltonian
+  with `c = c₀`. For `A > 0`, `|c| < A`, write `s = c/A`, `ψ_s = arcsin s` and
   `θ_s = ψ_s − φ` (stable zero, `cos(θ_s + φ) > 0`; `thetaS`),
   `θ_u⁺ = π − ψ_s − φ`, `θ_u⁻ = −π − ψ_s − φ` (the two neighbouring saddles; `thetaUp`,
   `thetaDown`).

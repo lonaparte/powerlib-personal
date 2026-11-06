@@ -4,15 +4,16 @@ module theorem.Drives.IMCCurrentLoop where
 
 -- Scaffold of the reading of the machine-drive IMC current loop through the converter PI current
 -- loop (`Drives.CascadeControl.family` of `theorem/Drives/CascadeControl.lean` read through
--- `CurrentControl.PIParams.family` of `theorem/CurrentControl/PILoop.lean`). The drive loop with
--- plant inductance `L`, resistance `R` and bandwidth `α` is, for `L ≠ 0`, the same linear plant as
--- the converter PI loop with the IMC tuning `K_p = L α`, `K_i = R α` (`CurrentControl.imc`), so the
--- reading is an equality of systems on the models with `L ≠ 0`, a context on the parameters. Both
--- families keep the two-element language `{stable, unstable}`. The scaffold derives the reading of
--- every sentence and the transfer of members; the plants are taken abstractly. Lean proves the
--- equality of plants (`imcModel_eq`), the reading (`mem_den_iff_imc`) and the member transfer
--- (`mem_den` from `CurrentControl.imc_mem_den_iff`). The families' own soundness and exactness are
--- not transferred: a loop with `L = 0` has no reading. Nothing here is exported.
+-- `CurrentControl.PIParams.family` of `theorem/GridConverter/CurrentControl/PILoop.lean`). The
+-- drive loop with plant inductance `L`, resistance `R` and bandwidth `α` is, for `L ≠ 0`, the same
+-- linear plant as the converter PI loop with the IMC tuning `K_p = L α`, `K_i = R α`
+-- (`CurrentControl.imc`), so the reading is an equality of systems on the models with `L ≠ 0`, a
+-- context on the parameters. Both families keep the two-element language `{stable, unstable}`. The
+-- scaffold derives the reading of every sentence and the transfer of members; the plants are taken
+-- abstractly. Lean proves the equality of plants (`imcModel_eq`), the reading (`mem_den_iff_imc`)
+-- and the member transfer (`mem_den` from `CurrentControl.imc_mem_den_iff`). The families' own
+-- soundness and exactness are not transferred: a loop with `L = 0` has no reading. Nothing here is
+-- exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

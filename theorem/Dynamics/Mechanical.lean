@@ -22,9 +22,10 @@ Scope.
   with nonzero masses only then (`field_point_eq_zero_iff`). No input, delay, switching or time
   variation.
 * Every statement is a generic implication about arbitrary `G`, `M`, `D` and `U`, a foundation
-  result; no model family is defined or fixed here. `theorem/Network/Swing/Degenerate.lean`
-  identifies the reduced swing network at a power-balance point with such a field
-  (`reducedField_eq_mechanical`) and applies these results inside its connection proofs.
+  result; no model family is defined or fixed here.
+  `theorem/PowerSystem/Network/Swing/Degenerate.lean` identifies the reduced swing network at a
+  power-balance point with such a field (`reducedField_eq_mechanical`) and applies these results
+  inside its connection proofs.
 
 Source: energy methods for dissipative mechanical systems (Lagrange–Dirichlet; LaSalle's invariance
 principle, Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 and Corollary 4.1); needed by

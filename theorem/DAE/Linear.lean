@@ -67,7 +67,7 @@ Corrections.
   (ground) branches is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology, connected
   or not (`Network.ybusNoShunt_det_eq_zero`); the two-bus line is a connected counterexample
   (`Network.ybus_two_bus_singular`). Nonsingularity needs a shunt path. Both are in
-  `theorem/Network/WeightedLaplacian.lean`.
+  `theorem/PowerSystem/Network/WeightedLaplacian.lean`.
 -/
 
 noncomputable section

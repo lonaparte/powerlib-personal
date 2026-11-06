@@ -12,7 +12,8 @@ Scope.
   amplitude map `F : ℝ → ℝ`: `swingMean` `V̄ = (1/2π)∫ F(δ(φ)) dφ`, `swingCoeff`
   `V_n = (1/2π)∫ F(δ(φ)) e^{−jnφ} dφ`, `harmonicRatio` `ε_n = 2|V_n|/V̄` (`ε_V = ε_1`).
 * Nothing here describes a physical system: `F` is any continuous map (the Thévenin amplitude
-  `|V_th|` seen by a GFL branch is one instance, `theorem/GFL/Parametric/ModulationTransfer.lean`).
+  `|V_th|` seen by a GFL branch is one instance,
+  `theorem/GridConverter/GFL/Parametric/ModulationTransfer.lean`).
 
 Source: work-sync projects/vsc-parametric-oscillation/references/
 gfm-driven-gfl-parametric-resonance/notes/concepts/network-modulation-transfer.md (section

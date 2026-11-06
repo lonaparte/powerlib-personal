@@ -4,8 +4,8 @@ import theorem.Dynamics.State
 /-! # Scalar calculus for the stability toolbox
 
 Real-variable calculus used by the Lyapunov, LaSalle and degenerate-equilibrium modules of
-`theorem/Dynamics/` and by the equal-area (`theorem/Synchronous/EqualArea.lean`) and PLL
-port-Hamiltonian (`theorem/PLL/PH.lean`) modules.
+`theorem/Dynamics/` and by the equal-area (`theorem/PowerSystem/Synchronous/EqualArea.lean`) and PLL
+port-Hamiltonian (`theorem/GridConverter/PLL/PH.lean`) modules.
 
 Scope.
 * Foundation results only: no model is fixed here and no behavioural sentence is stated.

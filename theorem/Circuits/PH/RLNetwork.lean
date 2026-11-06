@@ -1,5 +1,5 @@
 import theorem.PH.Composition
-import theorem.Network.WeightedLaplacian
+import theorem.PowerSystem.Network.WeightedLaplacian
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
 
@@ -10,8 +10,8 @@ rescaling (ideal-transformer referral).
 Model boundary.
 * Topology: a finite directed multigraph with node type `ν` and branch type `β` (`Fintype`,
   `DecidableEq`). The signed incidence matrix `signedIncidence tail head : Matrix ν β ℝ`
-  (`Network.signedIncidence`, `theorem/Network/WeightedLaplacian.lean`) has entry `+1` at the
-  tail of a branch (branch current leaves the node), `−1` at the head, `0` otherwise (a
+  (`Network.signedIncidence`, `theorem/PowerSystem/Network/WeightedLaplacian.lean`) has entry `+1`
+  at the tail of a branch (branch current leaves the node), `−1` at the head, `0` otherwise (a
   self-loop gives a zero column). Mathlib's `incMatrix` is unsigned and is not used. Every model
   below is stated for an **arbitrary** real matrix `𝓑 : Matrix ν β ℝ`, so weighted
   (ideal-transformer) incidence columns are included.

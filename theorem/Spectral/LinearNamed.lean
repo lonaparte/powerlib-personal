@@ -20,7 +20,8 @@ Scope.
 
 Source: the linear hub `theorem/Linear/Stability.lean` (`holds_iff_isHurwitz`,
 `sampledContraction_iff_isHurwitz`) and `theorem/Linear/Family.lean` (`IsLinear.den_hurwitz`); the
-families of `theorem/Frequency/` and `theorem/CurrentControl/DigitalPI.lean` (audit of the library).
+families of `theorem/PowerSystem/Frequency/` and
+`theorem/GridConverter/CurrentControl/DigitalPI.lean` (audit of the library).
 
 Results.
 * The table: `linearTable Rs Ru Rc Rp Rd` — Lyapunov stability, the attractive sentences and

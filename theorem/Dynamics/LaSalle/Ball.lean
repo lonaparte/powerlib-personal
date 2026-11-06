@@ -14,8 +14,8 @@ Scope.
 * Nothing here describes a physical system: every statement is a generic implication about an
   arbitrary field and function, a foundation result. No model family is defined or fixed here;
   `theorem/Dynamics/Mechanical.lean` applies the criterion to damped mechanical systems
-  (`Mechanical.localAsymptoticStable_of_strictMin`), which `theorem/Network/Swing/Degenerate.lean`
-  uses inside its connection proofs.
+  (`Mechanical.localAsymptoticStable_of_strictMin`), which
+  `theorem/PowerSystem/Network/Swing/Degenerate.lean` uses inside its connection proofs.
 
 Source: LaSalle's invariance principle (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 and
 Corollary 4.1) and Lyapunov's stability theorem (Theorem 4.1).

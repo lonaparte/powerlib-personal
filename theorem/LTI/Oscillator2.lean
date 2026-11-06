@@ -37,7 +37,7 @@ Results.
   `Ė = A E`, `E 0 = 1` is `t ↦ e^{tA}`) and `exp_smul_of_sq_eq` (if `B = A + a I` satisfies
   `B² = −w² I`, `w ≠ 0`, then `e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`, the matrix form of
   `osc2`); used by the lag covariance of the stochastic COI swing
-  (`theorem/Frequency/StochasticCOI.lean`).
+  (`theorem/PowerSystem/Frequency/StochasticCOI.lean`).
 -/
 
 noncomputable section

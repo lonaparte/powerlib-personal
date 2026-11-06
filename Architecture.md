@@ -5,8 +5,11 @@ contribution requirements, and [Changelog.md](Changelog.md) records completed ch
 
 ## Physical organization
 
-Sources are grouped by mathematical or electrical topic. Directory names do not
-assign `tmio`, foundation/domain, or connection status to declarations.
+Engineering sources are grouped by equipment class: grid-connected converters, electric drives,
+power systems, circuits and lines, and numerical simulation. Further classes (MMC, DC systems,
+resonant converters) get a directory of their own when their first module is added. Mathematical
+sources are grouped by topic. Directory names do not assign `tmio`, foundation/domain, or
+connection status to declarations.
 
 ```text
 powerlib.lean                 public Lean import
@@ -19,13 +22,19 @@ theorem/
   LTI/                       time evolution and sampling of linear systems
   Spectral/                  spectral criteria and family interpretation templates
   PH/                        general port-Hamiltonian theory
-  Circuits/                  circuit models; PH/ contains their PH instances
   Estimation/                estimation theory and symbolic resistance fitting
   Transform/                 coordinate and unit transformations
-  GFL/, GFM/, PLL/            converter and synchronization models
-  CurrentControl/, Drives/   current control and electric drives
-  Synchronous/, Network/     machines and networks
-  ...                        other mathematical and electrical topics
+  GridConverter/             grid-connected converters
+    GFL/, GFM/, PLL/          grid-following, grid-forming (Limiting/: current limiting), PLL
+    CurrentControl/          converter current loops
+  Drives/                    electric machines and drives
+  PowerSystem/               power systems
+    Synchronous/             synchronous machines, swing equation, equal area
+    Network/                 multi-machine networks, power flow, synchronization
+    Frequency/               frequency response and control
+  Circuits/                  circuit models; PH/ their PH instances; Line/ lines and cables
+  Numerics/                  numerical methods; EMT/ electromagnetic-transient simulation
+  ...                        other mathematical topics
   generated/                 checked data generated from Agda
   Architecture.lean          public-interface admission checker
   Attributes.lean            foundation/domain metadata and provenance
@@ -273,8 +282,8 @@ Representative interfaces are:
 
 | Topic | Interface and boundary | Source |
 | --- | --- | --- |
-| VSM test platform | A design, a delay-constrained implementation and a symbolic record-production relation; model inference implies producer truth only under realization soundness. | [VSMLPFRig.lean](theorem/GFM/VSMLPFRig.lean) |
-| Current control | Parameter mismatch, digital delay and hardware voltage limits have separate realization relations and explicit constraints. | [Mismatch.lean](theorem/CurrentControl/Mismatch.lean), [DigitalPI.lean](theorem/CurrentControl/DigitalPI.lean), [VoltageLimit.lean](theorem/CurrentControl/VoltageLimit.lean) |
+| VSM test platform | A design, a delay-constrained implementation and a symbolic record-production relation; model inference implies producer truth only under realization soundness. | [VSMLPFRig.lean](theorem/GridConverter/GFM/VSMLPFRig.lean) |
+| Current control | Parameter mismatch, digital delay and hardware voltage limits have separate realization relations and explicit constraints. | [Mismatch.lean](theorem/GridConverter/CurrentControl/Mismatch.lean), [DigitalPI.lean](theorem/GridConverter/CurrentControl/DigitalPI.lean), [VoltageLimit.lean](theorem/GridConverter/CurrentControl/VoltageLimit.lean) |
 | Sampling and numerical methods | Exact sampling, Euler and implicit methods connect continuous and discrete interpretations; their generic laws and electrical instances remain distinct. | [ExactSampling.lean](theorem/LTI/ExactSampling.lean), [EulerRealization.lean](theorem/Numerics/EulerRealization.lean), [ImplicitRealization.lean](theorem/Numerics/ImplicitRealization.lean), [EMT/Plant.lean](theorem/Numerics/EMT/Plant.lean) |
 | Disturbance envelopes | Finite-horizon safety uses solvability, margin and perturbation bounds; a finite-horizon guarantee does not imply an infinite-horizon guarantee. | [Disturbed.lean](theorem/Envelope/Disturbed.lean) |
 

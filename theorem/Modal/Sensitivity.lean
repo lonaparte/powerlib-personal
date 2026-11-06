@@ -69,7 +69,7 @@ Scalar root branches:
 * `root_branch_deriv`, `exists_root_branch` — a simple root `λ₀` of `P(s) + c K₀ = 0`
   (`P : ℂ → ℂ`, `P'(λ₀) ≠ 0`) continues to a differentiable root branch `λ(K)` of one real
   parameter (inverse function theorem), and every differentiable branch through it has
-  `dλ/dK = −c / P'(λ)` (used for the VSM cubic of `theorem/GFM/ContrastAlgebra.lean`).
+  `dλ/dK = −c / P'(λ)` (used for the VSM cubic of `theorem/GridConverter/GFM/ContrastAlgebra.lean`).
 -/
 
 noncomputable section

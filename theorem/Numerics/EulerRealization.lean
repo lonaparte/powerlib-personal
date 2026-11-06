@@ -45,10 +45,12 @@ Scope.
   its implementation type (a structure of a design model and a positive step); the small-step
   laws of an instance are these laws applied to its family's autonomy and the public smoothness
   lemma of its field, and the instance publishes what carries its own content, a witness against
-  soundness without a step constraint: `theorem/Synchronous/SwingEuler.lean` and the `Euler.lean`
-  modules of `theorem/GFM/`, `theorem/GFM/Matching/`, `theorem/GFL/`, `theorem/GFL/PowerLoop/`,
-  `theorem/GFL/LCLine/`, `theorem/GFL/DCLink/`, `theorem/CurrentControl/`,
-  `theorem/Network/Swing/`, `theorem/Drives/`, `theorem/PLL/` and `theorem/Limiting/`.
+  soundness without a step constraint: `theorem/PowerSystem/Synchronous/SwingEuler.lean` and the
+  `Euler.lean` modules of `theorem/GridConverter/GFM/`, `theorem/GridConverter/GFM/Matching/`,
+  `theorem/GridConverter/GFL/`, `theorem/GridConverter/GFL/PowerLoop/`,
+  `theorem/GridConverter/GFL/LCLine/`, `theorem/GridConverter/GFL/DCLink/`,
+  `theorem/GridConverter/CurrentControl/`, `theorem/PowerSystem/Network/Swing/`, `theorem/Drives/`,
+  `theorem/GridConverter/PLL/` and `theorem/GridConverter/GFM/Limiting/`.
 
 Source: `theorem/Numerics/LinearSchemes.lean` (`forwardEulerMatrix`,
 `forwardEuler_schurStable_iff`), `theorem/Dynamics/ConverseLinearization.lean`,

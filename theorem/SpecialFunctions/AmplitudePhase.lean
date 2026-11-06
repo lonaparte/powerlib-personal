@@ -14,8 +14,8 @@ Scope.
 
 Source: the amplitude-phase form `W cos x + f sin x = B sin(x + a)` of a sinusoid (elementary
 trigonometry, `Real.cos_arcsin`); used by the line potentials of a lossless cycle
-(`theorem/Network/Swing/CycleMinimum.lean`, `cos_base_pos`) and the representatives in
-`(−π/2, π/2)` of angles with positive cosine (`theorem/Network/Swing/Four.lean`,
+(`theorem/PowerSystem/Network/Swing/CycleMinimum.lean`, `cos_base_pos`) and the representatives in
+`(−π/2, π/2)` of angles with positive cosine (`theorem/PowerSystem/Network/Swing/Four.lean`,
 `exists_rep_of_cos_pos`).
 
 Results.

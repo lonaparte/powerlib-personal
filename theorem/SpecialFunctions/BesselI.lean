@@ -47,7 +47,7 @@ Results.
   along the ray `(1 + i)s`: `one_add_I_mul_re`, `norm_one_add_I_mul_le`.
 
 The second-kind functions `K₀`, `K₁` are in `theorem/SpecialFunctions/BesselK.lean`; the solid
-conductor surface impedance built on `I₀/I₁` is in `theorem/Line/CableBessel.lean`.
+conductor surface impedance built on `I₀/I₁` is in `theorem/Circuits/Line/CableBessel.lean`.
 -/
 
 noncomputable section

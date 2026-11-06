@@ -25,8 +25,9 @@ level and exploring the potential of ATD.
 ## Structure
 
 Lean 4 is the theorem layer; Agda scaffolds describe connections and are checked
-independently. Sources in `theorem/` are organized by topic, with scaffolds beside
-their Lean implementations. Formal verification lives in `tests/lean/`, examples
+independently. Engineering sources in `theorem/` are organized by equipment class
+(grid-connected converters, drives, power systems, circuits and lines, numerics), mathematical
+sources by topic, with scaffolds beside their Lean implementations. Formal verification lives in `tests/lean/`, examples
 in `example/`, and upstream interfaces in `dependencies/`.
 
 - [Architecture.md](Architecture.md): TMIO nodes and relations, shared semantics,

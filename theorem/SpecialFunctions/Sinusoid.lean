@@ -11,8 +11,8 @@ The number and position of the zeros of `c − A sin(θ + φ)` in a period windo
 
 Scope.
 * Pure trigonometry; no model family. It is used for the reduced GFL-PLL model whose
-  phase-detector characteristic is exactly of this form (`theorem/GFL/LCLine/Reduction.lean`,
-  `h_eq_polar`).
+  phase-detector characteristic is exactly of this form
+  (`theorem/GridConverter/GFL/LCLine/Reduction.lean`, `h_eq_polar`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
 §2 (number of equilibria per period).

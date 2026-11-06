@@ -38,8 +38,8 @@ delay bound on the bandwidth of a digital current loop), theory/T-numerical-inte
 (the discrete recursion as the sampled semantics); `theorem/Dynamics/VariationOfConstants.lean`
 (`zoh_exact`, the one-period ZOH step on a Banach space with two-sided derivatives),
 `theorem/LTI/Discrete.lean` (Schur stability, contractive powers), `theorem/Periodic/LTI.lean`
-(eigenvalues of `e^{TA}`), `theorem/CurrentControl/DigitalPI.lean` and
-`theorem/CurrentControl/LoopDelay.lean` (continuous delay models of the same loop).
+(eigenvalues of `e^{TA}`), `theorem/GridConverter/CurrentControl/DigitalPI.lean` and
+`theorem/GridConverter/CurrentControl/LoopDelay.lean` (continuous delay models of the same loop).
 
 Results.
 * `isHurwitz_iff_schurStable_exp`: for `T > 0`, `A` is Hurwitz iff `e^{TA}` is Schur stable
@@ -73,10 +73,11 @@ Results.
 Comparison of delay models (the IMC-tuned digital PI current loop, `K_p = ω_b L`, `K_i = ω_b R`,
 one-sample computation delay, ZOH; total delay `τ = 1.5 Tₛ`). As `R Tₛ/L → 0` the current mode
 of the exact sampled-data loop is the delayed integrator above, with stability boundary
-`ω_b Tₛ = 1`. The continuous pure-delay model (`theorem/CurrentControl/LoopDelay.lean`) gives
-`ω_b Tₛ < π/3 ≈ 1.047`, the Padé(1,1) platform (`theorem/CurrentControl/DigitalPI.lean`) gives
-`ω_b Tₛ < 4/3`: both continuous models overestimate the stable sampling range of the exact loop,
-by about `4.7 %` and `33 %`. Numerically (numpy eigenvalues of the 3 × 3 lifted matrix
+`ω_b Tₛ = 1`. The continuous pure-delay model
+(`theorem/GridConverter/CurrentControl/LoopDelay.lean`) gives `ω_b Tₛ < π/3 ≈ 1.047`, the Padé(1,1)
+platform (`theorem/GridConverter/CurrentControl/DigitalPI.lean`) gives `ω_b Tₛ < 4/3`: both
+continuous models overestimate the stable sampling range of the exact loop, by about `4.7 %` and
+`33 %`. Numerically (numpy eigenvalues of the 3 × 3 lifted matrix
 `[[e^{−RTₛ/L}, 0, (1 − e^{−RTₛ/L})/R], [−Tₛ, 1, 0], [−K_p, K_i, 0]]` on `(i, ξ, u)` with a
 forward-Euler integral, scanned over `ω_b Tₛ ∈ (0, 3]`; not formalized) the boundary is
 `ω_b Tₛ ≈ 1 + R Tₛ/(2L)`: `1.0006`, `1.005`, `1.050` at `R Tₛ/L = 0.001, 0.01, 0.1`. At `R = 0`

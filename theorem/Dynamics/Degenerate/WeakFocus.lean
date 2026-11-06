@@ -14,8 +14,8 @@ Scope.
 * Nothing here describes a physical system: every statement is a generic implication about an
   arbitrary field, function or polynomial, a foundation result. No model family is defined or
   fixed here; model families apply these criteria inside their own connection proofs
-  (`theorem/GFM/VSMLPFHopf.lean`, `theorem/GFL/RatePLLHopf.lean`,
-  `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
+  (`theorem/GridConverter/GFM/VSMLPFHopf.lean`, `theorem/GridConverter/GFL/RatePLLHopf.lean`,
+  `theorem/GridConverter/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
 
 Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem) and Theorem 4.4
 (LaSalle); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (first
