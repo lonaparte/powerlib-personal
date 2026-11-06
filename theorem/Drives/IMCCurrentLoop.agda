@@ -4,7 +4,7 @@ module theorem.Drives.IMCCurrentLoop where
 
 -- Scaffold of the reading of the machine-drive IMC current loop through the converter PI current
 -- loop (`Drives.CascadeControl.family` of `theorem/Drives/CascadeControl.lean` read through
--- `CurrentControl.PIParams.family` of `theorem/GridConverter/CurrentControl/PILoop.lean`). The
+-- `CurrentControl.PIParams.family` of `theorem/GridTiedConverter/CurrentControl/PILoop.lean`). The
 -- drive loop with plant inductance `L`, resistance `R` and bandwidth `α` is, for `L ≠ 0`, the same
 -- linear plant as the converter PI loop with the IMC tuning `K_p = L α`, `K_i = R α`
 -- (`CurrentControl.imc`), so the reading is an equality of systems on the models with `L ≠ 0`, a

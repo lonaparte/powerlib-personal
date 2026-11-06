@@ -46,11 +46,12 @@ Scope.
   laws of an instance are these laws applied to its family's autonomy and the public smoothness
   lemma of its field, and the instance publishes what carries its own content, a witness against
   soundness without a step constraint: `theorem/PowerSystem/Synchronous/SwingEuler.lean` and the
-  `Euler.lean` modules of `theorem/GridConverter/GFM/`, `theorem/GridConverter/GFM/Matching/`,
-  `theorem/GridConverter/GFL/`, `theorem/GridConverter/GFL/PowerLoop/`,
-  `theorem/GridConverter/GFL/LCLine/`, `theorem/GridConverter/GFL/DCLink/`,
-  `theorem/GridConverter/CurrentControl/`, `theorem/PowerSystem/Network/Swing/`, `theorem/Drives/`,
-  `theorem/GridConverter/PLL/` and `theorem/GridConverter/GFM/Limiting/`.
+  `Euler.lean` modules of `theorem/GridTiedConverter/GFM/`,
+  `theorem/GridTiedConverter/GFM/Matching/`, `theorem/GridTiedConverter/GFL/`,
+  `theorem/GridTiedConverter/GFL/PowerLoop/`, `theorem/GridTiedConverter/GFL/LCLine/`,
+  `theorem/GridTiedConverter/GFL/DCLink/`, `theorem/GridTiedConverter/CurrentControl/`,
+  `theorem/PowerSystem/Network/Swing/`, `theorem/Drives/`, `theorem/GridTiedConverter/PLL/` and
+  `theorem/GridTiedConverter/GFM/Limiting/`.
 
 Source: `theorem/Numerics/LinearSchemes.lean` (`forwardEulerMatrix`,
 `forwardEuler_schurStable_iff`), `theorem/Dynamics/ConverseLinearization.lean`,

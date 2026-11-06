@@ -97,15 +97,16 @@ branch, LCL filter) and their generated parameter conversions. -/
 def engineeringEntries : Array Name := #[
   `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis, `theorem.Circuits.PortEuler,
   `theorem.Circuits.RL, `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion,
-  `theorem.generated.LCLConversion, `theorem.GridConverter.CurrentControl, `theorem.Drives,
-  `theorem.PowerSystem.Frequency, `theorem.GridConverter.GFL, `theorem.GridConverter.GFL.DCLink,
-  `theorem.GridConverter.GFL.Impedance, `theorem.GridConverter.GFL.LCLine,
-  `theorem.GridConverter.GFL.Noise, `theorem.GridConverter.GFL.Parametric,
-  `theorem.GridConverter.GFL.PowerLoop, `theorem.GridConverter.GFM,
-  `theorem.GridConverter.GFM.Matching, `theorem.GridConverter.GFM.Limiting, `theorem.Circuits.Line,
+  `theorem.generated.LCLConversion, `theorem.GridTiedConverter.CurrentControl, `theorem.Drives,
+  `theorem.PowerSystem.Frequency, `theorem.GridTiedConverter.GFL,
+  `theorem.GridTiedConverter.GFL.DCLink, `theorem.GridTiedConverter.GFL.Impedance,
+  `theorem.GridTiedConverter.GFL.LCLine, `theorem.GridTiedConverter.GFL.Noise,
+  `theorem.GridTiedConverter.GFL.Parametric, `theorem.GridTiedConverter.GFL.PowerLoop,
+  `theorem.GridTiedConverter.GFM, `theorem.GridTiedConverter.GFM.Matching,
+  `theorem.GridTiedConverter.GFM.Limiting, `theorem.Circuits.Line,
   `theorem.PowerSystem.Network.FrequencyDivider, `theorem.PowerSystem.Network.PowerFlow,
   `theorem.PowerSystem.Network.Swing, `theorem.Numerics.EMT, `theorem.Circuits.PH,
-  `theorem.GridConverter.PLL, `theorem.PowerSystem.Synchronous]
+  `theorem.GridTiedConverter.PLL, `theorem.PowerSystem.Synchronous]
 
 /-- The registrations of a module: its own name in any table, or its directory in the generic
 or engineering table. -/

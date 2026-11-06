@@ -6,8 +6,8 @@ module theorem.PowerSystem.Synchronous.Swing where
 -- `theorem/PowerSystem/Synchronous/Swing.lean`): the swing machine
 -- `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))` read at a selected angle, its requirement language,
 -- its translation, and the laws it publishes for its spokes. The readings through it are
--- `theorem/GridConverter/GFM/DroopSwing.agda` (the droop loop with a power filter),
--- `theorem/GridConverter/GFM/Limiting/SaturationSwing.agda` (the saturated converter) and
+-- `theorem/GridTiedConverter/GFM/DroopSwing.agda` (the droop loop with a power filter),
+-- `theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda` (the saturated converter) and
 -- `theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda` (the classical machine). Nothing
 -- here is exported.
 

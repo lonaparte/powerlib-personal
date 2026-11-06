@@ -43,8 +43,8 @@ Model boundary.
 
 Scaffold: `theorem/PowerSystem/Synchronous/Swing.agda` (the hub content its spokes read: models,
 requirements, translation, published laws); the readings through it are
-`theorem/GridConverter/GFM/DroopSwing.agda`,
-`theorem/GridConverter/GFM/Limiting/SaturationSwing.agda` and
+`theorem/GridTiedConverter/GFM/DroopSwing.agda`,
+`theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda` and
 `theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda`.
 
 Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machine.md` §1.9;

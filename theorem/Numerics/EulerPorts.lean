@@ -44,10 +44,10 @@ Scope.
   integrator, linear algebra) and the passivity of systems are foundation lemmas. The instances
   apply the laws to their families (`IsPort`, `IsLinear`, the public smoothness lemma of the
   zero-input field) and publish what carries their own content — witnesses against soundness,
-  passivity witnesses — in the `PortEuler.lean` modules of `theorem/GridConverter/GFL/DCLink/` (the
-  linearized cascade), `theorem/Circuits/` (RL branch, LCL filter),
+  passivity witnesses — in the `PortEuler.lean` modules of `theorem/GridTiedConverter/GFL/DCLink/`
+  (the linearized cascade), `theorem/Circuits/` (RL branch, LCL filter),
   `theorem/PowerSystem/Synchronous/` (the classical, seven-state and 11-state single-machine pH
-  systems) and `theorem/GridConverter/PLL/` (SRF-PLL as a port-Hamiltonian system).
+  systems) and `theorem/GridTiedConverter/PLL/` (SRF-PLL as a port-Hamiltonian system).
 
 Source: `theorem/Numerics/EulerRealization.lean` (`eulerMap`, `eulerFamily`, `euler`,
 `euler_sound_small_step_local`, `not_euler_realizationSoundUnder_of_large_step_local`,

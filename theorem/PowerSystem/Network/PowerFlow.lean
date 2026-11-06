@@ -36,8 +36,8 @@ Results.
 * Purely reactive line: the converter-side power `S̄ = V̄_conv Ī*`, `P = V V_g sin θ / X`,
   `Q_conv = (V² − V V_g cos θ)/X` (`converterSide_power`), and the power received at the grid
   bus `S̄_g = V̄_g Ī*`, `Q_g = (V V_g cos θ − V_g²)/X` (`gridSide_power`).
-* The rotated droop of `theorem/GridConverter/GFM/DroopAlgebra.lean` and the reactive-power
-  correction of `theorem/GridConverter/GFM/PSC.lean` refer to these identities.
+* The rotated droop of `theorem/GridTiedConverter/GFM/DroopAlgebra.lean` and the reactive-power
+  correction of `theorem/GridTiedConverter/GFM/PSC.lean` refer to these identities.
 -/
 
 noncomputable section

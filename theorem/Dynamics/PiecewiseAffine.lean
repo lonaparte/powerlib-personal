@@ -21,7 +21,7 @@ Source: locality of the local sentences (`theorem/Dynamics/Locality.lean`), the 
 converse linearization (`Dynamics.isEquilibrium_of_lyapunovStable`,
 `theorem/Dynamics/ConverseLinearization.lean`) and the linear hub (`Linear.holds_input_iff`,
 `theorem/Linear/Family.lean`); used by the PI current loop under the inverter's voltage limit
-(`theorem/GridConverter/CurrentControl/VoltageLimit.lean`).
+(`theorem/GridTiedConverter/CurrentControl/VoltageLimit.lean`).
 
 Results.
 * `holds_congr_nhds`: the local sentences at a point depend only on the field near the point.

@@ -47,7 +47,7 @@ Results.
   (per-axis delay, no cross coupling).
 
 Scope notes.
-* The GFL impedance module `theorem/GridConverter/GFL/Impedance/Admittance.lean` does not use
+* The GFL impedance module `theorem/GridTiedConverter/GFL/Impedance/Admittance.lean` does not use
   `pade11`: it defines its own delay factor `Gdel` with `G_del = (1 − a s)/(1 + a s)`, `a = τ_d/2`
   (`Gdel_eq`), the same Padé(1,1) form.
 -/

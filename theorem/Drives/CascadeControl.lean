@@ -1,5 +1,5 @@
 import theorem.Spectral.Family
-import theorem.GridConverter.CurrentControl.IMC
+import theorem.GridTiedConverter.CurrentControl.IMC
 import theorem.Transform.SpaceVector
 import theorem.Criteria.Hurwitz2
 import theorem.Numerics.StabilityFunctions
@@ -57,12 +57,13 @@ Family and connection conclusions.
   (`imcLoop_exponentiallyStable_tracking`, `imcLoop_current_tendsto`) are trajectory-level
   results outside the sentence language, kept as private implementation evidence.
 * The same IMC rule on the converter current loop (IN-positive R–L branch, bandwidth `ω_b`) is
-  `CurrentControl.imc` in `theorem/GridConverter/CurrentControl/IMC.lean` (`imc_transfer_eq`,
+  `CurrentControl.imc` in `theorem/GridTiedConverter/CurrentControl/IMC.lean` (`imc_transfer_eq`,
   `imc_mem_den_iff`), read through the single-axis PI-loop family `CurrentControl.PIParams.family`
-  of `theorem/GridConverter/CurrentControl/PILoop.lean`; `IMCLoop` is the machine-drive form of that
-  loop. For `L ≠ 0` the two are the same plant (`imcModel_eq`), so every sentence of the drive loop
-  is read through the converter family (`mem_den_iff_imc`, a connection statement), and `mem_den` is
-  the converter result `imc_mem_den_iff` read back. Scaffold: `theorem/Drives/IMCCurrentLoop.agda`.
+  of `theorem/GridTiedConverter/CurrentControl/PILoop.lean`; `IMCLoop` is the machine-drive form of
+  that loop. For `L ≠ 0` the two are the same plant (`imcModel_eq`), so every sentence of the drive
+  loop is read through the converter family (`mem_den_iff_imc`, a connection statement), and
+  `mem_den` is the converter result `imc_mem_den_iff` read back. Scaffold:
+  `theorem/Drives/IMCCurrentLoop.agda`.
 
 Corrections.
 * FOC note §1.8: the "bandwidth-separated" speed loop
@@ -183,8 +184,8 @@ def imcEquilibrium (α iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, iref / α]
 /-! ### The IMC current-loop family -/
 
 /-- An IMC-tuned current loop: plant inductance and resistance, bandwidth. The converter-side
-form of the same loop is `CurrentControl.imc` (`theorem/GridConverter/CurrentControl/IMC.lean`) on
-`CurrentControl.PIParams` (`theorem/GridConverter/CurrentControl/PILoop.lean`). -/
+form of the same loop is `CurrentControl.imc` (`theorem/GridTiedConverter/CurrentControl/IMC.lean`)
+on `CurrentControl.PIParams` (`theorem/GridTiedConverter/CurrentControl/PILoop.lean`). -/
 @[ext] structure IMCLoop where
   L : ℝ
   R : ℝ

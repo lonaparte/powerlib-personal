@@ -28,8 +28,8 @@ Scope.
 
 Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 (LaSalle) applied on the cylinder
 `S¹ × ℝⁿ⁻¹`, as in the energy-shaping argument of Arghir–Dörfler (IEEE TPEL 35(4), 2020,
-appendix); interface for `theorem.GridConverter.GFM.Matching.LaSalle` and
-`theorem.GridConverter.GFM.Matching.ClosedLoop`.
+appendix); interface for `theorem.GridTiedConverter.GFM.Matching.LaSalle` and
+`theorem.GridTiedConverter.GFM.Matching.ClosedLoop`.
 
 Results. (The calculus of curves in `State n` it uses — `fderiv_apply_eq_of_hasDerivAt_line`,
 `hasDerivWithinAt_euclidean_of_coord`, `tendsto_euclidean_of_coord`, `norm_le_sum_abs` — is in

@@ -43,8 +43,8 @@ Results.
   function the derivatives have opposite signs (alternation of `h' < 0` / `h' > 0`).
 
 Scope notes. The module does not prove that 4 zeros actually occur for the GFL form-B
-characteristic (see `theorem/GridConverter/GFL/LCLine/FormB.lean`: for the exact quasi-steady line
-solution the `2θ` coefficients vanish).
+characteristic (see `theorem/GridTiedConverter/GFL/LCLine/FormB.lean`: for the exact quasi-steady
+line solution the `2θ` coefficients vanish).
 -/
 
 noncomputable section

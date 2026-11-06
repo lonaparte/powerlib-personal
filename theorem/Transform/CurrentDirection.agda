@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.Transform.CurrentDirection where
--- Lean modules: theorem.GridConverter.GFL.PowerLoop.QuasiStatic theorem.GridConverter.GFL.RatePLL theorem.GridConverter.GFL.ModelLayers theorem.GridConverter.GFL.LCLine.FullModel theorem.GridConverter.GFL.LCLine.FullModelDC theorem.GridConverter.GFL.DCLink.BasinGuard
+-- Lean modules: theorem.GridTiedConverter.GFL.PowerLoop.QuasiStatic theorem.GridTiedConverter.GFL.RatePLL theorem.GridTiedConverter.GFL.ModelLayers theorem.GridTiedConverter.GFL.LCLine.FullModel theorem.GridTiedConverter.GFL.LCLine.FullModelDC theorem.GridTiedConverter.GFL.DCLink.BasinGuard
 
 -- Scaffold of the unification of reference directions (work-sync `conventions.md` §D1, §D3,
 -- §D8). A model written with OUT-positive port current and export-positive power is the same
@@ -11,16 +11,17 @@ module theorem.Transform.CurrentDirection where
 -- reactances and gains are undirected and stay.
 --
 -- For families: the IN-written family reads through the OUT-written one. When the current is a
--- state coordinate (`GridConverter.GFL.PowerLoop.QuasiStatic`, state `(θ, x, i)`) the fields are
--- conjugate under the reversal of that coordinate, `diag(1, 1, −1)`; when the current is a
--- parameter (`GridConverter.GFL.RatePLL`, frozen `i_d`) the substitution of the parameter gives the
--- same system. The requirement languages correspond by restating each requirement (a sign condition
--- on a directed quantity flips, e.g. `0 ≤ L_g I_d` becomes `L_g i_d ≤ 0`). Then every exactness and
--- soundness result passes between the writings (`exact-rewritten`, `sound-rewritten`); the dispatch
--- law `i̇ = k_P (P_ref − P)` keeps its form because both sides flip. The library keeps one writing:
--- Lean writes the families IN-positive (`GridConverter.GFL.PowerLoop.QuasiStatic`,
--- `GridConverter.GFL.RatePLL`, `GridConverter.GFL.ModelLayers`, `GridConverter.GFL.LCLine.*`) and
--- keeps the OUT writing only as the literature field of each model, with the conjugacy against it
+-- state coordinate (`GridTiedConverter.GFL.PowerLoop.QuasiStatic`, state `(θ, x, i)`) the fields
+-- are conjugate under the reversal of that coordinate, `diag(1, 1, −1)`; when the current is a
+-- parameter (`GridTiedConverter.GFL.RatePLL`, frozen `i_d`) the substitution of the parameter gives
+-- the same system. The requirement languages correspond by restating each requirement (a sign
+-- condition on a directed quantity flips, e.g. `0 ≤ L_g I_d` becomes `L_g i_d ≤ 0`). Then every
+-- exactness and soundness result passes between the writings (`exact-rewritten`,
+-- `sound-rewritten`); the dispatch law `i̇ = k_P (P_ref − P)` keeps its form because both sides
+-- flip. The library keeps one writing: Lean writes the families IN-positive
+-- (`GridTiedConverter.GFL.PowerLoop.QuasiStatic`, `GridTiedConverter.GFL.RatePLL`,
+-- `GridTiedConverter.GFL.ModelLayers`, `GridTiedConverter.GFL.LCLine.*`) and keeps the OUT writing
+-- only as the literature field of each model, with the conjugacy against it
 -- (`field_eq_transport_literatureField`, `field_eq_literatureField`, `lift_ccField_eq_transport`,
 -- `field10_eq_transport_literatureField10`, `field13_eq_transport_literatureField13`), the §D8
 -- boundary translation; the structure the reversal must preserve (linearity of the field in the

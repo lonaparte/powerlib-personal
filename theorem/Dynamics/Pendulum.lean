@@ -5,10 +5,10 @@ import theorem.Dynamics.State
 
 An energy of the form `1 − cos θ + W`, the pendulum potential of an angle coordinate `θ` plus a
 remainder `W` in the other state coordinates, is the Lyapunov function of the undamped PLL
-witnesses of the grid-following families (`theorem/GridConverter/GFL/RatePLL.lean`,
-`theorem/GridConverter/GFL/PowerLoop/QuasiStatic.lean`,
-`theorem/GridConverter/GFL/DCLink/FourState.lean`). This module proves once that such an energy has
-a strict minimum at the selected point on the strip `|θ| < 2π`, when the remainder dominates a
+witnesses of the grid-following families (`theorem/GridTiedConverter/GFL/RatePLL.lean`,
+`theorem/GridTiedConverter/GFL/PowerLoop/QuasiStatic.lean`,
+`theorem/GridTiedConverter/GFL/DCLink/FourState.lean`). This module proves once that such an energy
+has a strict minimum at the selected point on the strip `|θ| < 2π`, when the remainder dominates a
 positive multiple of the squared distance in the other coordinates.
 
 Scope.

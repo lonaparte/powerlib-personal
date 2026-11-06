@@ -11,7 +11,7 @@ Scope.
   polynomials and matrices, or a generic semantic implication about an arbitrary field, so all of
   them are foundation results (Rules §3). Model families that use these criteria publish their
   engineering conclusions as connection statements (pattern:
-  `theorem/GridConverter/PLL/PIPLLFamily.lean`).
+  `theorem/GridTiedConverter/PLL/PIPLLFamily.lean`).
 
 Source: standard Routh–Hurwitz criterion for degree three (shared criteria interface for the
 work-sync formalization).
@@ -387,7 +387,7 @@ end FinThree
 These are generic semantic implications about an arbitrary caller-supplied field: foundation
 results (Rules §3), not model-specific engineering conclusions. A model family that uses them
 publishes its conclusions as connection statements (see
-`theorem/GridConverter/PLL/PIPLLFamily.lean`). -/
+`theorem/GridTiedConverter/PLL/PIPLLFamily.lean`). -/
 
 section Semantic
 

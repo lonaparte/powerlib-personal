@@ -1,11 +1,11 @@
-import theorem.GridConverter.PLL.Signals
+import theorem.GridTiedConverter.PLL.Signals
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-! # Frequency measurement by PMU: window estimator and ROCOF trip probability
 
 Identities of the ideal noise-free continuous-time PMU window estimator on a given signal and of
 a Gaussian ROCOF error model. The SRF-PLL used as a frequency meter is in
-`theorem/GridConverter/PLL/Measurement.lean`.
+`theorem/GridTiedConverter/PLL/Measurement.lean`.
 
 Model boundary.
 * Ideal, noise-free, continuous-time PMU window estimator applied to a given complex
@@ -20,7 +20,8 @@ Results.
   `X(t) = (1/T)∫_{t−T}^t x(τ) e^{−jω₀τ} dτ` (`windowPhasor`),
   `f̂ = f₀ + arg(X(t)/X(t−T))/(2πT)` equals `f = ω/2π` exactly whenever `|ω − ω₀| T < π`
   (`pmu_frequency_exact`; the window average of the demodulated exponential is computed with the
-  MAF transfer `PLL.mafTF`, `PLL.movingAverage_exp` of `theorem/GridConverter/PLL/Signals.lean`).
+  MAF transfer `PLL.mafTF`, `PLL.movingAverage_exp` of
+  `theorem/GridTiedConverter/PLL/Signals.lean`).
 * ROCOF trip probability for a Gaussian estimate `N(μ, σ²)`: `P(X ≤ −a) = Φ((−a − μ)/σ)`
   (`trip_probability`), and the probability is the same in Hz/s and rad/s²
   (`trip_unit_invariant`).

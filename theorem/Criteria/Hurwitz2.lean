@@ -556,7 +556,7 @@ end FinTwo
 These are generic semantic implications about an arbitrary caller-supplied field: foundation
 results (Rules §3), not model-specific engineering conclusions. A model family that uses them
 publishes its conclusions as connection statements (see
-`theorem/GridConverter/PLL/PIPLLFamily.lean`). -/
+`theorem/GridTiedConverter/PLL/PIPLLFamily.lean`). -/
 
 section Semantic
 
