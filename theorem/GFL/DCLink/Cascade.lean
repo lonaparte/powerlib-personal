@@ -196,7 +196,7 @@ def model : Linear.Plant 3 1 :=
 /-- `C¹` on `V_dc > 0`. -/
 def posV : Set (State 3) := {x | 0 < x 2}
 
-@[powerlib_foundation] theorem isOpen_posV : IsOpen posV :=
+@[tmio T, powerlib_foundation] theorem isOpen_posV : IsOpen posV :=
   isOpen_lt continuous_const ((EuclideanSpace.proj (2 : Fin 3)).continuous)
 
 @[tmio M, powerlib_domain] theorem field_contDiffOn (r : ℝ) : ContDiffOn ℝ 1 (p.field r) posV := by
@@ -1323,7 +1323,7 @@ def driftStorage (x : State 3) : ℝ :=
   linear_combination (p.Id0 * p.V0) * h
 
 /-- The scalar inequality behind the Lyapunov function of the cascade without integral gain. -/
-@[powerlib_foundation] private theorem drift_ineq {I C V0 x2 w e a1 a2 k L : ℝ} (hI : 0 ≤ I) (hC : 0 < C) (hV : 0 < V0)
+@[tmio T, powerlib_foundation] private theorem drift_ineq {I C V0 x2 w e a1 a2 k L : ℝ} (hI : 0 ≤ I) (hC : 0 < C) (hV : 0 < V0)
     (hx2 : 0 < x2) (hk : 0 < k) (hL : 0 < L) (he : e ^ 2 ≤ 1) :
     2 * (C / 2 * (x2 + V0) * w + (a1 * e + a2 * e ^ 2)) * -(I * w) +
       -(2 * (2 * I * (a1 ^ 2 + a2 ^ 2) * L / (C * V0 * k) + 1) * k / L * e ^ 2) ≤ 0 := by
@@ -1487,13 +1487,13 @@ def driftStorage (x : State 3) : ℝ :=
 /-! ### The undamped current loop on a rectifying DC node -/
 
 /-- Four-term Cauchy–Schwarz. -/
-@[powerlib_foundation] private theorem sq_add4_le (a b c d : ℝ) :
+@[tmio T, powerlib_foundation] private theorem sq_add4_le (a b c d : ℝ) :
     (a + b + c + d) ^ 2 ≤ 4 * (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) := by
   nlinarith [sq_nonneg (a - b), sq_nonneg (a - c), sq_nonneg (a - d), sq_nonneg (b - c),
     sq_nonneg (b - d), sq_nonneg (c - d)]
 
 /-- The quadratic correction of the undamped cascade is bounded by the current-loop energy. -/
-@[powerlib_foundation] private theorem psi_bound {L Ki Id0 b Kp e η : ℝ} (hL : 0 < L) (hKi : 0 < Ki) (hη : η ^ 2 ≤ 1) :
+@[tmio T, powerlib_foundation] private theorem psi_bound {L Ki Id0 b Kp e η : ℝ} (hL : 0 < L) (hKi : 0 < Ki) (hη : η ^ 2 ≤ 1) :
     (L * Id0 * e - b * η - Ki / 2 * η ^ 2 + Kp / 2 * (e * η)) ^ 2 ≤
       8 * ((L * Id0) ^ 2 + b ^ 2 + Ki ^ 2 / 4 + Kp ^ 2 / 4) * (1 / L + 1 / Ki) *
         (L / 2 * e ^ 2 + Ki / 2 * η ^ 2) := by
@@ -1537,7 +1537,7 @@ def driftStorage (x : State 3) : ℝ :=
   nlinarith
 
 /-- The scalar inequality behind the practical Lyapunov function of the undamped cascade. -/
-@[powerlib_foundation] private theorem center_ineq {I C V0 x2 w u ψ E K k : ℝ} (hI : 0 < I) (hC : 0 < C) (hV : 0 < V0)
+@[tmio T, powerlib_foundation] private theorem center_ineq {I C V0 x2 w u ψ E K k : ℝ} (hI : 0 < I) (hC : 0 < C) (hV : 0 < V0)
     (hx2 : 0 < x2) (hx2' : x2 < 2 * V0) (hK : 0 ≤ K) (hE : 0 ≤ E) (hψ : ψ ^ 2 ≤ K * E)
     (hu : u = C / 2 * (x2 + V0) * w + ψ) (hg : (4 * K + 1) * E < u ^ 2)
     (hμ : |u| < I * (4 * K + 1) / (4 * (3 * C * V0 / 2) * |k| + 1)) :

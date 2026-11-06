@@ -58,7 +58,7 @@ open Real MeasureTheory
 def weight (V : ℝ → ℝ) (D θ : ℝ) : ℝ := Real.exp (-V θ / D)
 
 /-- `(e^{−V/D})' = −(V'/D) e^{−V/D}`. -/
-@[powerlib_foundation] theorem boltzmann_hasDerivAt {V V' : ℝ → ℝ} (D : ℝ) (Z : ℝ) {θ : ℝ}
+@[tmio T, powerlib_foundation] theorem boltzmann_hasDerivAt {V V' : ℝ → ℝ} (D : ℝ) (Z : ℝ) {θ : ℝ}
     (hV : HasDerivAt V (V' θ) θ) :
     HasDerivAt (fun x => weight V D x / Z) (-(V' θ / D) * (weight V D θ / Z)) θ := by
   unfold weight
@@ -68,19 +68,19 @@ def weight (V : ℝ → ℝ) (D θ : ℝ) : ℝ := Real.exp (-V θ / D)
   ring
 
 /-- **Zero flux**: `J = −(V'/γ) p − (D/γ) p' = 0` for the Boltzmann density. -/
-@[powerlib_foundation] theorem boltzmann_flux_zero {V V' : ℝ → ℝ} {D γ Z : ℝ} (hD : D ≠ 0)
+@[tmio T, powerlib_foundation] theorem boltzmann_flux_zero {V V' : ℝ → ℝ} {D γ Z : ℝ} (hD : D ≠ 0)
     {θ : ℝ} (hV : HasDerivAt V (V' θ) θ) :
     -(V' θ / γ) * (weight V D θ / Z) - D / γ * (deriv (fun x => weight V D x / Z) θ) = 0 := by
   rw [(boltzmann_hasDerivAt D Z hV).deriv]
   field_simp
   ring
 
-@[powerlib_foundation] theorem boltzmann_pos (V : ℝ → ℝ) (D θ : ℝ) : 0 < weight V D θ :=
+@[tmio T, powerlib_foundation] theorem boltzmann_pos (V : ℝ → ℝ) (D θ : ℝ) : 0 < weight V D θ :=
   Real.exp_pos _
 
 /-- With the integrability premise `∫ e^{−V/D} < ∞`, `p = e^{−V/D}/Z`, `Z = ∫ e^{−V/D}`, is a
 probability density. -/
-@[powerlib_foundation] theorem boltzmann_integral_eq_one {V : ℝ → ℝ} {D : ℝ}
+@[tmio T, powerlib_foundation] theorem boltzmann_integral_eq_one {V : ℝ → ℝ} {D : ℝ}
     (hint : Integrable (fun θ => weight V D θ)) :
     ∫ θ, weight V D θ / (∫ x, weight V D x) = 1 := by
   have hZ : 0 < ∫ x, weight V D x :=
@@ -94,7 +94,7 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
   WithLp.toLp 2 ![-(deriv V (y 0)) / γ]
 
 /-- The overdamped gradient flow is locally exponentially stable at a nondegenerate minimum. -/
-@[powerlib_foundation] theorem gradientFlow_locallyExponentiallyStable {V : ℝ → ℝ} {γ θs : ℝ}
+@[tmio T, powerlib_foundation] theorem gradientFlow_locallyExponentiallyStable {V : ℝ → ℝ} {γ θs : ℝ}
     (hV : ContDiff ℝ 2 V) (hγ : 0 < γ) (hcrit : deriv V θs = 0)
     (hmin : 0 < deriv (deriv V) θs) :
     LocallyExponentiallyStable (gradField V γ) (WithLp.toLp 2 ![θs]) := by
@@ -140,7 +140,7 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
 
 /-- **Exact rescaling**: if `m θ̈ + γ θ̇ + V'(θ) = F(t)` and `ϑ(s) = θ(τ_V s)`, `τ_V = γ/κ`, then
 `(mκ/γ²) ϑ'' + ϑ' + V'(ϑ)/κ = F(τ_V s)/κ`, i.e. `ε² = mκ/γ²`. -/
-@[powerlib_foundation] theorem rescaled_equation {m γ κ : ℝ} (hγ : γ ≠ 0) (hκ : κ ≠ 0)
+@[tmio T, powerlib_foundation] theorem rescaled_equation {m γ κ : ℝ} (hγ : γ ≠ 0) (hκ : κ ≠ 0)
     {V' F ω a θ : ℝ → ℝ} (heq : ∀ t, m * a t + γ * ω t + V' (θ t) = F t) (s : ℝ) :
     m * κ / γ ^ 2 * ((γ / κ) ^ 2 * a (γ / κ * s)) + (γ / κ) * ω (γ / κ * s) +
         V' (θ (γ / κ * s)) / κ = F (γ / κ * s) / κ := by
@@ -150,7 +150,7 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
   linear_combination this
 
 /-- The rescaled derivatives of `ϑ(s) = θ(τ_V s)`. -/
-@[powerlib_foundation] theorem rescaled_derivs {θ ω a : ℝ → ℝ} {τV s : ℝ}
+@[tmio T, powerlib_foundation] theorem rescaled_derivs {θ ω a : ℝ → ℝ} {τV s : ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) (hω : ∀ t, HasDerivAt ω (a t) t) :
     HasDerivAt (fun u => θ (τV * u)) (τV * ω (τV * s)) s ∧
       HasDerivAt (fun u => τV * ω (τV * u)) (τV ^ 2 * a (τV * s)) s := by
@@ -163,7 +163,7 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
 /-- The note's rescaled equation `ε² ϑ'' + ε ϑ' + V'(ϑ) = F` with `ε² = m/(γ² τ_V)` fails:
 `m = κ = 1`, `γ = 2` (`τ_V = 2`, `ε² = 1/8`), `V' = F = 0`, `θ(t) = e^{−2t}` solves the original
 equation, but `ϑ(s) = e^{−4s}` gives `ε² ϑ''(0) + ε ϑ'(0) = 2 − √2 ≠ 0`. -/
-@[powerlib_foundation] theorem note_rescaling_false :
+@[tmio T, powerlib_foundation] theorem note_rescaling_false :
     (∀ t : ℝ, 1 * (4 * Real.exp (-2 * t)) + 2 * (-2 * Real.exp (-2 * t)) + 0 = 0) ∧
       (1 / 8 : ℝ) * (16 * Real.exp (-4 * 0)) +
         Real.sqrt (1 / 8) * (-4 * Real.exp (-4 * 0)) + 0 ≠ 0 := by
@@ -181,7 +181,7 @@ equation, but `ϑ(s) = e^{−4s}` gives `ε² ϑ''(0) + ε ϑ'(0) = 2 − √2 �
   norm_num at h2
 
 /-- `θ(t) = e^{−2t}` and its derivatives (support for `note_rescaling_false`). -/
-@[powerlib_foundation] theorem exp_solution_derivs (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem exp_solution_derivs (t : ℝ) :
     HasDerivAt (fun s => Real.exp (-2 * s)) (-2 * Real.exp (-2 * t)) t ∧
       HasDerivAt (fun s => -2 * Real.exp (-2 * s)) (4 * Real.exp (-2 * t)) t := by
   have h := ((hasDerivAt_id' t).const_mul (-2)).exp

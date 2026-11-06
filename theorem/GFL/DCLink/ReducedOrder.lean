@@ -88,14 +88,14 @@ KVL is `L_f i̇_d = v_gd − V_d^conv − R_f i_d + ω̂ L_f i_q`. -/
   ring
 
 /-- q-axis closed loop: residual `−ω̂ ΔL_f i_d`. -/
-@[powerlib_foundation] theorem closedLoop_q (kp ki ξq id iq iqRef vgq vffq ωhat Lf Lhat Rf : ℝ) :
+@[tmio M, powerlib_foundation] theorem closedLoop_q (kp ki ξq id iq iqRef vgq vffq ωhat Lf Lhat Rf : ℝ) :
     vgq - bridgeVoltageQ kp ki ξq iq iqRef vffq ωhat Lhat id - Rf * iq - ωhat * Lf * id =
       kp * (iqRef - iq) - ki * ξq + (vgq - vffq) - ωhat * (Lf - Lhat) * id - Rf * iq := by
   unfold bridgeVoltageQ
   ring
 
 /-- d–q duality: the decoupling terms cancel in `P_bridge = (3/2)(V_d^conv i_d + V_q^conv i_q)`. -/
-@[powerlib_foundation] theorem bridgePower_decoupling_cancel
+@[tmio M, powerlib_foundation] theorem bridgePower_decoupling_cancel
     (kp ki ξd ξq id iq idRef iqRef vffd vffq ωhat Lhat : ℝ) :
     (3 / 2 : ℝ) * (bridgeVoltageD kp ki ξd id idRef vffd ωhat Lhat iq * id +
         bridgeVoltageQ kp ki ξq iq iqRef vffq ωhat Lhat id * iq) =
@@ -184,7 +184,7 @@ Static evidence on the model, not a connection conclusion. -/
   field_simp
   linarith
 
-@[powerlib_foundation] private lemma powerAngle_aux {I0 V Xg Vg θ i : ℝ} (hV : V ≠ 0)
+@[tmio T, powerlib_foundation] private lemma powerAngle_aux {I0 V Xg Vg θ i : ℝ} (hV : V ≠ 0)
     (hX : Xg ≠ 0) (hid : Xg * i = -Vg * Real.sin θ)
     (h2 : I0 + 3 * (Vg * Real.cos θ * i) / (2 * V) = 0) :
     I0 * V = 3 * Vg ^ 2 / (4 * Xg) * Real.sin (2 * θ) := by

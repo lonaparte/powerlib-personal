@@ -230,7 +230,7 @@ def row4 (a b c d : ℝ) : State 4 →L[ℝ] ℝ :=
   a • Dynamics.coord 0 + b • Dynamics.coord 1 + c • Dynamics.coord 2 + d • Dynamics.coord 3
 
 omit p in
-@[simp, powerlib_foundation] theorem row4_apply (a b c d : ℝ) (v : State 4) :
+@[tmio T, simp, powerlib_foundation] theorem row4_apply (a b c d : ℝ) (v : State 4) :
     row4 a b c d v = a * v 0 + b * v 1 + c * v 2 + d * v 3 := by
   simp [row4]
 
@@ -563,7 +563,7 @@ for `ModelB.noLoad_mem_den_locallyExponentiallyStable`. -/
 /-- The states with nonzero DC-link voltage, where the field is smooth. -/
 def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
 
-@[powerlib_foundation] theorem isOpen_nonzeroVdc : IsOpen nonzeroVdc :=
+@[tmio T, powerlib_foundation] theorem isOpen_nonzeroVdc : IsOpen nonzeroVdc :=
   isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous continuous_const
 
 /-- Model B is `C¹` on `V_dc ≠ 0` (both signs of the DC-link voltage). -/

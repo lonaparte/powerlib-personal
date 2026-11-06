@@ -134,7 +134,7 @@ omit [NormOneClass 𝔸] in
 
 /-- A contractive exponential block `‖e^{HX}‖ < 1` gives a block `‖e^{H'X}‖ ≤ 1/4` (a multiple of
 the horizon). -/
-@[powerlib_foundation] theorem exists_norm_exp_smul_le_quarter {X : 𝔸} {H : ℝ} (hH : 0 < H)
+@[tmio T, powerlib_foundation] theorem exists_norm_exp_smul_le_quarter {X : 𝔸} {H : ℝ} (hH : 0 < H)
     (hq : ‖NormedSpace.exp (H • X)‖ < 1) :
     ∃ H' : ℝ, 0 < H' ∧ ‖NormedSpace.exp (H' • X)‖ ≤ 1 / 4 := by
   obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one (by norm_num : (0 : ℝ) < 1 / 4) hq
@@ -149,7 +149,7 @@ the horizon). -/
 /-- **One block of switching periods contracts.** If the averaged model contracts over the
 horizon `H` by `1/4`, then for every switching period `T ≤ T₀` a block of `N` periods with
 `H ≤ N T ≤ H + 1` contracts by `3/4`. -/
-@[powerlib_foundation] theorem exists_periodMap_pow_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem exists_periodMap_pow_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : 𝔸) {H : ℝ} (hH : 0 < H)
     (hexp : ‖NormedSpace.exp (H • avgMatrix d A₁ A₂)‖ ≤ 1 / 4) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ T₀ ≤ 1 ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, ∃ N : ℕ, 0 < N ∧
@@ -248,7 +248,7 @@ horizon `H` by `1/4`, then for every switching period `T ≤ T₀` a block of `N
 over some horizon (`‖e^{HĀ}‖ < 1`), there are `T₀ ∈ (0, 1]`, `C > 0`, `α > 0` such that for
 every switching period `T ∈ (0, T₀]` and every `k`:
 `‖(e^{(1−d)TA₂} e^{dTA₁})^k‖ ≤ C e^{−α k T}` (the constants do not depend on `T`). -/
-@[powerlib_foundation] theorem exists_periodMap_pow_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem exists_periodMap_pow_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : 𝔸) {H : ℝ} (hH : 0 < H)
     (hexp : ‖NormedSpace.exp (H • avgMatrix d A₁ A₂)‖ < 1) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ T₀ ≤ 1 ∧ ∃ C α : ℝ, 0 < C ∧ 0 < α ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, ∀ k : ℕ,
@@ -293,7 +293,7 @@ every switching period `T ∈ (0, T₀]` and every `k`:
 
 omit [NormOneClass 𝔸] in
 /-- `e^{s(N − ε)} = e^{−εs} (1 + sN)` for a square-zero element `N` (`N² = 0`). -/
-@[powerlib_foundation] theorem exp_smul_sqZero_sub_smul_one {N : 𝔸} (hN : N * N = 0)
+@[tmio T, powerlib_foundation] theorem exp_smul_sqZero_sub_smul_one {N : 𝔸} (hN : N * N = 0)
     (s ε : ℝ) :
     NormedSpace.exp (s • (N - ε • (1 : 𝔸))) = Real.exp (-(ε * s)) • (1 + s • N) := by
   have hsplit : s • (N - ε • (1 : 𝔸)) = s • N + (-(ε * s)) • (1 : 𝔸) := by
@@ -321,7 +321,7 @@ omit [NormOneClass 𝔸] in
 
 omit [CompleteSpace 𝔸] [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] in
 /-- Telescoping identity `M^k − P^k = Σ_{i<k} M^{k−1−i} (M − P) P^i` (no commutativity). -/
-@[powerlib_foundation] theorem pow_sub_pow_eq_sum (M P : 𝔸) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem pow_sub_pow_eq_sum (M P : 𝔸) (k : ℕ) :
     M ^ k - P ^ k = ∑ i ∈ Finset.range k, M ^ (k - 1 - i) * (M - P) * P ^ i := by
   induction k with
   | zero => simp
@@ -339,13 +339,13 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] in
 
 omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
 /-- The averaged matrix of a single topology is itself. -/
-@[powerlib_foundation] theorem avgMatrix_self (d : ℝ) (A : 𝔸) : avgMatrix d A A = A := by
+@[tmio T, powerlib_foundation] theorem avgMatrix_self (d : ℝ) (A : 𝔸) : avgMatrix d A A = A := by
   rw [avgMatrix, ← add_smul, add_sub_cancel, one_smul]
 
 omit [NormOneClass 𝔸] in
 /-- **Commuting topologies.** If `A₁ A₂ = A₂ A₁`, the period map is the exponential of the
 averaged matrix over one period: `e^{(1−d)TA₂} e^{dTA₁} = e^{TĀ}`, at every switching period. -/
-@[powerlib_foundation] theorem periodMap_eq_exp_of_commute (d T : ℝ) {A₁ A₂ : 𝔸}
+@[tmio T, powerlib_foundation] theorem periodMap_eq_exp_of_commute (d T : ℝ) {A₁ A₂ : 𝔸}
     (h : Commute A₁ A₂) : periodMap d T A₁ A₂ = NormedSpace.exp (T • avgMatrix d A₁ A₂) := by
   have hT : T • avgMatrix d A₁ A₂ = ((1 - d) * T) • A₂ + (d * T) • A₁ := by
     rw [avgMatrix, smul_add, smul_smul, smul_smul, add_comm, mul_comm T, mul_comm T]
@@ -357,13 +357,13 @@ averaged matrix over one period: `e^{(1−d)TA₂} e^{dTA₁} = e^{TĀ}`, at eve
 
 omit [NormOneClass 𝔸] in
 /-- The period map of a single topology is its exponential over one period. -/
-@[powerlib_foundation] theorem periodMap_self (d T : ℝ) (A : 𝔸) :
+@[tmio T, powerlib_foundation] theorem periodMap_self (d T : ℝ) (A : 𝔸) :
     periodMap d T A A = NormedSpace.exp (T • A) := by
   rw [periodMap_eq_exp_of_commute d T (Commute.refl A), avgMatrix_self]
 
 omit [NormOneClass 𝔸] in
 /-- The period map commutes with continuous algebra homomorphisms. -/
-@[powerlib_foundation] theorem map_periodMap {𝔹 : Type*} [NormedRing 𝔹] [NormedAlgebra ℝ 𝔹]
+@[tmio T, powerlib_foundation] theorem map_periodMap {𝔹 : Type*} [NormedRing 𝔹] [NormedAlgebra ℝ 𝔹]
     (f : 𝔸 →ₐ[ℝ] 𝔹) (hf : Continuous f) (d T : ℝ) (A₁ A₂ : 𝔸) :
     f (periodMap d T A₁ A₂) = periodMap d T (f A₁) (f A₂) := by
   have h (x : 𝔸) : f (NormedSpace.exp x) = NormedSpace.exp (f x) :=
@@ -375,7 +375,7 @@ omit [NormOneClass 𝔸] in
 some horizon (`‖e^{HĀ}‖ < 1`), there are `T₀ ∈ (0, 1]` and `C` such that for every switching
 period `T ∈ (0, T₀]` and **every** `k`: `‖M_T^k − e^{kTĀ}‖ ≤ C T` (the finite-horizon estimate
 `stateSpaceAveraging_error` becomes uniform in time). -/
-@[powerlib_foundation] theorem exists_periodMap_pow_sub_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem exists_periodMap_pow_sub_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : 𝔸) {H : ℝ} (hH : 0 < H)
     (hexp : ‖NormedSpace.exp (H • avgMatrix d A₁ A₂)‖ < 1) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ T₀ ≤ 1 ∧ ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, ∀ k : ℕ,
@@ -462,7 +462,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
 averaged model contracts over some horizon, `‖e^{HĀ}‖ < 1`, there are `T₀ > 0`, `C > 0`,
 `α > 0` such that for every switching period `T ∈ (0, T₀]` every switched trajectory decays
 exponentially at every instant: `‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖` for `t ≥ 0`. -/
-@[powerlib_foundation] theorem switched_decay_of_norm_exp_lt_one [Nonempty X] {d : ℝ}
+@[tmio T, powerlib_foundation] theorem switched_decay_of_norm_exp_lt_one [Nonempty X] {d : ℝ}
     (hd0 : 0 ≤ d) (hd1 : d ≤ 1) (A₁ A₂ : Matrix X X ℝ) {H : ℝ} (hH : 0 < H)
     (hexp : ‖NormedSpace.exp (H • avgMatrix d A₁ A₂)‖ < 1) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ ∃ C α : ℝ, 0 < C ∧ 0 < α ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, ∀ x : ℝ → X → ℝ,
@@ -507,7 +507,7 @@ exponentially at every instant: `‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖` for `t
 and initial state `x₀` there is a trajectory of the ideal two-topology switched system
 (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x` on `[kT + dT, (k + 1)T]`) with `x(0) = x₀`; the
 statements about every switched trajectory are not vacuous. -/
-@[powerlib_foundation] theorem exists_switched_trajectory {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem exists_switched_trajectory {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : Matrix X X ℝ) {T : ℝ} (hT : 0 < T) (x₀ : X → ℝ) :
     ∃ x : ℝ → X → ℝ, x 0 = x₀ ∧
       ∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
@@ -591,7 +591,7 @@ statements about every switched trajectory are not vacuous. -/
 averaged model contracts over some horizon (`‖e^{HĀ}‖ < 1`), there are `T₀ > 0` and `C` such that
 for every switching period `T ∈ (0, T₀]`, every switched trajectory and **every** instant `t ≥ 0`:
 `‖x(t) − e^{tĀ} x(0)‖ ≤ C T ‖x(0)‖` (the horizon of `stateSpaceAveraging_error_uniform` removed). -/
-@[powerlib_foundation] theorem switched_averaging_error_of_norm_exp_lt_one [Nonempty X] {d : ℝ}
+@[tmio T, powerlib_foundation] theorem switched_averaging_error_of_norm_exp_lt_one [Nonempty X] {d : ℝ}
     (hd0 : 0 ≤ d) (hd1 : d ≤ 1) (A₁ A₂ : Matrix X X ℝ) {H : ℝ} (hH : 0 < H)
     (hexp : ‖NormedSpace.exp (H • avgMatrix d A₁ A₂)‖ < 1) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, ∀ x : ℝ → X → ℝ,
@@ -699,7 +699,7 @@ section Hurwitz
 variable {n : ℕ}
 
 /-- A Hurwitz matrix has a contractive exponential block in the `L∞` operator norm. -/
-@[powerlib_foundation] theorem exists_norm_exp_lt_one_of_isHurwitz
+@[tmio T, powerlib_foundation] theorem exists_norm_exp_lt_one_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A) :
     ∃ H : ℝ, 0 < H ∧ ‖NormedSpace.exp (H • A)‖ < 1 := by
   have hρ : spectralRadius ℂ ((NormedSpace.exp A).map (algebraMap ℝ ℂ)) < 1 := by
@@ -713,7 +713,7 @@ variable {n : ℕ}
 /-- **Stability transfer, sampled form.** A Hurwitz averaged matrix `Ā = d A₁ + (1 − d) A₂`
 makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for every switching period
 `T ∈ (0, T₀]`, with a power of `L∞` operator norm below one. -/
-@[powerlib_foundation] theorem periodMap_schurStable_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d)
+@[tmio T, powerlib_foundation] theorem periodMap_schurStable_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d)
     (hd1 : d ≤ 1) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ)
     (hA : LinearSystems.IsHurwitz (avgMatrix d A₁ A₂)) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
@@ -754,7 +754,7 @@ makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for eve
 `Ā = d A₁ + (1 − d) A₂` is Hurwitz, there are `T₀ > 0`, `C > 0`, `α > 0` such that for every
 switching period `T ∈ (0, T₀]` every switched trajectory decays exponentially at every instant,
 ripple included: `‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖` for all `t ≥ 0`. -/
-@[powerlib_foundation] theorem switched_decay_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem switched_decay_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ) (hA : LinearSystems.IsHurwitz (avgMatrix d A₁ A₂)) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ ∃ C α : ℝ, 0 < C ∧ 0 < α ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
       ∀ x : ℝ → Fin n → ℝ,
@@ -772,7 +772,7 @@ ripple included: `‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖` for all `t ≥ 0`. -/
 `Ā = d A₁ + (1 − d) A₂` is Hurwitz, there are `T₀ > 0` and `C` such that for every switching
 period `T ∈ (0, T₀]`, every switched trajectory and every `t ≥ 0`:
 `‖x(t) − e^{tĀ} x(0)‖ ≤ C T ‖x(0)‖`. -/
-@[powerlib_foundation] theorem switched_averaging_error_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d)
+@[tmio T, powerlib_foundation] theorem switched_averaging_error_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d)
     (hd1 : d ≤ 1) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ)
     (hA : LinearSystems.IsHurwitz (avgMatrix d A₁ A₂)) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, ∀ x : ℝ → Fin n → ℝ,
@@ -792,7 +792,7 @@ switched trajectory with switching period `T ∈ (0, T₀]` decays as `‖x(t)�
 with constants `C`, `α > 0` independent of `T`, then `Ā = d A₁ + (1 − d) A₂` is Hurwitz (the
 averaged flow inherits the bound in the limit `T → 0`, through the finite-horizon averaging error
 and the existence of switched trajectories). -/
-@[powerlib_foundation] theorem isHurwitz_of_switched_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_switched_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ) {T₀ C α : ℝ} (hT₀ : 0 < T₀) (hα : 0 < α)
     (hdec : ∀ T ∈ Ioc (0 : ℝ) T₀, ∀ x : ℝ → Fin n → ℝ,
       (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
@@ -873,7 +873,7 @@ and the existence of switched trajectories). -/
 `Ā = d A₁ + (1 − d) A₂` is Hurwitz iff, for some `T₀ > 0`, every switched trajectory with
 switching period `T ∈ (0, T₀]` decays exponentially with constants independent of `T`:
 `‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖`, `C, α > 0`. -/
-@[powerlib_foundation] theorem isHurwitz_iff_switched_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_switched_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ) :
     LinearSystems.IsHurwitz (avgMatrix d A₁ A₂) ↔
       ∃ T₀ : ℝ, 0 < T₀ ∧ ∃ C α : ℝ, 0 < C ∧ 0 < α ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
@@ -906,7 +906,7 @@ private def blockAlgHom : Matrix m m ℝ × Matrix k k ℝ →ₐ[ℝ] Matrix (m
 /-- The period map of a block-diagonal pair is block diagonal (states relabelled along `e`):
 `M_T(diag(A₁, D₁), diag(A₂, D₂)) = diag(M_T(A₁, A₂), M_T(D₁, D₂))`, through the exponential of a
 block-diagonal matrix (`map_periodMap`). -/
-@[powerlib_foundation] theorem periodMap_reindex_fromBlocks (e : m ⊕ k ≃ ι) (d T : ℝ)
+@[tmio T, powerlib_foundation] theorem periodMap_reindex_fromBlocks (e : m ⊕ k ≃ ι) (d T : ℝ)
     (A₁ A₂ : Matrix m m ℝ) (D₁ D₂ : Matrix k k ℝ) :
     periodMap d T ((fromBlocks A₁ 0 0 D₁).reindex e e) ((fromBlocks A₂ 0 0 D₂).reindex e e) =
       (fromBlocks (periodMap d T A₁ A₂) 0 0 (periodMap d T D₁ D₂)).reindex e e := by
@@ -925,7 +925,7 @@ block-diagonal matrix (`map_periodMap`). -/
 
 /-- The averaged matrix of a block-diagonal pair is block diagonal (states relabelled along
 `e`). -/
-@[powerlib_foundation] theorem avgMatrix_reindex_fromBlocks (e : m ⊕ k ≃ ι) (d : ℝ)
+@[tmio T, powerlib_foundation] theorem avgMatrix_reindex_fromBlocks (e : m ⊕ k ≃ ι) (d : ℝ)
     (A₁ A₂ : Matrix m m ℝ) (D₁ D₂ : Matrix k k ℝ) :
     avgMatrix d ((fromBlocks A₁ 0 0 D₁).reindex e e) ((fromBlocks A₂ 0 0 D₂).reindex e e) =
       (fromBlocks (avgMatrix d A₁ A₂) 0 0 (avgMatrix d D₁ D₂)).reindex e e := by
@@ -935,7 +935,7 @@ block-diagonal matrix (`map_periodMap`). -/
 
 /-- A block-diagonal matrix with Hurwitz blocks is Hurwitz (states relabelled along `e`): its
 characteristic determinant is the product of the blocks' (`Linear.spectrallyStable_reindex`). -/
-@[powerlib_foundation] theorem isHurwitz_reindex_fromBlocks {p q n : ℕ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_reindex_fromBlocks {p q n : ℕ}
     (e : Fin p ⊕ Fin q ≃ Fin n) {A : Matrix (Fin p) (Fin p) ℝ} {D : Matrix (Fin q) (Fin q) ℝ}
     (hA : LinearSystems.IsHurwitz A) (hD : LinearSystems.IsHurwitz D) :
     LinearSystems.IsHurwitz ((fromBlocks A 0 0 D).reindex e e) := by
@@ -951,7 +951,7 @@ characteristic determinant is the product of the blocks' (`Linear.spectrallyStab
 
 /-- An eigenvalue of a block is an eigenvalue of the block-diagonal matrix (states relabelled
 along `e`): Schur stability of the whole gives Schur stability of the block. -/
-@[powerlib_foundation] theorem schurStable_of_reindex_fromBlocks {p q n : ℕ}
+@[tmio T, powerlib_foundation] theorem schurStable_of_reindex_fromBlocks {p q n : ℕ}
     (e : Fin p ⊕ Fin q ≃ Fin n) {P : Matrix (Fin p) (Fin p) ℝ} (Q : Matrix (Fin q) (Fin q) ℝ)
     (h : LTI.SchurStable ((fromBlocks P 0 0 Q).reindex e e)) : LTI.SchurStable P := by
   intro μ v hv hPv
@@ -977,7 +977,7 @@ section Counterexample
 /-- The slow-switching example: `A₁ = N₁ − εI`, `A₂ = N₂ − εI` with `N₁ = [[0, 1], [0, 0]]`,
 `N₂ = [[0, 0], [−1, 0]]`, duty ratio `1/2`: the period map is
 `e^{−εT} [[1, T/2], [−T/2, 1 − T²/4]]` (trace `e^{−εT}(2 − T²/4)`, determinant `e^{−2εT}`). -/
-@[powerlib_foundation] theorem periodMap_shear_pair (ε T : ℝ) :
+@[tmio T, powerlib_foundation] theorem periodMap_shear_pair (ε T : ℝ) :
     periodMap (1 / 2) T (!![-ε, 1; 0, -ε] : Matrix (Fin 2) (Fin 2) ℝ) !![-ε, 0; -1, -ε] =
       Real.exp (-(ε * T)) • !![1, T / 2; -(T / 2), 1 - T ^ 2 / 4] := by
   have hA₁ : (!![-ε, 1; 0, -ε] : Matrix (Fin 2) (Fin 2) ℝ) =
@@ -1005,7 +1005,7 @@ section Counterexample
 `Ā = [[−1/10, 1/2], [−1/2, −1/10]]` (`d = 1/2`) are Hurwitz, but at the switching period `T = 5`
 the period map has the real eigenvalue `−4 e^{−1/2}` (modulus `≈ 2.43 > 1`) with eigenvector
 `(1, −2)`, so it is not Schur stable. -/
-@[powerlib_foundation] theorem slowSwitching_counterexample :
+@[tmio T, powerlib_foundation] theorem slowSwitching_counterexample :
     LinearSystems.IsHurwitz (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) ∧
     LinearSystems.IsHurwitz (!![-1 / 10, 0; -1, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) ∧
     LinearSystems.IsHurwitz
@@ -1062,7 +1062,7 @@ the period map has the real eigenvalue `−4 e^{−1/2}` (modulus `≈ 2.43 > 1`
 coordinates (`Fin n ≃ Fin 2 ⊕ Fin (n − 2)`): both topologies and their average (`d = 1/2`) are
 Hurwitz, but at the switching period `T = 5` the period map, block diagonal, carries the
 eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
-@[powerlib_foundation] theorem slowSwitching_counterexample_of_two_le {n : ℕ} (hn : 2 ≤ n) :
+@[tmio T, powerlib_foundation] theorem slowSwitching_counterexample_of_two_le {n : ℕ} (hn : 2 ≤ n) :
     ∃ A₁ A₂ : Matrix (Fin n) (Fin n) ℝ, LinearSystems.IsHurwitz A₁ ∧
       LinearSystems.IsHurwitz A₂ ∧ LinearSystems.IsHurwitz (avgMatrix (1 / 2) A₁ A₂) ∧
       ¬ LTI.SchurStable (periodMap (1 / 2) 5 A₁ A₂) := by
@@ -1089,7 +1089,7 @@ eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
 (`A₁ = [[−1/10, 1], [0, −1/10]]`, `A₂ = [[−1/10, 0], [−1, −1/10]]`, `d = 1/2`, `T = 5`; both
 topologies and the average Hurwitz) there is a switched trajectory from `(1, −2)` whose samples are
 `x(5k) = (−4 e^{−1/2})^k (1, −2)` and grow without bound. -/
-@[powerlib_foundation] theorem slowSwitching_unbounded_trajectory :
+@[tmio T, powerlib_foundation] theorem slowSwitching_unbounded_trajectory :
     ∃ x : ℝ → Fin 2 → ℝ,
       (∀ k : ℕ, IsIntegralCurveOn x
           (fun _ y => (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) *ᵥ y)

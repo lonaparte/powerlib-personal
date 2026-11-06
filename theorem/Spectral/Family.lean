@@ -107,13 +107,13 @@ def linearTranslate : Sentence → Set Requirement
 def linearFamily (plant : X → Plant n p) (S U : X → Prop) : Family X Requirement n p :=
   ⟨fun x => (plant x).system, Meets S U, linearTranslate⟩
 
-@[powerlib_foundation] theorem linearFamily_isLinear (plant : X → Plant n p) (S U : X → Prop) :
+@[tmio M, powerlib_foundation] theorem linearFamily_isLinear (plant : X → Plant n p) (S U : X → Prop) :
     (linearFamily plant S U).IsLinear plant := fun _ => rfl
 
 variable {plant : X → Plant n p} {S U : X → Prop}
 
 /-- A Hurwitz state matrix has no characteristic root in the closed right half plane. -/
-@[powerlib_foundation] theorem not_root_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem not_root_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) {s : ℂ} (hs : (characteristicMatrix A s).det = 0) : s.re < 0 :=
   (spectrallyStable_iff_isHurwitz A).mpr hA s hs
 
@@ -199,7 +199,7 @@ selected operating point. -/
 def localFamily (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) : Family X Requirement n 0 :=
   ⟨fun x => Port.System.autonomous (field x), Meets S U, localTranslate⟩
 
-@[powerlib_foundation] theorem localFamily_isAutonomous (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) :
+@[tmio M, powerlib_foundation] theorem localFamily_isAutonomous (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) :
     (localFamily field S U).IsAutonomous field := fun _ => rfl
 
 /-- Soundness of every translation of a local spectral family: the stability condition gives

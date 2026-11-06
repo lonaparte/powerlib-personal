@@ -196,14 +196,14 @@ droop + LPF is the canonical swing model `M = τ_p K_R`, `D = K_R`, `P_m = P_ref
 /-! ## Linear shadow: transfer functions (foundation) -/
 
 /-- `−1/(K_R (1 + τ_p s)) = −1/(M s + D)` with `M = τ_p K_R`, `D = K_R`. -/
-@[powerlib_foundation] theorem droop_transfer_eq_vsm_transfer (KR τp : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem droop_transfer_eq_vsm_transfer (KR τp : ℝ) (s : ℂ) :
     -1 / ((KR : ℂ) * (1 + (τp : ℂ) * s)) = -1 / (((τp * KR : ℝ) : ℂ) * s + (KR : ℂ)) := by
   push_cast
   ring_nf
 
 /-- The droop + LPF small-signal map `ΔP ↦ Δω`: from `τ_p ΔṖ_f = −ΔP_f + ΔP`,
 `Δω = −ΔP_f / K_R`, the Laplace-domain relation is `Δω = −ΔP / (K_R (1 + τ_p s))`. -/
-@[powerlib_foundation] theorem droopLPF_transfer {KR τp : ℝ} {s ΔP ΔPf Δω : ℂ}
+@[tmio T, powerlib_foundation] theorem droopLPF_transfer {KR τp : ℝ} {s ΔP ΔPf Δω : ℂ}
     (hK : (KR : ℂ) ≠ 0) (hden : 1 + (τp : ℂ) * s ≠ 0)
     (hfilt : (τp : ℂ) * s * ΔPf = -ΔPf + ΔP) (hdroop : Δω = -ΔPf / (KR : ℂ)) :
     Δω = -1 / ((KR : ℂ) * (1 + (τp : ℂ) * s)) * ΔP := by

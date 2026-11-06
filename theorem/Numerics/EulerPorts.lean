@@ -128,14 +128,14 @@ def IsPort (F : Family X Q n p) (sys : X → Port.System n p) : Prop :=
   ∀ x, F.system x = .continuous (sys x)
 
 /-- A linear family is a family of port systems: the port systems of its plants. -/
-@[powerlib_foundation] theorem IsLinear.isPort {F : Family X Q n p}
+@[tmio M, powerlib_foundation] theorem IsLinear.isPort {F : Family X Q n p}
     {plant : X → Linear.Plant n p} (hF : F.IsLinear plant) :
     F.IsPort fun x => (plant x).system :=
   hF
 
 /-- A port-Hamiltonian family is a family of port systems: the port systems of its pH
 systems. -/
-@[powerlib_foundation] theorem IsNonlinearPH.isPort {F : Family X Q n p}
+@[tmio M, powerlib_foundation] theorem IsNonlinearPH.isPort {F : Family X Q n p}
     {model : X → PH.NonlinearModel n p} (hF : F.IsNonlinearPH model) :
     F.IsPort fun x => (model x).system :=
   hF
@@ -147,7 +147,7 @@ end Family
 /-- A discrete-time system that can draw unboundedly much energy out of its ports in one step
 from some state `x` is not passive: with a nonnegative storage `V`, one step from `x` delivers at
 most `V x`. -/
-@[powerlib_foundation] theorem Map.System.not_passive_of_supply_unbounded (s : Map.System n p)
+@[tmio T, powerlib_foundation] theorem Map.System.not_passive_of_supply_unbounded (s : Map.System n p)
     {x : ℝⁿ} (h : ∀ c : ℝ, ∃ u, s.supply x u < c) : ¬ s.Passive := by
   rintro ⟨V, hV0, hV⟩
   obtain ⟨u, hu⟩ := h (-V x)
@@ -163,7 +163,7 @@ def eulerSystem (s : Port.System n p) (h : ℝ) : Map.System n p :=
   ⟨fun x u => x + h • s.field x u, s.output, h⟩
 
 /-- With the ports at zero the Euler discretization is the Euler map of the zero-input field. -/
-@[simp, powerlib_foundation] theorem eulerSystem_zeroInput (s : Port.System n p) (h : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem eulerSystem_zeroInput (s : Port.System n p) (h : ℝ) :
     (eulerSystem s h).zeroInput = eulerMap s.zeroInput h :=
   rfl
 
@@ -171,7 +171,7 @@ def eulerSystem (s : Port.System n p) (h : ℝ) : Map.System n p :=
 `x` the output of a port system is a nonzero `y` whatever the input, then for every step `h > 0`
 its explicit Euler discretization is not passive, for any storage: the input `u = −t y` draws the
 energy `h t ‖y‖²` in one step from `x`, without bound in `t`. -/
-@[powerlib_foundation] theorem not_passive_eulerSystem (s : Port.System n p) {h : ℝ} (hh : 0 < h)
+@[tmio T, powerlib_foundation] theorem not_passive_eulerSystem (s : Port.System n p) {h : ℝ} (hh : 0 < h)
     {x : ℝⁿ} {y : Fin p → ℝ} (hy : ∀ u, s.output x u = y) (hy0 : y ≠ 0) :
     ¬ (eulerSystem s h).Passive := by
   refine Map.System.not_passive_of_supply_unbounded _ (x := x) fun c => ?_
@@ -204,7 +204,7 @@ private def integratorKYP : Linear.KYP integrator where
 
 /-- **The integrator is passive** with the storage `x²/2`: `d/dt (x²/2) = x u` is the supplied
 power. -/
-@[powerlib_foundation] theorem integrator_passiveWith :
+@[tmio TM, powerlib_foundation] theorem integrator_passiveWith :
     integrator.system.PassiveWith fun x => x 0 ^ 2 / 2 := by
   have h : integratorKYP.storage = fun x => x 0 ^ 2 / 2 := by
     funext x
@@ -215,7 +215,7 @@ power. -/
 /-- **The Euler discretization of the integrator is not passive at any step.** For every step
 `h > 0` the system `x⁺ = x + h u`, `y = x` is not passive for any storage
 (`not_passive_eulerSystem`: at `x = 1` the output is `1` whatever the input). -/
-@[powerlib_foundation] theorem not_passive_eulerSystem_integrator {h : ℝ} (hh : 0 < h) :
+@[tmio TM, powerlib_foundation] theorem not_passive_eulerSystem_integrator {h : ℝ} (hh : 0 < h) :
     ¬ (eulerSystem integrator.system h).Passive :=
   not_passive_eulerSystem _ hh (x := WithLp.toLp 2 ![1]) (y := ![1])
     (fun u => by
@@ -259,7 +259,7 @@ def zeroInputFamily (F : Family X Q n p) (sys : X → Port.System n p) : Family 
   meets := F.meets
   translate := F.translate
 
-@[powerlib_foundation] theorem zeroInputFamily_isAutonomous (F : Family X Q n p)
+@[tmio M, powerlib_foundation] theorem zeroInputFamily_isAutonomous (F : Family X Q n p)
     (sys : X → Port.System n p) :
     (zeroInputFamily F sys).IsAutonomous fun x => (sys x).zeroInput :=
   fun _ => rfl
@@ -411,7 +411,7 @@ refutes realization soundness of passivity (`not_passive_eulerSystem_integrator`
 
 /-- The Euler map of the linear field of `A` is the linear map of the forward Euler matrix
 `I + h A`. -/
-@[powerlib_foundation] theorem eulerMap_linear (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ) :
+@[tmio T, powerlib_foundation] theorem eulerMap_linear (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ) :
     eulerMap (affineLinearVectorField A 0) h = Map.op (forwardEulerMatrix h A) := by
   rw [Map.op, forwardEulerMatrix, map_add, map_smul, map_one]
   funext z
@@ -420,7 +420,7 @@ refutes realization soundness of passivity (`not_passive_eulerSystem_integrator`
 /-- **A Schur stable Euler matrix at a positive step forces a Hurwitz matrix.** If `I + h A` is
 Schur stable with `h > 0`, every eigenvalue `λ` of `A` has `|1 + hλ|² = 1 + h (2 Re λ + h |λ|²)
 < 1`, so `Re λ < 0`. -/
-@[powerlib_foundation] theorem isHurwitz_of_forwardEuler_schurStable
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_forwardEuler_schurStable
     {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ} (hh : 0 < h)
     (hS : LTI.SchurStable (forwardEulerMatrix h A)) : IsHurwitz A := by
   rw [Linear.isHurwitz_iff_forall_eigen]

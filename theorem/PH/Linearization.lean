@@ -60,7 +60,7 @@ namespace NonlinearModel
 
 variable (M : NonlinearModel n m)
 
-@[powerlib_foundation] private lemma field_apply (x : State n) (u : Fin m → ℝ) (i : Fin n) :
+@[tmio T, powerlib_foundation] private lemma field_apply (x : State n) (u : Fin m → ℝ) (i : Fin n) :
     M.field x u i =
       ∑ j, (M.J x i j - M.R x i j) * M.dH x j + ∑ j, M.g x i j * u j := by
   simp [field, mulVec, dotProduct]
@@ -78,7 +78,7 @@ variable (M : NonlinearModel n m)
     (ContDiff.sum fun j _ => (hg i j).mul contDiff_const)
 
 /-- Entrywise `Cᵏ` `J`, `R` and a `Cᵏ` gradient give a `Cᵏ` zero-input field. -/
-@[powerlib_foundation] theorem contDiff_zeroInputField {k : WithTop ℕ∞}
+@[tmio T, powerlib_foundation] theorem contDiff_zeroInputField {k : WithTop ℕ∞}
     (hJ : ∀ i j, ContDiff ℝ k fun x => M.J x i j) (hR : ∀ i j, ContDiff ℝ k fun x => M.R x i j)
     (hdH : ContDiff ℝ k M.dH) : ContDiff ℝ k M.zeroInputField := by
   rw [contDiff_euclidean]
@@ -93,7 +93,7 @@ variable (M : NonlinearModel n m)
 
 /-- At a critical point `x*` of `H`, the Jacobian of `(J − R) ∇H` is `(J(x*) − R(x*)) Q`,
 where `Q` is the derivative of `∇H` at `x*`. -/
-@[powerlib_foundation] theorem hasFDerivAt_zeroInputField_of_dH_eq_zero {xs : State n}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_zeroInputField_of_dH_eq_zero {xs : State n}
     {Q : Matrix (Fin n) (Fin n) ℝ}
     (hJ : ∀ i j, DifferentiableAt ℝ (fun x => M.J x i j) xs)
     (hR : ∀ i j, DifferentiableAt ℝ (fun x => M.R x i j) xs)
@@ -120,7 +120,7 @@ where `Q` is the derivative of `∇H` at `x*`. -/
     simp [h0j, mulVec, dotProduct, Finset.mul_sum, sub_mul, Finset.sum_sub_distrib]
 
 /-- The Jacobian of the zero-input field at a critical point of `H`. -/
-@[powerlib_foundation] theorem fderiv_zeroInputField_of_dH_eq_zero {xs : State n}
+@[tmio T, powerlib_foundation] theorem fderiv_zeroInputField_of_dH_eq_zero {xs : State n}
     {Q : Matrix (Fin n) (Fin n) ℝ}
     (hJ : ∀ i j, DifferentiableAt ℝ (fun x => M.J x i j) xs)
     (hR : ∀ i j, DifferentiableAt ℝ (fun x => M.R x i j) xs)
@@ -133,7 +133,7 @@ where `Q` is the derivative of `∇H` at `x*`. -/
 /-- Lyapunov indirect method for nonlinear pH systems: at a critical point `x*` of `H`
 with Hessian `Q`, if `(J(x*) − R(x*)) Q` is Hurwitz then `x*` is a locally exponentially
 stable equilibrium of the full zero-input field. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz {xs : State n}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz {xs : State n}
     {Q : Matrix (Fin n) (Fin n) ℝ}
     (hJ : ∀ i j, ContDiff ℝ 1 fun x => M.J x i j) (hR : ∀ i j, ContDiff ℝ 1 fun x => M.R x i j)
     (hdH : ContDiff ℝ 1 M.dH)
@@ -150,7 +150,7 @@ stable equilibrium of the full zero-input field. -/
 
 /-- At a critical point `x*` of `H` with Hessian `Q`, an eigenvalue of `(J(x*) − R(x*)) Q`
 with positive real part makes `x*` an unstable equilibrium of the full zero-input field. -/
-@[powerlib_foundation] theorem unstable_of_eigenvalue_re_pos {xs : State n}
+@[tmio T, powerlib_foundation] theorem unstable_of_eigenvalue_re_pos {xs : State n}
     {Q : Matrix (Fin n) (Fin n) ℝ}
     (hJ : ∀ i j, ContDiff ℝ 1 fun x => M.J x i j) (hR : ∀ i j, ContDiff ℝ 1 fun x => M.R x i j)
     (hdH : ContDiff ℝ 1 M.dH)

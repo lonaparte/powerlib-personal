@@ -1127,7 +1127,7 @@ Static evidence on the model, not a connection conclusion. -/
   rw [show δ₀ + s - p.k₃ = (δ₀ - p.k₃) + s by ring, Real.sin_add, ← hb]
   linear_combination (-Real.sin s) * hK'
 
-@[powerlib_foundation] private theorem cos_lt_one_of_abs_le_one {s : ℝ} (hs : s ≠ 0) (h : |s| ≤ 1) :
+@[tmio T, powerlib_foundation] private theorem cos_lt_one_of_abs_le_one {s : ℝ} (hs : s ≠ 0) (h : |s| ≤ 1) :
     Real.cos s < 1 := by
   refine lt_of_le_of_ne (Real.cos_le_one _) fun hc => hs ?_
   refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp hc

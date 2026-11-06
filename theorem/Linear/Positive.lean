@@ -51,7 +51,7 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
   ext i j
   simp [real, schur, schurReal]
 
-@[powerlib_foundation] theorem schur_symmetric {n : ℕ}
+@[tmio T, powerlib_foundation] theorem schur_symmetric {n : ℕ}
     {P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (h : Pᵀ = P) :
     (schurReal P)ᵀ = schurReal P := by
   ext i j
@@ -64,7 +64,7 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
   ring
 
 /-- Completing the square is the invariant of one elimination step. -/
-@[powerlib_foundation] theorem quadratic_split {n : ℕ}
+@[tmio T, powerlib_foundation] theorem quadratic_split {n : ℕ}
     {P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hs : Pᵀ = P) (hp : P 0 0 ≠ 0)
     (x : Fin (n + 1) → ℝ) :
     x ⬝ᵥ (P *ᵥ x) =
@@ -102,7 +102,7 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
   ring
 
 /-- Positive pivots and a positive Schur complement are equivalent to a positive form. -/
-@[powerlib_foundation] theorem posDef_schur_iff {n : ℕ}
+@[tmio T, powerlib_foundation] theorem posDef_schur_iff {n : ℕ}
     {P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hs : Pᵀ = P) (hp : 0 < P 0 0) :
     P.PosDef ↔ (schurReal P).PosDef := by
   have hh : P.IsHermitian := by
@@ -144,7 +144,7 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
       exact add_pos_of_nonneg_of_pos (mul_nonneg hp.le (sq_nonneg _)) hpos
 
 /-- The executable rational check recognizes precisely the positive real forms. -/
-@[powerlib_foundation] theorem check_iff (n : ℕ) (P : Matrix (Fin n) (Fin n) ℚ) :
+@[tmio T, powerlib_foundation] theorem check_iff (n : ℕ) (P : Matrix (Fin n) (Fin n) ℚ) :
     check n P = true ↔ (real P).PosDef := by
   induction n with
   | zero =>

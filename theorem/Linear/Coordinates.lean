@@ -47,7 +47,7 @@ def conjugate (s : Port.System n p) (L K : ℝⁿ →L[ℝ] ℝⁿ) : Port.Syste
     simpa [Function.comp_def, conjugate, hKL] using hd
   exact h.2 u (fun t => K (φ t)) t₀ t₁ ht hψ hi
 
-@[powerlib_foundation] theorem passive_conjugate (s : Port.System n p)
+@[tmio T, powerlib_foundation] theorem passive_conjugate (s : Port.System n p)
     (L K : ℝⁿ →L[ℝ] ℝⁿ) (hKL : ∀ x, K (L x) = x)
     (h : s.Passive) : (s.conjugate L K).Passive := by
   obtain ⟨V, hV⟩ := h
@@ -58,7 +58,7 @@ end Port.System
 namespace Linear
 open Matrix
 
-@[powerlib_foundation] theorem Plant.system_changeCoordinates (m : Plant n p)
+@[tmio T, powerlib_foundation] theorem Plant.system_changeCoordinates (m : Plant n p)
     (T S : Matrix (Fin n) (Fin n) ℝ) :
     (m.changeCoordinates T S).system = m.system.conjugate (op T) (op S) := by
   change Port.System.mk _ _ = Port.System.mk _ _
@@ -66,7 +66,7 @@ open Matrix
     simp [Plant.system, Plant.changeCoordinates, op,
       Matrix.mulVec_mulVec]
 
-@[powerlib_foundation] theorem Plant.passive_changeCoordinates (m : Plant n p)
+@[tmio T, powerlib_foundation] theorem Plant.passive_changeCoordinates (m : Plant n p)
     {T S : Matrix (Fin n) (Fin n) ℝ} (hST : S * T = 1) (h : m.system.Passive) :
     (m.changeCoordinates T S).system.Passive := by
   rw [m.system_changeCoordinates]
@@ -74,7 +74,7 @@ open Matrix
     (fun x => op_cancel hST x) h
 
 /-- State similarity also preserves port passivity, with no minimality assumption. -/
-@[powerlib_foundation] theorem Similar.passive_iff {m m' : Plant n p} (h : Similar m m') :
+@[tmio T, powerlib_foundation] theorem Similar.passive_iff {m m' : Plant n p} (h : Similar m m') :
     m'.system.Passive ↔ m.system.Passive := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
   constructor
@@ -84,7 +84,7 @@ open Matrix
   · exact m.passive_changeCoordinates hST
 
 /-- Similar plants agree on the complete sentence language, including passivity. -/
-@[powerlib_foundation] theorem Similar.sentence_iff {m m' : Plant n p} (h : Similar m m')
+@[tmio T, powerlib_foundation] theorem Similar.sentence_iff {m m' : Plant n p} (h : Similar m m')
     (s : Sentence) : s.holds (.continuous m'.system) ↔ s.holds (.continuous m.system) := by
   cases s with
   | flow P =>

@@ -246,39 +246,39 @@ def energyGrad (p : Params n) (z : State (n + (n + 1))) : State (n + (n + 1)) �
 def angleState (v : Fin n → ℝ) : State (n + (n + 1)) :=
   WithLp.toLp 2 fun r => Fin.addCases (motive := fun _ => ℝ) v (fun _ => 0) r
 
-@[simp, powerlib_foundation] theorem angleState_dIdx (v : Fin n → ℝ) (i : Fin n) :
+@[tmio T, simp, powerlib_foundation] theorem angleState_dIdx (v : Fin n → ℝ) (i : Fin n) :
     angleState v (dIdx i) = v i := by
   simp [angleState]
 
-@[simp, powerlib_foundation] theorem angleState_wIdx (v : Fin n → ℝ) (k : Fin (n + 1)) :
+@[tmio T, simp, powerlib_foundation] theorem angleState_wIdx (v : Fin n → ℝ) (k : Fin (n + 1)) :
     angleState v (wIdx k) = 0 := by
   simp [angleState]
 
 /-- Absolute angle displacement of relative angles `v` (reference angle `0`). -/
 def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
-@[simp, powerlib_foundation] theorem ground_zero (v : Fin n → ℝ) : ground v 0 = 0 := rfl
+@[tmio T, simp, powerlib_foundation] theorem ground_zero (v : Fin n → ℝ) : ground v 0 = 0 := rfl
 
-@[simp, powerlib_foundation] theorem ground_succ (v : Fin n → ℝ) (i : Fin n) :
+@[tmio T, simp, powerlib_foundation] theorem ground_succ (v : Fin n → ℝ) (i : Fin n) :
     ground v i.succ = v i := rfl
 
-@[powerlib_foundation] theorem ground_smul (c : ℝ) (v : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem ground_smul (c : ℝ) (v : Fin n → ℝ) :
     ground (c • v) = c • ground v := by
   funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
-@[powerlib_foundation] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
+@[tmio T, powerlib_foundation] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
   funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
-@[powerlib_foundation] theorem angleMap_angleState (v : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem angleMap_angleState (v : Fin n → ℝ) :
     angleMap (angleState v) = ground v := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
-@[powerlib_foundation] theorem angleState_smul (c : ℝ) (v : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem angleState_smul (c : ℝ) (v : Fin n → ℝ) :
     angleState (c • v) = c • angleState v := by
   apply state_ext <;> intro _ <;> simp
 
-@[powerlib_foundation] theorem angleState_eq_zero_iff (v : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem angleState_eq_zero_iff (v : Fin n → ℝ) :
     angleState v = 0 ↔ v = 0 := by
   constructor
   · intro h
@@ -288,11 +288,11 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
   · rintro rfl
     apply state_ext <;> intro _ <;> simp
 
-@[powerlib_foundation] theorem angleMap_equilibrium (θ : Fin (n + 1) → ℝ) :
+@[tmio T, powerlib_foundation] theorem angleMap_equilibrium (θ : Fin (n + 1) → ℝ) :
     angleMap (equilibrium θ) = fun k => θ k + -θ 0 := by
   rw [equilibrium, angleMap_reduce]
 
-@[powerlib_foundation] theorem equilibrium_wIdx (θ : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
+@[tmio T, powerlib_foundation] theorem equilibrium_wIdx (θ : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     equilibrium θ (wIdx k) = 0 := by
   simp [equilibrium]
 
@@ -339,12 +339,12 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
 /-! ## The reduced field as a damped mechanical system -/
 
-@[powerlib_foundation] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
+@[tmio T, powerlib_foundation] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
     angleMap w = ground fun i => w (dIdx i) := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
-@[powerlib_foundation] theorem norm_le_of_dIdx (w : State (n + (n + 1))) :
+@[tmio T, powerlib_foundation] theorem norm_le_of_dIdx (w : State (n + (n + 1))) :
     ‖(fun i => w (dIdx i) : Fin n → ℝ)‖ ≤ ‖w‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg w)).mpr fun i => PiLp.norm_apply_le w (dIdx i)
 
@@ -357,7 +357,7 @@ def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
       map_smul' := fun c v => by
         funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp }
 
-@[simp, powerlib_foundation] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
+@[tmio T, simp, powerlib_foundation] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
   rfl
 
 /-- The relative angle rates `ωᵢ₊₁ − ω₀` of the frequency deviations. -/
@@ -366,14 +366,14 @@ def relRate : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) :=
     ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) i.succ -
       ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) 0
 
-@[simp, powerlib_foundation] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
+@[tmio T, simp, powerlib_foundation] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
     relRate w i = w i.succ - w 0 := by
   simp [relRate]
 
 /-- The relative angles `θᵢ₊₁ − θ₀` of an angle profile. -/
 def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ - θ 0
 
-@[powerlib_foundation] theorem ground_relAngles_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem ground_relAngles_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
     ground (relAngles θ + v) = fun k => (θ + ground v) k + -θ 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
@@ -382,7 +382,7 @@ def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ -
     ring
 
 /-- The selected point is the rest point at the relative angles of the profile. -/
-@[powerlib_foundation] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
+@[tmio T, powerlib_foundation] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
     equilibrium θ = Dynamics.Mechanical.point (relAngles θ) := by
   apply state_ext
   · intro i
@@ -580,7 +580,7 @@ def hessForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
 def cubicForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
   ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * (u k - u j) ^ 3
 
-@[powerlib_foundation] theorem edgeIncrement_taylor (φ x : ℝ) (hx : |x| ≤ 1) :
+@[tmio T, powerlib_foundation] theorem edgeIncrement_taylor (φ x : ℝ) (hx : |x| ≤ 1) :
     |edgeIncrement φ x - (Real.cos φ * x ^ 2 / 2 - Real.sin φ * x ^ 3 / 6)| ≤ x ^ 4 / 8 := by
   have hc := Real.cos_bound hx
   have hs := Real.sin_bound hx
@@ -607,7 +607,7 @@ def cubicForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
 
 /-- A real cubic-quartic sign lemma: a negative quadratic coefficient, or a vanishing quadratic and
 nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbitrarily small `t ≠ 0`. -/
-@[powerlib_foundation] theorem exists_small_quartic_neg {a b C : ℝ} (hC : 0 ≤ C)
+@[tmio T, powerlib_foundation] theorem exists_small_quartic_neg {a b C : ℝ} (hC : 0 ≤ C)
     (h : a < 0 ∨ (a = 0 ∧ b ≠ 0)) {ε : ℝ} (hε : 0 < ε) :
     ∃ t : ℝ, t ≠ 0 ∧ |t| < ε ∧ t ^ 2 * a / 2 - t ^ 3 * b / 6 + t ^ 4 * C < 0 := by
   rcases h with ha | ⟨rfl, hb⟩
@@ -1114,7 +1114,7 @@ machines are uncoupled (a continuum of equilibria). -/
 /-! ## Three machines -/
 
 /-- A linear-quadratic function that is nonnegative everywhere has no linear term. -/
-@[powerlib_foundation] theorem eq_zero_of_forall_linear_quadratic_nonneg {L Q : ℝ}
+@[tmio T, powerlib_foundation] theorem eq_zero_of_forall_linear_quadratic_nonneg {L Q : ℝ}
     (h : ∀ x : ℝ, 0 ≤ x * L + x ^ 2 * Q) : L = 0 := by
   by_contra hL
   have hpos : 0 < L ^ 2 := by positivity
@@ -1131,7 +1131,7 @@ machines are uncoupled (a continuum of equilibria). -/
 
 /-- Three angles summing to zero, exactly one with a negative cosine: `sin · cos` has one strict
 sign on all three. -/
-@[powerlib_foundation] theorem sin_mul_cos_same_sign {α β γ : ℝ} (hsum : α + β + γ = 0)
+@[tmio T, powerlib_foundation] theorem sin_mul_cos_same_sign {α β γ : ℝ} (hsum : α + β + γ = 0)
     (hα : Real.cos α < 0) (hβ : 0 < Real.cos β) (hγ : 0 < Real.cos γ) :
     (0 < Real.sin α * Real.cos α ∧ 0 < Real.sin β * Real.cos β ∧ 0 < Real.sin γ * Real.cos γ) ∨
       (Real.sin α * Real.cos α < 0 ∧ Real.sin β * Real.cos β < 0 ∧
@@ -1163,7 +1163,7 @@ sign on all three. -/
 
 /-- Two zero-weight lines at a node whose cubic terms cancel: either both are open, or the third
 side of the triangle is in antiphase (`cos = −1`). -/
-@[powerlib_foundation] theorem node_open_or_antiphase {B₁ B₂ φ₁ φ₂ : ℝ} (hB₁ : 0 ≤ B₁)
+@[tmio T, powerlib_foundation] theorem node_open_or_antiphase {B₁ B₂ φ₁ φ₂ : ℝ} (hB₁ : 0 ≤ B₁)
     (hB₂ : 0 ≤ B₂) (hc₁ : B₁ * Real.cos φ₁ = 0) (hc₂ : B₂ * Real.cos φ₂ = 0)
     (hs : B₁ * Real.sin φ₁ + B₂ * Real.sin φ₂ = 0) :
     (B₁ = 0 ∧ B₂ = 0) ∨ Real.cos (φ₂ - φ₁) = -1 := by
@@ -1218,7 +1218,7 @@ together. -/
 /-- **Cubic term on a triangle.** A circulation `κ ≠ 0` through three lines with weights
 `Bᵢ cos φᵢ` (`B > 0`, angles summing to zero), exactly one of them negative, has a cubic term of
 one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ`. -/
-@[powerlib_foundation] theorem triangle_cubic_ne_zero {B₁ B₂ B₃ α β γ x₁ x₂ x₃ κ : ℝ}
+@[tmio T, powerlib_foundation] theorem triangle_cubic_ne_zero {B₁ B₂ B₃ α β γ x₁ x₂ x₃ κ : ℝ}
     (hB₁ : 0 < B₁) (hB₂ : 0 < B₂) (hB₃ : 0 < B₃) (hsum : α + β + γ = 0)
     (h₁ : B₁ * Real.cos α * x₁ = κ) (h₂ : B₂ * Real.cos β * x₂ = κ)
     (h₃ : B₃ * Real.cos γ * x₃ = κ) (hκ : κ ≠ 0)
@@ -1308,16 +1308,16 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
   simp only [Real.sin_neg]
   ring
 
-@[powerlib_foundation] private theorem B_eq_zero_of {B φ : ℝ} (hB : 0 ≤ B) (hc : B * Real.cos φ = 0)
+@[tmio T, powerlib_foundation] private theorem B_eq_zero_of {B φ : ℝ} (hB : 0 ≤ B) (hc : B * Real.cos φ = 0)
     (hs : B * Real.sin φ = 0) : B = 0 := by
   have := Real.sin_sq_add_cos_sq φ
   nlinarith [sq_nonneg B]
 
-@[powerlib_foundation] private theorem pos_of_mul_cos_ne {B φ : ℝ} (hB : 0 ≤ B) (h : B * Real.cos φ ≠ 0) : 0 < B :=
+@[tmio T, powerlib_foundation] private theorem pos_of_mul_cos_ne {B φ : ℝ} (hB : 0 ≤ B) (h : B * Real.cos φ ≠ 0) : 0 < B :=
   lt_of_le_of_ne hB fun h0 => h (by rw [← h0, zero_mul])
 
 /-- The grounded vector `(0, u₁, u₂)`. -/
-@[powerlib_foundation] private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
+@[tmio T, powerlib_foundation] private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
     u = ground ![u 1, u 2] := by
   funext k
   fin_cases k
@@ -1617,7 +1617,7 @@ def angleStateCLM : (Fin n → ℝ) →L[ℝ] State (n + (n + 1)) :=
       map_add' := fun v w => by apply state_ext <;> intro _ <;> simp
       map_smul' := fun c v => by apply state_ext <;> intro _ <;> simp }
 
-@[simp, powerlib_foundation] theorem angleStateCLM_apply (v : Fin n → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem angleStateCLM_apply (v : Fin n → ℝ) :
     angleStateCLM v = angleState v := rfl
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_potential_ground (p : Params n)

@@ -36,7 +36,7 @@ open Set
 
 /-- Uniqueness for the transport equation: every C¹ solution of `u_t + a u_x = 0` on the
 plane is constant along the characteristics, `u(x, t) = u(x - at, 0)`. -/
-@[powerlib_foundation] theorem transport_eq_initial {u ux ut : ℝ × ℝ → ℝ} (a : ℝ)
+@[tmio T, powerlib_foundation] theorem transport_eq_initial {u ux ut : ℝ × ℝ → ℝ} (a : ℝ)
     (hu : ∀ q, HasPartialsWithin u ux ut univ q) (hpde : ∀ q, ut q + a * ux q = 0)
     (x t : ℝ) : u (x, t) = u (x - a * t, 0) := by
   have hpt : ∀ s : ℝ, ((x - a * t, 0) : ℝ × ℝ) + s • (a, (1 : ℝ)) = (x - a * t + a * s, s) := by

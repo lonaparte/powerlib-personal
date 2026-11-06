@@ -77,23 +77,23 @@ def cmF : Filtration ℕ (inferInstance : MeasurableSpace (Bool × Bool)) where
     · exact measurable_fst.comap_le
     · exact le_rfl
 
-@[powerlib_foundation] theorem cmF_apply (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem cmF_apply (n : ℕ) :
     cmF n = if n = 0 then ⊥ else if n = 1 then MeasurableSpace.comap Prod.fst inferInstance
       else inferInstance := rfl
 
-@[powerlib_foundation] theorem cmF_one :
+@[tmio T, powerlib_foundation] theorem cmF_one :
     cmF 1 = MeasurableSpace.comap Prod.fst inferInstance := by
   rw [cmF_apply]; simp
 
-@[powerlib_foundation] theorem cmF_of_two_le {n : ℕ} (hn : 2 ≤ n) :
+@[tmio T, powerlib_foundation] theorem cmF_of_two_le {n : ℕ} (hn : 2 ≤ n) :
     cmF n = (inferInstance : MeasurableSpace (Bool × Bool)) := by
   rw [cmF_apply]; simp [show n ≠ 0 by omega, show n ≠ 1 by omega]
 
-@[powerlib_foundation] theorem cmX_le_one {n : ℕ} (hn : n ≤ 1) : cmX n = fun _ => 0 := by
+@[tmio T, powerlib_foundation] theorem cmX_le_one {n : ℕ} (hn : n ≤ 1) : cmX n = fun _ => 0 := by
   funext ω; simp [cmX, hn]
 
 /-- **`X` is a martingale** for `𝓕` under two fair coins. -/
-@[powerlib_foundation] theorem cm_martingale : Martingale cmX cmF coin2 := by
+@[tmio T, powerlib_foundation] theorem cm_martingale : Martingale cmX cmF coin2 := by
   refine martingale_nat ?_ (fun i => Integrable.of_finite) ?_
   · intro n
     by_cases hn : n ≤ 1
@@ -126,7 +126,7 @@ def cmF : Filtration ℕ (inferInstance : MeasurableSpace (Bool × Bool)) where
 /-- **`X` is not Markov** for `𝓕`: martingale does not imply Markov. The negated statement is the
 Markov property in conditional-expectation form: for bounded measurable test functions `g`,
 `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. -/
-@[powerlib_foundation] theorem cm_not_markov :
+@[tmio T, powerlib_foundation] theorem cm_not_markov :
     ¬ ∀ (n : ℕ) (g : ℝ → ℝ), Measurable g → (∃ C, ∀ x, |g x| ≤ C) →
       coin2[fun ω => g (cmX (n + 1) ω) | cmF n] =ᵐ[coin2]
         coin2[fun ω => g (cmX (n + 1) ω) | MeasurableSpace.comap (cmX n) inferInstance] := by

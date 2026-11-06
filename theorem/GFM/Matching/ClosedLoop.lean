@@ -207,7 +207,7 @@ def dissipation (z : State 5) : ℝ :=
 
 end Model
 
-@[powerlib_foundation] private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x j) :=
+@[tmio T, powerlib_foundation] private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x j) :=
   Dynamics.contDiff_coord j
 
 /-- Components of the reduced field. Static evidence on the model, not a connection conclusion. -/
@@ -386,7 +386,7 @@ not a connection conclusion. -/
   unfold Model.energy
   fun_prop
 
-@[powerlib_foundation] private theorem eq_zero_of_mul_sq {c x : ℝ} (hc : 0 < c) (h : c * x ^ 2 = 0) : x = 0 :=
+@[tmio T, powerlib_foundation] private theorem eq_zero_of_mul_sq {c x : ℝ} (hc : 0 < c) (h : c * x ^ 2 = 0) : x = 0 :=
   pow_eq_zero_iff (n := 2) (by norm_num) |>.mp ((mul_eq_zero.mp h).resolve_left hc.ne')
 
 /-- The storage is positive definite. Static evidence on the model, not a connection conclusion. -/
@@ -994,26 +994,26 @@ def Model.orbitPoint (m : Model) (θ : ℝ) : State 8 :=
     Real.cos θ * m.sd - Real.sin θ * m.sq, Real.sin θ * m.sd + Real.cos θ * m.sq]
 
 /-- `R_θᵀ R_θ = 1`, `d` component. Static evidence, not a connection conclusion. -/
-@[powerlib_foundation] theorem rotD_rot (θ d q : ℝ) :
+@[tmio T, powerlib_foundation] theorem rotD_rot (θ d q : ℝ) :
     rotD θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = d := by
   simp only [rotD]
   linear_combination d * Real.sin_sq_add_cos_sq θ
 
 /-- `R_θᵀ R_θ = 1`, `q` component. Static evidence, not a connection conclusion. -/
-@[powerlib_foundation] theorem rotQ_rot (θ d q : ℝ) :
+@[tmio T, powerlib_foundation] theorem rotQ_rot (θ d q : ℝ) :
     rotQ θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = q := by
   simp only [rotQ]
   linear_combination q * Real.sin_sq_add_cos_sq θ
 
 /-- `‖z − R_θ w‖ = ‖R_θᵀ z − w‖`. Static evidence, not a connection conclusion. -/
-@[powerlib_foundation] theorem rot_dist_sq (θ a b d q : ℝ) :
+@[tmio T, powerlib_foundation] theorem rot_dist_sq (θ a b d q : ℝ) :
     (a - (Real.cos θ * d - Real.sin θ * q)) ^ 2 + (b - (Real.sin θ * d + Real.cos θ * q)) ^ 2 =
       (rotD θ a b - d) ^ 2 + (rotQ θ a b - q) ^ 2 := by
   simp only [rotD, rotQ]
   linear_combination (d ^ 2 + q ^ 2 - a ^ 2 - b ^ 2) * Real.sin_sq_add_cos_sq θ
 
 /-- `‖R_a w − R_b w‖² = 2 ‖w‖² (1 − cos (a − b))`. Static evidence, not a connection conclusion. -/
-@[powerlib_foundation] theorem rot_sub_rot_sq (a b d q : ℝ) :
+@[tmio T, powerlib_foundation] theorem rot_sub_rot_sq (a b d q : ℝ) :
     (Real.cos a * d - Real.sin a * q - (Real.cos b * d - Real.sin b * q)) ^ 2 +
       (Real.sin a * d + Real.cos a * q - (Real.sin b * d + Real.cos b * q)) ^ 2 =
       2 * (d ^ 2 + q ^ 2) * (1 - Real.cos (a - b)) := by

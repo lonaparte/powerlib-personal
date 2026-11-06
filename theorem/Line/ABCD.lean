@@ -96,14 +96,14 @@ def voltage (V₀ I₀ : ℂ) (x : ℝ) : ℂ := V₀ * cosh (p.γ * x) - p.Zc *
 /-- Current profile with sending-end data `(V₀, I₀)`. -/
 def current (V₀ I₀ : ℂ) (x : ℝ) : ℂ := I₀ * cosh (p.γ * x) - V₀ / p.Zc * sinh (p.γ * x)
 
-@[powerlib_foundation] theorem hasDerivAt_cosh_mul (γ : ℂ) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_cosh_mul (γ : ℂ) (x : ℝ) :
     HasDerivAt (fun y : ℝ => cosh (γ * y)) (γ * sinh (γ * x)) x := by
   have hl : HasDerivAt (fun y : ℝ => γ * (y : ℂ)) γ x := by
     simpa using ((hasDerivAt_id (x : ℂ)).const_mul γ).comp_ofReal
   have := HasDerivAt.comp x (Complex.hasDerivAt_cosh (γ * x)) hl
   simpa [Function.comp_def, mul_comm] using this
 
-@[powerlib_foundation] theorem hasDerivAt_sinh_mul (γ : ℂ) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_sinh_mul (γ : ℂ) (x : ℝ) :
     HasDerivAt (fun y : ℝ => sinh (γ * y)) (γ * cosh (γ * x)) x := by
   have hl : HasDerivAt (fun y : ℝ => γ * (y : ℂ)) γ x := by
     simpa using ((hasDerivAt_id (x : ℂ)).const_mul γ).comp_ofReal
@@ -205,7 +205,7 @@ receiving-end quantities (`I₂` leaving end 2). -/
     simp [Matrix.mul_apply, Fin.sum_univ_two] <;> field_simp <;> ring
 
 /-- Chain matrices of cascaded two-ports multiply. -/
-@[powerlib_foundation] theorem cascade_relation {T₁ T₂ : Matrix (Fin 2) (Fin 2) ℂ}
+@[tmio T, powerlib_foundation] theorem cascade_relation {T₁ T₂ : Matrix (Fin 2) (Fin 2) ℂ}
     {X₀ X₁ X₂ : Fin 2 → ℂ} (h₁ : X₀ = T₁ *ᵥ X₁) (h₂ : X₁ = T₂ *ᵥ X₂) :
     X₀ = (T₁ * T₂) *ᵥ X₂ := by
   rw [h₁, h₂, mulVec_mulVec]
@@ -279,7 +279,7 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
 def piChain (Zs Ysh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![1, 0; Ysh, 1] * !![1, Zs; 0, 1] * !![1, 0; Ysh, 1]
 
-@[powerlib_foundation] theorem piChain_eq (Zs Ysh : ℂ) :
+@[tmio M, powerlib_foundation] theorem piChain_eq (Zs Ysh : ℂ) :
     piChain Zs Ysh = !![1 + Zs * Ysh, Zs; Ysh * (2 + Zs * Ysh), 1 + Zs * Ysh] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [piChain, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
@@ -378,7 +378,7 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
 
 /-- Lossless line, shorted far end: with `γ = iω/c` (`γℓ = iωτ`) the denominator vanishes iff
 `ωτ = (2k+1)π/2`, i.e. at `f = (2k+1)/(4τ) = (2k+1)c/(4ℓ)`. -/
-@[powerlib_foundation] theorem lossless_quarterWave (ω τ : ℝ) :
+@[tmio T, powerlib_foundation] theorem lossless_quarterWave (ω τ : ℝ) :
     cosh ((ω * τ : ℝ) * I) = 0 ↔ ∃ k : ℤ, ω * τ = (2 * k + 1) * Real.pi / 2 := by
   rw [Complex.cosh_mul_I, ← Complex.ofReal_cos, Complex.ofReal_eq_zero, Real.cos_eq_zero_iff]
 
@@ -400,7 +400,7 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
   linear_combination h
 
 /-- Correction: `tanh` is not entire; it is not even continuous at `iπ/2`. -/
-@[powerlib_foundation] theorem tanh_not_continuousAt :
+@[tmio T, powerlib_foundation] theorem tanh_not_continuousAt :
     ¬ ContinuousAt Complex.tanh ((Real.pi / 2 : ℝ) * I) := by
   intro h
   set z₀ : ℂ := (Real.pi / 2 : ℝ) * I with hz₀
@@ -433,7 +433,7 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
 
 /-- Correction for the matrix chain matrix: for `V' = -Z I`, `I' = -Y V` the voltage obeys
 `V'' = ZY V` while the current obeys `I'' = YZ I`. -/
-@[powerlib_foundation] theorem multiconductor_second_order {n : ℕ}
+@[tmio T, powerlib_foundation] theorem multiconductor_second_order {n : ℕ}
     (Z Y : Matrix (Fin n) (Fin n) ℂ) {V I : ℝ → Fin n → ℂ}
     (hV : ∀ x, HasDerivAt V (-(Z *ᵥ I x)) x) (hI : ∀ x, HasDerivAt I (-(Y *ᵥ V x)) x) (x : ℝ) :
     HasDerivAt (fun x => -(Z *ᵥ I x)) ((Z * Y) *ᵥ V x) x ∧
@@ -455,7 +455,7 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
     rw [mulVec_neg, neg_neg, mulVec_mulVec]
 
 /-- `ZY ≠ YZ` in general (so the two diagonal chain blocks differ). -/
-@[powerlib_foundation] theorem matrix_mul_not_comm_example :
+@[tmio T, powerlib_foundation] theorem matrix_mul_not_comm_example :
     (!![1, 1; 0, 1] : Matrix (Fin 2) (Fin 2) ℂ) * !![1, 0; 1, 1] ≠
       !![1, 0; 1, 1] * !![1, 1; 0, 1] := by
   intro h
@@ -471,13 +471,13 @@ def ZcOf (L C R G : ℝ) (s : ℂ) : ℂ := ((R + s * L) / (G + s * C)) ^ ((2 : 
 (so `γ² = (R' + sL')(G' + sC')`). -/
 def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
 
-@[powerlib_foundation] theorem ofReal_cpow_half {x : ℝ} (hx : 0 ≤ x) :
+@[tmio T, powerlib_foundation] theorem ofReal_cpow_half {x : ℝ} (hx : 0 ≤ x) :
     (x : ℂ) ^ ((2 : ℂ)⁻¹) = (Real.sqrt x : ℂ) := by
   rw [Real.sqrt_eq_rpow, Complex.ofReal_cpow hx]
   norm_num
 
 /-- DC values on the principal branch: `Z_c(0) = √(R'/G')`, `γ(0) = √(R'G')`. -/
-@[powerlib_foundation] theorem ZcOf_zero {L C R G : ℝ} (hR : 0 ≤ R) (hG : 0 < G) :
+@[tmio M, powerlib_foundation] theorem ZcOf_zero {L C R G : ℝ} (hR : 0 ≤ R) (hG : 0 < G) :
     ZcOf L C R G 0 = (Real.sqrt (R / G) : ℂ) ∧ gammaOf L C R G 0 = (Real.sqrt (R * G) : ℂ) := by
   have h1 : ZcOf L C R G 0 = (Real.sqrt (R / G) : ℂ) := by
     rw [ZcOf]
@@ -493,7 +493,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   field_simp
   rw [Real.sq_sqrt hG.le]
 
-@[powerlib_foundation] theorem ratio_tendsto {L C R G : ℝ} (hC : 0 < C) :
+@[tmio T, powerlib_foundation] theorem ratio_tendsto {L C R G : ℝ} (hC : 0 < C) :
     Filter.Tendsto (fun s : ℂ => (R + s * L) / (G + s * C)) (Bornology.cobounded ℂ)
       (nhds ((L / C : ℝ) : ℂ)) := by
   have hC' : (C : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hC.ne'
@@ -513,7 +513,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   field_simp
 
 /-- High-frequency limit on the principal branch: `Z_c(s) → √(L'/C')` as `|s| → ∞`. -/
-@[powerlib_foundation] theorem ZcOf_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
+@[tmio M, powerlib_foundation] theorem ZcOf_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
     Filter.Tendsto (ZcOf L C R G) (Bornology.cobounded ℂ) (nhds (Real.sqrt (L / C) : ℂ)) := by
   have hslit : ((L / C : ℝ) : ℂ) ∈ Complex.slitPlane :=
     Complex.ofReal_mem_slitPlane.mpr (div_pos hL hC)
@@ -524,7 +524,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
 
 /-- High-frequency limit of the propagation constant on the same branch:
 `γ(s)/s → √(L'C')`. -/
-@[powerlib_foundation] theorem gammaOf_div_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
+@[tmio M, powerlib_foundation] theorem gammaOf_div_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
     Filter.Tendsto (fun s => gammaOf L C R G s / s) (Bornology.cobounded ℂ)
       (nhds (Real.sqrt (L * C) : ℂ)) := by
   have hlim : Filter.Tendsto (fun s : ℂ => ZcOf L C R G s * (G * s⁻¹ + C)) (Bornology.cobounded ℂ)

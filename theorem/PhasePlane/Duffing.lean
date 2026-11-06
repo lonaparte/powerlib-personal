@@ -69,13 +69,13 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
   convert h using 1
   push_cast; ring
 
-@[powerlib_foundation] theorem force_contDiff {k : WithTop ℕ∞} : ContDiff ℝ k force := by
+@[tmio T, powerlib_foundation] theorem force_contDiff {k : WithTop ℕ∞} : ContDiff ℝ k force := by
   unfold force; fun_prop
 
-@[powerlib_foundation] theorem field_contDiff (δ : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (field δ) :=
+@[tmio M, powerlib_foundation] theorem field_contDiff (δ : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (field δ) :=
   Conservative.field_contDiff force_contDiff
 
-@[powerlib_foundation] theorem field_eq_zero_iff (δ : ℝ) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem field_eq_zero_iff (δ : ℝ) (y : State 2) :
     field δ y = 0 ↔ y 1 = 0 ∧ (y 0 = 0 ∨ y 0 = 1 ∨ y 0 = -1) := by
   rw [field, Conservative.field_eq_zero_iff one_ne_zero]
   have : force (y 0) = 0 ↔ (y 0 = 0 ∨ y 0 = 1 ∨ y 0 = -1) := by
@@ -92,7 +92,7 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
   rw [this]
 
 /-- Jacobian of the Duffing field at `(x, y)`. -/
-@[powerlib_foundation] theorem hasFDerivAt_field (δ : ℝ) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_field (δ : ℝ) (y : State 2) :
     HasFDerivAt (field δ)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; 1 - 3 * y 0 ^ 2, -δ]) y := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
@@ -111,7 +111,7 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
   · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp
 
 /-- The characteristic roots at the saddle are `(−δ ± √(δ² + 4))/2`. -/
-@[powerlib_foundation] theorem saddle_eigenvalues (δ : ℝ) (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
+@[tmio T, powerlib_foundation] theorem saddle_eigenvalues (δ : ℝ) (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
     (Linear.characteristicMatrix (!![0, 1; 1, -δ] : Matrix (Fin 2) (Fin 2) ℝ)
       (((-δ + σ * √(δ ^ 2 + 4)) / 2 : ℝ) : ℂ)).det = 0 := by
   rw [Criteria.det_characteristicMatrix_fin_two]
@@ -125,14 +125,14 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
   exact_mod_cast this
 
 /-- The origin is a saddle (`det = −1 < 0`), hence unstable, for every damping. -/
-@[powerlib_foundation] theorem origin_unstable (δ : ℝ) : Unstable (field δ) (mk 0 0) := by
+@[tmio TM, powerlib_foundation] theorem origin_unstable (δ : ℝ) : Unstable (field δ) (mk 0 0) := by
   refine Criteria.unstable_of_jacobian_det_neg_fin_two _ (field_contDiff δ) ?_
     (hasFDerivAt_field δ (mk 0 0)).fderiv ?_
   · rw [field_eq_zero_iff]; simp
   · simp [Matrix.det_fin_two]
 
 /-- With damping `δ > 0` the wells `(±1, 0)` are locally exponentially stable. -/
-@[powerlib_foundation] theorem well_locallyExponentiallyStable {δ : ℝ} (hδ : 0 < δ) (σ : ℝ)
+@[tmio TM, powerlib_foundation] theorem well_locallyExponentiallyStable {δ : ℝ} (hδ : 0 < δ) (σ : ℝ)
     (hσ : σ = 1 ∨ σ = -1) : LocallyExponentiallyStable (field δ) (mk σ 0) := by
   have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
   refine Criteria.locallyExponentiallyStable_of_jacobian_fin_two _ (field_contDiff δ) ?_
@@ -143,7 +143,7 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
   · simp [Matrix.det_fin_two, hσ2]
 
 /-- For every `δ ≥ 0` the wells `(±1, 0)` are Lyapunov stable (strict minima of `V`). -/
-@[powerlib_foundation] theorem well_lyapunovStable {δ : ℝ} (hδ : 0 ≤ δ) (σ : ℝ)
+@[tmio TM, powerlib_foundation] theorem well_lyapunovStable {δ : ℝ} (hδ : 0 ≤ δ) (σ : ℝ)
     (hσ : σ = 1 ∨ σ = -1) : LyapunovStable (field δ) (mk σ 0) := by
   have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
   refine Conservative.center_lyapunovStable one_pos hδ hasDerivAt_potential one_pos ?_
@@ -170,21 +170,21 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
   linarith
 
 /-- Energy is conserved in the undamped case. -/
-@[powerlib_foundation] theorem energy_conserved {φ : ℝ → State 2} {a b : ℝ}
+@[tmio TM, powerlib_foundation] theorem energy_conserved {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field 0) a b) :
     ∀ t ∈ Icc a b, energy (φ t) = energy (φ a) :=
   Conservative.energy_conserved one_ne_zero hasDerivAt_potential hφ
 
-@[powerlib_foundation] theorem energy_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
+@[tmio M, powerlib_foundation] theorem energy_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
     energy (mk σ 0) = -(1 / 4) := by
   rcases hσ with rfl | rfl <;> simp [energy, Conservative.energy, potential] <;> norm_num
 
-@[powerlib_foundation] theorem energy_continuous : Continuous energy :=
+@[tmio T, powerlib_foundation] theorem energy_continuous : Continuous energy :=
   (Conservative.energy_differentiable (m := 1) hasDerivAt_potential).continuous
 
 /-- Conservative case: a forward solution whose energy differs from that of the well never
 converges to the well. -/
-@[powerlib_foundation] theorem not_tendsto_of_energy_ne {φ : ℝ → State 2} {t₀ : ℝ}
+@[tmio TM, powerlib_foundation] theorem not_tendsto_of_energy_ne {φ : ℝ → State 2} {t₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ y => field 0 y) (Ici t₀)) {x : State 2}
     (hE : energy (φ t₀) ≠ energy x) : ¬ Tendsto φ atTop (𝓝 x) := by
   intro hlim
@@ -201,7 +201,7 @@ converges to the well. -/
 
 /-- Arbitrarily close to a well there are states with a different energy:
 `E(σ, s) = s²/2 − 1/4 ≠ −1/4` for `s ≠ 0`. -/
-@[powerlib_foundation] theorem energy_off_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) {s : ℝ}
+@[tmio M, powerlib_foundation] theorem energy_off_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) {s : ℝ}
     (hs : s ≠ 0) : energy (mk σ s) ≠ energy (mk σ 0) ∧ ‖mk σ s - mk σ 0‖ = |s| := by
   constructor
   · rw [energy_well σ hσ]
@@ -213,13 +213,13 @@ converges to the well. -/
   · rw [mk_sub, norm_mk]; simp [Real.sqrt_sq_eq_abs]
 
 /-- `dE/dt = −δ y² ≤ 0` for `δ ≥ 0`. -/
-@[powerlib_foundation] theorem energy_lie_nonpos {δ : ℝ} (hδ : 0 ≤ δ) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem energy_lie_nonpos {δ : ℝ} (hδ : 0 ≤ δ) (y : State 2) :
     fderiv ℝ energy y (field δ y) ≤ 0 := by
   rw [energy, field, Conservative.energy_lie one_ne_zero hasDerivAt_potential]
   nlinarith [sq_nonneg (y 1)]
 
 /-- Energy sublevel sets are compact (`‖y‖² ≤ 2c + 9/2` on `{E ≤ c}`). -/
-@[powerlib_foundation] theorem energy_sublevel_compact (c : ℝ) :
+@[tmio T, powerlib_foundation] theorem energy_sublevel_compact (c : ℝ) :
     IsCompact {y : State 2 | energy y ≤ c} := by
   apply Metric.isCompact_of_isClosed_isBounded (isClosed_le energy_continuous continuous_const)
   rw [Metric.isBounded_iff_subset_closedBall (0 : State 2)]
@@ -234,7 +234,7 @@ converges to the well. -/
     _ ≤ √(max (2 * c + 9 / 2) 0) := Real.sqrt_le_sqrt hsq
 
 /-- Every initial state has a forward solution for `δ ≥ 0`. -/
-@[powerlib_foundation] theorem forwardComplete {δ : ℝ} (hδ : 0 ≤ δ) :
+@[tmio TM, powerlib_foundation] theorem forwardComplete {δ : ℝ} (hδ : 0 ≤ δ) :
     Flow.ForwardComplete (field δ) :=
   Flow.forwardComplete_of_compact_sublevel (field_contDiff δ)
     (Conservative.energy_differentiable hasDerivAt_potential) (energy_lie_nonpos hδ)
@@ -242,7 +242,7 @@ converges to the well. -/
 
 /-- Correction: without damping the wells are not asymptotically stable — there is no attractor
 whose basin a separatrix could bound. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_conservative (σ : ℝ)
+@[tmio TM, powerlib_foundation] theorem not_localAsymptoticStable_conservative (σ : ℝ)
     (hσ : σ = 1 ∨ σ = -1) : ¬ LocalAsymptoticStable (field 0) (mk σ 0) := by
   rintro ⟨-, c, hc, hconv⟩
   obtain ⟨hne, hdist⟩ := energy_off_well σ hσ (s := c / 2) (by positivity)

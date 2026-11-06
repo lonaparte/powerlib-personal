@@ -52,7 +52,7 @@ open Matrix
   constructor <;> intro hk <;> rw [hk] <;> field_simp <;> ring
 
 /-- Capacitor `C dv/dt = i`: the trapezoidal step equals the companion form. -/
-@[powerlib_foundation] theorem capacitor_companion_iff {C h : ℝ} (hC : C ≠ 0) (hh : h ≠ 0)
+@[tmio T, powerlib_foundation] theorem capacitor_companion_iff {C h : ℝ} (hC : C ≠ 0) (hh : h ≠ 0)
     (i₀ v₀ i₁ v₁ : ℝ) :
     v₁ = v₀ + h / 2 * (i₀ / C + i₁ / C) ↔ i₁ = 2 * C / h * v₁ - (i₀ + 2 * C / h * v₀) := by
   constructor <;> intro hk
@@ -97,7 +97,7 @@ def Positive : Element → Prop
   | inductor L => 0 < L
   | capacitor C => 0 < C
 
-@[powerlib_foundation] theorem stepLaw_iff_companion {h : ℝ} (hh : h ≠ 0) (e : Element)
+@[tmio M, powerlib_foundation] theorem stepLaw_iff_companion {h : ℝ} (hh : h ≠ 0) (e : Element)
     (he : e.Valid) (i₀ v₀ i₁ v₁ : ℝ) :
     e.StepLaw h i₀ v₀ i₁ v₁ ↔ i₁ = e.conductance h * v₁ + e.history h i₀ v₀ := by
   cases e with
@@ -112,14 +112,14 @@ def Positive : Element → Prop
     simp only [StepLaw, conductance, history]
     rw [capacitor_companion_iff (h := h) he hh, sub_eq_add_neg]
 
-@[powerlib_foundation] theorem conductance_pos {h : ℝ} (hh : 0 < h) (e : Element)
+@[tmio M, powerlib_foundation] theorem conductance_pos {h : ℝ} (hh : 0 < h) (e : Element)
     (he : e.Positive) : 0 < e.conductance h := by
   cases e with
   | resistor R => exact one_div_pos.mpr he
   | inductor L => exact div_pos hh (mul_pos two_pos he)
   | capacitor C => exact div_pos (mul_pos two_pos he) hh
 
-@[powerlib_foundation] theorem Positive.valid {e : Element} (he : e.Positive) : e.Valid := by
+@[tmio M, powerlib_foundation] theorem Positive.valid {e : Element} (he : e.Positive) : e.Valid := by
   cases e with
   | resistor R => exact ne_of_gt he
   | inductor L => exact ne_of_gt he
@@ -144,7 +144,7 @@ def Terminal.potential {N : ℕ} (V : Fin N → ℝ) : Terminal N → ℝ
   | .node i => V i
   | .ground => 0
 
-@[powerlib_foundation] theorem Terminal.vec_dotProduct {N : ℕ} (t : Terminal N)
+@[tmio T, powerlib_foundation] theorem Terminal.vec_dotProduct {N : ℕ} (t : Terminal N)
     (V : Fin N → ℝ) : t.vec ⬝ᵥ V = t.potential V := by
   cases t <;> simp [Terminal.vec, Terminal.potential]
 
@@ -158,12 +158,12 @@ def nodalMatrix (p q : β → Terminal N) (G : β → ℝ) : Matrix (Fin N) (Fin
   ∑ b, G b • vecMulVec (incidence p q b) (incidence p q b)
 
 omit [Fintype β] in
-@[powerlib_foundation] theorem incidence_dotProduct (p q : β → Terminal N) (b : β)
+@[tmio T, powerlib_foundation] theorem incidence_dotProduct (p q : β → Terminal N) (b : β)
     (V : Fin N → ℝ) :
     incidence p q b ⬝ᵥ V = (p b).potential V - (q b).potential V := by
   rw [incidence, sub_dotProduct, Terminal.vec_dotProduct, Terminal.vec_dotProduct]
 
-@[powerlib_foundation] theorem nodalMatrix_mulVec (p q : β → Terminal N) (G : β → ℝ)
+@[tmio T, powerlib_foundation] theorem nodalMatrix_mulVec (p q : β → Terminal N) (G : β → ℝ)
     (V : Fin N → ℝ) :
     nodalMatrix p q G *ᵥ V = ∑ b, (G b * (incidence p q b ⬝ᵥ V)) • incidence p q b := by
   ext k
@@ -172,11 +172,11 @@ omit [Fintype β] in
   ring
 
 /-- The nodal matrix is symmetric: each branch stamp is symmetric. -/
-@[powerlib_foundation] theorem nodalMatrix_transpose (p q : β → Terminal N) (G : β → ℝ) :
+@[tmio T, powerlib_foundation] theorem nodalMatrix_transpose (p q : β → Terminal N) (G : β → ℝ) :
     (nodalMatrix p q G)ᵀ = nodalMatrix p q G := by
   simp [nodalMatrix, Matrix.transpose_sum, Matrix.transpose_smul, Matrix.transpose_vecMulVec]
 
-@[powerlib_foundation] theorem nodalMatrix_quadratic (p q : β → Terminal N) (G : β → ℝ)
+@[tmio T, powerlib_foundation] theorem nodalMatrix_quadratic (p q : β → Terminal N) (G : β → ℝ)
     (V : Fin N → ℝ) :
     V ⬝ᵥ (nodalMatrix p q G *ᵥ V) = ∑ b, G b * (incidence p q b ⬝ᵥ V) ^ 2 := by
   rw [nodalMatrix_mulVec, dotProduct_sum]
@@ -184,7 +184,7 @@ omit [Fintype β] in
   rw [dotProduct_smul, smul_eq_mul, dotProduct_comm]
   ring
 
-@[powerlib_foundation] theorem nodalMatrix_posSemidef (p q : β → Terminal N) (G : β → ℝ)
+@[tmio T, powerlib_foundation] theorem nodalMatrix_posSemidef (p q : β → Terminal N) (G : β → ℝ)
     (hG : ∀ b, 0 ≤ G b) : (nodalMatrix p q G).PosSemidef := by
   refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun V => ?_
   · exact nodalMatrix_transpose p q G
@@ -199,7 +199,7 @@ def Adjacent (p q : β → Terminal N) (G : β → ℝ) (s t : Terminal N) : Pro
 def GroundConnected (p q : β → Terminal N) (G : β → ℝ) : Prop :=
   ∀ i : Fin N, Relation.ReflTransGen (Adjacent p q G) (.node i) .ground
 
-@[powerlib_foundation] theorem nodalMatrix_posDef (p q : β → Terminal N) (G : β → ℝ)
+@[tmio T, powerlib_foundation] theorem nodalMatrix_posDef (p q : β → Terminal N) (G : β → ℝ)
     (hG : ∀ b, 0 ≤ G b) (hconn : GroundConnected p q G) : (nodalMatrix p q G).PosDef := by
   refine Matrix.PosDef.of_dotProduct_mulVec_pos (nodalMatrix_transpose p q G) fun V hV => ?_
   rw [star_trivial, nodalMatrix_quadratic]
@@ -227,7 +227,7 @@ def GroundConnected (p q : β → Terminal N) (G : β → ℝ) : Prop :=
 /-! ### Trapezoidal network ⇔ nodal companion equation -/
 
 /-- KCL with affine branch laws `i_b = G_b v_b + i_h,b` is the nodal equation. -/
-@[powerlib_foundation] theorem kcl_iff_nodal (p q : β → Terminal N) (G ih : β → ℝ)
+@[tmio T, powerlib_foundation] theorem kcl_iff_nodal (p q : β → Terminal N) (G ih : β → ℝ)
     (V J : Fin N → ℝ) :
     (∑ b, (G b * (incidence p q b ⬝ᵥ V) + ih b) • incidence p q b = J) ↔
       nodalMatrix p q G *ᵥ V = J - ∑ b, ih b • incidence p q b := by
@@ -240,7 +240,7 @@ new step) is exactly a solution of the companion nodal equations (the constant m
 the new node voltages equals the injections minus the history sources, and branch currents follow
 the companion law). Discrete trajectories are written out, not defined: discrete behaviour is
 defined only in the semantic layer. -/
-@[powerlib_foundation] theorem trapezoidalNetwork_iff_companion {h : ℝ} (hh : h ≠ 0)
+@[tmio M, powerlib_foundation] theorem trapezoidalNetwork_iff_companion {h : ℝ} (hh : h ≠ 0)
     (e : β → Element) (he : ∀ b, (e b).Valid) (p q : β → Terminal N) (V : ℕ → Fin N → ℝ)
     (I : ℕ → β → ℝ) (J : ℕ → Fin N → ℝ) :
     (∀ n, (∀ b, (e b).StepLaw h (I n b) (incidence p q b ⬝ᵥ V n) (I (n + 1) b)
@@ -265,7 +265,7 @@ defined only in the semantic layer. -/
 
 /-- Positive `R, L, C`, `h > 0` and ground connectivity: the EMT nodal matrix is positive
 definite, hence every implicit step has a unique solution. -/
-@[powerlib_foundation] theorem network_nodalMatrix_posDef {h : ℝ} (hh : 0 < h)
+@[tmio M, powerlib_foundation] theorem network_nodalMatrix_posDef {h : ℝ} (hh : 0 < h)
     (e : β → Element) (he : ∀ b, (e b).Positive) (p q : β → Terminal N)
     (hconn : ∀ i : Fin N, Relation.ReflTransGen
       (fun s t => ∃ b, (s = p b ∧ t = q b) ∨ (s = q b ∧ t = p b)) (.node i) .ground) :

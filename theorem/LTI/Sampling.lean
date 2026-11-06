@@ -128,7 +128,7 @@ def zohGamma (T : ℝ) (A : Matrix X X ℝ) (B : Matrix X U ℝ) : Matrix X U �
   ∫ s in (0 : ℝ)..T, NormedSpace.exp (s • A) * B
 
 /-- `s ↦ e^{sA} B` has derivative `A e^{sA} B`. -/
-@[powerlib_foundation] theorem hasDerivAt_exp_smul_mul (A : Matrix X X ℝ) (B : Matrix X U ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_exp_smul_mul (A : Matrix X X ℝ) (B : Matrix X U ℝ)
     (s : ℝ) :
     HasDerivAt (fun s : ℝ => NormedSpace.exp (s • A) * B) (A * NormedSpace.exp (s • A) * B) s := by
   let L : Matrix X X ℝ →L[ℝ] Matrix X U ℝ :=
@@ -139,13 +139,13 @@ def zohGamma (T : ℝ) (A : Matrix X X ℝ) (B : Matrix X U ℝ) : Matrix X U �
   have h := L.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_exp_smul_const' (𝕂 := ℝ) A s)
   exact h
 
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma continuous_exp_smul_mul (A : Matrix X X ℝ) (B : Matrix X U ℝ) :
     Continuous fun s : ℝ => NormedSpace.exp (s • A) * B :=
   continuous_iff_continuousAt.2 fun s => (hasDerivAt_exp_smul_mul A B s).continuousAt
 
 /-- `A Γ(s) + B = e^{sA} B`. -/
-@[powerlib_foundation] theorem mul_zohGamma_add (A : Matrix X X ℝ) (B : Matrix X U ℝ) (s : ℝ) :
+@[tmio T, powerlib_foundation] theorem mul_zohGamma_add (A : Matrix X X ℝ) (B : Matrix X U ℝ) (s : ℝ) :
     A * zohGamma s A B + B = NormedSpace.exp (s • A) * B := by
   let L : Matrix X U ℝ →L[ℝ] Matrix X U ℝ :=
     LinearMap.toContinuousLinearMap
@@ -165,7 +165,7 @@ private lemma continuous_exp_smul_mul (A : Matrix X X ℝ) (B : Matrix X U ℝ) 
   simp
 
 /-- The explicit ZOH solution solves `ẏ = A y + B u`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma hasDerivAt_zohSolution (A : Matrix X X ℝ) (B : Matrix X U ℝ) (u : U → ℝ)
     (a : ℝ) (x₀ : X → ℝ) (t : ℝ) :
     HasDerivAt (fun t => NormedSpace.exp ((t - a) • A) *ᵥ x₀ + zohGamma (t - a) A B *ᵥ u)
@@ -190,7 +190,7 @@ private lemma hasDerivAt_zohSolution (A : Matrix X X ℝ) (B : Matrix X U ℝ) (
 
 /-- **Exact ZOH solution.** On an interval where the input is held at `u`, every solution of
 `ẋ = A x + B u` is `x(t) = e^{(t − a)A} x(a) + Γ(t − a) u`. -/
-@[powerlib_foundation] theorem zoh_solution {A : Matrix X X ℝ} {B : Matrix X U ℝ} {u : U → ℝ}
+@[tmio T, powerlib_foundation] theorem zoh_solution {A : Matrix X X ℝ} {B : Matrix X U ℝ} {u : U → ℝ}
     {a b : ℝ} {x : ℝ → X → ℝ}
     (hx : IsIntegralCurveOn x (fun _ y => A *ᵥ y + B *ᵥ u) (Icc a b)) {t : ℝ}
     (ht : t ∈ Icc a b) :
@@ -210,7 +210,7 @@ private lemma hasDerivAt_zohSolution (A : Matrix X X ℝ) (B : Matrix X U ℝ) (
 
 /-- **Exact ZOH step.** If the input is held at `u` on `[a, a + T]`, then
 `x(a + T) = e^{TA} x(a) + Γ(T) u`. -/
-@[powerlib_foundation] theorem zoh_step {A : Matrix X X ℝ} {B : Matrix X U ℝ} {u : U → ℝ}
+@[tmio T, powerlib_foundation] theorem zoh_step {A : Matrix X X ℝ} {B : Matrix X U ℝ} {u : U → ℝ}
     {a T : ℝ} (hT : 0 ≤ T) {x : ℝ → X → ℝ}
     (hx : IsIntegralCurveOn x (fun _ y => A *ᵥ y + B *ᵥ u) (Icc a (a + T))) :
     x (a + T) = NormedSpace.exp (T • A) *ᵥ x a + zohGamma T A B *ᵥ u := by
@@ -218,7 +218,7 @@ private lemma hasDerivAt_zohSolution (A : Matrix X X ℝ) (B : Matrix X U ℝ) (
   rwa [add_sub_cancel_left] at h
 
 /-- Uniform bounds on `[0, T]` for `e^{sA}` and `Γ(s)`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma exists_zoh_bounds (A : Matrix X X ℝ) (B : Matrix X U ℝ) (T : ℝ) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ s ∈ Icc (0 : ℝ) T,
       ‖NormedSpace.exp (s • A)‖ ≤ K ∧ ‖zohGamma s A B‖ ≤ K := by
@@ -245,7 +245,7 @@ section SampledData
 variable {X U Z : Type*} [Fintype X] [DecidableEq X] [Fintype U] [Fintype Z] [DecidableEq Z]
 
 omit [DecidableEq X] in
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma norm_sumElim_le {Y : Type*} [Fintype Y] (v : X → ℝ) (w : Y → ℝ) :
     ‖Sum.elim v w‖ ≤ ‖v‖ + ‖w‖ := by
   refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_
@@ -254,13 +254,13 @@ private lemma norm_sumElim_le {Y : Type*} [Fintype Y] (v : X → ℝ) (w : Y →
   | inr i => exact (norm_le_pi_norm w i).trans (le_add_of_nonneg_left (norm_nonneg _))
 
 omit [DecidableEq X] in
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma norm_le_norm_sumElim_left {Y : Type*} [Fintype Y] (v : X → ℝ) (w : Y → ℝ) :
     ‖v‖ ≤ ‖Sum.elim v w‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => norm_le_pi_norm (Sum.elim v w) (Sum.inl i)
 
 omit [DecidableEq X] in
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma norm_le_norm_sumElim_right {Y : Type*} [Fintype Y] (v : X → ℝ) (w : Y → ℝ) :
     ‖w‖ ≤ ‖Sum.elim v w‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => norm_le_pi_norm (Sum.elim v w) (Sum.inr i)
@@ -274,7 +274,7 @@ def sampledLoopMatrix (T : ℝ) (A : Matrix X X ℝ) (B : Matrix X U ℝ) (Ac : 
 
 /-- **Sampled-data loop at the sampling instants.** Every trajectory of the sampled-data loop
 satisfies `(x(kT), ξ_k) = M^k (x(0), ξ_0)` with `M = sampledLoopMatrix`. -/
-@[powerlib_foundation] theorem sampledLoop_sample {T : ℝ} (hT : 0 ≤ T) {A : Matrix X X ℝ}
+@[tmio T, powerlib_foundation] theorem sampledLoop_sample {T : ℝ} (hT : 0 ≤ T) {A : Matrix X X ℝ}
     {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ} {Cc : Matrix U Z ℝ}
     {Dc : Matrix U X ℝ} {x : ℝ → X → ℝ} {ξ : ℕ → Z → ℝ} {u : ℕ → U → ℝ}
     (hx : ∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A *ᵥ y + B *ᵥ u k)
@@ -307,7 +307,7 @@ included.** If the lifted matrix `M` has spectral radius `< 1` (for `Fin`-indexe
 is `SchurStable`, `schurStable_iff_spectralRadius_lt_one`), there are `C, a > 0` such that every
 trajectory of the sampled-data loop satisfies `‖x(t)‖ ≤ C e^{−at} (‖x(0)‖ + ‖ξ_0‖)` for all
 `t ≥ 0` and `‖ξ_k‖ ≤ C e^{−a kT} (‖x(0)‖ + ‖ξ_0‖)`. -/
-@[powerlib_foundation] theorem sampledLoop_exponentialDecay {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem sampledLoop_exponentialDecay {T : ℝ} (hT : 0 < T)
     {A : Matrix X X ℝ} {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ}
     {Cc : Matrix U Z ℝ} {Dc : Matrix U X ℝ}
     (hM : spectralRadius ℂ ((sampledLoopMatrix T A B Ac Bc Cc Dc).map (algebraMap ℝ ℂ)) < 1) :
@@ -399,7 +399,7 @@ trajectory of the sampled-data loop satisfies `‖x(t)‖ ≤ C e^{−at} (‖x(
 
 /-- **Existence of sampled-data trajectories.** Every initial state `(x(0), ξ_0)` starts a
 trajectory of the sampled-data loop. -/
-@[powerlib_foundation] theorem sampledLoop_exists_trajectory {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem sampledLoop_exists_trajectory {T : ℝ} (hT : 0 < T)
     (A : Matrix X X ℝ) (B : Matrix X U ℝ) (Ac : Matrix Z Z ℝ) (Bc : Matrix Z X ℝ)
     (Cc : Matrix U Z ℝ) (Dc : Matrix U X ℝ) (x₀ : X → ℝ) (ξ₀ : Z → ℝ) :
     ∃ (x : ℝ → X → ℝ) (ξ : ℕ → Z → ℝ) (u : ℕ → U → ℝ), x 0 = x₀ ∧ ξ 0 = ξ₀ ∧
@@ -470,7 +470,7 @@ trajectory of the sampled-data loop. -/
     show u k = Cc *ᵥ (z k ∘ Sum.inr) + Dc *ᵥ x (k * T)
     rw [hu k, hxk k]
 
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 private lemma norm_le_sum_entries {Y : Type*} [Fintype Y] (P : Matrix Y Y ℝ) :
     ‖P‖ ≤ ∑ i, ∑ j, ‖P i j‖ := by
   rw [Matrix.linfty_opNorm_def]
@@ -483,7 +483,7 @@ private lemma norm_le_sum_entries {Y : Type*} [Fintype Y] (P : Matrix Y Y ℝ) :
 
 /-- **Converse: sampled convergence forces lifted-matrix stability.** If every trajectory of the
 sampled-data loop has `x(kT) → 0` and `ξ_k → 0`, the lifted matrix has spectral radius `< 1`. -/
-@[powerlib_foundation] theorem spectralRadius_lt_one_of_sampledLoop {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem spectralRadius_lt_one_of_sampledLoop {T : ℝ} (hT : 0 < T)
     {A : Matrix X X ℝ} {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ}
     {Cc : Matrix U Z ℝ} {Dc : Matrix U X ℝ}
     (h : ∀ (x : ℝ → X → ℝ) (ξ : ℕ → Z → ℝ) (u : ℕ → U → ℝ),
@@ -537,7 +537,7 @@ sampled-data loop has `x(kT) → 0` and `ξ_k → 0`, the lifted matrix has spec
 /-- **Lifted-matrix stability is exact for sampled-data loops.** Uniform exponential decay of
 every trajectory (state between samples and controller state) holds exactly when the lifted
 matrix has spectral radius `< 1`. -/
-@[powerlib_foundation] theorem sampledLoop_exponentialDecay_iff {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem sampledLoop_exponentialDecay_iff {T : ℝ} (hT : 0 < T)
     {A : Matrix X X ℝ} {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ}
     {Cc : Matrix U Z ℝ} {Dc : Matrix U X ℝ} :
     (∃ C a : ℝ, 0 < C ∧ 0 < a ∧ ∀ (x : ℝ → X → ℝ) (ξ : ℕ → Z → ℝ) (u : ℕ → U → ℝ),
@@ -573,7 +573,7 @@ def delayedLoopMatrix [DecidableEq U] (T : ℝ) (A : Matrix X X ℝ) (B : Matrix
 /-- **Sampled-data loop with one-sample computation delay.** If the lifted matrix of the delayed
 loop has spectral radius `< 1`, every trajectory with `u_{k+1} = C_c ξ_k + D_c x(kT)` (input
 `u_k` held on `[kT, (k+1)T]`) satisfies `‖x(t)‖ ≤ C e^{−at} (‖x(0)‖ + ‖ξ_0‖ + ‖u_0‖)`. -/
-@[powerlib_foundation] theorem delayedLoop_exponentialDecay [DecidableEq U] {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem delayedLoop_exponentialDecay [DecidableEq U] {T : ℝ} (hT : 0 < T)
     {A : Matrix X X ℝ} {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ}
     {Cc : Matrix U Z ℝ} {Dc : Matrix U X ℝ}
     (hM : spectralRadius ℂ ((delayedLoopMatrix T A B Ac Bc Cc Dc).map (algebraMap ℝ ℂ)) < 1) :
@@ -608,14 +608,14 @@ end SampledData
 section IntegratorDelay
 
 /-- ZOH input matrix of the pure integrator `ẋ = B u`: `Γ(T) = T B`. -/
-@[powerlib_foundation] theorem zohGamma_zero {X U : Type*} [Fintype X] [DecidableEq X]
+@[tmio T, powerlib_foundation] theorem zohGamma_zero {X U : Type*} [Fintype X] [DecidableEq X]
     [Fintype U] (T : ℝ) (B : Matrix X U ℝ) : zohGamma T 0 B = T • B := by
   simp [zohGamma]
 
 /-- **Integrator with a one-sample delay under a proportional gain.** The lifted matrix
 `[[1, b], [−k, 0]]` (sampled state `(x(kT), u_k)`, exact ZOH of the integrator `x⁺ = x + b u`,
 delayed proportional gain `u⁺ = −k x`) is Schur stable exactly when `0 < k b < 1`. -/
-@[powerlib_foundation] theorem schurStable_integratorDelay_iff (b k : ℝ) :
+@[tmio T, powerlib_foundation] theorem schurStable_integratorDelay_iff (b k : ℝ) :
     SchurStable !![1, b; -k, 0] ↔ 0 < k * b ∧ k * b < 1 := by
   constructor
   · intro hS

@@ -56,7 +56,7 @@ variable {n n' p : ℕ}
     (characteristicMatrix A s).det = (complexify A).charpoly.eval s :=
   det_characteristicMatrix_eq_eval A s
 
-@[powerlib_foundation] theorem transfer_eq_adjugate (m : Plant n p) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem transfer_eq_adjugate (m : Plant n p) (s : ℂ) :
     transfer m s = ((characteristicMatrix m.A s).det)⁻¹ •
       (complexify m.C * (characteristicMatrix m.A s).adjugate * complexify m.B) +
       complexify m.D := by
@@ -69,7 +69,7 @@ section Expansion
 
 variable (m : Plant n p)
 
-@[powerlib_foundation] private lemma smul_resolvent {s : ℂ}
+@[tmio T, powerlib_foundation] private lemma smul_resolvent {s : ℂ}
     (h : (characteristicMatrix m.A s).det ≠ 0) :
     s • (characteristicMatrix m.A s)⁻¹ = 1 + complexify m.A * (characteristicMatrix m.A s)⁻¹ := by
   have hinv := Matrix.mul_nonsing_inv (characteristicMatrix m.A s) (isUnit_iff_ne_zero.mpr h)
@@ -79,7 +79,7 @@ variable (m : Plant n p)
   rw [← hinv]
   abel
 
-@[powerlib_foundation] private lemma resolvent_expansion {s : ℂ} (hs : s ≠ 0)
+@[tmio T, powerlib_foundation] private lemma resolvent_expansion {s : ℂ} (hs : s ≠ 0)
     (h : (characteristicMatrix m.A s).det ≠ 0) (N : ℕ) :
     (characteristicMatrix m.A s)⁻¹ =
       ∑ j ∈ Finset.range N, (s ^ (j + 1))⁻¹ • complexify m.A ^ j +
@@ -100,7 +100,7 @@ variable (m : Plant n p)
     rw [Finset.sum_range_succ, add_assoc, ← step]
     exact ih
 
-@[powerlib_foundation] private lemma transfer_expansion {s : ℂ} (hs : s ≠ 0)
+@[tmio T, powerlib_foundation] private lemma transfer_expansion {s : ℂ} (hs : s ≠ 0)
     (h : (characteristicMatrix m.A s).det ≠ 0) (N : ℕ) :
     transfer m s = complexify m.D +
       ∑ j ∈ Finset.range N, (s ^ (j + 1))⁻¹ • complexify (markov m j) +
@@ -113,7 +113,7 @@ variable (m : Plant n p)
   abel
 
 open scoped Matrix.Norms.Operator in
-@[powerlib_foundation] private lemma resolvent_bound :
+@[tmio T, powerlib_foundation] private lemma resolvent_bound :
     ∃ s₀ > 0, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 ∧
       ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ ≤ 2 * ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖ / x := by
   refine ⟨2 * ‖complexify m.A‖ + 1, by positivity, fun x hx => ?_⟩
@@ -144,19 +144,19 @@ open scoped Matrix.Norms.Operator in
 
 end Expansion
 
-@[powerlib_foundation] theorem exists_det_characteristicMatrix_ne_zero (m : Plant n p) :
+@[tmio T, powerlib_foundation] theorem exists_det_characteristicMatrix_ne_zero (m : Plant n p) :
     ∃ s₀ : ℝ, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 := by
   obtain ⟨s₀, -, h⟩ := resolvent_bound m
   exact ⟨s₀, fun x hx => (h x hx).1⟩
 
-@[powerlib_foundation] private lemma eq_zero_of_norm_le_div {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] private lemma eq_zero_of_norm_le_div {E : Type*} [NormedAddCommGroup E]
     (X : E) (K s₀ : ℝ) (h : ∀ x : ℝ, s₀ ≤ x → ‖X‖ ≤ K / x) : X = 0 := by
   have ht : Filter.Tendsto (fun x : ℝ => K / x) Filter.atTop (nhds 0) :=
     tendsto_const_nhds.div_atTop Filter.tendsto_id
   exact norm_le_zero_iff.mp (ge_of_tendsto ht (Filter.eventually_atTop.2 ⟨s₀, h⟩))
 
 open scoped Matrix.Norms.Operator in
-@[powerlib_foundation] private lemma remainder_bound (m : Plant n p) (N : ℕ) :
+@[tmio T, powerlib_foundation] private lemma remainder_bound (m : Plant n p) (N : ℕ) :
     ∃ s₀ > 0, ∃ K, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 ∧
       ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A (x : ℂ))⁻¹ *
         complexify m.B‖ ≤ K / x := by
@@ -173,7 +173,7 @@ open scoped Matrix.Norms.Operator in
     _ = _ := by field_simp
 
 open scoped Matrix.Norms.Operator in
-@[powerlib_foundation] theorem markov_eq_of_transfer_eventually_eq {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem markov_eq_of_transfer_eventually_eq {m : Plant n p}
     {m' : Plant n' p} (h : ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x) :
     m.D = m'.D ∧ ∀ k, markov m k = markov m' k := by
   obtain ⟨s₁, hs₁⟩ := h
@@ -243,7 +243,7 @@ open scoped Matrix.Norms.Operator in
   exact ⟨hinj hD, fun k => hinj (hM k)⟩
 
 open scoped Matrix.Norms.Operator in
-@[powerlib_foundation] private lemma norm_mul_pow_le {α β : Type*} [Fintype α] [DecidableEq α]
+@[tmio T, powerlib_foundation] private lemma norm_mul_pow_le {α β : Type*} [Fintype α] [DecidableEq α]
     [Fintype β] (C : Matrix β α ℂ) (A : Matrix α α ℂ) (N : ℕ) : ‖C * A ^ N‖ ≤ ‖C‖ * ‖A‖ ^ N := by
   induction N with
   | zero => simp
@@ -254,7 +254,7 @@ open scoped Matrix.Norms.Operator in
       _ = ‖C‖ * ‖A‖ ^ (N + 1) := by ring
 
 open scoped Matrix.Norms.Operator in
-@[powerlib_foundation] private lemma norm_remainder_le (m : Plant n p) (N : ℕ) (s : ℂ) :
+@[tmio T, powerlib_foundation] private lemma norm_remainder_le (m : Plant n p) (N : ℕ) (s : ℂ) :
     ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A s)⁻¹ * complexify m.B‖ ≤
       ‖complexify m.A‖ ^ N * (‖complexify m.C‖ * ‖(characteristicMatrix m.A s)⁻¹‖ *
         ‖complexify m.B‖) := by
@@ -267,7 +267,7 @@ open scoped Matrix.Norms.Operator in
     _ = _ := by ring
 
 open scoped Matrix.Norms.Operator in
-@[powerlib_foundation] theorem transfer_eventually_eq_of_markov_eq {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem transfer_eventually_eq_of_markov_eq {m : Plant n p}
     {m' : Plant n' p} (hD : m.D = m'.D) (hM : ∀ k, markov m k = markov m' k) :
     ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x := by
   obtain ⟨a, ha, hb⟩ := resolvent_bound m
@@ -309,7 +309,7 @@ open scoped Matrix.Norms.Operator in
         rw [div_pow, div_pow]
         field_simp
 
-@[powerlib_foundation] private lemma transfer_eq_numerator (m : Plant n p) (s : ℂ) :
+@[tmio T, powerlib_foundation] private lemma transfer_eq_numerator (m : Plant n p) (s : ℂ) :
     transfer m s = ((complexify m.A).charpoly.eval s)⁻¹ •
       ((complexify m.C).map Polynomial.C * (charmatrix (complexify m.A)).adjugate *
         (complexify m.B).map Polynomial.C).map (Polynomial.eval s) + complexify m.D := by
@@ -330,7 +330,7 @@ open scoped Matrix.Norms.Operator in
     Matrix.map_mul, Matrix.map_mul, hadj]
   congr 2 <;> ext <;> simp
 
-@[powerlib_foundation] theorem transfer_eq_of_eventually_eq {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem transfer_eq_of_eventually_eq {m : Plant n p}
     {m' : Plant n' p} (h : ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x)
     (s : ℂ) (hs : (characteristicMatrix m.A s).det ≠ 0)
     (hs' : (characteristicMatrix m'.A s).det ≠ 0) : transfer m s = transfer m' s := by
@@ -378,7 +378,7 @@ open scoped Matrix.Norms.Operator in
   rw [hzero i j, Polynomial.eval_zero] at e
   exact sub_eq_zero.mp ((mul_eq_zero.mp e.symm).resolve_left (mul_ne_zero hs hs'))
 
-@[powerlib_foundation] theorem transfer_eq_iff_markov_eq {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem transfer_eq_iff_markov_eq {m : Plant n p}
     {m' : Plant n' p} :
     (∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 → (characteristicMatrix m'.A s).det ≠ 0 →
       transfer m s = transfer m' s) ↔ m.D = m'.D ∧ ∀ k, markov m k = markov m' k := by
@@ -399,13 +399,13 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
     Matrix (Fin n) (Fin N × Fin p) ℝ :=
   Matrix.of fun i kj => (A ^ (kj.1 : ℕ) * B) i kj.2
 
-@[powerlib_foundation] private lemma obsv_mul {β : Type*} (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] private lemma obsv_mul {β : Type*} (A : Matrix (Fin n) (Fin n) ℝ)
     (C : Matrix (Fin p) (Fin n) ℝ) (N : ℕ) (X : Matrix (Fin n) β ℝ) :
     obsv A C N * X = Matrix.of fun ki j => (C * A ^ (ki.1 : ℕ) * X) ki.2 j := by
   ext ⟨k, i⟩ j
   simp [obsv, Matrix.mul_apply]
 
-@[powerlib_foundation] private lemma mul_ctrb {β : Type*} [Fintype β]
+@[tmio T, powerlib_foundation] private lemma mul_ctrb {β : Type*} [Fintype β]
     (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : ℕ)
     (X : Matrix β (Fin n) ℝ) :
     X * ctrb A B N = Matrix.of fun i kj => (X * A ^ (kj.1 : ℕ) * B) i kj.2 := by
@@ -414,7 +414,7 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
   rw [Matrix.mul_assoc]
   simp [ctrb, Matrix.mul_apply]
 
-@[powerlib_foundation] private lemma hankel (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] private lemma hankel (A : Matrix (Fin n) (Fin n) ℝ)
     (B : Matrix (Fin n) (Fin p) ℝ) (C : Matrix (Fin p) (Fin n) ℝ) (N₁ N₂ r : ℕ) :
     obsv A C N₁ * A ^ r * ctrb A B N₂ =
       Matrix.of fun ki lj => (C * A ^ ((ki.1 : ℕ) + r + lj.1) * B) ki.2 lj.2 := by
@@ -424,13 +424,13 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
   rw [obsv_mul]
   simp only [Matrix.of_apply, pow_add, Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem ctrb_eq (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem ctrb_eq (A : Matrix (Fin n) (Fin n) ℝ)
     (B : Matrix (Fin n) (Fin p) ℝ) : ctrb A B n = controllabilityMatrix A B := rfl
 
-@[powerlib_foundation] theorem obsv_eq (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem obsv_eq (A : Matrix (Fin n) (Fin n) ℝ)
     (C : Matrix (Fin p) (Fin n) ℝ) : obsv A C n = observabilityMatrix A C := rfl
 
-@[powerlib_foundation] private lemma ctrb_right_inverse {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private lemma ctrb_right_inverse {A : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin p) ℝ} (h : IsControllable A B) :
     ∃ R : Matrix (Fin n × Fin p) (Fin n) ℝ, ctrb A B n * R = 1 := by
   rw [ctrb_eq]
@@ -439,7 +439,7 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
       rw [Fintype.card_fin]
       exact (isControllable_iff_controllabilityMatrix_rank_eq A B).mp h))
 
-@[powerlib_foundation] private lemma obsv_left_inverse {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private lemma obsv_left_inverse {A : Matrix (Fin n) (Fin n) ℝ}
     {C : Matrix (Fin p) (Fin n) ℝ} (h : IsObservable A C) :
     ∃ L : Matrix (Fin n) (Fin n × Fin p) ℝ, L * obsv A C n = 1 := by
   have hr : (observabilityMatrix A C)ᵀ.rank = Fintype.card (Fin n) := by
@@ -450,7 +450,7 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
   obtain ⟨x, hx⟩ := (MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows _).mpr hr y
   exact ⟨x, by simpa only [Matrix.mulVec_transpose] using hx⟩
 
-@[powerlib_foundation] theorem similar_of_markov_eq {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem similar_of_markov_eq {m : Plant n p}
     {m' : Plant n' p}
     (hc : IsControllable m.A m.B) (ho : IsObservable m.A m.C)
     (hc' : IsControllable m'.A m'.B) (ho' : IsObservable m'.A m'.C)
@@ -517,7 +517,7 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
   · show m'.C = m.C * S
     rw [← hC, Matrix.mul_assoc, hTS, Matrix.mul_one]
 
-@[powerlib_foundation] theorem similar_iff_transfer_eq {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem similar_iff_transfer_eq {m : Plant n p}
     {m' : Plant n' p}
     (hc : IsControllable m.A m.B) (ho : IsObservable m.A m.C)
     (hc' : IsControllable m'.A m'.B) (ho' : IsObservable m'.A m'.C) :
@@ -534,7 +534,7 @@ def basisMatrix {r : ℕ} {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis 
     Matrix (Fin n) (Fin r) ℝ :=
   Matrix.of fun i j => (b j : Fin n → ℝ) i
 
-@[powerlib_foundation] private lemma exists_coords {r : ℕ} {β : Type*}
+@[tmio T, powerlib_foundation] private lemma exists_coords {r : ℕ} {β : Type*}
     {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis (Fin r) ℝ V) (M : Matrix (Fin n) β ℝ)
     (hM : ∀ j, (fun i => M i j) ∈ V) : ∃ M' : Matrix (Fin r) β ℝ, basisMatrix b * M' = M := by
   refine ⟨Matrix.of fun l j => b.repr ⟨fun i => M i j, hM j⟩ l, ?_⟩
@@ -546,7 +546,7 @@ def basisMatrix {r : ℕ} {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis 
   simp only [basisMatrix, Matrix.mul_apply, Matrix.of_apply]
   exact Finset.sum_congr rfl fun l _ => mul_comm _ _
 
-@[powerlib_foundation] theorem reduce_uncontrollable {m : Plant n p}
+@[tmio T, powerlib_foundation] theorem reduce_uncontrollable {m : Plant n p}
     (h : ¬ IsControllable m.A m.B) :
     ∃ (r : ℕ) (m' : Plant r p), r < n ∧ m'.D = m.D ∧
       ∀ k, markov m' k = markov m k := by
@@ -585,11 +585,11 @@ def basisMatrix {r : ℕ} {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis 
 
 def Plant.dual (m : Plant n p) : Plant n p := ⟨m.Aᵀ, m.Cᵀ, m.Bᵀ, m.Dᵀ⟩
 
-@[powerlib_foundation] theorem markov_dual (m : Plant n p) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem markov_dual (m : Plant n p) (k : ℕ) :
     markov (Plant.dual m) k = (markov m k)ᵀ := by
   simp [markov, Plant.dual, Matrix.transpose_mul, Matrix.transpose_pow, Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem isObservable_iff_isControllable_transpose
+@[tmio T, powerlib_foundation] theorem isObservable_iff_isControllable_transpose
     (A : Matrix (Fin n) (Fin n) ℝ) (C : Matrix (Fin p) (Fin n) ℝ) :
     IsObservable A C ↔ IsControllable Aᵀ Cᵀ := by
   have hO : observabilityMatrix A C =
@@ -600,7 +600,7 @@ def Plant.dual (m : Plant n p) : Plant n p := ⟨m.Aᵀ, m.Cᵀ, m.Bᵀ, m.Dᵀ�
   rw [isObservable_iff_observabilityMatrix_rank_eq,
     isControllable_iff_controllabilityMatrix_rank_eq, hO, Matrix.rank_transpose]
 
-@[powerlib_foundation] private lemma reduce_unobservable {m : Plant n p}
+@[tmio T, powerlib_foundation] private lemma reduce_unobservable {m : Plant n p}
     (h : ¬ IsObservable m.A m.C) :
     ∃ (r : ℕ) (m' : Plant r p), r < n ∧ m'.D = m.D ∧
       ∀ k, markov m' k = markov m k := by
@@ -612,7 +612,7 @@ def Plant.dual (m : Plant n p) : Plant n p := ⟨m.Aᵀ, m.Cᵀ, m.Bᵀ, m.Dᵀ�
   · simp [Plant.dual, hD]
   · rw [markov_dual, hM, markov_dual, Matrix.transpose_transpose]
 
-@[powerlib_foundation] theorem exists_minimal_markov (m : Plant n p) :
+@[tmio T, powerlib_foundation] theorem exists_minimal_markov (m : Plant n p) :
     ∃ (n' : ℕ) (m' : Plant n' p), n' ≤ n ∧
       IsControllable m'.A m'.B ∧ IsObservable m'.A m'.C ∧
         m'.D = m.D ∧ ∀ k, markov m' k = markov m k := by
@@ -628,7 +628,7 @@ def Plant.dual (m : Plant n p) : Plant n p := ⟨m.Aᵀ, m.Cᵀ, m.Bᵀ, m.Dᵀ�
       obtain ⟨n', m', hn', hc', ho', hD', hM'⟩ := ih r hr m₁
       exact ⟨n', m', hn'.trans hr.le, hc', ho', hD'.trans hD, fun k => (hM' k).trans (hM k)⟩
 
-@[powerlib_foundation] theorem exists_minimal_realization (m : Plant n p) :
+@[tmio T, powerlib_foundation] theorem exists_minimal_realization (m : Plant n p) :
     ∃ (n' : ℕ) (m' : Plant n' p), n' ≤ n ∧
       IsControllable m'.A m'.B ∧ IsObservable m'.A m'.C ∧
         ∀ s : ℂ, (characteristicMatrix m'.A s).det ≠ 0 → (characteristicMatrix m.A s).det ≠ 0 →
@@ -636,7 +636,7 @@ def Plant.dual (m : Plant n p) : Plant n p := ⟨m.Aᵀ, m.Cᵀ, m.Bᵀ, m.Dᵀ�
   obtain ⟨n', m', hn, hc, ho, hD, hM⟩ := exists_minimal_markov m
   exact ⟨n', m', hn, hc, ho, transfer_eq_iff_markov_eq.mpr ⟨hD, hM⟩⟩
 
-@[powerlib_foundation] theorem controllable_observable_iff_minimal
+@[tmio T, powerlib_foundation] theorem controllable_observable_iff_minimal
     {m : Plant n p} :
     (IsControllable m.A m.B ∧ IsObservable m.A m.C) ↔
       ∀ (n₂ : ℕ) (m₂ : Plant n₂ p),
@@ -667,7 +667,7 @@ def Plant.Minimal (m : Plant n p) : Prop := IsControllable m.A m.B ∧ IsObserva
 
 /-- On minimal plants, equal transfer functions decide stability: the observation sees every
 mode. -/
-@[powerlib_foundation] theorem isHurwitz_iff_of_transfer_eq {m : Plant n p} {m' : Plant n' p}
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_of_transfer_eq {m : Plant n p} {m' : Plant n' p}
     (hm : m.Minimal) (hm' : m'.Minimal)
     (h : ∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 → (characteristicMatrix m'.A s).det ≠ 0 →
       transfer m s = transfer m' s) : IsHurwitz m.A ↔ IsHurwitz m'.A :=
@@ -698,7 +698,7 @@ semantics: every minimal producer of the same transfer function is similar. -/
   exact (hs.holds_iff P).mpr h
 
 /-- The hidden mode is not minimal: the observation misses exactly such modes. -/
-@[powerlib_foundation] theorem hiddenMode_not_minimal : ¬ hiddenMode.Minimal := by
+@[tmio M, powerlib_foundation] theorem hiddenMode_not_minimal : ¬ hiddenMode.Minimal := by
   rintro ⟨hc, -⟩
   have h := (isControllable_iff_controllabilityMatrix_rank_eq hiddenMode.A hiddenMode.B).mp hc
   have h0 : controllabilityMatrix hiddenMode.A hiddenMode.B = 0 := by

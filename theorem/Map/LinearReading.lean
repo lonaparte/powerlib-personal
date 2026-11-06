@@ -64,7 +64,7 @@ namespace Map
 /-! ## Linear maps -/
 
 /-- The iterates of a continuous linear map commute with scalar multiplication. -/
-@[powerlib_foundation] private theorem iterate_smul (L : ℝⁿ →L[ℝ] ℝⁿ) (c : ℝ) (y : ℝⁿ) (k : ℕ) :
+@[tmio T, powerlib_foundation] private theorem iterate_smul (L : ℝⁿ →L[ℝ] ℝⁿ) (c : ℝ) (y : ℝⁿ) (k : ℕ) :
     (⇑L)^[k] (c • y) = c • (⇑L)^[k] y := by
   induction k with
   | zero => rfl
@@ -91,7 +91,7 @@ to the origin: a scaled copy of the initial state lies in the basin. -/
 /-- Lyapunov stability of a continuous linear map at the origin bounds every orbit by a fixed
 multiple of its initial norm (decay at the rate zero): a scaled copy of the initial state lies in
 the ball that stays within distance one. -/
-@[powerlib_foundation] theorem decay_zero_of_lyapunovStable {L : ℝⁿ →L[ℝ] ℝⁿ}
+@[tmio T, powerlib_foundation] theorem decay_zero_of_lyapunovStable {L : ℝⁿ →L[ℝ] ℝⁿ}
     (h : LyapunovStable L 0) : Decay L 0 0 := by
   obtain ⟨δ, hδ, hb⟩ := h 1 one_pos
   refine ⟨2 / δ, fun y k => ?_⟩
@@ -115,7 +115,7 @@ the ball that stays within distance one. -/
 eigenvalue outside the closed unit disk is unstable at the origin: the real and imaginary parts of
 the eigenvector start orbits whose squared norms add up to `‖μ‖^{2k}` times their initial value,
 which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`) forbids. -/
-@[powerlib_foundation] theorem unstable_op_of_eigenvalue {Φ : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ}
+@[tmio T, powerlib_foundation] theorem unstable_op_of_eigenvalue {Φ : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ}
     {v : Fin n → ℂ} (hv : v ≠ 0) (heig : Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
     (hμ : 1 < ‖μ‖) : Unstable (op Φ) 0 := by
   intro hstab
@@ -167,7 +167,7 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
   linarith [hbound k, mul_lt_mul_of_pos_right hk hN0]
 
 /-- Convergence of every orbit of the linear map of `Φ` is Schur stability of `Φ`. -/
-@[powerlib_foundation] private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : ∀ y : ℝⁿ, Tendsto (fun k : ℕ => (⇑(op Φ))^[k] y) atTop (𝓝 0)) :
     LTI.SchurStable Φ := by
   refine (LTI.asymptoticallyStable_iff_schurStable ⟨Φ⟩).mp fun x hx => ?_
@@ -184,13 +184,13 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
   · rfl
 
 /-- Local asymptotic stability of the linear map of `Φ` at the origin is Schur stability. -/
-@[powerlib_foundation] theorem schurStable_of_localAsymptoticStable
+@[tmio T, powerlib_foundation] theorem schurStable_of_localAsymptoticStable
     {Φ : Matrix (Fin n) (Fin n) ℝ} (h : LocalAsymptoticStable (op Φ) 0) : LTI.SchurStable Φ :=
   schurStable_of_tendsto (tendsto_iterate_of_localAsymptoticStable h)
 
 /-- Sampled contraction of the linear map of `Φ` at the origin is Schur stability: the contracting
 block is a power of operator norm below one. -/
-@[powerlib_foundation] theorem schurStable_of_sampledContraction {Φ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem schurStable_of_sampledContraction {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : SampledContraction (op Φ) 0) : LTI.SchurStable Φ := by
   obtain ⟨k, hk, c, hc, hb⟩ := h
   have hnorm : ‖op Φ ^ k‖ ≤ max c 0 := by
@@ -205,7 +205,7 @@ block is a power of operator norm below one. -/
 /-- **The linear reading of the map semantics.** For the linear map of a real square matrix `Φ`,
 every attractive sentence and sampled contraction holds at the origin, with any step length,
 exactly when `Φ` is Schur stable. -/
-@[powerlib_foundation] theorem holdsMap_op_iff_schurStable {Φ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem holdsMap_op_iff_schurStable {Φ : Matrix (Fin n) (Fin n) ℝ}
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) (T : ℝ) :
     P.holdsMap T (op Φ) 0 ↔ LTI.SchurStable Φ := by
   refine ⟨fun h => ?_, fun h => (globallyExponentiallyStable_of_schurStable h).holdsMap hP T⟩

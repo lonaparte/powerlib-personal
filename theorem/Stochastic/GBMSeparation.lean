@@ -50,20 +50,20 @@ def unitIncr (B : ℝ≥0 → Ω → ℝ) (k : ℕ) (ω : Ω) : ℝ := B ((k + 1
   rw [e] at h
   exact h
 
-@[powerlib_foundation] theorem unitIncr_indep (hB : IsPreBrownianReal B P) :
+@[tmio T, powerlib_foundation] theorem unitIncr_indep (hB : IsPreBrownianReal B P) :
     Pairwise (Function.onFun (fun X Y : Ω → ℝ => IndepFun X Y P) (unitIncr B)) := by
   have h := hB.hasIndepIncrements.nat (P := P) (t := fun k : ℕ => (k : ℝ≥0))
     Nat.mono_cast
   intro i j hij
   exact h.indepFun hij
 
-@[powerlib_foundation] theorem unitIncr_identDistrib (hB : IsPreBrownianReal B P) (i : ℕ) :
+@[tmio T, powerlib_foundation] theorem unitIncr_identDistrib (hB : IsPreBrownianReal B P) (i : ℕ) :
     IdentDistrib (unitIncr B i) (unitIncr B 0) P P :=
   ⟨(unitIncr_hasLaw hB i).aemeasurable, (unitIncr_hasLaw hB 0).aemeasurable,
     (unitIncr_hasLaw hB i).map_eq.trans (unitIncr_hasLaw hB 0).map_eq.symm⟩
 
 /-- **`W_n / n → 0` almost surely** (strong law of large numbers). -/
-@[powerlib_foundation] theorem brownian_div_tendsto_zero (hB : IsPreBrownianReal B P) :
+@[tmio T, powerlib_foundation] theorem brownian_div_tendsto_zero (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ => B (n : ℝ≥0) ω / n) atTop (𝓝 0) := by
   have hint : Integrable (unitIncr B 0) P :=
     (unitIncr_hasLaw hB 0).integrable (memLp_one_iff_integrable.mp (by
@@ -84,7 +84,7 @@ def unitIncr (B : ℝ≥0 → Ω → ℝ) (k : ℕ) (ω : Ω) : ℝ := B ((k + 1
     from e, Nat.cast_zero, hω0, sub_zero, inv_mul_eq_div]
 
 /-- **Almost-sure exponent of GBM**: `(1/n) log |X_n| → a − b²/2` a.s. -/
-@[powerlib_foundation] theorem gbm_as_exponent (hB : IsPreBrownianReal B P) {x₀ : ℝ}
+@[tmio TM, powerlib_foundation] theorem gbm_as_exponent (hB : IsPreBrownianReal B P) {x₀ : ℝ}
     (hx : x₀ ≠ 0) (a b : ℝ) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ => log |gbm x₀ a b B n ω| / n) atTop (𝓝 (a - b ^ 2 / 2)) := by
   filter_upwards [brownian_div_tendsto_zero hB] with ω hω
@@ -106,7 +106,7 @@ def unitIncr (B : ℝ≥0 → Ω → ℝ) (k : ℕ) (ω : Ω) : ℝ := B ((k + 1
 
 /-- **A.s. stable but second-moment unstable**: if `a − b²/2 < 0 < a + b²/2`, then `X_n → 0`
 almost surely while `E X_n² → ∞`. -/
-@[powerlib_foundation] theorem gbm_as_stable_moment_unstable (hB : IsPreBrownianReal B P)
+@[tmio TM, powerlib_foundation] theorem gbm_as_stable_moment_unstable (hB : IsPreBrownianReal B P)
     {x₀ : ℝ} (hx : x₀ ≠ 0) {a b : ℝ} (h1 : a - b ^ 2 / 2 < 0) (h2 : 0 < a + b ^ 2 / 2) :
     (∀ᵐ ω ∂P, Tendsto (fun n : ℕ => gbm x₀ a b B n ω) atTop (𝓝 0)) ∧
       Tendsto (fun n : ℕ => ∫ ω, gbm x₀ a b B n ω ^ 2 ∂P) atTop atTop := by

@@ -59,25 +59,25 @@ open Set MeasureTheory intervalIntegral
 
 variable {u : ℝ × ℝ → ℝ}
 
-@[powerlib_foundation] theorem hasDerivAt_x_line (hu : Differentiable ℝ u) (x t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_x_line (hu : Differentiable ℝ u) (x t : ℝ) :
     HasDerivAt (fun y => u (y, t)) (dx u (x, t)) x := by
   have h := (hu (x, t)).hasFDerivAt.comp_hasDerivAt x
     ((hasDerivAt_id' x).prodMk (hasDerivAt_const x t))
   exact h
 
-@[powerlib_foundation] theorem hasDerivAt_t_line (hu : Differentiable ℝ u) (x t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_t_line (hu : Differentiable ℝ u) (x t : ℝ) :
     HasDerivAt (fun s => u (x, s)) (dt u (x, t)) t := by
   have h := (hu (x, t)).hasFDerivAt.comp_hasDerivAt t
     ((hasDerivAt_const t x).prodMk (hasDerivAt_id' t))
   exact h
 
-@[powerlib_foundation] theorem continuous_dx (hu : ContDiff ℝ 2 u) : Continuous (dx u) :=
+@[tmio T, powerlib_foundation] theorem continuous_dx (hu : ContDiff ℝ 2 u) : Continuous (dx u) :=
   ((hu.continuous_fderiv (by norm_num)).clm_apply continuous_const)
 
-@[powerlib_foundation] theorem continuous_dt (hu : ContDiff ℝ 2 u) : Continuous (dt u) :=
+@[tmio T, powerlib_foundation] theorem continuous_dt (hu : ContDiff ℝ 2 u) : Continuous (dt u) :=
   ((hu.continuous_fderiv (by norm_num)).clm_apply continuous_const)
 
-@[powerlib_foundation] theorem continuous_second (hu : ContDiff ℝ 2 u) (v w : ℝ × ℝ) :
+@[tmio T, powerlib_foundation] theorem continuous_second (hu : ContDiff ℝ 2 u) (v w : ℝ × ℝ) :
     Continuous (fun p => fderiv ℝ (fun q => fderiv ℝ u q w) p v) := by
   have h1 : ContDiff ℝ 1 (fderiv ℝ u) := hu.fderiv_right (m := 1) (by norm_num)
   have hfun : (fun p => fderiv ℝ (fun q => fderiv ℝ u q w) p v) =
@@ -88,19 +88,19 @@ variable {u : ℝ × ℝ → ℝ}
   rw [hfun]
   exact ((h1.continuous_fderiv one_ne_zero).clm_apply continuous_const).clm_apply continuous_const
 
-@[powerlib_foundation] theorem continuous_dxdx (hu : ContDiff ℝ 2 u) : Continuous (dx (dx u)) :=
+@[tmio T, powerlib_foundation] theorem continuous_dxdx (hu : ContDiff ℝ 2 u) : Continuous (dx (dx u)) :=
   continuous_second hu (1, 0) (1, 0)
 
-@[powerlib_foundation] theorem continuous_dtdt (hu : ContDiff ℝ 2 u) : Continuous (dt (dt u)) :=
+@[tmio T, powerlib_foundation] theorem continuous_dtdt (hu : ContDiff ℝ 2 u) : Continuous (dt (dt u)) :=
   continuous_second hu (0, 1) (0, 1)
 
-@[powerlib_foundation] theorem continuous_dtdx (hu : ContDiff ℝ 2 u) : Continuous (dt (dx u)) :=
+@[tmio T, powerlib_foundation] theorem continuous_dtdx (hu : ContDiff ℝ 2 u) : Continuous (dt (dx u)) :=
   continuous_second hu (0, 1) (1, 0)
 
 /-! ## Heat equation: energy dissipation and uniqueness -/
 
 /-- `d/dt ∫₀^ℓ u² = 2∫₀^ℓ u u_t`. -/
-@[powerlib_foundation] theorem hasDerivAt_energy (hu : ContDiff ℝ 2 u) (ℓ t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_energy (hu : ContDiff ℝ 2 u) (ℓ t : ℝ) :
     HasDerivAt (fun s => ∫ x in (0 : ℝ)..ℓ, u (x, s) ^ 2)
       (∫ x in (0 : ℝ)..ℓ, 2 * u (x, t) * dt u (x, t)) t := by
   have hd : Differentiable ℝ u := hu.differentiable (by norm_num)
@@ -112,7 +112,7 @@ variable {u : ℝ × ℝ → ℝ}
 
 /-- **Energy dissipation** for `u_t = ν u_xx` with zero Dirichlet data at time `t`:
 `∫₀^ℓ u u_t = −ν ∫₀^ℓ u_x²`. -/
-@[powerlib_foundation] theorem heat_energy_identity {ν ℓ t : ℝ} (hu : ContDiff ℝ 2 u)
+@[tmio T, powerlib_foundation] theorem heat_energy_identity {ν ℓ t : ℝ} (hu : ContDiff ℝ 2 u)
     (hpde : ∀ x ∈ uIcc 0 ℓ, dt u (x, t) = ν * dx (dx u) (x, t))
     (h0 : u (0, t) = 0) (hℓ : u (ℓ, t) = 0) :
     ∫ x in (0 : ℝ)..ℓ, 2 * u (x, t) * dt u (x, t) =
@@ -135,7 +135,7 @@ variable {u : ℝ × ℝ → ℝ}
 
 /-- **Uniqueness for the heat equation (energy method)**: a classical solution of
 `u_t = ν u_xx` on `[0, ℓ] × [0, ∞)` with zero Dirichlet data and zero initial data vanishes. -/
-@[powerlib_foundation] theorem heat_zero_of_zero_data {ν ℓ : ℝ} (hν : 0 < ν) (hℓ : 0 < ℓ)
+@[tmio T, powerlib_foundation] theorem heat_zero_of_zero_data {ν ℓ : ℝ} (hν : 0 < ν) (hℓ : 0 < ℓ)
     (hu : ContDiff ℝ 2 u)
     (hpde : ∀ t, 0 ≤ t → ∀ x ∈ Icc 0 ℓ, dt u (x, t) = ν * dx (dx u) (x, t))
     (hbc : ∀ t, 0 ≤ t → u (0, t) = 0 ∧ u (ℓ, t) = 0) (hic : ∀ x ∈ Icc 0 ℓ, u (x, 0) = 0) :
@@ -176,7 +176,7 @@ variable {u : ℝ × ℝ → ℝ}
   linarith
 
 /-- **Uniqueness**: two classical solutions with the same initial and Dirichlet data coincide. -/
-@[powerlib_foundation] theorem heat_unique {ν ℓ : ℝ} (hν : 0 < ν) (hℓ : 0 < ℓ)
+@[tmio T, powerlib_foundation] theorem heat_unique {ν ℓ : ℝ} (hν : 0 < ν) (hℓ : 0 < ℓ)
     {u₁ u₂ : ℝ × ℝ → ℝ} (h₁ : ContDiff ℝ 2 u₁) (h₂ : ContDiff ℝ 2 u₂)
     (hpde₁ : ∀ t, 0 ≤ t → ∀ x ∈ Icc 0 ℓ, dt u₁ (x, t) = ν * dx (dx u₁) (x, t))
     (hpde₂ : ∀ t, 0 ≤ t → ∀ x ∈ Icc 0 ℓ, dt u₂ (x, t) = ν * dx (dx u₂) (x, t))
@@ -208,7 +208,7 @@ variable {u : ℝ × ℝ → ℝ}
 
 /-- **Energy conservation** for `u_tt = c² u_xx` on `[0, ℓ]` with zero Dirichlet data:
 `E(t) = ½∫₀^ℓ (u_t² + c² u_x²)` has zero derivative. -/
-@[powerlib_foundation] theorem wave_energy_conserved {c ℓ : ℝ} (hu : ContDiff ℝ 2 u)
+@[tmio T, powerlib_foundation] theorem wave_energy_conserved {c ℓ : ℝ} (hu : ContDiff ℝ 2 u)
     (hpde : ∀ t, ∀ x ∈ uIcc 0 ℓ, dt (dt u) (x, t) = c ^ 2 * dx (dx u) (x, t))
     (hbc : ∀ t, u (0, t) = 0 ∧ u (ℓ, t) = 0) (t : ℝ) :
     HasDerivAt (fun s => ∫ x in (0 : ℝ)..ℓ, (dt u (x, s) ^ 2 + c ^ 2 * dx u (x, s) ^ 2) / 2)

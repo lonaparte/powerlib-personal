@@ -89,14 +89,14 @@ def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
   refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;>
     (simp only [field, mk_apply_zero, mk_apply_one]; fun_prop)
 
-@[simp, powerlib_foundation] theorem field_apply_zero (p : Params) (x : State 2) :
+@[tmio M, simp, powerlib_foundation] theorem field_apply_zero (p : Params) (x : State 2) :
     field p x 0 = p.μ * x 0 - p.ω₀ * x 1 + (p.l₁ * x 0 - p.κ * x 1) * (x 0 ^ 2 + x 1 ^ 2) := rfl
 
-@[simp, powerlib_foundation] theorem field_apply_one (p : Params) (x : State 2) :
+@[tmio M, simp, powerlib_foundation] theorem field_apply_one (p : Params) (x : State 2) :
     field p x 1 = p.ω₀ * x 0 + p.μ * x 1 + (p.κ * x 0 + p.l₁ * x 1) * (x 0 ^ 2 + x 1 ^ 2) := rfl
 
 /-- The Cartesian field is the complex normal form `ż = (μ + iω₀) z + c z |z|²`. -/
-@[powerlib_foundation] theorem field_complex (p : Params) (x : State 2) :
+@[tmio M, powerlib_foundation] theorem field_complex (p : Params) (x : State 2) :
     toComplex (field p x) =
       (p.μ + p.ω₀ * Complex.I) * toComplex x +
         (p.l₁ + p.κ * Complex.I) * toComplex x * (Complex.normSq (toComplex x) : ℂ) := by
@@ -112,13 +112,13 @@ def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
       Complex.normSq_apply]
     ring
 
-@[powerlib_foundation] theorem field_zero (p : Params) : field p 0 = 0 := by
+@[tmio M, powerlib_foundation] theorem field_zero (p : Params) : field p 0 = 0 := by
   rw [field, mk_eq_zero_iff]; simp only [PiLp.zero_apply]; constructor <;> ring
 
 /-- The linear part of the normal form. -/
 def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω₀, p.μ]
 
-@[powerlib_foundation] theorem hasFDerivAt_field_zero (p : Params) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_field_zero (p : Params) :
     HasFDerivAt (field p) (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart p)) 0 := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
     ![p.μ • Dynamics.coord 0 - p.ω₀ • Dynamics.coord 1,
@@ -151,19 +151,19 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
       ext v; simp
   · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [linPart]; ring
 
-@[powerlib_foundation] theorem fderiv_field_zero (p : Params) :
+@[tmio M, powerlib_foundation] theorem fderiv_field_zero (p : Params) :
     fderiv ℝ (field p) 0 = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart p) :=
   (hasFDerivAt_field_zero p).fderiv
 
-@[powerlib_foundation] theorem trace_linPart (p : Params) : (linPart p).trace = 2 * p.μ := by
+@[tmio M, powerlib_foundation] theorem trace_linPart (p : Params) : (linPart p).trace = 2 * p.μ := by
   simp [linPart, Matrix.trace_fin_two]; ring
 
-@[powerlib_foundation] theorem det_linPart (p : Params) :
+@[tmio M, powerlib_foundation] theorem det_linPart (p : Params) :
     (linPart p).det = p.μ ^ 2 + p.ω₀ ^ 2 := by
   simp [linPart, Matrix.det_fin_two]; ring
 
 /-- Every eigenvalue of the linear part has real part `μ`. -/
-@[powerlib_foundation] theorem eigenvalue_re (p : Params) {s : ℂ} {v : Fin 2 → ℂ} (hv : v ≠ 0)
+@[tmio M, powerlib_foundation] theorem eigenvalue_re (p : Params) {s : ℂ} {v : Fin 2 → ℂ} (hv : v ≠ 0)
     (heig : (linPart p).map (algebraMap ℝ ℂ) *ᵥ v = s • v) : s.re = p.μ := by
   have h := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair (linPart p) hv heig
   rw [Criteria.det_characteristicMatrix_fin_two, trace_linPart, det_linPart] at h
@@ -177,7 +177,7 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
     nlinarith [sq_nonneg (s.re - p.μ), sq_nonneg p.ω₀]
 
 /-- `μ + iω₀` is an eigenvalue of the linear part. -/
-@[powerlib_foundation] theorem exists_eigenpair (p : Params) :
+@[tmio M, powerlib_foundation] theorem exists_eigenpair (p : Params) :
     ∃ v : Fin 2 → ℂ, v ≠ 0 ∧
       (linPart p).map (algebraMap ℝ ℂ) *ᵥ v = ((p.μ : ℂ) + p.ω₀ * Complex.I) • v := by
   apply Linear.exists_eigenvector_of_root
@@ -187,32 +187,32 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
   rw [Complex.I_sq]; ring
 
 /-- For `μ < 0` the origin is locally exponentially stable. -/
-@[powerlib_foundation] theorem origin_stable (p : Params) (hμ : p.μ < 0) :
+@[tmio TM, powerlib_foundation] theorem origin_stable (p : Params) (hμ : p.μ < 0) :
     LocallyExponentiallyStable (field p) 0 :=
   Criteria.locallyExponentiallyStable_of_jacobian_fin_two (linPart p) (field_contDiff p)
     (field_zero p) (fderiv_field_zero p) (by rw [trace_linPart]; linarith)
     (by rw [det_linPart]; nlinarith [sq_nonneg p.ω₀, mul_pos (neg_pos.mpr hμ) (neg_pos.mpr hμ)])
 
 /-- For `μ > 0` the origin is unstable. -/
-@[powerlib_foundation] theorem origin_unstable (p : Params) (hμ : 0 < p.μ) :
+@[tmio TM, powerlib_foundation] theorem origin_unstable (p : Params) (hμ : 0 < p.μ) :
     Unstable (field p) 0 :=
   Criteria.unstable_of_jacobian_trace_pos_fin_two (linPart p) (field_contDiff p)
     (field_zero p) (fderiv_field_zero p) (by rw [trace_linPart]; linarith)
 
 /-! ## Polar form -/
 
-@[powerlib_foundation] theorem radial_identity (p : Params) (x : State 2) :
+@[tmio M, powerlib_foundation] theorem radial_identity (p : Params) (x : State 2) :
     x 0 * field p x 0 + x 1 * field p x 1 =
       p.μ * (x 0 ^ 2 + x 1 ^ 2) + p.l₁ * (x 0 ^ 2 + x 1 ^ 2) ^ 2 := by
   simp [field]; ring
 
 /-- `x₀ẋ₁ − x₁ẋ₀ = (ω₀ + κρ)ρ`, i.e. `θ̇ = ω₀ + κ r²`. -/
-@[powerlib_foundation] theorem angular_identity (p : Params) (x : State 2) :
+@[tmio M, powerlib_foundation] theorem angular_identity (p : Params) (x : State 2) :
     x 0 * field p x 1 - x 1 * field p x 0 = (p.ω₀ + p.κ * ‖x‖ ^ 2) * ‖x‖ ^ 2 := by
   rw [norm_sq_eq]; simp [field]; ring
 
 /-- Along every solution, `ρ = ‖x‖²` obeys `ρ̇ = 2μρ + 2l₁ρ²`. -/
-@[powerlib_foundation] theorem normSq_isIntegralCurveOn (p : Params) {φ : ℝ → State 2}
+@[tmio M, powerlib_foundation] theorem normSq_isIntegralCurveOn (p : Params) {φ : ℝ → State 2}
     {s : Set ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => field p x) s) :
     IsIntegralCurveOn (fun t => ‖φ t‖ ^ 2) (fun _ r => Logistic.field p.μ p.l₁ r) s := by
   intro t ht
@@ -228,7 +228,7 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
   linear_combination (-2 : ℝ) * this
 
 /-- For `r = ‖x‖ > 0`, `ṙ = μ r + l₁ r³`. -/
-@[powerlib_foundation] theorem radius_hasDerivWithinAt (p : Params) {φ : ℝ → State 2}
+@[tmio M, powerlib_foundation] theorem radius_hasDerivWithinAt (p : Params) {φ : ℝ → State 2}
     {s : Set ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => field p x) s) {t : ℝ} (ht : t ∈ s)
     (hne : φ t ≠ 0) :
     HasDerivWithinAt (fun τ => ‖φ τ‖) (p.μ * ‖φ t‖ + p.l₁ * ‖φ t‖ ^ 3) s t := by
@@ -244,7 +244,7 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
   field_simp
 
 /-- Linear part only (`c = 0`): `‖x(t)‖ = e^{μ(t − a)} ‖x(a)‖`, the exact linear decay rate. -/
-@[powerlib_foundation] theorem linear_norm_eq {μ ω₀ : ℝ} {φ : ℝ → State 2} {a b : ℝ}
+@[tmio M, powerlib_foundation] theorem linear_norm_eq {μ ω₀ : ℝ} {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field ⟨μ, ω₀, 0, 0⟩) a b) :
     ∀ t ∈ Icc a b, ‖φ t‖ = Real.exp (μ * (t - a)) * ‖φ a‖ := by
   have hρ := normSq_isIntegralCurveOn ⟨μ, ω₀, 0, 0⟩ hφ
@@ -282,26 +282,26 @@ def frequency (p : Params) : ℝ := p.ω₀ + p.κ * (-p.μ / p.l₁)
 def cycle (p : Params) (t : ℝ) : State 2 :=
   mk (radius p * Real.cos (frequency p * t)) (radius p * Real.sin (frequency p * t))
 
-@[simp, powerlib_foundation] theorem cycle_apply_zero (p : Params) (t : ℝ) :
+@[tmio M, simp, powerlib_foundation] theorem cycle_apply_zero (p : Params) (t : ℝ) :
     cycle p t 0 = radius p * Real.cos (frequency p * t) := rfl
 
-@[simp, powerlib_foundation] theorem cycle_apply_one (p : Params) (t : ℝ) :
+@[tmio M, simp, powerlib_foundation] theorem cycle_apply_one (p : Params) (t : ℝ) :
     cycle p t 1 = radius p * Real.sin (frequency p * t) := rfl
 
-@[powerlib_foundation] theorem radius_nonneg (p : Params) : 0 ≤ radius p := Real.sqrt_nonneg _
+@[tmio M, powerlib_foundation] theorem radius_nonneg (p : Params) : 0 ≤ radius p := Real.sqrt_nonneg _
 
-@[powerlib_foundation] theorem radius_sq (p : Params) (hR : 0 ≤ -p.μ / p.l₁) :
+@[tmio M, powerlib_foundation] theorem radius_sq (p : Params) (hR : 0 ≤ -p.μ / p.l₁) :
     radius p ^ 2 = -p.μ / p.l₁ :=
   Real.sq_sqrt hR
 
 /-- The circle `‖x‖² = −μ/l₁` is invariant. -/
-@[powerlib_foundation] theorem circle_invariant (p : Params) (hμ : p.μ ≠ 0) (hl : p.l₁ ≠ 0)
+@[tmio TM, powerlib_foundation] theorem circle_invariant (p : Params) (hμ : p.μ ≠ 0) (hl : p.l₁ ≠ 0)
     (hR : 0 < -p.μ / p.l₁) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field p) a b) (ha : ‖φ a‖ ^ 2 = -p.μ / p.l₁) :
     ∀ t ∈ Icc a b, ‖φ t‖ ^ 2 = -p.μ / p.l₁ :=
   Logistic.level_invariant hμ hl hR (normSq_isIntegralCurveOn p hφ) ha
 
-@[powerlib_foundation] theorem cycle_hasDerivAt (p : Params) (hl : p.l₁ ≠ 0)
+@[tmio M, powerlib_foundation] theorem cycle_hasDerivAt (p : Params) (hl : p.l₁ ≠ 0)
     (hR : 0 ≤ -p.μ / p.l₁) (t : ℝ) :
     HasDerivAt (cycle p) (field p (cycle p t)) t := by
   have hR2 := radius_sq p hR
@@ -337,12 +337,12 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
     linear_combination (radius p * Real.sin (frequency p * t)) * hμR -
       (radius p * Real.cos (frequency p * t)) * hfreq
 
-@[powerlib_foundation] theorem norm_cycle (p : Params) (t : ℝ) : ‖cycle p t‖ = radius p := by
+@[tmio M, powerlib_foundation] theorem norm_cycle (p : Params) (t : ℝ) : ‖cycle p t‖ = radius p := by
   rw [cycle, norm_mk, mul_pow, mul_pow, ← mul_add, Real.cos_sq_add_sin_sq, mul_one,
     Real.sqrt_sq (radius_nonneg p)]
 
 /-- The range of the cycle is the whole circle of radius `R` (`Ω ≠ 0`). -/
-@[powerlib_foundation] theorem range_cycle (p : Params) (hΩ : frequency p ≠ 0) :
+@[tmio M, powerlib_foundation] theorem range_cycle (p : Params) (hΩ : frequency p ≠ 0) :
     range (cycle p) = Metric.sphere 0 (radius p) := by
   ext y
   simp only [mem_range, mem_sphere_iff_norm, sub_zero]
@@ -358,7 +358,7 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
 
 /-- If `R² = −μ/l₁ > 0` and `Ω ≠ 0`, the cycle is a `2π/|Ω|`-periodic orbit: a nonconstant
 `T`-periodic solution of `ẋ = field p x` defined for all time, `T = 2π/|Ω| > 0`. -/
-@[powerlib_foundation] theorem cycle_isPeriodicOrbit (p : Params) (hl : p.l₁ ≠ 0)
+@[tmio TM, powerlib_foundation] theorem cycle_isPeriodicOrbit (p : Params) (hl : p.l₁ ≠ 0)
     (hR : 0 < -p.μ / p.l₁) (hΩ : frequency p ≠ 0) :
     0 < 2 * Real.pi / |frequency p| ∧ (∀ t, HasDerivAt (cycle p) (field p (cycle p t)) t) ∧
       (∀ t, cycle p (t + 2 * Real.pi / |frequency p|) = cycle p t) ∧
@@ -382,7 +382,7 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
     linarith [h.1]
 
 /-- Distance from a nonzero state to the circle of radius `R ≥ 0` is at most `|‖x‖ − R|`. -/
-@[powerlib_foundation] theorem infDist_sphere_le {x : State 2} (hx : x ≠ 0) {R : ℝ} (hR : 0 ≤ R) :
+@[tmio T, powerlib_foundation] theorem infDist_sphere_le {x : State 2} (hx : x ≠ 0) {R : ℝ} (hR : 0 ≤ R) :
     Metric.infDist x (Metric.sphere 0 R) ≤ |‖x‖ - R| := by
   have hn : 0 < ‖x‖ := norm_pos_iff.mpr hx
   have hmem : (R / ‖x‖) • x ∈ Metric.sphere (0 : State 2) R := by
@@ -396,7 +396,7 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
 
 /-- Supercritical truncation (`μ > 0`, `l₁ < 0`): every forward-complete nonzero solution has
 `‖x(t)‖ → R = √(μ/|l₁|)`. -/
-@[powerlib_foundation] theorem supercritical_norm_tendsto (p : Params) (hμ : 0 < p.μ)
+@[tmio TM, powerlib_foundation] theorem supercritical_norm_tendsto (p : Params) (hμ : 0 < p.μ)
     (hl : p.l₁ < 0) {φ : ℝ → State 2} {a : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => field p x) (Ici a)) (ha : φ a ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 (radius p)) := by
@@ -411,7 +411,7 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
 attracts orbitally: every forward-complete solution starting in `U` has distance to the cycle
 `→ 0`. Here `U` is the punctured plane, so it attracts every forward-complete solution that does
 not start at the origin. -/
-@[powerlib_foundation] theorem supercritical_isAttractingLimitCycle (p : Params) (hμ : 0 < p.μ)
+@[tmio TM, powerlib_foundation] theorem supercritical_isAttractingLimitCycle (p : Params) (hμ : 0 < p.μ)
     (hl : p.l₁ < 0) (hΩ : frequency p ≠ 0) :
     (0 < 2 * Real.pi / |frequency p| ∧ (∀ t, HasDerivAt (cycle p) (field p (cycle p t)) t) ∧
       (∀ t, cycle p (t + 2 * Real.pi / |frequency p|) = cycle p t) ∧
@@ -445,7 +445,7 @@ not start at the origin. -/
 
 /-- Subcritical truncation (`μ < 0`, `l₁ > 0`): the circle `R = √(−μ/l₁)` is repelling — the
 deviation `|1/‖x‖² − 1/R²|` grows like `e^{2|μ|(t−a)}`. -/
-@[powerlib_foundation] theorem subcritical_repelling (p : Params) (hμ : p.μ < 0)
+@[tmio TM, powerlib_foundation] theorem subcritical_repelling (p : Params) (hμ : p.μ < 0)
     {φ : ℝ → State 2} {a b : ℝ} (hφ : IsTrajectoryOn φ (field p) a b) (ha : φ a ≠ 0) :
     ∀ t ∈ Icc a b, |1 / ‖φ t‖ ^ 2 - 1 / (-p.μ / p.l₁)| =
       |1 / ‖φ a‖ ^ 2 - 1 / (-p.μ / p.l₁)| * Real.exp (2 * |p.μ| * (t - a)) :=
@@ -453,7 +453,7 @@ deviation `|1/‖x‖² − 1/R²|` grows like `e^{2|μ|(t−a)}`. -/
 
 /-- Subcritical truncation: forward-complete solutions starting inside the unstable cycle
 converge to the origin. -/
-@[powerlib_foundation] theorem subcritical_inside_tendsto_zero (p : Params) (hμ : p.μ < 0)
+@[tmio TM, powerlib_foundation] theorem subcritical_inside_tendsto_zero (p : Params) (hμ : p.μ < 0)
     (hl : 0 < p.l₁) {φ : ℝ → State 2} {a : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => field p x) (Ici a)) (ha : φ a ≠ 0)
     (hin : ‖φ a‖ < radius p) :
@@ -477,7 +477,7 @@ section Conventions
 open Complex Filter Topology
 
 /-- `w = κ z` turns `ż = λz + c z|z|²` into `ẇ = λw + (c/κ²) w|w|²`. -/
-@[powerlib_foundation] theorem normalForm_rescale {lam c : ℂ} {κ : ℝ} (hκ : κ ≠ 0) {z : ℝ → ℂ}
+@[tmio T, powerlib_foundation] theorem normalForm_rescale {lam c : ℂ} {κ : ℝ} (hκ : κ ≠ 0) {z : ℝ → ℂ}
     (hz : ∀ t, HasDerivAt z (lam * z t + c * z t * (‖z t‖ ^ 2 : ℝ)) t) (t : ℝ) :
     HasDerivAt (fun t => (κ : ℂ) * z t)
       (lam * ((κ : ℂ) * z t) + c / (κ : ℂ) ^ 2 * ((κ : ℂ) * z t) *
@@ -491,7 +491,7 @@ open Complex Filter Topology
 
 /-- GH coordinate `T[Re w, −Im w]ᵀ = Re(v w)`, and with `w = 2z` it equals Kuznetsov's
 `z q + z̄ q̄ = 2 Re(z q)` (`q = v`). -/
-@[powerlib_foundation] theorem gh_coordinate (v z : ℂ) :
+@[tmio T, powerlib_foundation] theorem gh_coordinate (v z : ℂ) :
     v.re * (2 * z).re - v.im * (2 * z).im = (v * (2 * z)).re ∧
       (v * (2 * z)).re = (z * v + (starRingEnd ℂ) (z * v)).re := by
   constructor
@@ -499,7 +499,7 @@ open Complex Filter Topology
   · simp [Complex.mul_re, Complex.conj_re]; ring
 
 /-- With the GH coefficient `a₁ = Re c₁/4`, the cycle radius `√(α/a₁)` is twice Kuznetsov's. -/
-@[powerlib_foundation] theorem radius_factor_two {α l : ℝ} (hl : 0 < l) :
+@[tmio T, powerlib_foundation] theorem radius_factor_two {α l : ℝ} (hl : 0 < l) :
     √(α / (l / 4)) = 2 * √(α / l) := by
   rw [show α / (l / 4) = 2 ^ 2 * (α / l) by field_simp; ring, Real.sqrt_mul (by norm_num),
     Real.sqrt_sq (by norm_num)]
@@ -523,7 +523,7 @@ def lyap1 (B : V →ₗ[ℂ] V →ₗ[ℂ] V) (C : V →ₗ[ℂ] V →ₗ[ℂ] V
 
 /-- Rescaling the eigenvector `q ↦ s q`, `q̄ ↦ s̄ q̄`, `p ↦ p/s̄` (so `⟨p, q⟩` is unchanged)
 multiplies `ℓ₁` by `|s|²`. -/
-@[powerlib_foundation] theorem lyap1_scale (B : V →ₗ[ℂ] V →ₗ[ℂ] V)
+@[tmio T, powerlib_foundation] theorem lyap1_scale (B : V →ₗ[ℂ] V →ₗ[ℂ] V)
     (C : V →ₗ[ℂ] V →ₗ[ℂ] V →ₗ[ℂ] V) (Ainv R2 : V →ₗ[ℂ] V) (P : V →ₗ[ℂ] ℂ) (ω₀ : ℝ)
     (q qc : V) {s : ℂ} (hs : s ≠ 0) :
     lyap1 B C Ainv R2 (s⁻¹ • P) ω₀ (s • q) ((starRingEnd ℂ) s • qc) =

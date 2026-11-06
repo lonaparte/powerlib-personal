@@ -63,7 +63,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-- An attractive sentence of a constant-input plant field holds at `e` exactly when `e` is an
 equilibrium and the state matrix is Hurwitz (an attractive point of a `C¹` field is an
 equilibrium; `Linear.holds_input_iff` there). -/
-@[powerlib_foundation] theorem holds_inputField_iff (M : Linear.Plant n p) (u : Fin p → ℝ)
+@[tmio T, powerlib_foundation] theorem holds_inputField_iff (M : Linear.Plant n p) (u : Fin p → ℝ)
     (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (M.inputField u) e ↔ IsEquilibrium (M.inputField u) e ∧ IsHurwitz M.A := by
   refine ⟨fun h => ?_, fun ⟨he, hA⟩ => (Linear.holds_input_iff M he hP).mpr hA⟩
@@ -75,7 +75,7 @@ equilibrium; `Linear.holds_input_iff` there). -/
 under a constant input `u`, translated to `e`, then `f` is locally asymptotically (exponentially)
 stable at the origin exactly when `e` is an equilibrium of the plant field and the state matrix is
 Hurwitz. -/
-@[powerlib_foundation] theorem holds_iff_of_eventuallyEq_inputField (M : Linear.Plant n p)
+@[tmio T, powerlib_foundation] theorem holds_iff_of_eventuallyEq_inputField (M : Linear.Plant n p)
     (u : Fin p → ℝ) {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} (h : f =ᶠ[𝓝 0] fun z => M.inputField u (z + e))
     {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :

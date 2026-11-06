@@ -65,12 +65,12 @@ def flipEta : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1]
 
 /-- The code-convention linearization is the text-convention Jacobian with `h′ = −g`,
 conjugated by `diag(1, −1)` (the sign of `η`). -/
-@[powerlib_foundation] theorem linA_eq_conj (Kp Ki g : ℝ) :
+@[tmio M, powerlib_foundation] theorem linA_eq_conj (Kp Ki g : ℝ) :
     linA Kp Ki g = flipEta * piPLLJacobian Kp Ki (-g) * flipEta := by
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [linA, flipEta, piPLLJacobian, Matrix.mul_apply, Fin.sum_univ_two]
 
-@[powerlib_foundation] theorem isHurwitz_linA_iff (Kp Ki g : ℝ) :
+@[tmio TM, powerlib_foundation] theorem isHurwitz_linA_iff (Kp Ki g : ℝ) :
     LinearSystems.IsHurwitz (linA Kp Ki g) ↔ 0 < Kp * g ∧ 0 < Ki * g := by
   rw [linA, Criteria.isHurwitz_fin_two_of_iff]
   constructor
@@ -93,7 +93,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![1 / (2 * Kp * g), 0; 0, 1 / (2 * Kp * Ki)]
 
 /-- `covV` solves `A P + P Aᵀ + B_v B_vᵀ = 0`. -/
-@[powerlib_foundation] theorem covV_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0) (σ : ℝ) :
+@[tmio M, powerlib_foundation] theorem covV_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0) (σ : ℝ) :
     linA Kp Ki g * covV Kp Ki g σ + covV Kp Ki g σ * (linA Kp Ki g)ᵀ +
       portV Kp σ * (portV Kp σ)ᵀ = 0 := by
   ext i j
@@ -102,7 +102,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   fin_cases i <;> fin_cases j <;> simp [linA, covV, portV] <;> field_simp <;> ring
 
 /-- `covW` solves `A P + P Aᵀ + B_ω B_ωᵀ = 0`. -/
-@[powerlib_foundation] theorem covW_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hKi : Ki ≠ 0)
+@[tmio M, powerlib_foundation] theorem covW_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hKi : Ki ≠ 0)
     (hg : g ≠ 0) :
     linA Kp Ki g * covW Kp Ki g + covW Kp Ki g * (linA Kp Ki g)ᵀ + portW * portWᵀ = 0 := by
   ext i j
@@ -112,7 +112,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Uniqueness: the Lyapunov operator `X ↦ A X + X Aᵀ` is injective when `K_p g ≠ 0`, `g ≠ 0`,
 `K_i ≠ 0`. -/
-@[powerlib_foundation] theorem lyapunov_unique {Kp Ki g : ℝ} (hKpg : Kp * g ≠ 0) (hg : g ≠ 0)
+@[tmio M, powerlib_foundation] theorem lyapunov_unique {Kp Ki g : ℝ} (hKpg : Kp * g ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) {Q X Y : Matrix (Fin 2) (Fin 2) ℝ}
     (hX : linA Kp Ki g * X + X * (linA Kp Ki g)ᵀ + Q = 0)
     (hY : linA Kp Ki g * Y + Y * (linA Kp Ki g)ᵀ + Q = 0) : X = Y := by
@@ -153,28 +153,28 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j; fin_cases i <;> fin_cases j <;> simp <;> linarith
 
 /-- The Lyapunov equation of the voltage channel has the unique solution `covV`. -/
-@[powerlib_foundation] theorem covV_unique {Kp Ki g σ : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
+@[tmio M, powerlib_foundation] theorem covV_unique {Kp Ki g σ : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) {P : Matrix (Fin 2) (Fin 2) ℝ}
     (hP : linA Kp Ki g * P + P * (linA Kp Ki g)ᵀ + portV Kp σ * (portV Kp σ)ᵀ = 0) :
     P = covV Kp Ki g σ :=
   lyapunov_unique (mul_ne_zero hKp hg) hg hKi hP (covV_lyapunov hKp hg σ)
 
 /-- The Lyapunov equation of the frequency channel has the unique solution `covW`. -/
-@[powerlib_foundation] theorem covW_unique {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
+@[tmio M, powerlib_foundation] theorem covW_unique {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) {P : Matrix (Fin 2) (Fin 2) ℝ}
     (hP : linA Kp Ki g * P + P * (linA Kp Ki g)ᵀ + portW * portWᵀ = 0) :
     P = covW Kp Ki g :=
   lyapunov_unique (mul_ne_zero hKp hg) hg hKi hP (covW_lyapunov hKp hKi hg)
 
 /-- q-channel: with `σ_q = g/V_g`, `Var(θ)^(q) = (K_i + K_p² g)/(2 K_p V_g²)`. -/
-@[powerlib_foundation] theorem varThetaQ_eq {Kp Ki g Vg : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
+@[tmio M, powerlib_foundation] theorem varThetaQ_eq {Kp Ki g Vg : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hVg : Vg ≠ 0) : covV Kp Ki g (g / Vg) 0 0 = (Ki + Kp ^ 2 * g) / (2 * Kp * Vg ^ 2) := by
   simp [covV]
   field_simp
 
 /-- The q-channel value stays finite at the saddle-node: it tends to `K_i/(2 K_p V_g²)` as
 `g → 0`. -/
-@[powerlib_foundation] theorem varThetaQ_tendsto {Kp Ki Vg : ℝ} (hKp : Kp ≠ 0) (hVg : Vg ≠ 0) :
+@[tmio M, powerlib_foundation] theorem varThetaQ_tendsto {Kp Ki Vg : ℝ} (hKp : Kp ≠ 0) (hVg : Vg ≠ 0) :
     Tendsto (fun g => covV Kp Ki g (g / Vg) 0 0) (𝓝[≠] 0) (𝓝 (Ki / (2 * Kp * Vg ^ 2))) := by
   have hc : Tendsto (fun g : ℝ => (Ki + Kp ^ 2 * g) / (2 * Kp * Vg ^ 2)) (𝓝 0)
       (𝓝 (Ki / (2 * Kp * Vg ^ 2))) := by
@@ -185,7 +185,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   exact (varThetaQ_eq hKp hg hVg).symm
 
 /-- The integrator variance of the frequency channel does not depend on the operating point. -/
-@[powerlib_foundation] theorem varEtaW_eq (Kp Ki g : ℝ) : covW Kp Ki g 1 1 = 1 / (2 * Kp * Ki) := by
+@[tmio M, powerlib_foundation] theorem varEtaW_eq (Kp Ki g : ℝ) : covW Kp Ki g 1 1 = 1 / (2 * Kp * Ki) := by
   simp [covW]
 
 /-- The model's q-axis EMF sensitivity is `σ_q = g/V_g` with `g = −h′(θ)` (gauge identity), so the

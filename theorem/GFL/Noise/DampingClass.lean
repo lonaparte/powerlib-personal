@@ -100,7 +100,7 @@ def gradH (x : State 2) : State 2 := WithLp.toLp 2 ![s.Pmax * sin (x 0) - s.Pm, 
   simp [gradH, π0, π1, dotProduct, Fin.sum_univ_two]
   ring
 
-@[powerlib_foundation] private lemma posSemidef_RA {D : ℝ} (hD : 0 ≤ D) :
+@[tmio T, powerlib_foundation] private lemma posSemidef_RA {D : ℝ} (hD : 0 ≤ D) :
     (!![0, 0; 0, D]).PosSemidef := by
   have : !![0, 0; 0, D] = Matrix.diagonal ![0, D] := by
     ext i j; fin_cases i <;> fin_cases j <;> simp
@@ -154,12 +154,12 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
     (hKp : 0 ≤ p.Kp) (y : State 2) : (p.pHModel hwC hΔ hKp).R y = RB p.Kp := rfl
 
 /-- Grid-frequency noise in class B, `B = (−ε, 0)ᵀ`: `B Bᵀ = 2 T R_B` with `T = ε²/(2K_p)`. -/
-@[powerlib_foundation] theorem classB_frequency_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
+@[tmio T, powerlib_foundation] theorem classB_frequency_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
     !![-ε; 0] * (!![-ε; 0])ᵀ = (2 * (ε ^ 2 / (2 * Kp))) • RB Kp := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [RB, Matrix.mul_apply]; field_simp
 
 /-- Grid-frequency noise in class A, `B = (−σ, 0)ᵀ`: orthogonal to `R_A`, `tr(B Bᵀ R_A) = 0`. -/
-@[powerlib_foundation] theorem classA_frequency_orthogonal (D σ : ℝ) :
+@[tmio T, powerlib_foundation] theorem classA_frequency_orthogonal (D σ : ℝ) :
     (!![-σ; 0] * (!![-σ; 0])ᵀ * RA D).trace = 0 := by
   have hB : !![-σ; 0] * (!![-σ; 0])ᵀ = !![σ ^ 2, 0; 0, (0 : ℝ)] := by
     ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, sq]
@@ -167,7 +167,7 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
   simp [RA, Matrix.trace_fin_two]
 
 /-- ... and never of the form `2 T R_A` (`σ ≠ 0`). -/
-@[powerlib_foundation] theorem classA_frequency_not_fdt {D σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :
+@[tmio T, powerlib_foundation] theorem classA_frequency_not_fdt {D σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :
     !![-σ; 0] * (!![-σ; 0])ᵀ ≠ (2 * T) • RA D := by
   intro h
   have := congrFun (congrFun h 0) 0
@@ -175,12 +175,12 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
   exact hσ this
 
 /-- Mechanical-power noise in class A, `B = (0, σ)ᵀ`: `B Bᵀ = 2 T R_A` with `T = σ²/(2D)`. -/
-@[powerlib_foundation] theorem classA_torque_fdt {D : ℝ} (hD : D ≠ 0) (σ : ℝ) :
+@[tmio T, powerlib_foundation] theorem classA_torque_fdt {D : ℝ} (hD : D ≠ 0) (σ : ℝ) :
     !![0; σ] * (!![0; σ])ᵀ = (2 * (σ ^ 2 / (2 * D))) • RA D := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [RA, Matrix.mul_apply]; field_simp
 
 /-- Voltage noise in class B enters both rows, `B = (K_p σ, σ)ᵀ`: never of the form `2 T R_B`. -/
-@[powerlib_foundation] theorem classB_voltage_not_fdt {Kp σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :
+@[tmio T, powerlib_foundation] theorem classB_voltage_not_fdt {Kp σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :
     !![Kp * σ; σ] * (!![Kp * σ; σ])ᵀ ≠ (2 * T) • RB Kp := by
   intro h
   have := congrFun (congrFun h 1) 1
@@ -190,7 +190,7 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 /-! ### Linearization invariants -/
 
 /-- Class B: `tr J / det J = −K_p/K_i` at every point with `g = h′(θ) ≠ 0` (`K_i ≠ 0`). -/
-@[powerlib_foundation] theorem classB_trace_div_det {Kp Ki g : ℝ} (hKi : Ki ≠ 0) (hg : g ≠ 0) :
+@[tmio M, powerlib_foundation] theorem classB_trace_div_det {Kp Ki g : ℝ} (hKi : Ki ≠ 0) (hg : g ≠ 0) :
     (piPLLJacobian Kp Ki g).trace / (piPLLJacobian Kp Ki g).det = -Kp / Ki := by
   rw [piPLLJacobian_trace, piPLLJacobian_det]
   field_simp
@@ -199,11 +199,11 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 `[[0, 1/M], [−g, −D/M]]`. -/
 def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, M⁻¹; -g, -(D * M⁻¹)]
 
-@[powerlib_foundation] theorem classA_trace (M D g : ℝ) :
+@[tmio M, powerlib_foundation] theorem classA_trace (M D g : ℝ) :
     (classAJacobian M D g).trace = -(D * M⁻¹) := by
   simp [classAJacobian, Matrix.trace_fin_two]
 
-@[powerlib_foundation] theorem classA_det (M D g : ℝ) :
+@[tmio M, powerlib_foundation] theorem classA_det (M D g : ℝ) :
     (classAJacobian M D g).det = g * M⁻¹ := by
   simp [classAJacobian, Matrix.det_fin_two]; ring
 
@@ -241,7 +241,7 @@ def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, M⁻¹; -
 
 /-- At a class-A fold (`g = 0`) the Jacobian is not nilpotent when `D/M ≠ 0`: one eigenvalue stays
 at `−D/M` (an ordinary saddle-node), unlike the class-B fold. -/
-@[powerlib_foundation] theorem classA_not_nilpotent {M D : ℝ} (h : D * M⁻¹ ≠ 0) :
+@[tmio M, powerlib_foundation] theorem classA_not_nilpotent {M D : ℝ} (h : D * M⁻¹ ≠ 0) :
     ¬ IsNilpotent (classAJacobian M D 0) := by
   rw [Criteria.isNilpotent_iff_trace_det_eq_zero_fin_two, classA_trace]
   rintro ⟨h1, -⟩
@@ -259,7 +259,7 @@ def zetaB (Kp Ki g : ℝ) : ℝ := Kp / 2 * √(g / Ki)
 def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
 
 /-- For the class-B Jacobian at a stable slope `h′ = −g`, `g > 0`: `ζ = ζ_B`. -/
-@[powerlib_foundation] theorem classB_zeta_eq {Kp Ki g : ℝ} (hKp : 0 ≤ Kp) (hKi : 0 < Ki)
+@[tmio M, powerlib_foundation] theorem classB_zeta_eq {Kp Ki g : ℝ} (hKp : 0 ≤ Kp) (hKi : 0 < Ki)
     (hg : 0 < g) : zeta (piPLLJacobian Kp Ki (-g)) = zetaB Kp Ki g := by
   rw [zeta, zetaB, piPLLJacobian_trace, piPLLJacobian_det,
     show -(Ki * -g) = Ki * g by ring, show Kp * -g = -(Kp * g) by ring, abs_neg,
@@ -275,7 +275,7 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
   linear_combination (-Kp) * h3'
 
 /-- For the class-A Jacobian with restoring slope `g > 0`: `ζ = ζ_A`. -/
-@[powerlib_foundation] theorem classA_zeta_eq {M D g : ℝ} (hM : 0 < M) (hD : 0 ≤ D) (hg : 0 < g) :
+@[tmio M, powerlib_foundation] theorem classA_zeta_eq {M D g : ℝ} (hM : 0 < M) (hD : 0 ≤ D) (hg : 0 < g) :
     zeta (classAJacobian M D g) = zetaA M D g := by
   rw [zeta, zetaA, classA_trace, classA_det, abs_neg,
     abs_of_nonneg (mul_nonneg hD (inv_nonneg.mpr hM.le))]
@@ -287,19 +287,19 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
   field_simp
 
 /-- Scaling law of class B: `ζ_B(λ g) = √λ ζ_B(g)`. -/
-@[powerlib_foundation] theorem zetaB_scale (Kp Ki g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
+@[tmio M, powerlib_foundation] theorem zetaB_scale (Kp Ki g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
     zetaB Kp Ki (l * g) = √l * zetaB Kp Ki g := by
   rw [zetaB, zetaB, mul_div_assoc, Real.sqrt_mul hl]; ring
 
 /-- Scaling law of class A: `ζ_A(λ g) = ζ_A(g)/√λ`. -/
-@[powerlib_foundation] theorem zetaA_scale (M D g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
+@[tmio M, powerlib_foundation] theorem zetaA_scale (M D g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
     zetaA M D (l * g) = zetaA M D g / √l := by
   rw [zetaA, zetaA, show M * (l * g) = l * (M * g) by ring, Real.sqrt_mul hl]
   rw [div_div, mul_comm (2 * √(M * g)) (√l)]
   ring
 
 /-- `ζ_B → 0` as `g → 0⁺`. -/
-@[powerlib_foundation] theorem zetaB_tendsto_zero (Kp Ki : ℝ) :
+@[tmio M, powerlib_foundation] theorem zetaB_tendsto_zero (Kp Ki : ℝ) :
     Tendsto (zetaB Kp Ki) (𝓝[>] 0) (𝓝 0) := by
   have h : Continuous (zetaB Kp Ki) := by unfold zetaB; fun_prop
   have := h.tendsto 0
@@ -307,7 +307,7 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
   exact tendsto_nhdsWithin_of_tendsto_nhds (by simpa [zetaB] using h.tendsto 0)
 
 /-- `ζ_A → ∞` as `g → 0⁺` (`M, D > 0`). -/
-@[powerlib_foundation] theorem zetaA_tendsto_atTop {M D : ℝ} (hM : 0 < M) (hD : 0 < D) :
+@[tmio M, powerlib_foundation] theorem zetaA_tendsto_atTop {M D : ℝ} (hM : 0 < M) (hD : 0 < D) :
     Tendsto (zetaA M D) (𝓝[>] 0) atTop := by
   have hs : Tendsto (fun g : ℝ => 2 * √(M * g)) (𝓝[>] 0) (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
@@ -320,7 +320,7 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
     (fun g => by simp [zetaA, div_eq_mul_inv])
 
 /-- Near the fold, `0 < g ≤ D²/(4M)`, the class-A eigenvalues are real (overdamped). -/
-@[powerlib_foundation] theorem classA_eigenvalues_real_of_le {M D g : ℝ} (hM : 0 < M)
+@[tmio M, powerlib_foundation] theorem classA_eigenvalues_real_of_le {M D g : ℝ} (hM : 0 < M)
     (hg : g ≤ D ^ 2 / (4 * M)) (μ : ℂ) (v : Fin 2 → ℂ) (hv : v ≠ 0)
     (heig : (classAJacobian M D g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) : μ.im = 0 := by
   refine (Criteria.eigenvalues_real_iff_discriminant_nonneg _).mpr ?_ μ v hv heig
@@ -333,7 +333,7 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
 
 /-- Near the fold, `0 < g < 4K_i/K_p²`, the class-B linearization has a non-real eigenvalue
 (underdamped). -/
-@[powerlib_foundation] theorem classB_eigenvalue_nonreal_of_lt {Kp Ki g : ℝ} (hg : 0 < g)
+@[tmio M, powerlib_foundation] theorem classB_eigenvalue_nonreal_of_lt {Kp Ki g : ℝ} (hg : 0 < g)
     (hlt : Kp ^ 2 * g < 4 * Ki) :
     ∃ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 ∧
       (piPLLJacobian Kp Ki (-g)).map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ μ.im ≠ 0 := by

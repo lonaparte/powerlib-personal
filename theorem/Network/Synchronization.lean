@@ -67,29 +67,29 @@ variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableR
   G.lapMatrix_mulVec_one_eq_zero ℝ
 
 /-- `L ⪰ 0` (wraps `SimpleGraph.posSemidef_lapMatrix`). -/
-@[powerlib_foundation] theorem lapMatrix_posSemidef : (G.lapMatrix ℝ).PosSemidef :=
+@[tmio T, powerlib_foundation] theorem lapMatrix_posSemidef : (G.lapMatrix ℝ).PosSemidef :=
   SimpleGraph.posSemidef_lapMatrix ℝ G
 
 /-- `L x = 0` iff `x` is constant on connected components
 (wraps `SimpleGraph.lapMatrix_mulVec_eq_zero_iff_forall_reachable`). -/
-@[powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff (x : V → ℝ) :
+@[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff (x : V → ℝ) :
     G.lapMatrix ℝ *ᵥ x = 0 ↔ ∀ i j, G.Reachable i j → x i = x j :=
   G.lapMatrix_mulVec_eq_zero_iff_forall_reachable
 
 /-- For a connected graph the kernel of `L` is spanned by `𝟙`. -/
-@[powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff_const (hG : G.Connected) (x : V → ℝ) :
+@[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff_const (hG : G.Connected) (x : V → ℝ) :
     G.lapMatrix ℝ *ᵥ x = 0 ↔ ∀ i j, x i = x j := by
   rw [lapMatrix_mulVec_eq_zero_iff]
   exact ⟨fun h i j => h i j (hG.preconnected i j), fun h i j _ => h i j⟩
 
 /-- `dim ker L` equals the number of connected components
 (wraps `SimpleGraph.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix`). -/
-@[powerlib_foundation] theorem card_components_eq_finrank_ker :
+@[tmio T, powerlib_foundation] theorem card_components_eq_finrank_ker :
     Fintype.card G.ConnectedComponent = Module.finrank ℝ (G.lapMatrix ℝ).toLin'.ker :=
   G.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix
 
 /-- The unweighted Laplacian is the weighted Laplacian of the 0/1 adjacency weights. -/
-@[powerlib_foundation] theorem lapMatrix_eq_laplacian :
+@[tmio T, powerlib_foundation] theorem lapMatrix_eq_laplacian :
     G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ) := by
   have hdeg : ∀ i, ∑ j, G.adjMatrix ℝ i j = G.degree i := by
     intro i
@@ -113,14 +113,14 @@ def netField (f H : E → E) (L : Matrix ι ι ℝ) (σ : ℝ) (X : ι → E) : 
 def RowSumZero (L : Matrix ι ι ℝ) : Prop := ∀ i, ∑ j, L i j = 0
 
 /-- **Tangency**: on the diagonal every node evolves by `f`. -/
-@[powerlib_foundation] theorem netField_diag {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
+@[tmio T, powerlib_foundation] theorem netField_diag {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
     (σ : ℝ) (x : E) : netField f H L σ (fun _ => x) = fun _ => f x := by
   funext i
   simp only [netField]
   rw [← Finset.sum_smul, hL i, zero_smul, smul_zero, sub_zero]
 
 /-- A solution of the isolated node lifts to the synchronized network solution. -/
-@[powerlib_foundation] theorem sync_lift {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
+@[tmio T, powerlib_foundation] theorem sync_lift {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
     (σ : ℝ) {s : ℝ → E} (hs : ∀ t, HasDerivAt s (f (s t)) t) (t : ℝ) :
     HasDerivAt (fun τ => fun _ : ι => s τ) (netField f H L σ (fun _ => s t)) t := by
   rw [netField_diag hL]
@@ -128,7 +128,7 @@ def RowSumZero (L : Matrix ι ι ℝ) : Prop := ∀ i, ∑ j, L i j = 0
 
 /-- **Invariance of `M_sync`** (globally Lipschitz network field): a network solution starting
 at `(s(0), …, s(0))` equals `(s(t), …, s(t))` for all `t`. -/
-@[powerlib_foundation] theorem sync_invariant {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
+@[tmio T, powerlib_foundation] theorem sync_invariant {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
     {σ : ℝ} {K : NNReal} (hF : LipschitzWith K (netField f H L σ)) {s : ℝ → E}
     (hs : ∀ t, HasDerivAt s (f (s t)) t) {X : ℝ → ι → E}
     (hX : ∀ t, HasDerivAt X (netField f H L σ (X t)) t) (h0 : X 0 = fun _ => s 0) :
@@ -144,7 +144,7 @@ at `(s(0), …, s(0))` equals `(s(t), …, s(t))` for all `t`. -/
 
 /-- **Modal decoupling**: if `W L = diag(μ) W`, then `ξ_k = Σᵢ W_{ki} δXᵢ` satisfies
 `ξ̇_k = (A(t) − σ μ_k Γ(t)) ξ_k` along every solution of the variational equation. -/
-@[powerlib_foundation] theorem variational_decouple {d : ℕ} {L W : Matrix ι ι ℝ} {μ : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem variational_decouple {d : ℕ} {L W : Matrix ι ι ℝ} {μ : ι → ℝ}
     [DecidableEq ι] (hW : W * L = diagonal μ * W) (σ : ℝ) (A Γ : ℝ → Matrix (Fin d) (Fin d) ℝ)
     {δX : ℝ → ι → Fin d → ℝ}
     (hX : ∀ t, HasDerivAt δX (fun i => A t *ᵥ δX t i - σ • ∑ j, L i j • (Γ t *ᵥ δX t j)) t)
@@ -179,7 +179,7 @@ at `(s(0), …, s(0))` equals `(s(t), …, s(t))` for all `t`. -/
 /-- **Threshold `σ μ_k > a`**: with `H = Γ = I`, if every eigenvalue of `A` has real part
 `≤ a` and `σ μ_k > a`, the transverse block `A − σ μ_k I` is Hurwitz. If `0 ≤ σ`, the eigenvalues
 are ordered `μ₂ ≤ μ_k`, and `σ μ₂ > a`, this holds for every transverse mode. -/
-@[powerlib_foundation] theorem transverse_isHurwitz_of_threshold {d : ℕ}
+@[tmio T, powerlib_foundation] theorem transverse_isHurwitz_of_threshold {d : ℕ}
     {A : Matrix (Fin d) (Fin d) ℝ} {a σ μ2 μk : ℝ}
     (ha : ∀ (lam : ℂ) (v : Fin d → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
       lam.re ≤ a) (hσ : 0 ≤ σ) (hμ : μ2 ≤ μk) (hthr : a < σ * μ2) :
@@ -206,7 +206,7 @@ def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) :
   fun c => f (Y c) - σ • ∑ c', Q c c' • H (Y c')
 
 /-- On the cluster manifold the network field is the lifted quotient field. -/
-@[powerlib_foundation] theorem cluster_field {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
+@[tmio T, powerlib_foundation] theorem cluster_field {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
     {Q : Matrix κ κ ℝ} (hπ : EquitablePartition L π Q) (σ : ℝ) (Y : κ → E) :
     netField f H L σ (Y ∘ π) = quotField f H Q σ Y ∘ π := by
   funext i
@@ -219,7 +219,7 @@ def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) :
   rw [(Finset.mem_filter.mp hj).2]
 
 /-- A quotient solution lifts to a cluster-synchronized network solution. -/
-@[powerlib_foundation] theorem cluster_lift {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
+@[tmio T, powerlib_foundation] theorem cluster_lift {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
     {Q : Matrix κ κ ℝ} (hπ : EquitablePartition L π Q) (σ : ℝ) {Y : ℝ → κ → E}
     (hY : ∀ t, HasDerivAt Y (quotField f H Q σ (Y t)) t) (t : ℝ) :
     HasDerivAt (fun τ => Y τ ∘ π) (netField f H L σ (Y t ∘ π)) t := by
@@ -227,7 +227,7 @@ def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) :
   exact hasDerivAt_pi.mpr fun i => (hasDerivAt_pi.mp (hY t)) (π i)
 
 /-- **Invariance of the cluster manifold** (globally Lipschitz network field). -/
-@[powerlib_foundation] theorem cluster_invariant {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
+@[tmio T, powerlib_foundation] theorem cluster_invariant {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
     {Q : Matrix κ κ ℝ} (hπ : EquitablePartition L π Q) {σ : ℝ} {K : NNReal}
     (hF : LipschitzWith K (netField f H L σ)) {Y : ℝ → κ → E}
     (hY : ∀ t, HasDerivAt Y (quotField f H Q σ (Y t)) t) {X : ℝ → ι → E}
@@ -242,7 +242,7 @@ def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) :
 
 /-- Complete synchronization is the one-cluster case: zero row sums make the trivial partition
 equitable with `Q = 0`. -/
-@[powerlib_foundation] theorem equitable_trivial {L : Matrix ι ι ℝ} (hL : RowSumZero L) :
+@[tmio T, powerlib_foundation] theorem equitable_trivial {L : Matrix ι ι ℝ} (hL : RowSumZero L) :
     EquitablePartition L (fun _ => ()) (0 : Matrix Unit Unit ℝ) := by
   intro i c
   simp [hL i]

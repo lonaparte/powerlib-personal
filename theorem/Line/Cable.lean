@@ -128,7 +128,7 @@ def lnGMR (a b : ℝ) : ℝ :=
 
 /-- Thin-tube algebra: with `u = 1 - (a/b)²` the GMR correction equals
 `-u²/4 + (1-u)²/(2u²) E`, where `E = ln(1-u) + u + u²/2`. -/
-@[powerlib_foundation] theorem lnGMR_thin_identity {a b : ℝ} (ha : 0 < a) (hab : a < b) :
+@[tmio M, powerlib_foundation] theorem lnGMR_thin_identity {a b : ℝ} (ha : 0 < a) (hab : a < b) :
     let u := 1 - (a / b) ^ 2
     lnGMR a b - Real.log b =
       -u ^ 2 / 4 + (1 - u) ^ 2 / (2 * u ^ 2) * (Real.log (1 - u) + u + u ^ 2 / 2) := by
@@ -146,7 +146,7 @@ def lnGMR (a b : ℝ) : ℝ :=
   ring
 
 /-- Thin-tube limit: `ln D_s → ln r_sh` as `r_in → r_sh⁻`; the `O(1/ε)` terms cancel exactly. -/
-@[powerlib_foundation] theorem lnGMR_thin_limit {b : ℝ} (hb : 0 < b) :
+@[tmio M, powerlib_foundation] theorem lnGMR_thin_limit {b : ℝ} (hb : 0 < b) :
     Tendsto (fun a => lnGMR a b) (𝓝[<] b) (𝓝 (Real.log b)) := by
   -- bound: `|lnGMR a b - ln b| ≤ u²/4 + u/2` with `u = 1 - (a/b)² → 0`
   have hu : Tendsto (fun a : ℝ => 1 - (a / b) ^ 2) (𝓝[<] b) (𝓝 0) := by
@@ -198,7 +198,7 @@ def lnGMR (a b : ℝ) : ℝ :=
 
 /-- Homogeneity: `ln D_s(λa, λb) = ln λ + ln D_s(a, b)` — the signature `A + B = 1` of a
 `ln(D_ref/D_s)` inductance; a bare logarithm silently fixes `D_ref` = one length unit. -/
-@[powerlib_foundation] theorem lnGMR_smul {a b lam : ℝ} (ha : 0 < a) (hab : a < b) (hl : 0 < lam) :
+@[tmio M, powerlib_foundation] theorem lnGMR_smul {a b lam : ℝ} (ha : 0 < a) (hab : a < b) (hl : 0 < lam) :
     lnGMR (lam * a) (lam * b) = Real.log lam + lnGMR a b := by
   have hb : 0 < b := ha.trans hab
   have hden : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
@@ -210,7 +210,7 @@ def lnGMR (a b : ℝ) : ℝ :=
   ring
 
 /-- Expanded form `ln D_s = A ln r_sh + B ln r_in + C'` with `A + B = 1`. -/
-@[powerlib_foundation] theorem lnGMR_expansion {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+@[tmio M, powerlib_foundation] theorem lnGMR_expansion {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     let k := a ^ 4 / (b ^ 2 - a ^ 2) ^ 2
     lnGMR a b = (1 - k) * Real.log b + k * Real.log a +
       (a ^ 2 / (2 * (b ^ 2 - a ^ 2)) - 1 / 4) ∧ (1 - k) + k = 1 := by
@@ -222,7 +222,7 @@ def lnGMR (a b : ℝ) : ℝ :=
 
 /-- `r_j` cancels in the screen–earth loop inductance:
 `ln(r_j/r_sh) + ln(D_e/r_j) = ln(D_e/r_sh)`. -/
-@[powerlib_foundation] theorem log_jacket_cancel {rsh rj De : ℝ} (hsh : 0 < rsh) (hj : 0 < rj)
+@[tmio T, powerlib_foundation] theorem log_jacket_cancel {rsh rj De : ℝ} (hsh : 0 < rsh) (hj : 0 < rj)
     (hDe : 0 < De) : Real.log (rj / rsh) + Real.log (De / rj) = Real.log (De / rsh) := by
   rw [Real.log_div hj.ne' hsh.ne', Real.log_div hDe.ne' hj.ne', Real.log_div hDe.ne' hsh.ne']
   ring
@@ -233,12 +233,12 @@ def lnGMR (a b : ℝ) : ℝ :=
 def ladderZ (Zcore Zsh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := !![Zcore + Zsh, -Zsh; -Zsh, Zsh]
 
 /-- **Structural negative result**: every naive ladder has screening ratio `η = |Z₁₂/Z₂₂| = 1`. -/
-@[powerlib_foundation] theorem ladder_eta_eq_one (Zcore Zsh : ℂ) (h : Zsh ≠ 0) :
+@[tmio M, powerlib_foundation] theorem ladder_eta_eq_one (Zcore Zsh : ℂ) (h : Zsh ≠ 0) :
     ‖ladderZ Zcore Zsh 0 1 / ladderZ Zcore Zsh 1 1‖ = 1 := by
   simp [ladderZ, neg_div, div_self h]
 
 /-- No naive ladder reproduces a loop matrix with `η ≠ 1` (e.g. a real cable, `η ≈ 10⁻³`). -/
-@[powerlib_foundation] theorem not_ladder_of_eta_ne_one {Z : Matrix (Fin 2) (Fin 2) ℂ}
+@[tmio M, powerlib_foundation] theorem not_ladder_of_eta_ne_one {Z : Matrix (Fin 2) (Fin 2) ℂ}
     (hZ : Z 1 1 ≠ 0) (hη : ‖Z 0 1 / Z 1 1‖ ≠ 1) : ¬ ∃ Zcore Zsh, ladderZ Zcore Zsh = Z := by
   rintro ⟨Zcore, Zsh, rfl⟩
   apply hη
@@ -246,14 +246,14 @@ def ladderZ (Zcore Zsh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := !![Zcore + Zsh, -Z
   simpa [ladderZ] using hZ
 
 /-- The ladder's loop-1 entry double-counts the screen branch: `Z₁₁ = Z_core + Z_sh`. -/
-@[powerlib_foundation] theorem ladder_Z11 (Zcore Zsh : ℂ) :
+@[tmio M, powerlib_foundation] theorem ladder_Z11 (Zcore Zsh : ℂ) :
     ladderZ Zcore Zsh 0 0 = Zcore + Zsh := by simp [ladderZ]
 
 /-! ## Coaxial mode -/
 
 /-- Geometry independence of the coaxial mode (lossless dielectric, real `ε_r`):
 `(jω μ₀/(2π) ln(r_in/r_c)) (jω 2π ε₀ ε_r / ln(r_in/r_c)) = -ω² μ₀ ε₀ ε_r`. -/
-@[powerlib_foundation] theorem coax_Z11ext_mul_Y1 {ω μ₀ ε₀ εr rc rin : ℝ} (hrc : 0 < rc)
+@[tmio T, powerlib_foundation] theorem coax_Z11ext_mul_Y1 {ω μ₀ ε₀ εr rc rin : ℝ} (hrc : 0 < rc)
     (hrin : rc < rin) :
     (Complex.I * ω * μ₀ / (2 * π) * Real.log (rin / rc) : ℂ) *
       (Complex.I * ω * (2 * π * ε₀ * εr) / Real.log (rin / rc)) = -(ω ^ 2 * μ₀ * ε₀ * εr : ℝ) := by
@@ -284,7 +284,7 @@ def Dhat (_c₁ s₁ Y₁ c₂ s₂ Y₂ Rb : ℂ) : ℂ := Aterm c₂ s₂ Y₂
 `I₁(0) = I₂(0) = I₀` (screen open at end 1). If the receiving end satisfies the bonding
 condition `U₂(ℓ) = R_b (I₂(ℓ) - I₁(ℓ))` and the load condition `U₁(ℓ) + U₂(ℓ) = Z_L I₁(ℓ)`,
 then `I_c(0) D̂ = I_c(ℓ) N̂`. -/
-@[powerlib_foundation] theorem port_relation {a₁ a₂ I₀ c₁ s₁ c₂ s₂ Z₁ Z₂ Y₁ Y₂ Rb ZL : ℂ}
+@[tmio M, powerlib_foundation] theorem port_relation {a₁ a₂ I₀ c₁ s₁ c₂ s₂ Z₁ Z₂ Y₁ Y₂ Rb ZL : ℂ}
     (h₁ : c₁ ^ 2 - s₁ ^ 2 = 1) (h₂ : c₂ ^ 2 - s₂ ^ 2 = 1)
     (hY₁ : Z₁ * Y₁ = 1) (hY₂ : Z₂ * Y₂ = 1)
     (hbond : a₂ * c₂ - Z₂ * I₀ * s₂ =
@@ -298,7 +298,7 @@ then `I_c(0) D̂ = I_c(ℓ) N̂`. -/
     (I₀ * Rb * Y₂ * s₁ ^ 2 * s₂ + I₀ * c₂ * s₁ ^ 2) * hY₁ + (I₀ * Rb * Y₁ * s₁ * s₂ ^ 2) * hY₂
 
 /-- `R_b = 0`: `cosh γ₂ℓ` cancels exactly inside the closed form. -/
-@[powerlib_foundation] theorem Rb_zero_cancel {c₁ s₁ Y₁ c₂ s₂ Y₂ ZL : ℂ} (hc₂ : c₂ ≠ 0) :
+@[tmio M, powerlib_foundation] theorem Rb_zero_cancel {c₁ s₁ Y₁ c₂ s₂ Y₂ ZL : ℂ} (hc₂ : c₂ ≠ 0) :
     Nhat c₁ s₁ Y₁ c₂ s₂ Y₂ 0 ZL / Dhat c₁ s₁ Y₁ c₂ s₂ Y₂ 0 = c₁ + ZL * s₁ * Y₁ := by
   simp only [Nhat, Dhat, Aterm, zero_mul, add_zero]
   field_simp
@@ -306,7 +306,7 @@ then `I_c(0) D̂ = I_c(ℓ) N̂`. -/
 /-- `N̂ - (cosh γ₁ℓ + Z_L sinh γ₁ℓ/Z_{c1}) D̂ =
 R_b sinh γ₁ℓ/Z_{c1} (cosh γ₂ℓ - cosh γ₁ℓ - Z_L sinh γ₁ℓ/Z_{c1})`;
 on `D̂ = 0` this is the value of `N̂`. -/
-@[powerlib_foundation] theorem Nhat_on_Dhat_zero {c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL : ℂ}
+@[tmio M, powerlib_foundation] theorem Nhat_on_Dhat_zero {c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL : ℂ}
     (hD : Dhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb = 0) :
     Nhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL = Rb * s₁ * Y₁ * (c₂ - c₁ - ZL * s₁ * Y₁) := by
   have : Nhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL - (c₁ + ZL * s₁ * Y₁) * Dhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb =
@@ -317,7 +317,7 @@ on `D̂ = 0` this is the value of `N̂`. -/
 
 /-- The pole at a zero of `D̂` is cancelled (`N̂ = 0` too) iff `R_b sinh γ₁ℓ = 0` or
 `Z_L = Z_{c1} (cosh γ₂ℓ - cosh γ₁ℓ)/sinh γ₁ℓ`. -/
-@[powerlib_foundation] theorem Nhat_zero_on_Dhat_zero_iff {c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL Z₁ : ℂ}
+@[tmio M, powerlib_foundation] theorem Nhat_zero_on_Dhat_zero_iff {c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL Z₁ : ℂ}
     (hY₁ : Z₁ * Y₁ = 1) (hD : Dhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb = 0) (hRb : Rb ≠ 0) (hs₁ : s₁ ≠ 0) :
     Nhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL = 0 ↔ ZL = Z₁ * (c₂ - c₁) / s₁ := by
   have hY : Y₁ ≠ 0 := right_ne_zero_of_mul_eq_one hY₁
@@ -337,13 +337,13 @@ on `D̂ = 0` this is the value of `N̂`. -/
 /-! ## Missing screen–earth admittance -/
 
 /-- With `Y₂ = 0` the modal matrix `ZY` is singular: the screen–earth mode disappears. -/
-@[powerlib_foundation] theorem det_ZY_of_Y2_zero (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_ZY_of_Y2_zero (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ) :
     (Z * Matrix.diagonal ![Y₁, 0]).det = 0 := by
   rw [Matrix.det_mul, Matrix.det_diagonal]
   simp [Fin.prod_univ_two]
 
 /-- With `Y₂ ≠ 0` (physical model) `det(ZY) = det Z · Y₁ Y₂`. -/
-@[powerlib_foundation] theorem det_ZY (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ Y₂ : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_ZY (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ Y₂ : ℂ) :
     (Z * Matrix.diagonal ![Y₁, Y₂]).det = Z.det * (Y₁ * Y₂) := by
   rw [Matrix.det_mul, Matrix.det_diagonal]
   simp [Fin.prod_univ_two]
@@ -355,7 +355,7 @@ def lineOp (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ) (w : (Fin 2 → ℂ) ×
 
 /-- `Y₂ = 0`: the zero mode is a 2×2 Jordan block — its kernel is the screen-voltage line,
 and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
-@[powerlib_foundation] theorem lineOp_jordan (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
+@[tmio M, powerlib_foundation] theorem lineOp_jordan (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
     (hZ : Z.det ≠ 0) :
     ∃ w, lineOp Z Y₁ w ≠ 0 ∧ lineOp Z Y₁ (lineOp Z Y₁ w) = 0 := by
   have hu : IsUnit Z.det := isUnit_iff_ne_zero.mpr hZ
@@ -371,7 +371,7 @@ and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
     ext i <;> fin_cases i <;> simp [Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
 
 /-- Kernel of the `Y₂ = 0` line operator: only the screen voltage `U₂` (one-dimensional). -/
-@[powerlib_foundation] theorem lineOp_ker (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
+@[tmio M, powerlib_foundation] theorem lineOp_ker (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
     (hY : Y₁ ≠ 0) (hZ : Z.det ≠ 0) (w : (Fin 2 → ℂ) × (Fin 2 → ℂ)) :
     lineOp Z Y₁ w = 0 ↔ w.2 = 0 ∧ w.1 0 = 0 := by
   have hu : IsUnit Z.det := isUnit_iff_ne_zero.mpr hZ
@@ -395,7 +395,7 @@ and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
 
 /-- Cable charging power from `S = V I*` with `I = jωC₁ℓ V`: `P = 0`, `Q = -ωC₁ℓ|V|²`
 (absorb-positive, so the cable generates reactive power). -/
-@[powerlib_foundation] theorem charging_power (ω C ℓ : ℝ) (V : ℂ) :
+@[tmio T, powerlib_foundation] theorem charging_power (ω C ℓ : ℝ) (V : ℂ) :
     V * (starRingEnd ℂ) (Complex.I * (ω * C * ℓ : ℝ) * V) =
       ((-(ω * C * ℓ) * Complex.normSq V : ℝ) : ℂ) * Complex.I := by
   rw [map_mul, map_mul, Complex.conj_I, Complex.conj_ofReal]
@@ -406,7 +406,7 @@ and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
   ring
 
 /-- Lumped parallel `LC` resonance: the admittance `jωC + 1/(jωL)` vanishes iff `ω² L C = 1`. -/
-@[powerlib_foundation] theorem lc_resonance {ω L C : ℝ} (hω : ω ≠ 0) (hL : L ≠ 0) :
+@[tmio T, powerlib_foundation] theorem lc_resonance {ω L C : ℝ} (hω : ω ≠ 0) (hL : L ≠ 0) :
     Complex.I * ω * C + 1 / (Complex.I * ω * L) = 0 ↔ ω ^ 2 * L * C = 1 := by
   have hωc : (ω : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hω
   have hLc : (L : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hL
@@ -443,7 +443,7 @@ def tubeZmut (ρ a b : ℝ) (m : ℂ) : ℂ :=
   (ρ : ℂ) * m / (Real.pi * (a + b)) / Complex.sinh (m * (b - a))
 
 /-- `sinh w / w → 1` as `w → 0`. -/
-@[powerlib_foundation] theorem tendsto_sinh_div_self :
+@[tmio T, powerlib_foundation] theorem tendsto_sinh_div_self :
     Tendsto (fun w : ℂ => Complex.sinh w / w) (𝓝[≠] 0) (𝓝 1) := by
   have h := hasDerivAt_iff_tendsto_slope.mp (Complex.hasDerivAt_sinh 0)
   rw [Complex.cosh_zero] at h
@@ -451,7 +451,7 @@ def tubeZmut (ρ a b : ℝ) (m : ℂ) : ℂ :=
   simp [slope_def_field, Complex.sinh_zero]
 
 /-- `m / sinh(m t) → 1/t` as `m → 0` (`t ≠ 0`). -/
-@[powerlib_foundation] theorem tendsto_div_sinh_mul {t : ℝ} (ht : t ≠ 0) :
+@[tmio T, powerlib_foundation] theorem tendsto_div_sinh_mul {t : ℝ} (ht : t ≠ 0) :
     Tendsto (fun m : ℂ => m / Complex.sinh (m * t)) (𝓝[≠] 0) (𝓝 ((1 / t : ℝ) : ℂ)) := by
   have ht' : (t : ℂ) ≠ 0 := by exact_mod_cast ht
   have hmt : Tendsto (fun m : ℂ => m * t) (𝓝[≠] 0) (𝓝[≠] 0) := by
@@ -472,7 +472,7 @@ def tubeZmut (ρ a b : ℝ) (m : ℂ) : ℂ :=
   field_simp
 
 /-- The tube's DC resistance: `ρ/(π(a+b)) · 1/(b − a) = ρ/(π(b² − a²))`. -/
-@[powerlib_foundation] theorem tube_dc_eq {ρ a b : ℝ} (hab : a < b) (ha : 0 < a) :
+@[tmio T, powerlib_foundation] theorem tube_dc_eq {ρ a b : ℝ} (hab : a < b) (ha : 0 < a) :
     ρ / (Real.pi * (a + b)) * (1 / (b - a)) = ρ / (Real.pi * (b ^ 2 - a ^ 2)) := by
   have h1 : b - a ≠ 0 := by linarith
   have h2 : a + b ≠ 0 := by linarith
@@ -481,7 +481,7 @@ def tubeZmut (ρ a b : ℝ) (m : ℂ) : ℂ :=
 
 /-- **Low-frequency limit of the transfer impedance**: `Z_mut(m) → ρ/(π(b² − a²))` as `m → 0`, the
 DC resistance of the tube (no screening at DC). -/
-@[powerlib_foundation] theorem tubeZmut_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+@[tmio M, powerlib_foundation] theorem tubeZmut_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
     Tendsto (tubeZmut ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   have h := (tendsto_div_sinh_mul (t := b - a) (by linarith)).const_mul
     ((ρ / (Real.pi * (a + b)) : ℝ) : ℂ)
@@ -492,7 +492,7 @@ DC resistance of the tube (no screening at DC). -/
   ring
 
 /-- **Low-frequency limit of the inner-surface impedance**: `Z_in(m) → ρ/(π(b² − a²))`. -/
-@[powerlib_foundation] theorem tubeZin_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+@[tmio M, powerlib_foundation] theorem tubeZin_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
     Tendsto (tubeZin ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   have hc : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝[≠] 0) (𝓝 1) := by
     have : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝 0) (𝓝 1) := by
@@ -522,7 +522,7 @@ DC resistance of the tube (no screening at DC). -/
   ring
 
 /-- **Low-frequency limit of the outer-surface impedance**: `Z_out(m) → ρ/(π(b² − a²))`. -/
-@[powerlib_foundation] theorem tubeZout_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+@[tmio M, powerlib_foundation] theorem tubeZout_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
     Tendsto (tubeZout ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   have hc : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝[≠] 0) (𝓝 1) := by
     have : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝 0) (𝓝 1) := by
@@ -552,7 +552,7 @@ DC resistance of the tube (no screening at DC). -/
   ring
 
 /-- `e^{−2w} → 0` when `Re w → +∞`. -/
-@[powerlib_foundation] theorem tendsto_cexp_neg_two_mul {α : Type*} {l : Filter α} {f : α → ℂ}
+@[tmio T, powerlib_foundation] theorem tendsto_cexp_neg_two_mul {α : Type*} {l : Filter α} {f : α → ℂ}
     (hf : Tendsto (fun a => (f a).re) l atTop) :
     Tendsto (fun a => Complex.exp (-(2 * f a))) l (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
@@ -562,7 +562,7 @@ DC resistance of the tube (no screening at DC). -/
   simp [Complex.norm_exp]
 
 /-- `coth w = (1 + e^{−2w})/(1 − e^{−2w})` (both sides `0` when `sinh w = 0`). -/
-@[powerlib_foundation] theorem cosh_div_sinh_eq (w : ℂ) :
+@[tmio T, powerlib_foundation] theorem cosh_div_sinh_eq (w : ℂ) :
     Complex.cosh w / Complex.sinh w =
       (1 + Complex.exp (-(2 * w))) / (1 - Complex.exp (-(2 * w))) := by
   have hc : Complex.cosh w = (Complex.exp w + Complex.exp (-w)) / 2 := by
@@ -579,7 +579,7 @@ DC resistance of the tube (no screening at DC). -/
   · rw [mul_sub, h1]
 
 /-- `e^w / sinh w = 2/(1 − e^{−2w})`. -/
-@[powerlib_foundation] theorem exp_div_sinh_eq (w : ℂ) :
+@[tmio T, powerlib_foundation] theorem exp_div_sinh_eq (w : ℂ) :
     Complex.exp w / Complex.sinh w = 2 / (1 - Complex.exp (-(2 * w))) := by
   have hs : Complex.sinh w = (Complex.exp w - Complex.exp (-w)) / 2 := by
     rw [← Complex.two_sinh]; ring
@@ -593,7 +593,7 @@ DC resistance of the tube (no screening at DC). -/
   · rw [mul_sub, h1]
 
 /-- `coth w → 1` when `Re w → +∞`. -/
-@[powerlib_foundation] theorem tendsto_cosh_div_sinh {α : Type*} {l : Filter α} {f : α → ℂ}
+@[tmio T, powerlib_foundation] theorem tendsto_cosh_div_sinh {α : Type*} {l : Filter α} {f : α → ℂ}
     (hf : Tendsto (fun a => (f a).re) l atTop) :
     Tendsto (fun a => Complex.cosh (f a) / Complex.sinh (f a)) l (𝓝 1) := by
   have h := tendsto_cexp_neg_two_mul hf
@@ -602,7 +602,7 @@ DC resistance of the tube (no screening at DC). -/
   exact this.congr fun a => (cosh_div_sinh_eq (f a)).symm
 
 /-- `csch w · e^w → 2` when `Re w → +∞`, i.e. `csch w ∼ 2 e^{−w}`. -/
-@[powerlib_foundation] theorem tendsto_exp_div_sinh {α : Type*} {l : Filter α} {f : α → ℂ}
+@[tmio T, powerlib_foundation] theorem tendsto_exp_div_sinh {α : Type*} {l : Filter α} {f : α → ℂ}
     (hf : Tendsto (fun a => (f a).re) l atTop) :
     Tendsto (fun a => Complex.exp (f a) / Complex.sinh (f a)) l (𝓝 2) := by
   have h := tendsto_cexp_neg_two_mul hf
@@ -611,12 +611,12 @@ DC resistance of the tube (no screening at DC). -/
   exact this.congr fun a => (exp_div_sinh_eq (f a)).symm
 
 /-- `Re((1 + i)s t) = s t`. -/
-@[powerlib_foundation] theorem re_one_add_I_mul (s t : ℝ) :
+@[tmio T, powerlib_foundation] theorem re_one_add_I_mul (s t : ℝ) :
     ((1 + Complex.I) * s * t).re = s * t := by simp
 
 /-- **High-frequency limit of the transfer impedance**: along the physical ray `m = (1 + i)s`
 (`s = 1/δ`, `δ` the skin depth), `Z_mut(m) → 0` as `s → ∞` (complete screening). -/
-@[powerlib_foundation] theorem tubeZmut_tendsto_zero {ρ a b : ℝ} (hab : a < b) :
+@[tmio M, powerlib_foundation] theorem tubeZmut_tendsto_zero {ρ a b : ℝ} (hab : a < b) :
     Tendsto (fun s : ℝ => tubeZmut ρ a b ((1 + Complex.I) * s)) atTop (𝓝 0) := by
   have ht : 0 < b - a := by linarith
   have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
@@ -648,11 +648,11 @@ DC resistance of the tube (no screening at DC). -/
   field_simp
 
 /-- `1 + i ≠ 0`. -/
-@[powerlib_foundation] theorem one_add_I_ne_zero : (1 + Complex.I) ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem one_add_I_ne_zero : (1 + Complex.I) ≠ 0 := by
   intro h; have := congrArg Complex.re h; simp at this
 
 /-- `c/s → 0` in `ℂ` as `s → ∞`. -/
-@[powerlib_foundation] theorem tendsto_const_mul_inv_ofReal (c : ℂ) :
+@[tmio T, powerlib_foundation] theorem tendsto_const_mul_inv_ofReal (c : ℂ) :
     Tendsto (fun s : ℝ => c * ((s⁻¹ : ℝ) : ℂ)) atTop (𝓝 0) := by
   have h : Tendsto (fun s : ℝ => ((s⁻¹ : ℝ) : ℂ)) atTop (𝓝 0) := by
     have := (Complex.continuous_ofReal.tendsto 0).comp tendsto_inv_atTop_zero
@@ -662,7 +662,7 @@ DC resistance of the tube (no screening at DC). -/
 
 /-- **High-frequency limit of the inner-surface impedance**: along `m = (1 + i)s`,
 `Z_in(m)/(ρ m/(2π a)) → 1` as `s → ∞` (skin effect on the inner surface). -/
-@[powerlib_foundation] theorem tubeZin_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem tubeZin_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
     (hab : a < b) :
     Tendsto (fun s : ℝ => tubeZin ρ a b ((1 + Complex.I) * s) /
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * a))) atTop (𝓝 1) := by
@@ -691,7 +691,7 @@ DC resistance of the tube (no screening at DC). -/
 
 /-- **High-frequency limit of the outer-surface impedance**: along `m = (1 + i)s`,
 `Z_out(m)/(ρ m/(2π b)) → 1` as `s → ∞`. -/
-@[powerlib_foundation] theorem tubeZout_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem tubeZout_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
     (hab : a < b) :
     Tendsto (fun s : ℝ => tubeZout ρ a b ((1 + Complex.I) * s) /
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * b))) atTop (𝓝 1) := by

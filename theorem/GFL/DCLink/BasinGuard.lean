@@ -191,16 +191,16 @@ end CarrierParams
 /-- The involution `S = diag(−1, −1, 1, 1)`. -/
 def carrierReflectMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![-1, -1, 1, 1]
 
-@[powerlib_foundation] theorem carrierReflectMatrix_mul_self :
+@[tmio T, powerlib_foundation] theorem carrierReflectMatrix_mul_self :
     carrierReflectMatrix * carrierReflectMatrix = 1 := by
   rw [carrierReflectMatrix, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1; ext i; fin_cases i <;> simp
 
-@[powerlib_foundation] theorem carrierReflectMatrix_isUnit : IsUnit carrierReflectMatrix :=
+@[tmio T, powerlib_foundation] theorem carrierReflectMatrix_isUnit : IsUnit carrierReflectMatrix :=
   (Matrix.isUnit_iff_isUnit_det _).mpr
     (by simp [carrierReflectMatrix, Matrix.det_diagonal, Fin.prod_univ_four])
 
-@[powerlib_foundation] theorem carrierReflectMatrix_inv :
+@[tmio T, powerlib_foundation] theorem carrierReflectMatrix_inv :
     carrierReflectMatrix⁻¹ = carrierReflectMatrix :=
   Matrix.inv_eq_left_inv carrierReflectMatrix_mul_self
 
@@ -208,7 +208,7 @@ def carrierReflectMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![-1, -
 def carrierReflect : State 4 ≃L[ℝ] State 4 :=
   Dynamics.matrixCoord carrierReflectMatrix carrierReflectMatrix_isUnit
 
-@[powerlib_foundation] theorem carrierReflect_apply (x : State 4) :
+@[tmio T, powerlib_foundation] theorem carrierReflect_apply (x : State 4) :
     carrierReflect x = WithLp.toLp 2 ![-(x 0), -(x 1), x 2, x 3] := by
   apply WithLp.ofLp_injective
   ext i
@@ -339,7 +339,7 @@ end CarrierParams
 `1 − V_dc`, the four-state GFL model `V − 1`. -/
 def integratorFlipMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![1, 1, 1, -1]
 
-@[powerlib_foundation] theorem integratorFlipMatrix_isUnit : IsUnit integratorFlipMatrix :=
+@[tmio T, powerlib_foundation] theorem integratorFlipMatrix_isUnit : IsUnit integratorFlipMatrix :=
   (Matrix.isUnit_iff_isUnit_det _).mpr
     (by simp [integratorFlipMatrix, Matrix.det_diagonal, Fin.prod_univ_four])
 
@@ -347,7 +347,7 @@ def integratorFlipMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![1, 1,
 def integratorFlip : State 4 ≃L[ℝ] State 4 :=
   Dynamics.matrixCoord integratorFlipMatrix integratorFlipMatrix_isUnit
 
-@[powerlib_foundation] theorem integratorFlip_apply (x : State 4) :
+@[tmio T, powerlib_foundation] theorem integratorFlip_apply (x : State 4) :
     integratorFlip x = WithLp.toLp 2 ![x 0, x 1, x 2, -(x 3)] := by
   apply WithLp.ofLp_injective
   ext i
@@ -355,7 +355,7 @@ def integratorFlip : State 4 ≃L[ℝ] State 4 :=
     simp [integratorFlip, integratorFlipMatrix, Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
 
 /-- The flip is an involution. -/
-@[powerlib_foundation] theorem integratorFlip_symm_apply (y : State 4) :
+@[tmio T, powerlib_foundation] theorem integratorFlip_symm_apply (y : State 4) :
     integratorFlip.symm y = integratorFlip y := by
   rw [ContinuousLinearEquiv.symm_apply_eq, integratorFlip_apply, integratorFlip_apply]
   apply WithLp.ofLp_injective

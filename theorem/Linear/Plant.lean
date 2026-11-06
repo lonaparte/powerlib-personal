@@ -46,13 +46,13 @@ abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ :=
 @[tmio T, powerlib_foundation] theorem affine_apply (A : Matrix (Fin n) (Fin n) ℝ) (e x : ℝⁿ) :
     affineLinearVectorField A e x = op A (x - e) := rfl
 
-@[powerlib_foundation] theorem op_mul_apply (X Y : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem op_mul_apply (X Y : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
     op (X * Y) x = op X (op Y x) := by
   change Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (X * Y) x = _
   rw [map_mul]
   rfl
 
-@[powerlib_foundation] theorem op_cancel {T S : Matrix (Fin n) (Fin n) ℝ} (h : S * T = 1)
+@[tmio T, powerlib_foundation] theorem op_cancel {T S : Matrix (Fin n) (Fin n) ℝ} (h : S * T = 1)
     (x : ℝⁿ) : op S (op T x) = x := by
   rw [← op_mul_apply, h]
   change Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) 1 x = x
@@ -65,7 +65,7 @@ def Plant.inputField (M : Plant n p) (u : Fin p → ℝ) : ℝⁿ → ℝⁿ :=
 
 /-- Under a constant input with an equilibrium `e`, the plant's field is the affine linear
 field of `A` centred at `e`. -/
-@[powerlib_foundation] theorem Plant.inputField_eq (M : Plant n p) {u : Fin p → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem Plant.inputField_eq (M : Plant n p) {u : Fin p → ℝ} {e : ℝⁿ}
     (he : IsEquilibrium (M.inputField u) e) :
     M.inputField u = affineLinearVectorField M.A e := by
   have hb : WithLp.toLp 2 (M.B *ᵥ u) = -op M.A e := eq_neg_of_add_eq_zero_right he
@@ -73,7 +73,7 @@ field of `A` centred at `e`. -/
   rw [Plant.inputField, hb, affine_apply, map_sub, sub_eq_add_neg]
 
 /-- With zero input the origin is an equilibrium and the field is linear. -/
-@[powerlib_foundation] theorem Plant.inputField_zero (M : Plant n p) :
+@[tmio T, powerlib_foundation] theorem Plant.inputField_zero (M : Plant n p) :
     M.inputField 0 = affineLinearVectorField M.A 0 := by
   funext x
   simp [Plant.inputField, affine_apply]

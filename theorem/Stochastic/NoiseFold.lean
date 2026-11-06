@@ -87,7 +87,7 @@ swept noisy fold `dx = (μ₀ − εt − x²) dt + σ dw` on `t ≥ 0`
 (`x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)`), the right side that of the rescaled problem
 `dy = (s₀ − s − y²) ds + η dw̃` on `s ≥ 0`
 (`y(s) = y(0) + ∫₀ˢ (s₀ − r − y(r)²) dr + η w̃(s)`). -/
-@[powerlib_foundation] theorem sweptFold_rescale_iff {c : ℝ} (hc : 0 < c) (μ₀ σ : ℝ)
+@[tmio M, powerlib_foundation] theorem sweptFold_rescale_iff {c : ℝ} (hc : 0 < c) (μ₀ σ : ℝ)
     (w x : ℝ → ℝ) :
     (∀ t, 0 ≤ t → x t = x 0 + (∫ r in (0 : ℝ)..t, (μ₀ - c ^ 3 * r - x r ^ 2)) + σ * w t) ↔
       ∀ s, 0 ≤ s → rescaleState c x s = rescaleState c x 0 +
@@ -114,18 +114,18 @@ swept noisy fold `dx = (μ₀ − εt − x²) dt + σ dw` on `t ≥ 0`
 
 /-- Along the sweep the parameter is `μ(t) = c² (s₀ − s)` with `s = c t`: crossing parameters
 of the swept problem are `ε^{2/3}` times crossing values of the rescaled problem. -/
-@[powerlib_foundation] theorem parameter_rescale {c : ℝ} (hc : 0 < c) (μ₀ t : ℝ) :
+@[tmio T, powerlib_foundation] theorem parameter_rescale {c : ℝ} (hc : 0 < c) (μ₀ t : ℝ) :
     μ₀ - c ^ 3 * t = c ^ 2 * (μ₀ / c ^ 2 - c * t) := by
   field_simp
 
 /-- `η = σ/c^{3/2}` is `σ/√ε` for `ε = c³`. -/
-@[powerlib_foundation] theorem eta_eq {c : ℝ} (hc : 0 < c) (σ : ℝ) :
+@[tmio T, powerlib_foundation] theorem eta_eq {c : ℝ} (hc : 0 < c) (σ : ℝ) :
     σ / (c * √c) = σ / √(c ^ 3) := by
   rw [show c ^ 3 = c ^ 2 * c by ring, Real.sqrt_mul (by positivity), Real.sqrt_sq hc.le]
 
 /-- **The rescaled noise is a Brownian motion** (Mathlib `IsBrownianReal.smul` with factor
 `c⁻¹`): `w̃_s = √c · B_{s/c}`. -/
-@[powerlib_foundation] theorem rescaled_noise_isBrownian {Ω : Type*} {mΩ : MeasurableSpace Ω}
+@[tmio T, powerlib_foundation] theorem rescaled_noise_isBrownian {Ω : Type*} {mΩ : MeasurableSpace Ω}
     {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ} (hB : IsBrownianReal B P) {c : ℝ≥0} (hc : c ≠ 0) :
     IsBrownianReal (fun s ω => √(c : ℝ) * B (c⁻¹ * s) ω) P := by
   have h := hB.smul (inv_ne_zero hc)
@@ -134,7 +134,7 @@ of the swept problem are `ε^{2/3}` times crossing values of the rescaled proble
   simpa [e] using h
 
 /-- Paths: for real time `s ≥ 0`, `√c · B_{c⁻¹ s}` is the rescaled path of `r ↦ B_r`. -/
-@[powerlib_foundation] theorem rescaled_path_eq {Ω : Type*} {B : ℝ≥0 → Ω → ℝ} {c : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem rescaled_path_eq {Ω : Type*} {B : ℝ≥0 → Ω → ℝ} {c : ℝ≥0}
     (hc : c ≠ 0) (ω : Ω) (s : ℝ) :
     √(c : ℝ) * B (c⁻¹ * s.toNNReal) ω =
       rescalePath c (fun r => B r.toNNReal ω) s := by
@@ -156,7 +156,7 @@ of the swept problem are `ε^{2/3}` times crossing values of the rescaled proble
 
 /-- Fold potential `V(x) = x³/3 − μx`; well `x₊ = √μ`, saddle `x₋ = −√μ`, barrier
 `ΔV = V(−√μ) − V(√μ) = (4/3) μ^{3/2}`. -/
-@[powerlib_foundation] theorem fold_barrier {μ : ℝ} (hμ : 0 ≤ μ) :
+@[tmio T, powerlib_foundation] theorem fold_barrier {μ : ℝ} (hμ : 0 ≤ μ) :
     ((-√μ) ^ 3 / 3 - μ * (-√μ)) - ((√μ) ^ 3 / 3 - μ * √μ) = 4 / 3 * μ * √μ := by
   have h := Real.sq_sqrt hμ
   have h3 : (√μ) ^ 3 = μ * √μ := by rw [pow_succ, h]
@@ -164,13 +164,13 @@ of the swept problem are `ε^{2/3}` times crossing values of the rescaled proble
 
 /-- **Correction (Kramers exponent)**: with `D = σ²/2` the Arrhenius exponent is
 `ΔV/D = 8 μ^{3/2}/(3σ²)`. -/
-@[powerlib_foundation] theorem kramers_exponent {μ σ : ℝ} (hσ : σ ≠ 0) :
+@[tmio T, powerlib_foundation] theorem kramers_exponent {μ σ : ℝ} (hσ : σ ≠ 0) :
     (4 / 3 * μ * √μ) / (σ ^ 2 / 2) = 8 * μ * √μ / (3 * σ ^ 2) := by
   field_simp; ring
 
 /-- **Correction (strong-noise advance)**: `8 μ^{3/2}/(3σ²) = κ` (`κ > 0`) holds exactly for
 `μ = (3κ/8)^{2/3} σ^{4/3}` — the advance scales as `σ^{4/3}`. -/
-@[powerlib_foundation] theorem advance_scale {κ σ : ℝ} (hκ : 0 < κ) (hσ : 0 < σ) :
+@[tmio T, powerlib_foundation] theorem advance_scale {κ σ : ℝ} (hκ : 0 < κ) (hσ : 0 < σ) :
     let μ := (3 * κ / 8) ^ ((2 : ℝ) / 3) * σ ^ ((4 : ℝ) / 3)
     8 * μ ^ ((3 : ℝ) / 2) / (3 * σ ^ 2) = κ := by
   intro μ

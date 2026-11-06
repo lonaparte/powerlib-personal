@@ -119,7 +119,7 @@ whose initial states start solutions on `[0, T₀]`, and whose states reached be
 least `δ` inside the safe set stays safe before `T₀` under every perturbation `σ g ω` that is
 bounded by `W`, when `gronwallBound 0 K (|σ| W) T₀ ≤ δ`; the level is the probability that the
 perturbation exceeds `W`. -/
-@[powerlib_foundation] theorem holds_safe_of_margin {s : Port.System n p} {S A : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem holds_safe_of_margin {s : Port.System n p} {S A : Set ℝⁿ}
     {ν : Measure Sample} {g : Sample → ℝⁿ → ℝⁿ} {σ δ W T₀ : ℝ} {K : ℝ≥0} {ε : ℝ≥0∞}
     (hK : LipschitzWith K s.zeroInput) (hW : 0 ≤ W) (hsol : s.Solvable S T₀)
     (hreach : s.reach S (ENNReal.ofReal T₀) ⊆ erode A δ)
@@ -249,7 +249,7 @@ instance : IsProbabilityMeasure gaussianSample := by
   unfold gaussianSample
   infer_instance
 
-@[powerlib_foundation] theorem gaussianSample_zero : gaussianSample {ω | ω 0 = 0} = 0 := by
+@[tmio T, powerlib_foundation] theorem gaussianSample_zero : gaussianSample {ω | ω 0 = 0} = 0 := by
   have := nullSingletonClass_gaussianReal (μ := 0) (v := 1) one_ne_zero
   have h := (measurePreserving_eval_infinitePi (fun _ : ℕ => gaussianReal 0 1) 0).measure_preimage
     (measurableSet_singleton (0 : ℝ)).nullMeasurableSet
@@ -266,7 +266,7 @@ def driftDesign : Family DriftDesign Unit 1 1 :=
   ⟨fun _ => .disturbed (fun _ => drift 0) {0} (ball 0 (1 / 2)) (Measure.dirac (constSample 0)),
     fun _ _ => False, fun _ => Set.univ⟩
 
-@[powerlib_foundation] theorem driftDesign_isDesign :
+@[tmio M, powerlib_foundation] theorem driftDesign_isDesign :
     IsDesign driftDesign (fun _ => drift 0) (fun _ => {0}) (fun _ => ball 0 (1 / 2))
       (fun _ => Measure.dirac (constSample 0)) := fun _ => rfl
 
@@ -279,10 +279,10 @@ def noisyDrift (σ : ℝ) : Noisy DriftDesign 1 :=
 def driftImpl : Implementation DriftDesign Unit (Noisy DriftDesign 1) NoiseRequirement 1 1 1 1 :=
   noisy driftDesign (fun _ => drift 0) (fun _ => {0}) (fun _ => ball 0 (1 / 2))
 
-@[powerlib_foundation] theorem norm_smul_e₁ (a : ℝ) : ‖a • e₁‖ = |a| := by
+@[tmio T, powerlib_foundation] theorem norm_smul_e₁ (a : ℝ) : ‖a • e₁‖ = |a| := by
   simp [e₁, norm_smul]
 
-@[powerlib_foundation] theorem drift_perturb (c : ℝ) :
+@[tmio M, powerlib_foundation] theorem drift_perturb (c : ℝ) :
     (drift 0).perturb (fun _ => c • e₁) = drift c := by
   simp only [drift, Port.System.perturb, zero_smul, zero_add]
 
@@ -300,7 +300,7 @@ def driftImpl : Implementation DriftDesign Unit (Noisy DriftDesign 1) NoiseRequi
   exact zero_le
 
 /-- The disturbed drift with a nonzero intensity leaves the unit ball with probability one. -/
-@[powerlib_foundation] theorem noisyDrift_exceeds {σ : ℝ} (hσ : σ ≠ 0) {ω : Sample}
+@[tmio TM, powerlib_foundation] theorem noisyDrift_exceeds {σ : ℝ} (hσ : σ ≠ 0) {ω : Sample}
     (hω : ω 0 ≠ 0) : (drift (σ * ω 0)).Exceeds {0} (ball 0 1) ⊤ := by
   have hc : σ * ω 0 ≠ 0 := mul_ne_zero hσ hω
   refine drift_exceeds_iff.mpr ⟨2 / |σ * ω 0|, by positivity, ENNReal.ofReal_lt_top, ?_⟩
@@ -309,7 +309,7 @@ def driftImpl : Implementation DriftDesign Unit (Noisy DriftDesign 1) NoiseRequi
   norm_num
 
 /-- States within `1/2` of the ball of radius `1/2` lie in the unit ball. -/
-@[powerlib_foundation] theorem ball_half_subset_erode :
+@[tmio T, powerlib_foundation] theorem ball_half_subset_erode :
     ball (0 : EuclideanSpace ℝ (Fin 1)) (1 / 2) ⊆ erode (ball 0 1) (1 / 2) := by
   intro z hz w hw
   rw [mem_ball, dist_zero_right] at hz ⊢

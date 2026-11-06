@@ -183,7 +183,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
   (1 - Real.cos (y 0)) + 1 / 2 * y 1 ^ 2 +
     σ * (1 / 2 * y 3 ^ 2 + 1 / 2 * (y 2 - 1) ^ 2 + 1 / 3 * (y 2 - 1) ^ 3)
 
-@[powerlib_foundation] theorem hasFDerivAt_centerEnergy (σ : ℝ) (y : State 4) :
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_centerEnergy (σ : ℝ) (y : State 4) :
     HasFDerivAt (centerEnergy σ) (ModelBParams.row4 (Real.sin (y 0)) (y 1)
       (σ * ((y 2 - 1) + (y 2 - 1) ^ 2)) (σ * y 3)) y := by
   have h0 := Dynamics.hasFDerivAt_coord 0 y
@@ -199,7 +199,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
   simp [ModelBParams.row4]
   ring
 
-@[powerlib_foundation] theorem contDiff_centerEnergy (σ : ℝ) : ContDiff ℝ 1 (centerEnergy σ) := by
+@[tmio T, powerlib_foundation] theorem contDiff_centerEnergy (σ : ℝ) : ContDiff ℝ 1 (centerEnergy σ) := by
   unfold centerEnergy
   fun_prop
 
@@ -324,7 +324,7 @@ regularized field, which is model B on the ball of radius `1/4`). -/
 
 /-- Invariants of a block-diagonal Jacobian `[[a, b, 0, 0], [c, 0, 0, 0], [0, 0, d, e],
 [0, 0, −1, 0]]` (PLL block and DC-loop block). -/
-@[powerlib_foundation] private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : ℝ}
+@[tmio T, powerlib_foundation] private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : ℝ}
     (e00 : J 0 0 = a) (e01 : J 0 1 = b) (e02 : J 0 2 = 0) (e03 : J 0 3 = 0)
     (e10 : J 1 0 = c) (e11 : J 1 1 = 0) (e12 : J 1 2 = 0) (e13 : J 1 3 = 0)
     (e20 : J 2 0 = 0) (e21 : J 2 1 = 0) (e22 : J 2 2 = d) (e23 : J 2 3 = e)
@@ -526,7 +526,7 @@ def dampedEnergy (y : State 4) : ℝ :=
   3 * (1 - Real.cos (y 0)) + 1 / 2 * y 1 ^ 2 - y 1 * Real.sin (y 0) +
     dcEnergy (y 2 - 1) (y 3 - 1 / 2)
 
-@[powerlib_foundation] theorem hasFDerivAt_dampedEnergy (y : State 4) :
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_dampedEnergy (y : State 4) :
     HasFDerivAt dampedEnergy (ModelBParams.row4 (3 * Real.sin (y 0) - y 1 * Real.cos (y 0))
       (y 1 - Real.sin (y 0)) (dcEnergyW (y 2 - 1) (y 3 - 1 / 2))
       (dcEnergyXi (y 2 - 1) (y 3 - 1 / 2))) y := by
@@ -550,7 +550,7 @@ def dampedEnergy (y : State 4) : ℝ :=
   · simp only [dampedEnergy, dcEnergy, Pi.add_apply, Pi.sub_apply, Pi.mul_apply,
       Function.comp_apply]
 
-@[powerlib_foundation] theorem contDiff_dampedEnergy : ContDiff ℝ 1 dampedEnergy := by
+@[tmio T, powerlib_foundation] theorem contDiff_dampedEnergy : ContDiff ℝ 1 dampedEnergy := by
   unfold dampedEnergy dcEnergy
   fun_prop
 
@@ -592,13 +592,13 @@ def hopfDamped : Model :=
   field_simp
   ring
 
-@[powerlib_foundation] private theorem pll_lie_le {s c y : ℝ} (hc : 1 / 2 ≤ c) (hc1 : c ≤ 1) :
+@[tmio T, powerlib_foundation] private theorem pll_lie_le {s c y : ℝ} (hc : 1 / 2 ≤ c) (hc1 : c ≤ 1) :
     -6 * s ^ 2 + 3 * c * s * y - c * y ^ 2 ≤ -(3 / 2) * s ^ 2 - 1 / 4 * y ^ 2 := by
   nlinarith [mul_nonneg (by linarith : (0:ℝ) ≤ c) (sq_nonneg (3 * s - y)),
     mul_nonneg (by linarith : (0:ℝ) ≤ 1 - c) (sq_nonneg s),
     mul_nonneg (by linarith : (0:ℝ) ≤ c - 1 / 2) (sq_nonneg y)]
 
-@[powerlib_foundation] private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
+@[tmio T, powerlib_foundation] private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
     dcQuintic w ξ ≤ 128 * m ^ 5 := by
   have b0 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 5 0)
   have b1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 4 1)
@@ -611,7 +611,7 @@ def hopfDamped : Model :=
   unfold dcQuintic
   linarith [b0.1, b0.2, b1.1, b1.2, b2.1, b2.2, b3.1, b3.2, b4.1, b4.2, b5.1, b5.2]
 
-@[powerlib_foundation] private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
+@[tmio T, powerlib_foundation] private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
     |dcEnergyW w ξ| ≤ 2 * m := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
   have a1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 0)
@@ -628,7 +628,7 @@ def hopfDamped : Model :=
   rw [abs_le]
   constructor <;> nlinarith [a1.1, a1.2, a2.1, a2.2, a3.1, a3.2, a4.1, a4.2, a5.1, a5.2, a6.1, a6.2]
 
-@[powerlib_foundation] private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200)
+@[tmio T, powerlib_foundation] private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200)
     (hmS : m ^ 2 ≤ w ^ 2 + ξ ^ 2) :
     1 / 4 * (w ^ 2 + ξ ^ 2) ≤ dcEnergy w ξ := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
@@ -647,7 +647,7 @@ def hopfDamped : Model :=
   nlinarith [c1.1, c2.1, c2.2, c3.1, q1.1, q2.1, q2.2, q3.1, q3.2, q4.1]
 
 /-- The combined Lie-derivative bound of the weakly damped loop. -/
-@[powerlib_foundation] private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c)
+@[tmio T, powerlib_foundation] private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c)
     (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
     (1 + w) * (-6 * s ^ 2 + 3 * c * s * y - c * y ^ 2) +
         (-(3 / 2) * (w ^ 2 + ξ ^ 2) ^ 2 + dcQuintic w ξ) +
@@ -693,17 +693,17 @@ def hopfDamped : Model :=
   nlinarith [sq_nonneg s, sq_nonneg (w ^ 2 + ξ ^ 2)]
 
 /-- Lower bound of the Lyapunov function of the weakly damped loop by a sum of nonnegative parts. -/
-@[powerlib_foundation] private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
+@[tmio T, powerlib_foundation] private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
     (3 * (1 - c) - 3 / 2 * s ^ 2) + (s ^ 2 + 1 / 2 * (s - y) ^ 2) + 1 / 4 * (w ^ 2 + ξ ^ 2) ≤
       3 * (1 - c) + 1 / 2 * y ^ 2 - y * s + dcEnergy w ξ := by
   have hE := dcEnergy_ge (le_max_left |w| |ξ|) (le_max_right |w| |ξ|) (max_le hw hξ)
     (SpecialFunctions.sq_max_abs_le w ξ)
   nlinarith
 
-@[powerlib_foundation] private theorem cos_eq_one_of_sq {c : ℝ} (h : c ^ 2 = 1) (hc : 1 / 2 ≤ c) : c = 1 := by
+@[tmio T, powerlib_foundation] private theorem cos_eq_one_of_sq {c : ℝ} (h : c ^ 2 = 1) (hc : 1 / 2 ≤ c) : c = 1 := by
   nlinarith
 
-@[powerlib_foundation] private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c) :
+@[tmio T, powerlib_foundation] private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c) :
     0 ≤ 3 * (1 - c) - 3 / 2 * s ^ 2 := by
   have hc1 : c ≤ 1 := by nlinarith [sq_nonneg s]
   nlinarith

@@ -71,17 +71,17 @@ def transField (μ : ℝ) (x : ℝ) : ℝ := μ * x - x ^ 2
     ContDiff ℝ k (transField μ) := by
   unfold transField; fun_prop
 
-@[powerlib_foundation] theorem hasDerivAt_transField (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_transField (μ x : ℝ) :
     HasDerivAt (transField μ) (μ - 2 * x) x := by
   have h := ((hasDerivAt_id' x).const_mul μ).sub (hasDerivAt_pow 2 x)
   unfold transField
   convert h using 1
   push_cast; ring
 
-@[powerlib_foundation] theorem deriv_transField (μ x : ℝ) : deriv (transField μ) x = μ - 2 * x :=
+@[tmio M, powerlib_foundation] theorem deriv_transField (μ x : ℝ) : deriv (transField μ) x = μ - 2 * x :=
   (hasDerivAt_transField μ x).deriv
 
-@[powerlib_foundation] theorem transField_eq_zero_iff (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem transField_eq_zero_iff (μ x : ℝ) :
     transField μ x = 0 ↔ x = 0 ∨ x = μ := by
   unfold transField
   constructor
@@ -93,7 +93,7 @@ def transField (μ : ℝ) (x : ℝ) : ℝ := μ * x - x ^ 2
   · rintro (rfl | rfl) <;> ring
 
 /-- Exchange of stability, `μ < 0`: the origin is stable and `x = μ` is unstable. -/
-@[powerlib_foundation] theorem trans_stability_neg {μ : ℝ} (hμ : μ < 0) :
+@[tmio TM, powerlib_foundation] theorem trans_stability_neg {μ : ℝ} (hμ : μ < 0) :
     LocallyExponentiallyStable (lift (transField μ)) (embed 0) ∧
       Unstable (lift (transField μ)) (embed μ) :=
   ⟨lift_locallyExponentiallyStable (transField_contDiff μ) (by simp [transField])
@@ -102,7 +102,7 @@ def transField (μ : ℝ) (x : ℝ) : ℝ := μ * x - x ^ 2
       (by rw [deriv_transField]; linarith)⟩
 
 /-- Exchange of stability, `μ > 0`: the origin is unstable and `x = μ` is stable. -/
-@[powerlib_foundation] theorem trans_stability_pos {μ : ℝ} (hμ : 0 < μ) :
+@[tmio TM, powerlib_foundation] theorem trans_stability_pos {μ : ℝ} (hμ : 0 < μ) :
     Unstable (lift (transField μ)) (embed 0) ∧
       LocallyExponentiallyStable (lift (transField μ)) (embed μ) :=
   ⟨lift_unstable (transField_contDiff μ) (by simp [transField])
@@ -118,44 +118,44 @@ def superField (μ : ℝ) (x : ℝ) : ℝ := μ * x - x ^ 3
 /-- The supercritical pitchfork as a vector field on `State 1`. -/
 def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 
-@[powerlib_foundation] theorem superField_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
+@[tmio M, powerlib_foundation] theorem superField_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (superField μ) := by
   unfold superField; fun_prop
 
-@[powerlib_foundation] theorem hasDerivAt_superField (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_superField (μ x : ℝ) :
     HasDerivAt (superField μ) (μ - 3 * x ^ 2) x := by
   have h := ((hasDerivAt_id' x).const_mul μ).sub (hasDerivAt_pow 3 x)
   unfold superField
   convert h using 1
   push_cast; ring
 
-@[powerlib_foundation] theorem deriv_superField (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem deriv_superField (μ x : ℝ) :
     deriv (superField μ) x = μ - 3 * x ^ 2 :=
   (hasDerivAt_superField μ x).deriv
 
-@[powerlib_foundation] theorem superField_eq_zero_iff (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem superField_eq_zero_iff (μ x : ℝ) :
     superField μ x = 0 ↔ x = 0 ∨ (0 ≤ μ ∧ (x = √μ ∨ x = -√μ)) := by
   have hfac : superField μ x = x * Fold.field μ x := by simp [superField, Fold.field]; ring
   rw [hfac, mul_eq_zero, Fold.field_eq_zero_iff]
 
 /-- Linearization slopes: `f_x(0) = μ`, `f_x(±√μ) = −2μ` (`μ ≥ 0`). -/
-@[powerlib_foundation] theorem super_slopes {μ : ℝ} (hμ : 0 ≤ μ) :
+@[tmio M, powerlib_foundation] theorem super_slopes {μ : ℝ} (hμ : 0 ≤ μ) :
     deriv (superField μ) 0 = μ ∧ deriv (superField μ) √μ = -2 * μ ∧
       deriv (superField μ) (-√μ) = -2 * μ := by
   simp only [deriv_superField, neg_sq, Real.sq_sqrt hμ]
   refine ⟨by ring, by ring, by ring⟩
 
-@[powerlib_foundation] theorem super_origin_stable {μ : ℝ} (hμ : μ < 0) :
+@[tmio TM, powerlib_foundation] theorem super_origin_stable {μ : ℝ} (hμ : μ < 0) :
     LocallyExponentiallyStable (superSystem μ) (embed 0) :=
   lift_locallyExponentiallyStable (superField_contDiff μ) (by simp [superField])
     (by rw [deriv_superField]; linarith)
 
-@[powerlib_foundation] theorem super_origin_unstable {μ : ℝ} (hμ : 0 < μ) :
+@[tmio TM, powerlib_foundation] theorem super_origin_unstable {μ : ℝ} (hμ : 0 < μ) :
     Unstable (superSystem μ) (embed 0) :=
   lift_unstable (superField_contDiff μ) (by simp [superField])
     (by rw [deriv_superField]; linarith)
 
-@[powerlib_foundation] theorem super_branch_stable {μ : ℝ} (hμ : 0 < μ) :
+@[tmio TM, powerlib_foundation] theorem super_branch_stable {μ : ℝ} (hμ : 0 < μ) :
     LocallyExponentiallyStable (superSystem μ) (embed √μ) ∧
       LocallyExponentiallyStable (superSystem μ) (embed (-√μ)) := by
   obtain ⟨-, h1, h2⟩ := super_slopes hμ.le
@@ -166,20 +166,20 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 
 /-! ### The degenerate point `μ = 0`: asymptotic but not exponential stability -/
 
-@[powerlib_foundation] theorem inner_superSystem (x : State 1) :
+@[tmio M, powerlib_foundation] theorem inner_superSystem (x : State 1) :
     inner ℝ x (superSystem 0 x) = -(x 0) ^ 4 := by
   simp [superSystem, PiLp.inner_apply, superField]
   ring
 
 /-- `V(x) = ‖x‖² = x²` is a radially unbounded strict Lyapunov function with `V̇ = −2x⁴`. -/
-@[powerlib_foundation] theorem super_zero_lie (x : State 1) :
+@[tmio M, powerlib_foundation] theorem super_zero_lie (x : State 1) :
     fderiv ℝ (fun y : State 1 => ‖y‖ ^ 2) x (superSystem 0 x) = -2 * (x 0) ^ 4 := by
   rw [(hasStrictFDerivAt_norm_sq x).hasFDerivAt.fderiv]
   simp only [smul_apply, innerSL_apply_apply, inner_superSystem]
   simp only [nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
-@[powerlib_foundation] theorem super_zero_lyapunov :
+@[tmio TM, powerlib_foundation] theorem super_zero_lyapunov :
     _root_.IsAsymptoticLyapunovFunction (superSystem 0) (fun y : State 1 => ‖y‖ ^ 2) 0 where
   hcont := (continuous_norm.pow 2)
   hV_c1 := contDiff_norm_sq ℝ
@@ -203,12 +203,12 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
     exact this.comp tendsto_comap
 
 /-- At `μ = 0` the origin of `ẋ = −x³` is globally asymptotically stable. -/
-@[powerlib_foundation] theorem super_zero_globallyAsymptoticallyStable :
+@[tmio TM, powerlib_foundation] theorem super_zero_globallyAsymptoticallyStable :
     Flow.GloballyAsymptoticallyStable (superSystem 0) 0 :=
   Flow.globallyAsymptoticallyStable_of_strictLyapunov (by norm_num)
     (lift_contDiff (superField_contDiff 0)) (asymptotic_implies_strict super_zero_lyapunov)
 
-@[powerlib_foundation] theorem super_zero_solution_hasDerivAt (x₀ t : ℝ) (ht : 0 ≤ t) :
+@[tmio M, powerlib_foundation] theorem super_zero_solution_hasDerivAt (x₀ t : ℝ) (ht : 0 ≤ t) :
     HasDerivAt (fun s => x₀ / √(1 + 2 * x₀ ^ 2 * s))
       (superField 0 (x₀ / √(1 + 2 * x₀ ^ 2 * t))) t := by
   have hu : 0 < 1 + 2 * x₀ ^ 2 * t := by positivity
@@ -227,7 +227,7 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
   rw [hsq2]
 
 /-- At `μ = 0` the origin is not locally exponentially stable. -/
-@[powerlib_foundation] theorem super_zero_not_locallyExponentiallyStable :
+@[tmio TM, powerlib_foundation] theorem super_zero_not_locallyExponentiallyStable :
     ¬ LocallyExponentiallyStable (superSystem 0) (embed 0) := by
   rintro ⟨r, C, a, hr, hC, ha, h⟩
   set x₀ := r / 2 with hx₀
@@ -278,7 +278,7 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 
 /-- The square `ρ = x²` of a solution of `ẋ = μx − x³` solves the logistic amplitude equation
 `ρ̇ = 2μρ − 2ρ²` (`Logistic.field μ (−1)`). -/
-@[powerlib_foundation] theorem super_sq_isIntegralCurveOn {μ : ℝ} {ψ : ℝ → ℝ} {s : Set ℝ}
+@[tmio M, powerlib_foundation] theorem super_sq_isIntegralCurveOn {μ : ℝ} {ψ : ℝ → ℝ} {s : Set ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => superField μ r) s) :
     IsIntegralCurveOn (fun t => ψ t ^ 2) (fun _ r => Logistic.field μ (-1) r) s := by
   intro t ht
@@ -289,7 +289,7 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 /-- For `μ > 0`, every solution with `x(a) > 0` satisfies
 `1/x² − 1/μ = (1/x(a)² − 1/μ) e^{−2μ(t−a)}` (`Logistic.reciprocal_formula` for `ρ = x²`,
 `l = −1`). -/
-@[powerlib_foundation] theorem super_bernoulli {μ : ℝ} (hμ : 0 < μ) {ψ : ℝ → ℝ} {a b : ℝ}
+@[tmio M, powerlib_foundation] theorem super_bernoulli {μ : ℝ} (hμ : 0 < μ) {ψ : ℝ → ℝ} {a b : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => superField μ r) (Icc a b)) (ha : 0 < ψ a) :
     ∀ t ∈ Icc a b, 1 / ψ t ^ 2 - 1 / μ = (1 / ψ a ^ 2 - 1 / μ) * Real.exp (-2 * μ * (t - a)) := by
   intro t ht
@@ -299,7 +299,7 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 
 /-- For `μ > 0` the positive half-line lies in the basin of `√μ`: every forward-complete
 solution with `x(a) > 0` converges to `√μ` (`Logistic.tendsto_level` for `ρ = x²`). -/
-@[powerlib_foundation] theorem super_tendsto_sqrt {μ : ℝ} (hμ : 0 < μ) {ψ : ℝ → ℝ} {a : ℝ}
+@[tmio TM, powerlib_foundation] theorem super_tendsto_sqrt {μ : ℝ} (hμ : 0 < μ) {ψ : ℝ → ℝ} {a : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => superField μ r) (Ici a)) (ha : 0 < ψ a) :
     Tendsto ψ atTop (𝓝 √μ) := by
   have hlim := Logistic.tendsto_level hμ (by norm_num) (super_sq_isIntegralCurveOn hψ)
@@ -319,28 +319,28 @@ def subField (μ : ℝ) (x : ℝ) : ℝ := μ * x + x ^ 3
 /-- The subcritical pitchfork as a vector field on `State 1`. -/
 def subSystem (μ : ℝ) : State 1 → State 1 := lift (subField μ)
 
-@[powerlib_foundation] theorem subField_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
+@[tmio M, powerlib_foundation] theorem subField_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (subField μ) := by
   unfold subField; fun_prop
 
-@[powerlib_foundation] theorem hasDerivAt_subField (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_subField (μ x : ℝ) :
     HasDerivAt (subField μ) (μ + 3 * x ^ 2) x := by
   have h := ((hasDerivAt_id' x).const_mul μ).add (hasDerivAt_pow 3 x)
   unfold subField
   convert h using 1
   push_cast; ring
 
-@[powerlib_foundation] theorem deriv_subField (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem deriv_subField (μ x : ℝ) :
     deriv (subField μ) x = μ + 3 * x ^ 2 :=
   (hasDerivAt_subField μ x).deriv
 
-@[powerlib_foundation] theorem subField_eq_zero_iff (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem subField_eq_zero_iff (μ x : ℝ) :
     subField μ x = 0 ↔ x = 0 ∨ (μ ≤ 0 ∧ (x = √(-μ) ∨ x = -√(-μ))) := by
   have hfac : subField μ x = -(x * Fold.field (-μ) x) := by simp [subField, Fold.field]; ring
   rw [hfac, neg_eq_zero, mul_eq_zero, Fold.field_eq_zero_iff, neg_nonneg]
 
 /-- Subcritical side branches `±√(−μ)` (`μ < 0`) have slope `−2μ > 0` and are unstable. -/
-@[powerlib_foundation] theorem sub_branch_unstable {μ : ℝ} (hμ : μ < 0) :
+@[tmio TM, powerlib_foundation] theorem sub_branch_unstable {μ : ℝ} (hμ : μ < 0) :
     Unstable (subSystem μ) (embed √(-μ)) ∧
       Unstable (subSystem μ) (embed (-√(-μ))) := by
   have hs : √(-μ) ^ 2 = -μ := Real.sq_sqrt (by linarith)
@@ -351,12 +351,12 @@ def subSystem (μ : ℝ) : State 1 → State 1 := lift (subField μ)
       ((subField_eq_zero_iff μ _).mpr (Or.inr ⟨hμ.le, Or.inr rfl⟩))
       (by rw [deriv_subField, neg_sq, hs]; linarith)⟩
 
-@[powerlib_foundation] theorem sub_origin_stable {μ : ℝ} (hμ : μ < 0) :
+@[tmio TM, powerlib_foundation] theorem sub_origin_stable {μ : ℝ} (hμ : μ < 0) :
     LocallyExponentiallyStable (subSystem μ) (embed 0) :=
   lift_locallyExponentiallyStable (subField_contDiff μ) (by simp [subField])
     (by rw [deriv_subField]; linarith)
 
-@[powerlib_foundation] theorem sub_origin_unstable {μ : ℝ} (hμ : 0 < μ) :
+@[tmio TM, powerlib_foundation] theorem sub_origin_unstable {μ : ℝ} (hμ : 0 < μ) :
     Unstable (subSystem μ) (embed 0) :=
   lift_unstable (subField_contDiff μ) (by simp [subField])
     (by rw [deriv_subField]; linarith)
@@ -364,24 +364,24 @@ def subSystem (μ : ℝ) : State 1 → State 1 := lift (subField μ)
 /-! ## `ℤ₂` symmetry -/
 
 /-- An odd scalar field has the origin as an equilibrium. -/
-@[powerlib_foundation] theorem odd_apply_zero {f : ℝ → ℝ} (hodd : ∀ x, f (-x) = -f x) :
+@[tmio T, powerlib_foundation] theorem odd_apply_zero {f : ℝ → ℝ} (hodd : ∀ x, f (-x) = -f x) :
     f 0 = 0 := by
   have := hodd 0
   rw [neg_zero] at this
   linarith
 
 /-- An odd scalar field has vanishing even-order derivatives at the origin. -/
-@[powerlib_foundation] theorem odd_iteratedDeriv_even_zero {f : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem odd_iteratedDeriv_even_zero {f : ℝ → ℝ}
     (hodd : ∀ x, f (-x) = -f x) (k : ℕ) : iteratedDeriv (2 * k) f 0 = 0 := by
   have hfun : (fun x => f (-x)) = fun x => -f x := funext hodd
   have h := iteratedDeriv_comp_neg (2 * k) f 0
   rw [hfun, iteratedDeriv_fun_neg, neg_zero, pow_mul, neg_one_sq, one_pow, one_smul] at h
   linarith
 
-@[powerlib_foundation] theorem superField_odd (μ x : ℝ) : superField μ (-x) = -superField μ x := by
+@[tmio M, powerlib_foundation] theorem superField_odd (μ x : ℝ) : superField μ (-x) = -superField μ x := by
   simp [superField]; ring
 
-@[powerlib_foundation] theorem subField_odd (μ x : ℝ) : subField μ (-x) = -subField μ x := by
+@[tmio M, powerlib_foundation] theorem subField_odd (μ x : ℝ) : subField μ (-x) = -subField μ x := by
   simp [subField]; ring
 
 /-! ## Potential barrier -/
@@ -389,7 +389,7 @@ def subSystem (μ : ℝ) : State 1 → State 1 := lift (subField μ)
 /-- The supercritical pitchfork potential `V(x) = −μx²/2 + x⁴/4`, `V' = −(μx − x³)`. -/
 def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x ^ 2 / 2 + x ^ 4 / 4
 
-@[powerlib_foundation] theorem hasDerivAt_potential (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_potential (μ x : ℝ) :
     HasDerivAt (potential μ) (-superField μ x) x := by
   have h := (((hasDerivAt_pow 2 x).const_mul (-μ)).div_const 2).add
     ((hasDerivAt_pow 4 x).div_const 4)
@@ -398,7 +398,7 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x ^ 2 / 2 + x ^ 4 / 4
   · simp [superField]; ring
 
 /-- Correction: the pitchfork barrier is `μ²/4` (exponent `2`). -/
-@[powerlib_foundation] theorem barrier {μ : ℝ} (hμ : 0 ≤ μ) :
+@[tmio M, powerlib_foundation] theorem barrier {μ : ℝ} (hμ : 0 ≤ μ) :
     potential μ 0 - potential μ √μ = μ ^ 2 / 4 ∧
       potential μ 0 - potential μ (-√μ) = μ ^ 2 / 4 := by
   have h2 : √μ ^ 2 = μ := Real.sq_sqrt hμ

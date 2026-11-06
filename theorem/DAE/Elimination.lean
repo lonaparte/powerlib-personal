@@ -53,7 +53,7 @@ def IsDAG (φ : X → (Fin m → ℝ) → Fin m → ℝ) : Prop :=
 /-- Sequential substitution: `m` passes of `y ↦ φ(x, y)` starting from `0`. -/
 def solveDAG (φ : X → (Fin m → ℝ) → Fin m → ℝ) (x : X) : Fin m → ℝ := (φ x)^[m] 0
 
-@[powerlib_foundation] private lemma iterate_stable {φ : X → (Fin m → ℝ) → Fin m → ℝ}
+@[tmio T, powerlib_foundation] private lemma iterate_stable {φ : X → (Fin m → ℝ) → Fin m → ℝ}
     (hφ : IsDAG φ) (x : X) :
     ∀ k : ℕ, ∀ j : Fin m, j.val < k → ∀ k', k ≤ k' → (φ x)^[k'] 0 j = (φ x)^[k] 0 j := by
   intro k
@@ -76,7 +76,7 @@ def solveDAG (φ : X → (Fin m → ℝ) → Fin m → ℝ) (x : X) : Fin m → 
   exact h
 
 /-- The algebraic constraint of a DAG-ordered system has exactly one solution. -/
-@[powerlib_foundation] theorem eq_of_fixed {φ : X → (Fin m → ℝ) → Fin m → ℝ} (hφ : IsDAG φ)
+@[tmio T, powerlib_foundation] theorem eq_of_fixed {φ : X → (Fin m → ℝ) → Fin m → ℝ} (hφ : IsDAG φ)
     {x : X} {y y' : Fin m → ℝ} (hy : φ x y = y) (hy' : φ x y' = y') : y = y' := by
   have key : ∀ k : ℕ, ∀ j : Fin m, j.val < k → y j = y' j := by
     intro k
@@ -89,14 +89,14 @@ def solveDAG (φ : X → (Fin m → ℝ) → Fin m → ℝ) (x : X) : Fin m → 
   funext j
   exact key m j j.isLt
 
-@[powerlib_foundation] theorem fixed_iff {φ : X → (Fin m → ℝ) → Fin m → ℝ} (hφ : IsDAG φ)
+@[tmio T, powerlib_foundation] theorem fixed_iff {φ : X → (Fin m → ℝ) → Fin m → ℝ} (hφ : IsDAG φ)
     (x : X) (y : Fin m → ℝ) : φ x y = y ↔ y = solveDAG φ x :=
   ⟨fun h => eq_of_fixed hφ h (solveDAG_spec hφ x), fun h => h ▸ solveDAG_spec hφ x⟩
 
 /-- Global trajectory equivalence of the DAG-ordered DAE and its substituted ODE: `(x, y)` is a
 global solution of the semi-explicit DAE `ẋ = f(x, y)`, `y = φ(x, y)` (left-hand side) iff `x`
 solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
-@[powerlib_foundation] theorem isDAGSolution_iff {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem isDAGSolution_iff {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {f : E → (Fin m → ℝ) → E} {φ : E → (Fin m → ℝ) → Fin m → ℝ}
     (hφ : IsDAG φ) (x : ℝ → E) (y : ℝ → Fin m → ℝ) :
     (∀ t, HasDerivAt x (f (x t) (y t)) t ∧ y t = φ (x t) (y t)) ↔
@@ -113,7 +113,7 @@ solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
 /-! ## Index 1: unit lower-triangular constraint Jacobian -/
 
 /-- A DAG-ordered map has a strictly lower-triangular Jacobian in `y`. -/
-@[powerlib_foundation] theorem jacobian_strictLower {φ : X → (Fin m → ℝ) → Fin m → ℝ}
+@[tmio T, powerlib_foundation] theorem jacobian_strictLower {φ : X → (Fin m → ℝ) → Fin m → ℝ}
     (hφ : IsDAG φ) {x : X} {y : Fin m → ℝ} {D : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)}
     (hD : HasFDerivAt (φ x) D y) {k j : Fin m} (hkj : k ≤ j) :
     D (Pi.single j 1) k = 0 := by
@@ -137,7 +137,7 @@ solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
   exact (hk.unique (hasDerivAt_const 0 _))
 
 /-- `I - N` with `N` strictly lower triangular has determinant `1`. -/
-@[powerlib_foundation] theorem det_one_sub_strictLower {R : Type*} [CommRing R]
+@[tmio T, powerlib_foundation] theorem det_one_sub_strictLower {R : Type*} [CommRing R]
     (N : Matrix (Fin m) (Fin m) R) (hN : ∀ k j : Fin m, k ≤ j → N k j = 0) :
     (1 - N).det = 1 := by
   rw [det_of_isLowerTriangular]
@@ -147,7 +147,7 @@ solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
     simp [hij'.ne, hN i j hij'.le]
 
 /-- Index 1 for DAG-ordered constraints: `det (∂g/∂y) = det (I - ∂φ/∂y) = 1`. -/
-@[powerlib_foundation] theorem det_constraint_jacobian_eq_one {φ : X → (Fin m → ℝ) → Fin m → ℝ}
+@[tmio T, powerlib_foundation] theorem det_constraint_jacobian_eq_one {φ : X → (Fin m → ℝ) → Fin m → ℝ}
     (hφ : IsDAG φ) {x : X} {y : Fin m → ℝ} {D : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)}
     (hD : HasFDerivAt (φ x) D y) :
     (1 - LinearMap.toMatrix' (D : (Fin m → ℝ) →ₗ[ℝ] Fin m → ℝ)).det = 1 :=
@@ -160,7 +160,7 @@ solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
 /-- A semi-explicit DAE `ẋ = F(x, z)`, `z = G(x)` with an explicit algebraic layer: a pair
 `(x(t), z(t))` solves it on `s` iff `z = G ∘ x` on `s` and `x` solves `ẋ = F(x, G(x))` on `s`.
 (Any DAG of explicit algebraic assignments composes into one such `G`.) -/
-@[powerlib_foundation] theorem isIntegralCurveOn_dae_iff {E Z : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_dae_iff {E Z : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (F : E → Z → E) (G : E → Z) (x : ℝ → E) (z : ℝ → Z) (s : Set ℝ) :
     ((∀ t ∈ s, z t = G (x t)) ∧ ∀ t ∈ s, HasDerivWithinAt x (F (x t) (z t)) s t) ↔
       ((∀ t ∈ s, z t = G (x t)) ∧

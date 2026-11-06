@@ -126,7 +126,7 @@ def Dfd (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Matrix β γ ℝ := -((Bbb W)
 /-- Machine-bus connectivity: every non-machine bus reaches a machine bus. -/
 def MachineConnected (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Prop := ∀ b, ∃ g, Reach W (.inl b) (.inr g)
 
-@[powerlib_foundation] theorem Bbb_eq_grounded (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) :
+@[tmio T, powerlib_foundation] theorem Bbb_eq_grounded (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) :
     Bbb W = grounded (Wbb W) (machineCoupling W) := by
   ext i j
   simp only [Bbb, submatrix_apply, grounded, laplacian, Wbb, machineCoupling,
@@ -135,12 +135,12 @@ def MachineConnected (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Prop := ∀ b, �
   · subst h; simp; ring
   · simp [h]
 
-@[powerlib_foundation] theorem Bbg_eq (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Bbg W = -Wbg W := by
+@[tmio T, powerlib_foundation] theorem Bbg_eq (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Bbg W = -Wbg W := by
   ext i g
   simp [Bbg, Wbg, laplacian_apply]
 
 omit [Fintype β] [DecidableEq β] [DecidableEq γ] in
-@[powerlib_foundation] theorem machineConnected_iff_groundReachable
+@[tmio T, powerlib_foundation] theorem machineConnected_iff_groundReachable
     {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ} (hpos : ∀ i j, 0 ≤ W i j) :
     GroundReachable (Wbb W) (machineCoupling W) ↔ MachineConnected W := by
   constructor
@@ -178,7 +178,7 @@ omit [Fintype β] [DecidableEq β] [DecidableEq γ] in
     exact key _ hg b rfl
 
 /-- `B_bb` is nonsingular iff every non-machine bus is connected to a machine bus. -/
-@[powerlib_foundation] theorem Bbb_det_ne_zero_iff {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ}
+@[tmio T, powerlib_foundation] theorem Bbb_det_ne_zero_iff {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) :
     (Bbb W).det ≠ 0 ↔ MachineConnected W := by
   rw [Bbb_eq_grounded, grounded_det_ne_zero_iff (W := Wbb W) (g := machineCoupling W)
@@ -189,7 +189,7 @@ omit [Fintype β] [DecidableEq β] [DecidableEq γ] in
 
 variable {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ}
 
-@[powerlib_foundation] theorem laplacian_mulVec_inl (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ)
+@[tmio T, powerlib_foundation] theorem laplacian_mulVec_inl (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ)
     (θ : β ⊕ γ → ℝ) (b : β) :
     (laplacian W *ᵥ θ) (.inl b) =
       (Bbb W *ᵥ (θ ∘ Sum.inl)) b + (Bbg W *ᵥ (θ ∘ Sum.inr)) b := by
@@ -197,7 +197,7 @@ variable {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ}
 
 /-- Static divider: zero injection perturbations at non-machine buses force
 `Δθ_b = D_fd Δθ_g`. -/
-@[powerlib_foundation] theorem nonMachine_angles (hpos : ∀ i j, 0 ≤ W i j)
+@[tmio T, powerlib_foundation] theorem nonMachine_angles (hpos : ∀ i j, 0 ≤ W i j)
     (hconn : MachineConnected W) {θ : β ⊕ γ → ℝ}
     (hP : ∀ b, (laplacian W *ᵥ θ) (.inl b) = 0) :
     θ ∘ Sum.inl = Dfd W *ᵥ (θ ∘ Sum.inr) := by
@@ -219,7 +219,7 @@ variable {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ}
 
 /-- **Frequency divider.** Along any differentiable angle-deviation trajectory with zero
 injection perturbation at every non-machine bus, `Δω_b(t) = D_fd Δω_g(t)`. -/
-@[powerlib_foundation] theorem frequencyDivider (hpos : ∀ i j, 0 ≤ W i j)
+@[tmio T, powerlib_foundation] theorem frequencyDivider (hpos : ∀ i j, 0 ≤ W i j)
     (hconn : MachineConnected W) {θ ω : ℝ → β ⊕ γ → ℝ} {t : ℝ}
     (hθ : ∀ s, HasDerivAt θ (ω s) s)
     (hP : ∀ s b, (laplacian W *ᵥ θ s) (.inl b) = 0) :
@@ -241,7 +241,7 @@ injection perturbation at every non-machine bus, `Δω_b(t) = D_fd Δω_g(t)`. -
   exact hb.unique hD
 
 /-- The divider weights are nonnegative. -/
-@[powerlib_foundation] theorem Dfd_nonneg (hpos : ∀ i j, 0 ≤ W i j) (hconn : MachineConnected W)
+@[tmio T, powerlib_foundation] theorem Dfd_nonneg (hpos : ∀ i j, 0 ≤ W i j) (hconn : MachineConnected W)
     (b : β) (g : γ) : 0 ≤ Dfd W b g := by
   simp only [Dfd, Bbg_eq, Matrix.mul_neg, neg_neg, Matrix.mul_apply]
   apply Finset.sum_nonneg
@@ -253,7 +253,7 @@ injection perturbation at every non-machine bus, `Δω_b(t) = D_fd Δω_g(t)`. -
   · exact hpos _ _
 
 /-- Each row of the divider sums to one. -/
-@[powerlib_foundation] theorem Dfd_row_sum (hpos : ∀ i j, 0 ≤ W i j) (hconn : MachineConnected W)
+@[tmio T, powerlib_foundation] theorem Dfd_row_sum (hpos : ∀ i j, 0 ≤ W i j) (hconn : MachineConnected W)
     (b : β) : ∑ g, Dfd W b g = 1 := by
   have hreach := (machineConnected_iff_groundReachable hpos).mpr hconn
   have hunit : IsUnit (Bbb W).det := by
@@ -278,7 +278,7 @@ injection perturbation at every non-machine bus, `Δω_b(t) = D_fd Δω_g(t)`. -
 
 /-- Every non-machine bus frequency deviation is bounded above by the largest machine
 frequency deviation. -/
-@[powerlib_foundation] theorem busFrequency_le (hpos : ∀ i j, 0 ≤ W i j)
+@[tmio T, powerlib_foundation] theorem busFrequency_le (hpos : ∀ i j, 0 ≤ W i j)
     (hconn : MachineConnected W) {ωg : γ → ℝ} {c : ℝ} (hc : ∀ g, ωg g ≤ c) (b : β) :
     (Dfd W *ᵥ ωg) b ≤ c := by
   calc (Dfd W *ᵥ ωg) b = ∑ g, Dfd W b g * ωg g := rfl
@@ -288,7 +288,7 @@ frequency deviation. -/
 
 /-- Every non-machine bus frequency deviation is bounded below by the smallest machine
 frequency deviation. -/
-@[powerlib_foundation] theorem le_busFrequency (hpos : ∀ i j, 0 ≤ W i j)
+@[tmio T, powerlib_foundation] theorem le_busFrequency (hpos : ∀ i j, 0 ≤ W i j)
     (hconn : MachineConnected W) {ωg : γ → ℝ} {c : ℝ} (hc : ∀ g, c ≤ ωg g) (b : β) :
     c ≤ (Dfd W *ᵥ ωg) b := by
   calc c = ∑ g, Dfd W b g * c := by rw [← Finset.sum_mul, Dfd_row_sum hpos hconn, one_mul]
@@ -297,7 +297,7 @@ frequency deviation. -/
     _ = (Dfd W *ᵥ ωg) b := rfl
 
 /-- Common mode: if all machines share one frequency deviation, every bus has it. -/
-@[powerlib_foundation] theorem busFrequency_commonMode (hpos : ∀ i j, 0 ≤ W i j)
+@[tmio T, powerlib_foundation] theorem busFrequency_commonMode (hpos : ∀ i j, 0 ≤ W i j)
     (hconn : MachineConnected W) (c : ℝ) (b : β) :
     (Dfd W *ᵥ (fun _ => c)) b = c :=
   le_antisymm (busFrequency_le hpos hconn (fun _ => le_rfl) b)
@@ -305,14 +305,14 @@ frequency deviation. -/
 
 /-- In common mode the deviation of each bus frequency from the COI frequency
 `∑ w_g ω_g` (weights summing to one) vanishes. -/
-@[powerlib_foundation] theorem busFrequency_sub_coi_commonMode (hpos : ∀ i j, 0 ≤ W i j)
+@[tmio T, powerlib_foundation] theorem busFrequency_sub_coi_commonMode (hpos : ∀ i j, 0 ≤ W i j)
     (hconn : MachineConnected W) {wH : γ → ℝ} (hw : ∑ g, wH g = 1) (c : ℝ) (b : β) :
     (Dfd W *ᵥ (fun _ => c)) b - ∑ g, wH g * c = 0 := by
   rw [busFrequency_commonMode hpos hconn, ← Finset.sum_mul, hw, one_mul, sub_self]
 
 /-- Modal map: a machine-frequency mode shape `v` appears at the buses as `D_fd v`,
 linearly in the modal amplitudes. -/
-@[powerlib_foundation] theorem busFrequency_modal {ι : Type*} [Fintype ι] (a : ι → ℝ)
+@[tmio T, powerlib_foundation] theorem busFrequency_modal {ι : Type*} [Fintype ι] (a : ι → ℝ)
     (v : ι → γ → ℝ) :
     Dfd W *ᵥ (∑ i, a i • v i) = ∑ i, a i • (Dfd W *ᵥ v i) := by
   rw [Matrix.mulVec_sum]

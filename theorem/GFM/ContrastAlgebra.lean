@@ -85,7 +85,7 @@ open Filter Topology
   linear_combination ((ωcr : ℂ) ^ 2) * Complex.I_sq
 
 /-- Spectrum of the family: the roots are exactly `−β₃` and `−α₀ ± jω_cr`. -/
-@[powerlib_foundation] theorem family_roots_iff {α0 ωcr β3 M : ℝ} (hM : M ≠ 0) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem family_roots_iff {α0 ωcr β3 M : ℝ} (hM : M ≠ 0) (s : ℂ) :
     M * ((s + β3) * (s ^ 2 + 2 * α0 * s + ((α0 ^ 2 + ωcr ^ 2 : ℝ) : ℂ))) = 0 ↔
       s = -β3 ∨ s = -α0 + Complex.I * ωcr ∨ s = -α0 - Complex.I * ωcr := by
   rw [roots_victim_quadratic]
@@ -93,7 +93,7 @@ open Filter Topology
   simp only [mul_eq_zero, hMC, false_or, sub_eq_zero, add_eq_zero_iff_eq_neg]
 
 /-- On the family, `T_exact = ω_c K / p(s)` equals `β₃ ν² / ((s + β₃)(s² + 2α₀ s + ν²))`. -/
-@[powerlib_foundation] theorem Texact_family {α0 ν β3 M D K ωc : ℝ} (hM : M ≠ 0)
+@[tmio T, powerlib_foundation] theorem Texact_family {α0 ν β3 M D K ωc : ℝ} (hM : M ≠ 0)
     (hK : ωc * K = M * β3 * ν ^ 2)
     (hfam : ∀ s : ℂ, (s + ωc) * (M * s ^ 2 + D * s) + ωc * K =
       M * ((s + β3) * (s ^ 2 + 2 * α0 * s + ν ^ 2))) (s : ℂ) :
@@ -110,7 +110,7 @@ def Texact (α0 ν β : ℝ) (s : ℂ) : ℂ :=
   ((β * ν ^ 2 : ℝ) : ℂ) / ((s + β) * (s ^ 2 + 2 * α0 * s + ν ^ 2))
 
 /-- `∂_{β₃} ln |T_exact(2jω)| = 4ω² / [β₃(β₃² + 4ω²)]`. -/
-@[powerlib_foundation] theorem hasDerivAt_log_norm_Texact {α0 ν ω β : ℝ} (hβ : 0 < β)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_log_norm_Texact {α0 ν ω β : ℝ} (hβ : 0 < β)
     (hν : ν ≠ 0)
     (hq : (2 * Complex.I * ω) ^ 2 + 2 * α0 * (2 * Complex.I * ω) + (ν : ℂ) ^ 2 ≠ 0) :
     HasDerivAt (fun b => Real.log ‖Texact α0 ν b (2 * Complex.I * ω)‖)
@@ -151,7 +151,7 @@ def Texact (α0 ν β : ℝ) (s : ℂ) : ℂ :=
 
 /-- VSM cubic on the `β₃` family: `P(s) = (s + ω_c)(M s² + D s)` has
 `P'(−α₀ + jω_cr) = 2jMω_cr(β₃ − α₀ + jω_cr)`. -/
-@[powerlib_foundation] theorem gfm_victim_derivative {α0 ωcr β3 M D K ωc : ℝ}
+@[tmio T, powerlib_foundation] theorem gfm_victim_derivative {α0 ωcr β3 M D K ωc : ℝ}
     (hfam : ∀ s : ℂ, (s + ωc) * (M * s ^ 2 + D * s) + ωc * K =
       M * ((s + β3) * (s ^ 2 + 2 * α0 * s + ((α0 ^ 2 + ωcr ^ 2 : ℝ) : ℂ)))) :
     HasStrictDerivAt (fun s : ℂ => (s + ωc) * (M * s ^ 2 + D * s))
@@ -191,10 +191,10 @@ def emfPCC (E0 mq Qref V X δ : ℝ) : ℝ :=
 def IsEmfInternal (E0 mq Qref V X δ E : ℝ) : Prop :=
   mq / X * E ^ 2 + (1 - mq * V * Real.cos δ / X) * E - (E0 + mq * Qref) = 0
 
-@[powerlib_foundation] theorem emfPCC_zero (E0 Qref V X δ : ℝ) : emfPCC E0 0 Qref V X δ = E0 := by
+@[tmio M, powerlib_foundation] theorem emfPCC_zero (E0 Qref V X δ : ℝ) : emfPCC E0 0 Qref V X δ = E0 := by
   simp [emfPCC]
 
-@[powerlib_foundation] theorem isEmfInternal_zero_iff (E0 Qref V X δ E : ℝ) :
+@[tmio M, powerlib_foundation] theorem isEmfInternal_zero_iff (E0 Qref V X δ E : ℝ) :
     IsEmfInternal E0 0 Qref V X δ E ↔ E = E0 := by
   simp [IsEmfInternal, sub_eq_zero]
 
@@ -205,7 +205,7 @@ def gfmField (E : ℝ → ℝ) (M D ωc Pref V X : ℝ) (y : Fin 3 → ℝ) : Fi
 
 /-- `K_q = 0`: the field (hence its Jacobian and spectrum at any point) is independent of
 `Q_ref`, for the PCC-sensing law; the internal-sensing law has the unique solution `E₀`. -/
-@[powerlib_foundation] theorem gfm_field_indep_Qref (E0 M D ωc Pref V X Qref Qref' : ℝ) :
+@[tmio M, powerlib_foundation] theorem gfm_field_indep_Qref (E0 M D ωc Pref V X Qref Qref' : ℝ) :
     gfmField (emfPCC E0 0 Qref V X) M D ωc Pref V X =
       gfmField (emfPCC E0 0 Qref' V X) M D ωc Pref V X := by
   funext y

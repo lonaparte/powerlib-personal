@@ -77,7 +77,7 @@ def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
 
 /-- Reduced slow field on the domain: `−sin θ*(ξ) = −(Δω + b ξ)/a = −(b/a)(ξ − ξ*)`,
 `ξ* = −Δω/b`. -/
-@[powerlib_foundation] theorem reduced_slow_field {a b Δω ξ : ℝ} (ha : 0 < a) (hb : b ≠ 0)
+@[tmio M, powerlib_foundation] theorem reduced_slow_field {a b Δω ξ : ℝ} (ha : 0 < a) (hb : b ≠ 0)
     (hdom : |Δω + b * ξ| < a) :
     -Real.sin (slowAngle a b Δω ξ) = -(b / a) * (ξ - (-Δω / b)) := by
   have hx : |(Δω + b * ξ) / a| < 1 := by rw [abs_div, abs_of_pos ha, div_lt_one ha]; exact hdom
@@ -87,7 +87,7 @@ def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
   ring
 
 /-- The reduced equilibrium `ξ* = −Δω/b` lies in the slow-manifold domain, with `θ* = 0`. -/
-@[powerlib_foundation] theorem reduced_equilibrium_mem {a b Δω : ℝ} (ha : 0 < a) (hb : b ≠ 0) :
+@[tmio M, powerlib_foundation] theorem reduced_equilibrium_mem {a b Δω : ℝ} (ha : 0 < a) (hb : b ≠ 0) :
     |Δω + b * (-Δω / b)| < a ∧ slowAngle a b Δω (-Δω / b) = 0 := by
   have h0 : Δω + b * (-Δω / b) = 0 := by field_simp; ring
   refine ⟨by rw [h0, abs_zero]; exact ha, ?_⟩
@@ -98,7 +98,7 @@ def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
 def reducedA (a b : ℝ) : Matrix (Fin 1) (Fin 1) ℝ := !![-(b / a)]
 
 /-- The reduced slow model is Hurwitz iff `b/a > 0`. -/
-@[powerlib_foundation] theorem isHurwitz_reducedA_iff (a b : ℝ) :
+@[tmio TM, powerlib_foundation] theorem isHurwitz_reducedA_iff (a b : ℝ) :
     LinearSystems.IsHurwitz (reducedA a b) ↔ 0 < b / a := by
   rw [reducedA, Linear.isHurwitz_one_iff, neg_lt_zero]
 
@@ -224,7 +224,7 @@ end ReducedSlow
 /-! ## Eigenvalues and the overdamping parameter -/
 
 /-- `ε_od = b/a² = 1/(4ζ²)` with `ζ = a/(2√b)` (`a = V K_p`, `b = V K_i > 0`, `a ≠ 0`). -/
-@[powerlib_foundation] theorem epsOd_eq {V Kp Ki : ℝ} (ha : V * Kp ≠ 0) (hb : 0 < V * Ki) :
+@[tmio M, powerlib_foundation] theorem epsOd_eq {V Kp Ki : ℝ} (ha : V * Kp ≠ 0) (hb : 0 < V * Ki) :
     V * Ki / (V * Kp) ^ 2 = 1 / (4 * zeta V Kp Ki ^ 2) := by
   have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt hb.le
   have h2 : (2 * omegaN V Ki) ^ 2 = 4 * (V * Ki) := by rw [mul_pow, hsq]; norm_num

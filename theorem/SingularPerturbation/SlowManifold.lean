@@ -67,7 +67,7 @@ def IsInvariantGraph (ε : ℝ) (f : E × F → E) (g : E × F → F) (H : E →
 
 /-- **Invariance of the graph** (globally Lipschitz full field): a full solution that starts on
 the graph coincides with the lifted reduced solution through the same point. -/
-@[powerlib_foundation] theorem graph_invariant_of_eq {ε : ℝ} (hε : ε ≠ 0) {f : E × F → E}
+@[tmio T, powerlib_foundation] theorem graph_invariant_of_eq {ε : ℝ} (hε : ε ≠ 0) {f : E × F → E}
     {g : E × F → F} {H : E → F} (hH : IsInvariantGraph ε f g H) {K : NNReal}
     (hL : LipschitzWith K (spField ε f g)) {x : ℝ → E}
     (hx : ∀ t, HasDerivAt x (f (x t, H (x t))) t) {z : ℝ → E × F}
@@ -82,7 +82,7 @@ the graph coincides with the lifted reduced solution through the same point. -/
 
 /-- A full solution that stays on the graph near `t₀` forces the invariance equation at
 `x(t₀)`. -/
-@[powerlib_foundation] theorem invarianceEq_of_solution_on_graph {ε : ℝ} {f : E × F → E}
+@[tmio T, powerlib_foundation] theorem invarianceEq_of_solution_on_graph {ε : ℝ} {f : E × F → E}
     {g : E × F → F} {H : E → F} {x : ℝ → E} {y : ℝ → F} {t₀ : ℝ}
     (hx : HasDerivAt x (f (x t₀, y t₀)) t₀) (hy : HasDerivAt y (ε⁻¹ • g (x t₀, y t₀)) t₀)
     (hon : ∀ᶠ t in 𝓝 t₀, y t = H (x t)) (hH : DifferentiableAt ℝ H (x t₀)) (hε : ε ≠ 0) :
@@ -98,7 +98,7 @@ the graph coincides with the lifted reduced solution through the same point. -/
 
 /-- If through every point of the graph there passes a full solution that stays on the graph,
 the graph satisfies the invariance equation everywhere. -/
-@[powerlib_foundation] theorem isInvariantGraph_of_forall {ε : ℝ} (hε : ε ≠ 0) {f : E × F → E}
+@[tmio T, powerlib_foundation] theorem isInvariantGraph_of_forall {ε : ℝ} (hε : ε ≠ 0) {f : E × F → E}
     {g : E × F → F} {H : E → F} (hH : Differentiable ℝ H)
     (hsol : ∀ x₀, ∃ z : ℝ → E × F, z 0 = (x₀, H x₀) ∧
       HasDerivAt z (spField ε f g (z 0)) 0 ∧ ∀ᶠ t in 𝓝 0, (z t).2 = H ((z t).1)) :
@@ -118,7 +118,7 @@ Let `H(ε, ·)` be a family of invariant graphs (`ε DₓH(ε, x) f(x, H(ε,x)) 
 `ε` near `0`), `H(0, x) = h₀ x`, `∂_ε H(0, x) = h₁`, with `DₓH(ε, x)` continuous in `ε` at `0`.
 If `(y, ε) ↦ g(x, y, ε)` has derivative `D` at `(h₀ x, 0)`, then `D(h₁, 1) = Dₓh₀ · f(x, h₀ x)`,
 i.e. `∂_y g · h₁ + ∂_ε g = ∂ₓh₀ · f`. -/
-@[powerlib_foundation] theorem h1_equation {f : E × F → E} {gx : F × ℝ → F} {H : ℝ → E → F}
+@[tmio T, powerlib_foundation] theorem h1_equation {f : E × F → E} {gx : F × ℝ → F} {H : ℝ → E → F}
     {x : E} {h1 : F} {D : F × ℝ →L[ℝ] F} {DH : ℝ → E →L[ℝ] F}
     (hinv : ∀ᶠ ε in 𝓝 0, ε • DH ε (f (x, H ε x)) = gx (H ε x, ε))
     (hHε : HasDerivAt (fun ε => H ε x) h1 0)
@@ -148,7 +148,7 @@ i.e. `∂_y g · h₁ + ∂_ε g = ∂ₓh₀ · f`. -/
 /-- Solution of `ẋ = 1`, `εẏ = x − y` from `(0, 0)`: `x = t`, `y = t − ε(1 − e^{−t/ε})`. -/
 def exampleY (ε t : ℝ) : ℝ := t - ε * (1 - Real.exp (-t / ε))
 
-@[powerlib_foundation] theorem exampleY_solves {ε : ℝ} (hε : ε ≠ 0) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem exampleY_solves {ε : ℝ} (hε : ε ≠ 0) (t : ℝ) :
     HasDerivAt (exampleY ε) (ε⁻¹ * (t - exampleY ε t)) t := by
   show HasDerivAt (fun t => t - ε * (1 - Real.exp (-t / ε))) _ t
   have h := ((hasDerivAt_neg t).div_const ε).exp
@@ -159,12 +159,12 @@ def exampleY (ε t : ℝ) : ℝ := t - ε * (1 - Real.exp (-t / ε))
   field_simp
   ring
 
-@[powerlib_foundation] theorem exampleY_zero (ε : ℝ) : exampleY ε 0 = 0 := by
+@[tmio T, powerlib_foundation] theorem exampleY_zero (ε : ℝ) : exampleY ε 0 = 0 := by
   simp [exampleY]
 
 /-- Correction to `T-slow-manifold` §1.4: starting on `M₀ = {y = x}` (where `g = x − y = 0`), the
 solution leaves `M₀` immediately: `y(t) − h(x(t)) = −ε(1 − e^{−t/ε}) ≠ 0` for `t ≠ 0`. -/
-@[powerlib_foundation] theorem M0_not_invariant {ε t : ℝ} (hε : 0 < ε) (ht : t ≠ 0) :
+@[tmio T, powerlib_foundation] theorem M0_not_invariant {ε t : ℝ} (hε : 0 < ε) (ht : t ≠ 0) :
     exampleY ε t - t ≠ 0 := by
   simp only [exampleY]
   intro h
@@ -181,7 +181,7 @@ solution leaves `M₀` immediately: `y(t) − h(x(t)) = −ε(1 − e^{−t/ε})
   · exact absurd h1 hε.ne'
 
 /-- On `M₀` the note's own derivative `d(y − h)/dt = −∂h/∂x · f_s` equals `−1 ≠ 0` here. -/
-@[powerlib_foundation] theorem M0_drift {ε : ℝ} (hε : ε ≠ 0) :
+@[tmio T, powerlib_foundation] theorem M0_drift {ε : ℝ} (hε : ε ≠ 0) :
     HasDerivAt (fun t => exampleY ε t - t) (ε⁻¹ * (0 - exampleY ε 0) - 1) 0 := by
   exact (exampleY_solves hε 0).sub (hasDerivAt_id 0)
 

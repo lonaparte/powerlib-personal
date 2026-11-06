@@ -135,7 +135,7 @@ def rightCurrent (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) : ℝ :=
   if h : k.val + 1 = N then u 1 else current p N x ⟨k.val + 1, by omega⟩
 
 omit p in
-@[powerlib_foundation] theorem sum_prev (k : Fin N) (g : Fin N → ℝ) :
+@[tmio T, powerlib_foundation] theorem sum_prev (k : Fin N) (g : Fin N → ℝ) :
     ∑ j : Fin N, (if j.val + 1 = k.val then g j else 0) =
       if h : k.val = 0 then 0 else g ⟨k.val - 1, by omega⟩ := by
   split_ifs with h
@@ -147,7 +147,7 @@ omit p in
     · exact fun h' => absurd (Finset.mem_univ _) h'
 
 omit p in
-@[powerlib_foundation] theorem sum_next (k : Fin N) (g : Fin N → ℝ) :
+@[tmio T, powerlib_foundation] theorem sum_next (k : Fin N) (g : Fin N → ℝ) :
     ∑ j : Fin N, (if j.val = k.val + 1 then g j else 0) =
       if h : k.val + 1 = N then 0 else g ⟨k.val + 1, by omega⟩ := by
   split_ifs with h
@@ -159,7 +159,7 @@ omit p in
     · exact fun h' => absurd (Finset.mem_univ _) h'
 
 omit p in
-@[powerlib_foundation] theorem sum_kvl (k : Fin N) (g : Fin N → ℝ) :
+@[tmio T, powerlib_foundation] theorem sum_kvl (k : Fin N) (g : Fin N → ℝ) :
     ∑ j : Fin N, (if j = k then -1 else if j.val + 1 = k.val then 1 else 0) * g j =
       -g k + if h : k.val = 0 then 0 else g ⟨k.val - 1, by omega⟩ := by
   rw [← sum_prev N k g]
@@ -173,7 +173,7 @@ omit p in
     _ = _ := by rw [Finset.sum_add_distrib, Finset.sum_ite_eq']; simp
 
 omit p in
-@[powerlib_foundation] theorem sum_kcl (k : Fin N) (g : Fin N → ℝ) :
+@[tmio T, powerlib_foundation] theorem sum_kcl (k : Fin N) (g : Fin N → ℝ) :
     ∑ j : Fin N, (if j = k then 1 else if j.val = k.val + 1 then -1 else 0) * g j =
       g k - if h : k.val + 1 = N then 0 else g ⟨k.val + 1, by omega⟩ := by
   rw [← sum_next N k g]

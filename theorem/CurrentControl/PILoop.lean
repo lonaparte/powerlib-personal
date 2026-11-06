@@ -312,7 +312,7 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
 /-- GFL reactive-power outer loop with `ξ_Q` frozen, PLL-aligned `v_q = 0` and `|v_g| = v_d`:
 `i_q* = −2/(3 v_d)·[k_p^Q (Q* − Q) + k_i^Q ξ_Q]` with `Q = (3/2)(v_q i_d − v_d i_q)` is the
 reference feedback `i_q* = r − k_p^Q i_q` (`κ = −k_p^Q`). -/
-@[powerlib_foundation] theorem qReference_eq (vd kpQ kiQ Qref ξQ id iq : ℝ) (hvd : vd ≠ 0) :
+@[tmio T, powerlib_foundation] theorem qReference_eq (vd kpQ kiQ Qref ξQ id iq : ℝ) (hvd : vd ≠ 0) :
     -(2 / (3 * vd)) * (kpQ * (Qref - 3 / 2 * (0 * id - vd * iq)) + kiQ * ξQ) =
       -(2 / (3 * vd)) * (kpQ * Qref + kiQ * ξQ) + (-kpQ) * iq := by
   field_simp
@@ -437,18 +437,18 @@ def lagLoop (ω : ℝ) (s : ℂ) : ℂ := ω / (s + ω)
 /-- PI closed loop `G_PI(s) = (2ζωs + ω²)/(s² + 2ζωs + ω²)`. -/
 def piLoop (ζ ω : ℝ) (s : ℂ) : ℂ := (2 * ζ * ω * s + ω ^ 2) / (s ^ 2 + 2 * ζ * ω * s + ω ^ 2)
 
-@[powerlib_foundation] theorem one_sub_lagLoop {ω : ℝ} {s : ℂ} (h : s + ω ≠ 0) :
+@[tmio M, powerlib_foundation] theorem one_sub_lagLoop {ω : ℝ} {s : ℂ} (h : s + ω ≠ 0) :
     1 - lagLoop ω s = s / (s + ω) := by
   rw [lagLoop]; field_simp; ring
 
-@[powerlib_foundation] theorem one_sub_piLoop {ζ ω : ℝ} {s : ℂ}
+@[tmio M, powerlib_foundation] theorem one_sub_piLoop {ζ ω : ℝ} {s : ℂ}
     (h : s ^ 2 + 2 * ζ * ω * s + ω ^ 2 ≠ 0) :
     1 - piLoop ζ ω s = s ^ 2 / (s ^ 2 + 2 * ζ * ω * s + ω ^ 2) := by
   rw [piLoop, eq_div_iff h, sub_mul, one_mul, div_mul_cancel₀ _ h]
   ring
 
 /-- The lag error is of exact order `ω⁻¹`: `ω (1 − G₁(s)) → s`. -/
-@[powerlib_foundation] theorem firstOrderLag_error (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem firstOrderLag_error (s : ℂ) :
     Tendsto (fun ω : ℝ => (ω : ℂ) * (1 - lagLoop ω s)) atTop (𝓝 s) := by
   have hinv : Tendsto (fun ω : ℝ => s * ((ω : ℂ))⁻¹) atTop (𝓝 0) := by
     have : Tendsto (fun ω : ℝ => ((ω : ℂ))⁻¹) atTop (𝓝 0) := by
@@ -473,7 +473,7 @@ def piLoop (ζ ω : ℝ) (s : ℂ) : ℂ := (2 * ζ * ω * s + ω ^ 2) / (s ^ 2 
   field_simp
 
 /-- The PI-loop error is of exact order `ω⁻²`: `ω² (1 − G_PI(s)) → s²`. -/
-@[powerlib_foundation] theorem piLoop_error (ζ : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem piLoop_error (ζ : ℝ) (s : ℂ) :
     Tendsto (fun ω : ℝ => (ω : ℂ) ^ 2 * (1 - piLoop ζ ω s)) atTop (𝓝 (s ^ 2)) := by
   have hinv : Tendsto (fun ω : ℝ => ((ω : ℂ))⁻¹) atTop (𝓝 0) := by
     have h := (tendsto_inv_atTop_zero (𝕜 := ℝ)).ofReal

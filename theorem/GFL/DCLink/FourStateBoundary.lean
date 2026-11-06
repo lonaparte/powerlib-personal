@@ -113,7 +113,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   have h4 : R * R ^ 2 ≤ R ^ 2 / 1000000 := by nlinarith [sq_nonneg R]
   nlinarith
 
-@[powerlib_foundation] private theorem bP2 {η u a t R X : ℝ} (hηu : |η * u| ≤ R / 2) (ht2 : t ^ 2 ≤ 5 / 2 * R)
+@[tmio T, powerlib_foundation] private theorem bP2 {η u a t R X : ℝ} (hηu : |η * u| ≤ R / 2) (ht2 : t ^ 2 ≤ 5 / 2 * R)
     (haX : a ^ 2 ≤ X) (hR0 : 0 ≤ R) (hRle : R ≤ 1 / 1000000) :
     η * u * ((a + t) ^ 2 - t ^ 2) / 2 ≤ R ^ 2 / 150 + X / 30000 := by
   have hq : |(a + t) ^ 2 - t ^ 2| ≤ 101 * a ^ 2 + t ^ 2 / 100 := by
@@ -129,7 +129,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   have h3 : R * X ≤ X / 1000000 := by nlinarith
   nlinarith
 
-@[powerlib_foundation] private theorem quartic_abs {u η : ℝ} :
+@[tmio T, powerlib_foundation] private theorem quartic_abs {u η : ℝ} :
     |(4 * u ^ 3 - 9 * u ^ 2 * η + 3 * η ^ 3) * η| ≤ 8 * (u ^ 2 + η ^ 2) ^ 2 := by
   rw [abs_le]
   constructor
@@ -138,7 +138,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   · nlinarith [mul_nonneg (sq_nonneg u) (sq_nonneg (u - η / 4)),
       mul_nonneg (sq_nonneg u) (sq_nonneg η), sq_nonneg (η ^ 2)]
 
-@[powerlib_foundation] private theorem bP3 {u η w c R : ℝ} (hR : R = u ^ 2 + η ^ 2) (hw0 : 0 < w) (hw2 : w ≤ 2)
+@[tmio T, powerlib_foundation] private theorem bP3 {u η w c R : ℝ} (hR : R = u ^ 2 + η ^ 2) (hw0 : 0 < w) (hw2 : w ≤ 2)
     (hd : |u + 1 - c| ≤ 1 / 500) :
     (4 * u ^ 3 - 9 * u ^ 2 * η + 3 * η ^ 3) / 32 * (η * w * (u + 1 - c)) ≤ R ^ 2 / 1000 := by
   have hq := quartic_abs (u := u) (η := η)
@@ -157,7 +157,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
       _ ≤ 8 * R ^ 2 * (2 * (1 / 500)) := mul_le_mul hq hwd (abs_nonneg _) (by positivity)
   linarith
 
-@[powerlib_foundation] private theorem bP4 {θ s a b R X : ℝ} (hσ : |θ - s| ≤ |θ| ^ 3 / 5) (hθ2 : θ ^ 2 ≤ 1 / 1000000)
+@[tmio T, powerlib_foundation] private theorem bP4 {θ s a b R X : ℝ} (hσ : |θ - s| ≤ |θ| ^ 3 / 5) (hθ2 : θ ^ 2 ≤ 1 / 1000000)
     (hθ4 : θ ^ 4 ≤ X / 10000 + 25 * R ^ 2) (hab : (a + 3 * b) ^ 2 ≤ 10 * X) :
     1 / 500 * ((θ - s) * (a + 3 * b)) ≤ X / 40000 + R ^ 2 / 1000000 := by
   have h6 : |θ| ^ 3 * |a + 3 * b| ≤ 50 * θ ^ 6 + (a + 3 * b) ^ 2 / 200 := by
@@ -177,7 +177,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
       _ ≤ |θ| ^ 3 / 5 * |a + 3 * b| := mul_le_mul_of_nonneg_right hσ (abs_nonneg _)
   nlinarith
 
-@[powerlib_foundation] private theorem bP5 {e a b R X : ℝ} (he2 : e ^ 2 ≤ 2 * R ^ 2 + 8 * R * (X / 10000 + 25 * R ^ 2))
+@[tmio T, powerlib_foundation] private theorem bP5 {e a b R X : ℝ} (he2 : e ^ 2 ≤ 2 * R ^ 2 + 8 * R * (X / 10000 + 25 * R ^ 2))
     (hab : (a - 2 * b) ^ 2 ≤ 5 * X) (hRle : R ≤ 1 / 1000000) :
     1 / 500 * (e * (a - 2 * b)) ≤ R ^ 2 / 40 + X / 1900 := by
   have h1 : e * (a - 2 * b) ≤ 5 * e ^ 2 + (a - 2 * b) ^ 2 / 20 := by
@@ -186,14 +186,14 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   have h4 : R * R ^ 2 ≤ R ^ 2 / 1000000 := by nlinarith [sq_nonneg R]
   nlinarith
 
-@[powerlib_foundation] private theorem cs_a {θ u η : ℝ} :
+@[tmio T, powerlib_foundation] private theorem cs_a {θ u η : ℝ} :
     (θ + u / 2 - 3 * η / 2) ^ 2 ≤ 7 / 2 * (θ ^ 2 + u ^ 2 + η ^ 2) := by
   nlinarith [sq_nonneg (u - θ / 2), sq_nonneg (η + 3 * θ / 2), sq_nonneg (η / 2 + 3 * u / 2)]
 
-@[powerlib_foundation] private theorem cs_b {x u η : ℝ} : (x - u / 2 - η / 2) ^ 2 ≤ 3 / 2 * (x ^ 2 + u ^ 2 + η ^ 2) := by
+@[tmio T, powerlib_foundation] private theorem cs_b {x u η : ℝ} : (x - u / 2 - η / 2) ^ 2 ≤ 3 / 2 * (x ^ 2 + u ^ 2 + η ^ 2) := by
   nlinarith [sq_nonneg (u + x / 2), sq_nonneg (η + x / 2), sq_nonneg (u / 2 - η / 2)]
 
-@[powerlib_foundation] private theorem be2 {η u w c θ R X : ℝ} (hR : R = u ^ 2 + η ^ 2) (hw0 : 0 < w) (hw2 : w ≤ 2)
+@[tmio T, powerlib_foundation] private theorem be2 {η u w c θ R X : ℝ} (hR : R = u ^ 2 + η ^ 2) (hw0 : 0 < w) (hw2 : w ≤ 2)
     (h1c : (1 - c) ^ 2 ≤ θ ^ 4) (hθ4 : θ ^ 4 ≤ X / 10000 + 25 * R ^ 2) :
     (η * w * (u + 1 - c)) ^ 2 ≤ 2 * R ^ 2 + 8 * R * (X / 10000 + 25 * R ^ 2) := by
   have hw4 : w ^ 2 ≤ 4 := by nlinarith
@@ -215,20 +215,20 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
     mul_le_mul hηR (h1c.trans hθ4) (sq_nonneg _) (by rw [hR]; positivity)
   nlinarith
 
-@[powerlib_foundation] private theorem sz_X {θ x u η : ℝ} (hr : θ ^ 2 + x ^ 2 + u ^ 2 + η ^ 2 ≤ 1 / 1000000) :
+@[tmio T, powerlib_foundation] private theorem sz_X {θ x u η : ℝ} (hr : θ ^ 2 + x ^ 2 + u ^ 2 + η ^ 2 ≤ 1 / 1000000) :
     (θ + u / 2 - 3 * η / 2) ^ 2 + (x - u / 2 - η / 2) ^ 2 ≤ 5 / 1000000 := by
   have h1 := cs_a (θ := θ) (u := u) (η := η)
   have h2 := cs_b (x := x) (u := u) (η := η)
   nlinarith [sq_nonneg θ, sq_nonneg x]
 
-@[powerlib_foundation] private theorem t_sq {u η : ℝ} : (-u / 2 + 3 * η / 2) ^ 2 ≤ 5 / 2 * (u ^ 2 + η ^ 2) := by
+@[tmio T, powerlib_foundation] private theorem t_sq {u η : ℝ} : (-u / 2 + 3 * η / 2) ^ 2 ≤ 5 / 2 * (u ^ 2 + η ^ 2) := by
   nlinarith [sq_nonneg (3 * u / 2 + η / 2)]
 
-@[powerlib_foundation] private theorem θ_sq {a t X R : ℝ} (ht2 : t ^ 2 ≤ 5 / 2 * R) (haX : a ^ 2 ≤ X) :
+@[tmio T, powerlib_foundation] private theorem θ_sq {a t X R : ℝ} (ht2 : t ^ 2 ≤ 5 / 2 * R) (haX : a ^ 2 ≤ X) :
     (a + t) ^ 2 ≤ 2 * X + 5 * R := by
   nlinarith [sq_nonneg (a - t)]
 
-@[powerlib_foundation] private theorem θ_four {θ X R : ℝ} (hθX : θ ^ 2 ≤ 2 * X + 5 * R) (hX0 : 0 ≤ X)
+@[tmio T, powerlib_foundation] private theorem θ_four {θ X R : ℝ} (hθX : θ ^ 2 ≤ 2 * X + 5 * R) (hX0 : 0 ≤ X)
     (hXle : X ≤ 5 / 1000000) (hRle : R ≤ 1 / 1000000) :
     θ ^ 4 ≤ X / 10000 + 25 * R ^ 2 := by
   have h1 : θ ^ 4 ≤ (2 * X + 5 * R) ^ 2 := by
@@ -239,10 +239,10 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   have h3 : R * X ≤ 1 / 1000000 * X := mul_le_mul_of_nonneg_right hRle hX0
   nlinarith
 
-@[powerlib_foundation] private theorem ηu_abs {η u : ℝ} : |η * u| ≤ (u ^ 2 + η ^ 2) / 2 := by
+@[tmio T, powerlib_foundation] private theorem ηu_abs {η u : ℝ} : |η * u| ≤ (u ^ 2 + η ^ 2) / 2 := by
   rw [abs_le]; constructor <;> nlinarith [sq_nonneg (η + u), sq_nonneg (η - u)]
 
-@[powerlib_foundation] private theorem cos_facts {θ c : ℝ} (hc : |c - (1 - θ ^ 2 / 2)| ≤ |θ| ^ 4 * (5 / 96))
+@[tmio T, powerlib_foundation] private theorem cos_facts {θ c : ℝ} (hc : |c - (1 - θ ^ 2 / 2)| ≤ |θ| ^ 4 * (5 / 96))
     (hθ2 : θ ^ 2 ≤ 1 / 1000000) :
     |1 - c - θ ^ 2 / 2| ≤ θ ^ 4 * (5 / 96) ∧ 0 ≤ 1 - c ∧ 1 - c ≤ θ ^ 2 := by
   have hθ4' : |θ| ^ 4 = θ ^ 4 := by
@@ -260,7 +260,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   have h0 : 0 ≤ θ ^ 2 := sq_nonneg θ
   constructor <;> linarith
 
-@[powerlib_foundation] private theorem sin_fact {θ s : ℝ} (hs : |s - (θ - θ ^ 3 / 6)| ≤ |θ| ^ 5 / 100)
+@[tmio T, powerlib_foundation] private theorem sin_fact {θ s : ℝ} (hs : |s - (θ - θ ^ 3 / 6)| ≤ |θ| ^ 5 / 100)
     (hθ2 : θ ^ 2 ≤ 1 / 1000000) : |θ - s| ≤ |θ| ^ 3 / 5 := by
   have e : θ - s = θ ^ 3 / 6 - (s - (θ - θ ^ 3 / 6)) := by ring
   rw [e]
@@ -274,7 +274,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
     _ ≤ |θ| ^ 3 / 6 + |θ| ^ 3 * θ ^ 2 / 100 := by rw [h3, ← h5]; linarith
     _ ≤ |θ| ^ 3 / 5 := by linarith
 
-@[powerlib_foundation] private theorem lie_identity {θ x u η s c w : ℝ} (hw : w * (u + 1) = 1) :
+@[tmio T, powerlib_foundation] private theorem lie_identity {θ x u η s c w : ℝ} (hw : w * (u + 1) = 1) :
     1 / 500 * (3 / 2 * (θ + u / 2 - 3 * η / 2) - (x - u / 2 - η / 2) / 2) * (-s + η + 2 * x) +
       1 / 500 * (-(θ + u / 2 - 3 * η / 2) / 2 + 7 / 2 * (x - u / 2 - η / 2)) * (-s + η) +
       (u + u ^ 2 + (4 * u ^ 3 - 9 * u ^ 2 * η + 3 * η ^ 3) / 32 +
@@ -295,7 +295,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
     500 * u ^ 3 - 12 * u + 16 * x) / 4000) * hw
 
 /-- Lie derivative bound on the ball of radius `1/1000`. -/
-@[powerlib_foundation] private theorem lie_bound {θ x u η s c w : ℝ}
+@[tmio T, powerlib_foundation] private theorem lie_bound {θ x u η s c w : ℝ}
     (hr : θ ^ 2 + x ^ 2 + u ^ 2 + η ^ 2 ≤ 1 / 1000000)
     (hs : |s - (θ - θ ^ 3 / 6)| ≤ |θ| ^ 5 / 100)
     (hc : |c - (1 - θ ^ 2 / 2)| ≤ |θ| ^ 4 * (5 / 96))
@@ -349,7 +349,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
   linarith
 
 
-@[powerlib_foundation] private theorem quartic_lower {u η : ℝ} :
+@[tmio T, powerlib_foundation] private theorem quartic_lower {u η : ℝ} :
     -(16 * (u ^ 2 + η ^ 2) ^ 2) ≤ u ^ 4 - 3 * u ^ 3 * η + 3 * u * η ^ 3 - 9 * η ^ 4 := by
   nlinarith [mul_nonneg (sq_nonneg u) (sq_nonneg (u - η)),
     mul_nonneg (sq_nonneg u) (sq_nonneg (u + η)),
@@ -357,7 +357,7 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
     sq_nonneg (u ^ 2), sq_nonneg (η ^ 2), mul_nonneg (sq_nonneg u) (sq_nonneg η)]
 
 /-- `W ≥ (u² + η²)/4 + |ξ|²/1000` near the origin. -/
-@[powerlib_foundation] private theorem wf_lower {θ x u η : ℝ} (hr : θ ^ 2 + x ^ 2 + u ^ 2 + η ^ 2 ≤ 1 / 1000000) :
+@[tmio T, powerlib_foundation] private theorem wf_lower {θ x u η : ℝ} (hr : θ ^ 2 + x ^ 2 + u ^ 2 + η ^ 2 ≤ 1 / 1000000) :
     (u ^ 2 + η ^ 2) / 4 + ((θ + u / 2 - 3 * η / 2) ^ 2 + (x - u / 2 - η / 2) ^ 2) / 1000 ≤
       u ^ 2 / 2 + u ^ 3 / 3 + η ^ 2 / 2 +
         (u ^ 4 - 3 * u ^ 3 * η + 3 * u * η ^ 3 - 9 * η ^ 4) / 32 +
@@ -398,7 +398,7 @@ private def wfLyap (z : Dynamics.State 4) : ℝ :=
       1 / 2 * (z 0 + z 2 / 2 - 3 * z 3 / 2) * (z 1 - z 2 / 2 - z 3 / 2) +
       7 / 4 * (z 1 - z 2 / 2 - z 3 / 2) ^ 2)
 
-@[powerlib_foundation] private theorem wfLyap_hasFDerivAt (z : Dynamics.State 4) :
+@[tmio T, powerlib_foundation] private theorem wfLyap_hasFDerivAt (z : Dynamics.State 4) :
     HasFDerivAt wfLyap
       ((1 / 500 * (3 / 2 * (z 0 + z 2 / 2 - 3 * z 3 / 2) - (z 1 - z 2 / 2 - z 3 / 2) / 2)) •
           (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 : Dynamics.State 4 →L[ℝ] ℝ) +
@@ -450,7 +450,7 @@ def weakFocus : Model := ⟨⟨1, 1, 0, 1, 2, 0, 1, 3 / 2, 0⟩, 0⟩
     vq, idc, Params.γ]
   ring
 
-@[powerlib_foundation] private theorem wfLyap_contDiff : ContDiff ℝ 1 wfLyap := by
+@[tmio T, powerlib_foundation] private theorem wfLyap_contDiff : ContDiff ℝ 1 wfLyap := by
   have c0 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 0) := contDiff_piLp_apply 2
   have c1 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 1) := contDiff_piLp_apply 2
   have c2 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 2) := contDiff_piLp_apply 2
@@ -458,18 +458,18 @@ def weakFocus : Model := ⟨⟨1, 1, 0, 1, 2, 0, 1, 3 / 2, 0⟩, 0⟩
   unfold wfLyap
   fun_prop
 
-@[powerlib_foundation] private theorem norm_sq_coords (z : Dynamics.State 4) :
+@[tmio T, powerlib_foundation] private theorem norm_sq_coords (z : Dynamics.State 4) :
     ‖z‖ ^ 2 = z 0 ^ 2 + z 1 ^ 2 + z 2 ^ 2 + z 3 ^ 2 := by
   rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
 
-@[powerlib_foundation] private theorem coords_small {z : Dynamics.State 4} (hz : ‖z - 0‖ < 1 / 1000) :
+@[tmio T, powerlib_foundation] private theorem coords_small {z : Dynamics.State 4} (hz : ‖z - 0‖ < 1 / 1000) :
     z 0 ^ 2 + z 1 ^ 2 + z 2 ^ 2 + z 3 ^ 2 ≤ 1 / 1000000 := by
   rw [sub_zero] at hz
   rw [← norm_sq_coords]
   have h0 : 0 ≤ ‖z‖ := norm_nonneg z
   nlinarith
 
-@[powerlib_foundation] private theorem pos_of_ne {z : Dynamics.State 4} (hne : z ≠ 0) :
+@[tmio T, powerlib_foundation] private theorem pos_of_ne {z : Dynamics.State 4} (hne : z ≠ 0) :
     0 < z 2 ^ 2 + z 3 ^ 2 ∨
       0 < (z 0 + z 2 / 2 - 3 * z 3 / 2) ^ 2 + (z 1 - z 2 / 2 - z 3 / 2) ^ 2 := by
   by_contra h
@@ -589,7 +589,7 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
   simp only at this ⊢
   rwa [← field_eq_regField_of_near p (hstay t ht)] at this
 
-@[powerlib_foundation] private theorem norm_toLp_four (a b c d : ℝ) :
+@[tmio T, powerlib_foundation] private theorem norm_toLp_four (a b c d : ℝ) :
     ‖(WithLp.toLp 2 ![a, b, c, d] : Dynamics.State 4)‖ ^ 2 = a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2 := by
   rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   simp

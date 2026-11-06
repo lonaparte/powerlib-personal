@@ -73,7 +73,7 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
     ring_nf
 
 /-- An eigenpair `(μ, v)` of `M` is an eigenpair `(μ^k, v)` of `M^k`. -/
-@[powerlib_foundation] theorem mulVec_pow_of_eigen {M : Matrix ι ι R} {μ : R} {v : ι → R}
+@[tmio T, powerlib_foundation] theorem mulVec_pow_of_eigen {M : Matrix ι ι R} {μ : R} {v : ι → R}
     (h : M *ᵥ v = μ • v) (k : ℕ) : (M ^ k) *ᵥ v = μ ^ k • v := by
   simpa using mulVec_aeval_of_eigen h (X ^ k)
 
@@ -86,28 +86,28 @@ section Mobius
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] theorem complexify_mulVec_ofReal (A : Matrix ι ι ℝ) (v : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem complexify_mulVec_ofReal (A : Matrix ι ι ℝ) (v : ι → ℝ) :
     complexify A *ᵥ (fun i => (v i : ℂ)) = fun i => ((A *ᵥ v) i : ℂ) := by
   funext i
   exact ((algebraMap ℝ ℂ).map_mulVec A v i).symm
 
 omit [Fintype ι] in
-@[powerlib_foundation] theorem complexify_affine (A : Matrix ι ι ℝ) (α β : ℝ) :
+@[tmio T, powerlib_foundation] theorem complexify_affine (A : Matrix ι ι ℝ) (α β : ℝ) :
     complexify (α • A + β • 1) = (α : ℂ) • complexify A + (β : ℂ) • 1 := by
   ext i j
   simp only [Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
   split_ifs <;> simp
 
-@[powerlib_foundation] private lemma affine_mulVec (N : Matrix ι ι ℂ) (a b : ℂ) (w : ι → ℂ) :
+@[tmio T, powerlib_foundation] private lemma affine_mulVec (N : Matrix ι ι ℂ) (a b : ℂ) (w : ι → ℂ) :
     (a • N + b • 1) *ᵥ w = a • (N *ᵥ w) + b • w := by
   rw [Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]
 
-@[powerlib_foundation] private lemma complexify_affine_mulVec {A : Matrix ι ι ℝ} {lam : ℂ} {v : ι → ℂ}
+@[tmio T, powerlib_foundation] private lemma complexify_affine_mulVec {A : Matrix ι ι ℝ} {lam : ℂ} {v : ι → ℂ}
     (h : complexify A *ᵥ v = lam • v) (α β : ℝ) :
     complexify (α • A + β • 1) *ᵥ v = ((α : ℂ) * lam + β) • v := by
   rw [complexify_affine, affine_mulVec, h, smul_smul, add_smul]
 
-@[powerlib_foundation] private lemma isUnit_complexify {Q : Matrix ι ι ℝ} (hQ : IsUnit Q.det) : IsUnit (complexify Q) := by
+@[tmio T, powerlib_foundation] private lemma isUnit_complexify {Q : Matrix ι ι ℝ} (hQ : IsUnit Q.det) : IsUnit (complexify Q) := by
   rw [Matrix.isUnit_iff_isUnit_det]
   have h : (complexify Q).det = algebraMap ℝ ℂ Q.det := by
     rw [RingHom.map_det]
@@ -118,7 +118,7 @@ omit [Fintype ι] in
 /-- **Eigenvalues of a Möbius image, forward.** Let `(γ A + δ) M = α A + β` with `γ A + δ`
 invertible. An eigenpair `(λ, v)` of `A` has `γ λ + δ ≠ 0`, and `((α λ + β)/(γ λ + δ), v)` is an
 eigenpair of `M`. -/
-@[powerlib_foundation] theorem eigen_mobius {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
+@[tmio T, powerlib_foundation] theorem eigen_mobius {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
     (hQ : IsUnit (γ • A + δ • 1).det) (hM : (γ • A + δ • 1) * M = α • A + β • 1) {lam : ℂ}
     {v : ι → ℂ} (hv : v ≠ 0) (h : complexify A *ᵥ v = lam • v) :
     (γ : ℂ) * lam + δ ≠ 0 ∧
@@ -138,7 +138,7 @@ eigenpair of `M`. -/
 /-- **Eigenvalues of a Möbius image, backward.** Let `(γ A + δ) M = α A + β` with
 `α δ − β γ ≠ 0`. An eigenpair `(μ, v)` of `M` comes from an eigenpair `(λ, v)` of `A` (the same
 eigenvector), with `γ λ + δ ≠ 0` and `μ = (α λ + β)/(γ λ + δ)`. -/
-@[powerlib_foundation] theorem exists_eigen_of_mobius {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_eigen_of_mobius {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
     (hdet : α * δ - β * γ ≠ 0) (hM : (γ • A + δ • 1) * M = α • A + β • 1) {μ : ℂ}
     {v : ι → ℂ} (hv : v ≠ 0) (h : complexify M *ᵥ v = μ • v) :
     ∃ lam : ℂ, complexify A *ᵥ v = lam • v ∧ (γ : ℂ) * lam + δ ≠ 0 ∧
@@ -174,7 +174,7 @@ eigenvector), with `γ λ + δ ≠ 0` and `μ = (α λ + β)/(γ λ + δ)`. -/
 /-- **Spectral mapping for Möbius images.** For `(γ A + δ) M = α A + β` with `γ A + δ` invertible
 and `α δ − β γ ≠ 0`, a property holds for every eigenvalue of `M` exactly when it holds for
 `(α λ + β)/(γ λ + δ)` for every eigenvalue `λ` of `A`. -/
-@[powerlib_foundation] theorem forall_eigen_mobius_iff {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
+@[tmio T, powerlib_foundation] theorem forall_eigen_mobius_iff {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
     (hdet : α * δ - β * γ ≠ 0) (hQ : IsUnit (γ • A + δ • 1).det)
     (hM : (γ • A + δ • 1) * M = α • A + β • 1) (P : ℂ → Prop) :
     (∀ (μ : ℂ) (v : ι → ℂ), v ≠ 0 → complexify M *ᵥ v = μ • v → P μ) ↔
@@ -188,7 +188,7 @@ and `α δ − β γ ≠ 0`, a property holds for every eigenvalue of `M` exactl
     exact hP lam v hv hA
 
 /-- `γ A + δ` is invertible when no eigenvalue `λ` of `A` has `γ λ + δ = 0` (`γ ≠ 0`). -/
-@[powerlib_foundation] theorem isUnit_det_affine_of_forall_eigen {A : Matrix ι ι ℝ} {γ δ : ℝ}
+@[tmio T, powerlib_foundation] theorem isUnit_det_affine_of_forall_eigen {A : Matrix ι ι ℝ} {γ δ : ℝ}
     (hγ : γ ≠ 0)
     (h : ∀ (lam : ℂ) (v : ι → ℂ), v ≠ 0 → complexify A *ᵥ v = lam • v → (γ : ℂ) * lam + δ ≠ 0) :
     IsUnit (γ • A + δ • 1).det := by
@@ -211,7 +211,7 @@ and `α δ − β γ ≠ 0`, a property holds for every eigenvalue of `M` exactl
   exact h _ _ hw hAw (by push_cast; field_simp; ring)
 
 /-- Scaling: the eigenvalues of `c A` are `c λ`. -/
-@[powerlib_foundation] theorem forall_eigen_smul_iff {c : ℝ} (hc : c ≠ 0) (A : Matrix ι ι ℝ)
+@[tmio T, powerlib_foundation] theorem forall_eigen_smul_iff {c : ℝ} (hc : c ≠ 0) (A : Matrix ι ι ℝ)
     (P : ℂ → Prop) :
     (∀ (μ : ℂ) (v : ι → ℂ), v ≠ 0 → complexify (c • A) *ᵥ v = μ • v → P μ) ↔
       ∀ (lam : ℂ) (v : ι → ℂ), v ≠ 0 → complexify A *ᵥ v = lam • v → P (c * lam) := by
@@ -227,14 +227,14 @@ section Stability
 
 variable {n : ℕ}
 
-@[powerlib_foundation] theorem isHurwitz_iff_forall_eigen {A : Matrix (Fin n) (Fin n) ℝ} :
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_forall_eigen {A : Matrix (Fin n) (Fin n) ℝ} :
     IsHurwitz A ↔
       ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 → complexify A *ᵥ v = μ • v → μ.re < 0 := by
   simp only [IsHurwitz, IsHurwitzWithRate, neg_zero]
 
 /-- A Möbius image is Hurwitz exactly when the images of the eigenvalues lie in the open left half
 plane. -/
-@[powerlib_foundation] theorem isHurwitz_mobius_iff {A M : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_mobius_iff {A M : Matrix (Fin n) (Fin n) ℝ}
     {α β γ δ : ℝ} (hdet : α * δ - β * γ ≠ 0) (hQ : IsUnit (γ • A + δ • 1).det)
     (hM : (γ • A + δ • 1) * M = α • A + β • 1) :
     IsHurwitz M ↔ ∀ (lam : ℂ) (v : Fin n → ℂ), v ≠ 0 → complexify A *ᵥ v = lam • v →
@@ -244,7 +244,7 @@ plane. -/
 
 /-- A Möbius image is Schur stable exactly when the images of the eigenvalues lie in the open unit
 disk. -/
-@[powerlib_foundation] theorem schurStable_mobius_iff {A M : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem schurStable_mobius_iff {A M : Matrix (Fin n) (Fin n) ℝ}
     {α β γ δ : ℝ} (hdet : α * δ - β * γ ≠ 0) (hQ : IsUnit (γ • A + δ • 1).det)
     (hM : (γ • A + δ • 1) * M = α • A + β • 1) :
     LTI.SchurStable M ↔ ∀ (lam : ℂ) (v : Fin n → ℂ), v ≠ 0 → complexify A *ᵥ v = lam • v →
@@ -252,7 +252,7 @@ disk. -/
   forall_eigen_mobius_iff hdet hQ hM fun μ => ‖μ‖ < 1
 
 /-- A positive scaling (a time base) keeps the Hurwitz property. -/
-@[powerlib_foundation] theorem isHurwitz_smul_iff {c : ℝ} (hc : 0 < c)
+@[tmio T, powerlib_foundation] theorem isHurwitz_smul_iff {c : ℝ} (hc : 0 < c)
     (A : Matrix (Fin n) (Fin n) ℝ) : IsHurwitz (c • A) ↔ IsHurwitz A := by
   rw [isHurwitz_iff_forall_eigen, isHurwitz_iff_forall_eigen,
     forall_eigen_smul_iff hc.ne' A fun μ => μ.re < 0]
@@ -273,7 +273,7 @@ section Charpoly
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
 /-- Spectral stability read through eigenpairs, on any finite index type. -/
-@[powerlib_foundation] theorem spectrallyStable_iff_forall_eigen {A : Matrix ι ι ℝ} :
+@[tmio T, powerlib_foundation] theorem spectrallyStable_iff_forall_eigen {A : Matrix ι ι ℝ} :
     SpectrallyStable A ↔
       ∀ (μ : ℂ) (v : ι → ℂ), v ≠ 0 → complexify A *ᵥ v = μ • v → μ.re < 0 := by
   refine forall_congr' fun μ => ⟨fun h v hv heig => h ?_, fun h hdet => ?_⟩
@@ -288,26 +288,26 @@ variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq
 
 /-- Matrices with the same characteristic polynomial, possibly on different index types, are
 spectrally stable together. -/
-@[powerlib_foundation] theorem spectrallyStable_congr_charpoly {A : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem spectrallyStable_congr_charpoly {A : Matrix ι ι ℝ}
     {B : Matrix κ κ ℝ} (h : A.charpoly = B.charpoly) :
     SpectrallyStable A ↔ SpectrallyStable B := by
   simp only [SpectrallyStable, det_characteristicMatrix_eq_eval, complexify, Matrix.charpoly_map, h]
 
-@[powerlib_foundation] theorem isHurwitz_congr_charpoly {n m : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_congr_charpoly {n m : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin m) (Fin m) ℝ} (h : A.charpoly = B.charpoly) : IsHurwitz A ↔ IsHurwitz B := by
   rw [← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
   exact spectrallyStable_congr_charpoly h
 
 /-- A similarity keeps the characteristic polynomial; only the left inverse `S T = 1` is used. -/
-@[powerlib_foundation] theorem charpoly_conj {T S : Matrix ι ι ℝ} (hST : S * T = 1)
+@[tmio T, powerlib_foundation] theorem charpoly_conj {T S : Matrix ι ι ℝ} (hST : S * T = 1)
     (A : Matrix ι ι ℝ) : (T * A * S).charpoly = A.charpoly := by
   rw [Matrix.mul_assoc, Matrix.charpoly_mul_comm, Matrix.mul_assoc, hST, Matrix.mul_one]
 
-@[powerlib_foundation] theorem spectrallyStable_conj {T S : Matrix ι ι ℝ} (hST : S * T = 1)
+@[tmio T, powerlib_foundation] theorem spectrallyStable_conj {T S : Matrix ι ι ℝ} (hST : S * T = 1)
     (A : Matrix ι ι ℝ) : SpectrallyStable (T * A * S) ↔ SpectrallyStable A :=
   spectrallyStable_congr_charpoly (charpoly_conj hST A)
 
-@[powerlib_foundation] theorem isHurwitz_transpose_iff {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ} :
+@[tmio T, powerlib_foundation] theorem isHurwitz_transpose_iff {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ} :
     IsHurwitz Aᵀ ↔ IsHurwitz A :=
   isHurwitz_congr_charpoly (Matrix.charpoly_transpose A)
 

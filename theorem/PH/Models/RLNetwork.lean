@@ -271,7 +271,7 @@ def rlNetwork_scaleCLM (c : β → ℝ) : (β → ℝ) →L[ℝ] (β → ℝ) :=
   LinearMap.toContinuousLinearMap (Matrix.toLin' (diagonal c))
 
 omit [Fintype ν] [DecidableEq ν] in
-@[simp, powerlib_foundation] theorem rlNetwork_scaleCLM_apply (c : β → ℝ) (φ : β → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem rlNetwork_scaleCLM_apply (c : β → ℝ) (φ : β → ℝ) :
     rlNetwork_scaleCLM c φ = fun j => c j * φ j := by
   ext j
   simp [rlNetwork_scaleCLM, mulVec_diagonal]
@@ -303,7 +303,7 @@ private def scaleCLM (c : Fin m → ℝ) :
     EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m) :=
   Matrix.toEuclideanCLM (n := Fin m) (𝕜 := ℝ) (diagonal c)
 
-@[powerlib_foundation] private theorem ofLp_scaleCLM (c : Fin m → ℝ) (x : EuclideanSpace ℝ (Fin m)) :
+@[tmio T, powerlib_foundation] private theorem ofLp_scaleCLM (c : Fin m → ℝ) (x : EuclideanSpace ℝ (Fin m)) :
     WithLp.ofLp (scaleCLM c x) = fun j => c j * WithLp.ofLp x j := by
   simp only [scaleCLM, Matrix.ofLp_toEuclideanCLM]
   funext j

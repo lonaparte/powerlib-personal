@@ -115,25 +115,25 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
   fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, linA]
 
 /-- Characteristic polynomial of the linearized PLL: `det(sI − A) = s² + V K_p s + V K_i`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
     (Linear.characteristicMatrix (linA V Kp Ki) s).det = loopPoly V Kp Ki s := by
   rw [characteristicMatrix_linA, det_fin_two_of, loopPoly]; ring
 
-@[simp, powerlib_foundation] theorem trace_linA (V Kp Ki : ℝ) :
+@[tmio M, simp, powerlib_foundation] theorem trace_linA (V Kp Ki : ℝ) :
     (linA V Kp Ki).trace = -(V * Kp) := by
   simp [linA, Matrix.trace_fin_two]
 
-@[simp, powerlib_foundation] theorem det_linA (V Kp Ki : ℝ) : (linA V Kp Ki).det = V * Ki := by
+@[tmio M, simp, powerlib_foundation] theorem det_linA (V Kp Ki : ℝ) : (linA V Kp Ki).det = V * Ki := by
   simp [linA, Matrix.det_fin_two]; ring
 
 /-- Hurwitz test: `linA` is Hurwitz iff `V K_p > 0 ∧ V K_i > 0`. -/
-@[powerlib_foundation] theorem isHurwitz_linA_iff (V Kp Ki : ℝ) :
+@[tmio TM, powerlib_foundation] theorem isHurwitz_linA_iff (V Kp Ki : ℝ) :
     LinearSystems.IsHurwitz (linA V Kp Ki) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
   rw [Criteria.isHurwitz_fin_two_iff, trace_linA, det_linA, neg_lt_zero]
 
 /-- Every root of the loop polynomial lies in the open left half-plane iff
 `V K_p > 0 ∧ V K_i > 0`. -/
-@[powerlib_foundation] theorem loopPoly_roots_re_neg_iff (V Kp Ki : ℝ) :
+@[tmio TM, powerlib_foundation] theorem loopPoly_roots_re_neg_iff (V Kp Ki : ℝ) :
     (∀ s : ℂ, loopPoly V Kp Ki s = 0 → s.re < 0) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
   have h := Criteria.quadratic_roots_re_neg_iff (V * Kp) (V * Ki)
   push_cast at h
@@ -141,7 +141,7 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
 
 /-! ## Transfer functions -/
 
-@[powerlib_foundation] private lemma transfer_linA_model (V Kp Ki : ℝ)
+@[tmio M, powerlib_foundation] private lemma transfer_linA_model (V Kp Ki : ℝ)
     (B : Matrix (Fin 2) (Fin 1) ℝ) (C : Matrix (Fin 1) (Fin 2) ℝ) (s : ℂ) :
     Linear.transfer (⟨linA V Kp Ki, B, C, 0⟩ : Linear.Plant 2 1) s =
       (loopPoly V Kp Ki s)⁻¹ •
@@ -153,7 +153,7 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
 
 /-- `θ̂(s)/θ_g(s) = V (K_p s + K_i) / (s² + V K_p s + V K_i)` (division by zero is `0` on both
 sides, so the identity holds for every `s`). -/
-@[powerlib_foundation] theorem transfer_phaseModel (V Kp Ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_phaseModel (V Kp Ki : ℝ) (s : ℂ) :
     Linear.transfer (phaseModel V Kp Ki) s = !![closedLoopTF V Kp Ki s] := by
   rw [phaseModel, transfer_linA_model]
   ext i j; fin_cases i; fin_cases j
@@ -161,7 +161,7 @@ sides, so the identity holds for every `s`). -/
   ring
 
 /-- `ω̂(s)/ω_g(s) = H_pll(s)`: the frequency estimate has the same transfer function. -/
-@[powerlib_foundation] theorem transfer_frequencyModel (V Kp Ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_frequencyModel (V Kp Ki : ℝ) (s : ℂ) :
     Linear.transfer (frequencyModel V Kp Ki) s = !![closedLoopTF V Kp Ki s] := by
   rw [frequencyModel, transfer_linA_model]
   ext i j; fin_cases i; fin_cases j
@@ -169,7 +169,7 @@ sides, so the identity holds for every `s`). -/
   ring
 
 /-- `Δθ̂(s)/ΔV_q^sys(s) = G_pll(s) = (K_p s + K_i)/(s² + V K_p s + V K_i)`. -/
-@[powerlib_foundation] theorem transfer_portModel (V Kp Ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_portModel (V Kp Ki : ℝ) (s : ℂ) :
     Linear.transfer (portModel V Kp Ki) s = !![portTF V Kp Ki s] := by
   rw [portModel, transfer_linA_model]
   ext i j; fin_cases i; fin_cases j
@@ -177,7 +177,7 @@ sides, so the identity holds for every `s`). -/
   ring
 
 /-- `Y_qq^pll(s) = I_d0 G_pll(s)`. -/
-@[powerlib_foundation] theorem transfer_admittanceModel (V Kp Ki Id0 : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_admittanceModel (V Kp Ki Id0 : ℝ) (s : ℂ) :
     Linear.transfer (admittanceModel V Kp Ki Id0) s = !![(Id0 : ℂ) * portTF V Kp Ki s] := by
   rw [admittanceModel, transfer_linA_model]
   ext i j; fin_cases i; fin_cases j
@@ -185,14 +185,14 @@ sides, so the identity holds for every `s`). -/
   ring
 
 /-- `G_pll = H_pll / V` (`V ≠ 0`). -/
-@[powerlib_foundation] theorem portTF_eq_closedLoopTF_div {V : ℝ} (hV : V ≠ 0) (Kp Ki : ℝ)
+@[tmio M, powerlib_foundation] theorem portTF_eq_closedLoopTF_div {V : ℝ} (hV : V ≠ 0) (Kp Ki : ℝ)
     (s : ℂ) : portTF V Kp Ki s = closedLoopTF V Kp Ki s / V := by
   have hV' : (V : ℂ) ≠ 0 := by exact_mod_cast hV
   rw [portTF, closedLoopTF]
   field_simp
 
 /-- Transfer-matrix form of `G_pll = H_pll / V`. -/
-@[powerlib_foundation] theorem transfer_portModel_eq_smul {V : ℝ} (hV : V ≠ 0) (Kp Ki : ℝ)
+@[tmio M, powerlib_foundation] theorem transfer_portModel_eq_smul {V : ℝ} (hV : V ≠ 0) (Kp Ki : ℝ)
     (s : ℂ) : Linear.transfer (portModel V Kp Ki) s =
       (V : ℂ)⁻¹ • Linear.transfer (phaseModel V Kp Ki) s := by
   rw [transfer_portModel, transfer_phaseModel, portTF_eq_closedLoopTF_div hV]
@@ -201,17 +201,17 @@ sides, so the identity holds for every `s`). -/
 
 /-- Unit DC gain `H_pll(0) = 1`: zero steady-state phase error for a phase step and zero
 steady-state frequency error for a frequency step (final-value form). -/
-@[powerlib_foundation] theorem closedLoopTF_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
+@[tmio M, powerlib_foundation] theorem closedLoopTF_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
     closedLoopTF V Kp Ki 0 = 1 := by
   have h' : (V : ℂ) * Ki ≠ 0 := by exact_mod_cast h
   simp [closedLoopTF, loopPoly, h']
 
-@[powerlib_foundation] theorem transfer_phaseModel_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
+@[tmio M, powerlib_foundation] theorem transfer_phaseModel_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
     Linear.transfer (phaseModel V Kp Ki) 0 = 1 := by
   rw [transfer_phaseModel, closedLoopTF_zero h]
   ext i j; fin_cases i; fin_cases j; rfl
 
-@[powerlib_foundation] theorem transfer_frequencyModel_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
+@[tmio M, powerlib_foundation] theorem transfer_frequencyModel_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
     Linear.transfer (frequencyModel V Kp Ki) 0 = 1 := by
   rw [transfer_frequencyModel, closedLoopTF_zero h]
   ext i j; fin_cases i; fin_cases j; rfl
@@ -225,7 +225,7 @@ def omegaN (V Ki : ℝ) : ℝ := Real.sqrt (V * Ki)
 def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
 
 /-- Standard second-order form `s² + 2ζω_n s + ω_n²` of the loop polynomial (`V K_i > 0`). -/
-@[powerlib_foundation] theorem loopPoly_eq_standard {V Kp Ki : ℝ} (h : 0 < V * Ki) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem loopPoly_eq_standard {V Kp Ki : ℝ} (h : 0 < V * Ki) (s : ℂ) :
     loopPoly V Kp Ki s = s ^ 2 + 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) * s +
       (omegaN V Ki : ℂ) ^ 2 := by
   have hω : 0 < omegaN V Ki := Real.sqrt_pos.mpr h
@@ -237,7 +237,7 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
   rw [loopPoly, h2', hsq']
 
 /-- `ζ = (K_p/2) √(V/K_i)` for `V, K_i > 0` (T-pll-dynamics §1.3 boxed). -/
-@[powerlib_foundation] theorem zeta_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
+@[tmio M, powerlib_foundation] theorem zeta_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
     zeta V Kp Ki = Kp / 2 * Real.sqrt (V / Ki) := by
   rw [zeta, omegaN, Real.sqrt_mul hV.le, Real.sqrt_div hV.le]
   have hsV : 0 < Real.sqrt V := Real.sqrt_pos.mpr hV
@@ -248,7 +248,7 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
   ring
 
 /-- `4ζ² = V K_p² / K_i` (T-invariant-coordinates §1.2). -/
-@[powerlib_foundation] theorem four_mul_zeta_sq {V Kp Ki : ℝ} (hV : V ≠ 0) (h : 0 < V * Ki) :
+@[tmio M, powerlib_foundation] theorem four_mul_zeta_sq {V Kp Ki : ℝ} (hV : V ≠ 0) (h : 0 < V * Ki) :
     4 * zeta V Kp Ki ^ 2 = V * Kp ^ 2 / Ki := by
   have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt h.le
   have hω : omegaN V Ki ≠ 0 := (Real.sqrt_pos.mpr h).ne'
@@ -259,7 +259,7 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
 
 /-- Raw-voltage PI tuning `K_p = 2ζ₀ω_b/V`, `K_i = ω_b²/V` gives `ω_n = ω_b` and `ζ = ζ₀`
 independently of `V` (T-invariant-coordinates §1.2). -/
-@[powerlib_foundation] theorem rawVoltageTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb)
+@[tmio M, powerlib_foundation] theorem rawVoltageTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb)
     (ζ₀ : ℝ) :
     omegaN V (ωb ^ 2 / V) = ωb ∧ zeta V (2 * ζ₀ * ωb / V) (ωb ^ 2 / V) = ζ₀ := by
   have hn : omegaN V (ωb ^ 2 / V) = ωb := by
@@ -270,7 +270,7 @@ independently of `V` (T-invariant-coordinates §1.2). -/
 
 /-- Typical tuning (T-pll-dynamics §1.3): `K_p = √2 ω_b / V`, `K_i = ω_b² / V` gives
 `ω_n = ω_b` and `ζ = 1/√2`. -/
-@[powerlib_foundation] theorem standardTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb) :
+@[tmio M, powerlib_foundation] theorem standardTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb) :
     omegaN V (ωb ^ 2 / V) = ωb ∧
       zeta V (Real.sqrt 2 * ωb / V) (ωb ^ 2 / V) = 1 / Real.sqrt 2 := by
   have h2 : Real.sqrt 2 = 2 * (1 / Real.sqrt 2) := by
@@ -282,7 +282,7 @@ independently of `V` (T-invariant-coordinates §1.2). -/
   exact h
 
 /-- Operating-point dependence (T-pll-dynamics §1.5): `ω_n(V) = ω_n(V₀) √(V/V₀)`. -/
-@[powerlib_foundation] theorem omegaN_scale {V V₀ Ki : ℝ} (hV₀ : 0 < V₀) (hKi : 0 ≤ Ki) :
+@[tmio M, powerlib_foundation] theorem omegaN_scale {V V₀ Ki : ℝ} (hV₀ : 0 < V₀) (hKi : 0 ≤ Ki) :
     omegaN V Ki = omegaN V₀ Ki * Real.sqrt (V / V₀) := by
   rw [omegaN, omegaN, ← Real.sqrt_mul (mul_nonneg hV₀.le hKi)]
   congr 1
@@ -290,14 +290,14 @@ independently of `V` (T-invariant-coordinates §1.2). -/
 
 /-- Applying gains designed for the normalized input `V_q/V` (design `ζ = zeta 1 K_p K_i`) to
 the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -/
-@[powerlib_foundation] theorem zeta_raw_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
+@[tmio M, powerlib_foundation] theorem zeta_raw_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
     zeta V Kp Ki = zeta 1 Kp Ki * Real.sqrt V := by
   rw [zeta_eq hV hKi, zeta_eq one_pos hKi, Real.sqrt_div hV.le, Real.sqrt_div zero_le_one,
     Real.sqrt_one]
   ring
 
 /-- `ζ ≥ 1/2 ⇔ K_i ≤ V K_p²` (`V, K_i > 0`, `K_p ≥ 0`). -/
-@[powerlib_foundation] theorem half_le_zeta_iff {V Kp Ki : ℝ} (hV : 0 < V) (hKp : 0 ≤ Kp)
+@[tmio M, powerlib_foundation] theorem half_le_zeta_iff {V Kp Ki : ℝ} (hV : 0 < V) (hKp : 0 ≤ Kp)
     (hKi : 0 < Ki) : 1 / 2 ≤ zeta V Kp Ki ↔ Ki ≤ V * Kp ^ 2 := by
   have h4 := four_mul_zeta_sq (Kp := Kp) hV.ne' (mul_pos hV hKi)
   have hz : 0 ≤ zeta V Kp Ki := by
@@ -315,7 +315,7 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
 /-! ## Real part of `G_pll(jω)` and the PLL negative conductance -/
 
 /-- `Re G_pll(jω) = (V K_i² + ω²(V K_p² − K_i)) / ((V K_i − ω²)² + (V K_p ω)²)`. -/
-@[powerlib_foundation] theorem re_portTF (V Kp Ki ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem re_portTF (V Kp Ki ω : ℝ) :
     (portTF V Kp Ki ((ω : ℂ) * Complex.I)).re =
       (V * Ki ^ 2 + ω ^ 2 * (V * Kp ^ 2 - Ki)) / ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) := by
   have hden : loopPoly V Kp Ki ((ω : ℂ) * Complex.I) =
@@ -327,7 +327,7 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
   rw [portTF, hden, hnum, Complex.div_re, Complex.normSq_mk, ← add_div]
   congr 1 <;> ring
 
-@[powerlib_foundation] private lemma portTF_den_pos {V Kp Ki : ℝ} (hVKp : V * Kp ≠ 0)
+@[tmio T, powerlib_foundation] private lemma portTF_den_pos {V Kp Ki : ℝ} (hVKp : V * Kp ≠ 0)
     (hVKi : V * Ki ≠ 0) (ω : ℝ) : 0 < (V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 := by
   rcases eq_or_ne ω 0 with rfl | hω
   · simp; positivity
@@ -335,7 +335,7 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
     positivity
 
 /-- For `V, K_p, K_i > 0`: `Re G_pll(jω) > 0` for every real `ω` iff `K_i ≤ V K_p²`. -/
-@[powerlib_foundation] theorem re_portTF_pos_iff {V Kp Ki : ℝ} (hV : 0 < V) (hKp : 0 < Kp)
+@[tmio TM, powerlib_foundation] theorem re_portTF_pos_iff {V Kp Ki : ℝ} (hV : 0 < V) (hKp : 0 < Kp)
     (hKi : 0 < Ki) :
     (∀ ω : ℝ, 0 < (portTF V Kp Ki ((ω : ℂ) * Complex.I)).re) ↔ Ki ≤ V * Kp ^ 2 := by
   have hden := portTF_den_pos (mul_pos hV hKp).ne' (mul_pos hV hKi).ne'
@@ -363,7 +363,7 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
 
 /-- The same statement for the port model's transfer function: `Re G_pll(jω) > 0 ∀ω ⇔
 ζ ≥ 1/2` (`V, K_p, K_i > 0`). -/
-@[powerlib_foundation] theorem re_transfer_portModel_pos_iff {V Kp Ki : ℝ} (hV : 0 < V)
+@[tmio TM, powerlib_foundation] theorem re_transfer_portModel_pos_iff {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) :
     (∀ ω : ℝ, 0 < (Linear.transfer (portModel V Kp Ki) ((ω : ℂ) * Complex.I) 0 0).re) ↔
       1 / 2 ≤ zeta V Kp Ki := by
@@ -373,7 +373,7 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
 /-- Frame-rotation linearization of a constant PLL-frame current (`T-gfl-impedance` §1.3):
 `d/dθ̂ (rot θ̂ · I₀)|₀ = J I₀ = (−I_q0, I_d0)`; its q component is the output gain `I_d0` of
 `admittanceModel`. -/
-@[powerlib_foundation] theorem rot_linearization (I0 : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem rot_linearization (I0 : Fin 2 → ℝ) :
     HasDerivAt (fun θ : ℝ => Transform.rot θ *ᵥ I0) ![-(I0 1), I0 0] 0 := by
   have h := Transform.hasDerivAt_rot_mulVec (θ := fun θ => θ) (x := fun _ => I0) (t := 0)
     (hasDerivAt_id 0) (hasDerivAt_const 0 I0)
@@ -385,7 +385,7 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
 (`I_d0 < 0`, IN-positive), the PLL contribution to the q-axis admittance has negative real
 part at every frequency. Static evidence on the model (a transfer-function inequality), not a
 connection conclusion. -/
-@[powerlib_foundation] theorem admittanceModel_re_neg {V Kp Ki Id0 : ℝ} (hV : 0 < V) (hKp : 0 < Kp)
+@[tmio M, powerlib_foundation] theorem admittanceModel_re_neg {V Kp Ki Id0 : ℝ} (hV : 0 < V) (hKp : 0 < Kp)
     (hKi : 0 < Ki) (hζ : 1 / 2 ≤ zeta V Kp Ki) (hId : Id0 < 0) (ω : ℝ) :
     (Linear.transfer (admittanceModel V Kp Ki Id0) ((ω : ℂ) * Complex.I) 0 0).re < 0 := by
   have hpos := ((re_portTF_pos_iff hV hKp hKi).mpr

@@ -60,13 +60,13 @@ structure KYP (M : Plant n p) where
 def KYP.storage {M : Plant n p} (c : KYP M) (x : ℝⁿ) : ℝ :=
   WithLp.ofLp x ⬝ᵥ (c.P *ᵥ WithLp.ofLp x) / 2
 
-@[powerlib_foundation] theorem KYP.output_dot {M : Plant n p} (c : KYP M) (X : Fin n → ℝ)
+@[tmio T, powerlib_foundation] theorem KYP.output_dot {M : Plant n p} (c : KYP M) (X : Fin n → ℝ)
     (u : Fin p → ℝ) : X ⬝ᵥ (c.P *ᵥ (M.B *ᵥ u)) = (M.C *ᵥ X) ⬝ᵥ u := by
   rw [← c.output, Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose,
     Matrix.transpose_mul, Matrix.transpose_transpose, c.symmetric]
 
 /-- A KYP certificate proves passivity with its quadratic storage. -/
-@[powerlib_foundation] theorem KYP.passiveWith {M : Plant n p} (c : KYP M) :
+@[tmio T, powerlib_foundation] theorem KYP.passiveWith {M : Plant n p} (c : KYP M) :
     M.system.PassiveWith c.storage := by
   apply Port.System.passiveWith_of_rate _ _ (fun x => div_nonneg (c.nonneg _) two_pos.le)
     (fun x u => WithLp.ofLp x ⬝ᵥ (c.P *ᵥ WithLp.ofLp (M.system.field x u)))
@@ -101,7 +101,7 @@ def KYP.storage {M : Plant n p} (c : KYP M) (x : ℝⁿ) : ℝ :=
 
 /-- With a lossless certificate, `Aᵀ P + P A = 0`, the storage is conserved along every zero-input
 solution segment. -/
-@[powerlib_foundation] theorem KYP.storage_conserved {M : Plant n p} (c : KYP M)
+@[tmio T, powerlib_foundation] theorem KYP.storage_conserved {M : Plant n p} (c : KYP M)
     (hl : M.Aᵀ * c.P + c.P * M.A = 0) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hx : IsTrajectoryOn x (affineLinearVectorField M.A 0) t₀ t₁) :
     ∀ t ∈ Icc t₀ t₁, c.storage (x t) = c.storage (x t₀) := fun t ht => by
@@ -109,7 +109,7 @@ solution segment. -/
 
 /-- With quadratic bounds on the storage, a KYP certificate proves Lyapunov stability of the
 zero-input plant in the Flow semantics. -/
-@[powerlib_foundation] theorem KYP.lyapunovStable {M : Plant n p} (c : KYP M) {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem KYP.lyapunovStable {M : Plant n p} (c : KYP M) {a b : ℝ}
     (ha : 0 < a) (hab : a ≤ b)
     (hbounds : ∀ x, a * ‖x‖ ^ 2 ≤ c.storage x ∧ c.storage x ≤ b * ‖x‖ ^ 2) :
     LyapunovStable (affineLinearVectorField M.A 0) 0 := by
@@ -118,7 +118,7 @@ zero-input plant in the Flow semantics. -/
 
 /-- A KYP certificate with a positive definite storage matrix proves Lyapunov stability of the
 zero-input plant in the Flow semantics. -/
-@[powerlib_foundation] theorem KYP.lyapunovStable_of_pos {M : Plant n p} (c : KYP M)
+@[tmio T, powerlib_foundation] theorem KYP.lyapunovStable_of_pos {M : Plant n p} (c : KYP M)
     (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (c.P *ᵥ x)) :
     LyapunovStable (affineLinearVectorField M.A 0) 0 := by
   obtain ⟨a, ha, b, hab, hb⟩ := Flow.quadratic_bounds c.storage

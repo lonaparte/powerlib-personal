@@ -87,7 +87,7 @@ open Matrix
 variable {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
 
 /-- If `T X = X S`, then `q(T) X = X q(S)` for every polynomial `q`. -/
-@[powerlib_foundation] theorem aeval_mul_intertwine {T : Matrix m m ℂ} {S : Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem aeval_mul_intertwine {T : Matrix m m ℂ} {S : Matrix n n ℂ}
     {Y : Matrix m n ℂ} (h : T * Y = Y * S) (q : ℂ[X]) :
     aeval T q * Y = Y * aeval S q := by
   induction q using Polynomial.induction_on with
@@ -101,7 +101,7 @@ variable {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
     rw [this, h2, Matrix.mul_assoc, h, ← Matrix.mul_assoc, ih, Matrix.mul_assoc]
 
 /-- Disjoint spectra: the only solution of `T X − X S = 0` is `X = 0`. -/
-@[powerlib_foundation] theorem sylvester_eq_zero {T : Matrix m m ℂ} {S : Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem sylvester_eq_zero {T : Matrix m m ℂ} {S : Matrix n n ℂ}
     (hdisj : ∀ z : ℂ, z ∈ spectrum ℂ T → z ∉ spectrum ℂ S) {Y : Matrix m n ℂ}
     (h : T * Y - Y * S = 0) : Y = 0 := by
   have hTX : T * Y = Y * S := sub_eq_zero.mp h
@@ -126,7 +126,7 @@ variable {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
   rw [← this, hp, Matrix.mul_zero]
 
 /-- Disjoint spectra: `T X − X S = R` has exactly one solution for every `R`. -/
-@[powerlib_foundation] theorem sylvester_unique {T : Matrix m m ℂ} {S : Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem sylvester_unique {T : Matrix m m ℂ} {S : Matrix n n ℂ}
     (hdisj : ∀ z : ℂ, z ∈ spectrum ℂ T → z ∉ spectrum ℂ S) (R : Matrix m n ℂ) :
     ∃! Y : Matrix m n ℂ, T * Y - Y * S = R := by
   let L : Matrix m n ℂ →ₗ[ℂ] Matrix m n ℂ :=
@@ -143,7 +143,7 @@ variable {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
 
 /-- Order-`α` coefficient equation with a spectral gap: if every eigenvalue of `A_h` has nonzero
 real part and `Re λᵢ = 0`, then `(A_h − (Σ αᵢ λᵢ) I) h = R` is uniquely solvable. -/
-@[powerlib_foundation] theorem homological_coeff_unique {k : ℕ} {A : Matrix m m ℂ}
+@[tmio T, powerlib_foundation] theorem homological_coeff_unique {k : ℕ} {A : Matrix m m ℂ}
     (hgap : ∀ z ∈ spectrum ℂ A, z.re ≠ 0) (lam : Fin k → ℂ) (hlam : ∀ i, (lam i).re = 0)
     (α : Fin k → ℕ) (R : m → ℂ) :
     ∃! h : m → ℂ, (A - (∑ i, (α i : ℂ) * lam i) • (1 : Matrix m m ℂ)) *ᵥ h = R := by
@@ -182,7 +182,7 @@ defined only in the semantic layer):
 
 /-- A time shift of a global solution of `ẋ = f(x)` (a curve with
 `∀ t, HasDerivAt γ (f (γ t)) t`) is again a global solution. -/
-@[powerlib_foundation] theorem IsGlobalSolution.shift {f : E → E} {γ : ℝ → E}
+@[tmio T, powerlib_foundation] theorem IsGlobalSolution.shift {f : E → E} {γ : ℝ → E}
     (h : ∀ t, HasDerivAt γ (f (γ t)) t) (c : ℝ) :
     ∀ t, HasDerivAt (fun t => γ (t + c)) (f (γ (t + c))) t :=
   fun t => (h (t + c)).comp_add_const t c
@@ -190,7 +190,7 @@ defined only in the semantic layer):
 /-- Every point of a heteroclinic orbit from `a` to `b` (a global solution `γ` with `γ → a` as
 `t → −∞` and `γ → b` as `t → +∞`) lies in `W^u(a) ∩ W^s(b)`: it is the initial state of a global
 solution converging to `a` backwards and of one converging to `b` forwards. -/
-@[powerlib_foundation] theorem heteroclinic_mem {f : E → E} {a b : E} {γ : ℝ → E}
+@[tmio T, powerlib_foundation] theorem heteroclinic_mem {f : E → E} {a b : E} {γ : ℝ → E}
     (h : (∀ t, HasDerivAt γ (f (γ t)) t) ∧ Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b))
     (t₀ : ℝ) :
     γ t₀ ∈ {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
@@ -210,7 +210,7 @@ variable [CompleteSpace E]
 omit [CompleteSpace E] in
 /-- Uniqueness of global solutions (`∀ t, HasDerivAt γ (f (γ t)) t`) for a globally Lipschitz
 field (both time directions). -/
-@[powerlib_foundation] theorem globalSolution_unique {f : E → E} {K : NNReal}
+@[tmio T, powerlib_foundation] theorem globalSolution_unique {f : E → E} {K : NNReal}
     (hf : LipschitzWith K f) {γ ψ : ℝ → E} (hγ : ∀ t, HasDerivAt γ (f (γ t)) t)
     (hψ : ∀ t, HasDerivAt ψ (f (ψ t)) t) (h0 : γ 0 = ψ 0) : γ = ψ := by
   funext t
@@ -233,7 +233,7 @@ omit [CompleteSpace E] in
 (`γ → a` as `t → −∞` and `γ → b` as `t → +∞`) iff `γ(0) ∈ W^u(a) ∩ W^s(b)`, i.e. `γ(0)` is the
 initial state of a global solution converging to `a` backwards and of one converging to `b`
 forwards. -/
-@[powerlib_foundation] theorem heteroclinic_iff {f : E → E} {K : NNReal} (hf : LipschitzWith K f)
+@[tmio T, powerlib_foundation] theorem heteroclinic_iff {f : E → E} {K : NNReal} (hf : LipschitzWith K f)
     {a b : E} {γ : ℝ → E} (hγ : ∀ t, HasDerivAt γ (f (γ t)) t) :
     ((∀ t, HasDerivAt γ (f (γ t)) t) ∧ Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b)) ↔
       γ 0 ∈ {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧

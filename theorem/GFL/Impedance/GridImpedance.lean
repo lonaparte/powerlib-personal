@@ -61,7 +61,7 @@ def networkModel (Lg Rg Rl C ω : ℝ) : Plant 4 2 :=
     (networkModel Lg Rg Rl C ω).D = 0 := rfl
 
 /-- The block equations are the PCC KCL and the line KVL. -/
-@[powerlib_foundation] theorem networkBlocks_field {Lg Rg Rl C ω : ℝ} (hC : C ≠ 0)
+@[tmio M, powerlib_foundation] theorem networkBlocks_field {Lg Rg Rl C ω : ℝ} (hC : C ≠ 0)
     (hL : Lg ≠ 0) (w l u : Fin 2 → ℝ) :
     networkA Lg Rg Rl C ω *ᵥ Sum.elim w l + networkB C *ᵥ u =
       Sum.elim (C⁻¹ • (u - l - Rl⁻¹ • w - (ω * C) • (Transform.J *ᵥ w)))
@@ -73,7 +73,7 @@ def networkModel (Lg Rg Rl C ω : ℝ) : Plant 4 2 :=
     field_simp <;> ring
 
 /-- The plant's characteristic determinant is the block one. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_networkModel (Lg Rg Rl C ω : ℝ)
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_networkModel (Lg Rg Rl C ω : ℝ)
     (s : ℂ) : (characteristicMatrix (networkModel Lg Rg Rl C ω).A s).det =
       (characteristicMatrix (networkA Lg Rg Rl C ω) s).det := by
   change (characteristicMatrix ((networkA Lg Rg Rl C ω).reindex _ _) s).det = _
@@ -113,7 +113,7 @@ def networkModel (Lg Rg Rl C ω : ℝ) : Plant 4 2 :=
     simp [Transform.J] <;> field_simp
 
 /-- The realization's transfer matrix is the corrected `Z_ext`. -/
-@[powerlib_foundation] theorem networkModel_transfer {Lg Rg Rl C ω : ℝ} (hC : C ≠ 0)
+@[tmio M, powerlib_foundation] theorem networkModel_transfer {Lg Rg Rl C ω : ℝ} (hC : C ≠ 0)
     (hL : Lg ≠ 0) {s : ℂ}
     (hM : (characteristicMatrix (networkModel Lg Rg Rl C ω).A s).det ≠ 0)
     (hZ : (Zoc Lg Rg ω s).det ≠ 0) :
@@ -188,14 +188,14 @@ def withNetwork {n₂ : ℕ} (Lg Rg Rl C ω : ℝ) (load : Plant n₂ 2) (hD : l
     Circuits.Interconnection 4 n₂ 2 :=
   ⟨networkModel Lg Rg Rl C ω, load, hD⟩
 
-@[powerlib_foundation] theorem withNetwork_sourceImpedance {n₂ : ℕ} {Lg Rg Rl C ω : ℝ}
+@[tmio M, powerlib_foundation] theorem withNetwork_sourceImpedance {n₂ : ℕ} {Lg Rg Rl C ω : ℝ}
     (hC : C ≠ 0) (hL : Lg ≠ 0) (load : Plant n₂ 2) (hD : load.D = 0) {s : ℂ}
     (hM : (characteristicMatrix (networkModel Lg Rg Rl C ω).A s).det ≠ 0)
     (hZ : (Zoc Lg Rg ω s).det ≠ 0) :
     (withNetwork Lg Rg Rl C ω load hD).sourceImpedance s = Zext Lg Rg Rl C ω s :=
   networkModel_transfer hC hL hM hZ
 
-@[powerlib_foundation] theorem withNetwork_returnDifference {n₂ : ℕ} {Lg Rg Rl C ω : ℝ}
+@[tmio M, powerlib_foundation] theorem withNetwork_returnDifference {n₂ : ℕ} {Lg Rg Rl C ω : ℝ}
     (hC : C ≠ 0) (hL : Lg ≠ 0) (load : Plant n₂ 2) (hD : load.D = 0) {s : ℂ}
     (hM : (characteristicMatrix (networkModel Lg Rg Rl C ω).A s).det ≠ 0)
     (hZ : (Zoc Lg Rg ω s).det ≠ 0) :

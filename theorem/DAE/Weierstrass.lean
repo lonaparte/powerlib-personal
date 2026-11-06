@@ -143,7 +143,7 @@ def pencilPoly (E A : Matrix ι ι K) : K[X] := ((X : K[X]) • E.map C - A.map 
 /-- The pencil `s E - A` is regular: its determinant polynomial is not identically zero. -/
 def Regular (E A : Matrix ι ι K) : Prop := pencilPoly E A ≠ 0
 
-@[powerlib_foundation] theorem eval_pencilPoly (E A : Matrix ι ι K) (s : K) :
+@[tmio T, powerlib_foundation] theorem eval_pencilPoly (E A : Matrix ι ι K) (s : K) :
     (pencilPoly E A).eval s = (s • E - A).det := by
   rw [pencilPoly, ← coe_evalRingHom, RingHom.map_det]
   congr 1
@@ -152,7 +152,7 @@ def Regular (E A : Matrix ι ι K) : Prop := pencilPoly E A ≠ 0
     coe_evalRingHom, eval_sub, smul_eq_mul, eval_mul, eval_X, eval_C]
 
 /-- Over an infinite field, regularity means that `det (c E - A) ≠ 0` for some `c`. -/
-@[powerlib_foundation] theorem regular_iff_exists_det_ne_zero [Infinite K] (E A : Matrix ι ι K) :
+@[tmio T, powerlib_foundation] theorem regular_iff_exists_det_ne_zero [Infinite K] (E A : Matrix ι ι K) :
     Regular E A ↔ ∃ c : K, (c • E - A).det ≠ 0 := by
   constructor
   · intro h
@@ -187,7 +187,7 @@ structure WeierstrassForm (E A : Matrix ι ι K) where
   A_eq : P * A * Q = fromBlocks J 0 0 1
 
 /-- Existence of a Weierstrass form from one point `c` with `det (c E - A) ≠ 0`. -/
-@[powerlib_foundation] theorem exists_weierstrassForm_of_det_ne_zero (E A : Matrix ι ι K) {c : K}
+@[tmio T, powerlib_foundation] theorem exists_weierstrassForm_of_det_ne_zero (E A : Matrix ι ι K) {c : K}
     (hc : (c • E - A).det ≠ 0) : Nonempty (WeierstrassForm E A) := by
   set G := c • E - A with hG
   have hGu : IsUnit G.det := isUnit_iff_ne_zero.mpr hc
@@ -242,7 +242,7 @@ structure WeierstrassForm (E A : Matrix ι ι K) where
 
 /-- **Weierstrass canonical form.** Every regular pencil `s E - A` over an infinite field has a
 Weierstrass form: `P (s E - A) Q = diag(s I - J, s N - I)` with `N` nilpotent. -/
-@[powerlib_foundation] theorem weierstrass [Infinite K] {E A : Matrix ι ι K} (h : Regular E A) :
+@[tmio T, powerlib_foundation] theorem weierstrass [Infinite K] {E A : Matrix ι ι K} (h : Regular E A) :
     Nonempty (WeierstrassForm E A) := by
   obtain ⟨c, hc⟩ := (regular_iff_exists_det_ne_zero E A).mp h
   exact exists_weierstrassForm_of_det_ne_zero E A hc
@@ -252,13 +252,13 @@ namespace WeierstrassForm
 variable {E A : Matrix ι ι K} (W : WeierstrassForm E A)
 
 /-- The transformed pencil is `diag(s I - J, s N - I)`. -/
-@[powerlib_foundation] theorem pencil_eq (s : K) :
+@[tmio T, powerlib_foundation] theorem pencil_eq (s : K) :
     W.P * (s • E - A) * W.Q = fromBlocks (s • 1 - W.J) 0 0 (s • W.N - 1) := by
   rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, W.E_eq, W.A_eq]
   ext (i | i) (j | j) <;> simp [Matrix.one_apply]
 
 /-- Finite generalized eigenvalues: `det (s E - A) = 0` iff `s` is an eigenvalue of `J`. -/
-@[powerlib_foundation] theorem det_eq_zero_iff (s : K) :
+@[tmio T, powerlib_foundation] theorem det_eq_zero_iff (s : K) :
     (s • E - A).det = 0 ↔ (s • 1 - W.J).det = 0 := by
   set X := s • E - A
   set B := W.P * X * W.Q
@@ -293,7 +293,7 @@ end WeierstrassForm
 
 /-- Regularity is necessary: over an infinite field a pencil with a Weierstrass form is regular
 (`det (s E - A) ≠ 0` wherever `s` is not an eigenvalue of `J`). -/
-@[powerlib_foundation] theorem regular_of_weierstrassForm [Infinite K] {E A : Matrix ι ι K}
+@[tmio T, powerlib_foundation] theorem regular_of_weierstrassForm [Infinite K] {E A : Matrix ι ι K}
     (W : WeierstrassForm E A) : Regular E A := by
   have hfin : {x | IsRoot W.J.charpoly x}.Finite := by
     by_contra hinf
@@ -308,13 +308,13 @@ end WeierstrassForm
   simp [Matrix.one_apply, Matrix.scalar_apply, Matrix.diagonal_apply]
 
 /-- Over an infinite field: a Weierstrass form exists iff the pencil is regular. -/
-@[powerlib_foundation] theorem regular_iff_nonempty_weierstrassForm [Infinite K]
+@[tmio T, powerlib_foundation] theorem regular_iff_nonempty_weierstrassForm [Infinite K]
     (E A : Matrix ι ι K) : Regular E A ↔ Nonempty (WeierstrassForm E A) :=
   ⟨weierstrass, fun ⟨W⟩ => regular_of_weierstrassForm W⟩
 
 /-- Correction (missing regularity premise): the singular pencil `s·0 - 0` of size one (the DAE
 `0 · x' = 0 · x`) has no Weierstrass form. -/
-@[powerlib_foundation] theorem zero_pencil_no_weierstrassForm [Infinite K] :
+@[tmio T, powerlib_foundation] theorem zero_pencil_no_weierstrassForm [Infinite K] :
     IsEmpty (WeierstrassForm (0 : Matrix (Fin 1) (Fin 1) K) 0) := by
   refine ⟨fun W => ?_⟩
   have h := regular_of_weierstrassForm W

@@ -62,22 +62,22 @@ open Matrix
 /-- `Σᵢⱼ |Nᵢⱼ|`. -/
 def absSum {k l : Type*} [Fintype k] [Fintype l] (N : Matrix k l ℝ) : ℝ := ∑ i, ∑ j, |N i j|
 
-@[powerlib_foundation] theorem absSum_nonneg {k l : Type*} [Fintype k] [Fintype l]
+@[tmio T, powerlib_foundation] theorem absSum_nonneg {k l : Type*} [Fintype k] [Fintype l]
     (N : Matrix k l ℝ) : 0 ≤ absSum N :=
   Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _
 
-@[powerlib_foundation] private lemma sq_le_dotProduct_self {k : Type*} [Fintype k] (u : k → ℝ)
+@[tmio T, powerlib_foundation] private lemma sq_le_dotProduct_self {k : Type*} [Fintype k] (u : k → ℝ)
     (i : k) : u i ^ 2 ≤ u ⬝ᵥ u := by
   have : u ⬝ᵥ u = ∑ j, u j ^ 2 := by simp [dotProduct, sq]
   rw [this]
   exact Finset.single_le_sum (fun j _ => sq_nonneg (u j)) (Finset.mem_univ i)
 
-@[powerlib_foundation] theorem dotProduct_self_nonneg' {k : Type*} [Fintype k] (u : k → ℝ) :
+@[tmio T, powerlib_foundation] theorem dotProduct_self_nonneg' {k : Type*} [Fintype k] (u : k → ℝ) :
     0 ≤ u ⬝ᵥ u := by
   simpa [dotProduct, sq] using Finset.sum_nonneg fun j (_ : j ∈ Finset.univ) => sq_nonneg (u j)
 
 /-- `|uᵀ N w| ≤ |N|₁ (δ |u|² + |w|²/δ) / 2` for `δ > 0`. -/
-@[powerlib_foundation] theorem abs_dotProduct_mulVec_le {k l : Type*} [Fintype k] [Fintype l]
+@[tmio T, powerlib_foundation] theorem abs_dotProduct_mulVec_le {k l : Type*} [Fintype k] [Fintype l]
     (N : Matrix k l ℝ) (u : k → ℝ) (w : l → ℝ) {δ : ℝ} (hδ : 0 < δ) :
     |u ⬝ᵥ (N *ᵥ w)| ≤ absSum N * (δ * (u ⬝ᵥ u) + (w ⬝ᵥ w) / δ) / 2 := by
   have hpt : ∀ i j, |N i j * (u i * w j)| ≤ |N i j| * ((δ * (u ⬝ᵥ u) + (w ⬝ᵥ w) / δ) / 2) := by
@@ -112,7 +112,7 @@ def absSum {k l : Type*} [Fintype k] [Fintype l] (N : Matrix k l ℝ) : ℝ := �
         simp only [absSum, Finset.sum_mul]
 
 /-- For `P = Pᵀ` with `P A + Aᵀ P = -I`: `xᵀ P A x = -|x|²/2`. -/
-@[powerlib_foundation] theorem dotProduct_mulVec_lyapunov {k : ℕ} {A P : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem dotProduct_mulVec_lyapunov {k : ℕ} {A P : Matrix (Fin k) (Fin k) ℝ}
     (hP : Pᵀ = P) (hL : P * A + Aᵀ * P = -1) (x : Fin k → ℝ) :
     x ⬝ᵥ (P *ᵥ (A *ᵥ x)) = -(x ⬝ᵥ x) / 2 := by
   have h := congrArg (fun Q => x ⬝ᵥ (Q *ᵥ x)) hL
@@ -169,24 +169,24 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
     Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ :=
   sp.coordChangeᵀ * fromBlocks P0 0 0 P2 * sp.coordChange
 
-@[powerlib_foundation] theorem compositeP_symm {P0 : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem compositeP_symm {P0 : Matrix (Fin n) (Fin n) ℝ}
     {P2 : Matrix (Fin m) (Fin m) ℝ} (h0 : P0ᵀ = P0) (h2 : P2ᵀ = P2) :
     (sp.compositeP P0 P2)ᵀ = sp.compositeP P0 P2 := by
   simp only [compositeP, transpose_mul, transpose_transpose, fromBlocks_transpose, h0, h2,
     transpose_zero, Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem coordChange_mulVec (x : Fin n → ℝ) (η : Fin m → ℝ) :
+@[tmio T, powerlib_foundation] theorem coordChange_mulVec (x : Fin n → ℝ) (η : Fin m → ℝ) :
     sp.coordChange *ᵥ Sum.elim x (η - sp.gain *ᵥ x) = Sum.elim x η := by
   rw [coordChange, fromBlocks_mulVec]
   simp
 
-@[powerlib_foundation] theorem compositeP_form (P0 : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem compositeP_form (P0 : Matrix (Fin n) (Fin n) ℝ)
     (P2 : Matrix (Fin m) (Fin m) ℝ) (u w : Fin n ⊕ Fin m → ℝ) :
     u ⬝ᵥ (sp.compositeP P0 P2 *ᵥ w) =
       (sp.coordChange *ᵥ u) ⬝ᵥ (fromBlocks P0 0 0 P2 *ᵥ (sp.coordChange *ᵥ w)) := by
   rw [compositeP, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec, vecMul_transpose]
 
-@[powerlib_foundation] theorem blockDiag_form (P0 : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem blockDiag_form (P0 : Matrix (Fin n) (Fin n) ℝ)
     (P2 : Matrix (Fin m) (Fin m) ℝ) (x x' : Fin n → ℝ) (η η' : Fin m → ℝ) :
     Sum.elim x η ⬝ᵥ (fromBlocks P0 0 0 P2 *ᵥ Sum.elim x' η') =
       x ⬝ᵥ (P0 *ᵥ x') + η ⬝ᵥ (P2 *ᵥ η') := by
@@ -195,7 +195,7 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
 
 /-- In `(x, η)` coordinates the full dynamics read `ẋ = A₀ x + A₁₂ η`,
 `η̇ = L (A₀ x + A₁₂ η) + A₂₂ η / ε`. -/
-@[powerlib_foundation] theorem coordChange_blockMatrix (hA22 : IsUnit sp.A22.det) (ε : ℝ)
+@[tmio T, powerlib_foundation] theorem coordChange_blockMatrix (hA22 : IsUnit sp.A22.det) (ε : ℝ)
     (x : Fin n → ℝ) (η : Fin m → ℝ) :
     sp.coordChange *ᵥ (sp.blockMatrix ε *ᵥ Sum.elim x (η - sp.gain *ᵥ x)) =
       Sum.elim (sp.reducedMatrix *ᵥ x + sp.A12 *ᵥ η)
@@ -214,7 +214,7 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
   simp only [Sum.elim_comp_inl, Sum.elim_comp_inr, one_mulVec, zero_mulVec, add_zero]
 
 /-- The composite Lyapunov estimate `V̇ ≤ -|x|²/4 - |η|²/2` for `0 < ε < ε*`. -/
-@[powerlib_foundation] theorem dissipation_le (hA22 : IsUnit sp.A22.det)
+@[tmio T, powerlib_foundation] theorem dissipation_le (hA22 : IsUnit sp.A22.det)
     {P0 : Matrix (Fin n) (Fin n) ℝ} {P2 : Matrix (Fin m) (Fin m) ℝ}
     (h0 : P0ᵀ = P0) (h2 : P2ᵀ = P2)
     (hL0 : P0 * sp.reducedMatrix + sp.reducedMatrixᵀ * P0 = -1)
@@ -288,7 +288,7 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
 
 /-- Kokotović's theorem with explicit `ε*`: for `0 < ε < ε* = 1/(2c+1)` the full matrix is
 Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_of_lt_epsStar (hA22 : IsUnit sp.A22.det)
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_lt_epsStar (hA22 : IsUnit sp.A22.det)
     {P0 : Matrix (Fin n) (Fin n) ℝ} {P2 : Matrix (Fin m) (Fin m) ℝ}
     (hP0 : P0.PosDef) (hP2 : P2.PosDef)
     (hL0 : P0 * sp.reducedMatrix + sp.reducedMatrixᵀ * P0 = -1)
@@ -378,7 +378,7 @@ Hurwitz. -/
 
 /-- Kokotović's linear two-time-scale theorem: `A₂₂` and `A₀` Hurwitz ⇒ there is `ε* > 0`
 such that the full system is globally exponentially stable for every `ε ∈ (0, ε*)`. -/
-@[powerlib_foundation] theorem exists_epsStar_exponentiallyStable
+@[tmio T, powerlib_foundation] theorem exists_epsStar_exponentiallyStable
     (hA22 : LinearSystems.IsHurwitz sp.A22) (hA0 : LinearSystems.IsHurwitz sp.reducedMatrix) :
     ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
       LinearSystems.IsHurwitz (sp.stateMatrix ε) ∧

@@ -62,7 +62,7 @@ abbrev op (A : Matrix n n ℂ) : Module.End ℂ (n → ℂ) := Matrix.toLin' A
   rwa [Fintype.card_coe] at this
 
 /-- (⇐) `m_g = m_a` for all eigenvalues gives a modal basis. -/
-@[powerlib_foundation] theorem nonempty_modalBasis_of_geom_eq_alg {A : Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem nonempty_modalBasis_of_geom_eq_alg {A : Matrix n n ℂ}
     (h : ∀ μ, finrank ℂ ((op A).eigenspace μ) = A.charpoly.rootMultiplicity μ) :
     Nonempty (ModalBasis A) := by
   -- eigenspaces = generalized eigenspaces
@@ -104,7 +104,7 @@ abbrev op (A : Matrix n n ℂ) : Module.End ℂ (n → ℂ) := Matrix.toLin' A
   exact ⟨⟨V, (V⁻¹)ᵀ, eig, hright, hbi⟩⟩
 
 /-- **Diagonalizable ⇔ `m_g = m_a`** for every eigenvalue. -/
-@[powerlib_foundation] theorem nonempty_modalBasis_iff (A : Matrix n n ℂ) :
+@[tmio T, powerlib_foundation] theorem nonempty_modalBasis_iff (A : Matrix n n ℂ) :
     Nonempty (ModalBasis A) ↔
       ∀ μ, finrank ℂ ((op A).eigenspace μ) = A.charpoly.rootMultiplicity μ :=
   ⟨fun ⟨mb⟩ => mb.geom_eq_alg, nonempty_modalBasis_of_geom_eq_alg⟩

@@ -46,7 +46,7 @@ def pump (δ ωp t : ℝ) : ℝ := δ * Real.cos (ωp * t)
 
 /-- Every global solution of `ż = f(z, u_δ(t))`, shifted by `T/2`, is a global solution of
 `ż = f(z, u_{−δ}(t))`. -/
-@[powerlib_foundation] theorem drivenTrajectory_half_shift {n : ℕ}
+@[tmio T, powerlib_foundation] theorem drivenTrajectory_half_shift {n : ℕ}
     {f : EuclideanSpace ℝ (Fin n) → ℝ → EuclideanSpace ℝ (Fin n)} {δ ωp T : ℝ}
     (hT : ωp * T = 2 * Real.pi) {z : ℝ → EuclideanSpace ℝ (Fin n)}
     (hz : ∀ t, HasDerivAt z (f (z t) (pump δ ωp t)) t) :
@@ -58,7 +58,7 @@ def pump (δ ωp t : ℝ) : ℝ := δ * Real.cos (ωp * t)
 
 /-- If `J_{−δ}(t) = J_δ(t + T/2)`, the Floquet multipliers (and hence Floquet instability) of the
 two variational systems coincide. -/
-@[powerlib_foundation] theorem floquetUnstable_half_shift {X : Type*} [Fintype X] [DecidableEq X]
+@[tmio T, powerlib_foundation] theorem floquetUnstable_half_shift {X : Type*} [Fintype X] [DecidableEq X]
     {Jp Jm : ℝ → Matrix X X ℝ} {M T : ℝ} (hA : Continuous Jp) (hM : ∀ t, ‖Jp t‖ ≤ M)
     (hT : 0 ≤ T) (hP : Periodic Jp T) (hshift : ∀ t, Jm t = Jp (t + T / 2)) :
     spectrum ℂ ((Periodic.monodromy Jm T 0).map (algebraMap ℝ ℂ)) =

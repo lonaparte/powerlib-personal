@@ -68,7 +68,7 @@ decreasing_by exact hj
 /-- The stability polynomial `R = 1 + X Σᵢ bᵢ pᵢ`. -/
 def stabilityPoly : ℂ[X] := 1 + X * ∑ i, C (M.b i : ℂ) * M.stagePoly i
 
-@[powerlib_foundation] private lemma stage_rhs (lam : ℂ) (h : ℝ) (x : ℂ) (k : Fin s → ℂ)
+@[tmio T, powerlib_foundation] private lemma stage_rhs (lam : ℂ) (h : ℝ) (x : ℂ) (k : Fin s → ℂ)
     (i : Fin s) (hlt : ∀ j, j < i → k j = lam * x * (M.stagePoly j).eval (h * lam)) :
     testField lam (x + h • ∑ j, M.a i j • k j) = lam * x * (M.stagePoly i).eval (h * lam) := by
   have hsum : ∑ j, M.a i j • k j =
@@ -99,12 +99,12 @@ def stabilityPoly : ℂ[X] := 1 + X * ∑ i, C (M.b i : ℂ) * M.stagePoly i
   exact ih j.val (hm ▸ hj) j rfl
 
 /-- For the test field the stage equations are solvable. -/
-@[powerlib_foundation] theorem stages_testEquation_exist (lam : ℂ) (h : ℝ) (x : ℂ) :
+@[tmio T, powerlib_foundation] theorem stages_testEquation_exist (lam : ℂ) (h : ℝ) (x : ℂ) :
     M.IsStages (testField lam) h x (fun i => lam * x * (M.stagePoly i).eval (h * lam)) :=
   fun i => (M.stage_rhs lam h x _ i (fun _ _ => rfl)).symm
 
 /-- One RK step on the test equation multiplies by the stability polynomial. -/
-@[powerlib_foundation] theorem update_testEquation (lam : ℂ) (h : ℝ) (x : ℂ) (k : Fin s → ℂ)
+@[tmio T, powerlib_foundation] theorem update_testEquation (lam : ℂ) (h : ℝ) (x : ℂ) (k : Fin s → ℂ)
     (hk : M.IsStages (testField lam) h x k) :
     M.update h x k = M.stabilityPoly.eval (h * lam) * x := by
   simp only [update, stabilityPoly, M.stages_testEquation lam h x k hk, Complex.real_smul,
@@ -114,13 +114,13 @@ def stabilityPoly : ℂ[X] := 1 + X * ∑ i, C (M.b i : ℂ) * M.stagePoly i
   refine Finset.sum_congr rfl fun i _ => ?_
   ring
 
-@[powerlib_foundation] theorem trajectory_testEquation (lam : ℂ) (h : ℝ) (x : ℕ → ℂ)
+@[tmio T, powerlib_foundation] theorem trajectory_testEquation (lam : ℂ) (h : ℝ) (x : ℕ → ℂ)
     (hx : M.IsTrajectory (testField lam) h x) (n : ℕ) :
     x (n + 1) = M.stabilityPoly.eval (h * lam) * x n := by
   obtain ⟨k, hk, hn⟩ := hx n
   rw [hn, M.update_testEquation lam h (x n) k hk]
 
-@[powerlib_foundation] theorem stagePoly_eval_zero (i : Fin s) : (M.stagePoly i).eval 0 = 1 := by
+@[tmio T, powerlib_foundation] theorem stagePoly_eval_zero (i : Fin s) : (M.stagePoly i).eval 0 = 1 := by
   rw [stagePoly]
   simp only [eval_add, eval_one, eval_finsetSum]
   rw [Finset.sum_eq_zero]
@@ -128,14 +128,14 @@ def stabilityPoly : ℂ[X] := 1 + X * ∑ i, C (M.b i : ℂ) * M.stagePoly i
   · intro j _
     split_ifs <;> simp
 
-@[powerlib_foundation] theorem stabilityPoly_coeff_one :
+@[tmio T, powerlib_foundation] theorem stabilityPoly_coeff_one :
     M.stabilityPoly.coeff 1 = ∑ i, (M.b i : ℂ) := by
   rw [stabilityPoly, coeff_add, coeff_one, coeff_X_mul, coeff_zero_eq_eval_zero]
   simp only [eval_finsetSum, eval_mul, eval_C, M.stagePoly_eval_zero, mul_one]
   simp
 
 /-- No consistent explicit Runge–Kutta method is A-stable. -/
-@[powerlib_foundation] theorem not_aStable (hcons : ∑ i, M.b i = 1) :
+@[tmio T, powerlib_foundation] theorem not_aStable (hcons : ∑ i, M.b i = 1) :
     ¬ AStable (fun z => M.stabilityPoly.eval z) := by
   apply polynomial_not_aStable
   rw [stabilityPoly_coeff_one]
@@ -143,7 +143,7 @@ def stabilityPoly : ℂ[X] := 1 + X * ∑ i, C (M.b i : ℂ) * M.stagePoly i
 
 /-- A consistent explicit Runge–Kutta method with `h = 1` diverges on some decaying test
 mode: every nonzero numerical trajectory has `‖x n‖ → ∞` although `Re λ < 0`. -/
-@[powerlib_foundation] theorem exists_stable_mode_divergent (hcons : ∑ i, M.b i = 1) :
+@[tmio T, powerlib_foundation] theorem exists_stable_mode_divergent (hcons : ∑ i, M.b i = 1) :
     ∃ lam : ℂ, lam.re < 0 ∧ ∀ x : ℕ → ℂ, M.IsTrajectory (testField lam) 1 x → x 0 ≠ 0 →
       Tendsto (fun n => ‖x n‖) atTop atTop := by
   have hdeg : 0 < M.stabilityPoly.degree := by

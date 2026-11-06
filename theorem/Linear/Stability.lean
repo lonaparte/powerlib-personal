@@ -60,7 +60,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     IsEquilibrium (affineLinearVectorField A e) e := by
   simp [IsEquilibrium, affine_apply]
 
-@[powerlib_foundation] theorem affine_hasFDerivAt (A : Matrix (Fin n) (Fin n) ℝ) (e x : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem affine_hasFDerivAt (A : Matrix (Fin n) (Fin n) ℝ) (e x : ℝⁿ) :
     HasFDerivAt (affineLinearVectorField A e) (op A) x := by
   have h : HasFDerivAt (fun y : ℝⁿ => op A (y - e))
       ((op A).comp (ContinuousLinearMap.id ℝ ℝⁿ)) x :=
@@ -68,12 +68,12 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   rw [ContinuousLinearMap.comp_id] at h
   exact h
 
-@[powerlib_foundation] theorem affine_contDiff (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem affine_contDiff (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
     ContDiff ℝ 1 (affineLinearVectorField A e) :=
   (op A).contDiff.comp (contDiff_id.sub contDiff_const)
 
 /-- Hurwitz gives local exponential stability (LeanForControl's linearization theorem). -/
-@[powerlib_foundation, aesop safe apply] theorem locallyExponentiallyStable_of_isHurwitz
+@[tmio T, powerlib_foundation, aesop safe apply] theorem locallyExponentiallyStable_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
     LocallyExponentiallyStable (affineLinearVectorField A e) e :=
   hurwitz_linearization_locally_exponentially_stable A (affine_contDiff A e)
@@ -85,14 +85,14 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) : ℝⁿ :=
   e + exp ((t - t₀) • op A) (x₀ - e)
 
-@[simp, powerlib_foundation] theorem solution_initial (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ)
+@[tmio T, simp, powerlib_foundation] theorem solution_initial (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ)
     (t₀ : ℝ) (x₀ : ℝⁿ) : solution A e t₀ x₀ t₀ = x₀ := by
   have h : (t₀ - t₀) • op A = 0 := by rw [sub_self]; exact zero_smul ℝ (op A)
   show e + exp ((t₀ - t₀) • op A) (x₀ - e) = x₀
   rw [h, exp_zero]
   exact add_sub_cancel e x₀
 
-@[powerlib_foundation] theorem solution_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ)
+@[tmio T, powerlib_foundation] theorem solution_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ)
     (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
     HasDerivAt (solution A e t₀ x₀) (affineLinearVectorField A e (solution A e t₀ x₀ t)) t := by
   have hexp : HasDerivAt (fun s : ℝ => exp ((s - t₀) • op A))
@@ -108,13 +108,13 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
   simp [affine_apply]
 
 /-- The affine linear field has a solution through every state. -/
-@[powerlib_foundation] theorem forwardComplete (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem forwardComplete (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
     Flow.ForwardComplete (affineLinearVectorField A e) :=
   fun t₀ x₀ => ⟨solution A e t₀ x₀, solution_initial A e t₀ x₀,
     fun t _ => (solution_hasDerivAt A e t₀ x₀ t).hasDerivWithinAt⟩
 
 /-- The affine linear field is globally Lipschitz. -/
-@[powerlib_foundation] theorem affine_lipschitzWith (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem affine_lipschitzWith (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
     LipschitzWith ‖op A‖₊ (affineLinearVectorField A e) :=
   LipschitzWith.of_dist_le_mul fun x y => by
     simp only [affine_apply, dist_eq_norm, ← map_sub, sub_sub_sub_cancel_right, coe_nnnorm]
@@ -122,7 +122,7 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
 
 /-- Every solution segment of the affine linear field is the matrix-exponential solution
 (LeanForControl's uniqueness for Lipschitz fields). -/
-@[powerlib_foundation] theorem trajectory_eq_solution {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem trajectory_eq_solution {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ (affineLinearVectorField A e) t₀ t₁) :
     ∀ t ∈ Icc t₀ t₁, φ t = solution A e t₀ (φ t₀) t :=
   eqOn_of_isIntegralCurveOn_Icc (fun _ => affine_lipschitzWith A e) hφ
@@ -130,7 +130,7 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
     (solution_initial A e t₀ (φ t₀)).symm
 
 /-- Two solution segments with the same initial state coincide. -/
-@[powerlib_foundation] theorem trajectory_unique {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem trajectory_unique {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     {φ ψ : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ (affineLinearVectorField A e) t₀ t₁)
     (hψ : IsTrajectoryOn ψ (affineLinearVectorField A e) t₀ t₁) (h₀ : φ t₀ = ψ t₀) :
     ∀ t ∈ Icc t₀ t₁, φ t = ψ t :=
@@ -138,14 +138,14 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
 
 /-! ## One-state plants -/
 
-@[powerlib_foundation] theorem op_one_apply (c : ℝ) (y : EuclideanSpace ℝ (Fin 1)) :
+@[tmio T, powerlib_foundation] theorem op_one_apply (c : ℝ) (y : EuclideanSpace ℝ (Fin 1)) :
     op !![c] y = c • y := by
   ext i
   fin_cases i
   simp [Matrix.mulVec, dotProduct]
 
 /-- The explicit solution of the one-state field `x' = -a (x - e)`. -/
-@[powerlib_foundation] theorem scalar_solution_hasDerivAt (a : ℝ) (e x₀ : EuclideanSpace ℝ (Fin 1))
+@[tmio T, powerlib_foundation] theorem scalar_solution_hasDerivAt (a : ℝ) (e x₀ : EuclideanSpace ℝ (Fin 1))
     (t₀ t : ℝ) :
     HasDerivAt (fun t => e + Real.exp (-a * (t - t₀)) • (x₀ - e))
       (affineLinearVectorField !![-a] e (e + Real.exp (-a * (t - t₀)) • (x₀ - e))) t := by
@@ -156,7 +156,7 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
   rw [affine_apply, add_sub_cancel_left, op_one_apply, smul_smul, mul_comm]
 
 /-- Every solution segment of a one-state plant decays or grows exponentially. -/
-@[powerlib_foundation] theorem trajectory_eq_scalar {a : ℝ} {e : EuclideanSpace ℝ (Fin 1)}
+@[tmio T, powerlib_foundation] theorem trajectory_eq_scalar {a : ℝ} {e : EuclideanSpace ℝ (Fin 1)}
     {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
     (hφ : IsTrajectoryOn φ (affineLinearVectorField !![-a] e) t₀ t₁) :
     ∀ t ∈ Icc t₀ t₁, φ t = e + Real.exp (-a * (t - t₀)) • (φ t₀ - e) :=
@@ -165,7 +165,7 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
 
 /-- A one-state plant `x' = -b x` decays exactly at the rates up to `b`: its solutions are the
 exponentials `e^{-b t}`. -/
-@[powerlib_foundation] theorem decay_scalar_iff (b a : ℝ) :
+@[tmio T, powerlib_foundation] theorem decay_scalar_iff (b a : ℝ) :
     Flow.Decay (affineLinearVectorField !![-b] 0) 0 a ↔ a ≤ b := by
   constructor
   · rintro ⟨C, hC⟩
@@ -206,7 +206,7 @@ exponentials `e^{-b t}`. -/
     nlinarith [ht.1]
 
 /-- Solution segments scale about the centre. -/
-@[powerlib_foundation] theorem isTrajectoryOn_scale {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_scale {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ (affineLinearVectorField A e) t₀ t₁)
     (c : ℝ) :
     IsTrajectoryOn (fun t => e + c • (φ t - e)) (affineLinearVectorField A e) t₀ t₁ := by
@@ -216,7 +216,7 @@ exponentials `e^{-b t}`. -/
   simp [affine_apply, map_smul]
 
 /-- Local exponential stability of the affine linear field is global. -/
-@[powerlib_foundation] theorem globallyExponentiallyStable_of_locallyExponentiallyStable
+@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_of_locallyExponentiallyStable
     {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     (h : LocallyExponentiallyStable (affineLinearVectorField A e) e) :
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e := by
@@ -238,7 +238,7 @@ exponentials `e^{-b t}`. -/
   exact le_of_mul_le_mul_left this hc
 
 /-- Hurwitz gives global exponential stability. -/
-@[powerlib_foundation, aesop safe apply] theorem globallyExponentiallyStable_of_isHurwitz
+@[tmio T, powerlib_foundation, aesop safe apply] theorem globallyExponentiallyStable_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e :=
   globallyExponentiallyStable_of_locallyExponentiallyStable
@@ -250,7 +250,7 @@ exponentials `e^{-b t}`. -/
 def eigenmode (part : ℂ →L[ℝ] ℝ) (μ : ℂ) (v : Fin n → ℂ) (t : ℝ) : ℝⁿ :=
   WithLp.toLp 2 fun j => part (Complex.exp (μ * t) * v j)
 
-@[powerlib_foundation] theorem eigen_component_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem eigen_component_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ)
     {μ : ℂ} {v : Fin n → ℂ} (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) (t : ℝ) (j : Fin n) :
     HasDerivAt (fun s : ℝ => Complex.exp (μ * s) * v j)
       (∑ k, (A j k : ℂ) * (Complex.exp (μ * t) * v k)) t := by
@@ -265,7 +265,7 @@ def eigenmode (part : ℂ →L[ℝ] ℝ) (μ : ℂ) (v : Fin n → ℂ) (t : ℝ
         rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun k _ => by ring
     _ = _ := by rw [hj]; ring
 
-@[powerlib_foundation] theorem eigenmode_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) {μ : ℂ}
+@[tmio T, powerlib_foundation] theorem eigenmode_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) {μ : ℂ}
     {v : Fin n → ℂ} (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) (part : ℂ →L[ℝ] ℝ)
     (hpart : ∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) (t : ℝ) :
     HasDerivAt (eigenmode part μ v) (op A (eigenmode part μ v t)) t := by
@@ -278,7 +278,7 @@ def eigenmode (part : ℂ →L[ℝ] ℝ) (μ : ℂ) (v : Fin n → ℂ) (t : ℝ
     t hcomp
   convert h using 1 <;> rfl
 
-@[powerlib_foundation] theorem eigenmode_norm_sq (μ : ℂ) (v : Fin n → ℂ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem eigenmode_norm_sq (μ : ℂ) (v : Fin n → ℂ) (t : ℝ) :
     ‖eigenmode Complex.reCLM μ v t‖ ^ 2 + ‖eigenmode Complex.imCLM μ v t‖ ^ 2 =
       Real.exp (μ.re * t) ^ 2 * ∑ j, Complex.normSq (v j) := by
   rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_add_distrib,
@@ -293,7 +293,7 @@ def eigenmode (part : ℂ →L[ℝ] ℝ) (μ : ℂ) (v : Fin n → ℂ) (t : ℝ
 
 /-- A non-decaying eigenmode rules out local asymptotic stability: local asymptotic stability of
 the affine linear field forces Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_of_localAsymptoticStable
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_localAsymptoticStable
     {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     (h : LocalAsymptoticStable (affineLinearVectorField A e) e) : IsHurwitz A := by
   obtain ⟨-, c, hc, hconv⟩ := h
@@ -355,39 +355,39 @@ the affine linear field forces Hurwitz. -/
 
 /-- For the affine linear field of `A`, every attractive sentence holds at the centre exactly
 when `A` is Hurwitz. -/
-@[powerlib_foundation] theorem holds_iff_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ)
+@[tmio T, powerlib_foundation] theorem holds_iff_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ)
     {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField A e) e ↔ IsHurwitz A :=
   ⟨fun h => isHurwitz_of_localAsymptoticStable (Flow.Property.localAsymptoticStable hP h),
     fun hA => (globallyExponentiallyStable_of_isHurwitz e hA).holds hP⟩
 
 /-- Hurwitz gives every attractive sentence. -/
-@[powerlib_foundation, aesop unsafe 80% apply] theorem holds_of_isHurwitz
+@[tmio T, powerlib_foundation, aesop unsafe 80% apply] theorem holds_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive)
     (hA : IsHurwitz A) : P.holds (affineLinearVectorField A e) e :=
   (holds_iff_isHurwitz e hP).mpr hA
 
 /-- Hurwitz gives global asymptotic stability, with a solution through every state. -/
-@[powerlib_foundation, aesop safe apply] theorem globallyAsymptoticallyStable_of_isHurwitz
+@[tmio T, powerlib_foundation, aesop safe apply] theorem globallyAsymptoticallyStable_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
     Flow.GloballyAsymptoticallyStable (affineLinearVectorField A e) e :=
   (globallyExponentiallyStable_of_isHurwitz e hA).globallyAsymptoticallyStable
 
 /-- Hurwitz gives local asymptotic stability. -/
-@[powerlib_foundation, aesop safe apply] theorem localAsymptoticStable_of_isHurwitz
+@[tmio T, powerlib_foundation, aesop safe apply] theorem localAsymptoticStable_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
     LocalAsymptoticStable (affineLinearVectorField A e) e :=
   Flow.locallyExponentiallyStable_localAsymptoticStable
     (locallyExponentiallyStable_of_isHurwitz e hA)
 
 /-- Hurwitz gives Lyapunov stability. -/
-@[powerlib_foundation, aesop unsafe 50% apply]
+@[tmio T, powerlib_foundation, aesop unsafe 50% apply]
 theorem lyapunovStable_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (e : ℝⁿ) (hA : IsHurwitz A) : LyapunovStable (affineLinearVectorField A e) e :=
   (globallyExponentiallyStable_of_isHurwitz e hA).lyapunovStable
 
 /-- An eigenvalue in the open right half plane gives instability (LeanForControl). -/
-@[powerlib_foundation] theorem unstable_of_eigenvalue {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ)
+@[tmio T, powerlib_foundation] theorem unstable_of_eigenvalue {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ)
     {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0) (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
     (hμ : 0 < μ.re) : Unstable (affineLinearVectorField A e) e :=
   unstable_affineLinear_of_eigenvalue_re_pos A e μ v hv heig hμ
@@ -403,12 +403,12 @@ open scoped Matrix.Norms.Frobenius
 
 /-- Hurwitz gives a positive integer horizon whose transition matrix has Frobenius norm below one
 (LeanForControl). -/
-@[powerlib_foundation] theorem contractive_block {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) :
+@[tmio T, powerlib_foundation] theorem contractive_block {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) :
     ∃ k : ℕ, 0 < k ∧ ‖exp ((k : ℝ) • A)‖ < 1 :=
   hA.exists_norm_exp_nat_smul_lt_one
 
 /-- The Frobenius norm bounds the action on states. -/
-@[powerlib_foundation] theorem norm_op_apply_le (M : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem norm_op_apply_le (M : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
     ‖op M x‖ ≤ ‖M‖ * ‖x‖ :=
   calc ‖op M x‖ = ‖replicateCol (Fin 1) (M *ᵥ x.ofLp)‖ :=
         (frobenius_norm_replicateCol (ι := Fin 1) (M *ᵥ x.ofLp)).symm
@@ -417,14 +417,14 @@ open scoped Matrix.Norms.Frobenius
     _ = ‖M‖ * ‖x‖ := congrArg (‖M‖ * ·) (frobenius_norm_replicateCol (ι := Fin 1) x.ofLp)
 
 /-- The exponential of a matrix acts on states as the exponential of its operator. -/
-@[powerlib_foundation] theorem op_exp (M : Matrix (Fin n) (Fin n) ℝ) : op (exp M) = exp (op M) :=
+@[tmio T, powerlib_foundation] theorem op_exp (M : Matrix (Fin n) (Fin n) ℝ) : op (exp M) = exp (op M) :=
   map_exp (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ))
     ((Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).toAlgEquiv.toLinearEquiv.toLinearMap
       |>.continuous_of_finiteDimensional) M
 
 /-- Hurwitz gives sampled contraction of the affine linear field: over an integer horizon the
 transition matrix has Frobenius norm below one. -/
-@[powerlib_foundation] theorem sampledContraction_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem sampledContraction_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (e : ℝⁿ) (hA : IsHurwitz A) : Flow.SampledContraction (affineLinearVectorField A e) e := by
   obtain ⟨k, hk, hlt⟩ := contractive_block hA
   refine ⟨k, hk, _, hlt, fun t₀ φ hφ => ?_⟩
@@ -438,7 +438,7 @@ end Sampling
 
 /-- A non-decaying eigenmode does not contract: sampled contraction of the affine linear field
 forces Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_of_sampledContraction {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_sampledContraction {A : Matrix (Fin n) (Fin n) ℝ}
     {e : ℝⁿ} (h : Flow.SampledContraction (affineLinearVectorField A e) e) : IsHurwitz A := by
   obtain ⟨k, hk, c, hc, hcon⟩ := h
   intro μ v hv heig
@@ -482,13 +482,13 @@ forces Hurwitz. -/
 
 /-- For the affine linear field, sampled contraction holds at the centre exactly when the matrix
 is Hurwitz. -/
-@[powerlib_foundation] theorem sampledContraction_iff_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem sampledContraction_iff_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (e : ℝⁿ) : Flow.SampledContraction (affineLinearVectorField A e) e ↔ IsHurwitz A :=
   ⟨isHurwitz_of_sampledContraction, sampledContraction_of_isHurwitz e⟩
 
 /-- A conserved energy excludes Hurwitz on a nontrivial state space: every solution of a Hurwitz
 field converges. -/
-@[powerlib_foundation] theorem not_isHurwitz_of_conservative (hn : 0 < n)
+@[tmio T, powerlib_foundation] theorem not_isHurwitz_of_conservative (hn : 0 < n)
     {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     (h : Flow.Conservative (affineLinearVectorField A e) e) : ¬ IsHurwitz A :=
   fun hA => h.not_localAsymptoticStable hn (forwardComplete A e)

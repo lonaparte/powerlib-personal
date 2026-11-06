@@ -62,12 +62,12 @@ def currentMag (E V R X δ : ℝ) : ℝ :=
   have := Real.sin_sq_add_cos_sq δ
   linear_combination E ^ 2 * this
 
-@[powerlib_foundation] theorem normZ_sq (R X : ℝ) : ‖(⟨R, X⟩ : ℂ)‖ ^ 2 = R ^ 2 + X ^ 2 := by
+@[tmio T, powerlib_foundation] theorem normZ_sq (R X : ℝ) : ‖(⟨R, X⟩ : ℂ)‖ ^ 2 = R ^ 2 + X ^ 2 := by
   rw [Complex.sq_norm, Complex.normSq_apply]
   ring
 
 /-- Law of cosines for the current magnitude. -/
-@[powerlib_foundation] theorem currentMag_sq (R X E V δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem currentMag_sq (R X E V δ : ℝ) :
     currentMag E V R X δ ^ 2 = (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / (R ^ 2 + X ^ 2) := by
   rw [currentMag, div_pow, currentMag_sq_num, normZ_sq]
 
@@ -75,11 +75,11 @@ def currentMag (E V R X δ : ℝ) : ℝ :=
 def deltaExit (E V R X Imax : ℝ) : ℝ :=
   Real.arccos ((E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
 
-@[powerlib_foundation] private lemma currentMag_nonneg (E V R X δ : ℝ) :
+@[tmio M, powerlib_foundation] private lemma currentMag_nonneg (E V R X δ : ℝ) :
     0 ≤ currentMag E V R X δ := div_nonneg (norm_nonneg _) (norm_nonneg _)
 
 /-- At `δ_exit` the current is exactly `I_max` (under the `arccos` domain premise). -/
-@[powerlib_foundation] theorem deltaExit_current {E V R X Imax : ℝ} (hE : 0 < E) (hV : 0 < V)
+@[tmio M, powerlib_foundation] theorem deltaExit_current {E V R X Imax : ℝ} (hE : 0 < E) (hV : 0 < V)
     (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
     (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
     (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1) :
@@ -91,7 +91,7 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
   exact (pow_left_inj₀ (currentMag_nonneg _ _ _ _ _) hI two_ne_zero).mp hsq
 
 /-- The `arccos` argument lies in `[−1, 1]` iff `|E − V| ≤ I_max |Z| ≤ E + V`. -/
-@[powerlib_foundation] theorem deltaExit_domain_iff {E V R X Imax : ℝ} (hE : 0 < E)
+@[tmio T, powerlib_foundation] theorem deltaExit_domain_iff {E V R X Imax : ℝ} (hE : 0 < E)
     (hV : 0 < V) :
     (-1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ∧
         (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1) ↔
@@ -101,7 +101,7 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
   constructor <;> rintro ⟨a, b⟩ <;> constructor <;> nlinarith
 
 /-- On `[0, π]` the current is below `I_max` iff `δ < δ_exit`. -/
-@[powerlib_foundation] theorem current_lt_iff {E V R X Imax δ : ℝ} (hE : 0 < E) (hV : 0 < V)
+@[tmio TM, powerlib_foundation] theorem current_lt_iff {E V R X Imax δ : ℝ} (hE : 0 < E) (hV : 0 < V)
     (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
     (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
     (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1)
@@ -124,7 +124,7 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
     rwa [Real.cos_arccos hdom1 hdom2] at h'
 
 /-- If `I_max |Z| > E + V` the current limit is never reached: no exit angle exists. -/
-@[powerlib_foundation] theorem current_lt_of_large_limit {E V R X Imax : ℝ} (hE : 0 ≤ E)
+@[tmio M, powerlib_foundation] theorem current_lt_of_large_limit {E V R X Imax : ℝ} (hE : 0 ≤ E)
     (hV : 0 ≤ V) (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
     (h : (E + V) ^ 2 < Imax ^ 2 * (R ^ 2 + X ^ 2)) (δ : ℝ) :
     currentMag E V R X δ < Imax := by
@@ -137,7 +137,7 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
 /-! ## Grid-code `S_new` power-reference rewrite -/
 
 /-- Real solution of `P*² + Q*² = S²` when `|Q*| ≤ S`. -/
-@[powerlib_foundation] theorem pq_circle {S Q : ℝ} (hQ : |Q| ≤ S) :
+@[tmio T, powerlib_foundation] theorem pq_circle {S Q : ℝ} (hQ : |Q| ≤ S) :
     Real.sqrt (S ^ 2 - Q ^ 2) ^ 2 + Q ^ 2 = S ^ 2 := by
   have : Q ^ 2 ≤ S ^ 2 := sq_le_sq' (abs_le.mp hQ).1 (abs_le.mp hQ).2
   rw [Real.sq_sqrt (by linarith)]
@@ -146,11 +146,11 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
 /-- Fault-mode reactive reference for `V_pu ≤ 0.9`. -/
 def qStar (S Vpu : ℝ) : ℝ := if Vpu ≤ 1 / 2 then S else 2 * S * (1 - Vpu)
 
-@[powerlib_foundation] theorem qStar_half (S : ℝ) : qStar S (1 / 2) = 2 * S * (1 - 1 / 2) := by
+@[tmio M, powerlib_foundation] theorem qStar_half (S : ℝ) : qStar S (1 / 2) = 2 * S * (1 - 1 / 2) := by
   simp [qStar]
   ring
 
-@[powerlib_foundation] theorem qStar_bounds {S Vpu : ℝ} (hS : 0 ≤ S) (hV : Vpu ≤ 9 / 10) :
+@[tmio M, powerlib_foundation] theorem qStar_bounds {S Vpu : ℝ} (hS : 0 ≤ S) (hV : Vpu ≤ 9 / 10) :
     0 ≤ qStar S Vpu ∧ qStar S Vpu ≤ S := by
   unfold qStar
   split_ifs with h
@@ -159,7 +159,7 @@ def qStar (S Vpu : ℝ) : ℝ := if Vpu ≤ 1 / 2 then S else 2 * S * (1 - Vpu)
     constructor <;> nlinarith
 
 /-- `S_new = V_pu S_n`, `P* = √(S_new² − Q*²)`: a real solution with `P*² + Q*² = S_new²`. -/
-@[powerlib_foundation] theorem snew_circle {Sn Vpu : ℝ} (hSn : 0 ≤ Sn) (hV0 : 0 ≤ Vpu)
+@[tmio M, powerlib_foundation] theorem snew_circle {Sn Vpu : ℝ} (hSn : 0 ≤ Sn) (hV0 : 0 ≤ Vpu)
     (hV : Vpu ≤ 9 / 10) :
     let S := Vpu * Sn
     0 ≤ Real.sqrt (S ^ 2 - qStar S Vpu ^ 2) ∧
@@ -174,7 +174,7 @@ def qStar (S Vpu : ℝ) : ℝ := if Vpu ≤ 1 / 2 then S else 2 * S * (1 - Vpu)
 /-- `R_v = k (I_o − I_th)` for `I_o ≥ I_th`, `0` otherwise. -/
 def adaptiveRv (k Ith Io : ℝ) : ℝ := if Ith ≤ Io then k * (Io - Ith) else 0
 
-@[powerlib_foundation] theorem adaptiveRv_eq_max (k Ith Io : ℝ) :
+@[tmio M, powerlib_foundation] theorem adaptiveRv_eq_max (k Ith Io : ℝ) :
     adaptiveRv k Ith Io = k * max (Io - Ith) 0 := by
   unfold adaptiveRv
   split_ifs with h
@@ -182,22 +182,22 @@ def adaptiveRv (k Ith Io : ℝ) : ℝ := if Ith ≤ Io then k * (Io - Ith) else 
   · rw [max_eq_right (by linarith), mul_zero]
 
 /-- The adaptive virtual resistance is continuous (no jump at the threshold). -/
-@[powerlib_foundation] theorem adaptiveRv_continuous (k Ith : ℝ) :
+@[tmio M, powerlib_foundation] theorem adaptiveRv_continuous (k Ith : ℝ) :
     Continuous (adaptiveRv k Ith) := by
   have : adaptiveRv k Ith = fun Io => k * max (Io - Ith) 0 :=
     funext (adaptiveRv_eq_max k Ith)
   rw [this]
   fun_prop
 
-@[powerlib_foundation] theorem adaptiveRv_threshold (k Ith : ℝ) : adaptiveRv k Ith Ith = 0 := by
+@[tmio M, powerlib_foundation] theorem adaptiveRv_threshold (k Ith : ℝ) : adaptiveRv k Ith Ith = 0 := by
   simp [adaptiveRv]
 
-@[powerlib_foundation] theorem adaptiveRv_nonneg {k : ℝ} (hk : 0 ≤ k) (Ith Io : ℝ) :
+@[tmio M, powerlib_foundation] theorem adaptiveRv_nonneg {k : ℝ} (hk : 0 ≤ k) (Ith Io : ℝ) :
     0 ≤ adaptiveRv k Ith Io := by
   rw [adaptiveRv_eq_max]
   exact mul_nonneg hk (le_max_right _ _)
 
-@[powerlib_foundation] theorem adaptiveRv_monotone {k : ℝ} (hk : 0 ≤ k) (Ith : ℝ) :
+@[tmio M, powerlib_foundation] theorem adaptiveRv_monotone {k : ℝ} (hk : 0 ≤ k) (Ith : ℝ) :
     Monotone (adaptiveRv k Ith) := by
   intro a b hab
   rw [adaptiveRv_eq_max, adaptiveRv_eq_max]
@@ -209,15 +209,15 @@ def adaptiveRv (k Ith Io : ℝ) : ℝ := if Ith ≤ Io then k * (Io - Ith) else 
 def barrier (Dmin β ith x : ℝ) : ℝ :=
   (1 - Dmin) * Real.exp (β * (x - ith)) / (1 + (1 - Dmin) * (Real.exp (β * (x - ith)) - 1))
 
-@[powerlib_foundation] theorem barrier_threshold (Dmin β ith : ℝ) :
+@[tmio M, powerlib_foundation] theorem barrier_threshold (Dmin β ith : ℝ) :
     barrier Dmin β ith ith = 1 - Dmin := by
   simp [barrier]
 
-@[powerlib_foundation] private lemma barrier_den_pos {Dmin : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
+@[tmio T, powerlib_foundation] private lemma barrier_den_pos {Dmin : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
     (u : ℝ) (hu : 0 < u) : 0 < 1 + (1 - Dmin) * (u - 1) := by
   nlinarith
 
-@[powerlib_foundation] theorem barrier_mem {Dmin : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
+@[tmio M, powerlib_foundation] theorem barrier_mem {Dmin : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
     (β ith x : ℝ) : 0 < barrier Dmin β ith x ∧ barrier Dmin β ith x < 1 := by
   have hu := Real.exp_pos (β * (x - ith))
   have hd := barrier_den_pos h0 h1 _ hu
@@ -227,7 +227,7 @@ def barrier (Dmin β ith x : ℝ) : ℝ :=
   · rw [div_lt_one hd]
     nlinarith
 
-@[powerlib_foundation] theorem barrier_strictMono {Dmin β : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
+@[tmio M, powerlib_foundation] theorem barrier_strictMono {Dmin β : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
     (hβ : 0 < β) (ith : ℝ) : StrictMono (barrier Dmin β ith) := by
   intro x y hxy
   have hux := Real.exp_pos (β * (x - ith))

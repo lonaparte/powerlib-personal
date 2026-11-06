@@ -281,7 +281,7 @@ Static evidence on the model, not a connection conclusion. -/
   simp only [Model.N, Model.ω0]
   ring
 
-@[powerlib_foundation] private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
+@[tmio T, powerlib_foundation] private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
     (hz : z1 ^ 2 + z2 ^ 2 = N) :
     -G * u ^ 2 - R * (e1 ^ 2 + e2 ^ 2) - B / N * u * (e1 * z1 + e2 * z2) ≤
       -(G - B ^ 2 / (4 * R * N)) * u ^ 2 := by
@@ -488,13 +488,13 @@ end Model
   field_simp
   ring
 
-@[powerlib_foundation] private theorem sq_add_sq_eq_zero {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
+@[tmio T, powerlib_foundation] private theorem sq_add_sq_eq_zero {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
   have hx : x ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   have hy : y ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   exact ⟨pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hx,
     pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hy⟩
 
-@[powerlib_foundation] private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fin 4 → ℂ}
+@[tmio T, powerlib_foundation] private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fin 4 → ℂ}
     (h : Matrix.mulVec (A.map (algebraMap ℝ ℂ)) v = lam • v) (i : Fin 4) :
     A i 0 * (v 0).re + A i 1 * (v 1).re + A i 2 * (v 2).re + A i 3 * (v 3).re =
         lam.re * (v i).re - lam.im * (v i).im ∧

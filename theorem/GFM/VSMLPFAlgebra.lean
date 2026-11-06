@@ -116,7 +116,7 @@ variable {g}
 
 /-- A non-real root of the reduced quadratic `s² + 2α s + ω₀²` has real part `−α`
 (so `α_red` is the decay rate of the reduced swing pair). -/
-@[powerlib_foundation] theorem reduced_root_re {α ω0sq : ℝ} {s : ℂ}
+@[tmio T, powerlib_foundation] theorem reduced_root_re {α ω0sq : ℝ} {s : ℂ}
     (hs : s ^ 2 + 2 * (α : ℂ) * s + (ω0sq : ℂ) = 0) (him : s.im ≠ 0) : s.re = -α := by
   have h := congrArg Complex.im hs
   simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_im, Complex.ofReal_re, pow_two,
@@ -193,12 +193,12 @@ def gfmAngle (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) : Fin 3 → ℝ :=
   ![z 1, (P₀ - z 2 - D * z 1) / M, ωc * (K₀ * Real.sin (z 0 - u) - z 2)]
 
 /-- The `P_ref` channel is affine with a constant coefficient `(0, 1/M, 0)`. -/
-@[powerlib_foundation] theorem gfmPref_affine (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+@[tmio M, powerlib_foundation] theorem gfmPref_affine (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
     gfmPref M D ωc K₀ P₀ u z = gfmPref M D ωc K₀ P₀ 0 z + u • ![0, 1 / M, 0] := by
   ext i; fin_cases i <;> simp [gfmPref]; ring
 
 /-- Hence `A_u = 0`: the state Jacobian of the `P_ref` channel does not depend on `u`. -/
-@[powerlib_foundation] theorem gfmPref_jacobian_indep (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+@[tmio M, powerlib_foundation] theorem gfmPref_jacobian_indep (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
     fderiv ℝ (gfmPref M D ωc K₀ P₀ u) z = fderiv ℝ (gfmPref M D ωc K₀ P₀ 0) z := by
   have : gfmPref M D ωc K₀ P₀ u = fun y => gfmPref M D ωc K₀ P₀ 0 y + u • ![0, 1 / M, 0] :=
     funext (gfmPref_affine M D ωc K₀ P₀ u)
@@ -206,7 +206,7 @@ def gfmAngle (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) : Fin 3 → ℝ :=
 
 /-- Grid-angle channel: the `δ`-derivative of the filter row is `ω_c K₀ cos(δ − u)`, and its
 `u`-derivative is `ω_c K₀ sin(δ − u)`, nonzero at a loaded point: `A_u ≠ 0`. -/
-@[powerlib_foundation] theorem gfmAngle_mixed_partial (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+@[tmio M, powerlib_foundation] theorem gfmAngle_mixed_partial (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
     HasDerivAt (fun δ => gfmAngle M D ωc K₀ P₀ u (Function.update z 0 δ) 2)
         (ωc * K₀ * Real.cos (z 0 - u)) (z 0) ∧
       HasDerivAt (fun v => ωc * K₀ * Real.cos (z 0 - v)) (ωc * K₀ * Real.sin (z 0 - u)) u ∧

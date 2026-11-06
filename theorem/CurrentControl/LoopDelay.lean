@@ -51,13 +51,13 @@ def imcDelayLoop (α τ ω : ℝ) : ℂ := (α : ℂ) / (I * ω) * exp (-(I * ω
     norm_real, norm_real, Real.norm_of_nonneg hα.le, Real.norm_of_nonneg hω.le]
 
 /-- The gain crossover of the delayed IMC loop is exactly `ω_c = α`. -/
-@[powerlib_foundation] theorem imcDelayLoop_norm_eq_one_iff {α τ ω : ℝ} (hα : 0 < α)
+@[tmio M, powerlib_foundation] theorem imcDelayLoop_norm_eq_one_iff {α τ ω : ℝ} (hα : 0 < α)
     (hω : 0 < ω) : ‖imcDelayLoop α τ ω‖ = 1 ↔ ω = α := by
   rw [imcDelayLoop_norm hα hω, div_eq_one_iff_eq hω.ne']
   exact eq_comm
 
 /-- At the crossover, `L(jα) = e^{j(−π/2 − ατ)}`. -/
-@[powerlib_foundation] theorem imcDelayLoop_crossover_eq {α τ : ℝ} (hα : 0 < α) :
+@[tmio M, powerlib_foundation] theorem imcDelayLoop_crossover_eq {α τ : ℝ} (hα : 0 < α) :
     imcDelayLoop α τ α = exp (((-(Real.pi / 2) - α * τ) : ℝ) * I) := by
   have hαc : (α : ℂ) ≠ 0 := by exact_mod_cast hα.ne'
   have h1 : (α : ℂ) / (I * α) = exp (((-(Real.pi / 2)) : ℝ) * I) := by
@@ -72,7 +72,7 @@ def imcDelayLoop (α τ ω : ℝ) : ℂ := (α : ℂ) / (I * ω) * exp (-(I * ω
 
 /-- **Phase at crossover**: for `ατ < π/2`, `arg L(jα) = −π/2 − ατ`; hence the phase margin
 is `PM = π + arg L(jα) = π/2 − ατ`. -/
-@[powerlib_foundation] theorem imcDelayLoop_arg_crossover {α τ : ℝ} (hα : 0 < α) (hτ : 0 ≤ τ)
+@[tmio M, powerlib_foundation] theorem imcDelayLoop_arg_crossover {α τ : ℝ} (hα : 0 < α) (hτ : 0 ≤ τ)
     (hsmall : α * τ < Real.pi / 2) :
     arg (imcDelayLoop α τ α) = -(Real.pi / 2) - α * τ := by
   rw [imcDelayLoop_crossover_eq hα, arg_exp_mul_I, toIocMod_eq_self]
@@ -80,7 +80,7 @@ is `PM = π + arg L(jα) = π/2 − ατ`. -/
   constructor <;> linarith [Real.pi_pos]
 
 /-- **60° phase margin bound**: `PM ≥ π/3` with `ατ < π/2` iff `α ≤ π/(6τ)`. -/
-@[powerlib_foundation] theorem imcDelayLoop_pm60_iff {α τ : ℝ} (hα : 0 < α) (hτ : 0 < τ) :
+@[tmio TM, powerlib_foundation] theorem imcDelayLoop_pm60_iff {α τ : ℝ} (hα : 0 < α) (hτ : 0 < τ) :
     (α * τ < Real.pi / 2 ∧ Real.pi / 3 ≤ Real.pi + arg (imcDelayLoop α τ α)) ↔
       α ≤ Real.pi / (6 * τ) := by
   rw [le_div_iff₀ (by positivity)]
@@ -95,7 +95,7 @@ is `PM = π + arg L(jα) = π/2 − ατ`. -/
     nlinarith [Real.pi_pos]
 
 /-- **The note's bound `ω_b = π/(3τ)` gives only a 30° phase margin.** -/
-@[powerlib_foundation] theorem imcDelayLoop_noteBound_pm {τ : ℝ} (hτ : 0 < τ) :
+@[tmio M, powerlib_foundation] theorem imcDelayLoop_noteBound_pm {τ : ℝ} (hτ : 0 < τ) :
     Real.pi + arg (imcDelayLoop (Real.pi / (3 * τ)) τ (Real.pi / (3 * τ))) = Real.pi / 6 := by
   have hα : 0 < Real.pi / (3 * τ) := by positivity
   have hατ : Real.pi / (3 * τ) * τ = Real.pi / 3 := by field_simp

@@ -693,7 +693,7 @@ def cubicDetector : Model := ⟨fun x => -x ^ 3, 1, 1, 0, 0, (contDiff_id.pow 3)
 /-- The PLL energy `θ⁴ / 4 + η² / 2` (`−∫ h` plus the integrator energy). -/
 def cubicEnergy (z : ℝ²) : ℝ := 1 / 4 * (z 0) ^ 4 + 1 / 2 * (z 1) ^ 2
 
-@[powerlib_foundation] theorem cubicEnergy_hasFDerivAt (z : ℝ²) :
+@[tmio T, powerlib_foundation] theorem cubicEnergy_hasFDerivAt (z : ℝ²) :
     HasFDerivAt cubicEnergy ((z 0) ^ 3 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
       z 1 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) z := by
   have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := z)
@@ -749,13 +749,13 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
 
 /-! ### The degenerate slope is locally asymptotically stable -/
 
-@[powerlib_foundation] theorem cubicEnergy_contDiff : ContDiff ℝ 1 cubicEnergy := by
+@[tmio T, powerlib_foundation] theorem cubicEnergy_contDiff : ContDiff ℝ 1 cubicEnergy := by
   unfold cubicEnergy
   exact (contDiff_const.mul
       ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).contDiff.pow 4)).add
     (contDiff_const.mul ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).contDiff.pow 2))
 
-@[powerlib_foundation] theorem cubicEnergy_pos {z : ℝ²} (hz : z ≠ 0) : 0 < cubicEnergy z := by
+@[tmio T, powerlib_foundation] theorem cubicEnergy_pos {z : ℝ²} (hz : z ≠ 0) : 0 < cubicEnergy z := by
   have hne : z 0 ≠ 0 ∨ z 1 ≠ 0 := by
     by_contra h
     push Not at h
@@ -772,7 +772,7 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
     nlinarith [pow_two_nonneg ((z 0) ^ 2)]
 
 /-- The PLL energy bounds the squared norm: `‖z‖² ≤ 4 V(z) + 1/4`. -/
-@[powerlib_foundation] theorem norm_sq_le_cubicEnergy (z : ℝ²) :
+@[tmio T, powerlib_foundation] theorem norm_sq_le_cubicEnergy (z : ℝ²) :
     ‖z‖ ^ 2 ≤ 4 * cubicEnergy z + 1 / 4 := by
   have hsq : ‖z‖ ^ 2 = z 0 ^ 2 + z 1 ^ 2 := by
     rw [PiLp.norm_sq_eq_of_L2]

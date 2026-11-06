@@ -79,7 +79,7 @@ def translate : Sentence → Set Requirement
 def family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0 :=
   ⟨fun A => (plant A).system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : (family (n := n)).IsLinear plant := fun _ => rfl
+@[tmio M, powerlib_foundation] theorem family_isLinear : (family (n := n)).IsLinear plant := fun _ => rfl
 
 /-- No matrix is Hurwitz with a right-half-plane root. -/
 @[tmio M, powerlib_foundation] theorem realize_univ :

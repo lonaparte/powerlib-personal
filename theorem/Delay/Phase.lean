@@ -49,7 +49,7 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
   exact Complex.arg_cos_add_sin_mul_I (θ := -(τ * ω)) ⟨by linarith, by linarith⟩
 
 /-- `arg ((a - b j)/(a + b j)) = -2 arctan (b/a)` for `a > 0`. -/
-@[powerlib_foundation] theorem arg_conj_ratio {a : ℝ} (ha : 0 < a) (b : ℝ) :
+@[tmio T, powerlib_foundation] theorem arg_conj_ratio {a : ℝ} (ha : 0 < a) (b : ℝ) :
     arg (((a : ℂ) - (b : ℂ) * I) / ((a : ℂ) + (b : ℂ) * I)) = -2 * arctan (b / a) := by
   set u := b / a with hu
   have hθ1 := neg_pi_div_two_lt_arctan u
@@ -82,13 +82,13 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
   rw [hval, Complex.ofReal_cos, Complex.ofReal_sin]
   exact Complex.arg_cos_add_sin_mul_I (θ := -2 * arctan u) ⟨by linarith, by linarith⟩
 
-@[powerlib_foundation] theorem arg_pade11_jω (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem arg_pade11_jω (τ ω : ℝ) :
     arg (pade11 τ (ω * I)) = -2 * arctan (τ * ω / 2) := by
   rw [pade11, pade11Num_jω, pade11Den_jω]
   have := arg_conj_ratio (a := 1) one_pos (τ * ω / 2)
   simpa using this
 
-@[powerlib_foundation] theorem arg_pade22_jω {τ ω : ℝ} (h : (τ * ω) ^ 2 < 12) :
+@[tmio T, powerlib_foundation] theorem arg_pade22_jω {τ ω : ℝ} (h : (τ * ω) ^ 2 < 12) :
     arg (pade22 τ (ω * I)) = -2 * arctan ((τ * ω / 2) / (1 - (τ * ω) ^ 2 / 12)) := by
   rw [pade22, pade22Num_jω, pade22Den_jω]
   exact arg_conj_ratio (by linarith) _
@@ -96,7 +96,7 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
 /-! ## Elementary arctan bounds -/
 
 /-- `u - u³/3 ≤ arctan u` for `u ≥ 0`. -/
-@[powerlib_foundation] theorem sub_cube_div_three_le_arctan {u : ℝ} (hu : 0 ≤ u) :
+@[tmio T, powerlib_foundation] theorem sub_cube_div_three_le_arctan {u : ℝ} (hu : 0 ≤ u) :
     u - u ^ 3 / 3 ≤ arctan u := by
   let g : ℝ → ℝ := fun v => arctan v - (v - v ^ 3 / 3)
   have hd : ∀ v, HasDerivAt g (1 / (1 + v ^ 2) - (1 - v ^ 2)) v := by
@@ -124,7 +124,7 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
 /-! ## Relative phase-error bounds -/
 
 /-- Padé(1,1): for `0 < τω < 1/2` the relative phase deficit lies in `[0, 5 %)`. -/
-@[powerlib_foundation] theorem relPhaseError_pade11_lt {τ ω : ℝ} (h₀ : 0 < τ * ω)
+@[tmio T, powerlib_foundation] theorem relPhaseError_pade11_lt {τ ω : ℝ} (h₀ : 0 < τ * ω)
     (h₁ : τ * ω < 1 / 2) :
     0 ≤ relPhaseError pade11 τ ω ∧ relPhaseError pade11 τ ω < 1 / 20 := by
   set x := τ * ω with hx
@@ -148,7 +148,7 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
       nlinarith
     nlinarith
 
-@[powerlib_foundation] private lemma hasDerivAt_pade22_phase {x : ℝ} (hx : x ^ 2 < 12) :
+@[tmio T, powerlib_foundation] private lemma hasDerivAt_pade22_phase {x : ℝ} (hx : x ^ 2 < 12) :
     HasDerivAt (fun y : ℝ => 2 * arctan ((y / 2) / (1 - y ^ 2 / 12)))
       (12 * (12 + x ^ 2) / (144 + 12 * x ^ 2 + x ^ 4)) x := by
   have hden : (1 - x ^ 2 / 12) ≠ 0 := by
@@ -172,7 +172,7 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
   ring
 
 /-- Padé(2,2): for `0 < τω < 3/2` the relative phase deficit lies in `[0, 5 %)`. -/
-@[powerlib_foundation] theorem relPhaseError_pade22_lt {τ ω : ℝ} (h₀ : 0 < τ * ω)
+@[tmio T, powerlib_foundation] theorem relPhaseError_pade22_lt {τ ω : ℝ} (h₀ : 0 < τ * ω)
     (h₁ : τ * ω < 3 / 2) :
     0 ≤ relPhaseError pade22 τ ω ∧ relPhaseError pade22 τ ω < 1 / 20 := by
   set x := τ * ω with hx

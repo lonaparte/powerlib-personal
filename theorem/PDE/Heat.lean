@@ -41,7 +41,7 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   ring
 
 /-- `∂ₓ uₙ = e^{νn²t} cos(nx)`. -/
-@[powerlib_foundation] theorem hasDerivAt_x (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_x (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
     HasDerivAt (fun y => hadamard ν n y t) (Real.exp (ν * n ^ 2 * t) * Real.cos (n * x)) x := by
   unfold hadamard
   have h := ((hasDerivAt_id' x).const_mul (n : ℝ)).sin
@@ -51,7 +51,7 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   field_simp
 
 /-- `∂ₓₓ uₙ = −n² uₙ`. -/
-@[powerlib_foundation] theorem hasDerivAt_xx (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_xx (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
     HasDerivAt (fun y => Real.exp (ν * n ^ 2 * t) * Real.cos (n * y))
       (-(n : ℝ) ^ 2 * hadamard ν n x t) x := by
   unfold hadamard
@@ -62,12 +62,12 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   field_simp
 
 /-- `uₙ` solves the backward heat equation `∂ₜu = −ν ∂ₓₓu`. -/
-@[powerlib_foundation] theorem backward_heat_solution (ν : ℝ) (n : ℕ) (x t : ℝ) :
+@[tmio T, powerlib_foundation] theorem backward_heat_solution (ν : ℝ) (n : ℕ) (x t : ℝ) :
     ν * n ^ 2 * hadamard ν n x t = -ν * (-(n : ℝ) ^ 2 * hadamard ν n x t) := by
   ring
 
 /-- Homogeneous Dirichlet data on `[0, π]`. -/
-@[powerlib_foundation] theorem boundary_zero (ν : ℝ) (n : ℕ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem boundary_zero (ν : ℝ) (n : ℕ) (t : ℝ) :
     hadamard ν n 0 t = 0 ∧ hadamard ν n π t = 0 := by
   unfold hadamard
   constructor
@@ -75,7 +75,7 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   · rw [Real.sin_nat_mul_pi]; simp
 
 /-- Small initial data: `|uₙ(x, 0)| ≤ 1/n`. -/
-@[powerlib_foundation] theorem initial_small (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem initial_small (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x : ℝ) :
     |hadamard ν n x 0| ≤ 1 / n := by
   unfold hadamard
   have hpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
@@ -83,7 +83,7 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   exact div_le_div_of_nonneg_right (Real.abs_sin_le_one _) hpos.le
 
 /-- Blow-up at every positive time: `uₙ(π/(2n), t) = e^{νn²t}/n → ∞`. -/
-@[powerlib_foundation] theorem blowup {ν t : ℝ} (hν : 0 < ν) (ht : 0 < t) :
+@[tmio T, powerlib_foundation] theorem blowup {ν t : ℝ} (hν : 0 < ν) (ht : 0 < t) :
     Tendsto (fun n : ℕ => hadamard ν n (π / (2 * n)) t) atTop atTop := by
   have hval : ∀ n : ℕ, n ≠ 0 → hadamard ν n (π / (2 * n)) t = Real.exp (ν * n ^ 2 * t) / n := by
     intro n hn
@@ -109,7 +109,7 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
 
 /-- **Ill-posedness**: no estimate `sup |u(·, t)| ≤ C sup |u(·, 0)|` holds for the backward heat
 equation, at any `t > 0` and any constant `C`. -/
-@[powerlib_foundation] theorem not_continuous_dependence {ν t : ℝ} (hν : 0 < ν) (ht : 0 < t)
+@[tmio T, powerlib_foundation] theorem not_continuous_dependence {ν t : ℝ} (hν : 0 < ν) (ht : 0 < t)
     (C : ℝ) : ∃ n : ℕ, n ≠ 0 ∧ C * (1 / n) < hadamard ν n (π / (2 * n)) t := by
   have h := blowup hν ht
   obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp ((tendsto_atTop.mp h) (|C| + 1))

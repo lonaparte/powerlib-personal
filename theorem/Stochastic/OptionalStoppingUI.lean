@@ -45,7 +45,7 @@ variable {Ω : Type*} {m : MeasurableSpace Ω} {μ : Measure Ω} {𝒢 : Filtrat
   exact integral_congr_ae (h.condExp_ae_eq (Nat.zero_le n))
 
 /-- If `τ < ∞` a.s., the stopped process converges a.s. to the stopped value. -/
-@[powerlib_foundation] theorem stoppedProcess_tendsto_stoppedValue
+@[tmio T, powerlib_foundation] theorem stoppedProcess_tendsto_stoppedValue
     (hfin : ∀ᵐ ω ∂μ, τ ω ≠ ⊤) :
     ∀ᵐ ω ∂μ, Tendsto (fun n => stoppedProcess f τ n ω) atTop (𝓝 (stoppedValue f τ ω)) := by
   filter_upwards [hfin] with ω hω
@@ -57,7 +57,7 @@ variable {Ω : Type*} {m : MeasurableSpace Ω} {μ : Measure Ω} {𝒢 : Filtrat
 
 /-- **Optional stopping, uniformly integrable version**: `τ < ∞` a.s. and `(M_{n∧τ})` UI ⇒
 `E[M_τ] = E[M_0]`. -/
-@[powerlib_foundation] theorem optional_stopping_UI [IsProbabilityMeasure μ]
+@[tmio T, powerlib_foundation] theorem optional_stopping_UI [IsProbabilityMeasure μ]
     (h : Martingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) (hfin : ∀ᵐ ω ∂μ, τ ω ≠ ⊤)
     (hUI : UniformIntegrable (stoppedProcess f τ) 1 μ) :
     Integrable (stoppedValue f τ) μ ∧ ∫ ω, stoppedValue f τ ω ∂μ = ∫ ω, f 0 ω ∂μ := by

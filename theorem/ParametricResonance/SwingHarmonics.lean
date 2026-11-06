@@ -54,7 +54,7 @@ open Filter Topology Asymptotics
   rw [this, Real.sin_nat_mul_pi, smul_zero]
 
 /-- `∫₀^{2π} cos φ cos(n φ) dφ` is `π` for `n = 1` and `0` otherwise. -/
-@[powerlib_foundation] theorem integral_cos_mul_cos_nat (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_cos_mul_cos_nat (n : ℕ) :
     ∫ φ in (0 : ℝ)..2 * Real.pi, Real.cos φ * Real.cos (n * φ) =
       if n = 1 then Real.pi else 0 := by
   rcases n with _ | _ | m
@@ -99,7 +99,7 @@ def cosCoeff (F : ℝ → ℝ) (δ0 dh : ℝ) (n : ℕ) : ℝ :=
   Real.pi⁻¹ * ∫ φ in (0 : ℝ)..2 * Real.pi, F (δ0 + dh * Real.cos φ) * Real.cos (n * φ)
 
 /-- The swing is even in `φ`, so every sine moment vanishes. -/
-@[powerlib_foundation] theorem integral_sin_moment_eq_zero (F : ℝ → ℝ) (δ0 dh : ℝ) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_sin_moment_eq_zero (F : ℝ → ℝ) (δ0 dh : ℝ) (n : ℕ) :
     ∫ φ in (0 : ℝ)..2 * Real.pi, F (δ0 + dh * Real.cos φ) * Real.sin (n * φ) = 0 := by
   have h := intervalIntegral.integral_comp_sub_left
     (fun φ => F (δ0 + dh * Real.cos φ) * Real.sin (n * φ)) (a := 0) (b := 2 * Real.pi)
@@ -122,7 +122,7 @@ def cosCoeff (F : ℝ → ℝ) (δ0 dh : ℝ) (n : ℕ) : ℝ :=
   linarith
 
 /-- `V_n = a_n / 2`: the Fourier coefficients of the swing are real. -/
-@[powerlib_foundation] theorem swingCoeff_eq {F : ℝ → ℝ} (hF : Continuous F) (δ0 dh : ℝ)
+@[tmio T, powerlib_foundation] theorem swingCoeff_eq {F : ℝ → ℝ} (hF : Continuous F) (δ0 dh : ℝ)
     (n : ℕ) : swingCoeff F δ0 dh n = ((cosCoeff F δ0 dh n / 2 : ℝ) : ℂ) := by
   have hpt : ∀ φ : ℝ, (F (δ0 + dh * Real.cos φ) : ℂ) *
       Complex.exp (-(((n : ℝ) * φ : ℝ) : ℂ) * Complex.I) =
@@ -147,7 +147,7 @@ def cosCoeff (F : ℝ → ℝ) (δ0 dh : ℝ) (n : ℕ) : ℝ :=
   · exact ((Complex.continuous_ofReal.comp hc2).mul continuous_const).intervalIntegrable _ _
 
 /-- `ε_n = |a_n| / V̄`. -/
-@[powerlib_foundation] theorem harmonicRatio_eq {F : ℝ → ℝ} (hF : Continuous F) (δ0 dh : ℝ)
+@[tmio T, powerlib_foundation] theorem harmonicRatio_eq {F : ℝ → ℝ} (hF : Continuous F) (δ0 dh : ℝ)
     (n : ℕ) : harmonicRatio F δ0 dh n = |cosCoeff F δ0 dh n| / swingMean F δ0 dh := by
   rw [harmonicRatio, swingCoeff_eq hF, Complex.norm_real, Real.norm_eq_abs, abs_div,
     abs_two]
@@ -158,7 +158,7 @@ section TaylorBounds
 variable {F : ℝ → ℝ} {δ0 F' C h0 : ℝ}
 
 /-- Pointwise remainder along the swing. -/
-@[powerlib_foundation] private theorem swing_remainder (hC : 0 ≤ C)
+@[tmio T, powerlib_foundation] private theorem swing_remainder (hC : 0 ≤ C)
     (hT : ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - F' * h| ≤ C * h ^ 2) {dh : ℝ} (hdh : |dh| ≤ h0)
     (φ : ℝ) : |F (δ0 + dh * Real.cos φ) - F δ0 - F' * (dh * Real.cos φ)| ≤ C * dh ^ 2 := by
   have hcos := Real.abs_cos_le_one φ
@@ -170,7 +170,7 @@ variable {F : ℝ → ℝ} {δ0 F' C h0 : ℝ}
   nlinarith [sq_nonneg dh]
 
 /-- **Mean, small swing**: `|V̄ − F(δ₀)| ≤ C δ̂²`. -/
-@[powerlib_foundation] theorem swingMean_sub_le (hF : Continuous F) (hC : 0 ≤ C)
+@[tmio T, powerlib_foundation] theorem swingMean_sub_le (hF : Continuous F) (hC : 0 ≤ C)
     (hT : ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - F' * h| ≤ C * h ^ 2) {dh : ℝ} (hdh : |dh| ≤ h0) :
     |swingMean F δ0 dh - F δ0| ≤ C * dh ^ 2 := by
   have hc : Continuous fun φ : ℝ => F (δ0 + dh * Real.cos φ) := by fun_prop
@@ -201,7 +201,7 @@ variable {F : ℝ → ℝ} {δ0 F' C h0 : ℝ}
     _ = C * dh ^ 2 := by field_simp
 
 /-- **Harmonics, small swing**: `|a_n − F'(δ₀) δ̂ [n = 1]| ≤ 2 C δ̂²` for `n ≥ 1`. -/
-@[powerlib_foundation] theorem cosCoeff_sub_le (hF : Continuous F) (hC : 0 ≤ C)
+@[tmio T, powerlib_foundation] theorem cosCoeff_sub_le (hF : Continuous F) (hC : 0 ≤ C)
     (hT : ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - F' * h| ≤ C * h ^ 2) {dh : ℝ} (hdh : |dh| ≤ h0)
     {n : ℕ} (hn : n ≠ 0) :
     |cosCoeff F δ0 dh n - (if n = 1 then F' * dh else 0)| ≤ 2 * C * dh ^ 2 := by
@@ -248,7 +248,7 @@ variable {F : ℝ → ℝ} {δ0 F' C h0 : ℝ}
 /-- **`ε_V = κ δ̂ + O(δ̂²)` with an explicit constant.** Under the Taylor bound
 `|F(δ₀ + h) − F(δ₀) − F' h| ≤ C h²` (`|h| ≤ h₀`), `F(δ₀) > 0`, for `0 ≤ δ̂ ≤ h₀` with
 `C δ̂² ≤ F(δ₀)/2`: `|ε₁(δ̂) − (|F'|/F(δ₀)) δ̂| ≤ (4C/F(δ₀) + 2|F'| C h₀/F(δ₀)²) δ̂²`. -/
-@[powerlib_foundation] theorem harmonicRatio_one_sub_le (hF : Continuous F) (hC : 0 ≤ C)
+@[tmio T, powerlib_foundation] theorem harmonicRatio_one_sub_le (hF : Continuous F) (hC : 0 ≤ C)
     (hpos : 0 < F δ0) (hT : ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - F' * h| ≤ C * h ^ 2)
     {dh : ℝ} (hdh0 : 0 ≤ dh) (hdh : dh ≤ h0) (hsmall : C * dh ^ 2 ≤ F δ0 / 2) :
     |harmonicRatio F δ0 dh 1 - |F'| / F δ0 * dh| ≤
@@ -298,7 +298,7 @@ variable {F : ℝ → ℝ} {δ0 F' C h0 : ℝ}
 
 /-- **Higher harmonics are second order**: for `n ≥ 2`, `ε_n(δ̂) ≤ (4C/F(δ₀)) δ̂²` under the same
 hypotheses (any sign of `δ̂`, `|δ̂| ≤ h₀`). -/
-@[powerlib_foundation] theorem harmonicRatio_le (hF : Continuous F) (hC : 0 ≤ C)
+@[tmio T, powerlib_foundation] theorem harmonicRatio_le (hF : Continuous F) (hC : 0 ≤ C)
     (hpos : 0 < F δ0) (hT : ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - F' * h| ≤ C * h ^ 2)
     {dh : ℝ} (hdh : |dh| ≤ h0) (hsmall : C * dh ^ 2 ≤ F δ0 / 2) {n : ℕ} (hn : 2 ≤ n) :
     harmonicRatio F δ0 dh n ≤ 4 * C / F δ0 * dh ^ 2 := by
@@ -318,7 +318,7 @@ hypotheses (any sign of `δ̂`, `|δ̂| ≤ h₀`). -/
         positivity
 
 /-- A `C²` amplitude map satisfies the Taylor bound near `δ₀` with `F' = F'(δ₀)`. -/
-@[powerlib_foundation] theorem exists_taylor_bound (hF : ContDiffAt ℝ 2 F δ0) :
+@[tmio T, powerlib_foundation] theorem exists_taylor_bound (hF : ContDiffAt ℝ 2 F δ0) :
     ∃ C h0 : ℝ, 0 ≤ C ∧ 0 < h0 ∧
       ∀ h, |h| ≤ h0 → |F (δ0 + h) - F δ0 - deriv F δ0 * h| ≤ C * h ^ 2 := by
   obtain ⟨K, t, ht, hlip⟩ := (hF.derivWithin (m := 1) (by norm_num)).exists_lipschitzOnWith
@@ -364,7 +364,7 @@ variable {F : ℝ → ℝ} {δ0 : ℝ}
 
 /-- **`ε_V = κ δ̂ + O(δ̂²)`** (Fourier-coefficient level) for a `C²` amplitude map with
 `F(δ₀) > 0`: `ε₁(δ̂) − (|F'(δ₀)|/F(δ₀)) δ̂ = O(δ̂²)` as `δ̂ → 0⁺`. -/
-@[powerlib_foundation] theorem harmonicRatio_one_isBigO (hF : Continuous F)
+@[tmio T, powerlib_foundation] theorem harmonicRatio_one_isBigO (hF : Continuous F)
     (hF2 : ContDiffAt ℝ 2 F δ0) (hpos : 0 < F δ0) :
     (fun dh => harmonicRatio F δ0 dh 1 - |deriv F δ0| / F δ0 * dh) =O[𝓝[≥] 0]
       (fun dh => dh ^ 2) := by
@@ -381,7 +381,7 @@ variable {F : ℝ → ℝ} {δ0 : ℝ}
   exact harmonicRatio_one_sub_le hF hC hpos hT hd0 hd1 hd2.le
 
 /-- **Higher harmonics, small swing**: `ε_n(δ̂) = O(δ̂²)` as `δ̂ → 0` for every `n ≥ 2`. -/
-@[powerlib_foundation] theorem harmonicRatio_isBigO (hF : Continuous F) (hF2 : ContDiffAt ℝ 2 F δ0)
+@[tmio T, powerlib_foundation] theorem harmonicRatio_isBigO (hF : Continuous F) (hF2 : ContDiffAt ℝ 2 F δ0)
     (hpos : 0 < F δ0) {n : ℕ} (hn : 2 ≤ n) :
     (fun dh => harmonicRatio F δ0 dh n) =O[𝓝 0] (fun dh => dh ^ 2) := by
   obtain ⟨C, h0, hC, hh0, hT⟩ := exists_taylor_bound hF2
@@ -407,7 +407,7 @@ end Asymptotic
 
 /-- **Finite swing, every amplitude**: for a nonnegative amplitude map with positive mean,
 `0 ≤ ε_n ≤ 2` (`|V_n| ≤ V̄`). -/
-@[powerlib_foundation] theorem harmonicRatio_le_two {F : ℝ → ℝ} (hF : Continuous F)
+@[tmio T, powerlib_foundation] theorem harmonicRatio_le_two {F : ℝ → ℝ} (hF : Continuous F)
     (hnn : ∀ x, 0 ≤ F x) {δ0 dh : ℝ} (hm : 0 < swingMean F δ0 dh) (n : ℕ) :
     0 ≤ harmonicRatio F δ0 dh n ∧ harmonicRatio F δ0 dh n ≤ 2 := by
   rw [harmonicRatio_eq hF]
@@ -434,7 +434,7 @@ end Asymptotic
 /-- **Finite swing at a symmetric operating point**: if `F(δ₀ + h) = F(δ₀ − h)` (e.g. the
 Thévenin amplitude at `δ₀ = 0`), every odd harmonic vanishes for every amplitude `δ̂`:
 `V_{2k+1} = 0`, hence `ε_{2k+1} = 0`. -/
-@[powerlib_foundation] theorem cosCoeff_odd_eq_zero {F : ℝ → ℝ} (hF : Continuous F) {δ0 : ℝ}
+@[tmio T, powerlib_foundation] theorem cosCoeff_odd_eq_zero {F : ℝ → ℝ} (hF : Continuous F) {δ0 : ℝ}
     (hsym : ∀ h, F (δ0 + h) = F (δ0 - h)) (dh : ℝ) (k : ℕ) :
     cosCoeff F δ0 dh (2 * k + 1) = 0 := by
   set g : ℝ → ℝ := fun φ => F (δ0 + dh * Real.cos φ) * Real.cos (((2 * k + 1 : ℕ) : ℝ) * φ)
@@ -464,7 +464,7 @@ Thévenin amplitude at `δ₀ = 0`), every odd harmonic vanishes for every ampli
   rw [this, mul_zero]
 
 /-- Odd harmonic ratios vanish at a symmetric operating point, for every amplitude. -/
-@[powerlib_foundation] theorem harmonicRatio_odd_eq_zero {F : ℝ → ℝ} (hF : Continuous F) {δ0 : ℝ}
+@[tmio T, powerlib_foundation] theorem harmonicRatio_odd_eq_zero {F : ℝ → ℝ} (hF : Continuous F) {δ0 : ℝ}
     (hsym : ∀ h, F (δ0 + h) = F (δ0 - h)) (dh : ℝ) (k : ℕ) :
     harmonicRatio F δ0 dh (2 * k + 1) = 0 := by
   rw [harmonicRatio_eq hF, cosCoeff_odd_eq_zero hF hsym, abs_zero, zero_div]

@@ -59,20 +59,20 @@ def LPLL (v kp ki : ℝ) (s : ℂ) : ℂ := s ^ 2 + ((kp * v : ℝ) : ℂ) * s +
 
 /-- Realization: with `ξ = θ + θ_g`, the block's state equation `A (ξ, x) + B θ_g` is the
 linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
-@[powerlib_foundation] theorem pllBlock_field (v kp ki θ x θg : ℝ) :
+@[tmio M, powerlib_foundation] theorem pllBlock_field (v kp ki θ x θg : ℝ) :
     (pllBlock v kp ki).A *ᵥ ![θ + θg, x] + (pllBlock v kp ki).B *ᵥ ![θg] =
         ![-kp * v * θ + ki * x, -v * θ] ∧
       (pllBlock v kp ki).C *ᵥ ![θ + θg, x] + (pllBlock v kp ki).D *ᵥ ![θg] = ![θ] := by
   constructor <;> ext i <;> fin_cases i <;>
     simp [pllBlock] <;> ring
 
-@[powerlib_foundation] theorem det_characteristicMatrix_pllBlock (v kp ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_pllBlock (v kp ki : ℝ) (s : ℂ) :
     (Linear.characteristicMatrix (pllBlock v kp ki).A s).det = LPLL v kp ki s := by
   rw [Criteria.det_characteristicMatrix_fin_two]
   simp [pllBlock, LPLL, Matrix.trace_fin_two, Matrix.det_fin_two]
 
 /-- `T_PLL(s) = −s² / L_PLL(s)`. -/
-@[powerlib_foundation] theorem transfer_pllBlock (v kp ki : ℝ) {s : ℂ}
+@[tmio M, powerlib_foundation] theorem transfer_pllBlock (v kp ki : ℝ) {s : ℂ}
     (hs : LPLL v kp ki s ≠ 0) :
     Linear.transfer (pllBlock v kp ki) s 0 0 = -s ^ 2 / LPLL v kp ki s := by
   rw [Linear.transfer_eq_adjugate, det_characteristicMatrix_pllBlock]
@@ -83,7 +83,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
   ring
 
 /-- Quasi-static PLL closed forms: `ω_n = √(k_i S)`, `ζ = (k_p/2)√(S/k_i)`. -/
-@[powerlib_foundation] theorem pll_closed_forms {kp ki S : ℝ} (hki : 0 < ki) (hS : 0 < S)
+@[tmio T, powerlib_foundation] theorem pll_closed_forms {kp ki S : ℝ} (hki : 0 < ki) (hS : 0 < S)
     (s : ℂ) :
     (Linear.characteristicMatrix !![-kp * S, ki; -S, 0] s).det =
       s ^ 2 + ((2 * (kp / 2 * Real.sqrt (S / ki)) * Real.sqrt (ki * S) : ℝ) : ℂ) * s +
@@ -102,7 +102,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
   ring
 
 /-- `|T_PLL(jΩ)| = r²/√((1 − r²)² + 4ζ²r²)` with `r = Ω/ω_pll`. -/
-@[powerlib_foundation] theorem norm_T_jΩ {v kp ki : ℝ} (hkv : 0 < ki * v) (Ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem norm_T_jΩ {v kp ki : ℝ} (hkv : 0 < ki * v) (Ω : ℝ) :
     ‖-(Complex.I * Ω) ^ 2 / LPLL v kp ki (Complex.I * Ω)‖ =
       (Ω / Real.sqrt (ki * v)) ^ 2 /
         Real.sqrt ((1 - (Ω / Real.sqrt (ki * v)) ^ 2) ^ 2 +
@@ -129,14 +129,14 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
   field_simp
 
 /-- `|L_PLL(2jω)|² = (k_i v − 4ω²)² + (2ω k_p v)²`. -/
-@[powerlib_foundation] theorem normSq_LPLL (v kp ki ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem normSq_LPLL (v kp ki ω : ℝ) :
     Complex.normSq (LPLL v kp ki (2 * Complex.I * ω)) =
       (ki * v - 4 * ω ^ 2) ^ 2 + (2 * ω * kp * v) ^ 2 := by
   simp [LPLL, Complex.normSq_apply, pow_two, Complex.mul_re, Complex.mul_im]
   ring
 
 /-- `∂_{k_p} |L_PLL(2jω)|² = 8ω² k_p v²`. -/
-@[powerlib_foundation] theorem hasDerivAt_normSq_LPLL (v ki ω kp : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_normSq_LPLL (v ki ω kp : ℝ) :
     HasDerivAt (fun kp => Complex.normSq (LPLL v kp ki (2 * Complex.I * ω)))
       (8 * ω ^ 2 * kp * v ^ 2) kp := by
   simp only [normSq_LPLL]
@@ -147,7 +147,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
   · simp; ring
 
 /-- `|T(2jω)| = 4ω²/|L_PLL(2jω)|` is strictly decreasing in `k_p > 0` (for `ω, v ≠ 0`). -/
-@[powerlib_foundation] theorem norm_T_strictAnti {v ki ω : ℝ} (hω : ω ≠ 0) (hv : v ≠ 0)
+@[tmio M, powerlib_foundation] theorem norm_T_strictAnti {v ki ω : ℝ} (hω : ω ≠ 0) (hv : v ≠ 0)
     {kp kp' : ℝ} (hkp : 0 < kp) (hlt : kp < kp') :
     ‖-(2 * Complex.I * ω) ^ 2 / LPLL v kp' ki (2 * Complex.I * ω)‖ <
       ‖-(2 * Complex.I * ω) ^ 2 / LPLL v kp ki (2 * Complex.I * ω)‖ := by

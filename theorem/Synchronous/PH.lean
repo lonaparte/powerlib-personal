@@ -980,7 +980,7 @@ def syncMachine7_inductance (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
      0, Laq, 0, 0, Lkqkq]
 
 /-- The structured inductance matrix is symmetric (reciprocal mutual inductances). -/
-@[powerlib_foundation] theorem syncMachine7_inductance_symm
+@[tmio M, powerlib_domain] theorem syncMachine7_inductance_symm
     (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
     (syncMachine7_inductance Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq)ᵀ =
       syncMachine7_inductance Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq := by
@@ -988,12 +988,12 @@ def syncMachine7_inductance (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
   fin_cases i <;> fin_cases j <;> rfl
 
 /-- A positive definite inductance matrix `L` gives the admissible parameter `Γ = L⁻¹`. -/
-@[powerlib_foundation] theorem syncMachine7_inv_posDef {L : Matrix (Fin 5) (Fin 5) ℝ}
+@[tmio T, powerlib_foundation] theorem syncMachine7_inv_posDef {L : Matrix (Fin 5) (Fin 5) ℝ}
     (hL : L.PosDef) : L⁻¹.PosDef :=
   hL.inv
 
 /-- With `Γ = L⁻¹`, the currents `i = Γ Ψ` satisfy the flux law `Ψ = L i`. -/
-@[powerlib_foundation] theorem syncMachine7_flux_eq {L : Matrix (Fin 5) (Fin 5) ℝ} (hL : L.PosDef)
+@[tmio T, powerlib_foundation] theorem syncMachine7_flux_eq {L : Matrix (Fin 5) (Fin 5) ℝ} (hL : L.PosDef)
     (Ψ : Fin 5 → ℝ) : L *ᵥ (L⁻¹ *ᵥ Ψ) = Ψ := by
   rw [mulVec_mulVec, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hL.det_pos.ne'), one_mulVec]
 

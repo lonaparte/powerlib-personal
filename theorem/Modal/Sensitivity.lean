@@ -101,7 +101,7 @@ omit [DecidableEq n] in
 
 omit [DecidableEq n] in
 /-- Derivative of the eigen-equation along a differentiable branch. -/
-@[powerlib_foundation] theorem eigen_branch_deriv {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem eigen_branch_deriv {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ}
     {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ} {lam' : ℂ} {α₀ : ℝ}
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
@@ -115,7 +115,7 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   {i : n} {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ} {lam' : ℂ}
 
 /-- `λ'(α₀) = ψᵢᵀ A' vᵢ` along a branch through `(λᵢ, vᵢ)` defined near `α₀`. -/
-@[powerlib_foundation] theorem eigenvalue_deriv_of_eventually
+@[tmio T, powerlib_foundation] theorem eigenvalue_deriv_of_eventually
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
     (heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i)
@@ -129,7 +129,7 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   linear_combination -h
 
 /-- `λ'(α₀) = ψᵢᵀ A' vᵢ` along the branch through `(λᵢ, vᵢ)`. -/
-@[powerlib_foundation] theorem eigenvalue_deriv
+@[tmio T, powerlib_foundation] theorem eigenvalue_deriv
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
     (heig : ∀ α, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i) (hl0 : lam α₀ = mb.eig i) :
@@ -138,7 +138,7 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
 
 /-- Off-diagonal modal coordinates of the eigenvector derivative, along a branch defined near
 `α₀`. -/
-@[powerlib_foundation] theorem eigenvector_deriv_coeff_of_eventually
+@[tmio T, powerlib_foundation] theorem eigenvector_deriv_coeff_of_eventually
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
     (heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i)
@@ -154,7 +154,7 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   linear_combination -h
 
 /-- Off-diagonal modal coordinates of the eigenvector derivative. -/
-@[powerlib_foundation] theorem eigenvector_deriv_coeff
+@[tmio T, powerlib_foundation] theorem eigenvector_deriv_coeff
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
     (heig : ∀ α, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i) (hl0 : lam α₀ = mb.eig i)
@@ -164,7 +164,7 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
     hsimple
 
 /-- **Eigenvector derivative** of a simple eigenpair, along a branch defined near `α₀`. -/
-@[powerlib_foundation] theorem eigenvector_deriv_of_eventually
+@[tmio T, powerlib_foundation] theorem eigenvector_deriv_of_eventually
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
     (heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i)
@@ -180,7 +180,7 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   rw [eigenvector_deriv_coeff_of_eventually mb hA hv hlam heig hv0 hl0 hji (hsimple j hji)]
 
 /-- **Eigenvector derivative** of a simple eigenpair. -/
-@[powerlib_foundation] theorem eigenvector_deriv
+@[tmio T, powerlib_foundation] theorem eigenvector_deriv
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
     (heig : ∀ α, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i) (hl0 : lam α₀ = mb.eig i)
@@ -196,7 +196,7 @@ end GivenBranch
 
 /-- The characteristic polynomial `(p, z) ↦ det(zI − A(p))` is `C¹` jointly in the parameter and
 the spectral variable when the entries of `A` are `C¹` at `p₀`. -/
-@[powerlib_foundation] theorem contDiffAt_charpoly_eval {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem contDiffAt_charpoly_eval {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E]
     {A : E → Matrix n n ℂ} {p₀ : E} (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀) (z₀ : ℂ) :
     ContDiffAt ℝ 1 (fun q : E × ℂ => (A q.1).charpoly.eval q.2) (p₀, z₀) := by
@@ -219,7 +219,7 @@ the characteristic polynomial, Mathlib `ContDiffAt.implicitFunction`): if the en
 are `C¹` at `p₀` and `λ₀` is a simple eigenvalue of `A(p₀)` (algebraic multiplicity one), there is
 a function `λ(p)`, `C¹` at `p₀`, with `λ(p₀) = λ₀`, such that near `p₀` every `λ(p)` is an
 eigenvalue of `A(p)` and, near `(p₀, λ₀)`, it is the only one. -/
-@[powerlib_foundation] theorem exists_eigenvalue_branch {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem exists_eigenvalue_branch {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ}
     (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀)
     (hsimple : (A p₀).charpoly.rootMultiplicity lam₀ = 1) :
@@ -282,7 +282,7 @@ one in `charpoly M`, `M v₀ = λ₀ v₀` with `v₀ ≠ 0`, and `(M − λ₀)
 of `v₀`. Indeed `x` lies in the generalized eigenspace `ker (M − λ₀)²`, whose dimension is at most
 the root multiplicity (Mathlib `LinearMap.finrank_genEigenspace_le`), hence is the line
 `span v₀`. -/
-@[powerlib_foundation] theorem eq_smul_of_mulVec_sub_eq_smul {M : Matrix n n ℂ} {lam₀ : ℂ}
+@[tmio T, powerlib_foundation] theorem eq_smul_of_mulVec_sub_eq_smul {M : Matrix n n ℂ} {lam₀ : ℂ}
     {v₀ x : n → ℂ}
     (hsimple : M.charpoly.rootMultiplicity lam₀ = 1) (hv₀ : v₀ ≠ 0)
     (hMv : M *ᵥ v₀ = lam₀ • v₀) {c : ℂ} (hx : M *ᵥ x - lam₀ • x = c • v₀) :
@@ -310,7 +310,7 @@ the root multiplicity (Mathlib `LinearMap.finrank_genEigenspace_le`), hence is t
 /-- **The bordered matrix of a simple eigenpair is injective**: if `λ₀` is a simple eigenvalue of
 `M` with eigenvector `v₀` and `wᵀ v₀ ≠ 0`, then `(M − λ₀) x − c v₀ = 0` and `wᵀ x = 0` force
 `x = 0` and `c = 0`; i.e. `[[M − λ₀ I, −v₀], [wᵀ, 0]]` is nonsingular. -/
-@[powerlib_foundation] theorem bordered_injective {M : Matrix n n ℂ} {lam₀ : ℂ} {v₀ w : n → ℂ}
+@[tmio T, powerlib_foundation] theorem bordered_injective {M : Matrix n n ℂ} {lam₀ : ℂ} {v₀ w : n → ℂ}
     (hsimple : M.charpoly.rootMultiplicity lam₀ = 1) (hMv : M *ᵥ v₀ = lam₀ • v₀)
     (hw : w ⬝ᵥ v₀ ≠ 0) {x : n → ℂ} {c : ℂ} (h1 : M *ᵥ x - lam₀ • x - c • v₀ = 0)
     (h2 : w ⬝ᵥ x = 0) : x = 0 ∧ c = 0 := by
@@ -335,7 +335,7 @@ eigenvector `v₀`, and a normalising vector `w` with `wᵀ v₀ ≠ 0`, there a
 `C¹` at `p₀`, with `v(p₀) = v₀`, `λ(p₀) = λ₀`, and for `p` near `p₀`
 `A(p) v(p) = λ(p) v(p)`, `wᵀ v(p) = wᵀ v₀` and `v(p) ≠ 0`; near `(p₀, v₀, λ₀)` every normalised
 eigenpair `(A(p) v = λ v, wᵀ v = wᵀ v₀)` is `(v(p), λ(p))`. -/
-@[powerlib_foundation] theorem exists_eigenvector_branch {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ}
+@[tmio T, powerlib_foundation] theorem exists_eigenvector_branch {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ}
     {v₀ w : n → ℂ}
     (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀)
     (hsimple : (A p₀).charpoly.rootMultiplicity lam₀ = 1) (hv₀ : A p₀ *ᵥ v₀ = lam₀ • v₀)
@@ -429,7 +429,7 @@ eigenpair `(A(p) v = λ v, wᵀ v = wᵀ v₀)` is `(v(p), λ(p))`. -/
 
 /-- Eigenvector branch through any eigenvector `v₀ ≠ 0` of a simple eigenvalue, normalised by
 the coordinate `v(p)_k = v₀ k` for some `k` with `v₀ k ≠ 0`. -/
-@[powerlib_foundation] theorem exists_eigenvector_branch_of_ne_zero {A : E → Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem exists_eigenvector_branch_of_ne_zero {A : E → Matrix n n ℂ}
     {p₀ : E} {lam₀ : ℂ} {v₀ : n → ℂ} (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀)
     (hsimple : (A p₀).charpoly.rootMultiplicity lam₀ = 1) (hv₀ : A p₀ *ᵥ v₀ = lam₀ • v₀)
     (hne : v₀ ≠ 0) :
@@ -453,7 +453,7 @@ with entries `C¹` at `α₀` and derivative `A'`, a simple eigenvalue `λ₀` o
 eigenvector `v₀`, and `wᵀ v₀ ≠ 0`, the branch of `exists_eigenvector_branch` has derivatives
 `v'`, `λ'` at `α₀` with `A' v₀ + A(α₀) v' = λ' v₀ + λ₀ v'`, `wᵀ v' = 0`, and
 `λ' (uᵀ v₀) = uᵀ A' v₀` for every left eigenvector `uᵀ A(α₀) = λ₀ uᵀ`. -/
-@[powerlib_foundation] theorem exists_eigenpair_branch_deriv {lam₀ : ℂ} {v₀ w : n → ℂ}
+@[tmio T, powerlib_foundation] theorem exists_eigenpair_branch_deriv {lam₀ : ℂ} {v₀ w : n → ℂ}
     (hA : ∀ k l, ContDiffAt ℝ 1 (fun α => A α k l) α₀)
     (hA' : ∀ k l, HasDerivAt (fun α => A α k l) (A' k l) α₀)
     (hsimple : (A α₀).charpoly.rootMultiplicity lam₀ = 1) (hv₀ : A α₀ *ᵥ v₀ = lam₀ • v₀)
@@ -494,7 +494,7 @@ branch premise of `eigenvalue_deriv` / `eigenvector_deriv`). For `A(α)` with en
 (`λⱼ ≠ λᵢ` for `j ≠ i`), there is an eigen-branch `A(α) v(α) = λ(α) v(α)` near `α₀`, normalised
 by `ψᵢᵀ v(α) = 1`, through `(λᵢ, vᵢ)`, with `λ'(α₀) = ψᵢᵀ A' vᵢ` and
 `v'(α₀) = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ`. -/
-@[powerlib_foundation] theorem eigenpair_deriv_of_simple (mb : ModalBasis (A α₀)) {i : n}
+@[tmio T, powerlib_foundation] theorem eigenpair_deriv_of_simple (mb : ModalBasis (A α₀)) {i : n}
     (hA : ∀ k l, ContDiffAt ℝ 1 (fun α => A α k l) α₀)
     (hA' : ∀ k l, HasDerivAt (fun α => A α k l) (A' k l) α₀)
     (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) :
@@ -523,7 +523,7 @@ by `ψᵢᵀ v(α) = 1`, through `(λᵢ, vᵢ)`, with `λ'(α₀) = ψᵢᵀ A'
 /-- **Unconditional `eigenvalue_deriv`**: for `A(α)` with entries `C¹` at `α₀`, a modal basis of
 `A(α₀)` and a simple eigenvalue `λᵢ`, there is an eigenvalue branch `λ(α)` of `A(α)` near `α₀`
 (with eigenvectors `v(α) ≠ 0`) through `λᵢ` whose derivative is `λ'(α₀) = ψᵢᵀ A' vᵢ`. -/
-@[powerlib_foundation] theorem eigenvalue_deriv_of_simple (mb : ModalBasis (A α₀)) {i : n}
+@[tmio T, powerlib_foundation] theorem eigenvalue_deriv_of_simple (mb : ModalBasis (A α₀)) {i : n}
     (hA : ∀ k l, ContDiffAt ℝ 1 (fun α => A α k l) α₀)
     (hA' : ∀ k l, HasDerivAt (fun α => A α k l) (A' k l) α₀)
     (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) :
@@ -544,7 +544,7 @@ section RootBranch
 
 /-- Any differentiable root branch of `P(λ) + cK = 0` through a simple root has
 `dλ/dK = −c / P'(λ)`. -/
-@[powerlib_foundation] theorem root_branch_deriv {P : ℂ → ℂ} {P' c lam' : ℂ} {lam : ℝ → ℂ}
+@[tmio T, powerlib_foundation] theorem root_branch_deriv {P : ℂ → ℂ} {P' c lam' : ℂ} {lam : ℝ → ℂ}
     {K0 : ℝ} (hP : HasDerivAt P P' (lam K0)) (hlam : HasDerivAt lam lam' K0)
     (hroot : ∀ᶠ K in 𝓝 K0, P (lam K) + c * K = 0) (hP' : P' ≠ 0) :
     lam' = -c / P' := by
@@ -561,7 +561,7 @@ section RootBranch
 
 /-- A simple root continues to a differentiable root branch (inverse function theorem), with
 `dλ/dK = −c / P'(λ₀)`. -/
-@[powerlib_foundation] theorem exists_root_branch {P : ℂ → ℂ} {P' lam0 c : ℂ} {K0 : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_root_branch {P : ℂ → ℂ} {P' lam0 c : ℂ} {K0 : ℝ}
     (hP : HasStrictDerivAt P P' lam0) (hP' : P' ≠ 0) (hroot : P lam0 + c * K0 = 0) :
     ∃ lam : ℝ → ℂ, lam K0 = lam0 ∧ (∀ᶠ K in 𝓝 K0, P (lam K) + c * K = 0) ∧
       HasDerivAt lam (-c / P') K0 := by

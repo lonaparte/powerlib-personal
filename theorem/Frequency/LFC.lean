@@ -118,7 +118,7 @@ def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
 
 /-- §1.2 boxed: with `δ̇_a = ω_s Δω̂_a`, `δ̇_b = ω_s Δω̂_b`, the linearised tie flow
 `ΔP_tie = T (δ_a − δ_b − δ⁰)` has rate `ω_s T (Δω̂_a − Δω̂_b)`. -/
-@[powerlib_foundation] theorem tieFlow_hasDerivAt {δa δb : ℝ → ℝ} {wa wb ωs T δ0 t : ℝ}
+@[tmio T, powerlib_foundation] theorem tieFlow_hasDerivAt {δa δb : ℝ → ℝ} {wa wb ωs T δ0 t : ℝ}
     (ha : HasDerivAt δa (ωs * wa) t) (hb : HasDerivAt δb (ωs * wb) t) :
     HasDerivAt (fun t => T * (δa t - δb t - δ0)) (ωs * T * (wa - wb)) t := by
   have h := ((ha.sub hb).sub_const δ0).const_mul T
@@ -126,7 +126,7 @@ def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
   ring
 
 /-- §1.4: `ACE = ΔP_tie + B Δω̂ = ΔP_tie + B^Hz Δf` with `Δf = f₀ Δω̂`, `B^Hz = B/f₀`. -/
-@[powerlib_foundation] theorem ace_hz {f₀ : ℝ} (hf : f₀ ≠ 0) (Ptie B w : ℝ) :
+@[tmio T, powerlib_foundation] theorem ace_hz {f₀ : ℝ} (hf : f₀ ≠ 0) (Ptie B w : ℝ) :
     Ptie + B * w = Ptie + B / f₀ * (f₀ * w) := by
   field_simp
 
@@ -412,7 +412,7 @@ def family7 : Family Model7 Requirement 7 2 :=
 @[tmio M, powerlib_domain] theorem family7_isLinear : family7.IsLinear Model7.plant := fun _ => rfl
 
 /-- A matrix is not both Hurwitz and with a right-half-plane root. -/
-@[powerlib_foundation] theorem meetsMatrix_univ {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio M, powerlib_foundation] theorem meetsMatrix_univ {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
     (h : ∀ q, MeetsMatrix A q) : False := by
   obtain ⟨s, hs, hre⟩ : MeetsMatrix A .rhpRoot := h .rhpRoot
   have := (Linear.spectrallyStable_iff_isHurwitz A).2 (h .hurwitz) s hs

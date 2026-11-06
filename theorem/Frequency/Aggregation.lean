@@ -65,7 +65,7 @@ def coi (M ω : ι → ℝ) : ℝ := (∑ k, M k * ω k) / ∑ k, M k
   simpa [Finset.sum_fn] using h.div_const (∑ k, M k)
 
 /-- §1.2 boxed COI swing, under network power conservation and `D_k = λ M_k`. -/
-@[powerlib_foundation] theorem coi_swing_of_proportional_damping
+@[tmio T, powerlib_foundation] theorem coi_swing_of_proportional_damping
     {M D Pm Pe ω ω' : ι → ℝ} {lam PL Ploss : ℝ} (hMsys : (∑ k, M k) ≠ 0)
     (hswing : ∀ k, M k * ω' k = Pm k - Pe k - D k * ω k)
     (hcons : ∑ k, Pe k = PL + Ploss) (hD : ∀ k, D k = lam * M k) :
@@ -81,7 +81,7 @@ def coi (M ω : ι → ℝ) : ℝ := (∑ k, M k * ω k) / ∑ k, M k
   field_simp
 
 /-- §1.2 with all machines at one common frequency deviation `Δω`. -/
-@[powerlib_foundation] theorem coi_swing_of_common_frequency
+@[tmio T, powerlib_foundation] theorem coi_swing_of_common_frequency
     {M D Pm Pe : ι → ℝ} {w w' PL Ploss : ℝ} (hMsys : (∑ k, M k) ≠ 0)
     (hswing : ∀ k, M k * w' = Pm k - Pe k - D k * w)
     (hcons : ∑ k, Pe k = PL + Ploss) :
@@ -93,7 +93,7 @@ def coi (M ω : ι → ℝ) : ℝ := (∑ k, M k * ω k) / ∑ k, M k
 
 /-- Without a premise linking `D_k` to `M_k` (or a common frequency), the damping sum is not
 `D_sys Δω_COI`: two equal-inertia machines, `D = (1, 0)`, `Δω = (1, 0)`. -/
-@[powerlib_foundation] theorem coi_damping_counterexample :
+@[tmio T, powerlib_foundation] theorem coi_damping_counterexample :
     ∑ k : Fin 2, ![(1 : ℝ), 0] k * ![(1 : ℝ), 0] k ≠
       (∑ k : Fin 2, ![(1 : ℝ), 0] k) * coi ![1, 1] ![1, 0] := by
   simp [coi, Fin.sum_univ_two]
@@ -104,7 +104,7 @@ end COI
 
 /-- With a common governor time constant, the aggregate mechanical power obeys the single
 first-order droop law with `K_R = Σ K_R,k`. -/
-@[powerlib_foundation] theorem droop_aggregate {ι : Type*} [Fintype ι] {Tg : ℝ} {K : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem droop_aggregate {ι : Type*} [Fintype ι] {Tg : ℝ} {K : ι → ℝ}
     {P : ι → ℝ → ℝ} {P' : ι → ℝ} {w t : ℝ} (hP : ∀ k, HasDerivAt (P k) (P' k) t)
     (hgov : ∀ k, Tg * P' k = -P k t - K k * w) :
     HasDerivAt (fun s => ∑ k, P k s) (∑ k, P' k) t ∧
@@ -119,7 +119,7 @@ first-order droop law with `K_R = Σ K_R,k`. -/
 
 /-- Linear virtual-inertia / virtual-damping injections `ΔP_inv,j = −K_d,j Δω̇ − K_R,j Δω`
 merge into `M_eff = M_sys + Σ K_d,j`, `D_eff = D_sys + Σ K_R,j`. -/
-@[powerlib_foundation] theorem virtualInertia_merge {ι : Type*} [Fintype ι]
+@[tmio T, powerlib_foundation] theorem virtualInertia_merge {ι : Type*} [Fintype ι]
     {Msys Dsys Pm PL w w' : ℝ} {Kd KR : ι → ℝ}
     (hswing : Msys * w' = Pm + ∑ j, (-Kd j * w' - KR j * w) - PL - Dsys * w) :
     (Msys + ∑ j, Kd j) * w' = Pm - PL - (Dsys + ∑ j, KR j) * w := by
@@ -128,7 +128,7 @@ merge into `M_eff = M_sys + Σ K_d,j`, `D_eff = D_sys + Σ K_R,j`. -/
   linarith
 
 /-- §1.4 solved for the frequency rate; this needs `M_eff ≠ 0`. -/
-@[powerlib_foundation] theorem virtualInertia_rate {Meff Deff Pm PL w w' : ℝ} (hM : Meff ≠ 0)
+@[tmio T, powerlib_foundation] theorem virtualInertia_rate {Meff Deff Pm PL w w' : ℝ} (hM : Meff ≠ 0)
     (h : Meff * w' = Pm - PL - Deff * w) : w' = (Pm - PL - Deff * w) / Meff := by
   rw [eq_div_iff hM, mul_comm, h]
 
@@ -136,12 +136,12 @@ merge into `M_eff = M_sys + Σ K_d,j`, `D_eff = D_sys + Σ K_R,j`. -/
 
 /-- Exact expansion of `½ J ω²` around `ω_s`; the remainder `½ J Δω²` is what the note's
 linear approximation drops. -/
-@[powerlib_foundation] theorem kineticEnergy_expansion (J ωs Δω : ℝ) :
+@[tmio T, powerlib_foundation] theorem kineticEnergy_expansion (J ωs Δω : ℝ) :
     J * (ωs + Δω) ^ 2 / 2 = J * ωs ^ 2 / 2 + J * ωs * Δω + J * Δω ^ 2 / 2 := by
   ring
 
 /-- The released energy `½J(ω_s + Δω)² − ½Jω_s² − Jω_sΔω` equals `½JΔω² ≥ 0` (`J ≥ 0`). -/
-@[powerlib_foundation] theorem kineticEnergy_remainder_nonneg {J : ℝ} (hJ : 0 ≤ J) (ωs Δω : ℝ) :
+@[tmio T, powerlib_foundation] theorem kineticEnergy_remainder_nonneg {J : ℝ} (hJ : 0 ≤ J) (ωs Δω : ℝ) :
     0 ≤ J * (ωs + Δω) ^ 2 / 2 - (J * ωs ^ 2 / 2 + J * ωs * Δω) := by
   have : J * (ωs + Δω) ^ 2 / 2 - (J * ωs ^ 2 / 2 + J * ωs * Δω) = J * Δω ^ 2 / 2 := by ring
   rw [this]; positivity
@@ -153,7 +153,7 @@ def complexPower (V I : ℂ) : ℂ := 3 * V * (starRingEnd ℂ) I
 
 /-- `|P| ≤ |S̄| = √3 V_LL |Ī| ≤ √3 V_LL i_max`, with `V_LL = √3 |V̄|`. The bound is on the
 total active power `P = Re S̄`. -/
-@[powerlib_foundation] theorem activePower_abs_le {V I : ℂ} {imax : ℝ} (hI : ‖I‖ ≤ imax) :
+@[tmio T, powerlib_foundation] theorem activePower_abs_le {V I : ℂ} {imax : ℝ} (hI : ‖I‖ ≤ imax) :
     |(complexPower V I).re| ≤ Real.sqrt 3 * (Real.sqrt 3 * ‖V‖) * imax := by
   have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
   have hS : ‖complexPower V I‖ = 3 * ‖V‖ * ‖I‖ := by
@@ -166,7 +166,7 @@ total active power `P = Re S̄`. -/
 /-- Correction: the current limit does not bound the *change* `ΔP` by `√3 V_LL i_max`.
 Reversing an admissible current from `+i_max` (in phase with `V̄`) to `−i_max` changes the
 active power by `−2 · √3 V_LL i_max`. -/
-@[powerlib_foundation] theorem deltaPower_counterexample {v imax : ℝ} (hv : 0 < v)
+@[tmio T, powerlib_foundation] theorem deltaPower_counterexample {v imax : ℝ} (hv : 0 < v)
     (himax : 0 < imax) :
     ∃ I₀ I₁ : ℂ, ‖I₀‖ ≤ imax ∧ ‖I₁‖ ≤ imax ∧
       |(complexPower v I₁).re - (complexPower v I₀).re| =

@@ -88,7 +88,7 @@ def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
     1 - beta X2 X3 = X2 / (X2 + X3) := by
   unfold beta; field_simp; ring
 
-@[powerlib_foundation] theorem vth_eq {X2 X3 E Vinf : ℝ} (h : X2 + X3 ≠ 0) (δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem vth_eq {X2 X3 E Vinf : ℝ} (h : X2 + X3 ≠ 0) (δ : ℝ) :
     vth X2 X3 E Vinf δ = (X3 * E * exp (δ * I) + X2 * Vinf) / (X2 + X3) := by
   have h' : (X2 : ℂ) + X3 ≠ 0 := by exact_mod_cast h
   unfold vth aV bV beta
@@ -104,7 +104,7 @@ variable {N : ℕ}
 def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
   (∑ k, Icur k) + (Vc - E * exp (δ * I)) / (I * X2) + (Vc - Vinf) / (I * X3) = 0
 
-@[powerlib_foundation] theorem kcl_iff {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
+@[tmio M, powerlib_foundation] theorem kcl_iff {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
     (h : X2 + X3 ≠ 0) (δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) :
     KCL X2 X3 E Vinf δ Vc Icur ↔
       Vc = vth X2 X3 E Vinf δ - I * Xeq X2 X3 * ∑ k, Icur k := by
@@ -135,7 +135,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
     linear_combination hv'
 
 /-- Terminal voltages of the GFL branches: `V = V_th 𝟙 − j[diag(X₁) + X_eq 𝟙𝟙ᵀ] I`. -/
-@[powerlib_foundation] theorem terminal_voltages {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
+@[tmio M, powerlib_foundation] theorem terminal_voltages {X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
     (h : X2 + X3 ≠ 0) (δ : ℝ) (X1 : Fin N → ℝ) (Vc : ℂ) (Icur V : Fin N → ℂ)
     (hkcl : KCL X2 X3 E Vinf δ Vc Icur) (hbr : ∀ i, V i = Vc - I * X1 i * Icur i) :
     V = (fun _ => vth X2 X3 E Vinf δ) -
@@ -152,7 +152,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
   ring
 
 /-- One GFL branch: `V_GFL = V_th − j X_g I_in`. -/
-@[powerlib_foundation] theorem single_branch {X1 X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
+@[tmio M, powerlib_foundation] theorem single_branch {X1 X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
     (h : X2 + X3 ≠ 0) (δ : ℝ) (Vc Iin Vgfl : ℂ)
     (hkcl : KCL X2 X3 E Vinf δ Vc (fun _ : Fin 1 => Iin)) (hbr : Vgfl = Vc - I * X1 * Iin) :
     Vgfl = vth X2 X3 E Vinf δ - I * Xg X1 X2 X3 * Iin := by
@@ -165,7 +165,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 /-! ## Magnitude and phase channels -/
 
 /-- `V(δ) = |V_th(δ)| = √(a_V² + b_V² + 2a_V b_V cos δ)`. -/
-@[powerlib_foundation] theorem norm_vth (X2 X3 E Vinf δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem norm_vth (X2 X3 E Vinf δ : ℝ) :
     ‖vth X2 X3 E Vinf δ‖ =
       Real.sqrt (aV X2 X3 E ^ 2 + bV X2 X3 Vinf ^ 2 +
         2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) := by
@@ -173,7 +173,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
   rfl
 
 /-- Amplitude channel: `dV/dδ = −a_V b_V sin δ / V` wherever `V(δ) ≠ 0`. -/
-@[powerlib_foundation] theorem hasDerivAt_norm_vth (X2 X3 E Vinf δ : ℝ)
+@[tmio M, powerlib_foundation] theorem hasDerivAt_norm_vth (X2 X3 E Vinf δ : ℝ)
     (hV : ‖vth X2 X3 E Vinf δ‖ ≠ 0) :
     HasDerivAt (fun d => ‖vth X2 X3 E Vinf d‖)
       (-(aV X2 X3 E * bV X2 X3 Vinf * Real.sin δ) / ‖vth X2 X3 E Vinf δ‖) δ := by
@@ -200,7 +200,7 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 /-- Phase channel: for the principal argument `θ_s = arg V_th`,
 `dθ_s/dδ = (a_V² + a_V b_V cos δ)/(a_V² + b_V² + 2a_V b_V cos δ)` (premise: `V_th(δ)` lies in the
 slit plane; elsewhere the same formula holds for any continuous phase lift). -/
-@[powerlib_foundation] theorem hasDerivAt_arg_vth (X2 X3 E Vinf δ : ℝ)
+@[tmio M, powerlib_foundation] theorem hasDerivAt_arg_vth (X2 X3 E Vinf δ : ℝ)
     (hslit : vth X2 X3 E Vinf δ ∈ slitPlane) :
     HasDerivAt (fun d => arg (vth X2 X3 E Vinf d))
       ((aV X2 X3 E ^ 2 + aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) /
@@ -221,7 +221,7 @@ slit plane; elsewhere the same formula holds for any continuous phase lift). -/
   exact (im_logDeriv_affine_exp _ _ δ).symm
 
 /-- Modulation index of the amplitude channel: `κ_δ = |dV/dδ|/V₀ = a_V b_V |sin δ₀| / V₀²`. -/
-@[powerlib_foundation] theorem kappa_eq {a b V0 δ0 : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hV : 0 < V0) :
+@[tmio T, powerlib_foundation] theorem kappa_eq {a b V0 δ0 : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hV : 0 < V0) :
     (1 / V0) * |-(a * b * Real.sin δ0) / V0| = a * b * |Real.sin δ0| / V0 ^ 2 := by
   rw [abs_div, abs_neg, abs_of_pos hV, abs_mul, abs_mul, abs_of_nonneg ha, abs_of_nonneg hb]
   field_simp
@@ -229,7 +229,7 @@ slit plane; elsewhere the same formula holds for any continuous phase lift). -/
 /-! ## Equal weights `a_V = b_V = 1/2` -/
 
 /-- `a_V = b_V = 1/2`: `V(δ) = |cos(δ/2)|`. -/
-@[powerlib_foundation] theorem norm_half_half (δ : ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_half_half (δ : ℝ) :
     ‖((1 / 2 : ℝ) : ℂ) * exp (δ * I) + ((1 / 2 : ℝ) : ℂ)‖ = |Real.cos (δ / 2)| := by
   rw [Complex.norm_def, normSq_affine_exp]
   have hc : Real.cos δ = 2 * Real.cos (δ / 2) ^ 2 - 1 := by
@@ -241,7 +241,7 @@ slit plane; elsewhere the same formula holds for any continuous phase lift). -/
   ring
 
 /-- `a_V = b_V = 1/2`: `κ_δ = |tan(δ₀/2)|/2` (where `cos(δ₀/2) ≠ 0`). -/
-@[powerlib_foundation] theorem kappa_half_half {δ0 : ℝ} (hc : Real.cos (δ0 / 2) ≠ 0) :
+@[tmio T, powerlib_foundation] theorem kappa_half_half {δ0 : ℝ} (hc : Real.cos (δ0 / 2) ≠ 0) :
     (1 / 2) * (1 / 2) * |Real.sin δ0| / |Real.cos (δ0 / 2)| ^ 2 = |Real.tan (δ0 / 2)| / 2 := by
   have hs : Real.sin δ0 = 2 * Real.sin (δ0 / 2) * Real.cos (δ0 / 2) := by
     rw [← Real.sin_two_mul]; ring_nf
@@ -252,7 +252,7 @@ slit plane; elsewhere the same formula holds for any continuous phase lift). -/
 
 /-- `δ₀ = 0`, `a_V = b_V = 1/2`, `δ = δ̂ cos φ`: `V = 1 − δ̂²/16 − (δ̂²/16) cos 2φ + O(δ̂⁴)`
 with the explicit remainder bound `5 δ̂⁴/1536` for `|δ̂| ≤ 2`. -/
-@[powerlib_foundation] theorem second_harmonic_expansion {dh : ℝ} (hd : |dh| ≤ 2) (φ : ℝ) :
+@[tmio T, powerlib_foundation] theorem second_harmonic_expansion {dh : ℝ} (hd : |dh| ≤ 2) (φ : ℝ) :
     |‖((1 / 2 : ℝ) : ℂ) * exp ((dh * Real.cos φ : ℝ) * I) + ((1 / 2 : ℝ) : ℂ)‖ -
         (1 - dh ^ 2 / 16 - dh ^ 2 / 16 * Real.cos (2 * φ))| ≤ 5 * dh ^ 4 / 1536 := by
   rw [norm_half_half]
@@ -295,11 +295,11 @@ open powerlib.ParametricResonance (swingMean harmonicRatio harmonicRatio_one_isB
 
 /-! ### The Thévenin amplitude map -/
 
-@[powerlib_foundation] theorem continuous_norm_vth (X2 X3 E Vinf : ℝ) :
+@[tmio M, powerlib_foundation] theorem continuous_norm_vth (X2 X3 E Vinf : ℝ) :
     Continuous fun δ => ‖vth X2 X3 E Vinf δ‖ := by
   unfold vth; fun_prop
 
-@[powerlib_foundation] theorem contDiffAt_norm_vth {X2 X3 E Vinf δ0 : ℝ}
+@[tmio M, powerlib_foundation] theorem contDiffAt_norm_vth {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) :
     ContDiffAt ℝ 2 (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 := by
   have hfun : (fun δ => ‖vth X2 X3 E Vinf δ‖) = fun δ => Real.sqrt (aV X2 X3 E ^ 2 +
@@ -314,7 +314,7 @@ with `V₀ = |V_th(δ₀)| > 0` and `a_V, b_V ≥ 0`, the fundamental modulation
 `ε_V = 2|V₁|/V̄` of the amplitude under `δ = δ₀ + δ̂ cos(ω_p t)` satisfies
 `ε_V − κ_δ δ̂ = O(δ̂²)` as `δ̂ → 0⁺`, `κ_δ = a_V b_V |sin δ₀| / V₀²` — at the level of the actual
 Fourier coefficients `V̄`, `V₁`, not only of the derivative `dV/dδ`. -/
-@[powerlib_foundation] theorem epsV_isBigO {X2 X3 E Vinf δ0 : ℝ}
+@[tmio M, powerlib_foundation] theorem epsV_isBigO {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) (ha : 0 ≤ aV X2 X3 E) (hb : 0 ≤ bV X2 X3 Vinf) :
     (fun dh => harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh 1 -
       aV X2 X3 E * bV X2 X3 Vinf * |Real.sin δ0| / ‖vth X2 X3 E Vinf δ0‖ ^ 2 * dh)
@@ -330,7 +330,7 @@ Fourier coefficients `V̄`, `V₁`, not only of the derivative `dV/dδ`. -/
   rwa [hk] at h
 
 /-- Higher harmonics of the Thévenin amplitude are second order: `ε_n = O(δ̂²)`, `n ≥ 2`. -/
-@[powerlib_foundation] theorem epsN_isBigO {X2 X3 E Vinf δ0 : ℝ}
+@[tmio M, powerlib_foundation] theorem epsN_isBigO {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) {n : ℕ} (hn : 2 ≤ n) :
     (fun dh => harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh n) =O[𝓝 0]
       (fun dh => dh ^ 2) :=
@@ -339,14 +339,14 @@ Fourier coefficients `V̄`, `V₁`, not only of the derivative `dV/dδ`. -/
 
 /-- Finite swing about `δ₀ = 0`: every odd harmonic of the Thévenin amplitude vanishes, for every
 amplitude `δ̂` (the fundamental channel is closed; only even harmonics remain). -/
-@[powerlib_foundation] theorem epsN_odd_eq_zero_at_zero (X2 X3 E Vinf dh : ℝ) (k : ℕ) :
+@[tmio M, powerlib_foundation] theorem epsN_odd_eq_zero_at_zero (X2 X3 E Vinf dh : ℝ) (k : ℕ) :
     harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) 0 dh (2 * k + 1) = 0 :=
   harmonicRatio_odd_eq_zero (continuous_norm_vth X2 X3 E Vinf)
     (fun h => by rw [norm_vth, norm_vth, zero_add, zero_sub, Real.cos_neg]) dh k
 
 /-- Finite swing, every amplitude: `0 ≤ ε_n ≤ 2` for the Thévenin amplitude whenever its mean is
 positive. -/
-@[powerlib_foundation] theorem epsN_le_two {X2 X3 E Vinf δ0 dh : ℝ}
+@[tmio M, powerlib_foundation] theorem epsN_le_two {X2 X3 E Vinf δ0 dh : ℝ}
     (hm : 0 < swingMean (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh) (n : ℕ) :
     0 ≤ harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh n ∧
       harmonicRatio (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 dh n ≤ 2 :=
@@ -360,20 +360,20 @@ end Fourier
 def modeMatrix (N : ℕ) (x Xe : ℝ) : Matrix (Fin N) (Fin N) ℝ :=
   x • (1 : Matrix (Fin N) (Fin N) ℝ) + Xe • Matrix.of (fun _ _ => (1 : ℝ))
 
-@[powerlib_foundation] theorem commonMode (N : ℕ) (x Xe : ℝ) :
+@[tmio M, powerlib_foundation] theorem commonMode (N : ℕ) (x Xe : ℝ) :
     modeMatrix N x Xe *ᵥ (fun _ => 1) = (x + N * Xe) • (fun _ => (1 : ℝ)) := by
   rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
   funext i
   simp [mulVec, dotProduct]
   ring
 
-@[powerlib_foundation] theorem diffMode (N : ℕ) (x Xe : ℝ) (v : Fin N → ℝ) (hv : ∑ k, v k = 0) :
+@[tmio M, powerlib_foundation] theorem diffMode (N : ℕ) (x Xe : ℝ) (v : Fin N → ℝ) (hv : ∑ k, v k = 0) :
     modeMatrix N x Xe *ᵥ v = x • v := by
   rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
   funext i
   simp [mulVec, dotProduct, hv]
 
-@[powerlib_foundation] private lemma det_scalar_sub_ones (N : ℕ) (c w : ℝ) :
+@[tmio T, powerlib_foundation] private lemma det_scalar_sub_ones (N : ℕ) (c w : ℝ) :
     (c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - w • Matrix.of (fun _ _ => (1 : ℝ))).det =
       c ^ N * (c - (N + 1) * w) := by
   by_cases hc : c = 0
@@ -402,7 +402,7 @@ def modeMatrix (N : ℕ) (x Xe : ℝ) : Matrix (Fin N) (Fin N) ℝ :=
 
 /-- `det(sI − (xI + X_eq 𝟙𝟙ᵀ)) = (s − x)^{N−1}(s − x − N X_eq)` (`N ≥ 1` branches): the
 differential eigenvalue `x` has algebraic multiplicity `N − 1`. -/
-@[powerlib_foundation] theorem det_modes (N : ℕ) (x Xe s : ℝ) :
+@[tmio M, powerlib_foundation] theorem det_modes (N : ℕ) (x Xe s : ℝ) :
     (s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe).det =
       (s - x) ^ N * (s - x - (N + 1) * Xe) := by
   have : s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe =

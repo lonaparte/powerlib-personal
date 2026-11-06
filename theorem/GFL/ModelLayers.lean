@@ -236,13 +236,13 @@ end CCParams
 `(i_d, i_q, ξ_d, ξ_q)` of the six-state carrier. -/
 def ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Matrix.diagonal ![1, 1, -1, -1, -1, -1]
 
-@[powerlib_foundation] theorem ccReversal_mul_self : ccReversal * ccReversal = 1 := by
+@[tmio T, powerlib_foundation] theorem ccReversal_mul_self : ccReversal * ccReversal = 1 := by
   rw [ccReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
   ext i
   fin_cases i <;> norm_num
 
-@[powerlib_foundation] theorem ccReversal_isUnit : IsUnit ccReversal :=
+@[tmio T, powerlib_foundation] theorem ccReversal_isUnit : IsUnit ccReversal :=
   (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse ccReversal_mul_self)
 
 /-- §D8 boundary translation of the six-state carrier: its field is the OUT-positive source field
@@ -313,12 +313,12 @@ def loopFactor (sL sP sK kpv Lg C V id : ℝ) : ℝ :=
   1 - sK * sP * sL * (3 / 2 * kpv * Lg * id) / (C * V)
 
 /-- Flipping all four signs (`i_d`, `s_L`, `s_P`, `s_K`) leaves `D₁` unchanged. -/
-@[powerlib_foundation] theorem loopFactor_flip_all (sL sP sK kpv Lg C V id : ℝ) :
+@[tmio M, powerlib_foundation] theorem loopFactor_flip_all (sL sP sK kpv Lg C V id : ℝ) :
     loopFactor (-sL) (-sP) (-sK) kpv Lg C V (-id) = loopFactor sL sP sK kpv Lg C V id := by
   unfold loopFactor; ring
 
 /-- Flipping only the current gives `2 − D₁`. -/
-@[powerlib_foundation] theorem loopFactor_flip_current (sL sP sK kpv Lg C V id : ℝ) :
+@[tmio M, powerlib_foundation] theorem loopFactor_flip_current (sL sP sK kpv Lg C V id : ℝ) :
     loopFactor sL sP sK kpv Lg C V (-id) = 2 - loopFactor sL sP sK kpv Lg C V id := by
   unfold loopFactor; ring
 

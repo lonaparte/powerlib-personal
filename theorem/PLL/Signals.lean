@@ -88,7 +88,7 @@ def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.
 
 /-- Park projection of the grid voltage onto the PLL frame `θ̂`:
 `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/
-@[powerlib_foundation] theorem park_gridAlphaBeta (V θg θh : ℝ) :
+@[tmio M, powerlib_foundation] theorem park_gridAlphaBeta (V θg θh : ℝ) :
     park θh *ᵥ gridAlphaBeta V θg =
       ![V * Real.cos (θg - θh), V * Real.sin (θg - θh)] := by
   ext i; fin_cases i <;> simp [gridAlphaBeta, Real.cos_sub, Real.sin_sub] <;> ring
@@ -97,14 +97,14 @@ def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.
 def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg) 1
 
 /-- Phase-detector characteristic `V_q = −V sin θ̃`, `θ̃ = θ̂ − θ_g`. -/
-@[simp, powerlib_foundation] theorem phaseDetector_eq (V θg θh : ℝ) :
+@[tmio M, simp, powerlib_foundation] theorem phaseDetector_eq (V θg θh : ℝ) :
     phaseDetector V θg θh = -(V * Real.sin (θh - θg)) := by
   rw [phaseDetector, park_gridAlphaBeta]
   simp only [Matrix.cons_val_one, Matrix.cons_val_zero]
   rw [show θg - θh = -(θh - θg) by ring, Real.sin_neg]; ring
 
 /-- Projecting a grid-frame vector into the PLL frame: `park θ̂ · rot θ_g = park(θ̂ − θ_g)`. -/
-@[powerlib_foundation] theorem park_rot_mulVec (θh θg : ℝ) (vg : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem park_rot_mulVec (θh θg : ℝ) (vg : Fin 2 → ℝ) :
     park θh *ᵥ (rot θg *ᵥ vg) = park (θh - θg) *ᵥ vg := by
   rw [Matrix.mulVec_mulVec, Transform.park_eq_rot_neg, Transform.park_eq_rot_neg,
     ← Transform.rot_add]
@@ -112,13 +112,13 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
 
 /-- Perturbation projection (T-pll-dynamics §1.2, boxed): grid-frame voltage
 `(V + δv_d, δv_q)` seen on the q axis of a PLL frame advanced by `θ_e`. -/
-@[powerlib_foundation] theorem perturbed_q (V θe δd δq : ℝ) :
+@[tmio T, powerlib_foundation] theorem perturbed_q (V θe δd δq : ℝ) :
     (park θe *ᵥ ![V + δd, δq]) 1 =
       -(V * Real.sin θe) + (-(Real.sin θe) * δd + Real.cos θe * δq) := by
   simp; ring
 
 /-- The bare noise-projection row `(−sin θ_e, cos θ_e)` has unit length. -/
-@[powerlib_foundation] theorem noiseProjection_sq_sum (θe : ℝ) :
+@[tmio T, powerlib_foundation] theorem noiseProjection_sq_sum (θe : ℝ) :
     (-(Real.sin θe)) ^ 2 + Real.cos θe ^ 2 = 1 := by
   rw [neg_sq]; exact Real.sin_sq_add_cos_sq θe
 
@@ -130,17 +130,17 @@ def posSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, A * Real.sin α]
 /-- Negative-sequence component `A (cos α, −sin α)` (clockwise rotation). -/
 def negSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, -(A * Real.sin α)]
 
-@[powerlib_foundation] theorem park_posSeq_q (A α θh : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_posSeq_q (A α θh : ℝ) :
     (park θh *ᵥ posSeq A α) 1 = A * Real.sin (α - θh) := by
   simp [posSeq, Real.sin_sub]; ring
 
-@[powerlib_foundation] theorem park_negSeq_q (A α θh : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_negSeq_q (A α θh : ℝ) :
     (park θh *ᵥ negSeq A α) 1 = -(A * Real.sin (α + θh)) := by
   simp [negSeq, Real.sin_add]; ring
 
 /-- q-axis PLL-frame voltage of `V⁺` positive sequence at `θ_g` plus `V⁻` negative sequence
 at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (corrected §1.6). -/
-@[powerlib_foundation] theorem park_unbalanced_q (Vp Vn θg θh φn : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_unbalanced_q (Vp Vn θg θh φn : ℝ) :
     (park θh *ᵥ (posSeq Vp θg + negSeq Vn (θg + φn))) 1 =
       -(Vp * Real.sin (θh - θg)) - Vn * Real.sin (θg + θh + φn) := by
   rw [Matrix.mulVec_add, Pi.add_apply, park_posSeq_q, park_negSeq_q,
@@ -148,23 +148,23 @@ at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (c
   ring
 
 /-- Locked PLL (`θ̂ = θ_g`): the negative sequence produces a double-frequency `V_q` term. -/
-@[powerlib_foundation] theorem park_unbalanced_q_locked (Vp Vn θg φn : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_unbalanced_q_locked (Vp Vn θg φn : ℝ) :
     (park θg *ᵥ (posSeq Vp θg + negSeq Vn (θg + φn))) 1 =
       -(Vn * Real.sin (2 * θg + φn)) := by
   rw [park_unbalanced_q]; ring_nf; simp
 
 /-- Locked PLL: an `h`-th harmonic positive-sequence component gives a `(h − 1)θ_g` term. -/
-@[powerlib_foundation] theorem park_posSeq_harmonic_locked (A h φ θg : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_posSeq_harmonic_locked (A h φ θg : ℝ) :
     (park θg *ᵥ posSeq A (h * θg + φ)) 1 = A * Real.sin ((h - 1) * θg + φ) := by
   rw [park_posSeq_q]; ring_nf
 
 /-- Locked PLL: an `h`-th harmonic negative-sequence component gives a `(h + 1)θ_g` term. -/
-@[powerlib_foundation] theorem park_negSeq_harmonic_locked (A h φ θg : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_negSeq_harmonic_locked (A h φ θg : ℝ) :
     (park θg *ᵥ negSeq A (h * θg + φ)) 1 = -(A * Real.sin ((h + 1) * θg + φ)) := by
   rw [park_negSeq_q]; ring_nf
 
 /-- The note's negative-sequence term `V⁻ sin(2θ_g − θ̂ + φ⁻)` is not the q-axis voltage. -/
-@[powerlib_foundation] theorem not_note_negSeq_formula {Vn : ℝ} (hVn : Vn ≠ 0) :
+@[tmio T, powerlib_foundation] theorem not_note_negSeq_formula {Vn : ℝ} (hVn : Vn ≠ 0) :
     ¬ ∀ θg θh φn : ℝ, (park θh *ᵥ negSeq Vn (θg + φn)) 1 =
       Vn * Real.sin (2 * θg - θh + φn) := by
   intro h
@@ -182,7 +182,7 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
 
 /-- Positive-frame (`dq^{+1}`) components: `V^{++} = V⁺ + park(2θ̂) V⁻`
 (Rodríguez et al. 2007, eq. (3)). -/
-@[powerlib_foundation] theorem ddsrf_positiveFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem ddsrf_positiveFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn = Vp + park (2 * θh) *ᵥ Vn := by
   rw [unbalancedAlphaBeta, Matrix.mulVec_add, Transform.park_mulVec_rot_mulVec,
     Matrix.mulVec_mulVec, Transform.park_eq_rot_neg θh, ← Transform.rot_add,
@@ -190,7 +190,7 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
   congr 3; ring
 
 /-- Componentwise form of `ddsrf_positiveFrame`. -/
-@[powerlib_foundation] theorem ddsrf_positiveFrame_apply (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem ddsrf_positiveFrame_apply (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn =
       ![Vp 0 + Real.cos (2 * θh) * Vn 0 + Real.sin (2 * θh) * Vn 1,
         Vp 1 + Real.cos (2 * θh) * Vn 1 - Real.sin (2 * θh) * Vn 0] := by
@@ -198,7 +198,7 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
   ext i; fin_cases i <;> simp <;> ring
 
 /-- Negative-frame (`dq^{−1}`) components: `V^{−−} = V⁻ + rot(2θ̂) V⁺`. -/
-@[powerlib_foundation] theorem ddsrf_negativeFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem ddsrf_negativeFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park (-θh) *ᵥ unbalancedAlphaBeta θh Vp Vn = Vn + rot (2 * θh) *ᵥ Vp := by
   rw [unbalancedAlphaBeta, Matrix.mulVec_add, Transform.park_mulVec_rot_mulVec,
     Matrix.mulVec_mulVec, Transform.park_eq_rot_neg (-θh), ← Transform.rot_add, add_comm]
@@ -206,18 +206,18 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
 
 /-- Exact DDSRF decoupling: subtracting `park(2θ̂)` of the negative-sequence estimate from the
 positive-frame voltage leaves the true positive sequence when the estimate is exact. -/
-@[powerlib_foundation] theorem ddsrf_decoupled (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem ddsrf_decoupled (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn - park (2 * θh) *ᵥ Vn = Vp := by
   rw [ddsrf_positiveFrame, add_sub_cancel_right]
 
 /-- Decoupling error with an estimate `V̄⁻`: the residual is `park(2θ̂)(V⁻ − V̄⁻)`. -/
-@[powerlib_foundation] theorem ddsrf_decoupling_error (θh : ℝ) (Vp Vn Vnbar : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem ddsrf_decoupling_error (θh : ℝ) (Vp Vn Vnbar : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn - park (2 * θh) *ᵥ Vnbar =
       Vp + park (2 * θh) *ᵥ (Vn - Vnbar) := by
   rw [ddsrf_positiveFrame, Matrix.mulVec_sub]; abel
 
 /-- The note's q row `V_q^{++} = V_q⁺ − cos(2θ̂) V_q⁻ + sin(2θ̂) V_d⁻` is false. -/
-@[powerlib_foundation] theorem not_note_ddsrf_q_row :
+@[tmio T, powerlib_foundation] theorem not_note_ddsrf_q_row :
     ¬ ∀ (θh : ℝ) (Vp Vn : Fin 2 → ℝ), (park θh *ᵥ unbalancedAlphaBeta θh Vp Vn) 1 =
       Vp 1 - Real.cos (2 * θh) * Vn 1 + Real.sin (2 * θh) * Vn 0 := by
   intro h
@@ -242,17 +242,17 @@ def sogiQ (k ω' : ℝ) : Linear.Plant 2 1 :=
 /-- SOGI denominator `s² + k ω′ s + ω′²`. -/
 def sogiDen (k ω' : ℝ) (s : ℂ) : ℂ := s ^ 2 + (k : ℂ) * ω' * s + (ω' : ℂ) ^ 2
 
-@[powerlib_foundation] theorem characteristicMatrix_sogiA (k ω' : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem characteristicMatrix_sogiA (k ω' : ℝ) (s : ℂ) :
     Linear.characteristicMatrix (sogiA k ω') s = !![s + k * ω', (ω' : ℂ); -(ω' : ℂ), s] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, sogiA]
 
-@[powerlib_foundation] theorem det_characteristicMatrix_sogiA (k ω' : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_sogiA (k ω' : ℝ) (s : ℂ) :
     (Linear.characteristicMatrix (sogiA k ω') s).det = sogiDen k ω' s := by
   rw [characteristicMatrix_sogiA, det_fin_two_of, sogiDen]; ring
 
 /-- `H_d(s) = k ω′ s / (s² + k ω′ s + ω′²)` (division by zero gives `0` on both sides). -/
-@[powerlib_foundation] theorem transfer_sogiD (k ω' : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_sogiD (k ω' : ℝ) (s : ℂ) :
     Linear.transfer (sogiD k ω') s = !![(k : ℂ) * ω' * s / sogiDen k ω' s] := by
   rw [Linear.transfer_eq_adjugate, show (sogiD k ω').A = sogiA k ω' from rfl,
     det_characteristicMatrix_sogiA, characteristicMatrix_sogiA, adjugate_fin_two_of]
@@ -261,7 +261,7 @@ def sogiDen (k ω' : ℝ) (s : ℂ) : ℂ := s ^ 2 + (k : ℂ) * ω' * s + (ω' 
   ring
 
 /-- `H_q(s) = k ω′² / (s² + k ω′ s + ω′²)`. -/
-@[powerlib_foundation] theorem transfer_sogiQ (k ω' : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_sogiQ (k ω' : ℝ) (s : ℂ) :
     Linear.transfer (sogiQ k ω') s = !![(k : ℂ) * (ω' : ℂ) ^ 2 / sogiDen k ω' s] := by
   rw [Linear.transfer_eq_adjugate, show (sogiQ k ω').A = sogiA k ω' from rfl,
     det_characteristicMatrix_sogiA, characteristicMatrix_sogiA, adjugate_fin_two_of]
@@ -269,12 +269,12 @@ def sogiDen (k ω' : ℝ) (s : ℂ) : ℂ := s ^ 2 + (k : ℂ) * ω' * s + (ω' 
   simp [sogiQ, Linear.complexify, Matrix.mul_apply, Fin.sum_univ_two]
   ring
 
-@[powerlib_foundation] private lemma sogiDen_center {k ω' : ℝ} :
+@[tmio M, powerlib_foundation] private lemma sogiDen_center {k ω' : ℝ} :
     sogiDen k ω' ((ω' : ℂ) * Complex.I) = Complex.I * k * (ω' : ℂ) ^ 2 := by
   rw [sogiDen]; ring_nf; rw [Complex.I_sq]; ring
 
 /-- Sinusoidal steady state at the centre frequency: `H_d(jω′) = 1` (unit gain, zero phase). -/
-@[powerlib_foundation] theorem transfer_sogiD_center {k ω' : ℝ} (hk : k ≠ 0) (hω : ω' ≠ 0) :
+@[tmio M, powerlib_foundation] theorem transfer_sogiD_center {k ω' : ℝ} (hk : k ≠ 0) (hω : ω' ≠ 0) :
     Linear.transfer (sogiD k ω') ((ω' : ℂ) * Complex.I) = !![1] := by
   rw [transfer_sogiD, sogiDen_center]
   have hk' : (k : ℂ) ≠ 0 := by exact_mod_cast hk
@@ -283,7 +283,7 @@ def sogiDen (k ω' : ℝ) (s : ℂ) : ℂ := s ^ 2 + (k : ℂ) * ω' * s + (ω' 
   field_simp
 
 /-- Sinusoidal steady state at the centre frequency: `H_q(jω′) = −j` (90° lag). -/
-@[powerlib_foundation] theorem transfer_sogiQ_center {k ω' : ℝ} (hk : k ≠ 0) (hω : ω' ≠ 0) :
+@[tmio M, powerlib_foundation] theorem transfer_sogiQ_center {k ω' : ℝ} (hk : k ≠ 0) (hω : ω' ≠ 0) :
     Linear.transfer (sogiQ k ω') ((ω' : ℂ) * Complex.I) = !![-Complex.I] := by
   rw [transfer_sogiQ, sogiDen_center]
   have hk' : (k : ℂ) ≠ 0 := by exact_mod_cast hk
@@ -293,7 +293,7 @@ def sogiDen (k ω' : ℝ) (s : ℂ) : ℂ := s ^ 2 + (k : ℂ) * ω' * s + (ω' 
   rw [one_div, Complex.inv_I]
 
 /-- The SOGI internal dynamics are Hurwitz iff `k ω′ > 0` and `ω′ ≠ 0`. -/
-@[powerlib_foundation] theorem isHurwitz_sogiA_iff (k ω' : ℝ) :
+@[tmio TM, powerlib_foundation] theorem isHurwitz_sogiA_iff (k ω' : ℝ) :
     LinearSystems.IsHurwitz (sogiA k ω') ↔ 0 < k * ω' ∧ ω' ≠ 0 := by
   rw [sogiA, Criteria.isHurwitz_fin_two_of_iff]
   constructor
@@ -307,7 +307,7 @@ def sogiDen (k ω' : ℝ) (s : ℂ) : ℂ := s ^ 2 + (k : ℂ) * ω' * s + (ω' 
 with `qv′ = −j v′`, `v_α⁺ = ½(v′_α − q v′_β)` recovers the positive-sequence phasor `P`
 exactly and rejects the negative-sequence phasor `N`
 (`V_α = P + N`, `V_β = −jP + jN`). -/
-@[powerlib_foundation] theorem dsogi_positive_extraction (P N : ℂ) :
+@[tmio T, powerlib_foundation] theorem dsogi_positive_extraction (P N : ℂ) :
     (1 / 2 : ℂ) * ((P + N) - (-Complex.I) * (-Complex.I * P + Complex.I * N)) = P ∧
       (1 / 2 : ℂ) * ((-Complex.I) * (P + N) + (-Complex.I * P + Complex.I * N)) =
         -Complex.I * P := by
@@ -322,7 +322,7 @@ def mafTF (Tw : ℝ) (s : ℂ) : ℂ := (1 - Complex.exp (-((Tw : ℂ) * s))) / 
 
 /-- The window average of a complex exponential input `e^{jωτ}` over `[t − T_w, t]` is
 `H_maf(jω) e^{jωt}`: the moving-average operator acts on this signal as `H_maf`. -/
-@[powerlib_foundation] theorem movingAverage_exp {Tw ω : ℝ} (hT : Tw ≠ 0) (hω : ω ≠ 0) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem movingAverage_exp {Tw ω : ℝ} (hT : Tw ≠ 0) (hω : ω ≠ 0) (t : ℝ) :
     (1 / (Tw : ℂ)) * ∫ τ in (t - Tw)..t, Complex.exp (((ω : ℂ) * Complex.I) * τ) =
       mafTF Tw ((ω : ℂ) * Complex.I) * Complex.exp (((ω : ℂ) * Complex.I) * t) := by
   have hc : (ω : ℂ) * Complex.I ≠ 0 :=
@@ -338,7 +338,7 @@ def mafTF (Tw : ℝ) (s : ℂ) : ℂ := (1 - Complex.exp (-((Tw : ℂ) * s))) / 
 
 /-- With window `T_w = 2π/ω_s` the MAF gain vanishes at every nonzero integer multiple
 `n ω_s` (`T-pll-dynamics` §1.9). -/
-@[powerlib_foundation] theorem mafTF_harmonic_eq_zero {ωs : ℝ} (hω : ωs ≠ 0) {n : ℤ}
+@[tmio T, powerlib_foundation] theorem mafTF_harmonic_eq_zero {ωs : ℝ} (hω : ωs ≠ 0) {n : ℤ}
     (hn : n ≠ 0) : mafTF (2 * Real.pi / ωs) ((n : ℂ) * ωs * Complex.I) = 0 := by
   rw [mafTF]
   have h1 : Complex.exp (-(((2 * Real.pi / ωs : ℝ) : ℂ) * ((n : ℂ) * ωs * Complex.I))) = 1 := by
@@ -350,7 +350,7 @@ def mafTF (Tw : ℝ) (s : ℂ) : ℂ := (1 - Complex.exp (-((Tw : ℂ) * s))) / 
   rw [h1, sub_self, zero_div]
 
 /-- Semantic form: the one-period moving average of the harmonic `e^{j n ω_s τ}` is zero. -/
-@[powerlib_foundation] theorem movingAverage_harmonic_eq_zero {ωs : ℝ} (hω : ωs ≠ 0) {n : ℤ}
+@[tmio T, powerlib_foundation] theorem movingAverage_harmonic_eq_zero {ωs : ℝ} (hω : ωs ≠ 0) {n : ℤ}
     (hn : n ≠ 0) (t : ℝ) :
     ∫ τ in (t - 2 * Real.pi / ωs)..t,
       Complex.exp (((n * ωs : ℝ) : ℂ) * Complex.I * τ) = 0 := by

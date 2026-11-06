@@ -152,7 +152,7 @@ def sat (V u : ℝ) : ℝ := max (-V) (min V u)
   · rw [max_eq_left ((min_le_left _ _).trans (by linarith)), abs_neg]
 
 /-- Beyond the limit the saturation is constant near the command. -/
-@[powerlib_foundation] theorem sat_eventually_eq {V u₀ : ℝ} (h : V < |u₀|) :
+@[tmio T, powerlib_foundation] theorem sat_eventually_eq {V u₀ : ℝ} (h : V < |u₀|) :
     ∀ᶠ u in 𝓝 u₀, sat V u = sat V u₀ := by
   rcases lt_abs.mp h with h | h
   · filter_upwards [eventually_gt_nhds h] with u hu
@@ -164,7 +164,7 @@ def sat (V u : ℝ) : ℝ := max (-V) (min V u)
     rw [e u hu, e u₀ h']
 
 /-- With a nonnegative limit, a command beyond it is changed by the saturation. -/
-@[powerlib_foundation] theorem sat_ne_of_lt_abs {V u : ℝ} (hV : 0 ≤ V) (h : V < |u|) :
+@[tmio T, powerlib_foundation] theorem sat_ne_of_lt_abs {V u : ℝ} (hV : 0 ≤ V) (h : V < |u|) :
     sat V u ≠ u := by
   rcases lt_abs.mp h with h | h
   · rw [show sat V u = V by simp [sat, min_eq_left h.le, max_eq_right (by linarith : -V ≤ V)]]

@@ -64,16 +64,16 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   simp only [mulVec, dotProduct, Finset.sum_mul, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun j _ => by ring
 
-@[powerlib_foundation] theorem laplacian_apply (W : Matrix ι ι ℝ) (i j : ι) :
+@[tmio T, powerlib_foundation] theorem laplacian_apply (W : Matrix ι ι ℝ) (i j : ι) :
     laplacian W i j = (if i = j then ∑ k, W i k else 0) - W i j := by
   simp [laplacian, diagonal_apply]
 
-@[powerlib_foundation] theorem laplacian_mulVec_const (W : Matrix ι ι ℝ) (c : ℝ) :
+@[tmio T, powerlib_foundation] theorem laplacian_mulVec_const (W : Matrix ι ι ℝ) (c : ℝ) :
     laplacian W *ᵥ (fun _ => c) = 0 := by
   ext i
   simp [laplacian_mulVec_apply]
 
-@[powerlib_foundation] theorem laplacian_transpose {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem laplacian_transpose {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) : (laplacian W)ᵀ = laplacian W := by
   ext i j
   by_cases h : i = j
@@ -81,7 +81,7 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   · simp [laplacian, h, Ne.symm h, hW i j]
 
 /-- Column sums of a symmetric Laplacian vanish: `𝟙ᵀ L x = 0`. -/
-@[powerlib_foundation] theorem sum_laplacian_mulVec {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem sum_laplacian_mulVec {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (x : ι → ℝ) : ∑ i, (laplacian W *ᵥ x) i = 0 := by
   simp only [laplacian_mulVec_apply, mul_sub, Finset.sum_sub_distrib]
   rw [sub_eq_zero, Finset.sum_comm]
@@ -89,14 +89,14 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- Propagation of an edge relation along positive-weight paths. -/
-@[powerlib_foundation] theorem eq_of_reach {α : Type*} {W : Matrix ι ι ℝ} {x : ι → α}
+@[tmio T, powerlib_foundation] theorem eq_of_reach {α : Type*} {W : Matrix ι ι ℝ} {x : ι → α}
     (hx : ∀ a b, 0 < W a b → x a = x b) {i k : ι} (h : Reach W i k) : x i = x k := by
   induction h with
   | refl => rfl
   | tail _ hbc ih => exact ih.trans (hx _ _ hbc)
 
 /-- Quadratic form of a symmetric weighted Laplacian. -/
-@[powerlib_foundation] theorem dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (x : ι → ℝ) :
     dotProduct x (laplacian W *ᵥ x) = (∑ i, ∑ j, W i j * (x i - x j) ^ 2) / 2 := by
   have h1 : dotProduct x (laplacian W *ᵥ x) = ∑ i, ∑ j, W i j * (x i * (x i - x j)) := by
@@ -115,7 +115,7 @@ omit [Fintype ι] [DecidableEq ι] in
 
 omit [DecidableEq ι] in
 /-- Complex Hermitian form of a symmetric real Laplacian: `uᴴ L u = ½ ∑ Wᵢⱼ |uᵢ - uⱼ|²`. -/
-@[powerlib_foundation] theorem star_dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem star_dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (u : ι → ℂ) :
     ∑ i, star (u i) * ∑ j, (W i j : ℂ) * (u i - u j) =
       (((∑ i, ∑ j, W i j * Complex.normSq (u i - u j)) / 2 : ℝ) : ℂ) := by
@@ -145,7 +145,7 @@ omit [DecidableEq ι] in
   rw [h3, ← h2]
   ring
 
-@[powerlib_foundation] theorem laplacian_posSemidef_form {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem laplacian_posSemidef_form {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (x : ι → ℝ) :
     0 ≤ dotProduct x (laplacian W *ᵥ x) := by
   rw [dotProduct_laplacian_mulVec hW]
@@ -154,7 +154,7 @@ omit [DecidableEq ι] in
     mul_nonneg (hpos i j) (sq_nonneg _)
 
 /-- A zero Laplacian quadratic form forces equality across every positive edge. -/
-@[powerlib_foundation] theorem edge_eq_of_form_zero {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem edge_eq_of_form_zero {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) {x : ι → ℝ}
     (h0 : dotProduct x (laplacian W *ᵥ x) = 0) : ∀ a b, 0 < W a b → x a = x b := by
   rw [dotProduct_laplacian_mulVec hW] at h0
@@ -173,7 +173,7 @@ omit [DecidableEq ι] in
   linarith
 
 /-- Kernel of a connected symmetric Laplacian: `L x = 0` forces `x` constant. -/
-@[powerlib_foundation] theorem eq_of_laplacian_mulVec_eq_zero {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem eq_of_laplacian_mulVec_eq_zero {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hconn : ∀ i j, Reach W i j)
     {x : ι → ℝ} (hx : laplacian W *ᵥ x = 0) (i j : ι) : x i = x j := by
   have h0 : dotProduct x (laplacian W *ᵥ x) = 0 := by rw [hx, dotProduct_zero]
@@ -181,7 +181,7 @@ omit [DecidableEq ι] in
 
 omit [DecidableEq ι] in
 /-- Complex kernel of a connected symmetric Laplacian. -/
-@[powerlib_foundation] theorem complex_eq_of_laplacian_eq_zero {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem complex_eq_of_laplacian_eq_zero {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hconn : ∀ i j, Reach W i j)
     {u : ι → ℂ} (hu : ∀ i, ∑ j, (W i j : ℂ) * (u i - u j) = 0) (i j : ι) : u i = u j := by
   have hform := star_dotProduct_laplacian_mulVec hW u
@@ -207,7 +207,7 @@ section ComplexLaplacian
 
 variable {n : ℕ}
 
-@[powerlib_foundation] theorem complex_laplacian_sum (W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+@[tmio T, powerlib_foundation] theorem complex_laplacian_sum (W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
     (ζ : Fin (n + 1) → ℂ) (k : Fin (n + 1)) :
     ∑ l, ((laplacian W k l : ℝ) : ℂ) * ζ l = ∑ l, (W k l : ℂ) * (ζ k - ζ l) := by
   simp only [laplacian_apply, Complex.ofReal_sub, sub_mul, mul_sub, Finset.sum_sub_distrib]
@@ -217,7 +217,7 @@ variable {n : ℕ}
   · intro j _ hj; simp [Ne.symm hj]
   · simp
 
-@[powerlib_foundation] theorem complex_laplacian_total {W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+@[tmio T, powerlib_foundation] theorem complex_laplacian_total {W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (hW : ∀ i j, W i j = W j i) (ζ : Fin (n + 1) → ℂ) :
     ∑ k, ∑ l, (W k l : ℂ) * (ζ k - ζ l) = 0 := by
   simp only [mul_sub, Finset.sum_sub_distrib]
@@ -234,13 +234,13 @@ def grounded (W : Matrix ι ι ℝ) (g : ι → ℝ) : Matrix ι ι ℝ := lapla
 /-- Every node reaches, through positive-weight edges, a node with positive grounding. -/
 def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃ k, Reach W i k ∧ 0 < g k
 
-@[powerlib_foundation] theorem grounded_mulVec_apply (W : Matrix ι ι ℝ) (g : ι → ℝ)
+@[tmio T, powerlib_foundation] theorem grounded_mulVec_apply (W : Matrix ι ι ℝ) (g : ι → ℝ)
     (x : ι → ℝ) (i : ι) :
     (grounded W g *ᵥ x) i = g i * x i + ∑ j, W i j * (x i - x j) := by
   simp [grounded, add_mulVec, laplacian_mulVec_apply, mulVec_diagonal, add_comm]
 
 /-- Discrete minimum principle for grounded Laplacians. -/
-@[powerlib_foundation] theorem nonneg_of_grounded_mulVec_nonneg {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem nonneg_of_grounded_mulVec_nonneg {W : Matrix ι ι ℝ}
     {g : ι → ℝ} (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i)
     (hreach : GroundReachable W g) {x : ι → ℝ} (hx : ∀ i, 0 ≤ (grounded W g *ᵥ x) i) :
     ∀ i, 0 ≤ x i := by
@@ -279,7 +279,7 @@ def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃
   obtain ⟨k, hk, hgk⟩ := hreach m
   exact absurd (hclosed k (key k hk)).1 hgk.ne'
 
-@[powerlib_foundation] theorem grounded_mulVec_injective {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_mulVec_injective {W : Matrix ι ι ℝ}
     {g : ι → ℝ} (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i)
     (hreach : GroundReachable W g) : Function.Injective (grounded W g *ᵥ ·) := by
   intro x y hxy
@@ -294,18 +294,18 @@ def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃
   linarith
 
 /-- A grounded Laplacian whose every node reaches ground is invertible. -/
-@[powerlib_foundation] theorem grounded_isUnit {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_isUnit {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) (hreach : GroundReachable W g) :
     IsUnit (grounded W g) :=
   mulVec_injective_iff_isUnit.mp (grounded_mulVec_injective hpos hg hreach)
 
-@[powerlib_foundation] theorem grounded_det_ne_zero {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_det_ne_zero {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) (hreach : GroundReachable W g) :
     (grounded W g).det ≠ 0 :=
   ((isUnit_iff_isUnit_det _).mp (grounded_isUnit hpos hg hreach)).ne_zero
 
 /-- Inverse nonnegativity: the solution of `(L + diag g) x = b` with `b ≥ 0` is `≥ 0`. -/
-@[powerlib_foundation] theorem grounded_inv_mulVec_nonneg {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_inv_mulVec_nonneg {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) (hreach : GroundReachable W g)
     {b : ι → ℝ} (hb : ∀ i, 0 ≤ b i) : ∀ i, 0 ≤ ((grounded W g)⁻¹ *ᵥ b) i := by
   apply nonneg_of_grounded_mulVec_nonneg hpos hg hreach
@@ -315,7 +315,7 @@ def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃
   exact hb i
 
 /-- The inverse of a ground-reachable grounded Laplacian is entrywise nonnegative. -/
-@[powerlib_foundation] theorem grounded_inv_nonneg {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_inv_nonneg {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) (hreach : GroundReachable W g)
     (i j : ι) : 0 ≤ (grounded W g)⁻¹ i j := by
   have h := grounded_inv_mulVec_nonneg hpos hg hreach (b := Pi.single j 1)
@@ -324,7 +324,7 @@ def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃
 
 /-- For symmetric weights, `L + diag g` is positive definite iff every node has a
 positive-weight path to a grounded node. -/
-@[powerlib_foundation] theorem grounded_posDef_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_posDef_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) :
     (grounded W g).PosDef ↔ GroundReachable W g := by
   have hherm : (grounded W g).IsHermitian := by
@@ -414,21 +414,21 @@ elements: `Y_ii = Σ_{j ≠ i} y_ij`, `Y_ij = -y_ij`. (The diagonal of `y` cance
 def ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ) : Matrix ι ι ℂ :=
   Matrix.diagonal (fun i => ∑ j, y i j) - y
 
-@[powerlib_foundation] theorem ybusNoShunt_mulVec_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+@[tmio T, powerlib_foundation] theorem ybusNoShunt_mulVec_one {ι : Type*} [Fintype ι] [DecidableEq ι]
     (y : Matrix ι ι ℂ) : ybusNoShunt y *ᵥ (fun _ => 1) = 0 := by
   ext i
   rw [ybusNoShunt, sub_mulVec, Pi.sub_apply, mulVec_diagonal]
   simp [mulVec, dotProduct]
 
 /-- Laplacian-type admittance matrices are singular, whatever the topology. -/
-@[powerlib_foundation] theorem ybusNoShunt_det_eq_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
+@[tmio T, powerlib_foundation] theorem ybusNoShunt_det_eq_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
     [Nonempty ι] (y : Matrix ι ι ℂ) : (ybusNoShunt y).det = 0 := by
   apply Matrix.exists_mulVec_eq_zero_iff.mp
   exact ⟨fun _ => 1, fun h => one_ne_zero (congrFun h (Classical.arbitrary ι)),
     ybusNoShunt_mulVec_one y⟩
 
 /-- Counterexample to "connected ⇒ nonsingular": two buses joined by one line. -/
-@[powerlib_foundation] theorem ybus_two_bus_singular :
+@[tmio T, powerlib_foundation] theorem ybus_two_bus_singular :
     ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ) = !![1, -1; -1, 1] ∧
       (ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ)).det = 0 := by
   refine ⟨?_, ybusNoShunt_det_eq_zero _⟩
@@ -450,7 +450,7 @@ def signedIncidence (tail head : β → ν) : Matrix ν β ℝ :=
 
 omit [Fintype β] [DecidableEq β] in
 /-- KVL: the branch voltage `(𝓑ᵀ v)_k` is the potential difference `v(tail k) − v(head k)`. -/
-@[powerlib_foundation] theorem signedIncidence_transpose_mulVec (tail head : β → ν)
+@[tmio T, powerlib_foundation] theorem signedIncidence_transpose_mulVec (tail head : β → ν)
     (v : ν → ℝ) (k : β) :
     ((signedIncidence tail head)ᵀ *ᵥ v) k = v (tail k) - v (head k) := by
   simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul]
@@ -462,7 +462,7 @@ section IncidenceSum
 variable {α β : Type} [Fintype α] [DecidableEq α] [Fintype β]
 
 omit [Fintype β] in
-@[powerlib_foundation] theorem signedIncidence_col_sum (tail head : β → α) (ℓ : β) :
+@[tmio T, powerlib_foundation] theorem signedIncidence_col_sum (tail head : β → α) (ℓ : β) :
     ∑ a, Network.signedIncidence tail head a ℓ = 0 := by
   have h := Network.signedIncidence_transpose_mulVec tail head (fun _ => (1 : ℝ)) ℓ
   simpa [mulVec, dotProduct] using h
@@ -478,7 +478,7 @@ variable {ι β : Type*} [Fintype ι] [DecidableEq ι] [Fintype β] [DecidableEq
 omit [DecidableEq β] in
 /-- Kron reduction: if the internal nodes inject no current (`Y_ii v_i + Y_ib v_b = 0`) and
 `Y_ii` is invertible, the boundary injections are `(Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`. -/
-@[powerlib_foundation] theorem kron_current {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
+@[tmio T, powerlib_foundation] theorem kron_current {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
     {Ybi : Matrix β ι ℝ} {Ybb : Matrix β β ℝ} (hinv : IsUnit Yii.det) {vi : ι → ℝ}
     {vb : β → ℝ} (hint : Yii *ᵥ vi + Yib *ᵥ vb = 0) :
     Ybi *ᵥ vi + Ybb *ᵥ vb = (Ybb - Ybi * Yii⁻¹ * Yib) *ᵥ vb := by
@@ -493,7 +493,7 @@ omit [DecidableEq β] in
 omit [DecidableEq ι] [DecidableEq β] in
 /-- Kron reduction conserves port power: with zero internal injection, the network power
 `vᵀ Y v` equals the boundary port power `v_bᵀ i_b`. -/
-@[powerlib_foundation] theorem kron_power (Yii : Matrix ι ι ℝ) (Yib : Matrix ι β ℝ)
+@[tmio T, powerlib_foundation] theorem kron_power (Yii : Matrix ι ι ℝ) (Yib : Matrix ι β ℝ)
     (Ybi : Matrix β ι ℝ) (Ybb : Matrix β β ℝ) {vi : ι → ℝ} {vb : β → ℝ}
     (hint : Yii *ᵥ vi + Yib *ᵥ vb = 0) :
     Sum.elim vi vb ⬝ᵥ (fromBlocks Yii Yib Ybi Ybb *ᵥ Sum.elim vi vb) =
@@ -506,7 +506,7 @@ omit [DecidableEq β] in
 /-- Kron reduction of a positive semidefinite network with positive definite internal block is
 positive semidefinite (passivity is preserved). Wrapper of Mathlib
 `Matrix.PosDef.fromBlocks₁₁` (Schur complement). -/
-@[powerlib_foundation] theorem kron_posSemidef {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
+@[tmio T, powerlib_foundation] theorem kron_posSemidef {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
     {Ybb : Matrix β β ℝ} (hY : (fromBlocks Yii Yib Yibᵀ Ybb).PosSemidef) (hii : Yii.PosDef) :
     (Ybb - Yibᵀ * Yii⁻¹ * Yib).PosSemidef := by
   have := hii.isUnit.invertible

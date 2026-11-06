@@ -146,16 +146,16 @@ def energy (M : Fin k → ℝ) (U : (Fin m → ℝ) → ℝ) (z : State (m + k))
 
 variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {U : (Fin m → ℝ) → ℝ}
 
-@[simp, powerlib_foundation] theorem field_qIdx (z : State (m + k)) (i : Fin m) :
+@[tmio T, simp, powerlib_foundation] theorem field_qIdx (z : State (m + k)) (i : Fin m) :
     field G M D U z (qIdx i) = G (vel z) i := by
   simp [field]
 
-@[simp, powerlib_foundation] theorem field_vIdx (z : State (m + k)) (j : Fin k) :
+@[tmio T, simp, powerlib_foundation] theorem field_vIdx (z : State (m + k)) (j : Fin k) :
     field G M D U z (vIdx j) =
       (-(D j * z (vIdx j)) - fderiv ℝ U (pos z) (G (Pi.single j 1))) / M j := by
   simp [field]
 
-@[simp, powerlib_foundation] theorem pos_field (z : State (m + k)) :
+@[tmio T, simp, powerlib_foundation] theorem pos_field (z : State (m + k)) :
     pos (field G M D U z) = G (vel z) := by
   ext i
   simp
@@ -184,7 +184,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
     simp [h]
 
 /-- A rest point is an equilibrium when `dU(q) ∘ G = 0`. -/
-@[powerlib_foundation] theorem field_point_eq_zero {q : Fin m → ℝ}
+@[tmio T, powerlib_foundation] theorem field_point_eq_zero {q : Fin m → ℝ}
     (hq : (fderiv ℝ U q).comp G = 0) : field G M D U (point q) = 0 := by
   have hj := (comp_eq_zero_iff _ G).mp hq
   apply state_ext
@@ -192,7 +192,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
   · intro j; simp [hj j]
 
 /-- With nonzero masses, a rest point is an equilibrium exactly when `dU(q) ∘ G = 0`. -/
-@[powerlib_foundation] theorem field_point_eq_zero_iff (hM : ∀ j, M j ≠ 0) (q : Fin m → ℝ) :
+@[tmio T, powerlib_foundation] theorem field_point_eq_zero_iff (hM : ∀ j, M j ≠ 0) (q : Fin m → ℝ) :
     field G M D U (point q) = 0 ↔ (fderiv ℝ U q).comp G = 0 := by
   refine ⟨fun h => (comp_eq_zero_iff _ G).mpr fun j => ?_, field_point_eq_zero⟩
   have := congrArg (fun z : State (m + k) => z (vIdx j)) h
@@ -201,7 +201,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
   exact this
 
 /-- A `C²` potential gives a `C¹` field. -/
-@[powerlib_foundation] theorem field_contDiff (hU : ContDiff ℝ 2 U) :
+@[tmio T, powerlib_foundation] theorem field_contDiff (hU : ContDiff ℝ 2 U) :
     ContDiff ℝ 1 (field G M D U) := by
   rw [contDiff_euclidean]
   intro r
@@ -220,7 +220,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
     · have h1 : ContDiff ℝ 1 (fderiv ℝ U) := hU.fderiv_right (by norm_num)
       exact (h1.comp pos.contDiff).clm_apply contDiff_const
 
-@[powerlib_foundation] theorem energy_contDiff (hU : ContDiff ℝ 1 U) :
+@[tmio T, powerlib_foundation] theorem energy_contDiff (hU : ContDiff ℝ 1 U) :
     ContDiff ℝ 1 (energy M U) := by
   unfold energy
   apply ContDiff.add
@@ -228,7 +228,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
     exact ContDiff.sum fun j _ => contDiff_const.mul ((contDiff_piLp_apply 2).pow 2)
   · exact hU.comp pos.contDiff
 
-@[powerlib_foundation] theorem hasFDerivAt_energy {z : State (m + k)}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_energy {z : State (m + k)}
     (hU : DifferentiableAt ℝ U (pos z)) :
     HasFDerivAt (energy M U)
       ((∑ j, (M j * z (vIdx j)) • PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (m + k) => ℝ) (vIdx j)) +
@@ -256,7 +256,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
 
 /-- **Energy balance.** Along the field the energy changes at the rate `−∑ⱼ Dⱼ wⱼ²`: the
 generalized force does no work. -/
-@[powerlib_foundation] theorem lie_energy (hU : Differentiable ℝ U) (hM : ∀ j, M j ≠ 0)
+@[tmio T, powerlib_foundation] theorem lie_energy (hU : Differentiable ℝ U) (hM : ∀ j, M j ≠ 0)
     (z : State (m + k)) :
     fderiv ℝ (energy M U) z (field G M D U z) = -∑ j, D j * z (vIdx j) ^ 2 := by
   rw [(hasFDerivAt_energy (hU (pos z))).fderiv]
@@ -271,18 +271,18 @@ generalized force does no work. -/
   ring
 
 /-- With nonnegative damping the energy does not increase. -/
-@[powerlib_foundation] theorem lie_energy_nonpos (hU : Differentiable ℝ U) (hM : ∀ j, M j ≠ 0)
+@[tmio T, powerlib_foundation] theorem lie_energy_nonpos (hU : Differentiable ℝ U) (hM : ∀ j, M j ≠ 0)
     (hD : ∀ j, 0 ≤ D j) (z : State (m + k)) :
     fderiv ℝ (energy M U) z (field G M D U z) ≤ 0 := by
   rw [lie_energy hU hM, neg_nonpos]
   exact Finset.sum_nonneg fun j _ => mul_nonneg (hD j) (sq_nonneg _)
 
-@[simp, powerlib_foundation] theorem energy_point (q : Fin m → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem energy_point (q : Fin m → ℝ) :
     energy M U (point (k := k) q) = U q := by
   simp [energy]
 
 /-- The energy relative to a rest point: the kinetic energy plus the potential increment. -/
-@[powerlib_foundation] theorem energy_sub_point (z : State (m + k)) (q : Fin m → ℝ) :
+@[tmio T, powerlib_foundation] theorem energy_sub_point (z : State (m + k)) (q : Fin m → ℝ) :
     energy M U z - energy M U (point q) =
       (∑ j, M j * z (vIdx j) ^ 2) / 2 + (U (pos z) - U q) := by
   rw [energy_point, energy]
@@ -293,7 +293,7 @@ generalized force does no work. -/
 /-- **A non-minimum of the potential is not asymptotically stable.** Positions arbitrarily close to
 `q` with a lower potential rule out local asymptotic stability of the rest point: the energy does
 not increase, so a solution started at rest there cannot reach `point q`. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_potential_lt (hU : ContDiff ℝ 2 U)
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_potential_lt (hU : ContDiff ℝ 2 U)
     (hM : ∀ j, M j ≠ 0) (hD : ∀ j, 0 ≤ D j) {q : Fin m → ℝ}
     (hseed : ∀ ε > 0, ∃ v : Fin m → ℝ, ‖v‖ < ε ∧ U (q + v) < U q) :
     ¬ LocalAsymptoticStable (field G M D U) (point q) := by
@@ -311,7 +311,7 @@ not increase, so a solution started at rest there cannot reach `point q`. -/
 
 /-- **Accumulating critical points rule out local asymptotic stability**: each is a rest point of
 the field near `point q`. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_critical {q : Fin m → ℝ}
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_critical {q : Fin m → ℝ}
     (h : ∀ ε > 0, ∃ v : Fin m → ℝ, v ≠ 0 ∧ ‖v‖ < ε ∧ (fderiv ℝ U (q + v)).comp G = 0) :
     ¬ LocalAsymptoticStable (field G M D U) (point q) := by
   refine Dynamics.not_localAsymptoticStable_of_equilibria fun ε hε => ?_
@@ -325,7 +325,7 @@ the field near `point q`. -/
 
 /-- **A line of critical points is not asymptotically stable.** If `dU ∘ G` vanishes along
 `q + t v` (`v ≠ 0`), every point of that line is a rest point of the field. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_critical_line {q v : Fin m → ℝ}
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_critical_line {q v : Fin m → ℝ}
     (hv : v ≠ 0) (hline : ∀ t : ℝ, (fderiv ℝ U (q + t • v)).comp G = 0) :
     ¬ LocalAsymptoticStable (field G M D U) (point q) := by
   refine not_localAsymptoticStable_of_critical fun ε hε => ?_
@@ -342,7 +342,7 @@ the field near `point q`. -/
 /-- **LaSalle at a strict isolated minimum.** A critical point `q` of the potential that is a
 strict local minimum and an isolated critical point gives a locally asymptotically stable rest
 point, whatever the linearization (positive masses and dampings). -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_strictMin (hmk : 0 < m + k)
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_strictMin (hmk : 0 < m + k)
     (hU : ContDiff ℝ 2 U) (hM : ∀ j, 0 < M j) (hD : ∀ j, 0 < D j) {q : Fin m → ℝ}
     (hq : (fderiv ℝ U q).comp G = 0) {r : ℝ} (hr : 0 < r)
     (hmin : ∀ v : Fin m → ℝ, v ≠ 0 → ‖v‖ < r → U q < U (q + v))
@@ -428,7 +428,7 @@ point, whatever the linearization (positive masses and dampings). -/
 /-- **A locally asymptotically stable rest point is a strict, isolated minimum of the
 potential**: a non-minimum is ruled out by the energy, critical points accumulating at `q` by the
 rest points they define, and a non-strict minimum is a nearby critical point. -/
-@[powerlib_foundation] theorem strictMin_of_localAsymptoticStable (hU : ContDiff ℝ 2 U)
+@[tmio T, powerlib_foundation] theorem strictMin_of_localAsymptoticStable (hU : ContDiff ℝ 2 U)
     (hM : ∀ j, M j ≠ 0) (hD : ∀ j, 0 ≤ D j) {q : Fin m → ℝ}
     (hLAS : LocalAsymptoticStable (field G M D U) (point q)) :
     ∃ r > 0, ∀ v : Fin m → ℝ, v ≠ 0 → ‖v‖ < r →

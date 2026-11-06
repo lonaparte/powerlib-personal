@@ -39,7 +39,7 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
     mk_apply_one]
   tauto
 
-@[powerlib_foundation] theorem energy_contDiff : ContDiff ℝ 1 energy := by
+@[tmio T, powerlib_foundation] theorem energy_contDiff : ContDiff ℝ 1 energy := by
   have h : energy = fun y : State 2 => 1 * y 1 ^ 2 / 2 + potential (y 0) := rfl
   rw [h]
   have h0 : ContDiff ℝ 1 (fun y : State 2 => y 0) := Dynamics.contDiff_coord 0
@@ -48,7 +48,7 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
   fun_prop
 
 /-- Energy sublevel sets are positively invariant for `δ ≥ 0`. -/
-@[powerlib_foundation] theorem sublevel_positivelyInvariant {δ : ℝ} (hδ : 0 ≤ δ) (c : ℝ) :
+@[tmio TM, powerlib_foundation] theorem sublevel_positivelyInvariant {δ : ℝ} (hδ : 0 ≤ δ) (c : ℝ) :
     IsPositivelyInvariant {y : State 2 | energy y ≤ c} (field δ) := by
   intro t₀ t₁ φ hφ h0 t ht
   have hanti := Conservative.energy_antitone one_ne_zero hδ hasDerivAt_potential hφ
@@ -56,7 +56,7 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
   exact le_trans this h0
 
 /-- Damped Duffing: every forward solution converges to the equilibrium set. -/
-@[powerlib_foundation] theorem tendsto_equilibria {δ : ℝ} (hδ : 0 < δ) {φ : ℝ → State 2}
+@[tmio TM, powerlib_foundation] theorem tendsto_equilibria {δ : ℝ} (hδ : 0 < δ) {φ : ℝ → State 2}
     (hφ : IsIntegralCurveOn φ (fun _ y => field δ y) (Ici 0)) :
     Tendsto φ atTop (𝓝ˢ equilibria) := by
   refine Dynamics.LaSalle.lasalle_invariance_principle_of_contDiff (V := energy)

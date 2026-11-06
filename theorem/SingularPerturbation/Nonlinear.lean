@@ -65,7 +65,7 @@ def blocksSP (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ) : LinearSP n m
   simp [LinearSP.blockMatrix, blocksSP]
 
 /-- Jacobian of the scaled field: `D_ε J`, i.e. the full matrix `[[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]`. -/
-@[powerlib_foundation] theorem fderiv_scaledField
+@[tmio T, powerlib_foundation] theorem fderiv_scaledField
     {Φ : Dynamics.State (n + m) → Dynamics.State (n + m)}
     {w₀ : Dynamics.State (n + m)} (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ)
     (hd : DifferentiableAt ℝ Φ w₀)
@@ -85,7 +85,7 @@ def blocksSP (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ) : LinearSP n m
   rw [← hcomp]
   exact h
 
-@[powerlib_foundation] theorem scaledField_contDiff
+@[tmio T, powerlib_foundation] theorem scaledField_contDiff
     {Φ : Dynamics.State (n + m) → Dynamics.State (n + m)}
     (hΦ : ContDiff ℝ 1 Φ) (ε : ℝ) : ContDiff ℝ 1 (scaledField ε Φ) :=
   (Matrix.toEuclideanCLM (n := Fin (n + m)) (𝕜 := ℝ) (scaleMatrix n m ε)).contDiff.comp hΦ
@@ -93,7 +93,7 @@ def blocksSP (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ) : LinearSP n m
 /-- **Nonlinear two-time-scale stability**: `A₂₂` and the Schur complement Hurwitz ⇒ there is
 `ε* > 0` such that `ẋ = f(x,z)`, `εż = g(x,z)` is locally exponentially stable at the
 equilibrium for every `ε ∈ (0, ε*)`. -/
-@[powerlib_foundation] theorem exists_epsStar_locallyExponentiallyStable
+@[tmio T, powerlib_foundation] theorem exists_epsStar_locallyExponentiallyStable
     {Φ : Dynamics.State (n + m) → Dynamics.State (n + m)} {w₀ : Dynamics.State (n + m)}
     (hΦ : ContDiff ℝ 1 Φ) (heq : Φ w₀ = 0) (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ)
     (hJ : fderiv ℝ Φ w₀ = Matrix.toEuclideanCLM (n := Fin (n + m)) (𝕜 := ℝ)

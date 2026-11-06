@@ -378,7 +378,7 @@ def resp : Fin 10 → ℂ :=
 
 end Resp
 
-@[powerlib_foundation] theorem one_apply_eq_unitVec (k c : Fin 2) :
+@[tmio T, powerlib_foundation] theorem one_apply_eq_unitVec (k c : Fin 2) :
     (1 : Matrix (Fin 2) (Fin 2) ℂ) k c = unitVec c k := by
   simp [unitVec, Matrix.one_apply, eq_comm]
 

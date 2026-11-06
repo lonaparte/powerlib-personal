@@ -150,11 +150,11 @@ def angleMap : State (n + (n + 1)) →L[ℝ] (Fin (n + 1) → ℝ) :=
     Fin.cases (0 : State (n + (n + 1)) →L[ℝ] ℝ)
       (fun i => PiLp.proj 2 (fun _ => ℝ) (dIdx i)) k
 
-@[simp, powerlib_foundation] theorem angleMap_zero (z : State (n + (n + 1))) :
+@[tmio T, simp, powerlib_foundation] theorem angleMap_zero (z : State (n + (n + 1))) :
     angleMap z 0 = 0 := by
   simp [angleMap]
 
-@[simp, powerlib_foundation] theorem angleMap_succ (z : State (n + (n + 1))) (i : Fin n) :
+@[tmio T, simp, powerlib_foundation] theorem angleMap_succ (z : State (n + (n + 1))) (i : Fin n) :
     angleMap z i.succ = z (dIdx i) := by
   simp [angleMap]
 
@@ -178,15 +178,15 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
   WithLp.toLp 2 fun r => Fin.addCases (motive := fun _ => ℝ)
     (fun i => x.1 i.succ - x.1 0) (fun k => x.2 k) r
 
-@[simp, powerlib_foundation] theorem reduce_dIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
+@[tmio T, simp, powerlib_foundation] theorem reduce_dIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
     (i : Fin n) : reduce x (dIdx i) = x.1 i.succ - x.1 0 := by
   simp [reduce]
 
-@[simp, powerlib_foundation] theorem reduce_wIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
+@[tmio T, simp, powerlib_foundation] theorem reduce_wIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
     (k : Fin (n + 1)) : reduce x (wIdx k) = x.2 k := by
   simp [reduce]
 
-@[powerlib_foundation] theorem angleMap_reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
+@[tmio T, powerlib_foundation] theorem angleMap_reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
     angleMap (reduce x) = fun k => x.1 k + -x.1 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
@@ -195,7 +195,7 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
 
 /-- A reduced state is determined by its angle and frequency blocks
 (`Dynamics.state_ext_blocks`). -/
-@[powerlib_foundation] theorem state_ext {z z' : State (n + (n + 1))}
+@[tmio T, powerlib_foundation] theorem state_ext {z z' : State (n + (n + 1))}
     (hd : ∀ i, z (dIdx i) = z' (dIdx i)) (hw : ∀ k, z (wIdx k) = z' (wIdx k)) : z = z' :=
   Dynamics.state_ext_blocks hd hw
 
@@ -356,7 +356,7 @@ selected point. -/
   simp [flowWeights, equilibrium, angleMap_reduce]
 
 /-- Sum over the reduced state, split into the angle and frequency blocks. -/
-@[powerlib_foundation] theorem sum_state {β : Type*} [AddCommMonoid β] (f : Fin (n + (n + 1)) → β) :
+@[tmio T, powerlib_foundation] theorem sum_state {β : Type*} [AddCommMonoid β] (f : Fin (n + (n + 1)) → β) :
     ∑ r, f r = ∑ i : Fin n, f (dIdx i) + ∑ k : Fin (n + 1), f (wIdx k) :=
   Fin.sum_univ_add f
 
@@ -417,7 +417,7 @@ selected point. -/
 
 /-! ## The Jacobian is Hurwitz -/
 
-@[powerlib_foundation] theorem re_neg_of_quadratic {μ : ℂ} {m d l : ℝ} (hm : 0 < m) (hd : 0 < d)
+@[tmio T, powerlib_foundation] theorem re_neg_of_quadratic {μ : ℂ} {m d l : ℝ} (hm : 0 < m) (hd : 0 < d)
     (hl : 0 ≤ l) (h : (m : ℂ) * μ ^ 2 + d * μ + l = 0) (hμ : μ ≠ 0) : μ.re < 0 := by
   have hre := congrArg Complex.re h
   have him := congrArg Complex.im h
@@ -911,15 +911,15 @@ private def conservedLin (m : ℕ) : State (m + (m + 1)) →ₗ[ℝ] State (m + 
     · intro i; simp; ring
     · intro k; simp
 
-@[powerlib_foundation] private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1))) (i : Fin m) :
+@[tmio T, powerlib_foundation] private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1))) (i : Fin m) :
     conservedLin m z (dIdx i) = z (dIdx i) + z (wIdx i.succ) - z (wIdx 0) := by
   simp [conservedLin]
 
-@[powerlib_foundation] private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1))) (k : Fin (m + 1)) :
+@[tmio T, powerlib_foundation] private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1))) (k : Fin (m + 1)) :
     conservedLin m z (wIdx k) = z (wIdx k) := by
   simp [conservedLin]
 
-@[powerlib_foundation] private theorem conservedLin_injective (m : ℕ) : Function.Injective (conservedLin m) := by
+@[tmio T, powerlib_foundation] private theorem conservedLin_injective (m : ℕ) : Function.Injective (conservedLin m) := by
   intro z w h
   have hw : ∀ k, z (wIdx k) = w (wIdx k) := fun k => by
     have := congrArg (fun y : State (m + (m + 1)) => y (wIdx k)) h

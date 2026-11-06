@@ -62,12 +62,12 @@ open scoped Topology
   field_simp
 
 /-- Characteristic determinant of a 2×2 state matrix in the literal form `!![a, b; c, d]`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_of (a b c d : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_of (a b c d : ℝ) (s : ℂ) :
     (characteristicMatrix !![a, b; c, d] s).det = (s - a) * (s - d) - (b : ℂ) * c := by
   simp [characteristicMatrix, Matrix.det_fin_two]
 
 /-- Transfer function of a two-state SISO plant, off the characteristic roots. -/
-@[powerlib_foundation] theorem transfer_fin_two (a b c d b1 b2 c1 c2 d0 : ℝ) {s : ℂ}
+@[tmio T, powerlib_foundation] theorem transfer_fin_two (a b c d b1 b2 c1 c2 d0 : ℝ) {s : ℂ}
     (hs : (s - a) * (s - d) - (b : ℂ) * c ≠ 0) :
     transfer (⟨!![a, b; c, d], !![b1; b2], !![c1, c2], !![d0]⟩ : Plant 2 1) s 0 0 =
       ((c1 : ℂ) * ((s - d) * b1 + b * b2) + c2 * (c * b1 + (s - a) * b2)) /
@@ -78,7 +78,7 @@ open scoped Topology
   ring
 
 /-- A solution of `(sI − A) X = B` gives the transfer matrix `C X + D`. -/
-@[powerlib_foundation] theorem transfer_eq_of_solution
+@[tmio T, powerlib_foundation] theorem transfer_eq_of_solution
     {n k : ℕ} (m : Plant n k) (s : ℂ) (X : Matrix (Fin n) (Fin k) ℂ)
     (hM : (characteristicMatrix m.A s).det ≠ 0)
     (hX : characteristicMatrix m.A s * X = complexify m.B) :
@@ -95,11 +95,11 @@ def negOutput (m : Plant n p) : Plant n p := ⟨m.A, m.B, -m.C, -m.D⟩
 
 /-- Reversing the output sign negates the transfer matrix. Read with the output as a port
 current: `Y^IN(s) = −Y^OUT(s)`. -/
-@[powerlib_foundation] theorem transfer_negOutput (m : Plant n p) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem transfer_negOutput (m : Plant n p) (s : ℂ) :
     transfer (negOutput m) s = -transfer m s := by
   simp only [transfer, negOutput, complexify_neg, Matrix.neg_mul, neg_add]
 
-@[powerlib_foundation] theorem negOutput_negOutput (m : Plant n p) :
+@[tmio T, powerlib_foundation] theorem negOutput_negOutput (m : Plant n p) :
     negOutput (negOutput m) = m := by
   simp [negOutput]
 
@@ -114,7 +114,7 @@ def derivModel {n p : ℕ} (m : Linear.Plant n p) : Linear.Plant n p :=
 /-- Along any input–state solution `ẋ = A x + B u` of a strictly proper plant (`D = 0`), the
 output of `derivModel` is the time derivative of the original output `C x + D u`. Generic: any
 plant, any differentiable state signal. -/
-@[powerlib_foundation] theorem hasDerivAt_output {n p : ℕ} {m : Linear.Plant n p} (hD : m.D = 0)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_output {n p : ℕ} {m : Linear.Plant n p} (hD : m.D = 0)
     {x : ℝ → Fin n → ℝ} {u : ℝ → Fin p → ℝ} {t : ℝ}
     (hx : HasDerivAt x (m.A *ᵥ x t + m.B *ᵥ u t) t) :
     HasDerivAt (fun τ => m.C *ᵥ x τ + m.D *ᵥ u τ)
@@ -128,7 +128,7 @@ plant, any differentiable state signal. -/
   simp [derivModel, Matrix.mulVec_add, Matrix.mulVec_mulVec]
 
 /-- Transfer of the derivative output: `s H(s)` (`D = 0`, `s` not an eigenvalue). -/
-@[powerlib_foundation] theorem transfer_derivModel {n p : ℕ} {m : Linear.Plant n p}
+@[tmio T, powerlib_foundation] theorem transfer_derivModel {n p : ℕ} {m : Linear.Plant n p}
     (hD : m.D = 0) {s : ℂ} (hs : (Linear.characteristicMatrix m.A s).det ≠ 0) :
     Linear.transfer (derivModel m) s = s • Linear.transfer m s := by
   set M := Linear.characteristicMatrix m.A s
@@ -149,7 +149,7 @@ variable {n p : ℕ}
 
 /-- Constant-input solutions of a plant with a Hurwitz state matrix converge to the
 equilibrium: generic foundation, the hub's global asymptotic stability about `e`. -/
-@[powerlib_foundation] theorem tendsto_equilibrium (M : Plant n p) (hA : IsHurwitz M.A)
+@[tmio T, powerlib_foundation] theorem tendsto_equilibrium (M : Plant n p) (hA : IsHurwitz M.A)
     {u : Fin p → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (M.inputField u) e)
     {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ : ℝ}
     (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Set.Ici t₀)) :
@@ -158,7 +158,7 @@ equilibrium: generic foundation, the hub's global asymptotic stability about `e`
   exact (globallyAsymptoticallyStable_of_isHurwitz e hA).2.2.2 t₀ x hx
 
 /-- Componentwise form, for a solution given by its derivative at every time. -/
-@[powerlib_foundation] theorem tendsto_equilibrium_apply (M : Plant n p) (hA : IsHurwitz M.A)
+@[tmio T, powerlib_foundation] theorem tendsto_equilibrium_apply (M : Plant n p) (hA : IsHurwitz M.A)
     {u : Fin p → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (M.inputField u) e)
     {x : ℝ → EuclideanSpace ℝ (Fin n)} (hx : ∀ t, HasDerivAt x (M.inputField u (x t)) t)
     (j : Fin n) : Tendsto (fun t => x t j) atTop (𝓝 (e j)) := by
@@ -179,12 +179,12 @@ variable {n p m : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- The field of a plant under a constant input, applied: `A x + B u`. -/
-@[powerlib_foundation] theorem inputField_apply (M : Linear.Plant n p) (u : Fin p → ℝ) (x : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem inputField_apply (M : Linear.Plant n p) (u : Fin p → ℝ) (x : ℝⁿ) :
     M.inputField u x = WithLp.toLp 2 (M.A *ᵥ WithLp.ofLp x + M.B *ᵥ u) := rfl
 
 /-- Under a constant input with an equilibrium, every forward solution from `t = 0` is the
 matrix-exponential solution. -/
-@[powerlib_foundation] theorem trajectory_eq_solution_Ici (M : Linear.Plant n p)
+@[tmio T, powerlib_foundation] theorem trajectory_eq_solution_Ici (M : Linear.Plant n p)
     {u : Fin p → ℝ} {e : ℝⁿ} (he : IsEquilibrium (M.inputField u) e) {x : ℝ → ℝⁿ}
     (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) {t : ℝ} (ht : 0 ≤ t) :
     x t = Linear.solution M.A e 0 (x 0) t := by
@@ -192,19 +192,19 @@ matrix-exponential solution. -/
   exact Linear.trajectory_eq_solution (hx.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
 
 /-- The matrix-exponential solution is a solution under the constant input. -/
-@[powerlib_foundation] theorem solution_hasDerivAt (M : Linear.Plant n p) {u : Fin p → ℝ}
+@[tmio T, powerlib_foundation] theorem solution_hasDerivAt (M : Linear.Plant n p) {u : Fin p → ℝ}
     {e : ℝⁿ} (he : IsEquilibrium (M.inputField u) e) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
     HasDerivAt (Linear.solution M.A e t₀ x₀)
       (M.inputField u (Linear.solution M.A e t₀ x₀ t)) t := by
   rw [M.inputField_eq he]
   exact Linear.solution_hasDerivAt M.A e t₀ x₀ t
 
-@[powerlib_foundation] theorem solution_continuous (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ)
+@[tmio T, powerlib_foundation] theorem solution_continuous (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ)
     (t₀ : ℝ) (x₀ : ℝⁿ) : Continuous (Linear.solution A e t₀ x₀) :=
   continuous_iff_continuousAt.2 fun t => (Linear.solution_hasDerivAt A e t₀ x₀ t).continuousAt
 
 /-- Componentwise convergence (for instance of the frequency deviation `x t 0`). -/
-@[powerlib_foundation] theorem tendsto_apply_of_isHurwitz (M : Linear.Plant n p)
+@[tmio T, powerlib_foundation] theorem tendsto_apply_of_isHurwitz (M : Linear.Plant n p)
     {u : Fin p → ℝ} {e : ℝⁿ} (he : IsEquilibrium (M.inputField u) e) (hA : IsHurwitz M.A)
     {x : ℝ → ℝⁿ} (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) (i : Fin n) :
     Tendsto (fun t => x t i) atTop (𝓝 (e i)) :=
@@ -213,7 +213,7 @@ matrix-exponential solution. -/
 
 /-- The right derivative at `t = 0` of a coordinate of a forward solution of any field is that
 coordinate of the field at the initial state. -/
-@[powerlib_foundation] theorem hasDerivWithinAt_apply_zero {f : ℝⁿ → ℝⁿ} {x : ℝ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_apply_zero {f : ℝⁿ → ℝⁿ} {x : ℝ → ℝⁿ}
     (hx : IsIntegralCurveOn x (fun _ y => f y) (Ici 0)) (i : Fin n) :
     HasDerivWithinAt (fun t => x t i) (f (x 0) i) (Ici 0) 0 := by
   have h := (PiLp.proj 2 (fun _ : Fin n => ℝ) i).hasFDerivAt.comp_hasDerivWithinAt (0 : ℝ)
@@ -222,7 +222,7 @@ coordinate of the field at the initial state. -/
 
 /-- In deviation coordinates about an equilibrium of a constant input, the field of a plant is
 its zero-input field. -/
-@[powerlib_foundation] theorem inputField_shift {n p : ℕ} (P : Linear.Plant n p)
+@[tmio T, powerlib_foundation] theorem inputField_shift {n p : ℕ} (P : Linear.Plant n p)
     {u : Fin p → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (P.inputField u) e) :
     (fun z => P.inputField u (z + e)) = affineLinearVectorField P.A 0 := by
   funext z
@@ -232,7 +232,7 @@ its zero-input field. -/
 /-- Generic: along a real eigenvector `v` of a positive eigenvalue `r` of the state matrix, the
 exponential mode `e + e^{r t} v` through an equilibrium `e` of a constant input is a solution,
 and every component where `v` is nonzero diverges, so it converges to no value. -/
-@[powerlib_foundation] theorem exists_not_tendsto_of_eigenvector (M : Linear.Plant n m)
+@[tmio T, powerlib_foundation] theorem exists_not_tendsto_of_eigenvector (M : Linear.Plant n m)
     {u : Fin m → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (M.inputField u) e)
     {r : ℝ} (hr : 0 < r) {v : Fin n → ℝ} (hAv : M.A *ᵥ v = r • v) {j : Fin n} (hvj : v j ≠ 0)
     (c : ℝ) : ∃ x : ℝ → EuclideanSpace ℝ (Fin n), (∀ t, HasDerivAt x (M.inputField u (x t)) t) ∧
@@ -277,7 +277,7 @@ each other, componentwise, for any common input signal: their difference solves 
 field, which is globally exponentially stable (the linear hub). A forward trajectory `x` of the
 plant `ẋ = A x + B u` under the input signal `u` is a solution on `[0, ∞)`, in plain coordinates,
 with one-sided derivatives at `0`. -/
-@[powerlib_foundation] theorem tendsto_sub_of_isHurwitz {n p : ℕ} {M : Linear.Plant n p}
+@[tmio T, powerlib_foundation] theorem tendsto_sub_of_isHurwitz {n p : ℕ} {M : Linear.Plant n p}
     (hA : LinearSystems.IsHurwitz M.A) {u : ℝ → Fin p → ℝ} {x y : ℝ → Fin n → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t)
     (hy : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt y (M.A *ᵥ y t + M.B *ᵥ u t) (Ici 0) t)

@@ -51,24 +51,24 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   convert h using 1
   ring
 
-@[powerlib_foundation] theorem torque_contDiff (ω₀ : ℝ) {k : WithTop ℕ∞} :
+@[tmio M, powerlib_foundation] theorem torque_contDiff (ω₀ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (torque ω₀) := by
   unfold torque; fun_prop
 
-@[powerlib_foundation] theorem field_contDiff (ω₀ : ℝ) {k : WithTop ℕ∞} :
+@[tmio M, powerlib_foundation] theorem field_contDiff (ω₀ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field ω₀) :=
   Conservative.field_contDiff (torque_contDiff ω₀)
 
-@[powerlib_foundation] theorem energy_conserved (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
+@[tmio TM, powerlib_foundation] theorem energy_conserved (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field ω₀) a b) :
     ∀ t ∈ Icc a b, energy ω₀ (φ t) = energy ω₀ (φ a) :=
   Conservative.energy_conserved one_ne_zero (hasDerivAt_potential ω₀) hφ
 
-@[powerlib_foundation] theorem potential_le (ω₀ θ : ℝ) : potential ω₀ θ ≤ 2 * ω₀ ^ 2 := by
+@[tmio M, powerlib_foundation] theorem potential_le (ω₀ θ : ℝ) : potential ω₀ θ ≤ 2 * ω₀ ^ 2 := by
   unfold potential
   nlinarith [Real.neg_one_le_cos θ, sq_nonneg ω₀]
 
-@[powerlib_foundation] theorem potential_pos {ω₀ θ : ℝ} (hω : ω₀ ≠ 0) (h1 : |θ| < 2 * Real.pi)
+@[tmio M, powerlib_foundation] theorem potential_pos {ω₀ θ : ℝ} (hω : ω₀ ≠ 0) (h1 : |θ| < 2 * Real.pi)
     (h0 : θ ≠ 0) : 0 < potential ω₀ θ := by
   unfold potential
   have hc : Real.cos θ < 1 := by
@@ -80,7 +80,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   nlinarith
 
 /-- The lower equilibrium `(0, 0)` is Lyapunov stable. -/
-@[powerlib_foundation] theorem origin_lyapunovStable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
+@[tmio TM, powerlib_foundation] theorem origin_lyapunovStable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
     LyapunovStable (field ω₀) (mk 0 0) :=
   Conservative.center_lyapunovStable one_pos le_rfl (hasDerivAt_potential ω₀) Real.pi_pos
     (fun θ hθ hne => by
@@ -89,7 +89,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
       exact potential_pos hω (by rw [sub_zero] at hθ; linarith [Real.pi_pos]) hne)
 
 /-- Jacobian of the pendulum field. -/
-@[powerlib_foundation] theorem hasFDerivAt_field (ω₀ : ℝ) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_field (ω₀ : ℝ) (y : State 2) :
     HasFDerivAt (field ω₀)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; -(ω₀ ^ 2 * Real.cos (y 0)), 0]) y := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
@@ -109,7 +109,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp
 
 /-- The upper equilibrium `(π, 0)` is a saddle, hence unstable. -/
-@[powerlib_foundation] theorem top_unstable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
+@[tmio TM, powerlib_foundation] theorem top_unstable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
     Unstable (field ω₀) (mk Real.pi 0) := by
   refine Criteria.unstable_of_jacobian_det_neg_fin_two _ (field_contDiff ω₀) ?_
     (hasFDerivAt_field ω₀ (mk Real.pi 0)).fderiv ?_
@@ -117,12 +117,12 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   · simp [Matrix.det_fin_two]; positivity
 
 /-- Separatrix energy `E(π, 0) = 2ω₀²`. -/
-@[powerlib_foundation] theorem separatrix_energy (ω₀ : ℝ) :
+@[tmio M, powerlib_foundation] theorem separatrix_energy (ω₀ : ℝ) :
     energy ω₀ (mk Real.pi 0) = 2 * ω₀ ^ 2 := by
   simp [energy, Conservative.energy, potential]; ring
 
 /-- Libration: below the separatrix energy a solution started in `(−π, π)` never reaches `±π`. -/
-@[powerlib_foundation] theorem libration (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
+@[tmio TM, powerlib_foundation] theorem libration (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field ω₀) a b) (hE : energy ω₀ (φ a) < 2 * ω₀ ^ 2)
     (hθ : |φ a 0| < Real.pi) :
     ∀ t ∈ Icc a b, |φ t 0| < Real.pi := by
@@ -144,7 +144,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 
 /-- Rotation: above the separatrix energy the angular velocity never vanishes and the angle
 advances at least linearly. -/
-@[powerlib_foundation] theorem rotation (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
+@[tmio TM, powerlib_foundation] theorem rotation (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field ω₀) a b) (hE : 2 * ω₀ ^ 2 < energy ω₀ (φ a)) :
     (∀ t ∈ Icc a b, φ t 1 ≠ 0) ∧
       ∀ t ∈ Icc a b, √(2 * (energy ω₀ (φ a) - 2 * ω₀ ^ 2)) * (t - a) ≤ |φ t 0 - φ a 0| := by

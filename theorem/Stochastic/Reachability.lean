@@ -69,7 +69,7 @@ def safeValue (Q : Kernel E E) (A : Set E) : ℕ → E → ℝ
   | 0 => stronglyMeasurable_const
   | N + 1 => ((safeValue_stronglyMeasurable Q hA N).indicator hA).integral_kernel
 
-@[powerlib_foundation] theorem safeValue_mem_Icc (Q : Kernel E E) [IsMarkovKernel Q] (A : Set E) :
+@[tmio T, powerlib_foundation] theorem safeValue_mem_Icc (Q : Kernel E E) [IsMarkovKernel Q] (A : Set E) :
     ∀ N x, 0 ≤ safeValue Q A N x ∧ safeValue Q A N x ≤ 1
   | 0, x => by simp [safeValue]
   | N + 1, x => by
@@ -92,7 +92,7 @@ def stayIn (X : ℕ → Ω → E) (A : Set E) (k N : ℕ) (ω : Ω) : ℝ :=
   ∏ i ∈ range N, A.indicator (fun _ => (1 : ℝ)) (X (k + 1 + i) ω)
 
 omit [MeasurableSpace E] in
-@[powerlib_foundation] theorem stayIn_succ (X : ℕ → Ω → E) (A : Set E) (k N : ℕ) :
+@[tmio T, powerlib_foundation] theorem stayIn_succ (X : ℕ → Ω → E) (A : Set E) (k N : ℕ) :
     stayIn X A k (N + 1) = fun ω =>
       A.indicator (fun _ => (1 : ℝ)) (X (k + 1) ω) * stayIn X A (k + 1) N ω := by
   funext ω
@@ -102,13 +102,13 @@ omit [MeasurableSpace E] in
   refine prod_congr rfl fun i _ => ?_
   rw [show k + 1 + (i + 1) = k + 1 + 1 + i by omega]
 
-@[powerlib_foundation] theorem stayIn_measurable {X : ℕ → Ω → E} (hX : ∀ n, Measurable (X n))
+@[tmio T, powerlib_foundation] theorem stayIn_measurable {X : ℕ → Ω → E} (hX : ∀ n, Measurable (X n))
     {A : Set E} (hA : MeasurableSet A) (k N : ℕ) : Measurable (stayIn X A k N) := by
   unfold stayIn
   exact Finset.measurable_prod _ fun i _ => (measurable_const.indicator hA).comp (hX _)
 
 omit [MeasurableSpace E] in
-@[powerlib_foundation] theorem stayIn_abs_le (X : ℕ → Ω → E) (A : Set E) (k N : ℕ) (ω : Ω) :
+@[tmio T, powerlib_foundation] theorem stayIn_abs_le (X : ℕ → Ω → E) (A : Set E) (k N : ℕ) (ω : Ω) :
     |stayIn X A k N ω| ≤ 1 := by
   unfold stayIn
   rw [abs_prod]
@@ -117,7 +117,7 @@ omit [MeasurableSpace E] in
 
 /-- **Dynamic programming for safety probabilities**:
 `P(X_{k+1}, …, X_{k+N} ∈ A | 𝓕_k) = V_N(X_k)` almost surely. -/
-@[powerlib_foundation] theorem safety_dp {P : Measure Ω} [IsProbabilityMeasure P]
+@[tmio T, powerlib_foundation] theorem safety_dp {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E} {Q : Kernel E E}
     [IsMarkovKernel Q]
     (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
@@ -173,7 +173,7 @@ omit [MeasurableSpace E] in
     simp only [hQ, safeValue]
 
 /-- **Safety probability from the initial law**: `P(X_1, …, X_N ∈ A) = E[V_N(X_0)]`. -/
-@[powerlib_foundation] theorem safety_prob_eq {P : Measure Ω} [IsProbabilityMeasure P]
+@[tmio T, powerlib_foundation] theorem safety_prob_eq {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E} {Q : Kernel E E}
     [IsMarkovKernel Q]
     (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
@@ -199,7 +199,7 @@ omit [MeasurableSpace E] in
 open scoped Classical in
 /-- The recursion computes the indicator of the reach-avoid event
 `∃ j ≤ N, X_{k+j} ∈ T ∧ ∀ i < j, X_{k+i} ∈ D \ T`. -/
-@[powerlib_foundation] theorem reachAvoid_eq_indicator (X : ℕ → Ω → E) (T D : Set E) :
+@[tmio T, powerlib_foundation] theorem reachAvoid_eq_indicator (X : ℕ → Ω → E) (T D : Set E) :
     ∀ N k ω, reachAvoid X T D k N ω =
       if ∃ j ≤ N, X (k + j) ω ∈ T ∧ ∀ i < j, X (k + i) ω ∈ D \ T then 1 else 0 := by
   intro N
@@ -252,7 +252,7 @@ def reachValue (Q : Kernel E E) (T D : Set E) : ℕ → E → ℝ
   | N + 1 => fun x => T.indicator (fun _ => (1 : ℝ)) x +
       (D \ T).indicator (fun _ => (1 : ℝ)) x * ∫ y, reachValue Q T D N y ∂(Q x)
 
-@[powerlib_foundation] theorem reachValue_stronglyMeasurable (Q : Kernel E E) {T D : Set E}
+@[tmio T, powerlib_foundation] theorem reachValue_stronglyMeasurable (Q : Kernel E E) {T D : Set E}
     (hT : MeasurableSet T) (hD : MeasurableSet D) :
     ∀ N, StronglyMeasurable (reachValue Q T D N)
   | 0 => (measurable_const.indicator hT).stronglyMeasurable
@@ -260,7 +260,7 @@ def reachValue (Q : Kernel E E) (T D : Set E) : ℕ → E → ℝ
       ((measurable_const.indicator (hD.diff hT)).stronglyMeasurable.mul
         (reachValue_stronglyMeasurable Q hT hD N).integral_kernel)
 
-@[powerlib_foundation] theorem reachValue_mem_Icc (Q : Kernel E E) [IsMarkovKernel Q]
+@[tmio T, powerlib_foundation] theorem reachValue_mem_Icc (Q : Kernel E E) [IsMarkovKernel Q]
     (T D : Set E) : ∀ N x, 0 ≤ reachValue Q T D N x ∧ reachValue Q T D N x ≤ 1
   | 0, x => by
     by_cases h : x ∈ T <;> simp [reachValue, h]
@@ -282,7 +282,7 @@ def reachValue (Q : Kernel E E) (T D : Set E) : ℕ → E → ℝ
         exact ⟨hI0, hI1⟩
       · simp [hT, hD]
 
-@[powerlib_foundation] theorem reachAvoid_measurable {X : ℕ → Ω → E}
+@[tmio T, powerlib_foundation] theorem reachAvoid_measurable {X : ℕ → Ω → E}
     (hX : ∀ n, Measurable (X n)) {T D : Set E} (hT : MeasurableSet T) (hD : MeasurableSet D) :
     ∀ N k, Measurable (reachAvoid X T D k N) := by
   intro N
@@ -294,14 +294,14 @@ def reachValue (Q : Kernel E E) (T D : Set E) : ℕ → E → ℝ
       (((measurable_const.indicator (hD.diff hT)).comp (hX k)).mul (ih (k + 1)))
 
 omit [MeasurableSpace E] in
-@[powerlib_foundation] theorem reachAvoid_abs_le (X : ℕ → Ω → E) (T D : Set E) (N k : ℕ)
+@[tmio T, powerlib_foundation] theorem reachAvoid_abs_le (X : ℕ → Ω → E) (T D : Set E) (N k : ℕ)
     (ω : Ω) : |reachAvoid X T D k N ω| ≤ 1 := by
   rw [reachAvoid_eq_indicator]
   split_ifs <;> simp
 
 /-- **Dynamic programming for the reach-avoid probability**:
 `P(reach T within N steps while staying in D | 𝓕_k) = W_N(X_k)` almost surely. -/
-@[powerlib_foundation] theorem reachAvoid_dp {P : Measure Ω} [IsProbabilityMeasure P]
+@[tmio T, powerlib_foundation] theorem reachAvoid_dp {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E} {Q : Kernel E E}
     [IsMarkovKernel Q]
     (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
@@ -376,13 +376,13 @@ section HJB
 variable {H A : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
 
 /-- Chain rule along a trajectory: `d/dt V(t, x(t)) = DV(t, x(t)) (1, ẋ(t))`. -/
-@[powerlib_foundation] private theorem hasDerivAt_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
     (hV : ∀ p, HasFDerivAt V (DV p) p) {x : ℝ → H} {v : H} {t : ℝ} (hx : HasDerivAt x v t) :
     HasDerivAt (fun s => V (s, x s)) (DV (t, x t) (1, v)) t := by
   have hp : HasDerivAt (fun s => (s, x s)) ((1 : ℝ), v) t := (hasDerivAt_id t).prodMk hx
   exact (hV (t, x t)).comp_hasDerivAt t hp
 
-@[powerlib_foundation] private theorem continuousOn_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
+@[tmio T, powerlib_foundation] private theorem continuousOn_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
     (hV : ∀ p, HasFDerivAt V (DV p) p) {x : ℝ → H} {T : ℝ} (hxc : ContinuousOn x (Set.Icc 0 T)) :
     ContinuousOn (fun s => V (s, x s)) (Set.Icc 0 T) := by
   have hVc : Continuous V := continuous_iff_continuousAt.mpr fun p => (hV p).continuousAt
@@ -394,7 +394,7 @@ admissible control value `w ∈ Uad` and `t ∈ (0, T)`, with terminal condition
 for every admissible pair (`x` continuous on `[0, T]`, `ẋ = f(t, x, u)` and `u(t) ∈ Uad` on
 `(0, T)`, running cost integrable) `V(0, x(0)) ≤ ∫₀ᵀ L(t, x, u) dt + g(x(T))`.
 (`DV p (1, v)` is `∂ₜV + D_yV · v`.) -/
-@[powerlib_foundation] theorem hjb_le_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
+@[tmio T, powerlib_foundation] theorem hjb_le_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
     {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
     (hV : ∀ p, HasFDerivAt V (DV p) p)
     (hHJB : ∀ t ∈ Set.Ioo 0 T, ∀ y, ∀ w ∈ Uad, 0 ≤ DV (t, y) (1, f t y w) + L t y w)
@@ -416,7 +416,7 @@ for every admissible pair (`x` continuous on `[0, T]`, `ẋ = f(t, x, u)` and `u
 /-- **HJB verification, equality along a minimizing pair**: if the HJB expression vanishes along
 `(x, u)` (the control attains the minimum in the Hamiltonian along its own trajectory), the cost of
 `(x, u)` equals `V(0, x(0))`. -/
-@[powerlib_foundation] theorem hjb_eq_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ}
+@[tmio T, powerlib_foundation] theorem hjb_eq_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ}
     {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
     (hV : ∀ p, HasFDerivAt V (DV p) p)
     (hterm : ∀ y, V (T, y) = g y)
@@ -441,7 +441,7 @@ for every admissible pair (`x` continuous on `[0, T]`, `ẋ = f(t, x, u)` and `u
 `min_{w ∈ Uad} [∂ₜV + D_yV · f(t, y, w) + L(t, y, w)] = 0`: the expression is `≥ 0` for all `w`, and
 `= 0` along an admissible pair `(x*, u*)` from `x₀`.  Then `V(0, x₀)` is the **least** cost over all
 admissible pairs from `x₀` — `V(0, x₀)` is the value of the problem and `(x*, u*)` is optimal. -/
-@[powerlib_foundation] theorem hjb_verification {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
+@[tmio T, powerlib_foundation] theorem hjb_verification {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
     {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
     (hV : ∀ p, HasFDerivAt V (DV p) p)
     (hHJB : ∀ t ∈ Set.Ioo 0 T, ∀ y, ∀ w ∈ Uad, 0 ≤ DV (t, y) (1, f t y w) + L t y w)
@@ -472,7 +472,7 @@ open Real
 /-- Riccati solution `p(t) = tanh(T − t)` of `ṗ = p² − 1`, `p(T) = 0`. -/
 def lqGain (T t : ℝ) : ℝ := sinh (T - t) / cosh (T - t)
 
-@[powerlib_foundation] private theorem lqGain_hasDerivAt (T t : ℝ) :
+@[tmio M, powerlib_foundation] private theorem lqGain_hasDerivAt (T t : ℝ) :
     HasDerivAt (lqGain T) (lqGain T t ^ 2 - 1) t := by
   have hc : cosh (T - t) ≠ 0 := (cosh_pos _).ne'
   have hs : HasDerivAt (fun s => sinh (T - s)) (-cosh (T - t)) t := by
@@ -488,7 +488,7 @@ def lqGain (T t : ℝ) : ℝ := sinh (T - t) / cosh (T - t)
   field_simp
   linarith
 
-@[powerlib_foundation] private theorem lqGain_continuous (T : ℝ) : Continuous (lqGain T) :=
+@[tmio M, powerlib_foundation] private theorem lqGain_continuous (T : ℝ) : Continuous (lqGain T) :=
   continuous_iff_continuousAt.mpr fun t => (lqGain_hasDerivAt T t).continuousAt
 
 /-- `V(t, x) = p(t) x²`. -/
@@ -499,7 +499,7 @@ def lqDValue (T : ℝ) (q : ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ :=
   ((lqGain T q.1 ^ 2 - 1) * q.2 ^ 2) • ContinuousLinearMap.fst ℝ ℝ ℝ +
     (2 * lqGain T q.1 * q.2) • ContinuousLinearMap.snd ℝ ℝ ℝ
 
-@[powerlib_foundation] private theorem lqValue_hasFDerivAt (T : ℝ) (q : ℝ × ℝ) :
+@[tmio M, powerlib_foundation] private theorem lqValue_hasFDerivAt (T : ℝ) (q : ℝ × ℝ) :
     HasFDerivAt (lqValue T) (lqDValue T q) q := by
   have h1 : HasFDerivAt (fun r : ℝ × ℝ => lqGain T r.1)
       ((lqGain T q.1 ^ 2 - 1) • ContinuousLinearMap.fst ℝ ℝ ℝ) q :=
@@ -514,7 +514,7 @@ def lqDValue (T : ℝ) (q : ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ :=
 (`T ≥ 0`), `u` unconstrained, and cost `∫₀ᵀ (x² + u²) dt`, the minimal cost from `x₀` is
 `tanh(T) x₀²`, attained by the feedback `u = −tanh(T − t) x`, i.e.
 `x*(t) = x₀ cosh(T − t) / cosh T`. -/
-@[powerlib_foundation] theorem lq_value {T : ℝ} (hT : 0 ≤ T) (x₀ : ℝ) :
+@[tmio TM, powerlib_foundation] theorem lq_value {T : ℝ} (hT : 0 ≤ T) (x₀ : ℝ) :
     IsLeast {J | ∃ (x u : ℝ → ℝ), x 0 = x₀ ∧ ContinuousOn x (Set.Icc 0 T) ∧
         (∀ t ∈ Set.Ioo 0 T, HasDerivAt x (u t) t) ∧
         MeasureTheory.IntegrableOn (fun t => x t ^ 2 + u t ^ 2) (Set.Icc 0 T) ∧

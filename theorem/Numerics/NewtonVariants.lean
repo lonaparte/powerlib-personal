@@ -82,12 +82,12 @@ def chordStep (F : E → E) (A : E →L[ℝ] E) (x : E) : E := x - Ring.inverse 
     _ = ‖Ring.inverse A‖ * c * ‖x - y‖ := by ring
 
 /-- The chord map fixes a root. -/
-@[powerlib_foundation] theorem chordStep_root {F : E → E} {A : E →L[ℝ] E} {xs : E}
+@[tmio T, powerlib_foundation] theorem chordStep_root {F : E → E} {A : E →L[ℝ] E} {xs : E}
     (hroot : F xs = 0) : chordStep F A xs = xs := by
   simp [chordStep, hroot]
 
 /-- Contraction towards the root: `‖C(x) − x*‖ ≤ q ‖x − x*‖` on the closed ball. -/
-@[powerlib_foundation] theorem chordStep_sub_root_le {F : E → E} {J : E → E →L[ℝ] E}
+@[tmio T, powerlib_foundation] theorem chordStep_sub_root_le {F : E → E} {J : E → E →L[ℝ] E}
     {A : E →L[ℝ] E} {xs : E} {r c : ℝ} (hF : ∀ z ∈ closedBall xs r, HasFDerivAt F (J z) z)
     (hA : IsUnit A) (hJA : ∀ z ∈ closedBall xs r, ‖J z - A‖ ≤ c) (hroot : F xs = 0)
     (hr : 0 ≤ r) {x : E} (hx : x ∈ closedBall xs r) :
@@ -98,7 +98,7 @@ def chordStep (F : E → E) (A : E →L[ℝ] E) (x : E) : E := x - Ring.inverse 
 /-- **Chord method is a contraction.** If `‖J z − A‖ ≤ c` on `closedBall x* r` and
 `q = ‖A⁻¹‖ c < 1`, the chord map restricted to the closed ball is `ContractingWith q`;
 its unique fixed point is the root. -/
-@[powerlib_foundation] theorem chord_contractingWith [CompleteSpace E] {F : E → E}
+@[tmio T, powerlib_foundation] theorem chord_contractingWith [CompleteSpace E] {F : E → E}
     {J : E → E →L[ℝ] E} {A : E →L[ℝ] E} {xs : E} {r c : ℝ}
     (hF : ∀ z ∈ closedBall xs r, HasFDerivAt F (J z) z) (hA : IsUnit A)
     (hJA : ∀ z ∈ closedBall xs r, ‖J z - A‖ ≤ c) (hroot : F xs = 0) (hr : 0 ≤ r)
@@ -120,7 +120,7 @@ its unique fixed point is the root. -/
 
 /-- **Linear convergence of the chord method.** Iterates started in `closedBall x* r` stay
 there and `‖x_k − x*‖ ≤ qᵏ ‖x₀ − x*‖` with `q = ‖A⁻¹‖ c < 1`; hence `x_k → x*`. -/
-@[powerlib_foundation] theorem chord_iterates_converge {F : E → E} {J : E → E →L[ℝ] E}
+@[tmio T, powerlib_foundation] theorem chord_iterates_converge {F : E → E} {J : E → E →L[ℝ] E}
     {A : E →L[ℝ] E} {xs : E} {r c : ℝ} (hF : ∀ z ∈ closedBall xs r, HasFDerivAt F (J z) z)
     (hA : IsUnit A) (hJA : ∀ z ∈ closedBall xs r, ‖J z - A‖ ≤ c) (hroot : F xs = 0)
     (hr : 0 ≤ r) (hq0 : 0 ≤ ‖Ring.inverse A‖ * c) (hq : ‖Ring.inverse A‖ * c < 1)
@@ -157,7 +157,7 @@ there and `‖x_k − x*‖ ≤ qᵏ ‖x₀ − x*‖` with `q = ‖A⁻¹‖ c
 /-- With the frozen Jacobian `A = J(x₀)`, `x₀ ∈ closedBall x* r` and `J` `L`-Lipschitz on the
 ball, the hypothesis of the chord results holds with `c = 2Lr`, so the contraction factor is
 `q = 2 L r ‖J(x₀)⁻¹‖`. -/
-@[powerlib_foundation] theorem chord_rate_of_lipschitz {J : E → E →L[ℝ] E} {xs x₀ : E}
+@[tmio T, powerlib_foundation] theorem chord_rate_of_lipschitz {J : E → E →L[ℝ] E} {xs x₀ : E}
     {r L : ℝ} (hL : 0 ≤ L) (hJ : ∀ z ∈ closedBall xs r, ∀ w ∈ closedBall xs r,
       ‖J z - J w‖ ≤ L * ‖z - w‖) (hx₀ : x₀ ∈ closedBall xs r) :
     ∀ z ∈ closedBall xs r, ‖J z - J x₀‖ ≤ 2 * L * r := by
@@ -183,7 +183,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **Inexact Newton with `η = O(‖F‖)` is still quadratic.** If the inner linear solve leaves
 a residual `‖J(x)δ + F(x)‖ ≤ c ‖F(x)‖²` (forcing term `η = c‖F(x)‖`) and
 `‖F(x)‖ ≤ M ‖x − x*‖`, then `‖x + δ − x*‖ ≤ ‖J(x)⁻¹‖ (L/2 + c M²) ‖x − x*‖²`. -/
-@[powerlib_foundation] theorem inexactNewton_step_le {F : E → E} {J : E → E →L[ℝ] E}
+@[tmio T, powerlib_foundation] theorem inexactNewton_step_le {F : E → E} {J : E → E →L[ℝ] E}
     {U : Set E} (hU : Convex ℝ U) (hF : ∀ z ∈ U, HasFDerivAt F (J z) z) {L : ℝ}
     (hJ : ∀ z ∈ U, ∀ w ∈ U, ‖J z - J w‖ ≤ L * ‖z - w‖) {x xs : E} (hx : x ∈ U) (hxs : xs ∈ U)
     (hroot : F xs = 0) (hJx : IsUnit (J x)) {M c : ℝ} (hc : 0 ≤ c)
@@ -228,7 +228,7 @@ def broydenUpdate (B : Matrix (Fin n) (Fin n) ℝ) (s y : Fin n → ℝ) :
   B + (1 / (s ⬝ᵥ s)) • vecMulVec (y - B *ᵥ s) s
 
 /-- **Secant condition**: `B⁺ Δx = ΔF` whenever `Δx ≠ 0`. -/
-@[powerlib_foundation] theorem broydenUpdate_secant (B : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem broydenUpdate_secant (B : Matrix (Fin n) (Fin n) ℝ)
     {s : Fin n → ℝ} (hs : s ≠ 0) (y : Fin n → ℝ) : broydenUpdate B s y *ᵥ s = y := by
   have hss : s ⬝ᵥ s ≠ 0 := by
     intro h
@@ -241,7 +241,7 @@ def broydenUpdate (B : Matrix (Fin n) (Fin n) ℝ) (s y : Fin n → ℝ) :
   ring
 
 /-- **Least change**: directions orthogonal to `Δx` are not modified. -/
-@[powerlib_foundation] theorem broydenUpdate_orthogonal (B : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem broydenUpdate_orthogonal (B : Matrix (Fin n) (Fin n) ℝ)
     (s y v : Fin n → ℝ) (hv : s ⬝ᵥ v = 0) : broydenUpdate B s y *ᵥ v = B *ᵥ v := by
   rw [broydenUpdate, add_mulVec, smul_mulVec, vecMulVec_mulVec, hv]
   simp
@@ -257,7 +257,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **Armijo condition is satisfiable.** If `φ` is differentiable at `x` and `d` is a descent
 direction (`φ'(x) d < 0`), then for `c₁ < 1` there is `ᾱ > 0` such that every
 `α ∈ (0, ᾱ]` satisfies `φ(x + α d) ≤ φ(x) + c₁ α φ'(x) d`. -/
-@[powerlib_foundation] theorem armijo_exists {φ : E → ℝ} {φ' : E →L[ℝ] ℝ} {x d : E}
+@[tmio T, powerlib_foundation] theorem armijo_exists {φ : E → ℝ} {φ' : E →L[ℝ] ℝ} {x d : E}
     (hφ : HasFDerivAt φ φ' x) (hd : φ' d < 0) {c₁ : ℝ} (hc₁ : c₁ < 1) :
     ∃ αbar > 0, ∀ α ∈ Ioc 0 αbar, φ (x + α • d) ≤ φ x + c₁ * α * φ' d := by
   set g : ℝ → ℝ := fun α => φ (x + α • d) with hg
@@ -285,7 +285,7 @@ direction (`φ'(x) d < 0`), then for `c₁ < 1` there is `ᾱ > 0` such that eve
   nlinarith
 
 /-- **Backtracking terminates**: for `ρ ∈ (0, 1)` some `α = ρᵐ` passes the Armijo test. -/
-@[powerlib_foundation] theorem armijo_backtracking_terminates {φ : E → ℝ} {φ' : E →L[ℝ] ℝ}
+@[tmio T, powerlib_foundation] theorem armijo_backtracking_terminates {φ : E → ℝ} {φ' : E →L[ℝ] ℝ}
     {x d : E} (hφ : HasFDerivAt φ φ' x) (hd : φ' d < 0) {c₁ ρ : ℝ} (hc₁ : c₁ < 1)
     (hρ0 : 0 < ρ) (hρ1 : ρ < 1) :
     ∃ m : ℕ, φ (x + ρ ^ m • d) ≤ φ x + c₁ * ρ ^ m * φ' d := by
@@ -299,7 +299,7 @@ open scoped RealInnerProductSpace
 
 /-- **Newton direction is a descent direction** of the merit function `φ = ½‖F‖²`:
 `φ'(x) (−J(x)⁻¹ F(x)) = −‖F(x)‖²`. -/
-@[powerlib_foundation] theorem newtonDirection_descent {F : H → H} {J : H →L[ℝ] H} {x : H}
+@[tmio T, powerlib_foundation] theorem newtonDirection_descent {F : H → H} {J : H →L[ℝ] H} {x : H}
     (hF : HasFDerivAt F J x) (hJ : IsUnit J) :
     ∃ φ' : H →L[ℝ] ℝ, HasFDerivAt (fun y => ‖F y‖ ^ 2 / 2) φ' x ∧
       φ' (-Ring.inverse J (F x)) = -‖F x‖ ^ 2 := by
@@ -318,7 +318,7 @@ open scoped RealInnerProductSpace
 
 /-- **Damped Newton with Armijo backtracking is well defined**: away from a root, some
 `α = ρᵐ` gives `½‖F(x + α δ)‖² ≤ ½‖F(x)‖² − c₁ α ‖F(x)‖²`, `δ = −J(x)⁻¹F(x)`. -/
-@[powerlib_foundation] theorem dampedNewton_armijo_terminates {F : H → H} {J : H →L[ℝ] H}
+@[tmio T, powerlib_foundation] theorem dampedNewton_armijo_terminates {F : H → H} {J : H →L[ℝ] H}
     {x : H} (hF : HasFDerivAt F J x) (hJ : IsUnit J) (hFx : F x ≠ 0) {c₁ ρ : ℝ}
     (hc₁ : c₁ < 1) (hρ0 : 0 < ρ) (hρ1 : ρ < 1) :
     ∃ m : ℕ, ‖F (x + ρ ^ m • (-Ring.inverse J (F x)))‖ ^ 2 / 2 ≤
@@ -346,12 +346,12 @@ open scoped RealInnerProductSpace
 def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
   (ContinuousLinearMap.adjoint J) (J δ) + μ • δ = -(ContinuousLinearMap.adjoint J) r
 
-@[powerlib_foundation] theorem inner_adjoint_self (J : E →L[ℝ] E') (v : E) :
+@[tmio T, powerlib_foundation] theorem inner_adjoint_self (J : E →L[ℝ] E') (v : E) :
     ⟪(ContinuousLinearMap.adjoint J) (J v), v⟫ = ‖J v‖ ^ 2 := by
   rw [ContinuousLinearMap.adjoint_inner_left, real_inner_self_eq_norm_sq]
 
 /-- A priori bound `μ ‖δ‖ ≤ ‖Jᵀ r‖`. -/
-@[powerlib_foundation] theorem lmStep_norm_le {J : E →L[ℝ] E'} {r : E'} {μ : ℝ} (hμ : 0 < μ)
+@[tmio T, powerlib_foundation] theorem lmStep_norm_le {J : E →L[ℝ] E'} {r : E'} {μ : ℝ} (hμ : 0 < μ)
     {δ : E} (h : IsLMStep J r μ δ) : ‖δ‖ ≤ ‖(ContinuousLinearMap.adjoint J) r‖ / μ := by
   set g := (ContinuousLinearMap.adjoint J) r
   have hin := congrArg (fun w => ⟪w, δ⟫) h
@@ -368,7 +368,7 @@ def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
   · nlinarith
 
 /-- For `μ > 0` the Levenberg–Marquardt step is unique. -/
-@[powerlib_foundation] theorem lmStep_unique {J : E →L[ℝ] E'} {r : E'} {μ : ℝ} (hμ : 0 < μ)
+@[tmio T, powerlib_foundation] theorem lmStep_unique {J : E →L[ℝ] E'} {r : E'} {μ : ℝ} (hμ : 0 < μ)
     {δ₁ δ₂ : E} (h₁ : IsLMStep J r μ δ₁) (h₂ : IsLMStep J r μ δ₂) : δ₁ = δ₂ := by
   have hd : IsLMStep J 0 μ (δ₁ - δ₂) := by
     unfold IsLMStep at *
@@ -379,7 +379,7 @@ def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
   exact sub_eq_zero.mp (norm_le_zero_iff.mp this)
 
 /-- For `μ > 0` the Levenberg–Marquardt step exists (finite dimension). -/
-@[powerlib_foundation] theorem lmStep_exists [FiniteDimensional ℝ E] (J : E →L[ℝ] E') (r : E')
+@[tmio T, powerlib_foundation] theorem lmStep_exists [FiniteDimensional ℝ E] (J : E →L[ℝ] E') (r : E')
     {μ : ℝ} (hμ : 0 < μ) : ∃ δ, IsLMStep J r μ δ := by
   set T : E →ₗ[ℝ] E :=
     ((ContinuousLinearMap.adjoint J).comp J + μ • ContinuousLinearMap.id ℝ E).toLinearMap
@@ -398,7 +398,7 @@ def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
   exact ⟨δ, by simpa [IsLMStep, hT] using hδ⟩
 
 /-- `μ → ∞`: the step shrinks, `δ(μ) → 0`. -/
-@[powerlib_foundation] theorem lmStep_tendsto_zero {J : E →L[ℝ] E'} {r : E'} {δ : ℝ → E}
+@[tmio T, powerlib_foundation] theorem lmStep_tendsto_zero {J : E →L[ℝ] E'} {r : E'} {δ : ℝ → E}
     (hδ : ∀ μ > 0, IsLMStep J r μ (δ μ)) : Tendsto δ atTop (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
   have hlim : Tendsto (fun μ : ℝ => ‖(ContinuousLinearMap.adjoint J) r‖ / μ) atTop (𝓝 0) :=
@@ -408,7 +408,7 @@ def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
   exact lmStep_norm_le hμ (hδ μ hμ)
 
 /-- `μ → ∞`: `μ δ(μ) → −Jᵀ r`, the steepest-descent direction of `½‖r‖²`. -/
-@[powerlib_foundation] theorem lmStep_smul_tendsto {J : E →L[ℝ] E'} {r : E'} {δ : ℝ → E}
+@[tmio T, powerlib_foundation] theorem lmStep_smul_tendsto {J : E →L[ℝ] E'} {r : E'} {δ : ℝ → E}
     (hδ : ∀ μ > 0, IsLMStep J r μ (δ μ)) :
     Tendsto (fun μ => μ • δ μ) atTop (𝓝 (-(ContinuousLinearMap.adjoint J) r)) := by
   set G : E →L[ℝ] E := (ContinuousLinearMap.adjoint J).comp J
@@ -430,7 +430,7 @@ def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
 
 /-- `μ = 0` with a square invertible `J`: the Levenberg–Marquardt (Gauss–Newton) step is the
 Newton step `−J⁻¹ r`. -/
-@[powerlib_foundation] theorem lmStep_zero_eq_newton {J : E →L[ℝ] E} (hJ : IsUnit J) (r δ : E)
+@[tmio T, powerlib_foundation] theorem lmStep_zero_eq_newton {J : E →L[ℝ] E} (hJ : IsUnit J) (r δ : E)
     (h : IsLMStep J r 0 δ) : δ = -Ring.inverse J r := by
   unfold IsLMStep at h
   rw [zero_smul, add_zero, ← map_neg] at h

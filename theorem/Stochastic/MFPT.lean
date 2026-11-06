@@ -64,17 +64,17 @@ variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
     HasDerivAt (innerI V D θr) (exp (-V y / D)) y :=
   (Continuous.integral_hasStrictDerivAt (by fun_prop) θr y).hasDerivAt
 
-@[powerlib_foundation] theorem innerI_continuous (hV : Continuous V) :
+@[tmio T, powerlib_foundation] theorem innerI_continuous (hV : Continuous V) :
     Continuous (innerI V D θr) :=
   continuous_iff_continuousAt.2 fun y => (innerI_hasDerivAt hV y).continuousAt
 
-@[powerlib_foundation] theorem outerG_continuous (hV : Continuous V) :
+@[tmio T, powerlib_foundation] theorem outerG_continuous (hV : Continuous V) :
     Continuous (outerG V D θr) := by
   unfold outerG
   exact (by fun_prop : Continuous fun y => exp (V y / D)).mul (innerI_continuous hV)
 
 /-- `g' = (V'/D) g + 1`. -/
-@[powerlib_foundation] theorem outerG_hasDerivAt (hV : ∀ x, HasDerivAt V (V' x) x) (y : ℝ) :
+@[tmio T, powerlib_foundation] theorem outerG_hasDerivAt (hV : ∀ x, HasDerivAt V (V' x) x) (y : ℝ) :
     HasDerivAt (outerG V D θr) (V' y / D * outerG V D θr y + 1) y := by
   have hVc : Continuous V := continuous_iff_continuousAt.2 fun x => (hV x).continuousAt
   have h1 := ((hV y).div_const D).exp
@@ -87,7 +87,7 @@ variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
   ring
 
 /-- `T' = −(γ/D) g`. -/
-@[powerlib_foundation] theorem kramersT_hasDerivAt (hV : Continuous V) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem kramersT_hasDerivAt (hV : Continuous V) (θ : ℝ) :
     HasDerivAt (kramersT V D γ θr θc) (-(γ / D) * outerG V D θr θ) θ := by
   have hg := outerG_continuous (D := D) (θr := θr) hV
   have h : HasDerivAt (fun u => ∫ y in θc..u, outerG V D θr y) (outerG V D θr θ) θ :=
@@ -99,7 +99,7 @@ variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
 
 /-- **Backward MFPT equation (§1.3)**: `D T'' − V' T' = −γ`, written with the explicit first and
 second derivatives. -/
-@[powerlib_foundation] theorem kramersT_ode (hV : ∀ x, HasDerivAt V (V' x) x) (hD : D ≠ 0)
+@[tmio T, powerlib_foundation] theorem kramersT_ode (hV : ∀ x, HasDerivAt V (V' x) x) (hD : D ≠ 0)
     (θ : ℝ) :
     HasDerivAt (kramersT V D γ θr θc) (-(γ / D) * outerG V D θr θ) θ ∧
       HasDerivAt (fun u => -(γ / D) * outerG V D θr u)
@@ -112,16 +112,16 @@ second derivatives. -/
   ring
 
 /-- Absorbing boundary `T(θ_c) = 0`. -/
-@[powerlib_foundation] theorem kramersT_absorbing : kramersT V D γ θr θc θc = 0 := by
+@[tmio T, powerlib_foundation] theorem kramersT_absorbing : kramersT V D γ θr θc θc = 0 := by
   simp [kramersT]
 
 /-- Reflecting boundary `T'(θ_r) = 0` (the inner integral vanishes there). -/
-@[powerlib_foundation] theorem kramersT_reflecting : -(γ / D) * outerG V D θr θr = 0 := by
+@[tmio T, powerlib_foundation] theorem kramersT_reflecting : -(γ / D) * outerG V D θr θr = 0 := by
   simp [outerG, innerI]
 
 /-- Uniqueness: any twice-differentiable solution of `D U'' − V' U' = −γ` with `U(θ_c) = 0`,
 `U'(θ_r) = 0` is the Kramers double integral. -/
-@[powerlib_foundation] theorem kramersT_unique (hV : ∀ x, HasDerivAt V (V' x) x) (hD : D ≠ 0)
+@[tmio T, powerlib_foundation] theorem kramersT_unique (hV : ∀ x, HasDerivAt V (V' x) x) (hD : D ≠ 0)
     {U U1 U2 : ℝ → ℝ} (hU : ∀ θ, HasDerivAt U (U1 θ) θ) (hU1 : ∀ θ, HasDerivAt U1 (U2 θ) θ)
     (hode : ∀ θ, D * U2 θ - V' θ * U1 θ = -γ) (hc : U θc = 0) (hr : U1 θr = 0) :
     U = kramersT V D γ θr θc := by
@@ -164,7 +164,7 @@ second derivatives. -/
   linarith
 
 /-- Positivity inside the domain: `T(θ) > 0` for `θ_r < θ < θ_c` (`γ, D > 0`). -/
-@[powerlib_foundation] theorem kramersT_pos (hV : Continuous V) (hD : 0 < D) (hγ : 0 < γ)
+@[tmio T, powerlib_foundation] theorem kramersT_pos (hV : Continuous V) (hD : 0 < D) (hγ : 0 < γ)
     {θ : ℝ} (h1 : θr ≤ θ) (h2 : θ < θc) : 0 < kramersT V D γ θr θc θ := by
   unfold kramersT
   apply mul_pos (div_pos hγ hD)
@@ -183,7 +183,7 @@ second derivatives. -/
 
 /-- For any `C²` function `T`, the adjoint-form expression `−(1/γ)(V' T)' + (D/γ) T''` equals the
 backward expression `−(V'/γ) T' + (D/γ) T''` minus `V'' T/γ`. -/
-@[powerlib_foundation] theorem adjointForm_residual {V2 : ℝ → ℝ} {T T1 : ℝ → ℝ} {θ : ℝ}
+@[tmio T, powerlib_foundation] theorem adjointForm_residual {V2 : ℝ → ℝ} {T T1 : ℝ → ℝ} {θ : ℝ}
     (hV' : HasDerivAt V' (V2 θ) θ) (hT : HasDerivAt T (T1 θ) θ) (T2 : ℝ) :
     HasDerivAt (fun u => V' u * T u) (V2 θ * T θ + V' θ * T1 θ) θ ∧
       -(1 / γ) * (V2 θ * T θ + V' θ * T1 θ) + D / γ * T2 =
@@ -193,7 +193,7 @@ backward expression `−(V'/γ) T' + (D/γ) T''` minus `V'' T/γ`. -/
 
 /-- **The adjoint form fails for the MFPT** inside a convex well: the Kramers solution satisfies the
 backward equation, and its adjoint-form value is `−1 − V'' T/γ ≠ −1` wherever `V'' T ≠ 0`. -/
-@[powerlib_foundation] theorem adjointForm_ne (hV : ∀ x, HasDerivAt V (V' x) x) {V2 : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem adjointForm_ne (hV : ∀ x, HasDerivAt V (V' x) x) {V2 : ℝ → ℝ}
     (hV' : ∀ x, HasDerivAt V' (V2 x) x) (hD : 0 < D) (hγ : 0 < γ) {θ : ℝ} (h1 : θr ≤ θ)
     (h2 : θ < θc) (hconv : 0 < V2 θ) :
     HasDerivAt (fun u => V' u * kramersT V D γ θr θc u)
@@ -216,7 +216,7 @@ backward equation, and its adjoint-form value is `−1 − V'' T/γ ≠ −1` wh
 /-- **Kramers prefactor (§1.4)**: the two Gaussian factors combine as
 `(γ/D) √(2πD/κ_b) √(2πD/κ_a) = 2πγ/√(κ_a κ_b)` (`κ_a = V''(θ_a)`, `κ_b = |V''(θ_b)|`); `D`
 cancels. -/
-@[powerlib_foundation] theorem kramers_prefactor {κa κb : ℝ} (hD : 0 < D) (ha : 0 < κa)
+@[tmio T, powerlib_foundation] theorem kramers_prefactor {κa κb : ℝ} (hD : 0 < D) (ha : 0 < κa)
     (hb : 0 < κb) :
     γ / D * √(2 * π * D / κb) * √(2 * π * D / κa) = 2 * π * γ / √(κa * κb) := by
   have hπ : 0 < π := pi_pos
@@ -227,7 +227,7 @@ cancels. -/
 
 /-- Pure diffusion between two absorbing points (`V' = 0`, `L = D d²/dθ²`): the MFPT
 `m(θ) = (θ − a)(b − θ)/(2D)` solves `D m'' = −1`, `m(a) = m(b) = 0`. -/
-@[powerlib_foundation] theorem mfpt_free_diffusion {a b : ℝ} (hD : D ≠ 0) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem mfpt_free_diffusion {a b : ℝ} (hD : D ≠ 0) (θ : ℝ) :
     HasDerivAt (fun x => (x - a) * (b - x) / (2 * D)) ((a + b - 2 * θ) / (2 * D)) θ ∧
       HasDerivAt (fun x => (a + b - 2 * x) / (2 * D)) (-2 / (2 * D)) θ ∧
       D * (-2 / (2 * D)) = -1 ∧
@@ -240,7 +240,7 @@ cancels. -/
     convert! this using 1; ring
 
 /-- Hit probability before `T` is one minus the survival probability: `h = 1 − s`. -/
-@[powerlib_foundation] theorem hit_eq_one_sub_survival {Ω : Type*} [MeasurableSpace Ω]
+@[tmio T, powerlib_foundation] theorem hit_eq_one_sub_survival {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsProbabilityMeasure P] {τ : Ω → ℝ} (hτ : Measurable τ) (t : ℝ) :
     P.real {ω | τ ω ≤ t} = 1 - P.real {ω | t < τ ω} := by
   have hs : MeasurableSet {ω | t < τ ω} := measurableSet_lt measurable_const hτ

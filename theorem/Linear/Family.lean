@@ -53,7 +53,7 @@ the plant is Hurwitz: the behaviour about every operating point is the zero-inpu
   exact holds_iff_isHurwitz e hP
 
 /-- A one-state plant is Hurwitz exactly when its state coefficient is negative. -/
-@[powerlib_foundation] theorem isHurwitz_one_iff (a : ℝ) : IsHurwitz !![a] ↔ a < 0 := by
+@[tmio T, powerlib_foundation] theorem isHurwitz_one_iff (a : ℝ) : IsHurwitz !![a] ↔ a < 0 := by
   rw [← spectrallyStable_iff_isHurwitz]
   constructor
   · intro h
@@ -134,11 +134,11 @@ stable denotation, equivalently its plant is not Hurwitz. -/
   exact ⟨_, c.passiveWith⟩
 
 /-- A family read in another representation stays linear. -/
-@[powerlib_foundation] theorem IsLinear.comap (hF : F.IsLinear plant) (g : Y → X) :
+@[tmio M, powerlib_foundation] theorem IsLinear.comap (hF : F.IsLinear plant) (g : Y → X) :
     (F.comap g).IsLinear (plant ∘ g) := fun y => hF (g y)
 
 /-- A family with an extended requirement language stays linear. -/
-@[powerlib_foundation] theorem IsLinear.extend (hF : F.IsLinear plant) (g : Y → X)
+@[tmio M, powerlib_foundation] theorem IsLinear.extend (hF : F.IsLinear plant) (g : Y → X)
     (extra : Y → R → Prop) : (F.extend g extra).IsLinear (plant ∘ g) := fun y => hF (g y)
 
 end Family

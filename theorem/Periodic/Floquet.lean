@@ -130,7 +130,7 @@ stated on the transition matrix: `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for all 
 
 /-- Trajectory form of the Floquet criterion: every forward solution of `ẋ = A(t) x` decays
 exponentially, uniformly in the initial time. -/
-@[powerlib_foundation] theorem trajectory_decay_of_spectralRadius_lt_one
+@[tmio T, powerlib_foundation] theorem trajectory_decay_of_spectralRadius_lt_one
     (hA : Continuous A) (hP : Periodic A T) (hT : 0 < T)
     (hρ : spectralRadius ℂ ((monodromy A T 0).map (algebraMap ℝ ℂ)) < 1) :
     ∃ K β : ℝ, 0 < β ∧ ∀ (s : ℝ) (x : ℝ → X → ℝ),

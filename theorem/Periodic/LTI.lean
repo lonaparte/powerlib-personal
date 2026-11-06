@@ -48,12 +48,12 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
   simpa using h.symm
 
 /-- LTI monodromy: `monodromy (fun _ => A) T s = exp (T • A)` (`T ≥ 0`). -/
-@[powerlib_foundation] theorem monodromy_const (A : Matrix X X ℝ) {T : ℝ} (hT : 0 ≤ T)
+@[tmio T, powerlib_foundation] theorem monodromy_const (A : Matrix X X ℝ) {T : ℝ} (hT : 0 ≤ T)
     (s : ℝ) : monodromy (fun _ => A) T s = NormedSpace.exp (T • A) := by
   rw [monodromy, transition_const A (by linarith), add_sub_cancel_left]
 
 /-- A complex matrix exponential acts on an eigenvector by the exponential of the eigenvalue. -/
-@[powerlib_foundation] theorem exp_mulVec_of_eigen (B : Matrix X X ℂ) {μ : ℂ} {v : X → ℂ}
+@[tmio T, powerlib_foundation] theorem exp_mulVec_of_eigen (B : Matrix X X ℂ) {μ : ℂ} {v : X → ℂ}
     (hv : B *ᵥ v = μ • v) : NormedSpace.exp B *ᵥ v = Complex.exp μ • v := by
   have hpow : ∀ k : ℕ, (B ^ k) *ᵥ v = μ ^ k • v := by
     intro k
@@ -78,7 +78,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
 
 /-- LTI Floquet multiplier: an eigenpair `(μ, v)` of the complexified constant matrix gives
 `M v = e^{μ T} v` for the monodromy matrix `M = exp (T • A)`. -/
-@[powerlib_foundation] theorem monodromy_const_mulVec_eigen (A : Matrix X X ℝ) {T : ℝ}
+@[tmio T, powerlib_foundation] theorem monodromy_const_mulVec_eigen (A : Matrix X X ℝ) {T : ℝ}
     (hT : 0 ≤ T) (s : ℝ) {μ : ℂ} {v : X → ℂ} (hv : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     (monodromy (fun _ => A) T s).map (algebraMap ℝ ℂ) *ᵥ v = Complex.exp (μ * T) • v := by
   rw [monodromy_const A hT]
@@ -97,13 +97,13 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
   rw [Matrix.smul_mulVec, hv, smul_smul, mul_comm]
 
 /-- `|e^{μ T}| = e^{(Re μ) T}`. -/
-@[powerlib_foundation] theorem norm_exp_mul_eq (μ : ℂ) (T : ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_exp_mul_eq (μ : ℂ) (T : ℝ) :
     ‖Complex.exp (μ * T)‖ = Real.exp (μ.re * T) := by
   rw [Complex.norm_exp]
   simp
 
 /-- The Floquet rate `ln |ρ| / T` of the multiplier `ρ = e^{μ T}` is `Re μ`. -/
-@[powerlib_foundation] theorem log_norm_exp_div (μ : ℂ) {T : ℝ} (hT : T ≠ 0) :
+@[tmio T, powerlib_foundation] theorem log_norm_exp_div (μ : ℂ) {T : ℝ} (hT : T ≠ 0) :
     Real.log ‖Complex.exp (μ * T)‖ / T = μ.re := by
   rw [norm_exp_mul_eq, Real.log_exp]
   field_simp

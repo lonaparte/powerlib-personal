@@ -82,7 +82,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
     Matrix.one_mulVec]
 
 /-- `jω χ = A₀ χ + b`. -/
-@[powerlib_foundation] theorem forcedAmplitude_eq {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ}
+@[tmio T, powerlib_foundation] theorem forcedAmplitude_eq {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ}
     (b : Fin n → ℂ) (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0) :
     ((ω : ℂ) * I) • forcedAmplitude A b ω =
       A.map (algebraMap ℝ ℂ) *ᵥ forcedAmplitude A b ω + b := by
@@ -92,7 +92,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
   exact sub_eq_iff_eq_add'.mp h1
 
 /-- A Hurwitz matrix has no eigenvalue on the imaginary axis. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_imag_ne_zero
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_imag_ne_zero
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) (ω : ℝ) :
     (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0 := by
   intro h
@@ -100,7 +100,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
   simp at this
 
 /-- `x₁` is a global solution of the forced LTI equation `ẋ = A₀ x + Re(b e^{jωt})`. -/
-@[powerlib_foundation] theorem forcedOrbit_solves {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ}
+@[tmio T, powerlib_foundation] theorem forcedOrbit_solves {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ}
     (b : Fin n → ℂ) (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0) :
     ∀ t, HasDerivAt (forcedOrbit A b ω)
       (Linear.op A (forcedOrbit A b ω t) + forcing b ω t) t := by
@@ -138,7 +138,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
   ring
 
 /-- `x₁` has the forcing period `T` when `ω T = 2π`. -/
-@[powerlib_foundation] theorem forcedOrbit_periodic {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem forcedOrbit_periodic {A : Matrix (Fin n) (Fin n) ℝ}
     (b : Fin n → ℂ) {ω T : ℝ} (hT : ω * T = 2 * Real.pi) (t : ℝ) :
     forcedOrbit A b ω (t + T) = forcedOrbit A b ω t := by
   simp only [forcedOrbit]
@@ -151,7 +151,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
 
 /-- The deviation of a global solution `x` of the forced equation from the forced orbit obeys
 the homogeneous LTI equation `ė = A₀ e`. -/
-@[powerlib_foundation] theorem isTrajectory_sub_forcedOrbit {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isTrajectory_sub_forcedOrbit {A : Matrix (Fin n) (Fin n) ℝ}
     {ω : ℝ} {b : Fin n → ℂ} (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0)
     {x : ℝ → ℝⁿ} (hx : ∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) :
     ∀ t, HasDerivAt (fun t => x t - forcedOrbit A b ω t)
@@ -163,7 +163,7 @@ the homogeneous LTI equation `ė = A₀ e`. -/
 
 /-- Hurwitz `A₀`: every global solution of the forced equation converges exponentially to the
 forced orbit. -/
-@[powerlib_foundation] theorem forced_error_bound {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem forced_error_bound {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) (b : Fin n → ℂ) (ω : ℝ) :
     ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝⁿ,
       (∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) → ∀ t, 0 ≤ t →
@@ -175,7 +175,7 @@ forced orbit. -/
 
 /-- Hurwitz `A₀`: the forced orbit is the only global solution of the forced equation with the
 forcing period `T = 2π/ω` (`ω T = 2π`, `T > 0`). -/
-@[powerlib_foundation] theorem forced_periodic_unique {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem forced_periodic_unique {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) (b : Fin n → ℂ) {ω T : ℝ} (hT0 : 0 < T)
     (hT : ω * T = 2 * Real.pi) {x : ℝ → ℝⁿ}
     (hx : ∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t)
@@ -222,7 +222,7 @@ forcing period `T = 2π/ω` (`ω T = 2π`, `T > 0`). -/
 variable {U : Type*}
 
 /-- A constant state Jacobian `A₀` (`D²f = 0`, `A₁ = 0`) forces `f(z, u) = A₀ z + f(0, u)`. -/
-@[powerlib_foundation] theorem affine_of_const_jacobian {f : ℝⁿ → U → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem affine_of_const_jacobian {f : ℝⁿ → U → ℝⁿ}
     {A : Matrix (Fin n) (Fin n) ℝ}
     (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
     (z : ℝⁿ) (u : U) : f z u = Linear.op A z + f 0 u := by
@@ -238,7 +238,7 @@ variable {U : Type*}
   rw [← this]; abel
 
 /-- Along any orbit the variational matrix is the constant `A₀`. -/
-@[powerlib_foundation] theorem jacobian_along_orbit {f : ℝⁿ → U → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem jacobian_along_orbit {f : ℝⁿ → U → ℝⁿ}
     {A : Matrix (Fin n) (Fin n) ℝ}
     (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
     (u : ℝ → U) (z_orb : ℝ → ℝⁿ) (t : ℝ) :
@@ -250,7 +250,7 @@ exponentially stable iff `A₀` is Hurwitz: the forcing can produce a large resp
 parametric instability. Exponential stability of `z_orb` means that every global solution
 converges to it at a uniform exponential rate,
 `‖z(t) − z_orb(t)‖ ≤ K e^{−rate t} ‖z(0) − z_orb(0)‖` for `t ≥ 0`. -/
-@[powerlib_foundation] theorem orbitExponentiallyStable_iff {f : ℝⁿ → U → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem orbitExponentiallyStable_iff {f : ℝⁿ → U → ℝⁿ}
     {A : Matrix (Fin n) (Fin n) ℝ}
     (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
     {u : ℝ → U} {z_orb : ℝ → ℝⁿ} (horb : ∀ t, HasDerivAt z_orb (f (z_orb t) (u t)) t) :
@@ -280,7 +280,7 @@ converges to it at a uniform exponential rate,
 /-! ### Additive forcing does not enter the Jacobian -/
 
 /-- For `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)` for every `ε` and `t`. -/
-@[powerlib_foundation] theorem jacobian_additive_forcing {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem jacobian_additive_forcing {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : E → E) (g : ℝ → E) (ε t : ℝ) (x : E) :
     fderiv ℝ (fun y => f y + ε • g t) x = fderiv ℝ f x :=
   fderiv_add_const _

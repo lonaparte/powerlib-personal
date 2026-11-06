@@ -59,7 +59,7 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   (min id I, sgn iq * Real.sqrt (I ^ 2 - (min id I) ^ 2))
 
 /-- The corrected limiter never exceeds the limit. -/
-@[powerlib_foundation] theorem dPriority_norm_le {I : ℝ} (hI : 0 ≤ I) (id iq : ℝ) :
+@[tmio M, powerlib_foundation] theorem dPriority_norm_le {I : ℝ} (hI : 0 ≤ I) (id iq : ℝ) :
     (dPriority I id iq).1 ^ 2 + (dPriority I id iq).2 ^ 2 ≤ I ^ 2 := by
   simp only [dPriority]
   have h1 := clampSym_sq_le hI id
@@ -68,7 +68,7 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   linarith
 
 /-- No action inside the limit disc. -/
-@[powerlib_foundation] theorem dPriority_of_within {I id iq : ℝ} (hI : 0 ≤ I)
+@[tmio M, powerlib_foundation] theorem dPriority_of_within {I id iq : ℝ} (hI : 0 ≤ I)
     (h : id ^ 2 + iq ^ 2 ≤ I ^ 2) : dPriority I id iq = (id, iq) := by
   have hd : |id| ≤ I :=
     abs_le_of_sq_le_sq' (by nlinarith [sq_nonneg iq]) hI |> fun h => abs_le.mpr h
@@ -79,26 +79,26 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   simp only [dPriority, hcd, clampSym_of_abs_le hq]
 
 /-- d-axis priority: `i_d` is kept whenever `|i_d| ≤ I`. -/
-@[powerlib_foundation] theorem dPriority_fst_of_abs_le {I id : ℝ} (h : |id| ≤ I) (iq : ℝ) :
+@[tmio M, powerlib_foundation] theorem dPriority_fst_of_abs_le {I id : ℝ} (h : |id| ≤ I) (iq : ℝ) :
     (dPriority I id iq).1 = id :=
   clampSym_of_abs_le h
 
-@[powerlib_foundation] theorem clampSym_nonneg {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) :
+@[tmio T, powerlib_foundation] theorem clampSym_nonneg {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) :
     0 ≤ clampSym r x :=
   le_max_of_le_right (le_min hx hr)
 
-@[powerlib_foundation] theorem clampSym_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : x ≤ 0) :
+@[tmio T, powerlib_foundation] theorem clampSym_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : x ≤ 0) :
     clampSym r x ≤ 0 :=
   max_le (by linarith) ((min_le_left _ _).trans hx)
 
 /-- The sign of `i_q` is preserved. -/
-@[powerlib_foundation] theorem dPriority_snd_sign (I id iq : ℝ) :
+@[tmio M, powerlib_foundation] theorem dPriority_snd_sign (I id iq : ℝ) :
     (0 ≤ iq → 0 ≤ (dPriority I id iq).2) ∧ (iq ≤ 0 → (dPriority I id iq).2 ≤ 0) :=
   ⟨fun h => clampSym_nonneg (Real.sqrt_nonneg _) h,
     fun h => clampSym_nonpos (Real.sqrt_nonneg _) h⟩
 
 /-- Correction (a): the note's rule changes a reference that is inside the limit. -/
-@[powerlib_foundation] theorem dPriorityNote_overwrites :
+@[tmio M, powerlib_foundation] theorem dPriorityNote_overwrites :
     (0 : ℝ) ^ 2 + (1 / 2) ^ 2 ≤ 1 ^ 2 ∧ dPriorityNote 1 0 (1 / 2) ≠ (0, 1 / 2) := by
   refine ⟨by norm_num, ?_⟩
   intro h
@@ -106,14 +106,14 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   simp [dPriorityNote, sgn] at h2
 
 /-- Correction (b): the note's rule does not limit a negative `i_d` (exported power). -/
-@[powerlib_foundation] theorem dPriorityNote_exceeds :
+@[tmio M, powerlib_foundation] theorem dPriorityNote_exceeds :
     1 ^ 2 < (dPriorityNote 1 (-2) 0).1 ^ 2 + (dPriorityNote 1 (-2) 0).2 ^ 2 := by
   simp [dPriorityNote]
   norm_num
 
 /-- Component-wise clipping does not commute with a frame rotation: rotating `(1, 1)` by
 `π/4` and clipping to `I = 1` differs from clipping and then rotating. -/
-@[powerlib_foundation] theorem clamp_not_rotation_invariant :
+@[tmio T, powerlib_foundation] theorem clamp_not_rotation_invariant :
     let rotQ : ℝ → ℝ → ℝ := fun a b => Real.sin (Real.pi / 4) * a + Real.cos (Real.pi / 4) * b
     clampSym 1 (rotQ 1 1) ≠ rotQ (clampSym 1 1) (clampSym 1 1) := by
   intro rotQ

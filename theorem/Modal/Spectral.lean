@@ -62,7 +62,7 @@ variable {A : Matrix n n ℂ} (mb : ModalBasis A)
     _ = ∏ i, (s - mb.eig i) := by rw [h, mul_one]
 
 /-- The characteristic polynomial is `Π_i (X − λ_i)`. -/
-@[powerlib_foundation] theorem charpoly_eq_prod :
+@[tmio T, powerlib_foundation] theorem charpoly_eq_prod :
     A.charpoly = ∏ i, (Polynomial.X - Polynomial.C (mb.eig i)) := by
   apply Polynomial.funext
   intro s
@@ -71,7 +71,7 @@ variable {A : Matrix n n ℂ} (mb : ModalBasis A)
   rw [← mb.det_sub_eq_prod s, Matrix.scalar_apply, smul_one_eq_diagonal]
 
 /-- The algebraic multiplicity of `μ` is the number of modal indices with `λ_i = μ`. -/
-@[powerlib_foundation] theorem rootMultiplicity_eq_card (μ : ℂ) :
+@[tmio T, powerlib_foundation] theorem rootMultiplicity_eq_card (μ : ℂ) :
     A.charpoly.rootMultiplicity μ = (Finset.univ.filter fun i => mb.eig i = μ).card := by
   classical
   rw [← Polynomial.count_roots, mb.charpoly_eq_prod]
@@ -92,19 +92,19 @@ def spectralProj (μ : ℂ) : Matrix n n ℂ :=
 /-- Subspace participation `P_{k,μ} = Σ_{λ_i = μ} p_{ki}`. -/
 def subspacePF (k : n) (μ : ℂ) : ℂ := ∑ i ∈ Finset.univ.filter (fun i => mb.eig i = μ), mb.pf k i
 
-@[powerlib_foundation] theorem spectralProj_apply (μ : ℂ) (k l : n) :
+@[tmio T, powerlib_foundation] theorem spectralProj_apply (μ : ℂ) (k l : n) :
     mb.spectralProj μ k l = ∑ i, (if mb.eig i = μ then mb.V k i * mb.W l i else 0) := by
   rw [spectralProj, Matrix.mul_apply]
   simp only [Matrix.mul_diagonal, transpose_apply]
   refine Finset.sum_congr rfl fun i _ => ?_
   split_ifs <;> ring
 
-@[powerlib_foundation] theorem subspacePF_eq_spectralProj (k : n) (μ : ℂ) :
+@[tmio T, powerlib_foundation] theorem subspacePF_eq_spectralProj (k : n) (μ : ℂ) :
     mb.subspacePF k μ = mb.spectralProj μ k k := by
   rw [spectralProj_apply, subspacePF, Finset.sum_filter]; rfl
 
 /-- `ψ_iᵀ x = 0` whenever `x` is a right eigenvector for an eigenvalue different from `λ_i`. -/
-@[powerlib_foundation] theorem ψ_dot_eigvec {ν : ℂ} {x : n → ℂ} (hx : A *ᵥ x = ν • x) {i : n}
+@[tmio T, powerlib_foundation] theorem ψ_dot_eigvec {ν : ℂ} {x : n → ℂ} (hx : A *ᵥ x = ν • x) {i : n}
     (hi : mb.eig i ≠ ν) : mb.ψ i ⬝ᵥ x = 0 := by
   have h1 : mb.ψ i ⬝ᵥ (A *ᵥ x) = ν * (mb.ψ i ⬝ᵥ x) := by rw [hx, dotProduct_smul, smul_eq_mul]
   have h2 : mb.ψ i ⬝ᵥ (A *ᵥ x) = mb.eig i * (mb.ψ i ⬝ᵥ x) := by
@@ -112,7 +112,7 @@ def subspacePF (k : n) (μ : ℂ) : ℂ := ∑ i ∈ Finset.univ.filter (fun i =
   have h3 : (mb.eig i - ν) * (mb.ψ i ⬝ᵥ x) = 0 := by linear_combination h1 - h2
   exact (mul_eq_zero.1 h3).resolve_left (sub_ne_zero.2 hi)
 
-@[powerlib_foundation] theorem spectralProj_mulVec_apply (μ : ℂ) (x : n → ℂ) :
+@[tmio T, powerlib_foundation] theorem spectralProj_mulVec_apply (μ : ℂ) (x : n → ℂ) :
     mb.spectralProj μ *ᵥ x = ∑ i, (if mb.eig i = μ then mb.ψ i ⬝ᵥ x else 0) • mb.v i := by
   ext k
   simp only [Matrix.mulVec, dotProduct, spectralProj_apply, Finset.sum_apply, Pi.smul_apply,
@@ -124,7 +124,7 @@ def subspacePF (k : n) (μ : ℂ) : ℂ := ∑ i ∈ Finset.univ.filter (fun i =
   · simp
 
 /-- Modal expansion of a vector: `x = Σ_i (ψ_iᵀ x) v_i`. -/
-@[powerlib_foundation] theorem eq_sum_modal (x : n → ℂ) : x = ∑ i, (mb.ψ i ⬝ᵥ x) • mb.v i := by
+@[tmio T, powerlib_foundation] theorem eq_sum_modal (x : n → ℂ) : x = ∑ i, (mb.ψ i ⬝ᵥ x) • mb.v i := by
   conv_lhs => rw [show x = mb.V *ᵥ (mb.Wᵀ *ᵥ x) by
     rw [Matrix.mulVec_mulVec, mb.V_mul_Wt, Matrix.one_mulVec]]
   ext k
@@ -134,7 +134,7 @@ def subspacePF (k : n) (μ : ℂ) : ℂ := ∑ i ∈ Finset.univ.filter (fun i =
   ring
 
 /-- `E_μ` acts as the identity on `μ`-eigenvectors and as zero on other eigenvectors. -/
-@[powerlib_foundation] theorem spectralProj_mulVec_eigvec (μ : ℂ) {ν : ℂ} {x : n → ℂ}
+@[tmio T, powerlib_foundation] theorem spectralProj_mulVec_eigvec (μ : ℂ) {ν : ℂ} {x : n → ℂ}
     (hx : A *ᵥ x = ν • x) : mb.spectralProj μ *ᵥ x = if ν = μ then x else 0 := by
   rw [spectralProj_mulVec_apply]
   have hexp := mb.eq_sum_modal x
@@ -151,7 +151,7 @@ def subspacePF (k : n) (μ : ℂ) : ℂ := ∑ i ∈ Finset.univ.filter (fun i =
     · exact zero_smul _ _
 
 /-- The spectral projector does not depend on the modal basis. -/
-@[powerlib_foundation] theorem spectralProj_eq (mb' : ModalBasis A) (μ : ℂ) :
+@[tmio T, powerlib_foundation] theorem spectralProj_eq (mb' : ModalBasis A) (μ : ℂ) :
     mb.spectralProj μ = mb'.spectralProj μ := by
   have hcols : mb.spectralProj μ * mb'.V = mb'.spectralProj μ * mb'.V := by
     ext k j
@@ -165,12 +165,12 @@ def subspacePF (k : n) (μ : ℂ) : ℂ := ∑ i ∈ Finset.univ.filter (fun i =
     _ = mb'.spectralProj μ := by rw [Matrix.mul_assoc, mb'.V_mul_Wt, Matrix.mul_one]
 
 /-- Subspace participation is basis independent. -/
-@[powerlib_foundation] theorem subspacePF_eq (mb' : ModalBasis A) (k : n) (μ : ℂ) :
+@[tmio T, powerlib_foundation] theorem subspacePF_eq (mb' : ModalBasis A) (k : n) (μ : ℂ) :
     mb.subspacePF k μ = mb'.subspacePF k μ := by
   rw [subspacePF_eq_spectralProj, subspacePF_eq_spectralProj, spectralProj_eq mb mb']
 
 /-- `Σ_k P_{k,μ}` is the algebraic multiplicity of `μ` (trace of the spectral projector). -/
-@[powerlib_foundation] theorem sum_subspacePF (μ : ℂ) :
+@[tmio T, powerlib_foundation] theorem sum_subspacePF (μ : ℂ) :
     ∑ k, mb.subspacePF k μ = (A.charpoly.rootMultiplicity μ : ℂ) := by
   rw [mb.rootMultiplicity_eq_card]
   simp only [subspacePF]
@@ -181,7 +181,7 @@ end ModalBasis
 
 /-! ## Residues at simple eigenvalues (§1.1, §1.5) -/
 
-@[powerlib_foundation] theorem eventually_ne_all (lam : n → ℂ) {i : n}
+@[tmio T, powerlib_foundation] theorem eventually_ne_all (lam : n → ℂ) {i : n}
     (hsimple : ∀ j, j ≠ i → lam j ≠ lam i) : ∀ᶠ s in 𝓝[≠] lam i, ∀ j, s ≠ lam j := by
   rw [Filter.eventually_all]
   intro j
@@ -190,7 +190,7 @@ end ModalBasis
   · exact nhdsWithin_le_nhds (isOpen_ne.mem_nhds (hsimple j hj).symm)
 
 /-- Partial-fraction residue: `(s − λ_i) Σ_j a_j / (s − λ_j) → a_i` at a simple `λ_i`. -/
-@[powerlib_foundation] theorem tendsto_partial_fraction (lam a : n → ℂ) {i : n}
+@[tmio T, powerlib_foundation] theorem tendsto_partial_fraction (lam a : n → ℂ) {i : n}
     (hsimple : ∀ j, j ≠ i → lam j ≠ lam i) :
     Tendsto (fun s => (s - lam i) * ∑ j, a j / (s - lam j)) (𝓝[≠] lam i) (𝓝 (a i)) := by
   let g : ℂ → ℂ := fun s => ∑ j, (if j = i then a j else a j * (s - lam i) / (s - lam j))
@@ -217,7 +217,7 @@ namespace ModalBasis
 variable {A : Matrix n n ℂ} (mb : ModalBasis A)
 
 /-- `(s − λ_i) [(sI − A)⁻¹]_{kl} → v_{ki} ψ_{li}` at a simple eigenvalue. -/
-@[powerlib_foundation] theorem tendsto_resolvent_residue {i : n}
+@[tmio T, powerlib_foundation] theorem tendsto_resolvent_residue {i : n}
     (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) (k l : n) :
     Tendsto (fun s => (s - mb.eig i) * (s • (1 : Matrix n n ℂ) - A)⁻¹ k l) (𝓝[≠] mb.eig i)
       (𝓝 (mb.V k i * mb.W l i)) := by
@@ -226,14 +226,14 @@ variable {A : Matrix n n ℂ} (mb : ModalBasis A)
   rw [mb.resolvent_apply hs]
 
 /-- The participation factor is the residue of the `(k,k)` resolvent channel. -/
-@[powerlib_foundation] theorem tendsto_pf_residue {i : n}
+@[tmio T, powerlib_foundation] theorem tendsto_pf_residue {i : n}
     (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) (k : n) :
     Tendsto (fun s => (s - mb.eig i) * (s • (1 : Matrix n n ℂ) - A)⁻¹ k k) (𝓝[≠] mb.eig i)
       (𝓝 (mb.pf k i)) :=
   mb.tendsto_resolvent_residue hsimple k k
 
 /-- `(s − λ_i) C (sI − A)⁻¹ B → R^{(i)}` at a simple eigenvalue. -/
-@[powerlib_foundation] theorem tendsto_io_residue {κ κ' : Type*} (C : Matrix κ n ℂ)
+@[tmio T, powerlib_foundation] theorem tendsto_io_residue {κ κ' : Type*} (C : Matrix κ n ℂ)
     (B : Matrix n κ' ℂ) {i : n} (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) :
     Tendsto (fun s => (s - mb.eig i) • (C * (s • (1 : Matrix n n ℂ) - A)⁻¹ * B))
       (𝓝[≠] mb.eig i) (𝓝 (mb.residue C B i)) := by
@@ -245,7 +245,7 @@ variable {A : Matrix n n ℂ} (mb : ModalBasis A)
   refine Finset.sum_congr rfl fun r _ => ?_
   ring
 
-@[powerlib_foundation] theorem residue_eq_zero_iff' {κ κ' : Type*} (C : Matrix κ n ℂ)
+@[tmio T, powerlib_foundation] theorem residue_eq_zero_iff' {κ κ' : Type*} (C : Matrix κ n ℂ)
     (B : Matrix n κ' ℂ) (i : n) :
     mb.residue C B i = 0 ↔ C *ᵥ mb.v i = 0 ∨ vecMul (mb.ψ i) B = 0 := by
   constructor
@@ -263,7 +263,7 @@ end ModalBasis
 
 /-! ## Modal free response (`T-small-signal-stability.md` §1.5) -/
 
-@[powerlib_foundation] theorem scalar_linear_ode {w : ℝ → ℂ} {c : ℂ}
+@[tmio T, powerlib_foundation] theorem scalar_linear_ode {w : ℝ → ℂ} {c : ℂ}
     (h : ∀ t, HasDerivAt w (c * w t) t) (t : ℝ) : w t = Complex.exp (c * t) * w 0 := by
   let g : ℝ → ℂ := fun t => Complex.exp (-(c * t)) * w t
   have hg : ∀ t, HasDerivAt g 0 t := by
@@ -280,7 +280,7 @@ end ModalBasis
 
 /-- Modal decomposition of every global free response of a real linear system `ẋ = A x` with
 diagonalisable state matrix: `x(t) = Σ_i e^{λ_i t} (ψ_iᵀ x(0)) v_i` (complexified). -/
-@[powerlib_foundation] theorem modal_free_response {N : ℕ} {A : Matrix (Fin N) (Fin N) ℝ}
+@[tmio T, powerlib_foundation] theorem modal_free_response {N : ℕ} {A : Matrix (Fin N) (Fin N) ℝ}
     (mb : ModalBasis (Linear.complexify A)) {x : ℝ → EuclideanSpace ℝ (Fin N)}
     (hx : ∀ t, HasDerivAt x (Linear.op A (x t)) t) (t : ℝ) :
     (fun k => (x t k : ℂ)) =
@@ -312,7 +312,7 @@ diagonalisable state matrix: `x(t) = Σ_i e^{λ_i t} (ψ_iᵀ x(0)) v_i` (comple
 /-- The modal decomposition on every solution segment `[0, T]` of the linear field
 `x ↦ A x` (`LinearSystems.affineLinearVectorField A 0`, LeanForControl's `IsTrajectoryOn`): the
 segment is the matrix-exponential solution (`Linear.trajectory_eq_solution`). -/
-@[powerlib_foundation] theorem modal_free_response_on {N : ℕ} {A : Matrix (Fin N) (Fin N) ℝ}
+@[tmio T, powerlib_foundation] theorem modal_free_response_on {N : ℕ} {A : Matrix (Fin N) (Fin N) ℝ}
     (mb : ModalBasis (Linear.complexify A)) {x : ℝ → EuclideanSpace ℝ (Fin N)} {T : ℝ}
     (hx : IsTrajectoryOn x (LinearSystems.affineLinearVectorField A 0) 0 T) {t : ℝ}
     (ht : t ∈ Set.Icc 0 T) :
@@ -328,7 +328,7 @@ segment is the matrix-exponential solution (`Linear.trajectory_eq_solution`). -/
   exact modal_free_response mb hsol t
 
 /-- With `x(0) = e_k`, the `k`-th state of a global solution is `x_k(t) = Σ_i p_{ki} e^{λ_i t}`. -/
-@[powerlib_foundation] theorem pf_free_response {N : ℕ} {A : Matrix (Fin N) (Fin N) ℝ}
+@[tmio T, powerlib_foundation] theorem pf_free_response {N : ℕ} {A : Matrix (Fin N) (Fin N) ℝ}
     (mb : ModalBasis (Linear.complexify A)) {x : ℝ → EuclideanSpace ℝ (Fin N)}
     (hx : ∀ t, HasDerivAt x (Linear.op A (x t)) t)
     {k : Fin N} (h0 : x 0 = EuclideanSpace.single k 1) (t : ℝ) :
@@ -347,7 +347,7 @@ segment is the matrix-exponential solution (`Linear.trajectory_eq_solution`). -/
   ring
 
 /-- Conjugate-pair contribution `p e^{λt} + p̄ e^{λ̄t} = 2|p| e^{σt} cos(ωt + arg p)` (§1.3). -/
-@[powerlib_foundation] theorem conj_pair_contribution (p lam : ℂ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem conj_pair_contribution (p lam : ℂ) (t : ℝ) :
     p * Complex.exp (lam * t) + conj p * Complex.exp (conj lam * t) =
       ((2 * ‖p‖ * Real.exp (lam.re * t) * Real.cos (lam.im * t + Complex.arg p) : ℝ) : ℂ) := by
   have hconj : conj p * Complex.exp (conj lam * t) = conj (p * Complex.exp (lam * t)) := by
@@ -369,7 +369,7 @@ variable {p : ℕ}
 
 /-- The transfer matrix through the adjugate: `G(s) = det(sI − A)⁻¹ C adj(sI − A) B + D`, on an
 arbitrary finite state index. -/
-@[powerlib_foundation] theorem transferOf_eq_adjugate (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
+@[tmio T, powerlib_foundation] theorem transferOf_eq_adjugate (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
     (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ) (s : ℂ) :
     Linear.transferOf A B C D s = ((Linear.characteristicMatrix A s).det)⁻¹ •
       (Linear.complexify C * (Linear.characteristicMatrix A s).adjugate * Linear.complexify B) +
@@ -377,7 +377,7 @@ arbitrary finite state index. -/
   rw [Linear.transferOf, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
 
 /-- Away from the spectrum the transfer matrix is continuous (no pole). -/
-@[powerlib_foundation] theorem transfer_continuousAt (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
+@[tmio T, powerlib_foundation] theorem transfer_continuousAt (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
     (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ) {μ : ℂ}
     (hμ : (Linear.characteristicMatrix A μ).det ≠ 0) :
     ContinuousAt (Linear.transferOf A B C D) μ := by
@@ -396,7 +396,7 @@ arbitrary finite state index. -/
 diagonalisable state matrix, simple eigenvalues and modal (PBH) controllability and
 observability (`ψ_iᵀ B ≠ 0`, `C v_i ≠ 0`): `(s − μ) G(s)` has a nonzero limit at `μ` iff `μ`
 is an eigenvalue. -/
-@[powerlib_foundation] theorem transfer_pole_iff (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
+@[tmio T, powerlib_foundation] theorem transfer_pole_iff (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
     (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ)
     (mb : ModalBasis (Linear.complexify A)) (hsimple : ∀ i j, i ≠ j → mb.eig i ≠ mb.eig j)
     (hobs : ∀ i, Linear.complexify C *ᵥ mb.v i ≠ 0)

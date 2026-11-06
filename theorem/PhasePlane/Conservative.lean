@@ -43,10 +43,10 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 @[tmio T, simp, powerlib_foundation] theorem field_apply_zero (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :
     field m γ dV y 0 = y 1 := rfl
 
-@[simp, powerlib_foundation] theorem field_apply_one (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :
+@[tmio T, simp, powerlib_foundation] theorem field_apply_one (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :
     field m γ dV y 1 = (-γ * y 1 - dV (y 0)) / m := rfl
 
-@[powerlib_foundation] theorem field_contDiff {m γ : ℝ} {dV : ℝ → ℝ} {k : WithTop ℕ∞}
+@[tmio T, powerlib_foundation] theorem field_contDiff {m γ : ℝ} {dV : ℝ → ℝ} {k : WithTop ℕ∞}
     (hdV : ContDiff ℝ k dV) : ContDiff ℝ k (field m γ dV) := by
   refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
   · exact Dynamics.contDiff_coord 1
@@ -54,7 +54,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
     have h1 : ContDiff ℝ k (fun y : State 2 => y 1) := Dynamics.contDiff_coord 1
     exact (((h1.const_smul (-γ)).sub (hdV.comp h0)).div_const m)
 
-@[powerlib_foundation] theorem field_eq_zero_iff {m γ : ℝ} {dV : ℝ → ℝ} (hm : m ≠ 0) (y : State 2) :
+@[tmio T, powerlib_foundation] theorem field_eq_zero_iff {m γ : ℝ} {dV : ℝ → ℝ} (hm : m ≠ 0) (y : State 2) :
     field m γ dV y = 0 ↔ y 1 = 0 ∧ dV (y 0) = 0 := by
   rw [field, mk_eq_zero_iff]
   constructor
@@ -66,7 +66,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   · rintro ⟨h1, h2⟩
     exact ⟨h1, by rw [h1, h2]; simp⟩
 
-@[powerlib_foundation] theorem hasFDerivAt_energy {m : ℝ} {V dV : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_energy {m : ℝ} {V dV : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     HasFDerivAt (energy m V) (dV (y 0) • Dynamics.coord 0 + (m * y 1) • Dynamics.coord 1) y := by
   have h0 := Dynamics.hasFDerivAt_coord 0 y
@@ -81,12 +81,12 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   simp
   ring
 
-@[powerlib_foundation] theorem energy_differentiable {m : ℝ} {V dV : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem energy_differentiable {m : ℝ} {V dV : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (dV x) x) : Differentiable ℝ (energy m V) :=
   fun y => (hasFDerivAt_energy hV y).differentiableAt
 
 /-- Energy balance: the Lie derivative of `E` is `−γ v²`. -/
-@[powerlib_foundation] theorem energy_lie {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
+@[tmio T, powerlib_foundation] theorem energy_lie {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     fderiv ℝ (energy m V) y (field m γ dV y) = -γ * y 1 ^ 2 := by
   rw [(hasFDerivAt_energy hV y).fderiv]
@@ -96,7 +96,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   ring
 
 /-- Along every solution, `dE/dt = −γ v²`. -/
-@[powerlib_foundation] theorem energy_hasDerivWithinAt {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
+@[tmio T, powerlib_foundation] theorem energy_hasDerivWithinAt {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
     (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {s : Set ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ y => field m γ dV y) s) {t : ℝ} (ht : t ∈ s) :
     HasDerivWithinAt (fun τ => energy m V (φ τ)) (-γ * φ t 1 ^ 2) s t := by
@@ -105,7 +105,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   exact h
 
 /-- Conservative case: the energy is constant along every solution segment. -/
-@[powerlib_foundation] theorem energy_conserved {m : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
+@[tmio T, powerlib_foundation] theorem energy_conserved {m : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
     (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field m 0 dV) a b) :
     ∀ t ∈ Icc a b, energy m V (φ t) = energy m V (φ a) := by
@@ -119,7 +119,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
       |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hτ.2)) t ht
 
 /-- Damped case `γ ≥ 0`: the energy is nonincreasing along every solution segment. -/
-@[powerlib_foundation] theorem energy_antitone {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0) (hγ : 0 ≤ γ)
+@[tmio T, powerlib_foundation] theorem energy_antitone {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0) (hγ : 0 ≤ γ)
     (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (field m γ dV) a b) :
     AntitoneOn (fun t => energy m V (φ t)) (Icc a b) := by
@@ -136,7 +136,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 
 /-- Slope of a phase trajectory: if `v = Φ(x)` near `t` and `v(t) ≠ 0`, then
 `Φ'(x(t)) = v̇(t) / v(t)`. -/
-@[powerlib_foundation] theorem phase_slope {x v Φ : ℝ → ℝ} {t a Φ' : ℝ}
+@[tmio T, powerlib_foundation] theorem phase_slope {x v Φ : ℝ → ℝ} {t a Φ' : ℝ}
     (hx : HasDerivAt x (v t) t) (hv : HasDerivAt v a t)
     (hgraph : v =ᶠ[𝓝 t] fun τ => Φ (x τ)) (hΦ : HasDerivAt Φ Φ' (x t)) (hv0 : v t ≠ 0) :
     Φ' = a / v t := by
@@ -147,7 +147,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 
 /-- A strict local minimum `x*` of `V` (with `V'(x*) = 0`) gives a Lyapunov-stable equilibrium
 `(x*, 0)` for any damping `γ ≥ 0`. -/
-@[powerlib_foundation] theorem center_lyapunovStable {m γ : ℝ} {V dV : ℝ → ℝ} (hm : 0 < m)
+@[tmio T, powerlib_foundation] theorem center_lyapunovStable {m γ : ℝ} {V dV : ℝ → ℝ} (hm : 0 < m)
     (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) {x₀ r : ℝ} (hr : 0 < r)
     (hmin : ∀ x, |x - x₀| < r → x ≠ x₀ → V x₀ < V x) :
     LyapunovStable (field m γ dV) (mk x₀ 0) := by

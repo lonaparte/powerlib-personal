@@ -68,7 +68,7 @@ def Consistent (m : LMM k) : Prop :=
 
 /-- Order conditions are exactness on monomials: the LMM residual of `x(t) = tᵠ` on the grid
 `tᵢ = i h` equals `C_q hᵠ`. -/
-@[powerlib_foundation] theorem residual_monomial (m : LMM k) (q : ℕ) (hq : 1 ≤ q) (h : ℝ) :
+@[tmio T, powerlib_foundation] theorem residual_monomial (m : LMM k) (q : ℕ) (hq : 1 ≤ q) (h : ℝ) :
     ∑ i, (m.α i : ℝ) * ((i : ℝ) * h) ^ q -
         h * ∑ i, (m.β i : ℝ) * ((q : ℝ) * ((i : ℝ) * h) ^ (q - 1)) =
       (m.C q : ℝ) * h ^ q := by
@@ -93,38 +93,38 @@ def bdf4 : LMM 4 := bdf 4 ![3/25, -16/25, 36/25, -48/25, 1] (12/25)
 def bdf5 : LMM 5 := bdf 5 ![-12/137, 75/137, -200/137, 300/137, -300/137, 1] (60/137)
 def bdf6 : LMM 6 := bdf 6 ![10/147, -72/147, 225/147, -400/147, 450/147, -360/147, 1] (60/147)
 
-@[powerlib_foundation] theorem bdf1_exactOrder : bdf1.HasExactOrder 1 := by
+@[tmio T, powerlib_foundation] theorem bdf1_exactOrder : bdf1.HasExactOrder 1 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;>
       simp only [LMM.C, bdf1, bdf, Fin.sum_univ_succ, Fin.sum_univ_zero] <;> norm_num
   · simp only [LMM.C, bdf1, bdf, Fin.sum_univ_succ, Fin.sum_univ_zero]; norm_num
 
-@[powerlib_foundation] theorem bdf2_exactOrder : bdf2.HasExactOrder 2 := by
+@[tmio T, powerlib_foundation] theorem bdf2_exactOrder : bdf2.HasExactOrder 2 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf2, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf2, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf3_exactOrder : bdf3.HasExactOrder 3 := by
+@[tmio T, powerlib_foundation] theorem bdf3_exactOrder : bdf3.HasExactOrder 3 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf3, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf3, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf4_exactOrder : bdf4.HasExactOrder 4 := by
+@[tmio T, powerlib_foundation] theorem bdf4_exactOrder : bdf4.HasExactOrder 4 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf4, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf4, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf5_exactOrder : bdf5.HasExactOrder 5 := by
+@[tmio T, powerlib_foundation] theorem bdf5_exactOrder : bdf5.HasExactOrder 5 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf5, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf5, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf6_exactOrder : bdf6.HasExactOrder 6 := by
+@[tmio T, powerlib_foundation] theorem bdf6_exactOrder : bdf6.HasExactOrder 6 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf6, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf6, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf_consistent :
+@[tmio T, powerlib_foundation] theorem bdf_consistent :
     bdf1.Consistent ∧ bdf2.Consistent ∧ bdf3.Consistent ∧ bdf4.Consistent ∧
       bdf5.Consistent ∧ bdf6.Consistent := by
   simp only [LMM.consistent_iff_hasOrder_one]

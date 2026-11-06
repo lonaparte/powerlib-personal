@@ -59,7 +59,7 @@ open powerlib.Transform.SpaceVector
   ring
 
 /-- `d|ψ|²/dt = 2 Re(conj ψ · ψ̇)`. -/
-@[powerlib_foundation] theorem normSq_flux_hasDerivAt (ψ : ℝ → ℂ) (dψ : ℂ) (t : ℝ)
+@[tmio T, powerlib_foundation] theorem normSq_flux_hasDerivAt (ψ : ℝ → ℂ) (dψ : ℂ) (t : ℝ)
     (h : HasDerivAt ψ dψ t) :
     HasDerivAt (fun s => Complex.normSq (ψ s)) (2 * (conj (ψ t) * dψ).re) t := by
   have hre := (Complex.reCLM.hasFDerivAt.comp_hasDerivAt t h)
@@ -105,7 +105,7 @@ open powerlib.Transform.SpaceVector
 /-- **Load-angle torque of the PMSM** (rotor frame): if the stator flux
 `ψ_s = (L_d i_d + ψ_f) + j L_q i_q` equals `ρ e^{jδ}`, then
 `T_e = (3/2) np (ψ_f ρ sin δ / L_d + ρ² (L_d − L_q) sin 2δ / (2 L_d L_q))`. -/
-@[powerlib_foundation] theorem torque_loadAngle_PMSM (np ψf Ld Lq id iq ρ δ : ℝ) (hd : Ld ≠ 0)
+@[tmio M, powerlib_foundation] theorem torque_loadAngle_PMSM (np ψf Ld Lq id iq ρ δ : ℝ) (hd : Ld ≠ 0)
     (hq : Lq ≠ 0) (h1 : Ld * id + ψf = ρ * Real.cos δ) (h2 : Lq * iq = ρ * Real.sin δ) :
     PMSM.torque np ψf Ld Lq id iq =
       3 / 2 * np * (ψf * ρ * Real.sin δ / Ld +
@@ -119,7 +119,7 @@ open powerlib.Transform.SpaceVector
 /-! ## Switching-table geometry -/
 
 /-- Radial and tangential components of `r e^{jα}` with respect to the direction `e^{jθ}`. -/
-@[powerlib_foundation] theorem radial_tangential (r α θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem radial_tangential (r α θ : ℝ) :
     ((⟨r * Real.cos α, r * Real.sin α⟩ : ℂ) * conj ⟨Real.cos θ, Real.sin θ⟩).re =
         r * Real.cos (α - θ) ∧
       ((⟨r * Real.cos α, r * Real.sin α⟩ : ℂ) * conj ⟨Real.cos θ, Real.sin θ⟩).im =
@@ -131,7 +131,7 @@ open powerlib.Transform.SpaceVector
 /-- Sign pattern of the radial (`cos`) and tangential (`sin`) components of the vectors
 `v_{k+1}, v_{k+2}, v_{k−1}, v_{k−2}` (relative angles `±π/3, ±2π/3`) for a flux inside the
 sector, `φ ∈ [−π/6, π/6]`. -/
-@[powerlib_foundation] theorem sector_signs (φ : ℝ)
+@[tmio T, powerlib_foundation] theorem sector_signs (φ : ℝ)
     (hφ : φ ∈ Set.Icc (-(Real.pi / 6)) (Real.pi / 6)) :
     (0 ≤ Real.cos (Real.pi / 3 - φ) ∧ 0 < Real.sin (Real.pi / 3 - φ)) ∧
       (Real.cos (2 * Real.pi / 3 - φ) ≤ 0 ∧ 0 < Real.sin (2 * Real.pi / 3 - φ)) ∧
@@ -153,7 +153,7 @@ sector, `φ ∈ [−π/6, π/6]`. -/
 /-- The radial component of `v_{k+1}` vanishes exactly at the lower sector boundary and that
 of `v_{k+2}` exactly at the upper boundary (the reason the sectors are centred on the
 active vectors). -/
-@[powerlib_foundation] theorem sector_boundary_radial_zero (φ : ℝ)
+@[tmio T, powerlib_foundation] theorem sector_boundary_radial_zero (φ : ℝ)
     (hφ : φ ∈ Set.Icc (-(Real.pi / 6)) (Real.pi / 6)) :
     (Real.cos (Real.pi / 3 - φ) = 0 ↔ φ = -(Real.pi / 6)) ∧
       (Real.cos (2 * Real.pi / 3 - φ) = 0 ↔ φ = Real.pi / 6) := by

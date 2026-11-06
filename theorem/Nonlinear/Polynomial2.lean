@@ -319,19 +319,19 @@ def eval : Polynomial → ℝ → ℝ → ℝ
   | [], _, _ => 0
   | t :: ts, x, y => (t.coefficient : ℝ) * x ^ t.powers.1 * y ^ t.powers.2 + eval ts x y
 
-@[simp, powerlib_foundation] theorem eval_nil (x y : ℝ) : eval [] x y = 0 := rfl
+@[tmio T, simp, powerlib_foundation] theorem eval_nil (x y : ℝ) : eval [] x y = 0 := rfl
 
-@[simp, powerlib_foundation] theorem eval_cons (t : Term) (ts : Polynomial) (x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem eval_cons (t : Term) (ts : Polynomial) (x y : ℝ) :
     eval (t :: ts) x y = (t.coefficient : ℝ) * x ^ t.powers.1 * y ^ t.powers.2 + eval ts x y :=
   rfl
 
-@[simp, powerlib_foundation] theorem eval_append (p q : Polynomial) (x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem eval_append (p q : Polynomial) (x y : ℝ) :
     eval (p ++ q) x y = eval p x y + eval q x y := by
   induction p with
   | nil => simp
   | cons t ts ih => simp [ih, add_assoc]
 
-@[simp, powerlib_foundation] theorem eval_scale (c : ℚ) (p : Polynomial) (x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem eval_scale (c : ℚ) (p : Polynomial) (x y : ℝ) :
     eval (scale c p) x y = c * eval p x y := by
   induction p with
   | nil => simp [scale]
@@ -340,7 +340,7 @@ def eval : Polynomial → ℝ → ℝ → ℝ
     rw [ih]
     ring
 
-@[powerlib_foundation] theorem eval_map_mul (s : Term) (q : Polynomial) (x y : ℝ) :
+@[tmio T, powerlib_foundation] theorem eval_map_mul (s : Term) (q : Polynomial) (x y : ℝ) :
     eval (q.map fun t => (⟨s.coefficient * t.coefficient,
         (s.powers.1 + t.powers.1, s.powers.2 + t.powers.2)⟩ : Term)) x y =
       (s.coefficient : ℝ) * x ^ s.powers.1 * y ^ s.powers.2 * eval q x y := by
@@ -351,7 +351,7 @@ def eval : Polynomial → ℝ → ℝ → ℝ
     rw [ih]
     ring
 
-@[simp, powerlib_foundation] theorem eval_mul (p q : Polynomial) (x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem eval_mul (p q : Polynomial) (x y : ℝ) :
     eval (mul p q) x y = eval p x y * eval q x y := by
   induction p with
   | nil => simp [mul]
@@ -360,10 +360,10 @@ def eval : Polynomial → ℝ → ℝ → ℝ
     rw [eval_map_mul, ih]
     ring
 
-@[powerlib_foundation] theorem coeff_cons (t : Term) (ts : Polynomial) (m : ℕ × ℕ) :
+@[tmio T, powerlib_foundation] theorem coeff_cons (t : Term) (ts : Polynomial) (m : ℕ × ℕ) :
     coeff (t :: ts) m = (if t.powers = m then t.coefficient else 0) + coeff ts m := rfl
 
-@[powerlib_foundation] theorem coeff_eq_zero_of_not_mem {p : Polynomial} {m : ℕ × ℕ}
+@[tmio T, powerlib_foundation] theorem coeff_eq_zero_of_not_mem {p : Polynomial} {m : ℕ × ℕ}
     (h : m ∉ (p.map (·.powers)).toFinset) : coeff p m = 0 := by
   induction p with
   | nil => rfl
@@ -373,7 +373,7 @@ def eval : Polynomial → ℝ → ℝ → ℝ
     simp [Ne.symm h.1]
 
 /-- A polynomial is the sum of its monomials with their collected coefficients. -/
-@[powerlib_foundation] theorem eval_eq_sum (p : Polynomial) (x y : ℝ) :
+@[tmio T, powerlib_foundation] theorem eval_eq_sum (p : Polynomial) (x y : ℝ) :
     eval p x y = ∑ m ∈ (p.map (·.powers)).toFinset, (coeff p m : ℝ) * x ^ m.1 * y ^ m.2 := by
   induction p with
   | nil => simp
@@ -390,7 +390,7 @@ def eval : Polynomial → ℝ → ℝ → ℝ
     rw [Finset.sum_insert_of_eq_zero_if_notMem fun hm => by rw [coeff_eq_zero_of_not_mem hm]; simp]
 
 /-- A vanishing polynomial is zero everywhere. -/
-@[powerlib_foundation] theorem eval_eq_zero_of_vanishes {p : Polynomial}
+@[tmio T, powerlib_foundation] theorem eval_eq_zero_of_vanishes {p : Polynomial}
     (h : vanishes p = true) (x y : ℝ) : eval p x y = 0 := by
   rw [eval_eq_sum]
   refine Finset.sum_eq_zero fun m hm => ?_
@@ -399,7 +399,7 @@ def eval : Polynomial → ℝ → ℝ → ℝ
   rw [beq_iff_eq] at this
   simp [this]
 
-@[powerlib_foundation] theorem eval_zero (p : Polynomial) : eval p 0 0 = coeff p (0, 0) := by
+@[tmio T, powerlib_foundation] theorem eval_zero (p : Polynomial) : eval p 0 0 = coeff p (0, 0) := by
   induction p with
   | nil => simp [coeff]
   | cons t ts ih =>
@@ -414,19 +414,19 @@ def eval : Polynomial → ℝ → ℝ → ℝ
 def Model.field (model : Model) (x : ℝ²) : ℝ² :=
   WithLp.toLp 2 ![eval model.field0 (x 0) (x 1), eval model.field1 (x 0) (x 1)]
 
-@[simp, powerlib_foundation] theorem Model.field_zero_apply (model : Model) (x : ℝ²) :
+@[tmio M, simp, powerlib_foundation] theorem Model.field_zero_apply (model : Model) (x : ℝ²) :
     model.field x 0 = eval model.field0 (x 0) (x 1) := by
   simp [Model.field]
 
-@[simp, powerlib_foundation] theorem Model.field_one_apply (model : Model) (x : ℝ²) :
+@[tmio M, simp, powerlib_foundation] theorem Model.field_one_apply (model : Model) (x : ℝ²) :
     model.field x 1 = eval model.field1 (x 0) (x 1) := by
   simp [Model.field]
 
-@[fun_prop, powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
+@[tmio T, fun_prop, powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
     ContDiff ℝ 1 (fun x : ℝ² => x j) :=
   Dynamics.contDiff_coord j
 
-@[powerlib_foundation] theorem eval_smooth (p : Polynomial) :
+@[tmio T, powerlib_foundation] theorem eval_smooth (p : Polynomial) :
     ContDiff ℝ 1 (fun x : ℝ² => eval p (x 0) (x 1)) := by
   induction p with
   | nil => exact contDiff_const
@@ -434,7 +434,7 @@ def Model.field (model : Model) (x : ℝ²) : ℝ² :=
       exact ((contDiff_const.mul ((coordinate_smooth 0).pow t.powers.1)).mul
         ((coordinate_smooth 1).pow t.powers.2)).add ih
 
-@[powerlib_foundation] theorem Model.field_smooth (model : Model) : ContDiff ℝ 1 model.field := by
+@[tmio M, powerlib_foundation] theorem Model.field_smooth (model : Model) : ContDiff ℝ 1 model.field := by
   have hs : ContDiff ℝ 1 (fun x : ℝ² =>
       ![eval model.field0 (x 0) (x 1), eval model.field1 (x 0) (x 1)]) := by
     apply contDiff_pi.mpr
@@ -447,19 +447,19 @@ def Model.field (model : Model) (x : ℝ²) : ℝ² :=
 /-- The energy of a witness. -/
 def Witness.energy (w : Witness) (x : ℝ²) : ℝ := eval w.quadPoly (x 0) (x 1)
 
-@[powerlib_foundation] theorem Witness.energy_apply (w : Witness) (x : ℝ²) :
+@[tmio T, powerlib_foundation] theorem Witness.energy_apply (w : Witness) (x : ℝ²) :
     w.energy x = (w.p00 : ℝ) * x 0 ^ 2 + 2 * (w.p01 : ℝ) * x 0 * x 1 + (w.p11 : ℝ) * x 1 ^ 2 := by
   simp [Witness.energy, Witness.quadPoly]
   ring
 
-@[powerlib_foundation] theorem Witness.energy_smooth (w : Witness) : ContDiff ℝ 1 w.energy := by
+@[tmio T, powerlib_foundation] theorem Witness.energy_smooth (w : Witness) : ContDiff ℝ 1 w.energy := by
   have h : w.energy = fun x : ℝ² =>
       (w.p00 : ℝ) * x 0 ^ 2 + 2 * (w.p01 : ℝ) * x 0 * x 1 + (w.p11 : ℝ) * x 1 ^ 2 :=
     funext w.energy_apply
   rw [h]
   fun_prop
 
-@[powerlib_foundation] theorem Witness.energy_derivative (w : Witness) (x dx : ℝ²) :
+@[tmio T, powerlib_foundation] theorem Witness.energy_derivative (w : Witness) (x dx : ℝ²) :
     fderiv ℝ w.energy x dx =
       (2 * (w.p00 : ℝ) * x 0 + 2 * (w.p01 : ℝ) * x 1) * dx 0 +
       (2 * (w.p01 : ℝ) * x 0 + 2 * (w.p11 : ℝ) * x 1) * dx 1 := by
@@ -478,15 +478,15 @@ def Witness.energy (w : Witness) (x : ℝ²) : ℝ := eval w.quadPoly (x 0) (x 1
   simp
   ring
 
-@[powerlib_foundation] theorem Witness.energy_lie (model : Model) (w : Witness) (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem Witness.energy_lie (model : Model) (w : Witness) (x : ℝ²) :
     fderiv ℝ w.energy x (model.field x) = eval (w.liePoly model) (x 0) (x 1) := by
   rw [w.energy_derivative]
   simp [Witness.liePoly]
 
-@[powerlib_foundation] theorem norm_sq (x : ℝ²) : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 :=
+@[tmio T, powerlib_foundation] theorem norm_sq (x : ℝ²) : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 :=
   PhasePlane.norm_sq_eq x
 
-@[powerlib_foundation] theorem eval_circle (x : ℝ²) : eval circle (x 0) (x 1) = ‖x‖ ^ 2 := by
+@[tmio T, powerlib_foundation] theorem eval_circle (x : ℝ²) : eval circle (x 0) (x 1) = ‖x‖ ^ 2 := by
   simp [circle, norm_sq]
 
 @[tmio T, powerlib_foundation] theorem sosPoly_nonneg {squares : List WeightedSquare}
@@ -499,7 +499,7 @@ def Witness.energy (w : Witness) (x : ℝ²) : ℝ := eval w.quadPoly (x 0) (x 1
       (ih fun s hs => h s (List.mem_cons_of_mem _ hs))
 
 /-- What the check establishes. -/
-@[powerlib_foundation] theorem Witness.check_spec {model : Model} {w : Witness}
+@[tmio M, powerlib_foundation] theorem Witness.check_spec {model : Model} {w : Witness}
     (h : w.check model = true) :
     0 < w.lower ∧ 0 < w.upper ∧ 0 < w.rate ∧
       (∀ s ∈ w.lower_sos ++ w.upper_sos ++ w.decay_sos, 0 ≤ s.weight) ∧
@@ -557,7 +557,7 @@ def Certificate.quadraticDecay {model : Model} (c : Certificate model) :
 /-- A coordinate functional. -/
 abbrev coord (j : Fin 2) : ℝ² →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) j
 
-@[powerlib_foundation] theorem hasFDerivAt_monomial_zero (c : ℝ) (a b : ℕ) :
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_monomial_zero (c : ℝ) (a b : ℕ) :
     HasFDerivAt (fun x : ℝ² => c * x 0 ^ a * x 1 ^ b)
       ((if (a, b) = (1, 0) then c else 0) • coord 0 +
         (if (a, b) = (0, 1) then c else 0) • coord 1) 0 := by
@@ -569,7 +569,7 @@ abbrev coord (j : Fin 2) : ℝ² →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => 
   rcases a with _ | _ | a <;> rcases b with _ | _ | b <;> simp [pow_succ]
 
 /-- At the origin a polynomial has the derivative of its linear terms. -/
-@[powerlib_foundation] theorem hasFDerivAt_eval_zero (p : Polynomial) :
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_eval_zero (p : Polynomial) :
     HasFDerivAt (fun x : ℝ² => eval p (x 0) (x 1))
       ((coeff p (1, 0) : ℝ) • coord 0 + (coeff p (0, 1) : ℝ) • coord 1) 0 := by
   induction p with
@@ -587,7 +587,7 @@ def Model.linearization (model : Model) : Matrix (Fin 2) (Fin 2) ℝ :=
   Linear.Synthesis.real model.linearPart
 
 /-- The linearization is the Jacobian of the field at the origin. -/
-@[powerlib_foundation] theorem hasFDerivAt_field_zero (model : Model) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_field_zero (model : Model) :
     HasFDerivAt model.field
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) model.linearization) 0 := by
   have hpi : HasFDerivAt
@@ -611,7 +611,7 @@ def Model.linearization (model : Model) : Matrix (Fin 2) (Fin 2) ℝ :=
     simp [Model.linearization, Model.linearPart, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- Without constant terms the origin is an equilibrium. -/
-@[powerlib_foundation] theorem Model.field_eq_zero (model : Model)
+@[tmio M, powerlib_foundation] theorem Model.field_eq_zero (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0) : model.field 0 = 0 := by
   ext i
   fin_cases i <;> simp [eval_zero, h.1, h.2]
@@ -655,7 +655,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 0 :=
   ⟨fun model => Port.System.autonomous model.field, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+@[tmio M, powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
 /-- An accepted certificate proves global exponential stability of the full polynomial field. -/
@@ -760,7 +760,7 @@ semantics connection. -/
 /-- Cubic damping `x' = -x³`, `y' = -y³`: no linear part. -/
 def cubicModel : Model := ⟨[⟨-1, (3, 0)⟩], [⟨-1, (0, 3)⟩]⟩
 
-@[powerlib_foundation] theorem cubicModel_field (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem cubicModel_field (x : ℝ²) :
     cubicModel.field x = WithLp.toLp 2 ![-(x 0) ^ 3, -(x 1) ^ 3] := by
   ext i
   fin_cases i <;> simp [Model.field, cubicModel]
@@ -825,7 +825,7 @@ compact sublevels. -/
     nlinarith [pow_pos ht 2]
   nlinarith [pow_pos ht 2, mul_pos hp (pow_pos ht 2)]
 
-@[powerlib_foundation] theorem cubicModel_linearization : cubicModel.linearization = 0 := by
+@[tmio M, powerlib_foundation] theorem cubicModel_linearization : cubicModel.linearization = 0 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Model.linearization, Model.linearPart, cubicModel, coeff]
 
@@ -864,14 +864,14 @@ stability but no uniform global exponential estimate, so no certificate of this 
 
 def cascadeModel : Model := ⟨[⟨-2, (1, 0)⟩, ⟨1, (0, 2)⟩], [⟨-1, (0, 1)⟩]⟩
 
-@[powerlib_foundation] theorem cascadeModel_field (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem cascadeModel_field (x : ℝ²) :
     cascadeModel.field x = WithLp.toLp 2 ![-2 * x 0 + (x 1) ^ 2, -x 1] := by
   ext i
   fin_cases i <;> simp [Model.field, cascadeModel]
 
 noncomputable def cascadeEnergy (x : ℝ²) : ℝ := ‖x‖ ^ 2 + (x 1) ^ 4
 
-@[powerlib_foundation] theorem cascadeEnergy_lie (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem cascadeEnergy_lie (x : ℝ²) :
     fderiv ℝ cascadeEnergy x (cascadeModel.field x) =
       -4 * (x 0) ^ 2 + 2 * x 0 * (x 1) ^ 2 - 2 * (x 1) ^ 2 - 4 * (x 1) ^ 4 := by
   have h := (hasStrictFDerivAt_norm_sq x).hasFDerivAt.add
@@ -993,7 +993,7 @@ semantics. It is a proved limitation of the certificate language, not just of it
   obtain ⟨c⟩ := hc
   exact cascade_not_exponential (family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)))
 
-@[powerlib_foundation] theorem cascade_rejected : accepts cascadeModel = false := by decide +kernel
+@[tmio M, powerlib_foundation] theorem cascade_rejected : accepts cascadeModel = false := by decide +kernel
 
 /-! Global exponential semantics is also strictly larger than the quadratic certificate
 language. A quartic Hamiltonian rotation with linear damping is the separating example. -/
@@ -1001,7 +1001,7 @@ language. A quartic Hamiltonian rotation with linear damping is the separating e
 def quarticModel : Model :=
   ⟨[⟨-1, (1, 0)⟩, ⟨-1, (0, 3)⟩], [⟨-1, (0, 1)⟩, ⟨1, (3, 0)⟩]⟩
 
-@[powerlib_foundation] theorem quarticModel_field (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem quarticModel_field (x : ℝ²) :
     quarticModel.field x = WithLp.toLp 2 ![-x 0 - (x 1) ^ 3, -x 1 + (x 0) ^ 3] := by
   ext i
   fin_cases i <;> simp [Model.field, quarticModel]
@@ -1009,10 +1009,10 @@ def quarticModel : Model :=
 
 def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
 
-@[powerlib_foundation] theorem quarticEnergy_smooth : ContDiff ℝ 1 quarticEnergy :=
+@[tmio T, powerlib_foundation] theorem quarticEnergy_smooth : ContDiff ℝ 1 quarticEnergy :=
   ((coord 0).contDiff.pow 4).add ((coord 1).contDiff.pow 4)
 
-@[powerlib_foundation] theorem quarticEnergy_lie (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem quarticEnergy_lie (x : ℝ²) :
     fderiv ℝ quarticEnergy x (quarticModel.field x) = -4 * quarticEnergy x := by
   have h := (((coord 0).hasFDerivAt (x := x)).pow 4).add
     (((coord 1).hasFDerivAt (x := x)).pow 4)
@@ -1021,7 +1021,7 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   simp [quarticEnergy, quarticModel_field, coord]
   ring
 
-@[powerlib_foundation] theorem quarticEnergy_bounds (x : ℝ²) :
+@[tmio T, powerlib_foundation] theorem quarticEnergy_bounds (x : ℝ²) :
     quarticEnergy x ≤ ‖x‖ ^ 4 ∧ ‖x‖ ^ 4 ≤ 2 * quarticEnergy x := by
   have hn : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 := by
     rw [EuclideanSpace.norm_sq_eq]
@@ -1034,7 +1034,7 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   · nlinarith [mul_nonneg (sq_nonneg (x 0)) (sq_nonneg (x 1))]
   · nlinarith [sq_nonneg ((x 0) ^ 2 - (x 1) ^ 2)]
 
-@[powerlib_foundation] theorem quarticEnergy_compact (c : ℝ) :
+@[tmio T, powerlib_foundation] theorem quarticEnergy_compact (c : ℝ) :
     IsCompact {x : ℝ² | quarticEnergy x ≤ c} := by
   refine (isCompact_closedBall (0 : ℝ²) (Real.sqrt (2 * max c 0 + 1))).of_isClosed_subset
     (isClosed_le quarticEnergy_smooth.continuous continuous_const) fun x hx => ?_
@@ -1081,7 +1081,7 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   simpa [B] using hnorm
 
 /-- A uniformly bounded quadratic growth coefficient cannot be positive. -/
-@[powerlib_foundation] theorem nonpos_of_sq_bound {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem nonpos_of_sq_bound {a b : ℝ}
     (h : ∀ s : ℝ, 0 < s → a * s ^ 2 ≤ b) : a ≤ 0 := by
   by_contra ha
   have ha : 0 < a := lt_of_not_ge ha
@@ -1095,7 +1095,7 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   linarith [le_max_left b 0]
 
 /-- A quadratic certificate forces every homogeneous quartic coefficient nonpositive. -/
-@[powerlib_foundation] theorem quartic_leading_nonpos (c : Certificate quarticModel) (u v : ℝ) :
+@[tmio M, powerlib_foundation] theorem quartic_leading_nonpos (c : Certificate quarticModel) (u v : ℝ) :
     2 * (c.witness.p01 : ℝ) * (u ^ 4 - v ^ 4) +
       2 * (c.witness.p11 : ℝ) * u ^ 3 * v -
       2 * (c.witness.p00 : ℝ) * u * v ^ 3 ≤ 0 := by

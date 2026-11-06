@@ -82,11 +82,11 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
   push_cast
   ring
 
-@[powerlib_foundation] theorem pureDelay_zero (s : ℂ) : pureDelay 0 s = 1 := by
+@[tmio T, powerlib_foundation] theorem pureDelay_zero (s : ℂ) : pureDelay 0 s = 1 := by
   simp [pureDelay]
 
 /-- A multiplicative cascade of constant delays is the delay by the total time. -/
-@[powerlib_foundation] theorem prod_pureDelay {ι : Type*} (t : Finset ι) (τ : ι → ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem prod_pureDelay {ι : Type*} (t : Finset ι) (τ : ι → ℝ) (s : ℂ) :
     ∏ i ∈ t, pureDelay (τ i) s = pureDelay (∑ i ∈ t, τ i) s := by
   classical
   induction t using Finset.induction_on with
@@ -95,7 +95,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
     rw [Finset.prod_insert ha, Finset.sum_insert ha, ih, pureDelay_add]
 
 /-- Sampling, computation and PWM, each a half-period delay, total `1.5 Tₛ`. -/
-@[powerlib_foundation] theorem pureDelay_three_half_periods (Ts : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pureDelay_three_half_periods (Ts : ℝ) (s : ℂ) :
     pureDelay (Ts / 2) s * pureDelay (Ts / 2) s * pureDelay (Ts / 2) s =
       pureDelay (3 * Ts / 2) s := by
   rw [← pureDelay_add, ← pureDelay_add]
@@ -104,55 +104,55 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
 
 /-! ## Frequency response: all-pass -/
 
-@[powerlib_foundation] theorem pureDelay_jω (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pureDelay_jω (τ ω : ℝ) :
     pureDelay τ (ω * I) = Complex.exp (((-(τ * ω) : ℝ) : ℂ) * I) := by
   simp only [pureDelay]
   congr 1
   push_cast
   ring
 
-@[powerlib_foundation] theorem norm_pureDelay_jω (τ ω : ℝ) : ‖pureDelay τ (ω * I)‖ = 1 := by
+@[tmio T, powerlib_foundation] theorem norm_pureDelay_jω (τ ω : ℝ) : ‖pureDelay τ (ω * I)‖ = 1 := by
   rw [pureDelay_jω, Complex.norm_exp_ofReal_mul_I]
 
-@[powerlib_foundation] private lemma norm_conj_div_self {z : ℂ} (hz : z ≠ 0) :
+@[tmio T, powerlib_foundation] private lemma norm_conj_div_self {z : ℂ} (hz : z ≠ 0) :
     ‖(starRingEnd ℂ) z / z‖ = 1 := by
   rw [norm_div, Complex.norm_conj, div_self (norm_ne_zero_iff.mpr hz)]
 
-@[powerlib_foundation] theorem pade11Num_jω (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pade11Num_jω (τ ω : ℝ) :
     pade11Num τ (ω * I) = 1 - ((τ * ω / 2 : ℝ) : ℂ) * I := by
   simp only [pade11Num]; push_cast; ring
 
-@[powerlib_foundation] theorem pade11Den_jω (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pade11Den_jω (τ ω : ℝ) :
     pade11Den τ (ω * I) = 1 + ((τ * ω / 2 : ℝ) : ℂ) * I := by
   simp only [pade11Den]; push_cast; ring
 
-@[powerlib_foundation] theorem pade11Den_jω_ne_zero (τ ω : ℝ) : pade11Den τ (ω * I) ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem pade11Den_jω_ne_zero (τ ω : ℝ) : pade11Den τ (ω * I) ≠ 0 := by
   intro h
   have := congrArg Complex.re h
   rw [pade11Den_jω] at this
   simp at this
 
-@[powerlib_foundation] theorem pade11Num_jω_eq_conj (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pade11Num_jω_eq_conj (τ ω : ℝ) :
     pade11Num τ (ω * I) = (starRingEnd ℂ) (pade11Den τ (ω * I)) := by
   rw [pade11Num_jω, pade11Den_jω, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
     map_one]
   ring
 
-@[powerlib_foundation] theorem norm_pade11_jω (τ ω : ℝ) : ‖pade11 τ (ω * I)‖ = 1 := by
+@[tmio T, powerlib_foundation] theorem norm_pade11_jω (τ ω : ℝ) : ‖pade11 τ (ω * I)‖ = 1 := by
   rw [pade11, pade11Num_jω_eq_conj]
   exact norm_conj_div_self (pade11Den_jω_ne_zero τ ω)
 
-@[powerlib_foundation] theorem pade22Num_jω (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pade22Num_jω (τ ω : ℝ) :
     pade22Num τ (ω * I) =
       ((1 - (τ * ω) ^ 2 / 12 : ℝ) : ℂ) - ((τ * ω / 2 : ℝ) : ℂ) * I := by
   simp only [pade22Num]; push_cast; ring_nf; rw [I_sq]; ring
 
-@[powerlib_foundation] theorem pade22Den_jω (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pade22Den_jω (τ ω : ℝ) :
     pade22Den τ (ω * I) =
       ((1 - (τ * ω) ^ 2 / 12 : ℝ) : ℂ) + ((τ * ω / 2 : ℝ) : ℂ) * I := by
   simp only [pade22Den]; push_cast; ring_nf; rw [I_sq]; ring
 
-@[powerlib_foundation] theorem pade22Den_jω_ne_zero (τ ω : ℝ) : pade22Den τ (ω * I) ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem pade22Den_jω_ne_zero (τ ω : ℝ) : pade22Den τ (ω * I) ≠ 0 := by
   intro h
   rw [pade22Den_jω] at h
   have him := congrArg Complex.im h
@@ -163,19 +163,19 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
   rw [hx] at hre
   norm_num at hre
 
-@[powerlib_foundation] theorem pade22Num_jω_eq_conj (τ ω : ℝ) :
+@[tmio T, powerlib_foundation] theorem pade22Num_jω_eq_conj (τ ω : ℝ) :
     pade22Num τ (ω * I) = (starRingEnd ℂ) (pade22Den τ (ω * I)) := by
   rw [pade22Num_jω, pade22Den_jω, map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal,
     Complex.conj_I]
   ring
 
-@[powerlib_foundation] theorem norm_pade22_jω (τ ω : ℝ) : ‖pade22 τ (ω * I)‖ = 1 := by
+@[tmio T, powerlib_foundation] theorem norm_pade22_jω (τ ω : ℝ) : ‖pade22 τ (ω * I)‖ = 1 := by
   rw [pade22, pade22Num_jω_eq_conj]
   exact norm_conj_div_self (pade22Den_jω_ne_zero τ ω)
 
 /-! ## Zeros and poles: non-minimum phase -/
 
-@[powerlib_foundation] theorem pade11Num_eq_zero_iff {τ : ℝ} (hτ : τ ≠ 0) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pade11Num_eq_zero_iff {τ : ℝ} (hτ : τ ≠ 0) (s : ℂ) :
     pade11Num τ s = 0 ↔ s = 2 / τ := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
   simp only [pade11Num]
@@ -187,7 +187,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
     field_simp
     ring
 
-@[powerlib_foundation] theorem pade11Den_eq_zero_iff {τ : ℝ} (hτ : τ ≠ 0) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pade11Den_eq_zero_iff {τ : ℝ} (hτ : τ ≠ 0) (s : ℂ) :
     pade11Den τ s = 0 ↔ s = -2 / τ := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
   simp only [pade11Den]
@@ -200,7 +200,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
     ring
 
 /-- Padé(1,1) has its only zero at `s = 2/τ`, in the open right half-plane. -/
-@[powerlib_foundation] theorem pade11_rhp_zero {τ : ℝ} (hτ : 0 < τ) :
+@[tmio T, powerlib_foundation] theorem pade11_rhp_zero {τ : ℝ} (hτ : 0 < τ) :
     pade11 τ (2 / τ) = 0 ∧ pade11Den τ (2 / τ) ≠ 0 ∧ 0 < (2 / (τ : ℂ)).re := by
   have hτ0 : τ ≠ 0 := hτ.ne'
   refine ⟨?_, ?_, ?_⟩
@@ -220,7 +220,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
     positivity
 
 /-- Factorization of the Padé(2,2) numerator; its roots are `τ s = 3 ± √3 j`. -/
-@[powerlib_foundation] theorem pade22Num_factor (τ : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pade22Num_factor (τ : ℝ) (s : ℂ) :
     pade22Num τ s =
       ((τ : ℂ) * s - (3 + (Real.sqrt 3 : ℂ) * I)) *
         ((τ : ℂ) * s - (3 - (Real.sqrt 3 : ℂ) * I)) / 12 := by
@@ -229,7 +229,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
   simp only [pade22Num]
   linear_combination (-(1 : ℂ) / 12) * h3 + ((Real.sqrt 3 : ℂ) ^ 2 / 12) * I_sq
 
-@[powerlib_foundation] theorem pade22Den_factor (τ : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pade22Den_factor (τ : ℝ) (s : ℂ) :
     pade22Den τ s =
       ((τ : ℂ) * s - (-3 + (Real.sqrt 3 : ℂ) * I)) *
         ((τ : ℂ) * s - (-3 - (Real.sqrt 3 : ℂ) * I)) / 12 := by
@@ -238,7 +238,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
   simp only [pade22Den]
   linear_combination (-(1 : ℂ) / 12) * h3 + ((Real.sqrt 3 : ℂ) ^ 2 / 12) * I_sq
 
-@[powerlib_foundation] theorem pade22Num_eq_zero_iff {τ : ℝ} (hτ : τ ≠ 0) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pade22Num_eq_zero_iff {τ : ℝ} (hτ : τ ≠ 0) (s : ℂ) :
     pade22Num τ s = 0 ↔
       s = (3 + (Real.sqrt 3 : ℂ) * I) / τ ∨ s = (3 - (Real.sqrt 3 : ℂ) * I) / τ := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
@@ -254,7 +254,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
 
 /-- Both Padé(2,2) zeros lie in the open right half-plane (real part `3/τ`) and the
 denominator does not vanish there. -/
-@[powerlib_foundation] theorem pade22_rhp_zeros {τ : ℝ} (hτ : 0 < τ) (s : ℂ)
+@[tmio T, powerlib_foundation] theorem pade22_rhp_zeros {τ : ℝ} (hτ : 0 < τ) (s : ℂ)
     (hs : pade22Num τ s = 0) : 0 < s.re ∧ pade22Den τ s ≠ 0 ∧ pade22 τ s = 0 := by
   have hτ0 : τ ≠ 0 := hτ.ne'
   have hre : s.re = 3 / τ := by
@@ -279,7 +279,7 @@ denominator does not vanish there. -/
 
 /-! ## Taylor matching order -/
 
-@[powerlib_foundation] private lemma exp_neg_taylor3 {z : ℂ} (hz : ‖z‖ ≤ 1) :
+@[tmio T, powerlib_foundation] private lemma exp_neg_taylor3 {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖Complex.exp (-z) - (1 - z + z ^ 2 / 2)‖ ≤ ‖z‖ ^ 3 * (2 / 9) := by
   have h := Complex.exp_bound (x := -z) (by simpa using hz) (n := 3) (by norm_num)
   have hsum : ∑ m ∈ Finset.range 3, (-z) ^ m / (m.factorial : ℂ) = 1 - z + z ^ 2 / 2 := by
@@ -289,7 +289,7 @@ denominator does not vanish there. -/
   convert h using 2
   norm_num [Nat.factorial]
 
-@[powerlib_foundation] private lemma exp_neg_taylor5 {z : ℂ} (hz : ‖z‖ ≤ 1) :
+@[tmio T, powerlib_foundation] private lemma exp_neg_taylor5 {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖Complex.exp (-z) - (1 - z + z ^ 2 / 2 - z ^ 3 / 6 + z ^ 4 / 24)‖ ≤ ‖z‖ ^ 5 * (1 / 100) := by
   have h := Complex.exp_bound (x := -z) (by simpa using hz) (n := 5) (by norm_num)
   have hsum : ∑ m ∈ Finset.range 5, (-z) ^ m / (m.factorial : ℂ) =
@@ -301,7 +301,7 @@ denominator does not vanish there. -/
   norm_num [Nat.factorial]
 
 /-- Padé(1,1) matches `e^{-z}` to third order: explicit bound on the unit disc. -/
-@[powerlib_foundation] theorem norm_exp_neg_sub_pade11_le {z : ℂ} (hz : ‖z‖ ≤ 1) :
+@[tmio T, powerlib_foundation] theorem norm_exp_neg_sub_pade11_le {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖Complex.exp (-z) - (1 - z / 2) / (1 + z / 2)‖ ≤ 2 * ‖z‖ ^ 3 := by
   have hden : (1 / 2 : ℝ) ≤ ‖1 + z / 2‖ := by
     have := norm_sub_norm_le (1 : ℂ) (-(z / 2))
@@ -333,7 +333,7 @@ denominator does not vanish there. -/
     _ ≤ 2 * ‖z‖ ^ 3 * ‖1 + z / 2‖ := by gcongr
 
 /-- Padé(2,2) matches `e^{-z}` to fifth order: explicit bound on the unit disc. -/
-@[powerlib_foundation] theorem norm_exp_neg_sub_pade22_le {z : ℂ} (hz : ‖z‖ ≤ 1) :
+@[tmio T, powerlib_foundation] theorem norm_exp_neg_sub_pade22_le {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖Complex.exp (-z) - (1 - z / 2 + z ^ 2 / 12) / (1 + z / 2 + z ^ 2 / 12)‖ ≤
       ‖z‖ ^ 5 / 10 := by
   have hn0 : 0 ≤ ‖z‖ := norm_nonneg z
@@ -386,14 +386,14 @@ denominator does not vanish there. -/
     _ ≤ ‖z‖ ^ 5 / 10 * ‖1 + z / 2 + z ^ 2 / 12‖ := by gcongr
 
 /-- `‖e^{-τ s} - pade11 τ s‖ ≤ 2 ‖τ s‖³` whenever `‖τ s‖ ≤ 1`. -/
-@[powerlib_foundation] theorem norm_pureDelay_sub_pade11_le (τ : ℝ) {s : ℂ}
+@[tmio T, powerlib_foundation] theorem norm_pureDelay_sub_pade11_le (τ : ℝ) {s : ℂ}
     (hs : ‖(τ : ℂ) * s‖ ≤ 1) :
     ‖pureDelay τ s - pade11 τ s‖ ≤ 2 * ‖(τ : ℂ) * s‖ ^ 3 := by
   have h := norm_exp_neg_sub_pade11_le hs
   simpa [pureDelay, pade11, pade11Num, pade11Den, mul_div_assoc] using h
 
 /-- `‖e^{-τ s} - pade22 τ s‖ ≤ ‖τ s‖⁵ / 10` whenever `‖τ s‖ ≤ 1`. -/
-@[powerlib_foundation] theorem norm_pureDelay_sub_pade22_le (τ : ℝ) {s : ℂ}
+@[tmio T, powerlib_foundation] theorem norm_pureDelay_sub_pade22_le (τ : ℝ) {s : ℂ}
     (hs : ‖(τ : ℂ) * s‖ ≤ 1) :
     ‖pureDelay τ s - pade22 τ s‖ ≤ ‖(τ : ℂ) * s‖ ^ 5 / 10 := by
   have h := norm_exp_neg_sub_pade22_le hs
@@ -406,7 +406,7 @@ def pade11Model (τ : ℝ) : Linear.Plant 1 1 :=
   ⟨!![-2 / τ], !![1], !![4 / τ], !![-1]⟩
 
 /-- Scalar identity behind the realization: `(4/τ)(s + 2/τ)⁻¹ - 1 = pade11 τ s`. -/
-@[powerlib_foundation] theorem pade11_eq_realization {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[tmio T, powerlib_foundation] theorem pade11_eq_realization {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : s + 2 / (τ : ℂ) ≠ 0) :
     4 / (τ : ℂ) * (s + 2 / (τ : ℂ))⁻¹ - 1 = pade11 τ s := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
@@ -424,7 +424,7 @@ def pade11Model (τ : ℝ) : Linear.Plant 1 1 :=
     2 * inv_mul_cancel₀ hs
 
 /-- The state-space realization `(-2/τ, 1, 4/τ, -1)` has transfer function `pade11 τ s`. -/
-@[powerlib_foundation] theorem transfer_pade11Model {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[tmio M, powerlib_foundation] theorem transfer_pade11Model {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : s ≠ -2 / τ) : Linear.transfer (pade11Model τ) s = !![pade11 τ s] := by
   have hden : s + 2 / (τ : ℂ) ≠ 0 := by
     intro h; apply hs; linear_combination h
@@ -447,7 +447,7 @@ def pade11Model (τ : ℝ) : Linear.Plant 1 1 :=
   ring
 
 /-- The realization's internal state is exponentially stable when `τ > 0`. -/
-@[powerlib_foundation] theorem pade11Model_exponentiallyStable {τ : ℝ} (hτ : 0 < τ) :
+@[tmio TM, powerlib_foundation] theorem pade11Model_exponentiallyStable {τ : ℝ} (hτ : 0 < τ) :
     Flow.GloballyExponentiallyStable
       (LinearSystems.affineLinearVectorField (pade11Model τ).A 0) 0 := by
   apply Linear.globallyExponentiallyStable_of_isHurwitz
@@ -464,7 +464,7 @@ def pade11DqModel (τ : ℝ) : Linear.Plant 2 2 :=
   ⟨(-2 / τ) • 1, 1, (4 / τ) • 1, -1⟩
 
 /-- The dq delay matrix is the scalar Padé(1,1) delay times `I₂` (no cross coupling). -/
-@[powerlib_foundation] theorem transfer_pade11DqModel {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[tmio M, powerlib_foundation] theorem transfer_pade11DqModel {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : s ≠ -2 / τ) :
     Linear.transfer (pade11DqModel τ) s = pade11 τ s • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ

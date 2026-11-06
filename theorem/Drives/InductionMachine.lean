@@ -294,9 +294,9 @@ abbrev State2 := Dynamics.State 2
 /-- Build a vector of `Dynamics.State 2` from its `d, q` coordinates. -/
 def vec (x y : ℝ) : State2 := (WithLp.equiv 2 (Fin 2 → ℝ)).symm ![x, y]
 
-@[simp, powerlib_foundation] theorem vec_apply_zero (x y : ℝ) : vec x y 0 = x := by simp [vec]
+@[tmio T, simp, powerlib_foundation] theorem vec_apply_zero (x y : ℝ) : vec x y 0 = x := by simp [vec]
 
-@[simp, powerlib_foundation] theorem vec_apply_one (x y : ℝ) : vec x y 1 = y := by simp [vec]
+@[tmio T, simp, powerlib_foundation] theorem vec_apply_one (x y : ℝ) : vec x y 1 = y := by simp [vec]
 
 /-- Rotor-flux vector field of the current-fed machine in the IFOC frame (stator current
 held at `(isd, isq)`, slip `ω_sl`): the unique `ψ̇_r` solving the rotor voltage equation
@@ -382,7 +382,7 @@ intermediate evidence only. -/
   · linarith
   · nlinarith [sq_nonneg ωsl]
 
-@[powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
+@[tmio T, powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
     ContDiff ℝ 1 (fun x : State2 => x j) :=
   Dynamics.contDiff_coord j
 
@@ -404,10 +404,10 @@ intermediate evidence only. -/
       fun_prop
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
 
-@[powerlib_foundation] theorem norm_sq_state2 (x : State2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 :=
+@[tmio T, powerlib_foundation] theorem norm_sq_state2 (x : State2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 :=
   PhasePlane.norm_sq_eq x
 
-@[powerlib_foundation] theorem inner_state2 (x y : State2) :
+@[tmio T, powerlib_foundation] theorem inner_state2 (x y : State2) :
     inner ℝ x y = x 0 * y 0 + x 1 * y 1 := by
   rw [PiLp.inner_apply]
   simp [Fin.sum_univ_succ, mul_comm]

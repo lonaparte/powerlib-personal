@@ -361,7 +361,7 @@ constant and linear coefficients give `Ki/L > 0` and `(R + Kp)/L > (τ/2) Ki/L`.
 
 /-- A monic real cubic with a negative coefficient or a strict violation of the gap condition has
 a root with positive real part. -/
-@[powerlib_foundation] private theorem exists_cubic_root_re_pos {c2 c1 c0 : ℝ}
+@[tmio T, powerlib_foundation] private theorem exists_cubic_root_re_pos {c2 c1 c0 : ℝ}
     (h : c2 < 0 ∨ c1 < 0 ∨ c0 < 0 ∨ c2 * c1 < c0) :
     ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧ 0 < s.re := by
   have hconst : c0 < 0 → ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧

@@ -70,7 +70,7 @@ def bump (t : ℝ) : ℝ := t * exp (1 - t)
 
 @[tmio T, powerlib_foundation] theorem bump_one : bump 1 = 1 := by simp [bump]
 
-@[powerlib_foundation] theorem bump_tendsto : Tendsto bump atTop (𝓝 0) := by
+@[tmio T, powerlib_foundation] theorem bump_tendsto : Tendsto bump atTop (𝓝 0) := by
   have h := Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1
   have : bump = fun t => exp 1 * (t ^ 1 * exp (-t)) := by
     funext t; simp only [bump, pow_one]; rw [sub_eq_add_neg, exp_add]; ring
@@ -85,7 +85,7 @@ Written out: the first conjunct is **almost-sure attractivity** of the path star
 `x₀` (`X x₀ t ω → 0` as `t → ∞` for `P`-a.e. `ω`); the negated second conjunct is **stability in
 probability** of the zero solution (small initial states keep the whole path in a ball with high
 probability: `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P(∃ t, r ≤ ‖X x₀ t‖) ≤ ε`). -/
-@[powerlib_foundation] theorem attractive_not_stableInProbability [IsProbabilityMeasure P] :
+@[tmio T, powerlib_foundation] theorem attractive_not_stableInProbability [IsProbabilityMeasure P] :
     let X : ℝ → ℝ≥0 → Ω → ℝ := fun x₀ t _ => if x₀ = 0 then 0 else bump t
     (∀ x₀, ∀ᵐ ω ∂P, Tendsto (fun t => X x₀ t ω) atTop (𝓝 0)) ∧
       ¬ ∀ ε > (0 : ℝ≥0∞), ∀ r > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x₀ : ℝ, ‖x₀‖ < δ →
@@ -116,7 +116,7 @@ probability: `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P
 /-- **Exponential decay of a moment** (deterministic Gronwall step): if `m` is continuous on
 `[0, T]`, right-differentiable with `m' ≤ −c m`, then `m(t) ≤ m(0) e^{−ct}` (Mathlib
 `le_gronwallBound_of_liminf_deriv_right_le`). -/
-@[powerlib_foundation] theorem moment_exp_decay {m m' : ℝ → ℝ} {c T : ℝ}
+@[tmio T, powerlib_foundation] theorem moment_exp_decay {m m' : ℝ → ℝ} {c T : ℝ}
     (hcont : ContinuousOn m (Icc 0 T))
     (hderiv : ∀ t ∈ Ico 0 T, HasDerivWithinAt m (m' t) (Ici t) t)
     (hbound : ∀ t ∈ Ico 0 T, m' t ≤ -c * m t) :
@@ -131,7 +131,7 @@ probability: `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P
 
 /-- **Lyapunov's inequality** (Hölder): for `f ≥ 0`, `θ ∈ (0, 1)`, `p, q ≥ 0`,
 `∫ f^{θp+(1−θ)q} ≤ (∫ f^p)^θ (∫ f^q)^{1−θ}`. -/
-@[powerlib_foundation] theorem moment_holder {f : Ω → ℝ≥0∞} (hf : AEMeasurable f P) {θ p q : ℝ}
+@[tmio T, powerlib_foundation] theorem moment_holder {f : Ω → ℝ≥0∞} (hf : AEMeasurable f P) {θ p q : ℝ}
     (hθ0 : 0 < θ) (hθ1 : θ < 1) (hp : 0 ≤ p) (hq : 0 ≤ q) :
     ∫⁻ ω, f ω ^ (θ * p + (1 - θ) * q) ∂P ≤
       (∫⁻ ω, f ω ^ p ∂P) ^ θ * (∫⁻ ω, f ω ^ q ∂P) ^ (1 - θ) := by
@@ -154,7 +154,7 @@ probability: `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P
 /-- **Convexity of moment growth rates (§1.3)**: if `E‖X_t‖^p ≤ e^{at}` and `E‖X_t‖^q ≤ e^{bt}`
 eventually, then `E‖X_t‖^{θp+(1−θ)q} ≤ e^{(θa+(1−θ)b)t}` eventually; i.e. `Λ(θp+(1−θ)q) ≤
 θΛ(p) + (1−θ)Λ(q)`. -/
-@[powerlib_foundation] theorem moment_growth_convex {ι : Type*} {l : Filter ι}
+@[tmio T, powerlib_foundation] theorem moment_growth_convex {ι : Type*} {l : Filter ι}
     {F : ι → Ω → ℝ≥0∞} (hF : ∀ i, AEMeasurable (F i) P) {θ p q a b : ℝ} (hθ0 : 0 < θ)
     (hθ1 : θ < 1) (hp : 0 ≤ p) (hq : 0 ≤ q) {τ : ι → ℝ}
     (hpa : ∀ᶠ i in l, ∫⁻ ω, F i ω ^ p ∂P ≤ ENNReal.ofReal (exp (a * τ i)))
@@ -177,7 +177,7 @@ eventually, then `E‖X_t‖^{θp+(1−θ)q} ≤ e^{(θa+(1−θ)b)t}` eventuall
 /-- **Almost-sure exponent bound** (discrete time): if `E‖X_n‖^p ≤ e^{an}` for all large `n`
 (`p > 0`), then almost surely, for every rational `γ > a/p`, `‖X_n‖ ≤ e^{γn}` for all large `n`
 (so `limsup (1/n) log‖X_n‖ ≤ a/p`). -/
-@[powerlib_foundation] theorem as_exponent_le {E : Type*} [NormedAddCommGroup E] {X : ℕ → Ω → E}
+@[tmio T, powerlib_foundation] theorem as_exponent_le {E : Type*} [NormedAddCommGroup E] {X : ℕ → Ω → E}
     (hX : ∀ n, AEStronglyMeasurable (X n) P) {p a : ℝ} (hp : 0 < p)
     (hmom : ∀ᶠ n in atTop, ∫⁻ ω, ‖X n ω‖ₑ ^ p ∂P ≤ ENNReal.ofReal (exp (a * n))) :
     ∀ᵐ ω ∂P, ∀ γ : ℚ, a / p < γ → ∀ᶠ n in atTop, ‖X n ω‖ ≤ exp (γ * n) := by

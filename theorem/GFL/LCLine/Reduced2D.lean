@@ -222,18 +222,18 @@ def gradH (y : State 2) : State 2 := WithLp.toLp 2 ![-p.h (y 0), p.Ki * y 1]
   ring
 
 /-- `(J − R) (a, b) = (−K_p a + b, −a)`. -/
-@[powerlib_foundation] theorem JR_mulVec (Kp a b : ℝ) :
+@[tmio T, powerlib_foundation] theorem JR_mulVec (Kp a b : ℝ) :
     (!![(0 : ℝ), 1; -1, 0] - !![Kp, 0; 0, 0]) *ᵥ ![a, b] = ![-Kp * a + b, -a] := by
   ext i; fin_cases i <;>
     simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- Port matrix `(−1, 0)ᵀ` applied to a scalar input. -/
-@[powerlib_foundation] theorem portB_mulVec (u : Fin 1 → ℝ) :
+@[tmio T, powerlib_foundation] theorem portB_mulVec (u : Fin 1 → ℝ) :
     (!![(-1 : ℝ); 0]) *ᵥ u = ![-u 0, 0] := by
   ext i; fin_cases i <;>
     simp [Matrix.mulVec, dotProduct]
 
-@[powerlib_foundation] private lemma posSemidef_R {Kp : ℝ} (hKp : 0 ≤ Kp) :
+@[tmio T, powerlib_foundation] private lemma posSemidef_R {Kp : ℝ} (hKp : 0 ≤ Kp) :
     (!![Kp, 0; 0, (0 : ℝ)]).PosSemidef := by
   have : !![Kp, 0; 0, (0 : ℝ)] = Matrix.diagonal ![Kp, 0] := by
     ext i j; fin_cases i <;> fin_cases j <;> simp
@@ -356,13 +356,13 @@ end Params
 /-- The reflection `(θ, η) ↦ (−θ, η)` as a matrix. -/
 def reflectMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![-1, 0; 0, 1]
 
-@[powerlib_foundation] theorem reflectMatrix_isUnit : IsUnit reflectMatrix :=
+@[tmio T, powerlib_foundation] theorem reflectMatrix_isUnit : IsUnit reflectMatrix :=
   (Matrix.isUnit_iff_isUnit_det _).mpr (by simp [reflectMatrix, Matrix.det_fin_two])
 
 /-- The reflection `(θ, η) ↦ (−θ, η)` as a coordinate change. -/
 def reflect : State 2 ≃L[ℝ] State 2 := Dynamics.matrixCoord reflectMatrix reflectMatrix_isUnit
 
-@[powerlib_foundation] theorem reflect_apply (y : State 2) :
+@[tmio T, powerlib_foundation] theorem reflect_apply (y : State 2) :
     reflect y = PhasePlane.mk (-(y 0)) (y 1) := by
   rw [PhasePlane.ext_iff']
   simp [reflect, reflectMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]

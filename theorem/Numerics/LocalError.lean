@@ -56,11 +56,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (fun s hs => (hφ s (Ico_subset_Icc_self hs)).hasDerivWithinAt)
     (by simp [h0]) hB (fun s hs => hb s (Ico_subset_Icc_self hs))
 
-@[powerlib_foundation] private lemma shift_mem {t h s : ℝ} (hs : s ∈ Icc 0 h) :
+@[tmio T, powerlib_foundation] private lemma shift_mem {t h s : ℝ} (hs : s ∈ Icc 0 h) :
     t + s ∈ Icc t (t + h) := ⟨by linarith [hs.1], by linarith [hs.2]⟩
 
 /-- First-order Taylor bound: `‖x(t+s) - x(t) - s x₁(t)‖ ≤ M s²/2`. -/
-@[powerlib_foundation] theorem taylor_one_bound {x x₁ x₂ : ℝ → E} {t h M : ℝ}
+@[tmio T, powerlib_foundation] theorem taylor_one_bound {x x₁ x₂ : ℝ → E} {t h M : ℝ}
     (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
     (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
     (hM : ∀ s ∈ Icc t (t + h), ‖x₂ s‖ ≤ M) :
@@ -81,7 +81,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     _ = M * s ^ 2 / 2 := by norm_num
 
 /-- Second-order Taylor bound. -/
-@[powerlib_foundation] theorem taylor_two_bound {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ}
+@[tmio T, powerlib_foundation] theorem taylor_two_bound {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ}
     (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
     (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
     (hx₂ : ∀ s ∈ Icc t (t + h), HasDerivAt x₂ (x₃ s) s)
@@ -109,7 +109,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     _ = M * s ^ 3 / 6 := by norm_num; ring
 
 /-- Third-order Taylor bound. -/
-@[powerlib_foundation] theorem taylor_three_bound {x x₁ x₂ x₃ x₄ : ℝ → E} {t h M : ℝ}
+@[tmio T, powerlib_foundation] theorem taylor_three_bound {x x₁ x₂ x₃ x₄ : ℝ → E} {t h M : ℝ}
     (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
     (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
     (hx₂ : ∀ s ∈ Icc t (t + h), HasDerivAt x₂ (x₃ s) s)
@@ -143,11 +143,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   calc _ ≤ M / 6 * s ^ (3 + 1) / ((3 : ℕ) + 1) := this
     _ = M * s ^ 4 / 24 := by norm_num; ring
 
-@[powerlib_foundation] private lemma right_mem {h : ℝ} (hh : 0 ≤ h) : h ∈ Icc (0 : ℝ) h :=
+@[tmio T, powerlib_foundation] private lemma right_mem {h : ℝ} (hh : 0 ≤ h) : h ∈ Icc (0 : ℝ) h :=
   ⟨hh, le_rfl⟩
 
 /-- Forward Euler local truncation error: `τ_FE = (h²/2) x₂(t) + O(h³)`. -/
-@[powerlib_foundation] theorem forwardEuler_lte {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
+@[tmio T, powerlib_foundation] theorem forwardEuler_lte {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
     (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
     (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
     (hx₂ : ∀ s ∈ Icc t (t + h), HasDerivAt x₂ (x₃ s) s)
@@ -156,7 +156,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   taylor_two_bound hx hx₁ hx₂ hM h (right_mem hh)
 
 /-- Backward Euler local truncation error: `τ_BE = -(h²/2) x₂(t) + O(h³)`. -/
-@[powerlib_foundation] theorem backwardEuler_lte {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
+@[tmio T, powerlib_foundation] theorem backwardEuler_lte {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
     (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
     (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
     (hx₂ : ∀ s ∈ Icc t (t + h), HasDerivAt x₂ (x₃ s) s)
@@ -177,7 +177,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     _ = 2 / 3 * M * h ^ 3 := by ring
 
 /-- Trapezoidal local truncation error: `τ_T = -(h³/12) x₃(t) + O(h⁴)`. -/
-@[powerlib_foundation] theorem trapezoidal_lte {x x₁ x₂ x₃ x₄ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
+@[tmio T, powerlib_foundation] theorem trapezoidal_lte {x x₁ x₂ x₃ x₄ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
     (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
     (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
     (hx₂ : ∀ s ∈ Icc t (t + h), HasDerivAt x₂ (x₃ s) s)
@@ -201,7 +201,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     _ = M * h ^ 4 / 8 := by ring
 
 /-- First-order global convergence of forward Euler. -/
-@[powerlib_foundation] theorem forwardEuler_global_error {f : E → E} {K : NNReal}
+@[tmio T, powerlib_foundation] theorem forwardEuler_global_error {f : E → E} {K : NNReal}
     (hf : LipschitzWith K f) {x x₂ : ℝ → E} {M h : ℝ} (hh : 0 < h) (N : ℕ)
     (hx : ∀ s ∈ Icc 0 (N * h), HasDerivAt x (f (x s)) s)
     (hx₁ : ∀ s ∈ Icc 0 (N * h), HasDerivAt (fun r => f (x r)) (x₂ s) s)

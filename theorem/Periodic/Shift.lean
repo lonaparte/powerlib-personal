@@ -52,14 +52,14 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
   simpa [h1] using this.symm
 
 /-- `M_{A_c}(s) = M_A(s + c)`. -/
-@[powerlib_foundation] theorem monodromy_shift (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem monodromy_shift (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     (c : ℝ) {T : ℝ} (hT : 0 ≤ T) (s : ℝ) :
     monodromy (fun r => A (r + c)) T s = monodromy A T (s + c) := by
   rw [monodromy, monodromy, transition_shift hA hM c (by linarith)]
   congr 1; ring
 
 /-- A time shift does not change the Floquet multipliers of a periodic system. -/
-@[powerlib_foundation] theorem spectrum_monodromy_shift (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem spectrum_monodromy_shift (hA : Continuous A)
     (hM : ∀ t, ‖A t‖ ≤ M) {T : ℝ} (hT : 0 ≤ T) (hP : Periodic A T) (c : ℝ) :
     spectrum ℂ ((monodromy (fun r => A (r + c)) T 0).map (algebraMap ℝ ℂ)) =
       spectrum ℂ ((monodromy A T 0).map (algebraMap ℝ ℂ)) := by
@@ -68,12 +68,12 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
 /-! ## Floquet exponents -/
 
 /-- `e^{μT} = ρ` for `μ = log ρ / T` (`ρ ≠ 0`, `T ≠ 0`). -/
-@[powerlib_foundation] theorem exp_floquetExponent {ρ : ℂ} (hρ : ρ ≠ 0) {T : ℝ} (hT : T ≠ 0) :
+@[tmio T, powerlib_foundation] theorem exp_floquetExponent {ρ : ℂ} (hρ : ρ ≠ 0) {T : ℝ} (hT : T ≠ 0) :
     Complex.exp (Complex.log ρ / T * T) = ρ := by
   rw [div_mul_cancel₀ _ (by exact_mod_cast hT), Complex.exp_log hρ]
 
 /-- `|ρ| < 1 ↔ Re μ < 0` for the exponent `μ = log ρ / T`, `T > 0`. -/
-@[powerlib_foundation] theorem norm_lt_one_iff_re_neg {ρ : ℂ} (hρ : ρ ≠ 0) {T : ℝ} (hT : 0 < T) :
+@[tmio T, powerlib_foundation] theorem norm_lt_one_iff_re_neg {ρ : ℂ} (hρ : ρ ≠ 0) {T : ℝ} (hT : 0 < T) :
     ‖ρ‖ < 1 ↔ (Complex.log ρ / T).re < 0 := by
   rw [show (Complex.log ρ / T).re = (Complex.log ρ).re / T by
     rw [Complex.div_ofReal_re], Complex.log_re, div_neg_iff]
@@ -86,7 +86,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
     · exact (Real.log_neg_iff (norm_pos_iff.mpr hρ)).mp h
 
 /-- Harmonic aliases `μ + jkω_s` (`ω_s T = 2π`) give the same Floquet multiplier. -/
-@[powerlib_foundation] theorem exp_alias (μ : ℂ) {ωs T : ℝ} (hT : ωs * T = 2 * Real.pi) (k : ℤ) :
+@[tmio T, powerlib_foundation] theorem exp_alias (μ : ℂ) {ωs T : ℝ} (hT : ωs * T = 2 * Real.pi) (k : ℤ) :
     Complex.exp ((μ + k * ωs * Complex.I) * T) = Complex.exp (μ * T) := by
   have hT' : (ωs : ℂ) * T = 2 * Real.pi := by exact_mod_cast hT
   rw [show (μ + k * ωs * Complex.I) * T = μ * T + k * (2 * Real.pi * Complex.I) by

@@ -113,17 +113,17 @@ omit [Fintype κ] in
   ext i
   exact mulVec_diagonal m.w x i
 
-@[powerlib_foundation] theorem field_eq_stateMatrix (m : DiagonalPH ι κ) (x : ι → ℝ)
+@[tmio T, powerlib_foundation] theorem field_eq_stateMatrix (m : DiagonalPH ι κ) (x : ι → ℝ)
     (u : κ → ℝ) : m.field x u = m.stateMatrix *ᵥ x + m.B *ᵥ u := by
   rw [field, stateMatrix, ← mulVec_mulVec, diagonal_mulVec_gradient]
 
 omit [Fintype κ] [DecidableEq ι] in
-@[powerlib_foundation] theorem dampingPower_nonneg (m : DiagonalPH ι κ) (x : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem dampingPower_nonneg (m : DiagonalPH ι κ) (x : ι → ℝ) :
     0 ≤ m.dampingPower x :=
   Finset.sum_nonneg fun i _ => mul_nonneg (m.damping_nonneg i) (sq_nonneg _)
 
 /-- Power balance: `∇Hᵀ ẋ = uᵀ y − Σ dᵢ (∇H)ᵢ²`. -/
-@[powerlib_foundation] theorem power_balance (m : DiagonalPH ι κ) (x : ι → ℝ) (u : κ → ℝ) :
+@[tmio T, powerlib_foundation] theorem power_balance (m : DiagonalPH ι κ) (x : ι → ℝ) (u : κ → ℝ) :
     m.gradient x ⬝ᵥ m.field x u = m.supply x u - m.dampingPower x := by
   have hskew : m.gradient x ⬝ᵥ (m.J *ᵥ m.gradient x) = 0 := by
     have h : m.gradient x ⬝ᵥ (m.J *ᵥ m.gradient x) =
@@ -146,22 +146,22 @@ omit [Fintype κ] [DecidableEq ι] in
 variable {n p : ℕ}
 
 omit [Fintype ι] [DecidableEq ι] in
-@[powerlib_foundation] theorem reindex_mulVec' (e : ι ≃ Fin n) (e' : κ ≃ Fin p)
+@[tmio T, powerlib_foundation] theorem reindex_mulVec' (e : ι ≃ Fin n) (e' : κ ≃ Fin p)
     (M : Matrix ι κ ℝ) (u : Fin p → ℝ) : reindex e e' M *ᵥ u = (M *ᵥ (u ∘ e')) ∘ e.symm := by
   rw [reindex_apply, submatrix_mulVec_equiv, Equiv.symm_symm]
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] theorem reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)
+@[tmio T, powerlib_foundation] theorem reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)
     (x : Fin n → ℝ) : reindex e e M *ᵥ x = (M *ᵥ (x ∘ e)) ∘ e.symm :=
   reindex_mulVec' e e M x
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] theorem dotProduct_reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)
+@[tmio T, powerlib_foundation] theorem dotProduct_reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)
     (x : Fin n → ℝ) : x ⬝ᵥ (reindex e e M *ᵥ x) = (x ∘ e) ⬝ᵥ (M *ᵥ (x ∘ e)) := by
   rw [reindex_mulVec, dotProduct_comp_equiv_symm]
 
 omit [Fintype ι] in
-@[powerlib_foundation] theorem diagonal_quadratic (d y : ι → ℝ) [Fintype ι] :
+@[tmio T, powerlib_foundation] theorem diagonal_quadratic (d y : ι → ℝ) [Fintype ι] :
     y ⬝ᵥ (diagonal d *ᵥ y) = ∑ i, d i * y i ^ 2 := by
   simp only [dotProduct, mulVec_diagonal]
   exact Finset.sum_congr rfl fun i _ => by ring
@@ -191,7 +191,7 @@ def toPH (m : DiagonalPH ι κ) (e : ι ≃ Fin n) (e' : κ ≃ Fin p) : Port.Po
     positivity
 
 omit [Fintype κ] in
-@[powerlib_foundation] theorem toPH_plant (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_plant (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) :
     (m.toPH e e').plant = ⟨reindex e e m.stateMatrix, reindex e e' m.B,
       reindex e' e (m.Bᵀ * diagonal m.w), 0⟩ := by
@@ -202,7 +202,7 @@ omit [Fintype κ] in
 
 /-- The state field of the numbered plant is the field of the data, read through the
 numbering. -/
-@[powerlib_foundation] theorem toPH_field (m : DiagonalPH ι κ) (e : ι ≃ Fin n) (e' : κ ≃ Fin p)
+@[tmio M, powerlib_foundation] theorem toPH_field (m : DiagonalPH ι κ) (e : ι ≃ Fin n) (e' : κ ≃ Fin p)
     (x : EuclideanSpace ℝ (Fin n)) (u : Fin p → ℝ) :
     WithLp.ofLp ((m.toPH e e').plant.system.field x u) =
       m.field (WithLp.ofLp x ∘ e) (u ∘ e') ∘ e.symm := by
@@ -212,7 +212,7 @@ numbering. -/
   rfl
 
 /-- The port output of the numbered plant is the output of the data. -/
-@[powerlib_foundation] theorem toPH_output (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_output (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) (x : EuclideanSpace ℝ (Fin n)) (u : Fin p → ℝ) :
     (m.toPH e e').plant.system.output x u = m.output (WithLp.ofLp x ∘ e) ∘ e'.symm := by
   rw [toPH_plant]
@@ -220,14 +220,14 @@ numbering. -/
     Equiv.symm_symm, output, ← mulVec_mulVec, diagonal_mulVec_gradient]
 
 /-- The supplied power of the numbered plant is the supplied power of the data. -/
-@[powerlib_foundation] theorem toPH_supply (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_supply (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) (x : EuclideanSpace ℝ (Fin n)) (u : Fin p → ℝ) :
     (m.toPH e e').plant.system.supply x u = m.supply (WithLp.ofLp x ∘ e) (u ∘ e') := by
   rw [Port.System.supply, toPH_output, dotProduct_comp_equiv_symm, supply]
 
 omit [Fintype κ] in
 /-- The stored energy `xᵀ Q x / 2` of the numbered plant is the energy of the data. -/
-@[powerlib_foundation] theorem toPH_storage (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_storage (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) (x : EuclideanSpace ℝ (Fin n)) :
     (m.toPH e e').kyp.storage x = m.energy (WithLp.ofLp x ∘ e) := by
   simp only [Linear.KYP.storage, Port.PortHamiltonian.kyp, toPH]
@@ -235,7 +235,7 @@ omit [Fintype κ] in
 
 omit [Fintype κ] in
 /-- Strictly positive damping on every state gives a strictly positive dissipation matrix. -/
-@[powerlib_foundation] theorem toPH_dissipation_pos (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_dissipation_pos (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) (hd : ∀ i, 0 < m.d i) :
     ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ ((m.toPH e e').R *ᵥ x) := by
   intro x hx
@@ -249,7 +249,7 @@ omit [Fintype κ] in
 
 omit [Fintype κ] in
 /-- Zero damping gives a zero dissipation matrix. -/
-@[powerlib_foundation] theorem toPH_R_eq_zero (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_R_eq_zero (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) (hd : m.d = 0) : (m.toPH e e').R = 0 := by
   change reindex e e (diagonal m.d) = 0
   rw [hd]
@@ -259,7 +259,7 @@ omit [Fintype κ] in
 omit [Fintype κ] in
 /-- Data related by a coordinate change `T`, `S = T⁻¹` (state matrix `T A S`, input `T B`,
 output `C S`) give similar numbered plants. -/
-@[powerlib_foundation] theorem toPH_similar (m m' : DiagonalPH ι κ) (e : ι ≃ Fin n)
+@[tmio M, powerlib_foundation] theorem toPH_similar (m m' : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) {T S : Matrix ι ι ℝ} (hTS : T * S = 1) (hST : S * T = 1)
     (hA : m'.stateMatrix = T * m.stateMatrix * S) (hB : m'.B = T * m.B)
     (hC : m'.Bᵀ * diagonal m'.w = m.Bᵀ * diagonal m.w * S) :
@@ -291,7 +291,7 @@ variable {n p : ℕ}
 
 /-- In a linear port-Hamiltonian plant the energy matrix turns the state matrix into the
 dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)`. -/
-@[powerlib_foundation] theorem energy_rate (h : Port.PortHamiltonian n p) (x : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem energy_rate (h : Port.PortHamiltonian n p) (x : Fin n → ℝ) :
     x ⬝ᵥ (h.Q *ᵥ (h.plant.A *ᵥ x)) = -((h.Q *ᵥ x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ x))) := by
   have hsym : x ⬝ᵥ (h.Q *ᵥ (((h.J - h.R) * h.Q) *ᵥ x)) =
       (h.Q *ᵥ x) ⬝ᵥ ((h.J - h.R) *ᵥ (h.Q *ᵥ x)) := by
@@ -326,26 +326,26 @@ exponentially stable denotation, equivalently its state matrix is Hurwitz. -/
   linarith [hR _ hQx]
 
 /-- Without dissipation the stored energy is conserved: `Aᵀ Q + Q A = 0`. -/
-@[powerlib_foundation] theorem lossless_lyapunov (h : Port.PortHamiltonian n p) (hR : h.R = 0) :
+@[tmio T, powerlib_foundation] theorem lossless_lyapunov (h : Port.PortHamiltonian n p) (hR : h.R = 0) :
     h.plant.Aᵀ * h.Q + h.Q * h.plant.A = 0 := by
   simp only [Port.PortHamiltonian.plant, hR, sub_zero, Matrix.transpose_mul, h.skew,
     h.energy_symmetric]
   noncomm_ring
 
 /-- The stored energy `xᵀ Q x / 2` as an inner product. -/
-@[powerlib_foundation] theorem storage_eq_inner (h : Port.PortHamiltonian n p) :
+@[tmio T, powerlib_foundation] theorem storage_eq_inner (h : Port.PortHamiltonian n p) :
     h.kyp.storage = fun x => inner ℝ x (Linear.op h.Q x) / 2 := by
   funext x
   rw [Linear.inner_op]
   rfl
 
-@[powerlib_foundation] theorem storage_contDiff (h : Port.PortHamiltonian n p) :
+@[tmio T, powerlib_foundation] theorem storage_contDiff (h : Port.PortHamiltonian n p) :
     ContDiff ℝ 1 h.kyp.storage := by
   rw [storage_eq_inner]
   exact (contDiff_id.inner ℝ (Linear.op h.Q).contDiff).div_const 2
 
 /-- The derivative of the stored energy in the direction `v` is `xᵀ Q v`. -/
-@[powerlib_foundation] theorem fderiv_storage_apply (h : Port.PortHamiltonian n p)
+@[tmio T, powerlib_foundation] theorem fderiv_storage_apply (h : Port.PortHamiltonian n p)
     (x v : EuclideanSpace ℝ (Fin n)) :
     fderiv ℝ h.kyp.storage x v = WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ WithLp.ofLp v) := by
   have hd : HasFDerivAt h.kyp.storage
@@ -369,7 +369,7 @@ exponentially stable denotation, equivalently its state matrix is Hurwitz. -/
 
 /-- Power balance of a linear port-Hamiltonian plant: in the direction of the field, the stored
 energy changes at the supplied power minus the dissipated power `(Q x)ᵀ R (Q x)`. -/
-@[powerlib_foundation] theorem fderiv_storage_field (h : Port.PortHamiltonian n p)
+@[tmio T, powerlib_foundation] theorem fderiv_storage_field (h : Port.PortHamiltonian n p)
     (x : EuclideanSpace ℝ (Fin n)) (u : Fin p → ℝ) :
     fderiv ℝ h.kyp.storage x (h.plant.system.field x u) =
       h.plant.system.supply x u -
@@ -394,7 +394,7 @@ energy changes at the supplied power minus the dissipated power `(Q x)ᵀ R (Q x
 
 /-- Strictly positive dissipation gives a quadratic-decay certificate whose energy is the stored
 energy itself. -/
-@[powerlib_foundation] theorem exists_quadraticDecay (h : Port.PortHamiltonian n p)
+@[tmio T, powerlib_foundation] theorem exists_quadraticDecay (h : Port.PortHamiltonian n p)
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     Nonempty (Flow.QuadraticDecay h.plant.system.zeroInput h.kyp.storage 0) := by
   have hpos : ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 → 0 < h.kyp.storage x := fun x hx =>
@@ -520,13 +520,13 @@ variable (m₁ : DiagonalPH ι₁ κ₁) (m₂ : DiagonalPH ι₂ κ₂)
   (Mc : Matrix κ₂ κ₁ ℝ) (g₁ : Matrix κ₁ κ ℝ) (g₂ : Matrix κ₂ κ ℝ)
 
 omit [DecidableEq ι₁] [DecidableEq ι₂] [Fintype ι₁] [Fintype ι₂] [Fintype κ] in
-@[powerlib_foundation] theorem interconnect_gradient (x : ι₁ ⊕ ι₂ → ℝ) :
+@[tmio M, powerlib_foundation] theorem interconnect_gradient (x : ι₁ ⊕ ι₂ → ℝ) :
     (interconnect m₁ m₂ Mc g₁ g₂).gradient x =
       Sum.elim (m₁.gradient (x ∘ Sum.inl)) (m₂.gradient (x ∘ Sum.inr)) := by
   ext (i | i) <;> rfl
 
 omit [Fintype ι₁] [Fintype ι₂] [Fintype κ] in
-@[powerlib_foundation] theorem interconnect_stateMatrix_sub :
+@[tmio M, powerlib_foundation] theorem interconnect_stateMatrix_sub :
     (interconnect m₁ m₂ Mc g₁ g₂).J - diagonal (interconnect m₁ m₂ Mc g₁ g₂).d =
       fromBlocks (m₁.J - diagonal m₁.d) (-(m₁.B * Mcᵀ * m₂.Bᵀ)) (m₂.B * Mc * m₁.Bᵀ)
         (m₂.J - diagonal m₂.d) := by
@@ -534,7 +534,7 @@ omit [Fintype ι₁] [Fintype ι₂] [Fintype κ] in
 
 /-- (1.10) restricted to the first block is the first subsystem driven by
 `u₁ = −Mᵀ y₂ + g₁ u`. -/
-@[powerlib_foundation] theorem interconnect_field_inl (x : ι₁ ⊕ ι₂ → ℝ) (u : κ → ℝ) :
+@[tmio M, powerlib_foundation] theorem interconnect_field_inl (x : ι₁ ⊕ ι₂ → ℝ) (u : κ → ℝ) :
     (interconnect m₁ m₂ Mc g₁ g₂).field x u ∘ Sum.inl =
       m₁.field (x ∘ Sum.inl) (-(Mcᵀ *ᵥ m₂.output (x ∘ Sum.inr)) + g₁ *ᵥ u) := by
   have hB : (interconnect m₁ m₂ Mc g₁ g₂).B = fromRows (m₁.B * g₁) (m₂.B * g₂) := rfl
@@ -548,7 +548,7 @@ omit [Fintype ι₁] [Fintype ι₂] [Fintype κ] in
 
 /-- (1.10) restricted to the second block is the second subsystem driven by
 `u₂ = M y₁ + g₂ u`. -/
-@[powerlib_foundation] theorem interconnect_field_inr (x : ι₁ ⊕ ι₂ → ℝ) (u : κ → ℝ) :
+@[tmio M, powerlib_foundation] theorem interconnect_field_inr (x : ι₁ ⊕ ι₂ → ℝ) (u : κ → ℝ) :
     (interconnect m₁ m₂ Mc g₁ g₂).field x u ∘ Sum.inr =
       m₂.field (x ∘ Sum.inr) (Mc *ᵥ m₁.output (x ∘ Sum.inl) + g₂ *ᵥ u) := by
   have hB : (interconnect m₁ m₂ Mc g₁ g₂).B = fromRows (m₁.B * g₁) (m₂.B * g₂) := rfl
@@ -562,14 +562,14 @@ omit [Fintype ι₁] [Fintype ι₂] [Fintype κ] in
 
 omit [DecidableEq ι₁] [DecidableEq ι₂] [Fintype κ] in
 /-- `H^tot = H₁ + H₂`. -/
-@[powerlib_foundation] theorem interconnect_energy (x : ι₁ ⊕ ι₂ → ℝ) :
+@[tmio M, powerlib_foundation] theorem interconnect_energy (x : ι₁ ⊕ ι₂ → ℝ) :
     (interconnect m₁ m₂ Mc g₁ g₂).energy x =
       m₁.energy (x ∘ Sum.inl) + m₂.energy (x ∘ Sum.inr) := by
   simp [DiagonalPH.energy, interconnect, Fintype.sum_sum_type]
 
 omit [DecidableEq ι₁] [DecidableEq ι₂] [Fintype κ] in
 /-- The external output is `g₁ᵀ y₁ + g₂ᵀ y₂`. -/
-@[powerlib_foundation] theorem interconnect_output (x : ι₁ ⊕ ι₂ → ℝ) :
+@[tmio M, powerlib_foundation] theorem interconnect_output (x : ι₁ ⊕ ι₂ → ℝ) :
     (interconnect m₁ m₂ Mc g₁ g₂).output x =
       g₁ᵀ *ᵥ m₁.output (x ∘ Sum.inl) + g₂ᵀ *ᵥ m₂.output (x ∘ Sum.inr) := by
   have hB : (interconnect m₁ m₂ Mc g₁ g₂).B = fromRows (m₁.B * g₁) (m₂.B * g₂) := rfl
@@ -582,7 +582,7 @@ variable {n p : ℕ}
 
 /-- A continuous linear map intertwining two port fields carries solution segments. Generic: for
 any two port systems. -/
-@[powerlib_foundation] theorem isTrajectoryOn_map {n' p' : ℕ} (s : Port.System n p)
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_map {n' p' : ℕ} (s : Port.System n p)
     (s' : Port.System n' p') (L : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n'))
     (v : EuclideanSpace ℝ (Fin n) → (Fin p → ℝ) → (Fin p' → ℝ))
     (hL : ∀ y u, L (s.field y u) = s'.field (L y) (v y u)) {u : ℝ → Fin p → ℝ}
@@ -599,14 +599,14 @@ private def restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β ≃ Fin 
     ((LinearMap.funLeft ℝ ℝ (e.symm.symm ∘ f ∘ e₁.symm)).toContinuousLinearMap.comp
       (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).toContinuousLinearMap)
 
-@[powerlib_foundation] private theorem ofLp_restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β ≃ Fin n)
+@[tmio T, powerlib_foundation] private theorem ofLp_restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β ≃ Fin n)
     (e₁ : α ≃ Fin n') (x : EuclideanSpace ℝ (Fin n)) :
     WithLp.ofLp (restrict f e e₁ x) = (WithLp.ofLp x ∘ e ∘ f) ∘ e₁.symm := rfl
 
 /-- Solutions of the composite project to solutions of the first subsystem under the coupling
 input `u₁ = −Mᵀ y₂ + g₁ u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_foundation] private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
+@[tmio T, powerlib_foundation] private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
     (e₁ : ι₁ ≃ Fin n₁) (e₁' : κ₁ ≃ Fin p₁) {u : ℝ → Fin p → ℝ}
     {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ : ℝ}
     (hx : ((interconnect m₁ m₂ Mc g₁ g₂).toPH e e').plant.system.IsTrajectoryOn u x t₀ t₁) :
@@ -629,7 +629,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Solutions of the composite project to solutions of the second subsystem under the coupling
 input `u₂ = M y₁ + g₂ u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[powerlib_foundation] private theorem interconnect_trajectory_inr {n₂ p₂ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
+@[tmio T, powerlib_foundation] private theorem interconnect_trajectory_inr {n₂ p₂ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
     (e₂ : ι₂ ≃ Fin n₂) (e₂' : κ₂ ≃ Fin p₂) {u : ℝ → Fin p → ℝ}
     {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ : ℝ}
     (hx : ((interconnect m₁ m₂ Mc g₁ g₂).toPH e e').plant.system.IsTrajectoryOn u x t₀ t₁) :
@@ -679,7 +679,7 @@ section Blocks
 variable {ι ι₁ ι₂ : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι₁] [Fintype ι₂]
 
 /-- Block-diagonal dissipation of independent components is positive semidefinite. -/
-@[powerlib_foundation] theorem blockDiag_posSemidef {R₁ : Matrix ι₁ ι₁ ℝ} {R₂ : Matrix ι₂ ι₂ ℝ}
+@[tmio T, powerlib_foundation] theorem blockDiag_posSemidef {R₁ : Matrix ι₁ ι₁ ℝ} {R₂ : Matrix ι₂ ι₂ ℝ}
     (h₁ : R₁.PosSemidef) (h₂ : R₂.PosSemidef) : (fromBlocks R₁ 0 0 R₂).PosSemidef := by
   rw [posSemidef_iff_dotProduct_mulVec] at h₁ h₂ ⊢
   refine ⟨h₁.1.fromBlocks (by simp) h₂.1, fun x => ?_⟩
@@ -693,7 +693,7 @@ variable {ι ι₁ ι₂ : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι₁] 
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- §1.5.2: adding skew-symmetric interconnection blocks keeps `J` skew. -/
-@[powerlib_foundation] theorem skew_add {J K : Matrix ι ι ℝ} (hJ : Jᵀ = -J) (hK : Kᵀ = -K) :
+@[tmio T, powerlib_foundation] theorem skew_add {J K : Matrix ι ι ℝ} (hJ : Jᵀ = -J) (hK : Kᵀ = -K) :
     (J + K)ᵀ = -(J + K) := by
   rw [transpose_add, hJ, hK, neg_add]
 
@@ -702,13 +702,13 @@ def skewPair (i j : ι) (a : ℝ) : Matrix ι ι ℝ :=
   a • (single i j 1 - single j i 1)
 
 omit [Fintype ι] in
-@[powerlib_foundation] theorem skewPair_skew (i j : ι) (a : ℝ) :
+@[tmio T, powerlib_foundation] theorem skewPair_skew (i j : ι) (a : ℝ) :
     (skewPair i j a)ᵀ = -skewPair i j a := by
   simp [skewPair, transpose_sub, transpose_single, smul_sub, neg_sub]
 
 omit [Fintype ι] in
 /-- §1.5.2 recursion: any finite sum of elementary pairs added to a skew `J` stays skew. -/
-@[powerlib_foundation] theorem skew_add_sum_skewPair {J : Matrix ι ι ℝ} (hJ : Jᵀ = -J)
+@[tmio T, powerlib_foundation] theorem skew_add_sum_skewPair {J : Matrix ι ι ℝ} (hJ : Jᵀ = -J)
     (s : Finset (ι × ι × ℝ)) :
     (J + ∑ p ∈ s, skewPair p.1 p.2.1 p.2.2)ᵀ = -(J + ∑ p ∈ s, skewPair p.1 p.2.1 p.2.2) := by
   apply skew_add hJ
@@ -717,7 +717,7 @@ omit [Fintype ι] in
 
 omit [Fintype ι] in
 /-- §1.7: a constant-impedance load adds a nonnegative diagonal term to `R`, keeping `R ⪰ 0`. -/
-@[powerlib_foundation] theorem posSemidef_add_diagonal {R : Matrix ι ι ℝ} (hR : R.PosSemidef)
+@[tmio T, powerlib_foundation] theorem posSemidef_add_diagonal {R : Matrix ι ι ℝ} (hR : R.PosSemidef)
     {G : ι → ℝ} (hG : ∀ i, 0 ≤ G i) : (R + diagonal G).PosSemidef :=
   hR.add (PosSemidef.diagonal hG)
 
@@ -729,7 +729,7 @@ section Strict
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
 
-@[powerlib_foundation] theorem exists_pos_lower {ι : Type*} [Finite ι] (f : ι → ℝ)
+@[tmio T, powerlib_foundation] theorem exists_pos_lower {ι : Type*} [Finite ι] (f : ι → ℝ)
     (hf : ∀ i, 0 < f i) : ∃ c > 0, ∀ i, c ≤ f i := by
   rcases isEmpty_or_nonempty ι with h | h
   · exact ⟨1, one_pos, fun i => isEmptyElim i⟩
@@ -737,7 +737,7 @@ variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
     exact ⟨f i₀, hf i₀, hi₀⟩
 
 omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem energy_hasFDerivAt (m : DiagonalPH ι κ) (x : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem energy_hasFDerivAt (m : DiagonalPH ι κ) (x : ι → ℝ) :
     HasFDerivAt m.energy
       (∑ i, (m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
   have h : ∀ i ∈ (Finset.univ : Finset ι), HasFDerivAt (fun y : ι → ℝ => m.w i * y i ^ 2 / 2)
@@ -753,20 +753,20 @@ omit [DecidableEq ι] [Fintype κ] in
   exact HasFDerivAt.fun_sum h
 
 omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem fderiv_energy_apply (m : DiagonalPH ι κ) (x v : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem fderiv_energy_apply (m : DiagonalPH ι κ) (x v : ι → ℝ) :
     fderiv ℝ m.energy x v = m.gradient x ⬝ᵥ v := by
   rw [(energy_hasFDerivAt m x).fderiv]
   simp [dotProduct, DiagonalPH.gradient]
 
 omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem energy_contDiff (m : DiagonalPH ι κ) :
+@[tmio T, powerlib_foundation] theorem energy_contDiff (m : DiagonalPH ι κ) :
     ContDiff ℝ 1 m.energy := by
   unfold DiagonalPH.energy
   apply ContDiff.sum
   intro i _
   exact ((contDiff_const.mul ((contDiff_apply ℝ ℝ i).pow 2)).div_const 2)
 
-@[powerlib_foundation] theorem zeroInput_contDiff (m : DiagonalPH ι κ) :
+@[tmio T, powerlib_foundation] theorem zeroInput_contDiff (m : DiagonalPH ι κ) :
     ContDiff ℝ 1 (fun x => m.field x 0) := by
   have h : (fun x => m.field x 0) = fun x => m.stateMatrix *ᵥ x := by
     funext x

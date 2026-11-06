@@ -60,12 +60,12 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   intro τ _
   exact hrate (x τ) (u τ)
 
-@[simp, powerlib_foundation] theorem System.supply_zero (s : System n p) (x : ℝⁿ) :
+@[tmio T, simp, powerlib_foundation] theorem System.supply_zero (s : System n p) (x : ℝⁿ) :
     s.supply x 0 = 0 := by
   simp [System.supply]
 
 /-- With the ports at zero, the storage does not increase along solutions. -/
-@[powerlib_foundation] theorem System.PassiveWith.zeroInput_le {s : System n p} {V : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem System.PassiveWith.zeroInput_le {s : System n p} {V : ℝⁿ → ℝ}
     (hV : s.PassiveWith V) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hx : _root_.IsTrajectoryOn x s.zeroInput t₀ t₁) {t : ℝ} (ht : t ∈ Icc t₀ t₁) :
     V (x t) ≤ V (x t₀) := by
@@ -77,7 +77,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A storage between two positive quadratic bounds proves Lyapunov stability of the zero-input
 field. -/
-@[powerlib_foundation] theorem System.PassiveWith.lyapunovStable {s : System n p} {V : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem System.PassiveWith.lyapunovStable {s : System n p} {V : ℝⁿ → ℝ}
     (hV : s.PassiveWith V) {a b : ℝ} (ha : 0 < a) (hab : a ≤ b)
     (hbounds : ∀ x, a * ‖x‖ ^ 2 ≤ V x ∧ V x ≤ b * ‖x‖ ^ 2) :
     LyapunovStable s.zeroInput 0 := by
@@ -101,7 +101,7 @@ field. -/
 
 /-- A solution segment that returns to its initial state while the ports deliver net energy
 refutes passivity: no storage can absorb a negative supply over a closed cycle. -/
-@[powerlib_foundation] theorem System.not_passive_of_cycle (s : System n p)
+@[tmio T, powerlib_foundation] theorem System.not_passive_of_cycle (s : System n p)
     {u : ℝ → Fin p → ℝ} {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hle : t₀ ≤ t₁)
     (hx : s.IsTrajectoryOn u x t₀ t₁) (hcycle : x t₁ = x t₀)
     (hint : IntervalIntegrable (fun t => s.supply (x t) (u t)) volume t₀ t₁)
@@ -113,7 +113,7 @@ refutes passivity: no storage can absorb a negative supply over a closed cycle. 
 
 /-- An equilibrium held by a constant input that draws energy out of the ports refutes
 passivity. -/
-@[powerlib_foundation] theorem System.not_passive_of_equilibrium (s : System n p)
+@[tmio T, powerlib_foundation] theorem System.not_passive_of_equilibrium (s : System n p)
     {x₀ : ℝⁿ} {u₀ : Fin p → ℝ} (hfield : s.field x₀ u₀ = 0) (hsupply : s.supply x₀ u₀ < 0) :
     ¬ s.Passive := by
   refine s.not_passive_of_cycle (u := fun _ => u₀) (x := fun _ => x₀) zero_le_one
@@ -121,63 +121,63 @@ passivity. -/
   · simpa [hfield] using (hasDerivAt_const t x₀).hasDerivWithinAt
   · simpa using hsupply
 
-@[simp, powerlib_foundation] theorem System.autonomous_zeroInput (f : ℝⁿ → ℝⁿ) :
+@[tmio T, simp, powerlib_foundation] theorem System.autonomous_zeroInput (f : ℝⁿ → ℝⁿ) :
     (System.autonomous f).zeroInput = f := rfl
 
 /-- A system without ports is passive: the zero storage never increases, and nothing is
 supplied. -/
-@[powerlib_foundation] theorem System.passive_of_noPorts (s : System n 0) : s.Passive :=
+@[tmio T, powerlib_foundation] theorem System.passive_of_noPorts (s : System n 0) : s.Passive :=
   ⟨fun _ => 0, fun _ => le_rfl, fun u x t₀ t₁ _ _ _ => by simp [System.supply]⟩
 
-@[powerlib_foundation] theorem System.autonomous_passive (f : ℝⁿ → ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem System.autonomous_passive (f : ℝⁿ → ℝⁿ) :
     (System.autonomous f).Passive :=
   (System.autonomous f).passive_of_noPorts
 
 end Port
 
 /-- A sentence about the flow holds on a system exactly when it holds for its zero-input field. -/
-@[simp, powerlib_foundation] theorem Sentence.holds_flow {n p : ℕ} (P : Flow.Property)
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_flow {n p : ℕ} (P : Flow.Property)
     (s : Port.System n p) : (Sentence.flow P).holds (s : Behaviour n p) ↔ P.holds s.zeroInput 0 :=
   Iff.rfl
 
-@[simp, powerlib_foundation] theorem Sentence.holds_passive {n p : ℕ} (s : Port.System n p) :
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_passive {n p : ℕ} (s : Port.System n p) :
     Sentence.passive.holds (s : Behaviour n p) ↔ s.Passive := Iff.rfl
 
-@[simp, powerlib_foundation] theorem Sentence.holds_flow_discrete {n p : ℕ} (P : Flow.Property)
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_flow_discrete {n p : ℕ} (P : Flow.Property)
     (s : Map.System n p) :
     (Sentence.flow P).holds (Behaviour.discrete s) ↔ P.holdsMap s.period s.zeroInput 0 :=
   Iff.rfl
 
-@[simp, powerlib_foundation] theorem Sentence.holds_passive_discrete {n p : ℕ}
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_passive_discrete {n p : ℕ}
     (s : Map.System n p) : Sentence.passive.holds (Behaviour.discrete s) ↔ s.Passive := Iff.rfl
 
 /-- A system read without an envelope has no initial states: its envelope sentences hold. -/
-@[simp, powerlib_foundation] theorem Sentence.holds_envelope {n p : ℕ} (E : Envelope.Property)
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_envelope {n p : ℕ} (E : Envelope.Property)
     (s : Port.System n p) : (Sentence.envelope E).holds (s : Behaviour n p) := trivial
 
-@[simp, powerlib_foundation] theorem Sentence.holds_envelope_discrete {n p : ℕ}
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_envelope_discrete {n p : ℕ}
     (E : Envelope.Property) (s : Map.System n p) :
     (Sentence.envelope E).holds (Behaviour.discrete s) := trivial
 
-@[simp, powerlib_foundation] theorem Sentence.holds_flow_disturbed {n p : ℕ} (P : Flow.Property)
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_flow_disturbed {n p : ℕ} (P : Flow.Property)
     (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
     (ν : Measure Envelope.Sample) :
     (Sentence.flow P).holds (Behaviour.disturbed s S A ν) ↔ ∀ ω, P.holds (s ω).zeroInput 0 :=
   Iff.rfl
 
-@[simp, powerlib_foundation] theorem Sentence.holds_passive_disturbed {n p : ℕ}
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_passive_disturbed {n p : ℕ}
     (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
     (ν : Measure Envelope.Sample) :
     Sentence.passive.holds (Behaviour.disturbed s S A ν) ↔ ∀ ω, (s ω).Passive := Iff.rfl
 
-@[simp, powerlib_foundation] theorem Sentence.holds_safe_disturbed {n p : ℕ} (T ε : ℝ≥0∞)
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_safe_disturbed {n p : ℕ} (T ε : ℝ≥0∞)
     (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
     (ν : Measure Envelope.Sample) :
     (Sentence.envelope (.safe T ε)).holds (Behaviour.disturbed s S A ν) ↔
       ν {ω | (s ω).Exceeds S A T} ≤ ε := Iff.rfl
 
 /-- A solution leaves the safe set exactly when the reached states are not all in it. -/
-@[powerlib_foundation] theorem Port.System.exceeds_iff_not_reach_subset {n p : ℕ}
+@[tmio T, powerlib_foundation] theorem Port.System.exceeds_iff_not_reach_subset {n p : ℕ}
     (s : Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n))) (T : ℝ≥0∞) :
     s.Exceeds S A T ↔ ¬ s.reach S T ⊆ A := by
   constructor
@@ -188,7 +188,7 @@ end Port
     exact ⟨x, t, ht, hT, hS, hx, hA⟩
 
 /-- The safety sentence bounds the exceedance probability, on every kind of system. -/
-@[powerlib_foundation] theorem Sentence.holds_safe_iff_exceedance {n p : ℕ} (T ε : ℝ≥0∞)
+@[tmio T, powerlib_foundation] theorem Sentence.holds_safe_iff_exceedance {n p : ℕ} (T ε : ℝ≥0∞)
     (b : Behaviour n p) :
     (Sentence.envelope (.safe T ε)).holds b ↔ b.exceedance T ≤ ε := by
   cases b with
@@ -196,7 +196,7 @@ end Port
   | discrete s => exact ⟨fun _ => zero_le, fun _ => trivial⟩
   | disturbed s S A ν => exact Iff.rfl
 
-@[simp, powerlib_foundation] theorem Sentence.holds_meanSquare_disturbed {n p : ℕ} (T c : ℝ≥0∞)
+@[tmio T, simp, powerlib_foundation] theorem Sentence.holds_meanSquare_disturbed {n p : ℕ} (T c : ℝ≥0∞)
     (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
     (ν : Measure Envelope.Sample) :
     (Sentence.envelope (.meanSquare T c)).holds (Behaviour.disturbed s S A ν) ↔

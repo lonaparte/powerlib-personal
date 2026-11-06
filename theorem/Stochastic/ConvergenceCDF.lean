@@ -56,7 +56,7 @@ variable {ι : Type*} {l : Filter ι}
   rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real, h, ENNReal.toReal_ofReal']
 
 /-- Atom-free points of a finite measure on `ℝ` are dense. -/
-@[powerlib_foundation] theorem dense_atomFree (ν : Measure ℝ) [IsFiniteMeasure ν] :
+@[tmio T, powerlib_foundation] theorem dense_atomFree (ν : Measure ℝ) [IsFiniteMeasure ν] :
     Dense {t : ℝ | ν {t} = 0} := by
   have hc := Measure.countable_meas_level_set_pos (μ := ν) (g := id) measurable_id
   have h := hc.dense_compl ℝ
@@ -66,7 +66,7 @@ variable {ι : Type*} {l : Filter ι}
 
 /-- **Forward direction**: weak convergence implies convergence of the distribution functions at
 atom-free points (continuity points) of the limit. -/
-@[powerlib_foundation] theorem cdf_tendsto_of_tendsto {μs : ι → ProbabilityMeasure ℝ}
+@[tmio T, powerlib_foundation] theorem cdf_tendsto_of_tendsto {μs : ι → ProbabilityMeasure ℝ}
     {ν : ProbabilityMeasure ℝ} (h : Tendsto μs l (𝓝 ν)) {x : ℝ} (hx : (ν : Measure ℝ) {x} = 0) :
     Tendsto (fun i => cdf (μs i : Measure ℝ) x) l (𝓝 (cdf (ν : Measure ℝ) x)) := by
   have hfr : (ν : Measure ℝ) (frontier (Iic x)) = 0 := by rw [frontier_Iic]; exact hx
@@ -76,7 +76,7 @@ atom-free points (continuity points) of the limit. -/
 
 /-- **Reverse direction**: convergence of the distribution functions at every atom-free point of
 the limit implies weak convergence. -/
-@[powerlib_foundation] theorem tendsto_of_cdf_tendsto [l.IsCountablyGenerated]
+@[tmio T, powerlib_foundation] theorem tendsto_of_cdf_tendsto [l.IsCountablyGenerated]
     {μs : ι → ProbabilityMeasure ℝ} {ν : ProbabilityMeasure ℝ}
     (h : ∀ x, (ν : Measure ℝ) {x} = 0 →
       Tendsto (fun i => cdf (μs i : Measure ℝ) x) l (𝓝 (cdf (ν : Measure ℝ) x))) :
@@ -115,7 +115,7 @@ the limit implies weak convergence. -/
 
 /-- **Convergence in distribution on `ℝ` ⇔ convergence of distribution functions at the
 continuity (atom-free) points of the limit.** -/
-@[powerlib_foundation] theorem tendsto_iff_cdf_tendsto [l.IsCountablyGenerated]
+@[tmio T, powerlib_foundation] theorem tendsto_iff_cdf_tendsto [l.IsCountablyGenerated]
     {μs : ι → ProbabilityMeasure ℝ} {ν : ProbabilityMeasure ℝ} :
     Tendsto μs l (𝓝 ν) ↔ ∀ x, (ν : Measure ℝ) {x} = 0 →
       Tendsto (fun i => cdf (μs i : Measure ℝ) x) l (𝓝 (cdf (ν : Measure ℝ) x)) :=
@@ -131,18 +131,18 @@ section Quantile
 
 variable {μ : Measure ℝ} {u : ℝ}
 
-@[powerlib_foundation] private theorem quantile_set_nonempty (hu1 : u < 1) : {x | u ≤ cdf μ x}.Nonempty := by
+@[tmio T, powerlib_foundation] private theorem quantile_set_nonempty (hu1 : u < 1) : {x | u ≤ cdf μ x}.Nonempty := by
   obtain ⟨x, hx⟩ := ((tendsto_order.1 (tendsto_cdf_atTop (μ := μ))).1 u hu1).exists
   exact ⟨x, hx.le⟩
 
-@[powerlib_foundation] private theorem quantile_set_bddBelow (hu0 : 0 < u) : BddBelow {x | u ≤ cdf μ x} := by
+@[tmio T, powerlib_foundation] private theorem quantile_set_bddBelow (hu0 : 0 < u) : BddBelow {x | u ≤ cdf μ x} := by
   obtain ⟨x₀, hx₀⟩ := eventually_atBot.mp ((tendsto_order.1 (tendsto_cdf_atBot (μ := μ))).2 u hu0)
   refine ⟨x₀, fun y hy => ?_⟩
   by_contra h
   exact absurd hy (not_le.mpr (hx₀ y (not_le.mp h).le))
 
 /-- **Galois connection** of the quantile: for `u ∈ (0, 1)`, `Q(u) ≤ x ↔ u ≤ F(x)`. -/
-@[powerlib_foundation] theorem quantile_le_iff (hu0 : 0 < u) (hu1 : u < 1) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem quantile_le_iff (hu0 : 0 < u) (hu1 : u < 1) (x : ℝ) :
     quantile μ u ≤ x ↔ u ≤ cdf μ x := by
   have hne := quantile_set_nonempty (μ := μ) hu1
   have hbdd := quantile_set_bddBelow (μ := μ) hu0
@@ -160,7 +160,7 @@ variable {μ : Measure ℝ} {u : ℝ}
     exact csInf_le hbdd h
 
 /-- The quantile is monotone on `(0, 1)`. -/
-@[powerlib_foundation] theorem quantile_monotoneOn : MonotoneOn (quantile μ) (Ioo 0 1) := by
+@[tmio T, powerlib_foundation] theorem quantile_monotoneOn : MonotoneOn (quantile μ) (Ioo 0 1) := by
   intro u hu v hv huv
   rw [quantile_le_iff hu.1 hu.2]
   exact huv.trans ((quantile_le_iff hv.1 hv.2 _).mp le_rfl)
@@ -173,12 +173,12 @@ abbrev unifI : Measure ℝ := volume.restrict (Ioo 0 1)
 instance : IsProbabilityMeasure unifI := ⟨by simp⟩
 
 /-- The quantile is a.e.-measurable for the uniform law on `(0, 1)`. -/
-@[powerlib_foundation] theorem aemeasurable_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+@[tmio T, powerlib_foundation] theorem aemeasurable_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     AEMeasurable (quantile μ) unifI :=
   aemeasurable_restrict_of_monotoneOn measurableSet_Ioo quantile_monotoneOn
 
 /-- **The quantile transform has law `μ`**: if `U` is uniform on `(0, 1)`, `Q_μ(U) ∼ μ`. -/
-@[powerlib_foundation] theorem map_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+@[tmio T, powerlib_foundation] theorem map_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     unifI.map (quantile μ) = μ := by
   refine Measure.ext_of_Iic _ _ fun x => ?_
   rw [Measure.map_apply_of_aemeasurable (aemeasurable_quantile μ) measurableSet_Iic,
@@ -209,7 +209,7 @@ instance : IsProbabilityMeasure unifI := ⟨by simp⟩
 /-- **Quantiles converge at continuity points.**  If `F_n(x) → F(x)` at every atom-free point `x`
 of the finite measure `μ`, then `Q_n(u) → Q(u)` at every `u ∈ (0, 1)` where `Q = Q_μ` is continuous
 (relative to `(0, 1)`). -/
-@[powerlib_foundation] theorem tendsto_quantile {μs : ℕ → Measure ℝ} {μ : Measure ℝ}
+@[tmio T, powerlib_foundation] theorem tendsto_quantile {μs : ℕ → Measure ℝ} {μ : Measure ℝ}
     [IsFiniteMeasure μ]
     (hF : ∀ x, μ {x} = 0 → Tendsto (fun n => cdf (μs n) x) atTop (𝓝 (cdf μ x)))
     {u : ℝ} (hu : u ∈ Ioo (0 : ℝ) 1) (hc : ContinuousWithinAt (quantile μ) (Ioo 0 1) u) :
@@ -247,7 +247,7 @@ of the finite measure `μ`, then `Q_n(u) → Q(u)` at every `u ∈ (0, 1)` where
 /-- **Almost-sure convergence of the quantile coupling**: under the hypothesis of
 `tendsto_quantile`, `Q_n(U) → Q(U)` for Lebesgue-a.e. `U ∈ (0, 1)` (the discontinuities of the
 monotone `Q` on `(0, 1)` are countable). -/
-@[powerlib_foundation] theorem ae_tendsto_quantile {μs : ℕ → Measure ℝ} {μ : Measure ℝ}
+@[tmio T, powerlib_foundation] theorem ae_tendsto_quantile {μs : ℕ → Measure ℝ} {μ : Measure ℝ}
     [IsFiniteMeasure μ]
     (hF : ∀ x, μ {x} = 0 → Tendsto (fun n => cdf (μs n) x) atTop (𝓝 (cdf μ x))) :
     ∀ᵐ u ∂unifI, Tendsto (fun n => quantile (μs n) u) atTop (𝓝 (quantile μ u)) := by
@@ -260,7 +260,7 @@ monotone `Q` on `(0, 1)` are countable). -/
 /-- **Skorokhod representation on `ℝ`** (quantile coupling).  If `μ_n → μ` weakly (convergence in
 distribution), then on the probability space `((0, 1), Lebesgue)` the random variables
 `Y_n = Q_{μ_n}` and `Y = Q_μ` have laws `μ_n` and `μ`, and `Y_n → Y` almost surely. -/
-@[powerlib_foundation] theorem skorokhod_representation {μs : ℕ → ProbabilityMeasure ℝ}
+@[tmio T, powerlib_foundation] theorem skorokhod_representation {μs : ℕ → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ} (h : Tendsto μs atTop (𝓝 μ)) :
     (∀ n, AEMeasurable (quantile (μs n : Measure ℝ)) unifI ∧
         unifI.map (quantile (μs n : Measure ℝ)) = μs n) ∧

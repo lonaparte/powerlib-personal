@@ -52,7 +52,7 @@ def apothemProjection (u : ℂ) : ℝ := Real.sqrt 3 / 2 * u.re + 1 / 2 * u.im
 
 /-- No leg pattern in `[0, V_dc]` produces a vector beyond `V_dc/√3` in the apothem
 direction. -/
-@[powerlib_foundation] theorem linearRange_projection_le (V xa xb xc : ℝ)
+@[tmio T, powerlib_foundation] theorem linearRange_projection_le (V xa xb xc : ℝ)
     (ha : xa ∈ Set.Icc 0 V) (hc : xc ∈ Set.Icc 0 V) :
     apothemProjection (clarke xa xb xc) ≤ V / Real.sqrt 3 := by
   rw [apothemProjection_clarke]
@@ -68,7 +68,7 @@ direction. -/
 def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
   (u.re, -u.re / 2 + Real.sqrt 3 / 2 * u.im, -u.re / 2 - Real.sqrt 3 / 2 * u.im)
 
-@[powerlib_foundation] theorem clarke_invClarke (u : ℂ) :
+@[tmio T, powerlib_foundation] theorem clarke_invClarke (u : ℂ) :
     clarke (invClarke u).1 (invClarke u).2.1 (invClarke u).2.2 = u := by
   have h3 := Transform.sqrt3_sq
   apply Complex.ext
@@ -77,7 +77,7 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
     linear_combination (u.im / 3) * h3
 
 /-- Pairwise phase differences are bounded by `√3 |u|` (line-to-line peak). -/
-@[powerlib_foundation] theorem invClarke_diff_le (u : ℂ) :
+@[tmio T, powerlib_foundation] theorem invClarke_diff_le (u : ℂ) :
     |(invClarke u).1 - (invClarke u).2.1| ≤ Real.sqrt 3 * ‖u‖ ∧
       |(invClarke u).2.1 - (invClarke u).2.2| ≤ Real.sqrt 3 * ‖u‖ ∧
       |(invClarke u).2.2 - (invClarke u).1| ≤ Real.sqrt 3 * ‖u‖ := by
@@ -108,7 +108,7 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
 
 /-- **SVPWM linear range.** Every vector with `|u| ≤ V_dc/√3` is the space vector of some
 leg voltages in `[0, V_dc]`. -/
-@[powerlib_foundation] theorem svpwm_linearRange (V : ℝ) (u : ℂ) (hu : ‖u‖ ≤ V / Real.sqrt 3) :
+@[tmio T, powerlib_foundation] theorem svpwm_linearRange (V : ℝ) (u : ℂ) (hu : ‖u‖ ≤ V / Real.sqrt 3) :
     ∃ xa xb xc : ℝ, xa ∈ Set.Icc 0 V ∧ xb ∈ Set.Icc 0 V ∧ xc ∈ Set.Icc 0 V ∧
       clarke xa xb xc = u := by
   obtain ⟨d1, d2, d3⟩ := invClarke_diff_le u
@@ -142,7 +142,7 @@ leg voltages in `[0, V_dc]`. -/
 
 /-- `V_dc/√3` is the largest synthesizable circle: if every vector of modulus `ρ ≥ 0` can be
 produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
-@[powerlib_foundation] theorem maxCircle_radius_le (V ρ : ℝ) (hρ : 0 ≤ ρ)
+@[tmio T, powerlib_foundation] theorem maxCircle_radius_le (V ρ : ℝ) (hρ : 0 ≤ ρ)
     (h : ∀ u : ℂ, ‖u‖ = ρ → ∃ xa xb xc : ℝ, xa ∈ Set.Icc 0 V ∧ xb ∈ Set.Icc 0 V ∧
       xc ∈ Set.Icc 0 V ∧ clarke xa xb xc = u) :
     ρ ≤ V / Real.sqrt 3 := by
@@ -165,7 +165,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
 
 /-- SPWM: sinusoidal legs `V/2 + M cos(θ − 2πk/3)` stay in `[0, V]` for every angle iff
 `M ≤ V/2` (for `0 ≤ M`); their space vector is `M e^{jθ}`. -/
-@[powerlib_foundation] theorem spwm_legs_mem_iff (V M : ℝ) (hM : 0 ≤ M) :
+@[tmio T, powerlib_foundation] theorem spwm_legs_mem_iff (V M : ℝ) (hM : 0 ≤ M) :
     (∀ θ : ℝ, V / 2 + M * Real.cos θ ∈ Set.Icc 0 V) ↔ M ≤ V / 2 := by
   constructor
   · intro h
@@ -177,7 +177,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
     have h2 := Real.cos_le_one θ
     constructor <;> nlinarith
 
-@[powerlib_foundation] theorem spwm_spaceVector (V M θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem spwm_spaceVector (V M θ : ℝ) :
     clarke (V / 2 + M * Real.cos θ) (V / 2 + M * Real.cos (θ - 2 * Real.pi / 3))
       (V / 2 + M * Real.cos (θ + 2 * Real.pi / 3)) = ⟨M * Real.cos θ, M * Real.sin θ⟩ := by
   have := clarke_add_const (M * Real.cos θ) (M * Real.cos (θ - 2 * Real.pi / 3))
@@ -191,7 +191,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
 
 /-- Six-step leg: `V_dc` on `[0, π)`, `0` on `[π, 2π)`. Its fundamental sine coefficient
 `(1/π) ∫₀^{2π} v(θ) sin θ dθ` equals `2V_dc/π`. -/
-@[powerlib_foundation] theorem sixStep_fundamental (V : ℝ) :
+@[tmio T, powerlib_foundation] theorem sixStep_fundamental (V : ℝ) :
     (1 / Real.pi) * ((∫ θ in (0 : ℝ)..Real.pi, V * Real.sin θ) +
       ∫ θ in Real.pi..(2 * Real.pi), (0 : ℝ) * Real.sin θ) = 2 * V / Real.pi := by
   rw [intervalIntegral.integral_const_mul, integral_sin]
@@ -199,7 +199,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
   ring
 
 /-- Line-to-line fundamental = `√3` × leg fundamental: `sin θ − sin(θ − 2π/3) = √3 cos(θ − π/3)`. -/
-@[powerlib_foundation] theorem sin_sub_sin_two_pi_div_three (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem sin_sub_sin_two_pi_div_three (θ : ℝ) :
     Real.sin θ - Real.sin (θ - 2 * Real.pi / 3) = Real.sqrt 3 * Real.cos (θ - Real.pi / 3) := by
   have hc : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
     have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
@@ -213,7 +213,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
 
 /-- Utilisation factors `V_LL,rms / V_dc`: SPWM `√(3/2)·(1/2) = √6/4 ∈ (0.612, 0.613)`,
 SVPWM `√(3/2)·(1/√3) = 1/√2 ∈ (0.707, 0.708)`, six-step `√3·(2/π)/√2 = √6/π ∈ (0.779, 0.780)`. -/
-@[powerlib_foundation] theorem utilisation_bounds :
+@[tmio T, powerlib_foundation] theorem utilisation_bounds :
     (0.612 < Real.sqrt 6 / 4 ∧ Real.sqrt 6 / 4 < 0.613) ∧
       (0.707 < 1 / Real.sqrt 2 ∧ 1 / Real.sqrt 2 < 0.708) ∧
       (0.779 < Real.sqrt 6 / Real.pi ∧ Real.sqrt 6 / Real.pi < 0.780) := by
@@ -232,7 +232,7 @@ SVPWM `√(3/2)·(1/√3) = 1/√2 ∈ (0.707, 0.708)`, six-step `√3·(2/π)/�
   · rw [div_lt_iff₀ (by linarith)]; nlinarith
 
 /-- The three utilisation constants are the stated combinations. -/
-@[powerlib_foundation] theorem utilisation_values :
+@[tmio T, powerlib_foundation] theorem utilisation_values :
     Real.sqrt (3 / 2) * (1 / 2) = Real.sqrt 6 / 4 ∧
       Real.sqrt (3 / 2) * (1 / Real.sqrt 3) = 1 / Real.sqrt 2 ∧
       Real.sqrt 3 * (2 / Real.pi) / Real.sqrt 2 = Real.sqrt 6 / Real.pi := by

@@ -52,7 +52,7 @@ variable {n : ℕ}
 
 /-- Bounded trajectories (every trajectory `Φ^k x₀` of `x_{k+1} = Φ x_k` is bounded) force
 every eigenvalue into the closed unit disk. -/
-@[powerlib_foundation] theorem norm_le_one_of_boundedTrajectories
+@[tmio T, powerlib_foundation] theorem norm_le_one_of_boundedTrajectories
     {Φ : Matrix (Fin n) (Fin n) ℂ} (hB : ∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ, ‖(Φ ^ k) *ᵥ x₀‖ ≤ C)
     {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0) (heig : Φ *ᵥ v = μ • v) : ‖μ‖ ≤ 1 := by
   by_contra hμ
@@ -66,7 +66,7 @@ every eigenvalue into the closed unit disk. -/
   rw [pow_mulVec_eigen heig, norm_smul, norm_pow] at this
   linarith
 
-@[powerlib_foundation] private lemma conj_pow {P Pinv : Matrix (Fin n) (Fin n) ℂ}
+@[tmio T, powerlib_foundation] private lemma conj_pow {P Pinv : Matrix (Fin n) (Fin n) ℂ}
     (hP : P * Pinv = 1) (hP' : Pinv * P = 1) (D : Matrix (Fin n) (Fin n) ℂ) (k : ℕ) :
     (P * D * Pinv) ^ k = P * D ^ k * Pinv := by
   induction k with
@@ -79,7 +79,7 @@ every eigenvalue into the closed unit disk. -/
 
 /-- Diagonalizable recursion: bounded trajectories (every `Φ^k x₀` bounded, for
 `Φ = P diag(d) P⁻¹`) ⇔ all eigenvalues in the closed unit disk. -/
-@[powerlib_foundation] theorem boundedTrajectories_iff_of_diagonalizable
+@[tmio T, powerlib_foundation] theorem boundedTrajectories_iff_of_diagonalizable
     {P Pinv : Matrix (Fin n) (Fin n) ℂ} (hP : P * Pinv = 1) (hP' : Pinv * P = 1)
     (d : Fin n → ℂ) :
     (∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ, ‖((P * diagonal d * Pinv) ^ k) *ᵥ x₀‖ ≤ C) ↔
@@ -120,7 +120,7 @@ every eigenvalue into the closed unit disk. -/
 /-- Forward Euler on a diagonalizable linear system: bounded numerical trajectories (every
 `(1 + hA)^k x₀` bounded) exactly when every `hλᵢ` lies in the forward-Euler region
 `‖1 + z‖ ≤ 1`. -/
-@[powerlib_foundation] theorem forwardEuler_boundedTrajectories_iff
+@[tmio T, powerlib_foundation] theorem forwardEuler_boundedTrajectories_iff
     {P Pinv : Matrix (Fin n) (Fin n) ℂ} (hP : P * Pinv = 1) (hP' : Pinv * P = 1)
     (lam : Fin n → ℂ) (h : ℂ) :
     (∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ,
@@ -141,7 +141,7 @@ every eigenvalue into the closed unit disk. -/
 /-- The unconditional "⇐" fails: a Jordan block whose eigenvalue maps to the boundary point
 `R(0) = 1` of the forward-Euler region has unbounded forward-Euler trajectories (not every
 `(1 + hA)^k x₀` is bounded). -/
-@[powerlib_foundation] theorem jordan_counterexample {h : ℝ} (hh : 0 < h) :
+@[tmio T, powerlib_foundation] theorem jordan_counterexample {h : ℝ} (hh : 0 < h) :
     (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 → !![0, 1; 0, 0] *ᵥ v = μ • v →
         ‖1 + (h : ℂ) * μ‖ ≤ 1) ∧
       ¬ ∀ x₀ : Fin 2 → ℂ, ∃ C : ℝ, ∀ k : ℕ,

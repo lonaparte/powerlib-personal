@@ -105,18 +105,18 @@ variable {α₀ cα cω g2}
     tongue α₀ cα cω g2 y = damping α₀ cα y ^ 2 - splitSq cω g2 y := by
   simp only [tongue, damping, splitSq, pumpQ]; ring
 
-@[powerlib_foundation] theorem sigma_mul (y h : ℝ) (hh : h ^ 2 = splitSq cω g2 y) :
+@[tmio M, powerlib_foundation] theorem sigma_mul (y h : ℝ) (hh : h ^ 2 = splitSq cω g2 y) :
     (-damping α₀ cα y + h) * (-damping α₀ cα y - h) = tongue α₀ cα cω g2 y := by
   rw [tongue_eq_damping_sq_sub_splitSq, ← hh]; ring
 
-@[powerlib_foundation] theorem det_secondOrderMatrix (Δ y : ℝ) (g : ℂ)
+@[tmio M, powerlib_foundation] theorem det_secondOrderMatrix (Δ y : ℝ) (g : ℂ)
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
     (secondOrderMatrix α₀ cα cω Δ y g).det =
       damping α₀ cα y ^ 2 + (Δ + cω * y) ^ 2 - g2 * y / 4 := by
   simp only [secondOrderMatrix, det_slowFlowMatrix, hg]
 
 /-- At the tongue centre the determinant of the second-order slow flow is `q(y)`. -/
-@[powerlib_foundation] theorem det_secondOrderMatrix_centre (y : ℝ) (g : ℂ)
+@[tmio M, powerlib_foundation] theorem det_secondOrderMatrix_centre (y : ℝ) (g : ℂ)
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
     (secondOrderMatrix α₀ cα cω 0 y g).det = tongue α₀ cα cω g2 y := by
   rw [det_secondOrderMatrix 0 y g hg, tongue_eq_damping_sq_sub_splitSq]
@@ -124,7 +124,7 @@ variable {α₀ cα cω g2}
 
 /-- The corrected criterion (§6) is exactly exponential stability of the second-order slow
 flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
-@[powerlib_foundation] theorem secondOrder_exponentiallyStable_iff (Δ y : ℝ) (g : ℂ)
+@[tmio TM, powerlib_foundation] theorem secondOrder_exponentiallyStable_iff (Δ y : ℝ) (g : ℂ)
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
     Flow.GloballyExponentiallyStable (secondOrderSystem α₀ cα cω Δ y g) 0 ↔
       0 < damping α₀ cα y ∧ g2 * y / 4 < damping α₀ cα y ^ 2 + (Δ + cω * y) ^ 2 := by
@@ -132,7 +132,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 
 /-- `σ₊ = −a + h > 0` iff `a < 0` or `q(y) < 0` (`h = √(h²)`; in the complex regime
 `h² < 0` the real part `−a` is what matters and `√` returns `0`). -/
-@[powerlib_foundation] theorem sigmaPlus_pos_iff (y : ℝ) :
+@[tmio M, powerlib_foundation] theorem sigmaPlus_pos_iff (y : ℝ) :
     0 < -damping α₀ cα y + √(splitSq cω g2 y) ↔
       damping α₀ cα y < 0 ∨ tongue α₀ cα cω g2 y < 0 := by
   rw [tongue_eq_damping_sq_sub_splitSq]
@@ -155,7 +155,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 /-! ## The tongue-centre quadratic (§8) -/
 
 /-- `q(y) < 0` exactly strictly between the two roots. -/
-@[powerlib_foundation] theorem tongue_neg_iff (hS : 0 < cα ^ 2 + cω ^ 2) (y : ℝ) :
+@[tmio M, powerlib_foundation] theorem tongue_neg_iff (hS : 0 < cα ^ 2 + cω ^ 2) (y : ℝ) :
     tongue α₀ cα cω g2 y < 0 ↔ yMinus α₀ cα cω g2 < y ∧ y < yPlus α₀ cα cω g2 := by
   have h := Criteria.quad_neg_iff (a := cα ^ 2 + cω ^ 2) (b := -pumpQ α₀ cα g2) (c := α₀ ^ 2)
     (x := y) hS
@@ -167,7 +167,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     (cα ^ 2 + cω ^ 2) * y ^ 2 + -pumpQ α₀ cα g2 * y + α₀ ^ 2 by ring]
   exact h
 
-@[powerlib_foundation] theorem tongue_yMinus (hS : 0 < cα ^ 2 + cω ^ 2)
+@[tmio M, powerlib_foundation] theorem tongue_yMinus (hS : 0 < cα ^ 2 + cω ^ 2)
     (hd : 0 ≤ tongueDisc α₀ cα cω g2) : tongue α₀ cα cω g2 (yMinus α₀ cα cω g2) = 0 := by
   have hd' : 0 ≤ (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 := by
     simp only [tongueDisc] at hd; linarith
@@ -178,7 +178,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
   simp only [tongue, yMinus]
   linear_combination h
 
-@[powerlib_foundation] theorem tongue_yPlus (hS : 0 < cα ^ 2 + cω ^ 2)
+@[tmio M, powerlib_foundation] theorem tongue_yPlus (hS : 0 < cα ^ 2 + cω ^ 2)
     (hd : 0 ≤ tongueDisc α₀ cα cω g2) : tongue α₀ cα cω g2 (yPlus α₀ cα cω g2) = 0 := by
   have hd' : 0 ≤ (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 := by
     simp only [tongueDisc] at hd; linarith
@@ -189,14 +189,14 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
   simp only [tongue, yPlus]
   linear_combination h
 
-@[powerlib_foundation] theorem yMinus_le_yPlus (hS : 0 < cα ^ 2 + cω ^ 2) :
+@[tmio M, powerlib_foundation] theorem yMinus_le_yPlus (hS : 0 < cα ^ 2 + cω ^ 2) :
     yMinus α₀ cα cω g2 ≤ yPlus α₀ cα cω g2 := by
   simp only [yMinus, yPlus]
   apply div_le_div_of_nonneg_right _ (by positivity)
   linarith [Real.sqrt_nonneg (tongueDisc α₀ cα cω g2)]
 
 /-- The flip sector `{q < 0}` is nonempty iff the discriminant is positive. -/
-@[powerlib_foundation] theorem exists_tongue_neg_iff (hS : 0 < cα ^ 2 + cω ^ 2) :
+@[tmio M, powerlib_foundation] theorem exists_tongue_neg_iff (hS : 0 < cα ^ 2 + cω ^ 2) :
     (∃ y, tongue α₀ cα cω g2 y < 0) ↔ 0 < tongueDisc α₀ cα cω g2 := by
   constructor
   · rintro ⟨y, hy⟩
@@ -215,7 +215,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     nlinarith
 
 /-- `Λ* < 1 ↔ disc > 0` (`α₀ > 0`, `|𝒢| > 0`, `c_α² + c_ω² > 0`). -/
-@[powerlib_foundation] theorem lamStar_lt_one_iff (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem lamStar_lt_one_iff (hα : 0 < α₀) (hg : 0 < g2)
     (hS : 0 < cα ^ 2 + cω ^ 2) :
     lamStar α₀ cα cω g2 < 1 ↔ 0 < tongueDisc α₀ cα cω g2 := by
   set r := √(cα ^ 2 + cω ^ 2) with hr
@@ -242,14 +242,14 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 
 /-- Degenerate linear case `c_α = c_ω = 0`: `q(y) = α₀² − g2 y/4`, single threshold
 `y* = 4α₀²/g2`. -/
-@[powerlib_foundation] theorem tongue_linear (hg : 0 < g2) (y : ℝ) :
+@[tmio M, powerlib_foundation] theorem tongue_linear (hg : 0 < g2) (y : ℝ) :
     tongue α₀ 0 0 g2 y < 0 ↔ 4 * α₀ ^ 2 / g2 < y := by
   simp only [tongue, pumpQ]
   rw [div_lt_iff₀ hg]
   constructor <;> intro h <;> nlinarith
 
 /-- Theorem 1: every root satisfies `c_ω² y² ≤ g2 y/4`, with equality iff `α₀ = c_α y`. -/
-@[powerlib_foundation] theorem tongue_root_split {y : ℝ} (h : tongue α₀ cα cω g2 y = 0) :
+@[tmio M, powerlib_foundation] theorem tongue_root_split {y : ℝ} (h : tongue α₀ cα cω g2 y = 0) :
     cω ^ 2 * y ^ 2 ≤ g2 * y / 4 ∧ (cω ^ 2 * y ^ 2 = g2 * y / 4 ↔ α₀ = cα * y) := by
   have he : g2 * y / 4 = (α₀ - cα * y) ^ 2 + cω ^ 2 * y ^ 2 := by
     simp only [tongue, pumpQ] at h; linarith
@@ -263,7 +263,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     rw [he, h2]; ring
 
 /-- Theorem 1, amplitude form: every positive root has `√y ≤ |𝒢|/(2c_ω)` (`c_ω > 0`). -/
-@[powerlib_foundation] theorem sqrt_root_le (hcω : 0 < cω) {y : ℝ} (hy : 0 < y)
+@[tmio M, powerlib_foundation] theorem sqrt_root_le (hcω : 0 < cω) {y : ℝ} (hy : 0 < y)
     (h : tongue α₀ cα cω g2 y = 0) : √y ≤ √g2 / (2 * cω) := by
   have h1 := (tongue_root_split h).1
   have hy' : y ≤ g2 / (4 * cω ^ 2) := by
@@ -275,7 +275,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     _ ≤ √g2 := Real.sqrt_le_sqrt (by rwa [le_div_iff₀ (by positivity)] at hy')
 
 /-- Theorem 2 (first part): a nonnegative discriminant forces `Q ≥ 2√(c_α² + c_ω²) α₀ > 0`. -/
-@[powerlib_foundation] theorem pumpQ_bounds (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem pumpQ_bounds (hα : 0 < α₀) (hg : 0 < g2)
     (hS : 0 < cα ^ 2 + cω ^ 2) (hd : 0 ≤ tongueDisc α₀ cα cω g2) :
     2 * √(cα ^ 2 + cω ^ 2) * α₀ ≤ pumpQ α₀ cα g2 ∧ 0 < pumpQ α₀ cα g2 := by
   set r := √(cα ^ 2 + cω ^ 2) with hr
@@ -298,7 +298,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
   · nlinarith
 
 /-- Theorem 2 (second part): every real root of `q` is positive. -/
-@[powerlib_foundation] theorem tongue_root_pos (hα : 0 < α₀) (hg : 0 < g2) {y : ℝ}
+@[tmio M, powerlib_foundation] theorem tongue_root_pos (hα : 0 < α₀) (hg : 0 < g2) {y : ℝ}
     (h : tongue α₀ cα cω g2 y = 0) : 0 < y := by
   have he : g2 * y / 4 = (α₀ - cα * y) ^ 2 + cω ^ 2 * y ^ 2 := by
     simp only [tongue, pumpQ] at h; linarith
@@ -315,7 +315,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 
 /-- The NS side condition as the sign of `q` at the NS amplitude:
 `q(α₀/c_α) = (α₀/c_α)(c_ω² α₀/c_α − g2/4)`. -/
-@[powerlib_foundation] theorem tongue_at_ns (hcα : cα ≠ 0) :
+@[tmio M, powerlib_foundation] theorem tongue_at_ns (hcα : cα ≠ 0) :
     tongue α₀ cα cω g2 (α₀ / cα) = α₀ / cα * (cω ^ 2 * α₀ / cα - g2 / 4) := by
   simp only [tongue, pumpQ]
   field_simp
@@ -323,7 +323,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 
 /-- For `c_α, c_ω > 0`: `q(α₀/c_α) < 0` iff the side condition is broken,
 `√(α₀/c_α) < |𝒢|/(2c_ω)`. -/
-@[powerlib_foundation] theorem tongue_at_ns_neg_iff (hα : 0 < α₀) (hcα : 0 < cα)
+@[tmio M, powerlib_foundation] theorem tongue_at_ns_neg_iff (hα : 0 < α₀) (hcα : 0 < cα)
     (hcω : 0 < cω) :
     tongue α₀ cα cω g2 (α₀ / cα) < 0 ↔ √(α₀ / cα) < √g2 / (2 * cω) := by
   rw [tongue_at_ns hcα.ne']
@@ -352,14 +352,14 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     exact (Real.sqrt_lt_sqrt_iff (by positivity)).mp h'
 
 /-- Side condition broken ⇔ `y₋ < α₀/c_α < y₊`. -/
-@[powerlib_foundation] theorem side_broken_iff (hα : 0 < α₀) (hcα : 0 < cα) (hcω : 0 < cω) :
+@[tmio M, powerlib_foundation] theorem side_broken_iff (hα : 0 < α₀) (hcα : 0 < cα) (hcω : 0 < cω) :
     √(α₀ / cα) < √g2 / (2 * cω) ↔
       yMinus α₀ cα cω g2 < α₀ / cα ∧ α₀ / cα < yPlus α₀ cα cω g2 := by
   rw [← tongue_at_ns_neg_iff hα hcα hcω, tongue_neg_iff (by positivity)]
 
 /-- Ordering under the side condition (`c_α, c_ω > 0`, `disc ≥ 0`):
 `√y₋ ≤ √y₊ ≤ |𝒢|/(2c_ω) < √(α₀/c_α) = δ̂₁^{NS}`. -/
-@[powerlib_foundation] theorem ordering (hα : 0 < α₀) (hg : 0 < g2) (hcα : 0 < cα)
+@[tmio M, powerlib_foundation] theorem ordering (hα : 0 < α₀) (hg : 0 < g2) (hcα : 0 < cα)
     (hcω : 0 < cω) (hd : 0 ≤ tongueDisc α₀ cα cω g2) (hside : √g2 / (2 * cω) < √(α₀ / cα)) :
     √(yMinus α₀ cα cω g2) ≤ √(yPlus α₀ cα cω g2) ∧ √(yPlus α₀ cα cω g2) ≤ √g2 / (2 * cω) ∧
       √g2 / (2 * cω) < √(α₀ / cα) := by
@@ -370,7 +370,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 
 /-- `a(y₋) > 0` whenever the discriminant is nonnegative: `√y₋` is always an up-crossing of
 `σ₊`. -/
-@[powerlib_foundation] theorem damping_yMinus_pos (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem damping_yMinus_pos (hα : 0 < α₀) (hg : 0 < g2)
     (hS : 0 < cα ^ 2 + cω ^ 2) (hd : 0 ≤ tongueDisc α₀ cα cω g2) :
     0 < damping α₀ cα (yMinus α₀ cα cω g2) := by
   set y := yMinus α₀ cα cω g2 with hy
@@ -420,7 +420,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
 
 /-- Where `a > 0`, membership in `ℱ` is `a² < D`, i.e. the detuned quadratic
 `S y² − (Q − 2c_ωΔ) y + α₀² + Δ²` is negative. -/
-@[powerlib_foundation] theorem mem_flipSet_of_damping_pos {y Δ : ℝ}
+@[tmio M, powerlib_foundation] theorem mem_flipSet_of_damping_pos {y Δ : ℝ}
     (ha : 0 < damping α₀ cα y) :
     (y, Δ) ∈ flipSet α₀ cα cω g2 ↔
       (cα ^ 2 + cω ^ 2) * y ^ 2 - (pumpQ α₀ cα g2 - 2 * cω * Δ) * y + (α₀ ^ 2 + Δ ^ 2) < 0 := by
@@ -437,7 +437,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     refine ⟨by nlinarith, (Real.lt_sqrt ha.le).mpr (by linarith)⟩
 
 /-- `Δ` lies in the projection iff `(y, Δ) ∈ ℱ` for some amplitude `y > 0`. -/
-@[powerlib_foundation] theorem mem_flipProjection {Δ : ℝ} :
+@[tmio M, powerlib_foundation] theorem mem_flipProjection {Δ : ℝ} :
     Δ ∈ flipProjection α₀ cα cω g2 ↔ ∃ y, 0 < y ∧ (y, Δ) ∈ flipSet α₀ cα cω g2 := by
   constructor
   · rintro ⟨⟨y, Δ'⟩, ⟨hmem, hy⟩, rfl⟩
@@ -446,7 +446,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     exact ⟨(y, Δ), ⟨hmem, hy⟩, rfl⟩
 
 /-- Case `c_α < 0`: the `Δ`-projection of `ℱ` is exactly `(Δ*₋, Δ*₊)` (both ends finite). -/
-@[powerlib_foundation] theorem flipProjection_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
     (hcα : cα < 0) (hcω : 0 < cω) :
     flipProjection α₀ cα cω g2 = Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) := by
   set S := cα ^ 2 + cω ^ 2 with hSdef
@@ -532,7 +532,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
 
 /-- Case `c_α = 0`: the `Δ`-projection of `ℱ` is `(−∞, g2/(16c_ω) − 4c_ωα₀²/g2)`:
 `Δ_sup = |𝒢|²/(16c_ω) − 4c_ωα₀²/|𝒢|²`, `Δ_inf = −∞`. -/
-@[powerlib_foundation] theorem flipProjection_calpha_zero (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_zero (hα : 0 < α₀) (hg : 0 < g2)
     (hcω : 0 < cω) :
     flipProjection α₀ 0 cω g2 = Iio (g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2) := by
   have hdamp : ∀ y, damping α₀ 0 y = α₀ := fun y => by simp [damping]
@@ -571,7 +571,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
 
 /-- On the `a < 0` segment the upper boundary is `Δ₊(y) = −c_ω y + |𝒢|√y/2`, maximal at
 `y* = g2/(16c_ω²)` with value `g2/(16c_ω)`. -/
-@[powerlib_foundation] theorem upper_branch_le (hcω : 0 < cω) (hg : 0 ≤ g2) {y : ℝ} (hy : 0 ≤ y) :
+@[tmio T, powerlib_foundation] theorem upper_branch_le (hcω : 0 < cω) (hg : 0 ≤ g2) {y : ℝ} (hy : 0 ≤ y) :
     -cω * y + √g2 * √y / 2 ≤ g2 / (16 * cω) ∧
       -cω * (g2 / (16 * cω ^ 2)) + √g2 * √(g2 / (16 * cω ^ 2)) / 2 = g2 / (16 * cω) := by
   have hg2 : √g2 ^ 2 = g2 := Real.sq_sqrt hg
@@ -591,7 +591,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
 
 /-- Case `c_α > 0`, high gain `|𝒢| > 4c_ω √(α₀/c_α)` (i.e. `y* > α₀/c_α`): the supremum of the
 `Δ`-projection is `g2/(16c_ω)` and is attained (independent of `α₀, c_α`). -/
-@[powerlib_foundation] theorem flipProjection_calpha_pos_isGreatest (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_isGreatest (hg : 0 < g2)
     (hcα : 0 < cα) (hcω : 0 < cω) (hhigh : α₀ / cα < g2 / (16 * cω ^ 2)) :
     IsGreatest (flipProjection α₀ cα cω g2) (g2 / (16 * cω)) := by
   have hg2 : √g2 ^ 2 = g2 := Real.sq_sqrt hg.le
@@ -621,7 +621,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     linarith
 
 /-- For `c_α > 0` the projection is unbounded below (`Δ_inf = −∞`). -/
-@[powerlib_foundation] theorem flipProjection_calpha_pos_not_bddBelow (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_not_bddBelow (hg : 0 < g2)
     (hcα : 0 < cα) (hcω : 0 < cω) : ¬BddBelow (flipProjection α₀ cα cω g2) := by
   rintro ⟨m, hm⟩
   -- take `y` large with `a(y) < 0` and `Δ = −c_ω y` (so `D = g2 y/4 ≥ 0`)
@@ -648,7 +648,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
 
 /-- Switching surface `y* = α₀/c_α` (`|𝒢| = 4c_ω√(α₀/c_α)`, `c_α > 0`): the two branches agree,
 `Δ*₊ = Δ₊(y*) = c_ω y_a`. -/
-@[powerlib_foundation] theorem deltaStarPlus_switch (hα : 0 < α₀) (hcα : 0 < cα) (hcω : 0 < cω)
+@[tmio M, powerlib_foundation] theorem deltaStarPlus_switch (hα : 0 < α₀) (hcα : 0 < cα) (hcω : 0 < cω)
     (hsw : g2 = 16 * cω ^ 2 * (α₀ / cα)) :
     deltaStarPlus α₀ cα cω g2 = cω * (α₀ / cα) ∧ g2 / (16 * cω) = cω * (α₀ / cα) := by
   set ya := α₀ / cα with hya
@@ -682,21 +682,21 @@ def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
 
 /-- `P(Δ) = S (a(y)² − D(y, Δ)) − (S y − (Q − 2c_ωΔ)/2)²` for every amplitude `y`
 (`S = c_α² + c_ω²`): `P(Δ)/S` is the minimum over `y` of `a² − D`. -/
-@[powerlib_foundation] theorem detunedP_eq (y Δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem detunedP_eq (y Δ : ℝ) :
     detunedP α₀ cα cω g2 Δ =
       (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) -
         ((cα ^ 2 + cω ^ 2) * y - (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2) ^ 2 := by
   simp only [detunedP, damping, detunedD, pumpQ]; ring
 
 /-- `P(Δ) ≤ S (a(y)² − D(y, Δ))` for every amplitude `y`. -/
-@[powerlib_foundation] theorem detunedP_le (y Δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem detunedP_le (y Δ : ℝ) :
     detunedP α₀ cα cω g2 Δ ≤
       (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) := by
   rw [detunedP_eq y Δ]
   nlinarith [sq_nonneg ((cα ^ 2 + cω ^ 2) * y - (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2)]
 
 /-- `a(y)² < D(y, Δ)` puts `(y, Δ)` in the flip set, whatever the sign of `a(y)`. -/
-@[powerlib_foundation] theorem mem_flipSet_of_sq_lt {y Δ : ℝ}
+@[tmio M, powerlib_foundation] theorem mem_flipSet_of_sq_lt {y Δ : ℝ}
     (h : damping α₀ cα y ^ 2 < detunedD cω g2 Δ y) : (y, Δ) ∈ flipSet α₀ cα cω g2 := by
   have hD : 0 ≤ detunedD cω g2 Δ y := (sq_nonneg _).trans h.le
   refine ⟨hD, ?_⟩
@@ -705,7 +705,7 @@ def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
     _ < √(detunedD cω g2 Δ y) := Real.sqrt_lt_sqrt (sq_nonneg _) h
 
 /-- The roots of `P` are `Δ*_±`: for `c_α ≠ 0`, `P(Δ) < 0 ↔ Δ*₋ < Δ < Δ*₊`. -/
-@[powerlib_foundation] theorem detunedP_neg_iff (hcα : cα ≠ 0) {Δ : ℝ} :
+@[tmio M, powerlib_foundation] theorem detunedP_neg_iff (hcα : cα ≠ 0) {Δ : ℝ} :
     detunedP α₀ cα cω g2 Δ < 0 ↔
       deltaStarMinus α₀ cα cω g2 < Δ ∧ Δ < deltaStarPlus α₀ cα cω g2 := by
   have hca2 : 0 < cα ^ 2 := by positivity
@@ -726,7 +726,7 @@ def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
   · convert h2 using 1; ring
 
 /-- Beyond the larger root `P` is positive: `Δ*₊ < Δ → 0 < P(Δ)` (`c_α ≠ 0`). -/
-@[powerlib_foundation] theorem detunedP_pos_of_gt (hcα : cα ≠ 0) {Δ : ℝ}
+@[tmio M, powerlib_foundation] theorem detunedP_pos_of_gt (hcα : cα ≠ 0) {Δ : ℝ}
     (hΔ : deltaStarPlus α₀ cα cω g2 < Δ) : 0 < detunedP α₀ cα cω g2 Δ := by
   set S := cα ^ 2 + cω ^ 2 with hSdef
   set Q := pumpQ α₀ cα g2 with hQdef
@@ -753,7 +753,7 @@ def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
 
 /-- `Δ*₊ < Q/(2c_ω)` when `c_α ≠ 0`, `c_ω > 0`, `Q > 0` and `c_α α₀ ≠ 0`; equivalently the
 minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
-@[powerlib_foundation] theorem deltaStarPlus_lt_div (hα : 0 < α₀) (hcα : cα ≠ 0) (hcω : 0 < cω)
+@[tmio M, powerlib_foundation] theorem deltaStarPlus_lt_div (hα : 0 < α₀) (hcα : cα ≠ 0) (hcω : 0 < cω)
     (hQ : 0 < pumpQ α₀ cα g2) :
     deltaStarPlus α₀ cα cω g2 < pumpQ α₀ cα g2 / (2 * cω) := by
   set S := cα ^ 2 + cω ^ 2 with hSdef
@@ -779,7 +779,7 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
 
 /-- Every `Δ` with `P(Δ) < 0` below `Q/(2c_ω)` lies in the projection: at the amplitude
 `y = (Q − 2c_ωΔ)/(2S)` one has `a² − D = P(Δ)/S < 0`. -/
-@[powerlib_foundation] theorem mem_flipProjection_of_detunedP_neg (hcω : 0 < cω) {Δ : ℝ}
+@[tmio M, powerlib_foundation] theorem mem_flipProjection_of_detunedP_neg (hcω : 0 < cω) {Δ : ℝ}
     (hP : detunedP α₀ cα cω g2 Δ < 0) (hΔ : Δ < pumpQ α₀ cα g2 / (2 * cω)) :
     Δ ∈ flipProjection α₀ cα cω g2 := by
   set S := cα ^ 2 + cω ^ 2 with hSdef
@@ -800,7 +800,7 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
 
 /-- Case `c_α > 0`, low gain `|𝒢| ≤ 4c_ω√(α₀/c_α)` (i.e. `y* = g2/(16c_ω²) ≤ α₀/c_α`): the
 `Δ`-projection contains `(Δ*₋, Δ*₊)` and lies below `Δ*₊`. -/
-@[powerlib_foundation] theorem flipProjection_calpha_pos_lowGain (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_lowGain (hα : 0 < α₀) (hg : 0 < g2)
     (hcα : 0 < cα) (hcω : 0 < cω) (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
     Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) ⊆ flipProjection α₀ cα cω g2 ∧
       flipProjection α₀ cα cω g2 ⊆ Iio (deltaStarPlus α₀ cα cω g2) := by
@@ -885,7 +885,7 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
 
 /-- Case `c_α > 0`, low gain: `Δ_sup = Δ*₊` and, unlike the high-gain branch, it is **not**
 attained. -/
-@[powerlib_foundation] theorem flipProjection_calpha_pos_lowGain_isLUB (hα : 0 < α₀)
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_lowGain_isLUB (hα : 0 < α₀)
     (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
     IsLUB (flipProjection α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) ∧
       deltaStarPlus α₀ cα cω g2 ∉ flipProjection α₀ cα cω g2 := by
@@ -906,7 +906,7 @@ attained. -/
 
 /-- Rationalized form `Δ*₊ = (Q² − 4Sα₀²) / (2(√S √(Q² − 4c_α²α₀²) + c_ω Q))`, regular at
 `c_α = 0`. -/
-@[powerlib_foundation] theorem deltaStarPlus_eq_rat (hcα : cα ≠ 0) (hcω : 0 < cω)
+@[tmio M, powerlib_foundation] theorem deltaStarPlus_eq_rat (hcα : cα ≠ 0) (hcω : 0 < cω)
     (hQ : 0 < pumpQ α₀ cα g2) (hK : 0 ≤ pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) :
     deltaStarPlus α₀ cα cω g2 =
       (pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) /
@@ -929,7 +929,7 @@ attained. -/
 
 /-- The limit `c_α → 0` of the low-gain / `c_α < 0` supremum:
 `Δ*₊ → |𝒢|²/(16c_ω) − 4c_ωα₀²/|𝒢|²`, the `c_α = 0` value. -/
-@[powerlib_foundation] theorem tendsto_deltaStarPlus (hg : 0 < g2) (hcω : 0 < cω) :
+@[tmio M, powerlib_foundation] theorem tendsto_deltaStarPlus (hg : 0 < g2) (hcω : 0 < cω) :
     Tendsto (fun cα => deltaStarPlus α₀ cα cω g2) (𝓝[≠] 0)
       (𝓝 (g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2)) := by
   set F : ℝ → ℝ := fun cα => (pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) /
@@ -969,7 +969,7 @@ attained. -/
 /-- `Δ_sup` is continuous in `c_α` at `0`: the supremum of the `Δ`-projection,
 `Δ*₊` for `c_α < 0` and for small `c_α > 0` (low gain), and
 `|𝒢|²/(16c_ω) − 4c_ωα₀²/|𝒢|²` at `c_α = 0`, tends to the `c_α = 0` value. -/
-@[powerlib_foundation] theorem continuousAt_sSup_flipProjection (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem continuousAt_sSup_flipProjection (hα : 0 < α₀) (hg : 0 < g2)
     (hcω : 0 < cω) :
     ContinuousAt (fun cα => sSup (flipProjection α₀ cα cω g2)) 0 := by
   have hzero : sSup (flipProjection α₀ 0 cω g2) = g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2 := by
@@ -1023,7 +1023,7 @@ def lamOmega (α₀ cω g2 : ℝ) : ℝ := 4 * α₀ * cω / g2
 def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega α₀ cω g2 ^ 2
 
 /-- Derivative of the tongue quadratic, `q'(y) = 2(c_α² + c_ω²) y − Q`. -/
-@[powerlib_foundation] theorem hasDerivAt_tongue (y : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_tongue (y : ℝ) :
     HasDerivAt (tongue α₀ cα cω g2)
       (2 * (cα ^ 2 + cω ^ 2) * y - pumpQ α₀ cα g2) y := by
   have h := (((hasDerivAt_pow 2 y).const_mul (cα ^ 2 + cω ^ 2)).sub
@@ -1033,14 +1033,14 @@ def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega �
   · simp; ring
 
 /-- `q(y₀)/α₀² = R² − 2Λ_α`. -/
-@[powerlib_foundation] theorem tongue_y0 (hα : α₀ ≠ 0) (hg : g2 ≠ 0) :
+@[tmio M, powerlib_foundation] theorem tongue_y0 (hα : α₀ ≠ 0) (hg : g2 ≠ 0) :
     tongue α₀ cα cω g2 (y0 α₀ g2) / α₀ ^ 2 = rSq α₀ cα cω g2 - 2 * lamAlpha α₀ cα g2 := by
   simp only [tongue, pumpQ, y0, rSq, lamAlpha, lamOmega]
   field_simp
   ring
 
 /-- `4 q'(y₀)/g2 = 2R² − 1 − 2Λ_α`. -/
-@[powerlib_foundation] theorem tongue_deriv_y0 (hg : g2 ≠ 0) :
+@[tmio M, powerlib_foundation] theorem tongue_deriv_y0 (hg : g2 ≠ 0) :
     4 / g2 * (2 * (cα ^ 2 + cω ^ 2) * y0 α₀ g2 - pumpQ α₀ cα g2) =
       2 * rSq α₀ cα cω g2 - 1 - 2 * lamAlpha α₀ cα g2 := by
   simp only [pumpQ, y0, rSq, lamAlpha, lamOmega]
@@ -1048,7 +1048,7 @@ def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega �
   ring
 
 /-- `Λ* = 2(R − Λ_α)`. -/
-@[powerlib_foundation] theorem lamStar_eq (hα : 0 < α₀) (hg : 0 < g2) :
+@[tmio M, powerlib_foundation] theorem lamStar_eq (hα : 0 < α₀) (hg : 0 < g2) :
     lamStar α₀ cα cω g2 = 2 * (√(rSq α₀ cα cω g2) - lamAlpha α₀ cα g2) := by
   have hR : √(rSq α₀ cα cω g2) = 4 * α₀ / g2 * √(cα ^ 2 + cω ^ 2) := by
     rw [show rSq α₀ cα cω g2 = (4 * α₀ / g2) ^ 2 * (cα ^ 2 + cω ^ 2) by
@@ -1059,7 +1059,7 @@ def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega �
   ring
 
 /-- `Λ* < 1` iff `(Λ_α, Λ)` lies inside the parabola `Λ² < 1/4 + Λ_α`. -/
-@[powerlib_foundation] theorem lamStar_lt_one_iff_parabola (hα : 0 < α₀) (hg : 0 < g2) :
+@[tmio M, powerlib_foundation] theorem lamStar_lt_one_iff_parabola (hα : 0 < α₀) (hg : 0 < g2) :
     lamStar α₀ cα cω g2 < 1 ↔ lamOmega α₀ cω g2 ^ 2 < 1 / 4 + lamAlpha α₀ cα g2 := by
   rw [lamStar_eq hα hg]
   have hR0 := Real.sqrt_nonneg (rSq α₀ cα cω g2)
@@ -1079,7 +1079,7 @@ def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega �
 
 /-- The two-circle criterion: with two distinct roots, `y₋ < y₀` (i.e. `e(0) > 0`) iff
 `R² < 2Λ_α` (`C₁`) or `2R² > 1 + 2Λ_α` (`C₂`). -/
-@[powerlib_foundation] theorem yMinus_lt_y0_iff (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem yMinus_lt_y0_iff (hα : 0 < α₀) (hg : 0 < g2)
     (hS : 0 < cα ^ 2 + cω ^ 2) (hd : 0 < tongueDisc α₀ cα cω g2) :
     yMinus α₀ cα cω g2 < y0 α₀ g2 ↔
       rSq α₀ cα cω g2 < 2 * lamAlpha α₀ cα g2 ∨
@@ -1127,7 +1127,7 @@ def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega �
 
 /-- Family corollary: `c_α < 0` and `Λ* < 1` force every root of `q` above `y₀`, so the
 corrected threshold exceeds the leading one, `e(0) < 0`, without exception. -/
-@[powerlib_foundation] theorem y0_lt_root_of_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
+@[tmio M, powerlib_foundation] theorem y0_lt_root_of_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
     (hcα : cα < 0) (hstar : lamStar α₀ cα cω g2 < 1) {y : ℝ}
     (hy : tongue α₀ cα cω g2 y = 0) : y0 α₀ g2 < y := by
   have hpar := (lamStar_lt_one_iff_parabola hα hg).mp hstar
@@ -1164,7 +1164,7 @@ corrected threshold exceeds the leading one, `e(0) < 0`, without exception. -/
   linarith
 
 /-- `t = y/y₀` is a root ratio iff `R² t² − (1 + 2Λ_α) t + 1 = 0`. -/
-@[powerlib_foundation] theorem ratio_equation (hα : α₀ ≠ 0) (hg : g2 ≠ 0) (t : ℝ) :
+@[tmio M, powerlib_foundation] theorem ratio_equation (hα : α₀ ≠ 0) (hg : g2 ≠ 0) (t : ℝ) :
     tongue α₀ cα cω g2 (t * y0 α₀ g2) = 0 ↔
       rSq α₀ cα cω g2 * t ^ 2 - (1 + 2 * lamAlpha α₀ cα g2) * t + 1 = 0 := by
   have hk : tongue α₀ cα cω g2 (t * y0 α₀ g2) =
@@ -1177,7 +1177,7 @@ corrected threshold exceeds the leading one, `e(0) < 0`, without exception. -/
   · intro h; rw [h, mul_zero]
 
 /-- `e(0) = δ̂₁⁰/δ̂₁* − 1 > 0` iff `y₋ < y₀` (`y₋ > 0`). -/
-@[powerlib_foundation] theorem e0_pos_iff {ym y : ℝ} (hym : 0 < ym) :
+@[tmio T, powerlib_foundation] theorem e0_pos_iff {ym y : ℝ} (hym : 0 < ym) :
     0 < √y / √ym - 1 ↔ ym < y := by
   rw [sub_pos, one_lt_div (Real.sqrt_pos.mpr hym)]
   exact Real.sqrt_lt_sqrt_iff hym.le

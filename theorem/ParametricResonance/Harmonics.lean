@@ -40,7 +40,7 @@ open Complex Matrix
   rw [h1, h2]; push_cast; ring
 
 /-- `u² = δ² [1/2 + (e² + e⁻²)/4]`. -/
-@[powerlib_foundation] theorem pump_harmonic2 (δ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem pump_harmonic2 (δ θ : ℝ) :
     ((δ * Real.cos θ : ℝ) : ℂ) ^ 2 =
       δ ^ 2 * (1 / 2 + (exp (θ * I) ^ 2 + exp (-(θ * I)) ^ 2) / 4) := by
   rw [pump_harmonic1]
@@ -48,7 +48,7 @@ open Complex Matrix
   linear_combination (δ ^ 2 / 2) * h
 
 /-- `u³ = δ³ [(3/8)(e + e⁻¹) + (1/8)(e³ + e⁻³)]`. -/
-@[powerlib_foundation] theorem pump_harmonic3 (δ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem pump_harmonic3 (δ θ : ℝ) :
     ((δ * Real.cos θ : ℝ) : ℂ) ^ 3 =
       δ ^ 3 * (3 / 8 * (exp (θ * I) + exp (-(θ * I))) +
         1 / 8 * (exp (θ * I) ^ 3 + exp (-(θ * I)) ^ 3)) := by
@@ -57,7 +57,7 @@ open Complex Matrix
   linear_combination (3 * δ ^ 3 / 8 * (exp (θ * I) + exp (-(θ * I)))) * h
 
 /-- For a Hurwitz `A₀`, every harmonic equation `(jhω_p I − A₀) X = R` is uniquely solvable. -/
-@[powerlib_foundation] theorem harmonic_solvable {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem harmonic_solvable {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (ωp : ℝ) (h : ℤ) (R : Fin n → ℂ) :
     ∃! X : Fin n → ℂ, Linear.characteristicMatrix A (((h * ωp : ℝ) : ℂ) * I) *ᵥ X = R := by
   have hdet := det_characteristicMatrix_imag_ne_zero hA (h * ωp)

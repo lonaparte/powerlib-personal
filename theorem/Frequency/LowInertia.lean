@@ -99,7 +99,7 @@ def rot (ω t : ℝ) : ℂ := Complex.exp (-((ω : ℂ) * Complex.I) * (t : ℂ)
 
 /-- dq form of a first-order stationary-frame element `X ẋ_αβ = s_αβ − Y x_αβ`:
 `ẋ_dq = (s_dq − Y x_dq)/X − j ω x_dq`. -/
-@[powerlib_foundation] theorem dq_firstOrder {X Y ω t : ℝ} {xs ss : ℝ → ℂ}
+@[tmio T, powerlib_foundation] theorem dq_firstOrder {X Y ω t : ℝ} {xs ss : ℝ → ℂ}
     (h : HasDerivAt xs ((ss t - Y * xs t) / X) t) :
     HasDerivAt (fun t : ℝ => rot ω t * xs t)
       ((rot ω t * ss t - Y * (rot ω t * xs t)) / X - (ω : ℂ) * Complex.I * (rot ω t * xs t)) t := by
@@ -108,7 +108,7 @@ def rot (ω t : ℝ) : ℂ := Complex.exp (-((ω : ℂ) * Complex.I) * (t : ℂ)
   ring
 
 /-- Real (d-axis) part: `X ẋ_d = s_d − Y x_d + ω X x_q`. -/
-@[powerlib_foundation] theorem dq_firstOrder_re {X Y ω t : ℝ} {xs ss : ℝ → ℂ} (hX : X ≠ 0)
+@[tmio T, powerlib_foundation] theorem dq_firstOrder_re {X Y ω t : ℝ} {xs ss : ℝ → ℂ} (hX : X ≠ 0)
     (h : HasDerivAt xs ((ss t - Y * xs t) / X) t) :
     HasDerivAt (fun t : ℝ => (rot ω t * xs t).re)
       (((rot ω t * ss t).re - Y * (rot ω t * xs t).re + ω * X * (rot ω t * xs t).im) / X) t := by
@@ -123,7 +123,7 @@ def rot (ω t : ℝ) : ℂ := Complex.exp (-((ω : ℂ) * Complex.I) * (t : ℂ)
   ring
 
 /-- Imaginary (q-axis) part: `X ẋ_q = s_q − Y x_q − ω X x_d`. -/
-@[powerlib_foundation] theorem dq_firstOrder_im {X Y ω t : ℝ} {xs ss : ℝ → ℂ} (hX : X ≠ 0)
+@[tmio T, powerlib_foundation] theorem dq_firstOrder_im {X Y ω t : ℝ} {xs ss : ℝ → ℂ} (hX : X ≠ 0)
     (h : HasDerivAt xs ((ss t - Y * xs t) / X) t) :
     HasDerivAt (fun t : ℝ => (rot ω t * xs t).im)
       (((rot ω t * ss t).im - Y * (rot ω t * xs t).im - ω * X * (rot ω t * xs t).re) / X) t := by
@@ -143,7 +143,7 @@ def rot (ω t : ℝ) : ℂ := Complex.exp (-((ω : ℂ) * Complex.I) * (t : ℂ)
 def criticalInertia (ΔPL f₀ rocofMax : ℝ) : ℝ := |ΔPL| * f₀ / (2 * rocofMax)
 
 /-- Algebraic inversion of the RoCoF formula. -/
-@[powerlib_foundation] theorem rocof_bound_iff {ΔPL f₀ H r : ℝ} (hH : 0 < H) (hr : 0 < r) :
+@[tmio T, powerlib_foundation] theorem rocof_bound_iff {ΔPL f₀ H r : ℝ} (hH : 0 < H) (hr : 0 < r) :
     |ΔPL| * f₀ / (2 * H) ≤ r ↔ criticalInertia ΔPL f₀ r ≤ H := by
   unfold criticalInertia
   rw [div_le_iff₀ (by positivity), div_le_iff₀ (by positivity)]
@@ -174,7 +174,7 @@ initial RoCoF `ḟ(0⁺)` (Hz/s, `f = f₀(1 + Δω)`) satisfies `|ḟ(0⁺)| �
   exact rocof_bound_iff hH hr
 
 /-- Worked example of §1.5: `ḟ_max = 1 Hz/s`, `ΔP_L = 0.1 pu`, `f₀ = 50 Hz` ⇒ `H_crit = 2.5 s`. -/
-@[powerlib_foundation] theorem criticalInertia_example :
+@[tmio T, powerlib_foundation] theorem criticalInertia_example :
     criticalInertia 0.1 50 1 = 2.5 := by
   norm_num [criticalInertia, abs_of_pos]
 
@@ -188,7 +188,7 @@ def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
   D := 0
 
 /-- `H(s) = −1/(M s + β)` (both sides `0` at the pole). -/
-@[powerlib_foundation] theorem firstOrder_transfer {M β : ℝ} (hM : M ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem firstOrder_transfer {M β : ℝ} (hM : M ≠ 0) (s : ℂ) :
     Linear.transfer (firstOrderModel M β) s 0 0 = -1 / ((M : ℂ) * s + β) := by
   have hM' : (M : ℂ) ≠ 0 := by exact_mod_cast hM
   have hdet : (Linear.characteristicMatrix (firstOrderModel M β).A s).det = s + β / M := by
@@ -208,7 +208,7 @@ def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
   · field_simp
 
 /-- `|H(jω)|² = 1/(β² + M² ω²)`. -/
-@[powerlib_foundation] theorem firstOrder_normSq_transfer {M β : ℝ} (hM : M ≠ 0)
+@[tmio M, powerlib_foundation] theorem firstOrder_normSq_transfer {M β : ℝ} (hM : M ≠ 0)
     (ω : ℝ) :
     Complex.normSq (Linear.transfer (firstOrderModel M β) (ω * Complex.I) 0 0) =
       1 / (β ^ 2 + M ^ 2 * ω ^ 2) := by
@@ -219,14 +219,14 @@ def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
   ring
 
 /-- Low-frequency limit `|H(jω)|² → 1/β²`, independent of `M`. -/
-@[powerlib_foundation] theorem normSq_tendsto_zero {M β : ℝ} (hβ : β ≠ 0) :
+@[tmio T, powerlib_foundation] theorem normSq_tendsto_zero {M β : ℝ} (hβ : β ≠ 0) :
     Tendsto (fun ω : ℝ => 1 / (β ^ 2 + M ^ 2 * ω ^ 2)) (𝓝 0) (𝓝 (1 / β ^ 2)) := by
   have hc : Continuous (fun ω : ℝ => β ^ 2 + M ^ 2 * ω ^ 2) := by fun_prop
   have := (hc.tendsto 0).inv₀ (by simpa using pow_ne_zero 2 hβ)
   simpa [one_div] using this
 
 /-- High-frequency asymptote: `ω² |H(jω)|² → 1/M²`. -/
-@[powerlib_foundation] theorem mul_normSq_tendsto_atTop {M β : ℝ} (hM : M ≠ 0) :
+@[tmio T, powerlib_foundation] theorem mul_normSq_tendsto_atTop {M β : ℝ} (hM : M ≠ 0) :
     Tendsto (fun ω : ℝ => ω ^ 2 * (1 / (β ^ 2 + M ^ 2 * ω ^ 2))) atTop (𝓝 (1 / M ^ 2)) := by
   have hM2 : 0 < M ^ 2 := by positivity
   have hinv : Tendsto (fun ω : ℝ => (ω ^ 2)⁻¹) atTop (𝓝 0) :=
@@ -243,7 +243,7 @@ def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
 /-! ## Frequency variance (§1.7) -/
 
 /-- `∫₀^∞ dω/(β² + M² ω²) = π/(2 β M)` for `β, M > 0`. -/
-@[powerlib_foundation] theorem whiteNoise_variance {M β : ℝ} (hM : 0 < M) (hβ : 0 < β) :
+@[tmio T, powerlib_foundation] theorem whiteNoise_variance {M β : ℝ} (hM : 0 < M) (hβ : 0 < β) :
     ∫ ω in Ioi (0 : ℝ), 1 / (β ^ 2 + M ^ 2 * ω ^ 2) = Real.pi / (2 * β * M) := by
   have hc : 0 < M / β := div_pos hM hβ
   have h1 : (fun ω : ℝ => 1 / (β ^ 2 + M ^ 2 * ω ^ 2)) =
@@ -258,7 +258,7 @@ def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
 def variance (S : ℝ → ℝ) (β M : ℝ) : ℝ := ∫ ω in Ioi (0 : ℝ), S ω / (β ^ 2 + M ^ 2 * ω ^ 2)
 
 /-- White PSD `S₀`: `σ² = S₀ π/(2βM)`, so `M σ²` does not depend on `M` (`p = 1`). -/
-@[powerlib_foundation] theorem variance_white {S₀ M β : ℝ} (hM : 0 < M) (hβ : 0 < β) :
+@[tmio M, powerlib_foundation] theorem variance_white {S₀ M β : ℝ} (hM : 0 < M) (hβ : 0 < β) :
     variance (fun _ => S₀) β M = S₀ * Real.pi / (2 * β * M) ∧
       M * variance (fun _ => S₀) β M = S₀ * Real.pi / (2 * β) := by
   have h : variance (fun _ => S₀) β M = S₀ * Real.pi / (2 * β * M) := by
@@ -276,14 +276,14 @@ section Elasticity
 
 variable {S : ℝ → ℝ} {β M₁ M₂ : ℝ}
 
-@[powerlib_foundation] private theorem denom_pos (hβ : β ≠ 0) (M ω : ℝ) :
+@[tmio T, powerlib_foundation] private theorem denom_pos (hβ : β ≠ 0) (M ω : ℝ) :
     0 < β ^ 2 + M ^ 2 * ω ^ 2 := by
   have := pow_pos (abs_pos.2 hβ) 2
   rw [sq_abs] at this
   positivity
 
 /-- Integrability at a smaller inertia implies integrability at a larger one. -/
-@[powerlib_foundation] theorem integrable_of_le (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio T, powerlib_foundation] theorem integrable_of_le (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hM : M₁ ^ 2 ≤ M₂ ^ 2)
     (hint : IntegrableOn (fun ω => S ω / (β ^ 2 + M₁ ^ 2 * ω ^ 2)) (Ioi 0))
     (hmeas : AEStronglyMeasurable (fun ω => S ω / (β ^ 2 + M₂ ^ 2 * ω ^ 2))
@@ -296,7 +296,7 @@ variable {S : ℝ → ℝ} {β M₁ M₂ : ℝ}
   exact div_le_div_of_nonneg_left (hS ω) h1 (by nlinarith [sq_nonneg ω])
 
 /-- More inertia never increases the variance (`p ≥ 0`). -/
-@[powerlib_foundation] theorem variance_antitone (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem variance_antitone (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hM : M₁ ^ 2 ≤ M₂ ^ 2)
     (h₁ : IntegrableOn (fun ω => S ω / (β ^ 2 + M₁ ^ 2 * ω ^ 2)) (Ioi 0))
     (h₂ : IntegrableOn (fun ω => S ω / (β ^ 2 + M₂ ^ 2 * ω ^ 2)) (Ioi 0)) :
@@ -306,7 +306,7 @@ variable {S : ℝ → ℝ} {β M₁ M₂ : ℝ}
   exact div_le_div_of_nonneg_left (hS ω) h1 (by nlinarith [sq_nonneg ω])
 
 /-- `M² σ²(M)` is nondecreasing (`p ≤ 2`): `σ²(M₁) ≤ (M₂/M₁)² σ²(M₂)` for `0 < M₁ ≤ M₂`. -/
-@[powerlib_foundation] theorem variance_le_sq_mul (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem variance_le_sq_mul (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hM₁ : 0 < M₁) (hM : M₁ ≤ M₂)
     (h₁ : IntegrableOn (fun ω => S ω / (β ^ 2 + M₁ ^ 2 * ω ^ 2)) (Ioi 0))
     (h₂ : IntegrableOn (fun ω => S ω / (β ^ 2 + M₂ ^ 2 * ω ^ 2)) (Ioi 0)) :
@@ -329,7 +329,7 @@ variable {S : ℝ → ℝ} {β M₁ M₂ : ℝ}
 
 /-- A power law `σ²(M) = c M^{−p}` matched at two inertia levels `M₁ < M₂` (with `σ² > 0`)
 has exponent `0 ≤ p ≤ 2`. -/
-@[powerlib_foundation] theorem powerLaw_exponent_mem (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem powerLaw_exponent_mem (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hM₁ : 0 < M₁) (hM : M₁ < M₂)
     (h₁ : IntegrableOn (fun ω => S ω / (β ^ 2 + M₁ ^ 2 * ω ^ 2)) (Ioi 0))
     (h₂ : IntegrableOn (fun ω => S ω / (β ^ 2 + M₂ ^ 2 * ω ^ 2)) (Ioi 0))
@@ -363,7 +363,7 @@ has exponent `0 ≤ p ≤ 2`. -/
 /-- The note's Nordel data (`M`: 250 → 100 GW·s, `σ_Δf`: 6 → 18 mHz, i.e. variance ratio 9)
 cannot come from the first-order model with any nonnegative PSD: the model allows at most
 `(250/100)² = 6.25`. -/
-@[powerlib_foundation] theorem nordel_not_explained (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem nordel_not_explained (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (h₁ : IntegrableOn (fun ω => S ω / (β ^ 2 + (100 : ℝ) ^ 2 * ω ^ 2)) (Ioi 0))
     (h₂ : IntegrableOn (fun ω => S ω / (β ^ 2 + (250 : ℝ) ^ 2 * ω ^ 2)) (Ioi 0)) :
     ¬ (variance S β 100 = 9 * variance S β 250 ∧ 0 < variance S β 250) := by
@@ -388,7 +388,7 @@ def twoPointExponent (S : ℝ → ℝ) (β M₁ M₂ : ℝ) : ℝ :=
 /-- **Low-frequency end (`p → 0`).** For an integrable nonnegative PSD the variance tends to
 `(∫ S)/β²` as the inertia vanishes: all the noise lies below the corner `ω_c = β/M → ∞`, where
 `|H|² → 1/β²` does not depend on `M`. -/
-@[powerlib_foundation] theorem variance_tendsto_zero (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem variance_tendsto_zero (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hint : IntegrableOn S (Ioi 0)) :
     Tendsto (fun M => variance S β M) (𝓝 0) (𝓝 ((∫ ω in Ioi (0 : ℝ), S ω) / β ^ 2)) := by
   have hb : 0 < β ^ 2 := by positivity
@@ -415,7 +415,7 @@ def twoPointExponent (S : ℝ → ℝ) (β M₁ M₂ : ℝ) : ℝ :=
 /-- **High-frequency end (`p → 2`).** If `S(ω)/ω²` is integrable, `M² σ²(M)` tends to
 `∫ S/ω²` as the inertia grows: all the noise lies above the corner `ω_c = β/M → 0`, where
 `|H|² ≈ 1/(M² ω²)`. -/
-@[powerlib_foundation] theorem mul_variance_tendsto_atTop (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem mul_variance_tendsto_atTop (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hint : IntegrableOn (fun ω => S ω / ω ^ 2) (Ioi 0)) :
     Tendsto (fun M => M ^ 2 * variance S β M) atTop
       (𝓝 (∫ ω in Ioi (0 : ℝ), S ω / ω ^ 2)) := by
@@ -459,7 +459,7 @@ def twoPointExponent (S : ℝ → ℝ) (β M₁ M₂ : ℝ) : ℝ :=
 /-- **`p → 0` at small inertia.** For an integrable nonnegative PSD with `∫ S > 0`, the two-point
 exponent between `M` and `κ M` (`κ > 1` fixed; the limit holds for every `κ`) tends to `0` as
 `M → 0⁺`. -/
-@[powerlib_foundation] theorem twoPointExponent_tendsto_zero (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem twoPointExponent_tendsto_zero (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hint : IntegrableOn S (Ioi 0)) (hpos : 0 < ∫ ω in Ioi (0 : ℝ), S ω) (κ : ℝ) :
     Tendsto (fun M => twoPointExponent S β M (κ * M)) (𝓝[>] 0) (𝓝 0) := by
   set L := (∫ ω in Ioi (0 : ℝ), S ω) / β ^ 2 with hLdef
@@ -481,7 +481,7 @@ exponent between `M` and `κ M` (`κ > 1` fixed; the limit holds for every `κ`)
 
 /-- **`p → 2` at large inertia.** If `S(ω)/ω²` is integrable with positive integral, the
 two-point exponent between `M` and `κ M` (`κ > 1` fixed) tends to `2` as `M → ∞`. -/
-@[powerlib_foundation] theorem twoPointExponent_tendsto_two (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+@[tmio M, powerlib_foundation] theorem twoPointExponent_tendsto_two (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
     (hint : IntegrableOn (fun ω => S ω / ω ^ 2) (Ioi 0))
     (hpos : 0 < ∫ ω in Ioi (0 : ℝ), S ω / ω ^ 2) {κ : ℝ} (hκ : 1 < κ) :
     Tendsto (fun M => twoPointExponent S β M (κ * M)) atTop (𝓝 2) := by
@@ -518,7 +518,7 @@ end Asymptotics
 def electromechanicalTime (H ωs : ℝ) : ℝ := 2 * H / ωs
 
 /-- Correction (§1.1): `T_em` is about 25 ms (`H = 4 s`, 50 Hz), not "several seconds". -/
-@[powerlib_foundation] theorem electromechanicalTime_example :
+@[tmio T, powerlib_foundation] theorem electromechanicalTime_example :
     0.025 < electromechanicalTime 4 (2 * Real.pi * 50) ∧
       electromechanicalTime 4 (2 * Real.pi * 50) < 0.026 := by
   have h1 := Real.pi_gt_d2
@@ -529,7 +529,7 @@ def electromechanicalTime (H ωs : ℝ) : ℝ := 2 * H / ωs
   · rw [div_lt_iff₀ (by positivity)]; nlinarith
 
 /-- Even `H = 10 s` gives `T_em < 0.07 s` at 50 Hz. -/
-@[powerlib_foundation] theorem electromechanicalTime_lt {H : ℝ} (hH : H ≤ 10) :
+@[tmio T, powerlib_foundation] theorem electromechanicalTime_lt {H : ℝ} (hH : H ≤ 10) :
     electromechanicalTime H (2 * Real.pi * 50) < 0.07 := by
   have h1 := Real.pi_gt_three
   unfold electromechanicalTime

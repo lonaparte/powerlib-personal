@@ -105,7 +105,7 @@ def IsDiracStructure (D : Set ((ι → ℝ) × (ι → ℝ))) : Prop := diracOrt
   linarith
 
 /-- The graph `{(f, e) | f = J e}` of a skew-symmetric `J` is a Dirac structure. -/
-@[powerlib_foundation] theorem dirac_graph_skew [DecidableEq ι] {J : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem dirac_graph_skew [DecidableEq ι] {J : Matrix ι ι ℝ}
     (hJ : Jᵀ = -J) : IsDiracStructure {a : (ι → ℝ) × (ι → ℝ) | a.1 = J *ᵥ a.2} := by
   have hskew : ∀ v w : ι → ℝ, (J *ᵥ w) ⬝ᵥ v = -(w ⬝ᵥ (J *ᵥ v)) := by
     intro v w
@@ -131,7 +131,7 @@ variable {σ ρ κ : Type*} [Fintype σ] [Fintype ρ] [Fintype κ]
 /-- Energy balance from a Dirac structure (T-ph (1.6)–(1.7)): the port set is split into
 storage `σ`, resistive `ρ` and control `κ` ports. If `(f, e) ∈ D` with `f_S = −ẋ`,
 `e_S = ∇H`, `f_R = −Φ(e_R)` and `(u, y) = (e_C, f_C)`, then `∇H · ẋ = uᵀ y − e_Rᵀ Φ(e_R)`. -/
-@[powerlib_foundation] theorem dirac_energy_balance
+@[tmio T, powerlib_foundation] theorem dirac_energy_balance
     {D : Set (((σ ⊕ ρ ⊕ κ) → ℝ) × ((σ ⊕ ρ ⊕ κ) → ℝ))} (hD : IsDiracStructure D)
     {a : ((σ ⊕ ρ ⊕ κ) → ℝ) × ((σ ⊕ ρ ⊕ κ) → ℝ)} (ha : a ∈ D)
     (xdot gradH : σ → ℝ) (Φ : (ρ → ℝ) → (ρ → ℝ)) (u y : κ → ℝ)
@@ -155,7 +155,7 @@ storage `σ`, resistive `ρ` and control `κ` ports. If `(f, e) ∈ D` with `f_S
   linarith
 
 /-- With a passive resistive relation `e_Rᵀ Φ(e_R) ≥ 0`: `∇H · ẋ ≤ uᵀ y`. -/
-@[powerlib_foundation] theorem dirac_dissipation_inequality
+@[tmio T, powerlib_foundation] theorem dirac_dissipation_inequality
     {D : Set (((σ ⊕ ρ ⊕ κ) → ℝ) × ((σ ⊕ ρ ⊕ κ) → ℝ))} (hD : IsDiracStructure D)
     {a : ((σ ⊕ ρ ⊕ κ) → ℝ) × ((σ ⊕ ρ ⊕ κ) → ℝ)} (ha : a ∈ D)
     (xdot gradH : σ → ℝ) (Φ : (ρ → ℝ) → (ρ → ℝ)) (u y : κ → ℝ)
@@ -180,7 +180,7 @@ def phDAE_field (M : NonlinearModel n m) (G : State n → Matrix (Fin n) (Fin k)
 
 /-- T-ph §1.4: on the constraint manifold `G(x)ᵀ ∇H(x) = 0` the multiplier term does no work,
 so the energy balance (1.2) is unchanged. -/
-@[powerlib_foundation] theorem phDAE_power_balance (M : NonlinearModel n m)
+@[tmio T, powerlib_foundation] theorem phDAE_power_balance (M : NonlinearModel n m)
     (G : State n → Matrix (Fin n) (Fin k) ℝ) (x : State n) (u : Fin m → ℝ) (lam : Fin k → ℝ)
     (hc : (G x)ᵀ *ᵥ WithLp.ofLp (M.dH x) = 0) :
     fderiv ℝ M.H x (phDAE_field M G x u lam) = M.supply x u - M.dampingPower x := by
@@ -191,7 +191,7 @@ so the energy balance (1.2) is unchanged. -/
 
 /-- Uniformly positive definite dissipation and uniformly bounded input matrix give strict
 output passivity: `Ḣ ≤ uᵀ y − ε |y|²` with `ε = ρ / (γ + 1)`. -/
-@[powerlib_foundation] theorem strictOutputPassive_of_uniform (M : NonlinearModel n m)
+@[tmio T, powerlib_foundation] theorem strictOutputPassive_of_uniform (M : NonlinearModel n m)
     {ρ γ : ℝ} (hρ : 0 < ρ) (hγ : 0 ≤ γ)
     (hR : ∀ x (w : Fin n → ℝ), ρ * (w ⬝ᵥ w) ≤ w ⬝ᵥ (M.R x *ᵥ w))
     (hg : ∀ x (w : Fin n → ℝ), ((M.g x)ᵀ *ᵥ w) ⬝ᵥ ((M.g x)ᵀ *ᵥ w) ≤ γ * (w ⬝ᵥ w)) :
@@ -218,7 +218,7 @@ output passivity: `Ḣ ≤ uᵀ y − ε |y|²` with `ε = ρ / (γ + 1)`. -/
 
 /-- If the feedback `β` satisfies the matching equation (1.13) at every state, the closed loop
 `ẋ = F(x, β(x))` is the target pH system `ẋ = (J_d − R_d)∇H_d`. -/
-@[powerlib_foundation] theorem idaPbc_closedLoop (M Md : NonlinearModel n m)
+@[tmio T, powerlib_foundation] theorem idaPbc_closedLoop (M Md : NonlinearModel n m)
     (β : State n → Fin m → ℝ)
     (hmatch : ∀ x, (M.J x - M.R x) *ᵥ WithLp.ofLp (M.dH x) + M.g x *ᵥ β x =
       (Md.J x - Md.R x) *ᵥ WithLp.ofLp (Md.dH x)) :
@@ -229,7 +229,7 @@ output passivity: `Ḣ ≤ uᵀ y − ε |y|²` with `ε = ρ / (γ + 1)`. -/
     mulVec_zero, add_zero]
 
 /-- Under matching, the target Hamiltonian is nonincreasing along the closed loop. -/
-@[powerlib_foundation] theorem idaPbc_lie_nonpos (M Md : NonlinearModel n m)
+@[tmio T, powerlib_foundation] theorem idaPbc_lie_nonpos (M Md : NonlinearModel n m)
     (β : State n → Fin m → ℝ)
     (hmatch : ∀ x, (M.J x - M.R x) *ᵥ WithLp.ofLp (M.dH x) + M.g x *ᵥ β x =
       (Md.J x - Md.R x) *ᵥ WithLp.ofLp (Md.dH x)) (x : State n) :
@@ -239,7 +239,7 @@ output passivity: `Ḣ ≤ uᵀ y − ε |y|²` with `ε = ρ / (γ + 1)`. -/
 
 /-- IDA-PBC (T-ph §1.9): matching plus a strict local minimum of `H_d` at `x*` gives Lyapunov
 stability of `x*` for the closed loop; `H_d − H_d(x*)` is the Lyapunov function. -/
-@[powerlib_foundation] theorem idaPbc_lyapunovStable (M Md : NonlinearModel n m)
+@[tmio T, powerlib_foundation] theorem idaPbc_lyapunovStable (M Md : NonlinearModel n m)
     (β : State n → Fin m → ℝ)
     (hmatch : ∀ x, (M.J x - M.R x) *ᵥ WithLp.ofLp (M.dH x) + M.g x *ᵥ β x =
       (Md.J x - Md.R x) *ᵥ WithLp.ofLp (Md.dH x))
@@ -258,7 +258,7 @@ def idaPbc_law (M Md : NonlinearModel n m) (x : State n) : Fin m → ℝ :=
 
 /-- When the bracket lies in `range g(x)` and `g(x)ᵀ g(x)` is invertible, the law (1.14) solves
 the matching equation (1.13) at `x`. -/
-@[powerlib_foundation] theorem idaPbc_law_matches (M Md : NonlinearModel n m) (x : State n)
+@[tmio T, powerlib_foundation] theorem idaPbc_law_matches (M Md : NonlinearModel n m) (x : State n)
     (hinv : IsUnit ((M.g x)ᵀ * M.g x).det) {w : Fin m → ℝ}
     (hw : idaPbc_bracket M Md x = M.g x *ᵥ w) :
     (M.J x - M.R x) *ᵥ WithLp.ofLp (M.dH x) + M.g x *ᵥ idaPbc_law M Md x =
@@ -270,7 +270,7 @@ the matching equation (1.13) at `x`. -/
   abel
 
 /-- Outside `range g(x)` no input solves the matching equation at `x`. -/
-@[powerlib_foundation] theorem idaPbc_no_matching (M Md : NonlinearModel n m) (x : State n)
+@[tmio T, powerlib_foundation] theorem idaPbc_no_matching (M Md : NonlinearModel n m) (x : State n)
     (hnot : ∀ w, idaPbc_bracket M Md x ≠ M.g x *ᵥ w) (u : Fin m → ℝ) :
     (M.J x - M.R x) *ᵥ WithLp.ofLp (M.dH x) + M.g x *ᵥ u ≠
       (Md.J x - Md.R x) *ᵥ WithLp.ofLp (Md.dH x) := by
@@ -282,7 +282,7 @@ the matching equation (1.13) at `x`. -/
 /-- IDA-PBC with the law (1.14): if the matching bracket lies in `range g(x)` and `gᵀ g` is
 invertible at every state, the closed loop under (1.14) is the target system and a strict
 local minimum of `H_d` is Lyapunov stable. -/
-@[powerlib_foundation] theorem idaPbc_law_lyapunovStable (M Md : NonlinearModel n m)
+@[tmio T, powerlib_foundation] theorem idaPbc_law_lyapunovStable (M Md : NonlinearModel n m)
     (hinv : ∀ x, IsUnit ((M.g x)ᵀ * M.g x).det)
     (hrange : ∀ x, ∃ w, idaPbc_bracket M Md x = M.g x *ᵥ w)
     {xs : State n} (hmin : Md.IsStrictLocalMin xs) :
@@ -300,7 +300,7 @@ def phLaSalle_H (x : State 2) : ℝ :=
 def phLaSalle_dH (x : State 2) : State 2 :=
   WithLp.toLp 2 ![x 0 ^ 3 + x 0 ^ 2 - 2 * x 0, x 1]
 
-@[powerlib_foundation] theorem phLaSalle_hasGradientAt (x : State 2) :
+@[tmio M, powerlib_foundation] theorem phLaSalle_hasGradientAt (x : State 2) :
     HasGradientAt phLaSalle_H (phLaSalle_dH x) x := by
   let P : Fin 2 → State 2 →L[ℝ] ℝ := fun i => PiLp.proj 2 (fun _ : Fin 2 => ℝ) i
   have h := (((((P 0).hasFDerivAt (x := x)).pow 4).const_mul (1 / 4)).add
@@ -329,7 +329,7 @@ def phLaSalle_xs : State 2 := WithLp.toLp 2 ![-2, 0]
 def phLaSalle_xo : State 2 := WithLp.toLp 2 ![1, 0]
 
 /-- Hypothesis "argmin H = {x*}" of the note holds: `H(x) > H(x*)` for `x ≠ x*`. -/
-@[powerlib_foundation] theorem phLaSalle_counterexample_unique_min (x : State 2)
+@[tmio M, powerlib_foundation] theorem phLaSalle_counterexample_unique_min (x : State 2)
     (hx : x ≠ phLaSalle_xs) :
     phLaSalle_counterexample.H phLaSalle_xs < phLaSalle_counterexample.H x := by
   simp only [phLaSalle_counterexample, phLaSalle_H, phLaSalle_xs,
@@ -352,7 +352,7 @@ def phLaSalle_xo : State 2 := WithLp.toLp 2 ![1, 0]
     nlinarith [sq_nonneg (x 1)]
 
 /-- Hypothesis "R ≻ 0" of the note holds everywhere: the damping power is `|∇H|²`. -/
-@[powerlib_foundation] theorem phLaSalle_counterexample_damping_pos (x : State 2)
+@[tmio M, powerlib_foundation] theorem phLaSalle_counterexample_damping_pos (x : State 2)
     (hx : phLaSalle_counterexample.dH x ≠ 0) : 0 < phLaSalle_counterexample.dampingPower x := by
   have hne : WithLp.ofLp (phLaSalle_counterexample.dH x) ≠ 0 := fun h =>
     hx (WithLp.ofLp_injective 2 (by rw [h, WithLp.ofLp_zero]))
@@ -365,7 +365,7 @@ def phLaSalle_xo : State 2 := WithLp.toLp 2 ![1, 0]
   exact lt_of_le_of_ne h0 (fun h => hne (dotProduct_self_eq_zero.mp h.symm))
 
 /-- `(1, 0) ≠ x*` is an equilibrium of the unforced counterexample. -/
-@[powerlib_foundation] theorem phLaSalle_counterexample_equilibrium :
+@[tmio M, powerlib_foundation] theorem phLaSalle_counterexample_equilibrium :
     phLaSalle_counterexample.zeroInputField phLaSalle_xo = 0 := by
   apply phLaSalle_counterexample.zeroInputField_eq_zero_of_dH_eq_zero
   apply WithLp.ofLp_injective 2
@@ -373,7 +373,7 @@ def phLaSalle_xo : State 2 := WithLp.toLp 2 ![1, 0]
   fin_cases i <;> norm_num [phLaSalle_counterexample, phLaSalle_dH, phLaSalle_xo]
 
 /-- The tilted double well is bounded below by its minimum `H(x*) = −8/3`. -/
-@[powerlib_foundation] theorem phLaSalle_H_lowerBound (x : State 2) : -(8 / 3) ≤ phLaSalle_H x := by
+@[tmio M, powerlib_foundation] theorem phLaSalle_H_lowerBound (x : State 2) : -(8 / 3) ≤ phLaSalle_H x := by
   have h := phLaSalle_counterexample_unique_min x
   by_cases hx : x = phLaSalle_xs
   · subst hx
@@ -417,7 +417,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 2 0 :=
   ⟨fun m => (phLaSalle_counterexample.shift m.point).system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isNonlinearPH :
+@[tmio M, powerlib_foundation] theorem family_isNonlinearPH :
     family.IsNonlinearPH fun m => phLaSalle_counterexample.shift m.point := fun _ => rfl
 
 @[tmio M, powerlib_foundation] theorem realize_univ :
@@ -505,7 +505,7 @@ end LaSalle
 only at `x*`, the damping power is positive wherever `∇H ≠ 0`, `H` is radially unbounded,
 and `H` and the zero-input field are `C¹`, then `x*` is a globally asymptotically stable
 equilibrium of the unforced pH system (forward completeness included). -/
-@[powerlib_foundation] theorem phGAS_of_unique_critical (M : NonlinearModel n m) {xs : State n}
+@[tmio T, powerlib_foundation] theorem phGAS_of_unique_critical (M : NonlinearModel n m) {xs : State n}
     (hn : 0 < n) (hH : ContDiff ℝ 1 M.H) (hf : ContDiff ℝ 1 M.zeroInputField)
     (hmin : ∀ x, x ≠ xs → M.H xs < M.H x) (hcrit : ∀ x, M.dH x = 0 → x = xs)
     (hdiss : ∀ x, M.dH x ≠ 0 → 0 < M.dampingPower x)

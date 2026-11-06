@@ -122,7 +122,7 @@ def imcModel (L R α : ℝ) : Plant 2 1 :=
   siso2 (-(α + R / L)) (R * α / L) (-1) 0 α 1 1 0
 
 /-- The closed-loop field is exactly the plant's field with input `i*`. -/
-@[powerlib_foundation] theorem imcField_eq_model (L R α iref : ℝ) (hL : L ≠ 0) (x : ℝ²) :
+@[tmio M, powerlib_foundation] theorem imcField_eq_model (L R α iref : ℝ) (hL : L ≠ 0) (x : ℝ²) :
     imcField L R α iref x = (imcModel L R α).inputField (fun _ => iref) x := by
   ext j
   fin_cases j
@@ -136,7 +136,7 @@ def imcModel (L R α : ℝ) : Plant 2 1 :=
 
 /-- **The IMC current loop is exactly first order**: `i(s)/i*(s) = α/(s + α)` at every `s`
 that is not a closed-loop eigenvalue. -/
-@[powerlib_foundation] theorem imcModel_transfer (L R α : ℝ) (s : ℂ)
+@[tmio M, powerlib_foundation] theorem imcModel_transfer (L R α : ℝ) (s : ℂ)
     (h1 : s + α ≠ 0) (h2 : s + (R / L : ℝ) ≠ 0) :
     transfer (imcModel L R α) s 0 0 = α / (s + α) := by
   have hdet : ((s - ((-(α + R / L) : ℝ) : ℂ)) * (s - ((0 : ℝ) : ℂ)) -
@@ -152,11 +152,11 @@ that is not a closed-loop eigenvalue. -/
   ring
 
 /-- Closed-loop state matrix `[[−(α + R/L), Rα/L], [−1, 0]]`. -/
-@[powerlib_foundation] theorem imcModel_A (L R α : ℝ) :
+@[tmio M, powerlib_foundation] theorem imcModel_A (L R α : ℝ) :
     (imcModel L R α).A = !![-(α + R / L), R * α / L; -1, 0] := rfl
 
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
-@[powerlib_foundation] theorem imcModel_exists_root (L R α : ℝ)
+@[tmio M, powerlib_foundation] theorem imcModel_exists_root (L R α : ℝ)
     (h : α + R / L < 0 ∨ R * α / L < 0) :
     ∃ s : ℂ, (characteristicMatrix (imcModel L R α).A s).det = 0 ∧ 0 < s.re := by
   rw [imcModel_A]
@@ -171,7 +171,7 @@ that is not a closed-loop eigenvalue. -/
 /-- Closed-loop equilibrium `(i*, i*/α)`. -/
 def imcEquilibrium (α iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, iref / α]
 
-@[powerlib_foundation] theorem imc_isEquilibrium (L R α iref : ℝ) (hL : L ≠ 0) (hα : α ≠ 0) :
+@[tmio M, powerlib_foundation] theorem imc_isEquilibrium (L R α iref : ℝ) (hL : L ≠ 0) (hα : α ≠ 0) :
     IsEquilibrium ((imcModel L R α).inputField fun _ => iref) (imcEquilibrium α iref) := by
   rw [IsEquilibrium, ← imcField_eq_model L R α iref hL]
   ext j
@@ -320,7 +320,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 (`v = −ω σL i_q − ê + u`, `ê = e`), the d-axis of FOC note §1.5,
 `σL_s di_d/dt = v_d − r' i_d + ω σL_s i_q + e_d`, reduces to the RL plant driven by the PI
 output `u`. -/
-@[powerlib_foundation] theorem decoupled_axis_eq_rl (σL r' ω id iq ed u : ℝ) :
+@[tmio T, powerlib_foundation] theorem decoupled_axis_eq_rl (σL r' ω id iq ed u : ℝ) :
     ((-ω * σL * iq - ed + u) - r' * id + ω * σL * iq + ed) / σL = rlField σL r' id u := by
   unfold rlField
   congr 1
@@ -333,7 +333,7 @@ output `u`. -/
 def speedLoopModel (J Kt Kp Ki : ℝ) : Plant 2 1 :=
   siso2 (-(Kt * Kp / J)) (Kt * Ki / J) (-1) 0 (Kt * Kp / J) 1 1 0
 
-@[powerlib_foundation] theorem speedLoop_transfer (J Kt Kp Ki : ℝ) (hJ : J ≠ 0) (s : ℂ)
+@[tmio M, powerlib_foundation] theorem speedLoop_transfer (J Kt Kp Ki : ℝ) (hJ : J ≠ 0) (s : ℂ)
     (hden : (J : ℂ) * s ^ 2 + Kt * Kp * s + Kt * Ki ≠ 0) :
     transfer (speedLoopModel J Kt Kp Ki) s 0 0 =
       Kt * (Kp * s + Ki) / (J * s ^ 2 + Kt * Kp * s + Kt * Ki) := by
@@ -352,7 +352,7 @@ def speedLoopModel (J Kt Kp Ki : ℝ) : Plant 2 1 :=
 
 /-- Pole placement of the speed loop: with `K_p = 2ζω_n J/K_t`, `K_i = ω_n² J/K_t` the
 denominator is `J (s² + 2ζω_n s + ω_n²)`. -/
-@[powerlib_foundation] theorem speedLoop_denominator_tuned (J Kt ζ ωn : ℝ) (hKt : Kt ≠ 0) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem speedLoop_denominator_tuned (J Kt ζ ωn : ℝ) (hKt : Kt ≠ 0) (s : ℂ) :
     (J : ℂ) * s ^ 2 + Kt * ((2 * ζ * ωn * J / Kt : ℝ) : ℂ) * s + Kt * ((ωn ^ 2 * J / Kt : ℝ) : ℂ) =
       J * (s ^ 2 + 2 * ζ * ωn * s + ωn ^ 2) := by
   have : (Kt : ℂ) ≠ 0 := by exact_mod_cast hKt
@@ -364,7 +364,7 @@ denominator is `J (s² + 2ζω_n s + ω_n²)`. -/
 /-- `σL_s di/dt = v − r' i − jω_e σL_s i + e` (complex) is equivalent to the real pair
 `σL_s di_d/dt = v_d − r' i_d + ω_e σL_s i_q + e_d`,
 `σL_s di_q/dt = v_q − r' i_q − ω_e σL_s i_d + e_q` (FOC note §1.5). -/
-@[powerlib_foundation] theorem complexVector_iff (σL r' ωe : ℝ) (i di v e : ℂ) :
+@[tmio T, powerlib_foundation] theorem complexVector_iff (σL r' ωe : ℝ) (i di v e : ℂ) :
     (σL : ℂ) * di = v - r' * i - Complex.I * ωe * σL * i + e ↔
       σL * di.re = v.re - r' * i.re + ωe * σL * i.im + e.re ∧
       σL * di.im = v.im - r' * i.im - ωe * σL * i.re + e.im := by

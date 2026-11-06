@@ -71,40 +71,40 @@ def pf (k i : n) : ℂ := mb.V k i * mb.W k i
 
 @[tmio T, powerlib_foundation] theorem V_mul_Wt : mb.V * mb.Wᵀ = 1 := mul_eq_one_comm.mp mb.biorth
 
-@[powerlib_foundation] theorem decomp : A = mb.V * diagonal mb.eig * mb.Wᵀ := by
+@[tmio T, powerlib_foundation] theorem decomp : A = mb.V * diagonal mb.eig * mb.Wᵀ := by
   calc A = A * (mb.V * mb.Wᵀ) := by rw [mb.V_mul_Wt, Matrix.mul_one]
     _ = mb.V * diagonal mb.eig * mb.Wᵀ := by rw [← Matrix.mul_assoc, mb.right]
 
-@[powerlib_foundation] theorem left : mb.Wᵀ * A = diagonal mb.eig * mb.Wᵀ := by
+@[tmio T, powerlib_foundation] theorem left : mb.Wᵀ * A = diagonal mb.eig * mb.Wᵀ := by
   calc mb.Wᵀ * A = mb.Wᵀ * (mb.V * diagonal mb.eig * mb.Wᵀ) := congrArg (mb.Wᵀ * ·) mb.decomp
     _ = diagonal mb.eig * mb.Wᵀ := by
       rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, mb.biorth, Matrix.one_mul]
 
-@[powerlib_foundation] theorem mulVec_v (i : n) : A *ᵥ mb.v i = mb.eig i • mb.v i := by
+@[tmio T, powerlib_foundation] theorem mulVec_v (i : n) : A *ᵥ mb.v i = mb.eig i • mb.v i := by
   ext k
   have h := congrFun (congrFun mb.right k) i
   rw [Matrix.mul_diagonal] at h
   simp only [Matrix.mul_apply] at h
   simpa [v, Matrix.mulVec, dotProduct, mul_comm] using h
 
-@[powerlib_foundation] theorem vecMul_ψ (i : n) : vecMul (mb.ψ i) A = mb.eig i • mb.ψ i := by
+@[tmio T, powerlib_foundation] theorem vecMul_ψ (i : n) : vecMul (mb.ψ i) A = mb.eig i • mb.ψ i := by
   ext k
   have h := congrFun (congrFun mb.left i) k
   rw [Matrix.diagonal_mul] at h
   simp only [Matrix.mul_apply, transpose_apply] at h
   simpa [ψ, Matrix.vecMul, dotProduct] using h
 
-@[powerlib_foundation] theorem ψ_dot_v (i j : n) :
+@[tmio T, powerlib_foundation] theorem ψ_dot_v (i j : n) :
     mb.ψ i ⬝ᵥ mb.v j = if i = j then 1 else 0 := by
   have h := congrFun (congrFun mb.biorth i) j
   simpa [Matrix.mul_apply, Matrix.one_apply, ψ, v, dotProduct] using h
 
-@[powerlib_foundation] theorem v_ne_zero (i : n) : mb.v i ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem v_ne_zero (i : n) : mb.v i ≠ 0 := by
   intro h
   have := mb.ψ_dot_v i i
   simp [h] at this
 
-@[powerlib_foundation] theorem ψ_ne_zero (i : n) : mb.ψ i ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem ψ_ne_zero (i : n) : mb.ψ i ≠ 0 := by
   intro h
   have := mb.ψ_dot_v i i
   simp [h] at this
@@ -112,18 +112,18 @@ def pf (k i : n) : ℂ := mb.V k i * mb.W k i
 /-! ## Normalisation (§1.2) -/
 
 /-- Each state is shared by all modes: `Σ_i p_{ki} = 1`. -/
-@[powerlib_foundation] theorem sum_pf_modes (k : n) : ∑ i, mb.pf k i = 1 := by
+@[tmio T, powerlib_foundation] theorem sum_pf_modes (k : n) : ∑ i, mb.pf k i = 1 := by
   have h := congrFun (congrFun mb.V_mul_Wt k) k
   simpa [Matrix.mul_apply, pf] using h
 
 /-- Each mode is shared by all states: `Σ_k p_{ki} = 1`. -/
-@[powerlib_foundation] theorem sum_pf_states (i : n) : ∑ k, mb.pf k i = 1 := by
+@[tmio T, powerlib_foundation] theorem sum_pf_states (i : n) : ∑ k, mb.pf k i = 1 := by
   have h := congrFun (congrFun mb.biorth i) i
   simpa [Matrix.mul_apply, pf, mul_comm] using h
 
 /-! ## Resolvent partial fractions and residues (§1.1, §1.5) -/
 
-@[powerlib_foundation] theorem sub_eq_conj (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem sub_eq_conj (s : ℂ) :
     s • (1 : Matrix n n ℂ) - A = mb.V * diagonal (fun i => s - mb.eig i) * mb.Wᵀ := by
   conv_lhs => rw [mb.decomp, ← mb.V_mul_Wt]
   rw [show diagonal (fun i => s - mb.eig i) = s • (1 : Matrix n n ℂ) - diagonal mb.eig from by
@@ -131,7 +131,7 @@ def pf (k i : n) : ℂ := mb.V k i * mb.W k i
     Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul]
 
 /-- `(sI − A)⁻¹ = V diag((s − λ_i)⁻¹) Wᵀ` away from the spectrum. -/
-@[powerlib_foundation] theorem resolvent_eq {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) :
+@[tmio T, powerlib_foundation] theorem resolvent_eq {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) :
     (s • (1 : Matrix n n ℂ) - A)⁻¹ = mb.V * diagonal (fun i => (s - mb.eig i)⁻¹) * mb.Wᵀ := by
   apply Matrix.inv_eq_right_inv
   rw [mb.sub_eq_conj]
@@ -146,7 +146,7 @@ def pf (k i : n) : ℂ := mb.V k i * mb.W k i
           funext fun i => mul_inv_cancel₀ (sub_ne_zero.mpr (hs i)), diagonal_one, Matrix.mul_one,
           mb.V_mul_Wt]
 
-@[powerlib_foundation] theorem resolvent_apply {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) (k l : n) :
+@[tmio T, powerlib_foundation] theorem resolvent_apply {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) (k l : n) :
     (s • (1 : Matrix n n ℂ) - A)⁻¹ k l = ∑ i, mb.V k i * mb.W l i / (s - mb.eig i) := by
   rw [mb.resolvent_eq hs, Matrix.mul_apply]
   simp only [Matrix.mul_diagonal, transpose_apply]
@@ -154,7 +154,7 @@ def pf (k i : n) : ℂ := mb.V k i * mb.W k i
   ring
 
 /-- The `(k,k)` resolvent channel: `[(sI − A)⁻¹]_{kk} = Σ_i p_{ki} / (s − λ_i)`. -/
-@[powerlib_foundation] theorem resolvent_diag {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) (k : n) :
+@[tmio T, powerlib_foundation] theorem resolvent_diag {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) (k : n) :
     (s • (1 : Matrix n n ℂ) - A)⁻¹ k k = ∑ i, mb.pf k i / (s - mb.eig i) := by
   rw [mb.resolvent_apply hs]; rfl
 
@@ -163,12 +163,12 @@ def residue {κ κ' : Type*} (C : Matrix κ n ℂ) (B : Matrix n κ' ℂ) (i : n
   fun l j => (C *ᵥ mb.v i) l * vecMul (mb.ψ i) B j
 
 /-- The participation factor is the residue of the state-to-state channel `B = C = I`. -/
-@[powerlib_foundation] theorem pf_eq_residue (k i : n) :
+@[tmio T, powerlib_foundation] theorem pf_eq_residue (k i : n) :
     mb.pf k i = mb.residue (1 : Matrix n n ℂ) 1 i k k := by
   simp [residue, pf, v, ψ]
 
 /-- Partial-fraction expansion `C (sI − A)⁻¹ B = Σ_i R^{(i)} / (s − λ_i)`. -/
-@[powerlib_foundation] theorem io_expansion {κ κ' : Type*} (C : Matrix κ n ℂ) (B : Matrix n κ' ℂ)
+@[tmio T, powerlib_foundation] theorem io_expansion {κ κ' : Type*} (C : Matrix κ n ℂ) (B : Matrix n κ' ℂ)
     {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) :
     C * (s • (1 : Matrix n n ℂ) - A)⁻¹ * B = ∑ i, (s - mb.eig i)⁻¹ • mb.residue C B i := by
   rw [mb.resolvent_eq hs]
@@ -187,7 +187,7 @@ def residue {κ κ' : Type*} (C : Matrix κ n ℂ) (B : Matrix n κ' ℂ) (i : n
 
 /-- Modal expansion of the transfer matrix of a real LTI model whose complexified state
 matrix is diagonalisable: `G(s) = Σ_i R^{(i)} / (s − λ_i) + D`. -/
-@[powerlib_foundation] theorem transfer_expansion {p : ℕ} (A : Matrix n n ℝ)
+@[tmio T, powerlib_foundation] theorem transfer_expansion {p : ℕ} (A : Matrix n n ℝ)
     (B : Matrix n (Fin p) ℝ) (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ)
     (mb : ModalBasis (Linear.complexify A)) {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) :
     Linear.transferOf A B C D s =
@@ -217,7 +217,7 @@ def scale (t : n → ℂ) (ht : ∀ i, t i ≠ 0) : ModalBasis (diagonal t * A *
       hinv, Matrix.one_mul, mb.biorth]
 
 /-- Participation factors are invariant under diagonal state scaling (§1.6). -/
-@[powerlib_foundation] theorem scale_pf (t : n → ℂ) (ht : ∀ i, t i ≠ 0) (k i : n) :
+@[tmio T, powerlib_foundation] theorem scale_pf (t : n → ℂ) (ht : ∀ i, t i ≠ 0) (k i : n) :
     (mb.scale t ht).pf k i = mb.pf k i := by
   simp only [pf, scale, diagonal_mul, Pi.inv_apply]
   field_simp [ht k]
@@ -226,13 +226,13 @@ def scale (t : n → ℂ) (ht : ∀ i, t i ≠ 0) : ModalBasis (diagonal t * A *
 def weightedPF (w : n → ℂ) (k i : n) : ℂ := w k * mb.V k i * (diagonal w⁻¹ *ᵥ mb.ψ i) k
 
 /-- With diagonal nonzero weights the weighted PF equals the original PF (§1.4). -/
-@[powerlib_foundation] theorem weightedPF_eq (w : n → ℂ) (hw : ∀ k, w k ≠ 0) (k i : n) :
+@[tmio T, powerlib_foundation] theorem weightedPF_eq (w : n → ℂ) (hw : ∀ k, w k ≠ 0) (k i : n) :
     mb.weightedPF w k i = mb.pf k i := by
   simp only [weightedPF, mulVec_diagonal, Pi.inv_apply, pf, ψ]
   field_simp [hw k]
 
 /-- Group participation over a partition `g : n → G` of the states sums to `1`. -/
-@[powerlib_foundation] theorem sum_groupPF {G : Type*} [Fintype G] [DecidableEq G] (g : n → G)
+@[tmio T, powerlib_foundation] theorem sum_groupPF {G : Type*} [Fintype G] [DecidableEq G] (g : n → G)
     (i : n) : ∑ γ, ∑ k ∈ Finset.univ.filter (fun k => g k = γ), mb.pf k i = 1 := by
   rw [Finset.sum_fiberwise Finset.univ g (fun k => mb.pf k i)]
   exact mb.sum_pf_states i
@@ -246,31 +246,31 @@ def enorm2 (x : n → ℂ) : ℝ := ‖(WithLp.equiv 2 (n → ℂ)).symm x‖
 def geomPF (k i : n) : ℝ := ‖mb.V k i‖ * ‖mb.W k i‖ / (enorm2 (mb.v i) * enorm2 (mb.ψ i))
 
 omit [DecidableEq n] in
-@[powerlib_foundation] theorem enorm2_pos {x : n → ℂ} (hx : x ≠ 0) : 0 < enorm2 x := by
+@[tmio T, powerlib_foundation] theorem enorm2_pos {x : n → ℂ} (hx : x ≠ 0) : 0 < enorm2 x := by
   unfold enorm2
   rw [norm_pos_iff]
   intro h
   exact hx (by simpa using congrArg (WithLp.equiv 2 (n → ℂ)) h)
 
 omit [DecidableEq n] in
-@[powerlib_foundation] theorem norm_apply_le_enorm2 (x : n → ℂ) (k : n) : ‖x k‖ ≤ enorm2 x :=
+@[tmio T, powerlib_foundation] theorem norm_apply_le_enorm2 (x : n → ℂ) (k : n) : ‖x k‖ ≤ enorm2 x :=
   PiLp.norm_apply_le ((WithLp.equiv 2 (n → ℂ)).symm x) k
 
 /-- `|p_{ki}| = ‖v_i‖₂ ‖ψ_i‖₂ g_{ki}`. -/
-@[powerlib_foundation] theorem norm_pf_eq (k i : n) :
+@[tmio T, powerlib_foundation] theorem norm_pf_eq (k i : n) :
     ‖mb.pf k i‖ = enorm2 (mb.v i) * enorm2 (mb.ψ i) * mb.geomPF k i := by
   have h1 := enorm2_pos (mb.v_ne_zero i)
   have h2 := enorm2_pos (mb.ψ_ne_zero i)
   rw [geomPF, pf, norm_mul]
   field_simp
 
-@[powerlib_foundation] theorem geomPF_nonneg (k i : n) : 0 ≤ mb.geomPF k i := by
+@[tmio T, powerlib_foundation] theorem geomPF_nonneg (k i : n) : 0 ≤ mb.geomPF k i := by
   unfold geomPF
   have h1 := enorm2_pos (mb.v_ne_zero i)
   have h2 := enorm2_pos (mb.ψ_ne_zero i)
   positivity
 
-@[powerlib_foundation] theorem geomPF_le_one (k i : n) : mb.geomPF k i ≤ 1 := by
+@[tmio T, powerlib_foundation] theorem geomPF_le_one (k i : n) : mb.geomPF k i ≤ 1 := by
   unfold geomPF
   have h1 := enorm2_pos (mb.v_ne_zero i)
   have h2 := enorm2_pos (mb.ψ_ne_zero i)
@@ -281,7 +281,7 @@ omit [DecidableEq n] in
 /-! ## Residue zero ⇔ uncontrollable or unobservable mode (§2.5) -/
 
 /-- For a simple eigenvalue, every left eigenvector is a multiple of `ψ_i`. -/
-@[powerlib_foundation] theorem left_eigvec_eq {i : n} (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i)
+@[tmio T, powerlib_foundation] theorem left_eigvec_eq {i : n} (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i)
     {w : n → ℂ} (hw : vecMul w A = mb.eig i • w) : w = (w ⬝ᵥ mb.v i) • mb.ψ i := by
   have hzero : ∀ j, j ≠ i → w ⬝ᵥ mb.v j = 0 := by
     intro j hj
@@ -301,7 +301,7 @@ omit [DecidableEq n] in
   rfl
 
 /-- For a simple eigenvalue, every right eigenvector is a multiple of `v_i`. -/
-@[powerlib_foundation] theorem right_eigvec_eq {i : n} (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i)
+@[tmio T, powerlib_foundation] theorem right_eigvec_eq {i : n} (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i)
     {x : n → ℂ} (hx : A *ᵥ x = mb.eig i • x) : x = (mb.ψ i ⬝ᵥ x) • mb.v i := by
   have hzero : ∀ j, j ≠ i → mb.ψ j ⬝ᵥ x = 0 := by
     intro j hj
@@ -325,7 +325,7 @@ omit [DecidableEq n] in
 `(c v_i)(ψ_iᵀ b)` is zero iff some left eigenvector of `λ_i` is orthogonal to `b`
 (uncontrollable mode) or some right eigenvector of `λ_i` is annihilated by `c`
 (unobservable mode). -/
-@[powerlib_foundation] theorem residue_eq_zero_iff {i : n}
+@[tmio T, powerlib_foundation] theorem residue_eq_zero_iff {i : n}
     (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) (b c : n → ℂ) :
     (c ⬝ᵥ mb.v i) * (mb.ψ i ⬝ᵥ b) = 0 ↔
       (∃ w : n → ℂ, w ≠ 0 ∧ vecMul w A = mb.eig i • w ∧ w ⬝ᵥ b = 0) ∨

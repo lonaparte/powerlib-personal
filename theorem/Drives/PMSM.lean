@@ -3,7 +3,7 @@ import theorem.Attributes
 
 /-! # PMSM steady-state algebra: torque, MTPA, voltage ellipse
 
-Static foundation for the permanent-magnet synchronous machine: torque, maximum torque per ampere
+Steady-state algebra for the permanent-magnet synchronous machine: torque, maximum torque per ampere
 (MTPA) for surface and interior machines, and the steady-state voltage ellipse.
 
 Model boundary.
@@ -51,7 +51,7 @@ def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq
 
 /-- SPMSM MTPA: on the disk `i_d² + i_q² ≤ I²` the torque is maximised exactly at
 `(i_d, i_q) = (0, I)` (for `np ψ_f > 0`). -/
-@[powerlib_foundation] theorem spmsm_mtpa (np ψf L I : ℝ) (hk : 0 < np * ψf) (hI : 0 ≤ I)
+@[tmio TM, powerlib_domain] theorem spmsm_mtpa (np ψf L I : ℝ) (hk : 0 < np * ψf) (hI : 0 ≤ I)
     (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2) :
     torque np ψf L L id iq ≤ torque np ψf L L 0 I ∧
       (torque np ψf L L id iq = torque np ψf L L 0 I → id = 0 ∧ iq = I) := by
@@ -73,7 +73,7 @@ def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq
 
 /-- SPMSM minimum current for a given torque: every current producing the torque `T` has
 `|i|² ≥ (T/c)²` with equality iff `i_d = 0`, `c = (3/2) np ψ_f`. -/
-@[powerlib_foundation] theorem spmsm_minCurrent (np ψf L T id iq : ℝ) (hk : np * ψf ≠ 0)
+@[tmio TM, powerlib_domain] theorem spmsm_minCurrent (np ψf L T id iq : ℝ) (hk : np * ψf ≠ 0)
     (hT : torque np ψf L L id iq = T) :
     (T / (3 / 2 * np * ψf)) ^ 2 ≤ id ^ 2 + iq ^ 2 ∧
       ((T / (3 / 2 * np * ψf)) ^ 2 = id ^ 2 + iq ^ 2 ↔ id = 0) := by
@@ -96,7 +96,7 @@ def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq
 /-- Reduced torque `i_q (ψ_f − ΔL i_d)` (= `T_e / ((3/2) np)` with `ΔL = L_q − L_d`). -/
 def reducedTorque (ψf ΔL x y : ℝ) : ℝ := y * (ψf - ΔL * x)
 
-@[powerlib_foundation] theorem torque_eq_reduced (np ψf Ld Lq id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem torque_eq_reduced (np ψf Ld Lq id iq : ℝ) :
     torque np ψf Ld Lq id iq = 3 / 2 * np * reducedTorque ψf (Lq - Ld) id iq := by
   unfold torque reducedTorque; ring
 
@@ -111,7 +111,7 @@ section MTPA
 variable {ψf ΔL I : ℝ}
 
 /-- The MTPA `i_d` solves `2ΔL x² − ψ_f x − ΔL I² = 0`. -/
-@[powerlib_foundation] theorem mtpaId_root (hΔ : 0 < ΔL) :
+@[tmio M, powerlib_domain] theorem mtpaId_root (hΔ : 0 < ΔL) :
     2 * ΔL * mtpaId ψf ΔL I ^ 2 - ψf * mtpaId ψf ΔL I - ΔL * I ^ 2 = 0 := by
   unfold mtpaId
   have hs := Real.sq_sqrt (show 0 ≤ ψf ^ 2 / (16 * ΔL ^ 2) + I ^ 2 / 2 by positivity)
@@ -121,7 +121,7 @@ variable {ψf ΔL I : ℝ}
   field_simp at hs
   linear_combination hs
 
-@[powerlib_foundation] theorem mtpaId_neg (hΔ : 0 < ΔL) (hψ : 0 ≤ ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpaId_neg (hΔ : 0 < ΔL) (hψ : 0 ≤ ψf) (hI : 0 < I) :
     mtpaId ψf ΔL I < 0 := by
   unfold mtpaId
   rw [sub_neg]
@@ -133,20 +133,20 @@ variable {ψf ΔL I : ℝ}
   linarith
 
 /-- `i_d² ≤ I²/2`, with strict inequality when `ψ_f > 0` (MTPA angle below 135°). -/
-@[powerlib_foundation] theorem mtpaId_sq_lt (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpaId_sq_lt (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     mtpaId ψf ΔL I ^ 2 < I ^ 2 / 2 := by
   have hr := mtpaId_root (ψf := ψf) (I := I) hΔ
   have hn := mtpaId_neg hΔ hψ.le hI
   have : ψf * mtpaId ψf ΔL I < 0 := mul_neg_of_pos_of_neg hψ hn
   nlinarith
 
-@[powerlib_foundation] theorem mtpaIq_sq (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpaIq_sq (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     mtpaIq ψf ΔL I ^ 2 = I ^ 2 - mtpaId ψf ΔL I ^ 2 := by
   unfold mtpaIq
   have := mtpaId_sq_lt hΔ hψ hI
   rw [Real.sq_sqrt (by nlinarith)]
 
-@[powerlib_foundation] theorem mtpaIq_pos (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpaIq_pos (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     0 < mtpaIq ψf ΔL I := by
   unfold mtpaIq
   have := mtpaId_sq_lt hΔ hψ hI
@@ -154,13 +154,13 @@ variable {ψf ΔL I : ℝ}
   nlinarith
 
 /-- The MTPA point lies on the current circle. -/
-@[powerlib_foundation] theorem mtpa_on_circle (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpa_on_circle (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     mtpaId ψf ΔL I ^ 2 + mtpaIq ψf ΔL I ^ 2 = I ^ 2 := by
   rw [mtpaIq_sq hΔ hψ hI]; ring
 
 /-- MTPA stationarity on the circle: `ΔL x² − ψ_f x − ΔL y² = 0` (the condition
 `∂T/∂i_d |_{|i|=const} = 0`). -/
-@[powerlib_foundation] theorem mtpa_stationary (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpa_stationary (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     ΔL * mtpaId ψf ΔL I ^ 2 - ψf * mtpaId ψf ΔL I - ΔL * mtpaIq ψf ΔL I ^ 2 = 0 := by
   rw [mtpaIq_sq hΔ hψ hI]
   linear_combination mtpaId_root (ψf := ψf) (I := I) hΔ
@@ -168,7 +168,7 @@ variable {ψf ΔL I : ℝ}
 /-- Lagrange-multiplier certificate: if `(x₀, y₀)` is on the circle `x₀² + y₀² = I²` and
 `∇T = 2λ (x₀, y₀)` there, the torque gap to any current is an explicit quadratic form plus the
 multiplier times the slack. -/
-@[powerlib_foundation] theorem gap_identity (ψf ΔL I x₀ y₀ μ x y : ℝ)
+@[tmio T, powerlib_foundation] theorem gap_identity (ψf ΔL I x₀ y₀ μ x y : ℝ)
     (hc : x₀ ^ 2 + y₀ ^ 2 = I ^ 2) (h1 : 2 * μ * x₀ = -(ΔL * y₀))
     (h2 : 2 * μ * y₀ = ψf - ΔL * x₀) :
     reducedTorque ψf ΔL x₀ y₀ - reducedTorque ψf ΔL x y =
@@ -178,7 +178,7 @@ multiplier times the slack. -/
   linear_combination (x - x₀) * h1 + (y - y₀) * h2 + μ * hc
 
 /-- The MTPA multiplier `λ = −ΔL i_q/(2 i_d)` satisfies both Lagrange equations. -/
-@[powerlib_foundation] theorem mtpa_lagrange (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
+@[tmio M, powerlib_domain] theorem mtpa_lagrange (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     2 * (-(ΔL * mtpaIq ψf ΔL I) / (2 * mtpaId ψf ΔL I)) * mtpaId ψf ΔL I =
         -(ΔL * mtpaIq ψf ΔL I) ∧
       2 * (-(ΔL * mtpaIq ψf ΔL I) / (2 * mtpaId ψf ΔL I)) * mtpaIq ψf ΔL I =
@@ -195,7 +195,7 @@ end MTPA
 /-- **IPMSM MTPA.** For `ΔL = L_q − L_d > 0`, `ψ_f > 0`, `I > 0`, the point
 `(mtpaId, mtpaIq)` maximises the torque over the current disk `i_d² + i_q² ≤ I²`, and it is
 the unique maximiser. -/
-@[powerlib_foundation] theorem ipmsm_mtpa_unique_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
+@[tmio TM, powerlib_domain] theorem ipmsm_mtpa_unique_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
     (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2)
     (hne : (id, iq) ≠ (mtpaId ψf (Lq - Ld) I, mtpaIq ψf (Lq - Ld) I)) :
     torque np ψf Ld Lq id iq <
@@ -236,7 +236,7 @@ the unique maximiser. -/
   linarith
 
 /-- The maximum is attained: the MTPA torque bounds every feasible torque. -/
-@[powerlib_foundation] theorem ipmsm_mtpa_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
+@[tmio TM, powerlib_domain] theorem ipmsm_mtpa_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
     (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2) :
     torque np ψf Ld Lq id iq ≤
       torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
@@ -246,7 +246,7 @@ the unique maximiser. -/
   · exact (ipmsm_mtpa_unique_max np ψf Ld Lq I hnp hΔ hψ hI id iq hdisk h).le
 
 /-- The MTPA `i_d` in terms of `i_q`: `i_d = ψ_f/(2ΔL) − √(ψ_f²/(4ΔL²) + i_q²)`. -/
-@[powerlib_foundation] theorem ipmsm_mtpa_id_of_iq (ψf ΔL I : ℝ) (hΔ : 0 < ΔL) (hψ : 0 < ψf)
+@[tmio M, powerlib_domain] theorem ipmsm_mtpa_id_of_iq (ψf ΔL I : ℝ) (hΔ : 0 < ΔL) (hψ : 0 < ψf)
     (hI : 0 < I) :
     mtpaId ψf ΔL I = ψf / (2 * ΔL) - Real.sqrt (ψf ^ 2 / (4 * ΔL ^ 2) + mtpaIq ψf ΔL I ^ 2) := by
   have hst := mtpa_stationary hΔ hψ hI
@@ -269,7 +269,7 @@ def noteMtpaId (ψf ΔL I : ℝ) : ℝ := ψf / (2 * ΔL) - Real.sqrt (ψf ^ 2 /
 /-- **Correction witness**: for `ψ_f = ΔL = 1`, `I = 2` the note's formula gives `i_d = −1`,
 which differs from the MTPA value, and the corresponding point on the current circle
 `(−1, √3)` produces strictly less torque than MTPA (`L_d = 1`, `L_q = 2`, `np = 1`). -/
-@[powerlib_foundation] theorem noteMTPA_not_optimal :
+@[tmio TM, powerlib_domain] theorem noteMTPA_not_optimal :
     noteMtpaId 1 1 2 = -1 ∧ mtpaId 1 1 2 ≠ -1 ∧
       torque 1 1 1 2 (-1) (Real.sqrt 3) < torque 1 1 1 2 (mtpaId 1 1 2) (mtpaIq 1 1 2) := by
   have hne1 : mtpaId 1 1 2 ≠ -1 := by
@@ -299,7 +299,7 @@ which differs from the MTPA value, and the corresponding point on the current ci
 /-- Steady-state PMSM voltages with `r_s = 0` (from the dq voltage equations with
 `di/dt = 0`): `v_d = −ω L_q i_q`, `v_q = ω (ψ_f + L_d i_d)`. The voltage limit
 `v_d² + v_q² ≤ V²` is the ellipse `(L_d i_d + ψ_f)² + (L_q i_q)² ≤ (V/ω)²`. -/
-@[powerlib_foundation] theorem voltageEllipse_iff (ω ψf Ld Lq id iq V : ℝ) (hω : ω ≠ 0) :
+@[tmio T, powerlib_foundation] theorem voltageEllipse_iff (ω ψf Ld Lq id iq V : ℝ) (hω : ω ≠ 0) :
     (-ω * Lq * iq) ^ 2 + (ω * (ψf + Ld * id)) ^ 2 ≤ V ^ 2 ↔
       (Ld * id + ψf) ^ 2 + (Lq * iq) ^ 2 ≤ (V / ω) ^ 2 := by
   have hω2 : 0 < ω ^ 2 := by positivity

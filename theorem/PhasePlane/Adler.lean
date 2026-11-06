@@ -65,15 +65,15 @@ def rate (A B : ℝ) : ℝ := √(B ^ 2 - A ^ 2)
 def adlerPrimitive (A B θ : ℝ) : ℝ :=
   (θ - 2 * Real.arctan (A * Real.cos θ / (B + rate A B - A * Real.sin θ))) / rate A B
 
-@[powerlib_foundation] theorem rate_pos (h : |A| < B) : 0 < rate A B := by
+@[tmio M, powerlib_foundation] theorem rate_pos (h : |A| < B) : 0 < rate A B := by
   apply Real.sqrt_pos.mpr
   have := abs_nonneg A
   nlinarith [sq_abs A]
 
-@[powerlib_foundation] theorem rate_sq (h : |A| < B) : rate A B ^ 2 = B ^ 2 - A ^ 2 :=
+@[tmio M, powerlib_foundation] theorem rate_sq (h : |A| < B) : rate A B ^ 2 = B ^ 2 - A ^ 2 :=
   Real.sq_sqrt (by have := abs_nonneg A; nlinarith [sq_abs A])
 
-@[powerlib_foundation] theorem denom_pos (h : |A| < B) (θ : ℝ) : 0 < B - A * Real.sin θ := by
+@[tmio T, powerlib_foundation] theorem denom_pos (h : |A| < B) (θ : ℝ) : 0 < B - A * Real.sin θ := by
   have : A * Real.sin θ ≤ |A| := by
     calc A * Real.sin θ ≤ |A * Real.sin θ| := le_abs_self _
       _ = |A| * |Real.sin θ| := abs_mul _ _
@@ -81,7 +81,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
       _ = |A| := mul_one _
   linarith
 
-@[powerlib_foundation] theorem hasDerivAt_adlerPrimitive (h : |A| < B) (θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_adlerPrimitive (h : |A| < B) (θ : ℝ) :
     HasDerivAt (adlerPrimitive A B) (1 / (B - A * Real.sin θ)) θ := by
   have hs := rate_pos h
   have hs2 := rate_sq h
@@ -119,13 +119,13 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   ring
 
 /-- `G(θ + 2π) = G(θ) + 2π/s`. -/
-@[powerlib_foundation] theorem adlerPrimitive_add_two_pi (θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem adlerPrimitive_add_two_pi (θ : ℝ) :
     adlerPrimitive A B (θ + 2 * π) = adlerPrimitive A B θ + 2 * π / rate A B := by
   simp only [adlerPrimitive, Real.cos_add_two_pi, Real.sin_add_two_pi]
   ring
 
 /-- Adler's formula: `∫₀^{2π} dθ/(B − A sin θ) = 2π/√(B² − A²)` for `B > |A|`. -/
-@[powerlib_foundation] theorem adler_integral (h : |A| < B) :
+@[tmio T, powerlib_foundation] theorem adler_integral (h : |A| < B) :
     ∫ θ in (0 : ℝ)..(2 * π), 1 / (B - A * Real.sin θ) = 2 * π / √(B ^ 2 - A ^ 2) := by
   have hcont : Continuous fun θ => 1 / (B - A * Real.sin θ) := by
     apply Continuous.div continuous_const (by fun_prop)
@@ -137,7 +137,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   ring
 
 /-- Along every solution of `θ̇ = B − A sin θ` (`B > |A|`), `G(θ(t)) − t` is constant. -/
-@[powerlib_foundation] theorem adler_time (h : |A| < B) {θ : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem adler_time (h : |A| < B) {θ : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (B - A * Real.sin (θ t)) t) (t : ℝ) :
     adlerPrimitive A B (θ t) = t + adlerPrimitive A B (θ 0) := by
   have hd : ∀ t, HasDerivAt (fun t => adlerPrimitive A B (θ t) - t) 0 t := by
@@ -153,7 +153,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   linarith
 
 /-- The slip time: the solution advances by `2π` in exactly `T = 2π/√(B² − A²)`. -/
-@[powerlib_foundation] theorem adler_slip_time (h : |A| < B) {θ : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem adler_slip_time (h : |A| < B) {θ : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (B - A * Real.sin (θ t)) t) {t₁ t₂ : ℝ}
     (h12 : θ t₂ = θ t₁ + 2 * π) : t₂ - t₁ = 2 * π / √(B ^ 2 - A ^ 2) := by
   have e1 := adler_time h hθ t₁
@@ -163,7 +163,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   linarith
 
 /-- Bounded deviation from uniform rotation: `|θ(t) − θ(0) − √(B² − A²) t| ≤ 2π`. -/
-@[powerlib_foundation] theorem adler_deviation (h : |A| < B) {θ : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem adler_deviation (h : |A| < B) {θ : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (B - A * Real.sin (θ t)) t) (t : ℝ) :
     |θ t - θ 0 - √(B ^ 2 - A ^ 2) * t| ≤ 2 * π := by
   have e := adler_time h hθ t
@@ -184,7 +184,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   constructor <;> linarith
 
 /-- The average angular velocity of every running solution is `√(B² − A²)`. -/
-@[powerlib_foundation] theorem adler_mean_velocity (h : |A| < B) {θ : ℝ → ℝ}
+@[tmio TM, powerlib_foundation] theorem adler_mean_velocity (h : |A| < B) {θ : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (B - A * Real.sin (θ t)) t) :
     Tendsto (fun t => θ t / t) atTop (𝓝 (√(B ^ 2 - A ^ 2))) := by
   set s := √(B ^ 2 - A ^ 2)

@@ -53,7 +53,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
   rw [I_sq]; ring
 
 /-- `χ = (Q, jω_p Q)` with `Q = F / D`. -/
-@[powerlib_foundation] theorem forcedAmplitude_oscillator {ζ ω₀ ωp : ℝ} (F : ℝ)
+@[tmio M, powerlib_foundation] theorem forcedAmplitude_oscillator {ζ ω₀ ωp : ℝ} (F : ℝ)
     (hD : denom ζ ω₀ ωp ≠ 0) :
     forcedAmplitude (linPart ζ ω₀) (drive F) ωp =
       ![(F : ℂ) / denom ζ ω₀ ωp, (ωp : ℂ) * I * ((F : ℂ) / denom ζ ω₀ ωp)] := by
@@ -76,7 +76,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
     Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.mpr hdet), Matrix.one_mulVec]
 
 /-- The drive term is `(0, F cos ω_p t)`. -/
-@[powerlib_foundation] theorem forcing_drive (F ωp t : ℝ) :
+@[tmio M, powerlib_foundation] theorem forcing_drive (F ωp t : ℝ) :
     forcing (drive F) ωp t = PhasePlane.mk 0 (F * Real.cos (ωp * t)) := by
   ext i
   fin_cases i
@@ -86,7 +86,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
 
 /-- The first-order forced displacement `q₁(t) = Re(Q e^{jω_p t})` solves the linear oscillator
 `q̈ + 2ζω₀ q̇ + ω₀² q = F cos(ω_p t)` (written as a first-order system for `(q₁, q̇₁)`). -/
-@[powerlib_foundation] theorem forced_q_solves {ζ ω₀ ωp : ℝ} (F : ℝ) (hD : denom ζ ω₀ ωp ≠ 0)
+@[tmio M, powerlib_foundation] theorem forced_q_solves {ζ ω₀ ωp : ℝ} (F : ℝ) (hD : denom ζ ω₀ ωp ≠ 0)
     (t : ℝ) :
     HasDerivAt (fun s => forcedOrbit (linPart ζ ω₀) (drive F) ωp s 0)
         (forcedOrbit (linPart ζ ω₀) (drive F) ωp t 1) t ∧
@@ -109,7 +109,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
     rfl
 
 /-- State Jacobian of the full field: `!![0, 1; −(ω₀² + 2a q), −2ζω₀]`. -/
-@[powerlib_foundation] theorem hasFDerivAt_field (ζ ω₀ a F ωp t : ℝ) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_field (ζ ω₀ a F ωp t : ℝ) (y : State 2) :
     HasFDerivAt (field ζ ω₀ a F ωp t)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         !![0, 1; -(ω₀ ^ 2 + 2 * a * y 0), -(2 * ζ * ω₀)]) y := by
@@ -133,7 +133,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
 
 /-- Without curvature (`a = 0`) the state Jacobian is the constant `A₀` at every state: the
 additive drive produces no periodic coefficient. -/
-@[powerlib_foundation] theorem jacobian_indep_of_a_zero (ζ ω₀ F ωp t : ℝ) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem jacobian_indep_of_a_zero (ζ ω₀ F ωp t : ℝ) (y : State 2) :
     fderiv ℝ (field ζ ω₀ 0 F ωp t) y =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart ζ ω₀) := by
   rw [(hasFDerivAt_field ζ ω₀ 0 F ωp t y).fderiv]

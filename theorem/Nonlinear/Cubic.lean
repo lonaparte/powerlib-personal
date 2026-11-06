@@ -54,11 +54,11 @@ def field (α : ℝ) (x : ℝⁿ) : ℝⁿ := (-(α + ‖x‖ ^ 2)) • x
 /-- The energy `‖x‖²`. -/
 def energy (x : ℝⁿ) : ℝ := ‖x‖ ^ 2
 
-@[powerlib_foundation] theorem field_smooth (α : ℝ) : ContDiff ℝ 1 (field (n := n) α) :=
+@[tmio M, powerlib_foundation] theorem field_smooth (α : ℝ) : ContDiff ℝ 1 (field (n := n) α) :=
   (contDiff_const.add (contDiff_norm_sq ℝ)).neg.smul contDiff_id
 
 /-- With a nonnegative gain the field admits no global Lipschitz constant. -/
-@[powerlib_foundation] theorem not_lipschitzWith (hn : 0 < n) {α : ℝ} (hα : 0 ≤ α)
+@[tmio M, powerlib_foundation] theorem not_lipschitzWith (hn : 0 < n) {α : ℝ} (hα : 0 ≤ α)
     (K : NNReal) : ¬ LipschitzWith K (field (n := n) α) := by
   intro h
   have hr : (0 : ℝ) < K + 1 := by positivity
@@ -71,7 +71,7 @@ def energy (x : ℝⁿ) : ℝ := ‖x‖ ^ 2
   nlinarith [NNReal.coe_nonneg K]
 
 /-- The Lie derivative of the energy. -/
-@[powerlib_foundation] theorem energy_lie (α : ℝ) (x : ℝⁿ) :
+@[tmio M, powerlib_foundation] theorem energy_lie (α : ℝ) (x : ℝⁿ) :
     fderiv ℝ energy x (field α x) = -2 * (α + ‖x‖ ^ 2) * ‖x‖ ^ 2 := by
   change fderiv ℝ (fun y : ℝⁿ => ‖y‖ ^ 2) x (field α x) = _
   rw [(hasStrictFDerivAt_norm_sq x).hasFDerivAt.fderiv]
@@ -116,7 +116,7 @@ def translate : Sentence → Set Requirement
 def family : Family Gain Requirement n 0 :=
   ⟨fun α => .continuous (Port.System.autonomous (field α.1)), Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isAutonomous :
+@[tmio M, powerlib_foundation] theorem family_isAutonomous :
     (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
 
 /-- Every model is globally exponentially stable, with a solution through every state. -/
@@ -127,7 +127,7 @@ def family : Family Gain Requirement n 0 :=
 
 /-- The energy never increases, so along a solution segment it decays no faster than at the rate
 `2 (α + r₀)`, with `r₀` the initial energy. -/
-@[powerlib_foundation] private theorem energy_lower (α : Gain) {φ : ℝ → ℝⁿ} {a b t : ℝ}
+@[tmio TM, powerlib_foundation] private theorem energy_lower (α : Gain) {φ : ℝ → ℝⁿ} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ (field α.1) a b) (ht : t ∈ Icc a b) :
     Real.exp (-(2 * (α.1 + ‖φ a‖ ^ 2) * (t - a))) * ‖φ a‖ ^ 2 ≤ ‖φ t‖ ^ 2 := by
   have hdec : ∀ s ∈ Icc a b, ‖φ s‖ ^ 2 ≤ ‖φ a‖ ^ 2 := fun s hs => by

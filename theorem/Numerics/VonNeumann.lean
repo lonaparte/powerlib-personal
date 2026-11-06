@@ -42,7 +42,7 @@ def ftcsFactor (lam θ : ℝ) : ℝ := 1 - 4 * lam * Real.sin (θ / 2) ^ 2
 
 def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
 
-@[powerlib_foundation] private lemma fourierMode_shift (θ : ℝ) (j : ℤ) (d : ℤ) :
+@[tmio T, powerlib_foundation] private lemma fourierMode_shift (θ : ℝ) (j : ℤ) (d : ℤ) :
     fourierMode θ (j + d) = fourierMode θ j * exp (((d : ℝ) * θ : ℝ) * I) := by
   simp only [fourierMode, ← Complex.exp_add]
   congr 1
@@ -71,7 +71,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
   push_cast
   linear_combination (↑lam * fourierMode θ j) * hc
 
-@[powerlib_foundation] theorem upwind_mode (σ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwind_mode (σ θ : ℝ) :
     upwind σ (fourierMode θ) = fun j => upwindFactor σ θ * fourierMode θ j := by
   funext j
   have h2 := fourierMode_shift θ j (-1)
@@ -80,7 +80,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
   push_cast
   ring_nf
 
-@[powerlib_foundation] theorem ftcs_iterate_mode (lam θ : ℝ) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem ftcs_iterate_mode (lam θ : ℝ) (n : ℕ) :
     (ftcs lam)^[n] (fourierMode θ) = fun j => (ftcsFactor lam θ : ℂ) ^ n * fourierMode θ j := by
   induction n with
   | zero => funext j; simp
@@ -92,7 +92,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
     simp only [ftcs] at this
     linear_combination (↑(ftcsFactor lam θ) : ℂ) ^ n * this
 
-@[powerlib_foundation] theorem upwind_iterate_mode (σ θ : ℝ) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem upwind_iterate_mode (σ θ : ℝ) (n : ℕ) :
     (upwind σ)^[n] (fourierMode θ) = fun j => upwindFactor σ θ ^ n * fourierMode θ j := by
   induction n with
   | zero => funext j; simp
@@ -104,7 +104,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
     linear_combination upwindFactor σ θ ^ n * this
 
 /-- Parabolic CFL condition: FTCS amplifies no Fourier mode iff `0 ≤ λ ≤ 1/2`. -/
-@[powerlib_foundation] theorem ftcs_growthFactor_bound_iff (lam : ℝ) :
+@[tmio T, powerlib_foundation] theorem ftcs_growthFactor_bound_iff (lam : ℝ) :
     (∀ θ : ℝ, |ftcsFactor lam θ| ≤ 1) ↔ 0 ≤ lam ∧ lam ≤ 1 / 2 := by
   constructor
   · intro h
@@ -117,7 +117,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
     rw [ftcsFactor, abs_le]
     constructor <;> nlinarith
 
-@[powerlib_foundation] theorem upwindFactor_normSq (σ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwindFactor_normSq (σ θ : ℝ) :
     normSq (upwindFactor σ θ) = 1 - 2 * σ * (1 - σ) * (1 - Real.cos θ) := by
   have hre : (upwindFactor σ θ).re = 1 - σ * (1 - Real.cos θ) := by
     simp [upwindFactor, Complex.exp_re, Complex.mul_re]
@@ -129,7 +129,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
 
 /-- Hyperbolic CFL condition: first-order upwind amplifies no Fourier mode iff
 `0 ≤ σ ≤ 1`. -/
-@[powerlib_foundation] theorem upwind_growthFactor_bound_iff (σ : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwind_growthFactor_bound_iff (σ : ℝ) :
     (∀ θ : ℝ, ‖upwindFactor σ θ‖ ≤ 1) ↔ 0 ≤ σ ∧ σ ≤ 1 := by
   have key : ∀ θ, ‖upwindFactor σ θ‖ ≤ 1 ↔ 0 ≤ σ * (1 - σ) * (1 - Real.cos θ) := by
     intro θ

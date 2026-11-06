@@ -58,19 +58,19 @@ open Complex
 /-! ## Static droop and sharing -/
 
 /-- Static droop `u = u* − K (y − y*)` has DC gain `Δu/Δy = −K`, i.e. `Δy = −Δu/K`. -/
-@[powerlib_foundation] theorem droop_deviation {K u ustar y ystar : ℝ} (hK : K ≠ 0)
+@[tmio T, powerlib_foundation] theorem droop_deviation {K u ustar y ystar : ℝ} (hK : K ≠ 0)
     (h : u = ustar - K * (y - ystar)) : y - ystar = -(u - ustar) / K := by
   rw [h]; field_simp; ring
 
 /-- Units sharing the same `Δu` split `Δy` inversely to their gains: `Δy_k/Δy_l = K_l/K_k`. -/
-@[powerlib_foundation] theorem droop_sharing {Kk Kl Δu Δyk Δyl : ℝ} (hk : Kk ≠ 0)
+@[tmio T, powerlib_foundation] theorem droop_sharing {Kk Kl Δu Δyk Δyl : ℝ} (hk : Kk ≠ 0)
     (hu : Δu ≠ 0) (hyk : Δu = -Kk * Δyk) (hyl : Δu = -Kl * Δyl) : Δyk / Δyl = Kl / Kk := by
   have hyl0 : Δyl ≠ 0 := by rintro rfl; simp at hyl; exact hu hyl
   field_simp
   linarith
 
 /-- Governor: from `T_g s ΔP_m = −ΔP_m − K_R Δω`, `ΔP_m = −K_R/(1 + T_g s) Δω`. -/
-@[powerlib_foundation] theorem governor_transfer {KR Tg : ℝ} {s ΔPm Δω : ℂ}
+@[tmio T, powerlib_foundation] theorem governor_transfer {KR Tg : ℝ} {s ΔPm Δω : ℂ}
     (hden : 1 + (Tg : ℂ) * s ≠ 0) (h : (Tg : ℂ) * s * ΔPm = -ΔPm - (KR : ℂ) * Δω) :
     ΔPm = -(KR : ℂ) / (1 + (Tg : ℂ) * s) * Δω := by
   field_simp
@@ -78,7 +78,7 @@ open Complex
 
 /-- Multi-unit droop: if `ΔP_k = −K_k Δω` and the units together balance `ΔP_L` with frequency
 damping `D_eff Δω`, i.e. `Σ ΔP_k − D_eff Δω = ΔP_L`, then `Δω = −ΔP_L/(Σ K_k + D_eff)`. -/
-@[powerlib_foundation] theorem steadyState_frequency {N : ℕ} (K ΔP : Fin N → ℝ) {Δω ΔPL Deff : ℝ}
+@[tmio T, powerlib_foundation] theorem steadyState_frequency {N : ℕ} (K ΔP : Fin N → ℝ) {Δω ΔPL Deff : ℝ}
     (hden : ∑ k, K k + Deff ≠ 0) (hk : ∀ k, ΔP k = -K k * Δω)
     (hbal : ∑ k, ΔP k - Deff * Δω = ΔPL) : Δω = -ΔPL / (∑ k, K k + Deff) := by
   rw [Finset.sum_congr rfl (fun k _ => hk k), ← Finset.sum_mul] at hbal
@@ -88,7 +88,7 @@ damping `D_eff Δω`, i.e. `Σ ΔP_k − D_eff Δω = ΔP_L`, then `Δω = −Δ
 
 /-- Proportional sharing: with `ΔP_k = −K_k Δω`, `Δω ≠ 0`, the per-rating shares `ΔP_k / S_k`
 are all equal iff the gains are proportional to the ratings. -/
-@[powerlib_foundation] theorem proportionalSharing_iff {N : ℕ} (K S ΔP : Fin N → ℝ) {Δω : ℝ}
+@[tmio T, powerlib_foundation] theorem proportionalSharing_iff {N : ℕ} (K S ΔP : Fin N → ℝ) {Δω : ℝ}
     (hS : ∀ k, S k ≠ 0) (hω : Δω ≠ 0) (hk : ∀ k, ΔP k = -K k * Δω) :
     (∃ ρ, ∀ k, ΔP k / S k = ρ) ↔ ∃ κ, ∀ k, K k = κ * S k := by
   constructor
@@ -106,7 +106,7 @@ are all equal iff the gains are proportional to the ratings. -/
 
 /-- Weighted consensus: `P_k = K_k (ω_s − ω) + P*_k` with `Σ P_k = P_L` gives the common
 frequency `ω = ω_s − (P_L − Σ P*_k)/Σ K_k`. -/
-@[powerlib_foundation] theorem consensus_frequency {N : ℕ} (K P Pstar : Fin N → ℝ) {ω ωs PL : ℝ}
+@[tmio T, powerlib_foundation] theorem consensus_frequency {N : ℕ} (K P Pstar : Fin N → ℝ) {ω ωs PL : ℝ}
     (hK : ∑ k, K k ≠ 0) (hP : ∀ k, P k = K k * (ωs - ω) + Pstar k) (hsum : ∑ k, P k = PL) :
     ω = ωs - (PL - ∑ k, Pstar k) / ∑ k, K k := by
   rw [Finset.sum_congr rfl (fun k _ => hP k), Finset.sum_add_distrib, ← Finset.sum_mul] at hsum
@@ -116,7 +116,7 @@ frequency `ω = ω_s − (P_L − Σ P*_k)/Σ K_k`. -/
 /-! ## Virtual-inertia energy -/
 
 /-- `∫_{t₀}^{t} K_d ω̇ ω = ½ K_d (ω(t)² − ω(t₀)²)` for a `C¹` frequency deviation. -/
-@[powerlib_foundation] theorem virtualInertia_energy {ω ω' : ℝ → ℝ} (Kd t₀ t : ℝ)
+@[tmio T, powerlib_foundation] theorem virtualInertia_energy {ω ω' : ℝ → ℝ} (Kd t₀ t : ℝ)
     (hd : ∀ s, HasDerivAt ω (ω' s) s) (hc : Continuous ω') :
     ∫ s in t₀..t, Kd * ω' s * ω s = Kd / 2 * (ω t ^ 2 - ω t₀ ^ 2) := by
   have hcω : Continuous ω := continuous_iff_continuousAt.mpr fun s => (hd s).continuousAt

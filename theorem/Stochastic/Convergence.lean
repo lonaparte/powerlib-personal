@@ -64,30 +64,30 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ℕ → �
   tendstoInMeasure_of_tendsto_ae hX h
 
 /-- `L^p` ⇒ in probability (via Markov's inequality). -/
-@[powerlib_foundation] theorem Lp_imp_inProbability {p : ℝ≥0∞} (hp : p ≠ 0)
+@[tmio T, powerlib_foundation] theorem Lp_imp_inProbability {p : ℝ≥0∞} (hp : p ≠ 0)
     (h : Tendsto (fun n => eLpNorm (X n - Y) p P) atTop (𝓝 0)) : TendstoInMeasure P X atTop Y :=
   tendstoInMeasure_of_tendsto_eLpNorm hp h
 
 /-- In probability ⇒ in distribution. -/
-@[powerlib_foundation] theorem inProbability_imp_inDistribution [IsProbabilityMeasure P]
+@[tmio T, powerlib_foundation] theorem inProbability_imp_inDistribution [IsProbabilityMeasure P]
     (h : TendstoInMeasure P X atTop Y) (hX : ∀ n, AEMeasurable (X n) P) :
     TendstoInDistribution X atTop Y (fun _ => P) P :=
   h.tendstoInDistribution hX
 
 /-- Subsequence criterion: convergence in probability gives an a.s. convergent subsequence. -/
-@[powerlib_foundation] theorem inProbability_subseq_ae (h : TendstoInMeasure P X atTop Y) :
+@[tmio T, powerlib_foundation] theorem inProbability_subseq_ae (h : TendstoInMeasure P X atTop Y) :
     ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ ω ∂P, Tendsto (fun i => X (ns i) ω) atTop (𝓝 (Y ω)) :=
   h.exists_seq_tendsto_ae
 
 /-- In probability + uniform integrability ⇒ `L^p` (Vitali). -/
-@[powerlib_foundation] theorem inProbability_UI_imp_Lp [IsFiniteMeasure P] {p : ℝ≥0∞}
+@[tmio T, powerlib_foundation] theorem inProbability_UI_imp_Lp [IsFiniteMeasure P] {p : ℝ≥0∞}
     (hp : 1 ≤ p) (hp' : p ≠ ∞) (hX : ∀ n, AEStronglyMeasurable (X n) P) (hY : MemLp Y p P)
     (hui : UnifIntegrable X p P) (h : TendstoInMeasure P X atTop Y) :
     Tendsto (fun n => eLpNorm (X n - Y) p P) atTop (𝓝 0) :=
   tendsto_Lp_finite_of_tendstoInMeasure hp hp' hX hY hui h
 
 /-- Markov's inequality `ε P(f ≥ ε) ≤ E f` for nonnegative `f`. -/
-@[powerlib_foundation] theorem markov_inequality {f : Ω → ℝ≥0∞} (hf : AEMeasurable f P)
+@[tmio T, powerlib_foundation] theorem markov_inequality {f : Ω → ℝ≥0∞} (hf : AEMeasurable f P)
     (ε : ℝ≥0∞) : ε * P {ω | ε ≤ f ω} ≤ ∫⁻ ω, f ω ∂P :=
   mul_meas_ge_le_lintegral₀ hf ε
 
@@ -98,7 +98,7 @@ end Implications
 /-- The spike `X_n = (n+1) 1_{[0, 1/(n+1))}` on `[0,1]`. -/
 def spike (n : ℕ) (u : I) : ℝ := if (u : ℝ) < 1 / ((n : ℝ) + 1) then (n : ℝ) + 1 else 0
 
-@[powerlib_foundation] theorem spike_tendsto_zero {u : I} (hu : (u : ℝ) ≠ 0) :
+@[tmio T, powerlib_foundation] theorem spike_tendsto_zero {u : I} (hu : (u : ℝ) ≠ 0) :
     Tendsto (fun n => spike n u) atTop (𝓝 0) := by
   have hpos : 0 < (u : ℝ) := lt_of_le_of_ne u.2.1 (Ne.symm hu)
   obtain ⟨N, hN⟩ := exists_nat_one_div_lt hpos
@@ -108,7 +108,7 @@ def spike (n : ℕ) (u : I) : ℝ := if (u : ℝ) < 1 / ((n : ℝ) + 1) then (n 
     exact one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hn 1)
   simp only [spike, not_lt.mpr this, ↓reduceIte]
 
-@[powerlib_foundation] theorem integral_spike (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_spike (n : ℕ) :
     ∫ u, spike n u ∂(volume : Measure I) = 1 := by
   have hx : (1 / ((n : ℝ) + 1)) ∈ I := ⟨by positivity, by
     rw [div_le_one (by positivity)]; linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]⟩
@@ -126,7 +126,7 @@ def spike (n : ℕ) (u : I) : ℝ := if (u : ℝ) < 1 / ((n : ℝ) + 1) then (n 
   field_simp
 
 /-- **a.s. convergence does not imply `L¹` convergence**. -/
-@[powerlib_foundation] theorem ae_not_L1 :
+@[tmio T, powerlib_foundation] theorem ae_not_L1 :
     (∀ᵐ u ∂(volume : Measure I), Tendsto (fun n => spike n u) atTop (𝓝 0)) ∧
       ¬ Tendsto (fun n => ∫ u, |spike n u - 0| ∂(volume : Measure I)) atTop (𝓝 0) := by
   constructor
@@ -156,10 +156,10 @@ abbrev unifSeq : Measure (ℕ → I) := Measure.infinitePi fun _ => volume
 /-- Events `A_n = {ω_n ≤ 1/(n+1)}`. -/
 def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n : ℝ) + 1)}
 
-@[powerlib_foundation] theorem measurableSet_eventA (n : ℕ) : MeasurableSet (eventA n) :=
+@[tmio T, powerlib_foundation] theorem measurableSet_eventA (n : ℕ) : MeasurableSet (eventA n) :=
   measurableSet_le (by fun_prop) measurable_const
 
-@[powerlib_foundation] theorem unifSeq_eventA (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem unifSeq_eventA (n : ℕ) :
     unifSeq (eventA n) = ENNReal.ofReal (1 / ((n : ℝ) + 1)) := by
   have hx : (1 / ((n : ℝ) + 1)) ∈ I := ⟨by positivity, by
     rw [div_le_one (by positivity)]; linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]⟩
@@ -169,7 +169,7 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
   rw [e, ← Measure.map_apply (by fun_prop) measurableSet_Iic, Measure.infinitePi_map_eval,
     volume_Iic]
 
-@[powerlib_foundation] theorem iIndepSet_eventA : iIndepSet eventA unifSeq := by
+@[tmio T, powerlib_foundation] theorem iIndepSet_eventA : iIndepSet eventA unifSeq := by
   rw [iIndepSet_iff_meas_biInter measurableSet_eventA]
   intro s
   have hind := iIndepFun_infinitePi (P := fun _ : ℕ => (volume : Measure I))
@@ -178,7 +178,7 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
     (fun _ _ => measurableSet_Iic)
   exact this
 
-@[powerlib_foundation] theorem tsum_unifSeq_eventA : ∑' n, unifSeq (eventA n) = ∞ := by
+@[tmio T, powerlib_foundation] theorem tsum_unifSeq_eventA : ∑' n, unifSeq (eventA n) = ∞ := by
   simp_rw [unifSeq_eventA]
   by_contra h
   have hs : Summable (fun n : ℕ => (1 / ((n : ℝ) + 1)).toNNReal) := by
@@ -193,7 +193,7 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
   exact Real.not_summable_one_div_natCast this
 
 /-- **Convergence in probability does not imply a.s. convergence**. -/
-@[powerlib_foundation] theorem inProbability_not_ae :
+@[tmio T, powerlib_foundation] theorem inProbability_not_ae :
     TendstoInMeasure unifSeq (fun n => (eventA n).indicator (fun _ => (1 : ℝ))) atTop 0 ∧
       ¬ (∀ᵐ ω ∂unifSeq, Tendsto (fun n => (eventA n).indicator (fun _ => (1 : ℝ)) ω) atTop
         (𝓝 0)) := by
@@ -229,7 +229,7 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
 
 /-- **Convergence in distribution does not imply convergence in probability**: `X ~ N(0,1)`,
 `X_n = X`, limit `−X` (same law). -/
-@[powerlib_foundation] theorem inDistribution_not_inProbability :
+@[tmio T, powerlib_foundation] theorem inDistribution_not_inProbability :
     TendstoInDistribution (fun _ : ℕ => (id : ℝ → ℝ)) atTop (fun x => -x)
         (fun _ => gaussianReal 0 1) (gaussianReal 0 1) ∧
       ¬ TendstoInMeasure (gaussianReal 0 1) (fun _ : ℕ => (id : ℝ → ℝ)) atTop (fun x => -x) := by
@@ -262,7 +262,7 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
 /-! ## Correction: `L^p` distance does not certify membership in `L^p` -/
 
 /-- `u ↦ 1/u` is not integrable on `[0,1]`. -/
-@[powerlib_foundation] theorem not_integrable_inv_unitInterval :
+@[tmio T, powerlib_foundation] theorem not_integrable_inv_unitInterval :
     ¬ Integrable (fun u : I => 1 / (u : ℝ)) (volume : Measure I) := by
   intro h
   have h' : IntegrableOn (fun x : ℝ => 1 / x) I volume :=
@@ -276,7 +276,7 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
 
 /-- **Correction (§1.2)**: `X_n = X = 1/u` on `[0,1]` has `‖X_n − X‖_p = 0` for all `n` (so
 `X_n → X` "in `L^p`" as a distance), yet `X ∉ L¹`. -/
-@[powerlib_foundation] theorem Lp_conv_not_memLp (p : ℝ≥0∞) :
+@[tmio T, powerlib_foundation] theorem Lp_conv_not_memLp (p : ℝ≥0∞) :
     (∀ n : ℕ, eLpNorm ((fun _ : ℕ => fun u : I => 1 / (u : ℝ)) n - fun u : I => 1 / (u : ℝ)) p
       volume = 0) ∧ ¬ MemLp (fun u : I => 1 / (u : ℝ)) 1 volume := by
   refine ⟨fun n => by simp, fun h => not_integrable_inv_unitInterval ?_⟩

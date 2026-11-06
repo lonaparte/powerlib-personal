@@ -46,7 +46,7 @@ open Matrix
 open powerlib.Dynamics (State)
 open powerlib.PLL.PIPLL (srf)
 
-@[powerlib_foundation] private lemma hasDerivAt_state {f g : ℝ → ℝ} {f' g' t : ℝ}
+@[tmio T, powerlib_foundation] private lemma hasDerivAt_state {f g : ℝ → ℝ} {f' g' t : ℝ}
     (hf : HasDerivAt f f' t) (hg : HasDerivAt g g' t) :
     HasDerivAt (fun τ => PhasePlane.mk (f τ) (g τ)) (PhasePlane.mk f' g') t := by
   have h : HasDerivAt (fun τ => ![f τ, g τ]) ![f', g'] t := by
@@ -77,7 +77,7 @@ open powerlib.PLL.PIPLL (srf)
 
 /-- Second-order pendulum ⇒ first-order system (`b ≠ 0`): a solution `θ` of
 `θ̈ + a cos θ · θ̇ + b sin θ = 0` with `ξ := (θ̇ − Δω + a sin θ)/b` solves `xiField a b Δω`. -/
-@[powerlib_foundation] theorem pendulum_xiField {a b Δω : ℝ} (hb : b ≠ 0) {θ θ' : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem pendulum_xiField {a b Δω : ℝ} (hb : b ≠ 0) {θ θ' : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (θ' t) t)
     (hθ' : ∀ t, HasDerivAt θ' (-(a * Real.cos (θ t) * θ' t) - b * Real.sin (θ t)) t) (t : ℝ) :
     HasDerivAt (fun τ => PhasePlane.mk (θ τ) ((θ' τ - Δω + a * Real.sin (θ τ)) / b))

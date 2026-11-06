@@ -93,11 +93,11 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   · intro h; rw [add_comm (A * P), h]; abel
 
 /-- Transposition preserves the Hurwitz property (`Linear.isHurwitz_transpose_iff`). -/
-@[powerlib_foundation] theorem isHurwitz_transpose {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_transpose {A : Matrix (Fin n) (Fin n) ℝ}
     (h : LinearSystems.IsHurwitz A) : LinearSystems.IsHurwitz Aᵀ :=
   Linear.isHurwitz_transpose_iff.mpr h
 
-@[powerlib_foundation] theorem solvesCovLyapunov_add {A P P' Q Q' : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem solvesCovLyapunov_add {A P P' Q Q' : Matrix (Fin n) (Fin n) ℝ}
     (h : SolvesCovLyapunov A P Q) (h' : SolvesCovLyapunov A P' Q') :
     SolvesCovLyapunov A (P + P') (Q + Q') := by
   unfold SolvesCovLyapunov at *
@@ -106,19 +106,19 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
         rw [mul_add, add_mul]; abel
     _ = 0 := by rw [h, h', add_zero]
 
-@[powerlib_foundation] theorem solvesCovLyapunov_smul {A P Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem solvesCovLyapunov_smul {A P Q : Matrix (Fin n) (Fin n) ℝ}
     (c : ℝ) (h : SolvesCovLyapunov A P Q) : SolvesCovLyapunov A (c • P) (c • Q) := by
   unfold SolvesCovLyapunov at *
   rw [mul_smul_comm, smul_mul_assoc, ← smul_add, ← smul_add, h, smul_zero]
 
-@[powerlib_foundation] theorem solvesCovLyapunov_sub {A P P' Q Q' : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem solvesCovLyapunov_sub {A P P' Q Q' : Matrix (Fin n) (Fin n) ℝ}
     (h : SolvesCovLyapunov A P Q) (h' : SolvesCovLyapunov A P' Q') :
     SolvesCovLyapunov A (P - P') (Q - Q') := by
   have := solvesCovLyapunov_add h (solvesCovLyapunov_smul (-1) h')
   simpa [sub_eq_add_neg] using this
 
 /-- For Hurwitz `A` the homogeneous equation has only the zero solution. -/
-@[powerlib_foundation] theorem eq_zero_of_solvesCovLyapunov_zero {A S : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem eq_zero_of_solvesCovLyapunov_zero {A S : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (hS : SolvesCovLyapunov A S 0) : S = 0 := by
   obtain ⟨P₁, -, hP₁, huniq⟩ :=
     (isHurwitz_transpose hA).exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
@@ -128,14 +128,14 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   simpa using this
 
 /-- Uniqueness of solutions for Hurwitz `A` and any forcing `Q`. -/
-@[powerlib_foundation] theorem solvesCovLyapunov_unique {A P P' Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem solvesCovLyapunov_unique {A P P' Q : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (h : SolvesCovLyapunov A P Q)
     (h' : SolvesCovLyapunov A P' Q) : P = P' := by
   have := eq_zero_of_solvesCovLyapunov_zero hA (by simpa using solvesCovLyapunov_sub h h')
   exact sub_eq_zero.mp this
 
 /-- Existence for Hurwitz `A`, any forcing `Q` (via `P_{Q+I} - P_I`). -/
-@[powerlib_foundation] theorem exists_solvesCovLyapunov {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem exists_solvesCovLyapunov {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (Q : Matrix (Fin n) (Fin n) ℝ) (hQ : Q.PosSemidef) :
     ∃ P, SolvesCovLyapunov A P Q := by
   have hAt := isHurwitz_transpose hA
@@ -148,7 +148,7 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
 
 /-- **Stationary covariance.** For Hurwitz `A` and positive-semidefinite forcing `Q`, the
 equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semidefinite. -/
-@[powerlib_foundation] theorem exists_unique_posSemidef_covLyapunov
+@[tmio T, powerlib_foundation] theorem exists_unique_posSemidef_covLyapunov
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A)
     (Q : Matrix (Fin n) (Fin n) ℝ) (hQ : Q.PosSemidef) :
     ∃ P, P.PosSemidef ∧ SolvesCovLyapunov A P Q ∧
@@ -193,7 +193,7 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
   linarith
 
 /-- The covariance equation of `dX = A X dt + B dW`: forcing `B Bᵀ`. -/
-@[powerlib_foundation] theorem exists_unique_posSemidef_stationaryCov
+@[tmio T, powerlib_foundation] theorem exists_unique_posSemidef_stationaryCov
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A)
     (B : Matrix (Fin n) (Fin m) ℝ) :
     ∃ P, P.PosSemidef ∧ SolvesCovLyapunov A P (B * Bᵀ) ∧
@@ -203,7 +203,7 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
 
 /-! ## Counterexamples to "A Hurwitz ⇔ P∞ unique positive definite" -/
 
-@[powerlib_foundation] theorem not_isHurwitz_zero :
+@[tmio T, powerlib_foundation] theorem not_isHurwitz_zero :
     ¬ LinearSystems.IsHurwitz (0 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) := by
   intro h
   have := h 0 (fun _ => 1) (by
@@ -211,14 +211,14 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
   simp at this
 
 /-- `A = 0`, `B = 0`, `P = I`: a positive-definite solution with `A` not Hurwitz. -/
-@[powerlib_foundation] theorem posDef_solution_not_imp_hurwitz :
+@[tmio T, powerlib_foundation] theorem posDef_solution_not_imp_hurwitz :
     ∃ (A P : Matrix (Fin 1) (Fin 1) ℝ) (B : Matrix (Fin 1) (Fin 1) ℝ),
       P.PosDef ∧ SolvesCovLyapunov A P (B * Bᵀ) ∧ ¬ LinearSystems.IsHurwitz A ∧
       ∀ S, SolvesCovLyapunov A S (B * Bᵀ) :=
   ⟨0, 1, 0, PosDef.one, by simp [SolvesCovLyapunov], not_isHurwitz_zero,
     fun S => by simp [SolvesCovLyapunov]⟩
 
-@[powerlib_foundation] theorem isHurwitz_neg_one :
+@[tmio T, powerlib_foundation] theorem isHurwitz_neg_one :
     LinearSystems.IsHurwitz (-1 : Matrix (Fin 1) (Fin 1) ℝ) := by
   intro μ v hv heig
   have hv0 : v 0 ≠ 0 := by
@@ -232,7 +232,7 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
   rw [hμ]; norm_num
 
 /-- `A = -1` is Hurwitz, `B = 0`, yet no solution is positive definite (it is `0`). -/
-@[powerlib_foundation] theorem hurwitz_not_imp_posDef_solution :
+@[tmio T, powerlib_foundation] theorem hurwitz_not_imp_posDef_solution :
     ∃ (A B : Matrix (Fin 1) (Fin 1) ℝ), LinearSystems.IsHurwitz A ∧
       ∀ P, SolvesCovLyapunov A P (B * Bᵀ) → ¬ P.PosDef := by
   refine ⟨-1, 0, isHurwitz_neg_one, fun P hP hPd => ?_⟩
@@ -245,7 +245,7 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
 /-! ## Decay of the matrix exponential of a Hurwitz matrix -/
 
 /-- `‖e^{tA}‖ → 0` as `t → ∞` for Hurwitz `A`. -/
-@[powerlib_foundation] theorem tendsto_norm_exp_smul_zero {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem tendsto_norm_exp_smul_zero {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) :
     Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖) atTop (𝓝 0) := by
   obtain ⟨m, hm, hc⟩ := hA.exists_norm_exp_nat_smul_lt_one
@@ -295,12 +295,12 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
 def covSol (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) : Matrix (Fin n) (Fin n) ℝ :=
   NormedSpace.exp (t • A) * (P₀ - Pinf) * NormedSpace.exp (t • Aᵀ) + Pinf
 
-@[powerlib_foundation] theorem covSol_zero (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) :
+@[tmio T, powerlib_foundation] theorem covSol_zero (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) :
     covSol A Pinf P₀ 0 = P₀ := by
   simp [covSol, NormedSpace.exp_zero]
 
 /-- `covSol` solves `Ṗ = A P + P Aᵀ + Q` whenever `P∞` solves the algebraic equation. -/
-@[powerlib_foundation] theorem covSol_hasDerivAt {A Pinf Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem covSol_hasDerivAt {A Pinf Q : Matrix (Fin n) (Fin n) ℝ}
     (hinf : SolvesCovLyapunov A Pinf Q) (P₀ : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) :
     HasDerivAt (covSol A Pinf P₀)
       (A * covSol A Pinf P₀ t + covSol A Pinf P₀ t * Aᵀ + Q) t := by
@@ -316,7 +316,7 @@ def covSol (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) : Matrix (Fin n)
   abel
 
 /-- Uniqueness: any differentiable solution with `P 0 = P₀` is `covSol`. -/
-@[powerlib_foundation] theorem covODE_unique {A Pinf Q P₀ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem covODE_unique {A Pinf Q P₀ : Matrix (Fin n) (Fin n) ℝ}
     (hinf : SolvesCovLyapunov A Pinf Q) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q) t) (h0 : P 0 = P₀) :
     P = covSol A Pinf P₀ := by
@@ -365,7 +365,7 @@ def covSol (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) : Matrix (Fin n)
   exact sub_eq_zero.mp hEt
 
 /-- Entries are bounded by the Frobenius norm. -/
-@[powerlib_foundation] theorem abs_entry_le_norm (M : Matrix (Fin n) (Fin n) ℝ) (i j : Fin n) :
+@[tmio T, powerlib_foundation] theorem abs_entry_le_norm (M : Matrix (Fin n) (Fin n) ℝ) (i j : Fin n) :
     |M i j| ≤ ‖M‖ := by
   rw [frobenius_norm_def]
   have h : ‖M i j‖ ^ (2 : ℝ) ≤ ∑ i, ∑ j, ‖M i j‖ ^ (2 : ℝ) :=
@@ -379,7 +379,7 @@ def covSol (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) : Matrix (Fin n)
 
 /-- For Hurwitz `A`, the solution of the differential Lyapunov equation converges to `P∞`
 from every initial matrix (Frobenius norm). -/
-@[powerlib_foundation] theorem covSol_tendsto_norm {A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem covSol_tendsto_norm {A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) :
     Tendsto (fun t => ‖covSol A Pinf P₀ t - Pinf‖) atTop (𝓝 0) := by
   have h1 := tendsto_norm_exp_smul_zero hA
@@ -392,7 +392,7 @@ from every initial matrix (Frobenius norm). -/
   exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
 
 /-- Entrywise convergence `P(t)ᵢⱼ → (P∞)ᵢⱼ`. -/
-@[powerlib_foundation] theorem covSol_tendsto_entry {A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem covSol_tendsto_entry {A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (i j : Fin n) :
     Tendsto (fun t => covSol A Pinf P₀ t i j) atTop (𝓝 (Pinf i j)) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
@@ -408,14 +408,14 @@ section Controllability
 open scoped Nat
 
 /-- `x ⬝ (M y) = (Mᵀ x) ⬝ y`. -/
-@[powerlib_foundation] private lemma dot_mulVec_eq {ι : Type*} [Fintype ι] (M : Matrix (Fin n) ι ℝ) (x : Fin n → ℝ)
+@[tmio T, powerlib_foundation] private lemma dot_mulVec_eq {ι : Type*} [Fintype ι] (M : Matrix (Fin n) ι ℝ) (x : Fin n → ℝ)
     (y : ι → ℝ) :
     x ⬝ᵥ (M *ᵥ y) = (Mᵀ *ᵥ x) ⬝ᵥ y := by
   rw [dotProduct_mulVec, mulVec_transpose]
 
 /-- Quadratic form of the covariance equation: for symmetric `P` solving
 `A P + P Aᵀ + B Bᵀ = 0`, `2 (P x)·(Aᵀ x) + |Bᵀ x|² = 0`. -/
-@[powerlib_foundation] theorem cov_quadratic {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem cov_quadratic {A P : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hs : Pᵀ = P)
     (x : Fin n → ℝ) :
     2 * ((P *ᵥ x) ⬝ᵥ (Aᵀ *ᵥ x)) + (Bᵀ *ᵥ x) ⬝ᵥ (Bᵀ *ᵥ x) = 0 := by
@@ -431,7 +431,7 @@ open scoped Nat
   linarith
 
 /-- Kernel invariance: if `P x = 0` then `Bᵀ x = 0` and `P Aᵀ x = 0`. -/
-@[powerlib_foundation] theorem cov_kernel_invariant {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem cov_kernel_invariant {A P : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hs : Pᵀ = P)
     {x : Fin n → ℝ} (hx : P *ᵥ x = 0) : Bᵀ *ᵥ x = 0 ∧ P *ᵥ (Aᵀ *ᵥ x) = 0 := by
   have hq := cov_quadratic hP hs x
@@ -445,7 +445,7 @@ open scoped Nat
 
 /-- **Controllability ⇒ positive definite stationary covariance.**  For Hurwitz `A`, the solution
 of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllable. -/
-@[powerlib_foundation] theorem posDef_of_isControllable {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem posDef_of_isControllable {A P : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
     (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hc : LinearSystems.IsControllable A B) :
     P.PosDef := by
@@ -476,7 +476,7 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
   exact dotProduct_self_eq_zero.mp hxx
 
 /-- A vector orthogonal to the reachable subspace of an uncontrollable pair. -/
-@[powerlib_foundation] theorem exists_orthogonal_of_not_isControllable
+@[tmio T, powerlib_foundation] theorem exists_orthogonal_of_not_isControllable
     {A : Matrix (Fin n) (Fin n) ℝ} {B : Matrix (Fin n) (Fin m) ℝ}
     (hc : ¬ LinearSystems.IsControllable A B) :
     ∃ x : Fin n → ℝ, x ≠ 0 ∧ ∀ (k : ℕ) (u : Fin m → ℝ), x ⬝ᵥ ((A ^ k * B) *ᵥ u) = 0 := by
@@ -505,7 +505,7 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
   exact fun k u => horth _ (hmem k u)
 
 /-- `x ⊥ e^{tA} B u` for every `t` when `x ⊥ A^k B u` for every `k` (exponential series). -/
-@[powerlib_foundation] theorem dot_exp_mul_eq_zero {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem dot_exp_mul_eq_zero {A : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} {x : Fin n → ℝ}
     (hx : ∀ (k : ℕ) (u : Fin m → ℝ), x ⬝ᵥ ((A ^ k * B) *ᵥ u) = 0) (t : ℝ) (u : Fin m → ℝ) :
     x ⬝ᵥ ((NormedSpace.exp (t • A) * B) *ᵥ u) = 0 := by
@@ -526,7 +526,7 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
 definite `P` solves `A P + P Aᵀ + B Bᵀ = 0`, then `(A, B)` is controllable.  (A vector `x ≠ 0`
 orthogonal to the reachable subspace has `Bᵀ e^{tAᵀ} x = 0`, so `xᵀ e^{tA} P e^{tAᵀ} x` is
 constant `= xᵀ P x > 0`, while it tends to `0`.) -/
-@[powerlib_foundation] theorem isControllable_of_posDef {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isControllable_of_posDef {A P : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
     (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hpd : P.PosDef) :
     LinearSystems.IsControllable A B := by
@@ -592,7 +592,7 @@ constant `= xᵀ P x > 0`, while it tends to `0`.) -/
 /-- **Stationary covariance and controllability** (T-sde-systems §2.5, corrected form).  For
 Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positive definite if and only if
 `(A, B)` is controllable. -/
-@[powerlib_foundation] theorem posDef_iff_isControllable {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem posDef_iff_isControllable {A P : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
     (hP : SolvesCovLyapunov A P (B * Bᵀ)) :
     P.PosDef ↔ LinearSystems.IsControllable A B :=
@@ -602,7 +602,7 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
 
 /-- Derivative of `t ↦ e^{tA} P e^{tAᵀ}` along a solution of the covariance equation:
 `d/dt (e^{tA} P e^{tAᵀ}) = −e^{tA} Q e^{tAᵀ}` when `A P + P Aᵀ + Q = 0`. -/
-@[powerlib_foundation] theorem hasDerivAt_exp_conj {A P Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_exp_conj {A P Q : Matrix (Fin n) (Fin n) ℝ}
     (hP : SolvesCovLyapunov A P Q) (t : ℝ) :
     HasDerivAt (fun t : ℝ => NormedSpace.exp (t • A) * P * NormedSpace.exp (t • Aᵀ))
       (-(NormedSpace.exp (t • A) * Q * NormedSpace.exp (t • Aᵀ))) t := by
@@ -624,7 +624,7 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
 
 /-- **Finite-horizon Gramian identity.**  If `A P + P Aᵀ + Q = 0`, then for every `T`,
 `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt = P − e^{TA} P e^{TAᵀ}` (no stability assumption). -/
-@[powerlib_foundation] theorem integral_gramian_eq {A P Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem integral_gramian_eq {A P Q : Matrix (Fin n) (Fin n) ℝ}
     (hP : SolvesCovLyapunov A P Q) (T : ℝ) :
     ∫ t in (0 : ℝ)..T, NormedSpace.exp (t • A) * Q * NormedSpace.exp (t • Aᵀ) =
       P - NormedSpace.exp (T • A) * P * NormedSpace.exp (T • Aᵀ) := by
@@ -645,7 +645,7 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
 /-- **Gramian representation of the stationary covariance.**  For Hurwitz `A` and
 `A P∞ + P∞ Aᵀ + Q = 0`, `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt → P∞` as `T → ∞`; i.e.
 `P∞ = ∫₀^∞ e^{tA} Q e^{tAᵀ} dt` as an improper integral. -/
-@[powerlib_foundation] theorem tendsto_integral_gramian {A P Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem tendsto_integral_gramian {A P Q : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (hP : SolvesCovLyapunov A P Q) :
     Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T,
       NormedSpace.exp (t • A) * Q * NormedSpace.exp (t • Aᵀ)) atTop (𝓝 P) := by
@@ -662,7 +662,7 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
 /-- **Controllability Gramian.**  For Hurwitz `A`, the stationary covariance
 `P∞ = lim_{T→∞} ∫₀ᵀ e^{tA} B Bᵀ e^{tAᵀ} dt` of `dX = A X dt + B dW` exists, is the unique solution
 of `A P∞ + P∞ Aᵀ + B Bᵀ = 0`, and is positive definite exactly when `(A, B)` is controllable. -/
-@[powerlib_foundation] theorem stationaryCov_gramian {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem stationaryCov_gramian {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (B : Matrix (Fin n) (Fin m) ℝ) :
     ∃ P, SolvesCovLyapunov A P (B * Bᵀ) ∧ (∀ S, SolvesCovLyapunov A S (B * Bᵀ) → S = P) ∧
       Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T,

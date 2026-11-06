@@ -76,7 +76,7 @@ omit [NormOneClass 𝔸] in
   hasDerivAt_exp_smul_const' X r
 
 /-- `‖e^{sX}‖ ≤ e^{‖X‖ s}` for `s ≥ 0` (Grönwall). -/
-@[powerlib_foundation] theorem norm_exp_smul_le (X : 𝔸) {s : ℝ} (hs : 0 ≤ s) :
+@[tmio T, powerlib_foundation] theorem norm_exp_smul_le (X : 𝔸) {s : ℝ} (hs : 0 ≤ s) :
     ‖NormedSpace.exp (s • X)‖ ≤ Real.exp (‖X‖ * s) := by
   have h := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r : ℝ => NormedSpace.exp (r • X))
     (f' := fun r => X * NormedSpace.exp (r • X)) (δ := 1) (K := ‖X‖) (ε := 0) (a := 0) (b := s)
@@ -88,7 +88,7 @@ omit [NormOneClass 𝔸] in
   exact h
 
 /-- `‖e^{sX} − 1‖ ≤ ‖X‖ s e^{‖X‖ s}` for `s ≥ 0`. -/
-@[powerlib_foundation] theorem norm_exp_smul_sub_one_le (X : 𝔸) {s : ℝ} (hs : 0 ≤ s) :
+@[tmio T, powerlib_foundation] theorem norm_exp_smul_sub_one_le (X : 𝔸) {s : ℝ} (hs : 0 ≤ s) :
     ‖NormedSpace.exp (s • X) - 1‖ ≤ ‖X‖ * s * Real.exp (‖X‖ * s) := by
   have h := norm_image_sub_le_of_norm_deriv_le_segment' (a := 0) (b := s)
     (f := fun r : ℝ => NormedSpace.exp (r • X)) (f' := fun r => X * NormedSpace.exp (r • X))
@@ -113,7 +113,7 @@ def periodMap (d T : ℝ) (A₁ A₂ : 𝔸) : 𝔸 :=
 
 omit [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] in
 /-- Telescoping: `‖M^k − P^k‖ ≤ k B^k ‖M − P‖` if `‖M‖, ‖P‖ ≤ B` and `1 ≤ B`. -/
-@[powerlib_foundation] theorem norm_pow_sub_pow_le {M P : 𝔸} {B : ℝ} (hB : 1 ≤ B)
+@[tmio T, powerlib_foundation] theorem norm_pow_sub_pow_le {M P : 𝔸} {B : ℝ} (hB : 1 ≤ B)
     (hM : ‖M‖ ≤ B) (hP : ‖P‖ ≤ B) (k : ℕ) :
     ‖M ^ k - P ^ k‖ ≤ k * B ^ k * ‖M - P‖ := by
   induction k with
@@ -143,7 +143,7 @@ omit [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] in
           rw [e]; linarith
 
 /-- One period: `‖e^{(1−d)TA₂} e^{dTA₁} − e^{TĀ}‖ ≤ c T²` for `0 ≤ T ≤ 1`. -/
-@[powerlib_foundation] theorem periodMap_sub_exp_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem periodMap_sub_exp_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : 𝔸) :
     ∃ c : ℝ, 0 ≤ c ∧ ∀ T ∈ Icc (0 : ℝ) 1,
       ‖periodMap d T A₁ A₂ - NormedSpace.exp (T • avgMatrix d A₁ A₂)‖ ≤ c * T ^ 2 := by
@@ -252,7 +252,7 @@ omit [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] in
 
 omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
 /-- `‖Ā‖ ≤ ‖A₁‖ + ‖A₂‖` for `d ∈ [0, 1]`. -/
-@[powerlib_foundation] theorem norm_avgMatrix_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem norm_avgMatrix_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : 𝔸) : ‖avgMatrix d A₁ A₂‖ ≤ ‖A₁‖ + ‖A₂‖ := by
   have hd1' : 0 ≤ 1 - d := by linarith
   calc ‖avgMatrix d A₁ A₂‖ ≤ ‖d • A₁‖ + ‖(1 - d) • A₂‖ := norm_add_le _ _
@@ -261,7 +261,7 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
     _ ≤ ‖A₁‖ + ‖A₂‖ := by nlinarith [norm_nonneg A₁, norm_nonneg A₂]
 
 /-- One switching period: `‖e^{(1−d)TA₂} e^{dTA₁}‖ ≤ e^{(‖A₁‖ + ‖A₂‖)T}`. -/
-@[powerlib_foundation] theorem norm_periodMap_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem norm_periodMap_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : 𝔸) {T : ℝ} (hT : 0 ≤ T) :
     ‖periodMap d T A₁ A₂‖ ≤ Real.exp ((‖A₁‖ + ‖A₂‖) * T) := by
   have hd1' : 0 ≤ 1 - d := by linarith
@@ -278,7 +278,7 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
           mul_nonneg (norm_nonneg A₁) (mul_nonneg hd1' hT)]
 
 /-- `‖e^{sX}‖ ≤ e^{a}` and `‖e^{sX} − 1‖ ≤ a s e^{a}` for `‖X‖ ≤ a`, `0 ≤ s ≤ 1`. -/
-@[powerlib_foundation] theorem exp_smul_bounds {X : 𝔸} {a s : ℝ} (hX : ‖X‖ ≤ a) (hs0 : 0 ≤ s)
+@[tmio T, powerlib_foundation] theorem exp_smul_bounds {X : 𝔸} {a s : ℝ} (hX : ‖X‖ ≤ a) (hs0 : 0 ≤ s)
     (hs1 : s ≤ 1) :
     ‖NormedSpace.exp (s • X)‖ ≤ Real.exp a ∧
       ‖NormedSpace.exp (s • X) - 1‖ ≤ a * s * Real.exp a := by
@@ -294,7 +294,7 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
 
 omit [NormOneClass 𝔸] in
 /-- `e^{(r + s)X} = e^{rX} e^{sX}`. -/
-@[powerlib_foundation] theorem exp_add_smul (X : 𝔸) (r s : ℝ) :
+@[tmio T, powerlib_foundation] theorem exp_add_smul (X : 𝔸) (r s : ℝ) :
     NormedSpace.exp ((r + s) • X) = NormedSpace.exp (r • X) * NormedSpace.exp (s • X) := by
   rw [add_smul]
   refine NormedSpace.exp_add_of_commute_of_mem_ball (𝕂 := ℝ)
@@ -311,7 +311,7 @@ section Switched
 variable {X : Type*} [Fintype X] [DecidableEq X]
 
 /-- `t ↦ e^{(t − a)A} v` solves `ẋ = A x`. -/
-@[powerlib_foundation] theorem hasDerivAt_exp_mulVec (A : Matrix X X ℝ) (a : ℝ) (v : X → ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_exp_mulVec (A : Matrix X X ℝ) (a : ℝ) (v : X → ℝ)
     (t : ℝ) :
     HasDerivAt (fun t => NormedSpace.exp ((t - a) • A) *ᵥ v)
       (A *ᵥ (NormedSpace.exp ((t - a) • A) *ᵥ v)) t := by
@@ -329,7 +329,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
   exact h2
 
 /-- On an interval with a constant matrix, a solution is `x(t) = e^{(t − a)A} x(a)`. -/
-@[powerlib_foundation] theorem const_solution_eq {A : Matrix X X ℝ} {x : ℝ → X → ℝ} {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem const_solution_eq {A : Matrix X X ℝ} {x : ℝ → X → ℝ} {a b : ℝ}
     (hx : IsIntegralCurveOn x (fun _ y => A *ᵥ y) (Icc a b)) {t : ℝ}
     (ht : t ∈ Icc a b) : x t = NormedSpace.exp ((t - a) • A) *ᵥ x a := by
   have hy : IsIntegralCurveOn (fun t => NormedSpace.exp ((t - a) • A) *ᵥ x a)
@@ -343,7 +343,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
 with duty ratio `d` and period `T` (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x` on
 `[kT + dT, (k + 1)T]`, one-sided derivatives at the switching instants) satisfies
 `x(kT) = (e^{(1−d)TA₂} e^{dTA₁})^k x(0)`. -/
-@[powerlib_foundation] theorem switched_sample {A₁ A₂ : Matrix X X ℝ} {d T : ℝ} (hd0 : 0 ≤ d)
+@[tmio T, powerlib_foundation] theorem switched_sample {A₁ A₂ : Matrix X X ℝ} {d T : ℝ} (hd0 : 0 ≤ d)
     (hd1 : d ≤ 1) (hT : 0 ≤ T) {x : ℝ → X → ℝ}
     (hx : ∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
       IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T)))
@@ -363,7 +363,7 @@ with duty ratio `d` and period `T` (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A�
     rfl
 
 /-- The averaged model `x̄̇ = Ā x̄` is solved by `x̄(t) = e^{tĀ} x₀`. -/
-@[powerlib_foundation] theorem averaged_solves (d : ℝ) (A₁ A₂ : Matrix X X ℝ) (x₀ : X → ℝ)
+@[tmio T, powerlib_foundation] theorem averaged_solves (d : ℝ) (A₁ A₂ : Matrix X X ℝ) (x₀ : X → ℝ)
     (t : ℝ) :
     HasDerivAt (fun t => NormedSpace.exp (t • avgMatrix d A₁ A₂) *ᵥ x₀)
       (avgMatrix d A₁ A₂ *ᵥ (NormedSpace.exp (t • avgMatrix d A₁ A₂) *ᵥ x₀)) t := by
@@ -373,7 +373,7 @@ with duty ratio `d` and period `T` (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A�
 for every horizon `L` there is `C` such that, for all switching periods `T ∈ (0, 1]`, every
 switched trajectory and every switching instant `kT ≤ L`,
 `‖x(kT) − x̄(kT)‖ ≤ C T ‖x(0)‖`, where `x̄(t) = e^{tĀ} x(0)` solves the averaged model. -/
-@[powerlib_foundation] theorem stateSpaceAveraging_error [Nonempty X] {d : ℝ} (hd0 : 0 ≤ d)
+@[tmio T, powerlib_foundation] theorem stateSpaceAveraging_error [Nonempty X] {d : ℝ} (hd0 : 0 ≤ d)
     (hd1 : d ≤ 1) (A₁ A₂ : Matrix X X ℝ) {L : ℝ} (hL : 0 ≤ L) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ,
       (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
@@ -443,7 +443,7 @@ switched trajectory and every switching instant `kT ≤ L`,
 /-- **Intra-period ripple.** There is `c`, depending only on `A₁`, `A₂`, such that for every
 switching period `T ∈ (0, 1]`, every switched trajectory, every period `k` and every instant
 `t ∈ [kT, (k + 1)T]`: `‖x(t) − x(kT)‖ ≤ c T ‖x(kT)‖`. -/
-@[powerlib_foundation] theorem switched_ripple [Nonempty X] {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+@[tmio T, powerlib_foundation] theorem switched_ripple [Nonempty X] {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
     (A₁ A₂ : Matrix X X ℝ) :
     ∃ c : ℝ, 0 ≤ c ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ,
       (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
@@ -515,7 +515,7 @@ ratio, CCM): for every horizon `L` there is `C` such that for all switching peri
 every switched trajectory and **every** instant `t ∈ [0, L]` (not only the switching instants),
 `‖x(t) − x̄(t)‖ ≤ C T ‖x(0)‖` with `x̄(t) = e^{tĀ} x(0)`: the averaged model tracks the switched
 state including its intra-period ripple to `O(T)`. -/
-@[powerlib_foundation] theorem stateSpaceAveraging_error_uniform [Nonempty X] {d : ℝ}
+@[tmio T, powerlib_foundation] theorem stateSpaceAveraging_error_uniform [Nonempty X] {d : ℝ}
     (hd0 : 0 ≤ d) (hd1 : d ≤ 1) (A₁ A₂ : Matrix X X ℝ) {L : ℝ} (hL : 0 ≤ L) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ,
       (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧

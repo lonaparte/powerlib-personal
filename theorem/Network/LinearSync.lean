@@ -69,14 +69,14 @@ structure SpectralData (L : Matrix (Fin N) (Fin N) ℝ) where
 @[tmio T, powerlib_foundation] theorem euclidean_sub (x y : Fin d → ℝ) :
     euclidean (x - y) = euclidean x - euclidean y := rfl
 
-@[powerlib_foundation] theorem euclidean_smul (c : ℝ) (x : Fin d → ℝ) :
+@[tmio T, powerlib_foundation] theorem euclidean_smul (c : ℝ) (x : Fin d → ℝ) :
     euclidean (c • x) = c • euclidean x := rfl
 
-@[powerlib_foundation] theorem euclidean_sum {ι : Type*} (s : Finset ι) (f : ι → Fin d → ℝ) :
+@[tmio T, powerlib_foundation] theorem euclidean_sum {ι : Type*} (s : Finset ι) (f : ι → Fin d → ℝ) :
     euclidean (∑ k ∈ s, f k) = ∑ k ∈ s, euclidean (f k) :=
   map_sum (WithLp.linearEquiv 2 ℝ (Fin d → ℝ)).symm f s
 
-@[powerlib_foundation] theorem norm_euclidean_sum_smul_le {ι : Type*} (s : Finset ι)
+@[tmio T, powerlib_foundation] theorem norm_euclidean_sum_smul_le {ι : Type*} (s : Finset ι)
     (c : ι → ℝ) (f : ι → Fin d → ℝ) :
     ‖euclidean (∑ k ∈ s, c k • f k)‖ ≤ ∑ k ∈ s, |c k| * ‖euclidean (f k)‖ := by
   rw [euclidean_sum]
@@ -90,29 +90,29 @@ namespace SpectralData
 
 variable {L : Matrix (Fin N) (Fin N) ℝ} (D : SpectralData L)
 
-@[powerlib_foundation] theorem orth' : D.Vᵀ * D.V = 1 := mul_eq_one_comm.mp D.orth
+@[tmio T, powerlib_foundation] theorem orth' : D.Vᵀ * D.V = 1 := mul_eq_one_comm.mp D.orth
 
-@[powerlib_foundation] theorem col_eig (i k : Fin N) : ∑ j, L i j * D.V j k = D.μ k * D.V i k := by
+@[tmio T, powerlib_foundation] theorem col_eig (i k : Fin N) : ∑ j, L i j * D.V j k = D.μ k * D.V i k := by
   have := congrFun (congrFun D.eig i) k
   rw [mul_apply, mul_diagonal] at this
   rw [this, mul_comm]
 
-@[powerlib_foundation] theorem colsq (k : Fin N) : ∑ i, D.V i k ^ 2 = 1 := by
+@[tmio T, powerlib_foundation] theorem colsq (k : Fin N) : ∑ i, D.V i k ^ 2 = 1 := by
   have := congrFun (congrFun D.orth' k) k
   simpa [mul_apply, one_apply_eq, sq] using this
 
-@[powerlib_foundation] theorem colorth {k l : Fin N} (h : k ≠ l) : ∑ i, D.V i k * D.V i l = 0 := by
+@[tmio T, powerlib_foundation] theorem colorth {k l : Fin N} (h : k ≠ l) : ∑ i, D.V i k * D.V i l = 0 := by
   have := congrFun (congrFun D.orth' k) l
   simpa [mul_apply, one_apply_ne h] using this
 
-@[powerlib_foundation] theorem abs_le_one (i k : Fin N) : |D.V i k| ≤ 1 := by
+@[tmio T, powerlib_foundation] theorem abs_le_one (i k : Fin N) : |D.V i k| ≤ 1 := by
   have h := D.colsq k
   have hle : D.V i k ^ 2 ≤ 1 := by
     rw [← h]; exact Finset.single_le_sum (fun j _ => sq_nonneg (D.V j k)) (Finset.mem_univ i)
   exact (sq_le_one_iff_abs_le_one _).mp hle
 
 /-- A transverse column is not constant. -/
-@[powerlib_foundation] theorem exists_ne {k : Fin N} (hk : k ≠ D.k0) :
+@[tmio T, powerlib_foundation] theorem exists_ne {k : Fin N} (hk : k ≠ D.k0) :
     ∃ i j, D.V i k ≠ D.V j k := by
   by_contra hcon
   push Not at hcon
@@ -143,7 +143,7 @@ end SpectralData
 are `K, r > 0` such that every global solution `X` of the linear network,
 `Ẋ = linNetField A Γ L σ X`, has `‖Xᵢ(t) − Xⱼ(t)‖ ≤ K e^{−rt} Σₗ ‖Xₗ(0)‖` for all `t ≥ 0` and
 all nodes `i, j`) ⇔ every transverse block `A − σ μ_k Γ` (`k ≠ k₀`) is Hurwitz. -/
-@[powerlib_foundation] theorem expSync_iff {A Γ : Matrix (Fin d) (Fin d) ℝ}
+@[tmio T, powerlib_foundation] theorem expSync_iff {A Γ : Matrix (Fin d) (Fin d) ℝ}
     {L : Matrix (Fin N) (Fin N) ℝ} (hL : Lᵀ = L) (D : SpectralData L) (σ : ℝ) :
     (∃ K > 0, ∃ r > 0, ∀ X : ℝ → Fin N → Fin d → ℝ,
       (∀ t, HasDerivAt X (linNetField A Γ L σ (X t)) t) → ∀ t, 0 ≤ t → ∀ i j,

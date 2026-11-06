@@ -82,7 +82,7 @@ open powerlib.Dynamics LinearSystems
 /-- `φ_opt = arccos(P₀/P_sat) + arcsin(P₀/P_max)`. -/
 def phiOpt (P0 Psat Pmax : ℝ) : ℝ := Real.arccos (P0 / Psat) + Real.arcsin (P0 / Pmax)
 
-@[powerlib_foundation] private lemma abs_div_le_one {a b : ℝ} (hb : 0 < b) (h : |a| ≤ b) :
+@[tmio T, powerlib_foundation] private lemma abs_div_le_one {a b : ℝ} (hb : 0 < b) (h : |a| ≤ b) :
     -1 ≤ a / b ∧ a / b ≤ 1 := by
   have := abs_le.mp h
   constructor
@@ -106,7 +106,7 @@ pre-fault operating point `(arcsin(P₀/P_max), P₀)` when `φ = φ_opt`. -/
   field_simp
 
 /-- Without `|P₀| ≤ P_sat` the saturated curve never reaches `P₀`. -/
-@[powerlib_foundation] theorem saturated_no_intersection {P0 Psat : ℝ} (hsat : 0 ≤ Psat)
+@[tmio T, powerlib_foundation] theorem saturated_no_intersection {P0 Psat : ℝ} (hsat : 0 ≤ Psat)
     (h : Psat < |P0|) (δ φ : ℝ) : Psat * Real.cos (δ - φ) ≠ P0 := by
   intro heq
   have : |Psat * Real.cos (δ - φ)| ≤ Psat := by
@@ -124,7 +124,7 @@ def satField (M D Pref Psat φ : ℝ) (x : State 2) : State 2 :=
 /-- The state `(δ, 0)`. -/
 def angleState (δ : ℝ) : State 2 := WithLp.toLp 2 ![δ, 0]
 
-@[powerlib_foundation] theorem satField_eq_zero_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
+@[tmio M, powerlib_foundation] theorem satField_eq_zero_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
     (x : State 2) :
     satField M D Pref Psat φ x = 0 ↔ x 1 = 0 ∧ Psat * Real.cos (x 0 - φ) = Pref := by
   constructor
@@ -141,7 +141,7 @@ def angleState (δ : ℝ) : State 2 := WithLp.toLp 2 ![δ, 0]
 
 /-- In saturation an equilibrium exists iff `|P_ref| ≤ P_sat`. Static evidence on the model,
 not a connection conclusion. -/
-@[powerlib_foundation] theorem saturated_equilibrium_exists_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
+@[tmio M, powerlib_foundation] theorem saturated_equilibrium_exists_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
     (hsat : 0 ≤ Psat) :
     (∃ x : State 2, satField M D Pref Psat φ x = 0) ↔ |Pref| ≤ Psat := by
   simp only [satField_eq_zero_iff hM]
@@ -165,13 +165,13 @@ not a connection conclusion. -/
 def satJacobian (M D Psat φ δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; Psat * Real.sin (δ - φ) / M, -D / M]
 
-@[powerlib_foundation] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
+@[tmio M, powerlib_foundation] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
     ContDiff ℝ 1 (satField M D Pref Psat φ) := by
   apply Dynamics.contDiff_of_components
   intro i
   fin_cases i <;> simp [satField] <;> fun_prop
 
-@[powerlib_foundation] theorem satField_fderiv (M D Pref Psat φ δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem satField_fderiv (M D Pref Psat φ δ : ℝ) :
     fderiv ℝ (satField M D Pref Psat φ) (angleState δ) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (satJacobian M D Psat φ δ) := by
   set x := angleState δ
@@ -281,7 +281,7 @@ selected equilibrium). -/
   unfold powerlib.TMIO.Statement
   exact Spectral.local_exact_passive _ _ _
 
-@[powerlib_foundation] private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < Psat) :
+@[tmio T, powerlib_foundation] private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < Psat) :
     0 < Real.sin (Real.arccos (Pref / Psat)) := by
   have hy : |Pref / Psat| < 1 := by
     rw [abs_div, abs_of_pos hsat, div_lt_one hsat]

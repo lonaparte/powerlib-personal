@@ -49,7 +49,7 @@ def windowPhasor (T ω₀ : ℝ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
 /-- Complex positive-sequence (analytic) signal `A e^{j(ωτ + φ)}`. -/
 def analyticSignal (A ω φ : ℝ) (τ : ℝ) : ℂ := A * Complex.exp (((ω * τ + φ : ℝ) : ℂ) * I)
 
-@[powerlib_foundation] private lemma windowPhasor_analytic {T ω₀ A ω φ : ℝ} (hT : T ≠ 0) :
+@[tmio T, powerlib_foundation] private lemma windowPhasor_analytic {T ω₀ A ω φ : ℝ} (hT : T ≠ 0) :
     ∃ K : ℂ, (A ≠ 0 → |ω - ω₀| * |T| < 2 * Real.pi → K ≠ 0) ∧
       ∀ s, windowPhasor T ω₀ (analyticSignal A ω φ) s =
         K * Complex.exp (((ω - ω₀ : ℝ) : ℂ) * I * s) := by
@@ -125,7 +125,7 @@ positive-sequence signal of nonzero amplitude when `|ω − ω₀| T < π`. -/
 open MeasureTheory ProbabilityTheory in
 /-- For a Gaussian ROCOF estimate `X ~ N(μ, σ²)`, `σ > 0`:
 `P(X ≤ −a) = Φ((−a − μ)/σ)` with `Φ` the standard normal law of `(−∞, ·]`. -/
-@[powerlib_foundation] theorem trip_probability {μ σ : ℝ} (hσ : 0 < σ) (a : ℝ) :
+@[tmio T, powerlib_foundation] theorem trip_probability {μ σ : ℝ} (hσ : 0 < σ) (a : ℝ) :
     gaussianReal μ (⟨σ ^ 2, sq_nonneg σ⟩) (Set.Iic (-a)) =
       gaussianReal 0 1 (Set.Iic ((-a - μ) / σ)) := by
   have hmap : gaussianReal μ (⟨σ ^ 2, sq_nonneg σ⟩) =
@@ -146,7 +146,7 @@ open MeasureTheory ProbabilityTheory in
 open MeasureTheory ProbabilityTheory in
 /-- Unit consistency: measuring the ROCOF in rad/s² (`ω̇ = 2πḟ`, `σ_ω̇ = 2πσ_ḟ`, threshold
 `2πḟ_th`) gives the same trip probability as in Hz/s. -/
-@[powerlib_foundation] theorem trip_unit_invariant {μ σ : ℝ} (hσ : 0 < σ) (a : ℝ) :
+@[tmio T, powerlib_foundation] theorem trip_unit_invariant {μ σ : ℝ} (hσ : 0 < σ) (a : ℝ) :
     gaussianReal (2 * Real.pi * μ) (⟨(2 * Real.pi * σ) ^ 2, sq_nonneg _⟩)
         (Set.Iic (-(2 * Real.pi * a))) =
       gaussianReal μ (⟨σ ^ 2, sq_nonneg σ⟩) (Set.Iic (-a)) := by

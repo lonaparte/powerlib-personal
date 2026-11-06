@@ -41,7 +41,7 @@ Results.
 Third-order model:
 * `field_swing`, `field_governor`, `field_turbine`: the three rows are the swing equation, the
   governor, and the time-domain form `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v` of `G_turb`.
-* `transfer_apply` (foundation): `Linear.transfer` equals the §1.4 third-order transfer
+* `transfer_apply` (domain, M): `Linear.transfer` equals the §1.4 third-order transfer
   function.
 * `routhQuantity_eq`, `isHurwitz_iff`, `isHurwitz_of_hp_fraction`: with
   `a₃ = M T_g T_R`, `a₂ = M (T_g + T_R) + D T_g T_R`, `a₁ = M + D (T_g + T_R) + K_R F T_R`,
@@ -50,7 +50,7 @@ Third-order model:
      + D² T_g T_R (T_g+T_R) + D K_R F T_g T_R²`,
   so `F ≥ T_g/(T_g + T_R)` (with `D, K_R ≥ 0`, `K_R + D > 0`) makes the model Hurwitz. The
   note states no stability condition; this one is added.
-* `isEquilibrium_iff` (foundation, static): unique equilibrium
+* `isEquilibrium_iff` (domain, M): unique equilibrium
   `(−ΔP_L/(K_R+D), K_R ΔP_L/(K_R+D), K_R ΔP_L/(K_R+D))` for the load step.
 * `rocof`, `tendsto_freq` (private implementation evidence): initial RoCoF `−ΔP_L/M`;
   `Δω → −ΔP_L/(K_R + D)` along every forward solution (§1.7).
@@ -142,7 +142,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
 @[tmio M, simp, powerlib_domain] theorem steadyState_zero (D K ΔPL : ℝ) :
     steadyState D K ΔPL 0 = -ΔPL / (K + D) := rfl
 
-@[powerlib_foundation] theorem field_apply (x : ℝ³) :
+@[tmio M, powerlib_domain] theorem field_apply (x : ℝ³) :
     (plant M D K F Tg TR).inputField (load ΔPL) x =
       WithLp.toLp 2 ![-D / M * x 0 + 1 / M * x 1 + -1 / M * ΔPL,
         -(F * K) / Tg * x 0 + -1 / TR * x 1 + (1 / TR - F / Tg) * x 2,
@@ -153,7 +153,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
   fin_cases i <;> simp [plant, load, dotProduct, Fin.sum_univ_three]
 
 /-- Swing row: `M Δω̇ = ΔP_m − ΔP_L − D Δω`. -/
-@[powerlib_foundation] theorem field_swing (hM : M ≠ 0) (x : ℝ³) :
+@[tmio M, powerlib_domain] theorem field_swing (hM : M ≠ 0) (x : ℝ³) :
     M * (plant M D K F Tg TR).inputField (load ΔPL) x 0 = x 1 - ΔPL - D * x 0 := by
   rw [field_apply]
   simp only [Fin.isValue, Matrix.cons_val_zero]
@@ -161,7 +161,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
   ring
 
 /-- Governor row: `T_g ΔṖ_v = −ΔP_v − K_R Δω`. -/
-@[powerlib_foundation] theorem field_governor (hTg : Tg ≠ 0) (x : ℝ³) :
+@[tmio M, powerlib_domain] theorem field_governor (hTg : Tg ≠ 0) (x : ℝ³) :
     Tg * (plant M D K F Tg TR).inputField (load ΔPL) x 2 = -x 2 - K * x 0 := by
   rw [field_apply]
   simp only [Fin.isValue, Matrix.cons_val_two, Matrix.tail_cons,
@@ -171,7 +171,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
 
 /-- Turbine row: `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v`, the time-domain form of
 `ΔP_m = (1 + s F T_R)/(1 + s T_R) ΔP_v`. -/
-@[powerlib_foundation] theorem field_turbine (hTg : Tg ≠ 0) (hTR : TR ≠ 0) (x : ℝ³) :
+@[tmio M, powerlib_domain] theorem field_turbine (hTg : Tg ≠ 0) (hTR : TR ≠ 0) (x : ℝ³) :
     TR * (plant M D K F Tg TR).inputField (load ΔPL) x 1 + x 1 =
       x 2 + F * TR * (plant M D K F Tg TR).inputField (load ΔPL) x 2 := by
   rw [field_apply]
@@ -182,7 +182,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
 
 /-! ## Transfer function (§1.4) -/
 
-@[powerlib_foundation] theorem det_characteristicMatrix (hM : M ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix (hM : M ≠ 0) (hTg : Tg ≠ 0)
     (hTR : TR ≠ 0) (s : ℂ) :
     (M : ℂ) * Tg * TR * (Linear.characteristicMatrix (plant M D K F Tg TR).A s).det =
       M * s * (1 + Tg * s) * (1 + TR * s) + D * (1 + Tg * s) * (1 + TR * s) +
@@ -197,7 +197,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
 /-- §1.4: `Δω(s)/ΔP_L(s) = −(1 + s T_g)(1 + s T_R) /
 (M s (1 + s T_g)(1 + s T_R) + D (1 + s T_g)(1 + s T_R) + K_R (1 + s F T_R))`
 (both sides are `0` at the poles). -/
-@[powerlib_foundation] theorem transfer_apply (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0)
+@[tmio M, powerlib_domain] theorem transfer_apply (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0)
     (s : ℂ) :
     Linear.transfer (plant M D K F Tg TR) s 0 0 =
       -((1 + Tg * s) * (1 + TR * s)) /
@@ -225,20 +225,20 @@ variable {M D K F Tg TR ΔPL : ℝ}
 
 /-! ## Stability (Routh–Hurwitz) -/
 
-@[powerlib_foundation] theorem routhQuantity_eq :
+@[tmio M, powerlib_domain] theorem routhQuantity_eq :
     routhQuantity M D K F Tg TR =
       M ^ 2 * (Tg + TR) + M * D * (Tg + TR) ^ 2 + M * K * TR * (F * (Tg + TR) - Tg) +
         D ^ 2 * Tg * TR * (Tg + TR) + D * K * F * Tg * TR ^ 2 := by
   unfold routhQuantity coeff3 coeff2 coeff1 coeff0
   ring
 
-@[powerlib_foundation] theorem trace_A (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
+@[tmio M, powerlib_domain] theorem trace_A (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
     (plant M D K F Tg TR).A.trace = -coeff2 M D Tg TR / coeff3 M Tg TR := by
   simp only [plant, Matrix.trace_fin_three_of, coeff2, coeff3]
   field_simp
   ring
 
-@[powerlib_foundation] theorem det_A (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
+@[tmio M, powerlib_domain] theorem det_A (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
     (plant M D K F Tg TR).A.det = -coeff0 D K / coeff3 M Tg TR := by
   simp only [plant, Matrix.det_fin_three, coeff0, coeff3, Matrix.of_apply, Matrix.cons_val',
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.empty_val',
@@ -246,7 +246,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
   field_simp
   ring
 
-@[powerlib_foundation] theorem principalMinorSum_A (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
+@[tmio M, powerlib_domain] theorem principalMinorSum_A (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
     Criteria.principalMinorSum (plant M D K F Tg TR).A =
       coeff1 M D K F Tg TR / coeff3 M Tg TR := by
   simp only [plant, Criteria.principalMinorSum, coeff1, coeff3, Matrix.of_apply,
@@ -357,7 +357,7 @@ def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, 
 
 /-- `a₀ < 0` (determinant `> 0`) or `a₂ < 0` (trace `> 0`): a characteristic root in the open
 right half plane. -/
-@[powerlib_foundation] theorem exists_root_of_unstable (hM : 0 < M) (hTg : 0 < Tg)
+@[tmio TM, powerlib_domain] theorem exists_root_of_unstable (hM : 0 < M) (hTg : 0 < Tg)
     (hTR : 0 < TR) (h : coeff0 D K < 0 ∨ coeff2 M D Tg TR < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant M D K F Tg TR).A s).det = 0 ∧ 0 < s.re := by
   have h3 : 0 < coeff3 M Tg TR := by unfold coeff3; positivity
@@ -377,7 +377,7 @@ right half plane. -/
 
 /-- The equilibria for the load step are exactly the steady state. Static evidence on the
 model, not a connection conclusion. -/
-@[powerlib_foundation] theorem isEquilibrium_iff (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0)
+@[tmio M, powerlib_domain] theorem isEquilibrium_iff (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0)
     (hKD : K + D ≠ 0) (e : ℝ³) :
     IsEquilibrium ((plant M D K F Tg TR).inputField (load ΔPL)) e ↔ e = steadyState D K ΔPL := by
   unfold IsEquilibrium
@@ -414,7 +414,7 @@ model, not a connection conclusion. -/
 
 /-- The steady state is an equilibrium of the load step. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem steadyState_isEquilibrium (hM : M ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_domain] theorem steadyState_isEquilibrium (hM : M ≠ 0) (hTg : Tg ≠ 0)
     (hTR : TR ≠ 0) (hKD : K + D ≠ 0) :
     IsEquilibrium ((plant M D K F Tg TR).inputField (load ΔPL)) (steadyState D K ΔPL) :=
   (isEquilibrium_iff hM hTg hTR hKD _).2 rfl
@@ -528,14 +528,14 @@ load `ΔP_L = 1` the steady state is an equilibrium at which the port supplies
 /-! ## Correction: the note's §1.8 state matrix -/
 
 /-- Transfer function of the corrected plant at `s = 0` (static gain `−1/(K_R + D)`). -/
-@[powerlib_foundation] theorem transfer_zero (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
+@[tmio M, powerlib_domain] theorem transfer_zero (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0) :
     Linear.transfer (plant M D K F Tg TR) 0 0 0 = -1 / ((D + K : ℝ) : ℂ) := by
   rw [transfer_apply hM hTg hTR]
   push_cast
   ring_nf
 
 /-- The note's §1.8 matrix has static gain `−1/(D + K_R (1 − F + F/T_g))`. -/
-@[powerlib_foundation] theorem notePlant_transfer_zero (hM : M ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_domain] theorem notePlant_transfer_zero (hM : M ≠ 0) (hTg : Tg ≠ 0)
     (hTR : TR ≠ 0) :
     Linear.transfer (notePlant M D K F Tg TR) 0 0 0 =
       -1 / ((D + K * (1 - F + F / Tg) : ℝ) : ℂ) := by
@@ -563,7 +563,7 @@ load `ΔP_L = 1` the steady state is an equilibrium at which the port supplies
 /-- Correction (§1.8): whenever `K_R F (1 − T_g) ≠ 0` the note's state matrix and the corrected
 one have different transfer functions (already at `s = 0`), so the note's matrix does not
 realise the §1.4 transfer function. -/
-@[powerlib_foundation] theorem notePlant_transfer_ne (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0)
+@[tmio M, powerlib_domain] theorem notePlant_transfer_ne (hM : M ≠ 0) (hTg : Tg ≠ 0) (hTR : TR ≠ 0)
     (hK : K ≠ 0) (hF : F ≠ 0) (hT1 : Tg ≠ 1) :
     Linear.transfer (notePlant M D K F Tg TR) 0 0 0 ≠
       Linear.transfer (plant M D K F Tg TR) 0 0 0 := by
@@ -588,7 +588,7 @@ def reducedPlant (M D K F TR : ℝ) : Linear.Plant 2 1 :=
   SwingGovernor.plant M (D + F * K) ((1 - F) * K) TR
 
 /-- Reduced swing row: `M Δω̇ = ΔP_m − ΔP_L − D Δω` with `ΔP_m = ΔP_RH − F K_R Δω`. -/
-@[powerlib_foundation] theorem reduced_field_swing (hM : M ≠ 0) (x : EuclideanSpace ℝ (Fin 2)) :
+@[tmio M, powerlib_domain] theorem reduced_field_swing (hM : M ≠ 0) (x : EuclideanSpace ℝ (Fin 2)) :
     M * (reducedPlant M D K F TR).inputField (load ΔPL) x 0 =
       (x 1 - F * K * x 0) - ΔPL - D * x 0 := by
   rw [reducedPlant, SwingGovernor.field_swing hM]
@@ -596,7 +596,7 @@ def reducedPlant (M D K F TR : ℝ) : Linear.Plant 2 1 :=
 
 /-- Reduced turbine: with `ΔP_v = −K_R Δω` (static governor) and `ΔP_m = ΔP_RH − F K_R Δω`,
 the field satisfies `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v`, i.e. `G_turb`. -/
-@[powerlib_foundation] theorem reduced_field_turbine (hTR : TR ≠ 0)
+@[tmio M, powerlib_domain] theorem reduced_field_turbine (hTR : TR ≠ 0)
     (x : EuclideanSpace ℝ (Fin 2)) :
     let f := (reducedPlant M D K F TR).inputField (load ΔPL) x
     TR * (f 1 - F * K * f 0) + (x 1 - F * K * x 0) = -K * x 0 + F * TR * (-K * f 0) := by
@@ -610,7 +610,7 @@ the field satisfies `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v`, i.e. `G_turb`
   linear_combination h
 
 /-- §1.5 transfer function `−(1 + T_R s)/(M T_R s² + (M + (D + K_R F) T_R) s + (K_R + D))`. -/
-@[powerlib_foundation] theorem reduced_transfer_apply (hM : M ≠ 0) (hTR : TR ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem reduced_transfer_apply (hM : M ≠ 0) (hTR : TR ≠ 0) (s : ℂ) :
     Linear.transfer (reducedPlant M D K F TR) s 0 0 =
       -(1 + (TR : ℂ) * s) / ((M : ℂ) * TR * s ^ 2 + (M + (D + K * F) * TR) * s + (K + D)) := by
   rw [reducedPlant, SwingGovernor.transfer_apply hM hTR]
@@ -618,14 +618,14 @@ the field satisfies `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v`, i.e. `G_turb`
   ring_nf
 
 /-- §1.5 boxed: `ω_n² = (K_R + D)/(M T_R)`. -/
-@[powerlib_foundation] theorem reduced_natFreq_sq (hM : 0 < M) (hTR : 0 < TR)
+@[tmio M, powerlib_domain] theorem reduced_natFreq_sq (hM : 0 < M) (hTR : 0 < TR)
     (hKD : 0 ≤ K + D) :
     SwingGovernor.natFreq M (D + F * K) ((1 - F) * K) TR ^ 2 = (K + D) / (M * TR) := by
   rw [SwingGovernor.natFreq_sq hM hTR (by linarith)]
   ring_nf
 
 /-- §1.5 boxed: `2 ζ ω_n = (M + (D + K_R F) T_R)/(M T_R)`. -/
-@[powerlib_foundation] theorem reduced_two_mul_dampingRatio_mul_natFreq (hM : 0 < M)
+@[tmio M, powerlib_domain] theorem reduced_two_mul_dampingRatio_mul_natFreq (hM : 0 < M)
     (hTR : 0 < TR) (hKD : 0 < K + D) :
     2 * SwingGovernor.dampingRatio M (D + F * K) ((1 - F) * K) TR *
         SwingGovernor.natFreq M (D + F * K) ((1 - F) * K) TR =
@@ -651,7 +651,7 @@ member of the swing + governor family. -/
     linarith)
 
 /-- `arg (σ − 1/T_R + j ω_d) = arg (σ T_R − 1 + j ω_d T_R)` for `T_R > 0`. -/
-@[powerlib_foundation] theorem arg_scale {σ ωd : ℝ} (hTR : 0 < TR) :
+@[tmio T, powerlib_foundation] theorem arg_scale {σ ωd : ℝ} (hTR : 0 < TR) :
     Complex.arg ⟨σ - 1 / TR, ωd⟩ = Complex.arg ⟨σ * TR - 1, ωd * TR⟩ := by
   have h : (⟨σ - 1 / TR, ωd⟩ : ℂ) = ((1 / TR : ℝ) : ℂ) * ⟨σ * TR - 1, ωd * TR⟩ := by
     apply Complex.ext <;> simp <;> field_simp
@@ -662,7 +662,7 @@ def noteNadirTime (σ ωd TR : ℝ) : ℝ := Real.arctan (ωd * TR / (1 - σ * T
 
 /-- Correction (§1.6): for `σ T_R > 1` (`σ = ζ ω_n`) the note's formula is the negative of the
 true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
-@[powerlib_foundation] theorem noteNadirTime_eq_neg {σ ωd : ℝ} (hTR : 0 < TR) (hωd : 0 < ωd)
+@[tmio M, powerlib_domain] theorem noteNadirTime_eq_neg {σ ωd : ℝ} (hTR : 0 < TR) (hωd : 0 < ωd)
     (h : 1 < σ * TR) :
     noteNadirTime σ ωd TR = -(Complex.arg ⟨σ - 1 / TR, ωd⟩ / ωd) ∧
       noteNadirTime σ ωd TR < 0 := by
@@ -676,7 +676,7 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
   exact SwingGovernor.tCrit_pos hωd
 
 /-- Exact nadir value of the reduced model with the §1.5 parameters substituted. -/
-@[powerlib_foundation] theorem reduced_nadirValue_eq :
+@[tmio M, powerlib_domain] theorem reduced_nadirValue_eq :
     SwingGovernor.nadirValue M (D + F * K) ((1 - F) * K) TR ΔPL =
       -ΔPL / (K + D) * (1 + Real.sqrt (1 -
         2 * SwingGovernor.decayRate M (D + F * K) ((1 - F) * K) TR * TR +
@@ -688,7 +688,7 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
 
 /-- The reduced model's nadir time in the corrected §1.6 form
 `t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d`. -/
-@[powerlib_foundation] theorem reduced_nadirTime_eq (hTR : 0 < TR) :
+@[tmio M, powerlib_domain] theorem reduced_nadirTime_eq (hTR : 0 < TR) :
     SwingGovernor.nadirTime M (D + F * K) ((1 - F) * K) TR =
       Complex.arg ⟨SwingGovernor.decayRate M (D + F * K) ((1 - F) * K) TR * TR - 1,
         SwingGovernor.dampedFreq M (D + F * K) ((1 - F) * K) TR * TR⟩ /

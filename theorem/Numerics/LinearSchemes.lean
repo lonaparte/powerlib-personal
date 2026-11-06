@@ -82,15 +82,15 @@ section Reduction
 
 variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
 
-@[powerlib_foundation] private lemma one_sub_smul_mulVec (c : ℝ) (y : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] private lemma one_sub_smul_mulVec (c : ℝ) (y : Fin n → ℝ) :
     (1 - c • A) *ᵥ y = y - c • (A *ᵥ y) := by
   rw [Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
 
-@[powerlib_foundation] private lemma one_add_smul_mulVec (c : ℝ) (y : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] private lemma one_add_smul_mulVec (c : ℝ) (y : Fin n → ℝ) :
     (1 + c • A) *ᵥ y = y + c • (A *ᵥ y) := by
   rw [Matrix.add_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
 
-@[powerlib_foundation] private lemma eq_inv_mulVec_iff {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private lemma eq_inv_mulVec_iff {P : Matrix (Fin n) (Fin n) ℝ}
     (hP : IsUnit P.det) (y z : Fin n → ℝ) : y = P⁻¹ *ᵥ z ↔ P *ᵥ y = z := by
   constructor
   · rintro rfl
@@ -106,7 +106,7 @@ variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
     forwardEulerMatrix, linearField, one_add_smul_mulVec]
 
 /-- Backward Euler on a linear field is the recursion with `(1 - hA)⁻¹`. -/
-@[powerlib_foundation] theorem isBackwardEulerTrajectory_iff (hP : IsUnit (1 - h • A).det)
+@[tmio T, powerlib_foundation] theorem isBackwardEulerTrajectory_iff (hP : IsUnit (1 - h • A).det)
     (x : ℕ → Fin n → ℝ) :
     IsBackwardEulerTrajectory (linearField A) h x ↔
       ∀ k, x (k + 1) = LTI.Model.step ⟨backwardEulerMatrix h A⟩ (x k) := by
@@ -117,7 +117,7 @@ variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
 
 /-- The trapezoidal rule on a linear field is the recursion with
 `(1 - (h/2)A)⁻¹ (1 + (h/2)A)`. -/
-@[powerlib_foundation] theorem isTrapezoidalTrajectory_iff (hP : IsUnit (1 - (h / 2) • A).det)
+@[tmio T, powerlib_foundation] theorem isTrapezoidalTrajectory_iff (hP : IsUnit (1 - (h / 2) • A).det)
     (x : ℕ → Fin n → ℝ) :
     IsTrapezoidalTrajectory (linearField A) h x ↔
       ∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h A⟩ (x k) := by
@@ -136,7 +136,7 @@ open LinearSystems
 variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
 
 /-- Real part of the Cayley-type quotient `(w - 1)/(w + 1)`. -/
-@[powerlib_foundation] theorem re_sub_one_div_add_one (w : ℂ) :
+@[tmio T, powerlib_foundation] theorem re_sub_one_div_add_one (w : ℂ) :
     ((w - 1) / (w + 1)).re = (Complex.normSq w - 1) / Complex.normSq (w + 1) := by
   rw [Complex.div_re]
   simp only [Complex.sub_re, Complex.add_re, Complex.one_re, Complex.sub_im, Complex.add_im,
@@ -144,7 +144,7 @@ variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
   ring
 
 /-- `‖1 + w‖² - ‖1 - w‖² = 4 Re w`. -/
-@[powerlib_foundation] theorem normSq_one_add_sub_normSq_one_sub (w : ℂ) :
+@[tmio T, powerlib_foundation] theorem normSq_one_add_sub_normSq_one_sub (w : ℂ) :
     Complex.normSq (1 + w) - Complex.normSq (1 - w) = 4 * w.re := by
   simp only [Complex.normSq_apply, Complex.add_re, Complex.sub_re, Complex.one_re,
     Complex.add_im, Complex.sub_im, Complex.one_im]
@@ -152,7 +152,7 @@ variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
 
 /-- The Cayley map `z ↦ (1 + z)/(1 - z)` sends the open left half plane onto the open unit disk:
 for `1 - z ≠ 0`, `‖(1 + z)/(1 - z)‖ < 1` exactly when `Re z < 0`. -/
-@[powerlib_foundation] theorem norm_one_add_div_one_sub_lt_one_iff {z : ℂ} (hz : 1 - z ≠ 0) :
+@[tmio T, powerlib_foundation] theorem norm_one_add_div_one_sub_lt_one_iff {z : ℂ} (hz : 1 - z ≠ 0) :
     ‖(1 + z) / (1 - z)‖ < 1 ↔ z.re < 0 := by
   have hpos : 0 < ‖1 - z‖ := norm_pos_iff.mpr hz
   have key := normSq_one_add_sub_normSq_one_sub z
@@ -161,13 +161,13 @@ for `1 - z ≠ 0`, `‖(1 + z)/(1 - z)‖ < 1` exactly when `Re z < 0`. -/
   constructor <;> intro h <;> linarith
 
 /-- `1 - cA = (-c) A + 1`, the denominator of the implicit schemes in Möbius form. -/
-@[powerlib_foundation] private lemma one_sub_smul_eq (c : ℝ) :
+@[tmio T, powerlib_foundation] private lemma one_sub_smul_eq (c : ℝ) :
     (1 : Matrix (Fin n) (Fin n) ℝ) - c • A = (-c) • A + (1 : ℝ) • 1 := by
   rw [neg_smul, one_smul, neg_add_eq_sub]
 
 /-- For a Hurwitz matrix and any `c > 0`, the implicit matrix `1 - cA = c (c⁻¹ - A)` is
 invertible (`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
-@[powerlib_foundation] theorem isUnit_det_one_sub_smul_of_isHurwitz (hA : IsHurwitz A) {c : ℝ}
+@[tmio T, powerlib_foundation] theorem isUnit_det_one_sub_smul_of_isHurwitz (hA : IsHurwitz A) {c : ℝ}
     (hc : 0 < c) : IsUnit (1 - c • A).det := by
   rw [isUnit_iff_ne_zero, show 1 - c • A = c • (c⁻¹ • (1 : Matrix (Fin n) (Fin n) ℝ) - A) by
     rw [smul_sub, smul_smul, mul_inv_cancel₀ hc.ne', one_smul], det_smul]
@@ -175,7 +175,7 @@ invertible (`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
     (Criteria.det_smul_sub_ne_zero_of_isHurwitz hA (inv_nonneg.mpr hc.le))
 
 /-- The trapezoidal matrix is the Möbius image `(1 - (h/2) A)⁻¹ (1 + (h/2) A)` of `A`. -/
-@[powerlib_foundation] private lemma trapezoidal_mobius (hP : IsUnit (1 - (h / 2) • A).det) :
+@[tmio T, powerlib_foundation] private lemma trapezoidal_mobius (hP : IsUnit (1 - (h / 2) • A).det) :
     ((-(h / 2)) • A + (1 : ℝ) • 1) * trapezoidalMatrix h A = (h / 2) • A + (1 : ℝ) • 1 := by
   rw [← one_sub_smul_eq, trapezoidalMatrix, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hP,
     Matrix.one_mul, one_smul, add_comm]
@@ -183,7 +183,7 @@ invertible (`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
 /-- The trapezoidal recursion is Schur stable exactly when `A` is Hurwitz (for `h > 0` and a
 well-posed implicit step): the Cayley map `λ ↦ (1 + hλ/2)/(1 - hλ/2)` of the eigenvalues
 (`Linear.schurStable_mobius_iff`, `norm_one_add_div_one_sub_lt_one_iff`). -/
-@[powerlib_foundation] theorem trapezoidal_schurStable_iff_isHurwitz (hh : 0 < h)
+@[tmio T, powerlib_foundation] theorem trapezoidal_schurStable_iff_isHurwitz (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • A).det) :
     LTI.SchurStable (trapezoidalMatrix h A) ↔ IsHurwitz A := by
   have hQ : IsUnit ((-(h / 2)) • A + (1 : ℝ) • 1).det := by rwa [← one_sub_smul_eq]
@@ -204,7 +204,7 @@ well-posed implicit step): the Cayley map `λ ↦ (1 + hλ/2)/(1 - hλ/2)` of th
   · exact mul_neg_of_pos_of_neg (half_pos hh)
 
 /-- Trapezoidal rule: Hurwitz implies Schur stability for every `h > 0`. -/
-@[powerlib_foundation] theorem trapezoidal_schurStable_of_isHurwitz (hA : IsHurwitz A)
+@[tmio T, powerlib_foundation] theorem trapezoidal_schurStable_of_isHurwitz (hA : IsHurwitz A)
     (hh : 0 < h) : LTI.SchurStable (trapezoidalMatrix h A) :=
   (trapezoidal_schurStable_iff_isHurwitz hh
     (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh))).2 hA
@@ -212,14 +212,14 @@ well-posed implicit step): the Cayley map `λ ↦ (1 + hλ/2)/(1 - hλ/2)` of th
 /-- Trapezoidal rule, converse: a well-posed Schur-stable trapezoidal recursion comes from a
 Hurwitz matrix.  Together with `trapezoidal_schurStable_of_isHurwitz` the trapezoidal rule
 neither creates nor destroys stability of `ẋ = A x`. -/
-@[powerlib_foundation] theorem isHurwitz_of_trapezoidal_schurStable (hh : 0 < h)
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_trapezoidal_schurStable (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • A).det) (hS : LTI.SchurStable (trapezoidalMatrix h A)) :
     IsHurwitz A :=
   (trapezoidal_schurStable_iff_isHurwitz hh hP).1 hS
 
 /-- Backward Euler: Hurwitz implies Schur stability for every `h > 0` (the eigenvalues map to
 `1/(1 - hλ)`, `Linear.schurStable_mobius_iff`). -/
-@[powerlib_foundation] theorem backwardEuler_schurStable_of_isHurwitz (hA : IsHurwitz A)
+@[tmio T, powerlib_foundation] theorem backwardEuler_schurStable_of_isHurwitz (hA : IsHurwitz A)
     (hh : 0 < h) : LTI.SchurStable (backwardEulerMatrix h A) := by
   have hP := isUnit_det_one_sub_smul_of_isHurwitz hA hh
   have hM : ((-h) • A + (1 : ℝ) • 1) * backwardEulerMatrix h A = (0 : ℝ) • A + (1 : ℝ) • 1 := by
@@ -239,7 +239,7 @@ neither creates nor destroys stability of `ẋ = A x`. -/
 
 /-- Forward Euler is Schur stable exactly when every eigenvalue `λ` of `A` has
 `‖1 + hλ‖ < 1` (that is, `hλ` is in the open forward-Euler disk). -/
-@[powerlib_foundation] theorem forwardEuler_schurStable_iff (hh : h ≠ 0) :
+@[tmio T, powerlib_foundation] theorem forwardEuler_schurStable_iff (hh : h ≠ 0) :
     LTI.SchurStable (forwardEulerMatrix h A) ↔
       ∀ (lam : ℂ) (v : Fin n → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
         ‖1 + (h : ℂ) * lam‖ < 1 := by
@@ -258,7 +258,7 @@ variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
 
 /-- Every trapezoidal trajectory of a Hurwitz linear field decays geometrically, for every
 step `h > 0`. -/
-@[powerlib_foundation] theorem trapezoidal_exponentiallyStable_of_isHurwitz (hA : IsHurwitz A)
+@[tmio T, powerlib_foundation] theorem trapezoidal_exponentiallyStable_of_isHurwitz (hA : IsHurwitz A)
     (hh : 0 < h) :
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (linearField A) h x →
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
@@ -269,7 +269,7 @@ step `h > 0`. -/
 
 /-- Every backward-Euler trajectory of a Hurwitz linear field decays geometrically, for every
 step `h > 0`. -/
-@[powerlib_foundation] theorem backwardEuler_exponentiallyStable_of_isHurwitz (hA : IsHurwitz A)
+@[tmio T, powerlib_foundation] theorem backwardEuler_exponentiallyStable_of_isHurwitz (hA : IsHurwitz A)
     (hh : 0 < h) :
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (linearField A) h x →
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
@@ -280,7 +280,7 @@ step `h > 0`. -/
     fun x hx => hb x ((isBackwardEulerTrajectory_iff A h hP x).mp hx)⟩
 
 /-- A well-posed trapezoidal step has exactly one trajectory from each initial state. -/
-@[powerlib_foundation] theorem trapezoidal_existsUnique (hP : IsUnit (1 - (h / 2) • A).det)
+@[tmio T, powerlib_foundation] theorem trapezoidal_existsUnique (hP : IsUnit (1 - (h / 2) • A).det)
     (initial : Fin n → ℝ) :
     ∃! x, IsTrapezoidalTrajectory (linearField A) h x ∧ x 0 = initial := by
   refine ⟨LTI.response ⟨trapezoidalMatrix h A⟩ initial,
@@ -291,7 +291,7 @@ step `h > 0`. -/
   rw [LTI.eq_response ((isTrapezoidalTrajectory_iff A h hP y).mp hy) k, hy0]
 
 /-- A well-posed backward-Euler step has exactly one trajectory from each initial state. -/
-@[powerlib_foundation] theorem backwardEuler_existsUnique (hP : IsUnit (1 - h • A).det)
+@[tmio T, powerlib_foundation] theorem backwardEuler_existsUnique (hP : IsUnit (1 - h • A).det)
     (initial : Fin n → ℝ) :
     ∃! x, IsBackwardEulerTrajectory (linearField A) h x ∧ x 0 = initial := by
   refine ⟨LTI.response ⟨backwardEulerMatrix h A⟩ initial,

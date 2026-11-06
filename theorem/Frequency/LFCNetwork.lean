@@ -304,7 +304,7 @@ def TieConnected (tail head : β → α) : Prop :=
     (fun x y => ∃ ℓ, (tail ℓ = x ∧ head ℓ = y) ∨ (tail ℓ = y ∧ head ℓ = x)) a c
 
 omit [Fintype β] in
-@[powerlib_foundation] theorem signedIncidence_const_of_connected {tail head : β → α}
+@[tmio T, powerlib_foundation] theorem signedIncidence_const_of_connected {tail head : β → α}
     (hconn : TieConnected tail head) (w : α → ℝ)
     (hw : ∀ ℓ, ∑ c, Network.signedIncidence tail head c ℓ * w c = 0) (a c : α) : w a = w c := by
   have hedge : ∀ ℓ, w (tail ℓ) = w (head ℓ) := by
@@ -385,7 +385,7 @@ stability, whatever the gains. -/
 
 /-- Three areas in a ring: the circulating flow `(1, 1, 1)` is in the kernel of the signed
 incidence matrix. -/
-@[powerlib_foundation] theorem triangle_circulation :
+@[tmio T, powerlib_foundation] theorem triangle_circulation :
     Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0] *ᵥ (fun _ => (1 : ℝ)) = 0 := by
   funext a
   fin_cases a <;>

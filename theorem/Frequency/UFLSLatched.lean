@@ -88,7 +88,7 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
     (fun _ => inputField_lipschitzWith m u) hf hf' hg hg' ha
 
 /-- First crossing time of a threshold for a signal continuous on `[0, ∞)`. -/
-@[powerlib_foundation] theorem exists_first_crossing {z : ℝ → ℝ} (hz : ContinuousOn z (Ici 0))
+@[tmio T, powerlib_foundation] theorem exists_first_crossing {z : ℝ → ℝ} (hz : ContinuousOn z (Ici 0))
     (h : ∃ τ ≥ 0, z τ ≤ -θ) : ∃ T ≥ 0, z T ≤ -θ ∧ ∀ s ∈ Ico 0 T, -θ < z s := by
   set S := {s | 0 ≤ s ∧ z s ≤ -θ}
   have hS : S = Ici 0 ∩ z ⁻¹' Iic (-θ) := rfl
@@ -104,7 +104,7 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
   exact absurd (csInf_le hbdd ⟨hs.1, hc⟩) (not_le.2 hs.2)
 
 /-- With first crossing time `T`, the latched trip at `t ≥ 0` is `T ≤ t`. -/
-@[powerlib_foundation] theorem latchedTrip_iff_of_first {z : ℝ → ℝ} {T : ℝ} (hT : 0 ≤ T)
+@[tmio T, powerlib_foundation] theorem latchedTrip_iff_of_first {z : ℝ → ℝ} {T : ℝ} (hT : 0 ≤ T)
     (hzT : z T ≤ -θ) (hfirst : ∀ s ∈ Ico 0 T, -θ < z s) {t : ℝ} :
     (∃ τ ∈ Icc 0 t, z τ ≤ -θ) ↔ T ≤ t := by
   constructor
@@ -115,20 +115,20 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
   · intro h
     exact ⟨T, ⟨hT, h⟩, hzT⟩
 
-@[powerlib_foundation] theorem latched_input_of_not {x : ℝ → ℝⁿ} {t : ℝ}
+@[tmio M, powerlib_foundation] theorem latched_input_of_not {x : ℝ → ℝⁿ} {t : ℝ}
     (h : ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ) :
     load (ΔPL - {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t) =
       load ΔPL := by
   rw [Set.indicator_of_notMem (show t ∉ {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ} from h),
     sub_zero]
 
-@[powerlib_foundation] theorem latched_input_of {x : ℝ → ℝⁿ} {t : ℝ}
+@[tmio M, powerlib_foundation] theorem latched_input_of {x : ℝ → ℝⁿ} {t : ℝ}
     (h : ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ) :
     load (ΔPL - {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t) =
       load (ΔPL - shed) := by
   rw [Set.indicator_of_mem (show t ∈ {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ} from h)]
 
-@[powerlib_foundation] private theorem coord_continuous (i : Fin n) : Continuous (fun y : ℝⁿ => y i) :=
+@[tmio T, powerlib_foundation] private theorem coord_continuous (i : Fin n) : Continuous (fun y : ℝⁿ => y i) :=
   PiLp.continuous_apply 2 (fun _ : Fin n => ℝ) i
 
 /-! ## Representation of latched trajectories -/
@@ -140,7 +140,7 @@ variable {e₁ e₂ : EuclideanSpace ℝ (Fin n)} (he₁ : IsEquilibrium (m.inpu
 include he₁
 
 /-- Before the first trip, a latched trajectory is the unshed response. -/
-@[powerlib_foundation] theorem latched_eqOn_unshed {x : ℝ → ℝⁿ}
+@[tmio M, powerlib_foundation] theorem latched_eqOn_unshed {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -154,7 +154,7 @@ include he₁
   rwa [latched_input_of_not (hun t ht)] at h
 
 /-- If the unshed response never reaches `−θ`, the latched trajectory is the unshed response. -/
-@[powerlib_foundation] theorem latched_representation_noTrip {x : ℝ → ℝⁿ}
+@[tmio M, powerlib_foundation] theorem latched_representation_noTrip {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -178,7 +178,7 @@ include he₁
 include he₂ in
 /-- If the unshed response first reaches `−θ` at `T`, the latched trajectory equals it on
 `[0, T]` and equals the post-shedding response from its state at `T` afterwards. -/
-@[powerlib_foundation] theorem latched_representation_trip {x : ℝ → ℝⁿ}
+@[tmio M, powerlib_foundation] theorem latched_representation_trip {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -227,7 +227,7 @@ include he₂ in
 
 include he₂ in
 /-- Uniqueness of the closed-loop solution. -/
-@[powerlib_foundation] theorem latched_unique {x y : ℝ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem latched_unique {x y : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -248,7 +248,7 @@ include he₂ in
 
 include he₂ in
 /-- Existence of the closed-loop solution from every initial state. -/
-@[powerlib_foundation] theorem latched_exists (x₀ : ℝⁿ) :
+@[tmio TM, powerlib_foundation] theorem latched_exists (x₀ : ℝⁿ) :
     ∃ x : ℝ → ℝⁿ, (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
       HasDerivWithinAt x (m.inputField (load (ΔPL -
         {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t) ∧
@@ -311,7 +311,7 @@ variable {e₁ e₂ : EuclideanSpace ℝ (Fin n)} (he₁ : IsEquilibrium (m.inpu
 include he₁ he₂ hA
 
 /-- A latched trajectory that trips converges to the post-shedding equilibrium. -/
-@[powerlib_foundation] theorem latched_tendsto_of_trip {x : ℝ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem latched_tendsto_of_trip {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -340,7 +340,7 @@ include he₁ he₂ hA
 
 omit he₂ in
 /-- A latched trajectory that never trips converges to the pre-shedding equilibrium. -/
-@[powerlib_foundation] theorem latched_tendsto_of_noTrip {x : ℝ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem latched_tendsto_of_noTrip {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))

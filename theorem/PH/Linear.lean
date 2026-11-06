@@ -109,28 +109,28 @@ variable {J R : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
   {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Qᵀ = Q)
 
 include hJ hR hQ in
-@[simp, powerlib_foundation] theorem linear_H (x : State n) :
+@[tmio M, simp, powerlib_foundation] theorem linear_H (x : State n) :
     (linear J R g Q hJ hR hQ).H x = quadraticEnergy Q x := rfl
 
 include hJ hR hQ in
-@[simp, powerlib_foundation] theorem ofLp_linear_dH (x : State n) :
+@[tmio M, simp, powerlib_foundation] theorem ofLp_linear_dH (x : State n) :
     WithLp.ofLp ((linear J R g Q hJ hR hQ).dH x) = Q *ᵥ WithLp.ofLp x := rfl
 
 include hJ hR hQ in
 /-- The field of the quadratic pH system is `(J − R) Q x + g u`. -/
-@[powerlib_foundation] theorem linear_field (x : State n) (u : Fin m → ℝ) :
+@[tmio M, powerlib_foundation] theorem linear_field (x : State n) (u : Fin m → ℝ) :
     (linear J R g Q hJ hR hQ).field x u =
       WithLp.toLp 2 (linearStateMatrix J R Q *ᵥ WithLp.ofLp x + g *ᵥ u) := by
   simp only [NonlinearModel.field, linear, linearStateMatrix, WithLp.ofLp_toLp, mulVec_mulVec]
 
 include hJ hR hQ in
-@[powerlib_foundation] theorem linear_output (x : State n) :
+@[tmio M, powerlib_foundation] theorem linear_output (x : State n) :
     (linear J R g Q hJ hR hQ).output x = (gᵀ * Q) *ᵥ WithLp.ofLp x := by
   simp only [NonlinearModel.output, linear, WithLp.ofLp_toLp, mulVec_mulVec]
 
 include hJ hR hQ in
 /-- The zero-input field is the linear map `x ↦ A x`. -/
-@[powerlib_foundation] theorem linear_zeroInputField :
+@[tmio M, powerlib_foundation] theorem linear_zeroInputField :
     (linear J R g Q hJ hR hQ).zeroInputField =
       ⇑(Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (linearStateMatrix J R Q)) := by
   funext x
@@ -139,7 +139,7 @@ include hJ hR hQ in
 
 include hJ hR hQ in
 /-- The Jacobian of the zero-input field is `A = (J − R) Q` at every point. -/
-@[powerlib_foundation] theorem fderiv_linear_zeroInputField (x : State n) :
+@[tmio M, powerlib_foundation] theorem fderiv_linear_zeroInputField (x : State n) :
     fderiv ℝ (linear J R g Q hJ hR hQ).zeroInputField x =
       Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (linearStateMatrix J R Q) := by
   rw [linear_zeroInputField]
@@ -147,14 +147,14 @@ include hJ hR hQ in
 
 include hJ hQ in
 /-- Lyapunov identity of the linear pH system: `Aᵀ Q + Q A = −2 Q R Q` for symmetric `R`. -/
-@[powerlib_foundation] theorem linearStateMatrix_lyapunov (hRt : Rᵀ = R) :
+@[tmio T, powerlib_foundation] theorem linearStateMatrix_lyapunov (hRt : Rᵀ = R) :
     (linearStateMatrix J R Q)ᵀ * Q + Q * linearStateMatrix J R Q = -(2 : ℝ) • (Q * R * Q) := by
   rw [linearStateMatrix, transpose_mul, transpose_sub, hJ, hRt, hQ, neg_smul, two_smul]
   noncomm_ring
 
 include hJ hR hQ in
 /-- `Aᵀ Q + Q A ⪯ 0`: its negation `2 Q R Q` is positive semidefinite. -/
-@[powerlib_foundation] theorem linearStateMatrix_lyapunov_negSemidef :
+@[tmio T, powerlib_foundation] theorem linearStateMatrix_lyapunov_negSemidef :
     (-((linearStateMatrix J R Q)ᵀ * Q + Q * linearStateMatrix J R Q)).PosSemidef := by
   have hRt : Rᵀ = R := by
     simpa only [conjTranspose_eq_transpose_of_trivial] using hR.isHermitian.eq
@@ -165,7 +165,7 @@ include hJ hR hQ in
 
 include hJ hR hQ in
 /-- With `Q ≻ 0`, the origin is a strict minimum of `H = ½ xᵀ Q x`. -/
-@[powerlib_foundation] theorem linear_isStrictLocalMin_zero (hQd : Q.PosDef) :
+@[tmio T, powerlib_foundation] theorem linear_isStrictLocalMin_zero (hQd : Q.PosDef) :
     (linear J R g Q hJ hR hQ).IsStrictLocalMin 0 := by
   refine eventually_nhdsWithin_of_forall fun x hx => ?_
   have hx0 : WithLp.ofLp x ≠ 0 := fun h => hx (WithLp.ofLp_injective 2 (by simpa using h))
@@ -178,14 +178,14 @@ include hJ hR hQ in
 /-- Lyapunov stability of the origin for the zero-input constant-coefficient pH system with
 `Q ≻ 0`, `R ⪰ 0` (the semantic form of T-ph §1.10 "`Re λ(A_ph) ≤ 0`"). Generic: for every
 constant-coefficient pH system. -/
-@[powerlib_foundation] theorem linear_lyapunovStable (hQd : Q.PosDef) :
+@[tmio T, powerlib_foundation] theorem linear_lyapunovStable (hQd : Q.PosDef) :
     LyapunovStable (linear J R g Q hJ hR hQ).zeroInputField 0 :=
   (linear_isStrictLocalMin_zero hJ hR hQ hQd).lyapunovStable
 
 end Linear
 
 /-- Two port systems with the same field and output are equal. -/
-@[powerlib_foundation] theorem system_ext {p : ℕ} {s t : Port.System n p}
+@[tmio T, powerlib_foundation] theorem system_ext {p : ℕ} {s t : Port.System n p}
     (hf : ∀ x u, s.field x u = t.field x u) (ho : ∀ x u, s.output x u = t.output x u) :
     s = t := by
   cases s
@@ -206,7 +206,7 @@ variable {J R : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
 
 include hJ hR hQ in
 /-- The port system of the pH model is the port system of its linear plant. -/
-@[powerlib_foundation] theorem linear_system_eq :
+@[tmio M, powerlib_foundation] theorem linear_system_eq :
     (linear J R g Q hJ hR hQ).system = (linearLTIModel J R g Q).system := by
   refine system_ext (fun x u => ?_) (fun x u => ?_)
   · apply WithLp.ofLp_injective
@@ -216,13 +216,13 @@ include hJ hR hQ in
     simp [Linear.Plant.system, linearLTIModel]
 
 include hJ hR hQ in
-@[powerlib_foundation] theorem linearLTIModel_field (x : State n) (u : Fin m → ℝ) :
+@[tmio M, powerlib_foundation] theorem linearLTIModel_field (x : State n) (u : Fin m → ℝ) :
     (linearLTIModel J R g Q).system.field x u = (linear J R g Q hJ hR hQ).field x u := by
   rw [← linear_system_eq hJ hR hQ]
   rfl
 
 include hJ hR hQ in
-@[powerlib_foundation] theorem linearLTIModel_output (x : State n) (u : Fin m → ℝ) :
+@[tmio M, powerlib_foundation] theorem linearLTIModel_output (x : State n) (u : Fin m → ℝ) :
     (linearLTIModel J R g Q).system.output x u = (linear J R g Q hJ hR hQ).output x := by
   rw [← linear_system_eq hJ hR hQ]
   rfl
@@ -231,11 +231,11 @@ end LinearLTI
 
 /-! ### The linear port-Hamiltonian plant -/
 
-@[powerlib_foundation] theorem symmetric_of_posSemidef {R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem symmetric_of_posSemidef {R : Matrix (Fin n) (Fin n) ℝ}
     (hR : R.PosSemidef) : Rᵀ = R := by
   simpa only [conjTranspose_eq_transpose_of_trivial] using hR.isHermitian.eq
 
-@[powerlib_foundation] theorem symmetric_of_posDef {Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem symmetric_of_posDef {Q : Matrix (Fin n) (Fin n) ℝ}
     (hQ : Q.PosDef) : Qᵀ = Q :=
   symmetric_of_posSemidef hQ.posSemidef
 
@@ -253,13 +253,13 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
   energy_symmetric := symmetric_of_posDef hQ
   energy_pos x hx := by simpa [star_trivial] using hQ.dotProduct_mulVec_pos hx
 
-@[powerlib_foundation] theorem toPortHamiltonian_plant {J R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio M, powerlib_foundation] theorem toPortHamiltonian_plant {J R : Matrix (Fin n) (Fin n) ℝ}
     {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) :
     (toPortHamiltonian J R g Q hJ hR hQ).plant = linearLTIModel J R g Q := rfl
 
 /-- The port system of the pH model is the port system of the linear port-Hamiltonian plant. -/
-@[powerlib_foundation] theorem linear_system_eq_toPortHamiltonian {J R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio M, powerlib_foundation] theorem linear_system_eq_toPortHamiltonian {J R : Matrix (Fin n) (Fin n) ℝ}
     {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) :
     (linear J R g Q hJ hR (symmetric_of_posDef hQ)).system =
@@ -267,7 +267,7 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
   rw [toPortHamiltonian_plant, linear_system_eq]
 
 /-- The quadratic Hamiltonian is the stored energy of the linear port-Hamiltonian plant. -/
-@[powerlib_foundation] theorem quadraticEnergy_eq_storage {J R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio M, powerlib_foundation] theorem quadraticEnergy_eq_storage {J R : Matrix (Fin n) (Fin n) ℝ}
     {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) (x : State n) :
     quadraticEnergy Q x = (toPortHamiltonian J R g Q hJ hR hQ).kyp.storage x := by
@@ -302,33 +302,33 @@ section Bridge
 
 variable (pm : DiagonalPH (Fin n) (Fin m))
 
-@[simp, powerlib_foundation] theorem ofLp_ofDiagonal_dH (x : State n) :
+@[tmio M, simp, powerlib_foundation] theorem ofLp_ofDiagonal_dH (x : State n) :
     WithLp.ofLp ((ofDiagonal pm).dH x) = pm.gradient (WithLp.ofLp x) := by
   simp [ofDiagonal]
 
 /-- The two vector fields coincide. -/
-@[powerlib_foundation] theorem ofDiagonal_field (x : State n) (u : Fin m → ℝ) :
+@[tmio M, powerlib_foundation] theorem ofDiagonal_field (x : State n) (u : Fin m → ℝ) :
     (ofDiagonal pm).field x u = WithLp.toLp 2 (pm.field (WithLp.ofLp x) u) := by
   apply WithLp.ofLp_injective
   rw [NonlinearModel.ofLp_field, ofLp_ofDiagonal_dH]
   rfl
 
-@[powerlib_foundation] theorem ofLp_ofDiagonal_field (x : State n) (u : Fin m → ℝ) :
+@[tmio M, powerlib_foundation] theorem ofLp_ofDiagonal_field (x : State n) (u : Fin m → ℝ) :
     WithLp.ofLp ((ofDiagonal pm).field x u) = pm.field (WithLp.ofLp x) u := by
   rw [ofDiagonal_field]
 
-@[powerlib_foundation] theorem ofDiagonal_output (x : State n) :
+@[tmio M, powerlib_foundation] theorem ofDiagonal_output (x : State n) :
     (ofDiagonal pm).output x = pm.output (WithLp.ofLp x) := by
   simp only [NonlinearModel.output, ofLp_ofDiagonal_dH]
   rfl
 
-@[powerlib_foundation] theorem ofDiagonal_H (x : State n) :
+@[tmio M, powerlib_foundation] theorem ofDiagonal_H (x : State n) :
     (ofDiagonal pm).H x = pm.energy (WithLp.ofLp x) := by
   change quadraticEnergy (diagonal pm.w) x = _
   simp only [quadraticEnergy, DiagonalPH.energy, dotProduct, mulVec_diagonal, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ => by ring
 
-@[powerlib_foundation] theorem ofDiagonal_dampingPower (x : State n) :
+@[tmio M, powerlib_foundation] theorem ofDiagonal_dampingPower (x : State n) :
     (ofDiagonal pm).dampingPower x = pm.dampingPower (WithLp.ofLp x) := by
   simp only [NonlinearModel.dampingPower, ofLp_ofDiagonal_dH]
   simp only [ofDiagonal, linear, dotProduct, mulVec_diagonal, DiagonalPH.dampingPower]
@@ -336,14 +336,14 @@ variable (pm : DiagonalPH (Fin n) (Fin m))
   intro i _
   ring
 
-@[powerlib_foundation] theorem ofDiagonal_supply (x : State n) (u : Fin m → ℝ) :
+@[tmio M, powerlib_foundation] theorem ofDiagonal_supply (x : State n) (u : Fin m → ℝ) :
     (ofDiagonal pm).supply x u = pm.supply (WithLp.ofLp x) u := by
   rw [NonlinearModel.supply, ofDiagonal_output]
   rfl
 
 /-- The port system of the pH model is the port system of the numbered diagonal plant; every
 solution notion of the Port semantics transfers by rewriting. -/
-@[powerlib_foundation] theorem ofDiagonal_system :
+@[tmio M, powerlib_foundation] theorem ofDiagonal_system :
     (ofDiagonal pm).system = (pm.toPH (Equiv.refl _) (Equiv.refl _)).plant.system := by
   refine system_ext (fun x u => ?_) (fun x u => ?_)
   · apply WithLp.ofLp_injective

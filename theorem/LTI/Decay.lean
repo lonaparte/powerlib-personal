@@ -62,7 +62,7 @@ LeanForControl's affine linear field of `A` centred at the origin. -/
     rfl
 
 /-- The coordinates of the matrix-exponential solution solve `ẋ = A x` globally. -/
-@[powerlib_foundation] theorem hasDerivAt_ofLp_solution (A : Matrix (Fin k) (Fin k) ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_ofLp_solution (A : Matrix (Fin k) (Fin k) ℝ)
     (x₀ : Fin k → ℝ) (t : ℝ) :
     HasDerivAt (fun s => WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) s))
       (A *ᵥ WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) t)) t := by
@@ -75,14 +75,14 @@ LeanForControl's affine linear field of `A` centred at the origin. -/
     rfl
 
 /-- Every initial state has a global coordinate solution of `ẋ = A x`. -/
-@[powerlib_foundation] theorem exists_linear_trajectory (A : Matrix (Fin k) (Fin k) ℝ)
+@[tmio T, powerlib_foundation] theorem exists_linear_trajectory (A : Matrix (Fin k) (Fin k) ℝ)
     (x₀ : Fin k → ℝ) : ∃ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) ∧ x 0 = x₀ :=
   ⟨fun s => WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) s),
     hasDerivAt_ofLp_solution A x₀, by simp⟩
 
 /-- Hurwitz `A`: every global coordinate solution of `ẋ = A x` decays exponentially in the
 Euclidean norm (from the Flow global exponential stability of the affine linear field). -/
-@[powerlib_foundation] theorem linear_decay_of_isHurwitz {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem linear_decay_of_isHurwitz {A : Matrix (Fin k) (Fin k) ℝ}
     (hA : IsHurwitz A) :
     ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
       ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
@@ -93,7 +93,7 @@ Euclidean norm (from the Flow global exponential stability of the affine linear 
 
 /-- Conversely, exponential decay of every global coordinate solution of `ẋ = A x` forces `A` to
 be Hurwitz: an eigenmode with `Re μ ≥ 0` does not decay. -/
-@[powerlib_foundation] theorem isHurwitz_of_linear_decay {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_linear_decay {A : Matrix (Fin k) (Fin k) ℝ}
     {K rate : ℝ} (hr : 0 < rate)
     (hdecay : ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
       ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
@@ -158,7 +158,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- Hurwitz `A`: every global solution of `ẋ = A x` decays exponentially from time `0` (the
 linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
-@[powerlib_foundation] theorem exists_global_bound_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem exists_global_bound_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) :
     ∃ K > 0, ∃ rate > 0, ∀ e : ℝ → ℝⁿ, (∀ t, HasDerivAt e (Linear.op A (e t)) t) →
       ∀ t, 0 ≤ t → ‖e t‖ ≤ K * Real.exp (-(rate * t)) * ‖e 0‖ := by
@@ -171,7 +171,7 @@ linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
 
 /-- A uniform exponential bound on every global solution of `ẋ = A x` forces `A` to be Hurwitz
 (the linear hub `Linear.holds_iff_isHurwitz`). -/
-@[powerlib_foundation] theorem isHurwitz_of_global_bound {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_global_bound {A : Matrix (Fin n) (Fin n) ℝ}
     {K rate : ℝ} (hrate : 0 < rate)
     (hb : ∀ e : ℝ → ℝⁿ, (∀ t, HasDerivAt e (Linear.op A (e t)) t) →
       ∀ t, 0 ≤ t → ‖e t‖ ≤ K * Real.exp (-(rate * t)) * ‖e 0‖) : IsHurwitz A := by
@@ -207,7 +207,7 @@ open scoped Topology
 
 /-- A real eigenvector `A v = μ v`, `v ≠ 0`, with `−a < μ` excludes decay at the rate `a`: the
 eigenmode `e^{μ t} v` is a solution segment that decays too slowly. -/
-@[powerlib_foundation] theorem not_decay_of_eigenvector {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem not_decay_of_eigenvector {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     {μ a : ℝ} {v : EuclideanSpace ℝ (Fin n)} (hv : v ≠ 0) (hAv : Linear.op A v = μ • v)
     (hμ : -a < μ) : ¬ Flow.Decay (affineLinearVectorField A 0) 0 a := by
   rintro ⟨C, hC⟩
@@ -252,7 +252,7 @@ open scoped Topology
 
 /-- Shifting by `c I` shifts the spectrum: if every eigenvalue of `A` has real part `< c`,
 then `A − c I` is Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_sub_smul_one {d : ℕ} {A : Matrix (Fin d) (Fin d) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_sub_smul_one {d : ℕ} {A : Matrix (Fin d) (Fin d) ℝ}
     {c : ℝ} (h : ∀ (lam : ℂ) (v : Fin d → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
       lam.re < c) : LinearSystems.IsHurwitz (A - c • 1) := by
   rw [Linear.isHurwitz_mobius_iff (A := A) (α := 1) (β := -c) (γ := 0) (δ := 1) (by norm_num)
@@ -268,7 +268,7 @@ then `A − c I` is Hurwitz. -/
 `A a = x a − y b`, `A b = y a + x b` and `x ≥ 0` vanishes, then `A` is spectrally stable
 (`a ± i b` would be an eigenvector for `x ± i y`; the real and imaginary parts of a complex
 eigenpair are `Criteria.mulVec_re_im_of_eigenpair`). Generic. -/
-@[powerlib_foundation] theorem spectrallyStable_of_real_pairs {ι : Type*} [Fintype ι]
+@[tmio T, powerlib_foundation] theorem spectrallyStable_of_real_pairs {ι : Type*} [Fintype ι]
     [DecidableEq ι] (A : Matrix ι ι ℝ)
     (h : ∀ (x y : ℝ) (a b : ι → ℝ), A *ᵥ a = x • a - y • b → A *ᵥ b = y • a + x • b →
       0 ≤ x → a = 0 ∧ b = 0) : Linear.SpectrallyStable A := by
@@ -287,7 +287,7 @@ variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
 /-- Spectral stability of the state matrix gives convergence of every constant-input forward
 solution to an equilibrium, on any finite index type (transport to `Fin N`, then the linear hub
 `Linear.globallyAsymptoticallyStable_of_isHurwitz`). Generic in the matrices. -/
-@[powerlib_foundation] theorem tendsto_of_spectrallyStable {A : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem tendsto_of_spectrallyStable {A : Matrix ι ι ℝ}
     {B : Matrix ι κ ℝ} (hA : Linear.SpectrallyStable A) {u : κ → ℝ} {e : ι → ℝ}
     (he : A *ᵥ e + B *ᵥ u = 0) {x : ℝ → ι → ℝ}
     (hx : ∀ t ≥ 0, HasDerivWithinAt x (A *ᵥ x t + B *ᵥ u) (Ici 0) t) :

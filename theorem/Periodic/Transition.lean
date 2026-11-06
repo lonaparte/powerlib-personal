@@ -78,7 +78,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
   exact (norm_mul_le _ _).trans
     (mul_le_mul_of_nonneg_right ((hM t).trans (le_max_left _ _)) (norm_nonneg _))
 
-@[powerlib_foundation] theorem vecField_lipschitz (hM : ∀ t, ‖A t‖ ≤ M) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem vecField_lipschitz (hM : ∀ t, ‖A t‖ ≤ M) (t : ℝ) :
     LipschitzWith (Real.toNNReal M) (vecField A t) := by
   refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [dist_eq_norm, dist_eq_norm, vecField, vecField, ← Matrix.mulVec_sub, Real.coe_toNNReal']
@@ -86,7 +86,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
     (mul_le_mul_of_nonneg_right ((hM t).trans (le_max_left _ _)) (norm_nonneg _))
 
 /-- A continuous periodic state matrix (period `T > 0`) is uniformly bounded. -/
-@[powerlib_foundation] theorem exists_bound_of_periodic {T : ℝ} (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem exists_bound_of_periodic {T : ℝ} (hA : Continuous A)
     (hP : Periodic A T) (hT : 0 < T) : ∃ M, ∀ t, ‖A t‖ ≤ M := by
   obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := T)).exists_bound_of_continuousOn
     hA.continuousOn
@@ -97,7 +97,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 
 /-! ## Existence and uniqueness -/
 
-@[powerlib_foundation] theorem transition_spec (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem transition_spec (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     (s : ℝ) :
     transition A s s = 1 ∧ IsIntegralCurveOn (fun t => transition A t s) (matField A) (Ici s) := by
   have hex : ∃ Y : ℝ → Matrix X X ℝ, Y s = 1 ∧ IsIntegralCurveOn Y (matField A) (Ici s) := by
@@ -115,12 +115,12 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
   · rw [hdef]
     exact hex.choose_spec.2
 
-@[powerlib_foundation] theorem transition_self (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem transition_self (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     (s : ℝ) : transition A s s = 1 :=
   (transition_spec hA hM s).1
 
 /-- Every forward matrix solution of `Ẏ = A(t) Y` with `Y(s) = C` is `Φ(t, s) C`. -/
-@[powerlib_foundation] theorem transition_unique (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem transition_unique (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {s : ℝ} {Y : ℝ → Matrix X X ℝ} (hY : IsIntegralCurveOn Y (matField A) (Ici s)) :
     ∀ t, s ≤ t → Y t = transition A t s * Y s := by
   intro t hst
@@ -135,7 +135,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
   exact heq
 
 /-- Every forward vector solution of `ẋ = A(t) x` is `x(t) = Φ(t, s) x(s)`. -/
-@[powerlib_foundation] theorem trajectory_eq (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem trajectory_eq (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {s : ℝ} {x : ℝ → X → ℝ} (hx : IsIntegralCurveOn x (vecField A) (Ici s)) :
     ∀ t, s ≤ t → x t = transition A t s *ᵥ x s := by
   intro t hst
@@ -157,14 +157,14 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
     (by simp [h1]) (show t ∈ Icc s t from ⟨hst, le_rfl⟩)
 
 /-- Forward composition: `Φ(t, s) Φ(s, τ) = Φ(t, τ)` for `τ ≤ s ≤ t`. -/
-@[powerlib_foundation] theorem transition_trans (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem transition_trans (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {τ s t : ℝ} (hτs : τ ≤ s) (hst : s ≤ t) :
     transition A t s * transition A s τ = transition A t τ := by
   have hY := (transition_spec hA hM τ).2.mono (Ici_subset_Ici.mpr hτs)
   exact (transition_unique hA hM hY t hst).symm
 
 /-- Grönwall bound `‖Φ(t, s)‖ ≤ ‖I‖ e^{M (t - s)}`. -/
-@[powerlib_foundation] theorem norm_transition_le (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem norm_transition_le (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {s t : ℝ} (hst : s ≤ t) :
     ‖transition A t s‖ ≤ ‖(1 : Matrix X X ℝ)‖ * Real.exp (Real.toNNReal M * (t - s)) := by
   obtain ⟨h1, hΦ⟩ := transition_spec hA hM s
@@ -178,7 +178,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 /-! ## Periodicity -/
 
 /-- `Φ(t + T, s + T) = Φ(t, s)` for a `T`-periodic state matrix (any real period `T`). -/
-@[powerlib_foundation] theorem transition_add_period (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem transition_add_period (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T : ℝ} (hP : Periodic A T) {s t : ℝ} (hst : s ≤ t) :
     transition A (t + T) (s + T) = transition A t s := by
   obtain ⟨h1, hΦ⟩ := transition_spec hA hM (s + T)
@@ -192,19 +192,19 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
   have := transition_unique hA hM hY t hst
   simpa [h1] using this
 
-@[powerlib_foundation] theorem monodromy_add_period (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem monodromy_add_period (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T c : ℝ} (hT : 0 ≤ T) (hP : Periodic A c) (s : ℝ) :
     monodromy A T (s + c) = monodromy A T s := by
   rw [monodromy, monodromy, show s + c + T = s + T + c by ring]
   exact transition_add_period hA hM hP (by linarith)
 
-@[powerlib_foundation] theorem monodromy_add_int_mul (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem monodromy_add_int_mul (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T : ℝ} (hT : 0 ≤ T) (hP : Periodic A T) (s : ℝ) (k : ℤ) :
     monodromy A T (s + k * T) = monodromy A T s :=
   monodromy_add_period hA hM hT (hP.int_mul k) s
 
 /-- `Φ(s + n T, s) = (monodromy A T s)^n`. -/
-@[powerlib_foundation] theorem transition_add_nat_mul_period (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem transition_add_nat_mul_period (hA : Continuous A)
     (hM : ∀ t, ‖A t‖ ≤ M) {T : ℝ} (hT : 0 ≤ T) (hP : Periodic A T) (s : ℝ) (n : ℕ) :
     transition A (s + n * T) s = monodromy A T s ^ n := by
   induction n with
@@ -218,7 +218,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
     exact (transition_trans hA hM (by linarith) (by linarith)).symm
 
 /-- On `[0, T]`: `M_0 = Q P` and `M_s = P Q` with `P = Φ(s, 0)`, `Q = Φ(T, s)`. -/
-@[powerlib_foundation] theorem monodromy_eq_mul_swap (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem monodromy_eq_mul_swap (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T : ℝ} (hP : Periodic A T) {s : ℝ} (hs0 : 0 ≤ s) (hsT : s ≤ T) :
     monodromy A T 0 = transition A T s * transition A s 0 ∧
       monodromy A T s = transition A s 0 * transition A T s := by
@@ -233,7 +233,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 
 /-- The characteristic polynomial of the monodromy matrix does not depend on the initial
 time. -/
-@[powerlib_foundation] theorem charpoly_monodromy (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem charpoly_monodromy (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T : ℝ} (hT : 0 ≤ T) (hP : Periodic A T) (s : ℝ) :
     (monodromy A T s).charpoly = (monodromy A T 0).charpoly := by
   rcases hT.eq_or_lt with hT0 | hTpos
@@ -261,7 +261,7 @@ time. -/
 
 /-- The Floquet multipliers (complex spectrum of the complexified monodromy matrix) do not
 depend on the initial time. -/
-@[powerlib_foundation] theorem spectrum_monodromy (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem spectrum_monodromy (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T : ℝ} (hT : 0 ≤ T) (hP : Periodic A T) (s : ℝ) :
     spectrum ℂ ((monodromy A T s).map (algebraMap ℝ ℂ)) =
       spectrum ℂ ((monodromy A T 0).map (algebraMap ℝ ℂ)) := by

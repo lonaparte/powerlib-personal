@@ -70,7 +70,7 @@ abbrev real (P : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℝ := Pos
   rw [Matrix.inv_def, Ring.inverse_eq_inv]
   rfl
 
-@[powerlib_foundation] theorem real_lyapunov {A P : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem real_lyapunov {A P : Matrix (Fin n) (Fin n) ℚ}
     (h : Aᵀ * P + P * A = -1) : (real A)ᵀ * real P + real P * real A = -1 := by
   have h' := congrArg (Rat.castHom ℝ).mapMatrix h
   rw [map_add, map_mul, map_mul, map_neg, map_one] at h'
@@ -78,7 +78,7 @@ abbrev real (P : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℝ := Pos
 
 /-- A Hurwitz real image makes the full rational operator injective. Uniqueness in the upstream
 Lyapunov theorem is among all matrices, so no symmetry premise is needed. -/
-@[powerlib_foundation] theorem operator_injective {A : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem operator_injective {A : Matrix (Fin n) (Fin n) ℚ}
     (hA : IsHurwitz (real A)) : Function.Injective (operator A).mulVec := by
   intro x y hxy
   have hzero : operatorMap A (x - y) = 0 := by
@@ -111,7 +111,7 @@ Lyapunov theorem is among all matrices, so no symmetry premise is needed. -/
   exact sub_eq_zero.mp hq
 
 /-- On a Hurwitz input the computed rational candidate solves the equation. -/
-@[powerlib_foundation] theorem candidate_solves {A : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem candidate_solves {A : Matrix (Fin n) (Fin n) ℚ}
     (hA : IsHurwitz (real A)) : Aᵀ * candidate A + candidate A * A = -1 := by
   have hu : IsUnit (operator A).det :=
     (Matrix.isUnit_iff_isUnit_det _).mp
@@ -129,7 +129,7 @@ Lyapunov theorem is among all matrices, so no symmetry premise is needed. -/
   exact congrFun h (i, j)
 
 /-- Every rational solution for a Hurwitz matrix passes the verified positivity check. -/
-@[powerlib_foundation] theorem check_of_solution {A P : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem check_of_solution {A P : Matrix (Fin n) (Fin n) ℚ}
     (hA : IsHurwitz (real A)) (hP : Aᵀ * P + P * A = -1) : check A P = true := by
   obtain ⟨S, hS, _, hunique⟩ := hA.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
   have hR : SolvesContinuousLyapunovEquation (real A) (real P) 1 := by
@@ -141,7 +141,7 @@ Lyapunov theorem is among all matrices, so no symmetry premise is needed. -/
   exact ⟨hP, (Positive.check_iff n P).mpr hpos⟩
 
 /-- The backend is complete for every finite rational state matrix. -/
-@[powerlib_foundation] theorem candidate_checked {A : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem candidate_checked {A : Matrix (Fin n) (Fin n) ℚ}
     (hA : IsHurwitz (real A)) : check A (candidate A) = true :=
   check_of_solution hA (candidate_solves hA)
 
@@ -155,7 +155,7 @@ def certificate (A P : Matrix (Fin n) (Fin n) ℚ) (h : check A P = true) : Cert
     by simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using hp.isHermitian.eq,
     fun x hx => by simpa using hp.dotProduct_mulVec_pos hx, real_lyapunov hs⟩
 
-@[powerlib_foundation] theorem isHurwitz_of_check {A P : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_check {A P : Matrix (Fin n) (Fin n) ℚ}
     (h : check A P = true) : IsHurwitz (real A) := (certificate A P h).isHurwitz
 
 end

@@ -120,11 +120,11 @@ variable {k : ℕ}
 /-- `ρ` as a polynomial over ℂ. -/
 def rhoPoly (m : LMM k) : ℂ[X] := ∑ i, Polynomial.C (m.α i : ℂ) * X ^ (i : ℕ)
 
-@[powerlib_foundation] theorem rhoPoly_eval (m : LMM k) (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem rhoPoly_eval (m : LMM k) (z : ℂ) :
     m.rhoPoly.eval z = m.rho z := by
   simp [rhoPoly, rho, eval_finsetSum]
 
-@[powerlib_foundation] theorem rhoPoly_natDegree (m : LMM k) (h : m.α (Fin.last k) ≠ 0) :
+@[tmio T, powerlib_foundation] theorem rhoPoly_natDegree (m : LMM k) (h : m.α (Fin.last k) ≠ 0) :
     m.rhoPoly.natDegree = k := by
   apply natDegree_eq_of_le_of_coeff_ne_zero
   · exact natDegree_sum_le_of_forall_le _ _ fun i _ =>
@@ -139,11 +139,11 @@ def rhoPoly (m : LMM k) : ℂ[X] := ∑ i, Polynomial.C (m.α i : ℂ) * X ^ (i 
     · simp
 
 /-- `ρ` has real (rational) coefficients. -/
-@[powerlib_foundation] theorem rho_conj (m : LMM k) (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem rho_conj (m : LMM k) (z : ℂ) :
     m.rho (conj z) = conj (m.rho z) := by
   simp [rho, map_sum, map_ratCast]
 
-@[powerlib_foundation] theorem rhoRev_eq (m : LMM k) {w : ℂ} (hw : w ≠ 0) :
+@[tmio T, powerlib_foundation] theorem rhoRev_eq (m : LMM k) {w : ℂ} (hw : w ≠ 0) :
     m.rhoRev w = w ^ k * m.rho w⁻¹ := by
   simp only [rhoRev, rho, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
@@ -152,7 +152,7 @@ def rhoPoly (m : LMM k) : ℂ[X] := ∑ i, Polynomial.C (m.α i : ℂ) * X ^ (i 
 
 /-- If all roots of `ρ` lie in the closed unit disk (e.g. under the root condition), then
 `‖ρ(w)‖ ≤ ‖ρ*(w)‖` for `0 < ‖w‖ ≤ 1`. -/
-@[powerlib_foundation] theorem norm_rho_le_norm_rhoRev (m : LMM k) (h : m.α (Fin.last k) ≠ 0)
+@[tmio T, powerlib_foundation] theorem norm_rho_le_norm_rhoRev (m : LMM k) (h : m.α (Fin.last k) ≠ 0)
     (hroots : ∀ ζ, m.rho ζ = 0 → ‖ζ‖ ≤ 1) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) :
     ‖m.rho w‖ ≤ ‖m.rhoRev w‖ := by
   have hP : m.rhoPoly ≠ 0 := by
@@ -173,7 +173,7 @@ def rhoPoly (m : LMM k) : ℂ[X] := ∑ i, Polynomial.C (m.α i : ℂ) * X ^ (i 
 
 /-- **A root outside the unit disk from one exact inequality.** If `‖ρ*(w)‖ < ‖ρ(w)‖` at a
 single point `0 < ‖w‖ ≤ 1`, then `ρ` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[powerlib_foundation] theorem exists_root_norm_gt_one_of_norm_rhoRev_lt (m : LMM k)
+@[tmio T, powerlib_foundation] theorem exists_root_norm_gt_one_of_norm_rhoRev_lt (m : LMM k)
     (h : m.α (Fin.last k) ≠ 0) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1)
     (hlt : ‖m.rhoRev w‖ < ‖m.rho w‖) : ∃ ζ, m.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
   by_contra hne
@@ -181,7 +181,7 @@ single point `0 < ‖w‖ ≤ 1`, then `ρ` has a root `ζ` with `1 < ‖ζ‖`.
   exact absurd (m.norm_rho_le_norm_rhoRev h hne hw0 hw) (not_le.mpr hlt)
 
 /-- The same witness violates the root condition. -/
-@[powerlib_foundation] theorem not_rootCondition_of_norm_rhoRev_lt (m : LMM k)
+@[tmio T, powerlib_foundation] theorem not_rootCondition_of_norm_rhoRev_lt (m : LMM k)
     (h : m.α (Fin.last k) ≠ 0) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1)
     (hlt : ‖m.rhoRev w‖ < ‖m.rho w‖) : ¬ m.RootCondition := by
   obtain ⟨ζ, hζ, h1⟩ := m.exists_root_norm_gt_one_of_norm_rhoRev_lt h hw0 hw hlt
@@ -191,20 +191,20 @@ end LMM
 
 /-! ## Exact norm comparisons at Gaussian-rational points -/
 
-@[powerlib_foundation] theorem ofReal_add_mul_I_ne_zero {a b : ℝ} (h : 0 < a ^ 2 + b ^ 2) :
+@[tmio T, powerlib_foundation] theorem ofReal_add_mul_I_ne_zero {a b : ℝ} (h : 0 < a ^ 2 + b ^ 2) :
     (a : ℂ) + b * Complex.I ≠ 0 := by
   intro h0
   have := congrArg Complex.normSq h0
   rw [Complex.normSq_add_mul_I, map_zero] at this
   linarith
 
-@[powerlib_foundation] theorem norm_ofReal_add_mul_I_le_one {a b : ℝ} (h : a ^ 2 + b ^ 2 ≤ 1) :
+@[tmio T, powerlib_foundation] theorem norm_ofReal_add_mul_I_le_one {a b : ℝ} (h : a ^ 2 + b ^ 2 ≤ 1) :
     ‖(a : ℂ) + b * Complex.I‖ ≤ 1 := by
   have h2 : ‖(a : ℂ) + b * Complex.I‖ ^ 2 ≤ 1 ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_add_mul_I, one_pow]; exact h
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) zero_le_one two_ne_zero).mp h2
 
-@[powerlib_foundation] theorem norm_ofReal_add_mul_I_lt {a b c d : ℝ}
+@[tmio T, powerlib_foundation] theorem norm_ofReal_add_mul_I_lt {a b c d : ℝ}
     (h : a ^ 2 + b ^ 2 < c ^ 2 + d ^ 2) :
     ‖(a : ℂ) + b * Complex.I‖ < ‖(c : ℂ) + d * Complex.I‖ := by
   have h2 : ‖(a : ℂ) + b * Complex.I‖ ^ 2 < ‖(c : ℂ) + d * Complex.I‖ ^ 2 := by
@@ -227,11 +227,11 @@ def bdfRevSum (k : ℕ) (w : ℂ) : ℂ :=
 def bdfPoly (k : ℕ) : ℂ[X] :=
   ∑ j ∈ Finset.range k, Polynomial.C (1 / ((j + 1 : ℕ) : ℂ)) * X ^ (k - 1 - j) * (X - 1) ^ (j + 1)
 
-@[powerlib_foundation] theorem bdfPoly_eval (k : ℕ) (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem bdfPoly_eval (k : ℕ) (z : ℂ) :
     (bdfPoly k).eval z = bdfRhoSum k z := by
   simp [bdfPoly, bdfRhoSum, eval_finsetSum]
 
-@[powerlib_foundation] private theorem bdfPoly_term (k j : ℕ) (hj : j < k) :
+@[tmio T, powerlib_foundation] private theorem bdfPoly_term (k j : ℕ) (hj : j < k) :
     ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).Monic ∧
       ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).natDegree = k := by
   have h1 : ((X : ℂ[X]) - 1).Monic := by simpa using monic_X_sub_C (1 : ℂ)
@@ -240,13 +240,13 @@ def bdfPoly (k : ℕ) : ℂ[X] :=
   rw [(monic_X_pow _).natDegree_mul (h1.pow _), natDegree_X_pow, h1.natDegree_pow, h1d]
   omega
 
-@[powerlib_foundation] theorem bdfPoly_natDegree_le (k : ℕ) : (bdfPoly k).natDegree ≤ k :=
+@[tmio T, powerlib_foundation] theorem bdfPoly_natDegree_le (k : ℕ) : (bdfPoly k).natDegree ≤ k :=
   natDegree_sum_le_of_forall_le _ _ fun j hj => by
     rw [mul_assoc]
     exact (natDegree_C_mul_le _ _).trans (bdfPoly_term k j (Finset.mem_range.mp hj)).2.le
 
 /-- The leading coefficient of `bdfRhoSum k` is `H_k = Σ_{j=1}^{k} 1/j`. -/
-@[powerlib_foundation] theorem bdfPoly_coeff (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem bdfPoly_coeff (k : ℕ) :
     (bdfPoly k).coeff k = ∑ j ∈ Finset.range k, 1 / ((j + 1 : ℕ) : ℂ) := by
   simp only [bdfPoly, finsetSum_coeff, mul_assoc, coeff_C_mul]
   refine Finset.sum_congr rfl fun j hj => ?_
@@ -255,7 +255,7 @@ def bdfPoly (k : ℕ) : ℂ[X] :=
   rw [hd] at this
   rw [this, mul_one]
 
-@[powerlib_foundation] theorem bdfPoly_natDegree {k : ℕ} (hk : 0 < k) :
+@[tmio T, powerlib_foundation] theorem bdfPoly_natDegree {k : ℕ} (hk : 0 < k) :
     (bdfPoly k).natDegree = k := by
   apply natDegree_eq_of_le_of_coeff_ne_zero (bdfPoly_natDegree_le k)
   rw [bdfPoly_coeff]
@@ -265,11 +265,11 @@ def bdfPoly (k : ℕ) : ℂ[X] :=
   exact (Finset.sum_pos (fun j _ => by positivity) (Finset.nonempty_range_iff.mpr hk.ne')).ne'
 
 /-- `bdfRhoSum k` has real coefficients. -/
-@[powerlib_foundation] theorem bdfRhoSum_conj (k : ℕ) (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem bdfRhoSum_conj (k : ℕ) (z : ℂ) :
     bdfRhoSum k (conj z) = conj (bdfRhoSum k z) := by
   simp [bdfRhoSum, map_sum]
 
-@[powerlib_foundation] theorem bdfRevSum_eq (k : ℕ) {w : ℂ} (hw : w ≠ 0) :
+@[tmio T, powerlib_foundation] theorem bdfRevSum_eq (k : ℕ) {w : ℂ} (hw : w ≠ 0) :
     bdfRevSum k w = w ^ k * bdfRhoSum k w⁻¹ := by
   simp only [bdfRevSum, bdfRhoSum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j hj => ?_
@@ -288,7 +288,7 @@ def bdfPoly (k : ℕ) : ℂ[X] :=
 
 /-- Schur–Cohn necessary condition for the BDF polynomial: if all roots of `bdfRhoSum k` lie in
 the closed unit disk, then `‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖` for `0 < ‖w‖ ≤ 1`. -/
-@[powerlib_foundation] theorem norm_bdfRhoSum_le_norm_bdfRevSum {k : ℕ} (hk : 0 < k)
+@[tmio T, powerlib_foundation] theorem norm_bdfRhoSum_le_norm_bdfRevSum {k : ℕ} (hk : 0 < k)
     (hroots : ∀ ζ, bdfRhoSum k ζ = 0 → ‖ζ‖ ≤ 1) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) :
     ‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖ := by
   have hP : bdfPoly k ≠ 0 := fun h0 => by
@@ -305,7 +305,7 @@ the closed unit disk, then `‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖` for `0 
 
 /-- One point `0 < ‖w‖ ≤ 1` with `‖bdfRevSum k w‖ < ‖bdfRhoSum k w‖` exhibits a root of
 `bdfRhoSum k` outside the closed unit disk. -/
-@[powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one_of_lt {k : ℕ} (hk : 0 < k)
+@[tmio T, powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one_of_lt {k : ℕ} (hk : 0 < k)
     {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) (hlt : ‖bdfRevSum k w‖ < ‖bdfRhoSum k w‖) :
     ∃ ζ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
   by_contra hne
@@ -323,11 +323,11 @@ def bdfPolyQ (k : ℕ) : ℚ[X] :=
 def bdfLMM (k : ℕ) : LMM k :=
   bdf k (fun i => (bdfPolyQ k).coeff i / bdfHarmonic k) (1 / bdfHarmonic k)
 
-@[powerlib_foundation] theorem bdfPolyQ_map (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem bdfPolyQ_map (k : ℕ) :
     (bdfPolyQ k).map (algebraMap ℚ ℂ) = bdfPoly k := by
   simp [bdfPolyQ, bdfPoly, Polynomial.map_sum]
 
-@[powerlib_foundation] theorem bdfLMM_rho_eq (k : ℕ) (ζ : ℂ) :
+@[tmio T, powerlib_foundation] theorem bdfLMM_rho_eq (k : ℕ) (ζ : ℂ) :
     (bdfLMM k).rho ζ = (1 / (bdfHarmonic k : ℂ)) * bdfRhoSum k ζ := by
   have hdeg : ((bdfPolyQ k).map (algebraMap ℚ ℂ)).natDegree < k + 1 := by
     rw [bdfPolyQ_map]
@@ -343,7 +343,7 @@ def bdfLMM (k : ℕ) : LMM k :=
 
 /-! ## The top coefficients of `bdfRhoSum k` and the uniform bound for `k ≥ 19` -/
 
-@[powerlib_foundation] private theorem bdfTerm_coeff (k j d : ℕ) :
+@[tmio T, powerlib_foundation] private theorem bdfTerm_coeff (k j d : ℕ) :
     ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).coeff d =
       if k - 1 - j ≤ d then
         (-1 : ℂ) ^ (j + 1 - (d - (k - 1 - j))) * ((j + 1).choose (d - (k - 1 - j)) : ℂ)
@@ -352,7 +352,7 @@ def bdfLMM (k : ℕ) : LMM k :=
     coeff_X_add_C_pow]
 
 /-- The coefficient of `ζ^{k-1}` in `bdfRhoSum k` is `-k` (each term contributes `-1`). -/
-@[powerlib_foundation] theorem bdfPoly_coeff_pred {k : ℕ} (hk : 1 ≤ k) :
+@[tmio T, powerlib_foundation] theorem bdfPoly_coeff_pred {k : ℕ} (hk : 1 ≤ k) :
     (bdfPoly k).coeff (k - 1) = -(k : ℂ) := by
   simp only [bdfPoly, finsetSum_coeff, mul_assoc, coeff_C_mul, bdfTerm_coeff]
   have : ∀ j ∈ Finset.range k, (1 / ((j + 1 : ℕ) : ℂ)) *
@@ -370,7 +370,7 @@ def bdfLMM (k : ℕ) : LMM k :=
 
 /-- The coefficient of `ζ^{k-2}` in `bdfRhoSum k` is `k(k-1)/4` (the term `j` contributes
 `C(j, 2)/j = (j-1)/2`). -/
-@[powerlib_foundation] theorem bdfPoly_coeff_pred_pred {k : ℕ} (hk : 2 ≤ k) :
+@[tmio T, powerlib_foundation] theorem bdfPoly_coeff_pred_pred {k : ℕ} (hk : 2 ≤ k) :
     (bdfPoly k).coeff (k - 2) = (k : ℂ) * ((k : ℂ) - 1) / 4 := by
   obtain ⟨m, rfl⟩ : ∃ m, k = m + 2 := ⟨k - 2, by omega⟩
   simp only [bdfPoly, finsetSum_coeff, mul_assoc, coeff_C_mul, bdfTerm_coeff]
@@ -404,12 +404,12 @@ def bdfLMM (k : ℕ) : LMM k :=
   push_cast
   ring
 
-@[powerlib_foundation] theorem bdfHarmonic_succ (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem bdfHarmonic_succ (k : ℕ) :
     bdfHarmonic (k + 1) = bdfHarmonic k + 1 / ((k + 1 : ℕ) : ℚ) := by
   simp only [bdfHarmonic, Finset.sum_range_succ]
 
 /-- `7/2 ≤ H_k < (3k - 7)/14` for every `k ≥ 19`. -/
-@[powerlib_foundation] private theorem bdfHarmonic_bounds (n : ℕ) :
+@[tmio T, powerlib_foundation] private theorem bdfHarmonic_bounds (n : ℕ) :
     7 / 2 ≤ bdfHarmonic (n + 19) ∧
       bdfHarmonic (n + 19) < (3 * ((n + 19 : ℕ) : ℚ) - 7) / 14 := by
   induction n with
@@ -427,7 +427,7 @@ def bdfLMM (k : ℕ) : LMM k :=
 /-- **BDF`k` is zero-unstable for every `k ≥ 19`** (uniform argument): `bdfRhoSum k` has a root
 outside the closed unit disk. The second power sum of its roots is
 `k²/H_k² - k(k-1)/(2H_k) < -k`, impossible if all `k` roots had modulus `≤ 1`. -/
-@[powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one_of_nineteen_le {k : ℕ}
+@[tmio T, powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one_of_nineteen_le {k : ℕ}
     (hk : 19 ≤ k) : ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
   have hdeg := bdfPoly_natDegree (by omega : 0 < k)
   refine (Criteria.exists_root_norm_gt_one_of_coeff (bdfPoly k) (by omega) ?_).imp fun ζ hζ =>
@@ -466,7 +466,7 @@ outside the closed unit disk. The second power sum of its roots is
 /-! ## Witnesses, `7 ≤ k ≤ 18` -/
 
 /-- Witness value of `bdfRhoSum 7` at `w = 1/16 + 31/32 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_7 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_7 :
     bdfRhoSum 7 (((1 / 16 : ℝ) : ℂ)
         + ((31 / 32 : ℝ) : ℂ) * Complex.I) = (((-2361592692043 / 7215545057280 : ℝ) : ℝ) : ℂ)
         + (((-1607795559683 / 14431090114560 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -479,7 +479,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (9987078922293 / 4810363371520 : ℂ) * Complex.I ^ 5) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 7` at `w = 1/16 + 31/32 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_7 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_7 :
     bdfRevSum 7 (((1 / 16 : ℝ) : ℂ)
         + ((31 / 32 : ℝ) : ℂ) * Complex.I) = (((-33749728583 / 360777252864 : ℝ) : ℝ) : ℂ)
         + (((79205805101 / 3607772528640 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -492,7 +492,7 @@ outside the closed unit disk. The second power sum of its roots is
       - (27512614111 / 240518168576 : ℂ) * Complex.I ^ 5) * Complex.I_sq
 
 /-- BDF7: `bdfRhoSum 7` has a root of modulus `> 1` (numerically `≈ 1.0222`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_7 : ∃ ζ : ℂ, bdfRhoSum 7 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_7 : ∃ ζ : ℂ, bdfRhoSum 7 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((1 / 16 : ℝ) : ℂ)
       + ((31 / 32 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -500,7 +500,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 8` at `w = 0 + 3/4 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_8 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_8 :
     bdfRhoSum 8 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((15001241 / 18350080 : ℝ) : ℝ) : ℂ)
         + (((36273 / 71680 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -511,7 +511,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (4992921 / 18350080 : ℂ) * Complex.I ^ 6) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 8` at `w = 0 + 3/4 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_8 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_8 :
     bdfRevSum 8 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((-8038909 / 18350080 : ℝ) : ℝ) : ℂ)
         + (((-45177 / 71680 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -522,7 +522,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (6561 / 524288 : ℂ) * Complex.I ^ 6) * Complex.I_sq
 
 /-- BDF8: `bdfRhoSum 8` has a root of modulus `> 1` (numerically `≈ 1.1839`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_8 : ∃ ζ : ℂ, bdfRhoSum 8 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_8 : ∃ ζ : ℂ, bdfRhoSum 8 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((0 : ℝ) : ℂ)
       + ((3 / 4 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -530,7 +530,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 9` at `w = 0 + 3/4 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_9 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_9 :
     bdfRhoSum 9 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((-22900403 / 20643840 : ℝ) : ℝ) : ℂ)
         + (((16316883 / 73400320 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -542,7 +542,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (15591123 / 73400320 : ℂ) * Complex.I ^ 7) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 9` at `w = 0 + 3/4 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_9 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_9 :
     bdfRevSum 9 (((0 : ℝ) : ℂ)
         + ((3 / 4 : ℝ) : ℂ) * Complex.I) = (((48173299 / 165150720 : ℝ) : ℝ) : ℂ)
         + (((-2196801 / 9175040 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -553,7 +553,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (59049 / 524288 : ℂ) * Complex.I ^ 6 - (2187 / 262144 : ℂ) * Complex.I ^ 7) * Complex.I_sq
 
 /-- BDF9: `bdfRhoSum 9` has a root of modulus `> 1` (numerically `≈ 1.3475`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_9 : ∃ ζ : ℂ, bdfRhoSum 9 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_9 : ∃ ζ : ℂ, bdfRhoSum 9 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((0 : ℝ) : ℂ)
       + ((3 / 4 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -561,7 +561,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 10` at `w = -1/16 + 11/16 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_10 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_10 :
     bdfRhoSum 10 (((-1 / 16 : ℝ) : ℂ)
         + ((11 / 16 : ℝ) : ℂ) * Complex.I) = (((5885868387253 / 4329327034368 : ℝ) : ℝ) : ℂ)
         + (((-314770770259 / 1924145348608 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -577,7 +577,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (191444130979981 / 2770769301995520 : ℂ) * Complex.I ^ 8) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 10` at `w = -1/16 + 11/16 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_10 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_10 :
     bdfRevSum 10 (((-1 / 16 : ℝ) : ℂ)
         + ((11 / 16 : ℝ) : ℂ) * Complex.I) = (((1753318992427 / 5411658792960 : ℝ) : ℝ) : ℂ)
         + (((4924574669531 / 21646635171840 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -593,7 +593,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (25937424601 / 10995116277760 : ℂ) * Complex.I ^ 8) * Complex.I_sq
 
 /-- BDF10: `bdfRhoSum 10` has a root of modulus `> 1` (numerically `≈ 1.5127`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_10 : ∃ ζ : ℂ, bdfRhoSum 10 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_10 : ∃ ζ : ℂ, bdfRhoSum 10 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 16 : ℝ) : ℂ)
       + ((11 / 16 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -601,7 +601,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 11` at `w = -1/8 + 5/8 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_11 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_11 :
     bdfRhoSum 11 (((-1 / 8 : ℝ) : ℂ)
         + ((5 / 8 : ℝ) : ℂ) * Complex.I) = (((-13988248765669 / 7441030840320 : ℝ) : ℝ) : ℂ)
         + (((-121204617607 / 496068722688 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -618,7 +618,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (817490234375 / 47622597378048 : ℂ) * Complex.I ^ 9) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 11` at `w = -1/8 + 5/8 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_11 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_11 :
     bdfRevSum 11 (((-1 / 8 : ℝ) : ℂ)
         + ((5 / 8 : ℝ) : ℂ) * Complex.I) = (((580735175 / 62008590336 : ℝ) : ℝ) : ℂ)
         + (((208965783085 / 186025771008 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -635,7 +635,7 @@ outside the closed unit disk. The second power sum of its roots is
       - (48828125 / 94489280512 : ℂ) * Complex.I ^ 9) * Complex.I_sq
 
 /-- BDF11: `bdfRhoSum 11` has a root of modulus `> 1` (numerically `≈ 1.6791`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_11 : ∃ ζ : ℂ, bdfRhoSum 11 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_11 : ∃ ζ : ℂ, bdfRhoSum 11 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((5 / 8 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -643,7 +643,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 12` at `w = -1/8 + 1/2 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_12 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_12 :
     bdfRhoSum 12 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((1664116889863013 / 1904903895121920 : ℝ) : ℝ) : ℂ)
         + (((106918075135969 / 119056493445120 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -659,7 +659,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (86021 / 113541120 : ℂ) * Complex.I ^ 10) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 12` at `w = -1/8 + 1/2 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_12 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_12 :
     bdfRevSum 12 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((-321331755101983 / 317483982520320 : ℝ) : ℝ) : ℂ)
         + (((-5447662453529 / 59528246722560 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -674,7 +674,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (1 / 49152 : ℂ) * Complex.I ^ 10) * Complex.I_sq
 
 /-- BDF12: `bdfRhoSum 12` has a root of modulus `> 1` (numerically `≈ 1.8464`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_12 : ∃ ζ : ℂ, bdfRhoSum 12 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_12 : ∃ ζ : ℂ, bdfRhoSum 12 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((1 / 2 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -682,7 +682,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 13` at `w = -1/8 + 1/2 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_13 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_13 :
     bdfRhoSum 13 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((-87104163692410019 / 66036668364226560 : ℝ) : ℝ) : ℂ)
         + (((-2408917654485409 / 4502500115742720 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -700,7 +700,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (1145993 / 2952069120 : ℂ) * Complex.I ^ 11) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 13` at `w = -1/8 + 1/2 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_13 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_13 :
     bdfRevSum 13 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((-2074495091156363 / 8254583545528320 : ℝ) : ℝ) : ℂ)
         + (((4754927337394019 / 6190937659146240 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -716,7 +716,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (29 / 98304 : ℂ) * Complex.I ^ 10 - (1 / 106496 : ℂ) * Complex.I ^ 11) * Complex.I_sq
 
 /-- BDF13: `bdfRhoSum 13` has a root of modulus `> 1` (numerically `≈ 2.0145`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_13 : ∃ ζ : ℂ, bdfRhoSum 13 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_13 : ∃ ζ : ℂ, bdfRhoSum 13 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((1 / 2 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -724,7 +724,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 14` at `w = -1/8 + 1/2 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_14 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_14 :
     bdfRhoSum 14 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ)
         * Complex.I) = (((2577393164230952741 / 1584880040741437440 : ℝ) : ℝ) : ℂ)
@@ -744,7 +744,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (1171733 / 5904138240 : ℂ) * Complex.I ^ 12) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 14` at `w = -1/8 + 1/2 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_14 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_14 :
     bdfRevSum 14 (((-1 / 8 : ℝ) : ℂ)
         + ((1 / 2 : ℝ) : ℂ) * Complex.I) = (((124484009038522417 / 132073336728453120 : ℝ) : ℝ) : ℂ)
         + (((65017173277104187 / 49527501273169920 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -762,7 +762,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (1 / 229376 : ℂ) * Complex.I ^ 12) * Complex.I_sq
 
 /-- BDF14: `bdfRhoSum 14` has a root of modulus `> 1` (numerically `≈ 2.1833`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_14 : ∃ ζ : ℂ, bdfRhoSum 14 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_14 : ∃ ζ : ℂ, bdfRhoSum 14 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((1 / 2 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -770,7 +770,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 15` at `w = -1/8 + 7/16 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_15 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_15 :
     bdfRhoSum 15 (((-1 / 8 : ℝ) : ℂ)
         + ((7 / 16 : ℝ) : ℂ)
         * Complex.I) = (((-269254480822623171774889 / 207733396700061688135680 : ℝ) : ℝ) : ℂ)
@@ -792,7 +792,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (810989986920701693 / 59352399057160482324480 : ℂ) * Complex.I ^ 13) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 15` at `w = -1/8 + 7/16 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_15 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_15 :
     bdfRevSum 15 (((-1 / 8 : ℝ) : ℂ)
         + ((7 / 16 : ℝ) : ℂ)
         * Complex.I) = (((209135618141690837237 / 1731111639167180734464 : ℝ) : ℝ) : ℂ)
@@ -814,7 +814,7 @@ outside the closed unit disk. The second power sum of its roots is
       - (4747561509943 / 17293822569102704640 : ℂ) * Complex.I ^ 13) * Complex.I_sq
 
 /-- BDF15: `bdfRhoSum 15` has a root of modulus `> 1` (numerically `≈ 2.3525`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_15 : ∃ ζ : ℂ, bdfRhoSum 15 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_15 : ∃ ζ : ℂ, bdfRhoSum 15 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((7 / 16 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -822,7 +822,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 16` at `w = -1/8 + 3/8 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_16 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_16 :
     bdfRhoSum 16 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ) * Complex.I) = (((14183666647489035 / 17609778230460416 : ℝ) : ℝ) : ℂ)
         + (((5784224770515 / 7146825580544 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -844,7 +844,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (11653986163671 / 22540516134989332480 : ℂ) * Complex.I ^ 14) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 16` at `w = -1/8 + 3/8 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_16 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_16 :
     bdfRevSum 16 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ) * Complex.I) = (((-74202892475821587 / 88048891152302080 : ℝ) : ℝ) : ℂ)
         + (((1101950313453537 / 2751527848509440 : ℝ) : ℝ) : ℂ) * Complex.I := by
@@ -866,7 +866,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (43046721 / 4503599627370496 : ℂ) * Complex.I ^ 14) * Complex.I_sq
 
 /-- BDF16: `bdfRhoSum 16` has a root of modulus `> 1` (numerically `≈ 2.5222`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_16 : ∃ ζ : ℂ, bdfRhoSum 16 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_16 : ∃ ζ : ℂ, bdfRhoSum 16 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((3 / 8 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -874,7 +874,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 17` at `w = -1/8 + 3/8 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_17 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_17 :
     bdfRhoSum 17 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ)
         * Complex.I) = (((-2723246982475835499 / 2394929839342616576 : ℝ) : ℝ) : ℂ)
@@ -898,7 +898,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (604694838600261 / 3065510194358549217280 : ℂ) * Complex.I ^ 15) * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 17` at `w = -1/8 + 3/8 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_17 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_17 :
     bdfRevSum 17 (((-1 / 8 : ℝ) : ℂ)
         + ((3 / 8 : ℝ) : ℂ)
         * Complex.I) = (((-164414279647388889 / 1496831149589135360 : ℝ) : ℝ) : ℂ)
@@ -922,7 +922,7 @@ outside the closed unit disk. The second power sum of its roots is
       - (129140163 / 38280596832649216 : ℂ) * Complex.I ^ 15) * Complex.I_sq
 
 /-- BDF17: `bdfRhoSum 17` has a root of modulus `> 1` (numerically `≈ 2.6923`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_17 : ∃ ζ : ℂ, bdfRhoSum 17 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_17 : ∃ ζ : ℂ, bdfRhoSum 17 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-1 / 8 : ℝ) : ℂ)
       + ((3 / 8 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -930,7 +930,7 @@ outside the closed unit disk. The second power sum of its roots is
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
 /-- Witness value of `bdfRhoSum 18` at `w = -3/32 + 11/32 i`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_witness_18 :
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_witness_18 :
     bdfRhoSum 18 (((-3 / 32 : ℝ) : ℂ)
         + ((11 / 32 : ℝ) : ℂ)
         * Complex.I) =
@@ -958,7 +958,7 @@ outside the closed unit disk. The second power sum of its roots is
       * Complex.I_sq
 
 /-- Witness value of `bdfRevSum 18` at `w = -3/32 + 11/32 i`. -/
-@[powerlib_foundation] private theorem bdfRevSum_witness_18 :
+@[tmio T, powerlib_foundation] private theorem bdfRevSum_witness_18 :
     bdfRevSum 18 (((-3 / 32 : ℝ) : ℂ)
         + ((11 / 32 : ℝ) : ℂ)
         * Complex.I) =
@@ -985,7 +985,7 @@ outside the closed unit disk. The second power sum of its roots is
       + (5559917313492231481 / 22282920707136844948184236032 : ℂ) * Complex.I ^ 16) * Complex.I_sq
 
 /-- BDF18: `bdfRhoSum 18` has a root of modulus `> 1` (numerically `≈ 2.8628`). -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_18 : ∃ ζ : ℂ, bdfRhoSum 18 ζ = 0 ∧ 1 < ‖ζ‖ := by
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_18 : ∃ ζ : ℂ, bdfRhoSum 18 ζ = 0 ∧ 1 < ‖ζ‖ := by
   refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-3 / 32 : ℝ) : ℂ)
       + ((11 / 32 : ℝ) : ℂ) * Complex.I))
     (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
@@ -995,7 +995,7 @@ outside the closed unit disk. The second power sum of its roots is
 /-! ## BDF`k` is not zero-stable for every `k ≥ 7` -/
 
 /-- `7 ≤ k ≤ 18`: one Schur–Cohn witness per `k`. -/
-@[powerlib_foundation] private theorem bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen {k : ℕ} (hk : 7 ≤ k)
+@[tmio T, powerlib_foundation] private theorem bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen {k : ℕ} (hk : 7 ≤ k)
     (hk' : k ≤ 18) : ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
   interval_cases k
   · exact bdfRhoSum_exists_root_7
@@ -1014,7 +1014,7 @@ outside the closed unit disk. The second power sum of its roots is
 /-- **BDF`k` is zero-unstable for every `k ≥ 7`**: the backward-difference polynomial
 `bdfRhoSum k` has a root outside the closed unit disk (Schur–Cohn witnesses for `k ≤ 18`, the
 uniform second power-sum bound for `k ≥ 19`). -/
-@[powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k) :
+@[tmio T, powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k) :
     ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
   rcases le_or_gt k 18 with h | h
   · exact bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen hk h
@@ -1022,13 +1022,13 @@ uniform second power-sum bound for `k ≥ 19`). -/
 
 /-- For every `k ≥ 7` the first characteristic polynomial of the `k`-step BDF has a root of
 modulus `> 1`. -/
-@[powerlib_foundation] theorem bdfLMM_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k) :
+@[tmio T, powerlib_foundation] theorem bdfLMM_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k) :
     ∃ ζ : ℂ, (bdfLMM k).rho ζ = 0 ∧ 1 < ‖ζ‖ := by
   obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_norm_gt_one hk
   exact ⟨ζ, by rw [bdfLMM_rho_eq, h, mul_zero], h1⟩
 
 /-- **The `k`-step BDF violates the root condition (is not zero-stable) for every `k ≥ 7`.** -/
-@[powerlib_foundation] theorem bdfLMM_not_rootCondition {k : ℕ} (hk : 7 ≤ k) :
+@[tmio T, powerlib_foundation] theorem bdfLMM_not_rootCondition {k : ℕ} (hk : 7 ≤ k) :
     ¬ (bdfLMM k).RootCondition := by
   obtain ⟨ζ, hζ, h1⟩ := bdfLMM_exists_root_norm_gt_one hk
   exact (bdfLMM k).not_rootCondition_of_root hζ h1
@@ -1041,35 +1041,35 @@ modulus `> 1`. -/
 def bdf7 : LMM 7 :=
   bdf 7 ![-20/363, 490/1089, -196/121, 1225/363, -4900/1089, 490/121, -980/363, 1] (140/363)
 
-@[powerlib_foundation] theorem bdf7_exactOrder : bdf7.HasExactOrder 7 := by
+@[tmio T, powerlib_foundation] theorem bdf7_exactOrder : bdf7.HasExactOrder 7 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf7, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf7, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf7_consistent : bdf7.Consistent := by
+@[tmio T, powerlib_foundation] theorem bdf7_consistent : bdf7.Consistent := by
   rw [LMM.consistent_iff_hasOrder_one]
   exact fun q hq => bdf7_exactOrder.1 q (by omega)
 
 /-- The BDF7 first characteristic polynomial is `β_7 · bdfRhoSum 7`. -/
-@[powerlib_foundation] theorem bdf7_rho_eq_sum (ζ : ℂ) :
+@[tmio T, powerlib_foundation] theorem bdf7_rho_eq_sum (ζ : ℂ) :
     bdf7.rho ζ = ((140 / 363) : ℂ) * bdfRhoSum 7 ζ := by
   simp [LMM.rho, bdf7, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
   ring
 
 /-- The table `bdf7` has the same first characteristic polynomial as `bdfLMM 7`. -/
-@[powerlib_foundation] theorem bdf7_rho_eq_bdfLMM (ζ : ℂ) : bdf7.rho ζ = (bdfLMM 7).rho ζ := by
+@[tmio T, powerlib_foundation] theorem bdf7_rho_eq_bdfLMM (ζ : ℂ) : bdf7.rho ζ = (bdfLMM 7).rho ζ := by
   rw [bdf7_rho_eq_sum, bdfLMM_rho_eq]
   congr 1
   norm_num [bdfHarmonic, Finset.sum_range_succ]
 
 /-- **BDF7 is not zero-stable**: `ρ_7` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[powerlib_foundation] theorem bdf7_exists_root_norm_gt_one :
+@[tmio T, powerlib_foundation] theorem bdf7_exists_root_norm_gt_one :
     ∃ ζ : ℂ, bdf7.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
   obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_7
   exact ⟨ζ, by rw [bdf7_rho_eq_sum, h, mul_zero], h1⟩
 
 /-- BDF7 violates the root condition (it is not zero-stable). -/
-@[powerlib_foundation] theorem bdf7_not_rootCondition : ¬ bdf7.RootCondition := by
+@[tmio T, powerlib_foundation] theorem bdf7_not_rootCondition : ¬ bdf7.RootCondition := by
   obtain ⟨ζ, hζ, h1⟩ := bdf7_exists_root_norm_gt_one
   exact bdf7.not_rootCondition_of_root hζ h1
 
@@ -1080,35 +1080,35 @@ def bdf8 : LMM 8 :=
   bdf 8 ![35/761, -320/761, 3920/2283, -3136/761, 4900/761, -15680/2283, 3920/761, -2240/761,
       1] (280/761)
 
-@[powerlib_foundation] theorem bdf8_exactOrder : bdf8.HasExactOrder 8 := by
+@[tmio T, powerlib_foundation] theorem bdf8_exactOrder : bdf8.HasExactOrder 8 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf8, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf8, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf8_consistent : bdf8.Consistent := by
+@[tmio T, powerlib_foundation] theorem bdf8_consistent : bdf8.Consistent := by
   rw [LMM.consistent_iff_hasOrder_one]
   exact fun q hq => bdf8_exactOrder.1 q (by omega)
 
 /-- The BDF8 first characteristic polynomial is `β_8 · bdfRhoSum 8`. -/
-@[powerlib_foundation] theorem bdf8_rho_eq_sum (ζ : ℂ) :
+@[tmio T, powerlib_foundation] theorem bdf8_rho_eq_sum (ζ : ℂ) :
     bdf8.rho ζ = ((280 / 761) : ℂ) * bdfRhoSum 8 ζ := by
   simp [LMM.rho, bdf8, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
   ring
 
 /-- The table `bdf8` has the same first characteristic polynomial as `bdfLMM 8`. -/
-@[powerlib_foundation] theorem bdf8_rho_eq_bdfLMM (ζ : ℂ) : bdf8.rho ζ = (bdfLMM 8).rho ζ := by
+@[tmio T, powerlib_foundation] theorem bdf8_rho_eq_bdfLMM (ζ : ℂ) : bdf8.rho ζ = (bdfLMM 8).rho ζ := by
   rw [bdf8_rho_eq_sum, bdfLMM_rho_eq]
   congr 1
   norm_num [bdfHarmonic, Finset.sum_range_succ]
 
 /-- **BDF8 is not zero-stable**: `ρ_8` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[powerlib_foundation] theorem bdf8_exists_root_norm_gt_one :
+@[tmio T, powerlib_foundation] theorem bdf8_exists_root_norm_gt_one :
     ∃ ζ : ℂ, bdf8.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
   obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_8
   exact ⟨ζ, by rw [bdf8_rho_eq_sum, h, mul_zero], h1⟩
 
 /-- BDF8 violates the root condition (it is not zero-stable). -/
-@[powerlib_foundation] theorem bdf8_not_rootCondition : ¬ bdf8.RootCondition := by
+@[tmio T, powerlib_foundation] theorem bdf8_not_rootCondition : ¬ bdf8.RootCondition := by
   obtain ⟨ζ, hζ, h1⟩ := bdf8_exists_root_norm_gt_one
   exact bdf8.not_rootCondition_of_root hζ h1
 
@@ -1119,35 +1119,35 @@ def bdf9 : LMM 9 :=
   bdf 9 ![-280/7129, 2835/7129, -12960/7129, 35280/7129, -63504/7129, 79380/7129, -70560/7129,
       45360/7129, -22680/7129, 1] (2520/7129)
 
-@[powerlib_foundation] theorem bdf9_exactOrder : bdf9.HasExactOrder 9 := by
+@[tmio T, powerlib_foundation] theorem bdf9_exactOrder : bdf9.HasExactOrder 9 := by
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf9, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf9, bdf, Fin.sum_univ_succ]; norm_num
 
-@[powerlib_foundation] theorem bdf9_consistent : bdf9.Consistent := by
+@[tmio T, powerlib_foundation] theorem bdf9_consistent : bdf9.Consistent := by
   rw [LMM.consistent_iff_hasOrder_one]
   exact fun q hq => bdf9_exactOrder.1 q (by omega)
 
 /-- The BDF9 first characteristic polynomial is `β_9 · bdfRhoSum 9`. -/
-@[powerlib_foundation] theorem bdf9_rho_eq_sum (ζ : ℂ) :
+@[tmio T, powerlib_foundation] theorem bdf9_rho_eq_sum (ζ : ℂ) :
     bdf9.rho ζ = ((2520 / 7129) : ℂ) * bdfRhoSum 9 ζ := by
   simp [LMM.rho, bdf9, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
   ring
 
 /-- The table `bdf9` has the same first characteristic polynomial as `bdfLMM 9`. -/
-@[powerlib_foundation] theorem bdf9_rho_eq_bdfLMM (ζ : ℂ) : bdf9.rho ζ = (bdfLMM 9).rho ζ := by
+@[tmio T, powerlib_foundation] theorem bdf9_rho_eq_bdfLMM (ζ : ℂ) : bdf9.rho ζ = (bdfLMM 9).rho ζ := by
   rw [bdf9_rho_eq_sum, bdfLMM_rho_eq]
   congr 1
   norm_num [bdfHarmonic, Finset.sum_range_succ]
 
 /-- **BDF9 is not zero-stable**: `ρ_9` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[powerlib_foundation] theorem bdf9_exists_root_norm_gt_one :
+@[tmio T, powerlib_foundation] theorem bdf9_exists_root_norm_gt_one :
     ∃ ζ : ℂ, bdf9.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
   obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_9
   exact ⟨ζ, by rw [bdf9_rho_eq_sum, h, mul_zero], h1⟩
 
 /-- BDF9 violates the root condition (it is not zero-stable). -/
-@[powerlib_foundation] theorem bdf9_not_rootCondition : ¬ bdf9.RootCondition := by
+@[tmio T, powerlib_foundation] theorem bdf9_not_rootCondition : ¬ bdf9.RootCondition := by
   obtain ⟨ζ, hζ, h1⟩ := bdf9_exists_root_norm_gt_one
   exact bdf9.not_rootCondition_of_root hζ h1
 

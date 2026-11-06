@@ -100,7 +100,7 @@ variable {f g u}
   ContDiffAt.implicitFunction_apply_self _ _ _
 
 /-- `g(x, h(x)) = 0` near `x₀` (wrapper of `ContDiffAt.eventually_apply_implicitFunction`). -/
-@[powerlib_foundation] theorem implicitMap_spec (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem implicitMap_spec (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) (hu : g u = 0) :
     ∀ᶠ x in 𝓝 u.1, g (x, implicitMap g u hg hinv x) = 0 := by
   have := ContDiffAt.eventually_apply_implicitFunction (hg.contDiffAt (x := u)) one_ne_zero hinv
@@ -108,7 +108,7 @@ variable {f g u}
 
 /-- Local uniqueness of the algebraic branch (wrapper of
 `ContDiffAt.eventually_apply_eq_iff_implicitFunction`). -/
-@[powerlib_foundation] theorem implicitMap_unique (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem implicitMap_unique (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) (hu : g u = 0) :
     ∀ᶠ v in 𝓝 u, g v = 0 ↔ implicitMap g u hg hinv v.1 = v.2 := by
   have := ContDiffAt.eventually_apply_eq_iff_implicitFunction (hg.contDiffAt (x := u))
@@ -116,17 +116,17 @@ variable {f g u}
   rwa [hu] at this
 
 /-- `Dh(x₀) = -(∂g/∂y)⁻¹ ∂g/∂x` (wrapper of `ContDiffAt.hasStrictFDerivAt_implicitFunction`). -/
-@[powerlib_foundation] theorem hasStrictFDerivAt_implicitMap (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem hasStrictFDerivAt_implicitMap (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) :
     HasStrictFDerivAt (implicitMap g u hg hinv) (-(partialY g u).inverse ∘L partialX g u) u.1 :=
   ContDiffAt.hasStrictFDerivAt_implicitFunction _ _ _
 
-@[powerlib_foundation] theorem contDiffAt_implicitMap (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem contDiffAt_implicitMap (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) : ContDiffAt ℝ 1 (implicitMap g u hg hinv) u.1 :=
   ContDiffAt.contDiffAt_implicitFunction _ _ _
 
 /-- Eliminating `y` and then linearizing gives the Schur complement. -/
-@[powerlib_foundation] theorem hasFDerivAt_reducedField (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_reducedField (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) :
     HasFDerivAt (reducedField f g u hg hinv) (schurCLM f g u) u.1 := by
   have hh := (hasStrictFDerivAt_implicitMap hg hinv).hasFDerivAt
@@ -144,12 +144,12 @@ variable {f g u}
   rw [hS]
   exact hcomp
 
-@[powerlib_foundation] theorem contDiffAt_reducedField (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem contDiffAt_reducedField (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) :
     ContDiffAt ℝ 1 (reducedField f g u hg hinv) u.1 :=
   hf.contDiffAt.comp u.1 (contDiffAt_id.prodMk (contDiffAt_implicitMap hg hinv))
 
-@[powerlib_foundation] theorem reducedField_self (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem reducedField_self (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) (hfu : f u = 0) :
     reducedField f g u hg hinv u.1 = 0 := by
   simp only [reducedField, implicitMap_self]
@@ -158,7 +158,7 @@ variable {f g u}
 /-! ## Local exponential stability -/
 
 /-- A globally `C¹` field equal to the reduced field on a ball around `x₀`. -/
-@[powerlib_foundation] theorem exists_contDiff_extension (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem exists_contDiff_extension (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) :
     ∃ R > 0, ∃ G : State n → State n, ContDiff ℝ 1 G ∧
       ∀ x, ‖x - u.1‖ < R → G x = reducedField f g u hg hinv x := by
@@ -190,7 +190,7 @@ variable {f g u}
 
 /-- **Reduced ODE stability.** For an index-1 equilibrium with Hurwitz Schur complement, the
 eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
-@[powerlib_foundation] theorem reducedODE_locallyExponentiallyStable (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem reducedODE_locallyExponentiallyStable (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) (hfu : f u = 0)
     (hH : LinearSystems.IsHurwitz (schurMatrix f g u)) :
     LocallyExponentiallyStable (reducedField f g u hg hinv) u.1 := by
@@ -211,7 +211,7 @@ eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
 DAE solution segment (a pair `(x, y)` solving `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) on the
 branch selected by a neighbourhood `V` of `y₀` and starting close to `x₀` decays exponentially,
 and its algebraic part is `y = h(x)`. -/
-@[powerlib_foundation] theorem dae_locallyExponentiallyStable (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem dae_locallyExponentiallyStable (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) (hfu : f u = 0) (hgu : g u = 0)
     (hH : LinearSystems.IsHurwitz (schurMatrix f g u)) :
     ∃ V ∈ 𝓝 u.2, ∃ r C a : ℝ, 0 < r ∧ 1 ≤ C ∧ 0 < a ∧
@@ -271,7 +271,7 @@ and its algebraic part is `y = h(x)`. -/
 (solves `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) iff `x` solves the reduced ODE
 `ẋ = f(x, h(x))` and `y = h(x)`: there are neighbourhoods `U` of `x₀` and `V` of `y₀` such that
 this holds for every segment staying in `U × V`. -/
-@[powerlib_foundation] theorem dae_iff_reduced_local (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem dae_iff_reduced_local (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) (hgu : g u = 0) :
     ∃ U ∈ 𝓝 u.1, ∃ V ∈ 𝓝 u.2, ∀ (t₀ t₁ : ℝ) (x : ℝ → State n) (y : ℝ → State m),
       (∀ t ∈ Icc t₀ t₁, x t ∈ U ∧ y t ∈ V) →

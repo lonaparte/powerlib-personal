@@ -63,45 +63,45 @@ namespace LTI
   exact congrArg exp (map_smul (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)) s A)
 
 /-- The iterates of the sampled map are the flow at the sampling instants. -/
-@[powerlib_foundation] theorem iterate_op_exp (A : Matrix (Fin n) (Fin n) ℝ) (T : ℝ) (k : ℕ)
+@[tmio T, powerlib_foundation] theorem iterate_op_exp (A : Matrix (Fin n) (Fin n) ℝ) (T : ℝ) (k : ℕ)
     (y : ℝⁿ) :
     (⇑(Map.op (exp (T • A))))^[k] y = Map.op (exp (((k : ℝ) * T) • A)) y := by
   rw [← FunLike.coe_pow_eq_iterate, ← map_pow, ← Matrix.exp_nsmul, ← Nat.cast_smul_eq_nsmul ℝ,
     smul_smul]
 
 /-- The solution of `ẋ = A x` through `x₀` at `t₀` is the flow `e^{(t - t₀) A} x₀`. -/
-@[powerlib_foundation] private theorem solution_zero (A : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem solution_zero (A : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
     Linear.solution A 0 t₀ x₀ t = Map.op (exp ((t - t₀) • A)) x₀ := by
   rw [op_exp_smul]
   simp [Linear.solution]
 
 /-- The flow is continuous in time. -/
-@[powerlib_foundation] private theorem continuous_op_exp (A : Matrix (Fin n) (Fin n) ℝ) :
+@[tmio T, powerlib_foundation] private theorem continuous_op_exp (A : Matrix (Fin n) (Fin n) ℝ) :
     Continuous fun s : ℝ => Map.op (exp (s • A)) := by
   simp_rw [op_exp_smul]
   exact continuous_iff_continuousAt.2 fun t =>
     (hasDerivAt_exp_smul_const' (𝕂 := ℝ) (Linear.op A) t).continuousAt
 
 /-- The flow over `s + τ` is the flow over `s` after the flow over `τ`. -/
-@[powerlib_foundation] theorem op_exp_add_smul (A : Matrix (Fin n) (Fin n) ℝ) (s τ : ℝ) (y : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem op_exp_add_smul (A : Matrix (Fin n) (Fin n) ℝ) (s τ : ℝ) (y : ℝⁿ) :
     Map.op (exp ((s + τ) • A)) y = Map.op (exp (s • A)) (Map.op (exp (τ • A)) y) := by
   rw [add_smul, Matrix.exp_add_of_commute _ _ (((Commute.refl A).smul_left s).smul_right τ)]
   exact Linear.op_mul_apply _ _ y
 
 /-- The solution from `y` at time zero is a solution segment on every interval. -/
-@[powerlib_foundation] private theorem isTrajectoryOn_solution (A : Matrix (Fin n) (Fin n) ℝ) (y : ℝⁿ) (t₁ : ℝ) :
+@[tmio T, powerlib_foundation] private theorem isTrajectoryOn_solution (A : Matrix (Fin n) (Fin n) ℝ) (y : ℝⁿ) (t₁ : ℝ) :
     IsTrajectoryOn (Linear.solution A 0 0 y) (affineLinearVectorField A 0) 0 t₁ :=
   fun t _ => (Linear.solution_hasDerivAt A 0 0 y t).hasDerivWithinAt
 
 /-- Sampled at `k T`, the solution from `y` is the `k`-th iterate of the sampled map. -/
-@[powerlib_foundation] private theorem solution_mul (A : Matrix (Fin n) (Fin n) ℝ) (T : ℝ) (y : ℝⁿ) (k : ℕ) :
+@[tmio T, powerlib_foundation] private theorem solution_mul (A : Matrix (Fin n) (Fin n) ℝ) (T : ℝ) (y : ℝⁿ) (k : ℕ) :
     Linear.solution A 0 0 y (k * T) = (⇑(Map.op (exp (T • A))))^[k] y := by
   rw [solution_zero, iterate_op_exp, sub_zero]
 
 /-- **Decay rates under exact sampling.** For `T > 0`, the linear flow decays at the rate `a`
 exactly when its sampled map decays at the rate `a T` per step: every time is a sampling
 instant plus less than one period, over which the flow is bounded. -/
-@[powerlib_foundation] theorem decay_iff_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem decay_iff_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ} (hT : 0 < T)
     (a : ℝ) :
     Flow.Decay (affineLinearVectorField A 0) 0 a ↔
       Map.Decay (Map.op (exp (T • A))) 0 (a * T) := by
@@ -151,7 +151,7 @@ instant plus less than one period, over which the flow is bounded. -/
 /-- **Lyapunov stability under exact sampling.** For `T > 0`, the linear flow is Lyapunov stable
 at the origin exactly when its sampled map is: the samples of a flow staying close stay close,
 and a Lyapunov stable linear map has bounded powers, which bound the flow at every time. -/
-@[powerlib_foundation] theorem lyapunovStable_iff_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ}
+@[tmio T, powerlib_foundation] theorem lyapunovStable_iff_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ}
     (hT : 0 < T) :
     LyapunovStable (affineLinearVectorField A 0) 0 ↔
       Map.LyapunovStable (Map.op (exp (T • A))) 0 := by
@@ -171,7 +171,7 @@ and a Lyapunov stable linear map has bounded powers, which bound the flow at eve
 a strict minimum at the origin exactly when its sampled map does: a conserved energy of the flow
 is conserved at the samples, and the average over one period of the flow of an energy conserved
 by the sampled map is conserved by the flow. -/
-@[powerlib_foundation] theorem conservative_iff_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ}
+@[tmio T, powerlib_foundation] theorem conservative_iff_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ}
     (hT : 0 < T) :
     Flow.Conservative (affineLinearVectorField A 0) 0 ↔
       Map.Conservative (Map.op (exp (T • A))) 0 := by
@@ -216,7 +216,7 @@ by the sampled map is conserved by the flow. -/
 /-- **Exact sampling reads every sentence.** For a sampling period `T > 0`, every sentence holds
 for the linear flow `ẋ = A x` at the origin exactly when it holds for its sampled map `e^{TA}`
 with step length `T`. -/
-@[powerlib_foundation] theorem holds_iff_holdsMap_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ}
+@[tmio T, powerlib_foundation] theorem holds_iff_holdsMap_exp (A : Matrix (Fin n) (Fin n) ℝ) {T : ℝ}
     (hT : 0 < T) (P : Flow.Property) :
     P.holds (affineLinearVectorField A 0) 0 ↔ P.holdsMap T (Map.op (exp (T • A))) 0 := by
   have hatt : ∀ {P : Flow.Property}, P.Attractive ∨ P = .contractive →

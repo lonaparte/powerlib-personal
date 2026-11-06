@@ -102,7 +102,7 @@ def translate : Sentence → Set Requirement
 def family : Family (PortHamiltonian n p) Requirement n p :=
   ⟨fun h => h.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear :
+@[tmio M, powerlib_foundation] theorem family_isLinear :
     (family (n := n) (p := p)).IsLinear PortHamiltonian.plant := fun _ => rfl
 
 /-- Stored energy places each submitted plant in the passivity denotation. -/

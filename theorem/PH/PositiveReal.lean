@@ -60,7 +60,7 @@ variable {n m : ℕ}
 
 /-- Real part of a complex quadratic form of a real matrix:
 `Re vᴴ P v = aᵀ P a + bᵀ P b` with `v = a + i b`. -/
-@[powerlib_foundation] theorem phCx_form_re (P : Matrix (Fin n) (Fin n) ℝ) (v : Fin n → ℂ) :
+@[tmio T, powerlib_foundation] theorem phCx_form_re (P : Matrix (Fin n) (Fin n) ℝ) (v : Fin n → ℂ) :
     (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re =
       (fun i => (v i).re) ⬝ᵥ (P *ᵥ fun i => (v i).re) +
         (fun i => (v i).im) ⬝ᵥ (P *ᵥ fun i => (v i).im) := by
@@ -71,7 +71,7 @@ variable {n m : ℕ}
     Complex.coe_algebraMap, Complex.ofReal_re, Complex.ofReal_im, Complex.mul_im]
   ring
 
-@[powerlib_foundation] theorem phCx_form_re_nonneg {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem phCx_form_re_nonneg {P : Matrix (Fin n) (Fin n) ℝ}
     (hP : P.PosSemidef) (v : Fin n → ℂ) : 0 ≤ (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re := by
   rw [phCx_form_re]
   have h1 := hP.dotProduct_mulVec_nonneg (fun i => (v i).re)
@@ -79,7 +79,7 @@ variable {n m : ℕ}
   rw [star_trivial] at h1 h2
   linarith
 
-@[powerlib_foundation] theorem phCx_form_re_pos {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem phCx_form_re_pos {P : Matrix (Fin n) (Fin n) ℝ}
     (hP : P.PosDef) {v : Fin n → ℂ} (hv : v ≠ 0) :
     0 < (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re := by
   rw [phCx_form_re]
@@ -102,7 +102,7 @@ variable {n m : ℕ}
     linarith
 
 /-- `uᴴ Gᴴ u = conj (uᴴ G u)` for complex `G`. -/
-@[powerlib_foundation] theorem phCx_conjTranspose_form {κ : Type*} [Fintype κ]
+@[tmio T, powerlib_foundation] theorem phCx_conjTranspose_form {κ : Type*} [Fintype κ]
     (G : Matrix κ κ ℂ) (u : κ → ℂ) :
     star u ⬝ᵥ (Gᴴ *ᵥ u) = star (star u ⬝ᵥ (G *ᵥ u)) := by
   simp only [dotProduct, mulVec, star_sum, star_mul', conjTranspose_apply, Pi.star_apply,
@@ -111,12 +111,12 @@ variable {n m : ℕ}
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   ring
 
-@[powerlib_foundation] theorem phCx_complexify_add (M N : Matrix (Fin n) (Fin m) ℝ) :
+@[tmio T, powerlib_foundation] theorem phCx_complexify_add (M N : Matrix (Fin n) (Fin m) ℝ) :
     Linear.complexify (M + N) = Linear.complexify M + Linear.complexify N := by
   ext i j
   simp
 
-@[powerlib_foundation] theorem phCx_complexify_conjTranspose (M : Matrix (Fin n) (Fin m) ℝ) :
+@[tmio T, powerlib_foundation] theorem phCx_complexify_conjTranspose (M : Matrix (Fin n) (Fin m) ℝ) :
     (Linear.complexify M)ᴴ = Linear.complexify Mᵀ := by
   ext i j
   simp [conjTranspose_apply, Complex.coe_algebraMap, Complex.conj_ofReal]
@@ -129,7 +129,7 @@ variable {J R Q : Matrix (Fin n) (Fin n) ℝ}
 
 /-- T-ph §1.10: every complex eigenvalue of `(J − R) Q` (`J` skew, `R ⪰ 0`, `Q ≻ 0`) has
 nonpositive real part. -/
-@[powerlib_foundation] theorem phSpectral_re_nonpos (hJ : Jᵀ = -J) (hR : R.PosSemidef)
+@[tmio T, powerlib_foundation] theorem phSpectral_re_nonpos (hJ : Jᵀ = -J) (hR : R.PosSemidef)
     (hQ : Q.PosDef) {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : Linear.complexify (linearStateMatrix J R Q) *ᵥ v = μ • v) : μ.re ≤ 0 := by
   have hQt : Qᵀ = Q := symmetric_of_posDef hQ
@@ -140,7 +140,7 @@ nonpositive real part. -/
   linarith
 
 /-- No pole of the linear pH system in the open right half-plane. -/
-@[powerlib_foundation] theorem phSpectral_det_ne_zero (hJ : Jᵀ = -J) (hR : R.PosSemidef)
+@[tmio T, powerlib_foundation] theorem phSpectral_det_ne_zero (hJ : Jᵀ = -J) (hR : R.PosSemidef)
     (hQ : Q.PosDef) {s : ℂ} (hs : 0 < s.re) :
     (Linear.characteristicMatrix (linearStateMatrix J R Q) s).det ≠ 0 :=
   Criteria.det_characteristicMatrix_ne_zero_of_re_lt _ fun _ _ hv heig =>
@@ -161,7 +161,7 @@ def IsPositiveReal {p : ℕ} (sys : Linear.Plant n p) : Prop :=
     (Linear.characteristicMatrix sys.A s).det ≠ 0 ∧ PositiveRealAt (Linear.transfer sys s)
 
 /-- `Re uᴴ (G + Gᴴ) u = 2 Re uᴴ G u`. -/
-@[powerlib_foundation] theorem positiveRealAt_iff_re {κ : Type*} [Fintype κ]
+@[tmio T, powerlib_foundation] theorem positiveRealAt_iff_re {κ : Type*} [Fintype κ]
     (G : Matrix κ κ ℂ) : PositiveRealAt G ↔ ∀ u : κ → ℂ, 0 ≤ (star u ⬝ᵥ (G *ᵥ u)).re := by
   have h : ∀ u : κ → ℂ, (star u ⬝ᵥ ((G + Gᴴ) *ᵥ u)).re = 2 * (star u ⬝ᵥ (G *ᵥ u)).re := by
     intro u
@@ -179,7 +179,7 @@ variable {J R Q : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
 
 /-- The key identity: with `x = (sI − A)⁻¹ g u`,
 `Re uᴴ G(s) u = Re(s) · Re(xᴴ Q x) + Re(xᴴ Q R Q x)`. -/
-@[powerlib_foundation] theorem linearLTIModel_transfer_re (hJ : Jᵀ = -J) (hRt : Rᵀ = R)
+@[tmio T, powerlib_foundation] theorem linearLTIModel_transfer_re (hJ : Jᵀ = -J) (hRt : Rᵀ = R)
     (hQt : Qᵀ = Q) (s : ℂ)
     (hdet : (Linear.characteristicMatrix (linearStateMatrix J R Q) s).det ≠ 0) (u : Fin m → ℂ) :
     (star u ⬝ᵥ (Linear.transfer (linearLTIModel J R g Q) s *ᵥ u)).re =
@@ -245,7 +245,7 @@ variable {J R Q : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
 /-- T-ph §1.10: the port admittance `G(s) = gᵀ Q (sI − (J − R) Q)⁻¹ g` of a linear pH system
 with `R ⪰ 0`, `Q ≻ 0` is positive real (no right-half-plane pole and
 `Re uᴴ (G + Gᴴ) u = 2 Re(s) xᴴQx + 2 xᴴQRQx ≥ 0`). -/
-@[powerlib_foundation] theorem linearLTIModel_isPositiveReal (hJ : Jᵀ = -J)
+@[tmio T, powerlib_foundation] theorem linearLTIModel_isPositiveReal (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) : IsPositiveReal (linearLTIModel J R g Q) := by
   intro s hs
   have hdet := phSpectral_det_ne_zero hJ hR hQ hs
@@ -269,7 +269,7 @@ end PR
 /-! ## Admittance versus impedance -/
 
 /-- For invertible `G`: `wᴴ Gᴴ (G⁻¹ + G⁻ᴴ) G w = wᴴ (G + Gᴴ) w`. -/
-@[powerlib_foundation] theorem positiveRealAt_inv_form {κ : Type*} [Fintype κ] [DecidableEq κ]
+@[tmio T, powerlib_foundation] theorem positiveRealAt_inv_form {κ : Type*} [Fintype κ] [DecidableEq κ]
     {G : Matrix κ κ ℂ} (hG : IsUnit G.det) (w : κ → ℂ) :
     star (G *ᵥ w) ⬝ᵥ ((G⁻¹ + G⁻¹ᴴ) *ᵥ (G *ᵥ w)) = star w ⬝ᵥ ((G + Gᴴ) *ᵥ w) := by
   have h1 : G⁻¹ *ᵥ (G *ᵥ w) = w := by rw [mulVec_mulVec, nonsing_inv_mul _ hG, one_mulVec]
@@ -281,7 +281,7 @@ end PR
 
 /-- At a fixed frequency, an invertible matrix is positive real iff its inverse is
 (admittance PR ⇔ impedance PR). -/
-@[powerlib_foundation] theorem positiveRealAt_inv_iff {κ : Type*} [Fintype κ] [DecidableEq κ]
+@[tmio T, powerlib_foundation] theorem positiveRealAt_inv_iff {κ : Type*} [Fintype κ] [DecidableEq κ]
     {G : Matrix κ κ ℂ} (hG : IsUnit G.det) : PositiveRealAt G⁻¹ ↔ PositiveRealAt G := by
   constructor
   · intro h w
@@ -295,7 +295,7 @@ end PR
 
 /-- The port impedance `Z(s) = G(s)⁻¹` of a linear pH system with `R ⪰ 0`, `Q ≻ 0` is positive
 real at every right-half-plane point where `G(s)` is invertible. -/
-@[powerlib_foundation] theorem linearLTIModel_impedance_positiveRealAt
+@[tmio T, powerlib_foundation] theorem linearLTIModel_impedance_positiveRealAt
     {J R Q : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
     (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Q.PosDef) {s : ℂ} (hs : 0 < s.re)
     (hG : IsUnit (Linear.transfer (linearLTIModel J R g Q) s).det) :

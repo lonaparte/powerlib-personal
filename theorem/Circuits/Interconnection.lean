@@ -649,7 +649,7 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
 @[tmio M, powerlib_foundation] theorem portData_hidden_quiet : hiddenLoop.portData = quietLoop.portData :=
   Prod.ext transfer_not_determines_stability.1 rfl
 
-@[powerlib_foundation] theorem testLoad_isHurwitz : IsHurwitz testLoad.A := by
+@[tmio TM, powerlib_foundation] theorem testLoad_isHurwitz : IsHurwitz testLoad.A := by
   simpa [testLoad] using (isHurwitz_one_iff (-1)).mpr (by norm_num)
 
 /-- The quiet interconnection is stable, by the impedance criterion. -/

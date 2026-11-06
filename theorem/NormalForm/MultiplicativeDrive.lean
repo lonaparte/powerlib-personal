@@ -64,7 +64,7 @@ def driveDeriv (F : E × ℝ → E) (p : E × ℝ) : E := fderiv ℝ F p (0, 1)
 
 /-- Discriminant (B): on a convex open domain, `F` is affine in the drive with a
 state-independent coefficient iff all second derivatives with a drive index vanish. -/
-@[powerlib_foundation] theorem affine_in_drive_iff {F : E × ℝ → E} {Ω : Set (E × ℝ)}
+@[tmio T, powerlib_foundation] theorem affine_in_drive_iff {F : E × ℝ → E} {Ω : Set (E × ℝ)}
     (hΩ : Convex ℝ Ω) (hΩo : IsOpen Ω) (hF : DifferentiableOn ℝ F Ω)
     (hg : DifferentiableOn ℝ (driveDeriv F) Ω) :
     (∃ f₀ : E → E, ∃ b : E, ∀ p ∈ Ω, F p = f₀ p.1 + p.2 • b) ↔
@@ -138,7 +138,7 @@ state-independent coefficient iff all second derivatives with a drive index vani
 
 /-- Discriminant (A) does not imply (B): `F = f₀(x) + u b + u² d` with `d ≠ 0` has
 `∂_x ∂_u F = 0` everywhere but is not of the form `f₀'(x) + u b'`. -/
-@[powerlib_foundation] theorem quadratic_drive_counterexample {f₀ : E → E}
+@[tmio T, powerlib_foundation] theorem quadratic_drive_counterexample {f₀ : E → E}
     (hf₀ : Differentiable ℝ f₀) (b d : E) (hd : d ≠ 0) :
     (∀ p : E × ℝ, ∀ w : E, fderiv ℝ (driveDeriv fun q : E × ℝ => f₀ q.1 + q.2 • b + q.2 ^ 2 • d)
         p (w, 0) = 0) ∧
@@ -189,7 +189,7 @@ state-independent coefficient iff all second derivatives with a drive index vani
 
 /-- A multilinear tensor on `E × ℝ` that vanishes whenever one argument is a pure drive vector
 sees only the state components: `D[δ, …, δ] = D[(δx, 0), …, (δx, 0)]`. -/
-@[powerlib_foundation] theorem apply_const_of_driveFree {k : ℕ}
+@[tmio T, powerlib_foundation] theorem apply_const_of_driveFree {k : ℕ}
     (D : ContinuousMultilinearMap ℝ (fun _ : Fin k => E × ℝ) E)
     (hD : ∀ (m : Fin k → E × ℝ) (i : Fin k) (s : ℝ), m i = (0, s) → D m = 0) (δ : E × ℝ) :
     D (fun _ => δ) = D (fun _ => (δ.1, 0)) := by
@@ -209,7 +209,7 @@ sees only the state components: `D[δ, …, δ] = D[(δx, 0), …, (δx, 0)]`. -
 
 /-- Iterated derivatives (`k ≥ 2`) of an affine drive channel `F(x, u) = f₀(x) + u b` see only the
 state: `D^kF(p) = D^kf₀(p.1) ∘ (fst, …, fst)`. -/
-@[powerlib_foundation] theorem iteratedFDeriv_affine {f₀ : E → E} {k : ℕ} (hf₀ : ContDiff ℝ k f₀)
+@[tmio T, powerlib_foundation] theorem iteratedFDeriv_affine {f₀ : E → E} {k : ℕ} (hf₀ : ContDiff ℝ k f₀)
     (b : E) (hk : 2 ≤ k) (p : E × ℝ) :
     iteratedFDeriv ℝ k (fun q : E × ℝ => f₀ q.1 + q.2 • b) p =
       (iteratedFDeriv ℝ k f₀ p.1).compContinuousLinearMap
@@ -244,7 +244,7 @@ state: `D^kF(p) = D^kf₀(p.1) ∘ (fst, …, fst)`. -/
   rfl
 
 /-- An affine drive channel has drive-free derivative tensors of every order `k ≥ 2`. -/
-@[powerlib_foundation] theorem iteratedFDeriv_affine_driveFree {f₀ : E → E} {k : ℕ}
+@[tmio T, powerlib_foundation] theorem iteratedFDeriv_affine_driveFree {f₀ : E → E} {k : ℕ}
     (hf₀ : ContDiff ℝ k f₀) (b : E) (hk : 2 ≤ k) (p : E × ℝ) (m : Fin k → E × ℝ) (i : Fin k)
     (s : ℝ) (hm : m i = (0, s)) :
     iteratedFDeriv ℝ k (fun q : E × ℝ => f₀ q.1 + q.2 • b) p m = 0 := by
@@ -258,7 +258,7 @@ section Extended
 variable {𝕜 : Type*} [Field 𝕜] {V : Type*} [AddCommGroup V] [Module 𝕜 V]
 
 /-- A bilinear tensor on `V × 𝕜` vanishing on pure drive arguments only sees state parts. -/
-@[powerlib_foundation] theorem bilin_state_only (B : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
+@[tmio T, powerlib_foundation] theorem bilin_state_only (B : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
     (hB₁ : ∀ s w, B (0, s) w = 0) (hB₂ : ∀ w s, B w (0, s) = 0) (a c : V × 𝕜) :
     B a c = B (a.1, 0) (c.1, 0) := by
   have ha : a = (a.1, 0) + (0, a.2) := by ext <;> simp
@@ -267,7 +267,7 @@ variable {𝕜 : Type*} [Field 𝕜] {V : Type*} [AddCommGroup V] [Module 𝕜 V
   simp
 
 /-- The same for a trilinear tensor. -/
-@[powerlib_foundation] theorem trilin_state_only
+@[tmio T, powerlib_foundation] theorem trilin_state_only
     (B : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
     (hB₁ : ∀ s w z, B (0, s) w z = 0) (hB₂ : ∀ w s z, B w (0, s) z = 0)
     (hB₃ : ∀ w z s, B w z (0, s) = 0) (a c e : V × 𝕜) :
@@ -289,7 +289,7 @@ def cxFormula (B2 : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
 
 /-- With drive-free tensors the extended (multiplicative) `c_x` with `χ̃ = (χ, 1)`,
 `χ̃' = (χ', 1)` equals the additive one with `(χ, 0)`, `(χ', 0)`, exactly. -/
-@[powerlib_foundation] theorem cx_extended_eq_additive (B2 : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
+@[tmio T, powerlib_foundation] theorem cx_extended_eq_additive (B2 : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
     (B3 : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
     (h2₁ : ∀ s w, B2 (0, s) w = 0) (h2₂ : ∀ w s, B2 w (0, s) = 0)
     (h3₁ : ∀ s w z, B3 (0, s) w z = 0) (h3₂ : ∀ w s z, B3 w (0, s) z = 0)
@@ -308,7 +308,7 @@ end Extended
 /-! ## Amplitude conventions -/
 
 /-- `a cos θ = û e^{jθ} + û* e^{−jθ}` with `û = a/2`, and `|û|² = a²/4`. -/
-@[powerlib_foundation] theorem tone_coefficient (a θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem tone_coefficient (a θ : ℝ) :
     ((a * Real.cos θ : ℝ) : ℂ) = (a / 2 : ℂ) * Complex.exp (θ * Complex.I) +
         (starRingEnd ℂ) (a / 2 : ℂ) * Complex.exp (-(θ * Complex.I)) ∧
       ‖(a / 2 : ℂ)‖ ^ 2 = a ^ 2 / 4 := by
@@ -325,7 +325,7 @@ end Extended
     norm_num
 
 /-- The mean square of a single tone over one period is `a²/2`. -/
-@[powerlib_foundation] theorem tone_meanSquare (a : ℝ) {ω T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem tone_meanSquare (a : ℝ) {ω T : ℝ} (hT : 0 < T)
     (hωT : ω * T = 2 * Real.pi) :
     (1 / T) * ∫ t in (0 : ℝ)..T, (a * Real.cos (ω * t)) ^ 2 = a ^ 2 / 2 := by
   have hω : ω ≠ 0 := by
@@ -350,7 +350,7 @@ end Extended
 
 /-- The leading-order background threshold: `α − c_x a²/4 = 0` with `a ≥ 0` iff
 `a = a*₍₂₎ = 2√(α/c_x)` (`α ≥ 0`, `c_x > 0`); below it the erosion keeps `α_eff > 0`. -/
-@[powerlib_foundation] theorem erosion_threshold {α cx a : ℝ} (hα : 0 ≤ α) (hc : 0 < cx)
+@[tmio T, powerlib_foundation] theorem erosion_threshold {α cx a : ℝ} (hα : 0 ≤ α) (hc : 0 < cx)
     (ha : 0 ≤ a) :
     (α - cx * a ^ 2 / 4 = 0 ↔ a = 2 * √(α / cx)) ∧
       (a < 2 * √(α / cx) → 0 < α - cx * a ^ 2 / 4 ∨ α = 0 ∧ a = 0) := by
@@ -379,7 +379,7 @@ end Extended
 
 /-- Multi-tone bookkeeping: the tone-wise erosion `Σ c_k a_k²/4` is one half of
 `Σ c_k · (a_k²/2)`, the latter being `c` weighted by the spectral mass `a_k²/2` of each tone. -/
-@[powerlib_foundation] theorem multitone_erosion {ι : Type*} (s : Finset ι) (α : ℝ)
+@[tmio T, powerlib_foundation] theorem multitone_erosion {ι : Type*} (s : Finset ι) (α : ℝ)
     (c a : ι → ℝ) :
     α - ∑ k ∈ s, c k * a k ^ 2 / 4 = α - 1 / 2 * ∑ k ∈ s, c k * (a k ^ 2 / 2) := by
   rw [Finset.mul_sum]

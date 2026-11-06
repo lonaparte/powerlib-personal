@@ -40,13 +40,13 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
   have := Real.sin_sq_add_cos_sq δ
   linear_combination (-E ^ 2) * this
 
-@[powerlib_foundation] theorem iMag_radicand_nonneg (E V δ : ℝ) :
+@[tmio T, powerlib_foundation] theorem iMag_radicand_nonneg (E V δ : ℝ) :
     0 ≤ E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ := by
   rw [iMag_radicand]
   positivity
 
 /-- Derivative `E V sin δ/(X² I_omag)`. -/
-@[powerlib_foundation] theorem iMag_hasDerivAt {E V X δ : ℝ} (hX : X ≠ 0)
+@[tmio M, powerlib_foundation] theorem iMag_hasDerivAt {E V X δ : ℝ} (hX : X ≠ 0)
     (hu : 0 < E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) :
     HasDerivAt (iMag E V X) (E * V * Real.sin δ / (X ^ 2 * iMag E V X δ)) δ := by
   have hu' : HasDerivAt (fun d => E ^ 2 + V ^ 2 - 2 * E * V * Real.cos d)
@@ -64,7 +64,7 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
   exact h
 
 /-- `I_omag` is strictly increasing in `δ` on `[0, π]`. -/
-@[powerlib_foundation] theorem iMag_strictMonoOn {E V X : ℝ} (hE : 0 < E) (hV : 0 < V)
+@[tmio M, powerlib_foundation] theorem iMag_strictMonoOn {E V X : ℝ} (hE : 0 < E) (hV : 0 < V)
     (hX : 0 < X) : StrictMonoOn (iMag E V X) (Set.Icc 0 Real.pi) := by
   intro a ha b hb hab
   have hcos : Real.cos b < Real.cos a := Real.strictAntiOn_cos ha hb hab
@@ -73,7 +73,7 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
   nlinarith [mul_pos hE hV]
 
 /-- The worst-case threshold `E sin δ_th/X` is a lower bound over all grid voltages. -/
-@[powerlib_foundation] theorem iMag_worstCase {E X δ : ℝ} (hE : 0 ≤ E) (hX : 0 < X)
+@[tmio M, powerlib_foundation] theorem iMag_worstCase {E X δ : ℝ} (hE : 0 ≤ E) (hX : 0 < X)
     (hδ0 : 0 ≤ δ) (hδπ : δ ≤ Real.pi) (V : ℝ) :
     E * Real.sin δ / X ≤ iMag E V X δ := by
   apply div_le_div_of_nonneg_right _ hX.le
@@ -84,14 +84,14 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
       Real.sqrt_le_sqrt (by nlinarith [sq_nonneg (V - E * Real.cos δ)])
 
 /-- Equality at `V_g = E cos δ_th`. -/
-@[powerlib_foundation] theorem iMag_at_worstCase {E X δ : ℝ} (hE : 0 ≤ E) (hδ0 : 0 ≤ δ)
+@[tmio M, powerlib_foundation] theorem iMag_at_worstCase {E X δ : ℝ} (hE : 0 ≤ E) (hδ0 : 0 ≤ δ)
     (hδπ : δ ≤ Real.pi) : iMag E (E * Real.cos δ) X δ = E * Real.sin δ / X := by
   have hs : 0 ≤ E * Real.sin δ := mul_nonneg hE (Real.sin_nonneg_of_nonneg_of_le_pi hδ0 hδπ)
   simp only [iMag]
   rw [iMag_radicand, sub_self, zero_pow two_ne_zero, zero_add, Real.sqrt_sq hs]
 
 /-- The threshold is the minimum of `I_omag(δ_th; ·)` over the grid voltage. -/
-@[powerlib_foundation] theorem iMag_isLeast {E X δ : ℝ} (hE : 0 ≤ E) (hX : 0 < X)
+@[tmio M, powerlib_foundation] theorem iMag_isLeast {E X δ : ℝ} (hE : 0 ≤ E) (hX : 0 < X)
     (hδ0 : 0 ≤ δ) (hδπ : δ ≤ Real.pi) :
     IsLeast (Set.range fun V => iMag E V X δ) (E * Real.sin δ / X) :=
   ⟨⟨E * Real.cos δ, iMag_at_worstCase hE hδ0 hδπ⟩,

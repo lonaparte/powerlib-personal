@@ -207,14 +207,14 @@ def literatureField : Dynamics.State 3 → Dynamics.State 3 :=
 /-- The reversal `diag(1, 1, −1)` of the current coordinate. -/
 def currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Matrix.diagonal ![1, 1, -1]
 
-@[powerlib_foundation] theorem currentReversal_mul_self :
+@[tmio T, powerlib_foundation] theorem currentReversal_mul_self :
     currentReversal * currentReversal = 1 := by
   rw [currentReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
   ext i
   fin_cases i <;> norm_num
 
-@[powerlib_foundation] theorem currentReversal_isUnit : IsUnit currentReversal :=
+@[tmio T, powerlib_foundation] theorem currentReversal_isUnit : IsUnit currentReversal :=
   (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse currentReversal_mul_self)
 
 /-- §D8 boundary translation: the IN-positive field is the OUT-positive source field transported
@@ -674,7 +674,7 @@ def undampedPLL : Model := ⟨⟨1, 0, 0, 1, 0, 0⟩, 0, 0⟩
   fin_cases i <;> simp [QuasiStatic.field, Dynamics.lift, coordField, undampedPLL, vq, power]
 
 /-- The energy `1 − cos θ + x²/2 + i_d²/2`. -/
-@[powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
+@[tmio T, powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
     HasFDerivAt (fun y : Dynamics.State 3 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + 1 / 2 * y 2 ^ 2)
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ) +
         z 1 • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 : Dynamics.State 3 →L[ℝ] ℝ) +

@@ -247,7 +247,7 @@ constant for all segments. -/
 /-! ## Complex normal modes of an LC pair -/
 
 /-- `a± = √L Ī ± j √C V̄`: `|a₊|² + |a₋|² = 2(L|I|² + C|V|²)`. -/
-@[powerlib_foundation] theorem normalMode_sum {L C : ℝ} (hL : 0 ≤ L) (hC : 0 ≤ C) (I V : ℂ) :
+@[tmio T, powerlib_foundation] theorem normalMode_sum {L C : ℝ} (hL : 0 ≤ L) (hC : 0 ≤ C) (I V : ℂ) :
     Complex.normSq (Real.sqrt L * I + Complex.I * (Real.sqrt C * V)) +
         Complex.normSq (Real.sqrt L * I - Complex.I * (Real.sqrt C * V)) =
       2 * (L * Complex.normSq I + C * Complex.normSq V) := by
@@ -259,7 +259,7 @@ constant for all segments. -/
   linear_combination (2 * (I.re ^ 2 + I.im ^ 2)) * hl + (2 * (V.re ^ 2 + V.im ^ 2)) * hc
 
 /-- `|a₊|² − |a₋|² = 4 √(LC) Im(Ī V̄*)`. -/
-@[powerlib_foundation] theorem normalMode_diff {L C : ℝ} (hL : 0 ≤ L) (I V : ℂ) :
+@[tmio T, powerlib_foundation] theorem normalMode_diff {L C : ℝ} (hL : 0 ≤ L) (I V : ℂ) :
     Complex.normSq (Real.sqrt L * I + Complex.I * (Real.sqrt C * V)) -
         Complex.normSq (Real.sqrt L * I - Complex.I * (Real.sqrt C * V)) =
       4 * Real.sqrt (L * C) * (I * (starRingEnd ℂ) V).im := by
@@ -271,7 +271,7 @@ constant for all segments. -/
 
 /-- The note's scale factor is wrong: with `L ≠ C` (both positive) and `Im(Ī V̄*) ≠ 0`,
 `|a₊|² − |a₋|²` is not `4 L Im(Ī V̄*)`. -/
-@[powerlib_foundation] theorem normalMode_diff_ne_note {L C : ℝ} (hL : 0 < L) (hC : 0 < C)
+@[tmio T, powerlib_foundation] theorem normalMode_diff_ne_note {L C : ℝ} (hL : 0 < L) (hC : 0 < C)
     (hLC : L ≠ C) {I V : ℂ} (hIV : (I * (starRingEnd ℂ) V).im ≠ 0) :
     Complex.normSq (Real.sqrt L * I + Complex.I * (Real.sqrt C * V)) -
         Complex.normSq (Real.sqrt L * I - Complex.I * (Real.sqrt C * V)) ≠

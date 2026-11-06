@@ -61,7 +61,7 @@ def lpf (τ : ℝ) : Plant 1 1 := ⟨!![-1 / τ], !![1 / τ], !![1], !![0]⟩
 /-- Same filter, output the uncancelled disturbance `v − ṽ`. -/
 def residual (τ : ℝ) : Plant 1 1 := ⟨!![-1 / τ], !![1 / τ], !![-1], !![1]⟩
 
-@[powerlib_foundation] private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[tmio T, powerlib_foundation] private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : 1 + s * τ ≠ 0) : s - ((-1 / τ : ℝ) : ℂ) ≠ 0 := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
   intro h
@@ -81,7 +81,7 @@ def residual (τ : ℝ) : Plant 1 1 := ⟨!![-1 / τ], !![1 / τ], !![-1], !![1]
   field_simp
   ring
 
-@[powerlib_foundation] theorem residual_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[tmio M, powerlib_foundation] theorem residual_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : 1 + s * τ ≠ 0) :
     transfer (residual τ) s 0 0 = s * τ / (1 + s * τ) := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
@@ -98,13 +98,13 @@ def residual (τ : ℝ) : Plant 1 1 := ⟨!![-1 / τ], !![1 / τ], !![-1], !![1]
   ring
 
 /-- LPF view `ṽ − v`: `−s τ/(1 + s τ)`. -/
-@[powerlib_foundation] theorem residualLPF_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
+@[tmio M, powerlib_foundation] theorem residualLPF_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : 1 + s * τ ≠ 0) :
     transfer (LTI.negOutput (residual τ)) s 0 0 = -(s * τ / (1 + s * τ)) := by
   rw [LTI.transfer_negOutput, Matrix.neg_apply, residual_transfer hτ hs]
 
 /-- High-pass gain on the imaginary axis: `|jωτ/(1 + jωτ)| = |ω| τ/√(1 + ω²τ²)`. -/
-@[powerlib_foundation] theorem residual_norm {τ : ℝ} (hτ : 0 < τ) (ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem residual_norm {τ : ℝ} (hτ : 0 < τ) (ω : ℝ) :
     ‖transfer (residual τ) ((ω : ℂ) * Complex.I) 0 0‖ =
       |ω| * τ / Real.sqrt (1 + (ω * τ) ^ 2) := by
   have hs : 1 + (ω : ℂ) * Complex.I * τ ≠ 0 := by

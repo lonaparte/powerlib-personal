@@ -51,31 +51,31 @@ open scoped Topology
     ω * L * iq - ωhat * Lhat * iq = (ω * L - ωhat * Lhat) * iq := by ring
 
 /-- q-axis coupling: geometric `−ω L i_d` minus `u_q^dec = −ω̂ L̂ i_d`. -/
-@[powerlib_foundation] theorem residual_general_q (ω ωhat L Lhat id : ℝ) :
+@[tmio T, powerlib_foundation] theorem residual_general_q (ω ωhat L Lhat id : ℝ) :
     -(ω * L * id) - -(ωhat * Lhat * id) = -((ω * L - ωhat * Lhat) * id) := by ring
 
 /-- Case A (`ω̂ = ω`): residual `ω ΔL i_q`, `ΔL = L − L̂`. -/
-@[powerlib_foundation] theorem residual_caseA (ω L Lhat iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem residual_caseA (ω L Lhat iq : ℝ) :
     ω * L * iq - ω * Lhat * iq = ω * (L - Lhat) * iq := by ring
 
 /-- Case B (`L̂ = L`): residual `(ω − ω̂) L i_q`. -/
-@[powerlib_foundation] theorem residual_caseB (ω ωhat L iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem residual_caseB (ω ωhat L iq : ℝ) :
     ω * L * iq - ωhat * L * iq = (ω - ωhat) * L * iq := by ring
 
 /-- Case A in rate form: the `di_d/dt` contribution is `ω ΔL i_q / L`. -/
-@[powerlib_foundation] theorem residual_rate (ω L Lhat iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem residual_rate (ω L Lhat iq : ℝ) :
     (ω * L * iq - ω * Lhat * iq) / L = ω * (L - Lhat) * iq / L := by ring
 
 /-- The decoupling terms do no work: `u_d^dec i_d + u_q^dec i_q = 0`. -/
-@[powerlib_foundation] theorem decoupling_power_cancel (ωhat Lhat id iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem decoupling_power_cancel (ωhat Lhat id iq : ℝ) :
     (ωhat * Lhat * iq) * id + (-(ωhat * Lhat * id)) * iq = 0 := by ring
 
 /-- Same cancellation in the OUT-positive sign convention. -/
-@[powerlib_foundation] theorem decoupling_power_cancel_out (ωhat Lhat id iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem decoupling_power_cancel_out (ωhat Lhat id iq : ℝ) :
     (-(ωhat * Lhat * iq)) * id + (ωhat * Lhat * id) * iq = 0 := by ring
 
 /-- Bridge power splits into the non-decoupling part only. -/
-@[powerlib_foundation] theorem bridgePower_decoupling (ud uq ωhat Lhat id iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem bridgePower_decoupling (ud uq ωhat Lhat id iq : ℝ) :
     (ud + ωhat * Lhat * iq) * id + (uq - ωhat * Lhat * id) * iq = ud * id + uq * iq := by ring
 
 /-! ## Zero steady-state error needs closed-loop stability -/

@@ -101,7 +101,7 @@ def semiExplicitBDFResidual (f : X × Y → X) (g : X × Y → W) (c : ℝ) (d :
 
 /-- Newton Jacobian of the semi-explicit BDF step:
 `𝒥 (u, w) = (c u − f'(u, w), g'(u, w))`, i.e. `[[cI − f_x, −f_y], [g_x, g_y]]`. -/
-@[powerlib_foundation] theorem semiExplicitBDFResidual_hasFDerivAt {f : X × Y → X}
+@[tmio T, powerlib_foundation] theorem semiExplicitBDFResidual_hasFDerivAt {f : X × Y → X}
     {g : X × Y → W} {f' : X × Y →L[ℝ] X} {g' : X × Y →L[ℝ] W} {c : ℝ} {d : X} {p : X × Y}
     (hf : HasFDerivAt f f' p) (hg : HasFDerivAt g g' p) :
     HasFDerivAt (semiExplicitBDFResidual f g c d)
@@ -118,7 +118,7 @@ variable {n m : Type*} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m]
 
 /-- `det 𝒥 = det A_yy · det(cI − A_red)`, `A_red = A_xx − A_xy A_yy⁻¹ A_yx`
 (wrapper of Mathlib `Matrix.det_fromBlocks₂₂`). -/
-@[powerlib_foundation] theorem daeJacobian_det (c : ℝ) (Axx : Matrix n n ℝ) (Axy : Matrix n m ℝ)
+@[tmio T, powerlib_foundation] theorem daeJacobian_det (c : ℝ) (Axx : Matrix n n ℝ) (Axy : Matrix n m ℝ)
     (Ayx : Matrix m n ℝ) (Ayy : Matrix m m ℝ) [Invertible Ayy] :
     (fromBlocks (c • (1 : Matrix n n ℝ) - Axx) (-Axy) Ayx Ayy).det =
       Ayy.det * (c • (1 : Matrix n n ℝ) - (Axx - Axy * Ayy⁻¹ * Ayx)).det := by
@@ -128,7 +128,7 @@ variable {n m : Type*} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m]
   abel
 
 /-- With `A_yy` invertible, the Newton matrix is invertible iff `cI − A_red` is. -/
-@[powerlib_foundation] theorem daeJacobian_isUnit_iff (c : ℝ) (Axx : Matrix n n ℝ)
+@[tmio T, powerlib_foundation] theorem daeJacobian_isUnit_iff (c : ℝ) (Axx : Matrix n n ℝ)
     (Axy : Matrix n m ℝ) (Ayx : Matrix m n ℝ) (Ayy : Matrix m m ℝ) [Invertible Ayy] :
     IsUnit (fromBlocks (c • (1 : Matrix n n ℝ) - Axx) (-Axy) Ayx Ayy).det ↔
       IsUnit (c • (1 : Matrix n n ℝ) - (Axx - Axy * Ayy⁻¹ * Ayx)).det := by
@@ -144,7 +144,7 @@ section Baumgarte
 /-- Constraint-residual dynamics `ë + 2αė + β²e = 0`, state `(e, ė)`. -/
 def baumgarteModel (α β : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -(β ^ 2), -(2 * α)]
 
-@[powerlib_foundation] theorem baumgarteModel_isHurwitz {α β : ℝ} (hα : 0 < α)
+@[tmio TM, powerlib_foundation] theorem baumgarteModel_isHurwitz {α β : ℝ} (hα : 0 < α)
     (hβ : β ≠ 0) : LinearSystems.IsHurwitz (baumgarteModel α β) := by
   rw [Criteria.isHurwitz_fin_two_iff]
   simp only [baumgarteModel, Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
@@ -154,14 +154,14 @@ def baumgarteModel (α β : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -(β ^
     rw [sq_abs] at this
     linarith
 
-@[powerlib_foundation] theorem baumgarteModel_exponentiallyStable {α β : ℝ} (hα : 0 < α)
+@[tmio TM, powerlib_foundation] theorem baumgarteModel_exponentiallyStable {α β : ℝ} (hα : 0 < α)
     (hβ : β ≠ 0) :
     Flow.GloballyExponentiallyStable
       (LinearSystems.affineLinearVectorField (baumgarteModel α β) 0) 0 :=
   Linear.globallyExponentiallyStable_of_isHurwitz 0 (baumgarteModel_isHurwitz hα hβ)
 
 /-- A solution of `ë + 2αė + β²e = 0` gives a trajectory `(e, ė)` of `baumgarteModel`. -/
-@[powerlib_foundation] theorem baumgarte_isTrajectory {α β : ℝ} {e e' : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem baumgarte_isTrajectory {α β : ℝ} {e e' : ℝ → ℝ}
     (he : ∀ t, HasDerivAt e (e' t) t)
     (he' : ∀ t, HasDerivAt e' (-(2 * α) * e' t - β ^ 2 * e t) t) :
     ∀ t, HasDerivAt (fun t => ![e t, e' t]) (baumgarteModel α β *ᵥ ![e t, e' t]) t := by
@@ -178,7 +178,7 @@ def baumgarteModel (α β : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -(β ^
 /-- **Baumgarte stabilization: the constraint residual decays exponentially.** For `α > 0`,
 `β ≠ 0` there are uniform `K, rate > 0` such that every solution of `ë + 2αė + β²e = 0`
 satisfies `|e(t)| ≤ K e^{−rate t} ‖(e(0), ė(0))‖` for `t ≥ 0`. -/
-@[powerlib_foundation] theorem baumgarte_constraint_exponentialDecay {α β : ℝ} (hα : 0 < α)
+@[tmio T, powerlib_foundation] theorem baumgarte_constraint_exponentialDecay {α β : ℝ} (hα : 0 < α)
     (hβ : β ≠ 0) :
     ∃ K > 0, ∃ rate > 0, ∀ e e' : ℝ → ℝ, (∀ t, HasDerivAt e (e' t) t) →
       (∀ t, HasDerivAt e' (-(2 * α) * e' t - β ^ 2 * e t) t) → ∀ t, 0 ≤ t →
@@ -194,7 +194,7 @@ satisfies `|e(t)| ≤ K e^{−rate t} ‖(e(0), ė(0))‖` for `t ≥ 0`. -/
   exact PiLp.norm_apply_le _ 0
 
 /-- The constraint residual converges to zero. -/
-@[powerlib_foundation] theorem baumgarte_constraint_tendsto_zero {α β : ℝ} (hα : 0 < α)
+@[tmio T, powerlib_foundation] theorem baumgarte_constraint_tendsto_zero {α β : ℝ} (hα : 0 < α)
     (hβ : β ≠ 0) {e e' : ℝ → ℝ} (he : ∀ t, HasDerivAt e (e' t) t)
     (he' : ∀ t, HasDerivAt e' (-(2 * α) * e' t - β ^ 2 * e t) t) :
     Tendsto e atTop (𝓝 0) := by
@@ -217,7 +217,7 @@ variable {k l : ℕ}
 `G M⁻¹ (F − Gᵀλ) + c = 0` (`c = Ġq̇ + 2αGq̇ + β²g(q)`, obtained by substituting
 `q̈ = M⁻¹(F − Gᵀλ)` into `G q̈ + Ġq̇ + 2αGq̇ + β²g = 0`) has exactly one solution `λ`:
 the multiplier is an algebraic function of `(q, q̇)`. -/
-@[powerlib_foundation] theorem baumgarte_index_one (M : Matrix (Fin k) (Fin k) ℝ) (hM : M.PosDef)
+@[tmio T, powerlib_foundation] theorem baumgarte_index_one (M : Matrix (Fin k) (Fin k) ℝ) (hM : M.PosDef)
     (G : Matrix (Fin l) (Fin k) ℝ) (hG : Function.Injective G.vecMul) (Fv : Fin k → ℝ)
     (c : Fin l → ℝ) : ∃! lam : Fin l → ℝ, G *ᵥ (M⁻¹ *ᵥ (Fv - Gᵀ *ᵥ lam)) + c = 0 := by
   have hS : (G * M⁻¹ * Gᵀ).PosDef := by
@@ -252,7 +252,7 @@ open scoped RealInnerProductSpace
 /-- **GGL: the projection term vanishes on exact solutions.** If `q̇ = v − G(q)ᵀμ`,
 `g(q(t)) = 0` for all `t` and `G(q)v = 0`, then `G(q)ᵀμ = 0`; hence `q̇ = v` and the GGL
 solution solves the original kinematics. -/
-@[powerlib_foundation] theorem ggl_projection_vanishes {g : E → V} {G : E → E →L[ℝ] V}
+@[tmio T, powerlib_foundation] theorem ggl_projection_vanishes {g : E → V} {G : E → E →L[ℝ] V}
     (hg : ∀ x, HasFDerivAt g (G x) x) {q v : ℝ → E} {μ : ℝ → V}
     (hq : ∀ t, HasDerivAt q (v t - ContinuousLinearMap.adjoint (G (q t)) (μ t)) t)
     (hcon : ∀ t, g (q t) = 0) (hvel : ∀ t, G (q t) (v t) = 0) (t : ℝ) :
@@ -277,7 +277,7 @@ solution solves the original kinematics. -/
 
 /-- **GGL multiplier is zero** when `G(q)ᵀ` is injective (full row rank constraint
 Jacobian). -/
-@[powerlib_foundation] theorem ggl_multiplier_eq_zero {g : E → V} {G : E → E →L[ℝ] V}
+@[tmio T, powerlib_foundation] theorem ggl_multiplier_eq_zero {g : E → V} {G : E → E →L[ℝ] V}
     (hg : ∀ x, HasFDerivAt g (G x) x) {q v : ℝ → E} {μ : ℝ → V}
     (hq : ∀ t, HasDerivAt q (v t - ContinuousLinearMap.adjoint (G (q t)) (μ t)) t)
     (hcon : ∀ t, g (q t) = 0) (hvel : ∀ t, G (q t) (v t) = 0)
@@ -298,7 +298,7 @@ open Finset
 `x_i = p(t_i)` on the grid `t_i = i h`; the BDF equation `Σ αᵢ xᵢ = h β_k y_k` then gives
 `y_k = p'(t_k)` exactly for every polynomial `p(t) = Σ_{q ≤ k} a_q t^q`, provided the method
 has order `k`.  (The grid origin is arbitrary: shift `t`.) -/
-@[powerlib_foundation] theorem bdf_index2_exact {k : ℕ} (α : Fin (k + 1) → ℚ) (βk : ℚ)
+@[tmio T, powerlib_foundation] theorem bdf_index2_exact {k : ℕ} (α : Fin (k + 1) → ℚ) (βk : ℚ)
     (hord : (bdf k α βk).HasOrder k) (hβ : βk ≠ 0) {h : ℝ} (hh : h ≠ 0) (a : ℕ → ℝ) (y : ℝ)
     (hstep : ∑ i : Fin (k + 1), (α i : ℝ) * ∑ q ∈ range (k + 1), a q * ((i : ℝ) * h) ^ q =
       h * (βk : ℝ) * y) :
@@ -342,7 +342,7 @@ has order `k`.  (The grid origin is arbitrary: shift `t`.) -/
   exact (mul_left_cancel₀ hne hstep).symm
 
 /-- BDF2 instance of `bdf_index2_exact`. -/
-@[powerlib_foundation] theorem bdf2_index2_exact {h : ℝ} (hh : h ≠ 0) (a : ℕ → ℝ) (y : ℝ)
+@[tmio T, powerlib_foundation] theorem bdf2_index2_exact {h : ℝ} (hh : h ≠ 0) (a : ℕ → ℝ) (y : ℝ)
     (hstep : ∑ i : Fin (2 + 1), (((![1/3, -4/3, 1] : Fin 3 → ℚ) i : ℚ) : ℝ) *
         ∑ q ∈ range (2 + 1), a q * ((i : ℝ) * h) ^ q = h * ((2 / 3 : ℚ) : ℝ) * y) :
     y = ∑ q ∈ range (2 + 1), a q * ((q : ℝ) * (((2 : ℕ) : ℝ) * h) ^ (q - 1)) :=

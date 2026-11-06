@@ -166,7 +166,7 @@ the lines leaving `X`. -/
   by_cases hk : k ∈ X <;> by_cases hj : j ∈ X <;> simp [hk, hj]
   rw [p.B_symm, show θ j - θ k = -(θ k - θ j) by ring, Real.cos_neg]
 
-@[powerlib_foundation] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
+@[tmio T, powerlib_foundation] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
     ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
@@ -174,7 +174,7 @@ the lines leaving `X`. -/
   · simp only [ground_succ]; ring
 
 /-- The grounded relative-angle direction that turns a group `X` rigidly. -/
-@[powerlib_foundation] theorem ground_groupIndicator (X : Finset (Fin (n + 1))) :
+@[tmio T, powerlib_foundation] theorem ground_groupIndicator (X : Finset (Fin (n + 1))) :
     ground (fun i : Fin n => groupIndicator X i.succ - groupIndicator X 0) =
       fun k => groupIndicator X k + -groupIndicator X 0 :=
   ground_sub_zero (groupIndicator X)
@@ -399,7 +399,7 @@ vanishing on every null direction of its Hessian form. -/
 /-! ## The four-cycle: superadditivity of `tan` -/
 
 /-- Superadditivity of `tan` on `(0, π/2)`. -/
-@[powerlib_foundation] theorem tan_add_tan_lt {x y : ℝ} (hx : 0 < x) (hy : 0 < y)
+@[tmio T, powerlib_foundation] theorem tan_add_tan_lt {x y : ℝ} (hx : 0 < x) (hy : 0 < y)
     (hxy : x + y < π / 2) :
     Real.tan x + Real.tan y < Real.tan (x + y) := by
   have cx : 0 < Real.cos x := Real.cos_pos_of_mem_Ioo ⟨by linarith [Real.pi_pos], by linarith⟩
@@ -417,7 +417,7 @@ vanishing on every null direction of its Hessian form. -/
   nlinarith [mul_pos sxy (mul_pos sx sy)]
 
 /-- Cauchy–Schwarz with three positive weights. -/
-@[powerlib_foundation] theorem sq_sum_le_mul {a₂ a₃ a₄ r₂ r₃ r₄ : ℝ} (hr₂ : 0 < r₂) (hr₃ : 0 < r₃)
+@[tmio T, powerlib_foundation] theorem sq_sum_le_mul {a₂ a₃ a₄ r₂ r₃ r₄ : ℝ} (hr₂ : 0 < r₂) (hr₃ : 0 < r₃)
     (hr₄ : 0 < r₄) :
     (a₂ + a₃ + a₄) ^ 2 ≤ (a₂ ^ 2 / r₂ + a₃ ^ 2 / r₃ + a₄ ^ 2 / r₄) * (r₂ + r₃ + r₄) := by
   obtain ⟨b₂, rfl⟩ : ∃ b, a₂ = b * r₂ := ⟨a₂ / r₂, by field_simp⟩
@@ -433,7 +433,7 @@ vanishing on every null direction of its Hessian form. -/
 
 /-- **Three angles in `(−π/2, π/2)` summing past `π/2`.** For positive `a`,
 `tan(β₂ + β₃ + β₄) (a₂ + a₃ + a₄)² < ∑ aᵢ² tan βᵢ`. -/
-@[powerlib_foundation] theorem tan_sum_mul_sq_lt {β₂ β₃ β₄ a₂ a₃ a₄ : ℝ}
+@[tmio T, powerlib_foundation] theorem tan_sum_mul_sq_lt {β₂ β₃ β₄ a₂ a₃ a₄ : ℝ}
     (h₂ : -(π / 2) < β₂ ∧ β₂ < π / 2) (h₃ : -(π / 2) < β₃ ∧ β₃ < π / 2)
     (h₄ : -(π / 2) < β₄ ∧ β₄ < π / 2) (ha₂ : 0 < a₂) (ha₃ : 0 < a₃) (ha₄ : 0 < a₄)
     (hσ : π / 2 < β₂ + β₃ + β₄) :
@@ -510,7 +510,7 @@ vanishing on every null direction of its Hessian form. -/
 
 /-- An angle with positive cosine has a representative in `(−π/2, π/2)` with the same sine and
 cosine. -/
-@[powerlib_foundation] theorem exists_rep_of_cos_pos {φ : ℝ} (hc : 0 < Real.cos φ) :
+@[tmio T, powerlib_foundation] theorem exists_rep_of_cos_pos {φ : ℝ} (hc : 0 < Real.cos φ) :
     ∃ β, (-(π / 2) < β ∧ β < π / 2) ∧ Real.sin β = Real.sin φ ∧ Real.cos β = Real.cos φ := by
   have hcb : Real.cos (Real.arcsin (Real.sin φ)) = Real.cos φ := by
     rw [SpecialFunctions.cos_arcsin_sin, abs_of_pos hc]
@@ -523,7 +523,7 @@ cosine. -/
 /-- **The cubic term on a four-cycle with one negative line (tangent form).** Four angles summing
 to zero, the first with negative cosine and the others with positive cosine, and positive `a`:
 `tan φ₁ (a₂ + a₃ + a₄)² + ∑ aᵢ² tan φᵢ ≠ 0` (superadditivity of `tan` and Cauchy–Schwarz). -/
-@[powerlib_foundation] theorem quad_tan_ne_zero {φ₁ φ₂ φ₃ φ₄ a₂ a₃ a₄ : ℝ}
+@[tmio T, powerlib_foundation] theorem quad_tan_ne_zero {φ₁ φ₂ φ₃ φ₄ a₂ a₃ a₄ : ℝ}
     (hsum : φ₁ + φ₂ + φ₃ + φ₄ = 0)
     (hc₁ : Real.cos φ₁ < 0) (hc₂ : 0 < Real.cos φ₂) (hc₃ : 0 < Real.cos φ₃)
     (hc₄ : 0 < Real.cos φ₄) (ha₂ : 0 < a₂) (ha₃ : 0 < a₃) (ha₄ : 0 < a₄) :
@@ -565,7 +565,7 @@ to zero, the first with negative cosine and the others with positive cosine, and
 `Bᵢ cos φᵢ` (`B > 0`, angles summing to zero, increments summing to zero), the first weight
 negative and the other three positive, has a nonzero cubic term:
 `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ`. -/
-@[powerlib_foundation] theorem quad_cubic_ne_zero {B₁ B₂ B₃ B₄ φ₁ φ₂ φ₃ φ₄ x₁ x₂ x₃ x₄ κ : ℝ}
+@[tmio T, powerlib_foundation] theorem quad_cubic_ne_zero {B₁ B₂ B₃ B₄ φ₁ φ₂ φ₃ φ₄ x₁ x₂ x₃ x₄ κ : ℝ}
     (hB₂ : 0 < B₂) (hB₃ : 0 < B₃) (hB₄ : 0 < B₄)
     (hsum : φ₁ + φ₂ + φ₃ + φ₄ = 0) (hx : x₁ + x₂ + x₃ + x₄ = 0)
     (h₁ : B₁ * Real.cos φ₁ * x₁ = κ) (h₂ : B₂ * Real.cos φ₂ * x₂ = κ)
@@ -604,7 +604,7 @@ negative and the other three positive, has a nonzero cubic term:
 /-- **The cubic term on a four-cycle with one negative line**, in any position: a circulation
 `κ ≠ 0` through four lines (`B > 0`, angles and increments summing to zero) whose weights
 `Bᵢ cos φᵢ` have nonnegative pairwise sums has a nonzero cubic term. -/
-@[powerlib_foundation] theorem ring_cubic_ne_zero {B₁ B₂ B₃ B₄ φ₁ φ₂ φ₃ φ₄ x₁ x₂ x₃ x₄ κ : ℝ}
+@[tmio T, powerlib_foundation] theorem ring_cubic_ne_zero {B₁ B₂ B₃ B₄ φ₁ φ₂ φ₃ φ₄ x₁ x₂ x₃ x₄ κ : ℝ}
     (hB₁ : 0 < B₁) (hB₂ : 0 < B₂) (hB₃ : 0 < B₃) (hB₄ : 0 < B₄)
     (hsum : φ₁ + φ₂ + φ₃ + φ₄ = 0) (hx : x₁ + x₂ + x₃ + x₄ = 0)
     (h₁ : B₁ * Real.cos φ₁ * x₁ = κ) (h₂ : B₂ * Real.cos φ₂ * x₂ = κ)
@@ -671,7 +671,7 @@ negative and the other three positive, has a nonzero cubic term:
 /-! ## Four machines in a labelled order -/
 
 /-- A symmetric double sum over four indices with zero diagonal. -/
-@[powerlib_foundation] theorem sum_four_pairs (F : Fin 4 → Fin 4 → ℝ)
+@[tmio T, powerlib_foundation] theorem sum_four_pairs (F : Fin 4 → Fin 4 → ℝ)
     (hs : ∀ i j, F i j = F j i) (hd : ∀ i, F i i = 0) :
     ∑ i, ∑ j, F i j = 2 * (F 0 1 + F 0 2 + F 0 3 + F 1 2 + F 1 3 + F 2 3) := by
   simp only [Fin.sum_univ_four, hd]
@@ -752,7 +752,7 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
     linear_combination -this
 
 /-- Node balances of a null direction of a positive semidefinite form on four machines. -/
-@[powerlib_foundation] theorem null_four {w01 w02 w03 w12 w13 w23 g₀ g₁ g₂ g₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem null_four {w01 w02 w03 w12 w13 w23 g₀ g₁ g₂ g₃ : ℝ}
     (hQ : ∀ a b c d : ℝ, 0 ≤ w01 * (a - b) ^ 2 + w02 * (a - c) ^ 2 + w03 * (a - d) ^ 2 +
       w12 * (b - c) ^ 2 + w13 * (b - d) ^ 2 + w23 * (c - d) ^ 2)
     (h0 : w01 * (g₀ - g₁) ^ 2 + w02 * (g₀ - g₂) ^ 2 + w03 * (g₀ - g₃) ^ 2 +

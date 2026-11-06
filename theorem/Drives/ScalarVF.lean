@@ -56,7 +56,7 @@ namespace powerlib.Drives.ScalarVF
   field_simp
 
 /-- Ramp limit: the available accelerating torque bounds `ḟ` by `np T_avail/(2πJ)`. -/
-@[powerlib_foundation] theorem rampRate_le (np J T Tavail df : ℝ) (hnp : 0 < np) (hJ : 0 < J)
+@[tmio T, powerlib_foundation] theorem rampRate_le (np J T Tavail df : ℝ) (hnp : 0 < np) (hJ : 0 < J)
     (h : J * (2 * Real.pi / np * df) = T) (hT : T ≤ Tavail) :
     df ≤ np * Tavail / (2 * Real.pi * J) := by
   rw [rampRate_eq np J T df hnp.ne' hJ.ne' h]
@@ -64,7 +64,7 @@ namespace powerlib.Drives.ScalarVF
   exact mul_le_mul_of_nonneg_left hT hnp.le
 
 /-- The note's formula differs from the correct one by the factor `1/f_n`. -/
-@[powerlib_foundation] theorem noteRamp_ne (np J Tavail fn : ℝ) (hnp : np ≠ 0) (hJ : J ≠ 0)
+@[tmio T, powerlib_foundation] theorem noteRamp_ne (np J Tavail fn : ℝ) (hnp : np ≠ 0) (hJ : J ≠ 0)
     (hT : Tavail ≠ 0) (hfn : fn ≠ 1) (hfn0 : fn ≠ 0) :
     Tavail / (2 * Real.pi * J) * (np / fn) ≠ np * Tavail / (2 * Real.pi * J) := by
   have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
@@ -85,7 +85,7 @@ def maxTorque (V ω rs X : ℝ) : ℝ :=
 /-- Pull-out slip `s_p = r_r / √(r_s² + X²)`. -/
 def pulloutSlip (rs rr X : ℝ) : ℝ := rr / Real.sqrt (rs ^ 2 + X ^ 2)
 
-@[powerlib_foundation] theorem torque_le_max (V ω rs rr X s : ℝ) (hω : 0 < ω) (hrs : 0 ≤ rs)
+@[tmio M, powerlib_foundation] theorem torque_le_max (V ω rs rr X s : ℝ) (hω : 0 < ω) (hrs : 0 ≤ rs)
     (hrr : 0 < rr) (hX : X ≠ 0) (hs : 0 < s) :
     torque V ω rs rr X s ≤ maxTorque V ω rs X := by
   unfold torque maxTorque
@@ -101,7 +101,7 @@ def pulloutSlip (rs rr X : ℝ) : ℝ := rr / Real.sqrt (rs ^ 2 + X ^ 2)
     nlinarith [sq_nonneg (a - Z)]
   nlinarith
 
-@[powerlib_foundation] theorem torque_at_pullout (V ω rs rr X : ℝ) (hω : 0 < ω) (hrs : 0 ≤ rs)
+@[tmio M, powerlib_foundation] theorem torque_at_pullout (V ω rs rr X : ℝ) (hω : 0 < ω) (hrs : 0 ≤ rs)
     (hrr : 0 < rr) (hX : X ≠ 0) :
     torque V ω rs rr X (pulloutSlip rs rr X) = maxTorque V ω rs X := by
   unfold torque maxTorque pulloutSlip
@@ -120,7 +120,7 @@ def pulloutSlip (rs rr X : ℝ) : ℝ := rr / Real.sqrt (rs ^ 2 + X ^ 2)
 def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs (x * f)
 
 /-- With `r_s = 0` the pull-out torque on the V/f line is `3k²/(4πx)` for every `f > 0`. -/
-@[powerlib_foundation] theorem maxTorque_vf_rs_zero (k x f : ℝ) (hx : 0 < x) (hf : 0 < f) :
+@[tmio M, powerlib_foundation] theorem maxTorque_vf_rs_zero (k x f : ℝ) (hx : 0 < x) (hf : 0 < f) :
     maxTorqueVF k x 0 f = 3 * k ^ 2 / (4 * Real.pi * x) := by
   unfold maxTorqueVF maxTorque
   have hs : Real.sqrt ((0 : ℝ) ^ 2 + (x * f) ^ 2) = x * f := by
@@ -131,7 +131,7 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
   ring
 
 /-- With `r_s > 0` the pull-out torque on the V/f line strictly increases with frequency. -/
-@[powerlib_foundation] theorem maxTorque_vf_strictMono (k x rs : ℝ) (hk : k ≠ 0) (hx : 0 < x)
+@[tmio M, powerlib_foundation] theorem maxTorque_vf_strictMono (k x rs : ℝ) (hk : k ≠ 0) (hx : 0 < x)
     (hrs : 0 < rs) : StrictMonoOn (maxTorqueVF k x rs) (Set.Ioi 0) := by
   intro f1 hf1 f2 hf2 h12
   simp only [Set.mem_Ioi] at hf1 hf2
@@ -160,7 +160,7 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
     (show 0 < 3 * k ^ 2 * (2 * Real.pi) * (f1 * f2) by positivity)]
 
 /-- Field weakening (`V = V_n`, `r_s = 0`): `T_max(f) = T_max(f_n) (f_n/f)²`. -/
-@[powerlib_foundation] theorem maxTorque_fieldWeakening (Vn x fn f : ℝ) (hx : 0 < x) (hfn : 0 < fn)
+@[tmio M, powerlib_foundation] theorem maxTorque_fieldWeakening (Vn x fn f : ℝ) (hx : 0 < x) (hfn : 0 < fn)
     (hf : 0 < f) :
     maxTorque Vn (2 * Real.pi * f) 0 (x * f) =
       maxTorque Vn (2 * Real.pi * fn) 0 (x * fn) * (fn / f) ^ 2 := by
@@ -175,7 +175,7 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
 
 /-- **Correction witness**: along the field-weakening pull-out curve the product
 `T_max(f) · Ω(f)` with `Ω = 2πf/np` strictly decreases, so it is not a constant-power curve. -/
-@[powerlib_foundation] theorem fieldWeakening_power_strictAnti (Vn x np : ℝ) (hV : Vn ≠ 0)
+@[tmio M, powerlib_foundation] theorem fieldWeakening_power_strictAnti (Vn x np : ℝ) (hV : Vn ≠ 0)
     (hx : 0 < x) (hnp : 0 < np) :
     StrictAntiOn (fun f => maxTorque Vn (2 * Real.pi * f) 0 (x * f) * (2 * Real.pi * f / np))
       (Set.Ioi 0) := by

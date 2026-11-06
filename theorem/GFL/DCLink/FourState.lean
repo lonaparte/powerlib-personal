@@ -750,7 +750,7 @@ def undampedPLL : Model := ⟨⟨1, 0, 0, 0, 1, 1, 1, 3 / 2, 0⟩, 0⟩
 private def lsEnergy (y : Dynamics.State 4) : ℝ :=
   1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + ((y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2)
 
-@[powerlib_foundation] private theorem lsEnergy_hasFDerivAt (z : Dynamics.State 4) :
+@[tmio T, powerlib_foundation] private theorem lsEnergy_hasFDerivAt (z : Dynamics.State 4) :
     HasFDerivAt lsEnergy
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 : Dynamics.State 4 →L[ℝ] ℝ) +
         z 1 • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 1 : Dynamics.State 4 →L[ℝ] ℝ) +

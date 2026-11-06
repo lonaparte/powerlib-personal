@@ -73,7 +73,7 @@ open Set Filter Topology
 
 /-- A strictly convex function on `[a, b]` that is positive at both ends and negative at an
 interior point `c` has exactly two zeros in `[a, b]`. -/
-@[powerlib_foundation] theorem ncard_zeros_strictConvex {g : ℝ → ℝ} {a b c : ℝ}
+@[tmio T, powerlib_foundation] theorem ncard_zeros_strictConvex {g : ℝ → ℝ} {a b c : ℝ}
     (hg : StrictConvexOn ℝ (Icc a b) g) (hcont : ContinuousOn g (Icc a b)) (hac : a < c)
     (hcb : c < b) (ha : 0 < g a) (hb : 0 < g b) (hgc : g c < 0) :
     {x ∈ Icc a b | g x = 0}.ncard = 2 := by
@@ -127,7 +127,7 @@ interior point `c` has exactly two zeros in `[a, b]`. -/
 
 /-- One-dimensional `Σ_SN` crossing (local box form of `f_xx > 0`, `f_μ > 0`): no equilibrium
 in `[x₀ − r, x₀ + r]` just above `μ₀`, exactly two just below. -/
-@[powerlib_foundation] theorem fold_crossing {f : ℝ → ℝ → ℝ} {x₀ μ₀ r ε : ℝ} (hr : 0 < r)
+@[tmio T, powerlib_foundation] theorem fold_crossing {f : ℝ → ℝ → ℝ} {x₀ μ₀ r ε : ℝ} (hr : 0 < r)
     (hε : 0 < ε)
     (hconv : ∀ μ ∈ Icc (μ₀ - ε) (μ₀ + ε), StrictConvexOn ℝ (Icc (x₀ - r) (x₀ + r)) (f · μ))
     (hmono : ∀ x ∈ Icc (x₀ - r) (x₀ + r), StrictMonoOn (f x) (Icc (μ₀ - ε) (μ₀ + ε)))
@@ -197,7 +197,7 @@ in `[x₀ − r, x₀ + r]` just above `μ₀`, exactly two just below. -/
 point `(x₀, μ₀)`. If `f = f_x = 0`, `f_xx > 0` and `f_μ > 0` there, then on some box
 `[x₀ − r, x₀ + r] × [μ₀ − ε, μ₀ + ε]` every premise of `fold_crossing` holds: strict convexity in
 `x`, strict monotonicity in `μ`, continuity, and `f(·, μ₀) ≥ 0` with minimum `f(x₀, μ₀) = 0`. -/
-@[powerlib_foundation] theorem fold_box_of_partials {f fx fxx fμ : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
+@[tmio T, powerlib_foundation] theorem fold_box_of_partials {f fx fxx fμ : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
     (hcont : Continuous (Function.uncurry f))
     (hfx : ∀ x μ, HasDerivAt (fun x => f x μ) (fx x μ) x)
     (hfxx : ∀ x μ, HasDerivAt (fun x => fx x μ) (fxx x μ) x)
@@ -284,7 +284,7 @@ point `(x₀, μ₀)`. If `f = f_x = 0`, `f_xx > 0` and `f_μ > 0` there, then o
 (`f = ∂ₓf = 0`, `∂ₓₓf > 0`, `∂_μ f > 0`), the box premises of `fold_crossing` hold on some box
 `[x₀ − r, x₀ + r] × [μ₀ − ε, μ₀ + ε]`. (The other sign cases of `f_xx`, `f_μ` reduce to this one by
 `f ↦ −f` and `μ ↦ −μ`.) -/
-@[powerlib_foundation] theorem fold_box_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
+@[tmio T, powerlib_foundation] theorem fold_box_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
     (hf : ContDiff ℝ 2 (Function.uncurry f)) (h0 : f x₀ μ₀ = 0)
     (h1 : deriv (fun x => f x μ₀) x₀ = 0)
     (h2 : 0 < deriv (fun x => deriv (fun x => f x μ₀) x) x₀)
@@ -332,7 +332,7 @@ point `(x₀, μ₀)`. If `f = f_x = 0`, `f_xx > 0` and `f_μ > 0` there, then o
 `∂_μ f > 0` at `(x₀, μ₀)`, there is a neighbourhood `[x₀ − r, x₀ + r]` in which the number of
 equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` for `μ` in some
 `(μ₀ − ε', μ₀)`. -/
-@[powerlib_foundation] theorem fold_crossing_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
+@[tmio T, powerlib_foundation] theorem fold_crossing_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
     (hf : ContDiff ℝ 2 (Function.uncurry f)) (h0 : f x₀ μ₀ = 0)
     (h1 : deriv (fun x => f x μ₀) x₀ = 0)
     (h2 : 0 < deriv (fun x => deriv (fun x => f x μ₀) x) x₀)
@@ -346,7 +346,7 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
 /-! ## 2. `Σ_WS` crossing with transversality -/
 
 /-- Hopf-type `Σ_WS` crossing: `det A > 0` near `μ₀`, `tr A(μ₀) = 0`, `d tr/dμ (μ₀) > 0`. -/
-@[powerlib_foundation] theorem ws_crossing_trace {F : ℝ → Dynamics.State 2 → Dynamics.State 2}
+@[tmio T, powerlib_foundation] theorem ws_crossing_trace {F : ℝ → Dynamics.State 2 → Dynamics.State 2}
     {xe : ℝ → Dynamics.State 2} {A : ℝ → Matrix (Fin 2) (Fin 2) ℝ} {μ₀ τ : ℝ}
     (hF : ∀ μ, ContDiff ℝ 1 (F μ)) (heq : ∀ μ, F μ (xe μ) = 0)
     (hJ : ∀ μ, fderiv ℝ (F μ) (xe μ) = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (A μ))
@@ -396,7 +396,7 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
 
 /-- Saddle-node-type `Σ_WS` crossing: `tr A < 0` near `μ₀`, `det A(μ₀) = 0`,
 `d det/dμ (μ₀) < 0`. -/
-@[powerlib_foundation] theorem ws_crossing_det {F : ℝ → Dynamics.State 2 → Dynamics.State 2}
+@[tmio T, powerlib_foundation] theorem ws_crossing_det {F : ℝ → Dynamics.State 2 → Dynamics.State 2}
     {xe : ℝ → Dynamics.State 2} {A : ℝ → Matrix (Fin 2) (Fin 2) ℝ} {μ₀ κ : ℝ}
     (hF : ∀ μ, ContDiff ℝ 1 (F μ)) (heq : ∀ μ, F μ (xe μ) = 0)
     (hJ : ∀ μ, fderiv ℝ (F μ) (xe μ) = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (A μ))
@@ -450,7 +450,7 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
 /-- A stable node (`tr² − 4 det > 0`) and a stable focus (`tr² − 4 det < 0`) are both
 globally exponentially stable (as the linear fields `x' = A (x − e)` at `e`): crossing `Σ_DOC`
 does not change stability. -/
-@[powerlib_foundation] theorem exponentiallyStable_node_and_focus (e : Dynamics.State 2) :
+@[tmio T, powerlib_foundation] theorem exponentiallyStable_node_and_focus (e : Dynamics.State 2) :
     Flow.GloballyExponentiallyStable
         (LinearSystems.affineLinearVectorField !![-3, 0; 0, -1] e) e ∧
       (!![-3, 0; 0, -1] : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 -
@@ -472,7 +472,7 @@ does not change stability. -/
 /-- For a planar linear field `x' = A (x − e)`, every attractive sentence (in particular global
 exponential stability) is decided by `tr A < 0 ∧ det A > 0` alone: the discriminant (the `Σ_DOC`
 coordinate) plays no role. -/
-@[powerlib_foundation] theorem exponentiallyStable_indep_discriminant
+@[tmio T, powerlib_foundation] theorem exponentiallyStable_indep_discriminant
     (A₁ A₂ : Matrix (Fin 2) (Fin 2) ℝ) (e₁ e₂ : Dynamics.State 2) (htr : A₁.trace = A₂.trace)
     (hdet : A₁.det = A₂.det) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (LinearSystems.affineLinearVectorField A₁ e₁) e₁ ↔
@@ -491,7 +491,7 @@ variable {P X : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace
 branch `ψ`, unique near `(μ₀, x₀)`. Wraps Mathlib `ContDiffAt.implicitFunction`,
 `ContDiffAt.contDiffAt_implicitFunction`, `ContDiffAt.eventually_apply_implicitFunction` and
 `ContDiffAt.eventually_apply_eq_iff_implicitFunction`. -/
-@[powerlib_foundation] theorem equilibrium_branch {f : P × X → X} {μ₀ : P} {x₀ : X}
+@[tmio T, powerlib_foundation] theorem equilibrium_branch {f : P × X → X} {μ₀ : P} {x₀ : X}
     {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f (μ₀, x₀)) (hn : n ≠ 0) (heq : f (μ₀, x₀) = 0)
     (hinv : (fderiv ℝ f (μ₀, x₀) ∘L ContinuousLinearMap.inr ℝ P X).IsInvertible) :
     ∃ ψ : P → X, ψ μ₀ = x₀ ∧ ContDiffAt ℝ n ψ μ₀ ∧ (∀ᶠ μ in 𝓝 μ₀, f (μ, ψ μ) = 0) ∧
@@ -505,7 +505,7 @@ end Continuation
 
 /-- Matrix form: on `X = ℝⁿ`, a state Jacobian `A` with `det A ≠ 0` is invertible, so the
 equilibrium continues smoothly. -/
-@[powerlib_foundation] theorem equilibrium_branch_matrix {P : Type*} [NormedAddCommGroup P]
+@[tmio T, powerlib_foundation] theorem equilibrium_branch_matrix {P : Type*} [NormedAddCommGroup P]
     [NormedSpace ℝ P] [CompleteSpace P] {k : ℕ} {f : P × (Fin k → ℝ) → Fin k → ℝ} {μ₀ : P}
     {x₀ : Fin k → ℝ} {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f (μ₀, x₀)) (hn : n ≠ 0)
     (heq : f (μ₀, x₀) = 0) (A : Matrix (Fin k) (Fin k) ℝ)

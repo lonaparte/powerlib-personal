@@ -42,7 +42,7 @@ open Filter Topology
     simp [System.supply, System.autonomous, Subsingleton.elim u 0]⟩
 
 /-- A Lyapunov stable point is fixed. -/
-@[powerlib_foundation] theorem LyapunovStable.fixed {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem LyapunovStable.fixed {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : LyapunovStable F x) : F x = x := by
   by_contra hne
   have hpos : 0 < ‖F x - x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne)
@@ -51,7 +51,7 @@ open Filter Topology
   simp at this
 
 /-- Geometric decay gives Lyapunov stability. -/
-@[powerlib_foundation] theorem LocallyExponentiallyStable.lyapunovStable {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem LocallyExponentiallyStable.lyapunovStable {F : ℝⁿ → ℝⁿ}
     {x : ℝⁿ} (h : LocallyExponentiallyStable F x) : LyapunovStable F x := by
   obtain ⟨r, C, ρ, hr, hC, hρ0, hρ1, hb⟩ := h
   intro ε hε
@@ -66,7 +66,7 @@ open Filter Topology
     _ = ε := by field_simp
 
 /-- Geometric decay gives local asymptotic stability. -/
-@[powerlib_foundation] theorem LocallyExponentiallyStable.localAsymptoticStable
+@[tmio T, powerlib_foundation] theorem LocallyExponentiallyStable.localAsymptoticStable
     {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : LocallyExponentiallyStable F x) :
     LocalAsymptoticStable F x := by
   refine ⟨h.lyapunovStable, ?_⟩
@@ -79,14 +79,14 @@ open Filter Topology
   exact squeeze_zero (fun _ => norm_nonneg _) (fun k => hb y hy k) hlim
 
 /-- A global geometric estimate is in particular a local one. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
     {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
     LocallyExponentiallyStable F x := by
   obtain ⟨-, C, ρ, hC, hρ0, hρ1, hb⟩ := h
   exact ⟨1, C, ρ, one_pos, hC, hρ0, hρ1, fun y _ k => hb y k⟩
 
 /-- A global geometric estimate gives global asymptotic stability. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.globallyAsymptoticallyStable
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.globallyAsymptoticallyStable
     {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
     GloballyAsymptoticallyStable F x := by
   refine ⟨h.1, h.locallyExponentiallyStable.lyapunovStable, fun y => ?_⟩
@@ -99,7 +99,7 @@ open Filter Topology
 
 /-- A global geometric estimate gives sampled contraction: the overshoot `C` is eventually beaten
 by `ρ^k`. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {F : ℝⁿ → ℝⁿ}
     {x : ℝⁿ} (h : GloballyExponentiallyStable F x) : SampledContraction F x := by
   obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k) atTop (𝓝 0) := by
@@ -108,13 +108,13 @@ by `ρ^k`. -/
   exact ⟨k, hk.1, C * ρ ^ k, hk.2, fun y => hb y k⟩
 
 /-- Global asymptotic stability gives local asymptotic stability. -/
-@[powerlib_foundation] theorem GloballyAsymptoticallyStable.localAsymptoticStable {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyAsymptoticallyStable.localAsymptoticStable {F : ℝⁿ → ℝⁿ}
     {x : ℝⁿ} (h : GloballyAsymptoticallyStable F x) : LocalAsymptoticStable F x :=
   ⟨h.2.1, 1, one_pos, fun y _ => h.2.2 y⟩
 
 /-- A global geometric estimate gives every attractive sentence and sampled contraction, for every
 step length. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.holdsMap {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.holdsMap {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable F x) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) (T : ℝ) : P.holdsMap T F x := by
   rcases hP with hP | rfl
@@ -130,7 +130,7 @@ step length. -/
 end Map
 
 /-- Every attractive sentence of a map gives local asymptotic stability. -/
-@[powerlib_foundation] theorem Flow.Property.localAsymptoticStable_of_holdsMap {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem Flow.Property.localAsymptoticStable_of_holdsMap {F : ℝⁿ → ℝⁿ}
     {x : ℝⁿ} {P : Flow.Property} (hP : P.Attractive) {T : ℝ} (h : P.holdsMap T F x) :
     Map.LocalAsymptoticStable F x := by
   cases P

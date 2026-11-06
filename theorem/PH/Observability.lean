@@ -76,12 +76,12 @@ variable {n m : ℕ}
 
 /-! ## Helpers: real and imaginary parts of real matrices acting on complex vectors -/
 
-@[powerlib_foundation] theorem phCx_mulVec_re {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem phCx_mulVec_re {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
     (v : Fin n → ℂ) (i : Fin p) :
     ((Linear.complexify M *ᵥ v) i).re = (M *ᵥ fun j => (v j).re) i :=
   Modal.complexify_mulVec_re M v i
 
-@[powerlib_foundation] theorem phCx_mulVec_im {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem phCx_mulVec_im {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
     (v : Fin n → ℂ) (i : Fin p) :
     ((Linear.complexify M *ᵥ v) i).im = (M *ᵥ fun j => (v j).im) i :=
   Modal.complexify_mulVec_im M v i
@@ -89,7 +89,7 @@ variable {n m : ℕ}
 /-- A complex eigenvector of a real `A` lying in `ker C` contradicts observability of `(A, C)`:
 `C Aᵏ v = μᵏ C v = 0` for every `k` (`Linear.mulVec_pow_of_eigen`,
 `Modal.eq_zero_of_isObservable`). -/
-@[powerlib_foundation] theorem phCx_eq_zero_of_isObservable {p : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem phCx_eq_zero_of_isObservable {p : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     {C : Matrix (Fin p) (Fin n) ℝ} (hobs : LinearSystems.IsObservable A C) {μ : ℂ}
     {v : Fin n → ℂ} (heig : Linear.complexify A *ᵥ v = μ • v) (hC : Linear.complexify C *ᵥ v = 0) :
     v = 0 :=
@@ -104,10 +104,10 @@ def losslessJ : Matrix (Fin 2) (Fin 2) ℝ := !![0, -1; 1, 0]
 /-- Input matrix: the source drives the inductor; the output is the loop current. -/
 def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
 
-@[powerlib_foundation] theorem losslessJ_skew : losslessJᵀ = -losslessJ := by
+@[tmio M, powerlib_foundation] theorem losslessJ_skew : losslessJᵀ = -losslessJ := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [losslessJ]
 
-@[powerlib_foundation] theorem losslessLC_stateMatrix :
+@[tmio M, powerlib_foundation] theorem losslessLC_stateMatrix :
     linearStateMatrix losslessJ 0 1 = !![0, -1; 1, 0] := by
   simp [linearStateMatrix, losslessJ]
 
@@ -165,7 +165,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- That trajectory keeps unit energy, so it does not converge to the origin.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem losslessLC_not_tendsto :
+@[tmio T, powerlib_foundation] theorem losslessLC_not_tendsto :
     ¬ Filter.Tendsto (fun t => ![Real.cos t, Real.sin t]) Filter.atTop (nhds 0) := by
   intro h
   have h2 : Filter.Tendsto (fun t => (![Real.cos t, Real.sin t] : Fin 2 → ℝ) 0 ^ 2 +
@@ -217,7 +217,7 @@ section Feedback
 variable {J R Q : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ} {k : ℝ}
 
 /-- Output feedback `u = −k y` turns `(J − R) Q x + g u` into `(J − (R + k g gᵀ)) Q x`. -/
-@[powerlib_foundation] theorem phOutputFeedback_stateMatrix (k : ℝ) :
+@[tmio T, powerlib_foundation] theorem phOutputFeedback_stateMatrix (k : ℝ) :
     linearStateMatrix J R Q - g * (k • (gᵀ * Q)) = linearStateMatrix J (R + k • (g * gᵀ)) Q := by
   simp only [linearStateMatrix, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc, sub_mul,
     add_mul]

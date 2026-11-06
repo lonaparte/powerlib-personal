@@ -75,7 +75,7 @@ def dx (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := fderiv ℝ F p (1, 0)
 /-- Partial derivative in `t`. -/
 def dt (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := fderiv ℝ F p (0, 1)
 
-@[powerlib_foundation] theorem hasFDerivAt_fderiv_apply {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F)
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_fderiv_apply {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F)
     (w p : ℝ × ℝ) :
     HasFDerivAt (fun q => fderiv ℝ F q w)
       ((ContinuousLinearMap.apply ℝ ℝ w).comp (fderiv ℝ (fderiv ℝ F) p)) p := by
@@ -83,14 +83,14 @@ def dt (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := fderiv ℝ F p (0, 1)
     ((hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero) p
   exact (ContinuousLinearMap.apply ℝ ℝ w).hasFDerivAt.comp p hd.hasFDerivAt
 
-@[powerlib_foundation] theorem differentiable_dx {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) :
+@[tmio T, powerlib_foundation] theorem differentiable_dx {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) :
     Differentiable ℝ (dx F) := fun p => (hasFDerivAt_fderiv_apply hF (1, 0) p).differentiableAt
 
-@[powerlib_foundation] theorem differentiable_dt {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) :
+@[tmio T, powerlib_foundation] theorem differentiable_dt {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) :
     Differentiable ℝ (dt F) := fun p => (hasFDerivAt_fderiv_apply hF (0, 1) p).differentiableAt
 
 /-- Mixed partials commute for `C²` functions. -/
-@[powerlib_foundation] theorem dx_dt_comm {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) (p : ℝ × ℝ) :
+@[tmio T, powerlib_foundation] theorem dx_dt_comm {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) (p : ℝ × ℝ) :
     dx (dt F) p = dt (dx F) p := by
   unfold dx dt
   rw [(hasFDerivAt_fderiv_apply hF (0, 1) p).fderiv, (hasFDerivAt_fderiv_apply hF (1, 0) p).fderiv]
@@ -98,7 +98,7 @@ def dt (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := fderiv ℝ F p (0, 1)
   exact (hF.contDiffAt.isSymmSndFDerivAt (by simp)) (1, 0) (0, 1)
 
 /-- Partial derivative of `a·F − b·G`. -/
-@[powerlib_foundation] theorem fderiv_combo {F G : ℝ × ℝ → ℝ} (hF : Differentiable ℝ F)
+@[tmio T, powerlib_foundation] theorem fderiv_combo {F G : ℝ × ℝ → ℝ} (hF : Differentiable ℝ F)
     (hG : Differentiable ℝ G) (a b : ℝ) (w p : ℝ × ℝ) :
     fderiv ℝ (fun q => a * F q - b * G q) p w = a * fderiv ℝ F p w - b * fderiv ℝ G p w := by
   rw [fderiv_fun_sub ((hF p).const_mul a) ((hG p).const_mul b), fderiv_const_mul (hF p),

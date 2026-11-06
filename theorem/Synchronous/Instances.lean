@@ -206,7 +206,7 @@ stable (energy function). -/
 
 /-- With the note's data `H = 2 s`, `K_E = 8 pu/rad`, `ω_s = 100π rad/s`, the corrected
 natural frequency `√(ω_s K_E / (2H))` lies in `(25, 25.1) rad/s`. -/
-@[powerlib_foundation] theorem naturalFrequency_numeric :
+@[tmio T, powerlib_foundation] theorem naturalFrequency_numeric :
     25 < Real.sqrt (100 * Real.pi * 8 / (2 * 2)) ∧
       Real.sqrt (100 * Real.pi * 8 / (2 * 2)) < 25.1 := by
   have h1 := Real.pi_gt_d2
@@ -283,7 +283,7 @@ end ClassicalSMIB
 /-- Electrical power from the complex power `S̄ = Ē' Ī*`, `Ī = (Ē' − V̄_g)/Z_e`
 (generator OUT-positive): with `Z_e = R_e + j X_e = r e^{jφ}`,
 `P_e = Re S̄ = (R_e/r²) E'² + (E' V_g / r) sin(δ − (θ_g + π/2 − φ))`. -/
-@[powerlib_foundation] theorem electricalPower_eq (E V δ θg R X r φ : ℝ) (hr : 0 < r)
+@[tmio T, powerlib_foundation] theorem electricalPower_eq (E V δ θg R X r φ : ℝ) (hr : 0 < r)
     (hR : R = r * Real.cos φ) (hX : X = r * Real.sin φ) :
     ((E : ℂ) * Complex.exp (δ * Complex.I) *
       (starRingEnd ℂ) (((E : ℂ) * Complex.exp (δ * Complex.I) -

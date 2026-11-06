@@ -70,7 +70,7 @@ def genL (f : Fin n → ℝ) (h : Matrix (Fin n) (Fin q) ℝ) (g : Fin n → ℝ
 /-- **Stochastic energy balance (T-sph (1.5))**, as an algebraic identity of the generator
 expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
 `𝓛H = uᵀ y − ∇Hᵀ R ∇H + ½ tr(h hᵀ ∇²H)`. -/
-@[powerlib_foundation] theorem genL_pH {m : ℕ} {J R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem genL_pH {m : ℕ} {J R : Matrix (Fin n) (Fin n) ℝ}
     (hJ : Jᵀ = -J) (G : Matrix (Fin n) (Fin m) ℝ) (u : Fin m → ℝ)
     (h : Matrix (Fin n) (Fin q) ℝ) (g : Fin n → ℝ) (K : Matrix (Fin n) (Fin n) ℝ) :
     genL ((J - R) *ᵥ g + G *ᵥ u) h g K
@@ -83,7 +83,7 @@ expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
   ring
 
 /-- `∇²H ⪰ 0 ⇒ Δ_Itô ≥ 0` (T-sph (1.6)). -/
-@[powerlib_foundation] theorem itoCorrection_nonneg {ι : Type*} [Fintype ι] (h : Matrix (Fin n) ι ℝ)
+@[tmio T, powerlib_foundation] theorem itoCorrection_nonneg {ι : Type*} [Fintype ι] (h : Matrix (Fin n) ι ℝ)
     {K : Matrix (Fin n) (Fin n) ℝ} (hK : K.PosSemidef) : 0 ≤ itoCorrection h K := by
   unfold itoCorrection
   have e : (h * hᵀ * K).trace = (hᵀ * K * h).trace := by
@@ -94,7 +94,7 @@ expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
   exact mul_nonneg (by norm_num) hpsd.trace_nonneg
 
 /-- Pointwise weak-passivity criterion (T-sph (1.9)): `𝓛H ≤ uᵀ y ⇔ Δ_Itô ≤ ∇Hᵀ R ∇H`. -/
-@[powerlib_foundation] theorem genL_le_supply_iff {m : ℕ} {J R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem genL_le_supply_iff {m : ℕ} {J R : Matrix (Fin n) (Fin n) ℝ}
     (hJ : Jᵀ = -J) (G : Matrix (Fin n) (Fin m) ℝ) (u : Fin m → ℝ)
     (h : Matrix (Fin n) (Fin q) ℝ) (g : Fin n → ℝ) (K : Matrix (Fin n) (Fin n) ℝ) :
     genL ((J - R) *ᵥ g + G *ᵥ u) h g K ≤ u ⬝ᵥ (Gᵀ *ᵥ g) ↔
@@ -103,14 +103,14 @@ expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
   constructor <;> intro H <;> linarith
 
 /-- Deterministic limit `h = 0`: no correction. -/
-@[powerlib_foundation] theorem itoCorrection_zero (K : Matrix (Fin n) (Fin n) ℝ) :
+@[tmio T, powerlib_foundation] theorem itoCorrection_zero (K : Matrix (Fin n) (Fin n) ℝ) :
     itoCorrection (0 : Matrix (Fin n) (Fin q) ℝ) K = 0 := by
   unfold itoCorrection; simp
 
 /-! ## Merged diffusion `Σ_tot` (T-sph §1.13) -/
 
 /-- Every positive-semidefinite real matrix has a factor `Σ = σ̃ σ̃ᵀ` (the CFC square root). -/
-@[powerlib_foundation] theorem exists_factor_of_posSemidef {S : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem exists_factor_of_posSemidef {S : Matrix (Fin n) (Fin n) ℝ}
     (hS : S.PosSemidef) : ∃ σ : Matrix (Fin n) (Fin n) ℝ, σ * σᵀ = S := by
   obtain ⟨X, hX, -, hXX⟩ := CFC.exists_sqrt_of_isSelfAdjoint_of_quasispectrumRestricts
     hS.isHermitian (QuasispectrumRestricts.nnreal_of_nonneg hS.nonneg)
@@ -126,13 +126,13 @@ def mergedCov {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ) (BS : Matrix (Fin
   hN * hNᵀ + BS * σS * σSᵀ * BSᵀ
 
 /-- The explicit factor `σ̃ = [h_N | B_S σ_S]` of `Σ_tot`. -/
-@[powerlib_foundation] theorem mergedCov_eq {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ)
+@[tmio T, powerlib_foundation] theorem mergedCov_eq {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ)
     (BS : Matrix (Fin n) (Fin qS) ℝ) (σS : Matrix (Fin qS) (Fin qS) ℝ) :
     fromCols hN (BS * σS) * (fromCols hN (BS * σS))ᵀ = mergedCov hN BS σS := by
   rw [transpose_fromCols, fromCols_mul_fromRows, mergedCov, transpose_mul]
   simp only [Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem mergedCov_posSemidef {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ)
+@[tmio T, powerlib_foundation] theorem mergedCov_posSemidef {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ)
     (BS : Matrix (Fin n) (Fin qS) ℝ) (σS : Matrix (Fin qS) (Fin qS) ℝ) :
     (mergedCov hN BS σS).PosSemidef := by
   rw [← mergedCov_eq]
@@ -141,7 +141,7 @@ def mergedCov {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ) (BS : Matrix (Fin
 
 /-- The Itô correction of the merged channel is the sum of the two channel corrections
 (this is why the merged form cannot separate them, T-sph §1.13). -/
-@[powerlib_foundation] theorem itoCorrection_merged {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ)
+@[tmio T, powerlib_foundation] theorem itoCorrection_merged {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ)
     (BS : Matrix (Fin n) (Fin qS) ℝ) (σS : Matrix (Fin qS) (Fin qS) ℝ)
     (K : Matrix (Fin n) (Fin n) ℝ) :
     itoCorrection (fromCols hN (BS * σS)) K = itoCorrection hN K + itoCorrection (BS * σS) K := by
@@ -153,7 +153,7 @@ def mergedCov {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ) (BS : Matrix (Fin
 
 /-- Linear pH `ẋ = (J − R) Q x` with noise `h hᵀ = 2 T R`: the Gibbs covariance `P = T Q⁻¹`
 solves the stationary covariance equation. -/
-@[powerlib_foundation] theorem rlc_fdt {J R Q : Matrix (Fin n) (Fin n) ℝ} {T : ℝ}
+@[tmio T, powerlib_foundation] theorem rlc_fdt {J R Q : Matrix (Fin n) (Fin n) ℝ} {T : ℝ}
     (hJ : Jᵀ = -J) (hR : Rᵀ = R) (hQ : Q.PosDef) :
     Lyapunov.SolvesCovLyapunov ((J - R) * Q) (T • Q⁻¹) ((2 * T) • R) := by
   have hQt : Qᵀ = Q := by
@@ -172,14 +172,14 @@ solves the stationary covariance equation. -/
         abel
 
 /-- Equipartition: `½ tr(Q · T Q⁻¹) = (n/2) T`; for the two-state RLC this is `T`. -/
-@[powerlib_foundation] theorem rlc_equipartition {Q : Matrix (Fin n) (Fin n) ℝ} (hQ : Q.PosDef)
+@[tmio T, powerlib_foundation] theorem rlc_equipartition {Q : Matrix (Fin n) (Fin n) ℝ} (hQ : Q.PosDef)
     (T : ℝ) : (1 / 2 : ℝ) * (Q * (T • Q⁻¹)).trace = (n / 2 : ℝ) * T := by
   have hdet : IsUnit Q.det := (isUnit_iff_ne_zero).mpr hQ.det_pos.ne'
   rw [mul_smul_comm, mul_nonsing_inv Q hdet, trace_smul, trace_one, Fintype.card_fin]
   simp only [smul_eq_mul]
   ring
 
-@[powerlib_foundation] theorem rlc_equipartition_two {Q : Matrix (Fin 2) (Fin 2) ℝ}
+@[tmio T, powerlib_foundation] theorem rlc_equipartition_two {Q : Matrix (Fin 2) (Fin 2) ℝ}
     (hQ : Q.PosDef) (T : ℝ) : (1 / 2 : ℝ) * (Q * (T • Q⁻¹)).trace = T := by
   rw [rlc_equipartition hQ]; norm_num
 
@@ -193,7 +193,7 @@ def stratCorrection (h : Matrix (Fin n) (Fin q) ℝ) (dh : Fin n → Fin q → F
 
 /-- The Itô drift of a Stratonovich SDE `δx = μ_S dt + h δW` is `μ_S + c`; the diffusion
 coefficient is `h` in both forms.  The two drifts coincide iff the correction vanishes. -/
-@[powerlib_foundation] theorem itoDrift_eq_iff (μS : Fin n → ℝ) (h : Matrix (Fin n) (Fin q) ℝ)
+@[tmio T, powerlib_foundation] theorem itoDrift_eq_iff (μS : Fin n → ℝ) (h : Matrix (Fin n) (Fin q) ℝ)
     (dh : Fin n → Fin q → Fin n → ℝ) :
     μS + stratCorrection h dh = μS ↔ stratCorrection h dh = 0 := by
   constructor
@@ -201,7 +201,7 @@ coefficient is `h` in both forms.  The two drifts coincide iff the correction va
   · intro H; rw [H, add_zero]
 
 /-- State-independent diffusion (`∂h = 0`) gives no drift correction. -/
-@[powerlib_foundation] theorem stratCorrection_const (h : Matrix (Fin n) (Fin q) ℝ) :
+@[tmio T, powerlib_foundation] theorem stratCorrection_const (h : Matrix (Fin n) (Fin q) ℝ) :
     stratCorrection h (fun _ _ _ => 0) = 0 := by
   funext k; simp [stratCorrection]
 

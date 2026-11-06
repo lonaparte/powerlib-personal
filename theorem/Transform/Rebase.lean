@@ -292,14 +292,14 @@ variable {n p : ℕ} {T S : Matrix (Fin n) (Fin n) ℝ} {w : ℝ}
 
 /-- The attractive sentences of the linear field are invariant under every change of state bases
 and every positive time base. -/
-@[powerlib_foundation] theorem holds_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
+@[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
     (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField (rebaseMatrix T S w A) 0) 0 ↔
       P.holds (affineLinearVectorField A 0) 0 := by
   rw [holds_iff_isHurwitz 0 hP, holds_iff_isHurwitz 0 hP, isHurwitz_rebaseMatrix_iff hTS hST hw]
 
 /-- With the time base `1`, every flow sentence of the linear field is invariant. -/
-@[powerlib_foundation] theorem holds_rebaseMatrix_one_iff (hTS : T * S = 1) (hST : S * T = 1)
+@[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_one_iff (hTS : T * S = 1) (hST : S * T = 1)
     (A : Matrix (Fin n) (Fin n) ℝ) (P : Flow.Property) :
     P.holds (affineLinearVectorField (rebaseMatrix T S 1 A) 0) 0 ↔
       P.holds (affineLinearVectorField A 0) 0 := by
@@ -309,7 +309,7 @@ and every positive time base. -/
 /-- For every positive time base, every flow sentence of the linear field is the rebased one with
 its decay rate scaled by `w`: `P` holds for the rebased field exactly when `P.timeScale w` holds
 for the original. -/
-@[powerlib_foundation] theorem holds_rebaseMatrix_timeScale_iff (hTS : T * S = 1)
+@[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_timeScale_iff (hTS : T * S = 1)
     (hST : S * T = 1) (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) (P : Flow.Property) :
     P.holds (affineLinearVectorField (rebaseMatrix T S w A) 0) 0 ↔
       (P.timeScale w).holds (affineLinearVectorField A 0) 0 := by

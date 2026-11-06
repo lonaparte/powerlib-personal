@@ -70,7 +70,7 @@ variable {α : Type*} {mα : MeasurableSpace α}
   Kernel.comp_assoc ξ η κ
 
 /-- Invariance is preserved by composition (Mathlib `Kernel.Invariant.comp`). -/
-@[powerlib_foundation] theorem invariant_comp {κ η : Kernel α α} {μ : Measure α}
+@[tmio T, powerlib_foundation] theorem invariant_comp {κ η : Kernel α α} {μ : Measure α}
     (hκ : κ.Invariant μ) (hη : η.Invariant μ) : (κ ∘ₖ η).Invariant μ :=
   hκ.comp hη
 
@@ -80,7 +80,7 @@ def kpow (κ : Kernel α α) : ℕ → Kernel α α
   | n + 1 => κ ∘ₖ kpow κ n
 
 /-- **Discrete Chapman–Kolmogorov**: `K^{m+n} = K^m ∘ K^n`. -/
-@[powerlib_foundation] theorem kpow_add (κ : Kernel α α) (m n : ℕ) :
+@[tmio T, powerlib_foundation] theorem kpow_add (κ : Kernel α α) (m n : ℕ) :
     kpow κ (m + n) = kpow κ m ∘ₖ kpow κ n := by
   induction m with
   | zero => simp [kpow, Kernel.id_comp]
@@ -88,7 +88,7 @@ def kpow (κ : Kernel α α) : ℕ → Kernel α α
     rw [show m + 1 + n = (m + n) + 1 by ring, kpow, ih, kpow, kernel_comp_assoc]
 
 /-- An invariant measure is invariant for every iterate. -/
-@[powerlib_foundation] theorem kpow_invariant {κ : Kernel α α} {μ : Measure α}
+@[tmio T, powerlib_foundation] theorem kpow_invariant {κ : Kernel α α} {μ : Measure α}
     (h : κ.Invariant μ) (n : ℕ) : (kpow κ n).Invariant μ := by
   induction n with
   | zero => simp [kpow, Kernel.Invariant]
@@ -103,13 +103,13 @@ variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 
 /-- **Discrete-time chains (Ionescu–Tulcea)**: the trajectory kernel `traj κ a` has the
 prescribed one-step transition (Mathlib `Kernel.map_traj_succ_self`). -/
-@[powerlib_foundation] theorem ionescuTulcea_next (a : ℕ) :
+@[tmio T, powerlib_foundation] theorem ionescuTulcea_next (a : ℕ) :
     (Kernel.traj κ a).map (fun x => x (a + 1)) = κ a :=
   Kernel.map_traj_succ_self
 
 /-- Its finite-dimensional marginals are the finite compositions (Mathlib
 `Kernel.traj_map_frestrictLe`). -/
-@[powerlib_foundation] theorem ionescuTulcea_marginal (a b : ℕ) :
+@[tmio T, powerlib_foundation] theorem ionescuTulcea_marginal (a b : ℕ) :
     (Kernel.traj κ a).map (Preorder.frestrictLe b) = Kernel.partialTraj κ a b :=
   Kernel.traj_map_frestrictLe a b
 
@@ -126,7 +126,7 @@ the **Markov property with transition kernels** `K s t` (conditional-expectation
 T-markov §1.3): for `s ≤ t` and bounded measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)`
 a.s. Then for `s ≤ t ≤ u` and measurable `A`, `K_{s,u}(X_s, A) = (K_{t,u} ∘ K_{s,t})(X_s, A)` for
 `P`-a.e. `ω`. -/
-@[powerlib_foundation] theorem chapmanKolmogorov_ae {P : Measure Ω} [IsProbabilityMeasure P]
+@[tmio T, powerlib_foundation] theorem chapmanKolmogorov_ae {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ι mΩ} {X : ι → Ω → E} {K : ι → ι → Kernel E E}
     [∀ s t, IsMarkovKernel (K s t)]
     (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
@@ -177,7 +177,7 @@ end MarkovProperty
 /-! ## Gaussian kernels and the OU semigroup -/
 
 /-- **Gaussian location mixture**: `∫ N(c y, v) N(m, w)(dy) = N(c m, c² w + v)`. -/
-@[powerlib_foundation] theorem gaussian_bind (m c : ℝ) (w v : ℝ≥0) :
+@[tmio T, powerlib_foundation] theorem gaussian_bind (m c : ℝ) (w v : ℝ≥0) :
     (gaussianReal m w).bind (fun y => gaussianReal (c * y) v) =
       gaussianReal (c * m) (.mk (c ^ 2) (sq_nonneg _) * w + v) := by
   have hmeas : Measurable fun y : ℝ => gaussianReal (c * y) v :=
@@ -203,7 +203,7 @@ def ouVar (θ σ : ℝ) (t : ℝ≥0) : ℝ≥0 := (σ ^ 2 * (1 - exp (-2 * θ *
 /-- OU transition law from `x` over time `t`: `N(e^{−θt} x, v(t))`. -/
 def ouLaw (θ σ : ℝ) (t : ℝ≥0) (x : ℝ) : Measure ℝ := gaussianReal (exp (-θ * t) * x) (ouVar θ σ t)
 
-@[powerlib_foundation] theorem ouVar_coe {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (t : ℝ≥0) :
+@[tmio M, powerlib_foundation] theorem ouVar_coe {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (t : ℝ≥0) :
     (ouVar θ σ t : ℝ) = σ ^ 2 * (1 - exp (-2 * θ * t)) / (2 * θ) := by
   rw [ouVar, Real.coe_toNNReal]
   apply div_nonneg _ (by positivity)
@@ -213,7 +213,7 @@ def ouLaw (θ σ : ℝ) (t : ℝ≥0) (x : ℝ) : Measure ℝ := gaussianReal (e
   nlinarith
 
 /-- Variance composition `e^{−2θt} v(s) + v(t) = v(s + t)`. -/
-@[powerlib_foundation] theorem ouVar_add {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (s t : ℝ≥0) :
+@[tmio M, powerlib_foundation] theorem ouVar_add {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (s t : ℝ≥0) :
     .mk (exp (-θ * t) ^ 2) (sq_nonneg _) * ouVar θ σ s + ouVar θ σ t = ouVar θ σ (s + t) := by
   apply NNReal.eq
   push_cast
@@ -227,7 +227,7 @@ def ouLaw (θ σ : ℝ) (t : ℝ≥0) (x : ℝ) : Measure ℝ := gaussianReal (e
 
 /-- **OU Chapman–Kolmogorov**: the Gaussian transition laws form a semigroup,
 `∫ K_t(y, ·) K_s(x, dy) = K_{s+t}(x, ·)`. -/
-@[powerlib_foundation] theorem ou_chapmanKolmogorov {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (s t : ℝ≥0)
+@[tmio M, powerlib_foundation] theorem ou_chapmanKolmogorov {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (s t : ℝ≥0)
     (x : ℝ) : (ouLaw θ σ s x).bind (ouLaw θ σ t) = ouLaw θ σ (s + t) x := by
   unfold ouLaw
   rw [gaussian_bind, ouVar_add hθ]
@@ -239,7 +239,7 @@ def ouLaw (θ σ : ℝ) (t : ℝ≥0) (x : ℝ) : Measure ℝ := gaussianReal (e
 /-- **OU increments are not independent of the current state**: if `X ~ N(0, v₀)` (`v₀ ≠ 0`),
 `Z` is independent of `X` and square integrable, and `X' = a X + Z` with `a ≠ 1` (the exact OU step
 with `a = e^{−θh}`), then `X' − X` is not independent of `X`. -/
-@[powerlib_foundation] theorem ou_increment_not_indep {Ω : Type*} {mΩ : MeasurableSpace Ω}
+@[tmio T, powerlib_foundation] theorem ou_increment_not_indep {Ω : Type*} {mΩ : MeasurableSpace Ω}
     {P : Measure Ω} [IsProbabilityMeasure P] {X Z : Ω → ℝ} {v₀ : ℝ≥0} (hv : v₀ ≠ 0)
     (hX : HasLaw X (gaussianReal 0 v₀) P) (hZ : MemLp Z 2 P) (hXZ : IndepFun X Z P) {a : ℝ}
     (ha : a ≠ 1) : ¬ IndepFun X (fun ω => a * X ω + Z ω - X ω) P := by

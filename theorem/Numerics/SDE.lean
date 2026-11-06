@@ -61,7 +61,7 @@ def milsteinStep (μ σ : E → ℝ → E) (dt t ξ : ℝ) (x : E) : E :=
 
 /-- Additive scalar noise: Milstein and Euler–Maruyama trajectories driven by the same
 samples coincide. -/
-@[powerlib_foundation] theorem milstein_trajectory_eq_em {μ σ : E → ℝ → E}
+@[tmio T, powerlib_foundation] theorem milstein_trajectory_eq_em {μ σ : E → ℝ → E}
     (hσ : ∀ x y t, σ x t = σ y t) (dt : ℝ) (ξ : ℕ → ℝ) (x y : ℕ → E) (h0 : x 0 = y 0)
     (hx : ∀ n, x (n + 1) = milsteinStep μ σ dt (n * dt) (ξ n) (x n))
     (hy : ∀ n, y (n + 1) = emStep μ σ dt (n * dt) (ξ n) (y n)) : x = y := by
@@ -85,7 +85,7 @@ def milsteinMultiStep {m : ℕ} (μ : E → ℝ → E) (σ : Fin m → E → ℝ
 
 /-- Additive multi-channel noise: Milstein equals Euler–Maruyama for every choice of the
 iterated integrals (Lévy areas are irrelevant). -/
-@[powerlib_foundation] theorem milsteinMultiStep_eq_emMultiStep {m : ℕ} {μ : E → ℝ → E}
+@[tmio T, powerlib_foundation] theorem milsteinMultiStep_eq_emMultiStep {m : ℕ} {μ : E → ℝ → E}
     {σ : Fin m → E → ℝ → E} (hσ : ∀ k x y t, σ k x t = σ k y t) (dt t : ℝ)
     (ξ : Fin m → ℝ) (I : Fin m → Fin m → ℝ) (x : E) :
     milsteinMultiStep μ σ dt t ξ I x = emMultiStep μ σ dt t ξ x := by
@@ -117,7 +117,7 @@ def exampleDiffusion (x : Fin 1 → ℝ) : Matrix (Fin 1) (Fin 2) ℝ := !![1, x
 
 /-- The note's condition holds for `σ = (1, x)` but the correct commutativity condition
 fails: the note's test is not sufficient. -/
-@[powerlib_foundation] theorem noteCommutative_not_sufficient :
+@[tmio T, powerlib_foundation] theorem noteCommutative_not_sufficient :
     NoteCommutative exampleDiffusion ∧ ¬ Commutative exampleDiffusion := by
   constructor
   · intro x i l j

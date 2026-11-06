@@ -46,7 +46,7 @@ def closedLoopInput {ι₁ ι₂ κ : Type*} [Fintype κ]
     Matrix (ι₁ ⊕ ι₂) κ ℝ :=
   Matrix.fromRows (-B₁) (B₂ * D₁)
 
-@[simp, powerlib_foundation] theorem closedLoopInput_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
+@[tmio M, simp, powerlib_foundation] theorem closedLoopInput_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
     (B₁ : Matrix ι₁ κ ℝ) (D₁ : Matrix κ κ ℝ) (B₂ : Matrix ι₂ κ ℝ) :
     closedLoopInput B₁ D₁ B₂ =
       Matrix.fromRows (-B₁) (B₂ * D₁) := rfl
@@ -56,7 +56,7 @@ def closedLoopOutput {ι₁ ι₂ κ : Type*} [Fintype κ]
     Matrix κ (ι₁ ⊕ ι₂) ℝ :=
   Matrix.fromCols (-C₁) (-(D₁ * C₂))
 
-@[simp, powerlib_foundation] theorem closedLoopOutput_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
+@[tmio M, simp, powerlib_foundation] theorem closedLoopOutput_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
     (C₁ : Matrix κ ι₁ ℝ) (D₁ : Matrix κ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
     closedLoopOutput C₁ D₁ C₂ =
       Matrix.fromCols (-C₁) (-(D₁ * C₂)) := rfl
@@ -66,7 +66,7 @@ def closedLoopFeedthrough {κ : Type*}
     Matrix κ κ ℝ :=
   D₁
 
-@[simp, powerlib_foundation] theorem closedLoopFeedthrough_spec {κ : Type*}
+@[tmio M, simp, powerlib_foundation] theorem closedLoopFeedthrough_spec {κ : Type*}
     (D₁ : Matrix κ κ ℝ) :
     closedLoopFeedthrough D₁ =
       D₁ := rfl

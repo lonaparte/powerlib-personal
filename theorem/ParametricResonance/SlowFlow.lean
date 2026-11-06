@@ -67,9 +67,9 @@ def toReal : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
 
 @[tmio T, simp, powerlib_foundation] theorem toReal_apply_zero (A : ℂ) : toReal A 0 = A.re := rfl
 
-@[simp, powerlib_foundation] theorem toReal_apply_one (A : ℂ) : toReal A 1 = A.im := rfl
+@[tmio T, simp, powerlib_foundation] theorem toReal_apply_one (A : ℂ) : toReal A 1 = A.im := rfl
 
-@[powerlib_foundation] theorem toReal_slowFlowField (α₀ Δ : ℝ) (g A : ℂ) :
+@[tmio M, powerlib_foundation] theorem toReal_slowFlowField (α₀ Δ : ℝ) (g A : ℂ) :
     slowFlowSystem α₀ Δ g (toReal A) = toReal (slowFlowField α₀ Δ g A) := by
   ext i
   fin_cases i <;>
@@ -78,7 +78,7 @@ def toReal : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
 
 /-- Solutions of the real field on any time set are exactly the real coordinates of solutions of
 the complex slow flow. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ)
+@[tmio M, powerlib_foundation] theorem isIntegralCurveOn_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ)
     (A : ℝ → ℂ) (s : Set ℝ) :
     IsIntegralCurveOn (fun t => toReal (A t)) (fun _ x => slowFlowSystem α₀ Δ g x) s ↔
       IsIntegralCurveOn A (fun _ z => slowFlowField α₀ Δ g z) s := by
@@ -93,7 +93,7 @@ the complex slow flow. -/
 
 /-- Solution segments of the real field (`IsTrajectoryOn`) are the real coordinates of
 solutions of the complex slow flow on the same segment. -/
-@[powerlib_foundation] theorem isTrajectoryOn_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ)
+@[tmio M, powerlib_foundation] theorem isTrajectoryOn_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ)
     (A : ℝ → ℂ) (a b : ℝ) :
     IsTrajectoryOn (fun t => toReal (A t)) (slowFlowSystem α₀ Δ g) a b ↔
       IsIntegralCurveOn A (fun _ z => slowFlowField α₀ Δ g z) (Set.Icc a b) :=
@@ -101,7 +101,7 @@ solutions of the complex slow flow on the same segment. -/
 
 /-- Global solutions of the real field are exactly the real coordinates of global solutions of
 the complex slow flow. -/
-@[powerlib_foundation] theorem hasDerivAt_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ) (A : ℝ → ℂ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ) (A : ℝ → ℂ) :
     (∀ t, HasDerivAt (fun t => toReal (A t)) (slowFlowSystem α₀ Δ g (toReal (A t))) t) ↔
       ∀ t, HasDerivAt A (slowFlowField α₀ Δ g (A t)) t := by
   refine forall_congr' fun t => ?_
@@ -115,17 +115,17 @@ the complex slow flow. -/
 
 /-! ## Spectrum -/
 
-@[powerlib_foundation] theorem trace_slowFlowMatrix (α₀ Δ : ℝ) (g : ℂ) :
+@[tmio M, powerlib_foundation] theorem trace_slowFlowMatrix (α₀ Δ : ℝ) (g : ℂ) :
     (slowFlowMatrix α₀ Δ g).trace = -2 * α₀ := by
   simp [slowFlowMatrix, Matrix.trace_fin_two]; ring
 
-@[powerlib_foundation] theorem det_slowFlowMatrix (α₀ Δ : ℝ) (g : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_slowFlowMatrix (α₀ Δ : ℝ) (g : ℂ) :
     (slowFlowMatrix α₀ Δ g).det = α₀ ^ 2 + Δ ^ 2 - ‖g‖ ^ 2 := by
   rw [Complex.sq_norm, Complex.normSq_apply]
   simp [slowFlowMatrix, Matrix.det_fin_two]; ring
 
 /-- Characteristic polynomial `s² + 2α₀ s + α₀² + Δ² − |g|²`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_slowFlow (α₀ Δ : ℝ) (g : ℂ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_slowFlow (α₀ Δ : ℝ) (g : ℂ) (s : ℂ) :
     (Linear.characteristicMatrix (slowFlowMatrix α₀ Δ g) s).det =
       s ^ 2 + 2 * α₀ * s + ((α₀ ^ 2 + Δ ^ 2 - ‖g‖ ^ 2 : ℝ) : ℂ) := by
   rw [Criteria.det_characteristicMatrix_fin_two, trace_slowFlowMatrix, det_slowFlowMatrix]
@@ -133,7 +133,7 @@ the complex slow flow. -/
 
 /-- The characteristic roots are exactly `s = −α₀ + w` with `w² = |g|² − Δ²`, i.e.
 `σ_± = −α₀ ± √(|g|² − Δ²)`. -/
-@[powerlib_foundation] theorem slowFlow_root_iff (α₀ Δ : ℝ) (g : ℂ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem slowFlow_root_iff (α₀ Δ : ℝ) (g : ℂ) (s : ℂ) :
     (Linear.characteristicMatrix (slowFlowMatrix α₀ Δ g) s).det = 0 ↔
       (s + α₀) ^ 2 = ((‖g‖ ^ 2 - Δ ^ 2 : ℝ) : ℂ) := by
   rw [det_characteristicMatrix_slowFlow]
@@ -141,7 +141,7 @@ the complex slow flow. -/
 
 /-- In the real-splitting regime `Δ² ≤ |g|²` both exponents `−α₀ ± √(|g|² − Δ²)` are real
 characteristic roots. -/
-@[powerlib_foundation] theorem slowFlow_real_roots (α₀ Δ : ℝ) (g : ℂ) (h : Δ ^ 2 ≤ ‖g‖ ^ 2) :
+@[tmio M, powerlib_foundation] theorem slowFlow_real_roots (α₀ Δ : ℝ) (g : ℂ) (h : Δ ^ 2 ≤ ‖g‖ ^ 2) :
     (Linear.characteristicMatrix (slowFlowMatrix α₀ Δ g)
         ((-α₀ + √(‖g‖ ^ 2 - Δ ^ 2) : ℝ) : ℂ)).det = 0 ∧
       (Linear.characteristicMatrix (slowFlowMatrix α₀ Δ g)
@@ -155,7 +155,7 @@ characteristic roots. -/
 
 /-- Every attractive sentence of the Flow semantics holds for the slow flow at `0` iff `α₀ > 0`
 and `|g|² < α₀² + Δ²`. -/
-@[powerlib_foundation] theorem slowFlow_holds_iff (α₀ Δ : ℝ) (g : ℂ) {P : Flow.Property}
+@[tmio TM, powerlib_foundation] theorem slowFlow_holds_iff (α₀ Δ : ℝ) (g : ℂ) {P : Flow.Property}
     (hP : P.Attractive) :
     P.holds (slowFlowSystem α₀ Δ g) 0 ↔ 0 < α₀ ∧ ‖g‖ ^ 2 < α₀ ^ 2 + Δ ^ 2 := by
   rw [slowFlowSystem, Criteria.holds_affine_fin_two_iff _ _ hP, trace_slowFlowMatrix,
@@ -165,14 +165,14 @@ and `|g|² < α₀² + Δ²`. -/
   · rintro ⟨h1, h2⟩; exact ⟨by linarith, by linarith⟩
 
 /-- The slow flow is globally exponentially stable iff `α₀ > 0` and `|g|² < α₀² + Δ²`. -/
-@[powerlib_foundation] theorem slowFlow_exponentiallyStable_iff (α₀ Δ : ℝ) (g : ℂ) :
+@[tmio TM, powerlib_foundation] theorem slowFlow_exponentiallyStable_iff (α₀ Δ : ℝ) (g : ℂ) :
     Flow.GloballyExponentiallyStable (slowFlowSystem α₀ Δ g) 0 ↔
       0 < α₀ ∧ ‖g‖ ^ 2 < α₀ ^ 2 + Δ ^ 2 :=
   slowFlow_holds_iff α₀ Δ g Flow.Property.attractive_globallyExponentiallyStable
 
 /-- Leading-order threshold: with `g = ε 𝒢 / 2`, `ε ≥ 0` and `α₀ > 0`, the slow flow is
 exponentially stable iff `ε |𝒢| < 2 √(α₀² + Δ²)`. -/
-@[powerlib_foundation] theorem slowFlow_threshold_iff {α₀ Δ ε : ℝ} (hα : 0 < α₀) (hε : 0 ≤ ε)
+@[tmio TM, powerlib_foundation] theorem slowFlow_threshold_iff {α₀ Δ ε : ℝ} (hα : 0 < α₀) (hε : 0 ≤ ε)
     (G : ℂ) :
     Flow.GloballyExponentiallyStable (slowFlowSystem α₀ Δ ((ε : ℂ) * G / 2)) 0 ↔
       ε * ‖G‖ < 2 * √(α₀ ^ 2 + Δ ^ 2) := by
@@ -197,7 +197,7 @@ exponentially stable iff `ε |𝒢| < 2 √(α₀² + Δ²)`. -/
 /-! ## Floquet multipliers at zero amplitude and perfect tuning -/
 
 /-- With `ω T = π`, `e^{(−α₀ ± jω) T} = −e^{−α₀ T}`. -/
-@[powerlib_foundation] theorem exp_victim_tuned {α₀ ω T : ℝ} (hT : ω * T = Real.pi) :
+@[tmio T, powerlib_foundation] theorem exp_victim_tuned {α₀ ω T : ℝ} (hT : ω * T = Real.pi) :
     Complex.exp ((-(α₀ : ℂ) + ω * I) * T) = -(Real.exp (-α₀ * T) : ℂ) ∧
       Complex.exp ((-(α₀ : ℂ) - ω * I) * T) = -(Real.exp (-α₀ * T) : ℂ) := by
   have e1 : (-(α₀ : ℂ) + ω * I) * T = ((-α₀ * T : ℝ) : ℂ) + (Real.pi : ℂ) * I := by
@@ -211,7 +211,7 @@ exponentially stable iff `ε |𝒢| < 2 √(α₀² + Δ²)`. -/
 /-- Spectral mapping at zero pump amplitude: if the constant state matrix `A₀` has the victim
 eigenpair `(−α₀ + jω, v)` and the pump is perfectly tuned (`ω T = π`), the monodromy matrix
 `e^{T A₀}` has the real negative multiplier `−e^{−α₀ T}` on `v`. -/
-@[powerlib_foundation] theorem monodromy_victim_tuned {X : Type*} [Fintype X] [DecidableEq X]
+@[tmio T, powerlib_foundation] theorem monodromy_victim_tuned {X : Type*} [Fintype X] [DecidableEq X]
     (A₀ : Matrix X X ℝ) {α₀ ω T : ℝ} (hT0 : 0 ≤ T) (hT : ω * T = Real.pi) (s : ℝ)
     {v : X → ℂ} (hv : A₀.map (algebraMap ℝ ℂ) *ᵥ v = (-(α₀ : ℂ) + ω * I) • v) :
     (Periodic.monodromy (fun _ => A₀) T s).map (algebraMap ℝ ℂ) *ᵥ v =

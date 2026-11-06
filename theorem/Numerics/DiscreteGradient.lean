@@ -49,7 +49,7 @@ exactly `h (uᵀ gᵀ ∇̄H − ∇̄Hᵀ R ∇̄H)`. -/
 
 /-- Exact energy conservation of the discrete gradient method for lossless unforced pH
 systems (`R = 0`, `u = 0`). -/
-@[powerlib_foundation] theorem discreteGradient_conserves {H : (Fin n → ℝ) → ℝ}
+@[tmio T, powerlib_foundation] theorem discreteGradient_conserves {H : (Fin n → ℝ) → ℝ}
     (G : DiscreteGradient H) {J : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J) (h : ℝ)
     {x y : Fin n → ℝ} (hstep : y - x = h • (J *ᵥ G.dg x y)) : H y = H x := by
   have := discreteGradient_energy_step G (R := 0) (0 : Matrix (Fin n) (Fin 0) ℝ) hJ h 0
@@ -59,7 +59,7 @@ systems (`R = 0`, `u = 0`). -/
 
 /-- Discrete dissipation inequality: with `h ≥ 0` and `R ⪰ 0`,
 `H(x⁺) − H(x) ≤ h uᵀ gᵀ ∇̄H`. -/
-@[powerlib_foundation] theorem discreteGradient_dissipation {H : (Fin n → ℝ) → ℝ}
+@[tmio T, powerlib_foundation] theorem discreteGradient_dissipation {H : (Fin n → ℝ) → ℝ}
     (G : DiscreteGradient H) {J R : Matrix (Fin n) (Fin n) ℝ} (g : Matrix (Fin n) (Fin m) ℝ)
     (hJ : Jᵀ = -J) (hR : R.PosSemidef) {h : ℝ} (hh : 0 ≤ h) (u : Fin m → ℝ) {x y : Fin n → ℝ}
     (hstep : y - x = h • ((J - R) *ᵥ G.dg x y + g *ᵥ u)) :

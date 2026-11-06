@@ -58,7 +58,7 @@ open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiab
   ring
 
 /-- The current satisfies the same second-order equation. -/
-@[powerlib_foundation] theorem second_order_i (L C R G : ℝ) {v i : ℝ × ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem second_order_i (L C R G : ℝ) {v i : ℝ × ℝ → ℝ}
     (hv : ContDiff ℝ 2 v) (hi : ContDiff ℝ 2 i)
     (h1 : ∀ p, dx v p = -L * dt i p - R * i p) (h2 : ∀ p, dx i p = -C * dt v p - G * v p)
     (p : ℝ × ℝ) :
@@ -70,7 +70,7 @@ open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiab
 def factorOp (κ τ : ℝ) (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := dt F p + κ * dx F p + τ * F p
 
 /-- `(∂ₜ + c∂ₓ + τ)(∂ₜ − c∂ₓ + τ) v = ∂ₜₜv − c²∂ₓₓv + 2τ∂ₜv + τ²v` for `v ∈ C²`. -/
-@[powerlib_foundation] theorem factor_distortionless (c τ : ℝ) {v : ℝ × ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem factor_distortionless (c τ : ℝ) {v : ℝ × ℝ → ℝ}
     (hv : ContDiff ℝ 2 v) (p : ℝ × ℝ) :
     factorOp c τ (factorOp (-c) τ v) p =
       dt (dt v) p - c ^ 2 * dx (dx v) p + 2 * τ * dt v p + τ ^ 2 * v p := by
@@ -96,7 +96,7 @@ def factorOp (κ τ : ℝ) (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := dt
 
 /-- On a distortionless line (`R' = τ_d L'`, `G' = τ_d C'`, `c² L'C' = 1`) the second-order
 telegrapher operator is `1/c²` times the factored operator. -/
-@[powerlib_foundation] theorem distortionless_iff {L C c τ : ℝ}
+@[tmio T, powerlib_foundation] theorem distortionless_iff {L C c τ : ℝ}
     (hc : c ^ 2 * (L * C) = 1) {v : ℝ × ℝ → ℝ} (hv : ContDiff ℝ 2 v) (p : ℝ × ℝ) :
     dx (dx v) p = L * C * dt (dt v) p + (L * (τ * C) + (τ * L) * C) * dt v p +
         (τ * L) * (τ * C) * v p ↔

@@ -71,7 +71,7 @@ def invPos (W f μ : ℝ) : ℝ := Real.arcsin ((f + μ) / amp W f) - base W f
 /-- Inverse of the flow increment on a line with negative weight. -/
 def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
 
-@[powerlib_foundation] theorem hasDerivAt_edgeG (W f x : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_edgeG (W f x : ℝ) :
     HasDerivAt (edgeG W f) (edgeD W f x) x := by
   show HasDerivAt (fun x => W * (1 - Real.cos x) + f * (Real.sin x - x)) _ x
   have h := (((hasDerivAt_const x (1 : ℝ)).sub (Real.hasDerivAt_cos x)).const_mul W).add
@@ -80,7 +80,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   unfold edgeD
   ring
 
-@[powerlib_foundation] theorem hasDerivAt_edgeD (W f x : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_edgeD (W f x : ℝ) :
     HasDerivAt (edgeD W f) (W * Real.cos x - f * Real.sin x) x := by
   show HasDerivAt (fun x => W * Real.sin x + f * (Real.cos x - 1)) _ x
   have h := ((Real.hasDerivAt_sin x).const_mul W).add
@@ -88,14 +88,14 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   refine h.congr_deriv ?_
   ring
 
-@[powerlib_foundation] theorem amp_pos {W f : ℝ} (hW : W ≠ 0) : 0 < amp W f := by
+@[tmio T, powerlib_foundation] theorem amp_pos {W f : ℝ} (hW : W ≠ 0) : 0 < amp W f := by
   unfold amp; positivity
 
-@[powerlib_foundation] theorem amp_sq (W f : ℝ) : amp W f ^ 2 = W ^ 2 + f ^ 2 := by
+@[tmio T, powerlib_foundation] theorem amp_sq (W f : ℝ) : amp W f ^ 2 = W ^ 2 + f ^ 2 := by
   unfold amp; rw [sq_sqrt (by positivity)]
 
 /-- `|f + μ| < B` exactly when `edgeQ > 0`. -/
-@[powerlib_foundation] theorem abs_div_amp_lt {W f μ : ℝ} (hW : W ≠ 0) (hq : 0 < edgeQ W f μ) :
+@[tmio T, powerlib_foundation] theorem abs_div_amp_lt {W f μ : ℝ} (hW : W ≠ 0) (hq : 0 < edgeQ W f μ) :
     |(f + μ) / amp W f| < 1 := by
   have hB := amp_pos (f := f) hW
   rw [abs_div, abs_of_pos hB, div_lt_one hB]
@@ -104,18 +104,18 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   exact abs_lt_of_sq_lt_sq h2 hB.le
 
 /-- `B cos a = |W|` (`SpecialFunctions.sqrt_mul_cos_arcsin`). -/
-@[powerlib_foundation] theorem cos_base_pos {W f : ℝ} (_hW : W ≠ 0) :
+@[tmio T, powerlib_foundation] theorem cos_base_pos {W f : ℝ} (_hW : W ≠ 0) :
     amp W f * Real.cos (base W f) = |W| :=
   SpecialFunctions.sqrt_mul_cos_arcsin W f
 
 /-- `B sin a = f` (`SpecialFunctions.mul_sin_arcsin_div`). -/
-@[powerlib_foundation] theorem sin_base {W f : ℝ} (hW : W ≠ 0) :
+@[tmio T, powerlib_foundation] theorem sin_base {W f : ℝ} (hW : W ≠ 0) :
     amp W f * Real.sin (base W f) = f :=
   SpecialFunctions.mul_sin_arcsin_div (abs_le_sqrt (le_add_of_nonneg_left (sq_nonneg W)))
     (amp_pos hW)
 
 /-- `f + G'(x) = B sin(a + x)` on a line with positive weight. -/
-@[powerlib_foundation] theorem add_edgeD_pos {W f : ℝ} (hW : 0 < W) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem add_edgeD_pos {W f : ℝ} (hW : 0 < W) (x : ℝ) :
     f + edgeD W f x = amp W f * Real.sin (base W f + x) := by
   have hc := cos_base_pos (f := f) hW.ne'
   have hs := sin_base (f := f) hW.ne'
@@ -124,7 +124,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   unfold edgeD; ring
 
 /-- `f + G'(x) = B sin(a − x)` on a line with negative weight. -/
-@[powerlib_foundation] theorem add_edgeD_neg {W f : ℝ} (hW : W < 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem add_edgeD_neg {W f : ℝ} (hW : W < 0) (x : ℝ) :
     f + edgeD W f x = amp W f * Real.sin (base W f - x) := by
   have hc := cos_base_pos (f := f) hW.ne
   have hs := sin_base (f := f) hW.ne
@@ -132,22 +132,22 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   rw [Real.sin_sub, mul_sub, ← mul_assoc, ← mul_assoc, hs, hc]
   unfold edgeD; ring
 
-@[powerlib_foundation] theorem arcsin_mem_Ioo {y : ℝ} (hy : |y| < 1) :
+@[tmio T, powerlib_foundation] theorem arcsin_mem_Ioo {y : ℝ} (hy : |y| < 1) :
     Real.arcsin y ∈ Ioo (-(π / 2)) (π / 2) :=
   ⟨Real.neg_pi_div_two_lt_arcsin.mpr (abs_lt.mp hy).1, Real.arcsin_lt_pi_div_two.mpr
     (abs_lt.mp hy).2⟩
 
-@[powerlib_foundation] theorem edgeQ_zero (W f : ℝ) : edgeQ W f 0 = W ^ 2 := by
+@[tmio T, powerlib_foundation] theorem edgeQ_zero (W f : ℝ) : edgeQ W f 0 = W ^ 2 := by
   unfold edgeQ; ring
 
-@[powerlib_foundation] theorem base_mem {W f : ℝ} (hW : W ≠ 0) :
+@[tmio T, powerlib_foundation] theorem base_mem {W f : ℝ} (hW : W ≠ 0) :
     base W f ∈ Ioo (-(π / 2)) (π / 2) := by
   have h := abs_div_amp_lt (W := W) (f := f) (μ := 0) hW (by rw [edgeQ_zero]; positivity)
   rw [add_zero] at h
   exact arcsin_mem_Ioo h
 
 /-- The flow increment is inverted by `invPos` on a line with positive weight. -/
-@[powerlib_foundation] theorem edgeD_invPos {W f μ : ℝ} (hW : 0 < W) (hq : 0 < edgeQ W f μ) :
+@[tmio T, powerlib_foundation] theorem edgeD_invPos {W f μ : ℝ} (hW : 0 < W) (hq : 0 < edgeQ W f μ) :
     edgeD W f (invPos W f μ) = μ := by
   have h := abs_div_amp_lt (f := f) hW.ne' hq
   have hB := amp_pos (f := f) hW.ne'
@@ -157,7 +157,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   rw [invPos]; linarith
 
 /-- The flow increment is inverted by `invNeg` on a line with negative weight. -/
-@[powerlib_foundation] theorem edgeD_invNeg {W f μ : ℝ} (hW : W < 0) (hq : 0 < edgeQ W f μ) :
+@[tmio T, powerlib_foundation] theorem edgeD_invNeg {W f μ : ℝ} (hW : W < 0) (hq : 0 < edgeQ W f μ) :
     edgeD W f (invNeg W f μ) = μ := by
   have h := abs_div_amp_lt (f := f) hW.ne hq
   have hB := amp_pos (f := f) hW.ne
@@ -167,7 +167,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   rw [invNeg]; linarith
 
 /-- `invPos` is a left inverse of the flow increment on the arc `|a + x| < π/2`. -/
-@[powerlib_foundation] theorem invPos_edgeD {W f x : ℝ} (hW : 0 < W)
+@[tmio T, powerlib_foundation] theorem invPos_edgeD {W f x : ℝ} (hW : 0 < W)
     (hx : base W f + x ∈ Ioo (-(π / 2)) (π / 2)) : invPos W f (edgeD W f x) = x := by
   have hB := amp_pos (f := f) hW.ne'
   rw [invPos, add_edgeD_pos hW, mul_div_cancel_left₀ _ hB.ne',
@@ -175,7 +175,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   ring
 
 /-- `invNeg` is a left inverse of the flow increment on the arc `|a − x| < π/2`. -/
-@[powerlib_foundation] theorem invNeg_edgeD {W f x : ℝ} (hW : W < 0)
+@[tmio T, powerlib_foundation] theorem invNeg_edgeD {W f x : ℝ} (hW : W < 0)
     (hx : base W f - x ∈ Ioo (-(π / 2)) (π / 2)) : invNeg W f (edgeD W f x) = x := by
   have hB := amp_pos (f := f) hW.ne
   rw [invNeg, add_edgeD_neg hW, mul_div_cancel_left₀ _ hB.ne',
@@ -183,25 +183,25 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   ring
 
 /-- `invPos` stays on the arc. -/
-@[powerlib_foundation] theorem base_add_invPos {W f μ : ℝ} (hW : 0 < W) (hq : 0 < edgeQ W f μ) :
+@[tmio T, powerlib_foundation] theorem base_add_invPos {W f μ : ℝ} (hW : 0 < W) (hq : 0 < edgeQ W f μ) :
     base W f + invPos W f μ ∈ Ioo (-(π / 2)) (π / 2) := by
   rw [invPos, add_sub_cancel]
   exact arcsin_mem_Ioo (abs_div_amp_lt hW.ne' hq)
 
 /-- `invNeg` stays on the arc. -/
-@[powerlib_foundation] theorem base_sub_invNeg {W f μ : ℝ} (hW : W < 0) (hq : 0 < edgeQ W f μ) :
+@[tmio T, powerlib_foundation] theorem base_sub_invNeg {W f μ : ℝ} (hW : W < 0) (hq : 0 < edgeQ W f μ) :
     base W f - invNeg W f μ ∈ Ioo (-(π / 2)) (π / 2) := by
   rw [invNeg, sub_sub_cancel]
   exact arcsin_mem_Ioo (abs_div_amp_lt hW.ne hq)
 
-@[powerlib_foundation] theorem invPos_zero (W f : ℝ) : invPos W f 0 = 0 := by
+@[tmio T, powerlib_foundation] theorem invPos_zero (W f : ℝ) : invPos W f 0 = 0 := by
   simp [invPos, base]
 
-@[powerlib_foundation] theorem invNeg_zero (W f : ℝ) : invNeg W f 0 = 0 := by
+@[tmio T, powerlib_foundation] theorem invNeg_zero (W f : ℝ) : invNeg W f 0 = 0 := by
   simp [invNeg, base]
 
 /-- `√q = B √(1 − ((f + μ)/B)²)`. -/
-@[powerlib_foundation] theorem sqrt_edgeQ {W f μ : ℝ} (hW : W ≠ 0) :
+@[tmio T, powerlib_foundation] theorem sqrt_edgeQ {W f μ : ℝ} (hW : W ≠ 0) :
     √(edgeQ W f μ) = amp W f * √(1 - ((f + μ) / amp W f) ^ 2) := by
   have hB := amp_pos (f := f) hW
   have e : edgeQ W f μ = amp W f ^ 2 * (1 - ((f + μ) / amp W f) ^ 2) := by
@@ -209,7 +209,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
     unfold edgeQ; ring
   rw [e, Real.sqrt_mul (by positivity), Real.sqrt_sq hB.le]
 
-@[powerlib_foundation] theorem hasDerivAt_invPos {W f μ : ℝ} (hW : W ≠ 0)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_invPos {W f μ : ℝ} (hW : W ≠ 0)
     (hq : 0 < edgeQ W f μ) : HasDerivAt (invPos W f) (1 / √(edgeQ W f μ)) μ := by
   have h := abs_div_amp_lt (f := f) hW hq
   have hB := amp_pos (f := f) hW
@@ -222,7 +222,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   rw [sqrt_edgeQ hW]
   field_simp
 
-@[powerlib_foundation] theorem hasDerivAt_invNeg {W f μ : ℝ} (hW : W ≠ 0)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_invNeg {W f μ : ℝ} (hW : W ≠ 0)
     (hq : 0 < edgeQ W f μ) : HasDerivAt (invNeg W f) (-(1 / √(edgeQ W f μ))) μ := by
   have h := abs_div_amp_lt (f := f) hW hq
   have hB := amp_pos (f := f) hW
@@ -237,7 +237,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
 
 /-- **Supporting line of a convex line potential.** On the arc where `B cos(a + x) > 0` the line
 potential lies above its tangents, strictly away from the contact point. -/
-@[powerlib_foundation] theorem edgeG_tangent {W f x X : ℝ} (hW : 0 < W)
+@[tmio T, powerlib_foundation] theorem edgeG_tangent {W f x X : ℝ} (hW : 0 < W)
     (hx : base W f + x ∈ Ioo (-(π / 2)) (π / 2)) (hX : base W f + X ∈ Ioo (-(π / 2)) (π / 2))
     (hne : x ≠ X) : edgeG W f X + edgeD W f X * (x - X) < edgeG W f x := by
   set I := Ioo (-(π / 2) - base W f) (π / 2 - base W f) with hI
@@ -276,9 +276,9 @@ potential lies above its tangents, strictly away from the contact point. -/
     rw [eq_div_iff (sub_ne_zero.mpr hgt.ne')] at hcd
     nlinarith
 
-@[powerlib_foundation] theorem edgeG_zero (W f : ℝ) : edgeG W f 0 = 0 := by simp [edgeG]
+@[tmio T, powerlib_foundation] theorem edgeG_zero (W f : ℝ) : edgeG W f 0 = 0 := by simp [edgeG]
 
-@[powerlib_foundation] theorem abs_edgeD_le (W f : ℝ) {x : ℝ} (hx : |x| ≤ 1) :
+@[tmio T, powerlib_foundation] theorem abs_edgeD_le (W f : ℝ) {x : ℝ} (hx : |x| ≤ 1) :
     |edgeD W f x| ≤ (|W| + |f|) * |x| := by
   have h1 : |Real.sin x| ≤ |x| := Real.abs_sin_le_abs
   have h2 : 1 - x ^ 2 / 2 ≤ Real.cos x := Real.one_sub_sq_div_two_le_cos
@@ -311,17 +311,17 @@ def curvePot (μ : ℝ) : ℝ :=
 
 variable {W f}
 
-@[powerlib_foundation] theorem closure_zero : closure W f 0 = 0 := by
+@[tmio T, powerlib_foundation] theorem closure_zero : closure W f 0 = 0 := by
   simp [closure, invNeg_zero, invPos_zero]
 
-@[powerlib_foundation] theorem curvePot_zero : curvePot W f 0 = 0 := by
+@[tmio T, powerlib_foundation] theorem curvePot_zero : curvePot W f 0 = 0 := by
   simp [curvePot, invNeg_zero, invPos_zero, edgeG_zero]
 
 variable (hW0 : W 0 < 0) (hW : ∀ i : Fin m, 0 < W i.succ) {ρ : ℝ}
   (hq : ∀ e μ, |μ| ≤ ρ → 0 < edgeQ (W e) (f e) μ)
 
 include hW0 hW hq in
-@[powerlib_foundation] theorem hasDerivAt_closure {μ : ℝ} (hμ : |μ| ≤ ρ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_closure {μ : ℝ} (hμ : |μ| ≤ ρ) :
     HasDerivAt (closure W f) (-(1 / √(edgeQ (W 0) (f 0) μ)) +
       ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) μ)) μ := by
   unfold closure
@@ -329,7 +329,7 @@ include hW0 hW hq in
     (HasDerivAt.fun_sum fun i _ => hasDerivAt_invPos (hW i).ne' (hq i.succ μ hμ))
 
 include hW0 hW hq in
-@[powerlib_foundation] theorem hasDerivAt_curvePot {μ : ℝ} (hμ : |μ| ≤ ρ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_curvePot {μ : ℝ} (hμ : |μ| ≤ ρ) :
     HasDerivAt (curvePot W f) (-closure W f μ) μ := by
   have hterm : ∀ {Wₑ fₑ : ℝ} {X : ℝ → ℝ} {X' : ℝ}, HasDerivAt X X' μ → edgeD Wₑ fₑ (X μ) = μ →
       HasDerivAt (fun μ => edgeG Wₑ fₑ (X μ) - μ * X μ) (-X μ) μ := by
@@ -350,7 +350,7 @@ variable (hΓ : ∀ μ, μ ≠ 0 → |μ| ≤ ρ →
 
 include hW0 hW hq hΓ in
 /-- The total angle of the critical curve is strictly decreasing near `μ = 0`. -/
-@[powerlib_foundation] theorem closure_sign {μ : ℝ} (hμ : |μ| ≤ ρ) :
+@[tmio T, powerlib_foundation] theorem closure_sign {μ : ℝ} (hμ : |μ| ≤ ρ) :
     (0 < μ → closure W f μ < 0) ∧ (μ < 0 → 0 < closure W f μ) := by
   have hderiv : ∀ ν ∈ Icc (-ρ) ρ, HasDerivAt (closure W f) (-(1 / √(edgeQ (W 0) (f 0) ν)) +
       ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) ν)) ν := fun ν hν =>
@@ -380,7 +380,7 @@ include hW0 hW hq hΓ in
 
 include hW0 hW hq hΓ in
 /-- The potential along the critical curve is positive away from the degenerate point. -/
-@[powerlib_foundation] theorem curvePot_pos {μ : ℝ} (hμ0 : μ ≠ 0) (hμ : |μ| ≤ ρ) :
+@[tmio T, powerlib_foundation] theorem curvePot_pos {μ : ℝ} (hμ0 : μ ≠ 0) (hμ : |μ| ≤ ρ) :
     0 < curvePot W f μ := by
   have hderiv : ∀ ν ∈ Icc (-ρ) ρ, HasDerivAt (curvePot W f) (-closure W f ν) ν := fun ν hν =>
     hasDerivAt_curvePot hW0 hW hq (abs_le.mpr hν)

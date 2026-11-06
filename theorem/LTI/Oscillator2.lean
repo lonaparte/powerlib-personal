@@ -60,7 +60,7 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
     simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.trace_fin_two, Matrix.det_fin_two] <;> ring
 
 /-- `(A + σ I)² = −ω_d² I` when `tr A = −2σ`, `det A = σ² + ω_d²`. -/
-@[powerlib_foundation] theorem shift_sq_mulVec (htr : A.trace = -2 * σ)
+@[tmio T, powerlib_foundation] theorem shift_sq_mulVec (htr : A.trace = -2 * σ)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (p : Fin 2 → ℝ) :
     (A + σ • 1) *ᵥ ((A + σ • 1) *ᵥ p) = -(ωd ^ 2) • p := by
   rw [Matrix.mulVec_mulVec]
@@ -74,12 +74,12 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
       _ = _ := by rw [hA]; module
   rw [h, Matrix.smul_mulVec, Matrix.one_mulVec]
 
-@[simp, powerlib_foundation] theorem osc2_zero (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ)
+@[tmio T, simp, powerlib_foundation] theorem osc2_zero (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ)
     (p : Fin 2 → ℝ) : osc2 A σ ωd p 0 = p := by
   simp [osc2]
 
 /-- `osc2` solves `ẏ = A y`. -/
-@[powerlib_foundation] theorem hasDerivAt_osc2 (htr : A.trace = -2 * σ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_osc2 (htr : A.trace = -2 * σ)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
     HasDerivAt (osc2 A σ ωd p) (A *ᵥ osc2 A σ ωd p t) t := by
   set q := (A + σ • 1) *ᵥ p with hq
@@ -107,7 +107,7 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
   field_simp
   ring
 
-@[powerlib_foundation] private theorem lipschitz_mulVec (A : Matrix (Fin 2) (Fin 2) ℝ) :
+@[tmio T, powerlib_foundation] private theorem lipschitz_mulVec (A : Matrix (Fin 2) (Fin 2) ℝ) :
     LipschitzWith ‖LinearMap.toContinuousLinearMap (Matrix.toLin' A)‖₊
       (fun y : Fin 2 → ℝ => A *ᵥ y) := by
   have h := (LinearMap.toContinuousLinearMap (Matrix.toLin' A)).lipschitzWith
@@ -117,7 +117,7 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
   rw [hf]; exact h
 
 /-- Flow law: `osc2 p (s + t) = osc2 (osc2 p s) t`. -/
-@[powerlib_foundation] theorem osc2_add (htr : A.trace = -2 * σ)
+@[tmio T, powerlib_foundation] theorem osc2_add (htr : A.trace = -2 * σ)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (s t : ℝ) :
     osc2 A σ ωd p (s + t) = osc2 A σ ωd (osc2 A σ ωd p s) t := by
   have hf : ∀ u, HasDerivAt (fun u => osc2 A σ ωd p (s + u))
@@ -134,7 +134,7 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
   exact congrFun heq t
 
 /-- Half-period law: `osc2 p (t + π/ω_d) = −e^{−σπ/ω_d} osc2 p t`. -/
-@[powerlib_foundation] theorem osc2_add_half_period (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem osc2_add_half_period (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
     osc2 A σ ωd p (t + Real.pi / ωd) = -Real.exp (-(σ * (Real.pi / ωd))) • osc2 A σ ωd p t := by
   have harg : ωd * (t + Real.pi / ωd) = ωd * t + Real.pi := by field_simp
   have hexp : Real.exp (-(σ * (t + Real.pi / ωd))) =
@@ -148,7 +148,7 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- `osc2` read on Euclidean state space solves the linear field `x' = A x`. -/
-@[powerlib_foundation] theorem hasDerivAt_toLp_osc2 (htr : A.trace = -2 * σ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_toLp_osc2 (htr : A.trace = -2 * σ)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
     HasDerivAt (fun s => WithLp.toLp 2 (osc2 A σ ωd p s))
       (Linear.op A (WithLp.toLp 2 (osc2 A σ ωd p t))) t :=
@@ -158,7 +158,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 /-- Every forward solution from `t = 0` of a two-state linear plant whose state matrix has
 eigenvalues `−σ ± j ω_d`, under a constant input `u` with equilibrium `e`, is the explicit closed
 form. -/
-@[powerlib_foundation] theorem trajectory_eq_osc2 {p : ℕ} (M : Linear.Plant 2 p)
+@[tmio T, powerlib_foundation] theorem trajectory_eq_osc2 {p : ℕ} (M : Linear.Plant 2 p)
     {u : Fin p → ℝ} {e : ℝ²} (he : IsEquilibrium (M.inputField u) e)
     (htr : M.A.trace = -2 * σ) (hdet : M.A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0)
     {x : ℝ → ℝ²} (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) {t : ℝ}
@@ -176,7 +176,7 @@ form. -/
   exact h
 
 /-- `e^{−σu}(cos(ω_d u) + (σ/ω_d) sin(ω_d u)) ≤ 1` for `0 ≤ σ`, `0 < ω_d`, `0 ≤ u`. -/
-@[powerlib_foundation] theorem one_add_ratio_sin_le_exp (hσ : 0 ≤ σ) (hωd : 0 < ωd) {u : ℝ}
+@[tmio T, powerlib_foundation] theorem one_add_ratio_sin_le_exp (hσ : 0 ≤ σ) (hωd : 0 < ωd) {u : ℝ}
     (hu : 0 ≤ u) :
     Real.exp (-(σ * u)) * (Real.cos (ωd * u) + σ / ωd * Real.sin (ωd * u)) ≤ 1 := by
   have hs : Real.sin (ωd * u) ≤ ωd * u := Real.sin_le (mul_nonneg hωd.le hu)
@@ -205,7 +205,7 @@ variable {n : ℕ}
 
 /-- Uniqueness of the matrix exponential: a differentiable `E` with `Ė = A E`, `E 0 = 1` is
 `t ↦ e^{tA}`. -/
-@[powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
     {E : ℝ → Matrix (Fin n) (Fin n) ℝ} (h0 : E 0 = 1) (hE : ∀ t, HasDerivAt E (A * E t) t)
     (t : ℝ) : E t = NormedSpace.exp (t • A) := by
   set F : ℝ → Matrix (Fin n) (Fin n) ℝ := fun s => NormedSpace.exp (s • (-A)) * E s with hF
@@ -231,7 +231,7 @@ variable {n : ℕ}
 
 /-- Closed form of `e^{tA}` when `B = A + a I` satisfies `B² = −w² I` (`w ≠ 0`):
 `e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`. -/
-@[powerlib_foundation] theorem exp_smul_of_sq_eq {A : Matrix (Fin n) (Fin n) ℝ} {a w : ℝ}
+@[tmio T, powerlib_foundation] theorem exp_smul_of_sq_eq {A : Matrix (Fin n) (Fin n) ℝ} {a w : ℝ}
     (hw : w ≠ 0) (hB : (A + a • 1) * (A + a • 1) = -(w ^ 2) • (1 : Matrix (Fin n) (Fin n) ℝ))
     (t : ℝ) :
     NormedSpace.exp (t • A) = (Real.exp (-a * t) * Real.cos (w * t)) • (1 : Matrix _ _ ℝ) +

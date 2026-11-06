@@ -64,7 +64,7 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
   ring
 
 /-- Integration by parts on `ℝ` against a compactly supported `C¹` function. -/
-@[powerlib_foundation] theorem integral_mul_deriv_of_hasCompactSupport {u v : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem integral_mul_deriv_of_hasCompactSupport {u v : ℝ → ℝ}
     (hu : ContDiff ℝ 1 u) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     ∫ x, u x * deriv v x = -∫ x, deriv u x * v x := by
   have hdu := hu.continuous_deriv le_rfl
@@ -79,7 +79,7 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
 
 /-- **`L*` is the formal adjoint of `L` (§1.1)**: for compactly supported `C²` test functions `φ`,
 `∫ p (L φ) = ∫ (L* p) φ`, provided `μ p ∈ C¹` and `a p ∈ C²`. -/
-@[powerlib_foundation] theorem integral_gen1_eq_integral_fp1 {μ a p φ : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem integral_gen1_eq_integral_fp1 {μ a p φ : ℝ → ℝ}
     (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
     (hμp : ContDiff ℝ 1 (fun y => μ y * p y)) (hap : ContDiff ℝ 2 (fun y => a y * p y)) :
     ∫ x, p x * gen1 μ a φ x = ∫ x, fp1 μ a p x * φ x := by
@@ -126,7 +126,7 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
 /-- **One-dimensional zero-flux density (§1.4)**: for `dX = μ dt + √(2D) dW` (`a = 2D`), if
 `Φ' = μ/D` and `p = (C/D) e^{Φ}` with `D ≠ 0` everywhere, then `(D p)' = μ p`, the flux
 `J = μ p − (D p)'` vanishes identically and `L* p = 0`. -/
-@[powerlib_foundation] theorem zeroFlux_hasDerivAt {μ D Φ : ℝ → ℝ} (C : ℝ)
+@[tmio T, powerlib_foundation] theorem zeroFlux_hasDerivAt {μ D Φ : ℝ → ℝ} (C : ℝ)
     (hD : ∀ x, D x ≠ 0) (hΦ : ∀ x, HasDerivAt Φ (μ x / D x) x) (x : ℝ) :
     HasDerivAt (fun y => D y * (C / D y * exp (Φ y))) (μ x * (C / D x * exp (Φ x))) x := by
   have e : (fun y => D y * (C / D y * exp (Φ y))) = fun y => C * exp (Φ y) := by
@@ -136,7 +136,7 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
   convert! this using 1
   field_simp [hD x]
 
-@[powerlib_foundation] theorem zeroFlux_flux {μ D Φ : ℝ → ℝ} (C : ℝ)
+@[tmio T, powerlib_foundation] theorem zeroFlux_flux {μ D Φ : ℝ → ℝ} (C : ℝ)
     (hD : ∀ x, D x ≠ 0) (hΦ : ∀ x, HasDerivAt Φ (μ x / D x) x) (x : ℝ) :
     flux1 μ (fun y => 2 * D y) (fun y => C / D y * exp (Φ y)) x = 0 := by
   unfold flux1
@@ -146,7 +146,7 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
   rw [e, h.deriv]
   ring
 
-@[powerlib_foundation] theorem zeroFlux_stationary {μ D Φ : ℝ → ℝ} (C : ℝ)
+@[tmio T, powerlib_foundation] theorem zeroFlux_stationary {μ D Φ : ℝ → ℝ} (C : ℝ)
     (hD : ∀ x, D x ≠ 0) (hΦ : ∀ x, HasDerivAt Φ (μ x / D x) x) (x : ℝ) :
     fp1 μ (fun y => 2 * D y) (fun y => C / D y * exp (Φ y)) x = 0 := by
   unfold fp1
@@ -169,7 +169,7 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
 
 /-- **Gibbs form (§1.4)**: gradient drift `μ = −V'`, constant `D > 0`: `p = e^{−V/D}` has zero
 flux and solves `L* p = 0` (special case `Φ = −V/D`, `C = D`). -/
-@[powerlib_foundation] theorem gibbs_stationary {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0)
+@[tmio T, powerlib_foundation] theorem gibbs_stationary {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0)
     (hV : ∀ x, HasDerivAt V (V' x) x) (x : ℝ) :
     fp1 (fun y => -V' y) (fun _ => 2 * D) (fun y => exp (-V y / D)) x = 0 := by
   have hΦ : ∀ x, HasDerivAt (fun y => -V y / D) ((fun y => -V' y) x / (fun _ => D) x) x := by
@@ -179,7 +179,7 @@ flux and solves `L* p = 0` (special case `Φ = −V/D`, `C = D`). -/
   convert! this using 3
   rw [div_self hD, one_mul]
 
-@[powerlib_foundation] theorem gibbs_flux {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0)
+@[tmio T, powerlib_foundation] theorem gibbs_flux {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0)
     (hV : ∀ x, HasDerivAt V (V' x) x) (x : ℝ) :
     flux1 (fun y => -V' y) (fun _ => 2 * D) (fun y => exp (-V y / D)) x = 0 := by
   have hΦ : ∀ x, HasDerivAt (fun y => -V y / D) ((fun y => -V' y) x / (fun _ => D) x) x := by
@@ -191,7 +191,7 @@ flux and solves `L* p = 0` (special case `Φ = −V/D`, `C = D`). -/
 
 /-- **Normalization hypothesis made explicit**: if `Z = ∫ e^{−V/D} < ∞` (integrability), then
 `e^{−V/D}/Z` is a probability density (nonnegative, total mass one). -/
-@[powerlib_foundation] theorem gibbs_normalized {V : ℝ → ℝ} {D : ℝ}
+@[tmio T, powerlib_foundation] theorem gibbs_normalized {V : ℝ → ℝ} {D : ℝ}
     (hint : Integrable (fun x => exp (-V x / D))) :
     (∀ x, 0 ≤ exp (-V x / D) / ∫ y, exp (-V y / D)) ∧
       ∫ x, exp (-V x / D) / ∫ y, exp (-V y / D) = 1 := by
@@ -205,7 +205,7 @@ flux and solves `L* p = 0` (special case `Φ = −V/D`, `C = D`). -/
 
 /-- Without normalizability: `e^{−V/D}` is not integrable when `V ≤ C` on a measurable set of
 infinite length (e.g. periodic `V`). -/
-@[powerlib_foundation] theorem gibbs_not_integrable {V : ℝ → ℝ} {D C : ℝ} (hD : 0 < D)
+@[tmio T, powerlib_foundation] theorem gibbs_not_integrable {V : ℝ → ℝ} {D C : ℝ} (hD : 0 < D)
     {S : Set ℝ} (hSm : MeasurableSet S) (hS : volume S = ⊤) (hVS : ∀ x ∈ S, V x ≤ C) :
     ¬ Integrable (fun x => exp (-V x / D)) := by
   intro hint

@@ -72,13 +72,13 @@ exponential-integrability set. -/
   simp [this]
 
 /-- All polynomial moments of a Gaussian are finite. -/
-@[powerlib_foundation] theorem integrable_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem integrable_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
     Integrable (fun x : ℝ => x ^ n) (gaussianReal m v) :=
   integrable_pow_of_mem_interior_integrableExpSet
     (zero_mem_interior_integrableExpSet_gaussianReal m v) n
 
 /-- `∫ x⁴ dN(0, v) = 3 v²`. -/
-@[powerlib_foundation] theorem integral_pow_four_gaussianReal_zero (v : ℝ≥0) :
+@[tmio T, powerlib_foundation] theorem integral_pow_four_gaussianReal_zero (v : ℝ≥0) :
     ∫ x, x ^ 4 ∂(gaussianReal 0 v) = 3 * (v : ℝ) ^ 2 := by
   have h := iteratedDeriv_mgf_zero (zero_mem_interior_integrableExpSet_gaussianReal 0 v) 4
   rw [mgf_id_gaussianReal] at h
@@ -138,13 +138,13 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbability
 
 omit [IsProbabilityMeasure P] in
 /-- `X ~ N(0, v)` has all moments: `X^n` is integrable. -/
-@[powerlib_foundation] theorem integrable_pow_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem integrable_pow_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) (n : ℕ) : Integrable (fun ω => X ω ^ n) P :=
   hX.integrable_comp (f := fun x : ℝ => x ^ n) (integrable_pow_gaussianReal 0 v n)
 
 omit [IsProbabilityMeasure P] in
 /-- `X ~ N(0, v)` ⇒ `X² ∈ L²`. -/
-@[powerlib_foundation] theorem memLp_sq_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem memLp_sq_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : MemLp (fun ω => X ω ^ 2) 2 P := by
   rw [memLp_two_iff_integrable_sq (hX.aemeasurable.pow_const 2).aestronglyMeasurable]
   have := integrable_pow_of_hasLaw hX 4
@@ -153,7 +153,7 @@ omit [IsProbabilityMeasure P] in
 
 omit [IsProbabilityMeasure P] in
 /-- `E X² = v` for `X ~ N(0, v)`. -/
-@[powerlib_foundation] theorem integral_sq_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem integral_sq_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : ∫ ω, X ω ^ 2 ∂P = v := by
   have := hX.integral_comp (f := fun x : ℝ => x ^ 2) (by fun_prop)
   simp only [Function.comp_def] at this
@@ -161,14 +161,14 @@ omit [IsProbabilityMeasure P] in
 
 omit [IsProbabilityMeasure P] in
 /-- `E X⁴ = 3v²` for `X ~ N(0, v)`. -/
-@[powerlib_foundation] theorem integral_pow_four_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem integral_pow_four_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : ∫ ω, X ω ^ 4 ∂P = 3 * (v : ℝ) ^ 2 := by
   have := hX.integral_comp (f := fun x : ℝ => x ^ 4) (by fun_prop)
   simp only [Function.comp_def] at this
   rw [this, integral_pow_four_gaussianReal_zero]
 
 /-- `Var(X²) = 2v²` for `X ~ N(0, v)`. -/
-@[powerlib_foundation] theorem variance_sq_of_hasLaw_gaussian {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem variance_sq_of_hasLaw_gaussian {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : variance (fun ω => X ω ^ 2) P = 2 * (v : ℝ) ^ 2 := by
   rw [variance_eq_sub (memLp_sq_of_hasLaw hX)]
   have e : (fun ω => X ω ^ 2) ^ 2 = fun ω => X ω ^ 4 := by
@@ -190,31 +190,31 @@ def qvSum (B : ℝ≥0 → Ω → ℝ) (t : ℕ → ℝ≥0) (n : ℕ) (ω : Ω)
 /-- Step length `t_{i+1} − t_i` (as a real number). -/
 def step (t : ℕ → ℝ≥0) (i : ℕ) : ℝ := (t (i + 1) : ℝ) - t i
 
-@[powerlib_foundation] theorem step_nonneg {t : ℕ → ℝ≥0} (ht : Monotone t) (i : ℕ) :
+@[tmio T, powerlib_foundation] theorem step_nonneg {t : ℕ → ℝ≥0} (ht : Monotone t) (i : ℕ) :
     0 ≤ step t i := by
   unfold step; have := ht (Nat.le_succ i); rw [sub_nonneg]; exact_mod_cast this
 
-@[powerlib_foundation] theorem sum_step (t : ℕ → ℝ≥0) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem sum_step (t : ℕ → ℝ≥0) (n : ℕ) :
     ∑ i ∈ range n, step t i = (t n : ℝ) - t 0 :=
   sum_range_sub (fun i => (t i : ℝ)) n
 
 omit [IsProbabilityMeasure P] in
-@[powerlib_foundation] theorem incr_hasLaw (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
+@[tmio T, powerlib_foundation] theorem incr_hasLaw (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
     (ht : Monotone t) (i : ℕ) : HasLaw (incr B t i) (gaussianReal 0 (t (i + 1) - t i)) P :=
   BM.increment_hasLaw hB (ht (Nat.le_succ i))
 
-@[powerlib_foundation] theorem coe_step {t : ℕ → ℝ≥0} (ht : Monotone t) (i : ℕ) :
+@[tmio T, powerlib_foundation] theorem coe_step {t : ℕ → ℝ≥0} (ht : Monotone t) (i : ℕ) :
     ((t (i + 1) - t i : ℝ≥0) : ℝ) = step t i := by
   rw [NNReal.coe_sub (ht (Nat.le_succ i))]; rfl
 
 omit [IsProbabilityMeasure P] in
 /-- `E (ΔW_i)² = Δt_i`. -/
-@[powerlib_foundation] theorem integral_incr_sq (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
+@[tmio T, powerlib_foundation] theorem integral_incr_sq (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
     (ht : Monotone t) (i : ℕ) : ∫ ω, incr B t i ω ^ 2 ∂P = step t i := by
   rw [integral_sq_of_hasLaw (incr_hasLaw hB ht i), coe_step ht]
 
 /-- `E ∑ (ΔW_i)² = t_n − t_0`. -/
-@[powerlib_foundation] theorem qvSum_mean (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qvSum_mean (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
     (ht : Monotone t) (n : ℕ) : ∫ ω, qvSum B t n ω ∂P = (t n : ℝ) - t 0 := by
   unfold qvSum
   rw [integral_finsetSum _ fun i _ => (memLp_sq_of_hasLaw (incr_hasLaw hB ht i)).integrable
@@ -223,7 +223,7 @@ omit [IsProbabilityMeasure P] in
   exact sum_step t n
 
 /-- `Var ∑ (ΔW_i)² = 2 ∑ (Δt_i)²` (pairwise independent increments). -/
-@[powerlib_foundation] theorem qvSum_variance (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qvSum_variance (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
     (ht : Monotone t) (n : ℕ) : variance (qvSum B t n) P = 2 * ∑ i ∈ range n, step t i ^ 2 := by
   have hind := hB.hasIndepIncrements.nat (P := P) ht
   have e : qvSum B t n = ∑ i ∈ range n, fun ω => incr B t i ω ^ 2 := by
@@ -238,7 +238,7 @@ omit [IsProbabilityMeasure P] in
 
 /-- **`L²` identity for the quadratic variation**:
 `E[(∑ (ΔW_i)² − (t_n − t_0))²] = 2 ∑ (Δt_i)²`. -/
-@[powerlib_foundation] theorem qvSum_L2_identity (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qvSum_L2_identity (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
     (ht : Monotone t) (n : ℕ) :
     ∫ ω, (qvSum B t n ω - ((t n : ℝ) - t 0)) ^ 2 ∂P = 2 * ∑ i ∈ range n, step t i ^ 2 := by
   have hmeas : AEMeasurable (qvSum B t n) P := by
@@ -248,7 +248,7 @@ omit [IsProbabilityMeasure P] in
   rw [← qvSum_variance hB ht n, variance_eq_integral hmeas, qvSum_mean hB ht n]
 
 /-- `L²` error bound by the mesh: if every step is `≤ δ` then the error is `≤ 2 δ (t_n − t_0)`. -/
-@[powerlib_foundation] theorem qvSum_L2_le (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qvSum_L2_le (hB : IsPreBrownianReal B P) {t : ℕ → ℝ≥0}
     (ht : Monotone t) (n : ℕ) {δ : ℝ} (hδ : ∀ i < n, step t i ≤ δ) :
     ∫ ω, (qvSum B t n ω - ((t n : ℝ) - t 0)) ^ 2 ∂P ≤ 2 * δ * ((t n : ℝ) - t 0) := by
   rw [qvSum_L2_identity hB ht n, ← sum_step t n, mul_assoc]
@@ -262,7 +262,7 @@ omit [IsProbabilityMeasure P] in
 
 /-- **Quadratic variation in `L²`**: for partitions `0 = par_k(0) ≤ … ≤ par_k(N_k) = T` of `[0, T]`
 whose mesh `δ_k → 0`, `E[(∑ (ΔW)² − T)²] → 0`. -/
-@[powerlib_foundation] theorem qv_tendsto_L2 (hB : IsPreBrownianReal B P) {T : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qv_tendsto_L2 (hB : IsPreBrownianReal B P) {T : ℝ≥0}
     {par : ℕ → ℕ → ℝ≥0} {N : ℕ → ℕ} {δ : ℕ → ℝ} (hmono : ∀ k, Monotone (par k))
     (h0 : ∀ k, par k 0 = 0) (hT : ∀ k, par k (N k) = T)
     (hmesh : ∀ k, ∀ i < N k, step (par k) i ≤ δ k) (hδ : Tendsto δ atTop (𝓝 0)) :
@@ -280,7 +280,7 @@ whose mesh `δ_k → 0`, `E[(∑ (ΔW)² − T)²] → 0`. -/
 
 /-- **Quadratic variation in probability**: under the same hypotheses,
 `P(|∑ (ΔW)² − T| ≥ ε) → 0` for every `ε > 0` (Chebyshev). -/
-@[powerlib_foundation] theorem qv_tendsto_inProbability (hB : IsPreBrownianReal B P) {T : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qv_tendsto_inProbability (hB : IsPreBrownianReal B P) {T : ℝ≥0}
     {par : ℕ → ℕ → ℝ≥0} {N : ℕ → ℕ} {δ : ℕ → ℝ} (hmono : ∀ k, Monotone (par k))
     (h0 : ∀ k, par k 0 = 0) (hT : ∀ k, par k (N k) = T)
     (hmesh : ∀ k, ∀ i < N k, step (par k) i ≤ δ k)
@@ -316,25 +316,25 @@ whose mesh `δ_k → 0`, `E[(∑ (ΔW)² − T)²] → 0`. -/
 /-- Dyadic grid of `[0, T]` with `2^(k+1)` steps: `t_i = T i / 2^(k+1)`. -/
 def dyadic (T : ℝ≥0) (k i : ℕ) : ℝ≥0 := T * ((i : ℝ≥0) / 2 ^ (k + 1))
 
-@[powerlib_foundation] theorem coe_dyadic (T : ℝ≥0) (k i : ℕ) :
+@[tmio T, powerlib_foundation] theorem coe_dyadic (T : ℝ≥0) (k i : ℕ) :
     (dyadic T k i : ℝ) = T * i / 2 ^ (k + 1) := by
   simp [dyadic, mul_div_assoc]
 
-@[powerlib_foundation] theorem dyadic_monotone (T : ℝ≥0) (k : ℕ) : Monotone (dyadic T k) := by
+@[tmio T, powerlib_foundation] theorem dyadic_monotone (T : ℝ≥0) (k : ℕ) : Monotone (dyadic T k) := by
   intro i j hij
   rw [← NNReal.coe_le_coe, coe_dyadic, coe_dyadic]
   have : (i : ℝ) ≤ j := by exact_mod_cast hij
   gcongr
 
-@[powerlib_foundation] theorem dyadic_zero (T : ℝ≥0) (k : ℕ) : dyadic T k 0 = 0 := by
+@[tmio T, powerlib_foundation] theorem dyadic_zero (T : ℝ≥0) (k : ℕ) : dyadic T k 0 = 0 := by
   simp [dyadic]
 
-@[powerlib_foundation] theorem dyadic_last (T : ℝ≥0) (k : ℕ) : dyadic T k (2 ^ (k + 1)) = T := by
+@[tmio T, powerlib_foundation] theorem dyadic_last (T : ℝ≥0) (k : ℕ) : dyadic T k (2 ^ (k + 1)) = T := by
   rw [← NNReal.coe_inj, coe_dyadic]
   push_cast
   field_simp
 
-@[powerlib_foundation] theorem step_dyadic (T : ℝ≥0) (k i : ℕ) :
+@[tmio T, powerlib_foundation] theorem step_dyadic (T : ℝ≥0) (k i : ℕ) :
     step (dyadic T k) i = T / 2 ^ (k + 1) := by
   unfold step
   rw [coe_dyadic, coe_dyadic]
@@ -344,14 +344,14 @@ def dyadic (T : ℝ≥0) (k i : ℕ) : ℝ≥0 := T * ((i : ℝ≥0) / 2 ^ (k + 
 /-- The merge rule: `(a + b)²` if `ab > 0` (drop the midpoint), `a² + b²` otherwise. -/
 def mergeSq (a b : ℝ) : ℝ := if 0 < a * b then (a + b) ^ 2 else a ^ 2 + b ^ 2
 
-@[powerlib_foundation] theorem mergeSq_eq (a b : ℝ) :
+@[tmio T, powerlib_foundation] theorem mergeSq_eq (a b : ℝ) :
     mergeSq a b = a ^ 2 + b ^ 2 + 2 * max (a * b) 0 := by
   unfold mergeSq
   split_ifs with h
   · rw [max_eq_left h.le]; ring
   · rw [max_eq_right (not_lt.mp h)]; ring
 
-@[powerlib_foundation] theorem max_mul_zero (a b : ℝ) :
+@[tmio T, powerlib_foundation] theorem max_mul_zero (a b : ℝ) :
     max (a * b) 0 = max a 0 * max b 0 + max (-a) 0 * max (-b) 0 := by
   rcases le_total a 0 with ha | ha <;> rcases le_total b 0 with hb | hb
   · rw [max_eq_left (mul_nonneg_of_nonpos_of_nonpos ha hb), max_eq_right ha, max_eq_right hb,
@@ -363,16 +363,16 @@ def mergeSq (a b : ℝ) : ℝ := if 0 < a * b then (a + b) ^ 2 else a ^ 2 + b ^ 
   · rw [max_eq_left (mul_nonneg ha hb), max_eq_left ha, max_eq_left hb,
       max_eq_right (neg_nonpos.mpr ha), max_eq_right (neg_nonpos.mpr hb)]; ring
 
-@[powerlib_foundation] theorem mergeSq_nonneg (a b : ℝ) : 0 ≤ mergeSq a b := by
+@[tmio T, powerlib_foundation] theorem mergeSq_nonneg (a b : ℝ) : 0 ≤ mergeSq a b := by
   rw [mergeSq_eq]; positivity
 
-@[powerlib_foundation] theorem mergeSq_le (a b : ℝ) : mergeSq a b ≤ 2 * (a ^ 2 + b ^ 2) := by
+@[tmio T, powerlib_foundation] theorem mergeSq_le (a b : ℝ) : mergeSq a b ≤ 2 * (a ^ 2 + b ^ 2) := by
   unfold mergeSq
   split_ifs
   · nlinarith [sq_nonneg (a - b)]
   · nlinarith [sq_nonneg a, sq_nonneg b]
 
-@[powerlib_foundation] theorem measurable_mergeSq :
+@[tmio T, powerlib_foundation] theorem measurable_mergeSq :
     Measurable fun p : ℝ × ℝ => mergeSq p.1 p.2 := by
   unfold mergeSq
   exact Measurable.ite (measurableSet_lt measurable_const (measurable_fst.mul measurable_snd))
@@ -386,14 +386,14 @@ def greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : �
   if i % 2 = 1 ∧ 0 < incr B (dyadic T k) (i - 1) ω * incr B (dyadic T k) i ω then
     dyadic T k (i - 1) else dyadic T k i
 
-@[powerlib_foundation] theorem greedyPartition_le (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
+@[tmio T, powerlib_foundation] theorem greedyPartition_le (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
     greedyPartition B T k ω i ≤ dyadic T k i := by
   unfold greedyPartition
   split_ifs
   · exact dyadic_monotone T k (Nat.sub_le i 1)
   · exact le_rfl
 
-@[powerlib_foundation] theorem dyadic_pred_le_greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
+@[tmio T, powerlib_foundation] theorem dyadic_pred_le_greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) (i : ℕ) :
     dyadic T k (i - 1) ≤ greedyPartition B T k ω i := by
   unfold greedyPartition
   split_ifs
@@ -402,7 +402,7 @@ def greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : �
 
 /-- The greedy partition is a genuine partition of `[0, T]` (monotone, from `0` to `T`) with mesh
 at most `T / 2^k`. -/
-@[powerlib_foundation] theorem greedyPartition_spec (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) :
+@[tmio T, powerlib_foundation] theorem greedyPartition_spec (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) (ω : Ω) :
     Monotone (greedyPartition B T k ω) ∧ greedyPartition B T k ω 0 = 0 ∧
       greedyPartition B T k ω (2 ^ (k + 1)) = T ∧
       ∀ i, step (greedyPartition B T k ω) i ≤ T / 2 ^ k := by
@@ -432,7 +432,7 @@ at most `T / 2^k`. -/
     linarith
 
 /-- Splitting a sum over `range (2n)` into consecutive pairs. -/
-@[powerlib_foundation] theorem sum_range_two_mul (f : ℕ → ℝ) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem sum_range_two_mul (f : ℕ → ℝ) (n : ℕ) :
     ∑ i ∈ range (2 * n), f i = ∑ j ∈ range n, (f (2 * j) + f (2 * j + 1)) := by
   induction n with
   | zero => simp
@@ -443,7 +443,7 @@ at most `T / 2^k`. -/
 
 /-- The quadratic sum along the greedy partition is the sum of the merge rule over the pairs of
 dyadic half-increments. -/
-@[powerlib_foundation] theorem qvSum_greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ)
+@[tmio T, powerlib_foundation] theorem qvSum_greedyPartition (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ)
     (ω : Ω) :
     qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω =
       ∑ j ∈ range (2 ^ k), mergeSq (incr B (dyadic T k) (2 * j) ω)
@@ -478,12 +478,12 @@ dyadic half-increments. -/
 /-- `m = E[Z⁺]` for a standard normal `Z` (`m = 1/√(2π)`, not needed here). -/
 def posPartMean : ℝ := ∫ x, max x 0 ∂(gaussianReal 0 1)
 
-@[powerlib_foundation] theorem hasLaw_neg_gaussian (v : ℝ≥0) :
+@[tmio T, powerlib_foundation] theorem hasLaw_neg_gaussian (v : ℝ≥0) :
     HasLaw (fun x : ℝ => -x) (gaussianReal 0 v) (gaussianReal 0 v) where
   aemeasurable := by fun_prop
   map_eq := by rw [gaussianReal_map_neg, neg_zero]
 
-@[powerlib_foundation] theorem hasLaw_sqrt_mul_gaussian (v : ℝ≥0) :
+@[tmio T, powerlib_foundation] theorem hasLaw_sqrt_mul_gaussian (v : ℝ≥0) :
     HasLaw (fun x : ℝ => √(v : ℝ) * x) (gaussianReal 0 v) (gaussianReal 0 1) where
   aemeasurable := by fun_prop
   map_eq := by
@@ -493,7 +493,7 @@ def posPartMean : ℝ := ∫ x, max x 0 ∂(gaussianReal 0 1)
 
 omit [IsProbabilityMeasure P] in
 /-- `E[X⁺] = √v · m` for `X ∼ N(0, v)`. -/
-@[powerlib_foundation] theorem integral_posPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem integral_posPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : ∫ ω, max (X ω) 0 ∂P = √(v : ℝ) * posPartMean := by
   have h1 := hX.integral_comp (f := fun x : ℝ => max x 0) (by fun_prop)
   have h2 := (hasLaw_sqrt_mul_gaussian v).integral_comp (f := fun x : ℝ => max x 0) (by fun_prop)
@@ -507,12 +507,12 @@ omit [IsProbabilityMeasure P] in
 
 omit [IsProbabilityMeasure P] in
 /-- `E[X⁻] = √v · m` for `X ∼ N(0, v)`. -/
-@[powerlib_foundation] theorem integral_negPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem integral_negPart_of_hasLaw {X : Ω → ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal 0 v) P) : ∫ ω, max (-X ω) 0 ∂P = √(v : ℝ) * posPartMean :=
   integral_posPart_of_hasLaw ((hasLaw_neg_gaussian v).fun_comp hX)
 
 /-- `m = E[Z⁺] > 0`. -/
-@[powerlib_foundation] theorem posPartMean_pos : 0 < posPartMean := by
+@[tmio T, powerlib_foundation] theorem posPartMean_pos : 0 < posPartMean := by
   have hint : Integrable (fun x : ℝ => max x 0) (gaussianReal 0 1) := by
     have := integrable_pow_gaussianReal 0 1 1
     simpa using this.pos_part
@@ -545,7 +545,7 @@ omit [IsProbabilityMeasure P] in
 /-! ### Mean and variance of the greedy quadratic sum -/
 
 omit [IsProbabilityMeasure P] in
-@[powerlib_foundation] theorem incr_dyadic_hasLaw (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k i : ℕ) :
+@[tmio T, powerlib_foundation] theorem incr_dyadic_hasLaw (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k i : ℕ) :
     HasLaw (incr B (dyadic T k) i) (gaussianReal 0 (T / 2 ^ (k + 1))) P := by
   have h := incr_hasLaw hB (dyadic_monotone T k) i
   have e : dyadic T k (i + 1) - dyadic T k i = T / 2 ^ (k + 1) := by
@@ -554,13 +554,13 @@ omit [IsProbabilityMeasure P] in
   rwa [e] at h
 
 omit [IsProbabilityMeasure P] in
-@[powerlib_foundation] theorem incr_dyadic_indep (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem incr_dyadic_indep (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k : ℕ) :
     iIndepFun (fun i => incr B (dyadic T k) i) P :=
   hB.hasIndepIncrements.nat (dyadic_monotone T k)
 
 omit [IsProbabilityMeasure P] in
 /-- One merged block has mean `2v(1 + 2m²)`, `v = T / 2^(k+1)`. -/
-@[powerlib_foundation] theorem integral_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
     ∫ ω, mergeSq (incr B (dyadic T k) (2 * j) ω) (incr B (dyadic T k) (2 * j + 1) ω) ∂P =
       2 * ((T / 2 ^ (k + 1) : ℝ≥0) : ℝ) * (1 + 2 * posPartMean ^ 2) := by
   set a := incr B (dyadic T k) (2 * j) with hadef
@@ -608,7 +608,7 @@ omit [IsProbabilityMeasure P] in
 
 omit [IsProbabilityMeasure P] in
 /-- Each merged block is in `L²`. -/
-@[powerlib_foundation] theorem memLp_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
+@[tmio T, powerlib_foundation] theorem memLp_mergeSq (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
     MemLp (fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
       (incr B (dyadic T k) (2 * j + 1) ω)) 2 P := by
   have ha := incr_dyadic_hasLaw hB T k (2 * j)
@@ -622,7 +622,7 @@ omit [IsProbabilityMeasure P] in
   exact mergeSq_le _ _
 
 /-- `Var(block) ≤ 48 v²`. -/
-@[powerlib_foundation] theorem variance_mergeSq_le (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
+@[tmio T, powerlib_foundation] theorem variance_mergeSq_le (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k j : ℕ) :
     variance (fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
       (incr B (dyadic T k) (2 * j + 1) ω)) P ≤ 48 * ((T / 2 ^ (k + 1) : ℝ≥0) : ℝ) ^ 2 := by
   set a := incr B (dyadic T k) (2 * j)
@@ -651,7 +651,7 @@ omit [IsProbabilityMeasure P] in
         ring
 
 /-- The greedy quadratic sum as a function of `ω`. -/
-@[powerlib_foundation] theorem greedyQV_eq_sum (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem greedyQV_eq_sum (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) :
     (fun ω => qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω) =
       ∑ j ∈ range (2 ^ k), fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
         (incr B (dyadic T k) (2 * j + 1) ω) := by
@@ -659,7 +659,7 @@ omit [IsProbabilityMeasure P] in
   rw [qvSum_greedyPartition, Finset.sum_apply]
 
 /-- **Mean of the greedy quadratic sum**: `E = T (1 + 2m²)` for every level `k`. -/
-@[powerlib_foundation] theorem greedyQV_mean (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem greedyQV_mean (hB : IsPreBrownianReal B P) (T : ℝ≥0) (k : ℕ) :
     ∫ ω, qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω ∂P =
       T * (1 + 2 * posPartMean ^ 2) := by
   simp_rw [qvSum_greedyPartition]
@@ -671,7 +671,7 @@ omit [IsProbabilityMeasure P] in
   field_simp
 
 /-- **Variance of the greedy quadratic sum**: `Var ≤ 12 T² / 2^k` (independent blocks). -/
-@[powerlib_foundation] theorem greedyQV_variance_le (hB : IsPreBrownianReal B P) (T : ℝ≥0)
+@[tmio T, powerlib_foundation] theorem greedyQV_variance_le (hB : IsPreBrownianReal B P) (T : ℝ≥0)
     (k : ℕ) :
     variance (fun ω => qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω) P ≤
       12 * (T : ℝ) ^ 2 / 2 ^ k := by
@@ -695,7 +695,7 @@ omit [IsProbabilityMeasure P] in
     exact h.comp measurable_mergeSq measurable_mergeSq
 
 /-- **Convergence in probability to `T (1 + 2m²)`**, not to `T`. -/
-@[powerlib_foundation] theorem greedyQV_tendstoInMeasure (hB : IsPreBrownianReal B P)
+@[tmio T, powerlib_foundation] theorem greedyQV_tendstoInMeasure (hB : IsPreBrownianReal B P)
     (T : ℝ≥0) :
     TendstoInMeasure P (fun k ω => qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω) atTop
       (fun _ => (T : ℝ) * (1 + 2 * posPartMean ^ 2)) := by
@@ -730,7 +730,7 @@ motion `B` and `T > 0`, the greedy partitions `greedyPartition B T k ω` are par
 with mesh `≤ T / 2^k → 0`, chosen from the path, yet for `P`-almost every `ω` the quadratic sums
 `∑ (ΔB)²` along them do **not** converge to `T` (they converge in probability to
 `T (1 + 2m²) > T`, `m = E[Z⁺] > 0`). -/
-@[powerlib_foundation] theorem qv_pathDependent_not_ae (hB : IsPreBrownianReal B P) {T : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem qv_pathDependent_not_ae (hB : IsPreBrownianReal B P) {T : ℝ≥0}
     (hT : 0 < T) :
     (∀ k ω, Monotone (greedyPartition B T k ω) ∧ greedyPartition B T k ω 0 = 0 ∧
       greedyPartition B T k ω (2 ^ (k + 1)) = T ∧

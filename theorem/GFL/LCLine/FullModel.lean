@@ -171,14 +171,14 @@ current and the current-loop integrators. -/
 def currentReversal10 : Matrix (Fin 10) (Fin 10) ℝ :=
   Matrix.diagonal ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1]
 
-@[powerlib_foundation] theorem currentReversal10_mul_self :
+@[tmio T, powerlib_foundation] theorem currentReversal10_mul_self :
     currentReversal10 * currentReversal10 = 1 := by
   rw [currentReversal10, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
   ext i
   fin_cases i <;> norm_num
 
-@[powerlib_foundation] theorem currentReversal10_isUnit : IsUnit currentReversal10 :=
+@[tmio T, powerlib_foundation] theorem currentReversal10_isUnit : IsUnit currentReversal10 :=
   (Matrix.isUnit_iff_isUnit_det _).mpr
     (Matrix.isUnit_det_of_right_inverse currentReversal10_mul_self)
 

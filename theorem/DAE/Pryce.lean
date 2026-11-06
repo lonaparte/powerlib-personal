@@ -91,13 +91,13 @@ def IsTight (σ : Equiv.Perm ι) (c d : ι → ℕ) : Prop := ∀ i, S.order i (
   rw [value, ← sum_add_distrib, ← Equiv.sum_comp σ d]
   exact sum_le_sum fun i _ => h i (σ i) (hσ i)
 
-@[powerlib_foundation] theorem value_add_eq {σ : Equiv.Perm ι} {c d : ι → ℕ}
+@[tmio T, powerlib_foundation] theorem value_add_eq {σ : Equiv.Perm ι} {c d : ι → ℕ}
     (ht : S.IsTight σ c d) : S.value σ + ∑ i, c i = ∑ j, d j := by
   rw [value, ← sum_add_distrib, ← Equiv.sum_comp σ d]
   exact sum_congr rfl fun i _ => ht i
 
 /-- Tight dual-feasible offsets certify that `σ` is a highest-value transversal. -/
-@[powerlib_foundation] theorem value_le_of_tight {σ τ : Equiv.Perm ι} {c d : ι → ℕ}
+@[tmio T, powerlib_foundation] theorem value_le_of_tight {σ τ : Equiv.Perm ι} {c d : ι → ℕ}
     (hτ : S.IsTransversal τ) (h : S.IsDualFeasible c d) (ht : S.IsTight σ c d) :
     S.value τ ≤ S.value σ := by
   have h1 := S.value_add_le hτ h
@@ -110,7 +110,7 @@ def IsTight (σ : Equiv.Perm ι) (c d : ι → ℕ) : Prop := ∀ i, S.order i (
 def StructurallyNonsingular [DecidableEq ι] : Prop :=
   ∃ M : Matrix ι ι ℝ, (∀ i j, S.occurs i j = false → M i j = 0) ∧ M.det ≠ 0
 
-@[powerlib_foundation] theorem structurallyNonsingular_iff [DecidableEq ι] :
+@[tmio T, powerlib_foundation] theorem structurallyNonsingular_iff [DecidableEq ι] :
     S.StructurallyNonsingular ↔ ∃ σ : Equiv.Perm ι, S.IsTransversal σ := by
   constructor
   · rintro ⟨M, hM, hdet⟩
@@ -137,7 +137,7 @@ def StructurallyNonsingular [DecidableEq ι] : Prop :=
       rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
 
 /-- Hall's marriage condition for the occurrence pattern. -/
-@[powerlib_foundation] theorem exists_transversal_iff_hall [DecidableEq ι] :
+@[tmio T, powerlib_foundation] theorem exists_transversal_iff_hall [DecidableEq ι] :
     (∃ σ : Equiv.Perm ι, S.IsTransversal σ) ↔
       ∀ A : Finset ι,
         A.card ≤ (A.biUnion fun i => univ.filter fun j => S.occurs i j = true).card := by
@@ -160,7 +160,7 @@ def pryceStep (σ : Equiv.Perm ι) (p : (ι → ℕ) × (ι → ℕ)) : (ι → 
 
 def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (S.pryceStep σ)^[k] (0, 0)
 
-@[powerlib_foundation] theorem pryceStep_mono (σ : Equiv.Perm ι) {p q : (ι → ℕ) × (ι → ℕ)}
+@[tmio T, powerlib_foundation] theorem pryceStep_mono (σ : Equiv.Perm ι) {p q : (ι → ℕ) × (ι → ℕ)}
     (h : p ≤ q) : S.pryceStep σ p ≤ S.pryceStep σ q := by
   have hd : ∀ j, (univ.filter fun i => S.occurs i j = true).sup (fun i => p.1 i + S.order i j) ≤
       (univ.filter fun i => S.occurs i j = true).sup (fun i => q.1 i + S.order i j) := fun j =>
@@ -168,7 +168,7 @@ def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (
   exact ⟨fun i => Nat.sub_le_sub_right (hd (σ i)) _, hd⟩
 
 /-- Every dual-feasible tight solution is an upper bound preserved by the step. -/
-@[powerlib_foundation] theorem pryceStep_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
+@[tmio T, powerlib_foundation] theorem pryceStep_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
     (hf : S.IsDualFeasible c d) (ht : S.IsTight σ c d) {p : (ι → ℕ) × (ι → ℕ)}
     (hp : p ≤ (c, d)) : S.pryceStep σ p ≤ (c, d) := by
   have hd : ∀ j, (univ.filter fun i => S.occurs i j = true).sup (fun i => p.1 i + S.order i j) ≤
@@ -183,7 +183,7 @@ def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (
   simp only [pryceStep]
   omega
 
-@[powerlib_foundation] theorem pryceIter_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
+@[tmio T, powerlib_foundation] theorem pryceIter_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
     (hf : S.IsDualFeasible c d) (ht : S.IsTight σ c d) (k : ℕ) : S.pryceIter σ k ≤ (c, d) := by
   induction k with
   | zero => exact ⟨fun i => Nat.zero_le _, fun j => Nat.zero_le _⟩
@@ -191,7 +191,7 @@ def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (
     rw [pryceIter, Function.iterate_succ_apply']
     exact S.pryceStep_le hf ht ih
 
-@[powerlib_foundation] theorem pryceIter_mono_succ (σ : Equiv.Perm ι) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem pryceIter_mono_succ (σ : Equiv.Perm ι) (k : ℕ) :
     S.pryceIter σ k ≤ S.pryceIter σ (k + 1) := by
   induction k with
   | zero => exact ⟨fun i => Nat.zero_le _, fun j => Nat.zero_le _⟩
@@ -201,7 +201,7 @@ def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (
 
 private def potential (p : (ι → ℕ) × (ι → ℕ)) : ℕ := ∑ i, p.1 i + ∑ j, p.2 j
 
-@[powerlib_foundation] private lemma potential_lt {p q : (ι → ℕ) × (ι → ℕ)} (h : p ≤ q)
+@[tmio T, powerlib_foundation] private lemma potential_lt {p q : (ι → ℕ) × (ι → ℕ)} (h : p ≤ q)
     (hne : p ≠ q) : potential p < potential q := by
   have h1 : ∑ i, p.1 i ≤ ∑ i, q.1 i := sum_le_sum fun i _ => h.1 i
   have h2 : ∑ j, p.2 j ≤ ∑ j, q.2 j := sum_le_sum fun j _ => h.2 j
@@ -217,7 +217,7 @@ private def potential (p : (ι → ℕ) × (ι → ℕ)) : ℕ := ∑ i, p.1 i +
 
 /-- Pryce's iteration terminates (within `Σ c* + Σ d*` sweeps) at the least dual-feasible
 offsets that are tight on `σ`, provided some such offsets exist. -/
-@[powerlib_foundation] theorem pryce_iteration_terminates {σ : Equiv.Perm ι}
+@[tmio T, powerlib_foundation] theorem pryce_iteration_terminates {σ : Equiv.Perm ι}
     (hσ : S.IsTransversal σ) {c d : ι → ℕ} (hf : S.IsDualFeasible c d) (ht : S.IsTight σ c d) :
     ∃ N ≤ potential (c, d), S.pryceStep σ (S.pryceIter σ N) = S.pryceIter σ N ∧
       S.IsDualFeasible (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧
@@ -295,14 +295,14 @@ def exampleD : Fin 3 → ℕ := ![1, 1, 0]
 /-- Transversal `F₁ ↦ y, F₂ ↦ x₂, F₃ ↦ x₁`. -/
 def exampleσ : Equiv.Perm (Fin 3) := Equiv.swap 0 2
 
-@[powerlib_foundation] theorem example_offsets :
+@[tmio M, powerlib_foundation] theorem example_offsets :
     exampleSig.IsTransversal exampleσ ∧ exampleSig.IsDualFeasible exampleC exampleD ∧
       exampleSig.IsTight exampleσ exampleC exampleD := by
   refine ⟨?_, ?_, ?_⟩ <;>
     simp only [Signature.IsTransversal, Signature.IsDualFeasible, Signature.IsTight] <;> decide
 
 /-- `(0, (1,1,0))` are the least nonnegative dual-feasible offsets. -/
-@[powerlib_foundation] theorem example_offsets_least (c d : Fin 3 → ℕ)
+@[tmio M, powerlib_foundation] theorem example_offsets_least (c d : Fin 3 → ℕ)
     (h : exampleSig.IsDualFeasible c d) : exampleC ≤ c ∧ exampleD ≤ d := by
   have h00 := h 0 0 rfl
   have h11 := h 1 1 rfl
@@ -311,19 +311,19 @@ def exampleσ : Equiv.Perm (Fin 3) := Equiv.swap 0 2
   refine ⟨fun i => by fin_cases i <;> simp [exampleC], fun j => ?_⟩
   fin_cases j <;> simp [exampleD] <;> omega
 
-@[powerlib_foundation] theorem example_noteIndex :
+@[tmio M, powerlib_foundation] theorem example_noteIndex :
     exampleSig.noteIndex exampleC = 0 := by
   unfold Signature.noteIndex
   decide
 
-@[powerlib_foundation] theorem example_pryceIndex :
+@[tmio M, powerlib_foundation] theorem example_pryceIndex :
     exampleSig.pryceIndex exampleC exampleD = 1 := by
   unfold Signature.pryceIndex
   decide
 
 /-- Hidden constraint: every solution of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` (hypothesis `h`)
 satisfies `y = 2 x₁`. -/
-@[powerlib_foundation] theorem example_hidden_constraint {x₁ x₂ y : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem example_hidden_constraint {x₁ x₂ y : ℝ → ℝ}
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : y t = 2 * x₁ t := by
   obtain ⟨h1, h2, h3⟩ := h t
@@ -332,7 +332,7 @@ satisfies `y = 2 x₁`. -/
 
 /-- Index ≠ 0: the initial point `(x₁, x₂, y) = (0, 0, 1)` is inconsistent: no solution of
 `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` starts there. -/
-@[powerlib_foundation] theorem example_inconsistent_initial {x₁ x₂ y : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem example_inconsistent_initial {x₁ x₂ y : ℝ → ℝ}
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) : ¬ (x₁ 0 = 0 ∧ y 0 = 1) := by
   rintro ⟨h1, h2⟩
@@ -343,7 +343,7 @@ satisfies `y = 2 x₁`. -/
 /-- Index ≤ 1: along every solution of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0`, one
 differentiation of the hidden constraint gives `ẏ = 2 y`, so `(x₁, x₂, y)` solves an explicit
 ODE. -/
-@[powerlib_foundation] theorem example_one_differentiation {x₁ x₂ y : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem example_one_differentiation {x₁ x₂ y : ℝ → ℝ}
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : HasDerivAt y (2 * y t) t := by
   have hd := ((h t).1).const_mul 2
@@ -367,7 +367,7 @@ def pendulumD : Fin 5 → ℕ := ![2, 2, 1, 1, 0]
 def pendulumσ : Equiv.Perm (Fin 5) :=
   ⟨![0, 3, 2, 4, 1], ![0, 4, 2, 1, 3], by decide, by decide⟩
 
-@[powerlib_foundation] theorem pendulum_offsets :
+@[tmio M, powerlib_foundation] theorem pendulum_offsets :
     pendulumSig.IsTransversal pendulumσ ∧ pendulumSig.IsDualFeasible pendulumC pendulumD ∧
       pendulumSig.IsTight pendulumσ pendulumC pendulumD ∧
       pendulumSig.noteIndex pendulumC = 3 ∧ pendulumSig.pryceIndex pendulumC pendulumD = 3 := by
@@ -379,7 +379,7 @@ def pendulumσ : Equiv.Perm (Fin 5) :=
 
 /-- Two swing equations `ω̇ₖ = Fₖ(t, ωₖ)` plus `ω₁ = ω₂` admit a solution only if the data
 satisfy the compatibility condition `F₁(t, ω) = F₂(t, ω)` along it. -/
-@[powerlib_foundation] theorem synchronous_constraint_compatibility {F₁ F₂ : ℝ → ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem synchronous_constraint_compatibility {F₁ F₂ : ℝ → ℝ → ℝ}
     {ω₁ ω₂ : ℝ → ℝ} (h : ∀ t, HasDerivAt ω₁ (F₁ t (ω₁ t)) t ∧ HasDerivAt ω₂ (F₂ t (ω₂ t)) t ∧
       ω₁ t = ω₂ t) (t : ℝ) : F₁ t (ω₁ t) = F₂ t (ω₁ t) := by
   have he : ω₁ = ω₂ := funext fun s => (h s).2.2
@@ -389,7 +389,7 @@ satisfy the compatibility condition `F₁(t, ω) = F₂(t, ω)` along it. -/
   exact h1.unique h2
 
 /-- Distinct constant accelerations: the overdetermined system has no solution. -/
-@[powerlib_foundation] theorem synchronous_constraint_no_solution {a₁ a₂ : ℝ} (ha : a₁ ≠ a₂) :
+@[tmio T, powerlib_foundation] theorem synchronous_constraint_no_solution {a₁ a₂ : ℝ} (ha : a₁ ≠ a₂) :
     ¬ ∃ ω₁ ω₂ : ℝ → ℝ, ∀ t, HasDerivAt ω₁ a₁ t ∧ HasDerivAt ω₂ a₂ t ∧ ω₁ t = ω₂ t := by
   rintro ⟨ω₁, ω₂, h⟩
   exact ha (synchronous_constraint_compatibility (F₁ := fun _ _ => a₁) (F₂ := fun _ _ => a₂) h 0)

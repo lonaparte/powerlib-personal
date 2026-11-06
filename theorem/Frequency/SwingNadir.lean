@@ -93,7 +93,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   ring
 
 /-- `rateC` as the derivative bracket of `e^{−σt}(a cos ω_d t + b sin ω_d t)`. -/
-@[powerlib_foundation] theorem rateC_eq_bracket {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_foundation] theorem rateC_eq_bracket {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
     (t : ℝ) :
     rateC c σ ωd Tg t = Real.exp (-(σ * t)) *
       (-σ * (c * Real.cos (ωd * t) + (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd *
@@ -106,7 +106,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
 /-- Critical-point shift: if `t ↦ e^{−σt}(a cos ω_d t + b sin ω_d t)` has zero derivative at
 `T`, then its value at `T + u` is its value at `T` times
 `e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`. -/
-@[powerlib_foundation] theorem damped_shift {σ ωd a b T : ℝ} (hωd : ωd ≠ 0)
+@[tmio T, powerlib_foundation] theorem damped_shift {σ ωd a b T : ℝ} (hωd : ωd ≠ 0)
     (hcrit : -σ * (a * Real.cos (ωd * T) + b * Real.sin (ωd * T)) +
       ωd * (b * Real.cos (ωd * T) - a * Real.sin (ωd * T)) = 0) (u : ℝ) :
     Real.exp (-(σ * (T + u))) * (a * Real.cos (ωd * (T + u)) + b * Real.sin (ωd * (T + u))) =
@@ -121,7 +121,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   linear_combination (Real.exp (-(σ * T)) * Real.exp (-(σ * u)) * Real.sin (ωd * u)) * hk
 
 /-- Facts about `θ = atan2(ω_d, b) = arg (b + j ω_d)` for `ω_d > 0`. -/
-@[powerlib_foundation] theorem arg_facts {b ωd : ℝ} (hωd : 0 < ωd) :
+@[tmio T, powerlib_foundation] theorem arg_facts {b ωd : ℝ} (hωd : 0 < ωd) :
     0 < Complex.arg ⟨b, ωd⟩ ∧ Complex.arg ⟨b, ωd⟩ < Real.pi ∧
       Real.cos (Complex.arg ⟨b, ωd⟩) = b / ‖(⟨b, ωd⟩ : ℂ)‖ ∧
       Real.sin (Complex.arg ⟨b, ωd⟩) = ωd / ‖(⟨b, ωd⟩ : ℂ)‖ ∧
@@ -146,7 +146,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   · rw [Complex.sq_norm, Complex.normSq_mk]; ring
 
 /-- `rateC` in phase form: `−(c ω_n² T_g/ω_d) e^{−σt} ρ sin(θ − ω_d t)`. -/
-@[powerlib_foundation] theorem rateC_eq_sin {c σ ωd Tg : ℝ} (hωd : 0 < ωd) (t : ℝ) :
+@[tmio M, powerlib_foundation] theorem rateC_eq_sin {c σ ωd Tg : ℝ} (hωd : 0 < ωd) (t : ℝ) :
     rateC c σ ωd Tg t = -(c * (σ ^ 2 + ωd ^ 2) * Tg / ωd) * Real.exp (-(σ * t)) *
       (‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ *
         Real.sin (Complex.arg ⟨σ - 1 / Tg, ωd⟩ - ωd * t)) := by
@@ -162,19 +162,19 @@ variable {c σ ωd Tg : ℝ}
 /-- `t_nadir` of the scalar core: `arg (σ − 1/T_g + j ω_d)/ω_d`. -/
 def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
 
-@[powerlib_foundation] theorem tCrit_pos (hωd : 0 < ωd) : 0 < tCrit σ ωd Tg :=
+@[tmio M, powerlib_foundation] theorem tCrit_pos (hωd : 0 < ωd) : 0 < tCrit σ ωd Tg :=
   div_pos (arg_facts hωd).1 hωd
 
-@[powerlib_foundation] theorem mul_tCrit (hωd : 0 < ωd) :
+@[tmio M, powerlib_foundation] theorem mul_tCrit (hωd : 0 < ωd) :
     ωd * tCrit σ ωd Tg = Complex.arg ⟨σ - 1 / Tg, ωd⟩ := by
   unfold tCrit; field_simp
 
-@[powerlib_foundation] theorem rateC_tCrit (hωd : 0 < ωd) :
+@[tmio M, powerlib_foundation] theorem rateC_tCrit (hωd : 0 < ωd) :
     rateC c σ ωd Tg (tCrit σ ωd Tg) = 0 := by
   rw [rateC_eq_sin hωd, mul_tCrit hωd, sub_self, Real.sin_zero]
   ring
 
-@[powerlib_foundation] theorem rateC_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) {t : ℝ}
+@[tmio M, powerlib_foundation] theorem rateC_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) {t : ℝ}
     (ht : t ∈ Ico 0 (tCrit σ ωd Tg)) : rateC c σ ωd Tg t < 0 := by
   obtain ⟨hθ0, hθπ, -, -, hn, -⟩ := arg_facts (b := σ - 1 / Tg) hωd
   rw [rateC_eq_sin hωd]
@@ -187,7 +187,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
   have := mul_pos (mul_pos hk (Real.exp_pos (-(σ * t)))) (mul_pos hn hsin)
   linarith [this]
 
-@[powerlib_foundation] theorem respC_tCrit (hωd : 0 < ωd) (hTg : 0 < Tg) :
+@[tmio M, powerlib_foundation] theorem respC_tCrit (hωd : 0 < ωd) (hTg : 0 < Tg) :
     respC c σ ωd Tg (tCrit σ ωd Tg) =
       -c - c * (Tg * ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖) * Real.exp (-(σ * tCrit σ ωd Tg)) := by
   obtain ⟨-, -, hcos, hsin, hn, hsq⟩ := arg_facts (b := σ - 1 / Tg) hωd
@@ -206,7 +206,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
   field_simp
   ring
 
-@[powerlib_foundation] theorem tg_mul_norm (hTg : 0 < Tg) (hωd : 0 < ωd) :
+@[tmio T, powerlib_foundation] theorem tg_mul_norm (hTg : 0 < Tg) (hωd : 0 < ωd) :
     Tg * ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ =
       Real.sqrt (1 - 2 * σ * Tg + (σ ^ 2 + ωd ^ 2) * Tg ^ 2) := by
   obtain ⟨-, -, -, -, hn, hsq⟩ := arg_facts (b := σ - 1 / Tg) hωd
@@ -214,7 +214,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     rw [mul_pow, hsq]; field_simp; ring]
   exact (Real.sqrt_sq (by positivity)).symm
 
-@[powerlib_foundation] theorem respC_strictAntiOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
+@[tmio M, powerlib_foundation] theorem respC_strictAntiOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
     StrictAntiOn (respC c σ ωd Tg) (Icc 0 (tCrit σ ωd Tg)) := by
   apply strictAntiOn_of_deriv_neg (convex_Icc _ _)
   · exact fun t _ => (hasDerivAt_respC hωd.ne' hTg.ne' t).continuousAt.continuousWithinAt
@@ -223,7 +223,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     rw [(hasDerivAt_respC hωd.ne' hTg.ne' t).deriv]
     exact rateC_neg hωd hTg hc ⟨ht.1.le, ht.2⟩
 
-@[powerlib_foundation] theorem respC_shift (hωd : 0 < ωd) (hTg : 0 < Tg) (u : ℝ) :
+@[tmio M, powerlib_foundation] theorem respC_shift (hωd : 0 < ωd) (hTg : 0 < Tg) (u : ℝ) :
     respC c σ ωd Tg (tCrit σ ωd Tg + u) + c =
       (respC c σ ωd Tg (tCrit σ ωd Tg) + c) *
         (Real.exp (-(σ * u)) * (Real.cos (ωd * u) + σ / ωd * Real.sin (ωd * u))) := by
@@ -235,14 +235,14 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
   simp only [neg_add_cancel_comm]
   rw [h]
 
-@[powerlib_foundation] theorem respC_tCrit_add_c_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
+@[tmio M, powerlib_foundation] theorem respC_tCrit_add_c_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
     respC c σ ωd Tg (tCrit σ ωd Tg) + c < 0 := by
   rw [respC_tCrit hωd hTg]
   obtain ⟨-, -, -, -, hn, -⟩ := arg_facts (b := σ - 1 / Tg) hωd
   have := mul_pos (mul_pos hc (mul_pos hTg hn)) (Real.exp_pos (-(σ * tCrit σ ωd Tg)))
   linarith
 
-@[powerlib_foundation] theorem respC_isMinOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hσ : 0 ≤ σ)
+@[tmio M, powerlib_foundation] theorem respC_isMinOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hσ : 0 ≤ σ)
     (hc : 0 < c) : IsMinOn (respC c σ ωd Tg) (Ici 0) (tCrit σ ωd Tg) := by
   intro t ht
   simp only [Set.mem_ofPred_eq]
@@ -255,7 +255,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     have hneg := respC_tCrit_add_c_neg (σ := σ) hωd hTg hc
     nlinarith
 
-@[powerlib_foundation] theorem respC_add_half_period (hωd : 0 < ωd) (t : ℝ) :
+@[tmio M, powerlib_foundation] theorem respC_add_half_period (hωd : 0 < ωd) (t : ℝ) :
     respC c σ ωd Tg (t + Real.pi / ωd) + c =
       -Real.exp (-(σ * (Real.pi / ωd))) * (respC c σ ωd Tg t + c) := by
   have harg : ωd * (t + Real.pi / ωd) = ωd * t + Real.pi := by field_simp
@@ -266,7 +266,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
   rw [harg, hexp, Real.cos_add_pi, Real.sin_add_pi]
   ring
 
-@[powerlib_foundation] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
+@[tmio M, powerlib_foundation] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
     rateC c σ ωd Tg (tCrit σ ωd Tg + k * (Real.pi / ωd)) = 0 := by
   have harg : ωd * (tCrit σ ωd Tg + k * (Real.pi / ωd)) =
       Complex.arg ⟨σ - 1 / Tg, ωd⟩ + k * Real.pi := by
@@ -297,13 +297,13 @@ def nadirValue (M D K Tg ΔPL : ℝ) : ℝ :=
 
 variable {M D K Tg ΔPL : ℝ}
 
-@[powerlib_foundation] theorem dampingRatio_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem dampingRatio_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) : 0 < dampingRatio M D K Tg := by
   unfold dampingRatio
   have : 0 < M * Tg * (D + K) := mul_pos (mul_pos hM hTg) (by linarith)
   exact div_pos (by nlinarith) (by positivity)
 
-@[powerlib_foundation] theorem decayRate_eq (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
+@[tmio M, powerlib_foundation] theorem decayRate_eq (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
     decayRate M D K Tg = (M + D * Tg) / (2 * (M * Tg)) := by
   have h := two_mul_dampingRatio_mul_natFreq hM hTg (by linarith : 0 < D + K)
   unfold decayRate
@@ -311,19 +311,19 @@ variable {M D K Tg ΔPL : ℝ}
     (2 * dampingRatio M D K Tg * natFreq M D K Tg) / 2 by ring, h]
   field_simp
 
-@[powerlib_foundation] theorem decayRate_nonneg (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem decayRate_nonneg (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) : 0 ≤ decayRate M D K Tg := by
   rw [decayRate_eq hM hTg hKD]
   have : 0 ≤ D * Tg := mul_nonneg hD hTg.le
   positivity
 
-@[powerlib_foundation] theorem dampedFreq_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem dampedFreq_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) : 0 < dampedFreq M D K Tg := by
   have hz := dampingRatio_pos hM hTg hD hKD
   exact mul_pos (natFreq_pos hM hTg (by linarith))
     (Real.sqrt_pos.2 (by nlinarith))
 
-@[powerlib_foundation] theorem decayRate_sq_add_dampedFreq_sq (hM : 0 < M) (hTg : 0 < Tg)
+@[tmio M, powerlib_foundation] theorem decayRate_sq_add_dampedFreq_sq (hM : 0 < M) (hTg : 0 < Tg)
     (hD : 0 ≤ D) (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
     decayRate M D K Tg ^ 2 + dampedFreq M D K Tg ^ 2 = natFreq M D K Tg ^ 2 := by
   have hz := dampingRatio_pos hM hTg hD hKD
@@ -331,26 +331,26 @@ variable {M D K Tg ΔPL : ℝ}
   rw [mul_pow, mul_pow, Real.sq_sqrt (by nlinarith)]
   ring
 
-@[powerlib_foundation] theorem trace_A (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
+@[tmio M, powerlib_foundation] theorem trace_A (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < K + D) :
     (plant M D K Tg).A.trace = -2 * decayRate M D K Tg := by
   rw [decayRate_eq hM hTg hKD, trace_plant]
   field_simp
   ring
 
-@[powerlib_foundation] theorem det_A (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem det_A (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
     (plant M D K Tg).A.det = decayRate M D K Tg ^ 2 + dampedFreq M D K Tg ^ 2 := by
   rw [decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ, natFreq_sq hM hTg (by linarith),
     det_plant hM.ne' hTg.ne']
   ring
 
-@[powerlib_foundation] theorem A_mulVec (v : Fin 2 → ℝ) :
+@[tmio M, powerlib_foundation] theorem A_mulVec (v : Fin 2 → ℝ) :
     (plant M D K Tg).A *ᵥ v = ![-D / M * v 0 + 1 / M * v 1, -K / Tg * v 0 + -1 / Tg * v 1] := by
   ext i; fin_cases i <;> simp [plant, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- The first component of the explicit solution from rest under the load step is the scalar
 closed form `respC`. A static identity of closed forms. -/
-@[powerlib_foundation] theorem osc2_freq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem osc2_freq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) (t : ℝ) :
     (steadyState D K ΔPL + WithLp.toLp 2 (LTI.osc2 (plant M D K Tg).A (decayRate M D K Tg)
       (dampedFreq M D K Tg) (WithLp.ofLp (0 - steadyState D K ΔPL)) t)) 0 =
@@ -366,7 +366,7 @@ closed form `respC`. A static identity of closed forms. -/
   ring
 
 /-- The closed form at the nadir time is the nadir value. -/
-@[powerlib_foundation] theorem respC_nadirTime (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem respC_nadirTime (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
     respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg (nadirTime M D K Tg) =
       nadirValue M D K Tg ΔPL := by
@@ -378,7 +378,7 @@ closed form `respC`. A static identity of closed forms. -/
   ring
 
 /-- The nadir is strictly below the quasi-steady state `−ΔP_L/(K_R + D)`. -/
-@[powerlib_foundation] theorem nadirValue_lt (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio M, powerlib_foundation] theorem nadirValue_lt (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1) :
     nadirValue M D K Tg ΔPL < -ΔPL / (K + D) := by
   have hωd := dampedFreq_pos hM hTg hD hKD hζ

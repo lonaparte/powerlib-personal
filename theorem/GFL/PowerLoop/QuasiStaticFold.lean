@@ -102,7 +102,7 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
   ring
 
 /-- Derivative of the fold function. -/
-@[powerlib_foundation] theorem hasFDerivAt_foldU (A B Xg kp ki κ : ℝ) (z : Dynamics.State 3) :
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_foldU (A B Xg kp ki κ : ℝ) (z : Dynamics.State 3) :
     HasFDerivAt (fun z : Dynamics.State 3 => foldU A B Xg kp ki κ (z 0) (z 1) (z 2))
       ((2 * foldS0 A Xg kp κ (z 0) (z 1) (z 2)) •
           (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ) +
@@ -128,7 +128,7 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
   simp [foldS0, foldS1, foldS2]
   ring
 
-@[powerlib_foundation] theorem contDiff_foldU (A B Xg kp ki κ : ℝ) :
+@[tmio T, powerlib_foundation] theorem contDiff_foldU (A B Xg kp ki κ : ℝ) :
     ContDiff ℝ 1 (fun z : Dynamics.State 3 => foldU A B Xg kp ki κ (z 0) (z 1) (z 2)) := by
   unfold foldU
   fun_prop
@@ -138,12 +138,12 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
 section FoldLocal
 
 /-- The size function `s = |z₀| + |z₁| + |z₂|`. -/
-@[powerlib_foundation] private theorem size3_tendsto :
+@[tmio T, powerlib_foundation] private theorem size3_tendsto :
     Tendsto (fun z : Dynamics.State 3 => |z 0| + |z 1| + |z 2|) (𝓝 0) (𝓝 0) := by
   have hc : Continuous (fun z : Dynamics.State 3 => |z 0| + |z 1| + |z 2|) := by fun_prop
   simpa using hc.tendsto 0
 
-@[powerlib_foundation] private theorem coord3_isBigO (i : Fin 3) :
+@[tmio T, powerlib_foundation] private theorem coord3_isBigO (i : Fin 3) :
     (fun z : Dynamics.State 3 => z i) =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ 1 :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, pow_one]
@@ -153,19 +153,19 @@ section FoldLocal
     refine le_trans ?_ (le_abs_self _)
     fin_cases i <;> simp <;> linarith)
 
-@[powerlib_foundation] private theorem mul3_isBigO {f g : Dynamics.State 3 → ℝ} {a b k : ℕ}
+@[tmio T, powerlib_foundation] private theorem mul3_isBigO {f g : Dynamics.State 3 → ℝ} {a b k : ℕ}
     (hf : f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ a)
     (hg : g =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ b) (hk : k ≤ a + b) :
     (fun z => f z * g z) =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
   ((hf.mul hg).congr_right fun _ => (pow_add _ _ _).symm).trans
     (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
 
-@[powerlib_foundation] private theorem mono3_isBigO {f : Dynamics.State 3 → ℝ} {a k : ℕ}
+@[tmio T, powerlib_foundation] private theorem mono3_isBigO {f : Dynamics.State 3 → ℝ} {a k : ℕ}
     (hf : f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ a) (hk : k ≤ a) :
     f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
   hf.trans (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
 
-@[powerlib_foundation] private theorem trig3_isBigO :
+@[tmio T, powerlib_foundation] private theorem trig3_isBigO :
     ((fun z : Dynamics.State 3 => 1 - Real.cos (z 0)) =O[𝓝 0]
         fun z => (|z 0| + |z 1| + |z 2|) ^ 2) ∧
     ((fun z : Dynamics.State 3 => Real.sin (z 0) - z 0) =O[𝓝 0]
@@ -191,7 +191,7 @@ variable {A B Xg kp ki κ : ℝ}
 
 /-- The fold Lie derivative: `U̇ = Φ + D` with the negative definite quadratic form `Φ` and a
 remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
-@[powerlib_foundation] private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
+@[tmio T, powerlib_foundation] private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
     {g : Dynamics.State 3 → Dynamics.State 3}
     (hg0 : ∀ z, g z 0 =
       kp * (-A * Real.sin (z 0) + B * (1 - Real.cos (z 0)) + Xg * z 2) + ki * z 1)
@@ -224,7 +224,7 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
     κ ^ 2 * z 1 * A * Real.sin (z 0)) * hAB
 
 /-- The fold remainder is `O(s³)`. -/
-@[powerlib_foundation] private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
+@[tmio T, powerlib_foundation] private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
     (fun z : Dynamics.State 3 =>
       -κ * (2 * A ^ 2 * (1 - Real.cos (z 0) - z 0 ^ 2 / 2) +
           B * Xg * (z 2 * (1 - Real.cos (z 0))) + A * Xg * (z 2 * (Real.sin (z 0) - z 0))) +
@@ -280,7 +280,7 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
     (by norm_num))).add (mul3_isBigO s1 d1 (by norm_num))).add (mul3_isBigO s2 d2 (by norm_num))
 
 /-- `s² ≤ (3/c)(κA²z₀² + 2k_i(k_p+κ)z₁² + κ(X_g z₂)²)`. -/
-@[powerlib_foundation] private theorem fold_size_isBigO (hA : A ≠ 0) (hκ : 0 < κ) (hk : 0 < ki * (kp + κ))
+@[tmio T, powerlib_foundation] private theorem fold_size_isBigO (hA : A ≠ 0) (hκ : 0 < κ) (hk : 0 < ki * (kp + κ))
     (hXg : Xg ≠ 0) :
     (fun z : Dynamics.State 3 => (|z 0| + |z 1| + |z 2|) ^ 2) =O[𝓝 0]
       fun z => κ * A ^ 2 * z 0 ^ 2 + 2 * ki * (kp + κ) * z 1 ^ 2 + κ * (Xg * z 2) ^ 2 := by
@@ -308,7 +308,7 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
 /-- **Saddle-node instability.** A `C¹` field with the fold structure (`A ≠ 0`, `B² = A²`,
 `X_g ≠ 0`, `κ > 0`, `k_i(k_p + κ) > 0`) is unstable at the origin: the fold function decreases
 strictly on a punctured neighbourhood and is negative along the ray `t (B, 0, AB/X_g)`. -/
-@[powerlib_foundation] private theorem fold_unstable (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2) (hκ : 0 < κ)
+@[tmio TM, powerlib_foundation] private theorem fold_unstable (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2) (hκ : 0 < κ)
     (hk : 0 < ki * (kp + κ)) (hXg : Xg ≠ 0) {g : Dynamics.State 3 → Dynamics.State 3}
     (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 =
@@ -467,7 +467,7 @@ section Members
   unfold powerlib.TMIO.Statement at hs
   exact (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
 
-@[powerlib_foundation] private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
+@[tmio T, powerlib_foundation] private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
     (h : ∃ᶠ z in 𝓝 (0 : Dynamics.State 3), P z) (ε : ℝ) (hε : 0 < ε) :
     ∃ x, ‖x - 0‖ < ε ∧ P x := by
   obtain ⟨x, hP, hx⟩ := (h.and_eventually (Metric.ball_mem_nhds 0 hε)).exists

@@ -91,13 +91,13 @@ Static evidence on the model, not a connection conclusion. -/
   ring
 
 /-- The stored energy is `½ C_dc V_dc²` with `V_dc = q / C_dc`. -/
-@[powerlib_foundation] theorem dcLink_energy (C : ℝ) (hC : 0 < C) (V : ℝ) :
+@[tmio M, powerlib_domain] theorem dcLink_energy (C : ℝ) (hC : 0 < C) (V : ℝ) :
     (dcLink C hC).energy ![C * V] = C * V ^ 2 / 2 := by
   simp [DiagonalPH.energy, dcLink]
   field_simp
 
 /-- `ΔE_dc = ½ C_dc (V_dc² − V_dc,0²)`. -/
-@[powerlib_foundation] theorem dcLink_energy_sub (C : ℝ) (hC : 0 < C) (V V₀ : ℝ) :
+@[tmio M, powerlib_domain] theorem dcLink_energy_sub (C : ℝ) (hC : 0 < C) (V V₀ : ℝ) :
     (dcLink C hC).energy ![C * V] - (dcLink C hC).energy ![C * V₀] =
       C * (V ^ 2 - V₀ ^ 2) / 2 := by
   rw [dcLink_energy, dcLink_energy]
@@ -105,7 +105,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Port power of the DC link: `uᵀ y = V_dc (i_in − i_out)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem dcLink_supply (C : ℝ) (hC : 0 < C) (x : Fin 1 → ℝ)
+@[tmio M, powerlib_domain] theorem dcLink_supply (C : ℝ) (hC : 0 < C) (x : Fin 1 → ℝ)
     (u : Fin 2 → ℝ) : (dcLink C hC).supply x u = (x 0 / C) * (u 0 - u 1) := by
   simp [DiagonalPH.supply, DiagonalPH.output, DiagonalPH.gradient, dcLink, mulVec, dotProduct,
     Fin.sum_univ_two]
@@ -117,7 +117,7 @@ def dcLinkPH (C : ℝ) (hC : 0 < C) : Port.PortHamiltonian 1 2 :=
 
 /-- Along a solution segment of a lossless linear pH plant the stored energy has the supplied
 power as derivative. -/
-@[powerlib_foundation] private theorem hasDerivWithinAt_storage_of_lossless {n p : ℕ} (h : Port.PortHamiltonian n p)
+@[tmio T, powerlib_foundation] private theorem hasDerivWithinAt_storage_of_lossless {n p : ℕ} (h : Port.PortHamiltonian n p)
     (hR : h.R = 0) {u : ℝ → Fin p → ℝ} {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ t : ℝ}
     (hx : h.plant.system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => h.kyp.storage (x τ)) (h.plant.system.supply (x t) (u t))

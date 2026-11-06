@@ -36,16 +36,16 @@ def field (μ l : ℝ) (ρ : ℝ) : ℝ := 2 * μ * ρ + 2 * l * ρ ^ 2
     ContDiff ℝ k (field μ l) := by
   unfold field; fun_prop
 
-@[powerlib_foundation] theorem field_zero (μ l : ℝ) : field μ l 0 = 0 := by simp [field]
+@[tmio M, powerlib_foundation] theorem field_zero (μ l : ℝ) : field μ l 0 = 0 := by simp [field]
 
 /-- A solution that starts positive stays positive. -/
-@[powerlib_foundation] theorem pos {μ l : ℝ} {ρ : ℝ → ℝ} {a b : ℝ}
+@[tmio TM, powerlib_foundation] theorem pos {μ l : ℝ} {ρ : ℝ → ℝ} {a b : ℝ}
     (hρ : IsIntegralCurveOn ρ (fun _ r => field μ l r) (Icc a b)) (ha : 0 < ρ a) :
     ∀ t ∈ Icc a b, 0 < ρ t :=
   pos_of_pos (field_contDiff μ l) (field_zero μ l) hρ ha
 
 /-- Explicit solution in the reciprocal variable. -/
-@[powerlib_foundation] theorem reciprocal_formula {μ l : ℝ} (hμ : μ ≠ 0) {ρ : ℝ → ℝ} {a b : ℝ}
+@[tmio M, powerlib_foundation] theorem reciprocal_formula {μ l : ℝ} (hμ : μ ≠ 0) {ρ : ℝ → ℝ} {a b : ℝ}
     (hρ : IsIntegralCurveOn ρ (fun _ r => field μ l r) (Icc a b)) (ha : 0 < ρ a) :
     ∀ t ∈ Icc a b, 1 / ρ t + l / μ = (1 / ρ a + l / μ) * Real.exp (-2 * μ * (t - a)) := by
   have hpos := pos hρ ha
@@ -77,7 +77,7 @@ def field (μ l : ℝ) (ρ : ℝ) : ℝ := 2 * μ * ρ + 2 * l * ρ ^ 2
     _ = _ := by rw [h, one_div]
 
 /-- The level `ρ = −μ/l` is invariant. -/
-@[powerlib_foundation] theorem level_invariant {μ l : ℝ} (hμ : μ ≠ 0) (hl : l ≠ 0)
+@[tmio TM, powerlib_foundation] theorem level_invariant {μ l : ℝ} (hμ : μ ≠ 0) (hl : l ≠ 0)
     (hR : 0 < -μ / l) {ρ : ℝ → ℝ} {a b : ℝ}
     (hρ : IsIntegralCurveOn ρ (fun _ r => field μ l r) (Icc a b)) (ha : ρ a = -μ / l) :
     ∀ t ∈ Icc a b, ρ t = -μ / l := by
@@ -92,7 +92,7 @@ def field (μ l : ℝ) (ρ : ℝ) : ℝ := 2 * μ * ρ + 2 * l * ρ ^ 2
   rw [this]; field_simp
 
 /-- `μ > 0`, `l < 0`: every forward-complete positive solution converges to `μ/|l| = −μ/l`. -/
-@[powerlib_foundation] theorem tendsto_level {μ l : ℝ} (hμ : 0 < μ) (hl : l < 0)
+@[tmio TM, powerlib_foundation] theorem tendsto_level {μ l : ℝ} (hμ : 0 < μ) (hl : l < 0)
     {ρ : ℝ → ℝ} {a : ℝ}
     (hρ : IsIntegralCurveOn ρ (fun _ r => field μ l r) (Ici a)) (ha : 0 < ρ a) :
     Tendsto ρ atTop (𝓝 (-μ / l)) := by
@@ -126,7 +126,7 @@ def field (μ l : ℝ) (ρ : ℝ) : ℝ := 2 * μ * ρ + 2 * l * ρ ^ 2
 
 /-- `μ < 0`, `l > 0`: the deviation from the invariant level, measured in `1/ρ`, grows like
 `e^{2|μ|(t − a)}`; the level `−μ/l` is repelling. -/
-@[powerlib_foundation] theorem deviation_growth {μ l : ℝ} (hμ : μ < 0) {ρ : ℝ → ℝ} {a b : ℝ}
+@[tmio M, powerlib_foundation] theorem deviation_growth {μ l : ℝ} (hμ : μ < 0) {ρ : ℝ → ℝ} {a b : ℝ}
     (hρ : IsIntegralCurveOn ρ (fun _ r => field μ l r) (Icc a b)) (ha : 0 < ρ a) :
     ∀ t ∈ Icc a b, |1 / ρ t - 1 / (-μ / l)| =
       |1 / ρ a - 1 / (-μ / l)| * Real.exp (2 * |μ| * (t - a)) := by
@@ -141,7 +141,7 @@ def field (μ l : ℝ) (ρ : ℝ) : ℝ := 2 * μ * ρ + 2 * l * ρ ^ 2
   congr 2; ring
 
 /-- `μ < 0`, `l > 0`: forward-complete solutions starting inside the level converge to `0`. -/
-@[powerlib_foundation] theorem tendsto_zero_of_lt_level {μ l : ℝ} (hμ : μ < 0) (hl : 0 < l)
+@[tmio TM, powerlib_foundation] theorem tendsto_zero_of_lt_level {μ l : ℝ} (hμ : μ < 0) (hl : 0 < l)
     {ρ : ℝ → ℝ} {a : ℝ}
     (hρ : IsIntegralCurveOn ρ (fun _ r => field μ l r) (Ici a)) (ha : 0 < ρ a)
     (hlt : ρ a < -μ / l) :

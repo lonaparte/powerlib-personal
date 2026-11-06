@@ -50,7 +50,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
   linear_combination h
 
 /-- Discriminant of the Jacobian: `tr² − 4 det = K_p² g² + 4 K_i g`. -/
-@[powerlib_foundation] theorem piPLLJacobian_discriminant (Kp Ki g : ℝ) :
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_discriminant (Kp Ki g : ℝ) :
     (piPLLJacobian Kp Ki g).trace ^ 2 - 4 * (piPLLJacobian Kp Ki g).det =
       Kp ^ 2 * g ^ 2 + 4 * Ki * g := by
   simp only [piPLLJacobian_trace, piPLLJacobian_det]
@@ -58,7 +58,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- Node/focus split at a slope `g < 0`: all eigenvalues are real (node) iff
 `|g| ≥ 4 K_i / K_p²`. -/
-@[powerlib_foundation] theorem piPLLJacobian_eigenvalues_real_iff {Kp Ki g : ℝ} (hKp : Kp ≠ 0)
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_eigenvalues_real_iff {Kp Ki g : ℝ} (hKp : Kp ≠ 0)
     (hg : g < 0) :
     (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →
         (piPLLJacobian Kp Ki g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v → μ.im = 0) ↔
@@ -74,7 +74,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     nlinarith
 
 /-- Focus: some eigenvalue is non-real iff `|g| < 4 K_i / K_p²` (for `g < 0`, `K_p ≠ 0`). -/
-@[powerlib_foundation] theorem piPLLJacobian_exists_nonreal_eigenvalue_iff {Kp Ki g : ℝ}
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_exists_nonreal_eigenvalue_iff {Kp Ki g : ℝ}
     (hKp : Kp ≠ 0) (hg : g < 0) :
     (∃ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 ∧
         (piPLLJacobian Kp Ki g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ μ.im ≠ 0) ↔
@@ -91,7 +91,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     exact hc ⟨μ, v, hv, heig, him⟩
 
 /-- No nonzero purely imaginary eigenvalue (`K_p ≠ 0`), for every slope `g`. -/
-@[powerlib_foundation] theorem piPLLJacobian_imaginary_eigenvalue_eq_zero {Kp Ki g : ℝ}
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_imaginary_eigenvalue_eq_zero {Kp Ki g : ℝ}
     (hKp : Kp ≠ 0) {μ : ℂ} {v : Fin 2 → ℂ} (hv : v ≠ 0)
     (heig : (piPLLJacobian Kp Ki g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) (hre : μ.re = 0) :
     μ = 0 := by
@@ -113,7 +113,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
   exact Complex.ext hre hω
 
 /-- The Hopf condition `tr J = 0 ∧ det J > 0` is never met (`K_p ≠ 0`). -/
-@[powerlib_foundation] theorem piPLLJacobian_not_hopf {Kp Ki g : ℝ} (hKp : Kp ≠ 0) :
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_not_hopf {Kp Ki g : ℝ} (hKp : Kp ≠ 0) :
     ¬ ((piPLLJacobian Kp Ki g).trace = 0 ∧ 0 < (piPLLJacobian Kp Ki g).det) := by
   rintro ⟨htr, hdet⟩
   rw [piPLLJacobian_trace] at htr
@@ -125,7 +125,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- `K_p ≠ 0` is necessary: with `K_p = 0` and `K_i g < 0` the Jacobian has the purely
 imaginary eigenvalue `j √(−K_i g)`. -/
-@[powerlib_foundation] theorem piPLLJacobian_imaginary_eigenvalue_of_Kp_zero {Ki g : ℝ}
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_imaginary_eigenvalue_of_Kp_zero {Ki g : ℝ}
     (h : Ki * g < 0) :
     ∃ v : Fin 2 → ℂ, v ≠ 0 ∧
       (piPLLJacobian 0 Ki g).map (algebraMap ℝ ℂ) *ᵥ v =
@@ -145,7 +145,7 @@ imaginary eigenvalue `j √(−K_i g)`. -/
 
 /-- Any matrix representing the Jacobian `fderiv` of the PI-PLL field at a point is
 `piPLLJacobian K_p K_i (h'(θ))`. -/
-@[powerlib_foundation] theorem piPLL_jacobian_matrix_eq {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
+@[tmio M, powerlib_foundation] theorem piPLL_jacobian_matrix_eq {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
     {x : ℝ²} (hh : HasDerivAt h g (x 0)) {A : Matrix (Fin 2) (Fin 2) ℝ}
     (hA : fderiv ℝ (piPLLField h Kp Ki δω) x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :
     A = piPLLJacobian Kp Ki g :=
@@ -156,7 +156,7 @@ imaginary eigenvalue `j √(−K_i g)`. -/
 
 /-- At every point (in particular every equilibrium) of the PI-PLL field with `K_p ≠ 0` and `h`
 differentiable there, the linearization has no nonzero purely imaginary eigenvalue. -/
-@[powerlib_foundation] theorem piPLL_linearization_no_imaginary_eigenvalue {h : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem piPLL_linearization_no_imaginary_eigenvalue {h : ℝ → ℝ}
     {Kp Ki δω g : ℝ} {x : ℝ²} (hKp : Kp ≠ 0) (hh : HasDerivAt h g (x 0))
     {A : Matrix (Fin 2) (Fin 2) ℝ}
     (hA : fderiv ℝ (piPLLField h Kp Ki δω) x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A)
@@ -167,7 +167,7 @@ differentiable there, the linearization has no nonzero purely imaginary eigenval
 
 /-- The linearization of the PI-PLL field at any point never satisfies the Hopf condition
 `tr = 0 ∧ det > 0` (`K_p ≠ 0`). -/
-@[powerlib_foundation] theorem piPLL_linearization_not_hopf {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
+@[tmio M, powerlib_foundation] theorem piPLL_linearization_not_hopf {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
     {x : ℝ²} (hKp : Kp ≠ 0) (hh : HasDerivAt h g (x 0)) {A : Matrix (Fin 2) (Fin 2) ℝ}
     (hA : fderiv ℝ (piPLLField h Kp Ki δω) x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :
     ¬ (A.trace = 0 ∧ 0 < A.det) := by

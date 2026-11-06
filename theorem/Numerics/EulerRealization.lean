@@ -109,7 +109,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-! ## The step thresholds -/
 
 /-- `|1 + hμ|² = 1 + h (2 Re μ + h |μ|²)`. -/
-@[powerlib_foundation] private theorem norm_one_add_mul_sq (h : ℝ) (μ : ℂ) :
+@[tmio T, powerlib_foundation] private theorem norm_one_add_mul_sq (h : ℝ) (μ : ℂ) :
     ‖1 + (h : ℂ) * μ‖ ^ 2 = 1 + h * (2 * μ.re + h * ‖μ‖ ^ 2) := by
   rw [Complex.sq_norm, Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
   simp only [Complex.add_re, Complex.one_re, Complex.re_ofReal_mul, Complex.add_im,
@@ -117,7 +117,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   ring
 
 /-- An eigenvalue of `A` is a root of the characteristic polynomial of its complexification. -/
-@[powerlib_foundation] private theorem mem_roots_of_eigen {A : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ} {v : Fin n → ℂ}
+@[tmio T, powerlib_foundation] private theorem mem_roots_of_eigen {A : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ} {v : Fin n → ℂ}
     (hv : v ≠ 0) (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     μ ∈ (Linear.complexify A).charpoly.roots.toFinset := by
   have hdet := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair A hv heig
@@ -127,7 +127,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- **Step threshold of forward Euler.** For a Hurwitz matrix `A` there is `h₀ > 0` such that
 the forward Euler matrix `I + h A` is Schur stable for every step `h ∈ (0, h₀]`. -/
-@[powerlib_foundation] theorem exists_forwardEuler_schurStable {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem exists_forwardEuler_schurStable {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) :
     ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ h ∈ Set.Ioc (0 : ℝ) h₀, LTI.SchurStable (forwardEulerMatrix h A) := by
   classical
@@ -156,7 +156,7 @@ the forward Euler matrix `I + h A` is Schur stable for every step `h ∈ (0, h�
 
 /-- A forward Euler matrix `I + h A` whose multipliers `1 + hλ` all lie outside the closed unit
 disk has a Schur stable inverse (`h ≠ 0`; the Möbius image `1 / (1 + hλ)` of every eigenvalue). -/
-@[powerlib_foundation] private theorem exists_inverse_schurStable_of_forall_eigen {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private theorem exists_inverse_schurStable_of_forall_eigen {A : Matrix (Fin n) (Fin n) ℝ}
     {h : ℝ} (hh : h ≠ 0) (hout : ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 →
       A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v → 1 < ‖1 + (h : ℂ) * μ‖) :
     ∃ B : Matrix (Fin n) (Fin n) ℝ, B * forwardEulerMatrix h A = 1 ∧ LTI.SchurStable B := by
@@ -179,7 +179,7 @@ disk has a Schur stable inverse (`h ≠ 0`; the Möbius image `1 / (1 + hλ)` of
 /-- **Large-step threshold of forward Euler.** For a Hurwitz matrix `A` there is `h₁ > 0` such
 that for every step `h ≥ h₁` the forward Euler matrix `I + h A` has a Schur stable inverse: every
 eigenvalue `λ` has `Re λ < 0`, so `|1 + hλ|² = 1 + h (2 Re λ + h |λ|²) > 1` for large `h`. -/
-@[powerlib_foundation] theorem exists_forwardEuler_inverse_schurStable
+@[tmio T, powerlib_foundation] theorem exists_forwardEuler_inverse_schurStable
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) :
     ∃ h₁ : ℝ, 0 < h₁ ∧ ∀ h, h₁ ≤ h →
       ∃ B : Matrix (Fin n) (Fin n) ℝ, B * forwardEulerMatrix h A = 1 ∧ LTI.SchurStable B := by
@@ -213,7 +213,7 @@ eigenvalue `λ` has `Re λ < 0`, so `|1 + hλ|² = 1 + h (2 Re λ + h |λ|²) > 
 def eulerMap (f : ℝⁿ → ℝⁿ) (h : ℝ) (z : ℝⁿ) : ℝⁿ := z + h • f z
 
 /-- The Euler map of a field with Jacobian `J` at `z` has Jacobian `I + h J` there. -/
-@[powerlib_foundation] theorem hasFDerivAt_eulerMap {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_eulerMap {f : ℝⁿ → ℝⁿ}
     {J : Matrix (Fin n) (Fin n) ℝ} {z : ℝⁿ} (hf : HasFDerivAt f (Map.op J) z) (h : ℝ) :
     HasFDerivAt (eulerMap f h) (Map.op (forwardEulerMatrix h J)) z := by
   have hd := (hasFDerivAt_id z).add (hf.const_smul h)
@@ -222,7 +222,7 @@ def eulerMap (f : ℝⁿ → ℝⁿ) (h : ℝ) (z : ℝⁿ) : ℝⁿ := z + h �
 
 /-- A field `C¹` near a point `x₀`, translated so that `x₀` is the origin, is `C¹` near the origin:
 the smoothness hypothesis of the local laws below, for a family read about selected points. -/
-@[powerlib_foundation] theorem contDiffAt_shift {g : ℝⁿ → ℝⁿ} {x₀ : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem contDiffAt_shift {g : ℝⁿ → ℝⁿ} {x₀ : ℝⁿ}
     (hg : ContDiffAt ℝ 1 g x₀) : ContDiffAt ℝ 1 (fun z => g (z + x₀)) 0 :=
   ContDiffAt.comp (g := g) (f := fun z : ℝⁿ => z + x₀) 0 (by rwa [zero_add])
     (contDiffAt_id.add contDiffAt_const)
@@ -265,7 +265,7 @@ variable {X Y Q : Type} {F : Family X Q n 0}
   {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {design : Y → X} {step : Y → ℝ}
 
 /-- A field `C¹` near the origin is `C¹` on an open neighbourhood of it. -/
-@[powerlib_foundation] private theorem exists_isOpen_contDiffOn {g : ℝⁿ → ℝⁿ} (hC : ContDiffAt ℝ 1 g 0) :
+@[tmio T, powerlib_foundation] private theorem exists_isOpen_contDiffOn {g : ℝⁿ → ℝⁿ} (hC : ContDiffAt ℝ 1 g 0) :
     ∃ U : Set ℝⁿ, IsOpen U ∧ (0 : ℝⁿ) ∈ U ∧ ContDiffOn ℝ 1 g U := by
   obtain ⟨U, hU, h0, hCU⟩ := (hC.contDiffWithinAt (s := Set.univ)).contDiffOn' le_rfl (by simp)
   rw [Set.insert_eq_of_mem (Set.mem_univ _), Set.univ_inter] at hCU
@@ -274,7 +274,7 @@ variable {X Y Q : Type} {F : Family X Q n 0}
 /-- A locally exponentially stable field, `C¹` near the origin, has an equilibrium at the origin
 with a Hurwitz Jacobian `J` (converse linearization for fields `C¹` on a neighbourhood,
 `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`). -/
-@[powerlib_foundation] private theorem exists_isHurwitz_jacobian {g : ℝⁿ → ℝⁿ} (hC : ContDiffAt ℝ 1 g 0)
+@[tmio T, powerlib_foundation] private theorem exists_isHurwitz_jacobian {g : ℝⁿ → ℝⁿ} (hC : ContDiffAt ℝ 1 g 0)
     (hles : LocallyExponentiallyStable g 0) :
     ∃ J : Matrix (Fin n) (Fin n) ℝ, fderiv ℝ g 0 = Map.op J ∧ g 0 = 0 ∧ IsHurwitz J := by
   obtain ⟨U, hU, h0, hCU⟩ := exists_isOpen_contDiffOn hC
@@ -286,7 +286,7 @@ with a Hurwitz Jacobian `J` (converse linearization for fields `C¹` on a neighb
     (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local hU h0 J hCU hJ).mp hles⟩
 
 /-- The Jacobian of a field `C¹` near the origin is its derivative there. -/
-@[powerlib_foundation] private theorem hasFDerivAt_of_fderiv_eq {g : ℝⁿ → ℝⁿ} {J : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private theorem hasFDerivAt_of_fderiv_eq {g : ℝⁿ → ℝⁿ} {J : Matrix (Fin n) (Fin n) ℝ}
     (hC : ContDiffAt ℝ 1 g 0) (hJ : fderiv ℝ g 0 = Map.op J) : HasFDerivAt g (Map.op J) 0 := by
   rw [← hJ]
   exact hC.differentiableAt_one.hasFDerivAt
@@ -420,7 +420,7 @@ include arbitrarily large steps refutes realization soundness
   exact not_euler_realizationSoundUnder_of_large_step_local hF hn (hC x).contDiffAt hx hY
 
 /-- A complex eigenvalue of a real scalar matrix `c I` is `c`. -/
-@[powerlib_foundation] private theorem eigen_smul_one {c : ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
+@[tmio T, powerlib_foundation] private theorem eigen_smul_one {c : ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : (c • (1 : Matrix (Fin n) (Fin n) ℝ)).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     μ = c := by
   have hmap : (c • (1 : Matrix (Fin n) (Fin n) ℝ)).map (algebraMap ℝ ℂ) =

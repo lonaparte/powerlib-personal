@@ -299,7 +299,7 @@ def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
   simp [smib11_angleAxis]
 
 /-- The rotor-angle axis is a nonzero direction. -/
-@[powerlib_foundation] private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
+@[tmio M, powerlib_foundation] private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
   simpa [smib11_angleAxis] using congrArg (fun z : State 11 => z 6) h
 
 /-- `H^tot` is not positive definite (it vanishes along the rotor-angle axis), hence it is no
@@ -592,7 +592,7 @@ end SMIB11Rel
 
 /-- T-power-system-ph §1.8: `N` seven-state machines, `ℓ` branch fluxes and `n_C` node charges
 give a state of dimension `7N + ℓ + n_C` (ZIP loads add no state). -/
-@[powerlib_foundation] theorem powerSystem_state_dim (N : ℕ) (β ν : Type*) [Fintype β]
+@[tmio T, powerlib_foundation] theorem powerSystem_state_dim (N : ℕ) (β ν : Type*) [Fintype β]
     [Fintype ν] :
     Fintype.card ((Fin N × Fin 7) ⊕ β ⊕ ν) = 7 * N + Fintype.card β + Fintype.card ν := by
   simp [Fintype.card_sum, Fintype.card_prod, mul_comm, add_assoc]

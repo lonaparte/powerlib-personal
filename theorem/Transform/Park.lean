@@ -317,7 +317,7 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 
 /-- Park: if `C dv_αβ/dt = i_αβ` with `v_αβ = rot θ · v`, `i_αβ = rot θ · i`, `θ' = ω`, then
 `C dv/dt = i − ω C J v`. -/
-@[powerlib_foundation] theorem capacitor_dq {C : ℝ} {θ : ℝ → ℝ} {ω : ℝ} {v i : ℝ → Fin 2 → ℝ}
+@[tmio M, powerlib_foundation] theorem capacitor_dq {C : ℝ} {θ : ℝ → ℝ} {ω : ℝ} {v i : ℝ → Fin 2 → ℝ}
     {v' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hv : HasDerivAt v v' t)
     (hαβ : HasDerivAt (fun s => Transform.rot (θ s) *ᵥ v s)
       (C⁻¹ • (Transform.rot (θ t) *ᵥ i t)) t) (hC : C ≠ 0) :

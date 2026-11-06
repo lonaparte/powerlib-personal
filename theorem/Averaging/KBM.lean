@@ -64,7 +64,7 @@ omit [NormedSpace ℝ E] [CompleteSpace E] in
   hf.2.2.1.comp (continuous_const.prodMk continuous_id)
 
 omit [NormedSpace ℝ E] [CompleteSpace E] in
-@[powerlib_foundation] theorem PeriodicField.M_nonneg
+@[tmio T, powerlib_foundation] theorem PeriodicField.M_nonneg
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) [Nonempty E] :
     0 ≤ M :=
@@ -72,7 +72,7 @@ omit [NormedSpace ℝ E] [CompleteSpace E] in
 
 omit [CompleteSpace E] in
 /-- Periodicity: the integral over any period equals `T f̄(y)`. -/
-@[powerlib_foundation] theorem periodIntegral_eq
+@[tmio T, powerlib_foundation] theorem periodIntegral_eq
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (y : E) (a : ℝ) :
     ∫ s in a..a + T, f y s = T • fieldAverage f T y := by
@@ -81,7 +81,7 @@ omit [CompleteSpace E] in
     mul_inv_cancel₀ hf.1.ne', one_smul]
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem norm_fieldAverage_le
+@[tmio T, powerlib_foundation] theorem norm_fieldAverage_le
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x : E) :
     ‖fieldAverage f T x‖ ≤ M := by
@@ -94,7 +94,7 @@ omit [CompleteSpace E] in
     _ = M := by field_simp [hf.1.ne']
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem fieldAverage_lipschitz
+@[tmio T, powerlib_foundation] theorem fieldAverage_lipschitz
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x y : E) :
     ‖fieldAverage f T x - fieldAverage f T y‖ ≤ ℓ * ‖x - y‖ := by
@@ -110,7 +110,7 @@ omit [CompleteSpace E] in
     _ = ℓ * ‖x - y‖ := by field_simp [hf.1.ne']
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem fieldAverage_continuous
+@[tmio T, powerlib_foundation] theorem fieldAverage_continuous
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) :
     Continuous (fieldAverage f T) := by
@@ -122,7 +122,7 @@ omit [CompleteSpace E] in
 
 omit [CompleteSpace E] in
 /-- Slow drift of the averaged solution: `‖x̄(s) − x̄(r)‖ ≤ εM(s − r)` for `r ≤ s`. -/
-@[powerlib_foundation] theorem averaged_drift
+@[tmio T, powerlib_foundation] theorem averaged_drift
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε : ℝ} (hε : 0 ≤ ε)
     {xbar : ℝ → E} (hxbar : ∀ t, HasDerivAt xbar (ε • fieldAverage f T (xbar t)) t) {r s : ℝ}
@@ -141,7 +141,7 @@ def oscPart (f : E → ℝ → E) (T : ℝ) (xbar : ℝ → E) (s : ℝ) : E :=
   f (xbar s) s - fieldAverage f T (xbar s)
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem oscPart_continuous
+@[tmio T, powerlib_foundation] theorem oscPart_continuous
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {xbar : ℝ → E}
     (hc : Continuous xbar) : Continuous (oscPart f T xbar) := by
@@ -149,7 +149,7 @@ omit [CompleteSpace E] in
   exact (hf.2.2.1.comp (hc.prodMk continuous_id)).sub ((fieldAverage_continuous hf).comp hc)
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem norm_oscPart_le
+@[tmio T, powerlib_foundation] theorem norm_oscPart_le
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (xbar : ℝ → E)
     (s : ℝ) : ‖oscPart f T xbar s‖ ≤ 2 * M := by
@@ -160,7 +160,7 @@ omit [CompleteSpace E] in
     _ = 2 * M := by ring
 
 /-- One period: `‖∫ₐ^{a+T} g‖ ≤ 2ℓεMT²`. -/
-@[powerlib_foundation] theorem norm_period_osc_le
+@[tmio T, powerlib_foundation] theorem norm_period_osc_le
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε : ℝ}
     (hε : 0 ≤ ε) {xbar : ℝ → E} (hxbar : ∀ t, HasDerivAt xbar (ε • fieldAverage f T (xbar t)) t)
@@ -209,7 +209,7 @@ omit [CompleteSpace E] in
     _ = 2 * ℓ * ε * M * T ^ 2 := by ring
 
 /-- Accumulated oscillation: `‖∫₀ᵗ g‖ ≤ 2ℓMLT + 2MT` for `0 ≤ t`, `εt ≤ L`. -/
-@[powerlib_foundation] theorem norm_integral_osc_le
+@[tmio T, powerlib_foundation] theorem norm_integral_osc_le
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε L : ℝ}
     (hε : 0 < ε) {xbar : ℝ → E}
@@ -273,7 +273,7 @@ omit [CompleteSpace E] in
 
 /-- **First-order periodic averaging.** With `x(0) = x̄(0)`, for every `t ∈ [0, L/ε]`:
 `‖x(t) − x̄(t)‖ ≤ (2ℓMLT + 2MT) e^{ℓL} ε`. -/
-@[powerlib_foundation] theorem kbm_first_order
+@[tmio T, powerlib_foundation] theorem kbm_first_order
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε L : ℝ}
     (hε : 0 < ε) (hL : 0 ≤ L) {x xbar : ℝ → E}

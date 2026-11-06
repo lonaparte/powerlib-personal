@@ -72,14 +72,14 @@ variable {μ : Measure Ω} {𝒢 : Filtration ℕ m} {f : ℕ → Ω → ℝ} {�
   hu.isStoppingTime_hittingAfter hs
 
 /-- **Optional stopping, bounded stopping times**. -/
-@[powerlib_foundation] theorem optional_stopping_bounded [SigmaFiniteFiltration μ 𝒢]
+@[tmio T, powerlib_foundation] theorem optional_stopping_bounded [SigmaFiniteFiltration μ 𝒢]
     (hf : Submartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) (hπ : IsStoppingTime 𝒢 π)
     (hle : τ ≤ π) {N : ℕ} (hbdd : ∀ ω, π ω ≤ N) :
     ∫ ω, stoppedValue f τ ω ∂μ ≤ ∫ ω, stoppedValue f π ω ∂μ :=
   hf.expected_stoppedValue_mono hτ hπ hle hbdd
 
 /-- **Optional stopping theorem** (characterization of submartingales). -/
-@[powerlib_foundation] theorem optional_stopping_iff [SigmaFiniteFiltration μ 𝒢]
+@[tmio T, powerlib_foundation] theorem optional_stopping_iff [SigmaFiniteFiltration μ 𝒢]
     (hadp : StronglyAdapted 𝒢 f) (hint : ∀ i, Integrable (f i) μ) :
     Submartingale f 𝒢 μ ↔ ∀ τ π : Ω → WithTop ℕ, IsStoppingTime 𝒢 τ → IsStoppingTime 𝒢 π →
       τ ≤ π → (∃ N : ℕ, ∀ x, π x ≤ N) →
@@ -87,18 +87,18 @@ variable {μ : Measure Ω} {𝒢 : Filtration ℕ m} {f : ℕ → Ω → ℝ} {�
   submartingale_iff_expected_stoppedValue_mono hadp hint
 
 /-- Optional sampling: `f_τ = E[f_n | 𝓕_τ]` for `τ ≤ n`. -/
-@[powerlib_foundation] theorem martingale_stoppedValue_condExp [SigmaFiniteFiltration μ 𝒢]
+@[tmio T, powerlib_foundation] theorem martingale_stoppedValue_condExp [SigmaFiniteFiltration μ 𝒢]
     (h : Martingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) {n : ℕ} (hτ_le : ∀ x, τ x ≤ n) :
     stoppedValue f τ =ᵐ[μ] μ[f n | hτ.measurableSpace] :=
   h.stoppedValue_ae_eq_condExp_of_le_const hτ hτ_le
 
 /-- Stopped submartingales are submartingales. -/
-@[powerlib_foundation] theorem submartingale_stopped [SigmaFiniteFiltration μ 𝒢]
+@[tmio T, powerlib_foundation] theorem submartingale_stopped [SigmaFiniteFiltration μ 𝒢]
     (h : Submartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) :
     Submartingale (stoppedProcess f τ) 𝒢 μ := h.stoppedProcess hτ
 
 /-- **Stopped martingales are martingales** (T-martingales §1.4). -/
-@[powerlib_foundation] theorem martingale_stoppedProcess [SigmaFiniteFiltration μ 𝒢]
+@[tmio T, powerlib_foundation] theorem martingale_stoppedProcess [SigmaFiniteFiltration μ 𝒢]
     (h : Martingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) :
     Martingale (stoppedProcess f τ) 𝒢 μ := by
   rw [martingale_iff] at h ⊢
@@ -121,7 +121,7 @@ variable {E : Type*} [MetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E
 omit [MeasurableSpace E] [OpensMeasurableSpace E] in
 /-- For continuous paths and a closed set, the hitting time after `0` is at most `i` iff the
 path visits the set during `[0, i]` (the infimum is attained). -/
-@[powerlib_foundation] theorem hittingAfter_le_iff_of_continuous {F : Set E} (hF : IsClosed F)
+@[tmio T, powerlib_foundation] theorem hittingAfter_le_iff_of_continuous {F : Set E} (hF : IsClosed F)
     {ω : Ω} (hc : Continuous fun t => X t ω) (i : ℝ≥0) :
     hittingAfter X F 0 ω ≤ i ↔ ∃ j, j ≤ i ∧ X j ω ∈ F := by
   constructor
@@ -142,7 +142,7 @@ path visits the set during `[0, i]` (the infimum is attained). -/
 
 omit [MeasurableSpace E] [OpensMeasurableSpace E] in
 /-- Visiting a closed nonempty set during `[0, i]` is a countable condition on rational times. -/
-@[powerlib_foundation] theorem exists_mem_iff_countable {F : Set E} (hF : IsClosed F)
+@[tmio T, powerlib_foundation] theorem exists_mem_iff_countable {F : Set E} (hF : IsClosed F)
     (hFne : F.Nonempty) {ω : Ω} (hc : Continuous fun t => X t ω) (i : ℝ≥0) :
     (∃ j, j ≤ i ∧ X j ω ∈ F) ↔ ∀ k : ℕ, infDist (X i ω) F < 1 / ((k : ℝ) + 1) ∨
       ∃ q : ℚ, 0 ≤ q ∧ (q : ℝ) ≤ i ∧ infDist (X (q : ℝ).toNNReal ω) F < 1 / ((k : ℝ) + 1) := by
@@ -190,7 +190,7 @@ omit [MeasurableSpace E] [OpensMeasurableSpace E] in
 /-- **Continuous-time hitting times of closed sets are stopping times** (T-martingales §1.3):
 for an adapted process with continuous paths and a closed set `F`, `τ_F = inf{t ≥ 0 : X_t ∈ F}`
 is a stopping time of the (raw) filtration. -/
-@[powerlib_foundation] theorem continuous_hitting_isStoppingTime (hX : Adapted 𝓕 X)
+@[tmio T, powerlib_foundation] theorem continuous_hitting_isStoppingTime (hX : Adapted 𝓕 X)
     (hc : ∀ ω, Continuous fun t => X t ω) {F : Set E} (hF : IsClosed F) :
     IsStoppingTime 𝓕 (hittingAfter X F 0) := by
   intro i
@@ -225,7 +225,7 @@ is a stopping time of the (raw) filtration. -/
 
 /-- **Exit times of open domains are stopping times** (T-first-passage-time): for an open
 `𝒟`, `τ_exit = inf{t ≥ 0 : X_t ∉ 𝒟}` is the hitting time of the closed set `𝒟ᶜ`. -/
-@[powerlib_foundation] theorem continuous_exit_isStoppingTime (hX : Adapted 𝓕 X)
+@[tmio T, powerlib_foundation] theorem continuous_exit_isStoppingTime (hX : Adapted 𝓕 X)
     (hc : ∀ ω, Continuous fun t => X t ω) {D : Set E} (hD : IsOpen D) :
     IsStoppingTime 𝓕 (hittingAfter X Dᶜ 0) :=
   continuous_hitting_isStoppingTime hX hc hD.isClosed_compl
@@ -240,7 +240,7 @@ def UsualConditions (P : Measure Ω) (𝓕 : Filtration ℝ≥0 m) : Prop :=
   (∀ s, P s = 0 → MeasurableSet[𝓕 0] s) ∧ 𝓕.IsRightContinuous
 
 /-- Under the usual conditions every `P`-null set is `𝓕_t`-measurable for every `t`. -/
-@[powerlib_foundation] theorem UsualConditions.null_mem {P : Measure Ω} {𝓕 : Filtration ℝ≥0 m}
+@[tmio T, powerlib_foundation] theorem UsualConditions.null_mem {P : Measure Ω} {𝓕 : Filtration ℝ≥0 m}
     (h : UsualConditions P 𝓕) {s : Set Ω} (hs : P s = 0) (t : ℝ≥0) : MeasurableSet[𝓕 t] s :=
   𝓕.mono zero_le _ (h.1 s hs)
 
@@ -252,7 +252,7 @@ deterministic process `X_n = n` is Markov (for any filtration) and is not a mart
 The first conjunct is the Markov property of a real discrete-time process `X` w.r.t. a filtration
 `𝓕`, in conditional expectation form, written out for `X_n = n`: for bounded measurable test
 functions `g`, `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. -/
-@[powerlib_foundation] theorem deterministic_markov_not_martingale {P : Measure Ω}
+@[tmio T, powerlib_foundation] theorem deterministic_markov_not_martingale {P : Measure Ω}
     [IsProbabilityMeasure P] (𝓕 : Filtration ℕ m) :
     (∀ (n : ℕ) (g : ℝ → ℝ), Measurable g → (∃ C, ∀ x, |g x| ≤ C) →
       P[fun _ => g ((n + 1 : ℕ) : ℝ) | 𝓕 n] =ᵐ[P]
@@ -279,7 +279,7 @@ def exitTime (w : ℝ → ℝ) (a b : ℝ) : ℝ := sInf {t : ℝ | 0 ≤ t ∧ 
 
 /-- **Two-sided stopping keeps the path bounded**: a continuous path started in `[a, b]`,
 stopped at its first exit time from `(a, b)`, stays in `[a, b]` at all times `t ≥ 0`. -/
-@[powerlib_foundation] theorem twoSided_stopped_mem {w : ℝ → ℝ} (hw : Continuous w) {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem twoSided_stopped_mem {w : ℝ → ℝ} (hw : Continuous w) {a b : ℝ}
     (h0 : w 0 ∈ Icc a b) {t : ℝ} (ht : 0 ≤ t) : w (min t (exitTime w a b)) ∈ Icc a b := by
   set S := {t : ℝ | 0 ≤ t ∧ w t ∉ Ioo a b}
   have hbdd : BddBelow S := ⟨0, fun s hs => hs.1⟩
@@ -318,7 +318,7 @@ stopped at its first exit time from `(a, b)`, stays in `[a, b]` at all times `t 
 
 /-- **Correction**: with a one-sided level the stopped path need not be bounded: `w(t) = −t`
 never reaches `a > 0`, so the stopped path `w(t ∧ τ_a) = −t` is unbounded below. -/
-@[powerlib_foundation] theorem oneSided_stopped_unbounded {a : ℝ} (ha : 0 < a) :
+@[tmio T, powerlib_foundation] theorem oneSided_stopped_unbounded {a : ℝ} (ha : 0 < a) :
     (∀ t, 0 ≤ t → (fun s : ℝ => -s) t < a) ∧ ¬ BddBelow (range fun t : ℝ≥0 => -((t : ℝ))) := by
   refine ⟨fun t ht => by linarith, ?_⟩
   rintro ⟨M, hM⟩

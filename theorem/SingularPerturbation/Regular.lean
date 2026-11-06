@@ -35,7 +35,7 @@ open Set NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-@[powerlib_foundation] private lemma hasDerivWithinAt_Ici_of_trajectoryOn {φ : ℝ → E}
+@[tmio T, powerlib_foundation] private lemma hasDerivWithinAt_Ici_of_trajectoryOn {φ : ℝ → E}
     {f : E → E} {a b : ℝ} (h : IsIntegralCurveOn φ (fun _ x => f x) (Icc a b)) {t : ℝ}
     (ht : t ∈ Ico a b) :
     HasDerivWithinAt φ (f (φ t)) (Ici t) t :=
@@ -57,7 +57,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   simpa [dist_eq_norm] using h
 
 /-- Explicit `O(ε)` form for `K ≠ 0`: `‖z_ε(t) - z₀(t)‖ ≤ (C ε / K)(e^{K (t - a)} - 1)`. -/
-@[powerlib_foundation] theorem norm_sub_le_exp {F : ℝ → E → E} {K : ℝ≥0} {C ε a b : ℝ}
+@[tmio T, powerlib_foundation] theorem norm_sub_le_exp {F : ℝ → E → E} {K : ℝ≥0} {C ε a b : ℝ}
     (hK0 : K ≠ 0) (hK : LipschitzWith K (F 0)) (hC : ∀ z, ‖F ε z - F 0 z‖ ≤ C * ε)
     {zε z₀ : ℝ → E} (hε : IsIntegralCurveOn zε (fun _ x => F ε x) (Icc a b))
     (h₀ : IsIntegralCurveOn z₀ (fun _ x => F 0 x) (Icc a b)) (hinit : zε a = z₀ a) :
@@ -69,7 +69,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   simpa only [zero_mul, zero_add] using h
 
 /-- Uniform `O(ε)` bound on a horizon `[a, a + T]`. -/
-@[powerlib_foundation] theorem norm_sub_le_const_mul {F : ℝ → E → E} {K : ℝ≥0} {C ε a T : ℝ}
+@[tmio T, powerlib_foundation] theorem norm_sub_le_const_mul {F : ℝ → E → E} {K : ℝ≥0} {C ε a T : ℝ}
     (hK0 : K ≠ 0) (hCε : 0 ≤ C * ε) (hK : LipschitzWith K (F 0))
     (hC : ∀ z, ‖F ε z - F 0 z‖ ≤ C * ε)
     {zε z₀ : ℝ → E} (hε : IsIntegralCurveOn zε (fun _ x => F ε x) (Icc a (a + T)))

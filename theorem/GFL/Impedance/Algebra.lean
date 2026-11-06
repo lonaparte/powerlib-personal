@@ -55,13 +55,13 @@ def Zoc (L R ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Zoc, Jc]
 
-@[powerlib_foundation] theorem det_Zoc (L R ω : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_Zoc (L R ω : ℝ) (s : ℂ) :
     (Zoc L R ω s).det = (s * L + R) ^ 2 + (ω * L) ^ 2 := by
   rw [Zoc_eq, Matrix.det_fin_two_of]
   ring
 
 /-- Closed-form inverse of `Z_oc`. -/
-@[powerlib_foundation] theorem Zoc_inv {L R ω : ℝ} {s : ℂ}
+@[tmio M, powerlib_foundation] theorem Zoc_inv {L R ω : ℝ} {s : ℂ}
     (h : (s * L + R) ^ 2 + (ω * L : ℂ) ^ 2 ≠ 0) :
     (Zoc L R ω s)⁻¹ =
       ((s * L + R) ^ 2 + (ω * L : ℂ) ^ 2)⁻¹ • !![s * L + R, ω * L; -(ω * L), s * L + R] := by
@@ -76,7 +76,7 @@ def Zoc (L R ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 /-- `G_id = −V_dc Z_oc⁻¹`. -/
 def Gid (L R ω Vdc : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := -((Vdc : ℂ) • (Zoc L R ω s)⁻¹)
 
-@[powerlib_foundation] theorem Gid_eq {L R ω Vdc : ℝ} {s : ℂ}
+@[tmio M, powerlib_foundation] theorem Gid_eq {L R ω Vdc : ℝ} {s : ℂ}
     (h : (s * L + R) ^ 2 + (ω * L : ℂ) ^ 2 ≠ 0) :
     Gid L R ω Vdc s =
       -((Vdc : ℂ) / ((s * L + R) ^ 2 + (ω * L) ^ 2)) •
@@ -86,19 +86,19 @@ def Gid (L R ω Vdc : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := -((Vdc : �
 /-! ## PLL frame projections -/
 
 /-- Voltage projection system → PLL frame: `ΔV^pll = ΔV − (G ΔV_q) J V₀ = G_v^pll ΔV`. -/
-@[powerlib_foundation] theorem pllVoltage_proj (V0 dV : Fin 2 → ℂ) (G : ℂ) :
+@[tmio T, powerlib_foundation] theorem pllVoltage_proj (V0 dV : Fin 2 → ℂ) (G : ℂ) :
     dV - (G * dV 1) • (Jc *ᵥ V0) = !![1, V0 1 * G; 0, 1 - V0 0 * G] *ᵥ dV := by
   ext k
   fin_cases k <;> simp [Jc, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- Current (and duty) projection: `ΔI^sys − ΔI^pll = (G ΔV_q) J I₀ = G_i^pll ΔV`. -/
-@[powerlib_foundation] theorem pllCurrent_proj (I0 dV : Fin 2 → ℂ) (G : ℂ) :
+@[tmio T, powerlib_foundation] theorem pllCurrent_proj (I0 dV : Fin 2 → ℂ) (G : ℂ) :
     (G * dV 1) • (Jc *ᵥ I0) = !![0, -(I0 1 * G); 0, I0 0 * G] *ᵥ dV := by
   ext k
   fin_cases k <;> simp [Jc, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- PLL-aligned operating point (`V_q0 = 0`): `G_v^pll = diag(1, 1 − V_d0 G)`. -/
-@[powerlib_foundation] theorem pllVoltage_aligned (Vd0 G : ℂ) :
+@[tmio T, powerlib_foundation] theorem pllVoltage_aligned (Vd0 G : ℂ) :
     (!![1, (0 : ℂ) * G; 0, 1 - Vd0 * G] : Matrix (Fin 2) (Fin 2) ℂ) =
       Matrix.diagonal ![1, 1 - Vd0 * G] := by
   ext i j
@@ -114,7 +114,7 @@ def Yload (Rl C ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 def YloadNote (Rl C : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   (1 / Rl + s * C) • (1 : Matrix (Fin 2) (Fin 2) ℂ)
 
-@[powerlib_foundation] theorem noteLoad_ne {Rl C ω : ℝ} (h : ω * C ≠ 0) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem noteLoad_ne {Rl C ω : ℝ} (h : ω * C ≠ 0) (s : ℂ) :
     YloadNote Rl C s ≠ Yload Rl C ω s := by
   intro heq
   have := congrFun (congrFun heq 1) 0
@@ -126,7 +126,7 @@ def Zext (Lg Rg Rl C ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   ((Zoc Lg Rg ω s)⁻¹ + Yload Rl C ω s)⁻¹
 
 /-- Parallel-connection identity `(Z⁻¹ + Y)⁻¹ = Z (I + Y Z)⁻¹` for invertible `Z`. -/
-@[powerlib_foundation] theorem Zext_eq {Lg Rg Rl C ω : ℝ} {s : ℂ}
+@[tmio M, powerlib_foundation] theorem Zext_eq {Lg Rg Rl C ω : ℝ} {s : ℂ}
     (hZ : IsUnit (Zoc Lg Rg ω s).det) :
     Zext Lg Rg Rl C ω s = Zoc Lg Rg ω s * (1 + Yload Rl C ω s * Zoc Lg Rg ω s)⁻¹ := by
   set Z := Zoc Lg Rg ω s

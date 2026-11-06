@@ -68,7 +68,7 @@ node `k` carries `w_{k−1}` for `1 ≤ k ≤ M`, and `0` otherwise. -/
 def gridExt {M : ℕ} (w : Fin M → ℝ) (k : ℕ) : ℝ :=
   if h : 1 ≤ k ∧ k ≤ M then w ⟨k - 1, by omega⟩ else 0
 
-@[powerlib_foundation] private lemma sum_shift {M : ℕ} (w : Fin M → ℝ) (k : ℕ) :
+@[tmio T, powerlib_foundation] private lemma sum_shift {M : ℕ} (w : Fin M → ℝ) (k : ℕ) :
     ∑ j : Fin M, (if (j : ℕ) + 1 = k then w j else 0) = gridExt w k := by
   unfold gridExt
   split_ifs with h
@@ -112,7 +112,7 @@ def gridExt {M : ℕ} (w : Fin M → ℝ) (k : ℕ) : ℝ :=
   ring
 
 /-- A grid function `s` that matches `w` at the interior nodes and vanishes at `0` and `N`. -/
-@[powerlib_foundation] theorem lapT_mulVec_of_grid {M : ℕ} (w : Fin M → ℝ) (s : ℕ → ℝ)
+@[tmio T, powerlib_foundation] theorem lapT_mulVec_of_grid {M : ℕ} (w : Fin M → ℝ) (s : ℕ → ℝ)
     (hs0 : s 0 = 0) (hsN : s (M + 1) = 0) (hw : ∀ j : Fin M, w j = s (j + 1)) (i : Fin M) :
     (lapT M *ᵥ w) i = s i - 2 * s (i + 1) + s (i + 2) := by
   have hg : ∀ k, k ≤ M + 1 → gridExt w k = s k := by
@@ -132,7 +132,7 @@ def eigvec (M k : ℕ) (j : Fin M) : ℝ := Real.sin (((j : ℕ) + 1 : ℝ) * (k
 /-- Eigenvalue `μₖ = −4 sin²(kπ/2N)`. -/
 def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
 
-@[powerlib_foundation] theorem lapT_mulVec_eigvec (M k : ℕ) :
+@[tmio T, powerlib_foundation] theorem lapT_mulVec_eigvec (M k : ℕ) :
     lapT M *ᵥ eigvec M k = eigval M k • eigvec M k := by
   set θ : ℝ := k * π / (M + 1) with hθ
   funext i
@@ -155,7 +155,7 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
     rw [this, Real.sin_nat_mul_pi]
   · intro j; simp [eigvec, hθ]
 
-@[powerlib_foundation] theorem eigvec_ne_zero {M k : ℕ} (hk1 : 1 ≤ k) (hkM : k ≤ M) :
+@[tmio T, powerlib_foundation] theorem eigvec_ne_zero {M k : ℕ} (hk1 : 1 ≤ k) (hkM : k ≤ M) :
     eigvec M k ≠ 0 := by
   intro h
   have h0 := congrFun h ⟨0, by omega⟩
@@ -169,7 +169,7 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
     nlinarith [Real.pi_pos]
   exact (Real.sin_pos_of_pos_of_lt_pi hpos hlt).ne' h0
 
-@[powerlib_foundation] theorem eigval_neg {M k : ℕ} (hk1 : 1 ≤ k) (hkM : k ≤ M) :
+@[tmio T, powerlib_foundation] theorem eigval_neg {M k : ℕ} (hk1 : 1 ≤ k) (hkM : k ≤ M) :
     eigval M k < 0 := by
   have hpos : 0 < (k : ℝ) * π / (2 * (M + 1)) := by
     have : (1 : ℝ) ≤ k := by exact_mod_cast hk1
@@ -183,7 +183,7 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
   nlinarith [sq_pos_of_pos this]
 
 /-- The eigenvalues `μ₁ > μ₂ > ⋯ > μ_M` are distinct. -/
-@[powerlib_foundation] theorem eigval_strictAnti {M : ℕ} {k l : ℕ} (hk1 : 1 ≤ k) (hkl : k < l)
+@[tmio T, powerlib_foundation] theorem eigval_strictAnti {M : ℕ} {k l : ℕ} (hk1 : 1 ≤ k) (hkl : k < l)
     (hlM : l ≤ M) : eigval M l < eigval M k := by
   have hN : (0 : ℝ) < 2 * (M + 1) := by positivity
   have ha : 0 ≤ (k : ℝ) * π / (2 * (M + 1)) := by positivity
@@ -206,7 +206,7 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
   nlinarith
 
 /-- **Spectrum of `T`**: every complex eigenvalue of `T` is one of `μ₁, …, μ_M`. -/
-@[powerlib_foundation] theorem eigenvalue_lapT {M : ℕ} {lam : ℂ} {x : Fin M → ℂ} (hx : x ≠ 0)
+@[tmio T, powerlib_foundation] theorem eigenvalue_lapT {M : ℕ} {lam : ℂ} {x : Fin M → ℂ} (hx : x ≠ 0)
     (heig : (lapT M).map (algebraMap ℝ ℂ) *ᵥ x = lam • x) :
     ∃ k : Fin M, lam = (eigval M (k + 1) : ℂ) := by
   by_contra hne
@@ -250,7 +250,7 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
   have hcard := hli.fintype_card_le_finrank
   simp at hcard
 
-@[powerlib_foundation] theorem lapT_isHurwitz (M : ℕ) : LinearSystems.IsHurwitz (lapT M) := by
+@[tmio T, powerlib_foundation] theorem lapT_isHurwitz (M : ℕ) : LinearSystems.IsHurwitz (lapT M) := by
   intro lam x hx heig
   obtain ⟨k, rfl⟩ := eigenvalue_lapT hx heig
   simpa using eigval_neg (M := M) (k := k + 1) (by omega) (by omega)
@@ -259,12 +259,12 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
 def heatMOL (ν Δx : ℝ) (M : ℕ) : Matrix (Fin M) (Fin M) ℝ := (ν / Δx ^ 2) • lapT M
 
 /-- A positive multiple of the Hurwitz matrix `T` (`Linear.isHurwitz_smul_iff`). -/
-@[powerlib_foundation] theorem heatMOL_isHurwitz {ν Δx : ℝ} (hν : 0 < ν) (hΔ : Δx ≠ 0) (M : ℕ) :
+@[tmio T, powerlib_foundation] theorem heatMOL_isHurwitz {ν Δx : ℝ} (hν : 0 < ν) (hΔ : Δx ≠ 0) (M : ℕ) :
     LinearSystems.IsHurwitz (heatMOL ν Δx M) :=
   (Linear.isHurwitz_smul_iff (by positivity) (lapT M)).2 (lapT_isHurwitz M)
 
 /-- The zero-Dirichlet semi-discrete heat equation is globally exponentially stable. -/
-@[powerlib_foundation] theorem heatMOL_exponentiallyStable {ν Δx : ℝ} (hν : 0 < ν) (hΔ : Δx ≠ 0)
+@[tmio T, powerlib_foundation] theorem heatMOL_exponentiallyStable {ν Δx : ℝ} (hν : 0 < ν) (hΔ : Δx ≠ 0)
     (M : ℕ) :
     Flow.GloballyExponentiallyStable (LinearSystems.affineLinearVectorField (heatMOL ν Δx M) 0)
       0 :=
@@ -273,7 +273,7 @@ def heatMOL (ν Δx : ℝ) (M : ℕ) : Matrix (Fin M) (Fin M) ℝ := (ν / Δx ^
 /-! ## Stiffness ratio -/
 
 /-- `|μ_M| / |μ₁| = cot²(π/2N)` and `2N²/π² ≤ cot²(π/2N) ≤ 4N²/π²` (`N = M + 1 ≥ 2`). -/
-@[powerlib_foundation] theorem stiffness_ratio_bounds {M : ℕ} (hM : 1 ≤ M) :
+@[tmio T, powerlib_foundation] theorem stiffness_ratio_bounds {M : ℕ} (hM : 1 ≤ M) :
     eigval M M / eigval M 1 = (Real.cos (π / (2 * (M + 1))) / Real.sin (π / (2 * (M + 1)))) ^ 2 ∧
       2 * ((M : ℝ) + 1) ^ 2 / π ^ 2 ≤ eigval M M / eigval M 1 ∧
       eigval M M / eigval M 1 ≤ 4 * ((M : ℝ) + 1) ^ 2 / π ^ 2 := by
@@ -339,75 +339,75 @@ def central2 (u : ℝ → ℝ) (x h : ℝ) : ℝ := (u (x + h) - 2 * u x + u (x 
 def central2o4 (u : ℝ → ℝ) (x h : ℝ) : ℝ :=
   (-u (x + 2 * h) + 16 * u (x + h) - 30 * u x + 16 * u (x - h) - u (x - 2 * h)) / (12 * h ^ 2)
 
-@[powerlib_foundation] theorem central1_exact {h : ℝ} (hh : h ≠ 0) (a b c x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central1_exact {h : ℝ} (hh : h ≠ 0) (a b c x : ℝ) :
     central1 (fun t => a + b * t + c * t ^ 2) x h = b + 2 * c * x := by
   unfold central1; field_simp; ring
 
-@[powerlib_foundation] theorem central1_cubic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central1_cubic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
     central1 (fun t => t ^ 3) x h = 3 * x ^ 2 + h ^ 2 := by
   unfold central1; field_simp; ring
 
-@[powerlib_foundation] theorem central1o4_exact {h : ℝ} (hh : h ≠ 0) (a b c d e x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central1o4_exact {h : ℝ} (hh : h ≠ 0) (a b c d e x : ℝ) :
     central1o4 (fun t => a + b * t + c * t ^ 2 + d * t ^ 3 + e * t ^ 4) x h =
       b + 2 * c * x + 3 * d * x ^ 2 + 4 * e * x ^ 3 := by
   unfold central1o4; field_simp; ring
 
-@[powerlib_foundation] theorem central1o4_quintic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central1o4_quintic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
     central1o4 (fun t => t ^ 5) x h = 5 * x ^ 4 - 4 * h ^ 4 := by
   unfold central1o4; field_simp; ring
 
-@[powerlib_foundation] theorem upwind1_exact {h : ℝ} (hh : h ≠ 0) (a b x : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwind1_exact {h : ℝ} (hh : h ≠ 0) (a b x : ℝ) :
     upwind1 (fun t => a + b * t) x h = b := by
   unfold upwind1; field_simp; ring
 
-@[powerlib_foundation] theorem upwind1_quadratic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwind1_quadratic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
     upwind1 (fun t => t ^ 2) x h = 2 * x - h := by
   unfold upwind1; field_simp; ring
 
-@[powerlib_foundation] theorem upwind2_exact {h : ℝ} (hh : h ≠ 0) (a b c x : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwind2_exact {h : ℝ} (hh : h ≠ 0) (a b c x : ℝ) :
     upwind2 (fun t => a + b * t + c * t ^ 2) x h = b + 2 * c * x := by
   unfold upwind2; field_simp; ring
 
 /-- Correction: the second-order upwind stencil is not fourth order — it already fails on `x³`
 with error `−2h²`. -/
-@[powerlib_foundation] theorem upwind2_cubic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem upwind2_cubic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
     upwind2 (fun t => t ^ 3) x h = 3 * x ^ 2 - 2 * h ^ 2 := by
   unfold upwind2; field_simp; ring
 
-@[powerlib_foundation] theorem central2_exact {h : ℝ} (hh : h ≠ 0) (a b c d x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central2_exact {h : ℝ} (hh : h ≠ 0) (a b c d x : ℝ) :
     central2 (fun t => a + b * t + c * t ^ 2 + d * t ^ 3) x h = 2 * c + 6 * d * x := by
   unfold central2; field_simp; ring
 
-@[powerlib_foundation] theorem central2_quartic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central2_quartic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
     central2 (fun t => t ^ 4) x h = 12 * x ^ 2 + 2 * h ^ 2 := by
   unfold central2; field_simp; ring
 
-@[powerlib_foundation] theorem central2o4_exact {h : ℝ} (hh : h ≠ 0) (a b c d e f x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central2o4_exact {h : ℝ} (hh : h ≠ 0) (a b c d e f x : ℝ) :
     central2o4 (fun t => a + b * t + c * t ^ 2 + d * t ^ 3 + e * t ^ 4 + f * t ^ 5) x h =
       2 * c + 6 * d * x + 12 * e * x ^ 2 + 20 * f * x ^ 3 := by
   unfold central2o4; field_simp; ring
 
-@[powerlib_foundation] theorem central2o4_sextic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem central2o4_sextic {h : ℝ} (hh : h ≠ 0) (x : ℝ) :
     central2o4 (fun t => t ^ 6) x h = 30 * x ^ 4 - 8 * h ^ 4 := by
   unfold central2o4; field_simp; ring
 
 /-! ## Neumann boundary closures (§1.7.2) -/
 
 /-- Central ghost-cell closure at node `0`: `(u₁ − u₋₁)/(2Δx) = h ⇔ u₋₁ = u₁ − 2Δx h`. -/
-@[powerlib_foundation] theorem ghost_iff {Δx : ℝ} (hΔ : Δx ≠ 0) (u1 um1 h : ℝ) :
+@[tmio T, powerlib_foundation] theorem ghost_iff {Δx : ℝ} (hΔ : Δx ≠ 0) (u1 um1 h : ℝ) :
     (u1 - um1) / (2 * Δx) = h ↔ um1 = u1 - 2 * Δx * h := by
   rw [div_eq_iff (mul_ne_zero two_ne_zero hΔ)]
   constructor <;> intro H <;> linarith
 
 /-- With the ghost value eliminated, the boundary row of the central second difference is
 `2(u₁ − u₀ − Δx h)/Δx²`. -/
-@[powerlib_foundation] theorem ghost_boundary_row {Δx : ℝ} (u0 u1 h : ℝ) :
+@[tmio T, powerlib_foundation] theorem ghost_boundary_row {Δx : ℝ} (u0 u1 h : ℝ) :
     (u1 - 2 * u0 + (u1 - 2 * Δx * h)) / Δx ^ 2 = 2 * (u1 - u0 - Δx * h) / Δx ^ 2 := by
   ring
 
 /-- Correction: the note's closure `(u₁ − u₀)/(2Δx) = h` uses a quotient that tends to
 `u'(0)/2`, so it imposes `u'(0) = 2h`, not `u'(0) = h`. -/
-@[powerlib_foundation] theorem note_ghost_tendsto {u : ℝ → ℝ} {d : ℝ} (hu : HasDerivAt u d 0) :
+@[tmio T, powerlib_foundation] theorem note_ghost_tendsto {u : ℝ → ℝ} {d : ℝ} (hu : HasDerivAt u d 0) :
     Filter.Tendsto (fun Δx => (u Δx - u 0) / (2 * Δx)) (nhdsWithin 0 {0}ᶜ) (nhds (d / 2)) := by
   have h := hu.tendsto_slope_zero
   have h' := h.div_const 2
@@ -417,7 +417,7 @@ with error `−2h²`. -/
   field_simp
 
 /-- The central closure quotient tends to `u'(0)`. -/
-@[powerlib_foundation] theorem ghost_central_tendsto {u : ℝ → ℝ} {d : ℝ} (hu : HasDerivAt u d 0) :
+@[tmio T, powerlib_foundation] theorem ghost_central_tendsto {u : ℝ → ℝ} {d : ℝ} (hu : HasDerivAt u d 0) :
     Filter.Tendsto (fun Δx => (u Δx - u (-Δx)) / (2 * Δx)) (nhdsWithin 0 {0}ᶜ) (nhds d) := by
   have h1 := hu.tendsto_slope_zero
   have hn : HasDerivAt (fun t : ℝ => -t) (-1) 0 := (hasDerivAt_id (0 : ℝ)).neg
@@ -432,12 +432,12 @@ with error `−2h²`. -/
   ring
 
 /-- One-sided second-order closure `(−3u₀ + 4u₁ − u₂)/(2Δx) = h ⇔ u₀ = (4u₁ − u₂ − 2Δx h)/3`. -/
-@[powerlib_foundation] theorem oneSided_iff {Δx : ℝ} (hΔ : Δx ≠ 0) (u0 u1 u2 h : ℝ) :
+@[tmio T, powerlib_foundation] theorem oneSided_iff {Δx : ℝ} (hΔ : Δx ≠ 0) (u0 u1 u2 h : ℝ) :
     (-3 * u0 + 4 * u1 - u2) / (2 * Δx) = h ↔ u0 = (4 * u1 - u2 - 2 * Δx * h) / 3 := by
   rw [div_eq_iff (mul_ne_zero two_ne_zero hΔ)]
   constructor <;> intro H <;> linarith
 
-@[powerlib_foundation] theorem oneSided_exact {Δx : ℝ} (hΔ : Δx ≠ 0) (a b c : ℝ) :
+@[tmio T, powerlib_foundation] theorem oneSided_exact {Δx : ℝ} (hΔ : Δx ≠ 0) (a b c : ℝ) :
     (-3 * (a + b * 0 + c * 0 ^ 2) + 4 * (a + b * Δx + c * Δx ^ 2) -
         (a + b * (2 * Δx) + c * (2 * Δx) ^ 2)) / (2 * Δx) = b := by
   field_simp; ring
@@ -446,7 +446,7 @@ with error `−2h²`. -/
 
 /-- A uniform Cauer chain with node capacitance `C = ρc_p A Δx` and link resistance
 `R = Δx/(κA)` has the MoL heat dynamics. -/
-@[powerlib_foundation] theorem cauer_eq_mol {ρcp A Δx κ : ℝ} (hρ : ρcp ≠ 0) (hA : A ≠ 0)
+@[tmio T, powerlib_foundation] theorem cauer_eq_mol {ρcp A Δx κ : ℝ} (hρ : ρcp ≠ 0) (hA : A ≠ 0)
     (hΔ : Δx ≠ 0) (hκ : κ ≠ 0) (Tm T0 Tp : ℝ) :
     ((Tm - T0) / (Δx / (κ * A)) - (T0 - Tp) / (Δx / (κ * A))) / (ρcp * A * Δx) =
       κ / ρcp * ((Tp - 2 * T0 + Tm) / Δx ^ 2) := by
@@ -467,7 +467,7 @@ system is an index-1 DAE: its solutions — pairs `(x, u_bnd)` with `ẋ = A_ii 
 B u_ext` and `0 = G_x x + G_b u_bnd + G_e u_ext` at every time (left-hand side, the DAE solution
 notion of `theorem.DAE.Linear` for `portCoupled`) — are exactly the reduced ODE solutions with
 `u_bnd = −G_b⁻¹(G_x x + G_e u_ext)`. -/
-@[powerlib_foundation] theorem portCoupled_isSolution_iff {n m p : ℕ}
+@[tmio T, powerlib_foundation] theorem portCoupled_isSolution_iff {n m p : ℕ}
     (Aii : Matrix (Fin n) (Fin n) ℝ) (Aib : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin n) (Fin p) ℝ)
     (Gx : Matrix (Fin m) (Fin n) ℝ) (Gb : Matrix (Fin m) (Fin m) ℝ) (Ge : Matrix (Fin m) (Fin p) ℝ)
     (hGb : Gb.det ≠ 0) (u : ℝ → Fin p → ℝ) (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :

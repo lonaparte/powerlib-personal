@@ -89,7 +89,7 @@ end ContinuousModel
 def continuousFamily : Family (ContinuousModel n) Spectral.Requirement n 0 :=
   Spectral.linearFamily ContinuousModel.plant ContinuousModel.Stable ContinuousModel.Unstable
 
-@[powerlib_foundation] theorem continuousFamily_isLinear :
+@[tmio M, powerlib_foundation] theorem continuousFamily_isLinear :
     (continuousFamily (n := n)).IsLinear ContinuousModel.plant :=
   Spectral.linearFamily_isLinear _ _ _
 
@@ -133,7 +133,7 @@ def sampledFamily : Family (Sampled n) Spectral.Requirement n 0 where
   meets y := continuousFamily.meets y.design
   translate := (continuousFamily (n := n)).translate
 
-@[powerlib_foundation] theorem sampledFamily_isAutonomousMap :
+@[tmio M, powerlib_foundation] theorem sampledFamily_isAutonomousMap :
     (sampledFamily (n := n)).IsAutonomousMap Sampled.T fun y => Map.op y.step :=
   fun _ => rfl
 

@@ -202,7 +202,7 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
     linarith
 
 /-- `‖(0, 0, t)‖ = |t|`. -/
-@[powerlib_foundation] private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
+@[tmio T, powerlib_foundation] private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
   have h : ‖mk3 0 0 t‖ ^ 2 = t ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
     simp

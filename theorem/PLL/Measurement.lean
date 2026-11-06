@@ -67,7 +67,7 @@ open powerlib.LTI (derivModel)
 def bandwidth (ωn ζ : ℝ) : ℝ :=
   ωn * Real.sqrt (1 + 2 * ζ ^ 2 + Real.sqrt ((1 + 2 * ζ ^ 2) ^ 2 + 1))
 
-@[powerlib_foundation] private lemma bandwidth_sq_root {V Kp Ki : ℝ} (h : 0 < V * Ki) :
+@[tmio M, powerlib_foundation] private lemma bandwidth_sq_root {V Kp Ki : ℝ} (h : 0 < V * Ki) :
     0 < bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 ∧
       (bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2) ^ 2 -
         (2 * (V * Ki) + (V * Kp) ^ 2) * bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 -
@@ -89,7 +89,7 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
   linear_combination ωn ^ 4 * hr2
 
 /-- Factorization of the −3 dB condition: `2|N|² − |D|² = −(ω² − X)(ω² + b²/X)`. -/
-@[powerlib_foundation] private lemma bandwidth_factor {V Kp Ki : ℝ} (h : 0 < V * Ki) (ω : ℝ) :
+@[tmio M, powerlib_foundation] private lemma bandwidth_factor {V Kp Ki : ℝ} (h : 0 < V * Ki) (ω : ℝ) :
     2 * ((V * Ki) ^ 2 + (V * Kp * ω) ^ 2) - ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) =
       -((ω ^ 2 - bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2) *
         (ω ^ 2 + (V * Ki) ^ 2 / bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2)) := by
@@ -100,7 +100,7 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
   rw [hdiv]
   linear_combination (-1 : ℝ) * hroot
 
-@[powerlib_foundation] private lemma closedLoop_den_pos_or {V Kp Ki : ℝ} (h : 0 < V * Ki) (ω : ℝ) :
+@[tmio T, powerlib_foundation] private lemma closedLoop_den_pos_or {V Kp Ki : ℝ} (h : 0 < V * Ki) (ω : ℝ) :
     0 < (V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 ∨
       ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 = 0 ∧ ω ^ 2 = V * Ki ∧ V * Kp = 0) := by
   rcases (add_nonneg (sq_nonneg (V * Ki - ω ^ 2)) (sq_nonneg (V * Kp * ω))).lt_or_eq with hp | h0
@@ -120,7 +120,7 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
     exact ⟨h0.symm, hω2, (mul_eq_zero.mp this).resolve_right hω⟩
 
 /-- −3 dB bandwidth: for `V K_i > 0` and `ω ≥ 0`, `|H(jω)|² = 1/2 ⇔ ω = ω_b`. -/
-@[powerlib_foundation] theorem normSq_closedLoopTF_eq_half_iff {V Kp Ki : ℝ} (h : 0 < V * Ki)
+@[tmio M, powerlib_foundation] theorem normSq_closedLoopTF_eq_half_iff {V Kp Ki : ℝ} (h : 0 < V * Ki)
     {ω : ℝ} (hω : 0 ≤ ω) :
     normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) = 1 / 2 ↔
       ω = bandwidth (omegaN V Ki) (zeta V Kp Ki) := by
@@ -157,7 +157,7 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
       nlinarith
 
 /-- Inside the bandwidth `|H(jω)|² > 1/2`; outside `|H(jω)|² < 1/2` (`V K_i > 0`, `V K_p ≠ 0`). -/
-@[powerlib_foundation] theorem normSq_closedLoopTF_cmp_half {V Kp Ki : ℝ} (h : 0 < V * Ki)
+@[tmio M, powerlib_foundation] theorem normSq_closedLoopTF_cmp_half {V Kp Ki : ℝ} (h : 0 < V * Ki)
     (ha : V * Kp ≠ 0) {ω : ℝ} (hω : 0 ≤ ω) :
     (ω < bandwidth (omegaN V Ki) (zeta V Kp Ki) →
       1 / 2 < normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I))) ∧
@@ -190,7 +190,7 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
 
 /-- The same −3 dB characterization for the transfer function of `frequencyModel`, in
 amplitude form `|H(jω)| = 1/√2`. -/
-@[powerlib_foundation] theorem frequencyModel_bandwidth {V Kp Ki : ℝ} (h : 0 < V * Ki) {ω : ℝ}
+@[tmio M, powerlib_foundation] theorem frequencyModel_bandwidth {V Kp Ki : ℝ} (h : 0 < V * Ki) {ω : ℝ}
     (hω : 0 ≤ ω) :
     ‖Linear.transfer (frequencyModel V Kp Ki) ((ω : ℂ) * I) 0 0‖ = 1 / Real.sqrt 2 ↔
       ω = bandwidth (omegaN V Ki) (zeta V Kp Ki) := by
@@ -208,7 +208,7 @@ amplitude form `|H(jω)| = 1/√2`. -/
 
 /-- The note's bandwidth `2ω_n √(1 − 2ζ² + √(4ζ⁴ − 4ζ² + 2))` equals `2ω_n` at `ζ = 1/√2`, and
 `2ω_n` is not a −3 dB frequency of the PLL closed loop with `ζ = 1/√2`. -/
-@[powerlib_foundation] theorem not_note_bandwidth {V Kp Ki : ℝ} (h : 0 < V * Ki)
+@[tmio M, powerlib_foundation] theorem not_note_bandwidth {V Kp Ki : ℝ} (h : 0 < V * Ki)
     (hζ : zeta V Kp Ki = 1 / Real.sqrt 2) :
     2 * omegaN V Ki * Real.sqrt (1 - 2 * zeta V Kp Ki ^ 2 +
         Real.sqrt (4 * zeta V Kp Ki ^ 4 - 4 * zeta V Kp Ki ^ 2 + 2)) = 2 * omegaN V Ki ∧
@@ -239,7 +239,7 @@ amplitude form `|H(jω)| = 1/√2`. -/
 /-! ## Phase -/
 
 /-- `H(jω) = |den|⁻² (D(ω) − j a ω³)` with `D(ω) = b(b − ω²) + a²ω²`. -/
-@[powerlib_foundation] theorem closedLoopTF_eq (V Kp Ki ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem closedLoopTF_eq (V Kp Ki ω : ℝ) :
     closedLoopTF V Kp Ki ((ω : ℂ) * I) =
       (((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2)⁻¹ : ℝ) *
         ⟨V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2, -(V * Kp * ω ^ 3)⟩ := by
@@ -260,14 +260,14 @@ amplitude form `|H(jω)| = 1/√2`. -/
     field_simp
     ring
 
-@[powerlib_foundation] private lemma arg_of_re_pos_eq_arctan {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] private lemma arg_of_re_pos_eq_arctan {z : ℂ} (hz : 0 < z.re) :
     arg z = Real.arctan (z.im / z.re) := by
   have habs : |arg z| < Real.pi / 2 := Complex.abs_arg_lt_pi_div_two_iff.mpr (Or.inl hz)
   rw [← Complex.tan_arg, Real.arctan_tan (by linarith [neg_abs_le (arg z)]) (lt_of_abs_lt habs)]
 
 /-- Phase of the PLL closed loop: `arg H(jω) = −arctan(a ω³/(b(b − ω²) + a²ω²))` whenever the
 denominator is positive (`a = V K_p`, `b = ω_n² = V K_i`). -/
-@[powerlib_foundation] theorem arg_closedLoopTF {V Kp Ki ω : ℝ}
+@[tmio M, powerlib_foundation] theorem arg_closedLoopTF {V Kp Ki ω : ℝ}
     (hD : 0 < V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2) :
     arg (closedLoopTF V Kp Ki ((ω : ℂ) * I)) =
       -Real.arctan (V * Kp * ω ^ 3 / (V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2)) := by
@@ -285,7 +285,7 @@ denominator is positive (`a = V K_p`, `b = ω_n² = V K_i`). -/
   rw [neg_div, Real.arctan_neg]
 
 /-- With `ζ ≥ 1/2` (`K_i ≤ V K_p²`, `V, K_i > 0`) the phase formula holds at every `ω`. -/
-@[powerlib_foundation] theorem arg_closedLoopTF_of_half_le_zeta {V Kp Ki : ℝ} (hV : 0 < V)
+@[tmio M, powerlib_foundation] theorem arg_closedLoopTF_of_half_le_zeta {V Kp Ki : ℝ} (hV : 0 < V)
     (hKi : 0 < Ki) (hK : Ki ≤ V * Kp ^ 2) (ω : ℝ) :
     arg (closedLoopTF V Kp Ki ((ω : ℂ) * I)) =
       -Real.arctan (V * Kp * ω ^ 3 / (V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2)) := by
@@ -297,7 +297,7 @@ denominator is positive (`a = V K_p`, `b = ω_n² = V K_i`). -/
 
 /-- At `ω = ω_n` the phase is `−arctan(ω_n / (V K_p)) ≠ 0` (`V K_p > 0`, `V K_i > 0`), whereas
 the note's formula `arctan(ω(ω_n² − ω²)/(K_p ω_n²))` vanishes there. -/
-@[powerlib_foundation] theorem arg_closedLoopTF_omegaN_ne_zero {V Kp Ki : ℝ} (ha : 0 < V * Kp)
+@[tmio M, powerlib_foundation] theorem arg_closedLoopTF_omegaN_ne_zero {V Kp Ki : ℝ} (ha : 0 < V * Kp)
     (h : 0 < V * Ki) : arg (closedLoopTF V Kp Ki ((omegaN V Ki : ℂ) * I)) ≠ 0 := by
   have hω : 0 < omegaN V Ki := Real.sqrt_pos.mpr h
   have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt h.le
@@ -314,7 +314,7 @@ the note's formula `arctan(ω(ω_n² − ω²)/(K_p ω_n²))` vanishes there. -/
 def rocofModel (V Kp Ki : ℝ) : Linear.Plant 2 1 := derivModel (frequencyModel V Kp Ki)
 
 /-- `ROCOF(s)/ω_g(s) = s H_pll(s)`. -/
-@[powerlib_foundation] theorem transfer_rocofModel {V Kp Ki : ℝ} {s : ℂ}
+@[tmio M, powerlib_foundation] theorem transfer_rocofModel {V Kp Ki : ℝ} {s : ℂ}
     (hs : loopPoly V Kp Ki s ≠ 0) :
     Linear.transfer (rocofModel V Kp Ki) s = !![s * closedLoopTF V Kp Ki s] := by
   rw [rocofModel, LTI.transfer_derivModel rfl (by rwa [show (frequencyModel V Kp Ki).A =
@@ -322,7 +322,7 @@ def rocofModel (V Kp Ki : ℝ) : Linear.Plant 2 1 := derivModel (frequencyModel 
   ext i j; fin_cases i; fin_cases j; simp
 
 /-- Noise amplification of differentiation: `|jω H(jω)|² = ω² |H(jω)|²`. -/
-@[powerlib_foundation] theorem normSq_rocof (V Kp Ki ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem normSq_rocof (V Kp Ki ω : ℝ) :
     normSq (((ω : ℂ) * I) * closedLoopTF V Kp Ki ((ω : ℂ) * I)) =
       ω ^ 2 * normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) := by
   rw [Complex.normSq_mul]

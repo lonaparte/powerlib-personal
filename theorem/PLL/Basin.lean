@@ -61,7 +61,7 @@ open Set Filter Matrix
 open scoped Topology
 open powerlib.Dynamics (State)
 
-@[powerlib_foundation] private lemma isCompact_of_bounds {S : Set (State 2)} (hS : IsClosed S)
+@[tmio T, powerlib_foundation] private lemma isCompact_of_bounds {S : Set (State 2)} (hS : IsClosed S)
     {M : ℝ} (hM : ∀ x ∈ S, x 0 ^ 2 + x 1 ^ 2 ≤ M) : IsCompact S := by
   refine Metric.isCompact_of_isClosed_isBounded hS ?_
   rw [Metric.isBounded_iff_subset_closedBall 0]
@@ -71,11 +71,11 @@ open powerlib.Dynamics (State)
   rw [PhasePlane.norm_sq_eq]
   exact (hM x hx).trans (le_max_left _ _)
 
-@[powerlib_foundation] private lemma contDiff_coord (i : Fin 2) :
+@[tmio T, powerlib_foundation] private lemma contDiff_coord (i : Fin 2) :
     ContDiff ℝ 1 (fun x : State 2 => x i) :=
   Dynamics.contDiff_coord i
 
-@[powerlib_foundation] private lemma fderiv_coord (i : Fin 2) (x v : State 2) :
+@[tmio T, powerlib_foundation] private lemma fderiv_coord (i : Fin 2) (x v : State 2) :
     fderiv ℝ (fun y : State 2 => y i) x v = v i := by
   have h : HasFDerivAt (fun y : State 2 => y i)
       (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i : State 2 →L[ℝ] ℝ) x :=
@@ -85,7 +85,7 @@ open powerlib.Dynamics (State)
 
 /-! ## 1. Port-Hamiltonian energy -/
 
-@[powerlib_foundation] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
+@[tmio M, powerlib_foundation] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
     ContDiff ℝ 1 (pllHamiltonian V Ki ηs) := by
   unfold pllHamiltonian
   exact (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0)))).add
@@ -199,13 +199,13 @@ def xiRate (a b Δω : ℝ) (x : State 2) : ℝ := Δω - a * Real.sin (x 0) + b
 def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   xiRate a b Δω x ^ 2 / 2 + b * (1 - Real.cos (x 0))
 
-@[powerlib_foundation] private lemma contDiff_xiRate (a b Δω : ℝ) :
+@[tmio M, powerlib_foundation] private lemma contDiff_xiRate (a b Δω : ℝ) :
     ContDiff ℝ 1 (xiRate a b Δω) := by
   unfold xiRate
   exact (contDiff_const.sub (contDiff_const.mul (Real.contDiff_sin.comp (contDiff_coord 0)))).add
     (contDiff_const.mul (contDiff_coord 1))
 
-@[powerlib_foundation] private lemma hasFDerivAt_xiRate (a b Δω : ℝ) (x : State 2) :
+@[tmio M, powerlib_foundation] private lemma hasFDerivAt_xiRate (a b Δω : ℝ) (x : State 2) :
     HasFDerivAt (xiRate a b Δω)
       ((-(a * Real.cos (x 0))) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ) +
         b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ)) x := by
@@ -239,13 +239,13 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   simp [xiField, xiRate]
   ring
 
-@[powerlib_foundation] private lemma contDiff_pendulumEnergy (a b Δω : ℝ) :
+@[tmio M, powerlib_foundation] private lemma contDiff_pendulumEnergy (a b Δω : ℝ) :
     ContDiff ℝ 1 (pendulumEnergy a b Δω) := by
   unfold pendulumEnergy
   exact (((contDiff_xiRate a b Δω).pow 2).div_const 2).add
     (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0))))
 
-@[powerlib_foundation] private lemma contDiff_xiField (a b Δω : ℝ) :
+@[tmio M, powerlib_foundation] private lemma contDiff_xiField (a b Δω : ℝ) :
     ContDiff ℝ 1 (xiField a b Δω) := by
   rw [xiField_eq_srfField]; exact contDiff_srfField _ _ _ _
 

@@ -52,67 +52,67 @@ def lift (g : ℝ → ℝ) (x : State 1) : State 1 := embed (g (x 0))
   fin_cases i
   simp [embed]
 
-@[simp, powerlib_foundation] theorem embed_coord (x : State 1) : embed (x 0) = x := by
+@[tmio T, simp, powerlib_foundation] theorem embed_coord (x : State 1) : embed (x 0) = x := by
   ext i
   fin_cases i
   simp
 
-@[powerlib_foundation] theorem embed_injective : Function.Injective embed := by
+@[tmio T, powerlib_foundation] theorem embed_injective : Function.Injective embed := by
   intro r s h
   simpa using congrArg (fun x : State 1 => x 0) h
 
-@[simp, powerlib_foundation] theorem embed_eq_iff {r s : ℝ} : embed r = embed s ↔ r = s :=
+@[tmio T, simp, powerlib_foundation] theorem embed_eq_iff {r s : ℝ} : embed r = embed s ↔ r = s :=
   embed_injective.eq_iff
 
-@[simp, powerlib_foundation] theorem embed_zero : embed 0 = 0 := by
+@[tmio T, simp, powerlib_foundation] theorem embed_zero : embed 0 = 0 := by
   ext i
   simp
 
-@[powerlib_foundation] theorem embed_sub (r s : ℝ) : embed r - embed s = embed (r - s) := by
+@[tmio T, powerlib_foundation] theorem embed_sub (r s : ℝ) : embed r - embed s = embed (r - s) := by
   ext i
   simp
 
-@[simp, powerlib_foundation] theorem norm_embed (r : ℝ) : ‖embed r‖ = |r| := by
+@[tmio T, simp, powerlib_foundation] theorem norm_embed (r : ℝ) : ‖embed r‖ = |r| := by
   simp [embed]
 
-@[powerlib_foundation] theorem norm_state1 (x : State 1) : ‖x‖ = |x 0| := by
+@[tmio T, powerlib_foundation] theorem norm_state1 (x : State 1) : ‖x‖ = |x 0| := by
   rw [← embed_coord x, norm_embed, embed_apply]
 
-@[simp, powerlib_foundation] theorem lift_apply (g : ℝ → ℝ) (x : State 1) (i : Fin 1) :
+@[tmio T, simp, powerlib_foundation] theorem lift_apply (g : ℝ → ℝ) (x : State 1) (i : Fin 1) :
     lift g x i = g (x 0) := by
   simp [lift]
 
-@[powerlib_foundation] theorem lift_embed (g : ℝ → ℝ) (r : ℝ) : lift g (embed r) = embed (g r) := by
+@[tmio T, powerlib_foundation] theorem lift_embed (g : ℝ → ℝ) (r : ℝ) : lift g (embed r) = embed (g r) := by
   simp [lift]
 
-@[powerlib_foundation] theorem lift_eq_zero_iff (g : ℝ → ℝ) (r : ℝ) :
+@[tmio T, powerlib_foundation] theorem lift_eq_zero_iff (g : ℝ → ℝ) (r : ℝ) :
     lift g (embed r) = 0 ↔ g r = 0 := by
   rw [lift_embed, ← embed_zero, embed_eq_iff]
 
 /-- The scalar embedding as a continuous linear map. -/
 def embedCLM : ℝ →L[ℝ] State 1 := (ContinuousLinearMap.id ℝ ℝ).smulRight (embed 1)
 
-@[simp, powerlib_foundation] theorem embedCLM_apply (r : ℝ) : embedCLM r = embed r := by
+@[tmio T, simp, powerlib_foundation] theorem embedCLM_apply (r : ℝ) : embedCLM r = embed r := by
   ext i
   simp [embedCLM]
 
 /-- The coordinate of the one-dimensional state as a continuous linear functional. -/
 def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
 
-@[simp, powerlib_foundation] theorem coordCLM_apply (x : State 1) : coordCLM x = x 0 := rfl
+@[tmio T, simp, powerlib_foundation] theorem coordCLM_apply (x : State 1) : coordCLM x = x 0 := rfl
 
-@[powerlib_foundation] theorem lift_eq_comp (g : ℝ → ℝ) :
+@[tmio T, powerlib_foundation] theorem lift_eq_comp (g : ℝ → ℝ) :
     lift g = embedCLM ∘ g ∘ coordCLM := by
   funext x
   simp [lift]
 
-@[powerlib_foundation] theorem lift_contDiff {g : ℝ → ℝ} {k : WithTop ℕ∞} (hg : ContDiff ℝ k g) :
+@[tmio T, powerlib_foundation] theorem lift_contDiff {g : ℝ → ℝ} {k : WithTop ℕ∞} (hg : ContDiff ℝ k g) :
     ContDiff ℝ k (lift g) := by
   rw [lift_eq_comp]
   exact embedCLM.contDiff.comp (hg.comp coordCLM.contDiff)
 
 /-- The Jacobian of the lifted scalar field is the `1 × 1` matrix of the scalar derivative. -/
-@[powerlib_foundation] theorem hasFDerivAt_lift {g : ℝ → ℝ} {a : ℝ} {x : State 1}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_lift {g : ℝ → ℝ} {a : ℝ} {x : State 1}
     (hg : HasDerivAt g a (x 0)) :
     HasFDerivAt (lift g) (Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![a]) x := by
   have h1 : HasFDerivAt (fun y : State 1 => g (coordCLM y)) (a • coordCLM) x :=
@@ -126,21 +126,21 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
   fin_cases i
   simp [Matrix.mulVec, dotProduct]
 
-@[powerlib_foundation] theorem fderiv_lift {g : ℝ → ℝ} {x : State 1}
+@[tmio T, powerlib_foundation] theorem fderiv_lift {g : ℝ → ℝ} {x : State 1}
     (hg : DifferentiableAt ℝ g (x 0)) :
     fderiv ℝ (lift g) x =
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![deriv g (x 0)] :=
   (hasFDerivAt_lift hg.hasDerivAt).fderiv
 
 /-- The `1 × 1` matrix `(a)` with `a > 0` has the eigenpair `(a, 1)`. -/
-@[powerlib_foundation] theorem exists_eigenpair_one_of_pos {a : ℝ} (ha : 0 < a) :
+@[tmio T, powerlib_foundation] theorem exists_eigenpair_one_of_pos {a : ℝ} (ha : 0 < a) :
     ∃ (μ : ℂ) (v : Fin 1 → ℂ), v ≠ 0 ∧
       (!![a] : Matrix (Fin 1) (Fin 1) ℝ).map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
   ⟨a, fun _ => 1, by intro h0; simpa using congrFun h0 0,
     by ext i; fin_cases i; simp [Matrix.mulVec, dotProduct], by simpa using ha⟩
 
 /-- Scalar linearization: an equilibrium with negative slope is locally exponentially stable. -/
-@[powerlib_foundation] theorem lift_locallyExponentiallyStable {g : ℝ → ℝ} {r : ℝ}
+@[tmio T, powerlib_foundation] theorem lift_locallyExponentiallyStable {g : ℝ → ℝ} {r : ℝ}
     (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : deriv g r < 0) :
     LocallyExponentiallyStable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
@@ -151,7 +151,7 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
 
 /-- A point of the lift of a `C¹` scalar field `ẋ = g x` is locally exponentially stable exactly
 when it is a zero with negative slope. -/
-@[powerlib_foundation] theorem lift_locallyExponentiallyStable_iff {g : ℝ → ℝ} {r : ℝ}
+@[tmio T, powerlib_foundation] theorem lift_locallyExponentiallyStable_iff {g : ℝ → ℝ} {r : ℝ}
     (hg : ContDiff ℝ 1 g) :
     LocallyExponentiallyStable (NormalForm.lift g) (NormalForm.embed r) ↔
       g r = 0 ∧ deriv g r < 0 := by
@@ -163,7 +163,7 @@ when it is a zero with negative slope. -/
     NormalForm.lift_eq_zero_iff, Linear.isHurwitz_one_iff]
 
 /-- Scalar linearization: an equilibrium with positive slope is unstable. -/
-@[powerlib_foundation] theorem lift_unstable {g : ℝ → ℝ} {r : ℝ}
+@[tmio T, powerlib_foundation] theorem lift_unstable {g : ℝ → ℝ} {r : ℝ}
     (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : 0 < deriv g r) :
     Unstable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
@@ -173,14 +173,14 @@ when it is a zero with negative slope. -/
   simpa using this
 
 /-- Lifting a scalar solution gives a solution of the lifted field. -/
-@[powerlib_foundation] theorem hasDerivWithinAt_embed {ψ : ℝ → ℝ} {g : ℝ → ℝ} {s : Set ℝ} {t : ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_embed {ψ : ℝ → ℝ} {g : ℝ → ℝ} {s : Set ℝ} {t : ℝ}
     (h : HasDerivWithinAt ψ (g (ψ t)) s t) :
     HasDerivWithinAt (fun τ => embed (ψ τ)) (lift g (embed (ψ t))) s t := by
   have := embedCLM.hasFDerivAt.comp_hasDerivWithinAt t h
   simpa [lift_embed, Function.comp_def] using this
 
 /-- Trajectories of the lifted field are exactly the scalar solutions in the coordinate `x 0`. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_lift_iff {g : ℝ → ℝ} {φ : ℝ → State 1}
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_lift_iff {g : ℝ → ℝ} {φ : ℝ → State 1}
     {s : Set ℝ} :
     IsIntegralCurveOn φ (fun _ x => lift g x) s ↔
       IsIntegralCurveOn (fun t => φ t 0) (fun _ r => g r) s := by
@@ -192,12 +192,12 @@ when it is a zero with negative slope. -/
     have := hasDerivWithinAt_embed (g := g) (h t ht)
     simpa using this
 
-@[powerlib_foundation] theorem isTrajectoryOn_lift_iff {g : ℝ → ℝ} {φ : ℝ → State 1} {a b : ℝ} :
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_lift_iff {g : ℝ → ℝ} {φ : ℝ → State 1} {a b : ℝ} :
     IsTrajectoryOn φ (lift g) a b ↔
       IsIntegralCurveOn (fun t => φ t 0) (fun _ r => g r) (Icc a b) :=
   isIntegralCurveOn_lift_iff
 
-@[powerlib_foundation] theorem isTrajectoryOn_embed {g : ℝ → ℝ} {ψ : ℝ → ℝ} {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_embed {g : ℝ → ℝ} {ψ : ℝ → ℝ} {a b : ℝ}
     (h : IsIntegralCurveOn ψ (fun _ r => g r) (Icc a b)) :
     IsTrajectoryOn (fun t => embed (ψ t)) (lift g) a b :=
   isTrajectoryOn_lift_iff.mpr (by simpa only [embed_apply] using h)
@@ -207,7 +207,7 @@ def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=
   ∃ x : State 1, lift g x = 0 ∧ fderiv ℝ (lift g) x = 0
 
 /-- In one dimension `Σ_SN` is exactly `f = f_x = 0` at a common point. -/
-@[powerlib_foundation] theorem saddleNodeCondition_iff {g : ℝ → ℝ} (hg : Differentiable ℝ g) :
+@[tmio T, powerlib_foundation] theorem saddleNodeCondition_iff {g : ℝ → ℝ} (hg : Differentiable ℝ g) :
     SaddleNodeCondition g ↔ ∃ r, g r = 0 ∧ deriv g r = 0 := by
   constructor
   · rintro ⟨x, hx, hJ⟩
@@ -228,7 +228,7 @@ def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=
 
 /-- A scalar solution of a `C¹` field that reaches the equilibrium `0` was already at `0`
 (backward uniqueness, Mathlib `ODE_solution_unique_of_mem_Icc_left`). -/
-@[powerlib_foundation] theorem eq_zero_of_eq_zero_later {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem eq_zero_of_eq_zero_later {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
     (hg0 : g 0 = 0) {ψ : ℝ → ℝ} {a b : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => g r) (Icc a b))
     {t₁ : ℝ} (ht₁ : t₁ ∈ Icc a b) (hz : ψ t₁ = 0) : ψ a = 0 := by
@@ -259,7 +259,7 @@ def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=
   exact heq ⟨le_rfl, hlt.le⟩
 
 /-- A scalar solution of a `C¹` field with equilibrium `0` keeps the sign of its initial value. -/
-@[powerlib_foundation] theorem pos_of_pos {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hg0 : g 0 = 0)
+@[tmio T, powerlib_foundation] theorem pos_of_pos {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hg0 : g 0 = 0)
     {ψ : ℝ → ℝ} {a b : ℝ} (hψ : IsIntegralCurveOn ψ (fun _ r => g r) (Icc a b))
     (ha : 0 < ψ a) : ∀ t ∈ Icc a b, 0 < ψ t := by
   intro t ht
@@ -271,7 +271,7 @@ def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=
   have := eq_zero_of_eq_zero_later hg hg0 hψ ⟨hc.1, hc.2.trans ht.2⟩ hc0
   linarith
 
-@[powerlib_foundation] theorem neg_of_neg {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hg0 : g 0 = 0)
+@[tmio T, powerlib_foundation] theorem neg_of_neg {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hg0 : g 0 = 0)
     {ψ : ℝ → ℝ} {a b : ℝ} (hψ : IsIntegralCurveOn ψ (fun _ r => g r) (Icc a b))
     (ha : ψ a < 0) : ∀ t ∈ Icc a b, ψ t < 0 := by
   have hg' : ContDiff ℝ 1 (fun r => -g (-r)) := (hg.comp contDiff_neg).neg
@@ -285,7 +285,7 @@ def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=
   linarith
 
 /-- A real function with zero one-sided derivative along `Icc a b` is constant there. -/
-@[powerlib_foundation] theorem eq_of_hasDerivWithinAt_zero {F : ℝ → ℝ} {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem eq_of_hasDerivWithinAt_zero {F : ℝ → ℝ} {a b : ℝ}
     (h : ∀ t ∈ Icc a b, HasDerivWithinAt F 0 (Icc a b) t) : ∀ t ∈ Icc a b, F t = F a := by
   apply constant_of_has_deriv_right_zero
   · intro t ht

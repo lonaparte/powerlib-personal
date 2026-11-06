@@ -126,7 +126,7 @@ d³ P Q ((P cos² a)² + (Q cos² b)² + 2 (P cos² a)(Q cos² b) cos Φ)`. -/
     (P ^ 3 * Q * Real.cos a ^ 4 * d ^ 3) * Real.sin_sq_add_cos_sq b
 
 /-- `U² + V² + 2UV cos φ = |U + V e^{iφ}|² ≥ 0`. -/
-@[powerlib_foundation] theorem branch_nonneg (U V φ : ℝ) :
+@[tmio T, powerlib_foundation] theorem branch_nonneg (U V φ : ℝ) :
     0 ≤ U ^ 2 + V ^ 2 + 2 * U * V * Real.cos φ := by
   nlinarith [sq_nonneg (U + V * Real.cos φ), sq_nonneg (V * Real.sin φ), Real.sin_sq_add_cos_sq φ]
 
@@ -135,7 +135,7 @@ d³ P Q ((P cos² a)² + (Q cos² b)² + 2 (P cos² a)(Q cos² b) cos Φ)`. -/
 A null direction of the Hessian form with `g₁ ≠ g₂` has a nonzero cubic term: with
 `d = g₁ − g₂` and `Φ = θ₁ − θ₂`, `s₀³ s₃³ sin Φ · A₃ = d³ (s₀³ s₃³ B₁₂ + nonnegative branch terms)`
 (`branch_identity`). -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem diamond_cubic_ne_zero {θ₀ θ₁ θ₂ θ₃ B₀₁ B₀₂ B₁₂ B₁₃ B₂₃ g₀ g₁ g₂ g₃ : ℝ}
     (h01 : 0 ≤ B₀₁) (h02 : 0 ≤ B₀₂) (h12 : 0 < B₁₂) (h13 : 0 ≤ B₁₃) (h23 : 0 ≤ B₂₃)
     (hs₀ : 0 < B₀₁ * Real.cos (θ₀ - θ₁) + B₀₂ * Real.cos (θ₀ - θ₂))
@@ -205,7 +205,7 @@ theorem diamond_cubic_ne_zero {θ₀ θ₁ θ₂ θ₃ B₀₁ B₀₂ B₁₂ B
 
 /-- A monotone direction with nonnegative line flows and a positive flow on `03` has a positive
 cubic term. -/
-@[powerlib_foundation] theorem cubic_pos_of_monotone {F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem cubic_pos_of_monotone {F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (f01 : 0 ≤ F₀₁) (f02 : 0 ≤ F₀₂) (f03 : 0 < F₀₃) (f12 : 0 ≤ F₁₂) (f13 : 0 ≤ F₁₃)
     (f23 : 0 ≤ F₂₃) (h01 : u₀ ≤ u₁) (h12 : u₁ ≤ u₂) (h23 : u₂ ≤ u₃) (h03 : u₀ < u₃) :
     0 < F₀₁ * (u₁ - u₀) ^ 3 + F₀₂ * (u₂ - u₀) ^ 3 + F₀₃ * (u₃ - u₀) ^ 3 +
@@ -219,7 +219,7 @@ cubic term. -/
   linarith
 
 /-- Three negative lines `02, 03, 13` and a monotone null direction. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem cubic_pos_three_neg {γ₁ γ₂ γ₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃
       u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁ ∧ γ₁ < π / 2) (hγ₂ : 0 ≤ γ₂ ∧ γ₂ < π / 2) (hγ₃ : 0 ≤ γ₃ ∧ γ₃ < π / 2)
@@ -272,7 +272,7 @@ theorem cubic_pos_three_neg {γ₁ γ₂ γ₃ W₀₁ W₀₂ W₀₃ W₁₂ W
   linarith
 
 /-- `tan x < 0` on `(π/2, π)`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem tan_neg_of_pi_div_two_lt_of_lt_pi {x : ℝ} (h1 : π / 2 < x) (h2 : x < π) :
     Real.tan x < 0 := by
   rw [Real.tan_eq_sin_div_cos]
@@ -280,7 +280,7 @@ theorem tan_neg_of_pi_div_two_lt_of_lt_pi {x : ℝ} (h1 : π / 2 < x) (h2 : x < 
     (Real.cos_neg_of_pi_div_two_lt_of_lt h1 (by linarith [Real.pi_pos]))
 
 /-- Only the line `03` negative; the null direction orders the machines `0 < 2 < 1 < 3`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem cubic_pos_cross {γ₁ γ₂ γ₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃
       u₀ u₁ u₂ u₃ : ℝ}
     (hγ₂ : 0 ≤ γ₂ ∧ γ₂ < π / 2) (h02 : 0 ≤ γ₁ + γ₂ ∧ γ₁ + γ₂ < π / 2)
@@ -336,7 +336,7 @@ theorem cubic_pos_cross {γ₁ γ₂ γ₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁�
   linarith
 
 /-- Lines `02, 03` negative; the null direction orders the machines `0 < 1 < 3 < 2`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem cubic_pos_two_neg {γ₁ γ₂ γ₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃
       u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁ ∧ γ₁ < π / 2) (hγ₃ : 0 ≤ γ₃ ∧ γ₃ < π / 2)
@@ -393,7 +393,7 @@ theorem cubic_pos_two_neg {γ₁ γ₂ γ₃ W₀₁ W₀₂ W₀₃ W₁₂ W�
 
 /-- Nonnegative weights at the two middle machines: the null direction keeps them strictly between
 the end machines. -/
-@[powerlib_foundation] theorem order_of_nonneg {W₀₁ W₀₂ W₁₂ W₁₃ W₂₃ u₀ u₁ u₂ u₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem order_of_nonneg {W₀₁ W₀₂ W₁₂ W₁₃ W₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (w01 : 0 < W₀₁) (w12 : 0 < W₁₂) (w23 : 0 < W₂₃) (w02 : 0 ≤ W₀₂) (w13 : 0 ≤ W₁₃)
     (N₁ : W₀₁ * (u₁ - u₀) + W₁₂ * (u₁ - u₂) + W₁₃ * (u₁ - u₃) = 0)
     (N₂ : W₀₂ * (u₂ - u₀) + W₁₂ * (u₂ - u₁) + W₂₃ * (u₂ - u₃) = 0) (h03 : u₀ < u₃) :
@@ -452,7 +452,7 @@ the end machines. -/
   exact ⟨A, B, C, D⟩
 
 /-- Reduction at machine 1: the reduced cut of machine 0. -/
-@[powerlib_foundation] theorem psd_reduce_one_zero {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem psd_reduce_one_zero {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
     (hQ : ∀ a b c d : ℝ, 0 ≤ W₀₁ * (a - b) ^ 2 + W₀₂ * (a - c) ^ 2 + W₀₃ * (a - d) ^ 2 +
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₁ + W₁₂ + W₁₃) :
@@ -468,7 +468,7 @@ the end machines. -/
   exact mul_nonneg s.le h
 
 /-- Reduction at machine 1: the reduced cut of machine 3. -/
-@[powerlib_foundation] theorem psd_reduce_one_three {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem psd_reduce_one_three {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
     (hQ : ∀ a b c d : ℝ, 0 ≤ W₀₁ * (a - b) ^ 2 + W₀₂ * (a - c) ^ 2 + W₀₃ * (a - d) ^ 2 +
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₁ + W₁₂ + W₁₃) :
@@ -484,7 +484,7 @@ the end machines. -/
   exact mul_nonneg s.le h
 
 /-- Reduction at machine 2: the reduced cut of machine 0. -/
-@[powerlib_foundation] theorem psd_reduce_two_zero {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem psd_reduce_two_zero {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
     (hQ : ∀ a b c d : ℝ, 0 ≤ W₀₁ * (a - b) ^ 2 + W₀₂ * (a - c) ^ 2 + W₀₃ * (a - d) ^ 2 +
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₂ + W₁₂ + W₂₃) :
@@ -500,7 +500,7 @@ the end machines. -/
   exact mul_nonneg s.le h
 
 /-- Reduction at machine 2: the reduced cut of machine 3. -/
-@[powerlib_foundation] theorem psd_reduce_two_three {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem psd_reduce_two_three {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
     (hQ : ∀ a b c d : ℝ, 0 ≤ W₀₁ * (a - b) ^ 2 + W₀₂ * (a - c) ^ 2 + W₀₃ * (a - d) ^ 2 +
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₂ + W₁₂ + W₂₃) :
@@ -517,7 +517,7 @@ the end machines. -/
 
 /-- One negative line at machine 0 besides `03`: the null direction puts machine 2 (and then
 machine 1) above machine 0. -/
-@[powerlib_foundation] theorem order_of_neg_02 {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ u₀ u₁ u₂ u₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem order_of_neg_02 {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (w01 : 0 < W₀₁) (w12 : 0 < W₁₂) (w23 : 0 < W₂₃) (w13 : 0 ≤ W₁₃)
     (s₁ : 0 < W₀₁ + W₁₂ + W₁₃)
     (P₁ : 0 ≤ (W₀₁ + W₁₂ + W₁₃) * (W₀₂ + W₀₃) + W₀₁ * (W₁₂ + W₁₃))
@@ -564,7 +564,7 @@ machine 1) above machine 0. -/
   linarith
 
 /-- Negative lines `02` and `13` (besides `03`): the null direction is strictly monotone. -/
-@[powerlib_foundation] theorem order_of_neg_02_13 {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ u₀ u₁ u₂ u₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem order_of_neg_02_13 {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (w12 : 0 < W₁₂) (w02 : W₀₂ < 0) (w03 : W₀₃ < 0) (w13 : W₁₃ < 0) (w01 : 0 < W₀₁)
     (w23 : 0 < W₂₃)
     (s₁ : 0 < W₀₁ + W₁₂ + W₁₃) (s₂ : 0 < W₀₂ + W₁₂ + W₂₃)
@@ -636,19 +636,19 @@ machine 1) above machine 0. -/
 /-! ## Sign cases of the lines `02` and `13` -/
 
 /-- `cos x > 0` on `[0, π/2)`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem cos_pos_of_nonneg_of_lt {x : ℝ} (h0 : 0 ≤ x) (h1 : x < π / 2) : 0 < Real.cos x :=
   Real.cos_pos_of_mem_Ioo ⟨by linarith [Real.pi_pos], h1⟩
 
 /-- Line flow from weight: `B sin α = tan α · B cos α` when `cos α ≠ 0`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem flow_eq_tan {B α W F : ℝ} (hW : W = B * Real.cos α) (hF : F = B * Real.sin α)
     (hc : Real.cos α ≠ 0) : F = Real.tan α * W := by
   rw [hW, hF, Real.tan_eq_sin_div_cos]
   field_simp
 
 /-- Sorted lifted angles, case `02` and `13` nonnegative. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sorted_case_nonneg {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B₁₃ B₂₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃
       F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁ ∧ γ₁ < π / 2) (hγ₂ : 0 ≤ γ₂ ∧ γ₂ < π / 2) (hγ₃ : 0 ≤ γ₃ ∧ γ₃ < π / 2)
@@ -719,7 +719,7 @@ theorem sorted_case_nonneg {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B�
     (flow_eq_tan hW₀₃ hF₀₃ c03.ne) f01 f23 N₁ N₂ N₃ o02 h21 o13
 
 /-- Sorted lifted angles, case `02` negative and `13` nonnegative. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sorted_case_neg {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B₁₃ B₂₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃
       F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁ ∧ γ₁ < π / 2) (hγ₂ : 0 ≤ γ₂ ∧ γ₂ < π / 2) (hγ₃ : 0 ≤ γ₃ ∧ γ₃ < π / 2)
@@ -809,7 +809,7 @@ theorem sorted_case_neg {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B₁�
     exact cubic_pos_of_monotone f01 f02 f03 f12 f13 f23 o01.le o12.le o23.le h03
 
 /-- Sorted lifted angles, case `02` and `13` both negative. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sorted_case_neg_neg {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B₁₃ B₂₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃
       F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁ ∧ γ₁ < π / 2) (hγ₂ : 0 ≤ γ₂ ∧ γ₂ < π / 2) (hγ₃ : 0 ≤ γ₃ ∧ γ₃ < π / 2)
@@ -859,7 +859,7 @@ theorem sorted_case_neg_neg {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B
 
 /-- **Sorted lifted angles: the cubic term is positive along a null direction rising from machine
 `0` to machine `3`.** -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sorted_cubic_pos {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B₁₃ B₂₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃
       F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁ ∧ γ₁ < π / 2) (hγ₂ : 0 ≤ γ₂ ∧ γ₂ < π / 2) (hγ₃ : 0 ≤ γ₃ ∧ γ₃ < π / 2)
@@ -910,7 +910,7 @@ non-constant null direction.** The machines are labelled by increasing lifted an
 `0, γ₁, γ₁ + γ₂, γ₁ + γ₂ + γ₃` (total spread at most `3π/2`), all six pairs are coupled, the
 Hessian form is positive semidefinite with the null direction `u`, and the cuts used below have
 positive total weight. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sorted_cubic_ne_zero {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ B₁₃ B₂₃ W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃
       F₀₁ F₀₂ F₀₃ F₁₂ F₁₃ F₂₃ u₀ u₁ u₂ u₃ : ℝ}
     (hγ₁ : 0 ≤ γ₁) (hγ₂ : 0 ≤ γ₂) (hγ₃ : 0 ≤ γ₃) (hspread : γ₁ + γ₂ + γ₃ ≤ π + π / 2)
@@ -1071,7 +1071,7 @@ theorem sorted_cubic_ne_zero {γ₁ γ₂ γ₃ B₀₁ B₀₂ B₀₃ B₁₂ 
 /-- **Sorted lifted angles of four machines.** Four angles can be relabelled (by `σ`) and shifted
 by multiples of `2π` so that the lifted angles increase and span at most `3π/2`: four points on a
 circle leave a gap of at least `π/2`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem exists_sorted_lift (θ : Fin 4 → ℝ) : ∃ (σ : Equiv.Perm (Fin 4)) (t : Fin 4 → ℝ),
     t 0 ≤ t 1 ∧ t 1 ≤ t 2 ∧ t 2 ≤ t 3 ∧ t 3 - t 0 ≤ π + π / 2 ∧
       ∀ k, ∃ m : ℤ, θ (σ k) = t k + m * (2 * π) := by
@@ -1203,7 +1203,7 @@ null direction of the Hessian form with zero cubic form. -/
   rfl
 
 /-- A direction constant on the labelled machines is constant. -/
-@[powerlib_foundation] theorem eq_of_labelled_eq {u : Fin (3 + 1) → ℝ} (σ : Equiv.Perm (Fin 4))
+@[tmio T, powerlib_foundation] theorem eq_of_labelled_eq {u : Fin (3 + 1) → ℝ} (σ : Equiv.Perm (Fin 4))
     (h : u (σ 0) = u (σ 1) ∧ u (σ 1) = u (σ 2) ∧ u (σ 2) = u (σ 3)) (k : Fin (3 + 1)) :
     u k = u 0 := by
   have hall : ∀ m : Fin 4, u (σ m) = u (σ 0) := by
@@ -1345,7 +1345,7 @@ form is nonzero (`sorted_cubic_ne_zero`): a fold. -/
     linear_combination hC0 / 2
 
 /-- A labelling of four machines with prescribed machines in positions `0` and `3`. -/
-@[powerlib_foundation] theorem exists_perm_zero_three : ∀ {i j : Fin 4}, i ≠ j →
+@[tmio T, powerlib_foundation] theorem exists_perm_zero_three : ∀ {i j : Fin 4}, i ≠ j →
     ∃ σ : Equiv.Perm (Fin 4), σ 0 = i ∧ σ 3 = j := by
   decide
 

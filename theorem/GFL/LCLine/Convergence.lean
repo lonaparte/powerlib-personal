@@ -63,7 +63,7 @@ open powerlib.PLL
 open scoped Matrix
 
 /-- Mean-value bound on a segment of `(0, ∞)`. -/
-@[powerlib_foundation] private lemma abs_sub_le_of_hasDerivAt {g g' : ℝ → ℝ} {a b C : ℝ}
+@[tmio T, powerlib_foundation] private lemma abs_sub_le_of_hasDerivAt {g g' : ℝ → ℝ} {a b C : ℝ}
     (ha : 0 < a) (hab : a ≤ b) (hg : ∀ t, 0 < t → HasDerivAt g (g' t) t)
     (hC : ∀ t ∈ Icc a b, |g' t| ≤ C) : |g b - g a| ≤ C * (b - a) := by
   have := norm_image_sub_le_of_norm_deriv_le_segment' (f := g) (f' := g') (C := C)
@@ -72,7 +72,7 @@ open scoped Matrix
   simpa [Real.norm_eq_abs] using this
 
 /-- One-sided mean-value bound on a segment of `(0, ∞)`. -/
-@[powerlib_foundation] private lemma sub_le_of_hasDerivAt {g g' : ℝ → ℝ} {a b C : ℝ}
+@[tmio T, powerlib_foundation] private lemma sub_le_of_hasDerivAt {g g' : ℝ → ℝ} {a b C : ℝ}
     (ha : 0 < a) (hab : a ≤ b) (hg : ∀ t, 0 < t → HasDerivAt g (g' t) t)
     (hC : ∀ t ∈ Icc a b, g' t ≤ C) : g b - g a ≤ C * (b - a) := by
   have hpos : ∀ x ∈ Icc a b, 0 < x := fun x hx => by linarith [hx.1]

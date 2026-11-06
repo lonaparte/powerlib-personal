@@ -55,24 +55,24 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
     ContDiff ℝ k (field μ) := by
   unfold field; fun_prop
 
-@[powerlib_foundation] theorem hasDerivAt_field (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_field (μ x : ℝ) :
     HasDerivAt (field μ) (-2 * x) x := by
   have := (hasDerivAt_pow 2 x).const_sub μ
   unfold field
   convert this using 1
   push_cast; ring
 
-@[powerlib_foundation] theorem deriv_field (μ x : ℝ) : deriv (field μ) x = -2 * x :=
+@[tmio M, powerlib_foundation] theorem deriv_field (μ x : ℝ) : deriv (field μ) x = -2 * x :=
   (hasDerivAt_field μ x).deriv
 
-@[powerlib_foundation] theorem hasDerivAt_potential (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_potential (μ x : ℝ) :
     HasDerivAt (potential μ) (-field μ x) x := by
   have h := ((hasDerivAt_id x).const_mul (-μ)).add (((hasDerivAt_id x).pow 3).div_const 3)
   convert h using 1
   · funext y; simp [potential]
   · simp [field]; ring
 
-@[powerlib_foundation] theorem field_eq_zero_iff (μ x : ℝ) :
+@[tmio M, powerlib_foundation] theorem field_eq_zero_iff (μ x : ℝ) :
     field μ x = 0 ↔ 0 ≤ μ ∧ (x = √μ ∨ x = -√μ) := by
   unfold field
   constructor
@@ -85,25 +85,25 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
     · right; rw [abs_of_nonpos hx, neg_neg]
   · rintro ⟨hμ, hx | hx⟩ <;> subst hx <;> simp [Real.sq_sqrt hμ]
 
-@[powerlib_foundation] theorem field_sqrt {μ : ℝ} (hμ : 0 ≤ μ) : field μ √μ = 0 :=
+@[tmio M, powerlib_foundation] theorem field_sqrt {μ : ℝ} (hμ : 0 ≤ μ) : field μ √μ = 0 :=
   (field_eq_zero_iff μ _).mpr ⟨hμ, Or.inl rfl⟩
 
-@[powerlib_foundation] theorem field_neg_sqrt {μ : ℝ} (hμ : 0 ≤ μ) : field μ (-√μ) = 0 :=
+@[tmio M, powerlib_foundation] theorem field_neg_sqrt {μ : ℝ} (hμ : 0 ≤ μ) : field μ (-√μ) = 0 :=
   (field_eq_zero_iff μ _).mpr ⟨hμ, Or.inr rfl⟩
 
 /-- Equilibria of the lifted system. -/
-@[powerlib_foundation] theorem system_eq_zero_iff (μ : ℝ) (x : State 1) :
+@[tmio M, powerlib_foundation] theorem system_eq_zero_iff (μ : ℝ) (x : State 1) :
     system μ x = 0 ↔ 0 ≤ μ ∧ (x = embed √μ ∨ x = embed (-√μ)) := by
   rw [← embed_coord x, system, lift_eq_zero_iff, field_eq_zero_iff, embed_eq_iff, embed_eq_iff]
 
 /-- For `μ < 0` the fold system has no equilibrium. -/
-@[powerlib_foundation] theorem no_equilibrium {μ : ℝ} (hμ : μ < 0) (x : State 1) :
+@[tmio M, powerlib_foundation] theorem no_equilibrium {μ : ℝ} (hμ : μ < 0) (x : State 1) :
     system μ x ≠ 0 := by
   rw [Ne, system_eq_zero_iff]
   exact fun h => absurd h.1 (not_le.mpr hμ)
 
 /-- The equilibrium set of the normal form. -/
-@[powerlib_foundation] theorem equilibria_eq (μ : ℝ) :
+@[tmio M, powerlib_foundation] theorem equilibria_eq (μ : ℝ) :
     {x : ℝ | field μ x = 0} = if μ < 0 then ∅ else {√μ, -√μ} := by
   split_ifs with hμ
   · ext x; simp only [Set.mem_ofPred_eq, mem_empty_iff_false, iff_false, field_eq_zero_iff]
@@ -111,7 +111,7 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
   · ext x; simp [field_eq_zero_iff, not_lt.mp hμ]
 
 /-- The number of equilibria is `2` for `μ > 0`, `1` for `μ = 0` and `0` for `μ < 0`. -/
-@[powerlib_foundation] theorem equilibria_ncard (μ : ℝ) :
+@[tmio M, powerlib_foundation] theorem equilibria_ncard (μ : ℝ) :
     {x : ℝ | field μ x = 0}.ncard = if 0 < μ then 2 else if μ = 0 then 1 else 0 := by
   rw [equilibria_eq]
   rcases lt_trichotomy μ 0 with h | h | h
@@ -122,35 +122,35 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
     simp [not_lt.mpr h.le, h, Set.ncard_pair hs]
 
 /-- For `μ > 0` the upper equilibrium `√μ` is locally exponentially stable. -/
-@[powerlib_foundation] theorem upper_locallyExponentiallyStable {μ : ℝ} (hμ : 0 < μ) :
+@[tmio TM, powerlib_foundation] theorem upper_locallyExponentiallyStable {μ : ℝ} (hμ : 0 < μ) :
     LocallyExponentiallyStable (system μ) (embed √μ) :=
   lift_locallyExponentiallyStable (field_contDiff μ) (field_sqrt hμ.le)
     (by rw [deriv_field]; have := Real.sqrt_pos.mpr hμ; linarith)
 
 /-- For `μ > 0` the lower equilibrium `−√μ` is unstable. -/
-@[powerlib_foundation] theorem lower_unstable {μ : ℝ} (hμ : 0 < μ) :
+@[tmio TM, powerlib_foundation] theorem lower_unstable {μ : ℝ} (hμ : 0 < μ) :
     Unstable (system μ) (embed (-√μ)) :=
   lift_unstable (field_contDiff μ) (field_neg_sqrt hμ.le)
     (by rw [deriv_field]; have := Real.sqrt_pos.mpr hμ; linarith)
 
 /-- Local recovery rate on the stable branch: `|f_x(√μ)| = 2√μ`. -/
-@[powerlib_foundation] theorem recovery_rate (μ : ℝ) :
+@[tmio M, powerlib_foundation] theorem recovery_rate (μ : ℝ) :
     |deriv (field μ) √μ| = 2 * √μ := by
   rw [deriv_field, abs_of_nonpos (by have := Real.sqrt_nonneg μ; linarith)]
   ring
 
 /-- Slopes at the two branches: `f_x(±√μ) = ∓2√μ`. -/
-@[powerlib_foundation] theorem slopes (μ : ℝ) :
+@[tmio M, powerlib_foundation] theorem slopes (μ : ℝ) :
     deriv (field μ) √μ = -2 * √μ ∧ deriv (field μ) (-√μ) = 2 * √μ := by
   exact ⟨by rw [deriv_field], by rw [deriv_field]; ring⟩
 
-@[powerlib_foundation] theorem rpow_three_halves {μ : ℝ} (hμ : 0 ≤ μ) :
+@[tmio T, powerlib_foundation] theorem rpow_three_halves {μ : ℝ} (hμ : 0 ≤ μ) :
     μ ^ ((3 : ℝ) / 2) = μ * √μ := by
   rw [show (3 : ℝ) / 2 = 1 + 1 / 2 by norm_num, Real.rpow_add' hμ (by norm_num),
     Real.rpow_one, Real.sqrt_eq_rpow]
 
 /-- The barrier from the stable node to the saddle is `ΔV = (4/3) μ^{3/2}`. -/
-@[powerlib_foundation] theorem barrier {μ : ℝ} (hμ : 0 ≤ μ) :
+@[tmio M, powerlib_foundation] theorem barrier {μ : ℝ} (hμ : 0 ≤ μ) :
     potential μ (-√μ) - potential μ √μ = 4 / 3 * μ ^ ((3 : ℝ) / 2) := by
   rw [rpow_three_halves hμ]
   have h2 : √μ ^ 2 = μ := Real.sq_sqrt hμ
@@ -160,7 +160,7 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
   ring
 
 /-- The one-dimensional saddle-node condition `f = f_x = 0` holds exactly at `μ = 0`. -/
-@[powerlib_foundation] theorem saddleNodeCondition_iff (μ : ℝ) :
+@[tmio TM, powerlib_foundation] theorem saddleNodeCondition_iff (μ : ℝ) :
     SaddleNodeCondition (field μ) ↔ μ = 0 := by
   rw [NormalForm.saddleNodeCondition_iff (field_contDiff μ (k := 1)).differentiable_one]
   constructor
@@ -173,7 +173,7 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
 
 /-! ## The critical parameter `μ = 0` -/
 
-@[powerlib_foundation] theorem critical_hasDerivAt (x₀ t : ℝ) (h : 1 + x₀ * t ≠ 0) :
+@[tmio M, powerlib_foundation] theorem critical_hasDerivAt (x₀ t : ℝ) (h : 1 + x₀ * t ≠ 0) :
     HasDerivAt (fun s => x₀ / (1 + x₀ * s)) (field 0 (x₀ / (1 + x₀ * t))) t := by
   have hden : HasDerivAt (fun s => 1 + x₀ * s) x₀ t := by
     simpa using ((hasDerivAt_id t).const_mul x₀).const_add 1
@@ -185,7 +185,7 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
 
 /-- At `μ = 0` the merged equilibrium is unstable: arbitrarily small negative initial states
 reach `|x| = 1` in finite time. -/
-@[powerlib_foundation] theorem critical_unstable :
+@[tmio TM, powerlib_foundation] theorem critical_unstable :
     Unstable (system 0) (embed 0) := by
   refine _root_.unstable_of_fixed_escape (ε := 1) one_pos ?_
   intro δ hδ
@@ -209,7 +209,7 @@ reach `|x| = 1` in finite time. -/
     rw [embed_sub, norm_embed, hcT, sub_zero, neg_div, div_self hc0.ne', abs_neg, abs_one]
 
 /-- At `μ = 0` every solution starting at `x₀ > 0` is `x₀ / (1 + x₀ (t − a))`. -/
-@[powerlib_foundation] theorem critical_solution_pos {ψ : ℝ → ℝ} {a b : ℝ}
+@[tmio M, powerlib_foundation] theorem critical_solution_pos {ψ : ℝ → ℝ} {a b : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => field 0 r) (Icc a b)) (ha : 0 < ψ a) :
     ∀ t ∈ Icc a b, ψ t = ψ a / (1 + ψ a * (t - a)) := by
   have hpos := pos_of_pos (field_contDiff 0) (by simp [field]) hψ ha
@@ -234,7 +234,7 @@ reach `|x| = 1` in finite time. -/
   linarith
 
 /-- At `μ = 0` every forward-complete solution starting at `x₀ > 0` converges to `0`. -/
-@[powerlib_foundation] theorem critical_tendsto_zero_of_pos {ψ : ℝ → ℝ} {a : ℝ}
+@[tmio TM, powerlib_foundation] theorem critical_tendsto_zero_of_pos {ψ : ℝ → ℝ} {a : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => field 0 r) (Ici a)) (ha : 0 < ψ a) :
     Tendsto ψ atTop (𝓝 0) := by
   have hformula : ∀ t, a ≤ t → ψ t = ψ a / (1 + ψ a * (t - a)) := fun t ht =>
@@ -247,7 +247,7 @@ reach `|x| = 1` in finite time. -/
   exact hlim.congr' (eventually_atTop.mpr ⟨a, fun t ht => (hformula t ht).symm⟩)
 
 /-- At `μ = 0` a solution starting at `x₀ < 0` cannot be continued for the time `−1/x₀`. -/
-@[powerlib_foundation] theorem critical_escape_of_neg {ψ : ℝ → ℝ} {a b : ℝ}
+@[tmio TM, powerlib_foundation] theorem critical_escape_of_neg {ψ : ℝ → ℝ} {a b : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => field 0 r) (Icc a b)) (ha : ψ a < 0) :
     b < a - 1 / ψ a := by
   by_contra hb

@@ -94,7 +94,7 @@ def massMatrix (n m : ℕ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ := f
   rw [← Linear.complexify_mul, nonsing_inv_mul _ h]
   simp [Linear.complexify]
 
-@[powerlib_foundation] theorem det_complexify {k : ℕ} (A : Matrix (Fin k) (Fin k) ℝ) :
+@[tmio T, powerlib_foundation] theorem det_complexify {k : ℕ} (A : Matrix (Fin k) (Fin k) ℝ) :
     (Linear.complexify A).det = algebraMap ℝ ℂ A.det := by
   rw [RingHom.map_det]; rfl
 
@@ -114,7 +114,7 @@ def algebraic (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin m → ℝ :=
 
 /-! ## Constraint solving and solution correspondence -/
 
-@[powerlib_foundation] theorem constraint_iff (hA : IsUnit d.Ayy.det) (x : Fin n → ℝ)
+@[tmio T, powerlib_foundation] theorem constraint_iff (hA : IsUnit d.Ayy.det) (x : Fin n → ℝ)
     (y : Fin m → ℝ) (u : Fin p → ℝ) :
     d.Ayx *ᵥ x + d.Ayy *ᵥ y + d.By *ᵥ u = 0 ↔ y = d.algebraic x u := by
   constructor
@@ -128,7 +128,7 @@ def algebraic (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin m → ℝ :=
     simp only [algebraic, mulVec_neg, mulVec_mulVec, mul_nonsing_inv _ hA, one_mulVec]
     abel
 
-@[powerlib_foundation] theorem field_on_constraint (x : Fin n → ℝ) (u : Fin p → ℝ) :
+@[tmio T, powerlib_foundation] theorem field_on_constraint (x : Fin n → ℝ) (u : Fin p → ℝ) :
     d.Axx *ᵥ x + d.Axy *ᵥ d.algebraic x u + d.Bx *ᵥ u = d.schurA *ᵥ x + d.schurB *ᵥ u := by
   simp only [algebraic, schurA, schurB, mulVec_neg, mulVec_add, sub_mulVec, ← mulVec_mulVec]
   abel
@@ -136,7 +136,7 @@ def algebraic (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin m → ℝ :=
 /-- Index-1 solution correspondence with the Schur-complement ODE: `(x, y)` is a global
 solution of the DAE for the input `u` (left-hand side) iff `x` solves the reduced ODE and `y`
 lies on the constraint manifold. -/
-@[powerlib_foundation] theorem isSolution_iff (hA : IsUnit d.Ayy.det) (u : ℝ → Fin p → ℝ)
+@[tmio T, powerlib_foundation] theorem isSolution_iff (hA : IsUnit d.Ayy.det) (u : ℝ → Fin p → ℝ)
     (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :
     (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
       d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0) ↔
@@ -155,7 +155,7 @@ lies on the constraint manifold. -/
     exact hx t
 
 /-- Zero-input version of `isSolution_iff`. -/
-@[powerlib_foundation] theorem isSolution_zero_iff (hA : IsUnit d.Ayy.det)
+@[tmio T, powerlib_foundation] theorem isSolution_zero_iff (hA : IsUnit d.Ayy.det)
     (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :
     (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
       d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ↔
@@ -165,7 +165,7 @@ lies on the constraint manifold. -/
 
 /-- Every reduced trajectory lifts to a DAE solution (zero input), with algebraic part
 `y t = algebraic (x t) 0`. -/
-@[powerlib_foundation] theorem isSolution_lift (hA : IsUnit d.Ayy.det) {x : ℝ → Fin n → ℝ}
+@[tmio T, powerlib_foundation] theorem isSolution_lift (hA : IsUnit d.Ayy.det) {x : ℝ → Fin n → ℝ}
     (hx : ∀ t, HasDerivAt x (d.schurA *ᵥ x t) t) :
     ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ d.algebraic (x t) 0 + d.Bx *ᵥ 0) t ∧
       d.Ayx *ᵥ x t + d.Ayy *ᵥ d.algebraic (x t) 0 + d.By *ᵥ 0 = 0 :=
@@ -175,14 +175,14 @@ lies on the constraint manifold. -/
 
 /-- Necessary condition: along every solution `(x, y)` of the DAE for the input `u`, the
 constraint holds at the initial time. -/
-@[powerlib_foundation] theorem initial_consistent {u : ℝ → Fin p → ℝ} {x : ℝ → Fin n → ℝ}
+@[tmio T, powerlib_foundation] theorem initial_consistent {u : ℝ → Fin p → ℝ} {x : ℝ → Fin n → ℝ}
     {y : ℝ → Fin m → ℝ}
     (h : ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
       d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0) :
     d.Ayx *ᵥ x 0 + d.Ayy *ᵥ y 0 + d.By *ᵥ u 0 = 0 := (h 0).2
 
 /-- An initial point violating the constraint carries no solution of the DAE. -/
-@[powerlib_foundation] theorem not_solution_of_inconsistent {u : ℝ → Fin p → ℝ}
+@[tmio T, powerlib_foundation] theorem not_solution_of_inconsistent {u : ℝ → Fin p → ℝ}
     {x : ℝ → Fin n → ℝ} {y : ℝ → Fin m → ℝ}
     (hc : d.Ayx *ᵥ x 0 + d.Ayy *ᵥ y 0 + d.By *ᵥ u 0 ≠ 0) :
     ¬ ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
@@ -191,7 +191,7 @@ constraint holds at the initial time. -/
 
 /-- Index 1: for `m > 0` some initial point `(x₀, y₀)` admits no solution, so the
 undifferentiated DAE is not an explicit ODE in `(x, y)`. -/
-@[powerlib_foundation] theorem exists_inconsistent_initial (hA : IsUnit d.Ayy.det) (hm : 0 < m) :
+@[tmio T, powerlib_foundation] theorem exists_inconsistent_initial (hA : IsUnit d.Ayy.det) (hm : 0 < m) :
     ∃ y₀ : Fin m → ℝ, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ), x 0 = 0 → y 0 = y₀ →
       ¬ (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
         d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) := by
@@ -203,7 +203,7 @@ undifferentiated DAE is not an explicit ODE in `(x, y)`. -/
 
 /-- Index 1: the consistent algebraic initial value is unique and every `x₀` has a
 (zero-input) solution. -/
-@[powerlib_foundation] theorem exists_unique_consistent (hA : IsUnit d.Ayy.det) (x₀ : Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem exists_unique_consistent (hA : IsUnit d.Ayy.det) (x₀ : Fin n → ℝ) :
     (∃ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
       (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
         d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ∧ x 0 = x₀) ∧
@@ -221,7 +221,7 @@ def stackedField : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ :=
 
 /-- Index 1 = one differentiation: on every zero-input solution `(x, y)` (hypothesis `h`), `y`
 is differentiable and the stacked state solves the explicit linear ODE `ż = stackedField z`. -/
-@[powerlib_foundation] theorem isSolution_stacked_ode (hA : IsUnit d.Ayy.det)
+@[tmio T, powerlib_foundation] theorem isSolution_stacked_ode (hA : IsUnit d.Ayy.det)
     {x : ℝ → Fin n → ℝ} {y : ℝ → Fin m → ℝ}
     (h : ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
       d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) (t : ℝ) :
@@ -263,7 +263,7 @@ def pencil (s : ℂ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℂ :=
   s • Linear.complexify (massMatrix n m) - Linear.complexify d.jacobian
 
 /-- `det (s E - J) = det (-Ayy) · det (s I - A_red)`. -/
-@[powerlib_foundation] theorem det_pencil (hA : IsUnit d.Ayy.det) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_pencil (hA : IsUnit d.Ayy.det) (s : ℂ) :
     (d.pencil s).det =
       (Linear.complexify (-d.Ayy)).det * (Linear.characteristicMatrix d.schurA s).det := by
   have hAn : IsUnit (-d.Ayy).det := by
@@ -286,7 +286,7 @@ def pencil (s : ℂ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℂ :=
     Matrix.neg_mul, Matrix.mul_neg, neg_neg, sub_neg_eq_add]
   abel
 
-@[powerlib_foundation] theorem det_pencil_eq_zero_iff (hA : IsUnit d.Ayy.det) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_pencil_eq_zero_iff (hA : IsUnit d.Ayy.det) (s : ℂ) :
     (d.pencil s).det = 0 ↔ (Linear.characteristicMatrix d.schurA s).det = 0 := by
   rw [d.det_pencil hA s, mul_eq_zero]
   have hAn : IsUnit (-d.Ayy).det := by
@@ -298,20 +298,20 @@ def pencil (s : ℂ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℂ :=
 
 /-- All finite generalized eigenvalues of the pencil lie in the open left half-plane iff the
 Schur complement is spectrally stable. -/
-@[powerlib_foundation] theorem pencil_stable_iff (hA : IsUnit d.Ayy.det) :
+@[tmio T, powerlib_foundation] theorem pencil_stable_iff (hA : IsUnit d.Ayy.det) :
     (∀ s, (d.pencil s).det = 0 → s.re < 0) ↔ Linear.SpectrallyStable d.schurA := by
   simp only [Linear.SpectrallyStable, d.det_pencil_eq_zero_iff hA]
 
 /-! ## Exponential stability -/
 
-@[powerlib_foundation] theorem sqNorm_mulVec_le {k l : ℕ} (M : Matrix (Fin k) (Fin l) ℝ)
+@[tmio T, powerlib_foundation] theorem sqNorm_mulVec_le {k l : ℕ} (M : Matrix (Fin k) (Fin l) ℝ)
     (v : Fin l → ℝ) :
     ∑ i, (M *ᵥ v) i ^ 2 ≤ (∑ i, ∑ j, M i j ^ 2) * ∑ j, v j ^ 2 := by
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun i _ => ?_
   simpa [mulVec, dotProduct] using Finset.sum_mul_sq_le_sq_mul_sq Finset.univ (M i) v
 
-@[powerlib_foundation] theorem norm_mulVec_le {k l : ℕ} (M : Matrix (Fin k) (Fin l) ℝ)
+@[tmio T, powerlib_foundation] theorem norm_mulVec_le {k l : ℕ} (M : Matrix (Fin k) (Fin l) ℝ)
     (v : Fin l → ℝ) :
     ‖WithLp.toLp 2 (M *ᵥ v)‖ ≤ Real.sqrt (∑ i, ∑ j, M i j ^ 2) * ‖WithLp.toLp 2 v‖ := by
   have hn : ∀ {r : ℕ} (w : Fin r → ℝ), ‖WithLp.toLp 2 w‖ ^ 2 = ∑ i, w i ^ 2 := fun w => by
@@ -327,7 +327,7 @@ Schur complement is spectrally stable. -/
 
 /-- Index 1 and Hurwitz Schur complement ⇒ exponential stability of the zero-input DAE: every
 solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`. -/
-@[powerlib_foundation] theorem exponentiallyStable_of_isHurwitz (hA : IsUnit d.Ayy.det)
+@[tmio T, powerlib_foundation] theorem exponentiallyStable_of_isHurwitz (hA : IsUnit d.Ayy.det)
     (hH : LinearSystems.IsHurwitz d.schurA) :
     ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
       (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
@@ -357,7 +357,7 @@ solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`
 
 /-- Conversely, exponential stability of the index-1 zero-input DAE (both components of every
 solution bounded by `K e^{-rate t} ‖x(0)‖`) forces the Schur complement to be Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_of_exponentiallyStable (hA : IsUnit d.Ayy.det)
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_exponentiallyStable (hA : IsUnit d.Ayy.det)
     (h : ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
         (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
           d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
@@ -369,7 +369,7 @@ solution bounded by `K e^{-rate t} ‖x(0)‖`) forces the Schur complement to b
 
 /-- Index 1: exponential stability of the zero-input DAE (both components of every solution
 bounded by `K e^{-rate t} ‖x(0)‖`, `K, rate > 0`) holds iff the Schur complement is Hurwitz. -/
-@[powerlib_foundation] theorem exponentiallyStable_iff_isHurwitz (hA : IsUnit d.Ayy.det) :
+@[tmio T, powerlib_foundation] theorem exponentiallyStable_iff_isHurwitz (hA : IsUnit d.Ayy.det) :
     (∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
         (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
           d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →

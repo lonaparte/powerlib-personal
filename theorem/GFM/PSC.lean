@@ -328,16 +328,16 @@ Static evidence on the model, not a connection conclusion. -/
   rw [rhs, ← hb, hs]
   ring
 
-@[powerlib_foundation] private theorem hasFDerivAt_coord (k : ℝ) (z : State 1) :
+@[tmio T, powerlib_foundation] private theorem hasFDerivAt_coord (k : ℝ) (z : State 1) :
     HasFDerivAt (fun y : State 1 => k * y 0) (k • NormalForm.coordCLM) z :=
   (NormalForm.coordCLM.hasFDerivAt (x := z)).const_mul k
 
-@[powerlib_foundation] private theorem fderiv_coord_apply (k : ℝ) (z v : State 1) :
+@[tmio T, powerlib_foundation] private theorem fderiv_coord_apply (k : ℝ) (z v : State 1) :
     fderiv ℝ (fun y : State 1 => k * y 0) z v = k * v 0 := by
   rw [(hasFDerivAt_coord k z).fderiv]
   rfl
 
-@[powerlib_foundation] private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embed δ₀‖ = |s| := by
+@[tmio T, powerlib_foundation] private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embed δ₀‖ = |s| := by
   rw [NormalForm.embed_sub, NormalForm.norm_embed, add_sub_cancel_left]
 
 /-- With a vanishing scalar field every state is an equilibrium: no point is locally
@@ -558,7 +558,7 @@ end PSC
 /-! ## Algebra (foundation) -/
 
 /-- Active resistance: with `H(s) = ω_b/(s + ω_b)`, `R_a (H(s) − 1) = −R_a s/(s + ω_b)`. -/
-@[powerlib_foundation] theorem activeResistance_highPass (Ra ωb : ℝ) (s : ℂ)
+@[tmio T, powerlib_foundation] theorem activeResistance_highPass (Ra ωb : ℝ) (s : ℂ)
     (hs : s + (ωb : ℂ) ≠ 0) :
     (Ra : ℂ) * ((ωb : ℂ) / (s + (ωb : ℂ)) - 1) = -(Ra : ℂ) * s / (s + (ωb : ℂ)) := by
   field_simp
@@ -566,7 +566,7 @@ end PSC
 
 /-- PSC frequency law `Δω = K_p (P* − P)` is the pure droop / zero-inertia swing law
 `0 = (P* − P) − D Δω` with `D = 1/K_p`. -/
-@[powerlib_foundation] theorem psc_eq_droop {Kp Δω Pstar P : ℝ} (hK : Kp ≠ 0) :
+@[tmio T, powerlib_foundation] theorem psc_eq_droop {Kp Δω Pstar P : ℝ} (hK : Kp ≠ 0) :
     Δω = Kp * (Pstar - P) ↔ 0 = (Pstar - P) - (1 / Kp) * Δω := by
   constructor
   · intro h; rw [h]; field_simp; ring

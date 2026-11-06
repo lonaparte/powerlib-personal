@@ -78,7 +78,7 @@ variable {m : ℕ}
 
 /-- **Uniform Lyapunov dissipation** for a continuous Hurwitz family on a compact parameter
 space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. -/
-@[powerlib_foundation] theorem exists_uniform_dissipation {X : Type*} [TopologicalSpace X]
+@[tmio T, powerlib_foundation] theorem exists_uniform_dissipation {X : Type*} [TopologicalSpace X]
     [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
     (hH : ∀ p, LinearSystems.IsHurwitz (A p)) :
     ∃ lo > 0, ∃ hi > 0, ∃ Pb ≥ 0, ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
@@ -129,7 +129,7 @@ space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. 
 energy bounds `lo, hi` and one bound `Pb` on `Σ|Pᵢⱼ|` serve a dissipation certificate of every
 linearization `A p` (Khalil's uniform form of the hypothesis), the boundary layer is locally
 exponentially stable uniformly in `p`, with `r = lo ρ/hi`, `C = hi/lo`, `α = 1/(8 hi)`. -/
-@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_of_certificates
+@[tmio T, powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_of_certificates
     {X : Type*} {A : X → Matrix (Fin m) (Fin m) ℝ} {lo hi Pb : ℝ} (hlo : 0 < lo) (hhi : 0 < hi)
     (hPb : 0 ≤ Pb)
     (hcert : ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
@@ -261,7 +261,7 @@ exponentially stable uniformly in `p`, with `r = lo ρ/hi`, `C = hi/lo`, `α = 1
 space with a continuous Hurwitz linearization (the certificates of
 `boundaryLayer_uniform_exponentialStability_of_certificates` come from
 `exists_uniform_dissipation`). -/
-@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability {X : Type*}
+@[tmio T, powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability {X : Type*}
     [TopologicalSpace X] [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
     (hH : ∀ p, LinearSystems.IsHurwitz (A p)) {g : X → (Fin m → ℝ) → Fin m → ℝ}
     {h : X → Fin m → ℝ}
@@ -276,7 +276,7 @@ space with a continuous Hurwitz linearization (the certificates of
 
 /-- `‖v‖² ≤ |v|²` (sup norm; the converse bound `dotProduct_self_le_card_mul_norm_sq` is in
 `theorem/SingularPerturbation/SupNorm.lean`). -/
-@[powerlib_foundation] theorem norm_sq_le_dotProduct_self (v : Fin m → ℝ) : ‖v‖ ^ 2 ≤ v ⬝ᵥ v := by
+@[tmio T, powerlib_foundation] theorem norm_sq_le_dotProduct_self (v : Fin m → ℝ) : ‖v‖ ^ 2 ≤ v ⬝ᵥ v := by
   have hs : ‖v‖ ≤ Real.sqrt (v ⬝ᵥ v) := by
     refine (pi_norm_le_iff_of_nonneg (Real.sqrt_nonneg _)).2 fun i => ?_
     rw [Real.norm_eq_abs, ← Real.sqrt_sq_eq_abs]
@@ -291,7 +291,7 @@ space with a continuous Hurwitz linearization (the certificates of
 
 /-- The uniform linearization hypothesis of `boundaryLayer_uniform_exponentialStability` follows
 from a Jacobian `J p z = ∂g/∂z (p, z)` that is uniformly continuous at the equilibrium. -/
-@[powerlib_foundation] theorem uniform_linearization_of_jacobian {X : Type*}
+@[tmio T, powerlib_foundation] theorem uniform_linearization_of_jacobian {X : Type*}
     {A : X → Matrix (Fin m) (Fin m) ℝ} {g : X → (Fin m → ℝ) → Fin m → ℝ} {h : X → Fin m → ℝ}
     {J : X → (Fin m → ℝ) → (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)}
     (heq : ∀ p, g p (h p) = 0) (hJ : ∀ p z, HasFDerivAt (g p) (J p z) z)
@@ -351,7 +351,7 @@ from a Jacobian `J p z = ∂g/∂z (p, z)` that is uniformly continuous at the e
 equilibrium `h(p)` (continuous in `p` over a compact parameter space) and is uniformly
 continuous at the equilibrium, the boundary layer is locally exponentially stable uniformly in
 `p`. -/
-@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_of_jacobian {X : Type*}
+@[tmio T, powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_of_jacobian {X : Type*}
     [TopologicalSpace X] [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
     (hH : ∀ p, LinearSystems.IsHurwitz (A p)) {g : X → (Fin m → ℝ) → Fin m → ℝ}
     {h : X → Fin m → ℝ} {J : X → (Fin m → ℝ) → (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)}
@@ -367,7 +367,7 @@ continuous at the equilibrium, the boundary layer is locally exponentially stabl
 
 /-- A Jacobian that is Lipschitz at the equilibrium with one constant `L` for all parameters
 (`‖J p z − J p (h p)‖ ≤ L ‖z − h p‖`) is uniformly continuous there. -/
-@[powerlib_foundation] theorem uniform_jacobian_of_lipschitz {X : Type*} {h : X → Fin m → ℝ}
+@[tmio T, powerlib_foundation] theorem uniform_jacobian_of_lipschitz {X : Type*} {h : X → Fin m → ℝ}
     {J : X → (Fin m → ℝ) → (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)} {L : ℝ}
     (hL : ∀ p z, ‖J p z - J p (h p)‖ ≤ L * ‖z - h p‖) :
     ∀ κ > 0, ∃ ρ > 0, ∀ p z, ‖z - h p‖ ≤ ρ → ‖J p z - J p (h p)‖ ≤ κ := by
@@ -388,7 +388,7 @@ matrix `A(t, x)` at `z = h(t, x)` that is continuous on `S` and Hurwitz at every
 is Lipschitz at the equilibrium with one constant `L`, then `z = h(t, x)` is locally exponentially
 stable uniformly in `(t, x) ∈ S`: one radius `r`, one constant `C` and one rate `α` serve every
 frozen `(t, x)`. -/
-@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_tx {n : ℕ}
+@[tmio T, powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_tx {n : ℕ}
     {S : Set (ℝ × (Fin n → ℝ))} (hS : IsCompact S)
     {g : ℝ → (Fin n → ℝ) → (Fin m → ℝ) → Fin m → ℝ} {h : ℝ → (Fin n → ℝ) → Fin m → ℝ}
     {J : ℝ → (Fin n → ℝ) → (Fin m → ℝ) → (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)}

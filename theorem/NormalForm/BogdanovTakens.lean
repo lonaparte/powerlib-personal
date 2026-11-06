@@ -62,20 +62,20 @@ def jordanBlock : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; 0, 0]
 @[tmio T, powerlib_foundation] theorem jordanBlock_sq : jordanBlock ^ 2 = 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [jordanBlock, pow_two]
 
-@[powerlib_foundation] theorem jordanBlock_ne_zero : jordanBlock ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem jordanBlock_ne_zero : jordanBlock ≠ 0 := by
   intro h
   have := congrFun (congrFun h 0) 1
   simp [jordanBlock] at this
 
-@[powerlib_foundation] theorem trace_jordanBlock : jordanBlock.trace = 0 := by
+@[tmio T, powerlib_foundation] theorem trace_jordanBlock : jordanBlock.trace = 0 := by
   simp [jordanBlock, Matrix.trace_fin_two]
 
-@[powerlib_foundation] theorem det_jordanBlock : jordanBlock.det = 0 := by
+@[tmio T, powerlib_foundation] theorem det_jordanBlock : jordanBlock.det = 0 := by
   simp [jordanBlock, Matrix.det_fin_two]
 
 /-- A real `2 × 2` matrix has `tr = det = 0` and is nonzero iff it is similar to the single
 Jordan block. -/
-@[powerlib_foundation] theorem trace_det_zero_iff_similar_jordanBlock
+@[tmio T, powerlib_foundation] theorem trace_det_zero_iff_similar_jordanBlock
     (J : Matrix (Fin 2) (Fin 2) ℝ) :
     (J.trace = 0 ∧ J.det = 0 ∧ J ≠ 0) ↔
       ∃ P : Matrix (Fin 2) (Fin 2) ℝ, P.det ≠ 0 ∧ J * P = P * jordanBlock := by
@@ -125,7 +125,7 @@ Jordan block. -/
         _ = 0 := by rw [this, Matrix.mul_zero]
 
 /-- Equivalently: `J` is nonzero nilpotent iff it is similar to the single Jordan block. -/
-@[powerlib_foundation] theorem isNilpotent_ne_zero_iff_similar_jordanBlock
+@[tmio T, powerlib_foundation] theorem isNilpotent_ne_zero_iff_similar_jordanBlock
     (J : Matrix (Fin 2) (Fin 2) ℝ) :
     (IsNilpotent J ∧ J ≠ 0) ↔
       ∃ P : Matrix (Fin 2) (Fin 2) ℝ, P.det ≠ 0 ∧ J * P = P * jordanBlock := by
@@ -134,14 +134,14 @@ Jordan block. -/
 
 /-! ## Structural trace / determinant formulas -/
 
-@[powerlib_foundation] theorem structural_trace_det (g₁ g₂ g₃ : ℝ) :
+@[tmio T, powerlib_foundation] theorem structural_trace_det (g₁ g₂ g₃ : ℝ) :
     (!![g₁, g₂; g₃, 0] : Matrix (Fin 2) (Fin 2) ℝ).trace = g₁ ∧
       (!![g₁, g₂; g₃, 0] : Matrix (Fin 2) (Fin 2) ℝ).det = -(g₂ * g₃) := by
   simp [Matrix.trace_fin_two, Matrix.det_fin_two]
 
 /-- For `!![k g, κ; g, 0]` with `κ ≠ 0`, trace and determinant are both proportional to `g`
 and vanish together exactly at `g = 0`. -/
-@[powerlib_foundation] theorem proportional_trace_det_zero_iff {k κ g : ℝ} (hκ : κ ≠ 0) :
+@[tmio T, powerlib_foundation] theorem proportional_trace_det_zero_iff {k κ g : ℝ} (hκ : κ ≠ 0) :
     ((!![k * g, κ; g, 0] : Matrix (Fin 2) (Fin 2) ℝ).trace = 0 ∧
       (!![k * g, κ; g, 0] : Matrix (Fin 2) (Fin 2) ℝ).det = 0) ↔ g = 0 := by
   simp only [Matrix.trace_fin_two, Matrix.det_fin_two, Matrix.of_apply, Matrix.cons_val',
@@ -153,7 +153,7 @@ and vanish together exactly at `g = 0`. -/
   · rintro rfl; simp
 
 /-- At `g = 0` the proportional structure is a single Jordan block when `κ ≠ 0`. -/
-@[powerlib_foundation] theorem proportional_jordan_at_zero {k κ : ℝ} (hκ : κ ≠ 0) :
+@[tmio T, powerlib_foundation] theorem proportional_jordan_at_zero {k κ : ℝ} (hκ : κ ≠ 0) :
     ∃ P : Matrix (Fin 2) (Fin 2) ℝ, P.det ≠ 0 ∧
       (!![k * 0, κ; 0, 0] : Matrix (Fin 2) (Fin 2) ℝ) * P = P * jordanBlock := by
   apply (trace_det_zero_iff_similar_jordanBlock _).mp
@@ -180,13 +180,13 @@ def field (p : Params) (y : State 2) : State 2 :=
 def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; p.β₂ + 2 * p.a * y₁ + p.b * y₂, p.b * y₁]
 
-@[powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
+@[tmio M, powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
   refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
   · simpa [field] using Dynamics.contDiff_coord (n := 2) 1
   · simp only [field, mk_apply_one]; fun_prop
 
-@[powerlib_foundation] theorem hasFDerivAt_field (p : Params) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_field (p : Params) (y : State 2) :
     HasFDerivAt (field p)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jacobian p (y 0) (y 1))) y := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
@@ -214,11 +214,11 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
       ring
   · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [jacobian]
 
-@[powerlib_foundation] theorem fderiv_field (p : Params) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem fderiv_field (p : Params) (y : State 2) :
     fderiv ℝ (field p) y = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jacobian p (y 0) (y 1)) :=
   (hasFDerivAt_field p y).fderiv
 
-@[powerlib_foundation] theorem field_eq_zero_iff (p : Params) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem field_eq_zero_iff (p : Params) (y : State 2) :
     field p y = 0 ↔ y 1 = 0 ∧ p.a * y 0 ^ 2 + p.β₂ * y 0 + p.β₁ = 0 := by
   rw [field, mk_eq_zero_iff]
   constructor
@@ -228,7 +228,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     exact ⟨h1, by rw [h1]; linarith⟩
 
 /-- An equilibrium exists iff the discriminant `β₂² − 4 a β₁` is nonnegative. -/
-@[powerlib_foundation] theorem exists_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
+@[tmio TM, powerlib_foundation] theorem exists_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
     (∃ y, field p y = 0) ↔ 0 ≤ p.β₂ ^ 2 - 4 * p.a * p.β₁ := by
   constructor
   · rintro ⟨y, hy⟩
@@ -247,7 +247,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     nlinarith [hs]
 
 /-- On the saddle-node curve `T : β₂² = 4 a β₁` the unique equilibrium is `(−β₂ / (2a), 0)`. -/
-@[powerlib_foundation] theorem equilibrium_on_T_iff (p : Params) (ha : p.a ≠ 0)
+@[tmio M, powerlib_foundation] theorem equilibrium_on_T_iff (p : Params) (ha : p.a ≠ 0)
     (hT : p.β₂ ^ 2 = 4 * p.a * p.β₁) (y : State 2) :
     field p y = 0 ↔ y = mk (-p.β₂ / (2 * p.a)) 0 := by
   rw [field_eq_zero_iff]
@@ -266,7 +266,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     nlinarith [hT]
 
 /-- The equilibrium is unique iff the parameters lie on `T`. -/
-@[powerlib_foundation] theorem existsUnique_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
+@[tmio TM, powerlib_foundation] theorem existsUnique_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
     (∃! y, field p y = 0) ↔ p.β₂ ^ 2 = 4 * p.a * p.β₁ := by
   constructor
   · rintro ⟨y, hy, huniq⟩
@@ -287,21 +287,21 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     refine ⟨mk (-p.β₂ / (2 * p.a)) 0, (equilibrium_on_T_iff p ha hT _).mpr rfl, fun y hy =>
       (equilibrium_on_T_iff p ha hT y).mp hy⟩
 
-@[powerlib_foundation] theorem trace_jacobian (p : Params) (y₁ : ℝ) :
+@[tmio M, powerlib_foundation] theorem trace_jacobian (p : Params) (y₁ : ℝ) :
     (jacobian p y₁ 0).trace = p.b * y₁ := by
   simp [jacobian, Matrix.trace_fin_two]
 
-@[powerlib_foundation] theorem det_jacobian (p : Params) (y₁ : ℝ) :
+@[tmio M, powerlib_foundation] theorem det_jacobian (p : Params) (y₁ : ℝ) :
     (jacobian p y₁ 0).det = -(p.β₂ + 2 * p.a * y₁) := by
   simp [jacobian, Matrix.det_fin_two]
 
 /-- The Jacobian at the equilibrium on `T` is singular (saddle-node). -/
-@[powerlib_foundation] theorem det_jacobian_on_T (p : Params) (ha : p.a ≠ 0) :
+@[tmio M, powerlib_foundation] theorem det_jacobian_on_T (p : Params) (ha : p.a ≠ 0) :
     (jacobian p (-p.β₂ / (2 * p.a)) 0).det = 0 := by
   rw [det_jacobian]; field_simp; ring
 
 /-- (`b ≠ 0`) An equilibrium with `tr = 0` and `det > 0` exists iff `β₁ = 0 ∧ β₂ < 0`. -/
-@[powerlib_foundation] theorem hopf_condition_iff (p : Params) (hb : p.b ≠ 0) :
+@[tmio TM, powerlib_foundation] theorem hopf_condition_iff (p : Params) (hb : p.b ≠ 0) :
     (∃ y, field p y = 0 ∧ (jacobian p (y 0) (y 1)).trace = 0 ∧ 0 < (jacobian p (y 0) (y 1)).det) ↔
       p.β₁ = 0 ∧ p.β₂ < 0 := by
   constructor
@@ -320,7 +320,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     · simp only [PiLp.zero_apply]; rw [det_jacobian]; linarith
 
 /-- (`b ≠ 0`) `tr = det = 0` at an equilibrium only at the BT point, and only at the origin. -/
-@[powerlib_foundation] theorem bt_point_iff (p : Params) (hb : p.b ≠ 0) (y : State 2) :
+@[tmio TM, powerlib_foundation] theorem bt_point_iff (p : Params) (hb : p.b ≠ 0) (y : State 2) :
     (field p y = 0 ∧ (jacobian p (y 0) (y 1)).trace = 0 ∧ (jacobian p (y 0) (y 1)).det = 0) ↔
       p.β₁ = 0 ∧ p.β₂ = 0 ∧ y = 0 := by
   constructor
@@ -338,12 +338,12 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     · simp only [PiLp.zero_apply]; rw [det_jacobian, h2]; ring
 
 /-- At the BT point the Jacobian of the truncated normal form is the Jordan block. -/
-@[powerlib_foundation] theorem jacobian_bt_point (a b : ℝ) :
+@[tmio M, powerlib_foundation] theorem jacobian_bt_point (a b : ℝ) :
     jacobian ⟨0, 0, a, b⟩ 0 0 = jordanBlock := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [jacobian, jordanBlock]
 
 /-- An equilibrium `(y₁, 0)` with `β₂ + 2 a y₁ > 0` is a saddle, hence unstable. -/
-@[powerlib_foundation] theorem saddle_unstable (p : Params) {y₁ : ℝ}
+@[tmio TM, powerlib_foundation] theorem saddle_unstable (p : Params) {y₁ : ℝ}
     (heq : p.a * y₁ ^ 2 + p.β₂ * y₁ + p.β₁ = 0) (hs : 0 < p.β₂ + 2 * p.a * y₁) :
     Unstable (field p) (mk y₁ 0) :=
   Criteria.unstable_of_jacobian_det_neg_fin_two (jacobian p y₁ 0) (field_contDiff p)
@@ -352,7 +352,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- An equilibrium `(y₁, 0)` with `β₂ + 2 a y₁ < 0` and `b y₁ < 0` is locally exponentially
 stable. -/
-@[powerlib_foundation] theorem node_or_focus_stable (p : Params) {y₁ : ℝ}
+@[tmio TM, powerlib_foundation] theorem node_or_focus_stable (p : Params) {y₁ : ℝ}
     (heq : p.a * y₁ ^ 2 + p.β₂ * y₁ + p.β₁ = 0) (hs : p.β₂ + 2 * p.a * y₁ < 0)
     (htr : p.b * y₁ < 0) :
     LocallyExponentiallyStable (field p) (mk y₁ 0) :=

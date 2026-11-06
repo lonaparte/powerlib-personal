@@ -69,7 +69,7 @@ variable {Ω E : Type*} {m₁ m₂ : MeasurableSpace Ω} {mΩ : MeasurableSpace 
 
 /-- **Indicators determine the conditional law**: if `E[1_A(Z) | m₁] = E[1_A(Z) | m₂]` for all
 measurable `A`, then `E[g(Z) | m₁] = E[g(Z) | m₂]` for all bounded measurable `g`. -/
-@[powerlib_foundation] theorem condExp_eq_condExp_of_indicator (h₂₁ : m₂ ≤ m₁) (h₁ : m₁ ≤ mΩ)
+@[tmio T, powerlib_foundation] theorem condExp_eq_condExp_of_indicator (h₂₁ : m₂ ≤ m₁) (h₁ : m₁ ≤ mΩ)
     {Z : Ω → E} (hZ : Measurable Z)
     (hind : ∀ A : Set E, MeasurableSet A →
       P[fun ω => A.indicator (fun _ => (1 : ℝ)) (Z ω) | m₁] =ᵐ[P]
@@ -137,7 +137,7 @@ def MarkovEvent (P : Measure Ω) (𝓕 : Filtration ι mΩ) (X : ι → Ω → E
 process on a finite measure space. The right-hand side is the Markov property in
 **conditional-expectation form**: `E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and every
 bounded measurable `g`. -/
-@[powerlib_foundation] theorem markovEvent_iff_markovCondExp {P : Measure Ω} [IsFiniteMeasure P]
+@[tmio T, powerlib_foundation] theorem markovEvent_iff_markovCondExp {P : Measure Ω} [IsFiniteMeasure P]
     {𝓕 : Filtration ι mΩ} {X : ι → Ω → E} (hadapt : ∀ s, Measurable[𝓕 s] (X s))
     (hX : ∀ t, Measurable (X t)) :
     MarkovEvent P 𝓕 X ↔
@@ -172,7 +172,7 @@ instance : IsProbabilityMeasure fellerP := by unfold fellerP; infer_instance
 def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.univ)
 
 /-- Probabilities under `fellerP` are counts divided by `9`. -/
-@[powerlib_foundation] theorem fellerP_apply (p : Fin 3 × Fin 3 → Prop) [DecidablePred p] :
+@[tmio T, powerlib_foundation] theorem fellerP_apply (p : Fin 3 × Fin 3 → Prop) [DecidablePred p] :
     fellerP {ω | p ω} = (Finset.univ.filter p).card / 9 := by
   rw [fellerP, uniformOn_univ]
   have : {ω | p ω} = ((Finset.univ.filter p : Finset _) : Set (Fin 3 × Fin 3)) := by ext; simp
@@ -180,18 +180,18 @@ def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.u
   rfl
 
 /-- Every sample point has probability `1/9`. -/
-@[powerlib_foundation] theorem fellerP_singleton (x : Fin 3 × Fin 3) :
+@[tmio T, powerlib_foundation] theorem fellerP_singleton (x : Fin 3 × Fin 3) :
     fellerP.real {x} = 1 / 9 := by
   have : ({x} : Set (Fin 3 × Fin 3)) = {ω | ω = x} := rfl
   rw [measureReal_def, this, fellerP_apply, Finset.filter_eq' Finset.univ x]
   simp
 
-@[powerlib_foundation] private theorem ennreal_three_div_nine : (3 : ℝ≥0∞) / 9 = 1 / 3 := by
+@[tmio T, powerlib_foundation] private theorem ennreal_three_div_nine : (3 : ℝ≥0∞) / 9 = 1 / 3 := by
   rw [ENNReal.div_eq_div_iff (by norm_num) (by norm_num) (by norm_num) (by norm_num)]
   norm_num
 
 /-- Two-dimensional laws: every pair `(X_i, X_j)`, `i ≠ j`, is uniform on `(Fin 3)²`. -/
-@[powerlib_foundation] theorem feller_pair (i j : Fin 3) (hij : i ≠ j) (a b : Fin 3) :
+@[tmio T, powerlib_foundation] theorem feller_pair (i j : Fin 3) (hij : i ≠ j) (a b : Fin 3) :
     fellerP {ω | fellerX i ω = a ∧ fellerX j ω = b} = 1 / 9 := by
   have hc : (Finset.univ.filter fun ω => fellerX i ω = a ∧ fellerX j ω = b).card = 1 := by
     revert i j a b; decide
@@ -199,25 +199,25 @@ def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.u
   simp
 
 /-- One-dimensional laws: every `X_i` is uniform on `Fin 3`. -/
-@[powerlib_foundation] theorem feller_marginal (i a : Fin 3) :
+@[tmio T, powerlib_foundation] theorem feller_marginal (i a : Fin 3) :
     fellerP {ω | fellerX i ω = a} = 1 / 3 := by
   have hc : (Finset.univ.filter fun ω => fellerX i ω = a).card = 3 := by revert i a; decide
   rw [fellerP_apply, hc]
   exact_mod_cast ennreal_three_div_nine
 
 /-- `K(a, {b}) = 1/3`. -/
-@[powerlib_foundation] theorem unifKernel_apply (a b : Fin 3) : unifKernel a {b} = 1 / 3 := by
+@[tmio T, powerlib_foundation] theorem unifKernel_apply (a b : Fin 3) : unifKernel a {b} = 1 / 3 := by
   rw [unifKernel, Kernel.const_apply, uniformOn_univ, Measure.count_singleton]
   simp
 
 /-- Chapman–Kolmogorov for the uniform kernel: `K ∘ K = K`. -/
-@[powerlib_foundation] theorem unifKernel_comp : unifKernel ∘ₖ unifKernel = unifKernel := by
+@[tmio T, powerlib_foundation] theorem unifKernel_comp : unifKernel ∘ₖ unifKernel = unifKernel := by
   ext1 a
   rw [unifKernel, Kernel.const_comp]
   simp [Kernel.const_apply]
 
 /-- Transition probabilities between any two distinct times: `P(X_j = b | X_i = a) = K(a, {b})`. -/
-@[powerlib_foundation] theorem feller_transition (i j : Fin 3) (hij : i ≠ j) (a b : Fin 3) :
+@[tmio T, powerlib_foundation] theorem feller_transition (i j : Fin 3) (hij : i ≠ j) (a b : Fin 3) :
     fellerP[{ω | fellerX j ω = b} | {ω | fellerX i ω = a}] = unifKernel a {b} := by
   have hm : MeasurableSet {ω : Fin 3 × Fin 3 | fellerX i ω = a} :=
     DiscreteMeasurableSpace.forall_measurableSet _
@@ -231,7 +231,7 @@ def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.u
 /-- Feller's process is not Markov (event form) for any filtration to which it is adapted:
 `P(X₂ = 0 | 𝓕₁)` equals `1` at `(0, 0)` and `0` at `(1, 0)`, while `P(X₂ = 0 | X₁)` cannot
 separate these two points (`X₁ = 0` at both). -/
-@[powerlib_foundation] theorem feller_not_markov
+@[tmio T, powerlib_foundation] theorem feller_not_markov
     (𝓕 : Filtration (Fin 3) (inferInstance : MeasurableSpace (Fin 3 × Fin 3)))
     (hadapt : ∀ s, Measurable[𝓕 s] (fellerX s)) : ¬ MarkovEvent fellerP 𝓕 fellerX := by
   intro h
@@ -282,7 +282,7 @@ separate these two points (`X₁ = 0` at both). -/
 `K` between any two times (`P(X_j = b | X_i = a) = K(a, {b}) = 1/3` for `i ≠ j`), and these
 kernels satisfy Chapman–Kolmogorov (`K ∘ K = K`); nevertheless `X` is not Markov (event form) for
 any filtration to which it is adapted. -/
-@[powerlib_foundation] theorem semigroup_not_markov :
+@[tmio T, powerlib_foundation] theorem semigroup_not_markov :
     unifKernel ∘ₖ unifKernel = unifKernel ∧
       (∀ i j : Fin 3, i ≠ j → ∀ a b : Fin 3,
         fellerP[{ω | fellerX j ω = b} | {ω | fellerX i ω = a}] = unifKernel a {b}) ∧

@@ -1004,7 +1004,7 @@ without an oscillatory mode is `B = 1 − √(1 − ζ₀⁴)` (for `ζ₀ ≤ 1
 
 /-- The damping ratio of the second-order swing reduction equals one exactly when
 `cos δ = ζ₀²` (`ζ(δ) = D / (2√(M K₀ cos δ))`, `cos δ > 0`). -/
-@[powerlib_foundation] theorem dampingRatio_eq_one_iff {M D K0 δ : ℝ} (hM : 0 < M)
+@[tmio T, powerlib_foundation] theorem dampingRatio_eq_one_iff {M D K0 δ : ℝ} (hM : 0 < M)
     (hK0 : 0 < K0) (hD : 0 ≤ D) (hc : 0 < Real.cos δ) :
     D / (2 * Real.sqrt (M * K0 * Real.cos δ)) = 1 ↔
       Real.cos δ = (D / (2 * Real.sqrt (M * K0))) ^ 2 := by

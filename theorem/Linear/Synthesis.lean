@@ -166,16 +166,16 @@ noncomputable section
 /-- The real matrix of a rational one. -/
 abbrev real (M : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℝ := M.map (Rat.cast : ℚ → ℝ)
 
-@[powerlib_foundation] theorem real_eq_mapMatrix (M : Matrix (Fin n) (Fin n) ℚ) :
+@[tmio T, powerlib_foundation] theorem real_eq_mapMatrix (M : Matrix (Fin n) (Fin n) ℚ) :
     real M = (Rat.castHom ℝ).mapMatrix M := rfl
 
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem Witness.lyapunov_eq {A : Matrix (Fin n) (Fin n) ℚ} {w : Witness n} (h : w.Valid A) :
     Aᵀ * w.P + w.P * A = -1 := by
   ext i j
   exact h.1 (i, j)
 
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem Witness.factor_eq {A : Matrix (Fin n) (Fin n) ℚ} {w : Witness n} (h : w.Valid A) :
     w.P = w.L * diagonal w.D * w.Lᵀ := by
   ext i j
@@ -229,7 +229,7 @@ def certificateOf (A : Matrix (Fin n) (Fin n) ℚ) (h : accepts A = true) :
 
 /-- Acceptance is complete: an untrusted proposal can affect running time but cannot lose a
 Hurwitz matrix, because a checked solution is uniquely the positive upstream solution. -/
-@[powerlib_foundation] theorem accepts_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem accepts_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℚ}
     (hA : LinearSystems.IsHurwitz (real A)) : accepts A = true := by
   unfold accepts selectedMatrix
   cases hs : synth A with
@@ -244,12 +244,12 @@ Hurwitz matrix, because a checked solution is uniquely the positive upstream sol
       exact VerifiedSynthesis.candidate_checked hA
 
 /-- The executable synthesizer decides the Hurwitz property of every finite rational matrix. -/
-@[powerlib_foundation] theorem accepts_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℚ) :
+@[tmio T, powerlib_foundation] theorem accepts_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℚ) :
     accepts A = true ↔ LinearSystems.IsHurwitz (real A) :=
   ⟨fun h => (certificateOf A h).isHurwitz, accepts_of_isHurwitz⟩
 
 /-- A rational matrix accepted by the synthesizer satisfies every attractive sentence. -/
-@[powerlib_foundation] private theorem holds_of_accepts {A : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] private theorem holds_of_accepts {A : Matrix (Fin n) (Fin n) ℚ}
     (h : accepts A = true) (e : EuclideanSpace ℝ (Fin n)) {P : Flow.Property}
     (hP : P.Attractive) : P.holds (LinearSystems.affineLinearVectorField (real A) e) e :=
   (certificateOf A h).holds e hP

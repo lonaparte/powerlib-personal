@@ -66,7 +66,7 @@ on any finite index. -/
   rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
 
 /-- Pole stability does not depend on the labelling of the states. -/
-@[powerlib_foundation] theorem spectrallyStable_reindex {ι ι' : Type*} [Fintype ι]
+@[tmio T, powerlib_foundation] theorem spectrallyStable_reindex {ι ι' : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) :
     SpectrallyStable (A.reindex e e) ↔ SpectrallyStable A := by
   have h (s : ℂ) :
@@ -76,7 +76,7 @@ on any finite index. -/
   simp only [SpectrallyStable, h, Matrix.det_reindex_self]
 
 /-- Pole stability is LeanForControl's Hurwitz predicate. -/
-@[powerlib_foundation] theorem spectrallyStable_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℝ) :
+@[tmio T, powerlib_foundation] theorem spectrallyStable_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℝ) :
     SpectrallyStable A ↔ IsHurwitz A := by
   constructor
   · intro h μ v hv heigen
@@ -94,7 +94,7 @@ on any finite index. -/
       exact (sub_eq_zero.mp hzero).symm)
 
 /-- A root of the characteristic polynomial is an eigenvalue. -/
-@[powerlib_foundation] theorem exists_eigenvector_of_root {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}
+@[tmio T, powerlib_foundation] theorem exists_eigenvector_of_root {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}
     (h : (characteristicMatrix A s).det = 0) :
     ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v := by
   obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
@@ -103,7 +103,7 @@ on any finite index. -/
   exact (sub_eq_zero.mp hzero).symm
 
 /-- A root of the characteristic polynomial in the open right half plane gives instability. -/
-@[powerlib_foundation] theorem unstable_of_root {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem unstable_of_root {A : Matrix (Fin n) (Fin n) ℝ}
     (e : EuclideanSpace ℝ (Fin n)) {s : ℂ} (h : (characteristicMatrix A s).det = 0)
     (hs : 0 < s.re) : Unstable (affineLinearVectorField A e) e := by
   obtain ⟨v, hv, heig⟩ := exists_eigenvector_of_root h
@@ -120,17 +120,17 @@ def transferOf {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ)
     Matrix (Fin p) (Fin p) ℂ :=
   complexify C * (characteristicMatrix A s)⁻¹ * complexify B + complexify D
 
-@[powerlib_foundation] theorem transfer_eq_transferOf (M : Plant n p) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem transfer_eq_transferOf (M : Plant n p) (s : ℂ) :
     transfer M s = transferOf M.A M.B M.C M.D s := rfl
 
-@[powerlib_foundation] theorem characteristicMatrix_reindex {ι ι' : Type*} [Fintype ι]
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_reindex {ι ι' : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) (s : ℂ) :
     characteristicMatrix (A.reindex e e) s = (characteristicMatrix A s).reindex e e := by
   ext i j
   simp [characteristicMatrix, Matrix.one_apply]
 
 /-- Relabelling the states does not change the transfer function. -/
-@[powerlib_foundation] theorem transferOf_reindex {ι ι' : Type*} [Fintype ι] [DecidableEq ι]
+@[tmio T, powerlib_foundation] theorem transferOf_reindex {ι ι' : Type*} [Fintype ι] [DecidableEq ι]
     [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) (B : Matrix ι (Fin p) ℝ)
     (C : Matrix (Fin p) ι ℝ) (D : Matrix (Fin p) (Fin p) ℝ) (s : ℂ) :
     transferOf (A.reindex e e) (B.reindex e (Equiv.refl _)) (C.reindex (Equiv.refl _) e) D s =
@@ -143,41 +143,41 @@ def transferOf {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ)
 
 /-! ## Coordinate changes -/
 
-@[powerlib_foundation] theorem complexify_mul {a b c : Type*} [Fintype b] (M : Matrix a b ℝ)
+@[tmio T, powerlib_foundation] theorem complexify_mul {a b c : Type*} [Fintype b] (M : Matrix a b ℝ)
     (N : Matrix b c ℝ) : complexify (M * N) = complexify M * complexify N :=
   Matrix.map_mul
 
-@[powerlib_foundation] theorem complexify_neg {a b : Type*} (M : Matrix a b ℝ) :
+@[tmio T, powerlib_foundation] theorem complexify_neg {a b : Type*} (M : Matrix a b ℝ) :
     complexify (-M) = -complexify M :=
   Matrix.map_neg _ (fun x => map_neg _ x) M
 
-@[powerlib_foundation] theorem complexify_sub {a b : Type*} (M N : Matrix a b ℝ) :
+@[tmio T, powerlib_foundation] theorem complexify_sub {a b : Type*} (M N : Matrix a b ℝ) :
     complexify (M - N) = complexify M - complexify N :=
   Matrix.map_sub _ (fun x y => map_sub _ x y) M N
 
-@[simp, powerlib_foundation] theorem complexify_zero {a b : Type*} :
+@[tmio T, simp, powerlib_foundation] theorem complexify_zero {a b : Type*} :
     complexify (0 : Matrix a b ℝ) = 0 :=
   Matrix.map_zero _ (map_zero _)
 
-@[powerlib_foundation] theorem complexify_fromRows {a b c : Type*} (M₁ : Matrix a c ℝ)
+@[tmio T, powerlib_foundation] theorem complexify_fromRows {a b c : Type*} (M₁ : Matrix a c ℝ)
     (M₂ : Matrix b c ℝ) : complexify (fromRows M₁ M₂) = fromRows (complexify M₁) (complexify M₂) :=
   fromRows_map _ _ _
 
-@[powerlib_foundation] theorem complexify_fromCols {a b c : Type*} (M₁ : Matrix c a ℝ)
+@[tmio T, powerlib_foundation] theorem complexify_fromCols {a b c : Type*} (M₁ : Matrix c a ℝ)
     (M₂ : Matrix c b ℝ) : complexify (fromCols M₁ M₂) = fromCols (complexify M₁) (complexify M₂) :=
   fromCols_map _ _ _
 
-@[powerlib_foundation] theorem complexify_fromBlocks {a b c d : Type*} (A : Matrix c a ℝ)
+@[tmio T, powerlib_foundation] theorem complexify_fromBlocks {a b c d : Type*} (A : Matrix c a ℝ)
     (B : Matrix c b ℝ) (C : Matrix d a ℝ) (D : Matrix d b ℝ) :
     complexify (fromBlocks A B C D) =
       fromBlocks (complexify A) (complexify B) (complexify C) (complexify D) :=
   Matrix.fromBlocks_map _ _ _ _ _
 
-@[powerlib_foundation] theorem complexify_mul_eq_one {a b : Type*} [Fintype b] [DecidableEq a]
+@[tmio T, powerlib_foundation] theorem complexify_mul_eq_one {a b : Type*} [Fintype b] [DecidableEq a]
     {T : Matrix a b ℝ} {S : Matrix b a ℝ} (h : T * S = 1) : complexify T * complexify S = 1 := by
   rw [← Matrix.map_mul, h, Matrix.map_one _ (map_zero _) (map_one _)]
 
-@[powerlib_foundation] theorem inv_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℂ}
+@[tmio T, powerlib_foundation] theorem inv_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℂ}
     {S : Matrix (Fin n) (Fin n') ℂ} (hTS : T * S = 1) (hST : S * T = 1)
     (N : Matrix (Fin n) (Fin n) ℂ) : (T * N * S)⁻¹ = T * N⁻¹ * S := by
   by_cases h : IsUnit N.det
@@ -188,7 +188,7 @@ def transferOf {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ)
   · rw [Matrix.nonsing_inv_apply_not_isUnit _ (by rwa [Matrix.det_conj_of_mul_eq_one hTS hST]),
       Matrix.nonsing_inv_apply_not_isUnit _ h, Matrix.mul_zero, Matrix.zero_mul]
 
-@[powerlib_foundation] theorem characteristicMatrix_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℝ}
     {S : Matrix (Fin n) (Fin n') ℝ} (hTS : T * S = 1) (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
     characteristicMatrix (T * A * S) s =
       complexify T * characteristicMatrix A s * complexify S := by
@@ -201,7 +201,7 @@ def Plant.changeCoordinates {n' : ℕ} (T : Matrix (Fin n') (Fin n) ℝ)
   ⟨T * M.A * S, T * M.B, M.C * S, M.D⟩
 
 /-- A coordinate change preserves the spectrum. -/
-@[powerlib_foundation] theorem isHurwitz_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℝ}
     {S : Matrix (Fin n) (Fin n') ℝ} (hTS : T * S = 1) (hST : S * T = 1)
     (A : Matrix (Fin n) (Fin n) ℝ) : IsHurwitz (T * A * S) ↔ IsHurwitz A := by
   rw [← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
@@ -209,7 +209,7 @@ def Plant.changeCoordinates {n' : ℕ} (T : Matrix (Fin n') (Fin n) ℝ)
     Matrix.det_conj_of_mul_eq_one (complexify_mul_eq_one hTS) (complexify_mul_eq_one hST)]
 
 /-- A coordinate change preserves the transfer function. -/
-@[powerlib_foundation] theorem transfer_changeCoordinates {n' : ℕ}
+@[tmio T, powerlib_foundation] theorem transfer_changeCoordinates {n' : ℕ}
     {T : Matrix (Fin n') (Fin n) ℝ} {S : Matrix (Fin n) (Fin n') ℝ} (hTS : T * S = 1)
     (hST : S * T = 1) (M : Plant n p) (s : ℂ) :
     transfer (M.changeCoordinates T S) s = transfer M s := by
@@ -227,7 +227,7 @@ def Plant.changeCoordinates {n' : ℕ} (T : Matrix (Fin n') (Fin n) ℝ)
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A solution of the conjugated field read back through `K` is a solution of the field. -/
-@[powerlib_foundation] theorem isTrajectoryOn_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
     (hKL : ∀ x, K (L x) = x) {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hφ : IsTrajectoryOn φ (fun x => L (f (K x))) t₀ t₁) :
     IsTrajectoryOn (fun t => K (φ t)) f t₀ t₁ := fun s hs => by
@@ -235,7 +235,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   simpa [Function.comp_def, hKL] using this
 
 /-- Lyapunov stability of the origin survives a linear change of coordinates. -/
-@[powerlib_foundation] theorem lyapunovStable_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+@[tmio T, powerlib_foundation] theorem lyapunovStable_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
     (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) (hf : LyapunovStable f 0) :
     LyapunovStable (fun x => L (f (K x))) 0 := by
   intro ε hε
@@ -257,7 +257,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     _ = ε := by field_simp
 
 /-- A decay rate survives a linear change of coordinates, with a new overshoot constant. -/
-@[powerlib_foundation] theorem decay_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+@[tmio T, powerlib_foundation] theorem decay_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
     (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) {a : ℝ} (hf : Flow.Decay f 0 a) :
     Flow.Decay (fun x => L (f (K x))) 0 a := by
   obtain ⟨C, hC⟩ := hf
@@ -278,7 +278,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     _ = ‖L‖ * max C 0 * ‖K‖ * Real.exp (-a * (t - t₀)) * ‖φ t₀‖ := by ring
 
 /-- Conservation survives a linear change of coordinates: the energy is read through `K`. -/
-@[powerlib_foundation] theorem conservative_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+@[tmio T, powerlib_foundation] theorem conservative_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
     (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) (hf : Flow.Conservative f 0) :
     Flow.Conservative (fun x => L (f (K x))) 0 := by
   obtain ⟨V, hV, hmin, hcons⟩ := hf
@@ -289,7 +289,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A property of fields preserved by every linear change of coordinates holds for the conjugated
 linear field exactly when it holds for the original one. -/
-@[powerlib_foundation] theorem conj_iff {Q : (ℝⁿ → ℝⁿ) → Prop}
+@[tmio T, powerlib_foundation] theorem conj_iff {Q : (ℝⁿ → ℝⁿ) → Prop}
     (hQ : ∀ (f : ℝⁿ → ℝⁿ) (L K : ℝⁿ →L[ℝ] ℝⁿ), (∀ x, K (L x) = x) → (∀ x, L (K x) = x) →
       Q f → Q fun x => L (f (K x)))
     {T S : Matrix (Fin n) (Fin n) ℝ} (hTS : T * S = 1) (hST : S * T = 1)
@@ -312,7 +312,7 @@ linear field exactly when it holds for the original one. -/
     exact hQ _ (op T) (op S) (op_cancel hST) (op_cancel hTS) h
 
 /-- A coordinate change preserves every behavioural sentence at the origin. -/
-@[powerlib_foundation] theorem holds_conj (P : Flow.Property) {T S : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem holds_conj (P : Flow.Property) {T S : Matrix (Fin n) (Fin n) ℝ}
     (hTS : T * S = 1) (hST : S * T = 1) (A : Matrix (Fin n) (Fin n) ℝ) :
     P.holds (affineLinearVectorField (T * A * S) 0) 0 ↔
       P.holds (affineLinearVectorField A 0) 0 := by
@@ -344,26 +344,26 @@ def Similar {n' : ℕ} (m : Plant n p) (m' : Plant n' p) : Prop :=
   ∃ (T : Matrix (Fin n') (Fin n) ℝ) (S : Matrix (Fin n) (Fin n') ℝ), T * S = 1 ∧ S * T = 1 ∧
     m' = m.changeCoordinates T S
 
-@[powerlib_foundation] theorem Plant.changeCoordinates_changeCoordinates {n' n'' : ℕ}
+@[tmio T, powerlib_foundation] theorem Plant.changeCoordinates_changeCoordinates {n' n'' : ℕ}
     (M : Plant n p) (T : Matrix (Fin n') (Fin n) ℝ) (S : Matrix (Fin n) (Fin n') ℝ)
     (T' : Matrix (Fin n'') (Fin n') ℝ) (S' : Matrix (Fin n') (Fin n'') ℝ) :
     (M.changeCoordinates T S).changeCoordinates T' S' = M.changeCoordinates (T' * T) (S * S') := by
   ext : 1 <;> simp only [Plant.changeCoordinates, Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem Plant.changeCoordinates_one (M : Plant n p) :
+@[tmio T, powerlib_foundation] theorem Plant.changeCoordinates_one (M : Plant n p) :
     M.changeCoordinates 1 1 = M := by
   ext : 1 <;> simp [Plant.changeCoordinates]
 
-@[powerlib_foundation] theorem Similar.refl (m : Plant n p) : Similar m m :=
+@[tmio T, powerlib_foundation] theorem Similar.refl (m : Plant n p) : Similar m m :=
   ⟨1, 1, Matrix.mul_one 1, Matrix.mul_one 1, m.changeCoordinates_one.symm⟩
 
-@[powerlib_foundation] theorem Similar.symm {n' : ℕ} {m : Plant n p} {m' : Plant n' p}
+@[tmio T, powerlib_foundation] theorem Similar.symm {n' : ℕ} {m : Plant n p} {m' : Plant n' p}
     (h : Similar m m') : Similar m' m := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
   exact ⟨S, T, hST, hTS, by rw [Plant.changeCoordinates_changeCoordinates, hST,
     Plant.changeCoordinates_one]⟩
 
-@[powerlib_foundation] theorem Similar.trans {n' n'' : ℕ} {m : Plant n p} {m' : Plant n' p}
+@[tmio T, powerlib_foundation] theorem Similar.trans {n' n'' : ℕ} {m : Plant n p} {m' : Plant n' p}
     {m'' : Plant n'' p} (h : Similar m m') (h' : Similar m' m'') : Similar m m'' := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
   obtain ⟨T', S', hTS', hST', rfl⟩ := h'
@@ -371,19 +371,19 @@ def Similar {n' : ℕ} (m : Plant n p) (m' : Plant n' p) : Prop :=
   · rw [Matrix.mul_assoc, ← Matrix.mul_assoc T, hTS, Matrix.one_mul, hTS']
   · rw [Matrix.mul_assoc, ← Matrix.mul_assoc S', hST', Matrix.one_mul, hST]
 
-@[powerlib_foundation] theorem Similar.transfer_eq {n' : ℕ} {m : Plant n p} {m' : Plant n' p}
+@[tmio T, powerlib_foundation] theorem Similar.transfer_eq {n' : ℕ} {m : Plant n p} {m' : Plant n' p}
     (h : Similar m m') (s : ℂ) : transfer m' s = transfer m s := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
   exact transfer_changeCoordinates hTS hST m s
 
 /-- Similar plants have the same spectrum. -/
-@[powerlib_foundation] theorem Similar.isHurwitz_iff {n' : ℕ} {m : Plant n p} {m' : Plant n' p}
+@[tmio T, powerlib_foundation] theorem Similar.isHurwitz_iff {n' : ℕ} {m : Plant n p} {m' : Plant n' p}
     (h : Similar m m') : IsHurwitz m'.A ↔ IsHurwitz m.A := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
   exact isHurwitz_conj hTS hST m.A
 
 /-- Similar plants of the same dimension satisfy the same behavioural sentences. -/
-@[powerlib_foundation] theorem Similar.holds_iff {m m' : Plant n p} (h : Similar m m')
+@[tmio T, powerlib_foundation] theorem Similar.holds_iff {m m' : Plant n p} (h : Similar m m')
     (P : Flow.Property) :
     P.holds (affineLinearVectorField m'.A 0) 0 ↔ P.holds (affineLinearVectorField m.A 0) 0 := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
@@ -424,7 +424,7 @@ def hiddenMode : Plant 1 1 := ⟨!![1], 0, 0, 0⟩
 def quietMode : Plant 1 1 := ⟨!![-1], 0, 0, 0⟩
 
 /-- The transfer function does not determine stability. -/
-@[powerlib_foundation] theorem transfer_not_determines_stability :
+@[tmio T, powerlib_foundation] theorem transfer_not_determines_stability :
     transfer hiddenMode = transfer quietMode ∧ IsHurwitz quietMode.A ∧
       ¬ IsHurwitz hiddenMode.A := by
   refine ⟨by funext s; simp [transfer, hiddenMode, quietMode], ?_, ?_⟩

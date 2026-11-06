@@ -68,7 +68,7 @@ open scoped Matrix.Norms.Operator in
     _ = ‖e₂‖ * C * ‖e₁‖ * ρ ^ k * ‖w‖ := by ring
 
 /-- Schur stability gives a power of operator norm below one. -/
-@[powerlib_foundation] theorem exists_pow_norm_toEuclideanCLM_lt_one
+@[tmio T, powerlib_foundation] theorem exists_pow_norm_toEuclideanCLM_lt_one
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LTI.SchurStable A) :
     ∃ m : ℕ, 0 < m ∧ ‖op A ^ m‖ < 1 := by
   obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
@@ -79,7 +79,7 @@ open scoped Matrix.Norms.Operator in
   exact ⟨m, hm0, (hb m).trans_lt hm1⟩
 
 /-- Near a fixed point, a map differentiable there is bounded by its derivative plus `ε`. -/
-@[powerlib_foundation] theorem eventually_norm_sub_le {G : ℝⁿ → ℝⁿ} {L : ℝⁿ →L[ℝ] ℝⁿ}
+@[tmio T, powerlib_foundation] theorem eventually_norm_sub_le {G : ℝⁿ → ℝⁿ} {L : ℝⁿ →L[ℝ] ℝⁿ}
     {x : ℝⁿ} (hG : HasFDerivAt G L x) (hx : G x = x) {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ y in 𝓝 x, ‖G y - x‖ ≤ (‖L‖ + ε) * ‖y - x‖ := by
   filter_upwards [hG.isLittleO.def hε] with y hy
@@ -91,7 +91,7 @@ open scoped Matrix.Norms.Operator in
 
 /-- A map differentiable at a fixed point, whose derivative has a power of norm below one, is
 locally exponentially stable there. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_pow_norm_lt_one {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_pow_norm_lt_one {F : ℝⁿ → ℝⁿ}
     {L : ℝⁿ →L[ℝ] ℝⁿ} {x : ℝⁿ} (hF : HasFDerivAt F L x) (hx : F x = x) {m : ℕ} (hm : 0 < m)
     (hL : ‖L ^ m‖ < 1) : LocallyExponentiallyStable F x := by
   set q : ℝ := (‖L ^ m‖ + 1) / 2 with hq
@@ -161,7 +161,7 @@ locally exponentially stable there. -/
 
 /-- **Linearization of maps.** A map with a fixed point `x`, differentiable at `x` with a Schur
 stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_schurStable {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_schurStable {F : ℝⁿ → ℝⁿ}
     {A : Matrix (Fin n) (Fin n) ℝ} {x : ℝⁿ} (hF : HasFDerivAt F (op A) x) (hx : F x = x)
     (hA : LTI.SchurStable A) : LocallyExponentiallyStable F x := by
   obtain ⟨m, hm, hlt⟩ := exists_pow_norm_toEuclideanCLM_lt_one hA
@@ -169,14 +169,14 @@ stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
 
 /-- The same with the sentence interpretation: local exponential stability holds for a discrete
 system whose zero-input map has a Schur Jacobian at the origin. -/
-@[powerlib_foundation] theorem holds_locallyExponentiallyStable {p : ℕ} {s : System n p}
+@[tmio T, powerlib_foundation] theorem holds_locallyExponentiallyStable {p : ℕ} {s : System n p}
     {A : Matrix (Fin n) (Fin n) ℝ} (hF : HasFDerivAt s.zeroInput (op A) 0)
     (hx : s.zeroInput 0 = 0) (hA : LTI.SchurStable A) :
     (Sentence.flow .locallyExponentiallyStable).holds (Behaviour.discrete s) :=
   locallyExponentiallyStable_of_schurStable hF hx hA
 
 /-- The linear map of a Schur matrix is globally exponentially stable at the origin. -/
-@[powerlib_foundation] theorem globallyExponentiallyStable_of_schurStable
+@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_of_schurStable
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LTI.SchurStable A) :
     GloballyExponentiallyStable (op A) 0 := by
   obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
@@ -189,7 +189,7 @@ system whose zero-input map has a Schur Jacobian at the origin. -/
 /-! ## Repelling fixed points -/
 
 /-- Near a fixed point, a map differentiable there is bounded below by its derivative minus `ε`. -/
-@[powerlib_foundation] theorem eventually_norm_sub_ge {G : ℝⁿ → ℝⁿ} {L : ℝⁿ →L[ℝ] ℝⁿ}
+@[tmio T, powerlib_foundation] theorem eventually_norm_sub_ge {G : ℝⁿ → ℝⁿ} {L : ℝⁿ →L[ℝ] ℝⁿ}
     {x : ℝⁿ} (hG : HasFDerivAt G L x) (hx : G x = x) {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ y in 𝓝 x, ‖L (y - x)‖ - ε * ‖y - x‖ ≤ ‖G y - x‖ := by
   filter_upwards [hG.isLittleO.def hε] with y hy
@@ -200,7 +200,7 @@ system whose zero-input map has a Schur Jacobian at the origin. -/
   linarith
 
 /-- A map differentiable at a fixed point whose derivative has an expanding power is unstable. -/
-@[powerlib_foundation] theorem unstable_of_expanding {F : ℝⁿ → ℝⁿ} {L : ℝⁿ →L[ℝ] ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_expanding {F : ℝⁿ → ℝⁿ} {L : ℝⁿ →L[ℝ] ℝⁿ}
     {x : ℝⁿ} (hF : HasFDerivAt F L x) (hx : F x = x) {m : ℕ} {q : ℝ} (hq1 : q < 1)
     (hexp : ∀ v, ‖v‖ ≤ q * ‖(L ^ m) v‖) (hn : 0 < n) : Unstable F x := by
   set q₁ : ℝ := max q (1 / 2) with hq₁
@@ -255,7 +255,7 @@ system whose zero-input map has a Schur Jacobian at the origin. -/
 /-- **Repelling fixed points.** A map with a fixed point `x`, differentiable at `x` with a Jacobian
 matrix `A` that has a Schur stable left inverse `B` (every eigenvalue of `A` outside the closed unit
 disk), is unstable at `x` (`n > 0`). -/
-@[powerlib_foundation] theorem unstable_of_inverse_schurStable {F : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_inverse_schurStable {F : ℝⁿ → ℝⁿ}
     {A B : Matrix (Fin n) (Fin n) ℝ} {x : ℝⁿ} (hF : HasFDerivAt F (op A) x) (hx : F x = x)
     (hBA : B * A = 1) (hB : LTI.SchurStable B) (hn : 0 < n) : Unstable F x := by
   obtain ⟨m, -, hlt⟩ := exists_pow_norm_toEuclideanCLM_lt_one hB
@@ -277,7 +277,7 @@ disk), is unstable at `x` (`n > 0`). -/
     _ ≤ ‖op B ^ m‖ * ‖(op A ^ m) v‖ := (op B ^ m).le_opNorm _
 
 /-- The same with the sentence interpretation. -/
-@[powerlib_foundation] theorem holds_unstable {p : ℕ} {s : System n p}
+@[tmio T, powerlib_foundation] theorem holds_unstable {p : ℕ} {s : System n p}
     {A B : Matrix (Fin n) (Fin n) ℝ} (hF : HasFDerivAt s.zeroInput (op A) 0)
     (hx : s.zeroInput 0 = 0) (hBA : B * A = 1) (hB : LTI.SchurStable B) (hn : 0 < n) :
     (Sentence.flow .unstable).holds (Behaviour.discrete s) :=

@@ -148,7 +148,7 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
   field_simp
 
 /-- Correction: the note's estimate `M |ḟ| · 2π` differs from `ΔP_L > 0` unless `2π f₀ = 1`. -/
-@[powerlib_foundation] theorem noteLoadEstimate_ne {ρ : ℝ} (hM : 0 < M) (hf : 0 < f₀)
+@[tmio T, powerlib_foundation] theorem noteLoadEstimate_ne {ρ : ℝ} (hM : 0 < M) (hf : 0 < f₀)
     (hP : 0 < ΔPL) (hρ : ΔPL = M * |ρ| / f₀) (h2π : 2 * Real.pi * f₀ ≠ 1) :
     M * |ρ| * (2 * Real.pi) ≠ ΔPL := by
   intro h
@@ -172,14 +172,14 @@ Trip rules on a frequency record `Δf` at time `t`, written out in the statement
 def instantTrip (Δf : ℝ → ℝ) (th t : ℝ) : Prop := Δf t ≤ -th
 
 /-- A latched trip stays tripped: `min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th` persists for `t' ≥ t`. -/
-@[powerlib_foundation] theorem latchedTrip_mono {Δf : ℝ → ℝ} {t t' : ℝ} (htt : t ≤ t')
+@[tmio T, powerlib_foundation] theorem latchedTrip_mono {Δf : ℝ → ℝ} {t t' : ℝ} (htt : t ≤ t')
     (h : ∃ τ ∈ Icc 0 t, Δf τ ≤ -th) : ∃ τ ∈ Icc 0 t', Δf τ ≤ -th := by
   obtain ⟨τ, hτ, hle⟩ := h
   exact ⟨τ, ⟨hτ.1, hτ.2.trans htt⟩, hle⟩
 
 /-- For a continuous frequency record the latched trip (`Δf` at or below `−Δf_th` somewhere on
 `[0, t]`) is the `min` rule. -/
-@[powerlib_foundation] theorem latchedTrip_iff_sInf {Δf : ℝ → ℝ} {t : ℝ} (ht : 0 ≤ t)
+@[tmio T, powerlib_foundation] theorem latchedTrip_iff_sInf {Δf : ℝ → ℝ} {t : ℝ} (ht : 0 ≤ t)
     (hc : ContinuousOn Δf (Icc 0 t)) :
     (∃ τ ∈ Icc 0 t, Δf τ ≤ -th) ↔ sInf (Δf '' Icc 0 t) ≤ -th := by
   have hK : IsCompact (Δf '' Icc 0 t) := isCompact_Icc.image_of_continuousOn hc
@@ -193,7 +193,7 @@ def instantTrip (Δf : ℝ → ℝ) (th t : ℝ) : Prop := Δf t ≤ -th
 
 /-- For a continuous frequency record the corrected confirmation rule (`Δf` at or below
 `−Δf_i` on the whole window `[t − τ_d, t]`) is the `sup` rule. -/
-@[powerlib_foundation] theorem confirmedTrip_iff_sSup {Δf : ℝ → ℝ} {τd t : ℝ} (hτ : 0 ≤ τd)
+@[tmio T, powerlib_foundation] theorem confirmedTrip_iff_sSup {Δf : ℝ → ℝ} {τd t : ℝ} (hτ : 0 ≤ τd)
     (hc : ContinuousOn Δf (Icc (t - τd) t)) :
     (∀ τ ∈ Icc (t - τd) t, Δf τ ≤ -th) ↔ sSup (Δf '' Icc (t - τd) t) ≤ -th := by
   have hK : IsCompact (Δf '' Icc (t - τd) t) := isCompact_Icc.image_of_continuousOn hc
@@ -208,7 +208,7 @@ def instantTrip (Δf : ℝ → ℝ) (th t : ℝ) : Prop := Δf t ≤ -th
 
 /-- The corrected rule (whole window below the threshold) implies the note's rule (some
 instant of the window below it) and, after `τ_d`, the latched trip. -/
-@[powerlib_foundation] theorem confirmedTrip_imp {Δf : ℝ → ℝ} {τd t : ℝ} (hτ : 0 ≤ τd)
+@[tmio T, powerlib_foundation] theorem confirmedTrip_imp {Δf : ℝ → ℝ} {τd t : ℝ} (hτ : 0 ≤ τd)
     (h : ∀ τ ∈ Icc (t - τd) t, Δf τ ≤ -th) :
     (∃ τ ∈ Icc (t - τd) t, Δf τ ≤ -th) ∧ (τd ≤ t → ∃ τ ∈ Icc 0 t, Δf τ ≤ -th) := by
   refine ⟨⟨t, ⟨by linarith, le_rfl⟩, h t ⟨by linarith, le_rfl⟩⟩, fun hle => ?_⟩
@@ -217,7 +217,7 @@ instant of the window below it) and, after `τ_d`, the latched trip. -/
 /-- The note's §1.1 indicator is not latched: a record that dips below the threshold and
 recovers (`Δf(t) = −2 Δf_th + 3 Δf_th t`) trips at `t = 0` and un-trips at `t = 1`, while the
 latched indicator stays tripped. -/
-@[powerlib_foundation] theorem instantTrip_not_latched (hth : 0 < th) :
+@[tmio T, powerlib_foundation] theorem instantTrip_not_latched (hth : 0 < th) :
     instantTrip (fun t => -2 * th + 3 * th * t) th 0 ∧
       ¬ instantTrip (fun t => -2 * th + 3 * th * t) th 1 ∧
       ∃ τ ∈ Icc (0 : ℝ) 1, -2 * th + 3 * th * τ ≤ -th := by
@@ -227,7 +227,7 @@ latched indicator stays tripped. -/
 `Δf(τ) = −Δf_th + Δf_th |τ − 1|` is at or below `−Δf_th` only at `τ = 1`, yet the `inf` rule
 (some instant of `[t − τ_d, t]` below the threshold) trips at `t = 1 + τ_d`; the corrected `sup`
 rule (the whole window below it) does not. -/
-@[powerlib_foundation] theorem windowInfTrip_single_touch {τd : ℝ} (hth : 0 < th)
+@[tmio T, powerlib_foundation] theorem windowInfTrip_single_touch {τd : ℝ} (hth : 0 < th)
     (hτ : 0 < τd) :
     (∀ τ, -th + th * |τ - 1| ≤ -th → τ = 1) ∧
       (∃ τ ∈ Icc (1 + τd - τd) (1 + τd), -th + th * |τ - 1| ≤ -th) ∧

@@ -65,13 +65,13 @@ structure Certificate (A : Matrix (Fin n) (Fin n) ℝ) where
   rw [h1, h2, dotProduct_comm (A *ᵥ z)]
   ring
 
-@[powerlib_foundation] theorem quadratic_lyapunov {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem quadratic_lyapunov {A P : Matrix (Fin n) (Fin n) ℝ}
     (hP : Pᵀ = P) (hL : Aᵀ * P + P * A = -1) (z : Fin n → ℝ) :
     2 * (z ⬝ᵥ (P *ᵥ (A *ᵥ z))) = -(z ⬝ᵥ z) := by
   rw [← quadratic_sym hP, hL, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
 
 /-- A certificate proves the matrix Hurwitz. -/
-@[powerlib_foundation, aesop safe forward]
+@[tmio T, powerlib_foundation, aesop safe forward]
 theorem Certificate.isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) : IsHurwitz A := by
   intro μ v hv heig
@@ -155,7 +155,7 @@ theorem Certificate.isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
 
 /-- A certificate exists exactly when the matrix is Hurwitz (LeanForControl's Lyapunov
 equation for the converse). -/
-@[powerlib_foundation] theorem nonempty_certificate_iff (A : Matrix (Fin n) (Fin n) ℝ) :
+@[tmio T, powerlib_foundation] theorem nonempty_certificate_iff (A : Matrix (Fin n) (Fin n) ℝ) :
     Nonempty (Certificate A) ↔ IsHurwitz A := by
   refine ⟨fun ⟨c⟩ => c.isHurwitz, fun hA => ?_⟩
   obtain ⟨P, hP, hL, -⟩ := hA.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
@@ -168,7 +168,7 @@ equation for the converse). -/
 
 /-! ## A certificate is a quadratic-decay certificate -/
 
-@[powerlib_foundation] theorem inner_op (P : Matrix (Fin n) (Fin n) ℝ) (x y : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem inner_op (P : Matrix (Fin n) (Fin n) ℝ) (x y : ℝⁿ) :
     ⟪x, op P y⟫ = WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp y) :=
   Matrix.inner_toEuclideanCLM P x y
 
@@ -176,7 +176,7 @@ equation for the converse). -/
 def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x : ℝⁿ) : ℝ :=
   ⟪x - e, op c.P (x - e)⟫
 
-@[powerlib_foundation] theorem Certificate.hasFDerivAt_energy {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem Certificate.hasFDerivAt_energy {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e x : ℝⁿ) :
     HasFDerivAt (c.energy e) ((fderivInnerCLM ℝ (x - e, op c.P (x - e))).comp
       ((ContinuousLinearMap.id ℝ ℝⁿ).prod (op c.P))) x := by
@@ -188,7 +188,7 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
   exact h1.inner ℝ h2
 
 /-- The derivative of a quadratic certificate energy along any linear field. -/
-@[powerlib_foundation] theorem Certificate.lie_energy_matrix
+@[tmio T, powerlib_foundation] theorem Certificate.lie_energy_matrix
     {A B : Matrix (Fin n) (Fin n) ℝ} (c : Certificate B) (e x : ℝⁿ) :
     fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) =
       WithLp.ofLp (x - e) ⬝ᵥ ((Aᵀ * c.P + c.P * A) *ᵥ WithLp.ofLp (x - e)) := by
@@ -207,7 +207,7 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
   ring
 
 /-- Along its own field, the energy decreases at the rate `‖x - e‖²`. -/
-@[powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e x : ℝⁿ) :
     fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) = -‖x - e‖ ^ 2 := by
   rw [c.lie_energy_matrix, c.lyapunov, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
@@ -215,11 +215,11 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
   rw [EuclideanSpace.norm_sq_eq]
   simp [dotProduct, sq]
 
-@[powerlib_foundation] theorem Certificate.energy_contDiff {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem Certificate.energy_contDiff {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e : ℝⁿ) : ContDiff ℝ 1 (c.energy e) :=
   (contDiff_id.sub contDiff_const).inner ℝ ((op c.P).contDiff.comp (contDiff_id.sub contDiff_const))
 
-@[powerlib_foundation] theorem Certificate.exists_energy_bounds {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem Certificate.exists_energy_bounds {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) :
     ∃ α > 0, ∃ β ≥ α, ∀ z : ℝⁿ, α * ‖z‖ ^ 2 ≤ ⟪z, op c.P z⟫ ∧ ⟪z, op c.P z⟫ ≤ β * ‖z‖ ^ 2 :=
   Flow.quadratic_bounds (fun z => ⟪z, op c.P z⟫)
@@ -258,14 +258,14 @@ def Certificate.toQuadraticDecay {A : Matrix (Fin n) (Fin n) ℝ} (c : Certifica
 
 /-- A certificate proves every attractive sentence at every centre: the generic quadratic-decay
 theory applied to its energy. -/
-@[powerlib_foundation] theorem Certificate.holds {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem Certificate.holds {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField A e) e :=
   (c.toQuadraticDecay e).holds (affine_contDiff A e) hP
 
 /-! ## Conserved quadratic energies -/
 
-@[powerlib_foundation] theorem dotProduct_hasDerivWithinAt {X Y : ℝ → (Fin n → ℝ)}
+@[tmio T, powerlib_foundation] theorem dotProduct_hasDerivWithinAt {X Y : ℝ → (Fin n → ℝ)}
     {dX dY : Fin n → ℝ} {s : Set ℝ} {t : ℝ} (hX : HasDerivWithinAt X dX s t)
     (hY : HasDerivWithinAt Y dY s t) :
     HasDerivWithinAt (fun τ => X τ ⬝ᵥ Y τ) (dX ⬝ᵥ Y t + X t ⬝ᵥ dY) s t := by
@@ -277,7 +277,7 @@ theory applied to its energy. -/
 
 /-- A symmetric `P` with `Aᵀ P + P A = 0` gives a quadratic energy constant along every solution
 segment of the linear field. -/
-@[powerlib_foundation] theorem quadratic_conserved {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem quadratic_conserved {A P : Matrix (Fin n) (Fin n) ℝ}
     (hP : Pᵀ = P) (hl : Aᵀ * P + P * A = 0) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hx : IsTrajectoryOn x (affineLinearVectorField A 0) t₀ t₁) :
     ∀ t ∈ Set.Icc t₀ t₁, WithLp.ofLp (x t) ⬝ᵥ (P *ᵥ WithLp.ofLp (x t)) =
@@ -311,7 +311,7 @@ segment of the linear field. -/
 
 /-- A positive definite `P` with `Aᵀ P + P A = 0` proves the linear field conservative: its
 quadratic energy has a strict minimum at the origin and is constant along every solution. -/
-@[powerlib_foundation] theorem conservative_of_quadratic {A P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem conservative_of_quadratic {A P : Matrix (Fin n) (Fin n) ℝ}
     (hP : Pᵀ = P) (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (P *ᵥ x))
     (hl : Aᵀ * P + P * A = 0) : Flow.Conservative (affineLinearVectorField A 0) 0 := by
   refine ⟨fun y => WithLp.ofLp y ⬝ᵥ (P *ᵥ WithLp.ofLp y), by fun_prop, fun y hy => ?_,

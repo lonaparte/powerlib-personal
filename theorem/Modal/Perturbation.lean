@@ -56,7 +56,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-! ## Bauer–Fike -/
 
 omit [DecidableEq n] in
-@[powerlib_foundation] private lemma exists_norm_eq_pi_norm [Nonempty n] (d : n → ℂ) :
+@[tmio T, powerlib_foundation] private lemma exists_norm_eq_pi_norm [Nonempty n] (d : n → ℂ) :
     ∃ i, ‖d‖ = ‖d i‖ := by
   obtain ⟨i, -, hi⟩ := Finset.exists_max_image Finset.univ (fun i => ‖d i‖) Finset.univ_nonempty
   refine ⟨i, le_antisymm ?_ (norm_le_pi_norm d i)⟩
@@ -131,7 +131,7 @@ omit [DecidableEq n] in
     _ = ‖V‖ * ‖Vinv‖ * ‖E‖ := by field_simp
 
 /-- Bauer–Fike with the modal data of a `ModalBasis` (`V⁻¹ = Wᵀ`). -/
-@[powerlib_foundation] theorem ModalBasis.bauerFike {A : Matrix n n ℂ} (mb : ModalBasis A)
+@[tmio T, powerlib_foundation] theorem ModalBasis.bauerFike {A : Matrix n n ℂ} (mb : ModalBasis A)
     (E : Matrix n n ℂ) {μ : ℂ} {x : EuclideanSpace ℂ n} (hx : x ≠ 0)
     (heig : act (A + E) x = μ • x) :
     ∃ i, ‖μ - mb.eig i‖ ≤ ‖mb.V‖ * ‖mb.Wᵀ‖ * ‖E‖ :=
@@ -139,7 +139,7 @@ omit [DecidableEq n] in
 
 /-- **Bauer–Fike for Hermitian (normal) matrices**: the eigenvector matrix is unitary, so every
 eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
-@[powerlib_foundation] theorem bauerFike_hermitian {A : Matrix n n ℂ} (hA : A.IsHermitian)
+@[tmio T, powerlib_foundation] theorem bauerFike_hermitian {A : Matrix n n ℂ} (hA : A.IsHermitian)
     (E : Matrix n n ℂ) {μ : ℂ} {x : EuclideanSpace ℂ n} (hx : x ≠ 0)
     (heig : act (A + E) x = μ • x) :
     ∃ i, ‖μ - (hA.eigenvalues i : ℂ)‖ ≤ ‖E‖ := by
@@ -165,13 +165,13 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
 
 /-- The spectrum of a complex matrix is its set of eigenvalues (membership form of
 `LTI.spectrum_eq_setOf_eigenpair`). -/
-@[powerlib_foundation] theorem mem_spectrum_iff_exists_eigvec {M : Matrix n n ℂ} {ν : ℂ} :
+@[tmio T, powerlib_foundation] theorem mem_spectrum_iff_exists_eigvec {M : Matrix n n ℂ} {ν : ℂ} :
     ν ∈ spectrum ℂ M ↔ ∃ w : n → ℂ, w ≠ 0 ∧ M *ᵥ w = ν • w :=
   Set.ext_iff.mp (LTI.spectrum_eq_setOf_eigenpair M) ν
 
 /-- **Bauer–Fike for normal matrices**: if `A` is normal (`Aᴴ A = A Aᴴ`), every eigenvalue `μ` of
 `A + E` lies within `‖E‖` (spectral norm) of some eigenvalue `ν ∈ σ(A)`. -/
-@[powerlib_foundation] theorem bauerFike_normal {A E : Matrix n n ℂ} (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ}
+@[tmio T, powerlib_foundation] theorem bauerFike_normal {A E : Matrix n n ℂ} (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ}
     {x : EuclideanSpace ℂ n} (hx : x ≠ 0) (heig : act (A + E) x = μ • x) :
     ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
   by_cases hμ : μ ∈ spectrum ℂ A
@@ -240,7 +240,7 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
 
 /-- **Bauer–Fike for normal matrices**, spectral form: `A` normal, `μ ∈ σ(A + E)` ⇒
 `∃ ν ∈ σ(A)`, `|μ − ν| ≤ ‖E‖₂`. -/
-@[powerlib_foundation] theorem bauerFike_normal_spectrum {A E : Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem bauerFike_normal_spectrum {A E : Matrix n n ℂ}
     (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ} (hμ : μ ∈ spectrum ℂ (A + E)) :
     ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
   obtain ⟨w, hw, hAw⟩ := mem_spectrum_iff_exists_eigvec.mp hμ
@@ -255,7 +255,7 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
 omit [DecidableEq n] in
 /-- **Eigenvalue sensitivity** `dλ/dα = ψᵀ A'(α₀) v / (ψᵀ v)` along a differentiable eigen-branch
 (entrywise derivatives; `ψ` a left eigenvector of `A(α₀)`). -/
-@[powerlib_foundation] theorem eigenvalue_sensitivity {A : ℝ → Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem eigenvalue_sensitivity {A : ℝ → Matrix n n ℂ}
     {A' : Matrix n n ℂ} {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ} {lam' : ℂ} {α₀ : ℝ}
     {ψ : n → ℂ} (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
@@ -293,7 +293,7 @@ omit [DecidableEq n] in
 
 /-- **Spectral condition number bound**: `|λ'(α₀)| ≤ κ(λ) ‖A'(α₀)‖`,
 `κ(λ) = ‖ψ‖ ‖v‖ / |ψᵀ v|` (Euclidean vector norms, spectral matrix norm). -/
-@[powerlib_foundation] theorem abs_sensitivity_le (A' : Matrix n n ℂ) (ψ v : EuclideanSpace ℂ n)
+@[tmio T, powerlib_foundation] theorem abs_sensitivity_le (A' : Matrix n n ℂ) (ψ v : EuclideanSpace ℂ n)
     (hnorm : (WithLp.ofLp ψ) ⬝ᵥ (WithLp.ofLp v) ≠ 0) :
     ‖(WithLp.ofLp ψ) ⬝ᵥ (A' *ᵥ WithLp.ofLp v) / ((WithLp.ofLp ψ) ⬝ᵥ (WithLp.ofLp v))‖ ≤
       ‖ψ‖ * ‖v‖ / ‖(WithLp.ofLp ψ) ⬝ᵥ (WithLp.ofLp v)‖ * ‖A'‖ := by

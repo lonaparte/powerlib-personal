@@ -89,25 +89,25 @@ private theorem coord0_isBigO (b : ℝ) :
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
     exact (le_add_of_nonneg_right (abs_nonneg _)).trans (le_abs_self _))
 
-@[powerlib_foundation] private theorem coord1_isBigO (b : ℝ) :
+@[tmio T, powerlib_foundation] private theorem coord1_isBigO (b : ℝ) :
     (fun z : Dynamics.State 2 => z 1 - b * z 0) =O[𝓝 0] fun z => |z 0| + |z 1 - b * z 0| :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
     exact (le_add_of_nonneg_left (abs_nonneg _)).trans (le_abs_self _))
 
-@[powerlib_foundation] private theorem size_tendsto (b : ℝ) :
+@[tmio T, powerlib_foundation] private theorem size_tendsto (b : ℝ) :
     Tendsto (fun z : Dynamics.State 2 => |z 0| + |z 1 - b * z 0|) (𝓝 0) (𝓝 0) := by
   have hc : Continuous (fun z : Dynamics.State 2 => |z 0| + |z 1 - b * z 0|) := by fun_prop
   simpa using hc.tendsto 0
 
-@[powerlib_foundation] private theorem mono_isBigO {f : Dynamics.State 2 → ℝ} (b c : ℝ) (i j k : ℕ) (h : k ≤ i + j)
+@[tmio T, powerlib_foundation] private theorem mono_isBigO {f : Dynamics.State 2 → ℝ} (b c : ℝ) (i j k : ℕ) (h : k ≤ i + j)
     (hf : ∀ z, f z = c * (z 0 ^ i * (z 1 - b * z 0) ^ j)) :
     f =O[𝓝 0] fun z => (|z 0| + |z 1 - b * z 0|) ^ k := by
   have := ((Dynamics.isBigO_monomial (coord0_isBigO b) (coord1_isBigO b) i j).trans
     (Dynamics.isBigO_pow_of_tendsto (size_tendsto b) h)).const_mul_left c
   exact this.congr_left fun z => (hf z).symm
 
-@[powerlib_foundation] private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
+@[tmio T, powerlib_foundation] private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPolyφ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
       fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
   unfold lyapPolyφ
@@ -118,7 +118,7 @@ private theorem coord0_isBigO (b : ℝ) :
     (mono_isBigO b (3 * c₅) 2 1 1 (by norm_num) fun z => by ring)).add
     (mono_isBigO b (4 * c₆) 3 0 1 (by norm_num) fun z => by ring)
 
-@[powerlib_foundation] private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
+@[tmio T, powerlib_foundation] private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPolyw q c₀ c₂ c₄ c₅ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
       fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
   unfold lyapPolyw
@@ -129,7 +129,7 @@ private theorem coord0_isBigO (b : ℝ) :
     (mono_isBigO b c₅ 3 0 1 (by norm_num) fun z => by ring)
 
 /-- The cubic and quartic part of `lyapPoly` is `O(s³)`. -/
-@[powerlib_foundation] private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
+@[tmio T, powerlib_foundation] private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0) -
         1 / 2 * (z 0 ^ 2 + q * (z 1 - b * z 0) ^ 2)) =O[𝓝 0]
       fun z => (|z 0| + |z 1 - b * z 0|) ^ 3 := by
@@ -148,7 +148,7 @@ private theorem coord0_isBigO (b : ℝ) :
   ring
 
 /-- `s² ≤ 2(1 + 1/ρ)(φ² + ρw²)` for `ρ > 0`. -/
-@[powerlib_foundation] private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :
+@[tmio T, powerlib_foundation] private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :
     (|φ| + |w|) ^ 2 ≤ 2 * (1 + 1 / ρ) * (φ ^ 2 + ρ * w ^ 2) := by
   have h1 : (|φ| + |w|) ^ 2 ≤ 2 * φ ^ 2 + 2 * w ^ 2 := by
     nlinarith [sq_abs φ, sq_abs w, sq_nonneg (|φ| - |w|)]
@@ -161,7 +161,7 @@ private theorem coord0_isBigO (b : ℝ) :
   linarith
 
 /-- The quadratic form `φ² + ρ w²` vanishes only at the origin. -/
-@[powerlib_foundation] private theorem quad_pos {ρ b : ℝ} (hρ : 0 < ρ) {z : Dynamics.State 2} (hz : z ≠ 0) :
+@[tmio T, powerlib_foundation] private theorem quad_pos {ρ b : ℝ} (hρ : 0 < ρ) {z : Dynamics.State 2} (hz : z ≠ 0) :
     0 < z 0 ^ 2 + ρ * (z 1 - b * z 0) ^ 2 := by
   by_contra h
   push Not at h
@@ -182,7 +182,7 @@ private theorem coord0_isBigO (b : ℝ) :
 variable {A B α β b : ℝ}
 
 /-- The Lie derivative of the normal-form Lyapunov polynomial along a field in normal form. -/
-@[powerlib_foundation] private theorem hopf_lie_eq {g : Dynamics.State 2 → Dynamics.State 2}
+@[tmio T, powerlib_foundation] private theorem hopf_lie_eq {g : Dynamics.State 2 → Dynamics.State 2}
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) (z : Dynamics.State 2) :
     fderiv ℝ (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0)) z (g z) =
@@ -199,7 +199,7 @@ variable {A B α β b : ℝ}
   simp
 
 /-- Normal form: `V̇ + κ Q² = o(Q²)`, `Q = φ² + (α/A) w²`. -/
-@[powerlib_foundation] private theorem hopf_lie_isLittleO (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
+@[tmio T, powerlib_foundation] private theorem hopf_lie_isLittleO (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
     {g : Dynamics.State 2 → Dynamics.State 2}
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -260,7 +260,7 @@ variable {A B α β b : ℝ}
     (by norm_num : 4 < 5)).trans_isBigO hs4)
 
 /-- `W − Q/2 = o(Q/2)`. -/
-@[powerlib_foundation] private theorem hopfW_isLittleO (hq : 0 < α / A) :
+@[tmio T, powerlib_foundation] private theorem hopfW_isLittleO (hq : 0 < α / A) :
     (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0) -
         1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2)) =o[𝓝 0]
       fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) := by
@@ -276,7 +276,7 @@ variable {A B α β b : ℝ}
     ((Dynamics.isLittleO_pow_of_tendsto (size_tendsto b) (by norm_num : 2 < 3)).trans_isBigO hs2)
 
 /-- A field in normal form vanishes at the origin. -/
-@[powerlib_foundation] private theorem hopf_field_zero {g : Dynamics.State 2 → Dynamics.State 2}
+@[tmio T, powerlib_foundation] private theorem hopf_field_zero {g : Dynamics.State 2 → Dynamics.State 2}
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) : g 0 = 0 := by
   have h0 := hg0 0
@@ -292,7 +292,7 @@ variable {A B α β b : ℝ}
 
 /-- **Supercritical boundary.** A `C¹` field in normal form with `κ > 0` is locally
 asymptotically stable at the origin. -/
-@[powerlib_foundation] private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ : 0 < hopfκ A B β)
+@[tmio TM, powerlib_foundation] private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ : 0 < hopfκ A B β)
     {g : Dynamics.State 2 → Dynamics.State 2} (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -312,7 +312,7 @@ asymptotically stable at the origin. -/
 
 /-- **Subcritical boundary.** A `C¹` field in normal form with `κ < 0` is unstable at the
 origin (Chetaev with the same polynomial). -/
-@[powerlib_foundation] private theorem hopf_unstable (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
+@[tmio TM, powerlib_foundation] private theorem hopf_unstable (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
     (hκ : hopfκ A B β < 0) {g : Dynamics.State 2 → Dynamics.State 2} (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -336,7 +336,7 @@ origin (Chetaev with the same polynomial). -/
 /-- **Conservative boundary.** With `β = 0` the normal form conserves
 `E = α w²/2 + A(1 − cos φ) − B(φ − sin φ)`, so the origin is not locally asymptotically
 stable. -/
-@[powerlib_foundation] private theorem hopf_conservative_not_las (hα : α ≠ 0) {g : Dynamics.State 2 → Dynamics.State 2}
+@[tmio TM, powerlib_foundation] private theorem hopf_conservative_not_las (hα : α ≠ 0) {g : Dynamics.State 2 → Dynamics.State 2}
     (hgc : ContDiff ℝ 1 g)
     (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + 0 * hopfN A B (z 0))
     (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
@@ -511,7 +511,7 @@ end Boundary
 section Members
 
 /-- States `t e_i` (`t > 0`) accumulate at the origin. -/
-@[powerlib_foundation] private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dynamics.State 2 → Prop}
+@[tmio T, powerlib_foundation] private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dynamics.State 2 → Prop}
     (h : ∀ t : ℝ, 0 < t → P (EuclideanSpace.single i (c * t))) :
     ∃ᶠ z in 𝓝 (0 : Dynamics.State 2), P z := by
   rw [Filter.frequently_iff]

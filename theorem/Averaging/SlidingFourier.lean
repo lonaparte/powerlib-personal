@@ -45,13 +45,13 @@ def slidingCoeff (T ω : ℝ) (k : ℤ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
   convert h3 using 1
   ring
 
-@[powerlib_foundation] theorem continuous_harmonic (ω : ℝ) (k : ℤ) :
+@[tmio T, powerlib_foundation] theorem continuous_harmonic (ω : ℝ) (k : ℤ) :
     Continuous fun τ : ℝ => Complex.exp (-((k : ℂ) * ω * τ * I)) := by
   fun_prop
 
 /-- Derivative of a moving-window integral of a continuous function:
 `d/dt ∫_{t−T}^{t} g = g(t) − g(t − T)`. -/
-@[powerlib_foundation] theorem hasDerivAt_window_integral {g : ℝ → ℂ} (hg : Continuous g)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_window_integral {g : ℝ → ℂ} (hg : Continuous g)
     (T t : ℝ) :
     HasDerivAt (fun t => ∫ τ in (t - T)..t, g τ) (g t - g (t - T)) t := by
   have hG : ∀ u, HasDerivAt (fun u => ∫ τ in (0 : ℝ)..u, g τ) (g u) u :=
@@ -66,7 +66,7 @@ def slidingCoeff (T ω : ℝ) (k : ℤ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
   exact h1.sub h2
 
 /-- The generalized-averaging identity `d⟨x⟩_k/dt = ⟨ẋ⟩_k − jkω⟨x⟩_k` for a `C¹` signal. -/
-@[powerlib_foundation] theorem hasDerivAt_slidingCoeff {T ω : ℝ} (k : ℤ) {x x' : ℝ → ℂ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_slidingCoeff {T ω : ℝ} (k : ℤ) {x x' : ℝ → ℂ}
     (hx : ∀ τ, HasDerivAt x (x' τ) τ) (hx' : Continuous x') (t : ℝ) :
     HasDerivAt (slidingCoeff T ω k x)
       (slidingCoeff T ω k x' t - (k : ℂ) * ω * I * slidingCoeff T ω k x t) t := by
@@ -100,7 +100,7 @@ def slidingCoeff (T ω : ℝ) (k : ℤ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
 
 /-- Along a solution of `ẋ = f(x, t)` (with `t ↦ f(x(t), t)` continuous):
 `d⟨x⟩_k/dt = ⟨f(x, t)⟩_k − jkω⟨x⟩_k`. -/
-@[powerlib_foundation] theorem hasDerivAt_slidingCoeff_of_ode {T ω : ℝ} (k : ℤ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_slidingCoeff_of_ode {T ω : ℝ} (k : ℤ)
     {f : ℂ → ℝ → ℂ} {x : ℝ → ℂ} (hx : ∀ τ, HasDerivAt x (f (x τ) τ) τ)
     (hf : Continuous fun τ => f (x τ) τ) (t : ℝ) :
     HasDerivAt (slidingCoeff T ω k x)
@@ -108,7 +108,7 @@ def slidingCoeff (T ω : ℝ) (k : ℤ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
   hasDerivAt_slidingCoeff k hx hf t
 
 /-- Demodulation: `⟨x e^{−jωt}⟩₀ = ⟨x⟩₁`. -/
-@[powerlib_foundation] theorem slidingCoeff_zero_demod (T ω : ℝ) (x : ℝ → ℂ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem slidingCoeff_zero_demod (T ω : ℝ) (x : ℝ → ℂ) (t : ℝ) :
     slidingCoeff T ω 0 (fun τ => x τ * Complex.exp (-((ω : ℂ) * τ * I))) t =
       slidingCoeff T ω 1 x t := by
   simp only [slidingCoeff, Int.cast_zero, Int.cast_one, zero_mul, neg_zero, Complex.exp_zero,

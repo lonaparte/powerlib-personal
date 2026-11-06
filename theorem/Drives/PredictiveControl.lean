@@ -197,7 +197,7 @@ Implementation evidence: discrete-time result outside the sentence language (Rul
 
 /-- FCS-MPC is well posed: a finite nonempty candidate set always has a cost minimiser
 (thin wrapper of `Finset.exists_min_image`). -/
-@[powerlib_foundation] theorem fcs_argmin_exists {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+@[tmio T, powerlib_foundation] theorem fcs_argmin_exists {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
     (J : ι → ℝ) : ∃ k ∈ s, ∀ k' ∈ s, J k ≤ J k' :=
   Finset.exists_min_image s J hs
 

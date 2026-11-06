@@ -94,7 +94,7 @@ def hillLTI (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) :
 
 /-- `s` is a characteristic root of `𝓗_K` iff `s + jhω_s` is an eigenvalue of `A₀` for some
 `|h| ≤ K`: `eig(𝓗_K) = {λ_i(A₀) − jhω_s}`. -/
-@[powerlib_foundation] theorem hillLTI_root_iff (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem hillLTI_root_iff (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) (s : ℂ) :
     (s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) - hillLTI A ωs K).det = 0 ↔
       ∃ k : Fin (2 * K + 1),
         (Linear.characteristicMatrix A (s + (harmonicIndex K k : ℂ) * ωs * I)).det = 0 := by
@@ -112,7 +112,7 @@ variable (A : Matrix ι ι ℝ) (B : Matrix ι (Fin p) ℝ) (C : Matrix (Fin p) 
   (D : Matrix (Fin p) (Fin p) ℝ)
 
 /-- Coefficients of two distinct exponentials are unique. -/
-@[powerlib_foundation] theorem exp_coeff_unique {ω₁ ω₂ : ℝ} (hne : ω₁ ≠ ω₂) {a b : ℂ}
+@[tmio T, powerlib_foundation] theorem exp_coeff_unique {ω₁ ω₂ : ℝ} (hne : ω₁ ≠ ω₂) {a b : ℂ}
     (h : ∀ t : ℝ, a * Complex.exp (ω₁ * t * I) + b * Complex.exp (ω₂ * t * I) = 0) :
     a = 0 ∧ b = 0 := by
   have hd : ∀ ω : ℝ, HasDerivAt (fun t : ℝ => Complex.exp (ω * t * I)) (ω * I) 0 := by
@@ -153,7 +153,7 @@ def toneState (ω : ℝ) (U : Fin p → ℂ) (t : ℝ) : ι → ℂ :=
 
 /-- The tone steady state is a complex-signal trajectory of the LTI model under the complex
 input `u(t) = U e^{jωt}`: `ẋ = A x + B u` at every instant. -/
-@[powerlib_foundation] theorem tone_solves {ω : ℝ}
+@[tmio T, powerlib_foundation] theorem tone_solves {ω : ℝ}
     (h : (Linear.characteristicMatrix A (ω * I)).det ≠ 0) (U : Fin p → ℂ) :
     ∀ t, HasDerivAt (toneState A B ω U)
       (Linear.complexify A *ᵥ toneState A B ω U t +
@@ -184,7 +184,7 @@ input `u(t) = U e^{jωt}`: `ẋ = A x + B u` at every instant. -/
   congr 1; ring
 
 /-- The output of a single tone is `G(jω) U e^{jωt}`. -/
-@[powerlib_foundation] theorem toneOutput_eq (ω : ℝ) (U : Fin p → ℂ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem toneOutput_eq (ω : ℝ) (U : Fin p → ℂ) (t : ℝ) :
     toneOutput C D (fun t => Complex.exp (ω * t * I) • U) (toneState A B ω U) t =
       Complex.exp (ω * t * I) • (Linear.transferOf A B C D (ω * I) *ᵥ U) := by
   simp only [toneOutput, toneState, Linear.transferOf, Matrix.mulVec_smul, Matrix.add_mulVec,
@@ -193,7 +193,7 @@ input `u(t) = U e^{jωt}`: `ẋ = A x + B u` at every instant. -/
 /-- LTI systems do not couple the mirror frequency: if the two-tone steady-state output
 (`ω_p`, `ω_c = 2ω_s − ω_p`, `ω_p ≠ ω_s`) is written as `Y₁ e^{jω_p t} + Y₂ e^{jω_c t}`, then
 `Y₁ = G(jω_p) V₁` and `Y₂ = G(jω_c) V₂`: the off-diagonal entries `Y₁₂ = Y₂₁ = 0`. -/
-@[powerlib_foundation] theorem mirror_coupling_zero {ωp ωs : ℝ}
+@[tmio T, powerlib_foundation] theorem mirror_coupling_zero {ωp ωs : ℝ}
     (hne : ωp ≠ ωs) (V₁ V₂ Y₁ Y₂ : Fin p → ℂ)
     (hy : ∀ t, toneOutput C D (fun t => Complex.exp (ωp * t * I) • V₁) (toneState A B ωp V₁) t +
         toneOutput C D (fun t => Complex.exp ((2 * ωs - ωp : ℝ) * t * I) • V₂)
@@ -235,16 +235,16 @@ def hillMatrix (J : ℤ → Matrix X X ℂ) (ν ω : ℝ) (K : ℕ) :
 def hillGauge (K : ℕ) : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ :=
   Matrix.diagonal fun p => ((harmonicIndex K p.2).negOnePow : ℂ)
 
-@[powerlib_foundation] private theorem negOnePow_mul_self (a : ℤ) :
+@[tmio T, powerlib_foundation] private theorem negOnePow_mul_self (a : ℤ) :
     (a.negOnePow : ℂ) * (a.negOnePow : ℂ) = 1 := by
   rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]; simp
 
-@[powerlib_foundation] private theorem negOnePow_mul_negOnePow (a b : ℤ) :
+@[tmio T, powerlib_foundation] private theorem negOnePow_mul_negOnePow (a b : ℤ) :
     (a.negOnePow : ℂ) * (b.negOnePow : ℂ) = ((a - b).negOnePow : ℂ) := by
   rw [Int.negOnePow_sub, Units.val_mul, Int.cast_mul]
 
 /-- The gauge is an involution. -/
-@[powerlib_foundation] theorem hillGauge_mul_self (K : ℕ) :
+@[tmio T, powerlib_foundation] theorem hillGauge_mul_self (K : ℕ) :
     hillGauge (X := X) K * hillGauge K = 1 := by
   rw [hillGauge, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
@@ -258,7 +258,7 @@ def hillGaugeUnit (K : ℕ) : (Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 
 /-- **Gauge covariance.** Conjugating the Hill matrix by `diag((−1)^m I)` multiplies the band
 `Δm = h` by `(−1)^h`: `G 𝓗[J] G = 𝓗[(−1)^h J_h]`; the diagonal (`h = 0`) blocks, including
 the frequency shift `−j(m + ν)ω I`, are unchanged. -/
-@[powerlib_foundation] theorem hillGauge_conj (J : ℤ → Matrix X X ℂ) (ν ω : ℝ) (K : ℕ) :
+@[tmio T, powerlib_foundation] theorem hillGauge_conj (J : ℤ → Matrix X X ℂ) (ν ω : ℝ) (K : ℕ) :
     hillGauge K * hillMatrix J ν ω K * hillGauge K =
       hillMatrix (fun h => (h.negOnePow : ℂ) • J h) ν ω K := by
   ext ⟨i, k⟩ ⟨i', k'⟩
@@ -277,14 +277,14 @@ the frequency shift `−j(m + ν)ω I`, are unchanged. -/
 /-- If the coefficient family has the parity `J'_h = (−1)^h J_h` (as produced by
 `δ̂₁ ↦ −δ̂₁` under the half-period symmetry), the two Hill matrices are similar through the
 gauge: `𝓗[J'] = G 𝓗[J] G⁻¹` with `G = G⁻¹`. -/
-@[powerlib_foundation] theorem hillMatrix_gauge_similar {J J' : ℤ → Matrix X X ℂ}
+@[tmio T, powerlib_foundation] theorem hillMatrix_gauge_similar {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
     hillMatrix J' ν ω K = hillGauge K * hillMatrix J ν ω K * hillGauge K := by
   have : J' = fun h => (h.negOnePow : ℂ) • J h := funext hJ
   subst this
   exact (hillGauge_conj J ν ω K).symm
 
-@[powerlib_foundation] private theorem hillMatrix_units_conj {J J' : ℤ → Matrix X X ℂ}
+@[tmio T, powerlib_foundation] private theorem hillMatrix_units_conj {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
     hillMatrix J' ν ω K =
       (hillGaugeUnit (X := X) K).val * hillMatrix J ν ω K * (hillGaugeUnit (X := X) K)⁻¹.val :=
@@ -292,7 +292,7 @@ gauge: `𝓗[J'] = G 𝓗[J] G⁻¹` with `G = G⁻¹`. -/
 
 /-- Spectral consequence: the gauge-related Hill matrices have the same characteristic
 polynomial. -/
-@[powerlib_foundation] theorem hillMatrix_charpoly_eq {J J' : ℤ → Matrix X X ℂ}
+@[tmio T, powerlib_foundation] theorem hillMatrix_charpoly_eq {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
     (hillMatrix J' ν ω K).charpoly = (hillMatrix J ν ω K).charpoly := by
   have hinv : (hillGauge (X := X) K)⁻¹ = hillGauge K :=
@@ -305,14 +305,14 @@ polynomial. -/
     _ = (hillMatrix J ν ω K).charpoly := Matrix.charpoly_units_conj _ _
 
 /-- Spectral consequence: the same spectrum (truncated Floquet exponents). -/
-@[powerlib_foundation] theorem hillMatrix_spectrum_eq {J J' : ℤ → Matrix X X ℂ}
+@[tmio T, powerlib_foundation] theorem hillMatrix_spectrum_eq {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
     spectrum ℂ (hillMatrix J' ν ω K) = spectrum ℂ (hillMatrix J ν ω K) := by
   rw [hillMatrix_units_conj hJ, spectrum.units_conjugate]
 
 /-- Spectral consequence, determinant form: `det(sI − 𝓗[J']) = det(sI − 𝓗[J])` for every `s`;
 an eigenvector `φ` of `𝓗[J]` is mapped to the eigenvector `Gφ = ((−1)^m φ_m)` of `𝓗[J']`. -/
-@[powerlib_foundation] theorem hillMatrix_det_eq {J J' : ℤ → Matrix X X ℂ}
+@[tmio T, powerlib_foundation] theorem hillMatrix_det_eq {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) (s : ℂ) :
     (s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) - hillMatrix J' ν ω K).det =
       (s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) -
@@ -326,7 +326,7 @@ an eigenvector `φ` of `𝓗[J]` is mapped to the eigenvector `Gφ = ((−1)^m �
     Matrix.det_one, one_mul]
 
 /-- An eigenvector `φ` of `𝓗[J]` for the exponent `s` gives the eigenvector `Gφ` of `𝓗[J']`. -/
-@[powerlib_foundation] theorem hillMatrix_gauge_eigenvector {J J' : ℤ → Matrix X X ℂ}
+@[tmio T, powerlib_foundation] theorem hillMatrix_gauge_eigenvector {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) {s : ℂ}
     {φ : X × Fin (2 * K + 1) → ℂ} (hφ : hillMatrix J ν ω K *ᵥ φ = s • φ) :
     hillMatrix J' ν ω K *ᵥ (hillGauge K *ᵥ φ) = s • (hillGauge K *ᵥ φ) := by
@@ -335,7 +335,7 @@ an eigenvector `φ` of `𝓗[J]` is mapped to the eigenvector `Gφ = ((−1)^m �
 
 omit [Fintype X] in
 /-- The LTI Hill matrix is the case `J_0 = A₀`, `J_h = 0` (`h ≠ 0`), `ν = 0`. -/
-@[powerlib_foundation] theorem hillLTI_eq_hillMatrix (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) :
+@[tmio T, powerlib_foundation] theorem hillLTI_eq_hillMatrix (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) :
     hillLTI A ωs K =
       hillMatrix (fun h => if h = 0 then A.map (algebraMap ℝ ℂ) else 0) 0 ωs K := by
   ext ⟨i, k⟩ ⟨i', k'⟩
@@ -367,7 +367,7 @@ def hillCoeff3 (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ : ℝ) (h : 
 omit [Fintype X] [DecidableEq X] in
 /-- Band parity: under `δ ↦ −δ` the first-order band changes sign, the second-order band is
 invariant, the third-order band changes sign: `J_h(−δ) = (−1)^h J_h(δ)`. -/
-@[powerlib_foundation] theorem hillBand3_neg (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ : ℝ)
+@[tmio T, powerlib_foundation] theorem hillBand3_neg (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ : ℝ)
     (n : ℕ) :
     hillBand3 A₀ Q₀ P P₃ Q₂ P₃₃ (-δ) n = ((-1 : ℂ) ^ n) • hillBand3 A₀ Q₀ P P₃ Q₂ P₃₃ δ n := by
   match n with
@@ -378,7 +378,7 @@ invariant, the third-order band changes sign: `J_h(−δ) = (−1)^h J_h(δ)`. -
   | n + 4 => simp [hillBand3]
 
 omit [Fintype X] [DecidableEq X] in
-@[powerlib_foundation] theorem hillCoeff3_neg (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ : ℝ)
+@[tmio T, powerlib_foundation] theorem hillCoeff3_neg (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ : ℝ)
     (h : ℤ) :
     hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ (-δ) h =
       (h.negOnePow : ℂ) • hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ δ h := by
@@ -397,7 +397,7 @@ omit [Fintype X] [DecidableEq X] in
 /-- **Half-period symmetry at the Hill level.** The third-order truncated Hill matrix at `−δ̂₁` is
 similar to the one at `δ̂₁` through the gauge `φ_m ↦ (−1)^m φ_m`; hence its characteristic
 polynomial and spectrum (the truncated Floquet exponents) are even in `δ̂₁`. -/
-@[powerlib_foundation] theorem hill3_neg_similar (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ ν ω : ℝ)
+@[tmio T, powerlib_foundation] theorem hill3_neg_similar (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ) (δ ν ω : ℝ)
     (K : ℕ) :
     hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ (-δ)) ν ω K =
         hillGauge K * hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K * hillGauge K ∧
@@ -414,7 +414,7 @@ polynomial and spectrum (the truncated Floquet exponents) are even in `δ̂₁`.
 open MeasureTheory AddCircle in
 /-- A half-period shift on the circle `ℝ/Tℤ` multiplies the `n`-th Fourier coefficient by
 `(−1)^n`: `(f(· + T/2))^_n = (−1)^n f^_n`. -/
-@[powerlib_foundation] theorem fourierCoeff_add_half {T : ℝ} [hT : Fact (0 < T)]
+@[tmio T, powerlib_foundation] theorem fourierCoeff_add_half {T : ℝ} [hT : Fact (0 < T)]
     (f : AddCircle T → ℂ) (n : ℤ) :
     fourierCoeff (fun t => f (t + ((T / 2 : ℝ) : AddCircle T))) n =
       (n.negOnePow : ℂ) * fourierCoeff f n := by
@@ -447,7 +447,7 @@ def fourierCoeffMatrix {T : ℝ} [Fact (0 < T)] (J : AddCircle T → Matrix X X 
 omit [Fintype X] [DecidableEq X] in
 /-- If `J'(t) = J(t + T/2)` (the half-period symmetry `u(t + T/2) = −u(t)` turns `δ̂₁ ↦ −δ̂₁`
 into this shift), then `J'_h = (−1)^h J_h`. -/
-@[powerlib_foundation] theorem fourierCoeffMatrix_half_shift {T : ℝ} [Fact (0 < T)]
+@[tmio T, powerlib_foundation] theorem fourierCoeffMatrix_half_shift {T : ℝ} [Fact (0 < T)]
     {J J' : AddCircle T → Matrix X X ℂ} (hshift : ∀ t, J' t = J (t + ((T / 2 : ℝ) : AddCircle T)))
     (h : ℤ) : fourierCoeffMatrix J' h = (h.negOnePow : ℂ) • fourierCoeffMatrix J h := by
   ext i j
@@ -457,7 +457,7 @@ into this shift), then `J'_h = (−1)^h J_h`. -/
 /-- **Exact Hill matrices under the half-period shift.** If `J'(t) = J(t + T/2)`, the exact
 (Fourier-coefficient) Hill matrices are gauge-similar, so their characteristic polynomials and
 spectra coincide. -/
-@[powerlib_foundation] theorem exactHill_half_shift {T : ℝ} [Fact (0 < T)]
+@[tmio T, powerlib_foundation] theorem exactHill_half_shift {T : ℝ} [Fact (0 < T)]
     {J J' : AddCircle T → Matrix X X ℂ} (hshift : ∀ t, J' t = J (t + ((T / 2 : ℝ) : AddCircle T)))
     (ν ω : ℝ) (K : ℕ) :
     hillMatrix (fourierCoeffMatrix J') ν ω K =

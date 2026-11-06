@@ -68,7 +68,7 @@ open Set Filter Topology
 /-! ## Correction 1: no uniform `O(ε)` bound up to `t = 0` -/
 
 /-- `y₀ e^{-t/ε}` is a fast solution: it solves the fast equation `ε ẏ = -y` at every time. -/
-@[powerlib_foundation] theorem fastSolution_exp (ε y₀ : ℝ) :
+@[tmio T, powerlib_foundation] theorem fastSolution_exp (ε y₀ : ℝ) :
     ∀ t, HasDerivAt (fun t => y₀ * Real.exp (-(t / ε))) (-(y₀ * Real.exp (-(t / ε))) / ε) t := by
   intro t
   have h1 : HasDerivAt (fun x => -(x / ε)) (-(1 / ε)) t := ((hasDerivAt_id' t).div_const ε).neg
@@ -76,7 +76,7 @@ open Set Filter Topology
 
 /-- Every fast solution (`∀ t, HasDerivAt y (-(y t) / ε) t`, the fast state of `ε ẏ = -y`) is
 `y(0) e^{-t/ε}`. -/
-@[powerlib_foundation] theorem fastSolution_eq {ε : ℝ} {y : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem fastSolution_eq {ε : ℝ} {y : ℝ → ℝ}
     (hy : ∀ t, HasDerivAt y (-(y t) / ε) t) (t : ℝ) : y t = y 0 * Real.exp (-(t / ε)) := by
   have h := linear_relaxation_eq (u := y) (r := 1 / ε) (c := 0)
     (fun s => (hy s).congr_deriv (by ring)) t
@@ -87,7 +87,7 @@ open Set Filter Topology
 /-- The claim "`|y(t) - h(x_s(t))| ≤ C ε` on `[0, T]` for all small `ε`" is false for the
 initial value `y(0) = 1` (here `h ≡ 0`): `y` ranges over the fast solutions of `ε ẏ = -y`,
 `∀ t, HasDerivAt y (-(y t) / ε) t`. -/
-@[powerlib_foundation] theorem tikhonov_uniform_claim_false {T : ℝ} (hT : 0 ≤ T) :
+@[tmio T, powerlib_foundation] theorem tikhonov_uniform_claim_false {T : ℝ} (hT : 0 ≤ T) :
     ¬ ∃ C ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε ∈ Ioo 0 ε₀, ∀ y : ℝ → ℝ, (∀ t, HasDerivAt y (-(y t) / ε) t) →
       y 0 = 1 → ∀ t ∈ Icc 0 T, |y t - 0| ≤ C * ε := by
   rintro ⟨C, ε₀, hε₀, h⟩
@@ -107,7 +107,7 @@ initial value `y(0) = 1` (here `h ≡ 0`): `y` ranges over the fast solutions of
 /-- Corrected statement: outside the initial layer `[0, t_b)` the error is `O(ε)`:
 `|y(t) - h| ≤ (|y(0)| / t_b) ε` for `t ≥ t_b > 0`, for every fast solution `y` of `ε ẏ = -y`
 (`∀ t, HasDerivAt y (-(y t) / ε) t`). -/
-@[powerlib_foundation] theorem fastSolution_le_after_layer {ε tb : ℝ} (hε : 0 < ε) (htb : 0 < tb)
+@[tmio T, powerlib_foundation] theorem fastSolution_le_after_layer {ε tb : ℝ} (hε : 0 < ε) (htb : 0 < tb)
     {y : ℝ → ℝ} (hy : ∀ t, HasDerivAt y (-(y t) / ε) t) {t : ℝ} (ht : tb ≤ t) :
     |y t - 0| ≤ |y 0| / tb * ε := by
   rw [sub_zero, fastSolution_eq hy t, abs_mul, Real.abs_exp]
@@ -126,7 +126,7 @@ initial value `y(0) = 1` (here `h ≡ 0`): `y` ranges over the fast solutions of
 /-- The boundary-layer equation as written in the note, `dy_b/dτ = g(x̄, y_b)` with
 `g(x̄, y) = x̄ - y`: every solution converges to `x̄` (the original-coordinate equilibrium
 `h(x̄) = x̄`), not to `0`. -/
-@[powerlib_foundation] theorem mixed_boundary_layer_tendsto {xbar : ℝ} {yb : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem mixed_boundary_layer_tendsto {xbar : ℝ} {yb : ℝ → ℝ}
     (h : ∀ τ, HasDerivAt yb (xbar - yb τ) τ) : Tendsto yb atTop (𝓝 xbar) := by
   have heq : ∀ τ, yb τ = xbar + (yb 0 - xbar) * Real.exp (-(1 * τ)) := fun τ =>
     linear_relaxation_eq (r := 1) (c := xbar) (fun s => by convert h s using 1; ring) τ
@@ -136,19 +136,19 @@ initial value `y(0) = 1` (here `h ≡ 0`): `y` ranges over the fast solutions of
   simp only [mul_zero, add_zero] at this
   exact this.congr fun τ => (heq τ).symm
 
-@[powerlib_foundation] theorem mixed_boundary_layer_not_tendsto_zero {xbar : ℝ} (hx : xbar ≠ 0)
+@[tmio T, powerlib_foundation] theorem mixed_boundary_layer_not_tendsto_zero {xbar : ℝ} (hx : xbar ≠ 0)
     {yb : ℝ → ℝ} (h : ∀ τ, HasDerivAt yb (xbar - yb τ) τ) : ¬ Tendsto yb atTop (𝓝 0) :=
   fun h0 => hx (tendsto_nhds_unique (mixed_boundary_layer_tendsto h) h0)
 
 /-- Correct shifted coordinates: if `y` solves the frozen fast system `dy/dτ = g(x̄, y)`, then
 `ỹ = y - h(x̄)` solves `dỹ/dτ = g(x̄, ỹ + h(x̄))`. -/
-@[powerlib_foundation] theorem shifted_boundary_layer {g : ℝ → ℝ → ℝ} {h : ℝ → ℝ} {xbar : ℝ}
+@[tmio T, powerlib_foundation] theorem shifted_boundary_layer {g : ℝ → ℝ → ℝ} {h : ℝ → ℝ} {xbar : ℝ}
     {y : ℝ → ℝ} (hy : ∀ τ, HasDerivAt y (g xbar (y τ)) τ) (τ : ℝ) :
     HasDerivAt (fun s => y s - h xbar) (g xbar ((y τ - h xbar) + h xbar)) τ := by
   simpa using (hy τ).sub_const (h xbar)
 
 /-- In shifted coordinates the boundary layer of `g(x̄, y) = x̄ - y` decays to `0`. -/
-@[powerlib_foundation] theorem shifted_boundary_layer_tendsto_zero {xbar : ℝ} {yt : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem shifted_boundary_layer_tendsto_zero {xbar : ℝ} {yt : ℝ → ℝ}
     (h : ∀ τ, HasDerivAt yt (xbar - (yt τ + xbar)) τ) : Tendsto yt atTop (𝓝 0) := by
   have h' : ∀ τ, HasDerivAt yt (0 - yt τ) τ := fun τ => by convert h τ using 1; ring
   exact mixed_boundary_layer_tendsto h'

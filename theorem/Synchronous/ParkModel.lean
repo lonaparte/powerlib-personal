@@ -90,7 +90,7 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 /-- **dq inductances are independent of the rotor angle.**
 `T_P(θ) L(θ) T_P(θ)ᵀ = diag(L_ℓ + (3/2)(L_A + L_B), L_ℓ + (3/2)(L_A − L_B), L_ℓ)`. -/
-@[powerlib_foundation] theorem park_statorInductance (Ll LA LB θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem park_statorInductance (Ll LA LB θ : ℝ) :
     parkMatrix θ * statorInductance Ll LA LB θ * (parkMatrix θ)ᵀ =
       diagonal ![Ll + 3 / 2 * (LA + LB), Ll + 3 / 2 * (LA - LB), Ll] := by
   have hc : parkMatrix θ *ᵥ cvec θ = ![k * (3 / 2), 0, 0] := by
@@ -113,7 +113,7 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 /-- Stator–field mutual inductance column `L_afd (cos(θ − φ_x))_x` maps to the constant
 d-axis value `√(3/2) L_afd` (written `k · 3/2 · L_afd`). -/
-@[powerlib_foundation] theorem park_mutual_d (Lafd θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem park_mutual_d (Lafd θ : ℝ) :
     parkMatrix θ *ᵥ (Lafd • cvec θ) = ![k * (3 / 2) * Lafd, 0, 0] := by
   rw [Matrix.mulVec_smul, parkMatrix_mulVec, cvec_dot_cvec, svec_dot_cvec, cvec_sum]
   ext i
@@ -122,7 +122,7 @@ d-axis value `√(3/2) L_afd` (written `k · 3/2 · L_afd`). -/
 
 /-- Stator–q-damper mutual inductance column `−L_akq (sin(θ − φ_x))_x` maps to the constant
 q-axis value `√(3/2) L_akq`. -/
-@[powerlib_foundation] theorem park_mutual_q (Lakq θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem park_mutual_q (Lakq θ : ℝ) :
     parkMatrix θ *ᵥ (-Lakq • svec θ) = ![0, k * (3 / 2) * Lakq, 0] := by
   rw [Matrix.mulVec_smul, parkMatrix_mulVec, svec_dot_svec, cvec_dot_svec, svec_sum]
   ext i
@@ -132,7 +132,7 @@ q-axis value `√(3/2) L_akq`. -/
 /-! ## Stator voltage equations in dq0 -/
 
 /-- Derivative of the phase flux `ψ_abc = T_P(θ)ᵀ ψ_dq0` along a trajectory. -/
-@[powerlib_foundation] theorem park_flux_hasDerivAt (θ : ℝ → ℝ) (ω : ℝ) (ψ : ℝ → Fin 3 → ℝ)
+@[tmio M, powerlib_foundation] theorem park_flux_hasDerivAt (θ : ℝ → ℝ) (ω : ℝ) (ψ : ℝ → Fin 3 → ℝ)
     (dψ : Fin 3 → ℝ) (t : ℝ) (hθ : HasDerivAt θ ω t) (hψ : HasDerivAt ψ dψ t) :
     HasDerivAt (fun s => (parkMatrix (θ s))ᵀ *ᵥ ψ s)
       ((parkMatrix (θ t))ᵀ *ᵥ dψ + ω • ((parkDeriv (θ t))ᵀ *ᵥ ψ t)) t := by
@@ -149,7 +149,7 @@ q-axis value `√(3/2) L_akq`. -/
     ring
 
 /-- `T_P (d/dt)(T_Pᵀ ψ_dq0) = ψ̇_dq0 + ω J₀ ψ_dq0`. -/
-@[powerlib_foundation] theorem park_apply_flux_derivative (θ ω : ℝ) (ψ dψ : Fin 3 → ℝ) :
+@[tmio M, powerlib_foundation] theorem park_apply_flux_derivative (θ ω : ℝ) (ψ dψ : Fin 3 → ℝ) :
     parkMatrix θ *ᵥ ((parkMatrix θ)ᵀ *ᵥ dψ + ω • ((parkDeriv θ)ᵀ *ᵥ ψ)) =
       dψ + ω • (J0 *ᵥ ψ) := by
   rw [Matrix.mulVec_add, Matrix.mulVec_smul, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec,
@@ -158,7 +158,7 @@ q-axis value `√(3/2) L_akq`. -/
 /-- **dq0 stator voltage equations (Kundur generator convention).** If the phase quantities
 satisfy `v_abc = dψ_abc/dt − r i_abc` with `ψ_abc = T_Pᵀ ψ_dq0`, `i_abc = T_Pᵀ i_dq0` and
 `θ̇ = ω`, then `T_P v_abc = (ψ̇_d − ωψ_q − r i_d, ψ̇_q + ωψ_d − r i_q, ψ̇_0 − r i_0)`. -/
-@[powerlib_foundation] theorem dq0_voltage_equations (r ω t : ℝ) (θ : ℝ → ℝ) (ψ : ℝ → Fin 3 → ℝ)
+@[tmio M, powerlib_foundation] theorem dq0_voltage_equations (r ω t : ℝ) (θ : ℝ → ℝ) (ψ : ℝ → Fin 3 → ℝ)
     (dψ idq : Fin 3 → ℝ) (dψabc vabc : Fin 3 → ℝ) (hθ : HasDerivAt θ ω t)
     (hψ : HasDerivAt ψ dψ t)
     (habc : HasDerivAt (fun s => (parkMatrix (θ s))ᵀ *ᵥ ψ s) dψabc t)
@@ -178,7 +178,7 @@ satisfy `v_abc = dψ_abc/dt − r i_abc` with `ψ_abc = T_Pᵀ ψ_dq0`, `i_abc =
 def torque (ψd ψq id iq : ℝ) : ℝ := ψd * iq - ψq * id
 
 /-- Output power in dq0: `v·i = Σ ψ̇ i − r |i|² + ω T_e`. -/
-@[powerlib_foundation] theorem power_dq0 (r ω ψd ψq dψd dψq dψ0 id iq i0 : ℝ) :
+@[tmio M, powerlib_foundation] theorem power_dq0 (r ω ψd ψq dψd dψq dψ0 id iq i0 : ℝ) :
     (dψd - ω * ψq - r * id) * id + (dψq + ω * ψd - r * iq) * iq + (dψ0 - r * i0) * i0 =
       (dψd * id + dψq * iq + dψ0 * i0) - r * (id ^ 2 + iq ^ 2 + i0 ^ 2) +
         ω * torque ψd ψq id iq := by
@@ -186,14 +186,14 @@ def torque (ψd ψq id iq : ℝ) : ℝ := ψd * iq - ψq * id
 
 /-- Two-axis model (`r_s = 0`, Sauer–Pai stator algebra `v_d = E_d' + X_q' i_q`,
 `v_q = E_q' − X_d' i_d`): `P_e = E_d' i_d + E_q' i_q + (X_q' − X_d') i_d i_q`. -/
-@[powerlib_foundation] theorem twoAxis_power (Ed Eq Xd' Xq' id iq vd vq : ℝ)
+@[tmio T, powerlib_foundation] theorem twoAxis_power (Ed Eq Xd' Xq' id iq vd vq : ℝ)
     (hd : vd = Ed + Xq' * iq) (hq : vq = Eq - Xd' * id) :
     vd * id + vq * iq = Ed * id + Eq * iq + (Xq' - Xd') * id * iq := by
   subst hd hq; ring
 
 /-- The note's reluctance coefficient `(X_d' − X_q')` disagrees with the stator algebra whenever
 the machine is salient and `i_d i_q ≠ 0`. -/
-@[powerlib_foundation] theorem twoAxis_noteSign_ne (Ed Eq Xd' Xq' id iq : ℝ) (hs : Xd' ≠ Xq')
+@[tmio T, powerlib_foundation] theorem twoAxis_noteSign_ne (Ed Eq Xd' Xq' id iq : ℝ) (hs : Xd' ≠ Xq')
     (hi : id * iq ≠ 0) :
     Ed * id + Eq * iq + (Xq' - Xd') * id * iq ≠ Ed * id + Eq * iq + (Xd' - Xq') * id * iq := by
   intro h
@@ -205,7 +205,7 @@ the machine is salient and `i_d i_q ≠ 0`. -/
 /-- Classical model: internal EMF `E' e^{jδ}` behind `X_d'` connected to the infinite bus
 `V∠0`. From `S = V I*` with `I = (E' e^{jδ} − V)/(jX)`, the active power delivered to the
 bus is `E' V sin δ / X`. -/
-@[powerlib_foundation] theorem classical_power (E V X δ : ℝ) (hX : X ≠ 0) :
+@[tmio T, powerlib_foundation] theorem classical_power (E V X δ : ℝ) (hX : X ≠ 0) :
     ((V : ℂ) * (starRingEnd ℂ) (((⟨E * Real.cos δ, E * Real.sin δ⟩ : ℂ) - V) /
       (Complex.I * X))).re = E * V / X * Real.sin δ := by
   have hX' : (X : ℂ) ≠ 0 := by exact_mod_cast hX
@@ -220,7 +220,7 @@ bus is `E' V sin δ / X`. -/
 
 /-- Correct first-order expansion of the classical electrical power around `δ₀`:
 `P_max sin(δ₀ + h) = P_max sin δ₀ + P_max cos δ₀ · h + o(h)`. -/
-@[powerlib_foundation] theorem classical_power_linearization (Pmax δ₀ : ℝ) :
+@[tmio T, powerlib_foundation] theorem classical_power_linearization (Pmax δ₀ : ℝ) :
     (fun h => Pmax * Real.sin (δ₀ + h) - Pmax * Real.sin δ₀ - h * (Pmax * Real.cos δ₀)) =o[𝓝 0]
       fun h => h := by
   have hd : HasDerivAt (fun δ => Pmax * Real.sin δ) (Pmax * Real.cos δ₀) δ₀ :=

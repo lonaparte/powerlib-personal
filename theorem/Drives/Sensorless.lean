@@ -73,7 +73,7 @@ open powerlib.Transform (rot rot_neg_mul_rot)
 def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * Real.cos θ⟩
 
 /-- `atan2(−e_α, e_β) = arg(e_β − j e_α)` recovers the rotor angle for `ωψ_f > 0`. -/
-@[powerlib_foundation] theorem angle_of_backEMF (ω ψf θ : ℝ) (hpos : 0 < ω * ψf)
+@[tmio M, powerlib_foundation] theorem angle_of_backEMF (ω ψf θ : ℝ) (hpos : 0 < ω * ψf)
     (hθ : θ ∈ Set.Ioc (-Real.pi) Real.pi) :
     Complex.arg ⟨(backEMF ω ψf θ).im, -(backEMF ω ψf θ).re⟩ = θ := by
   have h : (⟨(backEMF ω ψf θ).im, -(backEMF ω ψf θ).re⟩ : ℂ) =
@@ -82,7 +82,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   rw [h, Complex.arg_real_mul _ hpos, Complex.arg_cos_add_sin_mul_I hθ]
 
 /-- `‖e‖ = |ω| |ψ_f|`: the back-EMF magnitude gives the speed magnitude only. -/
-@[powerlib_foundation] theorem norm_backEMF (ω ψf θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem norm_backEMF (ω ψf θ : ℝ) :
     ‖backEMF ω ψf θ‖ = |ω| * |ψf| := by
   have h : ‖backEMF ω ψf θ‖ ^ 2 = (|ω| * |ψf|) ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply]
@@ -92,7 +92,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   exact (pow_left_inj₀ (norm_nonneg _) (by positivity) (by norm_num)).mp h
 
 /-- The note's `arctan(−e_α/e_β)` misses the angle whenever `cos θ < 0`. -/
-@[powerlib_foundation] theorem arctan_formula_wrong (ω ψf θ : ℝ) (hcos : Real.cos θ < 0) :
+@[tmio M, powerlib_foundation] theorem arctan_formula_wrong (ω ψf θ : ℝ) (hcos : Real.cos θ < 0) :
     Real.arctan (-(backEMF ω ψf θ).re / (backEMF ω ψf θ).im) ≠ θ := by
   intro h
   have h1 := Real.neg_pi_div_two_lt_arctan (-(backEMF ω ψf θ).re / (backEMF ω ψf θ).im)
@@ -105,7 +105,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
 
 /-- Error dynamics: plant `L di/dt = v − r i − e`, observer
 `dî/dt = (v − r î)/L + K sgn(i − î)`, `s = i − î`. -/
-@[powerlib_foundation] theorem smo_error_dynamics (r L K v i ih e : ℝ) (hL : L ≠ 0) :
+@[tmio T, powerlib_foundation] theorem smo_error_dynamics (r L K v i ih e : ℝ) (hL : L ≠ 0) :
     (v - r * i - e) / L - ((v - r * ih) / L + K * Real.sign (i - ih)) =
       -(r / L) * (i - ih) - e / L - K * Real.sign (i - ih) := by
   field_simp
@@ -114,7 +114,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
 /-- **SMO Lyapunov inequality.** For `V = ½ Σ s_i²` and
 `ṡ_i = −(r/L) s_i − e_i/L − K sgn(s_i)` with `r ≥ 0`, `L > 0`, `|e_i| ≤ M`:
 `Σ s_i ṡ_i ≤ −(K − M/L) Σ |s_i|`. -/
-@[powerlib_foundation] theorem smo_lyapunov_bound {n : ℕ} (r L K M : ℝ) (hr : 0 ≤ r) (hL : 0 < L)
+@[tmio T, powerlib_foundation] theorem smo_lyapunov_bound {n : ℕ} (r L K M : ℝ) (hr : 0 ≤ r) (hL : 0 < L)
     (s e : Fin n → ℝ) (he : ∀ j, |e j| ≤ M) :
     ∑ j, s j * (-(r / L) * s j - e j / L - K * Real.sign (s j)) ≤ -(K - M / L) * ∑ j, |s j| := by
   rw [Finset.mul_sum]
@@ -138,7 +138,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   linarith
 
 /-- Reaching condition: with `K > M/L`, `V̇ < 0` off the sliding surface. -/
-@[powerlib_foundation] theorem smo_reaching {n : ℕ} (r L K M : ℝ) (hr : 0 ≤ r) (hL : 0 < L)
+@[tmio T, powerlib_foundation] theorem smo_reaching {n : ℕ} (r L K M : ℝ) (hr : 0 ≤ r) (hL : 0 < L)
     (hK : M / L < K) (s e : Fin n → ℝ) (he : ∀ j, |e j| ≤ M) (hs : s ≠ 0) :
     ∑ j, s j * (-(r / L) * s j - e j / L - K * Real.sign (s j)) < 0 := by
   have hb := smo_lyapunov_bound r L K M hr hL s e he
@@ -151,7 +151,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
 
 /-- Equivalent control: if the error and its rate vanish at an instant
 (`s = 0`, `ṡ = −(r/L)s − e/L − u = 0`), the switching injection equals `u = −e/L`. -/
-@[powerlib_foundation] theorem smo_equivalentControl (r L e u : ℝ) (hL : L ≠ 0)
+@[tmio T, powerlib_foundation] theorem smo_equivalentControl (r L e u : ℝ) (hL : L ≠ 0)
     (h : -(r / L) * 0 - e / L - u = 0) : u = -e / L := by
   field_simp at h ⊢
   linarith
@@ -162,7 +162,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
 def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rot Δ * !![1 / Ld, 0; 0, 1 / Lq] * rot (-Δ)
 
-@[powerlib_foundation] theorem estInvInductance_eq (Δ Ld Lq : ℝ) :
+@[tmio M, powerlib_foundation] theorem estInvInductance_eq (Δ Ld Lq : ℝ) :
     estInvInductance Δ Ld Lq =
       !![(1 / Ld + 1 / Lq) / 2 + (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * Δ),
           (1 / Ld - 1 / Lq) / 2 * Real.sin (2 * Δ);
@@ -180,7 +180,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Frame relation: `ψ_dq = diag(L_d, L_q) i_dq`, `ψ̂ = R(Δθ) ψ_dq`, `î = R(Δθ) i_dq` give
 `î = Γ̂ ψ̂` with `Γ̂ = estInvInductance`. -/
-@[powerlib_foundation] theorem estCurrent_eq (Δ Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
+@[tmio M, powerlib_foundation] theorem estCurrent_eq (Δ Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
     (i : Fin 2 → ℝ) :
     rot Δ *ᵥ i = estInvInductance Δ Ld Lq *ᵥ (rot Δ *ᵥ (!![Ld, 0; 0, Lq] *ᵥ i)) := by
   have hdiag : !![1 / Ld, 0; 0, 1 / Lq] * !![Ld, 0; 0, Lq] = (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
@@ -194,7 +194,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- The injected flux `ψ̂_d(t) = (V_h/ω_h) sin ω_h t` solves `dψ̂_d/dt = V_h cos ω_h t`,
 `ψ̂_d(0) = 0` (resistance and rotation neglected). -/
-@[powerlib_foundation] theorem hf_flux_hasDerivAt (Vh ωh t : ℝ) (hω : ωh ≠ 0) :
+@[tmio T, powerlib_foundation] theorem hf_flux_hasDerivAt (Vh ωh t : ℝ) (hω : ωh ≠ 0) :
     HasDerivAt (fun s => Vh / ωh * Real.sin (ωh * s)) (Vh * Real.cos (ωh * t)) t := by
   have h1 : HasDerivAt (fun s : ℝ => ωh * s) ωh t := by
     simpa using (hasDerivAt_id t).const_mul ωh
@@ -203,7 +203,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   field_simp
 
 /-- HF current response in the estimated frame: `î = Γ̂ (ψ̂_d, 0)`. -/
-@[powerlib_foundation] theorem hf_current (Δ Ld Lq Vh ωh t : ℝ) :
+@[tmio M, powerlib_foundation] theorem hf_current (Δ Ld Lq Vh ωh t : ℝ) :
     estInvInductance Δ Ld Lq *ᵥ ![Vh / ωh * Real.sin (ωh * t), 0] =
       ![Vh / ωh * ((1 / Ld + 1 / Lq) / 2 + (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * Δ)) *
           Real.sin (ωh * t),
@@ -213,7 +213,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   fin_cases j <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- At `Δθ = 0` the d-axis HF current amplitude is `V_h/(ω_h L_d)`. -/
-@[powerlib_foundation] theorem hf_current_aligned (Ld Lq Vh ωh : ℝ) :
+@[tmio T, powerlib_foundation] theorem hf_current_aligned (Ld Lq Vh ωh : ℝ) :
     Vh / ωh * ((1 / Ld + 1 / Lq) / 2 + (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * 0)) =
       Vh / (ωh * Ld) := by
   simp
@@ -222,7 +222,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- **Correction witness**: the note's d-axis coefficient `Σ − Δ' cos 2Δθ` equals `1/L_q` at
 `Δθ = 0`. -/
-@[powerlib_foundation] theorem hf_note_d_axis_wrong (Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
+@[tmio T, powerlib_foundation] theorem hf_note_d_axis_wrong (Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
     (hne : Ld ≠ Lq) :
     (1 / Ld + 1 / Lq) / 2 - (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * 0) = 1 / Lq ∧
       1 / Lq ≠ 1 / Ld := by
@@ -232,7 +232,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- **HF demodulation.** Multiplying `î_q` by the carrier and averaging over one period gives
 `(V_h/(4ω_h))(1/L_d − 1/L_q) sin 2Δθ`. -/
-@[powerlib_foundation] theorem hf_demodulation (Δ Ld Lq Vh ωh : ℝ) (hω : 0 < ωh) :
+@[tmio T, powerlib_foundation] theorem hf_demodulation (Δ Ld Lq Vh ωh : ℝ) (hω : 0 < ωh) :
     ωh / (2 * Real.pi) * ∫ t in (0 : ℝ)..(2 * Real.pi / ωh),
         Vh / ωh * ((1 / Ld - 1 / Lq) / 2 * Real.sin (2 * Δ)) * Real.sin (ωh * t) *
           Real.sin (ωh * t) =
@@ -260,7 +260,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-! ## Angle-tracking loop -/
 
 /-- Small-signal gain of the demodulated error `K sin 2Δθ` is `2K`. -/
-@[powerlib_foundation] theorem demod_smallSignal_gain (K : ℝ) :
+@[tmio T, powerlib_foundation] theorem demod_smallSignal_gain (K : ℝ) :
     HasDerivAt (fun Δ => K * Real.sin (2 * Δ)) (2 * K) 0 := by
   have h1 : HasDerivAt (fun Δ : ℝ => 2 * Δ) 2 0 := by
     simpa using (hasDerivAt_id (0 : ℝ)).const_mul (2 : ℝ)
@@ -274,7 +274,7 @@ state `(θ̂, ξ)`, input `θ`, output `θ̂`. -/
 def trackingLoopModel (kε Kp Ki : ℝ) : Linear.Plant 2 1 :=
   CascadeControl.siso2 (-(Kp * kε)) Ki (-kε) 0 (Kp * kε) kε 1 0
 
-@[powerlib_foundation] theorem trackingLoop_transfer (kε Kp Ki : ℝ) (s : ℂ)
+@[tmio M, powerlib_foundation] theorem trackingLoop_transfer (kε Kp Ki : ℝ) (s : ℂ)
     (hden : s ^ 2 + kε * Kp * s + kε * Ki ≠ 0) :
     Linear.transfer (trackingLoopModel kε Kp Ki) s 0 0 =
       kε * (Kp * s + Ki) / (s ^ 2 + kε * Kp * s + kε * Ki) := by

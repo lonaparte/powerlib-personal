@@ -392,7 +392,7 @@ same Jacobian. -/
 
 /-- Source tuning rule `k_p = 2 ζ₀ ω_{n0} / V`, `k_i = ω_{n0}² / V`, `ω_{n0} = 2π f_{n0}`:
 `ω_s k_p / k_i = ω_s ζ₀ / (π f_{n0})`, i.e. `tan θ_H = ω_s ζ₀ / (π f_{n0})`. -/
-@[powerlib_foundation] theorem omega_kp_div_ki_of_pllGains (ωs fn0 ζ0 V : ℝ) (hV : V ≠ 0)
+@[tmio T, powerlib_foundation] theorem omega_kp_div_ki_of_pllGains (ωs fn0 ζ0 V : ℝ) (hV : V ≠ 0)
     (hfn : fn0 ≠ 0) :
     ωs * (2 * ζ0 * (2 * Real.pi * fn0) / V) / ((2 * Real.pi * fn0) ^ 2 / V) =
       ωs * ζ0 / (Real.pi * fn0) := by
@@ -692,7 +692,7 @@ def undampedPLL : Model := ⟨⟨1, 0, 1, 0, 1, 0⟩, 0⟩
       Params.Lg]
 
 /-- The pendulum energy `1 − cos θ + x²/2`. -/
-@[powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
+@[tmio T, powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
     HasFDerivAt (fun y : Dynamics.State 2 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2)
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
         z 1 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ)) z := by

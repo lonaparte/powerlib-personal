@@ -49,7 +49,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
   exact h r
 
 /-- Pairwise commuting state matrices: `Φ(t, s) = exp(∫ₛᵗ A)` (`s ≤ t`). -/
-@[powerlib_foundation] theorem transition_eq_exp_integral (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem transition_eq_exp_integral (hA : Continuous A)
     (hM : ∀ t, ‖A t‖ ≤ M) (hcomm : ∀ t r, Commute (A t) (A r)) {s t : ℝ} (hst : s ≤ t) :
     transition A t s = NormedSpace.exp (∫ r in s..t, A r) := by
   set Y : ℝ → Matrix X X ℝ := fun u => NormedSpace.exp (∫ r in s..u, A r) with hYdef
@@ -85,7 +85,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
   exact h.symm
 
 /-- Scalar modulation of a constant matrix, `A(t) = a(t) N`: `Φ(t, s) = exp((∫ₛᵗ a) N)`. -/
-@[powerlib_foundation] theorem transition_smul {a : ℝ → ℝ} (ha : Continuous a)
+@[tmio T, powerlib_foundation] theorem transition_smul {a : ℝ → ℝ} (ha : Continuous a)
     (N : Matrix X X ℝ) {M : ℝ} (hM : ∀ t, ‖a t • N‖ ≤ M) {s t : ℝ} (hst : s ≤ t) :
     transition (fun r => a r • N) t s = NormedSpace.exp ((∫ r in s..t, a r) • N) := by
   rw [transition_eq_exp_integral (A := fun r => a r • N) (ha.smul continuous_const) hM

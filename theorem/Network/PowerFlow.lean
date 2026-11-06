@@ -97,7 +97,7 @@ section LinePower
 open Complex
 
 /-- Export power from `E ∠ δ` through `Z = R + jX` into `V ∠ 0`, from `S̄ = Ē Ī*`. -/
-@[powerlib_foundation] theorem linePower (E V δ R X : ℝ) (hZ : R ^ 2 + X ^ 2 ≠ 0) :
+@[tmio T, powerlib_foundation] theorem linePower (E V δ R X : ℝ) (hZ : R ^ 2 + X ^ 2 ≠ 0) :
     (E : ℂ) * exp (δ * I) *
         (starRingEnd ℂ) (((E : ℂ) * exp (δ * I) - (V : ℂ)) / ((R : ℂ) + (X : ℂ) * I)) =
       (((R * (E ^ 2 - E * V * Real.cos δ) + X * E * V * Real.sin δ) / (R ^ 2 + X ^ 2) : ℝ) : ℂ) +
@@ -123,7 +123,7 @@ def lineP (V R X : ℝ) (δ E : ℝ) : ℝ :=
 def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   (X * (E ^ 2 - E * V * Real.cos δ) - R * E * V * Real.sin δ) / (R ^ 2 + X ^ 2)
 
-@[powerlib_foundation] theorem lineP_deriv_delta (V R X : ℝ) :
+@[tmio M, powerlib_foundation] theorem lineP_deriv_delta (V R X : ℝ) :
     HasDerivAt (fun δ => lineP V R X δ V) (X * V ^ 2 / (R ^ 2 + X ^ 2)) 0 := by
   have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul R).add
     ((Real.hasDerivAt_sin 0).const_mul (X * V * V)) |>.div_const (R ^ 2 + X ^ 2)
@@ -131,7 +131,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   · funext δ; simp only [lineP, Pi.add_apply]
   · simp; ring
 
-@[powerlib_foundation] theorem lineP_deriv_E (V R X : ℝ) :
+@[tmio M, powerlib_foundation] theorem lineP_deriv_E (V R X : ℝ) :
     HasDerivAt (fun E => lineP V R X 0 E) (R * V / (R ^ 2 + X ^ 2)) V := by
   have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul R)
     |>.div_const (R ^ 2 + X ^ 2)
@@ -139,7 +139,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   · funext E; simp [lineP]
   · simp; ring
 
-@[powerlib_foundation] theorem lineQ_deriv_delta (V R X : ℝ) :
+@[tmio M, powerlib_foundation] theorem lineQ_deriv_delta (V R X : ℝ) :
     HasDerivAt (fun δ => lineQ V R X δ V) (-(R * V ^ 2) / (R ^ 2 + X ^ 2)) 0 := by
   have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul X).sub
     ((Real.hasDerivAt_sin 0).const_mul (R * V * V)) |>.div_const (R ^ 2 + X ^ 2)
@@ -147,7 +147,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
   · funext δ; simp only [lineQ, Pi.sub_apply]
   · simp; ring
 
-@[powerlib_foundation] theorem lineQ_deriv_E (V R X : ℝ) :
+@[tmio M, powerlib_foundation] theorem lineQ_deriv_E (V R X : ℝ) :
     HasDerivAt (fun E => lineQ V R X 0 E) (X * V / (R ^ 2 + X ^ 2)) V := by
   have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul X)
     |>.div_const (R ^ 2 + X ^ 2)
@@ -158,7 +158,7 @@ def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
 /-- The rotation `R(β)`, `β = π/2 − θ_l` with `cos θ_l = R/|Z|`, `sin θ_l = X/|Z|`,
 diagonalizes the line Jacobian `[[X V², R V], [−R V², X V]] / |Z|²`:
 `R(β) J = (V/|Z|) diag(V, 1)`. -/
-@[powerlib_foundation] theorem rotation_diagonalizes {V R X z θl : ℝ} (hz : 0 < z)
+@[tmio T, powerlib_foundation] theorem rotation_diagonalizes {V R X z θl : ℝ} (hz : 0 < z)
     (hz2 : z ^ 2 = R ^ 2 + X ^ 2) (hc : Real.cos θl = R / z) (hs : Real.sin θl = X / z) :
     !![Real.cos (Real.pi / 2 - θl), -Real.sin (Real.pi / 2 - θl);
         Real.sin (Real.pi / 2 - θl), Real.cos (Real.pi / 2 - θl)] *
@@ -175,14 +175,14 @@ diagonalizes the line Jacobian `[[X V², R V], [−R V², X V]] / |Z|²`:
   · linear_combination (-V) * hz2
 
 /-- Inductive line (`θ_l = π/2`): the rotation is the identity (classical P–f / Q–V droop). -/
-@[powerlib_foundation] theorem rotation_inductive :
+@[tmio T, powerlib_foundation] theorem rotation_inductive :
     !![Real.cos (Real.pi / 2 - Real.pi / 2), -Real.sin (Real.pi / 2 - Real.pi / 2);
         Real.sin (Real.pi / 2 - Real.pi / 2), Real.cos (Real.pi / 2 - Real.pi / 2)] =
       (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
   ext i j; fin_cases i <;> fin_cases j <;> simp
 
 /-- Resistive line (`θ_l = 0`): `(P̂, Q̂) = R(π/2)(P, Q) = (−Q, P)` (inverse droop). -/
-@[powerlib_foundation] theorem rotation_resistive (P Q : ℝ) :
+@[tmio T, powerlib_foundation] theorem rotation_resistive (P Q : ℝ) :
     Matrix.mulVec !![Real.cos (Real.pi / 2 - 0), -Real.sin (Real.pi / 2 - 0);
         Real.sin (Real.pi / 2 - 0), Real.cos (Real.pi / 2 - 0)] ![P, Q] = ![-Q, P] := by
   ext i; fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
@@ -193,7 +193,7 @@ end LinePower
 
 /-- Converter-side complex power `S̄ = V̄_conv Ī*`, `Ī = (V e^{jθ} − V_g)/(jX)` (export current):
 `P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`. -/
-@[powerlib_foundation] theorem converterSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
+@[tmio T, powerlib_foundation] theorem converterSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
     (V : ℂ) * Complex.exp (θ * Complex.I) *
         (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
           ((X : ℂ) * Complex.I)) =
@@ -211,7 +211,7 @@ end LinePower
 
 /-- Grid-side received complex power `S̄_g = V̄_g Ī*`: `P = V V_g sin θ / X`,
 `Q_g = (V V_g cos θ − V_g²)/X` (the note's `Q₀`). -/
-@[powerlib_foundation] theorem gridSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
+@[tmio T, powerlib_foundation] theorem gridSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
     (Vg : ℂ) * (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
           ((X : ℂ) * Complex.I)) =
       ((V * Vg * Real.sin θ / X : ℝ) : ℂ) +

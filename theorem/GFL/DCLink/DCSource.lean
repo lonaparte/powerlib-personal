@@ -44,7 +44,7 @@ namespace powerlib.GFL.DCLink.DCSource
   convert h using 1 <;> simp
 
 /-- Constant-power source: `V̇ = (P₀ + P(V))/(C V)`, derivative at an equilibrium `V = 1`. -/
-@[powerlib_foundation] theorem hasDerivAt_constPower {P : ℝ → ℝ} {P' : ℝ} (P0 C : ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_constPower {P : ℝ → ℝ} {P' : ℝ} (P0 C : ℝ)
     (hC : C ≠ 0) (hP : HasDerivAt P P' 1) (heq : P0 + P 1 = 0) :
     HasDerivAt (fun V => (P0 + P V) / (C * V)) (P' / C) 1 := by
   have h := (hP.const_add P0).div ((hasDerivAt_id (1 : ℝ)).const_mul C) (by simpa using hC)
@@ -55,14 +55,14 @@ namespace powerlib.GFL.DCLink.DCSource
     ring
 
 /-- The two diagonal entries differ by exactly the exported power over `C`. -/
-@[powerlib_foundation] theorem a33_sub (P1 P' C : ℝ) :
+@[tmio T, powerlib_foundation] theorem a33_sub (P1 P' C : ℝ) :
     (P' - P1) / C - P' / C = -P1 / C := by ring
 
 /-- Absorbed power of the dc-voltage loop as a function of `V` (fixed `η`). -/
 def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
   3 / 2 * vd0 * (id0 - kpv * (V - 1) - kiv * η)
 
-@[powerlib_foundation] theorem hasDerivAt_loopPower (vd0 id0 kpv kiv η : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_loopPower (vd0 id0 kpv kiv η : ℝ) :
     HasDerivAt (loopPower vd0 id0 kpv kiv η) (-(3 / 2) * vd0 * kpv) 1 := by
   have := (((hasDerivAt_id (1 : ℝ)).sub_const 1).const_mul kpv).const_sub id0
     |>.sub_const (kiv * η) |>.const_mul (3 / 2 * vd0)
@@ -71,7 +71,7 @@ def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
   · simp
 
 /-- W9, constant-current source: `A₃₃ = (−1.5 v_{d0} k_pv + P)/C`, `P = −P_abs(1)`. -/
-@[powerlib_foundation] theorem a33_constCurrent (vd0 id0 kpv kiv η I0 C : ℝ) :
+@[tmio M, powerlib_foundation] theorem a33_constCurrent (vd0 id0 kpv kiv η I0 C : ℝ) :
     HasDerivAt (fun V => (I0 + loopPower vd0 id0 kpv kiv η V / V) / C)
       ((-1.5 * vd0 * kpv + -loopPower vd0 id0 kpv kiv η 1) / C) 1 := by
   have := hasDerivAt_constCurrent I0 C (hasDerivAt_loopPower vd0 id0 kpv kiv η)
@@ -80,7 +80,7 @@ def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
 
 /-- W9, constant-power source: `A₃₃ = −1.5 v_{d0} k_pv / C` (at the equilibrium
 `P₀ = P = −P_abs(1)`). -/
-@[powerlib_foundation] theorem a33_constPower (vd0 id0 kpv kiv η C : ℝ) (hC : C ≠ 0) :
+@[tmio M, powerlib_foundation] theorem a33_constPower (vd0 id0 kpv kiv η C : ℝ) (hC : C ≠ 0) :
     HasDerivAt (fun V => (-loopPower vd0 id0 kpv kiv η 1 + loopPower vd0 id0 kpv kiv η V) /
         (C * V)) (-1.5 * vd0 * kpv / C) 1 := by
   have := hasDerivAt_constPower (-loopPower vd0 id0 kpv kiv η 1) C hC

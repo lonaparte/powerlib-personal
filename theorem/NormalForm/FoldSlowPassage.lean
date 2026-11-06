@@ -84,7 +84,7 @@ def solvabilityShift (φ : ℝ → ℝ) : ℝ :=
 
 /-- Exact linearization along the separatrix: `X = τ + η` solves `X' = λ - τ² + X²` at `τ`
 iff `η' = 2τη + (λ - 1) + η²` there. -/
-@[powerlib_foundation] theorem riccatiGraze_shift_iff (lam : ℝ) {η : ℝ → ℝ} {η' τ : ℝ} :
+@[tmio M, powerlib_foundation] theorem riccatiGraze_shift_iff (lam : ℝ) {η : ℝ → ℝ} {η' τ : ℝ} :
     HasDerivAt (fun s => s + η s) (riccatiGraze lam τ (τ + η τ)) τ ∧ HasDerivAt η η' τ ↔
       HasDerivAt η η' τ ∧ η' = 2 * τ * η τ + (lam - 1) + η τ ^ 2 := by
   constructor
@@ -102,19 +102,19 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
     ring
 
 /-- The adjoint of `η' = 2τη` is solved by the Gaussian weight: `ζ = e^{-τ²}`, `ζ' = -2τζ`. -/
-@[powerlib_foundation] theorem hasDerivAt_adjointWeight (τ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_adjointWeight (τ : ℝ) :
     HasDerivAt (fun s : ℝ => Real.exp (-s ^ 2)) (-2 * τ * Real.exp (-τ ^ 2)) τ := by
   have h := ((hasDerivAt_pow 2 τ).neg).exp
   convert h using 1
   simp; ring
 
 /-- Parity: every odd perturbation leaves the threshold at `λ* = 1`. -/
-@[powerlib_foundation] theorem solvabilityShift_odd {φ : ℝ → ℝ} (hφ : ∀ τ, φ (-τ) = -φ τ) :
+@[tmio T, powerlib_foundation] theorem solvabilityShift_odd {φ : ℝ → ℝ} (hφ : ∀ τ, φ (-τ) = -φ τ) :
     solvabilityShift φ = 1 := by
   rw [solvabilityShift, Asymptotics.integral_exp_neg_sq_mul_odd hφ, mul_zero, sub_zero]
 
 /-- The even test perturbation `φ = τ²` gives `λ* = 1/2`. -/
-@[powerlib_foundation] theorem solvabilityShift_sq :
+@[tmio T, powerlib_foundation] theorem solvabilityShift_sq :
     solvabilityShift (fun τ => τ ^ 2) = 1 / 2 := by
   have h : ∫ τ : ℝ, Real.exp (-τ ^ 2) * τ ^ 2 = Real.sqrt π / 2 := by
     rw [← Asymptotics.integral_sq_mul_exp_neg_sq]
@@ -128,7 +128,7 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
 
 /-- A constant perturbation `φ = c` shifts the threshold by exactly `-c`
 (normalization `∫ e^{-τ²} = √π`). -/
-@[powerlib_foundation] theorem solvabilityShift_const (c : ℝ) :
+@[tmio T, powerlib_foundation] theorem solvabilityShift_const (c : ℝ) :
     solvabilityShift (fun _ => c) = 1 - c := by
   have hpi : 0 < Real.sqrt π := Real.sqrt_pos.mpr Real.pi_pos
   rw [solvabilityShift, integral_mul_const, Asymptotics.integral_exp_neg_sq]
@@ -136,7 +136,7 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
 
 /-- Constant-rate ramp: if `X` solves `X' = τ + X²`, then `Y(τ) = X(τ + λ)` solves
 `Y' = λ + τ + Y²`. The margin parameter is absorbed by a time translation. -/
-@[powerlib_foundation] theorem riccatiRamp_shift {X : ℝ → ℝ}
+@[tmio M, powerlib_foundation] theorem riccatiRamp_shift {X : ℝ → ℝ}
     (hX : ∀ τ, HasDerivAt X (riccatiRamp 0 τ (X τ)) τ) (lam : ℝ) :
     ∀ τ, HasDerivAt (fun s => X (s + lam)) (riccatiRamp lam τ (X (τ + lam))) τ := by
   intro τ
@@ -147,7 +147,7 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
 
 /-- Converse of `riccatiRamp_shift`: every solution of the ramp problem with parameter `λ` is
 a time translate of a solution with `λ = 0`. -/
-@[powerlib_foundation] theorem riccatiRamp_unshift {Y : ℝ → ℝ} (lam : ℝ)
+@[tmio M, powerlib_foundation] theorem riccatiRamp_unshift {Y : ℝ → ℝ} (lam : ℝ)
     (hY : ∀ τ, HasDerivAt Y (riccatiRamp lam τ (Y τ)) τ) :
     ∀ τ, HasDerivAt (fun s => Y (s - lam)) (riccatiRamp 0 τ (Y (τ - lam))) τ := by
   intro τ
@@ -158,7 +158,7 @@ a time translate of a solution with `λ = 0`. -/
 
 /-- Riccati–Schrödinger link: a nonvanishing solution of `-u'' + τ² u = λ u` gives the
 solution `X = -u'/u` of the grazing inner problem. -/
-@[powerlib_foundation] theorem riccatiGraze_of_schrodinger {lam : ℝ} {u u' : ℝ → ℝ} {τ : ℝ}
+@[tmio M, powerlib_foundation] theorem riccatiGraze_of_schrodinger {lam : ℝ} {u u' : ℝ → ℝ} {τ : ℝ}
     (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : HasDerivAt u' ((τ ^ 2 - lam) * u τ) τ)
     (hne : u τ ≠ 0) :
     HasDerivAt (fun s => -u' s / u s) (riccatiGraze lam τ (-u' τ / u τ)) τ := by
@@ -169,7 +169,7 @@ solution `X = -u'/u` of the grazing inner problem. -/
   ring
 
 /-- The Gaussian ground state `u = e^{-τ²/2}` solves `-u'' + τ² u = u` (eigenvalue `λ = 1`). -/
-@[powerlib_foundation] theorem groundState_schrodinger (τ : ℝ) :
+@[tmio T, powerlib_foundation] theorem groundState_schrodinger (τ : ℝ) :
     HasDerivAt (fun s : ℝ => -s * Real.exp (-s ^ 2 / 2))
       ((τ ^ 2 - 1) * Real.exp (-τ ^ 2 / 2)) τ ∧
     (∀ s, HasDerivAt (fun s : ℝ => Real.exp (-s ^ 2 / 2)) (-s * Real.exp (-s ^ 2 / 2)) s) := by
@@ -185,7 +185,7 @@ solution `X = -u'/u` of the grazing inner problem. -/
   simp; ring
 
 /-- The ground state reproduces the separatrix: `-u'/u = τ` for `u = e^{-τ²/2}`. -/
-@[powerlib_foundation] theorem groundState_logDeriv (τ : ℝ) :
+@[tmio T, powerlib_foundation] theorem groundState_logDeriv (τ : ℝ) :
     -(-τ * Real.exp (-τ ^ 2 / 2)) / Real.exp (-τ ^ 2 / 2) = τ := by
   have := Real.exp_pos (-τ ^ 2 / 2)
   field_simp
@@ -200,7 +200,7 @@ variable {lam T : ℝ} {X : ℝ → ℝ}
 
 /-- Along any solution of `X' = λ − τ² + X²`, the deviation `η = X − τ` from the separatrix,
 weighted by the adjoint weight `ζ = e^{−τ²}`, obeys `(e^{−τ²} η)' = e^{−τ²} (λ − 1 + η²)`. -/
-@[powerlib_foundation] theorem hasDerivAt_weighted_deviation {τ : ℝ}
+@[tmio M, powerlib_foundation] theorem hasDerivAt_weighted_deviation {τ : ℝ}
     (hX : HasDerivAt X (riccatiGraze lam τ (X τ)) τ) :
     HasDerivAt (fun s => Real.exp (-s ^ 2) * (X s - s))
       (Real.exp (-τ ^ 2) * (lam - 1 + (X τ - τ) ^ 2)) τ := by
@@ -208,7 +208,7 @@ weighted by the adjoint weight `ζ = e^{−τ²}`, obeys `(e^{−τ²} η)' = e^
   convert h using 1
   simp only [riccatiGraze, Pi.sub_apply]; ring
 
-@[powerlib_foundation] private theorem weighted_deviation_tendsto
+@[tmio T, powerlib_foundation] private theorem weighted_deviation_tendsto
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) :
     Tendsto (fun s => Real.exp (-s ^ 2) * (X s - s)) atBot (𝓝 0) := by
   apply squeeze_zero_norm (a := fun s => ‖X s - s‖) _ (by simpa using hbranch.norm)
@@ -217,7 +217,7 @@ weighted by the adjoint weight `ζ = e^{−τ²}`, obeys `(e^{−τ²} η)' = e^
   have : Real.exp (-s ^ 2) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [sq_nonneg s])
   nlinarith [norm_nonneg (X s - s), Real.exp_pos (-s ^ 2)]
 
-@[powerlib_foundation] private theorem continuousOn_weighted_Iic
+@[tmio M, powerlib_foundation] private theorem continuousOn_weighted_Iic
     (hX : ∀ τ ≤ T, HasDerivAt X (riccatiGraze lam τ (X τ)) τ) :
     ContinuousOn (fun s => Real.exp (-s ^ 2) * (X s - s)) (Iic T) := fun τ hτ =>
   (hasDerivAt_weighted_deviation (hX τ hτ)).continuousAt.continuousWithinAt
@@ -225,7 +225,7 @@ weighted by the adjoint weight `ζ = e^{−τ²}`, obeys `(e^{−τ²} η)' = e^
 /-- **Escape above the threshold (`λ > 1`).** A solution of the grazing inner problem that leaves
 the attracting branch (`X(τ) − τ → 0` as `τ → −∞`) and exists on `(−∞, T]` satisfies
 `X > τ` there, and `T < π / (2√(λ − 1))`: it escapes in finite time. -/
-@[powerlib_foundation] theorem riccatiGraze_escape (hlam : 1 < lam)
+@[tmio TM, powerlib_foundation] theorem riccatiGraze_escape (hlam : 1 < lam)
     (hX : ∀ τ ≤ T, HasDerivAt X (riccatiGraze lam τ (X τ)) τ)
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) :
     (∀ τ ≤ T, τ < X τ) ∧ T < π / (2 * √(lam - 1)) := by
@@ -298,7 +298,7 @@ the attracting branch (`X(τ) − τ → 0` as `τ → −∞`) and exists on `(
 
 /-- **No escape below the threshold (`λ < 1`).** A solution that leaves the attracting branch
 stays strictly below the separatrix `X = τ` for as long as it exists. -/
-@[powerlib_foundation] theorem riccatiGraze_below (hlam : lam < 1)
+@[tmio TM, powerlib_foundation] theorem riccatiGraze_below (hlam : lam < 1)
     (hX : ∀ τ ≤ T, HasDerivAt X (riccatiGraze lam τ (X τ)) τ)
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) :
     ∀ τ ≤ T, X τ < τ := by
@@ -380,7 +380,7 @@ stays strictly below the separatrix `X = τ` for as long as it exists. -/
 
 /-- **The critical value `λ = 1`.** The only solution of `X' = 1 − τ² + X²` that leaves the
 attracting branch and exists for all `τ ∈ ℝ` is the separatrix `X = τ`. -/
-@[powerlib_foundation] theorem riccatiGraze_critical_eq
+@[tmio TM, powerlib_foundation] theorem riccatiGraze_critical_eq
     (hX : ∀ τ, HasDerivAt X (riccatiGraze 1 τ (X τ)) τ)
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) :
     ∀ τ, X τ = τ := by
@@ -449,7 +449,7 @@ attracting branch and exists for all `τ ∈ ℝ` is the separatrix `X = τ`. -/
 
 /-- Consequently a global solution leaving the attracting branch exists only for `λ ≤ 1`, and at
 `λ = 1` it is the separatrix itself. -/
-@[powerlib_foundation] theorem le_one_of_global_branch
+@[tmio TM, powerlib_foundation] theorem le_one_of_global_branch
     (hX : ∀ τ, HasDerivAt X (riccatiGraze lam τ (X τ)) τ)
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) : lam ≤ 1 := by
   by_contra h

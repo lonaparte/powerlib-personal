@@ -70,7 +70,7 @@ variable {m : ℕ}
         rw [Finset.sum_mul]
         exact Finset.sum_congr rfl fun i _ => (Finset.sum_mul _ _ _).symm
 
-@[powerlib_foundation] theorem sqNorm_eq_dotProduct (y : Fin m → ℝ) : ∑ i, y i ^ 2 = y ⬝ᵥ y := by
+@[tmio T, powerlib_foundation] theorem sqNorm_eq_dotProduct (y : Fin m → ℝ) : ∑ i, y i ^ 2 = y ⬝ᵥ y := by
   simp [dotProduct, sq]
 
 /-- A quadratic Lyapunov certificate of `A` with explicit coordinate bounds
@@ -84,7 +84,7 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   upper_bound : ∀ y : Fin m → ℝ, y ⬝ᵥ (P *ᵥ y) ≤ upper * (y ⬝ᵥ y)
 
 /-- Every Hurwitz matrix has a bounded Lyapunov certificate. -/
-@[powerlib_foundation] theorem nonempty_boundedCertificate_of_isHurwitz
+@[tmio T, powerlib_foundation] theorem nonempty_boundedCertificate_of_isHurwitz
     {A : Matrix (Fin m) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A) :
     Nonempty (BoundedCertificate A) := by
   obtain ⟨c⟩ := (Linear.nonempty_certificate_iff A).mpr hA
@@ -99,7 +99,7 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
     upper_bound := fun y => by rw [← hconv, ← hq]; exact (hb _).2 }⟩
 
 /-- Derivative of the quadratic form `yᵀ P y` along a differentiable path. -/
-@[powerlib_foundation] theorem hasDerivAt_quadratic (P : Matrix (Fin m) (Fin m) ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_quadratic (P : Matrix (Fin m) (Fin m) ℝ)
     {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (dy ⬝ᵥ (P *ᵥ y t) + y t ⬝ᵥ (P *ᵥ dy)) t := by
   have hP : HasDerivAt (fun s => P *ᵥ y s) (P *ᵥ dy) t := Dynamics.hasDerivAt_mulVec P hy
@@ -108,7 +108,7 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
 
 /-- A Lyapunov certificate of `A₀` is a dissipation certificate for every nearby matrix `M`:
 `yᵀ P M y ≤ −|y|²/4` whenever `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`. -/
-@[powerlib_foundation] theorem dissipation_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
+@[tmio T, powerlib_foundation] theorem dissipation_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
     (c : BoundedCertificate A0) (hM : absSum (M - A0) ≤ 1 / (4 * absSum c.P + 4))
     (v : Fin m → ℝ) : v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
   have hP := c.symmetric
@@ -136,7 +136,7 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   linarith [abs_le.mp this]
 
 /-- A Lyapunov certificate of `A₀` also proves exponential decay for every nearby matrix `M`. -/
-@[powerlib_foundation] theorem decay_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
+@[tmio T, powerlib_foundation] theorem decay_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
     (c : BoundedCertificate A0) (hM : absSum (M - A0) ≤ 1 / (4 * absSum c.P + 4))
     {y : ℝ → Fin m → ℝ} (hy : ∀ s, HasDerivAt y (M *ᵥ y s) s) (t : ℝ) (ht : 0 ≤ t) :
     y t ⬝ᵥ y t ≤ (c.upper / c.lower) * Real.exp (-(t / (2 * c.upper))) *
@@ -175,14 +175,14 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
     _ ≤ Real.exp (-(t / (2 * c.upper))) * (c.upper * (y 0 ⬝ᵥ y 0)) := by gcongr
     _ = c.upper * Real.exp (-(t / (2 * c.upper))) * (y 0 ⬝ᵥ y 0) := by ring
 
-@[powerlib_foundation] theorem continuous_absSum_sub (A0 : Matrix (Fin m) (Fin m) ℝ) :
+@[tmio T, powerlib_foundation] theorem continuous_absSum_sub (A0 : Matrix (Fin m) (Fin m) ℝ) :
     Continuous fun M : Matrix (Fin m) (Fin m) ℝ => absSum (M - A0) := by
   unfold absSum
   refine continuous_finsetSum _ fun i _ => continuous_finsetSum _ fun j _ => ?_
   exact ((continuous_id.matrix_elem i j).sub continuous_const).abs
 
 /-- **Uniform exponential stability of the frozen fast subsystems** on a compact set. -/
-@[powerlib_foundation] theorem uniform_frozen_exponentialStability {X : Type*}
+@[tmio T, powerlib_foundation] theorem uniform_frozen_exponentialStability {X : Type*}
     [TopologicalSpace X] [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
     (hH : ∀ x, LinearSystems.IsHurwitz (A x)) :
     ∃ C > 0, ∃ α > 0, ∀ x (y : ℝ → Fin m → ℝ), (∀ s, HasDerivAt y (A x *ᵥ y s) s) → ∀ t, 0 ≤ t →

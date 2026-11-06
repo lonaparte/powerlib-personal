@@ -262,7 +262,7 @@ def rotor (ω₁ t : ℝ) : ℂ := Complex.exp ((t : ℂ) * ((ω₁ : ℂ) * Com
 /-- Time-domain form of the shift: if `z` solves `m` with input `u` (`ż = A z + B u` at every
 time), then `e^{jω₁t} z` solves the shifted model with input `e^{jω₁t} u` (dq → αβ when `m` is
 the complex dq model). -/
-@[powerlib_foundation] theorem isTrajectory_shift {m : CModel ι κ} {u : ℝ → κ → ℂ}
+@[tmio M, powerlib_foundation] theorem isTrajectory_shift {m : CModel ι κ} {u : ℝ → κ → ℂ}
     {z : ℝ → ι → ℂ} (ω₁ : ℝ) (h : ∀ t, HasDerivAt z (m.A *ᵥ z t + m.B *ᵥ u t) t) :
     ∀ t, HasDerivAt (fun t => rotor ω₁ t • z t)
       ((m.shift ω₁).A *ᵥ (rotor ω₁ t • z t) + (m.shift ω₁).B *ᵥ (rotor ω₁ t • u t)) t := by

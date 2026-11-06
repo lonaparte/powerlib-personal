@@ -80,7 +80,7 @@ def newtonStep (F : E → E) (J : E → E →L[ℝ] E) (x : E) : E := x - Ring.i
     _ = L / 2 * ‖y - x‖ ^ 2 := by push_cast; ring
 
 /-- Perturbation of an invertible operator (Neumann series). -/
-@[powerlib_foundation] theorem isUnit_of_norm_inverse_mul_le {A B : E →L[ℝ] E}
+@[tmio T, powerlib_foundation] theorem isUnit_of_norm_inverse_mul_le {A B : E →L[ℝ] E}
     [CompleteSpace E] (hA : IsUnit A) (h : ‖Ring.inverse A‖ * ‖B - A‖ ≤ 1 / 2) :
     IsUnit B ∧ ‖Ring.inverse B‖ ≤ 2 * ‖Ring.inverse A‖ := by
   obtain ⟨u, rfl⟩ := hA
@@ -108,7 +108,7 @@ def newtonStep (F : E → E) (J : E → E →L[ℝ] E) (x : E) : E := x - Ring.i
     _ ≤ 2 * ‖(↑u⁻¹ : E →L[ℝ] E)‖ := by gcongr
 
 /-- One Newton step with an invertible Jacobian: `‖N(x) - x*‖ ≤ (L/2)‖J(x)⁻¹‖‖x - x*‖²`. -/
-@[powerlib_foundation] theorem newtonStep_sub_le {F : E → E} {J : E → E →L[ℝ] E} {U : Set E}
+@[tmio T, powerlib_foundation] theorem newtonStep_sub_le {F : E → E} {J : E → E →L[ℝ] E} {U : Set E}
     (hU : Convex ℝ U) (hF : ∀ z ∈ U, HasFDerivAt F (J z) z) {L : ℝ}
     (hJ : ∀ z ∈ U, ∀ w ∈ U, ‖J z - J w‖ ≤ L * ‖z - w‖) {x xs : E} (hx : x ∈ U) (hxs : xs ∈ U)
     (hroot : F xs = 0) (hJx : IsUnit (J x)) :
@@ -131,7 +131,7 @@ def newtonStep (F : E → E) (J : E → E →L[ℝ] E) (x : E) : E := x - Ring.i
     _ = L / 2 * ‖Ring.inverse (J x)‖ * ‖x - xs‖ ^ 2 := by rw [norm_sub_rev]; ring
 
 /-- Local quadratic convergence of Newton's method (correct constant). -/
-@[powerlib_foundation] theorem newton_local_quadratic [CompleteSpace E] {F : E → E}
+@[tmio T, powerlib_foundation] theorem newton_local_quadratic [CompleteSpace E] {F : E → E}
     {J : E → E →L[ℝ] E} {xs : E} {r₀ L : ℝ} (hr₀ : 0 < r₀) (hL : 0 ≤ L)
     (hF : ∀ z ∈ ball xs r₀, HasFDerivAt F (J z) z)
     (hJ : ∀ z ∈ ball xs r₀, ∀ w ∈ ball xs r₀, ‖J z - J w‖ ≤ L * ‖z - w‖)
@@ -179,7 +179,7 @@ def newtonStep (F : E → E) (J : E → E →L[ℝ] E) (x : E) : E := x - Ring.i
 
 /-- Newton iterates from the convergence ball stay there, satisfy the quadratic error
 recursion, halve the error at least, and converge to the root. -/
-@[powerlib_foundation] theorem newton_iterates_converge [CompleteSpace E] {F : E → E}
+@[tmio T, powerlib_foundation] theorem newton_iterates_converge [CompleteSpace E] {F : E → E}
     {J : E → E →L[ℝ] E} {xs : E} {r₀ L : ℝ} (hr₀ : 0 < r₀) (hL : 0 ≤ L)
     (hF : ∀ z ∈ ball xs r₀, HasFDerivAt F (J z) z)
     (hJ : ∀ z ∈ ball xs r₀, ∀ w ∈ ball xs r₀, ‖J z - J w‖ ≤ L * ‖z - w‖)
@@ -219,7 +219,7 @@ def counterF (x : ℝ) : ℝ := x + x ^ 2 / 2
 /-- Its derivative field `J(x) = (1 + x)·id`. -/
 def counterJ (x : ℝ) : ℝ →L[ℝ] ℝ := (1 + x) • ContinuousLinearMap.id ℝ ℝ
 
-@[powerlib_foundation] theorem counterF_hasFDerivAt (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem counterF_hasFDerivAt (x : ℝ) :
     HasFDerivAt counterF (counterJ x) x := by
   have h : HasDerivAt counterF (1 + x) x := by
     have h1 := (hasDerivAt_id' x).add ((hasDerivAt_pow 2 x).div_const 2)
@@ -231,20 +231,20 @@ def counterJ (x : ℝ) : ℝ →L[ℝ] ℝ := (1 + x) • ContinuousLinearMap.id
   rw [hJ]
   exact h.hasFDerivAt
 
-@[powerlib_foundation] theorem counterJ_lipschitz (x y : ℝ) :
+@[tmio T, powerlib_foundation] theorem counterJ_lipschitz (x y : ℝ) :
     ‖counterJ x - counterJ y‖ = 1 * ‖x - y‖ := by
   have h : counterJ x - counterJ y = (x - y) • ContinuousLinearMap.id ℝ ℝ := by
     ext; simp [counterJ]
   rw [h, norm_smul, ContinuousLinearMap.norm_id, mul_one, one_mul]
 
-@[powerlib_foundation] private lemma inverse_counterJ {x : ℝ} (hx : 1 + x ≠ 0) :
+@[tmio T, powerlib_foundation] private lemma inverse_counterJ {x : ℝ} (hx : 1 + x ≠ 0) :
     Ring.inverse (counterJ x) = (1 + x)⁻¹ • ContinuousLinearMap.id ℝ ℝ := by
   let u : (ℝ →L[ℝ] ℝ)ˣ :=
     ⟨counterJ x, (1 + x)⁻¹ • ContinuousLinearMap.id ℝ ℝ,
       by ext; simp [counterJ, hx], by ext; simp [counterJ, hx]⟩
   exact Ring.inverse_unit u
 
-@[powerlib_foundation] theorem counter_newtonStep {ε : ℝ} (hε1 : ε < 1) :
+@[tmio T, powerlib_foundation] theorem counter_newtonStep {ε : ℝ} (hε1 : ε < 1) :
     newtonStep counterF counterJ (-ε) = ε ^ 2 / (2 * (1 - ε)) := by
   have hx : 1 + -ε ≠ 0 := by linarith
   rw [newtonStep, inverse_counterJ hx]
@@ -256,7 +256,7 @@ def counterJ (x : ℝ) : ℝ →L[ℝ] ℝ := (1 + x) • ContinuousLinearMap.id
 
 /-- The note's boxed estimate `‖e₁‖ ≤ (L ‖J(x*)⁻¹‖/2)‖e₀‖²` fails for `F(x) = x + x²/2`
 (`L = 1`, `x* = 0`, `J(0) = 1`) at every starting point `x₀ = -ε`, `0 < ε < 1`. -/
-@[powerlib_foundation] theorem newton_boxed_bound_false {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
+@[tmio T, powerlib_foundation] theorem newton_boxed_bound_false {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
     1 * ‖Ring.inverse (counterJ 0)‖ / 2 * ‖(-ε) - 0‖ ^ 2 <
       ‖newtonStep counterF counterJ (-ε) - 0‖ := by
   rw [inverse_counterJ (by norm_num), counter_newtonStep hε1]
@@ -269,7 +269,7 @@ def counterJ (x : ℝ) : ℝ →L[ℝ] ℝ := (1 + x) • ContinuousLinearMap.id
   nlinarith
 
 /-- Equivalently: no neighbourhood of the root satisfies the boxed bound. -/
-@[powerlib_foundation] theorem newton_boxed_bound_not_local :
+@[tmio T, powerlib_foundation] theorem newton_boxed_bound_not_local :
     ¬ ∃ r > 0, ∀ x : ℝ, ‖x - 0‖ < r →
       ‖newtonStep counterF counterJ x - 0‖ ≤
         1 * ‖Ring.inverse (counterJ 0)‖ / 2 * ‖x - 0‖ ^ 2 := by

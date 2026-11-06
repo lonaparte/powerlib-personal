@@ -88,7 +88,7 @@ omit [DecidableEq ι] in
   fun w h0 hr => h w h0 fun r hr' => hr r (by omega)
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] theorem isDiffIndex_unique {E A : Matrix ι ι K} {ν ν' : ℕ}
+@[tmio T, powerlib_foundation] theorem isDiffIndex_unique {E A : Matrix ι ι K} {ν ν' : ℕ}
     (h : IsDiffIndex E A ν) (h' : IsDiffIndex E A ν') : ν = ν' := by
   rcases lt_trichotomy ν ν' with hlt | heq | hgt
   · exact absurd h.1 (h'.2 ν hlt)
@@ -97,7 +97,7 @@ omit [DecidableEq ι] in
 
 omit [DecidableEq ι] in
 /-- The differentiation index is the least order at which the derivative array is 1-full. -/
-@[powerlib_foundation] theorem isDiffIndex_iff_least {E A : Matrix ι ι K} {ν : ℕ} :
+@[tmio T, powerlib_foundation] theorem isDiffIndex_iff_least {E A : Matrix ι ι K} {ν : ℕ} :
     IsDiffIndex E A ν ↔ OneFull E A ν ∧ ∀ μ, OneFull E A μ → ν ≤ μ := by
   constructor
   · rintro ⟨h, hmin⟩
@@ -107,7 +107,7 @@ omit [DecidableEq ι] in
 
 omit [DecidableEq ι] in
 /-- Some order is 1-full iff the differentiation index exists. -/
-@[powerlib_foundation] theorem exists_isDiffIndex_iff {E A : Matrix ι ι K} :
+@[tmio T, powerlib_foundation] theorem exists_isDiffIndex_iff {E A : Matrix ι ι K} :
     (∃ ν, IsDiffIndex E A ν) ↔ ∃ μ, OneFull E A μ := by
   classical
   constructor
@@ -116,7 +116,7 @@ omit [DecidableEq ι] in
     exact ⟨Nat.find h, Nat.find_spec h, fun μ hlt hμ => Nat.find_min h hlt hμ⟩
 
 /-- Index `0` means an explicit ODE: `IsDiffIndex E A 0` iff `E` is invertible. -/
-@[powerlib_foundation] theorem isDiffIndex_zero_iff {E A : Matrix ι ι K} :
+@[tmio T, powerlib_foundation] theorem isDiffIndex_zero_iff {E A : Matrix ι ι K} :
     IsDiffIndex E A 0 ↔ IsUnit E.det := by
   have h0 : OneFull E A 0 ↔ ∀ v, E *ᵥ v = 0 → v = 0 := by
     constructor
@@ -138,7 +138,7 @@ variable {κ : Type*} [Fintype κ] [DecidableEq κ]
 
 /-- 1-fullness is invariant under `(E, A) ↦ (P E Q, P A Q)` with `P` left-invertible and `Q`
 invertible. -/
-@[powerlib_foundation] theorem oneFull_equiv_iff {E A : Matrix ι ι K} {P : Matrix κ ι K}
+@[tmio T, powerlib_foundation] theorem oneFull_equiv_iff {E A : Matrix ι ι K} {P : Matrix κ ι K}
     {P' : Matrix ι κ K} {Q : Matrix ι κ K} {Q' : Matrix κ ι K} (hP : P' * P = 1)
     (hQ : Q * Q' = 1) (hQ' : Q' * Q = 1) (μ : ℕ) :
     OneFull (P * E * Q) (P * A * Q) μ ↔ OneFull E A μ := by
@@ -163,7 +163,7 @@ invertible. -/
 
 /-! ## The Weierstrass form -/
 
-@[powerlib_foundation] private theorem eq_zero_of_forall_mulVec {m n : Type*} [Fintype n] [DecidableEq n]
+@[tmio T, powerlib_foundation] private theorem eq_zero_of_forall_mulVec {m n : Type*} [Fintype n] [DecidableEq n]
     {M : Matrix m n K} (h : ∀ v, M *ᵥ v = 0) : M = 0 := by
   ext i j
   have := congrFun (h (Pi.single j 1)) i
@@ -171,7 +171,7 @@ invertible. -/
 
 /-- On the Weierstrass block form `(diag(I, N), diag(J, I))` with `N` nilpotent, the derivative
 array of order `μ` is 1-full iff `N ^ μ = 0`. -/
-@[powerlib_foundation] theorem oneFull_blocks_iff {k l : ℕ} (J : Matrix (Fin k) (Fin k) K)
+@[tmio T, powerlib_foundation] theorem oneFull_blocks_iff {k l : ℕ} (J : Matrix (Fin k) (Fin k) K)
     {N : Matrix (Fin l) (Fin l) K} (hN : IsNilpotent N) (μ : ℕ) :
     OneFull (fromBlocks 1 0 0 N) (fromBlocks J 0 0 1) μ ↔ N ^ μ = 0 := by
   constructor
@@ -232,7 +232,7 @@ array of order `μ` is 1-full iff `N ^ μ = 0`. -/
     · exact congrFun hb0' i
 
 /-- `N ^ μ = 0` for all `μ ≥ ν` and for no smaller `μ` iff `ν` is the nilpotency class. -/
-@[powerlib_foundation] private theorem pow_eq_zero_iff_class {R : Type*} [MonoidWithZero R] {N : R} (hN : IsNilpotent N)
+@[tmio T, powerlib_foundation] private theorem pow_eq_zero_iff_class {R : Type*} [MonoidWithZero R] {N : R} (hN : IsNilpotent N)
     (ν : ℕ) : (N ^ ν = 0 ∧ ∀ μ < ν, N ^ μ ≠ 0) ↔ ν = nilpotencyClass N := by
   constructor
   · rintro ⟨h, hmin⟩
@@ -243,7 +243,7 @@ array of order `μ` is 1-full iff `N ^ μ = 0`. -/
     exact ⟨pow_nilpotencyClass hN, fun μ hlt h => (not_le.mpr hlt) (Nat.sInf_le h)⟩
 
 /-- Differentiation index of the Weierstrass block form = nilpotency class of `N`. -/
-@[powerlib_foundation] theorem isDiffIndex_blocks_iff {k l : ℕ} (J : Matrix (Fin k) (Fin k) K)
+@[tmio T, powerlib_foundation] theorem isDiffIndex_blocks_iff {k l : ℕ} (J : Matrix (Fin k) (Fin k) K)
     {N : Matrix (Fin l) (Fin l) K} (hN : IsNilpotent N) (ν : ℕ) :
     IsDiffIndex (fromBlocks 1 0 0 N) (fromBlocks J 0 0 1) ν ↔ ν = nilpotencyClass N := by
   rw [IsDiffIndex, oneFull_blocks_iff J hN, ← pow_eq_zero_iff_class hN]
@@ -254,32 +254,32 @@ namespace WeierstrassForm
 variable {E A : Matrix ι ι K} (W : WeierstrassForm E A)
 
 /-- For a pencil in Weierstrass form, 1-fullness of order `μ` is `N ^ μ = 0`. -/
-@[powerlib_foundation] theorem oneFull_iff (μ : ℕ) : OneFull E A μ ↔ W.N ^ μ = 0 := by
+@[tmio T, powerlib_foundation] theorem oneFull_iff (μ : ℕ) : OneFull E A μ ↔ W.N ^ μ = 0 := by
   rw [← oneFull_equiv_iff W.P'_mul_P W.Q_mul_Q' W.Q'_mul_Q μ, W.E_eq, W.A_eq,
     oneFull_blocks_iff W.J W.nilpotent]
 
 /-- **Kronecker index = differentiation index.** For every Weierstrass form
 `P (s E - A) Q = diag(s I - J, s N - I)`, the differentiation index of `E x' = A x + f` is the
 nilpotency class of `N` (the least `ν` with `N ^ ν = 0`). -/
-@[powerlib_foundation] theorem isDiffIndex_iff (ν : ℕ) :
+@[tmio T, powerlib_foundation] theorem isDiffIndex_iff (ν : ℕ) :
     IsDiffIndex E A ν ↔ ν = nilpotencyClass W.N := by
   rw [IsDiffIndex, W.oneFull_iff, ← pow_eq_zero_iff_class W.nilpotent]
   simp only [W.oneFull_iff, ne_eq]
 
-@[powerlib_foundation] theorem isDiffIndex : IsDiffIndex E A (nilpotencyClass W.N) :=
+@[tmio T, powerlib_foundation] theorem isDiffIndex : IsDiffIndex E A (nilpotencyClass W.N) :=
   (W.isDiffIndex_iff _).mpr rfl
 
 end WeierstrassForm
 
 /-- The Kronecker index is well defined: two Weierstrass forms of the same pencil have nilpotent
 blocks of the same nilpotency class. -/
-@[powerlib_foundation] theorem kroneckerIndex_eq {E A : Matrix ι ι K} (W W' : WeierstrassForm E A) :
+@[tmio T, powerlib_foundation] theorem kroneckerIndex_eq {E A : Matrix ι ι K} (W W' : WeierstrassForm E A) :
     nilpotencyClass W.N = nilpotencyClass W'.N :=
   isDiffIndex_unique W.isDiffIndex W'.isDiffIndex
 
 /-- Every regular pencil over an infinite field has a differentiation index, equal to the
 Kronecker index of any of its Weierstrass forms. -/
-@[powerlib_foundation] theorem exists_isDiffIndex [Infinite K] {E A : Matrix ι ι K}
+@[tmio T, powerlib_foundation] theorem exists_isDiffIndex [Infinite K] {E A : Matrix ι ι K}
     (h : Regular E A) :
     ∃ ν, IsDiffIndex E A ν ∧ ∀ W : WeierstrassForm E A, ν = nilpotencyClass W.N := by
   obtain ⟨W⟩ := weierstrass h
@@ -292,7 +292,7 @@ omit [DecidableEq ι] in
 /-- Along a solution of `E x' = A x + f` with `x 0 = x`, `x (r + 1) = (x r)'` (`r ≤ μ`) and
 `f (r + 1) = (f r)'` (`r < μ`), the derivative array of order `μ` holds:
 `E x^(r+1) = A x^(r) + f^(r)` for `r ≤ μ`. -/
-@[powerlib_foundation] theorem derivArray_of_solution [DecidableEq ι] {E A : Matrix ι ι ℝ} {μ : ℕ}
+@[tmio T, powerlib_foundation] theorem derivArray_of_solution [DecidableEq ι] {E A : Matrix ι ι ℝ} {μ : ℕ}
     {x f : ℕ → ℝ → ι → ℝ} (hx : ∀ r ≤ μ, ∀ t, HasDerivAt (x r) (x (r + 1) t) t)
     (hf : ∀ r < μ, ∀ t, HasDerivAt (f r) (f (r + 1) t) t)
     (hs : ∀ t, E *ᵥ x 1 t = A *ᵥ x 0 t + f 0 t) :
@@ -315,7 +315,7 @@ omit [DecidableEq ι] in
 two solutions that are `μ + 1` times differentiable (`x r` the `r`-th derivative), driven by
 inputs `f`, `g` that are `μ` times differentiable, with equal states and equal input jets
 `f^(r)(t) = g^(r)(t)`, `r ≤ μ`, at an instant `t`, have the same velocity at `t`. -/
-@[powerlib_foundation] theorem velocity_eq_of_oneFull {E A : Matrix ι ι ℝ} {μ : ℕ}
+@[tmio T, powerlib_foundation] theorem velocity_eq_of_oneFull {E A : Matrix ι ι ℝ} {μ : ℕ}
     (h : OneFull E A μ) {x y f g : ℕ → ℝ → ι → ℝ} {t : ℝ}
     (hx : ∀ r ≤ μ, ∀ s, HasDerivAt (x r) (x (r + 1) s) s)
     (hy : ∀ r ≤ μ, ∀ s, HasDerivAt (y r) (y (r + 1) s) s)
@@ -340,7 +340,7 @@ private def jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) : ι → ℝ
   ∑ r ∈ Finset.range (μ + 1),
     if k ≤ r + 1 then (t ^ (r + 1 - k) / ((r + 1 - k).factorial : ℝ)) • w r else 0
 
-@[powerlib_foundation] private theorem hasDerivAt_monomial (m : ℕ) (t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_monomial (m : ℕ) (t : ℝ) :
     HasDerivAt (fun s : ℝ => s ^ (m + 1) / ((m + 1).factorial : ℝ))
       (t ^ m / (m.factorial : ℝ)) t := by
   have h := (hasDerivAt_pow (m + 1) t).div_const ((m + 1).factorial : ℝ)
@@ -350,7 +350,7 @@ private def jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) : ι → ℝ
   field_simp
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] private theorem hasDerivAt_jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_jetPoly (w : ℕ → ι → ℝ) (μ k : ℕ) (t : ℝ) :
     HasDerivAt (jetPoly w μ k) (jetPoly w μ (k + 1) t) t := by
   unfold jetPoly
   have : (fun s => ∑ r ∈ Finset.range (μ + 1),
@@ -375,7 +375,7 @@ omit [DecidableEq ι] in
       exact hasDerivAt_const t 0
 
 omit [Fintype ι] [DecidableEq ι] in
-@[powerlib_foundation] private theorem jetPoly_zero_succ (w : ℕ → ι → ℝ) (μ k : ℕ) (hk : k ≤ μ) :
+@[tmio T, powerlib_foundation] private theorem jetPoly_zero_succ (w : ℕ → ι → ℝ) (μ k : ℕ) (hk : k ≤ μ) :
     jetPoly w μ (k + 1) 0 = w k := by
   unfold jetPoly
   rw [Finset.sum_eq_single k]
@@ -389,7 +389,7 @@ omit [Fintype ι] [DecidableEq ι] in
     exact absurd (Finset.mem_range.mpr (by omega)) hk'
 
 omit [Fintype ι] [DecidableEq ι] in
-@[powerlib_foundation] private theorem jetPoly_zero_zero (w : ℕ → ι → ℝ) (μ : ℕ) : jetPoly w μ 0 0 = 0 := by
+@[tmio T, powerlib_foundation] private theorem jetPoly_zero_zero (w : ℕ → ι → ℝ) (μ : ℕ) : jetPoly w μ 0 0 = 0 := by
   unfold jetPoly
   refine Finset.sum_eq_zero fun r _ => ?_
   simp
@@ -400,7 +400,7 @@ omit [DecidableEq ι] in
 determine the velocity. There is a polynomial solution `x` of `E x' = A x + f` with the data of
 the zero solution at `t = 0` — `x(0) = 0` and input jet `f^(r)(0) = 0` for `r ≤ μ` — but
 `x'(0) ≠ 0` (`x r` and `f r` are the `r`-th derivatives, defined for all `r`). -/
-@[powerlib_foundation] theorem exists_solution_of_not_oneFull [DecidableEq ι] {E A : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem exists_solution_of_not_oneFull [DecidableEq ι] {E A : Matrix ι ι ℝ}
     {μ : ℕ}
     (h : ¬ OneFull E A μ) :
     ∃ x f : ℕ → ℝ → ι → ℝ, (∀ r t, HasDerivAt (x r) (x (r + 1) t) t) ∧
@@ -426,7 +426,7 @@ the zero solution at `t = 0` — `x(0) = 0` and input jet `f^(r)(0) = 0` for `r 
 1-full iff, for all solutions of `E x' = A x + f` that are `μ + 1` times differentiable with
 inputs `μ` times differentiable, equal states and equal input jets of order `μ` at an instant
 force equal velocities there. -/
-@[powerlib_foundation] theorem oneFull_iff_velocity_determined {E A : Matrix ι ι ℝ} {μ : ℕ} :
+@[tmio T, powerlib_foundation] theorem oneFull_iff_velocity_determined {E A : Matrix ι ι ℝ} {μ : ℕ} :
     OneFull E A μ ↔ ∀ (x y f g : ℕ → ℝ → ι → ℝ) (t : ℝ),
       (∀ r ≤ μ, ∀ s, HasDerivAt (x r) (x (r + 1) s) s) →
       (∀ r ≤ μ, ∀ s, HasDerivAt (y r) (y (r + 1) s) s) →
@@ -448,7 +448,7 @@ force equal velocities there. -/
 equal states and input jets of order `μ` determine the velocity of `μ + 1` times differentiable
 solutions iff `μ ≥ nilpotencyClass N`: the Kronecker index is the least number of
 differentiations of the DAE that determines `x'`. -/
-@[powerlib_foundation] theorem WeierstrassForm.velocity_determined_iff {E A : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem WeierstrassForm.velocity_determined_iff {E A : Matrix ι ι ℝ}
     (W : WeierstrassForm E A) (μ : ℕ) :
     (∀ (x y f g : ℕ → ℝ → ι → ℝ) (t : ℝ),
       (∀ r ≤ μ, ∀ s, HasDerivAt (x r) (x (r + 1) s) s) →
@@ -472,7 +472,7 @@ variable {n m p : ℕ} (d : LinearDAE n m p)
 
 /-- Index-1 semi-explicit DAE (`Ayy` invertible): one differentiation determines the
 velocity. -/
-@[powerlib_foundation] theorem oneFull_one (hA : IsUnit d.Ayy.det) :
+@[tmio T, powerlib_foundation] theorem oneFull_one (hA : IsUnit d.Ayy.det) :
     OneFull (massMatrix n m) d.jacobian 1 := by
   intro w h0 hr
   have h1 := hr 0 Nat.zero_lt_one
@@ -498,7 +498,7 @@ velocity. -/
 
 /-- With `m > 0` algebraic variables, the undifferentiated system does not determine the
 velocity of the algebraic variables. -/
-@[powerlib_foundation] theorem not_oneFull_zero (hm : 0 < m) :
+@[tmio T, powerlib_foundation] theorem not_oneFull_zero (hm : 0 < m) :
     ¬ OneFull (massMatrix n m) d.jacobian 0 := by
   intro h
   have := h (fun _ => Sum.elim 0 fun _ => 1) ?_ fun r hr => absurd hr (Nat.not_lt_zero r)
@@ -509,7 +509,7 @@ velocity of the algebraic variables. -/
 
 /-- A semi-explicit linear DAE with invertible `Ayy` and `m > 0` has differentiation index
 exactly `1` (one differentiation of the constraint, as corrected in `theorem.DAE.Linear`). -/
-@[powerlib_foundation] theorem isDiffIndex_one (hA : IsUnit d.Ayy.det) (hm : 0 < m) :
+@[tmio T, powerlib_foundation] theorem isDiffIndex_one (hA : IsUnit d.Ayy.det) (hm : 0 < m) :
     IsDiffIndex (massMatrix n m) d.jacobian 1 :=
   ⟨d.oneFull_one hA, fun μ hμ => by
     obtain rfl : μ = 0 := by omega
@@ -528,13 +528,13 @@ def pryceExampleA : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 1; 1, 0, -1; 0, 0, 0]
 
 /-- The signature `exampleSig` of `theorem.DAE.Pryce` is the occurrence/order pattern of this
 linear DAE. -/
-@[powerlib_foundation] theorem pryceExample_signature (i j : Fin 3) :
+@[tmio M, powerlib_foundation] theorem pryceExample_signature (i j : Fin 3) :
     (exampleSig.occurs i j = true ↔ pryceExampleE i j ≠ 0 ∨ pryceExampleA i j ≠ 0) ∧
       exampleSig.order i j = if pryceExampleE i j ≠ 0 then 1 else 0 := by
   fin_cases i <;> fin_cases j <;> norm_num [exampleSig, pryceExampleE, pryceExampleA]
 
 /-- The counterexample has differentiation index `1`. -/
-@[powerlib_foundation] theorem pryceExample_isDiffIndex :
+@[tmio M, powerlib_foundation] theorem pryceExample_isDiffIndex :
     IsDiffIndex pryceExampleE pryceExampleA 1 := by
   refine ⟨fun w h0 hr => ?_, fun μ hμ hμ' => ?_⟩
   · have h1 := hr 0 Nat.zero_lt_one
@@ -556,7 +556,7 @@ linear DAE. -/
 
 /-- The differentiation index `1` of the counterexample equals Pryce's corrected formula and
 differs from the note's formula (`0`). -/
-@[powerlib_foundation] theorem pryceExample_index_vs_formulas :
+@[tmio M, powerlib_foundation] theorem pryceExample_index_vs_formulas :
     IsDiffIndex pryceExampleE pryceExampleA (exampleSig.pryceIndex exampleC exampleD) ∧
       ¬ IsDiffIndex pryceExampleE pryceExampleA (exampleSig.noteIndex exampleC) := by
   rw [example_pryceIndex, example_noteIndex]

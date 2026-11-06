@@ -175,7 +175,7 @@ end Model
 def cyl (x : State 4) : State 5 :=
   WithLp.toLp 2 ![Real.cos (x 0), Real.sin (x 0), x 1, x 2, x 3]
 
-@[powerlib_foundation] private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
+@[tmio T, powerlib_foundation] private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
   Dynamics.contDiff_coord j
 
 /-- The cylinder field at the image of a state is the cylinder image of the closed loop.
@@ -189,7 +189,7 @@ Static evidence on the model, not a connection conclusion. -/
       Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem cyl_contDiff : ContDiff ℝ 1 cyl := by
+@[tmio T, powerlib_foundation] theorem cyl_contDiff : ContDiff ℝ 1 cyl := by
   have h0 := proj_contDiff (n := 4) 0
   have h1 := proj_contDiff (n := 4) 1
   have h2 := proj_contDiff (n := 4) 2
@@ -200,7 +200,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The derivative of the cylinder map along a line. Static evidence, not a connection
 conclusion. -/
-@[powerlib_foundation] theorem hasDerivAt_cyl_line (x v : State 4) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_cyl_line (x v : State 4) :
     HasDerivAt (fun t : ℝ => cyl (x + t • v))
       (WithLp.toLp 2 ![-Real.sin (x 0) * v 0, Real.cos (x 0) * v 0, v 1, v 2, v 3]) 0 := by
   rw [← hasDerivWithinAt_univ]
@@ -274,7 +274,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-! ## The cylinder -/
 
 /-- Coordinates of the cylinder map. Static evidence on the model, not a connection conclusion. -/
-@[simp, powerlib_foundation] theorem cyl_apply (x : State 4) :
+@[tmio T, simp, powerlib_foundation] theorem cyl_apply (x : State 4) :
     cyl x 0 = Real.cos (x 0) ∧ cyl x 1 = Real.sin (x 0) ∧ cyl x 2 = x 1 ∧ cyl x 3 = x 2 ∧
       cyl x 4 = x 3 := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [cyl]
@@ -287,7 +287,7 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem cQ_cos_sin (m : Model) (θ : ℝ) :
     m.cQ (Real.cos θ) (Real.sin θ) = m.iHatQ θ := rfl
 
-@[powerlib_foundation] private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
+@[tmio T, powerlib_foundation] private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
   have h0 := proj_contDiff (n := 5) 0
   have h1 := proj_contDiff (n := 5) 1
   fun_prop
@@ -306,7 +306,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Every point of the cylinder `c² + s² = 1` is the image of a state.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem exists_cyl_eq {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1) :
+@[tmio T, powerlib_foundation] theorem exists_cyl_eq {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1) :
     ∃ x : State 4, cyl x = y := by
   obtain ⟨θ, hc, hs⟩ := Dynamics.LaSalle.exists_cos_sin hy
   refine ⟨WithLp.toLp 2 ![θ, y 2, y 3, y 4], ?_⟩
@@ -1150,7 +1150,7 @@ conclusion. -/
         gcongr
     _ = _ := by ring
 
-@[powerlib_foundation] private theorem quad_nonneg {a b u e1 e2 w1 w2 : ℝ} (ha : 0 < a) (hab : w1 ^ 2 + w2 ^ 2 ≤ a * b) :
+@[tmio T, powerlib_foundation] private theorem quad_nonneg {a b u e1 e2 w1 w2 : ℝ} (ha : 0 < a) (hab : w1 ^ 2 + w2 ^ 2 ≤ a * b) :
     0 ≤ a * u ^ 2 + b * (e1 ^ 2 + e2 ^ 2) + 2 * u * (e1 * w1 + e2 * w2) := by
   have h : a * (a * u ^ 2 + b * (e1 ^ 2 + e2 ^ 2) + 2 * u * (e1 * w1 + e2 * w2)) =
       (a * u + (e1 * w1 + e2 * w2)) ^ 2 + (a * b - (w1 ^ 2 + w2 ^ 2)) * (e1 ^ 2 + e2 ^ 2) +
@@ -2137,7 +2137,7 @@ conclusion. -/
       field_simp
       ring
 
-@[powerlib_foundation] private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0) (he : e < 0) (hbc2 : b * c2 < 0)
+@[tmio T, powerlib_foundation] private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0) (he : e < 0) (hbc2 : b * c2 < 0)
     (hbc1 : b * c1 * f ≤ 0) (hdet : a * (e ^ 2 + f ^ 2) - b * c1 * f - b * e * c2 < 0) :
     LinearSystems.IsHurwitz !![a, 0, b; c1, e, f; c2, -f, e] := by
   rw [Criteria.isHurwitz_fin_three_iff]

@@ -86,7 +86,7 @@ def msFactorImplicit (lam β h : ℝ) : ℝ := (1 + β ^ 2 * h) / (1 + lam * h) 
 
 omit [IsProbabilityMeasure P] in
 /-- Explicit EM, multiplicative noise: `E[(X(1 - λh + βΔW))²] = msFactorEM · E[X²]`. -/
-@[powerlib_foundation] theorem em_multiplicative_step {X Z : Ω → ℝ} {h : ℝ≥0} {lam β : ℝ}
+@[tmio T, powerlib_foundation] theorem em_multiplicative_step {X Z : Ω → ℝ} {h : ℝ≥0} {lam β : ℝ}
     (hXm : Measurable X) (hZ : HasLaw Z (gaussianReal 0 h) P) (hZm : Measurable Z)
     (hind : IndepFun X Z P) :
     ∫ ω, (X ω * (1 - lam * h + β * Z ω)) ^ 2 ∂P
@@ -105,7 +105,7 @@ omit [IsProbabilityMeasure P] in
 
 omit [IsProbabilityMeasure P] in
 /-- Drift-implicit EM, multiplicative noise: `X_{n+1} = (X + βXΔW)/(1+λh)`. -/
-@[powerlib_foundation] theorem driftImplicit_multiplicative_step {X Z : Ω → ℝ} {h : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem driftImplicit_multiplicative_step {X Z : Ω → ℝ} {h : ℝ≥0}
     {lam β : ℝ} (hXm : Measurable X) (hZ : HasLaw Z (gaussianReal 0 h) P) (hZm : Measurable Z)
     (hind : IndepFun X Z P) :
     ∫ ω, ((X ω + β * X ω * Z ω) / (1 + lam * h)) ^ 2 ∂P
@@ -118,7 +118,7 @@ omit [IsProbabilityMeasure P] in
   ring
 
 /-- Explicit EM, additive noise: `E[(aX + βΔW)²] = a² E[X²] + β²h` for `X ∈ L²`. -/
-@[powerlib_foundation] theorem em_additive_step {X Z : Ω → ℝ} {h : ℝ≥0} {a β : ℝ}
+@[tmio T, powerlib_foundation] theorem em_additive_step {X Z : Ω → ℝ} {h : ℝ≥0} {a β : ℝ}
     (hX : MemLp X 2 P) (hZ : HasLaw Z (gaussianReal 0 h) P) (hind : IndepFun X Z P) :
     ∫ ω, (a * X ω + β * Z ω) ^ 2 ∂P = a ^ 2 * ∫ ω, X ω ^ 2 ∂P + β ^ 2 * h := by
   have hZ2 : MemLp Z 2 P := hZ.hasGaussianLaw.memLp_two
@@ -147,7 +147,7 @@ omit [IsProbabilityMeasure P] in
 /-! ## The deterministic second-moment recursions -/
 
 /-- Multiplicative noise: `m_n = c^n m₀` tends to `0` iff `c < 1` (`c ≥ 0`, `m₀ ≠ 0`). -/
-@[powerlib_foundation] theorem geometric_tendsto_zero_iff {c m₀ : ℝ} (hc : 0 ≤ c) (hm : m₀ ≠ 0) :
+@[tmio T, powerlib_foundation] theorem geometric_tendsto_zero_iff {c m₀ : ℝ} (hc : 0 ≤ c) (hm : m₀ ≠ 0) :
     Tendsto (fun n : ℕ => c ^ n * m₀) atTop (𝓝 0) ↔ c < 1 := by
   constructor
   · intro h
@@ -161,20 +161,20 @@ omit [IsProbabilityMeasure P] in
       tendsto_pow_atTop_nhds_zero_of_lt_one hc h
     simpa using this.mul_const m₀
 
-@[powerlib_foundation] theorem msFactorEM_nonneg (lam : ℝ) {h : ℝ} (hh : 0 ≤ h) (β : ℝ) :
+@[tmio T, powerlib_foundation] theorem msFactorEM_nonneg (lam : ℝ) {h : ℝ} (hh : 0 ≤ h) (β : ℝ) :
     0 ≤ msFactorEM lam β h := by
   unfold msFactorEM; positivity
 
 /-- Explicit EM for the multiplicative-noise test equation is mean-square stable
 (`E[X_n²] = c^n E[X_0²] → 0`, `E[X_0²] ≠ 0`) iff `(1-λh)² + β²h < 1`. -/
-@[powerlib_foundation] theorem em_multiplicative_ms_tendsto_zero_iff {lam β h m₀ : ℝ}
+@[tmio T, powerlib_foundation] theorem em_multiplicative_ms_tendsto_zero_iff {lam β h m₀ : ℝ}
     (hh : 0 ≤ h) (hm : m₀ ≠ 0) :
     Tendsto (fun n : ℕ => msFactorEM lam β h ^ n * m₀) atTop (𝓝 0) ↔
       (1 - lam * h) ^ 2 + β ^ 2 * h < 1 :=
   geometric_tendsto_zero_iff (msFactorEM_nonneg lam hh β) hm
 
 /-- For `h > 0` the explicit-EM factor is `< 1` iff `λ²h < 2λ - β²`: a step-size restriction. -/
-@[powerlib_foundation] theorem msFactorEM_lt_one_iff {lam β h : ℝ} (hh : 0 < h) :
+@[tmio T, powerlib_foundation] theorem msFactorEM_lt_one_iff {lam β h : ℝ} (hh : 0 < h) :
     msFactorEM lam β h < 1 ↔ lam ^ 2 * h < 2 * lam - β ^ 2 := by
   unfold msFactorEM
   constructor
@@ -190,7 +190,7 @@ omit [IsProbabilityMeasure P] in
 
 /-- Drift-implicit EM: whenever the SDE is mean-square stable (`β² < 2λ`, `λ > 0`), the
 mean-square factor is `< 1` for every step `h > 0`. -/
-@[powerlib_foundation] theorem driftImplicit_msFactor_lt_one {lam β h : ℝ} (hlam : 0 < lam)
+@[tmio T, powerlib_foundation] theorem driftImplicit_msFactor_lt_one {lam β h : ℝ} (hlam : 0 < lam)
     (hβ : β ^ 2 < 2 * lam) (hh : 0 < h) : msFactorImplicit lam β h < 1 := by
   unfold msFactorImplicit
   have hpos : 0 < (1 + lam * h) ^ 2 := by positivity
@@ -199,7 +199,7 @@ mean-square factor is `< 1` for every step `h > 0`. -/
 
 /-- Without `β² < 2λ`, drift-implicit EM is not mean-square stable for all steps: for
 `λ = 1, β = 2`, the factor exceeds `1` at `h = 1`. -/
-@[powerlib_foundation] theorem driftImplicit_msFactor_counterexample :
+@[tmio T, powerlib_foundation] theorem driftImplicit_msFactor_counterexample :
     1 < msFactorImplicit 1 2 1 := by
   norm_num [msFactorImplicit]
 
@@ -209,7 +209,7 @@ def addRec (a2 b m₀ : ℝ) : ℕ → ℝ
   | n + 1 => a2 * addRec a2 b m₀ n + b
 
 /-- The additive recursion stays nonnegative. -/
-@[powerlib_foundation] theorem addRec_nonneg {a2 b m₀ : ℝ} (ha : 0 ≤ a2) (hb : 0 ≤ b)
+@[tmio T, powerlib_foundation] theorem addRec_nonneg {a2 b m₀ : ℝ} (ha : 0 ≤ a2) (hb : 0 ≤ b)
     (hm : 0 ≤ m₀) (n : ℕ) : 0 ≤ addRec a2 b m₀ n := by
   induction n with
   | zero => exact hm
@@ -217,13 +217,13 @@ def addRec (a2 b m₀ : ℝ) : ℕ → ℝ
 
 /-- With additive noise the second moment is bounded below by `b = β²h` after one step
 (correction to T-sde-systems §1.14.5). -/
-@[powerlib_foundation] theorem em_additive_secondMoment_ge {a2 b m₀ : ℝ} (ha : 0 ≤ a2)
+@[tmio T, powerlib_foundation] theorem em_additive_secondMoment_ge {a2 b m₀ : ℝ} (ha : 0 ≤ a2)
     (hb : 0 ≤ b) (hm : 0 ≤ m₀) (n : ℕ) : b ≤ addRec a2 b m₀ (n + 1) := by
   simp only [addRec]
   nlinarith [addRec_nonneg ha hb hm n]
 
 /-- Hence, with additive noise `b = β²h > 0`, the second moment does not tend to `0`. -/
-@[powerlib_foundation] theorem em_additive_not_tendsto_zero {a2 b m₀ : ℝ} (ha : 0 ≤ a2)
+@[tmio T, powerlib_foundation] theorem em_additive_not_tendsto_zero {a2 b m₀ : ℝ} (ha : 0 ≤ a2)
     (hm : 0 ≤ m₀) (hb : 0 < b) : ¬ Tendsto (addRec a2 b m₀) atTop (𝓝 0) := by
   intro h
   have h1 : Tendsto (fun n => addRec a2 b m₀ (n + 1)) atTop (𝓝 0) :=
@@ -232,7 +232,7 @@ def addRec (a2 b m₀ : ℝ) : ℕ → ℝ
   linarith
 
 /-- Closed form of the additive recursion. -/
-@[powerlib_foundation] theorem addRec_eq {a2 b m₀ : ℝ} (ha : a2 ≠ 1) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem addRec_eq {a2 b m₀ : ℝ} (ha : a2 ≠ 1) (n : ℕ) :
     addRec a2 b m₀ n = a2 ^ n * (m₀ - b / (1 - a2)) + b / (1 - a2) := by
   have h1 : (1 - a2) ≠ 0 := sub_ne_zero.mpr (Ne.symm ha)
   induction n with
@@ -244,7 +244,7 @@ def addRec (a2 b m₀ : ℝ) : ℕ → ℝ
 
 /-- With additive noise and `0 ≤ a² < 1` the second moment converges to `b/(1-a²)`
 (`= β²h/(1-(1-λh)²)` for the EM step), whatever the initial value. -/
-@[powerlib_foundation] theorem em_additive_secondMoment_tendsto {a2 b m₀ : ℝ} (h0 : 0 ≤ a2)
+@[tmio T, powerlib_foundation] theorem em_additive_secondMoment_tendsto {a2 b m₀ : ℝ} (h0 : 0 ≤ a2)
     (h1 : a2 < 1) : Tendsto (addRec a2 b m₀) atTop (𝓝 (b / (1 - a2))) := by
   have e : addRec a2 b m₀ = fun n => a2 ^ n * (m₀ - b / (1 - a2)) + b / (1 - a2) :=
     funext (addRec_eq h1.ne)
@@ -255,7 +255,7 @@ def addRec (a2 b m₀ : ℝ) : ℕ → ℝ
 
 /-- With additive noise and `a² > 1`, `b ≥ 0` and a nonnegative initial moment above the
 fixed point direction, the second moment diverges. -/
-@[powerlib_foundation] theorem em_additive_secondMoment_tendsto_atTop {a2 b m₀ : ℝ} (h1 : 1 < a2)
+@[tmio T, powerlib_foundation] theorem em_additive_secondMoment_tendsto_atTop {a2 b m₀ : ℝ} (h1 : 1 < a2)
     (hb : 0 < b) (hm : 0 ≤ m₀) : Tendsto (addRec a2 b m₀) atTop atTop := by
   have e : addRec a2 b m₀ = fun n => a2 ^ n * (m₀ - b / (1 - a2)) + b / (1 - a2) :=
     funext (addRec_eq h1.ne')

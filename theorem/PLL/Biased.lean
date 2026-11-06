@@ -48,12 +48,12 @@ def biasedPD (V μ θ : ℝ) : ℝ := -(V * Real.sin θ) + μ
   have := (((Real.hasDerivAt_sin θ).const_mul V).neg).add_const μ
   exact this
 
-@[powerlib_foundation] theorem contDiff_biasedPD (V μ : ℝ) : ContDiff ℝ 1 (biasedPD V μ) :=
+@[tmio M, powerlib_foundation] theorem contDiff_biasedPD (V μ : ℝ) : ContDiff ℝ 1 (biasedPD V μ) :=
   ((contDiff_const.mul Real.contDiff_sin).neg).add contDiff_const
 
 /-- `|μ| > V ≥ 0`: the biased PLL has no equilibrium.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem biased_no_equilibrium {V μ : ℝ} (hV : 0 ≤ V) (hμ : V < |μ|)
+@[tmio M, powerlib_foundation] theorem biased_no_equilibrium {V μ : ℝ} (hV : 0 ≤ V) (hμ : V < |μ|)
     (Kp Ki δω : ℝ) (x : ℝ²) : piPLLField (biasedPD V μ) Kp Ki δω x ≠ 0 := by
   intro h
   have h1 : biasedPD V μ (x 0) = 0 := by
@@ -68,7 +68,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- `|μ| < V`: in the window `[−π/2, 3π/2)` the zeros of `h` are exactly
 `arcsin(μ/V)` and `π − arcsin(μ/V)`, and they are distinct. -/
-@[powerlib_foundation] theorem biasedPD_zeros {V μ : ℝ} (hV : 0 < V) (hμ : |μ| < V) :
+@[tmio M, powerlib_foundation] theorem biasedPD_zeros {V μ : ℝ} (hV : 0 < V) (hμ : |μ| < V) :
     {θ | θ ∈ Set.Ico (-(Real.pi / 2)) (3 * Real.pi / 2) ∧ biasedPD V μ θ = 0} =
       {Real.arcsin (μ / V), Real.pi - Real.arcsin (μ / V)} ∧
       Real.arcsin (μ / V) ≠ Real.pi - Real.arcsin (μ / V) := by
@@ -151,7 +151,7 @@ PLL meets the phase-locking requirement of the PI-PLL family. -/
 Jacobian there is the nonzero nilpotent matrix `[[0, K_i], [0, 0]]` (non-hyperbolic). The case
 `μ = −V` is symmetric (`θ* = −π/2`). Static evidence on the model (linearization only), not a
 connection conclusion. -/
-@[powerlib_foundation] theorem biased_fold {V Kp Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ) :
+@[tmio M, powerlib_foundation] theorem biased_fold {V Kp Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ) :
     piPLLField (biasedPD V V) Kp Ki δω (PhasePlane.mk (Real.pi / 2) (δω / Ki)) = 0 ∧
       fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (PhasePlane.mk (Real.pi / 2) (δω / Ki)) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧

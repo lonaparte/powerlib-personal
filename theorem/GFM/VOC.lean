@@ -537,7 +537,7 @@ variable {a}
 /-- The energy `|v|² = v_α² + v_β²`. -/
 private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
 
-@[powerlib_foundation] private theorem hasFDerivAt_energy (x : State 2) :
+@[tmio T, powerlib_foundation] private theorem hasFDerivAt_energy (x : State 2) :
     HasFDerivAt energy
       ((2 * x 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ) +
         (2 * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
@@ -549,7 +549,7 @@ private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
   apply ContinuousLinearMap.ext; intro v
   simp
 
-@[powerlib_foundation] private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
+@[tmio T, powerlib_foundation] private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
   rw [sub_zero, PhasePlane.norm_sq_eq, energy]
 
 @[tmio M, powerlib_domain] private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
@@ -712,7 +712,7 @@ sign of `κ_v`. -/
     smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   ring
 
-@[powerlib_foundation] private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
+@[tmio T, powerlib_foundation] private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
   rw [energy_eq, sub_zero]
   have : 0 < ‖x‖ := norm_pos_iff.mpr hx
   positivity
@@ -823,10 +823,10 @@ stability is not decided by the linearization. -/
     calc ‖x‖ = Real.sqrt (‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm
       _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
 
-@[powerlib_foundation] private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
+@[tmio T, powerlib_foundation] private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
   (hasFDerivAt_energy x).differentiableAt
 
-@[powerlib_foundation] private theorem seed (ε : ℝ) (hε : 0 < ε) :
+@[tmio T, powerlib_foundation] private theorem seed (ε : ℝ) (hε : 0 < ε) :
     ‖PhasePlane.mk (ε / 2) 0 - 0‖ < ε ∧ 0 < energy (PhasePlane.mk (ε / 2) 0) := by
   have hne : PhasePlane.mk (ε / 2) 0 ≠ 0 := by
     intro h
@@ -950,7 +950,7 @@ with `v = r e^{jϕ}`, `ṙ = (κ_v(v*² − r²) − σ) r − Re(κ_i i e^{−j
 
 /-- dVOC complex frequency: if `v̇ = jω_s v + η(e_θ + α(v*² − |v|²) v)` and `v ≠ 0`, then
 `v̇ / v = jω_s + η e_θ / v + η α (v*² − |v|²)`. -/
-@[powerlib_foundation] theorem dvoc_complexFrequency {ωs η α vstar : ℝ} {v eθ vdot : ℂ}
+@[tmio T, powerlib_foundation] theorem dvoc_complexFrequency {ωs η α vstar : ℝ} {v eθ vdot : ℂ}
     (hv : v ≠ 0)
     (hdyn : vdot = I * ωs * v + η * (eθ + (α * (vstar ^ 2 - normSq v) : ℝ) * v)) :
     vdot / v = I * ωs + η * eθ / v + η * α * ((vstar ^ 2 - normSq v : ℝ) : ℂ) := by

@@ -37,29 +37,29 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- Circular (radial) current limiter with limit `I`. -/
 def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x‖) • x
 
-@[powerlib_foundation] theorem radialLimit_of_norm_le {I : ℝ} {x : E} (h : ‖x‖ ≤ I) :
+@[tmio T, powerlib_foundation] theorem radialLimit_of_norm_le {I : ℝ} {x : E} (h : ‖x‖ ≤ I) :
     radialLimit I x = x := by
   simp [radialLimit, h]
 
-@[powerlib_foundation] theorem radialLimit_of_lt {I : ℝ} {x : E} (h : I < ‖x‖) :
+@[tmio T, powerlib_foundation] theorem radialLimit_of_lt {I : ℝ} {x : E} (h : I < ‖x‖) :
     radialLimit I x = (I / ‖x‖) • x := by
   simp [radialLimit, not_le.mpr h]
 
-@[powerlib_foundation] theorem norm_radialLimit_of_lt {I : ℝ} (hI : 0 ≤ I) {x : E}
+@[tmio T, powerlib_foundation] theorem norm_radialLimit_of_lt {I : ℝ} (hI : 0 ≤ I) {x : E}
     (h : I < ‖x‖) : ‖radialLimit I x‖ = I := by
   have hx : 0 < ‖x‖ := hI.trans_lt h
   rw [radialLimit_of_lt h, norm_smul, Real.norm_eq_abs, abs_of_nonneg (div_nonneg hI hx.le),
     div_mul_cancel₀ _ hx.ne']
 
 /-- The limited current never exceeds the limit. -/
-@[powerlib_foundation] theorem norm_radialLimit_le {I : ℝ} (hI : 0 ≤ I) (x : E) :
+@[tmio T, powerlib_foundation] theorem norm_radialLimit_le {I : ℝ} (hI : 0 ≤ I) (x : E) :
     ‖radialLimit I x‖ ≤ I := by
   by_cases h : ‖x‖ ≤ I
   · rwa [radialLimit_of_norm_le h]
   · exact (norm_radialLimit_of_lt hI (not_le.mp h)).le
 
 /-- The limiter preserves the direction of the reference. -/
-@[powerlib_foundation] theorem radialLimit_direction {I : ℝ} (hI : 0 < I) (x : E) :
+@[tmio T, powerlib_foundation] theorem radialLimit_direction {I : ℝ} (hI : 0 < I) (x : E) :
     ∃ c : ℝ, 0 < c ∧ c ≤ 1 ∧ radialLimit I x = c • x := by
   by_cases h : ‖x‖ ≤ I
   · exact ⟨1, one_pos, le_rfl, by rw [radialLimit_of_norm_le h, one_smul]⟩
@@ -68,7 +68,7 @@ def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x�
     exact ⟨I / ‖x‖, div_pos hI hx, (div_le_one hx).mpr h'.le, radialLimit_of_lt h'⟩
 
 /-- Variational inequality of the projection onto the ball of radius `I`. -/
-@[powerlib_foundation] theorem radialLimit_inner_le {I : ℝ} (hI : 0 ≤ I) (x : E) {z : E}
+@[tmio T, powerlib_foundation] theorem radialLimit_inner_le {I : ℝ} (hI : 0 ≤ I) (x : E) {z : E}
     (hz : ‖z‖ ≤ I) : ⟪x - radialLimit I x, z - radialLimit I x⟫ ≤ 0 := by
   by_cases h : ‖x‖ ≤ I
   · simp [radialLimit_of_norm_le h]
@@ -89,7 +89,7 @@ def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x�
     exact mul_nonpos_of_nonneg_of_nonpos hc this
 
 /-- The limiter output is the nearest point of the ball of radius `I`. -/
-@[powerlib_foundation] theorem radialLimit_nearest {I : ℝ} (hI : 0 ≤ I) (x : E) {z : E}
+@[tmio T, powerlib_foundation] theorem radialLimit_nearest {I : ℝ} (hI : 0 ≤ I) (x : E) {z : E}
     (hz : ‖z‖ ≤ I) : ‖x - radialLimit I x‖ ≤ ‖x - z‖ := by
   have hv := radialLimit_inner_le hI x hz
   set p := radialLimit I x
@@ -102,7 +102,7 @@ def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x�
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp this
 
 /-- The circular limiter is nonexpansive. -/
-@[powerlib_foundation] theorem radialLimit_dist_le {I : ℝ} (hI : 0 ≤ I) (x y : E) :
+@[tmio T, powerlib_foundation] theorem radialLimit_dist_le {I : ℝ} (hI : 0 ≤ I) (x y : E) :
     ‖radialLimit I x - radialLimit I y‖ ≤ ‖x - y‖ := by
   set a := radialLimit I x
   set b := radialLimit I y
@@ -129,7 +129,7 @@ def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x�
 
 /-- The circular limiter commutes with every linear isometry (e.g. Park rotation): limiting
 in the αβ frame equals limiting in a dq frame. -/
-@[powerlib_foundation] theorem radialLimit_isometry (I : ℝ) (R : E ≃ₗᵢ[ℝ] E) (x : E) :
+@[tmio T, powerlib_foundation] theorem radialLimit_isometry (I : ℝ) (R : E ≃ₗᵢ[ℝ] E) (x : E) :
     radialLimit I (R x) = R (radialLimit I x) := by
   by_cases h : ‖x‖ ≤ I
   · rw [radialLimit_of_norm_le h, radialLimit_of_norm_le (by rwa [R.norm_map])]

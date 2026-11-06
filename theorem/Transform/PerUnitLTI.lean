@@ -116,7 +116,7 @@ variable {n : ℕ}
 
 /-- SI and per-unit linear fields satisfy the attractive sentences together (any nonzero state
 bases, any positive time base: conventions (A) and (B) alike). Generic foundation. -/
-@[powerlib_foundation] theorem holds_puMatrix_iff {b : Fin n → ℝ} (hb : ∀ i, b i ≠ 0)
+@[tmio T, powerlib_foundation] theorem holds_puMatrix_iff {b : Fin n → ℝ} (hb : ∀ i, b i ≠ 0)
     {ωB : ℝ} (hω : 0 < ωB) (A : Matrix (Fin n) (Fin n) ℝ) {P : Flow.Property}
     (hP : P.Attractive) :
     P.holds (affineLinearVectorField (puMatrix b ωB A) 0) 0 ↔

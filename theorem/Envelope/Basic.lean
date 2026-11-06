@@ -80,7 +80,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   exact ⟨x, t, ht, hT.trans_le h, hS, hx, hA⟩
 
 /-- Leaving before the supremum of a set of horizons is leaving before one of them. -/
-@[powerlib_foundation] theorem exceeds_sSup_iff {s : Port.System n p} {S A : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exceeds_sSup_iff {s : Port.System n p} {S A : Set ℝⁿ}
     {H : Set ℝ≥0∞} : s.Exceeds S A (sSup H) ↔ ∃ T ∈ H, s.Exceeds S A T := by
   constructor
   · rintro ⟨x, t, ht, hT, hS, hx, hA⟩
@@ -90,7 +90,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     exact exceeds_mono (le_sSup hTH) he
 
 /-- The exceedance probability grows with the horizon. -/
-@[powerlib_foundation] theorem exceedance_mono (b : Behaviour n p) {T T' : ℝ≥0∞} (h : T ≤ T') :
+@[tmio T, powerlib_foundation] theorem exceedance_mono (b : Behaviour n p) {T T' : ℝ≥0∞} (h : T ≤ T') :
     b.exceedance T ≤ b.exceedance T' := by
   cases b with
   | continuous s => exact le_rfl
@@ -99,7 +99,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- Continuity from below: the exceedance probability at the supremum of a set of horizons is the
 supremum of the exceedance probabilities. No measurability is needed. -/
-@[powerlib_foundation] theorem exceedance_sSup (b : Behaviour n p) (H : Set ℝ≥0∞) :
+@[tmio T, powerlib_foundation] theorem exceedance_sSup (b : Behaviour n p) (H : Set ℝ≥0∞) :
     b.exceedance (sSup H) = ⨆ T ∈ H, b.exceedance T := by
   refine le_antisymm ?_ (iSup₂_le fun T hT => exceedance_mono b (le_sSup hT))
   rcases H.eq_empty_or_nonempty with rfl | hH
@@ -129,7 +129,7 @@ supremum of the exceedance probabilities. No measurability is needed. -/
 
 /-- The safety sentence at the supremum of a set of horizons is the conjunction of the safety
 sentences at the horizons of the set. -/
-@[powerlib_foundation] theorem holds_safe_sSup (b : Behaviour n p) (H : Set ℝ≥0∞) (ε : ℝ≥0∞) :
+@[tmio T, powerlib_foundation] theorem holds_safe_sSup (b : Behaviour n p) (H : Set ℝ≥0∞) (ε : ℝ≥0∞) :
     (Sentence.envelope (.safe (sSup H) ε)).holds b ↔
       ∀ T ∈ H, (Sentence.envelope (.safe T ε)).holds b := by
   simp only [Sentence.holds_safe_iff_exceedance, exceedance_sSup, iSup₂_le_iff]
@@ -154,7 +154,7 @@ supremum of a set of horizons is the intersection of the denotations, for every 
 
 /-- The mean-square sentence at the supremum of a set of horizons is the conjunction of the
 mean-square sentences at the horizons of the set. -/
-@[powerlib_foundation] theorem holds_meanSquare_sSup (b : Behaviour n p) (H : Set ℝ≥0∞)
+@[tmio T, powerlib_foundation] theorem holds_meanSquare_sSup (b : Behaviour n p) (H : Set ℝ≥0∞)
     (c : ℝ≥0∞) :
     (Sentence.envelope (.meanSquare (sSup H) c)).holds b ↔
       ∀ T ∈ H, (Sentence.envelope (.meanSquare T c)).holds b := by
@@ -174,7 +174,7 @@ mean-square sentences at the horizons of the set. -/
 
 /-- The safety sentence at the infimum of levels is the conjunction of the safety sentences at
 the levels. -/
-@[powerlib_foundation] theorem holds_safe_iInf {ι : Sort*} (b : Behaviour n p) (T : ℝ≥0∞)
+@[tmio T, powerlib_foundation] theorem holds_safe_iInf {ι : Sort*} (b : Behaviour n p) (T : ℝ≥0∞)
     (ε : ι → ℝ≥0∞) :
     (Sentence.envelope (.safe T (⨅ i, ε i))).holds b ↔
       ∀ i, (Sentence.envelope (.safe T (ε i))).holds b := by
@@ -191,7 +191,7 @@ the levels. -/
 
 /-- The mean-square sentence at the infimum of bounds is the conjunction of the mean-square
 sentences at the bounds. -/
-@[powerlib_foundation] theorem holds_meanSquare_iInf {ι : Sort*} (b : Behaviour n p) (T : ℝ≥0∞)
+@[tmio T, powerlib_foundation] theorem holds_meanSquare_iInf {ι : Sort*} (b : Behaviour n p) (T : ℝ≥0∞)
     (c : ι → ℝ≥0∞) :
     (Sentence.envelope (.meanSquare T (⨅ i, c i))).holds b ↔
       ∀ i, (Sentence.envelope (.meanSquare T (c i))).holds b := by
@@ -290,13 +290,13 @@ def worstExceedance {X Q : Type*} (F : Family X Q n p) (T : ℝ≥0∞) :
 /-! ## Safe sets -/
 
 /-- A larger safe set is left less often. -/
-@[powerlib_foundation] theorem exceedance_antitone_safe (s : Sample → Port.System n p)
+@[tmio T, powerlib_foundation] theorem exceedance_antitone_safe (s : Sample → Port.System n p)
     (S : Set ℝⁿ) (ν : Measure Sample) (T : ℝ≥0∞) {A A' : Set ℝⁿ} (h : A ⊆ A') :
     (Behaviour.disturbed s S A' ν).exceedance T ≤ (Behaviour.disturbed s S A ν).exceedance T :=
   measure_mono fun _ ⟨x, t, ht, hT, hS, hx, hA⟩ => ⟨x, t, ht, hT, hS, hx, fun h' => hA (h h')⟩
 
 /-- Almost surely, safety in an intersection of countably many safe sets is safety in each. -/
-@[powerlib_foundation] theorem holds_safe_iInter_null {ι : Type*} [Countable ι]
+@[tmio T, powerlib_foundation] theorem holds_safe_iInter_null {ι : Type*} [Countable ι]
     (s : Sample → Port.System n p) (S : Set ℝⁿ) (ν : Measure Sample) (T : ℝ≥0∞)
     (A : ι → Set ℝⁿ) :
     (Sentence.envelope (.safe T 0)).holds (Behaviour.disturbed s S (⋂ i, A i) ν) ↔
@@ -315,7 +315,7 @@ def worstExceedance {X Q : Type*} (F : Family X Q n p) (T : ℝ≥0∞) :
 
 /-- An undisturbed system with an envelope (the same system for every sample) is safe at a level
 below one exactly when the states it reaches before the horizon lie in the safe set. -/
-@[powerlib_foundation] theorem holds_safe_undisturbed_iff (s : Port.System n p) (S A : Set ℝⁿ)
+@[tmio T, powerlib_foundation] theorem holds_safe_undisturbed_iff (s : Port.System n p) (S A : Set ℝⁿ)
     (ν : Measure Sample) [IsProbabilityMeasure ν] (T : ℝ≥0∞) {ε : ℝ≥0∞} (hε : ε < 1) :
     (Sentence.envelope (.safe T ε)).holds (Behaviour.disturbed (fun _ => s) S A ν) ↔
       s.reach S T ⊆ A := by
@@ -331,7 +331,7 @@ below one exactly when the states it reaches before the horizon lie in the safe 
 
 /-- For an undisturbed system the reachable set is the least certified safe set: the certified
 safe sets are exactly its supersets. -/
-@[powerlib_foundation] theorem isLeast_safe_undisturbed (s : Port.System n p) (S : Set ℝⁿ)
+@[tmio T, powerlib_foundation] theorem isLeast_safe_undisturbed (s : Port.System n p) (S : Set ℝⁿ)
     (ν : Measure Sample) [IsProbabilityMeasure ν] (T : ℝ≥0∞) {ε : ℝ≥0∞} (hε : ε < 1) :
     IsLeast {A | (Sentence.envelope (.safe T ε)).holds (Behaviour.disturbed (fun _ => s) S A ν)}
       (s.reach S T) :=
@@ -343,17 +343,17 @@ safe sets are exactly its supersets. -/
 /-- The unit vector of the scalar state. -/
 def e₁ : EuclideanSpace ℝ (Fin 1) := EuclideanSpace.single 0 1
 
-@[simp, powerlib_foundation] theorem smul_e₁_apply (a : ℝ) : (a • e₁) 0 = a := by
+@[tmio T, simp, powerlib_foundation] theorem smul_e₁_apply (a : ℝ) : (a • e₁) 0 = a := by
   simp [e₁]
 
 /-- The scalar drift `ẋ = c`. -/
 def drift (c : ℝ) : Port.System 1 1 := ⟨fun _ _ => c • e₁, fun _ _ => 0⟩
 
-@[powerlib_foundation] theorem hasDerivAt_line (c τ : ℝ) : HasDerivAt (fun τ : ℝ => (c * τ) • e₁) (c • e₁) τ := by
+@[tmio T, powerlib_foundation] theorem hasDerivAt_line (c τ : ℝ) : HasDerivAt (fun τ : ℝ => (c * τ) • e₁) (c • e₁) τ := by
   simpa using ((hasDerivAt_id τ).const_mul c).smul_const e₁
 
 /-- The solution of the drift `ẋ = c` from the origin is `τ ↦ c τ`. -/
-@[powerlib_foundation] theorem drift_trajectory {c t : ℝ} {x : ℝ → EuclideanSpace ℝ (Fin 1)}
+@[tmio M, powerlib_foundation] theorem drift_trajectory {c t : ℝ} {x : ℝ → EuclideanSpace ℝ (Fin 1)}
     (h0 : x 0 = 0) (hx : (drift c).IsTrajectoryOn 0 x 0 t) :
     ∀ τ ∈ Icc 0 t, x τ = (c * τ) • e₁ :=
   eq_of_has_deriv_right_eq (f' := fun _ => c • e₁)
@@ -363,7 +363,7 @@ def drift (c : ℝ) : Port.System 1 1 := ⟨fun _ _ => c • e₁, fun _ _ => 0�
 
 /-- The drift from the origin leaves a set before the horizon exactly when the line `τ ↦ c τ`
 does. -/
-@[powerlib_foundation] theorem drift_exceeds_iff {c : ℝ} {A : Set (EuclideanSpace ℝ (Fin 1))}
+@[tmio TM, powerlib_foundation] theorem drift_exceeds_iff {c : ℝ} {A : Set (EuclideanSpace ℝ (Fin 1))}
     {T : ℝ≥0∞} :
     (drift c).Exceeds {0} A T ↔ ∃ t, 0 ≤ t ∧ ENNReal.ofReal t < T ∧ (c * t) • e₁ ∉ A := by
   constructor
@@ -389,7 +389,7 @@ def below : Set (EuclideanSpace ℝ (Fin 1)) := {y | y 0 < 1 / 2}
 
 def above : Set (EuclideanSpace ℝ (Fin 1)) := {y | -1 / 2 < y 0}
 
-@[powerlib_foundation] theorem exceeds_below_iff (c : ℝ) : (drift c).Exceeds {0} below ⊤ ↔ 0 < c := by
+@[tmio TM, powerlib_foundation] theorem exceeds_below_iff (c : ℝ) : (drift c).Exceeds {0} below ⊤ ↔ 0 < c := by
   rw [drift_exceeds_iff]
   simp only [below, mem_ofPred_eq, smul_e₁_apply, not_lt, ENNReal.ofReal_lt_top, true_and]
   constructor
@@ -399,7 +399,7 @@ def above : Set (EuclideanSpace ℝ (Fin 1)) := {y | -1 / 2 < y 0}
   · intro hc
     exact ⟨1 / c, by positivity, by rw [mul_one_div_cancel hc.ne']; norm_num⟩
 
-@[powerlib_foundation] theorem exceeds_above_iff (c : ℝ) : (drift c).Exceeds {0} above ⊤ ↔ c < 0 := by
+@[tmio TM, powerlib_foundation] theorem exceeds_above_iff (c : ℝ) : (drift c).Exceeds {0} above ⊤ ↔ c < 0 := by
   rw [drift_exceeds_iff]
   simp only [above, mem_ofPred_eq, smul_e₁_apply, not_lt, ENNReal.ofReal_lt_top, true_and]
   constructor
@@ -411,12 +411,12 @@ def above : Set (EuclideanSpace ℝ (Fin 1)) := {y | -1 / 2 < y 0}
       rw [mul_div_assoc', mul_neg_one, neg_div, div_self hc.ne]; norm_num⟩
 
 /-- Leaving a safe set is leaving every smaller one. -/
-@[powerlib_foundation] theorem exceeds_antitone_safe {s : Port.System n p} {S A A' : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exceeds_antitone_safe {s : Port.System n p} {S A A' : Set ℝⁿ}
     {T : ℝ≥0∞} (h : A' ⊆ A) (he : s.Exceeds S A T) : s.Exceeds S A' T := by
   obtain ⟨x, t, ht, hT, hS, hx, hA⟩ := he
   exact ⟨x, t, ht, hT, hS, hx, fun h' => hA (h h')⟩
 
-@[powerlib_foundation] theorem twoPoint_apply (E : Set Sample) :
+@[tmio M, powerlib_foundation] theorem twoPoint_apply (E : Set Sample) :
     twoPoint E = 2⁻¹ * (E.indicator 1 (constSample 1) + E.indicator 1 (constSample (-1))) := by
   simp [twoPoint, Measure.dirac_apply, mul_add]
 
@@ -457,7 +457,7 @@ one of the two sets. -/
 
 /-- At a positive level the certified safe sets have no least element: the random drift with
 `ω₀ = ±1` at the level `1/2`. -/
-@[powerlib_foundation] theorem not_isLeast_safe :
+@[tmio TM, powerlib_foundation] theorem not_isLeast_safe :
     ¬ ∃ L, IsLeast {A | (Sentence.envelope (.safe ⊤ 2⁻¹)).holds
       (Behaviour.disturbed randomDrift {0} A twoPoint)} L := by
   rintro ⟨L, hL, hlow⟩
@@ -473,7 +473,7 @@ one of the two sets. -/
 `ℓ > v₀` outside the safe set, and grows along every solution of the sample `ω` at most at the
 rate `c ω` bounds the probability of leaving the safe set before the horizon `T` by
 `E[c] T / (ℓ − v₀)`. -/
-@[powerlib_foundation] theorem exceedance_le_of_storage {s : Sample → Port.System n p}
+@[tmio T, powerlib_foundation] theorem exceedance_le_of_storage {s : Sample → Port.System n p}
     {S A : Set ℝⁿ} {ν : Measure Sample} {T : ℝ≥0∞} (V : ℝⁿ → ℝ≥0∞) (c : Sample → ℝ≥0∞)
     {v₀ ℓ : ℝ≥0∞} (hS : ∀ x ∈ S, V x ≤ v₀) (hA : ∀ x ∉ A, ℓ ≤ V x) (hv : v₀ < ℓ) (hℓ : ℓ ≠ ⊤)
     (hV : ∀ ω (x : ℝ → ℝⁿ) (t : ℝ), 0 ≤ t → (s ω).IsTrajectoryOn 0 x 0 t →
@@ -492,7 +492,7 @@ rate `c ω` bounds the probability of leaving the safe set before the horizon `T
     _ = (∫⁻ ω, c ω ∂ν) * T / (ℓ - v₀) := by rw [lintegral_mul_const'' T hmeas]
 
 /-- The storage certifies safety at every level above Kushner's bound. -/
-@[powerlib_foundation] theorem holds_safe_of_storage {s : Sample → Port.System n p}
+@[tmio T, powerlib_foundation] theorem holds_safe_of_storage {s : Sample → Port.System n p}
     {S A : Set ℝⁿ} {ν : Measure Sample} {T ε : ℝ≥0∞} (V : ℝⁿ → ℝ≥0∞) (c : Sample → ℝ≥0∞)
     {v₀ ℓ : ℝ≥0∞} (hS : ∀ x ∈ S, V x ≤ v₀) (hA : ∀ x ∉ A, ℓ ≤ V x) (hv : v₀ < ℓ) (hℓ : ℓ ≠ ⊤)
     (hV : ∀ ω (x : ℝ → ℝⁿ) (t : ℝ), 0 ≤ t → (s ω).IsTrajectoryOn 0 x 0 t →
@@ -504,7 +504,7 @@ rate `c ω` bounds the probability of leaving the safe set before the horizon `T
 
 /-- A mean-square bound bounds, at each time before the horizon, the probability that some solution
 from the initial set has norm at least `r`. -/
-@[powerlib_foundation] theorem meas_ge_le_of_meanSquare {s : Sample → Port.System n p}
+@[tmio T, powerlib_foundation] theorem meas_ge_le_of_meanSquare {s : Sample → Port.System n p}
     {S A : Set ℝⁿ} {ν : Measure Sample} {T c r : ℝ≥0∞}
     (h : (Sentence.envelope (.meanSquare T c)).holds (Behaviour.disturbed s S A ν)) {t : ℝ}
     (ht : 0 ≤ t) (htT : ENNReal.ofReal t < T) (hr : r ≠ 0) (hr' : r ≠ ⊤)

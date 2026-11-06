@@ -66,14 +66,14 @@ A forward trajectory of the linearized error dynamics for the grid-frequency dev
     ring
   · simp [frequencyModel, linA, dotProduct, Fin.sum_univ_two]
 
-@[powerlib_foundation] theorem frequencyModel_output (V Kp Ki : ℝ) (x : Fin 2 → ℝ)
+@[tmio M, powerlib_foundation] theorem frequencyModel_output (V Kp Ki : ℝ) (x : Fin 2 → ℝ)
     (u : Fin 1 → ℝ) :
     plantOutput (frequencyModel V Kp Ki) x u 0 = -(V * Kp) * x 0 + Ki * x 1 := by
   simp [plantOutput, frequencyModel, dotProduct, Fin.sum_univ_two]
 
 /-- A function with componentwise derivatives `d₀, d₁` solves the error dynamics (forward
 trajectory of `frequencyModel V K_p K_i` under the input `t ↦ ![w t]`). -/
-@[powerlib_foundation] private lemma isErrorTrajectory_of {V Kp Ki : ℝ} {w : ℝ → ℝ}
+@[tmio M, powerlib_foundation] private lemma isErrorTrajectory_of {V Kp Ki : ℝ} {w : ℝ → ℝ}
     {x : ℝ → Fin 2 → ℝ}
     (h0 : ∀ t, HasDerivAt (fun τ => x τ 0) (-(V * Kp) * x t 0 + Ki * x t 1 - w t) t)
     (h1 : ∀ t, HasDerivAt (fun τ => x τ 1) (-V * x t 0) t) :
@@ -148,7 +148,7 @@ def rampParticular (V Kp Ki ρ : ℝ) (t : ℝ) : Fin 2 → ℝ :=
 
 /-- The particular solution `rampParticular` is a forward trajectory of the error dynamics
 for `w = ρ t`. -/
-@[powerlib_foundation] theorem rampParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
+@[tmio M, powerlib_foundation] theorem rampParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
     (hKi : Ki ≠ 0) (ρ : ℝ) :
     ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (rampParticular V Kp Ki ρ)
       ((frequencyModel V Kp Ki).A *ᵥ rampParticular V Kp Ki ρ t +
@@ -220,7 +220,7 @@ def quadParticular (V Kp Ki α : ℝ) (t : ℝ) : Fin 2 → ℝ :=
 
 /-- The particular solution `quadParticular` is a forward trajectory of the error dynamics
 for `w = α t²`. -/
-@[powerlib_foundation] theorem quadParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
+@[tmio M, powerlib_foundation] theorem quadParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
     (hKi : Ki ≠ 0) (α : ℝ) :
     ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (quadParticular V Kp Ki α)
       ((frequencyModel V Kp Ki).A *ᵥ quadParticular V Kp Ki α t +

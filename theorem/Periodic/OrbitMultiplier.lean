@@ -46,7 +46,7 @@ variable {f : (X → ℝ) → X → ℝ} {xp : ℝ → X → ℝ}
   rw [variationalMatrix, LinearMap.toMatrix'_mulVec]
   rfl
 
-@[powerlib_foundation] theorem variationalMatrix_continuous (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem variationalMatrix_continuous (hf : ContDiff ℝ 1 f)
     (hxp : Continuous xp) : Continuous (variationalMatrix f xp) := by
   have hD : Continuous fun t => fderiv ℝ f (xp t) :=
     (hf.continuous_fderiv one_ne_zero).comp hxp
@@ -59,13 +59,13 @@ variable {f : (X → ℝ) → X → ℝ} {xp : ℝ → X → ℝ}
   exact (continuous_apply i).comp
     ((ContinuousLinearMap.apply ℝ (X → ℝ) (Pi.single j 1)).continuous.comp hD)
 
-@[powerlib_foundation] theorem variationalMatrix_periodic {T : ℝ} (hper : Periodic xp T) :
+@[tmio T, powerlib_foundation] theorem variationalMatrix_periodic {T : ℝ} (hper : Periodic xp T) :
     Periodic (variationalMatrix f xp) T := by
   intro t
   simp only [variationalMatrix, hper t]
 
 /-- The velocity `f(x_p(t))` solves the variational equation `ẏ = A(t) y`. -/
-@[powerlib_foundation] theorem velocity_solves_variational (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem velocity_solves_variational (hf : ContDiff ℝ 1 f)
     (hsol : ∀ t, HasDerivAt xp (f (xp t)) t) (s : Set ℝ) :
     IsIntegralCurveOn (fun t => f (xp t)) (vecField (variationalMatrix f xp)) s := by
   intro t _
@@ -76,7 +76,7 @@ variable {f : (X → ℝ) → X → ℝ} {xp : ℝ → X → ℝ}
   exact h.hasDerivWithinAt
 
 /-- `Φ(T, 0) f(x_p(0)) = f(x_p(0))`: the velocity is a Floquet eigenvector with multiplier `1`. -/
-@[powerlib_foundation] theorem monodromy_mulVec_velocity (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem monodromy_mulVec_velocity (hf : ContDiff ℝ 1 f)
     (hsol : ∀ t, HasDerivAt xp (f (xp t)) t) {T : ℝ} (hT : 0 < T) (hper : Periodic xp T) :
     monodromy (variationalMatrix f xp) T 0 *ᵥ f (xp 0) = f (xp 0) := by
   have hxp : Continuous xp := continuous_iff_continuousAt.mpr fun t => (hsol t).continuousAt
@@ -88,7 +88,7 @@ variable {f : (X → ℝ) → X → ℝ} {xp : ℝ → X → ℝ}
   rw [this]
 
 /-- A non-equilibrium periodic orbit has the Floquet multiplier `1`. -/
-@[powerlib_foundation] theorem one_mem_spectrum_monodromy (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem one_mem_spectrum_monodromy (hf : ContDiff ℝ 1 f)
     (hsol : ∀ t, HasDerivAt xp (f (xp t)) t) {T : ℝ} (hT : 0 < T) (hper : Periodic xp T)
     (hne : f (xp 0) ≠ 0) :
     (1 : ℂ) ∈ spectrum ℂ ((monodromy (variationalMatrix f xp) T 0).map (algebraMap ℝ ℂ)) := by
