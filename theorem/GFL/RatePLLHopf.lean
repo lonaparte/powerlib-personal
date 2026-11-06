@@ -7,7 +7,7 @@ import theorem.Dynamics.Degenerate.WeakFocus
 /-! # Rate-coupled GFL PLL at the boundary angle: Hopf normal form
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Model boundary.
 The model of `theorem/GFL/RatePLL.lean`, unchanged: a single

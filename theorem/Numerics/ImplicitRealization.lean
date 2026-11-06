@@ -12,7 +12,7 @@ invertibility of the implicit step. A singular inverse is never identified with 
 an implicit recursion: the exact trapezoidal comparison explicitly requires well-posedness.
 Hurwitz designs make both schemes well posed and stable for every positive step. Backward
 Euler is asserted sound only; unlike the trapezoidal rule, it can stabilize an unstable design.
-Scaffold: `theorem/ImplicitDiscretization.agda`.
+Scaffold: `theorem/Numerics/ImplicitDiscretization.agda`.
 
 Scope. Arbitrary continuous linear families, arbitrary implementation carriers with a design
 map and a real step length. Zero-input dynamics, exact arithmetic, fixed step, no solver error.

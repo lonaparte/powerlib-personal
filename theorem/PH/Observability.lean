@@ -17,7 +17,7 @@ Model boundary.
 * The counterexample is the lossless series `LC` loop `losslessLC`
   (`J = [[0, −1], [1, 0]]`, `R = 0`, `g = (1, 0)ᵀ`, `Q = I`, output the loop current) — the
   `r = 0`, `L = C = 1` case of the series RLC loop `seriesRLCPH` of
-  `theorem/PH/Models/RLC.lean`.
+  `theorem/Circuits/PH/RLC.lean`.
 * The corrected statement uses the output feedback `u = −k y` (`k > 0`), closed loop
   `phOutputFeedback` with dissipation `R + k g gᵀ`.
 
@@ -113,7 +113,7 @@ def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
 
 /-- The lossless `LC` loop as a linear port-Hamiltonian plant: `J = losslessJ`, `R = 0`,
 `g = losslessG`, `Q = 1`. These are the data of the series RLC loop `PH.Models.seriesRLCPH`
-(`theorem/PH/Models/RLC.lean`) with `r = 0`, `L = C = 1`. -/
+(`theorem/Circuits/PH/RLC.lean`) with `r = 0`, `L = C = 1`. -/
 def losslessLC : Port.PortHamiltonian 2 1 :=
   toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one
 

@@ -27,7 +27,7 @@ does realize passivity (`discreteGradient_passiveWith`). For linear plants `ẋ 
 Euler zero-input map is `I + hA`; a multiplier `1 + hλ` inside the unit disk forces `Re λ < 0`
 (`isHurwitz_of_forwardEuler_schurStable`), so the realization of the attractive sentences is
 complete at every positive step, and with the step threshold exact for small steps.
-Scaffold: `theorem/EulerPorts.agda`.
+Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Scope.
 * A generic template, not a model. Model layer (M): an arbitrary family `F : Family X Q n p` of

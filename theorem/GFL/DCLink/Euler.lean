@@ -15,7 +15,7 @@ they are, and the local laws of the generic template `theorem/Numerics/EulerReal
 point has a nonzero (for some families: positive) DC voltage has a step `h₀ > 0` below which its
 Euler integration is locally exponentially stable, and without a step constraint the realization
 is not sound; in the pattern of `theorem/Synchronous/SwingEuler.lean`. Scaffold:
-`theorem/EulerDiscretization.agda`.
+`theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M), each family with the model boundary of its module, read about its selected

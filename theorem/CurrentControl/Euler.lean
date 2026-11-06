@@ -12,7 +12,7 @@ there (`LimitedPI.contDiffAt_field`), and the local laws of the generic template
 `theorem/Numerics/EulerRealization.lean` apply to every platform with headroom. A locally
 exponentially stable platform with headroom has a step `h₀ > 0` below which its Euler integration
 is locally exponentially stable, and without a step constraint the realization is not sound; in
-the pattern of `theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
+the pattern of `theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M): `LimitedPI.family`, the PI current loop driven through the modulation limit,

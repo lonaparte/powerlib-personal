@@ -61,7 +61,7 @@ Family and connection conclusions.
 * `RLDeviation` and `LCLDeviation` carry an arbitrary constant input and an actual equilibrium;
   their families read deviations about it. Their private trajectory bridges justify that
   the implicit affine recursion has exactly the homogeneous step in these coordinates.
-Scaffold: `theorem/ImplicitDiscretization.agda`.
+Scaffold: `theorem/Numerics/ImplicitDiscretization.agda`.
 -/
 
 noncomputable section

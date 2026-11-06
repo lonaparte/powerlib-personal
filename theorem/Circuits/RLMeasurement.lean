@@ -1,6 +1,6 @@
 import theorem.TMIO.ClaimElab
 import theorem.Circuits.RL
-import theorem.Data.Analysis
+import theorem.Estimation.ResistanceFit
 
 /-! # RL candidate models from symbolic resistance constraints
 
@@ -24,7 +24,7 @@ Model boundary.
 
 Source: TMIO relational calculus (`Family.seed`, certification and prediction,
 `theorem/TMIO/Relation.lean`; representation change, `theorem/TMIO/Representation.lean`); the
-data analysis of `theorem/Data/Analysis.lean`; the Agda-generated conversion of
+data analysis of `theorem/Estimation/ResistanceFit.lean`; the Agda-generated conversion of
 `theorem/Circuits/RL.lean` for the state-space representation.
 
 Results.
@@ -39,7 +39,7 @@ Results.
 Family and connection conclusions.
 * No new family: the module constrains candidate models of `Circuits.RL.family` through `seed ε`.
   This is a model-side compatibility construction; it does not establish an I–O relation. Scaffold:
-  `theorem/RLMeasurement.agda`.
+  `theorem/Circuits/RLMeasurement.agda`.
 * `certify_reading`: a reading certifies a set of models exactly when its accuracy interval lies
   in the resistances all of whose models belong to the set; `predict_reading`: the possible
   readings, derived from certification by complement; `candidates`: the candidates of a reading

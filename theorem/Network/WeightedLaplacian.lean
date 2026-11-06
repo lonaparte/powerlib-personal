@@ -39,7 +39,7 @@ Results.
   (`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
   (`signedIncidence_transpose_mulVec`), and every column sums to zero
   (`signedIncidence_col_sum`). The RL-network pH models built on it are in
-  `theorem/PH/Models/RLNetwork.lean`, the multi-area tie-line graph in
+  `theorem/Circuits/PH/RLNetwork.lean`, the multi-area tie-line graph in
   `theorem/Frequency/LFCNetwork.lean`.
 * Kron reduction: eliminating internal nodes with zero injection from a linear resistive network
   `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b` (`kron_current`), conserves the port power

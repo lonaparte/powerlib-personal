@@ -4,7 +4,7 @@ import theorem.Synchronous.Swing
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
-import theorem.Spectral.Hub
+import theorem.Family.Reading
 import theorem.SpecialFunctions.Elementary
 import theorem.SpecialFunctions.Sinusoid
 
@@ -26,7 +26,7 @@ Model boundary.
 * Level: equilibrium set and local exponential stability / instability of an equilibrium, from
   the Jacobian computed by `fderiv` and the three-state Routh–Hurwitz criterion.
 
-Scaffold of the reading of `DroopLPF` through the swing family: `theorem/DroopSwing.agda`.
+Scaffold of the reading of `DroopLPF` through the swing family: `theorem/GFM/DroopSwing.agda`.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md` §15–§16; `…/gfm-driven-gfl-parametric-resonance/notes/concepts/
@@ -101,7 +101,7 @@ Family and connection conclusions.
   The loop is the swing machine `⟨D/ω_c, D, P₀, 0, K₀, 0⟩` in the coordinates `P_f = P₀ − D ω`
   (`DroopLPF.field_eq_transport`), so for `D, ω_c ≠ 0` every sentence is read through the swing
   family (`DroopLPF.mem_den_iff_swing`), and the laws above are the swing family's, carried over
-  within `D, ω_c > 0` by the hub transfer of `theorem/Spectral/Hub.lean`.
+  within `D, ω_c > 0` by the hub transfer of `theorem/Family/Reading.lean`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
   `exists_equilibrium_iff`, `field_equilibrium`.  The transfer functions, the boundary frequency,
   the first-order modulation `A₁`, the periodic time averages and the second-order reduction

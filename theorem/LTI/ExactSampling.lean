@@ -14,7 +14,7 @@ sampled contraction are the Hurwitz property of `A` and the Schur property of `e
 stability, instability, decay rates and conservation are read through the samples of the
 solutions and the flow over one period), and neither system has a port, so both are passive. The
 sampled family translates as its design model, so its translations are as sound and as exact as
-the model's. Scaffold: `theorem/ExactSampling.agda`.
+the model's. Scaffold: `theorem/LTI/ExactSampling.agda`.
 
 Scope.
 * Model layer (M). `LTI.ContinuousModel n`: a continuous-time autonomous linear model `ẋ = A x`

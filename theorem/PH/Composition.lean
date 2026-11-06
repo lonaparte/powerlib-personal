@@ -56,7 +56,7 @@ Family and connection conclusions.
   inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.isHurwitz_of_lyapunov`); no dissipation
   places it in conservation (`mem_den_conservative_of_lossless`); strict dissipation excludes
   conservation (`not_mem_den_conservative_of_dissipation_pos`); similar plants share every
-  sentence (`mem_den_iff_of_similar`, scaffold `theorem/Similarity.agda`); and every numbering of
+  sentence (`mem_den_iff_of_similar`, scaffold `theorem/Linear/Similarity.agda`); and every numbering of
   an interconnection is passive and Lyapunov stable (`interconnect_mem_den_passive`,
   `interconnect_mem_den_lyapunovStable`).
 * The trajectory projections `interconnect_trajectory_inl`, `interconnect_trajectory_inr` are

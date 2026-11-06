@@ -4,7 +4,7 @@ import theorem.SpecialFunctions.TrigZeros
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Model boundary.
 Grid-following VSC with LC filter and an `R_g`–`L_g` line to an infinite bus

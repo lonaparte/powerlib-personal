@@ -6,7 +6,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
 import theorem.Dynamics.Calculus
-import theorem.Spectral.Hub
+import theorem.Family.Reading
 import theorem.Spectral.Equilibrium
 
 /-! # SRF-PLL as a nonlinear port-Hamiltonian system
@@ -30,7 +30,7 @@ Model boundary.
   phase detector `h`, T-gfl-ph) and `theorem/GFL/LCLine/Reduced2D.lean` (`pHModel` of the
   reduced 2-state GFL-PLL, detector `h(θ) = c₀ − A sin(θ + φ)`).
 
-Scaffold of the reading through the PI-PLL family: `theorem/PortHamiltonianPLL.agda`.
+Scaffold of the reading through the PI-PLL family: `theorem/PLL/PortHamiltonianPLL.agda`.
 
 Source: work-sync `theory/T-pll-ph.md` §1.0–§1.2.
 

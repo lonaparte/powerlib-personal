@@ -10,7 +10,7 @@ locally exponentially stable model has a step `h₀ > 0` below which its Euler i
 locally exponentially stable, and without a step constraint the realization is not sound; an
 instance of the generic template
 `theorem/Numerics/EulerRealization.lean`, in the pattern of `theorem/Synchronous/SwingEuler.lean`.
-Scaffold: `theorem/EulerDiscretization.agda`.
+Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M): `LCLine.codeFamily`, the reduced two-state PLL of the LCL-filtered line in the

@@ -5,7 +5,7 @@ import theorem.Dynamics.Transport
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.Local
-import theorem.Spectral.Hub
+import theorem.Family.Reading
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -50,7 +50,7 @@ Seven-state dq machine (`syncMachine7`, T-sync-machine §1.13), continuous time:
   Not an instance of `Port.PortHamiltonian` (`J` depends on the state, `H` is not diagonal).
 
 Scaffold of the reading of `ClassicalSM` through the swing family:
-`theorem/ClassicalMachineSwing.agda`.
+`theorem/Synchronous/ClassicalMachineSwing.agda`.
 
 Source: work-sync `theory/T-ph.md` §1.7 (1.12); `theory/T-sync-machine.md` §1.13.
 
@@ -100,7 +100,7 @@ Family and connection conclusions.
   and is passive exactly when `P_m = 0`, the swing family has none and every model is passive, so
   the sentence-by-sentence equivalence fails (`ClassicalSM.not_den_eq_preimage`).
 * Flow conclusions, all read off the swing family through the equivalence by the hub transfers
-  of `theorem/Spectral/Hub.lean`: chain soundness (`ClassicalSM.chain_le_semantics`, from
+  of `theorem/Family/Reading.lean`: chain soundness (`ClassicalSM.chain_le_semantics`, from
   `Swing.chain_le_semantics` by `Spectral.sound_of_hub`; passivity from
   `ClassicalSM.mem_den_passive_of_Pm_zero`); members `ClassicalSM.mem_den_lyapunovStable`,
   `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable` (from

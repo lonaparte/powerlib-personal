@@ -12,7 +12,7 @@ fixed step `h > 0`: each integration realizes the model it integrates. A locally
 stable model whose field is `C¹` near its point has a step `h₀ > 0` below which its Euler
 integration is locally exponentially stable, and without a step constraint the realization is not
 sound; instances of the generic template `theorem/Numerics/EulerRealization.lean`, in the pattern
-of `theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
+of `theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M), each family with the model boundary of its module, read about its selected

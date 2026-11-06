@@ -6,7 +6,7 @@ import theorem.Spectral.Equilibrium
 /-! # Quasi-static three-state GFL: the fold of the Routh–Hurwitz region
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Model boundary.
 The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single

@@ -36,7 +36,7 @@ Source: finite-time stability over a horizon with given bounds (Dorato 1961; Ama
 Dorato 2001) and its stochastic form bounded through a nonnegative storage (Kushner 1966); the
 engineering reading of stability as the exceedance of thresholds on a few physical quantities
 (work-sync `theory/T-converter-stochastic-paradigm.md` §1.3, F3); generated adjoints
-(`theorem/TMIO/Generate.lean`). Scaffold: `theorem/Envelope.agda`.
+(`theorem/TMIO/Generate.lean`). Scaffold: `theorem/Envelope/Envelope.agda`.
 
 Results.
 * Horizons: `exceeds_mono`, `exceeds_sSup_iff`, `exceedance_mono`, `exceedance_sSup` (continuity

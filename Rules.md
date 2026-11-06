@@ -18,8 +18,8 @@ them or filters what they admit, and says which.
 | M5 | **Generic once.** A law about arbitrary families or fields is proved once, in a generic module that imports no engineering module; instances supply only their obligations and do not restate it. Upstream results are reused, not reproved. | `DEPENDENCIES`, `DUPLICATES`, `RESTATEMENTS` |
 | M6 | **One trust root.** The Lean kernel with the axioms `propext`, `Classical.choice` and `Quot.sound`. Agda, synthesizers, solvers, scripts and the elaborator are untrusted. | axiom audit; admission |
 
-The checks are the library structure test (`dependencies/tests/lean/Library/Structure.lean`) and
-the admission tests (`dependencies/tests/lean/Architecture/`). The meta-rules fix the form of the
+The checks are the library structure test (`tests/lean/Library/Structure.lean`) and
+the admission tests (`tests/lean/Architecture/`). The meta-rules fix the form of the
 library, not its content: which models and conclusions it contains is chosen from the sources each
 module header cites.
 
@@ -50,15 +50,21 @@ A connection is built in three steps:
 3. The scaffold stays in `theorem/` as the design record of the connection, and the
    header of the Lean module cites it. Only data passes between Agda and Lean (§11).
 
-The scaffold table of [Architecture.md](Architecture.md) is the registry: one row per
-scaffold, naming the Lean modules that prove its connection. The `SCAFFOLDS` check
-recognizes a connection from a public statement that uses two model families, an
-implementation or stack, or an observation seed, or that changes the representation inside
-one family (an iff or an equality with that family's denotation of one sentence on both
-sides, at different models); the module must cite a scaffold whose row names it. Every
-scaffold is cited by a Lean module and has a row. A scaffold's comments cite only public
-Lean declarations and library modules, and the check resolves every such name: a step
-proved by a private lemma is cited through the public theorem whose proof contains it.
+Each scaffold has exactly one source header of the form
+`-- Lean modules: theorem.Topic.Module theorem.Other.Module`, naming the Lean modules
+that prove its connection. Names must be distinct existing library modules; every
+named module cites that scaffold in its docstring. Scaffolds live in the topic
+directory of the construction they specify, and Agda module names follow their paths.
+There is no separate Markdown registry.
+
+The `SCAFFOLDS` check recognizes a connection from a public statement that uses two
+model families, an implementation or stack, or an observation seed, or changes the
+representation inside one family (an iff or equality with that family's denotation
+of one sentence on both sides, at different models). Such a module must cite a
+scaffold that registers it. Every scaffold is cited by a Lean module and has a valid
+ownership header. A scaffold's comments cite only public Lean declarations and
+library modules; the check resolves those names. A private proof step is cited
+through the public theorem whose proof contains it.
 
 A scaffold is named after the contents it connects: a reading of one family through
 another after the two families (`DroopSwing.agda`: the droop loop read as a swing
@@ -77,15 +83,27 @@ numerical experiments, and Agda-only proofs are not admitted theorems.
 
 *Filter (M6): what counts as library source.*
 
-The active visible source directories are `theorem/`, `example/`, and
-`dependencies/`. `theorem/` contains formalization source and checked generated
+The active source directories are `theorem/`, `example/`, `tests/`,
+`dependencies/`, and `tools/`. `theorem/` contains formalization source and checked generated
 formalization source, with no Markdown files. `example/` contains formal public
 consumers. Necessary kernel, discovery, and automatic-reuse consumers belong in
-`dependencies/tests/`; pinned integration profiles belong in
-`dependencies/integrations/`. Procedural or redundant tests and research notes
+`tests/lean/`; source inspection tools and their tests belong in `tools/`. Pinned
+integration profiles belong in `dependencies/integrations/`. Procedural or redundant tests and research notes
 stay in the local workspace outside the repositories. A result not yet expressed
 as a Lean theorem is a research note, regardless of its mathematical plausibility.
 Directory structure must enforce this distinction.
+
+Group formal sources by mathematical or engineering topic, independently of the
+declarations' metadata. Keep general constructions with their mathematical subject
+and concrete electrical instances with their engineering subject. Moving a file
+changes its import path; preserve public declaration names unless an API change is intended.
+
+Root documents use title-case filenames (`Architecture.md`, `Rules.md`,
+`Changelog.md`); `README.md` retains the conventional uppercase name.
+`Architecture.md` describes the current architecture and interfaces. `Rules.md`
+is the normative source. `Changelog.md` records completed changes with dates and,
+where available, commit references. Keep transient statistics, build logs,
+development plans and intermediate investigation notes outside the repository.
 
 ## 2a. Knowledge units and external observations
 
@@ -133,7 +151,7 @@ suggestions do not assign a kind to every declaration in a module. Unreviewed
 ordinary theorems may remain unclassified; definitions are outside this inventory.
 The required missing-label check is limited to public typed connection theorems;
 every explicit attribute, including one on an ordinary or private theorem, is checked.
-`Layers.md` gives the Lean environment queries and the source-only queries.
+`Architecture.md` gives the Lean environment queries and the source-only queries.
 
 ## 3. Foundation results and domain results
 
@@ -538,7 +556,7 @@ diff identity, and checked effective source identity in provenance. Do not vendo
 full upstream proofs. Kernel, semantic, automatic-reuse, rejection, and transitive
 axiom checks still apply to every reused result.
 
-Necessary formal verification consumers belong in `dependencies/tests/`.
+Necessary formal verification consumers belong in `tests/lean/`.
 They check the public interface, kernel and transitive axiom audit, registered
 theorem discovery, automatic reuse, or required semantic acceptance boundaries.
 Pinned formal integration profiles and their build configurations belong in

@@ -13,7 +13,7 @@ import theorem.SpecialFunctions.Sinusoid
 /-! # Quasi-static three-state GFL: PLL + active-power dispatch loop
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Model boundary.
 Single grid-following converter on an infinite bus of amplitude `V`

@@ -2,7 +2,7 @@ import theorem.LibrarySearch
 import theorem.TMIO.KnowledgeIndex
 import theorem.Architecture
 import theorem.TMIO.Instances.Finite
-import theorem.Data.Analysis
+import theorem.Estimation.ResistanceFit
 import theorem.Flow.Certificate
 import theorem.Linear.Family
 import theorem.Linear.Coordinates
@@ -64,7 +64,7 @@ import theorem.PDE.Energy
 import theorem.Potential.Barrier
 import theorem.Spectral.Family
 import theorem.Spectral.Local
-import theorem.Spectral.Hub
+import theorem.Family.Reading
 import theorem.Spectral.Global
 import theorem.Spectral.LinearNamed
 import theorem.Spectral.Equilibrium
@@ -244,9 +244,9 @@ import theorem.Numerics.VonNeumann
 import theorem.PH.Composition
 import theorem.PH.Linear
 import theorem.PH.Linearization
-import theorem.PH.Models.Instances
-import theorem.PH.Models.RLC
-import theorem.PH.Models.RLNetwork
+import theorem.Circuits.PH.Instances
+import theorem.Circuits.PH.RLC
+import theorem.Circuits.PH.RLNetwork
 import theorem.PH.Nonlinear
 import theorem.PH.Observability
 import theorem.PH.PositiveReal

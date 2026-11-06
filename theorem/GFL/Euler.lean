@@ -9,7 +9,7 @@ integration realizes the model it integrates. A locally exponentially stable mod
 `h₀ > 0` below which its Euler integration is locally exponentially stable, and without a step
 constraint the realization is not sound; an instance of the generic template
 `theorem/Numerics/EulerRealization.lean`, in the pattern of `theorem/Synchronous/SwingEuler.lean`.
-Scaffold: `theorem/EulerDiscretization.agda`.
+Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M): `RatePLL.family`, the rate-coupled PLL with a frozen current, state `(θ, x)`,

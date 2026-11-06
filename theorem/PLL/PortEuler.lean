@@ -11,7 +11,7 @@ SRF-PLL field, so local exponential stability is realized below a step threshold
 a step constraint. Passivity is not: the output `−V sin θ` does not depend on the input, so for
 `V ≠ 0` one Euler step with a large offset draws energy without bound; a discretization is
 passive exactly when the grid is dead (`V = 0`, zero output). Scaffold:
-`theorem/EulerPorts.agda`.
+`theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
 * Model layer (M): `PLLPH.family` (state `(θ_e, η)` centred at the selected point `(θ*, η*)`,

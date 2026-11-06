@@ -13,8 +13,8 @@ the initial state into the basin), and convergence of every orbit is Schur stabi
 (`LTI.asymptoticallyStable_iff_schurStable`). Lyapunov stability of a linear map bounds its
 orbits (scale the initial state into the stability ball), so one eigenvalue outside the closed
 unit disk gives instability: the discrete counterpart of `Linear.unstable_of_eigenvalue`.
-Scaffold: the `discrete-reading` hypothesis of `theorem/ExactSampling.agda` and
-`theorem/SwitchedAveraging.agda`.
+Scaffold: the `discrete-reading` hypothesis of `theorem/LTI/ExactSampling.agda` and
+`theorem/Averaging/SwitchedAveraging.agda`.
 
 Scope. Maps `F : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, read by the map semantics
 `theorem/Map/Defs.lean`; the linear map of a matrix is `Map.op Φ`

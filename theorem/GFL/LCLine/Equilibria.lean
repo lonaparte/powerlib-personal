@@ -4,7 +4,7 @@ import theorem.SpecialFunctions.Sinusoid
 /-! # Equilibrium count, saddle-node surface and fold of the GFL-PLL model
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Domain module.
 

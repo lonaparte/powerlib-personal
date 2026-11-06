@@ -5,7 +5,7 @@ import theorem.Dynamics.Transport
 /-! # The 10-state GFL-VSC model, its quasi-steady set, and its equilibria
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Domain module (`vsc-stochastic-stability`, rigid-DC baseline "M1").
 

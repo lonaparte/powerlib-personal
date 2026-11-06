@@ -55,7 +55,7 @@ Family and connection conclusions.
   attractive denotation is the PI family's pulled back along `pi`, cut by `I_dc0/(C V0) > 0`;
   `linearized_mem_den_iff`: with `L, C, V0 > 0`, stable iff
   `R + Kp > 0 ∧ Ki > 0 ∧ I_dc0 > 0`. Scaffold of the connection with the PI family:
-  `theorem/CascadeCurrentLoop.agda`.
+  `theorem/GFL/DCLink/CascadeCurrentLoop.agda`.
 * `family : Family CascadeParams Spectral.Requirement 3 0` reads the parameters as the
   nonlinear field with `i_d* = I_d0` translated so that `eqState` is the origin
   (`Spectral.localFamily`, `Flow.Property.holds_shift_iff`). Requirements: `stable` —

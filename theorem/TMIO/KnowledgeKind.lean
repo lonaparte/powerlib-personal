@@ -13,7 +13,7 @@ Scope.
   whose declared conclusion carries `powerlib.TMIO.Statement`. Private proofs, compiler
   auxiliaries and ordinary mathematical theorems are outside this connection coverage check.
 
-Source: the five-category contract in `Layers.md`; the authored-declaration provenance and
+Source: the five-category contract in `Architecture.md`; the authored-declaration provenance and
 typed-statement checks in `theorem/Architecture.lean`; Lean's `ParametricAttribute` interface.
 
 Results.

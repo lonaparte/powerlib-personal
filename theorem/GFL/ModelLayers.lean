@@ -7,7 +7,7 @@ import theorem.Dynamics.Transport
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3), in
 every layer (the dc carrier also keeps the OUT-positive writing as sign flags, `outConv`).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Algebraic identities about the model layers of the GFL side of
 `gfl-gfm-stability-tree`. Each layer is written as its defining relations (KVL of filter and line

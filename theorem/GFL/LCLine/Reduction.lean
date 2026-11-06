@@ -7,7 +7,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 /-! # GFL-VSC algebraic reduction chain and the closed form of the PLL error signal `h`
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Foundation layer for the `vsc-stochastic-stability` project (single grid-following VSC with
 LC filter, series R–L line and infinite bus). Everything in this module is an algebraic

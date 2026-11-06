@@ -12,7 +12,7 @@ property of `e^{TA}` (`Linear.holds_iff_isHurwitz`, `Map.holdsMap_op_iff_schurSt
 conservation are read directly, through the samples of the solutions and, back from the samples
 to every time, through the bound of the flow over one period (a decay rate, and so Lyapunov
 stability) or the average of an energy over one period (conservation). Scaffold: the readings of
-`theorem/ExactSampling.agda`.
+`theorem/LTI/ExactSampling.agda`.
 
 Scope.
 * Continuous time: the affine linear field `affineLinearVectorField A 0` of any real square

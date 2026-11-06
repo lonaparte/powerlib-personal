@@ -5,7 +5,7 @@ import theorem.TMIO.ClaimElab
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 import theorem.Spectral.Global
-import theorem.Spectral.Hub
+import theorem.Family.Reading
 import theorem.Dynamics.Lyapunov
 import theorem.GFL.DCLink.FourState
 import theorem.GFL.DCLink.FourStateBoundary
@@ -34,7 +34,7 @@ Source: work-sync `projects/basin-guard/notes/_MOC.md` (§方向约定, 卡点 5
 code reference `simulation/src/basin_guard_sim/models.py` (GFL carrier); the four-state GFL
 model `theorem/GFL/DCLink/FourState.lean`, which the carrier is for `I_q* = 0`, and its Routh
 boundary `theorem/GFL/DCLink/FourStateBoundary.lean`. Scaffold of the four-state reading:
-`theorem/BasinGuardFourState.agda`.
+`theorem/GFL/DCLink/BasinGuardFourState.agda`.
 
 Results.
 * `Pac_eq` : `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)` for both signs `s`
@@ -100,7 +100,7 @@ GFL model of `fourStateParams s ξ*` at the selected angle `θ_e*`.
 * Frame flip: for `I_q* = 0` the flipped model `Model.flip ⟨q, s, x*⟩ = ⟨q, −s, S x*⟩` satisfies
   exactly the sentences of the original (`BasinGuard.flip_mem_den_iff`, every sentence, every
   drop sign `s`). The two drop signs are the OUT and IN writings of the reactance drop; scaffold:
-  `theorem/CurrentDirection.agda`.
+  `theorem/Transform/CurrentDirection.agda`.
 * Four-state reading: for `I_q* = 0` a model whose selected point has `V_dc* = 1` and
   `K_i^pll x_p* = 0` (every equilibrium has both) satisfies exactly the sentences of its four-state
   reading (`BasinGuard.mem_den_iff_fourState`, every sentence), so the stability results of

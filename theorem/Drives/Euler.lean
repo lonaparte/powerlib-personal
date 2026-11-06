@@ -9,7 +9,7 @@ The induction-machine drive family (`InductionMachine.family`,
 locally exponentially stable drive has a step `h₀ > 0` below which its Euler integration is
 locally exponentially stable, and without a step constraint the realization is not sound; an
 instance of the generic template `theorem/Numerics/EulerRealization.lean`, in the pattern of
-`theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
+`theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M): `InductionMachine.family`, the rotor-flux dynamics of an indirect field-oriented

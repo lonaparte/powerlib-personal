@@ -1,5 +1,5 @@
 -- Generated from the Agda-normalized executable conversion.
--- Agda source SHA-256: bdb58c7794c9c616c0137b77cbda8b679ed140b5e05fe781e8743b8c4537fb23
+-- Agda source SHA-256: a16bfc2de5747774c3e3431bdd794a25d9d4d3061a0dd58c152e2f494f2577a1
 -- RL branch source SHA-256: fab63f8295f1af1f25cb3a1616519bc805ac8f581afa41a23e8165b17f24fa95
 import theorem.Attributes
 
@@ -16,8 +16,8 @@ Model boundary.
   the reals.
 * No dynamics: a map of parameters only.
 
-Source: scaffold `theorem/LCLConversion.agda` (LCL filter: circuit parameters ↔ state-space
-parameters), reusing the RL branch scaffold `theorem/Conversion.agda`, through the
+Source: scaffold `theorem/Circuits/LCLConversion.agda` (LCL filter: circuit parameters ↔ state-space
+parameters), reusing the RL branch scaffold `theorem/Circuits/Conversion.agda`, through the
 Agda-normalized executable conversion; the comment lines at the top of this file record the
 generator and the SHA-256 of both Agda sources.
 

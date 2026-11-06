@@ -27,7 +27,7 @@ origin, the discrete linearization), so the laws ask smoothness of the model at 
 near the origin (`ContDiffAt ℝ 1 (f x) 0`, the `_local` laws), which covers fields with a `1/V_dc`
 factor near a point with `V_dc ≠ 0`, saturations near a point with headroom and arbitrary laws
 that are `C¹` near the point; the laws for families whose fields are all `C¹` follow.
-Scaffold: `theorem/EulerDiscretization.agda`.
+Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Scope.
 * A generic template, not a model. Model layer (M): an arbitrary family `F : Family X Q n 0` of

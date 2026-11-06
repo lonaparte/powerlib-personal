@@ -1,5 +1,5 @@
 -- Generated from the Agda-normalized executable conversion.
--- Agda source SHA-256: fab63f8295f1af1f25cb3a1616519bc805ac8f581afa41a23e8165b17f24fa95
+-- Agda source SHA-256: c9844c52ab4d7da4942e77d5a4d5086a150f199fb8a5700e5ff10b7da12329a4
 import theorem.Attributes
 
 /-! # Generated RL parameter conversion
@@ -15,7 +15,7 @@ Model boundary.
   the reals and proves the algebraic laws (involutive reciprocal, cancellation) there.
 * No dynamics: a map of parameters only.
 
-Source: scaffold `theorem/Conversion.agda` (RL branch: impedance parameters ↔ state-space
+Source: scaffold `theorem/Circuits/Conversion.agda` (RL branch: impedance parameters ↔ state-space
 parameters), through the Agda-normalized executable conversion; the first two comment lines of
 this file record the generator and the SHA-256 of the Agda source.
 

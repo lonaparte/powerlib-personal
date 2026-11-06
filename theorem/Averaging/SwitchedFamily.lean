@@ -21,7 +21,7 @@ period map with a multiplier below `−1` (`Averaging.slowSwitching_counterexamp
 `ℝ²` example `Averaging.slowSwitching_counterexample` embedded block-diagonally; a
 period-doubling instability). The dimension boundary is exact: without a constraint the
 realization is sound for the attractive sentences (and sampled contraction) exactly when `n ≤ 1`.
-Scaffold: `theorem/SwitchedAveraging.agda`.
+Scaffold: `theorem/Averaging/SwitchedAveraging.agda`.
 
 Scope.
 * Model layer (M): the continuous linear family `LTI.continuousFamily`

@@ -7,7 +7,7 @@ implementation family (I, models under realistic constraints: platforms and test
 and computation delay, sensor and actuator dynamics, limits the design did not intend, parameter
 tolerances, numerical integration) by a realization relation: `(x, y) ∈ realizes` when the
 implementation `y` realizes the model `x`. The layers and the criterion that places a result in
-one of them are those of `theorem/Stack/Basic.lean` and `Layers.md`; records (O) are added by a
+one of them are those of `theorem/Stack/Basic.lean` and `Architecture.md`; records (O) are added by a
 `Stack`, which extends an `Implementation`.
 
 Both families are read by the single semantics. The composite connection from implementations
@@ -24,9 +24,9 @@ Realization soundness reduces to static obligations on requirements
 map `design : Y → X` uses `ofDesign`.
 
 Source: TMIO v0.3 (`theorem/TMIO/Derived.lean`, `theorem/TMIO/Relation.lean`); the model family
-interface (`theorem/Family/Basic.lean`). Scaffold: `theorem/Realization.agda` (the generic pattern;
-each realization of the library has its own scaffold, listed in the scaffold table of
-`Architecture.md`).
+interface (`theorem/Family/Basic.lean`). Scaffold: `theorem/Stack/Realization.agda` (the generic pattern;
+each realization of the library has its own scaffold, registering its implementing Lean modules
+in its source header).
 
 Results.
 * The composite connection `uTI` and its generated value at a sentence

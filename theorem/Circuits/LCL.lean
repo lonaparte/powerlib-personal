@@ -22,7 +22,7 @@ Model boundary.
   passivity is required.
 * No controller, PLL, PWM, sampling delay or further grid state.
 
-Source: scaffold `theorem/LCLConversion.agda` (circuit parameters ↔ state-space parameters), its
+Source: scaffold `theorem/Circuits/LCLConversion.agda` (circuit parameters ↔ state-space parameters), its
 generated conversion `theorem/generated/LCLConversion.lean`; the RL branch
 (`theorem/Circuits/RL.lean`); the linear family laws (`theorem/Linear/Family.lean`), rate margins
 (`theorem/Linear/Rate.lean`) and zero Jordan chains (`theorem/Linear/Jordan.lean`); the cubic

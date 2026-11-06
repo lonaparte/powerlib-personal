@@ -4,7 +4,7 @@ import theorem.Dynamics.Degenerate.WeakFocus
 /-! # Quasi-static three-state GFL: a supercritical Hopf point (gains of arbitrary sign)
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Model boundary.
 The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single

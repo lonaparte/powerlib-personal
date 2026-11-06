@@ -8,7 +8,7 @@ import theorem.Stack.Implementation
 /-! # PI current loop under the inverter's modulation voltage limit: an implementation layer
 
 Model boundary.
-* Implementation layer (I, `theorem/Stack/Implementation.lean`, `Layers.md`). A platform
+* Implementation layer (I, `theorem/Stack/Implementation.lean`, `Architecture.md`). A platform
   `LimitedPI` realizes its design, a single-axis PI current loop `PIParams` of the model layer
   `PIParams.family` (`theorem/CurrentControl/PILoop.lean`: perfect decoupling, ideal
   feedforward), under one realistic constraint the design did not intend: a two-level inverter
@@ -104,7 +104,7 @@ Family and connection conclusions.
   `not_realizationSoundUnder_globallyExponentiallyStable`: global exponential stability is not
   realized soundly within all realistic constraints including headroom (`unloaded`: the nominal
   design at `i* = 0`, `V_dc = 1`); `realizationCompleteUnder_globallyExponentiallyStable` holds
-  vacuously. Scaffold: `theorem/VoltageLimit.agda`.
+  vacuously. Scaffold: `theorem/CurrentControl/VoltageLimit.agda`.
 
 Complement (T-field-oriented-control §1.7, "当 |v_s*| 饱和后，PI 积分饱和需 anti-windup"): the
 note treats integrator windup as a performance issue. Here, without anti-windup, the voltage limit

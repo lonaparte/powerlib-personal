@@ -10,7 +10,7 @@ method with a fixed step `h > 0` are implementation layers over them: each integ
 model it integrates, and a locally exponentially stable model has a step `h₀ > 0` below which its
 Euler integration is locally exponentially stable; instances of the generic template
 `theorem/Numerics/EulerRealization.lean`, in the pattern of `theorem/Synchronous/SwingEuler.lean`.
-Scaffold: `theorem/EulerDiscretization.agda`.
+Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M): `PLL.PIPLL.family`, the PI-PLL with a `C¹` phase-detector characteristic, state

@@ -14,8 +14,8 @@ lean_lib PowerLibSources where
   globs := #[.one `powerlib, .submodules `theorem, .one `dependencies.Mathlib, .one `dependencies.LeanForControl]
 
 lean_lib PowerLibTests where
-  roots := #[`dependencies.tests.lean]
-  globs := #[.submodules `dependencies.tests.lean]
+  roots := #[`tests.lean]
+  globs := #[.submodules `tests.lean]
 
 lean_lib PowerLibExamples where
   roots := #[`example.Use]
@@ -52,12 +52,20 @@ target powerlib pkg : Unit := do
     -- yet imported by the public umbrella. Categories come from source attributes.
     text := text ++ "run_cmd powerlib.Registry.auditCompatibilityInEnvironment\n"
     text := text ++ "run_cmd powerlib.Knowledge.auditEnvironment\n"
+    -- Scaffold ownership lives in Agda source, not in a compiled Lean dependency.
+    -- Re-read it at admission and include its contents in the success receipt's trace.
+    text := text ++ "run_cmd Lean.Elab.Command.liftTermElabM LibraryStructure.auditScaffolds\n"
     -- The collected jobs trace every built module, including the checker.
     -- Also trace the inventory itself, so adding or removing a module reruns
     -- admission. Failed checks never produce a successful receipt.
     IO.FS.createDirAll pkg.buildDir
     IO.FS.writeFile source text
     Lake.addTrace (BuildTrace.ofHash (Hash.ofString text) "admission source")
+    let scaffolds := (← (pkg.dir / "theorem").walkDir).filter (·.extension == some "agda")
+    for path in scaffolds.qsort (fun a b => a.toString < b.toString) do
+      let content ← IO.FS.readFile path
+      Lake.addTrace (BuildTrace.ofHash (Hash.ofString (path.toString ++ "\n" ++ content))
+        "scaffold source")
     buildFileUnlessUpToDate' receipt do
       let result ← IO.Process.output {
         cmd := ws.lakeEnv.lean.lean.toString

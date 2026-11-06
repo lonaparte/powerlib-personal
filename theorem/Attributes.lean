@@ -16,7 +16,7 @@ Scope.
 * Explicit pairs must be compatible: foundation permits T/M/TM; domain permits M/TM/MI/IO.
   A module-boundary linter checks both attribute orders and delayed assignments, including
   private theorems. The environment audit also checks imported declarations.
-* Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `example`
+* Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `tests`, `example`
   and `powerlib`, plus sources of an isolated integration profile under
   `dependencies/integrations`; imported upstream declarations and downstream modules are not
   relabeled.
@@ -126,7 +126,7 @@ open Lean Elab Command
 -- Source ownership follows the canonical first-party module directories.
 -- Imported upstream declarations and downstream modules are not relabeled.
 def isFirstPartyModule (moduleName : Name) : Bool :=
-  #[`theorem, `dependencies, `example, `powerlib].contains moduleName.getRoot
+  #[`theorem, `dependencies, `tests, `example, `powerlib].contains moduleName.getRoot
 
 -- An isolated integration profile may compile its entry point under a short
 -- module name. Its actual source directory still establishes first-party scope.

@@ -1,353 +1,346 @@
-# Generated connections and verified completion
+# PowerLib Architecture
 
-PowerLib admits T and M knowledge nodes and the T–M, M–I and I–O relations.
-Implementation and observation types are relation endpoints; concrete measurement
-records and results remain external. The public engineering interface evaluates
-or compares generated connections. [Rules.md](Rules.md)
-applies that interface to library results, examples, admission tests, automatic
-reuse and the standalone LeanForControl integration.
+The architecture is described here; [Rules.md](Rules.md) specifies admission and
+contribution requirements, and [Changelog.md](Changelog.md) records completed changes.
 
-## Architecture
+## Physical organization
 
-A `TMIO.Seed` contains only three adjacent semantic `sInfHom` maps. `generate`
-constructs each lower adjoint, with uniqueness, leastness, supremum preservation
-and composition proved using Mathlib. Satisfaction generates the complete set
-of implementations; deterministic and relational observation maps generate
-certification and prediction. The finite four-layer and distributed analysis
-instances exercise the same framework.
+Sources are grouped by mathematical or electrical topic. Directory names do not
+assign `tmio`, foundation/domain, or connection status to declarations.
 
-A `Family` contains only its system map, requirement satisfaction and sentence
-translation. `Family.semantics` is the satisfaction connection generated from
-`Sentence.holds`; `Family.den` is its generated singleton value.
-`chain_eq_semantics_iff` and `chain_le_semantics_iff` reduce exactness and soundness
-to the generic connection comparisons in `TMIO.Compare`. Certification,
-refutation, representation changes and requirement extensions use this interface.
+```text
+powerlib.lean                 public Lean import
+theorem/
+  TMIO/                      generated connections, claim grammar and classification
+  Family/                    model families and semantic readings between families
+  Stack/                     realization and production interfaces
+  Flow/, Map/, Port/         the shared behavioural semantics
+  Linear/                    linear systems, certificates and coordinate laws
+  LTI/                       time evolution and sampling of linear systems
+  Spectral/                  spectral criteria and family interpretation templates
+  PH/                        general port-Hamiltonian theory
+  Circuits/                  circuit models; PH/ contains their PH instances
+  Estimation/                estimation theory and symbolic resistance fitting
+  Transform/                 coordinate and unit transformations
+  GFL/, GFM/, PLL/            converter and synchronization models
+  CurrentControl/, Drives/   current control and electric drives
+  Synchronous/, Network/     machines and networks
+  ...                        other mathematical and electrical topics
+  generated/                 checked data generated from Agda
+  Architecture.lean          public-interface admission checker
+  Attributes.lean            foundation/domain metadata and provenance
+  LibrarySearch.lean         theorem discovery and reuse checks
+tests/lean/                  architecture and library verification
+example/                     formal library consumers
+dependencies/                upstream import interfaces and compatibility patch
+  integrations/              pinned standalone integration profiles
+tools/                       source inspection tooling and its Python tests
+```
 
-The system map returns a `Behaviour`: a continuous-time system with ports (`Flow.Defs`,
-`Port.Defs`), a discrete-time system with ports (`Map.Defs`), or a random continuous-time system
-with an operating envelope (`Port.Defs`: a system for each sample of the disturbance, an initial
-set, a safe set and a law), each interpreted once by `Sentence.holds`. The envelope sentences,
-safety over a horizon at a probability level and a mean-square bound, are read on the random
-kind; the other kinds satisfy them. The disturbance is part of the system, not an input signal,
-so a behaviour holds no signal and families stay outside the reach of the signal rules. Discrete notions are stated through iterates of the state map and
-one-step inequalities, so the semantic layer keeps one time axis. The single-semantics
-audit recognizes discrete behaviour — a sequence indexed by steps into a state space, an
-iterate of a state map, the step of a discrete system — inside the semantic layer and
-rejects it outside, as it does for signals of time.
+Agda scaffolds live beside the Lean sources for their topic. Shared scaffolds
+remain with the general construction: family readings in `Family/`, realizations
+and record interfaces in `Stack/`, numerical bridges in `Numerics/`. The Agda
+module name follows its physical path. Lean import paths likewise follow files;
+public declaration namespaces need not change when a file moves.
 
-Family laws that recur across models are proved once in generic templates and instantiated by
-the model families: `Spectral.linearFamily` and `Spectral.localFamily` for the two-requirement
-languages, and the named-requirement template `theorem/Spectral/Local.lean` (`localTable`,
-`chain_le_semantics_of_localTable`, `exactUnder_les_of_jacobian`, the witness lemmas
-`not_exact_of_witness`, `not_exact_of_les_witness`, `mem_den_unstable_of_ne_zero`) for families
-that keep their own requirement languages. A model family then supplies only its obligations:
-which requirements give local exponential stability or instability, and the converse algebra of
-its Jacobian.
+`Linear/` supplies general linear-system mathematics; `LTI/` specializes the
+evolution and sampling interfaces; `Spectral/` organizes spectral criteria into
+family semantics. A reading between arbitrary families lives in `Family/` even
+when a spectral family is one of its applications. General PH constructions live
+in `PH/`; RL, RLC, DC-link and LC-filter instances live in `Circuits/PH/`.
 
-Families that are other families in disguise are read through a hub instead of re-proving its
-laws: the droop loop with a power filter, the saturated converter and the classical machine through
-the swing family, the port-Hamiltonian PLL through the PI-PLL, the drive IMC loop through the
-converter PI loop. A spoke supplies a map of models, a reading (usually an affine change of state
-coordinates, `Spectral.mem_den_flow_iff_of_transport`) and the correspondence of its requirement
-language with the hub's on a context; `theorem/Spectral/Hub.lean` then carries exactness within the
-context, soundness and requirement obligations from the hub (`exactUnder_of_hub`, `exact_of_hub`,
-`sound_of_hub`, `realize_subset_den_of_hub`).
+## Knowledge nodes and relations
 
-Representation transport preserves the semantic and generated maps and
-transports closed and interior fixed points. `closedTransport`,
-`interiorTransport` and `fixedPointsIso_transport` prove that the fixed-point
-correspondence commutes with representation changes.
+The core admits exactly five kinds of knowledge unit: T, M, T–M, M–I and I–O.
+T contains general theory and its internal theorems; M contains mathematical
+models and their internal structural facts. The other three kinds relate
+sentences to models, models to implementations, and implementations to external
+observations, respectively. There are no standalone I or O knowledge units.
 
-## Scaffolds
+`TMIO.Seed` still fixes the mathematics of four ordered endpoints, with one
+infimum-preserving backward map per adjacent edge and uniquely generated forward
+adjoints. Endpoint roles must not be confused with independent library contents.
+Implementation and record types are interface definitions owned by relations;
+concrete measurement records and numerical measurement results are external.
 
-Every connection between contents of the library is first built as an Agda scaffold
-([Rules.md](Rules.md) §1) and then proved in Lean. The scaffolds are kept in `theorem/` as
-design records; the Lean build does not read them. Data generated from a scaffold passes the
-narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
+## Endpoint roles
 
-| Scaffold | Connection | Lean |
+| Layer | Objects | Changes when |
 | --- | --- | --- |
-| `theorem/Conversion.agda` | RL branch: impedance parameters ↔ state-space parameters | `Circuits/RL` (generated `Conversion`) |
-| `theorem/LCLConversion.agda` | LCL filter: circuit parameters ↔ state-space parameters | `Circuits/LCL` (generated `LCLConversion`) |
-| `theorem/ImpedanceInterconnection.agda` | source and load → closed loop; covariance under state coordinates | `Circuits/Interconnection` (generated `ImpedanceInterconnection`) |
-| `theorem/TMIO/Representation.agda` | representation changes transport satisfaction structures and generated spaces | `TMIO/Representation` (`generate_transport`, `Seed.transport_whole`) |
-| `theorem/Rebase.agda` | changes of bases of an interconnection: state coordinates, per-unit bases, current direction, time base | `Transform/Rebase`; per-unit instance `Transform/PerUnitLTI` |
-| `theorem/Similarity.agda` | changes of state coordinates of linear plants with ports: similar plants satisfy the same sentences, passivity included (a storage pulls back along the inverse coordinates); a linear family reads through another along a map of models with similar plants; the port-Hamiltonian family reads through itself under similarity and under rescaling of RL branches | `Linear/Coordinates` (`Similar.sentence_iff`, `Family.IsLinear.den_similar`), `PH/Composition` (`mem_den_iff_of_similar`), `PH/Models/RLNetwork` (`rlNetworkPH_scale_mem_den_iff`) |
-| `theorem/FamilyReading.agda` | the generic pattern: a spoke family read through a hub family (readings by conjugacy or equality, contexts, transfer of exactness and soundness, composition) | `Spectral/Hub` |
-| `theorem/FlowSemantics.agda` | the semantic layer the readings use: fields at a point, affine changes of coordinates, the local sentence kinds and table | `Dynamics/Transport` (`holds_transport_iff`), `Spectral/Local` (`localTable`) |
-| `theorem/Swing.agda` | the swing hub: models, requirements, translation and the laws its spokes read | `Synchronous/Swing` |
-| `theorem/DroopSwing.agda` | the droop loop with a power filter read as a swing machine (`P_f = P₀ − D ω`, within `D, ω_c > 0`) | `GFM/VSMLPF` (`DroopLPF.mem_den_iff_swing`) |
-| `theorem/SaturationSwing.agda` | the current-saturated converter read as a swing machine (same field, within positive inertia) | `Limiting/Saturation` (`mem_den_flow_iff_swing`) |
-| `theorem/ClassicalMachineSwing.agda` | the classical machine read as a swing machine (momentum `p = M ω`, flow sentences) | `Synchronous/PH` (`ClassicalSM.mem_den_flow_iff_swing`) |
-| `theorem/MatchingSwing.agda` | the swing family of matching control read as a swing machine on a speed-independent sinusoidal law with `ω* = 0` (same field; local exponential stability from the hub) | `GFM/Matching/Matching` (`swing_mem_den_iff_hub_of_sinusoid`, `swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`) |
-| `theorem/VSMSwing.agda` | the VSM family (any power map, any frame) read as a swing machine where the power curve is sinusoidal and `ω* = 0`: same system, image `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩`; the infinite bus is a special case; no correspondence of requirements, so the VSM family keeps its own laws | `GFM/DroopVSM` (`vsm_mem_den_iff_swing_of_sinusoid`, `vsm_mem_den_iff_swing`) |
-| `theorem/DroopVSM.agda` | the droop + LPF family read as the VSM family by an affine change of coordinates (`M = τ_p K_R`, `D = K_R`), for every model and every sentence: its semantics is the VSM semantics pulled back along `toVSM`, and soundness transfers; composed with `VSMSwing`, the infinite-bus stability of droop + LPF | `GFM/DroopVSM` (`semantics_eq_comap`, `den_eq_preimage`, `droopFamily_chain_le_semantics`, `infiniteBus_locallyExponentiallyStable`) |
-| `theorem/SwingPortHamiltonian.agda` | the linearized swing family read as a linear port-Hamiltonian system when `M > 0`, `D ≥ 0`, `K > 0` (state matrix `diag(1, M) J diag(1, 1/M)`): flow sentences read; passivity and Lyapunov stability of the image | `Synchronous/SwingPH` (`linearPH_mem_den_flow_iff`, `linearPH_passive`, `linearPH_lyapunovStable`) |
-| `theorem/PortHamiltonianPLL.agda` | the port-Hamiltonian SRF-PLL read as a PI-PLL (flow sentences, within nonnegative energy) | `PLL/PH` (`PLLPH.mem_den_flow_iff_srf`) |
-| `theorem/IMCCurrentLoop.agda` | the drive IMC current loop read as the converter PI loop with IMC tuning (same plant, `L ≠ 0`) | `Drives/CascadeControl` (`mem_den_iff_imc`) |
-| `theorem/BasinGuardFourState.agda` | the basin-guard carrier read as the four-state DC-link model with `I_q* = 0` (integrator sign flip and shift; local exponential stability by the four-state Routh conditions) | `GFL/DCLink/BasinGuard` (`mem_den_iff_fourState`, `mem_den_locallyExponentiallyStable_iff`; the translation of local exponential stability is exact within `{iqZero, vdcNonzero}`: `exactUnder_locallyExponentiallyStable`) |
-| `theorem/FeedforwardCurrentLoop.agda` | the PI current loop with low-pass PCC-voltage feedforward read through the PI loop: its spectrum adds `−1/τ`, so the attractive denotation is the PI one pulled back along `LPFLoop.pi`, cut by `τ > 0` | `CurrentControl/Feedforward` (`lpfDen_eq`) |
-| `theorem/CascadeCurrentLoop.agda` | the linearized current-loop/DC-link cascade against the converter PI loop: the attractive denotation is the PI one pulled back along `pi`, cut by a positive DC-node coefficient `I_dc0/(C V0)` (the DC node adds its own pole) | `GFL/DCLink/Cascade` (`linearizedDen_eq`, `linearizedExact`, `linearized_mem_den_iff`) |
-| `theorem/GovernorReduction.agda` | the swing–governor family against its first-order reduction (`T_g → 0`): the attractive sentences and sampled contraction transfer when `0 < M + D T_g` (every `T_g` when `D ≥ 0`) and not on the whole family (an unstable model with a globally exponentially stable reduction); decay rates off the governor pole transfer below a threshold | `Frequency/SwingGovernor` (`mem_den_iff_reduce`, `mem_den_iff_reduce_of_nonneg`, `exists_unstable_reduce_globallyExponentiallyStable`, `exists_threshold_mem_den_decay_iff_reduce`) |
-| `theorem/CurrentDirection.agda` | OUT-positive and IN-positive writings of a model related by the reversal of currents and powers (conventions §D) | `GFL/PowerLoop/QuasiStatic`, `GFL/RatePLL`, `GFL/ModelLayers`, `GFL/LCLine/FullModel`, `GFL/LCLine/FullModelDC` (IN-written families; the literature OUT forms and `field_eq_transport_literatureField`-type identities); `GFL/DCLink/BasinGuard` (both writings as the drop sign `s = ±1`: `flip_mem_den_iff`) |
-| `theorem/DqAlphaBeta.agda` | the RL branch in the dq frame at speed `ω` and in the αβ frame (`ω = 0`): the attractive denotation is its own pull-back along `DqBranch.alphaBeta` (Hurwitz iff `R/L > 0` at every frame speed; not a conjugacy, Park's transformation being time-varying) | `CurrentControl/DqRL` (`den_eq_alphaBeta`) |
-| `theorem/PLLAmplitude.agda` | amplitude invariance inside the PI-PLL family: for `V ≠ 0` the SRF-PLL of amplitude `V` and gains `(K_p, K_i)` is conjugate (`ξ = η / V`) to the unit-amplitude one with gains `(V K_p, V K_i)` on every flow sentence | `PLL/Model` (`srf_mem_den_iff_unitAmplitude`) |
-| `theorem/PLLCodeFrame.agda` | the reduced PLL loop written in the project-code frame read as the PI-PLL family: the code field is the text field reflected by `(θ, η) ↦ (−θ, η)`, the code model reads as the member at angle `−θ_c*`, on every sentence; soundness of the PI-PLL translations carries over | `GFL/LCLine/Reduced2D` (`codeField_eq_transport`, `codeFamily_den`, `code_mem_den_iff`, `codeFamily_chain_le_semantics`) |
-| `theorem/Realization.agda` | the generic model–implementation pattern: realization soundness, completeness and exactness within constraints; realization by a design map and readings through the design model | `Stack/Implementation` (`ofDesign`, `realizationExactUnder_of_den_eq_preimage`, `not_realizationSoundUnder_of_design`) |
-| `theorem/Records.agda` | the generic record layer: records that implementations may produce; data-driven inference and theory-driven certification as one Galois connection, inference through a sound translation, truth of inferred sentences for the producers under realization soundness, refutation by a record outside the predicted ones | `Stack/Basic` (`mem_infer`, `mem_certified`, `mem_truth`, `mem_predicted`, `subset_certified_iff`, `mem_infer_of_organized`, `infer_subset_truth`, `refutes`) |
-| `theorem/ExactSampling.agda` | continuous linear model ↔ its exact sampling at any period: every sentence is read through the design, so the realization is exact for every sentence without constraints, and the sampled family inherits the soundness and exactness of the model's translations | `LTI/ExactSampling` (`sampled_reading`, `exactSampling_realizationExact`, `sampled_chain_le_semantics`, `sampled_exact_iff`), sentence by sentence `LTI/SampledFlow` (`holds_iff_holdsMap_exp`), discrete linear reading `Map/LinearReading` (`holdsMap_op_iff_schurStable`) |
-| `theorem/SwitchedAveraging.agda` | averaged linear model ↔ switched implementation read stroboscopically: sound under fast switching; exact for every sentence when the topologies commute, hence always in dimension one; not sound without a constraint in every dimension `n ≥ 2` | `Averaging/SwitchedFamily` (`switching_sound_fast`, `switching_realizationExactUnder_commuting`, `switching_realizationExactUnder_of_le_one`, `not_switching_realizationSoundUnder`, and the boundary `switching_realizationSoundUnder_iff`: sound without constraint ↔ `n ≤ 1`) |
-| `theorem/EulerDiscretization.agda` | model ↔ explicit Euler implementation: local exponential stability realized for every small step, and never for every step; only smoothness at the selected point is needed | connection statements over arbitrary autonomous families in `Numerics/EulerRealization` (`euler_sound_small_step(_local)`, `euler_certified_small_step(_local)`, `not_euler_realizationSoundUnder_of_large_step(_local)`); per family (`Synchronous/SwingEuler`, `GFM/Euler`, `GFM/Matching/Euler`, `GFL/Euler`, `GFL/PowerLoop/Euler`, `GFL/LCLine/Euler`, `GFL/DCLink/Euler`, `CurrentControl/Euler`, `Network/Swing/Euler`, `Drives/Euler`, `PLL/Euler`, `Limiting/Euler`): the Euler implementation, the public smoothness lemma and `not_euler_realizationSoundUnder` with the family's witness |
-| `theorem/ImplicitDiscretization.agda` | continuous linear design ↔ implicit numerical implementation: trapezoidal exactness under positive, well-posed steps; backward Euler soundness; constant-input deviations about equilibria | generic `Numerics/ImplicitRealization` (`trapezoidal_realizationExactUnder`, `backwardEuler_realizationSoundUnder`); RL/LCL families and connection criteria in `Numerics/EMT/Plant` |
-| `theorem/EulerPorts.agda` | model with ports ↔ explicit Euler implementation: flow sentences read through the zero-input dynamics (the autonomous laws carry over); passivity is not realized at any step when the output does not depend on the input; for linear plants the realization is complete at every step and exact below a threshold | connection statements over arbitrary families with ports in `Numerics/EulerPorts` (`eulerPorts_realizationSoundUnder_flow_iff`, `eulerPorts_sound_small_step_local`, `not_eulerPorts_realizationSoundUnder_passive`, `eulerPorts_realizationCompleteUnder_linear`, `eulerPorts_exact_small_step_linear`; contrast `discreteGradient_passiveWith`); per family the passivity and large-step witnesses (`Circuits/PortEuler`, `GFL/DCLink/PortEuler`, `Synchronous/PortEuler`, `PLL/PortEuler`) |
-| `theorem/Envelope.agda` | the parameters of the envelope sentences: the horizon and the level enter through Galois connections, whose upper adjoints are the longest certified horizon and the worst exceedance probability of a set of models; safe sets are closed under countable meets almost surely, and at a positive level two certified safe sets can have an uncertified intersection, so no certified safe set is least | `Envelope/Basic` (`den_safe_sSup`, `den_safe_antitone`, `le_certifiedHorizon_iff`, `generate_certifiedHorizon`, `den_safe_iInf`, `gc_worstExceedance`, `generate_worstExceedance`, `holds_safe_iInter_null`, `not_holds_safe_inter`, `not_isLeast_safe`) |
-| `theorem/DisturbedRealization.agda` | deterministic design ↔ disturbed implementation (a random perturbation of intensity `σ` added to the field, judged on a safe set with a margin): finite-horizon safety realized soundly within a Lipschitz, solvable design, the margin, a small intensity and a bounded perturbation (Grönwall); infinite-horizon safety not realized under any intensity bound; small disturbance and long horizon do not commute | connection statements over arbitrary design families in `Envelope/Disturbed` (`noisy_realizationSoundUnder_safe`); the drift witness (`noisyDrift_mem_den_finite`, `noisyDrift_not_mem_den_top`, `not_driftImpl_realizationSoundUnder_top`) |
-| `theorem/VSMPlatform.agda` | VSM + LPF models (M) realized by test platforms with an execution delay (I) that produce identification records (O): realization sound and exact within `fastLag`, complete for every delay, not sound without `fastLag`; instability realized for every delay; inference, certification, truth and the inference–truth gap of a record without the delay check | `GFM/VSMLPFRig` (`realizationExactUnder_locallyExponentiallyStable`, `not_realizationSoundUnder_locallyExponentiallyStable`, `realizationSoundUnder_unstable`, `locallyExponentiallyStable_mem_infer`, `mem_certified_locallyExponentiallyStable`, `infer_not_truth_of_unstable_producer`) |
-| `theorem/DigitalCurrentLoop.agda` | PI current loop ↔ its digital platform (computation delay and zero-order hold, `τ = 3Tₛ/2`, as a Padé(1,1) state): attractive sentences realized soundly under the step constraints, completely for every period, exactly under the constraints; not soundly without them; instability realized for unstable designs | `CurrentControl/DigitalPI` (`realizationSoundUnder`, `realizationCompleteUnder`, `realizationExactUnder`, `not_realizationSoundUnder`, `realizationSoundUnder_unstable`) |
-| `theorem/DecouplingMismatch.agda` | PI current loop ↔ the dq loop decoupled with an inductance estimate: the attractive denotation is the design's pulled back along `base` for every frame speed and mismatch, so the attractive sentences are realized exactly without constraints | `CurrentControl/Mismatch` (`den_eq_base`, `realizationExactUnder`) |
-| `theorem/VoltageLimit.agda` | PI current loop ↔ the loop with the applied voltage saturated at `V_dc/√3`: local sentences exact with integral action and headroom; without integral action Lyapunov stability not realized soundly; under overload every platform is unstable; global exponential stability not realized soundly | `CurrentControl/VoltageLimit` (`realizationExactUnder_local`, `realizationSoundUnder_attractive`, `not_realizationSoundUnder_lyapunovStable`, `realizationSoundUnder_unstable_of_overload`, `not_realizationSoundUnder_globallyExponentiallyStable`) |
-| `theorem/RLMeasurement.agda` | the RL model-side compatibility relation for a symbolic resistance reading of accuracy `ε` (not an implementation production interface): certification by the resistance window, prediction, an observation closure that cannot separate equal resistances (inductance and decay rate not identifiable), records certified through their estimate, independence of the model representation | `Circuits/RLMeasurement` (`certify_reading`, `predict_reading`, `certified_readings`, `closure_resistance`, `certified_records`, `stateSpace_whole`) |
+| T, theory | General mathematical theory, properties and their laws. The model-facing language is `Sentence`: flow properties, passivity and envelope properties. | The mathematics changes. |
+| M, model | The theory organized for a concrete situation. A model is an idealized description of one situation (topology, control law, parameters); its behaviour is given exactly by the semantic layer. A requirement language describes classes of models and organizes the theory over them. | The modelling changes for the same theory. |
+| I, implementation | A model under realistic constraints: experimental platforms and test rigs, sampling and computation delay, sensor and actuator dynamics, quantization, limits the design did not intend, parameter tolerances, disturbances, numerical integration. An implementation has its own behaviour, read by the same semantic layer, which in general differs from the behaviour of the model it realizes. | The conditions of realization change for the same model: platform, digitization, simulation method. |
+| O, observation | Records produced by implementations: sampled waveforms, frequency sweeps, identification results, with their measurement errors. A record has no behaviour of its own. | The run or the sensor changes for the same implementation. |
 
-The rebasing scaffold shows the division of labour. Univalence turns the equivalences of the
-six spaces of an interconnection into a path, so the closed loop commutes with every change of
-bases at once (`closedLoop-natural`), and the scaffold names what is left to prove: the
-equivalences must preserve the additive operations (`Preserves`, `closedLoop-rebased`). Lean
-proves the same statement in the same generality through typed constructions and one
-naturality theorem (`Construction.eval_rebase`), where linearity supplies the preservation and
-only the invertibility of the bases the constructions pass through remains as a hypothesis.
-Coordinates, per-unit bases and the current direction are then instances, not separate proofs.
+Boundary cases follow from design intent. A designed current limit, an averaged model and
+nominal parameters belong to M. A hardware limit, the switched circuit, an EMT discretization and
+a tolerance set belong to I.
 
-## Classification and discovery
+Theory-driven work runs forward along the chain: from sentences to the models that satisfy them,
+to the implementations whose models all satisfy them, to the records those implementations
+certify. Data-driven work is the complete backward traversal: from records to the
+implementations that may produce them, to the models they realize, to the sentences all those
+models satisfy. The whole-chain Galois connection ties the two directions together: a set of
+records supports a set of sentences exactly when every record is certified for them.
 
-`theorem/TMIO/KnowledgeKind.lean` registers the five source attributes
-`@[tmio T]`, `@[tmio M]`, `@[tmio TM]`, `@[tmio MI]` and `@[tmio IO]`.
-Each reviewed public connection theorem has exactly one. The attributes are the
-sole classification source; queries rebuild their index without a separate
-catalog or handwritten theorem-to-kind regression list. Compute current coverage
-with the queries below. Reviewing a module does not classify every theorem in it.
+## The Lean interface
 
-The attribute implementation rejects non-theorem targets, unknown kinds and
-second assignments. It records a reviewed semantic judgment; it does not infer
-or prove that judgment. `theorem/Attributes.lean` enforces the compatibility matrix:
-foundation accepts T/M/TM, and domain accepts M/TM/MI/IO. It checks both attribute
-orders and delayed assignments at module boundaries, including private theorems;
-the mandatory build and `#tmio_check` check imported pairs as well. Missing metadata
-remains optional. These necessary constraints do not prove the semantic judgment.
-Connection structure neither assigns domain nor follows from a domain label.
-Structural admission and the kernel's proof checking still apply independently.
-Existing attributes and `tmio` share a single `@[...]` block; the source preflight
-also rejects consecutive blocks, which Lean's declaration parser does not accept.
+Two structures carry the layers. An `Implementation X Q Y R n p m q`
+(`theorem/Stack/Implementation.lean`) is the T–M–I part:
 
-`theorem/TMIO/KnowledgeIndex.lean` provides `#tmio_theorems` for counts of every
-explicitly classified authored theorem, including ordinary and private results,
-and `#tmio_theorems T` (or `M`, `TM`, `MI`, `IO`) for a class listing.
-It also provides `#tmio_edges` for public connection counts,
-`#tmio_edges T`, `M`, `TM`, `MI` or `IO` for a class listing, and `#tmio_check`
-for coverage of public typed connections in the currently imported `theorem.*`
-modules. Missing connection attributes fail the check; unclassified ordinary
-theorems acquire no default kind, and unimported modules are not counted.
-`python3 tools/tmio_classification.py check`, `list TM` and
-`show powerlib.LTI.sampled_exact_iff` provide source checks and queries without
-starting Lean. The environment audit reads elaborated types and module ownership;
-the source tool does not replace it. [Layers.md](Layers.md#source-attributes-and-queries)
-gives complete usage examples.
+* `model : Family X Q n p`: models `X` with their requirement language `Q` and translation;
+* `impl : Family Y R m q`: implementations `Y` with their own system map, and the requirement
+  language `R` of their realistic constraints;
+* `realizes : SetRel X Y`: the implementation realizes the model (for a design map,
+  `Implementation.ofDesign`).
+
+A `Stack X Q Y R V n p m q` (`theorem/Stack/Basic.lean`) extends an `Implementation` by
+`produces : SetRel Y V`, the implementation may produce the record.
+
+| Operation | Meaning | Lean |
+| --- | --- | --- |
+| Composite through the realized models | Sentences every model realized by the given implementations satisfies | `Implementation.uTI` |
+| Realization soundness | Within constraints `Δ`, an implementation whose realized models all satisfy `s` satisfies `s` | `RealizationSoundUnder Δ s` |
+| Realization completeness | Within `Δ`, an implementation satisfying `s` realizes only models of `s` | `RealizationCompleteUnder Δ s` |
+| Realization exactness | Both: within `Δ`, an implementation satisfies `s` exactly when its realized models do | `RealizationExactUnder Δ s` |
+| Data-driven inference | Sentences satisfied by every model realized by a possible producer of the records | `Stack.infer` (`seed.uTO`) |
+| Theory-driven certification | Records all of whose possible producers realize only models of the sentences | `Stack.certified` (generated `uTO`) |
+| Inference through the requirement language | The same, checking the translation instead of the semantics | `Stack.inferOrganized`, `Stack.certifiedOrganized` |
+| Implementation truth | Sentences satisfied by every possible producer itself | `Stack.truth` |
+| Prediction | Records some implementation satisfying `s` may produce | `Stack.predicted` |
+
+The seed `Stack.seed` has the semantic maps `model.semantics`, `possibly realizes` and
+`possibly produces`; the organized seed `Stack.organized` replaces the first map by the
+translation chain `model.chain`, the theory as the requirement language organizes it.
+
+Realization soundness compares two connections from sentences to implementations, the
+composite through the realized models (`uTI`) and the implementations' own semantics, just as
+the soundness of a translation compares the translation chain with the semantics one layer up.
+It reduces to static obligations on requirements
+(`Implementation.realizationSoundUnder_of_requirements`): an exact model translation, a sound
+implementation translation, and an implication between the two requirement languages. A
+realization by a design map whose implementation denotation is the model denotation pulled back
+is exact (`Implementation.realizationExactUnder_of_den_eq_preimage`).
+Data-driven inference reaches conclusions about the realized models. They become conclusions
+about the producing implementations through realization soundness, for records certified for the
+constraints (`Stack.infer_true`, `Stack.infer_subset_truth`), and completeness gives the converse
+(`Stack.mem_infer_of_truth`). A record outside the predicted records refutes the sentence for its
+producers (`Stack.refutes`) and, through realization soundness, for some realized model
+(`Stack.refutes_realized`). Sound translations let inference use the requirement language
+(`Stack.mem_infer_of_organized`, `Stack.certifiedOrganized_subset`).
+
+## Placing knowledge units
+
+* **T**: general mathematics, semantic laws, numerical and estimation theory, and
+  generic connection composition or transport laws. Framework infrastructure supports
+  these units; it is not an extra knowledge category.
+* **M**: models, parameter and requirement languages, algebraic structure and changes
+  of model representation. A platform's mathematical description can be M as well.
+* **T–M**: interpretation of sentences in model families, parameter criteria,
+  translation soundness/exactness and preservation of this interpretation under a
+  model reading. A model mapping itself is M; a theorem about its interpretation is T–M.
+* **M–I**: realization relations and their conditional soundness, completeness,
+  exactness and boundaries. Endpoint models and requirements support the relation;
+  their carrier types do not acquire a permanent I classification.
+* **I–O**: production or compatibility interfaces for arbitrary external observations,
+  and their inference, certification and prediction laws. Records are parameters,
+  not stored measurements. Whole-chain results compose T–M, M–I and I–O; they do
+  not create independent O or T–O knowledge units.
+
+The legacy `Family.seed` encoding places requirement sets and model instances in
+its middle positions; both are on the M side of the interpretation. It does not
+establish a physical realization merely by occupying the third Seed position.
+In `Circuits/RLMeasurement`, `reading` is a model-side compatibility criterion
+for a symbolic resistance estimate. Its constraint calculations belong to M and
+its sentence criteria to T–M. A genuine I–O reading would additionally require an
+implementation and a justified production interface; that connection is not claimed.
+
+The generic/engineering dependency partition does not determine theorem metadata.
+Generic modules can contain engineering instances; engineering directories can contain
+general T lemmas. Foundation permits T, M and TM; domain permits M, TM, MI and IO.
+M and TM may belong to either class according to whether the selected object is a
+mathematical model or an engineering model. Classify the complete
+statement and its hypotheses, not just the directory or the type of one endpoint.
+In particular, general coordinate-change laws are foundation, while properties of
+the chosen abc/αβ/dq Clarke and Park transforms are domain. Quantifying over arbitrary
+vectors does not make a theorem about one selected electrical transform generic.
+Their model formulas belong to M; an M–I claim needs an actual realization relation.
+
+The semantic layer reads three kinds of systems (`Behaviour`): continuous-time systems with ports
+(`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`), discrete-time systems with ports
+(`theorem/Map/Defs.lean`), and random continuous-time systems with an operating envelope
+(`theorem/Port/Defs.lean`, `disturbed`). A digital controller, a sampled-data loop read at its sampling instants
+(`LTI/Sampling`), and the period map of a switched converter (`Averaging/SwitchedStability`)
+can describe discrete-time engineering implementations. A generic numerical integration or
+sampling scheme is a mathematical model; its interpretation does not alone establish MI.
+State-dependent hybrid switching is outside this semantic interface. The random kind
+uses a continuous-time system for each disturbance sample; it is not an Itô SDE interpreter.
+Discrete stability is read through map iterates; decay rates also depend on the sampling period.
+
+## Source attributes and queries
+
+A theorem carries its knowledge kind as one of `@[tmio T]`, `@[tmio M]`,
+`@[tmio TM]`, `@[tmio MI]` or `@[tmio IO]` beside its declaration. The attribute
+is the only source of its classification. There is no separately maintained
+catalog; an index is reconstructed when queried. Classification considers the
+complete statement, including its hypotheses and the relative roles of its
+endpoints.
+
+For example, `@[tmio TM, powerlib_domain] theorem ...` records both classifications.
+The declaration and compatibility rules are in [Rules.md](Rules.md#2a-knowledge-units-and-external-observations).
+
+`theorem/TMIO/KnowledgeKind.lean` defines the attribute and checks its theorem
+target, allowed kind and unique assignment. These checks do not decide whether
+the chosen kind correctly describes the mathematics. `theorem/Attributes.lean` additionally
+rejects foundation + MI/IO and domain + T at module boundaries and in environment audits,
+including private theorems and delayed attributes. M/TM are valid with either metadata label.
+Neither metadata label requires or follows from a kernel-checked `connection%` statement.
+
+The queries below compute current coverage and category counts from the attributes,
+including reviewed private helpers and ordinary theorems. No separate count or
+theorem inventory is maintained. A module's role does not assign a class to its declarations.
+
+`theorem/TMIO/KnowledgeIndex.lean` queries the attributes in the currently imported
+`theorem.*` modules:
+
+```lean
+import powerlib
+import theorem.TMIO.KnowledgeIndex
+
+#tmio_theorems    -- All explicitly classified authored theorems, including private ones.
+#tmio_theorems T  -- List classified theory theorems; arguments are T, M, TM, MI and IO.
+#tmio_edges       -- Counts restricted to public typed connections.
+#tmio_edges TM    -- List T–M connections only.
+#tmio_check       -- Check connection coverage and report all classified theorems.
+```
+
+These commands cover only imported modules. A missing attribute on a public typed
+connection is an error; unclassified ordinary theorems are not automatically assigned
+a kind. Private theorems appear under their source names with a visibility marker.
+Unimported modules are outside the query. The default Lake target first performs
+a source check, then checks the environment containing its complete module
+inventory, including modules absent from `powerlib.lean`.
+
+Source queries need only Python and do not start Lean or build dependencies:
+
+```sh
+python3 tools/tmio_classification.py check
+python3 tools/tmio_classification.py list T
+python3 tools/tmio_classification.py list TM
+python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
+```
+
+The source tool lists and shows every explicitly classified theorem, including
+ordinary and private ones. `check` reports both connection coverage and the total
+classified population, rejecting invalid or repeated labels on either population.
+No handwritten theorem-to-kind list is maintained. The source tool is a
+preflight and lookup tool; the Lean environment check additionally reads elaborated
+declaration types, including aliases. Neither check proves semantic classification
+or constructs a verified graph of relation endpoints.
+
+## Generated connections and family readings
+
+`TMIO.Seed` supplies three adjacent infimum-preserving backward maps. `generate`
+constructs their lower adjoints; uniqueness, leastness, supremum preservation
+and composition are proved from the same construction. Deterministic and
+relational interfaces use these maps rather than introducing separate semantics.
+
+A `Family` supplies its system map, requirement satisfaction and sentence
+translation. `Family.semantics` is generated from `Sentence.holds`; `Family.den`
+is its singleton denotation. The translation's chain is compared with this
+semantics to express soundness and exactness.
+
+`Spectral.linearFamily`, `Spectral.localFamily` and the named-requirement
+`localTable` template share the spectral interpretation laws.
+[Family/Reading.lean](theorem/Family/Reading.lean) transfers soundness, exactness
+and requirement obligations along a model reading and a correspondence of
+requirements on a context. This is how different electrical families reuse a
+swing, PLL or current-loop family without reproving the common interpretation.
+
+[TMIO/Representation.lean](theorem/TMIO/Representation.lean) transports semantic
+and generated maps, closure and interior operators, and their fixed points
+under representation changes.
+
+## Realization and observation interfaces
+
+The model and implementation are both read by `Sentence.holds`; a realization
+relates them and states the constraints under which their denotations agree or
+imply one another. The interpretation of each endpoint alone does not establish
+a realization. Generic sampling and discretization laws supply reusable mathematics;
+an electrical realization additionally fixes the engineering endpoints and constraints.
+
+Representative interfaces are:
+
+| Topic | Interface and boundary | Source |
+| --- | --- | --- |
+| VSM test platform | A design, a delay-constrained implementation and a symbolic record-production relation; model inference implies producer truth only under realization soundness. | [VSMLPFRig.lean](theorem/GFM/VSMLPFRig.lean) |
+| Current control | Parameter mismatch, digital delay and hardware voltage limits have separate realization relations and explicit constraints. | [Mismatch.lean](theorem/CurrentControl/Mismatch.lean), [DigitalPI.lean](theorem/CurrentControl/DigitalPI.lean), [VoltageLimit.lean](theorem/CurrentControl/VoltageLimit.lean) |
+| Sampling and numerical methods | Exact sampling, Euler and implicit methods connect continuous and discrete interpretations; their generic laws and electrical instances remain distinct. | [ExactSampling.lean](theorem/LTI/ExactSampling.lean), [EulerRealization.lean](theorem/Numerics/EulerRealization.lean), [ImplicitRealization.lean](theorem/Numerics/ImplicitRealization.lean), [EMT/Plant.lean](theorem/Numerics/EMT/Plant.lean) |
+| Disturbance envelopes | Finite-horizon safety uses solvability, margin and perturbation bounds; a finite-horizon guarantee does not imply an infinite-horizon guarantee. | [Disturbed.lean](theorem/Envelope/Disturbed.lean) |
+
+The observation interface is relational: it reasons about every possible producer
+of an arbitrary external record. It does not assign probabilities to observations.
+Record likelihoods would require a probability law beyond this interface.
+
+## Agda and Lean
+
+Agda scaffolds fix the connection's endpoints, generality and preserved
+structure. Lean independently proves the mathematical claims and is the sole
+theorem trust root. Only checked data crosses the narrow generation boundary
+into `theorem/generated/`; an Agda proof is not imported as a Lean proof.
+
+Each scaffold declares its implementing Lean modules in a `-- Lean modules:`
+header. Those modules cite the scaffold in their docstrings. The structure check
+reads these source-local declarations, verifies both directions, and resolves
+Lean references in scaffold comments to public declarations or library modules.
+It does not read Markdown or maintain a second documentation registry.
+The required format and ownership rules are in [Rules.md](Rules.md#1-agda-scaffolding-and-the-lean-4-theorem-layer).
 
 ## Public admission
 
-Rules §3a states what a public conclusion may be. Its implementation uses two closed,
-proposition-indexed inductive grammars:
-`TMIO.Endpoint` certifies values of real infimum-preserving maps or their uniquely
-generated adjoints; `TMIO.ConnectionClaim` certifies endpoint evaluation,
-comparison and boundary conclusions. Neither has an arbitrary-Prop constructor.
-`TMIO.Statement` carries this syntax certificate in the public proposition type.
-`connection% (P)` elaborates ordinary notation into the certificate. Both the
-certificate and the proof of P are checked by the kernel; the elaborator is
-untrusted. Statements unfold definitionally to P, preserving mathematical use.
-Admission keeps the stored certificate, so every restriction on the shape of a
-claim is a constructor of the kernel grammar, not an elaborator check.
+`TMIO.Endpoint` and `TMIO.ConnectionClaim` are closed, proposition-indexed
+grammars. They certify generated endpoint evaluations, comparisons and boundary
+claims without an arbitrary-proposition constructor. `TMIO.Statement` retains
+the syntax certificate in the proposition type. `connection% (P)` constructs
+that certificate, and Lean's kernel checks both it and the proof of `P`.
+`connection_proof%` exposes the definitionally equal proposition for tactic reuse.
 
-`ConnectionBase` defines the primitive generated maps before the grammar; `ClaimSyntax`
-implements the elaborator below the public laws in `Generate` and `Relation`. `ClaimElab`
-remains the public import for the notation and semantic constructors. This breaks the
-bootstrap import cycle without keeping duplicate public theorem declarations.
+Primitive maps and seeds live in `ConnectionBase`; `ClaimSyntax` provides the
+elaborator below the public connection laws, and `ClaimElab` is the public
+notation import. This ordering avoids a bootstrap cycle. The grammar supports
+polymorphic endpoints, extensional comparisons and constrained claims through
+explicit constructors; the allowed shapes are specified in Rules §3a.
 
-Extensional equality of functions, bundled lower adjoints and closure operators is admitted
-only when every evaluation has a connection certificate. Binders can use either endpoint
-universe. These constructors do not admit unrelated function equalities or arbitrary
-propositional transport. The notation `connection_proof% theoremTerm` exposes the theorem's
-definitionally equal proposition to tactics such as `rw`, which otherwise fail to recognize
-an iff behind `Statement`. It builds an identity application checked by the kernel; the
-original declaration keeps its complete certificate.
+Admission discovers model types from actual `Family` definitions and typed
+claims from elaborated declarations, independently of metadata. A separate
+bypass check examines operands, hypotheses and first-party dependencies for
+behaviour stated outside the shared semantics. Wrapping a raw behavioural set
+in an identity connection cannot bypass that check. Generic interface theorems
+about arbitrary families receive only the limited allowance specified in Rules §3a.
 
-Comparisons under a common constraint, `s ∩ d = t ∩ d`, require a certified endpoint
-on at least one side before restriction. Their two-inclusion characterization is
-also a closed constructor. The common context is still checked for behavioural
-bypass; it does not make arbitrary intersections endpoints or admit an unrelated
-conjunct. Equality of complete `Seed`s compares their three upper maps and supports
-four independent carrier universes. The seed structure lives with the primitive maps
-in `TMIO/ConnectionBase`; its generated maps and laws remain in `TMIO/Derived`.
+Rational certificate synthesis treats candidate search as untrusted. A fast
+candidate is checked against the exact Lyapunov equation; the complete rational
+fallback inverts the finite Lyapunov operator. The kernel checks the resulting
+equation and positivity. The polynomial sum-of-squares search is sound but
+incomplete. Completeness claims concern the certificate language, not runtime.
 
-The constructors `allType`, `iffCondition` and `existsGuard` carry the binders and
-side conditions of Rules §3a. Certificate universes are inferred from the actual
-maps and endpoints. Symmetric atomic constructors let the same certificate mix
-both directions of one pair of endpoint universes, for example sentence sets and
-model sets. External theorem parameters are checked separately, preserving the
-original `Type*` scope of generic laws. Seed comparisons use two further inferred
-universes within the same closed grammar. Side
-conditions are `TMIO.Condition` values. A tautological claim can still carry its
-condition, as `memberIff` can carry any right side; neither adds a kind of
-conclusion, and the bypass audit still reads every operand.
+## Verification entry points
 
-Admission infers model types from actual Family definitions, not a handwritten
-list, and discovers typed claims whatever their annotations. The semantic bypass
-checker independently checks that
-claim operands and hypothesis types do not directly state behaviour. At a
-certified endpoint it checks the input and structural maps while keeping the
-semantic map abstract. A raw behavioural set passed to an identity connection
-therefore fails admission even though that connection is mathematically valid.
+`lake build` (equivalently `lake build powerlib`) runs the source preflight,
+builds the actual inventory selected by all package library globs, and audits
+an environment importing that whole inventory. A new module is therefore checked
+even if it is absent from `powerlib.lean` or omits the architecture import.
+Internal library compilation alone does not run this admission gate. Scaffold
+source contents participate in the admission cache trace, and admission rechecks
+their ownership headers even when compiled Lean modules are reused.
 
-An interface theorem about an arbitrary `Family` may expose the library's own
-semantic predicates. This allowance requires that the family occur in the
-conclusion and that the statement have no concrete model dependency, including
-through first-party value definitions. It still checks the full connection
-certificate and rejects raw signals, discrete evolution and ambient behavioural
-predicates. Model families defined in the current module participate in this
-check as well as imported families; metadata cannot grant an exemption.
+The tests in `tests/lean/Architecture/` exercise claim grammar, semantic bypass,
+axioms, metadata, discovery and reuse. `tests/lean/Library/Structure.lean` checks
+module dependency roles, headers, duplicate and restated results, and scaffold
+ownership. `TMIOIndex.lean` checks classification queries. The dependency-role
+partition constrains imports and is separate from declaration-level metadata.
 
-The default Lake target `powerlib` first runs the source classification preflight,
-then builds every module selected by all package library globs and generates an
-admission module importing that actual inventory. Alongside mathematical admission,
-the generated module checks the `tmio` attributes of every imported public typed
-connection theorem from `theorem.*` modules.
-Consequently a new source cannot evade admission by omitting the linter import
-or the central library import. `lake build` and `lake build powerlib` include this
-gate. Lake reuses a successful audit only while the complete module inventory and
-all its built module dependencies are unchanged, including the admission checker.
-Failed audits never produce a success receipt. Direct Lean invocation or internal
-staging-library builds are not admission;
-changing the gate itself remains a build-policy change, not a mathematical claim.
-
-This is a structural public-interface contract. The gate infers concrete model
-domains from declared Family types, including transparent aliases. It does not
-decide whether an arbitrary generic mathematical proposition ought to be an
-engineering claim. Generic support remains available for implementation proofs.
-
-PortHamiltonian has a Family interface for passivity and Lyapunov stability.
-`Similar.sentence_iff` includes port passivity, using pullback of storage through
-the inverse state coordinates. `Family.IsLinear.den_similar` preserves every
-sentence denotation, with no minimality premise.
-
-## Completed mathematical boundaries
-
-| Question | Kernel-checked result |
-| --- | --- |
-| Is LCL right-half-plane-pole translation exact for instability? | **Refuted** by `Circuits.LCL.not_exact_unstable`: opposite unit resistances, unit inductances and capacitance 2 give frequency polynomial `2 s³`, but a zero-eigenvalue Jordan chain gives unbounded linear growth. |
-| Is LCL passive translation exact for Lyapunov stability? | **Refuted** by `not_exact_lyapunovStable`. |
-| Is LCL lossless translation exact for conservation without passivity? | **Refuted** by `not_exact_conservative`; `exactUnder_conservative` retains the passive context. |
-| Are polynomial global asymptotic translations exact? | **Refuted** by the cubic damping boundary `not_exact_asymptotic`. |
-| Can the cascade be globally certified? | `cascade_asymptotic` proves global asymptotic semantics for `x′ = -2x + y²`, `y′ = -y`; `cascade_not_exponential` proves failure of a uniform global exponential bound. `cascade_certificate_boundary` therefore proves absence of every certificate in this language, independently of search failure. |
-| Is the polynomial global exponential translation exact? | **Refuted** by `not_exact_exponential`: `x′ = -x - y³`, `y′ = -y + x³` has a quartic energy with exponential decay, but no quadratic certificate in the language (`quartic_certificate_boundary`). |
-| Is the polynomial sampled-contraction translation exact? | **Refuted** by `not_exact_contractive`, using the same quartic model. |
-| Is rational synthesis complete? | **Proved** by `Linear.Synthesis.accepts_iff_isHurwitz` for every finite dimension; `Linear.Rational.accepted_eq_den` exposes it as an equality of generated requirement space and denotation. |
-
-The instability lemma `Linear.unstable_of_zero_jordan_chain` is generic.
-The polynomial boundaries concern autonomous rational two-state fields on all
-of ℝ², in continuous time, with no switching, delay or inputs.
-
-## Rates and synthesis
-
-LCL, source-load interconnection and rational-matrix requirements include a
-specified real rate. The static requirement is `RateMargin A a`, meaning
-`IsHurwitz (A + a • 1)`. A shared quadratic-energy comparison proves its
-soundness at every real rate, including zero and negative rates. The interconnection
-rate uses the complete closed-loop state matrix; component stability is not
-required for this state-space evidence. Admission includes a nonempty positive-rate
-LCL example. Strict margin is sufficient; equality at the spectral boundary is
-not claimed exact.
-
-Rational synthesis checks an untrusted fast candidate when it solves the exact
-Lyapunov equation. Otherwise it computes a candidate by inverting the full finite
-rational Lyapunov operator. Upstream uniqueness makes that operator injective for
-a Hurwitz input and identifies every rational solution with the positive real
-solution. `Linear.Positive.check_iff` proves the executable Schur check equivalent
-to real positive definiteness. Both `accepts` and `lyapunov_certificate%` use this
-candidate selection and check. The elaborator writes rational literals; the
-kernel verifies the equation and positivity without trusting elaborator execution.
-
-The cofactor fallback proves completeness and is expensive for large matrices.
-The fast candidate avoids it in the common case; completeness is not a running-time
-claim. The polynomial sum-of-squares search remains sound and incomplete, with
-proved separating models rather than an unsupported completeness claim.
-
-## Validation
-
-The source preflight covers 2,925 classified declarations, including all 1,043 public
-connection statements. A further migration has rewritten 274 of the 526 source-review
-candidates; 252 remain unchanged. These are source counts, not a completed library build.
-The 86 migrated declarations in the TMIO and data-analysis modules have passed Lean 4.34.1
-compilation against their real definitions. `ConnectionRewrites` checks reuse and the original
-mathematical interfaces; `ClaimUniverses` checks universe polymorphism, with six negative
-controls between them. The Python preflight suite has 19 passing tests.
-
-This migration required only nine additional Mathlib modules and one Batteries module to be
-built on demand, beyond the 18 Mathlib modules built for the earlier migration. The semantic
-admission metaprogram is also checked with lightweight interface fixtures. That fixture does
-not validate the engineering definitions or proofs. Full engineering dependencies remain
-unavailable because cache downloads return HTTP CONNECT 403; no unrestricted Mathlib source
-build was started. The 188 other edited declarations still need full dependency validation.
-Four proposed generic realization equalities also require certificates spanning mixed-universe
-intersections; their `Type*` parameters were preserved and the rewrites deferred. The remaining
-candidates require semantic interface work or further admission review; in
-particular, a certified endpoint containing a raw behavioural input is not publishable merely
-because its outer syntax is a connection.
-
-The build figures below describe the previously validated `bb46a37` baseline,
-before the concrete-record cleanup and source-attribute classification. They
-are not a claim that the modified tree has been rebuilt. The changed observation
-scaffolds have been checked with Agda; current Lean verification requires the
-pinned dependency artifacts. Missing caches must not trigger an unrestricted
-source rebuild of Mathlib merely to refresh these figures.
-
-`lake build` checks the library, examples and the admission, discovery, reuse, architecture
-and library-structure tests. The library structure test enforces the meta-rules of Rules §0
-that are visible in the built environment: every module in exactly one layer (`LAYERS`), no
-generic module importing an engineering one (`DEPENDENCIES`), model behaviour only inside
-connection statements (`BARE_BEHAVIOUR`), module headers (`HEADERS`), no duplicate statements
-(`DUPLICATES`), no theorem restating another it could use (`RESTATEMENTS`, no exemptions), and
-every connection between contents (changes of representation inside one family included) citing
-a scaffold whose row above names its module, every scaffold cited and with a row, and every Lean
-name a scaffold cites a public declaration (`SCAFFOLDS`). The independent LeanForControl profile checks direct imported theorem
-reuse and rejection of an actual upstream custom-axiom consequence. The Agda
-scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.agda`
-from the repository root); the Lean build does not depend on them. Dependency
-oleans were reused without building Mathlib from source.
-
-The main admission checks 429 built modules, 8257 proof declarations and 856
-typed connection statements, including private rejection fixtures. The structure
-test reads 413 library modules (261 generic, 152 engineering), 7091 public
-theorems, and 45 modules with connections between contents (6 of them changes of representation
-inside one family) citing 39 scaffolds, whose comments cite 437 Lean names, all public.
-The independent profile checks 32 modules, 374 proof declarations and 6 typed
-statements; its library list is explicit and must follow the imports of the
-modules it names. The admitted Lean axiom set is `propext`, `Classical.choice`
-and `Quot.sound`.
-
-At that baseline, `ConnectionAdmission.lean` supplied two positive claims, one unannotated and one
-misleadingly annotated foundation, and nine rejection controls. Real temporary
-source files also exercise the public `lake build` entry point; none is added to
-the central library import or imports Architecture. Every expected rejection
-was checked against the offending declaration, rather than merely a nonzero
-build exit code.
-
-| Actual build probe | Result |
-| --- | --- |
-| Unannotated raw model behaviour, without the linter import | Rejected |
-| Raw behaviour marked foundation | Rejected |
-| Behavioural alias or model type alias | Both rejected |
-| Raw proof-valued `def` | Rejected |
-| Raw behavioural hypothesis of a typed claim | Rejected |
-| A new model behind a Family type alias | Rejected |
-| Entire model telescope hidden in a proposition alias | Rejected |
-| Behavioural set hidden as an identity connection's input | Rejected |
-| Behavioural alias marked with the removed endpoint tag inside TMIO | Rejected at compilation |
-| Unannotated genuine connection claim without the linter import | Accepted and discovered |
+The standalone profile in `dependencies/integrations/leanforcontrol/` checks
+upstream reuse and axiom rejection. Agda scaffolds are checked separately with
+Agda and Cubical, for example `agda theorem/Stack/Records.agda` from the root.
+The Lean build reads scaffold text for structural checks but does not execute Agda.

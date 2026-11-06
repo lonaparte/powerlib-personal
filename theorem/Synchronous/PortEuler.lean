@@ -16,7 +16,7 @@ families have no locally exponentially stable member, so their realization of lo
 stability is sound, vacuously, without a step constraint. For every family the
 passivity realization is not sound: the collocated outputs `gᵀ ∇H(x)` (speed, currents) do not
 depend on the input, so one Euler step with a large input draws energy without bound, while the
-continuous models are passive. Scaffold: `theorem/EulerPorts.agda`.
+continuous models are passive. Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
 * Model layer (M), each family with the model boundary of its module

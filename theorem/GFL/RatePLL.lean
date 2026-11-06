@@ -11,7 +11,7 @@ import theorem.Dynamics.Pendulum
 /-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `i_d`)
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Model boundary.
 Single grid-following converter on an infinite bus of amplitude `V`

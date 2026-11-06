@@ -10,7 +10,7 @@ port: each discretization realizes the parameter set it is designed from. The fa
 `theorem/Numerics/EulerPorts.lean` apply: the Euler zero-input map is `I + hA`, the attractive
 sentences and sampled contraction are realized completely at every step and exactly below a step
 threshold, and not soundly without a step constraint. No discretization is passive: the output
-`ΔV_dc` does not depend on the input (`D = 0`). Scaffold: `theorem/EulerPorts.agda`.
+`ΔV_dc` does not depend on the input (`D = 0`). Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
 * Model layer (M): `linearizedFamily : Family CascadeParams Spectral.Requirement 3 1`, the

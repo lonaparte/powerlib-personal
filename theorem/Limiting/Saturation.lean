@@ -17,7 +17,7 @@ Saturated current-source GFM, export-positive P as in the GFM family (work-sync
   `P_e = P_sat cos(δ − φ)` (T-current-limiting §1.3). No mode switching (the converter is
   assumed to stay saturated), no inner-loop, PWM, delay or grid dynamics.
 
-Scaffold of the reading through the swing family: `theorem/SaturationSwing.agda`.
+Scaffold of the reading through the swing family: `theorem/Limiting/SaturationSwing.agda`.
 
 Source: work-sync `theory/T-current-limiting.md` §1.3, §1.9; `theory/T-gfm-control.md` §1.10.
 

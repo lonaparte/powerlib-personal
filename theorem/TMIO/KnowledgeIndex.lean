@@ -14,7 +14,7 @@ Scope.
   it does not substitute for importing and checking the whole library.
 
 Source: the five-class `tmio` attribute and environment audit in
-`theorem/TMIO/KnowledgeKind.lean`; the per-declaration knowledge classes in `Layers.md`.
+`theorem/TMIO/KnowledgeKind.lean`; the per-declaration knowledge classes in `Architecture.md`.
 
 Results.
 * `indexSummary`, `indexListing`: counts and module-grouped listings of public connections.

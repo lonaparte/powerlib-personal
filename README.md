@@ -24,56 +24,28 @@ level and exploring the potential of ATD.
 
 ## Structure
 
-Lean 4 is the only theorem layer: it proves every admitted result, and the library
-builds and checks without Agda. The Agda scaffolds stay in `theorem/` as the design
-records of the connections they built; only data passes between Agda and Lean, and
-Lean checks it independently. The project pins Lean 4.34.1,
-Mathlib v4.34.1, and Agda 2.8.0. Adapt dependencies to these pins with minimal,
-provenance-preserving changes, and accept them only after the complete build and
-proof checks pass. See [Rules.md](Rules.md) for the six meta-rules and the formal
-requirements, and [Architecture.md](Architecture.md) for generated connections,
-admission and proved completion boundaries. [Layers.md](Layers.md) defines T and M
-knowledge nodes, T–M/M–I/I–O relations, their endpoints and classification queries.
+Lean 4 is the theorem layer; Agda scaffolds describe connections and are checked
+independently. Sources in `theorem/` are organized by topic, with scaffolds beside
+their Lean implementations. Formal verification lives in `tests/lean/`, examples
+in `example/`, and upstream interfaces in `dependencies/`.
 
-Public model behavioural results use `connection% (ordinary proposition)`. The resulting
-`TMIO.Statement` carries a kernel-checked certificate that the conclusion evaluates
-or compares generated connections. Each public typed connection theorem in
-`theorem/` also carries exactly one `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`,
-`@[tmio MI]` or `@[tmio IO]` attribute. These source attributes are the only
-classification source; no separate catalog or handwritten theorem-to-kind list is
-maintained. The queries below report current coverage, including private helpers.
-Labels record individual statement
-reviews; a module's role does not supply a default class for its declarations.
-Foundation/domain annotations remain optional. Foundation permits T/M/TM; domain
-permits M/TM/MI/IO. Both M and TM can belong to either class, according to the
-statement's mathematical or engineering content. Connection structure does not
-assign domain, and static domain model identities need no connection wrapper.
-The attribute checks enforce theorem targets, allowed kinds and unique assignment;
-module and environment audits reject incompatible explicit pairs. These checks
-do not prove semantic classification or change mathematical admission.
-Use one attribute block per declaration, such as `@[tmio TM, powerlib_domain]`.
+- [Architecture.md](Architecture.md): TMIO nodes and relations, shared semantics,
+  source organization, connection interfaces and classification queries.
+- [Rules.md](Rules.md): formalization, classification, provenance and admission rules.
+- [Changelog.md](Changelog.md): completed changes.
 
-For source queries without starting Lean or building dependencies, run:
+The project pins Lean 4.34.1, Mathlib v4.34.1 and Agda 2.8.0 with Cubical 0.9.
+`lake build` runs the source classification preflight and whole-package admission,
+including modules absent from the public umbrella. Internal library compilation
+alone does not run the complete gate.
+
+To inspect source classifications without starting Lean:
 
 ```sh
 python3 tools/tmio_classification.py check
-python3 tools/tmio_classification.py list T
 python3 tools/tmio_classification.py list TM
 python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
 ```
-
-In Lean, import `theorem.TMIO.KnowledgeIndex` alongside the desired theorem
-modules. `#tmio_theorems` lists counts of all explicitly classified theorems, and
-`#tmio_theorems T` lists one class (arguments: `T`, `M`, `TM`, `MI`, `IO`).
-`#tmio_edges` restricts queries to public typed connections. `#tmio_check` checks
-their required coverage and reports the full classified population. Ordinary and
-private theorem attributes are discoverable; unimported modules are excluded.
-
-`lake build` and `lake build powerlib` run the source preflight and check the
-actual complete module inventory, including new modules that omit the architecture
-linter import. Internal library targets provide compilation only; they do not run
-whole-package admission. See [Architecture.md](Architecture.md#validation) for
-the current verification scope and the historical full-build results.
 
 ## Dependencies
 

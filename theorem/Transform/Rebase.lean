@@ -18,7 +18,7 @@ coordinate changes (`w = 1`, ports unchanged), per-unit bases (diagonal; the ins
 `theorem/Transform/PerUnitLTI.lean`), the current direction convention (port current coordinate
 `−1`, `flipCurrent`) and the time base are instances, alone or together.
 
-Scaffold: `theorem/Rebase.agda`. Over six spaces (the two state spaces, their rate spaces, port
+Scaffold: `theorem/Transform/Rebase.agda`. Over six spaces (the two state spaces, their rate spaces, port
 voltage and port current) it transports the interconnection along the equivalences of the spaces
 and shows that the closed loop commutes with every change of bases, provided the equivalences
 preserve the additive operations. Here the maps are matrices, so the operations are preserved by

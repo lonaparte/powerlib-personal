@@ -35,7 +35,7 @@ Family and connection conclusions.
 * Through `stateMatrix_mul` every flow sentence of the pH plant is the same sentence of the
   linearized swing family `Synchronous.Swing.Linearized.family` at `(p, δ₀)`
   (`linearPH_mem_den_flow_iff`, a comparison of the two families' denotations). Scaffold:
-  `theorem/SwingPortHamiltonian.agda`.
+  `theorem/Synchronous/SwingPortHamiltonian.agda`.
 -/
 
 noncomputable section

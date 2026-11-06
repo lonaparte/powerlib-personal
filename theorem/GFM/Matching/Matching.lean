@@ -67,7 +67,7 @@ Family and connection conclusions.
   selected speed `ω*` is free, while the hub has the speed-independent sinusoid and the point
   `(δ*, 0)`. Without a requirement language there is nothing for `Spectral.exactUnder_of_hub` to
   carry: the hub supplies the denotations themselves on the sinusoidal case. Scaffold:
-  `theorem/MatchingSwing.agda`.
+  `theorem/GFM/Matching/MatchingSwing.agda`.
 * Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
   `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian
   and LaSalle). The work-sync notes quote only the condition; the closed loops are not written

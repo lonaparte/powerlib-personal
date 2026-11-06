@@ -8,7 +8,7 @@ Euler method with a fixed step `h > 0` is an implementation layer over it: each 
 realizes the swing model it integrates. A locally exponentially stable swing model has a step
 `h₀ > 0` below which its Euler integration is locally exponentially stable, and without a step
 constraint the realization is not sound; the instance of the generic template
-`theorem/Numerics/EulerRealization.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
+`theorem/Numerics/EulerRealization.lean`. Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M): `Swing.family`, the swing model `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))` read

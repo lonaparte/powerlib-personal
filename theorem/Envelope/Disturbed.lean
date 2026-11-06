@@ -44,7 +44,7 @@ Source: Grönwall's inequality for approximate solutions (Mathlib
 Ariola and Dorato 2001); the engineering reading of stability as the exceedance of thresholds on a
 few physical quantities (work-sync `theory/T-converter-stochastic-paradigm.md` §1.3, F3); the
 envelope laws (`theorem/Envelope/Basic.lean`); implementations
-(`theorem/Stack/Implementation.lean`). Scaffold: `theorem/DisturbedRealization.agda`.
+(`theorem/Stack/Implementation.lean`). Scaffold: `theorem/Envelope/DisturbedRealization.agda`.
 
 Results.
 * `erode A δ` (the states whose closed `δ`-ball lies in `A`); `Port.System.perturb`;

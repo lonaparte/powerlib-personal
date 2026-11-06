@@ -4,7 +4,7 @@ import theorem.PLL.PIPLL
 /-! # The 13-state GFL-VSC with DC-link dynamics: constant-power equilibria
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold: `theorem/Transform/CurrentDirection.agda`.
 
 Domain module (`vsc-stochastic-stability`, main-line "M1dc").
 

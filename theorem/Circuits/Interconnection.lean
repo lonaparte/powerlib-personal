@@ -28,7 +28,7 @@ Model boundary.
   function is the port impedance `(1 + Z Y)⁻¹ Z`.
 * No controller, delay or switching beyond what the two plants already contain.
 
-Source: scaffold `theorem/ImpedanceInterconnection.agda` (source and load → closed loop;
+Source: scaffold `theorem/Circuits/ImpedanceInterconnection.agda` (source and load → closed loop;
 covariance under state coordinates), its generated block matrices
 `theorem/generated/ImpedanceInterconnection.lean`; transfer functions, similarity and realization
 theory (`theorem/Linear/Transfer.lean`, `theorem/Linear/Realization.lean`); certification

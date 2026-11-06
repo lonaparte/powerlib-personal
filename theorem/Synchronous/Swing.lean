@@ -41,9 +41,9 @@ Model boundary.
   the LTI linearization; global existence of solutions (forward completeness) follows from
   a global Lipschitz bound.
 
-Scaffold: `theorem/Swing.agda` (the hub content its spokes read: models, requirements,
-translation, published laws); the readings through it are `theorem/DroopSwing.agda`,
-`theorem/SaturationSwing.agda` and `theorem/ClassicalMachineSwing.agda`.
+Scaffold: `theorem/Synchronous/Swing.agda` (the hub content its spokes read: models, requirements,
+translation, published laws); the readings through it are `theorem/GFM/DroopSwing.agda`,
+`theorem/Limiting/SaturationSwing.agda` and `theorem/Synchronous/ClassicalMachineSwing.agda`.
 
 Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machine.md` §1.9;
 `theory/T-transient-stability.md` §1.3, §1.4, §1.7;

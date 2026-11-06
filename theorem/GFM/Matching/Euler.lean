@@ -11,7 +11,7 @@ Euler integration is locally exponentially stable, and without a step constraint
 is not sound — except for the stationary-frame family, which has no locally exponentially stable
 member, so that its realization is sound without a step constraint, vacuously; instances of the
 generic template `theorem/Numerics/EulerRealization.lean`, in the pattern of
-`theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
+`theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/Numerics/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M), each family with the model boundary of its module, read about its selected

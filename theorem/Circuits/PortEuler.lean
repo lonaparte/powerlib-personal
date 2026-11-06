@@ -11,7 +11,7 @@ the attractive sentences and sampled contraction are realized completely at ever
 exactly below a step threshold, and not soundly without a step constraint. Passivity is not
 realized at any step: both circuits read their port currents, which do not depend on the port
 voltages (`D = 0`), so one Euler step with a large voltage draws energy without bound.
-Scaffold: `theorem/EulerPorts.agda`.
+Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
 * Model layer (M): `Circuits.RL.family` (one series RL branch `L i' = v − R i`, port voltage `v`,
