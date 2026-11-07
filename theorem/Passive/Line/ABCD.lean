@@ -58,7 +58,7 @@ Corrections.
 -/
 
 noncomputable section
-namespace powerlib.Line.Phasor
+namespace powerlib.Passive.Line.Phasor
 open Complex Matrix
 
 /-- Line parameters at one frequency. -/
@@ -562,4 +562,4 @@ def gammaOf (series : Passive.RL) (shunt : Passive.GC) (s : ℂ) : ℂ :=
   field_simp
   ring
 
-end powerlib.Line.Phasor
+end powerlib.Passive.Line.Phasor

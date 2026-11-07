@@ -24,8 +24,8 @@ Results.
   (T-vsg-control §1.0, §1.2; T-gfm-control §1.4).
 * Line powers (export from the source `E ∠ δ` through `R + jX` into `V ∠ 0`) from `S̄ = Ē Ī*`,
   their partial derivatives at `δ = 0, E = V`, and the rotation `R(β)`, `β = π/2 − θ_l`,
-  that diagonalizes this Jacobian (T-droop-control §1.2): `Network.linePower`, `Network.lineP`,
-  `Network.lineQ`, `Network.rotation_diagonalizes` (`theorem/Grid/PowerFlow.lean`).
+  that diagonalizes this Jacobian (T-droop-control §1.2): `Grid.linePower`, `Grid.lineP`,
+  `Grid.lineQ`, `Grid.rotation_diagonalizes` (`theorem/Grid/PowerFlow.lean`).
 * Static droop `u = u* − K (y − y*)`: DC gain `−K`; shared `Δu` gives
   `Δy_k / Δy_l = K_l / K_k` (T-droop-control §1.1).
 * Governor `T_g ΔṖ_m = −ΔP_m − K_R Δω` ⇒ `ΔP_m = −K_R/(1 + T_g s) Δω` (T-droop-control §1.3).
@@ -37,8 +37,8 @@ Results.
   equation with `M = C/η²`, `D = G/η²`, torque `i_dc/η` (T-gfm-control §1.6 table):
   `GFM.Matching.matching_swing` (`theorem/GridTiedConverter/GFM/Matching/Matching.lean`).
 * Rotated droop limits: inductive line `θ_l = π/2` ⇒ `R(β) = I`; resistive line `θ_l = 0` ⇒
-  `(P̂, Q̂) = (−Q, P)` (T-droop-control §1.5): `Network.rotation_inductive`,
-  `Network.rotation_resistive`.
+  `(P̂, Q̂) = (−Q, P)` (T-droop-control §1.5): `Grid.rotation_inductive`,
+  `Grid.rotation_resistive`.
 
 Family and connection conclusions.
 None.  The module has no behavioural content; every statement is public foundation (Rules §3).

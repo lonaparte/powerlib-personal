@@ -5,6 +5,16 @@ in Git; working statistics, build receipts and development plans are not kept he
 
 ## 2026-11-07
 
+- The passive-component and grid-structure sources now declare in the
+  namespaces of their directories: `Circuits.RL`/`Circuits.LCL` became
+  `Passive.RL`/`Passive.LCL`, the dq RL branch `Passive.DqRL` (was
+  `CurrentControl`), the PH instances `Passive` (was `PH.Models`), the lines
+  `Passive.Line.*` (was `Line.*`); `Circuits.Interconnection` became
+  `Grid.Interconnection`, and the RL networks, the grid impedance and the power
+  flow declare in `Grid` (were `PH.Models`, `GFL.Impedance`, `Network`), the
+  modulation transfer in `Grid.ModulationTransfer`. References in the library,
+  tests, examples and Agda scaffolds follow. The KYP storage positivity of the
+  RL model is now `Passive.RL.Impedance.energy_pos`, proved from the branch law.
 - Separated passive components from grid structure. `Passive/` holds the
   components and their own properties (RL branch and its dq form, LCL filter,
   RLC and LC PH instances, lines and cables); `Grid/` holds how components are

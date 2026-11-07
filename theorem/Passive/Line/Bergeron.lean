@@ -46,7 +46,7 @@ Results.
 -/
 
 noncomputable section
-namespace powerlib.Line
+namespace powerlib.Passive.Line
 open Set
 open powerlib.PDE (HasPartialsWithin strip const_along_segment)
 
@@ -335,4 +335,4 @@ travelling-wave pair**, with `f(ξ) = (v + Z_c i)(ξ, 0)/2`, `g(η) = (v - Z_c i
 
 end LosslessLine
 
-end powerlib.Line
+end powerlib.Passive.Line

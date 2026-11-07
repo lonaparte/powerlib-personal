@@ -249,17 +249,17 @@ example {n : ℕ} (T a : ℝ) (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace
 -- A family's denotation is the semantics connection's generated value, and a linear family's
 -- flow sentences are the hub's sentences of its zero-input plants.
 example (s : Sentence) :
-    Circuits.RL.family.den s = OrderDual.ofDual (TMIO.generate Circuits.RL.family.semantics {s}) :=
+    Passive.RL.family.den s = OrderDual.ofDual (TMIO.generate Passive.RL.family.semantics {s}) :=
   rfl
-example (P : Flow.Property) (m : Circuits.RL.Impedance) :
-    m ∈ Circuits.RL.family.den (.flow P) ↔ P.holds (affineLinearVectorField m.plant.A 0) 0 :=
-  Circuits.RL.family_isLinear.mem_den_flow
+example (P : Flow.Property) (m : Passive.RL.Impedance) :
+    m ∈ Passive.RL.family.den (.flow P) ↔ P.holds (affineLinearVectorField m.plant.A 0) 0 :=
+  Passive.RL.family_isLinear.mem_den_flow
 
 -- Both RL representations denote through the same plant.
 example (s : Sentence) :
-    (Circuits.RL.family.comap Circuits.RL.toImpedance).den s =
-      Circuits.RL.toImpedance ⁻¹' Circuits.RL.family.den s :=
-  Circuits.RL.family.den_comap _ s
+    (Passive.RL.family.comap Passive.RL.toImpedance).den s =
+      Passive.RL.toImpedance ⁻¹' Passive.RL.family.den s :=
+  Passive.RL.family.den_comap _ s
 
 /-! ## Semantic boundary: a stable linearization is not global stability -/
 

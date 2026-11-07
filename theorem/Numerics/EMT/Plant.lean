@@ -10,15 +10,15 @@ asserted sound only. The conclusions concern discrete numerical implementations 
 Model boundary.
 * The trapezoidal rule (the EMT companion-model integrator) and backward Euler with a fixed step
   `h > 0`, applied to the continuous plant vector fields already formalized in powerlib:
-  * the single-port RL branch of `theorem/Passive/RL.lean` (`Circuits.RL.Impedance`): state
+  * the single-port RL branch of `theorem/Passive/RL.lean` (`Passive.RL.Impedance`): state
     `x 0 = i` (inductor current, physical coordinate), terminal voltage `v` held constant (zero
     in perturbation coordinates), continuous field `i' = -a i + b v` with `a = R / L`,
     `b = 1 / L`, read off the plant of the RL family (`RL.Impedance.plant`);
-  * the ideal three-state LCL filter of `theorem/Passive/LCL.lean` (`Circuits.LCL.Circuit`):
+  * the ideal three-state LCL filter of `theorem/Passive/LCL.lean` (`Passive.LCL.Circuit`):
     state order `(x 0, x 1, x 2) = (i₁, v_C, i₂)` (converter-side current, capacitor voltage,
     grid-side current), stationary scalar phase variables, both terminal voltages `u, v_g` held
     constant, read off the plant of the LCL family (`LCL.Circuit.plant`, inputs `(u, v_g)`).
-* Inherited from `Circuits.RL` / `Circuits.LCL` and narrowed here: no controller, no PLL, no PWM
+* Inherited from `Passive.RL` / `Passive.LCL` and narrowed here: no controller, no PLL, no PWM
   or switching, no sampling or computation delay, no grid impedance beyond the second branch, no
   saturation, constant parameters, exact solution of each implicit step (no Newton or
   linear-solver error), fixed step size. Time is discrete (`k : ℕ`).
@@ -67,7 +67,7 @@ Scaffold: `theorem/Numerics/ImplicitDiscretization.agda`.
 noncomputable section
 namespace powerlib.Numerics.EMT
 open Matrix LinearSystems
-open powerlib.Circuits
+open powerlib.Passive
 
 /-! ### RL branch -/
 

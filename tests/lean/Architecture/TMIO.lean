@@ -86,16 +86,16 @@ run_cmd do
       (`powerlib.Family.refutes, `powerlib.TMIO.predict_eq_image),
       (`powerlib.Family.Exact.comap, `powerlib.Family.realize_comap),
       (`powerlib.Family.Exact.extend, `powerlib.Family.realize_extend_inl),
-      (`powerlib.Circuits.RL.chain_eq_semantics, `powerlib.Family.chain_eq_semantics_iff),
-      (`powerlib.Circuits.RL.certified_readings, `powerlib.Family.certified),
-      (`powerlib.Circuits.RL.certified_records, `powerlib.TMIO.generate_comp),
-      (`powerlib.Circuits.RL.predict_reading, `powerlib.TMIO.predict_eq_image),
-      (`powerlib.Circuits.RL.stateSpace_whole, `powerlib.TMIO.Seed.transport_whole),
-      (`powerlib.Circuits.LCL.chain_le_semantics, `powerlib.Family.chain_le_semantics_iff),
-      (`powerlib.Circuits.LCL.exact_hurwitz, `powerlib.Family.IsLinear.den_hurwitz),
-      (`powerlib.Circuits.Interconnection.exactUnder_hurwitz,
+      (`powerlib.Passive.RL.chain_eq_semantics, `powerlib.Family.chain_eq_semantics_iff),
+      (`powerlib.Passive.RL.certified_readings, `powerlib.Family.certified),
+      (`powerlib.Passive.RL.certified_records, `powerlib.TMIO.generate_comp),
+      (`powerlib.Passive.RL.predict_reading, `powerlib.TMIO.predict_eq_image),
+      (`powerlib.Passive.RL.stateSpace_whole, `powerlib.TMIO.Seed.transport_whole),
+      (`powerlib.Passive.LCL.chain_le_semantics, `powerlib.Family.chain_le_semantics_iff),
+      (`powerlib.Passive.LCL.exact_hurwitz, `powerlib.Family.IsLinear.den_hurwitz),
+      (`powerlib.Grid.Interconnection.exactUnder_hurwitz,
         `powerlib.Family.IsLinear.den_hurwitz),
-      (`powerlib.Circuits.Interconnection.portData_not_certified, `powerlib.TMIO.mem_certify),
+      (`powerlib.Grid.Interconnection.portData_not_certified, `powerlib.TMIO.mem_certify),
       (`powerlib.Nonlinear.Cubic.chain_eq_semantics, `powerlib.Family.chain_eq_semantics_iff),
       (`powerlib.Nonlinear.Polynomial2.chain_le_semantics,
         `powerlib.Family.chain_le_semantics_iff),
@@ -142,28 +142,28 @@ open powerlib LinearSystems
 @[powerlib_foundation] theorem phantomFamily (_F : Family Unit Unit 1 0) :
     IsHurwitz !![(-1 : ℝ)] := offConnection
 
-@[powerlib_foundation] theorem irrelevantHypothesis (m : Circuits.RL.Impedance)
-    (_h : m ∈ Circuits.RL.family.den (.flow .lyapunovStable)) :
+@[powerlib_foundation] theorem irrelevantHypothesis (m : Passive.RL.Impedance)
+    (_h : m ∈ Passive.RL.family.den (.flow .lyapunovStable)) :
     IsHurwitz !![(-1 : ℝ)] := offConnection
 
 -- Holds is a semantic alias, not a generated endpoint, even though it belongs to Family.
-@[powerlib_foundation] private theorem directHolds (m : Circuits.RL.Impedance)
-    (h : Circuits.RL.family.Holds m (.flow .lyapunovStable)) :
-    Circuits.RL.family.Holds m (.flow .lyapunovStable) := h
+@[powerlib_foundation] private theorem directHolds (m : Passive.RL.Impedance)
+    (h : Passive.RL.family.Holds m (.flow .lyapunovStable)) :
+    Passive.RL.family.Holds m (.flow .lyapunovStable) := h
 
-def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
-  Circuits.RL.family.Holds m (.flow .lyapunovStable)
+def hiddenHolds (m : Passive.RL.Impedance) : Prop :=
+  Passive.RL.family.Holds m (.flow .lyapunovStable)
 
-@[powerlib_foundation] private theorem transitiveHolds (m : Circuits.RL.Impedance)
+@[powerlib_foundation] private theorem transitiveHolds (m : Passive.RL.Impedance)
     (h : hiddenHolds m) : hiddenHolds m := h
 
 @[powerlib_foundation] theorem unrelatedConjunct :
-    Circuits.RL.family.chain = Circuits.RL.family.semantics ∧ IsHurwitz !![(-1 : ℝ)] :=
-  ⟨Circuits.RL.chain_eq_semantics, offConnection⟩
+    Passive.RL.family.chain = Passive.RL.family.semantics ∧ IsHurwitz !![(-1 : ℝ)] :=
+  ⟨Passive.RL.chain_eq_semantics, offConnection⟩
 
 @[powerlib_foundation] theorem conditionPadding :
     IsHurwitz (@ite (Matrix (Fin 1) (Fin 1) ℝ)
-      (Circuits.RL.family.chain = Circuits.RL.family.semantics)
+      (Passive.RL.family.chain = Passive.RL.family.semantics)
       (Classical.propDecidable _) !![(-1 : ℝ)] !![(-1 : ℝ)]) := by
   simp only [ite_self]
   exact offConnection
@@ -171,16 +171,16 @@ def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
 -- The side conditions of the grammar are comparisons of numbers, on the characterizing side of an
 -- iff only: a static fact on that side, or a numeric conjunct, is not a connection conclusion.
 @[powerlib_foundation] theorem staticIff :
-    Circuits.RL.family.chain = Circuits.RL.family.semantics ↔ IsHurwitz !![(-1 : ℝ)] :=
-  iff_of_true Circuits.RL.chain_eq_semantics offConnection
+    Passive.RL.family.chain = Passive.RL.family.semantics ↔ IsHurwitz !![(-1 : ℝ)] :=
+  iff_of_true Passive.RL.chain_eq_semantics offConnection
 
 @[powerlib_foundation] theorem numericConjunct :
-    Circuits.RL.family.chain = Circuits.RL.family.semantics ∧ (1 : ℕ) ≤ 2 :=
-  ⟨Circuits.RL.chain_eq_semantics, by norm_num⟩
+    Passive.RL.family.chain = Passive.RL.family.semantics ∧ (1 : ℕ) ≤ 2 :=
+  ⟨Passive.RL.chain_eq_semantics, by norm_num⟩
 
 @[powerlib_domain] theorem onConnection :
-    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) :=
-  Circuits.RL.chain_eq_semantics
+    connection% (Passive.RL.family.chain = Passive.RL.family.semantics) :=
+  Passive.RL.chain_eq_semantics
 
 end PlacementFixture
 

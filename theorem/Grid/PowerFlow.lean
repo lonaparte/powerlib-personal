@@ -41,7 +41,8 @@ Results.
 -/
 
 noncomputable section
-namespace powerlib.Network
+namespace powerlib.Grid
+open powerlib.Network
 
 /-! ## Linearized power flow -/
 
@@ -223,4 +224,4 @@ end LinePower
       Complex.add_im, Complex.I_re, Complex.I_im, Complex.normSq_apply] <;>
     field_simp <;> ring
 
-end powerlib.Network
+end powerlib.Grid

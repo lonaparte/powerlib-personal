@@ -33,7 +33,7 @@ Results.
   `R |i|²` and `d/dt (L |i|²/2)`; the rotation terms `± ω L` cancel.
 * `GC.capacitor_dq`: Park turns the αβ node equation `C v̇ = i − G v` into the dq one
   `C v̇ = i − G v − ω C J v`, for any differentiable frame angle (`Transform.hasDerivAt_rot_mulVec`).
-  The series-branch counterpart is `CurrentControl.dqRL_of_alphaBetaRL`
+  The series-branch counterpart is `Passive.DqRL.dqRL_of_alphaBetaRL`
   (`theorem/Passive/DqRL.lean`).
 -/
 

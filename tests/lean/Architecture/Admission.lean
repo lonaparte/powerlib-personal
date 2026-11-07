@@ -22,55 +22,55 @@ open powerlib LinearSystems Matrix
 -- RL: only `R = 2` and `L = 1` are submitted.
 namespace RLAdmission
 
-def submittedModel : Circuits.RL.Impedance := Circuits.RL.Impedance.ofParams 2 ⟨1, by norm_num⟩
+def submittedModel : Passive.RL.Impedance := Passive.RL.Impedance.ofParams 2 ⟨1, by norm_num⟩
 
 def accepted : Linear.Certificate submittedModel.plant.A :=
-  Circuits.RL.synthesize submittedModel (by norm_num [submittedModel])
+  Passive.RL.synthesize submittedModel (by norm_num [submittedModel])
 
 -- The synthesized witness is `p = 1/4`.
 @[powerlib_foundation] theorem accepted_P : accepted.P = !![1 / 4] := by
   ext i j
   fin_cases i
   fin_cases j
-  norm_num [accepted, Circuits.RL.synthesize, submittedModel]
+  norm_num [accepted, Passive.RL.synthesize, submittedModel]
 
 -- The synthesized certificate places the branch in every attractive sentence.
 @[powerlib_domain] theorem mem_den {P : Flow.Property} (hP : P.Attractive) :
-    connection% (submittedModel ∈ Circuits.RL.family.den (.flow P)) := by
+    connection% (submittedModel ∈ Passive.RL.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
+  rw [Passive.RL.family_isLinear.den_hurwitz (Or.inl hP)]
   exact accepted.isHurwitz
 
 -- The physical energy is a storage function: the branch is passive.
 @[powerlib_domain] theorem mem_den_passive :
-    connection% (submittedModel ∈ Circuits.RL.family.den .passive) :=
-  Circuits.RL.family_isLinear.mem_den_passive
-    (Circuits.RL.kyp submittedModel (by norm_num [submittedModel]))
+    connection% (submittedModel ∈ Passive.RL.family.den .passive) :=
+  Passive.RL.family_isLinear.mem_den_passive
+    (Passive.RL.kyp submittedModel (by norm_num [submittedModel]))
 
 end RLAdmission
 
 -- LCL: only the component values are submitted.
 namespace LCLAdmission
 
-def submittedModel : Circuits.LCL.Circuit :=
-  ⟨Circuits.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩,
-    Circuits.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩, ⟨1, by norm_num⟩⟩
+def submittedModel : Passive.LCL.Circuit :=
+  ⟨Passive.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩,
+    Passive.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩, ⟨1, by norm_num⟩⟩
 
 def accepted : Linear.Certificate submittedModel.plant.A :=
-  Circuits.LCL.synthesize submittedModel
-    (by norm_num [submittedModel, Circuits.LCL.Circuit.Passive])
-    (by norm_num [submittedModel, Circuits.LCL.Circuit.Damped])
+  Passive.LCL.synthesize submittedModel
+    (by norm_num [submittedModel, Passive.LCL.Circuit.Passive])
+    (by norm_num [submittedModel, Passive.LCL.Circuit.Damped])
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    connection% (submittedModel ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
+    connection% (submittedModel ∈ Passive.LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.LCL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  rw [Passive.LCL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   exact accepted.isHurwitz
 
 @[powerlib_domain] theorem mem_den_passive :
-    connection% (submittedModel ∈ Circuits.LCL.family.den .passive) :=
-  Circuits.LCL.family_isLinear.mem_den_passive (Circuits.LCL.kyp submittedModel
-    (by norm_num [submittedModel, Circuits.LCL.Circuit.Passive]))
+    connection% (submittedModel ∈ Passive.LCL.family.den .passive) :=
+  Passive.LCL.family_isLinear.mem_den_passive (Passive.LCL.kyp submittedModel
+    (by norm_num [submittedModel, Passive.LCL.Circuit.Passive]))
 
 end LCLAdmission
 
@@ -157,21 +157,21 @@ end LargeLTIAdmission
 -- synthesizer needs passivity; the kernel's run of the generic synthesizer does not.
 namespace NegativeResistanceAdmission
 
-def submitted : Circuits.LCL.RationalCircuit :=
+def submitted : Passive.LCL.RationalCircuit :=
   ⟨-1 / 10, 1, 1, 2, 1, by norm_num, by norm_num, by norm_num⟩
 
 @[powerlib_foundation] theorem not_passive : ¬ submitted.circuit.Passive := by
   intro h
   have := h.1
-  norm_num [submitted, Circuits.LCL.RationalCircuit.circuit] at this
+  norm_num [submitted, Passive.LCL.RationalCircuit.circuit] at this
 
 def accepted : Linear.Certificate submitted.circuit.plant.A :=
   submitted.certificate (by decide +kernel)
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    connection% (submitted ∈ Circuits.LCL.rationalFamily.den (.flow .globallyExponentiallyStable)) := by
+    connection% (submitted ∈ Passive.LCL.rationalFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.LCL.rationalFamily_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
+  rw [Passive.LCL.rationalFamily_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
     (Or.inl trivial)]
   exact accepted.isHurwitz
 
@@ -259,20 +259,20 @@ def marginCertificate : Certificate (Synthesis.real shiftedLCL) :=
       Synthesis.real shiftedLCL := by
     ext i j
     fin_cases i <;> fin_cases j <;>
-      norm_num [LCLAdmission.submittedModel, Circuits.LCL.Circuit.plant,
-        Circuits.LCL.StateSpace.plant, Circuits.RL.toStateSpace_decay,
+      norm_num [LCLAdmission.submittedModel, Passive.LCL.Circuit.plant,
+        Passive.LCL.StateSpace.plant, Passive.RL.toStateSpace_decay,
         shiftedLCL, Matrix.one_apply]
   unfold RateMargin
   rw [hA]
   exact marginCertificate.isHurwitz
 
 @[powerlib_domain] theorem lcl_rate :
-    connection% (LCLAdmission.submittedModel ∈ TMIO.realize Circuits.LCL.Meets
-      {Circuits.LCL.Requirement.rate (1 / 4)} ∧
-    LCLAdmission.submittedModel ∈ Circuits.LCL.family.den (.flow (.decay (1 / 4)))) := by
+    connection% (LCLAdmission.submittedModel ∈ TMIO.realize Passive.LCL.Meets
+      {Passive.LCL.Requirement.rate (1 / 4)} ∧
+    LCLAdmission.submittedModel ∈ Passive.LCL.family.den (.flow (.decay (1 / 4)))) := by
   unfold powerlib.TMIO.Statement
-  refine ⟨?_, Circuits.LCL.family_isLinear.mem_den_decay_of_rateMargin lcl_margin⟩
-  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Circuits.LCL.Meets]
+  refine ⟨?_, Passive.LCL.family_isLinear.mem_den_decay_of_rateMargin lcl_margin⟩
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Passive.LCL.Meets]
   exact lcl_margin
 
 -- The complete backend runs on nonnormal input, independently of the fast proposal.
@@ -316,12 +316,12 @@ run_cmd do
       for c in value.getUsedConstants do
         if certificate.isPrefixOf c then todo := todo.push c else seen := seen.push c
     return seen
-  for (certificate, synthesizer) in #[(`RLAdmission.accepted, `powerlib.Circuits.RL.synthesize),
-      (`LCLAdmission.accepted, `powerlib.Circuits.LCL.synthesize),
+  for (certificate, synthesizer) in #[(`RLAdmission.accepted, `powerlib.Passive.RL.synthesize),
+      (`LCLAdmission.accepted, `powerlib.Passive.LCL.synthesize),
       (`LTIAdmission.accepted, `powerlib.Linear.Synthesis.certificateOf),
       (`LargeLTIAdmission.accepted, `powerlib.Linear.VerifiedSynthesis.certificate),
       (`NegativeResistanceAdmission.accepted,
-        `powerlib.Circuits.LCL.RationalCircuit.certificate),
+        `powerlib.Passive.LCL.RationalCircuit.certificate),
       (`PolynomialAdmission.accepted, `powerlib.Nonlinear.Polynomial2.certificateOf),
       (`PolynomialAdmission.coupledAccepted, `powerlib.Nonlinear.Polynomial2.certificateOf),
       (`PolynomialAdmission.nonnormalAccepted, `powerlib.Nonlinear.Polynomial2.certificateOf)] do

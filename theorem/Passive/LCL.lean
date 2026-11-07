@@ -47,7 +47,7 @@ Results.
   `balancedEnergy_conserved`, `balancedEnergy_pos`, `jordanCircuit_frequency`.
 
 Family and connection conclusions.
-* `Circuits.LCL.family : Family Circuit Requirement 3 2`: requirements `poleStable`,
+* `Passive.LCL.family : Family Circuit Requirement 3 2`: requirements `poleStable`,
   `routhHurwitz`, `passive`, `damped`, `lossless`, `rightHalfPlanePole` and `rate a`. Lyapunov
   stability and passivity translate into `passive`, the attractive sentences and sampled
   contraction into `poleStable`, instability into `rightHalfPlanePole`, decay at `a` into
@@ -70,7 +70,7 @@ Family and connection conclusions.
 
 noncomputable section
 
-namespace powerlib.Circuits.LCL
+namespace powerlib.Passive.LCL
 
 open Matrix LinearSystems TMIO
 
@@ -733,4 +733,4 @@ This is a proved failure of exactness, not an unfinished equivalence. -/
     exact (pow_eq_zero_iff (by decide : (3 : ℕ) ≠ 0)).mp this
   simp [hz] at hre
 
-end powerlib.Circuits.LCL
+end powerlib.Passive.LCL

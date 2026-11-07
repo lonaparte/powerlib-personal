@@ -37,7 +37,7 @@ Results.
   (certified values do not depend on the model representation).
 
 Family and connection conclusions.
-* No new family: the module constrains candidate models of `Circuits.RL.family` through `seed ε`.
+* No new family: the module constrains candidate models of `Passive.RL.family` through `seed ε`.
   This is a model-side compatibility construction; it does not establish an I–O relation. Scaffold:
   `theorem/Passive/RLMeasurement.agda`.
 * `certify_reading`: a reading certifies a set of models exactly when its accuracy interval lies
@@ -55,7 +55,7 @@ Family and connection conclusions.
 
 noncomputable section
 
-namespace powerlib.Circuits.RL
+namespace powerlib.Passive.RL
 
 open OrderDual LinearSystems TMIO Data.Analysis
 
@@ -254,4 +254,4 @@ def stateSpaceSeed (ε : ℝ) :
   rw [stateSpaceSeed, Seed.transport_whole]
   rfl
 
-end powerlib.Circuits.RL
+end powerlib.Passive.RL

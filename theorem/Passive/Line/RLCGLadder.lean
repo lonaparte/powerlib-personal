@@ -58,7 +58,7 @@ Correction (T-pde-systems §2.7 "电报方程满足能量守恒").
 -/
 
 noncomputable section
-namespace powerlib.Line
+namespace powerlib.Passive.Line
 open Matrix Set PH
 
 /-! ## The RLCG ladder -/
@@ -355,4 +355,4 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 end Ladder
 
-end powerlib.Line
+end powerlib.Passive.Line

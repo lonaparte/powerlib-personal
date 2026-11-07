@@ -12,7 +12,7 @@ A change of bases of a continuous-time linear plant `x' = A x + B u`, `y = C x +
 coordinates `x̂ = T x` with left inverse `S` (`S T = 1`), a time base `w` (`τ = w t`), new input
 coordinates `u = S_u û` and new output coordinates `ŷ = T_y y`. The rebased plant is
 `(w⁻¹ T A S, w⁻¹ T B S_u, T_y C S, T_y D S_u)` (`plant`). For a source–load interconnection
-(`Circuits.Interconnection`) the two plants share the port bases: the source reads the port
+(`Grid.Interconnection`) the two plants share the port bases: the source reads the port
 current and writes the port voltage, the load the reverse (`Bases`, `interconnection`). State
 coordinate changes (`w = 1`, ports unchanged), per-unit bases (diagonal; the instance is
 `theorem/Transform/PerUnitLTI.lean`), the current direction convention (port current coordinate
@@ -79,7 +79,7 @@ noncomputable section
 
 namespace powerlib.Transform.Rebase
 
-open Matrix Linear LinearSystems powerlib.Circuits
+open Matrix Linear LinearSystems powerlib.Grid
 
 /-! ## Constructions and their naturality -/
 
@@ -602,8 +602,8 @@ bases need inverses. -/
 /-- The impedance criterion is invariant under every change of bases with positive time base. -/
 @[tmio M, powerlib_foundation] theorem impedanceStable_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
-    connection% ((interconnection ic β) ∈ TMIO.realize powerlib.Circuits.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Circuits.Interconnection.Meets {.impedanceStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets]
+    connection% ((interconnection ic β) ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   change (interconnection ic β).ImpedanceStable ↔ ic.ImpedanceStable
   have hw' : (β.w : ℂ) ≠ 0 := by exact_mod_cast hw.ne'
   simp only [Interconnection.ImpedanceStable, returnDifference_rebase h₁ h₂ hv hi hw.ne']
@@ -623,8 +623,8 @@ bases need inverses. -/
 base. -/
 @[tmio TM, powerlib_foundation] theorem isHurwitz_closedLoop_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
-    connection% ((interconnection ic β) ∈ powerlib.Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets]
+    connection% ((interconnection ic β) ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   change IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A
   rw [closedLoop_rebase hv hi]
   exact isHurwitz_rebaseMatrix_iff
@@ -692,7 +692,7 @@ invertible bases and positive time base. -/
   rw [Interconnection.family_isLinear.den_hurwitz hP]
   ext ic
   simp only [Set.mem_ofPred_eq, Set.mem_preimage]
-  exact ((show IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets] using (isHurwitz_closedLoop_rebase_iff h₁ h₂ hv hi hw))).symm
+  exact ((show IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets] using (isHurwitz_closedLoop_rebase_iff h₁ h₂ hv hi hw))).symm
 
 /-- With the time base `1`, every flow sentence is pulled back along any change of bases with
 invertible bases. -/

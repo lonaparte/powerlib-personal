@@ -10,63 +10,63 @@ open scoped ENNReal
 namespace ConnectionAdmission
 
 -- A real public connection is admitted without assigning a presentation classification.
-theorem passive (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
-    connection% (m ∈ Circuits.RL.family.den .passive) := by
+theorem passive (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+    connection% (m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
-  exact Circuits.RL.family_isLinear.mem_den_passive (Circuits.RL.kyp m h)
+  exact Passive.RL.family_isLinear.mem_den_passive (Passive.RL.kyp m h)
 
 -- Explicit metadata is preserved; admission still checks the actual statement.
-@[powerlib_foundation] theorem foundation_connection (m : Circuits.RL.Impedance)
-    (h : 0 ≤ m.resistance) : connection% (m ∈ Circuits.RL.family.den .passive) := passive m h
+@[powerlib_foundation] theorem foundation_connection (m : Passive.RL.Impedance)
+    (h : 0 ≤ m.resistance) : connection% (m ∈ Passive.RL.family.den .passive) := passive m h
 
-@[powerlib_domain] theorem domain_connection (m : Circuits.RL.Impedance)
-    (h : 0 ≤ m.resistance) : connection% (m ∈ Circuits.RL.family.den .passive) := passive m h
+@[powerlib_domain] theorem domain_connection (m : Passive.RL.Impedance)
+    (h : 0 ≤ m.resistance) : connection% (m ∈ Passive.RL.family.den .passive) := passive m h
 
 -- Domain is a semantic classification: a static engineering model identity needs no
 -- connection wrapper. Behavioural admission remains a separate structural check.
-@[tmio M, powerlib_domain] theorem domain_model_identity (m : Circuits.RL.Impedance) :
-    (Circuits.RL.toStateSpace m).inputGain.val = (m.inductance.val)⁻¹ :=
-  Circuits.RL.toStateSpace_inputGain m
+@[tmio M, powerlib_domain] theorem domain_model_identity (m : Passive.RL.Impedance) :
+    (Passive.RL.toStateSpace m).inputGain.val = (m.inductance.val)⁻¹ :=
+  Passive.RL.toStateSpace_inputGain m
 
 -- Private fixtures are implementation evidence, never public results.
-@[powerlib_foundation] private theorem raw (m : Circuits.RL.Impedance)
+@[powerlib_foundation] private theorem raw (m : Passive.RL.Impedance)
     (h : 0 ≤ m.resistance) : m.plant.system.Passive :=
-  ⟨_, (Circuits.RL.kyp m h).passiveWith⟩
+  ⟨_, (Passive.RL.kyp m h).passiveWith⟩
 
-def fakeEndpoint (m : Circuits.RL.Impedance) : Prop := m.plant.system.Passive
+def fakeEndpoint (m : Passive.RL.Impedance) : Prop := m.plant.system.Passive
 
-private theorem aliased (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
+private theorem aliased (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
-abbrev ModelAlias := Circuits.RL.Impedance
+abbrev ModelAlias := Passive.RL.Impedance
 
 private theorem aliasedModel (m : ModelAlias) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
-private def proofDefinition (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
+private def proofDefinition (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
-private theorem hiddenRelation (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
-    connection% (m ∈ Circuits.RL.family.den .passive ↔ fakeEndpoint m) := by
+private theorem hiddenRelation (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+    connection% (m ∈ Passive.RL.family.den .passive ↔ fakeEndpoint m) := by
   unfold Statement
   exact ⟨fun _ => raw m h, fun _ => passive m h⟩
 
-private theorem rawHypothesis (m : Circuits.RL.Impedance) (h : m.plant.system.Passive) :
-    connection% (m ∈ Circuits.RL.family.den .passive) := by
+private theorem rawHypothesis (m : Passive.RL.Impedance) (h : m.plant.system.Passive) :
+    connection% (m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
-  exact Circuits.RL.family.mem_den.mpr h
+  exact Passive.RL.family.mem_den.mpr h
 
 -- A real connection does not make a raw behavioural input an admitted interface.
-private theorem hiddenInput (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
-    connection% (m ∈ (sInfHom.id (Set Circuits.RL.Impedance))
-      {m : Circuits.RL.Impedance | fakeEndpoint m}) := by
+private theorem hiddenInput (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+    connection% (m ∈ (sInfHom.id (Set Passive.RL.Impedance))
+      {m : Passive.RL.Impedance | fakeEndpoint m}) := by
   unfold Statement
   exact raw m h
 
 private theorem freshRaw (m : ConnectionFamilyFixture.Model) :
     (Port.System.autonomous m.field).Passive := Port.System.autonomous_passive m.field
 
-def AllPassive : Prop := ∀ m : Circuits.RL.Impedance, 0 ≤ m.resistance → m.plant.system.Passive
+def AllPassive : Prop := ∀ m : Passive.RL.Impedance, 0 ≤ m.resistance → m.plant.system.Passive
 
 private theorem packed : AllPassive := fun m h => raw m h
 
@@ -98,14 +98,14 @@ private theorem packed : AllPassive := fun m h => raw m h
 
 -- An arbitrary Family cannot launder a concrete model or an unconnected signal input.
 @[powerlib_foundation] private theorem genericModelInput {X Q : Type} (F : Family X Q 1 0)
-    (x : X) (m : Circuits.RL.Impedance) (_h : m.plant.system.Passive)
+    (x : X) (m : Passive.RL.Impedance) (_h : m.plant.system.Passive)
     (hx : x ∈ F.den .passive) : connection% (x ∈ F.den .passive) := hx
 
 private theorem phantomFamilyInput {X Q : Type} (_F : Family X Q 1 0)
-    (m : Circuits.RL.Impedance) (h : m.plant.system.Passive) :
-    connection% (m ∈ Circuits.RL.family.den .passive) := by
+    (m : Passive.RL.Impedance) (h : m.plant.system.Passive) :
+    connection% (m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
-  exact Circuits.RL.family.mem_den.mpr h
+  exact Passive.RL.family.mem_den.mpr h
 
 private theorem genericSignalInput {X Q : Type} (F : Family X Q 1 0) (x : X)
     (_signal : ℝ → Dynamics.State 1) (hx : x ∈ F.den .passive) :
@@ -120,7 +120,7 @@ private theorem hiddenGenericModelInterface {X Q : Type} (F : Family X Q 1 0) (x
 -- parameters. Concrete models, signals and direct ambient behaviour remain rejected.
 private theorem genericConstructedModelInput {X : Type}
     (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop) (x : X)
-    (m : Circuits.RL.Impedance) (_h : m.plant.system.Passive)
+    (m : Passive.RL.Impedance) (_h : m.plant.system.Passive)
     (hx : x ∈ (Spectral.localFamily field S U).den .passive) :
     connection% (x ∈ (Spectral.localFamily field S U).den .passive) := hx
 
@@ -157,12 +157,12 @@ theorem allTypeClaim : connection% (∀ (X Q : Type) (F : Family X Q 1 0) (x : X
 -- A claim characterized by a numeric side condition (`iffCondition`), and an existential whose
 -- witness is guarded by one (`existsGuard`).
 theorem conditionIff :
-    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics ↔ (0 : ℕ) ≤ 1) := by
+    connection% (Passive.RL.family.chain = Passive.RL.family.semantics ↔ (0 : ℕ) ≤ 1) := by
   unfold Statement
-  exact iff_of_true Circuits.RL.chain_eq_semantics (by norm_num)
+  exact iff_of_true Passive.RL.chain_eq_semantics (by norm_num)
 
-theorem guardedExists (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
-    connection% (∃ r : ℝ, 0 < r ∧ m ∈ Circuits.RL.family.den .passive) := by
+theorem guardedExists (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+    connection% (∃ r : ℝ, 0 < r ∧ m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
   exact ⟨1, one_pos, passive m h⟩
 
@@ -217,31 +217,31 @@ run_cmd liftTermElabM do
     instantiateMVars e
   let controls : Array (String × Term) := #[
     ("claim ↔ a static fact that is no comparison of numbers",
-      ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+      ← `(Passive.RL.family.chain = Passive.RL.family.semantics ↔
           LinearSystems.IsHurwitz !![(-1 : ℝ)])),
-    ("a numeric conjunct", ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ∧
+    ("a numeric conjunct", ← `(Passive.RL.family.chain = Passive.RL.family.semantics ∧
           (1 : ℕ) ≤ 2)),
     ("condition ↔ condition", ← `(((2 : ℕ) ≤ 1) ↔ ((2 : ℕ) ≤ 1))),
-    ("a comparison in Prop", ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+    ("a comparison in Prop", ← `(Passive.RL.family.chain = Passive.RL.family.semantics ↔
           ((True : Prop) ≤ ((1 : ℕ) ≤ 2)))),
-    ("behaviour inside a numeric operand", ← `(∀ m : Circuits.RL.Impedance,
-          Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+    ("behaviour inside a numeric operand", ← `(∀ m : Passive.RL.Impedance,
+          Passive.RL.family.chain = Passive.RL.family.semantics ↔
             (@ite ℕ m.plant.system.Passive (Classical.propDecidable _) 0 1) ≤ 0)),
     ("a binder over Type without a claim", ← `(∀ X : Type, Nonempty (X → X))),
     ("an existential over types without a claim", ← `(∃ X : Type, Nonempty X)),
     ("a binder over Type with a signal binder",
       ← `(∀ (X : Type) (σ : ℝ → EuclideanSpace ℝ (Fin 1)),
-          Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+          Passive.RL.family.chain = Passive.RL.family.semantics)),
     ("a condition mixed with a static fact",
-      ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+      ← `(Passive.RL.family.chain = Passive.RL.family.semantics ↔
           ((1 : ℕ) ≤ 2 ∧ LinearSystems.IsHurwitz !![(-1 : ℝ)]))),
     ("condition ↔ claim", ← `(((2 : ℕ) ≤ 1) ↔
-          Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+          Passive.RL.family.chain = Passive.RL.family.semantics)),
     ("an existential guarded by a static fact", ← `(∃ k : ℕ,
           LinearSystems.IsHurwitz !![(-1 : ℝ)] ∧
-            Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+            Passive.RL.family.chain = Passive.RL.family.semantics)),
     ("an existential with the condition after the claim", ← `(∃ k : ℕ,
-          Circuits.RL.family.chain = Circuits.RL.family.semantics ∧ k ≤ 2)),
+          Passive.RL.family.chain = Passive.RL.family.semantics ∧ k ≤ 2)),
     ("an existential with a condition and no claim",
       ← `(∃ k : ℕ, k ≤ 2 ∧ LinearSystems.IsHurwitz !![(-1 : ℝ)]))]
   for (label, stx) in controls do

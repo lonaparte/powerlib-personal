@@ -59,7 +59,8 @@ Correction (T-invariant-coordinates §1.4).
 -/
 
 noncomputable section
-namespace powerlib.PH.Models
+namespace powerlib.Passive
+open powerlib.PH
 open Matrix Set LinearSystems
 
 /-- Physical parameters of the series RLC loop. -/
@@ -293,4 +294,4 @@ constant for all segments. -/
   rw [Real.sq_sqrt (mul_nonneg hL.le hC.le), sq] at h2
   exact hLC (mul_left_cancel₀ hL.ne' h2).symm
 
-end powerlib.PH.Models
+end powerlib.Passive

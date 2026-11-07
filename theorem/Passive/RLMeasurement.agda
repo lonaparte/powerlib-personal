@@ -3,7 +3,7 @@ module theorem.Passive.RLMeasurement where
 -- Lean modules: theorem.Passive.RLMeasurement
 
 -- Scaffold of the RL model-side compatibility construction, not an I–O production interface.
--- `Circuits.RL.family` of `theorem/Passive/RL.lean` is constrained in
+-- `Passive.RL.family` of `theorem/Passive/RL.lean` is constrained in
 -- `theorem/Passive/RLMeasurement.lean` through `seed ε := family.seed (reading ε)`.
 -- The relation is a formal compatibility assumption between a model and a symbolic resistance
 -- value. It constrains candidate models within M and supplies T–M property criteria. No

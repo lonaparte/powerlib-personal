@@ -26,7 +26,7 @@ and the Hurwitz property are invariant (`spectrallyStable_puMatrix_iff`,
 `isHurwitz_puMatrix_iff`), hence every attractive sentence of the zero-input linear field
 (`holds_puMatrix_iff`); the per-unit transfer matrix
 is `Ĝ(ŝ) = D_y⁻¹ G(ω_B ŝ) D_u` (`transfer_puIO`). For a source–load interconnection
-(`Circuits.Interconnection`) with voltage/current port bases, the return difference is only
+(`Grid.Interconnection`) with voltage/current port bases, the return difference is only
 re-parametrised (`returnDifference_perUnit`), so `ImpedanceStable` is invariant
 (`impedanceStable_perUnit_iff`), and the closed-loop state matrix is the per-unit transform of
 the SI one (`closedLoopBlocks_perUnit`), with the same Hurwitz property
@@ -37,7 +37,7 @@ supply the invertibility of the bases.
 Family and connection conclusions. Scaffold: `theorem/Transform/Rebase.agda` (per-unit bases are one of its
 changes of bases).
 `den_perUnit`: on the interconnection
-family `Circuits.Interconnection.family`, the denotation of every attractive sentence and of
+family `Grid.Interconnection.family`, the denotation of every attractive sentence and of
 sampled contraction is its own pull-back along the per-unit transformation
 `ic ↦ perUnit ic b₁ b₂ vb ib ω_B` (nonzero state and port bases, positive time base; conventions
 (A) and (B) alike): SI and per-unit descriptions are stable together, with no premise on the
@@ -149,7 +149,7 @@ def puIO (bx : Fin n → ℝ) (bu by' : Fin p → ℝ) (ωB : ℝ) (m : Plant n 
 
 section Interconnection
 
-open powerlib.Circuits
+open powerlib.Grid
 
 variable {n₁ n₂ : ℕ}
 
@@ -187,10 +187,10 @@ variable (ic : Interconnection n₁ n₂ p) {b₁ : Fin n₁ → ℝ} {b₂ : Fi
 /-- Impedance stability is invariant under per-unit scaling (positive time base). -/
 @[tmio M, powerlib_foundation] theorem impedanceStable_perUnit_iff (hb₁ : ∀ i, b₁ i ≠ 0)
     (hb₂ : ∀ i, b₂ i ≠ 0) (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (hω : 0 < ωB) :
-    connection% ((perUnit ic b₁ b₂ vb ib ωB) ∈ TMIO.realize powerlib.Circuits.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Circuits.Interconnection.Meets {.impedanceStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets, perUnit]
+    connection% ((perUnit ic b₁ b₂ vb ib ωB) ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, perUnit]
   change (perUnit ic b₁ b₂ vb ib ωB).ImpedanceStable ↔ ic.ImpedanceStable
-  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets, perUnit] using (impedanceStable_rebase_iff (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂) (diagonal_mul_inv hv)
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, perUnit] using (impedanceStable_rebase_iff (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂) (diagonal_mul_inv hv)
     (diagonal_mul_inv hi) hω))
 
 /-- The per-unit closed loop is the per-unit transformation of the SI closed loop, with the
@@ -210,17 +210,17 @@ stacked state bases. -/
 subsystems. Read through the existing family endpoint. -/
 @[tmio TM, powerlib_foundation] theorem isHurwitz_closedLoop_perUnit_iff (hb₁ : ∀ i, b₁ i ≠ 0)
     (hb₂ : ∀ i, b₂ i ≠ 0) (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (hω : 0 < ωB) :
-    connection% ((perUnit ic b₁ b₂ vb ib ωB) ∈ powerlib.Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets, perUnit]
+    connection% ((perUnit ic b₁ b₂ vb ib ωB) ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, perUnit]
   change IsHurwitz (perUnit ic b₁ b₂ vb ib ωB).closedLoop.A ↔ IsHurwitz ic.closedLoop.A
-  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets, perUnit] using (isHurwitz_closedLoop_rebase_iff (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂)
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, perUnit] using (isHurwitz_closedLoop_rebase_iff (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂)
     (diagonal_mul_inv hv) (diagonal_mul_inv hi) hω))
 
 end Interconnection
 
 /-! ## The per-unit connection on the interconnection family -/
 
-open powerlib.Circuits in
+open powerlib.Grid in
 /-- SI and per-unit descriptions of a source–load interconnection are stable together: on the
 interconnection family, the denotation of every attractive sentence and of sampled contraction
 is its own pull-back along the per-unit transformation (nonzero state and port bases, positive
@@ -234,7 +234,7 @@ time base). -/
   den_rebase (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂) (diagonal_mul_inv hv)
     (diagonal_mul_inv hi) hω hP
 
-open powerlib.Circuits in
+open powerlib.Grid in
 /-- With time in SI seconds (convention (A), `ω_B = 1`), SI and per-unit descriptions satisfy
 every flow sentence together. -/
 @[tmio TM, powerlib_foundation] theorem den_perUnit_unitTime {n₁ n₂ : ℕ} {b₁ : Fin n₁ → ℝ}
@@ -245,7 +245,7 @@ every flow sentence together. -/
   den_rebase_unitTime (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂) (diagonal_mul_inv hv)
     (diagonal_mul_inv hi) rfl P
 
-open powerlib.Circuits in
+open powerlib.Grid in
 /-- With any positive time base (conventions (A) and (B) alike), the per-unit description satisfies
 a flow sentence `P` exactly when the SI description satisfies `P.timeScale ω_B`: decay at the rate
 `a` per unit of `τ = ω_B t` is decay at the rate `ω_B a` per second, and every other sentence is

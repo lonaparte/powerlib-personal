@@ -51,6 +51,7 @@ Family and connection conclusions.
 noncomputable section
 
 namespace powerlib.Network.Swing
+open powerlib.Grid (powerInjection flowWeights hasFDerivAt_powerInjection)
 
 variable {n : ℕ}
 

@@ -28,16 +28,16 @@ Results.
 * `networkModel_transfer`: off the characteristic roots and with `det Z_line ≠ 0`, its transfer
   matrix is exactly the corrected `Z_ext`.
 * `withNetwork`, `withNetwork_sourceImpedance`: so the network is an admissible `source` of
-  `Circuits.Interconnection`, with any strictly proper converter admittance realization
+  `Grid.Interconnection`, with any strictly proper converter admittance realization
   (`D = 0`, e.g. a GFL admittance) as `load`; the interconnection's source impedance is `Z_ext`
   and its return difference is `det(I + Z_ext Y)`.
 
 These are realization identities (static evidence); the behaviour of the interconnection is
-that of the family `Circuits.Interconnection.family`, not restated here.
+that of the family `Grid.Interconnection.family`, not restated here.
 -/
 
 noncomputable section
-namespace powerlib.GFL.Impedance
+namespace powerlib.Grid
 open Matrix Linear
 
 /-- State index of the blocks: `(w_d, w_q)` then `(i_line,d, i_line,q)`. -/
@@ -215,7 +215,7 @@ def Zext (line : Passive.RL) (shunt : Passive.GC) (ω : ℝ) (s : ℂ) : Matrix 
 converter admittance as the load. -/
 def withNetwork {n₂ : ℕ} (line : Passive.RL) (shunt : Passive.GC) (ω : ℝ) (load : Plant n₂ 2)
     (hD : load.D = 0) :
-    Circuits.Interconnection 4 n₂ 2 :=
+    Grid.Interconnection 4 n₂ 2 :=
   ⟨networkModel line shunt ω, load, hD⟩
 
 @[tmio M, powerlib_domain] theorem withNetwork_sourceImpedance {n₂ : ℕ} {line : Passive.RL}
@@ -233,8 +233,8 @@ def withNetwork {n₂ : ℕ} (line : Passive.RL) (shunt : Passive.GC) (ω : ℝ)
     (hZ : (line.dqImpedance ω s).det ≠ 0) :
     (withNetwork line shunt ω load hD).returnDifference s =
       (1 + Zext line shunt ω s * transfer load s).det := by
-  rw [Circuits.Interconnection.returnDifference,
+  rw [Grid.Interconnection.returnDifference,
     withNetwork_sourceImpedance hC hL load hD hM hZ]
   rfl
 
-end powerlib.GFL.Impedance
+end powerlib.Grid

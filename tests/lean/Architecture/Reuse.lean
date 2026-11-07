@@ -7,15 +7,15 @@ namespace RegistryCurrent
 
 open powerlib LinearSystems
 
-def StableContract (m : Circuits.RL.Impedance) : Prop :=
-  m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable) ∧
-    m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)
+def StableContract (m : Passive.RL.Impedance) : Prop :=
+  m ∈ Passive.RL.family.den (.flow .globallyExponentiallyStable) ∧
+    m ∈ Passive.RL.family.den (.flow .globallyExponentiallyStable)
 
-@[powerlib_domain] theorem stable (m : Circuits.RL.Impedance) (c : Linear.Certificate m.plant.A) :
+@[powerlib_domain] theorem stable (m : Passive.RL.Impedance) (c : Linear.Certificate m.plant.A) :
     connection% (StableContract m) := by
   unfold powerlib.TMIO.Statement
   unfold StableContract
-  rw [Circuits.RL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  rw [Passive.RL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   exact ⟨c.isHurwitz, c.isHurwitz⟩
 
 def unclassifiable : Nat := 0
@@ -37,7 +37,7 @@ universe u
 @[powerlib_foundation] theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by
   powerlib_search
 
-@[powerlib_domain] theorem current_application (m : Circuits.RL.Impedance)
+@[powerlib_domain] theorem current_application (m : Passive.RL.Impedance)
     (c : Linear.Certificate m.plant.A) :
     connection% (StableContract m) := by
   unfold powerlib.TMIO.Statement
@@ -98,17 +98,17 @@ open powerlib LinearSystems
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e := by powerlib_search
 
 @[powerlib_domain] theorem rl_faithful :
-    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) := by
+    connection% (Passive.RL.family.chain = Passive.RL.family.semantics) := by
   unfold powerlib.TMIO.Statement
   powerlib_search
 
-@[powerlib_foundation] theorem rl_sign (m : Circuits.RL.Impedance) :
-    connection% (m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable) ↔
+@[powerlib_foundation] theorem rl_sign (m : Passive.RL.Impedance) :
+    connection% (m ∈ Passive.RL.family.den (.flow .globallyExponentiallyStable) ↔
       0 < m.resistance) := by powerlib_search
 
-@[powerlib_foundation] theorem lcl_poles (m : Circuits.LCL.Circuit) :
-    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable) ↔
-      m ∈ TMIO.realize Circuits.LCL.Meets {.poleStable}) := by powerlib_search
+@[powerlib_foundation] theorem lcl_poles (m : Passive.LCL.Circuit) :
+    connection% (m ∈ Passive.LCL.family.den (.flow .globallyExponentiallyStable) ↔
+      m ∈ TMIO.realize Passive.LCL.Meets {.poleStable}) := by powerlib_search
 
 @[powerlib_foundation] theorem decay_global {n : ℕ}
     {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {V : EuclideanSpace ℝ (Fin n) → ℝ}
@@ -152,9 +152,9 @@ run_cmd do
   for (consumer, source) in #[
       (`AutomaticReuse.certificate_holds, `powerlib.Linear.Certificate.holds),
       (`AutomaticReuse.hurwitz_global, `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz),
-      (`AutomaticReuse.rl_faithful, `powerlib.Circuits.RL.chain_eq_semantics),
-      (`AutomaticReuse.rl_sign, `powerlib.Circuits.RL.isHurwitz_iff),
-      (`AutomaticReuse.lcl_poles, `powerlib.Circuits.LCL.isHurwitz_iff_stable),
+      (`AutomaticReuse.rl_faithful, `powerlib.Passive.RL.chain_eq_semantics),
+      (`AutomaticReuse.rl_sign, `powerlib.Passive.RL.isHurwitz_iff),
+      (`AutomaticReuse.lcl_poles, `powerlib.Passive.LCL.isHurwitz_iff_stable),
       (`AutomaticReuse.decay_global, `powerlib.Flow.QuadraticDecay.globallyExponentiallyStable),
       (`AutomaticReuse.decay_complete, `powerlib.Flow.QuadraticDecay.forwardComplete),
       (`AutomaticReuse.polynomial_global,
@@ -186,21 +186,21 @@ open powerlib LinearSystems
     (c : Linear.Certificate A) : LocalAsymptoticStable (affineLinearVectorField A 0) 0 := by
   aesop
 
-@[powerlib_domain] theorem rl_resistance (m : Circuits.RL.Impedance) (h : 0 < m.resistance) :
-    connection% (m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)) := by
+@[powerlib_domain] theorem rl_resistance (m : Passive.RL.Impedance) (h : 0 < m.resistance) :
+    connection% (m ∈ Passive.RL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   aesop
 
-@[powerlib_domain] theorem lcl_passive_damped (m : Circuits.LCL.Circuit) (hp : m.Passive)
+@[powerlib_domain] theorem lcl_passive_damped (m : Passive.LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
-    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
+    connection% (m ∈ Passive.LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   aesop
 
 @[powerlib_domain] theorem interconnection_criterion {n₁ n₂ p : ℕ}
-    (ic : Circuits.Interconnection n₁ n₂ p) (h₁ : IsHurwitz ic.source.A)
+    (ic : Grid.Interconnection n₁ n₂ p) (h₁ : IsHurwitz ic.source.A)
     (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
-    connection% (ic ∈ Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
+    connection% (ic ∈ Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   aesop
 
@@ -222,12 +222,12 @@ run_cmd do
         #[`powerlib.Linear.Certificate.isHurwitz,
           `powerlib.Linear.localAsymptoticStable_of_isHurwitz]),
       (`AutomaticChaining.rl_resistance,
-        #[`powerlib.Circuits.RL.isHurwitz_iff]),
+        #[`powerlib.Passive.RL.isHurwitz_iff]),
       (`AutomaticChaining.lcl_passive_damped,
-        #[`powerlib.Circuits.LCL.routhHurwitz_of_passive,
-          `powerlib.Circuits.LCL.stable_of_routhHurwitz, `powerlib.Circuits.LCL.isHurwitz_iff_stable]),
+        #[`powerlib.Passive.LCL.routhHurwitz_of_passive,
+          `powerlib.Passive.LCL.stable_of_routhHurwitz, `powerlib.Passive.LCL.isHurwitz_iff_stable]),
       (`AutomaticChaining.interconnection_criterion,
-        #[`powerlib.Circuits.Interconnection.isHurwitz_closedLoop_of_impedanceStable]),
+        #[`powerlib.Grid.Interconnection.isHurwitz_closedLoop_of_impedanceStable]),
       (`AutomaticChaining.polynomial_certificate,
         #[`powerlib.Nonlinear.Polynomial2.Certificate.mem_den])] do
     let names := powerlib.Registry.theoremNames env

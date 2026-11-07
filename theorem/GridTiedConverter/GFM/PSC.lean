@@ -31,8 +31,8 @@ Results.
   `theorem/NormalForm/Scalar.lean`; `absoluteAngle_iff` shows that the original law in the
   absolute angle `θ` is equivalent, pointwise in time, to the `δ`-equation.
 * Algebra (foundation): the steady-state active power, the converter-side reactive power and
-  the grid-side received reactive power from `S̄ = V̄ Ī*` (`Network.converterSide_power`,
-  `Network.gridSide_power`, `theorem/Grid/PowerFlow.lean`); the active-resistance
+  the grid-side received reactive power from `S̄ = V̄ Ī*` (`Grid.converterSide_power`,
+  `Grid.gridSide_power`, `theorem/Grid/PowerFlow.lean`); the active-resistance
   high-pass `R_a (H(s) − 1) = −R_a s/(s + ω_b)`; PSC as pure droop with `D = 1/K_p`.
 
 Family and connection conclusions.
@@ -68,7 +68,7 @@ Corrections.
 * T-power-synchronization-control §1.1 calls `Q₀ = (V V_g cos θ₀ − V_g²)/(ω₁ L)` the reactive
   power exported by the converter; that expression is the reactive power *received at the grid
   bus*.  The converter-side output reactive power is `(V² − V V_g cos θ₀)/(ω₁ L)`
-  (`Network.converterSide_power`, `Network.gridSide_power`).
+  (`Grid.converterSide_power`, `Grid.gridSide_power`).
 * The same section declares the current IN-positive (into the converter) while the line equation
   `L dĪ/dt = V̄_conv − V̄_g − jω₁ L Ī` makes `Ī` flow from the converter to the grid; here `Ī` is
   the converter-to-grid (export) current.

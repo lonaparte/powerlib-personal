@@ -72,9 +72,9 @@ Correction (to reading the §1.2.2 boxed formulas as the tube's impedances).
 -/
 
 noncomputable section
-namespace powerlib.Line.CableSchelkunoff
+namespace powerlib.Passive.Line.CableSchelkunoff
 open Filter Topology
-open powerlib.SpecialFunctions powerlib.Line.Cable
+open powerlib.SpecialFunctions powerlib.Passive.Line.Cable
 
 /-- Schelkunoff's determinant of a tube (inner radius `a`, outer radius `b`):
 `D(m) = I₁(mb) K₁(ma) − I₁(ma) K₁(mb)`. -/
@@ -1071,4 +1071,4 @@ theorem exactZmut_div_asymptotic_tendsto {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0
   tendsto_exactZmut_div_asymptotic hρ ha hab two_pos ray_re_tendsto
     (ray_sector (eventually_ge_atTop 0))
 
-end powerlib.Line.CableSchelkunoff
+end powerlib.Passive.Line.CableSchelkunoff

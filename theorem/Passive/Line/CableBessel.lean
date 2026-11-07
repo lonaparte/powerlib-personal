@@ -59,7 +59,7 @@ Family and connection conclusions.
 -/
 
 noncomputable section
-namespace powerlib.Line.CableBessel
+namespace powerlib.Passive.Line.CableBessel
 open Filter Topology Asymptotics
 open scoped Nat
 open powerlib.SpecialFunctions (besselI0 besselI1 besselSeries0 besselSeries1 besselRatio_sub_le
@@ -252,4 +252,4 @@ open MeasureTheory Set intervalIntegral
     Real.tendsto_sqrt_atTop.comp ((tendsto_id.atTop_mul_const hμ).atTop_div_const (by positivity))
   exact (coreImpedance_tendsto_surface hρ.ne' hr).comp hs
 
-end powerlib.Line.CableBessel
+end powerlib.Passive.Line.CableBessel

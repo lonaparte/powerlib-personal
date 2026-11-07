@@ -71,7 +71,8 @@ Correction (note §1.6.ter "变压器").
 -/
 
 noncomputable section
-namespace powerlib.PH.Models
+namespace powerlib.Grid
+open powerlib.PH
 open Matrix Set
 open powerlib.Network (signedIncidence signedIncidence_transpose_mulVec)
 
@@ -451,4 +452,4 @@ magnetic plus electric energy (`toPH_storage`). -/
       Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
 
-end powerlib.PH.Models
+end powerlib.Grid

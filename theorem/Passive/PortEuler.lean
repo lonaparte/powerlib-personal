@@ -3,7 +3,7 @@ import theorem.Numerics.EulerPorts
 
 /-! # The explicit Euler discretization of the RL branch and the LCL filter: realizations
 
-The circuit families `Circuits.RL.family` and `Circuits.LCL.family` discretized by the explicit
+The circuit families `Passive.RL.family` and `Passive.LCL.family` discretized by the explicit
 Euler method with a fixed step `h > 0`, with their ports: each discretization realizes the circuit
 it is designed from. Both families are linear (`family_isLinear`), so the linear laws of the
 generic template `theorem/Numerics/EulerPorts.lean` apply: the Euler zero-input map is `I + hA`,
@@ -14,13 +14,13 @@ voltages (`D = 0`), so one Euler step with a large voltage draws energy without 
 Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
-* Model layer (M): `Circuits.RL.family` (one series RL branch `L i' = v − R i`, port voltage `v`,
-  port current `i`, `theorem/Passive/RL.lean`) and `Circuits.LCL.family` (converter branch,
+* Model layer (M): `Passive.RL.family` (one series RL branch `L i' = v − R i`, port voltage `v`,
+  port current `i`, `theorem/Passive/RL.lean`) and `Passive.LCL.family` (converter branch,
   shunt capacitor, grid branch; ports: converter voltage with current `i₁`, grid voltage with
   current `−i₂`, `theorem/Passive/LCL.lean`), continuous time, read about the origin, with their
   requirement languages and translations.
-* Implementation layer (I): for each family a structure `Euler` (in `Circuits.RL` and
-  `Circuits.LCL`) of a circuit and a step `h > 0`; the system is the explicit Euler discretization
+* Implementation layer (I): for each family a structure `Euler` (in `Passive.RL` and
+  `Passive.LCL`) of a circuit and a step `h > 0`; the system is the explicit Euler discretization
   `x⁺ = x + h (A x + B u)`, output `y = C x` (the input held over the step), step length `h`,
   discrete time, exact arithmetic, fixed step. Excluded: step-size control, implicit or
   higher-order schemes, the integration error against the continuous trajectory.
@@ -38,7 +38,7 @@ Results.
 * No static result beyond the family definitions.
 
 Family and connection conclusions.
-* For `N` = `Circuits.RL` and `Circuits.LCL`: `N.eulerFamily` (every discretization read as the
+* For `N` = `Passive.RL` and `Passive.LCL`: `N.eulerFamily` (every discretization read as the
   Euler discretization of its circuit's port system, with the requirements and translation of its
   circuit read through the design) and `N.euler` (every discretization realizing its circuit,
   `Implementation.ofDesign`).
@@ -62,7 +62,7 @@ noncomputable section
 
 open LinearSystems
 
-namespace powerlib.Circuits.RL
+namespace powerlib.Passive.RL
 
 /-- The explicit Euler discretization of an RL branch with step `h > 0`. -/
 structure Euler where
@@ -125,9 +125,9 @@ voltage draws energy without bound; no nonnegative storage pays for it. -/
     (family_isLinear.mem_den_passive (kyp _ zero_le_one)) (by rw [TMIO.realize_empty]; trivial)
     one_pos (output_unit _) (by simp)
 
-end powerlib.Circuits.RL
+end powerlib.Passive.RL
 
-namespace powerlib.Circuits.LCL
+namespace powerlib.Passive.LCL
 
 /-- The explicit Euler discretization of an LCL filter with step `h > 0`. -/
 structure Euler where
@@ -202,4 +202,4 @@ with all parameters `1` is passive (its physical energy), and its discretization
     (family_isLinear.mem_den_passive (kyp _ (show unitCircuit.Passive from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using unitCircuit_passive)))
     (by rw [TMIO.realize_empty]; trivial) one_pos (output_unit _) (by simp)
 
-end powerlib.Circuits.LCL
+end powerlib.Passive.LCL

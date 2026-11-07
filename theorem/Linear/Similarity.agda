@@ -12,7 +12,7 @@ module theorem.Linear.Similarity where
 -- similar plants, on every sentence and with no minimality assumption (`reading`, `den↔`). The
 -- port-Hamiltonian family reads through itself this way: similar plants
 -- (`PH.mem_den_iff_of_similar`) and RL networks whose branches are rescaled by nonzero factors, a
--- diagonal change of coordinates (`PH.Models.rlNetworkPH_scale_mem_den_iff`). Lean
+-- diagonal change of coordinates (`Grid.rlNetworkPH_scale_mem_den_iff`). Lean
 -- (`theorem/Linear/Coordinates.lean`): `system-change` is `Plant.system_changeCoordinates`,
 -- `conjugate-invariant` is
 -- `Port.System.passive_conjugate` with the flow transport of `Similar.holds_iff`, `sentence≃` is

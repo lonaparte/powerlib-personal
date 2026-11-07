@@ -67,6 +67,7 @@ Family and connection conclusions.
 
 noncomputable section
 namespace powerlib.Network.Swing
+open powerlib.Grid (powerInjection flowWeights hasFDerivAt_powerInjection)
 open Matrix Finset Filter Topology Metric
 open powerlib.Dynamics (State)
 open scoped Real

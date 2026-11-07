@@ -42,7 +42,7 @@ Results.
   `RationalCircuit.certificate`, `Synthesis`, `rationalFamily_isLinear`.
 
 Family and connection conclusions.
-* `Circuits.LCL.rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2`: the LCL
+* `Passive.LCL.rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2`: the LCL
   family read through the submitted parameters (`family.extend`), with the circuit requirements
   and acceptance by the generic synthesizer run on the exact rational plant matrix; the sentences
   keep the LCL translations.
@@ -52,7 +52,7 @@ Family and connection conclusions.
 
 noncomputable section
 
-namespace powerlib.Circuits.LCL
+namespace powerlib.Passive.LCL
 
 open Matrix TMIO
 
@@ -421,4 +421,4 @@ plant Hurwitz. -/
       (r.certificate hr).isHurwitz)
   simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using h
 
-end powerlib.Circuits.LCL
+end powerlib.Passive.LCL

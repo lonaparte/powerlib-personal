@@ -11,7 +11,7 @@ Model boundary.
 * Lossless network with no shunt branches, constant voltage magnitudes, small-signal
   linearization of `Pᵢ = ∑ⱼ bᵢⱼ ViVj sin(θᵢ - θⱼ)` around an operating point: the
   linearized injections are `ΔP = L Δθ` with `L` the weighted Laplacian of
-  `Wᵢⱼ = bᵢⱼ ViVj cos(θᵢ⁰ - θⱼ⁰)` (`Network.hasFDerivAt_powerInjection`). The theorems below
+  `Wᵢⱼ = bᵢⱼ ViVj cos(θᵢ⁰ - θⱼ⁰)` (`Grid.hasFDerivAt_powerInjection`). The theorems below
   take `W` symmetric and entrywise nonnegative (each line has positive susceptance
   and angle difference below `π/2`).
 * Non-machine buses carry no net injection perturbation: `ΔP_b = 0`.

@@ -91,6 +91,7 @@ Proof outline.
 
 noncomputable section
 namespace powerlib.Network.Swing
+open powerlib.Grid (powerInjection flowWeights hasFDerivAt_powerInjection)
 open Matrix Finset Filter Topology Metric
 open scoped Real
 open powerlib.Dynamics (State)

@@ -35,7 +35,7 @@ Results.
 set_option linter.unnecessarySeqFocus false
 
 noncomputable section
-namespace powerlib.Line.Telegrapher
+namespace powerlib.Passive.Line.Telegrapher
 open Set
 open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiable_dt dx_dt_comm
   fderiv_combo)
@@ -153,4 +153,4 @@ solve the lossy telegrapher equations with `R' = τ_d L'`, `G' = τ_d C'`. -/
     rw [e2]
     ring
 
-end powerlib.Line.Telegrapher
+end powerlib.Passive.Line.Telegrapher

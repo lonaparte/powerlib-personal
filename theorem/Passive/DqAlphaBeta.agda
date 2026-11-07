@@ -4,23 +4,23 @@ module theorem.Passive.DqAlphaBeta where
 
 -- Scaffold of the comparison of the two descriptions of one series R–L branch: in the dq frame
 -- rotating at the constant speed `ω`, `L i̇ = v − R i − ω L J i`, and in the stationary αβ frame,
--- `L i̇ = v − R i` (`CurrentControl.family` of
--- `theorem/Passive/DqRL.lean`, models `CurrentControl.DqBranch`
+-- `L i̇ = v − R i` (`Passive.DqRL.family` of
+-- `theorem/Passive/DqRL.lean`, models `Passive.DqRL.DqBranch`
 -- `(R, L, ω)`). The αβ description is the member at speed zero, so the change of frame on models is
 -- `alphaBeta (R, L, ω) = (R, L, 0)` (`DqBranch.alphaBeta`), and changing the frame speed
 -- (`reframe`) does not change the αβ description (`alphaBeta-reframe`). Park's transformation maps
 -- the trajectories of the two descriptions one to one for every differentiable frame angle
--- (`CurrentControl.alphaBetaRL_iff_dqRL`); it is time-varying, so the two fields are not conjugate
+-- (`Passive.DqRL.alphaBetaRL_iff_dqRL`); it is time-varying, so the two fields are not conjugate
 -- — their spectra are `−R/L ± jω` and `−R/L` — and the comparison is not a reading by conjugacy
 -- (`viaConjugacy`). It holds for the attractive sentences and sampled contraction (`Attractive`),
 -- read through the plant: the dq plant is Hurwitz exactly when `R/L > 0`, at every frame speed
 -- (`spectrum`). So the attractive denotation of the family is its own pulled back along `alphaBeta`
 -- (`den-eq`): the αβ and dq descriptions are stable together, and every two frame speeds agree
 -- (`frame-invariant`). The other sentences are not compared. Lean: `linear` is the linear reading
--- of `CurrentControl.family` (`Spectral.linear_den`), `spectrum` is
--- `CurrentControl.DqBranch.isHurwitz_plant_iff` (from
--- `CurrentControl.spectrallyStable_dqRLMatrix_iff`), `damped` is `CurrentControl.mem_den_iff`,
--- `den-eq` is `CurrentControl.den_eq_alphaBeta`; `frame-invariant` is `den-eq` taken at two
+-- of `Passive.DqRL.family` (`Spectral.linear_den`), `spectrum` is
+-- `Passive.DqRL.DqBranch.isHurwitz_plant_iff` (from
+-- `Passive.DqRL.spectrallyStable_dqRLMatrix_iff`), `damped` is `Passive.DqRL.mem_den_iff`,
+-- `den-eq` is `Passive.DqRL.den_eq_alphaBeta`; `frame-invariant` is `den-eq` taken at two
 -- speeds and has no Lean statement of its own. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude

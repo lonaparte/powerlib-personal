@@ -53,7 +53,7 @@ the dq KVL is `dqRL_of_alphaBetaRL`, and the plant's field is `dqRLPlant_field`.
 -/
 
 noncomputable section
-namespace powerlib.CurrentControl
+namespace powerlib.Passive.DqRL
 open Matrix Linear LinearSystems
 open powerlib.Transform (J park rot)
 
@@ -354,4 +354,4 @@ attractive denotation of the dq family is its pull-back along the αβ reading. 
   rw [den_flow hP]
   rfl
 
-end powerlib.CurrentControl
+end powerlib.Passive.DqRL

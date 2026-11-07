@@ -33,13 +33,14 @@ Results.
 * The plant: `StateSpace.plant`, `Impedance.plant`, `plant_toImpedance`, `plant_A`,
   `isHurwitz_iff` (Hurwitz exactly when the resistance is positive).
 * Certificates: `synthesize` (the closed-form Lyapunov certificate `P = L / (2 R)` for a positive
-  resistance), `kyp` (the physical energy `L i² / 2` for a nonnegative resistance), `energy_pos`.
+  resistance), `kyp` (the physical energy `L i² / 2` for a nonnegative resistance),
+  `Impedance.energy_pos`.
 * Frequency domain: `transfer_eq` (the admittance `1 / (R + L s)`), `minimal` (no hidden mode).
 * Static evidence: `field_hold`, `supply_hold` (a constant current `c` held by the terminal
   voltage `R c` draws the power `R c²`), `family_isLinear`.
 
 Family and connection conclusions.
-* `Circuits.RL.family : Family Impedance Requirement 1 1`: every branch read as the port system
+* `Passive.RL.family : Family Impedance Requirement 1 1`: every branch read as the port system
   of its plant. Requirements: positive, nonnegative or negative resistance, lossless, a decay rate
   at least `a`, and bounds on the resistance and inductance. Lyapunov stability and passivity
   translate into a nonnegative resistance, the attractive sentences and sampled contraction into a
@@ -53,7 +54,7 @@ Family and connection conclusions.
 
 noncomputable section
 
-namespace powerlib.Circuits.RL
+namespace powerlib.Passive.RL
 
 open Matrix LinearSystems TMIO
 
@@ -299,8 +300,9 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
     m.plant.A = !![-(m.resistance / m.inductance.val)] := by
   simp [Impedance.plant, StateSpace.plant, toStateSpace_decay]
 
-/-- The physical energy `L i² / 2` is positive on every nonzero current. -/
-@[tmio M, powerlib_domain] theorem energy_pos (m : Impedance) (hR : 0 ≤ m.resistance)
+/-- The storage `xᵀ P x = L x₀²` of the KYP certificate is twice the branch energy, hence positive on
+every nonzero current (`Passive.RL.energy_pos`). -/
+@[tmio M, powerlib_domain] theorem Impedance.energy_pos (m : Impedance) (hR : 0 ≤ m.resistance)
     (x : Fin 1 → ℝ) (hx : x ≠ 0) : 0 < x ⬝ᵥ ((kyp m hR).P *ᵥ x) := by
   have h0 : x 0 ≠ 0 := by
     intro h
@@ -308,8 +310,10 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
     funext i
     fin_cases i
     exact h
-  simp [kyp, dotProduct, Matrix.mulVec]
-  nlinarith [mul_pos m.inductance.property (mul_self_pos.mpr h0)]
+  have hE := Passive.RL.energy_pos m.inductance_pos h0
+  simp only [Passive.RL.energy] at hE
+  simp [kyp, dotProduct, Matrix.mulVec, Impedance.inductance]
+  nlinarith
 
 /-- A constant current `c` held by the terminal voltage `R c` draws the power `R c²`. -/
 @[tmio M, powerlib_domain] theorem field_hold (m : Impedance) (c : ℝ) :
@@ -337,7 +341,7 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
   have hLS : ∀ m : Impedance,
       LyapunovStable (affineLinearVectorField m.plant.A 0) 0 ↔ 0 ≤ m.resistance := by
     intro m
-    refine ⟨fun h => ?_, fun hR => (kyp m hR).lyapunovStable_of_pos (energy_pos m hR)⟩
+    refine ⟨fun h => ?_, fun hR => (kyp m hR).lyapunovStable_of_pos (Impedance.energy_pos m hR)⟩
     by_contra hR
     refine Linear.unstable_of_eigenvalue 0 (μ := ((-(toStateSpace m).decay : ℝ) : ℂ))
       (v := fun _ => 1) (by simp [funext_iff]) ?_ ?_ h
@@ -417,4 +421,4 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
         (by rw [supply_hold]; linarith [not_le.mp hR]) h
   · exact iff_of_true (fun q hq => (Set.notMem_empty q hq).elim) trivial
 
-end powerlib.Circuits.RL
+end powerlib.Passive.RL

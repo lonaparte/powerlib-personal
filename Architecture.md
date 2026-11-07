@@ -52,8 +52,11 @@ tools/                       source inspection tooling and its Python tests
 Agda scaffolds live beside the Lean sources for their topic. Shared scaffolds
 remain with the general construction: family readings in `Family/`, realizations
 and record interfaces in `Stack/`, numerical bridges in `Numerics/`. The Agda
-module name follows its physical path. Lean import paths likewise follow files;
-public declaration namespaces need not change when a file moves.
+module name follows its physical path. Lean import paths likewise follow files.
+The passive-component and grid-structure sources declare in the namespaces of their
+directories: `powerlib.Passive` (with `Passive.RL`, `Passive.GC`, `Passive.LCL`,
+`Passive.DqRL`, `Passive.Line.*`) and `powerlib.Grid` (with `Grid.Interconnection`,
+`Grid.ModulationTransfer`).
 
 `Linear/` supplies general linear-system mathematics; `LTI/` specializes the
 evolution and sampling interfaces; `Spectral/` organizes spectral criteria into

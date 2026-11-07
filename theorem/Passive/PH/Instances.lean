@@ -62,7 +62,8 @@ Family and connection conclusions.
 -/
 
 noncomputable section
-namespace powerlib.PH.Models
+namespace powerlib.Passive
+open powerlib.PH
 open Matrix Set MeasureTheory
 open powerlib.Dynamics (State)
 
@@ -264,4 +265,4 @@ Implementation evidence: trajectory-level result outside the sentence language (
     connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ rfl)
 
-end powerlib.PH.Models
+end powerlib.Passive

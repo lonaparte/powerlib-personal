@@ -28,8 +28,8 @@ Results.
   `S̄ = V̄ Ī*` in dq components is `Transform.complexPower_expand`
   (`theorem/Transform/ComplexPower.lean`).
 * Complex normal modes of an LC pair (T-invariant-coordinates §1.4), with the correction of
-  the note's scale factor: `PH.Models.normalMode_sum`, `PH.Models.normalMode_diff`,
-  `PH.Models.normalMode_diff_ne_note` in `theorem/Passive/PH/RLC.lean`.
+  the note's scale factor: `Passive.normalMode_sum`, `Passive.normalMode_diff`,
+  `Passive.normalMode_diff_ne_note` in `theorem/Passive/PH/RLC.lean`.
 
 Family and connection conclusions.
 No new family: the `(θ_err, ξ)` model with gains `(a, b)`

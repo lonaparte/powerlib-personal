@@ -77,7 +77,7 @@ Correction.
 -/
 
 noncomputable section
-namespace powerlib.Line.Cable
+namespace powerlib.Passive.Line.Cable
 open Filter Topology Real
 
 /-! ## Geometric mean radius -/
@@ -718,4 +718,4 @@ DC resistance of the tube (no screening at DC). -/
   push_cast
   field_simp
 
-end powerlib.Line.Cable
+end powerlib.Passive.Line.Cable

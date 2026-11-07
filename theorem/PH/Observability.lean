@@ -112,7 +112,7 @@ def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
   simp [linearStateMatrix, losslessJ]
 
 /-- The lossless `LC` loop as a linear port-Hamiltonian plant: `J = losslessJ`, `R = 0`,
-`g = losslessG`, `Q = 1`. These are the data of the series RLC loop `PH.Models.seriesRLCPH`
+`g = losslessG`, `Q = 1`. These are the data of the series RLC loop `Passive.seriesRLCPH`
 (`theorem/Passive/PH/RLC.lean`) with `r = 0`, `L = C = 1`. -/
 def losslessLC : Port.PortHamiltonian 2 1 :=
   toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one

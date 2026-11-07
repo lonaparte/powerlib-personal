@@ -60,7 +60,7 @@ Results.
 -/
 
 noncomputable section
-namespace powerlib.GFL.Parametric.ModulationTransfer
+namespace powerlib.Grid.ModulationTransfer
 open Complex Matrix
 open powerlib.SpecialFunctions (normSq_affine_exp im_logDeriv_affine_exp)
 
@@ -411,4 +411,4 @@ differential eigenvalue `x` has algebraic multiplicity `N − 1`. -/
     simp only [modeMatrix, sub_smul]; abel
   rw [this, det_scalar_sub_ones]
 
-end powerlib.GFL.Parametric.ModulationTransfer
+end powerlib.Grid.ModulationTransfer

@@ -30,7 +30,7 @@ IMC tuning (T-gfl-control §1.4.1, Harnefors–Nee 1998):
 * `imc_transfer_stable_insufficient` (connection): for `R ≤ 0` the transfer is still the stable
   first-order lag `ω_b/(s + ω_b)` (`imc_transfer_eq`, static) but the loop satisfies no
   attractive sentence — the hidden-mode pattern of
-  `Circuits.Interconnection.portData_not_certified`.
+  `Grid.Interconnection.portData_not_certified`.
 
 Sign of the current controller (T-gfl-impedance §1.4):
 * `signedField_correct`: `σ = −1` (the IN translation `−G_ci ε` of the note) is the PI loop

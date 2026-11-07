@@ -459,7 +459,7 @@ through the unified public interface. For example:
 
 ```lean
 import powerlib
-#check powerlib.Circuits.LCL.exact_hurwitz
+#check powerlib.Passive.LCL.exact_hurwitz
 ```
 
 A theorem generated temporarily in `results/.../Certificate.lean` is a proof

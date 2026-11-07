@@ -22,43 +22,43 @@ open powerlib LinearSystems
 
 -- RL: the translation chain is the semantics connection.
 @[powerlib_domain] theorem rl_chain :
-    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) :=
-  Circuits.RL.chain_eq_semantics
+    connection% (Passive.RL.family.chain = Passive.RL.family.semantics) :=
+  Passive.RL.chain_eq_semantics
 
 -- RL: decay at a rate is exactly a bound on the time constant, read off the faithful chain.
-@[powerlib_domain] theorem rl_decay (a : ℝ) (m : Circuits.RL.Impedance) :
-    connection% (m ∈ Circuits.RL.family.den (.flow (.decay a)) ↔ a ≤ m.resistance / m.inductance.val) := by
+@[powerlib_domain] theorem rl_decay (a : ℝ) (m : Passive.RL.Impedance) :
+    connection% (m ∈ Passive.RL.family.den (.flow (.decay a)) ↔ a ≤ m.resistance / m.inductance.val) := by
   unfold powerlib.TMIO.Statement
-  rw [← (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics
-    (.flow (.decay a)) : Circuits.RL.family.Exact _)]
-  simp [Circuits.RL.family, Circuits.RL.translate, Circuits.RL.Meets]
+  rw [← (Family.chain_eq_semantics_iff.mp Passive.RL.chain_eq_semantics
+    (.flow (.decay a)) : Passive.RL.family.Exact _)]
+  simp [Passive.RL.family, Passive.RL.translate, Passive.RL.Meets]
 
 -- LCL: pole stability is exact for the attractive sentences and sampled contraction, for every
 -- circuit; passivity is sound but not exact for Lyapunov stability; within passive circuits
 -- conservation is losslessness.
-#check powerlib.Circuits.LCL.exact_hurwitz
-#check powerlib.Circuits.LCL.exact_passive
-#check powerlib.Circuits.LCL.not_exact_lyapunovStable
-#check powerlib.Circuits.LCL.exactUnder_conservative
-#check powerlib.Circuits.LCL.not_exact_conservative
-#check powerlib.Circuits.LCL.not_exact_unstable
+#check powerlib.Passive.LCL.exact_hurwitz
+#check powerlib.Passive.LCL.exact_passive
+#check powerlib.Passive.LCL.not_exact_lyapunovStable
+#check powerlib.Passive.LCL.exactUnder_conservative
+#check powerlib.Passive.LCL.not_exact_conservative
+#check powerlib.Passive.LCL.not_exact_unstable
 #check powerlib.Linear.RateMargin
-#check powerlib.Circuits.LCL.realize_passive_damped
+#check powerlib.Passive.LCL.realize_passive_damped
 
 -- Synthesis: the certificate computed from the submitted parameters places the model in a
 -- denotation.
-@[powerlib_domain] theorem rl_synthesis (m : Circuits.RL.Impedance) (hR : 0 < m.resistance) {P : Flow.Property}
+@[powerlib_domain] theorem rl_synthesis (m : Passive.RL.Impedance) (hR : 0 < m.resistance) {P : Flow.Property}
     (hP : P.Attractive) :
-    connection% (m ∈ Circuits.RL.family.den (.flow P)) := by
+    connection% (m ∈ Passive.RL.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
-  exact (Circuits.RL.synthesize m hR).isHurwitz
+  rw [Passive.RL.family_isLinear.den_hurwitz (Or.inl hP)]
+  exact (Passive.RL.synthesize m hR).isHurwitz
 
-@[powerlib_domain] theorem lcl_synthesis (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
-    connection% (m ∈ Circuits.LCL.family.den (.flow .contractive)) := by
+@[powerlib_domain] theorem lcl_synthesis (m : Passive.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    connection% (m ∈ Passive.LCL.family.den (.flow .contractive)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.LCL.family_isLinear.den_hurwitz (Or.inr rfl)]
-  exact (Circuits.LCL.synthesize m hp hd).isHurwitz
+  rw [Passive.LCL.family_isLinear.den_hurwitz (Or.inr rfl)]
+  exact (Passive.LCL.synthesize m hp hd).isHurwitz
 
 #check powerlib.Linear.Synthesis.accepts_iff_isHurwitz
 #check powerlib.Linear.Rational.accepted_eq_den
@@ -79,8 +79,8 @@ open powerlib LinearSystems
   decide +kernel
 
 -- Multi-step goals close automatically from the reviewed rules.
-@[powerlib_domain] theorem lcl_automatic (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
-    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
+@[powerlib_domain] theorem lcl_automatic (m : Passive.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    connection% (m ∈ Passive.LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   aesop
 
@@ -93,12 +93,12 @@ open powerlib LinearSystems
 -- cannot certify the closed loop when a component hides a mode, and certify every flow sentence
 -- when both components are minimal; closed-loop stability is no product of component
 -- requirements.
-#check powerlib.Circuits.Interconnection.exactUnder_hurwitz
-#check powerlib.Circuits.Interconnection.soundUnder
-#check powerlib.Circuits.Interconnection.portData_not_certified
-#check powerlib.Circuits.Interconnection.portData_certified
-#check powerlib.Circuits.Interconnection.transfer_closedLoop
-#check powerlib.Circuits.Interconnection.closedLoop_not_separable
+#check powerlib.Grid.Interconnection.exactUnder_hurwitz
+#check powerlib.Grid.Interconnection.soundUnder
+#check powerlib.Grid.Interconnection.portData_not_certified
+#check powerlib.Grid.Interconnection.portData_certified
+#check powerlib.Grid.Interconnection.transfer_closedLoop
+#check powerlib.Grid.Interconnection.closedLoop_not_separable
 #check powerlib.Linear.similar_iff_transfer_eq
 #check powerlib.Linear.transfer_certified
 #check powerlib.Linear.Similar.sentence_iff

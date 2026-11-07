@@ -45,14 +45,15 @@ Results.
   `Ygfl s`. This confirms the boxed §1.5 formula (with `K = I`) exactly; no correction needed.
 * `gflOnNetwork`, `gflOnNetwork_returnDifference`: with the network realization of
   `GridImpedance.lean` as source (its input is the IN-positive converter current, its output
-  `−v_PCC`), the GFL realization is an admissible strictly proper load of `Circuits.Interconnection`
+  `−v_PCC`), the GFL realization is an admissible strictly proper load of `Grid.Interconnection`
   and the return difference of the GFL–grid interconnection is `det (I + Z_ext Y_gfl)`.
 These are realization identities (foundation, static evidence); no stability claim is made. The
-behaviour of the interconnection is that of the family `Circuits.Interconnection.family`.
+behaviour of the interconnection is that of the family `Grid.Interconnection.family`.
 -/
 
 noncomputable section
 namespace powerlib.GFL.Impedance
+open powerlib.Grid (withNetwork withNetwork_returnDifference networkModel Zext)
 open Matrix Linear
 open powerlib.Transform (Gi Gv)
 
@@ -475,7 +476,7 @@ end Resp
   fin_cases k <;> simp [model, gflOutput, hX, Matrix.mul_apply, Fin.sum_univ_succ, resp]
 
 /-- The GFL realization as the load of the grid-side network of `GridImpedance.lean`. -/
-def gflOnNetwork (line : Passive.RL) (shunt : Passive.GC) : Circuits.Interconnection 4 10 2 :=
+def gflOnNetwork (line : Passive.RL) (shunt : Passive.GC) : Grid.Interconnection 4 10 2 :=
   withNetwork line shunt p.ω p.model p.model_D
 
 /-- Return difference of the GFL–grid interconnection: `det (I + Z_ext Y_gfl)`. -/

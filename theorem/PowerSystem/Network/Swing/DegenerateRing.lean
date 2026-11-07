@@ -46,6 +46,7 @@ Family and connection conclusions.
 
 noncomputable section
 namespace powerlib.Network.Swing
+open powerlib.Grid (powerInjection flowWeights hasFDerivAt_powerInjection)
 open Matrix Finset Filter Topology Metric ComplexConjugate
 open powerlib.Dynamics (State)
 open powerlib.Network.Swing.CycleMinimum (edgeG edgeD edgeQ amp)
