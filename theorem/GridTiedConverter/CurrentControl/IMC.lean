@@ -121,7 +121,7 @@ evidence on the model, not a connection conclusion. -/
   unfold powerlib.TMIO.Statement at h ⊢
   rw [h]
   change 0 < R + L * ωb ∧ 0 < R * ωb ↔ 0 < R / L
-  rw [div_pos_iff_of_pos_right hL]
+  rw [show 0 < R / L ↔ 0 < R from Passive.RL.decay_pos_iff (b := ⟨R, L⟩) hL]
   constructor
   · rintro ⟨-, h⟩
     exact pos_of_mul_pos_left h hω.le

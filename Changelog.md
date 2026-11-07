@@ -17,6 +17,20 @@ in Git; working statistics, build receipts and development plans are not kept he
   SMIB link, RL-network branches and the series RLC loop now carry a
   `Passive.RL` field; their former `R`/`L` names remain as accessors, and the
   restated sign-of-decay proofs now use `Passive.RL.decay_pos_iff`.
+- Gathered the remaining simple R/L/C combinations into `Passive/`. Added the
+  shunt `Passive.GC` (`Passive/Shunt.lean`, dual of `Passive.RL`) and the dq
+  forms of both (`Passive/Dq.lean`: dq impedance and admittance matrices, the
+  dq capacitor law moved from `Transform/Park`, and the dq power balance moved
+  from `GFL/DCLink/PowerBalance`); both elements gained their trajectory energy
+  balance. The GFL `Z_oc`/`Y_load` matrices are now the elements' dq
+  immittances, and `Z_ext` moved to `Grid/GridImpedance`, which no longer
+  depends on a GFL module. RL-network nodes, the GFM matching DC nodes and DC
+  links, the closed-loop filter capacitor, the dq RL plant and impedance of
+  `Passive/DqRL`, the RLCG ladder, the telegrapher equations and the line's
+  characteristic impedance now carry `Passive.RL`/`Passive.GC`. Removed the
+  restatements `dcEnergy_balance`, `pcc_eq_bridge_add_losses` and the duplicate
+  dq impedance of `Passive/DqRL`; the IMC and drive-cascade decay proofs use
+  `Passive.RL.decay_pos_iff`, the DC-droop one `Passive.GC.decay_pos_iff`.
 
 ## 2026-11-06
 

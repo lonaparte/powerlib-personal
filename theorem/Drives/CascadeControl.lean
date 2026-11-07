@@ -270,7 +270,7 @@ loop (`mem_den_iff_imc`, `CurrentControl.imc_mem_den_iff`). -/
   have hr := mem_den_iff_imc ⟨⟨R, L⟩, α⟩ hL.ne' (.flow P)
   have hc := CurrentControl.imc_mem_den_iff (R := R) hL hα hP
   unfold powerlib.TMIO.Statement at hr hc ⊢
-  exact hr.mpr (hc.mpr (div_pos hR hL))
+  exact hr.mpr (hc.mpr ((Passive.RL.decay_pos_iff (b := ⟨R, L⟩) hL).mpr hR))
 
 /-- **IMC current loop: exponential tracking of a constant reference.** For `L, R, α > 0` there
 are uniform constants `K, rate > 0` such that every closed-loop trajectory satisfies
@@ -287,7 +287,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hA : IsHurwitz (imcModel L R α).A := by
     change IsHurwitz (IMCLoop.plant ⟨⟨R, L⟩, α⟩).A
     rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% imcModel_isHurwitz_iff)]
-    have : 0 < R / L := div_pos hR hL
+    have : 0 < R / L := (Passive.RL.decay_pos_iff (b := ⟨R, L⟩) hL).mpr hR
     exact ⟨by linarith, by positivity⟩
   set e := imcEquilibrium α iref
   have he := imc_isEquilibrium L R α iref hL.ne' hα.ne'

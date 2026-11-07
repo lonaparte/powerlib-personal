@@ -1,6 +1,7 @@
 import theorem.GridTiedConverter.GFM.Matching.Matching
 import theorem.Flow.Certificate
 import theorem.Passive.Branch
+import theorem.Passive.Shunt
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.Spectral.Global
 
@@ -152,8 +153,8 @@ open powerlib.Dynamics (State)
 voltage set points, matching gain `η`, modulation amplitude `μ`, AC inductance and resistance, AC
 capacitance and conductance, load conductance and susceptance, and the load source `s_dq`. -/
 structure Model where
-  Cdc : ℝ
-  Gdc : ℝ
+  /-- The DC link: capacitance `C_dc`, conductance `G_dc`. -/
+  dcLink : Passive.GC
   Kp : ℝ
   idcRef : ℝ
   vdcRef : ℝ
@@ -161,8 +162,8 @@ structure Model where
   μ : ℝ
   /-- The filter branch `(R, L)`. -/
   filter : Passive.RL
-  C : ℝ
-  G : ℝ
+  /-- The AC filter capacitor: capacitance `C`, conductance `G`. -/
+  shunt : Passive.GC
   Gl : ℝ
   Bl : ℝ
   sd : ℝ
@@ -178,6 +179,18 @@ abbrev Model.L (m : Model) : ℝ := m.filter.L
 
 /-- The filter resistance. -/
 abbrev Model.R (m : Model) : ℝ := m.filter.R
+
+/-- The DC-link capacitance. -/
+abbrev Model.Cdc (m : Model) : ℝ := m.dcLink.C
+
+/-- The DC-link conductance. -/
+abbrev Model.Gdc (m : Model) : ℝ := m.dcLink.G
+
+/-- The AC filter capacitance. -/
+abbrev Model.C (m : Model) : ℝ := m.shunt.C
+
+/-- The AC filter conductance. -/
+abbrev Model.G (m : Model) : ℝ := m.shunt.G
 
 namespace Model
 
@@ -642,8 +655,8 @@ is the selected point. Static evidence on the model, not a connection conclusion
 C = G = 1`, `G_l = B_l = 0`, `i_dc,ref = 9/8`, `v_dc,ref = 1`, `s_dq = (0, −1/4)`, selected point
 `v* = 1`, `i* = (0, 1/4)`, `v_dq* = (1/4, 1/4)`. -/
 def example1 : Model :=
-  { Cdc := 1, Gdc := 1, Kp := 1, idcRef := 9 / 8, vdcRef := 1, η := 1, μ := 1, filter := ⟨1, 1⟩,
-    C := 1, G := 1, Gl := 0, Bl := 0, sd := 0, sq := -1 / 4, vStar := 1, idStar := 0,
+  { dcLink := ⟨1, 1⟩, Kp := 1, idcRef := 9 / 8, vdcRef := 1, η := 1, μ := 1, filter := ⟨1, 1⟩,
+    shunt := ⟨1, 1⟩, Gl := 0, Bl := 0, sd := 0, sq := -1 / 4, vStar := 1, idStar := 0,
     iqStar := 1 / 4, vdStar := 1 / 4, vqStar := 1 / 4 }
 
 /-- The example meets the equilibrium requirement. -/

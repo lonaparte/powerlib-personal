@@ -1,5 +1,6 @@
 import theorem.PH.Composition
 import theorem.Passive.Branch
+import theorem.Passive.Shunt
 import theorem.PowerSystem.Network.WeightedLaplacian
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
@@ -339,12 +340,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ## RL network with node capacitors and shunt conductances -/
 
-/-- Node parameters: capacitance to ground `C_i > 0` and shunt conductance `G_i ≥ 0`. -/
+/-- Node parameters: at each node a shunt `Passive.GC` to ground, with capacitance `C_i > 0` and
+conductance `G_i ≥ 0`. -/
 structure NodeParams (ν : Type*) where
-  C : ν → ℝ
-  G : ν → ℝ
-  C_pos : ∀ i, 0 < C i
-  G_nonneg : ∀ i, 0 ≤ G i
+  node : ν → Passive.GC
+  C_pos : ∀ i, 0 < (node i).C
+  G_nonneg : ∀ i, 0 ≤ (node i).G
+
+/-- The node capacitances. -/
+abbrev NodeParams.C {ν : Type*} (q : NodeParams ν) : ν → ℝ := fun i => (q.node i).C
+
+/-- The node conductances. -/
+abbrev NodeParams.G {ν : Type*} (q : NodeParams ν) : ν → ℝ := fun i => (q.node i).G
 
 /-- RL network with node capacitors (note §1.6.ter) on the state `β ⊕ ν = (φ, q)`.
 `J = [[0, 𝓑ᵀ], [−𝓑, 0]]`, `R = diag(r, G)`, `w = (1/L, 1/C)`, inputs are node current

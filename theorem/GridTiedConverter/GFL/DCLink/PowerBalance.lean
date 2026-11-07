@@ -1,5 +1,6 @@
 import theorem.Attributes
 import dependencies.Mathlib
+import theorem.Passive.Dq
 
 /-! # Filter power balance and the rectifier right-half-plane zero
 
@@ -15,9 +16,10 @@ One series R–L filter between the PCC and the converter bridge, dq frame rotat
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1.1, §1.5, §2.5.
 
 Results.
-* `pcc_eq_bridge_add_losses`: along any differentiable current trajectory satisfying the KVL,
+* Along any differentiable current trajectory satisfying the KVL,
   `P_PCC = P_bridge + R |i|² + L d(|i|²/2)/dt` exactly (the rotation terms
-  `ω L (i_q i_d − i_d i_q)` cancel). T-vsc-dc-voltage-control §1.1.1 boxed.
+  `ω L (i_q i_d − i_d i_q)` cancel, T-vsc-dc-voltage-control §1.1.1 boxed): this is the filter
+  branch's own law `Passive.RL.dq_power_balance`; `pcc_eq_bridge_add_losses_si` is its SI form.
 * `bridgePower_expansion`: with `v_q = 0`, `I_q0 = 0`, a constant operating current `I_d0` and
   a stiff `v_d = V_d0`, the bridge power is `P_b = V_d0 i_d − R |i|² − L (i_d i_d' + i_q i_q')`;
   its perturbation is exactly
@@ -33,33 +35,16 @@ Results.
 noncomputable section
 namespace powerlib.GFL.DCLink
 
-/-- Exact power balance of the dq R–L filter along a trajectory. -/
-@[tmio T, powerlib_foundation] theorem pcc_eq_bridge_add_losses {L R ω : ℝ}
-    {id iq : ℝ → ℝ} {vd vq vcd vcq id' iq' t : ℝ}
-    (hd : HasDerivAt id id' t) (hq : HasDerivAt iq iq' t)
-    (kvl_d : L * id' = vd - vcd - R * id t + ω * L * iq t)
-    (kvl_q : L * iq' = vq - vcq - R * iq t - ω * L * id t) :
-    HasDerivAt (fun s => (id s ^ 2 + iq s ^ 2) / 2) (id t * id' + iq t * iq') t ∧
-      vd * id t + vq * iq t =
-        (vcd * id t + vcq * iq t) + R * (id t ^ 2 + iq t ^ 2) +
-          L * (id t * id' + iq t * iq') := by
-  refine ⟨?_, ?_⟩
-  · have h := ((hd.pow 2).add (hq.pow 2)).div_const 2
-    convert h using 1
-    push_cast
-    ring
-  · linear_combination (-(id t)) * kvl_d - iq t * kvl_q
-
 /-- SI form with the amplitude-invariant `3/2` factor. -/
-@[tmio T, powerlib_foundation] theorem pcc_eq_bridge_add_losses_si {L R ω : ℝ}
+@[tmio M, powerlib_domain] theorem pcc_eq_bridge_add_losses_si {b : Passive.RL} {ω : ℝ}
     {id iq : ℝ → ℝ} {vd vq vcd vcq id' iq' t : ℝ}
     (hd : HasDerivAt id id' t) (hq : HasDerivAt iq iq' t)
-    (kvl_d : L * id' = vd - vcd - R * id t + ω * L * iq t)
-    (kvl_q : L * iq' = vq - vcq - R * iq t - ω * L * id t) :
+    (kvl_d : b.L * id' = vd - vcd - b.R * id t + ω * b.L * iq t)
+    (kvl_q : b.L * iq' = vq - vcq - b.R * iq t - ω * b.L * id t) :
     3 / 2 * (vd * id t + vq * iq t) =
-      3 / 2 * (vcd * id t + vcq * iq t) + 3 / 2 * R * (id t ^ 2 + iq t ^ 2) +
-        3 / 2 * L * (id t * id' + iq t * iq') := by
-  have h := (pcc_eq_bridge_add_losses (ω := ω) hd hq kvl_d kvl_q).2
+      3 / 2 * (vcd * id t + vcq * iq t) + 3 / 2 * b.R * (id t ^ 2 + iq t ^ 2) +
+        3 / 2 * b.L * (id t * id' + iq t * iq') := by
+  have h := (Passive.RL.dq_power_balance (ω := ω) hd hq kvl_d kvl_q).2
   linear_combination 3 / 2 * h
 
 /-- Bridge power as a function of current and current derivative (`v_q = 0`, stiff `v_d`). -/

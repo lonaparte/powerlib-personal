@@ -1,5 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Passive.Branch
+import theorem.Passive.Shunt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
@@ -464,12 +466,15 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
 
 /-! ## Limits of `Z_c(s)` and `γ(s)` with an explicit branch -/
 
-/-- Characteristic impedance `Z_c(s) = ((R' + sL')/(G' + sC'))^{1/2}`, principal branch. -/
-def ZcOf (L C R G : ℝ) (s : ℂ) : ℂ := ((R + s * L) / (G + s * C)) ^ ((2 : ℂ)⁻¹)
+/-- Characteristic impedance `Z_c(s) = (z(s)/y(s))^{1/2}`, principal branch, of a line whose unit
+length is the series branch `series` (`z = R' + L' s`, `Passive.RL.impedance`) and the shunt
+`shunt` (`y = G' + C' s`, `Passive.GC.admittance`). -/
+def ZcOf (series : Passive.RL) (shunt : Passive.GC) (s : ℂ) : ℂ :=
+  (series.impedance s / shunt.admittance s) ^ ((2 : ℂ)⁻¹)
 
-/-- Propagation constant on the same branch, `γ(s) = Z_c(s) (G' + sC')`
-(so `γ² = (R' + sL')(G' + sC')`). -/
-def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
+/-- Propagation constant on the same branch, `γ(s) = Z_c(s) y(s)` (so `γ² = z(s) y(s)`). -/
+def gammaOf (series : Passive.RL) (shunt : Passive.GC) (s : ℂ) : ℂ :=
+  ZcOf series shunt s * shunt.admittance s
 
 @[tmio T, powerlib_foundation] theorem ofReal_cpow_half {x : ℝ} (hx : 0 ≤ x) :
     (x : ℂ) ^ ((2 : ℂ)⁻¹) = (Real.sqrt x : ℂ) := by
@@ -477,15 +482,19 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   norm_num
 
 /-- DC values on the principal branch: `Z_c(0) = √(R'/G')`, `γ(0) = √(R'G')`. -/
-@[tmio M, powerlib_domain] theorem ZcOf_zero {L C R G : ℝ} (hR : 0 ≤ R) (hG : 0 < G) :
-    ZcOf L C R G 0 = (Real.sqrt (R / G) : ℂ) ∧ gammaOf L C R G 0 = (Real.sqrt (R * G) : ℂ) := by
-  have h1 : ZcOf L C R G 0 = (Real.sqrt (R / G) : ℂ) := by
+@[tmio M, powerlib_domain] theorem ZcOf_zero {series : Passive.RL} {shunt : Passive.GC}
+    (hR : 0 ≤ series.R) (hG : 0 < shunt.G) :
+    ZcOf series shunt 0 = (Real.sqrt (series.R / shunt.G) : ℂ) ∧
+      gammaOf series shunt 0 = (Real.sqrt (series.R * shunt.G) : ℂ) := by
+  set R := series.R
+  set G := shunt.G
+  have h1 : ZcOf series shunt 0 = (Real.sqrt (R / G) : ℂ) := by
     rw [ZcOf]
-    simp only [zero_mul, add_zero]
+    simp only [Passive.RL.impedance, Passive.GC.admittance, mul_zero, add_zero]
     rw [← Complex.ofReal_div, ofReal_cpow_half (div_nonneg hR hG.le)]
   refine ⟨h1, ?_⟩
   rw [gammaOf, h1]
-  simp only [zero_mul, add_zero]
+  simp only [Passive.GC.admittance, mul_zero, add_zero]
   rw [← Complex.ofReal_mul]
   congr 1
   rw [Real.sqrt_div' _ hG.le, div_mul_eq_mul_div, Real.sqrt_mul' _ hG.le]
@@ -494,7 +503,7 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   rw [Real.sq_sqrt hG.le]
 
 @[tmio T, powerlib_foundation] theorem ratio_tendsto {L C R G : ℝ} (hC : 0 < C) :
-    Filter.Tendsto (fun s : ℂ => (R + s * L) / (G + s * C)) (Bornology.cobounded ℂ)
+    Filter.Tendsto (fun s : ℂ => (R + L * s) / (G + C * s)) (Bornology.cobounded ℂ)
       (nhds ((L / C : ℝ) : ℂ)) := by
   have hC' : (C : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hC.ne'
   have hw : Filter.Tendsto (fun w : ℂ => (R * w + L) / (G * w + C)) (nhds 0)
@@ -513,21 +522,28 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   field_simp
 
 /-- High-frequency limit on the principal branch: `Z_c(s) → √(L'/C')` as `|s| → ∞`. -/
-@[tmio M, powerlib_domain] theorem ZcOf_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
-    Filter.Tendsto (ZcOf L C R G) (Bornology.cobounded ℂ) (nhds (Real.sqrt (L / C) : ℂ)) := by
-  have hslit : ((L / C : ℝ) : ℂ) ∈ Complex.slitPlane :=
+@[tmio M, powerlib_domain] theorem ZcOf_tendsto {series : Passive.RL} {shunt : Passive.GC}
+    (hL : 0 < series.L) (hC : 0 < shunt.C) :
+    Filter.Tendsto (ZcOf series shunt) (Bornology.cobounded ℂ)
+      (nhds (Real.sqrt (series.L / shunt.C) : ℂ)) := by
+  have hslit : ((series.L / shunt.C : ℝ) : ℂ) ∈ Complex.slitPlane :=
     Complex.ofReal_mem_slitPlane.mpr (div_pos hL hC)
-  have hc := (continuousAt_cpow_const (b := (2 : ℂ)⁻¹) hslit).tendsto.comp (ratio_tendsto (R := R)
-    (G := G) (L := L) hC)
+  have hc := (continuousAt_cpow_const (b := (2 : ℂ)⁻¹) hslit).tendsto.comp
+    (ratio_tendsto (R := series.R) (G := shunt.G) (L := series.L) hC)
   rw [ofReal_cpow_half (div_pos hL hC).le] at hc
   exact hc
 
 /-- High-frequency limit of the propagation constant on the same branch:
 `γ(s)/s → √(L'C')`. -/
-@[tmio M, powerlib_domain] theorem gammaOf_div_tendsto {L C R G : ℝ} (hL : 0 < L) (hC : 0 < C) :
-    Filter.Tendsto (fun s => gammaOf L C R G s / s) (Bornology.cobounded ℂ)
-      (nhds (Real.sqrt (L * C) : ℂ)) := by
-  have hlim : Filter.Tendsto (fun s : ℂ => ZcOf L C R G s * (G * s⁻¹ + C)) (Bornology.cobounded ℂ)
+@[tmio M, powerlib_domain] theorem gammaOf_div_tendsto {series : Passive.RL} {shunt : Passive.GC}
+    (hL : 0 < series.L) (hC : 0 < shunt.C) :
+    Filter.Tendsto (fun s => gammaOf series shunt s / s) (Bornology.cobounded ℂ)
+      (nhds (Real.sqrt (series.L * shunt.C) : ℂ)) := by
+  set L := series.L
+  set C := shunt.C
+  set G := shunt.G
+  have hlim : Filter.Tendsto (fun s : ℂ => ZcOf series shunt s * (G * s⁻¹ + C))
+      (Bornology.cobounded ℂ)
       (nhds ((Real.sqrt (L / C) : ℂ) * (G * 0 + C))) := by
     apply (ZcOf_tendsto hL hC).mul
     exact (((Filter.tendsto_inv₀_cobounded (α := ℂ)).const_mul (G : ℂ)).add_const (C : ℂ))
@@ -542,7 +558,8 @@ def gammaOf (L C R G : ℝ) (s : ℂ) : ℂ := ZcOf L C R G s * (G + s * C)
   rw [hval] at hlim
   apply hlim.congr'
   filter_upwards [Bornology.eventually_ne_cobounded (0 : ℂ)] with s hs
-  simp only [gammaOf]
+  simp only [gammaOf, Passive.GC.admittance]
   field_simp
+  ring
 
 end powerlib.Line.Phasor

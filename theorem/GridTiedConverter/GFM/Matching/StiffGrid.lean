@@ -1,6 +1,7 @@
 import theorem.GridTiedConverter.GFM.Matching.Matching
 import theorem.Spectral.Global
 import theorem.Passive.Branch
+import theorem.Passive.Shunt
 import theorem.Criteria.Lyapunov
 import theorem.Dynamics.Coordinates
 
@@ -126,8 +127,8 @@ open powerlib.Dynamics (State)
 matching gain `η`, modulation amplitude `μ`, DC voltage reference `u*_dc`, grid amplitude `v₀`,
 switching-inductor resistance `R_s` and inductance `L_s`. -/
 structure Model where
-  Cdc : ℝ
-  Gdc : ℝ
+  /-- The DC link: capacitance `C_dc`, conductance `G_dc`. -/
+  dcLink : Passive.GC
   Kp : ℝ
   η : ℝ
   μ : ℝ
@@ -141,6 +142,12 @@ abbrev Model.Rs (m : Model) : ℝ := m.filter.R
 
 /-- The filter inductance `L_s`. -/
 abbrev Model.Ls (m : Model) : ℝ := m.filter.L
+
+/-- The DC-link capacitance. -/
+abbrev Model.Cdc (m : Model) : ℝ := m.dcLink.C
+
+/-- The DC-link conductance. -/
+abbrev Model.Gdc (m : Model) : ℝ := m.dcLink.G
 
 namespace Model
 

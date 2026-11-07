@@ -1031,7 +1031,7 @@ only semidefinite); the LaSalle set argument on the cylinder covers it. -/
 /-- A stiff-grid model at the boundary `margin = 0`: `C_dc = L_s = R_s = η = μ = u*_dc = v₀ = 1`,
 `G_dc = 1/8`, `K_p = 0` (`ω₀ = 1`, `N = 2`, `μ²ω₀²L_s²/(4R_sN) = 1/8`). -/
 def boundaryModel : Model :=
-  { Cdc := 1, Gdc := 1 / 8, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 1, filter := ⟨1, 1⟩ }
+  { dcLink := ⟨1 / 8, 1⟩, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 1, filter := ⟨1, 1⟩ }
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem boundaryModel_margin : boundaryModel.margin = 0 := by
@@ -1590,7 +1590,7 @@ point. -/
 /-- A stiff-grid model without grid voltage (`v₀ = 0`, so no synchronizing torque) and with
 `margin = 7/8 > 0`: `C_dc = L_s = R_s = η = μ = u*_dc = 1`, `G_dc = 1`, `K_p = 0`. -/
 def noSyncModel : Model :=
-  { Cdc := 1, Gdc := 1, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 0, filter := ⟨1, 1⟩ }
+  { dcLink := ⟨1, 1⟩, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 0, filter := ⟨1, 1⟩ }
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem noSyncModel_margin : noSyncModel.margin = 7 / 8 := by

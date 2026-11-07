@@ -117,7 +117,7 @@ solve the lossy telegrapher equations with `R' = τ_d L'`, `G' = τ_d C'`. -/
 @[tmio M, powerlib_domain] theorem distortionless_isSolution (p : LosslessLine) (τ : ℝ)
     {f g f' g' : ℝ → ℝ} (hf : ∀ y, HasDerivAt f (f' y) y) (hg : ∀ y, HasDerivAt g (g' y) y)
     (a b : ℝ) :
-    IsTelegrapherSolution p.L p.C (τ * p.L) (τ * p.C) a b
+    IsTelegrapherSolution ⟨τ * p.L, p.L⟩ ⟨τ * p.C, p.C⟩ a b
       (fun q => Real.exp (-τ * q.2) * LosslessLine.travellingV p f g q)
       (fun q => Real.exp (-τ * q.2) * LosslessLine.travellingI p f g q) := by
   obtain ⟨vx, vt, ix, it, h⟩ := LosslessLine.travelling_isSolution (p := p) hf hg a b

@@ -1,4 +1,5 @@
 import theorem.Grid.GridImpedance
+import theorem.GridTiedConverter.GFL.Impedance.Algebra
 import theorem.Passive.Branch
 import theorem.Transform.ComplexPower
 import theorem.LTI.Plant
@@ -280,23 +281,23 @@ def Theta (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 
 /-- The closed form `Y = [I − G_id G_del Φ]⁻¹ [Z_oc⁻¹ + G_id G_del Θ]` (`K = I`). -/
 def Ygfl (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
-  (1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s))⁻¹ *
-    ((Zoc p.L p.R p.ω s)⁻¹ + Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Theta s))
+  (1 - Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Phi s))⁻¹ *
+    ((p.filter.dqImpedance p.ω s)⁻¹ + Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Theta s))
 
 /-- The closed form solves the port equation `Z_oc Y + V_dc G_del (Φ Y + Θ) = I`. -/
-@[tmio M, powerlib_domain] theorem Ygfl_spec {s : ℂ} (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
-    (hP : (1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0) :
-    Zoc p.L p.R p.ω s * p.Ygfl s +
+@[tmio M, powerlib_domain] theorem Ygfl_spec {s : ℂ} (hZ : (p.filter.dqImpedance p.ω s).det ≠ 0)
+    (hP : (1 - Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0) :
+    p.filter.dqImpedance p.ω s * p.Ygfl s +
       ((p.Vdc : ℂ) * p.Gdel s) • (p.Phi s * p.Ygfl s + p.Theta s) = 1 := by
-  set Z := Zoc p.L p.R p.ω s with hZdef
-  set P := 1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s) with hPdef
+  set Z := p.filter.dqImpedance p.ω s with hZdef
+  set P := 1 - Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Phi s) with hPdef
   set Y := p.Ygfl s with hYdef
   have hZu : IsUnit Z.det := isUnit_iff_ne_zero.mpr hZ
   have hPu : IsUnit P.det := isUnit_iff_ne_zero.mpr hP
-  have hPY : P * Y = Z⁻¹ + Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Theta s) := by
+  have hPY : P * Y = Z⁻¹ + Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Theta s) := by
     rw [hYdef, Ygfl, ← hPdef, ← hZdef, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hPu,
       Matrix.one_mul]
-  have hZG : Z * Gid p.L p.R p.ω p.Vdc s = -((p.Vdc : ℂ) • (1 : Matrix (Fin 2) (Fin 2) ℂ)) := by
+  have hZG : Z * Gid p.filter p.ω p.Vdc s = -((p.Vdc : ℂ) • (1 : Matrix (Fin 2) (Fin 2) ℂ)) := by
     rw [Gid, ← hZdef, Matrix.mul_neg, Matrix.mul_smul, Matrix.mul_nonsing_inv _ hZu]
   have key := congrArg (fun M => Z * M) hPY
   simp only [hPdef, Matrix.mul_sub, Matrix.sub_mul, Matrix.one_mul,
@@ -391,7 +392,7 @@ end Resp
 @[tmio M, powerlib_domain] theorem resp_lin {Y : Matrix (Fin 2) (Fin 2) ℂ} {s : ℂ} (hs : s ≠ 0)
     (ha : p.a ≠ 0) (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
-    (hY : Zoc p.L p.R p.ω s * Y + ((p.Vdc : ℂ) * p.Gdel s) • (p.Phi s * Y + p.Theta s) = 1)
+    (hY : p.filter.dqImpedance p.ω s * Y + ((p.Vdc : ℂ) * p.Gdel s) • (p.Phi s * Y + p.Theta s) = 1)
     (c : Fin 2) :
     s • p.resp Y s c = p.lin (p.resp Y s c) (unitVec c) := by
   have hL' : (p.L : ℂ) ≠ 0 := by exact_mod_cast hL
@@ -401,7 +402,7 @@ end Resp
     intro h
     apply hpll
     linear_combination h
-  have hk : ∀ k : Fin 2, (Zoc p.L p.R p.ω s * Y) k c +
+  have hk : ∀ k : Fin 2, (p.filter.dqImpedance p.ω s * Y) k c +
       (p.Vdc * p.Gdel s) * p.rd Y s c k = unitVec c k := by
     intro k
     have := congrFun (congrFun hY k) c
@@ -410,7 +411,7 @@ end Resp
     exact this
   have h0 := hk 0
   have h1 := hk 1
-  simp only [Zoc_eq, Matrix.mul_apply, Fin.sum_univ_two, Gdel, Matrix.of_apply,
+  simp only [Passive.RL.dqImpedance_eq, Matrix.mul_apply, Fin.sum_univ_two, Gdel, Matrix.of_apply,
     Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
     Matrix.cons_val_fin_one] at h0 h1
   ext i
@@ -449,8 +450,8 @@ end Resp
 @[tmio M, powerlib_domain] theorem transfer_eq_Ygfl {s : ℂ} (hs : s ≠ 0) (ha : p.a ≠ 0)
     (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
-    (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
-    (hP : (1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0)
+    (hZ : (p.filter.dqImpedance p.ω s).det ≠ 0)
+    (hP : (1 - Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0)
     (hM : (characteristicMatrix p.model.A s).det ≠ 0) :
     transfer p.model s = p.Ygfl s := by
   have hY := p.Ygfl_spec hZ hP
@@ -474,21 +475,22 @@ end Resp
   fin_cases k <;> simp [model, gflOutput, hX, Matrix.mul_apply, Fin.sum_univ_succ, resp]
 
 /-- The GFL realization as the load of the grid-side network of `GridImpedance.lean`. -/
-def gflOnNetwork (Lg Rg Rl C : ℝ) : Circuits.Interconnection 4 10 2 :=
-  withNetwork Lg Rg Rl C p.ω p.model p.model_D
+def gflOnNetwork (line : Passive.RL) (shunt : Passive.GC) : Circuits.Interconnection 4 10 2 :=
+  withNetwork line shunt p.ω p.model p.model_D
 
 /-- Return difference of the GFL–grid interconnection: `det (I + Z_ext Y_gfl)`. -/
-@[tmio M, powerlib_domain] theorem gflOnNetwork_returnDifference {Lg Rg Rl C : ℝ} (hC : C ≠ 0)
-    (hLg : Lg ≠ 0) {s : ℂ}
-    (hMn : (characteristicMatrix (networkModel Lg Rg Rl C p.ω).A s).det ≠ 0)
-    (hZn : (Zoc Lg Rg p.ω s).det ≠ 0) (hs : s ≠ 0) (ha : p.a ≠ 0)
+@[tmio M, powerlib_domain] theorem gflOnNetwork_returnDifference {line : Passive.RL}
+    {shunt : Passive.GC}
+    (hC : shunt.C ≠ 0) (hLg : line.L ≠ 0) {s : ℂ}
+    (hMn : (characteristicMatrix (networkModel line shunt p.ω).A s).det ≠ 0)
+    (hZn : (line.dqImpedance p.ω s).det ≠ 0) (hs : s ≠ 0) (ha : p.a ≠ 0)
     (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
-    (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
-    (hP : (1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0)
+    (hZ : (p.filter.dqImpedance p.ω s).det ≠ 0)
+    (hP : (1 - Gid p.filter p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0)
     (hM : (characteristicMatrix p.model.A s).det ≠ 0) :
-    (p.gflOnNetwork Lg Rg Rl C).returnDifference s =
-      (1 + Zext Lg Rg Rl C p.ω s * p.Ygfl s).det := by
+    (p.gflOnNetwork line shunt).returnDifference s =
+      (1 + Zext line shunt p.ω s * p.Ygfl s).det := by
   rw [gflOnNetwork, withNetwork_returnDifference hC hLg _ _ hMn hZn,
     p.transfer_eq_Ygfl hs ha hda hL hpll hZ hP hM]
 

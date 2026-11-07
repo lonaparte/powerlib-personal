@@ -1,4 +1,6 @@
 import theorem.PH.Composition
+import theorem.Passive.Branch
+import theorem.Passive.Shunt
 
 /-! # Staggered-grid RLCG ladder as a port-Hamiltonian model
 
@@ -61,18 +63,29 @@ open Matrix Set PH
 
 /-! ## The RLCG ladder -/
 
-/-- Per-unit-length line constants and the cell length. -/
+/-- Per-unit-length line constants and the cell length: a unit length of line is the series
+branch `series` (`R'`, `L'`) and the shunt `shunt` (`G'`, `C'`). -/
 structure LadderParams where
-  L' : ℝ
-  C' : ℝ
-  R' : ℝ
-  G' : ℝ
+  series : Passive.RL
+  shunt : Passive.GC
   Δx : ℝ
-  L'_pos : 0 < L'
-  C'_pos : 0 < C'
-  R'_nonneg : 0 ≤ R'
-  G'_nonneg : 0 ≤ G'
+  L'_pos : 0 < series.L
+  C'_pos : 0 < shunt.C
+  R'_nonneg : 0 ≤ series.R
+  G'_nonneg : 0 ≤ shunt.G
   Δx_pos : 0 < Δx
+
+/-- The inductance per unit length. -/
+abbrev LadderParams.L' (p : LadderParams) : ℝ := p.series.L
+
+/-- The capacitance per unit length. -/
+abbrev LadderParams.C' (p : LadderParams) : ℝ := p.shunt.C
+
+/-- The resistance per unit length. -/
+abbrev LadderParams.R' (p : LadderParams) : ℝ := p.series.R
+
+/-- The conductance per unit length. -/
+abbrev LadderParams.G' (p : LadderParams) : ℝ := p.shunt.G
 
 namespace Ladder
 

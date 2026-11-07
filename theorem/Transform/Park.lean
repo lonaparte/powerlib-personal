@@ -38,10 +38,12 @@ Results.
 * The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
   frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
   (`hasDerivAt_park_zero`: `d/dθ (park θ · x)|₀ = −J x`) gives the PLL frame projections of
-  `T-gfl-impedance.md` §1.3, and its consequence for a shunt capacitor (`capacitor_dq`:
-  `C dv/dt = i − ω C J v` in the dq frame) the cross term of §1.7.
-* The αβ / dq KVL of one series R–L branch and its trajectory correspondence under Park
-  (`alphaBetaRL_iff_dqRL`) are in `theorem/Passive/DqRL.lean`.
+  `T-gfl-impedance.md` §1.3.
+* The element laws read through Park are with the elements: the αβ / dq KVL of one series R–L
+  branch and its trajectory correspondence (`alphaBetaRL_iff_dqRL`) in
+  `theorem/Passive/DqRL.lean`, the node equation of a shunt G–C element in the dq frame
+  (`Passive.GC.capacitor_dq`: `C dv/dt = i − G v − ω C J v`, the cross term of
+  `T-gfl-impedance.md` §1.7) in `theorem/Passive/Dq.lean`.
 
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence
 vector is "DC in the αβ frame". It is the reverse: `clarke_mulVec_balanced` shows it is the
@@ -298,7 +300,7 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   convert hz.mul he using 1
   ring
 
-/-! ## First-order frame rotation and a shunt capacitor in the dq frame -/
+/-! ## First-order frame rotation -/
 
 /-- First-order rotation: `d/dθ (park θ · x)` at `θ = 0` is `−J x`. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_park_zero (x : Fin 2 → ℝ) :
@@ -314,24 +316,6 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
     convert ((Real.hasDerivAt_sin 0).neg.mul_const (x 0)).add
       ((Real.hasDerivAt_cos 0).mul_const (x 1)) using 1
     simp
-
-/-- Park: if `C dv_αβ/dt = i_αβ` with `v_αβ = rot θ · v`, `i_αβ = rot θ · i`, `θ' = ω`, then
-`C dv/dt = i − ω C J v`. -/
-@[tmio M, powerlib_domain] theorem capacitor_dq {C : ℝ} {θ : ℝ → ℝ} {ω : ℝ} {v i : ℝ → Fin 2 → ℝ}
-    {v' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hv : HasDerivAt v v' t)
-    (hαβ : HasDerivAt (fun s => Transform.rot (θ s) *ᵥ v s)
-      (C⁻¹ • (Transform.rot (θ t) *ᵥ i t)) t) (hC : C ≠ 0) :
-    C • v' = i t - (ω * C) • (Transform.J *ᵥ v t) := by
-  have h := Transform.hasDerivAt_rot_mulVec hθ hv
-  have heq := h.unique hαβ
-  have h2 : v' + ω • (Transform.J *ᵥ v t) = C⁻¹ • i t := by
-    have := congrArg (fun y => Transform.park (θ t) *ᵥ y) heq
-    simp only [← Matrix.mulVec_smul, Transform.park_mulVec_rot_mulVec] at this
-    rwa [Matrix.mulVec_smul] at this
-  have h3 := congrArg (fun y => C • y) h2
-  simp only [smul_add, smul_smul, mul_inv_cancel₀ hC, one_smul] at h3
-  rw [← h3, mul_comm ω C, ← smul_smul]
-  abel
 
 /-! ## Park transformation components (`conventions.md` §D4) -/
 
