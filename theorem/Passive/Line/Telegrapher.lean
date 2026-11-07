@@ -1,4 +1,4 @@
-import theorem.Circuits.Line.Bergeron
+import theorem.Passive.Line.Bergeron
 import theorem.PDE.Partial
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
@@ -10,7 +10,7 @@ of the operator on a distortionless line with its undistorted attenuated travell
 Model boundary.
 * Single uniform conductor, constant `L', C' > 0`, `R', G' ≥ 0`, unknowns
   `v, i : ℝ × ℝ → ℝ` of `(x, t)` on the whole plane (current along `+x`, the through convention
-  of `theorem/Circuits/Line/Bergeron.lean`), continuous time, no frequency dependence.
+  of `theorem/Passive/Line/Bergeron.lean`), continuous time, no frequency dependence.
 
 Source: work-sync `theory/T-telegrapher-bergeron.md` §1.1 (elimination of `i` gives the
 second-order lossy hyperbolic equation), §1.1.2 (distortionless line `R'/L' = G'/C'`,

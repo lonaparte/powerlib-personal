@@ -17,7 +17,7 @@ Source: elementary analysis, used by the swing-equation damping estimates
 (`theorem/PowerSystem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
 (`theorem/GridTiedConverter/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
 (`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
-(`theorem/GridTiedConverter/GFL/Parametric/ModulationTransfer.lean`) and the SFR nadir-time
+(`theorem/Grid/ModulationTransfer.lean`) and the SFR nadir-time
 correction (`theorem/PowerSystem/Frequency/SFR.lean`).
 
 Results.

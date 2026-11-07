@@ -12,9 +12,9 @@ generated; each block's endpoint contract is checked here by the Lean kernel.
 
 Scope.
 * Generic: real matrices over arbitrary state indices `ι₁`, `ι₂` and a finite port index `κ`; no
-  model. `theorem/Circuits/Interconnection.lean` builds the closed loop from these blocks.
+  model. `theorem/Grid/Interconnection.lean` builds the closed loop from these blocks.
 
-Source: scaffold `theorem/Circuits/ImpedanceInterconnection.agda` (source and load → closed loop;
+Source: scaffold `theorem/Grid/ImpedanceInterconnection.agda` (source and load → closed loop;
 covariance under state coordinates), through the Agda-normalized executable conversion; the
 comment lines at the top of this file record the generator, the SHA-256 of the Agda source and
 the wire encoding of the block expressions.

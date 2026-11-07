@@ -13,7 +13,7 @@ Scope.
   frequency divider, the coupling to machine buses) gives the grounded Laplacian `L + diag g`.
 * Connectivity is the reflexive-transitive closure of the relation `0 < W i j`.
 * These are algebraic statements; no power-flow or dynamic claim is made here (the lossless
-  power-flow map and its Laplacian Jacobian are in `theorem/PowerSystem/Network/PowerFlow.lean`).
+  power-flow map and its Laplacian Jacobian are in `theorem/Grid/PowerFlow.lean`).
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.1 (weighted Laplacian, `L𝟙 = 0`,
 positive semidefinite), `theory/T-local-frequency.md` §1.4 and §2.7 (nonsingularity of `B_bb`),
@@ -39,7 +39,7 @@ Results.
   (`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
   (`signedIncidence_transpose_mulVec`), and every column sums to zero
   (`signedIncidence_col_sum`). The RL-network pH models built on it are in
-  `theorem/Circuits/PH/RLNetwork.lean`, the multi-area tie-line graph in
+  `theorem/Grid/RLNetwork.lean`, the multi-area tie-line graph in
   `theorem/PowerSystem/Frequency/LFCNetwork.lean`.
 * Kron reduction: eliminating internal nodes with zero injection from a linear resistive network
   `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b` (`kron_current`), conserves the port power

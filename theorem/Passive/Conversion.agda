@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.Circuits.Conversion where
--- Lean modules: theorem.Circuits.RL
+module theorem.Passive.Conversion where
+-- Lean modules: theorem.Passive.RL
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

@@ -1,10 +1,10 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.Circuits.RLMeasurement where
--- Lean modules: theorem.Circuits.RLMeasurement
+module theorem.Passive.RLMeasurement where
+-- Lean modules: theorem.Passive.RLMeasurement
 
 -- Scaffold of the RL model-side compatibility construction, not an I–O production interface.
--- `Circuits.RL.family` of `theorem/Circuits/RL.lean` is constrained in
--- `theorem/Circuits/RLMeasurement.lean` through `seed ε := family.seed (reading ε)`.
+-- `Circuits.RL.family` of `theorem/Passive/RL.lean` is constrained in
+-- `theorem/Passive/RLMeasurement.lean` through `seed ε := family.seed (reading ε)`.
 -- The relation is a formal compatibility assumption between a model and a symbolic resistance
 -- value. It constrains candidate models within M and supplies T–M property criteria. No
 -- implementation or proof of physical production of readings or records is supplied here.
@@ -25,25 +25,26 @@ module theorem.Circuits.RLMeasurement where
 -- parameterized record interface is read through deterministic analysis (`estimate`): the
 -- composite certifies a record exactly when it certifies its estimate (`certified-records`).
 -- Satisfaction and value compatibility form one satisfaction structure, so the state-space
--- model representation (the conversion of `theorem/Circuits/Conversion.agda`) is a path along which
+-- model representation (the conversion of `theorem/Passive/Conversion.agda`) is a path along which
 -- the whole chain is constant (`stateSpace-whole`, by `theorem/TMIO/Representation.agda`). Lean:
 -- `possibly`, `certify`, `predict` are `TMIO.possibly`, `TMIO.certify`, `TMIO.predict` (the image
 -- by `TMIO.predict_eq_image`), `generated` is `TMIO.gc_certify` with `TMIO.generate_possibly`,
 -- `closure` is `TMIO.closure`, `whole` is `TMIO.relationalSeed_whole` for `Family.seed`,
--- `certified` is `Family.certified`; in `Circuits.RL`: `certify-reading` is `certify_reading`
--- (with `abs_sub_le_iff` for the interval), `predict-reading` is `predict_reading`, `candidates`
--- is `candidates`, `certified-readings` is `certified_readings` (from `chain_eq_semantics` and
--- `kernImage_den`), `closure-resistance` is `closure_resistance`, `certified-records` is
--- `certified_records` (the composite by `TMIO.generate_comp`), `stateSpace-whole` is
--- `stateSpace_whole` (by `TMIO.Seed.transport_whole`); `never-certified` is the remark in `certified_readings`
--- (`kernImage_decayRate`), not a separate statement. Nothing here is exported.
+-- `certified` is `Family.certified`; in `Passive.RLMeasurement`: `certify-reading` is
+-- `certify_reading` (with `abs_sub_le_iff` for the interval), `predict-reading` is
+-- `predict_reading`, `candidates` is `candidates`, `certified-readings` is `certified_readings`
+-- (from `chain_eq_semantics` and `kernImage_den`), `closure-resistance` is `closure_resistance`,
+-- `certified-records` is `certified_records` (the composite by `TMIO.generate_comp`),
+-- `stateSpace-whole` is `stateSpace_whole` (by `TMIO.Seed.transport_whole`); `never-certified` is
+-- the remark in `certified_readings` (`kernImage_decayRate`), not a separate statement. Nothing
+-- here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
 open import Cubical.Data.Sum using (_⊎_; inl; inr)
 open import Cubical.Relation.Nullary using (¬_)
 
-open import theorem.Circuits.Conversion
+open import theorem.Passive.Conversion
 open import theorem.TMIO.Representation
 open import theorem.Family.FamilyReading
 
@@ -113,7 +114,7 @@ module Seeds (S : Semantics) where
   certified F obs s h = Observation.certify-↔ obs (λ x → ↔-trans (realize-single F s x) (h x))
 
 -- The RL family, in impedance parameters with the state-space representation of
--- `theorem/Circuits/Conversion.agda`, over an abstract semantic layer.
+-- `theorem/Passive/Conversion.agda`, over an abstract semantic layer.
 module _ (ops : Operations) (S : Semantics) where
   open Operations ops using (Scalar)
   open Checked ops using (SS; Z; toImpedance; modelEquiv)

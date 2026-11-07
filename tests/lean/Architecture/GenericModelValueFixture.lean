@@ -1,4 +1,4 @@
-import theorem.Circuits.RL
+import theorem.Passive.RL
 
 /-! A concrete model dependency hidden by a value's generic result type. The importing
 admission test must follow this definition; its type alone contains no RL model. -/

@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.Circuits.LCLConversion where
--- Lean modules: theorem.Circuits.LCL
+module theorem.Passive.LCLConversion where
+-- Lean modules: theorem.Passive.LCL
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
@@ -9,7 +9,7 @@ open import Cubical.Foundations.Univalence
 open import Cubical.Data.Sigma
 open import Cubical.Data.Nat using (ℕ)
 open import Cubical.Data.List using (List; []; _∷_; _++_)
-import theorem.Circuits.Conversion as RL
+import theorem.Passive.Conversion as RL
 
 record Circuit (Scalar Unit : Type) : Type where
   constructor circuit

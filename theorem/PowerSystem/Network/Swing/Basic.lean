@@ -6,7 +6,7 @@ import theorem.Dynamics.Coordinates
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
-import theorem.PowerSystem.Network.PowerFlow
+import theorem.Grid.PowerFlow
 import theorem.Spectral.Equilibrium
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.InnerProductSpace.Calculus

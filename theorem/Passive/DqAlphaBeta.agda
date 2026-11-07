@@ -1,11 +1,11 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.GridTiedConverter.CurrentControl.DqAlphaBeta where
--- Lean modules: theorem.GridTiedConverter.CurrentControl.DqRL
+module theorem.Passive.DqAlphaBeta where
+-- Lean modules: theorem.Passive.DqRL
 
 -- Scaffold of the comparison of the two descriptions of one series R–L branch: in the dq frame
 -- rotating at the constant speed `ω`, `L i̇ = v − R i − ω L J i`, and in the stationary αβ frame,
 -- `L i̇ = v − R i` (`CurrentControl.family` of
--- `theorem/GridTiedConverter/CurrentControl/DqRL.lean`, models `CurrentControl.DqBranch`
+-- `theorem/Passive/DqRL.lean`, models `CurrentControl.DqBranch`
 -- `(R, L, ω)`). The αβ description is the member at speed zero, so the change of frame on models is
 -- `alphaBeta (R, L, ω) = (R, L, 0)` (`DqBranch.alphaBeta`), and changing the frame speed
 -- (`reframe`) does not change the αβ description (`alphaBeta-reframe`). Park's transformation maps

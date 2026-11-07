@@ -1,4 +1,4 @@
-import theorem.Circuits.Interconnection
+import theorem.Grid.Interconnection
 import theorem.GridTiedConverter.GFL.Impedance.Algebra
 import theorem.Transform.Park
 

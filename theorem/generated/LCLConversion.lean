@@ -12,12 +12,12 @@ the endpoint, not a translation of the Agda proof.
 
 Model boundary.
 * Parametric in the coefficient domain `Scalar` and the positive scaling factors `Unit`, with
-  arbitrary operations `scale` and `reciprocal`; `theorem/Circuits/LCL.lean` instantiates them on
+  arbitrary operations `scale` and `reciprocal`; `theorem/Passive/LCL.lean` instantiates them on
   the reals.
 * No dynamics: a map of parameters only.
 
-Source: scaffold `theorem/Circuits/LCLConversion.agda` (LCL filter: circuit parameters ↔ state-space
-parameters), reusing the RL branch scaffold `theorem/Circuits/Conversion.agda`, through the
+Source: scaffold `theorem/Passive/LCLConversion.agda` (LCL filter: circuit parameters ↔ state-space
+parameters), reusing the RL branch scaffold `theorem/Passive/Conversion.agda`, through the
 Agda-normalized executable conversion; the comment lines at the top of this file record the
 generator and the SHA-256 of both Agda sources.
 

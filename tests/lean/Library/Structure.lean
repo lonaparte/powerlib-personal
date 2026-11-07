@@ -62,9 +62,9 @@ connections (`TMIO`), model families (`Family`), the semantic layer (`Flow`, `Ma
 systems (`Linear`), the polynomial example families (`Nonlinear`), estimation (`Estimation`), admission
 and search (`Architecture`, `Attributes`, `LibrarySearch`). An entry is a directory (the modules
 directly in it) or a single module.
-* `Circuits.Interconnection` (and its generated block matrices): the interconnection of a source
-  and a load plant with ports is linear-systems theory; the circuit models of `Circuits/` are
-  engineering.
+* `Grid.Interconnection` (and its generated block matrices): the interconnection of a source and a
+  load plant with ports is linear-systems theory; the other modules of `Grid/` and the component
+  models of `Passive/` are engineering.
 * `Transform`: coordinate transformations and unit bases (Clarke, Park, space vectors, complex
   power in dq, per-unit scaling, circulant line matrices) are identities, not models.
 * `PowerSystem/Network`: only the graph and node-network modules (weighted Laplacians,
@@ -74,12 +74,12 @@ directly in it) or a single module.
   are models.
 * `PH`: generic port-Hamiltonian theory, including the mathematical counterexample family of
   `PH/Structure` (a tilted double well) and the lossless LC counterexample of `PH/Observability`;
-  concrete circuit instances are in `Circuits/PH/`.
+  concrete component instances are in `Passive/PH/`.
 * `Spectral`: the spectral family template, parametrized by an arbitrary model type.
 * `Stack`: the four-layer stack of models, implementations and records over arbitrary families. -/
 def genericEntries : Array Name := #[
   `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch, `theorem.Asymptotics,
-  `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Circuits.Interconnection,
+  `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Grid.Interconnection,
   `theorem.Criteria, `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
   `theorem.Dynamics.LaSalle, `theorem.Envelope, `theorem.Estimation, `theorem.Family, `theorem.Flow,
   `theorem.Information, `theorem.LTI, `theorem.Linear, `theorem.LinearAlgebra, `theorem.Map,
@@ -92,20 +92,21 @@ def genericEntries : Array Name := #[
   `theorem.generated.ImpedanceInterconnection]
 
 /-- Engineering models of power electronics and power systems: model families, their connection
-conclusions and the static evidence about them, including the circuit models of `Circuits/` (RL
-branch, LCL filter) and their generated parameter conversions. -/
+conclusions and the static evidence about them, including the passive components of `Passive/`
+(RL branch, LCL filter, lines) with their generated parameter conversions, and the grid structure
+of `Grid/` (RL networks, grid impedance, power flow). -/
 def engineeringEntries : Array Name := #[
-  `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis, `theorem.Circuits.PortEuler,
-  `theorem.Circuits.RL, `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion,
+  `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
+  `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,
   `theorem.generated.LCLConversion, `theorem.GridTiedConverter.CurrentControl, `theorem.Drives,
   `theorem.PowerSystem.Frequency, `theorem.GridTiedConverter.GFL,
   `theorem.GridTiedConverter.GFL.DCLink, `theorem.GridTiedConverter.GFL.Impedance,
   `theorem.GridTiedConverter.GFL.LCLine, `theorem.GridTiedConverter.GFL.Noise,
   `theorem.GridTiedConverter.GFL.Parametric, `theorem.GridTiedConverter.GFL.PowerLoop,
   `theorem.GridTiedConverter.GFM, `theorem.GridTiedConverter.GFM.Matching,
-  `theorem.GridTiedConverter.GFM.Limiting, `theorem.Circuits.Line,
-  `theorem.PowerSystem.Network.FrequencyDivider, `theorem.PowerSystem.Network.PowerFlow,
-  `theorem.PowerSystem.Network.Swing, `theorem.Numerics.EMT, `theorem.Circuits.PH,
+  `theorem.GridTiedConverter.GFM.Limiting, `theorem.Passive.Line,
+  `theorem.PowerSystem.Network.FrequencyDivider, `theorem.Grid.PowerFlow,
+  `theorem.PowerSystem.Network.Swing, `theorem.Numerics.EMT,
   `theorem.GridTiedConverter.PLL, `theorem.PowerSystem.Synchronous]
 
 /-- The registrations of a module: its own name in any table, or its directory in the generic

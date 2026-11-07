@@ -19,8 +19,8 @@ Model boundary.
 * Inductance `L > 0`; resistance `R` real, of either sign.
 * No controller, PLL, PWM, delay, switching or discretization.
 
-Source: scaffold `theorem/Circuits/Conversion.agda` (impedance parameters ↔ state-space parameters), its
-generated conversion `theorem/generated/Conversion.lean`; the linear family laws
+Source: scaffold `theorem/Passive/Conversion.agda` (impedance parameters ↔ state-space parameters),
+its generated conversion `theorem/generated/Conversion.lean`; the linear family laws
 (`theorem/Linear/Family.lean`), KYP certificates (`theorem/Port/Linear.lean`) and realization
 theory (`theorem/Linear/Realization.lean`).
 

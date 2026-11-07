@@ -1,4 +1,4 @@
-import theorem.Circuits.LCL
+import theorem.Passive.LCL
 import theorem.Numerics.EulerPorts
 
 /-! # The explicit Euler discretization of the RL branch and the LCL filter: realizations
@@ -15,9 +15,9 @@ Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
 * Model layer (M): `Circuits.RL.family` (one series RL branch `L i' = v − R i`, port voltage `v`,
-  port current `i`, `theorem/Circuits/RL.lean`) and `Circuits.LCL.family` (converter branch,
+  port current `i`, `theorem/Passive/RL.lean`) and `Circuits.LCL.family` (converter branch,
   shunt capacitor, grid branch; ports: converter voltage with current `i₁`, grid voltage with
-  current `−i₂`, `theorem/Circuits/LCL.lean`), continuous time, read about the origin, with their
+  current `−i₂`, `theorem/Passive/LCL.lean`), continuous time, read about the origin, with their
   requirement languages and translations.
 * Implementation layer (I): for each family a structure `Euler` (in `Circuits.RL` and
   `Circuits.LCL`) of a circuit and a step `h > 0`; the system is the explicit Euler discretization

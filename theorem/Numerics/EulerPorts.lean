@@ -45,7 +45,7 @@ Scope.
   apply the laws to their families (`IsPort`, `IsLinear`, the public smoothness lemma of the
   zero-input field) and publish what carries their own content — witnesses against soundness,
   passivity witnesses — in the `PortEuler.lean` modules of `theorem/GridTiedConverter/GFL/DCLink/`
-  (the linearized cascade), `theorem/Circuits/` (RL branch, LCL filter),
+  (the linearized cascade), `theorem/Passive/` (RL branch, LCL filter),
   `theorem/PowerSystem/Synchronous/` (the classical, seven-state and 11-state single-machine pH
   systems) and `theorem/GridTiedConverter/PLL/` (SRF-PLL as a port-Hamiltonian system).
 

@@ -18,7 +18,7 @@ open import Cubical.Data.Bool using (Bool; true)
 open import Cubical.Data.Empty using (⊥)
 import Cubical.Data.Unit as U
 
-open import theorem.Circuits.Conversion
+open import theorem.Passive.Conversion
 
 -- Satisfaction of requirements `Q` by complete systems: the M—I semantics of TMIO.
 record SatContext (Q : Type) : Type₁ where
@@ -76,7 +76,7 @@ noSatEquiv E = snd carried U.tt U.tt
   carried = transportSat (λ C → Realize C (λ _ → U.Unit)) E (true , λ _ _ → U.tt)
 
 -- The RL instance: requirements on impedance models, read on state-space models through the
--- executable conversion of `theorem.Circuits.Conversion`. Preservation holds by definition.
+-- executable conversion of `theorem.Passive.Conversion`. Preservation holds by definition.
 module RL (ops : Operations) {Q : Type} (meets : Impedance (Operations.Scalar ops)
     (Operations.Unit ops) → Q → Type) where
   open Checked ops

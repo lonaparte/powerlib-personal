@@ -1,5 +1,5 @@
 import theorem.TMIO.ClaimElab
-import theorem.Circuits.LCL
+import theorem.Passive.LCL
 import theorem.Linear.Synthesis
 
 /-! # Synthesis of LCL Lyapunov certificates
@@ -13,7 +13,7 @@ requirements by an evaluation of the satisfaction connection (`realize_accepted`
 keep their exact translations by the generic extension theorems.
 
 Model boundary.
-* The LCL filter of `theorem/Circuits/LCL.lean`, unchanged.
+* The LCL filter of `theorem/Passive/LCL.lean`, unchanged.
 * For a passive, damped circuit, a closed-form symbolic witness built from the model
   coefficients; every endpoint is checked by the Lean kernel.
 * For circuits submitted with rational parameters, the generic rational synthesizer of
@@ -21,7 +21,7 @@ Model boundary.
   passivity nor damping: a circuit with a negative resistance is certified whenever its plant is
   Hurwitz.
 
-Source: the LCL family and its state-space parameters (`theorem/Circuits/LCL.lean`); the
+Source: the LCL family and its state-space parameters (`theorem/Passive/LCL.lean`); the
 certificates of `theorem/Linear/Certificate.lean`; the rational synthesizer
 (`theorem/Linear/Synthesis.lean`); requirement extensions (`Family.extend`,
 `theorem/Family/Basic.lean`).

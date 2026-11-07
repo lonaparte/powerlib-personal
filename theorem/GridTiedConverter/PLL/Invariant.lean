@@ -24,12 +24,12 @@ Results.
   (The note's right-hand side `dΔω/dt` vanishes for the constant offset modelled here.)
 * Amplitude–phase coordinates of a dq current (T-invariant-coordinates §1.3): the identities
   for the dq R–L filter (`hasDerivAt_half_sq_amplitude`, `hasDerivAt_arg_current`,
-  `hasDerivAt_phase`) are in `theorem/GridTiedConverter/CurrentControl/DqRL.lean`; the complex power
+  `hasDerivAt_phase`) are in `theorem/Passive/DqRL.lean`; the complex power
   `S̄ = V̄ Ī*` in dq components is `Transform.complexPower_expand`
   (`theorem/Transform/ComplexPower.lean`).
 * Complex normal modes of an LC pair (T-invariant-coordinates §1.4), with the correction of
   the note's scale factor: `PH.Models.normalMode_sum`, `PH.Models.normalMode_diff`,
-  `PH.Models.normalMode_diff_ne_note` in `theorem/Circuits/PH/RLC.lean`.
+  `PH.Models.normalMode_diff_ne_note` in `theorem/Passive/PH/RLC.lean`.
 
 Family and connection conclusions.
 No new family: the `(θ_err, ξ)` model with gains `(a, b)`

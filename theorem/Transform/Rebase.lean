@@ -1,4 +1,4 @@
-import theorem.Circuits.Interconnection
+import theorem.Grid.Interconnection
 import theorem.Dynamics.Calculus
 import theorem.Dynamics.Transport
 import theorem.Linear.EigenMap

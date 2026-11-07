@@ -1,4 +1,4 @@
-import theorem.GridTiedConverter.GFL.Impedance.GridImpedance
+import theorem.Grid.GridImpedance
 import theorem.Transform.ComplexPower
 import theorem.LTI.Plant
 

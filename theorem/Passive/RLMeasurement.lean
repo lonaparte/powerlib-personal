@@ -1,5 +1,5 @@
 import theorem.TMIO.ClaimElab
-import theorem.Circuits.RL
+import theorem.Passive.RL
 import theorem.Estimation.ResistanceFit
 
 /-! # RL candidate models from symbolic resistance constraints
@@ -16,7 +16,7 @@ tolerance interval lies in the resistances all of whose models satisfy the sente
 depends on the inductance, which this compatibility relation cannot separate (`closure_resistance`).
 
 Model boundary.
-* The RL family of `theorem.Circuits.RL`.
+* The RL family of `theorem.Passive.RL`.
 * The formal compatibility assumption for a symbolic resistance value `r` and tolerance `ε` is
   `|r - R| ≤ ε`; this constraint supplies no information about the inductance.
 * The parameterized record interface is reduced to symbolic resistance values by the deterministic
@@ -25,7 +25,7 @@ Model boundary.
 Source: TMIO relational calculus (`Family.seed`, certification and prediction,
 `theorem/TMIO/Relation.lean`; representation change, `theorem/TMIO/Representation.lean`); the
 data analysis of `theorem/Estimation/ResistanceFit.lean`; the Agda-generated conversion of
-`theorem/Circuits/RL.lean` for the state-space representation.
+`theorem/Passive/RL.lean` for the state-space representation.
 
 Results.
 * Model compatibility: `rl` (`rl_resistance`, `rl_inductance`), `reading`, `seed`.
@@ -39,7 +39,7 @@ Results.
 Family and connection conclusions.
 * No new family: the module constrains candidate models of `Circuits.RL.family` through `seed ε`.
   This is a model-side compatibility construction; it does not establish an I–O relation. Scaffold:
-  `theorem/Circuits/RLMeasurement.agda`.
+  `theorem/Passive/RLMeasurement.agda`.
 * `certify_reading`: a reading certifies a set of models exactly when its accuracy interval lies
   in the resistances all of whose models belong to the set; `predict_reading`: the possible
   readings, derived from certification by complement; `candidates`: the candidates of a reading

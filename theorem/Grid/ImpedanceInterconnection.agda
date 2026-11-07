@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.Circuits.ImpedanceInterconnection where
--- Lean modules: theorem.Circuits.Interconnection
+module theorem.Grid.ImpedanceInterconnection where
+-- Lean modules: theorem.Grid.Interconnection
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Nat using (ℕ)

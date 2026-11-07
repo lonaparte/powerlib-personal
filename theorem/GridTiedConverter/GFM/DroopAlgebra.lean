@@ -25,7 +25,7 @@ Results.
 * Line powers (export from the source `E ∠ δ` through `R + jX` into `V ∠ 0`) from `S̄ = Ē Ī*`,
   their partial derivatives at `δ = 0, E = V`, and the rotation `R(β)`, `β = π/2 − θ_l`,
   that diagonalizes this Jacobian (T-droop-control §1.2): `Network.linePower`, `Network.lineP`,
-  `Network.lineQ`, `Network.rotation_diagonalizes` (`theorem/PowerSystem/Network/PowerFlow.lean`).
+  `Network.lineQ`, `Network.rotation_diagonalizes` (`theorem/Grid/PowerFlow.lean`).
 * Static droop `u = u* − K (y − y*)`: DC gain `−K`; shared `Δu` gives
   `Δy_k / Δy_l = K_l / K_k` (T-droop-control §1.1).
 * Governor `T_g ΔṖ_m = −ΔP_m − K_R Δω` ⇒ `ΔP_m = −K_R/(1 + T_g s) Δω` (T-droop-control §1.3).

@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.Numerics.EulerPorts where
--- Lean modules: theorem.Numerics.EulerPorts theorem.Circuits.PortEuler theorem.GridTiedConverter.GFL.DCLink.PortEuler theorem.PowerSystem.Synchronous.PortEuler theorem.GridTiedConverter.PLL.PortEuler
+-- Lean modules: theorem.Numerics.EulerPorts theorem.Passive.PortEuler theorem.GridTiedConverter.GFL.DCLink.PortEuler theorem.PowerSystem.Synchronous.PortEuler theorem.GridTiedConverter.PLL.PortEuler
 
 -- Scaffold of the explicit Euler implementation of models with ports: the model is a port system
 -- `ẋ = f(x, u)`, `y = g(x, u)`; its implementation with step `h > 0` is the discrete port system
@@ -26,7 +26,7 @@ module theorem.Numerics.EulerPorts where
 -- is `Numerics.eulerPorts_realizationCompleteUnder_linear` (exactness
 -- `eulerPorts_exact_small_step_linear`); the passivity of the discrete-gradient step, the scheme
 -- that does keep the energy balance, is `Numerics.discreteGradient_passiveWith`. These laws are
--- connection statements over arbitrary families with ports. The `PortEuler` modules of `Circuits`
+-- connection statements over arbitrary families with ports. The `PortEuler` modules of `Passive`
 -- (RL, LCL), `GridTiedConverter/GFL/DCLink` (the linearized cascade), `PowerSystem/Synchronous`
 -- (classical machine, seventh-order machine, SMIB) and `GridTiedConverter/PLL` (port-Hamiltonian
 -- PLL) define each family's Euler implementation and state what needs the family's own witness: the

@@ -28,16 +28,16 @@ Model boundary.
 * Bessel impedances: the solid-conductor surface impedance `ρm/(2πr) · I₀(mr)/I₁(mr)`
   (§1.2.1), its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an
   `O(m⁴)` remainder) and its high-frequency (skin-effect) limit (`Z/(ρm/(2πr)) → 1`,
-  `Z = ρm/(2πr) + O(1)` along `m = (1 + j)s`) are in `theorem/Circuits/Line/CableBessel.lean`
+  `Z = ρm/(2πr) + O(1)` along `m = (1 + j)s`) are in `theorem/Passive/Line/CableBessel.lean`
   (modified Bessel functions defined by their power series, integral representation, Laplace
   estimate in `theorem/SpecialFunctions/BesselI.lean`). The exact tubular (Schelkunoff) impedances,
   with `K₀`, `K₁` from `theorem/SpecialFunctions/BesselK.lean`, are in
-  `theorem/Circuits/Line/CableSchelkunoff.lean`.
+  `theorem/Passive/Line/CableSchelkunoff.lean`.
 * Tubular conductor (§1.2.2): the note's Wedepohl–Wilcox formulas `Z_in`, `Z_out`, `Z_mut`
   (`tubeZin`, `tubeZout`, `tubeZmut`; inner radius `a = r_in`, outer radius `b = r_sh`,
   `t = b − a`, any complex `m`, `coth = cosh/sinh`, `csch = 1/sinh`) are taken as given
   engineering formulas; their limits are proved here. Their relation to the exact Bessel
-  solution is proved in `theorem/Circuits/Line/CableSchelkunoff.lean`: all three exact/WW ratios
+  solution is proved in `theorem/Passive/Line/CableSchelkunoff.lean`: all three exact/WW ratios
   tend to `1` at low frequency, the inner and outer ratios also at high frequency, while the
   transfer ratio tends to `(a + b)/(2√(ab)) > 1` (Correction there). High frequency is the physical
   ray `m = (1 + j)s`, `s = 1/δ → ∞`.

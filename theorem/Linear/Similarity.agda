@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.Linear.Similarity where
--- Lean modules: theorem.Linear.Coordinates theorem.PH.Composition theorem.Circuits.PH.RLNetwork
+-- Lean modules: theorem.Linear.Coordinates theorem.PH.Composition theorem.Grid.RLNetwork
 
 -- Scaffold of changes of state coordinates of linear plants with ports. A plant changed by
 -- invertible state coordinates `x' = T x` (`S T = 1`, `T S = 1`) is a similar plant; its port

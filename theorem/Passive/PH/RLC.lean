@@ -54,7 +54,7 @@ Correction (T-invariant-coordinates §1.4).
   `normalMode_diff_ne_note`). The note also labels `|a₊|² + |a₋|² = 2η₊` "conserved": by
   `normalMode_sum` this is `4H` with `H = ½L|I|² + ½C|V|²`, so it is conserved exactly when `H`
   is, i.e. (energy balance `Ḣ = P_src − P_conv`, the dq LC model of
-  `theorem/Circuits/PH/Instances.lean`) only while the port power vanishes, not in general.
+  `theorem/Passive/PH/Instances.lean`) only while the port power vanishes, not in general.
 -/
 
 noncomputable section

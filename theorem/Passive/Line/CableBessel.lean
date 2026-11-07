@@ -51,8 +51,8 @@ Results (cable impedance and supporting special-function analysis).
   `I₀K₁ + I₁K₀ = 1/z`, in `theorem/SpecialFunctions/BesselK.lean`. The exact inner, outer and
   transfer impedances, their low-frequency (DC resistance) and high-frequency (surface
   impedance, complete screening) limits and their comparison with the Wedepohl–Wilcox
-  `coth`/`csch` formulas of `theorem/Circuits/Line/Cable.lean` are in
-  `theorem/Circuits/Line/CableSchelkunoff.lean`.
+  `coth`/`csch` formulas of `theorem/Passive/Line/Cable.lean` are in
+  `theorem/Passive/Line/CableSchelkunoff.lean`.
 
 Family and connection conclusions.
 * None: static special-function analysis; no model family.

@@ -41,7 +41,7 @@ Results.
   `T-gfl-impedance.md` §1.3, and its consequence for a shunt capacitor (`capacitor_dq`:
   `C dv/dt = i − ω C J v` in the dq frame) the cross term of §1.7.
 * The αβ / dq KVL of one series R–L branch and its trajectory correspondence under Park
-  (`alphaBetaRL_iff_dqRL`) are in `theorem/GridTiedConverter/CurrentControl/DqRL.lean`.
+  (`alphaBetaRL_iff_dqRL`) are in `theorem/Passive/DqRL.lean`.
 
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence
 vector is "DC in the αβ frame". It is the reverse: `clarke_mulVec_balanced` shows it is the

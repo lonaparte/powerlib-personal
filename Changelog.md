@@ -3,6 +3,14 @@
 Completed architectural and library changes, newest first. Detailed diffs remain
 in Git; working statistics, build receipts and development plans are not kept here.
 
+## 2026-11-07
+
+- Separated passive components from grid structure. `Passive/` holds the
+  components and their own properties (RL branch and its dq form, LCL filter,
+  RLC and LC PH instances, lines and cables); `Grid/` holds how components are
+  connected (source–load interconnection, RL networks, the grid impedance seen
+  from a converter, power flow, shared network nodes). `Circuits/` is gone.
+
 ## 2026-11-06
 
 - Grouped the engineering sources by equipment class: `GridTiedConverter/` (`GFL`,

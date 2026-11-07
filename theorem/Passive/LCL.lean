@@ -1,7 +1,7 @@
 import theorem.TMIO.ClaimElab
 import theorem.Linear.Jordan
 import theorem.Linear.Rate
-import theorem.Circuits.RL
+import theorem.Passive.RL
 import theorem.Criteria.Routh3
 import theorem.generated.LCLConversion
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -22,9 +22,9 @@ Model boundary.
   passivity is required.
 * No controller, PLL, PWM, sampling delay or further grid state.
 
-Source: scaffold `theorem/Circuits/LCLConversion.agda` (circuit parameters ↔ state-space parameters), its
-generated conversion `theorem/generated/LCLConversion.lean`; the RL branch
-(`theorem/Circuits/RL.lean`); the linear family laws (`theorem/Linear/Family.lean`), rate margins
+Source: scaffold `theorem/Passive/LCLConversion.agda` (circuit parameters ↔ state-space parameters),
+its generated conversion `theorem/generated/LCLConversion.lean`; the RL branch
+(`theorem/Passive/RL.lean`); the linear family laws (`theorem/Linear/Family.lean`), rate margins
 (`theorem/Linear/Rate.lean`) and zero Jordan chains (`theorem/Linear/Jordan.lean`); the cubic
 Routh–Hurwitz criterion.
 

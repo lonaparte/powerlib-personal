@@ -1,5 +1,5 @@
 import theorem.SpecialFunctions.BesselK
-import theorem.Circuits.Line.Cable
+import theorem.Passive.Line.Cable
 
 /-! # Exact (Schelkunoff) tubular-conductor impedances: frequency limits and Wedepohl–Wilcox
 
@@ -21,7 +21,7 @@ Model boundary.
   integrals `∫₀^∞ e^{−z cosh t}(1, cosh t) dt` of `theorem/SpecialFunctions/BesselK.lean`. The
   formulas are the definitions here (the field solution behind them is not derived). No
   proximity effect, no earth return, no insulation; the Wedepohl–Wilcox comparisons use
-  `Cable.tubeZin`, `tubeZout`, `tubeZmut` of `theorem/Circuits/Line/Cable.lean`.
+  `Cable.tubeZin`, `tubeZout`, `tubeZmut` of `theorem/Passive/Line/Cable.lean`.
 
 Source: work-sync `theory/T-cable.md` §1.2.2 ("管状导体（屏蔽层）的三个阻抗" — the note states
 the Wedepohl–Wilcox `coth`/`csch` forms and their limits: "低频 → 管的直流电阻（无屏蔽），高频

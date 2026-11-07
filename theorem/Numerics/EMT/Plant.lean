@@ -1,5 +1,5 @@
 import theorem.Numerics.ImplicitRealization
-import theorem.Circuits.LCL
+import theorem.Passive.LCL
 
 /-! # Stability of the discretized (EMT-style) models of two canonical plants
 
@@ -10,11 +10,11 @@ asserted sound only. The conclusions concern discrete numerical implementations 
 Model boundary.
 * The trapezoidal rule (the EMT companion-model integrator) and backward Euler with a fixed step
   `h > 0`, applied to the continuous plant vector fields already formalized in powerlib:
-  * the single-port RL branch of `theorem/Circuits/RL.lean` (`Circuits.RL.Impedance`): state
+  * the single-port RL branch of `theorem/Passive/RL.lean` (`Circuits.RL.Impedance`): state
     `x 0 = i` (inductor current, physical coordinate), terminal voltage `v` held constant (zero
     in perturbation coordinates), continuous field `i' = -a i + b v` with `a = R / L`,
     `b = 1 / L`, read off the plant of the RL family (`RL.Impedance.plant`);
-  * the ideal three-state LCL filter of `theorem/Circuits/LCL.lean` (`Circuits.LCL.Circuit`):
+  * the ideal three-state LCL filter of `theorem/Passive/LCL.lean` (`Circuits.LCL.Circuit`):
     state order `(x 0, x 1, x 2) = (i₁, v_C, i₂)` (converter-side current, capacitor voltage,
     grid-side current), stationary scalar phase variables, both terminal voltages `u, v_g` held
     constant, read off the plant of the LCL family (`LCL.Circuit.plant`, inputs `(u, v_g)`).

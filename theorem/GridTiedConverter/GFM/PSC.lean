@@ -32,7 +32,7 @@ Results.
   absolute angle `θ` is equivalent, pointwise in time, to the `δ`-equation.
 * Algebra (foundation): the steady-state active power, the converter-side reactive power and
   the grid-side received reactive power from `S̄ = V̄ Ī*` (`Network.converterSide_power`,
-  `Network.gridSide_power`, `theorem/PowerSystem/Network/PowerFlow.lean`); the active-resistance
+  `Network.gridSide_power`, `theorem/Grid/PowerFlow.lean`); the active-resistance
   high-pass `R_a (H(s) − 1) = −R_a s/(s + ω_b)`; PSC as pure droop with `D = 1/K_p`.
 
 Family and connection conclusions.

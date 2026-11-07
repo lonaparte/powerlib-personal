@@ -1,4 +1,4 @@
-import theorem.Circuits.RL
+import theorem.Passive.RL
 import theorem.Architecture
 import theorem.Spectral.Family
 import tests.lean.Architecture.ConnectionFamilyFixture

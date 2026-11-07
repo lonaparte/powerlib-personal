@@ -6,7 +6,7 @@ contribution requirements, and [Changelog.md](Changelog.md) records completed ch
 ## Physical organization
 
 Engineering sources are grouped by equipment class: grid-tied converters, electric drives,
-power systems, circuits and lines, and numerical simulation. Further classes (MMC, DC systems,
+power systems, passive components, grid structure, and numerical simulation. Further classes (MMC, DC systems,
 resonant converters) get a directory of their own when their first module is added. Mathematical
 sources are grouped by topic. Directory names do not assign `tmio`, foundation/domain, or
 connection status to declarations.
@@ -32,7 +32,10 @@ theorem/
     Synchronous/             synchronous machines, swing equation, equal area
     Network/                 multi-machine networks, power flow, synchronization
     Frequency/               frequency response and control
-  Circuits/                  circuit models; PH/ their PH instances; Line/ lines and cables
+  Passive/                   passive components: RL branch (also in dq), LCL filter, RLC and LC
+                             PH instances (PH/), lines and cables (Line/)
+  Grid/                      grid structure: source–load interconnection, RL networks, grid
+                             impedance seen from a converter, power flow, shared network nodes
   Numerics/                  numerical methods; EMT/ electromagnetic-transient simulation
   ...                        other mathematical topics
   generated/                 checked data generated from Agda
@@ -56,7 +59,10 @@ public declaration namespaces need not change when a file moves.
 evolution and sampling interfaces; `Spectral/` organizes spectral criteria into
 family semantics. A reading between arbitrary families lives in `Family/` even
 when a spectral family is one of its applications. General PH constructions live
-in `PH/`; RL, RLC, DC-link and LC-filter instances live in `Circuits/PH/`.
+in `PH/`; RL, RLC, DC-link and LC-filter instances live in `Passive/PH/`. A passive component's
+own properties (impedance, state equation, stored energy, dq form) live once in `Passive/`; the
+way components are connected (interconnections, networks, the grid seen from a converter) lives
+in `Grid/`.
 
 ## Knowledge nodes and relations
 
@@ -159,7 +165,7 @@ producers (`Stack.refutes`) and, through realization soundness, for some realize
 The legacy `Family.seed` encoding places requirement sets and model instances in
 its middle positions; both are on the M side of the interpretation. It does not
 establish a physical realization merely by occupying the third Seed position.
-In `Circuits/RLMeasurement`, `reading` is a model-side compatibility criterion
+In `Passive/RLMeasurement`, `reading` is a model-side compatibility criterion
 for a symbolic resistance estimate. Its constraint calculations belong to M and
 its sentence criteria to T–M. A genuine I–O reading would additionally require an
 implementation and a justified production interface; that connection is not claimed.

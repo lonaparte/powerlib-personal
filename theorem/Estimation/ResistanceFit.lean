@@ -17,7 +17,7 @@ the same generated forward map.
 
 Scope.
 * Records over an arbitrary field `K`; the analysis is the least-squares fit through the origin,
-  with no noise model. No circuit is modelled here; `theorem/Circuits/RLMeasurement.lean`
+  with no noise model. No circuit is modelled here; `theorem/Passive/RLMeasurement.lean`
   attaches real records to the RL instance.
 * A record whose samples carry no nonzero current has zero denominator; Lean's convention
   `x / 0 = 0` then returns `0`, and no theorem below concludes anything about such records.
