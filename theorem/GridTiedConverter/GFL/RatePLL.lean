@@ -1,4 +1,5 @@
 import theorem.Dynamics.Locality
+import theorem.Passive.Phasor
 import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
@@ -114,8 +115,8 @@ open Matrix
 structure Params where
   /-- grid voltage amplitude -/
   V : ℝ
-  /-- grid reactance at `ω_s` -/
-  Xg : ℝ
+  /-- grid line `R + jX` (grid reactance at `ω_s`), lossless -/
+  line : Passive.RX
   /-- synchronous angular frequency -/
   ωs : ℝ
   /-- PLL proportional gain -/
@@ -124,6 +125,11 @@ structure Params where
   ki : ℝ
   /-- frozen d-axis current `i_d` (IN-positive: into the converter) -/
   Id : ℝ
+  /-- The grid line is lossless. -/
+  line_lossless : line.R = 0
+
+/-- The grid reactance `X_g`. -/
+abbrev Params.Xg (p : Params) : ℝ := p.line.X
 
 namespace Params
 variable (p : Params)
@@ -658,7 +664,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 
 /-- An unbalanced model: `V = 0`, `X_g = ω_s = 1`, `i_d = −1` (the OUT-positive source point
 `I_d = 1`), `k_p = k_i = 0` (so `D₀ = 1`), `θ* = 0`. -/
-def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, -1⟩, 0⟩
+def offEquilibrium : Model := ⟨⟨0, ⟨0, 1⟩, 1, 0, 0, -1, rfl⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
 @[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
@@ -667,7 +673,8 @@ def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, -1⟩, 0⟩
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) (contDiff_field _)
     fun h => ?_
   have := congrArg (fun y : Dynamics.State 2 => y 1) h
-  simp [offEquilibrium, RatePLL.field, Dynamics.lift, coordField, equilibrium, vq, pllOut, gridQ,
+  simp [Params.Xg, offEquilibrium, RatePLL.field, Dynamics.lift, coordField, equilibrium, vq,
+      pllOut, gridQ,
     Params.D0, Params.Lg] at this
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
@@ -676,19 +683,20 @@ while the translation asks for an equilibrium. -/
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
-    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium])
+    (by simp [Params.Xg, family, translate]) (by simp [Params.Xg, family, Meets, offEquilibrium])
 
 /-! ### The Lyapunov translation -/
 
 /-- An undamped PLL: `V = k_i = ω_s = 1`, `k_p = X_g = i_d = 0` (so `D₀ = 1`) at `θ* = 0`; the
 field is the pendulum `θ̇ = x`, `ẋ = −sin θ`. -/
-def undampedPLL : Model := ⟨⟨1, 0, 1, 0, 1, 0⟩, 0⟩
+def undampedPLL : Model := ⟨⟨1, ⟨0, 0⟩, 1, 0, 1, 0, rfl⟩, 0⟩
 
 @[tmio M, powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 2) :
     RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
   ext i
   fin_cases i <;>
-    simp [RatePLL.field, Dynamics.lift, coordField, undampedPLL, vq, pllOut, gridQ, Params.D0,
+    simp [Params.Xg, RatePLL.field, Dynamics.lift, coordField, undampedPLL, vq, pllOut, gridQ,
+        Params.D0,
       Params.Lg]
 
 /-- The pendulum energy `1 − cos θ + x²/2`. -/
@@ -718,7 +726,7 @@ conserved and has a strict minimum on `|θ| < π` (`Dynamics.pendulumEnergy_pos`
   change LyapunovStable _ _
   have hpt : equilibrium undampedPLL.θ = 0 := by
     ext i
-    fin_cases i <;> simp [equilibrium, undampedPLL]
+    fin_cases i <;> simp [Params.Xg, equilibrium, undampedPLL]
   rw [hpt]
   have hcont : Continuous fun y : Dynamics.State 2 => y 0 :=
     (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : Dynamics.State 2 →L[ℝ] ℝ).continuous
@@ -744,6 +752,6 @@ equilibrium whose Jacobian has trace `0`. -/
   refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .jacobianStable)
     (by simp [family, translate]) fun hs => ?_
   have := (hs : Meets undampedPLL .jacobianStable).1
-  simp [jac, Matrix.trace_fin_two, undampedPLL, Params.D0, Params.Lg] at this
+  simp [Params.Xg, jac, Matrix.trace_fin_two, undampedPLL, Params.D0, Params.Lg] at this
 
 end powerlib.GFL.RatePLL

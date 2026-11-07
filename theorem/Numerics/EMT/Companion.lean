@@ -1,4 +1,6 @@
 import theorem.Attributes
+import theorem.Passive.Branch
+import theorem.Passive.Shunt
 import dependencies.Mathlib
 
 /-! # Trapezoidal companion models and the EMT nodal equation
@@ -9,20 +11,23 @@ grounded through positive conductances.
 
 Model boundary.
 * A lumped network with `N` non-ground nodes and a finite set of two-terminal branches; every
-  branch is a linear resistor, inductor or capacitor with a constant parameter (no switches, no
-  controlled sources, no mutual coupling, no transmission lines), fixed step `h`.
+  branch is a linear resistor, a series RL branch `Passive.RL` or a shunt G–C element
+  `Passive.GC` with constant parameters (an ideal inductor or capacitor is the lossless one; no
+  switches, no controlled sources, no mutual coupling, no transmission lines), fixed step `h`.
 * Each branch runs from terminal `p` to terminal `q` (a node or ground); branch voltage
   `v_b = V_p - V_q`, branch current `i_b` flows from `p` to `q` (passive sign convention). KCL
   at node `k`: the branch currents leaving `k` sum to the external injection `J_k`.
 * Time is discrete (`n : ℕ`); the element laws are the trapezoidal rule applied to
-  `L di/dt = v` and `C dv/dt = i` (resistor laws are algebraic at every step).
+  `L di/dt = v − R i` and `C dv/dt = i − G v` (resistor laws are algebraic at every step).
 
 Source: work-sync theory/T-emt-simulation.md §1.2–§1.6, §2.2.
 
 Results.
-* `inductor_companion_iff`, `capacitor_companion_iff` — the trapezoidal rule on the branch ODE is
-  exactly the companion form `i_{n+1} = G v_{n+1} + i_h` with `G_L = h/(2L)`,
-  `i_h^L = i_n + G_L v_n` and `G_C = 2C/h`, `i_h^C = -(i_n + G_C v_n)` (coefficients checked).
+* `branch_companion_iff`, `shunt_companion_iff` — the trapezoidal rule on the element ODE is
+  exactly the companion form `i_{n+1} = G v_{n+1} + i_h` with `G_L = h/(2L + hR)`,
+  `i_h^L = ((2L − hR) i_n + h v_n)/(2L + hR)` and `G_C = 2C/h + G`,
+  `i_h^C = -(i_n + (2C/h − G) v_n)` (coefficients checked; `R = 0`, `G = 0` give the ideal
+  inductor `h/(2L)`, `i_n + G_L v_n` and capacitor `2C/h`, `-(i_n + G_C v_n)`).
 * `trapezoidalNetwork_iff_companion` — trapezoidal branch laws + KCL at every step ⇔ the nodal
   companion equation `G_n V_{n+1} = J_{n+1} - Σ_b i_h,b a_b` plus the branch-current update.
   The matrix `G_n = Σ_b G_b a_b a_bᵀ` does not depend on the step index (constant matrix).
@@ -30,11 +35,13 @@ Results.
 * `nodalMatrix_posSemidef` — nonnegative branch conductances ⇒ `G_n ⪰ 0`.
 * `nodalMatrix_posDef` — if additionally every node is joined to ground by a chain of
   positive-conductance branches, `G_n ≻ 0`; `network_nodalMatrix_posDef` applies this to
-  positive `R, L, C` and `h > 0`, so every implicit EMT step is uniquely solvable.
+  positive `R, L, C`, nonnegative losses and `h > 0`, so every implicit EMT step is uniquely
+  solvable.
 
 Corrections.
 * T-emt-simulation.md §2.2: the note attributes the symmetry of `G_n^disc` to "`G_L = G_C⁻¹`".
-  That relation is false in general (`G_L G_C = L⁻¹ C`, not `1`) and is irrelevant: `G_n` is
+  That relation is false in general (for ideal elements `G_L G_C = L⁻¹ C`, not `1`) and is
+  irrelevant: `G_n` is
   symmetric because each branch contributes the symmetric stamp `G_b a_b a_bᵀ`
   (`nodalMatrix_transpose`), for any real branch conductances.
 -/
@@ -45,60 +52,81 @@ open Matrix
 
 /-! ### Element companion models -/
 
-/-- Inductor `L di/dt = v`: the trapezoidal step equals the companion form. -/
-@[tmio T, powerlib_foundation] theorem inductor_companion_iff {L h : ℝ} (hL : L ≠ 0)
-    (i₀ v₀ i₁ v₁ : ℝ) :
-    i₁ = i₀ + h / 2 * (v₀ / L + v₁ / L) ↔ i₁ = h / (2 * L) * v₁ + (i₀ + h / (2 * L) * v₀) := by
-  constructor <;> intro hk <;> rw [hk] <;> field_simp <;> ring
+/-- Series RL branch `L di/dt = v − R i`: the trapezoidal step equals the companion form
+`i₁ = G v₁ + i_h`, `G = h/(2L + hR)`, `i_h = ((2L − hR) i₀ + h v₀)/(2L + hR)`. -/
+@[tmio M, powerlib_domain] theorem branch_companion_iff {b : Passive.RL} {h : ℝ} (hL : b.L ≠ 0)
+    (hD : 2 * b.L + h * b.R ≠ 0) (i₀ v₀ i₁ v₁ : ℝ) :
+    i₁ = i₀ + h / 2 * ((v₀ - b.R * i₀) / b.L + (v₁ - b.R * i₁) / b.L) ↔
+      i₁ = h / (2 * b.L + h * b.R) * v₁ +
+        ((2 * b.L - h * b.R) * i₀ + h * v₀) / (2 * b.L + h * b.R) := by
+  have e1 : i₀ + h / 2 * ((v₀ - b.R * i₀) / b.L + (v₁ - b.R * i₁) / b.L) =
+      (2 * b.L * i₀ + h * (v₀ - b.R * i₀ + v₁ - b.R * i₁)) / (2 * b.L) := by
+    field_simp; ring
+  have e2 : h / (2 * b.L + h * b.R) * v₁ + ((2 * b.L - h * b.R) * i₀ + h * v₀) /
+      (2 * b.L + h * b.R) = (h * v₁ + (2 * b.L - h * b.R) * i₀ + h * v₀) / (2 * b.L + h * b.R) := by
+    field_simp; ring
+  rw [e1, e2, eq_div_iff (mul_ne_zero two_ne_zero hL), eq_div_iff hD]
+  constructor <;> intro hk <;> linarith
 
-/-- Capacitor `C dv/dt = i`: the trapezoidal step equals the companion form. -/
-@[tmio T, powerlib_foundation] theorem capacitor_companion_iff {C h : ℝ} (hC : C ≠ 0) (hh : h ≠ 0)
-    (i₀ v₀ i₁ v₁ : ℝ) :
-    v₁ = v₀ + h / 2 * (i₀ / C + i₁ / C) ↔ i₁ = 2 * C / h * v₁ - (i₀ + 2 * C / h * v₀) := by
-  constructor <;> intro hk
-  · rw [hk]; field_simp; ring
-  · rw [hk]; field_simp; ring
+/-- Shunt G–C element `C dv/dt = i − G v`: the trapezoidal step equals the companion form
+`i₁ = G_eq v₁ + i_h`, `G_eq = 2C/h + G`, `i_h = −(i₀ + (2C/h − G) v₀)`. -/
+@[tmio M, powerlib_domain] theorem shunt_companion_iff {e : Passive.GC} {h : ℝ} (hC : e.C ≠ 0)
+    (hh : h ≠ 0) (i₀ v₀ i₁ v₁ : ℝ) :
+    v₁ = v₀ + h / 2 * ((i₀ - e.G * v₀) / e.C + (i₁ - e.G * v₁) / e.C) ↔
+      i₁ = (2 * e.C / h + e.G) * v₁ - (i₀ + (2 * e.C / h - e.G) * v₀) := by
+  have e1 : v₀ + h / 2 * ((i₀ - e.G * v₀) / e.C + (i₁ - e.G * v₁) / e.C) =
+      (2 * e.C * v₀ + h * (i₀ - e.G * v₀ + i₁ - e.G * v₁)) / (2 * e.C) := by
+    field_simp; ring
+  have e2 : (2 * e.C / h + e.G) * v₁ - (i₀ + (2 * e.C / h - e.G) * v₀) =
+      (2 * e.C * v₁ + h * e.G * v₁ - h * i₀ - 2 * e.C * v₀ + h * e.G * v₀) / h := by
+    field_simp; ring
+  rw [e1, e2, eq_div_iff (mul_ne_zero two_ne_zero hC), eq_div_iff hh]
+  constructor <;> intro hk <;> linarith
 
-/-- A linear two-terminal element. -/
+/-- A linear two-terminal element: a resistor, a series RL branch (`Passive.RL`) or a shunt G–C
+element (`Passive.GC`); an ideal inductor or capacitor is the lossless branch or element. -/
 inductive Element
   | resistor (R : ℝ)
-  | inductor (L : ℝ)
-  | capacitor (C : ℝ)
+  | inductor (b : Passive.RL)
+  | capacitor (e : Passive.GC)
 
 namespace Element
 
 /-- Companion conductance. -/
 def conductance (h : ℝ) : Element → ℝ
   | resistor R => 1 / R
-  | inductor L => h / (2 * L)
-  | capacitor C => 2 * C / h
+  | inductor b => h / (2 * b.L + h * b.R)
+  | capacitor e => 2 * e.C / h + e.G
 
 /-- Companion history current from the previous branch current and voltage. -/
 def history (h : ℝ) : Element → ℝ → ℝ → ℝ
   | resistor _, _, _ => 0
-  | inductor L, i₀, v₀ => i₀ + h / (2 * L) * v₀
-  | capacitor C, i₀, v₀ => -(i₀ + 2 * C / h * v₀)
+  | inductor b, i₀, v₀ => ((2 * b.L - h * b.R) * i₀ + h * v₀) / (2 * b.L + h * b.R)
+  | capacitor e, i₀, v₀ => -(i₀ + (2 * e.C / h - e.G) * v₀)
 
-/-- The element law over one step: Ohm's law, or the trapezoidal rule on the branch ODE. -/
+/-- The element law over one step: Ohm's law, or the trapezoidal rule on the element ODE
+(`Passive.RL`: `L di/dt = v − R i`; `Passive.GC`: `C dv/dt = i − G v`). -/
 def StepLaw (h : ℝ) : Element → ℝ → ℝ → ℝ → ℝ → Prop
   | resistor R, _, _, i₁, v₁ => v₁ = R * i₁
-  | inductor L, i₀, v₀, i₁, v₁ => i₁ = i₀ + h / 2 * (v₀ / L + v₁ / L)
-  | capacitor C, i₀, v₀, i₁, v₁ => v₁ = v₀ + h / 2 * (i₀ / C + i₁ / C)
+  | inductor b, i₀, v₀, i₁, v₁ =>
+      i₁ = i₀ + h / 2 * ((v₀ - b.R * i₀) / b.L + (v₁ - b.R * i₁) / b.L)
+  | capacitor e, i₀, v₀, i₁, v₁ =>
+      v₁ = v₀ + h / 2 * ((i₀ - e.G * v₀) / e.C + (i₁ - e.G * v₁) / e.C)
 
-/-- Nonzero parameter. -/
-def Valid : Element → Prop
+/-- Nonzero parameters for the step `h`. -/
+def Valid (h : ℝ) : Element → Prop
   | resistor R => R ≠ 0
-  | inductor L => L ≠ 0
-  | capacitor C => C ≠ 0
+  | inductor b => b.L ≠ 0 ∧ 2 * b.L + h * b.R ≠ 0
+  | capacitor e => e.C ≠ 0
 
-/-- Positive parameter (passive element). -/
+/-- Positive storage and nonnegative loss (passive element). -/
 def Positive : Element → Prop
   | resistor R => 0 < R
-  | inductor L => 0 < L
-  | capacitor C => 0 < C
+  | inductor b => 0 < b.L ∧ 0 ≤ b.R
+  | capacitor e => 0 < e.C ∧ 0 ≤ e.G
 
 @[tmio M, powerlib_domain] theorem stepLaw_iff_companion {h : ℝ} (hh : h ≠ 0) (e : Element)
-    (he : e.Valid) (i₀ v₀ i₁ v₁ : ℝ) :
+    (he : e.Valid h) (i₀ v₀ i₁ v₁ : ℝ) :
     e.StepLaw h i₀ v₀ i₁ v₁ ↔ i₁ = e.conductance h * v₁ + e.history h i₀ v₀ := by
   cases e with
   | resistor R =>
@@ -107,23 +135,28 @@ def Positive : Element → Prop
     constructor <;> intro hk
     · rw [hk]; field_simp
     · rw [hk]; field_simp
-  | inductor L => exact inductor_companion_iff (h := h) he i₀ v₀ i₁ v₁
-  | capacitor C =>
+  | inductor b => exact branch_companion_iff (h := h) he.1 he.2 i₀ v₀ i₁ v₁
+  | capacitor e =>
     simp only [StepLaw, conductance, history]
-    rw [capacitor_companion_iff (h := h) he hh, sub_eq_add_neg]
+    rw [shunt_companion_iff (h := h) he hh, sub_eq_add_neg]
 
 @[tmio M, powerlib_domain] theorem conductance_pos {h : ℝ} (hh : 0 < h) (e : Element)
     (he : e.Positive) : 0 < e.conductance h := by
   cases e with
   | resistor R => exact one_div_pos.mpr he
-  | inductor L => exact div_pos hh (mul_pos two_pos he)
-  | capacitor C => exact div_pos (mul_pos two_pos he) hh
+  | inductor b =>
+    have : 0 < 2 * b.L + h * b.R := by nlinarith [he.1, he.2]
+    exact div_pos hh this
+  | capacitor e =>
+    have : 0 < 2 * e.C / h := div_pos (mul_pos two_pos he.1) hh
+    exact add_pos_of_pos_of_nonneg this he.2
 
-@[tmio M, powerlib_domain] theorem Positive.valid {e : Element} (he : e.Positive) : e.Valid := by
+@[tmio M, powerlib_domain] theorem Positive.valid {e : Element} {h : ℝ} (hh : 0 < h)
+    (he : e.Positive) : e.Valid h := by
   cases e with
   | resistor R => exact ne_of_gt he
-  | inductor L => exact ne_of_gt he
-  | capacitor C => exact ne_of_gt he
+  | inductor b => exact ⟨ne_of_gt he.1, by nlinarith [he.1, he.2]⟩
+  | capacitor e => exact ne_of_gt he.1
 
 end Element
 
@@ -241,7 +274,7 @@ the new node voltages equals the injections minus the history sources, and branc
 the companion law). Discrete trajectories are written out, not defined: discrete behaviour is
 defined only in the semantic layer. -/
 @[tmio M, powerlib_domain] theorem trapezoidalNetwork_iff_companion {h : ℝ} (hh : h ≠ 0)
-    (e : β → Element) (he : ∀ b, (e b).Valid) (p q : β → Terminal N) (V : ℕ → Fin N → ℝ)
+    (e : β → Element) (he : ∀ b, (e b).Valid h) (p q : β → Terminal N) (V : ℕ → Fin N → ℝ)
     (I : ℕ → β → ℝ) (J : ℕ → Fin N → ℝ) :
     (∀ n, (∀ b, (e b).StepLaw h (I n b) (incidence p q b ⬝ᵥ V n) (I (n + 1) b)
         (incidence p q b ⬝ᵥ V (n + 1))) ∧

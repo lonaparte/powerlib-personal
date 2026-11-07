@@ -819,7 +819,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
 /-- A supercritical boundary PLL: `V = √2`, `X_g = ω_s = 1`, `k_p = −1/2`, `k_i = 1/2`,
 `i_d = 1` (so `L_g i_d = 1`, `D₀ = 1/2`; the OUT-positive source point `I_d = −1`) at
 `θ* = −π/4`. Balanced (`V sin θ* = −1 = −X_g i_d`), `tr J = 0`, `det J = 1`, `k_p k_i = −1/4`. -/
-def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, 1, 1, -1 / 2, 1 / 2, 1⟩, -(Real.pi / 4)⟩
+def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, ⟨0, 1⟩, 1, -1 / 2, 1 / 2, 1, rfl⟩, -(Real.pi / 4)⟩
 
 @[tmio M, powerlib_domain] private theorem supercriticalPLL_data :
     supercriticalPLL.params.V * Real.sin supercriticalPLL.θ =
@@ -829,15 +829,15 @@ def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, 1, 1, -1 / 2, 1 / 2, 1⟩, -(
       supercriticalPLL.params.kp * supercriticalPLL.params.ki < 0 := by
   have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
   have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
-    simp [supercriticalPLL, Params.D0, Params.Lg]; norm_num
-  refine ⟨?_, by rw [hD0]; norm_num, ?_, ?_, by simp [supercriticalPLL]; norm_num⟩
-  · simp only [supercriticalPLL, Real.sin_neg, Real.sin_pi_div_four]
+    simp [Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
+  refine ⟨?_, by rw [hD0]; norm_num, ?_, ?_, by simp [Params.Xg, supercriticalPLL]; norm_num⟩
+  · simp only [Params.Xg, supercriticalPLL, Real.sin_neg, Real.sin_pi_div_four]
     linear_combination (-1 / 2 : ℝ) * h2
   · rw [trace_jac, hD0]
-    simp only [supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four, Params.Lg]
+    simp only [Params.Xg, supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four, Params.Lg]
     linear_combination (1 / 2 : ℝ) * h2
   · rw [det_jac _ (by rw [hD0]; norm_num), hD0]
-    simp only [supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four]
+    simp only [Params.Xg, supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four]
     nlinarith [h2]
 
 /-- The supercritical boundary PLL is locally asymptotically stable. -/

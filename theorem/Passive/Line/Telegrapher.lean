@@ -140,13 +140,13 @@ solve the lossy telegrapher equations with `R' = τ_d L'`, `G' = τ_d C'`. -/
   · have := hE.hasFDerivWithinAt.mul hI
     refine this.congr_fderiv ?_
     ext <;> simp <;> ring
-  · simp only [zero_mul, sub_zero] at e1
+  · simp only [p.series_lossless, zero_mul, sub_zero] at e1
     show Real.exp (-τ * q.2) * vx q = -p.L * (-τ * Real.exp (-τ * q.2) *
       LosslessLine.travellingI p f g q + Real.exp (-τ * q.2) * it q) -
       τ * p.L * (Real.exp (-τ * q.2) * LosslessLine.travellingI p f g q)
     rw [e1]
     ring
-  · simp only [zero_mul, sub_zero] at e2
+  · simp only [p.shunt_lossless, zero_mul, sub_zero] at e2
     show Real.exp (-τ * q.2) * ix q = -p.C * (-τ * Real.exp (-τ * q.2) *
       LosslessLine.travellingV p f g q + Real.exp (-τ * q.2) * vt q) -
       τ * p.C * (Real.exp (-τ * q.2) * LosslessLine.travellingV p f g q)

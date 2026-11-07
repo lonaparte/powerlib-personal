@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Passive.Phasor
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -27,7 +28,9 @@ gfm-driven-gfl-parametric-resonance/notes/concepts/network-modulation-transfer.m
 
 Results.
 * `vth_eq`: `V_th(δ) = a_V e^{jδ} + b_V = (X₃ E e^{jδ} + X₂ V_∞)/(X₂ + X₃)` with
-  `β = X₃/(X₂+X₃)`, `a_V = βE`, `b_V = (1-β)V_∞`; `X_eq = X₂X₃/(X₂+X₃)`, `X_g = X₁ + X_eq`.
+  `β = X₃/(X₂+X₃)`, `a_V = βE`, `b_V = (1-β)V_∞`; `X_eq = X₂X₃/(X₂+X₃)`, `X_g = X₁ + X_eq`, the
+  parallel and series combinations of the lossless phasor branches (`Xeq_eq_parallel`,
+  `Xg_eq_series`; `Passive.RX.parallel`, `Passive.RX.series`).
 * `kcl_iff` / `terminal_voltages`: KCL ⇔ `V_c = V_th − jX_eq Σ I_k`, hence
   `V = V_th 𝟙 − j[diag(X_{1i}) + X_eq 𝟙𝟙ᵀ] I`; one branch: `V_GFL = V_th − jX_g I`.
 * `norm_vth`: `V(δ) = √(a_V² + b_V² + 2a_V b_V cos δ)`; `hasDerivAt_norm_vth`:
@@ -83,6 +86,18 @@ def Xeq (X2 X3 : ℝ) : ℝ := X2 * X3 / (X2 + X3)
 
 /-- Single-branch Thévenin reactance `X_g = X₁ + X_eq`. -/
 def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
+
+/-- `X_eq` is the lossless branch `jX₂ ∥ jX₃` (`Passive.RX.parallel_lossless`). -/
+@[tmio M, powerlib_domain] theorem Xeq_eq_parallel (X2 X3 : ℝ) :
+    (⟨0, X2⟩ : Passive.RX).parallel ⟨0, X3⟩ = ⟨0, Xeq X2 X3⟩ := by
+  rw [Passive.RX.parallel_lossless]
+  rfl
+
+/-- `X_g` is the lossless branch `jX₁` in series with `jX₂ ∥ jX₃`. -/
+@[tmio M, powerlib_domain] theorem Xg_eq_series (X1 X2 X3 : ℝ) :
+    (⟨0, X1⟩ : Passive.RX).series ((⟨0, X2⟩ : Passive.RX).parallel ⟨0, X3⟩) = ⟨0, Xg X1 X2 X3⟩ := by
+  rw [Xeq_eq_parallel]
+  simp [Passive.RX.series, Xg]
 
 @[tmio T, powerlib_foundation] theorem one_sub_beta {X2 X3 : ℝ} (h : X2 + X3 ≠ 0) :
     1 - beta X2 X3 = X2 / (X2 + X3) := by

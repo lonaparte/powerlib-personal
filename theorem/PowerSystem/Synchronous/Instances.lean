@@ -1,4 +1,5 @@
 import theorem.PowerSystem.Synchronous.Swing
+import theorem.Passive.Phasor
 import Mathlib.Analysis.Real.Pi.Bounds
 
 /-! # Instances of the canonical swing model: VSG, classical SMIB, post-fault SMIB with resistance
@@ -72,7 +73,12 @@ structure VSGInfiniteBus where
   Pref : ℝ
   E : ℝ
   Vg : ℝ
-  Xg : ℝ
+  /-- The line to the infinite bus, `R + jX` at the grid frequency (lossless). -/
+  line : Passive.RX
+  line_lossless : line.R = 0
+
+/-- The line reactance `X_g`. -/
+abbrev VSGInfiniteBus.Xg (v : VSGInfiniteBus) : ℝ := v.line.X
 
 namespace VSGInfiniteBus
 
@@ -283,12 +289,14 @@ end ClassicalSMIB
 /-- Electrical power from the complex power `S̄ = Ē' Ī*`, `Ī = (Ē' − V̄_g)/Z_e`
 (generator OUT-positive): with `Z_e = R_e + j X_e = r e^{jφ}`,
 `P_e = Re S̄ = (R_e/r²) E'² + (E' V_g / r) sin(δ − (θ_g + π/2 − φ))`. -/
-@[tmio T, powerlib_foundation] theorem electricalPower_eq (E V δ θg R X r φ : ℝ) (hr : 0 < r)
-    (hR : R = r * Real.cos φ) (hX : X = r * Real.sin φ) :
+@[tmio M, powerlib_domain] theorem electricalPower_eq (E V δ θg r φ : ℝ) (Z : Passive.RX)
+    (hr : 0 < r) (hR : Z.R = r * Real.cos φ) (hX : Z.X = r * Real.sin φ) :
     ((E : ℂ) * Complex.exp (δ * Complex.I) *
       (starRingEnd ℂ) (((E : ℂ) * Complex.exp (δ * Complex.I) -
-        (V : ℂ) * Complex.exp (θg * Complex.I)) / ((R : ℂ) + (X : ℂ) * Complex.I))).re =
-      R / r ^ 2 * E ^ 2 + E * V / r * Real.sin (δ - (θg + Real.pi / 2 - φ)) := by
+        (V : ℂ) * Complex.exp (θg * Complex.I)) / Z.impedance)).re =
+      Z.R / r ^ 2 * E ^ 2 + E * V / r * Real.sin (δ - (θg + Real.pi / 2 - φ)) := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.impedance] at hR hX ⊢
   have hr2 : R ^ 2 + X ^ 2 = r ^ 2 := by
     rw [hR, hX]; nlinarith [Real.sin_sq_add_cos_sq φ]
   have hns : Complex.normSq ((R : ℂ) + (X : ℂ) * Complex.I) = r ^ 2 := by
@@ -323,6 +331,9 @@ namespace PostFaultSMIB
 
 variable (m : PostFaultSMIB)
 
+/-- The post-fault line `Z_e = r cos φ + j r sin φ` as a phasor branch. -/
+def line : Passive.RX := ⟨m.r * Real.cos m.φ, m.r * Real.sin m.φ⟩
+
 /-- `(k₁, k₂, k₃) = (G_e E'², E' V_g / |Z_e|, θ_g + π/2 − φ)`, `G_e = cos φ / |Z_e|`. -/
 def toSwing : SwingParams :=
   ⟨m.M, m.D, m.Pm, Real.cos m.φ / m.r * m.E' ^ 2, m.E' * m.Vg / m.r,
@@ -333,9 +344,9 @@ def toSwing : SwingParams :=
     m.toSwing.Pe δ =
       ((m.E' : ℂ) * Complex.exp (δ * Complex.I) *
         (starRingEnd ℂ) (((m.E' : ℂ) * Complex.exp (δ * Complex.I) -
-          (m.Vg : ℂ) * Complex.exp (m.θg * Complex.I)) /
-          (((m.r * Real.cos m.φ : ℝ) : ℂ) + ((m.r * Real.sin m.φ : ℝ) : ℂ) * Complex.I))).re := by
-  rw [electricalPower_eq m.E' m.Vg δ m.θg _ _ m.r m.φ hr rfl rfl]
+          (m.Vg : ℂ) * Complex.exp (m.θg * Complex.I)) / m.line.impedance)).re := by
+  rw [electricalPower_eq m.E' m.Vg δ m.θg m.r m.φ m.line hr rfl rfl]
+  simp only [line]
   simp only [SwingParams.Pe, toSwing]
   field_simp
 

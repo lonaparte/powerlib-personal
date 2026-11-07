@@ -93,7 +93,7 @@ generic Euler laws (`Numerics.euler_sound_small_step`). -/
 /-- The parameters of the witness below: unit filter capacitance, grid frequency and grid EMF, a
 line without impedance, zero current references and unit PLL gains (`a = b = 0`, `Δ = 1`, so the
 phase-detector characteristic is `h = −sin`). -/
-private def unitLine : Params := ⟨⟨0, 0⟩, 1, ⟨0, 0⟩, 1, 1, 0, 0, 0, 0, 1, 1⟩
+private def unitLine : Params := ⟨⟨0, 0⟩, ⟨0, 1⟩, ⟨0, 0⟩, 1, 1, 0, 0, 0, 0, 1, 1, rfl⟩
 
 /-- **Without a step constraint the Euler realization of the code-frame PLL models is not sound.**
 The locally exponentially stable code-frame model `unitLine` at `θ_c* = 0` (a zero of `h = −sin`
@@ -103,14 +103,14 @@ disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
 @[tmio MI, powerlib_domain] theorem code_not_euler_realizationSoundUnder :
     connection% (¬ codeEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hwC : unitLine.wC ≠ 0 := by norm_num [unitLine, Params.wC]
-  have hΔ : unitLine.Δ ≠ 0 := by norm_num [unitLine, Params.Δ, Params.a, Params.b]
+  have hwC : unitLine.wC ≠ 0 := by norm_num [Params.Cf, unitLine, Params.wC]
+  have hΔ : unitLine.Δ ≠ 0 := by norm_num [Params.Cf, unitLine, Params.Δ, Params.a, Params.b]
   have h0 : unitLine.h (-0) = 0 := by
     rw [unitLine.h_eq hwC hΔ]
-    norm_num [unitLine, Params.c0, Params.a, Params.b, Params.Δ, Params.wC]
+    norm_num [Params.Cf, unitLine, Params.c0, Params.a, Params.b, Params.Δ, Params.wC]
   have hg : deriv unitLine.h (-0) < 0 := by
     rw [unitLine.deriv_h_eq hwC hΔ]
-    norm_num [unitLine, Params.a, Params.b, Params.Δ]
+    norm_num [Params.Cf, unitLine, Params.a, Params.b, Params.Δ]
   have hr := PLL.PIPLL.mem_den_locallyExponentiallyStable_of_pos (unitLine.pllModel (-0))
     one_pos one_pos h0 hg
   have hc := code_mem_den_iff ⟨unitLine, 0⟩ (.flow .locallyExponentiallyStable)

@@ -438,7 +438,7 @@ private def wfLyap (z : Dynamics.State 4) : ℝ :=
 
 /-- The weak focus: `V₀ = X_g = k_p = k_iv = 1`, `k_i = 2`, `i_{d0} = k_pv = I_dc0 = 0`,
 `C = 3/2` (so `γ = 1`), at `θ₀ = 0`. -/
-def weakFocus : Model := ⟨⟨1, 1, 0, 1, 2, 0, 1, 3 / 2, 0⟩, 0⟩
+def weakFocus : Model := ⟨⟨1, ⟨0, 1⟩, 0, 1, 2, 0, 1, ⟨0, 3 / 2⟩, 0, rfl, rfl⟩, 0⟩
 
 /-- The translated field of the weak focus: `θ̇ = −sin θ + η + 2x`, `ẋ = −sin θ + η`,
 `u̇ = −cos θ · η / (1 + u)`, `η̇ = u`. -/
@@ -446,7 +446,8 @@ def weakFocus : Model := ⟨⟨1, 1, 0, 1, 2, 0, 1, 3 / 2, 0⟩, 0⟩
     weakFocus.field z = WithLp.toLp 2 ![-Real.sin (z 0) + z 3 + 2 * z 1, -Real.sin (z 0) + z 3,
       -(Real.cos (z 0) * z 3 * (z 2 + 1)⁻¹), z 2] := by
   ext i
-  fin_cases i <;> simp [Model.field, FourState.field, Dynamics.lift, coordField, opPoint, weakFocus,
+  fin_cases i <;> simp [FourState.Params.Xg, FourState.Params.C, Model.field, FourState.field,
+      Dynamics.lift, coordField, opPoint, weakFocus,
     vq, idc, Params.γ]
   ring
 
@@ -558,8 +559,10 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
   have hmem := weakFocus_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
   rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  obtain ⟨-, -, -, hg⟩ : Meets weakFocus .routh := hmem .routh (by simp [family, translate])
-  norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, weakFocus, Params.γ] at hg
+  obtain ⟨-, -, -, hg⟩ : Meets weakFocus .routh := hmem .routh (by simp [FourState.Params.Xg,
+      FourState.Params.C, family, translate])
+  norm_num [FourState.Params.Xg, FourState.Params.C, a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc,
+      vd0, weakFocus, Params.γ] at hg
 
 /-! ## The Routh boundary: necessary conditions and inexpressibility -/
 
@@ -676,7 +679,7 @@ same holds for local asymptotic and local exponential stability. -/
 `undampedPLL` (`k_pv = k_iv = 1`, `C = 3/2`), `i_{d0} = I_dc0 = 0`, at `θ₀ = 0`: the PLL angle is
 constant and its integrator drifts, `ẋ = −sin θ`. Its quartic is `λ²(λ² + λ + 1)`, on the
 boundary of the Routh region. -/
-def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
+def frozenPLL : Model := ⟨⟨1, ⟨0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2⟩, 0, rfl, rfl⟩, 0⟩
 
 /-- The frozen PLL is unstable: `W = −x sin θ` has `Ẇ = sin² θ` (Chetaev). -/
 @[tmio TM, powerlib_domain] theorem frozenPLL_mem_den_unstable :
@@ -699,7 +702,7 @@ def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
       nlinarith
     · have hs : 0 < Real.sin a :=
         Real.sin_pos_of_pos_of_lt_pi ha0 (by linarith [Real.two_le_pi])
-      simp [opPoint, frozenPLL]
+      simp [FourState.Params.Xg, FourState.Params.C, opPoint, frozenPLL]
       positivity
   · intro y _ hWy
     have h0 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) :
@@ -713,7 +716,8 @@ def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
     have hs : Real.sin (y 0) ≠ 0 := fun h => by
       have : -(y 1 * Real.sin (y 0)) = 0 := by rw [h, mul_zero, neg_zero]
       linarith
-    simp [regField, Dynamics.lift, regCoordField, frozenPLL, vq, idc]
+    simp [FourState.Params.Xg, FourState.Params.C, regField, Dynamics.lift, regCoordField,
+        frozenPLL, vq, idc]
     positivity
 
 /-- The undamped PLL with a damped dc loop is not locally asymptotically stable: the PLL is
@@ -761,14 +765,16 @@ and neither meets the strict Routh conditions nor `a₀ < 0`. -/
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   cases q
-  · simp [Meets, IsEq, undampedPLL, frozenPLL]
+  · simp [FourState.Params.Xg, FourState.Params.C, Meets, IsEq, undampedPLL, frozenPLL]
   · constructor
     · rintro ⟨-, -, -, hg⟩
       norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL, Params.γ] at hg
     · rintro ⟨-, h1, -, -⟩
-      norm_num [a1, twoAlphaCl, omegaClSq, Γc, vd0, frozenPLL, Params.γ] at h1
+      norm_num [FourState.Params.Xg, FourState.Params.C, a1, twoAlphaCl, omegaClSq, Γc, vd0,
+          frozenPLL, Params.γ] at h1
   · simp only [Meets]
-    norm_num [a0, omegaClSq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
+    norm_num [FourState.Params.Xg, FourState.Params.C, a0, omegaClSq, Γc, vd0, undampedPLL,
+        frozenPLL, Params.γ]
 
 /-- `weakFocus` and `undampedPLL` meet the same requirements. -/
 @[tmio M, powerlib_domain] private theorem meets_weakFocus_iff_undamped (q : Requirement) :
@@ -776,14 +782,16 @@ and neither meets the strict Routh conditions nor `a₀ < 0`. -/
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   cases q
-  · simp [Meets, IsEq, undampedPLL, weakFocus]
+  · simp [FourState.Params.Xg, FourState.Params.C, Meets, IsEq, undampedPLL, weakFocus]
   · constructor
     · rintro ⟨-, -, -, hg⟩
-      norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, weakFocus, Params.γ] at hg
+      norm_num [FourState.Params.Xg, FourState.Params.C, a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc,
+          vd0, weakFocus, Params.γ] at hg
     · rintro ⟨-, -, -, hg⟩
       norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL, Params.γ] at hg
   · simp only [Meets]
-    norm_num [a0, omegaClSq, Γc, vd0, undampedPLL, weakFocus, Params.γ]
+    norm_num [FourState.Params.Xg, FourState.Params.C, a0, omegaClSq, Γc, vd0, undampedPLL,
+        weakFocus, Params.γ]
 
 /-- **Inexpressibility of Lyapunov stability.** No translation into the requirement language
 of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) and `frozenPLL`

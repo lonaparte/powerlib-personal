@@ -319,7 +319,7 @@ def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
 `k_P = 4/3`, `P_ref = −3` at `(θ*, 0, i_d*) = (arctan(1/2), 0, −1)` (so `V cos θ* = 2`,
 `V sin θ* = 1`); the converter exports `3`. -/
 def supercriticalQS : Model :=
-  ⟨⟨Real.sqrt 5, 1, -1 / 4, 21 / 4, 4 / 3, -3⟩, Real.arctan (1 / 2), -1⟩
+  ⟨⟨Real.sqrt 5, ⟨0, 1⟩, -1 / 4, 21 / 4, 4 / 3, -3, rfl⟩, Real.arctan (1 / 2), -1⟩
 
 @[tmio M, powerlib_domain] theorem supercriticalQS_trig :
     supercriticalQS.params.V * Real.cos supercriticalQS.θ = 2 ∧
@@ -329,7 +329,7 @@ def supercriticalQS : Model :=
     rw [Real.sqrt_eq_iff_mul_self_eq (by norm_num) (by positivity)]
     nlinarith [h5]
   have hpos : 0 < Real.sqrt 5 := Real.sqrt_pos.mpr (by norm_num)
-  simp only [supercriticalQS, Real.cos_arctan, Real.sin_arctan, hs]
+  simp only [Params.Xg, supercriticalQS, Real.cos_arctan, Real.sin_arctan, hs]
   constructor <;> field_simp
 
 @[tmio M, powerlib_domain] theorem supercriticalQS_isEq :
@@ -339,8 +339,8 @@ def supercriticalQS : Model :=
   change IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
   refine ⟨?_, ?_⟩
-  · rw [hs]; simp [supercriticalQS]
-  · unfold power; rw [hc]; simp [supercriticalQS]
+  · rw [hs]; simp [Params.Xg, supercriticalQS]
+  · unfold power; rw [hc]; simp [Params.Xg, supercriticalQS]
 
 /-- The translated field of the witness, `S = sin φ`, `C = cos φ`. -/
 @[tmio M, powerlib_domain] theorem supercriticalQS_field (z : Dynamics.State 3) :
@@ -352,7 +352,7 @@ def supercriticalQS : Model :=
   obtain ⟨h0, h1, h2⟩ := model_fold_form (show IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using supercriticalQS_isEq) z
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
   rw [hc, hs] at h0 h1 h2
-  simp only [supercriticalQS] at h0 h1 h2 ⊢
+  simp only [Params.Xg, supercriticalQS] at h0 h1 h2 ⊢
   refine ⟨by rw [h0]; ring, by rw [h1]; ring, ?_⟩
   linear_combination -h2
 
@@ -702,7 +702,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
     nlinarith [hc, hs]
   have e1 : supercriticalQS.params.V * Real.cos supercriticalQS.θ / 2 *
       (3 * supercriticalQS.params.kP + 2 * supercriticalQS.params.kp) = 7 / 2 := by
-    rw [hc]; simp [supercriticalQS]; norm_num
+    rw [hc]; simp [Params.Xg, supercriticalQS]; norm_num
   have e2 : supercriticalQS.params.V / 2 * (3 * supercriticalQS.params.V *
       supercriticalQS.params.kP * supercriticalQS.params.kp * Real.cos (2 * supercriticalQS.θ) +
       2 * supercriticalQS.params.ki * Real.cos supercriticalQS.θ) = 9 := by
@@ -713,14 +713,14 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
         supercriticalQS.params.kp * (supercriticalQS.params.V ^ 2 *
         Real.cos (2 * supercriticalQS.θ)) + supercriticalQS.params.ki *
         (supercriticalQS.params.V * Real.cos supercriticalQS.θ) := by ring
-    rw [this, hcos2, hc]; simp [supercriticalQS]; norm_num
+    rw [this, hcos2, hc]; simp [Params.Xg, supercriticalQS]; norm_num
   have e3 : 3 / 2 * supercriticalQS.params.V ^ 2 * supercriticalQS.params.kP *
       supercriticalQS.params.ki * Real.cos (2 * supercriticalQS.θ) = 63 / 2 := by
     have : 3 / 2 * supercriticalQS.params.V ^ 2 * supercriticalQS.params.kP *
         supercriticalQS.params.ki * Real.cos (2 * supercriticalQS.θ) =
         3 / 2 * supercriticalQS.params.kP * supercriticalQS.params.ki *
         (supercriticalQS.params.V ^ 2 * Real.cos (2 * supercriticalQS.θ)) := by ring
-    rw [this, hcos2]; simp [supercriticalQS]; norm_num
+    rw [this, hcos2]; simp [Params.Xg, supercriticalQS]; norm_num
   rw [e1, e2, e3]
   norm_num
 

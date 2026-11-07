@@ -101,7 +101,7 @@ linearization, and its discretizations with a large step are unstable. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ linearizedEuler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  set p : CascadeParams := ⟨⟨⟨0, 1⟩, 1, 1⟩, 1, 1, 1, 1⟩
+  set p : CascadeParams := ⟨⟨⟨0, 1⟩, 1, 1⟩, ⟨0, 1⟩, 1, 1, 1, rfl⟩
   have hA : IsHurwitz p.model.A :=
     (p.isHurwitz_iff one_pos one_pos one_pos).mpr
       ⟨⟨by norm_num [p], by norm_num [p]⟩, by norm_num [p, CascadeParams.Idc0]⟩

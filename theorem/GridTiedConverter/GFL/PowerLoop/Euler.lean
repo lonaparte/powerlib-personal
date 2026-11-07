@@ -80,7 +80,7 @@ Euler multiplier `1 + hλ` leaves the unit disk
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := mem_den_locallyExponentiallyStable_of_abs_lt ⟨1, 0, 1, 1, 1, 0⟩ one_pos one_pos one_pos
+  have hm := mem_den_locallyExponentiallyStable_of_abs_lt ⟨1, ⟨0, 0⟩, 1, 1, 1, 0, rfl⟩ one_pos one_pos one_pos
     one_pos (θ := 0) (Id := 0) ⟨by simp, by simp [power]⟩ (by simp [Real.pi_pos])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous

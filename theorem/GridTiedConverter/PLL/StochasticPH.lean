@@ -1,4 +1,5 @@
 import dependencies.Mathlib
+import theorem.Passive.Phasor
 import theorem.Attributes
 import theorem.Stochastic.SPH
 import theorem.Transform.Park
@@ -224,8 +225,10 @@ def lineResidual (R L C ω Vg : ℝ) (idq ig ξ : Fin 2 → ℝ) : Fin 2 → ℝ
   ![(idq 1 - ig 1) / (ω * C) - (Vg + ξ 0) - R * ig 0 + ω * L * ig 1,
     (ig 0 - idq 0) / (ω * C) - ξ 1 - R * ig 1 - ω * L * ig 0]
 
-/-- Effective reactance `X = ωL − 1/(ωC)`. -/
-def lineX (L C ω : ℝ) : ℝ := ω * L - 1 / (ω * C)
+/-- Effective reactance `X = ωL − 1/(ωC)`: the series reactance of the line inductance and the
+filter capacitance at `ω` (`Passive.RL.reactance`, `Passive.GC.reactance`; the negative of
+`FormBParams.lineX`). -/
+def lineX (L C ω : ℝ) : ℝ := (⟨0, L⟩ : Passive.RL).reactance ω + (⟨0, C⟩ : Passive.GC).reactance ω
 
 /-- Coefficient matrix of the form-B line system (independent of `θ_e`). -/
 def lineMatrix (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-R, X; -X, -R]
@@ -244,20 +247,24 @@ def lineDrive (C ω Vg : ℝ) (idq : Fin 2 → ℝ) : Fin 2 → ℝ :=
     have h1 := congrFun h 1
     simp [lineResidual] at h0 h1
     ext i; fin_cases i
-    · simp [lineMatrix, lineDrive, lineX, mulVec, dotProduct, Fin.sum_univ_two]
+    · simp [lineMatrix, lineDrive, lineX, Passive.RL.reactance, Passive.GC.reactance, mulVec,
+        dotProduct, Fin.sum_univ_two]
       linear_combination h0
-    · simp [lineMatrix, lineDrive, lineX, mulVec, dotProduct, Fin.sum_univ_two]
+    · simp [lineMatrix, lineDrive, lineX, Passive.RL.reactance, Passive.GC.reactance, mulVec,
+        dotProduct, Fin.sum_univ_two]
       linear_combination h1
   · intro h
     have h0 := congrFun h 0
     have h1 := congrFun h 1
-    simp [lineMatrix, lineDrive, lineX, mulVec, dotProduct, Fin.sum_univ_two] at h0 h1
+    simp [lineMatrix, lineDrive, lineX, Passive.RL.reactance, Passive.GC.reactance, mulVec,
+        dotProduct, Fin.sum_univ_two] at h0 h1
     ext i; fin_cases i
     · simp [lineResidual]; linear_combination h0
     · simp [lineResidual]; linear_combination h1
 
-@[tmio M, powerlib_domain] theorem lineMatrix_det (R X : ℝ) : (lineMatrix R X).det = R ^ 2 + X ^ 2 := by
-  simp [lineMatrix, det_fin_two]; ring
+@[tmio M, powerlib_domain] theorem lineMatrix_det (R X : ℝ) :
+    (lineMatrix R X).det = (⟨R, X⟩ : Passive.RX).absSq := by
+  simp [lineMatrix, det_fin_two, Passive.RX.absSq]; ring
 
 /-- Line sensitivity `G = M⁻¹`. -/
 def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹
@@ -269,7 +276,7 @@ def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹
     lineResidual R L C ω Vg idq ig ξ = 0 ↔
       ig = lineG R (lineX L C ω) *ᵥ lineDrive C ω Vg idq + lineG R (lineX L C ω) *ᵥ ξ := by
   have hdet : IsUnit (lineMatrix R (lineX L C ω)).det := by
-    rw [lineMatrix_det]; exact isUnit_iff_ne_zero.mpr (by positivity)
+    rw [lineMatrix_det]; simp only [Passive.RX.absSq]; exact isUnit_iff_ne_zero.mpr (by positivity)
   rw [lineResidual_eq_zero_iff, lineG, ← mulVec_add]
   constructor
   · intro h; rw [← h, mulVec_mulVec, nonsing_inv_mul _ hdet, one_mulVec]

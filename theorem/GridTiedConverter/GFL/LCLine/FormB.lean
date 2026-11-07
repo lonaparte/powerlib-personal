@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.PLL.PIPLL
+import theorem.Passive.Phasor
 import theorem.Passive.Branch
 import theorem.SpecialFunctions.TrigZeros
 
@@ -90,8 +91,8 @@ def formBPllInput (θ vcd vcq : ℝ) : ℝ := -Real.sin θ * vcd + Real.cos θ *
 structure FormBParams where
   /-- Grid angular frequency (constant). -/
   ωg : ℝ
-  /-- Filter capacitance. -/
-  Cf : ℝ
+  /-- Filter capacitor (lossless shunt). -/
+  filterCap : Passive.GC
   /-- Line branch `(R_g, L_g)`. -/
   line : Passive.RL
   /-- Infinite-bus voltage (system d axis). -/
@@ -99,6 +100,11 @@ structure FormBParams where
   /-- Frozen current references (controller frame). -/
   idRef : ℝ
   iqRef : ℝ
+  /-- The filter capacitor is lossless. -/
+  filterCap_lossless : filterCap.G = 0
+
+/-- The filter capacitance `C_f`. -/
+abbrev FormBParams.Cf (p : FormBParams) : ℝ := p.filterCap.C
 
 /-- Line inductance `L_g`. -/
 abbrev FormBParams.Lg (p : FormBParams) : ℝ := p.line.L
@@ -131,11 +137,13 @@ def QuasiSteady (θ vcd vcq igd igq : ℝ) : Prop :=
   p.Vg - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
   -vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0
 
-/-- `X = 1/(ω_g C_f) − ω_g L_g`. -/
-def lineX : ℝ := 1 / (p.ωg * p.Cf) - p.ωg * p.Lg
+/-- `X = 1/(ω_g C_f) − ω_g L_g`: minus the series reactance of the line inductance and the filter
+capacitance at `ω_g` (`Passive.RL.reactance`, `Passive.GC.reactance`). -/
+def lineX : ℝ := -(p.line.reactance p.ωg + p.filterCap.reactance p.ωg)
 
-/-- `Δ = R_g² + X²` (`= R_g² + (ω_g L_g − 1/(ω_g C_f))²`). -/
-def lineDet : ℝ := p.Rg ^ 2 + p.lineX ^ 2
+/-- `Δ = R_g² + X²` (`= R_g² + (ω_g L_g − 1/(ω_g C_f))²`), the squared magnitude of the
+phasor `R_g + jX`. -/
+def lineDet : ℝ := (⟨p.Rg, p.lineX⟩ : Passive.RX).absSq
 
 /-- `a(θ) = −V_g − i_q(θ)/(ω_g C_f)`. -/
 def driveA (θ : ℝ) : ℝ := -p.Vg - p.convCurrentQ θ / (p.ωg * p.Cf)
@@ -173,19 +181,19 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p
     -- the reduced 2×2 system `−R_g i_gd − X i_gq = a`, `X i_gd − R_g i_gq = b`
     have f3 : -p.Rg * igd - p.lineX * igq = p.driveA θ := by
       rw [hvcd] at e3
-      simp only [driveA, lineX]
+      simp only [driveA, lineX, Passive.RL.reactance, Passive.GC.reactance]
       linear_combination e3
     have f4 : p.lineX * igd - p.Rg * igq = p.driveB θ := by
       rw [hvcq] at e4
-      simp only [driveB, lineX]
+      simp only [driveB, lineX, Passive.RL.reactance, Passive.GC.reactance]
       linear_combination e4
     have hgd : igd = p.lineCurrentD θ := by
       simp only [lineCurrentD]
-      rw [eq_div_iff hΔ, lineDet]
+      rw [eq_div_iff hΔ, lineDet, Passive.RX.absSq]
       linear_combination (-p.Rg) * f3 + p.lineX * f4
     have hgq : igq = p.lineCurrentQ θ := by
       simp only [lineCurrentQ]
-      rw [eq_div_iff hΔ, lineDet]
+      rw [eq_div_iff hΔ, lineDet, Passive.RX.absSq]
       linear_combination (-p.lineX) * f3 - p.Rg * f4
     refine ⟨hgd, hgq, ?_, ?_⟩
     · rw [hvcd, hgq, capVoltageD]
@@ -194,14 +202,14 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p
     have f3 : -p.Rg * p.lineCurrentD θ - p.lineX * p.lineCurrentQ θ = p.driveA θ := by
       simp only [lineCurrentD, lineCurrentQ]
       field_simp
-      simp only [lineDet]
+      simp only [lineDet, Passive.RX.absSq]
       ring
     have f4 : p.lineX * p.lineCurrentD θ - p.Rg * p.lineCurrentQ θ = p.driveB θ := by
       simp only [lineCurrentD, lineCurrentQ]
       field_simp
-      simp only [lineDet]
+      simp only [lineDet, Passive.RX.absSq]
       ring
-    simp only [driveA, driveB, lineX] at f3 f4
+    simp only [driveA, driveB, lineX, Passive.RL.reactance, Passive.GC.reactance] at f3 f4
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [capVoltageQ, hk1]
       ring
@@ -326,7 +334,7 @@ constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
     · exact absurd h hΔ
   have hR : p.Rg = 0 := (mul_eq_zero.mp h1).resolve_right hVg
   have hXz : p.lineX = 0 := (mul_eq_zero.mp h2).resolve_right hVg
-  exact hΔ (by simp [lineDet, hR, hXz])
+  exact hΔ (by simp [lineDet, Passive.RX.absSq, hR, hXz])
 
 end FormBParams
 

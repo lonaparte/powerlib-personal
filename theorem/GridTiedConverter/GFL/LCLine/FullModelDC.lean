@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFL.LCLine.FullModel
+import theorem.Passive.Shunt
 import theorem.GridTiedConverter.PLL.PIPLL
 
 /-! # The 13-state GFL-VSC with DC-link dynamics: constant-power equilibria
@@ -70,8 +71,8 @@ open powerlib.Transform (park_dot iparkD iparkQ)
 
 /-- DC-side parameters. -/
 structure DCParams where
-  /-- DC-link capacitance `C_dc`. -/
-  Cdc : ℝ
+  /-- DC-link capacitance `C_dc`. (lossless shunt). -/
+  dcLink : Passive.GC
   /-- DC-voltage reference `v_dc^ref`. -/
   vref : ℝ
   /-- DC-voltage PI proportional gain `K_p^dc`. -/
@@ -82,6 +83,11 @@ structure DCParams where
   Pdc : ℝ
   /-- Measurement filter bandwidth `ω_f`. -/
   wf : ℝ
+  /-- The DC link is lossless. -/
+  dcLink_lossless : dcLink.G = 0
+
+/-- The DC-link capacitance. -/
+abbrev DCParams.Cdc (p : DCParams) : ℝ := p.dcLink.C
 
 /-- Bridge-power invariant: with `u = v_c + R_f i + ω L_f J i`, `u·i = v_c·i + R_f |i|²`
 (the `ω L_f` cross terms cancel in the dot product). -/

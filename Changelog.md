@@ -5,6 +5,23 @@ in Git; working statistics, build receipts and development plans are not kept he
 
 ## 2026-11-07
 
+- Unified the remaining passive elements. Ideal inductors and capacitors are
+  the lossless `Passive.RL`/`Passive.GC` (an explicit lossless field in the
+  model): the DC links of the GFL models, the LCLine and form-B filter
+  capacitors, the six-state carrier inductances, the SMIB11 terminal capacitor,
+  the LCL and dq LC filters, the series RLC capacitor and the lossless line.
+  Added the phasor branch `Passive.RX` (`Passive/Phasor.lean`: impedance,
+  `|Z|²`, series and parallel connection, the reactances of `RL` and `GC`); the
+  grid lines of the quasi-static models (rate PLL, quasi-static power loop, four-
+  state, basin guard, model B, VSG) carry it, and the power-flow line powers,
+  the synchronous-machine line power and the current-limiting formulas take
+  it. The form-B and stochastic-PH line reactances are both built from the
+  element reactances, and the modulation-transfer reactances are proved to be
+  the series/parallel combinations. The DC-link PH instance is now the PH model
+  of a `Passive.GC` (leakage `G ≥ 0`). The element per-unit laws moved from
+  `Transform/PerUnit` to `Passive/PerUnit.lean` (the inductor law generalised to
+  the RL branch), and the EMT companion elements are the RL branch and the GC
+  shunt (companion formulas generalised to the lossy elements).
 - The passive-component and grid-structure sources now declare in the
   namespaces of their directories: `Circuits.RL`/`Circuits.LCL` became
   `Passive.RL`/`Passive.LCL`, the dq RL branch `Passive.DqRL` (was

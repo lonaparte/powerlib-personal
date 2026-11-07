@@ -1,4 +1,5 @@
 import theorem.Attributes
+import theorem.GridTiedConverter.GFM.Limiting.Formulas
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -17,6 +18,8 @@ Wu–Wang (2023) current magnitude of a grid-forming converter before current li
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.7.
 
 Results.
+* `iMag_eq_currentMag`: `I_omag` is the current magnitude of `theorem/GridTiedConverter/GFM/Limiting/Formulas.lean`
+  behind the lossless phasor branch `jX` (`Passive.RX`).
 * `iMag_hasDerivAt`: `dI_omag/dδ = E V_g sin δ / (X² I_omag)` wherever `I_omag > 0` (the
   note's derivative).
 * `iMag_strictMonoOn`: for `E, V_g, X > 0`, `I_omag` is strictly increasing in `δ` on
@@ -33,6 +36,17 @@ namespace powerlib.Limiting
 
 /-- `I_omag(δ) = √(E² + V² − 2 E V cos δ)/X`. -/
 def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / X
+
+/-- `I_omag` is the current magnitude `currentMag` behind the lossless phasor branch
+`Z = jX` (`X > 0`). -/
+@[tmio M, powerlib_domain] theorem iMag_eq_currentMag {E V X : ℝ} (hX : 0 < X) (δ : ℝ) :
+    iMag E V X δ = currentMag E V ⟨0, X⟩ δ := by
+  have hZ : ‖(Passive.RX.impedance ⟨0, X⟩)‖ = X := by
+    have h := Passive.RX.norm_sq_impedance ⟨0, X⟩
+    simp only [Passive.RX.absSq, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+      zero_add] at h
+    rw [← Real.sqrt_sq (norm_nonneg _), h, Real.sqrt_sq hX.le]
+  rw [iMag, currentMag, hZ, ← currentMag_sq_num, Real.sqrt_sq (norm_nonneg _)]
 
 @[tmio T, powerlib_foundation] theorem iMag_radicand (E V δ : ℝ) :
     E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ =

@@ -1,6 +1,7 @@
 import theorem.PH.Composition
 import theorem.Criteria.Hurwitz2
 import theorem.Passive.Branch
+import theorem.Passive.Shunt
 
 /-! # Series RLC loop as a linear port-Hamiltonian system
 
@@ -8,13 +9,15 @@ The series RLC loop as a linear port-Hamiltonian plant: passivity, Lyapunov stab
 stability iff `r > 0`, and the complex normal modes of an LC pair.
 
 Model boundary.
-* Circuit: one series loop of an inductor `L > 0`, a capacitor `C > 0`, a resistor `r ≥ 0`
-  in series with the inductor branch, and an ideal voltage source `u` (one port).
+* Circuit: one series loop of the branch `branch : Passive.RL` (inductor `L > 0`, resistor
+  `r ≥ 0`), the lossless capacitor `capacitor : Passive.GC` (`C > 0`, `G = 0`, stated as a
+  field), and an ideal voltage source `u` (one port).
   Lumped, linear, time-invariant, continuous time. No switching, PWM, PLL, delay,
   saturation, controller, or grid connection; stationary (not dq) coordinates.
 * State order: `x = (φ, q)` with `φ = L i` the inductor flux linkage and `q = C v` the
   capacitor charge. Co-energy: `∇H = (φ / L, q / C) = (i, v)`.
-* Hamiltonian `H(φ, q) = φ² / (2L) + q² / (2C)`.
+* Hamiltonian `H(φ, q) = φ² / (2L) + q² / (2C)`, the sum of the element energies
+  (`seriesRLC_energy_elements`).
 * Kirchhoff equations (incoming-positive source power, `u · i` is the power delivered by
   the source into the loop): `φ̇ = u − r i − v`, `q̇ = i`. Collocated output `y = i`.
 * pH data: `J = !![0, −1; 1, 0]`, `R = diag(r, 0)`, `g = (1, 0)ᵀ`, i.e. the diagonal data
@@ -67,17 +70,21 @@ open Matrix Set LinearSystems
 structure SeriesRLCParams where
   /-- The series R–L branch. -/
   branch : Passive.RL
-  /-- The capacitance. -/
-  C : ℝ
+  /-- The capacitor, a lossless shunt element. -/
+  capacitor : Passive.GC
   L_pos : 0 < branch.L
-  C_pos : 0 < C
+  C_pos : 0 < capacitor.C
   r_nonneg : 0 ≤ branch.R
+  capacitor_lossless : capacitor.G = 0
 
 /-- The inductance of the branch. -/
 abbrev SeriesRLCParams.L (p : SeriesRLCParams) : ℝ := p.branch.L
 
 /-- The resistance of the branch. -/
 abbrev SeriesRLCParams.r (p : SeriesRLCParams) : ℝ := p.branch.R
+
+/-- The capacitance. -/
+abbrev SeriesRLCParams.C (p : SeriesRLCParams) : ℝ := p.capacitor.C
 
 /-- The series RLC loop (T-ph (1.11)) as constant-`J`, diagonal-damping, diagonal-quadratic
 port-Hamiltonian data. State `(φ, q)`, one voltage port. -/
@@ -128,6 +135,15 @@ Static evidence on the model, not a connection conclusion. -/
     (seriesRLC p).energy x = x 0 ^ 2 / (2 * p.L) + x 1 ^ 2 / (2 * p.C) := by
   simp [DiagonalPH.energy, seriesRLC, Fin.sum_univ_two]
   ring
+
+/-- In physical coordinates the pH energy is the inductor energy plus the capacitor energy. -/
+@[tmio M, powerlib_domain] theorem seriesRLC_energy_elements (p : SeriesRLCParams) (i v : ℝ) :
+    (seriesRLC p).energy ![p.L * i, p.C * v] = p.branch.energy i + p.capacitor.energy v := by
+  have hL := p.L_pos.ne'
+  have hC := p.C_pos.ne'
+  rw [seriesRLC_energy]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Passive.RL.energy, Passive.GC.energy]
+  field_simp
 
 /-- Energy balance (1.2) for the loop: `Ḣ = u i − r i²`.
 Static evidence on the model, not a connection conclusion. -/

@@ -149,7 +149,8 @@ def euler : Implementation Circuit Requirement Euler Requirement 3 2 3 2 :=
 
 /-- The circuit with all parameters `1`: passive and damped. -/
 private def unitCircuit : Circuit :=
-  ⟨RL.Impedance.ofParams 1 ⟨1, one_pos⟩, RL.Impedance.ofParams 1 ⟨1, one_pos⟩, ⟨1, one_pos⟩⟩
+  Circuit.ofParams (RL.Impedance.ofParams 1 ⟨1, one_pos⟩) (RL.Impedance.ofParams 1 ⟨1, one_pos⟩)
+    ⟨1, one_pos⟩
 
 @[tmio M, powerlib_domain] private theorem unitCircuit_passive :
     connection% (unitCircuit ∈ TMIO.realize Meets {.passive}) := by

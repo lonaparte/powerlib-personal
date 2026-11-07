@@ -1,4 +1,6 @@
 import dependencies.Mathlib
+import theorem.Passive.Phasor
+import theorem.Passive.Shunt
 import theorem.Dynamics.State
 import theorem.SpecialFunctions.Sinusoid
 
@@ -114,19 +116,29 @@ structure ModelBParams where
   /-- PLL PI gains. -/
   kp : ℝ
   ki : ℝ
-  /-- DC-link capacitance, upstream current injection, DC-voltage reference. -/
-  Cdc : ℝ
+  /-- DC link (lossless shunt), upstream current injection, DC-voltage reference. -/
+  dcLink : Passive.GC
   I0 : ℝ
   VdcRef : ℝ
   /-- DC-voltage-loop PI gains. -/
   kpv : ℝ
   kiv : ℝ
-  /-- Grid voltage and line impedance `Z_g = R_g + j X_g`. -/
+  /-- Grid voltage and the line `Z_g = R_g + j X_g` at the grid frequency. -/
   Vg : ℝ
-  Rg : ℝ
-  Xg : ℝ
+  line : Passive.RX
   /-- Frozen reactive current reference. -/
   iq0 : ℝ
+  /-- The DC link is lossless. -/
+  dcLink_lossless : dcLink.G = 0
+
+/-- The DC-link capacitance. -/
+abbrev ModelBParams.Cdc (p : ModelBParams) : ℝ := p.dcLink.C
+
+/-- The line resistance `R_g`. -/
+abbrev ModelBParams.Rg (p : ModelBParams) : ℝ := p.line.R
+
+/-- The line reactance `X_g`. -/
+abbrev ModelBParams.Xg (p : ModelBParams) : ℝ := p.line.X
 
 namespace ModelBParams
 

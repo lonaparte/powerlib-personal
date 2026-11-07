@@ -1,4 +1,6 @@
 import theorem.Dynamics.Transport
+import theorem.Passive.Phasor
+import theorem.Passive.Shunt
 import theorem.Family.Basic
 import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
@@ -132,8 +134,8 @@ structure CarrierParams where
   Iq : ℝ
   /-- Infinite-bus voltage `V`. -/
   V : ℝ
-  /-- Frozen grid reactance `X_g`. -/
-  Xg : ℝ
+  /-- Frozen grid reactance `X_g`: the line `R + jX` at the grid frequency, lossless. -/
+  line : Passive.RX
   /-- PLL proportional gain. -/
   Kpp : ℝ
   /-- PLL integral gain. -/
@@ -142,8 +144,18 @@ structure CarrierParams where
   Kpv : ℝ
   /-- DC-voltage PI integral gain `K_i^dvc`. -/
   Kiv : ℝ
-  /-- DC-link capacitance `C`. -/
-  C : ℝ
+  /-- DC-link capacitance `C`. (lossless shunt). -/
+  dcLink : Passive.GC
+  /-- The DC link is lossless. -/
+  dcLink_lossless : dcLink.G = 0
+  /-- The grid line is lossless. -/
+  line_lossless : line.R = 0
+
+/-- The DC-link capacitance. -/
+abbrev CarrierParams.C (p : CarrierParams) : ℝ := p.dcLink.C
+
+/-- The grid reactance `X_g`. -/
+abbrev CarrierParams.Xg (p : CarrierParams) : ℝ := p.line.X
 
 namespace CarrierParams
 
@@ -370,7 +382,7 @@ variable (q : CarrierParams)
 state `ξ*`: `V₀ = V`, `X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*` (the operating current), the same gains,
 capacitance and DC source current. -/
 def fourStateParams (s ξ : ℝ) : FourState.Params :=
-  ⟨q.V, s * q.Xg, q.Kiv * ξ, q.Kpp, q.Kip, q.Kpv, q.Kiv, q.C, q.Idc⟩
+  ⟨q.V, ⟨0, s * q.Xg⟩, q.Kiv * ξ, q.Kpp, q.Kip, q.Kpv, q.Kiv, ⟨0, q.C⟩, q.Idc, rfl, rfl⟩
 
 /-- The carrier field is `C¹` where `V_dc ≠ 0`. Static evidence on the model, not a connection
 conclusion. -/
@@ -730,13 +742,16 @@ Routh boundary. -/
 @[tmio TM, powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  have hto : (atUnitPoint ⟨0, 0, 1, 0, 0, 1, 1, 1, 3 / 2⟩).toFourState =
+  have hto : (atUnitPoint ⟨0, 0, 1, ⟨0, 0⟩, 0, 1, 1, 1, ⟨0, 3 / 2⟩, rfl, rfl⟩).toFourState =
       FourState.undampedPLL := by
-    simp [atUnitPoint, Model.toFourState, CarrierParams.fourStateParams, FourState.undampedPLL]
+    simp [CarrierParams.Xg, CarrierParams.C, atUnitPoint, Model.toFourState,
+        CarrierParams.fourStateParams, FourState.undampedPLL]
   have hm := FourState.undampedPLL_mem_den_lyapunovStable
   unfold powerlib.TMIO.Statement at hm
-  refine not_exactUnder_of_fourState (r := .routh) rfl (by simp [atUnitPoint])
-    (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
+  refine not_exactUnder_of_fourState (r := .routh) rfl (by simp [CarrierParams.Xg, CarrierParams.C,
+      atUnitPoint])
+    (by simp [CarrierParams.Xg, CarrierParams.C,
+        atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
   rw [hto] at hr
   obtain ⟨-, -, -, hg⟩ := hr
   norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl,
@@ -753,14 +768,17 @@ carrier `V = X_g = K_p^pll = K_i^dvc = 1`, `K_i^pll = 2`, `C = 3/2`,
     connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero}
       (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hto : (atUnitPoint ⟨0, 0, 1, 1, 1, 2, 0, 1, 3 / 2⟩).toFourState =
+  have hto : (atUnitPoint ⟨0, 0, 1, ⟨0, 1⟩, 1, 2, 0, 1, ⟨0, 3 / 2⟩, rfl, rfl⟩).toFourState =
       FourStateBoundary.weakFocus := by
-    simp [atUnitPoint, Model.toFourState, CarrierParams.fourStateParams,
+    simp [CarrierParams.Xg, CarrierParams.C, atUnitPoint, Model.toFourState,
+        CarrierParams.fourStateParams,
       FourStateBoundary.weakFocus]
   have hm := FourStateBoundary.weakFocus_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hm
-  refine not_exactUnder_of_fourState (r := .routh) rfl (by simp [atUnitPoint])
-    (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
+  refine not_exactUnder_of_fourState (r := .routh) rfl (by simp [CarrierParams.Xg, CarrierParams.C,
+      atUnitPoint])
+    (by simp [CarrierParams.Xg, CarrierParams.C,
+        atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
   rw [hto] at hr
   obtain ⟨-, -, -, hg⟩ := hr
   norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl,
@@ -774,14 +792,17 @@ at `(0, 0, 1, 0)` reads as `FourState.offEquilibrium`, which is unstable
 @[tmio TM, powerlib_domain] theorem not_exactUnder_unstable :
     connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  have hto : (atUnitPoint ⟨1, 0, 0, 0, 0, 0, 0, 0, 1⟩).toFourState =
+  have hto : (atUnitPoint ⟨1, 0, 0, ⟨0, 0⟩, 0, 0, 0, 0, ⟨0, 1⟩, rfl, rfl⟩).toFourState =
       FourState.offEquilibrium := by
-    simp [atUnitPoint, Model.toFourState, CarrierParams.fourStateParams,
+    simp [CarrierParams.Xg, CarrierParams.C, atUnitPoint, Model.toFourState,
+        CarrierParams.fourStateParams,
       FourState.offEquilibrium]
   have hm := FourState.offEquilibrium_mem_den_unstable
   unfold powerlib.TMIO.Statement at hm
-  refine not_exactUnder_of_fourState (r := .equilibrium) rfl (by simp [atUnitPoint])
-    (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inl rfl, rfl⟩) fun he => ?_
+  refine not_exactUnder_of_fourState (r := .equilibrium) rfl (by simp [CarrierParams.Xg,
+      CarrierParams.C, atUnitPoint])
+    (by simp [CarrierParams.Xg, CarrierParams.C,
+        atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inl rfl, rfl⟩) fun he => ?_
   rw [hto] at he
   simp [FourState.Meets, FourState.IsEq, FourState.offEquilibrium] at he
 

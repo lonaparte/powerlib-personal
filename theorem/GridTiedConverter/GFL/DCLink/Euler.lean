@@ -118,11 +118,11 @@ field is the smooth `regField`. The smoothness hypothesis of the local generic E
 is locally exponentially stable: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh conditions met
 (`mem_den_locallyExponentiallyStable_of_routh`). -/
 @[tmio TM, powerlib_domain] private theorem unitModel_mem_den :
-    connection% ((⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
+    connection% ((⟨⟨1, ⟨0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1⟩, 0, rfl, rfl⟩, 0⟩ : Model) ∈
       family.den (.flow .locallyExponentiallyStable)) := by
-  change (⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
+  change (⟨⟨1, ⟨0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1⟩, 0, rfl, rfl⟩, 0⟩ : Model) ∈
         family.den (.flow .locallyExponentiallyStable)
-  have hm := mem_den_locallyExponentiallyStable_of_routh ⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩ one_ne_zero
+  have hm := mem_den_locallyExponentiallyStable_of_routh ⟨1, ⟨0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1⟩, 0, rfl, rfl⟩ one_ne_zero
     (θ0 := 0) ⟨by simp, by simp⟩
     (by norm_num [a3, vd0, twoAlphaCl, Params.γ])
     (by norm_num [a1, vd0, twoAlphaCl, omegaClSq, Γc, Params.γ])
@@ -186,11 +186,11 @@ four-state model above. Integrated with a large enough step it is not: every Eul
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  set m : Model := ⟨⟨0, 0, 1, 0, 1, 1, 1, 1, 1⟩, 1, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  set m : Model := ⟨⟨0, 0, 1, ⟨0, 0⟩, 1, 1, 1, 1, ⟨0, 1⟩, rfl, rfl⟩, 1, WithLp.toLp 2 ![0, 0, 1, 0]⟩
   have h := mem_den_iff_fourState m rfl (by simp [m]) (by simp [m])
     (.flow .locallyExponentiallyStable)
   unfold powerlib.TMIO.Statement at h
-  have hto : m.toFourState = ⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ := by
+  have hto : m.toFourState = ⟨⟨1, ⟨0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1⟩, 0, rfl, rfl⟩, 0⟩ := by
     simp [m, Model.toFourState, CarrierParams.fourStateParams]
   rw [hto] at h
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local family_isAutonomous
@@ -323,7 +323,7 @@ step it is not: its Euler multiplier `1 + hλ` leaves the unit disk
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := openLoop_mem_den_locallyExponentiallyStable ⟨1, 1, 1⟩ one_pos one_pos (by norm_num)
+  have hm := openLoop_mem_den_locallyExponentiallyStable ⟨⟨0, 1⟩, 1, 1, rfl⟩ one_pos one_pos (by norm_num)
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local
     (Spectral.localFamily_isAutonomous _ _ _ : openFamily.IsAutonomous field)
@@ -368,7 +368,7 @@ unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := closedLoop_mem_den_locallyExponentiallyStable ⟨1, 1, 1, 1, 1, 0, 0⟩ one_pos one_pos
+  have hm := closedLoop_mem_den_locallyExponentiallyStable ⟨⟨0, 1⟩, 1, 1, 1, 1, 0, 0, rfl⟩ one_pos one_pos
     one_pos (by norm_num [Idc0]) one_pos
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local

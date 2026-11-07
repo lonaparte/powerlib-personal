@@ -1,6 +1,7 @@
 import theorem.Attributes
 import dependencies.Mathlib
 import theorem.PowerSystem.Network.WeightedLaplacian
+import theorem.Passive.Phasor
 
 /-! # Power flow: the lossless injection map, two-bus line powers, the decoupling rotation
 
@@ -11,8 +12,9 @@ No model family is defined and no behavioural sentence is stated.
 Model boundary.
 * Network: lossless lines, constant voltage magnitudes absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`, active
   power only.
-* One line: source `E ∠ δ` through `Z = R + jX` into `V ∠ 0`; the converter-side and grid-side
-  identities use a purely reactive line `X` from `V e^{jθ}` to `V_g` (export current
+* One line: source `E ∠ δ` through the phasor branch `Z = R + jX` (`Z : Passive.RX`,
+  impedance `Passive.RX.impedance`, `|Z|² = Passive.RX.absSq`) into `V ∠ 0`; the converter-side
+  and grid-side identities use a lossless line (`R = 0`) from `V e^{jθ}` to `V_g` (export current
   `Ī = (V e^{jθ} − V_g)/(jX)`).
 * Phasor (steady-state) level: no line or machine dynamics.
 
@@ -33,7 +35,7 @@ Results.
   `sin θ_l = X/|Z|`), diagonalizes that Jacobian; inductive line (`θ_l = π/2`): `R(β) = I`
   (`rotation_inductive`, classical P–f / Q–V droop); resistive line (`θ_l = 0`):
   `(P̂, Q̂) = (−Q, P)` (`rotation_resistive`, inverse droop).
-* Purely reactive line: the converter-side power `S̄ = V̄_conv Ī*`, `P = V V_g sin θ / X`,
+* Lossless line (`R = 0`): the converter-side power `S̄ = V̄_conv Ī*`, `P = V V_g sin θ / X`,
   `Q_conv = (V² − V V_g cos θ)/X` (`converterSide_power`), and the power received at the grid
   bus `S̄_g = V̄_g Ī*`, `Q_g = (V V_g cos θ − V_g²)/X` (`gridSide_power`).
 * The rotated droop of `theorem/GridTiedConverter/GFM/DroopAlgebra.lean` and the reactive-power
@@ -98,12 +100,13 @@ section LinePower
 open Complex
 
 /-- Export power from `E ∠ δ` through `Z = R + jX` into `V ∠ 0`, from `S̄ = Ē Ī*`. -/
-@[tmio T, powerlib_foundation] theorem linePower (E V δ R X : ℝ) (hZ : R ^ 2 + X ^ 2 ≠ 0) :
-    (E : ℂ) * exp (δ * I) *
-        (starRingEnd ℂ) (((E : ℂ) * exp (δ * I) - (V : ℂ)) / ((R : ℂ) + (X : ℂ) * I)) =
-      (((R * (E ^ 2 - E * V * Real.cos δ) + X * E * V * Real.sin δ) / (R ^ 2 + X ^ 2) : ℝ) : ℂ) +
-        (((X * (E ^ 2 - E * V * Real.cos δ) - R * E * V * Real.sin δ) / (R ^ 2 + X ^ 2) : ℝ) : ℂ) *
+@[tmio M, powerlib_domain] theorem linePower (E V δ : ℝ) (Z : Passive.RX) (hZ : Z.absSq ≠ 0) :
+    (E : ℂ) * exp (δ * I) * (starRingEnd ℂ) (((E : ℂ) * exp (δ * I) - (V : ℂ)) / Z.impedance) =
+      (((Z.R * (E ^ 2 - E * V * Real.cos δ) + Z.X * E * V * Real.sin δ) / Z.absSq : ℝ) : ℂ) +
+        (((Z.X * (E ^ 2 - E * V * Real.cos δ) - Z.R * E * V * Real.sin δ) / Z.absSq : ℝ) : ℂ) *
           I := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.impedance, Passive.RX.absSq] at hZ ⊢
   have hZ' : R * R + X * X ≠ 0 := by simpa [sq] using hZ
   have hsc := Real.sin_sq_add_cos_sq δ
   apply Complex.ext <;>
@@ -117,55 +120,66 @@ open Complex
   · linear_combination (E ^ 2 * X) * hsc
 
 /-- Active line power `P(δ, E)`. -/
-def lineP (V R X : ℝ) (δ E : ℝ) : ℝ :=
-  (R * (E ^ 2 - E * V * Real.cos δ) + X * E * V * Real.sin δ) / (R ^ 2 + X ^ 2)
+def lineP (V : ℝ) (Z : Passive.RX) (δ E : ℝ) : ℝ :=
+  (Z.R * (E ^ 2 - E * V * Real.cos δ) + Z.X * E * V * Real.sin δ) / Z.absSq
 
 /-- Reactive line power `Q(δ, E)`. -/
-def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
-  (X * (E ^ 2 - E * V * Real.cos δ) - R * E * V * Real.sin δ) / (R ^ 2 + X ^ 2)
+def lineQ (V : ℝ) (Z : Passive.RX) (δ E : ℝ) : ℝ :=
+  (Z.X * (E ^ 2 - E * V * Real.cos δ) - Z.R * E * V * Real.sin δ) / Z.absSq
 
-@[tmio M, powerlib_domain] theorem lineP_deriv_delta (V R X : ℝ) :
-    HasDerivAt (fun δ => lineP V R X δ V) (X * V ^ 2 / (R ^ 2 + X ^ 2)) 0 := by
+@[tmio M, powerlib_domain] theorem lineP_deriv_delta (V : ℝ) (Z : Passive.RX) :
+    HasDerivAt (fun δ => lineP V Z δ V) (Z.X * V ^ 2 / (Z.absSq)) 0 := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.absSq]
   have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul R).add
     ((Real.hasDerivAt_sin 0).const_mul (X * V * V)) |>.div_const (R ^ 2 + X ^ 2)
   convert h using 1
-  · funext δ; simp only [lineP, Pi.add_apply]
+  · funext δ; simp only [lineP, Passive.RX.absSq, Pi.add_apply]
   · simp; ring
 
-@[tmio M, powerlib_domain] theorem lineP_deriv_E (V R X : ℝ) :
-    HasDerivAt (fun E => lineP V R X 0 E) (R * V / (R ^ 2 + X ^ 2)) V := by
+@[tmio M, powerlib_domain] theorem lineP_deriv_E (V : ℝ) (Z : Passive.RX) :
+    HasDerivAt (fun E => lineP V Z 0 E) (Z.R * V / (Z.absSq)) V := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.absSq]
   have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul R)
     |>.div_const (R ^ 2 + X ^ 2)
   convert h using 1
-  · funext E; simp [lineP]
+  · funext E; simp [lineP, Passive.RX.absSq]
   · simp; ring
 
-@[tmio M, powerlib_domain] theorem lineQ_deriv_delta (V R X : ℝ) :
-    HasDerivAt (fun δ => lineQ V R X δ V) (-(R * V ^ 2) / (R ^ 2 + X ^ 2)) 0 := by
+@[tmio M, powerlib_domain] theorem lineQ_deriv_delta (V : ℝ) (Z : Passive.RX) :
+    HasDerivAt (fun δ => lineQ V Z δ V) (-(Z.R * V ^ 2) / (Z.absSq)) 0 := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.absSq]
   have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul X).sub
     ((Real.hasDerivAt_sin 0).const_mul (R * V * V)) |>.div_const (R ^ 2 + X ^ 2)
   convert h using 1
-  · funext δ; simp only [lineQ, Pi.sub_apply]
+  · funext δ; simp only [lineQ, Passive.RX.absSq, Pi.sub_apply]
   · simp; ring
 
-@[tmio M, powerlib_domain] theorem lineQ_deriv_E (V R X : ℝ) :
-    HasDerivAt (fun E => lineQ V R X 0 E) (X * V / (R ^ 2 + X ^ 2)) V := by
+@[tmio M, powerlib_domain] theorem lineQ_deriv_E (V : ℝ) (Z : Passive.RX) :
+    HasDerivAt (fun E => lineQ V Z 0 E) (Z.X * V / (Z.absSq)) V := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.absSq]
   have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul X)
     |>.div_const (R ^ 2 + X ^ 2)
   convert h using 1
-  · funext E; simp [lineQ]
+  · funext E; simp [lineQ, Passive.RX.absSq]
   · simp; ring
 
 /-- The rotation `R(β)`, `β = π/2 − θ_l` with `cos θ_l = R/|Z|`, `sin θ_l = X/|Z|`,
 diagonalizes the line Jacobian `[[X V², R V], [−R V², X V]] / |Z|²`:
 `R(β) J = (V/|Z|) diag(V, 1)`. -/
-@[tmio T, powerlib_foundation] theorem rotation_diagonalizes {V R X z θl : ℝ} (hz : 0 < z)
-    (hz2 : z ^ 2 = R ^ 2 + X ^ 2) (hc : Real.cos θl = R / z) (hs : Real.sin θl = X / z) :
+@[tmio M, powerlib_domain] theorem rotation_diagonalizes {V : ℝ} {Z : Passive.RX} {z θl : ℝ}
+    (hz : 0 < z) (hz2 : z ^ 2 = Z.absSq) (hc : Real.cos θl = Z.R / z)
+    (hs : Real.sin θl = Z.X / z) :
     !![Real.cos (Real.pi / 2 - θl), -Real.sin (Real.pi / 2 - θl);
         Real.sin (Real.pi / 2 - θl), Real.cos (Real.pi / 2 - θl)] *
-      !![X * V ^ 2 / (R ^ 2 + X ^ 2), R * V / (R ^ 2 + X ^ 2);
-        -(R * V ^ 2) / (R ^ 2 + X ^ 2), X * V / (R ^ 2 + X ^ 2)] =
+      !![Z.X * V ^ 2 / Z.absSq, Z.R * V / Z.absSq;
+        -(Z.R * V ^ 2) / Z.absSq, Z.X * V / Z.absSq] =
       !![V / z * V, 0; 0, V / z] := by
+  obtain ⟨R, X⟩ := Z
+  simp only [Passive.RX.absSq] at hz2 hc hs ⊢
   rw [Real.cos_pi_div_two_sub, Real.sin_pi_div_two_sub, hc, hs, ← hz2]
   have hz' := hz.ne'
   ext i j
@@ -194,12 +208,18 @@ end LinePower
 
 /-- Converter-side complex power `S̄ = V̄_conv Ī*`, `Ī = (V e^{jθ} − V_g)/(jX)` (export current):
 `P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`. -/
-@[tmio T, powerlib_foundation] theorem converterSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
+@[tmio M, powerlib_domain] theorem converterSide_power (V Vg θ : ℝ) (Z : Passive.RX) (hR : Z.R = 0)
+    (hX : Z.X ≠ 0) :
     (V : ℂ) * Complex.exp (θ * Complex.I) *
         (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
-          ((X : ℂ) * Complex.I)) =
-      ((V * Vg * Real.sin θ / X : ℝ) : ℂ) +
-        ((V ^ 2 - V * Vg * Real.cos θ) / X : ℝ) * Complex.I := by
+          Z.impedance) =
+      ((V * Vg * Real.sin θ / Z.X : ℝ) : ℂ) +
+        ((V ^ 2 - V * Vg * Real.cos θ) / Z.X : ℝ) * Complex.I := by
+  obtain ⟨R, X⟩ := Z
+  simp only at hR hX ⊢
+  subst hR
+  rw [show (Passive.RX.impedance ⟨0, X⟩) = (X : ℂ) * Complex.I by
+    simp [Passive.RX.impedance]]
   rw [show V ^ 2 - V * Vg * Real.cos θ =
       V ^ 2 * (Real.sin θ ^ 2 + Real.cos θ ^ 2) - V * Vg * Real.cos θ by
     rw [Real.sin_sq_add_cos_sq]; ring]
@@ -212,11 +232,17 @@ end LinePower
 
 /-- Grid-side received complex power `S̄_g = V̄_g Ī*`: `P = V V_g sin θ / X`,
 `Q_g = (V V_g cos θ − V_g²)/X` (the note's `Q₀`). -/
-@[tmio T, powerlib_foundation] theorem gridSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
+@[tmio M, powerlib_domain] theorem gridSide_power (V Vg θ : ℝ) (Z : Passive.RX) (hR : Z.R = 0)
+    (hX : Z.X ≠ 0) :
     (Vg : ℂ) * (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
-          ((X : ℂ) * Complex.I)) =
-      ((V * Vg * Real.sin θ / X : ℝ) : ℂ) +
-        ((V * Vg * Real.cos θ - Vg ^ 2) / X : ℝ) * Complex.I := by
+          Z.impedance) =
+      ((V * Vg * Real.sin θ / Z.X : ℝ) : ℂ) +
+        ((V * Vg * Real.cos θ - Vg ^ 2) / Z.X : ℝ) * Complex.I := by
+  obtain ⟨R, X⟩ := Z
+  simp only at hR hX ⊢
+  subst hR
+  rw [show (Passive.RX.impedance ⟨0, X⟩) = (X : ℂ) * Complex.I by
+    simp [Passive.RX.impedance]]
   apply Complex.ext <;>
     simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im,
       Complex.div_re, Complex.div_im, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,

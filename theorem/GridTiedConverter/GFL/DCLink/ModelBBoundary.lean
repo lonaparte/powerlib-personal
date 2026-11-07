@@ -164,18 +164,21 @@ the Routh conditions hold (a strict violation gives instability). -/
 `(−sin Δθ + x_pll, −sin Δθ, cos Δθ ξ_v / V_dc, 1 − V_dc)`: a damped PLL pendulum driving, through
 `cos Δθ`, a DC loop that is a nonlinear center when `Δθ = 0`. -/
 def hopfCenter : Model :=
-  ⟨⟨0, 0, 1, 1, 3 / 2, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2⟩, 0, 1, 0, 1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
 @[tmio M, powerlib_domain] theorem hopfCenter_field (y : State 4) (hy : y 2 ≠ 0) :
     hopfCenter.p.field y = WithLp.toLp 2 ![-Real.sin (y 0) + y 1, -Real.sin (y 0),
       Real.cos (y 0) * y 3 / y 2, 1 - y 2] := by
   ext i
   fin_cases i
-  · simp [hopfCenter, ModelBParams.field, ModelBParams.vgq]
-  · simp [hopfCenter, ModelBParams.field, ModelBParams.vgq]
-  · simp [hopfCenter, ModelBParams.field, ModelBParams.vgq, ModelBParams.vgd, ModelBParams.idRef]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter, ModelBParams.field,
+      ModelBParams.vgq]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter, ModelBParams.field,
+      ModelBParams.vgq]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter, ModelBParams.field,
+      ModelBParams.vgq, ModelBParams.vgd, ModelBParams.idRef]
     field_simp
-  · simp [hopfCenter, ModelBParams.field]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter, ModelBParams.field]
 
 /-- The PLL energy plus `σ` times the DC-loop energy `ξ²/2 + w²/2 + w³/3` (`w = V_dc − 1`), which
 the DC loop conserves when `Δθ = 0`. -/
@@ -300,8 +303,10 @@ regularized field, which is model B on the ball of radius `1/4`). -/
   intro hm
   rw [mem_den_flow_iff'] at hm
   have hlas : LocalAsymptoticStable hopfCenter.p.field hopfCenter.x := hm
-  have hV : 0 < hopfCenter.p.VdcRef := by norm_num [hopfCenter]
-  have hx2 : hopfCenter.x 2 = hopfCenter.p.VdcRef := by simp [hopfCenter]
+  have hV : 0 < hopfCenter.p.VdcRef := by norm_num [ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, hopfCenter]
+  have hx2 : hopfCenter.x 2 = hopfCenter.p.VdcRef := by simp [ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, hopfCenter]
   have hball : ∀ y : State 4, ‖y - hopfCenter.x‖ < 1 / 4 →
       hopfCenter.p.regField y = hopfCenter.p.field y := fun y hy =>
     (hopfCenter.p.field_eq_regField_of_mem_ball hV hx2
@@ -350,7 +355,8 @@ regularized field, which is model B on the ball of radius `1/4`). -/
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   change hopfCenter.p.field hopfCenter.x = 0
   rw [ModelBParams.field_eq_zero_iff]
-  simp [hopfCenter, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+  simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter, ModelBParams.idRef,
+      ModelBParams.vgq, ModelBParams.vgd]
 
 @[tmio M, powerlib_domain] private theorem hopfCenter_invariants :
     (hopfCenter.p.jacobian hopfCenter.x).trace = -1 ∧
@@ -359,15 +365,23 @@ regularized field, which is model B on the ball of radius `1/4`). -/
       (hopfCenter.p.jacobian hopfCenter.x).det = 1 := by
   have h := block_invariants (J := hopfCenter.p.jacobian hopfCenter.x) (a := -1) (b := 1)
     (c := -1) (d := 0) (e := 1)
-    (by simp [ModelBParams.jacobian, hopfCenter]) (by simp [ModelBParams.jacobian, hopfCenter])
-    (by simp [ModelBParams.jacobian, hopfCenter]) (by simp [ModelBParams.jacobian, hopfCenter])
-    (by simp [ModelBParams.jacobian, hopfCenter]) (by simp [ModelBParams.jacobian, hopfCenter])
-    (by simp [ModelBParams.jacobian, hopfCenter]) (by simp [ModelBParams.jacobian, hopfCenter])
-    (by simp [ModelBParams.jacobian, hopfCenter, ModelBParams.idRef])
-    (by simp [ModelBParams.jacobian, hopfCenter])
-    (by simp [ModelBParams.jacobian, hopfCenter, ModelBParams.idRef, ModelBParams.vgd,
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfCenter])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfCenter])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfCenter])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfCenter])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter, ModelBParams.idRef])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter, ModelBParams.idRef, ModelBParams.vgd,
       ModelBParams.vgq, ModelBParams.pccP])
-    (by simp [ModelBParams.jacobian, hopfCenter, ModelBParams.idRef, ModelBParams.vgd]; norm_num)
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfCenter, ModelBParams.idRef, ModelBParams.vgd]; norm_num)
     (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
     (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
   obtain ⟨h1, h2, h3, h4⟩ := h
@@ -402,12 +416,13 @@ translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
       (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ hopfCenter_mem_den_lyapunovStable
-    (q := Requirement.routh) (by simp [family, translate]) (show ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_not_routh)
+    (q := Requirement.routh) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, family,
+        translate]) (show ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_not_routh)
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact (show hopfCenter.p.field hopfCenter.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_equilibrium)
   · show (0 : ℝ) < hopfCenter.p.VdcRef
-    norm_num [hopfCenter]
+    norm_num [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter]
 
 /-! ## The Routh boundary: a disconnected DC link (unstable) -/
 
@@ -415,7 +430,7 @@ translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
 component of the field vanishes (`x / 0 = 0`) and `V_dc` is a first integral; otherwise as
 `hopfCenter`. The field is `(−sin Δθ + x_pll, −sin Δθ, 0, 1 − V_dc)`. -/
 def cdcZero : Model :=
-  ⟨⟨0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 0⟩, 0, 1, 0, 1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
 @[tmio M, powerlib_domain] private theorem cdcZero_equilibrium :
     connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium}) := by
@@ -423,7 +438,8 @@ def cdcZero : Model :=
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   change cdcZero.p.field cdcZero.x = 0
   rw [ModelBParams.field_eq_zero_iff]
-  simp [cdcZero, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+  simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, cdcZero, ModelBParams.idRef,
+      ModelBParams.vgq, ModelBParams.vgd]
 
 @[tmio M, powerlib_domain] private theorem cdcZero_invariants :
     (cdcZero.p.jacobian cdcZero.x).trace = -1 ∧
@@ -432,12 +448,18 @@ def cdcZero : Model :=
       (cdcZero.p.jacobian cdcZero.x).det = 0 := by
   have h := block_invariants (J := cdcZero.p.jacobian cdcZero.x) (a := -1) (b := 1)
     (c := -1) (d := 0) (e := 0)
-    (by simp [ModelBParams.jacobian, cdcZero]) (by simp [ModelBParams.jacobian, cdcZero])
-    (by simp [ModelBParams.jacobian, cdcZero]) (by simp [ModelBParams.jacobian, cdcZero])
-    (by simp [ModelBParams.jacobian, cdcZero]) (by simp [ModelBParams.jacobian, cdcZero])
-    (by simp [ModelBParams.jacobian, cdcZero]) (by simp [ModelBParams.jacobian, cdcZero])
-    (by simp [ModelBParams.jacobian, cdcZero]) (by simp [ModelBParams.jacobian, cdcZero])
-    (by simp [ModelBParams.jacobian, cdcZero]) (by simp [ModelBParams.jacobian, cdcZero])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        cdcZero]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, cdcZero])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        cdcZero]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, cdcZero])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        cdcZero]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, cdcZero])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        cdcZero]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, cdcZero])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        cdcZero]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, cdcZero])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        cdcZero]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, cdcZero])
     (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
     (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
   obtain ⟨h1, h2, h3, h4⟩ := h
@@ -469,7 +491,8 @@ integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the ra
   rw [mem_den_flow_iff']
   show Unstable cdcZero.p.field cdcZero.x
   have hf : ContDiff ℝ 1 cdcZero.p.field :=
-    cdcZero.p.contDiff_field_of_Cdc_eq_zero (by simp [cdcZero])
+    cdcZero.p.contDiff_field_of_Cdc_eq_zero (by simp [ModelBParams.Cdc, ModelBParams.Rg,
+        ModelBParams.Xg, cdcZero])
   set W : State 4 → ℝ := fun y => (1 - y 2) * y 3 with hW
   have hWd : ∀ y : State 4, HasFDerivAt W (ModelBParams.row4 0 0 (-y 3) (1 - y 2)) y := by
     intro y
@@ -484,7 +507,7 @@ integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the ra
   refine Dynamics.unstable_of_chetaev hf hWc (r := 1) one_pos (fun ε hε => ?_) (fun y _ hy => ?_)
   · refine ⟨WithLp.toLp 2 ![0, 0, 1 - ε / 4, ε / 4], ?_, ?_⟩
     · rw [EuclideanSpace.norm_eq, Real.sqrt_lt' hε]
-      simp [cdcZero, Fin.sum_univ_four]
+      simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, cdcZero, Fin.sum_univ_four]
       nlinarith
     · simp only [hW]
       simp
@@ -494,8 +517,10 @@ integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the ra
       intro h
       simp only [hW, h, zero_mul] at hy
       exact lt_irrefl _ hy
-    have : cdcZero.p.field y 2 = 0 := by simp [cdcZero, ModelBParams.field]
-    simp [ModelBParams.row4, cdcZero, ModelBParams.field]
+    have : cdcZero.p.field y 2 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
+        cdcZero, ModelBParams.field]
+    simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.row4, cdcZero,
+        ModelBParams.field]
     positivity
 
 /-! ## The Routh boundary: a weakly damped DC loop (locally asymptotically stable) -/
@@ -560,7 +585,7 @@ def dampedEnergy (y : State 4) : ℝ :=
 The PLL is decoupled and damped; the DC loop has a Hopf-type linearization (pure imaginary pair
 `±i`) whose cubic damping comes from the line loss `R_g i_d²`. -/
 def hopfDamped : Model :=
-  ⟨⟨0, 0, 1, 1, 3 / 2, -3 / 2, 1, -1, 1, 3, 2, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 1 / 2]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2⟩, -3 / 2, 1, -1, 1, 3, ⟨2, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, 1, 1 / 2]⟩
 
 @[tmio M, powerlib_domain] theorem hopfDamped_x : hopfDamped.x = WithLp.toLp 2 ![0, 0, 1, 1 / 2] :=
   rfl
@@ -570,12 +595,15 @@ def hopfDamped : Model :=
       -1 + (3 * Real.cos (y 0) - 2 * (y 2 - 1 + y 3)) * (y 2 - 1 + y 3) / y 2, 1 - y 2] := by
   ext i
   fin_cases i
-  · simp [hopfDamped, ModelBParams.field, ModelBParams.vgq]
-  · simp [hopfDamped, ModelBParams.field, ModelBParams.vgq]
-  · simp [hopfDamped, ModelBParams.field, ModelBParams.vgq, ModelBParams.vgd,
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped, ModelBParams.field,
+      ModelBParams.vgq]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped, ModelBParams.field,
+      ModelBParams.vgq]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped, ModelBParams.field,
+      ModelBParams.vgq, ModelBParams.vgd,
       ModelBParams.idRef]
     field_simp
-  · simp [hopfDamped, ModelBParams.field]
+  · simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped, ModelBParams.field]
 
 /-- The Lie derivative of `dampedEnergy`, multiplied by `V_dc`, as a polynomial in
 `s = sin Δθ`, `c = cos Δθ`, `x_pll`, `w = V_dc − 1`, `ξ = ξ_v − 1/2`. -/
@@ -714,7 +742,8 @@ def hopfDamped : Model :=
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   change hopfDamped.p.field hopfDamped.x = 0
   rw [ModelBParams.field_eq_zero_iff]
-  simp [hopfDamped, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+  simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped, ModelBParams.idRef,
+      ModelBParams.vgq, ModelBParams.vgd]
   norm_num
 
 @[tmio M, powerlib_domain] private theorem hopfDamped_invariants :
@@ -724,15 +753,23 @@ def hopfDamped : Model :=
       (hopfDamped.p.jacobian hopfDamped.x).det = 3 := by
   have h := block_invariants (J := hopfDamped.p.jacobian hopfDamped.x) (a := -3) (b := 1)
     (c := -3) (d := 0) (e := 1)
-    (by simp [ModelBParams.jacobian, hopfDamped]) (by simp [ModelBParams.jacobian, hopfDamped])
-    (by simp [ModelBParams.jacobian, hopfDamped]) (by simp [ModelBParams.jacobian, hopfDamped])
-    (by simp [ModelBParams.jacobian, hopfDamped]) (by simp [ModelBParams.jacobian, hopfDamped])
-    (by simp [ModelBParams.jacobian, hopfDamped]) (by simp [ModelBParams.jacobian, hopfDamped])
-    (by simp [ModelBParams.jacobian, hopfDamped, ModelBParams.idRef])
-    (by simp [ModelBParams.jacobian, hopfDamped])
-    (by simp [ModelBParams.jacobian, hopfDamped, ModelBParams.idRef, ModelBParams.vgd,
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfDamped])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfDamped])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfDamped])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped]) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian, hopfDamped])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped, ModelBParams.idRef])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped])
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped, ModelBParams.idRef, ModelBParams.vgd,
       ModelBParams.vgq, ModelBParams.pccP]; norm_num)
-    (by simp [ModelBParams.jacobian, hopfDamped, ModelBParams.idRef, ModelBParams.vgd]; norm_num)
+    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, ModelBParams.jacobian,
+        hopfDamped, ModelBParams.idRef, ModelBParams.vgd]; norm_num)
     (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
     (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
   obtain ⟨h1, h2, h3, h4⟩ := h
@@ -877,12 +914,13 @@ boundary. Off the boundary the translation is exact
       (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ hopfDamped_mem_den_locallyAsymptoticallyStable
-    (q := Requirement.routh) (by simp [family, translate]) (show ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_not_routh)
+    (q := Requirement.routh) (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, family,
+        translate]) (show ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_not_routh)
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact (show hopfDamped.p.field hopfDamped.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_equilibrium)
   · show (0 : ℝ) < hopfDamped.p.VdcRef
-    norm_num [hopfDamped]
+    norm_num [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped]
 
 /-! ## The witnesses lie on the Routh boundary -/
 
@@ -897,11 +935,14 @@ boundary. Off the boundary the translation is exact
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm hq
   rcases hm with rfl | rfl | rfl <;> rcases hq with rfl | rfl
   · exact (show hopfCenter.p.field hopfCenter.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_equilibrium)
-  · show (0 : ℝ) < hopfCenter.p.VdcRef; norm_num [hopfCenter]
+  · show (0 : ℝ) < hopfCenter.p.VdcRef; norm_num [ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, hopfCenter]
   · exact (show hopfDamped.p.field hopfDamped.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_equilibrium)
-  · show (0 : ℝ) < hopfDamped.p.VdcRef; norm_num [hopfDamped]
+  · show (0 : ℝ) < hopfDamped.p.VdcRef; norm_num [ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, hopfDamped]
   · exact (show cdcZero.p.field cdcZero.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using cdcZero_equilibrium)
-  · show (0 : ℝ) < cdcZero.p.VdcRef; norm_num [cdcZero]
+  · show (0 : ℝ) < cdcZero.p.VdcRef; norm_num [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
+      cdcZero]
 
 /-- None of the three boundary witnesses is off the 4×4 Routh boundary: their Jacobians neither
 meet the Routh conditions nor violate them strictly. -/

@@ -1,4 +1,5 @@
 import theorem.Attributes
+import theorem.Passive.Phasor
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -9,7 +10,8 @@ All statements are algebraic or trigonometric facts about the formulas of work-s
 T-current-limiting / T-gfm-control §1.10; none asserts stability of a converter.
 
 Model boundary.
-Static formulas only: a voltage source `E∠δ` behind `R + jX` against the grid `V∠0` (exit
+Static formulas only: a voltage source `E∠δ` behind the phasor branch `Z = R + jX`
+(`Passive.RX`, `|Z|² = Passive.RX.absSq`) against the grid `V∠0` (exit
 angle), the grid-code power references, the adaptive virtual resistance and the HAC barrier
 factor, each as a function of its arguments; no converter dynamics, mode switching or control
 loop.
@@ -47,9 +49,9 @@ namespace powerlib.Limiting
 
 /-! ## Exit angle of the current-limiting mode -/
 
-/-- Current magnitude of a source `E∠δ` behind `R + jX` against `V∠0`. -/
-def currentMag (E V R X δ : ℝ) : ℝ :=
-  ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ / ‖(⟨R, X⟩ : ℂ)‖
+/-- Current magnitude of a source `E∠δ` behind the phasor branch `Z = R + jX` against `V∠0`. -/
+def currentMag (E V : ℝ) (Z : Passive.RX) (δ : ℝ) : ℝ :=
+  ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ / ‖Z.impedance‖
 
 @[tmio T, powerlib_foundation] theorem currentMag_sq_num (E V δ : ℝ) :
     ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ ^ 2 = E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ := by
@@ -62,55 +64,51 @@ def currentMag (E V R X δ : ℝ) : ℝ :=
   have := Real.sin_sq_add_cos_sq δ
   linear_combination E ^ 2 * this
 
-@[tmio T, powerlib_foundation] theorem normZ_sq (R X : ℝ) : ‖(⟨R, X⟩ : ℂ)‖ ^ 2 = R ^ 2 + X ^ 2 := by
-  rw [Complex.sq_norm, Complex.normSq_apply]
-  ring
-
-/-- Law of cosines for the current magnitude. -/
-@[tmio M, powerlib_domain] theorem currentMag_sq (R X E V δ : ℝ) :
-    currentMag E V R X δ ^ 2 = (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / (R ^ 2 + X ^ 2) := by
-  rw [currentMag, div_pow, currentMag_sq_num, normZ_sq]
+/-- Law of cosines for the current magnitude (`|Z|² = Passive.RX.absSq`). -/
+@[tmio M, powerlib_domain] theorem currentMag_sq (Z : Passive.RX) (E V δ : ℝ) :
+    currentMag E V Z δ ^ 2 = (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / Z.absSq := by
+  rw [currentMag, div_pow, currentMag_sq_num, Passive.RX.norm_sq_impedance]
 
 /-- `δ_exit = arccos((E² + V² − I_max²(R² + X²))/(2 E V))`. -/
-def deltaExit (E V R X Imax : ℝ) : ℝ :=
-  Real.arccos ((E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
+def deltaExit (E V : ℝ) (Z : Passive.RX) (Imax : ℝ) : ℝ :=
+  Real.arccos ((E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V))
 
-@[tmio M, powerlib_domain] private lemma currentMag_nonneg (E V R X δ : ℝ) :
-    0 ≤ currentMag E V R X δ := div_nonneg (norm_nonneg _) (norm_nonneg _)
+@[tmio M, powerlib_domain] private lemma currentMag_nonneg (E V : ℝ) (Z : Passive.RX) (δ : ℝ) :
+    0 ≤ currentMag E V Z δ := div_nonneg (norm_nonneg _) (norm_nonneg _)
 
 /-- At `δ_exit` the current is exactly `I_max` (under the `arccos` domain premise). -/
-@[tmio M, powerlib_domain] theorem deltaExit_current {E V R X Imax : ℝ} (hE : 0 < E) (hV : 0 < V)
-    (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
-    (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
-    (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1) :
-    currentMag E V R X (deltaExit E V R X Imax) = Imax := by
-  have hsq : currentMag E V R X (deltaExit E V R X Imax) ^ 2 = Imax ^ 2 := by
+@[tmio M, powerlib_domain] theorem deltaExit_current {E V Imax : ℝ} {Z : Passive.RX} (hE : 0 < E) (hV : 0 < V)
+    (hZ : 0 < Z.absSq) (hI : 0 ≤ Imax)
+    (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V))
+    (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V) ≤ 1) :
+    currentMag E V Z (deltaExit E V Z Imax) = Imax := by
+  have hsq : currentMag E V Z (deltaExit E V Z Imax) ^ 2 = Imax ^ 2 := by
     rw [currentMag_sq, deltaExit, Real.cos_arccos hdom1 hdom2]
     field_simp
     ring
-  exact (pow_left_inj₀ (currentMag_nonneg _ _ _ _ _) hI two_ne_zero).mp hsq
+  exact (pow_left_inj₀ (currentMag_nonneg _ _ _ _) hI two_ne_zero).mp hsq
 
 /-- The `arccos` argument lies in `[−1, 1]` iff `|E − V| ≤ I_max |Z| ≤ E + V`. -/
-@[tmio T, powerlib_foundation] theorem deltaExit_domain_iff {E V R X Imax : ℝ} (hE : 0 < E)
+@[tmio M, powerlib_domain] theorem deltaExit_domain_iff {E V Imax : ℝ} {Z : Passive.RX} (hE : 0 < E)
     (hV : 0 < V) :
-    (-1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ∧
-        (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1) ↔
-      (E - V) ^ 2 ≤ Imax ^ 2 * (R ^ 2 + X ^ 2) ∧ Imax ^ 2 * (R ^ 2 + X ^ 2) ≤ (E + V) ^ 2 := by
+    (-1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V) ∧
+        (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V) ≤ 1) ↔
+      (E - V) ^ 2 ≤ Imax ^ 2 * Z.absSq ∧ Imax ^ 2 * Z.absSq ≤ (E + V) ^ 2 := by
   have h2 : 0 < 2 * E * V := by positivity
   rw [le_div_iff₀ h2, div_le_iff₀ h2]
   constructor <;> rintro ⟨a, b⟩ <;> constructor <;> nlinarith
 
 /-- On `[0, π]` the current is below `I_max` iff `δ < δ_exit`. -/
-@[tmio TM, powerlib_domain] theorem current_lt_iff {E V R X Imax δ : ℝ} (hE : 0 < E) (hV : 0 < V)
-    (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
-    (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V))
-    (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V) ≤ 1)
+@[tmio TM, powerlib_domain] theorem current_lt_iff {E V Imax δ : ℝ} {Z : Passive.RX} (hE : 0 < E) (hV : 0 < V)
+    (hZ : 0 < Z.absSq) (hI : 0 ≤ Imax)
+    (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V))
+    (hdom2 : (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V) ≤ 1)
     (hδ0 : 0 ≤ δ) (hδπ : δ ≤ Real.pi) :
-    currentMag E V R X δ < Imax ↔ δ < deltaExit E V R X Imax := by
-  set y := (E ^ 2 + V ^ 2 - Imax ^ 2 * (R ^ 2 + X ^ 2)) / (2 * E * V)
+    currentMag E V Z δ < Imax ↔ δ < deltaExit E V Z Imax := by
+  set y := (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq) / (2 * E * V)
   have h2 : 0 < 2 * E * V := by positivity
-  have hcur : currentMag E V R X δ < Imax ↔ y < Real.cos δ := by
-    rw [← pow_lt_pow_iff_left₀ (currentMag_nonneg _ _ _ _ _) hI two_ne_zero,
+  have hcur : currentMag E V Z δ < Imax ↔ y < Real.cos δ := by
+    rw [← pow_lt_pow_iff_left₀ (currentMag_nonneg _ _ _ _) hI two_ne_zero,
       currentMag_sq, div_lt_iff₀ hZ, div_lt_iff₀ h2]
     constructor <;> intro h <;> nlinarith
   rw [hcur, deltaExit]
@@ -124,11 +122,11 @@ def deltaExit (E V R X Imax : ℝ) : ℝ :=
     rwa [Real.cos_arccos hdom1 hdom2] at h'
 
 /-- If `I_max |Z| > E + V` the current limit is never reached: no exit angle exists. -/
-@[tmio M, powerlib_domain] theorem current_lt_of_large_limit {E V R X Imax : ℝ} (hE : 0 ≤ E)
-    (hV : 0 ≤ V) (hZ : 0 < R ^ 2 + X ^ 2) (hI : 0 ≤ Imax)
-    (h : (E + V) ^ 2 < Imax ^ 2 * (R ^ 2 + X ^ 2)) (δ : ℝ) :
-    currentMag E V R X δ < Imax := by
-  rw [← pow_lt_pow_iff_left₀ (currentMag_nonneg _ _ _ _ _) hI two_ne_zero, currentMag_sq,
+@[tmio M, powerlib_domain] theorem current_lt_of_large_limit {E V Imax : ℝ} {Z : Passive.RX} (hE : 0 ≤ E)
+    (hV : 0 ≤ V) (hZ : 0 < Z.absSq) (hI : 0 ≤ Imax)
+    (h : (E + V) ^ 2 < Imax ^ 2 * Z.absSq) (δ : ℝ) :
+    currentMag E V Z δ < Imax := by
+  rw [← pow_lt_pow_iff_left₀ (currentMag_nonneg _ _ _ _) hI two_ne_zero, currentMag_sq,
     div_lt_iff₀ hZ]
   have hc := Real.neg_one_le_cos δ
   have : E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ ≤ (E + V) ^ 2 := by nlinarith [mul_nonneg hE hV]

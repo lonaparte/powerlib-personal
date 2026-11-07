@@ -53,8 +53,8 @@ end RLAdmission
 namespace LCLAdmission
 
 def submittedModel : Passive.LCL.Circuit :=
-  ⟨Passive.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩,
-    Passive.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩, ⟨1, by norm_num⟩⟩
+  Passive.LCL.Circuit.ofParams (Passive.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩)
+    (Passive.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩) ⟨1, by norm_num⟩
 
 def accepted : Linear.Certificate submittedModel.plant.A :=
   Passive.LCL.synthesize submittedModel

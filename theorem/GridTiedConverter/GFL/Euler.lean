@@ -83,7 +83,7 @@ integrated with a large enough step is not locally exponentially stable: every E
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := mem_den_locallyExponentiallyStable_of_tan_lt ⟨1, 0, 1, 1, 1, 0⟩ (by norm_num
+  have hm := mem_den_locallyExponentiallyStable_of_tan_lt ⟨1, ⟨0, 0⟩, 1, 1, 1, 0, rfl⟩ (by norm_num
     [Params.D0])
     one_pos one_pos one_pos (θ := 0) (by simp) (by simp) (by simp)
   unfold powerlib.TMIO.Statement at hm

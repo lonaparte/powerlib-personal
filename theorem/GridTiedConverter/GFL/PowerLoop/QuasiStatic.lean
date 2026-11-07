@@ -1,4 +1,5 @@
 import theorem.Dynamics.Locality
+import theorem.Passive.Phasor
 import theorem.Criteria.Routh3
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
@@ -109,8 +110,8 @@ open Matrix
 structure Params where
   /-- grid voltage amplitude -/
   V : ℝ
-  /-- grid reactance -/
-  Xg : ℝ
+  /-- grid line `R + jX` (grid reactance), lossless -/
+  line : Passive.RX
   /-- PLL proportional gain -/
   kp : ℝ
   /-- PLL integral gain -/
@@ -119,6 +120,11 @@ structure Params where
   kP : ℝ
   /-- active-power reference (absorbed-positive) -/
   Pref : ℝ
+  /-- The grid line is lossless. -/
+  line_lossless : line.R = 0
+
+/-- The grid reactance `X_g`. -/
+abbrev Params.Xg (p : Params) : ℝ := p.line.X
 
 variable (p : Params)
 
@@ -643,7 +649,7 @@ a nonzero purely imaginary eigenvalue. -/
 
 /-- An unbalanced model: `V = 0`, `X_g = 1`, all gains and the reference zero, at
 `(θ*, 0, i_d*) = (0, 0, −1)` (the OUT-positive source point `I_d* = 1`). -/
-def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, -1⟩
+def offEquilibrium : Model := ⟨⟨0, ⟨0, 1⟩, 0, 0, 0, 0, rfl⟩, 0, -1⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
 @[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
@@ -652,7 +658,7 @@ def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, -1⟩
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) (contDiff_field _)
     fun h => ?_
   have := congrArg (fun y : Dynamics.State 3 => y 1) h
-  simp [offEquilibrium, QuasiStatic.field, Dynamics.lift, coordField, point, vq] at this
+  simp [Params.Xg, offEquilibrium, QuasiStatic.field, Dynamics.lift, coordField, point, vq] at this
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for an equilibrium. -/
@@ -660,19 +666,21 @@ while the translation asks for an equilibrium. -/
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
-    (by simp [family, translate]) (by simp [family, Meets, IsEq, offEquilibrium])
+    (by simp [Params.Xg, family, translate]) (by simp [Params.Xg, family, Meets, IsEq,
+        offEquilibrium])
 
 /-! ### The Lyapunov translation -/
 
 /-- An undamped PLL with a frozen dispatch loop: `V = k_i = 1`, `X_g = k_p = k_P = P_ref = 0` at
 `(θ*, 0, i_d*) = (0, 0, 0)`; the field is the pendulum `θ̇ = x`, `ẋ = −sin θ` with `i_d`
 constant. -/
-def undampedPLL : Model := ⟨⟨1, 0, 0, 1, 0, 0⟩, 0, 0⟩
+def undampedPLL : Model := ⟨⟨1, ⟨0, 0⟩, 0, 1, 0, 0, rfl⟩, 0, 0⟩
 
 @[tmio M, powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 3) :
     QuasiStatic.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0), 0] := by
   ext i
-  fin_cases i <;> simp [QuasiStatic.field, Dynamics.lift, coordField, undampedPLL, vq, power]
+  fin_cases i <;> simp [Params.Xg, QuasiStatic.field, Dynamics.lift, coordField, undampedPLL, vq,
+      power]
 
 /-- The energy `1 − cos θ + x²/2 + i_d²/2`. -/
 @[tmio T, powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
@@ -706,7 +714,7 @@ requirement. -/
   change LyapunovStable _ _
   have hpt : point undampedPLL.θ undampedPLL.Id = 0 := by
     ext i
-    fin_cases i <;> simp [point, undampedPLL]
+    fin_cases i <;> simp [Params.Xg, point, undampedPLL]
   rw [hpt]
   have hcont : Continuous fun y : Dynamics.State 3 => y 0 :=
     (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) : Dynamics.State 3 →L[ℝ] ℝ).continuous
@@ -734,6 +742,6 @@ is Lyapunov stable at an equilibrium whose Jacobian has trace `0`. -/
   refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .jacobianStable)
     (by simp [family, translate]) fun hs => ?_
   have := (hs : Meets undampedPLL .jacobianStable).1
-  simp [jac, Matrix.trace_fin_three, undampedPLL] at this
+  simp [Params.Xg, jac, Matrix.trace_fin_three, undampedPLL] at this
 
 end powerlib.GFL.PowerLoop.QuasiStatic

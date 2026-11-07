@@ -1,4 +1,6 @@
 import theorem.Dynamics.Locality
+import theorem.Passive.Phasor
+import theorem.Passive.Shunt
 import theorem.Criteria.Routh4
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
@@ -109,8 +111,8 @@ open Matrix
 structure Params where
   /-- ac source amplitude -/
   V0 : ℝ
-  /-- grid reactance -/
-  Xg : ℝ
+  /-- Grid reactance: the line `R + jX` at the grid frequency, lossless. -/
+  line : Passive.RX
   /-- d-axis current reference (IN-positive) -/
   id0 : ℝ
   /-- PLL proportional gain -/
@@ -121,10 +123,20 @@ structure Params where
   kpv : ℝ
   /-- dc-voltage loop integral gain -/
   kiv : ℝ
-  /-- dc-bus capacitance -/
-  C : ℝ
+  /-- dc-bus capacitance (lossless shunt). -/
+  dcLink : Passive.GC
   /-- dc source current -/
   Idc0 : ℝ
+  /-- The DC link is lossless. -/
+  dcLink_lossless : dcLink.G = 0
+  /-- The grid line is lossless. -/
+  line_lossless : line.R = 0
+
+/-- The DC-link capacitance. -/
+abbrev Params.C (p : Params) : ℝ := p.dcLink.C
+
+/-- The grid reactance `X_g`. -/
+abbrev Params.Xg (p : Params) : ℝ := p.line.X
 
 namespace Params
 variable (p : Params)
@@ -709,7 +721,7 @@ criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential sta
 
 /-- An unbalanced model: no ac source (`V₀ = 0`), unit capacitance and dc source current, all
 gains and references zero, at `θ₀ = 0`; the dc-bus voltage ramps, `V̇ = I_dc0 / C = 1`. -/
-def offEquilibrium : Model := ⟨⟨0, 0, 0, 0, 0, 0, 0, 1, 1⟩, 0⟩
+def offEquilibrium : Model := ⟨⟨0, ⟨0, 0⟩, 0, 0, 0, 0, 0, ⟨0, 1⟩, 1, rfl, rfl⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it (the field
 is the smooth `regField` near the point, `Spectral.mem_den_unstable_of_ne_zero_local`). -/
@@ -721,7 +733,8 @@ is the smooth `regField` near the point, `Spectral.mem_den_unstable_of_ne_zero_l
     ((contDiff_regField _).contDiffOn.congr fun y hy =>
       field_eq_regField_of_near _ (mem_ball_iff_norm.mp hy)) fun h => ?_
   have := congrArg (fun y : Dynamics.State 4 => y 2) h
-  simp [offEquilibrium, FourState.field, Dynamics.lift, coordField, opPoint, Params.γ] at this
+  simp [Params.Xg, Params.C, offEquilibrium, FourState.field, Dynamics.lift, coordField, opPoint,
+      Params.γ] at this
 
 /-- The instability translation is sound but not exact: instability is the failure of Lyapunov
 stability, so the non-equilibrium point `offEquilibrium` is unstable, while the translation asks
@@ -730,20 +743,22 @@ for an equilibrium. -/
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
-    (by simp [family, translate]) (by simp [family, Meets, IsEq, offEquilibrium])
+    (by simp [Params.Xg, Params.C, family, translate]) (by simp [Params.Xg, Params.C, family,
+        Meets, IsEq, offEquilibrium])
 
 /-! ### The Lyapunov translation -/
 
 /-- Undamped PLL with a damped dc loop: `V₀ = k_i = 1`, `X_g = i_{d0} = k_p = I_dc0 = 0`,
 `k_pv = k_iv = 1`, `C = 3/2` (so `γ = 1`), at `θ₀ = 0`. The field is the pendulum `θ̇ = x`,
 `ẋ = −sin θ` driving the dc loop `V̇ = cos θ (−(V − 1) − η) / V`, `η̇ = V − 1`. -/
-def undampedPLL : Model := ⟨⟨1, 0, 0, 0, 1, 1, 1, 3 / 2, 0⟩, 0⟩
+def undampedPLL : Model := ⟨⟨1, ⟨0, 0⟩, 0, 0, 1, 1, 1, ⟨0, 3 / 2⟩, 0, rfl, rfl⟩, 0⟩
 
 @[tmio M, powerlib_domain] private theorem undampedPLL_field (y : Dynamics.State 4) :
     FourState.field undampedPLL.params y = WithLp.toLp 2 ![y 1, -Real.sin (y 0),
       Real.cos (y 0) * (-(y 2 - 1) - y 3) / y 2, y 2 - 1] := by
   ext i
-  fin_cases i <;> simp [FourState.field, Dynamics.lift, coordField, undampedPLL, vq, idc, Params.γ]
+  fin_cases i <;> simp [Params.Xg, Params.C, FourState.field, Dynamics.lift, coordField,
+      undampedPLL, vq, idc, Params.γ]
   ring
 
 /-- The Lyapunov function `1 − cos θ + x²/2 + u² + u η + (3/2) η²`, `u = V − 1`. -/
@@ -794,17 +809,20 @@ input-to-state argument: the sum is a local Lyapunov function, positive away fro
     (D := {y | |y 0| < 1 / 2 ∧ |y 2 - 1| < 1 / 10}) (by norm_num)
     ⟨(isOpen_lt (continuous_abs.comp hc0) continuous_const).inter
         (isOpen_lt (continuous_abs.comp (hc2.sub continuous_const)) continuous_const),
-      by simp [opPoint, undampedPLL],
+      by simp [Params.Xg, Params.C, opPoint, undampedPLL],
       continuous_iff_continuousAt.mpr fun y => (lsEnergy_hasFDerivAt y).continuousAt,
       fun y => (lsEnergy_hasFDerivAt y).differentiableAt,
-      by simp [lsEnergy, opPoint, undampedPLL], fun y hy hne => ?_, fun y hy => ?_⟩
+      by simp [Params.Xg, Params.C, lsEnergy, opPoint,
+          undampedPLL], fun y hy hne => ?_, fun y hy => ?_⟩
   · have hy0 : |y 0| < 1 / 2 := hy.1
     have hw : 1 / 2 * (‖y - opPoint undampedPLL.θ‖ ^ 2 - y 0 ^ 2) ≤
         1 / 2 * y 1 ^ 2 + ((y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2) := by
-      simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, opPoint, undampedPLL]
+      simp [Params.Xg, Params.C, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, opPoint,
+          undampedPLL]
       nlinarith [sq_nonneg (y 2 - 1 + y 3), sq_nonneg (y 3)]
     unfold lsEnergy
-    linarith [Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp [opPoint, undampedPLL]) hw
+    linarith [Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp [Params.Xg, Params.C, opPoint,
+        undampedPLL]) hw
       (by linarith [Real.two_le_pi]) hne]
   · obtain ⟨hy0, hy2⟩ := hy
     rw [(lsEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
@@ -846,7 +864,8 @@ quartic `(λ² + 1)(λ² + λ + 1)` has the imaginary pair `±i`, so the Routh i
   refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .routh)
     (by simp [family, translate]) fun hr => ?_
   obtain ⟨-, -, -, hg⟩ : Meets undampedPLL .routh := hr
-  norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL, Params.γ] at hg
+  norm_num [Params.Xg, Params.C, a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL,
+      Params.γ] at hg
 
 
 end powerlib.GFL.DCLink.FourState

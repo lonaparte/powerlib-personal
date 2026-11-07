@@ -59,12 +59,21 @@ def IsTelegrapherSolution (series : Passive.RL) (shunt : Passive.GC) (a b : ℝ)
     HasPartialsWithin v vx vt (strip a b) q ∧ HasPartialsWithin i ix it (strip a b) q ∧
       vx q = -series.L * it q - series.R * i q ∧ ix q = -shunt.C * vt q - shunt.G * v q
 
-/-- Lossless line constants. -/
+/-- Lossless line constants: a unit length of line is the series branch `series` (`L'`) and
+the shunt `shunt` (`C'`), both lossless. -/
 structure LosslessLine where
-  L : ℝ
-  C : ℝ
-  L_pos : 0 < L
-  C_pos : 0 < C
+  series : Passive.RL
+  shunt : Passive.GC
+  L_pos : 0 < series.L
+  C_pos : 0 < shunt.C
+  series_lossless : series.R = 0
+  shunt_lossless : shunt.G = 0
+
+/-- The inductance per unit length. -/
+abbrev LosslessLine.L (p : LosslessLine) : ℝ := p.series.L
+
+/-- The capacitance per unit length. -/
+abbrev LosslessLine.C (p : LosslessLine) : ℝ := p.shunt.C
 
 namespace LosslessLine
 
@@ -112,7 +121,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
 
 /-- Forward Riemann invariant: `v + Z_c i` is constant along `x - ct = const`. -/
 @[tmio TM, powerlib_domain] theorem forward_invariant
-    (h : IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ a b v i) (hab : a ≤ b) (t₀ : ℝ) :
+    (h : IsTelegrapherSolution p.series p.shunt a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ + (b - a) / p.c) + p.Zc * i (b, t₀ + (b - a) / p.c) =
       v (a, t₀) + p.Zc * i (a, t₀) := by
   obtain ⟨vx, vt, ix, it, hsol⟩ := h
@@ -135,7 +144,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
       intro s hs
       obtain ⟨-, -, hkvl, hkcl⟩ := hsol _ (hmaps s hs)
       generalize (((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), 1 / p.c)) = q at hkvl hkcl ⊢
-      rw [hkvl, hkcl]
+      rw [hkvl, hkcl, p.series_lossless, p.shunt_lossless]
       have hc0 := hc.ne'
       have e : (-p.L * it q - 0 * i q + p.Zc * (-p.C * vt q - 0 * v q)) * (1, 1 / p.c).1 +
           (vt q + p.Zc * it q) * (1, 1 / p.c).2 =
@@ -147,7 +156,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
 
 /-- Backward Riemann invariant: `v - Z_c i` is constant along `x + ct = const`. -/
 @[tmio TM, powerlib_domain] theorem backward_invariant
-    (h : IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ a b v i) (hab : a ≤ b) (t₀ : ℝ) :
+    (h : IsTelegrapherSolution p.series p.shunt a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ - (b - a) / p.c) - p.Zc * i (b, t₀ - (b - a) / p.c) =
       v (a, t₀) - p.Zc * i (a, t₀) := by
   obtain ⟨vx, vt, ix, it, hsol⟩ := h
@@ -170,7 +179,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
       intro s hs
       obtain ⟨-, -, hkvl, hkcl⟩ := hsol _ (hmaps s hs)
       generalize (((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), -(1 / p.c))) = q at hkvl hkcl ⊢
-      rw [hkvl, hkcl]
+      rw [hkvl, hkcl, p.series_lossless, p.shunt_lossless]
       have hc0 := hc.ne'
       have e : (-p.L * it q - 0 * i q - p.Zc * (-p.C * vt q - 0 * v q)) * (1, -(1 / p.c)).1 +
           (vt q - p.Zc * it q) * (1, -(1 / p.c)).2 =
@@ -197,7 +206,7 @@ def i₂ (ℓ : ℝ) (i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ := -i (ℓ, t)
 /-- **Bergeron relation, forward wave** (inflow convention at both ends):
 `v₂(t) - Z_c i₂(t) = v₁(t - τ) + Z_c i₁(t - τ)` for every C¹ lossless solution. -/
 @[tmio TM, powerlib_domain] theorem bergeron_forward {ℓ : ℝ}
-    (h : IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
+    (h : IsTelegrapherSolution p.series p.shunt 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v₂ ℓ v t - p.Zc * i₂ ℓ i t = v₁ v (t - τ p ℓ) + p.Zc * i₁ i (t - τ p ℓ) := by
   have := forward_invariant h hℓ (t - τ p ℓ)
   simp only [sub_zero, τ, sub_add_cancel] at this
@@ -207,7 +216,7 @@ def i₂ (ℓ : ℝ) (i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ := -i (ℓ, t)
 /-- **Bergeron relation, backward wave** (inflow convention at both ends):
 `v₁(t) - Z_c i₁(t) = v₂(t - τ) + Z_c i₂(t - τ)`. -/
 @[tmio TM, powerlib_domain] theorem bergeron_backward {ℓ : ℝ}
-    (h : IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
+    (h : IsTelegrapherSolution p.series p.shunt 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v₁ v t - p.Zc * i₁ i t = v₂ ℓ v (t - τ p ℓ) + p.Zc * i₂ ℓ i (t - τ p ℓ) := by
   have := backward_invariant h hℓ t
   simp only [sub_zero] at this
@@ -225,7 +234,7 @@ def history₁ (ℓ : ℝ) (v i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ :=
 /-- EMTP companion form: each end is a conductance `1/Z_c` in parallel with a history
 current source, `iₖ(t) = vₖ(t)/Z_c - eₖ(t)/Z_c`. -/
 @[tmio TM, powerlib_domain] theorem bergeron_companion {ℓ : ℝ}
-    (h : IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
+    (h : IsTelegrapherSolution p.series p.shunt 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     i₁ i t = v₁ v t / p.Zc - history₁ (p := p) ℓ v i t / p.Zc ∧
       i₂ ℓ i t = v₂ ℓ v t / p.Zc - history₂ (p := p) ℓ v i t / p.Zc := by
   have hZ := p.Zc_pos.ne'
@@ -237,7 +246,7 @@ current source, `iₖ(t) = vₖ(t)/Z_c - eₖ(t)/Z_c`. -/
 
 /-- The same forward relation in the through convention (`i(ℓ, t)` along `+x`). -/
 @[tmio TM, powerlib_domain] theorem bergeron_forward_through {ℓ : ℝ}
-    (h : IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
+    (h : IsTelegrapherSolution p.series p.shunt 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v (ℓ, t) + p.Zc * i (ℓ, t) = v (0, t - τ p ℓ) + p.Zc * i (0, t - τ p ℓ) := by
   have := bergeron_forward h hℓ t
   simp only [v₁, v₂, i₁, i₂] at this
@@ -255,7 +264,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
 /-- Travelling waves solve the lossless telegrapher equations on every strip. -/
 @[tmio M, powerlib_domain] theorem travelling_isSolution {f g f' g' : ℝ → ℝ}
     (hf : ∀ y, HasDerivAt f (f' y) y) (hg : ∀ y, HasDerivAt g (g' y) y) (a b : ℝ) :
-    IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ a b (travellingV p f g) (travellingI p f g) := by
+    IsTelegrapherSolution p.series p.shunt a b (travellingV p f g) (travellingI p f g) := by
   have hZ := p.Zc_pos.ne'
   have hc := p.c_pos.ne'
   refine ⟨fun q => f' (q.1 - p.c * q.2) + g' (q.1 + p.c * q.2),
@@ -280,11 +289,11 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
     have := (((hf _).comp_hasFDerivAt q hm).sub ((hg _).comp_hasFDerivAt q hp)).mul_const
       p.Zc⁻¹
     exact (this.congr_fderiv (by ext <;> simp <;> field_simp)).hasFDerivWithinAt
-  · simp only [zero_mul, sub_zero]
+  · simp only [p.series_lossless, mul_zero, zero_mul, sub_zero]
     have h2 := p.c_mul_L
     field_simp
     linear_combination (-(f' (q.1 - p.c * q.2)) - g' (q.1 + p.c * q.2)) * h2
-  · simp only [zero_mul, sub_zero]
+  · simp only [p.shunt_lossless, mul_zero, zero_mul, sub_zero]
     have h1 := p.c_mul_Zc_mul_C
     field_simp
     linear_combination (g' (q.1 + p.c * q.2) - f' (q.1 - p.c * q.2)) * h1
@@ -299,7 +308,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
 /-- **Every C¹ solution of the lossless telegrapher equations on the plane is a
 travelling-wave pair**, with `f(ξ) = (v + Z_c i)(ξ, 0)/2`, `g(η) = (v - Z_c i)(η, 0)/2`. -/
 @[tmio M, powerlib_domain] theorem eq_travelling
-    (h : ∀ a b, IsTelegrapherSolution ⟨0, p.L⟩ ⟨0, p.C⟩ a b v i) (q : ℝ × ℝ) :
+    (h : ∀ a b, IsTelegrapherSolution p.series p.shunt a b v i) (q : ℝ × ℝ) :
     v q = travellingV p (fun ξ => (v (ξ, 0) + p.Zc * i (ξ, 0)) / 2)
         (fun η => (v (η, 0) - p.Zc * i (η, 0)) / 2) q ∧
       i q = travellingI p (fun ξ => (v (ξ, 0) + p.Zc * i (ξ, 0)) / 2)

@@ -1,4 +1,5 @@
 import dependencies.Mathlib
+import theorem.Passive.Shunt
 import theorem.Attributes
 import theorem.Transform.Park
 import theorem.Passive.Branch
@@ -86,8 +87,8 @@ open powerlib.Transform (parkD parkQ iparkD iparkQ iparkD_park iparkQ_park)
 structure Params where
   /-- Converter-side filter branch `(R_f, L_f)`. -/
   filter : Passive.RL
-  /-- Filter capacitance `C_f`. -/
-  Cf : ℝ
+  /-- Filter capacitor `C_f` (lossless shunt). -/
+  filterCap : Passive.GC
   /-- Line branch `(R_g, L_g)`. -/
   line : Passive.RL
   /-- Nominal grid angular frequency `ω_g`. -/
@@ -106,6 +107,11 @@ structure Params where
   Kp : ℝ
   /-- PLL integral gain `K_i`. -/
   Ki : ℝ
+  /-- The filter capacitor is lossless. -/
+  filterCap_lossless : filterCap.G = 0
+
+/-- The filter capacitance `C_f`. -/
+abbrev Params.Cf (p : Params) : ℝ := p.filterCap.C
 
 namespace Params
 

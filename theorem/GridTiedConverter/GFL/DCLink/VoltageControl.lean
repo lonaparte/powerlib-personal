@@ -1,4 +1,5 @@
 import theorem.Dynamics.Coordinates
+import theorem.Passive.Shunt
 import theorem.Dynamics.Locality
 import theorem.Spectral.Family
 import theorem.LTI.Plant
@@ -173,12 +174,17 @@ def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
 
 /-- The open-loop DC node about a selected operating voltage. -/
 @[ext] structure OpenLoop where
-  /-- DC-link capacitance. -/
-  C : ℝ
+  /-- DC-link capacitance. (lossless shunt). -/
+  dcLink : Passive.GC
   /-- AC power `P = V_d I_d0`. -/
   P : ℝ
   /-- Selected operating voltage `V0`. -/
   V0 : ℝ
+  /-- The DC link is lossless. -/
+  dcLink_lossless : dcLink.G = 0
+
+/-- The DC-link capacitance. -/
+abbrev OpenLoop.C (p : OpenLoop) : ℝ := p.dcLink.C
 
 namespace OpenLoop
 
@@ -207,9 +213,9 @@ def openFamily : Family OpenLoop Spectral.Requirement 1 0 :=
 
 /-- Rectifier (`I_dc0 = P/V0 > 0`): the open-loop DC voltage is locally exponentially
 stable. Implementation evidence for `openLoop_mem_den_locallyExponentiallyStable`. -/
-@[tmio TM, powerlib_domain] private theorem openLoop_locallyExponentiallyStable {C P V0 : ℝ} (hC : 0 < C)
-    (hV : 0 < V0) (hP : 0 < P / V0) :
-    connection% (((⟨C, P, V0⟩ : OpenLoop) ∈ openFamily.den (.flow .locallyExponentiallyStable))) := by
+@[tmio TM, powerlib_domain] private theorem openLoop_locallyExponentiallyStable {m : OpenLoop} (hC : 0 < m.C)
+    (hV : 0 < m.V0) (hP : 0 < m.P / m.V0) :
+    connection% ((m ∈ openFamily.den (.flow .locallyExponentiallyStable))) := by
   unfold TMIO.Statement
   rw [open_mem_den_flow]
   refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 1)
@@ -220,9 +226,9 @@ stable. Implementation evidence for `openLoop_mem_den_locallyExponentiallyStable
 
 /-- Inverter (`I_dc0 = P/V0 < 0`, constant-power load on the DC side): the open-loop DC
 voltage is unstable. Implementation evidence for `openLoop_mem_den_unstable`. -/
-@[tmio TM, powerlib_domain] private theorem openLoop_unstable {C P V0 : ℝ} (hC : 0 < C) (hV : 0 < V0)
-    (hP : P / V0 < 0) :
-    connection% (((⟨C, P, V0⟩ : OpenLoop) ∈ openFamily.den (.flow .unstable))) := by
+@[tmio TM, powerlib_domain] private theorem openLoop_unstable {m : OpenLoop} (hC : 0 < m.C) (hV : 0 < m.V0)
+    (hP : m.P / m.V0 < 0) :
+    connection% ((m ∈ openFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
   rw [open_mem_den_flow]
   refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 1)
@@ -236,8 +242,8 @@ voltage is unstable. Implementation evidence for `openLoop_mem_den_unstable`. -/
 
 /-- Parameters of the DC-voltage outer loop around the operating point. -/
 @[ext] structure DCParams where
-  /-- DC-link capacitance. -/
-  C : ℝ
+  /-- DC-link capacitance. (lossless shunt). -/
+  dcLink : Passive.GC
   /-- Stiff PCC d-axis voltage. -/
   Vd : ℝ
   /-- DC voltage reference `V_dc*`. -/
@@ -248,6 +254,11 @@ voltage is unstable. Implementation evidence for `openLoop_mem_den_unstable`. -/
   iff : ℝ
   /-- Equilibrium AC current `I_d0`. -/
   Id0 : ℝ
+  /-- The DC link is lossless. -/
+  dcLink_lossless : dcLink.G = 0
+
+/-- The DC-link capacitance. -/
+abbrev DCParams.C (p : DCParams) : ℝ := p.dcLink.C
 
 namespace DCParams
 
@@ -591,7 +602,7 @@ stable exactly in rectifier operation, `P/V0 > 0`. -/
     exact ⟨openField_eq_zero hV.ne', div_pos h hCV⟩
 
 /-- A negative capacitance with negative power, `C = P = −1`, `V0 = 1`. -/
-def negativeCapacitance : OpenLoop := ⟨-1, -1, 1⟩
+def negativeCapacitance : OpenLoop := ⟨⟨0, -1⟩, -1, 1, rfl⟩
 
 /-- The negative-capacitance node is locally exponentially stable (Jacobian `−1`). -/
 @[tmio TM, powerlib_domain] theorem negativeCapacitance_mem_den_locallyExponentiallyStable :
@@ -665,7 +676,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
     exact (closed_mem_den_flow.mp (p.closedLoop_locallyExponentiallyStable hVd hV hC hkp hki))
 
 /-- A negative-capacitance loop: `C = −1`, `V_d = V_dc* = 1`, `Kp = Ki = −1`, `i_ff = I_d0 = 0`. -/
-def negativeCapacitanceLoop : DCParams := ⟨-1, 1, 1, -1, -1, 0, 0⟩
+def negativeCapacitanceLoop : DCParams := ⟨⟨0, -1⟩, 1, 1, -1, -1, 0, 0, rfl⟩
 
 /-- The negative-capacitance loop is locally exponentially stable: its Jacobian
 `[[−1, −1], [1, 0]]` is Hurwitz. -/
@@ -1259,7 +1270,7 @@ voltage error is frozen and the integrator drifts; with `Kp < −I_dc0/V_d` the 
 
 /-- The loop on the boundary: `C = V_d = V_dc* = Ki = 1`, `Kp = i_ff = I_d0 = 0` (`I_dc0 = 0`, so
 `Kp = −I_dc0/V_d`). -/
-def centerLoop : DCParams := ⟨1, 1, 1, 0, 1, 0, 0⟩
+def centerLoop : DCParams := ⟨⟨0, 1⟩, 1, 1, 0, 1, 0, 0, rfl⟩
 
 @[tmio M, powerlib_domain] private theorem centerLoop_boundary :
     centerLoop.Kp = -(centerLoop.Idc0 / centerLoop.Vd) := by

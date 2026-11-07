@@ -32,7 +32,8 @@ theorem/
     Synchronous/             synchronous machines, swing equation, equal area
     Network/                 multi-machine networks, power flow, synchronization
     Frequency/               frequency response and control
-  Passive/                   passive components: RL branch and GC shunt (also in dq), LCL filter,
+  Passive/                   passive components: RL branch and GC shunt (also in dq, at a
+                             frequency as the phasor branch RX, and in per unit), LCL filter,
                              RLC and LC PH instances (PH/), lines and cables (Line/)
   Grid/                      grid structure: source–load interconnection, RL networks, grid
                              impedance seen from a converter, power flow, shared network nodes
@@ -65,16 +66,22 @@ when a spectral family is one of its applications. General PH constructions live
 in `PH/`; RL, RLC, DC-link and LC-filter instances live in `Passive/PH/`. A passive component's
 own properties (impedance, state equation, stored energy, dq form) live once in `Passive/`; the
 way components are connected (interconnections, networks, the grid seen from a converter) lives
-in `Grid/`. The two first-order elements have one definition each, with their decay rate,
-immittance, stored energy and power balance: the series branch `Passive.RL` (`Passive/Branch.lean`)
-and its dual, the shunt `Passive.GC` (`Passive/Shunt.lean`). Their dq immittance matrices, the dq
-capacitor law and the dq power balance are in `Passive/Dq.lean`. Every model containing such an
-element carries it as a field and uses those laws instead of restating them: the impedance model,
-the dq branch, current-loop plants, converter filters and lines, a machine link, RL-network
-branches and nodes, DC links with their loss conductance, filter capacitors and loads, the
-series RLC loop, and the unit length of a transmission line (series `Passive.RL`, shunt
-`Passive.GC`). `Grid/` only connects them (for example `Grid/GridImpedance.lean`: a line branch
-in parallel with a shunt).
+in `Grid/`. Every passive element of the library is one of three definitions, each with its own
+laws stated once: the series branch `Passive.RL` (`Passive/Branch.lean`: decay rate, impedance,
+stored energy, power balance), its dual the shunt `Passive.GC` (`Passive/Shunt.lean`), and, at a
+fixed frequency, the phasor branch `Passive.RX` (`Passive/Phasor.lean`: `R + jX`, `|Z|²`, series
+and parallel connection, the reactances `ωL`, `−1/(ωC)`). An ideal inductor, capacitor or line
+reactance is the lossless element (`R = 0`, `G = 0`), and a model that assumes it says so with
+an explicit field. The dq forms (immittance matrices, the dq capacitor law, the dq power balance)
+are in `Passive/Dq.lean`, the per-unit forms in `Passive/PerUnit.lean`. Every model containing
+such an element carries it as a field and uses those laws instead of restating them: the
+impedance model, the dq branch, current-loop plants, converter filters, filter capacitors and
+lines, DC links (with or without loss conductance), machine links and terminal capacitors,
+RL-network branches and nodes, the series RLC loop, the LCL and LC filters, the unit length of a
+transmission line, the lines of quasi-static phasor models, the power-flow and current-limiting
+formulas, and the elements of an EMT network. `Grid/` only connects them (for example
+`Grid/GridImpedance.lean`: a line branch in parallel with a shunt; `Grid/PowerFlow.lean`: a
+phasor branch between two sources).
 
 ## Knowledge nodes and relations
 
