@@ -60,7 +60,7 @@ namespace powerlib.Circuits.RL
 open OrderDual LinearSystems TMIO Data.Analysis
 
 /-- The impedance model with resistance `R` and inductance `L`. -/
-def rl (R L : ℝ) (hL : 0 < L) : Impedance := ⟨R, ⟨L, hL⟩⟩
+def rl (R L : ℝ) (hL : 0 < L) : Impedance := Impedance.ofParams R ⟨L, hL⟩
 
 @[tmio M, simp, powerlib_domain] theorem rl_resistance (R L : ℝ) (hL : 0 < L) :
     (rl R L hL).resistance = R := rfl

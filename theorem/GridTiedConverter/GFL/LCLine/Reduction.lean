@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Transform.Park
+import theorem.Passive.Branch
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
@@ -83,16 +84,12 @@ open powerlib.Transform (parkD parkQ iparkD iparkQ iparkD_park iparkQ_park)
 
 /-- Parameters of the single GFL-VSC (LC filter + R–L line + infinite bus), current loop and PLL. -/
 structure Params where
-  /-- Converter-side filter inductance `L_f`. -/
-  Lf : ℝ
-  /-- Converter-side filter resistance `R_f`. -/
-  Rf : ℝ
+  /-- Converter-side filter branch `(R_f, L_f)`. -/
+  filter : Passive.RL
   /-- Filter capacitance `C_f`. -/
   Cf : ℝ
-  /-- Line inductance `L_g`. -/
-  Lg : ℝ
-  /-- Line resistance `R_g`. -/
-  Rg : ℝ
+  /-- Line branch `(R_g, L_g)`. -/
+  line : Passive.RL
   /-- Nominal grid angular frequency `ω_g`. -/
   ωg : ℝ
   /-- Grid EMF amplitude `V_g` (d-axis of the system frame). -/
@@ -111,6 +108,18 @@ structure Params where
   Ki : ℝ
 
 namespace Params
+
+/-- Converter-side filter inductance `L_f`. -/
+abbrev Lf (p : Params) : ℝ := p.filter.L
+
+/-- Converter-side filter resistance `R_f`. -/
+abbrev Rf (p : Params) : ℝ := p.filter.R
+
+/-- Line inductance `L_g`. -/
+abbrev Lg (p : Params) : ℝ := p.line.L
+
+/-- Line resistance `R_g`. -/
+abbrev Rg (p : Params) : ℝ := p.line.R
 
 variable (p : Params)
 

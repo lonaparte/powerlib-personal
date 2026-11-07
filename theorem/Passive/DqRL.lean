@@ -1,4 +1,5 @@
 import theorem.Transform.Park
+import theorem.Passive.Branch
 import theorem.Spectral.Family
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
@@ -262,11 +263,18 @@ phase differs locally by a constant). -/
 
 /-- One series R–L branch read in the dq frame rotating at the constant speed `ω`. -/
 @[ext] structure DqBranch where
-  R : ℝ
-  L : ℝ
+  /-- The branch. -/
+  branch : Passive.RL
+  /-- The frame speed. -/
   ω : ℝ
 
 namespace DqBranch
+
+/-- The resistance of the branch. -/
+abbrev R (m : DqBranch) : ℝ := m.branch.R
+
+/-- The inductance of the branch. -/
+abbrev L (m : DqBranch) : ℝ := m.branch.L
 
 /-- The plant of the branch: input the branch voltage, output the current. -/
 def plant (m : DqBranch) : Plant 2 2 := dqRLPlant m.R m.L m.ω
@@ -295,7 +303,7 @@ namespace DqBranch
   linarith
 
 /-- The same branch in the stationary αβ frame (`ω = 0`). -/
-def alphaBeta (m : DqBranch) : DqBranch := ⟨m.R, m.L, 0⟩
+def alphaBeta (m : DqBranch) : DqBranch := ⟨m.branch, 0⟩
 
 end DqBranch
 
@@ -332,7 +340,7 @@ particular exponential stability) holds iff `R/L > 0`. -/
     connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : DqBranch | 0 < m.R}) := by
   unfold powerlib.TMIO.Statement
   rw [den_flow hP]
-  exact div_pos_iff_of_pos_right hL
+  exact Passive.RL.decay_pos_iff hL
 
 /-- The αβ and dq descriptions of the RL branch are stable together, at every frame speed: the
 attractive denotation of the dq family is its pull-back along the αβ reading. -/

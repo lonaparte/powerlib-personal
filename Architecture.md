@@ -62,7 +62,11 @@ when a spectral family is one of its applications. General PH constructions live
 in `PH/`; RL, RLC, DC-link and LC-filter instances live in `Passive/PH/`. A passive component's
 own properties (impedance, state equation, stored energy, dq form) live once in `Passive/`; the
 way components are connected (interconnections, networks, the grid seen from a converter) lives
-in `Grid/`.
+in `Grid/`. The series RL branch has one definition, `Passive.RL` in `Passive/Branch.lean`, with
+its decay rate, impedance, stored energy and power balance. Every model containing an RL branch
+(the impedance model, the dq branch, a current-loop plant, a converter filter or line, a machine
+link, the branches of an RL network, the series RLC loop) carries it as a `Passive.RL` field and
+uses those laws instead of restating them.
 
 ## Knowledge nodes and relations
 

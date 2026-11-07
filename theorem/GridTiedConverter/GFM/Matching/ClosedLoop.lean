@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.Matching.Matching
 import theorem.Flow.Certificate
+import theorem.Passive.Branch
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.Spectral.Global
 
@@ -158,8 +159,8 @@ structure Model where
   vdcRef : ℝ
   η : ℝ
   μ : ℝ
-  L : ℝ
-  R : ℝ
+  /-- The filter branch `(R, L)`. -/
+  filter : Passive.RL
   C : ℝ
   G : ℝ
   Gl : ℝ
@@ -171,6 +172,12 @@ structure Model where
   iqStar : ℝ
   vdStar : ℝ
   vqStar : ℝ
+
+/-- The filter inductance. -/
+abbrev Model.L (m : Model) : ℝ := m.filter.L
+
+/-- The filter resistance. -/
+abbrev Model.R (m : Model) : ℝ := m.filter.R
 
 namespace Model
 
@@ -359,10 +366,12 @@ not a connection conclusion. -/
   simp only [mul_zero, zero_mul, sub_zero, add_zero] at e2 e3
   have e2' := (mul_eq_zero.mp e2).resolve_left hR.ne'
   have e3' := (mul_eq_zero.mp e3).resolve_left hG.ne'
-  have z1 : z 1 = 0 := by nlinarith [sq_nonneg (z 1), sq_nonneg (z 2)]
-  have z2 : z 2 = 0 := by nlinarith [sq_nonneg (z 1), sq_nonneg (z 2)]
-  have z3 : z 3 = 0 := by nlinarith [sq_nonneg (z 3), sq_nonneg (z 4)]
-  have z4 : z 4 = 0 := by nlinarith [sq_nonneg (z 3), sq_nonneg (z 4)]
+  have h12 := (add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).mp e2'
+  have h34 := (add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).mp e3'
+  have z1 : z 1 = 0 := pow_eq_zero_iff two_ne_zero |>.mp h12.1
+  have z2 : z 2 = 0 := pow_eq_zero_iff two_ne_zero |>.mp h12.2
+  have z3 : z 3 = 0 := pow_eq_zero_iff two_ne_zero |>.mp h34.1
+  have z4 : z 4 = 0 := pow_eq_zero_iff two_ne_zero |>.mp h34.2
   apply hz
   ext i
   fin_cases i <;> simp [z0, z1, z2, z3, z4]
@@ -633,7 +642,7 @@ is the selected point. Static evidence on the model, not a connection conclusion
 C = G = 1`, `G_l = B_l = 0`, `i_dc,ref = 9/8`, `v_dc,ref = 1`, `s_dq = (0, −1/4)`, selected point
 `v* = 1`, `i* = (0, 1/4)`, `v_dq* = (1/4, 1/4)`. -/
 def example1 : Model :=
-  { Cdc := 1, Gdc := 1, Kp := 1, idcRef := 9 / 8, vdcRef := 1, η := 1, μ := 1, L := 1, R := 1,
+  { Cdc := 1, Gdc := 1, Kp := 1, idcRef := 9 / 8, vdcRef := 1, η := 1, μ := 1, filter := ⟨1, 1⟩,
     C := 1, G := 1, Gl := 0, Bl := 0, sd := 0, sq := -1 / 4, vStar := 1, idStar := 0,
     iqStar := 1 / 4, vdStar := 1 / 4, vqStar := 1 / 4 }
 

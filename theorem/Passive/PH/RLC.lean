@@ -1,5 +1,6 @@
 import theorem.PH.Composition
 import theorem.Criteria.Hurwitz2
+import theorem.Passive.Branch
 
 /-! # Series RLC loop as a linear port-Hamiltonian system
 
@@ -63,12 +64,19 @@ open Matrix Set LinearSystems
 
 /-- Physical parameters of the series RLC loop. -/
 structure SeriesRLCParams where
-  L : ℝ
+  /-- The series R–L branch. -/
+  branch : Passive.RL
+  /-- The capacitance. -/
   C : ℝ
-  r : ℝ
-  L_pos : 0 < L
+  L_pos : 0 < branch.L
   C_pos : 0 < C
-  r_nonneg : 0 ≤ r
+  r_nonneg : 0 ≤ branch.R
+
+/-- The inductance of the branch. -/
+abbrev SeriesRLCParams.L (p : SeriesRLCParams) : ℝ := p.branch.L
+
+/-- The resistance of the branch. -/
+abbrev SeriesRLCParams.r (p : SeriesRLCParams) : ℝ := p.branch.R
 
 /-- The series RLC loop (T-ph (1.11)) as constant-`J`, diagonal-damping, diagonal-quadratic
 port-Hamiltonian data. State `(φ, q)`, one voltage port. -/
@@ -175,7 +183,7 @@ for this linear family that is equivalent to its state matrix being Hurwitz. -/
   constructor
   · rintro ⟨htr, -⟩
     have : 0 < p.r / p.L := by linarith
-    exact (div_pos_iff_of_pos_right hL).mp this
+    exact (Passive.RL.decay_pos_iff hL).mp this
   · intro hr
     refine ⟨?_, hdet⟩
     have : 0 < p.r / p.L := div_pos hr hL

@@ -1,4 +1,5 @@
 import theorem.PH.Linear
+import theorem.Passive.Branch
 import theorem.PH.Linearization
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
@@ -98,8 +99,8 @@ structure SMIB11Params where
   rkq : ℝ
   D : ℝ
   C : ℝ
-  Ll : ℝ
-  rl : ℝ
+  /-- The RL link to the infinite bus. -/
+  link : Passive.RL
   ωs : ℝ
   Γ_posDef : Γ.PosDef
   M_pos : 0 < M
@@ -109,8 +110,14 @@ structure SMIB11Params where
   rkq_nonneg : 0 ≤ rkq
   D_nonneg : 0 ≤ D
   C_pos : 0 < C
-  Ll_pos : 0 < Ll
-  rl_nonneg : 0 ≤ rl
+  Ll_pos : 0 < link.L
+  rl_nonneg : 0 ≤ link.R
+
+/-- The inductance of the link. -/
+abbrev SMIB11Params.Ll (p : SMIB11Params) : ℝ := p.link.L
+
+/-- The resistance of the link. -/
+abbrev SMIB11Params.rl (p : SMIB11Params) : ℝ := p.link.R
 
 /-- Diagonal storage weights outside the magnetic block. -/
 def smib11_w (p : SMIB11Params) : Fin 11 → ℝ :=

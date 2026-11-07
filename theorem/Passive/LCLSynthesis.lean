@@ -368,8 +368,10 @@ structure RationalCircuit where
 
 /-- The circuit described by the parameters. -/
 def RationalCircuit.circuit (r : RationalCircuit) : Circuit :=
-  ⟨⟨r.firstResistance, ⟨r.firstInductance, by exact_mod_cast r.firstInductance_pos⟩⟩,
-    ⟨r.secondResistance, ⟨r.secondInductance, by exact_mod_cast r.secondInductance_pos⟩⟩,
+  ⟨RL.Impedance.ofParams r.firstResistance
+      ⟨r.firstInductance, by exact_mod_cast r.firstInductance_pos⟩,
+    RL.Impedance.ofParams r.secondResistance
+      ⟨r.secondInductance, by exact_mod_cast r.secondInductance_pos⟩,
     ⟨r.capacitance, by exact_mod_cast r.capacitance_pos⟩⟩
 
 /-- The plant matrix computed exactly from the parameters. -/

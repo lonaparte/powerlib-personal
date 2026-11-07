@@ -1,4 +1,5 @@
 import theorem.Grid.GridImpedance
+import theorem.Passive.Branch
 import theorem.Transform.ComplexPower
 import theorem.LTI.Plant
 
@@ -56,10 +57,8 @@ open powerlib.Transform (Gi Gv)
 
 /-- Parameters of the 10-state small-signal GFL port model. -/
 @[ext] structure GFLParams where
-  /-- Filter inductance. -/
-  L : ℝ
-  /-- Filter resistance. -/
-  R : ℝ
+  /-- Filter branch `(R, L)`. -/
+  filter : Passive.RL
   /-- Frame speed `ω_s`. -/
   ω : ℝ
   /-- DC-link voltage (constant). -/
@@ -81,6 +80,12 @@ open powerlib.Transform (Gi Gv)
   V0 : Fin 2 → ℝ
   I0 : Fin 2 → ℝ
   D0 : Fin 2 → ℝ
+
+/-- Filter inductance. -/
+abbrev GFLParams.L (p : GFLParams) : ℝ := p.filter.L
+
+/-- Filter resistance. -/
+abbrev GFLParams.R (p : GFLParams) : ℝ := p.filter.R
 
 namespace GFLParams
 

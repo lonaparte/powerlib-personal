@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.Matching.Matching
 import theorem.Spectral.Global
+import theorem.Passive.Branch
 import theorem.Criteria.Lyapunov
 import theorem.Dynamics.Coordinates
 
@@ -132,8 +133,14 @@ structure Model where
   μ : ℝ
   ustar : ℝ
   v0 : ℝ
-  Rs : ℝ
-  Ls : ℝ
+  /-- The L filter: series inductor `L_s` with resistance `R_s`. -/
+  filter : Passive.RL
+
+/-- The filter resistance `R_s`. -/
+abbrev Model.Rs (m : Model) : ℝ := m.filter.R
+
+/-- The filter inductance `L_s`. -/
+abbrev Model.Ls (m : Model) : ℝ := m.filter.L
 
 namespace Model
 

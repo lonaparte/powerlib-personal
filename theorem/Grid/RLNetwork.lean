@@ -1,4 +1,5 @@
 import theorem.PH.Composition
+import theorem.Passive.Branch
 import theorem.PowerSystem.Network.WeightedLaplacian
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
@@ -89,10 +90,16 @@ omit [Fintype ν] [DecidableEq β] in
 
 /-- Branch parameters of an RL network. -/
 structure RLBranchParams (β : Type*) where
-  L : β → ℝ
-  r : β → ℝ
-  L_pos : ∀ k, 0 < L k
-  r_nonneg : ∀ k, 0 ≤ r k
+  /-- The branches of the network. -/
+  branch : β → Passive.RL
+  L_pos : ∀ k, 0 < (branch k).L
+  r_nonneg : ∀ k, 0 ≤ (branch k).R
+
+/-- The branch inductances. -/
+abbrev RLBranchParams.L {β : Type*} (p : RLBranchParams β) : β → ℝ := fun k => (p.branch k).L
+
+/-- The branch resistances. -/
+abbrev RLBranchParams.r {β : Type*} (p : RLBranchParams β) : β → ℝ := fun k => (p.branch k).R
 
 /-- The RL network as diagonal port-Hamiltonian data: `J = 0`, `R = diag r`, `w = 1/L`,
 `B = 𝓑ᵀ`. Inputs: node potentials; outputs: node current injections. -/
@@ -184,8 +191,7 @@ exponentially stable. -/
 /-- Branch rescaling by nonzero factors `c`: `L ↦ c² L`, `r ↦ c² r`. -/
 def RLBranchParams.scale (p : RLBranchParams β) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) :
     RLBranchParams β where
-  L := fun k => c k ^ 2 * p.L k
-  r := fun k => c k ^ 2 * p.r k
+  branch k := ⟨c k ^ 2 * p.r k, c k ^ 2 * p.L k⟩
   L_pos := fun k => mul_pos (by have := hc k; positivity) (p.L_pos k)
   r_nonneg := fun k => mul_nonneg (sq_nonneg _) (p.r_nonneg k)
 
@@ -200,7 +206,7 @@ the field of `(c² L, c² r, 𝓑 diag c)` at `c φ` is `c` times the original f
     mulVec_diagonal]
   have hk := hc k
   have hL := (p.L_pos k).ne'
-  simp only [RLBranchParams.scale]
+  simp only [RLBranchParams.scale, RLBranchParams.L, RLBranchParams.r]
   field_simp
 
 omit [Fintype ν] [DecidableEq ν] in
@@ -215,7 +221,7 @@ omit [Fintype ν] [DecidableEq ν] in
   rw [mulVec_diagonal]
   have hk := hc k
   have hL := (p.L_pos k).ne'
-  simp only [RLBranchParams.scale]
+  simp only [RLBranchParams.scale, RLBranchParams.L, RLBranchParams.r]
   field_simp
 
 omit [Fintype ν] [DecidableEq ν] in
@@ -224,7 +230,8 @@ omit [Fintype ν] [DecidableEq ν] in
     (𝓑 : Matrix ν β ℝ) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) (φ : β → ℝ) :
     (rlNetwork (p.scale c hc) (𝓑 * diagonal c)).energy (fun j => c j * φ j) =
       (rlNetwork p 𝓑).energy φ := by
-  simp only [DiagonalPH.energy, rlNetwork, RLBranchParams.scale]
+  simp only [DiagonalPH.energy, rlNetwork, RLBranchParams.scale, RLBranchParams.L,
+    RLBranchParams.r]
   apply Finset.sum_congr rfl
   intro k _
   have hk := hc k
@@ -242,8 +249,8 @@ omit [Fintype ν] [DecidableEq ν] in
           diagonal (rlNetwork (p.scale c hc) (𝓑 * diagonal c)).w =
         (rlNetwork p 𝓑).Bᵀ * diagonal (rlNetwork p 𝓑).w * diagonal c⁻¹ := by
   refine ⟨?_, ?_, ?_⟩
-  · simp only [DiagonalPH.stateMatrix, rlNetwork, RLBranchParams.scale, zero_sub,
-      Matrix.neg_mul, Matrix.mul_neg, diagonal_mul_diagonal]
+  · simp only [DiagonalPH.stateMatrix, rlNetwork, RLBranchParams.scale, RLBranchParams.L,
+      RLBranchParams.r, zero_sub, Matrix.neg_mul, Matrix.mul_neg, diagonal_mul_diagonal]
     congr 1
     ext i j
     by_cases hij : i = j
@@ -254,8 +261,8 @@ omit [Fintype ν] [DecidableEq ν] in
       field_simp
     · simp [diagonal_apply_ne _ hij]
   · simp only [rlNetwork, transpose_mul, diagonal_transpose]
-  · simp only [rlNetwork, transpose_transpose, RLBranchParams.scale, Matrix.mul_assoc,
-      diagonal_mul_diagonal]
+  · simp only [rlNetwork, transpose_transpose, RLBranchParams.scale, RLBranchParams.L,
+      RLBranchParams.r, Matrix.mul_assoc, diagonal_mul_diagonal]
     congr 1
     ext i j
     by_cases hij : i = j

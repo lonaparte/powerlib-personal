@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFL.RatePLL
+import theorem.Passive.Branch
 import theorem.GridTiedConverter.GFL.DCLink.FourState
 import theorem.Transform.ComplexPower
 import theorem.Dynamics.Transport
@@ -332,10 +333,8 @@ structure DCParams where
   Vg : ℝ
   /-- nominal angular frequency -/
   ω0 : ℝ
-  /-- line inductance -/
-  Lg : ℝ
-  /-- line resistance -/
-  Rg : ℝ
+  /-- line branch `(R_g, L_g)` -/
+  line : Passive.RL
   /-- dc capacitance -/
   C : ℝ
   /-- dc source current -/
@@ -353,6 +352,12 @@ structure DCParams where
   sL : ℝ
   sP : ℝ
   sK : ℝ
+
+/-- Line inductance `L_g`. -/
+abbrev DCParams.Lg (p : DCParams) : ℝ := p.line.L
+
+/-- Line resistance `R_g`. -/
+abbrev DCParams.Rg (p : DCParams) : ℝ := p.line.R
 
 namespace DCParams
 variable (d : DCParams)

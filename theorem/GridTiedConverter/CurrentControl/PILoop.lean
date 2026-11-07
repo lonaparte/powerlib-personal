@@ -1,4 +1,5 @@
 import theorem.Spectral.Family
+import theorem.Passive.Branch
 import theorem.LTI.Plant
 import theorem.Criteria.Hurwitz2
 
@@ -84,14 +85,20 @@ open scoped Topology
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
-/-- Parameters of one PI current-loop axis: inductance, resistance, PI gains. -/
+/-- Parameters of one PI current-loop axis: the plant, an RL branch, and the PI gains. -/
 @[ext] structure PIParams where
-  L : ℝ
-  R : ℝ
+  /-- The plant: the RL branch the converter drives. -/
+  branch : Passive.RL
   Kp : ℝ
   Ki : ℝ
 
 namespace PIParams
+
+/-- The inductance of the plant branch. -/
+abbrev L (p : PIParams) : ℝ := p.branch.L
+
+/-- The resistance of the plant branch. -/
+abbrev R (p : PIParams) : ℝ := p.branch.R
 
 variable (p : PIParams)
 
@@ -219,7 +226,7 @@ connection conclusion. -/
 /-! ## The duty-cycle plant (`V_dc` gain) as a parameter instance -/
 
 /-- Gains seen by the branch when the PI output is a duty cycle scaled by `V_dc`. -/
-def withGain (Vdc : ℝ) : PIParams := ⟨p.L, p.R, Vdc * p.Kp, Vdc * p.Ki⟩
+def withGain (Vdc : ℝ) : PIParams := ⟨p.branch, Vdc * p.Kp, Vdc * p.Ki⟩
 
 /-- Duty-cycle plant `L di/dt = −R i + V_dc d`, `d = Kp (i* − i) + Ki ξ`. -/
 def dutyField (Vdc iref : ℝ) (x : ℝ²) : ℝ² :=

@@ -187,9 +187,16 @@ def imcEquilibrium (α iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, iref / α]
 form of the same loop is `CurrentControl.imc` (`theorem/GridTiedConverter/CurrentControl/IMC.lean`)
 on `CurrentControl.PIParams` (`theorem/GridTiedConverter/CurrentControl/PILoop.lean`). -/
 @[ext] structure IMCLoop where
-  L : ℝ
-  R : ℝ
+  /-- The plant: the stator RL branch. -/
+  branch : Passive.RL
+  /-- The bandwidth. -/
   α : ℝ
+
+/-- The inductance of the plant branch. -/
+abbrev IMCLoop.L (m : IMCLoop) : ℝ := m.branch.L
+
+/-- The resistance of the plant branch. -/
+abbrev IMCLoop.R (m : IMCLoop) : ℝ := m.branch.R
 
 /-- The plant of the loop. -/
 def IMCLoop.plant (m : IMCLoop) : Plant 2 1 := imcModel m.L m.R m.α
@@ -211,7 +218,8 @@ def family : Family IMCLoop Spectral.Requirement 2 1 :=
 /-- Hurwitz criterion of the IMC loop: the monic characteristic coefficients `α + R/L` and
 `Rα/L` are positive. An exact condition on the family denotation. -/
 @[tmio TM, powerlib_domain] theorem imcModel_isHurwitz_iff (L R α : ℝ) :
-    connection% ((⟨L, R, α⟩ : IMCLoop) ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < α + R / L ∧ 0 < R * α / L) := by
+    connection% ((⟨⟨R, L⟩, α⟩ : IMCLoop) ∈ family.den (.flow .globallyExponentiallyStable) ↔
+      0 < α + R / L ∧ 0 < R * α / L) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   change IsHurwitz (imcModel L R α).A ↔ 0 < α + R / L ∧ 0 < R * α / L
@@ -258,8 +266,8 @@ eigenvalues `−α`, `−R/L`), in particular global exponential stability; read
 loop (`mem_den_iff_imc`, `CurrentControl.imc_mem_den_iff`). -/
 @[tmio TM, powerlib_domain] theorem mem_den (L R α : ℝ) (hL : 0 < L) (hR : 0 < R) (hα : 0 < α)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (⟨L, R, α⟩ ∈ family.den (.flow P)) := by
-  have hr := mem_den_iff_imc ⟨L, R, α⟩ hL.ne' (.flow P)
+    connection% (⟨⟨R, L⟩, α⟩ ∈ family.den (.flow P)) := by
+  have hr := mem_den_iff_imc ⟨⟨R, L⟩, α⟩ hL.ne' (.flow P)
   have hc := CurrentControl.imc_mem_den_iff (R := R) hL hα hP
   unfold powerlib.TMIO.Statement at hr hc ⊢
   exact hr.mpr (hc.mpr (div_pos hR hL))
@@ -277,7 +285,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
             K * Real.exp (-(rate * t)) * ‖x 0 - imcEquilibrium α iref‖ ∧
           |x t 0 - iref| ≤ K * Real.exp (-(rate * t)) * ‖x 0 - imcEquilibrium α iref‖ := by
   have hA : IsHurwitz (imcModel L R α).A := by
-    change IsHurwitz (IMCLoop.plant ⟨L, R, α⟩).A
+    change IsHurwitz (IMCLoop.plant ⟨⟨R, L⟩, α⟩).A
     rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% imcModel_isHurwitz_iff)]
     have : 0 < R / L := div_pos hR hL
     exact ⟨by linarith, by positivity⟩

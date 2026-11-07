@@ -274,7 +274,7 @@ namespace powerlib.Synchronous
 /-- The 11-state system with `Γ = I`, `M = C = L_l = 1` and zero resistances, damping and
 frame speed. -/
 private def smib11Unit : SMIB11Params :=
-  ⟨1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, Matrix.PosDef.one, one_pos, le_rfl, le_rfl, le_rfl, le_rfl,
+  ⟨1, 1, 0, 0, 0, 0, 0, 1, ⟨0, 1⟩, 0, Matrix.PosDef.one, one_pos, le_rfl, le_rfl, le_rfl, le_rfl,
     le_rfl, one_pos, one_pos, le_rfl⟩
 
 namespace SMIB11

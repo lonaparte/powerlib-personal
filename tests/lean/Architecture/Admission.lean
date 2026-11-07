@@ -22,7 +22,7 @@ open powerlib LinearSystems Matrix
 -- RL: only `R = 2` and `L = 1` are submitted.
 namespace RLAdmission
 
-def submittedModel : Circuits.RL.Impedance := ⟨2, ⟨1, by norm_num⟩⟩
+def submittedModel : Circuits.RL.Impedance := Circuits.RL.Impedance.ofParams 2 ⟨1, by norm_num⟩
 
 def accepted : Linear.Certificate submittedModel.plant.A :=
   Circuits.RL.synthesize submittedModel (by norm_num [submittedModel])
@@ -53,7 +53,8 @@ end RLAdmission
 namespace LCLAdmission
 
 def submittedModel : Circuits.LCL.Circuit :=
-  ⟨⟨1, ⟨1, by norm_num⟩⟩, ⟨1, ⟨1, by norm_num⟩⟩, ⟨1, by norm_num⟩⟩
+  ⟨Circuits.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩,
+    Circuits.RL.Impedance.ofParams 1 ⟨1, by norm_num⟩, ⟨1, by norm_num⟩⟩
 
 def accepted : Linear.Certificate submittedModel.plant.A :=
   Circuits.LCL.synthesize submittedModel

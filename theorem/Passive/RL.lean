@@ -3,6 +3,7 @@ import theorem.Linear.Family
 import theorem.Linear.Realization
 import theorem.Port.Linear
 import theorem.generated.Conversion
+import theorem.Passive.Branch
 
 /-! # The RL branch
 
@@ -72,10 +73,28 @@ def reciprocal (x : Positive) : Positive := ⟨x.val⁻¹, inv_pos.mpr x.propert
   dsimp [reciprocal]
   field_simp [ne_of_gt y.property]
 
-/-- Impedance parameters `Z(s) = R + L s`. -/
+/-- Impedance parameters `Z(s) = R + L s`: the RL branch `Passive.RL` with a positive inductance.
+-/
 @[ext] structure Impedance where
-  resistance : ℝ
-  inductance : Positive
+  /-- The branch. -/
+  branch : Passive.RL
+  /-- A physical branch has a positive inductance. -/
+  inductance_pos : 0 < branch.L
+
+/-- The resistance `R` of the branch. -/
+def Impedance.resistance (m : Impedance) : ℝ := m.branch.R
+
+/-- The inductance `L` of the branch, positive. -/
+def Impedance.inductance (m : Impedance) : Positive := ⟨m.branch.L, m.inductance_pos⟩
+
+/-- The branch with resistance `R` and positive inductance `L`. -/
+def Impedance.ofParams (R : ℝ) (L : Positive) : Impedance := ⟨⟨R, L.val⟩, L.property⟩
+
+@[tmio M, simp, powerlib_domain] theorem Impedance.resistance_ofParams (R : ℝ) (L : Positive) :
+    (Impedance.ofParams R L).resistance = R := rfl
+
+@[tmio M, simp, powerlib_domain] theorem Impedance.inductance_ofParams (R : ℝ) (L : Positive) :
+    (Impedance.ofParams R L).inductance = L := rfl
 
 /-- State-space parameters of `i' = -a i + b v`. -/
 @[ext] structure StateSpace where
@@ -85,7 +104,7 @@ def reciprocal (x : Positive) : Positive := ⟨x.val⁻¹, inv_pos.mpr x.propert
 /-- The Agda-generated conversion, from state-space to impedance parameters. -/
 def toImpedance (m : StateSpace) : Impedance :=
   let y := generated.convert (fun a (b : Positive) => a * b.val) reciprocal (m.decay, m.inputGain)
-  ⟨y.1, y.2⟩
+  Impedance.ofParams y.1 y.2
 
 /-- The same generated conversion, from impedance to state-space parameters. -/
 def toStateSpace (m : Impedance) : StateSpace :=
@@ -96,16 +115,17 @@ def toStateSpace (m : Impedance) : StateSpace :=
 @[tmio M, simp, powerlib_domain] theorem state_roundtrip (m : StateSpace) :
     toStateSpace (toImpedance m) = m := by
   apply StateSpace.ext
-  · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
-      scale_cancel m.decay m.inputGain)
+  · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal, Impedance.ofParams,
+      Impedance.resistance, Impedance.inductance] using scale_cancel m.decay m.inputGain)
   · exact reciprocal_involutive m.inputGain
 
 @[tmio M, simp, powerlib_domain] theorem impedance_roundtrip (m : Impedance) :
     toImpedance (toStateSpace m) = m := by
   apply Impedance.ext
-  · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
-      scale_cancel m.resistance m.inductance)
-  · exact reciprocal_involutive m.inductance
+  apply Passive.RL.ext
+  · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal, Impedance.ofParams,
+      Impedance.resistance, Impedance.inductance] using scale_cancel m.resistance m.inductance)
+  · exact congrArg Subtype.val (reciprocal_involutive m.inductance)
 
 /-- The two representations are equivalent. -/
 def modelEquiv : StateSpace ≃ Impedance where
@@ -182,7 +202,8 @@ def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Mee
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
-  rw [Linear.isHurwitz_one_iff, neg_lt_zero, div_pos_iff_of_pos_right m.inductance.property]
+  rw [Linear.isHurwitz_one_iff, neg_lt_zero]
+  exact Passive.RL.decay_pos_iff m.inductance_pos
 
 /-! ## Certificates -/
 

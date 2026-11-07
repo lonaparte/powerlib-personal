@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.PLL.PIPLL
+import theorem.Passive.Branch
 import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
@@ -89,15 +90,21 @@ def formBPllInput (θ vcd vcq : ℝ) : ℝ := -Real.sin θ * vcd + Real.cos θ *
 structure FormBParams where
   /-- Grid angular frequency (constant). -/
   ωg : ℝ
-  /-- Filter capacitance, line inductance and resistance. -/
+  /-- Filter capacitance. -/
   Cf : ℝ
-  Lg : ℝ
-  Rg : ℝ
+  /-- Line branch `(R_g, L_g)`. -/
+  line : Passive.RL
   /-- Infinite-bus voltage (system d axis). -/
   Vg : ℝ
   /-- Frozen current references (controller frame). -/
   idRef : ℝ
   iqRef : ℝ
+
+/-- Line inductance `L_g`. -/
+abbrev FormBParams.Lg (p : FormBParams) : ℝ := p.line.L
+
+/-- Line resistance `R_g`. -/
+abbrev FormBParams.Rg (p : FormBParams) : ℝ := p.line.R
 
 namespace FormBParams
 

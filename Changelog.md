@@ -10,6 +10,13 @@ in Git; working statistics, build receipts and development plans are not kept he
   RLC and LC PH instances, lines and cables); `Grid/` holds how components are
   connected (source–load interconnection, RL networks, the grid impedance seen
   from a converter, power flow, shared network nodes). `Circuits/` is gone.
+- Gave the series RL branch a single definition, `Passive.RL` (`Passive/Branch.lean`),
+  with its decay rate, impedance, stored energy and power balance. The RL
+  impedance model, the dq branch, the current-loop plants (PI, IMC, drive
+  cascade), the GFL filters and lines, the GFM matching-control filters, the
+  SMIB link, RL-network branches and the series RLC loop now carry a
+  `Passive.RL` field; their former `R`/`L` names remain as accessors, and the
+  restated sign-of-decay proofs now use `Passive.RL.decay_pos_iff`.
 
 ## 2026-11-06
 

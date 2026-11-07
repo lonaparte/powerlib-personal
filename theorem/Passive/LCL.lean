@@ -98,7 +98,7 @@ def toCircuit (m : StateSpace) : Circuit :=
   let y := generated.convertLCL (fun a (b : RL.Positive) => a * b.val) RL.reciprocal
     (((m.first.decay, m.first.inputGain), (m.second.decay, m.second.inputGain)),
       m.capacitorGain)
-  ⟨⟨y.1.1.1, y.1.1.2⟩, ⟨y.1.2.1, y.1.2.2⟩, y.2⟩
+  ⟨RL.Impedance.ofParams y.1.1.1 y.1.1.2, RL.Impedance.ofParams y.1.2.1 y.1.2.2, y.2⟩
 
 @[tmio M, simp, powerlib_domain] theorem circuit_roundtrip (m : Circuit) :
     toCircuit (toStateSpace m) = m := by
@@ -623,10 +623,12 @@ to its start while the ports deliver the net energy `-R C² π`. -/
 
 /-- A circuit with a negative converter-side resistance: `R₁ = -1/10`, `R₂ = 2`,
 `L₁ = L₂ = C = 1`. -/
-def negativeCircuit : Circuit := ⟨⟨-1 / 10, ⟨1, one_pos⟩⟩, ⟨2, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
+def negativeCircuit : Circuit :=
+  ⟨RL.Impedance.ofParams (-1 / 10) ⟨1, one_pos⟩, RL.Impedance.ofParams 2 ⟨1, one_pos⟩, ⟨1, one_pos⟩⟩
 
 /-- Opposite resistances: `R₁ = 1`, `R₂ = -1`, `L₁ = L₂ = C = 1`. -/
-def balancedCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨-1, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
+def balancedCircuit : Circuit :=
+  ⟨RL.Impedance.ofParams 1 ⟨1, one_pos⟩, RL.Impedance.ofParams (-1) ⟨1, one_pos⟩, ⟨1, one_pos⟩⟩
 
 /-- The energy `xᵀ Q x` conserved by the balanced circuit. -/
 def balancedEnergy : Matrix (Fin 3) (Fin 3) ℝ := !![2, 2, 1; 2, 3, 2; 1, 2, 2]
@@ -698,7 +700,7 @@ which the translation is exact (`exactUnder_conservative`). -/
 /-- Opposite unit resistances with `L₁ = L₂ = 1` and `C = 2`: the state matrix has a
 nontrivial Jordan chain at zero, while its frequency polynomial is `2 s³`. -/
 def jordanCircuit : Circuit :=
-  ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨-1, ⟨1, one_pos⟩⟩, ⟨2, by norm_num⟩⟩
+  ⟨RL.Impedance.ofParams 1 ⟨1, one_pos⟩, RL.Impedance.ofParams (-1) ⟨1, one_pos⟩, ⟨2, by norm_num⟩⟩
 
 @[tmio M, powerlib_domain] theorem jordanCircuit_frequency (s : ℂ) :
     jordanCircuit.frequency s = 2 * s ^ 3 := by

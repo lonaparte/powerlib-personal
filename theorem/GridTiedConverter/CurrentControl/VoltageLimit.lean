@@ -668,7 +668,7 @@ the platform. -/
 
 /-- A lossless platform: the design `L = R = Ki = 1`, `Kp = −1` (`R + Kp = 0`), at `i* = 0`,
 `V_dc = 1`. -/
-def center : LimitedPI := ⟨⟨1, 1, -1, 1⟩, 0, 1⟩
+def center : LimitedPI := ⟨⟨⟨1, 1⟩, -1, 1⟩, 0, 1⟩
 
 /-- The lossless platform is Lyapunov stable: its design is a centre and the limit is inactive near
 the operating point. -/
@@ -788,7 +788,7 @@ stable design with headroom meeting the platform translation. -/
   · exact hΔ .headroom rfl
 
 /-- The nominal design `L = R = Kp = Ki = 1`. -/
-def nominal : PIParams := ⟨1, 1, 1, 1⟩
+def nominal : PIParams := ⟨⟨1, 1⟩, 1, 1⟩
 
 /-- The nominal design satisfies every attractive sentence. -/
 @[tmio TM, powerlib_domain] theorem nominal_mem_den {P : Flow.Property} (hP : P.Attractive) :
@@ -804,7 +804,7 @@ def overloaded : LimitedPI := ⟨nominal, 1, 1⟩
 @[tmio M, powerlib_domain] private theorem overloaded_overload :
     connection% (overloaded ∈ TMIO.realize Meets {.overload}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  simp only [Vmax, overloaded, nominal, one_mul, abs_one]
+  simp only [Vmax, overloaded, nominal, PIParams.R, one_mul, abs_one]
   rw [div_lt_one (by positivity), Real.lt_sqrt (by norm_num)]
   norm_num
 
@@ -891,10 +891,10 @@ platform satisfies it. -/
 
 /-- A drifting platform: the design `L = R = 1`, `Kp = Ki = 0` (no integral action) at `i* = 1`
 with `V_dc = 3` (`|R i*| = 1 < √3 = V_max`). -/
-def drifting : LimitedPI := ⟨⟨1, 1, 0, 0⟩, 1, 3⟩
+def drifting : LimitedPI := ⟨⟨⟨1, 1⟩, 0, 0⟩, 1, 3⟩
 
 @[tmio M, powerlib_domain] private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifting.Vmax := by
-  simp only [Vmax, drifting, one_mul, abs_one]
+  simp only [Vmax, drifting, PIParams.R, one_mul, abs_one]
   rw [lt_div_iff₀ (by positivity), one_mul, Real.sqrt_lt' (by norm_num)]
   norm_num
 
@@ -914,8 +914,8 @@ integrator only drifts by a bounded amount (`i² + (ξ − i)²` does not increa
       WithLp.toLp 2 ![-x 0, -x 0] := by
     intro x
     ext i
-    fin_cases i <;> simp [affineLinearVectorField, PIParams.model, drifting,
-      Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+    fin_cases i <;> simp [affineLinearVectorField, PIParams.model, drifting, PIParams.R,
+      PIParams.L, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   refine Dynamics.lyapunovStable_of_inner_nonpos (by norm_num) T ?_ ?_
   · intro x y hxy
     rw [hT, hT] at hxy
@@ -941,7 +941,7 @@ an equilibrium (the steady voltage `R i* = 1` is never commanded). -/
     (Dynamics.unstable_of_ne_zero drifting.contDiff_designField ?_)
   intro h
   have h0 := congrArg (fun z : ℝ² => z 0) h
-  simp [drifting, PIParams.field, PIParams.control, point, PIParams.equilibrium] at h0
+  simp [drifting, PIParams.field, PIParams.control, point, PIParams.equilibrium, PIParams.R] at h0
 
 @[tmio M, powerlib_domain] private theorem drifting_mem_context :
     connection% (drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}) := by

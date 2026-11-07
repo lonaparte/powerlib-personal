@@ -83,7 +83,7 @@ def euler : Implementation Impedance Requirement Euler Requirement 1 1 1 1 :=
   Numerics.eulerPorts family (fun m => m.plant.system) Euler.design Euler.h
 
 /-- The branch with `R = L = 1`. -/
-private def unitBranch : Impedance := ⟨1, ⟨1, one_pos⟩⟩
+private def unitBranch : Impedance := Impedance.ofParams 1 ⟨1, one_pos⟩
 
 /-- **Without a step constraint the Euler realization of the RL branch is not sound.** The branch
 `R = L = 1` (`ẋ = −x`) satisfies every attractive sentence, and its discretizations with a large
@@ -148,7 +148,8 @@ def euler : Implementation Circuit Requirement Euler Requirement 3 2 3 2 :=
   Numerics.eulerPorts family (fun m => m.plant.system) Euler.design Euler.h
 
 /-- The circuit with all parameters `1`: passive and damped. -/
-private def unitCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨1, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
+private def unitCircuit : Circuit :=
+  ⟨RL.Impedance.ofParams 1 ⟨1, one_pos⟩, RL.Impedance.ofParams 1 ⟨1, one_pos⟩, ⟨1, one_pos⟩⟩
 
 @[tmio M, powerlib_domain] private theorem unitCircuit_passive :
     connection% (unitCircuit ∈ TMIO.realize Meets {.passive}) := by

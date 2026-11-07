@@ -60,7 +60,7 @@ open scoped Topology
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- IMC tuning: `Kp = L ω_b`, `Ki = R ω_b`. -/
-def imc (L R ωb : ℝ) : PIParams := ⟨L, R, L * ωb, R * ωb⟩
+def imc (L R ωb : ℝ) : PIParams := ⟨⟨R, L⟩, L * ωb, R * ωb⟩
 
 section IMC
 
