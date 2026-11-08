@@ -1,5 +1,5 @@
 import theorem.PowerSystem.Synchronous.Swing
-import theorem.Passive.Phasor
+import theorem.Passive.Series
 import Mathlib.Analysis.Real.Pi.Bounds
 
 /-! # Instances of the canonical swing model: VSG, classical SMIB, post-fault SMIB with resistance
@@ -73,12 +73,13 @@ structure VSGInfiniteBus where
   Pref : ℝ
   E : ℝ
   Vg : ℝ
-  /-- The line to the infinite bus, `R + jX` at the grid frequency (lossless). -/
-  line : Passive.RX
+  /-- The line to the infinite bus, a series RLC branch; its phasor impedance is
+  `R + jX` at the grid frequency `ω_s` (lossless). -/
+  line : Passive.SeriesRLC
   line_lossless : line.R = 0
 
-/-- The line reactance `X_g`. -/
-abbrev VSGInfiniteBus.Xg (v : VSGInfiniteBus) : ℝ := v.line.X
+/-- The line reactance `X_g` at the grid frequency `ω_s`. -/
+abbrev VSGInfiniteBus.Xg (v : VSGInfiniteBus) : ℝ := v.line.reactance v.ωs
 
 namespace VSGInfiniteBus
 
@@ -287,16 +288,17 @@ end ClassicalSMIB
 /-! ## Post-fault SMIB with line resistance -/
 
 /-- Electrical power from the complex power `S̄ = Ē' Ī*`, `Ī = (Ē' − V̄_g)/Z_e`
-(generator OUT-positive): with `Z_e = R_e + j X_e = r e^{jφ}`,
+(generator OUT-positive): with the branch `Z_e(jω) = R_e + j X_e = r e^{jφ}`,
 `P_e = Re S̄ = (R_e/r²) E'² + (E' V_g / r) sin(δ − (θ_g + π/2 − φ))`. -/
-@[tmio M, powerlib_domain] theorem electricalPower_eq (E V δ θg r φ : ℝ) (Z : Passive.RX)
-    (hr : 0 < r) (hR : Z.R = r * Real.cos φ) (hX : Z.X = r * Real.sin φ) :
+@[tmio M, powerlib_domain] theorem electricalPower_eq (E V δ θg r φ : ℝ) (Z : Passive.SeriesRLC)
+    (ω : ℝ) (hr : 0 < r) (hR : Z.R = r * Real.cos φ) (hX : Z.reactance ω = r * Real.sin φ) :
     ((E : ℂ) * Complex.exp (δ * Complex.I) *
       (starRingEnd ℂ) (((E : ℂ) * Complex.exp (δ * Complex.I) -
-        (V : ℂ) * Complex.exp (θg * Complex.I)) / Z.impedance)).re =
+        (V : ℂ) * Complex.exp (θg * Complex.I)) / Z.impedance (ω * Complex.I))).re =
       Z.R / r ^ 2 * E ^ 2 + E * V / r * Real.sin (δ - (θg + Real.pi / 2 - φ)) := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.impedance] at hR hX ⊢
+  rw [Passive.SeriesRLC.impedance_jω]
+  generalize Z.R = R at hR ⊢
+  generalize Z.reactance ω = X at hX ⊢
   have hr2 : R ^ 2 + X ^ 2 = r ^ 2 := by
     rw [hR, hX]; nlinarith [Real.sin_sq_add_cos_sq φ]
   have hns : Complex.normSq ((R : ℂ) + (X : ℂ) * Complex.I) = r ^ 2 := by
@@ -331,8 +333,9 @@ namespace PostFaultSMIB
 
 variable (m : PostFaultSMIB)
 
-/-- The post-fault line `Z_e = r cos φ + j r sin φ` as a phasor branch. -/
-def line : Passive.RX := ⟨m.r * Real.cos m.φ, m.r * Real.sin m.φ⟩
+/-- The post-fault line as a series RL branch in per unit: at the per-unit grid frequency
+`ω = 1` (`s = j`) its impedance is `Z_e = r cos φ + j r sin φ`. -/
+def line : Passive.SeriesRLC := ⟨m.r * Real.cos m.φ, m.r * Real.sin m.φ, 0⟩
 
 /-- `(k₁, k₂, k₃) = (G_e E'², E' V_g / |Z_e|, θ_g + π/2 − φ)`, `G_e = cos φ / |Z_e|`. -/
 def toSwing : SwingParams :=
@@ -344,8 +347,11 @@ def toSwing : SwingParams :=
     m.toSwing.Pe δ =
       ((m.E' : ℂ) * Complex.exp (δ * Complex.I) *
         (starRingEnd ℂ) (((m.E' : ℂ) * Complex.exp (δ * Complex.I) -
-          (m.Vg : ℂ) * Complex.exp (m.θg * Complex.I)) / m.line.impedance)).re := by
-  rw [electricalPower_eq m.E' m.Vg δ m.θg m.r m.φ m.line hr rfl rfl]
+          (m.Vg : ℂ) * Complex.exp (m.θg * Complex.I)) / m.line.impedance Complex.I)).re := by
+  have h := electricalPower_eq m.E' m.Vg δ m.θg m.r m.φ m.line 1 hr rfl
+    (by simp [line, Passive.SeriesRLC.reactance])
+  rw [Complex.ofReal_one, one_mul] at h
+  rw [h]
   simp only [line]
   simp only [SwingParams.Pe, toSwing]
   field_simp

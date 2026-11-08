@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.PLL.PIPLL
-import theorem.Passive.Phasor
-import theorem.Passive.Branch
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
@@ -92,9 +92,9 @@ structure FormBParams where
   /-- Grid angular frequency (constant). -/
   ωg : ℝ
   /-- Filter capacitor (lossless shunt). -/
-  filterCap : Passive.GC
+  filterCap : Passive.ParallelRLC
   /-- Line branch `(R_g, L_g)`. -/
-  line : Passive.RL
+  line : Passive.SeriesRLC
   /-- Infinite-bus voltage (system d axis). -/
   Vg : ℝ
   /-- Frozen current references (controller frame). -/
@@ -102,6 +102,10 @@ structure FormBParams where
   iqRef : ℝ
   /-- The filter capacitor is lossless. -/
   filterCap_lossless : filterCap.G = 0
+  /-- The filter capacitor has no shunt inductor. -/
+  filterCap_noInd : filterCap.Γ = 0
+  /-- The line has no series capacitor. -/
+  line_noCap : line.S = 0
 
 /-- The filter capacitance `C_f`. -/
 abbrev FormBParams.Cf (p : FormBParams) : ℝ := p.filterCap.C
@@ -137,13 +141,20 @@ def QuasiSteady (θ vcd vcq igd igq : ℝ) : Prop :=
   p.Vg - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
   -vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0
 
-/-- `X = 1/(ω_g C_f) − ω_g L_g`: minus the series reactance of the line inductance and the filter
-capacitance at `ω_g` (`Passive.RL.reactance`, `Passive.GC.reactance`). -/
-def lineX : ℝ := -(p.line.reactance p.ωg + p.filterCap.reactance p.ωg)
+/-- The series RLC branch `(R_g, L_g, C_f)`: the line with the filter capacitance as series
+elastance `1/C_f`. -/
+def seriesBranch : Passive.SeriesRLC := ⟨p.Rg, p.Lg, 1 / p.Cf⟩
 
-/-- `Δ = R_g² + X²` (`= R_g² + (ω_g L_g − 1/(ω_g C_f))²`), the squared magnitude of the
-phasor `R_g + jX`. -/
-def lineDet : ℝ := (⟨p.Rg, p.lineX⟩ : Passive.RX).absSq
+/-- `X = 1/(ω_g C_f) − ω_g L_g`: minus the reactance of `seriesBranch` at `ω_g`
+(`Passive.SeriesRLC.reactance`). -/
+def lineX : ℝ := -(p.seriesBranch.reactance p.ωg)
+
+/-- `Δ = R_g² + (ω_g L_g − 1/(ω_g C_f))²`, the squared magnitude of `seriesBranch` at `ω_g`
+(`Passive.SeriesRLC.absSq`). -/
+def lineDet : ℝ := p.seriesBranch.absSq p.ωg
+
+@[tmio M, powerlib_domain] private theorem lineDet_eq : p.lineDet = p.Rg ^ 2 + p.lineX ^ 2 := by
+  simp [lineDet, lineX, seriesBranch, Passive.SeriesRLC.absSq]
 
 /-- `a(θ) = −V_g − i_q(θ)/(ω_g C_f)`. -/
 def driveA (θ : ℝ) : ℝ := -p.Vg - p.convCurrentQ θ / (p.ωg * p.Cf)
@@ -181,19 +192,19 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p
     -- the reduced 2×2 system `−R_g i_gd − X i_gq = a`, `X i_gd − R_g i_gq = b`
     have f3 : -p.Rg * igd - p.lineX * igq = p.driveA θ := by
       rw [hvcd] at e3
-      simp only [driveA, lineX, Passive.RL.reactance, Passive.GC.reactance]
+      simp only [driveA, lineX, seriesBranch, Passive.SeriesRLC.reactance]
       linear_combination e3
     have f4 : p.lineX * igd - p.Rg * igq = p.driveB θ := by
       rw [hvcq] at e4
-      simp only [driveB, lineX, Passive.RL.reactance, Passive.GC.reactance]
+      simp only [driveB, lineX, seriesBranch, Passive.SeriesRLC.reactance]
       linear_combination e4
     have hgd : igd = p.lineCurrentD θ := by
       simp only [lineCurrentD]
-      rw [eq_div_iff hΔ, lineDet, Passive.RX.absSq]
+      rw [eq_div_iff hΔ, lineDet_eq]
       linear_combination (-p.Rg) * f3 + p.lineX * f4
     have hgq : igq = p.lineCurrentQ θ := by
       simp only [lineCurrentQ]
-      rw [eq_div_iff hΔ, lineDet, Passive.RX.absSq]
+      rw [eq_div_iff hΔ, lineDet_eq]
       linear_combination (-p.lineX) * f3 - p.Rg * f4
     refine ⟨hgd, hgq, ?_, ?_⟩
     · rw [hvcd, hgq, capVoltageD]
@@ -202,14 +213,14 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p
     have f3 : -p.Rg * p.lineCurrentD θ - p.lineX * p.lineCurrentQ θ = p.driveA θ := by
       simp only [lineCurrentD, lineCurrentQ]
       field_simp
-      simp only [lineDet, Passive.RX.absSq]
+      simp only [lineDet_eq]
       ring
     have f4 : p.lineX * p.lineCurrentD θ - p.Rg * p.lineCurrentQ θ = p.driveB θ := by
       simp only [lineCurrentD, lineCurrentQ]
       field_simp
-      simp only [lineDet, Passive.RX.absSq]
+      simp only [lineDet_eq]
       ring
-    simp only [driveA, driveB, lineX, Passive.RL.reactance, Passive.GC.reactance] at f3 f4
+    simp only [driveA, driveB, lineX, seriesBranch, Passive.SeriesRLC.reactance] at f3 f4
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [capVoltageQ, hk1]
       ring
@@ -334,7 +345,7 @@ constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
     · exact absurd h hΔ
   have hR : p.Rg = 0 := (mul_eq_zero.mp h1).resolve_right hVg
   have hXz : p.lineX = 0 := (mul_eq_zero.mp h2).resolve_right hVg
-  exact hΔ (by simp [lineDet, Passive.RX.absSq, hR, hXz])
+  exact hΔ (by simp [lineDet_eq, hR, hXz])
 
 end FormBParams
 

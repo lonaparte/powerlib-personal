@@ -6,7 +6,7 @@ import theorem.LTI.Plant
 import theorem.Dynamics.Shift
 import theorem.PowerSystem.Synchronous.Swing
 import Mathlib.Analysis.Real.Pi.Bounds
-import theorem.Passive.Shunt
+import theorem.Passive.Parallel
 
 /-! # DC-voltage based grid forming: DC energy balance, matching control, DC droop
 
@@ -27,9 +27,9 @@ Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2, §1.4, §2.2;
 `theory/T-vsc-dc-voltage-control.md` §1.7; `theory/T-gfm-control.md` §1.6 (`matching_swing`).
 
 Results.
-* The DC node is a shunt `Passive.GC` (`C`, `G`) with injected current `i_dc − i_x`; its energy
-  balance `H' = P_src − P_ac − G v²` (`H = C v²/2`, `P_src = v i_dc`, `P_ac = v i_x`, §1.1) is
-  the element's own law `Passive.GC.hasDerivAt_energy`.
+* The DC node is a shunt `Passive.ParallelRLC` (`C`, `G`) with injected current `i_dc − i_x`; its
+  energy balance `H' = P_src − P_ac − G v²` (`H = C v²/2`, `P_src = v i_dc`, `P_ac = v i_x`, §1.1)
+  is the element's own law `Passive.ParallelRLC.hasDerivAt_energy`.
 * `droop_transfer`, `droop_dcGain`: the droop has `Δω/ΔP_export = −(3/2) K /(v* (C s + G))`;
   its DC gain `−(3/2) K /(G v*)` needs `G ≠ 0` (§1.4).
 * `matching_eq_swing`: with `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
@@ -266,9 +266,11 @@ conclusion. -/
 voltage reference. -/
 @[ext] structure DroopNode where
   /-- The DC node: capacitance `C`, conductance `G`. -/
-  node : Passive.GC
+  node : Passive.ParallelRLC
   K : ℝ
   vref : ℝ
+  /-- The DC node has no shunt inductor. -/
+  node_noInd : node.Γ = 0
 
 /-- The node capacitance. -/
 abbrev DroopNode.C (m : DroopNode) : ℝ := m.node.C
@@ -308,14 +310,14 @@ exponential stability) iff `G > 0`. -/
     connection% (m ∈ droopFamily.den (.flow P) ↔ m ∈ {m : DroopNode | 0 < m.G}) := by
   unfold powerlib.TMIO.Statement
   rw [droopDen_flow hP]
-  exact Passive.GC.decay_pos_iff hC
+  exact Passive.ParallelRLC.decay_pos_iff hC
 
 /-! ## The matching and swing families -/
 
 /-- A matching-control model with a selected point `(θ*, v*)`; `C, η ≠ 0`. -/
 structure MatchingModel where
   /-- The DC node: capacitance `C`, conductance `G`. -/
-  node : Passive.GC
+  node : Passive.ParallelRLC
   η : ℝ
   idc : ℝ
   /-- The load-current law `i_x(θ, v)`. -/
@@ -326,6 +328,8 @@ structure MatchingModel where
   v : ℝ
   C_ne : node.C ≠ 0
   η_ne : η ≠ 0
+  /-- The DC node has no shunt inductor. -/
+  node_noInd : node.Γ = 0
 
 /-- The DC-node capacitance. -/
 abbrev MatchingModel.C (m : MatchingModel) : ℝ := m.node.C
@@ -427,19 +431,25 @@ point `(θ*, η v*)`. -/
 Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
 @[tmio TM, powerlib_domain] private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
     (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    connection% ((⟨⟨G, C⟩, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
-      (⟨⟨G, C⟩, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .locallyExponentiallyStable)) := by
+    connection% ((⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη,
+        rfl⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
+      (⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη, rfl⟩ : MatchingModel) ∈ matchingFamily.den
+          (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
-  exact (Set.ext_iff.mp (matching_den_eq .locallyExponentiallyStable) (⟨⟨G, C⟩, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel)).symm
+  exact (Set.ext_iff.mp (matching_den_eq .locallyExponentiallyStable) (⟨⟨G, C, 0⟩, η, idc, ix,
+      x 0, x 1, hC, hη, rfl⟩ : MatchingModel)).symm
 
 /-- Instability transfers between the matching and swing models.
 Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
 @[tmio TM, powerlib_domain] private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    connection% ((⟨⟨G, C⟩, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .unstable) ↔
-      (⟨⟨G, C⟩, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .unstable)) := by
+    connection% ((⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη,
+        rfl⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .unstable) ↔
+      (⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη, rfl⟩ : MatchingModel) ∈ matchingFamily.den
+          (.flow .unstable)) := by
   unfold TMIO.Statement
-  exact (Set.ext_iff.mp (matching_den_eq .unstable) (⟨⟨G, C⟩, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel)).symm
+  exact (Set.ext_iff.mp (matching_den_eq .unstable) (⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη,
+      rfl⟩ : MatchingModel)).symm
 
 /-! ## The swing family read through the swing hub -/
 

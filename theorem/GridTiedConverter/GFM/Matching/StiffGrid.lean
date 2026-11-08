@@ -1,7 +1,7 @@
 import theorem.GridTiedConverter.GFM.Matching.Matching
 import theorem.Spectral.Global
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 import theorem.Criteria.Lyapunov
 import theorem.Dynamics.Coordinates
 
@@ -128,14 +128,18 @@ matching gain `η`, modulation amplitude `μ`, DC voltage reference `u*_dc`, gri
 switching-inductor resistance `R_s` and inductance `L_s`. -/
 structure Model where
   /-- The DC link: capacitance `C_dc`, conductance `G_dc`. -/
-  dcLink : Passive.GC
+  dcLink : Passive.ParallelRLC
   Kp : ℝ
   η : ℝ
   μ : ℝ
   ustar : ℝ
   v0 : ℝ
   /-- The L filter: series inductor `L_s` with resistance `R_s`. -/
-  filter : Passive.RL
+  filter : Passive.SeriesRLC
+  /-- The DC link has no shunt inductor. -/
+  dcLink_noInd : dcLink.Γ = 0
+  /-- The filter has no series capacitor. -/
+  filter_noCap : filter.S = 0
 
 /-- The filter resistance `R_s`. -/
 abbrev Model.Rs (m : Model) : ℝ := m.filter.R

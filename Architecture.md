@@ -55,7 +55,7 @@ remain with the general construction: family readings in `Family/`, realizations
 and record interfaces in `Stack/`, numerical bridges in `Numerics/`. The Agda
 module name follows its physical path. Lean import paths likewise follow files.
 The passive-component and grid-structure sources declare in the namespaces of their
-directories: `powerlib.Passive` (with `Passive.RL`, `Passive.GC`, `Passive.LCL`,
+directories: `powerlib.Passive` (with `Passive.SeriesRLC`, `Passive.ParallelRLC`, `Passive.LCL`,
 `Passive.DqRL`, `Passive.Line.*`) and `powerlib.Grid` (with `Grid.Interconnection`,
 `Grid.ModulationTransfer`).
 
@@ -66,22 +66,26 @@ when a spectral family is one of its applications. General PH constructions live
 in `PH/`; RL, RLC, DC-link and LC-filter instances live in `Passive/PH/`. A passive component's
 own properties (impedance, state equation, stored energy, dq form) live once in `Passive/`; the
 way components are connected (interconnections, networks, the grid seen from a converter) lives
-in `Grid/`. Every passive element of the library is one of three definitions, each with its own
-laws stated once: the series branch `Passive.RL` (`Passive/Branch.lean`: decay rate, impedance,
-stored energy, power balance), its dual the shunt `Passive.GC` (`Passive/Shunt.lean`), and, at a
-fixed frequency, the phasor branch `Passive.RX` (`Passive/Phasor.lean`: `R + jX`, `|Z|²`, series
-and parallel connection, the reactances `ωL`, `−1/(ωC)`). An ideal inductor, capacitor or line
-reactance is the lossless element (`R = 0`, `G = 0`), and a model that assumes it says so with
-an explicit field. The dq forms (immittance matrices, the dq capacitor law, the dq power balance)
-are in `Passive/Dq.lean`, the per-unit forms in `Passive/PerUnit.lean`. Every model containing
-such an element carries it as a field and uses those laws instead of restating them: the
-impedance model, the dq branch, current-loop plants, converter filters, filter capacitors and
+in `Grid/`. Every passive element of the library is one of two dual topologies, each with its
+own laws stated once: the series RLC branch `Passive.SeriesRLC` (`Passive/Series.lean`: `R`, `L`
+and the elastance `S = 1/C`; impedance `R + Ls + S/s`, decay rate, reactance `ωL − S/ω`,
+`|Z(jω)|²`, series connection, stored energy, power balance) and the parallel RLC element
+`Passive.ParallelRLC` (`Passive/Parallel.lean`: `G`, `C` and the reciprocal inductance
+`Γ = 1/L`; admittance `G + Cs + Γ/s`, its dual laws). RL, GC, pure L, pure C and the series RLC
+loop are the special cases with some parameters zero; a phasor is the immittance evaluated at
+`s = jω`. A model that needs a first-order element says so with an explicit field (no series
+capacitor `S = 0`, no shunt inductor `Γ = 0`), and an ideal element with a lossless field
+(`R = 0`, `G = 0`). The dq forms (immittance matrices, the dq capacitor law, the dq power
+balance) are in `Passive/Dq.lean`, the per-unit forms in `Passive/PerUnit.lean`. Every model
+containing such an element carries it as a field and uses those laws instead of restating them:
+the impedance model, the dq branch, current-loop plants, converter filters, filter capacitors and
 lines, DC links (with or without loss conductance), machine links and terminal capacitors,
 RL-network branches and nodes, the series RLC loop, the LCL and LC filters, the unit length of a
-transmission line, the lines of quasi-static phasor models, the power-flow and current-limiting
-formulas, and the elements of an EMT network. `Grid/` only connects them (for example
-`Grid/GridImpedance.lean`: a line branch in parallel with a shunt; `Grid/PowerFlow.lean`: a
-phasor branch between two sources).
+transmission line and the RLCG ladder, the lines of quasi-static phasor models (their reactance at
+the model's grid frequency, or at the per-unit frequency `ω = 1`), the power-flow and
+current-limiting formulas, and the elements of an EMT network. `Grid/` only connects them (for
+example `Grid/GridImpedance.lean`: a line branch in parallel with a shunt; `Grid/PowerFlow.lean`:
+a series branch at `s = jω` between two sources).
 
 ## Knowledge nodes and relations
 

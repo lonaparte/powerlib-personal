@@ -19,7 +19,7 @@ Model boundary.
   shunt capacitor, grid branch; ports: converter voltage with current `i₁`, grid voltage with
   current `−i₂`, `theorem/Passive/LCL.lean`), continuous time, read about the origin, with their
   requirement languages and translations.
-* Implementation layer (I): for each family a structure `Euler` (in `Passive.RL` and
+* Implementation layer (I): for each family a structure `Euler` (in `Passive.SeriesRLC` and
   `Passive.LCL`) of a circuit and a step `h > 0`; the system is the explicit Euler discretization
   `x⁺ = x + h (A x + B u)`, output `y = C x` (the input held over the step), step length `h`,
   discrete time, exact arithmetic, fixed step. Excluded: step-size control, implicit or
@@ -38,7 +38,7 @@ Results.
 * No static result beyond the family definitions.
 
 Family and connection conclusions.
-* For `N` = `Passive.RL` and `Passive.LCL`: `N.eulerFamily` (every discretization read as the
+* For `N` = `Passive.SeriesRLC` and `Passive.LCL`: `N.eulerFamily` (every discretization read as the
   Euler discretization of its circuit's port system, with the requirements and translation of its
   circuit read through the design) and `N.euler` (every discretization realizing its circuit,
   `Implementation.ofDesign`).

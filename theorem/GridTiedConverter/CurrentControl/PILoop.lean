@@ -1,5 +1,5 @@
 import theorem.Spectral.Family
-import theorem.Passive.Branch
+import theorem.Passive.Series
 import theorem.LTI.Plant
 import theorem.Criteria.Hurwitz2
 
@@ -88,9 +88,11 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 /-- Parameters of one PI current-loop axis: the plant, an RL branch, and the PI gains. -/
 @[ext] structure PIParams where
   /-- The plant: the RL branch the converter drives. -/
-  branch : Passive.RL
+  branch : Passive.SeriesRLC
   Kp : ℝ
   Ki : ℝ
+  /-- The plant has no series capacitor. -/
+  branch_noCap : branch.S = 0
 
 namespace PIParams
 
@@ -226,7 +228,7 @@ connection conclusion. -/
 /-! ## The duty-cycle plant (`V_dc` gain) as a parameter instance -/
 
 /-- Gains seen by the branch when the PI output is a duty cycle scaled by `V_dc`. -/
-def withGain (Vdc : ℝ) : PIParams := ⟨p.branch, Vdc * p.Kp, Vdc * p.Ki⟩
+def withGain (Vdc : ℝ) : PIParams := ⟨p.branch, Vdc * p.Kp, Vdc * p.Ki, p.branch_noCap⟩
 
 /-- Duty-cycle plant `L di/dt = −R i + V_dc d`, `d = Kp (i* − i) + Ki ξ`. -/
 def dutyField (Vdc iref : ℝ) (x : ℝ²) : ℝ² :=

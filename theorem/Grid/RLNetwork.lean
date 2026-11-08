@@ -1,6 +1,6 @@
 import theorem.PH.Composition
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 import theorem.PowerSystem.Network.WeightedLaplacian
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
@@ -93,9 +93,11 @@ omit [Fintype ν] [DecidableEq β] in
 /-- Branch parameters of an RL network. -/
 structure RLBranchParams (β : Type*) where
   /-- The branches of the network. -/
-  branch : β → Passive.RL
+  branch : β → Passive.SeriesRLC
   L_pos : ∀ k, 0 < (branch k).L
   r_nonneg : ∀ k, 0 ≤ (branch k).R
+  /-- The branches have no series capacitor. -/
+  branch_noCap : ∀ k, (branch k).S = 0
 
 /-- The branch inductances. -/
 abbrev RLBranchParams.L {β : Type*} (p : RLBranchParams β) : β → ℝ := fun k => (p.branch k).L
@@ -193,9 +195,10 @@ exponentially stable. -/
 /-- Branch rescaling by nonzero factors `c`: `L ↦ c² L`, `r ↦ c² r`. -/
 def RLBranchParams.scale (p : RLBranchParams β) (c : β → ℝ) (hc : ∀ k, c k ≠ 0) :
     RLBranchParams β where
-  branch k := ⟨c k ^ 2 * p.r k, c k ^ 2 * p.L k⟩
+  branch k := ⟨c k ^ 2 * p.r k, c k ^ 2 * p.L k, 0⟩
   L_pos := fun k => mul_pos (by have := hc k; positivity) (p.L_pos k)
   r_nonneg := fun k => mul_nonneg (sq_nonneg _) (p.r_nonneg k)
+  branch_noCap := fun _ => rfl
 
 omit [DecidableEq ν] in
 /-- Rescaled branch states obey the rescaled network's equations:
@@ -341,12 +344,14 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ## RL network with node capacitors and shunt conductances -/
 
-/-- Node parameters: at each node a shunt `Passive.GC` to ground, with capacitance `C_i > 0` and
-conductance `G_i ≥ 0`. -/
+/-- Node parameters: at each node a shunt `Passive.ParallelRLC` to ground, with capacitance
+`C_i > 0` and conductance `G_i ≥ 0`. -/
 structure NodeParams (ν : Type*) where
-  node : ν → Passive.GC
+  node : ν → Passive.ParallelRLC
   C_pos : ∀ i, 0 < (node i).C
   G_nonneg : ∀ i, 0 ≤ (node i).G
+  /-- The nodes have no shunt inductor. -/
+  node_noInd : ∀ i, (node i).Γ = 0
 
 /-- The node capacitances. -/
 abbrev NodeParams.C {ν : Type*} (q : NodeParams ν) : ν → ℝ := fun i => (q.node i).C

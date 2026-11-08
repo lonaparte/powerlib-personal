@@ -1,6 +1,6 @@
 import theorem.PH.Linear
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 import theorem.PH.Linearization
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
@@ -100,9 +100,9 @@ structure SMIB11Params where
   rkq : ℝ
   D : ℝ
   /-- The terminal capacitor (lossless). -/
-  capacitor : Passive.GC
+  capacitor : Passive.ParallelRLC
   /-- The RL link to the infinite bus. -/
-  link : Passive.RL
+  link : Passive.SeriesRLC
   ωs : ℝ
   Γ_posDef : Γ.PosDef
   M_pos : 0 < M
@@ -115,6 +115,10 @@ structure SMIB11Params where
   Ll_pos : 0 < link.L
   rl_nonneg : 0 ≤ link.R
   capacitor_lossless : capacitor.G = 0
+  /-- The terminal capacitor has no shunt inductor. -/
+  capacitor_noInd : capacitor.Γ = 0
+  /-- The link has no series capacitor. -/
+  link_noCap : link.S = 0
 
 /-- The terminal capacitance. -/
 abbrev SMIB11Params.C (p : SMIB11Params) : ℝ := p.capacitor.C

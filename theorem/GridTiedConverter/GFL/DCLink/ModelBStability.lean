@@ -920,15 +920,15 @@ separate regularization. -/
 `k_pv = k_iv = −1` (so that the loop still regulates), `V_g = C_dc = k_p = k_i = 1`, no load,
 lossless line `R_g = X_g = 0`, `i_q0 = 0`, `ω_s = ω_g = 0`, at `x* = (0, 0, −1, 0)`. -/
 def negativeReference : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 1⟩, 0, -1, -1, -1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, -1, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 1, 0⟩, 0, -1, -1, -1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩, WithLp.toLp 2 ![0, 0, -1, 0]⟩
 
 @[tmio M, powerlib_domain] private theorem negativeReference_equilibrium :
     connection% (negativeReference ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   rw [ModelBParams.field_eq_zero_iff]
-  simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, negativeReference, ModelBParams.idRef,
-      ModelBParams.vgq, ModelBParams.vgd]
+  simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
+      negativeReference, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
 /-- The negative-reference converter is locally exponentially stable: its Jacobian is block
 diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC loop), both Hurwitz. -/
@@ -938,34 +938,34 @@ diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC lo
   unfold powerlib.TMIO.Statement at h ⊢
   refine h.mpr ⟨(by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using negativeReference_equilibrium), ?_⟩
   set J := negativeReference.p.jacobian negativeReference.x with hJ
-  have e00 : J 0 0 = -1 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e01 : J 0 1 = 1 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e02 : J 0 2 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e03 : J 0 3 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e10 : J 1 0 = -1 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e11 : J 1 1 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e12 : J 1 2 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
-  have e13 : J 1 3 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
+  have e00 : J 0 0 = -1 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e01 : J 0 1 = 1 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e02 : J 0 2 = 0 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e03 : J 0 3 = 0 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e10 : J 1 0 = -1 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e11 : J 1 1 = 0 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e12 : J 1 2 = 0 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
+  have e13 : J 1 3 = 0 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
   have e20 : J 2 0 = 0 := by
-    simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J, ModelBParams.jacobian,
-        negativeReference, ModelBParams.idRef]
-  have e21 : J 2 1 = 0 := by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
-      ModelBParams.jacobian, negativeReference]
+    simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
+        ModelBParams.jacobian, negativeReference, ModelBParams.idRef]
+  have e21 : J 2 1 = 0 := by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg,
+      ModelBParams.Xg, J, ModelBParams.jacobian, negativeReference]
   have e22 : J 2 2 = -3 / 2 := by
-    simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J, ModelBParams.jacobian,
-        negativeReference, ModelBParams.idRef, ModelBParams.vgd,
-      ModelBParams.vgq, ModelBParams.pccP]
+    simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
+        ModelBParams.jacobian, negativeReference, ModelBParams.idRef, ModelBParams.vgd,
+        ModelBParams.vgq, ModelBParams.pccP]
   have e23 : J 2 3 = 3 / 2 := by
-    simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J, ModelBParams.jacobian,
-        negativeReference, ModelBParams.idRef, ModelBParams.vgd]
+    simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, J,
+        ModelBParams.jacobian, negativeReference, ModelBParams.idRef, ModelBParams.vgd]
   have e30 : J 3 0 = 0 := by simp [J, ModelBParams.jacobian]
   have e31 : J 3 1 = 0 := by simp [J, ModelBParams.jacobian]
   have e32 : J 3 2 = -1 := by simp [J, ModelBParams.jacobian]
@@ -1224,7 +1224,7 @@ power-balance case `P(x*) = 0` is not decided here. -/
 `v_d = 1` and `P = −1`; positive reference `V_dc,ref = 1`; `I₀ = C_dc = V_g = k_p = k_i = k_iv = 1`,
 `k_pv = R_g = X_g = i_q0 = 0`, `ω_s = ω_g = 0`; `x* = (0, 0, 0, −1)`. -/
 def collapsePoint : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 1⟩, 1, 1, 0, 1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, 0, -1]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 1, 0⟩, 1, 1, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩, WithLp.toLp 2 ![0, 0, 0, -1]⟩
 
 @[tmio M, powerlib_domain] private theorem collapsePoint_field_ne_zero :
     connection% (collapsePoint ∉ TMIO.realize Meets {.equilibrium}) := by
@@ -1232,7 +1232,7 @@ def collapsePoint : Model :=
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   intro h
   have := congrArg (fun y : State 4 => y 3) h
-  simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, collapsePoint,
+  simp [ModelBParams.Cdc, collapsePoint,
       ModelBParams.field] at this
 
 /-- The collapse point, which is not an equilibrium and has positive DC-voltage reference, is
@@ -1241,9 +1241,8 @@ locally exponentially stable in the segment semantics. -/
     connection% (collapsePoint ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have h := mem_den_locallyExponentiallyStable_of_collapse collapsePoint
     (by simp [collapsePoint]) (by
-      simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, collapsePoint, ModelBParams.pccP,
-          ModelBParams.vgd, ModelBParams.vgq,
-        ModelBParams.idRef])
+      simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
+          collapsePoint, ModelBParams.pccP, ModelBParams.vgd, ModelBParams.vgq, ModelBParams.idRef])
     (by simp [collapsePoint])
   unfold powerlib.TMIO.Statement at h ⊢
   exact h
@@ -1257,7 +1256,7 @@ is that of an equilibrium with positive reference (`exactUnder_locallyExponentia
   exact Spectral.not_exactUnder_of_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
     collapsePoint_mem_den_locallyExponentiallyStable (q := Requirement.equilibrium)
-    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, family,
+    (by simp [family,
         translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using collapsePoint_field_ne_zero)
 
 /-- Within the context of a positive DC-voltage reference the local asymptotic translation is not
@@ -1269,7 +1268,7 @@ exact (the collapse point). -/
   exact Spectral.not_exactUnder_of_les_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
     collapsePoint_mem_den_locallyExponentiallyStable (Or.inr rfl) (q := Requirement.equilibrium)
-    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, family,
+    (by simp [family,
         translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using collapsePoint_field_ne_zero)
 
 /-- Within the context of a positive DC-voltage reference the Lyapunov translation is not exact
@@ -1280,7 +1279,7 @@ exact (the collapse point). -/
   exact Spectral.not_exactUnder_of_les_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
     collapsePoint_mem_den_locallyExponentiallyStable (Or.inl rfl) (q := Requirement.equilibrium)
-    (by simp [ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, family,
+    (by simp [family,
         translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using collapsePoint_field_ne_zero)
 
 /-- The local asymptotic translation is not exact (the negative-reference converter). -/

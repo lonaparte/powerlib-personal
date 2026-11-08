@@ -9,8 +9,8 @@ Model boundary.
 * System: ONE series R–L branch (one inductor `L`, one resistor `R`, balanced, identical in
   both phases), driven by a branch voltage `v`. Current direction IN-positive
   (`conventions.md` §D1). No converter, controller, PLL, delay, PWM or saturation.
-* Time: continuous. Parameters: a branch `b : Passive.RL` with any real `R`, `L`; `ω` real and
-  CONSTANT (ideal grid / frame
+* Time: continuous. Parameters: a branch `b : Passive.SeriesRLC` with any real `R`, `L`; `ω` real
+  and CONSTANT (ideal grid / frame
   frequency, `θ(t) = ω t`). The time-varying-`ω` trajectory correspondence is
   `alphaBetaRL_iff_dqRL` (below).
 * αβ state `(i_α, i_β)`; dq state `(i_d, i_q)` with `i^{dq} = park(ω t) i^{αβ}`, both in
@@ -19,8 +19,8 @@ Model boundary.
   case `ω = 0`.
 * `dqRLPlant` is the input-driven dq model (input `v`, output `i`); its transfer matrix is the
   inverse of the branch's dq impedance `Z_dq(s) = (R + sL) I + ωL J`
-  (`Passive.RL.dqImpedance`, `theorem/Passive/Dq.lean`; `T-impedance-modeling.md` §1.7). The
-  decay rate `R/L` in the state matrix is the branch's own `Passive.RL.decay`.
+  (`Passive.SeriesRLC.dqImpedance`, `theorem/Passive/Dq.lean`; `T-impedance-modeling.md` §1.7). The
+  decay rate `R/L` in the state matrix is the branch's own `Passive.SeriesRLC.decay`.
 
 Source: work-sync `theory/T-park-transformation.md` §1.4 (dq-frame KVL with `±ωL` cross terms)
 and `theory/T-impedance-modeling.md` §1.7 (dq impedance of an R–L grid branch).
@@ -58,15 +58,17 @@ open Matrix Linear LinearSystems
 open powerlib.Transform (J park rot)
 
 /-- Zero-input dq-frame state matrix `−(R/L) I − ω J` of one R–L branch. -/
-def dqRLMatrix (b : Passive.RL) (ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-b.decay, ω; -ω, -b.decay]
+def dqRLMatrix (b : Passive.SeriesRLC) (ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  !![-b.decay, ω; -ω, -b.decay]
 
-@[tmio M, powerlib_domain] theorem dqRLMatrix_eq (b : Passive.RL) (ω : ℝ) :
+@[tmio M, powerlib_domain] theorem dqRLMatrix_eq (b : Passive.SeriesRLC) (ω : ℝ) :
     dqRLMatrix b ω = -b.decay • (1 : Matrix (Fin 2) (Fin 2) ℝ) - ω • J := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [dqRLMatrix, J]
 
 /-! ## Spectrum -/
 
-@[tmio M, powerlib_domain] theorem det_characteristicMatrix_dqRL (b : Passive.RL) (ω : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix_dqRL (b : Passive.SeriesRLC) (ω : ℝ)
+    (s : ℂ) :
     (characteristicMatrix (dqRLMatrix b ω) s).det = (s + (b.decay : ℝ)) ^ 2 + (ω : ℂ) ^ 2 := by
   simp [characteristicMatrix, dqRLMatrix, det_fin_two]
   ring
@@ -83,7 +85,7 @@ def dqRLMatrix (b : Passive.RL) (ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-b
     nlinarith [sq_nonneg z.re, sq_nonneg ω]
 
 /-- The eigenvalue `−R/L + jω` of the dq state matrix. -/
-@[tmio M, powerlib_domain] theorem dqRL_root (b : Passive.RL) (ω : ℝ) :
+@[tmio M, powerlib_domain] theorem dqRL_root (b : Passive.SeriesRLC) (ω : ℝ) :
     (characteristicMatrix (dqRLMatrix b ω) (-(b.decay : ℝ) + ω * Complex.I)).det = 0 := by
   rw [det_characteristicMatrix_dqRL]
   ring_nf
@@ -91,7 +93,8 @@ def dqRLMatrix (b : Passive.RL) (ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-b
   ring
 
 /-- The dq state matrix is spectrally stable iff `R/L > 0` (eigenvalues `−R/L ± jω`). -/
-@[tmio TM, powerlib_domain] theorem spectrallyStable_dqRLMatrix_iff (b : Passive.RL) (ω : ℝ) :
+@[tmio TM, powerlib_domain] theorem spectrallyStable_dqRLMatrix_iff (b : Passive.SeriesRLC)
+    (ω : ℝ) :
     SpectrallyStable (dqRLMatrix b ω) ↔ 0 < b.decay := by
   constructor
   · intro h
@@ -105,43 +108,43 @@ def dqRLMatrix (b : Passive.RL) (ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-b
 
 /-- The dq state matrix is Hurwitz iff `R/L > 0`, at every frame speed. Static evidence on the
 model, not a connection conclusion. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_dqRLMatrix_iff (b : Passive.RL) (ω : ℝ) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_dqRLMatrix_iff (b : Passive.SeriesRLC) (ω : ℝ) :
     IsHurwitz (dqRLMatrix b ω) ↔ 0 < b.decay := by
   rw [← spectrallyStable_iff_isHurwitz, spectrallyStable_dqRLMatrix_iff]
 
 /-! ## Input-driven dq model and the dq impedance -/
 
 /-- dq RL branch with voltage input and current output: `ẋ = A x + L⁻¹ v`, `y = x`. -/
-def dqRLPlant (b : Passive.RL) (ω : ℝ) : Plant 2 2 := ⟨dqRLMatrix b ω, b.L⁻¹ • 1, 1, 0⟩
+def dqRLPlant (b : Passive.SeriesRLC) (ω : ℝ) : Plant 2 2 := ⟨dqRLMatrix b ω, b.L⁻¹ • 1, 1, 0⟩
 
 /-- The plant's field is the dq KVL `L i' = v − R i − ωL J i` of `T-park-transformation.md` §1.4. -/
-@[tmio M, powerlib_domain] theorem dqRLPlant_field (b : Passive.RL) (ω : ℝ) (x : EuclideanSpace ℝ
-    (Fin 2))
-    (v : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem dqRLPlant_field (b : Passive.SeriesRLC) (ω : ℝ)
+    (x : EuclideanSpace ℝ (Fin 2)) (v : Fin 2 → ℝ) :
     WithLp.ofLp ((dqRLPlant b ω).inputField v x) =
       b.L⁻¹ • (v - b.R • WithLp.ofLp x) - ω • (J *ᵥ WithLp.ofLp x) := by
   ext k; fin_cases k <;>
-    simp [dqRLPlant, Plant.inputField, op, dqRLMatrix, Passive.RL.decay, J, Matrix.mulVec,
+    simp [dqRLPlant, Plant.inputField, op, dqRLMatrix, Passive.SeriesRLC.decay, J, Matrix.mulVec,
       dotProduct, Fin.sum_univ_two] <;> ring
 
-@[tmio M, powerlib_domain] theorem characteristicMatrix_dqRL_eq {b : Passive.RL} (hL : b.L ≠ 0)
-    (ω : ℝ)
-    (s : ℂ) : characteristicMatrix (dqRLMatrix b ω) s = ((b.L : ℂ)⁻¹) • b.dqImpedance ω s := by
+@[tmio M, powerlib_domain] theorem characteristicMatrix_dqRL_eq {b : Passive.SeriesRLC}
+    (hS : b.S = 0) (hL : b.L ≠ 0) (ω : ℝ) (s : ℂ) :
+    characteristicMatrix (dqRLMatrix b ω) s = ((b.L : ℂ)⁻¹) • b.dqImpedance ω s := by
   have hL' : (b.L : ℂ) ≠ 0 := by exact_mod_cast hL
+  rw [Passive.SeriesRLC.dqImpedance_of_noCap hS]
   ext i j; fin_cases i <;> fin_cases j <;>
-    simp [characteristicMatrix, dqRLMatrix, Passive.RL.dqImpedance_eq, Passive.RL.decay] <;>
+    simp [characteristicMatrix, dqRLMatrix, Passive.SeriesRLC.decay] <;>
     field_simp <;> ring
 
 /-- The dq admittance of the plant inverts the dq impedance wherever `s` is not a pole. -/
-@[tmio M, powerlib_domain] theorem transfer_dqRLPlant_mul_dqImpedance {b : Passive.RL}
-    (hL : b.L ≠ 0)
+@[tmio M, powerlib_domain] theorem transfer_dqRLPlant_mul_dqImpedance {b : Passive.SeriesRLC}
+    (hS : b.S = 0) (hL : b.L ≠ 0)
     (ω : ℝ) {s : ℂ} (hs : (characteristicMatrix (dqRLMatrix b ω) s).det ≠ 0) :
     transfer (dqRLPlant b ω) s * b.dqImpedance ω s = 1 := by
   have hL' : (b.L : ℂ) ≠ 0 := by exact_mod_cast hL
   have hB : complexify (b.L⁻¹ • (1 : Matrix (Fin 2) (Fin 2) ℝ)) = ((b.L : ℂ)⁻¹) • 1 := by
     ext i j; fin_cases i <;> fin_cases j <;> simp
   have hZ : ((b.L : ℂ)⁻¹) • b.dqImpedance ω s = characteristicMatrix (dqRLMatrix b ω) s :=
-    (characteristicMatrix_dqRL_eq hL ω s).symm
+    (characteristicMatrix_dqRL_eq hS hL ω s).symm
   simp only [transfer, dqRLPlant, hB, complexify_zero, add_zero]
   rw [show complexify (1 : Matrix (Fin 2) (Fin 2) ℝ) = 1 by simp, Matrix.one_mul,
     Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, ← Matrix.mul_smul, hZ]
@@ -156,14 +159,15 @@ the statements below:
   i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t`. -/
 
 /-- Componentwise form: `i̇_d = (v_d − R i_d)/L + ω i_q`, `i̇_q = (v_q − R i_q)/L − ω i_d`. -/
-@[tmio T, powerlib_foundation] theorem dqRL_field_apply (b : Passive.RL) (ω : ℝ) (v i : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem dqRL_field_apply (b : Passive.SeriesRLC) (ω : ℝ)
+    (v i : Fin 2 → ℝ) :
     b.L⁻¹ • (v - b.R • i) - ω • (J *ᵥ i) =
       ![b.L⁻¹ * (v 0 - b.R * i 0) + ω * i 1, b.L⁻¹ * (v 1 - b.R * i 1) - ω * i 0] := by
   ext k; fin_cases k <;> simp [Transform.J_mulVec]
 
 /-- Park maps αβ-frame RL trajectories to dq-frame RL trajectories, for any differentiable
 frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
-@[tmio M, powerlib_domain] theorem dqRL_of_alphaBetaRL {b : Passive.RL} {θ ω : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem dqRL_of_alphaBetaRL {b : Passive.SeriesRLC} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
     (h : ∀ t, HasDerivAt i (b.L⁻¹ • (v t - b.R • i t)) t) :
     ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
@@ -174,7 +178,7 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
   rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
 
 /-- Inverse direction: rotating a dq-frame trajectory back gives an αβ-frame trajectory. -/
-@[tmio M, powerlib_domain] theorem alphaBetaRL_of_dqRL {b : Passive.RL} {θ ω : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem alphaBetaRL_of_dqRL {b : Passive.SeriesRLC} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
     (h : ∀ t, HasDerivAt i (b.L⁻¹ • (v t - b.R • i t) - ω t • (J *ᵥ i t)) t) :
     ∀ t, HasDerivAt (fun t => rot (θ t) *ᵥ i t)
@@ -184,7 +188,7 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
   rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
 
 /-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`. -/
-@[tmio M, powerlib_domain] theorem alphaBetaRL_iff_dqRL {b : Passive.RL} {θ ω : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem alphaBetaRL_iff_dqRL {b : Passive.SeriesRLC} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) (v i : ℝ → Fin 2 → ℝ) :
     (∀ t, HasDerivAt i (b.L⁻¹ • (v t - b.R • i t)) t) ↔
       ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
@@ -198,7 +202,8 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
 /-! ## Amplitude–phase coordinates of a dq current (`T-invariant-coordinates.md` §1.3) -/
 
 /-- Squared-amplitude balance of the dq R–L filter: the frame-rotation terms cancel. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_half_sq_amplitude {b : Passive.RL} (hL : b.L ≠ 0)
+@[tmio M, powerlib_domain] theorem hasDerivAt_half_sq_amplitude {b : Passive.SeriesRLC}
+    (hL : b.L ≠ 0)
     {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
     (hd : HasDerivAt Id ((Vd t - Vcd t - b.R * Id t + ω t * b.L * Iq t) / b.L) t)
     (hq : HasDerivAt Iq ((Vq t - Vcq t - b.R * Iq t - ω t * b.L * Id t) / b.L) t) :
@@ -207,7 +212,7 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
         b.decay * (Id t ^ 2 + Iq t ^ 2)) t := by
   have h := ((hd.pow 2).add (hq.pow 2)).div_const 2
   convert h using 1
-  simp only [Passive.RL.decay]
+  simp only [Passive.SeriesRLC.decay]
   field_simp
   ring
 
@@ -242,7 +247,7 @@ phase differs locally by a constant). -/
 
 /-- Phase dynamics of the dq R–L filter:
 `φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω`. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_phase {b : Passive.RL} (hL : b.L ≠ 0)
+@[tmio M, powerlib_domain] theorem hasDerivAt_phase {b : Passive.SeriesRLC} (hL : b.L ≠ 0)
     {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
     (hd : HasDerivAt Id ((Vd t - Vcd t - b.R * Id t + ω t * b.L * Iq t) / b.L) t)
     (hq : HasDerivAt Iq ((Vq t - Vcq t - b.R * Iq t - ω t * b.L * Id t) / b.L) t)
@@ -267,9 +272,11 @@ phase differs locally by a constant). -/
 /-- One series R–L branch read in the dq frame rotating at the constant speed `ω`. -/
 @[ext] structure DqBranch where
   /-- The branch. -/
-  branch : Passive.RL
+  branch : Passive.SeriesRLC
   /-- The frame speed. -/
   ω : ℝ
+  /-- The branch has no series capacitor. -/
+  branch_noCap : branch.S = 0
 
 namespace DqBranch
 
@@ -306,7 +313,7 @@ namespace DqBranch
   exact neg_pos.mpr h
 
 /-- The same branch in the stationary αβ frame (`ω = 0`). -/
-def alphaBeta (m : DqBranch) : DqBranch := ⟨m.branch, 0⟩
+def alphaBeta (m : DqBranch) : DqBranch := ⟨m.branch, 0, m.branch_noCap⟩
 
 end DqBranch
 
@@ -343,7 +350,7 @@ particular exponential stability) holds iff `R/L > 0`. -/
     connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : DqBranch | 0 < m.R}) := by
   unfold powerlib.TMIO.Statement
   rw [den_flow hP]
-  exact Passive.RL.decay_pos_iff hL
+  exact Passive.SeriesRLC.decay_pos_iff hL
 
 /-- The αβ and dq descriptions of the RL branch are stable together, at every frame speed: the
 attractive denotation of the dq family is its pull-back along the αβ reading. -/

@@ -60,7 +60,7 @@ open scoped Topology
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- IMC tuning: `Kp = L ω_b`, `Ki = R ω_b`. -/
-def imc (L R ωb : ℝ) : PIParams := ⟨⟨R, L⟩, L * ωb, R * ωb⟩
+def imc (L R ωb : ℝ) : PIParams := ⟨⟨R, L, 0⟩, L * ωb, R * ωb, rfl⟩
 
 section IMC
 
@@ -121,7 +121,7 @@ evidence on the model, not a connection conclusion. -/
   unfold powerlib.TMIO.Statement at h ⊢
   rw [h]
   change 0 < R + L * ωb ∧ 0 < R * ωb ↔ 0 < R / L
-  rw [show 0 < R / L ↔ 0 < R from Passive.RL.decay_pos_iff (b := ⟨R, L⟩) hL]
+  rw [show 0 < R / L ↔ 0 < R from Passive.SeriesRLC.decay_pos_iff (b := ⟨R, L, 0⟩) hL]
   constructor
   · rintro ⟨-, h⟩
     exact pos_of_mul_pos_left h hω.le

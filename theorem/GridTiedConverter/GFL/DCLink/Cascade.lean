@@ -1,5 +1,5 @@
 import theorem.GridTiedConverter.CurrentControl.PILoop
-import theorem.Passive.Shunt
+import theorem.Passive.Parallel
 import theorem.Dynamics.Coordinates
 import theorem.Dynamics.Locality
 import theorem.GridTiedConverter.GFL.DCLink.PowerBalance
@@ -119,7 +119,7 @@ and operating d-axis current. -/
   /-- Current-loop axis `(L, R, Kp, Ki)`. -/
   pi : CurrentControl.PIParams
   /-- DC-link capacitance. (lossless shunt). -/
-  dcLink : Passive.GC
+  dcLink : Passive.ParallelRLC
   /-- Stiff PCC d-axis voltage. -/
   Vd0 : ℝ
   /-- DC operating voltage `V0`. -/
@@ -128,6 +128,8 @@ and operating d-axis current. -/
   Id0 : ℝ
   /-- The DC link is lossless. -/
   dcLink_lossless : dcLink.G = 0
+  /-- The DC link has no shunt inductor. -/
+  dcLink_noInd : dcLink.Γ = 0
 
 /-- The DC-link capacitance. -/
 abbrev CascadeParams.C (p : CascadeParams) : ℝ := p.dcLink.C
@@ -650,7 +652,7 @@ rectifies (`I_dc0 > 0`). -/
 
 /-- A negative-inductance cascade: `L = −1`, `R = 0`, `Kp = Ki = −1`, `C = V_d0 = V0 = I_d0 = 1`
 (`I_dc0 = 1`). -/
-def negativeInductance : CascadeParams := ⟨⟨⟨0, -1⟩, -1, -1⟩, ⟨0, 1⟩, 1, 1, 1, rfl⟩
+def negativeInductance : CascadeParams := ⟨⟨⟨0, -1, 0⟩, -1, -1, rfl⟩, ⟨0, 1, 0⟩, 1, 1, 1, rfl, rfl⟩
 
 /-- The negative-inductance cascade is locally exponentially stable: its current loop
 `L s² + (R + Kp) s + Ki = −(s² + s + 1)` and its DC node are stable. -/
@@ -1080,7 +1082,7 @@ translation (`stable`) is the local asymptotic denotation cut by the physical ra
     exact ⟨hL, hC, hV, hR, hKi, hI⟩
 
 /-- An idle cascade: `L = Kp = Ki = C = V_d0 = V0 = 1`, `R = 0`, `I_d0 = 0` (`I_dc0 = 0`). -/
-def idle : CascadeParams := ⟨⟨⟨0, 1⟩, 1, 1⟩, ⟨0, 1⟩, 1, 1, 0, rfl⟩
+def idle : CascadeParams := ⟨⟨⟨0, 1, 0⟩, 1, 1, rfl⟩, ⟨0, 1, 0⟩, 1, 1, 0, rfl, rfl⟩
 
 /-- The idle cascade is Lyapunov stable: its current loop is stable and the corrected capacitor
 energy `V²/2 + i²/2 + ξ` is conserved (`CascadeParams.storage`). -/

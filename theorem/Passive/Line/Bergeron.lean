@@ -1,8 +1,8 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.PDE.Partial
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 
 /-! # Telegrapher equations: characteristics, d'Alembert form and the Bergeron relations
 
@@ -51,23 +51,27 @@ open Set
 open powerlib.PDE (HasPartialsWithin strip const_along_segment)
 
 /-- A solution of the telegrapher equations on the strip `[a, b] × ℝ`, for a line whose unit
-length is the series branch `series` (`R'`, `L'`) and the shunt `shunt` (`G'`, `C'`):
-`∂ₓv = −L' ∂ₜi − R' i`, `∂ₓi = −C' ∂ₜv − G' v`. -/
-def IsTelegrapherSolution (series : Passive.RL) (shunt : Passive.GC) (a b : ℝ)
+length is the series element `series` (`R'`, `L'`, no series capacitance) and the parallel element
+`shunt` (`G'`, `C'`, no shunt inductance): `∂ₓv = −L' ∂ₜi − R' i`, `∂ₓi = −C' ∂ₜv − G' v`. -/
+def IsTelegrapherSolution (series : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (a b : ℝ)
     (v i : ℝ × ℝ → ℝ) : Prop :=
-  ∃ vx vt ix it : ℝ × ℝ → ℝ, ∀ q ∈ strip a b,
+  series.S = 0 ∧ shunt.Γ = 0 ∧ ∃ vx vt ix it : ℝ × ℝ → ℝ, ∀ q ∈ strip a b,
     HasPartialsWithin v vx vt (strip a b) q ∧ HasPartialsWithin i ix it (strip a b) q ∧
       vx q = -series.L * it q - series.R * i q ∧ ix q = -shunt.C * vt q - shunt.G * v q
 
 /-- Lossless line constants: a unit length of line is the series branch `series` (`L'`) and
 the shunt `shunt` (`C'`), both lossless. -/
 structure LosslessLine where
-  series : Passive.RL
-  shunt : Passive.GC
+  series : Passive.SeriesRLC
+  shunt : Passive.ParallelRLC
   L_pos : 0 < series.L
   C_pos : 0 < shunt.C
   series_lossless : series.R = 0
   shunt_lossless : shunt.G = 0
+  /-- The unit length has no series capacitance. -/
+  series_noCap : series.S = 0
+  /-- The unit length has no shunt inductance. -/
+  shunt_noInd : shunt.Γ = 0
 
 /-- The inductance per unit length. -/
 abbrev LosslessLine.L (p : LosslessLine) : ℝ := p.series.L
@@ -124,7 +128,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
     (h : IsTelegrapherSolution p.series p.shunt a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ + (b - a) / p.c) + p.Zc * i (b, t₀ + (b - a) / p.c) =
       v (a, t₀) + p.Zc * i (a, t₀) := by
-  obtain ⟨vx, vt, ix, it, hsol⟩ := h
+  obtain ⟨-, -, vx, vt, ix, it, hsol⟩ := h
   have hc := p.c_pos
   have hpt : ∀ s : ℝ, ((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), 1 / p.c) = (a + s, t₀ + s / p.c) := by
     intro s; ext <;> simp; ring
@@ -159,7 +163,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
     (h : IsTelegrapherSolution p.series p.shunt a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ - (b - a) / p.c) - p.Zc * i (b, t₀ - (b - a) / p.c) =
       v (a, t₀) - p.Zc * i (a, t₀) := by
-  obtain ⟨vx, vt, ix, it, hsol⟩ := h
+  obtain ⟨-, -, vx, vt, ix, it, hsol⟩ := h
   have hc := p.c_pos
   have hpt : ∀ s : ℝ, ((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), -(1 / p.c)) = (a + s, t₀ - s / p.c) := by
     intro s; ext <;> simp; ring
@@ -267,7 +271,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
     IsTelegrapherSolution p.series p.shunt a b (travellingV p f g) (travellingI p f g) := by
   have hZ := p.Zc_pos.ne'
   have hc := p.c_pos.ne'
-  refine ⟨fun q => f' (q.1 - p.c * q.2) + g' (q.1 + p.c * q.2),
+  refine ⟨p.series_noCap, p.shunt_noInd, fun q => f' (q.1 - p.c * q.2) + g' (q.1 + p.c * q.2),
     fun q => -p.c * f' (q.1 - p.c * q.2) + p.c * g' (q.1 + p.c * q.2),
     fun q => (f' (q.1 - p.c * q.2) - g' (q.1 + p.c * q.2)) / p.Zc,
     fun q => (-p.c * f' (q.1 - p.c * q.2) - p.c * g' (q.1 + p.c * q.2)) / p.Zc,

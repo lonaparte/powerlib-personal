@@ -1,6 +1,6 @@
 import theorem.Grid.GridImpedance
 import theorem.GridTiedConverter.GFL.Impedance.Algebra
-import theorem.Passive.Branch
+import theorem.Passive.Series
 import theorem.Transform.ComplexPower
 import theorem.LTI.Plant
 
@@ -60,7 +60,7 @@ open powerlib.Transform (Gi Gv)
 /-- Parameters of the 10-state small-signal GFL port model. -/
 @[ext] structure GFLParams where
   /-- Filter branch `(R, L)`. -/
-  filter : Passive.RL
+  filter : Passive.SeriesRLC
   /-- Frame speed `ω_s`. -/
   ω : ℝ
   /-- DC-link voltage (constant). -/
@@ -82,6 +82,8 @@ open powerlib.Transform (Gi Gv)
   V0 : Fin 2 → ℝ
   I0 : Fin 2 → ℝ
   D0 : Fin 2 → ℝ
+  /-- The filter has no series capacitor. -/
+  filter_noCap : filter.S = 0
 
 /-- Filter inductance. -/
 abbrev GFLParams.L (p : GFLParams) : ℝ := p.filter.L
@@ -412,7 +414,8 @@ end Resp
     exact this
   have h0 := hk 0
   have h1 := hk 1
-  simp only [Passive.RL.dqImpedance_eq, Matrix.mul_apply, Fin.sum_univ_two, Gdel, Matrix.of_apply,
+  simp only [Passive.SeriesRLC.dqImpedance_of_noCap p.filter_noCap, Matrix.mul_apply,
+    Fin.sum_univ_two, Gdel, Matrix.of_apply,
     Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
     Matrix.cons_val_fin_one] at h0 h1
   ext i
@@ -476,12 +479,13 @@ end Resp
   fin_cases k <;> simp [model, gflOutput, hX, Matrix.mul_apply, Fin.sum_univ_succ, resp]
 
 /-- The GFL realization as the load of the grid-side network of `GridImpedance.lean`. -/
-def gflOnNetwork (line : Passive.RL) (shunt : Passive.GC) : Grid.Interconnection 4 10 2 :=
+def gflOnNetwork (line : Passive.SeriesRLC)
+    (shunt : Passive.ParallelRLC) : Grid.Interconnection 4 10 2 :=
   withNetwork line shunt p.ω p.model p.model_D
 
 /-- Return difference of the GFL–grid interconnection: `det (I + Z_ext Y_gfl)`. -/
-@[tmio M, powerlib_domain] theorem gflOnNetwork_returnDifference {line : Passive.RL}
-    {shunt : Passive.GC}
+@[tmio M, powerlib_domain] theorem gflOnNetwork_returnDifference {line : Passive.SeriesRLC}
+    {shunt : Passive.ParallelRLC} (hS : line.S = 0) (hΓ : shunt.Γ = 0)
     (hC : shunt.C ≠ 0) (hLg : line.L ≠ 0) {s : ℂ}
     (hMn : (characteristicMatrix (networkModel line shunt p.ω).A s).det ≠ 0)
     (hZn : (line.dqImpedance p.ω s).det ≠ 0) (hs : s ≠ 0) (ha : p.a ≠ 0)
@@ -492,7 +496,7 @@ def gflOnNetwork (line : Passive.RL) (shunt : Passive.GC) : Grid.Interconnection
     (hM : (characteristicMatrix p.model.A s).det ≠ 0) :
     (p.gflOnNetwork line shunt).returnDifference s =
       (1 + Zext line shunt p.ω s * p.Ygfl s).det := by
-  rw [gflOnNetwork, withNetwork_returnDifference hC hLg _ _ hMn hZn,
+  rw [gflOnNetwork, withNetwork_returnDifference hS hΓ hC hLg _ _ hMn hZn,
     p.transfer_eq_Ygfl hs ha hda hL hpll hZ hP hM]
 
 end GFLParams

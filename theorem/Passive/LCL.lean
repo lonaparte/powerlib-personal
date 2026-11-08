@@ -2,7 +2,7 @@ import theorem.TMIO.ClaimElab
 import theorem.Linear.Jordan
 import theorem.Linear.Rate
 import theorem.Passive.RL
-import theorem.Passive.Shunt
+import theorem.Passive.Parallel
 import theorem.Criteria.Routh3
 import theorem.generated.LCLConversion
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -80,16 +80,18 @@ open Matrix LinearSystems TMIO
   first : RL.Impedance
   second : RL.Impedance
   /-- The shunt capacitor (capacitance `C > 0`, no conductance). -/
-  capacitor : Passive.GC
+  capacitor : Passive.ParallelRLC
   capacitance_pos : 0 < capacitor.C
   capacitor_lossless : capacitor.G = 0
+  /-- The capacitor has no shunt inductor. -/
+  capacitor_noInd : capacitor.Γ = 0
 
 /-- The capacitance, as a positive scaling factor. -/
 def Circuit.capacitance (m : Circuit) : RL.Positive := ⟨m.capacitor.C, m.capacitance_pos⟩
 
 /-- The circuit with branches `first`, `second` and capacitance `C`. -/
 def Circuit.ofParams (first second : RL.Impedance) (C : RL.Positive) : Circuit :=
-  ⟨first, second, ⟨0, C.val⟩, C.property, rfl⟩
+  ⟨first, second, ⟨0, C.val, 0⟩, C.property, rfl, rfl⟩
 
 @[tmio M, simp, powerlib_domain] theorem Circuit.first_ofParams (first second : RL.Impedance)
     (C : RL.Positive) : (Circuit.ofParams first second C).first = first := rfl
@@ -126,9 +128,10 @@ def toCircuit (m : StateSpace) : Circuit :=
   apply Circuit.ext
   · exact RL.impedance_roundtrip m.first
   · exact RL.impedance_roundtrip m.second
-  · apply Passive.GC.ext
+  · apply Passive.ParallelRLC.ext
     · exact m.capacitor_lossless.symm
     · exact congrArg Subtype.val (RL.reciprocal_involutive m.capacitance)
+    · exact m.capacitor_noInd.symm
 
 @[tmio M, simp, powerlib_domain] theorem state_roundtrip (m : StateSpace) :
     toStateSpace (toCircuit m) = m := by

@@ -42,7 +42,7 @@ Results.
 * The element laws read through Park are with the elements: the αβ / dq KVL of one series R–L
   branch and its trajectory correspondence (`alphaBetaRL_iff_dqRL`) in
   `theorem/Passive/DqRL.lean`, the node equation of a shunt G–C element in the dq frame
-  (`Passive.GC.capacitor_dq`: `C dv/dt = i − G v − ω C J v`, the cross term of
+  (`Passive.ParallelRLC.capacitor_dq`: `C dv/dt = i − G v − ω C J v`, the cross term of
   `T-gfl-impedance.md` §1.7) in `theorem/Passive/Dq.lean`.
 
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence

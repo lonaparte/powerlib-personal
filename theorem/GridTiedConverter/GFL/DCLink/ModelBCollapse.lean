@@ -365,7 +365,8 @@ segments spiral into the plane within a time `O(‖x(t₀) − x*‖)`. -/
 `k_pv = R_g = X_g = i_q0 = 0`, `ω_s = ω_g = 0`. Then `G = V_dc,ref = −1`, `H = I₀ / C_dc = 1`,
 `D = −3`. -/
 def degenerateFocus : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2⟩, 3 / 2, -1, 0, 1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, 0, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, -1, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩,
+    WithLp.toLp 2 ![0, 0, 0, 0]⟩
 
 /-- The degenerate focus is locally exponentially stable in the segment semantics (it is not an
 equilibrium: its DC-link component is `I₀ / C_dc = 1`). -/

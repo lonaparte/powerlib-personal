@@ -1,6 +1,6 @@
 import theorem.Attributes
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 import dependencies.Mathlib
 
 /-! # Trapezoidal companion models and the EMT nodal equation
@@ -11,9 +11,10 @@ grounded through positive conductances.
 
 Model boundary.
 * A lumped network with `N` non-ground nodes and a finite set of two-terminal branches; every
-  branch is a linear resistor, a series RL branch `Passive.RL` or a shunt G–C element
-  `Passive.GC` with constant parameters (an ideal inductor or capacitor is the lossless one; no
-  switches, no controlled sources, no mutual coupling, no transmission lines), fixed step `h`.
+  branch is a linear resistor, a series RL branch `Passive.SeriesRLC` or a shunt G–C element
+  `Passive.ParallelRLC` with constant parameters (an ideal inductor or capacitor is the lossless
+  one; no switches, no controlled sources, no mutual coupling, no transmission lines), fixed step
+  `h`.
 * Each branch runs from terminal `p` to terminal `q` (a node or ground); branch voltage
   `v_b = V_p - V_q`, branch current `i_b` flows from `p` to `q` (passive sign convention). KCL
   at node `k`: the branch currents leaving `k` sum to the external injection `J_k`.
@@ -54,7 +55,8 @@ open Matrix
 
 /-- Series RL branch `L di/dt = v − R i`: the trapezoidal step equals the companion form
 `i₁ = G v₁ + i_h`, `G = h/(2L + hR)`, `i_h = ((2L − hR) i₀ + h v₀)/(2L + hR)`. -/
-@[tmio M, powerlib_domain] theorem branch_companion_iff {b : Passive.RL} {h : ℝ} (hL : b.L ≠ 0)
+@[tmio M, powerlib_domain] theorem branch_companion_iff {b : Passive.SeriesRLC} {h : ℝ}
+    (hL : b.L ≠ 0)
     (hD : 2 * b.L + h * b.R ≠ 0) (i₀ v₀ i₁ v₁ : ℝ) :
     i₁ = i₀ + h / 2 * ((v₀ - b.R * i₀) / b.L + (v₁ - b.R * i₁) / b.L) ↔
       i₁ = h / (2 * b.L + h * b.R) * v₁ +
@@ -70,7 +72,8 @@ open Matrix
 
 /-- Shunt G–C element `C dv/dt = i − G v`: the trapezoidal step equals the companion form
 `i₁ = G_eq v₁ + i_h`, `G_eq = 2C/h + G`, `i_h = −(i₀ + (2C/h − G) v₀)`. -/
-@[tmio M, powerlib_domain] theorem shunt_companion_iff {e : Passive.GC} {h : ℝ} (hC : e.C ≠ 0)
+@[tmio M, powerlib_domain] theorem shunt_companion_iff {e : Passive.ParallelRLC} {h : ℝ}
+    (hC : e.C ≠ 0)
     (hh : h ≠ 0) (i₀ v₀ i₁ v₁ : ℝ) :
     v₁ = v₀ + h / 2 * ((i₀ - e.G * v₀) / e.C + (i₁ - e.G * v₁) / e.C) ↔
       i₁ = (2 * e.C / h + e.G) * v₁ - (i₀ + (2 * e.C / h - e.G) * v₀) := by
@@ -83,12 +86,13 @@ open Matrix
   rw [e1, e2, eq_div_iff (mul_ne_zero two_ne_zero hC), eq_div_iff hh]
   constructor <;> intro hk <;> linarith
 
-/-- A linear two-terminal element: a resistor, a series RL branch (`Passive.RL`) or a shunt G–C
-element (`Passive.GC`); an ideal inductor or capacitor is the lossless branch or element. -/
+/-- A linear two-terminal element: a resistor, a series RL branch (`Passive.SeriesRLC`) or a shunt
+G–C element (`Passive.ParallelRLC`); an ideal inductor or capacitor is the lossless branch or
+element. -/
 inductive Element
   | resistor (R : ℝ)
-  | inductor (b : Passive.RL)
-  | capacitor (e : Passive.GC)
+  | inductor (b : Passive.SeriesRLC)
+  | capacitor (e : Passive.ParallelRLC)
 
 namespace Element
 
@@ -105,7 +109,7 @@ def history (h : ℝ) : Element → ℝ → ℝ → ℝ
   | capacitor e, i₀, v₀ => -(i₀ + (2 * e.C / h - e.G) * v₀)
 
 /-- The element law over one step: Ohm's law, or the trapezoidal rule on the element ODE
-(`Passive.RL`: `L di/dt = v − R i`; `Passive.GC`: `C dv/dt = i − G v`). -/
+(`Passive.SeriesRLC`: `L di/dt = v − R i`; `Passive.ParallelRLC`: `C dv/dt = i − G v`). -/
 def StepLaw (h : ℝ) : Element → ℝ → ℝ → ℝ → ℝ → Prop
   | resistor R, _, _, i₁, v₁ => v₁ = R * i₁
   | inductor b, i₀, v₀, i₁, v₁ =>

@@ -93,7 +93,8 @@ generic Euler laws (`Numerics.euler_sound_small_step`). -/
 /-- The parameters of the witness below: unit filter capacitance, grid frequency and grid EMF, a
 line without impedance, zero current references and unit PLL gains (`a = b = 0`, `Δ = 1`, so the
 phase-detector characteristic is `h = −sin`). -/
-private def unitLine : Params := ⟨⟨0, 0⟩, ⟨0, 1⟩, ⟨0, 0⟩, 1, 1, 0, 0, 0, 0, 1, 1, rfl⟩
+private def unitLine : Params :=
+  ⟨⟨0, 0, 0⟩, ⟨0, 1, 0⟩, ⟨0, 0, 0⟩, 1, 1, 0, 0, 0, 0, 1, 1, rfl, rfl, rfl, rfl⟩
 
 /-- **Without a step constraint the Euler realization of the code-frame PLL models is not sound.**
 The locally exponentially stable code-frame model `unitLine` at `θ_c* = 0` (a zero of `h = −sin`

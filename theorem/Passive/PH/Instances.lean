@@ -1,19 +1,19 @@
 import theorem.PH.Composition
 import theorem.PH.Nonlinear
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 
 /-! # Small port-Hamiltonian instances: DC-link capacitor, dq LC filter
 
 Two independent circuit models as diagonal port-Hamiltonian data, read through the linear
 port-Hamiltonian family; each uses the incoming-positive power convention (`uᵀ y > 0` means power
-flows **into** the model). Their elements are the shunt `Passive.GC` and the series branch
-`Passive.RL`; the stored energy is the sum of the elements' own energies (`Passive.GC.energy`,
-`Passive.RL.energy`).
+flows **into** the model). Their elements are the shunt `Passive.ParallelRLC` and the series branch
+`Passive.SeriesRLC`; the stored energy is the sum of the elements' own energies
+(`Passive.ParallelRLC.capacitorEnergy`, `Passive.SeriesRLC.inductorEnergy`).
 
 Model boundary.
 DC-link capacitor (`dcLink`, T-low-inertia-frequency §1.4):
-* The DC link is a shunt `cap : Passive.GC` with `C_dc = cap.C > 0` and leakage conductance
+* The DC link is a shunt `cap : Passive.ParallelRLC` with `C_dc = cap.C > 0` and leakage conductance
   `G_dc = cap.G ≥ 0` (`G_dc = 0`: the ideal capacitor of the note).
 * State `x = (q)`, `q = C_dc V_dc` the capacitor charge. `H = q² / (2 C_dc) = ½ C_dc V_dc²`.
 * Inputs `u = (i_in, i_out)`: current into the positive rail from the source side and current
@@ -24,10 +24,10 @@ DC-link capacitor (`dcLink`, T-low-inertia-frequency §1.4):
   modelled (they only enter through the two current inputs).
 dq LC filter (`dqLC`, T-invariant-coordinates §1.4):
 * Rotating dq frame at a **constant** angular frequency `ω` (any real number); the filter branch
-  `filter : Passive.RL` and the capacitor `capacitor : Passive.GC` with `L_f, C_f > 0`, both
-  lossless (`R_f = 0`, `G_f = 0`, stated as fields). Topology of the note: `C_f` from the PCC node
-  to ground, `L_f` from the PCC to the converter terminal; the PCC voltage is the capacitor
-  state.
+  `filter : Passive.SeriesRLC` and the capacitor `capacitor : Passive.ParallelRLC` with
+  `L_f, C_f > 0`, both lossless (`R_f = 0`, `G_f = 0`, stated as fields). Topology of the note:
+  `C_f` from the PCC node to ground, `L_f` from the PCC to the converter terminal; the PCC voltage
+  is the capacitor state.
 * Energy variables: state order
   `x = (φ_d, φ_q, q_d, q_q) = (L_f I_d, L_f I_q, C_f V_d, C_f V_q)`.
   `H = ½ L_f |I|² + ½ C_f |V|²`.
@@ -79,7 +79,8 @@ open powerlib.Dynamics (State)
 
 /-- The DC-link capacitor `cap` (capacitance `C_dc > 0`, leakage `G_dc ≥ 0`) as a one-state
 port-Hamiltonian model. -/
-def dcLink (cap : Passive.GC) (hC : 0 < cap.C) (hG : 0 ≤ cap.G) : DiagonalPH (Fin 1) (Fin 2) where
+def dcLink (cap : Passive.ParallelRLC) (hC : 0 < cap.C) (hG : 0 ≤ cap.G) :
+    DiagonalPH (Fin 1) (Fin 2) where
   J := 0
   d := ![cap.G]
   w := ![1 / cap.C]
@@ -94,7 +95,7 @@ def dcLink (cap : Passive.GC) (hC : 0 < cap.C) (hG : 0 ≤ cap.G) : DiagonalPH (
     fin_cases i
     simp [hC]
 
-variable {cap : Passive.GC} (hC : 0 < cap.C) (hG : 0 ≤ cap.G)
+variable {cap : Passive.ParallelRLC} (hC : 0 < cap.C) (hG : 0 ≤ cap.G)
 
 /-- The pH field is `C_dc V̇_dc = i_in − i_out − G_dc V_dc`, written for the charge
 `q = C_dc V_dc`. Static evidence on the model, not a connection conclusion. -/
@@ -107,16 +108,17 @@ variable {cap : Passive.GC} (hC : 0 < cap.C) (hG : 0 ≤ cap.G)
 
 /-- The stored energy is the capacitor's own `½ C_dc V_dc²` with `V_dc = q / C_dc`. -/
 @[tmio M, powerlib_domain] theorem dcLink_energy (V : ℝ) :
-    (dcLink cap hC hG).energy ![cap.C * V] = cap.energy V := by
+    (dcLink cap hC hG).energy ![cap.C * V] = cap.capacitorEnergy V := by
   have hC' := hC.ne'
-  simp [DiagonalPH.energy, dcLink, Passive.GC.energy]
+  simp [DiagonalPH.energy, dcLink, Passive.ParallelRLC.capacitorEnergy]
   field_simp
 
 /-- `ΔE_dc = ½ C_dc (V_dc² − V_dc,0²)`. -/
 @[tmio M, powerlib_domain] theorem dcLink_energy_sub (V V₀ : ℝ) :
     (dcLink cap hC hG).energy ![cap.C * V] - (dcLink cap hC hG).energy ![cap.C * V₀] =
       cap.C * (V ^ 2 - V₀ ^ 2) / 2 := by
-  rw [dcLink_energy, dcLink_energy, Passive.GC.energy, Passive.GC.energy]
+  rw [dcLink_energy, dcLink_energy, Passive.ParallelRLC.capacitorEnergy,
+      Passive.ParallelRLC.capacitorEnergy]
   ring
 
 /-- Port power of the DC link: `uᵀ y = V_dc (i_in − i_out)`.
@@ -128,7 +130,8 @@ Static evidence on the model, not a connection conclusion. -/
   ring
 
 /-- The DC link as a linear port-Hamiltonian plant (charge state, ports `(i_in, i_out)`). -/
-def dcLinkPH (cap : Passive.GC) (hC : 0 < cap.C) (hG : 0 ≤ cap.G) : Port.PortHamiltonian 1 2 :=
+def dcLinkPH (cap : Passive.ParallelRLC) (hC : 0 < cap.C)
+    (hG : 0 ≤ cap.G) : Port.PortHamiltonian 1 2 :=
   (dcLink cap hC hG).toPH (Equiv.refl _) (Equiv.refl _)
 
 /-- Without leakage the DC link has no damping. -/
@@ -188,14 +191,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
 speed. -/
 structure DqLCParams where
   /-- The filter branch `L_f` (lossless). -/
-  filter : Passive.RL
+  filter : Passive.SeriesRLC
   /-- The filter capacitor `C_f` (lossless). -/
-  capacitor : Passive.GC
+  capacitor : Passive.ParallelRLC
   ω : ℝ
   L_pos : 0 < filter.L
   C_pos : 0 < capacitor.C
   filter_lossless : filter.R = 0
   capacitor_lossless : capacitor.G = 0
+  /-- The filter branch has no series capacitor. -/
+  filter_noCap : filter.S = 0
+  /-- The capacitor has no shunt inductor. -/
+  capacitor_noInd : capacitor.Γ = 0
 
 /-- The filter inductance. -/
 abbrev DqLCParams.L (p : DqLCParams) : ℝ := p.filter.L
@@ -243,10 +250,12 @@ Static evidence on the model, not a connection conclusion. -/
 of the capacitor: `H = ½ L_f |I|² + ½ C_f |V|²`. -/
 @[tmio M, powerlib_domain] theorem dqLC_energy (p : DqLCParams) (Id Iq Vd Vq : ℝ) :
     (dqLC p).energy ![p.L * Id, p.L * Iq, p.C * Vd, p.C * Vq] =
-      p.filter.energy Id + p.filter.energy Iq + p.capacitor.energy Vd + p.capacitor.energy Vq := by
+      p.filter.inductorEnergy Id + p.filter.inductorEnergy Iq + p.capacitor.capacitorEnergy Vd +
+        p.capacitor.capacitorEnergy Vq := by
   have hL := p.L_pos.ne'
   have hC := p.C_pos.ne'
-  simp [DiagonalPH.energy, dqLC, Fin.sum_univ_four, Passive.RL.energy, Passive.GC.energy]
+  simp [DiagonalPH.energy, dqLC, Fin.sum_univ_four, Passive.SeriesRLC.inductorEnergy,
+      Passive.ParallelRLC.capacitorEnergy]
   field_simp
 
 /-- Energy balance of the dq LC filter: `Ḣ = P_src − P_conv`

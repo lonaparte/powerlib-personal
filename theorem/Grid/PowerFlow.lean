@@ -1,7 +1,7 @@
 import theorem.Attributes
 import dependencies.Mathlib
 import theorem.PowerSystem.Network.WeightedLaplacian
-import theorem.Passive.Phasor
+import theorem.Passive.Series
 
 /-! # Power flow: the lossless injection map, two-bus line powers, the decoupling rotation
 
@@ -12,9 +12,10 @@ No model family is defined and no behavioural sentence is stated.
 Model boundary.
 * Network: lossless lines, constant voltage magnitudes absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`, active
   power only.
-* One line: source `E ∠ δ` through the phasor branch `Z = R + jX` (`Z : Passive.RX`,
-  impedance `Passive.RX.impedance`, `|Z|² = Passive.RX.absSq`) into `V ∠ 0`; the converter-side
-  and grid-side identities use a lossless line (`R = 0`) from `V e^{jθ}` to `V_g` (export current
+* One line: source `E ∠ δ` through a series RLC branch `Z : Passive.SeriesRLC` evaluated at
+  `s = jω`, `Z(jω) = R + jX` with `X = Z.reactance ω` and `|Z|² = Z.absSq ω`
+  (`Passive.SeriesRLC.impedance_jω`), into `V ∠ 0`; the converter-side and grid-side identities
+  use a lossless branch (`R = 0`) from `V e^{jθ}` to `V_g` (export current
   `Ī = (V e^{jθ} − V_g)/(jX)`).
 * Phasor (steady-state) level: no line or machine dynamics.
 
@@ -99,14 +100,20 @@ section LinePower
 
 open Complex
 
-/-- Export power from `E ∠ δ` through `Z = R + jX` into `V ∠ 0`, from `S̄ = Ē Ī*`. -/
-@[tmio M, powerlib_domain] theorem linePower (E V δ : ℝ) (Z : Passive.RX) (hZ : Z.absSq ≠ 0) :
-    (E : ℂ) * exp (δ * I) * (starRingEnd ℂ) (((E : ℂ) * exp (δ * I) - (V : ℂ)) / Z.impedance) =
-      (((Z.R * (E ^ 2 - E * V * Real.cos δ) + Z.X * E * V * Real.sin δ) / Z.absSq : ℝ) : ℂ) +
-        (((Z.X * (E ^ 2 - E * V * Real.cos δ) - Z.R * E * V * Real.sin δ) / Z.absSq : ℝ) : ℂ) *
-          I := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.impedance, Passive.RX.absSq] at hZ ⊢
+/-- Export power from `E ∠ δ` through the branch `Z(jω) = R + jX` into `V ∠ 0`, from
+`S̄ = Ē Ī*`. -/
+@[tmio M, powerlib_domain] theorem linePower (E V δ ω : ℝ) (Z : Passive.SeriesRLC)
+    (hZ : Z.absSq ω ≠ 0) :
+    (E : ℂ) * exp (δ * I) *
+        (starRingEnd ℂ) (((E : ℂ) * exp (δ * I) - (V : ℂ)) / Z.impedance (ω * I)) =
+      (((Z.R * (E ^ 2 - E * V * Real.cos δ) + Z.reactance ω * E * V * Real.sin δ) /
+          Z.absSq ω : ℝ) : ℂ) +
+        (((Z.reactance ω * (E ^ 2 - E * V * Real.cos δ) - Z.R * E * V * Real.sin δ) /
+          Z.absSq ω : ℝ) : ℂ) * I := by
+  rw [Passive.SeriesRLC.impedance_jω]
+  simp only [Passive.SeriesRLC.absSq] at hZ ⊢
+  generalize Z.R = R at hZ ⊢
+  generalize Z.reactance ω = X at hZ ⊢
   have hZ' : R * R + X * X ≠ 0 := by simpa [sq] using hZ
   have hsc := Real.sin_sq_add_cos_sq δ
   apply Complex.ext <;>
@@ -119,67 +126,61 @@ open Complex
   · linear_combination (E ^ 2 * R) * hsc
   · linear_combination (E ^ 2 * X) * hsc
 
-/-- Active line power `P(δ, E)`. -/
-def lineP (V : ℝ) (Z : Passive.RX) (δ E : ℝ) : ℝ :=
-  (Z.R * (E ^ 2 - E * V * Real.cos δ) + Z.X * E * V * Real.sin δ) / Z.absSq
+/-- Active line power `P(δ, E)` through `Z(jω)`. -/
+def lineP (V : ℝ) (Z : Passive.SeriesRLC) (ω δ E : ℝ) : ℝ :=
+  (Z.R * (E ^ 2 - E * V * Real.cos δ) + Z.reactance ω * E * V * Real.sin δ) / Z.absSq ω
 
-/-- Reactive line power `Q(δ, E)`. -/
-def lineQ (V : ℝ) (Z : Passive.RX) (δ E : ℝ) : ℝ :=
-  (Z.X * (E ^ 2 - E * V * Real.cos δ) - Z.R * E * V * Real.sin δ) / Z.absSq
+/-- Reactive line power `Q(δ, E)` through `Z(jω)`. -/
+def lineQ (V : ℝ) (Z : Passive.SeriesRLC) (ω δ E : ℝ) : ℝ :=
+  (Z.reactance ω * (E ^ 2 - E * V * Real.cos δ) - Z.R * E * V * Real.sin δ) / Z.absSq ω
 
-@[tmio M, powerlib_domain] theorem lineP_deriv_delta (V : ℝ) (Z : Passive.RX) :
-    HasDerivAt (fun δ => lineP V Z δ V) (Z.X * V ^ 2 / (Z.absSq)) 0 := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.absSq]
-  have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul R).add
-    ((Real.hasDerivAt_sin 0).const_mul (X * V * V)) |>.div_const (R ^ 2 + X ^ 2)
+@[tmio M, powerlib_domain] theorem lineP_deriv_delta (V ω : ℝ) (Z : Passive.SeriesRLC) :
+    HasDerivAt (fun δ => lineP V Z ω δ V) (Z.reactance ω * V ^ 2 / Z.absSq ω) 0 := by
+  have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul Z.R).add
+    ((Real.hasDerivAt_sin 0).const_mul (Z.reactance ω * V * V)) |>.div_const (Z.absSq ω)
   convert h using 1
-  · funext δ; simp only [lineP, Passive.RX.absSq, Pi.add_apply]
+  · funext δ; simp only [lineP, Pi.add_apply]
   · simp; ring
 
-@[tmio M, powerlib_domain] theorem lineP_deriv_E (V : ℝ) (Z : Passive.RX) :
-    HasDerivAt (fun E => lineP V Z 0 E) (Z.R * V / (Z.absSq)) V := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.absSq]
-  have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul R)
-    |>.div_const (R ^ 2 + X ^ 2)
+@[tmio M, powerlib_domain] theorem lineP_deriv_E (V ω : ℝ) (Z : Passive.SeriesRLC) :
+    HasDerivAt (fun E => lineP V Z ω 0 E) (Z.R * V / Z.absSq ω) V := by
+  have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul Z.R)
+    |>.div_const (Z.absSq ω)
   convert h using 1
-  · funext E; simp [lineP, Passive.RX.absSq]
+  · funext E; simp [lineP]
   · simp; ring
 
-@[tmio M, powerlib_domain] theorem lineQ_deriv_delta (V : ℝ) (Z : Passive.RX) :
-    HasDerivAt (fun δ => lineQ V Z δ V) (-(Z.R * V ^ 2) / (Z.absSq)) 0 := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.absSq]
-  have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul X).sub
-    ((Real.hasDerivAt_sin 0).const_mul (R * V * V)) |>.div_const (R ^ 2 + X ^ 2)
+@[tmio M, powerlib_domain] theorem lineQ_deriv_delta (V ω : ℝ) (Z : Passive.SeriesRLC) :
+    HasDerivAt (fun δ => lineQ V Z ω δ V) (-(Z.R * V ^ 2) / Z.absSq ω) 0 := by
+  have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul
+    (Z.reactance ω)).sub ((Real.hasDerivAt_sin 0).const_mul (Z.R * V * V)) |>.div_const
+    (Z.absSq ω)
   convert h using 1
-  · funext δ; simp only [lineQ, Passive.RX.absSq, Pi.sub_apply]
+  · funext δ; simp only [lineQ, Pi.sub_apply]
   · simp; ring
 
-@[tmio M, powerlib_domain] theorem lineQ_deriv_E (V : ℝ) (Z : Passive.RX) :
-    HasDerivAt (fun E => lineQ V Z 0 E) (Z.X * V / (Z.absSq)) V := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.absSq]
-  have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul X)
-    |>.div_const (R ^ 2 + X ^ 2)
+@[tmio M, powerlib_domain] theorem lineQ_deriv_E (V ω : ℝ) (Z : Passive.SeriesRLC) :
+    HasDerivAt (fun E => lineQ V Z ω 0 E) (Z.reactance ω * V / Z.absSq ω) V := by
+  have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul
+    (Z.reactance ω)) |>.div_const (Z.absSq ω)
   convert h using 1
-  · funext E; simp [lineQ, Passive.RX.absSq]
+  · funext E; simp [lineQ]
   · simp; ring
 
-/-- The rotation `R(β)`, `β = π/2 − θ_l` with `cos θ_l = R/|Z|`, `sin θ_l = X/|Z|`,
-diagonalizes the line Jacobian `[[X V², R V], [−R V², X V]] / |Z|²`:
+/-- The rotation `R(β)`, `β = π/2 − θ_l` with `cos θ_l = R/|Z|`, `sin θ_l = X/|Z|`
+(`X = Z.reactance ω`), diagonalizes the line Jacobian `[[X V², R V], [−R V², X V]] / |Z|²`:
 `R(β) J = (V/|Z|) diag(V, 1)`. -/
-@[tmio M, powerlib_domain] theorem rotation_diagonalizes {V : ℝ} {Z : Passive.RX} {z θl : ℝ}
-    (hz : 0 < z) (hz2 : z ^ 2 = Z.absSq) (hc : Real.cos θl = Z.R / z)
-    (hs : Real.sin θl = Z.X / z) :
+@[tmio M, powerlib_domain] theorem rotation_diagonalizes {V ω : ℝ} {Z : Passive.SeriesRLC}
+    {z θl : ℝ} (hz : 0 < z) (hz2 : z ^ 2 = Z.absSq ω) (hc : Real.cos θl = Z.R / z)
+    (hs : Real.sin θl = Z.reactance ω / z) :
     !![Real.cos (Real.pi / 2 - θl), -Real.sin (Real.pi / 2 - θl);
         Real.sin (Real.pi / 2 - θl), Real.cos (Real.pi / 2 - θl)] *
-      !![Z.X * V ^ 2 / Z.absSq, Z.R * V / Z.absSq;
-        -(Z.R * V ^ 2) / Z.absSq, Z.X * V / Z.absSq] =
+      !![Z.reactance ω * V ^ 2 / Z.absSq ω, Z.R * V / Z.absSq ω;
+        -(Z.R * V ^ 2) / Z.absSq ω, Z.reactance ω * V / Z.absSq ω] =
       !![V / z * V, 0; 0, V / z] := by
-  obtain ⟨R, X⟩ := Z
-  simp only [Passive.RX.absSq] at hz2 hc hs ⊢
+  simp only [Passive.SeriesRLC.absSq] at hz2 ⊢
+  generalize Z.R = R at hz2 hc ⊢
+  generalize Z.reactance ω = X at hz2 hs ⊢
   rw [Real.cos_pi_div_two_sub, Real.sin_pi_div_two_sub, hc, hs, ← hz2]
   have hz' := hz.ne'
   ext i j
@@ -206,20 +207,17 @@ end LinePower
 
 /-! ## Converter-side and grid-side power over a reactance -/
 
-/-- Converter-side complex power `S̄ = V̄_conv Ī*`, `Ī = (V e^{jθ} − V_g)/(jX)` (export current):
-`P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`. -/
-@[tmio M, powerlib_domain] theorem converterSide_power (V Vg θ : ℝ) (Z : Passive.RX) (hR : Z.R = 0)
-    (hX : Z.X ≠ 0) :
+/-- Converter-side complex power `S̄ = V̄_conv Ī*`, `Ī = (V e^{jθ} − V_g)/Z(jω)` with a lossless
+branch `Z(jω) = jX` (export current): `P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`. -/
+@[tmio M, powerlib_domain] theorem converterSide_power (V Vg θ ω : ℝ) (Z : Passive.SeriesRLC)
+    (hR : Z.R = 0) (hX : Z.reactance ω ≠ 0) :
     (V : ℂ) * Complex.exp (θ * Complex.I) *
         (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
-          Z.impedance) =
-      ((V * Vg * Real.sin θ / Z.X : ℝ) : ℂ) +
-        ((V ^ 2 - V * Vg * Real.cos θ) / Z.X : ℝ) * Complex.I := by
-  obtain ⟨R, X⟩ := Z
-  simp only at hR hX ⊢
-  subst hR
-  rw [show (Passive.RX.impedance ⟨0, X⟩) = (X : ℂ) * Complex.I by
-    simp [Passive.RX.impedance]]
+          Z.impedance (ω * Complex.I)) =
+      ((V * Vg * Real.sin θ / Z.reactance ω : ℝ) : ℂ) +
+        ((V ^ 2 - V * Vg * Real.cos θ) / Z.reactance ω : ℝ) * Complex.I := by
+  rw [Passive.SeriesRLC.impedance_jω, hR, Complex.ofReal_zero, zero_add]
+  generalize Z.reactance ω = X at hX ⊢
   rw [show V ^ 2 - V * Vg * Real.cos θ =
       V ^ 2 * (Real.sin θ ^ 2 + Real.cos θ ^ 2) - V * Vg * Real.cos θ by
     rw [Real.sin_sq_add_cos_sq]; ring]
@@ -230,19 +228,16 @@ end LinePower
       Complex.add_im, Complex.I_re, Complex.I_im, Complex.normSq_apply] <;>
     field_simp <;> ring
 
-/-- Grid-side received complex power `S̄_g = V̄_g Ī*`: `P = V V_g sin θ / X`,
-`Q_g = (V V_g cos θ − V_g²)/X` (the note's `Q₀`). -/
-@[tmio M, powerlib_domain] theorem gridSide_power (V Vg θ : ℝ) (Z : Passive.RX) (hR : Z.R = 0)
-    (hX : Z.X ≠ 0) :
+/-- Grid-side received complex power `S̄_g = V̄_g Ī*` over a lossless branch `Z(jω) = jX`:
+`P = V V_g sin θ / X`, `Q_g = (V V_g cos θ − V_g²)/X` (the note's `Q₀`). -/
+@[tmio M, powerlib_domain] theorem gridSide_power (V Vg θ ω : ℝ) (Z : Passive.SeriesRLC)
+    (hR : Z.R = 0) (hX : Z.reactance ω ≠ 0) :
     (Vg : ℂ) * (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
-          Z.impedance) =
-      ((V * Vg * Real.sin θ / Z.X : ℝ) : ℂ) +
-        ((V * Vg * Real.cos θ - Vg ^ 2) / Z.X : ℝ) * Complex.I := by
-  obtain ⟨R, X⟩ := Z
-  simp only at hR hX ⊢
-  subst hR
-  rw [show (Passive.RX.impedance ⟨0, X⟩) = (X : ℂ) * Complex.I by
-    simp [Passive.RX.impedance]]
+          Z.impedance (ω * Complex.I)) =
+      ((V * Vg * Real.sin θ / Z.reactance ω : ℝ) : ℂ) +
+        ((V * Vg * Real.cos θ - Vg ^ 2) / Z.reactance ω : ℝ) * Complex.I := by
+  rw [Passive.SeriesRLC.impedance_jω, hR, Complex.ofReal_zero, zero_add]
+  generalize Z.reactance ω = X at hX ⊢
   apply Complex.ext <;>
     simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im,
       Complex.div_re, Complex.div_im, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,

@@ -34,7 +34,7 @@ Results.
   line keep their form under it (`Passive.Line.telegrapher_pu_iff`,
   `theorem/Passive/PerUnit.lean`).
 * DC side (§1.12): the half-bridge modulation in per unit (`modulation_pu`); the DC-link capacitor
-  energy in per unit, with the correction of the note's `Ŵ_dc`, is `Passive.GC.energy_pu`.
+  energy in per unit, with the correction of the note's `Ŵ_dc`, is `Passive.ParallelRLC.energy_pu`.
 * PI gains (§1.13).
 
 Correction (`T-PU.md` §1.13): the boxed convention-(A) formula `k̂ = U_B k` assumes the PI output

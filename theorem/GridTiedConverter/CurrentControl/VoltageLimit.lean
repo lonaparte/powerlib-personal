@@ -668,7 +668,7 @@ the platform. -/
 
 /-- A lossless platform: the design `L = R = Ki = 1`, `Kp = −1` (`R + Kp = 0`), at `i* = 0`,
 `V_dc = 1`. -/
-def center : LimitedPI := ⟨⟨⟨1, 1⟩, -1, 1⟩, 0, 1⟩
+def center : LimitedPI := ⟨⟨⟨1, 1, 0⟩, -1, 1, rfl⟩, 0, 1⟩
 
 /-- The lossless platform is Lyapunov stable: its design is a centre and the limit is inactive near
 the operating point. -/
@@ -788,7 +788,7 @@ stable design with headroom meeting the platform translation. -/
   · exact hΔ .headroom rfl
 
 /-- The nominal design `L = R = Kp = Ki = 1`. -/
-def nominal : PIParams := ⟨⟨1, 1⟩, 1, 1⟩
+def nominal : PIParams := ⟨⟨1, 1, 0⟩, 1, 1, rfl⟩
 
 /-- The nominal design satisfies every attractive sentence. -/
 @[tmio TM, powerlib_domain] theorem nominal_mem_den {P : Flow.Property} (hP : P.Attractive) :
@@ -891,7 +891,7 @@ platform satisfies it. -/
 
 /-- A drifting platform: the design `L = R = 1`, `Kp = Ki = 0` (no integral action) at `i* = 1`
 with `V_dc = 3` (`|R i*| = 1 < √3 = V_max`). -/
-def drifting : LimitedPI := ⟨⟨⟨1, 1⟩, 0, 0⟩, 1, 3⟩
+def drifting : LimitedPI := ⟨⟨⟨1, 1, 0⟩, 0, 0, rfl⟩, 1, 3⟩
 
 @[tmio M, powerlib_domain] private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifting.Vmax := by
   simp only [Vmax, drifting, PIParams.R, one_mul, abs_one]

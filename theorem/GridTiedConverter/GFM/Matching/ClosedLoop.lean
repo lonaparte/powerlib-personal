@@ -1,7 +1,7 @@
 import theorem.GridTiedConverter.GFM.Matching.Matching
 import theorem.Flow.Certificate
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.Spectral.Global
 
@@ -154,16 +154,16 @@ voltage set points, matching gain `η`, modulation amplitude `μ`, AC inductance
 capacitance and conductance, load conductance and susceptance, and the load source `s_dq`. -/
 structure Model where
   /-- The DC link: capacitance `C_dc`, conductance `G_dc`. -/
-  dcLink : Passive.GC
+  dcLink : Passive.ParallelRLC
   Kp : ℝ
   idcRef : ℝ
   vdcRef : ℝ
   η : ℝ
   μ : ℝ
   /-- The filter branch `(R, L)`. -/
-  filter : Passive.RL
+  filter : Passive.SeriesRLC
   /-- The AC filter capacitor: capacitance `C`, conductance `G`. -/
-  shunt : Passive.GC
+  shunt : Passive.ParallelRLC
   Gl : ℝ
   Bl : ℝ
   sd : ℝ
@@ -173,6 +173,12 @@ structure Model where
   iqStar : ℝ
   vdStar : ℝ
   vqStar : ℝ
+  /-- The DC link has no shunt inductor. -/
+  dcLink_noInd : dcLink.Γ = 0
+  /-- The filter has no series capacitor. -/
+  filter_noCap : filter.S = 0
+  /-- The filter capacitor has no shunt inductor. -/
+  shunt_noInd : shunt.Γ = 0
 
 /-- The filter inductance. -/
 abbrev Model.L (m : Model) : ℝ := m.filter.L
@@ -655,9 +661,10 @@ is the selected point. Static evidence on the model, not a connection conclusion
 C = G = 1`, `G_l = B_l = 0`, `i_dc,ref = 9/8`, `v_dc,ref = 1`, `s_dq = (0, −1/4)`, selected point
 `v* = 1`, `i* = (0, 1/4)`, `v_dq* = (1/4, 1/4)`. -/
 def example1 : Model :=
-  { dcLink := ⟨1, 1⟩, Kp := 1, idcRef := 9 / 8, vdcRef := 1, η := 1, μ := 1, filter := ⟨1, 1⟩,
-    shunt := ⟨1, 1⟩, Gl := 0, Bl := 0, sd := 0, sq := -1 / 4, vStar := 1, idStar := 0,
-    iqStar := 1 / 4, vdStar := 1 / 4, vqStar := 1 / 4 }
+  { dcLink := ⟨1, 1, 0⟩, Kp := 1, idcRef := 9 / 8, vdcRef := 1, η := 1, μ := 1,
+    filter := ⟨1, 1, 0⟩, shunt := ⟨1, 1, 0⟩, Gl := 0, Bl := 0, sd := 0, sq := -1 / 4, vStar := 1,
+    idStar := 0, iqStar := 1 / 4, vdStar := 1 / 4, vqStar := 1 / 4, dcLink_noInd := rfl,
+    filter_noCap := rfl, shunt_noInd := rfl }
 
 /-- The example meets the equilibrium requirement. -/
 @[tmio M, powerlib_domain] theorem example1_equilibrium :

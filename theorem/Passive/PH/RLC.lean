@@ -1,7 +1,7 @@
 import theorem.PH.Composition
 import theorem.Criteria.Hurwitz2
-import theorem.Passive.Branch
-import theorem.Passive.Shunt
+import theorem.Passive.Series
+import theorem.Passive.Parallel
 
 /-! # Series RLC loop as a linear port-Hamiltonian system
 
@@ -9,9 +9,8 @@ The series RLC loop as a linear port-Hamiltonian plant: passivity, Lyapunov stab
 stability iff `r > 0`, and the complex normal modes of an LC pair.
 
 Model boundary.
-* Circuit: one series loop of the branch `branch : Passive.RL` (inductor `L > 0`, resistor
-  `r ≥ 0`), the lossless capacitor `capacitor : Passive.GC` (`C > 0`, `G = 0`, stated as a
-  field), and an ideal voltage source `u` (one port).
+* Circuit: one series RLC element `loop : Passive.SeriesRLC` (inductor `L > 0`, resistor `r ≥ 0`,
+  capacitor `C = 1/S > 0`) driven by an ideal voltage source `u` (one port).
   Lumped, linear, time-invariant, continuous time. No switching, PWM, PLL, delay,
   saturation, controller, or grid connection; stationary (not dq) coordinates.
 * State order: `x = (φ, q)` with `φ = L i` the inductor flux linkage and `q = C v` the
@@ -68,23 +67,24 @@ open Matrix Set LinearSystems
 
 /-- Physical parameters of the series RLC loop. -/
 structure SeriesRLCParams where
-  /-- The series R–L branch. -/
-  branch : Passive.RL
-  /-- The capacitor, a lossless shunt element. -/
-  capacitor : Passive.GC
-  L_pos : 0 < branch.L
-  C_pos : 0 < capacitor.C
-  r_nonneg : 0 ≤ branch.R
-  capacitor_lossless : capacitor.G = 0
+  /-- The loop: one series RLC element. -/
+  loop : Passive.SeriesRLC
+  L_pos : 0 < loop.L
+  S_pos : 0 < loop.S
+  r_nonneg : 0 ≤ loop.R
 
-/-- The inductance of the branch. -/
-abbrev SeriesRLCParams.L (p : SeriesRLCParams) : ℝ := p.branch.L
+/-- The inductance of the loop. -/
+abbrev SeriesRLCParams.L (p : SeriesRLCParams) : ℝ := p.loop.L
 
-/-- The resistance of the branch. -/
-abbrev SeriesRLCParams.r (p : SeriesRLCParams) : ℝ := p.branch.R
+/-- The resistance of the loop. -/
+abbrev SeriesRLCParams.r (p : SeriesRLCParams) : ℝ := p.loop.R
 
-/-- The capacitance. -/
-abbrev SeriesRLCParams.C (p : SeriesRLCParams) : ℝ := p.capacitor.C
+/-- The capacitance `1/S` of the loop. -/
+abbrev SeriesRLCParams.C (p : SeriesRLCParams) : ℝ := 1 / p.loop.S
+
+/-- The capacitance is positive. -/
+@[tmio M, powerlib_domain] theorem SeriesRLCParams.C_pos (p : SeriesRLCParams) : 0 < p.C :=
+  one_div_pos.mpr p.S_pos
 
 /-- The series RLC loop (T-ph (1.11)) as constant-`J`, diagonal-damping, diagonal-quadratic
 port-Hamiltonian data. State `(φ, q)`, one voltage port. -/
@@ -101,7 +101,7 @@ def seriesRLC (p : SeriesRLCParams) : DiagonalPH (Fin 2) (Fin 1) where
     fin_cases i <;> simp [p.r_nonneg]
   weights_pos := by
     intro i
-    fin_cases i <;> simp [p.L_pos, p.C_pos]
+    fin_cases i <;> simp [p.L_pos, p.S_pos]
 
 /-- Kirchhoff (KVL/KCL) right-hand side of the series loop:
 `φ̇ = u − r (φ/L) − q/C`, `q̇ = φ/L`. -/
@@ -133,16 +133,18 @@ Static evidence on the model, not a connection conclusion. -/
 /-- The pH energy is the circuit energy `φ²/(2L) + q²/(2C)`. -/
 @[tmio M, powerlib_domain] theorem seriesRLC_energy (p : SeriesRLCParams) (x : Fin 2 → ℝ) :
     (seriesRLC p).energy x = x 0 ^ 2 / (2 * p.L) + x 1 ^ 2 / (2 * p.C) := by
-  simp [DiagonalPH.energy, seriesRLC, Fin.sum_univ_two]
+  simp [DiagonalPH.energy, seriesRLC, Fin.sum_univ_two, SeriesRLCParams.C, div_eq_mul_inv]
   ring
 
-/-- In physical coordinates the pH energy is the inductor energy plus the capacitor energy. -/
-@[tmio M, powerlib_domain] theorem seriesRLC_energy_elements (p : SeriesRLCParams) (i v : ℝ) :
-    (seriesRLC p).energy ![p.L * i, p.C * v] = p.branch.energy i + p.capacitor.energy v := by
+/-- In the physical coordinates (current `i`, charge `q`) the pH energy is the element's own
+stored energy `L i²/2 + S q²/2`. -/
+@[tmio M, powerlib_domain] theorem seriesRLC_energy_elements (p : SeriesRLCParams) (i q : ℝ) :
+    (seriesRLC p).energy ![p.L * i, q] = p.loop.energy i q := by
   have hL := p.L_pos.ne'
   have hC := p.C_pos.ne'
   rw [seriesRLC_energy]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Passive.RL.energy, Passive.GC.energy]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Passive.SeriesRLC.energy,
+    Passive.SeriesRLC.inductorEnergy, Passive.SeriesRLC.capacitorEnergy, SeriesRLCParams.C]
   field_simp
 
 /-- Energy balance (1.2) for the loop: `Ḣ = u i − r i²`.
@@ -200,7 +202,7 @@ for this linear family that is equivalent to its state matrix being Hurwitz. -/
   constructor
   · rintro ⟨htr, -⟩
     have : 0 < p.r / p.L := by linarith
-    exact (Passive.RL.decay_pos_iff hL).mp this
+    exact (Passive.SeriesRLC.decay_pos_iff hL).mp this
   · intro hr
     refine ⟨?_, hdet⟩
     have : 0 < p.r / p.L := div_pos hr hL

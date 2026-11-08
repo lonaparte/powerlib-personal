@@ -3,6 +3,31 @@
 Completed architectural and library changes, newest first. Detailed diffs remain
 in Git; working statistics, build receipts and development plans are not kept here.
 
+## 2026-11-08
+
+- Reduced the passive elements to two dual topologies. `Passive.SeriesRLC`
+  (`Passive/Series.lean`: `R`, `L`, elastance `S = 1/C`; impedance
+  `R + Ls + S/s`) and `Passive.ParallelRLC` (`Passive/Parallel.lean`: `G`, `C`,
+  reciprocal inductance `Γ = 1/L`; admittance `G + Cs + Γ/s`) replace
+  `Passive.RL`, `Passive.GC` and `Passive.RX` (`Passive/Branch.lean`,
+  `Passive/Shunt.lean`, `Passive/Phasor.lean` removed). RL, GC, pure L/C and the
+  series RLC loop are the cases with some parameters zero; a phasor is the
+  immittance at `s = jω` (`SeriesRLC.impedance_jω`, `reactance`, `absSq`).
+  Models that need a first-order element state it with an explicit field
+  (`S = 0` for series branches, `Γ = 0` for shunts): the RL impedance model, the
+  dq branch, the current-loop plants, the GFL/GFM filters, lines and DC links,
+  the SMIB11 link and terminal capacitor, the RL-network branches and nodes, the
+  LCL and dq LC filters, the lossless line and the RLCG ladder. The quasi-static
+  models' lines are series branches whose reactance is taken at the model's grid
+  frequency (rate PLL `ω_s`, model B `ω_g`, VSG `ω_s`) or at the per-unit
+  frequency `ω = 1` (quasi-static power loop, four-state, basin guard, post-fault
+  SMIB). The power-flow line powers, the synchronous-machine line power and the
+  current-limiting formulas take a series branch and a frequency; the form-B and
+  stochastic-PH reactances are the reactances of the series branch
+  `(R_g, L_g, C_f)`; the modulation-transfer reactances are series and parallel
+  inductive branches. The dq immittances, per-unit laws, EMT companion elements
+  and PH instances are stated for the two topologies.
+
 ## 2026-11-07
 
 - Unified the remaining passive elements. Ideal inductors and capacitors are

@@ -183,7 +183,8 @@ exponentially stable. -/
 /-- A converter at rest on the singular plane with zero power and a degenerate node:
 `degenerateFocus` with `V_dc,ref = −1/4`, so `G = −1/4`, `H = 1`, `D = 0`. -/
 def degenerateNode : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2⟩, 3 / 2, -1 / 4, 0, 1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 0, 0, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, -1 / 4, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩,
+    WithLp.toLp 2 ![0, 0, 0, 0]⟩
 
 /-- The degenerate node is unstable. -/
 @[tmio TM, powerlib_domain] theorem degenerateNode_mem_den_unstable :
@@ -206,7 +207,8 @@ def degenerateNode : Model :=
 `P = 0`, `H = (I₀ − (3/2) k_pv V_g) / C_dc = 0`, `G = 0`, `I₀ / C_dc = 1` and the PLL drifts:
 `f_Δθ = k_i x_pll = 1`. -/
 def nilpotentDrift : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2⟩, 3 / 2, 0, 1, 1, 1, ⟨0, 0⟩, 0, rfl⟩, WithLp.toLp 2 ![0, 1, 0, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, 0, 1, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩,
+    WithLp.toLp 2 ![0, 1, 0, 0]⟩
 
 /-- The nilpotent plane point with drift is not locally exponentially stable. -/
 @[tmio TM, powerlib_domain] theorem nilpotentDrift_not_mem_den_locallyExponentiallyStable :

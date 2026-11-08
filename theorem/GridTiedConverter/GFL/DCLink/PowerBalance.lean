@@ -19,7 +19,8 @@ Results.
 * Along any differentiable current trajectory satisfying the KVL,
   `P_PCC = P_bridge + R |i|² + L d(|i|²/2)/dt` exactly (the rotation terms
   `ω L (i_q i_d − i_d i_q)` cancel, T-vsc-dc-voltage-control §1.1.1 boxed): this is the filter
-  branch's own law `Passive.RL.dq_power_balance`; `pcc_eq_bridge_add_losses_si` is its SI form.
+  branch's own law `Passive.SeriesRLC.dq_power_balance`; `pcc_eq_bridge_add_losses_si` is its SI
+  form.
 * `bridgePower_expansion`: with `v_q = 0`, `I_q0 = 0`, a constant operating current `I_d0` and
   a stiff `v_d = V_d0`, the bridge power is `P_b = V_d0 i_d − R |i|² − L (i_d i_d' + i_q i_q')`;
   its perturbation is exactly
@@ -36,7 +37,7 @@ noncomputable section
 namespace powerlib.GFL.DCLink
 
 /-- SI form with the amplitude-invariant `3/2` factor. -/
-@[tmio M, powerlib_domain] theorem pcc_eq_bridge_add_losses_si {b : Passive.RL} {ω : ℝ}
+@[tmio M, powerlib_domain] theorem pcc_eq_bridge_add_losses_si {b : Passive.SeriesRLC} {ω : ℝ}
     {id iq : ℝ → ℝ} {vd vq vcd vcq id' iq' t : ℝ}
     (hd : HasDerivAt id id' t) (hq : HasDerivAt iq iq' t)
     (kvl_d : b.L * id' = vd - vcd - b.R * id t + ω * b.L * iq t)
@@ -44,7 +45,7 @@ namespace powerlib.GFL.DCLink
     3 / 2 * (vd * id t + vq * iq t) =
       3 / 2 * (vcd * id t + vcq * iq t) + 3 / 2 * b.R * (id t ^ 2 + iq t ^ 2) +
         3 / 2 * b.L * (id t * id' + iq t * iq') := by
-  have h := (Passive.RL.dq_power_balance (ω := ω) hd hq kvl_d kvl_q).2
+  have h := (Passive.SeriesRLC.dq_power_balance (ω := ω) hd hq kvl_d kvl_q).2
   linear_combination 3 / 2 * h
 
 /-- Bridge power as a function of current and current derivative (`v_q = 0`, stiff `v_d`). -/

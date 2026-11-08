@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFL.RatePLL
-import theorem.Passive.Shunt
-import theorem.Passive.Branch
+import theorem.Passive.Parallel
+import theorem.Passive.Series
 import theorem.GridTiedConverter.GFL.DCLink.FourState
 import theorem.Transform.ComplexPower
 import theorem.Dynamics.Transport
@@ -90,9 +90,9 @@ structure CCParams where
   /-- nominal angular frequency -/
   ω0 : ℝ
   /-- filter branch `L_f` (lossless) -/
-  filter : Passive.RL
+  filter : Passive.SeriesRLC
   /-- line branch `L_g` (lossless) -/
-  line : Passive.RL
+  line : Passive.SeriesRLC
   /-- current-loop proportional gain -/
   kpcc : ℝ
   /-- current-loop integral gain -/
@@ -109,6 +109,10 @@ structure CCParams where
   filter_lossless : filter.R = 0
   /-- The line branch is lossless. -/
   line_lossless : line.R = 0
+  /-- The filter branch has no series capacitor. -/
+  filter_noCap : filter.S = 0
+  /-- The line branch has no series capacitor. -/
+  line_noCap : line.S = 0
 
 /-- Filter inductance `L_f`. -/
 abbrev CCParams.Lf (q : CCParams) : ℝ := q.filter.L
@@ -217,8 +221,10 @@ def bwTuned (ζc ωcc : ℝ) : CCParams :=
 (`L_f ≠ 0`): the stability parameters are `ω_cc, ζ_c`, not `L_f`. -/
 @[tmio M, powerlib_domain] theorem ccField_bwTuned_indep_Lf (ζc ωcc L L' : ℝ) (hL : L ≠ 0)
     (hL' : L' ≠ 0) :
-    (({ q with filter := ⟨0, L⟩, filter_lossless := rfl } : CCParams).bwTuned ζc ωcc).ccField =
-      (({ q with filter := ⟨0, L'⟩, filter_lossless := rfl } : CCParams).bwTuned ζc ωcc).ccField := by
+    (({ q with filter := ⟨0, L, 0⟩, filter_lossless := rfl, filter_noCap := rfl } :
+        CCParams).bwTuned ζc ωcc).ccField =
+      (({ q with filter := ⟨0, L', 0⟩, filter_lossless := rfl, filter_noCap := rfl } :
+        CCParams).bwTuned ζc ωcc).ccField := by
   funext y
   simp only [ccField, bwTuned, uSol, vqSol, piD, piQ]
   have e1 : ∀ a b : ℝ, (2 * ζc * ωcc * L * a + ωcc ^ 2 * L * b) / L =
@@ -345,9 +351,9 @@ structure DCParams where
   /-- nominal angular frequency -/
   ω0 : ℝ
   /-- line branch `(R_g, L_g)` -/
-  line : Passive.RL
+  line : Passive.SeriesRLC
   /-- dc capacitance (lossless shunt). -/
-  dcLink : Passive.GC
+  dcLink : Passive.ParallelRLC
   /-- dc source current -/
   Isrc : ℝ
   /-- PLL gains -/
@@ -365,6 +371,10 @@ structure DCParams where
   sK : ℝ
   /-- The DC link is lossless. -/
   dcLink_lossless : dcLink.G = 0
+  /-- The line branch has no series capacitor. -/
+  line_noCap : line.S = 0
+  /-- The DC link has no shunt inductor. -/
+  dcLink_noInd : dcLink.Γ = 0
 
 /-- The DC-link capacitance. -/
 abbrev DCParams.C (p : DCParams) : ℝ := p.dcLink.C

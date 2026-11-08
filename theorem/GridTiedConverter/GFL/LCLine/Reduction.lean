@@ -1,8 +1,8 @@
 import dependencies.Mathlib
-import theorem.Passive.Shunt
+import theorem.Passive.Parallel
 import theorem.Attributes
 import theorem.Transform.Park
-import theorem.Passive.Branch
+import theorem.Passive.Series
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
@@ -86,11 +86,11 @@ open powerlib.Transform (parkD parkQ iparkD iparkQ iparkD_park iparkQ_park)
 /-- Parameters of the single GFL-VSC (LC filter + R–L line + infinite bus), current loop and PLL. -/
 structure Params where
   /-- Converter-side filter branch `(R_f, L_f)`. -/
-  filter : Passive.RL
+  filter : Passive.SeriesRLC
   /-- Filter capacitor `C_f` (lossless shunt). -/
-  filterCap : Passive.GC
+  filterCap : Passive.ParallelRLC
   /-- Line branch `(R_g, L_g)`. -/
-  line : Passive.RL
+  line : Passive.SeriesRLC
   /-- Nominal grid angular frequency `ω_g`. -/
   ωg : ℝ
   /-- Grid EMF amplitude `V_g` (d-axis of the system frame). -/
@@ -109,6 +109,12 @@ structure Params where
   Ki : ℝ
   /-- The filter capacitor is lossless. -/
   filterCap_lossless : filterCap.G = 0
+  /-- The filter branch has no series capacitor. -/
+  filter_noCap : filter.S = 0
+  /-- The filter capacitor has no shunt inductor. -/
+  filterCap_noInd : filterCap.Γ = 0
+  /-- The line has no series capacitor. -/
+  line_noCap : line.S = 0
 
 /-- The filter capacitance `C_f`. -/
 abbrev Params.Cf (p : Params) : ℝ := p.filterCap.C

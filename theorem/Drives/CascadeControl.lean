@@ -188,9 +188,11 @@ form of the same loop is `CurrentControl.imc` (`theorem/GridTiedConverter/Curren
 on `CurrentControl.PIParams` (`theorem/GridTiedConverter/CurrentControl/PILoop.lean`). -/
 @[ext] structure IMCLoop where
   /-- The plant: the stator RL branch. -/
-  branch : Passive.RL
+  branch : Passive.SeriesRLC
   /-- The bandwidth. -/
   α : ℝ
+  /-- The plant has no series capacitor. -/
+  branch_noCap : branch.S = 0
 
 /-- The inductance of the plant branch. -/
 abbrev IMCLoop.L (m : IMCLoop) : ℝ := m.branch.L
@@ -218,7 +220,7 @@ def family : Family IMCLoop Spectral.Requirement 2 1 :=
 /-- Hurwitz criterion of the IMC loop: the monic characteristic coefficients `α + R/L` and
 `Rα/L` are positive. An exact condition on the family denotation. -/
 @[tmio TM, powerlib_domain] theorem imcModel_isHurwitz_iff (L R α : ℝ) :
-    connection% ((⟨⟨R, L⟩, α⟩ : IMCLoop) ∈ family.den (.flow .globallyExponentiallyStable) ↔
+    connection% ((⟨⟨R, L, 0⟩, α, rfl⟩ : IMCLoop) ∈ family.den (.flow .globallyExponentiallyStable) ↔
       0 < α + R / L ∧ 0 < R * α / L) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -266,11 +268,11 @@ eigenvalues `−α`, `−R/L`), in particular global exponential stability; read
 loop (`mem_den_iff_imc`, `CurrentControl.imc_mem_den_iff`). -/
 @[tmio TM, powerlib_domain] theorem mem_den (L R α : ℝ) (hL : 0 < L) (hR : 0 < R) (hα : 0 < α)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (⟨⟨R, L⟩, α⟩ ∈ family.den (.flow P)) := by
-  have hr := mem_den_iff_imc ⟨⟨R, L⟩, α⟩ hL.ne' (.flow P)
+    connection% (⟨⟨R, L, 0⟩, α, rfl⟩ ∈ family.den (.flow P)) := by
+  have hr := mem_den_iff_imc ⟨⟨R, L, 0⟩, α, rfl⟩ hL.ne' (.flow P)
   have hc := CurrentControl.imc_mem_den_iff (R := R) hL hα hP
   unfold powerlib.TMIO.Statement at hr hc ⊢
-  exact hr.mpr (hc.mpr ((Passive.RL.decay_pos_iff (b := ⟨R, L⟩) hL).mpr hR))
+  exact hr.mpr (hc.mpr ((Passive.SeriesRLC.decay_pos_iff (b := ⟨R, L, 0⟩) hL).mpr hR))
 
 /-- **IMC current loop: exponential tracking of a constant reference.** For `L, R, α > 0` there
 are uniform constants `K, rate > 0` such that every closed-loop trajectory satisfies
@@ -285,9 +287,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
             K * Real.exp (-(rate * t)) * ‖x 0 - imcEquilibrium α iref‖ ∧
           |x t 0 - iref| ≤ K * Real.exp (-(rate * t)) * ‖x 0 - imcEquilibrium α iref‖ := by
   have hA : IsHurwitz (imcModel L R α).A := by
-    change IsHurwitz (IMCLoop.plant ⟨⟨R, L⟩, α⟩).A
+    change IsHurwitz (IMCLoop.plant ⟨⟨R, L, 0⟩, α, rfl⟩).A
     rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% imcModel_isHurwitz_iff)]
-    have : 0 < R / L := (Passive.RL.decay_pos_iff (b := ⟨R, L⟩) hL).mpr hR
+    have : 0 < R / L := (Passive.SeriesRLC.decay_pos_iff (b := ⟨R, L, 0⟩) hL).mpr hR
     exact ⟨by linarith, by positivity⟩
   set e := imcEquilibrium α iref
   have he := imc_isEquilibrium L R α iref hL.ne' hα.ne'

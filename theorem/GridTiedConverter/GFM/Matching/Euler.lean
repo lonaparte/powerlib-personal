@@ -128,8 +128,8 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := mem_den_locallyExponentiallyStable ⟨⟨1, 1⟩, 0, 1, 1, 1, 1, 1,
-    1⟩ one_pos one_pos one_pos
+  have hm := mem_den_locallyExponentiallyStable ⟨⟨1, 1, 0⟩, 0, 1, 1, 1, 1,
+    ⟨1, 1, 0⟩, rfl, rfl⟩ one_pos one_pos one_pos
     (by norm_num) one_ne_zero (by norm_num [Model.margin, Model.ω0, Model.N])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
@@ -191,7 +191,8 @@ exponentially stable (its matched swing model `M = D = 1`, `τ = 0`, `P_e = sin 
 @[tmio MI, powerlib_domain] theorem matching_not_euler_realizationSoundUnder :
     connection% (¬ matchingEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  set m : MatchingModel := ⟨⟨1, 1⟩, 1, 0, fun θ _ => Real.sin θ, 0, 0, one_ne_zero, one_ne_zero⟩
+  set m : MatchingModel :=
+    ⟨⟨1, 1, 0⟩, 1, 0, fun θ _ => Real.sin θ, 0, 0, one_ne_zero, one_ne_zero, rfl⟩
   have hd := matching_den_eq .locallyExponentiallyStable
   have hs := swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid m.toSwing 0 1 0
     (by funext θ ω; simp [m, MatchingModel.toSwing]) (by simp [m, MatchingModel.toSwing])

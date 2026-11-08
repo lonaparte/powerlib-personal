@@ -1,6 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
-import theorem.Passive.Phasor
+import theorem.Passive.Series
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -29,8 +29,9 @@ gfm-driven-gfl-parametric-resonance/notes/concepts/network-modulation-transfer.m
 Results.
 * `vth_eq`: `V_th(δ) = a_V e^{jδ} + b_V = (X₃ E e^{jδ} + X₂ V_∞)/(X₂ + X₃)` with
   `β = X₃/(X₂+X₃)`, `a_V = βE`, `b_V = (1-β)V_∞`; `X_eq = X₂X₃/(X₂+X₃)`, `X_g = X₁ + X_eq`, the
-  parallel and series combinations of the lossless phasor branches (`Xeq_eq_parallel`,
-  `Xg_eq_series`; `Passive.RX.parallel`, `Passive.RX.series`).
+  parallel and series combinations of the inductive branches `Passive.SeriesRLC` `⟨0, X, 0⟩`
+  (`Xeq_eq_parallel`, `Xg_eq_series`; `Passive.SeriesRLC.parallel_inductors`,
+  `Passive.SeriesRLC.series`).
 * `kcl_iff` / `terminal_voltages`: KCL ⇔ `V_c = V_th − jX_eq Σ I_k`, hence
   `V = V_th 𝟙 − j[diag(X_{1i}) + X_eq 𝟙𝟙ᵀ] I`; one branch: `V_GFL = V_th − jX_g I`.
 * `norm_vth`: `V(δ) = √(a_V² + b_V² + 2a_V b_V cos δ)`; `hasDerivAt_norm_vth`:
@@ -87,17 +88,20 @@ def Xeq (X2 X3 : ℝ) : ℝ := X2 * X3 / (X2 + X3)
 /-- Single-branch Thévenin reactance `X_g = X₁ + X_eq`. -/
 def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
 
-/-- `X_eq` is the lossless branch `jX₂ ∥ jX₃` (`Passive.RX.parallel_lossless`). -/
+/-- `X_eq` is the inductive branch `jX₂ ∥ jX₃`: the series RLC branches `⟨0, X₂, 0⟩` and
+`⟨0, X₃, 0⟩` (per-unit reactances, evaluated at `s = j`) in parallel are `⟨0, X_eq, 0⟩`
+(`Passive.SeriesRLC.parallel_inductors`). -/
 @[tmio M, powerlib_domain] theorem Xeq_eq_parallel (X2 X3 : ℝ) :
-    (⟨0, X2⟩ : Passive.RX).parallel ⟨0, X3⟩ = ⟨0, Xeq X2 X3⟩ := by
-  rw [Passive.RX.parallel_lossless]
-  rfl
+    (⟨0, X2, 0⟩ : Passive.SeriesRLC).impedance I * (⟨0, X3, 0⟩ : Passive.SeriesRLC).impedance I /
+        ((⟨0, X2, 0⟩ : Passive.SeriesRLC).impedance I +
+          (⟨0, X3, 0⟩ : Passive.SeriesRLC).impedance I) =
+      (⟨0, Xeq X2 X3, 0⟩ : Passive.SeriesRLC).impedance I :=
+  Passive.SeriesRLC.parallel_inductors X2 X3 I
 
-/-- `X_g` is the lossless branch `jX₁` in series with `jX₂ ∥ jX₃`. -/
+/-- `X_g` is the branch `jX₁` in series with `jX₂ ∥ jX₃` (`Passive.SeriesRLC.series`). -/
 @[tmio M, powerlib_domain] theorem Xg_eq_series (X1 X2 X3 : ℝ) :
-    (⟨0, X1⟩ : Passive.RX).series ((⟨0, X2⟩ : Passive.RX).parallel ⟨0, X3⟩) = ⟨0, Xg X1 X2 X3⟩ := by
-  rw [Xeq_eq_parallel]
-  simp [Passive.RX.series, Xg]
+    (⟨0, X1, 0⟩ : Passive.SeriesRLC).series ⟨0, Xeq X2 X3, 0⟩ = ⟨0, Xg X1 X2 X3, 0⟩ := by
+  simp [Passive.SeriesRLC.series, Xg]
 
 @[tmio T, powerlib_foundation] theorem one_sub_beta {X2 X3 : ℝ} (h : X2 + X3 ≠ 0) :
     1 - beta X2 X3 = X2 / (X2 + X3) := by

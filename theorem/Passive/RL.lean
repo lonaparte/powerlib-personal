@@ -3,7 +3,7 @@ import theorem.Linear.Family
 import theorem.Linear.Realization
 import theorem.Port.Linear
 import theorem.generated.Conversion
-import theorem.Passive.Branch
+import theorem.Passive.Series
 
 /-! # The RL branch
 
@@ -74,13 +74,16 @@ def reciprocal (x : Positive) : Positive := ⟨x.val⁻¹, inv_pos.mpr x.propert
   dsimp [reciprocal]
   field_simp [ne_of_gt y.property]
 
-/-- Impedance parameters `Z(s) = R + L s`: the RL branch `Passive.RL` with a positive inductance.
+/-- Impedance parameters `Z(s) = R + L s`: the RL branch `Passive.SeriesRLC` with a positive
+inductance.
 -/
 @[ext] structure Impedance where
   /-- The branch. -/
-  branch : Passive.RL
+  branch : Passive.SeriesRLC
   /-- A physical branch has a positive inductance. -/
   inductance_pos : 0 < branch.L
+  /-- The branch has no series capacitor. -/
+  branch_noCap : branch.S = 0
 
 /-- The resistance `R` of the branch. -/
 def Impedance.resistance (m : Impedance) : ℝ := m.branch.R
@@ -89,7 +92,7 @@ def Impedance.resistance (m : Impedance) : ℝ := m.branch.R
 def Impedance.inductance (m : Impedance) : Positive := ⟨m.branch.L, m.inductance_pos⟩
 
 /-- The branch with resistance `R` and positive inductance `L`. -/
-def Impedance.ofParams (R : ℝ) (L : Positive) : Impedance := ⟨⟨R, L.val⟩, L.property⟩
+def Impedance.ofParams (R : ℝ) (L : Positive) : Impedance := ⟨⟨R, L.val, 0⟩, L.property, rfl⟩
 
 @[tmio M, simp, powerlib_domain] theorem Impedance.resistance_ofParams (R : ℝ) (L : Positive) :
     (Impedance.ofParams R L).resistance = R := rfl
@@ -123,10 +126,11 @@ def toStateSpace (m : Impedance) : StateSpace :=
 @[tmio M, simp, powerlib_domain] theorem impedance_roundtrip (m : Impedance) :
     toImpedance (toStateSpace m) = m := by
   apply Impedance.ext
-  apply Passive.RL.ext
+  apply Passive.SeriesRLC.ext
   · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal, Impedance.ofParams,
       Impedance.resistance, Impedance.inductance] using scale_cancel m.resistance m.inductance)
   · exact congrArg Subtype.val (reciprocal_involutive m.inductance)
+  · exact m.branch_noCap.symm
 
 /-- The two representations are equivalent. -/
 def modelEquiv : StateSpace ≃ Impedance where
@@ -204,7 +208,7 @@ def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Mee
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
   rw [Linear.isHurwitz_one_iff, neg_lt_zero]
-  exact Passive.RL.decay_pos_iff m.inductance_pos
+  exact Passive.SeriesRLC.decay_pos_iff m.inductance_pos
 
 /-! ## Certificates -/
 
@@ -301,7 +305,7 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
   simp [Impedance.plant, StateSpace.plant, toStateSpace_decay]
 
 /-- The storage `xᵀ P x = L x₀²` of the KYP certificate is twice the branch energy, hence positive on
-every nonzero current (`Passive.RL.energy_pos`). -/
+every nonzero current (`Passive.SeriesRLC.inductorEnergy_pos`). -/
 @[tmio M, powerlib_domain] theorem Impedance.energy_pos (m : Impedance) (hR : 0 ≤ m.resistance)
     (x : Fin 1 → ℝ) (hx : x ≠ 0) : 0 < x ⬝ᵥ ((kyp m hR).P *ᵥ x) := by
   have h0 : x 0 ≠ 0 := by
@@ -310,8 +314,8 @@ every nonzero current (`Passive.RL.energy_pos`). -/
     funext i
     fin_cases i
     exact h
-  have hE := Passive.RL.energy_pos m.inductance_pos h0
-  simp only [Passive.RL.energy] at hE
+  have hE := Passive.SeriesRLC.inductorEnergy_pos m.inductance_pos h0
+  simp only [Passive.SeriesRLC.inductorEnergy] at hE
   simp [kyp, dotProduct, Matrix.mulVec, Impedance.inductance]
   nlinarith
 
