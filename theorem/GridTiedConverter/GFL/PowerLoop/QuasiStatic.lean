@@ -91,11 +91,11 @@ local asymptotic translation is not exact for gains of arbitrary sign
 (`k_p = −1/4 < 0`) sits on the Hopf boundary `a₂a₁ = a₀` with eigenvalues `±3i`, `−7/2` and is
 locally asymptotically stable (a supercritical weak focus, decided by an explicit normal-form
 polynomial). Within positive gains both the local asymptotic and the Lyapunov translations are exact
-(`exactUnder_locallyAsymptoticallyStable`, `exactUnder_lyapunovStable`, in
-`theorem/GridTiedConverter/GFL/PowerLoop/QuasiStaticFold.lean`): the boundary of the Routh–Hurwitz
-region is the fold `cos 2θ* = 0` (no Hopf pair, `no_imaginary_eigenvalue`), a saddle-node that is
-unstable (`mem_den_unstable_of_fold`, explicit fold function, no centre-manifold theorem), and every
-other non-Hurwitz point with positive gains is unstable as well.
+(`exactUnder_positiveGains`, in `theorem/GridTiedConverter/GFL/PowerLoop/QuasiStaticFold.lean`):
+the boundary of the Routh–Hurwitz region is the fold `cos 2θ* = 0` (no Hopf pair,
+`no_imaginary_eigenvalue`), a saddle-node that is unstable (`mem_den_unstable_of_fold`, explicit
+fold function, no centre-manifold theorem), and every other non-Hurwitz point with positive gains
+is unstable as well.
 
 Correction: the source states the no-Hopf criterion as `cos θ_e / √(cos 2θ_e) ≥ 1`; the
 formal statement used here is the direct one (`a₂a₁ − a₀ > 0` on `cos 2θ ≥ 0`, `a₀ < 0` on

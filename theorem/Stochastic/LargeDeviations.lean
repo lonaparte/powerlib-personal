@@ -32,9 +32,9 @@ Results.
   function (the hypotheses the note leaves implicit; written out in the statement, see the
   section header); `dirac_satisfiesLDP`: the constant family `δ_{x₀}` satisfies it with rate `0`
   at `x₀` and `∞` elsewhere (non-vacuity check).
-* `chernoff_bound` (wrapper of Mathlib `ProbabilityTheory.measure_ge_le_exp_mul_mgf`),
-  `chernoff_iid` — `P(Σ_{i<n} Xᵢ ≥ n a) ≤ (e^{−ta} M(t))ⁿ` for independent summands with common
-  moment generating function — the exponential (Cramér) upper bound.
+* `chernoff_iid` — `P(Σ_{i<n} Xᵢ ≥ n a) ≤ (e^{−ta} M(t))ⁿ` for independent summands with common
+  moment generating function — the exponential (Cramér) upper bound; the one-variable Chernoff
+  bound is Mathlib's `ProbabilityTheory.measure_ge_le_exp_mul_mgf`.
 * `fwAction`, `fwAction_nonneg` — the Freidlin–Wentzell action for `C¹` paths with a positive
   definite diffusion matrix (the note's hypothesis "`a` invertible, `φ` absolutely continuous"
   is replaced by the explicit `C¹`/positive-definite class used here).
@@ -65,15 +65,15 @@ Results.
   the hull); the endpoint cases `P(X₀ > x) = 0` / `P(X₀ < x) = 0` (which contain every point
   outside the hull) via `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and
   `I(x) ≥ −log P(X₀ ∈ (x − δ, x])` (no boundedness needed there) and the reflection `X ↦ −X`;
-  **`cramer_lower_bound_of_bounded`**: Cramér's lower bound
-  `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for every open `G` (written
-  `⨆ x ∈ G, −I(x) ≤ liminf …`).
+  together (private step `cramer_lower_bound_of_bounded`) Cramér's lower bound for bounded
+  summands, the case of `cramer_lower_bound_general` used in its truncation proof.
 * General i.i.d. summands (no boundedness or moment assumption; Dembo–Zeitouni Thm 2.2.3):
   **`cramer_lower_bound_general`**: `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for
-  every open `G`, at every `x` (non-exposed points, non-steep `Λ`, `Λ = ∞` off `0`, `I(x) = ∞`
-  included). Proof by truncation: for each level `M`, `cramer_lower_bound_of_bounded` is applied
-  to i.i.d. copies of `X₀` conditioned on `|X₀| ≤ M` (coordinates of the product measure
-  `Measure.infinitePi` of the conditioned law `ProbabilityTheory.cond`), and
+  every open `G` (written `⨆ x ∈ G, −I(x) ≤ liminf …`), at every `x` (non-exposed points,
+  non-steep `Λ`, `Λ = ∞` off `0`, `I(x) = ∞` included). Proof by truncation: for each level
+  `M`, `cramer_lower_bound_of_bounded` is applied to i.i.d. copies of `X₀` conditioned on
+  `|X₀| ≤ M` (coordinates of the product measure `Measure.infinitePi` of the conditioned law
+  `ProbabilityTheory.cond`), and
   `P(S_n/n ∈ G) ≥ P(|X₀| ≤ M)ⁿ ν_M^{⊗n}(S_n/n ∈ G)` (product measure restricted to the box);
   this yields tilts `t` with `E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{ℓ + ε}` (`ℓ` the `liminf`). When
   both `P(X₀ < x)` and `P(X₀ > x)` are positive the truncated exponential moments are coercive
@@ -159,13 +159,6 @@ the lower bound `−inf_{int A} I ≤ liminf_{ε → 0⁺} ε log δ_{x₀}(A)` 
     · simp [h]
 
 /-! ## Chernoff / Cramér upper bound -/
-
-/-- **Chernoff bound** (Mathlib `ProbabilityTheory.measure_ge_le_exp_mul_mgf`). -/
-@[tmio T, powerlib_foundation] theorem chernoff_bound {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsFiniteMeasure μ] {X : Ω → ℝ} {t : ℝ} (ε : ℝ) (ht : 0 ≤ t)
-    (h_int : Integrable (fun ω => exp (t * X ω)) μ) :
-    μ.real {ω | ε ≤ X ω} ≤ exp (-t * ε) * mgf X μ t :=
-  measure_ge_le_exp_mul_mgf ε ht h_int
 
 /-- **Exponential bound for i.i.d.-type sums**: independent summands with common moment
 generating function `M(t)` satisfy `P(Σ_{i<n} Xᵢ ≥ n a) ≤ (e^{−ta} M(t))ⁿ`. -/
@@ -1408,9 +1401,9 @@ with `I = cramerRate X₀` the Legendre transform of the cumulant generating fun
 points of the convex hull of the support are exposed (`cramer_lower_bound_bounded`); the two
 endpoint cases (`P(X₀ > x) = 0` or `P(X₀ < x) = 0`, which include every point outside the hull,
 where `I = ∞`) use `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and `I(x) ≥ −log P(X₀ ∈ (x − δ, x])`
-(and the reflection `X ↦ −X`). -/
-@[tmio T, powerlib_foundation] theorem cramer_lower_bound_of_bounded [IsProbabilityMeasure μ]
-    (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
+(and the reflection `X ↦ −X`). The step of `cramer_lower_bound_general` for bounded summands. -/
+@[tmio T, powerlib_foundation] private theorem cramer_lower_bound_of_bounded
+    [IsProbabilityMeasure μ] (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
     (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {C : ℝ} (hb : ∀ᵐ ω ∂μ, |X 0 ω| ≤ C)
     {G : Set ℝ} (hG : IsOpen G) :
     (⨆ x ∈ G, -cramerRate (X 0) μ x) ≤

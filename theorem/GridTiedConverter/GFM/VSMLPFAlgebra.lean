@@ -16,8 +16,8 @@ gfl-gfm-parametric-contrast.md` §15 ("摆动二阶约化", "混合张量"); `no
 nonautonomous-criteria.md` (GFM `P_ref` 通道 `A_u = 0`).
 
 Results.
-* `hasDerivAt_powerAngle`, `K_eq_deriv`: `K = ∂P/∂δ = E V_g cos δ₀ / X_g`;
-  `exists_equilibrium_iff_EVX`: equilibria exist iff `|P₀| ≤ E V_g / X_g`.
+* `K_eq_deriv`: `K = ∂P/∂δ = K₀ cos δ₀` (`= E V_g cos δ₀ / X_g`); with `K₀ = E V_g / X_g`
+  equilibria exist iff `|P₀| ≤ E V_g / X_g` (`VSMLPF.exists_equilibrium_iff`).
 * `texact_denominator_expansion`: the exact identity
   `[(s + ω_c)(M s² + D s) + ω_c K] / (M (s + ω_c)) = s² + 2α_red s + K/M + R(s)`,
   `2α_red = D/M − K/(M ω_c)`, `R(s) = K s² / (M ω_c (s + ω_c))` (the first-order filter
@@ -36,19 +36,12 @@ Results.
 
 Family and connection conclusions.
 None.  The stability conclusions of the model are the connection statements of `VSMLPF.family`
-(`theorem/GridTiedConverter/GFM/VSMLPF.lean`); `exists_equilibrium_iff_EVX` is static evidence on
-the model.
+(`theorem/GridTiedConverter/GFM/VSMLPF.lean`).
 -/
 
 noncomputable section
 namespace powerlib.GFM
 open Set Matrix
-
-/-- `d/dδ [(E V_g / X_g) sin δ] = E V_g cos δ / X_g`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_powerAngle (E Vg Xg δ : ℝ) :
-    HasDerivAt (fun x => E * Vg / Xg * Real.sin x) (E * Vg * Real.cos δ / Xg) δ := by
-  convert (Real.hasDerivAt_sin δ).const_mul (E * Vg / Xg) using 1
-  ring
 
 namespace VSMLPF
 
@@ -59,14 +52,6 @@ variable (g : VSMLPF)
 @[tmio M, powerlib_domain] theorem K_eq_deriv :
     HasDerivAt (fun x => g.K0 * Real.sin x) g.K g.δ0 :=
   (Real.hasDerivAt_sin g.δ0).const_mul g.K0
-
-/-- With `K₀ = E V_g / X_g`, equilibria exist iff `|P₀| ≤ E V_g / X_g`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem exists_equilibrium_iff_EVX {E Vg Xg : ℝ} (hK0 : g.K0 = E * Vg / Xg)
-    (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hpos : 0 < E * Vg / Xg) :
-    (∃ x, g.field x = 0) ↔ |g.P0| ≤ E * Vg / Xg := by
-  rw [← hK0]
-  exact g.exists_equilibrium_iff hM hω (hK0 ▸ hpos)
 
 /-- Reduced-layer damping `2α_red = D/M − K/(M ω_c)`. -/
 def twoAlphaRed : ℝ := g.D / g.M - g.K / (g.M * g.ωc)

@@ -20,7 +20,7 @@ work-sync `projects/vsc-parametric-oscillation` and `projects/gfl-gfm-stability-
 
 Results.
 * Curve transfer: `isIntegralCurveOn_of_eq_on_curve` (an integral curve of `g` along which
-  `g = f` is one of `f`), `isTrajectoryOn_of_eqOn` (its solution-segment instance), and
+  `g = f` is one of `f`; solution segments `IsTrajectoryOn` are the case `s = Icc a b`), and
   `eventuallyEq_of_eqOn_ball` (agreement on a ball is agreement near its centre).
 * Neighbourhood (filter) form: `locallyExponentiallyStable_congr_nhds`, `lyapunovStable_congr_nhds`,
   `unstable_congr_nhds`, `localAsymptoticStable_congr_nhds`: if `f = g` on a neighbourhood of
@@ -37,11 +37,10 @@ Results.
   globally Lipschitz field).
 * Lyapunov's indirect method for fields that are `C¹` only on an open neighbourhood of the
   equilibrium (`locallyExponentiallyStable_of_isHurwitz_jacobian_local`,
-  `unstable_of_jacobian_eigenvalue_re_pos_local`), or that agree near it with a globally `C¹`
-  field (`locallyExponentiallyStable_of_isHurwitz_jacobian_of_eqOn_ball`,
-  `unstable_of_jacobian_eigenvalue_re_pos_of_eqOn_ball`), which the global-`ContDiff` wrappers of
-  `theorem/Dynamics/Linearization.lean` do not cover. Typical use: power-balance fields with a
-  `1/V_dc` factor, which are smooth only on `V_dc > 0`.
+  `unstable_of_jacobian_eigenvalue_re_pos_local`), which the global-`ContDiff` wrappers of
+  `theorem/Dynamics/Linearization.lean` do not cover; a field that agrees on a ball with a
+  globally `C¹` field is handled by the ball form above composed with those wrappers. Typical
+  use: power-balance fields with a `1/V_dc` factor, which are smooth only on `V_dc > 0`.
 * Smooth regularizations of a denominator away from zero: `invDen`, `invExt` (a globally smooth
   function equal to `V⁻¹` for `V ≥ 1/2`) and `regDen V` (equal to `v` for `v ≥ 3V/4`, at least
   `V/2` everywhere).
@@ -67,12 +66,6 @@ local notation "ℝⁿ" => State n
   show HasDerivWithinAt ψ (f (ψ t)) s t
   rw [← h t ht]
   exact hψ t ht
-
-/-- A solution segment of `f` along which `f` and `g` coincide is a solution segment of `g`. -/
-@[tmio T, powerlib_foundation] theorem isTrajectoryOn_of_eqOn {f g : Dynamics.State n → Dynamics.State n}
-    {φ : ℝ → Dynamics.State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b)
-    (h : ∀ t ∈ Icc a b, f (φ t) = g (φ t)) : IsTrajectoryOn φ g a b :=
-  isIntegralCurveOn_of_eq_on_curve hφ h
 
 /-- Agreement on the ball `‖y − x‖ < ρ` is agreement near `x`. -/
 @[tmio T, powerlib_foundation] theorem eventuallyEq_of_eqOn_ball {E F : Type*} [SeminormedAddCommGroup E]
@@ -117,7 +110,7 @@ local notation "Sₙ" => Dynamics.State n
     obtain ⟨τ, hτ, hτeq, hτin⟩ :=
       _root_.exists_first_sphere_hit hφ.continuousOn hρ0 hs hfar
     have hg' : IsTrajectoryOn φ g t₀ τ :=
-      isTrajectoryOn_of_eqOn (hφ.mono (Icc_subset_Icc_right hτ.2)) fun s hs =>
+      isIntegralCurveOn_of_eq_on_curve (hφ.mono (Icc_subset_Icc_right hτ.2)) fun s hs =>
         hfg' _ ((hτin s hs).trans_lt (by linarith))
     have hbound := hb t₀ τ φ hg' h0r τ ⟨hτ.1, le_rfl⟩
     have hexp : Real.exp (-a * (τ - t₀)) ≤ 1 := Real.exp_le_one_iff.mpr
@@ -130,7 +123,7 @@ local notation "Sₙ" => Dynamics.State n
         _ = ρ / 2 := hCρ
     linarith
   have hg' : IsTrajectoryOn φ g t₀ t₁ :=
-    isTrajectoryOn_of_eqOn hφ fun s hs => hfg' _ ((hstay s hs).trans (by linarith))
+    isIntegralCurveOn_of_eq_on_curve hφ fun s hs => hfg' _ ((hstay s hs).trans (by linarith))
   exact hb t₀ t₁ φ hg' h0r t ht
 
 /-- Lyapunov stability depends only on the field near the equilibrium. -/
@@ -153,7 +146,7 @@ local notation "Sₙ" => Dynamics.State n
     have hfar := not_lt.mp hfar0
     obtain ⟨τ, hτ, hτeq, hτin⟩ := _root_.exists_first_sphere_hit hφ.continuousOn h0ε hs hfar
     have hg' : IsTrajectoryOn φ g t₀ τ :=
-      isTrajectoryOn_of_eqOn (hφ.mono (Icc_subset_Icc_right hτ.2)) fun s hs =>
+      isIntegralCurveOn_of_eq_on_curve (hφ.mono (Icc_subset_Icc_right hτ.2)) fun s hs =>
         hfg' _ ((hτin s hs).trans_lt hερ)
     have := hb t₀ τ φ hg' h0δ τ ⟨hτ.1, le_rfl⟩
     linarith
@@ -392,29 +385,6 @@ never leaves the full ball. -/
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : Unstable g x) :
     Unstable f x :=
   (unstable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg)).mpr hg
-
-/-- Linearization through a local `C¹` extension: if `f` agrees near `x_eq` with a globally
-`C¹` field `g` whose Jacobian at `x_eq` is Hurwitz, then `f` is locally exponentially stable. -/
-@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian_of_eqOn_ball
-    {f g : Dynamics.State n → Dynamics.State n} {x_eq : Dynamics.State n} {ρ : ℝ}
-    (A : Matrix (Fin n) (Fin n) ℝ) (hρ : 0 < ρ) (hfg : ∀ y, ‖y - x_eq‖ < ρ → f y = g y)
-    (hg : ContDiff ℝ 1 g) (heq : g x_eq = 0)
-    (hJac : fderiv ℝ g x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    (hA : LinearSystems.IsHurwitz A) : LocallyExponentiallyStable f x_eq :=
-  locallyExponentiallyStable_of_eqOn_ball hρ hfg
-    (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hg heq hJac hA)
-
-/-- Instability through a local `C¹` extension (eigenvalue with positive real part). -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos_of_eqOn_ball
-    {f g : Dynamics.State n → Dynamics.State n} {x_eq : Dynamics.State n} {ρ : ℝ}
-    (A : Matrix (Fin n) (Fin n) ℝ) (hρ : 0 < ρ) (hfg : ∀ y, ‖y - x_eq‖ < ρ → f y = g y)
-    (hg : ContDiff ℝ 1 g) (heq : g x_eq = 0)
-    (hJac : fderiv ℝ g x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    (hunstable : ∃ (μ : ℂ) (v : Fin n → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re) :
-    Unstable f x_eq :=
-  unstable_of_eqOn_ball hρ hfg
-    (Dynamics.unstable_of_jacobian_eigenvalue_re_pos A hg heq hJac hunstable)
 
 /-- Bootstrap: an exponential estimate for `G` transfers to every curve that solves
 `ẋ = G x` while it stays in the ball of radius `R`. -/

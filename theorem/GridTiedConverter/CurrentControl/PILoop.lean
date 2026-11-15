@@ -46,7 +46,7 @@ Results.
 * Reference feedback (T-gfl-reduced-order-dynamics §1.3 premise): the note treats `i_q*` as
   frozen, but `i_q* = −2/(3|v_g|)·[k_p^Q (Q* − Q) + k_i^Q ξ_Q]` depends on the actual current
   through `Q`. `qReference_eq` shows that, with `v_q = 0`, `|v_g| = v_d ≠ 0` and `ξ_Q` frozen,
-  this is `i_q* = r − k_p^Q i_q`; `refFeedback_isHurwitz_iff` folds such a proportional
+  this is `i_q* = r − k_p^Q i_q`; `refFeedback_mem_den_iff` folds such a proportional
   reference feedback `i* = r + κ i` into the state matrix: Hurwitz iff
   `R + Kp (1 − κ) > 0 ∧ Ki (1 − κ) > 0`. With `κ = −k_p^Q` the A_ci condition of the note becomes
   `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`; the frozen reference is the case `κ = 0`.
@@ -71,8 +71,9 @@ Family and connection conclusions.
 
 Connection conclusions: `chain_le_semantics`, `refChain_le_semantics` (every translation
 sound), `exact`, `refExact` (the attractive sentences and sampled contraction are carved out
-exactly), and the membership equivalences `mem_den_iff`,
-`withGain_mem_den_iff`, `refFeedback_mem_den_iff`, `qLoop_mem_den_iff`. The Hurwitz criteria,
+exactly), and the membership equivalences `mem_den_iff` (the duty-cycle loop is its instance
+`p.withGain V_dc`) and `refFeedback_mem_den_iff` (the q-axis Q loop is its instance
+`κ = −k_p^Q`). The Hurwitz criteria,
 equilibria, transfer function and parameter identities are static evidence. Reference tracking
 (`tracks_reference`) is a trajectory-level result outside the sentence language and is kept as
 private implementation evidence.
@@ -240,14 +241,6 @@ def dutyField (Vdc iref : ℝ) (x : ℝ²) : ℝ² :=
   fin_cases j <;> simp [dutyField, field, control, withGain]
   ring
 
-/-- Characteristic polynomial of the duty-cycle loop: `L s² + (R + V_dc Kp) s + V_dc Ki`. -/
-@[tmio M, powerlib_domain] theorem withGain_det_characteristicMatrix (hL : p.L ≠ 0) (Vdc : ℝ)
-    (s : ℂ) :
-    (characteristicMatrix (p.withGain Vdc).model.A s).det =
-      ((p.L : ℂ) * s ^ 2 + (p.R + Vdc * p.Kp) * s + Vdc * p.Ki) / p.L := by
-  rw [(p.withGain Vdc).det_characteristicMatrix hL]
-  simp [withGain]
-
 /-! ## Proportional reference feedback (outer-loop coupling folded into the state matrix) -/
 
 /-- Closed loop with the reference `i* = r + κ i` depending on the actual current. -/
@@ -298,13 +291,6 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
       0 < p.Ki * (1 - κ) / p.L := by
     rw [mul_zero, zero_sub, mul_neg, neg_neg, div_mul_eq_mul_div]
   rw [h1, h2]
-
-/-- With `L > 0`, the reference-feedback denotation uses the unscaled coefficients. -/
-@[tmio TM, powerlib_domain] theorem refFeedback_isHurwitz_iff (hL : 0 < p.L) (κ : ℝ) :
-    connection% ((p, κ) ∈ refFamily.den (.flow .globallyExponentiallyStable) ↔
-      0 < p.R + p.Kp * (1 - κ) ∧ 0 < p.Ki * (1 - κ)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% refFeedback_isHurwitz_iff_div), div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
 @[tmio M, powerlib_domain] theorem refFeedback_exists_root_of_unstable {κ : ℝ}
     (h : (p.R + p.Kp * (1 - κ)) / p.L < 0 ∨ p.Ki * (1 - κ) / p.L < 0) :
@@ -368,16 +354,6 @@ exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
   change Stable p ↔ 0 < p.R + p.Kp ∧ 0 < p.Ki
   rw [Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
-/-- The duty-cycle loop: stable iff `R + V_dc Kp > 0 ∧ V_dc Ki > 0`. -/
-@[tmio TM, powerlib_domain] theorem withGain_mem_den_iff (p : PIParams) (hL : 0 < p.L) (Vdc : ℝ)
-    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (p.withGain Vdc ∈ family.den (.flow P) ↔
-      p.withGain Vdc ∈ {_q : PIParams | 0 < p.R + Vdc * p.Kp ∧ 0 < Vdc * p.Ki}) := by
-  have h := mem_den_iff (p.withGain Vdc) hL hP
-  unfold powerlib.TMIO.Statement at h ⊢
-  rw [h]
-  rfl
-
 /-- Every translation of the reference-feedback family is sound. -/
 @[tmio TM, powerlib_domain] theorem refChain_le_semantics :
     connection% (∀ P, refFamily.chain P ≤ refFamily.semantics P) := by
@@ -403,17 +379,6 @@ exactly by `(R + Kp (1 − κ))/L > 0 ∧ Ki (1 − κ)/L > 0`. -/
   rw [refDen_flow hP]
   change RefStable (p, κ) ↔ 0 < p.R + p.Kp * (1 - κ) ∧ 0 < p.Ki * (1 - κ)
   rw [RefStable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
-
-/-- The q-axis PI loop with the proportional Q-loop feedback folded in (`κ = −k_p^Q`): stable
-iff `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`. -/
-@[tmio TM, powerlib_domain] theorem qLoop_mem_den_iff (p : PIParams) (hL : 0 < p.L) (kpQ : ℝ)
-    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% ((p, -kpQ) ∈ refFamily.den (.flow P) ↔
-      (p, -kpQ) ∈ {_q : PIParams × ℝ | 0 < p.R + p.Kp * (1 + kpQ) ∧ 0 < p.Ki * (1 + kpQ)}) := by
-  have h := refFeedback_mem_den_iff p hL (-kpQ) hP
-  unfold powerlib.TMIO.Statement at h ⊢
-  rw [h]
-  simp only [Set.mem_ofPred_eq, sub_neg_eq_add]
 
 /-! ### Implementation evidence (private) -/
 

@@ -83,8 +83,9 @@ Family and connection conclusions.
   passivity into `{physical, equilibrium, damping}`; a decay rate `r` into those and `r ≤ 0`;
   instability and conservation into the whole (inconsistent, `realize_univ`) language.
   `chain_le_semantics` proves every translation sound. No exactness is claimed.
-* `mem_den_globallyExponentiallyStable`, `mem_den_globallyAsymptoticallyStable` (the source's
-  corollary, strengthened to exponential), `mem_den_attractive`, `mem_den_passive` (the
+* `mem_den_globallyExponentiallyStable` (the source's corollary, global asymptotic stability,
+  strengthened to exponential), `mem_den_attractive` (every attractive sentence, global
+  asymptotic stability included), `mem_den_passive` (the
   passivity theorem of the source relative to the steady state, with the P-control and the load
   admittance absorbed): under the static requirements, for every reduced model. Proof: the
   storage `V₁` has Lie derivative `−W(x̃) + w ⬝ y` (`energy_lie`), where the dissipation
@@ -500,8 +501,13 @@ def translate : Sentence → Set Requirement
 /-- The reduced matching closed-loop family. -/
 def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
 
-@[tmio TM, powerlib_domain] private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
-    (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
+/-- **Global exponential stability of the matching closed loop in the rotating frame**: with
+`C_dc, L, C, R, G + G_l > 0`, the selected point an equilibrium and a positive damping margin,
+the steady state of the reduced model is globally exponentially stable (the source proves global
+asymptotic stability). -/
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model)
+    (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
+    (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% (Family.mem_den (F := family)))]
@@ -555,7 +561,8 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
     rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := hm .physical (by simp)
     rw [(connection_proof% Family.mem_den)]
-    exact ((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))))
+    exact (Family.mem_den (F := family)).mp (mem_den_globallyExponentiallyStable m hCdc hL hC hR hG
+      (hm .equilibrium (by simp)) (hm .damping (by simp)))
   refine Spectral.chain_le_semantics_of_globalTable (F := family)
     (Rs := {.physical, .equilibrium, .damping}) (Rg := {.physical, .equilibrium, .damping})
     (Ru := Set.univ) (Rc := Set.univ) (Rp := {.physical, .equilibrium, .damping})
@@ -581,29 +588,9 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
     rw [(connection_proof% Family.mem_den)]
     exact ⟨_, passive m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))⟩
 
-/-- **Global exponential stability of the matching closed loop in the rotating frame**: with
-`C_dc, L, C, R, G + G_l > 0`, the selected point an equilibrium and a positive damping margin,
-the steady state of the reduced model is globally exponentially stable (the source proves global
-asymptotic stability). -/
-@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model) (hCdc : 0 < m.Cdc)
-    (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
-    (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
-    connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% Family.mem_den)]
-  exact ((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))
-
-/-- The source's corollary "Closed-loop stability with DC-side P-control": global asymptotic
-stability of the steady state of the reduced model. -/
-@[tmio TM, powerlib_domain] theorem mem_den_globallyAsymptoticallyStable (m : Model) (hCdc : 0 < m.Cdc)
-    (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
-    (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
-    connection% (m ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% Family.mem_den)]
-  exact (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))).globallyAsymptoticallyStable
-
-/-- Every attractive sentence and sampled contraction. -/
+/-- Every attractive sentence and sampled contraction; in particular the source's corollary
+"Closed-loop stability with DC-side P-control", global asymptotic stability of the steady state of
+the reduced model. -/
 @[tmio TM, powerlib_domain] theorem mem_den_attractive (m : Model) (hCdc : 0 < m.Cdc)
     (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) {P : Flow.Property}
@@ -612,8 +599,10 @@ stability of the steady state of the reduced model. -/
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den)]
   rcases hP with hP | rfl
-  · exact (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))).holds hP
-  · exact (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))).sampledContraction
+  · exact ((Family.mem_den (F := family)).mp
+      (mem_den_globallyExponentiallyStable m hCdc hL hC hR hG he hδ)).holds hP
+  · exact ((Family.mem_den (F := family)).mp
+      (mem_den_globallyExponentiallyStable m hCdc hL hC hR hG he hδ)).sampledContraction
 
 /-- Passivity relative to the steady state, from the port perturbations `(ĩ_dc, −ĩ_l,dq)` to
 `(ṽ_dc, ṽ_dq)` (the source's passivity theorem, with the P-control and load admittance
@@ -1149,7 +1138,8 @@ requirements (`C_dc, L, C, R, G + G_l > 0`, the selected point an equilibrium, `
 there are `K ≥ 0`, `a > 0` such that every stationary-frame solution segment whose load phasor
 `R_θᵀ s_αβ` is the model's `s_dq` (a stationary load in the source's sense) satisfies
 `dist(X t, O) ≤ K e^{−a (t − t₀)} dist(X t₀, O)`, `O = range orbitPoint` the steady-state orbit.
-Proof: global exponential stability in the reduced coordinates (`ges`), the reduction of solutions
+Proof: global exponential stability in the reduced coordinates
+(`mem_den_globallyExponentiallyStable`), the reduction of solutions
 (`reduce_isTrajectoryOn`, `load_const`), and the two-sided comparison `norm_sub_orbitPoint`,
 `norm_reduce_sub_le` through `Dynamics.LaSalle.infDist_le_of_reduction'`.
 Implementation evidence: set attraction is outside the sentence language (Rules §3a). -/
@@ -1161,7 +1151,8 @@ Implementation evidence: set attraction is outside the sentence language (Rules 
       ∀ t ∈ Set.Icc t₀ t₁, Metric.infDist (X t) (Set.range m.orbitPoint) ≤
         K * Real.exp (-a * (t - t₀)) * Metric.infDist (X t₀) (Set.range m.orbitPoint) := by
   have hges : Flow.GloballyExponentiallyStable (fun y => m.field y 0) m.point :=
-    Dynamics.globallyExponentiallyStable_shift_iff.mp (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ)))
+    Dynamics.globallyExponentiallyStable_shift_iff.mp ((Family.mem_den (F := family)).mp
+      (mem_den_globallyExponentiallyStable m hCdc hL hC hR hG he hδ))
   have hwl : m.withLoad m.sd m.sq = m := by cases m; rfl
   have hB : 0 ≤ 1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
       (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2)) := by

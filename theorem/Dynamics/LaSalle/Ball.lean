@@ -26,7 +26,7 @@ Results.
   that stays in the ball inside `{Ẇ = 0}` starts at `x*` ⇒ local asymptotic stability. Lyapunov
   stability comes from LeanForControl's `lyapunov_stable` on the ball; attraction from LaSalle's
   principle for `C¹` fields (`regionOfAttraction_of_lasalle_sublevel`,
-  `lasalle_condition_of_trajectories`, `theorem/Dynamics/LaSalle/Basin.lean`) on a sublevel set
+  `lasalle_condition_of_trajectories_mem`, `theorem/Dynamics/LaSalle/Basin.lean`) on a sublevel set
   inside the ball built from the minimum of `W` on a compact annulus. No global compact sublevel
   set and no global Lipschitz bound are required.
 -/
@@ -97,7 +97,7 @@ local notation "ℝⁿ" => State n
     (fun x hx => by
       rw [mem_ball, dist_eq_norm] at hx
       exact hLie x (by linarith))
-    hΩc (lasalle_condition_of_trajectories hf fun T φ hT hφ hin => hstay T φ hT hφ
+    hΩc (lasalle_condition_of_trajectories_mem hf fun T φ hT hφ hin => hstay T φ hT hφ
       fun t ht => by
         have hx := hin t ht
         rw [lieDerivZeroSet_def] at hx

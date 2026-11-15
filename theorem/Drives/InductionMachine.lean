@@ -57,9 +57,9 @@ Results.
   (`rotorFlux_voltageModel`), the stator current from stator/rotor flux (`statorCurrent_of_fluxes`,
   used by DTC), and the corrected current model (`currentModel`).
 * IFOC rotor-flux orientation (connection statements of `family`):
-  `ifocFlux_globallyExponentiallyStable`, `ifocFlux_decay`,
-  `ifocFlux_tuned_globallyExponentiallyStable`, `ifocFlux_detuned_globallyExponentiallyStable`;
-  the orientation of the detuned equilibrium is the static `ifocFlux_detuned_orientation_iff`.
+  `ifocFlux_globallyExponentiallyStable` (any slip command, in particular the tuned and the
+  detuned IFOC slip commands) and `ifocFlux_decay`; the orientation of the detuned equilibrium is
+  the static `ifocFlux_detuned_orientation_iff`.
 
 Family and connection conclusions.
 * `family : Family Drive Requirement 2 0` reads a drive — machine parameters, constant stator
@@ -71,11 +71,9 @@ Family and connection conclusions.
   into `positiveRotor`, decay at the rate `a` into `decayRateAtMost a`, passivity into nothing,
   instability and conservation into the whole (inconsistent) language.
 * Connection conclusions: `chain_le_semantics` (every translation sound, by the quadratic decay
-  certificate `fluxCertificate`), `exact_passive`, `ifocFlux_globallyExponentiallyStable`,
+  certificate `fluxCertificate`), `exact_passive`, `ifocFlux_globallyExponentiallyStable` and
   `ifocFlux_decay` (the segment bound with constant `1`, `ifocFlux_norm_bound`, is private
-  evidence), `ifocFlux_tuned_globallyExponentiallyStable` and
-  `ifocFlux_detuned_globallyExponentiallyStable`. Equilibria, the flux algebra and the
-  dissipation identity are static evidence.
+  evidence). Equilibria, the flux algebra and the dissipation identity are static evidence.
 * Boundary witness (`not_exact`): only `r_r / L_r` enters the rotor-flux field, so the drive
   `negativeRotor` with `r_r = L_r = −1` has the field of the unit-rotor drive and satisfies every
   attractive sentence, sampled contraction and Lyapunov stability (`negativeRotor_mem_den`)
@@ -574,7 +572,15 @@ def family : Family Drive Requirement 2 0 :=
   Spectral.mem_den_flow_iff_shift (f := fun d : Drive => fluxField d.p d.isd d.isq d.ωsl)
     (pt := fun d => fluxEquilibrium d.p d.isd d.isq d.ωsl) family_isAutonomous
 
-@[tmio TM, powerlib_domain] private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
+/-- **IFOC rotor-flux convergence (any slip command).** For the current-fed induction machine
+in the IFOC frame with constant stator current `(isd, isq)` and constant slip command `ω_sl`,
+the rotor flux is globally exponentially stable at `ψ_eq = L_m i_s / (1 + jω_sl T_r)`: every
+solution exists for all forward time and converges exponentially. This covers the tuned slip
+command `isq / (T_r isd)`, whose equilibrium is the oriented value `(L_m i_sd*, 0)`
+(`fluxEquilibrium_tuned`), and a detuned command `isq / (T̂_r isd)`, whose equilibrium is
+oriented only when `T̂_r = T_r` (`ifocFlux_detuned_orientation_iff`). -/
+@[tmio TM, powerlib_domain] theorem ifocFlux_globallyExponentiallyStable (d : Drive)
+    (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
@@ -583,7 +589,10 @@ def family : Family Drive Requirement 2 0 :=
   exact (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).globallyExponentiallyStable
     (fluxField_smooth d.p d.isd d.isq d.ωsl)
 
-@[tmio TM, powerlib_domain] private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
+/-- Decay at the exact rate `1/T_r`, for every initial flux and every slip command (the slip
+term rotates the flux error and does no work). -/
+@[tmio TM, powerlib_domain] theorem ifocFlux_decay (d : Drive) (hrr : 0 < d.p.rr)
+    (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow (.decay (1 / d.p.Tr)))) := by
   unfold TMIO.Statement
   apply mem_den_flow.mpr
@@ -611,7 +620,8 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
   have hG : TMIO.realize family.meets {.positiveRotor} ⊆
       family.den (.flow .globallyExponentiallyStable) := fun d hd => by
     have hm : Meets d .positiveRotor := (TMIO.mem_realize _ _ _).mp hd _ rfl
-    exact mem_den_flow.mpr ((mem_den_flow.mp (ges_of hm.1 hm.2)))
+    exact mem_den_flow.mpr
+      ((mem_den_flow.mp (ifocFlux_globallyExponentiallyStable d hm.1 hm.2)))
   refine Spectral.chain_le_semantics_of_globalTable (F := family) (Rs := {.positiveRotor})
     (Rg := {.positiveRotor}) (Ru := Set.univ) (Rc := Set.univ) (Rp := ∅)
     (Rd := fun a => {.decayRateAtMost a}) (fun s => ?_)
@@ -624,48 +634,13 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
     · rfl
     · rfl
   · have hm : Meets d (.decayRateAtMost a) := (TMIO.mem_realize _ _ _).mp hd _ rfl
-    exact mem_den_flow.mpr (Flow.Decay.mono (mem_den_flow.mp (decay_of hm.1 hm.2.1)) hm.2.2)
+    exact mem_den_flow.mpr
+      (Flow.Decay.mono (mem_den_flow.mp (ifocFlux_decay d hm.1 hm.2.1)) hm.2.2)
 
 /-- Passivity is translated exactly: the autonomous rotor-flux model has no ports. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
-/-- **IFOC rotor-flux convergence (any slip command).** For the current-fed induction machine
-in the IFOC frame with constant stator current `(isd, isq)` and constant slip command `ω_sl`,
-the rotor flux is globally exponentially stable at `ψ_eq = L_m i_s / (1 + jω_sl T_r)`: every
-solution exists for all forward time and converges exponentially. -/
-@[tmio TM, powerlib_domain] theorem ifocFlux_globallyExponentiallyStable (d : Drive) (hrr : 0 < d.p.rr)
-    (hLr : 0 < d.p.Lr) :
-    connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow.mpr ((mem_den_flow.mp (ges_of hrr hLr)))
-
-/-- Decay at the exact rate `1/T_r`, for every initial flux and every slip command (the slip
-term rotates the flux error and does no work). -/
-@[tmio TM, powerlib_domain] theorem ifocFlux_decay (d : Drive) (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
-    connection% (d ∈ family.den (.flow (.decay (1 / d.p.Tr)))) := by
-  unfold powerlib.TMIO.Statement
-  exact decay_of hrr hLr
-
-/-- The detuned IFOC drive, whose slip command uses an estimate `T̂_r`, is still globally
-exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`
-(`ifocFlux_detuned_orientation_iff`). -/
-@[tmio TM, powerlib_domain] theorem ifocFlux_detuned_globallyExponentiallyStable (p : Params)
-    (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq Tr_hat : ℝ) :
-    connection% (⟨p, isd, isq, isq / (Tr_hat * isd)⟩ ∈
-      family.den (.flow .globallyExponentiallyStable)) :=
-  ifocFlux_globallyExponentiallyStable ⟨p, isd, isq, isq / (Tr_hat * isd)⟩ hrr hLr
-
-/-- **IFOC field orientation with exact parameters.** With ideal current tracking, constant
-commands `(i_sd*, i_sq*)`, `i_sd* ≠ 0`, and the slip command computed with the true rotor time
-constant, the rotor flux converges globally exponentially (rate `1/T_r`) to its equilibrium,
-which is the oriented value `(L_m i_sd*, 0)` (`fluxEquilibrium_tuned`). -/
-@[tmio TM, powerlib_domain] theorem ifocFlux_tuned_globallyExponentiallyStable (p : Params)
-    (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq : ℝ) :
-    connection% (⟨p, isd, isq, isq / (p.Tr * isd)⟩ ∈
-      family.den (.flow .globallyExponentiallyStable)) :=
-  ifocFlux_detuned_globallyExponentiallyStable p hrr hLr isd isq p.Tr
 
 /-! ## Boundary witness: a negative rotor -/
 

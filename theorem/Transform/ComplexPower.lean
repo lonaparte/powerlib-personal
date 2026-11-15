@@ -15,16 +15,15 @@ Source: work-sync `theory/T-gfl-control.md` §1.5; `theory/T-gfl-impedance.md` �
 `conventions.md` §D0–§D3.
 
 Results.
-* `complexPower_expand`: `V̄ Ī* = (v_d i_d + v_q i_q) + j (v_q i_d − v_d i_q)`; the same
-  expansion with `Complex.I` (`complexPower_dq`) and the export-positive translation
-  `S̄^ext = −S̄^abs`, i.e. `P^ext = −P^abs`, `Q^ext = −Q^abs` (`exportPower_dq`,
-  T-vsg-control §1.1);
+* `complexPower_expand`: `V̄ Ī* = (v_d i_d + v_q i_q) + j (v_q i_d − v_d i_q)` (in `x + y j`
+  notation through `Complex.mk_eq_add_mul_I`); the export-positive translation
+  `S̄^ext = −S̄^abs` negates both parts, `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1);
   `activePower_eq_re`, `reactivePower_eq_im`: `P = (3/2) Re S̄`, `Q = (3/2) Im S̄` (SI,
   amplitude-invariant Park; the per-unit forms drop `3/2`).
 * `currentRef_spec`, `currentRef_unique`: in the PLL-aligned frame (`v_q = 0`, `v_d ≠ 0`) the
   references `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)` give exactly `P = P*`, `Q = Q*`, and
-  they are the only currents that do (T-gfl-control §1.5 boxed). `currentRef_export`: the
-  export-positive dispatch form `i_d* = −2 P*_exp/(3 v_d)`, `i_q* = 2 Q*_exp/(3 v_d)`.
+  they are the only currents that do (T-gfl-control §1.5 boxed); at `(−P*_exp, −Q*_exp)` this
+  is the export-positive dispatch form `i_d* = −2 P*_exp/(3 v_d)`, `i_q* = 2 Q*_exp/(3 v_d)`.
   `currentRef_sign`: for `v_d > 0`, absorbing reactive power (`Q* > 0`) means `i_q* < 0`.
 * `pq_mulVec_current`, `pq_mulVec_voltage`, `pq_expansion`: per-unit `(P, Q)` is bilinear in
   `(v, i)`; its Jacobians are `∂(P,Q)/∂(i_d,i_q) = [[v_d0, v_q0], [v_q0, −v_d0]]` and
@@ -44,29 +43,6 @@ open Matrix ComplexConjugate
   · simp [Complex.mul_re]
   · simp [Complex.mul_im]
     ring
-
-/-! ### `dq` components with `Complex.I`; export-positive translation -/
-
-section DqExport
-
-open Complex
-
-/-- `S̄ = (V_d + jV_q)(I_d + jI_q)* = (V_d I_d + V_q I_q) + j (V_q I_d − V_d I_q)`. -/
-@[tmio T, powerlib_foundation] theorem complexPower_dq (Vd Vq Id Iq : ℝ) :
-    ((Vd : ℂ) + Vq * I) * (starRingEnd ℂ) ((Id : ℂ) + Iq * I) =
-      ((Vd * Id + Vq * Iq : ℝ) : ℂ) + ((Vq * Id - Vd * Iq : ℝ) : ℂ) * I := by
-  apply Complex.ext
-  · simp
-  · simp; ring
-
-/-- Export-positive translation: `S̄^ext = −S̄^abs`, i.e. `P^ext = −(V_d I_d + V_q I_q)` and
-`Q^ext = −(V_q I_d − V_d I_q)` with the IN-positive current. -/
-@[tmio T, powerlib_foundation] theorem exportPower_dq (Vd Vq Id Iq : ℝ) :
-    -(((Vd : ℂ) + Vq * I) * (starRingEnd ℂ) ((Id : ℂ) + Iq * I)) =
-      ((-(Vd * Id + Vq * Iq) : ℝ) : ℂ) + ((-(Vq * Id - Vd * Iq) : ℝ) : ℂ) * I := by
-  rw [complexPower_dq]; push_cast; ring
-
-end DqExport
 
 /-- Active power `P = (3/2)(v_d i_d + v_q i_q)` (IN-positive, absorbed). -/
 def activePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * (vd * id + vq * iq)
@@ -100,13 +76,6 @@ def reactivePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * (vq * id - vd * iq)
     linear_combination 2 * hP
   · field_simp
     linear_combination -2 * hQ
-
-/-- Export-positive dispatch (`P_abs = −P_exp`, `Q_abs = −Q_exp`). -/
-@[tmio T, powerlib_foundation] theorem currentRef_export {vd : ℝ} (hvd : vd ≠ 0) (Pexp Qexp : ℝ) :
-    activePower vd 0 (-(2 * Pexp / (3 * vd))) (2 * Qexp / (3 * vd)) = -Pexp ∧
-      reactivePower vd 0 (-(2 * Pexp / (3 * vd))) (2 * Qexp / (3 * vd)) = -Qexp := by
-  have h := currentRef_spec hvd (-Pexp) (-Qexp)
-  simpa [neg_div, mul_neg] using h
 
 /-- Sign check: with `v_d > 0`, absorbing reactive power (`Q* > 0`) means `i_q* < 0`, and
 absorbing active power (`P* > 0`) means `i_d* > 0`. -/

@@ -27,9 +27,9 @@ and `theory/T-impedance-modeling.md` §1.7 (dq impedance of an R–L grid branch
 
 Results.
 * Rotating-frame KVL for any differentiable frame angle `θ` (`T-park-transformation.md` §1.4,
-  chain rule of `theorem/Transform/Park.lean`): `dqRL_field_apply`, `dqRL_of_alphaBetaRL`,
-  `alphaBetaRL_of_dqRL`, `alphaBetaRL_iff_dqRL` (Park maps αβ and dq trajectories one to one, no
-  balanced-three-phase premise).
+  chain rule of `theorem/Transform/Park.lean`): `dqRL_field_apply`, `alphaBetaRL_of_dqRL`,
+  `alphaBetaRL_iff_dqRL` (Park maps αβ and dq trajectories one to one, no balanced-three-phase
+  premise).
 * Amplitude–phase coordinates of the dq current (`T-invariant-coordinates.md` §1.3; dq R–L filter
   with converter voltage `V^c`, any `ω(t)`): `hasDerivAt_half_sq_amplitude` (the rotation terms
   cancel in `d/dt(½|I|²)`), `hasDerivAt_arg_current`, `hasDerivAt_phase`
@@ -49,7 +49,7 @@ branch at the origin. Requirements: `R/L > 0` (`stable`, eigenvalues `−R/L ± 
   (`spectrallyStable_dqRLMatrix_iff`), which do not depend on `ω`. Scaffold:
   `theorem/Passive/DqAlphaBeta.agda`.
 The spectra, the field identity and the dq impedance are static evidence. The trajectory form of
-the dq KVL is `dqRL_of_alphaBetaRL`, and the plant's field is `dqRLPlant_field`.
+the dq KVL is `alphaBetaRL_iff_dqRL`, and the plant's field is `dqRLPlant_field`.
 -/
 
 noncomputable section
@@ -165,18 +165,6 @@ the statements below:
       ![b.L⁻¹ * (v 0 - b.R * i 0) + ω * i 1, b.L⁻¹ * (v 1 - b.R * i 1) - ω * i 0] := by
   ext k; fin_cases k <;> simp [Transform.J_mulVec]
 
-/-- Park maps αβ-frame RL trajectories to dq-frame RL trajectories, for any differentiable
-frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
-@[tmio M, powerlib_domain] theorem dqRL_of_alphaBetaRL {b : Passive.SeriesRLC} {θ ω : ℝ → ℝ}
-    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
-    (h : ∀ t, HasDerivAt i (b.L⁻¹ • (v t - b.R • i t)) t) :
-    ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
-      (b.L⁻¹ • (park (θ t) *ᵥ v t - b.R • (park (θ t) *ᵥ i t)) -
-        ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
-  intro t
-  convert Transform.hasDerivAt_park_mulVec (hθ t) (h t) using 1
-  rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
-
 /-- Inverse direction: rotating a dq-frame trajectory back gives an αβ-frame trajectory. -/
 @[tmio M, powerlib_domain] theorem alphaBetaRL_of_dqRL {b : Passive.SeriesRLC} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
@@ -187,14 +175,18 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
   convert Transform.hasDerivAt_rot_mulVec (hθ t) (h t) using 1
   rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
 
-/-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`. -/
+/-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`, for
+any differentiable frame angle `θ` with `θ̇ = ω` (no balanced-three-phase premise): the forward
+direction is the Park chain rule `Transform.hasDerivAt_park_mulVec`. -/
 @[tmio M, powerlib_domain] theorem alphaBetaRL_iff_dqRL {b : Passive.SeriesRLC} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) (v i : ℝ → Fin 2 → ℝ) :
     (∀ t, HasDerivAt i (b.L⁻¹ • (v t - b.R • i t)) t) ↔
       ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
         (b.L⁻¹ • (park (θ t) *ᵥ v t - b.R • (park (θ t) *ᵥ i t)) -
           ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
-  refine ⟨dqRL_of_alphaBetaRL hθ, fun h => ?_⟩
+  refine ⟨fun h t => ?_, fun h => ?_⟩
+  · convert Transform.hasDerivAt_park_mulVec (hθ t) (h t) using 1
+    rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
   have h' := alphaBetaRL_of_dqRL hθ h
   simp only [Transform.rot_mulVec_park_mulVec] at h'
   exact h'

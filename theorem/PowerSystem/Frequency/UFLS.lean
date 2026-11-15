@@ -87,7 +87,7 @@ above `−Δf_th/f₀`, then `ΔP' ≤ (K_R + D) Δf_th / f₀`. -/
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔP') y) (Ici 0))
     (hev : ∀ᶠ t in atTop, -(th / f₀) ≤ x t 0) : ΔP' ≤ (K + D) * th / f₀ := by
   have hlim := LTI.tendsto_apply_of_isHurwitz (plant M D K Tg)
-    (SwingGovernor.steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
+    ((SwingGovernor.isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl)
     (SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨M, D, K, Tg, hM, hTg⟩ : SwingGovernor.Model)) |>.mp ((SwingGovernor.isHurwitz_iff_of_nonneg hM hTg hD).2 hKD)) hx 0
   rw [SwingGovernor.steadyState_zero] at hlim
   have h := ge_of_tendsto hlim hev
@@ -109,7 +109,7 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
   have hT0 : 0 < SwingGovernor.nadirTime M D K Tg := SwingGovernor.tCrit_pos hωd
   have hval : x (SwingGovernor.nadirTime M D K Tg) 0 = SwingGovernor.nadirValue M D K Tg ΔP' := by
     rw [LTI.trajectory_eq_osc2 (plant M D K Tg)
-      (SwingGovernor.steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
+      ((SwingGovernor.isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl)
       (SwingGovernor.trace_A hM hTg hKD) (SwingGovernor.det_A hM hTg hD hKD hζ) hωd.ne' hx
       hT0.le, h0, SwingGovernor.osc2_freq hM hTg hD hKD hζ,
       SwingGovernor.respC_nadirTime hM hTg hD hKD hζ]

@@ -39,7 +39,7 @@ Results.
   `C Φ (sI − A)⁻¹ B = C Φ B / (s − μ)`, which is bounded only if `C Aⁱ φ(A) Aʲ B = 0`.
   Observability and controllability (transferred from the real predicates to complex vectors)
   then give `φ(A) = 0`, contradicting `deg φ < deg π`.
-* `minimal_pole_iff`, `minimal_poles_eq_spectrum` — **the pole set of `G` equals `σ(A)`** for
+* `minimal_pole_iff` — **the pole set of `G` equals `σ(A)`** for
   every minimal realization.
 * `minimal_pole_tendsto_iff` — strong form: `μ ∈ σ(A)` iff `‖G_ij(s)‖ → ∞` (`s → μ`, `s ≠ μ`)
   for some entry. Each entry is meromorphic (`meromorphicAt_transfer`: analytic numerator
@@ -322,12 +322,6 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded near `μ` iff `μ ∈ σ(A)`. -
     by_contra hμ
     exact h (transfer_isBoundedUnder_of_not_mem_spectrum m hμ i j)
   · exact transfer_not_isBoundedUnder_of_mem_spectrum hm
-
-/-- The pole set of the transfer matrix of a minimal realization is the spectrum of `A`. -/
-@[tmio T, powerlib_foundation] theorem minimal_poles_eq_spectrum {m : Plant n p} (hm : m.Minimal) :
-    {μ | ∃ i j, ¬ IsBoundedUnder (· ≤ ·) (𝓝[≠] μ) (fun s => ‖transfer m s i j‖)} =
-      spectrum ℂ (complexify m.A) :=
-  Set.ext (minimal_pole_iff hm)
 
 /-- The determinant of a matrix with entries analytic at `x` is analytic at `x`. -/
 @[tmio T, powerlib_foundation] theorem analyticAt_det {ι : Type*} [Fintype ι] [DecidableEq ι]

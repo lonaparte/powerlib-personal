@@ -22,7 +22,8 @@ Results.
   `image_norm_le_of_norm_deriv_right_le_deriv_boundary`).
 * `taylor_one_bound`, `taylor_two_bound`, `taylor_three_bound` — Taylor bounds of order one, two
   and three.
-* `forwardEuler_lte` — `‖τ_FE - (h²/2) x₂(t)‖ ≤ M₃ h³/6`, `τ_FE = x(t+h) - x(t) - h x₁(t)`.
+* Forward Euler: `‖τ_FE - (h²/2) x₂(t)‖ ≤ M₃ h³/6`, `τ_FE = x(t+h) - x(t) - h x₁(t)`, is
+  `taylor_two_bound` at `s = h`.
 * `backwardEuler_lte` — `‖τ_BE + (h²/2) x₂(t)‖ ≤ (2/3) M₃ h³`,
   `τ_BE = x(t+h) - x(t) - h x₁(t+h)`.
 * `trapezoidal_lte` — `‖τ_T + (h³/12) x₃(t)‖ ≤ M₄ h⁴/8`,
@@ -145,15 +146,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 @[tmio T, powerlib_foundation] private lemma right_mem {h : ℝ} (hh : 0 ≤ h) : h ∈ Icc (0 : ℝ) h :=
   ⟨hh, le_rfl⟩
-
-/-- Forward Euler local truncation error: `τ_FE = (h²/2) x₂(t) + O(h³)`. -/
-@[tmio T, powerlib_foundation] theorem forwardEuler_lte {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)
-    (hx : ∀ s ∈ Icc t (t + h), HasDerivAt x (x₁ s) s)
-    (hx₁ : ∀ s ∈ Icc t (t + h), HasDerivAt x₁ (x₂ s) s)
-    (hx₂ : ∀ s ∈ Icc t (t + h), HasDerivAt x₂ (x₃ s) s)
-    (hM : ∀ s ∈ Icc t (t + h), ‖x₃ s‖ ≤ M) :
-    ‖(x (t + h) - x t - h • x₁ t) - (h ^ 2 / 2) • x₂ t‖ ≤ M * h ^ 3 / 6 :=
-  taylor_two_bound hx hx₁ hx₂ hM h (right_mem hh)
 
 /-- Backward Euler local truncation error: `τ_BE = -(h²/2) x₂(t) + O(h³)`. -/
 @[tmio T, powerlib_foundation] theorem backwardEuler_lte {x x₁ x₂ x₃ : ℝ → E} {t h M : ℝ} (hh : 0 ≤ h)

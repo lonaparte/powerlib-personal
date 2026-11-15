@@ -40,9 +40,9 @@ engineering reading of stability as the exceedance of thresholds on a few physic
 
 Results.
 * Horizons: `exceeds_mono`, `exceeds_sSup_iff`, `exceedance_mono`, `exceedance_sSup` (continuity
-  from below, no measurability), `holds_safe_sSup`, `den_safe_sSup` (the infinite horizon is the
-  meet of the finite horizons), `den_safe_antitone`, `holds_meanSquare_sSup`.
-* Levels: `holds_safe_iInf`, `den_safe_iInf`, `holds_meanSquare_iInf`.
+  from below, no measurability), `holds_safe_sSup` (the infinite horizon is the meet of
+  the finite horizons), `den_safe_antitone`, `holds_meanSquare_sSup`.
+* Levels: `holds_safe_iInf`, `holds_meanSquare_iInf`.
 * The connections: `certifiedHorizon F ε` and `worstExceedance F T`, arbitrary-infimum
   preserving maps from sets of models; `le_certifiedHorizon_iff`, `gc_certifiedHorizon`,
   `generate_certifiedHorizon`, `gc_worstExceedance`, `generate_worstExceedance` (the generated
@@ -128,22 +128,12 @@ supremum of the exceedance probabilities. No measurability is needed. -/
           iSup_le fun k => le_iSup₂_of_le (u k) (hmem k) le_rfl
 
 /-- The safety sentence at the supremum of a set of horizons is the conjunction of the safety
-sentences at the horizons of the set. -/
+sentences at the horizons of the set: the infinite horizon is the meet of the finite horizons, and
+for every family the denotation at `sSup H` is the intersection of the denotations. -/
 @[tmio T, powerlib_foundation] theorem holds_safe_sSup (b : Behaviour n p) (H : Set ℝ≥0∞) (ε : ℝ≥0∞) :
     (Sentence.envelope (.safe (sSup H) ε)).holds b ↔
       ∀ T ∈ H, (Sentence.envelope (.safe T ε)).holds b := by
   simp only [Sentence.holds_safe_iff_exceedance, exceedance_sSup, iSup₂_le_iff]
-
-/-- The infinite horizon is the meet of the finite horizons: the denotation of safety at the
-supremum of a set of horizons is the intersection of the denotations, for every family. -/
-@[tmio TM, powerlib_foundation] theorem den_safe_sSup {X Q : Type*} (F : Family X Q n p) (H : Set ℝ≥0∞)
-    (ε : ℝ≥0∞) :
-    connection% (F.den (.envelope (.safe (sSup H) ε)) =
-      ⋂ T ∈ H, F.den (.envelope (.safe T ε))) := by
-  unfold powerlib.TMIO.Statement
-  ext x
-  simp only [Family.mem_den, mem_iInter₂]
-  exact holds_safe_sSup _ H ε
 
 /-- Safety over a longer horizon is safety over a shorter one. -/
 @[tmio TM, powerlib_foundation] theorem den_safe_antitone {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞)
@@ -173,21 +163,13 @@ mean-square sentences at the horizons of the set. -/
 /-! ## Levels -/
 
 /-- The safety sentence at the infimum of levels is the conjunction of the safety sentences at
-the levels. -/
+the levels; for every family the denotation at the infimum is the intersection of the
+denotations. -/
 @[tmio T, powerlib_foundation] theorem holds_safe_iInf {ι : Sort*} (b : Behaviour n p) (T : ℝ≥0∞)
     (ε : ι → ℝ≥0∞) :
     (Sentence.envelope (.safe T (⨅ i, ε i))).holds b ↔
       ∀ i, (Sentence.envelope (.safe T (ε i))).holds b := by
   simp only [Sentence.holds_safe_iff_exceedance, le_iInf_iff]
-
-/-- The denotation of safety at the infimum of levels is the intersection of the denotations. -/
-@[tmio TM, powerlib_foundation] theorem den_safe_iInf {X Q : Type*} {ι : Sort*} (F : Family X Q n p)
-    (T : ℝ≥0∞) (ε : ι → ℝ≥0∞) :
-    connection% (F.den (.envelope (.safe T (⨅ i, ε i))) = ⋂ i, F.den (.envelope (.safe T (ε i)))) := by
-  change F.den (.envelope (.safe T (⨅ i, ε i))) = ⋂ i, F.den (.envelope (.safe T (ε i)))
-  ext x
-  simp only [Family.mem_den, mem_iInter]
-  exact holds_safe_iInf _ T ε
 
 /-- The mean-square sentence at the infimum of bounds is the conjunction of the mean-square
 sentences at the bounds. -/
@@ -215,8 +197,9 @@ private def horizonAdjunction {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0�
     refine ⟨fun h => le_sSup h, fun h => ?_⟩
     have hsup : ofDual D ⊆
         F.den (.envelope (.safe (sSup {T | ofDual D ⊆ F.den (.envelope (.safe T ε))}) ε)) := by
-      rw [den_safe_sSup]
-      exact subset_iInter₂ fun T hT => hT
+      intro x hx
+      simp only [Family.mem_den, holds_safe_sSup]
+      exact fun T hT => by simpa only [Family.mem_den] using hT hx
     exact hsup.trans (den_safe_antitone F ε h)
 
 /-- The certified horizon: a set of models is sent to the longest horizon over which every model
@@ -230,15 +213,10 @@ def certifiedHorizon {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞) :
 
 /-- A horizon is certified for a set of models exactly when it is at most the supremum of the
 horizons certified for it, evaluated through the certified-horizon connection. -/
-@[tmio TM, powerlib_foundation] theorem le_sSup_certified_iff {X Q : Type*} (F : Family X Q n p)
-    (ε : ℝ≥0∞) (D : Set X) (T : ℝ≥0∞) :
-    connection% (T ≤ certifiedHorizon F ε (toDual D) ↔ D ⊆ F.den (.envelope (.safe T ε))) :=
-  ((horizonAdjunction F ε).gc T (toDual D)).symm
-
 @[tmio TM, powerlib_foundation] theorem le_certifiedHorizon_iff {X Q : Type*} (F : Family X Q n p)
     (ε : ℝ≥0∞) (D : (Set X)ᵒᵈ) (T : ℝ≥0∞) :
-    connection% (T ≤ certifiedHorizon F ε D ↔ ofDual D ⊆ F.den (.envelope (.safe T ε))) := show T ≤ certifiedHorizon F ε D ↔ ofDual D ⊆ F.den (.envelope (.safe T ε)) from
-  le_sSup_certified_iff F ε (ofDual D) T
+    connection% (T ≤ certifiedHorizon F ε D ↔ ofDual D ⊆ F.den (.envelope (.safe T ε))) :=
+  ((horizonAdjunction F ε).gc T D).symm
 
 /-- The certified horizon is the upper adjoint of the safety denotation along the horizon. -/
 @[tmio TM, powerlib_foundation] theorem gc_certifiedHorizon {X Q : Type*} (F : Family X Q n p)

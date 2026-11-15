@@ -27,7 +27,7 @@ condition). Lyapunov's and Chetaev's theorems: Khalil, *Nonlinear Systems* (3rd 
 Thm 4.3. Candidate Lyapunov functions were computed with SymPy (untrusted); Lean checks them.
 
 Results.
-* `exactUnder_offBoundary_lyapunovStable`, `exactUnder_offBoundary_locallyAsymptoticallyStable`:
+* `exactUnder_offBoundary`: the Lyapunov and the local asymptotic translations are
   exact within the context `{equilibrium, positiveReference, offBoundary}` (requirement
   `Requirement.offBoundary`: Routh conditions or a strict violation,
   `Criteria.RouthViolationFin4`); a strict violation gives instability
@@ -54,10 +54,9 @@ Results.
   `{equilibrium, positiveReference}`.
 
 Family and connection conclusions.
-Connection conclusions on `ModelB.family`: `exactUnder_offBoundary_lyapunovStable`,
-`exactUnder_offBoundary_locallyAsymptoticallyStable`, `not_exactUnder_lyapunovStable`,
-`not_exactUnder_locallyAsymptoticallyStable`, `mem_den_unstable_of_violation` and the witness
-memberships above; `boundaryWitnesses_mem_realize`,
+Connection conclusions on `ModelB.family`: `exactUnder_offBoundary`,
+`not_exactUnder_lyapunovStable`, `not_exactUnder_locallyAsymptoticallyStable`,
+`mem_den_unstable_of_violation` and the witness memberships above; `boundaryWitnesses_mem_realize`,
 `boundaryWitnesses_not_mem_realize_offBoundary` are static facts about the requirement spaces. The
 field formulas, energies, their derivatives and the elementary inequalities are foundation; the
 trajectory-level statements behind the memberships are private implementation evidence.
@@ -88,8 +87,9 @@ namespace ModelB
 /-- At an equilibrium with positive reference, a strict violation of the 4×4 Routh conditions gives
 instability (a characteristic root in the open right half plane; LeanForControl's linearization
 theorem for the regularized field, transferred through the ball on which it is model B). -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
-    (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_violation (m : Model)
+    (hV : 0 < m.p.VdcRef) (hx : m.p.field m.x = 0)
+    (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow_iff')]
@@ -101,17 +101,11 @@ theorem for the regularized field, transferred through the ball on which it is m
     (fun y hy => m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
       (mem_ball_iff_norm.mpr hy)) hreg
 
-/-- At an equilibrium with positive reference whose Jacobian violates the 4×4 Routh conditions
-strictly, model B is unstable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_violation (m : Model) (hV : 0 < m.p.VdcRef)
-    (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff'.mpr ((mem_den_flow_iff'.mp (unstable_of_violation hV hx hviol)))
-
-/-- Off the boundary the local Lyapunov and asymptotic sentences are decided by the linearization:
-the Routh conditions give local exponential stability, a strict violation instability. -/
-@[tmio TM, powerlib_domain] private theorem exactUnder_offBoundary_of {P : Flow.Property}
+/-- **Off the Routh boundary the Lyapunov and the local asymptotic translations are exact.** At an
+equilibrium with positive reference whose Jacobian is not on the 4×4 Routh boundary, Lyapunov
+stability and local asymptotic stability each hold exactly when the Routh conditions hold: the
+Routh conditions give local exponential stability, a strict violation instability. -/
+@[tmio TM, powerlib_domain] theorem exactUnder_offBoundary {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)) := by
   change family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)
@@ -134,28 +128,13 @@ the Routh conditions give local exponential stability, a strict violation instab
   have hr : Meets m .routh := by
     rcases hob with hr | hviol
     · exact hr
-    · exact absurd (hLS m hd) ((mem_den_flow_iff'.mp (unstable_of_violation hV hx hviol)))
+    · exact absurd (hLS m hd)
+        ((mem_den_flow_iff'.mp (mem_den_unstable_of_violation m hV hx hviol)))
   rw [(connection_proof% TMIO.mem_realize), htr]
   rintro q (rfl | rfl | rfl)
   · exact hx
   · exact hV
   · exact hr
-
-/-- **Off the Routh boundary the Lyapunov translation is exact.** At an equilibrium with positive
-reference whose Jacobian is not on the 4×4 Routh boundary, Lyapunov stability holds exactly when
-the Routh conditions hold (a strict violation gives instability). -/
-@[tmio TM, powerlib_domain] theorem exactUnder_offBoundary_lyapunovStable :
-    connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary}
-      (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact exactUnder_offBoundary_of (Or.inl rfl)
-
-/-- **Off the Routh boundary the local asymptotic translation is exact.** -/
-@[tmio TM, powerlib_domain] theorem exactUnder_offBoundary_locallyAsymptoticallyStable :
-    connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary}
-      (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact exactUnder_offBoundary_of (Or.inr rfl)
 
 /-! ## The Routh boundary: an undamped DC loop (Lyapunov stable, not attractive) -/
 
@@ -417,7 +396,7 @@ Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
 
 /-- **The Lyapunov translation is not exact at equilibria with positive reference.** The undamped
 DC loop is Lyapunov stable, but its Jacobian is on the 4×4 Routh boundary. Off the boundary the
-translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
+translation is exact (`exactUnder_offBoundary`). -/
 @[tmio TM, powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .lyapunovStable)) := by
@@ -935,8 +914,7 @@ coefficient of the DC loop, dominates the quintic remainder. -/
 
 /-- **The local asymptotic translation is not exact at equilibria with positive reference.** The
 weakly damped DC loop is locally asymptotically stable, but its Jacobian is on the 4×4 Routh
-boundary. Off the boundary the translation is exact
-(`exactUnder_offBoundary_locallyAsymptoticallyStable`). -/
+boundary. Off the boundary the translation is exact (`exactUnder_offBoundary`). -/
 @[tmio TM, powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .locallyAsymptoticallyStable)) := by

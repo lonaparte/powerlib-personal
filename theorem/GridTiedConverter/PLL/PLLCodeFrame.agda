@@ -20,8 +20,8 @@ module theorem.GridTiedConverter.PLL.PLLCodeFrame where
 -- `GFL.LCLine.Params.codeField_eq_transport` (from `GFL.LCLine.Params.hCode_eq`); `point-eq` is the
 -- image of the selected point under the reflection (inside `GFL.LCLine.codeFamily_den`); the
 -- invariance is `Dynamics.holds_transport_iff` on the flow sentences, and passivity holds of both
--- families, which are autonomous. `den↔` with `semantics-path` is `GFL.LCLine.codeFamily_den` and
--- `GFL.LCLine.code_mem_den_iff`; `sound` is `GFL.LCLine.codeFamily_chain_le_semantics`, from
+-- families, which are autonomous. `den↔` with `semantics-path` is `GFL.LCLine.codeFamily_den`;
+-- `sound` is `GFL.LCLine.codeFamily_chain_le_semantics`, from
 -- `PLL.PIPLL.chain_le_semantics`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude

@@ -190,10 +190,6 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
   simp [piPLLJacobian] at this
   exact hKi this
 
-@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_isNilpotent (Kp Ki : ℝ) :
-    IsNilpotent (piPLLJacobian Kp Ki 0) :=
-  ⟨2, piPLLJacobian_zero_sq Kp Ki⟩
-
 /-- Every (complex) eigenvalue of the `g = 0` Jacobian is zero: `J² = 0`, so `μ² v = J² v = 0`
 (`Linear.mulVec_pow_of_eigen`). -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_zero_eigenvalue_eq_zero (Kp Ki : ℝ) {μ : ℂ}
@@ -240,12 +236,6 @@ Static evidence, not a connection conclusion. -/
   · rintro ⟨h0, h1⟩
     rw [h0, h1]
     exact ⟨by ring, rfl⟩
-
-/-- The equilibrium predicate at `(θ, η)`. Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem piPLL_isEquilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
-    (θ η : ℝ) :
-    IsEquilibrium (piPLLField h Kp Ki δω) (PhasePlane.mk θ η) ↔ h θ = 0 ∧ η = δω / Ki :=
-  piPLLField_eq_zero_iff hKi (PhasePlane.mk θ η)
 
 /-- The equilibrium set, for every constant `δω` (`K_i ≠ 0`):
 `{x | f x = 0} = {(θ*, δω / K_i) : h(θ*) = 0}`. Static evidence, not a connection conclusion. -/

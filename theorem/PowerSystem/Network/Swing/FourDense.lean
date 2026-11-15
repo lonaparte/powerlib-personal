@@ -64,7 +64,7 @@ Proof outline.
   Jacobian leaves a non-constant null direction `u` of the positive semidefinite form `A₂` with
   `A₃(u) = 0` (`not_localAsymptoticStable_of_hessForm_neg`,
   `not_localAsymptoticStable_of_cubicForm_ne_zero`). The four-machine networks not covered by
-  `mem_den_locallyAsymptoticallyStable_iff_four` (at most four lines) are the diamond (exactly
+  `not_localAsymptoticStable_four` (at most four lines) are the diamond (exactly
   one uncoupled pair) and the complete graph; on both, `A₃(u) ≠ 0`.
 * The diamond, uncoupled pair `σ0 σ3`, hub `σ1 σ2`. Each two-line branch `σ1 – σk – σ2`
   (`k = 0, 3`) with balanced middle machine and positive degree `s` satisfies the identity

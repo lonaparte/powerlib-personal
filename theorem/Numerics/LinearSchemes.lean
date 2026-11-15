@@ -209,14 +209,6 @@ well-posed implicit step): the Cayley map `λ ↦ (1 + hλ/2)/(1 - hλ/2)` of th
   (trapezoidal_schurStable_iff_isHurwitz hh
     (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh))).2 hA
 
-/-- Trapezoidal rule, converse: a well-posed Schur-stable trapezoidal recursion comes from a
-Hurwitz matrix.  Together with `trapezoidal_schurStable_of_isHurwitz` the trapezoidal rule
-neither creates nor destroys stability of `ẋ = A x`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_of_trapezoidal_schurStable (hh : 0 < h)
-    (hP : IsUnit (1 - (h / 2) • A).det) (hS : LTI.SchurStable (trapezoidalMatrix h A)) :
-    IsHurwitz A :=
-  (trapezoidal_schurStable_iff_isHurwitz hh hP).1 hS
-
 /-- Backward Euler: Hurwitz implies Schur stability for every `h > 0` (the eigenvalues map to
 `1/(1 - hλ)`, `Linear.schurStable_mobius_iff`). -/
 @[tmio T, powerlib_foundation] theorem backwardEuler_schurStable_of_isHurwitz (hA : IsHurwitz A)

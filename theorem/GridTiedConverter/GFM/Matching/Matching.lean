@@ -55,10 +55,9 @@ Family and connection conclusions.
   family's denotation is the swing family's pulled back along `MatchingModel.toSwing`
   (`M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`, point `(θ*, η v*)`):
   the coordinate change `(θ, v) ↦ (θ, η v)` (`Dynamics.scaleCoord`) transports every sentence
-  (`Dynamics.holds_transport_iff`). The sentence-by-sentence equivalences
-  `matching_locallyExponentiallyStable_iff`, `matching_unstable_iff` are private implementation
-  evidence, together with the solution correspondence `matching_trajectory_iff` (a
-  trajectory-level statement outside the sentence language).
+  (`Dynamics.holds_transport_iff`); read member-wise it gives every sentence-by-sentence
+  equivalence. The solution correspondence `matching_trajectory_iff` (a trajectory-level
+  statement outside the sentence language) is private implementation evidence.
 * `swing_mem_den_iff_hub_of_sinusoid` (connection comparison): on a speed-independent sinusoidal
   law `P_e(θ, ω) = k₁ + k₂ sin(θ − k₃)` with `ω* = 0` a swing model is the canonical swing model
   `⟨M, D, τ, k₁, k₂, k₃⟩` of `Synchronous.Swing.family` about `θ*`; through that hub
@@ -426,30 +425,6 @@ point `(θ*, η v*)`. -/
     rw [matching_eq_swing m.C_ne m.η_ne]
     rfl
   rw [hpt, hfield, holds_transport_iff]
-
-/-- Local exponential stability transfers between the matching and swing models.
-Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-@[tmio TM, powerlib_domain] private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
-    (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    connection% ((⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη,
-        rfl⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
-      (⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη, rfl⟩ : MatchingModel) ∈ matchingFamily.den
-          (.flow .locallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  exact (Set.ext_iff.mp (matching_den_eq .locallyExponentiallyStable) (⟨⟨G, C, 0⟩, η, idc, ix,
-      x 0, x 1, hC, hη, rfl⟩ : MatchingModel)).symm
-
-/-- Instability transfers between the matching and swing models.
-Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-@[tmio TM, powerlib_domain] private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
-    (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    connection% ((⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη,
-        rfl⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .unstable) ↔
-      (⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη, rfl⟩ : MatchingModel) ∈ matchingFamily.den
-          (.flow .unstable)) := by
-  unfold TMIO.Statement
-  exact (Set.ext_iff.mp (matching_den_eq .unstable) (⟨⟨G, C, 0⟩, η, idc, ix, x 0, x 1, hC, hη,
-      rfl⟩ : MatchingModel)).symm
 
 /-! ## The swing family read through the swing hub -/
 

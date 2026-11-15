@@ -40,7 +40,7 @@ Results.
   translation and an implication between the requirement languages
   (`realizationSoundUnder_of_requirements`, `realizationSoundUnder_of_exact`), and the dual
   reduction of completeness (`realizationCompleteUnder_of_requirements`).
-* Realization by a design map (`ofDesign`, `mem_ofDesign`, `certify_ofDesign`,
+* Realization by a design map (`ofDesign`, `certify_ofDesign`,
   `certify_realizes_of_design`); pointwise soundness obligations and witnesses against soundness
   and completeness (`realizationSoundUnder_of_design`, `not_realizationSoundUnder_of_design`,
   `not_realizationCompleteUnder_of_design`); exactness of a realization whose implementation
@@ -220,13 +220,6 @@ variable {X Q Y R : Type*} {n p m q : ℕ}
 
 /-- The realization relation of a design map: each implementation realizes its design model. -/
 def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
-
-@[tmio T, simp, powerlib_foundation] theorem mem_ofDesign {design : Y → X} {x : X} {y : Y} :
-    connection% (y ∈ certify (ofDesign design) {x} ↔ design y = x) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% mem_certify)]
-  change (∀ x', design y = x' → x' = x) ↔ design y = x
-  exact ⟨fun h => h _ rfl, fun h _ hx => hx ▸ h⟩
 
 /-- Certification against a design map is its preimage. -/
 @[tmio T, powerlib_foundation] theorem certify_ofDesign (design : Y → X) (P : Set X) :

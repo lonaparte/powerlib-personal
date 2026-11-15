@@ -17,9 +17,9 @@ module theorem.GridTiedConverter.GFM.VSMSwing where
 -- also fixes the VSM family (`VSMContent`, `VSMReading.vsmFamily`) through which
 -- `theorem/GridTiedConverter/GFM/DroopVSM.agda` reads the droop + LPF loop. Lean: `sameField` is
 -- the field identity in the proof of `GFM.DroopVSM.vsm_mem_den_iff_swing_of_sinusoid`,
--- `busSinusoid` and `busImage` the rewriting in the proof of `GFM.DroopVSM.vsm_mem_den_iff_swing`;
--- `den↔` is `GFM.DroopVSM.vsm_mem_den_iff_swing_of_sinusoid`, `den↔-bus` is
--- `GFM.DroopVSM.vsm_mem_den_iff_swing`. The VSM family's own laws are
+-- `busSinusoid` and `busImage` its instance `k₁ = k₃ = 0`, `ω_s = 0`; `den↔` is
+-- `GFM.DroopVSM.vsm_mem_den_iff_swing_of_sinusoid`, `den↔-bus` is the same theorem at
+-- `k₁ = k₃ = 0`, `ω_s = 0`. The VSM family's own laws are
 -- `GFM.DroopVSM.vsmFamily_chain_le_semantics` and
 -- `GFM.DroopVSM.vsm_mem_den_locallyExponentiallyStable`. Nothing here is exported.
 

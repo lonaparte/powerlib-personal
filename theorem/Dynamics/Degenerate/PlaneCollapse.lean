@@ -35,7 +35,7 @@ Results.
 * `unstable_of_cone`: instability from a cone `{σ y_k > 0, W ≥ 0}` at the plane that the field
   enters through its boundary and in which `σ y_k` grows at a positive rate (the degenerate case of
   the plane where the power term vanishes at `x`); helpers `Dynamics.deriv_nonpos_of_isMinOn_right`,
-  `Dynamics.exists_pos_of_hasDerivAt` (`theorem/Dynamics/Calculus.lean`).
+  `Dynamics.eventually_pos_of_hasDerivAt` (`theorem/Dynamics/Calculus.lean`).
 * `locallyExponentiallyStable_of_spiral`: spiral collapse. If off the plane `y_k f_k = q` with a
   `C¹` function `q`, `q(x) = 0`, `dq/dt = g + h q / y_k`, and `h(x)² + 4 g(x) < 0`, while on the
   plane `f_k ≠ 0`, then `x` satisfies the local exponential estimate: in the time `dτ = dt / y_k`
@@ -363,7 +363,8 @@ a point of the cone close to `x` stays in it and leaves every small ball. -/
     have h := (hWd (x + (0 : ℝ) • v)).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl
     rw [zero_smul, add_zero] at h
     exact h
-  obtain ⟨t₀, ht₀, hWt₀⟩ := exists_pos_of_hasDerivAt hline (by simpa using hW0) hWv hε0
+  obtain ⟨t₀, hWt₀, ht₀⟩ := ((eventually_pos_of_hasDerivAt hline (by simpa using hW0) hWv).and
+    (Ioo_mem_nhdsGT hε0)).exists
   set y₀ : State n := x + t₀ • v with hy₀
   have hy₀x : ‖y₀ - x‖ < min δ (ρ / 2) := by
     rw [hy₀, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos ht₀.1]

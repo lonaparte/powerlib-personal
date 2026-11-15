@@ -17,7 +17,7 @@ module theorem.PowerSystem.Synchronous.SwingPortHamiltonian where
 -- (`image-passive`; `image-lyapunovStable`, for every `D ≥ 0`, including `D = 0`); they are not
 -- stated of the swing models. The requirement languages of the two families take no part in the
 -- connection and are left empty here. Lean: `conjugate` is
--- `Synchronous.SwingParams.stateMatrix_eq_conj` (with `stateMatrix_mul`), `lin-flow` and `ph-flow`
+-- `Synchronous.SwingParams.stateMatrix_eq_conj`, `lin-flow` and `ph-flow`
 -- are `Family.IsLinear.mem_den_flow` (`Synchronous.Swing.Linearized.family_isLinear`,
 -- `Port.PortHamiltonian.family_isLinear`), `similar` is `Linear.holds_conj`, `den↔` is
 -- `Synchronous.SwingParams.linearPH_mem_den_flow_iff`; `ph-passive`, `ph-ls` are

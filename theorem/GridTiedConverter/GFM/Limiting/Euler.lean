@@ -23,8 +23,8 @@ Model boundary.
   implicit or higher-order schemes, the integration error against the continuous trajectory.
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step`),
 `theorem/GridTiedConverter/GFM/Limiting/Saturation.lean` (`satField_contDiff`,
 `saturated_stable_equilibrium`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -39,11 +39,11 @@ Family and connection conclusions.
   (`Implementation.ofDesign Euler.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy (`Spectral.localFamily_isAutonomous`, the family is a local family) and the
-  public smoothness lemma `Limiting.contDiff_modelField`: `Numerics.euler_sound_small_step`
+  public smoothness lemma `Limiting.contDiff_modelField`: `Numerics.euler_sound_small_step_local`
   (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such
   that every Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
-  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
-  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the stable saturated equilibrium with
   `M = D = P_sat = 1`, `P_ref = φ = 0` has Euler integrations with every multiplier outside the
   unit disk.
@@ -73,7 +73,7 @@ def euler : Implementation SatModel Spectral.Requirement Euler Spectral.Requirem
   Numerics.euler family SatModel.field Euler.design Euler.h
 
 /-- The translated field of a saturated GFM model is `C¹`: the smoothness hypothesis of the
-generic Euler laws (`Numerics.euler_sound_small_step`). -/
+generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : SatModel) :
     ContDiff ℝ 1 (SatModel.field m) :=
   (satField_contDiff _ _ _ _ _).comp (contDiff_id.add contDiff_const)

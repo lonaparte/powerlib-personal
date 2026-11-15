@@ -41,9 +41,10 @@ the four-state reading: `theorem/GridTiedConverter/GFL/DCLink/BasinGuardFourStat
 Results.
 * `Pac_eq` : `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)` for both signs `s`
   (the `X_g` cross terms cancel in `Re S̄`); `Pac_flip_invariant`.
-* `carrierField_reflect` : for `I_q* = 0`, the involution
+* `carrierField_reflect_sign` : for `I_q* = 0`, the involution
   `S(θ_e, x_p, V_dc, ξ) = (−θ_e, −x_p, V_dc, ξ)` conjugates the two writings,
-  `F_{s=−1} ∘ S = S ∘ F_{s=1}`; `carrierField_neg_eq_transport` expresses this as a coordinate
+  `F_{−s} ∘ S = S ∘ F_s` (in particular `F_{s=−1} ∘ S = S ∘ F_{s=1}`);
+  `carrierField_neg_sign_eq_transport` expresses this as a coordinate
   transport, so equilibria correspond (`carrier_equilibrium_iff`), every sentence holds at
   mirror points alike (`BasinGuard.flip_mem_den_iff`, below) and the Jacobians are similar with
   equal characteristic polynomials (`carrier_jacobian_charpoly`).
@@ -245,11 +246,6 @@ variable (q : CarrierParams)
   fin_cases i <;>
     simp [carrierField, vg_im, Pac_eq, hidr, hIq, sin_neg, cos_neg] <;> ring
 
-/-- `I_q* = 0`: `F_{s=−1} ∘ S = S ∘ F_{s=1}`. -/
-@[tmio M, powerlib_domain] theorem carrierField_reflect (hIq : q.Iq = 0) (x : State 4) :
-    q.carrierField (-1) (carrierReflect x) = carrierReflect (q.carrierField 1 x) :=
-  q.carrierField_reflect_sign hIq 1 x
-
 /-- `I_q* = 0`: for every drop sign `s`, the writing with `−s` is the one with `s` transported
 by `S`. -/
 @[tmio M, powerlib_domain] theorem carrierField_neg_sign_eq_transport (hIq : q.Iq = 0) (s : ℝ) :
@@ -262,16 +258,11 @@ by `S`. -/
   conv_lhs => rw [← carrierReflect.apply_symm_apply y]
   exact q.carrierField_reflect_sign hIq s _
 
-/-- `I_q* = 0`: the flipped writing is the IN-positive carrier transported by `S`. -/
-@[tmio M, powerlib_domain] theorem carrierField_neg_eq_transport (hIq : q.Iq = 0) :
-    q.carrierField (-1) = Dynamics.transportField carrierReflect 0 (q.carrierField 1) :=
-  q.carrierField_neg_sign_eq_transport hIq 1
-
 /-- `I_q* = 0`: equilibria correspond under `S`.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem carrier_equilibrium_iff (hIq : q.Iq = 0) (x : State 4) :
     q.carrierField (-1) (carrierReflect x) = 0 ↔ q.carrierField 1 x = 0 := by
-  rw [q.carrierField_reflect hIq]
+  rw [q.carrierField_reflect_sign hIq 1]
   exact carrierReflect.map_eq_zero_iff
 
 /-- `I_q* = 0`: if the IN-positive carrier has Jacobian `A` at `x`, the flipped writing has
@@ -289,7 +280,7 @@ Jacobian `S A S` at `S x`, with the same characteristic polynomial (same spectru
           (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) :=
       Dynamics.fderiv_transportField_matrix carrierReflectMatrix carrierReflectMatrix_isUnit
         0 A hf hJac
-    rw [← q.carrierField_neg_eq_transport hIq] at h
+    rw [← q.carrierField_neg_sign_eq_transport hIq 1] at h
     simpa [Dynamics.affineCoord, carrierReflect] using h
   · rw [Matrix.mul_assoc, Matrix.charpoly_mul_comm, Matrix.mul_assoc,
       Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).mp carrierReflectMatrix_isUnit),

@@ -641,32 +641,6 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
     simp
     nlinarith [sq_pos_of_ne_zero hBne]
 
-/-- A supercritical boundary point (`k_p k_i < 0`) is locally asymptotically stable. -/
-@[tmio TM, powerlib_domain] private theorem las_of_hopf {m : Model}
-    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
-    (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
-    (hk : m.params.kp * m.params.ki < 0) :
-    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change LocalAsymptoticStable m.field 0
-  obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
-  exact hopf_las hA hα hq ((model_kappa_sign hD0 hdet).1 hk) m.field_contDiff
-    (model_hg0 heq hD0 htr) (model_hg1 heq)
-
-/-- A subcritical boundary point (`k_p k_i > 0`) is unstable. -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_hopf {m : Model}
-    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
-    (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
-    (hk : 0 < m.params.kp * m.params.ki) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change Unstable m.field 0
-  obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
-  exact hopf_unstable hA hα hq ((model_kappa_sign hD0 hdet).2 hk) m.field_contDiff
-    (model_hg0 heq hD0 htr) (model_hg1 heq)
-
 /-- A boundary point without proportional gain (`k_p = 0`) conserves an energy. -/
 @[tmio TM, powerlib_domain] private theorem not_las_of_hopf_kp_eq_zero {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
@@ -694,9 +668,12 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
+  unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact (family_isAutonomous.mem_den_flow.mp (las_of_hopf heq hD0 htr hdet hk))
+  change LocalAsymptoticStable m.field 0
+  obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
+  exact hopf_las hA hα hq ((model_kappa_sign hD0 hdet).1 hk) m.field_contDiff
+    (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL on the boundary `tr J = 0` with gains of equal signs, `k_p k_i > 0`: a
 subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ < 0`). -/
@@ -705,9 +682,12 @@ subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ <
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) :
     connection% (m ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
+  unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact (family_isAutonomous.mem_den_flow.mp (unstable_of_hopf heq hD0 htr hdet hk))
+  change Unstable m.field 0
+  obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
+  exact hopf_unstable hA hα hq ((model_kappa_sign hD0 hdet).2 hk) m.field_contDiff
+    (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`)
 exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is unstable
@@ -802,7 +782,8 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
           rw [h, zero_div]
         have hkp : m.params.kp = 0 := (mul_eq_zero.mp hk).resolve_right hki
         exact ((fun hFlowConnection => (not_las_of_hopf_kp_eq_zero heq hD0 htr hdet hkp) (family_isAutonomous.mem_den_flow.mpr hFlowConnection)) hLAS).elim
-      · exact (((family_isAutonomous.mem_den_flow.mp (unstable_of_hopf heq hD0 htr hdet hk))) hLAS.1).elim
+      · exact ((family_isAutonomous.mem_den_flow.mp
+          (mem_den_unstable_of_hopf m heq hD0 htr hdet hk)) hLAS.1).elim
     · exact (hunst he (Or.inl htr)).elim
   · rintro ⟨he, hdet, htr | ⟨htr, hk⟩⟩
     · exact hden (.flow .locallyAsymptoticallyStable) (by
@@ -812,7 +793,8 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
         · exact he
         · exact ⟨htr, hdet⟩)
     · rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-      exact (family_isAutonomous.mem_den_flow.mp (las_of_hopf he.1 he.2 htr hdet hk))
+      exact (family_isAutonomous.mem_den_flow.mp
+        (mem_den_locallyAsymptoticallyStable_of_hopf m he.1 he.2 htr hdet hk))
 
 /-! ### The local asymptotic translation is not exact -/
 

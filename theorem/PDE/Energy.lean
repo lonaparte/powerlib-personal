@@ -88,15 +88,6 @@ variable {u : ℝ × ℝ → ℝ}
   rw [hfun]
   exact ((h1.continuous_fderiv one_ne_zero).clm_apply continuous_const).clm_apply continuous_const
 
-@[tmio T, powerlib_foundation] theorem continuous_dxdx (hu : ContDiff ℝ 2 u) : Continuous (dx (dx u)) :=
-  continuous_second hu (1, 0) (1, 0)
-
-@[tmio T, powerlib_foundation] theorem continuous_dtdt (hu : ContDiff ℝ 2 u) : Continuous (dt (dt u)) :=
-  continuous_second hu (0, 1) (0, 1)
-
-@[tmio T, powerlib_foundation] theorem continuous_dtdx (hu : ContDiff ℝ 2 u) : Continuous (dt (dx u)) :=
-  continuous_second hu (0, 1) (1, 0)
-
 /-! ## Heat equation: energy dissipation and uniqueness -/
 
 /-- `d/dt ∫₀^ℓ u² = 2∫₀^ℓ u u_t`. -/
@@ -127,7 +118,7 @@ variable {u : ℝ × ℝ → ℝ}
     (v := fun x => dx u (x, t)) (v' := fun x => dx (dx u) (x, t))
     (fun x _ => hasDerivAt_x_line hd x t) (fun x _ => hasDerivAt_x_line hdxd x t)
     ((continuous_dx hu).comp (by fun_prop) |>.intervalIntegrable 0 ℓ)
-    ((continuous_dxdx hu).comp (by fun_prop) |>.intervalIntegrable 0 ℓ)
+    ((continuous_second hu (1, 0) (1, 0)).comp (by fun_prop) |>.intervalIntegrable 0 ℓ)
   rw [hcongr, intervalIntegral.integral_const_mul, hibp, h0, hℓ]
   simp only [zero_mul, sub_zero, zero_sub]
   rw [show (fun x => dx u (x, t) * dx u (x, t)) = fun x => dx u (x, t) ^ 2 by funext; ring]
@@ -220,8 +211,8 @@ variable {u : ℝ × ℝ → ℝ}
   have hderiv := hasDerivAt_integral_param (G := fun p => (dt u p ^ 2 + c ^ 2 * dx u p ^ 2) / 2)
     (Gt := fun p => dt u p * dt (dt u) p + c ^ 2 * (dx u p * dt (dx u) p)) 0 ℓ
     ((((continuous_dt hu).pow 2).add (continuous_const.mul ((continuous_dx hu).pow 2))).div_const 2)
-    (((continuous_dt hu).mul (continuous_dtdt hu)).add
-      (continuous_const.mul ((continuous_dx hu).mul (continuous_dtdx hu))))
+    (((continuous_dt hu).mul (continuous_second hu (0, 1) (0, 1))).add
+      (continuous_const.mul ((continuous_dx hu).mul (continuous_second hu (0, 1) (1, 0)))))
     (fun x τ => by
       have h1 := (hasDerivAt_pow 2 (dt u (x, τ))).comp τ (hasDerivAt_t_line hdtd x τ)
       have h2 := (hasDerivAt_pow 2 (dx u (x, τ))).comp τ (hasDerivAt_t_line hdxd x τ)
@@ -244,7 +235,7 @@ variable {u : ℝ × ℝ → ℝ}
     ((((continuous_second hu (1, 0) (0, 1)).comp (by fun_prop)).mul
       ((continuous_dx hu).comp (by fun_prop))).add
       (((continuous_dt hu).comp (by fun_prop)).mul
-      ((continuous_dxdx hu).comp (by fun_prop))) |>.intervalIntegrable 0 ℓ)
+      ((continuous_second hu (1, 0) (1, 0)).comp (by fun_prop))) |>.intervalIntegrable 0 ℓ)
   have hcomm : (∫ x in (0 : ℝ)..ℓ,
       (dt u (x, t) * dx (dx u) (x, t) + dx (dt u) (x, t) * dx u (x, t))) =
       ∫ x in (0 : ℝ)..ℓ, (dx (dt u) (x, t) * dx u (x, t) + dt u (x, t) * dx (dx u) (x, t)) :=

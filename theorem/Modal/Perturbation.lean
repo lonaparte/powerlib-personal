@@ -23,8 +23,8 @@ theory/T-participation-factor.md (left/right eigenvectors).
 
 Results.
 * `bauerFike` — if `A = V Λ V⁻¹` (`Λ = diag λ`), every eigenvalue `μ` of `A + E` satisfies
-  `minᵢ |μ − λᵢ| ≤ ‖V‖ ‖V⁻¹‖ ‖E‖`; `ModalBasis.bauerFike` is the same with the modal data
-  (`V⁻¹ = Wᵀ`).
+  `minᵢ |μ − λᵢ| ≤ ‖V‖ ‖V⁻¹‖ ‖E‖` (for a `ModalBasis`: `bauerFike mb.V_mul_Wt mb.decomp`,
+  `V⁻¹ = Wᵀ`).
 * `bauerFike_hermitian` — normal-matrix corollary, Hermitian case via Mathlib's spectral theorem
   `Matrix.IsHermitian.spectral_theorem`, unitary `V`, `‖V‖ = ‖V⁻¹‖ = 1`:
   `minᵢ |μ − λᵢ| ≤ ‖E‖`.
@@ -35,8 +35,8 @@ Results.
   the `ℓ²` operator norm form a C⋆-algebra), which is attained at some `1/(μ − ν)`, `ν ∈ σ(A)`
   (`spectrum.exists_nnnorm_eq_spectralRadius`); `x = R E x` gives `1 ≤ ‖R‖ ‖E‖`.
   `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix
-  (membership form of `LTI.spectrum_eq_setOf_eigenpair`, `theorem/LTI/Discrete.lean`).
-  `bauerFike_normal_spectrum`: the same with `μ ∈ σ(A + E)` (spectrum form).
+  (membership form of `LTI.spectrum_eq_setOf_eigenpair`, `theorem/LTI/Discrete.lean`), which
+  turns the hypothesis into `μ ∈ σ(A + E)`.
 * `eigenvalue_sensitivity` — along a differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` with a
   left eigenvector `ψ` of `A(α₀)` (`ψᵀ v(α₀) ≠ 0`), `λ'(α₀) = ψᵀ A'(α₀) v(α₀) / (ψᵀ v(α₀))`
   (`= ψᵀ A' v` under the normalisation `ψᵀ v = 1`). The existence of a differentiable branch
@@ -129,13 +129,6 @@ omit [DecidableEq n] in
   calc ‖lam i - μ‖ = ‖lam i - μ‖ * 1 := (mul_one _).symm
     _ ≤ ‖lam i - μ‖ * (‖V‖ * ‖lam i - μ‖⁻¹ * ‖Vinv‖ * ‖E‖) := by gcongr
     _ = ‖V‖ * ‖Vinv‖ * ‖E‖ := by field_simp
-
-/-- Bauer–Fike with the modal data of a `ModalBasis` (`V⁻¹ = Wᵀ`). -/
-@[tmio T, powerlib_foundation] theorem ModalBasis.bauerFike {A : Matrix n n ℂ} (mb : ModalBasis A)
-    (E : Matrix n n ℂ) {μ : ℂ} {x : EuclideanSpace ℂ n} (hx : x ≠ 0)
-    (heig : act (A + E) x = μ • x) :
-    ∃ i, ‖μ - mb.eig i‖ ≤ ‖mb.V‖ * ‖mb.Wᵀ‖ * ‖E‖ :=
-  powerlib.Modal.bauerFike mb.V_mul_Wt mb.decomp hx heig
 
 /-- **Bauer–Fike for Hermitian (normal) matrices**: the eigenvector matrix is unitary, so every
 eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
@@ -237,18 +230,6 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
   · rw [sub_sub_cancel, norm_inv, hzn]
     rw [inv_le_iff_one_le_mul₀' hRpos]
     linarith
-
-/-- **Bauer–Fike for normal matrices**, spectral form: `A` normal, `μ ∈ σ(A + E)` ⇒
-`∃ ν ∈ σ(A)`, `|μ − ν| ≤ ‖E‖₂`. -/
-@[tmio T, powerlib_foundation] theorem bauerFike_normal_spectrum {A E : Matrix n n ℂ}
-    (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ} (hμ : μ ∈ spectrum ℂ (A + E)) :
-    ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
-  obtain ⟨w, hw, hAw⟩ := mem_spectrum_iff_exists_eigvec.mp hμ
-  refine bauerFike_normal hA (x := WithLp.toLp 2 w) (fun h => hw ?_) ?_
-  · have := congrArg WithLp.ofLp h
-    simpa using this
-  · rw [act, Matrix.toEuclideanCLM_toLp, hAw]
-    rfl
 
 /-! ## First-order sensitivity of a simple eigenvalue -/
 

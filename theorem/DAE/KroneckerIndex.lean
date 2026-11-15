@@ -242,13 +242,6 @@ array of order `μ` is 1-full iff `N ^ μ = 0`. -/
   · rintro rfl
     exact ⟨pow_nilpotencyClass hN, fun μ hlt h => (not_le.mpr hlt) (Nat.sInf_le h)⟩
 
-/-- Differentiation index of the Weierstrass block form = nilpotency class of `N`. -/
-@[tmio T, powerlib_foundation] theorem isDiffIndex_blocks_iff {k l : ℕ} (J : Matrix (Fin k) (Fin k) K)
-    {N : Matrix (Fin l) (Fin l) K} (hN : IsNilpotent N) (ν : ℕ) :
-    IsDiffIndex (fromBlocks 1 0 0 N) (fromBlocks J 0 0 1) ν ↔ ν = nilpotencyClass N := by
-  rw [IsDiffIndex, oneFull_blocks_iff J hN, ← pow_eq_zero_iff_class hN]
-  simp only [oneFull_blocks_iff J hN, ne_eq]
-
 namespace WeierstrassForm
 
 variable {E A : Matrix ι ι K} (W : WeierstrassForm E A)
@@ -266,16 +259,13 @@ nilpotency class of `N` (the least `ν` with `N ^ ν = 0`). -/
   rw [IsDiffIndex, W.oneFull_iff, ← pow_eq_zero_iff_class W.nilpotent]
   simp only [W.oneFull_iff, ne_eq]
 
-@[tmio T, powerlib_foundation] theorem isDiffIndex : IsDiffIndex E A (nilpotencyClass W.N) :=
-  (W.isDiffIndex_iff _).mpr rfl
-
 end WeierstrassForm
 
 /-- The Kronecker index is well defined: two Weierstrass forms of the same pencil have nilpotent
 blocks of the same nilpotency class. -/
 @[tmio T, powerlib_foundation] theorem kroneckerIndex_eq {E A : Matrix ι ι K} (W W' : WeierstrassForm E A) :
     nilpotencyClass W.N = nilpotencyClass W'.N :=
-  isDiffIndex_unique W.isDiffIndex W'.isDiffIndex
+  isDiffIndex_unique ((W.isDiffIndex_iff _).mpr rfl) ((W'.isDiffIndex_iff _).mpr rfl)
 
 /-- Every regular pencil over an infinite field has a differentiation index, equal to the
 Kronecker index of any of its Weierstrass forms. -/
@@ -283,7 +273,7 @@ Kronecker index of any of its Weierstrass forms. -/
     (h : Regular E A) :
     ∃ ν, IsDiffIndex E A ν ∧ ∀ W : WeierstrassForm E A, ν = nilpotencyClass W.N := by
   obtain ⟨W⟩ := weierstrass h
-  exact ⟨_, W.isDiffIndex, fun W' => kroneckerIndex_eq W W'⟩
+  exact ⟨_, (W.isDiffIndex_iff _).mpr rfl, fun W' => kroneckerIndex_eq W W'⟩
 
 /-! ## Meaning on solutions -/
 

@@ -31,8 +31,9 @@ Results.
 * `bdfResidual_hasFDerivAt` — `∂Φ/∂z = ∂F/∂z + c ∂F/∂ż` for `Φ(z) = F(z, cz + d)`.
 * `semiExplicitBDFResidual_hasFDerivAt` — for the semi-explicit DAE the Newton Jacobian is
   `(u, w) ↦ (c u − f'(u, w), g'(u, w))`, i.e. `[[cI − f_x, −f_y], [g_x, g_y]]`.
-* `daeJacobian_det` — wrapper of Mathlib `Matrix.det_fromBlocks₂₂`:
-  `det 𝒥 = det A_yy · det(cI − (A_xx − A_xy A_yy⁻¹ A_yx))`; `daeJacobian_isUnit_iff`.
+* `daeJacobian_isUnit_iff` — by Mathlib `Matrix.det_fromBlocks₂₂`,
+  `det 𝒥 = det A_yy · det(cI − (A_xx − A_xy A_yy⁻¹ A_yx))`, so with `A_yy` invertible the Newton
+  matrix is invertible iff `cI − A_red` is.
 * `baumgarteModel_isHurwitz`, `baumgarteModel_exponentiallyStable`,
   `baumgarte_constraint_exponentialDecay`, `baumgarte_constraint_tendsto_zero` — for `α > 0`,
   `β ≠ 0` the constraint residual decays exponentially.
@@ -43,7 +44,8 @@ Results.
 * `bdf_index2_exact` — on the index-2 DAE `ẋ = y`, `0 = x − p(t)`, BDF`k` of order `k`
   reproduces the algebraic variable exactly, `y_k = p'(t_k)`, for every polynomial `p` of
   degree `≤ k` (no order reduction); it applies to BDF1–BDF6 through the exact-order facts of
-  `theorem/Numerics/BDF.lean` (`bdf2_exactOrder.1`, …), e.g. `bdf2_index2_exact`.
+  `theorem/Numerics/BDF.lean` (`bdf2_exactOrder.1`, …), e.g.
+  `bdf_index2_exact _ _ bdf2_exactOrder.1` for BDF2.
 
 Corrections.
 * §1.3: "BDF`k` has order `p = k` **if and only if** index `≤ 1`" is wrong in the "only if"
@@ -116,23 +118,19 @@ section Schur
 
 variable {n m : Type*} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m]
 
-/-- `det 𝒥 = det A_yy · det(cI − A_red)`, `A_red = A_xx − A_xy A_yy⁻¹ A_yx`
-(wrapper of Mathlib `Matrix.det_fromBlocks₂₂`). -/
-@[tmio T, powerlib_foundation] theorem daeJacobian_det (c : ℝ) (Axx : Matrix n n ℝ) (Axy : Matrix n m ℝ)
-    (Ayx : Matrix m n ℝ) (Ayy : Matrix m m ℝ) [Invertible Ayy] :
-    (fromBlocks (c • (1 : Matrix n n ℝ) - Axx) (-Axy) Ayx Ayy).det =
-      Ayy.det * (c • (1 : Matrix n n ℝ) - (Axx - Axy * Ayy⁻¹ * Ayx)).det := by
-  rw [det_fromBlocks₂₂, Matrix.invOf_eq_nonsing_inv]
-  congr 2
-  simp only [Matrix.neg_mul]
-  abel
-
-/-- With `A_yy` invertible, the Newton matrix is invertible iff `cI − A_red` is. -/
+/-- With `A_yy` invertible, the Newton matrix is invertible iff `cI − A_red` is,
+`A_red = A_xx − A_xy A_yy⁻¹ A_yx`: by Mathlib `Matrix.det_fromBlocks₂₂`,
+`det 𝒥 = det A_yy · det(cI − A_red)`. -/
 @[tmio T, powerlib_foundation] theorem daeJacobian_isUnit_iff (c : ℝ) (Axx : Matrix n n ℝ)
     (Axy : Matrix n m ℝ) (Ayx : Matrix m n ℝ) (Ayy : Matrix m m ℝ) [Invertible Ayy] :
     IsUnit (fromBlocks (c • (1 : Matrix n n ℝ) - Axx) (-Axy) Ayx Ayy).det ↔
       IsUnit (c • (1 : Matrix n n ℝ) - (Axx - Axy * Ayy⁻¹ * Ayx)).det := by
-  rw [daeJacobian_det, IsUnit.mul_iff]
+  have hred : c • (1 : Matrix n n ℝ) - Axx - -Axy * ⅟Ayy * Ayx =
+      c • (1 : Matrix n n ℝ) - (Axx - Axy * Ayy⁻¹ * Ayx) := by
+    rw [Matrix.invOf_eq_nonsing_inv]
+    simp only [Matrix.neg_mul]
+    abel
+  rw [det_fromBlocks₂₂, hred, IsUnit.mul_iff]
   exact ⟨fun h => h.2, fun h => ⟨isUnit_det_of_invertible Ayy, h⟩⟩
 
 end Schur
@@ -340,13 +338,6 @@ has order `k`.  (The grid origin is arbitrary: shift `t`.) -/
   rw [hsum] at hstep
   have hne : h * (βk : ℝ) ≠ 0 := mul_ne_zero hh (by exact_mod_cast hβ)
   exact (mul_left_cancel₀ hne hstep).symm
-
-/-- BDF2 instance of `bdf_index2_exact`. -/
-@[tmio T, powerlib_foundation] theorem bdf2_index2_exact {h : ℝ} (hh : h ≠ 0) (a : ℕ → ℝ) (y : ℝ)
-    (hstep : ∑ i : Fin (2 + 1), (((![1/3, -4/3, 1] : Fin 3 → ℚ) i : ℚ) : ℝ) *
-        ∑ q ∈ range (2 + 1), a q * ((i : ℝ) * h) ^ q = h * ((2 / 3 : ℚ) : ℝ) * y) :
-    y = ∑ q ∈ range (2 + 1), a q * ((q : ℝ) * (((2 : ℕ) : ℝ) * h) ^ (q - 1)) :=
-  bdf_index2_exact _ _ bdf2_exactOrder.1 (by norm_num) hh a y hstep
 
 end Index2
 

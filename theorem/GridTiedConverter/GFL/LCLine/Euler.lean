@@ -18,18 +18,18 @@ Model boundary.
   project-code frame, state `(θ_c, η)`, read about its selected point `(θ_c*, 0)`, with the model
   boundary of `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`. Its field is `C¹` for every
   parameter set (the reflection of the reduced field, whose phase-detector characteristic is a
-  trigonometric polynomial, `Params.contDiff_h_one`).
+  trigonometric polynomial, `Params.contDiff_h`).
 * Implementation layer (I). `LCLine.CodeEuler`: a model and a step `h > 0`; the system is the
   explicit Euler map `z ↦ z + h f(z)` of the translated code-frame field, with step length `h`,
   discrete time, exact arithmetic (no round-off), fixed step. Excluded: step-size control, implicit
   or higher-order schemes, the integration error against the continuous trajectory.
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step`),
 `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean` (`codeFamily_isAutonomous`,
-`Params.codeField_eq_transport`, `Params.reducedField_eq`, `Params.contDiff_h_one`,
-`code_mem_den_iff`), `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`Params.h_eq`,
+`Params.codeField_eq_transport`, `Params.reducedField_eq`, `codeFamily_den`),
+`theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`Params.contDiff_h`, `Params.h_eq`,
 `Params.deriv_h_eq`), `theorem/GridTiedConverter/PLL/PIPLLFamily.lean`
 (`mem_den_locallyExponentiallyStable_of_pos`); work-sync `theory/T-numerical-integration.md` §1.2,
 §2.7.
@@ -45,15 +45,16 @@ Family and connection conclusions.
   (`Implementation.ofDesign CodeEuler.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `LCLine.codeFamily_isAutonomous` and the public smoothness lemma
-  `LCLine.code_contDiff_field`: `Numerics.euler_sound_small_step` (scaffold `sound-small-step`: a
-  locally exponentially stable model has a step `h₀ > 0` such that every Euler integration with a
-  step `h ≤ h₀` is locally exponentially stable) and `Numerics.euler_certified_small_step`
-  (scaffold `certified-small-step`). `code_not_euler_realizationSoundUnder` (scaffold
-  `not-sound-large-step`): without a step constraint the realization is not sound — the model with
-  unit filter capacitance, grid frequency and EMF, a line without impedance, zero current
-  references and unit PLL gains at `θ_c* = 0` (`h = −sin`, locally exponentially stable through
-  the text frame) has Euler integrations with every multiplier outside the unit disk. The
-  statements carry the prefix `code_` of the family's other conclusions.
+  `LCLine.code_contDiff_field`: `Numerics.euler_sound_small_step_local` (scaffold
+  `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such that every
+  Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `code_not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`): without
+  a step constraint the realization is not sound — the model with unit filter capacitance, grid
+  frequency and EMF, a line without impedance, zero current references and unit PLL gains at
+  `θ_c* = 0` (`h = −sin`, locally exponentially stable through the text frame) has Euler
+  integrations with every multiplier outside the unit disk. The statements carry the prefix `code_`
+  of the family's other conclusions.
 -/
 
 noncomputable section
@@ -82,12 +83,12 @@ def codeEuler : Implementation CodeModel PLL.PIPLL.Requirement CodeEuler PLL.PIP
 
 /-- The translated code-frame field is `C¹`: the reflection of the reduced field, whose
 phase-detector characteristic `h` is `C¹` for every parameter set. The smoothness hypothesis of the
-generic Euler laws (`Numerics.euler_sound_small_step`). -/
+generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem code_contDiff_field (m : CodeModel) :
     ContDiff ℝ 1 (CodeModel.field m) := by
   have h : ContDiff ℝ 1 m.params.codeField := by
     rw [Params.codeField_eq_transport, Params.reducedField_eq]
-    exact Dynamics.contDiff_transportField _ _ (PLL.contDiff_piPLLField m.params.contDiff_h_one)
+    exact Dynamics.contDiff_transportField _ _ (PLL.contDiff_piPLLField m.params.contDiff_h)
   exact h.comp (contDiff_id.add contDiff_const)
 
 /-- The parameters of the witness below: unit filter capacitance, grid frequency and grid EMF, a
@@ -98,7 +99,7 @@ private def unitLine : Params :=
 
 /-- **Without a step constraint the Euler realization of the code-frame PLL models is not sound.**
 The locally exponentially stable code-frame model `unitLine` at `θ_c* = 0` (a zero of `h = −sin`
-with negative slope, read through the text frame, `code_mem_den_iff`) integrated with a large
+with negative slope, read through the text frame, `codeFamily_den`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
 @[tmio MI, powerlib_domain] theorem code_not_euler_realizationSoundUnder :
@@ -114,10 +115,10 @@ disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
     norm_num [Params.Cf, unitLine, Params.a, Params.b, Params.Δ]
   have hr := PLL.PIPLL.mem_den_locallyExponentiallyStable_of_pos (unitLine.pllModel (-0))
     one_pos one_pos h0 hg
-  have hc := code_mem_den_iff ⟨unitLine, 0⟩ (.flow .locallyExponentiallyStable)
+  have hc := codeFamily_den (.flow .locallyExponentiallyStable)
   unfold powerlib.TMIO.Statement at hr hc
   exact Numerics.not_euler_realizationSoundUnder_of_large_step codeFamily_isAutonomous
-    code_contDiff_field (by norm_num) (hc.mpr hr)
+    code_contDiff_field (by norm_num) ((Set.ext_iff.mp hc ⟨unitLine, 0⟩).mpr hr)
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFL.LCLine

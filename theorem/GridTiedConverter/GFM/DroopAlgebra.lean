@@ -18,8 +18,8 @@ Source: work-sync `theory/T-vsg-control.md` §1.0–§1.2; `theory/T-gfm-control
 
 Results.
 * Complex power `S̄ = V̄ Ī*` in `dq` components (IN-positive current) and the export-positive
-  translation `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1): `Transform.complexPower_dq`,
-  `Transform.exportPower_dq` (`theorem/Transform/ComplexPower.lean`).
+  translation `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1):
+  `Transform.complexPower_expand` (`theorem/Transform/ComplexPower.lean`).
 * Inertia conversions `K_d = J ω_s / S_b`, `H = ½ J ω_s² / S_b`, `M_vsm = 2H/ω_s = K_d`
   (T-vsg-control §1.0, §1.2; T-gfm-control §1.4).
 * Line powers (export from the source `E ∠ δ` through `R + jX` into `V ∠ 0`) from `S̄ = Ē Ī*`,

@@ -54,8 +54,8 @@ Results.
 * `WeierstrassForm.pencil_eq` — `P (s E - A) Q = diag(s I - J, s N - I)` for every `s`.
 * `WeierstrassForm.det_eq_zero_iff` — the finite generalized eigenvalues of the pencil are
   exactly the eigenvalues of `J` (`det (s N - I)` is a unit because `s N` is nilpotent).
-* `regular_iff_nonempty_weierstrassForm` — over an infinite field a pencil has a Weierstrass
-  form iff it is regular.
+* `regular_of_weierstrassForm` — conversely, over an infinite field a pencil with a Weierstrass
+  form is regular (with `weierstrass`: a Weierstrass form exists iff the pencil is regular).
 
 Corrections.
 * T-pantelides-index-reduction §1.1, T-dae-systems §1.6.2: the note asserts the Weierstrass form
@@ -306,11 +306,6 @@ end WeierstrassForm
   congr 1
   ext i j
   simp [Matrix.one_apply, Matrix.scalar_apply, Matrix.diagonal_apply]
-
-/-- Over an infinite field: a Weierstrass form exists iff the pencil is regular. -/
-@[tmio T, powerlib_foundation] theorem regular_iff_nonempty_weierstrassForm [Infinite K]
-    (E A : Matrix ι ι K) : Regular E A ↔ Nonempty (WeierstrassForm E A) :=
-  ⟨weierstrass, fun ⟨W⟩ => regular_of_weierstrassForm W⟩
 
 /-- Correction (missing regularity premise): the singular pencil `s·0 - 0` of size one (the DAE
 `0 · x' = 0 · x`) has no Weierstrass form. -/

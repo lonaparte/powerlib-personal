@@ -164,18 +164,6 @@ def smib11_current (p : SMIB11Params) (x : State 11) : Fin 5 → ℝ := p.Γ *�
 /-- Rotor speed `ω_r = p / M`. -/
 def smib11_speed (p : SMIB11Params) (x : State 11) : ℝ := x 5 / p.M
 
-/-- `Q x = ∇H = (i, ω_r, 0, q_D/C, q_Q/C, φ_D/L_l, φ_Q/L_l)`. -/
-@[tmio M, powerlib_domain] theorem smib11_Q_mulVec (p : SMIB11Params) (x : State 11) :
-    smib11_Q p *ᵥ WithLp.ofLp x =
-      ![smib11_current p x 0, smib11_current p x 1, smib11_current p x 2,
-        smib11_current p x 3, smib11_current p x 4, smib11_speed p x, 0,
-        x 7 / p.C, x 8 / p.C, x 9 / p.Ll, x 10 / p.Ll] := by
-  ext i
-  fin_cases i <;>
-    simp [smib11_Q, smib11_w, smib11_current, smib11_flux, smib11_speed, mulVec, dotProduct,
-      Fin.sum_univ_succ]
-  all_goals ring
-
 /-- `J^tot(x)` of §1.5.1. -/
 def smib11_J (p : SMIB11Params) (x : State 11) : Matrix (Fin 11) (Fin 11) ℝ :=
   !![0, 0, 0, 0, 0, x 1, 0, Real.cos (x 6), Real.sin (x 6), 0, 0;
@@ -215,12 +203,18 @@ def smib11 (p : SMIB11Params) : NonlinearModel 11 4 where
       simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg, p.rl_nonneg])
   hasGradient := hasGradientAt_quadraticEnergy (smib11_Q_symm p)
 
+/-- `∇H = Q x = (i, ω_r, 0, q_D/C, q_Q/C, φ_D/L_l, φ_Q/L_l)`. -/
 @[tmio M, powerlib_domain] theorem smib11_dH (p : SMIB11Params) (x : State 11) :
     WithLp.ofLp ((smib11 p).dH x) =
       ![smib11_current p x 0, smib11_current p x 1, smib11_current p x 2,
         smib11_current p x 3, smib11_current p x 4, smib11_speed p x, 0,
-        x 7 / p.C, x 8 / p.C, x 9 / p.Ll, x 10 / p.Ll] :=
-  smib11_Q_mulVec p x
+        x 7 / p.C, x 8 / p.C, x 9 / p.Ll, x 10 / p.Ll] := by
+  show smib11_Q p *ᵥ WithLp.ofLp x = _
+  ext i
+  fin_cases i <;>
+    simp [smib11_Q, smib11_w, smib11_current, smib11_flux, smib11_speed, mulVec, dotProduct,
+      Fin.sum_univ_succ]
+  all_goals ring
 
 /-- The pH field reproduces the eleven state equations of §1.5.1 (with `δ̇ = ω_r` as in the
 note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
@@ -287,7 +281,7 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
     (smib11 p).H x =
       ((1 / 2 : ℝ) * (smib11_flux x ⬝ᵥ (p.Γ *ᵥ smib11_flux x)) + x 5 ^ 2 / (2 * p.M)) +
         (x 7 ^ 2 + x 8 ^ 2) / (2 * p.C) + (x 9 ^ 2 + x 10 ^ 2) / (2 * p.Ll) := by
-  have hQ := smib11_Q_mulVec p x
+  have hQ : smib11_Q p *ᵥ WithLp.ofLp x = _ := smib11_dH p x
   simp only [smib11, quadraticEnergy]
   rw [hQ]
   simp [smib11_current, smib11_flux, smib11_speed, dotProduct, Fin.sum_univ_succ]

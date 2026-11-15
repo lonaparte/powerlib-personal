@@ -33,8 +33,10 @@ Results.
   new coordinates is `g(y) = T f(φ⁻¹ y) = T f(T⁻¹ (y − c))` (`transportField`). Solutions,
   equilibria, smoothness and the Jacobian (`T ∘ Df(x*) ∘ T⁻¹`) are transported, and **every**
   behavioural sentence of the library holds for `f` at `x*` exactly when it holds for `g` at
-  `φ(x*)` (`holds_transport_iff`); forward completeness is invariant as well. The per-sentence
-  forms (`lyapunovStable_transport_iff`, …) are corollaries. Scaffold:
+  `φ(x*)` (`holds_transport_iff`, read for one sentence as `holds_transport_iff T c P`; `P.holds`
+  unfolds to the sentence); forward completeness is invariant as well
+  (`forwardComplete_transport_iff`), and LeanForControl's `GlobalAsymptoticStable`
+  (`globalAsymptoticStable_transport_iff`). Scaffold:
   `theorem/Flow/FlowSemantics.agda` (satisfaction of the sentences by a field at a point, invariant
   under affine changes of coordinates: `transportSystem`, `invariant`).
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
@@ -63,7 +65,7 @@ Lyapunov stability, decay rates and conservation are conjugated by
 (`theorem/Linear/Transfer.lean`), unchanged; the remaining sentences (local and global
 exponential and asymptotic stability, forward completeness, sampled contraction) are conjugated
 here, for arbitrary nonlinear fields (`*_conjEquiv`, collected in `holds_conjEquiv_iff`; forward
-completeness is the case `c = 0` of `ForwardComplete.transport`). The
+completeness is the case `c = 0` of `forwardComplete_transport_iff`). The
 equilibrium-shift lemmas (`Dynamics.*_shift_iff`, `Flow.Property.holds_shift_iff`) are those of
 `theorem/Dynamics/Shift.lean` and are not restated.
 -/
@@ -143,21 +145,11 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
   have h' := key T.symm (-(T.symm c)) _ h
   rwa [transportField_symm_transportField] at h'
 
-variable {T c} in
-@[tmio T, powerlib_foundation] theorem ForwardComplete.transport {f : State n → State n}
-    (h : Flow.ForwardComplete f) : Flow.ForwardComplete (transportField T c f) :=
-  (forwardComplete_transport_iff T c).mpr h
-
 /-- Equilibria correspond under the affine coordinate change. -/
 @[tmio T, powerlib_foundation] theorem transportField_affineCoord_eq_zero_iff
     (f : State n → State n) (x : State n) :
     transportField T c f (affineCoord T c x) = 0 ↔ f x = 0 := by
   rw [transportField_affineCoord, map_eq_zero_iff T T.injective]
-
-@[tmio T, powerlib_foundation] theorem isEquilibrium_transport_iff (f : State n → State n)
-    (x : State n) :
-    IsEquilibrium (transportField T c f) (affineCoord T c x) ↔ IsEquilibrium f x :=
-  transportField_affineCoord_eq_zero_iff T c f x
 
 @[tmio T, powerlib_foundation] theorem contDiff_transportField {f : State n → State n} {k : WithTop ℕ∞}
     (hf : ContDiff ℝ k f) : ContDiff ℝ k (transportField T c f) :=
@@ -261,10 +253,6 @@ variable {T : State n ≃L[ℝ] State n}
   rw [transportField_zero_eq_conj]
   exact Linear.conservative_conj _ _ symm_apply_coe apply_symm_coe h
 
-@[tmio T, powerlib_foundation] theorem forwardComplete_conjEquiv {g : State n → State n}
-    (h : Flow.ForwardComplete g) : Flow.ForwardComplete (transportField T 0 g) :=
-  ForwardComplete.transport h
-
 @[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_conjEquiv {g : State n → State n}
     (h : LocallyExponentiallyStable g 0) :
     LocallyExponentiallyStable (transportField T 0 g) 0 := by
@@ -320,7 +308,7 @@ variable {T : State n ≃L[ℝ] State n}
 @[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_conjEquiv {g : State n → State n}
     (h : Flow.GloballyAsymptoticallyStable g 0) :
     Flow.GloballyAsymptoticallyStable (transportField T 0 g) 0 :=
-  ⟨isEquilibrium_conjEquiv h.1, forwardComplete_conjEquiv h.2.1,
+  ⟨isEquilibrium_conjEquiv h.1, (forwardComplete_transport_iff T 0).mpr h.2.1,
     globalAsymptoticStable_conjEquiv h.2.2⟩
 
 @[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_conjEquiv {g : State n → State n}
@@ -330,7 +318,8 @@ variable {T : State n ≃L[ℝ] State n}
   set K := ‖(T : State n →L[ℝ] State n)‖
   set K' := ‖(T.symm : State n →L[ℝ] State n)‖
   have hK : 0 ≤ K := norm_nonneg _
-  refine ⟨isEquilibrium_conjEquiv heq, forwardComplete_conjEquiv hfc, max 1 (K * K') * C, a,
+  refine ⟨isEquilibrium_conjEquiv heq, (forwardComplete_transport_iff T 0).mpr hfc,
+    max 1 (K * K') * C, a,
     one_le_mul_of_one_le_of_one_le (le_max_left _ _) hC, ha, ?_⟩
   intro t₀ t₁ χ hχ t ht
   rw [sub_zero, sub_zero]
@@ -400,12 +389,6 @@ variable {T : State n ≃L[ℝ] State n}
         exact norm_apply_le (T := T.symm) _
     _ = K * max c 0 ^ m * ‖χ t₀‖ := by ring
 
-@[tmio T, powerlib_foundation] theorem lyapunovStable_conjEquiv_iff {g : State n → State n} :
-    LyapunovStable (transportField T 0 g) 0 ↔ LyapunovStable g 0 := by
-  refine ⟨fun h => ?_, lyapunovStable_conjEquiv⟩
-  have h' := lyapunovStable_conjEquiv (T := T.symm) h
-  rwa [transportField_symm_zero] at h'
-
 /-- Each behavioural sentence of `g` at the origin passes to the conjugate field. -/
 @[tmio T, powerlib_foundation] theorem holds_conjEquiv (P : Flow.Property) {g : State n → State n}
     (h : P.holds g 0) : P.holds (transportField T 0 g) 0 := by
@@ -415,7 +398,10 @@ variable {T : State n ≃L[ℝ] State n}
   case locallyExponentiallyStable => exact locallyExponentiallyStable_conjEquiv h
   case globallyAsymptoticallyStable => exact globallyAsymptoticallyStable_conjEquiv h
   case globallyExponentiallyStable => exact globallyExponentiallyStable_conjEquiv h
-  case unstable => exact fun hs => h (lyapunovStable_conjEquiv_iff.mp hs)
+  case unstable =>
+    refine fun hs => h ?_
+    have h' := lyapunovStable_conjEquiv (T := T.symm) hs
+    rwa [transportField_symm_zero] at h'
   case decay a => exact decay_conjEquiv h
   case contractive => exact sampledContraction_conjEquiv h
   case conservative => exact conservative_conjEquiv h
@@ -451,46 +437,6 @@ when it holds for the field in the coordinates `y = T x + c` at the image of `x`
     ← Flow.Property.holds_shift_iff P (f := f), transportField_shift]
   exact holds_conjEquiv_iff P
 
-/-- Lyapunov stability is invariant under invertible affine coordinate changes. -/
-@[tmio T, powerlib_foundation] theorem lyapunovStable_transport_iff {f : State n → State n}
-    {x : State n} :
-    LyapunovStable (transportField T c f) (affineCoord T c x) ↔ LyapunovStable f x :=
-  holds_transport_iff T c .lyapunovStable
-
-/-- Instability is invariant under invertible affine coordinate changes. -/
-@[tmio T, powerlib_foundation] theorem unstable_transport_iff {f : State n → State n} {x : State n} :
-    Unstable (transportField T c f) (affineCoord T c x) ↔ Unstable f x :=
-  holds_transport_iff T c .unstable
-
-/-- Local exponential stability is invariant under invertible affine coordinate changes. -/
-@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_transport_iff
-    {f : State n → State n} {x : State n} :
-    LocallyExponentiallyStable (transportField T c f) (affineCoord T c x) ↔
-      LocallyExponentiallyStable f x :=
-  holds_transport_iff T c .locallyExponentiallyStable
-
-/-- Local asymptotic stability is invariant under invertible affine coordinate changes. -/
-@[tmio T, powerlib_foundation] theorem localAsymptoticStable_transport_iff
-    {f : State n → State n} {x : State n} :
-    LocalAsymptoticStable (transportField T c f) (affineCoord T c x) ↔
-      LocalAsymptoticStable f x :=
-  holds_transport_iff T c .locallyAsymptoticallyStable
-
-/-- Global exponential stability is invariant under invertible affine coordinate changes. -/
-@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_transport_iff
-    {f : State n → State n} {x : State n} :
-    Flow.GloballyExponentiallyStable (transportField T c f) (affineCoord T c x) ↔
-      Flow.GloballyExponentiallyStable f x :=
-  holds_transport_iff T c .globallyExponentiallyStable
-
-/-- Global asymptotic stability (with global existence) is invariant under invertible affine
-coordinate changes. -/
-@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_transport_iff
-    {f : State n → State n} {x : State n} :
-    Flow.GloballyAsymptoticallyStable (transportField T c f) (affineCoord T c x) ↔
-      Flow.GloballyAsymptoticallyStable f x :=
-  holds_transport_iff T c .globallyAsymptoticallyStable
-
 /-- LeanForControl's global asymptotic stability (without global existence) is invariant under
 invertible affine coordinate changes. -/
 @[tmio T, powerlib_foundation] theorem globalAsymptoticStable_transport_iff
@@ -502,37 +448,6 @@ invertible affine coordinate changes. -/
   refine ⟨fun h => ?_, globalAsymptoticStable_conjEquiv⟩
   have h' := globalAsymptoticStable_conjEquiv (T := T.symm) h
   rwa [transportField_symm_zero] at h'
-
-variable {T c}
-
-@[tmio T, powerlib_foundation] theorem LyapunovStable.transport {f : State n → State n} {x : State n}
-    (h : LyapunovStable f x) : LyapunovStable (transportField T c f) (affineCoord T c x) :=
-  (lyapunovStable_transport_iff T c).mpr h
-
-@[tmio T, powerlib_foundation] theorem LocallyExponentiallyStable.transport {f : State n → State n}
-    {x : State n} (h : LocallyExponentiallyStable f x) :
-    LocallyExponentiallyStable (transportField T c f) (affineCoord T c x) :=
-  (locallyExponentiallyStable_transport_iff T c).mpr h
-
-@[tmio T, powerlib_foundation] theorem LocalAsymptoticStable.transport {f : State n → State n}
-    {x : State n} (h : LocalAsymptoticStable f x) :
-    LocalAsymptoticStable (transportField T c f) (affineCoord T c x) :=
-  (localAsymptoticStable_transport_iff T c).mpr h
-
-@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.transport {f : State n → State n}
-    {x : State n} (h : Flow.GloballyExponentiallyStable f x) :
-    Flow.GloballyExponentiallyStable (transportField T c f) (affineCoord T c x) :=
-  (globallyExponentiallyStable_transport_iff T c).mpr h
-
-@[tmio T, powerlib_foundation] theorem GlobalAsymptoticStable.transport {f : State n → State n}
-    {x : State n} (h : GlobalAsymptoticStable f x) :
-    GlobalAsymptoticStable (transportField T c f) (affineCoord T c x) :=
-  (globalAsymptoticStable_transport_iff T c).mpr h
-
-@[tmio T, powerlib_foundation] theorem GloballyAsymptoticallyStable.transport {f : State n → State n}
-    {x : State n} (h : Flow.GloballyAsymptoticallyStable f x) :
-    Flow.GloballyAsymptoticallyStable (transportField T c f) (affineCoord T c x) :=
-  (globallyAsymptoticallyStable_transport_iff T c).mpr h
 
 end Transport
 

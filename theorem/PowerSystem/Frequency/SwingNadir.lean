@@ -169,9 +169,13 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     ωd * tCrit σ ωd Tg = Complex.arg ⟨σ - 1 / Tg, ωd⟩ := by
   unfold tCrit; field_simp
 
-@[tmio M, powerlib_foundation] theorem rateC_tCrit (hωd : 0 < ωd) :
-    rateC c σ ωd Tg (tCrit σ ωd Tg) = 0 := by
-  rw [rateC_eq_sin hωd, mul_tCrit hωd, sub_self, Real.sin_zero]
+@[tmio M, powerlib_foundation] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
+    rateC c σ ωd Tg (tCrit σ ωd Tg + k * (Real.pi / ωd)) = 0 := by
+  have harg : ωd * (tCrit σ ωd Tg + k * (Real.pi / ωd)) =
+      Complex.arg ⟨σ - 1 / Tg, ωd⟩ + k * Real.pi := by
+    rw [mul_add, mul_tCrit hωd]; field_simp
+  rw [rateC_eq_sin hωd, harg, show ∀ a b : ℝ, a - (a + b) = -b from fun a b => by ring,
+    Real.sin_neg, Real.sin_nat_mul_pi]
   ring
 
 @[tmio M, powerlib_foundation] theorem rateC_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) {t : ℝ}
@@ -227,8 +231,8 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     respC c σ ωd Tg (tCrit σ ωd Tg + u) + c =
       (respC c σ ωd Tg (tCrit σ ωd Tg) + c) *
         (Real.exp (-(σ * u)) * (Real.cos (ωd * u) + σ / ωd * Real.sin (ωd * u))) := by
-  have hcrit := rateC_tCrit (c := c) hωd (Tg := Tg) (σ := σ)
-  rw [rateC_eq_bracket hωd.ne' hTg.ne'] at hcrit
+  have hcrit := rateC_tCrit_add (c := c) hωd (Tg := Tg) (σ := σ) 0
+  rw [Nat.cast_zero, zero_mul, add_zero, rateC_eq_bracket hωd.ne' hTg.ne'] at hcrit
   have hcrit' := (mul_eq_zero.1 hcrit).resolve_left (Real.exp_pos _).ne'
   have h := damped_shift hωd.ne' hcrit' u
   unfold respC
@@ -264,15 +268,6 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     rw [← Real.exp_add]; ring_nf
   unfold respC
   rw [harg, hexp, Real.cos_add_pi, Real.sin_add_pi]
-  ring
-
-@[tmio M, powerlib_foundation] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
-    rateC c σ ωd Tg (tCrit σ ωd Tg + k * (Real.pi / ωd)) = 0 := by
-  have harg : ωd * (tCrit σ ωd Tg + k * (Real.pi / ωd)) =
-      Complex.arg ⟨σ - 1 / Tg, ωd⟩ + k * Real.pi := by
-    rw [mul_add, mul_tCrit hωd]; field_simp
-  rw [rateC_eq_sin hωd, harg, show ∀ a b : ℝ, a - (a + b) = -b from fun a b => by ring,
-    Real.sin_neg, Real.sin_nat_mul_pi]
   ring
 
 end Core
@@ -402,7 +397,7 @@ Every forward solution from rest is the closed form `respC` on `t ≥ 0`. -/
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) {t : ℝ} (ht : 0 ≤ t) :
     x t 0 = respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg t := by
-  rw [LTI.trajectory_eq_osc2 (plant M D K Tg) (steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
+  rw [LTI.trajectory_eq_osc2 (plant M D K Tg) ((isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl)
     (trace_A hM hTg hKD) (det_A hM hTg hD hKD hζ) (dampedFreq_pos hM hTg hD hKD hζ).ne' hx ht,
     h0]
   exact osc2_freq hM hTg hD hKD hζ t

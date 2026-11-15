@@ -33,10 +33,10 @@ Results.
   `signedIncidence_isEquilibrium_iff` instantiates this for the signed incidence matrix of a
   connected graph (`TieConnected`); `isEquilibrium_iff_of_ker` gives the unique equilibrium
   `(0, 0, ΔP_L)` when `𝓑` has trivial kernel (radial tie-line graph).
-* `netModel_not_spectrallyStable` (foundation), `triangle_not_spectrallyStable`: if `𝓑`
-  has a nonzero kernel vector (a loop in the tie-line graph, e.g. three areas in a ring) the
-  line-flow state matrix is singular (a circulating flow is a zero mode), so the model is
-  **never** asymptotically stable, for any gains.
+* `netModel_not_spectrallyStable` (foundation): if `𝓑` has a nonzero kernel vector (a loop in
+  the tie-line graph, e.g. three areas in a ring, `triangle_circulation`) the line-flow state
+  matrix is singular (a circulating flow is a zero mode), so the model is **never**
+  asymptotically stable, for any gains (`triangle_not_mem_den_attractive`).
 * `LTI.tendsto_of_spectrallyStable` (foundation, any matrices on a finite index type, by
   transport to `Fin N`; `theorem/LTI/Decay.lean`) and `netModel_tendsto` (private): on a radial
   tie-line graph, a spectrally stable state matrix (explicit premise) makes every trajectory
@@ -393,14 +393,6 @@ incidence matrix. -/
       Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
       Matrix.tail_cons, Pi.zero_apply] <;> norm_num
 
-/-- Three areas in a ring (`1 → 2 → 3 → 1`): the line-flow LFC model is not spectrally stable
-for any parameters. A negative membership in the family denotation. -/
-@[tmio TM, powerlib_domain] theorem triangle_not_spectrallyStable (area : Fin 3 → Area) (ωs : ℝ)
-    (T : Fin 3 → ℝ) :
-    connection% ((⟨area, ωs, T, Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0]⟩ : NetModel (Fin 3) (Fin 3)) ∉ (netFamily (Fin 3) (Fin 3)).den (.flow .globallyExponentiallyStable)) :=
-  netModel_not_spectrallyStable (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
-    triangle_circulation
-
 /-! ## Gain condition: a parametric stability certificate on radial graphs -/
 
 /-- Margin `g_a = D_a + K_R,a − K_I,a M_a` of the gain condition. -/
@@ -481,12 +473,6 @@ omit [Fintype α] [DecidableEq α] [Fintype β] in
   simp only [netXi, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
-omit [Fintype α] [DecidableEq α] [Fintype β] in
-@[tmio M, powerlib_domain] theorem netXi_sub (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
-    netXi area (c • z₁ - d • z₂) a = c * netXi area z₁ a - d * netXi area z₂ a := by
-  simp only [netXi, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-  ring
-
 omit [DecidableEq α] in
 /-- The storage is linear in its second argument. -/
 @[tmio M, powerlib_domain] theorem netEnergy_combo (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
@@ -512,13 +498,6 @@ omit [DecidableEq α] in
     rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun _ _ => by ring
   rw [h1, h2, h3]
-  ring
-
-omit [DecidableEq α] in
-@[tmio M, powerlib_domain] theorem netEnergy_sub (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
-    netEnergy area ωs T z (c • z₁ - d • z₂) =
-      c * netEnergy area ωs T z z₁ - d * netEnergy area ωs T z z₂ := by
-  rw [sub_eq_add_neg, ← neg_smul, netEnergy_combo]
   ring
 
 omit [DecidableEq α] in
@@ -601,7 +580,7 @@ strength and every radial topology. -/
     (fun ℓ => (hw ℓ).ne') u
   have hEv := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
     (fun ℓ => (hw ℓ).ne') v
-  rw [hu, netEnergy_sub] at hEu
+  rw [hu, sub_eq_add_neg (x • u), ← neg_smul, netEnergy_combo] at hEu
   rw [hv, netEnergy_combo] at hEv
   have hcomm := netEnergy_comm (area := area) (ωs := ωs) (T := T) u v
   have hNu := netEnergy_nonneg (fun a => (hM a).le) hK hgB hw u
@@ -621,7 +600,7 @@ strength and every radial topology. -/
     obtain ⟨xv, gv⟩ := netDiss_eq_zero hg hB hDv0 a
     have ru := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 u a
     have rv := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 v a
-    rw [hu, netXi_sub, xu, xv] at ru
+    rw [hu, sub_eq_add_neg (x • u), ← neg_smul, netXi_combo, xu, xv] at ru
     rw [hv, netXi_combo, xu, xv] at rv
     have hKB : (area a).KI * (area a).B ≠ 0 := (mul_pos (hK a) (hB a)).ne'
     constructor

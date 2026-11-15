@@ -28,7 +28,7 @@ Results.
 * Clarke of the balanced three-phase voltage, Park projection
   `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))`, phase-detector characteristic `V_q = −V sin θ̃`,
   and the perturbation projection `V_q^p = −V sin θ_e + (−sin θ_e, cos θ_e)·(δv_d, δv_q)`
-  (T-pll-dynamics §1.2), with `‖(−sin θ_e, cos θ_e)‖ = 1`.
+  (T-pll-dynamics §1.2), with `‖(−sin θ_e, cos θ_e)‖ = 1` (`StochasticPH.sigmaBare_dot_self`).
 * Unbalanced / harmonic voltage in the PLL frame (T-pll-dynamics §1.6), with a Correction.
 * DDSRF cross-coupling (T-pll-dynamics §1.8, Rodríguez et al. 2007) and exact decoupling,
   with a Correction.
@@ -117,11 +117,6 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
       -(V * Real.sin θe) + (-(Real.sin θe) * δd + Real.cos θe * δq) := by
   simp; ring
 
-/-- The bare noise-projection row `(−sin θ_e, cos θ_e)` has unit length. -/
-@[tmio T, powerlib_foundation] theorem noiseProjection_sq_sum (θe : ℝ) :
-    (-(Real.sin θe)) ^ 2 + Real.cos θe ^ 2 = 1 := by
-  rw [neg_sq]; exact Real.sin_sq_add_cos_sq θe
-
 /-! ## Unbalanced and harmonic voltages in the PLL frame (T-pll-dynamics §1.6) -/
 
 /-- Positive-sequence component `A (cos α, sin α)` (counter-clockwise rotation). -/
@@ -189,14 +184,6 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
     Transform.park_eq_rot_neg (2 * θh)]
   congr 3; ring
 
-/-- Componentwise form of `ddsrf_positiveFrame`. -/
-@[tmio M, powerlib_domain] theorem ddsrf_positiveFrame_apply (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
-    park θh *ᵥ unbalancedAlphaBeta θh Vp Vn =
-      ![Vp 0 + Real.cos (2 * θh) * Vn 0 + Real.sin (2 * θh) * Vn 1,
-        Vp 1 + Real.cos (2 * θh) * Vn 1 - Real.sin (2 * θh) * Vn 0] := by
-  rw [ddsrf_positiveFrame]
-  ext i; fin_cases i <;> simp <;> ring
-
 /-- Negative-frame (`dq^{−1}`) components: `V^{−−} = V⁻ + rot(2θ̂) V⁺`. -/
 @[tmio M, powerlib_domain] theorem ddsrf_negativeFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park (-θh) *ᵥ unbalancedAlphaBeta θh Vp Vn = Vn + rot (2 * θh) *ᵥ Vp := by
@@ -204,13 +191,8 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
     Matrix.mulVec_mulVec, Transform.park_eq_rot_neg (-θh), ← Transform.rot_add, add_comm]
   congr 3; ring
 
-/-- Exact DDSRF decoupling: subtracting `park(2θ̂)` of the negative-sequence estimate from the
-positive-frame voltage leaves the true positive sequence when the estimate is exact. -/
-@[tmio M, powerlib_domain] theorem ddsrf_decoupled (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
-    park θh *ᵥ unbalancedAlphaBeta θh Vp Vn - park (2 * θh) *ᵥ Vn = Vp := by
-  rw [ddsrf_positiveFrame, add_sub_cancel_right]
-
-/-- Decoupling error with an estimate `V̄⁻`: the residual is `park(2θ̂)(V⁻ − V̄⁻)`. -/
+/-- Decoupling error with an estimate `V̄⁻`: the residual is `park(2θ̂)(V⁻ − V̄⁻)`; with an exact
+estimate `V̄⁻ = V⁻` the positive sequence is recovered exactly. -/
 @[tmio M, powerlib_domain] theorem ddsrf_decoupling_error (θh : ℝ) (Vp Vn Vnbar : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn - park (2 * θh) *ᵥ Vnbar =
       Vp + park (2 * θh) *ᵥ (Vn - Vnbar) := by
@@ -222,7 +204,7 @@ positive-frame voltage leaves the true positive sequence when the estimate is ex
       Vp 1 - Real.cos (2 * θh) * Vn 1 + Real.sin (2 * θh) * Vn 0 := by
   intro h
   have h0 := h 0 0 ![0, 1]
-  rw [ddsrf_positiveFrame_apply] at h0
+  rw [ddsrf_positiveFrame] at h0
   norm_num at h0
 
 /-! ## SOGI quadrature signal generator (T-pll-dynamics §1.7) -/

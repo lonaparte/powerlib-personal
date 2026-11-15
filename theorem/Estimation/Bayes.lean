@@ -20,10 +20,9 @@ principle, Fisher–Neyman factorisation), §1.5 (posterior predictive), §1.6 (
 §1.7 (sequential updating).
 
 Results.
-* Thin Mathlib wrappers: `bayes_cond` (`ProbabilityTheory.cond_eq_inv_mul_cond_mul`),
-  `posterior_ae_eq_withDensity` (`ProbabilityTheory.posterior_eq_withDensity`),
-  `posterior_comp_ae_eq` (`ProbabilityTheory.posterior_comp`: posterior through a composite
-  channel `θ → x → y`).
+* Mathlib's Bayes theorems are used directly: `ProbabilityTheory.cond_eq_inv_mul_cond_mul`
+  (events), `ProbabilityTheory.posterior_eq_withDensity` (Radon–Nikodym form),
+  `ProbabilityTheory.posterior_comp` (posterior through a composite channel `θ → x → y`).
 * `posterior_ae_eq_bayesPosterior` — for a dominated model `κ θ = ν.withDensity (p θ)` with
   jointly measurable density, Mathlib's posterior is a.e. the density-level `bayesPosterior`
   (Bayes' theorem in density form). `posterior_ae_eq_bayesPosterior_of_countable` specialises to
@@ -53,39 +52,6 @@ open MeasureTheory ProbabilityTheory Set
 open scoped ENNReal
 
 variable {Θ : Type*} {mΘ : MeasurableSpace Θ}
-
-/-! ### Thin wrappers of Mathlib's Bayes theorems -/
-
-/-- **Bayes' theorem for events.** Wrapper of Mathlib
-`ProbabilityTheory.cond_eq_inv_mul_cond_mul`. -/
-@[tmio T, powerlib_foundation] theorem bayes_cond {s t : Set Θ} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (μ : Measure Θ) [IsFiniteMeasure μ] :
-    μ[t | s] = (μ s)⁻¹ * μ[s | t] * μ t :=
-  cond_eq_inv_mul_cond_mul hs ht μ
-
-section MathlibPosterior
-
-variable {𝓧 𝓨 : Type*} {m𝓧 : MeasurableSpace 𝓧} {m𝓨 : MeasurableSpace 𝓨}
-  [StandardBorelSpace Θ] [Nonempty Θ]
-
-/-- **Bayes' theorem (Radon–Nikodym form).** Wrapper of Mathlib
-`ProbabilityTheory.posterior_eq_withDensity`. -/
-@[tmio T, powerlib_foundation] theorem posterior_ae_eq_withDensity {κ : Kernel Θ 𝓧} [IsFiniteKernel κ]
-    {μ : Measure Θ} [IsFiniteMeasure μ] [MeasurableSpace.CountableOrCountablyGenerated Θ 𝓧]
-    (h_ac : ∀ᵐ θ ∂μ, κ θ ≪ κ ∘ₘ μ) :
-    ∀ᵐ x ∂(κ ∘ₘ μ),
-      (κ†μ) x = μ.withDensity (fun θ => κ.rnDeriv (Kernel.const _ (κ ∘ₘ μ)) θ x) :=
-  posterior_eq_withDensity h_ac
-
-/-- **Posterior through a composite channel** `θ → x → y`. Wrapper of Mathlib
-`ProbabilityTheory.posterior_comp`. -/
-@[tmio T, powerlib_foundation] theorem posterior_comp_ae_eq [StandardBorelSpace 𝓧] [Nonempty 𝓧]
-    {κ : Kernel Θ 𝓧} [IsFiniteKernel κ] {μ : Measure Θ} [IsFiniteMeasure μ]
-    {η : Kernel 𝓧 𝓨} [IsFiniteKernel η] :
-    (η ∘ₖ κ)†μ =ᵐ[η ∘ₘ κ ∘ₘ μ] κ†μ ∘ₖ η†(κ ∘ₘ μ) :=
-  posterior_comp
-
-end MathlibPosterior
 
 /-! ### Density-level posterior -/
 
@@ -412,7 +378,7 @@ variable {μ : Measure Θ} [IsFiniteMeasure μ] {D H₁ H₂ : Set Θ}
 @[tmio T, powerlib_foundation] theorem posterior_odds (hD : MeasurableSet D) (h₁ : MeasurableSet H₁)
     (h₂ : MeasurableSet H₂) :
     μ[H₁ | D] * (μ[D | H₂] * μ H₂) = μ[H₂ | D] * (μ[D | H₁] * μ H₁) := by
-  rw [bayes_cond hD h₁, bayes_cond hD h₂]
+  rw [cond_eq_inv_mul_cond_mul hD h₁, cond_eq_inv_mul_cond_mul hD h₂]
   ring
 
 /-- **Posterior odds = Bayes factor × prior odds** (real ratio form, `μ D ≠ 0`). -/
@@ -420,7 +386,7 @@ variable {μ : Measure Θ} [IsFiniteMeasure μ] {D H₁ H₂ : Set Θ}
     (h₁ : MeasurableSet H₁) (h₂ : MeasurableSet H₂) (hD0 : μ D ≠ 0) :
     (μ[H₁ | D]).toReal / (μ[H₂ | D]).toReal =
       ((μ[D | H₁]).toReal / (μ[D | H₂]).toReal) * ((μ H₁).toReal / (μ H₂).toReal) := by
-  rw [bayes_cond hD h₁, bayes_cond hD h₂]
+  rw [cond_eq_inv_mul_cond_mul hD h₁, cond_eq_inv_mul_cond_mul hD h₂]
   simp only [ENNReal.toReal_mul]
   have hk : ((μ D)⁻¹).toReal ≠ 0 :=
     ENNReal.toReal_ne_zero.mpr ⟨ENNReal.inv_ne_zero.mpr (measure_ne_top μ D),

@@ -21,7 +21,7 @@ Model boundary.
   `i₁(t) = i(0, t)` flows into the line at end 1 and `i₂(t) = -i(ℓ, t)` flows into the
   line at end 2. (T-telegrapher-bergeron uses the through convention for `i₂` and
   T-pde-systems §1.6.5 mixes the two; here one convention is used throughout, and the
-  through-convention statements are corollaries `bergeron_forward_through`.)
+  through-convention statements follow by unfolding `v₁`, `v₂`, `i₁`, `i₂`.)
 * `c = 1/√(L'C')`, `Z_c = √(L'/C')`, `τ = ℓ/c`. The identities `c Z_c C' = 1` and
   `c L' = Z_c` (`c_mul_Zc_mul_C`, `c_mul_L`) are what make `v ± Z_c i` invariant.
 
@@ -247,14 +247,6 @@ current source, `iₖ(t) = vₖ(t)/Z_c - eₖ(t)/Z_c`. -/
   constructor
   · rw [history₁]; field_simp; linarith
   · rw [history₂]; field_simp; linarith
-
-/-- The same forward relation in the through convention (`i(ℓ, t)` along `+x`). -/
-@[tmio TM, powerlib_domain] theorem bergeron_forward_through {ℓ : ℝ}
-    (h : IsTelegrapherSolution p.series p.shunt 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
-    v (ℓ, t) + p.Zc * i (ℓ, t) = v (0, t - τ p ℓ) + p.Zc * i (0, t - τ p ℓ) := by
-  have := bergeron_forward h hℓ t
-  simp only [v₁, v₂, i₁, i₂] at this
-  linarith
 
 /-! ## d'Alembert form -/
 

@@ -45,8 +45,8 @@ Results.
 * `pHModel` : constant `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`, port matrix `(−1, 0)ᵀ`
   (input `δω_g`), non-quadratic Hamiltonian `H = ½ K_i η² + V(θ)`, `V(θ) = −c₀θ − A cos(θ + φ)`
   (`V′ = −h`); its zero-input field is `reducedField` and its input field is
-  `piPLLField h K_p K_i δω_g`. `reduced_energy_rate` : `Ḣ = −K_p h(θ)² ≤ 0`;
-  `energy_rate_with_drift` : `Ḣ = h δω_g − K_p h²`.
+  `piPLLField h K_p K_i δω_g`. `energy_rate_with_drift` : `Ḣ = h δω_g − K_p h²`, in particular
+  `Ḣ = −K_p h(θ)² ≤ 0` along `reducedField` (`δω_g = 0`, `reduced_energy_rate_nonpos`).
   `H` is not bounded below when `c₀ ≠ 0` (tilted washboard), so it is not a nonnegative storage
   and no passivity claim follows from it. Related port-Hamiltonian constructions of the PI-PLL:
   `theorem/GridTiedConverter/PLL/PH.lean` (SRF detector) and
@@ -54,7 +54,7 @@ Results.
 * `codeField_eq_transport` (`decisions.md` §D1.4): the project code frame
   (`θ̇ = −K_p h_c(θ) − K_i η`, `η̇ = h_c(θ)`, with `h_c` built by the code's own formulas,
   `hCode_eq : h_c(θ) = h(−θ)`) is the text-frame field transported by the reflection
-  `(θ, η) ↦ (−θ, η)`; every sentence transfers (`code_mem_den_iff`).
+  `(θ, η) ↦ (−θ, η)`; every sentence transfers (`codeFamily_den`).
 
 Family and connection conclusions.
 No new family for the text frame: the reduced model with a
@@ -62,18 +62,18 @@ selected angle `θ*` is the member `p.pllModel θ*` of the PI-PLL family `PLL.PI
 (`h = p.h`, gains `K_p, K_i`, `δω = 0`), whose system map reads the field translated so that
 `(θ*, 0)` is the origin; `pllModel_field` identifies that translated field with `reducedField`.
 Local exponential stability and instability are connection memberships on that family's semantics
-connection (`reduced_mem_den_locallyExponentiallyStable`, `reduced_mem_den_unstable`, and
-`reduced_not_mem_den_lyapunovStable`). The code frame has its own family `codeFamily` on
+connection (`reduced_mem_den_locallyExponentiallyStable`, `reduced_mem_den_unstable`; instability
+is the negation of Lyapunov stability). The code frame has its own family `codeFamily` on
 `CodeModel` (parameters and a selected code angle), read through `codeField` about the selected
 point, with the PI-PLL requirement language pulled back along `CodeModel.toText`
 (`θ_text* = −θ_code*`). The corrected §D1.4 conjugacy is the connection equality
 `codeFamily_den`: every denotation of the code family is the preimage of the PI-PLL denotation,
 for every sentence (all nine flow sentences, by the affine transport law, and passivity); hence
-`codeFamily_chain_le_semantics` and `code_mem_den_iff` (for every sentence). Scaffold of this
+`codeFamily_chain_le_semantics`. Scaffold of this
 reading, a reflection of the angle: `theorem/GridTiedConverter/PLL/PLLCodeFrame.agda`.
 Static evidence on the model, not connection conclusions: the equilibrium set
 (`reducedField_eq_zero_iff`), the fold Jacobian (`reduced_jacobian_nilpotent`) and the energy
-rates (`reduced_energy_rate`, `reduced_energy_rate_nonpos`, `energy_rate_with_drift`). The decrease
+rates (`reduced_energy_rate_nonpos`, `energy_rate_with_drift`). The decrease
 of `H` along solution segments (`hamiltonian_antitoneOn`) is a trajectory-level result outside the
 sentence language and is kept as private implementation evidence. No passivity claim is made for the
 port `δω_g` (`H` is unbounded below for `c₀ ≠ 0`).
@@ -110,10 +110,9 @@ Static evidence on the model, not a connection conclusion. -/
     p.reducedField y = 0 ↔ p.h (y 0) = 0 ∧ y 1 = 0 := by
   rw [reducedField_eq, piPLLField_eq_zero_iff hKi, zero_div]
 
-@[tmio M, powerlib_domain] theorem contDiff_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
-    ContDiff ℝ 1 p.reducedField := by
+@[tmio M, powerlib_domain] theorem contDiff_reducedField : ContDiff ℝ 1 p.reducedField := by
   rw [reducedField_eq]
-  exact contDiff_piPLLField (p.contDiff_h hwC hΔ)
+  exact contDiff_piPLLField p.contDiff_h
 
 /-- The Jacobian of the reduced field, computed with `fderiv`:
 `[[K_p h′(θ), K_i], [h′(θ), 0]]`, `h′(θ) = −A cos(θ + φ)`. -/
@@ -124,16 +123,9 @@ Static evidence on the model, not a connection conclusion. -/
   rw [reducedField_eq]
   exact fderiv_piPLLField (p.hasDerivAt_h hwC hΔ θ)
 
-/-- `h` is smooth for every parameter set (a trigonometric polynomial with constant
-coefficients); the polar form `contDiff_h` needs `ω_g C_f ≠ 0`, `Δ ≠ 0`. -/
-@[tmio M, powerlib_domain] theorem contDiff_h_one : ContDiff ℝ 1 p.h := by
-  unfold Params.h Params.hE parkQ Params.vcD Params.vcQ Params.igD Params.igQ Params.solD
-    Params.solQ Params.iD Params.iQ iparkD iparkQ
-  fun_prop
-
 /-- The reduced model read about the selected angle `θ*` as a member of the PI-PLL family:
 phase detector `h = p.h`, gains `K_p, K_i`, no frequency drift (`δω = 0`). -/
-def pllModel (θ : ℝ) : PLL.PIPLL.Model := ⟨p.h, p.Kp, p.Ki, 0, θ, p.contDiff_h_one⟩
+def pllModel (θ : ℝ) : PLL.PIPLL.Model := ⟨p.h, p.Kp, p.Ki, 0, θ, p.contDiff_h⟩
 
 /-- The system map of the PI-PLL family reads the member `p.pllModel θ*` as the reduced field
 translated so that `(θ*, 0)` is the origin. -/
@@ -142,10 +134,6 @@ translated so that `(θ*, 0)` is the origin. -/
   simp only [PLL.PIPLL.Model.field, PLL.PIPLL.Model.point, pllModel, zero_div]
   rw [reducedField_eq]
 
-@[tmio M, powerlib_domain] theorem deriv_pllModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
-    deriv (p.pllModel θ).h (p.pllModel θ).θ = -(p.amp * cos (θ + p.phase)) :=
-  p.deriv_h hwC hΔ θ
-
 /-- A1: `K_p, K_i > 0` and `h′(θ*) = −A cos(θ* + φ) < 0` ⇒ `(θ*, 0)` is locally exponentially
 stable for the reduced 2-state PLL model. -/
 @[tmio TM, powerlib_domain] theorem reduced_mem_den_locallyExponentiallyStable (hwC : p.wC ≠ 0)
@@ -153,23 +141,13 @@ stable for the reduced 2-state PLL model. -/
     (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
     connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
   PLL.PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi hθ
-    (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
+    (by rw [← p.deriv_h hwC hΔ θ] at hslope; exact hslope)
 
 /-- A1: `K_i > 0` and `h′(θ*) > 0` ⇒ `(θ*, 0)` is unstable (saddle). -/
 @[tmio TM, powerlib_domain] theorem reduced_mem_den_unstable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0) (hslope : 0 < -(p.amp * cos (θ + p.phase))) :
     connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .unstable)) :=
-  PLL.PIPLL.mem_den_unstable_of_pos _ hKi hθ (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
-
-/-- A1: at a saddle (`K_i > 0`, `h′(θ*) > 0`) the point is not Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem reduced_not_mem_den_lyapunovStable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0) (hslope : 0 < -(p.amp * cos (θ + p.phase))) :
-    connection% (p.pllModel θ ∉ PLL.PIPLL.family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  have h := p.reduced_mem_den_unstable hwC hΔ hKi hθ hslope
-  unfold powerlib.TMIO.Statement at h
-  rw [(connection_proof% PLL.PIPLL.family_isAutonomous.mem_den_flow)] at h ⊢
-  exact h
+  PLL.PIPLL.mem_den_unstable_of_pos _ hKi hθ (by rw [← p.deriv_h hwC hΔ θ] at hslope; exact hslope)
 
 /-- A1: at an equilibrium with `h′(θ*) = 0` (fold), the Jacobian of the reduced field is the
 nonzero nilpotent `[[0, K_i], [0, 0]]` (`K_i ≠ 0`); the equilibrium is not hyperbolic.
@@ -285,25 +263,9 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
   simp only [PH.NonlinearModel.output, pHModel, hg]
   simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
-/-- Energy balance of the reduced PLL (`reduced-2d-equation.md` §4):
-`Ḣ = −K_p h(θ)² ≤ 0` along the reduced field.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem reduced_energy_rate (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp)
-    (y : State 2) :
-    fderiv ℝ p.hamiltonian y (p.reducedField y) = -(p.Kp * p.h (y 0) ^ 2) := by
-  have h := (p.pHModel hwC hΔ hKp).zeroInput_power_balance y
-  rw [pHModel_zeroInputField, pHModel_dampingPower] at h
-  exact h
-
-/-- `Ḣ ≤ 0` along the reduced field.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem reduced_energy_rate_nonpos (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hKp : 0 ≤ p.Kp) (y : State 2) : fderiv ℝ p.hamiltonian y (p.reducedField y) ≤ 0 := by
-  rw [p.reduced_energy_rate hwC hΔ hKp]
-  have := mul_nonneg hKp (sq_nonneg (p.h (y 0)))
-  linarith
-
-/-- With a constant grid-frequency drift `δω_g` as port input: `Ḣ = h(θ) δω_g − K_p h(θ)²`.
+/-- With a constant grid-frequency drift `δω_g` as port input: `Ḣ = h(θ) δω_g − K_p h(θ)²`;
+with `δω_g = 0` this is the energy balance of the reduced PLL (`reduced-2d-equation.md` §4),
+`Ḣ = −K_p h(θ)²` along the reduced field (`reducedField_eq`).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_rate_with_drift (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) (δω : ℝ) (y : State 2) :
@@ -316,6 +278,14 @@ Static evidence on the model, not a connection conclusion. -/
   rw [h]
   simp [PH.NonlinearModel.supply, dotProduct, pHModel_output]
   ring
+
+/-- `Ḣ ≤ 0` along the reduced field.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem reduced_energy_rate_nonpos (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hKp : 0 ≤ p.Kp) (y : State 2) : fderiv ℝ p.hamiltonian y (p.reducedField y) ≤ 0 := by
+  rw [reducedField_eq, p.energy_rate_with_drift hwC hΔ hKp 0 y]
+  have := mul_nonneg hKp (sq_nonneg (p.h (y 0)))
+  linarith
 
 /-- The Hamiltonian is nonincreasing along every solution segment of the reduced field.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -470,15 +440,6 @@ soundness of the PI-PLL family. -/
   intro m hm
   exact hs ((TMIO.mem_realize _ _ _).mpr fun q hq =>
     ((TMIO.mem_realize _ _ _).mp hm) q hq)
-
-/-- Every sentence transfers between the two frames (mirror points), in particular local
-exponential stability and instability. -/
-@[tmio TM, powerlib_domain] theorem code_mem_den_iff (m : CodeModel) (s : Sentence) :
-    connection% (m ∈ codeFamily.den s ↔ m.toText ∈ PLL.PIPLL.family.den s) := by
-  unfold powerlib.TMIO.Statement
-  have h := codeFamily_den s
-  unfold powerlib.TMIO.Statement at h
-  rw [h, Set.mem_preimage]
 
 namespace Params
 

@@ -389,25 +389,9 @@ section FinTwo
     LinearSystems.IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det :=
   (Linear.spectrallyStable_iff_isHurwitz A).symm.trans (spectrallyStable_fin_two_iff A)
 
-@[tmio T, powerlib_foundation] theorem isHurwitz_fin_two_of {A : Matrix (Fin 2) (Fin 2) ℝ}
-    (htr : A.trace < 0) (hdet : 0 < A.det) : LinearSystems.IsHurwitz A :=
-  (isHurwitz_fin_two_iff A).2 ⟨htr, hdet⟩
-
-@[tmio T, powerlib_foundation] theorem trace_fin_two_of (a b c d : ℝ) :
-    (!![a, b; c, d] : Matrix (Fin 2) (Fin 2) ℝ).trace = a + d :=
-  Matrix.trace_fin_two_of a b c d
-
-@[tmio T, powerlib_foundation] theorem det_fin_two_of (a b c d : ℝ) :
-    (!![a, b; c, d] : Matrix (Fin 2) (Fin 2) ℝ).det = a * d - b * c :=
-  Matrix.det_fin_two_of a b c d
-
 @[tmio T, powerlib_foundation] theorem isHurwitz_fin_two_of_iff (a b c d : ℝ) :
     LinearSystems.IsHurwitz !![a, b; c, d] ↔ a + d < 0 ∧ 0 < a * d - b * c := by
   rw [isHurwitz_fin_two_iff, Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
-
-@[tmio T, powerlib_foundation] theorem spectrallyStable_fin_two_of_iff (a b c d : ℝ) :
-    Linear.SpectrallyStable !![a, b; c, d] ↔ a + d < 0 ∧ 0 < a * d - b * c := by
-  rw [spectrallyStable_fin_two_iff, Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
 
 /-- Companion form of `s ^ 2 + a1 * s + a0`: Hurwitz iff `0 < a0 ∧ 0 < a1`. -/
 @[tmio T, powerlib_foundation] theorem isHurwitz_companion_two_iff (a0 a1 : ℝ) :
@@ -524,12 +508,6 @@ case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`. -/
   · rintro ⟨ht, hd⟩
     rw [sq_eq_trace_smul_sub_det_smul_fin_two, ht, hd, zero_smul, zero_smul, sub_zero]
 
-/-- `tr = det = 0` together with `A ≠ 0` is exactly a nonzero square-zero (nilpotent) matrix. -/
-@[tmio T, powerlib_foundation] theorem trace_det_eq_zero_ne_zero_iff_fin_two
-    (A : Matrix (Fin 2) (Fin 2) ℝ) :
-    (A.trace = 0 ∧ A.det = 0 ∧ A ≠ 0) ↔ (A ^ 2 = 0 ∧ A ≠ 0) := by
-  rw [sq_eq_zero_iff_trace_det_eq_zero_fin_two, and_assoc]
-
 @[tmio T, powerlib_foundation] theorem isNilpotent_iff_trace_det_eq_zero_fin_two
     (A : Matrix (Fin 2) (Fin 2) ℝ) :
     IsNilpotent A ↔ A.trace = 0 ∧ A.det = 0 := by
@@ -571,7 +549,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A)
     (htr : A.trace < 0) (hdet : 0 < A.det) : LocallyExponentiallyStable f x_eq :=
   hurwitz_linearization_locally_exponentially_stable A hf heq hJac
-    (isHurwitz_fin_two_of htr hdet)
+    ((isHurwitz_fin_two_iff A).2 ⟨htr, hdet⟩)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ²`: a Jacobian with
 `det < 0` (saddle) gives instability (LeanForControl's

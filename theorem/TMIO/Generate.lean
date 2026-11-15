@@ -19,8 +19,7 @@ Source: TMIO v0.3 §3 (the generation theorem); Mathlib's `LowerAdjoint`, `Galoi
 `ClosureOperator` (`Mathlib.Order.Closure`, `Mathlib.Order.Hom.CompleteLattice`).
 
 Results.
-* `generate` (with `generate_apply`, `le_map_sInf_setOf`, `sInfHom_monotone`) and the generation
-  theorem `gc_generate`: `generate u ⊣ u`.
+* `generate` (with `generate_apply`) and the generation theorem `gc_generate`: `generate u ⊣ u`.
 * Uniqueness and optimality: `generate_unique`, `lowerAdjoint_eq_generate`, `generate_isLeast`.
 * Preservation: `generate_sSup`, `generate_sup`, `generate_monotone`; whole equals parts,
   `generate_comp` (the generated adjoint of a composite is the composite of the generated
@@ -32,17 +31,6 @@ Results.
 namespace powerlib.TMIO
 
 variable {A B C : Type*} [CompleteLattice A] [CompleteLattice B] [CompleteLattice C]
-
-/-- An arbitrary-infimum preserving map is monotone. -/
-@[tmio T, powerlib_foundation] theorem sInfHom_monotone (u : sInfHom B A) :
-    connection% (Monotone u) := show Monotone u from
-  OrderHomClass.mono u
-
-@[tmio T, powerlib_foundation] theorem le_map_sInf_setOf (u : sInfHom B A) (a : A) :
-    connection% (a ≤ u (sInf {b | a ≤ u b})) := by
-  change a ≤ u (sInf {b | a ≤ u b})
-  rw [map_sInf]
-  exact le_sInf (by rintro _ ⟨b, hb, rfl⟩; exact hb)
 
 @[tmio T, simp, powerlib_foundation] theorem generate_apply (u : sInfHom B A) (a : A) :
     connection% (generate u a = sInf {b | a ≤ u b}) := show generate u a = sInf {b | a ≤ u b} from rfl
@@ -112,7 +100,7 @@ def fixedPointsIso (u : sInfHom B A) :
   map_rel_iff' {a a'} := by
     constructor
     · intro h
-      have h' : u (generate u a.1) ≤ u (generate u a'.1) := sInfHom_monotone u h
+      have h' : u (generate u a.1) ≤ u (generate u a'.1) := OrderHomClass.mono u h
       rwa [a.2, a'.2] at h'
     · intro h
       exact generate_monotone u h

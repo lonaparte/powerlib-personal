@@ -18,10 +18,10 @@ Source: work-sync theory/T-kalman-filter.md §1.2, §1.4 (as in
 `theorem/Estimation/KalmanLTV.lean`).
 
 Results.
-* `stm_hasDerivAt`, `stm_self` — `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t ∈ ℝ` (the upstream
+* `stm_hasDerivAt` — `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t ∈ ℝ` (the upstream
   theorem `hasDerivAt_stateTransitionMatrix` holds on open segments `(s, t₁)`; the anchor is
   shifted with `stateTransitionMatrix_comp`, `stateTransitionMatrix_comp_of_mem`,
-  `stateTransitionMatrix_inv`) and `Φ(s, s) = I`.
+  `stateTransitionMatrix_inv`); `Φ(s, s) = I` is upstream `stateTransitionMatrix_self`.
 * `ltv_cov_stateTransition` — **LTV prediction covariance**: for continuous `A(t)`, `Q(t)`,
   `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` is the unique solution of
   `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`.
@@ -119,11 +119,6 @@ composition laws. -/
   rw [hfun, hcomp t, ← Matrix.mul_assoc]
   exact hda.mul_const _
 
-/-- `Φ(s, s) = I` (LeanForControl `stateTransitionMatrix_self`). -/
-@[tmio T, powerlib_foundation] theorem stm_self (s : ℝ) :
-    LinearSystems.stateTransitionMatrix A s s = 1 :=
-  LinearSystems.stateTransitionMatrix_self s
-
 /-- **LTV prediction covariance with LeanForControl's state-transition matrix.**  For continuous
 `A(t)`, `Q(t)`, the matrix
 `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
@@ -138,9 +133,11 @@ state-transition matrix of `ẋ = A(t) x`, is the unique solution of
           ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t * (A t)ᵀ + Q t) t) ∧
       ∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A t * P t + P t * (A t)ᵀ + Q t) t) →
         P t₀ = P₀ → P = ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ :=
-  ⟨ltvCov_self _ stm_self Q P₀ t₀,
-    fun t => hasDerivAt_ltvCov hA hQ (stm_hasDerivAt hA) stm_self P₀ t₀ t,
-    fun _ hP h0 => ltvCov_unique hA hQ (stm_hasDerivAt hA) stm_self hP h0⟩
+  ⟨ltvCov_self _ LinearSystems.stateTransitionMatrix_self Q P₀ t₀,
+    fun t => hasDerivAt_ltvCov hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
+      P₀ t₀ t,
+    fun _ hP h0 => ltvCov_unique hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
+      hP h0⟩
 
 variable {p : ℕ} {C : ℝ → Matrix (Fin p) (Fin n) ℝ} {Q : ℝ → Matrix (Fin n) (Fin n) ℝ}
   {R : ℝ → Matrix (Fin p) (Fin p) ℝ}
@@ -172,7 +169,8 @@ matrix**: a symmetric solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P`
       (fun t => Q t + (P t * (C t)ᵀ * (R t)⁻¹) * R t * (P t * (C t)ᵀ * (R t)⁻¹)ᵀ) (P t₀) t₀ := by
   have hPc : Continuous P := continuous_iff_continuousAt.2 fun t => (hP t).continuousAt
   exact riccati_joseph_form hA hC hQ hR hRs hRu hP hPs
-    (stm_hasDerivAt (closedLoop_continuous hA hC hR hRu hPc)) stm_self t₀
+    (stm_hasDerivAt (closedLoop_continuous hA hC hR hRu hPc))
+    LinearSystems.stateTransitionMatrix_self t₀
 
 /-- **The Kalman–Bucy Riccati covariance stays positive semidefinite** (no extra hypothesis):
 for continuous `A, C, Q, R` with `Q(t) ⪰ 0`, `R(t) ≻ 0`, every solution of
@@ -186,6 +184,7 @@ for continuous `A, C, Q, R` with `Q(t) ⪰ 0`, `R(t) ≻ 0`, every solution of
   have hPc : Continuous P := continuous_iff_continuousAt.2 fun t => (hP t).continuousAt
   have hRu : ∀ t, IsUnit (R t).det := fun t => (hRp t).isUnit.map Matrix.detMonoidHom
   exact riccati_posSemidef hA hC hQ hR hQp hRp hP
-    (stm_hasDerivAt (closedLoop_continuous hA hC hR hRu hPc)) stm_self hP₀ ht
+    (stm_hasDerivAt (closedLoop_continuous hA hC hR hRu hPc))
+    LinearSystems.stateTransitionMatrix_self hP₀ ht
 
 end powerlib.Estimation.LTV

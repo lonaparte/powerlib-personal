@@ -225,13 +225,6 @@ variable {A : Matrix n n ℂ} (mb : ModalBasis A)
   filter_upwards [eventually_ne_all mb.eig hsimple] with s hs
   rw [mb.resolvent_apply hs]
 
-/-- The participation factor is the residue of the `(k,k)` resolvent channel. -/
-@[tmio T, powerlib_foundation] theorem tendsto_pf_residue {i : n}
-    (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) (k : n) :
-    Tendsto (fun s => (s - mb.eig i) * (s • (1 : Matrix n n ℂ) - A)⁻¹ k k) (𝓝[≠] mb.eig i)
-      (𝓝 (mb.pf k i)) :=
-  mb.tendsto_resolvent_residue hsimple k k
-
 /-- `(s − λ_i) C (sI − A)⁻¹ B → R^{(i)}` at a simple eigenvalue. -/
 @[tmio T, powerlib_foundation] theorem tendsto_io_residue {κ κ' : Type*} (C : Matrix κ n ℂ)
     (B : Matrix n κ' ℂ) {i : n} (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) :

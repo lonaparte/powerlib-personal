@@ -17,9 +17,8 @@ evolution equation), §2.3 (dq frame = rotating-frame average), §2.8 (dynamic p
 Results.
 * `hasDerivAt_slidingCoeff` — if `x` is `C¹` (derivative `x'` continuous), then
   `d⟨x⟩_k/dt = ⟨ẋ⟩_k − jkω ⟨x⟩_k` (fundamental theorem of calculus for the moving window plus
-  integration by parts).
-* `hasDerivAt_slidingCoeff_of_ode` — along a solution of `ẋ = f(x, t)` with continuous
-  `t ↦ f(x(t), t)`, `d⟨x⟩_k/dt = ⟨f(x, t)⟩_k − jkω⟨x⟩_k` (the generalized-averaging equation).
+  integration by parts); along a solution of `ẋ = f(x, t)` with continuous `t ↦ f(x(t), t)`
+  take `x' := fun τ => f (x τ) τ` (the generalized-averaging equation).
 * `slidingCoeff_zero_demod` — `⟨x e^{−jωt}⟩₀ = ⟨x⟩₁` (demodulation by the fundamental turns the
   first harmonic into the zeroth one: dynamic phasor ↔ rotating-frame average).
 -/
@@ -97,15 +96,6 @@ def slidingCoeff (T ω : ℝ) (k : ℤ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
       (k : ℂ) * ω * I * (1 / (T : ℂ) * ∫ τ in (t - T)..t, x τ * e τ) = _
   rw [hparts]
   ring
-
-/-- Along a solution of `ẋ = f(x, t)` (with `t ↦ f(x(t), t)` continuous):
-`d⟨x⟩_k/dt = ⟨f(x, t)⟩_k − jkω⟨x⟩_k`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_slidingCoeff_of_ode {T ω : ℝ} (k : ℤ)
-    {f : ℂ → ℝ → ℂ} {x : ℝ → ℂ} (hx : ∀ τ, HasDerivAt x (f (x τ) τ) τ)
-    (hf : Continuous fun τ => f (x τ) τ) (t : ℝ) :
-    HasDerivAt (slidingCoeff T ω k x)
-      (slidingCoeff T ω k (fun τ => f (x τ) τ) t - (k : ℂ) * ω * I * slidingCoeff T ω k x t) t :=
-  hasDerivAt_slidingCoeff k hx hf t
 
 /-- Demodulation: `⟨x e^{−jωt}⟩₀ = ⟨x⟩₁`. -/
 @[tmio T, powerlib_foundation] theorem slidingCoeff_zero_demod (T ω : ℝ) (x : ℝ → ℂ) (t : ℝ) :

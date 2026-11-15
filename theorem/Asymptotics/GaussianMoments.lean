@@ -22,17 +22,18 @@ theory/T-fold-slow-passage.md §1.2–§1.3 (`∫ e^{-τ²} = √π`, odd weight
 projects/basin-guard/notes/concepts/fold-slow-passage.md §2.
 
 Results.
-* `halfMoment0`, `halfMoment1`, `halfMoment3` — the half-line moments
-  `∫_0^∞ ξⁿ e^{-b ξ²/2} dξ` (`n = 0, 1, 3`) of the endpoint Laplace table.
+* `halfMoment0` — the half-line Gaussian mass `∫_0^∞ e^{-b ξ²/2} dξ` of the endpoint Laplace
+  table.
 * `integral_exp_neg_sq`, `integral_sq_mul_exp_neg_sq`, `integral_exp_neg_sq_mul_odd`,
   `integral_odd_moments_vanish` — the full-line weight `e^{-τ²}` of the fold slow-passage
   solvability condition: `∫ e^{-τ²} = √π`, `∫ τ² e^{-τ²} = √π/2`, odd integrands vanish.
 * `gaussMoment1`, `gaussMoment3`, `gaussMoment5` — the half-line moments `∫_0^∞ ξⁿ e^{−cξ²}`
-  (`n = 1, 3, 5`) used by the guard first-passage asymptotics.
+  (`n = 1, 3, 5`) used by the endpoint Laplace table (`c = b/2`) and the guard first-passage
+  asymptotics.
 * `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_ge` — finite-interval bounds,
   `∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`.
-* `integral_mul_exp_neg_sq_div` — the closed form
-  `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`.
+* `integral_mul_exp_neg_mul_sq_interval` — the closed form
+  `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)`.
 -/
 
 noncomputable section
@@ -45,31 +46,6 @@ open Real MeasureTheory Set
     ∫ ξ in Ioi (0 : ℝ), Real.exp (-(b / 2) * ξ ^ 2) = Real.sqrt (2 * π / b) / 2 := by
   rw [integral_gaussian_Ioi]
   congr 2
-  field_simp
-
-/-- Half-line first moment: `∫_0^∞ ξ e^{-b ξ²/2} dξ = 1/b`
-(wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = 2`, `q = 1`). -/
-@[tmio T, powerlib_foundation] theorem halfMoment1 {b : ℝ} (hb : 0 < b) :
-    ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-(b / 2) * ξ ^ 2) = 1 / b := by
-  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 1) (b := b / 2)
-    two_pos (by norm_num) (by positivity)
-  simp only [Real.rpow_one, Real.rpow_two] at h
-  rw [h]
-  norm_num
-  rw [Real.rpow_neg_one]
-  field_simp
-
-/-- Half-line third moment: `∫_0^∞ ξ³ e^{-b ξ²/2} dξ = 2/b²`
-(wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = 2`, `q = 3`). -/
-@[tmio T, powerlib_foundation] theorem halfMoment3 {b : ℝ} (hb : 0 < b) :
-    ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2) = 2 / b ^ 2 := by
-  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 3) (b := b / 2)
-    two_pos (by norm_num) (by positivity)
-  have h3 : ∀ ξ : ℝ, ξ ^ (3 : ℝ) = ξ ^ (3 : ℕ) := fun ξ => by
-    exact_mod_cast Real.rpow_natCast ξ 3
-  simp only [h3, Real.rpow_two] at h
-  rw [h]
-  norm_num
   field_simp
 
 /-- Full-line Gaussian weight of the solvability condition: `∫ e^{-τ²} = √π`
@@ -125,22 +101,28 @@ section HalfLine
 
 open Filter Topology intervalIntegral
 
-variable {α : ℝ}
-
-/-- `∫_0^∞ ξ e^{−cξ²} dξ = 1/(2c)` (`halfMoment1` with `b = 2c`). -/
+/-- `∫_0^∞ ξ e^{−cξ²} dξ = 1/(2c)`
+(wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = 2`, `q = 1`). -/
 @[tmio T, powerlib_foundation] theorem gaussMoment1 {c : ℝ} (hc : 0 < c) :
     ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-c * ξ ^ 2) = 1 / (2 * c) := by
-  have h := halfMoment1 (b := 2 * c) (by positivity)
-  rw [show 2 * c / 2 = c by ring] at h
-  rw [← h]
+  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 1) (b := c)
+    two_pos (by norm_num) hc
+  simp only [Real.rpow_one, Real.rpow_two] at h
+  rw [h]
+  norm_num
+  rw [Real.rpow_neg_one]
 
-/-- `∫_0^∞ ξ³ e^{−cξ²} dξ = 1/(2c²)` (`halfMoment3` with `b = 2c`). -/
+/-- `∫_0^∞ ξ³ e^{−cξ²} dξ = 1/(2c²)`
+(wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = 2`, `q = 3`). -/
 @[tmio T, powerlib_foundation] theorem gaussMoment3 {c : ℝ} (hc : 0 < c) :
     ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-c * ξ ^ 2) = 1 / (2 * c ^ 2) := by
-  have h := halfMoment3 (b := 2 * c) (by positivity)
-  rw [show 2 * c / 2 = c by ring] at h
-  have e : (2 : ℝ) / (2 * c) ^ 2 = 1 / (2 * c ^ 2) := by field_simp
-  rw [← e, ← h]
+  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 3) (b := c)
+    two_pos (by norm_num) hc
+  have h3 : ∀ ξ : ℝ, ξ ^ (3 : ℝ) = ξ ^ (3 : ℕ) := fun ξ => by
+    exact_mod_cast Real.rpow_natCast ξ 3
+  simp only [h3, Real.rpow_two] at h
+  rw [h]
+  norm_num
 
 /-- `∫_0^∞ ξ⁵ e^{−cξ²} dξ = 1/c³` (wraps `integral_rpow_mul_exp_neg_mul_rpow`, `Γ(3) = 2`). -/
 @[tmio T, powerlib_foundation] theorem gaussMoment5 {c : ℝ} (hc : 0 < c) :
@@ -200,23 +182,22 @@ half-line integral. -/
   rw [intervalIntegral.integral_of_le hL.le]
   linarith
 
-/-- `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`. -/
-@[tmio T, powerlib_foundation] theorem integral_mul_exp_neg_sq_div (hα : 0 < α) {D : ℝ} (hD : 0 < D)
-    (y : ℝ) :
-    ∫ z in (0 : ℝ)..y, z * Real.exp (-(α / (2 * D)) * z ^ 2) =
-      D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) := by
-  have hderiv : ∀ z ∈ uIcc 0 y, HasDerivAt (fun z => -(D / α) * Real.exp (-(α / (2 * D)) * z ^ 2))
-      (z * Real.exp (-(α / (2 * D)) * z ^ 2)) z := by
-    intro z _
-    have h1 : HasDerivAt (fun z => -(α / (2 * D)) * z ^ 2) (-(α / (2 * D)) * (2 * z)) z := by
-      simpa using (hasDerivAt_pow 2 z).const_mul (-(α / (2 * D)))
-    have := (h1.exp).const_mul (-(D / α))
+/-- `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)` (fundamental theorem of calculus). -/
+@[tmio T, powerlib_foundation] theorem integral_mul_exp_neg_mul_sq_interval {β : ℝ} (hβ : 0 < β)
+    (L : ℝ) :
+    ∫ u in (0 : ℝ)..L, u * Real.exp (-β * u ^ 2) = (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by
+  have hderiv : ∀ u ∈ uIcc 0 L, HasDerivAt (fun u => -(1 / (2 * β)) * Real.exp (-β * u ^ 2))
+      (u * Real.exp (-β * u ^ 2)) u := by
+    intro u _
+    have h1 : HasDerivAt (fun u => -β * u ^ 2) (-β * (2 * u)) u := by
+      simpa using (hasDerivAt_pow 2 u).const_mul (-β)
+    have := (h1.exp).const_mul (-(1 / (2 * β)))
     convert this using 1
     field_simp
   rw [integral_eq_sub_of_hasDerivAt hderiv
-    ((by fun_prop : Continuous fun z : ℝ =>
-      z * Real.exp (-(α / (2 * D)) * z ^ 2)).intervalIntegrable _ _)]
+    ((by fun_prop : Continuous fun u : ℝ => u * Real.exp (-β * u ^ 2)).intervalIntegrable _ _)]
   simp
+  field_simp
   ring
 
 end HalfLine

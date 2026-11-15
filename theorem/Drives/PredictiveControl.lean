@@ -33,7 +33,7 @@ Results (foundation).
   model.
 * `LTI.prediction_closedForm` (`theorem/LTI/Discrete.lean`): multi-step prediction
   `x[k+j] = A^j x[k] + Σ A^{j−1−i}(B u[k+i] + d)`.
-* `fcs_argmin_exists` (wrapper of `Finset.exists_min_image`): every finite nonempty candidate
+* FCS-MPC well-posedness is Mathlib's `Finset.exists_min_image`: every finite nonempty candidate
   set (e.g. the 7 distinct two-level vectors, or `7^{N_p}` sequences) has a cost minimiser.
 * `Dynamics.zoh_exact` (`theorem/Dynamics/VariationOfConstants.lean`): exact zero-order-hold
   sampling of `ẋ = A x + c` with constant `c` over one period,
@@ -192,13 +192,5 @@ Implementation evidence: discrete-time result outside the sentence language (Rul
   intro k
   have h1 : x (k + 1) = eulerStep p Ts (ω k) (x k) (u k) := hplant k
   rw [hplant (k + 1), hctrl k, ← h1, eulerStep_deadbeat p hd hq Ts _ hTs]
-
-/-! ## Finite-control-set optimisation -/
-
-/-- FCS-MPC is well posed: a finite nonempty candidate set always has a cost minimiser
-(thin wrapper of `Finset.exists_min_image`). -/
-@[tmio T, powerlib_foundation] theorem fcs_argmin_exists {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
-    (J : ι → ℝ) : ∃ k ∈ s, ∀ k' ∈ s, J k ≤ J k' :=
-  Finset.exists_min_image s J hs
 
 end powerlib.Drives.Predictive

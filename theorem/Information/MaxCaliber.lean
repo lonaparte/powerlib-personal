@@ -26,8 +26,10 @@ path enumeration with reference `P₀`), §1.2 (Onsager–Machlup action, OU exa
 (transfer-matrix construction of the MaxCal transition matrix).
 
 Results.
-* `tiltedPath_maxCaliber` — among all path distributions with the same mean path functional
-  `⟨F⟩`, the tilted path weight `tiltedPath` has the largest caliber.
+* `tiltedPath` — the tilted path weight is the Gibbs vector of `P₀` with log-tilt `-λ F`, so
+  maximum caliber (among all path distributions with the same mean path functional `⟨F⟩` it
+  has the largest caliber, uniquely) is `klSum_gibbsVec_le` and `klSum_eq_klSum_gibbsVec_iff`
+  of `theorem/Information/Finite.lean` at `g = -λ F`.
 * `tiltedTransition_stochastic`, `prod_tiltedTransition` — `P(λ)` is a stochastic matrix, and
   its path probabilities are the tilted path weights up to the boundary factor
   `u(s_n) / (ρⁿ u(s_0))`.
@@ -43,24 +45,13 @@ section PathMaxEnt
 
 variable {S : Type*} [Fintype S] {n : ℕ}
 
-/-- Tilted path weight `P₀[Γ] exp(-λ F[Γ]) / 𝒵` on the finite path space `Fin (n+1) → S`. -/
+/-- Tilted path weight `P₀[Γ] exp(-λ F[Γ]) / 𝒵` on the finite path space `Fin (n+1) → S`: the
+Gibbs vector of `P₀` with log-tilt `-λ F`. Maximum caliber on the finite path space (the tilted
+weight has the largest caliber `-KL(P‖P₀)` among the path distributions with its mean `⟨F⟩`,
+uniquely) is `klSum_gibbsVec_le` and `klSum_eq_klSum_gibbsVec_iff` at `g = -λ F`. -/
 def tiltedPath (P₀ : (Fin (n + 1) → S) → ℝ) (F : (Fin (n + 1) → S) → ℝ) (lam : ℝ) :
     (Fin (n + 1) → S) → ℝ :=
   gibbsVec P₀ fun Γ => -lam * F Γ
-
-/-- **Maximum caliber on a finite path space.** Among all path distributions with the same mean
-path functional `⟨F⟩`, the tilted path weight has the largest caliber `-KL(P‖P₀)`, uniquely. -/
-@[tmio T, powerlib_foundation] theorem tiltedPath_maxCaliber [Nonempty S]
-    {P₀ F : (Fin (n + 1) → S) → ℝ} {lam : ℝ} (hP₀ : ∀ Γ, 0 < P₀ Γ)
-    {P : (Fin (n + 1) → S) → ℝ} (hP : ∀ Γ, 0 ≤ P Γ) (hP1 : ∑ Γ, P Γ = 1)
-    (hF : ∑ Γ, P Γ * F Γ = ∑ Γ, tiltedPath P₀ F lam Γ * F Γ) :
-    -klSum P P₀ ≤ -klSum (tiltedPath P₀ F lam) P₀ ∧
-      (-klSum P P₀ = -klSum (tiltedPath P₀ F lam) P₀ ↔ P = tiltedPath P₀ F lam) := by
-  have hmom : ∑ Γ, P Γ * (-lam * F Γ) = ∑ Γ, tiltedPath P₀ F lam Γ * (-lam * F Γ) := by
-    simp only [mul_left_comm _ (-lam), ← Finset.mul_sum, hF]
-  refine ⟨neg_le_neg (klSum_gibbsVec_le hP₀ hP hP1 hmom), ?_⟩
-  rw [neg_inj]
-  exact klSum_eq_klSum_gibbsVec_iff hP₀ hP hP1 hmom
 
 end PathMaxEnt
 

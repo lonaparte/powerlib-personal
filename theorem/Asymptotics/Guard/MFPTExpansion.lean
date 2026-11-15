@@ -25,24 +25,25 @@ Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("趋近 2 的�
 Results.
 * `guardMFPT_guard_two_term` — `T_guard/(P e^X) = 1 + c√D̃ + O(D̃)`;
   `tendsto_guardMFPT_guard_sub_one_div_sqrt`: `(T_guard/(P e^X) − 1)/√D̃ → c`;
-  `tendsto_guardMFPT_guard_mul_sqrt_atTop`: `√X (T_guard/(P e^X) − 1) → 1/√π`, i.e.
+  with `tendsto_sqrt_mul_comp_div_atTop` and `sqrt_barrierHeight_mul_halfOrder` this is
+  `√X (T_guard/(P e^X) − 1) → 1/√π` along `X = ΔU/D̃ → ∞`, i.e.
   `T_guard = P e^X (1 + 1/√(πX) + o(X^{−1/2}))`.
 * `guardMFPT_beyond_two_term` — `(T(r_b) − T_guard)/(P e^X) = 1 − c√D̃ + O(D̃)`.
 * `guardMFPT_ratio_two_term` — `T(r_b)/T(r_c) = 2 − 2c√D̃ + O(D̃)`;
   `tendsto_guardMFPT_ratio_sub_two_div_sqrt`: `(T(r_b)/T(r_c) − 2)/√D̃ → −2c = −4√l₁/(√π α)`;
-  `tendsto_guardMFPT_ratio_mul_sqrt_atTop`: `√X (T_committed/T_guard − 2) → −2/√π`, i.e.
-  `T_committed/T_guard = 2 (1 − 1/√(πX) + o(X^{−1/2}))`.
+  in `X = ΔU/D̃` (`tendsto_sqrt_mul_comp_div_atTop`): `√X (T_committed/T_guard − 2) → −2/√π`,
+  i.e. `T_committed/T_guard = 2 (1 − 1/√(πX) + o(X^{−1/2}))`.
 * `guardHalfOrder_pos` — the coefficient is nonzero, so the rates `O(√D̃)` of
   `guardMFPT_guard_isBigO` and `guardMFPT_ratio_sub_two_isBigO` are sharp:
-  `guardMFPT_guard_sub_one_isTheta`, `guardMFPT_ratio_sub_two_isTheta` (`=Θ(√D̃)`),
-  `not_guardMFPT_guard_sub_one_isLittleO`, `not_guardMFPT_ratio_sub_two_isLittleO` (`≠ o(√D̃)`).
+  `guardMFPT_guard_sub_one_isTheta`, `guardMFPT_ratio_sub_two_isTheta` (`=Θ(√D̃)`, hence
+  `≠ o(√D̃)`).
   This settles for the integral itself what `Asymptotics/Guard/MFPT.lean` only had from the
   truncated table `endpointCorrection_ne_zero_iff`.
-* `guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop` —
-  `T_committed = 2 P e^X (1 + O(1/X))`: the half-order terms of the two halves of the barrier
+* `guardMFPT_committed_two_term` — `T_committed = 2 P e^X (1 + O(D̃))`, i.e. `1 + O(1/X)` in
+  `X = ΔU/D̃` (`isBigO_comp_div_atTop_inv`): the half-order terms of the two halves of the barrier
   peak cancel (committed escape integrates the full Gaussian, an interior Laplace integral), so
   the whole half-order term of the ratio comes from `T_guard`. This sharpens the `O(X^{−1/2})`
-  upper bound `guardMFPT_committed_isBigO_atTop`; it is consistent with the source (§1.2:
+  upper bound `guardMFPT_committed_isBigO`; it is consistent with the source (§1.2:
   "极值成为内点 ⇒ 完整高斯").
 
 Route. Morse substitution `u = y² − r_c²` makes the barrier phase exactly Gaussian, because
@@ -559,7 +560,8 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
 
 /-- **Two-term expansion of `T_guard`** (source §1.3): as `D̃ → 0⁺`,
 `T_guard/(P e^X) = 1 + c √D̃ + O(D̃)` with `c = 2√l₁/(√π α)`, `P = guardPrefactor`, `X = ΔU/D̃`;
-equivalently `T_guard = P e^X (1 + 1/√(πX) + O(1/X))` (`tendsto_guardMFPT_guard_mul_sqrt_atTop`).
+equivalently `T_guard = P e^X (1 + 1/√(πX) + O(1/X))`
+(`tendsto_guardMFPT_guard_sub_one_div_sqrt`).
 The half-order term is the endpoint effect of stopping the outer integral at the barrier top: in
 the Morse variable `u = r_c² − y²` the weight is `(e^X/2) ∫ (r_c² − u)⁻¹ e^{−l₁u²/(4D̃)} du`
 (`guard_weight_inside_morse`), whose amplitude has slope `r_c⁻⁴ ≠ 0`; the inner integral and the
@@ -806,31 +808,6 @@ for every `r_b > r_c` (upper bound `guardMFPT_ratio_sub_two_isBigO`). -/
   exact (Asymptotics.isTheta_of_div_tendsto_nhds_ne_zero
     (tendsto_guardMFPT_ratio_sub_two_div_sqrt hα hl hrb) (neg_ne_zero.mpr h4.ne')).symm
 
-/-- The half-order term of the ratio is not removable: `T(r_b)/T(r_c) − 2 ≠ o(√D̃)`. -/
-@[tmio M, powerlib_foundation] theorem not_guardMFPT_ratio_sub_two_isLittleO (hα : 0 < α) (hl : 0 < l₁)
-    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
-    ¬ (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2) =o[𝓝[>] 0]
-      fun D => √D := by
-  intro ho
-  have h1 := ho.tendsto_div_nhds_zero
-  have h2 := tendsto_guardMFPT_ratio_sub_two_div_sqrt hα hl hrb
-  have h4 : 0 < 4 * √l₁ / (√π * α) := by
-    have := guardHalfOrder_pos hα hl
-    have e : 4 * √l₁ / (√π * α) = 2 * (2 * √l₁ / (√π * α)) := by ring
-    rw [e]; positivity
-  have := tendsto_nhds_unique h1 h2
-  linarith
-
-/-- The half-order term of `T_guard` is not removable: `T_guard/(P e^X) − 1 ≠ o(√D̃)`. -/
-@[tmio M, powerlib_foundation] theorem not_guardMFPT_guard_sub_one_isLittleO (hα : 0 < α) (hl : 0 < l₁) :
-    ¬ (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
-        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1) =o[𝓝[>] 0]
-      fun D => √D := by
-  intro ho
-  have := tendsto_nhds_unique ho.tendsto_div_nhds_zero
-    (tendsto_guardMFPT_guard_sub_one_div_sqrt hα hl)
-  linarith [guardHalfOrder_pos hα hl]
-
 /-- Consistency with the truncated moment table (`Asymptotics/EndpointLaplace.lean`): in
 `ξ = r_c − y` the weight has amplitude `g = (r_c − ξ)⁻¹` (`g₀ = r_c⁻¹`, `g₁ = r_c⁻²`) and phase
 `ΔU − U(r_c − ξ)` (`φ₂ = 2α`, `φ₃ = −6l₁r_c`), whose table coefficient is the half-order coefficient
@@ -853,7 +830,7 @@ for every `r_b > r_c` (upper bound `guardMFPT_ratio_sub_two_isBigO`). -/
   ring
 
 
-/-! ## The same statements along `X = ΔU/D̃ → ∞` -/
+/-! ## Transfer to `X = ΔU/D̃ → ∞` -/
 
 /-- Composition with `D̃ = Δ/X` (`Δ > 0`): `f(D̃)/√D̃ → c` as `D̃ → 0⁺` gives
 `√X f(Δ/X) → √Δ c` as `X → ∞`. -/
@@ -896,49 +873,5 @@ for every `r_b > r_c` (upper bound `guardMFPT_ratio_sub_two_isBigO`). -/
   have := Real.sqrt_pos.mpr hl
   have := Real.sqrt_pos.mpr Real.pi_pos
   field_simp
-
-/-- **`T_guard = P e^X (1 + 1/√(πX) + o(X^{−1/2}))`** along `X = ΔU/D̃ → ∞` (source §1.3):
-`√X (T_guard/(P e^X) − 1) → 1/√π`. -/
-@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_guard_mul_sqrt_atTop (hα : 0 < α) (hl : 0 < l₁) :
-    Tendsto (fun X => √X * (guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) /
-        (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X) - 1)) atTop
-      (𝓝 (1 / √π)) := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  have h := tendsto_sqrt_mul_comp_div_atTop hΔ (tendsto_guardMFPT_guard_sub_one_div_sqrt hα hl)
-  rw [sqrt_barrierHeight_mul_halfOrder hα hl] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with X hX
-  rw [div_div_cancel₀ hΔ.ne']
-
-/-- **`T_committed/T_guard = 2 (1 − 1/√(πX) + o(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`
-(source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`", with the coefficient):
-`√X (T(r_b)/T(r_c) − 2) → −2/√π`, for every `r_b > r_c`. -/
-@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio_mul_sqrt_atTop (hα : 0 < α) (hl : 0 < l₁)
-    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
-    Tendsto (fun X => √X * (guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
-        guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) - 2)) atTop
-      (𝓝 (-(2 / √π))) := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  have h := tendsto_sqrt_mul_comp_div_atTop hΔ
-    (tendsto_guardMFPT_ratio_sub_two_div_sqrt hα hl hrb)
-  have e : √(barrierHeight α l₁) * -(4 * √l₁ / (√π * α)) = -(2 / √π) := by
-    have := sqrt_barrierHeight_mul_halfOrder hα hl
-    have e2 : √(barrierHeight α l₁) * -(4 * √l₁ / (√π * α)) =
-        -(2 * (√(barrierHeight α l₁) * (2 * √l₁ / (√π * α)))) := by ring
-    rw [e2, this]; ring
-  rwa [e] at h
-
-/-- **`T_committed = 2 P e^X (1 + O(1/X))`** along `X = ΔU/D̃ → ∞`, for every `r_b > r_c`: no
-half-order term (`guardMFPT_committed_two_term`). -/
-@[tmio M, powerlib_foundation] theorem guardMFPT_committed_two_term_atTop (hα : 0 < α) (hl : 0 < l₁)
-    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
-    (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
-        (2 * (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X)) - 1) =O[atTop]
-      fun X => X⁻¹ := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  refine (isBigO_comp_div_atTop_inv hΔ (guardMFPT_committed_two_term hα hl hrb)).congr' ?_
-    EventuallyEq.rfl
-  filter_upwards [eventually_gt_atTop 0] with X hX
-  rw [div_div_cancel₀ hΔ.ne']
 
 end powerlib.Asymptotics.Guard

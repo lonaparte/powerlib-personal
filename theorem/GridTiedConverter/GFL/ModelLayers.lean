@@ -61,10 +61,10 @@ Results.
 * Direction convention: OUT-positive writing of the source `s_L = 1, s_P = −1, s_K = 1`
   (`outConv`); the workspace writing `inConv` is its complete §D8 translation, which negates both
   currents and all three flags.
-  `loopFactor_flip_all`, `D1_inConv`: `D₁` is invariant; `field_inConv`, `fderiv_field_inConv`:
-  the reduced four-state field — none of whose states is a current — is the same function in
-  both conventions, so the Jacobians agree entry by entry; `D1_currentOnly`: translating only
-  the current gives `2 − D₁`.
+  `loopFactor_flip_all`, `D1_inConv`: `D₁` is invariant; `field_inConv`: the reduced four-state
+  field — none of whose states is a current — is the same function in both conventions, so the
+  Jacobians agree entry by entry; `loopFactor_flip_current` (at the OUT-positive flags):
+  translating only the current gives `2 − D₁`.
 * Four-state model of `theorem/GridTiedConverter/GFL/DCLink/FourState.lean`: `fourState_power`:
   `P_abs`, `Q_abs` are `(3/2) Re / Im (V̄ Ī*)` with `V̄ = v_d + j v_q`, `Ī = i_d + j 0`
   (IN-positive).
@@ -543,12 +543,6 @@ def inConv : DCParams := { d with id0 := -d.id0, iq := -d.iq, sL := -1, sP := 1,
   rw [← loopFactor_flip_all]
   simp [inConv, outConv]
 
-/-- With the OUT-positive flags, evaluating `D₁` at the negated current (translating only the
-current) gives `2 − D₁`, which is `< 1` whenever the true `D₁ > 1`. -/
-@[tmio M, powerlib_domain] theorem D1_currentOnly (V id : ℝ) :
-    loopFactor 1 (-1) 1 d.kpv d.Lg d.C V (-id) = 2 - loopFactor 1 (-1) 1 d.kpv d.Lg d.C V id :=
-  loopFactor_flip_current _ _ _ _ _ _ _ _
-
 /-- `D₁` does not depend on the q-axis current. -/
 @[tmio M, powerlib_domain] theorem D1_indep_iq (a b V η : ℝ) :
     ({ d with iq := a } : DCParams).D1 V η = ({ d with iq := b } : DCParams).D1 V η := rfl
@@ -584,10 +578,6 @@ current), so its Jacobian agrees entry by entry at every point. -/
     funext y
     simp only [coordField, uSol_inConv, vqSol_inConv, VdSol_inConv]
   simp only [field, this]
-
-@[tmio M, powerlib_domain] theorem fderiv_field_inConv (z : Dynamics.State 4) :
-    fderiv ℝ d.inConv.field z = fderiv ℝ d.outConv.field z := by
-  rw [field_inConv]
 
 end DCParams
 

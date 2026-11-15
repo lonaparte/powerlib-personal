@@ -32,8 +32,9 @@ Results.
   (exact FDT); `voltage_alignment`, `voltage_alignment_lt_one`, `freq_alignment`: the voltage
   channel is structurally non-FDT (normalized alignment `K_p²/(1 + K_p²) < 1` with `R`), the
   frequency column has alignment one.
-* `ito_emb`, `genL_emb`, `genL_emb_pH`, `ito_freq_only`: the Itô correction
-  `Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''` and the generator `𝓛𝓗 = −K_p h² + Δ_Itô`.
+* `ito_emb`, `genL_emb`, `genL_emb_pH`: the Itô correction
+  `Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''` (frequency channel only, `σ_d = g = 0`:
+  `½ ε² 𝒱''`) and the generator `𝓛𝓗 = −K_p h² + Δ_Itô`.
 * `ito_emb_neg_iff`, `ito_emb_sign_indefinite`: the sign of `Δ_Itô` (Correction below).
 
 Correction (sphs-embedding §3, already noted there on 2026-08-13).  `Δ_Itô` is **not** a
@@ -200,11 +201,6 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
         itoCorrection (embNoise Kp σd g ε) (pllHess V2 Ki) := by
   rw [genL_pH embJ_skew]
   simp
-
-/-- Frequency channel only: `Δ_Itô = ½ ε² 𝒱''` (negative on the saddle side `𝒱'' < 0`). -/
-@[tmio M, powerlib_foundation] theorem ito_freq_only (Kp Ki ε V2 : ℝ) :
-    itoCorrection (embNoise Kp 0 0 ε) (pllHess V2 Ki) = (1 / 2 : ℝ) * ε ^ 2 * V2 := by
-  rw [ito_emb]; ring
 
 /-- **Correction (sign)**: `Δ_Itô < 0 ⇔ 𝒱'' < −(σ_d² + g²) K_i / ((σ_d² + g²) K_p² + ε²)`
 whenever some noise acts (`(σ_d² + g²) K_p² + ε² > 0`). -/

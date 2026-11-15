@@ -21,7 +21,7 @@ Source: work-sync theory/T-dynamical-systems.md §1.1 (flow, `φ₀ = Id`, `φ_{
 
 Results.
 * `lipschitzFlow hf : Flow ℝ≥0 E` — a Mathlib `Flow`: jointly continuous, `φ₀ = id`,
-  `φ_{t+s} = φ_t ∘ φ_s` (`lipschitzFlow_add`); joint continuity comes from the Grönwall estimate
+  `φ_{t+s} = φ_t ∘ φ_s` (Mathlib `Flow.map_add`); joint continuity comes from the Grönwall estimate
   `‖φ_t x − φ_t y‖ ≤ e^{Kt} ‖x − y‖` (`dist_forwardSolution_le`).
 * `lipschitzFlow_solution`: `t ↦ φ_t x` solves the ODE on `[0, ∞)` with `φ₀ x = x`;
   `lipschitzFlow_unique`: every forward solution from `x` coincides with it.
@@ -129,11 +129,6 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
 
 @[tmio T, powerlib_foundation] theorem lipschitzFlow_apply (hf : LipschitzWith K f) (t : ℝ≥0) (x : E) :
     lipschitzFlow hf t x = forwardSolution hf x t := rfl
-
-/-- Semigroup law `φ_{t+s} = φ_t ∘ φ_s`. -/
-@[tmio T, powerlib_foundation] theorem lipschitzFlow_add (hf : LipschitzWith K f) (t s : ℝ≥0) (x : E) :
-    lipschitzFlow hf (t + s) x = lipschitzFlow hf t (lipschitzFlow hf s x) :=
-  (lipschitzFlow hf).map_add t s x
 
 @[tmio T, powerlib_foundation] theorem lipschitzFlow_zero (hf : LipschitzWith K f) (x : E) :
     lipschitzFlow hf 0 x = x :=

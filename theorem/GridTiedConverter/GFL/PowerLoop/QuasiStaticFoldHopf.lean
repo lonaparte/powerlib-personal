@@ -59,8 +59,7 @@ Family and connection conclusions.
   stable (a weak focus: asymptotically, not exponentially, stable).
 * `not_exact_locallyAsymptoticallyStable`: the local asymptotic translation of
   `QuasiStatic.family` (`{equilibrium, jacobianStable}`, strict Routh–Hurwitz) is **not exact**
-  for gains of arbitrary sign. Within positive gains it is exact
-  (`exactUnder_locallyAsymptoticallyStable`,
+  for gains of arbitrary sign. Within positive gains it is exact (`exactUnder_positiveGains`,
   `theorem/GridTiedConverter/GFL/PowerLoop/QuasiStaticFold.lean`).
 -/
 
@@ -484,11 +483,6 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     fun_prop
   simpa [hopfQS_size, hopfQS_h] using hc.tendsto 0
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_sqrt_sq (z : Dynamics.State 3) :
-    |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)| =
-      Real.sqrt |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)| ^ 2 :=
-  (Real.sq_sqrt (abs_nonneg _)).symm
-
 @[tmio T, powerlib_foundation] private theorem hopfQS_c1_isBigO : (fun z => hopfQS_c1 z) =O[𝓝 0] hopfQS_size :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, abs_of_nonneg (hopfQS_size_nonneg z)]
@@ -513,7 +507,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
       have := abs_add_le (hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z))
         (hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z))
       rwa [sub_add_cancel] at this
-    rw [hopfQS_sqrt_sq z] at h3
+    rw [← Real.sq_sqrt (abs_nonneg (hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)))] at h3
     unfold hopfQS_size
     have hw := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     nlinarith [abs_nonneg (hopfQS_c1 z), abs_nonneg (hopfQS_c2 z)])
@@ -565,7 +559,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     have hx : x ^ 2 = hopfQS_c1 z ^ 2 := sq_abs _
     have hy : y ^ 2 = hopfQS_c2 z ^ 2 := sq_abs _
     have hw : (w ^ 2) ^ 2 = (hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)) ^ 2 := by
-      rw [← hopfQS_sqrt_sq z, sq_abs]
+      rw [Real.sq_sqrt (abs_nonneg _), sq_abs]
     have hx0 : 0 ≤ x := abs_nonneg _
     have hy0 : 0 ≤ y := abs_nonneg _
     have hw0 : 0 ≤ w := Real.sqrt_nonneg _
@@ -660,8 +654,12 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   unfold hopfQS_q4
   linarith
 
-/-- **The supercritical quasi-static witness is locally asymptotically stable** (a weak focus). -/
-@[tmio TM, powerlib_domain] private theorem supercriticalQS_las :
+/-! ## Connection conclusions -/
+
+/-- **The supercritical quasi-static witness is locally asymptotically stable** (a weak focus):
+`V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`, `k_P = 4/3`, `P_ref = −3`,
+`(θ*, i_d*) = (arctan(1/2), −1)`; its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
+@[tmio TM, powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -673,17 +671,6 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     (W := fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) (by norm_num)
     (contDiff_model_field _) hfz (contDiff_poly3 _ _ _ _) (by simp [hopfQS_W]) hopfQS_W_pos
     hopfQS_lie_neg
-
-/-! ## Connection conclusions -/
-
-/-- The supercritical quasi-static witness (`V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`,
-`k_P = 4/3`, `P_ref = −3`, `(θ*, i_d*) = (arctan(1/2), −1)`) is locally asymptotically stable: a
-weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
-@[tmio TM, powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
-    connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact (family_isAutonomous.mem_den_flow.mp (supercriticalQS_las))
 
 /-- The witness Jacobian is on the Hopf boundary: `a₂ = 7/2`, `a₁ = 9`, `a₀ = 63/2 = a₂a₁`, so
 `tr J · m₂(J) = det J` and the strict Routh–Hurwitz condition fails. -/

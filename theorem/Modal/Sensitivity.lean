@@ -27,12 +27,11 @@ projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/gfl-gfm-parametr
 
 Results.
 
-Along a given branch:
-* `eigen_branch_deriv`, `eigen_branch_deriv_of_eventually` — `A' vᵢ + A v' = λ' vᵢ + λᵢ v'`.
-* `eigenvalue_deriv`, `eigenvalue_deriv_of_eventually` — `λ'(α₀) = ψᵢᵀ A' vᵢ`.
-* `eigenvector_deriv_coeff`, `eigenvector_deriv_coeff_of_eventually` — for `j ≠ i`,
-  `ψⱼᵀ v' = ψⱼᵀ A' vᵢ / (λᵢ − λⱼ)`.
-* `eigenvector_deriv`, `eigenvector_deriv_of_eventually` —
+Along a given branch (a global branch `∀ α` enters through `Filter.Eventually.of_forall`):
+* `eigen_branch_deriv_of_eventually` — `A' vᵢ + A v' = λ' vᵢ + λᵢ v'`.
+* `eigenvalue_deriv_of_eventually` — `λ'(α₀) = ψᵢᵀ A' vᵢ`.
+* `eigenvector_deriv_coeff_of_eventually` — for `j ≠ i`, `ψⱼᵀ v' = ψⱼᵀ A' vᵢ / (λᵢ − λⱼ)`.
+* `eigenvector_deriv_of_eventually` —
   `v' = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ + (ψᵢᵀ v') vᵢ`; the component along `vᵢ` is fixed by
   the normalisation of the branch (e.g. `ψᵢᵀ v(α) ≡ 1` gives `ψᵢᵀ v' = 0`).
 
@@ -61,9 +60,9 @@ Existence of branches:
   derivatives `v'`, `λ'` with `A' v₀ + A₀ v' = λ' v₀ + λ₀ v'`, `wᵀ v' = 0`, and
   `λ' (uᵀ v₀) = uᵀ A' v₀` for **every** left eigenvector `uᵀ A₀ = λ₀ uᵀ`.
 * `eigenpair_deriv_of_simple`, `eigenvalue_deriv_of_simple` — **unconditional** versions of
-  `eigenvalue_deriv` / `eigenvector_deriv`: for `A(α)` with `C¹` entries, a modal basis at `α₀`
-  and a simple `λᵢ`, there is a branch with `ψᵢᵀ v(α) ≡ 1`, `λ'(α₀) = ψᵢᵀ A' vᵢ` and
-  `v'(α₀) = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ`; no branch is assumed.
+  `eigenvalue_deriv_of_eventually` / `eigenvector_deriv_of_eventually`: for `A(α)` with `C¹`
+  entries, a modal basis at `α₀` and a simple `λᵢ`, there is a branch with `ψᵢᵀ v(α) ≡ 1`,
+  `λ'(α₀) = ψᵢᵀ A' vᵢ` and `v'(α₀) = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ`; no branch is assumed.
 
 Scalar root branches:
 * `root_branch_deriv`, `exists_root_branch` — a simple root `λ₀` of `P(s) + c K₀ = 0`
@@ -100,16 +99,6 @@ omit [DecidableEq n] in
   simp only [Pi.add_apply, mulVec, dotProduct, Pi.smul_apply, smul_eq_mul, ← Finset.sum_add_distrib]
   exact this
 
-omit [DecidableEq n] in
-/-- Derivative of the eigen-equation along a differentiable branch. -/
-@[tmio T, powerlib_foundation] theorem eigen_branch_deriv {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ}
-    {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ} {lam' : ℂ} {α₀ : ℝ}
-    (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
-    (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
-    (heig : ∀ α, A α *ᵥ v α = lam α • v α) :
-    A' *ᵥ v α₀ + A α₀ *ᵥ v' = lam' • v α₀ + lam α₀ • v' :=
-  eigen_branch_deriv_of_eventually hA hv hlam (Eventually.of_forall heig)
-
 section GivenBranch
 
 variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : ModalBasis (A α₀))
@@ -129,14 +118,6 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   simp only [↓reduceIte] at h
   linear_combination -h
 
-/-- `λ'(α₀) = ψᵢᵀ A' vᵢ` along the branch through `(λᵢ, vᵢ)`. -/
-@[tmio T, powerlib_foundation] theorem eigenvalue_deriv
-    (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
-    (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
-    (heig : ∀ α, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i) (hl0 : lam α₀ = mb.eig i) :
-    lam' = mb.ψ i ⬝ᵥ (A' *ᵥ mb.v i) :=
-  eigenvalue_deriv_of_eventually mb hA hv hlam (Eventually.of_forall heig) hv0 hl0
-
 /-- Off-diagonal modal coordinates of the eigenvector derivative, along a branch defined near
 `α₀`. -/
 @[tmio T, powerlib_foundation] theorem eigenvector_deriv_coeff_of_eventually
@@ -154,16 +135,6 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   field_simp
   linear_combination -h
 
-/-- Off-diagonal modal coordinates of the eigenvector derivative. -/
-@[tmio T, powerlib_foundation] theorem eigenvector_deriv_coeff
-    (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
-    (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
-    (heig : ∀ α, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i) (hl0 : lam α₀ = mb.eig i)
-    {j : n} (hj : j ≠ i) (hsimple : mb.eig j ≠ mb.eig i) :
-    mb.ψ j ⬝ᵥ v' = mb.ψ j ⬝ᵥ (A' *ᵥ mb.v i) / (mb.eig i - mb.eig j) :=
-  eigenvector_deriv_coeff_of_eventually mb hA hv hlam (Eventually.of_forall heig) hv0 hl0 hj
-    hsimple
-
 /-- **Eigenvector derivative** of a simple eigenpair, along a branch defined near `α₀`. -/
 @[tmio T, powerlib_foundation] theorem eigenvector_deriv_of_eventually
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
@@ -179,17 +150,6 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
   refine Finset.sum_congr rfl fun j hj => ?_
   have hji := Finset.ne_of_mem_erase hj
   rw [eigenvector_deriv_coeff_of_eventually mb hA hv hlam heig hv0 hl0 hji (hsimple j hji)]
-
-/-- **Eigenvector derivative** of a simple eigenpair. -/
-@[tmio T, powerlib_foundation] theorem eigenvector_deriv
-    (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
-    (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
-    (heig : ∀ α, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i) (hl0 : lam α₀ = mb.eig i)
-    (hsimple : ∀ j, j ≠ i → mb.eig j ≠ mb.eig i) :
-    v' = ∑ j ∈ Finset.univ.erase i,
-        (mb.ψ j ⬝ᵥ (A' *ᵥ mb.v i) / (mb.eig i - mb.eig j)) • mb.v j +
-      (mb.ψ i ⬝ᵥ v') • mb.v i :=
-  eigenvector_deriv_of_eventually mb hA hv hlam (Eventually.of_forall heig) hv0 hl0 hsimple
 
 end GivenBranch
 
@@ -490,8 +450,9 @@ eigenvector `v₀`, and `wᵀ v₀ ≠ 0`, the branch of `exists_eigenvector_bra
   linear_combination -h
 
 /-- **Unconditional eigenvalue and eigenvector derivatives of a simple eigenpair** (removes the
-branch premise of `eigenvalue_deriv` / `eigenvector_deriv`). For `A(α)` with entries `C¹` at
-`α₀` and derivative `A'`, a modal basis of `A(α₀)` and a simple eigenvalue `λᵢ`
+branch premise of `eigenvalue_deriv_of_eventually` / `eigenvector_deriv_of_eventually`). For
+`A(α)` with entries `C¹` at `α₀` and derivative `A'`, a modal basis of `A(α₀)` and a simple
+eigenvalue `λᵢ`
 (`λⱼ ≠ λᵢ` for `j ≠ i`), there is an eigen-branch `A(α) v(α) = λ(α) v(α)` near `α₀`, normalised
 by `ψᵢᵀ v(α) = 1`, through `(λᵢ, vᵢ)`, with `λ'(α₀) = ψᵢᵀ A' vᵢ` and
 `v'(α₀) = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ`. -/
@@ -521,8 +482,9 @@ by `ψᵢᵀ v(α) = 1`, through `(λᵢ, vᵢ)`, with `λ'(α₀) = ψᵢᵀ A'
   rw [← hv']
   exact hvk k
 
-/-- **Unconditional `eigenvalue_deriv`**: for `A(α)` with entries `C¹` at `α₀`, a modal basis of
-`A(α₀)` and a simple eigenvalue `λᵢ`, there is an eigenvalue branch `λ(α)` of `A(α)` near `α₀`
+/-- **Unconditional `eigenvalue_deriv_of_eventually`**: for `A(α)` with entries `C¹` at `α₀`, a
+modal basis of `A(α₀)` and a simple eigenvalue `λᵢ`, there is an eigenvalue branch `λ(α)` of
+`A(α)` near `α₀`
 (with eigenvectors `v(α) ≠ 0`) through `λᵢ` whose derivative is `λ'(α₀) = ψᵢᵀ A' vᵢ`. -/
 @[tmio T, powerlib_foundation] theorem eigenvalue_deriv_of_simple (mb : ModalBasis (A α₀)) {i : n}
     (hA : ∀ k l, ContDiffAt ℝ 1 (fun α => A α k l) α₀)

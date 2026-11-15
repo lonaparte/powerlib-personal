@@ -18,12 +18,13 @@ theory/T-subset-simulation.md (head: `P(F_m) = P(F_1) Π_{k=2}^m P(F_k | F_{k−
 events).
 
 Results.
-* `importance_sampling_identity` — wrapper of Mathlib `Measure.setLIntegral_rnDeriv`:
-  `π(F) = ∫_F (dπ/dq) dq` **provided `π ≪ q`**; `importance_sampling_needs_ac`: without absolute
-  continuity the identity fails (`π = δ₀`, `q = δ₁`, `F = {0}`).
-* `mc_mean_unbiased`, `mc_strong_law` — wrapper of Mathlib `ProbabilityTheory.strong_law_ae`:
-  the plain Monte Carlo average is unbiased and converges almost surely for pairwise
-  independent, identically distributed, integrable samples.
+* The importance-sampling identity `π(F) = ∫_F (dπ/dq) dq` **provided `π ≪ q`** is Mathlib's
+  `MeasureTheory.Measure.setLIntegral_rnDeriv` (real form `Measure.setIntegral_toReal_rnDeriv`),
+  used directly; `importance_sampling_needs_ac`: without absolute continuity the identity fails
+  (`π = δ₀`, `q = δ₁`, `F = {0}`).
+* `mc_mean_unbiased` — the plain Monte Carlo average is unbiased; it converges almost surely for
+  pairwise independent, identically distributed, integrable samples by Mathlib's
+  `ProbabilityTheory.strong_law_ae` (used directly).
 * `zero_variance_proposal` — with densities, the proposal `q* = 1_F p / P_F` makes the weighted
   indicator equal to `P_F` wherever `q* > 0`, so the estimator has zero variance.
 * `subset_simulation_product` — `μ(F_m) = μ(F_0) Π_{k<m} μ(F_{k+1} | F_k)` for a decreasing
@@ -47,19 +48,6 @@ open scoped ENNReal Topology
 variable {α : Type*} [MeasurableSpace α]
 
 /-! ## Importance sampling -/
-
-/-- **Importance-sampling identity**: if `π ≪ q` then `π(F) = E_q[1_F · dπ/dq]`
-(Mathlib `MeasureTheory.Measure.setLIntegral_rnDeriv`). -/
-@[tmio T, powerlib_foundation] theorem importance_sampling_identity {π q : Measure α}
-    [π.HaveLebesgueDecomposition q] [SFinite q] (hac : π ≪ q) (F : Set α) :
-    ∫⁻ x in F, π.rnDeriv q x ∂q = π F :=
-  Measure.setLIntegral_rnDeriv hac F
-
-/-- Real-valued form for a finite target: `P_F = ∫ 1_F (dπ/dq) dq`. -/
-@[tmio T, powerlib_foundation] theorem importance_sampling_identity_real {π q : Measure α}
-    [IsFiniteMeasure π] [SigmaFinite q] (hac : π ≪ q) {F : Set α} (hF : MeasurableSet F) :
-    ∫ x, F.indicator (fun x => (π.rnDeriv q x).toReal) x ∂q = π.real F := by
-  rw [integral_indicator hF, Measure.setIntegral_toReal_rnDeriv hac]
 
 /-- **Absolute continuity cannot be dropped**: for `π = δ₀`, `q = δ₁`, `F = {0}` the importance
 identity fails (`π F = 1`, while any `q`-integral over `F` vanishes). -/
@@ -86,14 +74,6 @@ identity fails (`π F = 1`, while any `q`-integral over `F` vanishes). -/
   rw [integral_const_mul, integral_finsetSum _ fun i _ => hi i]
   simp_rw [fun i => (hident i).integral_eq]
   simp [hn]
-
-/-- **Strong law for the Monte Carlo estimator** (Mathlib `ProbabilityTheory.strong_law_ae`). -/
-@[tmio T, powerlib_foundation] theorem mc_strong_law {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] (X : ℕ → Ω → ℝ) (hint : Integrable (X 0) μ)
-    (hindep : Pairwise ((· ⟂ᵢ[μ] ·) on X)) (hident : ∀ i, IdentDistrib (X i) (X 0) μ μ) :
-    ∀ᵐ ω ∂μ, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ range n, X i ω) atTop
-      (𝓝 (∫ ω, X 0 ω ∂μ)) := by
-  simpa [smul_eq_mul] using strong_law_ae X hint hindep hident
 
 /-! ## Zero-variance proposal -/
 

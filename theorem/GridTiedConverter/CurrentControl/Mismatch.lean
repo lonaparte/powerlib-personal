@@ -27,9 +27,10 @@ Results.
 * `model_field`: the closed loop is `L i' = Kp (i* − i) + Ki ξ − R i − j ω ΔL i` in complex
   notation, i.e. the residual `±ω ΔL i` of §1.4; its characteristic polynomial factors as
   `p(s) p̄(s)` with `p(s) = L s² + (R + Kp + j ω ΔL) s + Ki` (`det_characteristicMatrix`).
-* `isHurwitz_iff` (static): exact Hurwitz condition `R + Kp > 0 ∧ Ki > 0`, for every `ω` and
-  every mismatch `ΔL` (via `complexQuadratic_realConst_roots_re_neg_iff`: an imaginary
-  perturbation of the `s` coefficient alone never moves a root across the imaginary axis).
+* `stateMatrix_isHurwitz_iff` (static): exact Hurwitz condition `(R + Kp)/L > 0 ∧ Ki/L > 0`,
+  for every `ω` and every mismatch `ΔL` (via `complexQuadratic_realConst_roots_re_neg_iff`: an
+  imaginary perturbation of the `s` coefficient alone never moves a root across the imaginary
+  axis); with `L > 0` it reads `R + Kp > 0 ∧ Ki > 0` through the family (`mem_den_iff`).
 * `equilibrium_current` (static): every equilibrium has `i = i*` (the integrators absorb the
   mismatch bias).
 
@@ -112,12 +113,6 @@ def model : Plant 4 2 :=
   fin_cases j <;>
     simp [Plant.inputField, op, model, stateMatrix, field, plantDeriv, converterVoltage, ΔL,
       Matrix.mulVec, dotProduct, Fin.sum_univ_four, Fin.sum_univ_two] <;> field_simp <;> ring
-
-/-- Mismatch residual in the L-equation (case A): `ω L i_q − ω L̂ i_q = ω ΔL i_q`. -/
-@[tmio M, powerlib_domain] theorem residual_d (iq : ℝ) :
-    p.ω * p.base.L * iq - p.ω * p.Lhat * iq = p.ω * p.ΔL * iq := by
-  simp only [ΔL]
-  ring
 
 @[tmio M, powerlib_domain] private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
     (h : (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
@@ -298,14 +293,6 @@ def family : Family MismatchParams Spectral.Requirement 4 2 :=
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear model :=
   Spectral.linearFamily_isLinear _ _ _
 
-/-- The mismatched loop is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`, for every `ω` and `ΔL`. Read through the family denotation. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.base.L) :
-    connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.base.R + p.base.Kp ∧ 0 < p.base.Ki) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
-  change IsHurwitz (stateMatrix _ _ _) ↔ _
-  rw [stateMatrix_isHurwitz_iff, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
-
 @[tmio TM, powerlib_domain] theorem isHurwitz_iff_stable :
     connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔ p.Stable) := by
   unfold TMIO.Statement
@@ -364,7 +351,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
     {x : ℝ → ℝ⁴} (hx : ∀ t, HasDerivAt x (p.field v iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 (iref 0)) ∧
       Tendsto (fun t => x t 1) atTop (𝓝 (iref 1)) := by
-  have hA := (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (p.isHurwitz_iff hL))).2 ⟨hR, hKi⟩
+  have hA := ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)).symm.trans
+      (p.mem_den_iff hL (P := .globallyExponentiallyStable) (Or.inl trivial))).2 ⟨hR, hKi⟩
   have he := p.isEquilibrium hL.ne' hKi.ne' iref
   have hx' : ∀ t, HasDerivAt x (p.model.inputField iref (x t)) t := by
     intro t

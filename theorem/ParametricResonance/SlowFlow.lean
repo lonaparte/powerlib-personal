@@ -31,7 +31,7 @@ Results.
 * `trace_slowFlowMatrix`, `det_slowFlowMatrix`, `slowFlow_root_iff` — trace `−2α₀`, determinant
   `α₀² + Δ² − |g|²`; characteristic polynomial `s² + 2α₀ s + α₀² + Δ² − |g|²`, whose roots are
   `−α₀ ± √(|g|² − Δ²)` (real when `Δ² ≤ |g|²`).
-* `slowFlow_holds_iff`, `slowFlow_exponentiallyStable_iff` — every attractive sentence of the
+* `slowFlow_holds_iff` — every attractive sentence of the
   Flow semantics at `0` (in particular global exponential stability) holds iff `α₀ > 0` and
   `|g|² < α₀² + Δ²`; with `g = ε𝒢/2`, `ε ≥ 0`, `α₀ > 0`: iff `ε |𝒢| < 2 √(α₀² + Δ²)`
   (`slowFlow_threshold_iff`), i.e. `ε_crit = 2√(α₀² + Δ²)/|𝒢|`. Stability goes through the
@@ -90,14 +90,6 @@ the complex slow flow. -/
     simpa [Function.comp_def] using h'
   · intro h
     exact toReal.hasFDerivAt.comp_hasDerivWithinAt t h
-
-/-- Solution segments of the real field (`IsTrajectoryOn`) are the real coordinates of
-solutions of the complex slow flow on the same segment. -/
-@[tmio M, powerlib_foundation] theorem isTrajectoryOn_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ)
-    (A : ℝ → ℂ) (a b : ℝ) :
-    IsTrajectoryOn (fun t => toReal (A t)) (slowFlowSystem α₀ Δ g) a b ↔
-      IsIntegralCurveOn A (fun _ z => slowFlowField α₀ Δ g z) (Set.Icc a b) :=
-  isIntegralCurveOn_slowFlow_iff α₀ Δ g A _
 
 /-- Global solutions of the real field are exactly the real coordinates of global solutions of
 the complex slow flow. -/
@@ -164,19 +156,13 @@ and `|g|² < α₀² + Δ²`. -/
   · rintro ⟨h1, h2⟩; exact ⟨by linarith, by linarith⟩
   · rintro ⟨h1, h2⟩; exact ⟨by linarith, by linarith⟩
 
-/-- The slow flow is globally exponentially stable iff `α₀ > 0` and `|g|² < α₀² + Δ²`. -/
-@[tmio TM, powerlib_foundation] theorem slowFlow_exponentiallyStable_iff (α₀ Δ : ℝ) (g : ℂ) :
-    Flow.GloballyExponentiallyStable (slowFlowSystem α₀ Δ g) 0 ↔
-      0 < α₀ ∧ ‖g‖ ^ 2 < α₀ ^ 2 + Δ ^ 2 :=
-  slowFlow_holds_iff α₀ Δ g Flow.Property.attractive_globallyExponentiallyStable
-
 /-- Leading-order threshold: with `g = ε 𝒢 / 2`, `ε ≥ 0` and `α₀ > 0`, the slow flow is
 exponentially stable iff `ε |𝒢| < 2 √(α₀² + Δ²)`. -/
 @[tmio TM, powerlib_foundation] theorem slowFlow_threshold_iff {α₀ Δ ε : ℝ} (hα : 0 < α₀) (hε : 0 ≤ ε)
     (G : ℂ) :
     Flow.GloballyExponentiallyStable (slowFlowSystem α₀ Δ ((ε : ℂ) * G / 2)) 0 ↔
       ε * ‖G‖ < 2 * √(α₀ ^ 2 + Δ ^ 2) := by
-  rw [slowFlow_exponentiallyStable_iff]
+  refine (slowFlow_holds_iff α₀ Δ _ Flow.Property.attractive_globallyExponentiallyStable).trans ?_
   have hn : ‖(ε : ℂ) * G / 2‖ = ε * ‖G‖ / 2 := by
     rw [norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg hε]; simp
   rw [hn]

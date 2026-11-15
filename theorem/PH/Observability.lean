@@ -28,7 +28,7 @@ Results.
 * The lossless loop is passive (`losslessLC_mem_den_passive`) and observable
   (`losslessLC_observable`), but `x(t) = (cos t, sin t)` is an unforced trajectory that keeps
   its energy (`losslessLC_trajectory`, `losslessLC_not_tendsto`), and its state matrix is not
-  Hurwitz (`losslessLC_not_isHurwitz`).
+  Hurwitz (`losslessLC_not_mem_den_locallyAsymptoticallyStable`).
 * Corrected statement (`phOutputFeedback_isHurwitz`,
   `phOutputFeedback_mem_den_globallyExponentiallyStable`): with damping injection `u = −k y`
   (`k > 0`; the closed loop is the pH system with dissipation `R + k g gᵀ`, i.e. output strictly
@@ -117,9 +117,6 @@ def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
 def losslessLC : Port.PortHamiltonian 2 1 :=
   toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one
 
-@[tmio M, powerlib_domain] theorem losslessLC_plant :
-    losslessLC.plant = linearLTIModel losslessJ 0 losslessG 1 := rfl
-
 /-- The lossless loop is passive (storage `H = ½ |x|²`). -/
 @[tmio TM, powerlib_domain] theorem losslessLC_mem_den_passive :
     connection% (losslessLC ∈ Port.PortHamiltonian.family.den .passive) :=
@@ -180,7 +177,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The lossless loop lies outside the locally asymptotically stable denotation,
 equivalently its state matrix is not Hurwitz (trace zero). -/
-@[tmio TM, powerlib_domain] theorem losslessLC_not_isHurwitz :
+@[tmio TM, powerlib_domain] theorem losslessLC_not_mem_den_locallyAsymptoticallyStable :
     connection% (losslessLC ∉
       Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
@@ -191,12 +188,6 @@ equivalently its state matrix is not Hurwitz (trace zero). -/
   rw [show (linearLTIModel losslessJ 0 losslessG 1).A = !![0, -1; 1, 0] from
     losslessLC_stateMatrix, Criteria.isHurwitz_fin_two_of_iff] at h
   linarith [h.1]
-
-/-- The lossless loop is not locally asymptotically stable. -/
-@[tmio TM, powerlib_domain] theorem losslessLC_not_mem_den_locallyAsymptoticallyStable :
-    connection% (losslessLC ∉
-      Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) :=
-  losslessLC_not_isHurwitz
 
 /-- Correction of T-ph Part 2: passivity together with zero-state observability does **not**
 give asymptotic stability, on the semantics connection of the linear port-Hamiltonian family. -/

@@ -45,8 +45,8 @@ Family and connection conclusions.
   unstable (`Dynamics.unstable_of_eventually_lie_neg`); `mem_den_unstable_of_pi_div_four` at
   `θ* = π/4`, `V > 0`. Together with `mem_den_unstable_of_cos_two_mul_neg` the whole closed fold
   side `cos 2θ* ≤ 0` of the branch is unstable.
-* `exactUnder_locallyAsymptoticallyStable`, `exactUnder_lyapunovStable`: within the requirement
-  context `positiveGains` (`k_p, k_i, k_P > 0`) the local asymptotic and Lyapunov translations
+* `exactUnder_positiveGains`: within the requirement context `positiveGains`
+  (`k_p, k_i, k_P > 0`) the local asymptotic and Lyapunov translations
   (`{equilibrium, jacobianStable}`) are exact: with positive gains every selected point that is not
   an equilibrium with a strict Routh–Hurwitz Jacobian is unstable — non-equilibria; `V = 0` (the
   integrator or current drifts linearly, Chetaev with `θx` or `X_g x ι`); `V cos θ* < 0`
@@ -434,12 +434,21 @@ section Members
     m.params.V * Real.sin m.θ * Real.sin (z 0)) + 3 / 2 * m.params.kP *
     (m.params.V * Real.cos m.θ)) * h1
 
-/-- **Saddle-node.** With positive gains, at a balanced point on the fold `cos 2θ* = 0` with
-`V cos θ* > 0` the translated field is unstable. -/
-@[tmio TM, powerlib_domain] private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
-    (hkp : 0 < m.params.kp) (hki : 0 < m.params.ki) (hkP : 0 < m.params.kP)
-    (hA : 0 < m.params.V * Real.cos m.θ) (hc2 : Real.cos (2 * m.θ) = 0) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
+/-- **Saddle-node.** Quasi-static GFL with positive gains at a balanced point on the fold
+`cos 2θ* = 0` with `V cos θ* > 0` (the transmission limit `P_ref = ±P_SN`): the operating point is
+unstable — a saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two stable
+ones. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold (p : Params) (hkp : 0 < p.kp)
+    (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id)
+    (hA : 0 < p.V * Real.cos θ) (hc2 : Real.cos (2 * θ) = 0) :
+    connection% (Model.mk p θ Id ∈ family.den (.flow .unstable)) := by
+  set m : Model := Model.mk p θ Id
+  replace heq : IsEq m.params m.θ m.Id := heq
+  replace hkp : 0 < m.params.kp := hkp
+  replace hki : 0 < m.params.ki := hki
+  replace hkP : 0 < m.params.kP := hkP
+  replace hA : 0 < m.params.V * Real.cos m.θ := hA
+  replace hc2 : Real.cos (2 * m.θ) = 0 := hc2
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Unstable m.field 0
@@ -582,7 +591,8 @@ other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 
       rw [hdet]; unfold a0
       have : 0 < m.params.V ^ 2 * m.params.kP * m.params.ki := by positivity
       nlinarith
-    · exact ((family_isAutonomous.mem_den_flow.mp (model_fold_unstable heq hkp hki hkP hA hc2)) h).elim
+    · exact ((family_isAutonomous.mem_den_flow.mp
+        (mem_den_unstable_of_fold m.params hkp hki hkP heq hA hc2)) h).elim
     · have ha2 : 0 < a2 m.params m.θ := by
         unfold a2
         have : 0 < 3 * m.params.kP + 2 * m.params.kp := by positivity
@@ -610,10 +620,14 @@ other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 
         linarith
       refine ⟨by linarith, by linarith, by nlinarith⟩
 
-/-- Within positive gains the translations of Lyapunov and local asymptotic stability,
-`{equilibrium, jacobianStable}`, are exact: a Lyapunov stable point of the `C¹` field is an
-equilibrium, and the strict Routh–Hurwitz guard decides (`Spectral.exactUnder_of_equilibrium`). -/
-@[tmio TM, powerlib_domain] private theorem exactUnder_of_routh {P : Flow.Property}
+/-- **Within positive gains the Lyapunov and the local asymptotic translations are exact.** For
+`k_p, k_i, k_P > 0` the translations `{equilibrium, jacobianStable}` of Lyapunov and of local
+asymptotic stability are exact: a Lyapunov stable point of the `C¹` field is an equilibrium, and
+the strict Routh–Hurwitz guard decides (`Spectral.exactUnder_of_equilibrium`); every non-Hurwitz
+point with positive gains is unstable, in particular the fold `cos 2θ* = 0` (no Hopf pair,
+`no_imaginary_eigenvalue`) is a saddle-node (`mem_den_unstable_of_fold`). The undamped witness of
+`not_exact_lyapunovStable` has `k_p = k_P = 0`. -/
+@[tmio TM, powerlib_domain] theorem exactUnder_positiveGains {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (family.ExactUnder {.positiveGains} (.flow P)) := by
   change family.ExactUnder {.positiveGains} (.flow P)
@@ -641,17 +655,6 @@ end Members
 
 /-! ### Connection conclusions at the fold and within positive gains -/
 
-/-- Quasi-static GFL with positive gains at a balanced point on the fold `cos 2θ* = 0` with
-`V cos θ* > 0` (the transmission limit `P_ref = ±P_SN`): the operating point is unstable — a
-saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two stable ones. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold (p : Params) (hkp : 0 < p.kp)
-    (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id)
-    (hA : 0 < p.V * Real.cos θ) (hc2 : Real.cos (2 * θ) = 0) :
-    connection% (Model.mk p θ Id ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact (family_isAutonomous.mem_den_flow.mp (model_fold_unstable (m := Model.mk p θ Id) heq hkp hki hkP hA hc2))
-
 /-- Same, at the fold angle `θ* = π/4` (`V > 0`): the transmission limit is unstable. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_pi_div_four (p : Params) (hV : 0 < p.V)
     (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkP : 0 < p.kP) {Id : ℝ}
@@ -660,22 +663,5 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
   mem_den_unstable_of_fold p hkp hki hkP heq
     (mul_pos hV (by rw [Real.cos_pi_div_four]; positivity))
     (by rw [show 2 * (Real.pi / 4) = Real.pi / 2 by ring, Real.cos_pi_div_two])
-
-/-- **Within positive gains the local asymptotic translation is exact.** For `k_p, k_i, k_P > 0`
-the selected point is locally asymptotically stable exactly when it is an equilibrium with a strict
-Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
-`no_imaginary_eigenvalue`) is a saddle-node and unstable (`mem_den_unstable_of_fold`). -/
-@[tmio TM, powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
-    connection% (family.ExactUnder {.positiveGains} (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact exactUnder_of_routh (Or.inr rfl)
-
-/-- **Within positive gains the Lyapunov translation is exact**: every non-Hurwitz point with
-positive gains is unstable (the undamped witness of `not_exact_lyapunovStable` has
-`k_p = k_P = 0`). -/
-@[tmio TM, powerlib_domain] theorem exactUnder_lyapunovStable :
-    connection% (family.ExactUnder {.positiveGains} (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact exactUnder_of_routh (Or.inl rfl)
 
 end powerlib.GFL.PowerLoop.QuasiStatic

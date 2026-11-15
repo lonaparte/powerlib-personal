@@ -30,8 +30,8 @@ Results.
   implies invariance `Σ_i π_i P_ij = π_j`; `mh_detailedBalance`, `mh_stochastic`,
   `mh_invariant`: the Metropolis–Hastings matrix built from any stochastic proposal satisfies
   detailed balance w.r.t. a positive target, hence leaves it invariant (§1.14 (a)).
-* `reversible_invariant` — wrapper of Mathlib `ProbabilityTheory.Kernel.IsReversible.invariant`:
-  the same implication for general Markov kernels.
+* For general Markov kernels the same implication is Mathlib's
+  `ProbabilityTheory.Kernel.IsReversible.invariant`, used directly.
 -/
 
 noncomputable section
@@ -189,12 +189,5 @@ the off-diagonal entries are bounded by the proposal. -/
   · simp
   · exact ⟨le_min zero_le_one (div_nonneg (mul_nonneg (hp₀ j).le (hQ j i))
       (mul_nonneg (hp₀ i).le (hQ i j))), min_le_left _ _⟩
-
-/-- General kernels (Mathlib `ProbabilityTheory.Kernel.IsReversible.invariant`): a reversible
-Markov kernel leaves its reference measure invariant. -/
-@[tmio T, powerlib_foundation] theorem reversible_invariant {α : Type*} [MeasurableSpace α]
-    {κ : ProbabilityTheory.Kernel α α} [ProbabilityTheory.IsMarkovKernel κ]
-    {μ : MeasureTheory.Measure α} (h : κ.IsReversible μ) : κ.Invariant μ :=
-  h.invariant
 
 end powerlib.Estimation

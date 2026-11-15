@@ -25,8 +25,8 @@ module theorem.GridTiedConverter.GFM.DroopVSM where
 -- `GFM.DroopVSM.vsmField_eq_transport` with `GFM.DroopVSM.affineCoord_apply` (read by
 -- `Dynamics.holds_transport_iff`; passivity holds of both loops), `semantics-eq-comap` is
 -- `GFM.DroopVSM.semantics_eq_comap`, `den-eq-preimage` is `GFM.DroopVSM.den_eq_preimage`, `den↔`
--- gives `GFM.DroopVSM.locallyExponentiallyStable_iff`, `lyapunovStable_iff`, `unstable_iff` and
--- `localAsymptoticStable_iff`, `vsm-sound` is `GFM.DroopVSM.vsmFamily_chain_le_semantics`, `sound`
+-- is `GFM.DroopVSM.den_eq_preimage` read member-wise, `vsm-sound` is
+-- `GFM.DroopVSM.vsmFamily_chain_le_semantics`, `sound`
 -- is `GFM.DroopVSM.droopFamily_chain_le_semantics`; `busSinusoid` and `busLocal` are the algebra of
 -- `GFM.DroopVSM.infiniteBus_locallyExponentiallyStable` (`GFM.DroopVSM.equilibrium_iff`,
 -- `GFM.DroopVSM.VSMModel.vector_eq_zero_iff`), whose conclusion is `bus-les`, through

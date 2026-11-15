@@ -258,7 +258,8 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
   ring
 
 /-- Raw-voltage PI tuning `K_p = 2ζ₀ω_b/V`, `K_i = ω_b²/V` gives `ω_n = ω_b` and `ζ = ζ₀`
-independently of `V` (T-invariant-coordinates §1.2). -/
+independently of `V` (T-invariant-coordinates §1.2); the typical tuning `K_p = √2 ω_b/V` of
+T-pll-dynamics §1.3 is `ζ₀ = 1/√2`. -/
 @[tmio M, powerlib_domain] theorem rawVoltageTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb)
     (ζ₀ : ℝ) :
     omegaN V (ωb ^ 2 / V) = ωb ∧ zeta V (2 * ζ₀ * ωb / V) (ωb ^ 2 / V) = ζ₀ := by
@@ -267,19 +268,6 @@ independently of `V` (T-invariant-coordinates §1.2). -/
   refine ⟨hn, ?_⟩
   rw [zeta, hn]
   field_simp
-
-/-- Typical tuning (T-pll-dynamics §1.3): `K_p = √2 ω_b / V`, `K_i = ω_b² / V` gives
-`ω_n = ω_b` and `ζ = 1/√2`. -/
-@[tmio M, powerlib_domain] theorem standardTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb) :
-    omegaN V (ωb ^ 2 / V) = ωb ∧
-      zeta V (Real.sqrt 2 * ωb / V) (ωb ^ 2 / V) = 1 / Real.sqrt 2 := by
-  have h2 : Real.sqrt 2 = 2 * (1 / Real.sqrt 2) := by
-    have : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
-    have hs : Real.sqrt 2 ≠ 0 := by positivity
-    field_simp; linarith
-  have h := rawVoltageTuning hV hω (1 / Real.sqrt 2)
-  rw [← h2] at h
-  exact h
 
 /-- Operating-point dependence (T-pll-dynamics §1.5): `ω_n(V) = ω_n(V₀) √(V/V₀)`. -/
 @[tmio M, powerlib_domain] theorem omegaN_scale {V V₀ Ki : ℝ} (hV₀ : 0 < V₀) (hKi : 0 ≤ Ki) :
@@ -479,8 +467,11 @@ inconsistent. -/
   have h2 : 0 < m.V * m.Ki := h .integral
   rcases (h .negativeGain : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) with h3 | h3 <;> linarith
 
-@[tmio TM, powerlib_domain] private theorem isHurwitz_plant_iff (m : Model) :
-    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki) := by
+/-- Linear SRF-PLL (every channel; they share the state matrix): global exponential stability of
+the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
+    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
+      m ∈ {m : Model | 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki}) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   change LinearSystems.IsHurwitz m.plant.A ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki
@@ -505,7 +496,9 @@ language for decay rates, conservation and passivity. -/
     connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
   change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% isHurwitz_plant_iff)]
+    forall_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz
+      (P := .globallyExponentiallyStable) (Or.inl trivial)),
+    (connection_proof% mem_den_globallyExponentiallyStable_iff)]
   rfl
 
 /-- A negative loop gain gives a characteristic root in the open right half plane. -/
@@ -543,16 +536,6 @@ positive loop gains are their exact translation, for every channel
   exact Spectral.exact_of_linearTable family_isLinear
     (fun s => (connection_proof% TMIO.image_table_singleton family.translate s).symm.trans
       (connection_proof% translate_eq s)) mem_realize_iff_isHurwitz hP
-
-/-- Linear SRF-PLL (every channel; they share the state matrix): global exponential stability of
-the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
-    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      m ∈ {m : Model | 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki}) := by
-  unfold powerlib.TMIO.Statement
-  rw [family_isLinear.den_hurwitz
-    (Or.inl Flow.Property.attractive_globallyExponentiallyStable), Set.mem_ofPred_eq,
-    Set.mem_ofPred_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% isHurwitz_plant_iff)]
 
 /-- The phase channel without loop gains (`V = 0`, `K_i = 0`): the state matrix is zero. -/
 def frozen : Model := ⟨0, 0, 0, .phase⟩

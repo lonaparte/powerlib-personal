@@ -37,9 +37,10 @@ Results.
   non-minimum phase: the Padé(1,1) numerator vanishes exactly at `s = 2/τ`; the Padé(2,2)
   numerator factors as `(τs - (3 + √3 j))(τs - (3 - √3 j))/12`; every such zero lies in the
   open right half-plane when `τ > 0`, while the denominators do not vanish there.
-* `norm_pureDelay_sub_pade11_le`, `norm_pureDelay_sub_pade22_le` — Taylor matching orders with
-  explicit constants on the unit disc `‖τ s‖ ≤ 1`: `‖e^{-τ s} - pade11 τ s‖ ≤ 2 ‖τ s‖³` and
-  `‖e^{-τ s} - pade22 τ s‖ ≤ ‖τ s‖⁵ / 10` (i.e. `O((τ s)³)` and `O((τ s)⁵)`).
+* `norm_exp_neg_sub_pade11_le`, `norm_exp_neg_sub_pade22_le` — Taylor matching orders with
+  explicit constants on the unit disc `‖z‖ ≤ 1`, `z = τ s`: `‖e^{-z} - pade11‖ ≤ 2 ‖z‖³` and
+  `‖e^{-z} - pade22‖ ≤ ‖z‖⁵ / 10` (i.e. `O((τ s)³)` and `O((τ s)⁵)`), with the Padé forms
+  written in `z` (`pureDelay`, `pade11`, `pade22` unfold to them at `z = τ s`).
 * `transfer_pade11Model`, `pade11Model_exponentiallyStable`, `transfer_pade11DqModel` — the
   realization `pade11Model τ` has `Linear.transfer = pade11 τ s` for `s ≠ -2/τ`, and its
   zero-input dynamics (the affine linear field of its state matrix, Flow semantics) are
@@ -300,7 +301,8 @@ denominator does not vanish there. -/
   convert h using 2
   norm_num [Nat.factorial]
 
-/-- Padé(1,1) matches `e^{-z}` to third order: explicit bound on the unit disc. -/
+/-- Padé(1,1) matches `e^{-z}` to third order: explicit bound on the unit disc. At `z = τ s`
+(unfold `pureDelay`, `pade11`) it reads `‖pureDelay τ s - pade11 τ s‖ ≤ 2 ‖τ s‖³`. -/
 @[tmio T, powerlib_foundation] theorem norm_exp_neg_sub_pade11_le {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖Complex.exp (-z) - (1 - z / 2) / (1 + z / 2)‖ ≤ 2 * ‖z‖ ^ 3 := by
   have hden : (1 / 2 : ℝ) ≤ ‖1 + z / 2‖ := by
@@ -332,7 +334,8 @@ denominator does not vanish there. -/
     _ ≤ 2 * ‖z‖ ^ 3 * (1 / 2) := by nlinarith
     _ ≤ 2 * ‖z‖ ^ 3 * ‖1 + z / 2‖ := by gcongr
 
-/-- Padé(2,2) matches `e^{-z}` to fifth order: explicit bound on the unit disc. -/
+/-- Padé(2,2) matches `e^{-z}` to fifth order: explicit bound on the unit disc. At `z = τ s`
+(unfold `pureDelay`, `pade22`) it reads `‖pureDelay τ s - pade22 τ s‖ ≤ ‖τ s‖⁵ / 10`. -/
 @[tmio T, powerlib_foundation] theorem norm_exp_neg_sub_pade22_le {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖Complex.exp (-z) - (1 - z / 2 + z ^ 2 / 12) / (1 + z / 2 + z ^ 2 / 12)‖ ≤
       ‖z‖ ^ 5 / 10 := by
@@ -384,20 +387,6 @@ denominator does not vanish there. -/
         gcongr
     _ ≤ ‖z‖ ^ 5 / 10 * (5 / 12) := by nlinarith
     _ ≤ ‖z‖ ^ 5 / 10 * ‖1 + z / 2 + z ^ 2 / 12‖ := by gcongr
-
-/-- `‖e^{-τ s} - pade11 τ s‖ ≤ 2 ‖τ s‖³` whenever `‖τ s‖ ≤ 1`. -/
-@[tmio T, powerlib_foundation] theorem norm_pureDelay_sub_pade11_le (τ : ℝ) {s : ℂ}
-    (hs : ‖(τ : ℂ) * s‖ ≤ 1) :
-    ‖pureDelay τ s - pade11 τ s‖ ≤ 2 * ‖(τ : ℂ) * s‖ ^ 3 := by
-  have h := norm_exp_neg_sub_pade11_le hs
-  simpa [pureDelay, pade11, pade11Num, pade11Den, mul_div_assoc] using h
-
-/-- `‖e^{-τ s} - pade22 τ s‖ ≤ ‖τ s‖⁵ / 10` whenever `‖τ s‖ ≤ 1`. -/
-@[tmio T, powerlib_foundation] theorem norm_pureDelay_sub_pade22_le (τ : ℝ) {s : ℂ}
-    (hs : ‖(τ : ℂ) * s‖ ≤ 1) :
-    ‖pureDelay τ s - pade22 τ s‖ ≤ ‖(τ : ℂ) * s‖ ^ 5 / 10 := by
-  have h := norm_exp_neg_sub_pade22_le hs
-  simpa [pureDelay, pade22, pade22Num, pade22Den, mul_div_assoc] using h
 
 /-! ## State-space realization of Padé(1,1) -/
 

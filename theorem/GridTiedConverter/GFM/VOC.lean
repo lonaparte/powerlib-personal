@@ -573,14 +573,19 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
   upper_bound x := by rw [energy_eq, one_mul]
   dissipation := dissipation hκ
 
-@[tmio TM, powerlib_domain] private theorem ges (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
-    connection% (a ∈ family.den (.flow .globallyExponentiallyStable)) := by
+/-! ### Members -/
+
+/-- Decay at the origin with `κ_v ≥ 0` makes the origin globally exponentially stable. -/
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (a : AHO) (hc : a.c < 0)
+    (hκ : 0 ≤ a.κv) : connection% (a ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Flow.GloballyExponentiallyStable a.realField 0
   exact (quadraticDecay hc hκ).globallyExponentiallyStable a.contDiff_realField
 
-@[tmio TM, powerlib_domain] private theorem les (hc : a.c < 0) :
+/-- Decay at the origin (`κ_v v*² < σ`) makes the origin locally exponentially stable, for every
+sign of `κ_v`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (a : AHO) (hc : a.c < 0) :
     connection% (a ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -590,7 +595,8 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
     (by rw [realJacobian_zero, Matrix.det_fin_two_of]; nlinarith [sq_nonneg a.ωs, sq_pos_of_neg hc])
 
-@[tmio TM, powerlib_domain] private theorem unstable_of (hc : 0 < a.c) :
+/-- Growth at the origin (`σ < κ_v v*²`) makes the origin unstable. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable (a : AHO) (hc : 0 < a.c) :
     connection% (a ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -599,7 +605,10 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
     (a.hasFDerivAt_realField 0).fderiv
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
 
-@[tmio TM, powerlib_domain] private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
+/-- With `κ_v ≥ 0` every solution segment decays at every rate `r ≤ −c` (a growth bound when
+`c > 0`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_decay (a : AHO) (hκ : 0 ≤ a.κv) {r : ℝ}
+    (hr : r + a.c ≤ 0) :
     connection% (a ∈ family.den (.flow (.decay r))) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -609,6 +618,14 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
       (by unfold energy; fun_prop) one_pos one_pos (fun x => by rw [energy_eq, one_mul])
       (fun x => by rw [energy_eq, one_mul]) (dissipation hκ) hφ ht⟩
   exact h.mono (by linarith)
+
+/-- Under the standing assumptions `κ_v > 0`, `σ < κ_v v*²` of the limit-cycle results, the
+origin of the no-load AHO is unstable. -/
+@[tmio TM, powerlib_domain] theorem Admissible.mem_den_unstable (h : a.Admissible) :
+    connection% (a ∈ family.den (.flow .unstable)) :=
+  AHO.mem_den_unstable a (by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using h.c_pos)
 
 /-! ### Soundness of the translation -/
 
@@ -638,10 +655,13 @@ contraction and decay rates, and passivity without requirement (the global table
     · rfl
     · rfl
   all_goals rw [(connection_proof% TMIO.mem_realize)] at ha; rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  · exact (family_isAutonomous.mem_den_flow.mp (les (ha .decaying rfl)))
-  · exact (family_isAutonomous.mem_den_flow.mp (ges (ha .decaying (by simp)) (ha .stiff (by simp))))
-  · exact (family_isAutonomous.mem_den_flow.mp (decay_of (ha .stiff (by simp)) (ha (.decayRate r) (by simp))))
-  · exact (family_isAutonomous.mem_den_flow.mp (unstable_of (ha .growing rfl)))
+  · exact family_isAutonomous.mem_den_flow.mp
+      (mem_den_locallyExponentiallyStable a (ha .decaying rfl))
+  · exact family_isAutonomous.mem_den_flow.mp
+      (mem_den_globallyExponentiallyStable a (ha .decaying (by simp)) (ha .stiff (by simp)))
+  · exact family_isAutonomous.mem_den_flow.mp
+      (mem_den_decay a (ha .stiff (by simp)) (ha (.decayRate r) (by simp)))
+  · exact family_isAutonomous.mem_den_flow.mp (mem_den_unstable a (ha .growing rfl))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -667,42 +687,6 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
   · rintro ⟨h, -⟩
     linarith
 
-/-! ### Members -/
-
-/-- Growth at the origin (`σ < κ_v v*²`) makes the origin unstable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable (a : AHO) (hc : 0 < a.c) :
-    connection% (a ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (unstable_of hc)))
-
-/-- Under the standing assumptions `κ_v > 0`, `σ < κ_v v*²` of the limit-cycle results, the
-origin of the no-load AHO is unstable. -/
-@[tmio TM, powerlib_domain] theorem Admissible.mem_den_unstable (h : a.Admissible) :
-    connection% (a ∈ family.den (.flow .unstable)) :=
-  AHO.mem_den_unstable a (by
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-      using h.c_pos)
-
-/-- Decay at the origin (`κ_v v*² < σ`) makes the origin locally exponentially stable, for every
-sign of `κ_v`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (a : AHO) (hc : a.c < 0) :
-    connection% (a ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (les hc)))
-
-/-- Decay at the origin with `κ_v ≥ 0` makes the origin globally exponentially stable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (a : AHO) (hc : a.c < 0)
-    (hκ : 0 ≤ a.κv) : connection% (a ∈ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (ges hc hκ)))
-
-/-- With `κ_v ≥ 0` every solution segment decays at every rate `r ≤ −c` (a growth bound when
-`c > 0`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_decay (a : AHO) (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
-    connection% (a ∈ family.den (.flow (.decay r))) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (decay_of hκ hr)))
-
 /-! ### Boundary witness: cubic damping at `c = 0` -/
 
 @[tmio M, powerlib_domain] private theorem energy_lie (a : AHO) (x : State 2) :
@@ -725,20 +709,19 @@ def critical : AHO := ⟨0, 1, 1, 1⟩
 @[tmio M, powerlib_domain] theorem critical_c : critical.c = 0 := by
   simp [critical, AHO.c]
 
-/-- The energy `|v|²` is a strict global Lyapunov function of the critical AHO: its derivative
-along the field is `−2 |v|⁴`. -/
-@[tmio M, powerlib_domain] private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.realField energy 0 where
+/-- With `c = 0` and `κ_v > 0`, `|v|²` is a strict global Lyapunov function (derivative
+`−2 κ_v |v|⁴`). -/
+@[tmio M, powerlib_domain] private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
+    IsStrictLyapunovFunction a.realField energy 0 where
   hcont := by unfold energy; fun_prop
   hV_c1 := by unfold energy; fun_prop
   hzero := by simp [energy]
   hpos x hx := energy_pos hx
-  hequil := critical.realField_zero
+  hequil := a.realField_zero
   hLie_neg x hx := by
-    rw [energy_lie, critical_c]
+    rw [energy_lie, hc]
     have h := energy_pos hx
-    have hk : critical.κv = 1 := rfl
-    rw [hk]
-    nlinarith
+    nlinarith [mul_pos hκ (mul_pos h h)]
   hbounded_sublevel c := by
     refine (isCompact_closedBall (0 : State 2) (Real.sqrt (max c 0))).of_isClosed_subset
       (isClosed_le (by unfold energy; fun_prop) continuous_const) fun x hx => ?_
@@ -757,7 +740,7 @@ along the field is `−2 |v|⁴`. -/
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr
     (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos critical.contDiff_realField
-      critical_strictLyapunov)
+      (strictLyapunov_of_critical critical_c (show (0 : ℝ) < critical.κv from one_pos)))
 
 @[tmio M, powerlib_domain] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
   unfold TMIO.Statement
@@ -797,31 +780,6 @@ stability is not decided by the linearization. -/
     (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
 
 /-! ### The local asymptotic and Lyapunov denotations -/
-
-/-- With `c = 0` and `κ_v > 0`, `|v|²` is a strict global Lyapunov function (derivative
-`−2 κ_v |v|⁴`). -/
-@[tmio M, powerlib_domain] private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
-    IsStrictLyapunovFunction a.realField energy 0 where
-  hcont := by unfold energy; fun_prop
-  hV_c1 := by unfold energy; fun_prop
-  hzero := by simp [energy]
-  hpos x hx := energy_pos hx
-  hequil := a.realField_zero
-  hLie_neg x hx := by
-    rw [energy_lie, hc]
-    have h := energy_pos hx
-    nlinarith [mul_pos hκ (mul_pos h h)]
-  hbounded_sublevel c := by
-    refine (isCompact_closedBall (0 : State 2) (Real.sqrt (max c 0))).of_isClosed_subset
-      (isClosed_le (by unfold energy; fun_prop) continuous_const) fun x hx => ?_
-    rw [Metric.mem_closedBall, dist_zero_right]
-    have hx' : ‖x‖ ^ 2 ≤ max c 0 := by
-      have := energy_eq x
-      rw [sub_zero] at this
-      rw [← this]
-      exact (Set.mem_ofPred_eq ▸ hx).trans (le_max_left _ _)
-    calc ‖x‖ = Real.sqrt (‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm
-      _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
 
 @[tmio T, powerlib_foundation] private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
   (hasFDerivAt_energy x).differentiableAt
@@ -865,9 +823,10 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
         nlinarith [mul_nonneg (neg_nonneg.mpr hκ) (sq_nonneg (energy x))]
       · simp [energy]
         positivity
-    · exact absurd h.1 ((family_isAutonomous.mem_den_flow.mp (unstable_of hc)))
+    · exact absurd h.1 ((family_isAutonomous.mem_den_flow.mp (mem_den_unstable a hc)))
   · rintro (hc | ⟨hc, hκ⟩)
-    · exact Flow.locallyExponentiallyStable_localAsymptoticStable ((family_isAutonomous.mem_den_flow.mp (les hc)))
+    · exact Flow.locallyExponentiallyStable_localAsymptoticStable
+        (family_isAutonomous.mem_den_flow.mp (mem_den_locallyExponentiallyStable a hc))
     · exact (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos a.contDiff_realField
         (strictLyapunov_of_critical hc hκ)).localAsymptoticStable
 
@@ -893,9 +852,10 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
       · exact seed ε hε
       · rw [energy_lie, hc]
         nlinarith [mul_pos (neg_pos.mpr hκ) (mul_pos hx hx)]
-    · exact absurd h ((family_isAutonomous.mem_den_flow.mp (unstable_of hc)))
+    · exact absurd h ((family_isAutonomous.mem_den_flow.mp (mem_den_unstable a hc)))
   · rintro (hc | ⟨hc, hκ⟩)
-    · exact ((family_isAutonomous.mem_den_flow.mp (les hc))).lyapunovStable
+    · exact (family_isAutonomous.mem_den_flow.mp
+        (mem_den_locallyExponentiallyStable a hc)).lyapunovStable
     · exact lyapunov_stable (V := energy) (D := Set.univ) two_pos
         ⟨isOpen_univ, Set.mem_univ _, energy_differentiable.continuous, energy_differentiable,
           by simp [energy], fun x _ hx => energy_pos hx, fun x _ => by

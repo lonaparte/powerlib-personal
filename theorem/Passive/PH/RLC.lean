@@ -26,8 +26,8 @@ Source: work-sync `theory/T-ph.md` §1.6 (1.11) and §1.2 (energy balance (1.2))
 `theory/T-invariant-coordinates.md` §1.4 (normal modes).
 
 Results.
-* `seriesRLCPH_field`, `seriesRLC_field_eq_kirchhoff` — the plant's field is exactly the
-  Kirchhoff field; `seriesRLC_power_balance` — energy balance `Ḣ = u i − r i²`;
+* `seriesRLC_field_eq_kirchhoff` — the plant's field is exactly the Kirchhoff field (through
+  `DiagonalPH.toPH_field`); `seriesRLC_power_balance` — energy balance `Ḣ = u i − r i²`;
   `seriesRLCPH_isHurwitz_iff` — the loop is Hurwitz iff `r > 0`.
 * Complex normal modes of an LC pair (T-invariant-coordinates §1.4): `a± = √L Ī ± j √C V̄` give
   `|a₊|² + |a₋|² = 2(L|I|² + C|V|²) = 2η₊` (`normalMode_sum`) and
@@ -43,7 +43,7 @@ Family and connection conclusions.
   (`seriesRLCPH_mem_den_passive`, `seriesRLCPH_mem_den_lyapunovStable`); every attractive
   sentence and sampled contraction hold **iff** `r > 0` (`seriesRLCPH_mem_den_iff`); global
   exponential stability and a positive decay rate when `r > 0`
-  (`seriesRLCPH_mem_den_globallyExponentiallyStable`, `seriesRLCPH_exists_decay`); and for the
+  (`seriesRLCPH_isHurwitz_iff`, `seriesRLCPH_exists_decay`); and for the
   lossless loop `r = 0`, conservation of `H` and failure of local asymptotic stability
   (`seriesRLCPH_mem_den_conservative`, `seriesRLCPH_not_mem_den_locallyAsymptoticallyStable`).
   The field, output, energy, power balance and state-matrix identities are static evidence.
@@ -166,15 +166,6 @@ numbered in order. -/
 def seriesRLCPH (p : SeriesRLCParams) : Port.PortHamiltonian 2 1 :=
   (seriesRLC p).toPH (Equiv.refl _) (Equiv.refl _)
 
-/-- The state field of the plant is the Kirchhoff field.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem seriesRLCPH_field (p : SeriesRLCParams)
-    (x : EuclideanSpace ℝ (Fin 2)) (u : Fin 1 → ℝ) :
-    WithLp.ofLp ((seriesRLCPH p).plant.system.field x u) =
-      seriesRLC_kirchhoffField p (WithLp.ofLp x) u := by
-  rw [seriesRLCPH, DiagonalPH.toPH_field, seriesRLC_field_eq_kirchhoff]
-  rfl
-
 /-- The state matrix `(J − R) Q` of the loop.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem seriesRLCPH_stateMatrix (p : SeriesRLCParams) :
@@ -233,21 +224,13 @@ centre). -/
     (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_setOf_eq] at hh
   exact hh
 
-/-- `r > 0`: the zero-input loop is globally exponentially stable. -/
-@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_globallyExponentiallyStable (p : SeriesRLCParams)
-    (hr : 0 < p.r) :
-    connection% (seriesRLCPH p ∈
-      Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
-  (seriesRLCPH_mem_den_iff p (P := .globallyExponentiallyStable) (Or.inl trivial)).mpr hr
-
 /-- `r > 0`: every zero-input solution segment decays at one positive exponential rate, with one
 constant for all segments. -/
 @[tmio TM, powerlib_domain] theorem seriesRLCPH_exists_decay (p : SeriesRLCParams) (hr : 0 < p.r) :
     connection% (∃ a : ℝ, 0 < a ∧
       seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
-  have h := seriesRLCPH_mem_den_globallyExponentiallyStable p hr
-  unfold powerlib.TMIO.Statement at h
+  have h := (seriesRLCPH_isHurwitz_iff p).mpr hr
   rw [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow)] at h
   obtain ⟨a, ha, hd⟩ := Flow.GloballyExponentiallyStable.exists_decay h
   exact ⟨a, ha, Port.PortHamiltonian.family_isLinear.mem_den_flow.mpr hd⟩

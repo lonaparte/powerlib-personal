@@ -121,7 +121,8 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
     have : V * Kp * ω = 0 := pow_eq_zero_iff two_ne_zero |>.mp h2
     exact ⟨h0.symm, hω2, (mul_eq_zero.mp this).resolve_right hω⟩
 
-/-- −3 dB bandwidth: for `V K_i > 0` and `ω ≥ 0`, `|H(jω)|² = 1/2 ⇔ ω = ω_b`. -/
+/-- −3 dB bandwidth: for `V K_i > 0` and `ω ≥ 0`, `|H(jω)|² = 1/2 ⇔ ω = ω_b` (`H` is the
+transfer function of `frequencyModel`, `transfer_frequencyModel`). -/
 @[tmio M, powerlib_domain] theorem normSq_closedLoopTF_eq_half_iff {V Kp Ki : ℝ} (h : 0 < V * Ki)
     {ω : ℝ} (hω : 0 ≤ ω) :
     normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) = 1 / 2 ↔
@@ -189,24 +190,6 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
       have := pow_lt_pow_left₀ hlt hb0 two_ne_zero
       simpa [X] using this
     nlinarith
-
-/-- The same −3 dB characterization for the transfer function of `frequencyModel`, in
-amplitude form `|H(jω)| = 1/√2`. -/
-@[tmio M, powerlib_domain] theorem frequencyModel_bandwidth {V Kp Ki : ℝ} (h : 0 < V * Ki) {ω : ℝ}
-    (hω : 0 ≤ ω) :
-    ‖Linear.transfer (frequencyModel V Kp Ki) ((ω : ℂ) * I) 0 0‖ = 1 / Real.sqrt 2 ↔
-      ω = bandwidth (omegaN V Ki) (zeta V Kp Ki) := by
-  rw [← normSq_closedLoopTF_eq_half_iff h hω, transfer_frequencyModel]
-  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.empty_val',
-    Matrix.cons_val_fin_one]
-  rw [Complex.normSq_eq_norm_sq]
-  constructor
-  · intro he; rw [he, div_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
-  · intro he
-    have h2 : (1 / Real.sqrt 2) ^ 2 = 1 / 2 := by
-      rw [div_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
-    rw [← h2] at he
-    exact (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).mp he
 
 /-- The note's bandwidth `2ω_n √(1 − 2ζ² + √(4ζ⁴ − 4ζ² + 2))` equals `2ω_n` at `ζ = 1/√2`, and
 `2ω_n` is not a −3 dB frequency of the PLL closed loop with `ζ = 1/√2`. -/

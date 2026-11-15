@@ -43,7 +43,7 @@ Third-order model:
   governor, and the time-domain form `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v` of `G_turb`.
 * `transfer_apply` (domain, M): `Linear.transfer` equals the §1.4 third-order transfer
   function.
-* `routhQuantity_eq`, `isHurwitz_iff`, `isHurwitz_of_hp_fraction`: with
+* `routhQuantity_eq`, `mem_den_attractive_iff`, `mem_den_globallyExponentiallyStable`: with
   `a₃ = M T_g T_R`, `a₂ = M (T_g + T_R) + D T_g T_R`, `a₁ = M + D (T_g + T_R) + K_R F T_R`,
   `a₀ = D + K_R`, the Routh quantity is
   `a₂ a₁ − a₃ a₀ = M²(T_g+T_R) + M D (T_g+T_R)² + M K_R T_R [F (T_g+T_R) − T_g]
@@ -81,9 +81,9 @@ Family and connection conclusions.
   `mem_den_globallyExponentiallyStable` (the added condition `F ≥ T_g/(T_g + T_R)`),
   `mem_den_unstable`, `not_mem_den_passive` and, for the reduced model as a member of
   `SwingGovernor.family`, `reduced_mem_den_globallyExponentiallyStable`.
-* Static evidence: `isEquilibrium_iff`, `steadyState_isEquilibrium`. Private implementation
-  evidence (trajectory level, Rules §3a): `rocof`, `exponentiallyConvergesTo_steadyState`,
-  `tendsto_freq`, `reduced_nadir`, `reduced_rocof`, `reduced_tendsto_freq`.
+* Static evidence: `isEquilibrium_iff`. Private implementation evidence (trajectory level,
+  Rules §3a): `rocof`, `exponentiallyConvergesTo_steadyState`, `tendsto_freq`, `reduced_nadir`,
+  `reduced_rocof`, `reduced_tendsto_freq`.
 
 Corrections.
 * §1.8 state matrix: the note's second row `[−F K_R/(T_R T_g), −1/T_R, (1 − F)/T_R]` does not
@@ -307,12 +307,14 @@ def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, 
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- Routh–Hurwitz for the corrected SFR plant: for `M, T_g, T_R > 0` it is Hurwitz iff
-`a₂ > 0`, `a₀ = K_R + D > 0` and `a₂ a₁ > a₃ a₀`. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hM : 0 < M) (hTg : 0 < Tg) (hTR : 0 < TR) :
-    connection% ((⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      0 < coeff2 M D Tg TR ∧ 0 < coeff0 D K ∧ 0 < routhQuantity M D K F Tg TR) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+`a₂ > 0`, `a₀ = K_R + D > 0` and `a₂ a₁ > a₃ a₀`, so the attractive sentences and sampled
+contraction denote exactly the models meeting `stable`. -/
+@[tmio TM, powerlib_domain] private theorem den_hurwitz {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (family.den (.flow P) = {m | Meets m .stable}) := by
+  change family.den (.flow P) = {m | Meets m .stable}
+  rw [family_isLinear.den_hurwitz hP]
+  ext ⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩
   change IsHurwitz (plant M D K F Tg TR).A ↔
       0 < coeff2 M D Tg TR ∧ 0 < coeff0 D K ∧ 0 < routhQuantity M D K F Tg TR
   have h3 : 0 < coeff3 M Tg TR := by unfold coeff3; positivity
@@ -345,15 +347,6 @@ def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, 
   have h4 : 0 ≤ D ^ 2 * Tg * TR * (Tg + TR) := by positivity
   have h5 : 0 ≤ D * K * F * Tg * TR ^ 2 := by positivity
   linarith
-
-/-- Added stability condition, matrix form. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_of_hp_fraction (hM : 0 < M) (hTg : 0 < Tg)
-    (hTR : 0 < TR) (hD : 0 ≤ D) (hK : 0 ≤ K) (hKD : 0 < K + D) (hF : Tg / (Tg + TR) ≤ F) :
-    connection% ((⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
-  change IsHurwitz (plant M D K F Tg TR).A
-  exact (((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model))).symm.trans (isHurwitz_iff hM hTg hTR))).2 (((Spectral.mem_realize_singleton (meets := Meets)).mp (routh_of_hp_fraction hM hTg hTR hD hK hKD hF)))
 
 /-- `a₀ < 0` (determinant `> 0`) or `a₂ < 0` (trace `> 0`): a characteristic root in the open
 right half plane. -/
@@ -412,13 +405,6 @@ model, not a connection conclusion. -/
   · rintro rfl
     ext i; fin_cases i <;> simp [steadyState] <;> field_simp <;> ring
 
-/-- The steady state is an equilibrium of the load step. Static evidence on the model, not a
-connection conclusion. -/
-@[tmio M, powerlib_domain] theorem steadyState_isEquilibrium (hM : M ≠ 0) (hTg : Tg ≠ 0)
-    (hTR : TR ≠ 0) (hKD : K + D ≠ 0) :
-    IsEquilibrium ((plant M D K F Tg TR).inputField (load ΔPL)) (steadyState D K ΔPL) :=
-  (isEquilibrium_iff hM hTg hTR hKD _).2 rfl
-
 /-! ## The family -/
 
 /-- No model is both stable and unstable: the whole requirement language is inconsistent. -/
@@ -428,13 +414,6 @@ connection conclusion. -/
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   obtain ⟨h1, h2, -⟩ : Meets m .stable := h .stable
   rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
-
-@[tmio TM, powerlib_domain] private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (family.den (.flow P) = {m | Meets m .stable}) := by
-  change family.den (.flow P) = {m | Meets m .stable}
-  rw [family_isLinear.den_hurwitz hP]
-  ext m
-  exact ((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos))
 
 @[tmio TM, powerlib_domain] private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
@@ -463,7 +442,9 @@ margins, `Spectral.chain_le_semantics_of_linearTable_univ`). -/
   exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
     (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
       (connection_proof% translate_eq_linearTable s))
-    (fun m hm => (((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos))).mpr
+    (fun m hm => ((connection_proof% SFR.family_isLinear.mem_den_hurwitz
+        (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
+        (Set.ext_iff.mp (den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)) m)).mpr
       ((mem_realize _ _ _).mp hm .stable rfl))
     (fun m hm => exists_root_of_unstable m.M_pos m.Tg_pos m.TR_pos
       ((mem_realize _ _ _).mp hm .unstable rfl))
@@ -479,7 +460,10 @@ Routh–Hurwitz conditions are their exact translation. -/
   exact Spectral.exact_of_linearTable (F := family) family_isLinear
     (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
       (connection_proof% translate_eq_linearTable s))
-    (fun m => Spectral.mem_realize_singleton.trans (((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos))).symm)
+    (fun m => Spectral.mem_realize_singleton.trans ((connection_proof%
+        SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+        (Or.inl trivial)).symm.trans
+        (Set.ext_iff.mp (den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)) m)).symm)
     hP
 
 /-- The member characterization: a model satisfies an attractive sentence exactly when the
@@ -499,7 +483,9 @@ steady state of every constant load step. -/
     (hK : 0 ≤ m.K) (hKD : 0 < m.K + m.D) (hF : m.Tg / (m.Tg + m.TR) ≤ m.F) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact isHurwitz_of_hp_fraction m.M_pos m.Tg_pos m.TR_pos hD hK hKD hF
+  rw [den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  exact (Spectral.mem_realize_singleton (meets := Meets)).mp
+    (routh_of_hp_fraction m.M_pos m.Tg_pos m.TR_pos hD hK hKD hF)
 
 /-- `a₀ = K_R + D < 0` or `a₂ < 0` places a model in instability. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable (m : Model)
@@ -517,7 +503,7 @@ load `ΔP_L = 1` the steady state is an equilibrium at which the port supplies
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den), family_isLinear m, Sentence.holds_passive]
   refine Port.System.not_passive_of_equilibrium _ (x₀ := steadyState m.D m.K 1) (u₀ := load 1)
-    (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne') ?_
+    ((isEquilibrium_iff m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne' _).2 rfl) ?_
   have hsupply : m.plant.system.supply (steadyState m.D m.K 1) (load 1) =
       -1 / (m.K + m.D) := by
     simp [Port.System.supply, Model.plant, plant, Linear.Plant.system, load,
@@ -646,9 +632,7 @@ member of the swing + governor family. -/
     (hTR : 0 < TR) (hD : 0 ≤ D + F * K) (hKD : 0 < K + D) :
     connection% (reducedModel M D K F TR hM hTR ∈
       SwingGovernor.family.den (.flow .globallyExponentiallyStable)) :=
-  SwingGovernor.mem_den_globallyExponentiallyStable _ hD (by
-    change 0 < (1 - F) * K + (D + F * K)
-    linarith)
+  (SwingGovernor.isHurwitz_iff_of_nonneg hM hTR hD).2 (by linarith)
 
 /-- `arg (σ − 1/T_R + j ω_d) = arg (σ T_R − 1 + j ω_d T_R)` for `T_R > 0`. -/
 @[tmio T, powerlib_foundation] theorem arg_scale {σ ωd : ℝ} (hTR : 0 < TR) :
@@ -719,8 +703,10 @@ every forward solution under the load step. -/
       (Ici 0)) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (K + D))) := by
   have h := LTI.tendsto_apply_of_isHurwitz (plant M D K F Tg TR)
-    (steadyState_isEquilibrium hM.ne' hTg.ne' hTR.ne' hKD.ne')
-    (((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model))).mp (isHurwitz_of_hp_fraction hM hTg hTR hD hK hKD hF))) hx 0
+    ((isEquilibrium_iff hM.ne' hTg.ne' hTR.ne' hKD.ne' _).2 rfl)
+    ((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+      (Or.inl trivial) (x := (⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : Model))).mp
+      (mem_den_globallyExponentiallyStable ⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ hD hK hKD hF)) hx 0
   simpa using h
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
@@ -759,7 +745,7 @@ over `t ≥ 0` there, and the minimum is
       (SwingGovernor.decayRate M D' K' TR) (SwingGovernor.dampedFreq M D' K' TR) TR t := by
     intro t ht
     rw [LTI.trajectory_eq_osc2 (SwingGovernor.plant M D' K' TR)
-      (SwingGovernor.steadyState_isEquilibrium hM.ne' hTR.ne' hKD'.ne')
+      ((SwingGovernor.isEquilibrium_iff hM.ne' hTR.ne' hKD'.ne' _).2 rfl)
       (SwingGovernor.trace_A hM hTR hKD') (SwingGovernor.det_A hM hTR hD hKD' hζ) hωd.ne' hx ht,
       h0]
     exact SwingGovernor.osc2_freq hM hTR hD hKD' hζ t
@@ -797,7 +783,7 @@ Reduced model: `Δω → −ΔP_L/(K_R + D)` along every forward solution (`0 �
     Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (K + D))) := by
   have hKD' : 0 < (1 - F) * K + (D + F * K) := by linarith
   have h := LTI.tendsto_apply_of_isHurwitz (reducedPlant M D K F TR)
-    (SwingGovernor.steadyState_isEquilibrium hM.ne' hTR.ne' hKD'.ne')
+    ((SwingGovernor.isEquilibrium_iff hM.ne' hTR.ne' hKD'.ne' _).2 rfl)
     ((((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (SwingGovernor.isHurwitz_iff_of_nonneg hM hTR hD))).2 hKD') hx 0
   rw [SwingGovernor.steadyState_zero, show (1 - F) * K + (D + F * K) = K + D by ring] at h
   exact h
@@ -825,7 +811,7 @@ the steady state (the connection theorem `mem_den_attractive_iff` and linearity,
     ⟨h2, by unfold coeff0; linarith, hR⟩
   rw [family_isLinear.den_hurwitz (Or.inl (by simp))] at hmem
   exact (Linear.holds_input_iff m.plant
-    (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne')
+    ((isEquilibrium_iff m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne' _).2 rfl)
     (P := .globallyExponentiallyStable) (by simp)).2 hmem
 
 end powerlib.Frequency.SFR

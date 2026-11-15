@@ -41,10 +41,10 @@ Results.
   `𝓗[J]` (`hillMatrix`: block `(m, m')` is `J_{m − m'} − δ_{mm'} j(m + ν)ω I`, `ν = 1/2` for the
   half-integer ansatz `w = ∑ φ_m e^{j(m + 1/2)ω_p t}`), conjugation by the involutive gauge
   `G = diag((−1)^m I)` (`hillGauge`, `hillGauge_mul_self`) multiplies the band `Δm = h` by `(−1)^h`
-  and leaves the diagonal blocks unchanged (`hillGauge_conj`). Hence coefficient families with
+  and leaves the diagonal blocks unchanged. Hence coefficient families with
   `J'_h = (−1)^h J_h` give similar Hill matrices (`hillMatrix_gauge_similar`) with the same
-  characteristic polynomial, determinant `det(sI − 𝓗)`, spectrum and gauge-mapped eigenvectors
-  (`hillMatrix_charpoly_eq`, `hillMatrix_det_eq`, `hillMatrix_spectrum_eq`,
+  characteristic polynomial (so the same `det(sI − 𝓗)` for every `s`), spectrum and
+  gauge-mapped eigenvectors (`hillMatrix_charpoly_eq`, `hillMatrix_spectrum_eq`,
   `hillMatrix_gauge_eigenvector`); `hillLTI` is the case `J_0 = A₀`, `ν = 0`
   (`hillLTI_eq_hillMatrix`). For the third-order truncated Hill matrix of the source
   (`hillCoeff3`: `J₀ = A₀ + δ̂₁²Q₀`, `J₁ = (δ̂₁/2)P + δ̂₁³P₃`, `J₂ = δ̂₁²Q₂`, `J₃ = δ̂₁³P₃₃`,
@@ -256,11 +256,16 @@ def hillGaugeUnit (K : ℕ) : (Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 
   ⟨hillGauge K, hillGauge K, hillGauge_mul_self K, hillGauge_mul_self K⟩
 
 /-- **Gauge covariance.** Conjugating the Hill matrix by `diag((−1)^m I)` multiplies the band
-`Δm = h` by `(−1)^h`: `G 𝓗[J] G = 𝓗[(−1)^h J_h]`; the diagonal (`h = 0`) blocks, including
-the frequency shift `−j(m + ν)ω I`, are unchanged. -/
-@[tmio T, powerlib_foundation] theorem hillGauge_conj (J : ℤ → Matrix X X ℂ) (ν ω : ℝ) (K : ℕ) :
-    hillGauge K * hillMatrix J ν ω K * hillGauge K =
-      hillMatrix (fun h => (h.negOnePow : ℂ) • J h) ν ω K := by
+`Δm = h` by `(−1)^h`; the diagonal (`h = 0`) blocks, including the frequency shift
+`−j(m + ν)ω I`, are unchanged. Hence if the coefficient family has the parity
+`J'_h = (−1)^h J_h` (as produced by `δ̂₁ ↦ −δ̂₁` under the half-period symmetry), the two Hill
+matrices are similar through the gauge: `𝓗[J'] = G 𝓗[J] G⁻¹` with `G = G⁻¹`. -/
+@[tmio T, powerlib_foundation] theorem hillMatrix_gauge_similar {J J' : ℤ → Matrix X X ℂ}
+    (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
+    hillMatrix J' ν ω K = hillGauge K * hillMatrix J ν ω K * hillGauge K := by
+  have : J' = fun h => (h.negOnePow : ℂ) • J h := funext hJ
+  subst this
+  symm
   ext ⟨i, k⟩ ⟨i', k'⟩
   simp only [hillGauge, hillMatrix, Matrix.diagonal_mul, Matrix.mul_diagonal, Matrix.sub_apply,
     Matrix.of_apply, Matrix.blockDiagonal_apply, Matrix.smul_apply, smul_eq_mul]
@@ -273,16 +278,6 @@ the frequency shift `−j(m + ν)ω I`, are unchanged. -/
   · simp only [hk, ite_false, sub_zero]
     rw [← negOnePow_mul_negOnePow]
     ring
-
-/-- If the coefficient family has the parity `J'_h = (−1)^h J_h` (as produced by
-`δ̂₁ ↦ −δ̂₁` under the half-period symmetry), the two Hill matrices are similar through the
-gauge: `𝓗[J'] = G 𝓗[J] G⁻¹` with `G = G⁻¹`. -/
-@[tmio T, powerlib_foundation] theorem hillMatrix_gauge_similar {J J' : ℤ → Matrix X X ℂ}
-    (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
-    hillMatrix J' ν ω K = hillGauge K * hillMatrix J ν ω K * hillGauge K := by
-  have : J' = fun h => (h.negOnePow : ℂ) • J h := funext hJ
-  subst this
-  exact (hillGauge_conj J ν ω K).symm
 
 @[tmio T, powerlib_foundation] private theorem hillMatrix_units_conj {J J' : ℤ → Matrix X X ℂ}
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
@@ -309,21 +304,6 @@ polynomial. -/
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) :
     spectrum ℂ (hillMatrix J' ν ω K) = spectrum ℂ (hillMatrix J ν ω K) := by
   rw [hillMatrix_units_conj hJ, spectrum.units_conjugate]
-
-/-- Spectral consequence, determinant form: `det(sI − 𝓗[J']) = det(sI − 𝓗[J])` for every `s`;
-an eigenvector `φ` of `𝓗[J]` is mapped to the eigenvector `Gφ = ((−1)^m φ_m)` of `𝓗[J']`. -/
-@[tmio T, powerlib_foundation] theorem hillMatrix_det_eq {J J' : ℤ → Matrix X X ℂ}
-    (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) (s : ℂ) :
-    (s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) - hillMatrix J' ν ω K).det =
-      (s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) -
-        hillMatrix J ν ω K).det := by
-  have hG := hillGauge_mul_self (X := X) K
-  have e : s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) - hillMatrix J' ν ω K =
-      hillGauge K * (s • 1 - hillMatrix J ν ω K) * hillGauge K := by
-    rw [hillMatrix_gauge_similar hJ, mul_sub, sub_mul, mul_smul_comm, mul_one, smul_mul_assoc,
-      hG]
-  rw [e, Matrix.det_mul, Matrix.det_mul, mul_comm, ← mul_assoc, ← Matrix.det_mul, hG,
-    Matrix.det_one, one_mul]
 
 /-- An eigenvector `φ` of `𝓗[J]` for the exponent `s` gives the eigenvector `Gφ` of `𝓗[J']`. -/
 @[tmio T, powerlib_foundation] theorem hillMatrix_gauge_eigenvector {J J' : ℤ → Matrix X X ℂ}

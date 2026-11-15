@@ -27,8 +27,7 @@ Results.
 * `kern`: the fibre-universal image (v0.3 §8); generates the preimage (`kern_apply`,
   `generate_kern`).
 * `cover`: a translation relation from theory sentences to requirements; generates its image
-  (`gc_image_core`, translation tables `table`, `image_table_singleton`, `image_table`,
-  `generate_cover`).
+  (translation tables `table`, `image_table_singleton`, `image_table`, `generate_cover`).
 * `possibly`: a relational observation in reverse-inclusion orders; generates certification
   (`certify`, `mem_certify`, `gc_certify`, `mem_possibly`, `generate_possibly`). Prediction
   (possible observations) is then derived by complement through Mathlib's
@@ -37,8 +36,8 @@ Results.
 * `relationalSeed`: the seed built from `cover`, `satisfaction` and `possibly`; its whole chain
   translates, realizes and certifies (`relationalSeed_whole`), and soundness of the translation
   propagates to every certified observation (`relationalSeed_sound`).
-* Applied forms of the generated maps: `generate_preimage_apply`, `generate_kern_apply`,
-  `generate_cover_apply`, `generate_possibly_apply`.
+* Applied forms of the generated maps: `generate_cover_apply`, `generate_possibly_apply`
+  (`preimage`, `kern`: `congrFun` of `generate_preimage`, `generate_kern`).
 * Satisfaction along maps and products: `realize_comap`; exactness relative to a context,
   `ExactUnder` (`exactUnder_empty_iff`: with an empty context, plain exactness); sums of
   requirement languages, `satSum` and `realize_sum` (component requirements carve out a product
@@ -171,11 +170,6 @@ section Relation
 
 variable {S Q X V : Type*}
 
-/-- Relational image and core form a Galois connection (Mathlib `SetRel.image_subset_iff`). -/
-@[tmio T, powerlib_foundation] theorem gc_image_core (R : SetRel S Q) :
-    connection% (GaloisConnection (generate (cover R)) (cover R)) :=
-  gc_generate (cover R)
-
 /-- A translation table, each sentence listing its requirements, as a relation. -/
 def table (t : S → Set Q) : SetRel S Q := {p | p.2 ∈ t p.1}
 
@@ -304,15 +298,6 @@ satisfies every sentence of `Φ`. -/
 end Seed
 
 /-! ## Applied forms of the generated maps -/
-
-@[tmio T, simp, powerlib_foundation] theorem generate_preimage_apply {D Y : Type*} (f : D → Y)
-    (A : Set D) :
-    connection% (generate (preimage f) A = f '' A) := show generate (preimage f) A = f '' A from
-  congrFun (generate_preimage f) A
-
-@[tmio T, simp, powerlib_foundation] theorem generate_kern_apply {D Y : Type*} (f : D → Y) (B : Set Y) :
-    connection% (generate (kern f) B = f ⁻¹' B) := show generate (kern f) B = f ⁻¹' B from
-  congrFun (generate_kern f) B
 
 @[tmio T, simp, powerlib_foundation] theorem generate_cover_apply {S Q : Type*} (R : SetRel S Q)
     (Φ : Set S) :

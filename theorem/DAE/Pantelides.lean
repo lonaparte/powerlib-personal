@@ -71,12 +71,13 @@ Results.
   there is an infinite run; hence "every run terminates" is equivalent to structural
   nonsingularity (`StructurallyNonsingular`, a nonsingular real matrix with the occurrence
   pattern).
-* Relation to Pryce — **equality, for every run** (§1.5 of the note). `pryce_le_pantelides`: at
-  a reachable state with assignment `σ`, Pryce's least offsets for `σ` are componentwise at most
-  Pantelides' counts `(c, d)`. Conversely (`differentiate_le`, `le_of_reaches`), along every run
-  the counts stay below every pair of offsets that is dual feasible and tight on some
-  transversal (every optimal dual solution of the assignment problem): a failed search can only
-  colour equations and variables whose optimal offsets are strictly above the current counts.
+* Relation to Pryce — **equality, for every run** (§1.5 of the note). At a reachable state with
+  assignment `σ`, Pryce's least offsets for `σ` are componentwise at most Pantelides' counts
+  `(c, d)`, which are dual feasible and tight on `σ`. Conversely (`differentiate_le`,
+  `le_of_reaches`), along every run the counts stay below every pair of offsets that is dual
+  feasible and tight on some transversal (every optimal dual solution of the assignment
+  problem): a failed search can only colour equations and variables whose optimal offsets are
+  strictly above the current counts.
   Hence `pryce_eq_pantelides`: Pryce's offsets on the final assignment *equal* `(c, d)`;
   `pryce_eq_pantelides_of_highestValue`: the same holds for Pryce's offsets on any
   highest-value transversal. Uniqueness question: the step relation is nondeterministic (choice
@@ -659,23 +660,6 @@ initial state (no state is terminal, and every valid non-terminal state has a st
   · rintro ⟨σ, hσ⟩ ⟨run, h0, hrun⟩
     exact S.not_infinite_run hσ run (h0 ▸ S.initial_valid) hrun
 
-omit [DecidableEq ι] in
-/-- Pantelides' counts dominate Pryce's offsets: at a reachable state assigning each equation `i`
-to `σ i`, Pryce's fixed-point iteration on `σ` (`theorem.DAE.Pryce`) stops at offsets
-componentwise below the differentiation counts `c` and highest derivative orders `d` produced by
-Pantelides' algorithm. -/
-@[tmio T, powerlib_foundation] theorem pryce_le_pantelides {st : PantelidesState ι}
-    (hr : Relation.ReflTransGen S.Step S.initial st) {σ : Equiv.Perm ι}
-    (hσ : ∀ i, st.assign i = some (σ i)) :
-    ∃ N, S.pryceStep σ (S.pryceIter σ N) = S.pryceIter σ N ∧
-      S.IsDualFeasible (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧
-      S.IsTight σ (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧ S.pryceIter σ N ≤ (st.c, st.d) := by
-  have hv := S.valid_of_reaches hr
-  have htr : S.IsTransversal σ := fun i => (hv.2.1 i (σ i) (hσ i)).1
-  have ht : S.IsTight σ st.c st.d := fun i => (hv.2.1 i (σ i) (hσ i)).2
-  obtain ⟨N, -, hfix, hdf, htt, hmin⟩ := S.pryce_iteration_terminates htr hv.1 ht
-  exact ⟨N, hfix, hdf, htt, hmin st.c st.d hv.1 ht⟩
-
 /-! ## Equality with Pryce's offsets (all runs) -/
 
 omit [DecidableEq ι] in
@@ -829,7 +813,8 @@ optimal solution of the dual of the assignment problem). -/
 run: at a reachable state assigning each equation `i` to `σ i` (in particular at the terminal
 state of any run), Pryce's fixed-point iteration on `σ` stops exactly at the differentiation
 counts `c` and highest derivative orders `d` produced by Pantelides' algorithm. The `≤` half is
-`pryce_le_pantelides`; the `≥` half is `le_of_reaches` applied to Pryce's offsets. -/
+the minimality of Pryce's offsets (`pryce_iteration_terminates`: the counts are dual feasible and
+tight on `σ`); the `≥` half is `le_of_reaches` applied to Pryce's offsets. -/
 @[tmio T, powerlib_foundation] theorem pryce_eq_pantelides {st : PantelidesState ι}
     (hr : Relation.ReflTransGen S.Step S.initial st) {σ : Equiv.Perm ι}
     (hσ : ∀ i, st.assign i = some (σ i)) :
@@ -838,8 +823,9 @@ counts `c` and highest derivative orders `d` produced by Pantelides' algorithm. 
       S.IsTight σ (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧ S.pryceIter σ N = (st.c, st.d) := by
   have hv := S.valid_of_reaches hr
   have htr : S.IsTransversal σ := fun i => (hv.2.1 i (σ i) (hσ i)).1
-  obtain ⟨N, hfix, hdf, htt, hle⟩ := S.pryce_le_pantelides hr hσ
-  exact ⟨N, hfix, hdf, htt, le_antisymm hle (S.le_of_reaches hr htr hdf htt)⟩
+  have ht : S.IsTight σ st.c st.d := fun i => (hv.2.1 i (σ i) (hσ i)).2
+  obtain ⟨N, -, hfix, hdf, htt, hmin⟩ := S.pryce_iteration_terminates htr hv.1 ht
+  exact ⟨N, hfix, hdf, htt, le_antisymm (hmin st.c st.d hv.1 ht) (S.le_of_reaches hr htr hdf htt)⟩
 
 /-- Pryce's offsets computed on **any** highest-value transversal `τ` (not necessarily the
 assignment found by the run) equal the counts at the terminal state of any run. -/

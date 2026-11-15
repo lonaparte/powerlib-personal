@@ -26,12 +26,11 @@ distribution), §1.5 (implication chain, Markov's inequality), §1.6 (three coun
 §1.7 (in probability + uniform integrability ⇒ `L^p`; subsequence criterion).
 
 Results.
-* Mathlib wrappers (Mathlib declaration in brackets): `ae_imp_inProbability`
-  [`tendstoInMeasure_of_tendsto_ae`], `Lp_imp_inProbability`
-  [`tendstoInMeasure_of_tendsto_eLpNorm`], `inProbability_imp_inDistribution`
-  [`TendstoInMeasure.tendstoInDistribution`], `inProbability_subseq_ae`
-  [`TendstoInMeasure.exists_seq_tendsto_ae`], `inProbability_UI_imp_Lp`
-  [`tendsto_Lp_finite_of_tendstoInMeasure`], `markov_inequality` [`mul_meas_ge_le_lintegral₀`].
+* The implications are Mathlib's, used directly: `tendstoInMeasure_of_tendsto_ae` (a.s. ⇒ in
+  probability), `tendstoInMeasure_of_tendsto_eLpNorm` (`L^p` ⇒ in probability),
+  `TendstoInMeasure.tendstoInDistribution`, `TendstoInMeasure.exists_seq_tendsto_ae` (subsequence
+  criterion), `tendsto_Lp_finite_of_tendstoInMeasure` (in probability + uniform integrability ⇒
+  `L^p`), `mul_meas_ge_le_lintegral₀` (Markov's inequality).
 * `ae_not_L1` — on `[0,1]`, `X_n = (n+1) 1_{[0, 1/(n+1))}` tends to `0` a.e. but `E|X_n| = 1`.
 * `inProbability_not_ae` — on `[0,1]^ℕ` (product of uniform laws), the indicators of the
   independent events `A_n = {ω_n ≤ 1/(n+1)}` tend to `0` in probability but not a.s. (second
@@ -50,48 +49,6 @@ namespace powerlib.Stochastic.Conv
 
 open MeasureTheory ProbabilityTheory Filter Set unitInterval
 open scoped ENNReal NNReal Topology
-
-/-! ## Mathlib wrappers: implications -/
-
-section Implications
-
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ℕ → Ω → ℝ} {Y : Ω → ℝ}
-
-/-- a.s. ⇒ in probability (finite measure). -/
-@[tmio T, powerlib_foundation] theorem ae_imp_inProbability [IsFiniteMeasure P]
-    (hX : ∀ n, AEStronglyMeasurable (X n) P)
-    (h : ∀ᵐ ω ∂P, Tendsto (fun n => X n ω) atTop (𝓝 (Y ω))) : TendstoInMeasure P X atTop Y :=
-  tendstoInMeasure_of_tendsto_ae hX h
-
-/-- `L^p` ⇒ in probability (via Markov's inequality). -/
-@[tmio T, powerlib_foundation] theorem Lp_imp_inProbability {p : ℝ≥0∞} (hp : p ≠ 0)
-    (h : Tendsto (fun n => eLpNorm (X n - Y) p P) atTop (𝓝 0)) : TendstoInMeasure P X atTop Y :=
-  tendstoInMeasure_of_tendsto_eLpNorm hp h
-
-/-- In probability ⇒ in distribution. -/
-@[tmio T, powerlib_foundation] theorem inProbability_imp_inDistribution [IsProbabilityMeasure P]
-    (h : TendstoInMeasure P X atTop Y) (hX : ∀ n, AEMeasurable (X n) P) :
-    TendstoInDistribution X atTop Y (fun _ => P) P :=
-  h.tendstoInDistribution hX
-
-/-- Subsequence criterion: convergence in probability gives an a.s. convergent subsequence. -/
-@[tmio T, powerlib_foundation] theorem inProbability_subseq_ae (h : TendstoInMeasure P X atTop Y) :
-    ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ ω ∂P, Tendsto (fun i => X (ns i) ω) atTop (𝓝 (Y ω)) :=
-  h.exists_seq_tendsto_ae
-
-/-- In probability + uniform integrability ⇒ `L^p` (Vitali). -/
-@[tmio T, powerlib_foundation] theorem inProbability_UI_imp_Lp [IsFiniteMeasure P] {p : ℝ≥0∞}
-    (hp : 1 ≤ p) (hp' : p ≠ ∞) (hX : ∀ n, AEStronglyMeasurable (X n) P) (hY : MemLp Y p P)
-    (hui : UnifIntegrable X p P) (h : TendstoInMeasure P X atTop Y) :
-    Tendsto (fun n => eLpNorm (X n - Y) p P) atTop (𝓝 0) :=
-  tendsto_Lp_finite_of_tendstoInMeasure hp hp' hX hY hui h
-
-/-- Markov's inequality `ε P(f ≥ ε) ≤ E f` for nonnegative `f`. -/
-@[tmio T, powerlib_foundation] theorem markov_inequality {f : Ω → ℝ≥0∞} (hf : AEMeasurable f P)
-    (ε : ℝ≥0∞) : ε * P {ω | ε ≤ f ω} ≤ ∫⁻ ω, f ω ∂P :=
-  mul_meas_ge_le_lintegral₀ hf ε
-
-end Implications
 
 /-! ## Counterexample 1: a.s. but not `L¹` -/
 

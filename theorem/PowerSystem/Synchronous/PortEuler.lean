@@ -104,9 +104,6 @@ def eulerFamily : Family Euler Requirement 2 1 :=
 def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
   Numerics.eulerPorts family (fun m => m.toPH.system) Euler.design Euler.h
 
-@[tmio M, powerlib_domain] private theorem family_isPort : family.IsPort fun m => m.toPH.system :=
-  family_isNonlinearPH.isPort
-
 /-- The centred zero-input field of a classical machine is `C¹` near the origin: the smoothness
 hypothesis of the generic Euler laws for port systems
 (`Numerics.eulerPorts_sound_small_step_local`). -/
@@ -143,7 +140,8 @@ disk. -/
   have hm := mem_den_locallyExponentiallyStable unitModel (by norm_num [unitModel])
     (by simp [unitModel]) (by simp [unitModel])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_local family_isPort
+  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_local
+    family_isNonlinearPH.isPort
     (by norm_num) (contDiffAt_zeroInput _) hm
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 

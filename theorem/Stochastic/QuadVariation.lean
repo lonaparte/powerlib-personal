@@ -650,8 +650,9 @@ omit [IsProbabilityMeasure P] in
           integral_pow_four_of_hasLaw hb]
         ring
 
-/-- The greedy quadratic sum as a function of `ω`. -/
-@[tmio T, powerlib_foundation] theorem greedyQV_eq_sum (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k : ℕ) :
+/-- `qvSum_greedyPartition` as an equality of functions of `ω`. -/
+@[tmio T, powerlib_foundation] private theorem greedyQV_eq_sum (B : ℝ≥0 → Ω → ℝ) (T : ℝ≥0)
+    (k : ℕ) :
     (fun ω => qvSum B (greedyPartition B T k ω) (2 ^ (k + 1)) ω) =
       ∑ j ∈ range (2 ^ k), fun ω => mergeSq (incr B (dyadic T k) (2 * j) ω)
         (incr B (dyadic T k) (2 * j + 1) ω) := by

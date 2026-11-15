@@ -107,7 +107,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
     continuous_const
   have hLie : ∀ x, fderiv ℝ H x (srfField V Kp Ki δω x) = -(Kp * srfPD V (x 0) ^ 2) :=
-    pllHamiltonian_shifted_lie hKp.le hKi.ne' δω
+    fun x => by
+      have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp.le (δω / Ki) x
+      rwa [mul_div_cancel₀ δω hKi.ne'] at h
   -- the sublevel piece equals a closed set
   have hset : {x ∈ W | H x ≤ c} = {x : State 2 | |x 0| ≤ Real.pi ∧ H x ≤ c} := by
     ext x

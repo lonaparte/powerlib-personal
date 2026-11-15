@@ -79,7 +79,9 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
       1 / 2 * g₀ * Real.sqrt (2 * π / (X * φ₂)) *
         (1 + endpointCorrection g₀ g₁ φ₂ φ₃ / Real.sqrt X) := by
   have hb : 0 < X * φ₂ := mul_pos hX hφ
-  rw [endpointTable, halfMoment0 hb, halfMoment1 hb, halfMoment3 hb, endpointCorrection]
+  rw [endpointTable, halfMoment0 hb, gaussMoment1 (half_pos hb), gaussMoment3 (half_pos hb),
+    show (1 : ℝ) / (2 * (X * φ₂ / 2)) = 1 / (X * φ₂) by ring,
+    show (1 : ℝ) / (2 * (X * φ₂ / 2) ^ 2) = 2 / (X * φ₂) ^ 2 by ring, endpointCorrection]
   have hpi : 0 < π := Real.pi_pos
   have hsX : 0 < Real.sqrt X := Real.sqrt_pos.mpr hX
   have hsφ : 0 < Real.sqrt φ₂ := Real.sqrt_pos.mpr hφ

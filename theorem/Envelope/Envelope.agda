@@ -12,9 +12,10 @@ module theorem.Envelope.Envelope where
 -- through meets only almost surely; at a positive level two certified safe sets can have an
 -- uncertified intersection, and then no certified safe set is least (`no-least`).
 --
--- Lean (`theorem/Envelope/Basic.lean`): `sup-meet` is `Envelope.den_safe_sSup`, `antitone` is
--- `Envelope.den_safe_antitone`, `galois` is `Envelope.le_certifiedHorizon_iff` with the generated
--- adjoint `Envelope.generate_certifiedHorizon`; the level is `Envelope.den_safe_iInf`,
+-- Lean (`theorem/Envelope/Basic.lean`): `sup-meet` is `Envelope.holds_safe_sSup` read through
+-- `Family.mem_den`, `antitone` is `Envelope.den_safe_antitone`, `galois` is
+-- `Envelope.le_certifiedHorizon_iff` with the generated adjoint
+-- `Envelope.generate_certifiedHorizon`; the level is `Envelope.holds_safe_iInf`,
 -- `Envelope.gc_worstExceedance`, `Envelope.generate_worstExceedance`; `no-least` is
 -- `Envelope.not_isLeast_safe` with the witness `Envelope.not_holds_safe_inter`, and the almost
 -- sure meets are `Envelope.holds_safe_iInter_null`. Nothing here is exported.

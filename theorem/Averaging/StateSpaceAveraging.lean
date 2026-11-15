@@ -43,7 +43,8 @@ Results.
 * `switched_sample` — every switched trajectory satisfies
   `x(kT) = (e^{(1−d)TA₂} e^{dTA₁})^k x(0)` (uniqueness of linear ODE solutions on each
   subinterval).
-* `averaged_solves` — `x̄(t) = e^{tĀ} x₀` solves the averaged model.
+* `hasDerivAt_exp_mulVec` — `t ↦ e^{(t − a)A} v` solves `ẋ = A x`; at `a = 0`, `A = Ā` it
+  says that `x̄(t) = e^{tĀ} x₀` solves the averaged model.
 * `stateSpaceAveraging_error` — for every horizon `L ≥ 0` there is `C` such that for all
   `T ∈ (0, 1]`, every switched trajectory with `x(0) = x₀`, and every switching instant
   `kT ≤ L`: `‖x(kT) − x̄(kT)‖ ≤ C T ‖x₀‖`.
@@ -70,18 +71,13 @@ section Algebra
 
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
 
-omit [NormOneClass 𝔸] in
-@[tmio T, powerlib_foundation] theorem hasDerivAt_exp_smul (X : 𝔸) (r : ℝ) :
-    HasDerivAt (fun s : ℝ => NormedSpace.exp (s • X)) (X * NormedSpace.exp (r • X)) r :=
-  hasDerivAt_exp_smul_const' X r
-
 /-- `‖e^{sX}‖ ≤ e^{‖X‖ s}` for `s ≥ 0` (Grönwall). -/
 @[tmio T, powerlib_foundation] theorem norm_exp_smul_le (X : 𝔸) {s : ℝ} (hs : 0 ≤ s) :
     ‖NormedSpace.exp (s • X)‖ ≤ Real.exp (‖X‖ * s) := by
   have h := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r : ℝ => NormedSpace.exp (r • X))
     (f' := fun r => X * NormedSpace.exp (r • X)) (δ := 1) (K := ‖X‖) (ε := 0) (a := 0) (b := s)
-    (fun r _ => (hasDerivAt_exp_smul X r).continuousAt.continuousWithinAt)
-    (fun r _ => (hasDerivAt_exp_smul X r).hasDerivWithinAt)
+    (fun r _ => (hasDerivAt_exp_smul_const' X r).continuousAt.continuousWithinAt)
+    (fun r _ => (hasDerivAt_exp_smul_const' X r).hasDerivWithinAt)
     (by simp) (fun r _ => by simpa using norm_mul_le X (NormedSpace.exp (r • X)))
     s ⟨hs, le_rfl⟩
   rw [gronwallBound_ε0, sub_zero, one_mul] at h
@@ -93,7 +89,7 @@ omit [NormOneClass 𝔸] in
   have h := norm_image_sub_le_of_norm_deriv_le_segment' (a := 0) (b := s)
     (f := fun r : ℝ => NormedSpace.exp (r • X)) (f' := fun r => X * NormedSpace.exp (r • X))
     (C := ‖X‖ * Real.exp (‖X‖ * s))
-    (fun r _ => (hasDerivAt_exp_smul X r).hasDerivWithinAt)
+    (fun r _ => (hasDerivAt_exp_smul_const' X r).hasDerivWithinAt)
     (fun r hr => by
       calc ‖X * NormedSpace.exp (r • X)‖ ≤ ‖X‖ * ‖NormedSpace.exp (r • X)‖ := norm_mul_le _ _
         _ ≤ ‖X‖ * Real.exp (‖X‖ * s) := by
@@ -181,13 +177,14 @@ omit [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] in
   set Eb : ℝ → 𝔸 := fun s => NormedSpace.exp (s • Ab)
   have hE₁ : ∀ s, HasDerivAt E₁ (d • (A₁ * E₁ s)) s := by
     intro s
-    have h := (hasDerivAt_exp_smul A₁ (d * s)).scomp s ((hasDerivAt_id s).const_mul d)
+    have h := (hasDerivAt_exp_smul_const' A₁ (d * s)).scomp s ((hasDerivAt_id s).const_mul d)
     simpa [E₁, Function.comp_def] using h
   have hE₂ : ∀ s, HasDerivAt E₂ ((1 - d) • (A₂ * E₂ s)) s := by
     intro s
-    have h := (hasDerivAt_exp_smul A₂ ((1 - d) * s)).scomp s ((hasDerivAt_id s).const_mul (1 - d))
+    have h := (hasDerivAt_exp_smul_const' A₂ ((1 - d) * s)).scomp s
+      ((hasDerivAt_id s).const_mul (1 - d))
     simpa [E₂, Function.comp_def] using h
-  have hEb : ∀ s, HasDerivAt Eb (Ab * Eb s) s := fun s => hasDerivAt_exp_smul Ab s
+  have hEb : ∀ s, HasDerivAt Eb (Ab * Eb s) s := fun s => hasDerivAt_exp_smul_const' Ab s
   set F' : ℝ → 𝔸 := fun s => (1 - d) • (A₂ * E₂ s) * E₁ s + E₂ s * (d • (A₁ * E₁ s)) -
     Ab * Eb s
   have hF : ∀ s, HasDerivAt (fun s => E₂ s * E₁ s - Eb s) (F' s) s :=
@@ -315,7 +312,7 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
     (t : ℝ) :
     HasDerivAt (fun t => NormedSpace.exp ((t - a) • A) *ᵥ v)
       (A *ᵥ (NormedSpace.exp ((t - a) • A) *ᵥ v)) t := by
-  have h := (hasDerivAt_exp_smul A (t - a)).scomp t ((hasDerivAt_id t).sub_const a)
+  have h := (hasDerivAt_exp_smul_const' A (t - a)).scomp t ((hasDerivAt_id t).sub_const a)
   simp only [Function.comp_def, id, one_smul] at h
   let L : Matrix X X ℝ →L[ℝ] (X → ℝ) :=
     LinearMap.toContinuousLinearMap
@@ -361,13 +358,6 @@ with duty ratio `d` and period `T` (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A�
     push_cast
     rw [e2, e1, ih, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, pow_succ']
     rfl
-
-/-- The averaged model `x̄̇ = Ā x̄` is solved by `x̄(t) = e^{tĀ} x₀`. -/
-@[tmio T, powerlib_foundation] theorem averaged_solves (d : ℝ) (A₁ A₂ : Matrix X X ℝ) (x₀ : X → ℝ)
-    (t : ℝ) :
-    HasDerivAt (fun t => NormedSpace.exp (t • avgMatrix d A₁ A₂) *ᵥ x₀)
-      (avgMatrix d A₁ A₂ *ᵥ (NormedSpace.exp (t • avgMatrix d A₁ A₂) *ᵥ x₀)) t := by
-  simpa using hasDerivAt_exp_mulVec (avgMatrix d A₁ A₂) 0 x₀ t
 
 /-- **State-space averaging error** (Middlebrook–Ćuk, ideal switches, fixed duty ratio, CCM):
 for every horizon `L` there is `C` such that, for all switching periods `T ∈ (0, 1]`, every

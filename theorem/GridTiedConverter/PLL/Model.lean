@@ -63,7 +63,7 @@ conclusions on the family's semantics connection: the four local-stability resul
 invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V` with gains
 `(K_p, K_i)` is the unit-amplitude loop with gains `(V K_p, V K_i)`). Scaffold of the amplitude
 invariance: `theorem/GridTiedConverter/PLL/PLLAmplitude.agda`. The equilibrium sets
-(`srfField_eq_zero_iff`, `srf_equilibria_eq`, `srf_exists_equilibrium`,
+(`srfField_eq_zero_iff`: the equilibria are `{(kπ, δω / K_i) : k ∈ ℤ}`, `srf_exists_equilibrium`,
 `measField_eq_zero_iff`) are static evidence on the model, not connection conclusions; the
 coordinate conjugacies are domain model identities.
 
@@ -158,18 +158,6 @@ Static evidence on the model, not a connection conclusion. -/
     srfField V Kp Ki δω x = 0 ↔ (∃ k : ℤ, x 0 = k * Real.pi) ∧ x 1 = δω / Ki := by
   rw [srfField, piPLLField_eq_zero_iff hKi, srfPD_eq_zero_iff hV]
 
-/-- The equilibrium set is `{(kπ, δω / K_i) : k ∈ ℤ}`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem srf_equilibria_eq {V Kp Ki δω : ℝ} (hV : V ≠ 0) (hKi : Ki ≠ 0) :
-    {x : State 2 | srfField V Kp Ki δω x = 0} =
-      Set.range (fun k : ℤ => PhasePlane.mk (k * Real.pi) (δω / Ki)) := by
-  rw [srfField, piPLL_equilibria_eq hKi]
-  ext x
-  simp only [Set.mem_image, Set.mem_ofPred_eq, Set.mem_range, srfPD_eq_zero_iff hV]
-  constructor
-  · rintro ⟨θ, ⟨k, rfl⟩, rfl⟩; exact ⟨k, rfl⟩
-  · rintro ⟨k, rfl⟩; exact ⟨k * Real.pi, ⟨k, rfl⟩, rfl⟩
-
 /-- An equilibrium exists for every constant frequency offset (integrator action).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem srf_exists_equilibrium (V Kp δω : ℝ) {Ki : ℝ} (hKi : Ki ≠ 0) :
@@ -177,11 +165,6 @@ Static evidence on the model, not a connection conclusion. -/
   (piPLLField_eq_zero_iff hKi _).mpr ⟨by simp [srfPD], rfl⟩
 
 /-! ## Local stability (instantiation of `PLL.PIPLL`) -/
-
-/-- The Jacobian at an in-phase equilibrium is Hurwitz iff `V K_p > 0 ∧ V K_i > 0`. -/
-@[tmio TM, powerlib_domain] theorem srf_inPhase_jacobian_isHurwitz_iff (V Kp Ki : ℝ) :
-    LinearSystems.IsHurwitz (piPLLJacobian Kp Ki (-(V * 1))) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
-  rw [piPLLJacobian_inPhase, isHurwitz_linA_iff]
 
 /-- The detector of the SRF family member is the SRF characteristic `srfPD V`. -/
 @[tmio M, powerlib_domain] theorem srf_h (V Kp Ki δω θ : ℝ) : (srf V Kp Ki δω θ).h = srfPD V := by

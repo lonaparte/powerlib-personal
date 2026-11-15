@@ -19,7 +19,6 @@ correction of order `X^{−1/2}`).
 
 Results.
 * `gaussMoment2_Ioi` — `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`.
-* `integral_mul_exp_neg_mul_sq_interval` — `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)`.
 * `integral_exp_neg_mul_sq_interval_bounds` —
   `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`.
 * `exp_neg_le_inv` — `e^{−x} ≤ 1/x` for `x > 0`.
@@ -62,23 +61,6 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
   field_simp
   ring
 
-/-- `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)` (fundamental theorem of calculus). -/
-@[tmio T, powerlib_foundation] theorem integral_mul_exp_neg_mul_sq_interval {β : ℝ} (hβ : 0 < β) (L : ℝ) :
-    ∫ u in (0 : ℝ)..L, u * Real.exp (-β * u ^ 2) = (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by
-  have hderiv : ∀ u ∈ uIcc 0 L, HasDerivAt (fun u => -(1 / (2 * β)) * Real.exp (-β * u ^ 2))
-      (u * Real.exp (-β * u ^ 2)) u := by
-    intro u _
-    have h1 : HasDerivAt (fun u => -β * u ^ 2) (-β * (2 * u)) u := by
-      simpa using (hasDerivAt_pow 2 u).const_mul (-β)
-    have := (h1.exp).const_mul (-(1 / (2 * β)))
-    convert this using 1
-    field_simp
-  rw [integral_eq_sub_of_hasDerivAt hderiv
-    ((by fun_prop : Continuous fun u : ℝ => u * Real.exp (-β * u ^ 2)).intervalIntegrable _ _)]
-  simp
-  field_simp
-  ring
-
 /-- `e^{−x} ≤ 1/x` for `x > 0`. -/
 @[tmio T, powerlib_foundation] theorem exp_neg_le_inv {x : ℝ} (hx : 0 < x) : Real.exp (-x) ≤ 1 / x := by
   have h := Real.add_one_le_exp x
@@ -101,10 +83,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
   have hmain := integral_gaussian_Ioi β
   have h0 := hsplit _ hg
   have h1 := hsplit _ hg1
-  have hm1 : ∫ u in Ioi (0 : ℝ), u * Real.exp (-β * u ^ 2) = 1 / (2 * β) := by
-    have h := halfMoment1 (b := 2 * β) (by positivity)
-    rw [show 2 * β / 2 = β by ring] at h
-    simpa only [neg_mul] using h
+  have hm1 : ∫ u in Ioi (0 : ℝ), u * Real.exp (-β * u ^ 2) = 1 / (2 * β) := gaussMoment1 hβ
   have hI1 : ∫ u in Ioc (0 : ℝ) L, u * Real.exp (-β * u ^ 2) =
       (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by
     rw [← intervalIntegral.integral_of_le hL.le, integral_mul_exp_neg_mul_sq_interval hβ]

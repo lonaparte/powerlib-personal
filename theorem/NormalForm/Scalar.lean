@@ -23,7 +23,7 @@ Source: work-sync theory/T-bifurcation.md §1.1–1.2, theory/T-bifurcation-hype
 
 Results.
 * `embed`, `lift`: the embedding `ℝ → State 1` and the lifted field; norms and trajectories
-  of the lifted system are exactly those of the scalar ODE (`isTrajectoryOn_lift_iff`).
+  of the lifted system are exactly those of the scalar ODE (`isIntegralCurveOn_lift_iff`).
 * Jacobian of the lifted field: `fderiv ℝ (lift g) (embed r) = toEuclideanCLM !![g' r]`
   (`fderiv_lift`).
 * Scalar linearization wrappers: `g r = 0`, `deriv g r < 0` ⇒ local exponential stability
@@ -192,15 +192,10 @@ when it is a zero with negative slope. -/
     have := hasDerivWithinAt_embed (g := g) (h t ht)
     simpa using this
 
-@[tmio T, powerlib_foundation] theorem isTrajectoryOn_lift_iff {g : ℝ → ℝ} {φ : ℝ → State 1} {a b : ℝ} :
-    IsTrajectoryOn φ (lift g) a b ↔
-      IsIntegralCurveOn (fun t => φ t 0) (fun _ r => g r) (Icc a b) :=
-  isIntegralCurveOn_lift_iff
-
 @[tmio T, powerlib_foundation] theorem isTrajectoryOn_embed {g : ℝ → ℝ} {ψ : ℝ → ℝ} {a b : ℝ}
     (h : IsIntegralCurveOn ψ (fun _ r => g r) (Icc a b)) :
     IsTrajectoryOn (fun t => embed (ψ t)) (lift g) a b :=
-  isTrajectoryOn_lift_iff.mpr (by simpa only [embed_apply] using h)
+  isIntegralCurveOn_lift_iff.mpr (by simpa only [embed_apply] using h)
 
 /-- The one-dimensional saddle-node condition `Σ_SN`: some equilibrium has zero Jacobian. -/
 def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=

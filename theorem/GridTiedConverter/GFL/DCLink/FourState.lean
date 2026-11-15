@@ -416,14 +416,6 @@ def Γc : ℝ := p.γ * p.Xg ^ 2 * p.id0 ^ 2
   simp [A0, LPLL, Ldc, twoAlphaCl, omegaClSq, Γc]
   ring
 
-/-- Same, with `L_dc` written through the closed forms (`charpoly(A₀)` form of the source). -/
-@[tmio M, powerlib_domain] theorem det_characteristicMatrix_A0_closed {θ0 : ℝ}
-    (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (s : ℂ) :
-    (Linear.characteristicMatrix (A0 p θ0) s).det =
-      LPLL p θ0 s * (s ^ 2 + (twoAlphaCl p θ0 : ℂ) * s + (omegaClSq p θ0 : ℂ)) -
-        (Γc p : ℂ) * ((p.kp : ℂ) * s + p.ki) * ((p.kpv : ℂ) * s + p.kiv) :=
-  det_characteristicMatrix_A0 p h s
-
 /-- Exact decoupling at `Γ = 0`: the characteristic polynomial factors as `L_PLL · L_dc`. -/
 @[tmio M, powerlib_domain] theorem decoupled_of_Gamma_zero {θ0 : ℝ}
     (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (hΓ : Γc p = 0) (s : ℂ) :
@@ -544,18 +536,23 @@ def family : Family Model Requirement 4 0 :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
     (pt := fun m => opPoint m.θ) family_isAutonomous
 
-/-- The quartic Routh conditions give local exponential stability of the physical field. -/
-@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  change m ∈ family.den (.flow .locallyExponentiallyStable)
-  obtain ⟨heq, hC⟩ := he
-  obtain ⟨h3, h1, h0, hg⟩ := hr
+/-! ### Local exponential stability of the operating point -/
+
+/-- Four-state GFL (PLL + dc-voltage loop): the quartic Routh–Hurwitz conditions on the
+coefficients of `det(λI − A₀)` place the operating point in local exponential stability. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_routh (p : Params)
+    (hC : p.C ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0) (h3 : 0 < a3 p θ0) (h1 : 0 < a1 p θ0)
+    (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
+    connection% (Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  change Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)
   exact mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_eqOn_ball
-    (by norm_num : (0 : ℝ) < 1 / 2) (fun y hy => field_eq_regField_of_near m.params hy)
-    (Criteria.locallyExponentiallyStable_of_jacobian_quartic (A0 m.params m.θ)
-      (contDiff_regField m.params) (regField_opPoint m.params hC heq)
-      (fderiv_regField_opPoint m.params m.θ) (det_characteristicMatrix_A0_quartic m.params heq.1)
+    (by norm_num : (0 : ℝ) < 1 / 2) (fun y hy => field_eq_regField_of_near p hy)
+    (Criteria.locallyExponentiallyStable_of_jacobian_quartic (A0 p θ0)
+      (contDiff_regField p) (regField_opPoint p hC heq)
+      (fderiv_regField_opPoint p θ0) (det_characteristicMatrix_A0_quartic p heq.1)
       h3 h1 h0 hg))
+
+/-! ### Implementation evidence: instability (private) -/
 
 /-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field. -/
 @[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
@@ -596,7 +593,9 @@ without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .equilibrium (by simp)) (hm .routh (by simp))
+    obtain ⟨heq, hC⟩ : Meets m .equilibrium := hm .equilibrium (by simp)
+    obtain ⟨h3, h1, h0, hg⟩ : Meets m .routh := hm .routh (by simp)
+    exact mem_den_locallyExponentiallyStable_of_routh m.params hC heq h3 h1 h0 hg
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .constNeg (by simp))
 
@@ -606,15 +605,6 @@ without requirement. -/
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-! ### Stability of the operating point -/
-
-/-- Four-state GFL (PLL + dc-voltage loop): the quartic Routh–Hurwitz conditions on the
-coefficients of `det(λI − A₀)` place the operating point in local exponential stability. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_routh (p : Params)
-    (hC : p.C ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0) (h3 : 0 < a3 p θ0) (h1 : 0 < a1 p θ0)
-    (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
-    connection% (Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact les_of_meets ⟨heq, hC⟩ ⟨h3, h1, h0, hg⟩
 
 /-- Four-state GFL: `cos 2θ₀ < 0` (operating angle beyond 45°) gives `a₀ = det A₀ < 0`, a
 positive real eigenvalue, and instability of the physical field, for all positive `C, k_i, k_iv`. -/
@@ -703,8 +693,9 @@ criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential sta
       field_eq_regField_of_near m.params (mem_ball_iff_norm.mp hy))
     (fun m _ => fderiv_field_opPoint m.params m.θ) fun m _ he hH => ?_)
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .equilibrium (by simp [family, translate]))
-      (hm .routh (by simp [family, translate]))
+    obtain ⟨heq, hC⟩ : Meets m .equilibrium := hm .equilibrium (by simp [family, translate])
+    obtain ⟨h3, h1, h0, hg⟩ : Meets m .routh := hm .routh (by simp [family, translate])
+    exact mem_den_locallyExponentiallyStable_of_routh m.params hC heq h3 h1 h0 hg
   rw [(connection_proof% TMIO.mem_realize)]
   by_cases hC : m.params.C = 0
   · -- the regularized field would be locally exponentially stable, but `V` is frozen

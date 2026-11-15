@@ -22,7 +22,8 @@ Model boundary.
   shifted `η* = δω/K_i` is used for a constant offset), gradient `(V sin θ, K_i (η − η*))`,
   output `y = Bᵀ∇H = −V sin θ = h(θ)`. Power sign: `u y` is power into the system
   (IN-positive, `conventions.md` §D6).
-* The field `(J − R)∇H + B u` is literally `srfField V K_p K_i u` (`pllPH_field`).
+* The field `(J − R)∇H + B u` is literally `srfField V K_p K_i u` at `η* = 0`
+  (`pllPH_field_input`).
 * Level: power balance and passivity (trajectory / dissipation level), Lyapunov function and
   Lyapunov stability of the locked equilibrium, local exponential stability / instability of
   `(2kπ, 0)` / `(π + 2kπ, 0)` under zero input (equilibrium level, via `Model.lean`).
@@ -145,9 +146,10 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
     intro i; fin_cases i <;> simp [hKp]
   hasGradient := hasGradientAt_pllHamiltonian V Ki ηs
 
-/-- T-pll-ph (1.3): `(J − R)∇H + B u` is the SRF-PLL field with frequency offset `u`. -/
-@[tmio M, powerlib_domain] theorem pllPH_field {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (x : State 2) (u : ℝ) :
-    (pllPH V Kp Ki 0 hKp).field x ![u] = srfField V Kp Ki u x := by
+/-- T-pll-ph (1.3): with the integrator set point `η*`, `(J − R)∇H + B u` is the SRF-PLL field
+with frequency offset `K_i η* + u` (offset `u` at `η* = 0`). -/
+@[tmio M, powerlib_domain] theorem pllPH_field_input {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
+    (u : ℝ) : (pllPH V Kp Ki ηs hKp).field x ![u] = srfField V Kp Ki (Ki * ηs + u) x := by
   rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, PhasePlane.mk,
     Matrix.mulVec, dotProduct, Fin.sum_univ_two]
@@ -173,7 +175,7 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
     fderiv ℝ (pllHamiltonian V Ki 0) x (srfField V Kp Ki u x) =
       u * srfPD V (x 0) - Kp * srfPD V (x 0) ^ 2 := by
   have h := (pllPH V Kp Ki 0 hKp).power_balance x ![u]
-  rw [pllPH_field, pllPH_dampingPower] at h
+  rw [pllPH_field_input, mul_zero, zero_add, pllPH_dampingPower] at h
   change fderiv ℝ (pllHamiltonian V Ki 0) x (srfField V Kp Ki u x) = _ at h
   rw [h, PH.NonlinearModel.supply, pllPH_output]
   simp [dotProduct]
@@ -183,15 +185,6 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
   unfold pllHamiltonian
   have h1 : 0 ≤ 1 - Real.cos (x 0) := by linarith [Real.cos_le_one (x 0)]
   positivity
-
-/-- With the integrator set point `η*`, `(J − R)∇H + B u` is the SRF-PLL field with frequency
-offset `K_i η* + u`. -/
-@[tmio M, powerlib_domain] theorem pllPH_field_input {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
-    (u : ℝ) : (pllPH V Kp Ki ηs hKp).field x ![u] = srfField V Kp Ki (Ki * ηs + u) x := by
-  rw [PhasePlane.ext_iff']
-  simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, PhasePlane.mk,
-    Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  ring
 
 /-- Under zero input the pH system with set point `η*` is the SRF-PLL with the constant offset
 `K_i η*`. -/
@@ -205,26 +198,15 @@ offset `K_i η* + u`. -/
 
 /-! ## Constant frequency offset: the shifted Hamiltonian -/
 
-/-- For a constant offset `δω` (`K_i ≠ 0`) the closed loop is the zero-input pH system with
-the shifted Hamiltonian (`η* = δω/K_i`). -/
-@[tmio M, powerlib_domain] theorem pllPH_shifted_zeroInputField {V Kp Ki : ℝ} (hKp : 0 ≤ Kp)
-    (hKi : Ki ≠ 0) (δω : ℝ) :
-    (pllPH V Kp Ki (δω / Ki) hKp).zeroInputField = srfField V Kp Ki δω := by
-  funext x
-  rw [PhasePlane.ext_iff']
-  simp [PH.NonlinearModel.zeroInputField, PH.NonlinearModel.field, pllPH, pllJ, pllR,
-    pllGradient, PhasePlane.mk, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  field_simp
-  ring
-
-/-- Lie derivative of the shifted Hamiltonian along the SRF-PLL with constant offset:
-`Ḣ_s = −K_p h(θ)² ≤ 0`. -/
-@[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_lie {V Kp Ki : ℝ} (hKp : 0 ≤ Kp)
-    (hKi : Ki ≠ 0) (δω : ℝ) (x : State 2) :
-    fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) =
+/-- Lie derivative of the Hamiltonian with set point `η*` along the SRF-PLL with offset `K_i η*`
+(the zero-input pH system): `Ḣ = −K_p h(θ)² ≤ 0`. For a constant offset `δω` (`K_i ≠ 0`) the
+closed loop is this system with the shifted set point `η* = δω/K_i`. -/
+@[tmio M, powerlib_domain] theorem pllHamiltonian_lie {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (ηs : ℝ)
+    (x : State 2) :
+    fderiv ℝ (pllHamiltonian V Ki ηs) x (srfField V Kp Ki (Ki * ηs) x) =
       -(Kp * srfPD V (x 0) ^ 2) := by
-  have h := (pllPH V Kp Ki (δω / Ki) hKp).zeroInput_power_balance x
-  rw [pllPH_shifted_zeroInputField hKp hKi, pllPH_dampingPower] at h
+  have h := (pllPH V Kp Ki ηs hKp).zeroInput_power_balance x
+  rw [pllPH_zeroInputField, pllPH_dampingPower] at h
   exact h
 
 /-- The shifted Hamiltonian is a Lyapunov function at the locked equilibrium `(0, δω/K_i)`
@@ -237,7 +219,10 @@ Static evidence on the model, not a connection conclusion; Lyapunov stability it
       pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 ∧
       (∀ x, fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) ≤ 0) :=
   ⟨pllHamiltonian_nonneg hV.le hKi.le _, by simp [pllHamiltonian, PhasePlane.mk],
-    fun x => by rw [pllHamiltonian_shifted_lie hKp hKi.ne']; nlinarith [sq_nonneg (srfPD V (x 0))]⟩
+    fun x => by
+      have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp (δω / Ki) x
+      rw [mul_div_cancel₀ δω hKi.ne'] at h
+      rw [h]; nlinarith [sq_nonneg (srfPD V (x 0))]⟩
 
 /-- At a well bottom `cos θ* = 1` (`V, K_i > 0`) the Hamiltonian with set point `η*` has a strict
 local minimum at `(θ*, η*)`. -/
@@ -298,7 +283,10 @@ Implementation evidence: trajectory-level result outside the sentence language (
       pllHamiltonian V Ki (δω / Ki) (φ t) = pllHamiltonian V Ki (δω / Ki) (φ a) :=
   Dynamics.firstIntegral_const (I := pllHamiltonian V Ki (δω / Ki))
     (pllPH V 0 Ki (δω / Ki) le_rfl).differentiable_H
-    (fun x => by rw [pllHamiltonian_shifted_lie le_rfl hKi]; simp) hφ
+    (fun x => by
+      have h := pllHamiltonian_lie (V := V) (Kp := 0) (Ki := Ki) le_rfl (δω / Ki) x
+      rw [mul_div_cancel₀ δω hKi] at h
+      rw [h]; simp) hφ
 
 /-! ## Structure -/
 
@@ -432,11 +420,6 @@ for `K_i = 0` both fields ignore the integrator state, so the selected points `(
   fin_cases i <;>
     simp [toSRF, srf, PIPLL.Model.field, PIPLL.Model.point, Model.point, hKi, mul_assoc]
 
-/-- The slope of the SRF member: `h'(θ*) = −V cos θ*`. -/
-@[tmio M, powerlib_domain] private theorem toSRF_deriv (m : Model) :
-    deriv (toSRF m).h (toSRF m).θ = -m.V * Real.cos m.θ :=
-  PIPLL.srf_deriv _ _ _ _ _
-
 @[tmio T, powerlib_foundation] private theorem sin_eq_zero_of_cos_sq {θ : ℝ} (h : Real.cos θ ^ 2 = 1) : Real.sin θ = 0 := by
   have := Real.sin_sq_add_cos_sq θ
   exact pow_eq_zero_iff two_ne_zero |>.mp (by linarith)
@@ -466,7 +449,7 @@ stability for the SRF member: phase-locked, with both slope-gain products `K_p (
   · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
       toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
   · show m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧ m.Ki * deriv (toSRF m).h (toSRF m).θ < 0
-    rw [toSRF_deriv, hθ]
+    rw [toSRF, PIPLL.srf_deriv, hθ]
     constructor <;> linarith [mul_comm m.V m.Kp, mul_comm m.V m.Ki]
 
 /-- Within nonnegative energy the converse holds: `K_i (−V cos θ*) < 0` with `V, K_i ≥ 0` gives
@@ -480,7 +463,7 @@ stability for the SRF member: phase-locked, with both slope-gain products `K_p (
   have h0 : -m.V * Real.sin m.θ = 0 := (h .phaseLocked (by simp)).1
   obtain ⟨h1, h2⟩ : m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧
       m.Ki * deriv (toSRF m).h (toSRF m).θ < 0 := h .slopeStable (by simp)
-  rw [toSRF_deriv] at h1 h2
+  rw [toSRF, PIPLL.srf_deriv] at h1 h2
   have hVpos : 0 < m.V := lt_of_le_of_ne hV fun hV0 => by rw [← hV0] at h2; simp at h2
   have hcos : 0 < Real.cos m.θ := by
     by_contra hc
@@ -508,7 +491,7 @@ with the slope-gain product `K_i (−V cos θ*) = V K_i` positive. -/
   · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
       toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
   · show 0 < m.Ki * deriv (toSRF m).h (toSRF m).θ ∨ 0 < m.Kp * deriv (toSRF m).h (toSRF m).θ
-    rw [toSRF_deriv, hθ]
+    rw [toSRF, PIPLL.srf_deriv, hθ]
     exact Or.inl (by linarith [mul_comm m.V m.Ki])
 
 /-- Positive loop gains at a well bottom give local exponential stability through the hub: the
@@ -527,31 +510,27 @@ SRF member meets the PI-PLL's translated requirements, which are sound
     (fun _ => toSRF_of_saddle) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
     (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .unstable))
 
-@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (h : Meets m .slopeStable) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  les_sound (by simpa using h)
-
-@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (h : Meets m .saddle) :
-    connection% (m ∈ family.den (.flow .unstable)) := show m ∈ family.den (.flow .unstable) from
-  unstable_sound (by simpa using h)
-
-@[tmio TM, powerlib_domain] private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
+/-- Passivity of the SRF-PLL from the frequency-offset port to `y = h(θ)`, with storage `H ≥ 0`
+(`V, K_i ≥ 0`, `K_p ≥ 0`), at every set point and selected phase. -/
+@[tmio TM, powerlib_domain] theorem mem_den_passive (m : Model) (hV : 0 ≤ m.V) (hKi : 0 ≤ m.Ki) :
     connection% (m ∈ family.den .passive) := show m ∈ family.den .passive from
   family_isNonlinearPH.mem_den_passive_of_lowerBound 0 fun _ =>
-    pllHamiltonian_nonneg h.1 h.2 _ _
+    pllHamiltonian_nonneg hV hKi _ _
 
-/-- A well bottom is Lyapunov stable through the hub: the SRF member has a zero of `h = −V sin` at
+/-- Lyapunov stability of a well bottom `(θ*, η*)`, `cos θ* = 1` (`V, K_i > 0`, every
+`K_p ≥ 0`, every offset `K_i η*`): through the hub the SRF member has a zero of `h = −V sin` at
 `θ*` with slope `−V < 0`, `K_p ≥ 0` and `K_i > 0` (`PIPLL.mem_den_lyapunovStable_of_slope`, whose
-PLL energy `−∫_{θ*} h + ½ K_i (η − η*)²` is the Hamiltonian with set point `η*`). -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_meets {m : Model} (h : Meets m .wellBottom) :
+PLL energy `−∫_{θ*} h + ½ K_i (η − η*)²` is the Hamiltonian with set point `η*`, with a strict
+local minimum there, `pllPH_isStrictLocalMin`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hV : 0 < m.V)
+    (hKi : 0 < m.Ki) (hθ : Real.cos m.θ = 1) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   change m ∈ family.den (.flow .lyapunovStable)
-  obtain ⟨hV, hKi, hθ⟩ := h
   refine (mem_den_flow_iff_toSRF m _).mpr
     (PIPLL.mem_den_lyapunovStable_of_slope (toSRF m) ?_ m.damping hKi ?_)
   · show -m.V * Real.sin m.θ = 0
     rw [sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num), mul_zero]
-  · rw [toSRF_deriv, hθ]
+  · rw [toSRF, PIPLL.srf_deriv, hθ]
     linarith
 
 /-- Every translation of the SRF-PLL pH family is sound: nonnegative energy proves passivity
@@ -566,41 +545,30 @@ PI-PLL family, `PIPLL.chain_le_semantics`, read through the hub,
   refine Spectral.chain_le_semantics_of_localTable (Rl := {Requirement.wellBottom})
     (Rs := {Requirement.slopeStable}) (Ru := {Requirement.saddle})
     (Rp := {Requirement.nonnegativeEnergy}) (fun s => ?_) realize_univ
-    (fun m hm => lyapunovStable_of_meets ((TMIO.mem_realize _ _ _).mp hm .wellBottom rfl))
+    (fun m hm => by
+      obtain ⟨hV, hKi, hθ⟩ := (TMIO.mem_realize _ _ _).mp hm .wellBottom rfl
+      exact mem_den_lyapunovStable m hV hKi hθ)
     les_sound unstable_sound
-    fun m hm => passive_of_meets ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl)
+    fun m hm => by
+      obtain ⟨hV, hKi⟩ := (TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl
+      exact mem_den_passive m hV hKi
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
   · rfl
-
-/-- Passivity of the SRF-PLL from the frequency-offset port to `y = h(θ)`, with storage `H ≥ 0`
-(`V, K_i ≥ 0`, `K_p ≥ 0`), at every set point and selected phase. -/
-@[tmio TM, powerlib_domain] theorem mem_den_passive (m : Model) (hV : 0 ≤ m.V) (hKi : 0 ≤ m.Ki) :
-    connection% (m ∈ family.den .passive) :=
-  passive_of_meets ⟨hV, hKi⟩
-
-/-- Lyapunov stability of a well bottom `(θ*, η*)`, `cos θ* = 1` (`V, K_i > 0`, every
-`K_p ≥ 0`, every offset `K_i η*`): the PI-PLL's energy at a negative slope
-(`PIPLL.mem_den_lyapunovStable_of_slope`), here the shifted Hamiltonian, which has a strict local
-minimum there (`pllPH_isStrictLocalMin`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hV : 0 < m.V) (hKi : 0 < m.Ki)
-    (hθ : Real.cos m.θ = 1) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) :=
-  lyapunovStable_of_meets ⟨hV, hKi, hθ⟩
 
 /-- A well bottom `(θ*, η*)`, `cos θ* = 1`, is locally exponentially stable when `V K_p > 0` and
 `V K_i > 0`. -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hVKp : 0 < m.V * m.Kp)
     (hVKi : 0 < m.V * m.Ki) (hθ : Real.cos m.θ = 1) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) :=
-  les_of_meets ⟨hVKp, hVKi, hθ⟩
+  les_sound (by simpa using (show Meets m .slopeStable from ⟨hVKp, hVKi, hθ⟩))
 
 /-- An anti-phase point `(θ*, η*)`, `cos θ* = −1`, is unstable (a saddle) when `V K_i > 0`. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_antiPhase (m : Model) (hVKi : 0 < m.V * m.Ki)
     (hθ : Real.cos m.θ = -1) :
     connection% (m ∈ family.den (.flow .unstable)) :=
-  unstable_of_meets ⟨hVKi, hθ⟩
+  unstable_sound (by simpa using (show Meets m .saddle from ⟨hVKi, hθ⟩))
 
 /-! ### Exactness of the local exponential translation -/
 
@@ -629,7 +597,7 @@ def reversedAmplitude : Model := ⟨-1, 1, 1, 0, Real.pi, zero_le_one⟩
   unfold powerlib.TMIO.Statement
   refine (mem_den_flow_iff_toSRF _ _).mpr (PIPLL.mem_den_locallyExponentiallyStable _ ?_ ?_ ?_)
   · simp [toSRF, srf, reversedAmplitude]
-  all_goals rw [toSRF_deriv]; simp [toSRF, srf, reversedAmplitude]
+  all_goals rw [toSRF, PIPLL.srf_deriv]; simp [srf, reversedAmplitude]
 
 /-- Without the context of nonnegative energy the local exponential translation is sound but not
 exact: the reversed-amplitude model is locally exponentially stable at an anti-phase point. -/
@@ -648,15 +616,6 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
     ‖PhasePlane.mk (θ + s) (ηs + w) - PhasePlane.mk θ ηs‖ ≤ |s| + |w| := by
   refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
   simp [PhasePlane.mk]
-
-/-- The Hamiltonian with set point `η*` decreases at the damping rate `K_p h(θ)²` along the
-SRF-PLL with offset `K_i η*`. -/
-@[tmio M, powerlib_domain] private theorem hamiltonian_lie (m : Model) (x : State 2) :
-    fderiv ℝ (pllHamiltonian m.V m.Ki m.ηs) x (srfField m.V m.Kp m.Ki (m.Ki * m.ηs) x) =
-      -(m.Kp * srfPD m.V (x 0) ^ 2) := by
-  have h := (pllPH m.V m.Kp m.Ki m.ηs m.damping).zeroInput_power_balance x
-  rw [pllPH_zeroInputField, pllPH_dampingPower] at h
-  exact h
 
 /-- Within nonnegative energy, local asymptotic stability at an equilibrium `(θ*, η*)` forces
 positive gains at a well bottom. The degenerate gains are decided by the model's structure: a dead
@@ -709,7 +668,7 @@ equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a s
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
         (V := fun x => -pllHamiltonian m.V m.Ki m.ηs x) (ρ := 1) hC hHd.neg one_pos
         (fun x _ => ?_) (fun ε hε => ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), ?_, ?_⟩) hlas
-      · rw [fderiv_fun_neg, _root_.neg_apply, hamiltonian_lie, ← hKp0]
+      · rw [fderiv_fun_neg, _root_.neg_apply, pllHamiltonian_lie m.damping, ← hKp0]
         simp
       · refine (norm_point_sub _ _ _ _).trans_lt ?_
         rw [abs_zero, zero_add, abs_of_pos (by linarith)]
@@ -727,7 +686,8 @@ equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a s
       nlinarith
     rcases mul_self_eq_one_iff.mp hc with hc1 | hc1
     · exact hc1
-    · exact absurd hlas.1 (mem_den_flow_iff.mp (unstable_of_meets ⟨mul_pos hVpos hKipos, hc1⟩))
+    · exact absurd hlas.1
+        (mem_den_flow_iff.mp (mem_den_unstable_antiPhase m (mul_pos hVpos hKipos) hc1))
   obtain ⟨hV, hKi, hKp, hθ⟩ := hguard
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)

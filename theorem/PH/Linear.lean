@@ -258,14 +258,6 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
     (hR : R.PosSemidef) (hQ : Q.PosDef) :
     (toPortHamiltonian J R g Q hJ hR hQ).plant = linearLTIModel J R g Q := rfl
 
-/-- The port system of the pH model is the port system of the linear port-Hamiltonian plant. -/
-@[tmio M, powerlib_foundation] theorem linear_system_eq_toPortHamiltonian {J R : Matrix (Fin n) (Fin n) ℝ}
-    {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
-    (hR : R.PosSemidef) (hQ : Q.PosDef) :
-    (linear J R g Q hJ hR (symmetric_of_posDef hQ)).system =
-      (toPortHamiltonian J R g Q hJ hR hQ).plant.system := by
-  rw [toPortHamiltonian_plant, linear_system_eq]
-
 /-- The quadratic Hamiltonian is the stored energy of the linear port-Hamiltonian plant. -/
 @[tmio M, powerlib_foundation] theorem quadraticEnergy_eq_storage {J R : Matrix (Fin n) (Fin n) ℝ}
     {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
@@ -313,10 +305,6 @@ variable (pm : DiagonalPH (Fin n) (Fin m))
   rw [NonlinearModel.ofLp_field, ofLp_ofDiagonal_dH]
   rfl
 
-@[tmio M, powerlib_foundation] theorem ofLp_ofDiagonal_field (x : State n) (u : Fin m → ℝ) :
-    WithLp.ofLp ((ofDiagonal pm).field x u) = pm.field (WithLp.ofLp x) u := by
-  rw [ofDiagonal_field]
-
 @[tmio M, powerlib_foundation] theorem ofDiagonal_output (x : State n) :
     (ofDiagonal pm).output x = pm.output (WithLp.ofLp x) := by
   simp only [NonlinearModel.output, ofLp_ofDiagonal_dH]
@@ -348,7 +336,7 @@ solution notion of the Port semantics transfers by rewriting. -/
   refine system_ext (fun x u => ?_) (fun x u => ?_)
   · apply WithLp.ofLp_injective
     rw [DiagonalPH.toPH_field, NonlinearModel.system_field]
-    exact ofLp_ofDiagonal_field pm x u
+    exact congrArg WithLp.ofLp (ofDiagonal_field pm x u)
   · rw [DiagonalPH.toPH_output, NonlinearModel.system_output]
     exact ofDiagonal_output pm x
 

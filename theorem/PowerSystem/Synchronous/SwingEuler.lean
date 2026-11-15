@@ -21,8 +21,8 @@ Model boundary.
   schemes, the integration error against the continuous trajectory.
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step`),
 `theorem/PowerSystem/Synchronous/Swing.lean` (`family_isAutonomous`, `SwingParams.contDiff_field`,
 `mem_den_locallyExponentiallyStable`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -37,13 +37,13 @@ Family and connection conclusions.
   realizing its swing model (`Implementation.ofDesign Euler.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `Swing.family_isAutonomous` and the public smoothness lemma
-  `Swing.contDiff_modelField`: `Numerics.euler_sound_small_step` (scaffold `sound-small-step`: a
-  locally exponentially stable swing model — for instance a balanced angle with positive inertia,
-  damping and synchronizing coefficient, `Swing.mem_den_locallyExponentiallyStable` — has a step
-  `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally exponentially
-  stable) and `Numerics.euler_certified_small_step` (scaffold `certified-small-step`: the same for
-  the design of an integration certified for local exponential stability).
-  `not_euler_realizationSoundUnder`
+  `Swing.contDiff_modelField`: `Numerics.euler_sound_small_step_local` (scaffold
+  `sound-small-step`: a locally exponentially stable swing model — for instance a balanced angle
+  with positive inertia, damping and synchronizing coefficient,
+  `Swing.mem_den_locallyExponentiallyStable` — has a step `h₀ > 0` such that every Euler
+  integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`: the same for the design
+  of an integration certified for local exponential stability). `not_euler_realizationSoundUnder`
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — the
   locally exponentially stable model `M = 1`, `D = 4`, `K = 4` at a balanced angle has Euler
   integrations with every Euler multiplier outside the unit disk (`h = 3`: both at `−5`; the
@@ -73,7 +73,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
 /-- The translated swing field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step`). -/
+(`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 m.field :=
   (m.p.contDiff_field (k := 1)).comp (contDiff_id.add contDiff_const)
 

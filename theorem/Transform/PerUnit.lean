@@ -22,7 +22,8 @@ Results.
   `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`, `S_B = 3 V_LN I_B`.
 * Ideal transformer (§1.4): with `V_B¹ / V_B² = a` and a common `S_B`, per-unit voltages and
   currents are equal on both sides and a referred impedance has the same per-unit value.
-* Change of base (§1.5), including the inertia constant; the 600 MVA → 100 MVA example gives
+* Change of base (§1.5); `voltage_change_base` covers every quantity with one base in the
+  denominator (voltage, power, the inertia constant); the 600 MVA → 100 MVA example gives
   `8 s ↦ 48 s` (`inertia_change_example`).
 * Time base (§1.6): the per-unit element values `L̂ = ω_B L / Z_B`, `Ĉ = ω_B C Z_B`, the flux base
   `Ψ_B = V_B / ω_B` and the element laws in conventions (A) and (B) are with the elements, in
@@ -183,6 +184,9 @@ impedance referred through the transformer (`Z₁ = a² Z₂`) has the same per-
     z / (Vn ^ 2 / Sn) = (z / (Vo ^ 2 / So)) * (Sn / So) * (Vo / Vn) ^ 2 := by
   field_simp
 
+/-- A quantity with one base quantity in the denominator on a new base:
+`x / B_new = (x / B_old) (B_old / B_new)`. It covers voltage, power and the inertia constant
+`H = W_kin / S_B` (`H_new = H_old S_old / S_new`). -/
 @[tmio T, powerlib_foundation] theorem voltage_change_base {v Vo Vn : ℝ} (hVo : Vo ≠ 0) (hVn : Vn ≠ 0) :
     v / Vn = (v / Vo) * (Vo / Vn) := by
   field_simp
@@ -191,17 +195,6 @@ impedance referred through the transformer (`Z₁ = a² Z₂`) has the same per-
     (hVo : Vo ≠ 0) (hSn : Sn ≠ 0) (hVn : Vn ≠ 0) :
     i / (Sn / Vn) = (i / (So / Vo)) * (So / Sn) * (Vn / Vo) := by
   field_simp
-
-/-- Power on a new base: the rule of `voltage_change_base` (one base quantity in the
-denominator). -/
-@[tmio T, powerlib_foundation] theorem power_change_base {p So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
-    p / Sn = (p / So) * (So / Sn) :=
-  voltage_change_base hSo hSn
-
-/-- Inertia constant `H = W_kin / S_B` on a new power base: `H_new = H_old S_old / S_new`. -/
-@[tmio T, powerlib_foundation] theorem inertia_change_base {W So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
-    W / Sn = (W / So) * (So / Sn) :=
-  voltage_change_base hSo hSn
 
 /-- The §1.5 example: `8 s` on a 600 MVA machine base is `48 s` on a 100 MVA system base. -/
 @[tmio T, powerlib_foundation] theorem inertia_change_example {W : ℝ} (h : W / 600 = 8) : W / 100 = 48 := by

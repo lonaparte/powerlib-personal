@@ -55,7 +55,7 @@ Results.
 * `Z₁₁^ext Y₁ = -ω²μ₀ε₀ε_r` independently of the geometry (lossless dielectric, real `ε_r`).
 * Closed form `I_c(0) D̂ = I_c(ℓ) N̂`; `R_b = 0` cancellation; `N̂` on `D̂ = 0` and the
   load at which the pole is cancelled.
-* `Y₂ = 0` ⇒ `det(ZY) = 0` and a size-2 Jordan chain for the zero mode.
+* `Y₂ = 0` ⇒ `det(ZY) = 0` (`det_ZY`) and a size-2 Jordan chain for the zero mode.
 * Cable charging power `Q = -ωC₁ℓ|V|²` (absorb-positive) from `S = V I*`; lumped `LC`
   resonance at `ω² L C = 1`.
 * Tube impedances, low frequency (`m → 0`): `tubeZin_tendsto_dc`, `tubeZout_tendsto_dc`,
@@ -336,13 +336,8 @@ on `D̂ = 0` this is the value of `N̂`. -/
 
 /-! ## Missing screen–earth admittance -/
 
-/-- With `Y₂ = 0` the modal matrix `ZY` is singular: the screen–earth mode disappears. -/
-@[tmio T, powerlib_foundation] theorem det_ZY_of_Y2_zero (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ) :
-    (Z * Matrix.diagonal ![Y₁, 0]).det = 0 := by
-  rw [Matrix.det_mul, Matrix.det_diagonal]
-  simp [Fin.prod_univ_two]
-
-/-- With `Y₂ ≠ 0` (physical model) `det(ZY) = det Z · Y₁ Y₂`. -/
+/-- `det(ZY) = det Z · Y₁ Y₂`: nonzero for the physical model (`Y₂ ≠ 0`, `det Z ≠ 0`, `Y₁ ≠ 0`);
+with `Y₂ = 0` the modal matrix `ZY` is singular and the screen–earth mode disappears. -/
 @[tmio T, powerlib_foundation] theorem det_ZY (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ Y₂ : ℂ) :
     (Z * Matrix.diagonal ![Y₁, Y₂]).det = Z.det * (Y₁ * Y₂) := by
   rw [Matrix.det_mul, Matrix.det_diagonal]

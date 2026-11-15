@@ -48,7 +48,8 @@ Family and connection conclusions.
   `lyapunovStable` (members of the nonlinear denotations), `VSGInfiniteBus.linearModel_mem_den_iff`
   (a member of the linearized global exponential denotation iff `D_p > 0 ∧ K_E > 0`),
   `ClassicalSMIB.locallyExponentiallyStable`, `unstable`,
-  `PostFaultSMIB.deltaS_stable_deltaU_unstable`, `deltaS_lyapunovStable`.
+  `PostFaultSMIB.deltaS_stable_deltaU_unstable` (Lyapunov stability of `δ_s` for `D ≥ 0` is
+  `Swing.deltaS_mem_den_lyapunovStable` at `m.toSwing`).
 
 Corrections.
 * T-vsg-control §1.10 writes `Δθ̇ = Δω`, `2H Δω̇ = −K_E Δθ − D_p Δω` with `Δω` in per unit and
@@ -367,13 +368,6 @@ def toSwing : SwingParams :=
   have h2 := Swing.deltaU_mem_den_unstable m.toSwing hM hk h
   unfold powerlib.TMIO.Statement at h1 h2 ⊢
   exact ⟨h1, h2⟩
-
-/-- Undamped post-fault model (`D = 0`): `δ_s` is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem deltaS_lyapunovStable (hM : 0 < m.M) (hD : 0 ≤ m.D)
-    (hk : 0 < m.toSwing.k₂) (h : |m.toSwing.Pm - m.toSwing.k₁| < m.toSwing.k₂) :
-    connection% (Swing.Model.mk m.toSwing m.toSwing.deltaS ∈
-      Swing.family.den (.flow .lyapunovStable)) :=
-  Swing.deltaS_mem_den_lyapunovStable m.toSwing hM hD hk h
 
 end PostFaultSMIB
 

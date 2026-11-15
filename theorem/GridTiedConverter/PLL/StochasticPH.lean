@@ -58,11 +58,6 @@ def pllV (Vg θ : ℝ) : ℝ := Vg * (1 - cos θ)
   unfold pllV
   exact this.congr_deriv (by ring)
 
-/-- `𝒱'' = V_g cos θ`. -/
-@[tmio T, powerlib_foundation] theorem pllV'_hasDerivAt (Vg θ : ℝ) :
-    HasDerivAt (fun θ => Vg * sin θ) (Vg * cos θ) θ :=
-  (hasDerivAt_sin θ).const_mul Vg
-
 /-- The `η`-part `½ K_i η²` has first derivative `K_i η` and second derivative `K_i`. -/
 @[tmio T, powerlib_foundation] theorem pllEta_hasDerivAt (Ki η : ℝ) :
     HasDerivAt (fun η => (1 / 2 : ℝ) * Ki * η ^ 2) (Ki * η) η := by
@@ -102,16 +97,12 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
   field_simp
   ring
 
-@[tmio T, powerlib_foundation] theorem pllV_second_zero (Vg : ℝ) : Vg * cos 0 = Vg := by simp
-
-@[tmio T, powerlib_foundation] theorem pllV_second_pi (Vg : ℝ) : Vg * cos π = -Vg := by simp
-
 /-- Saddle value: `Δ_Itô^PLL(π) = ½ σ_v σ_vᵀ K_i (1 − 4ζ²)`. -/
 @[tmio M, powerlib_foundation] theorem pllIto_saddle {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki)
     (σv : Fin 2 → ℝ) :
     itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki)
       = (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki * (1 - 4 * zeta Kp Vg Ki ^ 2) := by
-  rw [pllIto, pllV_second_pi, four_zeta_sq hVg hKi]
+  rw [pllIto, Real.cos_pi, mul_neg_one, four_zeta_sq hVg hKi]
   field_simp
   ring
 
@@ -158,7 +149,7 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
     0 < itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos 0) Ki) := by
   have hs : 0 < σv ⬝ᵥ σv := by
     simpa using (dotProduct_self_star_pos_iff (v := σv)).mpr hσ
-  rw [pllIto, pllV_second_zero]
+  rw [pllIto, Real.cos_zero, mul_one]
   positivity
 
 /-- Park geometry `σ_v^bare(θ) = (−sin θ, cos θ)` has unit norm. -/

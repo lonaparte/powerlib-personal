@@ -28,9 +28,10 @@ Results.
 * Reduced slow equation `ξ̇ = −sin θ*(ξ)`: on that domain it equals the linear field
   `−(Δω + b ξ)/a = −(b/a)(ξ − ξ*)`, `ξ* = −Δω/b`; the equilibrium `ξ*` is inside the domain;
   the shifted 1-state linear model `ẏ = −(b/a) y` is globally exponentially stable iff
-  `b/a > 0` (`ReducedSlow.mem_den_globallyExponentiallyStable_iff`).
+  `b/a > 0` (`ReducedSlow.mem_den_iff`, every attractive sentence).
 * Eigenvalues of the in-phase linearization `λ² + aλ + b = 0` and the overdamping parameter
-  `ε_od = b/a² = 1/(4ζ²)` (`epsOd_eq`; `ζ = a/(2√b)`, the `zeta` of `Linear.lean`). The root
+  `ε_od = b/a² = 1/(4ζ²)` (the reciprocal of `four_mul_zeta_sq`; `ζ = a/(2√b)`, the `zeta` of
+  `Linear.lean`). The root
   facts are generic quadratics in `Criteria` (`theorem/Criteria/Hurwitz2.lean`):
   real roots iff `ε_od ≤ 1/4` (`ζ ≥ 1`); then `λ± = −(a/2)(1 ∓ √(1 − 4ε_od))`,
   `λ₊/λ₋ = 4ε_od/(1 + √(1 − 4ε_od))² ∈ [ε_od, 4ε_od]`, `λ₋ ∈ [−a, −a/2]`,
@@ -42,8 +43,8 @@ Family and connection conclusions.
 one-state field `ẏ = −(b/a) y` (`y = ξ − ξ*`, origin = reduced equilibrium). Its requirements are
 static (`b/a > 0` or `b/a < 0`). Connection conclusions: soundness of every translation
 (`chain_le_semantics`), exactness for the attractive sentences and sampled contraction
-(`exact_hurwitz`), the global exponential stability equivalence
-(`mem_den_globallyExponentiallyStable_iff`) and exact passivity (`exact_passive`). The slow
+(`exact_hurwitz`), the membership equivalence for these sentences (`mem_den_iff`, global
+exponential stability included) and exact passivity (`exact_passive`). The slow
 manifold and eigenvalue results are static.
 
 Correction (§1.5): the reduced equation `ξ̇ = −(Δω + V K_i ξ)/(V K_p)` is stated without its
@@ -155,7 +156,9 @@ def family : Family Model Requirement 1 0 :=
   have h2 : m.b / m.a < 0 := h .negativeRatio
   linarith
 
-@[tmio TM, powerlib_domain] private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
+/-- The reduced slow model satisfies an attractive sentence (in particular global exponential
+stability) or sampled contraction iff `b/a > 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_iff {m : Model} {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P) ↔ 0 < m.b / m.a) := by
   change m ∈ family.den (.flow P) ↔ 0 < m.b / m.a
@@ -171,7 +174,7 @@ def family : Family Model Requirement 1 0 :=
   unfold powerlib.TMIO.Statement
   have hG : TMIO.realize family.meets {.positiveRatio} ⊆
       family.den (.flow .globallyExponentiallyStable) := fun m hm =>
-    (mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mpr
+    (mem_den_iff (P := .globallyExponentiallyStable) (Or.inl trivial)).mpr
       ((TMIO.mem_realize _ _ _).mp hm _ rfl)
   refine Spectral.chain_le_semantics_of_globalTable (F := family) (Rs := {.positiveRatio})
     (Rg := {.positiveRatio}) (Ru := {.negativeRatio}) (Rc := Set.univ) (Rp := ∅)
@@ -203,16 +206,8 @@ def family : Family Model Requirement 1 0 :=
   change TMIO.realize Meets (translate (.flow P)) = _
   rw [ht]
   ext m
-  rw [(connection_proof% mem_den_hurwitz hP)]
+  rw [(connection_proof% mem_den_iff hP)]
   simp [Meets]
-
-/-- The reduced slow model is globally exponentially stable iff `b/a > 0`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
-    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      m ∈ {m : Model | 0 < m.b / m.a}) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% mem_den_hurwitz (Or.inl Flow.Property.attractive_globallyExponentiallyStable))]
-  rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -220,16 +215,5 @@ def family : Family Model Requirement 1 0 :=
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 end ReducedSlow
-
-/-! ## Eigenvalues and the overdamping parameter -/
-
-/-- `ε_od = b/a² = 1/(4ζ²)` with `ζ = a/(2√b)` (`a = V K_p`, `b = V K_i > 0`, `a ≠ 0`). -/
-@[tmio M, powerlib_domain] theorem epsOd_eq {V Kp Ki : ℝ} (ha : V * Kp ≠ 0) (hb : 0 < V * Ki) :
-    V * Ki / (V * Kp) ^ 2 = 1 / (4 * zeta V Kp Ki ^ 2) := by
-  have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt hb.le
-  have h2 : (2 * omegaN V Ki) ^ 2 = 4 * (V * Ki) := by rw [mul_pow, hsq]; norm_num
-  have ha2 : (V * Kp) ^ 2 ≠ 0 := pow_ne_zero 2 ha
-  rw [zeta, div_pow, h2]
-  field_simp
 
 end powerlib.PLL

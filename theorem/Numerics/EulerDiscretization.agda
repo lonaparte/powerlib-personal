@@ -20,9 +20,8 @@ module theorem.Numerics.EulerDiscretization where
 -- is `Map.locallyExponentiallyStable_of_schurStable` with `Numerics.hasFDerivAt_eulerMap`, `large`
 -- comes from `Numerics.exists_forwardEuler_inverse_schurStable`. The laws are connection statements
 -- over arbitrary autonomous families (`theorem/Numerics/EulerRealization.lean`): `sound-small-step`
--- is `Numerics.euler_sound_small_step_local` (every field `C¹`: `euler_sound_small_step`),
--- `certified-small-step` is `Numerics.euler_certified_small_step_local`
--- (`euler_certified_small_step`), `not-sound-large-step` is
+-- is `Numerics.euler_sound_small_step_local`, `certified-small-step` is the same law at the
+-- design after `Implementation.certify_realizes_of_design`, `not-sound-large-step` is
 -- `Numerics.not_euler_realizationSoundUnder_of_large_step_local`
 -- (`not_euler_realizationSoundUnder_of_large_step`). A family uses them through its autonomy and
 -- the public smoothness lemma of its field; the `Euler` modules of `PowerSystem/Synchronous`,

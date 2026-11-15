@@ -22,7 +22,8 @@ Results.
   `Z = R' + sL'` and `Y = G' + sC'` at a fixed complex frequency are covered).
 * `modal_ZY`: for such `Z`, `Y`, the product `ZY` is diagonalised by the same constant `T`, with
   modal squared propagation constants `(z_s − z_m)(y_s − y_m)` (twice) and
-  `(z_s + 2z_m)(y_s + 2y_m)`, and `ZY = YZ`; hence the voltage and current modal equations
+  `(z_s + 2z_m)(y_s + 2y_m)`. `ZY = YZ` is Mathlib's `Matrix.circulant_mul_comm` (`symCirc` is
+  circulant); hence the voltage (`V'' = ZY V`) and current (`I'' = YZ I`) modal equations
   coincide and the three modes are independent single-conductor lines.
 -/
 
@@ -111,12 +112,5 @@ the same constant `T` diagonalises `ZY`, with modal `γ_k²` equal to `(z_s − 
   rw [hsplit, clarkePI_diagonalizes, clarkePI_diagonalizes, diagonal_mul_diagonal]
   congr 1
   funext k; fin_cases k <;> rfl
-
-/-- Symmetric circulant impedance and admittance matrices commute: `ZY = YZ`, so the voltage
-(`V'' = ZY V`) and current (`I'' = YZ I`) modal equations coincide for such lines. -/
-@[tmio T, powerlib_foundation] theorem symCirc_mul_comm (zs zm ys ym : ℂ) :
-    symCirc zs zm * symCirc ys ym = symCirc ys ym * symCirc zs zm := by
-  simp only [symCirc_apply]
-  ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_three] <;> ring
 
 end powerlib.Transform

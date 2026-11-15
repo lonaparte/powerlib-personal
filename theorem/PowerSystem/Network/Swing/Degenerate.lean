@@ -42,10 +42,10 @@ Results.
   `node_open_or_antiphase`, `balance_line_of_edges`: on at most three machines every singular
   positive semidefinite Hessian is a fold (nonzero cubic term along the null direction) or comes
   with a continuum of equilibria.
-* Four machines (`n = 3`): `theorem/PowerSystem/Network/Swing/Four.lean` proves exactness for every
-  network with at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled
-  machine pairs: a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a
-  triangle with a pendant line) and the cut and flat-direction tests for every `n`;
+* Four machines (`n = 3`): `theorem/PowerSystem/Network/Swing/Four.lean` decides every network
+  with at most four lines (`not_localAsymptoticStable_four`; two uncoupled machine pairs: a
+  subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle with a
+  pendant line) and the cut and flat-direction tests for every `n`;
   `theorem/PowerSystem/Network/Swing/FourDense.lean` decides the diamond and the complete graph and
   proves `exact_locallyAsymptoticallyStable_four` (exact for every four-machine network) and
   `mem_den_locallyAsymptoticallyStable_iff_four_machines`. For five or more machines the
@@ -289,14 +289,6 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
   · rintro rfl
     apply state_ext <;> intro _ <;> simp
 
-@[tmio T, powerlib_foundation] theorem angleMap_equilibrium (θ : Fin (n + 1) → ℝ) :
-    angleMap (equilibrium θ) = fun k => θ k + -θ 0 := by
-  rw [equilibrium, angleMap_reduce]
-
-@[tmio T, powerlib_foundation] theorem equilibrium_wIdx (θ : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
-    equilibrium θ (wIdx k) = 0 := by
-  simp [equilibrium]
-
 @[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     potential p (fun k => θ k + c) = potential p θ - c * ∑ k, p.P k := by
   simp only [potential, add_sub_add_right_eq_sub]
@@ -315,9 +307,9 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ) :
     energy p (equilibrium θ + angleState v) = potential p (θ + ground v) := by
   have hz : ∀ k, (equilibrium θ + angleState v) (wIdx k) = 0 := fun k => by
-    simp [equilibrium_wIdx]
+    simp [equilibrium]
   have ha : angleMap (equilibrium θ + angleState v) = fun k => (θ + ground v) k + -θ 0 := by
-    rw [map_add, angleMap_equilibrium, angleMap_angleState]
+    rw [map_add, equilibrium, angleMap_reduce, angleMap_angleState]
     funext k
     simp only [Pi.add_apply]
     ring
@@ -778,7 +770,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
   have h1 : ∀ i, w i.succ - w 0 = μ * η i := by
     intro i
     have := hrow (dIdx i)
-    rw [sum_state] at this
+    rw [Fin.sum_univ_add] at this
     simp only [jacobian_dd, jacobian_dw, Complex.ofReal_sub, Complex.ofReal_zero, zero_mul,
       Finset.sum_const_zero, zero_add, apply_ite (fun x : ℝ => (x : ℂ)), Complex.ofReal_one,
       sub_mul, ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ,
@@ -790,7 +782,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
       ∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l) = 0 := by
     intro k
     have := hrow (wIdx k)
-    rw [sum_state] at this
+    rw [Fin.sum_univ_add] at this
     simp only [jacobian_wd, jacobian_ww] at this
     have e1 : ∑ l, ((laplacian (flowWeights p.B θ) k l : ℝ) : ℂ) * ζ l =
         ∑ i : Fin n, ((laplacian (flowWeights p.B θ) k i.succ : ℝ) : ℂ) * η i := by
@@ -925,16 +917,19 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 
 /-! ## Necessary conditions from the Hessian and cubic forms -/
 
-/-- Implementation evidence for `not_localAsymptoticStable_of_forms`, at the selected point of the
-untranslated field. -/
-@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
-    {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ)
-    (h : hessForm p θ (ground v) < 0 ∨
-      (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0)) :
-    connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
-  unfold TMIO.Statement
-  rw [mem_den_flow_iff']
-  apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
+/-- **Second- and third-order test.** At a power-balance point, a relative-angle direction `v`
+with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local asymptotic stability:
+the model is not in the denotation of the local asymptotic sentence. -/
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_forms (m : Model n)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (v : Fin n → ℝ)
+    (h : hessForm m.params m.θ (ground v) < 0 ∨
+      (hessForm m.params m.θ (ground v) = 0 ∧ cubicForm m.params m.θ (ground v) ≠ 0)) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  obtain ⟨p, θ⟩ := m
+  change ∀ k, p.P k = powerInjection p.B θ k at hbal
+  change hessForm p θ (ground v) < 0 ∨
+    (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0) at h
+  unfold powerlib.TMIO.Statement
   refine reducedSwing_not_localAsymptoticStable_of_potential_lt hbal fun ε hε => ?_
   have hN : 0 < ‖angleState v‖ + 1 := by positivity
   obtain ⟨t, -, ht, hlt⟩ := exists_potential_lt hbal (ground v) h (div_pos hε hN)
@@ -945,18 +940,6 @@ untranslated field. -/
     _ < ε / (‖angleState v‖ + 1) * (‖angleState v‖ + 1) :=
         mul_lt_mul_of_pos_right ht hN
     _ = ε := by field_simp
-
-/-- **Second- and third-order test.** At a power-balance point, a relative-angle direction `v`
-with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local asymptotic stability:
-the model is not in the denotation of the local asymptotic sentence. -/
-@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_forms (m : Model n)
-    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (v : Fin n → ℝ)
-    (h : hessForm m.params m.θ (ground v) < 0 ∨
-      (hessForm m.params m.θ (ground v) = 0 ∧ cubicForm m.params m.θ (ground v) ≠ 0)) :
-    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff']
-  exact (not_congr mem_den_flow_iff').mp (reducedSwing_not_localAsymptoticStable_of_forms hbal v h)
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
@@ -1041,12 +1024,17 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
   · simp [hB]
   · rw [Subsingleton.elim i 0]; simp [hB']
 
-/-- Implementation evidence for `not_localAsymptoticStable_two`, at the selected point of the
-untranslated field. -/
-@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
-    (hbal : ∀ k, p.P k = powerInjection p.B θ k)
-    (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    connection% (¬ ((⟨p, θ⟩ : Model 1) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+/-- **Two machines (`n = 1`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
+model is not locally asymptotically stable: the line weight `B₀₁ cos(θ₀ − θ₁)` is negative (a
+saddle of the potential), or zero with a coupled line (a fold, nonzero cubic term), or the
+machines are uncoupled (a continuum of equilibria). -/
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_two (m : Model 1)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
+    (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  obtain ⟨p, θ⟩ := m
+  change ∀ k, p.P k = powerInjection p.B θ k at hbal
+  change ¬ LinearSystems.IsHurwitz (jacobian p θ) at hH
   unfold TMIO.Statement
   rw [mem_den_flow_iff']
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
@@ -1067,7 +1055,7 @@ untranslated field. -/
     linarith
   rcases hW.lt_or_eq with hW | hW
   · apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
-    refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inl ?_)
+    refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal v (Or.inl ?_)
     rw [hessForm_two p θ _ hg0, hg1]
     linarith
   · by_cases hB : p.B 0 1 = 0
@@ -1087,23 +1075,11 @@ untranslated field. -/
         rw [hs, hc] at this
         norm_num at this
       apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
-      refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inr ⟨?_, ?_⟩)
+      refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal v (Or.inr ⟨?_, ?_⟩)
       · rw [hessForm_two p θ _ hg0, hW]; ring
       · rw [cubicForm_two p θ _ hg0, hg1]
         simp only [one_pow, mul_one]
         exact mul_ne_zero (by norm_num) (mul_ne_zero hB hs)
-
-/-- **Two machines (`n = 1`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
-model is not locally asymptotically stable: the line weight `B₀₁ cos(θ₀ − θ₁)` is negative (a
-saddle of the potential), or zero with a coupled line (a fold, nonzero cubic term), or the
-machines are uncoupled (a continuum of equilibria). -/
-@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_two (m : Model 1)
-    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
-    (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
-    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff']
-  exact (not_congr mem_den_flow_iff').mp (reducedSwing_not_localAsymptoticStable_two m.params m.θ hbal hH)
 
 /-- **For two machines the local asymptotic translation is exact.** -/
 @[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_two :
@@ -1314,7 +1290,9 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
   have := Real.sin_sq_add_cos_sq φ
   nlinarith [sq_nonneg B]
 
-@[tmio T, powerlib_foundation] private theorem pos_of_mul_cos_ne {B φ : ℝ} (hB : 0 ≤ B) (h : B * Real.cos φ ≠ 0) : 0 < B :=
+/-- A nonnegative coupling with a nonzero linearization weight `B cos φ` is positive. -/
+@[tmio T, powerlib_foundation] theorem pos_of_mul_cos_ne {B φ : ℝ} (hB : 0 ≤ B)
+    (h : B * Real.cos φ ≠ 0) : 0 < B :=
   lt_of_le_of_ne hB fun h0 => h (by rw [← h0, zero_mul])
 
 /-- The grounded vector `(0, u₁, u₂)`. -/
@@ -1326,12 +1304,22 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
   · rfl
   · rfl
 
-/-- Implementation evidence for `not_localAsymptoticStable_three`, at the selected point of the
-untranslated field. -/
-@[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
-    (θ : Fin (2 + 1) → ℝ) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
-    (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    connection% (¬ ((⟨p, θ⟩ : Model 2) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+/-- **Three machines (`n = 2`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
+model is not locally asymptotically stable. With `a, b, c` the linearization weights of the
+lines `01, 12, 02`, the Hessian form is `a s² + c t² + b (s − t)²` on grounded directions
+`(0, s, t)`. A negative value is a saddle. Otherwise a null direction exists; if its circulation
+`κ = b(s − t)` is nonzero, exactly one weight is negative and, since the three line angles sum to
+zero, the cubic term has one strict sign (`triangle_cubic_ne_zero`): a fold. If `κ = 0` the null
+direction turns one machine against the other two through two zero-weight lines, whose cubic terms
+cancel only if both lines are open (a continuum of equilibria) or the third line is in antiphase,
+which contradicts the positive Hessian along it. -/
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_three (m : Model 2)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
+    (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  obtain ⟨p, θ⟩ := m
+  change ∀ k, p.P k = powerInjection p.B θ k at hbal
+  change ¬ LinearSystems.IsHurwitz (jacobian p θ) at hH
   unfold TMIO.Statement
   rw [mem_den_flow_iff']
   intro hLAS
@@ -1340,7 +1328,7 @@ untranslated field. -/
     intro s t
     by_contra hneg
     push Not at hneg
-    exact reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t]
+    exact not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal ![s, t]
       (Or.inl (by rw [hessForm_three]; linarith)) (mem_den_flow_iff'.mpr hLAS)
   have hK : ∀ s t, p.B 0 1 * Real.cos (θ 0 - θ 1) * s ^ 2 +
       p.B 0 2 * Real.cos (θ 0 - θ 2) * t ^ 2 + p.B 1 2 * Real.cos (θ 1 - θ 2) * (s - t) ^ 2 = 0 →
@@ -1348,7 +1336,8 @@ untranslated field. -/
         p.B 1 2 * Real.sin (θ 1 - θ 2) * (s - t) ^ 3 = 0 := by
     intro s t h0
     by_contra hne
-    refine reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t] (Or.inr ⟨?_, ?_⟩) (mem_den_flow_iff'.mpr hLAS)
+    refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal ![s, t] (Or.inr ⟨?_, ?_⟩)
+      (mem_den_flow_iff'.mpr hLAS)
     · rw [hessForm_three, h0, mul_zero]
     · rw [cubicForm_three]
       exact mul_ne_zero two_ne_zero hne
@@ -1528,24 +1517,6 @@ untranslated field. -/
     rw [e1, e2, e3]
     linarith
 
-
-/-- **Three machines (`n = 2`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
-model is not locally asymptotically stable. With `a, b, c` the linearization weights of the
-lines `01, 12, 02`, the Hessian form is `a s² + c t² + b (s − t)²` on grounded directions
-`(0, s, t)`. A negative value is a saddle. Otherwise a null direction exists; if its circulation
-`κ = b(s − t)` is nonzero, exactly one weight is negative and, since the three line angles sum to
-zero, the cubic term has one strict sign (`triangle_cubic_ne_zero`): a fold. If `κ = 0` the null
-direction turns one machine against the other two through two zero-weight lines, whose cubic terms
-cancel only if both lines are open (a continuum of equilibria) or the third line is in antiphase,
-which contradicts the positive Hessian along it. -/
-@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_three (m : Model 2)
-    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
-    (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
-    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff']
-  exact (not_congr mem_den_flow_iff').mp (reducedSwing_not_localAsymptoticStable_three m.params m.θ hbal hH)
-
 /-- **For three machines the local asymptotic translation is exact.** -/
 @[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_three :
     connection% ((family (n := 2)).Exact (.flow .locallyAsymptoticallyStable)) := by
@@ -1564,12 +1535,13 @@ the potential increment of its relative angles. -/
         (potential p (θ + ground fun i => w (dIdx i)) - potential p θ) := by
   have ha : angleMap (equilibrium θ + w) =
       fun k => (θ + ground fun i => w (dIdx i)) k + -θ 0 := by
-    rw [map_add, angleMap_equilibrium, angleMap_eq_ground]
+    rw [map_add, equilibrium, angleMap_reduce, angleMap_eq_ground]
     funext k
     simp only [Pi.add_apply]
     ring
   rw [energy, ha, potential_add_const, sum_P_of_balance hbal, energy_equilibrium hbal]
-  simp only [PiLp.add_apply, equilibrium_wIdx, zero_add, mul_zero, sub_zero]
+  simp only [PiLp.add_apply, equilibrium, reduce_wIdx, Pi.zero_apply, zero_add, mul_zero,
+    sub_zero]
   ring
 
 /-- A relative-angle displacement that keeps power balance is an equilibrium of the reduced
@@ -1579,16 +1551,16 @@ field. -/
     (hv : ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
     reducedField p (equilibrium θ + angleState v) = 0 := by
   apply state_ext
-  · intro i; simp [reducedField_dIdx, equilibrium_wIdx]
+  · intro i; simp [reducedField_dIdx, equilibrium]
   · intro k
     rw [reducedField_wIdx]
     have ha : angleMap (equilibrium θ + angleState v) = fun j => (θ + ground v) j + -θ 0 := by
-      rw [map_add, angleMap_equilibrium, angleMap_angleState]
+      rw [map_add, equilibrium, angleMap_reduce, angleMap_angleState]
       funext j
       simp only [Pi.add_apply]
       ring
     rw [ha, powerInjection_add_const, ← hv k]
-    simp [equilibrium_wIdx]
+    simp [equilibrium]
 
 /-- Implementation evidence: `Dynamics.Mechanical.localAsymptoticStable_of_strictMin` (LaSalle) on
 the reduced field (`reducedField_eq_mechanical`). At a power-balance point whose relative angles

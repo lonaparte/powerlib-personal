@@ -19,9 +19,9 @@ factorization and undistorted attenuated travelling waves); `theory/T-pde-system
 Results.
 * `dx F`, `dt F` are the partial derivatives `fderiv ℝ F p (1,0)`, `fderiv ℝ F p (0,1)`
   (`PDE.dx`, `PDE.dt`, with the mixed-partial lemmas, in `theorem/PDE/Partial.lean`).
-* `second_order_v` / `second_order_i`: if `v, i ∈ C²` solve `∂ₓv = −L'∂ₜi − R'i`,
-  `∂ₓi = −C'∂ₜv − G'v`, then
-  `∂ₓₓv = L'C' ∂ₜₜv + (L'G' + R'C') ∂ₜv + R'G' v` and the same for `i`. (The proof uses the
+* `second_order_v`: if `v, i ∈ C²` solve `∂ₓv = −L'∂ₜi − R'i`, `∂ₓi = −C'∂ₜv − G'v`, then
+  `∂ₓₓv = L'C' ∂ₜₜv + (L'G' + R'C') ∂ₜv + R'G' v`; the same holds for `i`
+  (`second_order_v C L G R hi hv h2 h1`, roles `v ↔ i`, `L ↔ C`, `R ↔ G`). (The proof uses the
   symmetry of second derivatives of `C²` functions, Mathlib `ContDiffAt.isSymmSndFDerivAt`.)
 * `factor_distortionless`: for `v ∈ C²`, `(∂ₜ + c∂ₓ + τ_d)(∂ₜ − c∂ₓ + τ_d) v =
   ∂ₜₜv − c²∂ₓₓv + 2τ_d ∂ₜv + τ_d² v`; with `R' = τ_d L'`, `G' = τ_d C'`, `c² L'C' = 1` this is
@@ -56,15 +56,6 @@ open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiab
     rw [e2]; exact fderiv_combo (differentiable_dt hv) hdv (-C) G (0, 1) p
   rw [step1, dx_dt_comm hi, step2, h2 p]
   ring
-
-/-- The current satisfies the same second-order equation. -/
-@[tmio T, powerlib_foundation] theorem second_order_i (L C R G : ℝ) {v i : ℝ × ℝ → ℝ}
-    (hv : ContDiff ℝ 2 v) (hi : ContDiff ℝ 2 i)
-    (h1 : ∀ p, dx v p = -L * dt i p - R * i p) (h2 : ∀ p, dx i p = -C * dt v p - G * v p)
-    (p : ℝ × ℝ) :
-    dx (dx i) p = L * C * dt (dt i) p + (L * G + R * C) * dt i p + R * G * i p := by
-  have := second_order_v C L G R hi hv h2 h1 p
-  rw [this]; ring
 
 /-- The first-order factor `(∂ₜ + κ∂ₓ + τ) F`. -/
 def factorOp (κ τ : ℝ) (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := dt F p + κ * dx F p + τ * F p

@@ -14,7 +14,8 @@ Scope.
 * Probability theory, not an engineering result.
 * Related modules: `OptionalStoppingUI.lean` (optional stopping for uniformly integrable stopped
   martingales), `MartingaleNotMarkov.lean` (a martingale that is not Markov),
-  `ProcessFoundations.lean` (adapted / progressive / predictable, finite-dimensional laws).
+  `ProcessFoundations.lean` (the Mathlib results on adapted / progressive / predictable
+  processes and finite-dimensional laws).
 
 Source: work-sync theory/T-process-foundations-stochastic.md §1.1 (filtered space, usual
 conditions), §1.2 (adapted processes); theory/T-martingales-stopping-times.md §1.1
@@ -25,18 +26,18 @@ stopping), §1.6.1 (Brownian hitting time); theory/T-first-passage-time.md
 ("Markov need not be a martingale").
 
 Results.
-* Mathlib wrappers (Mathlib declaration in brackets): `discrete_hitting_isStoppingTime`
-  [`MeasureTheory.Adapted.isStoppingTime_hittingAfter`], `optional_stopping_bounded`
-  [`Submartingale.expected_stoppedValue_mono`], `optional_stopping_iff`
-  [`submartingale_iff_expected_stoppedValue_mono`], `martingale_stoppedValue_condExp`
-  [`Martingale.stoppedValue_ae_eq_condExp_of_le_const`], `submartingale_stopped`
-  [`Submartingale.stoppedProcess`].
+* Discrete time, from Mathlib (namespace `MeasureTheory`), used directly:
+  `Adapted.isStoppingTime_hittingAfter` (hitting times are stopping times),
+  `Submartingale.expected_stoppedValue_mono` and `submartingale_iff_expected_stoppedValue_mono`
+  (optional stopping for bounded stopping times),
+  `Martingale.stoppedValue_ae_eq_condExp_of_le_const` (optional sampling),
+  `Submartingale.stoppedProcess` (stopped submartingales).
 * `martingale_stoppedProcess` — a stopped (discrete-time, real) martingale is a martingale
   (from the sub/supermartingale cases).
 * `hittingAfter_le_iff_of_continuous`, `continuous_hitting_isStoppingTime` — in **continuous
   time** `ℝ≥0`, the hitting time of a **closed** set by an adapted process with continuous paths
-  is a stopping time (no usual conditions needed); `continuous_exit_isStoppingTime`: the exit
-  time of an **open** domain `𝒟` is a stopping time.
+  is a stopping time (no usual conditions needed); so is the exit time of an **open** domain
+  `𝒟`, the hitting time of the closed set `𝒟ᶜ`.
 * `UsualConditions`, `UsualConditions.null_mem` — usual conditions (complete + right-continuous
   filtration); every null set is measurable at every time.
 * `deterministic_markov_not_martingale` — the deterministic process `X_n = n` is Markov (in the
@@ -59,43 +60,11 @@ open scoped NNReal ENNReal Topology
 
 variable {Ω : Type*} {m : MeasurableSpace Ω}
 
-/-! ## Mathlib wrappers (discrete time) -/
+/-! ## Stopped martingales (discrete time) -/
 
 section Discrete
 
-variable {μ : Measure Ω} {𝒢 : Filtration ℕ m} {f : ℕ → Ω → ℝ} {τ π : Ω → WithTop ℕ}
-
-/-- Discrete hitting (and exit) times of adapted processes are stopping times. -/
-@[tmio T, powerlib_foundation] theorem discrete_hitting_isStoppingTime {β : Type*} [MeasurableSpace β]
-    {u : ℕ → Ω → β} {s : Set β} (hu : Adapted 𝒢 u) (hs : MeasurableSet s) (n : ℕ) :
-    IsStoppingTime 𝒢 (hittingAfter u s n) :=
-  hu.isStoppingTime_hittingAfter hs
-
-/-- **Optional stopping, bounded stopping times**. -/
-@[tmio T, powerlib_foundation] theorem optional_stopping_bounded [SigmaFiniteFiltration μ 𝒢]
-    (hf : Submartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) (hπ : IsStoppingTime 𝒢 π)
-    (hle : τ ≤ π) {N : ℕ} (hbdd : ∀ ω, π ω ≤ N) :
-    ∫ ω, stoppedValue f τ ω ∂μ ≤ ∫ ω, stoppedValue f π ω ∂μ :=
-  hf.expected_stoppedValue_mono hτ hπ hle hbdd
-
-/-- **Optional stopping theorem** (characterization of submartingales). -/
-@[tmio T, powerlib_foundation] theorem optional_stopping_iff [SigmaFiniteFiltration μ 𝒢]
-    (hadp : StronglyAdapted 𝒢 f) (hint : ∀ i, Integrable (f i) μ) :
-    Submartingale f 𝒢 μ ↔ ∀ τ π : Ω → WithTop ℕ, IsStoppingTime 𝒢 τ → IsStoppingTime 𝒢 π →
-      τ ≤ π → (∃ N : ℕ, ∀ x, π x ≤ N) →
-        ∫ ω, stoppedValue f τ ω ∂μ ≤ ∫ ω, stoppedValue f π ω ∂μ :=
-  submartingale_iff_expected_stoppedValue_mono hadp hint
-
-/-- Optional sampling: `f_τ = E[f_n | 𝓕_τ]` for `τ ≤ n`. -/
-@[tmio T, powerlib_foundation] theorem martingale_stoppedValue_condExp [SigmaFiniteFiltration μ 𝒢]
-    (h : Martingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) {n : ℕ} (hτ_le : ∀ x, τ x ≤ n) :
-    stoppedValue f τ =ᵐ[μ] μ[f n | hτ.measurableSpace] :=
-  h.stoppedValue_ae_eq_condExp_of_le_const hτ hτ_le
-
-/-- Stopped submartingales are submartingales. -/
-@[tmio T, powerlib_foundation] theorem submartingale_stopped [SigmaFiniteFiltration μ 𝒢]
-    (h : Submartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ) :
-    Submartingale (stoppedProcess f τ) 𝒢 μ := h.stoppedProcess hτ
+variable {μ : Measure Ω} {𝒢 : Filtration ℕ m} {f : ℕ → Ω → ℝ} {τ : Ω → WithTop ℕ}
 
 /-- **Stopped martingales are martingales** (T-martingales §1.4). -/
 @[tmio T, powerlib_foundation] theorem martingale_stoppedProcess [SigmaFiniteFiltration μ 𝒢]
@@ -189,7 +158,9 @@ omit [MeasurableSpace E] [OpensMeasurableSpace E] in
 
 /-- **Continuous-time hitting times of closed sets are stopping times** (T-martingales §1.3):
 for an adapted process with continuous paths and a closed set `F`, `τ_F = inf{t ≥ 0 : X_t ∈ F}`
-is a stopping time of the (raw) filtration. -/
+is a stopping time of the (raw) filtration. In particular the exit time
+`τ_exit = inf{t ≥ 0 : X_t ∉ 𝒟}` of an open domain `𝒟` (T-first-passage-time) is one, at
+`F = 𝒟ᶜ` (`hD.isClosed_compl`). -/
 @[tmio T, powerlib_foundation] theorem continuous_hitting_isStoppingTime (hX : Adapted 𝓕 X)
     (hc : ∀ ω, Continuous fun t => X t ω) {F : Set E} (hF : IsClosed F) :
     IsStoppingTime 𝓕 (hittingAfter X F 0) := by
@@ -222,13 +193,6 @@ is a stopping time of the (raw) filtration. -/
     · convert @MeasurableSet.empty _ (𝓕 i) using 1
       ext ω; simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false]
       exact fun h => hq ⟨h.1, h.2.1⟩
-
-/-- **Exit times of open domains are stopping times** (T-first-passage-time): for an open
-`𝒟`, `τ_exit = inf{t ≥ 0 : X_t ∉ 𝒟}` is the hitting time of the closed set `𝒟ᶜ`. -/
-@[tmio T, powerlib_foundation] theorem continuous_exit_isStoppingTime (hX : Adapted 𝓕 X)
-    (hc : ∀ ω, Continuous fun t => X t ω) {D : Set E} (hD : IsOpen D) :
-    IsStoppingTime 𝓕 (hittingAfter X Dᶜ 0) :=
-  continuous_hitting_isStoppingTime hX hc hD.isClosed_compl
 
 end Continuous
 

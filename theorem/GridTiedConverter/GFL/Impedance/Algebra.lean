@@ -21,8 +21,8 @@ Results.
   filter branch, `Passive.SeriesRLC.dqImpedance` (`theorem/Passive/Dq.lean`, with its determinant
   and inverse); `Gid_eq`: `G_id = −V_dc Z_oc⁻¹` in closed form (T-gfl-impedance §1.1 boxed).
 * PLL frame projections (T-gfl-impedance §1.3, without any property of `G_pll`):
-  `Transform.hasDerivAt_park_zero` (`theorem/Transform/Park.lean`):
-  `d/dθ (park θ · x)|₀ = −J x`; hence to first order `x^pll = x^sys − Δθ J x₀` and
+  `Transform.hasDerivAt_park_mulVec` (`theorem/Transform/Park.lean`, at `θ = id`, constant `x`,
+  `t = 0`): `d/dθ (park θ · x)|₀ = −J x`; hence to first order `x^pll = x^sys − Δθ J x₀` and
   `x^sys = x^pll + Δθ J x₀`. With `Δθ = G_pll ΔV_q`: `pllVoltage_proj` gives
   `G_v^pll = [[1, V_q0 G], [0, 1 − V_d0 G]]`, `pllCurrent_proj` gives
   `G_i^pll = [[0, −I_q0 G], [0, I_d0 G]]` (the same form is `G_d^pll` for duty cycles).

@@ -42,8 +42,8 @@ Model boundary.
   vacuously.
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step` and their `_local`
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step` and their `_local`
 forms, `contDiffAt_shift`), `theorem/GridTiedConverter/GFM/Matching/StiffGrid.lean`
 (`field_contDiff`, `mem_den_locallyExponentiallyStable`),
 `theorem/GridTiedConverter/GFM/Matching/Matching.lean` (`matching_den_eq`,
@@ -66,19 +66,18 @@ Family and connection conclusions.
   realizing its model (`Implementation.ofDesign Euler.design`).
 * M–I (realization) on the stiff grid. The small-step laws are the generic connection laws
   applied to the family, with its autonomy `MatchingStiffGrid.family_isAutonomous` and the public
-  smoothness lemma `MatchingStiffGrid.contDiff_modelField`: `Numerics.euler_sound_small_step`
+  smoothness lemma `MatchingStiffGrid.contDiff_modelField`: `Numerics.euler_sound_small_step_local`
   (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such
   that every Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
-  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
-  `MatchingStiffGrid.not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
-  without a step constraint the realization is not sound — the locally exponentially stable model
-  with unit parameters and `K_p = 0` (`margin = 7/8`) has Euler integrations with every multiplier
-  outside the unit disk.
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `MatchingStiffGrid.not_euler_realizationSoundUnder` (scaffold
+  `not-sound-large-step`): without a step constraint the realization is not sound — the locally
+  exponentially stable model with unit parameters and `K_p = 0` (`margin = 7/8`) has Euler
+  integrations with every multiplier outside the unit disk.
 * The same laws for `Matching.matchingFamily` (`Matching.matchingEulerFamily`,
-  `Matching.matchingEuler`; the local generic laws `Numerics.euler_sound_small_step_local`,
-  `Numerics.euler_certified_small_step_local` applied with `Spectral.localFamily_isAutonomous`
-  and `matching_contDiffAt_field`, for a load law `C¹` near `(θ*, v*)`;
-  `matching_not_euler_realizationSoundUnder`, witness `C = G = η = 1`, `i_dc = 0`,
+  `Matching.matchingEuler`; the local generic laws `Numerics.euler_sound_small_step_local` applied
+  with `Spectral.localFamily_isAutonomous` and `matching_contDiffAt_field`, for a load law `C¹`
+  near `(θ*, v*)`; `matching_not_euler_realizationSoundUnder`, witness `C = G = η = 1`, `i_dc = 0`,
   `i_x(θ, v) = sin θ` at the origin, through `matching_den_eq`) and `Matching.swingFamily`
   (`Matching.swingEulerFamily`, `Matching.swingEuler`; the local generic laws with
   `swing_contDiffAt_field`, for a power law `C¹` near `(θ*, ω*)`;
@@ -115,7 +114,7 @@ def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
   Numerics.euler family Model.translated Euler.design Euler.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step`). -/
+(`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) :
     ContDiff ℝ 1 (Model.translated m) :=
   (field_contDiff m).comp (contDiff_id.add contDiff_const)
@@ -291,7 +290,7 @@ def fullEuler :
   Numerics.euler fullFamily FullModel.field FullEuler.design FullEuler.h
 
 /-- The translated stationary-frame field is `C¹`: the smoothness hypothesis of the generic Euler
-laws (`Numerics.euler_sound_small_step`), which hold vacuously for this family. -/
+laws (`Numerics.euler_sound_small_step_local`), which hold vacuously for this family. -/
 @[tmio M, powerlib_domain] theorem full_contDiff_field (M : FullModel) : ContDiff ℝ 1 M.field :=
   (abField_smooth M.p).comp (contDiff_id.add contDiff_const)
 

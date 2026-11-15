@@ -29,8 +29,8 @@ averaging over the dc oscillation (local SymPy note), and every inequality is ch
 Lean kernel.
 
 Results.
-* `closedRouth_of_mem_den_lyapunovStable` (and
-  `closedRouth_of_mem_den_locallyAsymptoticallyStable`): every Lyapunov stable model has
+* `closedRouth_of_mem_den_lyapunovStable` (hence also for local asymptotic stability, through
+  `Spectral.den_las_subset_lyapunovStable`): every Lyapunov stable model has
   `C ≠ 0` (otherwise `W = (V − 1) η` is a Chetaev function), an equilibrium at the selected
   point (`IsEq`), and quartic coefficients in the closed Routh region
   `a₃, a₂, a₁, a₀ ≥ 0`, `a₁² + a₃² a₀ ≤ a₃ a₂ a₁` (a strict violation gives an eigenvalue with
@@ -591,11 +591,6 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
   simp only at this ⊢
   rwa [← field_eq_regField_of_near p (hstay t ht)] at this
 
-@[tmio T, powerlib_foundation] private theorem norm_toLp_four (a b c d : ℝ) :
-    ‖(WithLp.toLp 2 ![a, b, c, d] : Dynamics.State 4)‖ ^ 2 = a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2 := by
-  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  simp
-
 /-! ### Necessary conditions: the closed Routh region -/
 
 /-- With no capacitance the dc-bus voltage is frozen while the dc integrator integrates its
@@ -609,7 +604,8 @@ every operating point. -/
   refine Dynamics.unstable_of_chetaev (contDiff_regField p) hW one_pos (fun ε hε => ?_) ?_
   · refine ⟨opPoint θ0 + WithLp.toLp 2 ![0, 0, ε / 4, ε / 4], ?_, ?_⟩
     · rw [add_sub_cancel_left]
-      have h2 := norm_toLp_four 0 0 (ε / 4) (ε / 4)
+      have h2 := norm_sq_coords (WithLp.toLp 2 ![0, 0, ε / 4, ε / 4])
+      simp only [Matrix.cons_val] at h2
       have h0 := norm_nonneg (WithLp.toLp 2 ![0, 0, ε / 4, ε / 4] : Dynamics.State 4)
       nlinarith
     · simp [opPoint]
@@ -657,21 +653,6 @@ same holds for local asymptotic and local exponential stability. -/
   push Not at hnot
   exact ⟨heq, hC, hnot⟩
 
-/-- The closed Routh region is necessary for local asymptotic stability as well. -/
-@[tmio TM, powerlib_domain] theorem closedRouth_of_mem_den_locallyAsymptoticallyStable :
-    connection% (family.den (.flow .locallyAsymptoticallyStable) ⊆
-      {m : Model | IsEq m.params m.θ ∧ m.params.C ≠ 0 ∧ 0 ≤ a3 m.params m.θ ∧
-        0 ≤ a2 m.params m.θ ∧ 0 ≤ a1 m.params m.θ ∧ 0 ≤ a0 m.params m.θ ∧
-        a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ ≤
-          a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ}) := by
-  unfold powerlib.TMIO.Statement
-  intro m h
-  have hLS := closedRouth_of_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hLS
-  refine hLS ?_
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h ⊢
-  exact h.1
-
 /-! ### The Routh boundary is not decided by the requirement language -/
 
 /-- A frozen PLL (`k_p = k_i = 0`, `X_g = 0`, `V₀ = 1`) with the damped dc loop of
@@ -696,7 +677,8 @@ def frozenPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2, 0�
     have ha2 : a ≤ 1 := min_le_right _ _
     refine ⟨opPoint frozenPLL.θ + WithLp.toLp 2 ![a, -a, 0, 0], ?_, ?_⟩
     · rw [add_sub_cancel_left]
-      have h2 := norm_toLp_four a (-a) 0 0
+      have h2 := norm_sq_coords (WithLp.toLp 2 ![a, -a, 0, 0])
+      simp only [Matrix.cons_val] at h2
       have h0 := norm_nonneg (WithLp.toLp 2 ![a, -a, 0, 0] : Dynamics.State 4)
       nlinarith
     · have hs : 0 < Real.sin a :=
@@ -752,7 +734,8 @@ decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. 
     rfl
   · refine ⟨opPoint undampedPLL.θ + WithLp.toLp 2 ![0, ε / 2, 0, 0], ?_, ?_⟩
     · rw [add_sub_cancel_left]
-      have h2 := norm_toLp_four 0 (ε / 2) 0 0
+      have h2 := norm_sq_coords (WithLp.toLp 2 ![0, ε / 2, 0, 0])
+      simp only [Matrix.cons_val] at h2
       have h0 := norm_nonneg (WithLp.toLp 2 ![0, ε / 2, 0, 0] : Dynamics.State 4)
       nlinarith
     · simp [opPoint, undampedPLL]

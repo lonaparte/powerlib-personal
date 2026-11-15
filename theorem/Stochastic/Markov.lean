@@ -13,9 +13,9 @@ Ornstein–Uhlenbeck Gaussian semigroup, and why "Markov ⇔ semigroup" is too s
 
 Scope.
 * Probability theory, not an engineering result.
-* The Brownian weak Markov property is `theorem/Stochastic/Brownian.lean`
-  (`brownian_weakMarkov`). The equivalence of the event form and the conditional-expectation
-  form of the Markov property (bounded measurable test functions) is
+* The Brownian weak Markov property is Mathlib's `IsPreBrownianReal.indepFun_shift` (used in
+  `theorem/Stochastic/Brownian.lean`). The equivalence of the event form and the
+  conditional-expectation form of the Markov property (bounded measurable test functions) is
   `theorem/Stochastic/MarkovForms.lean` (`markovEvent_iff_markovCondExp`).
 
 Source: work-sync theory/T-markov-processes.md §1.1 (Markov property, transition kernel
@@ -24,11 +24,10 @@ Source: work-sync theory/T-markov-processes.md §1.1 (Markov property, transitio
 Brownian motion, OU process); theory/T-sde-systems.md §1.8.1 (OU transition law).
 
 Results.
-* Mathlib wrappers (Mathlib declaration in brackets): `kernel_comp_assoc`
-  [`ProbabilityTheory.Kernel.comp_assoc`], `invariant_comp` [`Kernel.Invariant.comp`],
-  `ionescuTulcea_next` [`Kernel.map_traj_succ_self`: the trajectory law built by the
-  Ionescu–Tulcea theorem has the prescribed one-step kernel], `ionescuTulcea_marginal`
-  [`Kernel.traj_map_frestrictLe`].
+* The kernel facts are Mathlib's, used directly: `ProbabilityTheory.Kernel.comp_assoc`,
+  `Kernel.Invariant.comp`, `Kernel.map_traj_succ_self` (the trajectory law built by the
+  Ionescu–Tulcea theorem has the prescribed one-step kernel) and `Kernel.traj_map_frestrictLe`
+  (its finite-dimensional marginals are the finite compositions).
 * `kpow`, `kpow_add` — discrete-time Chapman–Kolmogorov `K^{m+n} = K^m ∘ K^n` for the iterates
   of a kernel; `kpow_invariant`: an invariant measure is invariant for every iterate.
 * `chapmanKolmogorov_ae` — the Markov property in conditional-expectation form with transition
@@ -57,22 +56,11 @@ namespace powerlib.Stochastic.Markov
 open MeasureTheory ProbabilityTheory Filter Real
 open scoped ENNReal NNReal
 
-/-! ## Mathlib wrappers: kernels -/
+/-! ## Kernel iterates -/
 
 section Kernels
 
 variable {α : Type*} {mα : MeasurableSpace α}
-
-/-- Composition of kernels is associative (Mathlib `ProbabilityTheory.Kernel.comp_assoc`). -/
-@[tmio T, powerlib_foundation] theorem kernel_comp_assoc {β γ δ : Type*} {mβ : MeasurableSpace β}
-    {mγ : MeasurableSpace γ} {mδ : MeasurableSpace δ} (ξ : Kernel γ δ) (η : Kernel β γ)
-    (κ : Kernel α β) : ξ ∘ₖ η ∘ₖ κ = ξ ∘ₖ (η ∘ₖ κ) :=
-  Kernel.comp_assoc ξ η κ
-
-/-- Invariance is preserved by composition (Mathlib `Kernel.Invariant.comp`). -/
-@[tmio T, powerlib_foundation] theorem invariant_comp {κ η : Kernel α α} {μ : Measure α}
-    (hκ : κ.Invariant μ) (hη : η.Invariant μ) : (κ ∘ₖ η).Invariant μ :=
-  hκ.comp hη
 
 /-- `n`-step kernel `K^n` (iterated composition, `K^0 = id`). -/
 def kpow (κ : Kernel α α) : ℕ → Kernel α α
@@ -85,7 +73,7 @@ def kpow (κ : Kernel α α) : ℕ → Kernel α α
   induction m with
   | zero => simp [kpow, Kernel.id_comp]
   | succ m ih =>
-    rw [show m + 1 + n = (m + n) + 1 by ring, kpow, ih, kpow, kernel_comp_assoc]
+    rw [show m + 1 + n = (m + n) + 1 by ring, kpow, ih, kpow, Kernel.comp_assoc]
 
 /-- An invariant measure is invariant for every iterate. -/
 @[tmio T, powerlib_foundation] theorem kpow_invariant {κ : Kernel α α} {μ : Measure α}
@@ -95,25 +83,6 @@ def kpow (κ : Kernel α α) : ℕ → Kernel α α
   | succ n ih => exact h.comp ih
 
 end Kernels
-
-section IonescuTulcea
-
-variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
-  (κ : (n : ℕ) → Kernel (Π i : Finset.Iic n, X i) (X (n + 1))) [∀ n, IsMarkovKernel (κ n)]
-
-/-- **Discrete-time chains (Ionescu–Tulcea)**: the trajectory kernel `traj κ a` has the
-prescribed one-step transition (Mathlib `Kernel.map_traj_succ_self`). -/
-@[tmio T, powerlib_foundation] theorem ionescuTulcea_next (a : ℕ) :
-    (Kernel.traj κ a).map (fun x => x (a + 1)) = κ a :=
-  Kernel.map_traj_succ_self
-
-/-- Its finite-dimensional marginals are the finite compositions (Mathlib
-`Kernel.traj_map_frestrictLe`). -/
-@[tmio T, powerlib_foundation] theorem ionescuTulcea_marginal (a b : ℕ) :
-    (Kernel.traj κ a).map (Preorder.frestrictLe b) = Kernel.partialTraj κ a b :=
-  Kernel.traj_map_frestrictLe a b
-
-end IonescuTulcea
 
 /-! ## Markov property and Chapman–Kolmogorov almost surely -/
 

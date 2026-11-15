@@ -26,8 +26,8 @@ Model boundary.
   trajectory.
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step`),
 `theorem/GridTiedConverter/PLL/PIPLL.lean` (`contDiff_piPLLField`),
 `theorem/GridTiedConverter/PLL/PIPLLFamily.lean` (`srf_mem_den_locallyExponentiallyStable`),
 `theorem/GridTiedConverter/PLL/Multiscale.lean` (`chain_le_semantics`),
@@ -48,11 +48,11 @@ Family and connection conclusions.
 * M–I (realization), for both families. The small-step laws are the generic connection laws
   applied to each family, with its autonomy (`PIPLL.family_isAutonomous`,
   `ReducedSlow.family_isAutonomous`) and its public smoothness lemma (`PIPLL.contDiff_modelField`,
-  `ReducedSlow.contDiff_modelField`): `Numerics.euler_sound_small_step` (scaffold
+  `ReducedSlow.contDiff_modelField`): `Numerics.euler_sound_small_step_local` (scaffold
   `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such that every
   Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
-  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
-  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — for the PI-PLL the SRF detector with
   `V = K_p = K_i = 1` at `θ* = 0`, for the reduced slow model `a = b = 1` (`ẏ = −y`), each locally
   exponentially stable with Euler integrations having every multiplier outside the unit disk.
@@ -81,7 +81,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
 /-- The translated field of a PI-PLL model is `C¹`: the smoothness hypothesis of the generic Euler
-laws (`Numerics.euler_sound_small_step`). -/
+laws (`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   (contDiff_piPLLField m.smooth).comp (contDiff_id.add contDiff_const)
 
@@ -123,7 +123,7 @@ def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
 /-- The field of a reduced slow PLL model is `C¹` (it is linear): the smoothness hypothesis of the
-generic Euler laws (`Numerics.euler_sound_small_step`). -/
+generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   Linear.affine_contDiff _ _
 

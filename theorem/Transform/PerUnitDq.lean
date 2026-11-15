@@ -57,19 +57,13 @@ def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • p
       rw [Real.sqrt_mul_self (by norm_num)]]
   norm_num
 
-@[tmio M, powerlib_domain] private lemma park_dotProduct (θ : ℝ) (x y : Fin 2 → ℝ) :
-    (park θ *ᵥ x) ⬝ᵥ (park θ *ᵥ y) = x ⬝ᵥ y := by
-  simp only [park_apply_mulVec, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one]
-  linear_combination (x 0 * y 0 + x 1 * y 1) * Real.sin_sq_add_cos_sq θ
-
 /-- Amplitude-invariant dq power: `v_abc · i_abc = (3/2)(v_d i_d + v_q i_q)` for
 zero-sequence-free current. -/
 @[tmio M, powerlib_domain] theorem power_parkABC (θ : ℝ) (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (3 / 2 : ℝ) * ((parkABC θ *ᵥ v) ⬝ᵥ (parkABC θ *ᵥ i)) := by
-  rw [parkABC, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, park_dotProduct,
-    dotProduct_eq_three_halves_clarke v i hi]
+  rw [parkABC, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, park_eq_rot_neg,
+    frameRotation_power_invariant, dotProduct_eq_three_halves_clarke v i hi]
 
 /-- Power-invariant dq power: `v_abc · i_abc = v_d i_d + v_q i_q`. -/
 @[tmio M, powerlib_domain] theorem power_parkABCPI (θ : ℝ) (v i : Fin 3 → ℝ)

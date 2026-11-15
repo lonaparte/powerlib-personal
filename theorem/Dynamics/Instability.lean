@@ -28,7 +28,7 @@ Results.
   field near the point and takes values below its value at the point arbitrarily close to it rules
   out local asymptotic stability: conserved energies, fold points with a monotone coordinate);
   `not_localAsymptoticStable_of_equilibria` (accumulating equilibria rule it out).
-* `unstable_of_exponential_chetaev`: LeanForControl's exponential Chetaev criterion
+* LeanForControl's exponential Chetaev criterion is used directly
   (`NonlinearInstability.unstable_of_exponential_chetaev`: `2 α V ≤ V̇` near the base point, with
   `|V| ≤ C ‖x − x_eq‖²` and positive values of `V` accumulating at the base point).
 * Fields that are `C¹` only on an open set `U` containing the point (typically power-balance fields
@@ -236,27 +236,6 @@ and `W` grows at a uniform rate on the compact part of that sublevel near `x*`. 
   linarith
 
 end Classical
-
-section Exponential
-
-open Set Filter Topology
-
-variable {n : ℕ}
-local notation "ℝⁿ" => State n
-
-/-- Exponential Chetaev instability criterion.
-Upstream: `NonlinearInstability.unstable_of_exponential_chetaev`. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_exponential_chetaev
-    {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {x_eq : ℝⁿ}
-    (hf : ContDiff ℝ 1 f) (hV : ContDiff ℝ 1 V)
-    {ρ α C : ℝ} (hρ : 0 < ρ) (hα : 0 < α) (hC : 0 ≤ C)
-    (hbound : ∀ x, ‖x - x_eq‖ ≤ ρ → |V x| ≤ C * ‖x - x_eq‖ ^ 2)
-    (hgrowth : ∀ x, ‖x - x_eq‖ ≤ ρ → 2 * α * V x ≤ fderiv ℝ V x (f x))
-    (hseed : ∀ δ > 0, ∃ x, ‖x - x_eq‖ < min δ ρ ∧ 0 < V x) :
-    Unstable f x_eq :=
-  NonlinearInstability.unstable_of_exponential_chetaev hf hV hρ hα hC hbound hgrowth hseed
-
-end Exponential
 
 /-! ## Fields that are `C¹` only near the point -/
 

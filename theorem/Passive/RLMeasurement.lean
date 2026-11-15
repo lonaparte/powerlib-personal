@@ -28,7 +28,8 @@ data analysis of `theorem/Estimation/ResistanceFit.lean`; the Agda-generated con
 `theorem/Passive/RL.lean` for the state-space representation.
 
 Results.
-* Model compatibility: `rl` (`rl_resistance`, `rl_inductance`), `reading`, `seed`.
+* Model compatibility: `rl` (fields by `Impedance.resistance_ofParams`,
+  `Impedance.inductance_ofParams`), `reading`, `seed`.
 * Windows: `window` (the resistances all of whose models satisfy a sentence),
   `kernImage_resistance`, `kernImage_decayRate`, `kernImage_den` (the window of every sentence is
   the resistance kernel of its denotation).
@@ -61,12 +62,6 @@ open OrderDual LinearSystems TMIO Data.Analysis
 
 /-- The impedance model with resistance `R` and inductance `L`. -/
 def rl (R L : ℝ) (hL : 0 < L) : Impedance := Impedance.ofParams R ⟨L, hL⟩
-
-@[tmio M, simp, powerlib_domain] theorem rl_resistance (R L : ℝ) (hL : 0 < L) :
-    (rl R L hL).resistance = R := rfl
-
-@[tmio M, simp, powerlib_domain] theorem rl_inductance (R L : ℝ) (hL : 0 < L) :
-    (rl R L hL).inductance.val = L := rfl
 
 /-! ## Model compatibility -/
 
@@ -142,19 +137,19 @@ def window : Sentence → Set ℝ
   ext R
   constructor
   · intro h
-    have h1 : a ≤ R := by simpa using h (x := rl R 1 one_pos) rfl
+    have h1 : a ≤ R := by simpa [rl] using h (x := rl R 1 one_pos) rfl
     have hR : 0 ≤ R := by
       by_contra hR
       push Not at hR
       have hL : 0 < R / (a - 1) := div_pos_of_neg_of_neg hR (by linarith)
-      have h2 : a ≤ R / (R / (a - 1)) := by simpa using h (x := rl R _ hL) rfl
+      have h2 : a ≤ R / (R / (a - 1)) := by simpa [rl] using h (x := rl R _ hL) rfl
       rw [div_div_cancel₀ hR.ne] at h2
       linarith
     refine ⟨hR, ?_⟩
     by_contra ha
     push Not at ha
     have hL : 0 < (R + 1) / a := div_pos (by linarith) ha
-    have h2 : a ≤ R / ((R + 1) / a) := by simpa using h (x := rl R _ hL) rfl
+    have h2 : a ≤ R / ((R + 1) / a) := by simpa [rl] using h (x := rl R _ hL) rfl
     rw [div_div_eq_mul_div, le_div_iff₀ (by linarith)] at h2
     nlinarith
   · rintro ⟨hR, ha⟩ m hm

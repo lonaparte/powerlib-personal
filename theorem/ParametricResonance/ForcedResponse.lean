@@ -39,10 +39,10 @@ Results.
   the variational matrix along any orbit is `J(t) ≡ A₀` (`jacobian_along_orbit`), and
   `orbitExponentiallyStable_iff`: every orbit is exponentially stable (all solutions converge to
   it at a uniform exponential rate) iff `A₀` is Hurwitz — no parametric instability can arise.
-* `jacobian_additive_forcing` — for `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)`
-  for every `ε, t`; in particular the frozen Jacobian at a fixed operating point, and every
-  quantity computed from it (frozen damping ratio, frozen spectrum), does not depend on `ε` by
-  construction.
+* Mathlib's `fderiv_add_const` (with `c = ε g(t)`) — for `f_ε(x, t) = f(x) + ε g(t)` the state
+  Jacobian is `Df(x)` for every `ε, t`; in particular the frozen Jacobian at a fixed operating
+  point, and every quantity computed from it (frozen damping ratio, frozen spectrum), does not
+  depend on `ε` by construction.
 
 Decay and the converse (a uniform exponential bound on every global solution of `ẋ = A x` forces
 `A` Hurwitz; `LTI.exists_global_bound_of_isHurwitz`, `LTI.isHurwitz_of_global_bound` in
@@ -276,13 +276,5 @@ converges to it at a uniform exponential rate,
       convert h1 using 1
       rw [haff (z s), haff (z_orb s), map_sub]; abel
     exact hb _ he t ht
-
-/-! ### Additive forcing does not enter the Jacobian -/
-
-/-- For `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)` for every `ε` and `t`. -/
-@[tmio T, powerlib_foundation] theorem jacobian_additive_forcing {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (f : E → E) (g : ℝ → E) (ε t : ℝ) (x : E) :
-    fderiv ℝ (fun y => f y + ε • g t) x = fderiv ℝ f x :=
-  fderiv_add_const _
 
 end powerlib.ParametricResonance

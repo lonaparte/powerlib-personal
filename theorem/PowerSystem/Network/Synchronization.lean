@@ -22,11 +22,13 @@ equation decoupled by the Laplacian spectrum), §1.5 (linear-node threshold `σ 
 (cluster synchronization under an equitable partition).
 
 Results.
-* Mathlib wrappers for the unweighted Laplacian `SimpleGraph.lapMatrix`: `L𝟙 = 0`, positive
-  semidefinite, kernel = vectors constant on connected components, `dim ker L = #components`
-  (`lapMatrix_mulVec_one`, `lapMatrix_posSemidef`, `lapMatrix_mulVec_eq_zero_iff_const`,
-  `card_components_eq_finrank_ker`); bridge `G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ)`
-  (`lapMatrix_eq_laplacian`).
+* The unweighted Laplacian `SimpleGraph.lapMatrix` (Mathlib): `L𝟙 = 0`, positive semidefinite,
+  kernel = vectors constant on connected components, `dim ker L = #components`
+  (`SimpleGraph.lapMatrix_mulVec_one_eq_zero`, `SimpleGraph.posSemidef_lapMatrix`,
+  `SimpleGraph.lapMatrix_mulVec_eq_zero_iff_forall_reachable`,
+  `SimpleGraph.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix`); for a connected graph
+  the kernel is spanned by `𝟙` (`lapMatrix_mulVec_eq_zero_iff_const`); bridge
+  `G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ)` (`lapMatrix_eq_laplacian`).
 * `netField_diag`: on the diagonal the network field is `f` in every node (tangency);
   `sync_lift`: a node solution `s` gives the network solution `(s, …, s)`;
   `sync_invariant`: if the network field is globally Lipschitz, every network solution that
@@ -56,37 +58,17 @@ noncomputable section
 namespace powerlib.Network.Sync
 open Matrix Finset
 
-/-! ## Unweighted graph Laplacian (Mathlib wrappers) -/
+/-! ## Unweighted graph Laplacian -/
 
 section Graph
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
-/-- `L𝟙 = 0` (wraps `SimpleGraph.lapMatrix_mulVec_one_eq_zero`). -/
-@[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_one : G.lapMatrix ℝ *ᵥ 1 = 0 :=
-  G.lapMatrix_mulVec_one_eq_zero ℝ
-
-/-- `L ⪰ 0` (wraps `SimpleGraph.posSemidef_lapMatrix`). -/
-@[tmio T, powerlib_foundation] theorem lapMatrix_posSemidef : (G.lapMatrix ℝ).PosSemidef :=
-  SimpleGraph.posSemidef_lapMatrix ℝ G
-
-/-- `L x = 0` iff `x` is constant on connected components
-(wraps `SimpleGraph.lapMatrix_mulVec_eq_zero_iff_forall_reachable`). -/
-@[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff (x : V → ℝ) :
-    G.lapMatrix ℝ *ᵥ x = 0 ↔ ∀ i j, G.Reachable i j → x i = x j :=
-  G.lapMatrix_mulVec_eq_zero_iff_forall_reachable
-
 /-- For a connected graph the kernel of `L` is spanned by `𝟙`. -/
 @[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff_const (hG : G.Connected) (x : V → ℝ) :
     G.lapMatrix ℝ *ᵥ x = 0 ↔ ∀ i j, x i = x j := by
-  rw [lapMatrix_mulVec_eq_zero_iff]
+  rw [G.lapMatrix_mulVec_eq_zero_iff_forall_reachable]
   exact ⟨fun h i j => h i j (hG.preconnected i j), fun h i j _ => h i j⟩
-
-/-- `dim ker L` equals the number of connected components
-(wraps `SimpleGraph.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix`). -/
-@[tmio T, powerlib_foundation] theorem card_components_eq_finrank_ker :
-    Fintype.card G.ConnectedComponent = Module.finrank ℝ (G.lapMatrix ℝ).toLin'.ker :=
-  G.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix
 
 /-- The unweighted Laplacian is the weighted Laplacian of the 0/1 adjacency weights. -/
 @[tmio T, powerlib_foundation] theorem lapMatrix_eq_laplacian :

@@ -34,22 +34,22 @@ Results.
 * Constructions (generic): `Construction`, `Construction.eval`, `Construction.inner` (the spaces a
   construction passes through), `Construction.rebase`; `Construction.eval_rebase` (naturality).
 * Matrices and plants: `rebaseMatrix` (`w⁻¹ T A S`); solutions correspond
-  (`solves_rebaseMatrix_iff`, `τ = w t`, `x̂ = T x`); spectral stability, the Hurwitz property and
-  the attractive sentences are invariant for `w > 0` (`spectrallyStable_rebaseMatrix_iff`,
-  `isHurwitz_rebaseMatrix_iff`, `holds_rebaseMatrix_iff`), every flow sentence for `w = 1`
-  (`holds_rebaseMatrix_one_iff`), and for every `w > 0` every flow sentence with its decay rate
-  scaled by `w` (`holds_rebaseMatrix_timeScale_iff`, through the time-scaling law
-  `Dynamics.holds_timeScale_linear_iff`); `transfer_rebase`: `Ĝ(ŝ) = T_y G(w ŝ) S_u`. Scaling and
-  similarity of spectra are the generic eigenvalue maps of `theorem/Linear/EigenMap.lean`
-  (`spectrallyStable_smul_iff`, `spectrallyStable_conj_iff`).
+  (`solves_rebaseMatrix_iff`, `τ = w t`, `x̂ = T x`); spectral stability (hence the Hurwitz
+  property, `spectrallyStable_iff_isHurwitz`) and the attractive sentences are invariant for
+  `w > 0` (`spectrallyStable_rebaseMatrix_iff`, `holds_rebaseMatrix_iff`), and for every `w > 0`
+  every flow sentence with its decay rate scaled by `w` (`holds_rebaseMatrix_timeScale_iff`,
+  through the time-scaling law `Dynamics.holds_timeScale_linear_iff`; at `w = 1` every flow
+  sentence is invariant, `Flow.Property.timeScale_one`); `transfer_rebase`:
+  `Ĝ(ŝ) = T_y G(w ŝ) S_u`. Scaling and similarity of spectra are the generic eigenvalue maps of
+  `theorem/Linear/EigenMap.lean` (`spectrallyStable_smul_iff`, `spectrallyStable_conj_iff`).
 * Interconnections: the closed-loop state, input and output blocks of the rebased components are
   the rebased blocks (`closedLoopBlocks_rebase`, `inputBlocks_rebase`, `outputBlocks_rebase`; only
   the port bases need inverses), hence the closed loop is the rebased closed loop
   (`closedLoop_rebase`); the source impedance and load admittance change bases
   (`sourceImpedance_rebase`, `loadAdmittance_rebase`), the return difference is only
-  re-parametrized (`returnDifference_rebase`), so the impedance criterion
-  (`impedanceStable_rebase_iff`) and closed-loop pole stability
-  (`isHurwitz_closedLoop_rebase_iff`) are invariant for `w > 0`.
+  re-parametrized (`returnDifference_rebase`), so the impedance criterion is invariant for
+  `w > 0` (`impedanceStable_rebase_iff`); closed-loop pole stability is `den_rebase` at the
+  globally exponentially stable sentence.
 * Instances: state coordinate changes are rebasings (`changeCoordinates_eq`); the current
   direction convention `flipCurrent` reverses the injected current and leaves the closed-loop
   state matrix unchanged (`closedLoop_flipCurrent`), negates the source impedance and the load
@@ -66,11 +66,10 @@ Family and connection conclusions.
 * `den_rebase`: on the interconnection family, the denotation of every attractive sentence and of
   sampled contraction is its own pull-back along any change of bases with invertible bases and
   positive time base.
-* `den_rebase_unitTime`: with the time base `1`, every flow sentence.
 * `den_rebase_timeScale`: with any positive time base `w`, every flow sentence, rescaled: the
   rebased interconnections satisfying `P` are those whose original satisfies `P.timeScale w` (a
   decay rate `a` per unit of `τ = w t` is the rate `w a` per unit of `t`; the other sentences are
-  unchanged).
+  unchanged). At the time base `1` every flow sentence is pulled back unchanged.
 * `den_flipCurrent`: the two current direction conventions denote the same interconnections for
   every flow sentence.
 -/
@@ -284,27 +283,14 @@ section Plants
 
 variable {n p : ℕ} {T S : Matrix (Fin n) (Fin n) ℝ} {w : ℝ}
 
-@[tmio T, powerlib_foundation] theorem isHurwitz_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
-    (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) :
-    IsHurwitz (rebaseMatrix T S w A) ↔ IsHurwitz A := by
-  rw [← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
-  exact spectrallyStable_rebaseMatrix_iff hTS hST hw A
-
 /-- The attractive sentences of the linear field are invariant under every change of state bases
 and every positive time base. -/
 @[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
     (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField (rebaseMatrix T S w A) 0) 0 ↔
       P.holds (affineLinearVectorField A 0) 0 := by
-  rw [holds_iff_isHurwitz 0 hP, holds_iff_isHurwitz 0 hP, isHurwitz_rebaseMatrix_iff hTS hST hw]
-
-/-- With the time base `1`, every flow sentence of the linear field is invariant. -/
-@[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_one_iff (hTS : T * S = 1) (hST : S * T = 1)
-    (A : Matrix (Fin n) (Fin n) ℝ) (P : Flow.Property) :
-    P.holds (affineLinearVectorField (rebaseMatrix T S 1 A) 0) 0 ↔
-      P.holds (affineLinearVectorField A 0) 0 := by
-  rw [rebaseMatrix, inv_one, one_smul]
-  exact holds_conj P hTS hST A
+  rw [holds_iff_isHurwitz 0 hP, holds_iff_isHurwitz 0 hP, ← spectrallyStable_iff_isHurwitz,
+    ← spectrallyStable_iff_isHurwitz, spectrallyStable_rebaseMatrix_iff hTS hST hw]
 
 /-- For every positive time base, every flow sentence of the linear field is the rebased one with
 its decay rate scaled by `w`: `P` holds for the rebased field exactly when `P.timeScale w` holds
@@ -620,14 +606,15 @@ bases need inverses. -/
   rw [blockCoordinates_mul, h₁, h₂, blockCoordinates_one]
 
 /-- Closed-loop pole stability is invariant under every change of bases with positive time
-base. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_closedLoop_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
-    (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
+base: the step of `den_rebase` at the globally exponentially stable sentence. -/
+@[tmio TM, powerlib_foundation] private theorem isHurwitz_closedLoop_rebase_iff
+    (h₁ : β.S₁ * β.T₁ = 1) (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1)
+    (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
     connection% ((interconnection ic β) ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   change IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A
-  rw [closedLoop_rebase hv hi]
-  exact isHurwitz_rebaseMatrix_iff
+  rw [closedLoop_rebase hv hi, ← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
+  exact spectrallyStable_rebaseMatrix_iff
     (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
     (blockCoordinates_inv h₁ h₂) hw _
 
@@ -694,28 +681,12 @@ invertible bases and positive time base. -/
   simp only [Set.mem_ofPred_eq, Set.mem_preimage]
   exact ((show IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets] using (isHurwitz_closedLoop_rebase_iff h₁ h₂ hv hi hw))).symm
 
-/-- With the time base `1`, every flow sentence is pulled back along any change of bases with
-invertible bases. -/
-@[tmio TM, powerlib_foundation] theorem den_rebase_unitTime {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
-    (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : β.w = 1)
-    (P : Flow.Property) :
-    connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den (.flow P) =
-      (fun ic => interconnection ic β) ⁻¹' Interconnection.family.den (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  ext ic
-  rw [Set.mem_preimage, (connection_proof% Interconnection.family_isLinear.mem_den_flow),
-    (connection_proof% Interconnection.family_isLinear.mem_den_flow), closedLoop_rebase hv hi]
-  change _ ↔ P.holds (affineLinearVectorField (rebaseMatrix _ _ β.w ic.closedLoop.A) 0) 0
-  rw [hw]
-  exact (holds_rebaseMatrix_one_iff
-    (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
-    (blockCoordinates_inv h₁ h₂) _ P).symm
-
 /-- Stable together in every bases, every sentence: on the interconnection family, for any change
 of bases with invertible bases and positive time base `w`, the rebased interconnections that
 satisfy a flow sentence `P` are those whose original satisfies `P.timeScale w` (decay at the rate
 `a` per unit of the rebased time `τ = w t` is decay at the rate `w a` per unit of `t`; every other
-sentence is unchanged). -/
+sentence is unchanged). At `w = 1` (`Flow.Property.timeScale_one`) every flow sentence is pulled
+back unchanged. -/
 @[tmio TM, powerlib_foundation] theorem den_rebase_timeScale {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w)
     (P : Flow.Property) :

@@ -39,8 +39,8 @@ Results.
   `isHurwitz_companion_three_iff`).
 * Instability witnesses, the case `n = 3` of the any-dimension witnesses
   `Criteria.exists_pos_real_eigenvector_of_det` and `Criteria.exists_eigenpair_re_pos_of_trace_pos`:
-  `0 < det A` gives a positive real eigenvalue (real and complex eigenvectors;
-  `exists_pos_real_eigenvector_of_det_pos_fin_three`,
+  `0 < det A` gives a positive real eigenvalue (real eigenvector: the generic
+  `exists_pos_real_eigenvector_of_det`; complex eigenvector:
   `exists_eigenvalue_re_pos_of_det_pos_fin_three`); `0 < tr A` gives an eigenvalue with positive
   real part (`exists_eigenvalue_re_pos_of_trace_pos_fin_three`), in the shape of
   `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos`.
@@ -274,20 +274,10 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     map_add, map_sub, map_mul]
   ring
 
-@[tmio T, powerlib_foundation] theorem charpoly_coeff_two_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    A.charpoly.coeff 2 = -A.trace := by
-  rw [charpoly_fin_three]
-  simp [coeff_X_pow]
-
 @[tmio T, powerlib_foundation] theorem charpoly_coeff_one_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
     A.charpoly.coeff 1 = principalMinorSum A := by
   rw [charpoly_fin_three]
   simp [coeff_C, coeff_X_pow]
-
-@[tmio T, powerlib_foundation] theorem charpoly_coeff_zero_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    A.charpoly.coeff 0 = -A.det := by
-  rw [charpoly_fin_three]
-  simp [coeff_X, coeff_C, coeff_X_pow]
 
 @[tmio T, powerlib_foundation] theorem spectrallyStable_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ) :
     Linear.SpectrallyStable A ↔
@@ -306,26 +296,6 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     LinearSystems.IsHurwitz A ↔
       A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det :=
   (Linear.spectrallyStable_iff_isHurwitz A).symm.trans (spectrallyStable_fin_three_iff A)
-
-/-- Routh–Hurwitz for real 3×3 matrices, in terms of `A.charpoly` coefficients
-(`a2 = coeff 2`, `a1 = coeff 1`, `a0 = coeff 0`). -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_fin_three_iff_charpoly_coeff
-    (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    LinearSystems.IsHurwitz A ↔
-      0 < A.charpoly.coeff 2 ∧ 0 < A.charpoly.coeff 0 ∧
-        A.charpoly.coeff 0 < A.charpoly.coeff 2 * A.charpoly.coeff 1 := by
-  rw [isHurwitz_fin_three_iff, charpoly_coeff_two_fin_three, charpoly_coeff_one_fin_three,
-    charpoly_coeff_zero_fin_three, neg_pos, neg_pos]
-  constructor
-  · rintro ⟨h2, h0, hg⟩
-    exact ⟨h2, h0, by linarith⟩
-  · rintro ⟨h2, h0, hg⟩
-    exact ⟨h2, h0, by linarith⟩
-
-@[tmio T, powerlib_foundation] theorem isHurwitz_fin_three_of {A : Matrix (Fin 3) (Fin 3) ℝ}
-    (htr : A.trace < 0) (hdet : A.det < 0) (hg : A.trace * principalMinorSum A < A.det) :
-    LinearSystems.IsHurwitz A :=
-  (isHurwitz_fin_three_iff A).2 ⟨htr, hdet, hg⟩
 
 /-- Companion form of `s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
 @[tmio T, powerlib_foundation] theorem isHurwitz_companion_three_iff (a0 a1 a2 : ℝ) :
@@ -356,13 +326,6 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     Matrix.one_apply_ne (show (2 : Fin 3) ≠ 0 by decide),
     Matrix.one_apply_ne (show (2 : Fin 3) ≠ 1 by decide), smul_eq_mul]
   ring
-
-/-- `0 < det A`: a positive real eigenvalue with a real eigenvector; the case `n = 3` of
-`Criteria.exists_pos_real_eigenvector_of_det`. -/
-@[tmio T, powerlib_foundation] theorem exists_pos_real_eigenvector_of_det_pos_fin_three
-    (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
-    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 3 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v :=
-  exists_pos_real_eigenvector_of_det A (by norm_num; exact h)
 
 /-- `0 < det A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`. -/
 @[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_pos_fin_three
@@ -402,7 +365,7 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
     (htr : A.trace < 0) (hdet : A.det < 0) (hg : A.trace * principalMinorSum A < A.det) :
     LocallyExponentiallyStable f x_eq :=
   Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hf heq hJac
-    (isHurwitz_fin_three_of htr hdet hg)
+    ((isHurwitz_fin_three_iff A).2 ⟨htr, hdet, hg⟩)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < det`
 (a positive real eigenvalue) gives instability. -/

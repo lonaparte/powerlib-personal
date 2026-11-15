@@ -22,11 +22,12 @@ Results.
   derivative has a contractive power is locally exponentially stable (abstract form; the
   contraction of one block of steps is spread over the steps by `LTI.exp_neg_pow_div_le`).
 * `locallyExponentiallyStable_of_schurStable` (main): `HasFDerivAt F A x`, `F x = x`, `A` Schur
-  ⇒ `Map.LocallyExponentiallyStable F x`; `holds_locallyExponentiallyStable` reads it for the
-  zero-input map of a discrete system.
+  ⇒ `Map.LocallyExponentiallyStable F x`; for the zero-input map of a discrete system this is
+  the sentence `(Sentence.flow .locallyExponentiallyStable).holds (Behaviour.discrete s)`, by
+  definition.
 * `globallyExponentiallyStable_of_schurStable`: the linear map of a Schur matrix is globally
   exponentially stable at the origin.
-* `unstable_of_expanding`, `unstable_of_inverse_schurStable`, `holds_unstable`: a Jacobian with a
+* `unstable_of_expanding`, `unstable_of_inverse_schurStable`: a Jacobian with a
   Schur stable left inverse (every eigenvalue outside the closed unit disk) gives instability
   (`n > 0`).
   Instability from a single Jacobian eigenvalue outside the unit circle is not proved here; it
@@ -167,14 +168,6 @@ stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
   obtain ⟨m, hm, hlt⟩ := exists_pow_norm_toEuclideanCLM_lt_one hA
   exact locallyExponentiallyStable_of_pow_norm_lt_one hF hx hm hlt
 
-/-- The same with the sentence interpretation: local exponential stability holds for a discrete
-system whose zero-input map has a Schur Jacobian at the origin. -/
-@[tmio T, powerlib_foundation] theorem holds_locallyExponentiallyStable {p : ℕ} {s : System n p}
-    {A : Matrix (Fin n) (Fin n) ℝ} (hF : HasFDerivAt s.zeroInput (op A) 0)
-    (hx : s.zeroInput 0 = 0) (hA : LTI.SchurStable A) :
-    (Sentence.flow .locallyExponentiallyStable).holds (Behaviour.discrete s) :=
-  locallyExponentiallyStable_of_schurStable hF hx hA
-
 /-- The linear map of a Schur matrix is globally exponentially stable at the origin. -/
 @[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_of_schurStable
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LTI.SchurStable A) :
@@ -275,12 +268,5 @@ disk), is unstable at `x` (`n > 0`). -/
       _ = v := by rw [hop]; rfl
   calc ‖v‖ = ‖(op B ^ m) ((op A ^ m) v)‖ := by rw [hinv]
     _ ≤ ‖op B ^ m‖ * ‖(op A ^ m) v‖ := (op B ^ m).le_opNorm _
-
-/-- The same with the sentence interpretation. -/
-@[tmio T, powerlib_foundation] theorem holds_unstable {p : ℕ} {s : System n p}
-    {A B : Matrix (Fin n) (Fin n) ℝ} (hF : HasFDerivAt s.zeroInput (op A) 0)
-    (hx : s.zeroInput 0 = 0) (hBA : B * A = 1) (hB : LTI.SchurStable B) (hn : 0 < n) :
-    (Sentence.flow .unstable).holds (Behaviour.discrete s) :=
-  unstable_of_inverse_schurStable hF hx hBA hB hn
 
 end powerlib.Map

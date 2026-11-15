@@ -21,12 +21,11 @@ with a perturbed matrix, valid for `‖ΔA‖/‖A‖ < 1/κ(A)`).
 
 Results.
 * `one_le_cond` — `κ(A) ≥ 1` for invertible `A` (nonempty index type).
-* `rhs_perturbation` — `A x = b`, `A (x + Δx) = b + Δb`, `b ≠ 0` ⇒
-  `‖Δx‖/‖x‖ ≤ κ(A) ‖Δb‖/‖b‖`.
 * `isUnit_add_of_norm_lt` — Neumann series, Mathlib `Units.add`: `‖A⁻¹‖ ‖ΔA‖ < 1` ⇒ `A + ΔA` is
   invertible, so the perturbed system has a unique solution.
-* `matrix_perturbation` — with also `(A + ΔA)(x + Δx) = b + Δb` and `κ ‖ΔA‖/‖A‖ < 1`,
-  `‖Δx‖/‖x‖ ≤ κ/(1 − κ‖ΔA‖/‖A‖) · (‖ΔA‖/‖A‖ + ‖Δb‖/‖b‖)`.
+* `matrix_perturbation` — `A x = b`, `(A + ΔA)(x + Δx) = b + Δb`, `b ≠ 0` and
+  `κ ‖ΔA‖/‖A‖ < 1` ⇒ `‖Δx‖/‖x‖ ≤ κ/(1 − κ‖ΔA‖/‖A‖) · (‖ΔA‖/‖A‖ + ‖Δb‖/‖b‖)`; at `ΔA = 0` this
+  is the right-hand-side bound `‖Δx‖/‖x‖ ≤ κ(A) ‖Δb‖/‖b‖`.
 -/
 
 noncomputable section
@@ -63,24 +62,6 @@ abbrev act (A : Matrix n n 𝕜) : EuclideanSpace 𝕜 n →L[𝕜] EuclideanSpa
   calc (1 : ℝ) = ‖(1 : Matrix n n 𝕜)‖ := h1.symm
     _ = ‖A * A⁻¹‖ := by rw [Matrix.mul_nonsing_inv _ hA]
     _ ≤ ‖A‖ * ‖A⁻¹‖ := Matrix.l2_opNorm_mul A A⁻¹
-
-/-- **Right-hand-side perturbation bound** `‖Δx‖/‖x‖ ≤ κ(A) ‖Δb‖/‖b‖`. -/
-@[tmio T, powerlib_foundation] theorem rhs_perturbation {A : Matrix n n 𝕜} (hA : IsUnit A.det)
-    {x dx b db : EuclideanSpace 𝕜 n} (hx : act A x = b) (hdx : act A (x + dx) = b + db)
-    (hb : b ≠ 0) : ‖dx‖ / ‖x‖ ≤ cond A * (‖db‖ / ‖b‖) := by
-  have hAdx : act A dx = db := by
-    rw [map_add, hx] at hdx; exact add_left_cancel hdx
-  have hdx' : dx = act A⁻¹ db := by rw [← hAdx, act_inv_act hA]
-  have hxne : x ≠ 0 := by rintro rfl; rw [map_zero] at hx; exact hb hx.symm
-  have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr hxne
-  have hbpos : 0 < ‖b‖ := norm_pos_iff.mpr hb
-  have h1 : ‖dx‖ ≤ ‖A⁻¹‖ * ‖db‖ := by rw [hdx']; exact norm_act_le _ _
-  have h2 : ‖b‖ ≤ ‖A‖ * ‖x‖ := by rw [← hx]; exact norm_act_le _ _
-  rw [cond, div_le_iff₀ hxpos]
-  calc ‖dx‖ ≤ ‖A⁻¹‖ * ‖db‖ := h1
-    _ = ‖A⁻¹‖ * ‖db‖ / ‖b‖ * ‖b‖ := by field_simp
-    _ ≤ ‖A⁻¹‖ * ‖db‖ / ‖b‖ * (‖A‖ * ‖x‖) := by gcongr
-    _ = ‖A‖ * ‖A⁻¹‖ * (‖db‖ / ‖b‖) * ‖x‖ := by ring
 
 /-- **Neumann series**: a perturbation with `‖A⁻¹‖ ‖ΔA‖ < 1` keeps `A` invertible. -/
 @[tmio T, powerlib_foundation] theorem isUnit_add_of_norm_lt {A dA : Matrix n n 𝕜} (hA : IsUnit A.det)

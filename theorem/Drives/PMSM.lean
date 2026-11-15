@@ -140,6 +140,7 @@ variable {ψf ΔL I : ℝ}
   have : ψf * mtpaId ψf ΔL I < 0 := mul_neg_of_pos_of_neg hψ hn
   nlinarith
 
+/-- The MTPA point lies on the current circle: `i_q² = I² − i_d²`. -/
 @[tmio M, powerlib_domain] theorem mtpaIq_sq (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
     mtpaIq ψf ΔL I ^ 2 = I ^ 2 - mtpaId ψf ΔL I ^ 2 := by
   unfold mtpaIq
@@ -152,11 +153,6 @@ variable {ψf ΔL I : ℝ}
   have := mtpaId_sq_lt hΔ hψ hI
   apply Real.sqrt_pos.mpr
   nlinarith
-
-/-- The MTPA point lies on the current circle. -/
-@[tmio M, powerlib_domain] theorem mtpa_on_circle (hΔ : 0 < ΔL) (hψ : 0 < ψf) (hI : 0 < I) :
-    mtpaId ψf ΔL I ^ 2 + mtpaIq ψf ΔL I ^ 2 = I ^ 2 := by
-  rw [mtpaIq_sq hΔ hψ hI]; ring
 
 /-- MTPA stationarity on the circle: `ΔL x² − ψ_f x − ΔL y² = 0` (the condition
 `∂T/∂i_d |_{|i|=const} = 0`). -/
@@ -204,7 +200,7 @@ the unique maximiser. -/
   apply mul_lt_mul_of_pos_left _ (by positivity)
   set ΔL := Lq - Ld
   obtain ⟨hl1, hl2⟩ := mtpa_lagrange hΔ hψ hI
-  have hgap := gap_identity ψf ΔL I _ _ _ id iq (mtpa_on_circle hΔ hψ hI) hl1 hl2
+  have hgap := gap_identity ψf ΔL I _ _ _ id iq (by rw [mtpaIq_sq hΔ hψ hI]; ring) hl1 hl2
   set x₀ := mtpaId ψf ΔL I
   set y₀ := mtpaIq ψf ΔL I
   have hx0 := mtpaId_neg hΔ hψ.le hI

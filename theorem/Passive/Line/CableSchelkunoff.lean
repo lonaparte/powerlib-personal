@@ -37,7 +37,7 @@ needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m 
   `tendsto_exactZout_dc`; ray `s → 0⁺`: `exactZmut_tendsto_dc`, `exactZin_tendsto_dc`,
   `exactZout_tendsto_dc`.
 * High frequency: normalized forms `tubeDet_eq_norm`, `numIn_eq_norm`, `numOut_eq_norm`,
-  `exactZin_div_surface_eq`, `exactZout_div_surface_eq`, `exactZmut_eq_norm` (from
+  `exactZin_eq_norm`, `exactZout_eq_norm`, `exactZmut_eq_norm` (from
   `I_ν(z) = e^z G(z) Î_ν(z)/π`, `K_ν(z) = e^{−z} G(z) K̂_ν(z)`, `Î, K̂ → 1`,
   `G(ma)G(mb) = π/(2m√(ab))`, `gaussHalf_mul_gaussHalf`); `tendsto_exactZin_surface`,
   `tendsto_exactZout_surface` (`Z_in/(ρm/(2πa)) → 1`, `Z_out/(ρm/(2πb)) → 1`: surface
@@ -358,41 +358,29 @@ theorem commonFactor_ne_zero {a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
   exact mul_ne_zero (div_ne_zero (mul_ne_zero (gaussHalf_ne_zero (re_mul_ofReal_pos' ha hm))
     (gaussHalf_ne_zero (re_mul_ofReal_pos' hb hm))) hπ) (Complex.exp_ne_zero _)
 
-/-- `Z_in(m)/(ρ m/(2π a))` in normalized form. -/
+/-- `Z_in(m) = (ρ m/(2π a)) · N'/D'` in normalized form (`Re m > 0`). -/
 @[tmio M, powerlib_domain]
-theorem exactZin_div_surface_eq {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (hb : 0 < b) {m : ℂ}
-    (hm : 0 < m.re) :
-    exactZin ρ a b m / ((ρ : ℂ) * m / (2 * Real.pi * a)) =
-      (besselI0Norm (m * a) * besselK1Norm (m * b) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))) +
+theorem exactZin_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
+    exactZin ρ a b m = (ρ : ℂ) * m / (2 * Real.pi * a) *
+      ((besselI0Norm (m * a) * besselK1Norm (m * b) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))) +
         besselK0Norm (m * a) * besselI1Norm (m * b)) /
       (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) := by
-  have hm0 : m ≠ 0 := by intro h; rw [h] at hm; simp at hm
-  have hρ' : (ρ : ℂ) ≠ 0 := by exact_mod_cast hρ
-  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
-  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
   unfold exactZin
-  rw [mul_div_cancel_left₀ _ (div_ne_zero (mul_ne_zero hρ' hm0) (by simp [hπ, ha'])),
-    numIn_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
+  rw [numIn_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
     mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
 
-/-- `Z_out(m)/(ρ m/(2π b))` in normalized form. -/
+/-- `Z_out(m) = (ρ m/(2π b)) · N'_out/D'` in normalized form (`Re m > 0`). -/
 @[tmio M, powerlib_domain]
-theorem exactZout_div_surface_eq {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (hb : 0 < b) {m : ℂ}
-    (hm : 0 < m.re) :
-    exactZout ρ a b m / ((ρ : ℂ) * m / (2 * Real.pi * b)) =
-      (besselI0Norm (m * b) * besselK1Norm (m * a) +
+theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
+    exactZout ρ a b m = (ρ : ℂ) * m / (2 * Real.pi * b) *
+      ((besselI0Norm (m * b) * besselK1Norm (m * a) +
         besselK0Norm (m * b) * besselI1Norm (m * a) *
           Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
       (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) := by
-  have hm0 : m ≠ 0 := by intro h; rw [h] at hm; simp at hm
-  have hρ' : (ρ : ℂ) ≠ 0 := by exact_mod_cast hρ
-  have hb' : (b : ℂ) ≠ 0 := by exact_mod_cast hb.ne'
-  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
   unfold exactZout
-  rw [mul_div_cancel_left₀ _ (div_ne_zero (mul_ne_zero hρ' hm0) (by simp [hπ, hb'])),
-    numOut_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
+  rw [numOut_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
     mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
 
 /-- The limits of the eight normalized quantities and of `e^{−2m(b−a)}` along a sector filter. -/
@@ -428,7 +416,11 @@ theorem tendsto_exactZin_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) 
   rw [show ((1 : ℂ) * 1 * 0 + 1 * 1) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
   refine h.congr' ?_
   filter_upwards [hre.eventually_gt_atTop 0] with i hi
-  rw [Pi.div_apply, exactZin_div_surface_eq hρ ha hb hi]
+  have hm0 : f i ≠ 0 := by intro h; rw [h] at hi; simp at hi
+  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
+  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+  rw [Pi.div_apply, exactZin_eq_norm ha hb hi, mul_div_cancel_left₀ _
+    (div_ne_zero (mul_ne_zero (by exact_mod_cast hρ) hm0) (by simp [hπ, ha']))]
 
 /-- **High-frequency limit of the exact outer-surface impedance**: `Z_out(m)/(ρ m/(2π b)) → 1`. -/
 @[tmio M, powerlib_domain]
@@ -443,7 +435,11 @@ theorem tendsto_exactZout_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
   rw [show ((1 : ℂ) * 1 + 1 * 1 * 0) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
   refine h.congr' ?_
   filter_upwards [hre.eventually_gt_atTop 0] with i hi
-  rw [Pi.div_apply, exactZout_div_surface_eq hρ ha hb hi]
+  have hm0 : f i ≠ 0 := by intro h; rw [h] at hi; simp at hi
+  have hb' : (b : ℂ) ≠ 0 := by exact_mod_cast hb.ne'
+  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+  rw [Pi.div_apply, exactZout_eq_norm ha hb hi, mul_div_cancel_left₀ _
+    (div_ne_zero (mul_ne_zero (by exact_mod_cast hρ) hm0) (by simp [hπ, hb']))]
 
 /-- `G(ma) G(mb) = π/(2m √a √b)` (`Re m > 0`, `a, b > 0`). -/
 @[tmio T, powerlib_foundation]
@@ -947,31 +943,6 @@ theorem outerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
   refine (((h1.add h2).mul hinv).congr_right (fun i => mul_one _)).congr' ?_ (EventuallyEq.refl _ _)
   filter_upwards [hD.eventually_ne one_ne_zero] with i hi
   exact (outerRatio_sub_one_eq hi).symm
-
-/-- `Z_in(m) = (ρ m/(2π a)) · N'/D'` in normalized form (`Re m > 0`). -/
-@[tmio M, powerlib_domain]
-theorem exactZin_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
-    exactZin ρ a b m = (ρ : ℂ) * m / (2 * Real.pi * a) *
-      ((besselI0Norm (m * a) * besselK1Norm (m * b) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))) +
-        besselK0Norm (m * a) * besselI1Norm (m * b)) /
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
-  unfold exactZin
-  rw [numIn_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
-    mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
-
-/-- `Z_out(m) = (ρ m/(2π b)) · N'_out/D'` in normalized form (`Re m > 0`). -/
-@[tmio M, powerlib_domain]
-theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
-    exactZout ρ a b m = (ρ : ℂ) * m / (2 * Real.pi * b) *
-      ((besselI0Norm (m * b) * besselK1Norm (m * a) +
-        besselK0Norm (m * b) * besselI1Norm (m * a) *
-          Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
-  unfold exactZout
-  rw [numOut_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
-    mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
 
 /-- The surface term `ρ m/(2π r)` is `O(Re m)` in a sector. -/
 @[tmio T, powerlib_foundation] theorem surface_isBigO {ρ r K : ℝ} (hr : 0 < r) (hK : 0 ≤ K)

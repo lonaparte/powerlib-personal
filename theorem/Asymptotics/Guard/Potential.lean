@@ -31,7 +31,7 @@ sensitivity).
 Results.
 * `hasDerivAt_guardPotential`, `guardDrift_guardRadius`, `guardPotential_barrier`,
   `deriv2_guardPotential_guardRadius`, `deriv3_guardPotential_guardRadius_ne_zero`,
-  `guardPotential_scaled`, `guard_tail_cutoff_at_two` — `ṙ = -U'(r)`, `U'(r_c) = 0`,
+  `guardPotential_scaled` — `ṙ = -U'(r)`, `U'(r_c) = 0`,
   `ΔU = U(r_c) - U(0) = α²/(4 l₁)`, `U''(r_c) = -2α`, `U'''(r) = -6 l₁ r` (so `U'''(r_c) ≠ 0`,
   the endpoint hypothesis of the endpoint Laplace expansion), and
   `U(u r_c) - U(r_c) = -ΔU (u² - 1)²`, which equals `-9 ΔU` at `u = 2`.
@@ -169,16 +169,6 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   have hu4 : (u * guardRadius α l₁) ^ 4 = u ^ 4 * (α / l₁) ^ 2 := by rw [mul_pow, h4]
   rw [guardPotential, guardPotential, hu2, hu4, h2, h4, barrierHeight]
   field_simp
-  ring
-
-/-- Past the barrier top the integrand `e^{(U(u r_c) - U(r_c))/D̃}` is cut off as
-`e^{-X (u²-1)²}`; at `u = 2` it equals `e^{-9X}`, `X = ΔU/D̃`. -/
-@[tmio M, powerlib_foundation] theorem guard_tail_cutoff_at_two (hα : 0 ≤ α) (hl : 0 < l₁) (D : ℝ) :
-    Real.exp ((guardPotential α l₁ (2 * guardRadius α l₁) -
-        guardPotential α l₁ (guardRadius α l₁)) / D) =
-      Real.exp (-9 * (barrierHeight α l₁ / D)) := by
-  rw [guardPotential_scaled hα hl]
-  congr 1
   ring
 
 /-- The two forms of the first-arrival prefactor agree:

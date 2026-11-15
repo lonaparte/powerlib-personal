@@ -48,9 +48,7 @@ Results. (The calculus of curves in `State n` it uses — `fderiv_apply_eq_of_ha
   `exists_isIntegralCurveOn_of_isCompact`: a forward solution on `[0, ∞)` from every point of a
   compact positively invariant set of a `C¹` field.
 * `lasalle_condition_of_lieDeriv_mem`: the set version of `lasalle_condition_of_lieDeriv` (every
-  positively invariant subset of `E ⊆ {h = 0}` lies in `M` when `ḣ = 0` on `E` forces `M`);
-  `lasalle_condition_of_trajectories_mem`: the set version of
-  `lasalle_condition_of_trajectories` (solution segments staying in `E` start in `M`).
+  positively invariant subset of `E ⊆ {h = 0}` lies in `M` when `ḣ = 0` on `E` forces `M`).
 * `tendsto_zero_of_tendsto_nhdsSet`: convergence to a set `M` gives convergence to `0` of every
   continuous function vanishing on `M`.
 * `abs_le_of_abs_le_pi_div_two` (`|x| ≤ (π/2) |sin x|` for `|x| ≤ π/2`) and
@@ -186,20 +184,6 @@ every positively invariant subset of `E` lies in `M`. -/
   have hx0 : ψ 0 ∈ E := hNE (hstay 0 hmem0)
   rw [← hψ0]
   exact hpt _ hx0 ((uniqueDiffOn_Icc hT 0 hmem0).eq_deriv _ hchain hzero)
-
-/-- Set version of `lasalle_condition_of_trajectories`: if every solution segment of positive
-length that stays in `E` starts in `M`, then every positively invariant subset of `E` lies in
-`M`. -/
-@[tmio T, powerlib_foundation] theorem lasalle_condition_of_trajectories_mem {n : ℕ}
-    {f : State n → State n} {E M : Set (State n)} (hf_c1 : ContDiff ℝ 1 f)
-    (h : ∀ (T : ℝ) (φ : ℝ → State n), 0 < T → IsTrajectoryOn φ f 0 T →
-      (∀ t ∈ Icc 0 T, φ t ∈ E) → φ 0 ∈ M) :
-    ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ M := by
-  intro N hNE hN x hx
-  obtain ⟨T, ψ, hT, hψ0, hψ⟩ := (hf_c1.contDiffAt (x := x)).exists_isIntegralCurveOn_Icc
-  have hstay : ∀ t ∈ Icc 0 T, ψ t ∈ N := hN 0 T ψ hψ (hψ0 ▸ hx)
-  rw [← hψ0]
-  exact h T ψ hT hψ fun t ht => hNE (hstay t ht)
 
 /-- Convergence to a set gives convergence to `0` of every continuous function vanishing on it. -/
 @[tmio T, powerlib_foundation] theorem tendsto_zero_of_tendsto_nhdsSet {n : ℕ} {α : Type*}

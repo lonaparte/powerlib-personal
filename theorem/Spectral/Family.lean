@@ -80,21 +80,6 @@ variable {X : Type*} {n p : ℕ}
   | .stable => S x
   | .unstable => U x
 
-@[tmio M, simp, powerlib_foundation] theorem meets_stable {S U : X → Prop} {x : X} :
-    connection% (x ∈ realize (Meets S U) {.stable} ↔ S x) := by
-  unfold TMIO.Statement
-  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-
-@[tmio M, simp, powerlib_foundation] theorem meets_unstable {S U : X → Prop} {x : X} :
-    connection% (x ∈ realize (Meets S U) {.unstable} ↔ U x) := by
-  unfold TMIO.Statement
-  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-
-/-- No member meets both requirements when they are mutually exclusive. -/
-@[tmio T, powerlib_foundation] theorem realize_univ_of {S U : X → Prop} (h : ∀ x, S x → U x → False) :
-    connection% (realize (Meets S U) Set.univ = ∅) := show realize (Meets S U) Set.univ = ∅ from
-  realize_univ_eq_empty_of .stable .unstable h
-
 /-! ### Linear families -/
 
 /-- The translation of a linear spectral family. -/
@@ -126,9 +111,10 @@ plane. -/
     connection% (∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P) := by
   change ∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P
   have hF := linearFamily_isLinear plant S U
-  have hnone : realize (Meets S U) Set.univ = ∅ := realize_univ_of fun x h1 h2 => by
-    obtain ⟨s, hs, hre⟩ := hU x h2
-    exact absurd (not_root_of_isHurwitz (hS x h1) hs) (not_lt.mpr hre.le)
+  have hnone : realize (Meets S U) Set.univ = ∅ :=
+    realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable fun x h1 h2 => by
+      obtain ⟨s, hs, hre⟩ := hU x h2
+      exact absurd (not_root_of_isHurwitz (hS x h1) hs) (not_lt.mpr hre.le)
   refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
   rw [(connection_proof% mem_realize)] at hx
   change ∀ q ∈ linearTranslate s, Meets S U x q at hx
@@ -211,7 +197,8 @@ local exponential stability of the field at the origin, the instability conditio
   change ∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P
   have hF := localFamily_isAutonomous field S U
   refine chain_le_semantics_of_localTable_same (Rs := {.stable}) (Ru := {.unstable})
-    (fun s => ?_) (realize_univ_of fun x h1 h2 => hU x h2 (hS x h1).lyapunovStable)
+    (fun s => ?_) (realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable
+      fun x h1 h2 => hU x h2 (hS x h1).lyapunovStable)
     (fun x hx => hF.mem_den_flow.mpr (hS x ((mem_realize _ _ _).mp hx .stable rfl)))
     (fun x hx => hF.mem_den_flow.mpr (hU x ((mem_realize _ _ _).mp hx .unstable rfl)))
     hF.den_passive

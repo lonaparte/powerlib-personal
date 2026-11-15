@@ -56,8 +56,10 @@ Family and connection conclusions.
 * The eight plant conclusions transfer design-side conditions along the design projection
   to actual numerical implementations, so their knowledge category is M–I. They are generated
   denotation/requirement statements. The four
-  forward stability results also assert the well-posed requirement. The original existence,
-  uniqueness and uniform geometric estimates remain private `_trajectory_support` lemmas.
+  forward stability results also assert the well-posed requirement. Existence, uniqueness and
+  geometric decay of the discrete trajectories are the generic `trapezoidal_existsUnique`,
+  `backwardEuler_existsUnique`, `trapezoidal_exponentiallyStable_of_isHurwitz` and
+  `backwardEuler_exponentiallyStable_of_isHurwitz` of `theorem/Numerics/LinearSchemes.lean`.
 * `RLDeviation` and `LCLDeviation` carry an arbitrary constant input and an actual equilibrium;
   their families read deviations about it. Their private trajectory bridges justify that
   the implicit affine recursion has exactly the homogeneous step in these coordinates.
@@ -112,73 +114,6 @@ when its resistance is positive. -/
     TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
     RL.isHurwitz_iff m
 
-/-- Discretized RL model, trapezoidal rule: for `R > 0` and every `h > 0` the implicit step
-is uniquely solvable and every discrete trajectory decays geometrically.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
-    (∀ initial, ∃! x, IsTrapezoidalTrajectory (rlField m) h x ∧ x 0 = initial) ∧
-    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (rlField m) h x →
-      ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hden : m ∈ RL.family.den (.flow .globallyExponentiallyStable) := by
-    simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
-      TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
-      (rlMatrix_isHurwitz_iff m).mpr hR
-  have hA := (RL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
-    (Or.inl trivial)).mp hden
-  rw [rlField_eq_linearField]
-  exact ⟨trapezoidal_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh)),
-    trapezoidal_exponentiallyStable_of_isHurwitz hA hh⟩
-
-/-- Discretized RL model, backward Euler: for `R > 0` and every `h > 0` the implicit step is
-uniquely solvable and every discrete trajectory decays geometrically.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem rlPlant_backwardEulerDiscretization_exponentiallyStable_trajectory_support
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
-    (∀ initial, ∃! x, IsBackwardEulerTrajectory (rlField m) h x ∧ x 0 = initial) ∧
-    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (rlField m) h x →
-      ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hden : m ∈ RL.family.den (.flow .globallyExponentiallyStable) := by
-    simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
-      TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
-      (rlMatrix_isHurwitz_iff m).mpr hR
-  have hA := (RL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
-    (Or.inl trivial)).mp hden
-  rw [rlField_eq_linearField]
-  exact ⟨backwardEuler_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA hh),
-    backwardEuler_exponentiallyStable_of_isHurwitz hA hh⟩
-
-/-- For a well-posed trapezoidal step, the discretized RL model decays geometrically exactly
-when the resistance is positive (every trajectory of the trapezoidal recursion satisfies
-`‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`): the trapezoidal rule neither creates nor
-removes stability of this plant.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajectory_support
-    (m : RL.Impedance) {h : ℝ} (hh : 0 < h)
-    (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) :
-    (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x : ℕ → LTI.State 1,
-        (∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h (rlMatrix m)⟩ (x k)) →
-        ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ 0 < m.resistance := by
-  rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP]
-  have hden : (m ∈ RL.family.den (.flow .globallyExponentiallyStable)) ↔
-      0 < m.resistance := by
-    simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
-      TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
-      rlMatrix_isHurwitz_iff m
-  exact (RL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
-    (Or.inl trivial)).symm.trans hden
-
-/-- The trapezoidal recursion of `rlMatrix` is exactly the trajectory predicate of the
-discretized RL field.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio M, powerlib_domain] private theorem rlPlant_isTrapezoidalTrajectory_iff (m : RL.Impedance)
-    {h : ℝ} (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) (x : ℕ → Fin 1 → ℝ) :
-    IsTrapezoidalTrajectory (rlField m) h x ↔
-      ∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h (rlMatrix m)⟩ (x k) := by
-  rw [rlField_eq_linearField]
-  exact isTrapezoidalTrajectory_iff _ h hP x
-
 /-! ### Ideal three-state LCL plant -/
 
 /-- Continuous LCL vector field in the state order `(i₁, v_C, i₂)` at terminal voltages
@@ -219,96 +154,6 @@ Read through the existing family endpoint. -/
           (LCL.isHurwitz_iff_stable m)) m).mpr ((show m.Stable ↔ m.Damped from by
       simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
         LCL.passive_stable_iff m hp).mpr hd)
-
-/-- Discretized ideal LCL model, trapezoidal rule: for a passive damped plant and every
-`h > 0` the implicit step is uniquely solvable and every discrete trajectory (zero terminal
-voltage perturbations) decays geometrically.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
-    (∀ initial, ∃! x, IsTrapezoidalTrajectory (lclField m) h x ∧ x 0 = initial) ∧
-    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (lclField m) h x →
-      ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hA := (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp (lclMatrix_isHurwitz m hp hd)
-  rw [lclField_eq_linearField]
-  exact ⟨trapezoidal_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh)),
-    trapezoidal_exponentiallyStable_of_isHurwitz hA hh⟩
-
-/-- Discretized ideal LCL model, backward Euler: for a passive damped plant and every
-`h > 0` the implicit step is uniquely solvable and every discrete trajectory decays
-geometrically.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable_trajectory_support
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
-    (∀ initial, ∃! x, IsBackwardEulerTrajectory (lclField m) h x ∧ x 0 = initial) ∧
-    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (lclField m) h x →
-      ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hA := (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp (lclMatrix_isHurwitz m hp hd)
-  rw [lclField_eq_linearField]
-  exact ⟨backwardEuler_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA hh),
-    backwardEuler_exponentiallyStable_of_isHurwitz hA hh⟩
-
-/-- For a passive ideal LCL plant and a well-posed trapezoidal step, the discretized model
-decays geometrically (every trajectory of the trapezoidal recursion satisfies
-`‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`) exactly when the plant is damped
-(`R₁ ≠ 0 ∨ R₂ ≠ 0`).
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff_trajectory_support
-    (m : LCL.Circuit) (hp : m.Passive) {h : ℝ} (hh : 0 < h)
-    (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
-    (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x : ℕ → LTI.State 3,
-        (∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h m.plant.A⟩ (x k)) →
-        ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
-      m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
-  rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
-    (show ∀ m : LCL.Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
-        (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
-          (LCL.isHurwitz_iff_stable m)), (show m.Stable ↔ m.Damped from by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
-        LCL.passive_stable_iff m hp)]
-  rfl
-
-/-- Constant terminal voltages: every trapezoidal trajectory of the discretized LCL model
-converges geometrically to any equilibrium of the continuous field.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem idealLCLPlant_trapezoidal_deviation_decay_trajectory_support
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) (u vg : ℝ) :
-    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ (xeq : Fin 3 → ℝ), lclInputField m u vg xeq = 0 →
-      ∀ x, IsTrapezoidalTrajectory (lclInputField m u vg) h x →
-        ∀ k, ‖x k - xeq‖ ≤ C * ρ ^ k * ‖x 0 - xeq‖ := by
-  obtain ⟨-, C, hC, ρ, hρ0, hρ1, hb⟩ :=
-    idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support m hp hd hh
-  refine ⟨C, hC, ρ, hρ0, hρ1, fun xeq heq x hx k => ?_⟩
-  have hdev : IsTrapezoidalTrajectory (lclField m) h (fun j => x j - xeq) := by
-    intro j
-    have hf : ∀ j, lclField m (x j - xeq) = lclInputField m u vg (x j) := by
-      intro j
-      rw [← lclInputField_sub, heq, sub_zero]
-    simp only [hf]
-    linear_combination (norm := module) hx j
-  exact hb _ hdev k
-
-/-- Constant terminal voltage: every trapezoidal trajectory of the discretized RL model
-converges geometrically to any equilibrium of the continuous field.
-Quantitative trajectory evidence retained alongside the generated discrete-family connection. -/
-@[tmio TM, powerlib_domain] private theorem rlPlant_trapezoidal_deviation_decay_trajectory_support
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) (v : ℝ) :
-    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ (xeq : Fin 1 → ℝ), rlInputField m v xeq = 0 →
-      ∀ x, IsTrapezoidalTrajectory (rlInputField m v) h x →
-        ∀ k, ‖x k - xeq‖ ≤ C * ρ ^ k * ‖x 0 - xeq‖ := by
-  obtain ⟨-, C, hC, ρ, hρ0, hρ1, hb⟩ :=
-    rlPlant_trapezoidalDiscretization_exponentiallyStable_trajectory_support m hR hh
-  refine ⟨C, hC, ρ, hρ0, hρ1, fun xeq heq x hx k => ?_⟩
-  have hdev : IsTrapezoidalTrajectory (rlField m) h (fun j => x j - xeq) := by
-    intro j
-    have hf : ∀ j, rlField m (x j - xeq) = rlInputField m v (x j) := by
-      intro j
-      rw [← rlInputField_sub, heq, sub_zero]
-    simp only [hf]
-    linear_combination (norm := module) hx j
-  exact hb _ hdev k
 
 /-! ### Generated implementation interfaces -/
 
@@ -538,8 +383,7 @@ def lclTrapezoidalDeviation :
   rw [Matrix.toEuclideanCLM_toLp]
   exact (WithLp.toLp_injective 2).eq_iff.symm
 
-/-- The constant-input RL implementation is exponentially stable in deviation coordinates.
-The private quantitative theorem retains constants uniform in the chosen equilibrium. -/
+/-- The constant-input RL implementation is exponentially stable in deviation coordinates. -/
 @[tmio MI, powerlib_domain] theorem rlPlant_trapezoidal_deviation_decay
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) (v : ℝ) :
     connection% (∀ (xeq : Fin 1 → ℝ) (heq : rlInputField m v xeq = 0),
@@ -550,8 +394,7 @@ The private quantitative theorem retains constants uniform in the chosen equilib
   exact implicit_mem_den_of_design .trapezoidal RL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh
     ((RL.isHurwitz_iff m).mpr hR)
 
-/-- The constant-input LCL implementation is exponentially stable in deviation coordinates.
-The private quantitative theorem retains constants uniform in the chosen equilibrium. -/
+/-- The constant-input LCL implementation is exponentially stable in deviation coordinates. -/
 @[tmio MI, powerlib_domain] theorem idealLCLPlant_trapezoidal_deviation_decay
     (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) (u vg : ℝ) :
     connection% (∀ (xeq : Fin 3 → ℝ) (heq : lclInputField m u vg xeq = 0),

@@ -19,8 +19,8 @@ Results.
   open set), `pos_on_Icc_of_propagate` (positivity that propagates along `[a, b]`),
   `forall_Icc_of_forall_Ico` (a closed upper bound on `[a, b)` extends to `b`).
 * Monotonicity and mean-value bounds: `monotoneOn_Icc_of_hasDerivAt`, `sub_ge_of_deriv_ge`,
-  `sub_le_of_deriv_le`, `deriv_nonpos_of_isMinOn_right`, `exists_pos_of_hasDerivAt`,
-  `eventually_pos_of_hasDerivAt`, `HasDerivWithinAt.eq_zero_of_eqOn_Icc`.
+  `sub_le_of_deriv_le`, `deriv_nonpos_of_isMinOn_right`, `eventually_pos_of_hasDerivAt`,
+  `HasDerivWithinAt.eq_zero_of_eqOn_Icc`.
 * Grönwall-type scalar inequalities: `le_exp_mul_of_hasDerivWithinAt` (linear Grönwall),
   `abs_le_of_sq_le_exp` (square-root-free decay bound), `abs_sub_le_of_abs_deriv_le_exp`
   (an exponentially decaying rate gives a bounded drift), `exists_tendsto_of_abs_deriv_le_exp`
@@ -175,21 +175,6 @@ open Set Filter Topology
   rw [slope_def_field]
   exact div_nonpos_of_nonneg_of_nonpos (by linarith [hmin u ⟨hu.1.le, hu.2.le⟩])
     (by linarith [hu.2])
-
-/-- A function vanishing at `0` with positive derivative there is positive at some `t ∈ (0, ε)`. -/
-@[tmio T, powerlib_foundation] theorem exists_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
-    (h0 : ψ 0 = 0) (hpos : 0 < d) {ε : ℝ} (hε : 0 < ε) : ∃ t ∈ Ioo 0 ε, 0 < ψ t := by
-  rw [hasDerivAt_iff_tendsto_slope] at hd
-  have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
-    hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)
-  have h2 : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < slope ψ 0 t ∧ t < ε :=
-    (h1.eventually (lt_mem_nhds hpos)).and (Ioo_mem_nhdsGT hε |> fun h =>
-      Filter.mem_of_superset h fun t ht => ht.2)
-  obtain ⟨t, ht, ht0⟩ := (h2.and self_mem_nhdsWithin).exists
-  refine ⟨t, ⟨ht0, ht.2⟩, ?_⟩
-  have := ht.1
-  rw [slope_def_field, h0, sub_zero, sub_zero] at this
-  exact (div_pos_iff_of_pos_right ht0).mp this
 
 /-- A function vanishing at `0` with positive derivative there is positive just to the right. -/
 @[tmio T, powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ}

@@ -38,8 +38,8 @@ Model boundary.
   (`ContDiffAt ℝ 1 P θ*`, the local laws of the template; weaker than the requirement `smooth`).
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step` and their `_local`
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step` and their `_local`
 forms, `contDiffAt_shift`) and the family modules (autonomy, `C¹` fields, members of local
 exponential stability); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -60,9 +60,9 @@ Family and connection conclusions.
 * M–I (realization), for each family. The small-step laws are the generic connection laws applied
   to the family, with its autonomy (`F.family_isAutonomous`, for the platform
   `VSMLPF.rigFamily_isAutonomous`) and its public smoothness lemma above:
-  `Numerics.euler_sound_small_step` (scaffold `sound-small-step`: a locally exponentially stable
-  model has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
-  exponentially stable) and `Numerics.euler_certified_small_step` (scaffold
+  `Numerics.euler_sound_small_step_local` (scaffold `sound-small-step`: a locally exponentially
+  stable model has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
+  exponentially stable) and `Numerics.euler_sound_small_step_local` (scaffold
   `certified-small-step`). `F.not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — a locally exponentially stable member
   (`PSC.locallyExponentiallyStable`, `VSMLPF.mem_den_locallyExponentiallyStable`,
@@ -71,14 +71,14 @@ Family and connection conclusions.
   Euler integrations with every multiplier outside the unit disk. The platform's statements carry
   the prefix `rig_`.
 * M–I for the DroopVSM families, with a power map `C¹` near the selected angle: the small-step
-  laws are the local generic laws `Numerics.euler_sound_small_step_local` and
-  `Numerics.euler_certified_small_step_local` applied with `DroopVSM.vsmFamily_isAutonomous`,
-  `DroopVSM.droopFamily_isAutonomous` and the smoothness lemmas `DroopVSM.vsm_contDiffAt_field`,
-  `DroopVSM.droop_contDiffAt_field`; `DroopVSM.vsm_not_euler_realizationSoundUnder` (witness
-  `vsm_mem_den_locallyExponentiallyStable` with `P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the
-  origin) and `DroopVSM.droop_not_euler_realizationSoundUnder` (witness
-  `infiniteBus_locallyExponentiallyStable` with `P = sin`, `K_R = τ_p = 1`, `P_ref = ω_s = 0` at the
-  origin).
+  laws are the local generic laws `Numerics.euler_sound_small_step_local` applied with
+  `DroopVSM.vsmFamily_isAutonomous`, `DroopVSM.droopFamily_isAutonomous` and the smoothness lemmas
+  `DroopVSM.vsm_contDiffAt_field`, `DroopVSM.droop_contDiffAt_field`;
+  `DroopVSM.vsm_not_euler_realizationSoundUnder` (witness `vsm_mem_den_locallyExponentiallyStable`
+  with `P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the origin) and
+  `DroopVSM.droop_not_euler_realizationSoundUnder` (witness
+  `infiniteBus_locallyExponentiallyStable` with `P = sin`, `K_R = τ_p = 1`, `P_ref = ω_s = 0` at
+  the origin).
 -/
 
 noncomputable section
@@ -104,7 +104,7 @@ def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step`). -/
+(`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   (NormalForm.lift_contDiff m.c.rhs_contDiff).comp (contDiff_id.add contDiff_const)
 
@@ -145,7 +145,7 @@ def euler : Implementation Model Requirement Euler Requirement 3 0 3 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step`). -/
+(`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
 
@@ -184,7 +184,7 @@ def rigEuler : Implementation Rig RigRequirement RigEuler RigRequirement 4 0 4 0
   Numerics.euler rigFamily Rig.field RigEuler.design RigEuler.h
 
 /-- The translated platform field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step`). -/
+(`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem rig_contDiff_field (m : Rig) : ContDiff ℝ 1 (Rig.field m) :=
   (contDiff_rigField m).comp (contDiff_id.add contDiff_const)
 
@@ -232,7 +232,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step`). -/
+(`Numerics.euler_sound_small_step_local`). -/
 @[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   m.q.contDiff_field.comp (contDiff_id.add contDiff_const)
 

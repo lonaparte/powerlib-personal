@@ -33,10 +33,6 @@ variable {k : ℕ}
 
 /-! ## Triangular helpers -/
 
-@[tmio T, powerlib_foundation] theorem lowerTriangular_mul {A B : Matrix (Fin k) (Fin k) ℝ}
-    (hA : A.IsLowerTriangular) (hB : B.IsLowerTriangular) : (A * B).IsLowerTriangular :=
-  BlockTriangular.mul hA hB
-
 /-- Diagonal of a product of lower triangular matrices. -/
 @[tmio T, powerlib_foundation] theorem lowerTriangular_mul_diag {A B : Matrix (Fin k) (Fin k) ℝ}
     (hA : A.IsLowerTriangular) (hB : B.IsLowerTriangular) (i : Fin k) :
@@ -122,7 +118,7 @@ variable {k : ℕ}
   have := invertibleOfIsUnitDet L₂ hdet₂
   have h₂inv : L₂⁻¹.IsLowerTriangular := blockTriangular_inv_of_blockTriangular h₂
   set M := L₂⁻¹ * L₁ with hM
-  have hMl : M.IsLowerTriangular := lowerTriangular_mul h₂inv h₁
+  have hMl : M.IsLowerTriangular := BlockTriangular.mul h₂inv h₁
   -- `M Mᵀ = I`
   have hMM : M * Mᵀ = 1 := by
     rw [hM, transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc L₁, heq, ← Matrix.mul_assoc,

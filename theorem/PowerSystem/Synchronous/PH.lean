@@ -67,8 +67,8 @@ Results.
   `|δ − δ*| < π`: it changes sign beyond the unstable equilibrium `π − δ*`; positivity is only
   claimed on `|δ| < π/2`.) Hessian `diag(b cos δ, 1/M)` (`classicalSM_hasFDerivAt_dH`) and
   linearization `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]` (`classicalSM_linearization`); at a
-  fold `cos δ* = 0` the Hamiltonian and the accelerating power (`ClassicalSM.classicalSM_H_fold`,
-  `ClassicalSM.classicalSM_accel_fold`).
+  fold `cos δ* = 0` the Hamiltonian and the accelerating power (`ClassicalSM.classicalSM_H_fold`;
+  `Swing.Pe_fold` at `ClassicalSM.Model.toSwing`).
 * Seven-state machine: the pH field reproduces every rate equation of §1.13
   (`syncMachine7_field`); the energy balance (`syncMachine7_power_balance`)
   `Ḣ = (v_d i_d + v_q i_q + v_f i_f + T_m ω_r) − (r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² +
@@ -90,7 +90,7 @@ Family and connection conclusions.
 * Equivalence with the swing family. The canonical family is `Swing.family`; on every flow
   sentence `ClassicalSM.family` is its pullback through `ClassicalSM.Model.toSwing`
   (`⟨⟨M, D, P_m, 0, b, 0⟩, δ*⟩`), for both connections: the denotations
-  (`ClassicalSM.den_flow_eq_preimage`, member form `ClassicalSM.mem_den_flow_iff_swing`; every
+  (`ClassicalSM.mem_den_flow_iff_swing`, member by member; every
   flow sentence is invariant under `diag(1, M)`, `Spectral.mem_den_flow_iff_of_transport`) and the
   translations (`ClassicalSM.realize_translate_flow_eq_preimage`: on the image positive inertia
   and nonnegative damping always hold, `locked` is `balanced`, `stableBranch` is `synchronizing`,
@@ -102,7 +102,7 @@ Family and connection conclusions.
 * Flow conclusions, all read off the swing family through the equivalence by the hub transfers
   of `theorem/Family/Reading.lean`: chain soundness (`ClassicalSM.chain_le_semantics`, from
   `Swing.chain_le_semantics` by `Spectral.sound_of_hub`; passivity from
-  `ClassicalSM.mem_den_passive_of_Pm_zero`); members `ClassicalSM.mem_den_lyapunovStable`,
+  `ClassicalSM.mem_den_passive_of_Pm_zero`); members `ClassicalSM.mem_den_lyapunovStable_iff`,
   `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable` (from
   `Swing.mem_den_*`). The local exponential and local asymptotic translations are exact
   (`ClassicalSM.exact_locallyExponentiallyStable`, `ClassicalSM.exact_locallyAsymptoticallyStable`,
@@ -530,19 +530,6 @@ the coordinates `(δ, M ω)` (`classicalSM_zeroInputField_eq_transport`), the op
   exact Spectral.mem_den_flow_iff_of_transport (g := Model.toSwing) (fun _ _ => mem_den_flow_iff)
     hdenG (Dynamics.scaleCoord m.p.M_pos.ne') 0 (classicalSM_zeroInputField_eq_transport m.p) hpt P
 
-/-- Every flow sentence of the classical-machine family denotes the preimage of its swing
-denotation under `Model.toSwing`: on the flow sentences the semantics connection of the family is
-that of `Swing.family.comap Model.toSwing`. -/
-@[tmio TM, powerlib_domain] theorem den_flow_eq_preimage :
-    connection% (∀ P : Flow.Property,
-      family.den (.flow P) = Model.toSwing ⁻¹' Swing.family.den (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  intro P
-  ext m
-  have h := mem_den_flow_iff_swing m P
-  unfold powerlib.TMIO.Statement at h
-  exact h
-
 /-- The translation of every flow sentence carves out the preimage of the space of its swing
 translation. On the image of `toSwing` positive inertia and nonnegative damping always hold;
 `locked` is `balanced`, `stableBranch` is `synchronizing` (`b > 0`), `damped` is `damped` with
@@ -603,10 +590,11 @@ translation is exact on the image of `toSwing`. -/
   unfold powerlib.TMIO.Statement
   intro P
   have hr := realize_translate_flow_eq_preimage
-  have hd := den_flow_eq_preimage
-  unfold powerlib.TMIO.Statement at hr hd
+  have hd : family.den (.flow P) = Model.toSwing ⁻¹' Swing.family.den (.flow P) :=
+    Set.ext fun m => mem_den_flow_iff_swing m P
+  unfold powerlib.TMIO.Statement at hr
   unfold Family.Exact
-  rw [Family.realize_comap, Family.den_comap, hr P, hd P]
+  rw [Family.realize_comap, Family.den_comap, hr P, hd]
   rfl
 
 /-- Every swing reading has positive inertia and a curved power-angle curve (`k₂ = b > 0`): it
@@ -634,19 +622,6 @@ correspondence (`realize_translate_flow_eq_preimage`) hold. -/
     (fun m => mem_den_flow_iff_swing m P) (fun m => Set.ext_iff.mp (hr P) m) h
 
 /-! #### Members of the flow denotations -/
-
-/-- Lyapunov stability of the stable equilibrium `(δ*, 0)`, `b sin δ* = P_m`, `cos δ* > 0`, of
-the unforced classical machine, for every `D ≥ 0`: the swing reading is balanced with a positive
-synchronizing coefficient `b cos δ*` (`Swing.mem_den_lyapunovStable`, whose energy
-`½ M ω² + U(δ)` is `H − H(x*)` in swing coordinates). -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model)
-    (heq : m.p.b * Real.sin m.δs = m.p.Pm) (hcos : 0 < Real.cos m.δs) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  have hsw := mem_den_flow_iff_swing m .lyapunovStable
-  have hs := Swing.mem_den_lyapunovStable m.toSwing m.p.M_pos m.p.D_nonneg
-    ((toSwing_Pe m).trans heq) (by rw [toSwing_syncCoeff]; exact mul_pos m.p.b_pos hcos)
-  unfold powerlib.TMIO.Statement at hsw hs ⊢
-  exact hsw.mpr hs
 
 /-- `D > 0`, `b sin δ* = P_m`, `cos δ* > 0`: the equilibrium `(δ*, 0)` of the full nonlinear
 unforced classical machine is locally exponentially stable
@@ -732,14 +707,6 @@ Static evidence on the model, not a connection conclusion. -/
   rw [Real.cos_add, hcos, ← heq]
   ring
 
-/-- At a fold the accelerating power is `P_m (1 − cos s)` at `δ* + s`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem classicalSM_accel_fold (p : ClassicalSMParams) {δs : ℝ}
-    (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) (s : ℝ) :
-    p.Pm - p.b * Real.sin (δs + s) = p.Pm * (1 - Real.cos s) := by
-  rw [Real.sin_add, hcos, ← heq]
-  ring
-
 /-- The local asymptotic translation is exact: the classical machine is locally asymptotically
 stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`
 (`Swing.exactUnder_locallyAsymptoticallyStable` on the swing readings, all of positive inertia,
@@ -758,7 +725,7 @@ machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) �
 exactly when `b sin δ* = P_m` and `cos δ* > 0`, for every `D ≥ 0`. Within positive inertia and a
 curved power-angle curve the swing translation is exact (`Swing.exactUnder_lyapunovStable`: the
 unstable branch is a saddle, and a fold `cos δ* = 0` is unstable for every `D ≥ 0`, the
-accelerating power being `P_m (1 − cos(δ − δ*))`, `classicalSM_accel_fold`; `Swing.Pe_fold` in
+accelerating power being `P_m (1 − cos(δ − δ*))`, `Swing.Pe_fold` in
 swing coordinates), and every swing reading lies in that context (`M > 0`, `k₂ = b > 0`;
 `Spectral.exact_of_hub`). The stable-branch requirement `cos δ* > 0` is invariant under whole
 turns; `|δ*| < π/2` would not be (at `δ* = 2π`, `M = b = 1`, `D = P_m = 0` the machine is Lyapunov
@@ -987,11 +954,6 @@ def syncMachine7_inductance (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
-/-- A positive definite inductance matrix `L` gives the admissible parameter `Γ = L⁻¹`. -/
-@[tmio T, powerlib_foundation] theorem syncMachine7_inv_posDef {L : Matrix (Fin 5) (Fin 5) ℝ}
-    (hL : L.PosDef) : L⁻¹.PosDef :=
-  hL.inv
-
 /-- With `Γ = L⁻¹`, the currents `i = Γ Ψ` satisfy the flux law `Ψ = L i`. -/
 @[tmio T, powerlib_foundation] theorem syncMachine7_flux_eq {L : Matrix (Fin 5) (Fin 5) ℝ} (hL : L.PosDef)
     (Ψ : Fin 5 → ℝ) : L *ᵥ (L⁻¹ *ᵥ Ψ) = Ψ := by
@@ -1019,17 +981,6 @@ def syncMachine7_current (p : SyncMachine7Params) (x : State 7) : Fin 5 → ℝ 
 
 /-- Rotor speed `ω_r = p / M`. -/
 def syncMachine7_speed (p : SyncMachine7Params) (x : State 7) : ℝ := x 5 / p.M
-
-/-- `Q x = (i, ω_r, 0)`. -/
-@[tmio M, powerlib_domain] theorem syncMachine7_Q_mulVec (p : SyncMachine7Params) (x : State 7) :
-    syncMachine7_Q p *ᵥ WithLp.ofLp x =
-      ![syncMachine7_current p x 0, syncMachine7_current p x 1, syncMachine7_current p x 2,
-        syncMachine7_current p x 3, syncMachine7_current p x 4, syncMachine7_speed p x, 0] := by
-  ext i
-  fin_cases i <;>
-    simp [syncMachine7_Q, syncMachine7_current, syncMachine7_flux, syncMachine7_speed, mulVec,
-      dotProduct, Fin.sum_univ_succ]
-  ring
 
 /-- Interconnection matrix `J(x)` of §1.13 (state dependent through `Ψ_d, Ψ_q`). -/
 def syncMachine7_J (x : State 7) : Matrix (Fin 7) (Fin 7) ℝ :=
@@ -1069,12 +1020,17 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
     fin_cases i <;> simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg])
   hasGradient := hasGradientAt_quadraticEnergy (syncMachine7_Q_symm p)
 
-/-- The co-energy is `∇H = (i_d, i_q, i_f, i_kd, i_kq, ω_r, 0)`. -/
+/-- The co-energy is `∇H = Q x = (i_d, i_q, i_f, i_kd, i_kq, ω_r, 0)`. -/
 @[tmio M, powerlib_domain] theorem syncMachine7_dH (p : SyncMachine7Params) (x : State 7) :
     WithLp.ofLp ((syncMachine7 p).dH x) =
       ![syncMachine7_current p x 0, syncMachine7_current p x 1, syncMachine7_current p x 2,
-        syncMachine7_current p x 3, syncMachine7_current p x 4, syncMachine7_speed p x, 0] :=
-  syncMachine7_Q_mulVec p x
+        syncMachine7_current p x 3, syncMachine7_current p x 4, syncMachine7_speed p x, 0] := by
+  show syncMachine7_Q p *ᵥ WithLp.ofLp x = _
+  ext i
+  fin_cases i <;>
+    simp [syncMachine7_Q, syncMachine7_current, syncMachine7_flux, syncMachine7_speed, mulVec,
+      dotProduct, Fin.sum_univ_succ]
+  ring
 
 /-- The pH field reproduces the rate equations of §1.13:
 `Ψ̇_d = −r_s i_d + ω_r Ψ_q + v_d`, `Ψ̇_q = −r_s i_q − ω_r Ψ_d + v_q`, `Ψ̇_f = −r_f i_f + v_f`,
@@ -1137,7 +1093,7 @@ electromagnetic-torque terms cancel. -/
     (syncMachine7 p).H x =
       (1 / 2 : ℝ) * (syncMachine7_flux x ⬝ᵥ (p.Γ *ᵥ syncMachine7_flux x)) +
         x 5 ^ 2 / (2 * p.M) := by
-  have hQ := syncMachine7_Q_mulVec p x
+  have hQ : syncMachine7_Q p *ᵥ WithLp.ofLp x = _ := syncMachine7_dH p x
   simp only [syncMachine7, quadraticEnergy]
   rw [hQ]
   simp [syncMachine7_current, syncMachine7_flux, syncMachine7_speed, dotProduct,
@@ -1152,16 +1108,6 @@ electromagnetic-torque terms cancel. -/
   rw [star_trivial] at h
   have hM := p.M_pos
   positivity
-
-/-- Along every solution segment the energy balance of §1.13 holds pointwise in time.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem syncMachine7_trajectory_energy_derivative (p : SyncMachine7Params)
-    {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → State 7} {t₀ t₁ t : ℝ}
-    (hx : (syncMachine7 p).system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
-    HasDerivWithinAt (fun τ => (syncMachine7 p).H (x τ))
-      ((syncMachine7 p).supply (x t) (u t) - (syncMachine7 p).dampingPower (x t))
-      (Icc t₀ t₁) t :=
-  (syncMachine7 p).trajectory_energy_derivative hx ht
 
 /-! ### The rotor-angle direction at the origin -/
 

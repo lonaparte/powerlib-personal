@@ -25,7 +25,7 @@ module theorem.GridTiedConverter.CurrentControl.DigitalCurrentLoop where
 -- `design-reading` is `CurrentControl.PIParams.family_isLinear` read by
 -- `Family.IsLinear.den_hurwitz` with `CurrentControl.PIParams.isHurwitz_iff_div`,
 -- `platform-reading` is `CurrentControl.DigitalPI.family_isLinear` read by
--- `Family.IsLinear.den_hurwitz`, `routh-iff` is `CurrentControl.DigitalPI.isHurwitz_iff`, `fast` is
+-- `Family.IsLinear.den_hurwitz`, `routh-iff` is `CurrentControl.DigitalPI.mem_den_iff`, `fast` is
 -- `CurrentControl.DigitalPI.routh_of_fastSampling`, `delay` is
 -- `CurrentControl.DigitalPI.design_stable_of_isHurwitz`, `strict` is
 -- `CurrentControl.DigitalPI.lagged_of_unstable`, `root` is

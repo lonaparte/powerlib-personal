@@ -36,8 +36,10 @@ Corrections.
 * T-sph §1.5: the note says "the diffusion `h` is the same in (1.1) and (1.11) ⇔ `∂ₓh · h = 0`".
   In the Itô ↔ Stratonovich conversion the **diffusion coefficient is always the same** `h`;
   only the **drift** changes, by `c_k = ½ Σ_{j,ℓ} h_{ℓj} ∂_ℓ h_{kj}`. Hence the correct
-  statement is "the two drifts coincide ⇔ `c = 0`" (`itoDrift_eq_iff`); `∂ₓh·h = 0` is the
-  condition for equal *drifts*, not for equal diffusions.
+  statement is "the two drifts coincide ⇔ `c = 0`" (`μ_S + stratCorrection h dh = μ_S` iff
+  `stratCorrection h dh = 0`, Mathlib `add_eq_left`); `∂ₓh·h = 0` is the condition for equal
+  *drifts*, not for equal diffusions; `stratCorrection_const`: a state-independent diffusion
+  gives no correction.
 -/
 
 noncomputable section
@@ -179,26 +181,15 @@ solves the stationary covariance equation. -/
   simp only [smul_eq_mul]
   ring
 
-@[tmio T, powerlib_foundation] theorem rlc_equipartition_two {Q : Matrix (Fin 2) (Fin 2) ℝ}
-    (hQ : Q.PosDef) (T : ℝ) : (1 / 2 : ℝ) * (Q * (T • Q⁻¹)).trace = T := by
-  rw [rlc_equipartition hQ]; norm_num
-
 /-! ## Itô / Stratonovich drift conversion (correction to T-sph §1.5) -/
 
 /-- Stratonovich → Itô drift correction `c_k = ½ Σ_{j,ℓ} h_{ℓj} ∂_ℓ h_{kj}`, given the
-Jacobian array `dh k j ℓ = ∂_ℓ h_{kj}` at the current state. -/
+Jacobian array `dh k j ℓ = ∂_ℓ h_{kj}` at the current state. The Itô drift of a Stratonovich SDE
+`δx = μ_S dt + h δW` is `μ_S + c`; the diffusion coefficient is `h` in both forms, and the two
+drifts coincide iff `c = 0` (Mathlib `add_eq_left`). -/
 def stratCorrection (h : Matrix (Fin n) (Fin q) ℝ) (dh : Fin n → Fin q → Fin n → ℝ) :
     Fin n → ℝ :=
   fun k => (1 / 2 : ℝ) * ∑ j, ∑ l, h l j * dh k j l
-
-/-- The Itô drift of a Stratonovich SDE `δx = μ_S dt + h δW` is `μ_S + c`; the diffusion
-coefficient is `h` in both forms.  The two drifts coincide iff the correction vanishes. -/
-@[tmio T, powerlib_foundation] theorem itoDrift_eq_iff (μS : Fin n → ℝ) (h : Matrix (Fin n) (Fin q) ℝ)
-    (dh : Fin n → Fin q → Fin n → ℝ) :
-    μS + stratCorrection h dh = μS ↔ stratCorrection h dh = 0 := by
-  constructor
-  · intro H; simpa using H
-  · intro H; rw [H, add_zero]
 
 /-- State-independent diffusion (`∂h = 0`) gives no drift correction. -/
 @[tmio T, powerlib_foundation] theorem stratCorrection_const (h : Matrix (Fin n) (Fin q) ℝ) :

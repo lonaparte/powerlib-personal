@@ -444,10 +444,12 @@ private def energy (m : Model) (x : ℝ²) : ℝ :=
     rw [hzero] at this
     exact neg_pos.mpr this
 
-/-- At a zero of `h` with negative slope, `K_p ≥ 0` and `K_i > 0`, the untranslated field is
-Lyapunov stable at the selected point (the PLL energy, LeanForControl's `lyapunov_stable`). -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_slope {m : Model} (hzero : m.h m.θ = 0) (hKp : 0 ≤ m.Kp)
-    (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
+/-- At a zero `θ*` of `h` with negative slope `h'(θ*) < 0`, a nonnegative proportional gain and a
+positive integral gain place a model in Lyapunov stability, for every constant offset `δω`: the PLL
+energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at the rate `K_p h(θ)²`. With
+`K_p = 0` (a lossless loop, a centre of the linearization) the energy is conserved. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_slope (m : Model) (hzero : m.h m.θ = 0)
+    (hKp : 0 ≤ m.Kp) (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow_iff)]
@@ -477,16 +479,6 @@ Lyapunov stable at the selected point (the PLL energy, LeanForControl's `lyapuno
       linarith
   · rw [energy_lie m hKi.ne']
     nlinarith [sq_nonneg (m.h (x 0))]
-
-/-- At a zero `θ*` of `h` with negative slope `h'(θ*) < 0`, a nonnegative proportional gain and a
-positive integral gain place a model in Lyapunov stability, for every constant offset `δω`: the PLL
-energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at the rate `K_p h(θ)²`. With
-`K_p = 0` (a lossless loop, a centre of the linearization) the energy is conserved. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_slope (m : Model) (hzero : m.h m.θ = 0)
-    (hKp : 0 ≤ m.Kp) (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (lyapunovStable_of_slope hzero hKp hKi hg)))
 
 /-! ### The synchronous-reference-frame detector -/
 

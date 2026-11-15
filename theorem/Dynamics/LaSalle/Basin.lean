@@ -52,9 +52,10 @@ Results.
 * `regionOfAttraction_of_lasalle_sublevel`: the usual "potential-well" form. If `W` is open,
   `V̇ ≤ 0` on `W` and `Ω = {x ∈ W | V x ≤ c}` is compact, then `Ω` is automatically positively
   invariant (`isPositivelyInvariant_sublevel_of_isOpen`), so only the LaSalle condition remains.
-* `lasalle_condition_of_trajectories`, `lasalle_condition_of_lieDeriv`: practical ways to
-  discharge the LaSalle condition (no solution can stay in `E` except at `x_eq`; or `E` lies in
-  the zero set of a `C¹` function `h` whose derivative along `f` vanishes on `E` only at `x_eq`).
+* `lasalle_condition_of_trajectories_mem`, `lasalle_condition_of_lieDeriv`: practical ways to
+  discharge the LaSalle condition (solution segments staying in `E` start in `M`, e.g. no
+  solution can stay in `E` except at `x_eq`; or `E` lies in the zero set of a `C¹` function `h`
+  whose derivative along `f` vanishes on `E` only at `x_eq`).
 * Links: `LocalAsymptoticStable` plus forward completeness gives a ball inside the region of
   attraction; `GloballyAsymptoticallyStable` puts the whole space `univ` in the region of
   attraction.
@@ -253,9 +254,10 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
       exact ⟨hx, by rw [← hgfΩ x hx]; exact h⟩
     · rintro ⟨hx, h⟩
       exact ⟨hx, by rw [hgfΩ x hx]; exact h⟩
-  refine lasalle_invariance_principle hΩ_compact hΩ_inv_g hglip hg hV_c1
+  refine _root_.lasalle_invariance_principle hΩ_compact hΩ_inv_g hglip hg hV_c1
     (fun x hx => by rw [hgfΩ x hx]; exact hLie x hx) (hfwd hφ hφ0) hφ0 ?_
   intro N hN hNinv
+  change N ⊆ LieDerivZeroSet g V Ω at hN
   rw [hE] at hN
   exact hM N hN (hback N (fun x hx => (hN hx).1) hNinv)
 
@@ -283,20 +285,6 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
       (hφ0 ▸ hx₀) hLasalle
     rwa [nhdsSet_singleton] at h
 
-/-- Same estimate with a globally Lipschitz field (the Lipschitz hypothesis is not needed:
-`regionOfAttraction_of_lasalle`). -/
-@[tmio T, powerlib_foundation] theorem regionOfAttraction_of_lasalle_lipschitz
-    {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω : Set ℝⁿ} {x_eq : ℝⁿ} {K : NNReal}
-    (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
-    (_hf_lip : LipschitzWith K f) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
-    (hLie : ∀ x ∈ Ω, fderiv ℝ V x (f x) ≤ 0)
-    (hLasalle : ∀ N ⊆ LieDerivZeroSet f V Ω, IsPositivelyInvariant N f → N ⊆ {x_eq}) :
-    ∀ x₀ ∈ Ω,
-      (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-      ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-        Tendsto φ atTop (𝓝 x_eq) :=
-  regionOfAttraction_of_lasalle hΩ_compact hΩ_inv hf_c1 hV_c1 hLie hLasalle
-
 /-- **Potential-well estimate.** `W` open, `V̇ ≤ 0` on `W`, `Ω = {x ∈ W | V x ≤ c}` compact,
 and the LaSalle condition on `Ω` ⇒ `Ω` lies in the region of attraction of `x_eq`.
 Positive invariance of `Ω` is derived, not assumed. -/
@@ -318,17 +306,18 @@ Positive invariance of `Ω` is derived, not assumed. -/
 
 /-! ## Discharging the LaSalle condition -/
 
-/-- If no solution segment of positive length can stay in `E` unless it starts at `x_eq`, then
-every positively invariant subset of `E` is contained in `{x_eq}`. -/
-@[tmio T, powerlib_foundation] theorem lasalle_condition_of_trajectories {f : ℝⁿ → ℝⁿ} {E : Set ℝⁿ}
-    {x_eq : ℝⁿ} (hf_c1 : ContDiff ℝ 1 f)
+/-- If every solution segment of positive length that stays in `E` starts in `M`, then every
+positively invariant subset of `E` lies in `M` (`M = {x_eq}`: no solution can stay in `E` unless
+it starts at `x_eq`). -/
+@[tmio T, powerlib_foundation] theorem lasalle_condition_of_trajectories_mem {f : ℝⁿ → ℝⁿ}
+    {E M : Set ℝⁿ} (hf_c1 : ContDiff ℝ 1 f)
     (h : ∀ (T : ℝ) (φ : ℝ → ℝⁿ), 0 < T → IsTrajectoryOn φ f 0 T →
-      (∀ t ∈ Icc 0 T, φ t ∈ E) → φ 0 = x_eq) :
-    ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ {x_eq} := by
+      (∀ t ∈ Icc 0 T, φ t ∈ E) → φ 0 ∈ M) :
+    ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ M := by
   intro N hNE hN x hx
   obtain ⟨T, ψ, hT, hψ0, hψ⟩ := (hf_c1.contDiffAt (x := x)).exists_isIntegralCurveOn_Icc
   have hstay : ∀ t ∈ Icc 0 T, ψ t ∈ N := hN 0 T ψ hψ (hψ0 ▸ hx)
-  rw [mem_singleton_iff, ← hψ0]
+  rw [← hψ0]
   exact h T ψ hT hψ fun t ht => hNE (hstay t ht)
 
 /-- If `E` lies in the zero set of a `C¹` function `h`, and the derivative of `h` along `f`
@@ -338,7 +327,7 @@ contained in `{x_eq}`. (Typical use: `E = {ω = 0} ∩ Ω` and `h = ω`.) -/
     {x_eq : ℝⁿ} (hf_c1 : ContDiff ℝ 1 f) {h : ℝⁿ → ℝ} (hh : ContDiff ℝ 1 h)
     (hE : ∀ x ∈ E, h x = 0) (hpt : ∀ x ∈ E, fderiv ℝ h x (f x) = 0 → x = x_eq) :
     ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ {x_eq} := by
-  refine lasalle_condition_of_trajectories hf_c1 ?_
+  refine lasalle_condition_of_trajectories_mem hf_c1 ?_
   intro T ψ hT hψ hstay
   have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
   have hchain : HasDerivWithinAt (h ∘ ψ) (fderiv ℝ h (ψ 0) (f (ψ 0))) (Icc 0 T) 0 :=

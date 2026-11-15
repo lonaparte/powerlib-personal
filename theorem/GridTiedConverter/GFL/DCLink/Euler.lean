@@ -46,7 +46,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`euler_certified_small_step_local`, `not_euler_realizationSoundUnder_of_large_step_local`,
+`not_euler_realizationSoundUnder_of_large_step_local`,
 `contDiffAt_shift`) and the family modules (autonomy, smoothness on `V_dc ≠ 0`, members of local
 exponential stability; for the carrier its four-state reading `BasinGuard.mem_den_iff_fourState`);
 work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
@@ -68,8 +68,8 @@ Family and connection conclusions.
   lemma above: `Numerics.euler_sound_small_step_local` (scaffold `sound-small-step`: a locally
   exponentially stable model, with the smoothness hypothesis above, has a step `h₀ > 0` such that
   every Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
-  `Numerics.euler_certified_small_step_local` (scaffold `certified-small-step`).
-  `N.not_euler_realizationSoundUnder`
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `N.not_euler_realizationSoundUnder`
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — a
   locally exponentially stable member (`FourState`: `V₀ = k_p = k_i = k_pv = k_iv = C = 1`,
   `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`, `FourState.mem_den_locallyExponentiallyStable_of_routh`;
@@ -326,9 +326,8 @@ step it is not: its Euler multiplier `1 + hλ` leaves the unit disk
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := openLoop_mem_den_locallyExponentiallyStable ⟨⟨0, 1, 0⟩, 1, 1, rfl,
-      rfl⟩ one_pos one_pos (by norm_num)
-  unfold powerlib.TMIO.Statement at hm
+  have hm := (connection_proof% openLoop_mem_den_locallyExponentiallyStable_iff
+    ⟨⟨0, 1, 0⟩, 1, 1, rfl, rfl⟩ one_pos one_pos).mpr (by norm_num)
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local
     (Spectral.localFamily_isAutonomous _ _ _ : openFamily.IsAutonomous field)
     (by norm_num) (contDiffAt_field one_pos) hm
@@ -372,10 +371,9 @@ unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := closedLoop_mem_den_locallyExponentiallyStable ⟨⟨0, 1, 0⟩, 1, 1, 1, 1, 0, 0, rfl,
-      rfl⟩ one_pos one_pos
-    one_pos (by norm_num [Idc0]) one_pos
-  unfold powerlib.TMIO.Statement at hm
+  have hm := (connection_proof% closedLoop_mem_den_locallyExponentiallyStable_iff
+    ⟨⟨0, 1, 0⟩, 1, 1, 1, 1, 0, 0, rfl, rfl⟩ one_pos one_pos one_pos).mpr
+    ⟨by norm_num [Idc0], one_pos⟩
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local
     (Spectral.localFamily_isAutonomous _ _ _ : closedFamily.IsAutonomous shiftedField)
     (by norm_num) (contDiffAt_shiftedField one_pos) hm

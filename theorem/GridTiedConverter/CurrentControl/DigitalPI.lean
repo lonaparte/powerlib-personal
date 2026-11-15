@@ -53,7 +53,7 @@ Results.
   one-step delay and the hold make up `e^{−τ s}` (`Delay.pureDelay_three_half_periods`,
   `Delay.zoh_jω_eq_halfDelay`, the hold leaving the real factor `Tₛ sinc (ω Tₛ/2)`).
 * Static, Routh–Hurwitz of the platform: with `L > 0`, `Tₛ > 0` the plant is Hurwitz iff
-  `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁` (`isHurwitz_iff`); a strict violation gives a root in the open
+  `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁` (`mem_den_iff`); a strict violation gives a root in the open
   right half plane (`exists_root_of_lagged`); for every `Tₛ > 0` and every inductance a Hurwitz
   platform has a stable design (`design_stable_of_isHurwitz`: `a₀ > 0` and `a₁ > 0` give
   `(R + Kp)/L > (τ/2) Ki/L > 0`); fast sampling and a stable design give the platform conditions
@@ -98,7 +98,7 @@ Family and connection conclusions.
 
 Scope (the Padé platform versus the pure delay). The implementation model is itself an
 approximation of the transcendental delay: Padé(1,1) matches `e^{−τ s}` to third order
-(`Delay.norm_pureDelay_sub_pade11_le`) and is phase-accurate for `ω τ < 1/2` (T-control-delay §1.3,
+(`Delay.norm_exp_neg_sub_pade11_le`) and is phase-accurate for `ω τ < 1/2` (T-control-delay §1.3,
 `Delay.relPhaseError_pade11_lt`). For the IMC design the delay-free open loop is `ω_b/s`; with the
 pure delay the loop `(ω_b/s) e^{−τ s}` has the phase margin `π/2 − ω_b τ`
 (`LoopDelay.imcDelayLoop_arg_crossover`) and is stable iff `ω_b τ < π/2`, i.e. `ω_b Tₛ < π/3`
@@ -453,12 +453,15 @@ def family : Family DigitalPI DigitalRequirement 3 1 :=
 
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear model := fun _ => rfl
 
-/-- Routh–Hurwitz for the platform with `L > 0`, `Tₛ > 0`. Read through the platform family denotation. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts) :
-    connection% (y ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1) := by
+/-- With `L > 0` and `Tₛ > 0` a platform satisfies an attractive sentence (in particular global
+exponential stability) iff `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_iff (y : DigitalPI) (hL : 0 < y.design.L)
+    (hT : 0 < y.Ts) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (y ∈ family.den (.flow P) ↔
+      y ∈ {y : DigitalPI | 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1}) := by
   unfold TMIO.Statement
-  rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
+  rw [(connection_proof% (family_isLinear.mem_den_hurwitz hP))]
+  change IsHurwitz y.model.A ↔ 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1
   have ha3 := a3_pos hL hT
   have htr : y.model.A.trace = -(y.a2 / y.a3) := by
     rw [← neg_trace_A y hL.ne' hT.ne', neg_neg]
@@ -579,8 +582,10 @@ a strict violation a characteristic root in the open right half plane (the linea
       (connection_proof% translate_eq_linearTable s)) (fun y hy => ?_) (fun y hy => ?_)
     fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _
   · rw [(connection_proof% TMIO.mem_realize)] at hy
-    exact (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y (hy .physical (by simp)) (hy .sampling (by simp))))).mpr
-      (hy .routh (by simp))
+    exact (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
+      ((mem_den_iff y (hy .physical (by simp)) (hy .sampling (by simp))
+        (P := .globallyExponentiallyStable) (Or.inl trivial)).mpr
+        (hy .routh (by simp)))
   · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact exists_root_of_lagged (hy .physical (by simp)) (hy .sampling (by simp))
       (hy .lagged (by simp))
@@ -597,20 +602,13 @@ platform Routh conditions hold. -/
   rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .physical (by simp)
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
-  rw [((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y hL hT)), (connection_proof% TMIO.mem_realize)]
+  rw [((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+      (Or.inl trivial)).symm.trans
+    (mem_den_iff y hL hT (P := .globallyExponentiallyStable) (Or.inl trivial))),
+    (connection_proof% TMIO.mem_realize)]
   refine ⟨fun h => h .routh (by simp), fun h q hq => ?_⟩
   rcases hq with rfl | rfl | rfl
   exacts [hL, hT, h]
-
-/-- With `L > 0` and `Tₛ > 0` a platform satisfies an attractive sentence (in particular global
-exponential stability) iff `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts)
-    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (y ∈ family.den (.flow P) ↔
-      y ∈ {y : DigitalPI | 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1}) := by
-  unfold powerlib.TMIO.Statement
-  rw [family_isLinear.den_hurwitz hP]
-  exact ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y hL hT))
 
 /-! ## The digital loop as an implementation of the PI design (M–I) -/
 

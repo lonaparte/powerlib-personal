@@ -22,8 +22,8 @@ Model boundary.
   higher-order schemes, the integration error against the continuous trajectory.
 * Level: local exponential stability of the selected point.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step`),
 `theorem/GridTiedConverter/GFL/PowerLoop/QuasiStatic.lean`
 (`mem_den_locallyExponentiallyStable_of_abs_lt`),
 `theorem/GridTiedConverter/GFL/PowerLoop/QuasiStaticFold.lean` (`contDiff_model_field`); work-sync
@@ -39,11 +39,11 @@ Family and connection conclusions.
   its model (`Implementation.ofDesign Euler.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `QuasiStatic.family_isAutonomous` and the public smoothness lemma
-  `QuasiStatic.contDiff_model_field`: `Numerics.euler_sound_small_step` (scaffold
+  `QuasiStatic.contDiff_model_field`: `Numerics.euler_sound_small_step_local` (scaffold
   `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such that every
   Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
-  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
-  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the locally exponentially stable model
   `V = k_p = k_i = k_P = 1`, `X_g = P_ref = 0` at `θ* = i_d* = 0` has Euler integrations with every
   multiplier outside the unit disk.

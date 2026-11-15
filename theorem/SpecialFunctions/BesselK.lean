@@ -45,8 +45,9 @@ Results.
   `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from `besselI_laplace_le`),
   `tendsto_bessel_div_gaussHalf` (all four normalized functions `→ 1` as `Re z → ∞` in a sector),
   i.e. `K_ν(z) ∼ √(π/(2z)) e^{−z}` and `I_ν(z) ∼ e^z/√(2πz)`.
-* The scale: `norm_gaussHalf` (`‖G(z)‖ = √(π/(‖z‖/2))/2`), `gaussHalf_ne_zero`, `gaussHalf_sq`
-  (`G(z)² = π/(2z)`), `gaussHalf_ofReal_mul` (`G(rz) = G(z)/√r`, `r > 0`); normalized functions
+* The scale: `norm_integral_gaussian_half` (`BesselI`: `‖G(z)‖ = √(π/(‖z‖/2))/2`),
+  `gaussHalf_ne_zero`, `gaussHalf_sq` (`G(z)² = π/(2z)`), `gaussHalf_ofReal_mul`
+  (`G(rz) = G(z)/√r`, `r > 0`); normalized functions
   `besselI0Norm`, `besselI1Norm`, `besselK0Norm`, `besselK1Norm` with `besselI0_eq_norm` …
   (`I_ν(z) = e^z G(z) Î_ν(z)/π`, `K_ν(z) = e^{−z} G(z) K̂_ν(z)`) and `tendsto_besselNorm`.
 * Derivatives: `hasDerivAt_besselI0` (`I₀' = I₁`), `hasDerivAt_besselI1` (`I₁' = I₀ − I₁/z`,
@@ -271,18 +272,14 @@ theorem two_sinh_half_sq (t : ℝ) : (2 * Real.sinh (t / 2)) ^ 2 / 2 = Real.cosh
 /-! ## Large argument: comparison with the half-line Gaussian -/
 
 /-- The half-line Gaussian `G(z) = ∫₀^∞ e^{−z u²/2} du` (`= √(π/(2z))`, principal branch, for
-`Re z > 0`): the common large-argument scale of `π e^{−z} I_ν(z)` and `e^z K_ν(z)`. -/
+`Re z > 0`): the common large-argument scale of `π e^{−z} I_ν(z)` and `e^z K_ν(z)`. Its modulus
+`‖G(z)‖ = √(π/(‖z‖/2))/2` is `norm_integral_gaussian_half`. -/
 def gaussHalf (z : ℂ) : ℂ := ∫ u in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (u : ℂ) ^ 2)
-
-/-- `‖G(z)‖ = √(π/(‖z‖/2))/2` (`Re z > 0`). -/
-@[tmio T, powerlib_foundation] theorem norm_gaussHalf {z : ℂ} (hz : 0 < z.re) :
-    ‖gaussHalf z‖ = Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 :=
-  norm_integral_gaussian_half hz
 
 /-- `G(z) ≠ 0` (`Re z > 0`). -/
 @[tmio T, powerlib_foundation] theorem gaussHalf_ne_zero {z : ℂ} (hz : 0 < z.re) : gaussHalf z ≠ 0 := by
   have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hz (Complex.re_le_norm z)
-  rw [← norm_pos_iff, norm_gaussHalf hz]
+  rw [← norm_pos_iff, gaussHalf, norm_integral_gaussian_half hz]
   positivity
 
 /-- `G(z)² = π/(2z)` (`Re z > 0`). -/
@@ -466,7 +463,7 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
 theorem sqrt_div_four_le_mul_norm_gaussHalf {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
     Real.sqrt (Real.pi / (z.re / 4)) / 2 ≤ Real.sqrt (2 * K) * ‖gaussHalf z‖ := by
   have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hz (Complex.re_le_norm z)
-  rw [norm_gaussHalf hz]
+  rw [gaussHalf, norm_integral_gaussian_half hz]
   have e : Real.pi / (z.re / 4) = (2 * ‖z‖ / z.re) * (Real.pi / (‖z‖ / 2)) := by
     field_simp; ring
   rw [e, Real.sqrt_mul (by positivity)]

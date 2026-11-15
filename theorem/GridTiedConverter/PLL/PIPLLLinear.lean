@@ -58,7 +58,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
   ring
 
 /-- Node/focus split at a slope `g < 0`: all eigenvalues are real (node) iff
-`|g| ≥ 4 K_i / K_p²`. -/
+`|g| ≥ 4 K_i / K_p²`; equivalently some eigenvalue is non-real (focus) iff `|g| < 4 K_i / K_p²`. -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_eigenvalues_real_iff {Kp Ki g : ℝ} (hKp : Kp ≠ 0)
     (hg : g < 0) :
     (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →
@@ -73,23 +73,6 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     nlinarith
   · intro h
     nlinarith
-
-/-- Focus: some eigenvalue is non-real iff `|g| < 4 K_i / K_p²` (for `g < 0`, `K_p ≠ 0`). -/
-@[tmio M, powerlib_domain] theorem piPLLJacobian_exists_nonreal_eigenvalue_iff {Kp Ki g : ℝ}
-    (hKp : Kp ≠ 0) (hg : g < 0) :
-    (∃ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 ∧
-        (piPLLJacobian Kp Ki g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ μ.im ≠ 0) ↔
-      |g| < 4 * Ki / Kp ^ 2 := by
-  rw [← not_le, ← piPLLJacobian_eigenvalues_real_iff hKp hg]
-  constructor
-  · rintro ⟨μ, v, hv, heig, him⟩ H
-    exact him (H μ v hv heig)
-  · intro H
-    by_contra hc
-    apply H
-    intro μ v hv heig
-    by_contra him
-    exact hc ⟨μ, v, hv, heig, him⟩
 
 /-- No nonzero purely imaginary eigenvalue (`K_p ≠ 0`), for every slope `g`. -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_imaginary_eigenvalue_eq_zero {Kp Ki g : ℝ}

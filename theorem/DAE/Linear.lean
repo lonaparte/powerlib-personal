@@ -154,22 +154,14 @@ lies on the constraint manifold. -/
     rw [hy t, field_on_constraint]
     exact hx t
 
-/-- Zero-input version of `isSolution_iff`. -/
-@[tmio T, powerlib_foundation] theorem isSolution_zero_iff (hA : IsUnit d.Ayy.det)
-    (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :
-    (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
-      d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ↔
-      (∀ t, HasDerivAt x (d.schurA *ᵥ x t) t) ∧ ∀ t, y t = d.algebraic (x t) 0 := by
-  rw [d.isSolution_iff hA]
-  simp only [mulVec_zero, add_zero]
-
 /-- Every reduced trajectory lifts to a DAE solution (zero input), with algebraic part
 `y t = algebraic (x t) 0`. -/
 @[tmio T, powerlib_foundation] theorem isSolution_lift (hA : IsUnit d.Ayy.det) {x : ℝ → Fin n → ℝ}
     (hx : ∀ t, HasDerivAt x (d.schurA *ᵥ x t) t) :
     ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ d.algebraic (x t) 0 + d.Bx *ᵥ 0) t ∧
       d.Ayx *ᵥ x t + d.Ayy *ᵥ d.algebraic (x t) 0 + d.By *ᵥ 0 = 0 :=
-  (d.isSolution_zero_iff hA _ _).mpr ⟨hx, fun _ => rfl⟩
+  (d.isSolution_iff hA (fun _ => 0) _ _).mpr
+    ⟨fun t => by simpa only [mulVec_zero, add_zero] using hx t, fun _ => rfl⟩
 
 /-! ## Consistent initial values -/
 
@@ -337,7 +329,8 @@ solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`
   obtain ⟨K, hK, r, hr, hdecay⟩ := LTI.linear_decay_of_isHurwitz hH
   set c := Real.sqrt (∑ i, ∑ j, (d.Ayy⁻¹ * d.Ayx) i j ^ 2)
   refine ⟨K * (1 + c), by positivity, r, hr, fun x y hs t ht => ?_⟩
-  obtain ⟨hx, hy⟩ := (d.isSolution_zero_iff hA x y).mp hs
+  obtain ⟨hx, hy⟩ := (d.isSolution_iff hA (fun _ => 0) x y).mp hs
+  simp only [mulVec_zero, add_zero] at hx
   have hxb := hdecay x hx t ht
   have hc : 0 ≤ c := Real.sqrt_nonneg _
   have hE : 0 ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by positivity

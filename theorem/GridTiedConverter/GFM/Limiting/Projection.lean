@@ -21,7 +21,7 @@ Results.
 * `radialLimit_direction`: the direction is preserved (`radialLimit I x = c • x` with `c > 0`).
 * `radialLimit_inner_le`, `radialLimit_nearest`: it is the metric projection onto the closed
   ball of radius `I` (variational inequality, nearest point).
-* `radialLimit_lipschitz`: it is 1-Lipschitz (nonexpansive).
+* `radialLimit_dist_le`: it is nonexpansive (1-Lipschitz).
 * `radialLimit_isometry`: it commutes with every linear isometry, in particular with the Park
   rotation; hence circular limiting in the αβ frame and in any dq frame give the same physical
   current (T-current-limiting §1.1 "αβ 圆形限幅"). Component-wise clipping does not have this
@@ -121,11 +121,6 @@ def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x�
     exact norm_nonneg _
   · have hpos : 0 < ‖a - b‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm hab)
     nlinarith
-
-@[tmio T, powerlib_foundation] theorem radialLimit_lipschitz {I : ℝ} (hI : 0 ≤ I) :
-    LipschitzWith 1 (radialLimit (E := E) I) :=
-  LipschitzWith.of_dist_le_mul fun x y => by
-    simpa [dist_eq_norm] using radialLimit_dist_le hI x y
 
 /-- The circular limiter commutes with every linear isometry (e.g. Park rotation): limiting
 in the αβ frame equals limiting in a dq frame. -/

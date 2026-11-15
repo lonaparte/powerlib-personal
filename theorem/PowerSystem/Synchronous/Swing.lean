@@ -108,7 +108,7 @@ Family and connection conclusions.
   (`Swing.offEquilibrium_mem_den_unstable`), while the translation asks for power balance.
 * The linearization at the selected angle is a second family on the same models
   (`Swing.Linearized.family`, the linear plant `Swing.Linearized.plant` of the Jacobian;
-  `fderiv_point_eq_plant` identifies it with the Jacobian of the nonlinear field); its
+  its state matrix is the Jacobian of the nonlinear field, `Swing.Model.fderiv_point`); its
   translation is the linear table (`Spectral.linearTable`). Within positive inertia its
   attractive sentences and sampled contraction are translated exactly
   (`Swing.Linearized.exactUnder_hurwitz`): `M s² + D s + K` is Hurwitz iff `D > 0` and `K > 0`
@@ -749,19 +749,26 @@ namespace Swing
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   simpa using ((m.p.field_eq_zero_iff hM _).mp heq).2
 
-@[tmio TM, powerlib_domain] private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
-    (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
+/-- Positive inertia, damping and synchronizing coefficient at a balanced angle place a swing
+model in local exponential stability. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hM : 0 < m.p.M)
+    (hD : 0 < m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
-  exact (mem_den_flow_iff.mp (m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
+  exact (mem_den_flow_iff.mp (m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD
+    (point_eq_zero hM hb) (by simpa using hK)))
 
-@[tmio TM, powerlib_domain] private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
-    (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
+/-- With nonnegative damping — in particular the undamped swing equation — positive inertia and
+synchronizing coefficient at a balanced angle place a swing model in Lyapunov stability (energy
+function). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hM : 0 < m.p.M)
+    (hD : 0 ≤ m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
-  exact (mem_den_flow_iff.mp (m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
+  exact (mem_den_flow_iff.mp (m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb)
+    (by simpa using hK)))
 
 @[tmio TM, powerlib_domain] private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : connection% (m ∈ family.den (.flow .unstable)) := by
@@ -801,10 +808,12 @@ proves instability; passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (ls_of (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (mem_den_lyapunovStable _
+      (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
       (hm .balanced (by simp)) (hm .synchronizing (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .inertia (by simp)) (hm .damped (by simp))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (mem_den_locallyExponentiallyStable _
+      (hm .inertia (by simp)) (hm .damped (by simp))
       (hm .balanced (by simp)) (hm .synchronizing (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .inertia (by simp)) (hm .balanced (by simp))
@@ -819,30 +828,13 @@ proves instability; passivity holds without requirement. -/
 
 /-! ### Members of the local denotations -/
 
-/-- Positive inertia, damping and synchronizing coefficient at a balanced angle place a swing
-model in local exponential stability. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hM : 0 < m.p.M)
-    (hD : 0 < m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of hM hD hb hK)))
-
 /-- The same conditions place a swing model in local asymptotic stability. -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable (m : Model) (hM : 0 < m.p.M)
     (hD : 0 < m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
-    ((mem_den_flow_iff.mp (les_of hM hD hb hK))))
-
-/-- With nonnegative damping — in particular the undamped swing equation — positive inertia and
-synchronizing coefficient at a balanced angle place a swing model in Lyapunov stability (energy
-function). -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hM : 0 < m.p.M)
-    (hD : 0 ≤ m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (ls_of hM hD hb hK)))
+    ((mem_den_flow_iff.mp (mem_den_locallyExponentiallyStable m hM hD hb hK))))
 
 /-- A balanced angle with negative synchronizing coefficient (saddle) places a swing model with
 positive inertia in instability, for every damping. -/
@@ -913,7 +905,8 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
     (fun m => m.p.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.p.contDiff_field)
     (fun m _ => m.fderiv_point) fun m hI heq hH => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .inertia (by simp [family, translate]))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (mem_den_locallyExponentiallyStable _
+      (hm .inertia (by simp [family, translate]))
       (hm .damped (by simp [family, translate])) (hm .balanced (by simp [family, translate]))
       (hm .synchronizing (by simp [family, translate])))))
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
@@ -1059,7 +1052,8 @@ an equilibrium, so the guard `D > 0`, `K > 0` decides (`Spectral.exactUnder_of_e
     (fun m _ => m.p.contDiff_field) (fun m hI heq hG hd => ?_) fun m hI heq hG => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact Spectral.den_locallyExponentiallyStable_subset_las (mem_den_flow_iff.mpr
-      ((mem_den_flow_iff.mp (les_of (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
+      ((mem_den_flow_iff.mp (mem_den_locallyExponentiallyStable _
+        (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
         (hm .balanced (by simp [family, translate]))
         (hm .synchronizing (by simp [family, translate]))))))
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
@@ -1266,7 +1260,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
           nlinarith
     · exact Or.inl ⟨hD, hK⟩
   · rintro ⟨hb, (⟨hD, hK⟩ | ⟨hk2, hD⟩)⟩
-    · exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (ls_of hM hD hb hK)))
+    · exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (mem_den_lyapunovStable _ hM hD hb hK)))
     · -- a damped flat curve: `(δ + (M/D) ω)² + ω²` does not increase
       rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       have hDne := hD.ne'
@@ -1377,12 +1371,6 @@ namespace Linearized
 /-- The linear plant of the Jacobian at the selected angle. -/
 def plant (m : Model) : Linear.Plant 2 0 := ⟨m.p.jacobian m.δ, 0, 0, 0⟩
 
-/-- The Jacobian of the nonlinear field at the selected point is the state matrix of the
-linearized plant. -/
-@[tmio M, powerlib_domain] theorem fderiv_point_eq_plant (m : Model) :
-    fderiv ℝ m.p.field m.point = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (plant m).A :=
-  m.fderiv_point
-
 /-- The translation for the linearization: the attractive sentences, sampled contraction and
 Lyapunov stability into positive inertia, damping and synchronization; instability into inertia
 and a destabilizing sign; conservation into inertia, synchronization and zero damping; passivity
@@ -1412,9 +1400,10 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
   · rfl
   · rfl
 
-@[tmio TM, powerlib_domain] private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
+/-- The linearization is exponentially stable iff `D > 0` and `K > 0` (`M > 0`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_iff (m : Model) (hM : 0 < m.p.M) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
+      m ∈ {m : Model | 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ}) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
     (Or.inl trivial))]
@@ -1452,11 +1441,6 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
       (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.trace_jacobian, neg_div]
           exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
 
-/-- The decay requirement is the whole language: damped and undamped are inconsistent. -/
-@[tmio M, powerlib_domain] theorem realize_univ :
-    connection% (TMIO.realize Meets Set.univ = ∅) :=
-  Swing.realize_univ
-
 /-- Every translation of the linearized swing family is sound (the linear table,
 `Spectral.chain_le_semantics_of_linearTable`): positive inertia, damping and synchronization make
 the Jacobian Hurwitz; a destabilizing sign gives a characteristic root in the open right half
@@ -1471,11 +1455,11 @@ passive; decay rates go to the inconsistent whole language. -/
     family_isLinear
     (fun s => by simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq s)
     (fun m hm => ?_) (fun m hm => ?_)
-    (fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
+    (fun _ => Spectral.realize_univ_subset_of_eq_empty Swing.realize_univ _) (fun m hm => ?_)
     fun m _ => family.mem_den.mpr (Port.System.passive_of_noPorts _)
   · obtain ⟨hM, hD, hK⟩ := mem_realize_stable.mp hm
     exact (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
-      ((isHurwitz_iff hM).mpr ⟨hD, hK⟩)
+      ((mem_den_iff m hM).mpr ⟨hD, hK⟩)
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact exists_root (hm .inertia (by simp)) (hm .destabilizing (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
@@ -1509,19 +1493,8 @@ swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` 
     (fun m hI => mem_realize_stable.trans ?_) hP
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
   rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
-    (Or.inl trivial)), (connection_proof% isHurwitz_iff hM)]
+    (Or.inl trivial)), (connection_proof% mem_den_iff m hM)]
   exact ⟨fun h => h.2, fun h => ⟨hM, h⟩⟩
-
-/-- The linearization is exponentially stable iff `D > 0` and `K > 0` (`M > 0`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_iff (m : Model) (hM : 0 < m.p.M) :
-    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      m ∈ {m : Model | 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ}) := by
-  unfold powerlib.TMIO.Statement
-  rw [family_isLinear.den_hurwitz (Or.inl Flow.Property.attractive_globallyExponentiallyStable),
-    Set.mem_ofPred_eq,
-    ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
-      (Or.inl trivial)), (connection_proof% isHurwitz_iff hM)]
-  rfl
 
 /-- Passivity is translated exactly for the linearization. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by

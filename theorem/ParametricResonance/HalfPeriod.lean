@@ -24,9 +24,9 @@ Results.
   holds for `δ` iff it holds for `−δ`: monodromy spectrum and flip threshold are invariant.
 
 The Hill-level gauge `φ_m ↦ (−1)^m φ_m` of the source is proved in `theorem/Periodic/Hill.lean`:
-`hillGauge_conj` (the gauge flips the odd bands), `hill3_neg_similar` (third-order Hill matrices at
-`±δ̂₁` are gauge-similar) and `exactHill_half_shift` (a half-period shift of `J(t)` gives
-gauge-similar exact Hill matrices).
+`hillMatrix_gauge_similar` (the gauge flips the odd bands), `hill3_neg_similar` (third-order Hill
+matrices at `±δ̂₁` are gauge-similar) and `exactHill_half_shift` (a half-period shift of `J(t)`
+gives gauge-similar exact Hill matrices).
 -/
 
 noncomputable section

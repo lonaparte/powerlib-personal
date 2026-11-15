@@ -24,7 +24,8 @@ module theorem.PowerSystem.Frequency.GovernorReduction where
 -- and the finite-horizon trajectory estimate of the limit is implementation evidence outside the
 -- sentences. Lean: `full-hurwitz`, `red-hurwitz` are `Family.IsLinear.den_hurwitz`
 -- (`SwingGovernor.family_isLinear`, `SwingGovernor.reducedFamily_isLinear`), `hurwitz-reduce` is
--- `SwingGovernor.isHurwitz_iff_reduced`, `den↔` is `SwingGovernor.mem_den_iff_reduce`,
+-- the matrix step of `SwingGovernor.mem_den_iff_reduce` (its `ges` instance read through
+-- `Family.IsLinear.mem_den_hurwitz`), `den↔` is `SwingGovernor.mem_den_iff_reduce`,
 -- `den↔-nonneg` is `SwingGovernor.mem_den_iff_reduce_of_nonneg` (`damped-of-nonneg` its
 -- arithmetic), `boundary` is `SwingGovernor.exists_unstable_reduce_globallyExponentiallyStable`
 -- (`no-transfer` is its reading, with `unstable-excludes` from

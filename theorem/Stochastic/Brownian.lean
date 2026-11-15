@@ -29,11 +29,9 @@ theory/T-martingales-stopping-times.md §1.2 (`W_t` and `W_t² − t` are martin
 motion: the future increment is independent of the past).
 
 Results.
-* Mathlib wrappers (Mathlib declarations in brackets): `brownian_hasLaw` [`hasLaw_eval`],
-  `brownian_mean` [`integral_eval`], `brownian_cov` [`covariance_eval`],
-  `brownian_indepIncrements` [`hasIndepIncrements`], `brownian_increment_hasLaw` [`hasLaw_sub`],
-  `brownian_weakMarkov` [`IsPreBrownianReal.indepFun_shift`], `brownian_scaling`
-  [`IsBrownianReal.smul`].
+* The basic laws are used from Mathlib directly: `IsPreBrownianReal.hasLaw_eval` (`W_t ~ N(0, t)`),
+  `integral_eval`, `covariance_eval` (`Cov(W_s, W_t) = min(s, t)`), `hasIndepIncrements`,
+  `hasLaw_sub`, `indepFun_shift` (the weak Markov property) and `IsBrownianReal.smul` (scaling).
 * `condExp_increment`, `condExp_increment_zero` — increments are independent of the past:
   `E[f(W_t − W_s) | 𝓕_s] = E f(W_t − W_s)` a.s., in particular `E[W_t − W_s | 𝓕_s] = 0`.
 * `martingale_brownian`, `martingale_brownian_sq`, `martingale_brownian_exp` — `W_t`,
@@ -51,38 +49,6 @@ open MeasureTheory ProbabilityTheory Real Filter
 open scoped NNReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
-
-/-! ## Mathlib wrappers: Brownian motion -/
-
-/-- `W_t ~ N(0, t)` (Mathlib `IsPreBrownianReal.hasLaw_eval`). -/
-@[tmio T, powerlib_foundation] theorem brownian_hasLaw (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
-    HasLaw (B t) (gaussianReal 0 t) P := hB.hasLaw_eval t
-
-/-- `E W_t = 0` (Mathlib `IsPreBrownianReal.integral_eval`). -/
-@[tmio T, powerlib_foundation] theorem brownian_mean (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
-    ∫ ω, B t ω ∂P = 0 := hB.integral_eval t
-
-/-- `Cov(W_s, W_t) = min(s, t)` (Mathlib `IsPreBrownianReal.covariance_eval`). -/
-@[tmio T, powerlib_foundation] theorem brownian_cov (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
-    cov[B s, B t; P] = min s t := hB.covariance_eval s t
-
-/-- Independent increments (Mathlib `IsPreBrownianReal.hasIndepIncrements`). -/
-@[tmio T, powerlib_foundation] theorem brownian_indepIncrements (hB : IsPreBrownianReal B P) :
-    HasIndepIncrements B P := hB.hasIndepIncrements
-
-/-- `W_s − W_t ~ N(0, |s − t|)` (Mathlib `IsPreBrownianReal.hasLaw_sub`). -/
-@[tmio T, powerlib_foundation] theorem brownian_increment_hasLaw (hB : IsPreBrownianReal B P)
-    (s t : ℝ≥0) : HasLaw (B s - B t) (gaussianReal 0 (nndist s.1 t.1)) P := hB.hasLaw_sub s t
-
-/-- **Weak Markov property** (Mathlib `IsPreBrownianReal.indepFun_shift`): the shifted process
-`u ↦ W_{t₀+u} − W_{t₀}` is independent of the past `(W_r)_{r ≤ t₀}`. -/
-@[tmio T, powerlib_foundation] theorem brownian_weakMarkov (hB : IsPreBrownianReal B P) (t₀ : ℝ≥0) :
-    IndepFun (fun ω t => B (t₀ + t) ω - B t₀ ω) (fun ω (t : Set.Iic t₀) => B t ω) P :=
-  hB.indepFun_shift t₀
-
-/-- Brownian scaling `t ↦ c^{−1/2} W_{ct}` (Mathlib `IsBrownianReal.smul`). -/
-@[tmio T, powerlib_foundation] theorem brownian_scaling (hB : IsBrownianReal B P) {c : ℝ≥0} (hc : c ≠ 0) :
-    IsBrownianReal (fun t ω => (√c)⁻¹ * B (c * t) ω) P := hB.smul hc
 
 /-! ## Increments and the natural filtration -/
 

@@ -77,8 +77,8 @@ Family and connection conclusions.
   translation).
 * Linearization: `hasFDerivAt_field_point` (the Jacobian `jac` at `x*`), `jac_isHurwitz` (under
   `margin > 0`, `μ u* v₀ > 0`, `η ≠ 0`; eigenvector form of the energy argument), giving the
-  connection results `mem_den_locallyExponentiallyStable` and
-  `mem_den_locallyAsymptoticallyStable`.
+  connection result `mem_den_locallyExponentiallyStable` (local asymptotic stability, already for
+  `margin ≥ 0`, is `mem_den_locallyAsymptoticallyStable_of_dissipative`, in the LaSalle module).
 * Trajectory level, in `theorem.GridTiedConverter.GFM.Matching.LaSalle` (private implementation
   evidence: set attraction and regions of attraction are outside the sentence language; the generic
   tools are the foundation results of `theorem.Dynamics.LaSalle.Periodic`, LaSalle on the invariant
@@ -855,8 +855,12 @@ def family : Family Model Requirement 4 0 :=
       hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
         (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
 
-@[tmio TM, powerlib_domain] private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
+/-- **Local exponential stability of the operating point** under the source's (and the note's)
+strict condition `margin > 0`, with `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` and `η ≠ 0`: the
+linearization is Hurwitz (`jac_isHurwitz`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0)
+    (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
@@ -909,8 +913,8 @@ Static evidence on the model, not a connection conclusion. -/
       (hm .dissipative (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
-    exact mem_den_flow.mpr ((mem_den_flow.mp (les m hC hL hR (hm .synchronizing (by simp)) (hm .matching (by simp))
-      (hm .damped (by simp)))))
+    exact mem_den_locallyExponentiallyStable m hC hL hR (hm .synchronizing (by simp))
+      (hm .matching (by simp)) (hm .damped (by simp))
   · exact Spectral.realize_univ_subset_of_eq_empty realize_univ _ hm
   · rw [family_isAutonomous.den_passive]
     trivial
@@ -966,26 +970,5 @@ Lyapunov function on `|θ_dq| < 2π`. -/
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
   exact (mem_den_flow.mp (lyapunovStable m hC hL hR (k_pos m hL hR hs) hδ))
-
-
-/-- **Local exponential stability of the operating point** under the source's (and the note's)
-strict condition `margin > 0`, with `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` and `η ≠ 0`: the
-linearization is Hurwitz (`jac_isHurwitz`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0)
-    (hδ : 0 < m.margin) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% mem_den_flow)]
-  exact (mem_den_flow.mp (les m hC hL hR hs hη hδ))
-
-/-- Local asymptotic stability of the operating point under the same requirements. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0)
-    (hδ : 0 < m.margin) :
-    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.den_locallyExponentiallyStable_subset_las
-    (mem_den_locallyExponentiallyStable m hC hL hR hs hη hδ)
 
 end powerlib.GFM.Matching.MatchingStiffGrid

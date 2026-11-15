@@ -31,9 +31,10 @@ Results.
 * `D_fd ≥ 0` entrywise and each row sums to 1 (§1.4; `Dfd_nonneg`, `Dfd_row_sum`).
 * Each bus frequency deviation lies between the smallest and the largest machine
   frequency deviation (`le_busFrequency`, `busFrequency_le`); in common mode all bus
-  frequencies equal the COI frequency (`busFrequency_commonMode`,
-  `busFrequency_sub_coi_commonMode`); a machine mode shape `v` appears at the buses as `D_fd v`
-  (`busFrequency_modal`).
+  frequencies equal the common machine frequency, which is the COI frequency for any weights
+  summing to one (`busFrequency_commonMode`); a machine mode shape `v` appears at the buses as
+  `D_fd v`, linearly in the modal amplitudes (Mathlib `Matrix.mulVec_sum`,
+  `Matrix.mulVec_smul`).
 
 Corrections.
 * §2.7 ("环网可能病态"): meshed (loopy) networks are never singular under the connectivity
@@ -302,20 +303,5 @@ frequency deviation. -/
     (Dfd W *ᵥ (fun _ => c)) b = c :=
   le_antisymm (busFrequency_le hpos hconn (fun _ => le_rfl) b)
     (le_busFrequency hpos hconn (fun _ => le_rfl) b)
-
-/-- In common mode the deviation of each bus frequency from the COI frequency
-`∑ w_g ω_g` (weights summing to one) vanishes. -/
-@[tmio T, powerlib_foundation] theorem busFrequency_sub_coi_commonMode (hpos : ∀ i j, 0 ≤ W i j)
-    (hconn : MachineConnected W) {wH : γ → ℝ} (hw : ∑ g, wH g = 1) (c : ℝ) (b : β) :
-    (Dfd W *ᵥ (fun _ => c)) b - ∑ g, wH g * c = 0 := by
-  rw [busFrequency_commonMode hpos hconn, ← Finset.sum_mul, hw, one_mul, sub_self]
-
-/-- Modal map: a machine-frequency mode shape `v` appears at the buses as `D_fd v`,
-linearly in the modal amplitudes. -/
-@[tmio T, powerlib_foundation] theorem busFrequency_modal {ι : Type*} [Fintype ι] (a : ι → ℝ)
-    (v : ι → γ → ℝ) :
-    Dfd W *ᵥ (∑ i, a i • v i) = ∑ i, a i • (Dfd W *ᵥ v i) := by
-  rw [Matrix.mulVec_sum]
-  exact Finset.sum_congr rfl fun i _ => Matrix.mulVec_smul _ _ _
 
 end powerlib.Network

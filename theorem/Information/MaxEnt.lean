@@ -28,9 +28,9 @@ Results.
 * `relEntropy_tilted_le`, `relEntropy_eq_relEntropy_tilted_iff` — `p_λ` minimises relative
   entropy (maximises `H[·‖m]`) on the moment class, uniquely.
 * `gibbs_isIProjection` — for finitely many constraints, the Gibbs measure whose multipliers
-  close the constraints is the unique I-projection of `m` onto the linear moment family.
-* `gibbs_isIProjection_own_moments` — every exponential-family member is the MaxEnt solution
-  for its own moments (§1.6).
+  close the constraints is the unique I-projection of `m` onto the linear moment family; with
+  `F` its own moments (`hclose` by `rfl`), every exponential-family member is the MaxEnt
+  solution for its own moments (§1.6).
 * `klDiv_eq_klDiv_tilted_add` — the same identity in `klDiv` form when `m` is a probability
   measure.
 * `deriv_dual`, `deriv_dual_eq_zero_iff`, `iteratedDeriv_two_dual`,
@@ -188,7 +188,8 @@ def momentFamily (m : Measure α) (f : ι → α → ℝ) (F : ι → ℝ) : Set
 
 /-- **MaxEnt as I-projection.** If the multipliers `λ` close the constraints
 (`gibbs m f λ` lies in the moment family), then `gibbs m f λ` is the unique minimiser of
-`relEntropy · m` over the moment family. -/
+`relEntropy · m` over the moment family. At `F` the Gibbs measure's own moments
+(`hclose := fun _ => rfl`): every exponential-family member is a MaxEnt solution (§1.6). -/
 @[tmio T, powerlib_foundation] theorem gibbs_isIProjection
     {m : Measure α} [SigmaFinite m] [NeZero m] {f : ι → α → ℝ} {lam F : ι → ℝ}
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
@@ -207,17 +208,6 @@ def momentFamily (m : Measure α) (f : ι → α → ℝ) (F : ι → ℝ) : Set
     simp only [(hpF _).2, hclose]
   exact ⟨relEntropy_tilted_le hZ hpm hint (integrable_tilt lam hfp) hgq hmom,
     relEntropy_eq_relEntropy_tilted_iff hZ hpm hint (integrable_tilt lam hfp) hgq hmom⟩
-
-/-- **Every exponential-family member is a MaxEnt solution** (§1.6): `gibbs m f λ` is the unique
-I-projection of `m` onto the family with its own moments `F_k = E_{p_λ}[f_k]`. -/
-@[tmio T, powerlib_foundation] theorem gibbs_isIProjection_own_moments
-    {m : Measure α} [SigmaFinite m] [NeZero m] {f : ι → α → ℝ} {lam : ι → ℝ}
-    (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
-    (hfq : ∀ i, Integrable (f i) (gibbs m f lam)) :
-    ∀ p ∈ momentFamily m f (fun i => ∫ x, f i x ∂(gibbs m f lam)),
-      relEntropy (gibbs m f lam) m ≤ relEntropy p m ∧
-        (relEntropy p m = relEntropy (gibbs m f lam) m ↔ p = gibbs m f lam) :=
-  (gibbs_isIProjection hZ hfq fun _ => rfl).2
 
 end Gibbs
 

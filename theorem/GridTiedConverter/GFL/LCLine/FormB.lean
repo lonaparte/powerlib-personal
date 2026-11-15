@@ -253,21 +253,14 @@ def γq : ℝ := (p.lineX * p.iqRef - p.Rg * p.idRef) / (p.ωg * p.Cf * p.lineDe
   field_simp
   ring
 
-/-- Rotational structure of the exact line solution: `γ_q = −β_d`, `γ_d = β_q`. -/
+/-- Rotational structure of the exact line solution: `γ_q = −β_d`, `γ_d = β_q`; hence the
+double-angle coefficients of §1.7 vanish, `c₃ = (γ_q + β_d)/2 = 0`, `c₄ = (γ_d − β_q)/2 = 0`. -/
 @[tmio M, powerlib_domain] theorem lineCurrent_rotational : p.γq = -p.βd ∧ p.γd = p.βq := by
   constructor
   · simp only [γq, βd]
     ring
   · simp only [γd, βq]
     ring
-
-/-- Hence the double-angle coefficients of §1.7 vanish: `c₃ = (γ_q + β_d)/2 = 0`,
-`c₄ = (γ_d − β_q)/2 = 0`. -/
-@[tmio M, powerlib_domain] theorem doubleAngle_coefficients_zero :
-    (p.γq + p.βd) / 2 = 0 ∧ (p.γd - p.βq) / 2 = 0 := by
-  obtain ⟨h1, h2⟩ := p.lineCurrent_rotational
-  rw [h1, h2]
-  constructor <;> ring
 
 end FormBParams
 

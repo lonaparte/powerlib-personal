@@ -153,11 +153,6 @@ def pf (k i : n) : ℂ := mb.V k i * mb.W k i
   refine Finset.sum_congr rfl fun i _ => ?_
   ring
 
-/-- The `(k,k)` resolvent channel: `[(sI − A)⁻¹]_{kk} = Σ_i p_{ki} / (s − λ_i)`. -/
-@[tmio T, powerlib_foundation] theorem resolvent_diag {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) (k : n) :
-    (s • (1 : Matrix n n ℂ) - A)⁻¹ k k = ∑ i, mb.pf k i / (s - mb.eig i) := by
-  rw [mb.resolvent_apply hs]; rfl
-
 /-- Modal residue matrix `R^{(i)}_{ℓj} = (C v_i)_ℓ (ψ_iᵀ B)_j`. -/
 def residue {κ κ' : Type*} (C : Matrix κ n ℂ) (B : Matrix n κ' ℂ) (i : n) : Matrix κ κ' ℂ :=
   fun l j => (C *ᵥ mb.v i) l * vecMul (mb.ψ i) B j

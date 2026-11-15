@@ -20,12 +20,10 @@ Source: work-sync theory/T-singular-perturbation.md and theory/T-tikhonov.md use
 solution formula for the slow and boundary-layer subsystems; the formula itself is Hespanha,
 Ch. 5, Thm. 5.2, as formalized upstream.
 
-Results (each upstream item a thin wrapper that invokes the upstream theorem; no upstream proof is
-copied).
-* `forcedResponse_hasDerivAt`: the forced response solves the state equation at every time
-  (upstream `LinearSystems.ContinuousLinearSystem.isTrajectory_forcedResponse`, applied to the
-  system `(A, B, 0, 0)`).
-* `forcedResponse_self`: it starts at `x₀` (upstream `LinearSystems.variationOfConstants_self`).
+Results (each upstream item invokes the upstream theorems; no upstream proof is copied). That the
+forced response solves the state equation and starts at `x₀` is upstream and used directly
+(`LinearSystems.ContinuousLinearSystem.isTrajectory_forcedResponse` at the system `(A, B, 0, 0)`,
+`LinearSystems.variationOfConstants_self`).
 * `eq_forcedResponse_of_isIntegralCurveOn`: every solution on the segment between `t₀` and `t₁`
   (a Mathlib integral curve, one-sided at the endpoints) with `x(t₀) = x₀` equals the forced
   response there (upstream `IsIntegralCurveOn.isIntegralSolution`,
@@ -59,21 +57,6 @@ open Matrix Set
 open scoped Matrix.Norms.Operator
 
 variable {X U : Type*} [Fintype X] [DecidableEq X] [Fintype U]
-
-/-- The forced response solves `ẋ = A(t) x + B(t) u(t)` at every time. -/
-@[tmio T, powerlib_foundation] theorem forcedResponse_hasDerivAt {A : ℝ → Matrix X X ℝ}
-    {B : ℝ → Matrix X U ℝ} {u : ℝ → U → ℝ} (hA : Continuous A) (hB : Continuous B)
-    (hu : Continuous u) (t₀ : ℝ) (x₀ : X → ℝ) (t : ℝ) :
-    HasDerivAt (LinearSystems.forcedResponse A B u t₀ x₀)
-      (A t *ᵥ LinearSystems.forcedResponse A B u t₀ x₀ t + B t *ᵥ u t) t :=
-  LinearSystems.ContinuousLinearSystem.isTrajectory_forcedResponse
-    (⟨A, B, 0, 0⟩ : LinearSystems.ContinuousLinearSystem X U X ℝ) hA hB hu t₀ x₀ t
-
-/-- The forced response starts at `x₀`. -/
-@[tmio T, powerlib_foundation] theorem forcedResponse_self (A : ℝ → Matrix X X ℝ)
-    (B : ℝ → Matrix X U ℝ) (u : ℝ → U → ℝ) (t₀ : ℝ) (x₀ : X → ℝ) :
-    LinearSystems.forcedResponse A B u t₀ x₀ t₀ = x₀ :=
-  LinearSystems.variationOfConstants_self t₀ x₀
 
 /-- Every solution of `ẋ = A(t) x + B(t) u(t)` on the segment between `t₀` and `t₁` with
 `x(t₀) = x₀` is the forced response there. -/

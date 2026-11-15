@@ -94,8 +94,8 @@ Results.
   trajectory); `switched_averaging_error_of_isHurwitz` (averaging error `O(T)` on `[0, ∞)`);
   `isHurwitz_of_switched_decay` (converse: decay with `T`-independent constants for all
   `T ∈ (0, T₀]` forces `Ā` Hurwitz, via the averaging error, `exists_switched_trajectory` and the
-  Floquet multiplier `e^{μ t}` of an eigenpair); `isHurwitz_iff_switched_decay` (the transfer is
-  exact in the fast-switching limit).
+  Floquet multiplier `e^{μ t}` of an eigenpair); with `switched_decay_of_isHurwitz` the transfer
+  is exact in the fast-switching limit.
 * Slow switching (`d = 1/2`, `A₁ = N₁ − εI`, `A₂ = N₂ − εI`, `N₁ = [[0, 1], [0, 0]]`,
   `N₂ = [[0, 0], [−1, 0]]`): `periodMap_shear_pair` (`M_T = e^{−εT} [[1, T/2], [−T/2, 1 − T²/4]]`,
   trace `e^{−εT}(2 − T²/4)`, determinant `e^{−2εT}`); `slowSwitching_counterexample` (`ε = 1/10`:
@@ -868,22 +868,6 @@ and the existence of switched trajectories). -/
     linarith
   have := neg_of_mul_neg_left hneg ht₁.le
   simpa using this
-
-/-- **Exactness of the stability transfer in the fast-switching limit.** The averaged matrix
-`Ā = d A₁ + (1 − d) A₂` is Hurwitz iff, for some `T₀ > 0`, every switched trajectory with
-switching period `T ∈ (0, T₀]` decays exponentially with constants independent of `T`:
-`‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖`, `C, α > 0`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_iff_switched_decay {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
-    (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ) :
-    LinearSystems.IsHurwitz (avgMatrix d A₁ A₂) ↔
-      ∃ T₀ : ℝ, 0 < T₀ ∧ ∃ C α : ℝ, 0 < C ∧ 0 < α ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
-        ∀ x : ℝ → Fin n → ℝ,
-        (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
-          IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))) →
-        ∀ t : ℝ, 0 ≤ t → ‖x t‖ ≤ C * Real.exp (-(α * t)) * ‖x 0‖ := by
-  refine ⟨switched_decay_of_isHurwitz hd0 hd1 A₁ A₂, ?_⟩
-  rintro ⟨T₀, hT₀, C, α, -, hα, hdec⟩
-  exact isHurwitz_of_switched_decay hd0 hd1 A₁ A₂ hT₀ hα hdec
 
 end Hurwitz
 

@@ -35,7 +35,7 @@ Model boundary.
 * Level: local exponential stability of the operating point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`euler_certified_small_step_local`, `not_euler_realizationSoundUnder_of_large_step_local`),
+`not_euler_realizationSoundUnder_of_large_step_local`),
 `theorem/GridTiedConverter/CurrentControl/VoltageLimit.lean` (`family_isAutonomous`,
 `contDiffAt_field`, `mem_den_iff`, `unloaded`); work-sync `theory/T-numerical-integration.md` §1.2,
 §2.7.
@@ -54,7 +54,7 @@ Family and connection conclusions.
   `Numerics.euler_sound_small_step_local` (scaffold `sound-small-step`: a locally exponentially
   stable platform with headroom — with `L > 0`: `R + Kp > 0`, `Ki > 0`, `LimitedPI.mem_den_iff`
   — has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
-  exponentially stable) and `Numerics.euler_certified_small_step_local` (scaffold
+  exponentially stable) and `Numerics.euler_sound_small_step_local` (scaffold
   `certified-small-step`). `LimitedPI.not_euler_realizationSoundUnder` (scaffold
   `not-sound-large-step`): without a step constraint the realization is not sound — the unloaded
   platform `LimitedPI.unloaded` (nominal design `L = R = Kp = Ki = 1`, `i* = 0`, `V_dc = 1`) is

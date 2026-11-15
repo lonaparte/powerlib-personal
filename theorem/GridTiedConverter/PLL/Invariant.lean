@@ -2,8 +2,8 @@ import theorem.GridTiedConverter.PLL.Model
 
 /-! # Invariant coordinates: pendulum form of the SRF-PLL, amplitude–phase and normal modes
 
-Coordinate and trajectory identities; the only stability claims are the two connection
-statements on the PI-PLL family at the end.
+Coordinate and trajectory identities; the stability claims are those of the PI-PLL family,
+read at the member below.
 
 Model boundary.
 * System: the SRF-PLL error model of `theorem/GridTiedConverter/PLL/Model.lean` in the `(θ, ξ)`
@@ -34,10 +34,12 @@ Results.
 Family and connection conclusions.
 No new family: the `(θ_err, ξ)` model with gains `(a, b)`
 and offset `Δω`, read about `θ*`, is the member `PLL.PIPLL.srf 1 a b (−Δω) θ*` of the PI-PLL
-family (`xi_piPLLField`; its selected point is `(θ*, −Δω / b)`). The two local-stability results
-are connection statements on that family (`xi_mem_den_locallyExponentiallyStable`,
-`xi_mem_den_unstable_antiPhase`). The pendulum form is domain evidence for
-the stated PLL fields and their signals.
+family (`xi_piPLLField`; its selected point is `(θ*, −Δω / b)`). Its local stability is that
+family's at `V = 1`, `K_p = a`, `K_i = b`, `δω = −Δω`: for `a, b > 0` the equilibria
+`(2kπ, −Δω/b)` are locally exponentially stable (`srf_mem_den_locallyExponentiallyStable_inPhase`)
+and for `b > 0` the equilibria `((2k+1)π, −Δω/b)` are saddles (`srf_mem_den_unstable_antiPhase`),
+in `theorem/GridTiedConverter/PLL/Model.lean`. The pendulum form is domain evidence for the stated
+PLL fields and their signals.
 -/
 
 noncomputable section
@@ -90,28 +92,12 @@ open powerlib.PLL.PIPLL (srf)
   · field_simp; ring
   · field_simp; ring
 
-/-! ## Local stability in `(θ_err, ξ)` coordinates -/
+/-! ## The `(θ_err, ξ)` field as a PI-PLL family member -/
 
 /-- The `(θ_err, ξ)` field is the untranslated field of the unit-amplitude SRF family member with
 gains `(a, b)` and offset `−Δω`. -/
 @[tmio M, powerlib_domain] theorem xi_piPLLField (a b Δω θ : ℝ) :
     piPLLField (srf 1 a b (-Δω) θ).h a b (-Δω) = xiField a b Δω := by
   rw [srf_piPLLField, xiField_eq_srfField]
-
-/-- `(θ_err, ξ)` model (T-invariant-coordinates §1.2, T-gfl-multiscale §1.3): for
-`a = V K_p > 0`, `b = V K_i > 0` the equilibria `(2kπ, −Δω/b)` are locally exponentially
-stable. -/
-@[tmio TM, powerlib_domain] theorem xi_mem_den_locallyExponentiallyStable {a b : ℝ} (ha : 0 < a)
-    (hb : 0 < b) (Δω : ℝ) (k : ℤ) :
-    connection% (srf 1 a b (-Δω) (2 * k * Real.pi) ∈
-      PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
-  srf_mem_den_locallyExponentiallyStable_inPhase (by simpa using ha) (by simpa using hb) (-Δω) k
-
-/-- `(θ_err, ξ)` model: for `b > 0` the equilibria `((2k+1)π, −Δω/b)` are saddles, unstable. -/
-@[tmio TM, powerlib_domain] theorem xi_mem_den_unstable_antiPhase {a b : ℝ} (hb : 0 < b) (Δω : ℝ)
-    (k : ℤ) :
-    connection% (srf 1 a b (-Δω) ((2 * k + 1) * Real.pi) ∈
-      PIPLL.family.den (.flow .unstable)) :=
-  srf_mem_den_unstable_antiPhase (Kp := a) (by simpa using hb) (-Δω) k
 
 end powerlib.PLL

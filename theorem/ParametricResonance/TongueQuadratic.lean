@@ -17,7 +17,7 @@ Model boundary.
   truncation at second order) is not formalized.
 * Real algebra inside an averaged model, no model family. Exponential stability of the
   second-order slow flow is `Flow.GloballyExponentiallyStable` of its linear field (through
-  `slowFlow_exponentiallyStable_iff`).
+  `slowFlow_holds_iff`).
 
 Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md §6 (corrected criterion), §7 (two exponents), §8 (tongue-centre
@@ -128,7 +128,9 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
     Flow.GloballyExponentiallyStable (secondOrderSystem α₀ cα cω Δ y g) 0 ↔
       0 < damping α₀ cα y ∧ g2 * y / 4 < damping α₀ cα y ^ 2 + (Δ + cω * y) ^ 2 := by
-  rw [secondOrderSystem, slowFlow_exponentiallyStable_iff, hg]
+  rw [secondOrderSystem]
+  refine (slowFlow_holds_iff _ _ _ Flow.Property.attractive_globallyExponentiallyStable).trans ?_
+  rw [hg]
 
 /-- `σ₊ = −a + h > 0` iff `a < 0` or `q(y) < 0` (`h = √(h²)`; in the complex regime
 `h² < 0` the real part `−a` is what matters and `√` returns `0`). -/

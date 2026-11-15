@@ -18,8 +18,8 @@ Source: work-sync `theory/T-impedance-modeling.md` §1.4 (complex transfer funct
 
 Results.
 * `complexSymm a b = [[a, −b], [b, a]]` over any commutative ring. Over `ℝ` it is the matrix of
-  multiplication by `a + jb` (`complexSymm_eq_leftMulMatrix` wraps Mathlib's
-  `Algebra.leftMulMatrix_complex`). Over `ℂ` (entries evaluated at a complex Laplace variable)
+  multiplication by `a + jb` (Mathlib's `Algebra.leftMulMatrix_complex`, `complexSymm`
+  unfolded). Over `ℂ` (entries evaluated at a complex Laplace variable)
   `toSISO M = M₀₀ + j M₁₀` is multiplicative on complex-symmetric matrices.
 * `transfer_csModel`: a real 2 × 2 linear plant whose four matrices are complex-symmetric has
   a complex-symmetric transfer matrix, and its SISO complex transfer function is
@@ -96,12 +96,6 @@ variable {R : Type*} [CommRing R]
 @[tmio T, powerlib_foundation] theorem complexSymm_map {S : Type*} [CommRing S] (f : R →+* S) (a b : R) :
     (complexSymm a b).map f = complexSymm (f a) (f b) := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
-
-/-- C wrapper: the real complex-symmetric matrix is Mathlib's left-multiplication matrix of
-`a + jb` in the basis `(1, j)` (`Algebra.leftMulMatrix_complex`). -/
-@[tmio T, powerlib_foundation] theorem complexSymm_eq_leftMulMatrix (z : ℂ) :
-    complexSymm z.re z.im = Algebra.leftMulMatrix Complex.basisOneI z :=
-  (Algebra.leftMulMatrix_complex z).symm
 
 /-- Real action: `[[a, −b], [b, a]] x` is `(a + jb) (x_d + j x_q)` in complex form. -/
 @[tmio T, powerlib_foundation] theorem toComplex_complexSymm_mulVec (a b : ℝ) (x : Fin 2 → ℝ) :

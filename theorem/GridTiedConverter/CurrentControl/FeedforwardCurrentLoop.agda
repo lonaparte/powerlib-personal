@@ -18,7 +18,7 @@ module theorem.GridTiedConverter.CurrentControl.FeedforwardCurrentLoop where
 -- (`lpfChain_le_semantics`, `lpfExact`) are proved for each family, not transferred. Lean:
 -- `pi-linear` is `CurrentControl.PIParams.family_isLinear` read by `Family.IsLinear.den_hurwitz`,
 -- `lpf-linear` is `CurrentControl.LPFLoop.lpfFamily_isLinear` read by
--- `Family.IsLinear.den_hurwitz`, `block` is `CurrentControl.PIParams.lpf_isHurwitz_iff` (from
+-- `Family.IsLinear.den_hurwitz`, `block` is `CurrentControl.LPFLoop.isHurwitz_iff_stable` (from
 -- `CurrentControl.PIParams.characteristic_root_iff`), `den-eq` is
 -- `CurrentControl.LPFLoop.lpfDen_eq`. Nothing here is exported.
 

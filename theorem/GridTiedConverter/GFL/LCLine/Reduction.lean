@@ -69,7 +69,7 @@ correct sign.
 Correction (`reduced-2d-equation.md` §1–§2): the note states (OUT-positive)
 `−sin θ · i_q − cos θ · i_d = −i_d* cos 2θ − i_q* sin 2θ` on `i = T(−θ) i*`. In fact the left side
 is identically `−i_d*`; written IN-positive, the current part `sin θ · i_q + cos θ · i_d` of
-`ω_g C_f v_cq^c` is identically `i_d*` (`current_part`), and the double-angle form is false
+`ω_g C_f v_cq^c` is identically `i_d*` (`sin_iQ_add_cos_iD`), and the double-angle form is false
 whenever `i_d* ≠ 0` (`current_part_ne_doubleAngle`). Hence `h` has no `2θ` term: it is exactly a
 shifted sinusoid (`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal / basin asymmetric"
 does not hold for this model.
@@ -185,7 +185,8 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
   · rintro ⟨rfl, rfl⟩
     simp [iD, iQ]
 
-/-- `sin θ · i_q + cos θ · i_d = i_d*` on `i = T(−θ) i*`. -/
+/-- `sin θ · i_q + cos θ · i_d = i_d*` on `i = T(−θ) i*`: the current part of `ω_g C_f v_cq^c`
+has no double-angle term. -/
 @[tmio M, powerlib_domain] theorem sin_iQ_add_cos_iD (θ : ℝ) :
     sin θ * p.iQ θ + cos θ * p.iD θ = p.idRef := by
   unfold iQ iD iparkQ iparkD; linear_combination p.idRef * sin_sq_add_cos_sq θ
@@ -195,12 +196,6 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
     cos θ * p.iQ θ - sin θ * p.iD θ = p.iqRef := by
   unfold iQ iD iparkQ iparkD; linear_combination p.iqRef * sin_sq_add_cos_sq θ
 
-/-- The current part of `ω_g C_f v_cq^c`: `sin θ · i_q + cos θ · i_d ≡ i_d*` (no double-angle
-term). -/
-@[tmio M, powerlib_domain] theorem current_part (θ : ℝ) :
-    -sin θ * (-p.iQ θ) + cos θ * p.iD θ = p.idRef := by
-  linear_combination p.sin_iQ_add_cos_iD θ
-
 /-- Correction: the double-angle form printed in `reduced-2d-equation.md` §1 (here with the
 IN-positive currents) is false as soon as `i_d* ≠ 0` (it fails at `θ = π/2`). -/
 @[tmio M, powerlib_domain] theorem current_part_ne_doubleAngle (hid : p.idRef ≠ 0) :
@@ -208,7 +203,8 @@ IN-positive currents) is false as soon as `i_d* ≠ 0` (it fails at `θ = π/2`)
       p.idRef * cos (2 * θ) + p.iqRef * sin (2 * θ) := by
   intro h
   have h1 := h (π / 2)
-  rw [current_part] at h1
+  rw [show -sin (π / 2) * (-p.iQ (π / 2)) + cos (π / 2) * p.iD (π / 2) = p.idRef by
+    linear_combination p.sin_iQ_add_cos_iD (π / 2)] at h1
   have e1 : cos (2 * (π / 2)) = -1 := by rw [show 2 * (π / 2) = π by ring, cos_pi]
   have e2 : sin (2 * (π / 2)) = 0 := by rw [show 2 * (π / 2) = π by ring, sin_pi]
   rw [e1, e2] at h1
@@ -399,14 +395,10 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
   rw [p.h_eq hwC hΔ, p.sinusoid_eq hΔ, ← p.amp_eq hΔ]
   ring
 
-@[tmio M, powerlib_domain] theorem h_funext (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
-    p.h = fun θ => p.c0 - p.amp * sin (θ + p.phase) :=
-  funext (p.h_eq_polar hwC hΔ)
-
 /-- `h′(θ) = −A cos(θ + φ)`. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     HasDerivAt p.h (-(p.amp * cos (θ + p.phase))) θ := by
-  rw [p.h_funext hwC hΔ]
+  rw [funext (p.h_eq_polar hwC hΔ)]
   have h1 : HasDerivAt (fun θ : ℝ => θ + p.phase) 1 θ := (hasDerivAt_id θ).add_const _
   have h2 := (h1.sin).const_mul p.amp
   simpa using h2.const_sub p.c0
@@ -421,9 +413,11 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
   rw [p.deriv_h hwC hΔ, p.cosinusoid_eq hΔ, ← p.amp_eq hΔ]
   ring
 
-@[tmio M, powerlib_domain] theorem contDiff_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) {k : WithTop ℕ∞} :
-    ContDiff ℝ k p.h := by
-  rw [p.h_funext hwC hΔ]
+/-- `h` is smooth for every parameter set: a trigonometric polynomial with constant
+coefficients. -/
+@[tmio M, powerlib_domain] theorem contDiff_h {k : WithTop ℕ∞} : ContDiff ℝ k p.h := by
+  unfold Params.h Params.hE parkQ Params.vcD Params.vcQ Params.igD Params.igQ Params.solD
+    Params.solQ Params.iD Params.iQ iparkD iparkQ
   fun_prop
 
 /-! ### EMF rotation covariance and noise sensitivities -/

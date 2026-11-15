@@ -42,8 +42,8 @@ Results (generic foundation for every nonlinear pH system).
 * Power balance (1.2) and its integral (1.3) (`power_balance`, `integral_power_balance`,
   `trajectory_energy_derivative`), the dissipation inequality (`dissipation_inequality`,
   `integral_dissipation`) and the zero-input corollary (`zeroInput_power_balance`,
-  `zeroInput_energy_antitone`), along the finite solution segments of the Port semantics
-  (`Port.System.IsTrajectoryOn`).
+  `energy_antitoneOn_of_isIntegralCurveOn`), along the finite solution segments of the Port
+  semantics (`Port.System.IsTrajectoryOn`).
 * Passivity with storage `H − c` under a lower bound `c ≤ H` (`passiveWith_sub`,
   `passive_of_bddBelow`); Lyapunov stability of a strict local minimum of `H` under zero input
   (`IsStrictLocalMin.lyapunovStable`).
@@ -304,12 +304,6 @@ def system : Port.System n m :=
   antitoneOn_V_comp_traj M.differentiable_H M.continuous_H hs hφ
     (fun t _ => M.zeroInput_lie_nonpos (φ t))
 
-/-- Under zero input the Hamiltonian is antitone along every forward solution. -/
-@[tmio T, powerlib_foundation] theorem zeroInput_energy_antitone {x : ℝ → State n} {t₀ : ℝ}
-    (hx : IsIntegralCurveOn x (fun _ y => M.zeroInputField y) (Ici t₀)) :
-    AntitoneOn (fun t => M.H (x t)) (Ici t₀) :=
-  M.energy_antitoneOn_of_isIntegralCurveOn (convex_Ici t₀) hx
-
 /-- Under zero input the Hamiltonian is antitone along every finite solution segment of the
 zero-input field. -/
 @[tmio T, powerlib_foundation] theorem energy_antitoneOn_of_isTrajectoryOn {φ : ℝ → State n} {a b : ℝ}
@@ -329,21 +323,11 @@ zero-input field. -/
       ((M.differentiable_H (x t)).hasFDerivAt.comp_hasDerivWithinAt t (hx t ht)).sub_const c)
     (fun x u => M.dissipation_inequality x u)
 
-/-- Passivity with storage `H` when `H` is nonnegative. -/
-@[tmio T, powerlib_foundation] theorem passiveWith (hH : ∀ x, 0 ≤ M.H x) : M.system.PassiveWith M.H := by
-  simpa using M.passiveWith_sub hH
-
 /-- A Hamiltonian bounded below makes the pH system passive. -/
 @[tmio T, powerlib_foundation] theorem passive_of_bddBelow (hH : BddBelow (range M.H)) :
     M.system.Passive := by
   obtain ⟨c, hc⟩ := hH
   exact ⟨_, M.passiveWith_sub fun x => hc (mem_range_self x)⟩
-
-/-- The passivity sentence of the library holds for a pH system whose Hamiltonian is bounded
-below. -/
-@[tmio T, powerlib_foundation] theorem holds_passive (hH : BddBelow (range M.H)) :
-    Sentence.passive.holds (.continuous M.system) :=
-  M.passive_of_bddBelow hH
 
 /-! ### Equilibria and Lyapunov stability at a strict minimum of `H` -/
 
@@ -485,7 +469,7 @@ field at the operating point. -/
 /-- Passivity does not depend on the centre of the coordinates. -/
 @[tmio T, powerlib_foundation] theorem holds_passive_shift (xs : State n) (hH : BddBelow (range M.H)) :
     Sentence.passive.holds (.continuous (M.shift xs).system) :=
-  (M.shift xs).holds_passive ((M.bddBelow_range_shift_H).mpr hH)
+  (M.shift xs).passive_of_bddBelow ((M.bddBelow_range_shift_H).mpr hH)
 
 /-- Lyapunov stability of a strict local minimum, as the library sentence of the centred
 system. -/
@@ -560,7 +544,7 @@ system at the origin. -/
     (hH : BddBelow (range (model x).H)) : connection% (x ∈ F.den .passive) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% mem_den), hF x]
-  exact (model x).holds_passive hH
+  exact (model x).passive_of_bddBelow hH
 
 /-- An explicit lower bound `c ≤ H` places a member in the passivity denotation. -/
 @[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive_of_lowerBound

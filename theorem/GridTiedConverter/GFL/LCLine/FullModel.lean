@@ -60,10 +60,9 @@ Results.
 
 Family and connection conclusions.
 The module states no behaviour of the 10-state field: it has
-no Family, and every result is static. The equilibrium characterizations `field10_eq_zero_iff`
-and `field10_equilibria_eq` are static evidence on the model, not
-connection conclusions; behavioural conclusions about the reduced model are made through the
-family of `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`.
+no Family, and every result is static. The equilibrium characterization `field10_eq_zero_iff`
+is static evidence on the model, not a connection conclusion; behavioural conclusions about the
+reduced model are made through the family of `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`.
 -/
 
 noncomputable section
@@ -375,18 +374,6 @@ Static evidence on the model, not a connection conclusion. -/
       rw [p.vccQ_qssState]; exact hθ
     · show p.Kp * vccQ (p.qssState θ 0) + p.Ki * p.qssState θ 0 8 = 0
       rw [p.vccQ_qssState, hθ, p.qssState_8]; ring
-
-/-- The equilibrium set of the 10-state field as an image of the zero set of `h`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem field10_equilibria_eq (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
-    (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0) :
-    {x : State 10 | p.field10 x = 0} = (fun θ => p.qssState θ 0) '' {θ | p.h θ = 0} := by
-  ext x
-  simp only [Set.mem_ofPred_eq, Set.mem_image]
-  rw [p.field10_eq_zero_iff hLf hCf hLg hwC hΔ hKicc hKi]
-  constructor
-  · rintro ⟨θ, hθ, rfl⟩; exact ⟨θ, hθ, rfl⟩
-  · rintro ⟨θ, hθ, rfl⟩; exact ⟨θ, hθ, rfl⟩
 
 /-! ### The reduced field, derived from the 10-state field -/
 

@@ -17,12 +17,11 @@ Source: work-sync `theory/T-decoupling-control.md` §1.3–§1.5, §2.2;
 `theory/T-gfl-control.md` §1.4.3; `theory/T-dae-elimination.md` §2.2 (uses the cancellation).
 
 Results.
-* `residual_general`, `residual_caseA`, `residual_caseB` (+ q-axis forms): the coupling left in
-  the `L`-equation is `(ω L − ω̂ L̂) i_q` on d and `−(ω L − ω̂ L̂) i_d` on q; it is `ω ΔL i` when
-  `ω̂ = ω` (case A, `ΔL = L − L̂`) and `(ω − ω̂) L i` when `L̂ = L` (case B). `residual_rate` is
-  the `di/dt` form (divided by `L`).
+* `residual_general`: the coupling left in the `L`-equation is `(ω L − ω̂ L̂) i_q` on d (and,
+  negated with `i_q ↦ i_d`, `−(ω L − ω̂ L̂) i_d` on q); it is `ω ΔL i` when `ω̂ = ω` (case A,
+  `ΔL = L − L̂`) and `(ω − ω̂) L i` when `L̂ = L` (case B).
 * `decoupling_power_cancel`: the decoupling terms contribute nothing to the bridge power
-  `u_d i_d + u_q i_q`, for either sign convention (`decoupling_power_cancel_out`).
+  `u_d i_d + u_q i_q` (the OUT-positive convention negates both terms).
 
 Family and connection conclusions.
 * `PIParams.mem_den_unstable_of_Ki_neg` (connection): if `Ki < 0` the loop is unstable — a
@@ -50,29 +49,9 @@ open scoped Topology
 @[tmio T, powerlib_foundation] theorem residual_general (ω ωhat L Lhat iq : ℝ) :
     ω * L * iq - ωhat * Lhat * iq = (ω * L - ωhat * Lhat) * iq := by ring
 
-/-- q-axis coupling: geometric `−ω L i_d` minus `u_q^dec = −ω̂ L̂ i_d`. -/
-@[tmio T, powerlib_foundation] theorem residual_general_q (ω ωhat L Lhat id : ℝ) :
-    -(ω * L * id) - -(ωhat * Lhat * id) = -((ω * L - ωhat * Lhat) * id) := by ring
-
-/-- Case A (`ω̂ = ω`): residual `ω ΔL i_q`, `ΔL = L − L̂`. -/
-@[tmio T, powerlib_foundation] theorem residual_caseA (ω L Lhat iq : ℝ) :
-    ω * L * iq - ω * Lhat * iq = ω * (L - Lhat) * iq := by ring
-
-/-- Case B (`L̂ = L`): residual `(ω − ω̂) L i_q`. -/
-@[tmio T, powerlib_foundation] theorem residual_caseB (ω ωhat L iq : ℝ) :
-    ω * L * iq - ωhat * L * iq = (ω - ωhat) * L * iq := by ring
-
-/-- Case A in rate form: the `di_d/dt` contribution is `ω ΔL i_q / L`. -/
-@[tmio T, powerlib_foundation] theorem residual_rate (ω L Lhat iq : ℝ) :
-    (ω * L * iq - ω * Lhat * iq) / L = ω * (L - Lhat) * iq / L := by ring
-
 /-- The decoupling terms do no work: `u_d^dec i_d + u_q^dec i_q = 0`. -/
 @[tmio T, powerlib_foundation] theorem decoupling_power_cancel (ωhat Lhat id iq : ℝ) :
     (ωhat * Lhat * iq) * id + (-(ωhat * Lhat * id)) * iq = 0 := by ring
-
-/-- Same cancellation in the OUT-positive sign convention. -/
-@[tmio T, powerlib_foundation] theorem decoupling_power_cancel_out (ωhat Lhat id iq : ℝ) :
-    (-(ωhat * Lhat * iq)) * id + (ωhat * Lhat * id) * iq = 0 := by ring
 
 /-- Bridge power splits into the non-decoupling part only. -/
 @[tmio T, powerlib_foundation] theorem bridgePower_decoupling (ud uq ωhat Lhat id iq : ℝ) :

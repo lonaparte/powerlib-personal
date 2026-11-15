@@ -579,22 +579,25 @@ namespace VSMLPF
   rw [m.g.fderiv_field]
   simp [Model.point]
 
-@[tmio TM, powerlib_domain] private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
+/-- Positive `M, D, ω_c`, a balanced angle, a positive synchronizing coefficient and the
+fast-filter Routh condition place a model in local exponential stability (strict 3×3
+Routh–Hurwitz conditions of the Jacobian at the selected point). -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model)
+    (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0)
     (hK : 0 < m.K) (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow_iff)]
   change LocallyExponentiallyStable m.g.field m.point
-  obtain ⟨hM, hD, hwc⟩ := hp
   refine Criteria.locallyExponentiallyStable_of_jacobian_fin_three (m.g.jacobian m.δ)
-    m.g.contDiff_field (point_eq_zero ⟨hM, hD, hwc⟩ hb) (fderiv_point m) ?_ ?_ ?_
+    m.g.contDiff_field (point_eq_zero ⟨hM, hD, hω⟩ hb) (fderiv_point m) ?_ ?_ ?_
   · rw [trace_jacobian, neg_div]
     have : 0 < m.g.D / m.g.M := div_pos hD hM
     linarith
   · rw [det_jacobian, neg_div]
-    exact neg_neg_of_pos (div_pos (mul_pos hwc hK) hM)
+    exact neg_neg_of_pos (div_pos (mul_pos hω hK) hM)
   · rw [trace_jacobian, det_jacobian, principalMinorSum_jacobian]
-    have key := mul_lt_mul_of_pos_left hf (div_pos hwc hM)
+    have key := mul_lt_mul_of_pos_left hf (div_pos hω hM)
     have e1 : (-m.g.D / m.g.M - m.g.ωc) * (m.g.D * m.g.ωc / m.g.M) =
         -(m.g.ωc / m.g.M * (m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M)) := by ring
     have e2 : -(m.g.ωc * (m.g.K0 * Real.cos m.δ)) / m.g.M = -(m.g.ωc / m.g.M * m.K) := by
@@ -659,8 +662,9 @@ and passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .physical (by simp)) (hm .balanced (by simp))
-      (hm .synchronizing (by simp)) (hm .fastFilter (by simp)))))
+    obtain ⟨hM, hD, hω⟩ : Meets m .physical := hm .physical (by simp)
+    exact mem_den_locallyExponentiallyStable m hM hD hω (hm .balanced (by simp))
+      (hm .synchronizing (by simp)) (hm .fastFilter (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .physical (by simp)) (hm .balanced (by simp))
       (hm .destabilizing (by simp)))))
@@ -682,9 +686,10 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
     (fun m => m.g.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.g.contDiff_field)
     (fun m _ => fderiv_point m) fun m hI heq hH => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .physical (by simp [family, translate]))
+    obtain ⟨hM, hD, hω⟩ : Meets m .physical := hm .physical (by simp [family, translate])
+    exact mem_den_locallyExponentiallyStable m hM hD hω
       (hm .balanced (by simp [family, translate])) (hm .synchronizing (by simp [family, translate]))
-      (hm .fastFilter (by simp [family, translate])))))
+      (hm .fastFilter (by simp [family, translate]))
   have hp : Meets m .physical := (TMIO.mem_realize _ _ _).mp hI .physical rfl
   obtain ⟨hM, hD, hω⟩ := hp
   rw [m.g.field_eq_zero_iff hM.ne' hω.ne'] at heq
@@ -713,15 +718,6 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
   · exact hf
 
 /-! ### Members -/
-
-/-- Positive `M, D, ω_c`, a balanced angle, a positive synchronizing coefficient and the
-fast-filter Routh condition place a model in local exponential stability. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hM : 0 < m.g.M)
-    (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : 0 < m.K)
-    (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of ⟨hM, hD, hω⟩ hb hK hf)))
 
 /-- A slow filter, `D ω_c + D²/M < K`, places a balanced model with positive `M, D, ω_c` in
 instability (a characteristic root crosses into the open right half plane). -/

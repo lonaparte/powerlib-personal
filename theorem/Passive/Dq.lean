@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Transform.Park
+import theorem.Transform.ComplexImpedance
 import theorem.Passive.Series
 import theorem.Passive.Parallel
 
@@ -31,7 +32,9 @@ Results.
 * `SeriesRLC.dqImpedance`, `ParallelRLC.dqAdmittance`: the two matrices;
   `SeriesRLC.dqImpedance_of_noCap`, `ParallelRLC.dqAdmittance_of_noInd`: their entries without a
   series capacitor or a shunt inductor.
-* `det_rotationPencil`, `rotationPencil_inv`: determinant and inverse of `[[a, −b], [b, a]]`.
+* Both are `Transform.complexSymm a b = [[a, −b], [b, a]]`
+  (`theorem/Transform/ComplexImpedance.lean`, with its determinant `Transform.det_complexSymm` and
+  inverse `Transform.complexSymm_inv`).
 * `SeriesRLC.det_dqImpedance_of_noCap`, `SeriesRLC.dqImpedance_inv_of_noCap`:
   `det = (R + L s)² + (ω L)²` and the closed-form inverse; `ParallelRLC.det_dqAdmittance_of_noInd`:
   `det = (G + C s)² + (ω C)²`.
@@ -39,7 +42,7 @@ Results.
   power, the loss `R |i|²` and `d/dt (L |i|²/2)`; the rotation terms `± ω L` cancel.
 * `ParallelRLC.capacitor_dq`: Park turns the αβ node equation `C v̇ = i − G v` into the dq one
   `C v̇ = i − G v − ω C J v`, for any differentiable frame angle (`Transform.hasDerivAt_rot_mulVec`).
-  The series counterpart is `Passive.DqRL.dqRL_of_alphaBetaRL` (`theorem/Passive/DqRL.lean`).
+  The series counterpart is `Passive.DqRL.alphaBetaRL_iff_dqRL` (`theorem/Passive/DqRL.lean`).
 -/
 
 noncomputable section
@@ -48,26 +51,6 @@ namespace powerlib.Passive
 
 open Matrix
 
-/-- The matrix `[[a, −b], [b, a]] = a I + b J`. -/
-def rotationPencil (a b : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := !![a, -b; b, a]
-
-/-- The determinant of `a I + b J` is `a² + b²`. -/
-@[tmio T, powerlib_foundation] theorem det_rotationPencil (a b : ℂ) :
-    (rotationPencil a b).det = a ^ 2 + b ^ 2 := by
-  rw [rotationPencil, Matrix.det_fin_two_of]
-  ring
-
-/-- The inverse of `a I + b J` is `(a² + b²)⁻¹ (a I − b J)`. -/
-@[tmio T, powerlib_foundation] theorem rotationPencil_inv {a b : ℂ} (h : a ^ 2 + b ^ 2 ≠ 0) :
-    (rotationPencil a b)⁻¹ = (a ^ 2 + b ^ 2)⁻¹ • !![a, b; -b, a] := by
-  apply Matrix.inv_eq_left_inv
-  have hprod : !![a, b; -b, a] * rotationPencil a b =
-      (a ^ 2 + b ^ 2) • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [rotationPencil, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-  rw [Matrix.smul_mul, hprod, smul_smul, inv_mul_cancel₀ h, one_smul]
-
 namespace SeriesRLC
 
 variable (b : SeriesRLC)
@@ -75,18 +58,19 @@ variable (b : SeriesRLC)
 /-- The dq impedance `R I + L (s I + ω J) + S (s I + ω J)⁻¹` of the element in the frame rotating
 at `ω`. -/
 def dqImpedance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
-  rotationPencil (b.R + b.L * s + b.S * s / (s ^ 2 + ω ^ 2)) (ω * b.L - b.S * ω / (s ^ 2 + ω ^ 2))
+  Transform.complexSymm (b.R + b.L * s + b.S * s / (s ^ 2 + ω ^ 2))
+    (ω * b.L - b.S * ω / (s ^ 2 + ω ^ 2))
 
 /-- Without a series capacitor the dq impedance is `(R + L s) I + ω L J`. -/
 @[tmio M, powerlib_domain] theorem dqImpedance_of_noCap {b : SeriesRLC} (hS : b.S = 0) (ω : ℝ)
     (s : ℂ) :
     b.dqImpedance ω s = !![b.R + b.L * s, -(ω * b.L); ω * b.L, b.R + b.L * s] := by
-  simp [dqImpedance, rotationPencil, hS]
+  simp [dqImpedance, Transform.complexSymm, hS]
 
 /-- Without a series capacitor the determinant of the dq impedance is `(R + L s)² + (ω L)²`. -/
 @[tmio M, powerlib_domain] theorem det_dqImpedance_of_noCap {b : SeriesRLC} (hS : b.S = 0)
     (ω : ℝ) (s : ℂ) : (b.dqImpedance ω s).det = (b.R + b.L * s) ^ 2 + (ω * b.L) ^ 2 := by
-  rw [dqImpedance, det_rotationPencil]
+  rw [dqImpedance, Transform.det_complexSymm]
   simp [hS]
 
 /-- Closed-form inverse of the dq impedance without a series capacitor. -/
@@ -94,10 +78,11 @@ def dqImpedance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     {ω : ℝ} {s : ℂ} (h : (b.R + b.L * s) ^ 2 + (ω * b.L : ℂ) ^ 2 ≠ 0) :
     (b.dqImpedance ω s)⁻¹ = ((b.R + b.L * s) ^ 2 + (ω * b.L : ℂ) ^ 2)⁻¹ •
       !![b.R + b.L * s, ω * b.L; -(ω * b.L), b.R + b.L * s] := by
-  have hb : b.dqImpedance ω s = rotationPencil (b.R + b.L * s) (ω * b.L) := by
+  have hb : b.dqImpedance ω s = Transform.complexSymm (b.R + b.L * s) (ω * b.L) := by
     simp [dqImpedance, hS]
-  rw [hb]
-  exact rotationPencil_inv h
+  rw [hb, Transform.complexSymm_inv h]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Transform.complexSymm, div_eq_inv_mul, neg_div]
 
 /-- Power balance of the R–L part in the dq frame along a trajectory: with the dq KVL
 `L i_d' = v_d − v^c_d − R i_d + ω L i_q`, `L i_q' = v_q − v^c_q − R i_q − ω L i_d`, the power
@@ -128,18 +113,19 @@ variable (e : ParallelRLC)
 /-- The dq admittance `G I + C (s I + ω J) + Γ (s I + ω J)⁻¹` of the element in the frame
 rotating at `ω`. -/
 def dqAdmittance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
-  rotationPencil (e.G + e.C * s + e.Γ * s / (s ^ 2 + ω ^ 2)) (ω * e.C - e.Γ * ω / (s ^ 2 + ω ^ 2))
+  Transform.complexSymm (e.G + e.C * s + e.Γ * s / (s ^ 2 + ω ^ 2))
+    (ω * e.C - e.Γ * ω / (s ^ 2 + ω ^ 2))
 
 /-- Without a shunt inductor the dq admittance is `(G + C s) I + ω C J`. -/
 @[tmio M, powerlib_domain] theorem dqAdmittance_of_noInd {e : ParallelRLC} (hΓ : e.Γ = 0)
     (ω : ℝ) (s : ℂ) :
     e.dqAdmittance ω s = !![e.G + e.C * s, -(ω * e.C); ω * e.C, e.G + e.C * s] := by
-  simp [dqAdmittance, rotationPencil, hΓ]
+  simp [dqAdmittance, Transform.complexSymm, hΓ]
 
 /-- Without a shunt inductor the determinant of the dq admittance is `(G + C s)² + (ω C)²`. -/
 @[tmio M, powerlib_domain] theorem det_dqAdmittance_of_noInd {e : ParallelRLC} (hΓ : e.Γ = 0)
     (ω : ℝ) (s : ℂ) : (e.dqAdmittance ω s).det = (e.G + e.C * s) ^ 2 + (ω * e.C) ^ 2 := by
-  rw [dqAdmittance, det_rotationPencil]
+  rw [dqAdmittance, Transform.det_complexSymm]
   simp [hΓ]
 
 /-- Park: if `C dv_αβ/dt = i_αβ − G v_αβ` with `v_αβ = rot θ · v`, `i_αβ = rot θ · i`,

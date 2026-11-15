@@ -28,9 +28,8 @@ committed escape).
 
 Results.
 * `tendsto_guardMFPT_ratio` — `T(r_b)/T(r_c) → 2` as `D̃ → 0⁺`, for every `r_b > r_c`
-  (the source's `U(r_b) ≪ U(r_c)` placement is not needed for the limit);
-  `tendsto_guardMFPT_ratio_atTop`: the same along `X = ΔU/D̃ → ∞`;
-  `tendsto_guardMFPT_ratio_inv`: `T_guard/T_committed → 1/2`.
+  (the source's `U(r_b) ≪ U(r_c)` placement is not needed for the limit; equivalently along
+  `X = ΔU/D̃ → ∞`); `tendsto_guardMFPT_ratio_inv`: `T_guard/T_committed → 1/2`.
 * Proof route (no Laplace expansion is needed for the ratio): cut at `a < r_c` and at its mirror
   `ψ(a) = √(2r_c² − a²)`, for which `U(ψ(a)) = U(a)` (`guardPotential_reflect`). The substitution
   `y ↦ ψ(y)` (`integral_guardIntegrand_reflect`) maps the part of the outer integral beyond the
@@ -41,8 +40,8 @@ Results.
   to `0` as `D̃ → 0⁺` (`tendsto_guardEps`, `tendsto_guardKappa`); letting `a → r_c` closes the
   squeeze `B/A → 1`.
 * Rate of the ratio (source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"):
-  `guardMFPT_ratio_sub_two_isBigO`: `T(r_b)/T(r_c) − 2 = O(√D̃)` as `D̃ → 0⁺`;
-  `guardMFPT_ratio_isBigO_atTop`: `T(r_b)/T(r_c) = 2(1 + O(X^{−1/2}))` along `X = ΔU/D̃ → ∞`.
+  `guardMFPT_ratio_sub_two_isBigO`: `T(r_b)/T(r_c) − 2 = O(√D̃)` as `D̃ → 0⁺`, i.e.
+  `T(r_b)/T(r_c) = 2(1 + O(X^{−1/2}))` along `X = ΔU/D̃ → ∞` (`isBigO_comp_div_atTop`).
   Deterministic form: `guard_ratio_rate_bounds` (`(1 − δ) A ≤ (1 + ε) B`) and
   `guardMFPT_ratio_sub_two_le` (`|T(r_b)/T(r_c) − 2| ≤ δ + κ + ε`), with the explicit half-order
   term `δ = (8e/a)(1 + κ)√(D̃/α)` (`guardDelta`) and `κ, ε = o(D̃)` (`tendsto_guardKappa_div`,
@@ -56,15 +55,15 @@ Results.
   `K(a) ≤ K(y) ≤ K(ψ(a)) ≤ (1 + κ) K(a)`, so no separate expansion of `K` is needed. The rate is
   sharp: for this integral the `X^{−1/2}` term is present with a nonzero coefficient,
   `T_committed/T_guard = 2 (1 − 1/√(πX) + O(1/X))` (`guardMFPT_ratio_two_term`,
-  `tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `guardMFPT_ratio_sub_two_isTheta` in
+  `tendsto_guardMFPT_ratio_sub_two_div_sqrt`, `guardMFPT_ratio_sub_two_isTheta` in
   `Asymptotics/Guard/MFPTExpansion.lean`).
 * Single-term asymptotics (source §1.3, and the `× 2` of §1.5), with
   `P = guardPrefactor α l₁ D̃ = (√π/2) √(D̃ l₁)/α²` and `X = ΔU/D̃`:
-  `guardMFPT_guard_isBigO`: `T_guard/(P e^X) − 1 = O(√D̃)` as `D̃ → 0⁺`;
-  `guardMFPT_guard_isBigO_atTop`: `T_guard = P e^X (1 + O(X^{−1/2}))`;
+  `guardMFPT_guard_isBigO`: `T_guard/(P e^X) − 1 = O(√D̃)` as `D̃ → 0⁺`, i.e.
+  `T_guard = P e^X (1 + O(X^{−1/2}))`;
   `tendsto_guardMFPT_guard`: `T_guard/(P e^X) → 1`;
-  `guardMFPT_committed_isBigO`, `guardMFPT_committed_isBigO_atTop`:
-  `T_committed = 2 P e^X (1 + O(X^{−1/2}))` for every `r_b > r_c`.
+  `guardMFPT_committed_isBigO`: `T_committed = 2 P e^X (1 + O(√D̃))` for every `r_b > r_c`.
+  `isBigO_comp_div_atTop` turns each `O(√D̃)` rate into `O(X^{−1/2})` along `X = ΔU/D̃ → ∞`.
   Explicit two-sided bounds at a cut `0 < a < r_c` (`guardMFPT_guard_ge`, `guardMFPT_guard_le`):
   `(1 − e^{−αa²/(2D̃)})(1 − √(D̃/α)/(√π(r_c − a))) P e^X ≤ T_guard ≤
   (1 + ε)(1 + 16 l₁D̃/α²)(1 + 17√(D̃/α)/(√π a)) P e^X` (`D̃ ≤ a²` for the upper bound).
@@ -80,11 +79,10 @@ Results.
   (`∫_0^∞ ξⁿ e^{−cξ²}`, `n = 1, 3, 5`), `integral_exp_neg_mul_sq_ge`
   (`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`), `intervalIntegral_le_integral_Ioi`.
   The `T_guard` rate is sharp: `T_guard = P e^X (1 + 1/√(πX) + O(1/X))`
-  (`guardMFPT_guard_two_term`, `tendsto_guardMFPT_guard_mul_sqrt_atTop`,
+  (`guardMFPT_guard_two_term`, `tendsto_guardMFPT_guard_sub_one_div_sqrt`,
   `guardMFPT_guard_sub_one_isTheta` in `Asymptotics/Guard/MFPTExpansion.lean`). The committed
   rate is not: the half-order terms of the two halves of the peak cancel and
-  `T_committed = 2 P e^X (1 + O(1/X))` (`guardMFPT_committed_two_term`,
-  `guardMFPT_committed_two_term_atTop`).
+  `T_committed = 2 P e^X (1 + O(1/X))` (`guardMFPT_committed_two_term`).
 * Two-term expansions (`Asymptotics/Guard/MFPTExpansion.lean`) use the bounds of this module made
   public for that purpose: `guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`,
   `guardKappa_nonneg`, `guardEps_nonneg`, `guard_exists_cut`, `intervalIntegrable_guardWeight`.
@@ -1462,19 +1460,6 @@ committed escape time by a factor of two. -/
   refine h.congr fun D => ?_
   simp only [inv_div]
 
-/-- **`T_committed / T_guard → 2` along `X = ΔU/D̃ → ∞`**: the same limit with the noise intensity
-written as `D̃ = ΔU/X`, `ΔU = α²/(4 l₁)` (`barrierHeight`). -/
-@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
-    (hrb : guardRadius α l₁ < rb) :
-    Tendsto (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
-        guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁)) atTop (𝓝 2) := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  have hD : Tendsto (fun X : ℝ => barrierHeight α l₁ / X) atTop (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_const_nhds.div_atTop tendsto_id, ?_⟩
-    filter_upwards [eventually_gt_atTop 0] with X hX
-    exact div_pos hΔ hX
-  exact (tendsto_guardMFPT_ratio hα hl hrb).comp hD
-
 /-- **`T_committed / T_guard = 2 + O(√D̃)`** as `D̃ → 0⁺` (source §1.2: the approach to `2` is
 itself an endpoint effect of relative order `X^{−1/2}`, `X = ΔU/D̃`), for every committed-escape
 boundary `r_b > r_c`. Explicitly, at a fixed cut `a`, `|T(r_b)/T(r_c) − 2| ≤ δ + κ + ε`
@@ -1529,32 +1514,6 @@ boundary `r_b > r_c`. Explicitly, at a fixed cut `a`, `|T(r_b)/T(r_c) − 2| ≤
   have : 0 ≤ 16 * Real.exp 1 / a / √α * √D := by positivity
   nlinarith
 
-/-- **`T_committed / T_guard = 2(1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`, `ΔU = α²/(4 l₁)`
-(source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"). This theorem is the upper bound; the
-half-order term is present for this integral, with coefficient `−1/√π`
-(`tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `Asymptotics/Guard/MFPTExpansion.lean`). -/
-@[tmio M, powerlib_foundation] theorem guardMFPT_ratio_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
-    (hrb : guardRadius α l₁ < rb) :
-    (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
-        guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) / 2 - 1) =O[atTop]
-      fun X => (√X)⁻¹ := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  have hD : Tendsto (fun X : ℝ => barrierHeight α l₁ / X) atTop (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_const_nhds.div_atTop tendsto_id, ?_⟩
-    filter_upwards [eventually_gt_atTop 0] with X hX
-    exact div_pos hΔ hX
-  have h1 := (guardMFPT_ratio_sub_two_isBigO hα hl hrb).comp_tendsto hD
-  have h2 : (fun X => √(barrierHeight α l₁ / X)) =O[atTop] fun X => (√X)⁻¹ := by
-    apply Asymptotics.IsBigO.of_bound (√(barrierHeight α l₁))
-    filter_upwards [eventually_gt_atTop 0] with X hX
-    have hsX : 0 < √X := Real.sqrt_pos.mpr hX
-    rw [Real.sqrt_div' _ hX.le, Real.norm_eq_abs, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity), abs_of_nonneg (by positivity), div_eq_mul_inv]
-  have h3 := (h1.trans h2).const_mul_left (1 / 2)
-  refine h3.congr_left fun X => ?_
-  simp only [Function.comp_apply]
-  ring
-
 end Ratio
 
 /-! ## The single-term asymptotics `T_guard ~ P e^X` -/
@@ -1566,7 +1525,9 @@ section Guard
 @[tmio M, powerlib_foundation] theorem guardInner_ge_gauss (hα : 0 < α) (hl : 0 ≤ l₁) {D y : ℝ}
     (hD : 0 < D) (hy : 0 ≤ y) :
     D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) ≤ guardInner α l₁ D y := by
-  rw [← integral_mul_exp_neg_sq_div hα hD]
+  have hβ : 0 < α / (2 * D) := by positivity
+  rw [show D / α = (2 * (α / (2 * D)))⁻¹ by field_simp, mul_comm (2 * (α / (2 * D)))⁻¹,
+    ← div_eq_mul_inv, ← integral_mul_exp_neg_mul_sq_interval hβ]
   apply integral_mono_on hy
     ((by fun_prop : Continuous fun z : ℝ =>
       z * Real.exp (-(α / (2 * D)) * z ^ 2)).intervalIntegrable _ _)
@@ -1645,10 +1606,10 @@ on `[0, r_c]` and the fifth half-line moment). -/
         intervalIntegral.integral_add (hg1.intervalIntegrable _ _) (hg5.intervalIntegrable _ _)
     _ ≤ D / α + l₁ / (4 * D) * (1 / (α / (4 * D)) ^ 3) := by
         apply add_le_add
-        · rw [integral_mul_exp_neg_sq_div hα hD]
-          have := Real.exp_pos (-(α / (2 * D)) * √(α / l₁) ^ 2)
-          have : 0 < D / α := by positivity
-          nlinarith
+        · have hβ : 0 < α / (2 * D) := by positivity
+          rw [integral_mul_exp_neg_mul_sq_interval hβ, div_le_iff₀ (by positivity),
+            show D / α * (2 * (α / (2 * D))) = 1 by field_simp]
+          linarith [Real.exp_pos (-(α / (2 * D)) * √(α / l₁) ^ 2)]
         · refine (intervalIntegral_le_integral_Ioi hrc hint5 fun z hz => by positivity).trans ?_
           rw [MeasureTheory.integral_const_mul, gaussMoment5 hc]
     _ = D / α * (1 + 16 * l₁ * D / α ^ 2) := by field_simp; ring
@@ -2131,29 +2092,6 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
   rw [zero_add] at h
   exact h.congr fun D => by ring
 
-/-- **`T_guard = P e^X (1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞` (source §1.3), with
-`P = (√π/2) √(D̃ l₁)/α² = √π/(4α√X)` (`guardPrefactor_eq`). -/
-@[tmio M, powerlib_foundation] theorem guardMFPT_guard_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) :
-    (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) /
-        (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X) - 1) =O[atTop]
-      fun X => (√X)⁻¹ := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  have hD : Tendsto (fun X : ℝ => barrierHeight α l₁ / X) atTop (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_const_nhds.div_atTop tendsto_id, ?_⟩
-    filter_upwards [eventually_gt_atTop 0] with X hX
-    exact div_pos hΔ hX
-  have h1 := (guardMFPT_guard_isBigO hα hl).comp_tendsto hD
-  have h2 : (fun X => √(barrierHeight α l₁ / X)) =O[atTop] fun X => (√X)⁻¹ := by
-    apply Asymptotics.IsBigO.of_bound (√(barrierHeight α l₁))
-    filter_upwards [eventually_gt_atTop 0] with X hX
-    have hsX : 0 < √X := Real.sqrt_pos.mpr hX
-    rw [Real.sqrt_div' _ hX.le, Real.norm_eq_abs, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity), abs_of_nonneg (by positivity), div_eq_mul_inv]
-  refine (h1.trans h2).congr' ?_ EventuallyEq.rfl
-  filter_upwards [eventually_gt_atTop 0] with X hX
-  simp only [Function.comp_apply]
-  rw [div_div_cancel₀ hΔ.ne']
-
 /-- **`T_committed = 2 P e^X (1 + O(√D̃))`** as `D̃ → 0⁺`, for every committed-escape boundary
 `r_b > r_c` (source §1.5, "`× 2` 承诺逃逸"): the product of `guardMFPT_ratio_sub_two_isBigO` and
 `guardMFPT_guard_isBigO`. Not sharp: the half-order terms cancel and the relative error is `O(D̃)`
@@ -2201,18 +2139,6 @@ as `X → ∞`. -/
     rw [Real.sqrt_div' _ hX.le, Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_nonneg (by positivity), abs_of_nonneg (by positivity), div_eq_mul_inv]
   exact (hf.comp_tendsto hD).trans h2
-
-/-- **`T_committed = 2 P e^X (1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`. -/
-@[tmio M, powerlib_foundation] theorem guardMFPT_committed_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁)
-    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
-    (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
-        (2 * (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X)) - 1) =O[atTop]
-      fun X => (√X)⁻¹ := by
-  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
-  refine (isBigO_comp_div_atTop hΔ (guardMFPT_committed_isBigO hα hl hrb)).congr' ?_
-    EventuallyEq.rfl
-  filter_upwards [eventually_gt_atTop 0] with X hX
-  rw [div_div_cancel₀ hΔ.ne']
 
 end Guard
 

@@ -175,12 +175,6 @@ section Boltzmann
 
 variable [Nonempty ι] {β : ℝ} {E : ι → ℝ}
 
-@[tmio T, powerlib_foundation] theorem boltzmann_pos (i : ι) : 0 < boltzmann β E i :=
-  gibbsVec_pos (fun _ => one_pos) i
-
-@[tmio T, powerlib_foundation] theorem sum_boltzmann : ∑ i, boltzmann β E i = 1 :=
-  sum_gibbsVec fun _ => one_pos
-
 /-- Thermodynamic identity `S = β⟨E⟩ + log Z` for the Boltzmann–Gibbs law. -/
 @[tmio T, powerlib_foundation] theorem shannon_boltzmann :
     shannon (boltzmann β E) = β * ∑ i, boltzmann β E i * E i +

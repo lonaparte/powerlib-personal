@@ -690,10 +690,10 @@ linearization weights (extended by `0`). -/
   · funext r
     refine Fin.addCases (fun i => ?_) (fun k => ?_) r
     · simp only [mulVec, dotProduct, Pi.zero_apply]
-      rw [sum_state]
+      rw [Fin.sum_univ_add]
       simp
     · simp only [mulVec, dotProduct, Pi.zero_apply]
-      rw [sum_state]
+      rw [Fin.sum_univ_add]
       simp only [jacobian_wd, jacobian_ww, angleState_dIdx, angleState_wIdx, mul_zero,
         Finset.sum_const_zero, add_zero]
       have hL : ∑ i : Fin n, laplacian (flowWeights p.B θ) k i.succ * v i = 0 := by

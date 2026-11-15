@@ -24,15 +24,15 @@ Source: work-sync `theory/T-vsg-control.md` §2.9 (pH form `H = ½ J ω² + ½ K
 Results.
 * `linearPH` — the pH plant; `linearPH_field` — its field reproduces the linearized swing
   equation `d(Δδ)/dt = Δω`, `d(M Δω)/dt = −K Δδ − D Δω + u`.
-* `stateMatrix_mul`, `stateMatrix_eq_conj` — the pH state matrix is the swing Jacobian under the
-  change of coordinates `diag(1, M)` (`momentumCoord`).
+* `stateMatrix_eq_conj` — the pH state matrix is the swing Jacobian under the change of
+  coordinates `diag(1, M)` (`momentumCoord`): `A_pH = diag(1, M) · J_swing · diag(1, 1/M)`.
 
 Family and connection conclusions.
 * No new family: the plant is a member of the port-Hamiltonian family
   `Port.PortHamiltonian.family`. Passivity and Lyapunov stability are not re-proved: they are the
   family's `mem_den_passive` and `mem_den_lyapunovStable` applied to this plant
   (`linearPH_passive`, `linearPH_lyapunovStable`, connection statements; reuse).
-* Through `stateMatrix_mul` every flow sentence of the pH plant is the same sentence of the
+* Through `stateMatrix_eq_conj` every flow sentence of the pH plant is the same sentence of the
   linearized swing family `Synchronous.Swing.Linearized.family` at `(p, δ₀)`
   (`linearPH_mem_den_flow_iff`, a comparison of the two families' denotations). Scaffold:
   `theorem/PowerSystem/Synchronous/SwingPortHamiltonian.agda`.
@@ -83,17 +83,6 @@ def linearPH (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D) (hK : 0 < p.syncCoeff
 
 /-- Coordinate change `(Δδ, Δω) ↦ (Δδ, M Δω)`. -/
 def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
-
-/-- The pH state matrix is the swing Jacobian in momentum coordinates:
-`A_pH · diag(1, M) = diag(1, M) · J_swing`. -/
-@[tmio M, powerlib_domain] theorem stateMatrix_mul (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
-    (hK : 0 < p.syncCoeff δ₀) :
-    (p.linearPH δ₀ hM hD hK).plant.A * p.momentumCoord = p.momentumCoord * p.jacobian δ₀ := by
-  have hM' := hM.ne'
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Port.PortHamiltonian.plant, linearPH, momentumCoord, jacobian, Matrix.mul_apply,
-      Fin.sum_univ_two] <;> field_simp
 
 /-- The pH state matrix is the swing Jacobian conjugated by the momentum coordinates. -/
 @[tmio M, powerlib_domain] theorem stateMatrix_eq_conj (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)

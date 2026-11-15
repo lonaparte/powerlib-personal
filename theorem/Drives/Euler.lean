@@ -24,8 +24,8 @@ Model boundary.
   discretization).
 * Level: local exponential stability of the flux equilibrium.
 
-Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
+`not_euler_realizationSoundUnder_of_large_step`),
 `theorem/Drives/InductionMachine.lean` (`family_isAutonomous`, `field_contDiff`,
 `mem_den_attractive_iff`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7.
@@ -40,11 +40,11 @@ Family and connection conclusions.
   realizing its drive (`Implementation.ofDesign Euler.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `InductionMachine.family_isAutonomous` and the public smoothness lemma
-  `InductionMachine.field_contDiff`: `Numerics.euler_sound_small_step` (scaffold
+  `InductionMachine.field_contDiff`: `Numerics.euler_sound_small_step_local` (scaffold
   `sound-small-step`: a locally exponentially stable drive has a step `h₀ > 0` such that every
   Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
-  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
-  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+  `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
+  certification). `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the unit-rotor drive (`r_r = L_r = 1`,
   locally exponentially stable by `mem_den_attractive_iff`) has Euler integrations with every
   multiplier outside the unit disk.

@@ -58,11 +58,11 @@ Results.
   range, so near the point the platform field is the unsaturated design field
   (`field_eventuallyEq_design`), the design's linear zero-input field when `Ki ≠ 0`
   (`field_eventuallyEq_linear`). With overload the saturation is constant near the point and the
-  point is not an equilibrium (`unstable_of_overload`). No platform is globally exponentially
-  stable (`not_globallyExponentiallyStable`): from `(0, ξ₀)` the current stays below a bound `B`
-  on `[0, T]` independent of `ξ₀` (Grönwall: the applied voltage is bounded), so the integrator
-  moves by at most `B T`, while an exponential estimate halves `‖x‖` by a time `T` fixed by its
-  constants; a large `ξ₀` contradicts both.
+  point is not an equilibrium (the proof of `mem_den_unstable_of_overload`). No platform is
+  globally exponentially stable (the proof of `not_mem_den_globallyExponentiallyStable`): from
+  `(0, ξ₀)` the current stays below a bound `B` on `[0, T]` independent of `ξ₀` (Grönwall: the
+  applied voltage is bounded), so the integrator moves by at most `B T`, while an exponential
+  estimate halves `‖x‖` by a time `T` fixed by its constants; a large `ξ₀` contradicts both.
 
 Family and connection conclusions.
 * I: `family : Family LimitedPI LimitRequirement 2 0`. Requirements: the lifted design
@@ -80,7 +80,7 @@ Family and connection conclusions.
   stability is not exact within all realistic constraints (`center`, a lossless design
   `R + Kp = 0`). `exact_globallyExponentiallyStable`: no platform is globally exponentially
   stable (`not_mem_den_globallyExponentiallyStable`), so the whole-language translation is exact.
-  `mem_den_unstable_of_overload`: with `L > 0`, `Ki ≠ 0`, `V_dc > 0` and overload the platform is
+  `mem_den_unstable_of_overload`: with `L ≠ 0`, `Ki ≠ 0`, `V_dc > 0` and overload the platform is
   unstable, whatever the design. Global asymptotic stability is not decided here.
 * M–I: `implementation : Implementation PIParams Spectral.Requirement LimitedPI LimitRequirement
   2 1 2 0`, every platform realizing its design (`Implementation.ofDesign design`).
@@ -469,109 +469,6 @@ sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_
   filter_upwards [hc.eventually (sat_eventually_eq ho)] with z hz
   simp only [field, limitedField, applied, hz]
 
-/-- With overload the operating point is not an equilibrium: the platform is unstable. -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
-    (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
-    connection% (y ∈ family.den (.flow .unstable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change Unstable y.field 0
-  refine (Dynamics.unstable_congr_nhds (y.field_eventuallyEq_overload hKi ho)).mpr
-    (Dynamics.unstable_of_ne_zero ?_ ?_)
-  · rw [contDiff_euclidean]
-    intro i
-    fin_cases i <;> simp <;> fun_prop
-  · intro h
-    have h0 := congrArg (fun z : ℝ² => z 0) h
-    simp [hL] at h0
-    have hVm : 0 ≤ y.Vmax := div_nonneg hV.le (Real.sqrt_nonneg 3)
-    exact sat_ne_of_lt_abs hVm ho (by linarith)
-
-/-- No platform is globally exponentially stable. From `(0, ξ₀)` the current obeys
-`|di/dt| ≤ (|R|/|L|) |i − i*| + (|R i*| + |V_max|)/|L|` and stays below a bound `B` on `[0, T]`
-(Grönwall), so the integrator moves by at most `B T`; an exponential estimate with constants
-`C, a` halves the distance by `T = log (2C)/a`, which fails for `ξ₀ = 2 B T + 1`. -/
-@[tmio TM, powerlib_domain] private theorem not_globallyExponentiallyStable (y : LimitedPI) :
-    connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change ¬ Flow.GloballyExponentiallyStable y.field 0
-  rintro ⟨-, hfc, C, a, hC, ha, hest⟩
-  have hT : 0 ≤ Real.log (2 * C) / a := div_nonneg (Real.log_nonneg (by linarith)) ha.le
-  set T := Real.log (2 * C) / a with hTdef
-  have hCT : C * Real.exp (-a * T) = 1 / 2 := by
-    have : -a * T = -Real.log (2 * C) := by
-      rw [hTdef]; field_simp
-    rw [this, Real.exp_neg, Real.exp_log (by linarith)]
-    field_simp
-  set K := |y.design.R| / |y.design.L| with hK
-  set ε := (|y.design.R * y.iref| + |y.Vmax|) / |y.design.L| with hε
-  have hgc : Continuous (gronwallBound 0 K ε) :=
-    continuous_iff_continuousAt.mpr fun x => (hasDerivAt_gronwallBound 0 K ε x).continuousAt
-  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc 0 T) hgc.continuousOn
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 ⟨le_rfl, hT⟩)
-  obtain ⟨φ, hφ0, hφ⟩ := hfc 0 (WithLp.toLp 2 ![0, 2 * B * T + 1])
-  have hd : ∀ t ∈ Ici (0 : ℝ), ∀ i : Fin 2,
-      HasDerivWithinAt (fun s => φ s i) (y.field (φ t) i) (Ici 0) t :=
-    fun t ht i => (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i).hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht)
-  have hf0 : ∀ z : ℝ², y.field z 0 =
-      (-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)) / y.design.L := by
-    intro z
-    simp [field, limitedField]
-  have hf1 : ∀ z : ℝ², y.field z 1 = -z 0 := by
-    intro z
-    simp [field, limitedField]
-  have hbound0 : ∀ z : ℝ², ‖y.field z 0‖ ≤ K * ‖z 0‖ + ε := by
-    intro z
-    rw [hf0, Real.norm_eq_abs, Real.norm_eq_abs, abs_div]
-    have hs := abs_sat_le y.Vmax (y.design.control y.iref (z + y.point))
-    have hn : |-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)| ≤
-        |y.design.R| * |z 0| + (|y.design.R * y.iref| + |y.Vmax|) := by
-      have e : -y.design.R * (z 0 + y.iref) + y.applied (z + y.point) =
-          -(y.design.R * z 0) + (-(y.design.R * y.iref) + y.applied (z + y.point)) := by ring
-      rw [e]
-      refine (abs_add_le _ _).trans ?_
-      rw [abs_neg, abs_mul]
-      have := abs_add_le (-(y.design.R * y.iref)) (y.applied (z + y.point))
-      rw [abs_neg] at this
-      have hs' : |y.applied (z + y.point)| ≤ |y.Vmax| := hs
-      linarith
-    calc |-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)| / |y.design.L|
-        ≤ (|y.design.R| * |z 0| + (|y.design.R * y.iref| + |y.Vmax|)) / |y.design.L| :=
-          div_le_div_of_nonneg_right hn (abs_nonneg _)
-      _ = K * |z 0| + ε := by rw [hK, hε]; ring
-  have hcont : ∀ i : Fin 2, ContinuousOn (fun s => φ s i) (Icc 0 T) := fun i t ht =>
-    (hd t ht.1 i).continuousWithinAt.mono Icc_subset_Ici_self
-  have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun s => φ s 0)
-    (f' := fun s => y.field (φ s) 0) (δ := 0) (K := K) (ε := ε) (a := 0) (b := T) (hcont 0)
-    (fun t ht => (hd t ht.1 0).mono (Ici_subset_Ici.mpr ht.1)) (by simp [hφ0])
-    (fun t _ => hbound0 (φ t))
-  have hb1 : ∀ t ∈ Ico (0 : ℝ) T, ‖y.field (φ t) 1‖ ≤ B := by
-    intro t ht
-    rw [hf1, norm_neg]
-    have h1 := hg t (Ico_subset_Icc_self ht)
-    rw [sub_zero] at h1
-    exact h1.trans ((le_abs_self _).trans (hB t (Ico_subset_Icc_self ht)))
-  have hmv := norm_image_sub_le_of_norm_deriv_right_le_segment (f := fun s => φ s 1)
-    (f' := fun s => y.field (φ s) 1) (C := B) (hcont 1)
-    (fun t ht => (hd t ht.1 1).mono (Ici_subset_Ici.mpr ht.1)) hb1 T ⟨hT, le_rfl⟩
-  have he := hest 0 T φ (hφ.mono Icc_subset_Ici_self) T ⟨hT, le_rfl⟩
-  simp only [sub_zero] at he
-  rw [hCT, hφ0] at he
-  have hn : ‖(WithLp.toLp 2 ![0, 2 * B * T + 1] : ℝ²)‖ = 2 * B * T + 1 := by
-    rw [EuclideanSpace.norm_eq]
-    simp [Fin.sum_univ_two]
-    rw [Real.sqrt_sq_eq_abs, abs_of_pos (by positivity)]
-  rw [hn] at he
-  have h1 : ‖φ T 1‖ ≤ ‖φ T‖ := PiLp.norm_apply_le _ _
-  simp only [hφ0, sub_zero] at hmv
-  have hξ : (![0, 2 * B * T + 1] : Fin 2 → ℝ) 1 = 2 * B * T + 1 := by simp
-  rw [hξ, Real.norm_eq_abs] at hmv
-  rw [Real.norm_eq_abs] at h1
-  have := abs_sub_abs_le_abs_sub (2 * B * T + 1) (φ T 1)
-  rw [abs_of_pos (by positivity : (0 : ℝ) < 2 * B * T + 1), abs_sub_comm] at this
-  linarith
-
 /-! ### Translation of the platform family (I) -/
 
 /-- The whole platform requirement language is inconsistent: headroom and overload exclude each
@@ -704,13 +601,90 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
   · have := (hs : PIParams.Stable center.design).1
     norm_num [center] at this
 
-/-- No platform is globally exponentially stable: the voltage limit bounds the rate at which a
-large integrator state unwinds. -/
+/-- No platform is globally exponentially stable. From `(0, ξ₀)` the current obeys
+`|di/dt| ≤ (|R|/|L|) |i − i*| + (|R i*| + |V_max|)/|L|` and stays below a bound `B` on `[0, T]`
+(Grönwall), so the integrator moves by at most `B T`; an exponential estimate with constants
+`C, a` halves the distance by `T = log (2C)/a`, which fails for `ξ₀ = 2 B T + 1`. -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_globallyExponentiallyStable (y : LimitedPI) :
     connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
+  unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact (fun hFlowConnection => (not_globallyExponentiallyStable y) (family_isAutonomous.mem_den_flow.mpr hFlowConnection))
+  change ¬ Flow.GloballyExponentiallyStable y.field 0
+  rintro ⟨-, hfc, C, a, hC, ha, hest⟩
+  have hT : 0 ≤ Real.log (2 * C) / a := div_nonneg (Real.log_nonneg (by linarith)) ha.le
+  set T := Real.log (2 * C) / a with hTdef
+  have hCT : C * Real.exp (-a * T) = 1 / 2 := by
+    have : -a * T = -Real.log (2 * C) := by
+      rw [hTdef]; field_simp
+    rw [this, Real.exp_neg, Real.exp_log (by linarith)]
+    field_simp
+  set K := |y.design.R| / |y.design.L| with hK
+  set ε := (|y.design.R * y.iref| + |y.Vmax|) / |y.design.L| with hε
+  have hgc : Continuous (gronwallBound 0 K ε) :=
+    continuous_iff_continuousAt.mpr fun x => (hasDerivAt_gronwallBound 0 K ε x).continuousAt
+  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc 0 T) hgc.continuousOn
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 ⟨le_rfl, hT⟩)
+  obtain ⟨φ, hφ0, hφ⟩ := hfc 0 (WithLp.toLp 2 ![0, 2 * B * T + 1])
+  have hd : ∀ t ∈ Ici (0 : ℝ), ∀ i : Fin 2,
+      HasDerivWithinAt (fun s => φ s i) (y.field (φ t) i) (Ici 0) t :=
+    fun t ht i => (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i).hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht)
+  have hf0 : ∀ z : ℝ², y.field z 0 =
+      (-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)) / y.design.L := by
+    intro z
+    simp [field, limitedField]
+  have hf1 : ∀ z : ℝ², y.field z 1 = -z 0 := by
+    intro z
+    simp [field, limitedField]
+  have hbound0 : ∀ z : ℝ², ‖y.field z 0‖ ≤ K * ‖z 0‖ + ε := by
+    intro z
+    rw [hf0, Real.norm_eq_abs, Real.norm_eq_abs, abs_div]
+    have hs := abs_sat_le y.Vmax (y.design.control y.iref (z + y.point))
+    have hn : |-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)| ≤
+        |y.design.R| * |z 0| + (|y.design.R * y.iref| + |y.Vmax|) := by
+      have e : -y.design.R * (z 0 + y.iref) + y.applied (z + y.point) =
+          -(y.design.R * z 0) + (-(y.design.R * y.iref) + y.applied (z + y.point)) := by ring
+      rw [e]
+      refine (abs_add_le _ _).trans ?_
+      rw [abs_neg, abs_mul]
+      have := abs_add_le (-(y.design.R * y.iref)) (y.applied (z + y.point))
+      rw [abs_neg] at this
+      have hs' : |y.applied (z + y.point)| ≤ |y.Vmax| := hs
+      linarith
+    calc |-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)| / |y.design.L|
+        ≤ (|y.design.R| * |z 0| + (|y.design.R * y.iref| + |y.Vmax|)) / |y.design.L| :=
+          div_le_div_of_nonneg_right hn (abs_nonneg _)
+      _ = K * |z 0| + ε := by rw [hK, hε]; ring
+  have hcont : ∀ i : Fin 2, ContinuousOn (fun s => φ s i) (Icc 0 T) := fun i t ht =>
+    (hd t ht.1 i).continuousWithinAt.mono Icc_subset_Ici_self
+  have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun s => φ s 0)
+    (f' := fun s => y.field (φ s) 0) (δ := 0) (K := K) (ε := ε) (a := 0) (b := T) (hcont 0)
+    (fun t ht => (hd t ht.1 0).mono (Ici_subset_Ici.mpr ht.1)) (by simp [hφ0])
+    (fun t _ => hbound0 (φ t))
+  have hb1 : ∀ t ∈ Ico (0 : ℝ) T, ‖y.field (φ t) 1‖ ≤ B := by
+    intro t ht
+    rw [hf1, norm_neg]
+    have h1 := hg t (Ico_subset_Icc_self ht)
+    rw [sub_zero] at h1
+    exact h1.trans ((le_abs_self _).trans (hB t (Ico_subset_Icc_self ht)))
+  have hmv := norm_image_sub_le_of_norm_deriv_right_le_segment (f := fun s => φ s 1)
+    (f' := fun s => y.field (φ s) 1) (C := B) (hcont 1)
+    (fun t ht => (hd t ht.1 1).mono (Ici_subset_Ici.mpr ht.1)) hb1 T ⟨hT, le_rfl⟩
+  have he := hest 0 T φ (hφ.mono Icc_subset_Ici_self) T ⟨hT, le_rfl⟩
+  simp only [sub_zero] at he
+  rw [hCT, hφ0] at he
+  have hn : ‖(WithLp.toLp 2 ![0, 2 * B * T + 1] : ℝ²)‖ = 2 * B * T + 1 := by
+    rw [EuclideanSpace.norm_eq]
+    simp [Fin.sum_univ_two]
+    rw [Real.sqrt_sq_eq_abs, abs_of_pos (by positivity)]
+  rw [hn] at he
+  have h1 : ‖φ T 1‖ ≤ ‖φ T‖ := PiLp.norm_apply_le _ _
+  simp only [hφ0, sub_zero] at hmv
+  have hξ : (![0, 2 * B * T + 1] : Fin 2 → ℝ) 1 = 2 * B * T + 1 := by simp
+  rw [hξ, Real.norm_eq_abs] at hmv
+  rw [Real.norm_eq_abs] at h1
+  have := abs_sub_abs_le_abs_sub (2 * B * T + 1) (φ T 1)
+  rw [abs_of_pos (by positivity : (0 : ℝ) < 2 * B * T + 1), abs_sub_comm] at this
+  linarith
 
 /-- Global exponential stability is translated exactly into the whole, inconsistent, language:
 no platform satisfies it. -/
@@ -720,13 +694,26 @@ no platform satisfies it. -/
   exact Family.exact_of_translate_eq_univ realize_univ rfl
     (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyExponentiallyStable)
 
-/-- With a positive inductance, integral action, a positive DC link and overload, the platform is
-unstable whatever the design: the operating point is not an equilibrium. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_overload (y : LimitedPI) (hL : 0 < y.design.L)
-    (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
+/-- With a nonzero inductance, integral action, a positive DC link and overload, the platform is
+unstable whatever the design: with overload the saturation is constant near the operating point,
+which is not an equilibrium. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_overload (y : LimitedPI)
+    (hL : y.design.L ≠ 0) (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc)
+    (ho : y.Vmax < |y.design.R * y.iref|) :
     connection% (y ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (y.unstable_of_overload hL.ne' hKi hV ho)))
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable y.field 0
+  refine (Dynamics.unstable_congr_nhds (y.field_eventuallyEq_overload hKi ho)).mpr
+    (Dynamics.unstable_of_ne_zero ?_ ?_)
+  · rw [contDiff_euclidean]
+    intro i
+    fin_cases i <;> simp <;> fun_prop
+  · intro h
+    have h0 := congrArg (fun z : ℝ² => z 0) h
+    simp [hL] at h0
+    have hVm : 0 ≤ y.Vmax := div_nonneg hV.le (Real.sqrt_nonneg 3)
+    exact sat_ne_of_lt_abs hVm ho (by linarith)
 
 /-! ## The implementation over the PI design (M–I) -/
 
@@ -824,7 +811,7 @@ instability is realized soundly: every such platform is unstable. -/
   unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   rintro y ⟨-, hΔ⟩
   rw [implementation_impl, (connection_proof% TMIO.mem_realize)] at hΔ
-  have h := mem_den_unstable_of_overload y (hΔ .inductance (by simp)) (hΔ .integral (by simp))
+  have h := mem_den_unstable_of_overload y (hΔ .inductance (by simp)).ne' (hΔ .integral (by simp))
     (hΔ .dcLink (by simp)) (hΔ .overload (by simp))
   unfold powerlib.TMIO.Statement at h
   exact h

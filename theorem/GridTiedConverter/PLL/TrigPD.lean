@@ -50,7 +50,8 @@ open powerlib.SpecialFunctions (trigPoly2 trigPoly2Deriv trigPoly2ZeroSet)
 /-- T-pll-dynamics §1.13 phase detector `h(θ) = a sin θ + b cos θ + c sin 2θ + d cos 2θ + e`. -/
 def trigPD (a b c d e : ℝ) : ℝ → ℝ := trigPoly2 e b a d c
 
-/-- Its derivative `h'(θ) = a cos θ − b sin θ + 2c cos 2θ − 2d sin 2θ`. -/
+/-- Its derivative `h'(θ) = a cos θ − b sin θ + 2c cos 2θ − 2d sin 2θ`
+(`SpecialFunctions.hasDerivAt_trigPoly2 e b a d c`). -/
 def trigPDDeriv (a b c d : ℝ) : ℝ → ℝ := trigPoly2Deriv b a d c
 
 @[tmio M, powerlib_foundation] theorem trigPD_apply (a b c d e θ : ℝ) :
@@ -64,14 +65,6 @@ def trigPDDeriv (a b c d : ℝ) : ℝ → ℝ := trigPoly2Deriv b a d c
       2 * d * Real.sin (2 * θ) := by
   simp only [trigPDDeriv, trigPoly2Deriv]
   ring
-
-@[tmio T, powerlib_foundation] theorem hasDerivAt_trigPD (a b c d e θ : ℝ) :
-    HasDerivAt (trigPD a b c d e) (trigPDDeriv a b c d θ) θ :=
-  SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ
-
-@[tmio T, powerlib_foundation] theorem contDiff_trigPD (a b c d e : ℝ) :
-    ContDiff ℝ 1 (trigPD a b c d e) :=
-  SpecialFunctions.contDiff_trigPoly2 e b a d c
 
 /-- Equilibria with `θ_e ∈ [α, α + 2π)` are the points `(θ*, δω/K_i)`, `h(θ*) = 0`.
 Static evidence on the model, not a connection conclusion. -/
@@ -127,12 +120,12 @@ Static evidence on the model, not a connection conclusion. -/
 /-- The PI-PLL model with the trigonometric detector, read about the selected phase `θ*`
 (selected point `(θ*, δω / K_i)`). -/
 def trigModel (a b c d e Kp Ki δω θ : ℝ) : PIPLL.Model :=
-  ⟨trigPD a b c d e, Kp, Ki, δω, θ, contDiff_trigPD a b c d e⟩
+  ⟨trigPD a b c d e, Kp, Ki, δω, θ, SpecialFunctions.contDiff_trigPoly2 e b a d c⟩
 
 @[tmio M, powerlib_domain] theorem trigModel_deriv (a b c d e Kp Ki δω θ : ℝ) :
     deriv (trigModel a b c d e Kp Ki δω θ).h (trigModel a b c d e Kp Ki δω θ).θ =
       trigPDDeriv a b c d θ :=
-  (hasDerivAt_trigPD a b c d e θ).deriv
+  (SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ).deriv
 
 /-- `K_p, K_i > 0`, `h(θ*) = 0`, `h'(θ*) < 0`: `(θ*, δω/K_i)` is locally exponentially stable. -/
 @[tmio TM, powerlib_domain] theorem trigPLL_mem_den_locallyExponentiallyStable {a b c d e Kp Ki δω θ : ℝ}
@@ -165,7 +158,9 @@ exponentially stable and the other is unstable. -/
   unfold powerlib.TMIO.Statement
   have hmul := SpecialFunctions.deriv_mul_neg_of_consecutive_simple_zeros
     (SpecialFunctions.continuous_trigPoly2 e b a d c) h12 hz1 hz2 hnz
-    (hasDerivAt_trigPD a b c d e θ₁) (hasDerivAt_trigPD a b c d e θ₂) hs1 hs2
+    (SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ₁)
+    (SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ₂) hs1 hs2
+  change trigPDDeriv a b c d θ₁ * trigPDDeriv a b c d θ₂ < 0 at hmul
   rcases lt_or_gt_of_ne hs1 with h1 | h1
   · left
     have h2 : 0 < trigPDDeriv a b c d θ₂ := by
@@ -190,7 +185,8 @@ Static evidence on the model, not a connection conclusion. -/
     fderiv ℝ (piPLLField (trigPD a b c d e) Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧
       piPLLJacobian Kp Ki 0 ≠ 0 ∧ (piPLLJacobian Kp Ki 0) ^ 2 = 0 := by
-  have hder := hasDerivAt_trigPD a b c d e θ
+  have hder : HasDerivAt (trigPD a b c d e) (trigPDDeriv a b c d θ) θ :=
+    SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ
   rw [hd] at hder
   obtain ⟨-, h1, h2, h3, -⟩ := piPLL_jacobian_nilpotent_of_deriv_zero (Kp := Kp) (δω := δω)
     hz hder hKi

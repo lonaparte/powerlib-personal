@@ -33,19 +33,20 @@ Results.
   decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_bimodal`).
 * Washboard `V = V₀ (−cos θ − αθ)` (`V₀ > 0`, `washboard`; defined as the washboard of
   `theorem/Potential/Barrier.lean` with `c = V₀α`, `A = V₀`, `φ = 0`, `washboard_eq`):
-  `V' = V₀ (sin θ − α)`; a critical point exists iff `|α| ≤ 1` (`washboard_critical_exists_iff`);
+  `V' = V₀ (sin θ − α)` (`Barrier.hasDerivAt_washboard`); a critical point exists iff `|α| ≤ 1`
+  (`washboard_critical_exists_iff`);
   `α > 1 ⇒ V' < 0` (`washboard_deriv_neg`); at `α = 1` the critical points are `π/2 + 2πk`, where
   also `V'' = 0` (well and barrier merge; `washboard_critical_merge`).
-* `V(θ + 2π) = V(θ) − 2πV₀α` (`washboard_shift`): all wells are translates, with identical
-  barrier heights (`washboard_barrier_translate`).
+* `V(θ + 2πk) = V(θ) − 2πkV₀α` (`washboard_shift_int`): all wells are translates, with
+  identical barrier heights (`washboard_barrier_translate`).
 * For `|α| ≤ 1`, with `θ_min = arcsin α`, `θ_max = π − arcsin α`:
   `ΔV₊ = V₀[2√(1−α²) + α(2 arcsin α − π)]`, `ΔV₋ = V₀[2√(1−α²) + α(π + 2 arcsin α)]`
   (`barrierForward`, `barrierBackward`, `washboard_barrier_forward`, `washboard_barrier_backward`),
   `ΔV₊ = ΔV₋ = 2V₀` at `α = 0` (`barrier_at_zero`), `ΔV₊ → 0` and `ΔV₋ → 2πV₀` as `α → 1⁻`
   (`barrier_tendsto_one`).
 * Curvatures `V''(θ_min) = V₀√(1−α²)`, `V''(θ_max) = −V₀√(1−α²)` (`washboard_curvatures`), so
-  the Kramers prefactor is `2πγ / √(V''(θ_min) |V''(θ_max)|) = 2πγ / (V₀√(1−α²))`
-  (`washboard_kramers_prefactor`).
+  `√(V''(θ_min) |V''(θ_max)|) = V₀√(1−α²)` (`washboard_prefactor`), so the Kramers prefactor is
+  `2πγ / √(V''(θ_min) |V''(θ_max)|) = 2πγ / (V₀√(1−α²))`.
 * For `α ≠ 0` the weight `e^{−V/D}` is not integrable on `ℝ`
   (`washboard_weight_not_integrable`).
 
@@ -290,12 +291,6 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
     washboard V₀ α θ = V₀ * (-Real.cos θ - α * θ) := by
   simp only [washboard, Barrier.washboard, add_zero]; ring
 
-@[tmio T, powerlib_foundation] theorem hasDerivAt_washboard (V₀ α θ : ℝ) :
-    HasDerivAt (washboard V₀ α) (V₀ * (Real.sin θ - α)) θ := by
-  convert Barrier.hasDerivAt_washboard (c := V₀ * α) (A := V₀) (φ := 0) θ using 1
-  · rfl
-  · rw [add_zero]; ring
-
 @[tmio T, powerlib_foundation] theorem hasDerivAt_washboard_deriv (V₀ α θ : ℝ) :
     HasDerivAt (fun θ => V₀ * (Real.sin θ - α)) (V₀ * Real.cos θ) θ := by
   simpa using ((Real.hasDerivAt_sin θ).sub_const α).const_mul V₀
@@ -333,11 +328,7 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
   have := h.const_sub π
   convert this using 2; ring
 
-/-- `V(θ + 2π) = V(θ) − 2πV₀α`: the tilted washboard is a periodic potential plus a ramp. -/
-@[tmio T, powerlib_foundation] theorem washboard_shift (V₀ α θ : ℝ) :
-    washboard V₀ α (θ + 2 * π) = washboard V₀ α θ - 2 * π * V₀ * α := by
-  simp only [washboard_eq, Real.cos_add_two_pi]; ring
-
+/-- `V(θ + 2πk) = V(θ) − 2πkV₀α`: the tilted washboard is a periodic potential plus a ramp. -/
 @[tmio T, powerlib_foundation] theorem washboard_shift_int (V₀ α θ : ℝ) (k : ℤ) :
     washboard V₀ α (θ + k * (2 * π)) = washboard V₀ α θ - k * (2 * π * V₀ * α) := by
   simp only [washboard_eq, Real.cos_add_int_mul_two_pi]; ring
@@ -358,8 +349,8 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
 @[tmio T, powerlib_foundation] theorem washboard_barrier_backward {V₀ α : ℝ} :
     washboard V₀ α (π - Real.arcsin α - 2 * π) - washboard V₀ α (Real.arcsin α) =
       V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α)) := by
-  have h := washboard_shift V₀ α (π - Real.arcsin α - 2 * π)
-  rw [sub_add_cancel] at h
+  have h := washboard_shift_int V₀ α (π - Real.arcsin α - 2 * π) 1
+  rw [Int.cast_one, one_mul, one_mul, sub_add_cancel] at h
   have hf := washboard_barrier_forward (V₀ := V₀) (α := α)
   linarith
 
@@ -403,11 +394,6 @@ def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * 
       V₀ * √(1 - α ^ 2) := by
   obtain ⟨h1, h2⟩ := washboard_curvatures V₀ α
   rw [h1, h2, abs_neg, abs_of_nonneg (by positivity), ← sq, Real.sqrt_sq (by positivity)]
-
-@[tmio T, powerlib_foundation] theorem washboard_kramers_prefactor {V₀ γ : ℝ} (hV : 0 ≤ V₀) (α : ℝ) :
-    2 * π * γ / √(V₀ * Real.cos (Real.arcsin α) * |V₀ * Real.cos (π - Real.arcsin α)|) =
-      2 * π * γ / (V₀ * √(1 - α ^ 2)) := by
-  rw [washboard_prefactor hV]
 
 /-- For `α ≠ 0` the Boltzmann weight `e^{−V/D}` of the tilted washboard is not integrable on `ℝ`. -/
 @[tmio T, powerlib_foundation] theorem washboard_weight_not_integrable {V₀ α D : ℝ} (hV : 0 < V₀)

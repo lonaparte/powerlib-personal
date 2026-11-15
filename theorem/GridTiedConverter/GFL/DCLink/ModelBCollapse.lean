@@ -38,15 +38,14 @@ discriminant `D = H² + 4G` (`planeDisc`).
   `{P(x*) = 0, I₀ / C_dc ≠ 0, D = 0}`: LES ⇔ `I₀ / C_dc ≠ 0 ∧ (P / C_dc < 0 ∨ (P = 0 ∧ D < 0))`.
 * Static support (foundation): `dP0`, `dP2`, `dP3` (partial derivatives of `P`), `planeQ`,
   `planeG`, `planeH`, `planeDisc`, `hasFDerivAt_planeQ`, `planeQ_lie`, `field_two_eq_planeQ_div`,
-  `continuous_planeG`, `continuous_planeH`, `exists_contDiff_eq_field_of_sign`.
+  `contDiff_planeG`, `contDiff_planeH`, `exists_contDiff_eq_field_of_sign`.
 
 Family and connection conclusions.
 Connection conclusions on `ModelB.family`: `mem_den_unstable_of_disc_pos`,
 `mem_den_locallyExponentiallyStable_of_disc_neg`,
 `degenerateFocus_mem_den_locallyExponentiallyStable`,
 `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate`. The plane coefficients and
-their identities are foundation; the trajectory-level statements are private implementation
-evidence.
+their identities are foundation.
 
 The degenerate discriminant `D = 0` (with `P(x*) = 0`, `I₀ / C_dc ≠ 0`) is treated in
 `theorem/GridTiedConverter/GFL/DCLink/ModelBCollapseDegenerate.lean`: `H ≠ 0` ⇒ unstable,
@@ -127,14 +126,14 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
   simp only [row4_apply, planeG, planeH]
   ring
 
-@[tmio M, powerlib_domain] theorem continuous_planeG : Continuous p.planeG := by
-  show Continuous fun y : State 4 => 3 / 2 * (p.dP0 y *
+@[tmio M, powerlib_domain] theorem contDiff_planeG : ContDiff ℝ 1 p.planeG := by
+  show ContDiff ℝ 1 fun y : State 4 => 3 / 2 * (p.dP0 y *
     (p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1) +
       p.dP3 y * (p.VdcRef - y 2)) / p.Cdc
   unfold dP0 dP3 vgq vgd idRef
   fun_prop
 
-@[tmio M, powerlib_domain] theorem continuous_planeH : Continuous p.planeH := by
+@[tmio M, powerlib_domain] theorem contDiff_planeH : ContDiff ℝ 1 p.planeH := by
   unfold planeH dP2 vgd idRef
   fun_prop
 
@@ -188,17 +187,25 @@ denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
       simp [field, pccP]
     · rfl
 
-/-- **Degenerate power balance on the singular plane, positive discriminant: instability.** At a
-state `x` with `V_dc = 0` and `P(x) = 0`, write `q = (I₀ V_dc + (3/2) P) / C_dc`, so that near
-the plane `V_dc V_dc' = q` and `q' = G + H q / V_dc` (`planeQ_lie`). If `H² + 4G > 0` at `x`, the
-quadratic `λ² − Hλ − G` has a root `λ₊ > 0` on the side `σ = sign H` (or on both sides if
-`G > 0`), and the cone `{σ V_dc > 0, q ≥ μ σ V_dc}` for `μ` slightly above `σH/2` is entered by
-the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_cone`). -/
-@[tmio TM, powerlib_domain] private theorem modelB_unstable_of_disc_pos {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0)
-    (hD : 0 < p.planeDisc x) :
-    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
+end ModelBParams
+
+namespace ModelB
+
+/-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+    m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
+    family_isAutonomous
+
+/-- **Degenerate power balance, positive discriminant: instability.** A selected state on the
+singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) is unstable. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_disc_pos (m : Model) (hx : m.x 2 = 0)
+    (hP : m.p.pccP m.x = 0) (hD : 0 < m.p.planeDisc m.x) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  obtain ⟨p, x⟩ := m
+  dsimp only at hx hP hD
   unfold TMIO.Statement
-  rw [(connection_proof% (Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous))]
+  rw [mem_den_flow_iff']
   change Unstable p.field x
   obtain ⟨σ, hσ, hσH⟩ : ∃ σ : ℝ, (σ = 1 ∨ σ = -1) ∧ σ * p.planeH x = |p.planeH x| := by
     by_cases h : 0 ≤ p.planeH x
@@ -208,7 +215,7 @@ the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_co
   obtain ⟨a0, ha0⟩ : ∃ a, a = 3 / 2 * p.dP0 x / p.Cdc := ⟨_, rfl⟩
   obtain ⟨a3, ha3⟩ : ∃ a, a = 3 / 2 * p.dP3 x / p.Cdc := ⟨_, rfl⟩
   have hG : p.planeG x = a0 * p.field x 0 + a3 * p.field x 3 := by
-    rw [ha0, ha3, planeG]; ring
+    rw [ha0, ha3, ModelBParams.planeG]; ring
   have hDHG : p.planeDisc x = p.planeH x ^ 2 + 4 * p.planeG x := rfl
   have hS : 0 < a0 ^ 2 + a3 ^ 2 + |p.planeH x| / 2 := by
     by_contra hS
@@ -235,20 +242,20 @@ the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_co
     nlinarith
   -- the boundary rate is positive near `x`
   have hcont : Continuous fun y : State 4 => p.planeG y + σ * p.planeH y * μ - μ ^ 2 :=
-    (p.continuous_planeG.add ((continuous_const.mul p.continuous_planeH).mul
+    (p.contDiff_planeG.continuous.add ((continuous_const.mul p.contDiff_planeH.continuous).mul
       continuous_const)).sub continuous_const
   have hmargin' : 0 < p.planeG x + σ * p.planeH x * μ - μ ^ 2 := by rw [hσH]; exact hmargin
   obtain ⟨ρ, hρ, hball⟩ := Metric.continuous_iff.mp hcont x _ hmargin'
   have hWc : ContDiff ℝ 1 (fun y : State 4 => p.planeQ y - μ * σ * y 2) :=
     p.contDiff_planeQ.sub (contDiff_const.mul (Dynamics.contDiff_coord 2))
   have hWd : ∀ y : State 4, HasFDerivAt (fun y : State 4 => p.planeQ y - μ * σ * y 2)
-      (row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
+      (ModelBParams.row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
         (3 / 2 * p.dP3 y / p.Cdc)) y := by
     intro y
     have h := (p.hasFDerivAt_planeQ y).sub ((Dynamics.hasFDerivAt_coord 2 y).const_mul (μ * σ))
     refine h.congr_fderiv ?_
     ext v
-    simp only [row4_apply, _root_.sub_apply, _root_.smul_apply, Dynamics.coord_apply,
+    simp only [ModelBParams.row4_apply, _root_.sub_apply, _root_.smul_apply, Dynamics.coord_apply,
       smul_eq_mul]
     ring
   have hW0 : p.planeQ x - μ * σ * x 2 = 0 := by rw [p.planeQ_eq_zero hx hP, hx]; ring
@@ -273,15 +280,16 @@ the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_co
     have hrate' := (abs_lt.mp hrate).1
     have hf2' : p.field y 2 = μ * σ := by
       rw [p.field_two_eq_planeQ_div hy2, hq]; field_simp
-    have hlie : row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
+    have hlie : ModelBParams.row4 (3 / 2 * p.dP0 y / p.Cdc) 0
+        ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
         (3 / 2 * p.dP3 y / p.Cdc) (p.field y) =
         p.planeG y + σ * p.planeH y * μ - μ ^ 2 := by
-      rw [row4_apply, hf2', planeG, planeH]
+      rw [ModelBParams.row4_apply, hf2', ModelBParams.planeG, ModelBParams.planeH]
       linear_combination (-(μ ^ 2)) * hσ2
     rw [hlie]
     linarith
   · simp [hσ2]
-  · rw [(hWd x).fderiv, row4_apply]
+  · rw [(hWd x).fderiv, ModelBParams.row4_apply]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
     have h1 : (p.I0 + 3 / 2 * p.dP2 x) / p.Cdc = p.planeH x := rfl
@@ -297,23 +305,24 @@ the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_co
     exact ⟨g, hg, fun y _ hy => hgf y hy⟩
 
 
-/-- **Degenerate power balance on the singular plane, negative discriminant: collapse.** At a
-state `x` with `V_dc = 0`, `P(x) = 0` and `I₀ / C_dc ≠ 0`, if `H² + 4G < 0` at `x` then in the
-time `dτ = dt / V_dc` the pair `(V_dc, q)` is a linear focus near `x`: every solution segment
-reaches the plane at most at its end, after a time `O(‖x(t₀) − x‖)`, so the segment-based local
-exponential estimate holds although `x` is not an equilibrium
-(`Dynamics.Degenerate.locallyExponentiallyStable_of_spiral`). Implementation evidence for
-`ModelB.mem_den_locallyExponentiallyStable_of_disc_neg`. -/
-@[tmio TM, powerlib_domain] private theorem modelB_locallyExponentiallyStable_of_disc_neg {x : State 4} (hx : x 2 = 0)
-    (hP : p.pccP x = 0) (hI : p.I0 / p.Cdc ≠ 0) (hD : p.planeDisc x < 0) :
-    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
+/-- **Degenerate power balance, negative discriminant: local exponential estimate.** A selected
+state on the singular plane with `P(x*) = 0`, `I₀ / C_dc ≠ 0` and `H² + 4G < 0` is locally
+exponentially stable in the segment semantics, although it is not an equilibrium: solution
+segments spiral into the plane within a time `O(‖x(t₀) − x*‖)`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_disc_neg (m : Model)
+    (hx : m.x 2 = 0) (hP : m.p.pccP m.x = 0) (hI : m.p.I0 / m.p.Cdc ≠ 0)
+    (hD : m.p.planeDisc m.x < 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  obtain ⟨p, x⟩ := m
+  dsimp only at hx hP hI hD
   unfold TMIO.Statement
-  rw [(connection_proof% (Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous))]
+  rw [mem_den_flow_iff']
   change LocallyExponentiallyStable p.field x
   obtain ⟨M, hM⟩ := (isCompact_closedBall x 1).exists_bound_of_continuousOn
     p.contDiff_field_offDC.continuous.continuousOn
   refine Dynamics.Degenerate.locallyExponentiallyStable_of_spiral 2 hx p.contDiff_planeQ
-    (p.planeQ_eq_zero hx hP) p.continuous_planeG.continuousAt p.continuous_planeH.continuousAt
+    (p.planeQ_eq_zero hx hP) p.contDiff_planeG.continuous.continuousAt
+    p.contDiff_planeH.continuous.continuousAt
     (ρ := 1) (M := M) one_pos ?_ ?_ ?_ hD ?_
   · intro y _ hy
     rw [p.field_two_eq_planeQ_div hy]
@@ -330,35 +339,6 @@ exponential estimate holds although `x` is not an equilibrium
       fin_cases i <;> simp
     rw [hFy]
     exact hM y (by rw [Metric.mem_closedBall, dist_eq_norm]; exact hy.le)
-
-end ModelBParams
-
-namespace ModelB
-
-/-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
-    family_isAutonomous
-
-/-- **Degenerate power balance, positive discriminant: instability.** A selected state on the
-singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) is unstable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_disc_pos (m : Model) (hx : m.x 2 = 0)
-    (hP : m.p.pccP m.x = 0) (hD : 0 < m.p.planeDisc m.x) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff'.mpr (((Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous).mp (m.p.modelB_unstable_of_disc_pos hx hP hD)))
-
-/-- **Degenerate power balance, negative discriminant: local exponential estimate.** A selected
-state on the singular plane with `P(x*) = 0`, `I₀ / C_dc ≠ 0` and `H² + 4G < 0` is locally
-exponentially stable in the segment semantics, although it is not an equilibrium: solution
-segments spiral into the plane within a time `O(‖x(t₀) − x*‖)`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_disc_neg (m : Model)
-    (hx : m.x 2 = 0) (hP : m.p.pccP m.x = 0) (hI : m.p.I0 / m.p.Cdc ≠ 0)
-    (hD : m.p.planeDisc m.x < 0) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff'.mpr (((Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous).mp (m.p.modelB_locallyExponentiallyStable_of_disc_neg hx hP hI hD)))
 
 /-- A converter at rest on the singular plane with zero power: `x* = 0`, so `i_d* = 0` and
 `P = 0`; `I₀ = C_dc = 3/2`, `V_dc,ref = −1`, `V_g = k_p = k_i = k_iv = 1`,

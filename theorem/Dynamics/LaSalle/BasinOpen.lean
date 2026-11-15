@@ -41,7 +41,7 @@ invariant. -/
   show Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t (lipschitzFlow hf s x)) atTop (𝓝 xs)
   have : (fun t : ℝ≥0 => lipschitzFlow hf t (lipschitzFlow hf s x)) =
       (fun t => lipschitzFlow hf t x) ∘ (fun t => t + s) := by
-    funext t; simp [lipschitzFlow_add]
+    funext t; simp [Flow.map_add]
   rw [this]
   exact hx.comp (tendsto_atTop_mono (fun _ => le_self_add) tendsto_id)
 
@@ -77,7 +77,7 @@ invariant. -/
   apply (hin.comp hsub).congr'
   filter_upwards [eventually_ge_atTop T] with t ht
   simp only [Function.comp_def]
-  rw [← lipschitzFlow_add, tsub_add_cancel_of_le ht]
+  rw [← Flow.map_add, tsub_add_cancel_of_le ht]
 
 /-- Coercion `ℝ≥0 → ℝ` tends to `+∞`. -/
 @[tmio T, powerlib_foundation] theorem tendsto_nnreal_coe_atTop :

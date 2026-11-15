@@ -25,8 +25,10 @@ Results.
 * `itoCorrection_sparseNoise` — for a sparse diffusion with distinct target coordinates the Itô
   correction only sees the diagonal Hessian entries, `½ Σ_j σ_j² K_{c_j c_j}`; `smIto` — the SM
   correction (1.5) involves only the three entries at `Ψ_d`, `Ψ_q`, `p` (independent of `V_el`).
-* `smIto_nonneg`, `smIto_nonneg_of_diag`, `inv_diag_pos` — `Δ_Itô^SM ≥ 0` for a positive
-  semidefinite Hessian, or from positive diagonal entries of `L⁻¹` (`L ≻ 0`) and `1/M > 0`.
+* `smIto_nonneg_of_diag` — `Δ_Itô^SM ≥ 0` from nonnegative diagonal entries at `Ψ_d`, `Ψ_q`,
+  `p`: in particular for a positive semidefinite Hessian (`itoCorrection_nonneg`), or for
+  `(L⁻¹)_{dd}, (L⁻¹)_{qq} > 0` with `L ≻ 0` (Mathlib `Matrix.PosDef.inv`, `PosDef.diag_pos`) and
+  `1/M > 0`.
 * `qBlock_inv_00` — Schur complement `(L_qblock⁻¹)_{qq} = 1/(L_q − L_aq²/L_kqkq)`;
   `qBlock_effective_lt` — with a coupled damper `L_q^eff < L_q`; `fromBlocks_inv_q` — the
   `(Ψ_q, Ψ_q)` entry of `L⁻¹` is the `(0,0)` entry of the q-block inverse.
@@ -79,11 +81,6 @@ entries are constant. -/
       = (1 / 2 : ℝ) * (σvd ^ 2 * K 0 0 + σvq ^ 2 * K 1 1 + σT ^ 2 * K 5 5) := by
   rw [smNoise, itoCorrection_sparseNoise, Fin.sum_univ_three]
   simp
-
-/-- `Δ_Itô^SM ≥ 0` whenever the Hessian is positive semidefinite (convex `H`). -/
-@[tmio M, powerlib_domain] theorem smIto_nonneg (σvd σvq σT : ℝ) {K : Matrix (Fin 7) (Fin 7) ℝ}
-    (hK : K.PosSemidef) : 0 ≤ itoCorrection (smNoise σvd σvq σT) K :=
-  itoCorrection_nonneg _ hK
 
 /-- `Δ_Itô^SM ≥ 0` from the three diagonal entries alone (they are the only ones that enter);
 e.g. `(L⁻¹)_{dd} > 0`, `(L⁻¹)_{qq} > 0` for `L ≻ 0` and `1/M > 0`. -/
@@ -140,10 +137,5 @@ of `L⁻¹` is the `(0,0)` entry of the q-block inverse (the d-axis coupling doe
     rw [fromBlocks_multiply]
     simp [nonsing_inv_mul _ hd, nonsing_inv_mul _ hq, fromBlocks_one]
   rw [hinv]; rfl
-
-/-- `L ≻ 0` gives positive diagonal entries of `L⁻¹`, hence `Δ_Itô^SM ≥ 0`. -/
-@[tmio T, powerlib_foundation] theorem inv_diag_pos {m : ℕ} {L : Matrix (Fin m) (Fin m) ℝ} (hL : L.PosDef)
-    (i : Fin m) : 0 < L⁻¹ i i :=
-  hL.inv.diag_pos
 
 end powerlib.Synchronous.SM

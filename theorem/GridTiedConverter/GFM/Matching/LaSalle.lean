@@ -101,7 +101,7 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   (`energy_lie_le_sq`, any `μ u* v₀`), so `H` decays exponentially at `noSyncRate`
   (`energy_lie_le_noSyncRate`); `θ' = η ũ` is integrable and the angle settles.
   Private: `tendsto_equilibrium_of_no_sync` (every forward solution converges to one equilibrium
-  `(θ∞, u*, î(θ∞))` — no drift), `lyapunovStable_of_no_sync`. Connection:
+  `(θ∞, u*, î(θ∞))` — no drift). Connection:
   `mem_den_lyapunovStable_of_no_sync` (Lyapunov stable), `noSyncModel_mem_den_lyapunovStable`,
   and the boundary `not_exact_lyapunovStable` (**REFUTED exactness**: the Lyapunov translation
   `{physical, synchronizing, dissipative}` is sound but not exact, `noSyncModel` has `v₀ = 0`).
@@ -114,8 +114,8 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   convergence to the source's set) and, for `η ≠ 0`, the connection `mem_den_unstable_of_mu_eq_zero`
   (the angle drifts away linearly from arbitrarily small DC offsets). With `η = 0` (frozen angle;
   any `margin ≥ 0`) the deviation dynamics is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L_s)`,
-  so `⟨z, z'⟩ ≤ 0`: Lyapunov stable (private `lyapunovStable_of_frozen`, connection
-  `mem_den_lyapunovStable_of_frozen`), not asymptotically.
+  so `⟨z, z'⟩ ≤ 0`: Lyapunov stable (connection `mem_den_lyapunovStable_of_frozen`), not
+  asymptotically.
 * (c) `margin = 0`, `μ ≠ 0` (so `u* v₀ = 0`): `tendsto_error_of_no_sync_margin_zero` (private,
   LaSalle on the cylinder with the LaSalle-set argument `no_sync_margin_zero_segment`:
   `ũ_dc, ĩ_dq → 0`) and `tendsto_equilibrium_of_no_sync_margin_zero` (private: every forward
@@ -124,10 +124,9 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   Jacobian `redJac` is Hurwitz (`redJac_isHurwitz`, Routh–Hurwitz of `theorem.Criteria.Routh3`);
   local exponential stability then bounds `ũ` exponentially after the solution enters the ball, and
   `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge. Lyapunov stability
-  (private `lyapunovStable_of_no_sync_of_mu_ne_zero`, connection
-  `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting near `x*` the
-  reduced error starts in the ball of local exponential stability (`red_bounds`), stays
-  exponentially small, and the angle moves by at most `|η| C K₁ ‖x₀ − x*‖ / a`
+  (connection `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting
+  near `x*` the reduced error starts in the ball of local exponential stability (`red_bounds`),
+  stays exponentially small, and the angle moves by at most `|η| C K₁ ‖x₀ − x*‖ / a`
   (`Dynamics.abs_sub_le_of_abs_deriv_le_exp`).
 * Decision (connection `mem_den_lyapunovStable_iff_of_no_sync`): with `C_dc, L_s, R_s > 0`,
   `μ u* v₀ = 0` and `margin ≥ 0`, the operating point is Lyapunov stable iff
@@ -1387,10 +1386,11 @@ settles (`θ' = η ũ` is integrable), it does not drift. -/
   · simpa using hd.add (((iHatD_continuous m).tendsto _).comp hθ)
   · simpa using hq.add (((iHatQ_continuous m).tendsto _).comp hθ)
 
-/-- Lyapunov stability without synchronizing torque (`margin > 0`): the angle moves by at most a
+/-- **Lyapunov stability without synchronizing torque**: with `C_dc, L_s, R_s > 0`,
+`μ u* v₀ = 0` and `margin > 0` the operating point is Lyapunov stable; the angle moves by at most a
 multiple of the initial deviation. -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow')]
@@ -1532,15 +1532,6 @@ multiple of the initial deviation. -/
 @[tmio M, powerlib_domain] private theorem point_apply (m : Model) :
     m.point 0 = 0 ∧ m.point 1 = m.ustar ∧ m.point 2 = m.iHatD 0 ∧ m.point 3 = m.iHatQ 0 := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> simp [Model.point]
-
-/-- **Lyapunov stability without synchronizing torque**: with `C_dc, L_s, R_s > 0`,
-`μ u* v₀ = 0` and `margin > 0` the operating point is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow']
-  exact (mem_den_flow'.mp (lyapunovStable_of_no_sync m hC hL hR hs hδ))
 
 /-- **Boundary: no local asymptotic stability without synchronizing torque.** With `R_s > 0` and
 `μ u* v₀ = 0` every `(θ, u*, î(θ))` is an equilibrium, so equilibria accumulate at the operating
@@ -2317,13 +2308,13 @@ Implementation evidence (Rules §3a). -/
 
 /-! ### Lyapunov stability without synchronizing torque at the boundary -/
 
-/-- **Frozen angle without modulation** (`μ = 0`, `η = 0`, `margin ≥ 0`): in deviation coordinates
+/-- **Lyapunov stability with a frozen angle and no modulation**: with `C_dc, L_s, R_s > 0`,
+`μ = 0`, `η = 0` and `margin ≥ 0` the operating point is Lyapunov stable. In deviation coordinates
 the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L_s)` (the angle and, at
-`margin = 0`, the DC error are conserved, the current error decays), so `⟨z, z'⟩ ≤ 0` and the
-operating point is Lyapunov stable (`Dynamics.lyapunovStable_of_inner_nonpos`). Implementation
-evidence. -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
+`margin = 0`, the DC error are conserved, the current error decays), so `⟨z, z'⟩ ≤ 0`
+(`Dynamics.lyapunovStable_of_inner_nonpos`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -2411,12 +2402,13 @@ Implementation evidence (it names the model's reduction only; kept private with 
     have b2 := bnd (-s) c e1 e2 (by rwa [abs_neg]) hc
     linarith
 
-/-- **Lyapunov stability without synchronizing torque, with modulation** (`μ ≠ 0`, `margin ≥ 0`):
-the rotation-reduced error is locally exponentially stable and the angle moves by at most a
-multiple of the initial error. Implementation evidence. -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
-    (hδ : 0 ≤ m.margin) :
+/-- **Lyapunov stability without synchronizing torque, with modulation**: with
+`C_dc, L_s, R_s > 0`, `μ ≠ 0`, `μ u* v₀ = 0` and `margin ≥ 0` (in particular at `margin = 0`) the
+operating point is Lyapunov stable: the rotation-reduced error is locally exponentially stable and
+the angle moves by at most a multiple of the initial error. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model)
+    (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0)
+    (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow')]
@@ -2533,26 +2525,6 @@ multiple of the initial error. Implementation evidence. -/
     have := (lt_div_iff₀ (by linarith : (0 : ℝ) < K + 1)).mp hρ₂
     linarith
   linarith
-
-/-- **Lyapunov stability with a frozen angle and no modulation**: with `C_dc, L_s, R_s > 0`,
-`μ = 0`, `η = 0` and `margin ≥ 0` the operating point is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% (show family.IsAutonomous Model.translated from fun _ => rfl).mem_den_flow)]
-  exact (family_isAutonomous.mem_den_flow.mp (lyapunovStable_of_frozen m hC hL hR hμ hη hδ))
-
-/-- **Lyapunov stability without synchronizing torque, with modulation**: with
-`C_dc, L_s, R_s > 0`, `μ ≠ 0`, `μ u* v₀ = 0` and `margin ≥ 0` (in particular at `margin = 0`) the
-operating point is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model)
-    (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0)
-    (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow']
-  exact (mem_den_flow'.mp (lyapunovStable_of_no_sync_of_mu_ne_zero m hC hL hR hμ hs hδ))
 
 /-- **Lyapunov stability without synchronizing torque, decided** (`C_dc, L_s, R_s > 0`,
 `μ u* v₀ = 0`, `margin ≥ 0`): the operating point is Lyapunov stable exactly when

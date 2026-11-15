@@ -61,7 +61,7 @@ Family and connection conclusions.
   resistances (`exact_passive`: a negative resistance is exposed by a closed cycle along which the
   ports deliver net energy). Within passive circuits, conservation is exactly losslessness
   (`exactUnder_conservative`); the requirement equivalences of Routh and Hurwitz are evaluations
-  of the satisfaction connection (`realize_routhHurwitz`, `realize_passive_damped`).
+  of the satisfaction connection (`stable_of_routhHurwitz`, `realize_passive_damped`).
 * Two circuits mark where the connections part: a Hurwitz circuit with a negative resistance is
   Lyapunov stable but not passive, and a circuit with opposite resistances conserves an energy
   without being lossless (`not_exact_lyapunovStable`, `not_exact_conservative`). The
@@ -626,14 +626,6 @@ to its start while the ports deliver the net energy `-R C² π`. -/
       ring
 
 /-! ## Requirement equivalences -/
-
-/-- The Routh–Hurwitz condition entails pole stability. -/
-@[tmio M, powerlib_domain] theorem realize_routhHurwitz :
-    connection% (realize Meets {.routhHurwitz} ⊆ realize Meets {.poleStable}) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets] at hm ⊢
-  exact (show m.Stable from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using stable_of_routhHurwitz m hm)
 
 /-- Within passive circuits, pole stability is exactly damping. -/
 @[tmio M, powerlib_domain] theorem realize_passive_damped :

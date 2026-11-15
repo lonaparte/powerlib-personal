@@ -41,7 +41,7 @@ Results.
   underdamped, `ΔP_L > 0`: if the unprotected nadir is at or below `−θ`, the relay trips and
   `Δω(t) → −(ΔP_L − p P⁰)/(K_R + D)` (§1.4 post-shedding steady state).
 * `sfr_latched_tendsto` (private): the third-order SFR plant with the stability condition of
-  `SFR.isHurwitz_of_hp_fraction`: a trajectory that trips converges to
+  `SFR.mem_den_globallyExponentiallyStable`: a trajectory that trips converges to
   `Δω = −(ΔP_L − p P⁰)/(K_R + D)`.
 
 Family and connection conclusions.
@@ -374,9 +374,9 @@ below `−θ`, the latched relay trips and `Δω → −(ΔP_L − p P⁰)/(K_R 
     (h0 : x 0 = 0) :
     (∃ t ≥ 0, x t 0 ≤ -θ) ∧
       Tendsto (fun t => x t 0) atTop (𝓝 (-(ΔPL - shed) / (K + D))) := by
-  have he₁ := SwingGovernor.steadyState_isEquilibrium (ΔPL := ΔPL) hM.ne' hTg.ne' hKD.ne'
-  have he₂ := SwingGovernor.steadyState_isEquilibrium (ΔPL := ΔPL - shed) hM.ne' hTg.ne'
-    hKD.ne'
+  have he₁ := (SwingGovernor.isEquilibrium_iff (ΔPL := ΔPL) hM.ne' hTg.ne' hKD.ne' _).2 rfl
+  have he₂ := (SwingGovernor.isEquilibrium_iff (ΔPL := ΔPL - shed) hM.ne' hTg.ne' hKD.ne'
+    _).2 rfl
   have hA := (SwingGovernor.family_isLinear.mem_den_hurwitz
     (P := .globallyExponentiallyStable) (Or.inl trivial)
     (x := (⟨M, D, K, Tg, hM, hTg⟩ : SwingGovernor.Model))).mp
@@ -420,13 +420,14 @@ trips converges to `Δω = −(ΔP_L − p P⁰)/(K_R + D)`. -/
           {s | ∃ τ ∈ Icc 0 s, x τ 0 ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
     (htrip : ∃ t ≥ 0, x t 0 ≤ -θ) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-(ΔPL - shed) / (K + D))) := by
-  have he₁ := SFR.steadyState_isEquilibrium (F := F) (ΔPL := ΔPL) hM.ne' hTg.ne' hTR.ne' hKD.ne'
-  have he₂ := SFR.steadyState_isEquilibrium (F := F) (ΔPL := ΔPL - shed) hM.ne' hTg.ne'
-    hTR.ne' hKD.ne'
+  have he₁ := (SFR.isEquilibrium_iff (F := F) (ΔPL := ΔPL) hM.ne' hTg.ne' hTR.ne' hKD.ne'
+    _).2 rfl
+  have he₂ := (SFR.isEquilibrium_iff (F := F) (ΔPL := ΔPL - shed) hM.ne' hTg.ne' hTR.ne'
+    hKD.ne' _).2 rfl
   have hA := (SFR.family_isLinear.mem_den_hurwitz
     (P := .globallyExponentiallyStable) (Or.inl trivial)
     (x := (⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : SFR.Model))).mp
-    (SFR.isHurwitz_of_hp_fraction hM hTg hTR hD hK hKD hF)
+    (SFR.mem_den_globallyExponentiallyStable ⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ hD hK hKD hF)
   have h := latched_tendsto_of_trip he₁ he₂ hA hx htrip
   have := ((coord_continuous 0).tendsto _).comp h
   simpa [Function.comp_def] using this

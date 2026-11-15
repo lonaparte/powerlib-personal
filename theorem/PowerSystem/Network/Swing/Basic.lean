@@ -79,8 +79,8 @@ Family and connection conclusions.
   `B = 0`) are Lyapunov stable (`uncoupledN_mem_den_lyapunovStable`: in the block coordinates
   `(δᵢ + ω_{i+1} − ω₀, ω)`, built with `Fin.addCases`, the first block is conserved and the
   frequencies decay) while their reduced Jacobian has a zero column (`uncoupledN_not_isHurwitz`);
-  the two-machine instance is `not_exact_lyapunovStable_two` (`uncoupled`). For a single
-  machine (`n = 0`) it is exact (`exact_lyapunovStable_zero`; `jacobian_isHurwitz_zero`).
+  two machines are `uncoupledN 0`. For a single machine (`family (n := 0)`) it is exact
+  (`exact_lyapunovStable_zero`; `jacobian_isHurwitz_zero`).
 * Local asymptotic translation `{powerFlow, jacobianStable}`, decided per number of machines:
   exact for one machine (`exact_locallyAsymptoticallyStable_zero`, here), two machines
   (`exact_locallyAsymptoticallyStable_two`) and three machines
@@ -92,8 +92,8 @@ Family and connection conclusions.
   for every `n` is `mem_den_locallyAsymptoticallyStable_iff` (power balance, a strict local minimum
   of the network potential in relative angles, and an isolated power-balance point). Four machines
   (`n = 3`): exact (`exact_locallyAsymptoticallyStable_four`,
-  `theorem/PowerSystem/Network/Swing/FourDense.lean`; at most four lines already in
-  `mem_den_locallyAsymptoticallyStable_iff_four`, `theorem/PowerSystem/Network/Swing/Four.lean`).
+  `theorem/PowerSystem/Network/Swing/FourDense.lean`; at most four lines already decided by
+  `not_localAsymptoticStable_four`, `theorem/PowerSystem/Network/Swing/Four.lean`).
   Hence the local asymptotic translation is exact for at most four machines and not exact from five.
 -/
 
@@ -357,11 +357,6 @@ selected point. -/
   ext i j
   simp [flowWeights, equilibrium, angleMap_reduce]
 
-/-- Sum over the reduced state, split into the angle and frequency blocks. -/
-@[tmio T, powerlib_foundation] theorem sum_state {β : Type*} [AddCommMonoid β] (f : Fin (n + (n + 1)) → β) :
-    ∑ r, f r = ∑ i : Fin n, f (dIdx i) + ∑ k : Fin (n + 1), f (wIdx k) :=
-  Fin.sum_univ_add f
-
 @[tmio M, powerlib_domain] theorem laplacian_angleMap (p : Params n) (θ : Fin (n + 1) → ℝ)
     (v : State (n + (n + 1))) (k : Fin (n + 1)) :
     (laplacian (flowWeights p.B θ) *ᵥ angleMap v) k =
@@ -386,7 +381,7 @@ selected point. -/
     ext v
     simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply, Matrix.ofLp_toEuclideanCLM,
       _root_.sub_apply]
-    rw [mulVec, dotProduct, sum_state]
+    rw [mulVec, dotProduct, Fin.sum_univ_add]
     simp only [jacobian_dd, zero_mul, Finset.sum_const_zero, zero_add, jacobian_dw, sub_mul,
       ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   · have hP := (hasFDerivAt_powerInjection p.B (angleMap (equilibrium θ))).comp (equilibrium θ)
@@ -404,7 +399,7 @@ selected point. -/
     · rfl
     ext v
     simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply, Matrix.ofLp_toEuclideanCLM]
-    rw [mulVec, dotProduct, sum_state]
+    rw [mulVec, dotProduct, Fin.sum_univ_add]
     simp only [jacobian_wd, jacobian_ww, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
       ite_true]
     simp only [_root_.smul_apply, _root_.sub_apply, smul_eq_mul, ContinuousLinearMap.comp_apply,
@@ -463,7 +458,7 @@ nonnegative and their positive edges connect all machines. -/
   have h1 : ∀ i, w i.succ - w 0 = μ * η i := by
     intro i
     have := hrow (dIdx i)
-    rw [sum_state] at this
+    rw [Fin.sum_univ_add] at this
     simp only [jacobian_dd, jacobian_dw, Complex.ofReal_sub, Complex.ofReal_zero, zero_mul,
       Finset.sum_const_zero, zero_add, apply_ite (fun x : ℝ => (x : ℂ)), Complex.ofReal_one,
       sub_mul, ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ,
@@ -475,7 +470,7 @@ nonnegative and their positive edges connect all machines. -/
       ∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l) = 0 := by
     intro k
     have := hrow (wIdx k)
-    rw [sum_state] at this
+    rw [Fin.sum_univ_add] at this
     simp only [jacobian_wd, jacobian_ww] at this
     have e1 : ∑ l, ((laplacian (flowWeights p.B θ) k l : ℝ) : ℂ) * ζ l =
         ∑ i : Fin n, ((laplacian (flowWeights p.B θ) k i.succ : ℝ) : ℂ) * η i := by
@@ -789,93 +784,6 @@ while the translation asks for power balance. -/
   have := (hp : Meets (offEquilibrium (n := n)) .powerFlow) 0
   simp [offEquilibrium, powerInjection] at this
 
-/-! ### The Lyapunov translation: two uncoupled machines -/
-
-/-- Two uncoupled machines (`n = 1`): unit inertia and damping, no power, no coupling, `θ* = 0`.
-In the reduced state `(δ, ω₀, ω₁)` the field is `δ̇ = ω₁ − ω₀`, `ω̇ₖ = −ωₖ`. -/
-def uncoupled : Model 1 :=
-  ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
-    fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
-
-@[tmio M, powerlib_domain] private theorem uncoupled_point : equilibrium uncoupled.θ = 0 := by
-  apply state_ext
-  · intro i; simp [equilibrium, uncoupled]
-  · intro k; simp [equilibrium, uncoupled]
-
-@[tmio M, powerlib_domain] private theorem uncoupled_field (z : State (1 + (1 + 1))) :
-    uncoupled.field z = WithLp.toLp 2 ![z 2 - z 1, -z 1, -z 2] := by
-  have hz : uncoupled.field z = reducedField uncoupled.params z := by
-    simp [Model.field, uncoupled_point]
-  rw [hz]
-  ext r
-  fin_cases r
-  · show reducedField uncoupled.params z (dIdx 0) = _
-    rw [reducedField_dIdx]
-    rfl
-  · show reducedField uncoupled.params z (wIdx 0) = _
-    rw [reducedField_wIdx]
-    simp [uncoupled, powerInjection]
-    rfl
-  · show reducedField uncoupled.params z (wIdx 1) = _
-    rw [reducedField_wIdx]
-    simp [uncoupled, powerInjection]
-    rfl
-
-/-- Two uncoupled machines are Lyapunov stable: `(δ − ω₀ + ω₁)² + ω₀² + ω₁²` does not increase
-(`δ − ω₀ + ω₁` is conserved, the frequencies decay), although the relative angle has no restoring
-force (the reduced Jacobian has a zero column). -/
-@[tmio TM, powerlib_domain] theorem uncoupled_mem_den_lyapunovStable :
-    connection% (uncoupled ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  refine Dynamics.lyapunovStable_of_inner_nonpos (by norm_num)
-    (Matrix.toEuclideanCLM (n := Fin (1 + (1 + 1))) (𝕜 := ℝ) !![1, -1, 1; 0, 1, 0; 0, 0, 1])
-    (fun z w hzw => ?_) fun z => ?_
-  · have h0 := congrArg (fun y : State (1 + (1 + 1)) => y 0) hzw
-    have h1 := congrArg (fun y : State (1 + (1 + 1)) => y 1) hzw
-    have h2 := congrArg (fun y : State (1 + (1 + 1)) => y 2) hzw
-    simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ] at h0 h1 h2
-    ext r
-    fin_cases r
-    · simp
-      linarith
-    · simpa using h1
-    · simpa using h2
-  · rw [uncoupled_field]
-    simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ,
-      PiLp.inner_apply]
-    nlinarith [sq_nonneg (z 1), sq_nonneg (z 2)]
-
-/-- The reduced Jacobian of two uncoupled machines is not Hurwitz: the relative angle is not
-restored (zero column). Read through the existing family endpoint. -/
-@[tmio M, powerlib_domain] theorem uncoupled_not_isHurwitz :
-    connection% (uncoupled ∉ TMIO.realize Meets {.jacobianStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
-  change ¬ LinearSystems.IsHurwitz (jacobian uncoupled.params uncoupled.θ)
-  intro hH
-  apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := Pi.single (dIdx 0) 1)
-  · intro h
-    have := congrFun h (dIdx 0)
-    simp at this
-  · rw [Matrix.mulVec_single]
-    funext r
-    refine Fin.addCases (fun i => ?_) (fun k => ?_) r
-    · have h := jacobian_dd uncoupled.params uncoupled.θ i 0
-      simp only [Pi.smul_apply, Matrix.col_apply, op_smul_eq_mul, mul_one, Pi.zero_apply]
-      exact h
-    · have h := jacobian_wd uncoupled.params uncoupled.θ k 0
-      simp only [Pi.smul_apply, Matrix.col_apply, op_smul_eq_mul, mul_one, Pi.zero_apply]
-      rw [h]
-      simp [uncoupled, laplacian, flowWeights]
-
-/-- The Lyapunov translation of the two-machine network is sound but not exact: two uncoupled
-machines are Lyapunov stable at a power-balance point whose reduced Jacobian is not Hurwitz. -/
-@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable_two :
-    connection% (¬ (family (n := 1)).Exact (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.not_exact_of_witness uncoupled_mem_den_lyapunovStable (q := .jacobianStable)
-    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (uncoupled_not_isHurwitz))
-
 /-! ### The Lyapunov translation for every number of machines -/
 
 /-- `n + 2` uncoupled machines: unit inertia and damping, no power, no coupling, `θ* = 0`. In the
@@ -944,7 +852,7 @@ energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increas
     fun z => ?_
   simp only [LinearMap.coe_toContinuousLinearMap', PiLp.inner_apply, RCLike.inner_apply,
     conj_trivial]
-  rw [sum_state]
+  rw [Fin.sum_univ_add]
   have h1 : ∀ i : Fin (n + 1), conservedLin (n + 1) ((uncoupledN n).field z) (dIdx i) = 0 := by
     intro i
     rw [conservedLin_d, uncoupledN_field_d, uncoupledN_field_w, uncoupledN_field_w]

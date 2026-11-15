@@ -112,9 +112,76 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
   rw [Real.sin_add, ← hb, Model.K]
   ring
 
-/-- The boundary loop in Hopf coordinates (local asymptotic stability). -/
-@[tmio TM, powerlib_domain] private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc)
-    (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
+/-- `‖(0, 0, t)‖ = |t|`. -/
+@[tmio T, powerlib_foundation] private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
+  have h : ‖mk3 0 0 t‖ ^ 2 = t ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
+    simp
+  rw [← abs_norm, ← sq_eq_sq_iff_abs_eq_abs]
+  exact h
+
+/-- With `K = 0` at a balanced angle, `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the
+rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is not attractive. -/
+@[tmio TM, powerlib_domain] private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
+    (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = 0) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change ¬ LocalAsymptoticStable m.field 0
+  have hC : ContDiff ℝ 1 m.field := by
+    show ContDiff ℝ 1 fun z => m.g.field (z + m.point)
+    exact m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
+  set S : State 3 →L[ℝ] ℝ := (m.g.D * m.g.ωc) • EuclideanSpace.proj (0 : Fin 3) +
+    (m.g.M * m.g.ωc) • EuclideanSpace.proj (1 : Fin 3) - EuclideanSpace.proj (2 : Fin 3) with hS
+  have hSz : ∀ z : State 3, S z = m.g.D * m.g.ωc * z 0 + m.g.M * m.g.ωc * z 1 - z 2 := by
+    intro z; simp [hS]
+  have hSlie : ∀ z : State 3, S (m.field z) = m.g.ωc * m.g.P0 * (1 - Real.cos (z 0)) := by
+    intro z
+    obtain ⟨f0, f1, f2⟩ := field_apply m z
+    have hs : m.g.K0 * Real.sin (z 0 + m.δ) = m.g.P0 * (Real.cos (z 0) - 1) + m.g.P0 := by
+      have hr := restoring m hb (z 0)
+      rw [hK, zero_mul, zero_add] at hr
+      linarith
+    rw [hSz, f0, f1, f2, hs]
+    field_simp
+    ring
+  have hcos : ∀ z : State 3, 0 ≤ 1 - Real.cos (z 0) := fun z => by
+    linarith [Real.cos_le_one (z 0)]
+  rcases le_or_gt 0 m.g.P0 with hP | hP
+  · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := ⇑(-S)) (ρ := 1) hC
+      (-S).differentiable one_pos (fun x _ => ?_) (fun ε hε => ⟨mk3 0 0 (-(ε / 2)), ?_, ?_⟩)
+    · rw [(-S).fderiv]
+      show -S (m.field x) ≤ 0
+      rw [hSlie]
+      have := mul_nonneg (mul_nonneg hω.le hP) (hcos x)
+      linarith
+    · rw [sub_zero, norm_mk3_zero_zero, abs_neg, abs_of_pos (by linarith)]; linarith
+    · show -S (mk3 0 0 (-(ε / 2))) < -S 0
+      rw [hSz, hSz]
+      simp
+      linarith
+  · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := ⇑S) (ρ := 1) hC
+      S.differentiable one_pos (fun x _ => ?_) (fun ε hε => ⟨mk3 0 0 (ε / 2), ?_, ?_⟩)
+    · rw [S.fderiv, hSlie]
+      have h1 : 0 ≤ m.g.ωc * -m.g.P0 * (1 - Real.cos (x 0)) :=
+        mul_nonneg (mul_nonneg hω.le (neg_nonneg.mpr hP.le)) (hcos x)
+      have e : m.g.ωc * m.g.P0 * (1 - Real.cos (x 0)) =
+          -(m.g.ωc * -m.g.P0 * (1 - Real.cos (x 0))) := by ring
+      rw [e]
+      linarith
+    · rw [sub_zero, norm_mk3_zero_zero, abs_of_pos (by linarith)]; linarith
+    · rw [hSz, hSz]
+      simp
+      linarith
+
+/-! ### Connection conclusions -/
+
+/-- **Hopf boundary.** Positive `M, D, ω_c`, a balanced angle and `K = D ω_c + D²/M` place a model
+in local asymptotic stability: the boundary point is a weak stable focus (supercritical Hopf), at
+every load. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
+    (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0)
+    (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -201,80 +268,6 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
         (4 * (m.g.D * m.g.ωc / m.g.M) + (m.g.ωc + m.g.D / m.g.M) ^ 2) := by positivity
     linarith
 
-/-- `‖(0, 0, t)‖ = |t|`. -/
-@[tmio T, powerlib_foundation] private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
-  have h : ‖mk3 0 0 t‖ ^ 2 = t ^ 2 := by
-    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
-    simp
-  rw [← abs_norm, ← sq_eq_sq_iff_abs_eq_abs]
-  exact h
-
-/-- With `K = 0` at a balanced angle, `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the
-rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is not attractive. -/
-@[tmio TM, powerlib_domain] private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
-    (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = 0) :
-    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change ¬ LocalAsymptoticStable m.field 0
-  have hC : ContDiff ℝ 1 m.field := by
-    show ContDiff ℝ 1 fun z => m.g.field (z + m.point)
-    exact m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
-  set S : State 3 →L[ℝ] ℝ := (m.g.D * m.g.ωc) • EuclideanSpace.proj (0 : Fin 3) +
-    (m.g.M * m.g.ωc) • EuclideanSpace.proj (1 : Fin 3) - EuclideanSpace.proj (2 : Fin 3) with hS
-  have hSz : ∀ z : State 3, S z = m.g.D * m.g.ωc * z 0 + m.g.M * m.g.ωc * z 1 - z 2 := by
-    intro z; simp [hS]
-  have hSlie : ∀ z : State 3, S (m.field z) = m.g.ωc * m.g.P0 * (1 - Real.cos (z 0)) := by
-    intro z
-    obtain ⟨f0, f1, f2⟩ := field_apply m z
-    have hs : m.g.K0 * Real.sin (z 0 + m.δ) = m.g.P0 * (Real.cos (z 0) - 1) + m.g.P0 := by
-      have hr := restoring m hb (z 0)
-      rw [hK, zero_mul, zero_add] at hr
-      linarith
-    rw [hSz, f0, f1, f2, hs]
-    field_simp
-    ring
-  have hcos : ∀ z : State 3, 0 ≤ 1 - Real.cos (z 0) := fun z => by
-    linarith [Real.cos_le_one (z 0)]
-  rcases le_or_gt 0 m.g.P0 with hP | hP
-  · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := ⇑(-S)) (ρ := 1) hC
-      (-S).differentiable one_pos (fun x _ => ?_) (fun ε hε => ⟨mk3 0 0 (-(ε / 2)), ?_, ?_⟩)
-    · rw [(-S).fderiv]
-      show -S (m.field x) ≤ 0
-      rw [hSlie]
-      have := mul_nonneg (mul_nonneg hω.le hP) (hcos x)
-      linarith
-    · rw [sub_zero, norm_mk3_zero_zero, abs_neg, abs_of_pos (by linarith)]; linarith
-    · show -S (mk3 0 0 (-(ε / 2))) < -S 0
-      rw [hSz, hSz]
-      simp
-      linarith
-  · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := ⇑S) (ρ := 1) hC
-      S.differentiable one_pos (fun x _ => ?_) (fun ε hε => ⟨mk3 0 0 (ε / 2), ?_, ?_⟩)
-    · rw [S.fderiv, hSlie]
-      have h1 : 0 ≤ m.g.ωc * -m.g.P0 * (1 - Real.cos (x 0)) :=
-        mul_nonneg (mul_nonneg hω.le (neg_nonneg.mpr hP.le)) (hcos x)
-      have e : m.g.ωc * m.g.P0 * (1 - Real.cos (x 0)) =
-          -(m.g.ωc * -m.g.P0 * (1 - Real.cos (x 0))) := by ring
-      rw [e]
-      linarith
-    · rw [sub_zero, norm_mk3_zero_zero, abs_of_pos (by linarith)]; linarith
-    · rw [hSz, hSz]
-      simp
-      linarith
-
-/-! ### Connection conclusions -/
-
-/-- **Hopf boundary.** Positive `M, D, ω_c`, a balanced angle and `K = D ω_c + D²/M` place a model
-in local asymptotic stability: the boundary point is a weak stable focus (supercritical Hopf), at
-every load. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
-    (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0)
-    (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
-    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (las_of_hopf hM hD hω hb hK)))
-
 /-- **Local asymptotic stability within positive `M, D, ω_c`.** The operating point `(δ*, 0, P₀)`
 is locally asymptotically stable exactly when the angle is balanced and
 `0 < K ≤ D ω_c + D²/M` (the Hopf boundary included). -/
@@ -312,7 +305,7 @@ is locally asymptotically stable exactly when the angle is balanced and
       exact family_isAutonomous.mem_den_flow.mpr
         (Flow.locallyExponentiallyStable_localAsymptoticStable
           (family_isAutonomous.mem_den_flow.mp hl))
-    · exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (las_of_hopf hM hD hω hb heq)))
+    · exact mem_den_locallyAsymptoticallyStable_of_hopf m hM hD hω hb heq
 
 /-- The Hopf boundary model `M = D = ω_c = 1`, `P₀ = 0`, `K₀ = 2`, `δ* = 0`:
 `K = 2 = D ω_c + D²/M`. -/

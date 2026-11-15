@@ -33,7 +33,7 @@ Results.
 * Exact solution of the line ODE (`propagation_solves`) and its uniqueness (`eq_propagation`).
 * The ABCD relation `[V₁; I₁] = T [V₂; I₂]` (`chain_relation`), `det T = 1` (`det_chain`),
   `A = D` (`chain_A_eq_D`), `BC = sinh²` (`chain_B_mul_C`), cascade `T(ℓ₁)T(ℓ₂) = T(ℓ₁+ℓ₂)`
-  (`chain_mul`, `cascade_relation`).
+  (`chain_mul`; the port relations compose by Mathlib `Matrix.mulVec_mulVec`).
 * Short/open-circuit impedances and parameter inversion (`shortCircuit`, `openCircuit`,
   `Zsc_mul_Zoc`, `Zsc_div_Zoc`, `exp_two_mul_gammaL`, `two_mul_gammaL_eq_log_add`).
 * Exact Π equivalent and its short-line limit (`piChain_exact`, `piSeries_shortLine`,
@@ -205,12 +205,6 @@ receiving-end quantities (`I₂` leaving end 2). -/
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two] <;> field_simp <;> ring
-
-/-- Chain matrices of cascaded two-ports multiply. -/
-@[tmio T, powerlib_foundation] theorem cascade_relation {T₁ T₂ : Matrix (Fin 2) (Fin 2) ℂ}
-    {X₀ X₁ X₂ : Fin 2 → ℂ} (h₁ : X₀ = T₁ *ᵥ X₁) (h₂ : X₁ = T₂ *ᵥ X₂) :
-    X₀ = (T₁ * T₂) *ᵥ X₂ := by
-  rw [h₁, h₂, mulVec_mulVec]
 
 /-! ## Short- and open-circuit impedances -/
 

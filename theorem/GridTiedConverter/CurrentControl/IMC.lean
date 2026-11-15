@@ -47,9 +47,9 @@ Family and connection conclusions.
 No new family: both models are read through `PIParams.family` of `PILoop.lean`; the connection
 statements are `imc_mem_den_iff`, `imc_transfer_stable_insufficient`, `copied_mem_den_unstable`
 and `copied_not_mem_den`. The transfer functions, characteristic polynomials and field identities
-are static evidence. That the copied form has a solution whose current does not track
-(`copied_not_tracks`) is a trajectory-level result outside the sentence language, kept as private
-implementation evidence.
+are static evidence. That the copied form has a solution whose current does not track is the
+`Ki < 0` trajectory fact of `Decoupling.lean` (`PIParams.not_tracks_of_Ki_neg`, private
+implementation evidence) at `p.withGain (−V_dc)`, read through `signedField_copied`.
 -/
 
 noncomputable section
@@ -166,15 +166,6 @@ def signedField (Vdc σ iref : ℝ) (x : ℝ²) : ℝ² :=
   fin_cases j <;> simp [signedField, field, control, withGain]
   ring
 
-/-- Characteristic polynomial of the copied form: `L s² + (R − V_dc Kp) s − V_dc Ki`. -/
-@[tmio M, powerlib_domain] theorem copied_det_characteristicMatrix (hL : p.L ≠ 0) (Vdc : ℝ)
-    (s : ℂ) :
-    (characteristicMatrix (p.withGain (-Vdc)).model.A s).det =
-      ((p.L : ℂ) * s ^ 2 + (p.R - Vdc * p.Kp) * s - Vdc * p.Ki) / p.L := by
-  rw [p.withGain_det_characteristicMatrix hL]
-  push_cast
-  ring
-
 /-- The copied form has a negative state-matrix determinant. Static evidence on the model, not a
 connection conclusion. -/
 @[tmio M, powerlib_domain] theorem copied_det_neg (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
@@ -214,24 +205,6 @@ stable). -/
   rintro ⟨-, h⟩
   change 0 < -Vdc * p.Ki at h
   nlinarith
-
-/-- The copied OUT form does not track: some solution has `i(t) ↛ i*`.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem copied_not_tracks (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc) (hKi : 0 < p.Ki)
-    (iref : ℝ) :
-    ∃ x : ℝ → ℝ², (∀ t, HasDerivAt x (p.signedField Vdc 1 iref (x t)) t) ∧
-      ¬ Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
-  have hKi' : (p.withGain (-Vdc)).Ki < 0 := by
-    simp only [withGain]
-    nlinarith
-  obtain ⟨r, hr, v, hv, hAv⟩ :=
-    Criteria.exists_pos_real_eigenvector_of_det_neg _ (p.copied_det_neg hL hV hKi)
-  obtain ⟨x, hx, hn⟩ := LTI.exists_not_tendsto_of_eigenvector (p.withGain (-Vdc)).model
-    ((p.withGain (-Vdc)).isEquilibrium hKi'.ne iref) hr hAv
-    ((p.withGain (-Vdc)).first_ne_zero hr hv hAv) iref
-  refine ⟨x, fun t => ?_, hn⟩
-  rw [signedField_copied, ← model_field]
-  exact hx t
 
 end PIParams
 

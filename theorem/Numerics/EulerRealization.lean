@@ -83,18 +83,20 @@ Family and connection conclusions.
   `ContDiffAt ℝ 1 (f x) 0`:
   `euler_sound_small_step_local` (scaffold `sound-small-step`): a locally exponentially stable
   model has a step `h₀ > 0` such that its Euler implementations with a step in `(0, h₀]` are
-  locally exponentially stable. `euler_certified_small_step_local` (scaffold
-  `certified-small-step`): the same for the design of an implementation certified for local
-  exponential stability (`certify`). `not_euler_realizationSoundUnder_local`: without a step
-  constraint the realization of local exponential stability is not sound, given an implementation
-  whose design has an equilibrium at the origin with a Hurwitz Jacobian `J` and whose `I + h J`
-  has a Schur stable left inverse; `not_euler_realizationSoundUnder_of_large_step_local` (scaffold
-  `not-sound-large-step`, `n > 0`): the same from any locally exponentially stable model whose
-  Euler implementations include arbitrarily large steps (the instances' form: every positive step
+  locally exponentially stable; for the design of an implementation certified for local
+  exponential stability (`certify`, scaffold `certified-small-step`) it applies at
+  `x := design y` after `Implementation.certify_realizes_of_design`.
+  `not_euler_realizationSoundUnder_local`: without a step constraint the realization of local
+  exponential stability is not sound, given an implementation whose design has an equilibrium at
+  the origin with a Hurwitz Jacobian `J` and whose `I + h J` has a Schur stable left inverse;
+  `not_euler_realizationSoundUnder_of_large_step_local` (scaffold `not-sound-large-step`,
+  `n > 0`): the same from any locally exponentially stable model whose Euler implementations
+  include arbitrarily large steps (the instances' form: every positive step
   is an implementation).
-* The same laws for families whose fields are all `C¹` (`∀ x, ContDiff ℝ 1 (f x)`), derived from
-  the local ones: `euler_sound_small_step`, `euler_certified_small_step`,
-  `not_euler_realizationSoundUnder`, `not_euler_realizationSoundUnder_of_large_step`.
+* The negative laws for families whose fields are all `C¹` (`∀ x, ContDiff ℝ 1 (f x)`), derived
+  from the local ones: `not_euler_realizationSoundUnder`,
+  `not_euler_realizationSoundUnder_of_large_step` (the positive law needs only
+  `(hC x).contDiffAt`).
 * `not_euler_realizationSoundUnder_of_neg` (`n > 0`, any family): an implementation of a design
   with the field `ż = −z` and step `h = 3` is a witness (the Euler map is `z ↦ −2 z`).
 -/
@@ -309,45 +311,6 @@ locally exponentially stable. The smoothness is asked of this model only. -/
   rw [(connection_proof% (eulerFamily_isAutonomousMap F f design step).mem_den_flow), hy]
   exact Map.locallyExponentiallyStable_of_schurStable
     (hasFDerivAt_eulerMap (hasFDerivAt_of_fderiv_eq hC hJ) _) (by simp [eulerMap, h0]) (hS _ hstep)
-
-/-- **Small steps realize local exponential stability.** In a family of autonomous `C¹` fields, a
-locally exponentially stable model has a step `h₀ > 0` such that every Euler implementation of it
-with a step in `(0, h₀]` is locally exponentially stable (`euler_sound_small_step_local`). -/
-@[tmio TM, powerlib_foundation] theorem euler_sound_small_step (hF : F.IsAutonomous f)
-    (hC : ∀ x, ContDiff ℝ 1 (f x)) {x : X} (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
-    connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
-      y ∈ (eulerFamily F f design step).den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact euler_sound_small_step_local hF (hC x).contDiffAt hx
-
-/-- **Certified implementations with a small step, for a design `C¹` near its point.** For an
-Euler implementation certified for local exponential stability (every model it realizes is
-locally exponentially stable) whose design has a field `C¹` near the origin, every Euler
-implementation of its design with a step below a threshold is locally exponentially stable. -/
-@[tmio TM, powerlib_foundation] theorem euler_certified_small_step_local (hF : F.IsAutonomous f) {y : Y}
-    (hC : ContDiffAt ℝ 1 (f (design y)) 0)
-    (hy : y ∈ TMIO.certify (euler F f design step).realizes
-      ((euler F f design step).model.den (.flow .locallyExponentiallyStable))) :
-    connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y' : Y, design y' = design y →
-      step y' ∈ Set.Ioc (0 : ℝ) h₀ →
-        y' ∈ (eulerFamily F f design step).den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [Implementation.certify_realizes_of_design (I := euler F f design step) rfl] at hy
-  exact euler_sound_small_step_local hF hC hy
-
-/-- **Certified implementations with a small step.** For an Euler implementation certified for
-local exponential stability (every model it realizes is locally exponentially stable), every
-Euler implementation of its design with a step below a threshold is locally exponentially
-stable (`euler_certified_small_step_local`). -/
-@[tmio TM, powerlib_foundation] theorem euler_certified_small_step (hF : F.IsAutonomous f)
-    (hC : ∀ x, ContDiff ℝ 1 (f x)) {y : Y}
-    (hy : y ∈ TMIO.certify (euler F f design step).realizes
-      ((euler F f design step).model.den (.flow .locallyExponentiallyStable))) :
-    connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y' : Y, design y' = design y →
-      step y' ∈ Set.Ioc (0 : ℝ) h₀ →
-        y' ∈ (eulerFamily F f design step).den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact euler_certified_small_step_local hF (hC _).contDiffAt hy
 
 /-- **Without a step constraint the Euler realization is not sound, from a design `C¹` near its
 point.** An implementation whose design has a field `C¹` near the origin, an equilibrium there

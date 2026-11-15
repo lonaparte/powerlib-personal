@@ -16,7 +16,8 @@ Source: work-sync `theory/T-current-limiting.md` §1.1, §1.2.
 Results.
 * `dPriority_norm_le`: `i_d'² + i_q'² ≤ I²` always;
 * `dPriority_of_within`: the limiter is the identity inside the disc `i_d² + i_q² ≤ I²`;
-* `dPriority_fst_of_abs_le`: the d-axis current is kept whenever `|i_d| ≤ I` (priority);
+* `clampSym_of_abs_le`: d-axis priority, `(dPriority I i_d i_q).1 = clampSym I i_d = i_d` whenever
+  `|i_d| ≤ I`;
 * `dPriority_snd_sign`: the sign of `i_q` is kept.
 * `clamp_not_rotation_invariant`: component-wise clipping in dq does not commute with a frame
   rotation (unlike the circular limiter, `radialLimit_isometry`), which is the formal content of
@@ -77,11 +78,6 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
     rw [← Real.sqrt_sq_eq_abs]
     exact Real.sqrt_le_sqrt (by linarith)
   simp only [dPriority, hcd, clampSym_of_abs_le hq]
-
-/-- d-axis priority: `i_d` is kept whenever `|i_d| ≤ I`. -/
-@[tmio M, powerlib_foundation] theorem dPriority_fst_of_abs_le {I id : ℝ} (h : |id| ≤ I) (iq : ℝ) :
-    (dPriority I id iq).1 = id :=
-  clampSym_of_abs_le h
 
 @[tmio T, powerlib_foundation] theorem clampSym_nonneg {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) :
     0 ≤ clampSym r x :=

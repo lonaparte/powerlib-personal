@@ -37,8 +37,8 @@ Results.
   `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
 * The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
   frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
-  (`hasDerivAt_park_zero`: `d/dθ (park θ · x)|₀ = −J x`) gives the PLL frame projections of
-  `T-gfl-impedance.md` §1.3.
+  (`hasDerivAt_park_mulVec` at `θ = id`, `x` constant, `t = 0`: `d/dθ (park θ · x)|₀ = −J x`)
+  gives the PLL frame projections of `T-gfl-impedance.md` §1.3.
 * The element laws read through Park are with the elements: the αβ / dq KVL of one series R–L
   branch and its trajectory correspondence (`alphaBetaRL_iff_dqRL`) in
   `theorem/Passive/DqRL.lean`, the node equation of a shunt G–C element in the dq frame
@@ -106,9 +106,6 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
   simp only [rot, mul_fin_two, Real.cos_add, Real.sin_add]
   ext i j; fin_cases i <;> fin_cases j <;> simp <;> ring
 
-@[tmio M, powerlib_domain] theorem park_add (a b : ℝ) : park (a + b) = park a * park b := by
-  rw [park_eq_rot_neg, park_eq_rot_neg, park_eq_rot_neg, neg_add, rot_add]
-
 @[tmio M, powerlib_domain] theorem rot_mul_park (θ : ℝ) : rot θ * park θ = 1 := by
   rw [park_eq_rot_neg, ← rot_add, add_neg_cancel, rot_zero]
 
@@ -140,20 +137,13 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
 @[tmio M, powerlib_domain] theorem det_rot (θ : ℝ) : (rot θ).det = 1 := by
   rw [rot, det_fin_two_of]; nlinarith [Real.sin_sq_add_cos_sq θ]
 
-@[tmio M, powerlib_domain] theorem det_park (θ : ℝ) : (park θ).det = 1 := by
-  rw [park_eq_rot_neg, det_rot]
-
 /-- Park is a proper rotation: it lies in `SO(2)`. -/
 @[tmio M, powerlib_domain] theorem park_mem_specialOrthogonalGroup (θ : ℝ) :
     park θ ∈ Matrix.specialOrthogonalGroup (Fin 2) ℝ := by
   rw [Matrix.mem_specialOrthogonalGroup_iff, Matrix.mem_orthogonalGroup_iff]
-  refine ⟨?_, det_park θ⟩
+  refine ⟨?_, by rw [park_eq_rot_neg, det_rot]⟩
   rw [show (park θ)ᵀ = rot θ by rw [park_eq_transpose_rot, transpose_transpose]]
   exact park_mul_rot θ
-
-@[tmio M, powerlib_domain] theorem rot_mem_specialOrthogonalGroup (θ : ℝ) :
-    rot θ ∈ Matrix.specialOrthogonalGroup (Fin 2) ℝ := by
-  simpa [park_eq_rot_neg] using park_mem_specialOrthogonalGroup (-θ)
 
 @[tmio T, powerlib_foundation] theorem J_mul_J : J * J = -1 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [J]
@@ -164,17 +154,6 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
 @[tmio M, powerlib_domain] theorem rot_mul_J (θ : ℝ) : rot θ * J = J * rot θ := by
   simp only [rot, J, mul_fin_two]
   ext i j; fin_cases i <;> fin_cases j <;> simp
-
-@[tmio M, powerlib_domain] theorem park_mul_J (θ : ℝ) : park θ * J = J * park θ := by
-  rw [park_eq_rot_neg, rot_mul_J]
-
-@[tmio M, powerlib_domain] theorem rot_mulVec_J_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
-    rot θ *ᵥ (J *ᵥ x) = J *ᵥ (rot θ *ᵥ x) := by
-  rw [Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, rot_mul_J]
-
-@[tmio M, powerlib_domain] theorem park_mulVec_J_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
-    park θ *ᵥ (J *ᵥ x) = J *ᵥ (park θ *ᵥ x) := by
-  rw [Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, park_mul_J]
 
 /-! ## Complex form versus matrix form (`T-park-transformation.md` §1.2) -/
 
@@ -234,27 +213,13 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
     toComplex (J *ᵥ x) = Complex.I * toComplex x := by
   apply Complex.ext <;> simp [toComplex]
 
-/-- Rotation preserves the Euclidean squared norm. -/
-@[tmio M, powerlib_domain] theorem rot_mulVec_sq_sum (θ : ℝ) (x : Fin 2 → ℝ) :
-    (rot θ *ᵥ x) 0 ^ 2 + (rot θ *ᵥ x) 1 ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-  simp only [rot_apply_mulVec, Matrix.cons_val_zero, Matrix.cons_val_one]
-  nlinarith [Real.sin_sq_add_cos_sq θ]
-
-@[tmio M, powerlib_domain] theorem park_mulVec_sq_sum (θ : ℝ) (x : Fin 2 → ℝ) :
-    (park θ *ᵥ x) 0 ^ 2 + (park θ *ᵥ x) 1 ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-  rw [park_eq_rot_neg, rot_mulVec_sq_sum]
-
 /-- Rotation preserves the Euclidean norm. -/
 @[tmio M, powerlib_domain] theorem norm_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm (rot θ *ᵥ x)‖ = ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm x‖ := by
-  have h := rot_mulVec_sq_sum θ x
+  have h := frameRotation_power_invariant θ x x
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), EuclideanSpace.norm_sq_eq,
     EuclideanSpace.norm_sq_eq]
-  simpa [Fin.sum_univ_two, Real.norm_eq_abs, sq_abs] using h
-
-@[tmio M, powerlib_domain] theorem norm_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
-    ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm (park θ *ᵥ x)‖ = ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm x‖ := by
-  rw [park_eq_rot_neg, norm_rot_mulVec]
+  simpa [Fin.sum_univ_two, Real.norm_eq_abs, sq_abs, dotProduct, sq] using h
 
 /-! ## Chain rule in a rotating frame (`T-park-transformation.md` §1.3) -/
 
@@ -277,7 +242,8 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
     simp; ring
 
 /-- The same chain rule for the Park direction:
-`d/dt (park θ · x) = park θ · ẋ − ω J (park θ · x)`. -/
+`d/dt (park θ · x) = park θ · ẋ − ω J (park θ · x)`. At `θ = id`, `x` constant and `t = 0` it is
+the first-order frame rotation `d/dθ (park θ · x)|₀ = −J x`. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_park_mulVec {θ : ℝ → ℝ} {ω : ℝ} {x : ℝ → Fin 2 → ℝ}
     {x' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hx : HasDerivAt x x' t) :
     HasDerivAt (fun s => park (θ s) *ᵥ x s)
@@ -287,8 +253,8 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   rw [show (fun s => park (θ s) *ᵥ x s) = fun s => rot (-θ s) *ᵥ x s from
     funext fun s => by rw [park_eq_rot_neg]]
   convert h using 1
-  rw [← park_eq_rot_neg, Matrix.mulVec_add, Matrix.mulVec_smul, park_mulVec_J_mulVec, neg_smul,
-    sub_eq_add_neg]
+  rw [Matrix.mulVec_add, Matrix.mulVec_smul, ← park_eq_rot_neg, Matrix.mulVec_mulVec,
+    Matrix.mulVec_mulVec, park_eq_rot_neg, rot_mul_J, neg_smul, sub_eq_add_neg]
 
 /-- Complex form of the §1.3 boxed chain rule:
 `d/dt (x^{dq} e^{jθ}) = (ẋ^{dq} + jω x^{dq}) e^{jθ}`. -/
@@ -299,23 +265,6 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   have he := (hθ.ofReal_comp.mul_const Complex.I).cexp
   convert hz.mul he using 1
   ring
-
-/-! ## First-order frame rotation -/
-
-/-- First-order rotation: `d/dθ (park θ · x)` at `θ = 0` is `−J x`. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_park_zero (x : Fin 2 → ℝ) :
-    HasDerivAt (fun θ => Transform.park θ *ᵥ x) (-(Transform.J *ᵥ x)) 0 := by
-  refine hasDerivAt_pi.2 fun i => ?_
-  fin_cases i
-  · simp only [Transform.park_apply_mulVec, Fin.zero_eta, Matrix.cons_val_zero]
-    convert ((Real.hasDerivAt_cos 0).mul_const (x 0)).add
-      ((Real.hasDerivAt_sin 0).mul_const (x 1)) using 1
-    simp
-  · simp only [Transform.park_apply_mulVec, Fin.mk_one, Matrix.cons_val_one,
-      Matrix.cons_val_zero]
-    convert ((Real.hasDerivAt_sin 0).neg.mul_const (x 0)).add
-      ((Real.hasDerivAt_cos 0).mul_const (x 1)) using 1
-    simp
 
 /-! ## Park transformation components (`conventions.md` §D4) -/
 
@@ -424,18 +373,10 @@ zero-sequence free. -/
     simp [clarkePI, Matrix.mul_apply, Fin.sum_univ_three] <;>
     first | ring1 | (field_simp; nlinarith [h3, h2])
 
-/-- The power-invariant Clarke matrix is orthogonal. -/
-@[tmio M, powerlib_domain] theorem clarkePI_mem_orthogonalGroup :
-    clarkePI ∈ Matrix.orthogonalGroup (Fin 3) ℝ := by
-  rw [Matrix.mem_orthogonalGroup_iff]
-  exact clarkePI_mul_transpose
-
 /-- Power invariance: `(T v) · (T i) = v · i` for the power-invariant Clarke `T`. -/
 @[tmio M, powerlib_domain] theorem clarkePI_dotProduct (v i : Fin 3 → ℝ) :
     (clarkePI *ᵥ v) ⬝ᵥ (clarkePI *ᵥ i) = v ⬝ᵥ i := by
-  have hTT : clarkePIᵀ * clarkePI = 1 := by
-    have := (Matrix.mem_orthogonalGroup_iff' (A := clarkePI)).1 clarkePI_mem_orthogonalGroup
-    simpa [star_eq_conjTranspose] using this
+  have hTT : clarkePIᵀ * clarkePI = 1 := mul_eq_one_comm.mp clarkePI_mul_transpose
   rw [Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose, Matrix.vecMul_vecMul, hTT,
     Matrix.vecMul_one]
 
