@@ -836,7 +836,7 @@ the current-loop energy is conserved. -/
   · rw [fderiv_fun_neg, _root_.neg_apply, p.loopEnergy_lie hL.ne' hKi.ne', hR]
     simp
   · rw [add_sub_cancel_left]
-    refine (Dynamics.norm_le_abs_add_abs_three _).trans_lt ?_
+    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_three _)).trans_lt ?_
     norm_num
     rw [abs_of_pos (half_pos hε)]
     linarith
@@ -1144,7 +1144,7 @@ unstable: the current-loop energy is conserved and `Kp · centerStorage` grows a
   · rw [fderiv_fun_neg, _root_.neg_apply, p.loopEnergy_lie hL.ne' hKi.ne', hR]
     simp
   · rw [add_sub_cancel_left]
-    refine (Dynamics.norm_le_abs_add_abs_three _).trans_lt ?_
+    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_three _)).trans_lt ?_
     norm_num
     rw [abs_of_pos (half_pos hε)]
     linarith
@@ -1211,7 +1211,7 @@ unstable: the current-loop energy is conserved and `Kp · centerStorage` grows a
     isOpen_posV (p.eqState_mem hV) (p.field_contDiffOn _) (by fun_prop) one_pos
     (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0, 0], ?_, ?_⟩) (fun x _ _ hW => ?_)
   · rw [add_sub_cancel_left]
-    refine (Dynamics.norm_le_abs_add_abs_three _).trans_lt ?_
+    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_three _)).trans_lt ?_
     norm_num
     rw [abs_of_pos (half_pos hε)]
     linarith
@@ -1246,7 +1246,7 @@ unstable: the current-loop energy is conserved and `Kp · centerStorage` grows a
     (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 4, -(ε / 4), 0], ?_, ?_⟩)
     (fun x _ _ hW => ?_)
   · rw [add_sub_cancel_left]
-    refine (Dynamics.norm_le_abs_add_abs_three _).trans_lt ?_
+    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_three _)).trans_lt ?_
     norm_num
     rw [abs_of_pos (by positivity : 0 < ε / 4)]
     linarith

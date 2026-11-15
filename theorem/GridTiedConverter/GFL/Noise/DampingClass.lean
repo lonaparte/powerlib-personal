@@ -28,7 +28,8 @@ Results.
   `classA_frequency_not_fdt`); mechanical-power noise is exactly in the class-A port
   (`classA_torque_fdt`), and the class-B voltage channel is not (`classB_voltage_not_fdt`).
 * Linearization (`§2b`): class-B Jacobian has `tr/det = −K_p/K_i` at every non-fold point
-  (`classB_trace_div_det`) and is nonzero nilpotent at a fold (`Params.reduced_jacobian_nilpotent`,
+  (`PLL.piPLLJacobian_trace_det_relation`: `K_i tr + K_p det = 0`, at every slope) and is nonzero
+  nilpotent at a fold (`Params.reduced_jacobian_nilpotent`,
   `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`); the class-A Jacobian
   `[[0, 1/M], [−g, −D/M]]` has constant trace `−D/M` (`classA_trace`), so at a fold it is never
   nilpotent (`classA_not_nilpotent`).
@@ -189,12 +190,6 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
   exact hσ this
 
 /-! ### Linearization invariants -/
-
-/-- Class B: `tr J / det J = −K_p/K_i` at every point with `g = h′(θ) ≠ 0` (`K_i ≠ 0`). -/
-@[tmio M, powerlib_foundation] theorem classB_trace_div_det {Kp Ki g : ℝ} (hKi : Ki ≠ 0) (hg : g ≠ 0) :
-    (piPLLJacobian Kp Ki g).trace / (piPLLJacobian Kp Ki g).det = -Kp / Ki := by
-  rw [piPLLJacobian_trace, piPLLJacobian_det]
-  field_simp
 
 /-- Class-A Jacobian at a point with restoring slope `g = P_max cos δ`:
 `[[0, 1/M], [−g, −D/M]]`. -/

@@ -362,6 +362,81 @@ in Git; working statistics, build receipts and development plans are not kept he
   - `Transform.rot_mulVec_sq_sum` → `Transform.frameRotation_power_invariant`
   - `Transform.symCirc_mul_comm` → `Matrix.circulant_mul_comm`
 
+- Second pass of the duplicate removal, over theorems whose call sites span several
+  directories: 74 further declarations removed under the same rules. Some keepers
+  moved to the more fundamental module (`Linear.mul_resolvent` and
+  `Linear.spectrallyStable_smul_iff` into `Linear`), and `Delay.zoh_jω` now states
+  the half-period-delay form. Classified theorems 7518 → 7444, public connection
+  theorems 1075 → 1069. Removed public names and their replacements:
+  - `Criteria.det_characteristicMatrix_fin_two'` → `Criteria.det_characteristicMatrix_fin_two`
+  - `Criteria.isHurwitz_of_lyapunov` → `Criteria.re_neg_of_lyapunov`
+  - `Criteria.spectrallyStable_fin_four_iff` → `Criteria.isHurwitz_fin_four_iff`
+  - `Criteria.unstable_of_jacobian_quartic_const_neg` → `Criteria.unstable_of_jacobian_quartic_violation`
+  - `CurrentControl.DigitalPI.pureDelay_τ_halves` → `Delay.pureDelay_three_half_periods`
+  - `CurrentControl.DigitalPI.transfer_delay` → `Delay.transfer_pade11Model`
+  - `CurrentControl.LoopDelay.norm_exp_neg_I_mul` → `Complex.norm_exp_ofReal_mul_I`
+  - `DAE.det_complexify` → `RingHom.map_det`
+  - `Delay.zoh_jω_eq_halfDelay` → `Delay.zoh_jω`
+  - `Drives.InductionMachine.norm_sq_state2` → `PhasePlane.norm_sq_eq`
+  - `Dynamics.conservative_conjEquiv` → `Linear.conservative_conj`
+  - `Dynamics.decay_conjEquiv` → `Linear.decay_conj`
+  - `Dynamics.hasDerivAt_of_coords` → `Dynamics.hasDerivAt_iff_coords`
+  - `Dynamics.localAsymptoticStable_of_eqOn_ball` → `Dynamics.localAsymptoticStable_congr_nhds`
+  - `Dynamics.lyapunovStable_conjEquiv` → `Linear.lyapunovStable_conj`
+  - `Dynamics.lyapunovStable_of_eqOn_ball` → `Dynamics.lyapunovStable_congr_nhds`
+  - `Dynamics.norm_le_abs_add_abs_three` → `Dynamics.norm_le_sum_abs`
+  - `Dynamics.toEuclideanCLM_injective_fin_two` → `Matrix.toEuclideanCLM.injective`
+  - `Estimation.predict_cov_ode_unique` → `Stochastic.Lyapunov.covODE_unique`
+  - `Flow.QuadraticDecay.norm_bound` → `Flow.norm_bound_of_dissipation`
+  - `GFL.DCLink.bridgePower_decoupling_cancel` → `CurrentControl.bridgePower_decoupling`
+  - `GFL.Noise.Embed.embJ_skew` → `PH.transpose_symplectic_two`
+  - `GFL.Noise.Embed.genL_emb_pH` → `Stochastic.SPH.genL_pH`
+  - `GFL.Noise.classB_trace_div_det` → `PLL.piPLLJacobian_trace_det_relation`
+  - `GFL.Parametric.PLLBlock.pll_closed_forms` → `PLL.det_characteristicMatrix_linA`
+  - `GFM.DroopLPF.restoring_fold` → `Synchronous.Swing.Pe_fold`
+  - `Grid.Interconnection.loadAdmittance_changeCoordinates` → `Linear.transfer_changeCoordinates`
+  - `Grid.Interconnection.sourceImpedance_changeCoordinates` → `Linear.transfer_changeCoordinates`
+  - `Grid.ModulationTransfer.Xeq_eq_parallel` → `Passive.SeriesRLC.parallel_inductors`
+  - `Grid.withNetwork_returnDifference` → `Grid.networkModel_transfer`
+  - `LTI.mul_self_fin_two` → `Criteria.sq_eq_trace_smul_sub_det_smul_fin_two`
+  - `Linear.forall_eigen_smul_iff` → `Linear.forall_eigen_mobius_iff`
+  - `Modal.ModalBasis.transfer_expansion` → `Modal.ModalBasis.io_expansion`
+  - `Modal.ofRealVec_mulVec` → `RingHom.map_mulVec`
+  - `Network.Swing.CycleMinimum.cos_base_pos` → `SpecialFunctions.sqrt_mul_cos_arcsin`
+  - `Nonlinear.Polynomial2.norm_sq` → `PhasePlane.norm_sq_eq`
+  - `NormalForm.BogdanovTakens.isNilpotent_ne_zero_iff_similar_jordanBlock` → `NormalForm.BogdanovTakens.trace_det_zero_iff_similar_jordanBlock`
+  - `Numerics.EMT.rlMatrix_eq` → `Passive.RL.plant_A`
+  - `Numerics.EMT.rlMatrix_isHurwitz_iff` → `Passive.RL.isHurwitz_iff`
+  - `Numerics.portCoupled_isSolution_iff` → `DAE.LinearDAE.isSolution_iff`
+  - `Numerics.pow_mulVec_eigen` → `Linear.mulVec_pow_of_eigen`
+  - `PH.NonlinearModel.energy_antitoneOn_of_isTrajectoryOn` → `PH.NonlinearModel.energy_antitoneOn_of_isIntegralCurveOn`
+  - `PH.phCx_mulVec_im` → `Modal.complexify_mulVec_im`
+  - `PH.phCx_mulVec_re` → `Modal.complexify_mulVec_re`
+  - `PLL.clarke_balancedAbc` → `Transform.clarke_mulVec_balanced`
+  - `PLL.hasFDerivAt_coord_one` → `Dynamics.hasFDerivAt_coord`
+  - `PLL.hasFDerivAt_coord_zero` → `Dynamics.hasFDerivAt_coord`
+  - `PLL.hasFDerivAt_piPLLState_comp` → `Dynamics.hasFDerivAt_toEuclideanCLM_of_components`
+  - `PLL.loopPoly_roots_re_neg_iff` → `Criteria.quadratic_roots_re_neg_iff`
+  - `Passive.DqRL.isHurwitz_dqRLMatrix_iff` → `Passive.DqRL.spectrallyStable_dqRLMatrix_iff`
+  - `Passive.LCL.realize_passive_damped` → `Passive.LCL.passive_stable_iff`
+  - `Passive.Line.Cable.re_one_add_I_mul` → `SpecialFunctions.one_add_I_mul_re`
+  - `PhasePlane.charRoot_iff` → `Criteria.det_characteristicMatrix_fin_two`
+  - `SpecialFunctions.tendsto_besselNorm` → `SpecialFunctions.tendsto_bessel_div_gaussHalf`
+  - `Spectral.not_root_of_isHurwitz` → `Linear.spectrallyStable_iff_isHurwitz`
+  - `Spectral.sound_of_hub` → `Spectral.realize_subset_den_of_hub`
+  - `Stack.subset_certified_iff` → `TMIO.Seed.gc_whole`
+  - `Stochastic.Lyapunov.isHurwitz_transpose` → `Linear.isHurwitz_transpose_iff`
+  - `Stochastic.NoiseFold.fold_barrier` → `NormalForm.Fold.barrier`
+  - `Stochastic.SPH.skew_dotProduct_self` → `PH.dotProduct_mulVec_self_eq_zero_of_skew`
+  - `TMIO.generate_cover_apply` → `TMIO.generate_cover`
+  - `TMIO.generate_possibly_apply` → `TMIO.generate_possibly`
+  - `Transform.Rebase.characteristicMatrix_conj'` → `Linear.characteristicMatrix_conj`
+  - `Transform.Rebase.spectrallyStable_conj_iff` → `Linear.spectrallyStable_conj`
+  - `Transform.Rebase.spectrallyStable_smul_iff` → `Linear.spectrallyStable_smul_iff`
+  - `Transform.rot_mulVec_park_mulVec` → `Transform.rot_mul_park`
+  - `Transform.rot_neg_mul_rot` → `Transform.park_mul_rot`
+  - `Transform.svec_dot_cvec` → `Transform.cvec_dot_svec`
+
 ## 2026-11-08
 
 - Reduced the passive elements to two dual topologies. `Passive.SeriesRLC`

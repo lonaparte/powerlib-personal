@@ -75,14 +75,6 @@ open powerlib.Dynamics (State)
     ContDiff ℝ 1 (fun x : State 2 => x i) :=
   Dynamics.contDiff_coord i
 
-@[tmio T, powerlib_foundation] private lemma fderiv_coord (i : Fin 2) (x v : State 2) :
-    fderiv ℝ (fun y : State 2 => y i) x v = v i := by
-  have h : HasFDerivAt (fun y : State 2 => y i)
-      (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i : State 2 →L[ℝ] ℝ) x :=
-    (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i : State 2 →L[ℝ] ℝ).hasFDerivAt
-  rw [h.fderiv]
-  rfl
-
 /-! ## 1. Port-Hamiltonian energy -/
 
 @[tmio M, powerlib_domain] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
@@ -171,7 +163,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
         simp only [srfPD, neg_eq_zero, mul_eq_zero] at this
         exact this.resolve_left hV.ne'
       exact (Real.sin_eq_zero_iff_of_lt_of_lt (abs_lt.mp hxW).1 (abs_lt.mp hxW).2).mp hs
-    rw [fderiv_coord, srfField_apply_zero, hθ, Real.sin_zero] at hd
+    rw [(Dynamics.hasFDerivAt_coord _ _).fderiv, Dynamics.coord_apply, srfField_apply_zero, hθ,
+      Real.sin_zero] at hd
     rw [PhasePlane.ext_iff']
     refine ⟨by simp [PhasePlane.mk, hθ], ?_⟩
     simp only [PhasePlane.mk_apply_one]

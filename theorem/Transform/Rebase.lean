@@ -41,7 +41,8 @@ Results.
   through the time-scaling law `Dynamics.holds_timeScale_linear_iff`; at `w = 1` every flow
   sentence is invariant, `Flow.Property.timeScale_one`); `transfer_rebase`:
   `Ĝ(ŝ) = T_y G(w ŝ) S_u`. Scaling and similarity of spectra are the generic eigenvalue maps of
-  `theorem/Linear/EigenMap.lean` (`spectrallyStable_smul_iff`, `spectrallyStable_conj_iff`).
+  `theorem/Linear/EigenMap.lean` (`Linear.spectrallyStable_smul_iff`,
+  `Linear.spectrallyStable_conj`).
 * Interconnections: the closed-loop state, input and output blocks of the rebased components are
   the rebased blocks (`closedLoopBlocks_rebase`, `inputBlocks_rebase`, `outputBlocks_rebase`; only
   the port bases need inverses), hence the closed loop is the rebased closed loop
@@ -178,36 +179,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
     Matrix.one_apply, smul_eq_mul, Complex.coe_algebraMap]
   split_ifs <;> push_cast <;> field_simp
 
-/-- Scaling the state matrix by a positive constant does not change spectral stability (the
-eigenvalues scale, `Linear.forall_eigen_smul_iff`). -/
-@[tmio T, powerlib_foundation] theorem spectrallyStable_smul_iff {c : ℝ} (hc : 0 < c) (A : Matrix ι ι ℝ) :
-    SpectrallyStable (c • A) ↔ SpectrallyStable A := by
-  rw [spectrallyStable_iff_forall_eigen, spectrallyStable_iff_forall_eigen]
-  refine (forall_eigen_smul_iff hc.ne' A fun μ => μ.re < 0).trans
-    (forall₄_congr fun lam v _ _ => ?_)
-  show ((c : ℂ) * lam).re < 0 ↔ lam.re < 0
-  rw [Complex.re_ofReal_mul]
-  constructor
-  · intro h
-    by_contra h'
-    exact absurd h (not_lt.mpr (mul_nonneg hc.le (not_lt.mp h')))
-  · exact mul_neg_of_pos_of_neg hc
-
-/-- A similarity on an arbitrary finite index conjugates the characteristic matrix. -/
-@[tmio T, powerlib_foundation] theorem characteristicMatrix_conj' {T S : Matrix ι ι ℝ} (hTS : T * S = 1)
-    (A : Matrix ι ι ℝ) (s : ℂ) :
-    characteristicMatrix (T * A * S) s =
-      complexify T * characteristicMatrix A s * complexify S := by
-  simp only [characteristicMatrix, Matrix.map_mul, Matrix.mul_sub, Matrix.sub_mul,
-    Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, complexify_mul_eq_one hTS]
-
-/-- A similarity on an arbitrary finite index preserves spectral stability (it keeps the
-characteristic polynomial, `Linear.spectrallyStable_conj`). -/
-@[tmio T, powerlib_foundation] theorem spectrallyStable_conj_iff {T S : Matrix ι ι ℝ} (_hTS : T * S = 1)
-    (hST : S * T = 1) (A : Matrix ι ι ℝ) :
-    SpectrallyStable (T * A * S) ↔ SpectrallyStable A :=
-  spectrallyStable_conj hST A
-
 omit [DecidableEq ι] in
 /-- The square instance of `Dynamics.hasDerivAt_mulVec`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_mulVec (M : Matrix ι ι ℝ) {x : ℝ → ι → ℝ} {x' : ι → ℝ}
@@ -271,11 +242,11 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
   simp only [Matrix.mulVec_mulVec, hST, Matrix.one_mulVec, mul_div_cancel_left₀ _ hw] at h'
   exact h'
 
-@[tmio T, powerlib_foundation] theorem spectrallyStable_rebaseMatrix_iff (hTS : T * S = 1)
+@[tmio T, powerlib_foundation] theorem spectrallyStable_rebaseMatrix_iff (_hTS : T * S = 1)
     (hST : S * T = 1) (hw : 0 < w) (A : Matrix ι ι ℝ) :
     SpectrallyStable (rebaseMatrix T S w A) ↔ SpectrallyStable A := by
   rw [rebaseMatrix, spectrallyStable_smul_iff (inv_pos.mpr hw)]
-  exact spectrallyStable_conj_iff hTS hST A
+  exact spectrallyStable_conj hST A
 
 end Matrices
 

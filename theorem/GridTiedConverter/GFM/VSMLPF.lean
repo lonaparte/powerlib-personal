@@ -1488,14 +1488,6 @@ Static evidence on the model, not a connection conclusion. -/
   simp
   ring
 
-/-- At a balanced fold angle the restoring power is `P₀ − K₀ sin(δ* + s) = P₀ (1 − cos s)`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem restoring_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
-    (hcos : Real.cos δ₀ = 0) (s : ℝ) :
-    q.P0 - q.K0 * Real.sin (δ₀ + s) = q.P0 * (1 - Real.cos s) := by
-  rw [Real.sin_add, hcos, ← hb]
-  ring
-
 /-- Within positive droop damping and bandwidth the local asymptotic translation is exact: a
 model with `D, ω_c > 0` is locally asymptotically stable at `(δ*, P₀)` exactly when the angle is
 balanced and synchronizing (`K₀ cos δ* > 0`). The linearization does not decide `K₀ cos δ* = 0`,

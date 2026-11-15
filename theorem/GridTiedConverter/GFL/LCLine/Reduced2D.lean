@@ -293,7 +293,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hKp : 0 ≤ p.Kp) {φ : ℝ → State 2} {a b : ℝ}
     (hφ : IsTrajectoryOn φ p.reducedField a b) :
     AntitoneOn (p.hamiltonian ∘ φ) (Set.Icc a b) := by
-  have h := (p.pHModel hwC hΔ hKp).energy_antitoneOn_of_isTrajectoryOn
+  have h := (p.pHModel hwC hΔ hKp).energy_antitoneOn_of_isIntegralCurveOn (convex_Icc a b)
     (by rwa [pHModel_zeroInputField])
   exact h
 

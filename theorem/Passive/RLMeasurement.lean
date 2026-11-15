@@ -225,7 +225,8 @@ as a composite, certifies a record exactly when it certifies the record's estima
     connection% (ofDual (generate ((seed ε).uTO.comp recordEdge) Φ) =
       estimate ⁻¹' ofDual (generate (seed ε).uTO Φ)) := by
   unfold powerlib.TMIO.Statement
-  rw [generate_comp, Function.comp_apply, recordEdge, generate_possibly_apply]
+  rw [generate_comp, Function.comp_apply, recordEdge, congrFun (generate_possibly _) _,
+    Function.comp_apply, Function.comp_apply, ofDual_toDual]
   ext d
   rw [(connection_proof% mem_certify)]
   exact ⟨fun h => h _ rfl, fun h r hr => (show estimate d = r from hr) ▸ h⟩

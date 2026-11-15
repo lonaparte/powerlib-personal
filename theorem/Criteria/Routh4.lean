@@ -45,11 +45,11 @@ Results.
   open right half plane, `exists_eigenvalue_re_pos_of_violation_fin_four`).
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial:
-  `locallyExponentiallyStable_of_jacobian_quartic`, `unstable_of_jacobian_quartic_const_neg`,
-  `unstable_of_jacobian_quartic_violation`) or `EuclideanSpace ℝ (Fin 4)`
-  (`locallyExponentiallyStable_of_jacobian_fin_four`, `unstable_of_jacobian_det_neg_fin_four`,
-  `unstable_of_jacobian_violation_fin_four`), and the attractive sentences of a linear field
-  `x' = A (x - e)`, for every attractive sentence, in both directions
+  `locallyExponentiallyStable_of_jacobian_quartic`, `unstable_of_jacobian_quartic_violation`)
+  or `EuclideanSpace ℝ (Fin 4)` (`locallyExponentiallyStable_of_jacobian_fin_four`,
+  `unstable_of_jacobian_det_neg_fin_four`, `unstable_of_jacobian_violation_fin_four`), and the
+  attractive sentences of a linear field `x' = A (x - e)`, for every attractive sentence, in
+  both directions
   (`holds_affine_iff_of_det_characteristicMatrix_quartic`, `holds_affine_fin_four_iff`). They only
   repackage `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
   `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` and `Linear.holds_iff_isHurwitz`.
@@ -400,13 +400,6 @@ determinant form. -/
       A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by ring
   rw [e1, e2]
 
-@[tmio T, powerlib_foundation] theorem spectrallyStable_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ) :
-    Linear.SpectrallyStable A ↔
-      A.trace < 0 ∧ principalMinorSum3Fin4 A < 0 ∧ 0 < A.det ∧
-        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det <
-          A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A :=
-  (Linear.spectrallyStable_iff_isHurwitz A).trans (isHurwitz_fin_four_iff A)
-
 /-- A strict violation of a 4×4 Routh sign condition (`0 < tr A`, `m₂ < 0`, `0 < m₃`,
 `det A < 0`, or a negative third Hurwitz determinant) gives an eigenvalue with positive real
 part. -/
@@ -481,20 +474,6 @@ characteristic polynomial satisfying the Routh conditions: local exponential sta
     LocallyExponentiallyStable f x_eq :=
   Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hf heq hJac
     ((isHurwitz_iff_of_det_characteristicMatrix_quartic A hchar).2 ⟨h3, h1, h0, hg⟩)
-
-/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ` whose Jacobian has a quartic
-characteristic polynomial with negative constant term: instability. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_quartic_const_neg
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
-    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    {a3 a2 a1 a0 : ℝ}
-    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
-      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ))
-    (h0 : a0 < 0) : Unstable f x_eq :=
-  Dynamics.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation A hchar
-      (Or.inr (Or.inr (Or.inr (Or.inl h0)))))
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ⁴`: a Jacobian satisfying the 4×4
 Routh conditions gives local exponential stability. -/

@@ -32,8 +32,9 @@ Results.
   `Transform.complexPower_expand` (`theorem/Transform/ComplexPower.lean`).
 * `closedLoop_d`, `closedLoop_q`: in the PLL-frame model the residual of the decoupling is
   exactly `ω̂ ΔL_f i_q`, `ΔL_f = L_f − L̂_f`, with no locking assumption (Correction below).
-* d–q duality: the decoupling terms cancel exactly in the bridge power
-  (`bridgePower_decoupling_cancel`).
+* d–q duality: the decoupling terms of `bridgeVoltageD`, `bridgeVoltageQ` cancel exactly in the
+  bridge power (`CurrentControl.bridgePower_decoupling`,
+  `theorem/GridTiedConverter/CurrentControl/Decoupling.lean`).
 * An explicit algebraic layer (index-1 DAE whose algebraic variables are given by a DAG of
   explicit formulas) has the same solutions as the ODE obtained by substitution: the generic
   statement is `DAE.isIntegralCurveOn_dae_iff` (`theorem/DAE/Elimination.lean`).
@@ -94,16 +95,6 @@ KVL is `L_f i̇_d = v_gd − V_d^conv − R_f i_d + ω̂ L_f i_q`. -/
     vgq - bridgeVoltageQ kp ki ξq iq iqRef vffq ωhat Lhat id - Rf * iq - ωhat * Lf * id =
       kp * (iqRef - iq) - ki * ξq + (vgq - vffq) - ωhat * (Lf - Lhat) * id - Rf * iq := by
   unfold bridgeVoltageQ
-  ring
-
-/-- d–q duality: the decoupling terms cancel in `P_bridge = (3/2)(V_d^conv i_d + V_q^conv i_q)`. -/
-@[tmio M, powerlib_domain] theorem bridgePower_decoupling_cancel
-    (kp ki ξd ξq id iq idRef iqRef vffd vffq ωhat Lhat : ℝ) :
-    (3 / 2 : ℝ) * (bridgeVoltageD kp ki ξd id idRef vffd ωhat Lhat iq * id +
-        bridgeVoltageQ kp ki ξq iq iqRef vffq ωhat Lhat id * iq) =
-      (3 / 2) * ((kp * (id - idRef) + ki * ξd + vffd) * id +
-        (kp * (iq - iqRef) + ki * ξq + vffq) * iq) := by
-  unfold bridgeVoltageD bridgeVoltageQ
   ring
 
 /-! ## Model B (§1.6) -/

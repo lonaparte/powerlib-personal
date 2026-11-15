@@ -42,9 +42,10 @@ Results.
   (`parameter_rescale`).
 
 Corrections.
-* §1.5: for `V(x) = x³/3 − μx` the barrier is `ΔV = (4/3)μ^{3/2}` and the noise temperature of
-  `σ dW` is `D = σ²/2`, so the Arrhenius exponent is `ΔV/D = 8μ^{3/2}/(3σ²)`
-  (`kramers_exponent`), twice the note's `4μ^{3/2}/(3σ²)`.
+* §1.5: for `V(x) = x³/3 − μx` the barrier is `ΔV = (4/3)μ^{3/2}` (`NormalForm.Fold.barrier`,
+  `theorem/NormalForm/Fold.lean`) and the noise temperature of `σ dW` is `D = σ²/2`, so the
+  Arrhenius exponent is `ΔV/D = 8μ^{3/2}/(3σ²)` (`kramers_exponent`), twice the note's
+  `4μ^{3/2}/(3σ²)`.
 * §1.3, segment 3: balancing `ΔV/D` against an order-one constant `κ` gives
   `μ = (3κ/8)^{2/3} σ^{4/3}` (`advance_scale`): the noise-induced advance scales as `σ^{4/3}`,
   not `σ^{2/3}`.
@@ -153,14 +154,6 @@ of the swept problem are `ε^{2/3}` times crossing values of the rescaled proble
     rw [h1, h2, mul_zero]
 
 /-! ## Corrected static exponents -/
-
-/-- Fold potential `V(x) = x³/3 − μx`; well `x₊ = √μ`, saddle `x₋ = −√μ`, barrier
-`ΔV = V(−√μ) − V(√μ) = (4/3) μ^{3/2}`. -/
-@[tmio T, powerlib_foundation] theorem fold_barrier {μ : ℝ} (hμ : 0 ≤ μ) :
-    ((-√μ) ^ 3 / 3 - μ * (-√μ)) - ((√μ) ^ 3 / 3 - μ * √μ) = 4 / 3 * μ * √μ := by
-  have h := Real.sq_sqrt hμ
-  have h3 : (√μ) ^ 3 = μ * √μ := by rw [pow_succ, h]
-  rw [neg_pow, h3]; ring
 
 /-- **Correction (Kramers exponent)**: with `D = σ²/2` the Arrhenius exponent is
 `ΔV/D = 8 μ^{3/2}/(3σ²)`. -/

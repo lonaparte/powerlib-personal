@@ -573,8 +573,8 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
 @[tmio TM, powerlib_domain] private theorem lyapunovStable_regField {p : Params} {θ0 : ℝ}
     (h : LyapunovStable (FourState.field p) (opPoint θ0)) :
     LyapunovStable (regField p) (opPoint θ0) :=
-  Dynamics.lyapunovStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-    (fun _ hy => (field_eq_regField_of_near p hy).symm) h
+  Dynamics.lyapunovStable_congr_nhds (Dynamics.eventuallyEq_of_eqOn_ball
+    (by norm_num : (0 : ℝ) < 1 / 2) (fun _ hy => (field_eq_regField_of_near p hy).symm)) h
 
 @[tmio TM, powerlib_domain] private theorem localAsymptoticStable_regField {p : Params} {θ0 : ℝ}
     (h : LocalAsymptoticStable (FourState.field p) (opPoint θ0)) :

@@ -94,10 +94,6 @@ def massMatrix (n m : ℕ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ := f
   rw [← Linear.complexify_mul, nonsing_inv_mul _ h]
   simp [Linear.complexify]
 
-@[tmio T, powerlib_foundation] theorem det_complexify {k : ℕ} (A : Matrix (Fin k) (Fin k) ℝ) :
-    (Linear.complexify A).det = algebraMap ℝ ℂ A.det := by
-  rw [RingHom.map_det]; rfl
-
 namespace LinearDAE
 
 variable (d : LinearDAE n m p)
@@ -263,7 +259,8 @@ def pencil (s : ℂ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℂ :=
   have hinvR : (-d.Ayy)⁻¹ = -(d.Ayy⁻¹) :=
     Matrix.inv_eq_left_inv (by rw [neg_mul_neg, nonsing_inv_mul _ hA])
   have hAc : IsUnit (Linear.complexify (-d.Ayy)).det := by
-    rw [det_complexify]; exact hAn.map _
+    change IsUnit ((algebraMap ℝ ℂ).mapMatrix (-d.Ayy)).det
+    rw [← RingHom.map_det]; exact hAn.map _
   let _ : Invertible (Linear.complexify (-d.Ayy)) := invertibleOfIsUnitDet _ hAc
   have hblocks : d.pencil s = fromBlocks (s • 1 - Linear.complexify d.Axx)
       (-Linear.complexify d.Axy) (-Linear.complexify d.Ayx) (Linear.complexify (-d.Ayy)) := by
@@ -284,7 +281,8 @@ def pencil (s : ℂ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℂ :=
   have hAn : IsUnit (-d.Ayy).det := by
     rw [det_neg]; exact (isUnit_neg_one.pow _).mul hA
   have : (Linear.complexify (-d.Ayy)).det ≠ 0 := by
-    rw [det_complexify]
+    change ((algebraMap ℝ ℂ).mapMatrix (-d.Ayy)).det ≠ 0
+    rw [← RingHom.map_det]
     exact (hAn.map (algebraMap ℝ ℂ)).ne_zero
   simp [this]
 

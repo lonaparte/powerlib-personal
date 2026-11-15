@@ -90,9 +90,6 @@ variable (θ : ℝ)
   simp [dotProduct, Fin.sum_univ_three]
   linear_combination (-(Real.sin θ * Real.cos θ) / 2) * sqrt3_sq
 
-@[tmio M, powerlib_domain] theorem svec_dot_cvec : svec θ ⬝ᵥ cvec θ = 0 := by
-  rw [dotProduct_comm, cvec_dot_svec]
-
 @[tmio M, powerlib_domain] theorem cvec_sum : ∑ x, cvec θ x = 0 := by
   rw [cvec_explicit]; simp [Fin.sum_univ_three]; ring
 
@@ -162,8 +159,8 @@ def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow
   rw [parkMatrix, of_mul_transpose_apply]
   fin_cases i <;> fin_cases j <;>
     simp [parkRow, smul_dotProduct, dotProduct_smul, const_dotProduct,
-      dotProduct_const, cvec_dot_cvec, svec_dot_svec, cvec_dot_svec, svec_dot_cvec, cvec_sum,
-      svec_sum] <;>
+      dotProduct_const, cvec_dot_cvec, svec_dot_svec, cvec_dot_svec,
+      dotProduct_comm (svec θ) (cvec θ), cvec_sum, svec_sum] <;>
     first
     | linear_combination (3 / 2) * hk
     | (field_simp; linarith)
@@ -184,7 +181,7 @@ def J0 : Matrix (Fin 3) (Fin 3) ℝ := !![0, -1, 0; 1, 0, 0; 0, 0, 0]
   fin_cases i <;> fin_cases j <;>
     simp [parkRow, parkDerivRow, J0, smul_dotProduct, dotProduct_smul,
       const_dotProduct, cvec_dot_cvec, svec_dot_svec, cvec_dot_svec,
-      svec_dot_cvec, cvec_sum, svec_sum] <;>
+      dotProduct_comm (svec θ) (cvec θ), cvec_sum, svec_sum] <;>
     linear_combination (3 / 2) * hk
 
 /-- The reversed product `(dT_P/dθ)ᵀ T_P` is not `J₀` (entry `(a, b)` at `θ = 0` is `−1/√3`). -/

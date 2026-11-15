@@ -157,17 +157,12 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
   · simp only [Matrix.mulVec_zero]; exact Submodule.zero_mem _
   · simp only [Matrix.mulVec_add]; exact Submodule.add_mem _ hx hy
 
-@[tmio T, powerlib_foundation] theorem ofRealVec_mulVec (A : Matrix (Fin n) (Fin n) ℝ) (x : Fin n → ℝ) :
-    ofRealVec n (A *ᵥ x) = A.map (algebraMap ℝ ℂ) *ᵥ ofRealVec n x := by
-  funext i
-  have := RingHom.map_mulVec (algebraMap ℝ ℂ) A x i
-  exact this
-
 /-- `rSpec A S` is `A`-invariant. -/
 @[tmio T, powerlib_foundation] theorem mulVec_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
     {x : Fin n → ℝ} (hx : x ∈ rSpec A S) : A *ᵥ x ∈ rSpec A S := by
-  rw [mem_rSpec, ofRealVec_mulVec]
-  exact mulVec_mem_cSpec hx
+  rw [mem_rSpec] at hx ⊢
+  convert mulVec_mem_cSpec hx using 1
+  exact funext (RingHom.map_mulVec (algebraMap ℝ ℂ) A x)
 
 /-! ## Real parts -/
 

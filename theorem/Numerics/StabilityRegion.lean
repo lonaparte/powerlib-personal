@@ -45,11 +45,6 @@ open scoped Matrix.Norms.Operator
 
 variable {n : ℕ}
 
-/-- The powers of an eigenvalue are eigenvalues of the powers (`Linear.mulVec_pow_of_eigen`). -/
-@[tmio T, powerlib_foundation] theorem pow_mulVec_eigen {Φ : Matrix (Fin n) (Fin n) ℂ} {μ : ℂ}
-    {v : Fin n → ℂ} (heig : Φ *ᵥ v = μ • v) (k : ℕ) : (Φ ^ k) *ᵥ v = μ ^ k • v :=
-  Linear.mulVec_pow_of_eigen heig k
-
 /-- Bounded trajectories (every trajectory `Φ^k x₀` of `x_{k+1} = Φ x_k` is bounded) force
 every eigenvalue into the closed unit disk. -/
 @[tmio T, powerlib_foundation] theorem norm_le_one_of_boundedTrajectories
@@ -63,7 +58,7 @@ every eigenvalue into the closed unit disk. -/
     (tendsto_pow_atTop_atTop_of_one_lt hμ).atTop_mul_const hvpos
   obtain ⟨k, hk⟩ := (hlim.eventually_gt_atTop C).exists
   have := hC k
-  rw [pow_mulVec_eigen heig, norm_smul, norm_pow] at this
+  rw [Linear.mulVec_pow_of_eigen heig, norm_smul, norm_pow] at this
   linarith
 
 @[tmio T, powerlib_foundation] private lemma conj_pow {P Pinv : Matrix (Fin n) (Fin n) ℂ}

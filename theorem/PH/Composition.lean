@@ -53,7 +53,7 @@ Family and connection conclusions.
   port-Hamiltonian plant: strictly positive dissipation places a plant in every attractive
   sentence and in sampled contraction (`mem_den_of_dissipation_pos`,
   `mem_den_globallyExponentiallyStable_of_dissipation_pos`, through the strict Lyapunov
-  inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.isHurwitz_of_lyapunov`); no dissipation
+  inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.re_neg_of_lyapunov`); no dissipation
   places it in conservation (`mem_den_conservative_of_lossless`); strict dissipation excludes
   conservation (`not_mem_den_conservative_of_dissipation_pos`); similar plants share every
   sentence (`mem_den_iff_of_similar`, scaffold `theorem/Linear/Similarity.agda`); and every numbering of
@@ -311,7 +311,9 @@ exponentially stable denotation, equivalently its state matrix is Hurwitz. -/
   unfold TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
     (P := .globallyExponentiallyStable) (Or.inl trivial)]
-  refine Criteria.isHurwitz_of_lyapunov h.energy_symmetric h.energy_pos fun x hx => ?_
+  intro μ v hv heig
+  refine (Criteria.re_neg_of_lyapunov h.energy_symmetric h.energy_pos (fun x hx => ?_) hv
+    heig).trans_eq neg_zero.symm
   rw [energy_rate]
   have hQx : h.Q *ᵥ x ≠ 0 := by
     intro h0

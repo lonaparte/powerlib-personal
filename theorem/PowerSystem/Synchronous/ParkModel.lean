@@ -60,7 +60,7 @@ namespace powerlib.Synchronous.SyncMachine
 
 open Matrix Filter Asymptotics
 open scoped Topology
-open powerlib.Transform (phase cvec svec cvec_dot_cvec svec_dot_svec cvec_dot_svec svec_dot_cvec
+open powerlib.Transform (phase cvec svec cvec_dot_cvec svec_dot_svec cvec_dot_svec
   cvec_sum svec_sum k k_sq parkMatrix parkDeriv parkMatrix_hasDerivAt parkMatrix_mulVec
   parkMatrix_mul_transpose J0 parkMatrix_mul_deriv_transpose)
 
@@ -95,7 +95,8 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
     parkMatrix θ * statorInductance Ll LA LB θ * (parkMatrix θ)ᵀ =
       diagonal ![Ll + 3 / 2 * (LA + LB), Ll + 3 / 2 * (LA - LB), Ll] := by
   have hc : parkMatrix θ *ᵥ cvec θ = ![k * (3 / 2), 0, 0] := by
-    rw [parkMatrix_mulVec, cvec_dot_cvec, svec_dot_cvec, cvec_sum]
+    rw [parkMatrix_mulVec, cvec_dot_cvec, dotProduct_comm (svec θ) (cvec θ), cvec_dot_svec,
+      cvec_sum]
     simp
   have hs : parkMatrix θ *ᵥ svec θ = ![0, -k * (3 / 2), 0] := by
     rw [parkMatrix_mulVec, svec_dot_svec, cvec_dot_svec, svec_sum]
@@ -116,7 +117,8 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 d-axis value `√(3/2) L_afd` (written `k · 3/2 · L_afd`). -/
 @[tmio M, powerlib_domain] theorem park_mutual_d (Lafd θ : ℝ) :
     parkMatrix θ *ᵥ (Lafd • cvec θ) = ![k * (3 / 2) * Lafd, 0, 0] := by
-  rw [Matrix.mulVec_smul, parkMatrix_mulVec, cvec_dot_cvec, svec_dot_cvec, cvec_sum]
+  rw [Matrix.mulVec_smul, parkMatrix_mulVec, cvec_dot_cvec, dotProduct_comm (svec θ) (cvec θ),
+    cvec_dot_svec, cvec_sum]
   ext i
   fin_cases i <;> simp
   ring

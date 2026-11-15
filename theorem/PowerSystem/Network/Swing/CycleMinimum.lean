@@ -103,11 +103,6 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
     rw [amp_sq]; unfold edgeQ at hq; nlinarith
   exact abs_lt_of_sq_lt_sq h2 hB.le
 
-/-- `B cos a = |W|` (`SpecialFunctions.sqrt_mul_cos_arcsin`). -/
-@[tmio T, powerlib_foundation] theorem cos_base_pos {W f : ℝ} (_hW : W ≠ 0) :
-    amp W f * Real.cos (base W f) = |W| :=
-  SpecialFunctions.sqrt_mul_cos_arcsin W f
-
 /-- `B sin a = f` (`SpecialFunctions.mul_sin_arcsin_div`). -/
 @[tmio T, powerlib_foundation] theorem sin_base {W f : ℝ} (hW : W ≠ 0) :
     amp W f * Real.sin (base W f) = f :=
@@ -117,7 +112,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
 /-- `f + G'(x) = B sin(a + x)` on a line with positive weight. -/
 @[tmio T, powerlib_foundation] theorem add_edgeD_pos {W f : ℝ} (hW : 0 < W) (x : ℝ) :
     f + edgeD W f x = amp W f * Real.sin (base W f + x) := by
-  have hc := cos_base_pos (f := f) hW.ne'
+  have hc : amp W f * Real.cos (base W f) = |W| := SpecialFunctions.sqrt_mul_cos_arcsin W f
   have hs := sin_base (f := f) hW.ne'
   rw [abs_of_pos hW] at hc
   rw [Real.sin_add, mul_add, ← mul_assoc, ← mul_assoc, hs, hc]
@@ -126,7 +121,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
 /-- `f + G'(x) = B sin(a − x)` on a line with negative weight. -/
 @[tmio T, powerlib_foundation] theorem add_edgeD_neg {W f : ℝ} (hW : W < 0) (x : ℝ) :
     f + edgeD W f x = amp W f * Real.sin (base W f - x) := by
-  have hc := cos_base_pos (f := f) hW.ne
+  have hc : amp W f * Real.cos (base W f) = |W| := SpecialFunctions.sqrt_mul_cos_arcsin W f
   have hs := sin_base (f := f) hW.ne
   rw [abs_of_neg hW] at hc
   rw [Real.sin_sub, mul_sub, ← mul_assoc, ← mul_assoc, hs, hc]
@@ -244,7 +239,7 @@ potential lies above its tangents, strictly away from the contact point. -/
   have hmemI : ∀ y, base W f + y ∈ Ioo (-(π / 2)) (π / 2) ↔ y ∈ I := fun y => by
     simp only [hI, mem_Ioo]; constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
   have hB := amp_pos (f := f) hW.ne'
-  have hc := cos_base_pos (f := f) hW.ne'
+  have hc : amp W f * Real.cos (base W f) = |W| := SpecialFunctions.sqrt_mul_cos_arcsin W f
   have hs := sin_base (f := f) hW.ne'
   rw [abs_of_pos hW] at hc
   have hD2 : ∀ y ∈ I, W * Real.cos y - f * Real.sin y = amp W f * Real.cos (base W f + y) := by

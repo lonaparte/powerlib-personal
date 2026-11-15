@@ -53,7 +53,7 @@ behaviour of the interconnection is that of the family `Grid.Interconnection.fam
 
 noncomputable section
 namespace powerlib.GFL.Impedance
-open powerlib.Grid (withNetwork withNetwork_returnDifference networkModel Zext)
+open powerlib.Grid (withNetwork networkModel networkModel_transfer Zext)
 open Matrix Linear
 open powerlib.Transform (Gi Gv)
 
@@ -496,8 +496,8 @@ def gflOnNetwork (line : Passive.SeriesRLC)
     (hM : (characteristicMatrix p.model.A s).det ≠ 0) :
     (p.gflOnNetwork line shunt).returnDifference s =
       (1 + Zext line shunt p.ω s * p.Ygfl s).det := by
-  rw [gflOnNetwork, withNetwork_returnDifference hS hΓ hC hLg _ _ hMn hZn,
-    p.transfer_eq_Ygfl hs ha hda hL hpll hZ hP hM]
+  change (1 + transfer (networkModel line shunt p.ω) s * transfer p.model s).det = _
+  rw [networkModel_transfer hS hΓ hC hLg hMn hZn, p.transfer_eq_Ygfl hs ha hda hL hpll hZ hP hM]
 
 end GFLParams
 

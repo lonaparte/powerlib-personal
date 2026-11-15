@@ -36,8 +36,8 @@ Results.
 * `relationalSeed`: the seed built from `cover`, `satisfaction` and `possibly`; its whole chain
   translates, realizes and certifies (`relationalSeed_whole`), and soundness of the translation
   propagates to every certified observation (`relationalSeed_sound`).
-* Applied forms of the generated maps: `generate_cover_apply`, `generate_possibly_apply`
-  (`preimage`, `kern`: `congrFun` of `generate_preimage`, `generate_kern`).
+* Applied forms of the generated maps: `congrFun` of `generate_cover`, `generate_possibly`,
+  `generate_preimage`, `generate_kern`.
 * Satisfaction along maps and products: `realize_comap`; exactness relative to a context,
   `ExactUnder` (`exactUnder_empty_iff`: with an empty context, plain exactness); sums of
   requirement languages, `satSum` and `realize_sum` (component requirements carve out a product
@@ -296,18 +296,6 @@ satisfies every sentence of `Φ`. -/
   exact hsound φ hφ (realize_antitone sat (SetRel.image_mono (Set.singleton_subset_iff.mpr hφ)) (hv x hx))
 
 end Seed
-
-/-! ## Applied forms of the generated maps -/
-
-@[tmio T, simp, powerlib_foundation] theorem generate_cover_apply {S Q : Type*} (R : SetRel S Q)
-    (Φ : Set S) :
-    connection% (generate (cover R) Φ = R.image Φ) := show generate (cover R) Φ = R.image Φ from
-  congrFun (generate_cover R) Φ
-
-@[tmio T, simp, powerlib_foundation] theorem generate_possibly_apply {X V : Type*} (R : SetRel X V)
-    (P : (Set X)ᵒᵈ) :
-    connection% (ofDual (generate (possibly R) P) = certify R (ofDual P)) := show ofDual (generate (possibly R) P) = certify R (ofDual P) from
-  congrArg ofDual (congrFun (generate_possibly R) P)
 
 /-! ## Satisfaction along maps and products -/
 

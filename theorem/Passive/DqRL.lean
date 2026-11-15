@@ -106,12 +106,6 @@ def dqRLMatrix (b : Passive.SeriesRLC) (ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :
     simp at h0
     linarith
 
-/-- The dq state matrix is Hurwitz iff `R/L > 0`, at every frame speed. Static evidence on the
-model, not a connection conclusion. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_dqRLMatrix_iff (b : Passive.SeriesRLC) (ω : ℝ) :
-    IsHurwitz (dqRLMatrix b ω) ↔ 0 < b.decay := by
-  rw [← spectrallyStable_iff_isHurwitz, spectrallyStable_dqRLMatrix_iff]
-
 /-! ## Input-driven dq model and the dq impedance -/
 
 /-- dq RL branch with voltage input and current output: `ẋ = A x + L⁻¹ v`, `y = x`. -/
@@ -188,7 +182,7 @@ direction is the Park chain rule `Transform.hasDerivAt_park_mulVec`. -/
   · convert Transform.hasDerivAt_park_mulVec (hθ t) (h t) using 1
     rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
   have h' := alphaBetaRL_of_dqRL hθ h
-  simp only [Transform.rot_mulVec_park_mulVec] at h'
+  simp only [Matrix.mulVec_mulVec, Transform.rot_mul_park, Matrix.one_mulVec] at h'
   exact h'
 
 /-! ## Amplitude–phase coordinates of a dq current (`T-invariant-coordinates.md` §1.3) -/
@@ -295,7 +289,8 @@ namespace DqBranch
   rw [(connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   change IsHurwitz m.plant.A ↔ 0 < m.R / m.L
   change IsHurwitz (dqRLMatrix m.branch m.ω) ↔ _
-  exact isHurwitz_dqRLMatrix_iff m.branch m.ω
+  rw [← spectrallyStable_iff_isHurwitz]
+  exact spectrallyStable_dqRLMatrix_iff m.branch m.ω
 
 @[tmio M, powerlib_domain] theorem exists_root_of_neg (m : DqBranch) (h : m.R / m.L < 0) :
     ∃ s : ℂ, (characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by

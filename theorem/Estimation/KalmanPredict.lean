@@ -27,7 +27,8 @@ Results.
 * `predict_posSemidef` — `P ⪰ 0`, `Q ⪰ 0` ⇒ `Φ P Φᵀ + Q ⪰ 0` (discrete prediction keeps PSD).
 * `predict_cov_ode_solution` — if `P∞` solves the algebraic equation `A P∞ + P∞ Aᵀ + Q = 0`,
   then `P(t) = e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞` (`Lyapunov.covSol`) solves
-  `Ṗ = A P + P Aᵀ + Q`, `P(0) = P₀`; `predict_cov_ode_unique`: it is the only solution.
+  `Ṗ = A P + P Aᵀ + Q`, `P(0) = P₀`; it is the only solution (`Lyapunov.covODE_unique`,
+  `theorem/Stochastic/LyapunovCovariance.lean`).
 * `predict_cov_hurwitz` — for `A` Hurwitz and `Q ⪰ 0` such a `P∞ ⪰ 0` exists (uniquely), the
   prediction ODE has the explicit solution above and `P(t) → P∞`.
 -/
@@ -60,13 +61,6 @@ noncomputable local instance frobeniusENormedAddMonoid'' :
     covSol A Pinf P₀ 0 = P₀ ∧
       ∀ t, HasDerivAt (covSol A Pinf P₀) (A * covSol A Pinf P₀ t + covSol A Pinf P₀ t * Aᵀ + Q) t :=
   ⟨covSol_zero A Pinf P₀, covSol_hasDerivAt hinf P₀⟩
-
-/-- Uniqueness of the prediction covariance trajectory. -/
-@[tmio T, powerlib_foundation] theorem predict_cov_ode_unique {A Q Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
-    (hinf : SolvesCovLyapunov A Pinf Q) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
-    (hP : ∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q) t) (h0 : P 0 = P₀) :
-    P = covSol A Pinf P₀ :=
-  covODE_unique hinf hP h0
 
 /-- **Hurwitz prediction**: for `A` Hurwitz and `Q ⪰ 0` there is a unique `P∞ ⪰ 0` with
 `A P∞ + P∞ Aᵀ + Q = 0`; every solution of the prediction ODE with `P(0) = P₀` equals

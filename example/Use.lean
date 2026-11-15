@@ -43,7 +43,7 @@ open powerlib LinearSystems
 #check powerlib.Passive.LCL.not_exact_conservative
 #check powerlib.Passive.LCL.not_exact_unstable
 #check powerlib.Linear.RateMargin
-#check powerlib.Passive.LCL.realize_passive_damped
+#check powerlib.Passive.LCL.passive_stable_iff
 
 -- Synthesis: the certificate computed from the submitted parameters places the model in a
 -- denotation.

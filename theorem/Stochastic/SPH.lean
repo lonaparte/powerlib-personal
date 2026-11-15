@@ -2,6 +2,7 @@ import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.Matrix.Order
 import theorem.Stochastic.LyapunovCovariance
+import theorem.PH.Nonlinear
 
 /-! # Algebra of the Itô generator for stochastic port-Hamiltonian systems
 
@@ -60,15 +61,6 @@ def genL (f : Fin n → ℝ) (h : Matrix (Fin n) (Fin q) ℝ) (g : Fin n → ℝ
     (K : Matrix (Fin n) (Fin n) ℝ) : ℝ :=
   f ⬝ᵥ g + itoCorrection h K
 
-/-- A skew matrix contributes no power: `(J g) ⬝ g = 0`. -/
-@[tmio T, powerlib_foundation] theorem skew_dotProduct_self {J : Matrix (Fin n) (Fin n) ℝ}
-    (hJ : Jᵀ = -J) (g : Fin n → ℝ) : (J *ᵥ g) ⬝ᵥ g = 0 := by
-  have h1 : g ⬝ᵥ (Jᵀ *ᵥ g) = g ⬝ᵥ (J *ᵥ g) := by
-    rw [mulVec_transpose, dotProduct_comm g (g ᵥ* J), ← dotProduct_mulVec]
-  rw [hJ, neg_mulVec, dotProduct_neg] at h1
-  have h2 := dotProduct_comm (J *ᵥ g) g
-  linarith
-
 /-- **Stochastic energy balance (T-sph (1.5))**, as an algebraic identity of the generator
 expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
 `𝓛H = uᵀ y − ∇Hᵀ R ∇H + ½ tr(h hᵀ ∇²H)`. -/
@@ -81,7 +73,8 @@ expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
   have hGu : (G *ᵥ u) ⬝ᵥ g = u ⬝ᵥ (Gᵀ *ᵥ g) := by
     rw [mulVec_transpose, dotProduct_comm (G *ᵥ u) g, dotProduct_mulVec, dotProduct_comm]
   have hRg : (R *ᵥ g) ⬝ᵥ g = g ⬝ᵥ (R *ᵥ g) := dotProduct_comm _ _
-  rw [sub_mulVec, add_dotProduct, sub_dotProduct, skew_dotProduct_self hJ, hGu, hRg]
+  rw [sub_mulVec, add_dotProduct, sub_dotProduct, dotProduct_comm (J *ᵥ g) g,
+    PH.dotProduct_mulVec_self_eq_zero_of_skew hJ, hGu, hRg]
   ring
 
 /-- `∇²H ⪰ 0 ⇒ Δ_Itô ≥ 0` (T-sph (1.6)). -/

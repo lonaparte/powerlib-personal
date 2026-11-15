@@ -25,7 +25,8 @@ Conventions (shared by every `powerlib.PLL` module).
 Source: work-sync `theory/T-pll-dynamics.md` §1.2, §1.6, §1.7, §1.8, §1.9.
 
 Results.
-* Clarke of the balanced three-phase voltage, Park projection
+* Grid voltage `gridAlphaBeta`, the Clarke image of the balanced three-phase voltage
+  (`Transform.clarke_mulVec_balanced` at `φ = 0`), Park projection
   `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))`, phase-detector characteristic `V_q = −V sin θ̃`,
   and the perturbation projection `V_q^p = −V sin θ_e + (−sin θ_e, cos θ_e)·(δv_d, δv_q)`
   (T-pll-dynamics §1.2), with `‖(−sin θ_e, cos θ_e)‖ = 1` (`StochasticPH.sigmaBare_dot_self`).
@@ -59,32 +60,13 @@ negative-sequence signs reversed. The correct relation is
 noncomputable section
 namespace powerlib.PLL
 open Matrix
-open powerlib.Transform (park rot clarke)
+open powerlib.Transform (park rot)
 
 /-! ## Balanced grid voltage and the SRF phase detector -/
 
-/-- Balanced positive-sequence phase voltages `V cos(θ_g + φ_x)`, `φ = (0, −2π/3, 2π/3)`. -/
-def balancedAbc (V θg : ℝ) : Fin 3 → ℝ :=
-  ![V * Real.cos θg, V * Real.cos (θg - 2 * Real.pi / 3), V * Real.cos (θg + 2 * Real.pi / 3)]
-
-/-- Grid voltage space vector `V (cos θ_g, sin θ_g)` in the stationary αβ frame. -/
+/-- Grid voltage space vector `V (cos θ_g, sin θ_g)` in the stationary αβ frame: the Clarke
+image of the balanced phase voltages (`Transform.clarke_mulVec_balanced` at `φ = 0`). -/
 def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.sin θg]
-
-/-- Amplitude-invariant Clarke maps the balanced phase voltages to `V (cos θ_g, sin θ_g)`. -/
-@[tmio M, powerlib_domain] theorem clarke_balancedAbc (V θg : ℝ) :
-    clarke *ᵥ balancedAbc V θg = gridAlphaBeta V θg := by
-  have h3 : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
-  have hc : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
-    rw [show 2 * Real.pi / 3 = Real.pi - Real.pi / 3 by ring, Real.cos_pi_sub,
-      Real.cos_pi_div_three]; ring
-  have hs : Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
-    rw [show 2 * Real.pi / 3 = Real.pi - Real.pi / 3 by ring, Real.sin_pi_sub,
-      Real.sin_pi_div_three]
-  ext i; fin_cases i <;>
-    simp [clarke, balancedAbc, gridAlphaBeta, Matrix.mulVec, dotProduct, Fin.sum_univ_three,
-      Real.cos_sub, Real.cos_add, hc, hs]
-  · ring
-  · linear_combination (1 / 3 : ℝ) * V * Real.sin θg * h3
 
 /-- Park projection of the grid voltage onto the PLL frame `θ̂`:
 `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/

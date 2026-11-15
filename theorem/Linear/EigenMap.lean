@@ -34,8 +34,9 @@ Results.
   eigenpair of `M` is such an image, when `α δ − β γ ≠ 0`), and `forall_eigen_mobius_iff`: a
   property holds for every eigenvalue of `M` exactly when it holds for the image of every
   eigenvalue of `A`. `isUnit_det_affine_of_forall_eigen`: `γ A + δ` is invertible when no eigenvalue
-  has `γ λ + δ = 0`. Instances: `forall_eigen_smul_iff` (scaling), `isHurwitz_mobius_iff`,
-  `schurStable_mobius_iff`, `isHurwitz_smul_iff` (positive scaling keeps the Hurwitz property).
+  has `γ λ + δ = 0`. Instances: `isHurwitz_mobius_iff`, `schurStable_mobius_iff`; positive
+  scaling keeps spectral stability and the Hurwitz property (`spectrallyStable_smul_iff`,
+  `isHurwitz_smul_iff`).
 * Characteristic polynomials: `spectrallyStable_iff_forall_eigen`,
   `spectrallyStable_congr_charpoly` (matrices with the same characteristic polynomial, possibly on
   different index types, are spectrally stable together), `isHurwitz_congr_charpoly`;
@@ -210,15 +211,6 @@ and `α δ − β γ ≠ 0`, a property holds for every eigenvalue of `M` exactl
   have hγ' : (γ : ℂ) ≠ 0 := by exact_mod_cast hγ
   exact h _ _ hw hAw (by push_cast; field_simp; ring)
 
-/-- Scaling: the eigenvalues of `c A` are `c λ`. -/
-@[tmio T, powerlib_foundation] theorem forall_eigen_smul_iff {c : ℝ} (hc : c ≠ 0) (A : Matrix ι ι ℝ)
-    (P : ℂ → Prop) :
-    (∀ (μ : ℂ) (v : ι → ℂ), v ≠ 0 → complexify (c • A) *ᵥ v = μ • v → P μ) ↔
-      ∀ (lam : ℂ) (v : ι → ℂ), v ≠ 0 → complexify A *ᵥ v = lam • v → P (c * lam) := by
-  rw [forall_eigen_mobius_iff (A := A) (M := c • A) (α := c) (β := 0) (γ := 0) (δ := 1)
-    (by simpa using hc) (by simp) (by simp)]
-  simp
-
 end Mobius
 
 /-! ## Hurwitz and Schur stability of Möbius images -/
@@ -250,19 +242,6 @@ disk. -/
     LTI.SchurStable M ↔ ∀ (lam : ℂ) (v : Fin n → ℂ), v ≠ 0 → complexify A *ᵥ v = lam • v →
       ‖((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)‖ < 1 :=
   forall_eigen_mobius_iff hdet hQ hM fun μ => ‖μ‖ < 1
-
-/-- A positive scaling (a time base) keeps the Hurwitz property. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_smul_iff {c : ℝ} (hc : 0 < c)
-    (A : Matrix (Fin n) (Fin n) ℝ) : IsHurwitz (c • A) ↔ IsHurwitz A := by
-  rw [isHurwitz_iff_forall_eigen, isHurwitz_iff_forall_eigen,
-    forall_eigen_smul_iff hc.ne' A fun μ => μ.re < 0]
-  refine forall₄_congr fun lam v _ _ => ?_
-  rw [Complex.re_ofReal_mul]
-  constructor
-  · intro h
-    by_contra h'
-    exact absurd h (not_lt.mpr (mul_nonneg hc.le (not_lt.mp h')))
-  · exact mul_neg_of_pos_of_neg hc
 
 end Stability
 
@@ -312,5 +291,35 @@ spectrally stable together. -/
   isHurwitz_congr_charpoly (Matrix.charpoly_transpose A)
 
 end Charpoly
+
+/-! ## Positive scaling -/
+
+section Scaling
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- A positive scaling (a time base) keeps spectral stability: the eigenvalues of `c A` are the
+`c λ` (`forall_eigen_mobius_iff` at `α = c`, `β = γ = 0`, `δ = 1`). -/
+@[tmio T, powerlib_foundation] theorem spectrallyStable_smul_iff {c : ℝ} (hc : 0 < c)
+    (A : Matrix ι ι ℝ) : SpectrallyStable (c • A) ↔ SpectrallyStable A := by
+  rw [spectrallyStable_iff_forall_eigen, spectrallyStable_iff_forall_eigen,
+    forall_eigen_mobius_iff (A := A) (M := c • A) (α := c) (β := 0) (γ := 0) (δ := 1)
+      (by simpa using hc.ne') (by simp) (by simp)]
+  refine forall₄_congr fun lam v _ _ => ?_
+  simp only [Complex.ofReal_zero, Complex.ofReal_one, add_zero, zero_mul, zero_add, div_one,
+    Complex.re_ofReal_mul]
+  constructor
+  · intro h
+    by_contra h'
+    exact absurd h (not_lt.mpr (mul_nonneg hc.le (not_lt.mp h')))
+  · exact mul_neg_of_pos_of_neg hc
+
+/-- A positive scaling (a time base) keeps the Hurwitz property. -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_smul_iff {n : ℕ} {c : ℝ} (hc : 0 < c)
+    (A : Matrix (Fin n) (Fin n) ℝ) : IsHurwitz (c • A) ↔ IsHurwitz A := by
+  rw [← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
+  exact spectrallyStable_smul_iff hc A
+
+end Scaling
 
 end powerlib.Linear

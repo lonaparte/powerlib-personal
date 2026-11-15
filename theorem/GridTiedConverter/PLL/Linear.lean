@@ -131,14 +131,6 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
     LinearSystems.IsHurwitz (linA V Kp Ki) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
   rw [Criteria.isHurwitz_fin_two_iff, trace_linA, det_linA, neg_lt_zero]
 
-/-- Every root of the loop polynomial lies in the open left half-plane iff
-`V K_p > 0 ∧ V K_i > 0`. -/
-@[tmio TM, powerlib_domain] theorem loopPoly_roots_re_neg_iff (V Kp Ki : ℝ) :
-    (∀ s : ℂ, loopPoly V Kp Ki s = 0 → s.re < 0) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
-  have h := Criteria.quadratic_roots_re_neg_iff (V * Kp) (V * Ki)
-  push_cast at h
-  simpa only [loopPoly] using h
-
 /-! ## Transfer functions -/
 
 @[tmio M, powerlib_domain] private lemma transfer_linA_model (V Kp Ki : ℝ)

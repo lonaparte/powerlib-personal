@@ -188,8 +188,11 @@ def transferOf {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ)
   · rw [Matrix.nonsing_inv_apply_not_isUnit _ (by rwa [Matrix.det_conj_of_mul_eq_one hTS hST]),
       Matrix.nonsing_inv_apply_not_isUnit _ h, Matrix.mul_zero, Matrix.zero_mul]
 
-@[tmio T, powerlib_foundation] theorem characteristicMatrix_conj {n' : ℕ} {T : Matrix (Fin n') (Fin n) ℝ}
-    {S : Matrix (Fin n) (Fin n') ℝ} (hTS : T * S = 1) (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
+/-- A coordinate change `T A S` with `T S = 1` conjugates the characteristic matrix, on any finite
+state indices (`T` and `S` may be rectangular). -/
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_conj {ι κ : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype κ] [DecidableEq κ] {T : Matrix κ ι ℝ} {S : Matrix ι κ ℝ}
+    (hTS : T * S = 1) (A : Matrix ι ι ℝ) (s : ℂ) :
     characteristicMatrix (T * A * S) s =
       complexify T * characteristicMatrix A s * complexify S := by
   simp only [characteristicMatrix, Matrix.map_mul, Matrix.mul_sub, Matrix.sub_mul,

@@ -37,7 +37,6 @@ Results.
   `C v = 0` and be an eigenvector of `A`, contradicting observability,
   `phCx_eq_zero_of_isObservable`, from `Modal.eq_zero_of_isObservable`); for linear systems this
   replaces the LaSalle argument.
-* `phCx_mulVec_re`, `phCx_mulVec_im`: the instances of `Modal.complexify_mulVec_re`/`_im`.
 * Nonlinear LaSalle version: for an arbitrary passive system `ẋ = F(x, u)`, `y = H(x)` with a
   `C¹` positive definite storage, zero-state detectability (or observability) and an output
   feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` give local / global asymptotic stability of the
@@ -74,17 +73,7 @@ open scoped Pointwise
 
 variable {n m : ℕ}
 
-/-! ## Helpers: real and imaginary parts of real matrices acting on complex vectors -/
-
-@[tmio T, powerlib_foundation] theorem phCx_mulVec_re {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
-    (v : Fin n → ℂ) (i : Fin p) :
-    ((Linear.complexify M *ᵥ v) i).re = (M *ᵥ fun j => (v j).re) i :=
-  Modal.complexify_mulVec_re M v i
-
-@[tmio T, powerlib_foundation] theorem phCx_mulVec_im {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
-    (v : Fin n → ℂ) (i : Fin p) :
-    ((Linear.complexify M *ᵥ v) i).im = (M *ᵥ fun j => (v j).im) i :=
-  Modal.complexify_mulVec_im M v i
+/-! ## Helper: complex eigenvectors in `ker C` and observability -/
 
 /-- A complex eigenvector of a real `A` lying in `ker C` contradicts observability of `(A, C)`:
 `C Aᵏ v = μᵏ C v = 0` for every `k` (`Linear.mulVec_pow_of_eigen`,
@@ -261,8 +250,8 @@ closed loop. -/
   have hCv : Linear.complexify C *ᵥ v = 0 := by
     funext i
     apply Complex.ext
-    · rw [phCx_mulVec_re, ha]; rfl
-    · rw [phCx_mulVec_im, hb]; rfl
+    · rw [Modal.complexify_mulVec_re, ha]; rfl
+    · rw [Modal.complexify_mulVec_im, hb]; rfl
   -- and `v` is an eigenvector of the open-loop `A`
   have hAv : Linear.complexify (linearStateMatrix J R Q) *ᵥ v = μ • v := by
     have hA : linearStateMatrix J R Q = A' + g * (k • C) := by

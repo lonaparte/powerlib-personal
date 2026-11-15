@@ -26,8 +26,8 @@ Results.
   `unstable_congr_nhds`, `localAsymptoticStable_congr_nhds`: if `f = g` on a neighbourhood of
   `x_eq` the properties transfer (first-exit argument with `exists_first_sphere_hit`).
 * Ball form, the corollaries for `f = g` on `‖y − x‖ < ρ`:
-  `locallyExponentiallyStable_of_eqOn_ball`, `lyapunovStable_of_eqOn_ball`,
-  `unstable_of_eqOn_ball`, `localAsymptoticStable_of_eqOn_ball`.
+  `locallyExponentiallyStable_of_eqOn_ball`, `unstable_of_eqOn_ball` (for Lyapunov and local
+  asymptotic stability compose the filter form with `eventuallyEq_of_eqOn_ball`).
 * First-exit and bootstrap arguments on finite solution segments: `forall_lt_of_first_exit`,
   `forall_norm_sub_lt_of_bootstrap`, `exp_bound_of_local` (an exponential estimate transfers to a
   curve that solves `ẋ = G x` while it stays in a ball).
@@ -372,13 +372,6 @@ never leaves the full ball. -/
     LocallyExponentiallyStable f x :=
   locallyExponentiallyStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
 
-/-- Lyapunov stability depends only on the field on a ball around the equilibrium. -/
-@[tmio T, powerlib_foundation] theorem lyapunovStable_of_eqOn_ball
-    {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
-    (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : LyapunovStable g x) :
-    LyapunovStable f x :=
-  lyapunovStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
-
 /-- Instability depends only on the field on a ball around the equilibrium. -/
 @[tmio T, powerlib_foundation] theorem unstable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
@@ -455,12 +448,6 @@ never leaves the full ball. -/
     have h2 : ‖φ (sInf S) - x₀‖ ≤ C * ‖φ t₀ - x₀‖ := hsT.2
     linarith
   exact hG t₀ t₁ φ (hsub t₁ le_rfl hstay) h0r
-
-/-- Local asymptotic stability only depends on the field on a ball around the point. -/
-@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_eqOn_ball {f g : State n → State n}
-    {x : State n} {R : ℝ} (hR : 0 < R) (hfg : ∀ y, ‖y - x‖ < R → f y = g y)
-    (hg : LocalAsymptoticStable g x) : LocalAsymptoticStable f x :=
-  localAsymptoticStable_congr_nhds (eventuallyEq_of_eqOn_ball hR hfg) hg
 
 end Ball
 

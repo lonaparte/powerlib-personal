@@ -50,7 +50,7 @@ Results.
   `eval_eq_zero_of_vanishes`, `eval_zero`), `Model.field` (`Model.field_zero_apply`,
   `Model.field_one_apply`, `Model.field_smooth`), `coordinate_smooth`, `eval_smooth`,
   `Witness.energy` (`Witness.energy_apply`, `Witness.energy_smooth`, `Witness.energy_derivative`,
-  `Witness.energy_lie`), `norm_sq`, `eval_circle`.
+  `Witness.energy_lie`), `eval_circle` (through `PhasePlane.norm_sq_eq`).
 * The linearization: `coord`, `hasFDerivAt_monomial_zero`, `hasFDerivAt_eval_zero`,
   `Model.linearization` (the matrix of linear coefficients), `hasFDerivAt_field_zero` (it is the
   Jacobian of the field at the origin), `Model.field_eq_zero`.
@@ -483,11 +483,8 @@ def Witness.energy (w : Witness) (x : ℝ²) : ℝ := eval w.quadPoly (x 0) (x 1
   rw [w.energy_derivative]
   simp [Witness.liePoly]
 
-@[tmio T, powerlib_foundation] theorem norm_sq (x : ℝ²) : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 :=
-  PhasePlane.norm_sq_eq x
-
 @[tmio T, powerlib_foundation] theorem eval_circle (x : ℝ²) : eval circle (x 0) (x 1) = ‖x‖ ^ 2 := by
-  simp [circle, norm_sq]
+  simp [circle, PhasePlane.norm_sq_eq]
 
 @[tmio T, powerlib_foundation] theorem sosPoly_nonneg {squares : List WeightedSquare}
     (h : ∀ s ∈ squares, 0 ≤ s.weight) (x y : ℝ) : 0 ≤ eval (sosPoly squares) x y := by

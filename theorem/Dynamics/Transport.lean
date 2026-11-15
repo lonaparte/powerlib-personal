@@ -238,21 +238,6 @@ variable {T : State n ≃L[ℝ] State n}
   unfold IsEquilibrium at h ⊢
   simp [h]
 
-@[tmio T, powerlib_foundation] theorem lyapunovStable_conjEquiv {g : State n → State n}
-    (h : LyapunovStable g 0) : LyapunovStable (transportField T 0 g) 0 := by
-  rw [transportField_zero_eq_conj]
-  exact Linear.lyapunovStable_conj _ _ symm_apply_coe apply_symm_coe h
-
-@[tmio T, powerlib_foundation] theorem decay_conjEquiv {g : State n → State n} {a : ℝ}
-    (h : Flow.Decay g 0 a) : Flow.Decay (transportField T 0 g) 0 a := by
-  rw [transportField_zero_eq_conj]
-  exact Linear.decay_conj _ _ symm_apply_coe apply_symm_coe h
-
-@[tmio T, powerlib_foundation] theorem conservative_conjEquiv {g : State n → State n}
-    (h : Flow.Conservative g 0) : Flow.Conservative (transportField T 0 g) 0 := by
-  rw [transportField_zero_eq_conj]
-  exact Linear.conservative_conj _ _ symm_apply_coe apply_symm_coe h
-
 @[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_conjEquiv {g : State n → State n}
     (h : LocallyExponentiallyStable g 0) :
     LocallyExponentiallyStable (transportField T 0 g) 0 := by
@@ -290,7 +275,9 @@ variable {T : State n ≃L[ℝ] State n}
   obtain ⟨hs, ρ, hρ, hattr⟩ := h
   set K' := ‖(T.symm : State n →L[ℝ] State n)‖
   have hK' : 0 ≤ K' := norm_nonneg _
-  refine ⟨lyapunovStable_conjEquiv hs, ρ / (K' + 1), div_pos hρ (by linarith), ?_⟩
+  refine ⟨?_, ρ / (K' + 1), div_pos hρ (by linarith), ?_⟩
+  · rw [transportField_zero_eq_conj]
+    exact Linear.lyapunovStable_conj _ _ symm_apply_coe apply_symm_coe hs
   intro t₀ χ hχ h0
   rw [sub_zero] at h0
   have h0' : ‖T.symm (χ t₀) - 0‖ < ρ := by
@@ -302,7 +289,8 @@ variable {T : State n ≃L[ℝ] State n}
 
 @[tmio T, powerlib_foundation] theorem globalAsymptoticStable_conjEquiv {g : State n → State n}
     (h : GlobalAsymptoticStable g 0) : GlobalAsymptoticStable (transportField T 0 g) 0 :=
-  ⟨lyapunovStable_conjEquiv h.1, fun t₀ _ hχ =>
+  ⟨by rw [transportField_zero_eq_conj]
+      exact Linear.lyapunovStable_conj _ _ symm_apply_coe apply_symm_coe h.1, fun t₀ _ hχ =>
     tendsto_of_back (h.2 t₀ _ (isIntegralCurveOn_back hχ))⟩
 
 @[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_conjEquiv {g : State n → State n}
@@ -393,18 +381,24 @@ variable {T : State n ≃L[ℝ] State n}
 @[tmio T, powerlib_foundation] theorem holds_conjEquiv (P : Flow.Property) {g : State n → State n}
     (h : P.holds g 0) : P.holds (transportField T 0 g) 0 := by
   cases P
-  case lyapunovStable => exact lyapunovStable_conjEquiv h
+  case lyapunovStable =>
+    rw [transportField_zero_eq_conj]
+    exact Linear.lyapunovStable_conj _ _ symm_apply_coe apply_symm_coe h
   case locallyAsymptoticallyStable => exact localAsymptoticStable_conjEquiv h
   case locallyExponentiallyStable => exact locallyExponentiallyStable_conjEquiv h
   case globallyAsymptoticallyStable => exact globallyAsymptoticallyStable_conjEquiv h
   case globallyExponentiallyStable => exact globallyExponentiallyStable_conjEquiv h
   case unstable =>
     refine fun hs => h ?_
-    have h' := lyapunovStable_conjEquiv (T := T.symm) hs
-    rwa [transportField_symm_zero] at h'
-  case decay a => exact decay_conjEquiv h
+    rw [transportField_zero_eq_conj] at hs
+    simpa using Linear.lyapunovStable_conj _ _ (apply_symm_coe (T := T)) symm_apply_coe hs
+  case decay a =>
+    rw [transportField_zero_eq_conj]
+    exact Linear.decay_conj _ _ symm_apply_coe apply_symm_coe h
   case contractive => exact sampledContraction_conjEquiv h
-  case conservative => exact conservative_conjEquiv h
+  case conservative =>
+    rw [transportField_zero_eq_conj]
+    exact Linear.conservative_conj _ _ symm_apply_coe apply_symm_coe h
 
 /-- Every behavioural sentence is invariant under conjugation by an invertible linear map. -/
 @[tmio T, powerlib_foundation] theorem holds_conjEquiv_iff (P : Flow.Property) {g : State n → State n} :

@@ -22,11 +22,11 @@ average delay `T/2`) and §1.4 (ZOH `G_ZOH(s) = (1 - e^{-T s})/s`,
 
 Results.
 * `zoh_eq` — `zoh T s = (1 - e^{-sT}) / s` for `s ≠ 0` (closed form from the integral).
-* `zoh_jω`, `sampleHold_jω`, `zoh_jω_eq_halfDelay` — on `s = jω`:
+* `zoh_jω`, `sampleHold_jω` — on `s = jω`:
   `zoh T (jω) = e^{-jωT/2} · T · sinc (ωT/2)` and, for `T ≠ 0`,
   `sampleHold T (jω) = e^{-jωT/2} · sinc (ωT/2)`; here `sinc` is Mathlib's `Real.sinc`
-  (`sin x / x`, value `1` at `0`). The factor `e^{-jωT/2}` is exactly the half-period delay
-  `pureDelay (T/2)`.
+  (`sin x / x`, value `1` at `0`). The factor `e^{-jωT/2}` is stated as the half-period delay
+  `pureDelay (T/2) (jω)`.
 * `zoh_zero`, `sampleHold_zero`, `norm_zoh_jω`, `norm_zoh_nyquist`, `zoh_eq_zero_of_two_pi` —
   DC gains `zoh T 0 = T`, `sampleHold T 0 = 1`; magnitude `‖zoh T (jω)‖ = |T| |sinc (ωT/2)|`;
   at the Nyquist frequency `ωT = π` the magnitude is `2T/π` (nonzero), and the first null
@@ -59,10 +59,16 @@ def sampleHold (T : ℝ) (s : ℂ) : ℂ := zoh T s / T
   rw [sampleHold, zoh_zero]
   exact div_self (by exact_mod_cast hT)
 
-/-- `zoh T (jω) = e^{-jωT/2} · T · sinc (ωT/2)`. -/
+/-- `zoh T (jω) = e^{-jωT/2} · T · sinc (ωT/2)`: the ZOH phase factor is the half-period
+delay. -/
 @[tmio T, powerlib_foundation] theorem zoh_jω (T ω : ℝ) :
-    zoh T (ω * I) =
-      Complex.exp (-((ω * T / 2 : ℝ) : ℂ) * I) * (T * (Real.sinc (ω * T / 2) : ℂ)) := by
+    zoh T (ω * I) = pureDelay (T / 2) (ω * I) * (T * (Real.sinc (ω * T / 2) : ℂ)) := by
+  have hd : pureDelay (T / 2) (ω * I) = Complex.exp (-((ω * T / 2 : ℝ) : ℂ) * I) := by
+    rw [pureDelay]
+    congr 1
+    push_cast
+    ring
+  rw [hd]
   by_cases hω : ω = 0
   · subst hω
     simp [zoh]
@@ -97,26 +103,17 @@ def sampleHold (T : ℝ) (s : ℂ) : ℂ := zoh T s / T
   linear_combination (-1) * hprod + (-(Em * (Em - Ep) * ((T : ℂ) * ω / θ) / 2)) * I_sq +
     (Em * (Em - Ep) / 2) * key
 
-/-- The ZOH phase factor is the half-period delay. -/
-@[tmio T, powerlib_foundation] theorem zoh_jω_eq_halfDelay (T ω : ℝ) :
-    zoh T (ω * I) = pureDelay (T / 2) (ω * I) * (T * (Real.sinc (ω * T / 2) : ℂ)) := by
-  rw [zoh_jω, pureDelay]
-  congr 2
-  push_cast
-  ring
-
 /-- Sample-and-hold `G_sh(jω) = e^{-jωT/2} sinc(ωT/2)` (unit DC gain). -/
 @[tmio T, powerlib_foundation] theorem sampleHold_jω {T : ℝ} (hT : T ≠ 0) (ω : ℝ) :
     sampleHold T (ω * I) = pureDelay (T / 2) (ω * I) * (Real.sinc (ω * T / 2) : ℂ) := by
   have hT' : (T : ℂ) ≠ 0 := by exact_mod_cast hT
-  rw [sampleHold, zoh_jω_eq_halfDelay]
+  rw [sampleHold, zoh_jω]
   field_simp
 
 @[tmio T, powerlib_foundation] theorem norm_zoh_jω (T ω : ℝ) :
     ‖zoh T (ω * I)‖ = |T| * |Real.sinc (ω * T / 2)| := by
-  rw [zoh_jω, norm_mul, norm_mul, Complex.norm_real, Complex.norm_real]
-  rw [show -((ω * T / 2 : ℝ) : ℂ) * I = ((-(ω * T / 2) : ℝ) : ℂ) * I by push_cast; ring,
-    Complex.norm_exp_ofReal_mul_I, one_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+  rw [zoh_jω, norm_mul, norm_mul, norm_pureDelay_jω, Complex.norm_real, Complex.norm_real,
+    one_mul, Real.norm_eq_abs, Real.norm_eq_abs]
 
 /-- At the Nyquist frequency `ωT = π` the ZOH magnitude is `2T/π`. -/
 @[tmio T, powerlib_foundation] theorem norm_zoh_nyquist {T ω : ℝ} (hT : 0 < T) (h : ω * T = π) :

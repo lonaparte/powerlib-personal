@@ -39,7 +39,8 @@ Results.
 Family and connection conclusions.
 * Transfer laws, connection statements about arbitrary families of `Type` (stated once; model
   modules instantiate them): `realize_subset_den_of_hub` (a requirement obligation
-  `realize A ⊆ den s` of the spoke from the hub's), `sound_of_hub`, `exactUnder_of_hub`,
+  `realize A ⊆ den s` of the spoke from the hub's; with `A`, `B` the translations of `s` it
+  carries soundness, `Family.Sound s`, from the hub to the spoke), `exactUnder_of_hub`,
   `exact_of_hub` (exactness passes from the hub to the spoke), `mem_den_iff_of_flow` (a reading
   of the flow sentences of autonomous families is a reading of every sentence).
 -/
@@ -55,22 +56,15 @@ variable {X Y Q R : Type} {n m p r : ℕ} {F : Family X Q n p} {G : Family Y R m
 /-! ## Transfer along a map of models -/
 
 /-- A requirement obligation of the spoke from one of the hub: the models of `A` map into the
-models of `B`, which satisfy `s` in the hub, and a model satisfies `s` when its image does. -/
+models of `B`, which satisfy `s` in the hub, and a model satisfies `s` when its image does. With
+`A`, `B` the translations of `s` this carries soundness (`Family.Sound s`) from the hub to the
+spoke. -/
 @[tmio TM, powerlib_foundation] theorem realize_subset_den_of_hub (g : X → Y) {A : Set Q} {B : Set R}
     {s : Sentence} (hreq : ∀ x ∈ realize F.meets A, g x ∈ realize G.meets B)
     (hden : ∀ x ∈ realize F.meets A, g x ∈ G.den s → x ∈ F.den s)
     (hG : realize G.meets B ⊆ G.den s) : connection% (realize F.meets A ⊆ F.den s) := by
   unfold powerlib.TMIO.Statement
   exact fun x hx => hden x hx (hG (hreq x hx))
-
-/-- Soundness passes from the hub to the spoke when the spoke's translated requirements give the
-hub's. -/
-@[tmio TM, powerlib_foundation] theorem sound_of_hub (g : X → Y) {s : Sentence}
-    (hreq : ∀ x ∈ realize F.meets (F.translate s), g x ∈ realize G.meets (G.translate s))
-    (hden : ∀ x ∈ realize F.meets (F.translate s), g x ∈ G.den s → x ∈ F.den s)
-    (hG : G.Sound s) : connection% (F.Sound s) := by
-  unfold powerlib.TMIO.Statement
-  exact realize_subset_den_of_hub g hreq hden hG
 
 /-- Exactness within a context passes from the hub to the spoke: the spoke's context maps into
 the hub's, and on it the map reads `s` and the translated requirements of the two families

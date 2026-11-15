@@ -562,10 +562,10 @@ coefficients of `det(λI − A₀)` place the operating point in local exponenti
   obtain ⟨heq, hC⟩ := he
   exact mem_den_flow_iff.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun y hy => field_eq_regField_of_near m.params hy)
-    (Criteria.unstable_of_jacobian_quartic_const_neg (A0 m.params m.θ)
+    (Criteria.unstable_of_jacobian_quartic_violation (A0 m.params m.θ)
       (contDiff_regField m.params) (regField_opPoint m.params hC heq)
       (fderiv_regField_opPoint m.params m.θ) (det_characteristicMatrix_A0_quartic m.params heq.1)
-      hn))
+      (Or.inr (Or.inr (Or.inr (Or.inl hn))))))
 
 /-! ### Soundness of the translation -/
 

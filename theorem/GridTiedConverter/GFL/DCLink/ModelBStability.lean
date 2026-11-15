@@ -49,8 +49,8 @@ local-stability statement requested as the "4×4 Routh–Hurwitz of model B" ite
 states no stability condition for model B).
 
 Results.
-`ModelB.mem_den_locallyExponentiallyStable` (proved by the private
-`modelB_locallyExponentiallyStable`) and `ModelB.mem_den_unstable_of_det_neg`: at an equilibrium,
+`ModelB.mem_den_locallyExponentiallyStable` and `ModelB.mem_den_unstable_of_det_neg`: at an
+equilibrium,
 the 4×4 Routh conditions on the Jacobian (`tr < 0`, `m₃ < 0`, `det > 0`,
 `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0`, `a1² + a3² a0 < a3 a2 a1` for the characteristic
 polynomial `s⁴ + a3 s³ + a2 s² + a1 s + a0`) give local exponential stability; `det J < 0` gives
@@ -451,29 +451,6 @@ namespace ModelBParams
 
 variable (p : ModelBParams)
 
-/-- **Model B, local exponential stability.** At an equilibrium of model B (`V_dc* > 0`), if the
-Jacobian `J = jacobian x` satisfies the 4×4 Routh conditions (`tr J < 0`, `m₃(J) < 0`,
-`det J > 0`, `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0` and `a1² + a3² a0 < a3 a2 a1` for
-`det(sI − J) = s⁴ + a3 s³ + a2 s² + a1 s + a0`), the equilibrium is locally exponentially
-stable. Implementation evidence for `ModelB.mem_den_locallyExponentiallyStable`. -/
-@[tmio TM, powerlib_domain] private theorem modelB_locallyExponentiallyStable (hV : 0 < p.VdcRef) {x : State 4}
-    (hx : p.field x = 0) (htr : (p.jacobian x).trace < 0)
-    (hm3 : Criteria.principalMinorSum3Fin4 (p.jacobian x) < 0)
-    (hdet : 0 < (p.jacobian x).det)
-    (hg : Criteria.principalMinorSum3Fin4 (p.jacobian x) ^ 2 +
-        (p.jacobian x).trace ^ 2 * (p.jacobian x).det <
-      (p.jacobian x).trace * Criteria.principalMinorSum2Fin4 (p.jacobian x) *
-        Criteria.principalMinorSum3Fin4 (p.jacobian x)) :
-    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [ModelB.mem_den_flow_iff]
-  obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
-  have hreg := Criteria.locallyExponentiallyStable_of_jacobian_fin_four (p.jacobian x)
-    (p.contDiff_regField hV) hreg0 hJ htr hm3 hdet hg
-  exact Dynamics.locallyExponentiallyStable_of_eqOn_ball (by positivity)
-    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
-      (mem_ball_iff_norm.mpr hy)) hreg
-
 /-! ## Model B away from the singular plane `V_dc = 0` -/
 
 /-- The states with nonzero DC-link voltage, where the field is smooth. -/
@@ -602,10 +579,30 @@ language is inconsistent. -/
   have h2 : (m.p.jacobian m.x).det < 0 := hd
   linarith [h1.2.2.1]
 
-@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hV : Meets m .positiveReference) (hr : Meets m .routh) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_locallyExponentiallyStable hV he hr.1 hr.2.1 hr.2.2.1 hr.2.2.2)))
+/-- **Model B, local exponential stability.** At an equilibrium of model B (`V_dc* > 0`), if the
+Jacobian `J = jacobian x*` satisfies the 4×4 Routh conditions (`tr J < 0`, `m₃(J) < 0`,
+`det J > 0`, `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0` and `a1² + a3² a0 < a3 a2 a1` for
+`det(sI − J) = s⁴ + a3 s³ + a2 s² + a1 s + a0`), the equilibrium is locally exponentially
+stable. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model)
+    (hV : 0 < m.p.VdcRef) (hx : m.p.field m.x = 0) (htr : (m.p.jacobian m.x).trace < 0)
+    (hm3 : Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x) < 0)
+    (hdet : 0 < (m.p.jacobian m.x).det)
+    (hg : Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x) ^ 2 +
+        (m.p.jacobian m.x).trace ^ 2 * (m.p.jacobian m.x).det <
+      (m.p.jacobian m.x).trace * Criteria.principalMinorSum2Fin4 (m.p.jacobian m.x) *
+        Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x)) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  obtain ⟨p, x⟩ := m
+  dsimp only at hV hx htr hm3 hdet hg
+  unfold TMIO.Statement
+  rw [ModelB.mem_den_flow_iff]
+  obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
+  have hreg := Criteria.locallyExponentiallyStable_of_jacobian_fin_four (p.jacobian x)
+    (p.contDiff_regField hV) hreg0 hJ htr hm3 hdet hg
+  exact Dynamics.locallyExponentiallyStable_of_eqOn_ball (by positivity)
+    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
+      (mem_ball_iff_norm.mpr hy)) hreg
 
 /-- **Model B, instability.** At an equilibrium of model B (`V_dc* > 0`) with `det J < 0` the
 Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
@@ -639,8 +636,9 @@ which it agrees with model B), and passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .equilibrium (by simp)) (hm .positiveReference (by simp))
-      (hm .routh (by simp))
+    have hr : Meets m .routh := hm .routh (by simp)
+    exact mem_den_locallyExponentiallyStable m (hm .positiveReference (by simp))
+      (hm .equilibrium (by simp)) hr.1 hr.2.1 hr.2.2.1 hr.2.2.2
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_unstable_of_det_neg m (hm .positiveReference (by simp))
       (hm .equilibrium (by simp)) (hm .detNeg (by simp))
@@ -649,23 +647,6 @@ which it agrees with model B), and passivity holds without requirement. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
-/-- **Model B, local exponential stability.** At an equilibrium of model B (`V_dc* > 0`), if the
-Jacobian `J = jacobian x*` satisfies the 4×4 Routh conditions (`tr J < 0`, `m₃(J) < 0`,
-`det J > 0`, `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0` and `a1² + a3² a0 < a3 a2 a1` for
-`det(sI − J) = s⁴ + a3 s³ + a2 s² + a1 s + a0`), the equilibrium is locally exponentially
-stable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model)
-    (hV : 0 < m.p.VdcRef) (hx : m.p.field m.x = 0) (htr : (m.p.jacobian m.x).trace < 0)
-    (hm3 : Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x) < 0)
-    (hdet : 0 < (m.p.jacobian m.x).det)
-    (hg : Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x) ^ 2 +
-        (m.p.jacobian m.x).trace ^ 2 * (m.p.jacobian m.x).det <
-      (m.p.jacobian m.x).trace * Criteria.principalMinorSum2Fin4 (m.p.jacobian m.x) *
-        Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x)) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact les_of_meets hx hV ⟨htr, hm3, hdet, hg⟩
 
 /-- Concrete non-vacuous instance: the no-load operating point. With `I₀ = 0`, `R_g = 0`,
 `i_q0 = 0`, `V_dc* > 0`, `V_g > 0` and positive gains `k_p, k_i, k_pv, k_iv` and `C_dc > 0`
@@ -727,7 +708,7 @@ exponentially stable. -/
     rw [hb]
     ring
   have hD : 0 < a * c * ((b - d) ^ 2 + (a + c) * (a * d + b * c)) := by positivity
-  refine (ModelB.mem_den_flow_iff.mp (p.modelB_locallyExponentiallyStable hV hx ?_ ?_ ?_ ?_))
+  refine ModelB.mem_den_flow_iff.mp (mem_den_locallyExponentiallyStable ⟨p, _⟩ hV hx ?_ ?_ ?_ ?_)
   · rw [← hJ, htr]; linarith
   · rw [← hJ, hm3]; nlinarith [mul_pos ha0 hd0, mul_pos hb0 hc0]
   · rw [← hJ, hdet]; positivity
@@ -757,9 +738,10 @@ model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criter
     (fun m hm => m.p.fderiv_field (by rw [m.p.equilibrium_Vdc (hΔ m hm).1]; exact (hΔ m hm).2.ne'))
     fun m hm _ hH => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .equilibrium (by simp [family, translate]))
+    have hr : Meets m .routh := hm .routh (by simp [family, translate])
+    exact mem_den_locallyExponentiallyStable m
       (hm .positiveReference (by simp [family, translate]))
-      (hm .routh (by simp [family, translate]))
+      (hm .equilibrium (by simp [family, translate])) hr.1 hr.2.1 hr.2.2.1 hr.2.2.2
   obtain ⟨hx, hV⟩ := hΔ m hm
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl)

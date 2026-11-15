@@ -289,7 +289,8 @@ regularized field, which is model B on the ball of radius `1/4`). -/
       hopfCenter.p.regField y = hopfCenter.p.field y := fun y hy =>
     (hopfCenter.p.field_eq_regField_of_mem_ball hV hx2
       (by rw [Metric.mem_ball, dist_eq_norm]; simpa [hopfCenter] using hy)).symm
-  have hreg := Dynamics.localAsymptoticStable_of_eqOn_ball (by norm_num) hball hlas
+  have hreg := Dynamics.localAsymptoticStable_congr_nhds
+    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num) hball) hlas
   refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (hopfCenter.p.contDiff_regField hV)
     ((contDiff_centerEnergy (-1)).differentiable one_ne_zero) (by norm_num : (0 : ℝ) < 1 / 4)
     (fun y hy => ?_) (fun ε hε => ?_) hreg

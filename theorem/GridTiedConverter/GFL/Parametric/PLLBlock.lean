@@ -20,9 +20,11 @@ Results.
   `θ̇ = −k_p v θ + k_i x − θ̇_g`, `ẋ = −v θ` rewritten in `ξ`.
 * `transfer_pllBlock`: its transfer function is `T_PLL(s) = −s² / L_PLL(s)`,
   `L_PLL(s) = s² + k_p v s + k_i v`.
-* `pll_closed_forms`: for the quasi-static PLL Jacobian `[[−k_p S, k_i], [−S, 0]]`,
-  `S = V cos θ > 0`: `det(sI − J) = s² + 2ζω_n s + ω_n²`, `ω_n = √(k_i S)`,
-  `ζ = (k_p/2)√(S/k_i)` (contrast-conclusions 差别一).
+* Quasi-static PLL closed forms (contrast-conclusions 差别一): the PLL Jacobian
+  `[[−k_p S, k_i], [−S, 0]]`, `S = V cos θ > 0`, is `PLL.linA S k_p k_i`, so
+  `det(sI − J) = s² + 2ζω_n s + ω_n²` with `ω_n = √(S k_i)`, `ζ = (k_p/2)√(S/k_i)`
+  (`PLL.det_characteristicMatrix_linA`, `PLL.loopPoly_eq_standard`, `PLL.zeta_eq`,
+  `theorem/GridTiedConverter/PLL/Linear.lean`).
 * `norm_T_jΩ`: `|T_PLL(jΩ)| = r² / √((1 − r²)² + 4ζ²r²)`, `r = Ω/ω_pll`,
   `ω_pll = √(k_i v)`, `ζ_pll = k_p v / (2ω_pll)`.
 * `hasDerivAt_normSq_LPLL`: `∂_{k_p} |L_PLL(2jω)|² = 8ω² k_p v²`, and `|T(2jω)|` is strictly
@@ -80,25 +82,6 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
     Fin.sum_univ_two]
   field_simp
   simp [LPLL]
-  ring
-
-/-- Quasi-static PLL closed forms: `ω_n = √(k_i S)`, `ζ = (k_p/2)√(S/k_i)`. -/
-@[tmio T, powerlib_foundation] theorem pll_closed_forms {kp ki S : ℝ} (hki : 0 < ki) (hS : 0 < S)
-    (s : ℂ) :
-    (Linear.characteristicMatrix !![-kp * S, ki; -S, 0] s).det =
-      s ^ 2 + ((2 * (kp / 2 * Real.sqrt (S / ki)) * Real.sqrt (ki * S) : ℝ) : ℂ) * s +
-        ((Real.sqrt (ki * S) ^ 2 : ℝ) : ℂ) := by
-  rw [Criteria.det_characteristicMatrix_fin_two, Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
-  have h1 : Real.sqrt (ki * S) ^ 2 = ki * S := Real.sq_sqrt (by positivity)
-  have h2 : 2 * (kp / 2 * Real.sqrt (S / ki)) * Real.sqrt (ki * S) = kp * S := by
-    have hm : Real.sqrt (S / ki) * Real.sqrt (ki * S) = S := by
-      rw [← Real.sqrt_mul (by positivity)]
-      have : S / ki * (ki * S) = S ^ 2 := by field_simp
-      rw [this, Real.sqrt_sq hS.le]
-    rw [show 2 * (kp / 2 * Real.sqrt (S / ki)) * Real.sqrt (ki * S) =
-      kp * (Real.sqrt (S / ki) * Real.sqrt (ki * S)) by ring, hm]
-  rw [h1, h2]
-  push_cast
   ring
 
 /-- `|T_PLL(jΩ)| = r²/√((1 − r²)² + 4ζ²r²)` with `r = Ω/ω_pll`. -/

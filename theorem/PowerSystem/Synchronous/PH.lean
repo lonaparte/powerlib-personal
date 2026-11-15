@@ -57,8 +57,8 @@ Source: work-sync `theory/T-ph.md` §1.7 (1.12); `theory/T-sync-machine.md` §1.
 Results.
 * Classical machine: `H` is not bounded below for `P_m ≠ 0`
   (`classicalSM_hamiltonian_not_bddBelow`), while the dissipation inequality
-  `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω` holds on every solution segment (private
-  `classicalSM_integral_dissipation`); energy balance `Ḣ = u ω − D ω²`
+  `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω` holds on every solution segment (the generic
+  `PH.NonlinearModel.integral_dissipation` at `classicalSM p`); energy balance `Ḣ = u ω − D ω²`
   (`classicalSM_power_balance`); equilibria `b sin δ = P_m`, `p = 0`
   (`classicalSM_isEquilibrium_iff`).
 * Classical machine, local structure of `H`: `H − H(x*)` has a strict local minimum at a stable
@@ -101,7 +101,7 @@ Family and connection conclusions.
   the sentence-by-sentence equivalence fails (`ClassicalSM.not_den_eq_preimage`).
 * Flow conclusions, all read off the swing family through the equivalence by the hub transfers
   of `theorem/Family/Reading.lean`: chain soundness (`ClassicalSM.chain_le_semantics`, from
-  `Swing.chain_le_semantics` by `Spectral.sound_of_hub`; passivity from
+  `Swing.chain_le_semantics` by `Spectral.realize_subset_den_of_hub`; passivity from
   `ClassicalSM.mem_den_passive_of_Pm_zero`); members `ClassicalSM.mem_den_lyapunovStable_iff`,
   `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable` (from
   `Swing.mem_den_*`). The local exponential and local asymptotic translations are exact
@@ -136,16 +136,16 @@ Family and connection conclusions.
   linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`).
 * The rate equations, energies, damping powers, supplies, power balances, equilibrium
   characterization, unboundedness of `H`, the linearization and the swing reading are static
-  evidence; the trajectory-level dissipation inequality of the classical machine, the energy
-  derivative of the seven-state machine and the smoothness and Jacobian at the origin of its
-  zero-input field are private implementation evidence.
+  evidence; the energy derivative of the seven-state machine and the smoothness and Jacobian at
+  the origin of its zero-input field are private implementation evidence.
 
 Correction.
 * T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`: the classical-machine `H` contains
   `−P_m δ` and is **not bounded below** whenever `P_m ≠ 0`
   (`classicalSM_hamiltonian_not_bddBelow`), so (1.12) violates assumption 3 and the global
   passivity inequality (1.4) with storage `H − H_min` is unavailable; the dissipation
-  inequality (`classicalSM_integral_dissipation`) still holds.
+  inequality (`PH.NonlinearModel.integral_dissipation`, which assumes no lower bound) still
+  holds.
 -/
 
 noncomputable section
@@ -241,18 +241,6 @@ so T-ph §1.1 structural assumption 3 fails for (1.12). -/
   simp only [classicalSM, classicalSM_H] at hx
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hx
   nlinarith [p.b_pos]
-
-/-- Dissipation inequality without any lower bound on `H`, `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω`, on
-every solution segment.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem classicalSM_integral_dissipation (p : ClassicalSMParams)
-    {u : ℝ → (Fin 1 → ℝ)} {x : ℝ → State 2} {t₀ t₁ : ℝ}
-    (hx : (classicalSM p).system.IsTrajectoryOn u x t₀ t₁) (hle : t₀ ≤ t₁)
-    (hsupply : IntervalIntegrable (fun τ => (classicalSM p).supply (x τ) (u τ))
-      MeasureTheory.volume t₀ t₁) :
-    (classicalSM p).H (x t₁) - (classicalSM p).H (x t₀) ≤
-      ∫ τ in t₀..t₁, (classicalSM p).supply (x τ) (u τ) :=
-  (classicalSM p).integral_dissipation hx hle hsupply
 
 /-- Equilibria of the unforced classical machine: `b sin δ = P_m` and `p = 0`. -/
 @[tmio M, powerlib_domain] theorem classicalSM_isEquilibrium_iff (p : ClassicalSMParams) (x : State 2) :
@@ -663,7 +651,7 @@ machine is passive. -/
   nlinarith
 
 /-- Every translation of the classical-machine family is sound: the flow translations are the
-swing translations read through `toSwing` (`Spectral.sound_of_hub` from
+swing translations read through `toSwing` (`Spectral.realize_subset_den_of_hub` from
 `Swing.chain_le_semantics`, with `realize_translate_flow_eq_preimage` and
 `mem_den_flow_iff_swing`); passivity from `P_m = 0`. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
@@ -673,8 +661,9 @@ swing translations read through `toSwing` (`Spectral.sound_of_hub` from
   unfold powerlib.TMIO.Statement at hs hr ⊢
   refine Family.chain_le_semantics_iff.mpr fun s => ?_
   rcases s with P | _ | E
-  · exact Spectral.sound_of_hub Model.toSwing (fun m hm => (Set.ext_iff.mp (hr P) m).mp hm)
-      (fun m _ => (mem_den_flow_iff_swing m P).mpr) (Family.chain_le_semantics_iff.mp hs (.flow P))
+  · exact Spectral.realize_subset_den_of_hub Model.toSwing
+      (fun m hm => (Set.ext_iff.mp (hr P) m).mp hm) (fun m _ => (mem_den_flow_iff_swing m P).mpr)
+      (Family.chain_le_semantics_iff.mp hs (.flow P))
   · intro m hm
     rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)

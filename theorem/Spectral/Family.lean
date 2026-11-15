@@ -97,11 +97,6 @@ def linearFamily (plant : X → Plant n p) (S U : X → Prop) : Family X Require
 
 variable {plant : X → Plant n p} {S U : X → Prop}
 
-/-- A Hurwitz state matrix has no characteristic root in the closed right half plane. -/
-@[tmio T, powerlib_foundation] theorem not_root_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
-    (hA : IsHurwitz A) {s : ℂ} (hs : (characteristicMatrix A s).det = 0) : s.re < 0 :=
-  (spectrallyStable_iff_isHurwitz A).mpr hA s hs
-
 /-- Soundness of every translation of a linear spectral family: the stability condition gives a
 Hurwitz state matrix, the instability condition a characteristic root in the open right half
 plane. -/
@@ -114,7 +109,7 @@ plane. -/
   have hnone : realize (Meets S U) Set.univ = ∅ :=
     realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable fun x h1 h2 => by
       obtain ⟨s, hs, hre⟩ := hU x h2
-      exact absurd (not_root_of_isHurwitz (hS x h1) hs) (not_lt.mpr hre.le)
+      exact absurd ((spectrallyStable_iff_isHurwitz _).mpr (hS x h1) s hs) (not_lt.mpr hre.le)
   refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
   rw [(connection_proof% mem_realize)] at hx
   change ∀ q ∈ linearTranslate s, Meets S U x q at hx

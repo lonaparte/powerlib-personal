@@ -58,7 +58,8 @@ Results.
   lives for a time `≍ s³`, during which the drift carries it beyond the estimate.
 
 The generic tools these constructions use are in the flat `Dynamics` modules: ball locality
-(`Dynamics.localAsymptoticStable_of_eqOn_ball`, `theorem/Dynamics/Locality.lean`), the local strict
+(`Dynamics.localAsymptoticStable_congr_nhds` with `Dynamics.eventuallyEq_of_eqOn_ball`,
+`theorem/Dynamics/Locality.lean`), the local strict
 Lyapunov theorem (`Dynamics.localAsymptoticStable_of_lie_neg`, `theorem/Dynamics/Lyapunov.lean`),
 mean-value and interval bounds (`theorem/Dynamics/Calculus.lean`) and the norm bounds for the
 projection removing one coordinate (`Dynamics.norm_sub_smul_single_le`,

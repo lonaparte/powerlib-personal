@@ -43,13 +43,14 @@ Results.
   (`‖e^z K_ν(z) − G(z)‖ = O(x^{−3/2})`, `x = Re z`, explicit constants, every `x > 0`),
   `besselK_laplace_le` (relative form `≤ (2√(2K)/x)‖G(z)‖` in the sector `‖z‖ ≤ K x`),
   `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from `besselI_laplace_le`),
-  `tendsto_bessel_div_gaussHalf` (all four normalized functions `→ 1` as `Re z → ∞` in a sector),
-  i.e. `K_ν(z) ∼ √(π/(2z)) e^{−z}` and `I_ν(z) ∼ e^z/√(2πz)`.
+  `tendsto_bessel_div_gaussHalf` (all four normalized functions `→ 1` as `Re z → ∞` in a sector,
+  the quotients `besselI0Norm`, … below), i.e. `K_ν(z) ∼ √(π/(2z)) e^{−z}` and
+  `I_ν(z) ∼ e^z/√(2πz)`.
 * The scale: `norm_integral_gaussian_half` (`BesselI`: `‖G(z)‖ = √(π/(‖z‖/2))/2`),
   `gaussHalf_ne_zero`, `gaussHalf_sq` (`G(z)² = π/(2z)`), `gaussHalf_ofReal_mul`
   (`G(rz) = G(z)/√r`, `r > 0`); normalized functions
   `besselI0Norm`, `besselI1Norm`, `besselK0Norm`, `besselK1Norm` with `besselI0_eq_norm` …
-  (`I_ν(z) = e^z G(z) Î_ν(z)/π`, `K_ν(z) = e^{−z} G(z) K̂_ν(z)`) and `tendsto_besselNorm`.
+  (`I_ν(z) = e^z G(z) Î_ν(z)/π`, `K_ν(z) = e^{−z} G(z) K̂_ν(z)`).
 * Derivatives: `hasDerivAt_besselI0` (`I₀' = I₁`), `hasDerivAt_besselI1` (`I₁' = I₀ − I₁/z`,
   via `mul_integral_cexp_cos_mul_sin_sq`), `hasDerivAt_besselK0` (**`K₀' = −K₁`**),
   `hasDerivAt_besselK1` (`K₁' = −K₀ − K₁/z`, via `mul_integral_cexp_neg_mul_cosh_mul_sinh_sq`:
@@ -536,8 +537,10 @@ theorem tendsto_div_of_rel_bound {α : Type*} {l : Filter α} {f X G : α → �
   gcongr
   exact le_abs_self C
 
-/-- In a sector, `Re f → ∞`, the four normalized Bessel functions tend to `1`:
-`π e^{−f} I₀(f)/G(f)`, `π e^{−f} I₁(f)/G(f)`, `e^f K₀(f)/G(f)`, `e^f K₁(f)/G(f)`. -/
+/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`, the four
+normalized Bessel functions tend to `1`: `π e^{−f} I₀(f)/G(f)`, `π e^{−f} I₁(f)/G(f)`,
+`e^f K₀(f)/G(f)`, `e^f K₁(f)/G(f)` (by definition `besselI0Norm f`, `besselI1Norm f`,
+`besselK0Norm f`, `besselK1Norm f`), i.e. `I_ν(z) ∼ e^z/√(2πz)`, `K_ν(z) ∼ √(π/(2z)) e^{−z}`. -/
 @[tmio T, powerlib_foundation]
 theorem tendsto_bessel_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (hK : 0 < K)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
@@ -595,15 +598,6 @@ def besselK1Norm (z : ℂ) : ℂ := Complex.exp z * besselK1 z / gaussHalf z
     besselK1 z = gaussHalf z * besselK1Norm z / Complex.exp z := by
   unfold besselK1Norm
   field_simp [Complex.exp_ne_zero]
-
-/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`, the four
-normalized functions tend to `1`, i.e. `I_ν(z) ∼ e^z/√(2πz)`, `K_ν(z) ∼ √(π/(2z)) e^{−z}`. -/
-@[tmio T, powerlib_foundation] theorem tendsto_besselNorm {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ}
-    (hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
-    (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
-    Tendsto (fun i => besselI0Norm (f i)) l (𝓝 1) ∧ Tendsto (fun i => besselI1Norm (f i)) l (𝓝 1) ∧
-    Tendsto (fun i => besselK0Norm (f i)) l (𝓝 1) ∧ Tendsto (fun i => besselK1Norm (f i)) l (𝓝 1) :=
-  tendsto_bessel_div_gaussHalf hK hre hsec
 
 /-! ## Small argument -/
 

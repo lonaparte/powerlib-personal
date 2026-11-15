@@ -34,8 +34,9 @@ Results.
   `μ` (any realization; `G` is continuous there).
 * `transfer_not_isBoundedUnder_of_mem_spectrum` — for a minimal realization, every `μ ∈ σ(A)` is
   a pole. Proof: if all entries of `C (sI − A)⁻¹ B` were bounded near `μ`, so would be
-  `C q(A) (sI − A)⁻¹ B` for every polynomial `q` (`A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`). Writing
-  the minimal polynomial as `π = (X − μ) φ`, `Φ = Aⁱ φ(A) Aʲ` satisfies `Φ A = μ Φ`, hence
+  `C q(A) (sI − A)⁻¹ B` for every polynomial `q` (`A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`,
+  `Linear.mul_resolvent`). Writing the minimal polynomial as `π = (X − μ) φ`,
+  `Φ = Aⁱ φ(A) Aʲ` satisfies `Φ A = μ Φ`, hence
   `C Φ (sI − A)⁻¹ B = C Φ B / (s − μ)`, which is bounded only if `C Aⁱ φ(A) Aʲ B = 0`.
   Observability and controllability (transferred from the real predicates to complex vectors)
   then give `φ(A) = 0`, contradicting `deg φ < deg π`.
@@ -48,9 +49,9 @@ Results.
 * `hiddenMode_eigenvalue_not_pole` — minimality cannot be dropped (`Linear.hiddenMode`, `A = 1`,
   `B = C = D = 0`: eigenvalue `1`, `G ≡ 0`).
 * Supporting facts: `analyticAt_det`, `analyticAt_adjugate`, `analyticAt_characteristicMatrix`,
-  `eventually_det_characteristicMatrix_ne_zero`, `mul_resolvent`,
-  `mul_resolvent_of_mul_eq`, `eq_zero_of_isBigO_inv_sub`, `complexify_pow`,
-  `complexify_mulVec_re/im`, `eq_zero_of_isObservable`, `eq_zero_of_isControllable`.
+  `eventually_det_characteristicMatrix_ne_zero`, `mul_resolvent_of_mul_eq`,
+  `eq_zero_of_isBigO_inv_sub`, `complexify_pow`, `complexify_mulVec_re/im`,
+  `eq_zero_of_isObservable`, `eq_zero_of_isControllable`.
 -/
 
 noncomputable section
@@ -77,17 +78,6 @@ variable {n p : ℕ}
   rw [det_characteristicMatrix]
   intro h0
   exact hs ⟨h0, hsμ⟩
-
-/-- `A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`. -/
-@[tmio T, powerlib_foundation] theorem mul_resolvent {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}
-    (h : (characteristicMatrix A s).det ≠ 0) :
-    complexify A * (characteristicMatrix A s)⁻¹ = s • (characteristicMatrix A s)⁻¹ - 1 := by
-  have hinv := Matrix.mul_nonsing_inv (characteristicMatrix A s) (isUnit_iff_ne_zero.mpr h)
-  generalize (characteristicMatrix A s)⁻¹ = R at hinv ⊢
-  rw [show characteristicMatrix A s = s • 1 - complexify A from rfl, Matrix.sub_mul,
-    Matrix.smul_mul, Matrix.one_mul] at hinv
-  rw [← hinv]
-  abel
 
 /-- If `Φ A = μ Φ`, then `Φ (sI − A)⁻¹ = (s − μ)⁻¹ Φ` for `s ≠ μ` off the spectrum. -/
 @[tmio T, powerlib_foundation] theorem mul_resolvent_of_mul_eq {A : Matrix (Fin n) (Fin n) ℝ}
@@ -236,7 +226,7 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded on every punctured neighbourhoo
           = Cc * M * (Ac * (characteristicMatrix m.A s)⁻¹) * Bc := by
             simp only [Matrix.mul_assoc]
         _ = Cc * M * (s • (characteristicMatrix m.A s)⁻¹ - 1) * Bc := by
-            rw [hAc, mul_resolvent hdet]
+            rw [hAc, Linear.mul_resolvent hdet]
         _ = _ := by
             rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one]
     simp only [e, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul]

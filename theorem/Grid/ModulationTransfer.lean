@@ -30,7 +30,7 @@ Results.
 * `vth_eq`: `V_th(δ) = a_V e^{jδ} + b_V = (X₃ E e^{jδ} + X₂ V_∞)/(X₂ + X₃)` with
   `β = X₃/(X₂+X₃)`, `a_V = βE`, `b_V = (1-β)V_∞`; `X_eq = X₂X₃/(X₂+X₃)`, `X_g = X₁ + X_eq`, the
   parallel and series combinations of the inductive branches `Passive.SeriesRLC` `⟨0, X, 0⟩`
-  (`Xeq_eq_parallel`, `Xg_eq_series`; `Passive.SeriesRLC.parallel_inductors`,
+  (`Passive.SeriesRLC.parallel_inductors` at `s = j`, `Xg_eq_series`;
   `Passive.SeriesRLC.series`).
 * `kcl_iff` / `terminal_voltages`: KCL ⇔ `V_c = V_th − jX_eq Σ I_k`, hence
   `V = V_th 𝟙 − j[diag(X_{1i}) + X_eq 𝟙𝟙ᵀ] I`; one branch: `V_GFL = V_th − jX_g I`.
@@ -82,21 +82,13 @@ def bV (X2 X3 Vinf : ℝ) : ℝ := (1 - beta X2 X3) * Vinf
 /-- Open-circuit Thévenin voltage `V_th(δ) = a_V e^{jδ} + b_V`. -/
 def vth (X2 X3 E Vinf δ : ℝ) : ℂ := (aV X2 X3 E : ℂ) * exp (δ * I) + (bV X2 X3 Vinf : ℂ)
 
-/-- Parallel reactance `X_eq = X₂X₃/(X₂ + X₃)`. -/
+/-- Parallel reactance `X_eq = X₂X₃/(X₂ + X₃)`: the series RLC branches `⟨0, X₂, 0⟩` and
+`⟨0, X₃, 0⟩` (per-unit reactances, evaluated at `s = j`) in parallel are `⟨0, X_eq, 0⟩`
+(`Passive.SeriesRLC.parallel_inductors X₂ X₃ I`, by unfolding). -/
 def Xeq (X2 X3 : ℝ) : ℝ := X2 * X3 / (X2 + X3)
 
 /-- Single-branch Thévenin reactance `X_g = X₁ + X_eq`. -/
 def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
-
-/-- `X_eq` is the inductive branch `jX₂ ∥ jX₃`: the series RLC branches `⟨0, X₂, 0⟩` and
-`⟨0, X₃, 0⟩` (per-unit reactances, evaluated at `s = j`) in parallel are `⟨0, X_eq, 0⟩`
-(`Passive.SeriesRLC.parallel_inductors`). -/
-@[tmio M, powerlib_domain] theorem Xeq_eq_parallel (X2 X3 : ℝ) :
-    (⟨0, X2, 0⟩ : Passive.SeriesRLC).impedance I * (⟨0, X3, 0⟩ : Passive.SeriesRLC).impedance I /
-        ((⟨0, X2, 0⟩ : Passive.SeriesRLC).impedance I +
-          (⟨0, X3, 0⟩ : Passive.SeriesRLC).impedance I) =
-      (⟨0, Xeq X2 X3, 0⟩ : Passive.SeriesRLC).impedance I :=
-  Passive.SeriesRLC.parallel_inductors X2 X3 I
 
 /-- `X_g` is the branch `jX₁` in series with `jX₂ ∥ jX₃` (`Passive.SeriesRLC.series`). -/
 @[tmio M, powerlib_domain] theorem Xg_eq_series (X1 X2 X3 : ℝ) :

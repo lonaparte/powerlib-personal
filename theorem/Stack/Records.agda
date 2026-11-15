@@ -15,7 +15,7 @@ module theorem.Stack.Records where
 -- producer (`refutes`). Each implementation of the library with records has its own scaffold,
 -- registering its implementing modules in its header. Lean (`theorem/Stack/Basic.lean`): `Infer`,
 -- `CertifiedRecords`, `Truth`, `Predicted` are `Stack.mem_infer`, `Stack.mem_certified`,
--- `Stack.mem_truth`, `Stack.mem_predicted`; `galois` is `Stack.subset_certified_iff`,
+-- `Stack.mem_truth`, `Stack.mem_predicted`; `galois` is `TMIO.Seed.gc_whole` (of `Stack.seed`),
 -- `infer-of-organized` is `Stack.mem_infer_of_organized`, `truth-of-infer` is
 -- `Stack.infer_subset_truth`, `refutes` is `Stack.refutes`. Nothing here is exported.
 

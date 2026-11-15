@@ -48,45 +48,6 @@ namespace powerlib.PLL
 open Matrix
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
-/-! ## A Jacobian helper on `ℝ²` -/
-
-/-- If `F₀`, `F₁ : ℝ² → ℝ` have derivatives `v ↦ a v₀ + b v₁` and `v ↦ c v₀ + d v₁` at `x`,
-then `y ↦ (F₀ y, F₁ y)` has Jacobian matrix `[[a, b], [c, d]]` at `x`. -/
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_piPLLState_comp {F₀ F₁ : ℝ² → ℝ} {x : ℝ²}
-    {L₀ L₁ : ℝ² →L[ℝ] ℝ} {a b c d : ℝ} (h₀ : HasFDerivAt F₀ L₀ x)
-    (h₁ : HasFDerivAt F₁ L₁ x) (hL₀ : ∀ v : ℝ², L₀ v = a * v 0 + b * v 1)
-    (hL₁ : ∀ v : ℝ², L₁ v = c * v 0 + d * v 1) :
-    HasFDerivAt (fun y => PhasePlane.mk (F₀ y) (F₁ y))
-      (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![a, b; c, d]) x := by
-  have hG : HasFDerivAt (fun y : ℝ² => ![F₀ y, F₁ y]) (ContinuousLinearMap.pi ![L₀, L₁]) x := by
-    rw [hasFDerivAt_pi]
-    intro i
-    fin_cases i
-    · simpa using h₀
-    · simpa using h₁
-  have hE :=
-    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp x hG
-  have hfun : (fun y => PhasePlane.mk (F₀ y) (F₁ y)) =
-      (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm ∘
-        (fun y : ℝ² => ![F₀ y, F₁ y]) := rfl
-  rw [hfun]
-  refine hE.congr_fderiv ?_
-  ext v i
-  rw [Matrix.ofLp_toEuclideanCLM]
-  fin_cases i
-  · simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, hL₀]
-  · simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, hL₁]
-
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_coord_zero (x : ℝ²) :
-    HasFDerivAt (fun y : ℝ² => y 0)
-      (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) x :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).hasFDerivAt
-
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_coord_one (x : ℝ²) :
-    HasFDerivAt (fun y : ℝ² => y 1)
-      (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ) x :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).hasFDerivAt
-
 /-! ## Velocity coordinates and the Liénard field -/
 
 /-- `(θ, η) ↦ (θ, w)`, `w = K_p h(θ) + K_i η − δω` (`= θ̇`). -/
@@ -136,20 +97,25 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
     {x : ℝ²} (hh : HasDerivAt h g (x 0)) :
     HasFDerivAt (piPLLVelocityCoord h Kp Ki δω)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; Kp * g, Ki]) x := by
-  have hc := hh.comp_hasFDerivAt x (hasFDerivAt_coord_zero x)
-  have h1 := ((hc.const_mul Kp).add ((hasFDerivAt_coord_one x).const_mul Ki)).sub_const δω
-  exact hasFDerivAt_piPLLState_comp (hasFDerivAt_coord_zero x) h1 (fun v => by simp)
-    (fun v => by simp; ring)
+  have hc := hh.comp_hasFDerivAt x (Dynamics.hasFDerivAt_coord 0 x)
+  have h1 := ((hc.const_mul Kp).add ((Dynamics.hasFDerivAt_coord 1 x).const_mul Ki)).sub_const δω
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 0, _]
+    (fun i => by fin_cases i; exacts [Dynamics.hasFDerivAt_coord 0 x, h1]) fun i v => ?_
+  fin_cases i <;> simp [Fin.sum_univ_two]
+  ring
 
 /-- Derivative of the inverse velocity coordinates: `[[1, 0], [−K_p h'(θ)/K_i, 1/K_i]]`. -/
 @[tmio M, powerlib_domain] theorem hasFDerivAt_piPLLVelocityCoordInv {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
     {y : ℝ²} (hh : HasDerivAt h g (y 0)) :
     HasFDerivAt (piPLLVelocityCoordInv h Kp Ki δω)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; -(Kp * g) / Ki, 1 / Ki]) y := by
-  have hc := hh.comp_hasFDerivAt y (hasFDerivAt_coord_zero y)
-  have h1 := (((hasFDerivAt_coord_one y).sub (hc.const_mul Kp)).add_const δω).const_mul Ki⁻¹
-  exact hasFDerivAt_piPLLState_comp (hasFDerivAt_coord_zero y) h1 (fun v => by simp)
-    (fun v => by simp; ring)
+  have hc := hh.comp_hasFDerivAt y (Dynamics.hasFDerivAt_coord 0 y)
+  have h1 :=
+    (((Dynamics.hasFDerivAt_coord 1 y).sub (hc.const_mul Kp)).add_const δω).const_mul Ki⁻¹
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 0, _]
+    (fun i => by fin_cases i; exacts [Dynamics.hasFDerivAt_coord 0 y, h1]) fun i v => ?_
+  fin_cases i <;> simp [Fin.sum_univ_two]
+  ring
 
 /-- Conjugacy identity: `DΦ(x) f(x) = G(Φ(x))`. -/
 @[tmio M, powerlib_domain] theorem piPLLVelocityCoord_pushforward {h h' : ℝ → ℝ} {Kp Ki δω : ℝ}
@@ -216,11 +182,13 @@ this is a conjugacy of the two flows. -/
     HasFDerivAt (piPLLLienardField h h' Kp Ki)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         !![0, 1; Ki * h' (y 0) + Kp * h2 * y 1, Kp * h' (y 0)]) y := by
-  have hc := hh.comp_hasFDerivAt y (hasFDerivAt_coord_zero y)
-  have hc' := hh'.comp_hasFDerivAt y (hasFDerivAt_coord_zero y)
-  have h1 := (hc.const_mul Ki).add ((hc'.const_mul Kp).mul (hasFDerivAt_coord_one y))
-  exact hasFDerivAt_piPLLState_comp (hasFDerivAt_coord_one y) h1 (fun v => by simp)
-    (fun v => by simp; ring)
+  have hc := hh.comp_hasFDerivAt y (Dynamics.hasFDerivAt_coord 0 y)
+  have hc' := hh'.comp_hasFDerivAt y (Dynamics.hasFDerivAt_coord 0 y)
+  have h1 := (hc.const_mul Ki).add ((hc'.const_mul Kp).mul (Dynamics.hasFDerivAt_coord 1 y))
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 1, _]
+    (fun i => by fin_cases i; exacts [Dynamics.hasFDerivAt_coord 1 y, h1]) fun i v => ?_
+  fin_cases i <;> simp [Fin.sum_univ_two]
+  ring
 
 /-- At a double zero (`h(θ*) = h'(θ*) = 0`) the Liénard Jacobian at `(θ*, 0)` is the Jordan block
 `[[0, 1], [0, 0]]`, and `(θ*, 0)` is an equilibrium. -/

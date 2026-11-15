@@ -20,10 +20,9 @@ Results.
 * `lyapunov_form_eigenpair` (the Lyapunov form at an eigenvector): for symmetric `P`,
   `aᵀ P M a + bᵀ P M b = Re μ · (aᵀ P a + bᵀ P b)`.
 * `re_neg_of_lyapunov`: if `P = Pᵀ` is positive definite and `wᵀ P (M w) < 0` for every
-  `w ≠ 0`, every complex eigenvalue of `M` has negative real part; `re_nonpos_of_lyapunov`: with
-  `wᵀ P (M w) ≤ 0`, nonpositive real part.
-* `isHurwitz_of_lyapunov`: the strict criterion stated for `LinearSystems.IsHurwitz` on
-  `Fin N`.
+  `w ≠ 0`, every complex eigenvalue of `M` has negative real part (on `Fin N` this is
+  `LinearSystems.IsHurwitz M`); `re_nonpos_of_lyapunov`: with `wᵀ P (M w) ≤ 0`, nonpositive
+  real part.
 * `dotProduct_mulVec_comm_of_symm`: `uᵀ P w = wᵀ P u` for symmetric `P`.
 
 Used by the Lyapunov certificates of `theorem/Linear/Certificate.lean`, the spectrum of linear
@@ -144,13 +143,5 @@ complex eigenvalue of `M` has nonpositive real part. -/
   linarith [mul_pos hμ hS]
 
 end Eigen
-
-/-- Lyapunov-inequality criterion for `LinearSystems.IsHurwitz`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_of_lyapunov {N : ℕ} {M P : Matrix (Fin N) (Fin N) ℝ}
-    (hPsymm : Pᵀ = P) (hPpos : ∀ w : Fin N → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
-    (hdiss : ∀ w : Fin N → ℝ, w ≠ 0 → w ⬝ᵥ (P *ᵥ (M *ᵥ w)) < 0) :
-    LinearSystems.IsHurwitz M := by
-  intro μ v hv heig
-  simpa using re_neg_of_lyapunov hPsymm hPpos hdiss hv heig
 
 end powerlib.Criteria

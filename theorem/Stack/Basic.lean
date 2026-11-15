@@ -41,7 +41,7 @@ The generated forward maps are the denotation, certification against the realize
 certification of records. Theory-driven work runs forward along the whole chain (`certified`);
 data-driven work is the whole backward traversal (`infer`, the seed's `uTO`). The whole-chain
 Galois connection reads: records support sentences exactly when they are certified for them
-(`subset_certified_iff`).
+(`seed.gc_whole Φ (toDual D)`: `D ⊆ certified Φ ↔ Φ ⊆ infer D`).
 
 The seed encoding `Family.seed` places the model instances in the third position and the
 requirement sets in the second. In the reading above both belong to the model layer: a `Family`
@@ -65,8 +65,9 @@ in its source header).
 Results.
 * The stack seed and its organized variant (`seed`, `organized`), data-driven inference
   (`infer`, `mem_infer`) and theory-driven certification (`certified`, `certified_eq`,
-  `mem_certified`), the whole-chain Galois connection (`subset_certified_iff`), its monotonicity
-  in both directions (`infer_antitone`, `certified_antitone`).
+  `mem_certified`), the whole-chain Galois connection (`Seed.gc_whole` of `seed`, read as
+  `D ⊆ certified Φ ↔ Φ ⊆ infer D`), its monotonicity in both directions (`infer_antitone`,
+  `certified_antitone`).
 * Truth at the implementation layer (`truth`, `mem_truth`); the seed's composite through the
   realized models is the implementation layer's (`seed_uTI`); transfer of data-driven conclusions
   to the producing implementations under realization soundness (`infer_true`,
@@ -184,17 +185,9 @@ certify against the realized models, certify the records. -/
     congrFun (generate_comp _ _)]
   have h : (generate (cover (table S.model.translate))).toFun Φ =
       (table S.model.translate).image Φ :=
-    generate_cover_apply _ Φ
+    congrFun (generate_cover _) Φ
   simp only [Function.comp_apply, h]
   rfl
-
-/-- The whole-chain Galois connection of the stack (`Seed.gc_whole`): a set of records supports
-a set of sentences exactly when every record is certified for them. -/
-@[tmio T, powerlib_foundation] theorem subset_certified_iff (D : Set V) (Φ : Set Sentence) :
-    connection% (D ⊆ S.certified Φ ↔ Φ ⊆ S.infer D) := by
-  unfold powerlib.TMIO.Statement
-  have h := S.seed.gc_whole Φ (toDual D)
-  exact h
 
 /-- More records support fewer sentences. -/
 @[tmio T, powerlib_foundation] theorem infer_antitone {D E : Set V} (h : D ⊆ E) :

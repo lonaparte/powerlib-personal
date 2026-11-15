@@ -26,7 +26,8 @@ certification by an observation (`TMIO.certify`, `theorem/TMIO/Relation.lean`).
 
 Results.
 * Transfer functions and Markov parameters: `det_characteristicMatrix`, `transfer_eq_adjugate`,
-  `markov`, `exists_det_characteristicMatrix_ne_zero`, `markov_eq_of_transfer_eventually_eq`,
+  `mul_resolvent` (`A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`), `markov`,
+  `exists_det_characteristicMatrix_ne_zero`, `markov_eq_of_transfer_eventually_eq`,
   `transfer_eventually_eq_of_markov_eq`, `transfer_eq_of_eventually_eq`,
   `transfer_eq_iff_markov_eq`.
 * Minimal plants: `obsv`, `ctrb`, `ctrb_eq`, `obsv_eq`, `similar_of_markov_eq`,
@@ -69,12 +70,13 @@ section Expansion
 
 variable (m : Plant n p)
 
-@[tmio T, powerlib_foundation] private lemma smul_resolvent {s : ℂ}
-    (h : (characteristicMatrix m.A s).det ≠ 0) :
-    s • (characteristicMatrix m.A s)⁻¹ = 1 + complexify m.A * (characteristicMatrix m.A s)⁻¹ := by
-  have hinv := Matrix.mul_nonsing_inv (characteristicMatrix m.A s) (isUnit_iff_ne_zero.mpr h)
-  generalize (characteristicMatrix m.A s)⁻¹ = R at hinv ⊢
-  rw [show characteristicMatrix m.A s = s • 1 - complexify m.A from rfl, Matrix.sub_mul,
+/-- `A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`. -/
+@[tmio T, powerlib_foundation] theorem mul_resolvent {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}
+    (h : (characteristicMatrix A s).det ≠ 0) :
+    complexify A * (characteristicMatrix A s)⁻¹ = s • (characteristicMatrix A s)⁻¹ - 1 := by
+  have hinv := Matrix.mul_nonsing_inv (characteristicMatrix A s) (isUnit_iff_ne_zero.mpr h)
+  generalize (characteristicMatrix A s)⁻¹ = R at hinv ⊢
+  rw [show characteristicMatrix A s = s • 1 - complexify A from rfl, Matrix.sub_mul,
     Matrix.smul_mul, Matrix.one_mul] at hinv
   rw [← hinv]
   abel
@@ -84,10 +86,10 @@ variable (m : Plant n p)
     (characteristicMatrix m.A s)⁻¹ =
       ∑ j ∈ Finset.range N, (s ^ (j + 1))⁻¹ • complexify m.A ^ j +
         (s ^ N)⁻¹ • (complexify m.A ^ N * (characteristicMatrix m.A s)⁻¹) := by
-  have hR := smul_resolvent m h
+  have hR := mul_resolvent h
   generalize (characteristicMatrix m.A s)⁻¹ = R at hR ⊢
   have hR' : R = s⁻¹ • (1 + complexify m.A * R) := by
-    rw [← hR, smul_smul, inv_mul_cancel₀ hs, one_smul]
+    rw [hR, add_sub_cancel, smul_smul, inv_mul_cancel₀ hs, one_smul]
   induction N with
   | zero => simp
   | succ N ih =>
@@ -133,10 +135,10 @@ open scoped Matrix.Norms.Operator in
     have hv0 : 0 < ‖v‖ := norm_pos_iff.mpr hv
     nlinarith
   refine ⟨hdet, ?_⟩
-  have hR := smul_resolvent m hdet
+  have hR := mul_resolvent hdet
   generalize (characteristicMatrix m.A (x : ℂ))⁻¹ = R at hR ⊢
   have h1 : x * ‖R‖ ≤ ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖ + ‖complexify m.A‖ * ‖R‖ := by
-    rw [← hxn, ← norm_smul, hR]
+    rw [← hxn, ← norm_smul, show (x : ℂ) • R = 1 + complexify m.A * R by rw [hR]; abel]
     exact (norm_add_le _ _).trans (by gcongr; exact Matrix.linfty_opNorm_mul _ _)
   rw [le_div_iff₀ hx0]
   nlinarith [norm_nonneg R, mul_nonneg (show (0 : ℝ) ≤ x - 2 * ‖complexify m.A‖ by linarith)

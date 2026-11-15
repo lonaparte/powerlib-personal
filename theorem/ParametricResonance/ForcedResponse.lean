@@ -105,7 +105,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
     ∀ t, HasDerivAt (forcedOrbit A b ω)
       (Linear.op A (forcedOrbit A b ω t) + forcing b ω t) t := by
   intro t
-  apply Dynamics.hasDerivAt_of_coords
+  apply Dynamics.hasDerivAt_iff_coords.mpr
   intro i
   set χ := forcedAmplitude A b ω with hχdef
   have he : HasDerivAt (fun s : ℂ => χ i * Complex.exp ((ω : ℂ) * s * I))

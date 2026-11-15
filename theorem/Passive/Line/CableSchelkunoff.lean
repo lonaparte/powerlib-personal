@@ -398,8 +398,8 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  exact ⟨tendsto_besselNorm hK (hrer ha) (sector_mul_ofReal ha hsec),
-    tendsto_besselNorm hK (hrer hb) (sector_mul_ofReal hb hsec),
+  exact ⟨tendsto_bessel_div_gaussHalf hK (hrer ha) (sector_mul_ofReal ha hsec),
+    tendsto_bessel_div_gaussHalf hK (hrer hb) (sector_mul_ofReal hb hsec),
     tendsto_cexp_neg_two_mul (hrer (by linarith))⟩
 
 /-- **High-frequency limit of the exact inner-surface impedance**: along any `m → ∞` in a sector

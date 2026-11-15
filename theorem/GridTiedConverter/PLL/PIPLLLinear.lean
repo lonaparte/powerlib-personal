@@ -133,7 +133,7 @@ imaginary eigenvalue `j √(−K_i g)`. -/
     {x : ℝ²} (hh : HasDerivAt h g (x 0)) {A : Matrix (Fin 2) (Fin 2) ℝ}
     (hA : fderiv ℝ (piPLLField h Kp Ki δω) x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :
     A = piPLLJacobian Kp Ki g :=
-  Dynamics.toEuclideanCLM_injective_fin_two (by
+  (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)).injective (by
     change Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki g)
     rw [← hA, fderiv_piPLLField hh])

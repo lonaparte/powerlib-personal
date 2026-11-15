@@ -40,15 +40,12 @@ open Complex
 /-- Open-loop frequency response `L(jω) = (α/(jω)) e^{−jωτ}`. -/
 def imcDelayLoop (α τ ω : ℝ) : ℂ := (α : ℂ) / (I * ω) * exp (-(I * ω * τ))
 
-@[tmio T, powerlib_foundation] theorem norm_exp_neg_I_mul (ω τ : ℝ) : ‖exp (-(I * ω * τ))‖ = 1 := by
-  rw [show -(I * ω * τ) = ((-(ω * τ) : ℝ) : ℂ) * I by push_cast; ring]
-  exact norm_exp_ofReal_mul_I _
-
 /-- `|L(jω)| = α/ω` for `α, ω > 0`. -/
 @[tmio M, powerlib_foundation] theorem imcDelayLoop_norm {α τ ω : ℝ} (hα : 0 < α) (hω : 0 < ω) :
     ‖imcDelayLoop α τ ω‖ = α / ω := by
-  rw [imcDelayLoop, norm_mul, norm_exp_neg_I_mul, mul_one, norm_div, norm_mul, norm_I, one_mul,
-    norm_real, norm_real, Real.norm_of_nonneg hα.le, Real.norm_of_nonneg hω.le]
+  rw [imcDelayLoop, norm_mul, show -(I * ω * τ) = ((-(ω * τ) : ℝ) : ℂ) * I by push_cast; ring,
+    norm_exp_ofReal_mul_I, mul_one, norm_div, norm_mul, norm_I, one_mul, norm_real, norm_real,
+    Real.norm_of_nonneg hα.le, Real.norm_of_nonneg hω.le]
 
 /-- The gain crossover of the delayed IMC loop is exactly `ω_c = α`. -/
 @[tmio M, powerlib_foundation] theorem imcDelayLoop_norm_eq_one_iff {α τ ω : ℝ} (hα : 0 < α)

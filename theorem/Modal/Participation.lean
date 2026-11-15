@@ -12,9 +12,8 @@ Scope.
   of `W` are left eigenvectors, and the biorthonormality `Wᵀ V = I` (`ψ_iᵀ v_j = δ_ij`) holds.
   The existence of such data is exactly diagonalisability of `A`; it is a hypothesis of every
   statement here (defective matrices are excluded).
-* Matrix-level statements with no model family. The real LTI system of the transfer expansion is
-  given by its matrices `A B C D` (state index `n`, `p` inputs and outputs) and
-  `Linear.transferOf`.
+* Matrix-level statements with no model family. A real LTI system enters through its
+  complexified matrices `A B C` (state index `n`), as in `Linear.transferOf`.
 
 Source: work-sync theory/T-participation-factor.md §1.1–§1.6, §1.10, §2.4–§2.5;
 theory/T-small-signal-stability.md §1.5, §1.7, §1.9; conventions.md §2.
@@ -22,11 +21,13 @@ theory/T-small-signal-stability.md §1.5, §1.7, §1.9; conventions.md §2.
 Results.
 * `pf`, `sum_pf_modes`, `sum_pf_states` — `pf k i = v_{ki} ψ_{ki}` (Pérez-Arriaga). Row and
   column sums are `1` (§1.2).
-* `resolvent_eq`, `pf_eq_residue`, `io_expansion`, `transfer_expansion` — resolvent partial
+* `resolvent_eq`, `pf_eq_residue`, `io_expansion` — resolvent partial
   fractions: `(sI − A)⁻¹ = Σ_i (s − λ_i)⁻¹ v_i ψ_iᵀ`; the `(k,k)` entry is
   `Σ_i p_{ki} / (s − λ_i)`, i.e. `p_{ki}` is the residue of the `(k,k)` channel (§1.1).
-  Input/output residues `R^{(i)}_{ℓj} = (C v_i)_ℓ (ψ_iᵀ B)_j` and the expansion of a real LTI
-  transfer matrix `G(s) = Σ_i R^{(i)} / (s − λ_i) + D` (§1.5, small-signal §1.9).
+  Input/output residues `R^{(i)}_{ℓj} = (C v_i)_ℓ (ψ_iᵀ B)_j` and the expansion
+  `C (sI − A)⁻¹ B = Σ_i R^{(i)} / (s − λ_i)`; for a real LTI model with complexified `A, B, C`
+  this is the strictly proper part `G(s) − D` of `G = Linear.transferOf A B C D`
+  (§1.5, small-signal §1.9).
 * `scale_pf`, `weightedPF_eq`, `sum_groupPF` — diagonal state scaling `x̃ = T x` gives a modal
   basis of `T A T⁻¹` with the same participation factors (§1.6). The "weighted PF" of §1.4 with
   diagonal weights is identically the original PF (as the note itself observes); grouped PFs sum
@@ -179,17 +180,6 @@ def residue {κ κ' : Type*} (C : Matrix κ n ℂ) (B : Matrix n κ' ℂ) (i : n
     show (mb.Wᵀ * B) i j = vecMul (mb.ψ i) B j from rfl]
   simp only [residue]
   ring
-
-/-- Modal expansion of the transfer matrix of a real LTI model whose complexified state
-matrix is diagonalisable: `G(s) = Σ_i R^{(i)} / (s − λ_i) + D`. -/
-@[tmio T, powerlib_foundation] theorem transfer_expansion {p : ℕ} (A : Matrix n n ℝ)
-    (B : Matrix n (Fin p) ℝ) (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ)
-    (mb : ModalBasis (Linear.complexify A)) {s : ℂ} (hs : ∀ i, s ≠ mb.eig i) :
-    Linear.transferOf A B C D s =
-      ∑ i, (s - mb.eig i)⁻¹ • mb.residue (Linear.complexify C) (Linear.complexify B) i +
-        Linear.complexify D := by
-  rw [Linear.transferOf, ← mb.io_expansion _ _ hs]
-  rfl
 
 /-! ## Scaling invariance, weighted and grouped PF (§1.4, §1.6) -/
 

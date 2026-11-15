@@ -60,7 +60,7 @@ noncomputable section
 namespace powerlib.Drives.Sensorless
 
 open Complex ComplexConjugate Matrix
-open powerlib.Transform (rot rot_neg_mul_rot)
+open powerlib.Transform (rot park_eq_rot_neg park_mul_rot)
 
 /-! ## Back-EMF methods -/
 
@@ -189,7 +189,8 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   have key : estInvInductance Δ Ld Lq * (rot Δ * !![Ld, 0; 0, Lq]) = rot Δ := by
     unfold estInvInductance
     simp only [Matrix.mul_assoc]
-    rw [← Matrix.mul_assoc (rot (-Δ)), rot_neg_mul_rot, Matrix.one_mul, hdiag, Matrix.mul_one]
+    rw [← Matrix.mul_assoc (rot (-Δ)), ← park_eq_rot_neg, park_mul_rot, Matrix.one_mul, hdiag,
+      Matrix.mul_one]
   rw [Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, Matrix.mul_assoc, key]
 
 /-- The injected flux `ψ̂_d(t) = (V_h/ω_h) sin ω_h t` solves `dψ̂_d/dt = V_h cos ω_h t`,

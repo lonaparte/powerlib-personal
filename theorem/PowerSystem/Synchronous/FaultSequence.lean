@@ -33,7 +33,7 @@ All are private implementation evidence (trajectory-level results outside the se
 of `Synchronous.Swing.family`, Rules §3a); the static areas are in
 `theorem/PowerSystem/Synchronous/EqualArea.lean`.
 * Single stage (kept next to the switched-model proofs that use them): energy conservation for
-  `D = 0` (`energy_conserved`) and the **exact first-swing equal-area criterion**
+  `D = 0` (`energy_conserved_Icc`) and the **exact first-swing equal-area criterion**
   (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a post-fault trajectory
   starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never exceeds the unstable
   equilibrium angle `δ_u` iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)`; bolted three-phase fault
@@ -80,29 +80,21 @@ variable (p : SwingParams)
 
 /-! ## Single stage: energy conservation and the exact first-swing criterion (`D = 0`) -/
 
-/-- Energy is conserved along every solution of the undamped (`D = 0`) swing equation.
+/-- Energy conservation (`D = 0`) along a solution on a compact time interval.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain]
-private theorem energy_conserved (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
-    {φ : ℝ → State 2} {a : ℝ}
-    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici a)) :
-    ∀ t ∈ Ici a, p.energy δ₀ (φ t) = p.energy δ₀ (φ a) := by
+@[tmio TM, powerlib_domain] private theorem energy_conserved_Icc (hM : p.M ≠ 0) (hD : p.D = 0)
+    (δ₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc a b)) :
+    ∀ t ∈ Icc a b, p.energy δ₀ (φ t) = p.energy δ₀ (φ a) := by
   have hdiff : Differentiable ℝ (p.energy δ₀) :=
     (p.contDiff_energy (k := 1) δ₀).differentiable (by norm_num)
-  have h1 := antitoneOn_V_comp_traj hdiff hdiff.continuous (convex_Ici a) hφ
-    (fun t _ => by rw [p.energy_lie hM, hD]; simp)
-  have hneg : ∀ x, fderiv ℝ (fun y => -p.energy δ₀ y) x (p.field x) ≤ 0 := by
-    intro x
-    rw [fderiv_fun_neg, _root_.neg_apply, p.energy_lie hM, hD]
-    simp
-  have h2 := antitoneOn_V_comp_traj (V := fun x => -p.energy δ₀ x) hdiff.neg
-    hdiff.neg.continuous (convex_Ici a) hφ (fun t _ => hneg (φ t))
-  intro t ht
-  have ha : a ∈ Ici a := mem_Ici.mpr le_rfl
-  have e1 := h1 ha ht ht
-  have e2 := h2 ha ht ht
-  simp only [Function.comp_apply] at e1 e2
-  linarith
+  apply constant_of_has_deriv_right_zero (f := fun t => p.energy δ₀ (φ t))
+    (hdiff.continuous.comp_continuousOn hφ.continuousOn)
+  intro x hx
+  have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ x hx
+  have h := (hdiff (φ x)).hasFDerivAt.comp_hasDerivWithinAt x hd
+  rw [p.energy_lie hM, hD, neg_zero, zero_mul] at h
+  exact h
 
 /-- Sufficiency: if the clearing kinetic energy does not exceed the decelerating area up to the
 unstable angle, the post-fault trajectory never goes beyond `δ_u`.
@@ -121,7 +113,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
   obtain ⟨ts, hts, hδs⟩ := intermediate_value_Icc ht hcont
     ⟨by simpa [h0] using hδc, hlt.le⟩
   simp only at hδs
-  have hcons := p.energy_conserved hM.ne' hD δc hφ ts hts.1
+  have hcons := p.energy_conserved_Icc hM.ne' hD δc (b := ts) (hφ.mono Icc_subset_Ici_self) ts
+    ⟨hts.1, le_rfl⟩
   rw [h0] at hcons
   simp only [energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self, add_zero,
     hδs] at hcons
@@ -160,7 +153,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hc : 0 < c := lt_min hW0 (by linarith)
   have hcons : ∀ t ∈ Ici tc, p.M / 2 * φ t 1 ^ 2 + p.potential δc (φ t 0) = W0 := by
     intro t ht
-    have := p.energy_conserved hM.ne' hD δc hφ t ht
+    have := p.energy_conserved_Icc hM.ne' hD δc (b := t) (hφ.mono Icc_subset_Ici_self) t
+      ⟨ht, le_rfl⟩
     rw [h0] at this
     simpa [energy] using this
   -- inside the window `[δ_c, δ_u]` the kinetic energy is at least `c`
@@ -461,28 +455,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
   · exact hfault ⟨ht, h⟩
   · exact eqOn_of_isIntegralCurveOn_Icc (fun _ => post.lipschitzWith_field)
       (hφ.2.2.2.mono Icc_subset_Ici_self) (hψ.2.2.2.mono Icc_subset_Ici_self) hc ⟨h, le_rfl⟩
-
-namespace SwingParams
-
-variable (p : SwingParams)
-
-/-- Energy conservation (`D = 0`) along a solution on a compact time interval.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem energy_conserved_Icc (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
-    {φ : ℝ → State 2} {a b : ℝ}
-    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc a b)) :
-    ∀ t ∈ Icc a b, p.energy δ₀ (φ t) = p.energy δ₀ (φ a) := by
-  have hdiff : Differentiable ℝ (p.energy δ₀) :=
-    (p.contDiff_energy (k := 1) δ₀).differentiable (by norm_num)
-  apply constant_of_has_deriv_right_zero (f := fun t => p.energy δ₀ (φ t))
-    (hdiff.continuous.comp_continuousOn hφ.continuousOn)
-  intro x hx
-  have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ x hx
-  have h := (hdiff (φ x)).hasFDerivAt.comp_hasDerivWithinAt x hd
-  rw [p.energy_lie hM, hD, neg_zero, zero_mul] at h
-  exact h
-
-end SwingParams
 
 /-- Clearing energy: with an undamped during-fault stage started at `(δ₀, 0)`, the kinetic
 energy at clearing equals the accelerating area, `½ M ω(t_c)² = A_acc(δ₀, δ(t_c))`.

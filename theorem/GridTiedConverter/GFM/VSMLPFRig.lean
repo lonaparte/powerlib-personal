@@ -94,9 +94,9 @@ Family and connection conclusions.
   exponential stability of every realized model (through the organized seed,
   `Stack.mem_infer_of_organized`, and the M-layer `chain_le_semantics`);
   `mem_certified_locallyExponentiallyStable`: the record is certified for it
-  (`Stack.subset_certified_iff`); `locallyExponentiallyStable_mem_truth`: with `LagCheck` the
-  record is certified for the platform constraints and the sentence is true of every platform that
-  may produce it (`Stack.infer_subset_truth`).
+  (`TMIO.Seed.gc_whole` of `stack.seed`); `locallyExponentiallyStable_mem_truth`: with
+  `LagCheck` the record is certified for the platform constraints and the sentence is true of
+  every platform that may produce it (`Stack.infer_subset_truth`).
   `infer_not_truth_of_unstable_producer`: if a record passes `ModelCheck` and an unstable platform
   may produce it, its model-level inference does not hold for every producing platform.
   `unstable_mem_infer`, `unstable_mem_truth`: a `SlowCheck` record supports instability of the
@@ -817,7 +817,7 @@ for local exponential stability (the whole-chain Galois connection). -/
   unfold powerlib.TMIO.Statement
   have hi := locallyExponentiallyStable_mem_infer v h
   unfold powerlib.TMIO.Statement at hi
-  exact (stack.subset_certified_iff {v} _).mpr (Set.singleton_subset_iff.mpr hi) rfl
+  exact (stack.seed.gc_whole _ (OrderDual.toDual {v})).mpr (Set.singleton_subset_iff.mpr hi) rfl
 
 /-- With the delay bound checked as well, the inferred local exponential stability is true of
 every platform that may produce the record (`Stack.infer_subset_truth` with

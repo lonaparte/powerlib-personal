@@ -297,19 +297,13 @@ def system : Port.System n m :=
   intro τ _
   exact M.dissipation_inequality (x τ) (u τ)
 
-/-- Under zero input the Hamiltonian is antitone along every solution on a convex time set. -/
+/-- Under zero input the Hamiltonian is antitone along every solution on a convex time set (a
+finite solution segment `IsTrajectoryOn φ M.zeroInputField a b` on `s = Icc a b`). -/
 @[tmio T, powerlib_foundation] theorem energy_antitoneOn_of_isIntegralCurveOn {φ : ℝ → State n}
     {s : Set ℝ} (hs : Convex ℝ s) (hφ : IsIntegralCurveOn φ (fun _ x => M.zeroInputField x) s) :
     AntitoneOn (M.H ∘ φ) s :=
   antitoneOn_V_comp_traj M.differentiable_H M.continuous_H hs hφ
     (fun t _ => M.zeroInput_lie_nonpos (φ t))
-
-/-- Under zero input the Hamiltonian is antitone along every finite solution segment of the
-zero-input field. -/
-@[tmio T, powerlib_foundation] theorem energy_antitoneOn_of_isTrajectoryOn {φ : ℝ → State n} {a b : ℝ}
-    (hφ : IsTrajectoryOn φ M.zeroInputField a b) :
-    AntitoneOn (M.H ∘ φ) (Icc a b) :=
-  M.energy_antitoneOn_of_isIntegralCurveOn (convex_Icc a b) hφ
 
 /-! ### Passivity -/
 

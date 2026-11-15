@@ -24,17 +24,19 @@ form, `h_noise` with columns `(d, q, ω)`), §2b (invariant noise coordinates: r
 `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`).
 
 Results.
-* `embDrift_eq_pH`, `embDrift_dot_grad`, `embJ_skew`, `embR_posSemidef`: the drift is the pH
-  field `(J − R)∇𝓗` with skew `J` (`PH.transpose_symplectic_two`) and `R ⪰ 0` (`K_p ≥ 0`).
+* `embDrift_eq_pH`, `embDrift_dot_grad`, `embR_posSemidef`: the drift is the pH field
+  `(J − R)∇𝓗` with skew `J` (`embJ` is `[[0, 1], [−1, 0]]`, skew by
+  `PH.transpose_symplectic_two`) and `R ⪰ 0` (`K_p ≥ 0`).
 * `voltageBlock_eq_vecMulVec`, `voltageBlock_det`, `voltageBlock_rank_le`: the voltage block is
   the rank-one matrix `(K_p, 1)ᵀ(σ_d, g)`.
 * `freqNoise_fdt`: the frequency channel satisfies `B Bᵀ = 2 T_eff R`, `T_eff = ε²/(2K_p)`
   (exact FDT); `voltage_alignment`, `voltage_alignment_lt_one`, `freq_alignment`: the voltage
   channel is structurally non-FDT (normalized alignment `K_p²/(1 + K_p²) < 1` with `R`), the
   frequency column has alignment one.
-* `ito_emb`, `genL_emb`, `genL_emb_pH`: the Itô correction
+* `ito_emb`, `genL_emb`: the Itô correction
   `Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''` (frequency channel only, `σ_d = g = 0`:
-  `½ ε² 𝒱''`) and the generator `𝓛𝓗 = −K_p h² + Δ_Itô`.
+  `½ ε² 𝒱''`) and the generator `𝓛𝓗 = −K_p h² + Δ_Itô` (the generic stochastic-pH balance
+  `Stochastic.SPH.genL_pH` with no control port).
 * `ito_emb_neg_iff`, `ito_emb_sign_indefinite`: the sign of `Δ_Itô` (Correction below).
 
 Correction (sphs-embedding §3, already noted there on 2026-08-13).  `Δ_Itô` is **not** a
@@ -62,8 +64,6 @@ def embGrad (Ki hθ η : ℝ) : Fin 2 → ℝ := ![-hθ, Ki * η]
 
 /-- Drift `f = (K_p h + K_i η, h)` of the 2D slow model. -/
 def embDrift (Kp Ki hθ η : ℝ) : Fin 2 → ℝ := ![Kp * hθ + Ki * η, hθ]
-
-@[tmio T, powerlib_foundation] theorem embJ_skew : embJᵀ = -embJ := PH.transpose_symplectic_two
 
 @[tmio M, powerlib_foundation] theorem embR_posSemidef {Kp : ℝ} (hKp : 0 ≤ Kp) : (embR Kp).PosSemidef := by
   have : embR Kp = Matrix.diagonal ![Kp, 0] := by
@@ -192,15 +192,6 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
     genL (embDrift Kp Ki hθ η) (embNoise Kp σd g ε) (embGrad Ki hθ η) (pllHess V2 Ki) =
       -(Kp * hθ ^ 2) + itoCorrection (embNoise Kp σd g ε) (pllHess V2 Ki) := by
   unfold genL; rw [embDrift_dot_grad]
-
-/-- The same identity through the generic stochastic-pH balance `genL_pH` (no control port). -/
-@[tmio M, powerlib_foundation] theorem genL_emb_pH (Kp Ki σd g ε hθ η V2 : ℝ) :
-    genL ((embJ - embR Kp) *ᵥ embGrad Ki hθ η + (0 : Matrix (Fin 2) (Fin 1) ℝ) *ᵥ 0)
-        (embNoise Kp σd g ε) (embGrad Ki hθ η) (pllHess V2 Ki) =
-      -(embGrad Ki hθ η ⬝ᵥ (embR Kp *ᵥ embGrad Ki hθ η)) +
-        itoCorrection (embNoise Kp σd g ε) (pllHess V2 Ki) := by
-  rw [genL_pH embJ_skew]
-  simp
 
 /-- **Correction (sign)**: `Δ_Itô < 0 ⇔ 𝒱'' < −(σ_d² + g²) K_i / ((σ_d² + g²) K_p² + ε²)`
 whenever some noise acts (`(σ_d² + g²) K_p² + ε² > 0`). -/

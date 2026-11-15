@@ -368,20 +368,10 @@ section FinTwo
   push_cast
   ring
 
-/-- The characteristic polynomial of a 2×2 matrix in the monic-quadratic form
-`s ^ 2 + a1 * s + a0` with `a1 = -tr A`, `a0 = det A`. -/
-@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_fin_two'
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (s : ℂ) :
-    (Linear.characteristicMatrix A s).det =
-      s ^ 2 + ((-A.trace : ℝ) : ℂ) * s + (A.det : ℂ) := by
-  rw [det_characteristicMatrix_fin_two]
-  push_cast
-  ring
-
 @[tmio T, powerlib_foundation] theorem spectrallyStable_fin_two_iff (A : Matrix (Fin 2) (Fin 2) ℝ) :
     Linear.SpectrallyStable A ↔ A.trace < 0 ∧ 0 < A.det := by
   unfold Linear.SpectrallyStable
-  simp only [det_characteristicMatrix_fin_two']
+  simp only [det_characteristicMatrix_fin_two, sub_eq_add_neg, ← neg_mul, ← Complex.ofReal_neg]
   rw [quadratic_roots_re_neg_iff, neg_pos]
 
 /-- Routh–Hurwitz for real 2×2 matrices: `IsHurwitz A ↔ tr A < 0 ∧ 0 < det A`. -/
@@ -475,11 +465,13 @@ case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`. -/
   constructor
   · intro H s hs
     obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root
-      (by rw [det_characteristicMatrix_fin_two']; exact hs)
+      (by
+        rw [det_characteristicMatrix_fin_two, sub_eq_add_neg, ← neg_mul, ← Complex.ofReal_neg]
+        exact hs)
     exact H s v hv heig
   · intro H μ v hv heig
     have h := det_characteristicMatrix_eq_zero_of_eigenpair A hv heig
-    rw [det_characteristicMatrix_fin_two'] at h
+    rw [det_characteristicMatrix_fin_two, sub_eq_add_neg, ← neg_mul, ← Complex.ofReal_neg] at h
     exact H μ h
 
 /-- Cayley–Hamilton for 2×2 matrices. -/

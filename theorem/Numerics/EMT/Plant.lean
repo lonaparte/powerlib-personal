@@ -81,12 +81,9 @@ def rlInputField (m : RL.Impedance) (v : ℝ) (x : Fin 1 → ℝ) : Fin 1 → �
 /-- Zero-input (perturbation) RL field. -/
 def rlField (m : RL.Impedance) : (Fin 1 → ℝ) → (Fin 1 → ℝ) := rlInputField m 0
 
-/-- State matrix of the RL field: the state matrix of the RL family's plant. -/
+/-- State matrix of the RL field: the state matrix of the RL family's plant, `[−R/L]`
+(`Passive.RL.plant_A`). -/
 def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
-
-@[tmio M, powerlib_domain] theorem rlMatrix_eq (m : RL.Impedance) :
-    rlMatrix m = !![-(m.resistance / m.inductance.val)] :=
-  RL.plant_A m
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem rlField_eq_linearField (m : RL.Impedance) :
@@ -104,15 +101,6 @@ def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
   rw [rlField_eq_linearField]
   simp only [rlInputField, linearField, rlMatrix, mulVec_sub]
   abel
-
-/-- The forward semantics of a single RL branch contains global exponential stability exactly
-when its resistance is positive. -/
-@[tmio TM, powerlib_domain] theorem rlMatrix_isHurwitz_iff (m : RL.Impedance) :
-    connection% ((Sentence.flow .globallyExponentiallyStable) ∈
-      RL.family.semantics (OrderDual.toDual {m}) ↔ 0 < m.resistance) := by
-  simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
-    TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
-    RL.isHurwitz_iff m
 
 /-! ### Ideal three-state LCL plant -/
 

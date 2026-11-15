@@ -22,8 +22,8 @@ not included).
 Results.
 * `trace_det_zero_iff_similar_jordanBlock`: `tr J = det J = 0 ∧ J ≠ 0` iff `J` is similar to the
   single Jordan block `!![0, 1; 0, 0]` (`jordanBlock`; `J P = P N` with `det P ≠ 0`); together
-  with `powerlib.Criteria` this is also equivalent to `J` being nonzero nilpotent
-  (`isNilpotent_ne_zero_iff_similar_jordanBlock`).
+  with `Criteria.isNilpotent_iff_trace_det_eq_zero_fin_two` this is also equivalent to `J` being
+  nonzero nilpotent.
 * Structural form `!![g₁, g₂; g₃, 0]`: `tr = g₁`, `det = −g₂ g₃` (`structural_trace_det`). For the
   special shape `!![k g, κ; g, 0]` with `κ ≠ 0` both vanish exactly at `g = 0`, where the matrix is
   a single Jordan block (`proportional_trace_det_zero_iff`, `proportional_jordan_at_zero`).
@@ -123,14 +123,6 @@ Jordan block. -/
       calc jordanBlock = P⁻¹ * (P * jordanBlock) := by
             rw [← Matrix.mul_assoc, Matrix.nonsing_inv_mul P hu, Matrix.one_mul]
         _ = 0 := by rw [this, Matrix.mul_zero]
-
-/-- Equivalently: `J` is nonzero nilpotent iff it is similar to the single Jordan block. -/
-@[tmio T, powerlib_foundation] theorem isNilpotent_ne_zero_iff_similar_jordanBlock
-    (J : Matrix (Fin 2) (Fin 2) ℝ) :
-    (IsNilpotent J ∧ J ≠ 0) ↔
-      ∃ P : Matrix (Fin 2) (Fin 2) ℝ, P.det ≠ 0 ∧ J * P = P * jordanBlock := by
-  rw [Criteria.isNilpotent_iff_trace_det_eq_zero_fin_two, and_assoc]
-  exact trace_det_zero_iff_similar_jordanBlock J
 
 /-! ## Structural trace / determinant formulas -/
 

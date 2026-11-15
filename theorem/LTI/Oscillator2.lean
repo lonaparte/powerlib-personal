@@ -1,4 +1,5 @@
 import theorem.LTI.Plant
+import theorem.Criteria.Hurwitz2
 
 /-! # Closed-form flow of a real 2×2 system with complex eigenvalues (foundation)
 
@@ -20,7 +21,8 @@ Source: work-sync `theory/T-frequency-stability.md` §1.7 (underdamped frequency
 Results.
 * `osc2 A σ ω_d p t = e^{−σ t} (cos(ω_d t) p + (sin(ω_d t)/ω_d) (A + σ I) p)` solves `ẏ = A y`,
   `y(0) = p` (`hasDerivAt_osc2`, `osc2_zero`). The proof uses only the 2×2 Cayley–Hamilton
-  identity `(A + σ I)² = −ω_d² I` (`shift_sq_mulVec`). Uniqueness of global solutions (Mathlib
+  identity (`Criteria.sq_eq_trace_smul_sub_det_smul_fin_two`) in the form
+  `(A + σ I)² = −ω_d² I` (`shift_sq_mulVec`). Uniqueness of global solutions (Mathlib
   `ODE_solution_unique_univ`) then gives the flow law `osc2 p (s + t) = osc2 (osc2 p s) t`
   (`osc2_add`), and the half-period law `osc2 p (t + π/ω_d) = −e^{−σπ/ω_d} osc2 p t`
   (`osc2_add_half_period`) is a direct trigonometric identity.
@@ -52,21 +54,14 @@ def osc2 (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ) (p : Fin 2 → ℝ) (t 
 
 variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
 
-/-- 2×2 Cayley–Hamilton: `A² = tr A · A − det A · I`. -/
-@[tmio T, powerlib_foundation] theorem mul_self_fin_two (A : Matrix (Fin 2) (Fin 2) ℝ) :
-    A * A = A.trace • A - A.det • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.trace_fin_two, Matrix.det_fin_two] <;> ring
-
 /-- `(A + σ I)² = −ω_d² I` when `tr A = −2σ`, `det A = σ² + ω_d²`. -/
 @[tmio T, powerlib_foundation] theorem shift_sq_mulVec (htr : A.trace = -2 * σ)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (p : Fin 2 → ℝ) :
     (A + σ • 1) *ᵥ ((A + σ • 1) *ᵥ p) = -(ωd ^ 2) • p := by
   rw [Matrix.mulVec_mulVec]
   have h : (A + σ • 1) * (A + σ • 1) = -(ωd ^ 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
-    have hA := mul_self_fin_two A
-    rw [htr, hdet] at hA
+    have hA := Criteria.sq_eq_trace_smul_sub_det_smul_fin_two A
+    rw [sq, htr, hdet] at hA
     calc (A + σ • 1) * (A + σ • 1) = A * A + (2 * σ) • A + σ ^ 2 • (1 : Matrix _ _ ℝ) := by
           simp only [add_mul, mul_add, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
             Matrix.mul_one, smul_smul]

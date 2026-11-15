@@ -402,9 +402,6 @@ intermediate evidence only. -/
       fun_prop
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
 
-@[tmio T, powerlib_foundation] theorem norm_sq_state2 (x : State2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 :=
-  PhasePlane.norm_sq_eq x
-
 @[tmio T, powerlib_foundation] theorem inner_state2 (x y : State2) :
     inner ℝ x y = x 0 * y 0 + x 1 * y 1 := by
   rw [PiLp.inner_apply]
@@ -428,7 +425,7 @@ skew and does no work). -/
   rw [h.fderiv]
   simp only [smul_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.id_apply, innerSL_apply_apply]
-  rw [inner_state2, norm_sq_state2, fluxField_eq_error p hrr hLr]
+  rw [inner_state2, PhasePlane.norm_sq_eq, fluxField_eq_error p hrr hLr]
   simp only [vec_apply_zero, vec_apply_one, PiLp.sub_apply, nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
@@ -460,9 +457,11 @@ its sentence form is `ifocFlux_decay`. -/
     (hψ : IsTrajectoryOn ψ (fluxField p isd isq ωsl) a b) (ht : t ∈ Set.Icc a b) :
     ‖ψ t - fluxEquilibrium p isd isq ωsl‖ ≤
       Real.exp (-((t - a) / p.Tr)) * ‖ψ a - fluxEquilibrium p isd isq ωsl‖ := by
-  have h := (fluxCertificate p hrr hLr isd isq ωsl).norm_bound hψ ht
+  let c := fluxCertificate p hrr hLr isd isq ωsl
+  have h := Flow.norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos c.lower_bound
+    c.upper_bound c.dissipation hψ ht
   have hTr : p.Tr ≠ 0 := (div_pos hLr hrr).ne'
-  simp only [fluxCertificate, div_one, Real.sqrt_one, one_mul] at h
+  simp only [c, fluxCertificate, div_one, Real.sqrt_one, one_mul] at h
   have hr : -(2 / p.Tr / 2) * (t - a) = -((t - a) / p.Tr) := by field_simp
   rwa [hr] at h
 
@@ -844,16 +843,16 @@ So the translation `positiveRotor` is not exact for Lyapunov stability even with
       refine Dynamics.unstable_of_chetaev (W := fun z : State2 => ‖z‖ ^ 2) (r := 1)
         (Linear.affine_contDiff _ _) (contDiff_norm_sq ℝ) one_pos
         (fun ε hε => ⟨vec (ε / 2) 0, ?_, ?_⟩) (fun z _ hz => ?_) h
-      · rw [sub_zero, ← sq_lt_sq₀ (norm_nonneg _) hε.le, norm_sq_state2]
+      · rw [sub_zero, ← sq_lt_sq₀ (norm_nonneg _) hε.le, PhasePlane.norm_sq_eq]
         simp only [vec_apply_zero, vec_apply_one]
         nlinarith
-      · rw [norm_sq_state2]
+      · rw [PhasePlane.norm_sq_eq]
         simp only [vec_apply_zero, vec_apply_one]
         positivity
       · rw [fderiv_norm_sq_apply]
         show 0 < (2 : ℕ) • inner ℝ z
           (LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 z)
-        rw [nsmul_eq_mul, inner_fluxMatrix, ← norm_sq_state2]
+        rw [nsmul_eq_mul, inner_fluxMatrix, ← PhasePlane.norm_sq_eq]
         nlinarith
     · exact Or.inr ⟨hk, (field_zero_iff_of_ratio_zero hk).mp h0⟩
     · exact Or.inl hk

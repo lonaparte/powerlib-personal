@@ -13,7 +13,7 @@ module theorem.PowerSystem.Synchronous.ClassicalMachineSwing where
 -- (`ClassicalSM.exact_passive`). Lean proves the conjugacy (`mem_den_flow_iff_swing`, through
 -- `Spectral.mem_den_flow_iff_of_transport` with `T = diag(1, M)`), the requirement correspondence
 -- (`realize_translate_flow_eq_preimage`) and the transfer (`Spectral.exact_of_hub`,
--- `Spectral.sound_of_hub`). Nothing here is exported.
+-- `Spectral.realize_subset_den_of_hub`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

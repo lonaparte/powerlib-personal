@@ -92,11 +92,6 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   · intro h; rw [eq_neg_iff_add_eq_zero, ← h]; abel
   · intro h; rw [add_comm (A * P), h]; abel
 
-/-- Transposition preserves the Hurwitz property (`Linear.isHurwitz_transpose_iff`). -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_transpose {A : Matrix (Fin n) (Fin n) ℝ}
-    (h : LinearSystems.IsHurwitz A) : LinearSystems.IsHurwitz Aᵀ :=
-  Linear.isHurwitz_transpose_iff.mpr h
-
 @[tmio T, powerlib_foundation] theorem solvesCovLyapunov_add {A P P' Q Q' : Matrix (Fin n) (Fin n) ℝ}
     (h : SolvesCovLyapunov A P Q) (h' : SolvesCovLyapunov A P' Q') :
     SolvesCovLyapunov A (P + P') (Q + Q') := by
@@ -121,7 +116,8 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
 @[tmio T, powerlib_foundation] theorem eq_zero_of_solvesCovLyapunov_zero {A S : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (hS : SolvesCovLyapunov A S 0) : S = 0 := by
   obtain ⟨P₁, -, hP₁, huniq⟩ :=
-    (isHurwitz_transpose hA).exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
+    (Linear.isHurwitz_transpose_iff.mpr hA).exists_posDef_unique_solution_continuous_lyapunov 1
+      PosDef.one
   have h1 : SolvesCovLyapunov A P₁ 1 := (solvesCovLyapunov_iff _ _ _).mpr hP₁
   have h2 : SolvesCovLyapunov A (P₁ + S) 1 := by simpa using solvesCovLyapunov_add h1 hS
   have := huniq _ ((solvesCovLyapunov_iff _ _ _).mp h2)
@@ -138,7 +134,7 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
 @[tmio T, powerlib_foundation] theorem exists_solvesCovLyapunov {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (Q : Matrix (Fin n) (Fin n) ℝ) (hQ : Q.PosSemidef) :
     ∃ P, SolvesCovLyapunov A P Q := by
-  have hAt := isHurwitz_transpose hA
+  have hAt := Linear.isHurwitz_transpose_iff.mpr hA
   obtain ⟨P₁, -, hP₁, -⟩ := hAt.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
   obtain ⟨P₂, -, hP₂, -⟩ := hAt.exists_posDef_unique_solution_continuous_lyapunov (Q + 1)
     (PosDef.posSemidef_add hQ PosDef.one)
@@ -153,7 +149,7 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
     (Q : Matrix (Fin n) (Fin n) ℝ) (hQ : Q.PosSemidef) :
     ∃ P, P.PosSemidef ∧ SolvesCovLyapunov A P Q ∧
       ∀ S, SolvesCovLyapunov A S Q → S = P := by
-  have hAt := isHurwitz_transpose hA
+  have hAt := Linear.isHurwitz_transpose_iff.mpr hA
   obtain ⟨P, hP⟩ := exists_solvesCovLyapunov hA Q hQ
   obtain ⟨P₁, hP₁pd, hP₁, -⟩ := hAt.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
   have hP₁' : SolvesCovLyapunov A P₁ 1 := (solvesCovLyapunov_iff _ _ _).mpr hP₁
@@ -383,7 +379,7 @@ from every initial matrix (Frobenius norm). -/
     (hA : LinearSystems.IsHurwitz A) :
     Tendsto (fun t => ‖covSol A Pinf P₀ t - Pinf‖) atTop (𝓝 0) := by
   have h1 := tendsto_norm_exp_smul_zero hA
-  have h2 := tendsto_norm_exp_smul_zero (isHurwitz_transpose hA)
+  have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
   have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖P₀ - Pinf‖ *
       ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
     simpa using (h1.mul_const ‖P₀ - Pinf‖).mul h2
@@ -574,7 +570,7 @@ constant `= xᵀ P x > 0`, while it tends to `0`.) -/
   have hGt : Tendsto G atTop (𝓝 0) := by
     refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
     have h1 := tendsto_norm_exp_smul_zero hA
-    have h2 := tendsto_norm_exp_smul_zero (isHurwitz_transpose hA)
+    have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
     have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖P‖ *
         ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
       simpa using (h1.mul_const ‖P‖).mul h2
@@ -652,7 +648,7 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
   refine tendsto_iff_norm_sub_tendsto_zero.mpr ?_
   simp only [integral_gramian_eq hP, sub_sub_cancel_left, norm_neg]
   have h1 := tendsto_norm_exp_smul_zero hA
-  have h2 := tendsto_norm_exp_smul_zero (isHurwitz_transpose hA)
+  have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
   have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖P‖ *
       ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
     simpa using (h1.mul_const ‖P‖).mul h2

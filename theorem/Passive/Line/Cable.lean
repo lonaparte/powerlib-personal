@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.SpecialFunctions.BesselI
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Complex.Trigonometric
@@ -605,17 +606,14 @@ DC resistance of the tube (no screening at DC). -/
   simp only [sub_zero, div_one] at this
   exact this.congr fun a => (exp_div_sinh_eq (f a)).symm
 
-/-- `Re((1 + i)s t) = s t`. -/
-@[tmio T, powerlib_foundation] theorem re_one_add_I_mul (s t : ℝ) :
-    ((1 + Complex.I) * s * t).re = s * t := by simp
-
 /-- **High-frequency limit of the transfer impedance**: along the physical ray `m = (1 + i)s`
 (`s = 1/δ`, `δ` the skin depth), `Z_mut(m) → 0` as `s → ∞` (complete screening). -/
 @[tmio M, powerlib_domain] theorem tubeZmut_tendsto_zero {ρ a b : ℝ} (hab : a < b) :
     Tendsto (fun s : ℝ => tubeZmut ρ a b ((1 + Complex.I) * s)) atTop (𝓝 0) := by
   have ht : 0 < b - a := by linarith
   have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
-    simpa [re_one_add_I_mul] using tendsto_id.atTop_mul_const ht
+    simpa [Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re] using
+      tendsto_id.atTop_mul_const ht
   have hq := tendsto_exp_div_sinh hre
   -- `m e^{−m t} → 0`
   have hdecay : Tendsto (fun s : ℝ => (1 + Complex.I) * s *
@@ -630,7 +628,7 @@ DC resistance of the tube (no screening at DC). -/
     filter_upwards [eventually_ge_atTop 0] with s hs
     rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hs, Complex.norm_exp]
     have : (-((1 + Complex.I) * s * ((b - a : ℝ) : ℂ))).re = -(s * (b - a)) := by
-      rw [Complex.neg_re, re_one_add_I_mul]
+      rw [Complex.neg_re, Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re]
     rw [this]
     field_simp
   have h := (hdecay.mul hq).const_mul ((ρ / (Real.pi * (a + b)) : ℝ) : ℂ)
@@ -663,7 +661,8 @@ DC resistance of the tube (no screening at DC). -/
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * a))) atTop (𝓝 1) := by
   have ht : 0 < b - a := by linarith
   have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
-    simpa [re_one_add_I_mul] using tendsto_id.atTop_mul_const ht
+    simpa [Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re] using
+      tendsto_id.atTop_mul_const ht
   have h := (tendsto_cosh_div_sinh hre).sub
     (tendsto_const_mul_inv_ofReal (1 / ((1 + Complex.I) * ((a + b : ℝ) : ℂ))))
   rw [sub_zero] at h
@@ -692,7 +691,8 @@ DC resistance of the tube (no screening at DC). -/
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * b))) atTop (𝓝 1) := by
   have ht : 0 < b - a := by linarith
   have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
-    simpa [re_one_add_I_mul] using tendsto_id.atTop_mul_const ht
+    simpa [Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re] using
+      tendsto_id.atTop_mul_const ht
   have h := (tendsto_cosh_div_sinh hre).add
     (tendsto_const_mul_inv_ofReal (1 / ((1 + Complex.I) * ((a + b : ℝ) : ℂ))))
   rw [add_zero] at h

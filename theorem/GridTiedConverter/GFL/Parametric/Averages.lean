@@ -41,15 +41,11 @@ variable (p : FourState.Params)
       (fieldAngle p u ud z) 3 = z 2 - 1 := by
   refine ⟨?_, ?_, ?_⟩ <;> simp [fieldAngle, field, Dynamics.lift, coordField]
 
-@[tmio M, powerlib_domain] private theorem hasDerivAt_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
-    (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) (t : ℝ) :
-    HasDerivAt (fun s => φ s i) (fieldAngle p (θg t) (θgd t) (φ t) i) t := by
-  exact (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp_hasDerivAt t (hφ t)
-
 @[tmio M, powerlib_domain] private theorem continuous_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) :
     Continuous fun s => φ s i :=
-  continuous_iff_continuousAt.2 fun t => (hasDerivAt_coord p hφ i t).continuousAt
+  continuous_iff_continuousAt.2 fun t =>
+    (Dynamics.hasDerivAt_iff_coords.mp (hφ t) i).continuousAt
 
 @[tmio M, powerlib_domain] private theorem continuous_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) :
@@ -68,7 +64,7 @@ variable (p : FourState.Params)
     ∫ t in (0 : ℝ)..T, (φ t 2 - 1) = 0 := by
   have hd : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => φ s 3) (φ t 2 - 1) t := by
     intro t _
-    have := hasDerivAt_coord p hφ 3 t
+    have := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 3
     rwa [(fieldAngle_apply p _ _ _).2.2] at this
   rw [integral_eq_sub_of_hasDerivAt hd
     (((continuous_coord p hφ 2).sub continuous_const).intervalIntegrable _ _), hT, sub_self]
@@ -80,7 +76,7 @@ variable (p : FourState.Params)
   have hd : ∀ t ∈ Set.uIcc 0 T,
       HasDerivAt (fun s => φ s 1) (vq p (φ t 0) (φ t 2) (φ t 3)) t := by
     intro t _
-    have := hasDerivAt_coord p hφ 1 t
+    have := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 1
     rwa [(fieldAngle_apply p _ _ _).2.1] at this
   rw [integral_eq_sub_of_hasDerivAt hd ((continuous_vq p hφ).intervalIntegrable _ _), hT,
     sub_self]
@@ -96,7 +92,7 @@ variable (p : FourState.Params)
   have hd : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => φ s 0)
       (p.kp * vq p (φ t 0) (φ t 2) (φ t 3) + p.ki * φ t 1 - θgd t) t := by
     intro t _
-    have := hasDerivAt_coord p hφ 0 t
+    have := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 0
     rwa [(fieldAngle_apply p _ _ _).1] at this
   have hi1 : IntervalIntegrable (fun y => p.kp * vq p (φ y 0) (φ y 2) (φ y 3))
       MeasureTheory.volume 0 T := (continuous_const.mul hvq).intervalIntegrable _ _

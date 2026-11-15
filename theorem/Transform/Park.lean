@@ -13,8 +13,8 @@ Conventions fixed by this module:
   (resp. q). Its complex form is `toComplex x = x 0 + x 1 * I`.
 * `rot θ` is the counter-clockwise rotation by `θ` (dq → αβ). The Park matrix is
   `park θ = [[cos θ, sin θ], [-sin θ, cos θ]]` (αβ → dq), exactly `conventions.md` §4.
-  Hence `park θ = rot (-θ)` and, in complex form, `x^{dq} = x^{αβ} · e^{-jθ}`.
-  `rot_neg_mul_rot`: `rot (−a) · rot a = 1` (used by `theorem/Drives/Sensorless.lean`);
+  Hence `park θ = rot (-θ)` (`park_eq_rot_neg`) and, in complex form,
+  `x^{dq} = x^{αβ} · e^{-jθ}`. `park_mul_rot`, `rot_mul_park`: the two are mutually inverse;
   `frameRotation_power_invariant`: `rot δ` preserves the port power `v·i` (machine frame vs
   common DQ frame, `theory/T-power-system-ph.md` §1.2).
 * `J = [[0, -1], [1, 0]]` is the rotation generator (`d/dθ rot θ = J · rot θ`); in complex
@@ -112,11 +112,6 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
 @[tmio M, powerlib_domain] theorem park_mul_rot (θ : ℝ) : park θ * rot θ = 1 := by
   rw [park_eq_rot_neg, ← rot_add, neg_add_cancel, rot_zero]
 
-@[tmio M, powerlib_domain] theorem rot_neg_mul_rot (a : ℝ) : rot (-a) * rot a = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [rot, Matrix.mul_apply, Fin.sum_univ_two] <;>
-    nlinarith [Real.sin_sq_add_cos_sq a]
-
 /-- T-power-system-ph §1.2: the rotation `R(δ)` is orthogonal, so the port power
 `v_d i_d + v_q i_q` is the same in the machine frame and in the common DQ frame. -/
 @[tmio M, powerlib_domain] theorem frameRotation_power_invariant (δ : ℝ) (v i : Fin 2 → ℝ) :
@@ -125,10 +120,6 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
     Matrix.cons_val_one]
   have h := Real.sin_sq_add_cos_sq δ
   linear_combination (v 0 * i 0 + v 1 * i 1) * h
-
-@[tmio M, simp, powerlib_domain] theorem rot_mulVec_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
-    rot θ *ᵥ (park θ *ᵥ x) = x := by
-  rw [Matrix.mulVec_mulVec, rot_mul_park, Matrix.one_mulVec]
 
 @[tmio M, simp, powerlib_domain] theorem park_mulVec_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     park θ *ᵥ (rot θ *ᵥ x) = x := by

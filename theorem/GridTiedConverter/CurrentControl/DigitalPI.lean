@@ -37,7 +37,7 @@ Source: work-sync `theory/T-control-delay.md` §1.1 (the `1.5 Tₛ` total), §1.
 accuracy band `ω τ < 1/2`), §1.4 (the ZOH as a half-period delay), §1.5 (the one-step delay), §1.6
 (the bandwidth bound); `theory/T-gfl-control.md` §1.4.1 (the PI loop and its IMC tuning). Tools:
 `theorem/Delay/Pade.lean` (`pade11Model`, `transfer_pade11Model`, `pureDelay_three_half_periods`),
-`theorem/Delay/SampleHold.lean` (`zoh_jω_eq_halfDelay`), `theorem/Delay/Phase.lean` (phase error
+`theorem/Delay/SampleHold.lean` (`zoh_jω`), `theorem/Delay/Phase.lean` (phase error
 of Padé(1,1)), `theorem/GridTiedConverter/CurrentControl/LoopDelay.lean` (the IMC loop with the pure
 delay); the layer interface `theorem/Stack/Implementation.lean`.
 
@@ -47,11 +47,12 @@ Results.
   `det_characteristicMatrix`: `det (sI − A) = (a₃ s³ + a₂ s² + a₁ s + a₀)/a₃` with `a₃ = L τ/2`,
   `a₂ = L + (R − Kp) τ/2`, `a₁ = R + Kp − Ki τ/2`, `a₀ = Ki`; `det_characteristicMatrix_pade`: the
   same polynomial is the return difference `(L s + R) s (1 + τ s/2) + (Kp s + Ki)(1 − τ s/2)` of the
-  design loop closed through the Padé delay (`Delay.pade11Den`, `Delay.pade11Num`);
-  `transfer_delay`: the delay block has the transfer function `Delay.pade11 τ`
-  (`Delay.transfer_pade11Model`); `pureDelay_τ`, `pureDelay_τ_halves`, `computation_zoh_jω`: the
-  one-step delay and the hold make up `e^{−τ s}` (`Delay.pureDelay_three_half_periods`,
-  `Delay.zoh_jω_eq_halfDelay`, the hold leaving the real factor `Tₛ sinc (ω Tₛ/2)`).
+  design loop closed through the Padé delay (`Delay.pade11Den`, `Delay.pade11Num`); the delay
+  block `Delay.pade11Model τ` has the transfer function `Delay.pade11 τ`
+  (`Delay.transfer_pade11Model`, `τ ≠ 0` for `Tₛ ≠ 0`); `pureDelay_τ`, `computation_zoh_jω`: the
+  one-step delay and the hold make up `e^{−τ s}`, the same total as three half periods
+  (`Delay.pureDelay_three_half_periods`, `τ = 3 Tₛ / 2`), the hold leaving the real factor
+  `Tₛ sinc (ω Tₛ/2)` (`Delay.zoh_jω`).
 * Static, Routh–Hurwitz of the platform: with `L > 0`, `Tₛ > 0` the plant is Hurwitz iff
   `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁` (`mem_den_iff`); a strict violation gives a root in the open
   right half plane (`exists_root_of_lagged`); for every `Tₛ > 0` and every inductance a Hurwitz
@@ -305,13 +306,7 @@ the implementation, not a connection conclusion. -/
   push_cast
   ring
 
-/-! ### The delay block and the `3 Tₛ / 2` total -/
-
-/-- The delay block of the platform has the Padé(1,1) transfer function `Delay.pade11 τ`. Static
-evidence on the implementation, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem transfer_delay (hT : y.Ts ≠ 0) {s : ℂ} (hs : s ≠ -2 / y.τ) :
-    Linear.transfer (Delay.pade11Model y.τ) s = !![Delay.pade11 y.τ s] :=
-  Delay.transfer_pade11Model (τ_ne_zero hT) hs
+/-! ### The total delay `τ = 3 Tₛ / 2` -/
 
 /-- One period of computation delay and the half-period hold make up the delay `τ`. -/
 @[tmio M, powerlib_domain] theorem pureDelay_τ (s : ℂ) :
@@ -320,18 +315,12 @@ evidence on the implementation, not a connection conclusion. -/
   congr 1
   ring
 
-/-- The same total as three half-period delays (sampling, computation, PWM). -/
-@[tmio M, powerlib_domain] theorem pureDelay_τ_halves (s : ℂ) :
-    Delay.pureDelay (y.Ts / 2) s * Delay.pureDelay (y.Ts / 2) s * Delay.pureDelay (y.Ts / 2) s =
-      Delay.pureDelay y.τ s :=
-  Delay.pureDelay_three_half_periods y.Ts s
-
 /-- On the imaginary axis the one-step delay followed by the zero-order hold is the delay `τ`
 times the real factor `Tₛ sinc (ω Tₛ / 2)`. -/
 @[tmio M, powerlib_domain] theorem computation_zoh_jω (ω : ℝ) :
     Delay.pureDelay y.Ts (ω * Complex.I) * Delay.zoh y.Ts (ω * Complex.I) =
       Delay.pureDelay y.τ (ω * Complex.I) * (y.Ts * (Real.sinc (ω * y.Ts / 2) : ℂ)) := by
-  rw [Delay.zoh_jω_eq_halfDelay, ← mul_assoc, pureDelay_τ]
+  rw [Delay.zoh_jω, ← mul_assoc, pureDelay_τ]
 
 /-! ### Routh–Hurwitz for the platform -/
 

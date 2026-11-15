@@ -35,8 +35,8 @@ Results.
   (`QuadraticDecay.decay`); with a C¹ field it proves global exponential stability, hence every
   attractive sentence, Lyapunov stability and sampled contraction
   (`QuadraticDecay.globallyExponentiallyStable`, `QuadraticDecay.holds`,
-  `QuadraticDecay.forwardComplete`); also `QuadraticDecay.energy_bound`,
-  `QuadraticDecay.norm_bound`, `QuadraticDecay.compact_sublevel`.
+  `QuadraticDecay.forwardComplete`); also `QuadraticDecay.energy_bound` and
+  `QuadraticDecay.compact_sublevel` (the state estimate is `norm_bound_of_dissipation`).
 * A strict Lyapunov function with compact sublevels proves global asymptotic stability of a C¹
   field, including a solution through every state
   (`globallyAsymptoticallyStable_of_strictLyapunov`).
@@ -261,14 +261,6 @@ namespace QuadraticDecay
     V (φ t) ≤ Real.exp (-(c.rate * (t - a))) * V (φ a) :=
   energy_bound_of_dissipation c.smooth c.dissipation hφ ht
 
-/-- The energy estimate as an estimate on the state. -/
-@[tmio T, powerlib_foundation] theorem norm_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
-    (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
-    ‖φ t - e‖ ≤ Real.sqrt (c.upper / c.lower) * Real.exp (-(c.rate / 2) * (t - a)) * ‖φ a - e‖ :=
-  norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos c.lower_bound c.upper_bound
-    c.dissipation hφ ht
-
 /-- Quadratic coercivity and continuity make every energy sublevel compact. -/
 @[tmio T, powerlib_foundation] theorem compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) (level : ℝ) :
@@ -297,7 +289,9 @@ theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
     (c : QuadraticDecay f V e)
     (hf : ContDiff ℝ 1 f) : GloballyExponentiallyStable f e :=
   ⟨c.equilibrium, c.forwardComplete hf, max 1 (Real.sqrt (c.upper / c.lower)), c.rate / 2,
-    le_max_left _ _, half_pos c.rate_pos, fun _ _ _ hφ _ ht => (c.norm_bound hφ ht).trans
+    le_max_left _ _, half_pos c.rate_pos, fun _ _ _ hφ _ ht =>
+      (norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos c.lower_bound c.upper_bound
+        c.dissipation hφ ht).trans
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_right _ _)
         (Real.exp_nonneg _)) (norm_nonneg _))⟩
 
@@ -310,7 +304,8 @@ theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
 /-- The certificate proves decay at half its energy rate. -/
 @[tmio T, powerlib_foundation] theorem decay {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) : Decay f e (c.rate / 2) :=
-  ⟨_, fun _ _ _ hφ _ ht => c.norm_bound hφ ht⟩
+  ⟨_, fun _ _ _ hφ _ ht => norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos
+    c.lower_bound c.upper_bound c.dissipation hφ ht⟩
 
 end QuadraticDecay
 

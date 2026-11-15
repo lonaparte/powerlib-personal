@@ -40,9 +40,10 @@ Results.
   quadratics.
 * `cauer_eq_mol` — a uniform Cauer RC chain (`C = ρc_p AΔx`, `R = Δx/(κA)`) has exactly the MoL
   dynamics `Ṫ_j = (κ/ρc_p)(T_{j+1} − 2T_j + T_{j−1})/Δx²`.
-* `portCoupled_isSolution_iff` — interior MoL ODE + linear port constraint
-  `0 = G_x x + G_b u_bnd + G_e u_ext` is an index-1 DAE when `det G_b ≠ 0` (one-to-one with the
-  Schur-reduced ODE; `theorem/DAE/Linear.lean`).
+* `portCoupled` — interior MoL ODE + linear port constraint
+  `0 = G_x x + G_b u_bnd + G_e u_ext` as a `DAE.LinearDAE`; index 1 when `det G_b ≠ 0`, with
+  solutions one-to-one with the Schur-reduced ODE (`DAE.LinearDAE.isSolution_iff`,
+  `theorem/DAE/Linear.lean`).
 
 Corrections.
 * Stencil table (§1.4.1): the second-order upwind stencil `(3u_j − 4u_{j−1} + u_{j−2})/(2Δx)`
@@ -456,25 +457,13 @@ with error `−2h²`. -/
 /-! ## Port coupling (§1.7.4) -/
 
 /-- Interior MoL ODE `ẋ = A_ii x + A_ib u_bnd + B u_ext` with the linear port constraint
-`0 = G_x x + G_b u_bnd + G_e u_ext`. -/
+`0 = G_x x + G_b u_bnd + G_e u_ext`, as a linear semi-explicit DAE. With `det G_b ≠ 0` (the
+boundary Jacobian `∂g/∂u_bnd` is nonsingular) it is index 1: its solutions are exactly the
+reduced ODE solutions with `u_bnd = −G_b⁻¹(G_x x + G_e u_ext)` (`DAE.LinearDAE.isSolution_iff`,
+`Ayy = G_b`). -/
 def portCoupled {n m p : ℕ} (Aii : Matrix (Fin n) (Fin n) ℝ) (Aib : Matrix (Fin n) (Fin m) ℝ)
     (B : Matrix (Fin n) (Fin p) ℝ) (Gx : Matrix (Fin m) (Fin n) ℝ) (Gb : Matrix (Fin m) (Fin m) ℝ)
     (Ge : Matrix (Fin m) (Fin p) ℝ) : DAE.LinearDAE n m p :=
   ⟨Aii, Aib, Gx, Gb, B, Ge⟩
-
-/-- With `det G_b ≠ 0` (the boundary Jacobian `∂g/∂u_bnd` is nonsingular) the port-coupled MoL
-system is an index-1 DAE: its solutions — pairs `(x, u_bnd)` with `ẋ = A_ii x + A_ib u_bnd +
-B u_ext` and `0 = G_x x + G_b u_bnd + G_e u_ext` at every time (left-hand side, the DAE solution
-notion of `theorem.DAE.Linear` for `portCoupled`) — are exactly the reduced ODE solutions with
-`u_bnd = −G_b⁻¹(G_x x + G_e u_ext)`. -/
-@[tmio T, powerlib_foundation] theorem portCoupled_isSolution_iff {n m p : ℕ}
-    (Aii : Matrix (Fin n) (Fin n) ℝ) (Aib : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin n) (Fin p) ℝ)
-    (Gx : Matrix (Fin m) (Fin n) ℝ) (Gb : Matrix (Fin m) (Fin m) ℝ) (Ge : Matrix (Fin m) (Fin p) ℝ)
-    (hGb : Gb.det ≠ 0) (u : ℝ → Fin p → ℝ) (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :
-    (∀ t, HasDerivAt x (Aii *ᵥ x t + Aib *ᵥ y t + B *ᵥ u t) t ∧
-      Gx *ᵥ x t + Gb *ᵥ y t + Ge *ᵥ u t = 0) ↔
-      (∀ t, HasDerivAt x ((Aii - Aib * Gb⁻¹ * Gx) *ᵥ x t + (B - Aib * Gb⁻¹ * Ge) *ᵥ u t) t) ∧
-        ∀ t, y t = -(Gb⁻¹ *ᵥ (Gx *ᵥ x t + Ge *ᵥ u t)) :=
-  (portCoupled Aii Aib B Gx Gb Ge).isSolution_iff (isUnit_iff_ne_zero.mpr hGb) u x y
 
 end powerlib.Numerics

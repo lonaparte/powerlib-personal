@@ -22,8 +22,8 @@ Results.
 * `hasFDerivAt_toEuclideanCLM_of_components` / `fderiv_eq_toEuclideanCLM_of_components`:
   if each component has derivative `L i` with `L i v = ∑ j, A i j * v j`, the Jacobian is `A`
   (any dimension); `toEuclideanCLM_apply`: a matrix acts on a state coordinatewise,
-  `(A v) i = ∑ j, A i j * v j` (any dimension); `toEuclideanCLM_injective_fin_two`: a planar
-  Jacobian determines its matrix.
+  `(A v) i = ∑ j, A i j * v j` (any dimension); a Jacobian determines its matrix by Mathlib's
+  `Matrix.toEuclideanCLM.injective`.
 * `coord`, `hasFDerivAt_coord`, `contDiff_coord` (`fun_prop`): coordinates are smooth linear maps.
 * `contDiff_of_components`: smoothness of `f` from smoothness of its components.
 * `contDiff_field_mk_two_example`: a `fun_prop` demonstration for a planar field built from
@@ -37,14 +37,12 @@ Results.
   `toLin' A` (`hasFDerivAt_lift`, `fderiv_lift`, `contDiff_lift`); `hasFDerivAt_of_eq` replaces a
   function and its derivative by provably equal ones.
 * Norms and coordinates: `abs_apply_le_norm`, `abs_coord_sub_le`, `norm_le_sum_abs` with its
-  instances `norm_le_abs_add_abs_two`, `norm_le_abs_add_abs_three`, `sqrt_sq_add_sq_le`, and the
-  projection
+  planar instance `norm_le_abs_add_abs_two`, `sqrt_sq_add_sq_le`, and the projection
   removing one coordinate (`norm_sub_smul_single_le`, `norm_le_norm_sub_smul_single_add`).
 * Curves in `State n`: `fderiv_apply_eq_of_hasDerivAt_line` (a directional derivative is the
   derivative along the line), `hasDerivWithinAt_euclidean_of_coord`,
   `HasDerivWithinAt.euclidean_coord`, `tendsto_euclidean_of_coord` (curves are differentiated,
-  and converge, coordinatewise); `hasDerivAt_of_coords`, `hasDerivAt_iff_coords` (the same for
-  `HasDerivAt`).
+  and converge, coordinatewise); `hasDerivAt_iff_coords` (the same for `HasDerivAt`).
 -/
 
 noncomputable section
@@ -97,11 +95,6 @@ def coord (i : Fin n) : Dynamics.State n →L[ℝ] ℝ := EuclideanSpace.proj i
     (v : Dynamics.State n) (i : Fin n) :
     (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A v) i = ∑ j, A i j * v j := by
   simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct]
-
-@[tmio T, powerlib_foundation] theorem toEuclideanCLM_injective_fin_two :
-    Function.Injective (fun A : Matrix (Fin 2) (Fin 2) ℝ =>
-      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :=
-  Matrix.toEuclideanCLM.injective
 
 /-- Smoothness of a field on `Dynamics.State n` from smoothness of its components. -/
 @[tmio T, powerlib_foundation] theorem contDiff_of_components {f : Dynamics.State n → Dynamics.State n}
@@ -279,12 +272,6 @@ coordinates. -/
     ‖x‖ ≤ |x 0| + |x 1| :=
   (norm_le_sum_abs x).trans_eq (Fin.sum_univ_two _)
 
-/-- The Euclidean norm of a three-dimensional state is bounded by the sum of the absolute
-coordinates. -/
-@[tmio T, powerlib_foundation] theorem norm_le_abs_add_abs_three (x : EuclideanSpace ℝ (Fin 3)) :
-    ‖x‖ ≤ |x 0| + |x 1| + |x 2| :=
-  (norm_le_sum_abs x).trans_eq (Fin.sum_univ_three _)
-
 /-- The coordinate projection killing the `k`-th coordinate does not increase the norm. -/
 @[tmio T, powerlib_foundation] theorem norm_sub_smul_single_le (k : Fin n) (v : State n) :
     ‖v - v k • EuclideanSpace.single k (1 : ℝ)‖ ≤ ‖v‖ := by
@@ -371,19 +358,12 @@ variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
-/-- Coordinatewise derivatives give the derivative of a curve in `ℝⁿ`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_of_coords {x : ℝ → ℝⁿ} {v : ℝⁿ} {t : ℝ}
-    (h : ∀ i, HasDerivAt (fun s => x s i) (v i) t) : HasDerivAt x v t := by
-  have hpi : HasDerivAt (fun s => WithLp.ofLp (x s)) (WithLp.ofLp v) t := hasDerivAt_pi.2 h
-  have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivAt
-    t hpi
-  simpa [Function.comp_def] using h2
-
 /-- A curve in `ℝⁿ` has the derivative `v` iff each coordinate has the derivative `v i`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_iff_coords {x : ℝ → ℝⁿ} {v : ℝⁿ} {t : ℝ} :
     HasDerivAt x v t ↔ ∀ i, HasDerivAt (fun s => x s i) (v i) t :=
   ⟨fun h i => (EuclideanSpace.proj i : ℝⁿ →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t h,
-    hasDerivAt_of_coords⟩
+    fun h => hasDerivWithinAt_univ.mp
+      (hasDerivWithinAt_euclidean_of_coord fun i => (h i).hasDerivWithinAt)⟩
 
 end CurvesAt
 
