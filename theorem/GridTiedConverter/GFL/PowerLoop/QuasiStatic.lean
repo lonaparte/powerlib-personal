@@ -213,35 +213,23 @@ def literatureField : Dynamics.State 3 → Dynamics.State 3 :=
     -p.V * Real.sin (y 0) + p.Xg * y 2, p.kP * (p.Pref - 3 / 2 * (p.V * Real.cos (y 0)) * y 2)]
 
 /-- The reversal `diag(1, 1, −1)` of the current coordinate. -/
-def currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Matrix.diagonal ![1, 1, -1]
-
-@[tmio M, powerlib_domain] theorem currentReversal_mul_self :
-    currentReversal * currentReversal = 1 := by
-  rw [currentReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-  congr 1
-  ext i
-  fin_cases i <;> norm_num
-
-@[tmio M, powerlib_domain] theorem currentReversal_isUnit : IsUnit currentReversal :=
-  (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse currentReversal_mul_self)
+abbrev currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Dynamics.signMatrix ![1, 1, -1]
 
 /-- §D8 boundary translation: the IN-positive field is the OUT-positive source field transported
 by the reversal of the current coordinate (`i_d = −I_d`), with the power reference reversed
 (`P_ref = −P_ref,exp`); the dispatch law keeps its form since both sides of `İ_d = k_P(P_ref − P)`
 change sign. -/
 @[tmio M, powerlib_domain] theorem field_eq_transport_literatureField :
-    field p = Dynamics.transportField (Dynamics.matrixCoord currentReversal currentReversal_isUnit)
+    field p = Dynamics.transportField
+      (Dynamics.matrixCoord currentReversal (Dynamics.signMatrix_isUnit _))
       0 (literatureField { p with Pref := -p.Pref }) := by
-  have hinv : currentReversal⁻¹ = currentReversal :=
-    Matrix.inv_eq_left_inv currentReversal_mul_self
+  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext y
   apply WithLp.ofLp_injective
   ext i
-  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
-    Dynamics.matrixCoord_symm_apply, hinv]
   fin_cases i <;>
-    simp [field, literatureField, Dynamics.lift, coordField, vq, power, currentReversal,
-      Matrix.mulVec_diagonal, -mul_eq_mul_left_iff] <;> ring
+    simp [field, literatureField, Dynamics.lift, coordField, vq, power,
+      -mul_eq_mul_left_iff] <;> ring
 
 /-! ## Equilibria and the transmission limit -/
 

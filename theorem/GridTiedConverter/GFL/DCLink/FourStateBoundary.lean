@@ -66,7 +66,8 @@ Results.
   (`Dynamics.unstable_of_chetaev`).
 * Inexpressibility, `realize_ne_den_lyapunovStable`, `realize_ne_den_locallyAsymptoticallyStable`,
   `realize_ne_den_unstable`: for every set `T` of requirements, `TMIO.realize Meets T` differs from
-  the Lyapunov, local asymptotic and instability denotations. `undampedPLL` and `frozenPLL` meet
+  the Lyapunov, local asymptotic and instability denotations
+  (`Spectral.realize_ne_den_of_indistinguishable`). `undampedPLL` and `frozenPLL` meet
   exactly the same requirements (equilibrium, neither Routh nor `a₀ < 0`) but only the first is
   Lyapunov stable; `weakFocus` and `undampedPLL` meet the same requirements but only the first is
   locally asymptotically stable. So no translation into the requirement language of the family
@@ -555,13 +556,11 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := weakFocus_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  obtain ⟨-, -, -, hg⟩ : Meets weakFocus .routh := hmem .routh (by simp [family, translate])
+  refine Spectral.not_exact_of_witness weakFocus_mem_den_locallyAsymptoticallyStable
+    (q := .routh) (by simp [family, translate]) fun hs => ?_
+  obtain ⟨-, -, -, hg⟩ : Meets weakFocus .routh := hs
   norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3, a0,
-      twoAlphaCl, omegaClSq, Γc, vd0, weakFocus, Params.γ] at hg
+      twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, weakFocus, Params.γ] at hg
 
 /-! ## The Routh boundary: necessary conditions and inexpressibility -/
 
@@ -753,13 +752,13 @@ and neither meets the strict Routh conditions nor `a₀ < 0`. -/
       undampedPLL, frozenPLL]
   · constructor
     · rintro ⟨-, -, -, hg⟩
-      norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL, Params.γ] at hg
+      norm_num [a1, a2, a3, a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, Params.γ] at hg
     · rintro ⟨-, h1, -, -⟩
       norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1,
-          twoAlphaCl, omegaClSq, Γc, vd0, frozenPLL, Params.γ] at h1
+          twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, frozenPLL, Params.γ] at h1
   · simp only [Meets]
-    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a0, omegaClSq,
-        Γc, vd0, undampedPLL, frozenPLL, Params.γ]
+    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a0,
+        omegaClSq_eq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
 
 /-- `weakFocus` and `undampedPLL` meet the same requirements. -/
 @[tmio M, powerlib_domain] private theorem meets_weakFocus_iff_undamped (q : Requirement) :
@@ -772,12 +771,12 @@ and neither meets the strict Routh conditions nor `a₀ < 0`. -/
   · constructor
     · rintro ⟨-, -, -, hg⟩
       norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3,
-          a0, twoAlphaCl, omegaClSq, Γc, vd0, weakFocus, Params.γ] at hg
+          a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, weakFocus, Params.γ] at hg
     · rintro ⟨-, -, -, hg⟩
-      norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL, Params.γ] at hg
+      norm_num [a1, a2, a3, a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, Params.γ] at hg
   · simp only [Meets]
-    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a0, omegaClSq,
-        Γc, vd0, undampedPLL, weakFocus, Params.γ]
+    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a0,
+        omegaClSq_eq, Γc, vd0, undampedPLL, weakFocus, Params.γ]
 
 /-- **Inexpressibility of Lyapunov stability.** No translation into the requirement language
 of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) and `frozenPLL`
@@ -786,19 +785,15 @@ of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) a
     connection% (∀ T : Set Requirement,
       TMIO.realize Meets T ≠ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro T hT
-  have h1 := undampedPLL_mem_den_lyapunovStable
   have h2 := frozenPLL_mem_den_unstable
-  unfold powerlib.TMIO.Statement at h1 h2
-  rw [← hT, (connection_proof% TMIO.mem_realize)] at h1
-  have h3 : frozenPLL ∈ family.den (.flow .lyapunovStable) := by
-    rw [← hT, (connection_proof% TMIO.mem_realize)]
-    exact fun q hq => by
-      have heq : Meets undampedPLL q ↔ Meets frozenPLL q := by
-        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using meets_undamped_iff_frozen q
-      exact heq.mp (h1 q hq)
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h2 h3
-  exact h2 h3
+  unfold powerlib.TMIO.Statement at h2
+  refine Spectral.realize_ne_den_of_indistinguishable (F := family) (y := frozenPLL)
+    (fun q => ?_) undampedPLL_mem_den_lyapunovStable fun h3 => ?_
+  · change Meets _ q ↔ Meets _ q
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      meets_undamped_iff_frozen q
+  · rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h2 h3
+    exact h2 h3
 
 /-- **Inexpressibility of instability.** No translation into the requirement language of the
 family is exact for instability: `frozenPLL` (unstable) and `undampedPLL` (Lyapunov stable) meet
@@ -806,19 +801,15 @@ the same requirements. -/
 @[tmio TM, powerlib_domain] theorem realize_ne_den_unstable :
     connection% (∀ T : Set Requirement, TMIO.realize Meets T ≠ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro T hT
   have h1 := undampedPLL_mem_den_lyapunovStable
-  have h2 := frozenPLL_mem_den_unstable
-  unfold powerlib.TMIO.Statement at h1 h2
-  rw [← hT, (connection_proof% TMIO.mem_realize)] at h2
-  have h3 : undampedPLL ∈ family.den (.flow .unstable) := by
-    rw [← hT, (connection_proof% TMIO.mem_realize)]
-    exact fun q hq => by
-      have heq : Meets undampedPLL q ↔ Meets frozenPLL q := by
-        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using meets_undamped_iff_frozen q
-      exact heq.mpr (h2 q hq)
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h1 h3
-  exact h3 h1
+  unfold powerlib.TMIO.Statement at h1
+  refine Spectral.realize_ne_den_of_indistinguishable (F := family) (y := undampedPLL)
+    (fun q => ?_) frozenPLL_mem_den_unstable fun h3 => ?_
+  · change Meets _ q ↔ Meets _ q
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      (meets_undamped_iff_frozen q).symm
+  · rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h1 h3
+    exact h3 h1
 
 /-- **Inexpressibility of local asymptotic stability.** No translation into the requirement
 language of the family is exact for local asymptotic stability: `weakFocus` (locally
@@ -827,15 +818,12 @@ asymptotically stable) and `undampedPLL` (not) meet the same requirements. -/
     connection% (∀ T : Set Requirement,
       TMIO.realize Meets T ≠ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro T hT
-  have h1 := weakFocus_mem_den_locallyAsymptoticallyStable
-  have h2 := undampedPLL_not_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at h1 h2
-  apply h2
-  rw [← hT, (connection_proof% TMIO.mem_realize)] at h1 ⊢
-  exact fun q hq => by
-    have heq : Meets weakFocus q ↔ Meets undampedPLL q := by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using meets_weakFocus_iff_undamped q
-    exact heq.mp (h1 q hq)
+  exact Spectral.realize_ne_den_of_indistinguishable (F := family)
+    (fun q => by
+      change Meets _ q ↔ Meets _ q
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+        meets_weakFocus_iff_undamped q)
+    weakFocus_mem_den_locallyAsymptoticallyStable
+    undampedPLL_not_mem_den_locallyAsymptoticallyStable
 
 end powerlib.GFL.DCLink.FourStateBoundary

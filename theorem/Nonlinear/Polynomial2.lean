@@ -5,6 +5,7 @@ import theorem.Linear.Synthesis
 import theorem.Linear.Transfer
 import theorem.Dynamics.Coordinates
 import theorem.PhasePlane.Planar
+import theorem.Spectral.Local
 
 /-! # Two-state polynomial fields with sum-of-squares certificates
 
@@ -826,20 +827,16 @@ is not Hurwitz. -/
   unfold powerlib.TMIO.Statement
   have hgas := (family_isAutonomous.mem_den_flow.mp (cubicModel_globallyAsymptoticallyStable))
   constructor
-  · intro h
-    have hmem : cubicModel ∈ family.den (.flow .globallyAsymptoticallyStable) :=
-      family_isAutonomous.mem_den_flow.mpr hgas
-    rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-    obtain ⟨c⟩ : Nonempty (Certificate cubicModel) := hmem .certified rfl
-    apply cubicModel_not_certified
-    simpa only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
-      (show Nonempty (Certificate cubicModel) from ⟨c⟩)
-  · intro h
-    have hmem : cubicModel ∈ family.den (.flow .locallyAsymptoticallyStable) :=
-      family_isAutonomous.mem_den_flow.mpr hgas.localAsymptoticStable
-    rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-    have hH : IsHurwitz cubicModel.linearization := hmem .linearizationHurwitz
+  · refine Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr hgas)
+      (q := .certified) rfl fun hc => cubicModel_not_certified ?_
+    change Nonempty (Certificate cubicModel) at hc
+    simpa only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hc
+  · refine Spectral.not_exact_of_witness
+      (family_isAutonomous.mem_den_flow.mpr hgas.localAsymptoticStable)
+      (q := .linearizationHurwitz)
       (show _ ∈ ({.equilibrium, .linearizationHurwitz} : Set Requirement) from Or.inr rfl)
+      fun hH => ?_
+    change IsHurwitz cubicModel.linearization at hH
     rw [cubicModel_linearization] at hH
     have := hH 0 ![1, 0] (by simp [funext_iff])
       (by ext i; simp [Matrix.mulVec, dotProduct, Matrix.map_apply])

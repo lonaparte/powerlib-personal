@@ -44,7 +44,10 @@ Results.
   `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`). A stability condition that also
   fixes physical signs (positive inertia, capacitance, …) is not of this form; such families
   publish the exact membership within the physical range and a witness that the translation itself
-  is not exact.
+  is not exact. Within a range `D` implied by `S`: the generated space of a local sentence is its
+  denotation cut by `D` when `S` is equivalent to the sentence on `D`
+  (`local_realize_eq_den_inter_of_iff`), and is not when a member of `D` satisfies the sentence
+  without meeting `S` (`local_realize_ne_den_inter_of_witness`).
 * The local laws are the two-requirement instance of the named-requirement template
   `theorem/Spectral/Local.lean` (`localTable`, `chain_le_semantics_of_localTable_same`,
   `realize_univ_eq_empty_of`), which families with their own requirement languages use directly.
@@ -226,6 +229,55 @@ Jacobian, for `C¹` fields, the local exponential translation of a local spectra
     connection% ((localFamily field S U).Exact (.flow .locallyExponentiallyStable)) := show (localFamily field S U).Exact (.flow .locallyExponentiallyStable) from
   local_exact_locallyExponentiallyStable fun x =>
     (hS x).trans (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (hC x) (hJ x)).symm
+
+/-! ### Exactness within a physical range -/
+
+/-- The local sentences of a local spectral family are translated to `stable`: their generated
+space is the set of models meeting the stability condition. -/
+@[tmio TM, powerlib_foundation] private theorem local_realize_stable {field : X → ℝⁿ → ℝⁿ}
+    {S U : X → Prop} {P : Flow.Property} (hP : P = .lyapunovStable ∨
+      P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
+    realize (localFamily field S U).meets ((localFamily field S U).translate (.flow P)) =
+      {x | S x} := by
+  ext x
+  rw [(connection_proof% mem_realize)]
+  rcases hP with rfl | rfl | rfl <;>
+  · change (∀ q ∈ ({.stable} : Set Requirement), Meets S U x q) ↔ _
+    simp
+
+/-- **Exactness within a range.** In a local spectral family whose stability condition `S`
+implies a range `D` (e.g. positive physical parameters) and, within `D`, is equivalent to a local
+sentence, the generated space of that sentence's translation is its denotation cut by `D`. -/
+@[tmio TM, powerlib_foundation] theorem local_realize_eq_den_inter_of_iff {field : X → ℝⁿ → ℝⁿ}
+    {S U : X → Prop} {P : Flow.Property} (hP : P = .lyapunovStable ∨
+      P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) {D : Set X}
+    (hSD : ∀ x, S x → x ∈ D) (h : ∀ x ∈ D, S x ↔ x ∈ (localFamily field S U).den (.flow P)) :
+    connection% (realize (localFamily field S U).meets
+      ((localFamily field S U).translate (.flow P)) = (localFamily field S U).den (.flow P) ∩ D) :=
+    by
+  change realize (localFamily field S U).meets ((localFamily field S U).translate (.flow P)) =
+    (localFamily field S U).den (.flow P) ∩ D
+  rw [local_realize_stable hP]
+  ext x
+  exact ⟨fun hx => ⟨(h x (hSD x hx)).mp hx, hSD x hx⟩, fun hx => (h x hx.2).mpr hx.1⟩
+
+/-- **A witness against exactness within a range.** A model of a local spectral family in the
+range `D` that satisfies a local sentence without meeting the stability condition shows that the
+generated space of the sentence's translation is not its denotation cut by `D`. -/
+@[tmio TM, powerlib_foundation] theorem local_realize_ne_den_inter_of_witness
+    {field : X → ℝⁿ → ℝⁿ} {S U : X → Prop} {P : Flow.Property} (hP : P = .lyapunovStable ∨
+      P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) {D : Set X} {x : X}
+    (hx : x ∈ (localFamily field S U).den (.flow P)) (hD : x ∈ D) (hS : ¬ S x) :
+    connection% (¬ realize (localFamily field S U).meets
+      ((localFamily field S U).translate (.flow P)) = (localFamily field S U).den (.flow P) ∩ D) :=
+    by
+  change ¬ realize (localFamily field S U).meets ((localFamily field S U).translate (.flow P)) =
+    (localFamily field S U).den (.flow P) ∩ D
+  rw [local_realize_stable hP]
+  intro h
+  have hin : x ∈ (localFamily field S U).den (.flow P) ∩ D := ⟨hx, hD⟩
+  rw [← h] at hin
+  exact hS hin
 
 /-! ### Inexactness along translations -/
 

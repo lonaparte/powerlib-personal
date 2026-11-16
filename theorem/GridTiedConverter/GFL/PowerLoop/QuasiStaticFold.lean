@@ -137,75 +137,6 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
 
 section FoldLocal
 
-/-- The size function `s = |z₀| + |z₁| + |z₂|`. -/
-@[tmio T, powerlib_foundation] private theorem size3_tendsto :
-    Tendsto (fun z : Dynamics.State 3 => |z 0| + |z 1| + |z 2|) (𝓝 0) (𝓝 0) := by
-  have hc : Continuous (fun z : Dynamics.State 3 => |z 0| + |z 1| + |z 2|) := by fun_prop
-  simpa using hc.tendsto 0
-
-@[tmio T, powerlib_foundation] private theorem coord3_isBigO (i : Fin 3) :
-    (fun z : Dynamics.State 3 => z i) =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ 1 :=
-  IsBigO.of_bound 1 (Eventually.of_forall fun z => by
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, pow_one]
-    have h0 := abs_nonneg (z 0)
-    have h1 := abs_nonneg (z 1)
-    have h2 := abs_nonneg (z 2)
-    refine le_trans ?_ (le_abs_self _)
-    fin_cases i <;> simp <;> linarith)
-
-@[tmio T, powerlib_foundation] private theorem mul3_isBigO {f g : Dynamics.State 3 → ℝ} {a b k : ℕ}
-    (hf : f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ a)
-    (hg : g =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ b) (hk : k ≤ a + b) :
-    (fun z => f z * g z) =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
-  ((hf.mul hg).congr_right fun _ => (pow_add _ _ _).symm).trans
-    (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
-
-@[tmio T, powerlib_foundation] private theorem mono3_isBigO {f : Dynamics.State 3 → ℝ} {a k : ℕ}
-    (hf : f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ a) (hk : k ≤ a) :
-    f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
-  hf.trans (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
-
-/-- `1 − cos z₀ = O(s²)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
-@[tmio T, powerlib_foundation] private theorem one_sub_cos3_isBigO :
-    (fun z : Dynamics.State 3 => 1 - Real.cos (z 0)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 2 := by
-  have ht : Tendsto (fun z : Dynamics.State 3 => z 0) (𝓝 0) (𝓝 0) :=
-    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
-      Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
-  have h0' : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1| + |z 2| :=
-    (coord3_isBigO 0).congr_right fun z => pow_one _
-  exact (Dynamics.one_sub_cos_isBigO.comp_tendsto ht).trans (h0'.pow 2)
-
-/-- `sin z₀ − z₀ = O(s³)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
-@[tmio T, powerlib_foundation] private theorem sin_sub_self3_isBigO :
-    (fun z : Dynamics.State 3 => Real.sin (z 0) - z 0) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 3 := by
-  have ht : Tendsto (fun z : Dynamics.State 3 => z 0) (𝓝 0) (𝓝 0) :=
-    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
-      Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
-  have h0' : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1| + |z 2| :=
-    (coord3_isBigO 0).congr_right fun z => pow_one _
-  exact (Dynamics.sin_sub_self_isBigO.comp_tendsto ht).trans (h0'.pow 3)
-
-/-- `1 − cos z₀ − z₀²/2 = O(s⁴)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
-@[tmio T, powerlib_foundation] private theorem one_sub_cos_sub3_isBigO :
-    (fun z : Dynamics.State 3 => 1 - Real.cos (z 0) - z 0 ^ 2 / 2) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 4 := by
-  have ht : Tendsto (fun z : Dynamics.State 3 => z 0) (𝓝 0) (𝓝 0) :=
-    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
-      Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
-  have h0' : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1| + |z 2| :=
-    (coord3_isBigO 0).congr_right fun z => pow_one _
-  exact (Dynamics.one_sub_cos_sub_isBigO.comp_tendsto ht).trans (h0'.pow 4)
-
-/-- `sin z₀ = O(s)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
-@[tmio T, powerlib_foundation] private theorem sin3_isBigO :
-    (fun z : Dynamics.State 3 => Real.sin (z 0)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 1 := by
-  refine (IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_)).trans (coord3_isBigO 0)
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
-  exact Real.abs_sin_le_abs
-
 variable {A B Xg kp ki κ : ℝ}
 
 /-- The fold Lie derivative: `U̇ = Φ + D` with the negative definite quadratic form `Φ` and a
@@ -254,57 +185,72 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
         2 * foldS2 A kp κ (z 0) (z 1) *
           (κ * (A * B * (1 - Real.cos (z 0)) + A * Xg * (z 2 * (1 - Real.cos (z 0))) +
             B * Xg * (z 2 * Real.sin (z 0)) + A ^ 2 * (Real.sin (z 0) - z 0)))) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 3 := by
-  have t2 := one_sub_cos3_isBigO
-  have t3 := sin_sub_self3_isBigO
-  have t4 := one_sub_cos_sub3_isBigO
-  have ts := sin3_isBigO
-  have e0 := coord3_isBigO 0
-  have e1 := coord3_isBigO 1
-  have e2 := coord3_isBigO 2
+      fun z => (∑ i, |z i|) ^ 3 := by
+  -- the size `s = ∑ᵢ |zᵢ|`, its coordinates and the Taylor remainders, from `Dynamics.Calculus`
+  have hs : Tendsto (fun z : Dynamics.State 3 => ∑ i, |z i|) (𝓝 0) (𝓝 0) :=
+    Dynamics.tendsto_sum_abs_coord ((PiLp.continuous_ofLp 2 _).tendsto' 0 0 (by simp))
+  have mono : ∀ {f : Dynamics.State 3 → ℝ} {a k : ℕ}, f =O[𝓝 0] (fun z => (∑ i, |z i|) ^ a) →
+      k ≤ a → f =O[𝓝 0] fun z => (∑ i, |z i|) ^ k :=
+    fun hf hk => hf.trans (Dynamics.isBigO_pow_of_tendsto hs hk)
+  have c0 := Dynamics.coord_isBigO_sum_abs (l := 𝓝 0) (WithLp.ofLp (p := 2)) (0 : Fin 3)
+  have h0 := c0.trans_tendsto hs
+  have t2 := Dynamics.isBigO_comp_pow Dynamics.one_sub_cos_isBigO h0 c0
+  have t3 := Dynamics.isBigO_comp_pow Dynamics.sin_sub_self_isBigO h0 c0
+  have t4 := Dynamics.isBigO_comp_pow Dynamics.one_sub_cos_sub_isBigO h0 c0
+  have ts := Dynamics.isBigO_comp_pow (g := Real.sin) (k := 1)
+    (IsBigO.of_bound 1 (Eventually.of_forall fun x => by simpa using Real.abs_sin_le_abs)) h0 c0
+  have e : ∀ i : Fin 3, (fun z : Dynamics.State 3 => z i) =O[𝓝 0] fun z => (∑ j, |z j|) ^ 1 :=
+    fun i => (Dynamics.coord_isBigO_sum_abs (WithLp.ofLp (p := 2)) i).congr_right
+      fun _ => (pow_one _).symm
+  have e0 := e 0
+  have e1 := e 1
+  have e2 := e 2
   -- the trigonometric factors
   have d1 : (fun z : Dynamics.State 3 =>
       -A * (Real.sin (z 0) - z 0) + B * (1 - Real.cos (z 0))) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 2 :=
-    (mono3_isBigO (t3.const_mul_left (-A)) (by norm_num)).add (t2.const_mul_left B)
+      fun z => (∑ i, |z i|) ^ 2 :=
+    (mono (t3.const_mul_left (-A)) (by norm_num)).add (t2.const_mul_left B)
   have d2 : (fun z : Dynamics.State 3 =>
       κ * (A * B * (1 - Real.cos (z 0)) + A * Xg * (z 2 * (1 - Real.cos (z 0))) +
         B * Xg * (z 2 * Real.sin (z 0)) + A ^ 2 * (Real.sin (z 0) - z 0))) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 2 :=
+      fun z => (∑ i, |z i|) ^ 2 :=
     ((((t2.const_mul_left (A * B)).add
-      ((mul3_isBigO e2 t2 (by norm_num)).const_mul_left (A * Xg))).add
-      ((mul3_isBigO e2 ts (by norm_num)).const_mul_left (B * Xg))).add
-      (mono3_isBigO (t3.const_mul_left (A ^ 2)) (by norm_num))).const_mul_left κ
+      ((Dynamics.isBigO_mul_pow hs e2 t2 (by norm_num)).const_mul_left (A * Xg))).add
+      ((Dynamics.isBigO_mul_pow hs e2 ts (by norm_num)).const_mul_left (B * Xg))).add
+      (mono (t3.const_mul_left (A ^ 2)) (by norm_num))).const_mul_left κ
   -- the linear factors
   have s0 : (fun z : Dynamics.State 3 => 2 * foldS0 A Xg kp κ (z 0) (z 1) (z 2)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 1 := by
+      fun z => (∑ i, |z i|) ^ 1 := by
     unfold foldS0
     exact ((e0.add (e1.const_mul_left (-(kp + κ)))).add (e2.const_mul_left (-1 / A * Xg))
       |>.congr_left fun z => by ring).const_mul_left 2
   have s1 : (fun z : Dynamics.State 3 => 2 * foldS1 A Xg kp ki κ (z 0) (z 1) (z 2)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 1 := by
+      fun z => (∑ i, |z i|) ^ 1 := by
     unfold foldS1
     exact (((e0.const_mul_left (-(kp + κ))).add
       (e1.const_mul_left (-A * κ ^ 2 / 2 + kp ^ 2 + 2 * kp * κ + ki / A))).add
       (e2.const_mul_left ((-κ / 2 + kp / A) * Xg)) |>.congr_left fun z => by ring).const_mul_left 2
   have s2 : (fun z : Dynamics.State 3 => 2 * foldS2 A kp κ (z 0) (z 1)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1| + |z 2|) ^ 1 := by
+      fun z => (∑ i, |z i|) ^ 1 := by
     unfold foldS2
     exact ((e0.const_mul_left (-1 / A)).add (e1.const_mul_left (-κ / 2 + kp / A))).const_mul_left 2
   have hR1 : (fun z : Dynamics.State 3 =>
       -κ * (2 * A ^ 2 * (1 - Real.cos (z 0) - z 0 ^ 2 / 2) +
         B * Xg * (z 2 * (1 - Real.cos (z 0))) + A * Xg * (z 2 * (Real.sin (z 0) - z 0))))
-      =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ 3 :=
-    (((mono3_isBigO (t4.const_mul_left (2 * A ^ 2)) (by norm_num)).add
-      ((mul3_isBigO e2 t2 (by norm_num)).const_mul_left (B * Xg))).add
-      ((mul3_isBigO e2 t3 (by norm_num)).const_mul_left (A * Xg))).const_mul_left (-κ)
-  exact ((hR1.add (mul3_isBigO s0 (d1.const_mul_left kp |>.congr_left fun z => by ring)
-    (by norm_num))).add (mul3_isBigO s1 d1 (by norm_num))).add (mul3_isBigO s2 d2 (by norm_num))
+      =O[𝓝 0] fun z => (∑ i, |z i|) ^ 3 :=
+    (((mono (t4.const_mul_left (2 * A ^ 2)) (by norm_num)).add
+      ((Dynamics.isBigO_mul_pow hs e2 t2 (by norm_num)).const_mul_left (B * Xg))).add
+      ((Dynamics.isBigO_mul_pow hs e2 t3 (by norm_num)).const_mul_left (A * Xg))).const_mul_left
+      (-κ)
+  exact ((hR1.add (Dynamics.isBigO_mul_pow hs s0
+    (d1.const_mul_left kp |>.congr_left fun z => by ring) (by norm_num))).add
+    (Dynamics.isBigO_mul_pow hs s1 d1 (by norm_num))).add
+    (Dynamics.isBigO_mul_pow hs s2 d2 (by norm_num))
 
 /-- `s² ≤ (3/c)(κA²z₀² + 2k_i(k_p+κ)z₁² + κ(X_g z₂)²)`. -/
 @[tmio T, powerlib_foundation] private theorem fold_size_isBigO (hA : A ≠ 0) (hκ : 0 < κ) (hk : 0 < ki * (kp + κ))
     (hXg : Xg ≠ 0) :
-    (fun z : Dynamics.State 3 => (|z 0| + |z 1| + |z 2|) ^ 2) =O[𝓝 0]
+    (fun z : Dynamics.State 3 => (∑ i, |z i|) ^ 2) =O[𝓝 0]
       fun z => κ * A ^ 2 * z 0 ^ 2 + 2 * ki * (kp + κ) * z 1 ^ 2 + κ * (Xg * z 2) ^ 2 := by
   set c := min (κ * A ^ 2) (min (2 * ki * (kp + κ)) (κ * Xg ^ 2)) with hc
   have hc0 : 0 < c := lt_min (by positivity) (lt_min (by nlinarith) (by positivity))
@@ -318,7 +264,8 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
     have := mul_le_mul_of_nonneg_right hc2 (sq_nonneg (z 1))
     have := mul_le_mul_of_nonneg_right hc3 (sq_nonneg (z 2))
     nlinarith
-  have hs : (|z 0| + |z 1| + |z 2|) ^ 2 ≤ 3 * (z 0 ^ 2 + z 1 ^ 2 + z 2 ^ 2) := by
+  have hs : (∑ i, |z i|) ^ 2 ≤ 3 * (z 0 ^ 2 + z 1 ^ 2 + z 2 ^ 2) := by
+    rw [Fin.sum_univ_three]
     nlinarith [sq_abs (z 0), sq_abs (z 1), sq_abs (z 2), sq_nonneg (|z 0| - |z 1|),
       sq_nonneg (|z 1| - |z 2|), sq_nonneg (|z 0| - |z 2|)]
   have hq0 : 0 ≤ κ * A ^ 2 * z 0 ^ 2 + 2 * ki * (kp + κ) * z 1 ^ 2 + κ * (Xg * z 2) ^ 2 := by
@@ -387,7 +334,8 @@ strictly on a punctured neighbourhood and is negative along the ray `t (B, 0, AB
     refine Dynamics.eventually_neg_of_isLittleO
       (q := fun z => κ * A ^ 2 * z 0 ^ 2 + 2 * ki * (kp + κ) * z 1 ^ 2 + κ * (Xg * z 2) ^ 2) hQ ?_
     refine (((fold_D_isBigO A B Xg kp ki κ).trans_isLittleO
-      ((Dynamics.isLittleO_pow_of_tendsto size3_tendsto (by norm_num : 2 < 3)).trans_isBigO
+      ((Dynamics.isLittleO_pow_of_tendsto (Dynamics.tendsto_sum_abs_coord
+        ((PiLp.continuous_ofLp 2 _).tendsto' 0 0 (by simp))) (by norm_num : 2 < 3)).trans_isBigO
         (fold_size_isBigO hA hκ hk hXg))).mono nhdsWithin_le_nhds).congr_left fun z => ?_
     rw [fold_lie_eq hA hAB hg0 hg1 hg2 z]
     ring

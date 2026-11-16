@@ -1,5 +1,7 @@
 import theorem.GridTiedConverter.GFL.LCLine.Reduced2D
 import theorem.Criteria.Hurwitz2
+import theorem.GridTiedConverter.PLL.Linear
+import theorem.PowerSystem.Synchronous.PH
 
 /-! # Damping-class dichotomy: constant-damping swing (class A) vs GFL type-2 PLL (class B)
 
@@ -16,12 +18,18 @@ Model boundary.
   `H = p²/(2M) + V(δ)`, `V(δ) = −P_m δ − P_max cos δ`; `J = [[0, 1], [−1, 0]]`, `R = diag(0, D)`,
   input port `(0, 1)ᵀ` (mechanical-power / torque perturbation). Constant damping `D`; classical
   `P_e = P_max sin δ`; continuous time; no exciter, governor, saturation or network dynamics.
+  The pH statements are those of the classical machine `Synchronous.classicalSM`, with its
+  physical range `M > 0`, `D ≥ 0`, `P_max = b > 0` (`Synchronous.ClassicalSMParams`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md`
 §1–§3; `sn-critical-scaling.md` §1.
 
 Results.
-* `swingPH` and `swingPH_zeroInputField`, `swing_energy_rate` (`Ḣ = −D (p/M)²`).
+* The class-A pH model is the classical machine `Synchronous.classicalSM`
+  (`theorem/PowerSystem/Synchronous/PH.lean`, `b = P_max`): its field is the swing field
+  (`Synchronous.classicalSM_field`), its energy balance `Ḣ = u ω − D ω²`
+  (`Synchronous.classicalSM_power_balance`, `Ḣ = −D (p/M)²` at `u = 0`) and its dissipation matrix
+  `R_A` (`swingPH_R`).
 * Port inversion (`damping-class-dichotomy.md` §2): grid-frequency noise enters the class-B
   dissipation port exactly, `B Bᵀ = 2 (ε²/2K_p) R_B` (`classB_frequency_fdt`), while for class A it
   is orthogonal to `R_A` and never proportional to it (`classA_frequency_orthogonal`,
@@ -33,10 +41,12 @@ Results.
   `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`); the class-A Jacobian
   `[[0, 1/M], [−g, −D/M]]` has constant trace `−D/M` (`classA_trace`), so at a fold it is never
   nilpotent (`classA_not_nilpotent`).
-* Damping ratio (`§3`): `ζ_B = (K_p/2)√(g/K_i)` (`classB_zeta_eq`), `ζ_A = D/(2√(M g))`
-  (`classA_zeta_eq`); `ζ_B(λ g) = √λ ζ_B(g)`, `ζ_A(λ g) = ζ_A(g)/√λ`; `ζ_B → 0`, `ζ_A → ∞` as
-  `g → 0⁺`; near the fold the class-A eigenvalues are real (`classA_eigenvalues_real_of_le`)
-  and the class-B eigenvalues are non-real (`classB_eigenvalue_nonreal_of_lt`).
+* Damping ratio (`§3`, `Criteria.dampingRatio`): `ζ_B` is the PI-PLL damping ratio `PLL.zeta` at the
+  slope `g` (`classB_zeta_eq`), `ζ_B = (K_p/2)√(g/K_i)` for `g > 0` (`zetaB_eq`),
+  `ζ_A = D/(2√(M g))` (`classA_zeta_eq`); `ζ_B(λ g) = √λ ζ_B(g)`, `ζ_A(λ g) = ζ_A(g)/√λ`; `ζ_B → 0`,
+  `ζ_A → ∞` as `g → 0⁺`; near the fold the class-A eigenvalues are real
+  (`classA_eigenvalues_real_of_le`) and the class-B eigenvalues are non-real
+  (`classB_eigenvalue_nonreal_of_lt`).
 
 Family and connection conclusions.
 No family and no connection conclusion: the module contains
@@ -53,7 +63,10 @@ open powerlib.Dynamics (State)
 open powerlib.PLL
 open powerlib.GFL.LCLine
 
-/-! ### Class A: the swing equation as a pH system -/
+/-! ### Class A: the swing field
+
+Its port-Hamiltonian form is the classical machine `Synchronous.classicalSM`
+(`theorem/PowerSystem/Synchronous/PH.lean`). -/
 
 /-- Parameters of the class-A swing model. -/
 structure SwingParams where
@@ -74,72 +87,6 @@ variable (s : SwingParams)
 def field (x : State 2) : State 2 :=
   WithLp.toLp 2 ![s.M⁻¹ * x 1, s.Pm - s.Pmax * sin (x 0) - s.D * (s.M⁻¹ * x 1)]
 
-/-- Potential `V(δ) = −P_m δ − P_max cos δ`. -/
-def pot (δ : ℝ) : ℝ := -(s.Pm * δ) - s.Pmax * cos δ
-
-/-- Hamiltonian `H = p²/(2M) + V(δ)`. -/
-def hamiltonian (x : State 2) : ℝ := (2 * s.M)⁻¹ * x 1 ^ 2 + s.pot (x 0)
-
-/-- Gradient `∇H = (P_max sin δ − P_m, p/M)`. -/
-def gradH (x : State 2) : State 2 := WithLp.toLp 2 ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1]
-
-@[tmio M, powerlib_domain] theorem hasGradientAt_hamiltonian (x : State 2) :
-    HasGradientAt s.hamiltonian (s.gradH x) x := by
-  set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
-  set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
-  have h0 : HasFDerivAt (fun z : State 2 => z 0) π0 x := π0.hasFDerivAt
-  have h1 : HasFDerivAt (fun z : State 2 => z 1) π1 x := π1.hasFDerivAt
-  have hpot : HasDerivAt s.pot (s.Pmax * sin (x 0) - s.Pm) (x 0) := by
-    have h := ((hasDerivAt_id (x 0)).const_mul s.Pm).neg.sub
-      ((hasDerivAt_cos (x 0)).const_mul s.Pmax)
-    convert h using 1
-    · funext x; simp [pot]
-    · simp; ring
-  have hp := hpot.comp_hasFDerivAt x h0
-  have hq := (h1.pow 2).const_mul (2 * s.M)⁻¹
-  refine PH.hasGradientAt_of_hasFDerivAt (hq.add hp) ?_
-  intro v
-  simp [gradH, π0, π1, dotProduct, Fin.sum_univ_two]
-  ring
-
-@[tmio T, powerlib_foundation] private lemma posSemidef_RA {D : ℝ} (hD : 0 ≤ D) :
-    (!![0, 0; 0, D]).PosSemidef := by
-  have : !![0, 0; 0, D] = Matrix.diagonal ![0, D] := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp
-  rw [this, Matrix.posSemidef_diagonal_iff]
-  intro i; fin_cases i <;> simp [hD]
-
-/-- Class A as a nonlinear pH system: `J = [[0, 1], [−1, 0]]`, `R = diag(0, D)`, port `(0, 1)ᵀ`. -/
-def swingPH (hD : 0 ≤ s.D) : PH.NonlinearModel 2 1 where
-  J _ := !![0, 1; -1, 0]
-  R _ := !![0, 0; 0, s.D]
-  g _ := !![0; 1]
-  H := s.hamiltonian
-  dH := s.gradH
-  skew _ := PH.transpose_symplectic_two
-  dissipation_posSemidef _ := posSemidef_RA hD
-  hasGradient := s.hasGradientAt_hamiltonian
-
-@[tmio M, powerlib_domain] theorem swingPH_zeroInputField (hD : 0 ≤ s.D) :
-    (s.swingPH hD).zeroInputField = s.field := by
-  funext x
-  have hg : WithLp.ofLp (s.gradH x) = ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1] := rfl
-  simp only [PH.NonlinearModel.zeroInputField, PH.NonlinearModel.field, swingPH, hg, field]
-  congr 1
-  ext i; fin_cases i <;> simp [Matrix.vecHead, Matrix.vecTail]; ring
-
-/-- Class-A energy balance: `Ḣ = −D (p/M)²`. -/
-@[tmio M, powerlib_domain] theorem swing_energy_rate (hD : 0 ≤ s.D) (x : State 2) :
-    fderiv ℝ s.hamiltonian x (s.field x) = -(s.D * (s.M⁻¹ * x 1) ^ 2) := by
-  have h := (s.swingPH hD).zeroInput_power_balance x
-  have hH : (s.swingPH hD).H = s.hamiltonian := rfl
-  rw [swingPH_zeroInputField, hH] at h
-  rw [h]
-  have hg : WithLp.ofLp (s.gradH x) = ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1] := rfl
-  simp only [PH.NonlinearModel.dampingPower, swingPH, hg]
-  simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  ring
-
 end SwingParams
 
 /-! ### Noise ports and the fluctuation–dissipation structure (matrix algebra) -/
@@ -149,11 +96,17 @@ def RA (D : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 0; 0, D]
 /-- Class-B dissipation matrix `R_B = diag(K_p, 0)`. -/
 def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 
-@[tmio M, powerlib_domain] theorem swingPH_R (s : SwingParams) (hD : 0 ≤ s.D) (x : State 2) :
-    (s.swingPH hD).R x = RA s.D := rfl
+/-- The class-A pH model is the classical machine `Synchronous.classicalSM` (`b = P_max`): its
+dissipation matrix is `R_A`. -/
+@[tmio M, powerlib_domain] theorem swingPH_R (p : Synchronous.ClassicalSMParams) (x : State 2) :
+    (Synchronous.classicalSM p).R x = RA p.D := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
 
 @[tmio M, powerlib_domain] theorem pHModel_R (p : Params) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hKp : 0 ≤ p.Kp) (y : State 2) : (p.pHModel hwC hΔ hKp).R y = RB p.Kp := rfl
+    (hKp : 0 ≤ p.Kp) (y : State 2) : (p.pHModel hwC hΔ hKp).R y = RB p.Kp := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
 
 /-- Grid-frequency noise in class B, `B = (−ε, 0)ᵀ`: `B Bᵀ = 2 T R_B` with `T = ε²/(2K_p)`. -/
 @[tmio M, powerlib_domain] theorem classB_frequency_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
@@ -245,37 +198,36 @@ at `−D/M` (an ordinary saddle-node), unlike the class-B fold. -/
 
 /-! ### Damping ratio laws -/
 
-/-- `ζ = |tr|/(2√det)` of a 2×2 matrix. -/
-def zeta (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := |A.trace| / (2 * √A.det)
-
-/-- Class-B damping ratio `ζ_B = (K_p/2) √(g/K_i)`. -/
-def zetaB (Kp Ki g : ℝ) : ℝ := Kp / 2 * √(g / Ki)
+/-- Class-B damping ratio: the PI-PLL damping ratio `PLL.zeta` at the detector slope `g`,
+`ζ_B = g K_p / (2 √(g K_i))`, which is `(K_p/2) √(g/K_i)` for `g > 0` (`zetaB_eq`). -/
+def zetaB (Kp Ki g : ℝ) : ℝ := PLL.zeta g Kp Ki
 
 /-- Class-A damping ratio `ζ_A = D/(2√(M g))`. -/
 def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
 
-/-- For the class-B Jacobian at a stable slope `h′ = −g`, `g > 0`: `ζ = ζ_B`. -/
-@[tmio M, powerlib_domain] theorem classB_zeta_eq {Kp Ki g : ℝ} (hKp : 0 ≤ Kp) (hKi : 0 < Ki)
-    (hg : 0 < g) : zeta (piPLLJacobian Kp Ki (-g)) = zetaB Kp Ki g := by
-  rw [zeta, zetaB, piPLLJacobian_trace, piPLLJacobian_det,
-    show -(Ki * -g) = Ki * g by ring, show Kp * -g = -(Kp * g) by ring, abs_neg,
-    abs_of_nonneg (mul_nonneg hKp hg.le)]
-  have h1 : √(Ki * g) = Ki * √(g / Ki) := by
-    rw [show Ki * g = Ki ^ 2 * (g / Ki) by field_simp, Real.sqrt_mul (sq_nonneg _),
-      Real.sqrt_sq hKi.le]
-  have h2 : 0 < √(g / Ki) := Real.sqrt_pos.mpr (div_pos hg hKi)
-  rw [h1]
-  have h3 : √(g / Ki) * √(g / Ki) = g / Ki := Real.mul_self_sqrt (div_pos hg hKi).le
-  have h3' : √(g / Ki) * √(g / Ki) * Ki = g := by rw [h3, div_mul_cancel₀ g hKi.ne']
-  rw [div_eq_iff (by positivity)]
-  linear_combination (-Kp) * h3'
+/-- For the class-B Jacobian at the slope `h′ = −g`: its damping ratio (`Criteria.dampingRatio`)
+is `ζ_B`. -/
+@[tmio M, powerlib_domain] theorem classB_zeta_eq (Kp Ki g : ℝ) :
+    Criteria.dampingRatio (piPLLJacobian Kp Ki (-g)) = zetaB Kp Ki g := by
+  rw [Criteria.dampingRatio, zetaB, PLL.zeta, PLL.omegaN, piPLLJacobian_trace,
+    piPLLJacobian_det, show -(Ki * -g) = g * Ki by ring]
+  ring
 
-/-- For the class-A Jacobian with restoring slope `g > 0`: `ζ = ζ_A`. -/
-@[tmio M, powerlib_domain] theorem classA_zeta_eq {M D g : ℝ} (hM : 0 < M) (hD : 0 ≤ D)
-    (hg : 0 < g) :
-    zeta (classAJacobian M D g) = zetaA M D g := by
-  rw [zeta, zetaA, classA_trace, classA_det, abs_neg,
-    abs_of_nonneg (mul_nonneg hD (inv_nonneg.mpr hM.le))]
+/-- The closed form `ζ_B = (K_p/2) √(g/K_i)` for a positive slope `g` (`PLL.zeta_eq`; for
+`K_i ≤ 0` both sides vanish). -/
+@[tmio M, powerlib_domain] theorem zetaB_eq (Kp Ki : ℝ) {g : ℝ} (hg : 0 < g) :
+    zetaB Kp Ki g = Kp / 2 * √(g / Ki) := by
+  rcases lt_or_ge 0 Ki with hKi | hKi
+  · exact PLL.zeta_eq hg hKi
+  · have h1 : √(g * Ki) = 0 := Real.sqrt_eq_zero'.mpr (mul_nonpos_of_nonneg_of_nonpos hg.le hKi)
+    have h2 : √(g / Ki) = 0 := Real.sqrt_eq_zero'.mpr (div_nonpos_of_nonneg_of_nonpos hg.le hKi)
+    simp [zetaB, PLL.zeta, PLL.omegaN, h1, h2]
+
+/-- For the class-A Jacobian with restoring slope `g > 0`: its damping ratio
+(`Criteria.dampingRatio`) is `ζ_A`. -/
+@[tmio M, powerlib_domain] theorem classA_zeta_eq {M D g : ℝ} (hM : 0 < M) (hg : 0 < g) :
+    Criteria.dampingRatio (classAJacobian M D g) = zetaA M D g := by
+  rw [Criteria.dampingRatio, zetaA, classA_trace, classA_det, neg_neg]
   have h1 : √(M * g) = M * √(g * M⁻¹) := by
     rw [show M * g = M ^ 2 * (g * M⁻¹) by field_simp, Real.sqrt_mul (sq_nonneg _),
       Real.sqrt_sq hM.le]
@@ -286,7 +238,15 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
 /-- Scaling law of class B: `ζ_B(λ g) = √λ ζ_B(g)`. -/
 @[tmio M, powerlib_domain] theorem zetaB_scale (Kp Ki g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
     zetaB Kp Ki (l * g) = √l * zetaB Kp Ki g := by
-  rw [zetaB, zetaB, mul_div_assoc, Real.sqrt_mul hl]; ring
+  rw [zetaB, zetaB, PLL.zeta, PLL.zeta, PLL.omegaN, PLL.omegaN,
+    show l * g * Ki = l * (g * Ki) by ring, Real.sqrt_mul hl]
+  rcases hl.eq_or_lt with rfl | hl
+  · simp
+  · have hs : √l ≠ 0 := (Real.sqrt_pos.mpr hl).ne'
+    have hsl : √l * √l = l := Real.mul_self_sqrt hl.le
+    have hn : l * g * Kp = √l * (√l * (g * Kp)) := by rw [← mul_assoc, hsl]; ring
+    rw [hn, show 2 * (√l * √(g * Ki)) = √l * (2 * √(g * Ki)) by ring,
+      mul_div_mul_left _ _ hs, mul_div_assoc]
 
 /-- Scaling law of class A: `ζ_A(λ g) = ζ_A(g)/√λ`. -/
 @[tmio M, powerlib_domain] theorem zetaA_scale (M D g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
@@ -298,10 +258,9 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
 /-- `ζ_B → 0` as `g → 0⁺`. -/
 @[tmio M, powerlib_domain] theorem zetaB_tendsto_zero (Kp Ki : ℝ) :
     Tendsto (zetaB Kp Ki) (𝓝[>] 0) (𝓝 0) := by
-  have h : Continuous (zetaB Kp Ki) := by unfold zetaB; fun_prop
-  have := h.tendsto 0
-  simp [zetaB] at this
-  exact tendsto_nhdsWithin_of_tendsto_nhds (by simpa [zetaB] using h.tendsto 0)
+  have h : Continuous fun g : ℝ => Kp / 2 * √(g / Ki) := by fun_prop
+  refine (tendsto_nhdsWithin_congr (fun g hg => (zetaB_eq Kp Ki hg).symm) ?_)
+  exact tendsto_nhdsWithin_of_tendsto_nhds (by simpa using h.tendsto 0)
 
 /-- `ζ_A → ∞` as `g → 0⁺` (`M, D > 0`). -/
 @[tmio M, powerlib_domain] theorem zetaA_tendsto_atTop {M D : ℝ} (hM : 0 < M) (hD : 0 < D) :

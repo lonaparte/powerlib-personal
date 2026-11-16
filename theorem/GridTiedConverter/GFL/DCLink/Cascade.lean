@@ -662,12 +662,9 @@ negative-inductance cascade is locally exponentially stable without `L > 0`. -/
 @[tmio TM, powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeInductance_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hs : CascadeParams.Stable negativeInductance := hmem .stable rfl
-  have := hs.1
+  refine Spectral.not_exact_of_witness negativeInductance_mem_den_locallyExponentiallyStable
+    (q := .stable) rfl fun hs => ?_
+  have := (hs : CascadeParams.Stable negativeInductance).1
   norm_num [negativeInductance] at this
 
 /-! ## The local asymptotic and Lyapunov sentences -/
@@ -1032,18 +1029,6 @@ point exactly when it is locally exponentially stable: `R + Kp > 0`, `Ki > 0`, `
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
       ((mem_den_flow.mp (mem_den_locallyExponentiallyStable p hL hC hV hR hKi hI)))
 
-@[tmio TM, powerlib_domain] private theorem realize_stable (P : Flow.Property)
-    (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
-    connection% (TMIO.realize family.meets (family.translate (.flow P)) =
-      {p : CascadeParams | CascadeParams.Stable p}) := by
-  change TMIO.realize family.meets (family.translate (.flow P)) =
-        {p : CascadeParams | CascadeParams.Stable p}
-  ext p
-  rw [(connection_proof% TMIO.mem_realize)]
-  rcases hP with rfl | rfl <;>
-  · change (∀ q ∈ ({.stable} : Set Spectral.Requirement), Spectral.Meets _ _ p q) ↔ _
-    simp
-
 /-- Within `L, C, V0 > 0` the local asymptotic translation is exact: the generated space of its
 translation (`stable`) is the local asymptotic denotation cut by the physical range. -/
 @[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_physical :
@@ -1051,18 +1036,12 @@ translation (`stable`) is the local asymptotic denotation cut by the physical ra
       family.den (.flow .locallyAsymptoticallyStable) ∩
         {p : CascadeParams | 0 < p.pi.L ∧ 0 < p.C ∧ 0 < p.V0}) := by
   unfold powerlib.TMIO.Statement
-  rw [realize_stable _ (Or.inr rfl)]
-  ext p
-  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
-  rw [(connection_proof% mem_den_flow)]
-  constructor
-  · rintro ⟨hL, hC, hV, hR, hKi, hI⟩
-    exact ⟨(mem_den_flow.symm.trans (mem_den_locallyAsymptoticallyStable_iff p hL hC hV)).mpr
-      ⟨⟨hR, hKi⟩, hI⟩, hL, hC, hV⟩
-  · rintro ⟨h, hL, hC, hV⟩
-    obtain ⟨⟨hR, hKi⟩, hI⟩ :=
-      (mem_den_flow.symm.trans (mem_den_locallyAsymptoticallyStable_iff p hL hC hV)).mp h
-    exact ⟨hL, hC, hV, hR, hKi, hI⟩
+  refine Spectral.local_realize_eq_den_inter_of_iff (Or.inr (Or.inl rfl))
+    (fun p hp => ⟨hp.1, hp.2.1, hp.2.2.1⟩) fun p ⟨hL, hC, hV⟩ => ?_
+  refine Iff.trans ?_
+    (connection_proof% (mem_den_locallyAsymptoticallyStable_iff p hL hC hV)).symm
+  exact ⟨fun ⟨_, _, _, hR, hKi, hI⟩ => ⟨⟨hR, hKi⟩, hI⟩,
+    fun ⟨⟨hR, hKi⟩, hI⟩ => ⟨hL, hC, hV, hR, hKi, hI⟩⟩
 
 /-- An idle cascade: `L = Kp = Ki = C = V_d0 = V0 = 1`, `R = 0`, `I_d0 = 0` (`I_dc0 = 0`). -/
 def idle : CascadeParams := ⟨⟨⟨0, 1, 0⟩, 1, 1, rfl⟩, ⟨0, 1, 0⟩, 1, 1, 0, rfl, rfl⟩
@@ -1092,13 +1071,9 @@ Lyapunov stable but does not meet `stable` (`I_dc0 = 0`). -/
       family.den (.flow .lyapunovStable) ∩
         {p : CascadeParams | 0 < p.pi.L ∧ 0 < p.C ∧ 0 < p.V0}) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := idle_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hin : idle ∈ family.den (.flow .lyapunovStable) ∩
-      {p : CascadeParams | 0 < p.pi.L ∧ 0 < p.C ∧ 0 < p.V0} := ⟨hmem, by norm_num [idle]⟩
-  rw [← h, realize_stable _ (Or.inl rfl)] at hin
-  have := hin.2.2.2.2.2
+  refine Spectral.local_realize_ne_den_inter_of_witness (Or.inl rfl) idle_mem_den_lyapunovStable
+    (by norm_num [idle]) fun hs => ?_
+  have := (hs : CascadeParams.Stable idle).2.2.2.2.2
   norm_num [idle, CascadeParams.Idc0] at this
 
 /-! ## The Lyapunov sentence within the physical range

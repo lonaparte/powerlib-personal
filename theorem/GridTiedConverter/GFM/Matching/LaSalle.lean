@@ -1052,13 +1052,10 @@ violates `damped` and is locally asymptotically stable. -/
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := boundaryModel_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hd : Meets boundaryModel .damped := hmem .damped (by
-    show Requirement.damped ∈ translate (.flow .locallyAsymptoticallyStable)
-    simp [translate])
+  refine Spectral.not_exact_of_witness boundaryModel_mem_den_locallyAsymptoticallyStable
+    (q := .damped) (by
+      show Requirement.damped ∈ translate (.flow .locallyAsymptoticallyStable)
+      simp [translate]) fun hd => ?_
   have : (0 : ℝ) < 0 := by
     have hd' : 0 < boundaryModel.margin := hd
     rwa [boundaryModel_margin] at hd'
@@ -1665,13 +1662,10 @@ def noSyncModel : Model :=
 @[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := noSyncModel_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hd : Meets noSyncModel .synchronizing := hmem .synchronizing (by
-    show Requirement.synchronizing ∈ translate (.flow .lyapunovStable)
-    simp [translate])
+  refine Spectral.not_exact_of_witness noSyncModel_mem_den_lyapunovStable
+    (q := .synchronizing) (by
+      show Requirement.synchronizing ∈ translate (.flow .lyapunovStable)
+      simp [translate]) fun hd => ?_
   have : (0 : ℝ) < 0 := by
     have hd' : 0 < noSyncModel.μ * noSyncModel.ustar * noSyncModel.v0 := hd
     simp [noSyncModel] at hd'

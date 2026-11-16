@@ -26,7 +26,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step`),
+`not_eulerStep_realizationSoundUnder`),
 `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean` (`codeFamily_isAutonomous`,
 `Params.codeField_eq_transport`, `Params.reducedField_eq`, `codeFamily_den`),
 `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`Params.contDiff_h`, `Params.h_eq`,
@@ -42,7 +42,7 @@ Family and connection conclusions.
 * `LCLine.codeEulerFamily : Family LCLine.CodeEuler PLL.PIPLL.Requirement 2 0`: every integration
   read as its Euler map; requirements and translation are those of its model, read through the
   design. `LCLine.codeEuler`: the implementation layer, every integration realizing its model
-  (`Implementation.ofDesign CodeEuler.design`).
+  (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `LCLine.codeFamily_isAutonomous` and the public smoothness lemma
   `LCLine.code_contDiff_field`: `Numerics.euler_sound_small_step_local` (scaffold
@@ -63,23 +63,17 @@ namespace powerlib.GFL.LCLine
 
 /-- The explicit Euler integration of a code-frame PLL model about its selected point with step
 `h > 0`. -/
-structure CodeEuler where
-  /-- The integrated code-frame PLL model. -/
-  design : CodeModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev CodeEuler := Numerics.EulerStep CodeModel
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 code-frame field, with step length its step. -/
 def codeEulerFamily : Family CodeEuler PLL.PIPLL.Requirement 2 0 :=
-  Numerics.eulerFamily codeFamily CodeModel.field CodeEuler.design CodeEuler.h
+  Numerics.eulerFamily codeFamily CodeModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its code-frame PLL model. -/
 def codeEuler : Implementation CodeModel PLL.PIPLL.Requirement CodeEuler PLL.PIPLL.Requirement 2 0
     2 0 :=
-  Numerics.euler codeFamily CodeModel.field CodeEuler.design CodeEuler.h
+  Numerics.euler codeFamily CodeModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated code-frame field is `C¹`: the reflection of the reduced field, whose
 phase-detector characteristic `h` is `C¹` for every parameter set. The smoothness hypothesis of the
@@ -101,7 +95,7 @@ private def unitLine : Params :=
 The locally exponentially stable code-frame model `unitLine` at `θ_c* = 0` (a zero of `h = −sin`
 with negative slope, read through the text frame, `codeFamily_den`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
-disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem code_not_euler_realizationSoundUnder :
     connection% (¬ codeEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -117,8 +111,7 @@ disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
     one_pos one_pos h0 hg
   have hc := codeFamily_den (.flow .locallyExponentiallyStable)
   unfold powerlib.TMIO.Statement at hr hc
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step codeFamily_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder codeFamily_isAutonomous
     code_contDiff_field (by norm_num) ((Set.ext_iff.mp hc ⟨unitLine, 0⟩).mpr hr)
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFL.LCLine

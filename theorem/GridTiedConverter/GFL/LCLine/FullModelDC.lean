@@ -1,6 +1,7 @@
 import theorem.GridTiedConverter.GFL.LCLine.FullModel
 import theorem.Passive.Parallel
-import theorem.GridTiedConverter.PLL.PIPLL
+import theorem.GridTiedConverter.PLL.PIPLLPH
+import theorem.GridTiedConverter.CurrentControl.Decoupling
 
 /-! # The 13-state GFL-VSC with DC-link dynamics: constant-power equilibria
 
@@ -51,15 +52,16 @@ Results.
   `≥ 0` and `h(θ, r₊(θ)) = 0` or `h(θ, r₋(θ)) = 0` (union of the two branches).
 * `field13_eq_transport_literatureField13` (§D8): the field is the OUT-positive source field
   transported by the reversal of the current coordinates, with `i_q*` reversed.
-* `cp_energy_rate` : on the 2D constant-power layer, wherever a local potential `V` with
-  `V′ = −h_cp` exists, `Ḣ_cp = −K_p h_cp² ≤ 0` (no claim where `h_cp` is undefined).
+* `cp_energy_rate_nonpos` : on the 2D constant-power layer, wherever a local potential `V` with
+  `V′ = −h_cp` exists, `Ḣ_cp = −K_p h_cp² ≤ 0` (the energy rate of the PI-PLL,
+  `PLL.piPLL_energy_rate`; no claim where `h_cp` is undefined).
 
 Family and connection conclusions.
 The module states no behaviour of the 13-state field: it has
 no Family, and every result is static. The equilibrium characterizations `field13_eq_zero_iff`
 and `field13_exists_equilibrium_iff` are static evidence on the model,
-not connection conclusions. `cp_energy_rate` is a pointwise derivative identity for an arbitrary
-phase-detector signal.
+not connection conclusions. `cp_energy_rate_nonpos` is a pointwise derivative inequality for an
+arbitrary phase-detector signal.
 -/
 
 noncomputable section
@@ -92,11 +94,12 @@ structure DCParams where
 abbrev DCParams.Cdc (p : DCParams) : ℝ := p.dcLink.C
 
 /-- Bridge-power invariant: with `u = v_c + R_f i + ω L_f J i`, `u·i = v_c·i + R_f |i|²`
-(the `ω L_f` cross terms cancel in the dot product). -/
+(the `ω L_f` cross terms cancel in the dot product, `CurrentControl.bridgePower_decoupling`). -/
 @[tmio T, powerlib_foundation] theorem bridge_power_invariant (vd vq id iq Rf ωL : ℝ) :
     (vd + Rf * id - ωL * iq) * id + (vq + Rf * iq + ωL * id) * iq =
       (vd * id + vq * iq) + Rf * (id ^ 2 + iq ^ 2) := by
-  ring
+  linear_combination
+    CurrentControl.bridgePower_decoupling (vd + Rf * id) (vq + Rf * iq) (-ωL) 1 id iq
 
 namespace Params
 
@@ -392,19 +395,8 @@ end Params
 
 /-- The reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1, 1, 1, 1)` of the current coordinates
 of the 13-state model. -/
-def currentReversal13 : Matrix (Fin 13) (Fin 13) ℝ :=
-  Matrix.diagonal ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1]
-
-@[tmio M, powerlib_domain] theorem currentReversal13_mul_self :
-    currentReversal13 * currentReversal13 = 1 := by
-  rw [currentReversal13, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-  congr 1
-  ext i
-  fin_cases i <;> norm_num
-
-@[tmio M, powerlib_domain] theorem currentReversal13_isUnit : IsUnit currentReversal13 :=
-  (Matrix.isUnit_iff_isUnit_det _).mpr
-    (Matrix.isUnit_det_of_right_inverse currentReversal13_mul_self)
+abbrev currentReversal13 : Matrix (Fin 13) (Fin 13) ℝ :=
+  Dynamics.signMatrix ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1]
 
 /-- §D8 boundary translation: the IN-positive 13-state field is the OUT-positive source field
 transported by the reversal of the current coordinates, with the frozen q-axis reference reversed
@@ -412,45 +404,30 @@ transported by the reversal of the current coordinates, with the frozen q-axis r
 @[tmio M, powerlib_domain] theorem Params.field13_eq_transport_literatureField13 (p : Params)
     (d : DCParams) :
     p.field13 d = Dynamics.transportField
-      (Dynamics.matrixCoord currentReversal13 currentReversal13_isUnit) 0
+      (Dynamics.matrixCoord currentReversal13 (Dynamics.signMatrix_isUnit _)) 0
       (({ p with iqRef := -p.iqRef } : Params).literatureField13 d) := by
-  have hinv : currentReversal13⁻¹ = currentReversal13 :=
-    Matrix.inv_eq_left_inv currentReversal13_mul_self
+  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext x
   apply WithLp.ofLp_injective
   ext j
-  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
-    Dynamics.matrixCoord_symm_apply, hinv]
   fin_cases j <;>
     simp [Params.field13, Params.literatureField13, Params.field10, Params.literatureField10,
       Params.withId, Params.idStar, Params.Pbr, proj10, Params.ucD, Params.ucQ, Params.uD,
       Params.uQ, icD, icQ, vccD, vccQ, Transform.parkD, Transform.parkQ, iparkD, iparkQ,
-      currentReversal13, Matrix.mulVec_diagonal, -mul_eq_mul_left_iff] <;> ring
+      -mul_eq_mul_left_iff] <;> ring
 
 /-! ### Energy identity of the 2D constant-power layer -/
 
 /-- For the PI-PLL field with any phase-detector signal `h_cp` (for the constant-power layer,
 `h_cp(θ) = h(θ, r_±(θ))`, defined where the discriminant is `≥ 0`): at every point where a local
-potential `V` has `V′ = −h_cp`, the energy `H = ½ K_i η² + V(θ)` satisfies `Ḣ = −K_p h_cp² ≤ 0`. -/
-@[tmio M, powerlib_domain] theorem cp_energy_rate {hcp V : ℝ → ℝ} (Kp Ki : ℝ) {y : State 2}
-    (hV : HasDerivAt V (-hcp (y 0)) (y 0)) :
-    fderiv ℝ (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) y (piPLLField hcp Kp Ki 0 y) =
-      -(Kp * hcp (y 0) ^ 2) := by
-  set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
-  set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
-  have h0 : HasFDerivAt (fun z : State 2 => z 0) π0 y := π0.hasFDerivAt
-  have h1 : HasFDerivAt (fun z : State 2 => z 1) π1 y := π1.hasFDerivAt
-  have hH : HasFDerivAt (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0))
-      ((Ki / 2) • (2 • y 1 ^ (2 - 1)) • π1 + -hcp (y 0) • π0) y :=
-    ((h1.pow 2).const_mul (Ki / 2)).add (hV.comp_hasFDerivAt y h0)
-  rw [hH.fderiv]
-  simp [π0, π1, piPLLField]
-  ring
-
+potential `V` has `V′ = −h_cp`, the energy `H = ½ K_i η² + V(θ)` satisfies `Ḣ = −K_p h_cp² ≤ 0`
+(`PLL.piPLL_energy_rate`). -/
 @[tmio M, powerlib_domain] theorem cp_energy_rate_nonpos {hcp V : ℝ → ℝ} {Kp : ℝ} (Ki : ℝ)
     (hKp : 0 ≤ Kp) {y : State 2} (hV : HasDerivAt V (-hcp (y 0)) (y 0)) :
     fderiv ℝ (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) y (piPLLField hcp Kp Ki 0 y) ≤ 0 := by
-  rw [cp_energy_rate Kp Ki hV]
+  have hH : (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) =
+      fun z => V (z 0) + Ki / 2 * z 1 ^ 2 := funext fun _ => add_comm _ _
+  rw [hH, piPLL_energy_rate Kp Ki 0 hV]
   have := mul_nonneg hKp (sq_nonneg (hcp (y 0)))
   linarith
 

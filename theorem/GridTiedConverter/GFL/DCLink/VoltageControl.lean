@@ -607,12 +607,9 @@ negative-capacitance node is locally exponentially stable without `C > 0`. -/
 @[tmio TM, powerlib_domain] theorem openNot_exact_locallyExponentiallyStable :
     connection% (¬ openFamily.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeCapacitance_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hs : OpenLoop.Stable negativeCapacitance := hmem .stable rfl
-  have := hs.2.1
+  refine Spectral.not_exact_of_witness negativeCapacitance_mem_den_locallyExponentiallyStable
+    (q := .stable) rfl fun hs => ?_
+  have := (hs : OpenLoop.Stable negativeCapacitance).2.1
   norm_num [negativeCapacitance] at this
 
 /-- A negative-capacitance loop: `C = −1`, `V_d = V_dc* = 1`, `Kp = Ki = −1`, `i_ff = I_d0 = 0`. -/
@@ -640,12 +637,9 @@ negative-capacitance loop is locally exponentially stable without `C > 0`. -/
 @[tmio TM, powerlib_domain] theorem closedNot_exact_locallyExponentiallyStable :
     connection% (¬ closedFamily.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeCapacitanceLoop_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hs : DCParams.Stable negativeCapacitanceLoop := hmem .stable rfl
-  have := hs.2.2.1
+  refine Spectral.not_exact_of_witness negativeCapacitanceLoop_mem_den_locallyExponentiallyStable
+    (q := .stable) rfl fun hs => ?_
+  have := (hs : DCParams.Stable negativeCapacitanceLoop).2.2.1
   norm_num [negativeCapacitanceLoop] at this
 
 /-! ## The local asymptotic and Lyapunov sentences -/
@@ -1238,16 +1232,6 @@ def centerLoop : DCParams := ⟨⟨0, 1, 0⟩, 1, 1, 0, 1, 0, 0, rfl, rfl⟩
   exact (fun h => (centerLoop.closed_not_las_boundary (by norm_num [centerLoop]) (by norm_num [centerLoop])
     (by norm_num [centerLoop]) (by norm_num [centerLoop]) centerLoop_boundary) (closed_mem_den_flow.mpr h))
 
-@[tmio TM, powerlib_domain] private theorem closed_realize_stable :
-    connection% (TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
-      {p : DCParams | DCParams.Stable p}) := by
-  change TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
-        {p : DCParams | DCParams.Stable p}
-  ext p
-  rw [(connection_proof% TMIO.mem_realize)]
-  change (∀ q ∈ ({.stable} : Set Spectral.Requirement), Spectral.Meets _ _ p q) ↔ _
-  simp
-
 /-- Within positive `V_d`, `V_dc*`, `C` the local asymptotic translation is exact: the generated
 space of its translation (`stable`) is the local asymptotic denotation cut by the physical
 range. -/
@@ -1257,18 +1241,11 @@ range. -/
       closedFamily.den (.flow .locallyAsymptoticallyStable) ∩
         {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C}) := by
   unfold powerlib.TMIO.Statement
-  rw [closed_realize_stable]
-  ext p
-  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
-  rw [closed_mem_den_flow]
-  constructor
-  · rintro ⟨hVd, hV, hC, hkp, hki⟩
-    exact ⟨(closed_mem_den_flow.symm.trans
-      (closedLoop_mem_den_locallyAsymptoticallyStable_iff p hVd hV hC)).mpr ⟨hkp, hki⟩, hVd, hV, hC⟩
-  · rintro ⟨h, hVd, hV, hC⟩
-    obtain ⟨hkp, hki⟩ := (closed_mem_den_flow.symm.trans
-      (closedLoop_mem_den_locallyAsymptoticallyStable_iff p hVd hV hC)).mp h
-    exact ⟨hVd, hV, hC, hkp, hki⟩
+  refine Spectral.local_realize_eq_den_inter_of_iff (Or.inr (Or.inl rfl))
+    (fun p hp => ⟨hp.1, hp.2.1, hp.2.2.1⟩) fun p ⟨hVd, hV, hC⟩ => ?_
+  refine Iff.trans ?_
+    (connection_proof% (closedLoop_mem_den_locallyAsymptoticallyStable_iff p hVd hV hC)).symm
+  exact ⟨fun ⟨_, _, _, hkp, hki⟩ => ⟨hkp, hki⟩, fun ⟨hkp, hki⟩ => ⟨hVd, hV, hC, hkp, hki⟩⟩
 
 /-- Within positive `V_d`, `V_dc*`, `C` the Lyapunov translation is not exact: the boundary loop
 `centerLoop` is physical and Lyapunov stable but does not meet `stable`. -/
@@ -1278,15 +1255,9 @@ range. -/
       closedFamily.den (.flow .lyapunovStable) ∩
         {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C}) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := centerLoop_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hin : centerLoop ∈ closedFamily.den (.flow .lyapunovStable) ∩
-      {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C} :=
-    ⟨hmem, by norm_num [centerLoop]⟩
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hin
-  have hs : DCParams.Stable centerLoop := hin .stable rfl
-  have := hs.2.2.2.1
+  refine Spectral.local_realize_ne_den_inter_of_witness (Or.inl rfl)
+    centerLoop_mem_den_lyapunovStable (by norm_num [centerLoop]) fun hs => ?_
+  have := (hs : DCParams.Stable centerLoop).2.2.2.1
   norm_num [centerLoop, DCParams.Idc0] at this
 
 end powerlib.GFL.DCLink

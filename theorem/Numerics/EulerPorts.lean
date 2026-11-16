@@ -90,7 +90,8 @@ Family and connection conclusions.
   Euler implementations are locally exponentially stable) and
   `not_eulerPorts_realizationSoundUnder_of_large_step_local` (scaffold `not-sound-large-step`,
   `n > 0`: without a step constraint the realization is not sound, given such a model with
-  arbitrarily large steps).
+  arbitrarily large steps); over the integrations `EulerStep X`, which include arbitrarily large
+  steps, `not_eulerStepPorts_realizationSoundUnder_local`.
 * M–I laws for passivity: `eulerPortFamily_not_mem_den_passive` (an Euler
   implementation with a positive step of a model whose output is independent of the input and
   nonzero at some state is not passive, whatever the step);
@@ -104,7 +105,8 @@ Family and connection conclusions.
   every positive step, within every context); `eulerPorts_exact_small_step_linear` (every model
   has a step `h₀ > 0` below which its Euler implementations satisfy these sentences exactly when
   it does); `not_eulerPorts_realizationSoundUnder_of_large_step_linear` (`n > 0`: not sound
-  without a step constraint, given a Hurwitz model with arbitrarily large steps).
+  without a step constraint, given a Hurwitz model with arbitrarily large steps); over the
+  integrations `EulerStep X`, `not_eulerStepPorts_realizationSoundUnder_linear`.
 -/
 
 noncomputable section
@@ -359,6 +361,18 @@ arbitrarily large steps refutes realization soundness
   exact not_euler_realizationSoundUnder_of_large_step_local (zeroInputFamily_isAutonomous F sys)
     hn hC hx hY
 
+/-- **Large steps: without a step constraint the Euler realization of a family of port systems
+over the integrations `EulerStep X` is not sound, from a model `C¹` near its point** (`n > 0`):
+`not_eulerPorts_realizationSoundUnder_of_large_step_local` with `EulerStep.exists_le_h`. -/
+@[tmio TM, powerlib_foundation] theorem not_eulerStepPorts_realizationSoundUnder_local
+    (hF : F.IsPort sys) (hn : 0 < n) {x : X} (hC : ContDiffAt ℝ 1 (sys x).zeroInput 0)
+    (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
+    connection% (¬ (eulerPorts F sys EulerStep.design EulerStep.h).RealizationSoundUnder ∅
+      (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact not_eulerPorts_realizationSoundUnder_of_large_step_local hF hn hC hx
+    (EulerStep.exists_le_h x)
+
 /-! ## Passivity -/
 
 /-- **Explicit Euler implementations are not passive, at any step.** An Euler implementation with
@@ -519,6 +533,19 @@ step threshold every multiplier `1 + hλ` lies outside the closed unit disk
       (Map.op (forwardEulerMatrix (step y) (plant (design y)).A)).hasFDerivAt (map_zero _) hB hS hn
     exact hu (Map.globallyExponentiallyStable_of_schurStable
       hy').locallyExponentiallyStable.lyapunovStable
+
+/-- **Large steps: without a step constraint the Euler realization of a linear family over the
+integrations `EulerStep X` is not sound** (`n > 0`): a Hurwitz model refutes realization
+soundness of every attractive sentence and of sampled contraction
+(`not_eulerPorts_realizationSoundUnder_of_large_step_linear` with `EulerStep.exists_le_h`). -/
+@[tmio TM, powerlib_foundation] theorem not_eulerStepPorts_realizationSoundUnder_linear
+    (hF : F.IsLinear plant) (hn : 0 < n) {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) {x : X} (hx : IsHurwitz (plant x).A) :
+    connection% (¬ (eulerPorts F (fun x => (plant x).system) EulerStep.design
+      EulerStep.h).RealizationSoundUnder ∅ (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  exact not_eulerPorts_realizationSoundUnder_of_large_step_linear hF hn hP hx
+    (EulerStep.exists_le_h x)
 
 end Numerics
 

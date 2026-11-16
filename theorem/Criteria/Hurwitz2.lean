@@ -43,7 +43,8 @@ Results.
   (`det_characteristicMatrix_fin_two`); `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det`
   (`isHurwitz_fin_two_iff`; for `SpectrallyStable` through `Linear.spectrallyStable_iff_isHurwitz`;
   for the literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
-  `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`).
+  `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`). The damping ratio
+  `dampingRatio A = −tr A / (2 √det A)` (a definition).
 * Instability witnesses: `A.det < 0` and `0 < A.trace` are the cases `n = 2` of the generic
   witnesses `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`
   (`(-1) ^ 2 * A.det = A.det`), `Criteria.exists_eigenpair_re_pos_of_trace_pos` and
@@ -420,6 +421,11 @@ section FinTwo
     exact ⟨by linarith, by linarith⟩
   · rintro ⟨h0, h1⟩
     exact ⟨by linarith, by linarith⟩
+
+/-- The damping ratio `ζ = −tr A / (2 √det A)` of a real 2×2 matrix: for `det A > 0` its
+characteristic polynomial is `s² + 2ζω_n s + ω_n²` with `ω_n = √det A`. Signed (negative for
+`tr A > 0`); meaningful for a complex pair. -/
+def dampingRatio (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := -A.trace / (2 * Real.sqrt A.det)
 
 /-! ### Instability witnesses -/
 

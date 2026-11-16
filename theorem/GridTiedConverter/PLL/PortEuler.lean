@@ -27,7 +27,7 @@ Model boundary.
   system.
 
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
-`not_eulerPorts_realizationSoundUnder_of_large_step_local`,
+`not_eulerStepPorts_realizationSoundUnder_local`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`,
 `Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
 `theorem/GridTiedConverter/PLL/Model.lean` (`contDiff_srfField`),
@@ -59,22 +59,18 @@ noncomputable section
 namespace powerlib.PLL.PLLPH
 
 /-- The explicit Euler discretization of an SRF-PLL pH model with step `h > 0`. -/
-structure Euler where
-  /-- The discretized model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 model's centred pH port system, with step length its step. -/
 def eulerFamily : Family Euler Requirement 2 1 :=
-  Numerics.eulerPortFamily family (fun m => (m.toPH.shift m.point).system) Euler.design Euler.h
+  Numerics.eulerPortFamily family (fun m => (m.toPH.shift m.point).system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its model. -/
 def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
-  Numerics.eulerPorts family (fun m => (m.toPH.shift m.point).system) Euler.design Euler.h
+  Numerics.eulerPorts family (fun m => (m.toPH.shift m.point).system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The centred zero-input field is `C¹` near the origin: it is the SRF-PLL field with offset
 `K_i η*`, translated to the selected point. The smoothness hypothesis of the generic Euler laws
@@ -104,9 +100,8 @@ large step are not: every Euler multiplier `1 + hλ` leaves the unit disk. -/
   have hm := mem_den_locallyExponentiallyStable unitModel (by norm_num [unitModel])
     (by norm_num [unitModel]) (by simp [unitModel])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_local
+  exact Numerics.not_eulerStepPorts_realizationSoundUnder_local
     family_isNonlinearPH.isPort (by norm_num) (contDiffAt_zeroInput _) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- **An Euler discretization of an SRF-PLL pH model is passive exactly when the grid is dead,
 whatever its step.** For `V ≠ 0` the output `−V sin θ` does not depend on the offset input, so one
@@ -120,8 +115,8 @@ vanishes and the zero storage proves passivity. -/
   constructor
   · intro hmem
     by_contra hV
-    refine Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design)
-      (step := Euler.h) (y := ⟨m, h, hh⟩) hh (fun _ => output_quarter m) ?_ hmem
+    refine Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+      (step := Numerics.EulerStep.h) (y := ⟨m, h, hh⟩) hh (fun _ => output_quarter m) ?_ hmem
     intro h0
     exact hV (by simpa using congrFun h0 0)
   · intro hV

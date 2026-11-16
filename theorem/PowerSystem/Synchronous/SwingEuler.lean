@@ -22,7 +22,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step`),
+`not_eulerStep_realizationSoundUnder`),
 `theorem/PowerSystem/Synchronous/Swing.lean` (`family_isAutonomous`, `SwingParams.contDiff_field`,
 `mem_den_locallyExponentiallyStable`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -34,7 +34,7 @@ Family and connection conclusions.
 * `Swing.eulerFamily : Family Swing.Euler Requirement 2 0`: every integration read as its Euler
   map; requirements and translation are those of its swing model, read through the design
   (`meets y = Swing.Meets y.design`). `Swing.euler`: the implementation layer, every integration
-  realizing its swing model (`Implementation.ofDesign Euler.design`).
+  realizing its swing model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `Swing.family_isAutonomous` and the public smoothness lemma
   `Swing.contDiff_modelField`: `Numerics.euler_sound_small_step_local` (scaffold
@@ -47,7 +47,7 @@ Family and connection conclusions.
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — the
   locally exponentially stable model `M = 1`, `D = 4`, `K = 4` at a balanced angle has Euler
   integrations with every Euler multiplier outside the unit disk (`h = 3`: both at `−5`; the
-  generic law `Numerics.not_euler_realizationSoundUnder_of_large_step`).
+  generic law `Numerics.not_eulerStep_realizationSoundUnder`).
 -/
 
 noncomputable section
@@ -55,22 +55,16 @@ noncomputable section
 namespace powerlib.Synchronous.Swing
 
 /-- The explicit Euler integration of a swing model about its selected point with step `h > 0`. -/
-structure Euler where
-  /-- The integrated swing model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler integration family: every integration read as the Euler map of its model's
 translated field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 2 0 :=
-  Numerics.eulerFamily family Model.field Euler.design Euler.h
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its swing model. -/
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
-  Numerics.euler family Model.field Euler.design Euler.h
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated swing field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
@@ -80,14 +74,14 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 /-- **Without a step constraint the Euler realization of the swing family is not sound.** A
 locally exponentially stable swing model (`M = 1`, `D = 4`, `K = 4` at a balanced angle) integrated
 with a large enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves
-the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+the unit disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable ⟨⟨1, 4, 0, 0, 4, 0⟩, 0⟩ one_pos (by norm_num)
     (by simp [SwingParams.Pe]) (by norm_num [SwingParams.syncCoeff])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
-    contDiff_modelField two_pos hm fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
+    contDiff_modelField two_pos hm
 
 end powerlib.Synchronous.Swing

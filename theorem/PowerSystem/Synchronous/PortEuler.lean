@@ -26,11 +26,12 @@ Model boundary.
   `(i_d, i_q, i_f, ω_r)`, at the origin); `SMIB11.family` and `SMIB11Rel.family` (eleven states,
   ports `(v_f, T_m, V_D^∞, V_Q^∞)`, outputs `(i_f, ω_r, −I_D, −I_Q)`, at the origin); continuous
   time.
-* Implementation layer (I): for each family a structure `Euler` (in its namespace) of a model and
-  a step `h > 0`; the system is the explicit Euler discretization `x⁺ = x + h f(x, u)` of the
-  model's port system with the same output (the input held over the step), step length `h`,
-  discrete time, exact arithmetic, fixed step. Excluded: step-size control, implicit, symplectic
-  or discrete-gradient schemes, the integration error against the continuous trajectory.
+* Implementation layer (I): for each family the integrations `Euler := Numerics.EulerStep` of its
+  model type (in its namespace): a model and a step `h > 0`; the system is the explicit Euler
+  discretization `x⁺ = x + h f(x, u)` of the model's port system with the same output (the input
+  held over the step), step length `h`, discrete time, exact arithmetic, fixed step. Excluded:
+  step-size control, implicit, symplectic or discrete-gradient schemes, the integration error
+  against the continuous trajectory.
 * Level: local exponential stability of the zero-input dynamics about the origin; passivity of
   the discretized port system.
 * The seven-state and 11-state families have no locally exponentially stable member, whatever
@@ -44,7 +45,7 @@ Model boundary.
   vacuously and is not stated.
 
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
-`not_eulerPorts_realizationSoundUnder_of_large_step_local`,
+`not_eulerStepPorts_realizationSoundUnder_local`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`,
 `Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
 `theorem/PH/Linearization.lean` (`NonlinearModel.contDiff_zeroInputField`),
@@ -87,22 +88,17 @@ open powerlib.PH
 namespace powerlib.Synchronous.ClassicalSM
 
 /-- The explicit Euler discretization of a classical-machine model with step `h > 0`. -/
-structure Euler where
-  /-- The discretized model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 model's centred pH port system, with step length its step. -/
 def eulerFamily : Family Euler Requirement 2 1 :=
-  Numerics.eulerPortFamily family (fun m => m.toPH.system) Euler.design Euler.h
+  Numerics.eulerPortFamily family (fun m => m.toPH.system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its model. -/
 def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
-  Numerics.eulerPorts family (fun m => m.toPH.system) Euler.design Euler.h
+  Numerics.eulerPorts family (fun m => m.toPH.system) Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The centred zero-input field of a classical machine is `C¹` near the origin: the smoothness
 hypothesis of the generic Euler laws for port systems
@@ -140,10 +136,9 @@ disk. -/
   have hm := mem_den_locallyExponentiallyStable unitModel (by norm_num [unitModel])
     (by simp [unitModel]) (by simp [unitModel])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_local
+  exact Numerics.not_eulerStepPorts_realizationSoundUnder_local
     family_isNonlinearPH.isPort
     (by norm_num) (contDiffAt_zeroInput _) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- **No Euler discretization of a classical machine is passive, whatever its step.** The speed
 output does not depend on the mechanical-power input, so one step from a unit momentum deviation
@@ -153,7 +148,8 @@ with a large braking input draws energy without bound. -/
       (⟨m, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro m h hh
-  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design) (step := Euler.h)
+  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h)
     (y := ⟨m, h, hh⟩) hh (fun _ => output_unit m) (output_unit_ne_zero m)
 
 /-- **The passivity realization of explicit Euler is not sound for the classical machine.** The
@@ -192,22 +188,18 @@ end powerlib.Synchronous
 namespace powerlib.Synchronous.SyncMachine7
 
 /-- The explicit Euler discretization of a seven-state machine with step `h > 0`. -/
-structure Euler where
-  /-- The discretized machine. -/
-  design : SyncMachine7Params
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep SyncMachine7Params
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 machine's pH port system, with step length its step. -/
 def eulerFamily : Family Euler Requirement 7 4 :=
-  Numerics.eulerPortFamily family (fun p => (syncMachine7 p).system) Euler.design Euler.h
+  Numerics.eulerPortFamily family (fun p => (syncMachine7 p).system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its machine. -/
 def euler : Implementation SyncMachine7Params Requirement Euler Requirement 7 4 7 4 :=
-  Numerics.eulerPorts family (fun p => (syncMachine7 p).system) Euler.design Euler.h
+  Numerics.eulerPorts family (fun p => (syncMachine7 p).system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **The Euler realization of the seven-state machine is sound without a step constraint,
 vacuously.** No machine is locally exponentially stable at the origin
@@ -240,7 +232,8 @@ a large braking torque draws energy without bound. -/
       (⟨p, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro p h hh
-  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design) (step := Euler.h)
+  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h)
     (y := ⟨p, h, hh⟩) hh (fun _ => rfl) (output_ne_zero p)
 
 /-- **The passivity realization of explicit Euler is not sound for the seven-state machine.**
@@ -278,22 +271,18 @@ private def smib11Unit : SMIB11Params :=
 namespace SMIB11
 
 /-- The explicit Euler discretization of the note's 11-state system with step `h > 0`. -/
-structure Euler where
-  /-- The discretized system. -/
-  design : SMIB11Params
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep SMIB11Params
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 pH port system, with step length its step. -/
 def eulerFamily : Family Euler Requirement 11 4 :=
-  Numerics.eulerPortFamily family (fun p => (smib11 p).system) Euler.design Euler.h
+  Numerics.eulerPortFamily family (fun p => (smib11 p).system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its system. -/
 def euler : Implementation SMIB11Params Requirement Euler Requirement 11 4 11 4 :=
-  Numerics.eulerPorts family (fun p => (smib11 p).system) Euler.design Euler.h
+  Numerics.eulerPorts family (fun p => (smib11 p).system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **The Euler realization of the note's 11-state system is sound without a step constraint,
 vacuously.** No system is locally exponentially stable at the origin
@@ -314,7 +303,8 @@ outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
       (⟨p, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro p h hh
-  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design) (step := Euler.h)
+  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h)
     (y := ⟨p, h, hh⟩) hh (fun _ => rfl) (smib11_output_ne_zero p)
 
 /-- **The passivity realization of explicit Euler is not sound for the note's 11-state system.**
@@ -332,22 +322,16 @@ end SMIB11
 namespace SMIB11Rel
 
 /-- The explicit Euler discretization of the corrected 11-state system with step `h > 0`. -/
-structure Euler where
-  /-- The discretized system. -/
-  design : SMIB11Params
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep SMIB11Params
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 corrected port system, with step length its step. -/
 def eulerFamily : Family Euler SMIB11.Requirement 11 4 :=
-  Numerics.eulerPortFamily family smib11Rel_system Euler.design Euler.h
+  Numerics.eulerPortFamily family smib11Rel_system Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its system. -/
 def euler : Implementation SMIB11Params SMIB11.Requirement Euler SMIB11.Requirement 11 4 11 4 :=
-  Numerics.eulerPorts family smib11Rel_system Euler.design Euler.h
+  Numerics.eulerPorts family smib11Rel_system Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **The Euler realization of the corrected 11-state system is sound without a step
 constraint, vacuously.** No system is locally exponentially stable at the origin, whatever `ω_s`
@@ -369,7 +353,8 @@ The outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
       (⟨p, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro p h hh
-  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design) (step := Euler.h)
+  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h)
     (y := ⟨p, h, hh⟩) hh (fun _ => rfl) (smib11_output_ne_zero p)
 
 /-- **The passivity realization of explicit Euler is not sound for the corrected 11-state

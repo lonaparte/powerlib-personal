@@ -24,12 +24,12 @@ Model boundary.
   `(θ, ω)`), `theorem/GridTiedConverter/GFM/Matching/Matching.lean`; `MatchingClosedLoop.fullFamily`
   (the stationary-frame closed loop with the load oscillator, state `(θ, v_dc, i_αβ, v_αβ, s_αβ)`,
   `theorem/GridTiedConverter/GFM/Matching/ClosedLoop.lean`).
-* Implementation layer (I). For each family a structure (`MatchingStiffGrid.Euler`,
-  `Matching.MatchingEuler`, `Matching.SwingEuler`, `MatchingClosedLoop.FullEuler`) of a model and a
-  step `h > 0`; the system is the explicit Euler map `z ↦ z + h f(z)` of the translated field,
-  with step length `h`, discrete time, exact arithmetic (no round-off), fixed step. Excluded:
-  step-size control, implicit or higher-order schemes, the integration error against the
-  continuous trajectory.
+* Implementation layer (I). For each family the integrations `Numerics.EulerStep` of its model type
+  (`MatchingStiffGrid.Euler`, `Matching.MatchingEuler`, `Matching.SwingEuler`,
+  `MatchingClosedLoop.FullEuler`): a model and a step `h > 0`; the system is the explicit Euler map
+  `z ↦ z + h f(z)` of the translated field, with step length `h`, discrete time, exact arithmetic
+  (no round-off), fixed step. Excluded: step-size control, implicit or higher-order schemes, the
+  integration error against the continuous trajectory.
 * Smoothness: the stiff-grid and stationary-frame fields are `C¹` everywhere (`field_contDiff`,
   `MatchingClosedLoop.abField_smooth`; the global laws of the template). The laws of
   `matchingFamily` and `swingFamily` carry the hypothesis that the law is `C¹` near the selected
@@ -43,7 +43,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step` and their `_local`
+`not_eulerStep_realizationSoundUnder` and their `_local`
 forms, `contDiffAt_shift`), `theorem/GridTiedConverter/GFM/Matching/StiffGrid.lean`
 (`field_contDiff`, `mem_den_locallyExponentiallyStable`),
 `theorem/GridTiedConverter/GFM/Matching/Matching.lean` (`matching_den_eq`,
@@ -63,7 +63,7 @@ Family and connection conclusions.
 * `MatchingStiffGrid.eulerFamily : Family MatchingStiffGrid.Euler Requirement 4 0`: every
   integration read as its Euler map; requirements and translation are those of its model, read
   through the design. `MatchingStiffGrid.euler`: the implementation layer, every integration
-  realizing its model (`Implementation.ofDesign Euler.design`).
+  realizing its model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization) on the stiff grid. The small-step laws are the generic connection laws
   applied to the family, with its autonomy `MatchingStiffGrid.family_isAutonomous` and the public
   smoothness lemma `MatchingStiffGrid.contDiff_modelField`: `Numerics.euler_sound_small_step_local`
@@ -96,22 +96,16 @@ namespace powerlib.GFM.Matching.MatchingStiffGrid
 
 /-- The explicit Euler integration of a stiff-grid matching model about its operating point with
 step `h > 0`. -/
-structure Euler where
-  /-- The integrated stiff-grid matching model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 4 0 :=
-  Numerics.eulerFamily family Model.translated Euler.design Euler.h
+  Numerics.eulerFamily family Model.translated Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its stiff-grid matching model. -/
 def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
-  Numerics.euler family Model.translated Euler.design Euler.h
+  Numerics.euler family Model.translated Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
@@ -123,7 +117,7 @@ def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
 sound.** A locally exponentially stable model (`C_dc = G_dc = η = μ = u*_dc = v₀ = R_s = L_s = 1`,
 `K_p = 0`: `margin = 7/8 > 0`) integrated with a large enough step is not locally exponentially
 stable: every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -131,9 +125,8 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
     ⟨1, 1, 0⟩, rfl, rfl⟩ one_pos one_pos one_pos
     (by norm_num) one_ne_zero (by norm_num [Model.margin, Model.ω0, Model.N])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     contDiff_modelField (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.Matching.MatchingStiffGrid
 
@@ -143,23 +136,18 @@ open powerlib.Dynamics (State)
 
 /-- The explicit Euler integration of a matching-control model about its selected point with step
 `h > 0`. -/
-structure MatchingEuler where
-  /-- The integrated matching-control model. -/
-  design : MatchingModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev MatchingEuler := Numerics.EulerStep MatchingModel
 
 /-- The Euler integration family of the matching-control models: every integration read as the
 Euler map of its model's translated field, with step length its step. -/
 def matchingEulerFamily : Family MatchingEuler Spectral.Requirement 2 0 :=
-  Numerics.eulerFamily matchingFamily MatchingModel.field MatchingEuler.design MatchingEuler.h
+  Numerics.eulerFamily matchingFamily MatchingModel.field
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization of the matching-control models: every integration realizes its model. -/
 def matchingEuler :
     Implementation MatchingModel Spectral.Requirement MatchingEuler Spectral.Requirement 2 0 2 0 :=
-  Numerics.euler matchingFamily MatchingModel.field MatchingEuler.design MatchingEuler.h
+  Numerics.euler matchingFamily MatchingModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated matching field is `C¹` near the origin when the load law is `C¹` near the
 selected point: the smoothness hypothesis of the local generic Euler laws
@@ -186,7 +174,7 @@ selected point: the smoothness hypothesis of the local generic Euler laws
 sound.** The model `C = G = η = 1`, `i_dc = 0`, `i_x(θ, v) = sin θ` at the origin is locally
 exponentially stable (its matched swing model `M = D = 1`, `τ = 0`, `P_e = sin θ` is,
 `matching_den_eq`); integrated with a large enough step it is not: every Euler multiplier
-`1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+`1 + hλ` leaves the unit disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
 @[tmio MI, powerlib_domain] theorem matching_not_euler_realizationSoundUnder :
     connection% (¬ matchingEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -200,31 +188,24 @@ exponentially stable (its matched swing model `M = D = 1`, `τ = 0`, `P_e = sin 
   have hm : m ∈ matchingFamily.den (.flow .locallyExponentiallyStable) := by
     rw [hd, Set.mem_preimage, hs]
     norm_num [m, MatchingModel.toSwing]
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step_local
+  exact Numerics.not_eulerStep_realizationSoundUnder_local
     (Spectral.localFamily_isAutonomous _ _ _ : matchingFamily.IsAutonomous MatchingModel.field)
     (by norm_num) (matching_contDiffAt_field (m := m)
       (show ContDiffAt ℝ 1 (fun p : ℝ × ℝ => Real.sin p.1) (0, 0) by fun_prop)) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The explicit Euler integration of a swing model with an arbitrary power law about its selected
 point with step `h > 0`. -/
-structure SwingEuler where
-  /-- The integrated swing model. -/
-  design : SwingModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev SwingEuler := Numerics.EulerStep SwingModel
 
 /-- The Euler integration family of the swing models: every integration read as the Euler map of
 its model's translated field, with step length its step. -/
 def swingEulerFamily : Family SwingEuler Spectral.Requirement 2 0 :=
-  Numerics.eulerFamily swingFamily SwingModel.field SwingEuler.design SwingEuler.h
+  Numerics.eulerFamily swingFamily SwingModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization of the swing models: every integration realizes its model. -/
 def swingEuler :
     Implementation SwingModel Spectral.Requirement SwingEuler Spectral.Requirement 2 0 2 0 :=
-  Numerics.euler swingFamily SwingModel.field SwingEuler.design SwingEuler.h
+  Numerics.euler swingFamily SwingModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated swing field is `C¹` near the origin when the power law is `C¹` near the
 selected point: the smoothness hypothesis of the local generic Euler laws
@@ -251,19 +232,18 @@ selected point: the smoothness hypothesis of the local generic Euler laws
 swing model `M = D = 1`, `τ = 0`, `P_e(θ, ω) = sin θ` at the origin is locally exponentially
 stable (`swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`); integrated with a large
 enough step it is not: every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
 @[tmio MI, powerlib_domain] theorem swing_not_euler_realizationSoundUnder :
     connection% (¬ swingEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   set m : SwingModel := ⟨1, 1, 0, fun θ _ => 0 + 1 * Real.sin (θ - 0), 0, 0⟩
   have hs := swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid m 0 1 0 rfl rfl one_pos
   unfold powerlib.TMIO.Statement at hs
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step_local
+  exact Numerics.not_eulerStep_realizationSoundUnder_local
     (Spectral.localFamily_isAutonomous _ _ _ : swingFamily.IsAutonomous SwingModel.field)
     (by norm_num) (swing_contDiffAt_field (m := m)
       (show ContDiffAt ℝ 1 (fun p : ℝ × ℝ => 0 + 1 * Real.sin (p.1 - 0)) (0, 0) by fun_prop))
     (hs.mpr (by norm_num [m]))
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.Matching
 
@@ -271,23 +251,17 @@ namespace powerlib.GFM.Matching.MatchingClosedLoop
 
 /-- The explicit Euler integration of a stationary-frame matching model about its selected point
 with step `h > 0`. -/
-structure FullEuler where
-  /-- The integrated stationary-frame model. -/
-  design : FullModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev FullEuler := Numerics.EulerStep FullModel
 
 /-- The Euler integration family of the stationary-frame models: every integration read as the
 Euler map of its model's translated field, with step length its step. -/
 def fullEulerFamily : Family FullEuler Spectral.Requirement 8 0 :=
-  Numerics.eulerFamily fullFamily FullModel.field FullEuler.design FullEuler.h
+  Numerics.eulerFamily fullFamily FullModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization of the stationary-frame models: every integration realizes its model. -/
 def fullEuler :
     Implementation FullModel Spectral.Requirement FullEuler Spectral.Requirement 8 0 8 0 :=
-  Numerics.euler fullFamily FullModel.field FullEuler.design FullEuler.h
+  Numerics.euler fullFamily FullModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated stationary-frame field is `C¹`: the smoothness hypothesis of the generic Euler
 laws (`Numerics.euler_sound_small_step_local`), which hold vacuously for this family. -/

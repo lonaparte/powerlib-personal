@@ -25,7 +25,7 @@ Model boundary.
 * Level: local exponential stability of the flux equilibrium.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step`),
+`not_eulerStep_realizationSoundUnder`),
 `theorem/Drives/InductionMachine.lean` (`family_isAutonomous`, `field_contDiff`,
 `mem_den_attractive_iff`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7.
@@ -37,7 +37,7 @@ Family and connection conclusions.
 * `InductionMachine.eulerFamily : Family InductionMachine.Euler InductionMachine.Requirement 2 0`:
   every integration read as its Euler map; requirements and translation are those of its drive,
   read through the design. `InductionMachine.euler`: the implementation layer, every integration
-  realizing its drive (`Implementation.ofDesign Euler.design`).
+  realizing its drive (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `InductionMachine.family_isAutonomous` and the public smoothness lemma
   `InductionMachine.field_contDiff`: `Numerics.euler_sound_small_step_local` (scaffold
@@ -55,34 +55,27 @@ noncomputable section
 namespace powerlib.Drives.InductionMachine
 
 /-- The explicit Euler integration of a drive about its rotor-flux equilibrium with step `h > 0`. -/
-structure Euler where
-  /-- The integrated drive. -/
-  design : Drive
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Drive
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 2 0 :=
-  Numerics.eulerFamily family Drive.field Euler.design Euler.h
+  Numerics.eulerFamily family Drive.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its drive. -/
 def euler : Implementation Drive Requirement Euler Requirement 2 0 2 0 :=
-  Numerics.euler family Drive.field Euler.design Euler.h
+  Numerics.euler family Drive.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **Without a step constraint the Euler realization of the drives is not sound.** A locally
 exponentially stable drive (`unitRotor`, `r_r = L_r = 1`) integrated with a large enough step is not
 locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := (mem_den_attractive_iff unitRotor (P := .locallyExponentiallyStable) trivial).mpr
     (by norm_num [unitRotor])
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     field_contDiff (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.Drives.InductionMachine

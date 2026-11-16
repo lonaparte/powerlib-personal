@@ -13,13 +13,15 @@ Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §
 `.../gfl-gfm-contrast/archive/notes/concepts/contrast-conclusions.md` 差别一.
 
 Results.
-* `pllBlock v k_p k_i`: a two-state single-input single-output `Linear.Plant 2 1` whose state matrix
+* `pllBlock v k_p k_i`: a two-state single-input single-output `Linear.Plant 2 1`, the phase model
+  `PLL.phaseModel v k_p k_i` of the linearized PLL with feedthrough `D = −1`, whose state matrix
   is the PLL block `[[−k_p v, k_i], [−v, 0]]` of `A₀` (`pllBlock_A_eq_A0`).  Realization:
   state `(ξ, x)` with `ξ = θ + θ_g` the estimated grid angle, input `θ_g` (grid angle),
   output `θ = ξ − θ_g` (PLL error angle); `pllBlock_field` shows this is the linearized PLL
   `θ̇ = −k_p v θ + k_i x − θ̇_g`, `ẋ = −v θ` rewritten in `ξ`.
-* `transfer_pllBlock`: its transfer function is `T_PLL(s) = −s² / L_PLL(s)`,
-  `L_PLL(s) = s² + k_p v s + k_i v`.
+* `transfer_pllBlock`: its transfer function is `T_PLL(s) = −s² / L_PLL(s)` (`H_pll − 1`,
+  `PLL.transfer_phaseModel`), `L_PLL(s) = s² + k_p v s + k_i v` the loop polynomial
+  `PLL.loopPoly`.
 * Quasi-static PLL closed forms (contrast-conclusions 差别一): the PLL Jacobian
   `[[−k_p S, k_i], [−S, 0]]`, `S = V cos θ > 0`, is `PLL.linA S k_p k_i`, so
   `det(sI − J) = s² + 2ζω_n s + ω_n²` with `ω_n = √(S k_i)`, `ζ = (k_p/2)√(S/k_i)`
@@ -43,21 +45,19 @@ namespace powerlib.GFL.Parametric.PLLBlock
 open powerlib.GFL.DCLink
 open Matrix
 
-/-- The frozen PLL block as a SISO linear plant (input `θ_g`, output `θ`). -/
-def pllBlock (v kp ki : ℝ) : Linear.Plant 2 1 where
-  A := !![-kp * v, ki; -v, 0]
-  B := !![kp * v; v]
-  C := !![1, 0]
-  D := !![-1]
+/-- The frozen PLL block as a SISO linear plant (input `θ_g`, output `θ`): the phase model of the
+linearized PLL (`PLL.phaseModel`, output `θ̂`) with the feedthrough `−θ_g`. -/
+def pllBlock (v kp ki : ℝ) : Linear.Plant 2 1 :=
+  { PLL.phaseModel v kp ki with D := !![-1] }
 
-/-- `L_PLL(s) = s² + k_p v s + k_i v` -/
-def LPLL (v kp ki : ℝ) (s : ℂ) : ℂ := s ^ 2 + ((kp * v : ℝ) : ℂ) * s + ((ki * v : ℝ) : ℂ)
+/-- `L_PLL(s) = s² + k_p v s + k_i v`: the PLL loop polynomial `PLL.loopPoly`. -/
+abbrev LPLL (v kp ki : ℝ) (s : ℂ) : ℂ := PLL.loopPoly v kp ki s
 
 /-- The block matrix is the `(θ, x)` block of the four-state `A₀`. -/
 @[tmio M, powerlib_domain] theorem pllBlock_A_eq_A0 (p : FourState.Params) (θ0 : ℝ) (i j : Fin 2) :
     (pllBlock (FourState.vd0 p θ0) p.kp p.ki).A i j =
       FourState.A0 p θ0 (Fin.castLE (by norm_num) i) (Fin.castLE (by norm_num) j) := by
-  fin_cases i <;> fin_cases j <;> simp [pllBlock, FourState.A0]
+  fin_cases i <;> fin_cases j <;> simp [pllBlock, PLL.phaseModel, PLL.linA, FourState.A0, mul_comm]
 
 /-- Realization: with `ξ = θ + θ_g`, the block's state equation `A (ξ, x) + B θ_g` is the
 linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
@@ -66,22 +66,21 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
         ![-kp * v * θ + ki * x, -v * θ] ∧
       (pllBlock v kp ki).C *ᵥ ![θ + θg, x] + (pllBlock v kp ki).D *ᵥ ![θg] = ![θ] := by
   constructor <;> ext i <;> fin_cases i <;>
-    simp [pllBlock] <;> ring
+    simp [pllBlock, PLL.phaseModel, PLL.linA] <;> ring
 
-@[tmio M, powerlib_domain] theorem det_characteristicMatrix_pllBlock (v kp ki : ℝ) (s : ℂ) :
-    (Linear.characteristicMatrix (pllBlock v kp ki).A s).det = LPLL v kp ki s := by
-  rw [Criteria.det_characteristicMatrix_fin_two]
-  simp [pllBlock, LPLL, Matrix.trace_fin_two, Matrix.det_fin_two]
-
-/-- `T_PLL(s) = −s² / L_PLL(s)`. -/
+/-- `T_PLL(s) = −s² / L_PLL(s)`: the closed-loop transfer `H_pll` of the phase model
+(`PLL.transfer_phaseModel`) minus the feedthrough `1`. -/
 @[tmio M, powerlib_domain] theorem transfer_pllBlock (v kp ki : ℝ) {s : ℂ}
     (hs : LPLL v kp ki s ≠ 0) :
     Linear.transfer (pllBlock v kp ki) s 0 0 = -s ^ 2 / LPLL v kp ki s := by
-  rw [Linear.transfer_eq_adjugate, det_characteristicMatrix_pllBlock]
-  simp [pllBlock, Linear.characteristicMatrix, Matrix.adjugate_fin_two, Matrix.mul_apply,
-    Fin.sum_univ_two]
+  have h : Linear.transfer (pllBlock v kp ki) s =
+      Linear.transfer (PLL.phaseModel v kp ki) s + Linear.complexify !![-1] := by
+    simp [Linear.transfer, pllBlock, PLL.phaseModel, Linear.complexify]
+  rw [h, Matrix.add_apply, PLL.transfer_phaseModel, PLL.closedLoopTF]
+  simp only [LPLL] at hs ⊢
+  simp [Linear.complexify]
   field_simp
-  simp [LPLL]
+  simp [PLL.loopPoly]
   ring
 
 /-- `|T_PLL(jΩ)| = r²/√((1 − r²)² + 4ζ²r²)` with `r = Ω/ω_pll`. -/
@@ -100,7 +99,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
       Real.sqrt ((ki * v - Ω ^ 2) ^ 2 + (kp * v * Ω) ^ 2) := by
     rw [Complex.norm_def, Complex.normSq_apply]
     congr 1
-    simp [LPLL, pow_two, Complex.mul_re, Complex.mul_im]
+    simp [PLL.loopPoly, pow_two, Complex.mul_re, Complex.mul_im]
     ring
   rw [norm_div, hnum, hden]
   have hrhs : (1 - (Ω / w) ^ 2) ^ 2 + 4 * (kp * v / (2 * w)) ^ 2 * (Ω / w) ^ 2 =
@@ -115,7 +114,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
 @[tmio M, powerlib_domain] theorem normSq_LPLL (v kp ki ω : ℝ) :
     Complex.normSq (LPLL v kp ki (2 * Complex.I * ω)) =
       (ki * v - 4 * ω ^ 2) ^ 2 + (2 * ω * kp * v) ^ 2 := by
-  simp [LPLL, Complex.normSq_apply, pow_two, Complex.mul_re, Complex.mul_im]
+  simp [PLL.loopPoly, Complex.normSq_apply, pow_two, Complex.mul_re, Complex.mul_im]
   ring
 
 /-- `∂_{k_p} |L_PLL(2jω)|² = 8ω² k_p v²`. -/

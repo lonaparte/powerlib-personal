@@ -29,9 +29,14 @@ Results.
   (`g = ∓q + o(q)` with `q > 0` ⇒ `g` has the sign of `∓q`), `eventually_neg_of_le_of_isLittleO`
   (`g ≤ −q + o(q)`), `isBigO_pow_of_tendsto` / `isLittleO_pow_of_tendsto` (powers of a vanishing
   size function), `isBigO_monomial` (a monomial in two `O(s)` functions is `O(s^{i+j})`),
-  `frequently_of_forall_smul` (states on a ray accumulate at the origin).
+  `isBigO_mul_pow` (`O(s^a) · O(s^b) = O(s^k)`, `k ≤ a + b`), `isBigO_comp_pow` (`g = O(x^k)` at
+  `0`, `u = O(s)`, `u → 0` ⇒ `g ∘ u = O(s^k)`), the size `∑ᵢ |(T z)ᵢ|` of a coordinate map `T`
+  (`tendsto_sum_abs_coord`: it vanishes where `T` does;
+  `coord_isBigO_sum_abs`: every coordinate is `O` of it), `frequently_of_forall_smul` (states on
+  a ray accumulate at the origin).
 * Taylor remainders at `0`: `one_sub_cos_isBigO` (`1 − cos x = O(x²)`), `sin_sub_self_isBigO`
-  (`sin x − x = O(x³)`), `one_sub_cos_sub_isBigO` (`1 − cos x − x²/2 = O(x⁴)`), from Mathlib's
+  (`sin x − x = O(x³)`), `sin_sub_taylor_isBigO` (`sin x − (x − x³/6) = O(x⁴)`),
+  `one_sub_cos_sub_isBigO` (`1 − cos x − x²/2 = O(x⁴)`), from Mathlib's
   `Real.sin_bound`, `Real.cos_bound`, `Real.one_sub_sq_div_two_le_cos`.
 * `hasDerivAt_mulVec`: a matrix (rectangular, any finite index types) maps a differentiable
   curve to a differentiable curve, `(M x)' = M x'`.
@@ -382,6 +387,40 @@ open Set Filter Topology Metric Asymptotics
   refine this.congr_right fun x => ?_
   rw [pow_add]
 
+/-- A product of an `O(s^a)` and an `O(s^b)` function is `O(s^k)` for `k ≤ a + b`, when the size
+`s` vanishes. -/
+@[tmio T, powerlib_foundation] theorem isBigO_mul_pow {α : Type*} {l : Filter α}
+    {f g s : α → ℝ} (hs : Tendsto s l (𝓝 0)) {a b k : ℕ} (hf : f =O[l] fun x => s x ^ a)
+    (hg : g =O[l] fun x => s x ^ b) (hk : k ≤ a + b) :
+    (fun x => f x * g x) =O[l] fun x => s x ^ k :=
+  ((hf.mul hg).congr_right fun _ => (pow_add _ _ _).symm).trans (isBigO_pow_of_tendsto hs hk)
+
+/-- **Composition with a small argument.** If `g = O(x^k)` at `0` and `u = O(s)` with `u → 0`,
+then `g ∘ u = O(s^k)`. -/
+@[tmio T, powerlib_foundation] theorem isBigO_comp_pow {α : Type*} {l : Filter α} {g : ℝ → ℝ}
+    {u s : α → ℝ} {k : ℕ} (hg : g =O[𝓝 0] fun x => x ^ k) (hu0 : Tendsto u l (𝓝 0))
+    (hu : u =O[l] s) : (fun x => g (u x)) =O[l] fun x => s x ^ k :=
+  (hg.comp_tendsto hu0).trans (hu.pow k)
+
+/-- The size `∑ᵢ |(T z)ᵢ|` of a coordinate map `T` that vanishes in the limit (e.g. a continuous
+linear map at the origin) vanishes. -/
+@[tmio T, powerlib_foundation] theorem tendsto_sum_abs_coord {α ι : Type*} [Fintype ι]
+    {l : Filter α} {T : α → ι → ℝ} (hT : Tendsto T l (𝓝 0)) :
+    Tendsto (fun z => ∑ i, |T z i|) l (𝓝 0) := by
+  have h := tendsto_finset_sum (Finset.univ : Finset ι) fun i _ =>
+    ((continuous_apply i).tendsto (0 : ι → ℝ)).comp hT |>.abs
+  simpa using h
+
+/-- Every coordinate of a coordinate map `T` is `O` of the size `∑ⱼ |(T z)ⱼ|`. -/
+@[tmio T, powerlib_foundation] theorem coord_isBigO_sum_abs {α ι : Type*} [Fintype ι]
+    {l : Filter α} (T : α → ι → ℝ) (i : ι) :
+    (fun z => T z i) =O[l] fun z => ∑ j, |T z j| :=
+  IsBigO.of_bound 1 (Eventually.of_forall fun z => by
+    have h0 : (0 : ℝ) ≤ ∑ j, |T z j| := Finset.sum_nonneg fun j _ => abs_nonneg _
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, abs_of_nonneg h0]
+    exact Finset.single_le_sum (f := fun j => |T z j|) (fun j _ => abs_nonneg _)
+      (Finset.mem_univ i))
+
 /-- A sign estimate `g ≤ −q + R` with `R = o(q)` and `q > 0` forces `g < 0` eventually. -/
 @[tmio T, powerlib_foundation] theorem eventually_neg_of_le_of_isLittleO {α : Type*} {l : Filter α}
     {g q R : α → ℝ} (hq : ∀ᶠ x in l, 0 < q x) (hle : ∀ᶠ x in l, g x ≤ -q x + R x)
@@ -432,6 +471,18 @@ open Set Filter Topology Metric Asymptotics
     _ ≤ |x| ^ 3 := by
         have h0 : 0 ≤ |x| ^ 3 := by positivity
         rw [h3]; linarith
+
+/-- `sin x − (x − x³/6) = O(x⁴)`. -/
+@[tmio T, powerlib_foundation] theorem sin_sub_taylor_isBigO :
+    (fun x : ℝ => Real.sin x - (x - x ^ 3 / 6)) =O[𝓝 0] fun x => x ^ 4 := by
+  refine IsBigO.of_bound 1 ?_
+  filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with x hx
+  rw [Metric.mem_ball, Real.dist_eq, sub_zero] at hx
+  have hb := Real.sin_bound hx.le
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_pow, one_mul]
+  have h5 : |x| ^ 5 ≤ |x| ^ 4 := pow_le_pow_of_le_one (abs_nonneg _) hx.le (by norm_num)
+  have h4 : 0 ≤ |x| ^ 4 := by positivity
+  linarith
 
 /-- `1 − cos x − x²/2 = O(x⁴)`. -/
 @[tmio T, powerlib_foundation] theorem one_sub_cos_sub_isBigO :

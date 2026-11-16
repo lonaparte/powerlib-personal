@@ -797,14 +797,11 @@ asymptotically stable at a power-balance point whose reduced Jacobian has a zero
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ (family (n := n + 4)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
   obtain ⟨p, θ, hbal, hmin, v, hv, hker⟩ := exists_degenerate n
   have hmem := mem_den_locallyAsymptoticallyStable_iff (⟨p, θ⟩ : Model (n + 4))
   unfold powerlib.TMIO.Statement at hmem
-  have hin := hmem.mpr ⟨hbal, hmin⟩
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hin
-  have hj : Meets (⟨p, θ⟩ : Model (n + 4)) .jacobianStable :=
-    hin .jacobianStable (by simp [family, translate])
+  refine Spectral.not_exact_of_witness (hmem.mpr ⟨hbal, hmin⟩) (q := .jacobianStable)
+    (by simp [family, translate]) fun hj => ?_
   exact (show ¬ LinearSystems.IsHurwitz (jacobian p θ) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets, ring5] using not_isHurwitz_of_kernel hv hker) hj
 
 end powerlib.Network.Swing

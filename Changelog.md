@@ -134,6 +134,57 @@ in Git; working statistics, build receipts and development plans are not kept he
   an arbitrary signal) stay foundation. Kinds now T 3615, M 2680; labels
   foundation 4376, domain 3173.
 
+- Consolidated the grid-following converter models, first round: what the GFL
+  models share is now stated once in the module it belongs to; each model keeps its
+  own family and requirement language.
+  - Euler realizations: one step type `Numerics.EulerStep X` and the large-step
+    refutations `Numerics.not_eulerStep_realizationSoundUnder(_local)`,
+    `not_eulerStepPorts_realizationSoundUnder_local` and `_linear`. The 35 per-family
+    Euler structures (GFL, GFM, PLL, current control, power system, drives, passive)
+    are abbreviations of it under their old names; `<Family>.Euler.{design, h, pos,
+    mk}` → `Numerics.EulerStep.{design, h, pos, mk}`.
+  - Sign coordinates: `Dynamics.signMatrix σ`, `Dynamics.signCoord σ` with
+    `signMatrix_{mul_self, isUnit, inv}`, `signCoord_{apply, symm}` and
+    `transportField_zero_eq_iff_comp`. The GFL current reversals and reflections
+    (`currentReversal`, `ccReversal`, `currentReversal10/13`,
+    `carrierReflect(Matrix)`, `integratorFlip(Matrix)`, `reflect(Matrix)`) are
+    abbreviations; their 17 own `mul_self`/`isUnit`/`inv`/`apply` lemmas are removed.
+  - PI-PLL energy law once: `PLL.piPLL_energy_rate` (from which
+    `gflPH_power_balance` follows) replaces `LCLine.cp_energy_rate` and
+    `Noise.Escape.H_hasDerivAt_along`; `LCLine.Params.pHModel` is an instance of
+    `PLL.gflPHModel`, and its copies (`gradH`, `hasGradientAt_hamiltonian`,
+    `JR_mulVec`, `portB_mulVec`, `pHModel_field`, `pHModel_dampingPower`,
+    `pHModel_output`, `energy_rate_with_drift`) → `PLL.gflPH_*`.
+  - PLL linear block from `PLL/Linear`: `FourState.LPLL`, `PLLBlock.LPLL` →
+    `PLL.loopPoly`; `pllBlock` is `PLL.phaseModel` with `D = −1`
+    (`det_characteristicMatrix_pllBlock` → `PLL.det_characteristicMatrix_linA`);
+    `Impedance.Gpll` → `PLL.portTF`; `RatePLL.zetaQS`, `Noise.zetaB` via `PLL.zeta`;
+    one damping ratio `Criteria.dampingRatio` replaces `RatePLL.dampingRatio` and
+    `Noise.zeta` (`classA_zeta_eq`, `classB_zeta_eq` restated with it, hypotheses
+    dropped).
+  - The class-A swing of `Noise/DampingClass` is `Synchronous.classicalSM`: its
+    `pot`, `hamiltonian`, `gradH`, `swingPH`, `hasGradientAt_hamiltonian`,
+    `swingPH_zeroInputField`, `swing_energy_rate` → `classicalSM`,
+    `classicalSM_hasGradientAt`, `classicalSM_field`, `classicalSM_power_balance`.
+  - Witness and range laws: eleven inline re-proofs use
+    `Spectral.not_exact_of_witness`; new `Spectral.local_realize_eq_den_inter_of_iff`,
+    `local_realize_ne_den_inter_of_witness` (the physical-range statements of the
+    cascade and DC voltage loop) and `Spectral.realize_ne_den_of_indistinguishable`
+    (the four-state boundary's inexpressibility results).
+  - Generic local asymptotics in `Dynamics/Calculus` (`tendsto_sum_abs_coord`,
+    `coord_isBigO_sum_abs`, `isBigO_comp_pow`, `isBigO_mul_pow`,
+    `sin_sub_taylor_isBigO`) replace nine dimension-fixed private helpers of the
+    quasi-static fold and Hopf analyses; `Criteria.invariants_of_blockDiag_fin_four`
+    replaces the model-B block invariants computed twice.
+  - Exact relations stated: `RatePLL.field_eq_srfField` (the rate-coupled PLL with
+    `I_d = 0` is the SRF PI-PLL; its undamped witness now comes from the pendulum);
+    `FourState.dcLoop` and `FourState.A0_dcBlock` (the four-state DC block is the
+    closed DC-voltage loop's Jacobian; `twoAlphaCl`, `omegaClSq` are its trace and
+    determinant, `dcBlock_closed_forms` removed); the 13-state bridge power identity
+    is derived from `CurrentControl.bridgePower_decoupling`.
+  - Classified theorems 7550 → 7530 (GFL 879 → 837); public connection theorems
+    1052 → 1059 (new generic connection laws).
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

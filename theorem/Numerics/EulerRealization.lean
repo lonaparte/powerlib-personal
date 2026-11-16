@@ -41,11 +41,12 @@ Scope.
   `x = design y`, `h = step y`, with step length `h` (`Map.System.autonomous`), discrete time,
   exact arithmetic (no round-off), fixed step (no step-size control).
 * The laws are connection statements about arbitrary families of `Type` (model, requirement and
-  implementation types in `Type`; the definitions stay universe polymorphic). An instance fixes
-  its implementation type (a structure of a design model and a positive step); the small-step
-  laws of an instance are these laws applied to its family's autonomy and the public smoothness
-  lemma of its field, and the instance publishes what carries its own content, a witness against
-  soundness without a step constraint: `theorem/PowerSystem/Synchronous/SwingEuler.lean` and the
+  implementation types in `Type`; the definitions stay universe polymorphic). An instance takes
+  the implementation type `EulerStep X` of its model type (a design model and a positive step);
+  the small-step laws of an instance are these laws applied to its family's autonomy and the
+  public smoothness lemma of its field, and the instance publishes what carries its own content,
+  a witness against soundness without a step constraint, through the `EulerStep` laws:
+  `theorem/PowerSystem/Synchronous/SwingEuler.lean` and the
   `Euler.lean` modules of `theorem/GridTiedConverter/GFM/`,
   `theorem/GridTiedConverter/GFM/Matching/`, `theorem/GridTiedConverter/GFL/`,
   `theorem/GridTiedConverter/GFL/PowerLoop/`, `theorem/GridTiedConverter/GFL/LCLine/`,
@@ -100,6 +101,12 @@ Family and connection conclusions.
   `(hC x).contDiffAt`).
 * `not_euler_realizationSoundUnder_of_neg` (`n > 0`, any family): an implementation of a design
   with the field `ż = −z` and step `h = 3` is a witness (the Euler map is `z ↦ −2 z`).
+* The instances' implementation type `EulerStep X` (a design model and a positive step), whose
+  integrations include arbitrarily large steps (`EulerStep.exists_le_h`), closes the large-step
+  hypothesis once: `not_eulerStep_realizationSoundUnder_local` (a locally exponentially stable
+  model `C¹` near the origin refutes soundness of the realization over `EulerStep X` without a
+  step constraint) and `not_eulerStep_realizationSoundUnder` (the same for families of `C¹`
+  fields).
 -/
 
 noncomputable section
@@ -261,6 +268,22 @@ def euler (F : Family X Q n 0) (f : X → ℝⁿ → ℝⁿ) (design : Y → X) 
   { model := F, impl := eulerFamily F f design step,
     realizes := Implementation.ofDesign design }
 
+/-- An explicit Euler integration of a model of type `X`: the integrated design model and a
+positive step. The implementation type of the instances (`design := EulerStep.design`,
+`step := EulerStep.h`). -/
+structure EulerStep (X : Type*) where
+  /-- The integrated model. -/
+  design : X
+  /-- The step. -/
+  h : ℝ
+  /-- Steps are positive. -/
+  pos : 0 < h
+
+/-- The integrations of a model include arbitrarily large steps. -/
+@[tmio M, powerlib_foundation] theorem EulerStep.exists_le_h (x : X) (h₁ : ℝ) :
+    ∃ y : EulerStep X, y.design = x ∧ h₁ ≤ y.h :=
+  ⟨⟨x, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
+
 end Template
 
 /-! ## The realization of local exponential stability
@@ -371,6 +394,30 @@ include arbitrarily large steps refutes realization soundness
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact not_euler_realizationSoundUnder_of_large_step_local hF hn (hC x).contDiffAt hx hY
+
+/-- **Large steps: without a step constraint the Euler realization over the integrations
+`EulerStep X` is not sound, from a model `C¹` near its point** (`n > 0`). A locally exponentially
+stable model whose field is `C¹` near the origin has integrations with arbitrarily large steps
+(`EulerStep.exists_le_h`), so `not_euler_realizationSoundUnder_of_large_step_local` applies. -/
+@[tmio TM, powerlib_foundation] theorem not_eulerStep_realizationSoundUnder_local
+    (hF : F.IsAutonomous f) (hn : 0 < n) {x : X} (hC : ContDiffAt ℝ 1 (f x) 0)
+    (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
+    connection% (¬ (euler F f EulerStep.design EulerStep.h).RealizationSoundUnder ∅
+      (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact not_euler_realizationSoundUnder_of_large_step_local hF hn hC hx (EulerStep.exists_le_h x)
+
+/-- **Large steps: without a step constraint the Euler realization over the integrations
+`EulerStep X` is not sound** (`n > 0`). In a family of autonomous `C¹` fields, a locally
+exponentially stable model refutes realization soundness
+(`not_eulerStep_realizationSoundUnder_local`). -/
+@[tmio TM, powerlib_foundation] theorem not_eulerStep_realizationSoundUnder
+    (hF : F.IsAutonomous f) (hC : ∀ x, ContDiff ℝ 1 (f x)) (hn : 0 < n) {x : X}
+    (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
+    connection% (¬ (euler F f EulerStep.design EulerStep.h).RealizationSoundUnder ∅
+      (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact not_eulerStep_realizationSoundUnder_local hF hn (hC x).contDiffAt hx
 
 /-- A complex eigenvalue of a real scalar matrix `c I` is `c`. -/
 @[tmio T, powerlib_foundation] private theorem eigen_smul_one {c : ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)

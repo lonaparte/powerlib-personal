@@ -28,7 +28,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step`),
+`not_eulerStep_realizationSoundUnder`),
 `theorem/GridTiedConverter/GFL/RatePLL.lean` (`family_isAutonomous`, `Model.field_contDiff`,
 `mem_den_locallyExponentiallyStable_of_tan_lt`);
 work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
@@ -40,7 +40,7 @@ Family and connection conclusions.
 * `RatePLL.eulerFamily : Family RatePLL.Euler RatePLL.Requirement 2 0`: every integration read as
   its Euler map; requirements and translation are those of its model, read through the design.
   `RatePLL.euler`: the implementation layer, every integration realizing its model
-  (`Implementation.ofDesign Euler.design`).
+  (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `RatePLL.family_isAutonomous` and the public smoothness lemma
   `RatePLL.Model.field_contDiff`: `Numerics.euler_sound_small_step_local` (scaffold
@@ -59,27 +59,21 @@ namespace powerlib.GFL.RatePLL
 
 /-- The explicit Euler integration of a rate-coupled PLL model about its selected point with step
 `h > 0`. -/
-structure Euler where
-  /-- The integrated rate-coupled PLL model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 2 0 :=
-  Numerics.eulerFamily family Model.field Euler.design Euler.h
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its rate-coupled PLL model. -/
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
-  Numerics.euler family Model.field Euler.design Euler.h
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **Without a step constraint the Euler realization of the rate-coupled PLL models is not sound.**
 A locally exponentially stable model (`V = ω_s = k_p = k_i = 1`, `X_g = i_d = 0` at `θ* = 0`)
 integrated with a large enough step is not locally exponentially stable: every Euler multiplier
-`1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+`1 + hλ` leaves the unit disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -88,8 +82,7 @@ integrated with a large enough step is not locally exponentially stable: every E
     [Params.D0])
     one_pos one_pos one_pos (θ := 0) (by simp) (by simp) (by simp)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     Model.field_contDiff (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFL.RatePLL

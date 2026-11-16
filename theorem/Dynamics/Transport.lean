@@ -42,7 +42,10 @@ Results.
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
   `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
   planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleCoord`, `scaleCoord_apply`,
-  `scaleCoord_symm_apply`).
+  `scaleCoord_symm_apply`). Sign changes `x ↦ (σᵢ xᵢ)ᵢ`, `σ : Fin n → ℤˣ` (`signMatrix`, an
+  involution: `signMatrix_mul_self`, `signMatrix_isUnit`, `signMatrix_inv`; `signCoord`,
+  `signCoord_apply`, `signCoord_symm`). A field is the transport of `g` by `T` about the origin
+  exactly when `T` conjugates them (`transportField_zero_eq_iff_comp`).
 * Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): the solutions of `c • f` are the
   solutions of `f` read at `t = c τ` (`isTrajectoryOn_timeScale`,
   `isIntegralCurveOn_Ici_timeScale`).
@@ -196,6 +199,17 @@ variable {T : State n ≃L[ℝ] State n}
     transportField T.symm 0 (transportField T 0 g) = g := by
   funext y
   simp
+
+/-- A field is the transport of `g` by `T` about the origin exactly when `T` conjugates them:
+`f ∘ T = T ∘ g`. -/
+@[tmio T, powerlib_foundation] theorem transportField_zero_eq_iff_comp {f g : State n → State n} :
+    f = transportField T 0 g ↔ ∀ x, f (T x) = T (g x) := by
+  constructor
+  · rintro rfl x
+    simp
+  · intro h
+    funext y
+    rw [transportField_zero_apply, ← h, ContinuousLinearEquiv.apply_symm_apply]
 
 @[tmio T, powerlib_foundation] private lemma transportField_zero_eq_conj (g : State n → State n) :
     transportField T 0 g =
@@ -488,6 +502,49 @@ variable (P : Matrix (Fin n) (Fin n) ℝ) (hP : IsUnit P)
   rfl
 
 end MatrixCoord
+
+/-! ### Sign changes of coordinates: `x ↦ (σᵢ xᵢ)ᵢ`, every `σᵢ = ±1` -/
+
+section Sign
+
+/-- The diagonal sign matrix `diag(σ₀, …, σₙ₋₁)` of a sign vector `σ : Fin n → ℤˣ` (every entry
+`±1`). -/
+def signMatrix (σ : Fin n → ℤˣ) : Matrix (Fin n) (Fin n) ℝ :=
+  Matrix.diagonal fun i => ((σ i : ℤ) : ℝ)
+
+variable (σ : Fin n → ℤˣ)
+
+/-- A sign matrix is an involution. -/
+@[tmio T, powerlib_foundation] theorem signMatrix_mul_self :
+    signMatrix σ * signMatrix σ = 1 := by
+  rw [signMatrix, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  congr 1
+  funext i
+  rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+
+@[tmio T, powerlib_foundation] theorem signMatrix_isUnit : IsUnit (signMatrix σ) :=
+  (Matrix.isUnit_iff_isUnit_det _).mpr
+    (Matrix.isUnit_det_of_right_inverse (signMatrix_mul_self σ))
+
+@[tmio T, powerlib_foundation] theorem signMatrix_inv : (signMatrix σ)⁻¹ = signMatrix σ :=
+  Matrix.inv_eq_left_inv (signMatrix_mul_self σ)
+
+/-- The sign change of coordinates `x ↦ (σᵢ xᵢ)ᵢ`. -/
+def signCoord : State n ≃L[ℝ] State n :=
+  matrixCoord (signMatrix σ) (signMatrix_isUnit σ)
+
+@[tmio T, simp, powerlib_foundation] theorem signCoord_apply (x : State n) :
+    signCoord σ x = WithLp.toLp 2 fun i => ((σ i : ℤ) : ℝ) * x i := by
+  apply WithLp.ofLp_injective
+  funext i
+  rw [signCoord, ofLp_matrixCoord, signMatrix, Matrix.mulVec_diagonal]
+
+/-- A sign change of coordinates is its own inverse. -/
+@[tmio T, simp, powerlib_foundation] theorem signCoord_symm : (signCoord σ).symm = signCoord σ :=
+  ContinuousLinearEquiv.ext <| funext fun y => by
+    rw [signCoord, matrixCoord_symm_apply, signMatrix_inv, matrixCoord_apply]
+
+end Sign
 
 /-! ### Scaling one coordinate: `(θ, v) ↦ (θ, η v)` -/
 

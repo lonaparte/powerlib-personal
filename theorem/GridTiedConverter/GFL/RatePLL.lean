@@ -7,7 +7,9 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
-import theorem.Dynamics.Pendulum
+import theorem.PhasePlane.Pendulum
+import theorem.GridTiedConverter.PLL.Model
+import theorem.GridTiedConverter.PLL.Linear
 
 /-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `i_d`)
 
@@ -43,6 +45,8 @@ the frozen current OUT-positive, `I_d = −i_d` (`convention_override` there): t
 Results.
 * `field_eq_literatureField` (§D8 boundary translation): the field at `i_d` is the OUT-positive
   source field at `I_d = −i_d`.
+* `field_eq_srfField`: with `i_d = 0` the field is the SRF-PLL field `PLL.srfField V k_p k_i 0`
+  (`D₀ = 1`).
 * `jacobian_eq`: the Jacobian at an equilibrium is
   `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]` (derived with `fderiv`; at an
   equilibrium `−L_g i_d = V sin θ / ω_s`).
@@ -54,8 +58,9 @@ Results.
   (`trace_jac_eq_zero_of_tan_eq`) and the Jacobian has the purely imaginary pair `± j √det J`
   (`imaginary_pair_at_boundary`; a Hopf *candidate* — no transversality or Lyapunov-coefficient
   claim is made).
-* `zeta_ratio`: damping ratio of the rate-coupled Jacobian over the quasi-static closed form
-  `(k_p/2) √(V cos θ / k_i)` equals `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`.
+* `zeta_ratio`: the damping ratio (`Criteria.dampingRatio`) of the rate-coupled Jacobian over the
+  quasi-static one `zetaQS` (`PLL.zeta` at the slope `V cos θ`, closed form
+  `(k_p/2) √(V cos θ / k_i)`) equals `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`.
 * `jacobian_indep_Xg`: at a fixed equilibrium angle the Jacobian does not depend on `X_g`
   (`−L_g i_d = V sin θ / ω_s` there).
 * `omega_kp_div_ki_of_pllGains`: with the source tuning rule `k_p = 2ζ₀ω_{n0}/V`,
@@ -92,8 +97,9 @@ exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, 
 selected point is not an equilibrium (`offEquilibrium`) is unstable
 (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not exact
 (`not_exact_lyapunovStable`): the undamped PLL `undampedPLL` (`k_p = 0`, `i_d = 0`) is the pendulum
-`θ̇ = x`, `ẋ = −sin θ`, Lyapunov stable through its conserved energy `1 − cos θ + x²/2`
-(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The local asymptotic
+`θ̇ = x`, `ẋ = −sin θ` (`field_eq_srfField`), Lyapunov stable at its lower equilibrium
+(`PhasePlane.Pendulum.origin_lyapunovStable`, `undampedPLL_mem_den_lyapunovStable`) with a
+trace-zero Jacobian. The local asymptotic
 translation is not exact (`not_exact_locallyAsymptoticallyStable`, in
 `theorem/GridTiedConverter/GFL/RatePLLHopf.lean`): on the boundary `tr J = 0`
 (`tan θ = ω_s k_p / k_i` for physical gains) the Jacobian has the imaginary pair `± j √det J`
@@ -175,6 +181,16 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   apply Dynamics.lift_toLp_eq_zero
   ext i
   fin_cases i <;> simp [coordField, vq, pllOut, hq]
+
+/-- With a zero frozen current the rate-coupled field is the SRF-PLL field: `D₀ = 1` and
+`v_q = −V sin θ` (`PLL.srfField V k_p k_i 0`, `theorem/GridTiedConverter/PLL/Model.lean`). -/
+@[tmio M, powerlib_domain] theorem field_eq_srfField (hId : p.Id = 0) :
+    field p = PLL.srfField p.V p.kp p.ki 0 := by
+  funext y
+  ext i
+  fin_cases i <;>
+    simp [field, Dynamics.lift, coordField, pllOut, vq, gridQ, Params.D0, hId, PLL.srfField,
+      PLL.piPLLField, PLL.srfPD]
 
 @[tmio M, powerlib_domain] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
   apply Dynamics.contDiff_lift
@@ -349,18 +365,16 @@ source field at `I_d = −i_d`. -/
   rw [Params.D0, Params.Lg, mul_assoc p.kp, div_mul_eq_mul_div]
   linear_combination (p.kp / p.ωs) * heq
 
-/-- Damping ratio `−tr / (2 √det)` of a real 2×2 matrix (meaningful for a complex pair). -/
-def dampingRatio (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := -A.trace / (2 * Real.sqrt A.det)
-
-/-- Quasi-static PLL damping-ratio closed form `(k_p/2) √(V cos θ / k_i)`. -/
-def zetaQS (θ : ℝ) : ℝ := p.kp / 2 * Real.sqrt (p.V * Real.cos θ / p.ki)
+/-- Quasi-static PLL damping ratio: the PI-PLL damping ratio `PLL.zeta` at the detector slope
+`V cos θ`, `(k_p/2) √(V cos θ / k_i)` for `V cos θ, k_i > 0` (`PLL.zeta_eq`). -/
+def zetaQS (θ : ℝ) : ℝ := PLL.zeta (p.V * Real.cos θ) p.kp p.ki
 
 /-- The rate-coupled damping ratio equals the quasi-static closed form times
 `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`, `D₀ = 1 − k_p V sin θ / ω_s`. -/
 @[tmio M, powerlib_domain] theorem zeta_ratio (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
-    dampingRatio (jac p θ) =
+    Criteria.dampingRatio (jac p θ) =
       zetaQS p θ * (1 - Real.tan θ / (p.ωs * p.kp / p.ki)) /
         Real.sqrt (1 - p.kp * p.V * Real.sin θ / p.ωs) := by
   rw [← D0_eq_of_equilibrium p heq]
@@ -383,7 +397,7 @@ def zetaQS (θ : ℝ) : ℝ := p.kp / 2 * Real.sqrt (p.V * Real.cos θ / p.ki)
   have ha0 : 0 < Real.sqrt (p.V * Real.cos θ) := Real.sqrt_pos.2 hS
   have hb0 : 0 < Real.sqrt p.ki := Real.sqrt_pos.2 hki
   have hc0 : 0 < Real.sqrt p.D0 := Real.sqrt_pos.2 hD0
-  rw [dampingRatio, neg_div, ← neg_div, htr, hdet, h1, zetaQS, h2]
+  rw [Criteria.dampingRatio, neg_div, ← neg_div, htr, hdet, h1, zetaQS, PLL.zeta_eq hS hki, h2]
   set a := Real.sqrt (p.V * Real.cos θ)
   set b := Real.sqrt p.ki
   set c := Real.sqrt p.D0
@@ -692,57 +706,26 @@ while the translation asks for an equilibrium. -/
 field is the pendulum `θ̇ = x`, `ẋ = −sin θ`. -/
 def undampedPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 1, 0, 1, 0, rfl⟩, 0⟩
 
-@[tmio M, powerlib_domain] private theorem undampedPLL_field (z : Dynamics.State 2) :
-    RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
-  ext i
-  fin_cases i <;>
-    simp [Passive.SeriesRLC.reactance, Params.Xg, RatePLL.field, Dynamics.lift, coordField,
-        undampedPLL, vq, pllOut, gridQ, Params.D0, Params.Lg]
-
-/-- The pendulum energy `1 − cos θ + x²/2`. -/
-@[tmio T, powerlib_foundation] private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
-    HasFDerivAt (fun y : Dynamics.State 2 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2)
-      (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
-        z 1 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ)) z := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
-    Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
-    Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have hc := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z h0
-  have h := (hc.const_sub 1).add ((h1.pow 2).const_mul (1 / 2 : ℝ))
-  refine h.congr_fderiv ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  simp
-  ring
-
-/-- The undamped PLL is Lyapunov stable at `θ* = 0`: the pendulum energy `1 − cos θ + x²/2` is
-conserved and has a strict minimum on `|θ| < π` (`Dynamics.pendulumEnergy_pos`). Its Jacobian
+/-- The undamped PLL is Lyapunov stable at `θ* = 0`: with `i_d = 0` its field is the SRF-PLL field
+(`field_eq_srfField`) with `V = k_i = 1`, `k_p = 0`, the pendulum `θ̇ = x`, `ẋ = −sin θ`, whose
+lower equilibrium is Lyapunov stable (`PhasePlane.Pendulum.origin_lyapunovStable`). Its Jacobian
 `[[0, 1], [−1, 0]]` has trace `0`, so it meets no stable-Jacobian requirement. -/
 @[tmio TM, powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff.mpr ?_
   change LyapunovStable _ _
-  have hpt : equilibrium undampedPLL.θ = 0 := by
-    ext i
-    fin_cases i <;> simp [equilibrium, undampedPLL]
-  rw [hpt]
-  have hcont : Continuous fun y : Dynamics.State 2 => y 0 :=
-    (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : Dynamics.State 2 →L[ℝ] ℝ).continuous
-  refine lyapunov_stable (V := fun y : Dynamics.State 2 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2)
-    (D := {y | |y 0| < Real.pi}) two_pos
-    ⟨isOpen_lt (continuous_abs.comp hcont) continuous_const, by simp [Real.pi_pos],
-      continuous_iff_continuousAt.mpr fun y => (pendulumEnergy_hasFDerivAt y).continuousAt,
-      fun y => (pendulumEnergy_hasFDerivAt y).differentiableAt, by simp,
-      fun y hy hne => ?_, fun y _ => ?_⟩
-  · have hy' : |y 0| < Real.pi := hy
-    have hw : 1 / 2 * (‖y - 0‖ ^ 2 - y 0 ^ 2) ≤ 1 / 2 * y 1 ^ 2 := by
-      simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
-    exact Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp) hw
-      (by linarith [Real.pi_pos]) hne
-  · rw [(pendulumEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
-    simp [mul_comm]
+  have hpt : equilibrium undampedPLL.θ = PhasePlane.mk 0 0 := by
+    rw [PhasePlane.ext_iff']
+    simp [equilibrium, undampedPLL]
+  have hf : RatePLL.field undampedPLL.params = PhasePlane.Pendulum.field 1 := by
+    rw [field_eq_srfField _ rfl]
+    funext z
+    rw [PhasePlane.ext_iff']
+    simp [PLL.srfField, PLL.piPLLField, PLL.srfPD, PhasePlane.Pendulum.field,
+      PhasePlane.Pendulum.torque, undampedPLL]
+  rw [hpt, hf]
+  exact PhasePlane.Pendulum.origin_lyapunovStable one_ne_zero
 
 /-- The Lyapunov translation is sound but not exact: the undamped PLL is Lyapunov stable at an
 equilibrium whose Jacobian has trace `0`. -/

@@ -23,7 +23,9 @@ Results.
 pH data (T-gfl-ph (1.2)): `H(θ, η) = V(θ) + (K_i / 2) η²`, `∇H = (−h(θ), K_i η)`,
 `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0) ⪰ 0`, `B = (−1, 0)ᵀ`, output `y = Bᵀ ∇H = h(θ)`.
 * `gflPH_field`: `(J − R) ∇H + B δω` is exactly the PI-PLL field.
-* `gflPH_power_balance`: `Ḣ = −K_p h² + h δω` at every state and input.
+* `piPLL_energy_rate`: for any `h` and any `V` with `V′ = −h` at `θ` (a local primitive),
+  `H = V(θ) + (K_i / 2) η²` has `Ḣ = −K_p h(θ)² + h(θ) δω` along the PI-PLL field;
+  `gflPH_power_balance`: the same for the pH model at every state and input.
 * `gflPH_trajectory_energy` (private): the same along every input/state solution.
 * Form-B characteristic `h = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ]`
   (`formBH`), its potential (1.4) (`formBPotential`, proved to be a primitive of `−h` and equal to
@@ -37,8 +39,8 @@ Family and connection conclusions.
 No family is defined here (and none may take
 `PH.NonlinearModel` itself as its model type): the autonomous behaviour of this model with
 constant `δω` is the PI-PLL family `PLL.PIPLL.family` (`gflPH_field` identifies the fields). The
-field identity (`gflPH_field`), the pointwise power
-balance (`gflPH_power_balance`) and the unboundedness of the form-B Hamiltonian
+field identity (`gflPH_field`), the pointwise energy rate and power
+balance (`piPLL_energy_rate`, `gflPH_power_balance`) and the unboundedness of the form-B Hamiltonian
 (`formBHamiltonian_not_bddBelow`) are static evidence on the model, not connection conclusions;
 the energy identity along solutions (`gflPH_trajectory_energy`) and the failure of passivity with
 the particular storages `H − c` (`formB_not_passiveWithStorage`, a statement about one storage,
@@ -121,14 +123,33 @@ Static evidence on the model, not a connection conclusion. -/
     Fin.sum_univ_two, Matrix.diagonal]
   ring
 
-/-- Energy balance `Ḣ = −K_p h² + h δω` (T-gfl-ph §1.2), pointwise.
+/-- **Energy rate of the PI-PLL** (T-gfl-ph §1.2), pointwise, for every phase-detector
+characteristic `h` and every gain: where `V′ = −h` at `θ` (a local primitive suffices, e.g. the
+potential of the constant-power layer of `theorem/GridTiedConverter/GFL/LCLine/FullModelDC.lean`,
+defined where its discriminant is nonnegative), the energy `H = V(θ) + (K_i / 2) η²` changes
+along the PI-PLL field with input `δω` at the rate `Ḣ = −K_p h(θ)² + h(θ) δω`.
 Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem piPLL_energy_rate {h V : ℝ → ℝ} (Kp Ki δω : ℝ) {x : State 2}
+    (hV : HasDerivAt V (-h (x 0)) (x 0)) :
+    fderiv ℝ (fun z : State 2 => V (z 0) + Ki / 2 * z 1 ^ 2) x (piPLLField h Kp Ki δω x) =
+      -(Kp * h (x 0) ^ 2) + h (x 0) * δω := by
+  set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
+  set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
+  have h0 : HasFDerivAt (fun z : State 2 => z 0) π0 x := π0.hasFDerivAt
+  have h1 : HasFDerivAt (fun z : State 2 => z 1) π1 x := π1.hasFDerivAt
+  have hH : HasFDerivAt (fun z : State 2 => V (z 0) + Ki / 2 * z 1 ^ 2)
+      (-h (x 0) • π0 + (Ki / 2) • (2 • x 1 ^ (2 - 1)) • π1) x :=
+    (hV.comp_hasFDerivAt x h0).add ((h1.pow 2).const_mul (Ki / 2))
+  rw [hH.fderiv]
+  simp [π0, π1, piPLLField]
+  ring
+
+/-- Energy balance `Ḣ = −K_p h² + h δω` of the pH model (T-gfl-ph §1.2), pointwise
+(`piPLL_energy_rate`). Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem gflPH_power_balance (x : State 2) (δω : ℝ) :
     fderiv ℝ (gflPHModel h V hV Kp Ki hKp).H x (piPLLField h Kp Ki δω x) =
-      -(Kp * h (x 0) ^ 2) + h (x 0) * δω := by
-  rw [← gflPH_field (hV := hV) (hKp := hKp), PH.NonlinearModel.power_balance, gflPH_supply,
-    gflPH_dampingPower]
-  ring
+      -(Kp * h (x 0) ^ 2) + h (x 0) * δω :=
+  piPLL_energy_rate Kp Ki δω (hV (x 0))
 
 /-- Along every input/state solution on a time set `s` (input `u(t) = (δω(t))`):
 `d/dt H(x(t)) = −K_p h(θ(t))² + h(θ(t)) δω(t)`.

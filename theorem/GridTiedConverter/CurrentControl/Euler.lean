@@ -35,7 +35,7 @@ Model boundary.
 * Level: local exponential stability of the operating point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step_local`),
+`not_eulerStep_realizationSoundUnder_local`),
 `theorem/GridTiedConverter/CurrentControl/VoltageLimit.lean` (`family_isAutonomous`,
 `contDiffAt_field`, `mem_den_iff`, `unloaded`); work-sync `theory/T-numerical-integration.md` §1.2,
 §2.7.
@@ -47,7 +47,7 @@ Family and connection conclusions.
 * `LimitedPI.eulerFamily : Family LimitedPI.Euler LimitRequirement 2 0`: every integration read as
   its Euler map; requirements and translation are those of its platform, read through the design
   (`meets y = LimitedPI.Meets y.design`). `LimitedPI.euler`: the implementation layer, every
-  integration realizing its platform (`Implementation.ofDesign Euler.design`).
+  integration realizing its platform (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy `LimitedPI.family_isAutonomous` and the public smoothness lemma
   `LimitedPI.contDiffAt_field` (the field is `C¹` near the operating point with headroom):
@@ -68,28 +68,22 @@ namespace powerlib.CurrentControl.LimitedPI
 
 /-- The explicit Euler integration of a voltage-limited platform about its operating point with
 step `h > 0`. -/
-structure Euler where
-  /-- The integrated platform. -/
-  design : LimitedPI
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep LimitedPI
 
 /-- The Euler integration family: every integration read as the Euler map of its platform's
 translated field, with step length its step. -/
 def eulerFamily : Family Euler LimitRequirement 2 0 :=
-  Numerics.eulerFamily family field Euler.design Euler.h
+  Numerics.eulerFamily family field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its platform. -/
 def euler : Implementation LimitedPI LimitRequirement Euler LimitRequirement 2 0 2 0 :=
-  Numerics.euler family field Euler.design Euler.h
+  Numerics.euler family field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **Without a step constraint the Euler realization of the platforms is not sound.** The
 unloaded platform (nominal design `L = R = Kp = Ki = 1`, `i* = 0`, `V_dc = 1`: headroom
 `0 < 1/√3`) is locally exponentially stable; integrated with a large enough step it is not: every
 Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -100,9 +94,8 @@ Euler multiplier `1 + hλ` leaves the unit disk
   have hm := mem_den_iff unloaded (by norm_num [unloaded, nominal]) hr
     (P := .locallyExponentiallyStable) (Or.inr rfl)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step_local family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder_local family_isAutonomous
     (by norm_num) (unloaded.contDiffAt_field hr)
     (hm.mpr ⟨by norm_num [unloaded, nominal], by norm_num [unloaded, nominal]⟩)
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.CurrentControl.LimitedPI

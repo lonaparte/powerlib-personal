@@ -3,6 +3,7 @@ import theorem.GridTiedConverter.GFL.Impedance.Algebra
 import theorem.Passive.Series
 import theorem.Transform.ComplexPower
 import theorem.LTI.Plant
+import theorem.GridTiedConverter.PLL.Linear
 
 /-! # 10-state small-signal GFL port realization and its closed-form dq admittance
 
@@ -23,8 +24,8 @@ point; system dq frame rotating at the constant `ω = ω_s`; port current IN-pos
   `a ż = ΔD − z`, `y = 2 z − ΔD`, i.e. `G_del = (1 − a s)/(1 + a s)` (`Gdel_eq`), `a = τ_d/2`;
   `V_dc` constant (no DC-link dynamics).
 * PLL (§1.3): linearized SRF-PLL `Δθ' = Kpl ΔV_q^pll + η`, `η' = Kil ΔV_q^pll`,
-  `ΔV_q^pll = ΔV_q − V_d0 Δθ`, so `Δθ = G_pll ΔV_q`; first-order frame projections
-  `ΔI^pll = ΔI − Δθ J I₀`, `ΔV^pll = ΔV − Δθ J V₀`, `ΔD^sys = ΔD^pll + Δθ J D₀`
+  `ΔV_q^pll = ΔV_q − V_d0 Δθ`, so `Δθ = G_pll ΔV_q` (`G_pll = PLL.portTF` at `V_d0`); first-order
+  frame projections `ΔI^pll = ΔI − Δθ J I₀`, `ΔV^pll = ΔV − Δθ J V₀`, `ΔD^sys = ΔD^pll + Δθ J D₀`
   (`G_i^pll`, `G_v^pll`, `G_d^pll`; cf. `pllVoltage_proj`, `pllCurrent_proj`).
 * Current loop (§1.4, IN-positive form): `ΔD^pll = −G_ci (ΔI_ref − ΔI^pll) − G_dei ΔI^pll`,
   `G_ci = Kpc + Kic/s`, `G_dei = gdei · J` (the note's value is `gdei = 3 ω L / V_dc`).
@@ -252,8 +253,9 @@ def Gci (s : ℂ) : ℂ := p.Kpc + p.Kic / s
 /-- Power-loop PI `G_cpq = Kpp + Kip/s`. -/
 def Gcpq (s : ℂ) : ℂ := p.Kpp + p.Kip / s
 
-/-- PLL port transfer `G_pll = (Kpl s + Kil)/(s² + V_d0 Kpl s + V_d0 Kil)`. -/
-def Gpll (s : ℂ) : ℂ := (p.Kpl * s + p.Kil) / (s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil)
+/-- PLL port transfer `G_pll = (Kpl s + Kil)/(s² + V_d0 Kpl s + V_d0 Kil)`: the port transfer
+`PLL.portTF` of the linearized PLL at the amplitude `V_d0`. -/
+abbrev Gpll (s : ℂ) : ℂ := PLL.portTF (p.V0 0) p.Kpl p.Kil s
 
 /-- Delay-decoupling correction `G_dei = gdei · J`. -/
 def Gdei : Matrix (Fin 2) (Fin 2) ℂ := (p.gdei : ℂ) • Jc

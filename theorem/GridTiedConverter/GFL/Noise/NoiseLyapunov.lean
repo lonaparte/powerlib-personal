@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFL.LCLine.Reduction
 import theorem.GridTiedConverter.PLL.PIPLL
+import theorem.Dynamics.Transport
 
 /-! # Second-order form and closed-form Lyapunov-equation solutions of the linearized GFL-PLL
 
@@ -61,14 +62,14 @@ everywhere, then `θ̈ = K_p h′(θ) θ̇ + K_i h(θ)`. -/
 def linA (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(Kp * g), -Ki; g, 0]
 
 /-- `diag(1, −1)`. -/
-def flipEta : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1]
+abbrev flipEta : Matrix (Fin 2) (Fin 2) ℝ := Dynamics.signMatrix ![1, -1]
 
 /-- The code-convention linearization is the text-convention Jacobian with `h′ = −g`,
 conjugated by `diag(1, −1)` (the sign of `η`). -/
 @[tmio M, powerlib_domain] theorem linA_eq_conj (Kp Ki g : ℝ) :
     linA Kp Ki g = flipEta * piPLLJacobian Kp Ki (-g) * flipEta := by
   ext i j; fin_cases i <;> fin_cases j <;>
-    simp [linA, flipEta, piPLLJacobian, Matrix.mul_apply, Fin.sum_univ_two]
+    simp [linA, Dynamics.signMatrix, piPLLJacobian, Matrix.mul_apply, Fin.sum_univ_two]
 
 @[tmio TM, powerlib_domain] theorem isHurwitz_linA_iff (Kp Ki g : ℝ) :
     LinearSystems.IsHurwitz (linA Kp Ki g) ↔ 0 < Kp * g ∧ 0 < Ki * g := by

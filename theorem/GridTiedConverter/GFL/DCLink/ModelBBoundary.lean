@@ -310,28 +310,6 @@ regularized field, which is model B on the ball of radius `1/4`). -/
 
 /-! ## Jacobians of the boundary witnesses -/
 
-/-- Invariants of a block-diagonal Jacobian `[[a, b, 0, 0], [c, 0, 0, 0], [0, 0, d, e],
-[0, 0, −1, 0]]` (PLL block and DC-loop block). -/
-@[tmio T, powerlib_foundation] private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : ℝ}
-    (e00 : J 0 0 = a) (e01 : J 0 1 = b) (e02 : J 0 2 = 0) (e03 : J 0 3 = 0)
-    (e10 : J 1 0 = c) (e11 : J 1 1 = 0) (e12 : J 1 2 = 0) (e13 : J 1 3 = 0)
-    (e20 : J 2 0 = 0) (e21 : J 2 1 = 0) (e22 : J 2 2 = d) (e23 : J 2 3 = e)
-    (e30 : J 3 0 = 0) (e31 : J 3 1 = 0) (e32 : J 3 2 = -1) (e33 : J 3 3 = 0) :
-    J.trace = a + d ∧ Criteria.principalMinorSum2Fin4 J = -(b * c) + e + a * d ∧
-      Criteria.principalMinorSum3Fin4 J = a * e - b * c * d ∧ J.det = -(b * c) * e := by
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, e00, e11, e22, e33]
-    ring
-  · simp only [Criteria.principalMinorSum2Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
-      e22, e23, e30, e31, e32, e33]
-    ring
-  · simp only [Criteria.principalMinorSum3Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
-      e22, e23, e30, e31, e32, e33]
-    ring
-  · rw [Criteria.det_fin_four]
-    simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
-    ring
-
 @[tmio M, powerlib_domain] private theorem hopfCenter_equilibrium :
     connection% (hopfCenter ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
@@ -346,7 +324,8 @@ regularized field, which is model B on the ball of radius `1/4`). -/
       Criteria.principalMinorSum2Fin4 (hopfCenter.p.jacobian hopfCenter.x) = 2 ∧
       Criteria.principalMinorSum3Fin4 (hopfCenter.p.jacobian hopfCenter.x) = -1 ∧
       (hopfCenter.p.jacobian hopfCenter.x).det = 1 := by
-  have h := block_invariants (J := hopfCenter.p.jacobian hopfCenter.x) (a := -1) (b := 1)
+  have h := Criteria.invariants_of_blockDiag_fin_four (J := hopfCenter.p.jacobian hopfCenter.x)
+    (a := -1) (b := 1)
     (c := -1) (d := 0) (e := 1)
     (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
         ModelBParams.jacobian, hopfCenter])
@@ -438,7 +417,8 @@ def cdcZero : Model :=
       Criteria.principalMinorSum2Fin4 (cdcZero.p.jacobian cdcZero.x) = 1 ∧
       Criteria.principalMinorSum3Fin4 (cdcZero.p.jacobian cdcZero.x) = 0 ∧
       (cdcZero.p.jacobian cdcZero.x).det = 0 := by
-  have h := block_invariants (J := cdcZero.p.jacobian cdcZero.x) (a := -1) (b := 1)
+  have h := Criteria.invariants_of_blockDiag_fin_four (J := cdcZero.p.jacobian cdcZero.x)
+    (a := -1) (b := 1)
     (c := -1) (d := 0) (e := 0)
     (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
         ModelBParams.jacobian, cdcZero])
@@ -759,7 +739,8 @@ def hopfDamped : Model :=
       Criteria.principalMinorSum2Fin4 (hopfDamped.p.jacobian hopfDamped.x) = 4 ∧
       Criteria.principalMinorSum3Fin4 (hopfDamped.p.jacobian hopfDamped.x) = -3 ∧
       (hopfDamped.p.jacobian hopfDamped.x).det = 3 := by
-  have h := block_invariants (J := hopfDamped.p.jacobian hopfDamped.x) (a := -3) (b := 1)
+  have h := Criteria.invariants_of_blockDiag_fin_four (J := hopfDamped.p.jacobian hopfDamped.x)
+    (a := -3) (b := 1)
     (c := -3) (d := 0) (e := 1)
     (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
         ModelBParams.jacobian, hopfDamped])

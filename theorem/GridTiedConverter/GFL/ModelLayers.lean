@@ -253,34 +253,22 @@ end CCParams
 
 /-- The reversal `diag(1, 1, −1, −1, −1, −1)` of the current-loop coordinates
 `(i_d, i_q, ξ_d, ξ_q)` of the six-state carrier. -/
-def ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Matrix.diagonal ![1, 1, -1, -1, -1, -1]
-
-@[tmio M, powerlib_domain] theorem ccReversal_mul_self : ccReversal * ccReversal = 1 := by
-  rw [ccReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-  congr 1
-  ext i
-  fin_cases i <;> norm_num
-
-@[tmio M, powerlib_domain] theorem ccReversal_isUnit : IsUnit ccReversal :=
-  (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse ccReversal_mul_self)
+abbrev ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Dynamics.signMatrix ![1, 1, -1, -1, -1, -1]
 
 /-- §D8 boundary translation of the six-state carrier: its field is the OUT-positive source field
 transported by the reversal of `(i_d, i_q, ξ_d, ξ_q)`, with the current references reversed. -/
 @[tmio M, powerlib_domain] theorem lift_ccField_eq_transport (q : CCParams) :
     Dynamics.lift q.ccField =
-      Dynamics.transportField (Dynamics.matrixCoord ccReversal ccReversal_isUnit) 0
+      Dynamics.transportField (Dynamics.matrixCoord ccReversal (Dynamics.signMatrix_isUnit _)) 0
         (Dynamics.lift
           ({ q with idRef := -q.idRef, iqRef := -q.iqRef } : CCParams).literatureCCField) := by
-  have hinv : ccReversal⁻¹ = ccReversal := Matrix.inv_eq_left_inv ccReversal_mul_self
+  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext y
   apply WithLp.ofLp_injective
   ext i
-  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
-    Dynamics.matrixCoord_symm_apply, hinv]
   fin_cases i <;>
     simp [Dynamics.lift, CCParams.ccField, CCParams.literatureCCField, CCParams.uSol,
-      CCParams.vqSol, CCParams.piD, CCParams.piQ, ccReversal, Matrix.mulVec_diagonal,
-      -mul_eq_mul_left_iff] <;> ring
+      CCParams.vqSol, CCParams.piD, CCParams.piQ, -mul_eq_mul_left_iff] <;> ring
 
 /-! ## Two-state rate carrier with line resistance -/
 

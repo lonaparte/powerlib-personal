@@ -29,7 +29,7 @@ Model boundary.
 
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_exact_small_step_linear`,
 `eulerPorts_realizationCompleteUnder_linear`,
-`not_eulerPorts_realizationSoundUnder_of_large_step_linear`,
+`not_eulerStepPorts_realizationSoundUnder_linear`,
 `eulerPortFamily_not_mem_den_passive`) and `theorem/GridTiedConverter/GFL/DCLink/Cascade.lean`
 (linearity, the Hurwitz criterion `CascadeParams.isHurwitz_iff`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7, `theory/T-vsc-dc-voltage-control.md` §1.4.
@@ -47,12 +47,11 @@ Family and connection conclusions.
   linearity `linearizedFamily_isLinear`: `Numerics.eulerPorts_exact_small_step_linear` (scaffold
   `sound-small-step`, with completeness: every parameter set has a step `h₀ > 0` below which its
   discretizations satisfy `P` exactly when its linearization does) and
-  `Numerics.eulerPorts_realizationCompleteUnder_linear` (with `LinearizedEuler.pos`: at every
+  `Numerics.eulerPorts_realizationCompleteUnder_linear` (with `Numerics.EulerStep.pos`: at every
   step, within every requirement context, a discretization satisfying `P` realizes only parameter
   sets satisfying it). `not_linearizedEuler_realizationSoundUnder` (scaffold
-  `not-sound-large-step`): without a
-  step constraint the realization is not sound (the rectifier `L = Kp = Ki = C = V_d0 = V0 =
-  I_d0 = 1`, `R = 0`, so `I_dc0 = 1`).
+  `not-sound-large-step`): without a step constraint the realization is not sound (the rectifier
+  `L = Kp = Ki = C = V_d0 = V0 = I_d0 = 1`, `R = 0`, so `I_dc0 = 1`).
 * Passivity: `linearizedEuler_not_mem_den_passive`: no discretization is passive, whatever its
   step. The realization of passivity is not refuted here: the cascade module proves no passive
   linearization, and without a passive model the realization of passivity is vacuously sound.
@@ -68,13 +67,7 @@ namespace CascadeParams
 
 /-- The explicit Euler discretization of the linearized cascade of a parameter set with step
 `h > 0`. -/
-structure LinearizedEuler where
-  /-- The discretized parameter set. -/
-  design : CascadeParams
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev LinearizedEuler := Numerics.EulerStep CascadeParams
 
 end CascadeParams
 
@@ -83,16 +76,16 @@ open CascadeParams (LinearizedEuler)
 /-- The Euler discretization family of the linearized cascade: every discretization read as the
 Euler discretization of its small-signal port system, with step length its step. -/
 def linearizedEulerFamily : Family LinearizedEuler Spectral.Requirement 3 1 :=
-  Numerics.eulerPortFamily linearizedFamily (fun p => p.model.system) LinearizedEuler.design
-    LinearizedEuler.h
+  Numerics.eulerPortFamily linearizedFamily (fun p => p.model.system) Numerics.EulerStep.design
+    Numerics.EulerStep.h
 
 /-- The Euler realization of the linearized cascade: every discretization realizes its parameter
 set. -/
 def linearizedEuler :
     Implementation CascadeParams Spectral.Requirement LinearizedEuler Spectral.Requirement
       3 1 3 1 :=
-  Numerics.eulerPorts linearizedFamily (fun p => p.model.system) LinearizedEuler.design
-    LinearizedEuler.h
+  Numerics.eulerPorts linearizedFamily (fun p => p.model.system) Numerics.EulerStep.design
+    Numerics.EulerStep.h
 
 /-- **Without a step constraint the Euler realization of the linearized cascade is not sound.**
 The rectifier `L = Kp = Ki = C = V_d0 = V0 = I_d0 = 1`, `R = 0` (`I_dc0 = 1`) has a Hurwitz
@@ -105,9 +98,8 @@ linearization, and its discretizations with a large step are unstable. -/
   have hA : IsHurwitz p.model.A :=
     (p.isHurwitz_iff one_pos one_pos one_pos).mpr
       ⟨⟨by norm_num [p], by norm_num [p]⟩, by norm_num [p, CascadeParams.Idc0]⟩
-  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_linear
+  exact Numerics.not_eulerStepPorts_realizationSoundUnder_linear
     linearizedFamily_isLinear (by norm_num) hP (x := p) hA
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- **No Euler discretization of the linearized cascade is passive, whatever its step.** The
 output `ΔV_dc` does not depend on the input, so one step from a unit DC-voltage deviation with a
@@ -117,8 +109,8 @@ large reverse input draws energy without bound. -/
       (⟨p, h, hh⟩ : LinearizedEuler) ∉ linearizedEulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro p h hh
-  refine Numerics.eulerPortFamily_not_mem_den_passive (design := LinearizedEuler.design)
-    (step := LinearizedEuler.h) (y := ⟨p, h, hh⟩) hh (x₀ := WithLp.toLp 2 ![0, 0, 1])
+  refine Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h) (y := ⟨p, h, hh⟩) hh (x₀ := WithLp.toLp 2 ![0, 0, 1])
     (v := ![1]) (fun u => ?_) (by simp)
   funext i
   fin_cases i

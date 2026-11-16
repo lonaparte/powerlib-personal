@@ -167,19 +167,8 @@ end Params
 
 /-- The reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1)` of the converter current, the line
 current and the current-loop integrators. -/
-def currentReversal10 : Matrix (Fin 10) (Fin 10) ℝ :=
-  Matrix.diagonal ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1]
-
-@[tmio M, powerlib_domain] theorem currentReversal10_mul_self :
-    currentReversal10 * currentReversal10 = 1 := by
-  rw [currentReversal10, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-  congr 1
-  ext i
-  fin_cases i <;> norm_num
-
-@[tmio M, powerlib_domain] theorem currentReversal10_isUnit : IsUnit currentReversal10 :=
-  (Matrix.isUnit_iff_isUnit_det _).mpr
-    (Matrix.isUnit_det_of_right_inverse currentReversal10_mul_self)
+abbrev currentReversal10 : Matrix (Fin 10) (Fin 10) ℝ :=
+  Dynamics.signMatrix ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1]
 
 namespace Params
 
@@ -189,18 +178,15 @@ variable (p : Params)
 transported by the reversal of the six current coordinates, with the references reversed. -/
 @[tmio M, powerlib_domain] theorem field10_eq_transport_literatureField10 :
     p.field10 = Dynamics.transportField
-      (Dynamics.matrixCoord currentReversal10 currentReversal10_isUnit) 0
+      (Dynamics.matrixCoord currentReversal10 (Dynamics.signMatrix_isUnit _)) 0
       ({ p with idRef := -p.idRef, iqRef := -p.iqRef } : Params).literatureField10 := by
-  have hinv : currentReversal10⁻¹ = currentReversal10 :=
-    Matrix.inv_eq_left_inv currentReversal10_mul_self
+  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext x
   apply WithLp.ofLp_injective
   ext i
-  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
-    Dynamics.matrixCoord_symm_apply, hinv]
   fin_cases i <;>
     simp [field10, literatureField10, ucD, ucQ, uD, uQ, icD, icQ, vccD, vccQ, parkD, parkQ,
-      iparkD, iparkQ, currentReversal10, Matrix.mulVec_diagonal, -mul_eq_mul_left_iff] <;> ring
+      iparkD, iparkQ, -mul_eq_mul_left_iff] <;> ring
 
 /-! ### The quasi-steady set -/
 

@@ -27,11 +27,12 @@ Model boundary.
   `theorem/GridTiedConverter/GFM/VOC.lean`); `GFM.DroopVSM.vsmFamily` (VSM with an arbitrary power
   map `P`, state `(θ, ω)`) and `GFM.DroopVSM.droopFamily` (droop + LPF with an arbitrary power map,
   state `(θ, P_f)`), `theorem/GridTiedConverter/GFM/DroopVSM.lean`.
-* Implementation layer (I). For each family a structure (`Euler`; for the platform `RigEuler`,
-  for the DroopVSM families `VSMEuler` and `DroopEuler`) of a model and a step `h > 0`; the system
-  is the explicit Euler map `z ↦ z + h f(z)` of the model's (translated) field, with step length
-  `h`, discrete time, exact arithmetic (no round-off), fixed step. Excluded: step-size control,
-  implicit or higher-order schemes, the integration error against the continuous trajectory.
+* Implementation layer (I). For each family the integrations `Numerics.EulerStep` of its model type
+  (`Euler`; for the platform `RigEuler`, for the DroopVSM families `VSMEuler` and `DroopEuler`): a
+  model and a step `h > 0`; the system is the explicit Euler map `z ↦ z + h f(z)` of the model's
+  (translated) field, with step length `h`, discrete time, exact arithmetic (no round-off), fixed
+  step. Excluded: step-size control, implicit or higher-order schemes, the integration error against
+  the continuous trajectory.
 * Smoothness: the fields of `PSC`, `VSMLPF`, `DroopLPF`, `AHO` and the platform are `C¹`
   everywhere (the global laws of the template). The DroopVSM families have an arbitrary power map
   `P`, so their laws carry the hypothesis that `P` is `C¹` near the selected angle
@@ -39,7 +40,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step` and their `_local`
+`not_eulerStep_realizationSoundUnder` and their `_local`
 forms, `contDiffAt_shift`) and the family modules (autonomy, `C¹` fields, members of local
 exponential stability); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -86,22 +87,16 @@ noncomputable section
 namespace powerlib.GFM.PSC
 
 /-- The explicit Euler integration of a PSC model about its selected angle with step `h > 0`. -/
-structure Euler where
-  /-- The integrated PSC model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 1 0 :=
-  Numerics.eulerFamily family Model.field Euler.design Euler.h
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its PSC model. -/
 def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
-  Numerics.euler family Model.field Euler.design Euler.h
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
@@ -111,15 +106,14 @@ def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
 /-- **Without a step constraint the Euler realization of the PSC models is not sound.** A locally
 exponentially stable PSC model (`K_p = P_max = 1`, `P* = 0` at `δ* = 0`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
-disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := PSC.locallyExponentiallyStable ⟨1, 0, 1⟩ one_pos one_pos (δ₀ := 0) (by simp) (by simp)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     contDiff_modelField (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.PSC
 
@@ -127,22 +121,16 @@ namespace powerlib.GFM.VSMLPF
 
 /-- The explicit Euler integration of a VSM + power-filter model about its selected point with step
 `h > 0`. -/
-structure Euler where
-  /-- The integrated VSM + power-filter model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 3 0 :=
-  Numerics.eulerFamily family Model.field Euler.design Euler.h
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its VSM + power-filter model. -/
 def euler : Implementation Model Requirement Euler Requirement 3 0 3 0 :=
-  Numerics.euler family Model.field Euler.design Euler.h
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
@@ -153,35 +141,28 @@ def euler : Implementation Model Requirement Euler Requirement 3 0 3 0 :=
 sound.** A locally exponentially stable model (`M = D = ω_c = K₀ = 1`, `P₀ = 0` at `δ* = 0`:
 `K = 1 < D ω_c + D²/M = 2`) integrated with a large enough step is not locally exponentially stable:
 every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable ⟨⟨1, 1, 1, 0, 1⟩, 0⟩ one_pos one_pos one_pos
       (by simp) (by norm_num [Model.K]) (by norm_num [Model.K])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     contDiff_modelField (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The explicit Euler integration of a platform model about its operating point with step
 `h > 0`. -/
-structure RigEuler where
-  /-- The integrated platform model. -/
-  design : Rig
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev RigEuler := Numerics.EulerStep Rig
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 platform field, with step length its step. -/
 def rigEulerFamily : Family RigEuler RigRequirement 4 0 :=
-  Numerics.eulerFamily rigFamily Rig.field RigEuler.design RigEuler.h
+  Numerics.eulerFamily rigFamily Rig.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its platform model. -/
 def rigEuler : Implementation Rig RigRequirement RigEuler RigRequirement 4 0 4 0 :=
-  Numerics.euler rigFamily Rig.field RigEuler.design RigEuler.h
+  Numerics.euler rigFamily Rig.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated platform field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
@@ -192,7 +173,7 @@ def rigEuler : Implementation Rig RigRequirement RigEuler RigRequirement 4 0 4 0
 locally exponentially stable platform (design `M = D = ω_c = K₀ = 1`, `P₀ = δ* = 0`, delay
 `τ = 1/2`, so `H = 1/2 > 0`) integrated with a large enough step is not locally exponentially
 stable: every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem rig_not_euler_realizationSoundUnder :
     connection% (¬ rigEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -204,9 +185,8 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
     simp only [rigFamily, rigTranslate, Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro q (rfl | rfl | rfl | rfl | rfl) <;>
       norm_num [RigMeets, Meets, Rig.H, Rig.b, Rig.c, Model.K]
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step rigFamily_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder rigFamily_isAutonomous
     rig_contDiff_field (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.VSMLPF
 
@@ -214,22 +194,16 @@ namespace powerlib.GFM.DroopLPF
 
 /-- The explicit Euler integration of a droop + LPF model about its selected point with step
 `h > 0`. -/
-structure Euler where
-  /-- The integrated droop + LPF model. -/
-  design : Model
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Model
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 2 0 :=
-  Numerics.eulerFamily family Model.field Euler.design Euler.h
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its droop + LPF model. -/
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
-  Numerics.euler family Model.field Euler.design Euler.h
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
 (`Numerics.euler_sound_small_step_local`). -/
@@ -239,15 +213,14 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 /-- **Without a step constraint the Euler realization of the droop + LPF models is not sound.** A
 locally exponentially stable model (`D = ω_c = K₀ = 1`, `P₀ = 0` at its loading angle) integrated
 with a large enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves
-the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+the unit disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := DroopLPF.locallyExponentiallyStable ⟨1, 1, 0, 1⟩ one_pos one_pos one_pos (by norm_num)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     contDiff_modelField (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.DroopLPF
 
@@ -255,36 +228,29 @@ namespace powerlib.GFM.AHO
 
 /-- The explicit Euler integration of a virtual-oscillator model about the origin with step
 `h > 0`. -/
-structure Euler where
-  /-- The integrated virtual-oscillator model. -/
-  design : AHO
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep AHO
 
 /-- The Euler integration family: every integration read as the Euler map of its model's field, with
 step length its step. -/
 def eulerFamily : Family Euler Requirement 2 0 :=
-  Numerics.eulerFamily family AHO.realField Euler.design Euler.h
+  Numerics.eulerFamily family AHO.realField Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its virtual-oscillator model. -/
 def euler : Implementation AHO Requirement Euler Requirement 2 0 2 0 :=
-  Numerics.euler family AHO.realField Euler.design Euler.h
+  Numerics.euler family AHO.realField Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **Without a step constraint the Euler realization of the virtual-oscillator models is not
 sound.** A locally exponentially stable oscillator (`ω_s = σ = κ_v = 1`, `v* = 0`:
 `c = κ_v v*² − σ < 0`) integrated with a large enough step is not locally exponentially stable:
 every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable ⟨1, 1, 1, 0⟩ (by norm_num [AHO.c])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     AHO.contDiff_realField (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.AHO
 
@@ -293,22 +259,16 @@ namespace powerlib.GFM.DroopVSM
 open powerlib.Dynamics (State)
 
 /-- The explicit Euler integration of a VSM model about its selected state with step `h > 0`. -/
-structure VSMEuler where
-  /-- The integrated VSM model. -/
-  design : VSMModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev VSMEuler := Numerics.EulerStep VSMModel
 
 /-- The Euler integration family of the VSM models: every integration read as the Euler map of its
 model's translated field, with step length its step. -/
 def vsmEulerFamily : Family VSMEuler VSMRequirement 2 0 :=
-  Numerics.eulerFamily vsmFamily VSMModel.field VSMEuler.design VSMEuler.h
+  Numerics.eulerFamily vsmFamily VSMModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization of the VSM models: every integration realizes its VSM model. -/
 def vsmEuler : Implementation VSMModel VSMRequirement VSMEuler VSMRequirement 2 0 2 0 :=
-  Numerics.euler vsmFamily VSMModel.field VSMEuler.design VSMEuler.h
+  Numerics.euler vsmFamily VSMModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated VSM field is `C¹` near the origin when the power map is `C¹` near the selected
 angle: the smoothness hypothesis of the local generic Euler laws
@@ -330,35 +290,28 @@ angle: the smoothness hypothesis of the local generic Euler laws
 /-- **Without a step constraint the Euler realization of the VSM models is not sound.** A locally
 exponentially stable VSM model (`P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the origin)
 integrated with a large enough step is not locally exponentially stable: every Euler multiplier
-`1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+`1 + hλ` leaves the unit disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
 @[tmio MI, powerlib_domain] theorem vsm_not_euler_realizationSoundUnder :
     connection% (¬ vsmEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := vsm_mem_den_locallyExponentiallyStable ⟨1, 1, 0, 0, fun θ => θ, 0⟩ contDiff_id
     (by simp) (by simp) one_pos one_pos (by simp)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step_local vsmFamily_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder_local vsmFamily_isAutonomous
     (by norm_num) (vsm_contDiffAt_field contDiff_id.contDiffAt) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The explicit Euler integration of a droop + LPF model about its selected state with step
 `h > 0`. -/
-structure DroopEuler where
-  /-- The integrated droop + LPF model. -/
-  design : DroopModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev DroopEuler := Numerics.EulerStep DroopModel
 
 /-- The Euler integration family of the droop + LPF models: every integration read as the Euler
 map of its model's translated field, with step length its step. -/
 def droopEulerFamily : Family DroopEuler VSMRequirement 2 0 :=
-  Numerics.eulerFamily droopFamily DroopModel.field DroopEuler.design DroopEuler.h
+  Numerics.eulerFamily droopFamily DroopModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization of the droop + LPF models: every integration realizes its model. -/
 def droopEuler : Implementation DroopModel VSMRequirement DroopEuler VSMRequirement 2 0 2 0 :=
-  Numerics.euler droopFamily DroopModel.field DroopEuler.design DroopEuler.h
+  Numerics.euler droopFamily DroopModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated droop + LPF field is `C¹` near the origin when the power map is `C¹` near the
 selected angle: the smoothness hypothesis of the local generic Euler laws
@@ -382,7 +335,7 @@ selected angle: the smoothness hypothesis of the local generic Euler laws
 locally exponentially stable model on an infinite bus (`P = sin`, `K_R = τ_p = 1`,
 `P_ref = ω_s = 0` at the origin, `infiniteBus_locallyExponentiallyStable`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
-disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
 @[tmio MI, powerlib_domain] theorem droop_not_euler_realizationSoundUnder :
     connection% (¬ droopEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -390,8 +343,7 @@ disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
     ⟨⟨1, 1, 0, 0, fun θ => 1 * Real.sin θ⟩, one_ne_zero, one_ne_zero, 0⟩ 1 rfl one_pos one_pos
     (by simp [droopField]) (by simp)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step_local droopFamily_isAutonomous
+  exact Numerics.not_eulerStep_realizationSoundUnder_local droopFamily_isAutonomous
     (by norm_num) (droop_contDiffAt_field (contDiff_const.mul Real.contDiff_sin).contDiffAt) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFM.DroopVSM

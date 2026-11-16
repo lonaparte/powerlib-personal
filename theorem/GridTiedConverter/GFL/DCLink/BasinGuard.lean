@@ -207,31 +207,10 @@ def carrierField (s : ℝ) (x : State 4) : State 4 :=
 end CarrierParams
 
 /-- The involution `S = diag(−1, −1, 1, 1)`. -/
-def carrierReflectMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![-1, -1, 1, 1]
-
-@[tmio M, powerlib_domain] theorem carrierReflectMatrix_mul_self :
-    carrierReflectMatrix * carrierReflectMatrix = 1 := by
-  rw [carrierReflectMatrix, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-  congr 1; ext i; fin_cases i <;> simp
-
-@[tmio M, powerlib_domain] theorem carrierReflectMatrix_isUnit : IsUnit carrierReflectMatrix :=
-  (Matrix.isUnit_iff_isUnit_det _).mpr
-    (by simp [carrierReflectMatrix, Matrix.det_diagonal, Fin.prod_univ_four])
-
-@[tmio M, powerlib_domain] theorem carrierReflectMatrix_inv :
-    carrierReflectMatrix⁻¹ = carrierReflectMatrix :=
-  Matrix.inv_eq_left_inv carrierReflectMatrix_mul_self
+abbrev carrierReflectMatrix : Matrix (Fin 4) (Fin 4) ℝ := Dynamics.signMatrix ![-1, -1, 1, 1]
 
 /-- `S(θ_e, x_p, V_dc, ξ) = (−θ_e, −x_p, V_dc, ξ)` as a coordinate change. -/
-def carrierReflect : State 4 ≃L[ℝ] State 4 :=
-  Dynamics.matrixCoord carrierReflectMatrix carrierReflectMatrix_isUnit
-
-@[tmio M, powerlib_domain] theorem carrierReflect_apply (x : State 4) :
-    carrierReflect x = WithLp.toLp 2 ![-(x 0), -(x 1), x 2, x 3] := by
-  apply WithLp.ofLp_injective
-  ext i
-  fin_cases i <;>
-    simp [carrierReflect, carrierReflectMatrix, Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
+abbrev carrierReflect : State 4 ≃L[ℝ] State 4 := Dynamics.signCoord ![-1, -1, 1, 1]
 
 namespace CarrierParams
 
@@ -240,9 +219,9 @@ variable (q : CarrierParams)
 /-- `I_q* = 0`: for every drop sign `s`, `F_{−s} ∘ S = S ∘ F_s`. -/
 @[tmio M, powerlib_domain] theorem carrierField_reflect_sign (hIq : q.Iq = 0) (s : ℝ) (x : State 4) :
     q.carrierField (-s) (carrierReflect x) = carrierReflect (q.carrierField s x) := by
-  rw [carrierReflect_apply, carrierReflect_apply]
-  have hidr : q.idr (WithLp.toLp 2 ![-(x 0), -(x 1), x 2, x 3]) = q.idr x := by
+  have hidr : q.idr (carrierReflect x) = q.idr x := by
     simp [idr]
+  simp only [Dynamics.signCoord_apply] at hidr ⊢
   apply WithLp.ofLp_injective
   ext i
   fin_cases i <;>
@@ -251,14 +230,8 @@ variable (q : CarrierParams)
 /-- `I_q* = 0`: for every drop sign `s`, the writing with `−s` is the one with `s` transported
 by `S`. -/
 @[tmio M, powerlib_domain] theorem carrierField_neg_sign_eq_transport (hIq : q.Iq = 0) (s : ℝ) :
-    q.carrierField (-s) = Dynamics.transportField carrierReflect 0 (q.carrierField s) := by
-  funext y
-  have hy : y = Dynamics.affineCoord carrierReflect 0 (carrierReflect.symm y) := by
-    simp [Dynamics.affineCoord]
-  rw [hy, Dynamics.transportField_affineCoord]
-  simp only [Dynamics.affineCoord, add_zero, ContinuousLinearEquiv.apply_symm_apply]
-  conv_lhs => rw [← carrierReflect.apply_symm_apply y]
-  exact q.carrierField_reflect_sign hIq s _
+    q.carrierField (-s) = Dynamics.transportField carrierReflect 0 (q.carrierField s) :=
+  Dynamics.transportField_zero_eq_iff_comp.mpr (q.carrierField_reflect_sign hIq s)
 
 /-- `I_q* = 0`: equilibria correspond under `S`.
 Static evidence on the model, not a connection conclusion. -/
@@ -279,7 +252,7 @@ Jacobian `S A S⁻¹` at `S x`; it has the same characteristic polynomial (same 
   have h : fderiv ℝ (Dynamics.transportField carrierReflect 0 (q.carrierField 1))
       (Dynamics.affineCoord carrierReflect 0 x) = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
         (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) :=
-    Dynamics.fderiv_transportField_matrix carrierReflectMatrix carrierReflectMatrix_isUnit
+    Dynamics.fderiv_transportField_matrix carrierReflectMatrix (Dynamics.signMatrix_isUnit _)
       0 A hf hJac
   rw [← q.carrierField_neg_sign_eq_transport hIq 1] at h
   simpa [Dynamics.affineCoord, carrierReflect] using h
@@ -345,30 +318,10 @@ end CarrierParams
 
 /-- The sign change of the DC-voltage integrator, `diag(1, 1, 1, −1)`: the carrier integrates
 `1 − V_dc`, the four-state GFL model `V − 1`. -/
-def integratorFlipMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![1, 1, 1, -1]
-
-@[tmio M, powerlib_domain] theorem integratorFlipMatrix_isUnit : IsUnit integratorFlipMatrix :=
-  (Matrix.isUnit_iff_isUnit_det _).mpr
-    (by simp [integratorFlipMatrix, Matrix.det_diagonal, Fin.prod_univ_four])
+abbrev integratorFlipMatrix : Matrix (Fin 4) (Fin 4) ℝ := Dynamics.signMatrix ![1, 1, 1, -1]
 
 /-- `(θ, x, V, η) ↦ (θ, x, V, −η)` as a coordinate change. -/
-def integratorFlip : State 4 ≃L[ℝ] State 4 :=
-  Dynamics.matrixCoord integratorFlipMatrix integratorFlipMatrix_isUnit
-
-@[tmio M, powerlib_domain] theorem integratorFlip_apply (x : State 4) :
-    integratorFlip x = WithLp.toLp 2 ![x 0, x 1, x 2, -(x 3)] := by
-  apply WithLp.ofLp_injective
-  ext i
-  fin_cases i <;>
-    simp [integratorFlip, integratorFlipMatrix, Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
-
-/-- The flip is an involution. -/
-@[tmio M, powerlib_domain] theorem integratorFlip_symm_apply (y : State 4) :
-    integratorFlip.symm y = integratorFlip y := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, integratorFlip_apply, integratorFlip_apply]
-  apply WithLp.ofLp_injective
-  ext i
-  fin_cases i <;> simp
+abbrev integratorFlip : State 4 ≃L[ℝ] State 4 := Dynamics.signCoord ![1, 1, 1, -1]
 
 namespace CarrierParams
 
@@ -421,7 +374,7 @@ Static evidence on the model, not a connection conclusion. -/
   apply WithLp.ofLp_injective
   ext i
   fin_cases i <;>
-    simp [Dynamics.transportField, integratorFlip_symm_apply, integratorFlip_apply, FourState.field,
+    simp [Dynamics.transportField, FourState.field,
         Dynamics.lift, FourState.coordField, FourState.vq, FourState.idc, FourState.Params.γ,
         FourState.Params.Xg, Passive.SeriesRLC.reactance, carrierField, vg_im, Pac_eq, idr, hIq,
         fourStateParams]
@@ -559,7 +512,7 @@ sentence (in particular local exponential stability and instability at `s = 1`).
   apply WithLp.ofLp_injective
   ext i
   fin_cases i <;>
-    simp [Dynamics.affineCoord, integratorFlip_apply, FourState.opPoint, Model.toFourState, hV]
+    simp [Dynamics.affineCoord, FourState.opPoint, Model.toFourState, hV]
 
 /-- **The four-state reading.** For `I_q* = 0`, a carrier model whose selected point has
 `V_dc* = 1` and `K_i^pll x_p* = 0` (every equilibrium has both, `equilibrium_Kip_xp`) satisfies
@@ -745,8 +698,8 @@ Routh boundary. -/
     (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
   rw [hto] at hr
   obtain ⟨-, -, -, hg⟩ := hr
-  norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl,
-    FourState.omegaClSq, FourState.Γc, FourState.vd0, FourState.undampedPLL,
+  norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl_eq,
+    FourState.omegaClSq_eq, FourState.Γc, FourState.vd0, FourState.undampedPLL,
     FourState.Params.γ] at hg
 
 /-- **Within `I_q* = 0` and `V_dc* ≠ 0` the local asymptotic translation is not exact.** The
@@ -770,8 +723,8 @@ carrier `V = X_g = K_p^pll = K_i^dvc = 1`, `K_i^pll = 2`, `C = 3/2`,
     (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
   rw [hto] at hr
   obtain ⟨-, -, -, hg⟩ := hr
-  norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl,
-    FourState.omegaClSq, FourState.Γc, FourState.vd0, FourStateBoundary.weakFocus,
+  norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl_eq,
+    FourState.omegaClSq_eq, FourState.Γc, FourState.vd0, FourStateBoundary.weakFocus,
     FourState.Params.γ] at hg
 
 /-- **Within `I_q* = 0` and `V_dc* ≠ 0` the instability translation is not exact.** The carrier

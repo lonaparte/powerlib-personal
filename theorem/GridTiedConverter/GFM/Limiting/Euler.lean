@@ -24,7 +24,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step`),
+`not_eulerStep_realizationSoundUnder`),
 `theorem/GridTiedConverter/GFM/Limiting/Saturation.lean` (`satField_contDiff`,
 `saturated_stable_equilibrium`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -36,7 +36,7 @@ Family and connection conclusions.
 * `Limiting.eulerFamily : Family Limiting.Euler Spectral.Requirement 2 0`: every integration read
   as its Euler map; requirements and translation are those of its model, read through the design.
   `Limiting.euler`: the implementation layer, every integration realizing its model
-  (`Implementation.ofDesign Euler.design`).
+  (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
   with its autonomy (`Spectral.localFamily_isAutonomous`, the family is a local family) and the
   public smoothness lemma `Limiting.contDiff_modelField`: `Numerics.euler_sound_small_step_local`
@@ -55,22 +55,16 @@ namespace powerlib.Limiting
 
 /-- The explicit Euler integration of a saturated GFM model about its selected angle with step
 `h > 0`. -/
-structure Euler where
-  /-- The integrated saturated GFM model. -/
-  design : SatModel
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep SatModel
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family Euler Spectral.Requirement 2 0 :=
-  Numerics.eulerFamily family SatModel.field Euler.design Euler.h
+  Numerics.eulerFamily family SatModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its saturated GFM model. -/
 def euler : Implementation SatModel Spectral.Requirement Euler Spectral.Requirement 2 0 2 0 :=
-  Numerics.euler family SatModel.field Euler.design Euler.h
+  Numerics.euler family SatModel.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated field of a saturated GFM model is `C¹`: the smoothness hypothesis of the
 generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
@@ -81,16 +75,15 @@ generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
 /-- **Without a step constraint the Euler realization of the saturated GFM models is not sound.**
 The stable saturated equilibrium with `M = D = P_sat = 1`, `P_ref = φ = 0` integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
-disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := saturated_stable_equilibrium (M := 1) (D := 1) (Pref := 0) (Psat := 1) (φ := 0) one_pos
     one_pos one_pos (by norm_num)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step
+  exact Numerics.not_eulerStep_realizationSoundUnder
     (Spectral.localFamily_isAutonomous _ _ _)
     contDiff_modelField (by norm_num) hm
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.Limiting

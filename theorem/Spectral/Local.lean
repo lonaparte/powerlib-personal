@@ -52,7 +52,9 @@ Results.
   `mem_den_unstable_of_ne_zero_local` and `not_exact_unstable_of_ne_zero` (off-equilibrium
   points), `not_mem_den_lyapunovStable_of_unstable`, `not_exact_of_les_witness` and
   `not_exactUnder_of_les_witness` (a locally exponentially stable member refutes the Lyapunov and
-  local asymptotic translations).
+  local asymptotic translations); `realize_ne_den_of_indistinguishable` (two members meeting the
+  same requirements, one satisfying a sentence and the other not: no set of requirements
+  generates its denotation).
 
 Family and connection conclusions.
 * The local stability implication is a generic foundation connection between denotations.
@@ -343,6 +345,17 @@ requirement refutes exactness within the context. -/
   intro h
   have hx' := ((exactUnder_iff_forall.mp h) x hΔ).mpr hx
   exact hn ((mem_realize _ _ _).mp hx' q hq)
+
+/-- **Inexpressibility.** Two models that meet the same requirements, one satisfying a sentence
+and the other not, show that no set of requirements generates the sentence's denotation: no
+translation into the requirement language is exact. -/
+@[tmio TM, powerlib_foundation] theorem realize_ne_den_of_indistinguishable {y : X}
+    (hq : ∀ q, F.meets x q ↔ F.meets y q) (hx : x ∈ F.den s) (hy : y ∉ F.den s) :
+    connection% (∀ T, realize F.meets T ≠ F.den s) := by
+  change ∀ T, realize F.meets T ≠ F.den s
+  intro T hT
+  rw [← hT] at hx hy
+  exact hy ((mem_realize _ _ _).mpr fun q hq' => (hq q).mp ((mem_realize _ _ _).mp hx q hq'))
 
 variable {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
   {pt : X → EuclideanSpace ℝ (Fin n)}

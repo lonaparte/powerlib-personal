@@ -818,21 +818,8 @@ diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC lo
   have e31 : J 3 1 = 0 := by simp [J, ModelBParams.jacobian]
   have e32 : J 3 2 = -1 := by simp [J, ModelBParams.jacobian]
   have e33 : J 3 3 = 0 := by simp [J, ModelBParams.jacobian]
-  have htr : J.trace = -5 / 2 := by
-    simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, e00, e11, e22, e33]
-    norm_num
-  have hm2 : Criteria.principalMinorSum2Fin4 J = 4 := by
-    simp only [Criteria.principalMinorSum2Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
-      e22, e23, e30, e31, e32, e33]
-    norm_num
-  have hm3 : Criteria.principalMinorSum3Fin4 J = -3 := by
-    simp only [Criteria.principalMinorSum3Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
-      e22, e23, e30, e31, e32, e33]
-    norm_num
-  have hdet : J.det = 3 / 2 := by
-    rw [Criteria.det_fin_four]
-    simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
-    norm_num
+  obtain ⟨htr, hm2, hm3, hdet⟩ := Criteria.invariants_of_blockDiag_fin_four e00 e01 e02 e03 e10
+    e11 e12 e13 e20 e21 e22 e23 e30 e31 e32 e33
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [htr]; norm_num
   · rw [hm3]; norm_num

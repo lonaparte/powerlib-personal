@@ -19,17 +19,18 @@ Model boundary.
   shunt capacitor, grid branch; ports: converter voltage with current `i₁`, grid voltage with
   current `−i₂`, `theorem/Passive/LCL.lean`), continuous time, read about the origin, with their
   requirement languages and translations.
-* Implementation layer (I): for each family a structure `Euler` (in `Passive.SeriesRLC` and
-  `Passive.LCL`) of a circuit and a step `h > 0`; the system is the explicit Euler discretization
-  `x⁺ = x + h (A x + B u)`, output `y = C x` (the input held over the step), step length `h`,
-  discrete time, exact arithmetic, fixed step. Excluded: step-size control, implicit or
-  higher-order schemes, the integration error against the continuous trajectory.
+* Implementation layer (I): for each family the integrations `Euler := Numerics.EulerStep` of its
+  circuit type (in `Passive.SeriesRLC` and `Passive.LCL`): a circuit and a step `h > 0`; the system
+  is the explicit Euler discretization `x⁺ = x + h (A x + B u)`, output `y = C x` (the input held
+  over the step), step length `h`, discrete time, exact arithmetic, fixed step. Excluded: step-size
+  control, implicit or higher-order schemes, the integration error against the continuous
+  trajectory.
 * Level: the attractive sentences and sampled contraction of the zero-input dynamics about the
   origin; passivity of the discretized port system.
 
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_exact_small_step_linear`,
 `eulerPorts_realizationCompleteUnder_linear`,
-`not_eulerPorts_realizationSoundUnder_of_large_step_linear`,
+`not_eulerStepPorts_realizationSoundUnder_linear`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`) and the
 circuit modules (linearity, Hurwitz criteria, KYP certificates); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7.
@@ -42,16 +43,16 @@ Family and connection conclusions.
   Euler discretization of its circuit's port system, with the requirements and translation of its
   circuit read through the design) and `N.euler` (every discretization realizing its circuit,
   `Implementation.ofDesign`).
-* M–I (realization), for each family and every attractive sentence or sampled contraction `P`.
-  The small-step and completeness laws are the generic connection laws for linear families
-  applied to the family's linearity `N.family_isLinear`:
-  `Numerics.eulerPorts_exact_small_step_linear` (scaffold `sound-small-step`, with completeness:
-  every circuit has a step `h₀ > 0` below which its discretizations satisfy `P` exactly when the
-  circuit does) and `Numerics.eulerPorts_realizationCompleteUnder_linear` (with `Euler.pos`: at
-  every step a discretization satisfying `P` realizes only circuits satisfying it, within every
-  requirement context). `N.not_euler_realizationSoundUnder`
-  (scaffold `not-sound-large-step`): without a step constraint the realization is not sound (RL:
-  `R = L = 1`; LCL: all parameters `1`, passive and damped, hence pole stable).
+* M–I (realization), for each family and every attractive sentence or sampled contraction `P`. The
+  small-step and completeness laws are the generic connection laws for linear families applied to
+  the family's linearity `N.family_isLinear`: `Numerics.eulerPorts_exact_small_step_linear`
+  (scaffold `sound-small-step`, with completeness: every circuit has a step `h₀ > 0` below which its
+  discretizations satisfy `P` exactly when the circuit does) and
+  `Numerics.eulerPorts_realizationCompleteUnder_linear` (with `Numerics.EulerStep.pos`: at every
+  step a discretization satisfying `P` realizes only circuits satisfying it, within every
+  requirement context). `N.not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+  without a step constraint the realization is not sound (RL: `R = L = 1`; LCL: all parameters `1`,
+  passive and damped, hence pole stable).
 * Passivity: `N.euler_not_mem_den_passive`: no discretization is passive, whatever its step (the
   port current at a unit state is `1` whatever the input);
   `N.not_euler_realizationSoundUnder_passive`: the passivity realization is not sound (the passive
@@ -65,22 +66,18 @@ open LinearSystems
 namespace powerlib.Passive.RL
 
 /-- The explicit Euler discretization of an RL branch with step `h > 0`. -/
-structure Euler where
-  /-- The discretized branch. -/
-  design : Impedance
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Impedance
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of
 its branch's port system, with step length its step. -/
 def eulerFamily : Family Euler Requirement 1 1 :=
-  Numerics.eulerPortFamily family (fun m => m.plant.system) Euler.design Euler.h
+  Numerics.eulerPortFamily family (fun m => m.plant.system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its branch. -/
 def euler : Implementation Impedance Requirement Euler Requirement 1 1 1 1 :=
-  Numerics.eulerPorts family (fun m => m.plant.system) Euler.design Euler.h
+  Numerics.eulerPorts family (fun m => m.plant.system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The branch with `R = L = 1`. -/
 private def unitBranch : Impedance := Impedance.ofParams 1 ⟨1, one_pos⟩
@@ -92,11 +89,10 @@ step do not (the multiplier `1 − h` leaves the unit disk). -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_linear family_isLinear
+  exact Numerics.not_eulerStepPorts_realizationSoundUnder_linear family_isLinear
     one_pos hP (x := unitBranch)
     ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
       ((isHurwitz_iff _).mpr one_pos))
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The port current at the unit state is `1`, whatever the port voltage. -/
 @[tmio M, powerlib_domain] private theorem output_unit (m : Impedance) (u : Fin 1 → ℝ) :
@@ -113,7 +109,8 @@ voltage draws energy without bound; no nonnegative storage pays for it. -/
       (⟨m, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro m h hh
-  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design) (step := Euler.h)
+  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h)
     (y := ⟨m, h, hh⟩) hh (output_unit m) (by simp)
 
 /-- **The passivity realization of explicit Euler is not sound for the RL branch.** The branch
@@ -130,22 +127,18 @@ end powerlib.Passive.RL
 namespace powerlib.Passive.LCL
 
 /-- The explicit Euler discretization of an LCL filter with step `h > 0`. -/
-structure Euler where
-  /-- The discretized circuit. -/
-  design : Circuit
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler := Numerics.EulerStep Circuit
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of
 its circuit's port system, with step length its step. -/
 def eulerFamily : Family Euler Requirement 3 2 :=
-  Numerics.eulerPortFamily family (fun m => m.plant.system) Euler.design Euler.h
+  Numerics.eulerPortFamily family (fun m => m.plant.system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its circuit. -/
 def euler : Implementation Circuit Requirement Euler Requirement 3 2 3 2 :=
-  Numerics.eulerPorts family (fun m => m.plant.system) Euler.design Euler.h
+  Numerics.eulerPorts family (fun m => m.plant.system)
+    Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The circuit with all parameters `1`: passive and damped. -/
 private def unitCircuit : Circuit :=
@@ -171,9 +164,8 @@ with a large step are not stable. -/
     apply (passive_stable_iff _ (show unitCircuit.Passive from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using unitCircuit_passive)).mpr
     simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
       (show unitCircuit.Damped from Or.inl one_ne_zero)
-  exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_linear family_isLinear
+  exact Numerics.not_eulerStepPorts_realizationSoundUnder_linear family_isLinear
     (by norm_num) hP (x := unitCircuit) hA
-    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The port currents at the unit converter current are `(1, 0)`, whatever the port voltages. -/
 @[tmio M, powerlib_domain] private theorem output_unit (m : Circuit) (u : Fin 2 → ℝ) :
@@ -191,7 +183,8 @@ reverse converter voltage draws energy without bound. -/
       (⟨m, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
   intro m h hh
-  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Euler.design) (step := Euler.h)
+  exact Numerics.eulerPortFamily_not_mem_den_passive (design := Numerics.EulerStep.design)
+    (step := Numerics.EulerStep.h)
     (y := ⟨m, h, hh⟩) hh (output_unit m) (by simp)
 
 /-- **The passivity realization of explicit Euler is not sound for the LCL filter.** The circuit

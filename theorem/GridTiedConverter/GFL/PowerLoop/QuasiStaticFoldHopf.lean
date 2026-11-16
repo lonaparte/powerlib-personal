@@ -376,18 +376,6 @@ def supercriticalQS : Model :=
 
 /-! ## The witness is locally asymptotically stable (implementation evidence) -/
 
-/-- `sin x − (x − x³/6) = O(x⁴)`. -/
-@[tmio T, powerlib_foundation] private theorem sin_sub_taylor_isBigO :
-    (fun x : ℝ => Real.sin x - (x - x ^ 3 / 6)) =O[𝓝 0] fun x => x ^ 4 := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with x hx
-  rw [Metric.mem_ball, Real.dist_eq, sub_zero] at hx
-  have hb := Real.sin_bound hx.le
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_pow, one_mul]
-  have h5 : |x| ^ 5 ≤ |x| ^ 4 := pow_le_pow_of_le_one (abs_nonneg _) hx.le (by norm_num)
-  have h4 : 0 ≤ |x| ^ 4 := by positivity
-  linarith
-
 /-- The Lie derivative of `W` along the witness field. -/
 @[tmio M, powerlib_domain] private theorem supercriticalQS_lie (z : Dynamics.State 3) :
     fderiv ℝ (fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) z
@@ -560,10 +548,10 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
       Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
   have hs4 : (fun z : Dynamics.State 3 => Real.sin (z 0) - (z 0 - z 0 ^ 3 / 6)) =O[𝓝 0]
       fun z => hopfQS_size z ^ 4 :=
-    (sin_sub_taylor_isBigO.comp_tendsto ht).trans (hopfQS_z0_isBigO.pow 4)
+    Dynamics.isBigO_comp_pow Dynamics.sin_sub_taylor_isBigO ht hopfQS_z0_isBigO
   have hc4 : (fun z : Dynamics.State 3 => Real.cos (z 0) - (1 - z 0 ^ 2 / 2)) =O[𝓝 0]
       fun z => hopfQS_size z ^ 4 := by
-    have := (Dynamics.one_sub_cos_sub_isBigO.comp_tendsto ht).trans (hopfQS_z0_isBigO.pow 4)
+    have := Dynamics.isBigO_comp_pow Dynamics.one_sub_cos_sub_isBigO ht hopfQS_z0_isBigO
     exact (this.neg_left).congr_left fun z => by simp only [Function.comp]; ring
   have hKS := isBigO_poly3_weight hopfQS_size_tendsto hopfQS_c1_isBigO hopfQS_c2_isBigO
     hopfQS_c3_isBigO hopfQS_KS (k := 1) (by simp [hopfQS_KS])
@@ -745,13 +733,9 @@ Routh–Hurwitz requirement. -/
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := supercriticalQS_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hs : Meets supercriticalQS .jacobianStable :=
-    hmem .jacobianStable (by simp [family, translate])
-  have := hs.2.2
+  refine Spectral.not_exact_of_witness supercriticalQS_mem_den_locallyAsymptoticallyStable
+    (q := .jacobianStable) (by simp [family, translate]) fun hs => ?_
+  have := (hs : Meets supercriticalQS .jacobianStable).2.2
   rw [supercriticalQS_routh_boundary] at this
   exact lt_irrefl _ this
 

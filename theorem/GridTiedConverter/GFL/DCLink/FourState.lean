@@ -10,6 +10,8 @@ import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
 import theorem.Dynamics.Pendulum
 import theorem.SpecialFunctions.Sinusoid
+import theorem.GridTiedConverter.PLL.Linear
+import theorem.GridTiedConverter.GFL.DCLink.VoltageControl
 
 /-! # Four-state GFL with PLL and dc-bus voltage loop
 
@@ -49,8 +51,14 @@ Results.
   `J(z₀; ε) = A₀ + ε A₁` and `f_ε(z₀) = ε b₁`.
 * Characteristic polynomial
   `det(λI − A₀) = L_PLL(λ)(λ² + 2α_cl λ + ω_cl²) − Γ(k_p λ + k_i)(k_pv λ + k_iv)` with
-  `L_PLL = λ² + k_p v_{d0} λ + k_i v_{d0}`, `2α_cl = γ v_{d0}(i_{d0} + k_pv)`,
+  `L_PLL = λ² + k_p v_{d0} λ + k_i v_{d0}` (`PLL.loopPoly` at `v_{d0}`),
+  `2α_cl = γ v_{d0}(i_{d0} + k_pv)`,
   `ω_cl² = γ v_{d0} k_iv`, `Γ = γ X_g² i_{d0}²`; exact decoupling when `Γ = 0`;
+  the `(V, η)` block of `A₀` is the Jacobian of the closed DC-voltage loop
+  (`theorem/GridTiedConverter/GFL/DCLink/VoltageControl.lean`) with `V_d = (3/2) V₀ cos θ₀`,
+  `V_dc* = 1`, `K_p = k_pv`, `K_i = k_iv`, `I_d0 = i_d0` (`dcLoop`, `A0_dcBlock`), whose negated
+  trace and determinant are `2α_cl` and `ω_cl²` (`twoAlphaCl`, `omegaClSq`; closed forms
+  `twoAlphaCl_eq`, `omegaClSq_eq`);
   `det A₀ = γ k_i k_iv V₀² cos 2θ₀`.
 * Domain: quartic Routh–Hurwitz conditions ⇒ local exponential stability;
   `cos 2θ₀ < 0` ⇒ positive real eigenvalue ⇒ unstable; hence local exponential stability
@@ -379,14 +387,35 @@ def b1 (θ0 : ℝ) : Fin 4 → ℝ :=
 
 /-! ## Characteristic polynomial -/
 
-/-- `L_PLL(λ) = λ² + k_p v_{d0} λ + k_i v_{d0}` -/
-def LPLL (θ0 : ℝ) (s : ℂ) : ℂ := s ^ 2 + (p.kp * vd0 p θ0 : ℝ) * s + (p.ki * vd0 p θ0 : ℝ)
+/-- `L_PLL(λ) = λ² + k_p v_{d0} λ + k_i v_{d0}`: the PLL loop polynomial `PLL.loopPoly` at the
+amplitude `v_{d0}`. -/
+abbrev LPLL (θ0 : ℝ) (s : ℂ) : ℂ := PLL.loopPoly (vd0 p θ0) p.kp p.ki s
 
-/-- `2α_cl = γ v_{d0}(i_{d0} + k_pv)` -/
-def twoAlphaCl (θ0 : ℝ) : ℝ := p.γ * vd0 p θ0 * (p.id0 + p.kpv)
+/-- The DC-voltage outer loop of the model at `θ₀` (`DCParams`,
+`theorem/GridTiedConverter/GFL/DCLink/VoltageControl.lean`): `V_d = (3/2) v_{d0}`, `V_dc* = 1`,
+gains `(k_pv, k_iv)`, operating current `I_d0 = i_{d0}` with feedforward `i_ff = i_{d0}`, the
+model's DC link. -/
+def dcLoop (θ0 : ℝ) : DCParams :=
+  ⟨p.dcLink, 3 / 2 * vd0 p θ0, 1, p.kpv, p.kiv, p.id0, p.id0, p.dcLink_lossless, p.dcLink_noInd⟩
 
-/-- `ω_cl² = γ v_{d0} k_iv` -/
-def omegaClSq (θ0 : ℝ) : ℝ := p.γ * vd0 p θ0 * p.kiv
+/-- `2α_cl`: the negated trace `a K_p + b` of the closed DC loop `dcLoop`
+(`DCParams.jacobian_trace`); `2α_cl = γ v_{d0}(i_{d0} + k_pv)` (`twoAlphaCl_eq`). -/
+def twoAlphaCl (θ0 : ℝ) : ℝ := (dcLoop p θ0).a * (dcLoop p θ0).Kp + (dcLoop p θ0).b
+
+/-- `ω_cl²`: the determinant `a K_i` of the closed DC loop `dcLoop` (`DCParams.jacobian_det`);
+`ω_cl² = γ v_{d0} k_iv` (`omegaClSq_eq`). -/
+def omegaClSq (θ0 : ℝ) : ℝ := (dcLoop p θ0).a * (dcLoop p θ0).Ki
+
+@[tmio M, powerlib_domain] theorem twoAlphaCl_eq (θ0 : ℝ) :
+    twoAlphaCl p θ0 = p.γ * vd0 p θ0 * (p.id0 + p.kpv) := by
+  simp only [twoAlphaCl, dcLoop, DCParams.a, DCParams.b, DCParams.Idc0, DCParams.C, Params.γ,
+    Params.C]
+  ring
+
+@[tmio M, powerlib_domain] theorem omegaClSq_eq (θ0 : ℝ) :
+    omegaClSq p θ0 = p.γ * vd0 p θ0 * p.kiv := by
+  simp only [omegaClSq, dcLoop, DCParams.a, DCParams.C, Params.γ, Params.C]
+  ring
 
 /-- `L_dc(λ) = λ² + 2α_cl λ + ω_cl²` -/
 def Ldc (θ0 : ℝ) (s : ℂ) : ℂ := s ^ 2 + (twoAlphaCl p θ0 : ℂ) * s + (omegaClSq p θ0 : ℂ)
@@ -394,10 +423,15 @@ def Ldc (θ0 : ℝ) (s : ℂ) : ℂ := s ^ 2 + (twoAlphaCl p θ0 : ℂ) * s + (o
 /-- Coupling `Γ = γ X_g² i_{d0}²` -/
 def Γc : ℝ := p.γ * p.Xg ^ 2 * p.id0 ^ 2
 
-/-- `2α_cl` and `ω_cl²` are the negated dc-block entries of `A₀`. -/
-@[tmio M, powerlib_domain] theorem dcBlock_closed_forms (θ0 : ℝ) :
-    twoAlphaCl p θ0 = -A0 p θ0 2 2 ∧ omegaClSq p θ0 = -A0 p θ0 2 3 := by
-  simp [twoAlphaCl, omegaClSq, A0]
+/-- **The DC block of `A₀` is the closed DC-voltage loop.** The `(V, η)` block of `A₀` is the
+Jacobian `[[−(a K_p + b), −a K_i], [1, 0]]` of `dcLoop θ₀` (`DCParams.jacobian`), so
+`2α_cl = −A₀[2,2]` and `ω_cl² = −A₀[2,3]`. -/
+@[tmio M, powerlib_domain] theorem A0_dcBlock (θ0 : ℝ) :
+    (A0 p θ0).submatrix (Fin.addNat · 2) (Fin.addNat · 2) = (dcLoop p θ0).jacobian := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [A0, DCParams.jacobian, dcLoop, DCParams.a, DCParams.b, DCParams.Idc0, Params.γ,
+      -mul_eq_mul_right_iff, -mul_eq_mul_left_iff] <;> ring
 
 /-- Characteristic equation of the source:
 `det(λI − A₀) = L_PLL(λ) L_dc(λ) − Γ (k_p λ + k_i)(k_pv λ + k_iv)`. -/
@@ -413,7 +447,7 @@ def Γc : ℝ := p.γ * p.Xg ^ 2 * p.id0 ^ 2
     rw [this, h]; ring
   simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, Criteria.principalMinorSum2Fin4,
     Criteria.principalMinorSum3Fin4, Criteria.det_fin_four, hA]
-  simp [A0, LPLL, Ldc, twoAlphaCl, omegaClSq, Γc]
+  simp [A0, PLL.loopPoly, Ldc, twoAlphaCl_eq, omegaClSq_eq, Γc]
   ring
 
 /-- Exact decoupling at `Γ = 0`: the characteristic polynomial factors as `L_PLL · L_dc`. -/
@@ -441,7 +475,7 @@ def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * 
       s ^ 4 + (a3 p θ0 : ℂ) * s ^ 3 + (a2 p θ0 : ℂ) * s ^ 2 + (a1 p θ0 : ℂ) * s +
         (a0 p θ0 : ℂ) := by
   rw [det_characteristicMatrix_A0 p h]
-  simp only [LPLL, Ldc, a3, a2, a1, a0]
+  simp only [LPLL, PLL.loopPoly, Ldc, a3, a2, a1, a0]
   push_cast
   ring
 
@@ -451,7 +485,7 @@ def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * 
   have hc : Real.cos (2 * θ0) = Real.cos θ0 ^ 2 - Real.sin θ0 ^ 2 := by
     rw [Real.cos_two_mul]; have := Real.sin_sq_add_cos_sq θ0; linarith
   have hs : (p.Xg * p.id0) ^ 2 = (p.V0 * Real.sin θ0) ^ 2 := by rw [h]; ring
-  simp only [a0, omegaClSq, Γc, vd0, hc]
+  simp only [a0, omegaClSq_eq, Γc, vd0, hc]
   linear_combination (-(p.γ * p.ki * p.kiv)) * hs
 
 @[tmio M, powerlib_domain] theorem det_A0 {θ0 : ℝ} (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) :
@@ -855,8 +889,8 @@ quartic `(λ² + 1)(λ² + λ + 1)` has the imaginary pair `±i`, so the Routh i
   refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .routh)
     (by simp [family, translate]) fun hr => ?_
   obtain ⟨-, -, -, hg⟩ : Meets undampedPLL .routh := hr
-  norm_num [Passive.SeriesRLC.reactance, Params.Xg, Params.C, a1, a2, a3, a0, twoAlphaCl, omegaClSq,
-      Γc, vd0, undampedPLL, Params.γ] at hg
+  norm_num [Passive.SeriesRLC.reactance, Params.Xg, Params.C, a1, a2, a3, a0, twoAlphaCl_eq,
+      omegaClSq_eq, Γc, vd0, undampedPLL, Params.γ] at hg
 
 
 end powerlib.GFL.DCLink.FourState

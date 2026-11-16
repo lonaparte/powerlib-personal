@@ -876,13 +876,9 @@ requirement. -/
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := supercriticalPLL_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
-  have hs : Meets supercriticalPLL .jacobianStable :=
-    hmem .jacobianStable (by simp [family, translate])
-  have := hs.1
+  refine Spectral.not_exact_of_witness supercriticalPLL_mem_den_locallyAsymptoticallyStable
+    (q := .jacobianStable) (by simp [family, translate]) fun hs => ?_
+  have := (hs : Meets supercriticalPLL .jacobianStable).1
   rw [supercriticalPLL_trace_jac] at this
   exact lt_irrefl 0 this
 

@@ -23,8 +23,9 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/escape-quasi
 exponential mean `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ})`).
 
 Results.
-* `H_hasDerivAt_along`: along a trajectory, `𝓗 = ½ K_i η² + 𝒱(θ)` decreases at rate `K_p h²`
-  (§0); `Hold_hasDerivAt_along`, `Hold_deriv_pos_somewhere`: the old pairing (Corrections).
+* The corrected pairing `𝓗 = ½ K_i η² + 𝒱(θ)` decreases at rate `K_p h²` (§0): the energy rate
+  of the PI-PLL, `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLLPH.lean`);
+  `Hold_hasDerivAt_along`, `Hold_deriv_pos_somewhere`: the old pairing (Corrections).
 * `fpFreq_gibbs` (with `gibbs2_hasDerivAt_θ`, `gibbs2_hasDerivAt_η`): if `ε² = 2 K_p T`
   (`B Bᵀ = 2 T R`, `T = T_eff`), then `e^{−𝓗/T}` solves the stationary Fokker–Planck equation
   pointwise; `gibbs2_not_integrable`: it is not normalizable in general (Corrections).
@@ -55,18 +56,6 @@ open Real MeasureTheory Set Matrix
 open scoped ENNReal
 
 /-! ## Lyapunov pairing along trajectories (§0) -/
-
-/-- Along a trajectory of `θ̇ = K_p h(θ) + K_i η`, `η̇ = h(θ)`, the corrected energy
-`𝓗 = ½ K_i η² + 𝒱(θ)` (`𝒱' = −h`) decreases at rate `K_p h²`. -/
-@[tmio T, powerlib_foundation] theorem H_hasDerivAt_along {Kp Ki : ℝ} {h V : ℝ → ℝ}
-    (hV : ∀ x, HasDerivAt V (-h x) x) {θ η : ℝ → ℝ} {t : ℝ}
-    (hθ : HasDerivAt θ (Kp * h (θ t) + Ki * η t) t) (hη : HasDerivAt η (h (θ t)) t) :
-    HasDerivAt (fun s => Ki / 2 * η s ^ 2 + V (θ s)) (-(Kp * h (θ t) ^ 2)) t := by
-  have h1 := (hη.pow 2).const_mul (Ki / 2)
-  have h2 := (hV (θ t)).comp t hθ
-  convert! h1.add h2 using 1
-  push_cast
-  ring
 
 /-- The old pairing `𝓗_old = ½ K_i η² + K_i 𝒱(θ)`: along trajectories
 `𝓗̇_old = −K_p K_i h² + K_i (1 − K_i) η h`. -/

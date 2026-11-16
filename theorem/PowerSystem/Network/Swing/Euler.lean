@@ -23,7 +23,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_euler_realizationSoundUnder_of_large_step`),
+`not_eulerStep_realizationSoundUnder`),
 `theorem/PowerSystem/Network/Swing/Basic.lean` (`reducedField_contDiff`,
 `mem_den_locallyExponentiallyStable`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
@@ -35,7 +35,7 @@ Family and connection conclusions.
 * `Network.Swing.eulerFamily : Family (Network.Swing.Euler n) Requirement (n + (n + 1)) 0`: every
   integration read as its Euler map; requirements and translation are those of its model, read
   through the design. `Network.Swing.euler`: the implementation layer, every integration realizing
-  its model (`Implementation.ofDesign Euler.design`).
+  its model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization), for every number `n + 1` of machines. The small-step laws are the generic
   connection laws applied to the family, with its autonomy `Network.Swing.family_isAutonomous` and
   the public smoothness lemma `Network.Swing.contDiff_modelField`:
@@ -57,23 +57,17 @@ variable {n : ℕ}
 
 /-- The explicit Euler integration of a swing-network model about its selected angle profile with
 step `h > 0`. -/
-structure Euler (n : ℕ) where
-  /-- The integrated swing-network model. -/
-  design : (Model n)
-  /-- The step. -/
-  h : ℝ
-  /-- Steps are positive. -/
-  pos : 0 < h
+abbrev Euler (n : ℕ) := Numerics.EulerStep (Model n)
 
 /-- The Euler integration family: every integration read as the Euler map of its model's translated
 field, with step length its step. -/
 def eulerFamily : Family (Euler n) Requirement (n + (n + 1)) 0 :=
-  Numerics.eulerFamily family Model.field Euler.design Euler.h
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every integration realizes its swing-network model. -/
 def euler : Implementation (Model n) Requirement (Euler n) Requirement (n + (n + 1)) 0 (n + (n +
     1)) 0 :=
-  Numerics.euler family Model.field Euler.design Euler.h
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The translated field of a swing-network model is `C¹`: the smoothness hypothesis of the generic
 Euler laws (`Numerics.euler_sound_small_step_local`). -/
@@ -84,7 +78,7 @@ Euler laws (`Numerics.euler_sound_small_step_local`). -/
 locally exponentially stable network (unit inertia and damping, no injection, unit coupling between
 every pair of machines, `θ* = 0`) integrated with a large enough step is not locally exponentially
 stable: every Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+(`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ (euler (n := n)).RealizationSoundUnder ∅
       (.flow .locallyExponentiallyStable)) := by
@@ -95,7 +89,7 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
     (fun _ => by simp [powerInjection]) (fun _ _ _ => by simp [Real.pi_pos])
     (fun _ _ => .single one_pos)
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
-    contDiff_modelField (by omega) hm fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
+  exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
+    contDiff_modelField (by omega) hm
 
 end powerlib.Network.Swing
