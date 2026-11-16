@@ -289,8 +289,8 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
     have q6 : q 6 = p.Rf * p.idRef / p.Kicc := rfl
     have q7 : q 7 = p.Rf * p.iqRef / p.Kicc := rfl
     have q9 : q 9 = θ := rfl
-    have hic0 : icD q = p.idRef := by simp [icD, q0, q1, q9, iD, iQ]
-    have hic1 : icQ q = p.iqRef := by simp [icQ, q0, q1, q9, iD, iQ]
+    have hic0 : icD q = p.idRef := by simp [icD, q0, q1, q9, Network.iD, Network.iQ]
+    have hic1 : icQ q = p.iqRef := by simp [icQ, q0, q1, q9, Network.iD, Network.iQ]
     have hlin := (p.lc_line_qss_iff hwC p.Vg 0 (p.iD θ) (p.iQ θ) (p.vcD θ p.Vg 0)
       (p.vcQ θ p.Vg 0) (p.igD θ p.Vg 0) (p.igQ θ p.Vg 0)).mpr
       ⟨(p.lineMatrix_mulVec_iff hΔ _ _ _ _ _ _).mpr ⟨rfl, rfl⟩, rfl, rfl⟩

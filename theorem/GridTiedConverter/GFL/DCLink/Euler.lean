@@ -37,8 +37,8 @@ Model boundary.
   the continuous trajectory.
 * Smoothness at the selected point, as a hypothesis on the model where the family admits points
   off it: none for `FourState` (its fields agree with the smooth `regField` near every operating
-  point); `V_dc* ≠ 0` for `BasinGuard` (the carrier is `C¹` on `V_dc ≠ 0`,
-  `CarrierParams.carrierField_contDiffOn`) and `ModelB` (`ModelBParams.field_contDiffOn`);
+  point); `V_dc* ≠ 0` for `ModelB` (`ModelBParams.field_contDiffOn`) and `BasinGuard` (the
+  carrier is model B, `CarrierParams.carrierField_eq_modelB_field`);
   `V0 > 0` for the cascade (`CascadeParams.field_contDiffOn`) and the open loop
   (`openField_contDiffOn`); `V_dc,ref > 0` for the closed loop
   (`DCParams.closedField_contDiffOn`). Without it the laws are
@@ -141,54 +141,6 @@ Euler multiplier `1 + hλ` leaves the unit disk
 
 end powerlib.GFL.DCLink.FourState
 
-namespace powerlib.GFL.DCLink.BasinGuard
-
-/-- The explicit Euler integration of a `basin-guard` carrier model about its selected operating
-point with step `h > 0`. -/
-abbrev Euler := Numerics.EulerStep Model
-
-/-- The Euler integration family: every integration read as the Euler map of its model's
-translated carrier field, with step length its step. -/
-def eulerFamily : Family Euler Requirement 4 0 :=
-  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The Euler realization: every integration realizes its carrier model. -/
-def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
-  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The translated carrier field is `C¹` near the origin when the selected point has
-`V_dc ≠ 0`: the smoothness hypothesis of the local generic Euler laws
-(`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiffAt_modelField {m : Model} (hV : m.point 2 ≠ 0) :
-    ContDiffAt ℝ 1 m.field 0 :=
-  Numerics.contDiffAt_shift (g := m.params.carrierField m.s) (x₀ := m.point)
-    ((m.params.carrierField_contDiffOn m.s).contDiffAt
-      ((isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous
-        continuous_const).mem_nhds hV))
-
-/-- **Without a step constraint the Euler realization of the carrier models is not sound.** The
-IN-positive carrier (`s = 1`) with `I_dc = I_q* = X_g = 0`,
-`V = K_p^pll = K_i^pll = K_p^dvc = K_i^dvc = C = 1` at `(θ_e, x_p, V_dc, ξ) = (0, 0, 1, 0)` is
-locally exponentially stable: its four-state reading (`mem_den_iff_fourState`) is the unit
-four-state model above. Integrated with a large enough step it is not: every Euler multiplier
-`1 + hλ` leaves the unit disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
-@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
-    connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  set m : Model := ⟨⟨0, 0, 1, ⟨0, 0, 0⟩, 1, 1, 1, 1, ⟨0, 1, 0⟩, rfl, rfl, rfl⟩, 1,
-      WithLp.toLp 2 ![0, 0, 1, 0]⟩
-  have h := mem_den_iff_fourState m rfl (by simp [m]) (by simp [m])
-    (.flow .locallyExponentiallyStable)
-  unfold powerlib.TMIO.Statement at h
-  have hto : m.toFourState = ⟨⟨1, ⟨0, 0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩ := by
-    simp [m, Model.toFourState, CarrierParams.fourStateParams, CarrierParams.Xg,
-        Passive.SeriesRLC.reactance]
-  rw [hto] at h
-  exact Numerics.not_eulerStep_realizationSoundUnder_local family_isAutonomous
-    (by norm_num) (contDiffAt_modelField (by simp [m])) (h.mpr FourState.unitModel_mem_den)
-
-end powerlib.GFL.DCLink.BasinGuard
-
 namespace powerlib.GFL.DCLink.ModelB
 
 /-- The explicit Euler integration of a model-B system about its selected state with step
@@ -224,6 +176,53 @@ disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
     (by norm_num) (contDiffAt_modelField (by simp [negativeReference])) hm
 
 end powerlib.GFL.DCLink.ModelB
+
+namespace powerlib.GFL.DCLink.BasinGuard
+
+/-- The explicit Euler integration of a `basin-guard` carrier model about its selected operating
+point with step `h > 0`. -/
+abbrev Euler := Numerics.EulerStep Model
+
+/-- The Euler integration family: every integration read as the Euler map of its model's
+translated carrier field, with step length its step. -/
+def eulerFamily : Family Euler Requirement 4 0 :=
+  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
+
+/-- The Euler realization: every integration realizes its carrier model. -/
+def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
+  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
+
+/-- The translated carrier field is `C¹` near the origin when the selected point has
+`V_dc ≠ 0`: the smoothness hypothesis of the local generic Euler laws
+(`Numerics.euler_sound_small_step_local`); it is the translated field of the model-B reading
+(`Model.field_eq_modelB`, `ModelB.contDiffAt_modelField`). -/
+@[tmio M, powerlib_domain] theorem contDiffAt_modelField {m : Model} (hV : m.point 2 ≠ 0) :
+    ContDiffAt ℝ 1 m.field 0 := by
+  rw [m.field_eq_modelB]
+  exact ModelB.contDiffAt_modelField hV
+
+/-- **Without a step constraint the Euler realization of the carrier models is not sound.** The
+IN-positive carrier (`s = 1`) with `I_dc = I_q* = X_g = 0`,
+`V = K_p^pll = K_i^pll = K_p^dvc = K_i^dvc = C = 1` at `(θ_e, x_p, V_dc, ξ) = (0, 0, 1, 0)` is
+locally exponentially stable: its four-state reading (`mem_den_iff_fourState`) is the unit
+four-state model above. Integrated with a large enough step it is not: every Euler multiplier
+`1 + hλ` leaves the unit disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
+    connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  set m : Model := ⟨⟨0, 0, 1, ⟨0, 0, 0⟩, 1, 1, 1, 1, ⟨0, 1, 0⟩, rfl, rfl, rfl⟩, 1,
+      WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  have h := mem_den_iff_fourState m rfl (by simp [m]) (by simp [m])
+    (.flow .locallyExponentiallyStable)
+  unfold powerlib.TMIO.Statement at h
+  have hto : m.toFourState = ⟨⟨1, ⟨0, 0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩ := by
+    simp [m, Model.toFourState, CarrierParams.fourStateParams, ModelBParams.fourStateParams,
+      CarrierParams.toModelB, ModelBParams.Xg, CarrierParams.Xg, Passive.SeriesRLC.reactance]
+  rw [hto] at h
+  exact Numerics.not_eulerStep_realizationSoundUnder_local family_isAutonomous
+    (by norm_num) (contDiffAt_modelField (by simp [m])) (h.mpr FourState.unitModel_mem_den)
+
+end powerlib.GFL.DCLink.BasinGuard
 
 namespace powerlib.GFL.DCLink.CascadeParams
 

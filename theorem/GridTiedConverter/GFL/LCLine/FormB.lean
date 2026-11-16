@@ -1,6 +1,5 @@
-import theorem.GridTiedConverter.PLL.PIPLL
-import theorem.Passive.Series
-import theorem.Passive.Parallel
+import theorem.GridTiedConverter.PLL.PIPLLPH
+import theorem.GridTiedConverter.GFL.LCLine.Reduction
 import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
@@ -13,15 +12,18 @@ Grid-following VSC with LC filter and an `R_g`–`L_g` line to an infinite bus
 `(V_g, 0)` (system dq frame rotating at the constant grid frequency `ω_g`), SRF-PLL with PI gains
 `K_p, K_i`, current references `i_d*, i_q*` frozen (outer loops frozen), IN-positive currents:
 the converter current `i` flows from the filter into the bridge, the line current `i_g` from the
-grid into the filter, Park matrix `T(θ) = [[cos θ, sin θ], [−sin θ, cos θ]]`. What is
-formalized is the algebra of the form-B reduction of `T-gfl-dynamics` §1.4–§1.7:
-* step 1 (`convCurrentD/Q`): ideal current tracking `i^c = i*`, rotated to the system frame,
-  `i = T(−θ) i*`;
+grid into the filter, Park matrix `T(θ) = [[cos θ, sin θ], [−sin θ, cos θ]]`. The parameters are
+the network record `Network` of `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (filter
+capacitor, line, `ω_g`, `V_g`, `i_d*`, `i_q*`), which the full parameter set `Params` extends.
+What is formalized is the algebra of the form-B reduction of `T-gfl-dynamics` §1.4–§1.7:
+* step 1 (`Network.iD`, `Network.iQ`): ideal current tracking `i^c = i*`, rotated to the system
+  frame, `i = T(−θ) i*`;
 * steps 2–3 (`QuasiSteady`): the LC-capacitor equation `C_f v̇_c = i_g − i − ω_g C_f J v_c` and the
   line equation `L_g i̇_g = (V_g, 0) − v_c − R_g i_g − ω_g L_g J i_g` with their time derivatives
   set to zero, `0 = i_gd − i_d + ω_g C_f v_cq`, `0 = i_gq − i_q − ω_g C_f v_cd`,
   `0 = V_g − v_cd − R_g i_gd + ω_g L_g i_gq`, `0 = −v_cq − R_g i_gq − ω_g L_g i_gd`;
-* step 4 (`formBPllInput`): the PLL input `v_cq^c = −sin θ v_cd + cos θ v_cq`.
+* step 4: the PLL input `v_cq^c = −sin θ v_cd + cos θ v_cq`, the `q` component of the capacitor
+  voltage in the controller frame (`Transform.parkQ`).
 The singular-perturbation (Tikhonov) justification of the reduction and its error are **not**
 formalized; the reduced 2D model is `piPLLField p.formBChar K_p K_i δω` of
 `theorem/GridTiedConverter/PLL/PIPLL.lean`, valid as a model only under the note's assumptions
@@ -32,7 +34,8 @@ project is `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`h_eq`, `h_eq_
 Source: work-sync `theory/T-gfl-dynamics.md` §1.0 (frame rotations), §1.4–§1.9, §1.11, §1.14.
 
 Results.
-* `cc_projection`: the current-loop part of `ω_g C_f v_cq^c` is identically `i_d*`.
+* The current-loop part of `ω_g C_f v_cq^c` is identically `i_d*`
+  (`Network.sin_iQ_add_cos_iD`, `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean`).
 * `pllInput_expansion`: for any line solution `i_g = α + β sin θ + γ cos θ`, the double-angle
   expansion with the coefficients `c₀ … c₄` of §1.7 (written for the IN-positive currents: the
   line current coefficients and `i_d*` enter with the opposite sign).
@@ -44,6 +47,12 @@ Results.
   `formBChar θ = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ]` (first-order trigonometric).
 * `formB_equilibria_ncard_le_two`: the reduced form-B GFL-PLL has at most two equilibria
   per `2π` window of `θ` (for `V_g ≠ 0`, `K_i ≠ 0`).
+* `Params.formBChar_eq_h`: the form-B characteristic of the network of a parameter set is the PLL
+  error signal `h` of the reduction, for every parameter set (`lineDet = Δ/(ω_g C_f)²`,
+  `α_q/(ω_g C_f) = (1 − b) V_g/Δ`, `α_d/(ω_g C_f) = a V_g/Δ`, the constant terms are both `c₀`);
+  so the form-B reduction is the reduction of `Reduction.lean` read with the parameters
+  `R_g, X, lineDet` instead of `a, b, Δ`. `Network.formBChar_eq_formBH`: it is `PLL.formBH`
+  (`T-gfl-ph` (1.3)) with `c₃ = c₄ = 0`.
 * The two rotation matrices are mutually inverse: `Transform.park_mul_rot`,
   `Transform.rot_mul_park` (`T(θ) = park θ`, `T(−θ) = rot θ`), not repeated here.
 
@@ -81,63 +90,16 @@ open Complex Polynomial Set
 open powerlib.PLL (piPLLField)
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
-/-! ## Step 1: the current loop -/
-
-/-- PLL input of form B: `q` component of the capacitor voltage in the controller frame,
-`v_cq^c = −sin θ v_cd + cos θ v_cq` (`x^c = T(θ) x^sys`). -/
-def formBPllInput (θ vcd vcq : ℝ) : ℝ := -Real.sin θ * vcd + Real.cos θ * vcq
-
-/-- Parameters of the form-B reduction. -/
-structure FormBParams where
-  /-- Grid angular frequency (constant). -/
-  ωg : ℝ
-  /-- Filter capacitor (lossless shunt). -/
-  filterCap : Passive.ParallelRLC
-  /-- Line branch `(R_g, L_g)`. -/
-  line : Passive.SeriesRLC
-  /-- Infinite-bus voltage (system d axis). -/
-  Vg : ℝ
-  /-- Frozen current references (controller frame). -/
-  idRef : ℝ
-  iqRef : ℝ
-  /-- The filter capacitor is lossless. -/
-  filterCap_lossless : filterCap.G = 0
-  /-- The filter capacitor has no shunt inductor. -/
-  filterCap_noInd : filterCap.Γ = 0
-  /-- The line has no series capacitor. -/
-  line_noCap : line.S = 0
-
-/-- The filter capacitance `C_f`. -/
-abbrev FormBParams.Cf (p : FormBParams) : ℝ := p.filterCap.C
-
-/-- Line inductance `L_g`. -/
-abbrev FormBParams.Lg (p : FormBParams) : ℝ := p.line.L
-
-/-- Line resistance `R_g`. -/
-abbrev FormBParams.Rg (p : FormBParams) : ℝ := p.line.R
-
-namespace FormBParams
-
-variable (p : FormBParams)
-
-/-- `i_d(θ) = cos θ i_d* − sin θ i_q*` (system frame, `i = T(−θ) i*`). -/
-def convCurrentD (θ : ℝ) : ℝ := Real.cos θ * p.idRef - Real.sin θ * p.iqRef
-
-/-- `i_q(θ) = sin θ i_d* + cos θ i_q*`. -/
-def convCurrentQ (θ : ℝ) : ℝ := Real.sin θ * p.idRef + Real.cos θ * p.iqRef
-
-/-- The current-loop contribution to `ω_g C_f v_cq^c` is the constant `i_d*` (§1.7 (a)). -/
-@[tmio M, powerlib_domain] theorem cc_projection (θ : ℝ) :
-    Real.sin θ * p.convCurrentQ θ + Real.cos θ * p.convCurrentD θ = p.idRef := by
-  simp only [convCurrentD, convCurrentQ]
-  linear_combination p.idRef * Real.sin_sq_add_cos_sq θ
-
 /-! ## Steps 2–4: quasi-steady LC and line, PLL input -/
+
+namespace Network
+
+variable (p : Network)
 
 /-- Quasi-steady LC-capacitor and line equations at phase offset `θ`. -/
 def QuasiSteady (θ vcd vcq igd igq : ℝ) : Prop :=
-  igd - p.convCurrentD θ + p.ωg * p.Cf * vcq = 0 ∧
-  igq - p.convCurrentQ θ - p.ωg * p.Cf * vcd = 0 ∧
+  igd - p.iD θ + p.ωg * p.Cf * vcq = 0 ∧
+  igq - p.iQ θ - p.ωg * p.Cf * vcd = 0 ∧
   p.Vg - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
   -vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0
 
@@ -157,10 +119,10 @@ def lineDet : ℝ := p.seriesBranch.absSq p.ωg
   simp [lineDet, lineX, seriesBranch, Passive.SeriesRLC.absSq]
 
 /-- `a(θ) = −V_g − i_q(θ)/(ω_g C_f)`. -/
-def driveA (θ : ℝ) : ℝ := -p.Vg - p.convCurrentQ θ / (p.ωg * p.Cf)
+def driveA (θ : ℝ) : ℝ := -p.Vg - p.iQ θ / (p.ωg * p.Cf)
 
 /-- `b(θ) = i_d(θ)/(ω_g C_f)`. -/
-def driveB (θ : ℝ) : ℝ := p.convCurrentD θ / (p.ωg * p.Cf)
+def driveB (θ : ℝ) : ℝ := p.iD θ / (p.ωg * p.Cf)
 
 /-- Closed-form line current, d axis: `(−R_g a + X b)/Δ`. -/
 def lineCurrentD (θ : ℝ) : ℝ := (-p.Rg * p.driveA θ + p.lineX * p.driveB θ) / p.lineDet
@@ -169,10 +131,10 @@ def lineCurrentD (θ : ℝ) : ℝ := (-p.Rg * p.driveA θ + p.lineX * p.driveB �
 def lineCurrentQ (θ : ℝ) : ℝ := (-p.lineX * p.driveA θ - p.Rg * p.driveB θ) / p.lineDet
 
 /-- Closed-form capacitor voltage, d axis: `(i_gq − i_q)/(ω_g C_f)`. -/
-def capVoltageD (θ : ℝ) : ℝ := (p.lineCurrentQ θ - p.convCurrentQ θ) / (p.ωg * p.Cf)
+def capVoltageD (θ : ℝ) : ℝ := (p.lineCurrentQ θ - p.iQ θ) / (p.ωg * p.Cf)
 
 /-- Closed-form capacitor voltage, q axis: `(i_d − i_gd)/(ω_g C_f)`. -/
-def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)
+def capVoltageQ (θ : ℝ) : ℝ := (p.iD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)
 
 /-- Unique solvability of the quasi-steady equations (premises `ω_g C_f ≠ 0`, `Δ ≠ 0`). -/
 @[tmio M, powerlib_domain] theorem quasiSteady_iff (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0)
@@ -183,10 +145,10 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p
   have hk1 (z : ℝ) : p.ωg * p.Cf * (z / (p.ωg * p.Cf)) = z := mul_div_cancel₀ z hωC
   constructor
   · rintro ⟨e1, e2, e3, e4⟩
-    have hvcd : vcd = (igq - p.convCurrentQ θ) / (p.ωg * p.Cf) := by
+    have hvcd : vcd = (igq - p.iQ θ) / (p.ωg * p.Cf) := by
       rw [eq_div_iff hωC]
       linarith
-    have hvcq : vcq = (p.convCurrentD θ - igd) / (p.ωg * p.Cf) := by
+    have hvcq : vcq = (p.iD θ - igd) / (p.ωg * p.Cf) := by
       rw [eq_div_iff hωC]
       linarith
     -- the reduced 2×2 system `−R_g i_gd − X i_gq = a`, `X i_gd − R_g i_gq = b`
@@ -243,13 +205,13 @@ def γq : ℝ := (p.lineX * p.iqRef - p.Rg * p.idRef) / (p.ωg * p.Cf * p.lineDe
 
 @[tmio M, powerlib_domain] theorem lineCurrentD_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
     p.lineCurrentD θ = p.αd + p.βd * Real.sin θ + p.γd * Real.cos θ := by
-  simp only [lineCurrentD, driveA, driveB, convCurrentD, convCurrentQ, αd, βd, γd]
+  simp only [lineCurrentD, driveA, driveB, iD, iQ, Transform.iparkD, Transform.iparkQ, αd, βd, γd]
   field_simp
   ring
 
 @[tmio M, powerlib_domain] theorem lineCurrentQ_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
     p.lineCurrentQ θ = p.αq + p.βq * Real.sin θ + p.γq * Real.cos θ := by
-  simp only [lineCurrentQ, driveA, driveB, convCurrentD, convCurrentQ, αq, βq, γq]
+  simp only [lineCurrentQ, driveA, driveB, iD, iQ, Transform.iparkD, Transform.iparkQ, αq, βq, γq]
   field_simp
   ring
 
@@ -262,26 +224,26 @@ double-angle coefficients of §1.7 vanish, `c₃ = (γ_q + β_d)/2 = 0`, `c₄ =
   · simp only [γd, βq]
     ring
 
-end FormBParams
+end Network
 
 /-- The double-angle expansion of §1.7 for an arbitrary line solution
 `i_g = α + β sin θ + γ cos θ`:
 `−sin θ (i_gq − i_q) + cos θ (i_d − i_gd) = c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ`,
 `c₀ = i_d* − (β_q + γ_d)/2`, `c₁ = −α_q`, `c₂ = −α_d`, `c₃ = −(γ_q + β_d)/2`,
 `c₄ = −(γ_d − β_q)/2`. -/
-@[tmio M, powerlib_domain] theorem pllInput_expansion (p : FormBParams)
+@[tmio M, powerlib_domain] theorem pllInput_expansion (p : Network)
     (αd βd γd αq βq γq θ : ℝ) :
-    -Real.sin θ * ((αq + βq * Real.sin θ + γq * Real.cos θ) - p.convCurrentQ θ) +
-        Real.cos θ * (p.convCurrentD θ - (αd + βd * Real.sin θ + γd * Real.cos θ)) =
+    -Real.sin θ * ((αq + βq * Real.sin θ + γq * Real.cos θ) - p.iQ θ) +
+        Real.cos θ * (p.iD θ - (αd + βd * Real.sin θ + γd * Real.cos θ)) =
       (p.idRef - (βq + γd) / 2) - αq * Real.sin θ - αd * Real.cos θ -
         (γq + βd) / 2 * Real.sin (2 * θ) - (γd - βq) / 2 * Real.cos (2 * θ) := by
-  simp only [FormBParams.convCurrentD, FormBParams.convCurrentQ, Real.sin_two_mul,
+  simp only [Network.iD, Network.iQ, Transform.iparkD, Transform.iparkQ, Real.sin_two_mul,
     Real.cos_two_mul]
   linear_combination (p.idRef - βq) * Real.sin_sq_add_cos_sq θ
 
-namespace FormBParams
+namespace Network
 
-variable (p : FormBParams)
+variable (p : Network)
 
 /-- The form-B phase-detector characteristic
 `h(θ) = (1/(ω_g C_f)) [(i_d* − β_q) − α_q sin θ − α_d cos θ]`. -/
@@ -291,16 +253,16 @@ def formBChar (θ : ℝ) : ℝ :=
 /-- Along the quasi-steady manifold the PLL input is exactly `formBChar θ` (no `2θ` terms). -/
 @[tmio M, powerlib_domain] theorem pllInput_of_quasiSteady (hωC : p.ωg * p.Cf ≠ 0)
     (hΔ : p.lineDet ≠ 0) {θ vcd vcq igd igq : ℝ} (h : p.QuasiSteady θ vcd vcq igd igq) :
-    formBPllInput θ vcd vcq = p.formBChar θ := by
+    Transform.parkQ θ vcd vcq = p.formBChar θ := by
   obtain ⟨hgd, hgq, hvd, hvq⟩ := (p.quasiSteady_iff hωC hΔ θ vcd vcq igd igq).mp h
   have hexp := pllInput_expansion p p.αd p.βd p.γd p.αq p.βq p.γq θ
   obtain ⟨h1, h2⟩ := p.lineCurrent_rotational
   rw [← p.lineCurrentD_eq hΔ, ← p.lineCurrentQ_eq hΔ, h1, h2] at hexp
-  rw [formBPllInput, hvd, hvq, capVoltageD, capVoltageQ, formBChar]
-  have e : -Real.sin θ * ((p.lineCurrentQ θ - p.convCurrentQ θ) / (p.ωg * p.Cf)) +
-      Real.cos θ * ((p.convCurrentD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)) =
-      1 / (p.ωg * p.Cf) * (-Real.sin θ * (p.lineCurrentQ θ - p.convCurrentQ θ) +
-        Real.cos θ * (p.convCurrentD θ - p.lineCurrentD θ)) := by
+  rw [Transform.parkQ, hvd, hvq, capVoltageD, capVoltageQ, formBChar]
+  have e : -Real.sin θ * ((p.lineCurrentQ θ - p.iQ θ) / (p.ωg * p.Cf)) +
+      Real.cos θ * ((p.iD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)) =
+      1 / (p.ωg * p.Cf) * (-Real.sin θ * (p.lineCurrentQ θ - p.iQ θ) +
+        Real.cos θ * (p.iD θ - p.lineCurrentD θ)) := by
     field_simp
   rw [e, hexp]
   ring
@@ -312,6 +274,15 @@ constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
       (-p.αd / (p.ωg * p.Cf)) (-p.αq / (p.ωg * p.Cf)) 0 0 := by
   funext θ
   simp only [formBChar, SpecialFunctions.trigPoly2]
+  ring
+
+/-- `formBChar` is the characteristic `PLL.formBH` of `T-gfl-ph` (1.3) with
+`c₀ = i_d* − β_q`, `c₁ = −α_q`, `c₂ = −α_d` and no double-angle terms, `c₃ = c₄ = 0`; its
+potential is `PLL.formBPotential` with these coefficients (`PLL.hasDerivAt_formBPotential`). -/
+@[tmio M, powerlib_domain] theorem formBChar_eq_formBH :
+    p.formBChar = PLL.formBH p.ωg p.Cf (p.idRef - p.βq) (-p.αq) (-p.αd) 0 0 := by
+  funext θ
+  simp only [formBChar, PLL.formBH]
   ring
 
 @[tmio M, powerlib_domain] theorem contDiff_formBChar : ContDiff ℝ 1 p.formBChar := by
@@ -340,12 +311,12 @@ constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
   have hXz : p.lineX = 0 := (mul_eq_zero.mp h2).resolve_right hVg
   exact hΔ (by simp [lineDet_eq, hR, hXz])
 
-end FormBParams
+end Network
 
 /-- The reduced form-B GFL-PLL `θ̇ = K_p h_B(θ) + K_i η − δω`, `η̇ = h_B(θ)` (with `h_B` the exact
 quasi-steady characteristic) has at most two equilibria with `θ` in any window `[a, a + 2π)`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem formB_equilibria_ncard_le_two (p : FormBParams) {Kp Ki δω : ℝ}
+@[tmio M, powerlib_domain] theorem formB_equilibria_ncard_le_two (p : Network) {Kp Ki δω : ℝ}
     (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) (hKi : Ki ≠ 0) (a : ℝ) :
     {x : ℝ² | piPLLField p.formBChar Kp Ki δω x = 0 ∧
       x 0 ∈ Ico a (a + 2 * Real.pi)}.ncard ≤ 2 := by
@@ -357,10 +328,57 @@ Static evidence on the model, not a connection conclusion. -/
   · rintro x ⟨hx, hxa⟩
     refine ⟨hxa, ?_⟩
     have := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).1
-    rwa [FormBParams.formBChar_eq_trigPoly2] at this
+    rwa [Network.formBChar_eq_trigPoly2] at this
   · rintro x ⟨hx, -⟩ y ⟨hy, -⟩ hxy
     have h1 := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).2
     have h2 := ((PLL.piPLLField_eq_zero_iff hKi y).mp hy).2
     exact PhasePlane.ext_iff'.mpr ⟨hxy, by rw [h1, h2]⟩
+
+/-! ## Form B as a reading of the reduction -/
+
+namespace Params
+
+variable (p : Params)
+
+/-- **The form-B characteristic is the PLL error signal of the reduction**: `formBChar = h` for
+every parameter set. With `ω_g C_f ≠ 0` the parametrizations correspond by `R_g = a/(ω_g C_f)`,
+`X = (1 − b)/(ω_g C_f)`, `lineDet = Δ/(ω_g C_f)²` (so `lineDet ≠ 0 ↔ Δ ≠ 0`),
+`α_q/(ω_g C_f) = (1 − b) V_g/Δ`, `α_d/(ω_g C_f) = a V_g/Δ` and `(i_d* − β_q)/(ω_g C_f) = c₀`
+(`h_eq`); in the degenerate cases `ω_g C_f = 0` (both vanish) and `Δ = 0` (both are
+`i_d*/(ω_g C_f)`, `Network.sin_iQ_add_cos_iD`) the identity holds as well. -/
+@[tmio M, powerlib_domain] theorem formBChar_eq_h : p.formBChar = p.h := by
+  funext θ
+  by_cases hwC : p.wC = 0
+  · have h0 : p.ωg * p.Cf = 0 := hwC
+    simp [Network.formBChar, h0, h, hE, vcD, vcQ, hwC, Transform.parkQ]
+  have hω : p.ωg ≠ 0 := left_ne_zero_of_mul hwC
+  have hC : p.Cf ≠ 0 := right_ne_zero_of_mul hwC
+  have hX : p.lineX = (1 - p.b) / p.wC := by
+    simp only [Network.lineX, Network.seriesBranch, Passive.SeriesRLC.reactance, b, wC]
+    field_simp
+    ring
+  have hR : p.Rg = p.a / p.wC := by
+    simp only [a, wC]
+    field_simp
+  have hdet : p.lineDet = p.Δ / p.wC ^ 2 := by
+    rw [Network.lineDet_eq, hX, hR, Δ]
+    field_simp
+    ring
+  by_cases hΔ : p.Δ = 0
+  · have hd0 : p.lineDet = 0 := by rw [hdet, hΔ, zero_div]
+    have hs := p.sin_iQ_add_cos_iD θ
+    simp only [Network.formBChar, Network.αq, Network.αd, Network.βq, hd0, h, hE, vcD, vcQ,
+      igD, igQ, solD, solQ, hΔ, Transform.parkQ, div_zero, mul_zero, sub_zero]
+    rw [← hs]
+    simp only [wC]
+    field_simp
+    ring
+  · rw [p.h_eq hwC hΔ]
+    simp only [Network.formBChar, Network.αq, Network.αd, Network.βq, hdet, hX, hR, c0]
+    simp only [wC] at hwC ⊢
+    field_simp
+    ring
+
+end Params
 
 end powerlib.GFL.LCLine

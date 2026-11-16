@@ -24,6 +24,12 @@ Results.
 * `|c| = A`: exactly one zero, where the derivative vanishes (`ncard_sinusoidZeros_of_eq`).
 * `|c| > A`: no zero (`sinusoidZeros_eq_empty`).
 * Explicitly `stableRoot ≡ arcsin(c/A) − φ` and `saddleRoot ≡ π − arcsin(c/A) − φ (mod 2π)`.
+* The power-angle law: `X i = −V sin θ` gives `V cos θ · i = −(V²/(2X)) sin 2θ`
+  (`mul_cos_mul_eq_neg_sin_two_mul`); `K sin 2θ = c` is solvable iff `|c| ≤ K`
+  (`exists_mul_sin_two_mul_eq_iff`, `K > 0`); at its extremes `|sin 2θ| = 1` one has
+  `sin² θ = 1/2` (`sin_sq_eq_half_of_abs_sin_two_mul`). Used by the quasi-static GFL power loop
+  and model B (`theorem/GridTiedConverter/GFL/PowerLoop/QuasiStatic.lean`,
+  `theorem/GridTiedConverter/GFL/DCLink/ReducedOrder.lean`).
 -/
 
 noncomputable section
@@ -220,6 +226,41 @@ variable {c A φ a : ℝ}
     exact sinusoid_ne_zero_of_lt hA.le h θ hθ
   · intro hc
     exact ⟨stableRoot c A φ 0, stableRoot_zero hc hA⟩
+
+/-! ## The power-angle law -/
+
+/-- The power-angle identity: if `X i = −V sin θ` (`X ≠ 0`), the product `V cos θ · i` is
+`−(V² / (2X)) sin 2θ`. -/
+@[tmio T, powerlib_foundation] theorem mul_cos_mul_eq_neg_sin_two_mul {X V θ i : ℝ} (hX : X ≠ 0)
+    (h : X * i = -(V * sin θ)) : V * cos θ * i = -(V ^ 2 / (2 * X) * sin (2 * θ)) := by
+  have hi : i = -(V * sin θ) / X := by
+    field_simp
+    linarith
+  rw [hi, sin_two_mul]
+  field_simp
+
+/-- The power-angle law: `K sin 2θ` takes the value `c` for some `θ` exactly when `|c| ≤ K`
+(`K > 0`; `exists_sinusoid_zero_iff` at `2θ`). -/
+@[tmio T, powerlib_foundation] theorem exists_mul_sin_two_mul_eq_iff {K c : ℝ} (hK : 0 < K) :
+    (∃ θ, K * sin (2 * θ) = c) ↔ |c| ≤ K := by
+  rw [← exists_sinusoid_zero_iff (φ := 0) hK]
+  constructor
+  · rintro ⟨θ, hθ⟩
+    exact ⟨2 * θ, by rw [add_zero, hθ, sub_self]⟩
+  · rintro ⟨φ, hφ⟩
+    exact ⟨φ / 2, by rw [mul_div_cancel₀ _ two_ne_zero]; rw [add_zero] at hφ; linarith⟩
+
+/-- At the extremes of `sin 2θ` (`|sin 2θ| = 1`, the fold of the power-angle law) the angle has
+`sin² θ = 1/2`. -/
+@[tmio T, powerlib_foundation] theorem sin_sq_eq_half_of_abs_sin_two_mul {θ : ℝ}
+    (h : |sin (2 * θ)| = 1) : sin θ ^ 2 = 1 / 2 := by
+  have hsq : sin (2 * θ) ^ 2 = 1 := by rw [← sq_abs, h, one_pow]
+  have hcos : cos (2 * θ) = 0 := by
+    have := sin_sq_add_cos_sq (2 * θ)
+    rw [hsq] at this
+    exact pow_eq_zero_iff (n := 2) two_ne_zero |>.mp (by linarith)
+  rw [cos_two_mul, cos_sq'] at hcos
+  linarith
 
 end
 

@@ -42,14 +42,17 @@ polynomials and their identities are generic, in `Dynamics.Degenerate`
 * `hopfN_sub_hopfN3_isBigO`: `N − N₃ = O(φ⁴)` (Mathlib's `Real.sin_bound`, `Real.cos_bound`).
 * `hasFDerivAt_lyapPoly`, `contDiff_lyapPoly`: derivative and smoothness of the polynomial in the
   coordinates `(φ, w)`.
+* The stability laws of a `C¹` field in this normal form (generic, same module):
+  `localAsymptoticStable_of_sineLienard` (`κ > 0`), `unstable_of_sineLienard` (`κ < 0`, Chetaev)
+  and `not_localAsymptoticStable_of_sineLienard_conservative` (`β = 0`, conserved energy).
 Since `α/A = det J/A² > 0`, `κ > 0 ⇔ k_p k_i < 0`.
 
 Family and connection conclusions.
 * `mem_den_locallyAsymptoticallyStable_of_hopf`: on the boundary (balanced, `D₀ ≠ 0`, `tr J = 0`,
   `det J > 0`) with `k_p k_i < 0` the point is locally asymptotically stable — a supercritical
-  Hopf point, decided by `hopfW` through `Dynamics.localAsymptoticStable_of_eventually_lyapunov`.
+  Hopf point, decided by `hopfW` (`Dynamics.Degenerate.localAsymptoticStable_of_sineLienard`).
 * `mem_den_unstable_of_hopf`: on the boundary with `k_p k_i > 0` it is unstable (subcritical;
-  Chetaev with the same polynomial, `Dynamics.unstable_of_eventually_chetaev`).
+  Chetaev with the same polynomial, `Dynamics.Degenerate.unstable_of_sineLienard`).
 * `mem_den_unstable_of_tan_eq`: with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`,
   `cos θ > 0`) the point exactly at the boundary angle `tan θ = ω_s k_p/k_i` is unstable;
   `mem_den_locallyAsymptoticallyStable_iff_tan_lt`: with physical gains the point is locally
@@ -75,303 +78,8 @@ opposite signs, which give a supercritical boundary.
 noncomputable section
 namespace powerlib.GFL.RatePLL
 open Filter Topology Asymptotics
-open powerlib.Dynamics.Degenerate (hopfN hopfN3 lyapPoly lyapPolyφ lyapPolyw hopfκ hopfW hopfWφ
-  hopfWw hopf_lie_poly hopfN_sub_hopfN3_isBigO hasFDerivAt_lyapPoly contDiff_lyapPoly)
-
-/-! ## Local analysis of the normal form (implementation evidence) -/
-
-section NormalForm
-
-@[tmio T, powerlib_foundation]
-private theorem coord0_isBigO (b : ℝ) :
-    (fun z : Dynamics.State 2 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1 - b * z 0| :=
-  IsBigO.of_bound 1 (Eventually.of_forall fun z => by
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
-    exact (le_add_of_nonneg_right (abs_nonneg _)).trans (le_abs_self _))
-
-@[tmio T, powerlib_foundation] private theorem coord1_isBigO (b : ℝ) :
-    (fun z : Dynamics.State 2 => z 1 - b * z 0) =O[𝓝 0] fun z => |z 0| + |z 1 - b * z 0| :=
-  IsBigO.of_bound 1 (Eventually.of_forall fun z => by
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
-    exact (le_add_of_nonneg_left (abs_nonneg _)).trans (le_abs_self _))
-
-@[tmio T, powerlib_foundation] private theorem size_tendsto (b : ℝ) :
-    Tendsto (fun z : Dynamics.State 2 => |z 0| + |z 1 - b * z 0|) (𝓝 0) (𝓝 0) := by
-  have hc : Continuous (fun z : Dynamics.State 2 => |z 0| + |z 1 - b * z 0|) := by fun_prop
-  simpa using hc.tendsto 0
-
-@[tmio T, powerlib_foundation] private theorem mono_isBigO {f : Dynamics.State 2 → ℝ} (b c : ℝ) (i j k : ℕ) (h : k ≤ i + j)
-    (hf : ∀ z, f z = c * (z 0 ^ i * (z 1 - b * z 0) ^ j)) :
-    f =O[𝓝 0] fun z => (|z 0| + |z 1 - b * z 0|) ^ k := by
-  have := ((Dynamics.isBigO_monomial (coord0_isBigO b) (coord1_isBigO b) i j).trans
-    (Dynamics.isBigO_pow_of_tendsto (size_tendsto b) h)).const_mul_left c
-  exact this.congr_left fun z => (hf z).symm
-
-@[tmio T, powerlib_foundation] private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
-    (fun z : Dynamics.State 2 => lyapPolyφ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
-  unfold lyapPolyφ
-  exact (((((mono_isBigO b 1 1 0 1 le_rfl fun z => by ring).add
-    (mono_isBigO b (2 * c₂) 1 1 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (3 * c₃) 2 0 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b c₄ 0 3 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (3 * c₅) 2 1 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (4 * c₆) 3 0 1 (by norm_num) fun z => by ring)
-
-@[tmio T, powerlib_foundation] private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
-    (fun z : Dynamics.State 2 => lyapPolyw q c₀ c₂ c₄ c₅ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
-  unfold lyapPolyw
-  exact ((((mono_isBigO b q 0 1 1 le_rfl fun z => by ring).add
-    (mono_isBigO b (3 * c₀) 0 2 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b c₂ 2 0 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (3 * c₄) 1 2 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b c₅ 3 0 1 (by norm_num) fun z => by ring)
-
-/-- The cubic and quartic part of `lyapPoly` is `O(s³)`. -/
-@[tmio T, powerlib_foundation] private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
-    (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0) -
-        1 / 2 * (z 0 ^ 2 + q * (z 1 - b * z 0) ^ 2)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1 - b * z 0|) ^ 3 := by
-  have := (((((mono_isBigO (f := fun z => c₀ * (z 1 - b * z 0) ^ 3) b c₀ 0 3 3 le_rfl
-      fun z => by ring).add
-    (mono_isBigO (f := fun z => c₂ * (z 0 ^ 2 * (z 1 - b * z 0))) b c₂ 2 1 3 le_rfl
-      fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₃ * z 0 ^ 3) b c₃ 3 0 3 le_rfl fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₄ * (z 0 * (z 1 - b * z 0) ^ 3)) b c₄ 1 3 3 (by norm_num)
-      fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₅ * (z 0 ^ 3 * (z 1 - b * z 0))) b c₅ 3 1 3 (by norm_num)
-      fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₆ * z 0 ^ 4) b c₆ 4 0 3 (by norm_num) fun z => by ring)
-  refine this.congr_left fun z => ?_
-  unfold lyapPoly
-  ring
-
-/-- `s² ≤ 2(1 + 1/ρ)(φ² + ρw²)` for `ρ > 0`. -/
-@[tmio T, powerlib_foundation] private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :
-    (|φ| + |w|) ^ 2 ≤ 2 * (1 + 1 / ρ) * (φ ^ 2 + ρ * w ^ 2) := by
-  have h1 : (|φ| + |w|) ^ 2 ≤ 2 * φ ^ 2 + 2 * w ^ 2 := by
-    nlinarith [sq_abs φ, sq_abs w, sq_nonneg (|φ| - |w|)]
-  have h2 : 2 * (1 + 1 / ρ) * (φ ^ 2 + ρ * w ^ 2) =
-      2 * φ ^ 2 + 2 * w ^ 2 + 2 * ρ * w ^ 2 + 2 / ρ * φ ^ 2 := by
-    field_simp
-    ring
-  have h3 : 0 ≤ 2 * ρ * w ^ 2 := by positivity
-  have h4 : 0 ≤ 2 / ρ * φ ^ 2 := by positivity
-  linarith
-
-/-- The quadratic form `φ² + ρ w²` vanishes only at the origin. -/
-@[tmio T, powerlib_foundation] private theorem quad_pos {ρ b : ℝ} (hρ : 0 < ρ) {z : Dynamics.State 2} (hz : z ≠ 0) :
-    0 < z 0 ^ 2 + ρ * (z 1 - b * z 0) ^ 2 := by
-  by_contra h
-  push Not at h
-  have h0 : z 0 = 0 := by nlinarith [sq_nonneg (z 0), sq_nonneg (z 1 - b * z 0)]
-  have h1 : z 1 - b * z 0 = 0 := by
-    have : ρ * (z 1 - b * z 0) ^ 2 ≤ 0 := by nlinarith [sq_nonneg (z 0)]
-    have : (z 1 - b * z 0) ^ 2 ≤ 0 := by
-      by_contra hc; push Not at hc; nlinarith
-    exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp (le_antisymm this (sq_nonneg _))
-  apply hz
-  ext i
-  fin_cases i
-  · simpa using h0
-  · simp only [Fin.mk_one, PiLp.zero_apply]
-    rw [h0, mul_zero, sub_zero] at h1
-    exact h1
-
-variable {A B α β b : ℝ}
-
-/-- The Lie derivative of the normal-form Lyapunov polynomial along a field in normal form. -/
-@[tmio T, powerlib_foundation] private theorem hopf_lie_eq {g : Dynamics.State 2 → Dynamics.State 2}
-    (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
-    (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) (z : Dynamics.State 2) :
-    fderiv ℝ (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0)) z (g z) =
-      hopfWφ A B α β (z 0) (z 1 - b * z 0) * (α * (z 1 - b * z 0) + β * hopfN A B (z 0)) +
-        hopfWw A B α β (z 0) (z 1 - b * z 0) * (-A * z 0 + hopfN A B (z 0)) := by
-  have hd : HasFDerivAt (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0))
-      (hopfWφ A B α β (z 0) (z 1 - b * z 0) •
-          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
-        hopfWw A B α β (z 0) (z 1 - b * z 0) •
-          ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ) -
-            b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ))) z :=
-    hasFDerivAt_lyapPoly _ _ _ _ _ _ _ b z
-  rw [hd.fderiv, ← hg0 z, ← hg1 z]
-  simp
-
-/-- Normal form: `V̇ + κ Q² = o(Q²)`, `Q = φ² + (α/A) w²`. -/
-@[tmio T, powerlib_foundation] private theorem hopf_lie_isLittleO (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
-    {g : Dynamics.State 2 → Dynamics.State 2}
-    (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
-    (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
-    (fun z => fderiv ℝ (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0)) z (g z) +
-        hopfκ A B β * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) ^ 2) =o[𝓝 0]
-      fun z => (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) ^ 2 := by
-  set s : Dynamics.State 2 → ℝ := fun z => |z 0| + |z 1 - b * z 0| with hs
-  -- the eight monomials of degree five and six
-  have hR : (fun z : Dynamics.State 2 =>
-      B * α * β ^ 2 * (A ^ 2 + B ^ 2) / (32 * A ^ 3) * (z 0 ^ 2 * (z 1 - b * z 0) ^ 3) +
-      B * α * β * (25 * A ^ 2 + 9 * B ^ 2) / (96 * A ^ 3) * (z 0 ^ 3 * (z 1 - b * z 0) ^ 2) +
-      α * β ^ 2 * (A ^ 2 + B ^ 2) / (96 * A ^ 2) * (z 0 ^ 3 * (z 1 - b * z 0) ^ 3) +
-      B * β ^ 2 * (31 * A ^ 2 - 9 * B ^ 2) / (96 * A ^ 2) * (z 0 ^ 4 * (z 1 - b * z 0) ^ 1) +
-      α * β * (A ^ 2 + B ^ 2) / (32 * A ^ 2) * (z 0 ^ 4 * (z 1 - b * z 0) ^ 2) +
-      -B * β * (A ^ 2 * α + 8 * A * B ^ 2 * β ^ 2 + B ^ 2 * α) / (32 * A ^ 2 * α) *
-        (z 0 ^ 5 * (z 1 - b * z 0) ^ 0) +
-      β ^ 2 * (5 * A ^ 2 - 3 * B ^ 2) / (96 * A) * (z 0 ^ 5 * (z 1 - b * z 0) ^ 1) +
-      -β * (A ^ 2 * α + 8 * A * B ^ 2 * β ^ 2 + B ^ 2 * α) / (96 * A * α) *
-        (z 0 ^ 6 * (z 1 - b * z 0) ^ 0)) =O[𝓝 0] fun z => s z ^ 5 :=
-    ((((((((mono_isBigO b _ 2 3 5 le_rfl fun z => rfl).add
-      (mono_isBigO b _ 3 2 5 le_rfl fun z => rfl)).add
-      (mono_isBigO b _ 3 3 5 (by norm_num) fun z => rfl)).add
-      (mono_isBigO b _ 4 1 5 le_rfl fun z => rfl)).add
-      (mono_isBigO b _ 4 2 5 (by norm_num) fun z => rfl)).add
-      (mono_isBigO b _ 5 0 5 le_rfl fun z => rfl)).add
-      (mono_isBigO b _ 5 1 5 (by norm_num) fun z => rfl)).add
-      (mono_isBigO b _ 6 0 5 (by norm_num) fun z => rfl))
-  -- the Taylor remainder of `N` times the gradient
-  have hN : (fun z : Dynamics.State 2 => hopfN A B (z 0) - hopfN3 A B (z 0)) =O[𝓝 0]
-      fun z => s z ^ 4 := by
-    have h1 := (hopfN_sub_hopfN3_isBigO A B).comp_tendsto
-      ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
-        Dynamics.State 2 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp))
-    exact h1.trans ((coord0_isBigO b).pow 4)
-  have hG : (fun z : Dynamics.State 2 =>
-      β * hopfWφ A B α β (z 0) (z 1 - b * z 0) + hopfWw A B α β (z 0) (z 1 - b * z 0)) =O[𝓝 0]
-      fun z => s z ^ 1 :=
-    ((lyapPolyφ_isBigO b _ _ _ _ _).const_mul_left β).add (lyapPolyw_isBigO b _ _ _ _ _)
-  have hNG := (hN.mul hG).congr_right (fun z => by rw [← pow_add])
-  have htot : (fun z => fderiv ℝ (fun z : Dynamics.State 2 => hopfW A B α β (z 0)
-      (z 1 - b * z 0)) z (g z) + hopfκ A B β * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) ^ 2)
-      =O[𝓝 0] fun z => s z ^ 5 := by
-    refine (hR.add hNG).congr_left fun z => ?_
-    rw [hopf_lie_eq hg0 hg1 z]
-    linear_combination (-1 : ℝ) * hopf_lie_poly (B := B) (β := β) hA hα (z 0) (z 1 - b * z 0)
-  have hs4 : (fun z => s z ^ 4) =O[𝓝 0]
-      fun z => (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) ^ 2 := by
-    refine IsBigO.of_bound ((2 * (1 + 1 / (α / A))) ^ 2) (Eventually.of_forall fun z => ?_)
-    have h := size_sq_le hq (z 0) (z 1 - b * z 0)
-    have hQ : 0 ≤ z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2 := by positivity
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by positivity),
-      abs_of_nonneg (by positivity)]
-    calc s z ^ 4 = (s z ^ 2) ^ 2 := by ring
-      _ ≤ (2 * (1 + 1 / (α / A)) * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2)) ^ 2 :=
-          pow_le_pow_left₀ (by positivity) h 2
-      _ = _ := by ring
-  exact htot.trans_isLittleO ((Dynamics.isLittleO_pow_of_tendsto (size_tendsto b)
-    (by norm_num : 4 < 5)).trans_isBigO hs4)
-
-/-- `W − Q/2 = o(Q/2)`. -/
-@[tmio T, powerlib_foundation] private theorem hopfW_isLittleO (hq : 0 < α / A) :
-    (fun z : Dynamics.State 2 => hopfW A B α β (z 0) (z 1 - b * z 0) -
-        1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2)) =o[𝓝 0]
-      fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) := by
-  have hs2 : (fun z : Dynamics.State 2 => (|z 0| + |z 1 - b * z 0|) ^ 2) =O[𝓝 0]
-      fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) := by
-    refine IsBigO.of_bound (4 * (1 + 1 / (α / A))) (Eventually.of_forall fun z => ?_)
-    have h := size_sq_le hq (z 0) (z 1 - b * z 0)
-    have hQ : 0 ≤ 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) := by positivity
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg (|z 0| + |z 1 - b * z 0|)),
-      abs_of_nonneg hQ]
-    linarith
-  exact (lyapPoly_sub_isBigO b _ _ _ _ _ _ _).trans_isLittleO
-    ((Dynamics.isLittleO_pow_of_tendsto (size_tendsto b) (by norm_num : 2 < 3)).trans_isBigO hs2)
-
-/-- **Supercritical boundary.** A `C¹` field in normal form with `κ > 0` is locally
-asymptotically stable at the origin. -/
-@[tmio TM, powerlib_foundation] private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ : 0 < hopfκ A B β)
-    {g : Dynamics.State 2 → Dynamics.State 2} (hgc : ContDiff ℝ 1 g)
-    (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
-    (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
-    LocalAsymptoticStable g 0 := by
-  have hQ : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 2), 0 < z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2 :=
-    eventually_nhdsWithin_of_forall fun z hz => quad_pos hq hz
-  refine Dynamics.localAsymptoticStable_of_eventually_lyapunov
-    (W := fun z => hopfW A B α β (z 0) (z 1 - b * z 0)) two_pos hgc
-    (contDiff_lyapPoly _ _ _ _ _ _ _ b) (by simp [hopfW, lyapPoly]) ?_ ?_
-  · exact Dynamics.eventually_pos_of_isLittleO
-      (q := fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2))
-      (hQ.mono fun z hz => by positivity) ((hopfW_isLittleO hq).mono nhdsWithin_le_nhds)
-  · exact Dynamics.eventually_neg_of_isLittleO
-      (q := fun z => hopfκ A B β * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) ^ 2)
-      (hQ.mono fun z hz => by positivity)
-      (((hopf_lie_isLittleO hA hα hq hg0 hg1).const_mul_right hκ.ne').mono nhdsWithin_le_nhds)
-
-/-- **Subcritical boundary.** A `C¹` field in normal form with `κ < 0` is unstable at the
-origin (Chetaev with the same polynomial). -/
-@[tmio TM, powerlib_foundation] private theorem hopf_unstable (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A)
-    (hκ : hopfκ A B β < 0) {g : Dynamics.State 2 → Dynamics.State 2} (hgc : ContDiff ℝ 1 g)
-    (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
-    (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
-    Unstable g 0 := by
-  have hQ : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 2), 0 < z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2 :=
-    eventually_nhdsWithin_of_forall fun z hz => quad_pos hq hz
-  have hκ' : 0 < -hopfκ A B β := neg_pos.mpr hκ
-  refine Dynamics.unstable_of_eventually_chetaev
-    (W := fun z => hopfW A B α β (z 0) (z 1 - b * z 0)) two_pos hgc
-    (contDiff_lyapPoly _ _ _ _ _ _ _ b) (by simp [hopfW, lyapPoly]) ?_ ?_
-  · exact Dynamics.eventually_pos_of_isLittleO
-      (q := fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2))
-      (hQ.mono fun z hz => by positivity) ((hopfW_isLittleO hq).mono nhdsWithin_le_nhds)
-  · refine Dynamics.eventually_pos_of_isLittleO
-      (q := fun z => -hopfκ A B β * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2) ^ 2)
-      (hQ.mono fun z hz => by positivity) ?_
-    refine (((hopf_lie_isLittleO hA hα hq hg0 hg1).const_mul_right hκ'.ne').mono
-      nhdsWithin_le_nhds).congr_left fun z => ?_
-    ring
-
-/-- **Conservative boundary.** With `β = 0` the normal form conserves
-`E = α w²/2 + A(1 − cos φ) − B(φ − sin φ)`, so the origin is not locally asymptotically
-stable. -/
-@[tmio TM, powerlib_foundation] private theorem hopf_conservative_not_las (hα : α ≠ 0) {g : Dynamics.State 2 → Dynamics.State 2}
-    (hgc : ContDiff ℝ 1 g)
-    (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + 0 * hopfN A B (z 0))
-    (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) :
-    ¬ LocalAsymptoticStable g 0 := by
-  set E : Dynamics.State 2 → ℝ := fun z => -α * (α / 2 * (z 1 - b * z 0) ^ 2 +
-    A * (1 - Real.cos (z 0)) - B * (z 0 - Real.sin (z 0))) with hE
-  have hd : ∀ z : Dynamics.State 2, HasFDerivAt E
-      ((-α * (A * Real.sin (z 0) - B * (1 - Real.cos (z 0)))) •
-          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
-        (-α * (α * (z 1 - b * z 0))) •
-          ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ) -
-            b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ))) z := by
-    intro z
-    have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
-      Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
-    have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
-      Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
-    have hw := h1.sub (h0.const_mul b)
-    have hc := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z h0
-    have hs := (Real.hasDerivAt_sin (z 0)).comp_hasFDerivAt z h0
-    have h := ((((hw.pow 2).const_mul (α / 2)).add ((hc.const_sub 1).const_mul A)).sub
-      ((h0.sub hs).const_mul B)).const_mul (-α)
-    refine h.congr_fderiv ?_
-    ext v
-    simp
-    ring
-  have hEd : Differentiable ℝ E := fun z => (hd z).differentiableAt
-  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos hgc hEd
-    (Eventually.of_forall fun z => ?_) ?_
-  · rw [(hd z).fderiv]
-    have key : (-α * (A * Real.sin (z 0) - B * (1 - Real.cos (z 0)))) * (g z) 0 +
-        (-α * (α * (z 1 - b * z 0))) * ((g z) 1 - b * (g z) 0) = 0 := by
-      rw [hg1 z, hg0 z]
-      unfold hopfN
-      ring
-    simp only [add_apply, smul_apply, sub_apply, PiLp.proj_apply, smul_eq_mul]
-    linarith [key]
-  · rw [Filter.frequently_iff]
-    intro U hU
-    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hU
-    refine ⟨EuclideanSpace.single 1 (ε / 2), hball ?_, ?_⟩
-    · rw [Metric.mem_ball, dist_zero_right, EuclideanSpace.single, PiLp.norm_single,
-        Real.norm_eq_abs, abs_of_pos (half_pos hε)]
-      linarith
-    · simp only [hE, PiLp.zero_apply]
-      simp
-      have h2 : 0 < α ^ 2 * ε ^ 2 := by positivity
-      nlinarith [h2]
-
-end NormalForm
+open powerlib.Dynamics.Degenerate (hopfN hopfκ localAsymptoticStable_of_sineLienard
+  unstable_of_sineLienard not_localAsymptoticStable_of_sineLienard_conservative)
 
 /-! ## The rate-coupled PLL at the boundary angle -/
 
@@ -664,8 +372,8 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change ¬ LocalAsymptoticStable m.field 0
   have hα := model_kiD0_ne_zero hD0 hdet
-  exact hopf_conservative_not_las hα m.field_contDiff
-    (fun z => by rw [model_hg0 heq hD0 htr z, hkp, zero_div]) (model_hg1 heq)
+  exact not_localAsymptoticStable_of_sineLienard_conservative hα m.field_contDiff
+    (fun z => by rw [model_hg0 heq hD0 htr z, hkp, zero_div, zero_mul, add_zero]) (model_hg1 heq)
 
 end Members
 
@@ -687,7 +395,8 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
   have hA := model_Vcos_ne_zero hD0 hdet
   have hα := model_kiD0_ne_zero hD0 hdet
   have hq := model_ratio_pos hD0 hdet
-  exact hopf_las hA hα hq (model_kappa_pos hD0 hdet hk) m.field_contDiff
+  exact localAsymptoticStable_of_sineLienard hA hα hq (model_kappa_pos hD0 hdet hk)
+    m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL on the boundary `tr J = 0` with gains of equal signs, `k_p k_i > 0`: a
@@ -703,7 +412,7 @@ subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ <
   have hA := model_Vcos_ne_zero hD0 hdet
   have hα := model_kiD0_ne_zero hD0 hdet
   have hq := model_ratio_pos hD0 hdet
-  exact hopf_unstable hA hα hq (model_kappa_neg hD0 hdet hk) m.field_contDiff
+  exact unstable_of_sineLienard hA hα hq (model_kappa_neg hD0 hdet hk) m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`)

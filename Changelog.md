@@ -185,6 +185,46 @@ in Git; working statistics, build receipts and development plans are not kept he
   - Classified theorems 7550 → 7530 (GFL 879 → 837); public connection theorems
     1052 → 1059 (new generic connection laws).
 
+- Consolidated the grid-following converter models, second round: models that are
+  the same object are now connected by exact maps and readings, so shared results
+  are proved once and transported.
+  - Model B is the hub of the four-state DC-link models. New
+    `CarrierParams.toModelB`, `carrierField_eq_modelB_field` (the basin-guard
+    carrier field is model B's field under a parameter map),
+    `ModelBParams.fourStateParams`, `ModelBParams.field_eq_transport`,
+    `ModelB.Model.toFourState`, `ModelB.mem_den_iff_fourState` (new module
+    `DCLink/ModelBFourState`) and `BasinGuard.mem_den_iff_modelB`, with scaffolds
+    `BasinGuardModelB.agda` and `ModelBFourState.agda`;
+    `BasinGuard.mem_den_iff_fourState` is now their composition. Transported:
+    `BasinGuard.mem_den_locallyExponentiallyStable_iff_modelB` (every `I_q*`,
+    `V_dc* ≠ 0`), `BasinGuard.collapsePoint_mem_den_locallyExponentiallyStable`
+    and `not_exactUnder_iqZero_locallyExponentiallyStable`, which settle the
+    carrier's previously undecided cases. The carrier's own re-derivations are
+    removed: `carrierField_contDiffOn` → `ModelBParams.field_contDiffOn`,
+    `equilibrium_Vdc` → `ModelBParams.equilibrium_Vdc`, `equilibrium_Kip_xp` →
+    `ModelBParams.equilibrium_ki_xpll`, `dcNode_partial_Vdc` → `ModelBParams.jacobian`,
+    `carrierField_eq_transport` → `carrierField_eq_modelB_field` with
+    `ModelBParams.field_eq_transport`; `dcNode_partial_Vdc_eq_zero_iff` now states
+    the Jacobian entry.
+  - One LC-network record `LCLine.Network`, extended by `LCLine.Params`; form B is
+    stated on it (`FormBParams` and its `QuasiSteady`, `lineDet`, `formBChar`, … →
+    `LCLine.Network.*`; `convCurrentD/Q` → `Network.iD/iQ`; `cc_projection` →
+    `Network.sin_iQ_add_cos_iD`; `LCLine.formBPllInput` → `Transform.parkQ`). New
+    `LCLine.Params.formBChar_eq_h` (form B and the reduction chain give the same
+    detector characteristic, for every parameter set) and
+    `Network.formBChar_eq_formBH`.
+  - Power-angle law once in `SpecialFunctions/Sinusoid`:
+    `mul_cos_mul_eq_neg_sin_two_mul`, `exists_mul_sin_two_mul_eq_iff`,
+    `sin_sq_eq_half_of_abs_sin_two_mul`, used by the quasi-static power loop and
+    model B.
+  - The sine–Liénard weak-focus laws are general results in
+    `Dynamics/Degenerate/WeakFocus`: `localAsymptoticStable_of_sineLienard`,
+    `unstable_of_sineLienard`,
+    `not_localAsymptoticStable_of_sineLienard_conservative` (formerly private in
+    `RatePLLHopf`).
+  - Classified theorems 7530 → 7537 (GFL 837 → 826); public connection theorems
+    1059 → 1064.
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

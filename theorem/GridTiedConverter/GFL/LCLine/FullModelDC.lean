@@ -162,10 +162,10 @@ def PbrAlg (θ : ℝ) : ℝ :=
     p.Rf * (p.idRef ^ 2 + p.iqRef ^ 2))
 
 @[tmio M, powerlib_domain] theorem icD_qssState (θ η : ℝ) : icD (p.qssState θ η) = p.idRef := by
-  simp [icD, qssState, iD, iQ]
+  simp [icD, qssState, Network.iD, Network.iQ]
 
 @[tmio M, powerlib_domain] theorem icQ_qssState (θ η : ℝ) : icQ (p.qssState θ η) = p.iqRef := by
-  simp [icQ, qssState, iD, iQ]
+  simp [icQ, qssState, Network.iD, Network.iQ]
 
 /-- `P_br = (3/2) u^c · i^c` evaluated on the quasi-steady set (`K_i^cc ≠ 0`). -/
 @[tmio M, powerlib_domain] theorem bridgePower_qss (hKicc : p.Kicc ≠ 0) (θ η : ℝ) :
@@ -196,12 +196,12 @@ def PbrAlg (θ : ℝ) : ℝ :=
         p.Δ := by
     simp only [igD, igQ, solD, solQ]; field_simp; ring
   have s3 : p.iD θ ^ 2 + p.iQ θ ^ 2 = p.idRef ^ 2 + p.iqRef ^ 2 := by
-    simp only [iD, iQ, iparkD, iparkQ]
+    simp only [Network.iD, Network.iQ, iparkD, iparkQ]
     linear_combination (p.idRef ^ 2 + p.iqRef ^ 2) * sin_sq_add_cos_sq θ
   have s4 : (1 - p.b) * p.iD θ - p.a * p.iQ θ =
       p.idRef * ((1 - p.b) * cos θ - p.a * sin θ) -
         p.iqRef * ((1 - p.b) * sin θ + p.a * cos θ) := by
-    simp only [iD, iQ, iparkD, iparkQ]; ring
+    simp only [Network.iD, Network.iQ, iparkD, iparkQ]; ring
   have ha : p.a = p.wC * p.Rg := rfl
   rw [PbrAlg, s1, s2, s3, s4, ha]
   field_simp

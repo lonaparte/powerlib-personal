@@ -4,21 +4,28 @@ module theorem.GridTiedConverter.GFL.DCLink.BasinGuardFourState where
 
 -- Scaffold of the reading of the basin-guard carrier family through the four-state DC-link
 -- family (`BasinGuard.family` of `theorem/GridTiedConverter/GFL/DCLink/BasinGuard.lean` read
--- through `FourState.family` of `theorem/GridTiedConverter/GFL/DCLink/FourState.lean`). With no
--- quadrature current reference (`I_q* = 0`), at a point with `V_dc* = 1` and `K_i^pll x_p* = 0`,
--- the carrier field is the four-state field written in other coordinates: the integrator sign flip
--- `diag(1, 1, 1, −1)` and the shift `(0, x_p*, 0, ξ*)`, with the parameters mapped by `V₀ = V`,
--- `X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*`. So on that context the two families agree on every flow
--- sentence (`den↔`, a reading by conjugacy). A locally exponentially stable point of the carrier
--- field is an equilibrium, which forces `V_dc* = 1` and `K_i^pll x_p* = 0` (`necessary`); with the
--- four-state characterization (equilibrium and the Routh conditions, by converse linearization)
--- this gives the characterization of local exponential stability of the basin-guard models with
--- `I_q* = 0` and `V_dc* ≠ 0` (`les↔`). Lean: `conjugate` is
--- `CarrierParams.carrierField_eq_transport` read through `Spectral.mem_den_flow_iff_of_transport`,
--- `den↔` is `BasinGuard.mem_den_iff_fourState`, `necessary` is `CarrierParams.equilibrium_Kip_xp`
--- with `Dynamics.isEquilibrium_of_lyapunovStable_local`, `four-les` is
--- `FourState.exact_locallyExponentiallyStable`, `les↔` is
--- `BasinGuard.mem_den_locallyExponentiallyStable_iff`. The family's requirement language speaks
+-- through `FourState.family` of `theorem/GridTiedConverter/GFL/DCLink/FourState.lean`), the
+-- composite of two readings through the model-B hub. The carrier is model B for every model, an
+-- equality of systems (`sameSystem`, scaffold
+-- `theorem/GridTiedConverter/GFL/DCLink/BasinGuardModelB.agda`, Lean
+-- `BasinGuard.Model.field_eq_modelB`). With no quadrature current reference (`I_q* = 0`), at a
+-- point with `V_dc* = 1` and `K_i^pll x_p* = 0`, its model-B image lies on the slice of model B
+-- (`onSlice`) where model B is the four-state field written in other coordinates: the integrator
+-- sign flip `diag(1, 1, 1, −1)` and the shift `(0, x_p*, 0, ξ*)`, with the parameters mapped by
+-- `V₀ = V`, `X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*` (`conjugate`, scaffold
+-- `theorem/GridTiedConverter/GFL/DCLink/ModelBFourState.agda`, Lean
+-- `ModelBParams.field_eq_transport` read through `Spectral.mem_den_flow_iff_of_transport`). So on
+-- that context the carrier and its four-state image agree on every flow sentence (`den↔`, the
+-- model-B reading followed by the reading by conjugacy; Lean `BasinGuard.mem_den_iff_fourState`
+-- from `BasinGuard.mem_den_iff_modelB` and `ModelB.mem_den_iff_fourState`). A locally
+-- exponentially stable point of the carrier with `V_dc* ≠ 0` is an equilibrium of model B, which
+-- forces `V_dc* = 1` and `K_i^pll x_p* = 0` (`necessary`, Lean
+-- `BasinGuard.mem_den_locallyExponentiallyStable_iff_modelB` with `ModelBParams.equilibrium_Vdc`
+-- and `ModelBParams.equilibrium_ki_xpll`); with the four-state characterization (equilibrium and
+-- the Routh conditions, by converse linearization, `four-les`, Lean
+-- `FourState.exact_locallyExponentiallyStable`) this gives the characterization of local
+-- exponential stability of the basin-guard models with `I_q* = 0` and `V_dc* ≠ 0` (`les↔`, Lean
+-- `BasinGuard.mem_den_locallyExponentiallyStable_iff`). The family's requirement language speaks
 -- of these conditions (`iqZero`, `vdcNonzero`, `fourStatePoint`, and `fourState r` for each
 -- four-state requirement `r`, meaning `r` of the four-state reading), and translates local
 -- exponential stability to `iqZero`, `fourStatePoint` and the four-state equilibrium and Routh
@@ -40,15 +47,18 @@ module _ (X : Type) (holds : System X → Sentence → Type)
 
   open Flows X holds invariant
 
-  module _ (GuardModel FourModel GuardReq FourReq : Type)
-    (guardSystem : GuardModel → System X) (fourSystem : FourModel → System X)
+  module _ (GuardModel BModel FourModel GuardReq BReq FourReq : Type)
+    (guardSystem : GuardModel → System X) (bSystem : BModel → System X)
+    (fourSystem : FourModel → System X)
     (guardMeets : GuardModel → GuardReq → Type) (guardTranslate : Sentence → GuardReq → Type)
+    (bMeets : BModel → BReq → Type) (bTranslate : Sentence → BReq → Type)
     (fourMeets : FourModel → FourReq → Type) (fourTranslate : Sentence → FourReq → Type)
-    -- The map of models and the change of frame (integrator flip and shift).
-    (toFour : GuardModel → FourModel) (frame : GuardModel → Affine X)
-    -- `I_q* = 0` with `V_dc* ≠ 0` (the guard), and the reading context `V_dc* = 1`,
-    -- `K_i^pll x_p* = 0`.
-    (Guard Context : GuardModel → Type)
+    -- The maps of models through the hub and the change of frame of model B (integrator flip and
+    -- shift).
+    (toB : GuardModel → BModel) (bToFour : BModel → FourModel) (frame : BModel → Affine X)
+    -- `I_q* = 0` with `V_dc* ≠ 0` (the guard), the reading context `V_dc* = 1`,
+    -- `K_i^pll x_p* = 0`, and the slice of model B.
+    (Guard Context : GuardModel → Type) (Slice : BModel → Type)
     (Equilibrium Routh : FourModel → Type)
     -- `I_q* = 0` alone (part of the guard and of the translation).
     (IqZero : GuardModel → Type)
@@ -59,16 +69,27 @@ module _ (X : Type) (holds : System X → Sentence → Type)
       { Model = GuardModel ; Req = GuardReq ; system = guardSystem ; meets = guardMeets
       ; translate = guardTranslate }
 
+    bFamily : Family
+    bFamily = record
+      { Model = BModel ; Req = BReq ; system = bSystem ; meets = bMeets
+      ; translate = bTranslate }
+
     fourFamily : Family
     fourFamily = record
       { Model = FourModel ; Req = FourReq ; system = fourSystem ; meets = fourMeets
       ; translate = fourTranslate }
 
+    -- The four-state reading of a carrier is that of its model-B image.
+    toFour : GuardModel → FourModel
+    toFour m = bToFour (toB m)
+
     -- What Lean proves.
     record Obligations : Type where
       field
-        conjugate : (m : GuardModel) → Context m → (s : Sentence) → Flow s →
-          holds (guardSystem m) s ≃ holds (transportSystem (frame m) (fourSystem (toFour m))) s
+        sameSystem : (m : GuardModel) → guardSystem m ≡ bSystem (toB m)
+        onSlice : (m : GuardModel) → Context m → Slice (toB m)
+        conjugate : (b : BModel) → Slice b → (s : Sentence) → Flow s →
+          holds (bSystem b) s ≃ holds (transportSystem (frame b) (fourSystem (bToFour b))) s
         necessary : (m : GuardModel) → Guard m → den guardFamily locallyExponentiallyStable m →
           Context m
         four-les : (f : FourModel) →
@@ -77,14 +98,21 @@ module _ (X : Type) (holds : System X → Sentence → Type)
     module _ (ob : Obligations) where
       open Obligations ob
 
-      onContext : Family
-      onContext = restrictBy guardFamily Context
+      toModelB : Hub guardFamily bFamily
+      toModelB = viaEquality toB sameSystem
 
-      reading : PartialHub Flow onContext fourFamily
-      reading = partialConjugacy affine Flow (λ x → toFour (fst x)) (λ x → frame (fst x))
+      sliceReading : PartialHub Flow (restrictBy bFamily Slice) fourFamily
+      sliceReading = partialConjugacy affine Flow (λ x → bToFour (fst x)) (λ x → frame (fst x))
         (λ x s p → conjugate (fst x) (snd x) s p)
 
-      -- On the context the two families agree on every flow sentence.
+      -- The composite reading on the context: through model B, then through its slice.
+      reading : PartialHub Flow (restrictBy guardFamily Context) fourFamily
+      reading = record
+        { map = λ x → toFour (fst x)
+        ; read = λ x s p → compEquiv (Hub.read toModelB (fst x) s)
+            (PartialHub.read sliceReading (toB (fst x) , onSlice (fst x) (snd x)) s p) }
+
+      -- On the context the carrier and its four-state image agree on every flow sentence.
       den↔ : (m : GuardModel) → Context m → (s : Sentence) → Flow s →
         den guardFamily s m ↔ den fourFamily s (toFour m)
       den↔ m c s p = ↔-of-≃ (PartialHub.read reading (m , c) s p)

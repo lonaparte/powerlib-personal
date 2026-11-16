@@ -38,8 +38,9 @@ Results.
 * An explicit algebraic layer (index-1 DAE whose algebraic variables are given by a DAG of
   explicit formulas) has the same solutions as the ODE obtained by substitution: the generic
   statement is `DAE.isIntegralCurveOn_dae_iff` (`theorem/DAE/Elimination.lean`).
-* Model B, necessary equilibrium conditions: `v_q = 0` (`equilibrium_vgq`) and
-  `x_pll = (ω_g − ω_s)/k_i` (`equilibrium_xpll`); `V_dc = V_dc*` is `equilibrium_Vdc`
+* Model B, necessary equilibrium conditions: `v_q = 0` (`equilibrium_vgq`),
+  `ω_s − ω_g + k_i x_pll = 0` (`equilibrium_ki_xpll`), so `x_pll = (ω_g − ω_s)/k_i` for `k_i ≠ 0`
+  (`equilibrium_xpll`); `V_dc = V_dc*` is `equilibrium_Vdc`
   (`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`).
 * Model B with `R_g = 0`, `i_q0 = 0`: at an equilibrium `X_g i_d = −V_g sin Δθ`
   (`equilibrium_idRef`) and `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`
@@ -49,8 +50,8 @@ Results.
 
 Family and connection conclusions.
 This module states no behaviour and defines no family. The equilibrium results of model B
-(`equilibrium_vgq`, `equilibrium_xpll`, `equilibrium_idRef`, `equilibrium_powerAngle`,
-`exists_equilibrium_iff`, `fold_current`) are
+(`equilibrium_vgq`, `equilibrium_ki_xpll`, `equilibrium_xpll`, `equilibrium_idRef`,
+`equilibrium_powerAngle`, `exists_equilibrium_iff`, `fold_current`) are
 algebraic facts about the zero set of `ModelBParams.field`; they are static evidence on the model,
 domain identities that do not require connection wrappers. The model-B family and its connection
 conclusions (local stability through the Jacobian, 4×4 Routh–Hurwitz) are in
@@ -187,25 +188,20 @@ Static evidence on the model, not a connection conclusion. -/
     p.vgq (x 0) (p.idRef (x 2) (x 3)) = 0 :=
   ((p.field_eq_zero_iff x).mp hx).2.1
 
+/-- At an equilibrium the PLL integrator balances the frequency offset:
+`ω_s − ω_g + k_i x_pll = 0` (any `k_i`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem equilibrium_ki_xpll {x : State 4} (hx : p.field x = 0) :
+    p.ωs - p.ωg + p.ki * x 1 = 0 := by
+  obtain ⟨h0, h1, -, -⟩ := (p.field_eq_zero_iff x).mp hx
+  rwa [h1, mul_zero, add_zero] at h0
+
 /-- At an equilibrium (`k_i ≠ 0`) the PLL integrator state is `x_pll = (ω_g − ω_s)/k_i`.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem equilibrium_xpll (hki : p.ki ≠ 0) {x : State 4}
     (hx : p.field x = 0) : x 1 = (p.ωg - p.ωs) / p.ki := by
-  obtain ⟨h0, h1, -, -⟩ := (p.field_eq_zero_iff x).mp hx
-  rw [h1, mul_zero, add_zero] at h0
+  have h0 := p.equilibrium_ki_xpll hx
   field_simp
-  linarith
-
-@[tmio T, powerlib_foundation] private lemma powerAngle_aux {I0 V Xg Vg θ i : ℝ} (hV : V ≠ 0)
-    (hX : Xg ≠ 0) (hid : Xg * i = -Vg * Real.sin θ)
-    (h2 : I0 + 3 * (Vg * Real.cos θ * i) / (2 * V) = 0) :
-    I0 * V = 3 * Vg ^ 2 / (4 * Xg) * Real.sin (2 * θ) := by
-  have hi : i = -Vg * Real.sin θ / Xg := by
-    field_simp
-    linarith
-  subst hi
-  rw [Real.sin_two_mul]
-  field_simp at h2 ⊢
   linarith
 
 /-- With `R_g = 0` and `i_q0 = 0`, every equilibrium satisfies `X_g i_d = −V_g sin Δθ`.
@@ -218,7 +214,8 @@ Static evidence on the model, not a connection conclusion. -/
   linarith
 
 /-- With `R_g = 0` and `i_q0 = 0`, every equilibrium satisfies the power-angle relation
-`I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ` (`C_dc ≠ 0`, `V_dc* ≠ 0`, `X_g ≠ 0`).
+`I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ` (`C_dc ≠ 0`, `V_dc* ≠ 0`, `X_g ≠ 0`;
+`SpecialFunctions.mul_cos_mul_eq_neg_sin_two_mul`).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem equilibrium_powerAngle (hC : p.Cdc ≠ 0)
     (hV : p.VdcRef ≠ 0) (hX : p.Xg ≠ 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) {x : State 4}
@@ -229,32 +226,33 @@ Static evidence on the model, not a connection conclusion. -/
   have hid := p.equilibrium_idRef hR hq hx
   have h2' := (div_eq_zero_iff.mp h2).resolve_right hC
   simp only [vgd, hR, hq, zero_mul, mul_zero, sub_zero, add_zero] at h2'
-  have h := powerAngle_aux (by rw [hVdc]; exact hV) hX hid h2'
-  rwa [hVdc] at h
+  have hP := SpecialFunctions.mul_cos_mul_eq_neg_sin_two_mul (V := p.Vg) (θ := x 0)
+    (i := p.idRef (x 2) (x 3)) hX (by rw [hid]; ring)
+  have hV2 : x 2 ≠ 0 := by rw [hVdc]; exact hV
+  have h2'' : p.I0 * x 2 + 3 / 2 * (p.Vg * Real.cos (x 0) * p.idRef (x 2) (x 3)) = 0 := by
+    field_simp at h2'
+    linarith
+  rw [← hVdc]
+  linear_combination h2'' - 3 / 2 * hP
 
 /-- Existence of an equilibrium of model B (`R_g = 0`, `i_q0 = 0`, `X_g > 0`, `V_dc* > 0`,
-`V_g ≠ 0`, nonzero `C_dc`, `k_i`, `k_iv`): iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)`.
+`V_g ≠ 0`, nonzero `C_dc`, `k_i`, `k_iv`): iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)` (the power-angle
+law `SpecialFunctions.exists_mul_sin_two_mul_eq_iff`).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem exists_equilibrium_iff (hki : p.ki ≠ 0) (hkiv : p.kiv ≠ 0)
     (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef) (hX : 0 < p.Xg) (hVg : p.Vg ≠ 0) (hR : p.Rg = 0)
     (hq : p.iq0 = 0) :
     (∃ x, p.field x = 0) ↔ |p.I0| * p.VdcRef ≤ 3 * p.Vg ^ 2 / (4 * p.Xg) := by
   have hK : 0 < 3 * p.Vg ^ 2 / (4 * p.Xg) := by positivity
+  rw [← abs_of_pos hV, ← abs_mul, ← SpecialFunctions.exists_mul_sin_two_mul_eq_iff hK]
   constructor
   · rintro ⟨x, hx⟩
-    have hpa := p.equilibrium_powerAngle hC hV.ne' hX.ne' hR hq hx
-    rw [← abs_of_pos hV, ← abs_mul, hpa, abs_mul, abs_of_pos hK]
-    exact mul_le_of_le_one_right hK.le (Real.abs_sin_le_one _)
-  · intro hle
+    exact ⟨x 0, (p.equilibrium_powerAngle hC hV.ne' hX.ne' hR hq hx).symm⟩
+  · rintro ⟨Δθ, hK2⟩
     set K := 3 * p.Vg ^ 2 / (4 * p.Xg) with hKdef
     set s := p.I0 * p.VdcRef / K with hs
-    -- a zero `φ` of the sinusoid `I₀ V_dc* − K sin φ` gives the angle `Δθ = φ/2`
-    obtain ⟨φ, hφ⟩ := (SpecialFunctions.exists_sinusoid_zero_iff (c := p.I0 * p.VdcRef)
-      (φ := 0) hK).mpr (by rwa [abs_mul, abs_of_pos hV])
-    set Δθ := φ / 2 with hΔθ
     have hsin2 : Real.sin (2 * Δθ) = s := by
-      rw [hΔθ, mul_div_cancel₀ _ (two_ne_zero), hs, eq_div_iff hK.ne']
-      rw [add_zero] at hφ
+      rw [hs, eq_div_iff hK.ne']
       linarith
     set id := -p.Vg * Real.sin Δθ / p.Xg with hid
     refine ⟨WithLp.toLp 2 ![Δθ, (p.ωg - p.ωs) / p.ki, p.VdcRef, id / p.kiv], ?_⟩
@@ -282,7 +280,8 @@ Static evidence on the model, not a connection conclusion. -/
       linear_combination (-1 / 2 : ℝ) * hsin2'
 
 /-- Fold of model B (`R_g = 0`, `i_q0 = 0`): at an equilibrium on the existence boundary
-`|I₀| V_dc* = 3 V_g² / (4 X_g)` the d-axis current satisfies `|X_g i_d| = |V_g| / √2`.
+`|I₀| V_dc* = 3 V_g² / (4 X_g)` the d-axis current satisfies `|X_g i_d| = |V_g| / √2`
+(`|sin 2Δθ| = 1`, `SpecialFunctions.sin_sq_eq_half_of_abs_sin_two_mul`).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem fold_current (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef)
     (hX : 0 < p.Xg) (hVg : p.Vg ≠ 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) {x : State 4}
@@ -299,15 +298,7 @@ Static evidence on the model, not a connection conclusion. -/
     rcases mul_eq_zero.mp h3 with h | h
     · exact absurd h hK.ne'
     · linarith
-  have hsq2 : Real.sin (2 * x 0) ^ 2 = 1 := by
-    rw [← sq_abs, habs, one_pow]
-  have hcos2 : Real.cos (2 * x 0) = 0 := by
-    have := Real.sin_sq_add_cos_sq (2 * x 0)
-    rw [hsq2] at this
-    exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp (by linarith)
-  have hsin : Real.sin (x 0) ^ 2 = 1 / 2 := by
-    rw [Real.cos_two_mul, Real.cos_sq'] at hcos2
-    linarith
+  have hsin := SpecialFunctions.sin_sq_eq_half_of_abs_sin_two_mul habs
   have hs2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
   have hs2pos : 0 < Real.sqrt 2 := by positivity
   rw [hid]

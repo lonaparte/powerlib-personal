@@ -32,6 +32,8 @@ Model boundary.
   source's `c₀ = [((1 − b) i*_d,out + a i*_q,out)/Δ − i*_d,out]/(ω_g C_f)`).
 * Parameters: `L_f, R_f, C_f, L_g, R_g, ω_g, V_g` (filter, line, nominal grid frequency and
   EMF), frozen current references `i_d*, i_q*`, current-loop PI `K_p^cc, K_i^cc`, PLL PI `K_p, K_i`.
+  The network part `C_f, L_g, R_g, ω_g, V_g, i_d*, i_q*`, all the quasi-steady algebra below
+  depends on, is the record `Network`, which `Params` extends.
   `a = ω_g C_f R_g`, `b = ω_g² C_f L_g`, `Δ = (1 − b)² + a²`. Nondegeneracy hypotheses
   (`ω_g C_f ≠ 0`, `Δ ≠ 0`) are explicit in each statement.
 * Quasi-steady algebra (`reduction-pipeline.md` §2–§4), capacitor
@@ -42,9 +44,10 @@ Model boundary.
   `[[1 − b, −a], [a, 1 − b]] i_g = (i_d − ω_g C_f E_q, i_q + ω_g C_f E_d)`.
 * `h(θ_e) := v_cq^c` on that algebraic set (`reduced-2d-equation.md` §2), with the nominal EMF
   `(E_d, E_q) = (V_g, 0)`; `hE` keeps a general EMF for the noise-sensitivity identities.
-* The same reduction written with the network of `T-gfl-dynamics` form B is
-  `theorem/GridTiedConverter/GFL/LCLine/FormB.lean` (`formBChar`, `pllInput_of_quasiSteady`); both
-  find no `2θ` term in the PLL error signal.
+* The same reduction written with the parameters `R_g, X, lineDet` of `T-gfl-dynamics` form B, on
+  the same record `Network`, is `theorem/GridTiedConverter/GFL/LCLine/FormB.lean`
+  (`Network.formBChar`, `Network.pllInput_of_quasiSteady`); its characteristic is `h`
+  (`Params.formBChar_eq_h`): both find no `2θ` term in the PLL error signal.
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md`
 §1–§4; `reduced-2d-equation.md` §1–§2; `sn-critical-scaling.md` §3.
@@ -69,10 +72,10 @@ correct sign.
 Correction (`reduced-2d-equation.md` §1–§2): the note states (OUT-positive)
 `−sin θ · i_q − cos θ · i_d = −i_d* cos 2θ − i_q* sin 2θ` on `i = T(−θ) i*`. In fact the left side
 is identically `−i_d*`; written IN-positive, the current part `sin θ · i_q + cos θ · i_d` of
-`ω_g C_f v_cq^c` is identically `i_d*` (`sin_iQ_add_cos_iD`), and the double-angle form is false
-whenever `i_d* ≠ 0` (`current_part_ne_doubleAngle`). Hence `h` has no `2θ` term: it is exactly a
-shifted sinusoid (`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal / basin asymmetric"
-does not hold for this model.
+`ω_g C_f v_cq^c` is identically `i_d*` (`Network.sin_iQ_add_cos_iD`), and the double-angle form is
+false whenever `i_d* ≠ 0` (`current_part_ne_doubleAngle`). Hence `h` has no `2θ` term: it is
+exactly a shifted sinusoid (`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal /
+basin asymmetric" does not hold for this model.
 
 Correction (`sn-critical-scaling.md` §3): the note supports `σ_q = g/V_g` by a numerical check
 `|σ_q V_g/g − 1| < 1e−5`; here it is an exact identity.
@@ -83,10 +86,10 @@ namespace powerlib.GFL.LCLine
 open Real Matrix
 open powerlib.Transform (parkD parkQ iparkD iparkQ iparkD_park iparkQ_park)
 
-/-- Parameters of the single GFL-VSC (LC filter + R–L line + infinite bus), current loop and PLL. -/
-structure Params where
-  /-- Converter-side filter branch `(R_f, L_f)`. -/
-  filter : Passive.SeriesRLC
+/-- The network of the single GFL-VSC: filter capacitor, R–L line, infinite bus and the frozen
+current references, the part of `Params` that the quasi-steady algebra (and `h`) depends on; also
+the parameters of the form-B reduction (`theorem/GridTiedConverter/GFL/LCLine/FormB.lean`). -/
+structure Network where
   /-- Filter capacitor `C_f` (lossless shunt). -/
   filterCap : Passive.ParallelRLC
   /-- Line branch `(R_g, L_g)`. -/
@@ -99,6 +102,18 @@ structure Params where
   idRef : ℝ
   /-- Frozen q-axis current reference `i_q*` (IN-positive). -/
   iqRef : ℝ
+  /-- The filter capacitor is lossless. -/
+  filterCap_lossless : filterCap.G = 0
+  /-- The filter capacitor has no shunt inductor. -/
+  filterCap_noInd : filterCap.Γ = 0
+  /-- The line has no series capacitor. -/
+  line_noCap : line.S = 0
+
+/-- Parameters of the single GFL-VSC (LC filter + R–L line + infinite bus), current loop and PLL:
+the network, the converter-side filter branch and the controller gains. -/
+structure Params extends Network where
+  /-- Converter-side filter branch `(R_f, L_f)`. -/
+  filter : Passive.SeriesRLC
   /-- Current-loop proportional gain `K_p^cc`. -/
   Kpcc : ℝ
   /-- Current-loop integral gain `K_i^cc`. -/
@@ -107,17 +122,40 @@ structure Params where
   Kp : ℝ
   /-- PLL integral gain `K_i`. -/
   Ki : ℝ
-  /-- The filter capacitor is lossless. -/
-  filterCap_lossless : filterCap.G = 0
   /-- The filter branch has no series capacitor. -/
   filter_noCap : filter.S = 0
-  /-- The filter capacitor has no shunt inductor. -/
-  filterCap_noInd : filterCap.Γ = 0
-  /-- The line has no series capacitor. -/
-  line_noCap : line.S = 0
+
+namespace Network
 
 /-- The filter capacitance `C_f`. -/
-abbrev Params.Cf (p : Params) : ℝ := p.filterCap.C
+abbrev Cf (p : Network) : ℝ := p.filterCap.C
+
+/-- Line inductance `L_g`. -/
+abbrev Lg (p : Network) : ℝ := p.line.L
+
+/-- Line resistance `R_g`. -/
+abbrev Rg (p : Network) : ℝ := p.line.R
+
+variable (p : Network)
+
+/-- Converter current on the current-loop quasi-steady set, `i = T(−θ) i*` (d-axis). -/
+def iD (θ : ℝ) : ℝ := iparkD θ p.idRef p.iqRef
+
+/-- Converter current on the current-loop quasi-steady set, `i = T(−θ) i*` (q-axis). -/
+def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
+
+/-- `sin θ · i_q + cos θ · i_d = i_d*` on `i = T(−θ) i*`: the current part of `ω_g C_f v_cq^c`
+has no double-angle term. -/
+@[tmio M, powerlib_domain] theorem sin_iQ_add_cos_iD (θ : ℝ) :
+    sin θ * p.iQ θ + cos θ * p.iD θ = p.idRef := by
+  unfold iQ iD iparkQ iparkD; linear_combination p.idRef * sin_sq_add_cos_sq θ
+
+/-- `cos θ · i_q − sin θ · i_d = i_q*` on `i = T(−θ) i*`. -/
+@[tmio M, powerlib_domain] theorem cos_iQ_sub_sin_iD (θ : ℝ) :
+    cos θ * p.iQ θ - sin θ * p.iD θ = p.iqRef := by
+  unfold iQ iD iparkQ iparkD; linear_combination p.iqRef * sin_sq_add_cos_sq θ
+
+end Network
 
 namespace Params
 
@@ -126,12 +164,6 @@ abbrev Lf (p : Params) : ℝ := p.filter.L
 
 /-- Converter-side filter resistance `R_f`. -/
 abbrev Rf (p : Params) : ℝ := p.filter.R
-
-/-- Line inductance `L_g`. -/
-abbrev Lg (p : Params) : ℝ := p.line.L
-
-/-- Line resistance `R_g`. -/
-abbrev Rg (p : Params) : ℝ := p.line.R
 
 variable (p : Params)
 
@@ -164,12 +196,6 @@ def noteLineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; -p.a, 1 - p
 
 /-! ### Step 1: current loop at rest -/
 
-/-- Converter current on the current-loop quasi-steady set, `i = T(−θ) i*` (d-axis). -/
-def iD (θ : ℝ) : ℝ := iparkD θ p.idRef p.iqRef
-
-/-- Converter current on the current-loop quasi-steady set, `i = T(−θ) i*` (q-axis). -/
-def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
-
 /-- `reduction-pipeline.md` §2: the current-loop integrators are at rest
 (`ξ̇^c = i* − T(θ) i = 0`) iff `i = T(−θ) i*`. -/
 @[tmio M, powerlib_domain] theorem current_qss_iff (θ id iq : ℝ) :
@@ -180,21 +206,10 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
     have e1 : parkD θ id iq = p.idRef := by linarith
     have e2 : parkQ θ id iq = p.iqRef := by linarith
     refine ⟨?_, ?_⟩
-    · rw [iD, ← e1, ← e2, iparkD_park]
-    · rw [iQ, ← e1, ← e2, iparkQ_park]
+    · rw [Network.iD, ← e1, ← e2, iparkD_park]
+    · rw [Network.iQ, ← e1, ← e2, iparkQ_park]
   · rintro ⟨rfl, rfl⟩
-    simp [iD, iQ]
-
-/-- `sin θ · i_q + cos θ · i_d = i_d*` on `i = T(−θ) i*`: the current part of `ω_g C_f v_cq^c`
-has no double-angle term. -/
-@[tmio M, powerlib_domain] theorem sin_iQ_add_cos_iD (θ : ℝ) :
-    sin θ * p.iQ θ + cos θ * p.iD θ = p.idRef := by
-  unfold iQ iD iparkQ iparkD; linear_combination p.idRef * sin_sq_add_cos_sq θ
-
-/-- `cos θ · i_q − sin θ · i_d = i_q*` on `i = T(−θ) i*`. -/
-@[tmio M, powerlib_domain] theorem cos_iQ_sub_sin_iD (θ : ℝ) :
-    cos θ * p.iQ θ - sin θ * p.iD θ = p.iqRef := by
-  unfold iQ iD iparkQ iparkD; linear_combination p.iqRef * sin_sq_add_cos_sq θ
+    simp [Network.iD, Network.iQ]
 
 /-- Correction: the double-angle form printed in `reduced-2d-equation.md` §1 (here with the
 IN-positive currents) is false as soon as `i_d* ≠ 0` (it fails at `θ = π/2`). -/
@@ -417,7 +432,7 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
 coefficients. -/
 @[tmio M, powerlib_domain] theorem contDiff_h {k : WithTop ℕ∞} : ContDiff ℝ k p.h := by
   unfold Params.h Params.hE parkQ Params.vcD Params.vcQ Params.igD Params.igQ Params.solD
-    Params.solQ Params.iD Params.iQ iparkD iparkQ
+    Params.solQ Network.iD Network.iQ iparkD iparkQ
   fun_prop
 
 /-! ### EMF rotation covariance and noise sensitivities -/

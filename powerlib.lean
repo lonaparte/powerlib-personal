@@ -134,6 +134,7 @@ import theorem.GridTiedConverter.GFL.DCLink.FourStateBoundary
 import theorem.GridTiedConverter.GFL.DCLink.ModelBBoundary
 import theorem.GridTiedConverter.GFL.DCLink.ModelBCollapse
 import theorem.GridTiedConverter.GFL.DCLink.ModelBCollapseDegenerate
+import theorem.GridTiedConverter.GFL.DCLink.ModelBFourState
 import theorem.GridTiedConverter.GFL.DCLink.ModelBStability
 import theorem.GridTiedConverter.GFL.DCLink.PowerBalance
 import theorem.GridTiedConverter.GFL.DCLink.ReducedOrder

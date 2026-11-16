@@ -231,8 +231,8 @@ def hCode (θ : ℝ) : ℝ :=
 
 /-- Exact form of "numerically `h_code(θ) = h_text(−θ)`". -/
 @[tmio M, powerlib_domain] theorem hCode_eq (θ : ℝ) : p.hCode θ = p.h (-θ) := by
-  have e1 : p.codeID θ = p.iD (-θ) := by simp [codeID, iD, iparkD]
-  have e2 : p.codeIQ θ = p.iQ (-θ) := by simp [codeIQ, iQ, iparkQ]
+  have e1 : p.codeID θ = p.iD (-θ) := by simp [codeID, Network.iD, iparkD]
+  have e2 : p.codeIQ θ = p.iQ (-θ) := by simp [codeIQ, Network.iQ, iparkQ]
   simp only [hCode, e1, e2, h, hE, parkQ, vcD, vcQ, igD, igQ, sin_neg, cos_neg]
   ring
 

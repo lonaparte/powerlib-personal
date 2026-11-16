@@ -233,17 +233,19 @@ change sign. -/
 
 /-! ## Equilibria and the transmission limit -/
 
+/-- The power-angle curve at an equilibrium of the line, `P = −P_SN sin 2θ`
+(`SpecialFunctions.mul_cos_mul_eq_neg_sin_two_mul`). -/
 @[tmio M, powerlib_domain] theorem power_of_isEq {θ Id : ℝ} (hX : p.Xg ≠ 0)
     (h : -(p.Xg * Id) = p.V * Real.sin θ) :
     power p θ Id = -(PSN p * Real.sin (2 * θ)) := by
-  have hId : Id = -(p.V * Real.sin θ / p.Xg) := by field_simp; linarith
-  rw [power, PSN, hId, Real.sin_two_mul]
-  field_simp
-  ring
+  have hP := SpecialFunctions.mul_cos_mul_eq_neg_sin_two_mul (V := p.V) (θ := θ) hX
+    (by linarith : p.Xg * Id = -(p.V * Real.sin θ))
+  rw [power, PSN]
+  linear_combination 3 / 2 * hP
 
 /-- Quasi-static GFL: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)` (for either sign of the
-absorbed reference; the zeros of the sinusoid `−P_ref − P_SN sin 2θ`,
-`SpecialFunctions.exists_sinusoid_zero_iff`).
+absorbed reference; the power-angle law `P_SN sin 2θ = −P_ref`,
+`SpecialFunctions.exists_mul_sin_two_mul_eq_iff`).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem equilibrium_exists_iff (hX : 0 < p.Xg)
     (hkP : p.kP ≠ 0) :
@@ -269,13 +271,13 @@ Static evidence on the model, not a connection conclusion. -/
     by_cases h0 : PSN p = 0
     · have hP0 : p.Pref = 0 := by rw [h0] at h; exact abs_nonpos_iff.mp h
       refine ⟨point 0 0, field_point_eq_zero p ⟨by simp, by simp [power, hP0]⟩⟩
-    · -- a zero `φ` of the sinusoid `−P_ref − P_SN sin φ` gives the angle `θ = φ/2`
-      obtain ⟨φ, hφ⟩ := (SpecialFunctions.exists_sinusoid_zero_iff (φ := 0)
+    · -- an angle of the power-angle law `P_SN sin 2θ = −P_ref`
+      obtain ⟨θ, hθ⟩ := (SpecialFunctions.exists_mul_sin_two_mul_eq_iff
         (lt_of_le_of_ne hPSN (Ne.symm h0))).mpr (by rwa [abs_neg])
-      have hXI : -(p.Xg * -(p.V * Real.sin (φ / 2) / p.Xg)) = p.V * Real.sin (φ / 2) := by
+      have hXI : -(p.Xg * -(p.V * Real.sin θ / p.Xg)) = p.V * Real.sin θ := by
         field_simp
-      refine ⟨point (φ / 2) (-(p.V * Real.sin (φ / 2) / p.Xg)), field_point_eq_zero p ⟨hXI, ?_⟩⟩
-      rw [power_of_isEq p hX.ne' hXI, show 2 * (φ / 2) = φ + 0 by ring]
+      refine ⟨point θ (-(p.V * Real.sin θ / p.Xg)), field_point_eq_zero p ⟨hXI, ?_⟩⟩
+      rw [power_of_isEq p hX.ne' hXI]
       linarith
 
 /-- On the branch `|θ| < π/2` the exported power `−P = P_SN sin 2θ` (`power_of_isEq`) reaches
@@ -287,12 +289,12 @@ Static evidence on the model, not a connection conclusion. -/
   have hcos : 0 < Real.cos θ := Real.cos_pos_of_mem_Ioo hθ
   constructor
   · intro h
-    have h1 : Real.sin (2 * θ) = 1 := by
-      have := mul_left_cancel₀ hpos.ne' (h.trans (mul_one _).symm)
-      exact this
+    have h1 : Real.sin (2 * θ) = 1 := mul_left_cancel₀ hpos.ne' (h.trans (mul_one _).symm)
+    have hs2 := SpecialFunctions.sin_sq_eq_half_of_abs_sin_two_mul (by rw [h1, abs_one])
     rw [Real.sin_two_mul] at h1
     have hsc : Real.sin θ = Real.cos θ := by
       have := Real.sin_sq_add_cos_sq θ
+      have hs : 0 < Real.sin θ := by nlinarith
       nlinarith [sq_nonneg (Real.sin θ - Real.cos θ)]
     have htan : Real.tan θ = 1 := by
       rw [Real.tan_eq_sin_div_cos, hsc, div_self hcos.ne']

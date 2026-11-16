@@ -219,7 +219,7 @@ def lineResidual (R L C ω Vg : ℝ) (idq ig ξ : Fin 2 → ℝ) : Fin 2 → ℝ
 
 /-- Effective reactance `X = ωL − 1/(ωC)`: the reactance at `ω` of the series LC branch
 `⟨0, L, 1/C⟩` (line inductance, filter capacitance as series elastance;
-`Passive.SeriesRLC.reactance`; the negative of `FormBParams.lineX`). -/
+`Passive.SeriesRLC.reactance`; the negative of `GFL.LCLine.Network.lineX`). -/
 def lineX (L C ω : ℝ) : ℝ := (⟨0, L, 1 / C⟩ : Passive.SeriesRLC).reactance ω
 
 /-- Coefficient matrix of the form-B line system (independent of `θ_e`). -/

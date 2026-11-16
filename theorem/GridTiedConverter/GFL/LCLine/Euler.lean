@@ -88,8 +88,22 @@ generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
 /-- The parameters of the witness below: unit filter capacitance, grid frequency and grid EMF, a
 line without impedance, zero current references and unit PLL gains (`a = b = 0`, `Δ = 1`, so the
 phase-detector characteristic is `h = −sin`). -/
-private def unitLine : Params :=
-  ⟨⟨0, 0, 0⟩, ⟨0, 1, 0⟩, ⟨0, 0, 0⟩, 1, 1, 0, 0, 0, 0, 1, 1, rfl, rfl, rfl, rfl⟩
+private def unitLine : Params where
+  filterCap := ⟨0, 1, 0⟩
+  line := ⟨0, 0, 0⟩
+  ωg := 1
+  Vg := 1
+  idRef := 0
+  iqRef := 0
+  filterCap_lossless := rfl
+  filterCap_noInd := rfl
+  line_noCap := rfl
+  filter := ⟨0, 0, 0⟩
+  Kpcc := 0
+  Kicc := 0
+  Kp := 1
+  Ki := 1
+  filter_noCap := rfl
 
 /-- **Without a step constraint the Euler realization of the code-frame PLL models is not sound.**
 The locally exponentially stable code-frame model `unitLine` at `θ_c* = 0` (a zero of `h = −sin`
@@ -99,14 +113,14 @@ disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem code_not_euler_realizationSoundUnder :
     connection% (¬ codeEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hwC : unitLine.wC ≠ 0 := by norm_num [Params.Cf, unitLine, Params.wC]
-  have hΔ : unitLine.Δ ≠ 0 := by norm_num [Params.Cf, unitLine, Params.Δ, Params.a, Params.b]
+  have hwC : unitLine.wC ≠ 0 := by norm_num [Network.Cf, unitLine, Params.wC]
+  have hΔ : unitLine.Δ ≠ 0 := by norm_num [Network.Cf, unitLine, Params.Δ, Params.a, Params.b]
   have h0 : unitLine.h (-0) = 0 := by
     rw [unitLine.h_eq hwC hΔ]
-    norm_num [Params.Cf, unitLine, Params.c0, Params.a, Params.b, Params.Δ, Params.wC]
+    norm_num [Network.Cf, unitLine, Params.c0, Params.a, Params.b, Params.Δ, Params.wC]
   have hg : deriv unitLine.h (-0) < 0 := by
     rw [unitLine.deriv_h_eq hwC hΔ]
-    norm_num [Params.Cf, unitLine, Params.a, Params.b, Params.Δ]
+    norm_num [Network.Cf, unitLine, Params.a, Params.b, Params.Δ]
   have hr := PLL.PIPLL.mem_den_locallyExponentiallyStable_of_pos (unitLine.pllModel (-0))
     one_pos one_pos h0 hg
   have hc := codeFamily_den (.flow .locallyExponentiallyStable)
