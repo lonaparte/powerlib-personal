@@ -26,7 +26,7 @@ Results.
   `boltzmann_integral_eq_one`, `boltzmann_pos`: under the integrability premise
   `∫ e^{−V/D} < ∞` (which the note leaves implicit) `p` is a probability density.
 * `gradientFlow_locallyExponentiallyStable` — an application of
-  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`: the overdamped flow
+  `hurwitz_linearization_locally_exponentially_stable`: the overdamped flow
   `θ̇ = −V'(θ)/γ` (`V ∈ C²`, `γ > 0`) is locally exponentially stable at every critical point
   with `V''(θ*) > 0`.
 * `rescaled_equation`, `note_rescaling_false` — the exact rescaled equation and the
@@ -102,7 +102,7 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
   have hdV : ContDiff ℝ 1 (deriv V) := h2.deriv'
   have hdiff : Differentiable ℝ (deriv V) := hdV.differentiable one_ne_zero
   have hcd : ContDiff ℝ 1 (gradField V γ) := by
-    apply Dynamics.contDiff_of_components
+    apply contDiff_euclidean.2
     intro i; fin_cases i
     simp only [gradField]
     simp
@@ -113,11 +113,11 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
     have h1 : HasDerivAt (deriv V) (deriv (deriv V) θs) (xs 0) := (hdiff θs).hasDerivAt
     have h := h1.comp_hasFDerivAt xs (Dynamics.hasFDerivAt_coord 0 xs)
     exact h
-  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
+  refine hurwitz_linearization_locally_exponentially_stable
     (!![-(deriv (deriv V) θs) / γ]) hcd ?_ ?_ ?_
   · ext i; fin_cases i; simp [gradField, xs, hcrit]
-  · refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
-      ![γ⁻¹ • -((deriv (deriv V) θs) • Dynamics.coord 0)] ?_ ?_
+  · refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+      ![γ⁻¹ • -((deriv (deriv V) θs) • Dynamics.coord 0)] ?_ ?_).fderiv
     · intro i; fin_cases i
       have h := hc.neg.const_smul γ⁻¹
       convert h using 1

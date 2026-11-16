@@ -36,8 +36,8 @@ Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impe
 一阶滞后 `O(ω_cc⁻¹)`, current-loop order).
 
 Results.
-* `isHurwitz_iff`: with `L > 0` the closed-loop state matrix is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`
-  (equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`).
+* With `L > 0` the closed-loop state matrix is Hurwitz iff `R + Kp > 0 ∧ Ki > 0` (`mem_den_iff`;
+  equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`).
 * `equilibrium_current`: every equilibrium for a constant reference has `i = i*`.
 * `transfer_eq`: `I/I* = (Kp s + Ki)/(L s² + (R + Kp) s + Ki)` via `Linear.transfer`.
 * `dutyField_eq`: the duty-cycle plant `L di/dt = −R i + V_dc d` with `d` the PI output is the
@@ -183,13 +183,6 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
     rw [mul_zero, zero_sub, mul_neg_one, neg_neg]
   rw [h1, h2]
 
-/-- With `L > 0`, the stable denotation is characterized by the unscaled coefficients. -/
-@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.L) :
-    connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔
-      0 < p.R + p.Kp ∧ 0 < p.Ki) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% isHurwitz_iff_div), div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
-
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
 @[tmio M, powerlib_domain] theorem exists_root_of_unstable
     (h : (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0) :
@@ -197,7 +190,7 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
   change ∃ s : ℂ, (characteristicMatrix !![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] s).det = 0 ∧
     0 < s.re
   rcases h with h | h
-  · refine Criteria.exists_characteristic_root_re_pos_of_trace_pos _ ?_
+  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [Matrix.trace_fin_two_of, neg_div]
     linarith
   · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
@@ -298,7 +291,7 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
   change ∃ s : ℂ, (characteristicMatrix
     !![-(p.R + p.Kp * (1 - κ)) / p.L, p.Ki / p.L; -(1 - κ), 0] s).det = 0 ∧ 0 < s.re
   rcases h with h | h
-  · refine Criteria.exists_characteristic_root_re_pos_of_trace_pos _ ?_
+  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [Matrix.trace_fin_two_of, neg_div]
     linarith
   · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
@@ -389,14 +382,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hKi : 0 < p.Ki) {iref : ℝ} {x : ℝ → ℝ²} (hx : ∀ t, HasDerivAt x (p.field iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧
       Tendsto (fun t => x t 1) atTop (𝓝 (p.R * iref / p.Ki)) := by
-  have hA := (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp ((p.isHurwitz_iff hL).2 ⟨hR, hKi⟩)
+  have hA := (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)).mp
+      ((p.mem_den_iff hL (P := .globallyExponentiallyStable) (Or.inl trivial)).2 ⟨hR, hKi⟩)
   have he := p.isEquilibrium hKi.ne' iref
   have hx' : ∀ t, HasDerivAt x (p.model.inputField (fun _ => iref) (x t)) t := by
     intro t
     rw [model_field]
     exact hx t
-  exact ⟨by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 0,
-    by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 1⟩
+  have hc : IsIntegralCurveOn x (fun _ y => p.model.inputField (fun _ => iref) y) (Set.Ici 0) :=
+    fun t _ => (hx' t).hasDerivWithinAt
+  exact ⟨by simpa [equilibrium] using LTI.tendsto_apply_of_isHurwitz p.model he hA hc 0,
+    by simpa [equilibrium] using LTI.tendsto_apply_of_isHurwitz p.model he hA hc 1⟩
 
 end PIParams
 

@@ -251,14 +251,14 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
     (h1.const_mul p.pi.Ki)).mul_const p.pi.L⁻¹)
   have hB := h0.const_sub p.Id0
   have hC := (((hvc.mul h0).mul (hasFDerivAt_inv_coord 2 hx2)).const_add p.isrc).mul_const p.C⁻¹
-  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
+  refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
     ![p.pi.L⁻¹ • ((-p.pi.R) • Dynamics.coord 0 + p.pi.Kp • -Dynamics.coord 0 +
         p.pi.Ki • Dynamics.coord 1),
       -Dynamics.coord 0,
       p.C⁻¹ • ((p.vconv p.Id0 x * x 0) •
           (ContinuousLinearMap.toSpanSingleton ℝ (-(x 2 ^ 2)⁻¹)).comp (Dynamics.coord 2) +
         (x 2)⁻¹ • (p.vconv p.Id0 x • Dynamics.coord 0 +
-          x 0 • (p.pi.Kp • Dynamics.coord 0 - p.pi.Ki • Dynamics.coord 1)))] ?_ ?_
+          x 0 • (p.pi.Kp • Dynamics.coord 0 - p.pi.Ki • Dynamics.coord 1)))] ?_ ?_).fderiv
   · intro i
     fin_cases i
     · convert hA using 1
@@ -343,7 +343,8 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
 @[tmio M, powerlib_domain] theorem isHurwitz_iff_pi :
     LinearSystems.IsHurwitz p.stateMatrix ↔
       LinearSystems.IsHurwitz p.pi.model.A ∧ 0 < p.Idc0 / (p.C * p.V0) := by
-  simp only [Criteria.isHurwitz_iff_characteristic_roots, p.characteristic_root_iff]
+  simp only [← Linear.spectrallyStable_iff_isHurwitz, Linear.SpectrallyStable,
+      p.characteristic_root_iff]
   constructor
   · intro h
     refine ⟨fun s hs => h s (Or.inl hs), ?_⟩
@@ -363,7 +364,8 @@ evidence on the model, not a connection conclusion. -/
   rw [p.isHurwitz_iff_pi,
     ← (connection_proof% CurrentControl.PIParams.family_isLinear.mem_den_hurwitz
       (P := .globallyExponentiallyStable) (Or.inl trivial)),
-    (connection_proof% p.pi.isHurwitz_iff hL), div_pos_iff_of_pos_right (mul_pos hC hV)]
+    (connection_proof% p.pi.mem_den_iff hL (P := .globallyExponentiallyStable) (Or.inl trivial)),
+    Set.mem_ofPred_eq, div_pos_iff_of_pos_right (mul_pos hC hV)]
 
 /-- The translated nonlinear field: `i_d* = I_d0` held, `eqState` moved to the origin. -/
 def shiftedField (z : State 3) : State 3 := p.field p.Id0 (z + p.eqState)

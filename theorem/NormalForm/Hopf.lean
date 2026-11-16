@@ -86,7 +86,7 @@ def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
 
 @[tmio T, powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
-  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;>
+  refine contDiff_euclidean.2 (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;>
     (simp only [field, mk_apply_zero, mk_apply_one]; fun_prop)
 
 @[tmio M, simp, powerlib_foundation] theorem field_apply_zero (p : Params) (x : State 2) :

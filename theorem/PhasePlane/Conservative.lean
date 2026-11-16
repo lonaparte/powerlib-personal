@@ -48,7 +48,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 
 @[tmio T, powerlib_foundation] theorem field_contDiff {m γ : ℝ} {dV : ℝ → ℝ} {k : WithTop ℕ∞}
     (hdV : ContDiff ℝ k dV) : ContDiff ℝ k (field m γ dV) := by
-  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+  refine contDiff_euclidean.2 (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
   · exact Dynamics.contDiff_coord 1
   · have h0 : ContDiff ℝ k (fun y : State 2 => y 0) := Dynamics.contDiff_coord 0
     have h1 : ContDiff ℝ k (fun y : State 2 => y 1) := Dynamics.contDiff_coord 1

@@ -52,10 +52,10 @@ Results.
 * `regionOfAttraction_of_lasalle_sublevel`: the usual "potential-well" form. If `W` is open,
   `V̇ ≤ 0` on `W` and `Ω = {x ∈ W | V x ≤ c}` is compact, then `Ω` is automatically positively
   invariant (`isPositivelyInvariant_sublevel_of_isOpen`), so only the LaSalle condition remains.
-* `lasalle_condition_of_trajectories_mem`, `lasalle_condition_of_lieDeriv`: practical ways to
-  discharge the LaSalle condition (solution segments staying in `E` start in `M`, e.g. no
+* `lasalle_condition_of_trajectories_mem`, `lasalle_condition_of_lieDeriv_mem`: practical ways
+  to discharge the LaSalle condition (solution segments staying in `E` start in `M`, e.g. no
   solution can stay in `E` except at `x_eq`; or `E` lies in the zero set of a `C¹` function `h`
-  whose derivative along `f` vanishes on `E` only at `x_eq`).
+  whose derivative along `f` vanishes on `E` only in `M`, e.g. `M = {x_eq}`).
 * Links: `LocalAsymptoticStable` plus forward completeness gives a ball inside the region of
   attraction; `GloballyAsymptoticallyStable` puts the whole space `univ` in the region of
   attraction.
@@ -320,13 +320,13 @@ it starts at `x_eq`). -/
   rw [← hψ0]
   exact h T ψ hT hψ fun t ht => hNE (hstay t ht)
 
-/-- If `E` lies in the zero set of a `C¹` function `h`, and the derivative of `h` along `f`
-vanishes at a point of `E` only at `x_eq`, then every positively invariant subset of `E` is
-contained in `{x_eq}`. (Typical use: `E = {ω = 0} ∩ Ω` and `h = ω`.) -/
-@[tmio T, powerlib_foundation] theorem lasalle_condition_of_lieDeriv {f : ℝⁿ → ℝⁿ} {E : Set ℝⁿ}
-    {x_eq : ℝⁿ} (hf_c1 : ContDiff ℝ 1 f) {h : ℝⁿ → ℝ} (hh : ContDiff ℝ 1 h)
-    (hE : ∀ x ∈ E, h x = 0) (hpt : ∀ x ∈ E, fderiv ℝ h x (f x) = 0 → x = x_eq) :
-    ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ {x_eq} := by
+/-- If `E` lies in the zero set of a `C¹` function `h`, and at a point of `E` the derivative of
+`h` along `f` vanishes only in `M`, then every positively invariant subset of `E` lies in `M`.
+(Typical use: `E = {ω = 0} ∩ Ω`, `h = ω` and `M = {x_eq}`.) -/
+@[tmio T, powerlib_foundation] theorem lasalle_condition_of_lieDeriv_mem {f : ℝⁿ → ℝⁿ}
+    {E M : Set ℝⁿ} (hf_c1 : ContDiff ℝ 1 f) {h : ℝⁿ → ℝ} (hh : ContDiff ℝ 1 h)
+    (hE : ∀ x ∈ E, h x = 0) (hpt : ∀ x ∈ E, fderiv ℝ h x (f x) = 0 → x ∈ M) :
+    ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ M := by
   refine lasalle_condition_of_trajectories_mem hf_c1 ?_
   intro T ψ hT hψ hstay
   have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩

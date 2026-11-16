@@ -157,15 +157,6 @@ equilibrium: generic foundation, the hub's global asymptotic stability about `e`
   rw [M.inputField_eq he] at hx
   exact (globallyAsymptoticallyStable_of_isHurwitz e hA).2.2.2 t₀ x hx
 
-/-- Componentwise form, for a solution given by its derivative at every time. -/
-@[tmio T, powerlib_foundation] theorem tendsto_equilibrium_apply (M : Plant n p) (hA : IsHurwitz M.A)
-    {u : Fin p → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (M.inputField u) e)
-    {x : ℝ → EuclideanSpace ℝ (Fin n)} (hx : ∀ t, HasDerivAt x (M.inputField u (x t)) t)
-    (j : Fin n) : Tendsto (fun t => x t j) atTop (𝓝 (e j)) := by
-  have h := tendsto_equilibrium M hA he (t₀ := 0) fun t _ => (hx t).hasDerivWithinAt
-  exact ((PiLp.proj 2 (fun _ : Fin n => ℝ) j : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ).continuous.tendsto
-    e).comp h
-
 end Trajectory
 
 /-! ## Constant inputs: solutions, convergence, initial rates, unstable modes -/

@@ -13,7 +13,7 @@ Scope.
   `Matrix.toEuclideanCLM A` from componentwise derivatives (`Dynamics.coord`,
   `Dynamics.hasFDerivAt_toEuclideanCLM_of_components`, any dimension) are in
   `theorem/Dynamics/Coordinates.lean`; this is the shape required by the linearization theorems
-  `powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `hurwitz_linearization_locally_exponentially_stable`,
   `powerlib.Criteria.locallyExponentiallyStable_of_jacobian_fin_two`, etc.
 * These are calculus utilities only; no model is fixed here (no model family, all results
   public foundation support).

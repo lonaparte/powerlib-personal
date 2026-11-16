@@ -498,7 +498,7 @@ language for decay rates, conservation and passivity. -/
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
   rcases h with h | h
-  · exact Criteria.exists_characteristic_root_re_pos_of_trace_pos _ (by rw [trace_linA]; linarith)
+  · exact Criteria.exists_root_re_pos_of_trace_pos _ (by rw [trace_linA]; linarith)
   · exact Criteria.exists_characteristic_root_re_pos_of_det_neg _ (by rw [det_linA]; exact h)
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its

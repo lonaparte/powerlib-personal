@@ -128,11 +128,6 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
   rw [transportField_affineCoord]
   exact (T.hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht)).add_const c
 
-@[tmio T, powerlib_foundation] theorem isTrajectoryOn_transport {f : State n → State n}
-    {φ : ℝ → State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b) :
-    IsTrajectoryOn (fun t => affineCoord T c (φ t)) (transportField T c f) a b :=
-  isIntegralCurveOn_transport T c hφ
-
 /-- Forward completeness is invariant under invertible affine coordinate changes. -/
 @[tmio T, powerlib_foundation] theorem forwardComplete_transport_iff {f : State n → State n} :
     Flow.ForwardComplete (transportField T c f) ↔ Flow.ForwardComplete f := by

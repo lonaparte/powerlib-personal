@@ -64,11 +64,6 @@ abbrev qIdx (i : Fin m) : Fin (m + k) := Fin.castAdd k i
 /-- Position of the velocity `wⱼ` in the state. -/
 abbrev vIdx (j : Fin k) : Fin (m + k) := Fin.natAdd m j
 
-/-- A state is determined by its positions and velocities (`Dynamics.state_ext_blocks`). -/
-@[tmio T, powerlib_foundation] theorem state_ext {z z' : State (m + k)}
-    (hq : ∀ i, z (qIdx i) = z' (qIdx i)) (hv : ∀ j, z (vIdx j) = z' (vIdx j)) : z = z' :=
-  state_ext_blocks hq hv
-
 /-- The positions of a state. -/
 def pos : State (m + k) →L[ℝ] (Fin m → ℝ) :=
   ContinuousLinearMap.pi fun i => PiLp.proj 2 (fun _ : Fin (m + k) => ℝ) (qIdx i)
@@ -188,7 +183,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
 @[tmio T, powerlib_foundation] theorem field_point_eq_zero {q : Fin m → ℝ}
     (hq : (fderiv ℝ U q).comp G = 0) : field G M D U (point q) = 0 := by
   have hj := (comp_eq_zero_iff _ G).mp hq
-  apply state_ext
+  apply state_ext_blocks
   · intro i; simp
   · intro j; simp [hj j]
 
@@ -367,7 +362,7 @@ point, whatever the linearization (positive masses and dampings). -/
         by_contra hall
         push Not at hall
         apply hne
-        apply state_ext
+        apply state_ext_blocks
         · intro i
           have := congrFun hv0 i
           simp only [pos_apply] at this
@@ -419,7 +414,7 @@ point, whatever the linearization (positive masses and dampings). -/
       refine hcrit _ hv0 ((norm_pos_sub_le (φ 0) q).trans_lt (hin 0 hmem0).1) ?_
       rw [add_sub_cancel]
       exact hcrit0
-    apply state_ext
+    apply state_ext_blocks
     · intro i
       have := congrFun hq0 i
       simp only [pos_apply] at this

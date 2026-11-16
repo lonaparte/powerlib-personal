@@ -793,7 +793,7 @@ stability is not decided by the linearization. -/
     linarith
   refine ⟨?_, energy_pos hne⟩
   rw [sub_zero]
-  refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans_lt ?_
   simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, abs_zero, add_zero]
   rw [abs_of_pos (by linarith)]
   linarith

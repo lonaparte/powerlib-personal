@@ -47,8 +47,6 @@ Results. (The calculus of curves in `State n` it uses — `fderiv_apply_eq_of_ha
   `{h = c₀, V ≤ c}`, where `V̇ ≤ 0` is required only on the level set `{h = c₀}`.
   `exists_isIntegralCurveOn_of_isCompact`: a forward solution on `[0, ∞)` from every point of a
   compact positively invariant set of a `C¹` field.
-* `lasalle_condition_of_lieDeriv_mem`: the set version of `lasalle_condition_of_lieDeriv` (every
-  positively invariant subset of `E ⊆ {h = 0}` lies in `M` when `ḣ = 0` on `E` forces `M`).
 * `tendsto_zero_of_tendsto_nhdsSet`: convergence to a set `M` gives convergence to `0` of every
   continuous function vanishing on `M`.
 * `abs_le_of_abs_le_pi_div_two` (`|x| ≤ (π/2) |sin x|` for `|x| ≤ π/2`) and
@@ -164,26 +162,6 @@ converges to every set `M` that contains the positively invariant subsets of
   have hψ' := hgf hψ (hψ0 ▸ hy₀)
   exact ⟨ψ, hψ0, hψ', fun t ht =>
     hinv 0 t ψ (hψ'.mono Icc_subset_Ici_self) (hψ0 ▸ hy₀) t ⟨ht, le_rfl⟩⟩
-
-/-- Set version of `lasalle_condition_of_lieDeriv`: if `E` lies in the zero set of a `C¹`
-function `h`, and at a point of `E` the derivative of `h` along `f` vanishes only in `M`, then
-every positively invariant subset of `E` lies in `M`. -/
-@[tmio T, powerlib_foundation] theorem lasalle_condition_of_lieDeriv_mem {n : ℕ} {f : State n → State n}
-    {E M : Set (State n)} (hf_c1 : ContDiff ℝ 1 f) {h : State n → ℝ} (hh : ContDiff ℝ 1 h)
-    (hE : ∀ x ∈ E, h x = 0) (hpt : ∀ x ∈ E, fderiv ℝ h x (f x) = 0 → x ∈ M) :
-    ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ M := by
-  intro N hNE hN x hx
-  obtain ⟨T, ψ, hT, hψ0, hψ⟩ := (hf_c1.contDiffAt (x := x)).exists_isIntegralCurveOn_Icc
-  have hstay : ∀ t ∈ Icc 0 T, ψ t ∈ N := hN 0 T ψ hψ (hψ0 ▸ hx)
-  have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
-  have hchain : HasDerivWithinAt (h ∘ ψ) (fderiv ℝ h (ψ 0) (f (ψ 0))) (Icc 0 T) 0 :=
-    (hh.differentiable (by norm_num) (ψ 0)).hasFDerivAt.comp_hasDerivWithinAt 0 (hψ 0 hmem0)
-  have hzero : HasDerivWithinAt (h ∘ ψ) 0 (Icc 0 T) 0 :=
-    (hasDerivWithinAt_const (0 : ℝ) _ (0 : ℝ)).congr (fun s hs => hE _ (hNE (hstay s hs)))
-      (hE _ (hNE (hstay 0 hmem0)))
-  have hx0 : ψ 0 ∈ E := hNE (hstay 0 hmem0)
-  rw [← hψ0]
-  exact hpt _ hx0 ((uniqueDiffOn_Icc hT 0 hmem0).eq_deriv _ hchain hzero)
 
 /-- Convergence to a set gives convergence to `0` of every continuous function vanishing on it. -/
 @[tmio T, powerlib_foundation] theorem tendsto_zero_of_tendsto_nhdsSet {n : ℕ} {α : Type*}

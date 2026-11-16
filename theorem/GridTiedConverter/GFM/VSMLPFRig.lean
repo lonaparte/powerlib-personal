@@ -342,8 +342,8 @@ def rigFamily : Family Rig RigRequirement 4 0 :=
     have hg := gap_eq y hM.ne' hτ.ne'
     have hMτ : 0 < (y.design.g.M * y.τ) ^ 3 := by positivity
     nlinarith
-  · refine Criteria.unstable_of_jacobian_det_neg_fin_four y.jacobian (contDiff_rigField y) heq
-      (hasFDerivAt_rigField y).fderiv ?_
+  · refine Criteria.unstable_of_jacobian_violation_fin_four y.jacobian (contDiff_rigField y) heq
+      (hasFDerivAt_rigField y).fderiv (Or.inr (Or.inr (Or.inr (Or.inl ?_))))
     rw [rig_det_jacobian]
     exact mul_neg_of_pos_of_neg (by positivity) hK
 

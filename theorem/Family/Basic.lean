@@ -371,7 +371,7 @@ def IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :
   change F.den .passive = Set.univ
   ext x
   simp only [mem_den, Set.mem_univ, iff_true, hF x, Sentence.holds_passive]
-  exact Port.System.autonomous_passive _
+  exact Port.System.passive_of_noPorts _
 
 /-- A family read without an envelope satisfies every envelope sentence. -/
 @[tmio TM, powerlib_foundation] theorem IsAutonomous.den_envelope {F : Family X Q n 0}

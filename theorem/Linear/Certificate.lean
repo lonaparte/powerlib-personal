@@ -261,7 +261,7 @@ theory applied to its energy. -/
 @[tmio T, powerlib_foundation] theorem Certificate.holds {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField A e) e :=
-  (c.toQuadraticDecay e).holds (affine_contDiff A e) hP
+  ((c.toQuadraticDecay e).globallyExponentiallyStable (affine_contDiff A e)).holds hP
 
 /-! ## Conserved quadratic energies -/
 

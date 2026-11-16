@@ -208,7 +208,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     fderiv ℝ (field p) (WithLp.toLp 2 ![θ, x]) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jac p θ) := by
   have := hasFDerivAt_coordField p hD0 ![θ, x]
-  exact Dynamics.fderiv_lift (by simpa using this)
+  exact (Dynamics.hasFDerivAt_lift (by simpa using this)).fderiv
 
 /-- Jacobian at an equilibrium in the source form
 `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]`. -/

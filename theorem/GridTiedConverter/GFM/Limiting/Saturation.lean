@@ -168,7 +168,7 @@ def satJacobian (M D Psat φ δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 @[tmio M, powerlib_domain] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
     ContDiff ℝ 1 (satField M D Pref Psat φ) := by
-  apply Dynamics.contDiff_of_components
+  apply contDiff_euclidean.2
   intro i
   fin_cases i <;> simp [satField] <;> fun_prop
 
@@ -180,9 +180,9 @@ def satJacobian (M D Psat φ δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   have h1 := Dynamics.hasFDerivAt_coord 1 x
   have hc := ((h0.sub_const φ).cos.const_mul Psat)
   have hω := (((hc.const_sub Pref).sub (h1.const_mul D)).mul_const M⁻¹)
-  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
+  refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
     ![Dynamics.coord 1, M⁻¹ • (-(Psat • -Real.sin (x 0 - φ) • Dynamics.coord 0) -
-      D • Dynamics.coord 1)] ?_ ?_
+      D • Dynamics.coord 1)] ?_ ?_).fderiv
   · intro i
     fin_cases i
     · simpa [satField] using h1

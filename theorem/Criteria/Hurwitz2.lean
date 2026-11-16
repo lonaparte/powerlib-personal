@@ -22,9 +22,10 @@ work-sync formalization).
 
 Results.
 * Any dimension: characteristic roots ↔ eigenpairs
-  (`det_characteristicMatrix_eq_zero_iff_exists_eigenpair`, `isHurwitz_iff_characteristic_roots`,
-  `isHurwitz_iff_charpoly_roots`), and `¬ IsHurwitz` as an explicit eigenpair with nonnegative
-  real part (`not_isHurwitz_iff`).
+  (`det_characteristicMatrix_eq_zero_iff_exists_eigenpair`; the root form of `IsHurwitz` is
+  `Linear.spectrallyStable_iff_isHurwitz`, the polynomial form
+  `Criteria.isHurwitz_iff_of_charpoly`), and `¬ IsHurwitz` as an explicit eigenpair with
+  nonnegative real part (`not_isHurwitz_iff`).
 * Monic real quadratic `s ^ 2 + a1 * s + a0`: all complex roots in the open left half-plane
   iff `0 < a1 ∧ 0 < a0` (both directions, `quadratic_roots_re_neg_iff`; the necessary direction
   is Stodola's condition `Criteria.coeff_pos_of_roots_re_neg`); explicit root witnesses
@@ -39,15 +40,16 @@ Results.
   (`eigen_ratio`), `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]` (`eigen_bounds`).
 * `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`
   (`det_characteristicMatrix_fin_two`); `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det`
-  (`isHurwitz_fin_two_iff`; also for `SpectrallyStable`, `spectrallyStable_fin_two_iff`, for the
-  literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
+  (`isHurwitz_fin_two_iff`; for `SpectrallyStable` through `Linear.spectrallyStable_iff_isHurwitz`;
+  for the literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
   `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`).
-* Instability witnesses, the case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`,
-  `Criteria.exists_pos_real_eigenvalue_of_det` and `Criteria.exists_eigenpair_re_pos_of_trace_pos`:
-  `A.det < 0` gives a positive real eigenvalue (with real and complex
-  eigenvectors; `exists_pos_real_eigenvalue_of_det_neg`, `exists_pos_real_eigenvector_of_det_neg`,
-  `exists_eigenvalue_re_pos_of_det_neg`); `0 < A.trace` gives an eigenvalue with positive real
-  part (`exists_eigenvalue_re_pos_of_trace_pos`). The conclusion shape matches LeanForControl's
+* Instability witnesses: `A.det < 0` gives an eigenpair with positive real part
+  (`exists_eigenvalue_re_pos_of_det_neg`, characteristic-root form
+  `exists_characteristic_root_re_pos_of_det_neg`), the case `n = 2` of
+  `Criteria.exists_pos_real_eigenvalue_of_det`; the generic witnesses
+  `Criteria.exists_pos_real_eigenvector_of_det` (`(-1) ^ 2 * A.det = A.det`),
+  `Criteria.exists_eigenpair_re_pos_of_trace_pos` and `Criteria.exists_root_re_pos_of_trace_pos`
+  (`0 < A.trace`) apply directly. The conclusion shape matches LeanForControl's
   `unstable_of_exists_complex_eigenvalue_re_pos`.
 * Discriminant: all eigenvalues real iff `0 ≤ tr² − 4 det`
   (`eigenvalues_real_iff_discriminant_nonneg`); nilpotency: `A ^ 2 = 0 ↔ tr A = 0 ∧ det A = 0`
@@ -88,21 +90,6 @@ variable {n : ℕ}
       ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
   ⟨Linear.exists_eigenvector_of_root,
     fun ⟨_, hv, heig⟩ => det_characteristicMatrix_eq_zero_of_eigenpair A hv heig⟩
-
-/-- `IsHurwitz` in characteristic-root form (any dimension). -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_iff_characteristic_roots
-    (A : Matrix (Fin n) (Fin n) ℝ) :
-    LinearSystems.IsHurwitz A ↔
-      ∀ s : ℂ, (Linear.characteristicMatrix A s).det = 0 → s.re < 0 :=
-  (Linear.spectrallyStable_iff_isHurwitz A).symm
-
-/-- `IsHurwitz` in characteristic-polynomial form (any dimension). -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_iff_charpoly_roots
-    (A : Matrix (Fin n) (Fin n) ℝ) :
-    LinearSystems.IsHurwitz A ↔
-      ∀ s : ℂ, (A.map (algebraMap ℝ ℂ)).charpoly.eval s = 0 → s.re < 0 := by
-  rw [isHurwitz_iff_characteristic_roots]
-  simp only [Linear.det_characteristicMatrix]
 
 /-- Failure of `IsHurwitz` is an explicit eigenpair with nonnegative real part. -/
 @[tmio T, powerlib_foundation] theorem not_isHurwitz_iff (A : Matrix (Fin n) (Fin n) ℝ) :
@@ -368,16 +355,13 @@ section FinTwo
   push_cast
   ring
 
-@[tmio T, powerlib_foundation] theorem spectrallyStable_fin_two_iff (A : Matrix (Fin 2) (Fin 2) ℝ) :
-    Linear.SpectrallyStable A ↔ A.trace < 0 ∧ 0 < A.det := by
+/-- Routh–Hurwitz for real 2×2 matrices: `IsHurwitz A ↔ tr A < 0 ∧ 0 < det A`. -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_fin_two_iff (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    LinearSystems.IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det := by
+  rw [← Linear.spectrallyStable_iff_isHurwitz]
   unfold Linear.SpectrallyStable
   simp only [det_characteristicMatrix_fin_two, sub_eq_add_neg, ← neg_mul, ← Complex.ofReal_neg]
   rw [quadratic_roots_re_neg_iff, neg_pos]
-
-/-- Routh–Hurwitz for real 2×2 matrices: `IsHurwitz A ↔ tr A < 0 ∧ 0 < det A`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_fin_two_iff (A : Matrix (Fin 2) (Fin 2) ℝ) :
-    LinearSystems.IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det :=
-  (Linear.spectrallyStable_iff_isHurwitz A).symm.trans (spectrallyStable_fin_two_iff A)
 
 @[tmio T, powerlib_foundation] theorem isHurwitz_fin_two_of_iff (a b c d : ℝ) :
     LinearSystems.IsHurwitz !![a, b; c, d] ↔ a + d < 0 ∧ 0 < a * d - b * c := by
@@ -410,35 +394,14 @@ section FinTwo
     Matrix.one_apply_ne (show (1 : Fin 2) ≠ 0 by decide), smul_eq_mul]
   ring
 
-/-- `det A < 0`: a positive real eigenvalue with a real eigenvector (saddle direction); the
-case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`. -/
-@[tmio T, powerlib_foundation] theorem exists_pos_real_eigenvector_of_det_neg
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
-    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 2 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v :=
-  exists_pos_real_eigenvector_of_det A (by simpa using h)
-
-/-- `det A < 0`: a positive real eigenvalue (complex eigenvector form). -/
-@[tmio T, powerlib_foundation] theorem exists_pos_real_eigenvalue_of_det_neg
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
-    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 2 → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = (r : ℂ) • v :=
-  exists_pos_real_eigenvalue_of_det A (by simpa using h)
-
 /-- `det A < 0`: eigenpair shaped for LeanForControl's
 `unstable_of_exists_complex_eigenvalue_re_pos`. -/
 @[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_neg
     (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
     ∃ (μ : ℂ) (v : Fin 2 → ℂ),
       v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det_neg A h
+  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det A (by simpa using h)
   exact ⟨r, v, hv, heig, by rw [Complex.ofReal_re]; exact hr⟩
-
-/-- `0 < tr A`: eigenpair shaped for LeanForControl's
-`unstable_of_exists_complex_eigenvalue_re_pos` (`Criteria.exists_eigenpair_re_pos_of_trace_pos`). -/
-@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : 0 < A.trace) :
-    ∃ (μ : ℂ) (v : Fin 2 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
-  exists_eigenpair_re_pos_of_trace_pos A h
 
 /-- Characteristic-root form of the `det A < 0` witness, for
 `Linear.unstable_of_root`. -/
@@ -447,11 +410,6 @@ case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`. -/
     ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
   obtain ⟨μ, v, hv, heig, hre⟩ := exists_eigenvalue_re_pos_of_det_neg A h
   exact ⟨μ, det_characteristicMatrix_eq_zero_of_eigenpair A hv heig, hre⟩
-
-@[tmio T, powerlib_foundation] theorem exists_characteristic_root_re_pos_of_trace_pos
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : 0 < A.trace) :
-    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re :=
-  exists_root_re_pos_of_trace_pos A h
 
 /-! ### Discriminant and nilpotency -/
 
@@ -562,7 +520,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A)
     (htr : 0 < A.trace) : Unstable f x_eq :=
   unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenvalue_re_pos_of_trace_pos A htr)
+    (exists_eigenpair_re_pos_of_trace_pos A htr)
 
 /-- Two-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
 Flow semantics (in particular global exponential stability) holds at `e` iff

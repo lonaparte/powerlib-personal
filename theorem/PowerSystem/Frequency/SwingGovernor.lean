@@ -407,7 +407,7 @@ right half plane. -/
   · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
     rw [det_plant hM.ne' hTg.ne']
     exact div_neg_of_neg_of_pos h (mul_pos hM hTg)
-  · refine Criteria.exists_characteristic_root_re_pos_of_trace_pos _ ?_
+  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [trace_plant]
     have : -D / M + -1 / Tg = -((M + D * Tg) / (M * Tg)) := by
       field_simp

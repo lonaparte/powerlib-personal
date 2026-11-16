@@ -99,7 +99,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
     rw [Matrix.det_fin_two_of]
     have : p.Ki / p.L < 0 := div_neg_of_neg_of_pos hKi hL
     linarith
-  obtain ⟨r, hr, v, hv, hAv⟩ := Criteria.exists_pos_real_eigenvector_of_det_neg _ hdet
+  obtain ⟨r, hr, v, hv, hAv⟩ := Criteria.exists_pos_real_eigenvector_of_det p.model.A
+    (by simpa using hdet)
   obtain ⟨x, hx, hn⟩ := LTI.exists_not_tendsto_of_eigenvector p.model (p.isEquilibrium hKi.ne iref)
     hr hAv (p.first_ne_zero hr hv hAv) iref
   exact ⟨x, fun t => by rw [← model_field]; exact hx t, hn⟩

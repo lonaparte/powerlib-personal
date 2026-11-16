@@ -48,7 +48,7 @@ Results.
 * Evaluation and smoothness: `eval` (with `eval_nil`, `eval_cons`, `eval_append`, `eval_scale`,
   `eval_map_mul`, `eval_mul`, `coeff_cons`, `coeff_eq_zero_of_not_mem`, `eval_eq_sum`,
   `eval_eq_zero_of_vanishes`, `eval_zero`), `Model.field` (`Model.field_zero_apply`,
-  `Model.field_one_apply`, `Model.field_smooth`), `coordinate_smooth`, `eval_smooth`,
+  `Model.field_one_apply`, `Model.field_smooth`), `eval_smooth` (with `Dynamics.contDiff_coord`),
   `Witness.energy` (`Witness.energy_apply`, `Witness.energy_smooth`, `Witness.energy_derivative`,
   `Witness.energy_lie`), `eval_circle` (through `PhasePlane.norm_sq_eq`).
 * The linearization: `coord`, `hasFDerivAt_monomial_zero`, `hasFDerivAt_eval_zero`,
@@ -422,17 +422,14 @@ def Model.field (model : Model) (x : ℝ²) : ℝ² :=
     model.field x 1 = eval model.field1 (x 0) (x 1) := by
   simp [Model.field]
 
-@[tmio T, fun_prop, powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
-    ContDiff ℝ 1 (fun x : ℝ² => x j) :=
-  Dynamics.contDiff_coord j
-
 @[tmio T, powerlib_foundation] theorem eval_smooth (p : Polynomial) :
     ContDiff ℝ 1 (fun x : ℝ² => eval p (x 0) (x 1)) := by
   induction p with
   | nil => exact contDiff_const
   | cons t ts ih =>
-      exact ((contDiff_const.mul ((coordinate_smooth 0).pow t.powers.1)).mul
-        ((coordinate_smooth 1).pow t.powers.2)).add ih
+      exact ((contDiff_const.mul
+        ((Dynamics.contDiff_coord (n := 2) (k := 1) 0).pow t.powers.1)).mul
+        ((Dynamics.contDiff_coord (n := 2) (k := 1) 1).pow t.powers.2)).add ih
 
 @[tmio M, powerlib_foundation] theorem Model.field_smooth (model : Model) : ContDiff ℝ 1 model.field := by
   have hs : ContDiff ℝ 1 (fun x : ℝ² =>
@@ -656,20 +653,13 @@ def family : Family Model Requirement 2 0 :=
   fun _ => rfl
 
 /-- An accepted certificate proves global exponential stability of the full polynomial field. -/
-@[tmio TM, powerlib_foundation, aesop unsafe 80% apply]
-private theorem Certificate.globallyExponentiallyStable {model : Model}
-    (c : Certificate model) :
+@[tmio TM, aesop norm -1 apply (index := [unindexed]), powerlib_foundation]
+theorem Certificate.mem_den {model : Model} (c : Certificate model) :
     connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Flow.GloballyExponentiallyStable model.field 0
   exact c.quadraticDecay.globallyExponentiallyStable model.field_smooth
-
-@[tmio TM, aesop norm -1 apply (index := [unindexed]), powerlib_foundation] theorem Certificate.mem_den {model : Model}
-    (c : Certificate model) :
-    connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable))
 
 /-- No model has a Hurwitz linearization with a right-half-plane root. -/
 @[tmio M, powerlib_foundation] theorem realize_univ :
@@ -740,13 +730,13 @@ semantics connection. -/
       exact this.elim
     case globallyAsymptoticallyStable =>
       obtain ⟨c⟩ := hm .certified rfl
-      exact (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)).globallyAsymptoticallyStable
+      exact (family_isAutonomous.mem_den_flow.mp c.mem_den).globallyAsymptoticallyStable
     case globallyExponentiallyStable =>
       obtain ⟨c⟩ := hm .certified rfl
-      exact (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable))
+      exact (family_isAutonomous.mem_den_flow.mp c.mem_den)
     case contractive =>
       obtain ⟨c⟩ := hm .certified rfl
-      exact (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)).sampledContraction
+      exact (family_isAutonomous.mem_den_flow.mp c.mem_den).sampledContraction
   · rw [family_isAutonomous.den_passive]
     trivial
   · rw [family_isAutonomous.den_envelope]
@@ -988,7 +978,8 @@ semantics. It is a proved limitation of the certificate language, not just of it
   intro h
   have hc : Nonempty (Certificate cascadeModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
   obtain ⟨c⟩ := hc
-  exact cascade_not_exponential (family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)))
+  exact cascade_not_exponential
+    (family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp c.mem_den))
 
 @[tmio M, powerlib_foundation] theorem cascade_rejected : accepts cascadeModel = false := by decide +kernel
 

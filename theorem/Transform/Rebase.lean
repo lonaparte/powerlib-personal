@@ -179,12 +179,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
     Matrix.one_apply, smul_eq_mul, Complex.coe_algebraMap]
   split_ifs <;> push_cast <;> field_simp
 
-omit [DecidableEq ι] in
-/-- The square instance of `Dynamics.hasDerivAt_mulVec`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_mulVec (M : Matrix ι ι ℝ) {x : ℝ → ι → ℝ} {x' : ι → ℝ}
-    {t : ℝ} (hx : HasDerivAt x x' t) : HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t :=
-  Dynamics.hasDerivAt_mulVec M hx
-
 /-- **The return difference does not see the port bases.** For voltage coordinates `T_v` with
 inverse `S_v` and current coordinates `T_i` with left inverse `S_i`, over any commutative ring
 (complex bases included), `det(1 + (T_v Z S_i)(T_i Y S_v)) = det(1 + Z Y)`. -/
@@ -212,7 +206,7 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
   intro τ
   have hτ : HasDerivAt (fun τ : ℝ => τ / w) w⁻¹ τ := by
     simpa [div_eq_mul_inv] using (hasDerivAt_id τ).mul_const w⁻¹
-  have h := hasDerivAt_mulVec T ((hx (τ / w)).scomp τ hτ)
+  have h := Dynamics.hasDerivAt_mulVec T ((hx (τ / w)).scomp τ hτ)
   have hM : rebaseMatrix T S w A * T = w⁻¹ • (T * A) := by
     rw [rebaseMatrix, Matrix.smul_mul, Matrix.mul_assoc (T * A), hST, Matrix.mul_one]
   refine h.congr_deriv ?_
@@ -227,7 +221,7 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
   intro t
   have ht : HasDerivAt (fun t : ℝ => w * t) w t := by
     simpa using (hasDerivAt_id t).const_mul w
-  have h := hasDerivAt_mulVec S ((hy (w * t)).scomp t ht)
+  have h := Dynamics.hasDerivAt_mulVec S ((hy (w * t)).scomp t ht)
   refine h.congr_deriv ?_
   simp only [rebaseMatrix, Matrix.smul_mulVec, smul_smul,
     mul_inv_cancel₀ hw, one_smul, Matrix.mulVec_mulVec, ← Matrix.mul_assoc, hST, Matrix.one_mul]

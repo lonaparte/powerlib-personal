@@ -97,9 +97,9 @@ theorem for the regularized field, transferred through the ball on which it is m
   obtain ⟨hreg0, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.unstable_of_jacobian_violation_fin_four (m.p.jacobian m.x)
     (m.p.contDiff_regField hV) hreg0 hJ hviol
-  exact Dynamics.unstable_of_eqOn_ball (by positivity)
-    (fun y hy => m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
-      (mem_ball_iff_norm.mpr hy)) hreg
+  exact (Dynamics.unstable_congr_nhds (Dynamics.eventuallyEq_of_eqOn_ball (by positivity)
+    fun y hy => m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
+      (mem_ball_iff_norm.mpr hy))).mpr hreg
 
 /-- **Off the Routh boundary the Lyapunov and the local asymptotic translations are exact.** At an
 equilibrium with positive reference whose Jacobian is not on the 4×4 Routh boundary, Lyapunov

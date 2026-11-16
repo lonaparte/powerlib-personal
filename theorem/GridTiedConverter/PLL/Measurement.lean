@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.PLL.Linear
 import theorem.LTI.Plant
+import theorem.SpecialFunctions.Elementary
 
 /-! # Frequency measurement by SRF-PLL: bandwidth, phase, ROCOF
 
@@ -245,11 +246,6 @@ transfer function of `frequencyModel`, `transfer_frequencyModel`). -/
     field_simp
     ring
 
-@[tmio T, powerlib_foundation] private lemma arg_of_re_pos_eq_arctan {z : ℂ} (hz : 0 < z.re) :
-    arg z = Real.arctan (z.im / z.re) := by
-  have habs : |arg z| < Real.pi / 2 := Complex.abs_arg_lt_pi_div_two_iff.mpr (Or.inl hz)
-  rw [← Complex.tan_arg, Real.arctan_tan (by linarith [neg_abs_le (arg z)]) (lt_of_abs_lt habs)]
-
 /-- Phase of the PLL closed loop: `arg H(jω) = −arctan(a ω³/(b(b − ω²) + a²ω²))` whenever the
 denominator is positive (`a = V K_p`, `b = ω_n² = V K_i`). -/
 @[tmio M, powerlib_domain] theorem arg_closedLoopTF {V Kp Ki ω : ℝ}
@@ -266,7 +262,7 @@ denominator is positive (`a = V K_p`, `b = ω_n² = V K_i`). -/
       have : V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2 = 0 := by
         rw [h1, show (V * Kp) ^ 2 * ω ^ 2 = (V * Kp * ω) ^ 2 by ring, h2]; ring
       linarith
-  rw [closedLoopTF_eq, Complex.arg_real_mul _ (inv_pos.mpr hden), arg_of_re_pos_eq_arctan hD]
+  rw [closedLoopTF_eq, Complex.arg_real_mul _ (inv_pos.mpr hden), SpecialFunctions.arg_eq_arctan hD]
   rw [neg_div, Real.arctan_neg]
 
 /-- With `ζ ≥ 1/2` (`K_i ≤ V K_p²`, `V, K_i > 0`) the phase formula holds at every `ω`. -/

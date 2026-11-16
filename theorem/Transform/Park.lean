@@ -121,10 +121,6 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
   have h := Real.sin_sq_add_cos_sq δ
   linear_combination (v 0 * i 0 + v 1 * i 1) * h
 
-@[tmio M, simp, powerlib_domain] theorem park_mulVec_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
-    park θ *ᵥ (rot θ *ᵥ x) = x := by
-  rw [Matrix.mulVec_mulVec, park_mul_rot, Matrix.one_mulVec]
-
 @[tmio M, powerlib_domain] theorem det_rot (θ : ℝ) : (rot θ).det = 1 := by
   rw [rot, det_fin_two_of]; nlinarith [Real.sin_sq_add_cos_sq θ]
 

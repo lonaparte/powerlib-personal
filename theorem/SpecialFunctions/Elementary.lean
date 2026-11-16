@@ -32,7 +32,7 @@ Results.
 * Complex exponential: `normSq_affine_exp` (`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`),
   `im_logDeriv_affine_exp`
   (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`).
-* Complex argument: `arg_eq_arctan` (`arg (x + j y) = arctan (y / x)` for `x > 0`).
+* Complex argument: `arg_eq_arctan` (`arg z = arctan (Im z / Re z)` for `Re z > 0`).
 -/
 
 noncomputable section
@@ -182,18 +182,10 @@ end ComplexExp
 
 /-! ## Complex argument -/
 
-/-- `arg (x + j y) = arctan (y / x)` for `x > 0`. -/
-@[tmio T, powerlib_foundation] theorem arg_eq_arctan {x y : ℝ} (hx : 0 < x) :
-    Complex.arg ⟨x, y⟩ = Real.arctan (y / x) := by
-  have hz : (⟨x, y⟩ : ℂ) ≠ 0 := by
-    intro h; have := congrArg Complex.re h; simp at this; linarith
-  have habs : |Complex.arg ⟨x, y⟩| < Real.pi / 2 :=
-    Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hx)
-  have hn : 0 < ‖(⟨x, y⟩ : ℂ)‖ := norm_pos_iff.2 hz
-  have htan : Real.tan (Complex.arg ⟨x, y⟩) = y / x := by
-    rw [Real.tan_eq_sin_div_cos, Complex.sin_arg, Complex.cos_arg hz]
-    simp only
-    field_simp
-  rw [← htan, Real.arctan_tan (abs_lt.1 habs).1 (abs_lt.1 habs).2]
+/-- `arg z = arctan (Im z / Re z)` for `Re z > 0` (for `z = x + j y`: `arctan (y / x)`). -/
+@[tmio T, powerlib_foundation] theorem arg_eq_arctan {z : ℂ} (hz : 0 < z.re) :
+    Complex.arg z = Real.arctan (z.im / z.re) := by
+  have habs : |Complex.arg z| < Real.pi / 2 := Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hz)
+  rw [← Complex.tan_arg, Real.arctan_tan (abs_lt.1 habs).1 (abs_lt.1 habs).2]
 
 end powerlib.SpecialFunctions

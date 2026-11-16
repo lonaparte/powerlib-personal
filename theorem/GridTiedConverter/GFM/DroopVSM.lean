@@ -161,7 +161,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     IsTrajectoryOn (fun t => Dynamics.affineCoord (d.coord hK) d.offset (φ t))
       (d.vsmField (d.τp * d.KR) d.KR) a b := by
   rw [d.vsmField_eq_transport hK hτ]
-  exact Dynamics.isTrajectoryOn_transport _ _ hφ
+  exact Dynamics.isIntegralCurveOn_transport _ _ hφ
 
 /-- Trajectories of the VSM map back to trajectories of droop + LPF.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -172,7 +172,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
       (fun t => Dynamics.affineCoord (d.coord hK).symm (-((d.coord hK).symm d.offset)) (χ t))
       d.droopField a b := by
   rw [d.vsmField_eq_transport hK hτ] at hχ
-  have h := Dynamics.isTrajectoryOn_transport (d.coord hK).symm (-((d.coord hK).symm d.offset)) hχ
+  have h := Dynamics.isIntegralCurveOn_transport (d.coord hK).symm
+    (-((d.coord hK).symm d.offset)) hχ
   rwa [Dynamics.transportField_symm_transportField] at h
 
 /-- Equilibria correspond. Static evidence on the model, not a connection conclusion. -/
@@ -510,7 +511,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
     rcases s with P | _ | E
     · exact droopFamily_isAutonomous.mem_den_flow.symm.trans
         ((holds_iff m P).trans vsmFamily_isAutonomous.mem_den_flow)
-    · exact ⟨fun _ => Port.System.autonomous_passive _, fun _ => Port.System.autonomous_passive _⟩
+    · exact ⟨fun _ => Port.System.passive_of_noPorts _, fun _ => Port.System.passive_of_noPorts _⟩
     · exact iff_of_true trivial trivial
   exact congrArg TMIO.satisfaction hh
 

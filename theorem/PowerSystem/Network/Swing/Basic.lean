@@ -43,12 +43,12 @@ Results.
   (`hasFDerivAt_reducedField`), shows it is Hurwitz from the eigenvector identity
   `μ²uᴴMu + μuᴴDu + uᴴLu = 0` with `L` the Laplacian of `Bᵢⱼ cos(θ*ᵢ - θ*ⱼ)`
   (`jacobian_isHurwitz`, `jacobian_isHurwitz_of_angle`), and applies
-  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`.
+  `hurwitz_linearization_locally_exponentially_stable`.
 * Static evidence: `fullField_equilibrium_shift`, `reducedField_reduce`,
   `reducedField_equilibrium` and its converse `powerFlow_of_equilibrium` (the equilibria of the
-  reduced field at the selected points are the power-balance points), `state_ext`,
-  `jacobian_isHurwitz_of_angle`. Private implementation evidence (trajectory level, Rules §3a):
-  `reduce_trajectory`.
+  reduced field at the selected points are the power-balance points; a reduced state is fixed by
+  its `dIdx`/`wIdx` blocks, `Dynamics.state_ext_blocks`), `jacobian_isHurwitz_of_angle`.
+  Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.
 
 Family and connection conclusions.
 * System map: a model (`Model n`: the swing data `Params n` and a selected angle profile `θ*`)
@@ -195,18 +195,12 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
   · simp
   · simp [sub_eq_add_neg]
 
-/-- A reduced state is determined by its angle and frequency blocks
-(`Dynamics.state_ext_blocks`). -/
-@[tmio T, powerlib_foundation] theorem state_ext {z z' : State (n + (n + 1))}
-    (hd : ∀ i, z (dIdx i) = z' (dIdx i)) (hw : ∀ k, z (wIdx k) = z' (wIdx k)) : z = z' :=
-  Dynamics.state_ext_blocks hd hw
-
 /-- The reduction intertwines the full and the reduced field. Static evidence on the model, not a
 connection conclusion. -/
 @[tmio M, powerlib_domain] theorem reducedField_reduce (p : Params n)
     (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
     reducedField p (reduce x) = reduce (fullField p x) := by
-  apply state_ext
+  apply Dynamics.state_ext_blocks
   · intro i; simp [fullField]
   · intro k
     simp only [reducedField_wIdx, reduce_wIdx, fullField, angleMap_reduce,
@@ -231,7 +225,7 @@ Every trajectory of the full swing model projects to a trajectory of the reduced
         (fun k => (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) k).comp
           (ContinuousLinearMap.snd ℝ (Fin (n + 1) → ℝ) (Fin (n + 1) → ℝ))) r), ?_⟩
     intro y
-    apply state_ext
+    apply Dynamics.state_ext_blocks
     · intro i; simp [reduce]
     · intro k; simp [reduce]
   obtain ⟨R, hR⟩ := hlin
@@ -254,7 +248,7 @@ not a connection conclusion. -/
     have := fullField_equilibrium_shift p θ heq 0
     simpa using this
   rw [this]
-  apply state_ext <;> intro _ <;> simp
+  apply Dynamics.state_ext_blocks <;> intro _ <;> simp
 
 /-- Block form of the reduced Jacobian. -/
 def jacobianBlocks (p : Params n) (θ : Fin (n + 1) → ℝ) :
@@ -645,14 +639,14 @@ the untranslated field. -/
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow_iff)]
   change LocallyExponentiallyStable (reducedField p) (equilibrium θ)
-  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian p θ)
+  exact hurwitz_linearization_locally_exponentially_stable (jacobian p θ)
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_of_angle p θ hangle hconn)))
 
 @[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hH : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
+  mem_den_flow_iff.mpr (hurwitz_linearization_locally_exponentially_stable
     (jacobian m.params m.θ) (reducedField_contDiff m.params)
     (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 
@@ -793,7 +787,7 @@ def uncoupledN (n : ℕ) : Model (n + 1) :=
     fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
 
 @[tmio M, powerlib_domain] private theorem uncoupledN_point : equilibrium (uncoupledN n).θ = 0 := by
-  apply state_ext
+  apply Dynamics.state_ext_blocks
   · intro i; simp [equilibrium, uncoupledN]
   · intro k; simp [equilibrium, uncoupledN]
 
@@ -813,11 +807,11 @@ private def conservedLin (m : ℕ) : State (m + (m + 1)) →ₗ[ℝ] State (m + 
   toFun z := WithLp.toLp 2 fun r => Fin.addCases (motive := fun _ => ℝ)
     (fun i => z (dIdx i) + z (wIdx i.succ) - z (wIdx 0)) (fun k => z (wIdx k)) r
   map_add' z w := by
-    apply state_ext
+    apply Dynamics.state_ext_blocks
     · intro i; simp; ring
     · intro k; simp
   map_smul' c z := by
-    apply state_ext
+    apply Dynamics.state_ext_blocks
     · intro i; simp; ring
     · intro k; simp
 
@@ -834,7 +828,7 @@ private def conservedLin (m : ℕ) : State (m + (m + 1)) →ₗ[ℝ] State (m + 
   have hw : ∀ k, z (wIdx k) = w (wIdx k) := fun k => by
     have := congrArg (fun y : State (m + (m + 1)) => y (wIdx k)) h
     simpa [conservedLin_w] using this
-  apply state_ext _ hw
+  apply Dynamics.state_ext_blocks _ hw
   intro i
   have := congrArg (fun y : State (m + (m + 1)) => y (dIdx i)) h
   simp only [conservedLin_d, hw] at this

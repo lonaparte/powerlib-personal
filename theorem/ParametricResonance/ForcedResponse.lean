@@ -1,4 +1,5 @@
 import theorem.Linear.Transfer
+import theorem.Criteria.Hurwitz
 import theorem.LTI.Decay
 import theorem.Dynamics.Coordinates
 
@@ -91,14 +92,6 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
     at h1
   exact sub_eq_iff_eq_add'.mp h1
 
-/-- A Hurwitz matrix has no eigenvalue on the imaginary axis. -/
-@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_imag_ne_zero
-    {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) (ω : ℝ) :
-    (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0 := by
-  intro h
-  have := (Linear.spectrallyStable_iff_isHurwitz A).mpr hA _ h
-  simp at this
-
 /-- `x₁` is a global solution of the forced LTI equation `ẋ = A₀ x + Re(b e^{jωt})`. -/
 @[tmio T, powerlib_foundation] theorem forcedOrbit_solves {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ}
     (b : Fin n → ℂ) (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0) :
@@ -171,7 +164,8 @@ forced orbit. -/
         K * Real.exp (-(rate * t)) * ‖x 0 - forcedOrbit A b ω 0‖ := by
   obtain ⟨K, hK, rate, hrate, hbound⟩ := LTI.exists_global_bound_of_isHurwitz hA
   exact ⟨K, hK, rate, hrate, fun x hx t ht =>
-    hbound _ (isTrajectory_sub_forcedOrbit (det_characteristicMatrix_imag_ne_zero hA ω) hx) t ht⟩
+    hbound _ (isTrajectory_sub_forcedOrbit
+      (Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz hA (by simp)) hx) t ht⟩
 
 /-- Hurwitz `A₀`: the forced orbit is the only global solution of the forced equation with the
 forcing period `T = 2π/ω` (`ω T = 2π`, `T > 0`). -/

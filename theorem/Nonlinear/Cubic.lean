@@ -120,7 +120,8 @@ def family : Family Gain Requirement n 0 :=
     (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
 
 /-- Every model is globally exponentially stable, with a solution through every state. -/
-@[tmio TM, powerlib_foundation] private theorem globallyExponentiallyStable (α : Gain) :
+@[tmio TM, powerlib_foundation]
+theorem mem_den_globallyExponentiallyStable (α : Gain) :
     connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) :=
   family_isAutonomous.mem_den_flow.mpr
     ((certificate α).globallyExponentiallyStable (field_smooth _))
@@ -131,7 +132,8 @@ def family : Family Gain Requirement n 0 :=
     (hφ : IsTrajectoryOn φ (field α.1) a b) (ht : t ∈ Icc a b) :
     Real.exp (-(2 * (α.1 + ‖φ a‖ ^ 2) * (t - a))) * ‖φ a‖ ^ 2 ≤ ‖φ t‖ ^ 2 := by
   have hdec : ∀ s ∈ Icc a b, ‖φ s‖ ^ 2 ≤ ‖φ a‖ ^ 2 := fun s hs => by
-    have hb := (certificate α).energy_bound hφ hs
+    have hb := Flow.energy_bound_of_dissipation (certificate α).smooth
+      (certificate α).dissipation hφ hs
     have he : Real.exp (-((certificate (n := n) α).rate * (s - a))) ≤ 1 := by
       rw [Real.exp_le_one_iff]
       have : 0 ≤ (certificate (n := n) α).rate * (s - a) :=
@@ -150,12 +152,6 @@ def family : Family Gain Requirement n 0 :=
 
 /-! ## The family -/
 
-@[tmio TM, powerlib_foundation]
-theorem mem_den_globallyExponentiallyStable (α : Gain) :
-    connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact globallyExponentiallyStable α
-
 /-- No gain bounds every decay rate. -/
 @[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
@@ -172,7 +168,7 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
     connection% ((family (n := n)).chain = (family (n := n)).semantics) := by
   unfold powerlib.TMIO.Statement
   have hges : ∀ α : Gain, Flow.GloballyExponentiallyStable (field (n := n) α.1) 0 :=
-    fun α => family_isAutonomous.mem_den_flow.mp (globallyExponentiallyStable α)
+    fun α => family_isAutonomous.mem_den_flow.mp (mem_den_globallyExponentiallyStable α)
   have hall : ∀ {P : Flow.Property}, (∀ α : Gain, P.holds (field (n := n) α.1) 0) →
       (family (n := n)).den (.flow P) = univ := fun h => by
     ext α

@@ -234,9 +234,6 @@ def dissipation (z : State 5) : ℝ :=
 
 end Model
 
-@[tmio T, powerlib_foundation] private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x j) :=
-  Dynamics.contDiff_coord j
-
 /-- Components of the reduced field. Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_apply (m : Model) (x : State 5) (w : Fin 3 → ℝ) :
     m.field x w 0 =
@@ -257,11 +254,11 @@ end Model
 /-- The reduced field is `C¹`. Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_smooth (m : Model) (w : Fin 3 → ℝ) :
     ContDiff ℝ 1 (fun x => m.field x w) := by
-  have h0 := coord_smooth 0
-  have h1 := coord_smooth 1
-  have h2 := coord_smooth 2
-  have h3 := coord_smooth 3
-  have h4 := coord_smooth 4
+  have h0 := Dynamics.contDiff_coord (n := 5) (k := 1) 0
+  have h1 := Dynamics.contDiff_coord (n := 5) (k := 1) 1
+  have h2 := Dynamics.contDiff_coord (n := 5) (k := 1) 2
+  have h3 := Dynamics.contDiff_coord (n := 5) (k := 1) 3
+  have h4 := Dynamics.contDiff_coord (n := 5) (k := 1) 4
   have hs : ContDiff ℝ 1 (fun x : State 5 => ![
     (-m.Gdc * x 0 + m.idcRef - m.Kp * (x 0 - m.vdcRef) - m.μ / 2 * x 2 + w 0) / m.Cdc,
     (-m.R * x 1 - x 3) / m.L + m.η * x 0 * x 2,
@@ -397,7 +394,7 @@ not a connection conclusion. -/
   fin_cases i <;> simp [z0, z1, z2, z3, z4]
 
 @[tmio M, powerlib_domain] private theorem dissipation_continuous (m : Model) : Continuous m.dissipation := by
-  have h := fun j => (coord_smooth j).continuous
+  have h := fun j => (Dynamics.contDiff_coord (n := 5) (k := 1) j).continuous
   have h0 := h 0
   have h1 := h 1
   have h2 := h 2
@@ -407,11 +404,11 @@ not a connection conclusion. -/
   fun_prop
 
 @[tmio M, powerlib_domain] private theorem energy_smooth (m : Model) : ContDiff ℝ 1 m.energy := by
-  have h0 := coord_smooth 0
-  have h1 := coord_smooth 1
-  have h2 := coord_smooth 2
-  have h3 := coord_smooth 3
-  have h4 := coord_smooth 4
+  have h0 := Dynamics.contDiff_coord (n := 5) (k := 1) 0
+  have h1 := Dynamics.contDiff_coord (n := 5) (k := 1) 1
+  have h2 := Dynamics.contDiff_coord (n := 5) (k := 1) 2
+  have h3 := Dynamics.contDiff_coord (n := 5) (k := 1) 3
+  have h4 := Dynamics.contDiff_coord (n := 5) (k := 1) 4
   unfold Model.energy
   fun_prop
 

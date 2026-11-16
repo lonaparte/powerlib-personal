@@ -162,7 +162,7 @@ that is not a closed-loop eigenvalue. -/
     ∃ s : ℂ, (characteristicMatrix (imcModel L R α).A s).det = 0 ∧ 0 < s.re := by
   rw [imcModel_A]
   rcases h with h | h
-  · refine Criteria.exists_characteristic_root_re_pos_of_trace_pos _ ?_
+  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [Matrix.trace_fin_two_of]
     linarith
   · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_

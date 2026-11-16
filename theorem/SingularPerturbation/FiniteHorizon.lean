@@ -206,12 +206,6 @@ variable {n m : ℕ}
   linarith
 
 
-/-- Derivative of `N y(t)` (`Dynamics.hasDerivAt_mulVec`). -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_mulVec {k l : ℕ} (N : Matrix (Fin k) (Fin l) ℝ)
-    {y : ℝ → Fin l → ℝ} {dy : Fin l → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
-    HasDerivAt (fun s => N *ᵥ y s) (N *ᵥ dy) t :=
-  Dynamics.hasDerivAt_mulVec N hy
-
 /-- `|a v|² = a² |v|²`. -/
 @[tmio T, powerlib_foundation] theorem smul_dotProduct_smul_self {k : Type*} [Fintype k] (a : ℝ)
     (v : k → ℝ) :
@@ -336,7 +330,7 @@ variable {n m : ℕ}
   have hdd : ∀ s, HasDerivAt d
       (A0 *ᵥ d s + (A0 * G) *ᵥ (ε • ηb s) + A12 *ᵥ (η s - ηb s)) s := by
     intro s
-    have h := ((hx s).sub (hxbar s)).sub ((hasDerivAt_mulVec G (hηb s)).const_smul ε)
+    have h := ((hx s).sub (hxbar s)).sub ((Dynamics.hasDerivAt_mulVec G (hηb s)).const_smul ε)
     convert h using 1
     have : ε • (G *ᵥ (ε⁻¹ • (A22 *ᵥ ηb s))) = A12 *ᵥ ηb s := by
       rw [mulVec_smul, smul_smul, mul_inv_cancel₀ hε.ne', one_smul, mulVec_mulVec, hGA]
@@ -532,7 +526,7 @@ variable (sp : LinearSP n m)
   have hx' : HasDerivAt x (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t)) t := by
     rw [← hslow]; exact hx t
   refine ⟨hx', ?_⟩
-  have h := (hz t).add (hasDerivAt_mulVec sp.gain hx')
+  have h := (hz t).add (Dynamics.hasDerivAt_mulVec sp.gain hx')
   rw [mulVec_add, hAL, add_comm (sp.A22 *ᵥ z t)]
   exact h
 

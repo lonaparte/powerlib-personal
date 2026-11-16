@@ -161,16 +161,17 @@ def unbalancedAlphaBeta (θh : ℝ) (Vp Vn : Fin 2 → ℝ) : Fin 2 → ℝ :=
 (Rodríguez et al. 2007, eq. (3)). -/
 @[tmio M, powerlib_domain] theorem ddsrf_positiveFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park θh *ᵥ unbalancedAlphaBeta θh Vp Vn = Vp + park (2 * θh) *ᵥ Vn := by
-  rw [unbalancedAlphaBeta, Matrix.mulVec_add, Transform.park_mulVec_rot_mulVec,
-    Matrix.mulVec_mulVec, Transform.park_eq_rot_neg θh, ← Transform.rot_add,
+  rw [unbalancedAlphaBeta, Matrix.mulVec_add, Matrix.mulVec_mulVec Vp, Transform.park_mul_rot,
+    Matrix.one_mulVec, Matrix.mulVec_mulVec, Transform.park_eq_rot_neg θh, ← Transform.rot_add,
     Transform.park_eq_rot_neg (2 * θh)]
   congr 3; ring
 
 /-- Negative-frame (`dq^{−1}`) components: `V^{−−} = V⁻ + rot(2θ̂) V⁺`. -/
 @[tmio M, powerlib_domain] theorem ddsrf_negativeFrame (θh : ℝ) (Vp Vn : Fin 2 → ℝ) :
     park (-θh) *ᵥ unbalancedAlphaBeta θh Vp Vn = Vn + rot (2 * θh) *ᵥ Vp := by
-  rw [unbalancedAlphaBeta, Matrix.mulVec_add, Transform.park_mulVec_rot_mulVec,
-    Matrix.mulVec_mulVec, Transform.park_eq_rot_neg (-θh), ← Transform.rot_add, add_comm]
+  rw [unbalancedAlphaBeta, Matrix.mulVec_add, Matrix.mulVec_mulVec Vn, Transform.park_mul_rot,
+    Matrix.one_mulVec, Matrix.mulVec_mulVec, Transform.park_eq_rot_neg (-θh), ← Transform.rot_add,
+    add_comm]
   congr 3; ring
 
 /-- Decoupling error with an estimate `V̄⁻`: the residual is `park(2θ̂)(V⁻ − V̄⁻)`; with an exact

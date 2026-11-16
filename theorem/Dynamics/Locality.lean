@@ -25,9 +25,8 @@ Results.
 * Neighbourhood (filter) form: `locallyExponentiallyStable_congr_nhds`, `lyapunovStable_congr_nhds`,
   `unstable_congr_nhds`, `localAsymptoticStable_congr_nhds`: if `f = g` on a neighbourhood of
   `x_eq` the properties transfer (first-exit argument with `exists_first_sphere_hit`).
-* Ball form, the corollaries for `f = g` on `‖y − x‖ < ρ`:
-  `locallyExponentiallyStable_of_eqOn_ball`, `unstable_of_eqOn_ball` (for Lyapunov and local
-  asymptotic stability compose the filter form with `eventuallyEq_of_eqOn_ball`).
+* Ball form: for `f = g` on `‖y − x‖ < ρ` compose the filter form with
+  `eventuallyEq_of_eqOn_ball`.
 * First-exit and bootstrap arguments on finite solution segments: `forall_lt_of_first_exit`,
   `forall_norm_sub_lt_of_bootstrap`, `exp_bound_of_local` (an exponential estimate transfers to a
   curve that solves `ẋ = G x` while it stays in a ball).
@@ -194,7 +193,7 @@ field. -/
     (hA : LinearSystems.IsHurwitz A) : LocallyExponentiallyStable f x_eq := by
   obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
   refine locallyExponentiallyStable_congr_nhds hgf.symm ?_
-  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hg
+  exact hurwitz_linearization_locally_exponentially_stable A hg
     (by rw [hgf.eq_of_nhds, heq]) (by rw [hgf.fderiv_eq, hJac]) hA
 
 /-- Instability from a Jacobian eigenvalue with positive real part, local `C¹` version. -/
@@ -208,7 +207,7 @@ field. -/
     Unstable f x_eq := by
   obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
   rw [unstable_congr_nhds hgf.symm]
-  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos A hg
+  exact unstable_of_exists_complex_eigenvalue_re_pos A hg
     (by rw [hgf.eq_of_nhds, heq]) (by rw [hgf.fderiv_eq, hJac]) hunstable
 
 end Nhds
@@ -364,20 +363,6 @@ never leaves the full ball. -/
   rw [closure_Ico hτ0.ne] at hcl
   have hle : ‖φ τ - x‖ ≤ R / 2 := (hcl ⟨hτ0.le, le_rfl⟩).2
   linarith
-
-/-- Local exponential stability depends only on the field on a ball around the equilibrium. -/
-@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_eqOn_ball
-    {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
-    (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : LocallyExponentiallyStable g x) :
-    LocallyExponentiallyStable f x :=
-  locallyExponentiallyStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
-
-/-- Instability depends only on the field on a ball around the equilibrium. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_eqOn_ball
-    {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
-    (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : Unstable g x) :
-    Unstable f x :=
-  (unstable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg)).mpr hg
 
 /-- Bootstrap: an exponential estimate for `G` transfers to every curve that solves
 `ẋ = G x` while it stays in the ball of radius `R`. -/

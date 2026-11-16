@@ -141,7 +141,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       IsTrajectoryOn (fun t => scaleCoord hη (φ t)) (matchedSwing C G η idc ix) a b := by
   constructor
   · intro h
-    have h' := isTrajectoryOn_transport (scaleCoord hη) 0 h
+    have h' := isIntegralCurveOn_transport (scaleCoord hη) 0 h
     rw [matching_eq_swing hC hη] at h'
     simpa [affineCoord_zero_apply] using h'
   · intro h
@@ -150,7 +150,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       rw [matching_eq_swing hC hη]
       simp only [affineCoord_zero_apply]
       exact h
-    have h2 := isTrajectoryOn_transport (scaleCoord hη).symm (-((scaleCoord hη).symm 0)) h1
+    have h2 := isIntegralCurveOn_transport (scaleCoord hη).symm (-((scaleCoord hη).symm 0)) h1
     rw [transportField_symm_transportField] at h2
     simpa only [affineCoord_symm_affineCoord] using h2
 

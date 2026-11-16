@@ -28,8 +28,8 @@ Results.
   (`fderiv_lift`).
 * Scalar linearization wrappers: `g r = 0`, `deriv g r < 0` ⇒ local exponential stability
   (`lift_locallyExponentiallyStable`); `deriv g r > 0` ⇒ instability (`lift_unstable`). They only
-  repackage `powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian` and
-  `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos` for `n = 1`;
+  repackage `hurwitz_linearization_locally_exponentially_stable` and
+  `unstable_of_exists_complex_eigenvalue_re_pos` for `n = 1`;
   `lift_locallyExponentiallyStable_iff`: with the converse linearization
   (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), local exponential stability of
   `r` holds exactly when `g r = 0` and `g'(r) < 0`.
@@ -144,7 +144,7 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
     (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : deriv g r < 0) :
     LocallyExponentiallyStable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
-  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian !![deriv g r] (lift_contDiff hg)
+  refine hurwitz_linearization_locally_exponentially_stable !![deriv g r] (lift_contDiff hg)
     ((lift_eq_zero_iff g r).mpr h0) ?_ ((Linear.isHurwitz_one_iff _).mpr hslope)
   have := fderiv_lift (g := g) (x := embed r) (by simpa using hd)
   simpa using this
@@ -167,7 +167,7 @@ when it is a zero with negative slope. -/
     (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : 0 < deriv g r) :
     Unstable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
-  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos !![deriv g r] (lift_contDiff hg)
+  refine unstable_of_exists_complex_eigenvalue_re_pos !![deriv g r] (lift_contDiff hg)
     ((lift_eq_zero_iff g r).mpr h0) ?_ (exists_eigenpair_one_of_pos hslope)
   have := fderiv_lift (g := g) (x := embed r) (by simpa using hd)
   simpa using this

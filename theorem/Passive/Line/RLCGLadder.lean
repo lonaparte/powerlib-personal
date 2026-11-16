@@ -326,7 +326,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (model p N).energy (WithLp.ofLp (φ t) ∘ finSumFinEquiv) <
       (model p N).energy (WithLp.ofLp (φ a) ∘ finSumFinEquiv) := by
   obtain ⟨c⟩ := exists_quadraticDecay (ladderPH p N) (ladderPH_dissipation_pos p N hR hG)
-  have hb := c.energy_bound hφ ⟨ht.1.le, ht.2⟩
+  have hb := Flow.energy_bound_of_dissipation c.smooth c.dissipation hφ ⟨ht.1.le, ht.2⟩
   have hpos : 0 < (ladderPH p N).kyp.storage (φ a) :=
     div_pos ((ladderPH p N).energy_pos _ (by simpa using h0)) two_pos
   have hexp : Real.exp (-(c.rate * (t - a))) < 1 := by

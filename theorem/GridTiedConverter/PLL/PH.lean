@@ -614,7 +614,7 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
 
 @[tmio T, powerlib_foundation] private theorem norm_point_sub (θ ηs s w : ℝ) :
     ‖PhasePlane.mk (θ + s) (ηs + w) - PhasePlane.mk θ ηs‖ ≤ |s| + |w| := by
-  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
+  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans (le_of_eq ?_)
   simp [PhasePlane.mk]
 
 /-- Within nonnegative energy, local asymptotic stability at an equilibrium `(θ*, η*)` forces

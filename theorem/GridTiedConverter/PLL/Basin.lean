@@ -71,17 +71,14 @@ open powerlib.Dynamics (State)
   rw [PhasePlane.norm_sq_eq]
   exact (hM x hx).trans (le_max_left _ _)
 
-@[tmio T, powerlib_foundation] private lemma contDiff_coord (i : Fin 2) :
-    ContDiff ℝ 1 (fun x : State 2 => x i) :=
-  Dynamics.contDiff_coord i
-
 /-! ## 1. Port-Hamiltonian energy -/
 
 @[tmio M, powerlib_domain] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
     ContDiff ℝ 1 (pllHamiltonian V Ki ηs) := by
   unfold pllHamiltonian
-  exact (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0)))).add
-    (contDiff_const.mul (((contDiff_coord 1).sub contDiff_const).pow 2))
+  exact (contDiff_const.mul (contDiff_const.sub
+      (Real.contDiff_cos.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0)))).add
+    (contDiff_const.mul (((Dynamics.contDiff_coord (n := 2) (k := 1) 1).sub contDiff_const).pow 2))
 
 /-- For `c < 2V` the potential-well piece `{|θ| < π, H_s ≤ c}` of the shifted
 port-Hamiltonian energy lies in the region of attraction of the locked equilibrium. 
@@ -96,8 +93,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
         Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
   set H := pllHamiltonian V Ki (δω / Ki)
   set W : Set (State 2) := {x | |x 0| < Real.pi}
-  have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
-    continuous_const
+  have hW : IsOpen W :=
+    isOpen_lt (continuous_abs.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0).continuous)
+      continuous_const
   have hLie : ∀ x, fderiv ℝ H x (srfField V Kp Ki δω x) = -(Kp * srfPD V (x 0) ^ 2) :=
     fun x => by
       have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp.le (δω / Ki) x
@@ -119,7 +117,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hcompact : IsCompact {x ∈ W | H x ≤ c} := by
     rw [hset]
     refine isCompact_of_bounds (M := Real.pi ^ 2 + 2 * (2 * |c| / Ki + (δω / Ki) ^ 2)) ?_ ?_
-    · exact (isClosed_le (continuous_abs.comp (contDiff_coord 0).continuous) continuous_const).inter
+    · exact (isClosed_le
+          (continuous_abs.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0).continuous)
+          continuous_const).inter
         (isClosed_le (contDiff_pllHamiltonian V Ki _).continuous continuous_const)
     · rintro x ⟨h1, h2⟩
       have hθ : x 0 ^ 2 ≤ Real.pi ^ 2 := by
@@ -135,8 +135,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (contDiff_pllHamiltonian V Ki _)
     (fun x _ => by rw [hLie]; nlinarith [sq_nonneg (srfPD V (x 0))])
     hcompact ?_
-  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_srfField V Kp Ki δω)
-    (contDiff_coord 0) (fun x hx => ?_) (fun x hx hd => ?_)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem (contDiff_srfField V Kp Ki δω)
+    (Dynamics.contDiff_coord (n := 2) (k := 1) 0) (fun x hx => ?_) (fun x hx hd => ?_)
   · -- on the zero set of `Ḣ_s` inside the well, `θ = 0`
     rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
     obtain ⟨⟨hxW, -⟩, hz⟩ := hx
@@ -165,7 +165,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       exact (Real.sin_eq_zero_iff_of_lt_of_lt (abs_lt.mp hxW).1 (abs_lt.mp hxW).2).mp hs
     rw [(Dynamics.hasFDerivAt_coord _ _).fderiv, Dynamics.coord_apply, srfField_apply_zero, hθ,
       Real.sin_zero] at hd
-    rw [PhasePlane.ext_iff']
+    rw [Set.mem_singleton_iff, PhasePlane.ext_iff']
     refine ⟨by simp [PhasePlane.mk, hθ], ?_⟩
     simp only [PhasePlane.mk_apply_one]
     field_simp
@@ -197,8 +197,9 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
 @[tmio M, powerlib_domain] private lemma contDiff_xiRate (a b Δω : ℝ) :
     ContDiff ℝ 1 (xiRate a b Δω) := by
   unfold xiRate
-  exact (contDiff_const.sub (contDiff_const.mul (Real.contDiff_sin.comp (contDiff_coord 0)))).add
-    (contDiff_const.mul (contDiff_coord 1))
+  exact (contDiff_const.sub (contDiff_const.mul
+      (Real.contDiff_sin.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0)))).add
+    (contDiff_const.mul (Dynamics.contDiff_coord (n := 2) (k := 1) 1))
 
 @[tmio M, powerlib_domain] private lemma hasFDerivAt_xiRate (a b Δω : ℝ) (x : State 2) :
     HasFDerivAt (xiRate a b Δω)
@@ -238,7 +239,8 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
     ContDiff ℝ 1 (pendulumEnergy a b Δω) := by
   unfold pendulumEnergy
   exact (((contDiff_xiRate a b Δω).pow 2).div_const 2).add
-    (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0))))
+    (contDiff_const.mul (contDiff_const.sub
+      (Real.contDiff_cos.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0))))
 
 @[tmio M, powerlib_domain] private lemma contDiff_xiField (a b Δω : ℝ) :
     ContDiff ℝ 1 (xiField a b Δω) := by
@@ -257,8 +259,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
         Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (-Δω / b))) := by
   set E := pendulumEnergy a b Δω
   set W : Set (State 2) := {x | |x 0| < Real.pi / 2}
-  have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
-    continuous_const
+  have hW : IsOpen W :=
+    isOpen_lt (continuous_abs.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0).continuous)
+      continuous_const
   have hcosW : ∀ x ∈ W, 0 < Real.cos (x 0) := fun x hx =>
     Real.cos_pos_of_mem_Ioo ⟨(abs_lt.mp hx).1, (abs_lt.mp hx).2⟩
   have hset : {x ∈ W | E x ≤ c} = {x : State 2 | |x 0| ≤ Real.pi / 2 ∧ E x ≤ c} := by
@@ -279,7 +282,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
     rw [hset]
     refine isCompact_of_bounds
       (M := Real.pi ^ 2 + ((Real.sqrt (2 * |c|) + |Δω| + a) / b) ^ 2) ?_ ?_
-    · exact (isClosed_le (continuous_abs.comp (contDiff_coord 0).continuous) continuous_const).inter
+    · exact (isClosed_le
+          (continuous_abs.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0).continuous)
+          continuous_const).inter
         (isClosed_le (contDiff_pendulumEnergy a b Δω).continuous continuous_const)
     · rintro x ⟨h1, h2⟩
       have hθ : x 0 ^ 2 ≤ Real.pi ^ 2 := by
@@ -326,7 +331,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     rcases this with h | h
     · exact absurd h hpos.ne'
     · exact pow_eq_zero_iff two_ne_zero |>.mp h
-  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_xiField a b Δω)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem (contDiff_xiField a b Δω)
     (contDiff_xiRate a b Δω) hzero (fun x hx hd => ?_)
   have hw := hzero x hx
   rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
@@ -344,7 +349,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (by linarith [(abs_lt.mp hxW').1, Real.pi_pos])
     (by linarith [(abs_lt.mp hxW').2, Real.pi_pos])).mp hs
   rw [hθ, Real.sin_zero, mul_zero, sub_zero] at hw'
-  rw [PhasePlane.ext_iff']
+  rw [Set.mem_singleton_iff, PhasePlane.ext_iff']
   refine ⟨by simp [PhasePlane.mk, hθ], ?_⟩
   simp only [PhasePlane.mk_apply_one]
   field_simp

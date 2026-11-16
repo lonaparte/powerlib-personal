@@ -277,7 +277,7 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
 @[tmio T, powerlib_foundation] theorem angleState_smul (c : ℝ) (v : Fin n → ℝ) :
     angleState (c • v) = c • angleState v := by
-  apply state_ext <;> intro _ <;> simp
+  apply Dynamics.state_ext_blocks <;> intro _ <;> simp
 
 @[tmio T, powerlib_foundation] theorem angleState_eq_zero_iff (v : Fin n → ℝ) :
     angleState v = 0 ↔ v = 0 := by
@@ -287,7 +287,7 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
     have := congrArg (fun y : State (n + (n + 1)) => y (dIdx i)) h
     simpa using this
   · rintro rfl
-    apply state_ext <;> intro _ <;> simp
+    apply Dynamics.state_ext_blocks <;> intro _ <;> simp
 
 @[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     potential p (fun k => θ k + c) = potential p θ - c * ∑ k, p.P k := by
@@ -377,7 +377,7 @@ def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ -
 /-- The selected point is the rest point at the relative angles of the profile. -/
 @[tmio T, powerlib_foundation] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
     equilibrium θ = Dynamics.Mechanical.point (relAngles θ) := by
-  apply state_ext
+  apply Dynamics.state_ext_blocks
   · intro i
     rw [Dynamics.Mechanical.point_qIdx]
     simp [equilibrium, relAngles]
@@ -436,7 +436,7 @@ in relative angles `q ↦ U(ground q)`. Static identity: the dynamics results of
   have hpos : Dynamics.Mechanical.pos z = fun i => z (dIdx i) := by
     ext i
     simp
-  apply state_ext
+  apply Dynamics.state_ext_blocks
   · intro i
     rw [reducedField_dIdx, Dynamics.Mechanical.field_qIdx]
     simp
@@ -1550,7 +1550,7 @@ field. -/
     {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ}
     (hv : ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
     reducedField p (equilibrium θ + angleState v) = 0 := by
-  apply state_ext
+  apply Dynamics.state_ext_blocks
   · intro i; simp [reducedField_dIdx, equilibrium]
   · intro k
     rw [reducedField_wIdx]
@@ -1587,8 +1587,8 @@ field is locally asymptotically stable, whatever its linearization. -/
 def angleStateCLM : (Fin n → ℝ) →L[ℝ] State (n + (n + 1)) :=
   LinearMap.toContinuousLinearMap
     { toFun := angleState
-      map_add' := fun v w => by apply state_ext <;> intro _ <;> simp
-      map_smul' := fun c v => by apply state_ext <;> intro _ <;> simp }
+      map_add' := fun v w => by apply Dynamics.state_ext_blocks <;> intro _ <;> simp
+      map_smul' := fun c v => by apply Dynamics.state_ext_blocks <;> intro _ <;> simp }
 
 @[tmio T, simp, powerlib_foundation] theorem angleStateCLM_apply (v : Fin n → ℝ) :
     angleStateCLM v = angleState v := rfl

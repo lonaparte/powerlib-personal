@@ -16,8 +16,8 @@ Source: the port semantics of `theorem/Port/Defs.lean` (passivity as dissipativi
 to the supplied power) and the flow semantics of `theorem/Flow/Defs.lean`.
 
 Results.
-* Proving passivity: `System.passiveWith_of_rate`, `System.passive_of_noPorts`,
-  `System.autonomous_passive`.
+* Proving passivity: `System.passiveWith_of_rate`, `System.passive_of_noPorts` (every
+  `System.autonomous f` has no ports).
 * Refuting passivity: `System.not_passive_of_cycle`, `System.not_passive_of_equilibrium` (an
   equilibrium held by a constant input that draws energy out of the ports).
 * Consequences of a storage: `System.PassiveWith.zeroInput_le`,
@@ -128,10 +128,6 @@ passivity. -/
 supplied. -/
 @[tmio T, powerlib_foundation] theorem System.passive_of_noPorts (s : System n 0) : s.Passive :=
   ⟨fun _ => 0, fun _ => le_rfl, fun u x t₀ t₁ _ _ _ => by simp [System.supply]⟩
-
-@[tmio T, powerlib_foundation] theorem System.autonomous_passive (f : ℝⁿ → ℝⁿ) :
-    (System.autonomous f).Passive :=
-  (System.autonomous f).passive_of_noPorts
 
 end Port
 

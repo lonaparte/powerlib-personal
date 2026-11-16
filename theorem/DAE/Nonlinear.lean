@@ -24,7 +24,7 @@ Model boundary.
 * Conclusions are equilibrium-level (local, small-signal); nothing is claimed about large
   disturbances or about index ≥ 2 systems.
 * Behaviour is LeanForControl's `IsTrajectoryOn` / `LocallyExponentiallyStable`; the
-  linearization step is `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE
+  linearization step is `hurwitz_linearization_locally_exponentially_stable`. The DAE
   solution notion lies outside the Flow sentence language and is written out in the statements
   that use it: `(x, y)` is a solution segment of `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]` when
   `∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0`.
@@ -44,7 +44,7 @@ Results.
   reduced field `F(x) = f(x, h(x))` has derivative `∂f/∂x - ∂f/∂y (∂g/∂y)⁻¹ ∂g/∂x` at `x₀`;
   `schurMatrix` is its matrix in the standard basis.
 * Local exponential stability depends only on the field near the equilibrium
-  (`Dynamics.locallyExponentiallyStable_of_eqOn_ball`, bootstrap with
+  (`Dynamics.locallyExponentiallyStable_congr_nhds`, bootstrap with
   `Dynamics.exp_bound_of_local`, in `theorem/Dynamics/Locality.lean`).
 * `reducedODE_locallyExponentiallyStable` — if `schurMatrix` is Hurwitz, the reduced ODE
   `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. The reduced field is only
@@ -204,8 +204,9 @@ eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
       Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (schurMatrix f g u) := by
     rw [hGF'.fderiv_eq, (hasFDerivAt_reducedField hf hg hinv).fderiv, schurMatrix,
       StarAlgEquiv.apply_symm_apply]
-  have hG := Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
-  exact Dynamics.locallyExponentiallyStable_of_eqOn_ball hR (fun x hx => (hGF x hx).symm) hG
+  have hG := hurwitz_linearization_locally_exponentially_stable _ hGc hGeq hJac hH
+  exact Dynamics.locallyExponentiallyStable_congr_nhds
+    (Dynamics.eventuallyEq_of_eqOn_ball hR fun x hx => (hGF x hx).symm) hG
 
 /-- **DAE stability.** Under the hypotheses of `reducedODE_locallyExponentiallyStable`, every
 DAE solution segment (a pair `(x, y)` solving `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) on the
@@ -231,7 +232,7 @@ and its algebraic part is `y = h(x)`. -/
     rw [hGF'.fderiv_eq, (hasFDerivAt_reducedField hf hg hinv).fderiv, schurMatrix,
       StarAlgEquiv.apply_symm_apply]
   obtain ⟨r, C, a, hr, hC, ha, hb⟩ :=
-    Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
+    hurwitz_linearization_locally_exponentially_stable _ hGc hGeq hJac hH
   have huniq : ∀ᶠ v in 𝓝 u.1 ×ˢ 𝓝 u.2, g v = 0 ↔ implicitMap g u hg hinv v.1 = v.2 := by
     rw [← nhds_prod_eq]
     exact implicitMap_unique hg hinv hgu

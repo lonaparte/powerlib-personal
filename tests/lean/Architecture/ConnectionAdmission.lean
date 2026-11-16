@@ -64,7 +64,7 @@ private theorem hiddenInput (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) 
   exact raw m h
 
 private theorem freshRaw (m : ConnectionFamilyFixture.Model) :
-    (Port.System.autonomous m.field).Passive := Port.System.autonomous_passive m.field
+    (Port.System.autonomous m.field).Passive := Port.System.passive_of_noPorts _
 
 def AllPassive : Prop := ∀ m : Passive.RL.Impedance, 0 ≤ m.resistance → m.plant.system.Passive
 

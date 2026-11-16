@@ -237,7 +237,8 @@ def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
   -- block triangular closed loop: the spectrum is the PI loop's together with `−1/τ`
   have h : IsHurwitz q.plant.A ↔ IsHurwitz q.pi.model.A ∧ 0 < q.τ := by
     change IsHurwitz (q.pi.lpfModel q.τ).A ↔ _
-    simp only [Criteria.isHurwitz_iff_characteristic_roots, q.pi.characteristic_root_iff]
+    simp only [← Linear.spectrallyStable_iff_isHurwitz, Linear.SpectrallyStable,
+        q.pi.characteristic_root_iff]
     constructor
     · intro h
       refine ⟨fun s hs => h s (Or.inl hs), ?_⟩
@@ -313,8 +314,10 @@ Implementation evidence: trajectory-level result outside the sentence language (
     intro t
     rw [PIParams.lpfModel_field]
     exact hx t
-  exact ⟨by simpa [PIParams.lpfEquilibrium] using LTI.tendsto_equilibrium_apply _ hA he hx' 0,
-    by simpa [PIParams.lpfEquilibrium] using LTI.tendsto_equilibrium_apply _ hA he hx' 2⟩
+  have hc : IsIntegralCurveOn x (fun _ y => (p.lpfModel τ).inputField ![iref, v] y) (Set.Ici 0) :=
+    fun t _ => (hx' t).hasDerivWithinAt
+  exact ⟨by simpa [PIParams.lpfEquilibrium] using LTI.tendsto_apply_of_isHurwitz _ he hA hc 0,
+    by simpa [PIParams.lpfEquilibrium] using LTI.tendsto_apply_of_isHurwitz _ he hA hc 2⟩
 
 end LPFLoop
 

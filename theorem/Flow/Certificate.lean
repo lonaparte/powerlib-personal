@@ -34,9 +34,10 @@ Results.
 * The quadratic-decay certificate proves decay at half the energy rate
   (`QuadraticDecay.decay`); with a C¹ field it proves global exponential stability, hence every
   attractive sentence, Lyapunov stability and sampled contraction
-  (`QuadraticDecay.globallyExponentiallyStable`, `QuadraticDecay.holds`,
-  `QuadraticDecay.forwardComplete`); also `QuadraticDecay.energy_bound` and
-  `QuadraticDecay.compact_sublevel` (the state estimate is `norm_bound_of_dissipation`).
+  (`QuadraticDecay.globallyExponentiallyStable`, every attractive sentence through
+  `GloballyExponentiallyStable.holds`, `QuadraticDecay.forwardComplete`); also
+  `QuadraticDecay.compact_sublevel` (the energy and state estimates are
+  `energy_bound_of_dissipation` and `norm_bound_of_dissipation` with the certificate's fields).
 * A strict Lyapunov function with compact sublevels proves global asymptotic stability of a C¹
   field, including a solution through every state
   (`globallyAsymptoticallyStable_of_strictLyapunov`).
@@ -254,13 +255,6 @@ Negative rates give growth bounds, and zero gives a bounded energy. -/
 
 namespace QuadraticDecay
 
-/-- Integrating the decay inequality along any solution segment. -/
-@[tmio T, powerlib_foundation] theorem energy_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
-    (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
-    V (φ t) ≤ Real.exp (-(c.rate * (t - a))) * V (φ a) :=
-  energy_bound_of_dissipation c.smooth c.dissipation hφ ht
-
 /-- Quadratic coercivity and continuity make every energy sublevel compact. -/
 @[tmio T, powerlib_foundation] theorem compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) (level : ℝ) :
@@ -294,12 +288,6 @@ theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
         c.dissipation hφ ht).trans
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_right _ _)
         (Real.exp_nonneg _)) (norm_nonneg _))⟩
-
-/-- The certificate proves every attractive sentence. -/
-@[tmio T, powerlib_foundation] theorem holds {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
-    (c : QuadraticDecay f V e) (hf : ContDiff ℝ 1 f)
-    {P : Property} (hP : P.Attractive) : P.holds f e :=
-  (c.globallyExponentiallyStable hf).holds hP
 
 /-- The certificate proves decay at half its energy rate. -/
 @[tmio T, powerlib_foundation] theorem decay {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}

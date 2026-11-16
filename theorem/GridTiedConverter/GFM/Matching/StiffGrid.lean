@@ -869,7 +869,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
     unfold Model.N
     have := sq_nonneg m.ω0
     positivity
-  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian m.jac (field_contDiff m)
+  exact hurwitz_linearization_locally_exponentially_stable m.jac (field_contDiff m)
     (field_point m hN.ne') (hasFDerivAt_field_point m hL.ne').fderiv
     (jac_isHurwitz m hC hL hR hs hη hδ)
 

@@ -141,8 +141,8 @@ def dqAdmittance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   have heq := h.unique hαβ
   have h2 : v' + ω • (Transform.J *ᵥ v t) = e.C⁻¹ • (i t - e.G • v t) := by
     have := congrArg (fun y => Transform.park (θ t) *ᵥ y) heq
-    simpa only [Matrix.mulVec_smul, Matrix.mulVec_sub, Transform.park_mulVec_rot_mulVec]
-      using this
+    simpa only [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_mulVec,
+      Transform.park_mul_rot, Matrix.one_mulVec] using this
   have h3 := congrArg (fun y => e.C • y) h2
   simp only [smul_add, smul_smul, mul_inv_cancel₀ hC, one_smul] at h3
   rw [← h3, mul_comm ω e.C, ← smul_smul]

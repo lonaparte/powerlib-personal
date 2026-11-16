@@ -28,8 +28,9 @@ Level: local behaviour at an equilibrium (linearization), not a basin estimate.
 The field contains `1/V_dc` and is therefore not globally `C¹`; the powerlib linearization
 theorems need a globally `C¹` field. This module
 * uses that local exponential stability and instability only depend on the field on a ball
-  around the equilibrium (`Dynamics.locallyExponentiallyStable_of_eqOn_ball`,
-  `Dynamics.unstable_of_eqOn_ball` in `theorem/Dynamics/Locality.lean`, first-exit argument on
+  around the equilibrium (`Dynamics.locallyExponentiallyStable_congr_nhds`,
+  `Dynamics.unstable_congr_nhds` with `Dynamics.eventuallyEq_of_eqOn_ball` in
+  `theorem/Dynamics/Locality.lean`, first-exit argument on
   finite solution segments);
 * builds a globally `C¹` field `regField` that coincides with `field` on `{V_dc > 3V_dc*/4}`
   (the denominator `V_dc` is replaced by a smooth `Dynamics.regDen ≥ V_dc*/2`), which contains a
@@ -200,7 +201,7 @@ def regField (x : State 4) : State 4 :=
   have h3 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 3) := by
     show ContDiff ℝ 1 (fun y : State 4 => p.VdcRef - y 2)
     fun_prop
-  apply Dynamics.contDiff_of_components
+  apply contDiff_euclidean.2
   intro i
   fin_cases i
   exacts [h0, h1, h2, h3]
@@ -535,7 +536,7 @@ function `(2 I₀ V_dc + 3 P) / C_dc`. Static evidence on the model. -/
 @[tmio M, powerlib_domain] theorem contDiff_field_offDC :
     ContDiff ℝ 1 (fun y : State 4 => (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] :
       State 4)) := by
-  apply Dynamics.contDiff_of_components
+  apply contDiff_euclidean.2
   intro i
   fin_cases i
   · show ContDiff ℝ 1 (fun y : State 4 =>
@@ -600,9 +601,9 @@ stable. -/
   obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.locallyExponentiallyStable_of_jacobian_fin_four (p.jacobian x)
     (p.contDiff_regField hV) hreg0 hJ htr hm3 hdet hg
-  exact Dynamics.locallyExponentiallyStable_of_eqOn_ball (by positivity)
-    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
-      (mem_ball_iff_norm.mpr hy)) hreg
+  exact Dynamics.locallyExponentiallyStable_congr_nhds
+    (Dynamics.eventuallyEq_of_eqOn_ball (by positivity) fun y hy =>
+      p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx) (mem_ball_iff_norm.mpr hy)) hreg
 
 /-- **Model B, instability.** At an equilibrium of model B (`V_dc* > 0`) with `det J < 0` the
 Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
@@ -614,11 +615,11 @@ Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
   unfold TMIO.Statement
   rw [ModelB.mem_den_flow_iff]
   obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
-  have hreg := Criteria.unstable_of_jacobian_det_neg_fin_four (p.jacobian x)
-    (p.contDiff_regField hV) hreg0 hJ hdet
-  exact Dynamics.unstable_of_eqOn_ball (by positivity)
-    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
-      (mem_ball_iff_norm.mpr hy)) hreg
+  have hreg := Criteria.unstable_of_jacobian_violation_fin_four (p.jacobian x)
+    (p.contDiff_regField hV) hreg0 hJ (Or.inr (Or.inr (Or.inr (Or.inl hdet))))
+  exact (Dynamics.unstable_congr_nhds (Dynamics.eventuallyEq_of_eqOn_ball (by positivity)
+    fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
+      (mem_ball_iff_norm.mpr hy))).mpr hreg
 
 /-- Every translation of the model-B family is sound: the Routh conditions at an equilibrium
 prove the local sentences, a negative Jacobian determinant proves instability (LeanForControl's
@@ -1105,7 +1106,7 @@ while it stays near `x*` (`Dynamics.Degenerate.unstable_of_repel`). -/
         have : 0 < Dynamics.regDen s (y 2) := lt_of_lt_of_le (by positivity) this
         positivity
       have hoff := p.contDiff_field_offDC
-      apply Dynamics.contDiff_of_components
+      apply contDiff_euclidean.2
       intro i
       fin_cases i
       · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)

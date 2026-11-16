@@ -93,9 +93,10 @@ Family and connection conclusions.
   `n > 0`): the same from any locally exponentially stable model whose Euler implementations
   include arbitrarily large steps (the instances' form: every positive step
   is an implementation).
-* The negative laws for families whose fields are all `C¹` (`∀ x, ContDiff ℝ 1 (f x)`), derived
-  from the local ones: `not_euler_realizationSoundUnder`,
-  `not_euler_realizationSoundUnder_of_large_step` (the positive law needs only
+* The large-step negative law for families whose fields are all `C¹`
+  (`∀ x, ContDiff ℝ 1 (f x)`), derived from the local one:
+  `not_euler_realizationSoundUnder_of_large_step` (for one implementation pass
+  `(hC _).contDiffAt` to `not_euler_realizationSoundUnder_local`; the positive law needs only
   `(hC x).contDiffAt`).
 * `not_euler_realizationSoundUnder_of_neg` (`n > 0`, any family): an implementation of a design
   with the field `ż = −z` and step `h = 3` is a witness (the Euler map is `z ↦ −2 z`).
@@ -338,20 +339,6 @@ not locally exponentially stable. -/
       (hasFDerivAt_eulerMap (hasFDerivAt_of_fderiv_eq hC hJ) (step y))
       (by simp [eulerMap, h0]) hB hS hn
     exact hu (Map.LocallyExponentiallyStable.lyapunovStable hy)
-
-/-- **Without a step constraint the Euler realization is not sound.** An implementation whose
-design has an equilibrium at the origin and a Hurwitz Jacobian `J` (so it is locally
-exponentially stable) and whose Euler Jacobian `I + h J` has a Schur stable left inverse (every
-Euler multiplier outside the closed unit disk) is not locally exponentially stable
-(`not_euler_realizationSoundUnder_local`). -/
-@[tmio TM, powerlib_foundation] theorem not_euler_realizationSoundUnder (hF : F.IsAutonomous f)
-    (hC : ∀ x, ContDiff ℝ 1 (f x)) (hn : 0 < n) (y : Y) (J B : Matrix (Fin n) (Fin n) ℝ)
-    (hJ : fderiv ℝ (f (design y)) 0 = Map.op J) (h0 : f (design y) 0 = 0) (hA : IsHurwitz J)
-    (hB : B * forwardEulerMatrix (step y) J = 1) (hS : LTI.SchurStable B) :
-    connection% (¬ (euler F f design step).RealizationSoundUnder ∅
-      (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact not_euler_realizationSoundUnder_local hF hn y J B (hC _).contDiffAt hJ h0 hA hB hS
 
 /-- **Large steps: without a step constraint the Euler realization is not sound, from a model
 `C¹` near its point.** In a family of autonomous fields (`n > 0`), a locally exponentially stable

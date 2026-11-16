@@ -359,8 +359,10 @@ Implementation evidence: trajectory-level result outside the sentence language (
     intro t
     rw [p.model_field hL.ne' v]
     exact hx t
-  exact ⟨by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 0,
-    by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 1⟩
+  have hc : IsIntegralCurveOn x (fun _ y => p.model.inputField iref y) (Set.Ici 0) :=
+    fun t _ => (hx' t).hasDerivWithinAt
+  exact ⟨by simpa [equilibrium] using LTI.tendsto_apply_of_isHurwitz p.model he hA hc 0,
+    by simpa [equilibrium] using LTI.tendsto_apply_of_isHurwitz p.model he hA hc 1⟩
 
 /-! ### The mismatched loop as an implementation of the PI design -/
 

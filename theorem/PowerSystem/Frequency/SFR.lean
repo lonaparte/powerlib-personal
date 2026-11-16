@@ -360,7 +360,7 @@ right half plane. -/
     · refine Criteria.exists_eigenvalue_re_pos_of_det_pos_fin_three _ ?_
       rw [det_A hM.ne' hTg.ne' hTR.ne', neg_div]
       exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
-    · refine Criteria.exists_eigenvalue_re_pos_of_trace_pos_fin_three _ ?_
+    · refine Criteria.exists_eigenpair_re_pos_of_trace_pos _ ?_
       rw [trace_A hM.ne' hTg.ne' hTR.ne', neg_div]
       exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
   obtain ⟨μ, v, hv, heig, hre⟩ := key
@@ -651,7 +651,9 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
     noteNadirTime σ ωd TR = -(Complex.arg ⟨σ - 1 / TR, ωd⟩ / ωd) ∧
       noteNadirTime σ ωd TR < 0 := by
   have harg : Complex.arg ⟨σ - 1 / TR, ωd⟩ = Real.arctan (ωd * TR / (σ * TR - 1)) := by
-    rw [arg_scale hTR, SpecialFunctions.arg_eq_arctan (by linarith)]
+    rw [arg_scale hTR]
+    exact SpecialFunctions.arg_eq_arctan (z := ⟨σ * TR - 1, ωd * TR⟩)
+      (show 0 < σ * TR - 1 by linarith)
   have heq : noteNadirTime σ ωd TR = -(Complex.arg ⟨σ - 1 / TR, ωd⟩ / ωd) := by
     rw [harg, noteNadirTime, show ωd * TR / (1 - σ * TR) = -(ωd * TR / (σ * TR - 1)) by
       rw [← div_neg, neg_sub], Real.arctan_neg, neg_div]

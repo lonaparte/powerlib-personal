@@ -32,7 +32,7 @@ Results.
 * `isHurwitz_of_locallyExponentiallyStable` (**converse linearization**): local exponential
   stability gives a Hurwitz Jacobian.
 * `locallyExponentiallyStable_iff_isHurwitz_jacobian`: with the direct theorem
-  (`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`, LeanForControl), local exponential
+  (`hurwitz_linearization_locally_exponentially_stable`, LeanForControl), local exponential
   stability holds exactly when `x*` is an equilibrium with a Hurwitz Jacobian;
   `locallyExponentiallyStable_iff_isHurwitz_of_eq` at a known equilibrium.
 * `not_locallyExponentiallyStable_of_firstIntegral`: a `C¹` field with a nonzero linear first
@@ -288,7 +288,7 @@ point is an equilibrium and the Jacobian is Hurwitz. -/
     LocallyExponentiallyStable f x_eq ↔ f x_eq = 0 ∧ IsHurwitz A :=
   ⟨fun h => ⟨isEquilibrium_of_locallyExponentiallyStable hf h,
       isHurwitz_of_locallyExponentiallyStable A hf hJac h⟩,
-    fun h => Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hf h.1 hJac h.2⟩
+    fun h => hurwitz_linearization_locally_exponentially_stable A hf h.1 hJac h.2⟩
 
 /-- At an equilibrium of a `C¹` field, local exponential stability is equivalent to a Hurwitz
 Jacobian. -/

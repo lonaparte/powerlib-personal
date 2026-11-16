@@ -218,7 +218,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
     have hx1' : |x 1| ≤ 1 + x 1 ^ 2 := by
       rcases abs_cases (x 1) with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> nlinarith [sq_nonneg (x 1 - 1),
         sq_nonneg (x 1 + 1)]
-    linarith [Dynamics.norm_le_abs_add_abs_two x]
+    linarith [(Dynamics.norm_le_sum_abs x).trans_eq (Fin.sum_univ_two _)]
 
 /-- Inside the well window the only equilibrium is `(δ_s, 0)`. -/
 @[tmio M, powerlib_domain] theorem eq_deltaS_of_field_eq_zero (hM : p.M ≠ 0) (hk : 0 < p.k₂)
@@ -281,7 +281,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     p.contDiff_field (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
   · rw [p.energy_lie hM.ne']
     nlinarith [sq_nonneg (x 1)]
-  · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv p.contDiff_field
+  · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem p.contDiff_field
       (h := fun x : State 2 => x 1) (Dynamics.contDiff_coord 1) ?_ ?_
     · intro x hx
       exact hω x hx.2

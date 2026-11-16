@@ -160,9 +160,9 @@ def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![-(P / V0) / (C * V0)] := by
   have hx : (dcState V0) 0 ≠ 0 := by simpa [dcState] using hV
   have h := (((hasFDerivAt_inv_coord 0 hx).const_mul P).const_add isrc).mul_const C⁻¹
-  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
+  refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
     (fun _ => C⁻¹ • (P • (ContinuousLinearMap.toSpanSingleton ℝ (-((dcState V0) 0 ^ 2)⁻¹)).comp
-      (Dynamics.coord 0))) ?_ ?_
+      (Dynamics.coord 0))) ?_ ?_).fderiv
   · intro i
     fin_cases i
     convert h using 1
@@ -350,11 +350,11 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
   have h0 := (((hid.const_mul p.Vd).mul (hasFDerivAt_inv_coord 0 hx)).const_add p.isrc).mul_const
     p.C⁻¹
   have h1' := (Dynamics.hasFDerivAt_coord 0 p.eqState).sub_const p.Vref
-  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
+  refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
     ![p.C⁻¹ • ((p.Vd * p.idRef p.eqState) •
         (ContinuousLinearMap.toSpanSingleton ℝ (-(p.eqState 0 ^ 2)⁻¹)).comp (Dynamics.coord 0) +
       (p.eqState 0)⁻¹ • p.Vd • (-p.Kp • Dynamics.coord 0 - p.Ki • Dynamics.coord 1)),
-      Dynamics.coord 0] ?_ ?_
+      Dynamics.coord 0] ?_ ?_).fderiv
   · intro i
     fin_cases i
     · convert h0 using 1
@@ -492,7 +492,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
   refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
     (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
     (p.closedField_eqState hKi hV.ne') (p.closedJacobian hKi hV.ne' hC.ne')
-    (Criteria.exists_eigenvalue_re_pos_of_trace_pos _ ?_)
+    (Criteria.exists_eigenpair_re_pos_of_trace_pos _ ?_)
   rw [DCParams.jacobian_trace]
   have hVC : 0 < p.Vref * p.C := mul_pos hV hC
   have hsum : p.a * p.Kp + p.b = (p.Vd * p.Kp + p.Idc0) / (p.Vref * p.C) := by
@@ -894,7 +894,7 @@ every nearby solution on its level. -/
       p.centerEnergy_lie hVd.ne' hV.ne' hKi.ne' hkp (ne_of_gt hx), neg_zero]
   · refine ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0], ?_, ?_⟩
     · rw [add_sub_cancel_left]
-      refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+      refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans_lt ?_
       simp only [Matrix.cons_val_zero, Matrix.cons_val_one, abs_zero, add_zero]
       rw [abs_of_pos (by positivity)]
       linarith
@@ -1046,7 +1046,7 @@ unstable (Chetaev's function `v²`). -/
     (r := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by fun_prop) one_pos
     (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0], ?_, ?_⟩) (fun x hx _ hW => ?_)
   · rw [add_sub_cancel_left]
-    refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans_lt ?_
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, abs_zero, add_zero]
     rw [abs_of_pos (by positivity)]
     linarith
@@ -1083,7 +1083,7 @@ constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
     (r := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by fun_prop) one_pos
     (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 4, ε / 4], ?_, ?_⟩) (fun x hx _ hW => ?_)
   · rw [add_sub_cancel_left]
-    refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans_lt ?_
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
     rw [abs_of_pos (by positivity)]
     linarith

@@ -32,9 +32,9 @@ Results (generic foundation).
 * `NonlinearModel.locallyExponentiallyStable_of_isHurwitz` — local exponential stability of
   `x*` when `A` is Hurwitz; `NonlinearModel.unstable_of_eigenvalue_re_pos` — instability of `x*`
   when `A` has an eigenvalue with positive real part; both for the full nonlinear zero-input
-  field (Lyapunov indirect method, LeanForControl's linearization theorems through
-  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
-  `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` in `theorem/Dynamics/Linearization.lean`).
+  field (Lyapunov indirect method, LeanForControl's linearization theorems
+  `hurwitz_linearization_locally_exponentially_stable`,
+  `unstable_of_exists_complex_eigenvalue_re_pos`).
 
 Family and connection conclusions.
 * No family: `NonlinearModel` is the generic framework of `theorem/PH/Nonlinear.lean`, which no
@@ -145,7 +145,7 @@ stable equilibrium of the full zero-input field. -/
     (fun i j => ((hJ i j).differentiable (by norm_num)) xs)
     (fun i j => ((hR i j).differentiable (by norm_num)) xs)
     (hQ ▸ hdiff.hasFDerivAt) h0
-  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _
+  exact hurwitz_linearization_locally_exponentially_stable _
     (M.contDiff_zeroInputField hJ hR hdH) (M.zeroInputField_eq_zero_of_dH_eq_zero h0) hJac hA
 
 /-- At a critical point `x*` of `H` with Hessian `Q`, an eigenvalue of `(J(x*) − R(x*)) Q`
@@ -164,7 +164,7 @@ with positive real part makes `x*` an unstable equilibrium of the full zero-inpu
     (fun i j => ((hJ i j).differentiable (by norm_num)) xs)
     (fun i j => ((hR i j).differentiable (by norm_num)) xs)
     (hQ ▸ hdiff.hasFDerivAt) h0
-  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos _
+  exact unstable_of_exists_complex_eigenvalue_re_pos _
     (M.contDiff_zeroInputField hJ hR hdH) (M.zeroInputField_eq_zero_of_dH_eq_zero h0) hJac
     hunstable
 

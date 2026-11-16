@@ -60,7 +60,8 @@ open Complex Matrix
 @[tmio T, powerlib_foundation] theorem harmonic_solvable {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (ωp : ℝ) (h : ℤ) (R : Fin n → ℂ) :
     ∃! X : Fin n → ℂ, Linear.characteristicMatrix A (((h * ωp : ℝ) : ℂ) * I) *ᵥ X = R := by
-  have hdet := det_characteristicMatrix_imag_ne_zero hA (h * ωp)
+  have hdet : (Linear.characteristicMatrix A (((h * ωp : ℝ) : ℂ) * I)).det ≠ 0 :=
+    Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz hA (by simp)
   set M := Linear.characteristicMatrix A (((h * ωp : ℝ) : ℂ) * I)
   refine ⟨M⁻¹ *ᵥ R, ?_, fun X hX => ?_⟩
   · simp only

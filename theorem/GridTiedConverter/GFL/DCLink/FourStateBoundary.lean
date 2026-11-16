@@ -665,8 +665,9 @@ def frozenPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2, 0�
 @[tmio TM, powerlib_domain] theorem frozenPLL_mem_den_unstable :
     connection% (frozenPLL ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff'.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-    (fun y hy => field_eq_regField_of_near _ hy) ?_)
+  refine mem_den_flow_iff'.mpr ((Dynamics.unstable_congr_nhds
+    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+      fun y hy => field_eq_regField_of_near _ hy)).mpr ?_)
   have c0 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 0) := contDiff_piLp_apply 2
   have c1 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 1) := contDiff_piLp_apply 2
   have hW : ContDiff ℝ 1 (fun y : Dynamics.State 4 => -(y 1 * Real.sin (y 0))) := by fun_prop

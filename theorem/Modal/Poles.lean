@@ -75,7 +75,7 @@ variable {n p : ℕ}
   have hmem : ({x | IsRoot (complexify A).charpoly x} \ {μ})ᶜ ∈ 𝓝 μ :=
     hfin.isClosed.isOpen_compl.mem_nhds (by simp)
   filter_upwards [nhdsWithin_le_nhds hmem, self_mem_nhdsWithin] with s hs hsμ
-  rw [det_characteristicMatrix]
+  rw [det_characteristicMatrix_eq_eval]
   intro h0
   exact hs ⟨h0, hsμ⟩
 

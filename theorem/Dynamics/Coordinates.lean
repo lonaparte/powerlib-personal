@@ -3,7 +3,7 @@ import theorem.Dynamics.State
 /-! # Coordinates on `Dynamics.State n`
 
 Calculus utilities on the Euclidean state space `Dynamics.State n = EuclideanSpace ℝ (Fin n)`.
-The linearization theorems (`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+The linearization theorems (`hurwitz_linearization_locally_exponentially_stable`,
 `Criteria.locallyExponentiallyStable_of_jacobian_fin_two`, …) take a field
 `f : Dynamics.State n → Dynamics.State n` (`EuclideanSpace ℝ (Fin n)`), the hypothesis
 `ContDiff ℝ 1 f`, and the identification
@@ -19,13 +19,13 @@ Source: library infrastructure (no work-sync note): the shared criteria interfac
 work-sync formalization.
 
 Results.
-* `hasFDerivAt_toEuclideanCLM_of_components` / `fderiv_eq_toEuclideanCLM_of_components`:
+* `hasFDerivAt_toEuclideanCLM_of_components` (with `.fderiv` for the Jacobian identity):
   if each component has derivative `L i` with `L i v = ∑ j, A i j * v j`, the Jacobian is `A`
   (any dimension); `toEuclideanCLM_apply`: a matrix acts on a state coordinatewise,
   `(A v) i = ∑ j, A i j * v j` (any dimension); a Jacobian determines its matrix by Mathlib's
   `Matrix.toEuclideanCLM.injective`.
 * `coord`, `hasFDerivAt_coord`, `contDiff_coord` (`fun_prop`): coordinates are smooth linear maps.
-* `contDiff_of_components`: smoothness of `f` from smoothness of its components.
+* Smoothness of `f` from smoothness of its components is Mathlib's `contDiff_euclidean`.
 * `contDiff_field_mk_two_example`: a `fun_prop` demonstration for a planar field built from
   `Real.sin` / `Real.cos` (pendulum / swing / PLL shape); `fderiv_field_mk_two_example_zero`
   computes the Jacobian of such a field with the component helper.
@@ -34,10 +34,10 @@ Results.
   `toEuclideanCLM_apply` for a `3 × 3` matrix).
 * `lift F`: a field on plain coordinates `Fin n → ℝ` transported to `Dynamics.State n`; its
   Fréchet derivative is `toEuclideanCLM A` whenever the coordinate field has derivative
-  `toLin' A` (`hasFDerivAt_lift`, `fderiv_lift`, `contDiff_lift`); `hasFDerivAt_of_eq` replaces a
+  `toLin' A` (`hasFDerivAt_lift`, `contDiff_lift`); `hasFDerivAt_of_eq` replaces a
   function and its derivative by provably equal ones.
-* Norms and coordinates: `abs_apply_le_norm`, `abs_coord_sub_le`, `norm_le_sum_abs` with its
-  planar instance `norm_le_abs_add_abs_two`, `sqrt_sq_add_sq_le`, and the projection
+* Norms and coordinates: `abs_apply_le_norm`, `abs_coord_sub_le`, `norm_le_sum_abs` (unrolled
+  with `Fin.sum_univ_two`, `Fin.sum_univ_three`), `sqrt_sq_add_sq_le`, and the projection
   removing one coordinate (`norm_sub_smul_single_le`, `norm_le_norm_sub_smul_single_add`).
 * Curves in `State n`: `fderiv_apply_eq_of_hasDerivAt_line` (a directional derivative is the
   derivative along the line), `hasDerivWithinAt_euclidean_of_coord`,
@@ -82,24 +82,11 @@ def coord (i : Fin n) : Dynamics.State n →L[ℝ] ℝ := EuclideanSpace.proj i
   ext v
   simp [hA, Matrix.mulVec, dotProduct]
 
-@[tmio T, powerlib_foundation] theorem fderiv_eq_toEuclideanCLM_of_components
-    {f : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n}
-    (A : Matrix (Fin n) (Fin n) ℝ) (L : Fin n → Dynamics.State n →L[ℝ] ℝ)
-    (hL : ∀ i, HasFDerivAt (fun y => f y i) (L i) x)
-    (hA : ∀ i (v : Dynamics.State n), L i v = ∑ j, A i j * v j) :
-    fderiv ℝ f x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A :=
-  (hasFDerivAt_toEuclideanCLM_of_components A L hL hA).fderiv
-
 /-- A matrix acts on a state coordinatewise (any dimension). -/
 @[tmio T, powerlib_foundation] theorem toEuclideanCLM_apply (A : Matrix (Fin n) (Fin n) ℝ)
     (v : Dynamics.State n) (i : Fin n) :
     (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A v) i = ∑ j, A i j * v j := by
   simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct]
-
-/-- Smoothness of a field on `Dynamics.State n` from smoothness of its components. -/
-@[tmio T, powerlib_foundation] theorem contDiff_of_components {f : Dynamics.State n → Dynamics.State n}
-    {k : WithTop ℕ∞} (h : ∀ i, ContDiff ℝ k (fun y => f y i)) : ContDiff ℝ k f :=
-  contDiff_euclidean.2 h
 
 /-- `fun_prop` demonstration: a planar field with trigonometric terms (the shape of a
 pendulum, swing equation or reduced PLL in `(angle, rate)` coordinates) is smooth. -/
@@ -107,18 +94,18 @@ pendulum, swing equation or reduced PLL in `(angle, rate)` coordinates) is smoot
     ContDiff ℝ 1 (fun y : Dynamics.State 2 =>
       (WithLp.toLp 2 ![y 1, c - a * Real.sin (y 0) - b * y 1 + d * Real.cos (y 0)] :
         Dynamics.State 2)) := by
-  apply contDiff_of_components
+  apply contDiff_euclidean.2
   intro i
   fin_cases i <;> simp <;> fun_prop
 
-/-- Worked use of `fderiv_eq_toEuclideanCLM_of_components`: the planar field
+/-- Worked use of `hasFDerivAt_toEuclideanCLM_of_components`: the planar field
 `(y₀, y₁) ↦ (y₁, -a sin y₀ - b y₁)` has Jacobian `!![0, 1; -a, -b]` at the origin. -/
 @[tmio T, powerlib_foundation] theorem fderiv_field_mk_two_example_zero (a b : ℝ) :
     fderiv ℝ (fun y : Dynamics.State 2 =>
         (WithLp.toLp 2 ![y 1, -a * Real.sin (y 0) - b * y 1] : Dynamics.State 2)) 0 =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; -a, -b] := by
-  refine fderiv_eq_toEuclideanCLM_of_components _ ![coord 1, (-a) • coord 0 - b • coord 1]
-    ?_ ?_
+  refine (hasFDerivAt_toEuclideanCLM_of_components _ ![coord 1, (-a) • coord 0 - b • coord 1]
+    ?_ ?_).fderiv
   · intro i
     fin_cases i
     · simpa using hasFDerivAt_coord (1 : Fin 2) (0 : Dynamics.State 2)
@@ -208,12 +195,6 @@ def lift (F : (Fin n → ℝ) → (Fin n → ℝ)) (x : Dynamics.State n) : Dyna
   simp [e]
   rfl
 
-@[tmio T, powerlib_foundation] theorem fderiv_lift {F : (Fin n → ℝ) → (Fin n → ℝ)}
-    {A : Matrix (Fin n) (Fin n) ℝ} {x : Dynamics.State n}
-    (h : HasFDerivAt F (Matrix.toLin' A).toContinuousLinearMap (WithLp.ofLp x)) :
-    fderiv ℝ (lift F) x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A :=
-  (hasFDerivAt_lift h).fderiv
-
 @[tmio T, powerlib_foundation] theorem contDiff_lift {F : (Fin n → ℝ) → (Fin n → ℝ)}
     {k : WithTop ℕ∞} (h : ContDiff ℝ k F) : ContDiff ℝ k (lift F) := by
   let e := PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)
@@ -266,11 +247,6 @@ coordinates. -/
   rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (Finset.sum_nonneg fun i _ => abs_nonneg _)]
   simp only [Real.norm_eq_abs]
   exact Finset.sum_sq_le_sq_sum_of_nonneg fun i _ => abs_nonneg _
-
-/-- The Euclidean norm of a planar state is bounded by the sum of the absolute coordinates. -/
-@[tmio T, powerlib_foundation] theorem norm_le_abs_add_abs_two (x : EuclideanSpace ℝ (Fin 2)) :
-    ‖x‖ ≤ |x 0| + |x 1| :=
-  (norm_le_sum_abs x).trans_eq (Fin.sum_univ_two _)
 
 /-- The coordinate projection killing the `k`-th coordinate does not increase the norm. -/
 @[tmio T, powerlib_foundation] theorem norm_sub_smul_single_le (k : Fin n) (v : State n) :

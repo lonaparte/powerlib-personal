@@ -159,7 +159,7 @@ denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
       · have : 0 < 2 * Dynamics.regDen s (-1 * y 2) := by positivity
         intro h; linarith
     have hoff := p.contDiff_field_offDC
-    apply Dynamics.contDiff_of_components
+    apply contDiff_euclidean.2
     intro i
     fin_cases i
     · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)

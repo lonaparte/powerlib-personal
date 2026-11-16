@@ -51,7 +51,7 @@ in Git; working statistics, build receipts and development plans are not kept he
   - `Criteria.isHurwitz_of_det_characteristicMatrix_quartic` → `Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic`
   - `Criteria.quartic_hurwitz_iff_routh` → `Criteria.quartic_hurwitz_iff`
   - `Criteria.quartic_roots_re_neg_of_routh` → `Criteria.quartic_roots_re_neg_of`
-  - `Criteria.spectrallyStable_fin_two_of_iff` → `Criteria.spectrallyStable_fin_two_iff`
+  - `Criteria.spectrallyStable_fin_two_of_iff` → `Criteria.isHurwitz_fin_two_iff`
   - `Criteria.trace_det_eq_zero_ne_zero_iff_fin_two` → `Criteria.sq_eq_zero_iff_trace_det_eq_zero_fin_two`
   - `Criteria.trace_fin_two_of` → `Matrix.trace_fin_two_of`
   - `Criteria.unstable_of_jacobian_trace_pos_fin_four` → `Criteria.unstable_of_jacobian_violation_fin_four`
@@ -105,12 +105,12 @@ in Git; working statistics, build receipts and development plans are not kept he
   - `Dynamics.isTrajectoryOn_of_eqOn` → `Dynamics.isIntegralCurveOn_of_eq_on_curve`
   - `Dynamics.lipschitzFlow_add` → `Flow.map_add`
   - `Dynamics.localAsymptoticStable_transport_iff` → `Dynamics.holds_transport_iff`
-  - `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_of_eqOn_ball` → `Dynamics.locallyExponentiallyStable_of_eqOn_ball`
+  - `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_of_eqOn_ball` → `Dynamics.locallyExponentiallyStable_congr_nhds`
   - `Dynamics.locallyExponentiallyStable_transport_iff` → `Dynamics.holds_transport_iff`
   - `Dynamics.lyapunovStable_conjEquiv_iff` → `Dynamics.holds_conjEquiv_iff`
   - `Dynamics.lyapunovStable_transport_iff` → `Dynamics.holds_transport_iff`
   - `Dynamics.unstable_of_exponential_chetaev` → `NonlinearInstability.unstable_of_exponential_chetaev`
-  - `Dynamics.unstable_of_jacobian_eigenvalue_re_pos_of_eqOn_ball` → `Dynamics.unstable_of_eqOn_ball`
+  - `Dynamics.unstable_of_jacobian_eigenvalue_re_pos_of_eqOn_ball` → `Dynamics.unstable_congr_nhds`
   - `Dynamics.unstable_transport_iff` → `Dynamics.holds_transport_iff`
   - `Envelope.den_safe_iInf` → `Envelope.holds_safe_iInf`
   - `Envelope.den_safe_sSup` → `Envelope.holds_safe_sSup`
@@ -436,6 +436,54 @@ in Git; working statistics, build receipts and development plans are not kept he
   - `Transform.rot_mulVec_park_mulVec` → `Transform.rot_mul_park`
   - `Transform.rot_neg_mul_rot` → `Transform.park_mul_rot`
   - `Transform.svec_dot_cvec` → `Transform.cvec_dot_svec`
+
+- Third pass, over the theorems with call sites in many files: 43 further
+  declarations removed (37 public, 6 private twins merged into their public
+  keeper); 49 were kept because their replacement would need more than a name
+  change at many call sites, or because a test fixture, an Aesop rule or
+  `Architecture.md` names them. `SpecialFunctions.arg_eq_arctan` now takes any `z`
+  with `0 < z.re`; `Criteria.isHurwitz_fin_two_iff` and `isHurwitz_fin_three_iff` hold
+  the proofs of the removed spectral forms. Entries of the lists above whose
+  replacement was removed in this pass point at its final keeper. Classified
+  theorems 7444 → 7401, public connection theorems 1069 → 1066. Removed public
+  names and their replacements:
+  - `Criteria.exists_characteristic_root_re_pos_of_trace_pos` → `Criteria.exists_root_re_pos_of_trace_pos`
+  - `Criteria.exists_eigenvalue_re_pos_of_trace_pos` → `Criteria.exists_eigenpair_re_pos_of_trace_pos`
+  - `Criteria.exists_eigenvalue_re_pos_of_trace_pos_fin_three` → `Criteria.exists_eigenpair_re_pos_of_trace_pos`
+  - `Criteria.exists_pos_real_eigenvalue_of_det_neg` → `Criteria.exists_pos_real_eigenvalue_of_det`
+  - `Criteria.exists_pos_real_eigenvector_of_det_neg` → `Criteria.exists_pos_real_eigenvector_of_det`
+  - `Criteria.isHurwitz_iff_characteristic_roots` → `Linear.spectrallyStable_iff_isHurwitz`
+  - `Criteria.isHurwitz_iff_charpoly_roots` → `Criteria.isHurwitz_iff_of_charpoly`
+  - `Criteria.spectrallyStable_fin_three_iff` → `Criteria.isHurwitz_fin_three_iff`
+  - `Criteria.spectrallyStable_fin_two_iff` → `Criteria.isHurwitz_fin_two_iff`
+  - `Criteria.unstable_of_jacobian_det_neg_fin_four` → `Criteria.unstable_of_jacobian_violation_fin_four`
+  - `CurrentControl.PIParams.isHurwitz_iff` → `CurrentControl.PIParams.mem_den_iff`
+  - `Drives.InductionMachine.coordinate_smooth` → `Dynamics.contDiff_coord`
+  - `Dynamics.LaSalle.lasalle_condition_of_lieDeriv` → `Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem`
+  - `Dynamics.Mechanical.state_ext` → `Dynamics.state_ext_blocks`
+  - `Dynamics.contDiff_of_components` → `contDiff_euclidean` (Mathlib)
+  - `Dynamics.fderiv_eq_toEuclideanCLM_of_components` → `Dynamics.hasFDerivAt_toEuclideanCLM_of_components`
+  - `Dynamics.fderiv_lift` → `Dynamics.hasFDerivAt_lift`
+  - `Dynamics.isTrajectoryOn_transport` → `Dynamics.isIntegralCurveOn_transport`
+  - `Dynamics.locallyExponentiallyStable_of_eqOn_ball` → `Dynamics.locallyExponentiallyStable_congr_nhds`
+  - `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian` → `hurwitz_linearization_locally_exponentially_stable` (LeanForControl)
+  - `Dynamics.norm_le_abs_add_abs_two` → `Dynamics.norm_le_sum_abs`
+  - `Dynamics.unstable_of_eqOn_ball` → `Dynamics.unstable_congr_nhds`
+  - `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` → `unstable_of_exists_complex_eigenvalue_re_pos` (LeanForControl)
+  - `Flow.QuadraticDecay.energy_bound` → `Flow.energy_bound_of_dissipation`
+  - `Flow.QuadraticDecay.holds` → `Flow.GloballyExponentiallyStable.holds`
+  - `LTI.tendsto_equilibrium_apply` → `LTI.tendsto_apply_of_isHurwitz`
+  - `Linear.det_characteristicMatrix` → `Linear.det_characteristicMatrix_eq_eval`
+  - `Network.Swing.state_ext` → `Dynamics.state_ext_blocks`
+  - `Nonlinear.Polynomial2.coordinate_smooth` → `Dynamics.contDiff_coord`
+  - `Numerics.not_euler_realizationSoundUnder` → `Numerics.not_euler_realizationSoundUnder_local`
+  - `PH.isHurwitz_of_dissipation_pos` → `PH.mem_den_globallyExponentiallyStable_of_dissipation_pos`
+  - `ParametricResonance.det_characteristicMatrix_imag_ne_zero` → `Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz`
+  - `Passive.SeriesRLC.normSq_impedance_jω` → `Passive.SeriesRLC.norm_sq_impedance_jω`
+  - `Port.System.autonomous_passive` → `Port.System.passive_of_noPorts`
+  - `SingularPerturbation.hasDerivAt_mulVec` → `Dynamics.hasDerivAt_mulVec`
+  - `Transform.Rebase.hasDerivAt_mulVec` → `Dynamics.hasDerivAt_mulVec`
+  - `Transform.park_mulVec_rot_mulVec` → `Transform.park_mul_rot`
 
 ## 2026-11-08
 

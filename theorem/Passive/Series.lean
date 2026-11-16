@@ -34,9 +34,10 @@ Results.
   `capacitorEnergy` (`S q²/2`), `energy`, and the series connection `series`.
 * `decay_pos_iff`, `decay_neg_iff`: with `L > 0` the decay rate `R/L` has the sign of `R`;
   `impedance_of_noCap`, `impedance_eq`: without a capacitor `Z = R + L s = L (s + R/L)`.
-* `impedance_jω`, `normSq_impedance_jω`, `norm_sq_impedance_jω`: `Z(jω) = R + jX`,
-  `|Z(jω)|² = R² + X²`; `series_impedance`, `series_reactance`: impedances and reactances add in
-  series; `parallel_inductors`: two inductors in parallel are the inductor `L₁L₂/(L₁ + L₂)`.
+* `impedance_jω`, `norm_sq_impedance_jω`: `Z(jω) = R + jX`, `‖Z(jω)‖² = R² + X²`
+  (`Complex.sq_norm` for `Complex.normSq`); `series_impedance`, `series_reactance`: impedances
+  and reactances add in series; `parallel_inductors`: two inductors in parallel are the inductor
+  `L₁L₂/(L₁ + L₂)`.
 * `inductorEnergy_nonneg`, `inductorEnergy_pos`, `capacitorEnergy_nonneg`, `energy_nonneg`;
   `power_balance`, `hasDerivAt_energy`: along the element equation the stored energy changes at
   `v i − R i²`, the supplied power less the dissipated one.
@@ -125,16 +126,11 @@ def series (a b : SeriesRLC) : SeriesRLC := ⟨a.R + b.R, a.L + b.L, a.S + b.S�
     field_simp
     linear_combination ((b.S : ℝ) : ℂ) * Complex.I_sq
 
-/-- `|Z(jω)|² = R² + X²` (as `Complex.normSq`). -/
-@[tmio M, powerlib_domain] theorem normSq_impedance_jω (ω : ℝ) :
-    Complex.normSq (b.impedance (ω * Complex.I)) = b.absSq ω := by
-  rw [impedance_jω]
-  simp [absSq, Complex.normSq_apply, sq]
-
 /-- `‖Z(jω)‖² = R² + X²`. -/
 @[tmio M, powerlib_domain] theorem norm_sq_impedance_jω (ω : ℝ) :
     ‖b.impedance (ω * Complex.I)‖ ^ 2 = b.absSq ω := by
-  rw [Complex.sq_norm, normSq_impedance_jω]
+  rw [Complex.sq_norm, impedance_jω]
+  simp [absSq, Complex.normSq_apply, sq]
 
 /-- Impedances add in series. -/
 @[tmio M, powerlib_domain] theorem series_impedance (a b : SeriesRLC) (s : ℂ) :

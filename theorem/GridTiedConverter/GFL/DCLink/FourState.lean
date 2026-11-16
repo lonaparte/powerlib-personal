@@ -326,7 +326,7 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
       Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (A0 p θ0) := by
   have := hasFDerivAt_regCoordField p (y := ![θ0, 0, 1, 0]) (by simp; norm_num)
   rw [← jacGen_opPoint]
-  exact Dynamics.fderiv_lift (by simpa [opPoint] using this)
+  exact (Dynamics.hasFDerivAt_lift (by simpa [opPoint] using this)).fderiv
 
 /-- The physical field has the same Jacobian `A₀` at the operating point. -/
 @[tmio M, powerlib_domain] theorem fderiv_field_opPoint (θ0 : ℝ) :
@@ -545,8 +545,9 @@ coefficients of `det(λI − A₀)` place the operating point in local exponenti
     (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
     connection% (Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)) := by
   change Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)
-  exact mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_eqOn_ball
-    (by norm_num : (0 : ℝ) < 1 / 2) (fun y hy => field_eq_regField_of_near p hy)
+  exact mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_congr_nhds
+    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+      fun y hy => field_eq_regField_of_near p hy)
     (Criteria.locallyExponentiallyStable_of_jacobian_quartic (A0 p θ0)
       (contDiff_regField p) (regField_opPoint p hC heq)
       (fderiv_regField_opPoint p θ0) (det_characteristicMatrix_A0_quartic p heq.1)
@@ -560,8 +561,9 @@ coefficients of `det(λI − A₀)` place the operating point in local exponenti
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)
   obtain ⟨heq, hC⟩ := he
-  exact mem_den_flow_iff.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-    (fun y hy => field_eq_regField_of_near m.params hy)
+  exact mem_den_flow_iff.mpr ((Dynamics.unstable_congr_nhds
+    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+      fun y hy => field_eq_regField_of_near m.params hy)).mpr
     (Criteria.unstable_of_jacobian_quartic_violation (A0 m.params m.θ)
       (contDiff_regField m.params) (regField_opPoint m.params hC heq)
       (fderiv_regField_opPoint m.params m.θ) (det_characteristicMatrix_A0_quartic m.params heq.1)

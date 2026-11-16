@@ -174,7 +174,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 @[tmio M, powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
-  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+  refine contDiff_euclidean.2 (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
   · simpa [field] using Dynamics.contDiff_coord (n := 2) 1
   · simp only [field, mk_apply_one]; fun_prop
 

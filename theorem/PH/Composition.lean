@@ -305,8 +305,8 @@ dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)`. -/
 
 /-- Strictly positive dissipation places a linear port-Hamiltonian plant in the globally
 exponentially stable denotation, equivalently its state matrix is Hurwitz. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_of_dissipation_pos (h : Port.PortHamiltonian n p)
-    (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
+@[tmio TM, powerlib_foundation] theorem mem_den_globallyExponentiallyStable_of_dissipation_pos
+    (h : Port.PortHamiltonian n p) (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
@@ -446,17 +446,11 @@ contraction. -/
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz hP]
-  have hh := isHurwitz_of_dissipation_pos h hR
+  have hh := mem_den_globallyExponentiallyStable_of_dissipation_pos h hR
   change h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) at hh
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
     (P := .globallyExponentiallyStable) (Or.inl trivial)] at hh
   exact hh
-
-/-- Strict damping: the zero-input plant is globally exponentially stable. -/
-@[tmio TM, powerlib_foundation] theorem mem_den_globallyExponentiallyStable_of_dissipation_pos
-    (h : Port.PortHamiltonian n p) (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
-    connection% (h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
-  mem_den_of_dissipation_pos h hR (Or.inl trivial)
 
 /-- Without dissipation the zero-input plant conserves its positive definite stored energy. -/
 @[tmio TM, powerlib_foundation] theorem mem_den_conservative_of_lossless (h : Port.PortHamiltonian n p)
@@ -471,7 +465,7 @@ contraction. -/
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     connection% (h ∉ Port.PortHamiltonian.family.den (.flow .conservative)) := fun hc =>
   Port.PortHamiltonian.family_isLinear.not_isHurwitz_of_mem_den_conservative hn hc
-    (isHurwitz_of_dissipation_pos h hR)
+    (mem_den_globallyExponentiallyStable_of_dissipation_pos h hR)
 
 /-- Similar plants of port-Hamiltonian models satisfy the same sentences. -/
 @[tmio TM, powerlib_foundation] theorem mem_den_iff_of_similar {h h' : Port.PortHamiltonian n p}

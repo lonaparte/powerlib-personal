@@ -380,10 +380,6 @@ intermediate evidence only. -/
   · linarith
   · nlinarith [sq_nonneg ωsl]
 
-@[tmio T, powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
-    ContDiff ℝ 1 (fun x : State2 => x j) :=
-  Dynamics.contDiff_coord j
-
 @[tmio M, powerlib_domain] theorem fluxField_smooth (p : Params) (isd isq ωsl : ℝ) :
     ContDiff ℝ 1 (fluxField p isd isq ωsl) := by
   have hs : ContDiff ℝ 1 (fun x : State2 =>
@@ -393,12 +389,12 @@ intermediate evidence only. -/
     intro j
     fin_cases j
     · simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_zero]
-      have h0 := coordinate_smooth 0
-      have h1 := coordinate_smooth 1
+      have h0 := Dynamics.contDiff_coord (n := 2) (k := 1) 0
+      have h1 := Dynamics.contDiff_coord (n := 2) (k := 1) 1
       fun_prop
     · simp only [Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_zero]
-      have h0 := coordinate_smooth 0
-      have h1 := coordinate_smooth 1
+      have h0 := Dynamics.contDiff_coord (n := 2) (k := 1) 0
+      have h1 := Dynamics.contDiff_coord (n := 2) (k := 1) 1
       fun_prop
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
 

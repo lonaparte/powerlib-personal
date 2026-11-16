@@ -184,7 +184,8 @@ the model, not a connection conclusion. -/
     (hKi : 0 < p.Ki) :
     ∃ r : ℝ, 0 < r ∧ (characteristicMatrix (p.withGain (-Vdc)).model.A r).det = 0 := by
   obtain ⟨r, hr, v, hv, heig⟩ :=
-    Criteria.exists_pos_real_eigenvalue_of_det_neg _ (p.copied_det_neg hL hV hKi)
+    Criteria.exists_pos_real_eigenvalue_of_det (p.withGain (-Vdc)).model.A
+      (by simpa using p.copied_det_neg hL hV hKi)
   exact ⟨r, hr, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig⟩
 
 /-- The copied OUT form is unstable. -/

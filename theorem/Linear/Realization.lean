@@ -25,7 +25,7 @@ Source: LeanForControl's controllability and observability (`IsControllable`, `I
 certification by an observation (`TMIO.certify`, `theorem/TMIO/Relation.lean`).
 
 Results.
-* Transfer functions and Markov parameters: `det_characteristicMatrix`, `transfer_eq_adjugate`,
+* Transfer functions and Markov parameters: `transfer_eq_adjugate`,
   `mul_resolvent` (`A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`), `markov`,
   `exists_det_characteristicMatrix_ne_zero`, `markov_eq_of_transfer_eventually_eq`,
   `transfer_eventually_eq_of_markov_eq`, `transfer_eq_of_eventually_eq`,
@@ -52,10 +52,6 @@ namespace powerlib.Linear
 open Matrix LinearSystems
 
 variable {n n' p : ℕ}
-
-@[tmio T, powerlib_foundation] theorem det_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
-    (characteristicMatrix A s).det = (complexify A).charpoly.eval s :=
-  det_characteristicMatrix_eq_eval A s
 
 @[tmio T, powerlib_foundation] theorem transfer_eq_adjugate (m : Plant n p) (s : ℂ) :
     transfer m s = ((characteristicMatrix m.A s).det)⁻¹ •
@@ -326,7 +322,7 @@ open scoped Matrix.Norms.Operator in
       (characteristicMatrix m.A s).adjugate := by
     rw [← hchar, ← RingHom.map_adjugate]
     rfl
-  rw [transfer_eq_adjugate, det_characteristicMatrix]
+  rw [transfer_eq_adjugate, det_characteristicMatrix_eq_eval]
   congr 2
   rw [show (Polynomial.eval s : Polynomial ℂ → ℂ) = Polynomial.evalRingHom s from rfl,
     Matrix.map_mul, Matrix.map_mul, hadj]
@@ -341,8 +337,8 @@ open scoped Matrix.Norms.Operator in
   obtain ⟨a', -, ha'⟩ := resolvent_bound m'
   have hnum := transfer_eq_numerator m
   have hnum' := transfer_eq_numerator m'
-  have hdet := det_characteristicMatrix m.A
-  have hdet' := det_characteristicMatrix m'.A
+  have hdet := det_characteristicMatrix_eq_eval m.A
+  have hdet' := det_characteristicMatrix_eq_eval m'.A
   generalize (complexify m.A).charpoly = χ at hnum hdet
   generalize (complexify m'.A).charpoly = χ' at hnum' hdet'
   generalize (complexify m.C).map Polynomial.C * (charmatrix (complexify m.A)).adjugate *

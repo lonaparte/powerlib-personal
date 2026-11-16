@@ -174,9 +174,6 @@ end Model
 def cyl (x : State 4) : State 5 :=
   WithLp.toLp 2 ![Real.cos (x 0), Real.sin (x 0), x 1, x 2, x 3]
 
-@[tmio T, powerlib_foundation] private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
-  Dynamics.contDiff_coord j
-
 /-- The cylinder field at the image of a state is the cylinder image of the closed loop.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem cylField_cyl (m : Model) (x : State 4) :
@@ -189,10 +186,10 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio T, powerlib_foundation] theorem cyl_contDiff : ContDiff ℝ 1 cyl := by
-  have h0 := proj_contDiff (n := 4) 0
-  have h1 := proj_contDiff (n := 4) 1
-  have h2 := proj_contDiff (n := 4) 2
-  have h3 := proj_contDiff (n := 4) 3
+  have h0 := Dynamics.contDiff_coord (k := 1) (n := 4) 0
+  have h1 := Dynamics.contDiff_coord (k := 1) (n := 4) 1
+  have h2 := Dynamics.contDiff_coord (k := 1) (n := 4) 2
+  have h3 := Dynamics.contDiff_coord (k := 1) (n := 4) 3
   rw [contDiff_euclidean]
   intro i
   fin_cases i <;> simp [cyl] <;> fun_prop
@@ -242,21 +239,21 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem cylEnergy_contDiff (m : Model) : ContDiff ℝ 1 m.cylEnergy := by
-  have h0 := proj_contDiff (n := 5) 0
-  have h1 := proj_contDiff (n := 5) 1
-  have h2 := proj_contDiff (n := 5) 2
-  have h3 := proj_contDiff (n := 5) 3
-  have h4 := proj_contDiff (n := 5) 4
+  have h0 := Dynamics.contDiff_coord (k := 1) (n := 5) 0
+  have h1 := Dynamics.contDiff_coord (k := 1) (n := 5) 1
+  have h2 := Dynamics.contDiff_coord (k := 1) (n := 5) 2
+  have h3 := Dynamics.contDiff_coord (k := 1) (n := 5) 3
+  have h4 := Dynamics.contDiff_coord (k := 1) (n := 5) 4
   unfold Model.cylEnergy Model.cD Model.cQ
   fun_prop
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem cylField_contDiff (m : Model) : ContDiff ℝ 1 m.cylField := by
-  have h0 := proj_contDiff (n := 5) 0
-  have h1 := proj_contDiff (n := 5) 1
-  have h2 := proj_contDiff (n := 5) 2
-  have h3 := proj_contDiff (n := 5) 3
-  have h4 := proj_contDiff (n := 5) 4
+  have h0 := Dynamics.contDiff_coord (k := 1) (n := 5) 0
+  have h1 := Dynamics.contDiff_coord (k := 1) (n := 5) 1
+  have h2 := Dynamics.contDiff_coord (k := 1) (n := 5) 2
+  have h3 := Dynamics.contDiff_coord (k := 1) (n := 5) 3
+  have h4 := Dynamics.contDiff_coord (k := 1) (n := 5) 4
   rw [contDiff_euclidean]
   intro i
   fin_cases i <;> simp [Model.cylField, Model.cD, Model.cQ] <;> fun_prop
@@ -287,8 +284,8 @@ Static evidence on the model, not a connection conclusion. -/
     m.cQ (Real.cos θ) (Real.sin θ) = m.iHatQ θ := rfl
 
 @[tmio T, powerlib_foundation] private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
-  have h0 := proj_contDiff (n := 5) 0
-  have h1 := proj_contDiff (n := 5) 1
+  have h0 := Dynamics.contDiff_coord (k := 1) (n := 5) 0
+  have h1 := Dynamics.contDiff_coord (k := 1) (n := 5) 1
   fun_prop
 
 /-- The circle `c² + s² = 1` is a first integral of the cylinder field.
@@ -608,7 +605,8 @@ motion is a negatively damped pendulum `C_dc ũ' = g ũ − κ s`, `θ' = η ũ`
   have hco : ∀ {I : Set ℝ}, I ⊆ Icc 0 T → ∀ t ∈ I, ∀ i,
       HasDerivWithinAt (fun τ => ψ τ i) (m.cylField (ψ t) i) I t :=
     fun hI t ht i => Dynamics.HasDerivWithinAt.euclidean_coord ((hψ t (hI ht)).mono hI) i
-  have hcont2 : Continuous (fun y : State 5 => y 2) := (proj_contDiff 2).continuous
+  have hcont2 : Continuous (fun y : State 5 => y 2) :=
+    (Dynamics.contDiff_coord (k := 1) 2).continuous
   -- `ũ` vanishes on `[0, T)`
   have hA : ∀ t₀ ∈ Ico 0 T, ψ t₀ 2 = m.ustar := by
     intro t₀ ht₀
@@ -715,7 +713,7 @@ they instantiate are the public foundation results of `theorem.Dynamics.LaSalle.
     rw [← eta_mul_k]
     exact mul_ne_zero hη (k_ne_zero m hL hR hs)
   have h2 : ContDiff ℝ 1 (fun y : State 5 => y 2 - m.ustar) :=
-    (proj_contDiff 2).sub contDiff_const
+    (Dynamics.contDiff_coord (k := 1) 2).sub contDiff_const
   refine Dynamics.LaSalle.lasalle_levelSet (h := fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) (c₀ := 1)
     (c := m.cylEnergy (cyl (φ 0))) (cylField_contDiff m)
     (circle_contDiff.differentiable (by norm_num)) (cylEnergy_contDiff m)
@@ -753,7 +751,7 @@ every forward solution of the stiff-grid closed loop converges to **one** equili
       m.iHatD (j * Real.pi), m.iHatQ (j * Real.pi)])) := by
   have hT := tendsto_cyl m hC hL hR hη hs hδ hφ
   have c5 : ∀ j : Fin 5, Continuous (fun y : State 5 => y j) := fun j =>
-    (proj_contDiff j).continuous
+    (Dynamics.contDiff_coord (k := 1) j).continuous
   have hsin : Tendsto (fun t => Real.sin (φ t 0)) atTop (𝓝 0) := by
     have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT (c5 1) (fun y hy => hy.1)
     simpa using this
@@ -782,7 +780,7 @@ every forward solution of the stiff-grid closed loop converges to **one** equili
       (fun y hy => sub_eq_zero.mpr hy.2.2.2)
     simpa [cQ_cos_sin] using this
   have hθc : ContinuousOn (fun t => φ t 0) (Ici 0) :=
-    ((proj_contDiff (n := 4) 0).continuous.comp_continuousOn hφ.continuousOn)
+    ((Dynamics.contDiff_coord (k := 1) (n := 4) 0).continuous.comp_continuousOn hφ.continuousOn)
   obtain ⟨j, hj⟩ := Dynamics.LaSalle.exists_int_tendsto_of_tendsto_sin hθc hsin
   refine ⟨j, Dynamics.tendsto_euclidean_of_coord fun i => ?_⟩
   fin_cases i
@@ -824,8 +822,9 @@ from `cyl x₀` stays in a compact energy sublevel set, and its angle is lifted 
       HasDerivWithinAt (fun τ => ψ τ i) (m.cylField (ψ t) i) (Ici 0) t :=
     fun t ht i => Dynamics.HasDerivWithinAt.euclidean_coord (hψ t ht) i
   have hw : ContinuousOn (fun t => m.η * ψ t 2 - m.ω0) (Ici 0) :=
-    (continuousOn_const.mul ((proj_contDiff (n := 5) 2).continuous.comp_continuousOn
-      hψ.continuousOn)).sub continuousOn_const
+    (continuousOn_const.mul
+      ((Dynamics.contDiff_coord (k := 1) (n := 5) 2).continuous.comp_continuousOn
+        hψ.continuousOn)).sub continuousOn_const
   obtain ⟨θ, hθ0, hθd, hθcs⟩ := Dynamics.LaSalle.exists_angle_lift (c := fun t => ψ t 0)
     (s := fun t => ψ t 1) (θ₀ := x₀ 0) hw
     (fun t ht => by simpa [Model.cylField] using hco t ht 0)
@@ -887,7 +886,7 @@ initial state a forward solution exists, and every forward solution converges to
     have := hanti (show (0 : ℝ) ∈ Ici 0 from Set.mem_Ici.mpr le_rfl) (show t ∈ Ici 0 from ht) ht
     simpa [hφ0] using this
   have hθc : ContinuousOn (fun t => φ t 0) (Ici 0) :=
-    ((proj_contDiff (n := 4) 0).continuous.comp_continuousOn hφ.continuousOn)
+    ((Dynamics.contDiff_coord (k := 1) (n := 4) 0).continuous.comp_continuousOn hφ.continuousOn)
   -- the angle stays in `(−π, π)`: crossing `±π` would need energy `≥ 2k`
   have hwin : ∀ t, 0 ≤ t → |φ t 0| < Real.pi := by
     intro t ht
@@ -912,7 +911,7 @@ initial state a forward solution exists, and every forward solution converges to
   set p : State 4 := WithLp.toLp 2 ![j * Real.pi, m.ustar, m.iHatD (j * Real.pi),
     m.iHatQ (j * Real.pi)] with hp
   have hθj : Tendsto (fun t => φ t 0) atTop (𝓝 (j * Real.pi)) := by
-    have := ((proj_contDiff (n := 4) 0).continuous.tendsto p).comp hj
+    have := ((Dynamics.contDiff_coord (k := 1) (n := 4) 0).continuous.tendsto p).comp hj
     simpa [hp, Function.comp_def] using this
   have hjle : |(j : ℝ) * Real.pi| ≤ Real.pi :=
     le_of_tendsto hθj.abs (eventually_atTop.mpr ⟨0, fun t ht => (hwin t ht).le⟩)
@@ -1015,7 +1014,8 @@ only semidefinite); the LaSalle set argument on the cylinder covers it. -/
   refine ⟨hLS, ?_⟩
   have hk := k_pos m hL hR hs
   have hW : IsOpen {x : State 4 | |x 0| < Real.pi ∧ m.energy x < 2 * m.k} :=
-    (isOpen_lt (continuous_abs.comp (proj_contDiff (n := 4) 0).continuous) continuous_const).inter
+    (isOpen_lt (continuous_abs.comp (Dynamics.contDiff_coord (k := 1) (n := 4) 0).continuous)
+      continuous_const).inter
       (isOpen_lt (energy_differentiable m).continuous continuous_const)
   have hp : m.point ∈ {x : State 4 | |x 0| < Real.pi ∧ m.energy x < 2 * m.k} := by
     refine ⟨by simp [Model.point, Real.pi_pos], ?_⟩
@@ -1632,8 +1632,8 @@ def noSyncModel : Model :=
     ring
   intro t ht
   have hc : ContinuousOn (fun τ => φ τ 1) (Icc 0 t) :=
-    ((proj_contDiff (n := 4) 1).continuous.comp_continuousOn hφ.continuousOn).mono
-      Icc_subset_Ici_self
+    ((Dynamics.contDiff_coord (k := 1) (n := 4) 1).continuous.comp_continuousOn
+      hφ.continuousOn).mono Icc_subset_Ici_self
   have hd : ∀ τ ∈ Ico 0 t, HasDerivWithinAt (fun τ => φ τ 1) 0 (Ici τ) τ := fun τ hτ => by
     have h := Dynamics.HasDerivWithinAt.euclidean_coord (hφ τ hτ.1) 1
     rw [hF] at h
@@ -1701,7 +1701,8 @@ approaches the source's set `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`. -/
     fun h => ?_⟩
   have hU : {x : State 4 | x 1 ≠ m.ustar + 1} ∈ 𝓝ˢ {x : State 4 | x 1 = m.ustar ∧
       deriv m.potential (x 0) = 0 ∧ x 2 = m.iHatD (x 0) ∧ x 3 = m.iHatQ (x 0)} := by
-    refine (isOpen_ne_fun (proj_contDiff (n := 4) 1).continuous continuous_const).mem_nhdsSet.mpr ?_
+    refine (isOpen_ne_fun (Dynamics.contDiff_coord (k := 1) (n := 4) 1).continuous
+      continuous_const).mem_nhdsSet.mpr ?_
     rintro x ⟨hx, -⟩
     show x 1 ≠ m.ustar + 1
     rw [hx]
@@ -1836,7 +1837,8 @@ forces `μ ũ (s/L_s − u*η c/R_s) = 0 = μ ũ (c/L_s + u*η s/R_s)`, hence `�
       linarith
     · -- `μ ω₀ L_s ≠ 0`: negatively damped DC row on a set of constant energy
       by_contra hne
-      have hcont2 : Continuous (fun y : State 5 => y 2) := (proj_contDiff 2).continuous
+      have hcont2 : Continuous (fun y : State 5 => y 2) :=
+        (Dynamics.contDiff_coord (k := 1) 2).continuous
       obtain ⟨t₁, h01, h1T, hU⟩ := Dynamics.exists_Icc_mem_of_isOpen hψ.continuousOn
         (U := {y : State 5 | y 2 ≠ m.ustar}) (isOpen_ne_fun hcont2 continuous_const)
         (show (0 : ℝ) ∈ Ico 0 T from ⟨le_rfl, hT⟩) hne
@@ -1903,7 +1905,7 @@ cylinder. -/
     exact no_sync_margin_zero_segment m hC hL hR hμ hs hm hT hψ fun t ht =>
       ⟨(hstay t ht).1.1, (hstay t ht).2⟩
   have c5 : ∀ j : Fin 5, Continuous (fun y : State 5 => y j) := fun j =>
-    (proj_contDiff j).continuous
+    (Dynamics.contDiff_coord (k := 1) j).continuous
   have hcD : Continuous (fun y : State 5 => y 3 - m.cD (y 0) (y 1)) := by
     have h0 := c5 0
     have h1 := c5 1
@@ -2069,9 +2071,9 @@ def Model.redJac (m : Model) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem redField_contDiff (m : Model) : ContDiff ℝ 1 m.redField := by
-  have h0 := proj_contDiff (n := 3) 0
-  have h1 := proj_contDiff (n := 3) 1
-  have h2 := proj_contDiff (n := 3) 2
+  have h0 := Dynamics.contDiff_coord (k := 1) (n := 3) 0
+  have h1 := Dynamics.contDiff_coord (k := 1) (n := 3) 1
+  have h2 := Dynamics.contDiff_coord (k := 1) (n := 3) 2
   rw [contDiff_euclidean]
   intro i
   fin_cases i <;> simp [Model.redField] <;> fun_prop
@@ -2266,7 +2268,7 @@ Implementation evidence (Rules §3a). -/
     · simp only [PiLp.zero_apply]
       refine squeeze_zero_norm' (Eventually.of_forall fun t => ?_) hb
       simpa [Model.red] using (hrot (φ t 0) _ _).2
-  obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
+  obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
     m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv
     (redJac_isHurwitz m hC hL hR hμ hm.ge)
   obtain ⟨T₀, hT₀⟩ := eventually_atTop.mp
@@ -2415,7 +2417,7 @@ the angle moves by at most a multiple of the initial error. -/
   change LyapunovStable m.field m.point
   have hN := N_pos m hR
   have hκ := kappa_eq_zero_of_no_sync m hs
-  obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
+  obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
     m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv
     (redJac_isHurwitz m hC hL hR hμ hδ)
   obtain ⟨Λ, hΛdef⟩ : ∃ Λ, Λ = (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) /

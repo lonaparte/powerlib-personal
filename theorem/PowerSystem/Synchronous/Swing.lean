@@ -534,7 +534,7 @@ synchronizing coefficient stays positive. -/
   have hs := Real.abs_sin_sub_sin_le (x 0 - p.k₃) (y 0 - p.k₃)
   have hsub : x 0 - p.k₃ - (y 0 - p.k₃) = x 0 - y 0 := by ring
   rw [hsub] at hs
-  refine (Dynamics.norm_le_abs_add_abs_two _).trans ?_
+  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans ?_
   simp only [PiLp.sub_apply, field_apply_zero, field_apply_one, accel, Pe]
   have he : (p.Pm - (p.k₁ + p.k₂ * Real.sin (x 0 - p.k₃)) - p.D * x 1) / p.M -
       (p.Pm - (p.k₁ + p.k₂ * Real.sin (y 0 - p.k₃)) - p.D * y 1) / p.M =
@@ -953,7 +953,7 @@ conclusion. -/
 
 @[tmio M, powerlib_domain] private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
     ‖PhasePlane.mk (m.δ + s) t - m.point‖ ≤ |s| + |t| := by
-  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
+  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans (le_of_eq ?_)
   simp [Model.point]
 
 @[tmio M, powerlib_domain] private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :

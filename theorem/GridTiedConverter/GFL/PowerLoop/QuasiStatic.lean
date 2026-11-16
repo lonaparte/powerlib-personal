@@ -200,7 +200,7 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
     fderiv ℝ (field p) (WithLp.toLp 2 ![θ, x, Id]) =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (jac p θ Id) := by
   have := hasFDerivAt_coordField p ![θ, x, Id]
-  exact Dynamics.fderiv_lift (by simpa using this)
+  exact (Dynamics.hasFDerivAt_lift (by simpa using this)).fderiv
 
 /-! ## The OUT-positive form of the source (conventions §D8) -/
 
