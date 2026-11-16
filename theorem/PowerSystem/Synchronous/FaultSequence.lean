@@ -37,8 +37,9 @@ of `Synchronous.Swing.family`, Rules §3a); the static areas are in
   (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a post-fault trajectory
   starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never exceeds the unstable
   equilibrium angle `δ_u` iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)`; bolted three-phase fault
-  (`P_e^f ≡ 0`, `D = 0`): explicit during-fault trajectory (`boltedFault_trajectory`) and the
-  exact critical clearing time `t_cc = √(2M(δ_cc − δ₀)/P_m)` (`boltedFault_clearingTime`);
+  (`P_e^f ≡ 0`, `D = 0`): explicit during-fault trajectory (`boltedFault_speed`,
+  `boltedFault_angle`) and the exact critical clearing time `t_cc = √(2M(δ_cc − δ₀)/P_m)`
+  (`boltedFault_clearingTime`);
   general during-fault curve: time spent in `[δ₀, δ_cc]` is at most
   `√(2M(δ_cc − δ₀)/(P_m − max P_e^f))` (`time_in_window_le`).
 * `exists_faultTrajectory`, `faultTrajectory_unique`: from a pre-fault equilibrium the switched
@@ -253,21 +254,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ## Critical clearing time -/
 
-/-- Bolted fault at the receiving bus (`P_e^f ≡ 0`, `D = 0`): the during-fault trajectory from
-the pre-fault equilibrium `(δ₀, 0)` is `ω = (P_m/M)(t − t_f)`,
-`δ = δ₀ + (P_m/(2M))(t − t_f)²`.
+/-- Bolted fault at the receiving bus (`P_e^f ≡ 0`, `D = 0`): the during-fault speed from the
+pre-fault equilibrium `(δ₀, 0)` is `ω = (P_m/M)(t − t_f)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
+@[tmio M, powerlib_domain] private theorem boltedFault_speed (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
-    ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.M * (t - tf) ∧
-      φ t 0 = δ₀ + p.Pm / (2 * p.M) * (t - tf) ^ 2 := by
+    ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.M * (t - tf) := by
   have hacc : ∀ x : State 2, p.field x 1 = p.Pm / p.M := by
     intro x; simp [accel, Pe, hD, hk₁, hk₂]
   have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ
   have hcont := hφ.continuousOn
-  have hproj (j : Fin 2) := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State 2 →L[ℝ] ℝ)
   have h1 : ∀ t ∈ Icc tf T, φ t 1 - p.Pm / p.M * (t - tf) = φ tf 1 - p.Pm / p.M * (tf - tf) := by
     apply constant_of_has_deriv_right_zero
     · exact (((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
@@ -279,8 +277,19 @@ Implementation evidence: trajectory-level result outside the sentence language (
       convert this using 1
       · funext y; simp [Function.comp_def]
       · simp [hacc]
-  have hω : ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.M * (t - tf) := by
-    intro t ht; have := h1 t ht; simp [h0] at this; linarith
+  intro t ht; have := h1 t ht; simp [h0] at this; linarith
+
+/-- Bolted fault at the receiving bus (`P_e^f ≡ 0`, `D = 0`): the during-fault angle from the
+pre-fault equilibrium `(δ₀, 0)` is `δ = δ₀ + (P_m/(2M))(t − t_f)²`.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio M, powerlib_domain] private theorem boltedFault_angle (hM : 0 < p.M) (hD : p.D = 0)
+    (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) :
+    ∀ t ∈ Icc tf T, φ t 0 = δ₀ + p.Pm / (2 * p.M) * (t - tf) ^ 2 := by
+  have hω := p.boltedFault_speed hD hk₁ hk₂ hφ h0
+  have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ
+  have hcont := hφ.continuousOn
   have h2 : ∀ t ∈ Icc tf T, φ t 0 - p.Pm / (2 * p.M) * (t - tf) ^ 2 =
       φ tf 0 - p.Pm / (2 * p.M) * (tf - tf) ^ 2 := by
     apply constant_of_has_deriv_right_zero
@@ -297,7 +306,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
         field_simp
         ring
   intro t ht
-  refine ⟨hω t ht, ?_⟩
   have := h2 t ht
   simp [h0] at this
   linarith
@@ -310,7 +318,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) (hcc : δ₀ ≤ δcc) {t : ℝ} (ht : t ∈ Icc tf T) :
     φ t 0 = δcc ↔ t = tf + Real.sqrt (2 * p.M * (δcc - δ₀) / p.Pm) := by
-  rw [(p.boltedFault_trajectory hM hD hk₁ hk₂ hφ h0 t ht).2]
+  rw [p.boltedFault_angle hM hD hk₁ hk₂ hφ h0 t ht]
   have hτ : 0 ≤ t - tf := by linarith [ht.1]
   constructor
   · intro he
@@ -511,8 +519,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔
       tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) := by
   have hMf : 0 < fault.M := hMeq ▸ hM
-  obtain ⟨hωc, hδc⟩ := fault.boltedFault_trajectory hMf hDf hk₁ hk₂ hφ.2.2.1 h0 tc
-    ⟨hφ.1, le_rfl⟩
+  have hωc := fault.boltedFault_speed hDf hk₁ hk₂ hφ.2.2.1 h0 tc ⟨hφ.1, le_rfl⟩
+  have hδc := fault.boltedFault_angle hMf hDf hk₁ hk₂ hφ.2.2.1 h0 tc ⟨hφ.1, le_rfl⟩
   rw [hMeq, hPm] at hωc hδc
   set τ := tc - tf with hτ
   have hτ0 : 0 < τ := by rw [hτ]; linarith

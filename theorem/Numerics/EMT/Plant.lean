@@ -33,13 +33,16 @@ discretization in EMT); theory/T-numerical-integration.md §1.3, §2.7 (A-stabil
 `x_{n+1} = R(hA) x_n`).
 
 Results.
-* `rlPlant_trapezoidalDiscretization_exponentiallyStable`,
-  `rlPlant_backwardEulerDiscretization_exponentiallyStable` — for a positive resistance and
-  every `h > 0` the implicit step is uniquely solvable and every discrete trajectory decays
-  geometrically.
+* `rlPlant_trapezoidalDiscretization_wellPosed`, `rlPlant_backwardEulerDiscretization_wellPosed`
+  — for a positive resistance and every `h > 0` the implicit step is uniquely solvable;
+  `rlPlant_trapezoidalDiscretization_exponentiallyStable`,
+  `rlPlant_backwardEulerDiscretization_exponentiallyStable` — and every discrete trajectory
+  decays geometrically.
 * `rlPlant_trapezoidalDiscretization_exponentiallyStable_iff` — for a well-posed trapezoidal
   step, geometric decay of the discretized RL model holds exactly when `R > 0`.
-* `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable`,
+* `idealLCLPlant_trapezoidalDiscretization_wellPosed`,
+  `idealLCLPlant_backwardEulerDiscretization_wellPosed`,
+  `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable`,
   `idealLCLPlant_backwardEulerDiscretization_exponentiallyStable` — same for a passive, damped
   ideal LCL plant (`R₁, R₂ ≥ 0`, not both zero).
 * `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff` — for a passive plant and a
@@ -53,10 +56,10 @@ Family and connection conclusions.
   Their corresponding realization objects use the design projection. The generic M–I laws
   of `Numerics/ImplicitRealization` give trapezoidal exactness within positive, well-posed
   steps, and backward-Euler soundness; no passivity or general sentence transfer is claimed.
-* The eight plant conclusions transfer design-side conditions along the design projection
+* The twelve plant conclusions transfer design-side conditions along the design projection
   to actual numerical implementations, so their knowledge category is M–I. They are generated
-  denotation/requirement statements. The four
-  forward stability results also assert the well-posed requirement. Existence, uniqueness and
+  denotation/requirement statements. The four `…_wellPosed` results assert the well-posed
+  requirement under the hypotheses of the four forward stability results. Existence, uniqueness and
   geometric decay of the discrete trajectories are the generic `trapezoidal_existsUnique`,
   `backwardEuler_existsUnique`, `trapezoidal_exponentiallyStable_of_isHurwitz` and
   `backwardEuler_exponentiallyStable_of_isHurwitz` of `theorem/Numerics/LinearSchemes.lean`.
@@ -185,31 +188,49 @@ def lclBackwardEuler : Implementation LCL.Circuit LCL.Requirement (ImplicitStep 
     (ImplicitRequirement LCL.Requirement) 3 2 3 0 :=
   implicitRealization .backwardEuler LCL.family LCL.Circuit.plant ImplicitStep.design ImplicitStep.h
 
-/-- Positive resistance gives a well-posed, globally exponentially stable trapezoidal RL step. -/
+/-- Positive resistance gives a well-posed (uniquely solvable) trapezoidal RL step. -/
+@[tmio MI, powerlib_domain] theorem rlPlant_trapezoidalDiscretization_wellPosed
+    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
+      TMIO.realize rlTrapezoidalFamily.meets {.wellPosed}) := by
+  unfold TMIO.Statement
+  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
+    (RL.isHurwitz_iff m).mpr hR
+  exact implicit_mem_wellPosed_of_design .trapezoidal RL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
+
+/-- Positive resistance gives a globally exponentially stable trapezoidal RL step. -/
 @[tmio MI, powerlib_domain] theorem rlPlant_trapezoidalDiscretization_exponentiallyStable
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-        TMIO.realize rlTrapezoidalFamily.meets {.wellPosed} ∧
-      (⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-        rlTrapezoidalFamily.den (.flow .globallyExponentiallyStable)) := by
+      rlTrapezoidalFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
-  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) := (RL.isHurwitz_iff m).mpr hR
-  exact ⟨implicit_mem_wellPosed_of_design .trapezoidal RL.family_isLinear (P := .globallyExponentiallyStable)
-      (Or.inl trivial) hh hd,
-    implicit_mem_den_of_design .trapezoidal RL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd⟩
+  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
+    (RL.isHurwitz_iff m).mpr hR
+  exact implicit_mem_den_of_design .trapezoidal RL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
 
-/-- Positive resistance gives a well-posed, globally exponentially stable backward-Euler RL step. -/
+/-- Positive resistance gives a well-posed (uniquely solvable) backward-Euler RL step. -/
+@[tmio MI, powerlib_domain] theorem rlPlant_backwardEulerDiscretization_wellPosed
+    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
+      TMIO.realize rlBackwardEulerFamily.meets {.wellPosed}) := by
+  unfold TMIO.Statement
+  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
+    (RL.isHurwitz_iff m).mpr hR
+  exact implicit_mem_wellPosed_of_design .backwardEuler RL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
+
+/-- Positive resistance gives a globally exponentially stable backward-Euler RL step. -/
 @[tmio MI, powerlib_domain] theorem rlPlant_backwardEulerDiscretization_exponentiallyStable
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-        TMIO.realize rlBackwardEulerFamily.meets {.wellPosed} ∧
-      (⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-        rlBackwardEulerFamily.den (.flow .globallyExponentiallyStable)) := by
+      rlBackwardEulerFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
-  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) := (RL.isHurwitz_iff m).mpr hR
-  exact ⟨implicit_mem_wellPosed_of_design .backwardEuler RL.family_isLinear (P := .globallyExponentiallyStable)
-      (Or.inl trivial) hh hd,
-    implicit_mem_den_of_design .backwardEuler RL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd⟩
+  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
+    (RL.isHurwitz_iff m).mpr hR
+  exact implicit_mem_den_of_design .backwardEuler RL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
 
 /-- A well-posed trapezoidal RL step is stable exactly when the resistance is positive. -/
 @[tmio MI, powerlib_domain] theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff
@@ -223,31 +244,45 @@ def lclBackwardEuler : Implementation LCL.Circuit LCL.Requirement (ImplicitStep 
     (P := .globallyExponentiallyStable)
     (Or.inl trivial) hh hP).trans (RL.isHurwitz_iff m)
 
-/-- Passive damped LCL designs give well-posed and stable trapezoidal implementations. -/
+/-- A passive damped LCL design gives a well-posed (uniquely solvable) trapezoidal LCL step. -/
+@[tmio MI, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_wellPosed
+    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
+      TMIO.realize lclTrapezoidalFamily.meets {.wellPosed}) := by
+  unfold TMIO.Statement
+  have hmodel := lclMatrix_isHurwitz m hp hd
+  exact implicit_mem_wellPosed_of_design .trapezoidal LCL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
+
+/-- A passive damped LCL design gives a globally exponentially stable trapezoidal LCL step. -/
 @[tmio MI, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable
     (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-        TMIO.realize lclTrapezoidalFamily.meets {.wellPosed} ∧
-      (⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-        lclTrapezoidalFamily.den (.flow .globallyExponentiallyStable)) := by
+      lclTrapezoidalFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   have hmodel := lclMatrix_isHurwitz m hp hd
-  exact ⟨implicit_mem_wellPosed_of_design .trapezoidal LCL.family_isLinear (P := .globallyExponentiallyStable)
-      (Or.inl trivial) hh hmodel,
-    implicit_mem_den_of_design .trapezoidal LCL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel⟩
+  exact implicit_mem_den_of_design .trapezoidal LCL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
 
-/-- Passive damped LCL designs give well-posed and stable backward-Euler implementations. -/
+/-- A passive damped LCL design gives a well-posed (uniquely solvable) backward-Euler LCL step. -/
+@[tmio MI, powerlib_domain] theorem idealLCLPlant_backwardEulerDiscretization_wellPosed
+    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
+      TMIO.realize lclBackwardEulerFamily.meets {.wellPosed}) := by
+  unfold TMIO.Statement
+  have hmodel := lclMatrix_isHurwitz m hp hd
+  exact implicit_mem_wellPosed_of_design .backwardEuler LCL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
+
+/-- A passive damped LCL design gives a globally exponentially stable backward-Euler LCL step. -/
 @[tmio MI, powerlib_domain] theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable
     (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-        TMIO.realize lclBackwardEulerFamily.meets {.wellPosed} ∧
-      (⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-        lclBackwardEulerFamily.den (.flow .globallyExponentiallyStable)) := by
+      lclBackwardEulerFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   have hmodel := lclMatrix_isHurwitz m hp hd
-  exact ⟨implicit_mem_wellPosed_of_design .backwardEuler LCL.family_isLinear (P := .globallyExponentiallyStable)
-      (Or.inl trivial) hh hmodel,
-    implicit_mem_den_of_design .backwardEuler LCL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel⟩
+  exact implicit_mem_den_of_design .backwardEuler LCL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
 
 /-- A passive LCL design's well-posed trapezoidal implementation is stable exactly when damped. -/
 @[tmio MI, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff

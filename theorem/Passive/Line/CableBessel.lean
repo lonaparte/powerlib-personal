@@ -202,7 +202,7 @@ open MeasureTheory Set intervalIntegral
   have hsr : x₀ ≤ s * r := by rwa [div_le_iff₀ hr] at hs
   set w : ℂ := (1 + Complex.I) * ((s * r : ℝ) : ℂ) with hw
   have hwre : w.re = s * r := by rw [hw, one_add_I_mul_re]
-  obtain ⟨-, hI1, hb⟩ := hC w (by rw [hwre]; exact hsr)
+  have hb := hC w (by rw [hwre]; exact hsr)
     (by rw [hwre, ← one_add_I_mul_re (s * r)]; exact norm_one_add_I_mul_le (by positivity))
   have hm : (1 + Complex.I) * (s : ℂ) * r = w := by rw [hw]; push_cast; ring
   have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero

@@ -231,26 +231,32 @@ def bdfPoly (k : ℕ) : ℂ[X] :=
     (bdfPoly k).eval z = bdfRhoSum k z := by
   simp [bdfPoly, bdfRhoSum, eval_finsetSum]
 
-@[tmio T, powerlib_foundation] private theorem bdfPoly_term (k j : ℕ) (hj : j < k) :
-    ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).Monic ∧
-      ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).natDegree = k := by
+/-- Each term `X^(k−1−j) (X − 1)^(j+1)` of `bdfPoly k` is monic. -/
+@[tmio T, powerlib_foundation] private theorem bdfPoly_term_monic (k j : ℕ) :
+    ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).Monic := by
+  have h1 : ((X : ℂ[X]) - 1).Monic := by simpa using monic_X_sub_C (1 : ℂ)
+  exact (monic_X_pow _).mul (h1.pow _)
+
+/-- Each term `X^(k−1−j) (X − 1)^(j+1)` of `bdfPoly k` (`j < k`) has degree `k`. -/
+@[tmio T, powerlib_foundation] private theorem bdfPoly_term_natDegree (k j : ℕ) (hj : j < k) :
+    ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).natDegree = k := by
   have h1 : ((X : ℂ[X]) - 1).Monic := by simpa using monic_X_sub_C (1 : ℂ)
   have h1d : ((X : ℂ[X]) - 1).natDegree = 1 := by simpa using natDegree_X_sub_C (1 : ℂ)
-  refine ⟨(monic_X_pow _).mul (h1.pow _), ?_⟩
   rw [(monic_X_pow _).natDegree_mul (h1.pow _), natDegree_X_pow, h1.natDegree_pow, h1d]
   omega
 
 @[tmio T, powerlib_foundation] theorem bdfPoly_natDegree_le (k : ℕ) : (bdfPoly k).natDegree ≤ k :=
   natDegree_sum_le_of_forall_le _ _ fun j hj => by
     rw [mul_assoc]
-    exact (natDegree_C_mul_le _ _).trans (bdfPoly_term k j (Finset.mem_range.mp hj)).2.le
+    exact (natDegree_C_mul_le _ _).trans (bdfPoly_term_natDegree k j (Finset.mem_range.mp hj)).le
 
 /-- The leading coefficient of `bdfRhoSum k` is `H_k = Σ_{j=1}^{k} 1/j`. -/
 @[tmio T, powerlib_foundation] theorem bdfPoly_coeff (k : ℕ) :
     (bdfPoly k).coeff k = ∑ j ∈ Finset.range k, 1 / ((j + 1 : ℕ) : ℂ) := by
   simp only [bdfPoly, finsetSum_coeff, mul_assoc, coeff_C_mul]
   refine Finset.sum_congr rfl fun j hj => ?_
-  obtain ⟨hm, hd⟩ := bdfPoly_term k j (Finset.mem_range.mp hj)
+  have hm := bdfPoly_term_monic k j
+  have hd := bdfPoly_term_natDegree k j (Finset.mem_range.mp hj)
   have := hm.coeff_natDegree
   rw [hd] at this
   rw [this, mul_one]

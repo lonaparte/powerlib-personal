@@ -432,25 +432,34 @@ the grid q-voltage alone. -/
   field_simp
   linear_combination (z 0) * htr'
 
+/-- `A = V cos θ ≠ 0` on the boundary (`det J > 0`). -/
+@[tmio M, powerlib_domain] private theorem model_Vcos_ne_zero {m : Model}
+    (hD0 : m.params.D0 ≠ 0) (hdet : 0 < (jac m.params m.θ).det) :
+    m.params.V * Real.cos m.θ ≠ 0 := by
+  rw [det_jac m.params hD0] at hdet
+  intro h
+  rw [mul_assoc, h, mul_zero, zero_div] at hdet
+  exact lt_irrefl 0 hdet
+
+/-- `α = k_i / D₀ ≠ 0` on the boundary (`det J > 0`). -/
+@[tmio M, powerlib_domain] private theorem model_kiD0_ne_zero {m : Model}
+    (hD0 : m.params.D0 ≠ 0) (hdet : 0 < (jac m.params m.θ).det) :
+    m.params.ki / m.params.D0 ≠ 0 := by
+  rw [det_jac m.params hD0] at hdet
+  intro h
+  have : m.params.ki = 0 := by
+    rcases div_eq_zero_iff.mp h with h | h
+    · exact h
+    · exact absurd h hD0
+  rw [this, zero_mul, zero_mul, zero_div] at hdet
+  exact lt_irrefl 0 hdet
+
 /-- `α / A = det J / A² > 0` on the boundary. -/
 @[tmio M, powerlib_domain] private theorem model_ratio_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
     (hdet : 0 < (jac m.params m.θ).det) :
-    m.params.V * Real.cos m.θ ≠ 0 ∧ m.params.ki / m.params.D0 ≠ 0 ∧
-      0 < m.params.ki / m.params.D0 / (m.params.V * Real.cos m.θ) := by
+    0 < m.params.ki / m.params.D0 / (m.params.V * Real.cos m.θ) := by
+  have hA := model_Vcos_ne_zero hD0 hdet
   rw [det_jac m.params hD0] at hdet
-  have hA : m.params.V * Real.cos m.θ ≠ 0 := by
-    intro h
-    rw [mul_assoc, h, mul_zero, zero_div] at hdet
-    exact lt_irrefl 0 hdet
-  have hα : m.params.ki / m.params.D0 ≠ 0 := by
-    intro h
-    have : m.params.ki = 0 := by
-      rcases div_eq_zero_iff.mp h with h | h
-      · exact h
-      · exact absurd h hD0
-    rw [this, zero_mul, zero_mul, zero_div] at hdet
-    exact lt_irrefl 0 hdet
-  refine ⟨hA, hα, ?_⟩
   have : m.params.ki / m.params.D0 / (m.params.V * Real.cos m.θ) =
       m.params.ki * m.params.V * Real.cos m.θ / m.params.D0 /
         (m.params.V * Real.cos m.θ) ^ 2 := by
@@ -458,16 +467,15 @@ the grid q-voltage alone. -/
   rw [this]
   positivity
 
-/-- The sign of the normal-form coefficient: `κ > 0 ↔ k_p k_i < 0`. -/
-@[tmio M, powerlib_domain] private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
+/-- The sign of the normal-form coefficient for gains of opposite signs:
+`k_p k_i < 0 → κ > 0`. -/
+@[tmio M, powerlib_domain] private theorem model_kappa_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
     (hdet : 0 < (jac m.params m.θ).det) :
-    (m.params.kp * m.params.ki < 0 →
+    m.params.kp * m.params.ki < 0 →
       0 < hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
-        (m.params.kp / m.params.D0)) ∧
-    (0 < m.params.kp * m.params.ki →
-      hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
-        (m.params.kp / m.params.D0) < 0) := by
-  obtain ⟨hA, -, hq⟩ := model_ratio_pos hD0 hdet
+        (m.params.kp / m.params.D0) := by
+  have hA := model_Vcos_ne_zero hD0 hdet
+  have hq := model_ratio_pos hD0 hdet
   set A := m.params.V * Real.cos m.θ
   set B := m.params.V * Real.sin m.θ
   have hAB : 0 < A ^ 2 + B ^ 2 := by positivity
@@ -479,21 +487,41 @@ the grid q-voltage alone. -/
     field_simp
   have hDA : 0 < (m.params.D0 * A) ^ 2 := by positivity
   rw [hκ]
-  constructor
-  · intro hk
-    have h1 : m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) < 0 := by
-      rw [hprod]; exact div_neg_of_neg_of_pos hk hDA
-    have h2 : m.params.kp / m.params.D0 / A < 0 := by
-      by_contra hc; push Not at hc; nlinarith
-    have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
-    nlinarith
-  · intro hk
-    have h1 : 0 < m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) := by
-      rw [hprod]; exact div_pos hk hDA
-    have h2 : 0 < m.params.kp / m.params.D0 / A := by
-      by_contra hc; push Not at hc; nlinarith
-    have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
-    nlinarith
+  intro hk
+  have h1 : m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) < 0 := by
+    rw [hprod]; exact div_neg_of_neg_of_pos hk hDA
+  have h2 : m.params.kp / m.params.D0 / A < 0 := by
+    by_contra hc; push Not at hc; nlinarith
+  have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
+  nlinarith
+
+/-- The sign of the normal-form coefficient for gains of equal signs:
+`k_p k_i > 0 → κ < 0`. -/
+@[tmio M, powerlib_domain] private theorem model_kappa_neg {m : Model} (hD0 : m.params.D0 ≠ 0)
+    (hdet : 0 < (jac m.params m.θ).det) :
+    0 < m.params.kp * m.params.ki →
+      hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
+        (m.params.kp / m.params.D0) < 0 := by
+  have hA := model_Vcos_ne_zero hD0 hdet
+  have hq := model_ratio_pos hD0 hdet
+  set A := m.params.V * Real.cos m.θ
+  set B := m.params.V * Real.sin m.θ
+  have hAB : 0 < A ^ 2 + B ^ 2 := by positivity
+  have hκ : hopfκ A B (m.params.kp / m.params.D0) =
+      -(A ^ 2 + B ^ 2) / 16 * (m.params.kp / m.params.D0 / A) := by
+    unfold hopfκ; field_simp
+  have hprod : m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) =
+      m.params.kp * m.params.ki / (m.params.D0 * A) ^ 2 := by
+    field_simp
+  have hDA : 0 < (m.params.D0 * A) ^ 2 := by positivity
+  rw [hκ]
+  intro hk
+  have h1 : 0 < m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) := by
+    rw [hprod]; exact div_pos hk hDA
+  have h2 : 0 < m.params.kp / m.params.D0 / A := by
+    by_contra hc; push Not at hc; nlinarith
+  have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
+  nlinarith
 
 /-- Membership through the sound translation. -/
 @[tmio TM, powerlib_domain] private theorem mem_den_of_meets {m : Model} {s : Sentence}
@@ -650,7 +678,7 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change ¬ LocalAsymptoticStable m.field 0
-  obtain ⟨-, hα, -⟩ := model_ratio_pos hD0 hdet
+  have hα := model_kiD0_ne_zero hD0 hdet
   exact hopf_conservative_not_las hα m.field_contDiff
     (fun z => by rw [model_hg0 heq hD0 htr z, hkp, zero_div]) (model_hg1 heq)
 
@@ -671,8 +699,10 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change LocalAsymptoticStable m.field 0
-  obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
-  exact hopf_las hA hα hq ((model_kappa_sign hD0 hdet).1 hk) m.field_contDiff
+  have hA := model_Vcos_ne_zero hD0 hdet
+  have hα := model_kiD0_ne_zero hD0 hdet
+  have hq := model_ratio_pos hD0 hdet
+  exact hopf_las hA hα hq (model_kappa_pos hD0 hdet hk) m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL on the boundary `tr J = 0` with gains of equal signs, `k_p k_i > 0`: a
@@ -685,8 +715,10 @@ subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ <
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Unstable m.field 0
-  obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
-  exact hopf_unstable hA hα hq ((model_kappa_sign hD0 hdet).2 hk) m.field_contDiff
+  have hA := model_Vcos_ne_zero hD0 hdet
+  have hα := model_kiD0_ne_zero hD0 hdet
+  have hq := model_ratio_pos hD0 hdet
+  exact hopf_unstable hA hα hq (model_kappa_neg hD0 hdet hk) m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`)
@@ -697,7 +729,8 @@ exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is 
     (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     connection% (Model.mk p θ ∈ family.den (.flow .unstable)) := by
-  obtain ⟨htr, hdet, -⟩ := imaginary_pair_at_boundary p hD0 hV hki hωs hcos heq htan
+  have htr := trace_jac_eq_zero_of_tan_eq p hD0 hV hki hωs hcos heq htan
+  have hdet := det_jac_pos p hD0 hV hki hcos
   exact mem_den_unstable_of_hopf (Model.mk p θ) heq hD0.ne' htr hdet (mul_pos hkp hki)
 
 /-- With physical gains the operating point is locally asymptotically stable exactly below the
@@ -778,7 +811,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
     · refine Or.inr ⟨htr, ?_⟩
       rcases lt_trichotomy (m.params.kp * m.params.ki) 0 with hk | hk | hk
       · exact hk
-      · have hki : m.params.ki ≠ 0 := (model_ratio_pos hD0 hdet).2.1 ∘ fun h => by
+      · have hki : m.params.ki ≠ 0 := model_kiD0_ne_zero hD0 hdet ∘ fun h => by
           rw [h, zero_div]
         have hkp : m.params.kp = 0 := (mul_eq_zero.mp hk).resolve_right hki
         exact ((fun hFlowConnection => (not_las_of_hopf_kp_eq_zero heq hD0 htr hdet hkp) (family_isAutonomous.mem_den_flow.mpr hFlowConnection)) hLAS).elim
@@ -803,32 +836,54 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
 `θ* = −π/4`. Balanced (`V sin θ* = −1 = −X_g i_d`), `tr J = 0`, `det J = 1`, `k_p k_i = −1/4`. -/
 def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, ⟨0, 1, 0⟩, 1, -1 / 2, 1 / 2, 1, rfl⟩, -(Real.pi / 4)⟩
 
-@[tmio M, powerlib_domain] private theorem supercriticalPLL_data :
+/-- The supercritical boundary PLL is balanced: `V sin θ* = −X_g i_d`. -/
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_balance :
     supercriticalPLL.params.V * Real.sin supercriticalPLL.θ =
-        -(supercriticalPLL.params.Xg * supercriticalPLL.params.Id) ∧
-      supercriticalPLL.params.D0 ≠ 0 ∧ (jac supercriticalPLL.params supercriticalPLL.θ).trace = 0 ∧
-      0 < (jac supercriticalPLL.params supercriticalPLL.θ).det ∧
-      supercriticalPLL.params.kp * supercriticalPLL.params.ki < 0 := by
+      -(supercriticalPLL.params.Xg * supercriticalPLL.params.Id) := by
+  have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
+  simp only [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Real.sin_neg,
+    Real.sin_pi_div_four]
+  linear_combination (-1 / 2 : ℝ) * h2
+
+/-- The supercritical boundary PLL has `D₀ ≠ 0` (`D₀ = 1/2`). -/
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_D0_ne_zero :
+    supercriticalPLL.params.D0 ≠ 0 := by
+  have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
+    simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
+  rw [hD0]; norm_num
+
+/-- The supercritical boundary PLL lies on the boundary: `tr J = 0`. -/
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_trace_jac :
+    (jac supercriticalPLL.params supercriticalPLL.θ).trace = 0 := by
   have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
   have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
     simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
-  refine ⟨?_, by rw [hD0]; norm_num, ?_, ?_, by simp [supercriticalPLL]; norm_num⟩
-  · simp only [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Real.sin_neg,
-      Real.sin_pi_div_four]
-    linear_combination (-1 / 2 : ℝ) * h2
-  · rw [trace_jac, hD0]
-    simp only [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Real.cos_neg,
-        Real.cos_pi_div_four, Params.Lg]
-    linear_combination (1 / 2 : ℝ) * h2
-  · rw [det_jac _ (by rw [hD0]; norm_num), hD0]
-    simp only [supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four]
-    nlinarith [h2]
+  rw [trace_jac, hD0]
+  simp only [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Real.cos_neg,
+      Real.cos_pi_div_four, Params.Lg]
+  linear_combination (1 / 2 : ℝ) * h2
+
+/-- The supercritical boundary PLL has `det J > 0` (`det J = 1`). -/
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_det_jac_pos :
+    0 < (jac supercriticalPLL.params supercriticalPLL.θ).det := by
+  have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
+  have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
+    simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
+  rw [det_jac _ (by rw [hD0]; norm_num), hD0]
+  simp only [supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four]
+  nlinarith [h2]
+
+/-- The supercritical boundary PLL has gains of opposite signs: `k_p k_i < 0`. -/
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_kp_mul_ki_neg :
+    supercriticalPLL.params.kp * supercriticalPLL.params.ki < 0 := by
+  simp [supercriticalPLL]; norm_num
 
 /-- The supercritical boundary PLL is locally asymptotically stable. -/
 @[tmio TM, powerlib_domain] theorem supercriticalPLL_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalPLL ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  obtain ⟨heq, hD0, htr, hdet, hk⟩ := supercriticalPLL_data
-  exact mem_den_locallyAsymptoticallyStable_of_hopf supercriticalPLL heq hD0 htr hdet hk
+  exact mem_den_locallyAsymptoticallyStable_of_hopf supercriticalPLL supercriticalPLL_balance
+    supercriticalPLL_D0_ne_zero supercriticalPLL_trace_jac supercriticalPLL_det_jac_pos
+    supercriticalPLL_kp_mul_ki_neg
 
 /-- **The local asymptotic translation is not exact.** The supercritical boundary PLL is locally
 asymptotically stable, but its Jacobian has trace `0`, so it meets no stable-Jacobian
@@ -843,7 +898,7 @@ requirement. -/
   have hs : Meets supercriticalPLL .jacobianStable :=
     hmem .jacobianStable (by simp [family, translate])
   have := hs.1
-  rw [supercriticalPLL_data.2.2.1] at this
+  rw [supercriticalPLL_trace_jac] at this
   exact lt_irrefl 0 this
 
 

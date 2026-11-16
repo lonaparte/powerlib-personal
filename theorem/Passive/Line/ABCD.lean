@@ -35,7 +35,8 @@ Results.
   `A = D` (`chain_A_eq_D`), `BC = sinh²` (`chain_B_mul_C`), cascade `T(ℓ₁)T(ℓ₂) = T(ℓ₁+ℓ₂)`
   (`chain_mul`; the port relations compose by Mathlib `Matrix.mulVec_mulVec`).
 * Short/open-circuit impedances and parameter inversion (`shortCircuit`, `openCircuit`,
-  `Zsc_mul_Zoc`, `Zsc_div_Zoc`, `exp_two_mul_gammaL`, `two_mul_gammaL_eq_log_add`).
+  `Zsc_mul_Zoc`, `Zsc_div_Zoc`, `one_sub_Zsc_div_Zc_ne_zero`, `exp_two_mul_gammaL`,
+  `two_mul_gammaL_eq_log_add`).
 * Exact Π equivalent and its short-line limit (`piChain_exact`, `piSeries_shortLine`,
   `piShunt_shortLine`); input impedance with a load (`input_relation`,
   `inputImpedance_tanh`, `matched_inputImpedance`, `lossless_quarterWave`).
@@ -241,10 +242,21 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
   simp only [Zsc, Zoc, Complex.tanh_eq_sinh_div_cosh]
   field_simp
 
+/-- With `ρ = Z_sc/Z_c = tanh γℓ` and `cosh γℓ ≠ 0`: `1 - ρ ≠ 0`. -/
+@[tmio M, powerlib_domain] theorem one_sub_Zsc_div_Zc_ne_zero (ℓ : ℂ)
+    (hc : cosh (p.γ * ℓ) ≠ 0) : 1 - Zsc p ℓ / p.Zc ≠ 0 := by
+  have hZc := p.Zc_ne
+  have hρ : Zsc p ℓ / p.Zc = sinh (p.γ * ℓ) / cosh (p.γ * ℓ) := by
+    simp only [Zsc, Complex.tanh_eq_sinh_div_cosh]; field_simp
+  have hcm : cosh (p.γ * ℓ) - sinh (p.γ * ℓ) = exp (-(p.γ * ℓ)) := by
+    rw [← Complex.cosh_neg, ← Complex.cosh_add_sinh, Complex.cosh_neg, Complex.sinh_neg]; ring
+  have hden : 1 - Zsc p ℓ / p.Zc = exp (-(p.γ * ℓ)) / cosh (p.γ * ℓ) := by
+    rw [hρ, ← hcm]; field_simp
+  rw [hden]; exact div_ne_zero (Complex.exp_ne_zero _) hc
+
 /-- With `ρ = Z_sc/Z_c = tanh γℓ`: `exp(2γℓ) = (1+ρ)/(1-ρ)`. -/
 @[tmio M, powerlib_domain] theorem exp_two_mul_gammaL (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
-    1 - Zsc p ℓ / p.Zc ≠ 0 ∧
-      exp (2 * (p.γ * ℓ)) = (1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc) := by
+    exp (2 * (p.γ * ℓ)) = (1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc) := by
   have hZc := p.Zc_ne
   have hρ : Zsc p ℓ / p.Zc = sinh (p.γ * ℓ) / cosh (p.γ * ℓ) := by
     simp only [Zsc, Complex.tanh_eq_sinh_div_cosh]; field_simp
@@ -255,7 +267,6 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
     rw [hρ, ← hcm]; field_simp
   have hnum : 1 + Zsc p ℓ / p.Zc = exp (p.γ * ℓ) / cosh (p.γ * ℓ) := by
     rw [hρ, ← hcp]; field_simp
-  refine ⟨by rw [hden]; exact div_ne_zero (Complex.exp_ne_zero _) hc, ?_⟩
   rw [hnum, hden, div_div_div_cancel_right₀ hc, ← Complex.exp_sub]
   ring_nf
 
@@ -263,7 +274,7 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
 @[tmio M, powerlib_domain] theorem two_mul_gammaL_eq_log_add (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
     ∃ k : ℤ, 2 * (p.γ * ℓ) =
       log ((1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc)) + k * (2 * Real.pi * I) := by
-  obtain ⟨-, h⟩ := exp_two_mul_gammaL p ℓ hc
+  have h := exp_two_mul_gammaL p ℓ hc
   have hq : (1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc) ≠ 0 := by
     rw [← h]; exact Complex.exp_ne_zero _
   have := Complex.exp_eq_exp_iff_exists_int.mp (h.trans (Complex.exp_log hq).symm)

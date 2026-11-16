@@ -47,9 +47,10 @@ Family and connection conclusions.
 * Connection conclusions: `VSGInfiniteBus.locallyExponentiallyStable`, `unstable`,
   `lyapunovStable` (members of the nonlinear denotations), `VSGInfiniteBus.linearModel_mem_den_iff`
   (a member of the linearized global exponential denotation iff `D_p > 0 ∧ K_E > 0`),
-  `ClassicalSMIB.locallyExponentiallyStable`, `unstable`,
-  `PostFaultSMIB.deltaS_stable_deltaU_unstable` (Lyapunov stability of `δ_s` for `D ≥ 0` is
-  `Swing.deltaS_mem_den_lyapunovStable` at `m.toSwing`).
+  `ClassicalSMIB.locallyExponentiallyStable`, `unstable`. The post-fault equilibria
+  `δ_s = arcsin((P_m − k₁)/k₂) + k₃` and `δ_u = π − arcsin(·) + k₃` (`|P_m − k₁| < k₂`) are read
+  at `PostFaultSMIB.toSwing` by `Swing.deltaS_mem_den_locallyExponentiallyStable` (`D > 0`),
+  `Swing.deltaU_mem_den_unstable` and `Swing.deltaS_mem_den_lyapunovStable` (`D ≥ 0`).
 
 Corrections.
 * T-vsg-control §1.10 writes `Δθ̇ = Δω`, `2H Δω̇ = −K_E Δθ − D_p Δω` with `Δω` in per unit and
@@ -356,18 +357,6 @@ def toSwing : SwingParams :=
   simp only [line]
   simp only [SwingParams.Pe, toSwing]
   field_simp
-
-/-- Post-fault equilibria `δ_s = arcsin((P_m − k₁)/k₂) + k₃` (locally exponentially stable,
-`D > 0`) and `δ_u = π − arcsin(·) + k₃` (unstable), when `|P_m − k₁| < k₂`. -/
-@[tmio TM, powerlib_domain] theorem deltaS_stable_deltaU_unstable (hM : 0 < m.M) (hD : 0 < m.D)
-    (hk : 0 < m.toSwing.k₂) (h : |m.toSwing.Pm - m.toSwing.k₁| < m.toSwing.k₂) :
-    connection% (Swing.Model.mk m.toSwing m.toSwing.deltaS ∈
-        Swing.family.den (.flow .locallyExponentiallyStable) ∧
-      Swing.Model.mk m.toSwing m.toSwing.deltaU ∈ Swing.family.den (.flow .unstable)) := by
-  have h1 := Swing.deltaS_mem_den_locallyExponentiallyStable m.toSwing hM hD hk h
-  have h2 := Swing.deltaU_mem_den_unstable m.toSwing hM hk h
-  unfold powerlib.TMIO.Statement at h1 h2 ⊢
-  exact ⟨h1, h2⟩
 
 end PostFaultSMIB
 

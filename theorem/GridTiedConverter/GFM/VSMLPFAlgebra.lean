@@ -28,7 +28,8 @@ Results.
   Routh–Hurwitz boundary `ω_c = K/D − D/M` by `D/M`.
 * `iteratedDeriv_jacobian_u`: `f_xuu = ∂²J/∂u² |_{u=0} = −(A₀)_{P_f δ} e_{P_f} e_δᵀ`.
 * `boundary_eigenpairs`: on the Routh boundary both `±j ω_H` are eigenvalues of `A₀`.
-* GFM channels (`gfmPref_affine`, `gfmPref_jacobian_indep`, `gfmAngle_mixed_partial`): in the
+* GFM channels (`gfmPref_affine`, `gfmPref_jacobian_indep`, `gfmAngle_delta_partial`,
+  `gfmAngle_mixed_partial`, `gfmAngle_mixed_partial_ne_zero`): in the
   same three-state model written on `Fin 3 → ℝ` (`gfmPref`, `gfmAngle`), a `P_ref` modulation
   enters affinely with a constant coefficient, so `A_u = ∂_u ∂_z f = 0`; a grid-angle modulation
   enters through `K₀ sin(δ − u)`, whose mixed partial `∂_u ∂_δ = ω_c K₀ sin(δ − u)` is nonzero at
@@ -190,26 +191,34 @@ def gfmAngle (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) : Fin 3 → ℝ :=
     funext (gfmPref_affine M D ωc K₀ P₀ u)
   rw [this, fderiv_add_const]
 
-/-- Grid-angle channel: the `δ`-derivative of the filter row is `ω_c K₀ cos(δ − u)`, and its
-`u`-derivative is `ω_c K₀ sin(δ − u)`, nonzero at a loaded point: `A_u ≠ 0`. -/
-@[tmio M, powerlib_domain] theorem gfmAngle_mixed_partial (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+/-- Grid-angle channel: the `δ`-derivative of the filter row is `ω_c K₀ cos(δ − u)`. -/
+@[tmio M, powerlib_domain] theorem gfmAngle_delta_partial (M D ωc K₀ P₀ u : ℝ)
+    (z : Fin 3 → ℝ) :
     HasDerivAt (fun δ => gfmAngle M D ωc K₀ P₀ u (Function.update z 0 δ) 2)
-        (ωc * K₀ * Real.cos (z 0 - u)) (z 0) ∧
-      HasDerivAt (fun v => ωc * K₀ * Real.cos (z 0 - v)) (ωc * K₀ * Real.sin (z 0 - u)) u ∧
-      (ωc * K₀ ≠ 0 → Real.sin (z 0) ≠ 0 → ωc * K₀ * Real.sin (z 0 - 0) ≠ 0) := by
-  refine ⟨?_, ?_, ?_⟩
-  · have h := (((Real.hasDerivAt_sin (z 0 - u)).comp (z 0)
-      ((hasDerivAt_id (z 0)).sub_const u)).const_mul K₀).sub_const (z 2) |>.const_mul ωc
-    convert h using 1
-    · funext δ; simp [gfmAngle, Function.update]
-    · simp; ring
-  · have h := ((Real.hasDerivAt_cos (z 0 - u)).comp u
-      ((hasDerivAt_id u).const_sub (z 0))).const_mul (ωc * K₀)
-    convert h using 1
-    simp; ring
-  · intro h1 h2
-    rw [sub_zero]
-    exact mul_ne_zero h1 h2
+      (ωc * K₀ * Real.cos (z 0 - u)) (z 0) := by
+  have h := (((Real.hasDerivAt_sin (z 0 - u)).comp (z 0)
+    ((hasDerivAt_id (z 0)).sub_const u)).const_mul K₀).sub_const (z 2) |>.const_mul ωc
+  convert h using 1
+  · funext δ; simp [gfmAngle, Function.update]
+  · simp; ring
+
+/-- Grid-angle channel, mixed partial: the `u`-derivative of the `δ`-derivative
+`ω_c K₀ cos(δ − u)` of the filter row is `ω_c K₀ sin(δ − u)`. -/
+@[tmio T, powerlib_foundation] theorem gfmAngle_mixed_partial (ωc K₀ u : ℝ) (z : Fin 3 → ℝ) :
+    HasDerivAt (fun v => ωc * K₀ * Real.cos (z 0 - v)) (ωc * K₀ * Real.sin (z 0 - u)) u := by
+  have h := ((Real.hasDerivAt_cos (z 0 - u)).comp u
+    ((hasDerivAt_id u).const_sub (z 0))).const_mul (ωc * K₀)
+  convert h using 1
+  simp; ring
+
+/-- Grid-angle channel: the mixed partial `ω_c K₀ sin(δ − u)` at `u = 0` is nonzero at a loaded
+point (`ω_c K₀ ≠ 0`, `sin δ ≠ 0`): `A_u ≠ 0`. -/
+@[tmio T, powerlib_foundation] theorem gfmAngle_mixed_partial_ne_zero (ωc K₀ : ℝ)
+    (z : Fin 3 → ℝ) :
+    ωc * K₀ ≠ 0 → Real.sin (z 0) ≠ 0 → ωc * K₀ * Real.sin (z 0 - 0) ≠ 0 := by
+  intro h1 h2
+  rw [sub_zero]
+  exact mul_ne_zero h1 h2
 
 end VSMLPF
 

@@ -95,7 +95,7 @@ attraction `{x | φ_t x → x*}`. -/
   obtain ⟨-, c, hc, hconv⟩ := hlas
   apply basin_isOpen hg ⟨c, hc, fun y hy => ?_⟩
   have h := hconv 0 (forwardSolution hg y) (lipschitzFlow_solution hg y)
-    (by rw [(forwardSolution_spec hg y).1, ← dist_eq_norm]; exact hy)
+    (by rw [forwardSolution_zero hg y, ← dist_eq_norm]; exact hy)
   exact h.comp tendsto_nnreal_coe_atTop
 
 end powerlib.Dynamics.LaSalle

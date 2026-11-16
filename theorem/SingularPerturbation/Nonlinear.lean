@@ -30,7 +30,7 @@ Results.
   such that for every `ε ∈ (0, ε*)` the full nonlinear system is locally exponentially stable at
   `w₀`. Proof: the Jacobian of `F_ε` is `D_ε J = [[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]`
   (`fderiv_scaledField`), which is Hurwitz for small `ε` by Kokotović's theorem
-  (`LinearSP.exists_epsStar_exponentiallyStable`), and the linearization theorem
+  (`LinearSP.exists_epsStar_isHurwitz`), and the linearization theorem
   (`hurwitz_linearization_locally_exponentially_stable`) applies. With explicit Lyapunov
   solutions `P₀`, `P₂`, `ε*` is the explicit `LinearSP.epsStar P₀ P₂`.
 -/
@@ -102,9 +102,9 @@ equilibrium for every `ε ∈ (0, ε*)`. -/
     (hA0 : LinearSystems.IsHurwitz (J.toBlocks₁₁ - J.toBlocks₁₂ * J.toBlocks₂₂⁻¹ * J.toBlocks₂₁)) :
     ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
       LocallyExponentiallyStable (scaledField ε Φ) w₀ := by
-  obtain ⟨εs, hεs, h⟩ := (blocksSP J).exists_epsStar_exponentiallyStable hA22 hA0
+  obtain ⟨εs, hεs, h⟩ := (blocksSP J).exists_epsStar_isHurwitz hA22 hA0
   refine ⟨εs, hεs, fun ε hε hlt => ?_⟩
-  have hH := (h ε hε hlt).1
+  have hH := h ε hε hlt
   refine hurwitz_linearization_locally_exponentially_stable _ (scaledField_contDiff hΦ ε)
     ?_ (fderiv_scaledField J (hΦ.differentiable one_ne_zero w₀) hJ ε) hH
   simp [scaledField, heq]

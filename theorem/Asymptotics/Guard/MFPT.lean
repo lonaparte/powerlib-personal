@@ -34,11 +34,11 @@ Results.
   `ψ(a) = √(2r_c² − a²)`, for which `U(ψ(a)) = U(a)` (`guardPotential_reflect`). The substitution
   `y ↦ ψ(y)` (`integral_guardIntegrand_reflect`) maps the part of the outer integral beyond the
   top onto the part inside it with Jacobian factor `y/ψ(y)` and inner integral `K(ψ(y))`;
-  `guard_ratio_bounds` gives explicit deterministic bounds
+  `guard_ratio_ge`, `guard_ratio_le` give explicit deterministic bounds
   `a²/(2r_c² − a²) · A ≤ (1 + ε) B` and `B ≤ (1 + κ + ε) A`
-  (`A = ∫₀^{r_c}`, `B = ∫_{r_c}^{r_b}`), with explicit `ε = guardEps`, `κ = guardKappa` that tend
-  to `0` as `D̃ → 0⁺` (`tendsto_guardEps`, `tendsto_guardKappa`); letting `a → r_c` closes the
-  squeeze `B/A → 1`.
+  (`A = ∫₀^{r_c}`, `B = ∫_{r_c}^{r_b}`, `0 < A` by `guard_ratio_den_pos`), with explicit
+  `ε = guardEps`, `κ = guardKappa` that tend to `0` as `D̃ → 0⁺` (`tendsto_guardEps`,
+  `tendsto_guardKappa`); letting `a → r_c` closes the squeeze `B/A → 1`.
 * Rate of the ratio (source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"):
   `guardMFPT_ratio_sub_two_isBigO`: `T(r_b)/T(r_c) − 2 = O(√D̃)` as `D̃ → 0⁺`, i.e.
   `T(r_b)/T(r_c) = 2(1 + O(X^{−1/2}))` along `X = ΔU/D̃ → ∞` (`isBigO_comp_div_atTop`).
@@ -84,8 +84,9 @@ Results.
   rate is not: the half-order terms of the two halves of the peak cancel and
   `T_committed = 2 P e^X (1 + O(1/X))` (`guardMFPT_committed_two_term`).
 * Two-term expansions (`Asymptotics/Guard/MFPTExpansion.lean`) use the bounds of this module made
-  public for that purpose: `guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`,
-  `guardKappa_nonneg`, `guardEps_nonneg`, `guard_exists_cut`, `intervalIntegrable_guardWeight`.
+  public for that purpose: `guard_inside_ge`, `guard_inside_le`, `guard_tails_le`,
+  `guardInner_reflect_le`, `guardKappa_nonneg`, `guardEps_nonneg`, `guard_exists_cut`,
+  `intervalIntegrable_guardWeight`.
 * Supporting facts: `U(z) = ΔU − (l₁/4)(z² − r_c²)²` (`guardPotential_eq_barrier_sub`),
   monotonicity / integrability / two-sided bounds of the inner integral `K` (`guardInner_*`) and
   of the outer integrand (`guardIntegrand_*`).
@@ -615,45 +616,50 @@ variable {D : ℝ}
   apply ContinuousOn.mul _ (continuous_exp_guardPotential α l₁ D).continuousOn
   exact continuousOn_inv₀.mono fun y hy => (ne_of_gt (ha.trans_le hy.1) : y ≠ 0)
 
-/-- The part of the outer integral just inside the barrier top:
-`K(a) I ≤ ∫_a^{r_c} h ≤ K(r_c) I`, `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`. -/
-@[tmio M, powerlib_foundation] theorem guard_inside_bounds {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+/-- Lower bound for the part of the outer integral just inside the barrier top:
+`K(a) I ≤ ∫_a^b h`, `I = ∫_a^b y⁻¹ e^{U/D̃}` (used with `b = r_c`). -/
+@[tmio M, powerlib_foundation] theorem guard_inside_ge {a b : ℝ} (ha : 0 < a)
+    (hab : a ≤ b) :
     guardInner α l₁ D a * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) ≤
-        ∫ y in a..b, guardIntegrand α l₁ D y ∧
-      ∫ y in a..b, guardIntegrand α l₁ D y ≤
-        guardInner α l₁ D b * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
+      ∫ y in a..b, guardIntegrand α l₁ D y := by
   have hw := intervalIntegrable_guardWeight (α := α) (l₁ := l₁) (D := D) ha hab
   have hh : IntervalIntegrable (guardIntegrand α l₁ D) volume a b :=
     intervalIntegrable_guardIntegrand_of_pos ha (ha.trans_le hab)
-  constructor
-  · rw [← intervalIntegral.integral_const_mul]
-    apply integral_mono_on hab (hw.const_mul _) hh
-    intro y hy
-    have hy0 : 0 < y := ha.trans_le hy.1
-    simp only [guardIntegrand]
-    rw [mul_comm (guardInner α l₁ D a)]
-    exact mul_le_mul_of_nonneg_left (guardInner_mono ha.le hy.1)
-      (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
-  · rw [← intervalIntegral.integral_const_mul]
-    apply integral_mono_on hab hh (hw.const_mul _)
-    intro y hy
-    have hy0 : 0 < y := ha.trans_le hy.1
-    simp only [guardIntegrand]
-    rw [mul_comm (guardInner α l₁ D b)]
-    exact mul_le_mul_of_nonneg_left (guardInner_mono hy0.le hy.2)
-      (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
+  rw [← intervalIntegral.integral_const_mul]
+  apply integral_mono_on hab (hw.const_mul _) hh
+  intro y hy
+  have hy0 : 0 < y := ha.trans_le hy.1
+  simp only [guardIntegrand]
+  rw [mul_comm (guardInner α l₁ D a)]
+  exact mul_le_mul_of_nonneg_left (guardInner_mono ha.le hy.1)
+    (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
 
-/-- The part just beyond the barrier top, through the reflection:
-`a²/(2r_c² − a²) K(r_c) I ≤ ∫_{r_c}^{ψ(a)} h ≤ K(ψ(a)) I`. -/
-@[tmio M, powerlib_foundation] private theorem guard_beyond_bounds (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
-    (har : a ≤ √(α / l₁)) (hρ : 0 < α / l₁) :
+/-- Upper bound for the part of the outer integral just inside the barrier top:
+`∫_a^b h ≤ K(b) I`, `I = ∫_a^b y⁻¹ e^{U/D̃}` (used with `b = r_c`). -/
+@[tmio M, powerlib_foundation] theorem guard_inside_le {a b : ℝ} (ha : 0 < a)
+    (hab : a ≤ b) :
+    ∫ y in a..b, guardIntegrand α l₁ D y ≤
+      guardInner α l₁ D b * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
+  have hw := intervalIntegrable_guardWeight (α := α) (l₁ := l₁) (D := D) ha hab
+  have hh : IntervalIntegrable (guardIntegrand α l₁ D) volume a b :=
+    intervalIntegrable_guardIntegrand_of_pos ha (ha.trans_le hab)
+  rw [← intervalIntegral.integral_const_mul]
+  apply integral_mono_on hab hh (hw.const_mul _)
+  intro y hy
+  have hy0 : 0 < y := ha.trans_le hy.1
+  simp only [guardIntegrand]
+  rw [mul_comm (guardInner α l₁ D b)]
+  exact mul_le_mul_of_nonneg_left (guardInner_mono hy0.le hy.2)
+    (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
+
+/-- Lower bound for the part just beyond the barrier top, through the reflection:
+`a²/(2r_c² − a²) K(r_c) I ≤ ∫_{r_c}^{ψ(a)} h`, `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`. -/
+@[tmio M, powerlib_foundation] private theorem guard_beyond_ge (hl : 0 < l₁) {a : ℝ}
+    (ha : 0 < a) (har : a ≤ √(α / l₁)) (hρ : 0 < α / l₁) :
     a ^ 2 / (2 * (α / l₁) - a ^ 2) *
         (guardInner α l₁ D √(α / l₁) *
           ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) ≤
-        ∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y ∧
-      ∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y ≤
-        guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) *
-          ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
+      ∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y := by
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
   have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
   have hw := intervalIntegrable_guardWeight (α := α) (l₁ := l₁) (D := D) ha har
@@ -662,44 +668,58 @@ variable {D : ℝ}
   have hy2 : ∀ y ∈ Icc a √(α / l₁), y ^ 2 ≤ α / l₁ := fun y hy => by
     have := pow_le_pow_left₀ (ha.le.trans hy.1) hy.2 2; rwa [hrc2] at this
   rw [integral_guardIntegrand_reflect ha har hρ]
-  constructor
-  · rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul]
-    apply integral_mono_on har ((hw.const_mul _).const_mul _) hri
-    intro y hy
-    have hy0 : 0 < y := ha.trans_le hy.1
-    rw [guardIntegrand_reflect_eq hl (by linarith [hy2 y hy, hρ])]
-    have hK1 : guardInner α l₁ D √(α / l₁) ≤ guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) :=
-      guardInner_mono hrc.le (Real.sqrt_le_sqrt (by linarith [hy2 y hy]))
-    have hfac := frac_ge ha hy.1 (hy2 y hy)
-    calc a ^ 2 / (2 * (α / l₁) - a ^ 2) *
-          (guardInner α l₁ D √(α / l₁) * (y⁻¹ * Real.exp (guardPotential α l₁ y / D)))
-        = (a ^ 2 / (2 * (α / l₁) - a ^ 2) * y⁻¹) * Real.exp (guardPotential α l₁ y / D) *
-            guardInner α l₁ D √(α / l₁) := by ring
-      _ ≤ y / (2 * (α / l₁) - y ^ 2) * Real.exp (guardPotential α l₁ y / D) *
-            guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) :=
-          mul_le_mul (mul_le_mul_of_nonneg_right hfac (Real.exp_pos _).le) hK1
-            (guardInner_nonneg hrc.le) (mul_nonneg (div_nonneg hy0.le
-              (by linarith [hy2 y hy])) (Real.exp_pos _).le)
-  · rw [← intervalIntegral.integral_const_mul]
-    apply integral_mono_on har hri (hw.const_mul _)
-    intro y hy
-    have hy0 : 0 < y := ha.trans_le hy.1
-    rw [guardIntegrand_reflect_eq hl (by linarith [hy2 y hy, hρ])]
-    have hK1 : guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) ≤
-        guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) := by
-      apply guardInner_mono (Real.sqrt_nonneg _)
-      apply Real.sqrt_le_sqrt
-      have := pow_le_pow_left₀ ha.le hy.1 2; linarith
-    have hfac := frac_le_inv hy0 (hy2 y hy)
-    calc y / (2 * (α / l₁) - y ^ 2) * Real.exp (guardPotential α l₁ y / D) *
-          guardInner α l₁ D √(2 * (α / l₁) - y ^ 2)
-        ≤ y⁻¹ * Real.exp (guardPotential α l₁ y / D) *
-            guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) :=
-          mul_le_mul (mul_le_mul_of_nonneg_right hfac (Real.exp_pos _).le) hK1
-            (guardInner_nonneg (Real.sqrt_nonneg _))
-            (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
-      _ = guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) *
-            (y⁻¹ * Real.exp (guardPotential α l₁ y / D)) := by ring
+  rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul]
+  apply integral_mono_on har ((hw.const_mul _).const_mul _) hri
+  intro y hy
+  have hy0 : 0 < y := ha.trans_le hy.1
+  rw [guardIntegrand_reflect_eq hl (by linarith [hy2 y hy, hρ])]
+  have hK1 : guardInner α l₁ D √(α / l₁) ≤ guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) :=
+    guardInner_mono hrc.le (Real.sqrt_le_sqrt (by linarith [hy2 y hy]))
+  have hfac := frac_ge ha hy.1 (hy2 y hy)
+  calc a ^ 2 / (2 * (α / l₁) - a ^ 2) *
+        (guardInner α l₁ D √(α / l₁) * (y⁻¹ * Real.exp (guardPotential α l₁ y / D)))
+      = (a ^ 2 / (2 * (α / l₁) - a ^ 2) * y⁻¹) * Real.exp (guardPotential α l₁ y / D) *
+          guardInner α l₁ D √(α / l₁) := by ring
+    _ ≤ y / (2 * (α / l₁) - y ^ 2) * Real.exp (guardPotential α l₁ y / D) *
+          guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) :=
+        mul_le_mul (mul_le_mul_of_nonneg_right hfac (Real.exp_pos _).le) hK1
+          (guardInner_nonneg hrc.le) (mul_nonneg (div_nonneg hy0.le
+            (by linarith [hy2 y hy])) (Real.exp_pos _).le)
+
+/-- Upper bound for the part just beyond the barrier top, through the reflection:
+`∫_{r_c}^{ψ(a)} h ≤ K(ψ(a)) I`, `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`. -/
+@[tmio M, powerlib_foundation] private theorem guard_beyond_le (hl : 0 < l₁) {a : ℝ}
+    (ha : 0 < a) (har : a ≤ √(α / l₁)) (hρ : 0 < α / l₁) :
+    ∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y ≤
+      guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) *
+        ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
+  have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
+  have hw := intervalIntegrable_guardWeight (α := α) (l₁ := l₁) (D := D) ha har
+  have hri := intervalIntegrable_guardIntegrand_reflect (α := α) (l₁ := l₁) (D := D) ha har
+    (by rw [hrc2]; linarith)
+  have hy2 : ∀ y ∈ Icc a √(α / l₁), y ^ 2 ≤ α / l₁ := fun y hy => by
+    have := pow_le_pow_left₀ (ha.le.trans hy.1) hy.2 2; rwa [hrc2] at this
+  rw [integral_guardIntegrand_reflect ha har hρ]
+  rw [← intervalIntegral.integral_const_mul]
+  apply integral_mono_on har hri (hw.const_mul _)
+  intro y hy
+  have hy0 : 0 < y := ha.trans_le hy.1
+  rw [guardIntegrand_reflect_eq hl (by linarith [hy2 y hy, hρ])]
+  have hK1 : guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) ≤
+      guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) := by
+    apply guardInner_mono (Real.sqrt_nonneg _)
+    apply Real.sqrt_le_sqrt
+    have := pow_le_pow_left₀ ha.le hy.1 2; linarith
+  have hfac := frac_le_inv hy0 (hy2 y hy)
+  calc y / (2 * (α / l₁) - y ^ 2) * Real.exp (guardPotential α l₁ y / D) *
+        guardInner α l₁ D √(2 * (α / l₁) - y ^ 2)
+      ≤ y⁻¹ * Real.exp (guardPotential α l₁ y / D) *
+          guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) :=
+        mul_le_mul (mul_le_mul_of_nonneg_right hfac (Real.exp_pos _).le) hK1
+          (guardInner_nonneg (Real.sqrt_nonneg _))
+          (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
+    _ = guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) *
+          (y⁻¹ * Real.exp (guardPotential α l₁ y / D)) := by ring
 
 /-- Lower bound for the main weight integral: `I ≥ ((r_c − m)/r_c) e^{U(m)/D̃}` for `a ≤ m ≤ r_c`
 with `U ≥ U(m)` on `[m, r_c]`. -/
@@ -956,25 +976,14 @@ small relative amount. -/
   · exact mul_nonneg (add_nonneg (by positivity) (mul_nonneg hb (by positivity))) (by positivity)
   · exact mul_nonneg (by positivity) (mul_nonneg (div_nonneg hrm.le hrc.le) (by positivity))
 
-/-- Deterministic bounds at a fixed cut `a ∈ (0, r_c)` with reflected cut `ψ(a) ≤ r_b` and
-`D̃ ≤ a²`: with `A = ∫₀^{r_c} h` and `B = ∫_{r_c}^{r_b} h`,
-`0 < A`, `B ≤ (1 + κ + ε) A` and `a²/(2r_c² − a²) · A ≤ (1 + ε) B`. -/
-@[tmio M, powerlib_foundation] theorem guard_ratio_bounds (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
-    (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
-    (hDa : D ≤ a ^ 2) :
-    0 < ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y ∧
-      ∫ y in √(α / l₁)..rb, guardIntegrand α l₁ D y ≤
-        (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) *
-          ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y ∧
-      a ^ 2 / (2 * (α / l₁) - a ^ 2) * ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y ≤
-        (1 + guardEps α l₁ a rb D) * ∫ y in √(α / l₁)..rb, guardIntegrand α l₁ D y := by
+/-- Positivity of the guard part at a fixed cut `a ∈ (0, r_c)` with `D̃ ≤ a²`:
+`0 < A`, `A = ∫₀^{r_c} h`. -/
+@[tmio M, powerlib_foundation] theorem guard_ratio_den_pos (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+    (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) (hDa : D ≤ a ^ 2) :
+    0 < ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
-  have ha2 : a ^ 2 < α / l₁ := by
-    have := pow_lt_pow_left₀ har ha.le (two_ne_zero); rwa [hrc2] at this
-  have hrcψ : √(α / l₁) ≤ √(2 * (α / l₁) - a ^ 2) := Real.sqrt_le_sqrt (by linarith)
-  have hψ0 : 0 < √(2 * (α / l₁) - a ^ 2) := hrc.trans_le hrcψ
   have ham : a < (a + √(α / l₁)) / 2 := by linarith
   have hmr : (a + √(α / l₁)) / 2 < √(α / l₁) := by linarith
   have hUm_ge : ∀ y ∈ Icc ((a + √(α / l₁)) / 2) √(α / l₁),
@@ -985,12 +994,43 @@ small relative amount. -/
     have h1 : ((a + √(α / l₁)) / 2) ^ 2 ≤ y ^ 2 := pow_le_pow_left₀ hm0.le hy.1 2
     have h2 : y ^ 2 ≤ √(α / l₁) ^ 2 := pow_le_pow_left₀ (hm0.le.trans hy.1) hy.2 2
     nlinarith
-  -- the pieces
   have hKa := guardInner_ge (l₁ := l₁) hα.le hl.le hD ha.le hDa
   have hKa0 : 0 < guardInner α l₁ D a := lt_of_lt_of_le (by positivity) hKa
-  obtain ⟨hAm_lo, hAm_hi⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
-  obtain ⟨hBm_lo, hBm_hi⟩ := guard_beyond_bounds (D := D) hl ha har.le hρ
+  have hAm_lo := guard_inside_ge (α := α) (l₁ := l₁) (D := D) ha har.le
   have hI := guard_weight_ge (l₁ := l₁) hD ha ham.le hmr.le hUm_ge
+  have hint0a : IntervalIntegrable (guardIntegrand α l₁ D) volume 0 a :=
+    intervalIntegrable_guardIntegrand hl hD ha.le
+  have hintar : IntervalIntegrable (guardIntegrand α l₁ D) volume a √(α / l₁) :=
+    intervalIntegrable_guardIntegrand_of_pos ha hrc
+  have hAt0 : 0 ≤ ∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y :=
+    integral_nonneg ha.le fun y hy => guardIntegrand_nonneg hy.1
+  rw [← integral_add_adjacent_intervals hint0a hintar]
+  generalize (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
+    at hAm_lo hI
+  generalize (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) = At at hAt0 ⊢
+  generalize (∫ y in a..√(α / l₁), guardIntegrand α l₁ D y) = Am at hAm_lo ⊢
+  have hrm : 0 < √(α / l₁) - (a + √(α / l₁)) / 2 := by linarith
+  have hI0 : 0 < I := lt_of_lt_of_le (by positivity) hI
+  have hAm0 : 0 < Am := lt_of_lt_of_le (mul_pos hKa0 hI0) hAm_lo
+  linarith
+
+/-- Upper bound at a fixed cut `a ∈ (0, r_c)` with reflected cut `ψ(a) ≤ r_b` and `D̃ ≤ a²`:
+with `A = ∫₀^{r_c} h` and `B = ∫_{r_c}^{r_b} h`, `B ≤ (1 + κ + ε) A`. -/
+@[tmio M, powerlib_foundation] theorem guard_ratio_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+    (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
+    (hDa : D ≤ a ^ 2) :
+    ∫ y in √(α / l₁)..rb, guardIntegrand α l₁ D y ≤
+      (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) *
+        ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
+  have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
+  have ha2 : a ^ 2 < α / l₁ := by
+    have := pow_lt_pow_left₀ har ha.le (two_ne_zero); rwa [hrc2] at this
+  have hrcψ : √(α / l₁) ≤ √(2 * (α / l₁) - a ^ 2) := Real.sqrt_le_sqrt (by linarith)
+  have hψ0 : 0 < √(2 * (α / l₁) - a ^ 2) := hrc.trans_le hrcψ
+  have hAm_lo := guard_inside_ge (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hBm_hi := guard_beyond_le (D := D) hl ha har.le hρ
   have htails := guard_tails_le hα hl ha har hψ hD hDa
   have hkap := guardInner_reflect_le hα hl ha har hD hDa
   have heps0 := guardEps_nonneg hα hl ha har hψ hD
@@ -1005,62 +1045,97 @@ small relative amount. -/
     intervalIntegrable_guardIntegrand_of_pos hψ0 (hψ0.trans_le hψ)
   have hAt0 : 0 ≤ ∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y :=
     integral_nonneg ha.le fun y hy => guardIntegrand_nonneg hy.1
+  have hI0 : 0 ≤ ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) :=
+    integral_nonneg har.le fun y hy =>
+      mul_nonneg (inv_nonneg.2 (ha.le.trans hy.1)) (Real.exp_pos _).le
+  rw [← integral_add_adjacent_intervals hint0a hintar,
+    ← integral_add_adjacent_intervals hintrψ hintψb]
+  generalize (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
+    at hAm_lo hBm_hi htails hI0
+  generalize (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) = At at htails hAt0 ⊢
+  generalize (∫ y in a..√(α / l₁), guardIntegrand α l₁ D y) = Am at hAm_lo ⊢
+  generalize (∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y) = Bm
+    at hBm_hi ⊢
+  generalize (∫ y in √(2 * (α / l₁) - a ^ 2)..rb, guardIntegrand α l₁ D y) = Bt
+    at htails ⊢
+  have hBt_le : Bt ≤ guardEps α l₁ a rb D * Am := by
+    have := mul_le_mul_of_nonneg_left hAm_lo heps0
+    linarith
+  have h1 : guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) * I ≤
+      (1 + guardKappa α l₁ a D) * (guardInner α l₁ D a * I) := by
+    have := mul_le_mul_of_nonneg_right hkap hI0; linarith
+  have h2 : (1 + guardKappa α l₁ a D) * (guardInner α l₁ D a * I) ≤
+      (1 + guardKappa α l₁ a D) * Am := mul_le_mul_of_nonneg_left hAm_lo (by linarith)
+  have h3 : (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) * Am ≤
+      (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) * (At + Am) :=
+    mul_le_mul_of_nonneg_left (by linarith) (by linarith)
+  calc Bm + Bt ≤ (1 + guardKappa α l₁ a D) * Am + guardEps α l₁ a rb D * Am := by linarith
+    _ = (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) * Am := by ring
+    _ ≤ _ := h3
+
+/-- Lower bound at a fixed cut `a ∈ (0, r_c)` with reflected cut `ψ(a) ≤ r_b` and `D̃ ≤ a²`:
+with `A = ∫₀^{r_c} h` and `B = ∫_{r_c}^{r_b} h`, `a²/(2r_c² − a²) · A ≤ (1 + ε) B`. -/
+@[tmio M, powerlib_foundation] theorem guard_ratio_ge (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+    (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
+    (hDa : D ≤ a ^ 2) :
+    a ^ 2 / (2 * (α / l₁) - a ^ 2) * ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y ≤
+      (1 + guardEps α l₁ a rb D) * ∫ y in √(α / l₁)..rb, guardIntegrand α l₁ D y := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
+  have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
+  have ha2 : a ^ 2 < α / l₁ := by
+    have := pow_lt_pow_left₀ har ha.le (two_ne_zero); rwa [hrc2] at this
+  have hrcψ : √(α / l₁) ≤ √(2 * (α / l₁) - a ^ 2) := Real.sqrt_le_sqrt (by linarith)
+  have hψ0 : 0 < √(2 * (α / l₁) - a ^ 2) := hrc.trans_le hrcψ
+  have hAm_lo := guard_inside_ge (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hAm_hi := guard_inside_le (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hBm_lo := guard_beyond_ge (D := D) hl ha har.le hρ
+  have htails := guard_tails_le hα hl ha har hψ hD hDa
+  have heps0 := guardEps_nonneg hα hl ha har hψ hD
+  have hint0a : IntervalIntegrable (guardIntegrand α l₁ D) volume 0 a :=
+    intervalIntegrable_guardIntegrand hl hD ha.le
+  have hintar : IntervalIntegrable (guardIntegrand α l₁ D) volume a √(α / l₁) :=
+    intervalIntegrable_guardIntegrand_of_pos ha hrc
+  have hintrψ : IntervalIntegrable (guardIntegrand α l₁ D) volume √(α / l₁)
+      √(2 * (α / l₁) - a ^ 2) := intervalIntegrable_guardIntegrand_of_pos hrc hψ0
+  have hintψb : IntervalIntegrable (guardIntegrand α l₁ D) volume √(2 * (α / l₁) - a ^ 2) rb :=
+    intervalIntegrable_guardIntegrand_of_pos hψ0 (hψ0.trans_le hψ)
   have hBt0 : 0 ≤ ∫ y in √(2 * (α / l₁) - a ^ 2)..rb, guardIntegrand α l₁ D y :=
     integral_nonneg hψ fun y hy => guardIntegrand_nonneg (hψ0.le.trans hy.1)
   rw [← integral_add_adjacent_intervals hint0a hintar,
     ← integral_add_adjacent_intervals hintrψ hintψb]
-  -- abbreviations
   generalize (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
-    at hAm_lo hAm_hi hBm_lo hBm_hi hI htails
-  generalize (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) = At at htails hAt0 ⊢
+    at hAm_lo hAm_hi hBm_lo htails
+  generalize (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) = At at htails ⊢
   generalize (∫ y in a..√(α / l₁), guardIntegrand α l₁ D y) = Am at hAm_lo hAm_hi ⊢
   generalize (∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y) = Bm
-    at hBm_lo hBm_hi ⊢
+    at hBm_lo ⊢
   generalize (∫ y in √(2 * (α / l₁) - a ^ 2)..rb, guardIntegrand α l₁ D y) = Bt
     at htails hBt0 ⊢
-  have hrm : 0 < √(α / l₁) - (a + √(α / l₁)) / 2 := by linarith
-  have hI0 : 0 < I := lt_of_lt_of_le (by positivity) hI
-  have hKaI : 0 < guardInner α l₁ D a * I := mul_pos hKa0 hI0
   have hAt_le : At ≤ guardEps α l₁ a rb D * Am := by
     have := mul_le_mul_of_nonneg_left hAm_lo heps0
     linarith
-  have hBt_le : Bt ≤ guardEps α l₁ a rb D * Am := by
-    have := mul_le_mul_of_nonneg_left hAm_lo heps0
-    linarith
-  have hAm0 : 0 < Am := lt_of_lt_of_le hKaI hAm_lo
   have hL0 : 0 ≤ a ^ 2 / (2 * (α / l₁) - a ^ 2) := div_nonneg (sq_nonneg a) (by linarith)
-  refine ⟨by linarith, ?_, ?_⟩
-  · have h1 : guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) * I ≤
-        (1 + guardKappa α l₁ a D) * (guardInner α l₁ D a * I) := by
-      have := mul_le_mul_of_nonneg_right hkap hI0.le; linarith
-    have h2 : (1 + guardKappa α l₁ a D) * (guardInner α l₁ D a * I) ≤
-        (1 + guardKappa α l₁ a D) * Am := mul_le_mul_of_nonneg_left hAm_lo (by linarith)
-    have h3 : (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) * Am ≤
-        (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) * (At + Am) :=
-      mul_le_mul_of_nonneg_left (by linarith) (by linarith)
-    calc Bm + Bt ≤ (1 + guardKappa α l₁ a D) * Am + guardEps α l₁ a rb D * Am := by linarith
-      _ = (1 + guardKappa α l₁ a D + guardEps α l₁ a rb D) * Am := by ring
-      _ ≤ _ := h3
-  · have h1 : a ^ 2 / (2 * (α / l₁) - a ^ 2) * (At + Am) ≤
-        a ^ 2 / (2 * (α / l₁) - a ^ 2) * ((1 + guardEps α l₁ a rb D) * Am) := by
-      apply mul_le_mul_of_nonneg_left _ hL0; linarith
-    have h2 : a ^ 2 / (2 * (α / l₁) - a ^ 2) * Am ≤
-        a ^ 2 / (2 * (α / l₁) - a ^ 2) * (guardInner α l₁ D √(α / l₁) * I) :=
-      mul_le_mul_of_nonneg_left hAm_hi hL0
-    have h3 : a ^ 2 / (2 * (α / l₁) - a ^ 2) * ((1 + guardEps α l₁ a rb D) * Am) ≤
-        (1 + guardEps α l₁ a rb D) * Bm := by
-      calc a ^ 2 / (2 * (α / l₁) - a ^ 2) * ((1 + guardEps α l₁ a rb D) * Am)
-          = (1 + guardEps α l₁ a rb D) * (a ^ 2 / (2 * (α / l₁) - a ^ 2) * Am) := by ring
-        _ ≤ (1 + guardEps α l₁ a rb D) * Bm :=
-          mul_le_mul_of_nonneg_left (h2.trans hBm_lo) (by linarith)
-    have h4 : (1 + guardEps α l₁ a rb D) * Bm ≤ (1 + guardEps α l₁ a rb D) * (Bm + Bt) :=
-      mul_le_mul_of_nonneg_left (by linarith) (by linarith)
-    linarith
+  have h1 : a ^ 2 / (2 * (α / l₁) - a ^ 2) * (At + Am) ≤
+      a ^ 2 / (2 * (α / l₁) - a ^ 2) * ((1 + guardEps α l₁ a rb D) * Am) := by
+    apply mul_le_mul_of_nonneg_left _ hL0; linarith
+  have h2 : a ^ 2 / (2 * (α / l₁) - a ^ 2) * Am ≤
+      a ^ 2 / (2 * (α / l₁) - a ^ 2) * (guardInner α l₁ D √(α / l₁) * I) :=
+    mul_le_mul_of_nonneg_left hAm_hi hL0
+  have h3 : a ^ 2 / (2 * (α / l₁) - a ^ 2) * ((1 + guardEps α l₁ a rb D) * Am) ≤
+      (1 + guardEps α l₁ a rb D) * Bm := by
+    calc a ^ 2 / (2 * (α / l₁) - a ^ 2) * ((1 + guardEps α l₁ a rb D) * Am)
+        = (1 + guardEps α l₁ a rb D) * (a ^ 2 / (2 * (α / l₁) - a ^ 2) * Am) := by ring
+      _ ≤ (1 + guardEps α l₁ a rb D) * Bm :=
+        mul_le_mul_of_nonneg_left (h2.trans hBm_lo) (by linarith)
+  have h4 : (1 + guardEps α l₁ a rb D) * Bm ≤ (1 + guardEps α l₁ a rb D) * (Bm + Bt) :=
+    mul_le_mul_of_nonneg_left (by linarith) (by linarith)
+  linarith
 
-/-- **Rate lower bound at a fixed cut.** Under the hypotheses of `guard_ratio_bounds` and the
+/-- **Rate lower bound at a fixed cut.** Under the hypotheses of `guard_ratio_le` and the
 window condition `√(D̃/α) ≤ r_c − a`: `(1 − δ) A ≤ (1 + ε) B` with `δ = guardDelta α l₁ a D̃`
 (`A = ∫₀^{r_c} h`, `B = ∫_{r_c}^{r_b} h`). Together with `B ≤ (1 + κ + ε) A`
-(`guard_ratio_bounds`) this pins `B/A` to `1 + O(√D̃)`. The proof compares the reflected
+(`guard_ratio_le`) this pins `B/A` to `1 + O(√D̃)`. The proof compares the reflected
 integrand with the inside one pointwise (`|y/ψ(y)² − y⁻¹| ≤ 4(r_c − y)/(a r_c)`) and bounds the
 first moment `∫ (r_c − y) e^{U/D̃}` by `2e r_c √(D̃/α)` times the weight integral. -/
 @[tmio M, powerlib_foundation] theorem guard_ratio_rate_bounds (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
@@ -1077,7 +1152,7 @@ first moment `∫ (r_c − y) e^{U/D̃}` by `2e r_c √(D̃/α)` times the weigh
   have hψ0 : 0 < √(2 * (α / l₁) - a ^ 2) := hrc.trans_le hrcψ
   have hKa := guardInner_ge (l₁ := l₁) hα.le hl.le hD ha.le hDa
   have hKa0 : 0 < guardInner α l₁ D a := lt_of_lt_of_le (by positivity) hKa
-  obtain ⟨hAm_lo, -⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hAm_lo := guard_inside_ge (α := α) (l₁ := l₁) (D := D) ha har.le
   have hbl := guard_beyond_lower (D := D) hl ha har.le hρ
   have hJ := guard_firstMoment_le_weight hα hl hD ha hwin
   have htails := guard_tails_le hα hl ha har hψ hD hDa
@@ -1175,7 +1250,8 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
     have := pow_lt_pow_left₀ har ha.le (two_ne_zero); rwa [hrc2] at this
   have hrcψ : √(α / l₁) < √(2 * (α / l₁) - a ^ 2) := Real.sqrt_lt_sqrt hρ.le (by linarith)
   have hrb : √(α / l₁) < rb := hrcψ.trans_le hψ
-  obtain ⟨hA, hup, -⟩ := guard_ratio_bounds hα hl ha har hψ hD hDa
+  have hA := guard_ratio_den_pos hα hl ha har hD hDa
+  have hup := guard_ratio_le hα hl ha har hψ hD hDa
   have hlow := guard_ratio_rate_bounds hα hl ha har hψ hD hDa hwin
   have heps0 := guardEps_nonneg hα hl ha har hψ hD
   have hkap0 := guardKappa_nonneg hα hl ha har hD
@@ -1417,7 +1493,8 @@ half of the Gaussian barrier peak. -/
     filter_upwards [hev, self_mem_nhdsWithin,
       nhdsWithin_le_nhds (eventually_lt_nhds (by positivity : (0 : ℝ) < a ^ 2)),
       hε.eventually (lt_mem_nhds (by norm_num : (-1 : ℝ) < 0))] with D h1 hD hDa hε1
-    obtain ⟨hA, -, hlow⟩ := guard_ratio_bounds hα hl ha har hψ hD hDa.le
+    have hA := guard_ratio_den_pos hα hl ha har hD hDa.le
+    have hlow := guard_ratio_ge hα hl ha har hψ hD hDa.le
     rw [hratio D hD, ← hrcs] at *
     have hA' : 0 < ∫ y in (0 : ℝ)..rc, guardIntegrand α l₁ D y := hA
     rw [add_div, div_self hA'.ne']
@@ -1440,7 +1517,8 @@ half of the Gaussian barrier peak. -/
     filter_upwards [hev, self_mem_nhdsWithin,
       nhdsWithin_le_nhds (eventually_lt_nhds (by positivity : (0 : ℝ) < a ^ 2))]
       with D h1 hD hDa
-    obtain ⟨hA, hup, -⟩ := guard_ratio_bounds hα hl ha har hψ hD hDa.le
+    have hA := guard_ratio_den_pos hα hl ha har hD hDa.le
+    have hup := guard_ratio_le hα hl ha har hψ hD hDa.le
     rw [hratio D hD]
     have hA' : 0 < ∫ y in (0 : ℝ)..rc, guardIntegrand α l₁ D y := hA
     have hup' : ∫ y in rc..rb, guardIntegrand α l₁ D y ≤
@@ -1846,7 +1924,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
   -- `T_guard ≥ D̃⁻¹ K(a) I`
   have hKa := guardInner_ge_gauss (l₁ := l₁) hα hl.le hD ha.le
   have hI := guard_weight_ge_gauss hα hl hD ha har
-  obtain ⟨hAm, -⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hAm := guard_inside_ge (α := α) (l₁ := l₁) (D := D) ha har.le
   have hAt0 : 0 ≤ ∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y :=
     integral_nonneg ha.le fun y hy => guardIntegrand_nonneg hy.1
   have hsplit : ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y =
@@ -1928,7 +2006,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
   have htails := guard_tails_le (D := D) hα hl ha har le_rfl hD hDa
   rw [intervalIntegral.integral_same, add_zero] at htails
   have heps0 := guardEps_nonneg (D := D) hα hl ha har le_rfl hD
-  obtain ⟨-, hAm⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hAm := guard_inside_le (α := α) (l₁ := l₁) (D := D) ha har.le
   have hKr := guardInner_le_gauss hα hl hD
   have hI := guard_weight_le_gauss hα hl hD ha har
   have hKar : guardInner α l₁ D a ≤ guardInner α l₁ D √(α / l₁) := guardInner_mono ha.le har.le

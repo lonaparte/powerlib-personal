@@ -24,9 +24,11 @@ theory/T-first-passage-time.md (`L m = −1`, `m = 0` on the absorbing boundary;
 hit probability `h = 1 − s`).
 
 Results.
-* `kramersT_ode`, `kramersT_absorbing`, `kramersT_reflecting` — the Kramers double integral
-  `kramersT`, `T(θ) = (γ/D) ∫_θ^{θ_c} e^{V(y)/D} ∫_{θ_r}^{y} e^{−V(z)/D} dz dy`, solves
-  `D T'' − V' T' = −γ` with `T(θ_c) = 0`, `T'(θ_r) = 0`.
+* `kramersT_hasDerivAt`, `outerG_hasDerivAt`, `kramersT_ode`, `kramersT_absorbing`,
+  `kramersT_reflecting` — the Kramers double integral `kramersT`,
+  `T(θ) = (γ/D) ∫_θ^{θ_c} e^{V(y)/D} ∫_{θ_r}^{y} e^{−V(z)/D} dz dy`, has `T' = −(γ/D) g`,
+  `T'' = −(γ/D) g'` with `g' = (V'/D) g + 1`, and solves `D T'' − V' T' = −γ` with `T(θ_c) = 0`,
+  `T'(θ_r) = 0`.
 * `kramersT_unique` — any twice-differentiable solution of that boundary-value problem is the
   Kramers double integral; `kramersT_pos`: `T(θ) > 0` for `θ_r < θ < θ_c` (`γ, D > 0`).
 * `kramers_prefactor` — `(γ/D) √(2πD/κ_b) √(2πD/κ_a) = 2πγ/√(κ_a κ_b)`; `D` cancels.
@@ -97,17 +99,12 @@ variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
   rw [e]
   exact h.const_mul _
 
-/-- **Backward MFPT equation (§1.3)**: `D T'' − V' T' = −γ`, written with the explicit first and
-second derivatives. -/
-@[tmio T, powerlib_foundation] theorem kramersT_ode (hV : ∀ x, HasDerivAt V (V' x) x) (hD : D ≠ 0)
-    (θ : ℝ) :
-    HasDerivAt (kramersT V D γ θr θc) (-(γ / D) * outerG V D θr θ) θ ∧
-      HasDerivAt (fun u => -(γ / D) * outerG V D θr u)
-        (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) θ ∧
-      D * (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) -
-        V' θ * (-(γ / D) * outerG V D θr θ) = -γ := by
-  have hVc : Continuous V := continuous_iff_continuousAt.2 fun x => (hV x).continuousAt
-  refine ⟨kramersT_hasDerivAt hVc θ, (outerG_hasDerivAt hV θ).const_mul _, ?_⟩
+/-- **Backward MFPT equation (§1.3)**: `D T'' − V' T' = −γ`, written with the explicit first
+derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T'' = −(γ/D) g'`,
+`g' = (V'/D) g + 1` (`outerG_hasDerivAt`). -/
+@[tmio T, powerlib_foundation] theorem kramersT_ode (hD : D ≠ 0) (θ : ℝ) :
+    D * (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) -
+      V' θ * (-(γ / D) * outerG V D θr θ) = -γ := by
   field_simp
   ring
 
@@ -125,7 +122,12 @@ second derivatives. -/
     {U U1 U2 : ℝ → ℝ} (hU : ∀ θ, HasDerivAt U (U1 θ) θ) (hU1 : ∀ θ, HasDerivAt U1 (U2 θ) θ)
     (hode : ∀ θ, D * U2 θ - V' θ * U1 θ = -γ) (hc : U θc = 0) (hr : U1 θr = 0) :
     U = kramersT V D γ θr θc := by
-  have hT := kramersT_ode (γ := γ) (θr := θr) (θc := θc) hV hD
+  have hVc : Continuous V := continuous_iff_continuousAt.2 fun x => (hV x).continuousAt
+  have hT1 : ∀ θ, HasDerivAt (kramersT V D γ θr θc) (-(γ / D) * outerG V D θr θ) θ :=
+    kramersT_hasDerivAt hVc
+  have hT2 : ∀ θ, HasDerivAt (fun u => -(γ / D) * outerG V D θr u)
+      (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) θ :=
+    fun θ => (outerG_hasDerivAt hV θ).const_mul _
   set T1 : ℝ → ℝ := fun u => -(γ / D) * outerG V D θr u
   set W1 : ℝ → ℝ := fun θ => U1 θ - T1 θ
   -- `e^{−V/D} W1` is constant
@@ -135,7 +137,7 @@ second derivatives. -/
       have := ((hV θ).neg.div_const D).exp
       convert! this using 1
     have hw : HasDerivAt W1 (U2 θ - (-(γ / D) * (V' θ / D * outerG V D θr θ + 1))) θ :=
-      (hU1 θ).sub (hT θ).2.1
+      (hU1 θ).sub (hT2 θ)
     convert! he.mul hw using 1
     have h1 := hode θ
     have hU2 : U2 θ = (V' θ * U1 θ - γ) / D := by field_simp; linarith
@@ -156,7 +158,7 @@ second derivatives. -/
   -- `U − T` is constant and vanishes at `θ_c`
   have hd : ∀ θ, HasDerivAt (fun θ => U θ - kramersT V D γ θr θc θ) 0 θ := by
     intro θ
-    have := (hU θ).sub (hT θ).1
+    have := (hU θ).sub (hT1 θ)
     rwa [hW1 θ, sub_self] at this
   funext θ
   have := is_const_of_deriv_eq_zero (fun s => (hd s).differentiableAt) (fun s => (hd s).deriv) θ θc

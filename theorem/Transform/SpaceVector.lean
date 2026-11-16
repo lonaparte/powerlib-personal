@@ -112,44 +112,82 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
   · apply Complex.ext <;> simp [inverterVector]
     ring
 
-/-- The six active switching states produce the regular hexagon of vectors
-`(2/3) V_dc e^{j(k-1)π/3}` (Takahashi–Noguchi numbering). -/
-@[tmio M, powerlib_domain] theorem inverterVector_active (Vdc : ℝ) :
-    inverterVector Vdc true false false = activeVector Vdc 1 ∧
-    inverterVector Vdc true true false = activeVector Vdc 2 ∧
-    inverterVector Vdc false true false = activeVector Vdc 3 ∧
-    inverterVector Vdc false true true = activeVector Vdc 4 ∧
-    inverterVector Vdc false false true = activeVector Vdc 5 ∧
-    inverterVector Vdc true false true = activeVector Vdc 6 := by
+/-- Switching state `100` gives the active vector `v₁ = (2/3) V_dc` (Takahashi–Noguchi
+numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
+@[tmio M, powerlib_domain] theorem inverterVector_100 (Vdc : ℝ) :
+    inverterVector Vdc true false false = activeVector Vdc 1 := by
+  have e : ((1 : ℕ) - 1 : ℝ) * Real.pi / 3 = 0 := by norm_num
+  apply Complex.ext <;>
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, Real.cos_zero, Real.sin_zero,
+      ↓reduceIte, Bool.false_eq_true] <;>
+    ring
+
+/-- Switching state `110` gives the active vector `v₂ = (2/3) V_dc e^{jπ/3}` (Takahashi–Noguchi
+numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
+@[tmio M, powerlib_domain] theorem inverterVector_110 (Vdc : ℝ) :
+    inverterVector Vdc true true false = activeVector Vdc 2 := by
+  have e : ((2 : ℕ) - 1 : ℝ) * Real.pi / 3 = Real.pi / 3 := by norm_num
+  apply Complex.ext <;>
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, Real.cos_pi_div_three,
+      Real.sin_pi_div_three, ↓reduceIte, Bool.false_eq_true] <;>
+    ring
+
+/-- Switching state `010` gives the active vector `v₃ = (2/3) V_dc e^{j2π/3}` (Takahashi–Noguchi
+numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
+@[tmio M, powerlib_domain] theorem inverterVector_010 (Vdc : ℝ) :
+    inverterVector Vdc false true false = activeVector Vdc 3 := by
   have c2 : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
     have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
     rw [this, Real.cos_pi_sub, Real.cos_pi_div_three]; ring
   have s2 : Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
     have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
     rw [this, Real.sin_pi_sub, Real.sin_pi_div_three]
+  have e : ((3 : ℕ) - 1 : ℝ) * Real.pi / 3 = 2 * Real.pi / 3 := by norm_num
+  apply Complex.ext <;>
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, c2, s2,
+      ↓reduceIte, Bool.false_eq_true] <;>
+    ring
+
+/-- Switching state `011` gives the active vector `v₄ = (2/3) V_dc e^{jπ}` (Takahashi–Noguchi
+numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
+@[tmio M, powerlib_domain] theorem inverterVector_011 (Vdc : ℝ) :
+    inverterVector Vdc false true true = activeVector Vdc 4 := by
+  have e : ((4 : ℕ) - 1 : ℝ) * Real.pi / 3 = Real.pi := by norm_num
+  apply Complex.ext <;>
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, Real.cos_pi, Real.sin_pi,
+      ↓reduceIte, Bool.false_eq_true] <;>
+    ring
+
+/-- Switching state `001` gives the active vector `v₅ = (2/3) V_dc e^{j4π/3}` (Takahashi–Noguchi
+numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
+@[tmio M, powerlib_domain] theorem inverterVector_001 (Vdc : ℝ) :
+    inverterVector Vdc false false true = activeVector Vdc 5 := by
   have c4 : Real.cos (4 * Real.pi / 3) = -1 / 2 := by
     have : 4 * Real.pi / 3 = Real.pi / 3 + Real.pi := by ring
     rw [this, Real.cos_add_pi, Real.cos_pi_div_three]; ring
   have s4 : Real.sin (4 * Real.pi / 3) = -(Real.sqrt 3 / 2) := by
     have : 4 * Real.pi / 3 = Real.pi / 3 + Real.pi := by ring
     rw [this, Real.sin_add_pi, Real.sin_pi_div_three]
+  have e : ((5 : ℕ) - 1 : ℝ) * Real.pi / 3 = 4 * Real.pi / 3 := by norm_num
+  apply Complex.ext <;>
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, c4, s4,
+      ↓reduceIte, Bool.false_eq_true] <;>
+    ring
+
+/-- Switching state `101` gives the active vector `v₆ = (2/3) V_dc e^{j5π/3}` (Takahashi–Noguchi
+numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
+@[tmio M, powerlib_domain] theorem inverterVector_101 (Vdc : ℝ) :
+    inverterVector Vdc true false true = activeVector Vdc 6 := by
   have c5 : Real.cos (5 * Real.pi / 3) = 1 / 2 := by
     have : 5 * Real.pi / 3 = -(Real.pi / 3) + 2 * Real.pi := by ring
     rw [this, Real.cos_add_two_pi, Real.cos_neg, Real.cos_pi_div_three]
   have s5 : Real.sin (5 * Real.pi / 3) = -(Real.sqrt 3 / 2) := by
     have : 5 * Real.pi / 3 = -(Real.pi / 3) + 2 * Real.pi := by ring
     rw [this, Real.sin_add_two_pi, Real.sin_neg, Real.sin_pi_div_three]
-  have h3 := sqrt3_sq
-  have e1 : ((1 : ℕ) - 1 : ℝ) * Real.pi / 3 = 0 := by norm_num
-  have e2 : ((2 : ℕ) - 1 : ℝ) * Real.pi / 3 = Real.pi / 3 := by norm_num
-  have e3 : ((3 : ℕ) - 1 : ℝ) * Real.pi / 3 = 2 * Real.pi / 3 := by norm_num
-  have e4 : ((4 : ℕ) - 1 : ℝ) * Real.pi / 3 = Real.pi := by norm_num
-  have e5 : ((5 : ℕ) - 1 : ℝ) * Real.pi / 3 = 4 * Real.pi / 3 := by norm_num
-  have e6 : ((6 : ℕ) - 1 : ℝ) * Real.pi / 3 = 5 * Real.pi / 3 := by norm_num
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> apply Complex.ext <;>
-    simp only [inverterVector, activeVector, clarke_re, clarke_im, e1, e2, e3, e4, e5, e6,
-      Real.cos_zero, Real.sin_zero, Real.cos_pi_div_three, Real.sin_pi_div_three, c2, s2,
-      Real.cos_pi, Real.sin_pi, c4, s4, c5, s5, ↓reduceIte, Bool.false_eq_true] <;>
+  have e : ((6 : ℕ) - 1 : ℝ) * Real.pi / 3 = 5 * Real.pi / 3 := by norm_num
+  apply Complex.ext <;>
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, c5, s5,
+      ↓reduceIte, Bool.false_eq_true] <;>
     ring
 
 /-! ## Rotation, power and torque -/

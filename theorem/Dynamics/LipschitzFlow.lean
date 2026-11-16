@@ -23,8 +23,9 @@ Results.
 * `lipschitzFlow hf : Flow ℝ≥0 E` — a Mathlib `Flow`: jointly continuous, `φ₀ = id`,
   `φ_{t+s} = φ_t ∘ φ_s` (Mathlib `Flow.map_add`); joint continuity comes from the Grönwall estimate
   `‖φ_t x − φ_t y‖ ≤ e^{Kt} ‖x − y‖` (`dist_forwardSolution_le`).
-* `lipschitzFlow_solution`: `t ↦ φ_t x` solves the ODE on `[0, ∞)` with `φ₀ x = x`;
-  `lipschitzFlow_unique`: every forward solution from `x` coincides with it.
+* `lipschitzFlow_solution`: `t ↦ φ_t x` solves the ODE on `[0, ∞)`, with `φ₀ x = x`
+  (`forwardSolution_zero`); `forwardSolution_unique`, `lipschitzFlow_unique`: every forward
+  solution from `x` coincides with it.
 * `isInvariant_omegaLimit`: the ω-limit set `ω(s)` (Mathlib `omegaLimit` along `atTop`) is
   invariant under the flow (Mathlib `Flow.isInvariant_omegaLimit`).
 
@@ -46,30 +47,40 @@ def forwardSolution (hf : LipschitzWith K f) (x : E) : ℝ → E :=
   (_root_.exists_isIntegralCurveOn_Ici (f := fun _ y => f y)
     (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose
 
-@[tmio T, powerlib_foundation] theorem forwardSolution_spec (hf : LipschitzWith K f) (x : E) :
-    forwardSolution hf x 0 = x ∧
-      IsIntegralCurveOn (forwardSolution hf x) (fun _ y => f y) (Ici 0) ∧
-      ∀ β : ℝ → E, β 0 = x → IsIntegralCurveOn β (fun _ y => f y) (Ici 0) →
-        EqOn β (forwardSolution hf x) (Ici 0) :=
+/-- The forward solution starts at `x`: `φ₀ x = x`. -/
+@[tmio T, powerlib_foundation] theorem forwardSolution_zero (hf : LipschitzWith K f) (x : E) :
+    forwardSolution hf x 0 = x :=
   (_root_.exists_isIntegralCurveOn_Ici (f := fun _ y => f y)
-    (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose_spec
+    (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose_spec.1
+
+/-- `t ↦ φ_t x` solves the ODE on `[0, ∞)`. -/
+@[tmio T, powerlib_foundation] theorem lipschitzFlow_solution (hf : LipschitzWith K f) (x : E) :
+    IsIntegralCurveOn (forwardSolution hf x) (fun _ y => f y) (Ici 0) :=
+  (_root_.exists_isIntegralCurveOn_Ici (f := fun _ y => f y)
+    (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose_spec.2.1
+
+/-- Every forward solution from `x` coincides with the forward solution on `[0, ∞)`. -/
+@[tmio T, powerlib_foundation] theorem forwardSolution_unique (hf : LipschitzWith K f) (x : E) :
+    ∀ β : ℝ → E, β 0 = x → IsIntegralCurveOn β (fun _ y => f y) (Ici 0) →
+      EqOn β (forwardSolution hf x) (Ici 0) :=
+  (_root_.exists_isIntegralCurveOn_Ici (f := fun _ y => f y)
+    (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose_spec.2.2
 
 /-- Grönwall: `‖φ_t x − φ_t y‖ ≤ e^{Kt} ‖x − y‖`. -/
 @[tmio T, powerlib_foundation] theorem dist_forwardSolution_le (hf : LipschitzWith K f) (x y : E) {t : ℝ}
     (ht : 0 ≤ t) :
     dist (forwardSolution hf x t) (forwardSolution hf y t) ≤ dist x y * Real.exp (K * t) := by
-  obtain ⟨hx0, hx, -⟩ := forwardSolution_spec hf x
-  obtain ⟨hy0, hy, -⟩ := forwardSolution_spec hf y
   have h := _root_.dist_le_of_isIntegralCurveOn_Icc (f := fun _ z => f z) (fun _ => hf)
-    (hx.mono Icc_subset_Ici_self) (hy.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
-  simpa [hx0, hy0] using h
+    ((lipschitzFlow_solution hf x).mono Icc_subset_Ici_self)
+    ((lipschitzFlow_solution hf y).mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
+  simpa [forwardSolution_zero hf x, forwardSolution_zero hf y] using h
 
 /-- Shifted solutions: `φ_{r+s} x = φ_r (φ_s x)` for `r, s ≥ 0`. -/
 @[tmio T, powerlib_foundation] theorem forwardSolution_add (hf : LipschitzWith K f) (x : E) {s : ℝ}
     (hs : 0 ≤ s) {r : ℝ} (hr : 0 ≤ r) :
     forwardSolution hf x (r + s) = forwardSolution hf (forwardSolution hf x s) r := by
-  obtain ⟨-, hx, -⟩ := forwardSolution_spec hf x
-  obtain ⟨-, -, huniq⟩ := forwardSolution_spec hf (forwardSolution hf x s)
+  have hx := lipschitzFlow_solution hf x
+  have huniq := forwardSolution_unique hf (forwardSolution hf x s)
   have hshift : IsIntegralCurveOn (fun r => forwardSolution hf x (r + s))
       (fun _ y => f y) (Ici 0) := by
     intro r hr
@@ -86,7 +97,7 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
   cont' := by
     rw [continuous_iff_continuousAt]
     rintro ⟨t₀, x₀⟩
-    obtain ⟨-, hx₀, -⟩ := forwardSolution_spec hf x₀
+    have hx₀ := lipschitzFlow_solution hf x₀
     have hc : ContinuousWithinAt (forwardSolution hf x₀) (Ici 0) (t₀ : ℝ) :=
       hx₀.continuousOn.continuousWithinAt (show (t₀ : ℝ) ∈ Ici 0 from t₀.2)
     rw [Metric.continuousAt_iff]
@@ -125,7 +136,7 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
       forwardSolution hf (forwardSolution hf x t₂) t₁
     rw [NNReal.coe_add]
     exact forwardSolution_add hf x t₂.2 t₁.2
-  map_zero' x := (forwardSolution_spec hf x).1
+  map_zero' x := forwardSolution_zero hf x
 
 @[tmio T, powerlib_foundation] theorem lipschitzFlow_apply (hf : LipschitzWith K f) (t : ℝ≥0) (x : E) :
     lipschitzFlow hf t x = forwardSolution hf x t := rfl
@@ -134,16 +145,11 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
     lipschitzFlow hf 0 x = x :=
   (lipschitzFlow hf).map_zero_apply x
 
-/-- `t ↦ φ_t x` solves the ODE on `[0, ∞)`. -/
-@[tmio T, powerlib_foundation] theorem lipschitzFlow_solution (hf : LipschitzWith K f) (x : E) :
-    IsIntegralCurveOn (forwardSolution hf x) (fun _ y => f y) (Ici 0) :=
-  (forwardSolution_spec hf x).2.1
-
 /-- Every forward solution from `x` coincides with the flow. -/
 @[tmio T, powerlib_foundation] theorem lipschitzFlow_unique (hf : LipschitzWith K f) {x : E} {β : ℝ → E}
     (h0 : β 0 = x) (hβ : IsIntegralCurveOn β (fun _ y => f y) (Ici 0)) (t : ℝ≥0) :
     β t = lipschitzFlow hf t x :=
-  (forwardSolution_spec hf x).2.2 β h0 hβ (show (t : ℝ) ∈ Ici 0 from t.2)
+  forwardSolution_unique hf x β h0 hβ (show (t : ℝ) ∈ Ici 0 from t.2)
 
 /-- ω-limit sets are invariant under the flow (Mathlib `Flow.isInvariant_omegaLimit`). -/
 @[tmio T, powerlib_foundation] theorem isInvariant_omegaLimit (hf : LipschitzWith K f) (s : Set E) :

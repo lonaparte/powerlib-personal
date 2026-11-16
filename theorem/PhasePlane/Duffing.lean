@@ -31,8 +31,9 @@ Results.
 * Conservative case `δ = 0`: energy is conserved (`energy_conserved`), and a forward solution
   whose energy differs from `E(±1, 0) = −1/4` can never converge to `(±1, 0)`
   (`not_tendsto_of_energy_ne`); points with this property exist arbitrarily close to the wells
-  (`energy_off_well`). Hence the wells are not locally asymptotically stable
-  (`not_localAsymptoticStable_conservative`): there is no attractor.
+  (`energy_off_well`, at distance `|s|` by `norm_mk_sub_mk_zero`). Hence the wells are not
+  locally asymptotically stable (`not_localAsymptoticStable_conservative`): there is no
+  attractor.
 
 Potential shapes: `V(x) = x⁴/4 − x²/2` is the double well of `theorem/Potential/Wells.lean` with
 `a = b = 1` (wells `±1`, barrier `a²/4b = 1/4`); the same quartic shape is the supercritical
@@ -199,18 +200,21 @@ converges to the well. -/
     exact (hconst t ht).symm
   exact hE (tendsto_nhds_unique h2 h1)
 
-/-- Arbitrarily close to a well there are states with a different energy:
-`E(σ, s) = s²/2 − 1/4 ≠ −1/4` for `s ≠ 0`. -/
+/-- Off a well there are states with a different energy:
+`E(σ, s) = s²/2 − 1/4 ≠ −1/4` for `s ≠ 0` (at distance `|s|`, `norm_mk_sub_mk_zero`). -/
 @[tmio M, powerlib_foundation] theorem energy_off_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) {s : ℝ}
-    (hs : s ≠ 0) : energy (mk σ s) ≠ energy (mk σ 0) ∧ ‖mk σ s - mk σ 0‖ = |s| := by
-  constructor
-  · rw [energy_well σ hσ]
-    have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
-    have hσ4 : σ ^ 4 = 1 := by rw [show σ ^ 4 = (σ ^ 2) ^ 2 by ring, hσ2]; norm_num
-    simp only [energy, Conservative.energy, potential, mk_apply_zero, mk_apply_one, hσ2, hσ4]
-    have : 0 < s ^ 2 := by positivity
-    intro h; linarith
-  · rw [mk_sub, norm_mk]; simp [Real.sqrt_sq_eq_abs]
+    (hs : s ≠ 0) : energy (mk σ s) ≠ energy (mk σ 0) := by
+  rw [energy_well σ hσ]
+  have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
+  have hσ4 : σ ^ 4 = 1 := by rw [show σ ^ 4 = (σ ^ 2) ^ 2 by ring, hσ2]; norm_num
+  simp only [energy, Conservative.energy, potential, mk_apply_zero, mk_apply_one, hσ2, hσ4]
+  have : 0 < s ^ 2 := by positivity
+  intro h; linarith
+
+/-- The state `(σ, s)` lies at distance `|s|` from `(σ, 0)`. -/
+@[tmio T, powerlib_foundation] theorem norm_mk_sub_mk_zero (σ s : ℝ) :
+    ‖mk σ s - mk σ 0‖ = |s| := by
+  rw [mk_sub, norm_mk]; simp [Real.sqrt_sq_eq_abs]
 
 /-- `dE/dt = −δ y² ≤ 0` for `δ ≥ 0`. -/
 @[tmio M, powerlib_foundation] theorem energy_lie_nonpos {δ : ℝ} (hδ : 0 ≤ δ) (y : State 2) :
@@ -245,7 +249,8 @@ whose basin a separatrix could bound. -/
 @[tmio TM, powerlib_foundation] theorem not_localAsymptoticStable_conservative (σ : ℝ)
     (hσ : σ = 1 ∨ σ = -1) : ¬ LocalAsymptoticStable (field 0) (mk σ 0) := by
   rintro ⟨-, c, hc, hconv⟩
-  obtain ⟨hne, hdist⟩ := energy_off_well σ hσ (s := c / 2) (by positivity)
+  have hne := energy_off_well σ hσ (s := c / 2) (by positivity)
+  have hdist := norm_mk_sub_mk_zero σ (c / 2)
   obtain ⟨φ, hφ0, hφ⟩ := forwardComplete le_rfl 0 (mk σ (c / 2))
   have hlim := hconv 0 φ hφ (by rw [hφ0, hdist, abs_of_pos (by positivity)]; linarith)
   exact not_tendsto_of_energy_ne hφ (by rw [hφ0]; exact hne) hlim

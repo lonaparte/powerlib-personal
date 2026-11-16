@@ -174,13 +174,17 @@ end Derivation
   have := tendsto_nhds_unique h0 stabTrap_tendsto_neg_one
   norm_num at this
 
-/-- On the negative real axis beyond `-2` the trapezoidal multiplier lies in `(-1, 0)`. -/
-@[tmio T, powerlib_foundation] theorem trapezoidal_real_multiplier_mem {x : ℝ} (hx : x < -2) :
-    -1 < (1 + x / 2) / (1 - x / 2) ∧ (1 + x / 2) / (1 - x / 2) < 0 := by
+/-- On the negative real axis beyond `-2` the trapezoidal multiplier is greater than `-1`. -/
+@[tmio T, powerlib_foundation] theorem trapezoidal_real_multiplier_gt_neg_one {x : ℝ}
+    (hx : x < -2) : -1 < (1 + x / 2) / (1 - x / 2) := by
   have hd : 0 < 1 - x / 2 := by linarith
-  constructor
-  · rw [lt_div_iff₀ hd]; linarith
-  · exact div_neg_of_neg_of_pos (by linarith) hd
+  rw [lt_div_iff₀ hd]; linarith
+
+/-- On the negative real axis beyond `-2` the trapezoidal multiplier is negative. -/
+@[tmio T, powerlib_foundation] theorem trapezoidal_real_multiplier_neg {x : ℝ} (hx : x < -2) :
+    (1 + x / 2) / (1 - x / 2) < 0 := by
+  have hd : 0 < 1 - x / 2 := by linarith
+  exact div_neg_of_neg_of_pos (by linarith) hd
 
 /-- The trapezoidal multiplier tends to `-1` as `hλ → -∞`: stiff modes are not damped. -/
 @[tmio T, powerlib_foundation] theorem trapezoidal_real_multiplier_tendsto :
@@ -204,7 +208,7 @@ trajectory changes sign at every step. -/
     {x : ℕ → ℝ} (hx : IsTrapezoidalTrajectory (fun y : ℝ => lam * y) h x) (h0 : x 0 ≠ 0) :
     ∀ k, x (k + 1) * x k < 0 := by
   set r := (1 + h * lam / 2) / (1 - h * lam / 2) with hr
-  obtain ⟨hr1, hr0⟩ := trapezoidal_real_multiplier_mem hstiff
+  have hr0 := trapezoidal_real_multiplier_neg hstiff
   have hd : 1 - h * lam / 2 ≠ 0 := by
     have : 0 < 1 - h * lam / 2 := by linarith
     exact this.ne'

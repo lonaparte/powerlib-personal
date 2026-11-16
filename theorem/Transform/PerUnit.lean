@@ -21,7 +21,8 @@ Results.
 * Three-phase bases (§1.3): `V_LN = V_LL / √3`, `I_B = S_B / (√3 V_LL)`,
   `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`, `S_B = 3 V_LN I_B`.
 * Ideal transformer (§1.4): with `V_B¹ / V_B² = a` and a common `S_B`, per-unit voltages and
-  currents are equal on both sides and a referred impedance has the same per-unit value.
+  currents are equal on both sides and a referred impedance has the same per-unit value
+  (`transformer_pu_voltage`, `transformer_pu_current`, `transformer_pu_impedance`).
 * Change of base (§1.5); `voltage_change_base` covers every quantity with one base in the
   denominator (voltage, power, the inertia constant); the 600 MVA → 100 MVA example gives
   `8 s ↦ 48 s` (`inertia_change_example`).
@@ -161,20 +162,40 @@ end ThreePhaseBase
 
 /-! ## Ideal transformer (§1.4) -/
 
-/-- An ideal transformer of ratio `a = N₁/N₂` disappears in per unit when the two voltage bases
-follow the ratio and the power base is common: per-unit voltages and currents agree, and an
-impedance referred through the transformer (`Z₁ = a² Z₂`) has the same per-unit value. -/
-@[tmio T, powerlib_foundation] theorem transformer_pu {a S V₂ v₂ i₂ z₂ : ℝ} (ha : a ≠ 0) (hS : S ≠ 0)
+/-- Ideal transformer of ratio `a = N₁/N₂` with voltage bases following the ratio
+(`V_B¹ = a V_B²`): the per-unit voltages agree. -/
+@[tmio T, powerlib_foundation] theorem transformer_pu_voltage {a V₂ v₂ : ℝ} (ha : a ≠ 0)
     (hV : V₂ ≠ 0) :
+    let V₁ := a * V₂
+    (a * v₂) / V₁ = v₂ / V₂ := by
+  intro V₁
+  simp only [V₁]
+  field_simp
+
+/-- Ideal transformer of ratio `a = N₁/N₂` with voltage bases following the ratio and a common
+power base `S_B`: the per-unit currents agree. -/
+@[tmio T, powerlib_foundation] theorem transformer_pu_current {a S V₂ i₂ : ℝ} (ha : a ≠ 0)
+    (hS : S ≠ 0) (hV : V₂ ≠ 0) :
     let V₁ := a * V₂
     let I₁ := S / V₁
     let I₂ := S / V₂
+    (i₂ / a) / I₁ = i₂ / I₂ := by
+  intro V₁ I₁ I₂
+  simp only [V₁, I₁, I₂]
+  field_simp
+
+/-- Ideal transformer of ratio `a = N₁/N₂` with voltage bases following the ratio and a common
+power base `S_B`: an impedance referred through the transformer (`Z₁ = a² Z₂`) has the same
+per-unit value. -/
+@[tmio T, powerlib_foundation] theorem transformer_pu_impedance {a S V₂ z₂ : ℝ} (ha : a ≠ 0)
+    (hS : S ≠ 0) (hV : V₂ ≠ 0) :
+    let V₁ := a * V₂
     let Z₁ := V₁ ^ 2 / S
     let Z₂ := V₂ ^ 2 / S
-    (a * v₂) / V₁ = v₂ / V₂ ∧ (i₂ / a) / I₁ = i₂ / I₂ ∧ (a ^ 2 * z₂) / Z₁ = z₂ / Z₂ := by
-  intro V₁ I₁ I₂ Z₁ Z₂
-  simp only [V₁, I₁, I₂, Z₁, Z₂]
-  refine ⟨?_, ?_, ?_⟩ <;> field_simp
+    (a ^ 2 * z₂) / Z₁ = z₂ / Z₂ := by
+  intro V₁ Z₁ Z₂
+  simp only [V₁, Z₁, Z₂]
+  field_simp
 
 /-! ## Change of base (§1.5) -/
 

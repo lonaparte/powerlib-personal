@@ -37,10 +37,11 @@ Results.
   and the sublevel sets of `H` are unbounded for `c₀ ≠ 0`.)
 * `Params.reduced_tendsto_equilibrium_of_bounded` (instantiation), with
   `Params.lipschitzWith_h`, `Params.h_zero_isolated`.
-* `Params.reduced_node_iff`: at a slope `g = h′(θ*) < 0` the Jacobian (from `fderiv`) is
-  `[[K_p g, K_i], [g, 0]]`; it has only real eigenvalues (stable node) iff `|g| ≥ 4 K_i / K_p²`,
-  otherwise a non-real pair (stable focus) — instantiating
-  `theorem/GridTiedConverter/PLL/PIPLLLinear.lean`.
+* Node / focus: the Jacobian of the reduced field (from `fderiv`) is
+  `[[K_p g, K_i], [g, 0]]`, `g = h′(θ*)` (`Params.fderiv_reducedField`,
+  `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`); at a slope `g < 0` it has only real
+  eigenvalues (stable node) iff `|g| ≥ 4 K_i / K_p²`, otherwise a non-real pair (stable focus)
+  (`piPLLJacobian_eigenvalues_real_iff`, `theorem/GridTiedConverter/PLL/PIPLLLinear.lean`).
 
 Family and connection conclusions.
 No family and no connection conclusion. The convergence of
@@ -415,20 +416,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [reducedField_eq] at hφ
   exact piPLL_tendsto_of_bounded hKp hKi (p.lipschitzWith_h hwC hΔ hVg) (p.hasDerivAt_pot hwC hΔ)
     (fun θ _ => p.h_zero_isolated hwC hΔ hVg θ) hφ hb
-
-/-- A1, node / focus: at a point with slope `g = h′(θ*) = −A cos(θ* + φ) < 0` the Jacobian of the
-reduced field (computed with `fderiv`) is `[[K_p g, K_i], [g, 0]]`, and all its eigenvalues are
-real (stable node) iff `|g| ≥ 4 K_i / K_p²`; otherwise it has a non-real pair (stable focus). -/
-@[tmio M, powerlib_domain] theorem reduced_node_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : p.Kp ≠ 0)
-    {θ η : ℝ} (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
-    fderiv ℝ p.reducedField (PhasePlane.mk θ η) =
-        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
-          (piPLLJacobian p.Kp p.Ki (-(p.amp * cos (θ + p.phase)))) ∧
-      ((∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →
-          (piPLLJacobian p.Kp p.Ki (-(p.amp * cos (θ + p.phase)))).map (algebraMap ℝ ℂ) *ᵥ v =
-            μ • v → μ.im = 0) ↔
-        4 * p.Ki / p.Kp ^ 2 ≤ |-(p.amp * cos (θ + p.phase))|) :=
-  ⟨p.fderiv_reducedField hwC hΔ θ η, piPLLJacobian_eigenvalues_real_iff hKp hslope⟩
 
 end Params
 

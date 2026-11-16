@@ -36,10 +36,10 @@ Results.
   `|g|² < α₀² + Δ²`; with `g = ε𝒢/2`, `ε ≥ 0`, `α₀ > 0`: iff `ε |𝒢| < 2 √(α₀² + Δ²)`
   (`slowFlow_threshold_iff`), i.e. `ε_crit = 2√(α₀² + Δ²)/|𝒢|`. Stability goes through the
   linear stability hub (`Criteria.holds_affine_fin_two_iff`).
-* `exp_victim_tuned`, `monodromy_victim_tuned` — at zero pump amplitude and perfect tuning
-  (`ω_cr T = π`, `T = 2π/ω_p`) the victim eigenvalues `−α₀ ± jω_cr` of a constant state matrix
-  give the Floquet multiplier `−e^{−α₀T}` (a real negative double multiplier, by the LTI
-  spectral mapping `Periodic.monodromy_const_mulVec_eigen`).
+* `exp_victim_tuned`, `exp_victim_tuned_conj`, `monodromy_victim_tuned` — at zero pump amplitude
+  and perfect tuning (`ω_cr T = π`, `T = 2π/ω_p`) the victim eigenvalues `−α₀ ± jω_cr` of a
+  constant state matrix give the Floquet multiplier `−e^{−α₀T}` (a real negative double
+  multiplier, by the LTI spectral mapping `Periodic.monodromy_const_mulVec_eigen`).
 -/
 
 noncomputable section
@@ -182,17 +182,20 @@ exponentially stable iff `ε |𝒢| < 2 √(α₀² + Δ²)`. -/
 
 /-! ## Floquet multipliers at zero amplitude and perfect tuning -/
 
-/-- With `ω T = π`, `e^{(−α₀ ± jω) T} = −e^{−α₀ T}`. -/
+/-- With `ω T = π`, `e^{(−α₀ + jω) T} = −e^{−α₀ T}`. -/
 @[tmio T, powerlib_foundation] theorem exp_victim_tuned {α₀ ω T : ℝ} (hT : ω * T = Real.pi) :
-    Complex.exp ((-(α₀ : ℂ) + ω * I) * T) = -(Real.exp (-α₀ * T) : ℂ) ∧
-      Complex.exp ((-(α₀ : ℂ) - ω * I) * T) = -(Real.exp (-α₀ * T) : ℂ) := by
+    Complex.exp ((-(α₀ : ℂ) + ω * I) * T) = -(Real.exp (-α₀ * T) : ℂ) := by
   have e1 : (-(α₀ : ℂ) + ω * I) * T = ((-α₀ * T : ℝ) : ℂ) + (Real.pi : ℂ) * I := by
     rw [← hT]; push_cast; ring
+  rw [e1, Complex.exp_add, Complex.exp_pi_mul_I, Complex.ofReal_exp]; ring
+
+/-- With `ω T = π`, also `e^{(−α₀ − jω) T} = −e^{−α₀ T}` (the conjugate exponent). -/
+@[tmio T, powerlib_foundation] theorem exp_victim_tuned_conj {α₀ ω T : ℝ}
+    (hT : ω * T = Real.pi) :
+    Complex.exp ((-(α₀ : ℂ) - ω * I) * T) = -(Real.exp (-α₀ * T) : ℂ) := by
   have e2 : (-(α₀ : ℂ) - ω * I) * T = ((-α₀ * T : ℝ) : ℂ) - (Real.pi : ℂ) * I := by
     rw [← hT]; push_cast; ring
-  constructor
-  · rw [e1, Complex.exp_add, Complex.exp_pi_mul_I, Complex.ofReal_exp]; ring
-  · rw [e2, Complex.exp_sub, Complex.exp_pi_mul_I, Complex.ofReal_exp]; ring
+  rw [e2, Complex.exp_sub, Complex.exp_pi_mul_I, Complex.ofReal_exp]; ring
 
 /-- Spectral mapping at zero pump amplitude: if the constant state matrix `A₀` has the victim
 eigenpair `(−α₀ + jω, v)` and the pump is perfectly tuned (`ω T = π`), the monodromy matrix
@@ -202,6 +205,6 @@ eigenpair `(−α₀ + jω, v)` and the pump is perfectly tuned (`ω T = π`), t
     {v : X → ℂ} (hv : A₀.map (algebraMap ℝ ℂ) *ᵥ v = (-(α₀ : ℂ) + ω * I) • v) :
     (Periodic.monodromy (fun _ => A₀) T s).map (algebraMap ℝ ℂ) *ᵥ v =
       (-(Real.exp (-α₀ * T) : ℂ)) • v := by
-  rw [Periodic.monodromy_const_mulVec_eigen A₀ hT0 s hv, (exp_victim_tuned hT).1]
+  rw [Periodic.monodromy_const_mulVec_eigen A₀ hT0 s hv, exp_victim_tuned hT]
 
 end powerlib.ParametricResonance

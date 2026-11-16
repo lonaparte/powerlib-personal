@@ -485,6 +485,118 @@ in Git; working statistics, build receipts and development plans are not kept he
   - `Transform.Rebase.hasDerivAt_mulVec` → `Dynamics.hasDerivAt_mulVec`
   - `Transform.park_mulVec_rot_mulVec` → `Transform.park_mul_rot`
 
+- Split bundled theorems into single-claim theorems (minimal-unit pass): 133
+  theorems whose conclusion conjoined independent claims are replaced by 343
+  named theorems, one claim each with its own docstring, or by theorems the
+  library already had; bundles are removed without aliases and callers use the
+  parts by name. Two closely tied parts are split only where a caller used one of
+  them alone; criteria (`↔` with a list of parameter conditions) and conjunctions
+  that share one existential witness stay whole. Some parts dropped hypotheses
+  they do not use. Classified theorems 7401 → 7601 (public connection theorems
+  1066 → 1074). Removed or narrowed bundles and their parts (names relative to
+  the bundle's namespace unless qualified; a name listed among the parts now
+  states only that part):
+  - `Criteria.quadratic_partner` → `quadratic_partner_sum`, `quadratic_partner_prod`, `quadratic_partner` (root fact)
+  - `Flow.quadratic_bounds` → `Flow.quadratic_lower_bound`, `Flow.quadratic_upper_bound`
+  - `GFL.DCLink.ModelBParams.equilibrium_necessary` → `equilibrium_vgq`, `equilibrium_xpll` (`V_dc` part = existing `equilibrium_Vdc`)
+  - `GFL.DCLink.ModelBParams.equilibrium_powerAngle` → `equilibrium_powerAngle`, `equilibrium_idRef`
+  - `GFL.Noise.Params.varThetaQ_model` → existing `GFL.LCLine.Params.sigma_q_eq` and `GFL.Noise.varThetaQ_eq`
+  - `GFM.Matching.MatchingClosedLoop.field_reduce` → `field_reduce`, `abField_load_stationary`
+  - `LTI.sampledLoop_exponentialDecay` → `sampledLoop_exponentialDecay`, `sampledLoop_controller_exponentialDecay`
+  - `NormalForm.exponentiallyStable_node_and_focus` → `exponentiallyStable_node`, `node_discriminant_pos`, `exponentiallyStable_focus`, `focus_discriminant_neg`
+  - `NormalForm.Pitchfork.super_slopes` → `super_slope_zero`, `super_slope_sqrt`, `super_slope_neg_sqrt`
+  - `Numerics.EMT.`{rlPlant,idealLCLPlant}_{trapezoidal,backwardEuler}`Discretization_exponentiallyStable` → …_wellPosed + …_exponentiallyStable
+  - `Numerics.trapezoidal_real_multiplier_mem` → `trapezoidal_real_multiplier_gt_neg_one`, `trapezoidal_real_multiplier_neg`
+  - `PhasePlane.Duffing.energy_off_well` → `energy_off_well`, `norm_mk_sub_mk_zero`
+  - `Network.Swing.CycleMinimum.closure_sign` → `closure_neg_of_pos`, `closure_pos_of_neg`
+  - `Network.Swing.norm_mul_cos_arg_sub` → `norm_mul_cos_arg_sub`, `norm_mul_sin_arg_sub`
+  - `Network.Swing.Ring5.line_trig` → `line_cos`, `line_sin`; `line_trig'` → `line_cos'`, `line_sin'`
+  - `Network.Swing.degenerate_addLeaf` → `powerBalance_addLeaf`, `strictMin_addLeaf`, `kernel_addLeaf`
+  - `Synchronous.PostFaultSMIB.deltaS_stable_deltaU_unstable` → existing `Synchronous.Swing.deltaS_mem_den_locallyExponentiallyStable`, `deltaU_mem_den_unstable` (at m.toSwing)
+  - `SingularPerturbation.LinearSP.coords_hasDerivAt` → `coords_hasDerivAt_slow`, `coords_hasDerivAt_fast`
+  - `Stochastic.MFPT.kramersT_ode` → `kramersT_ode` (ODE identity only; others = existing `kramersT_hasDerivAt`, `outerG_hasDerivAt`)
+  - `Transform.SpaceVector.inverterVector_active` → `inverterVector_100`, _110, _010, _011, _001, _101
+  - `Criteria.quartic_routh_consequences` → `quartic_routh_a2_pos`, `quartic_routh_a1_lt`
+  - `DAE.example_offsets` → `example_isTransversal`, `example_isDualFeasible`, `example_isTight`
+  - `DAE.pendulum_offsets` → `pendulum_isTransversal`, `pendulum_isDualFeasible`, `pendulum_isTight`, `pendulum_noteIndex`, `pendulum_pryceIndex`
+  - `Estimation.LTV.lti_cov_integral_form` → `lti_cov_self`, `hasDerivAt_lti_cov`, `lti_cov_unique`
+  - `GFL.LCLine.Params.two_equilibria_per_period_den` → `stableRoot_mem_den_locallyExponentiallyStable`, `saddleRoot_mem_den_unstable`
+  - `GFL.Parametric.Averages.fieldAngle_apply` → `fieldAngle_apply_zero`, `fieldAngle_apply_one`, `fieldAngle_apply_three`
+  - `PLL.piPLL_jacobian_nilpotent_of_deriv_zero` → `piPLLField_eq_zero_iff`, `fderiv_piPLLField`, `piPLLJacobian_zero_ne_zero`, `piPLLJacobian_zero_sq`, `piPLLJacobian_zero_not_isHurwitz`
+  - `Numerics.bdf_consistent` → `bdf1_consistent` … `bdf6_consistent`
+  - `ParametricResonance.tongue_root_split` → `tongue_root_le`, `tongue_root_eq_iff`
+  - `ParametricResonance.flipProjection_calpha_pos_lowGain` → `Ioo_subset_flipProjection_calpha_pos_lowGain`, `flipProjection_calpha_pos_lowGain_subset_Iio`
+  - `Potential.doubleWell_curvatures` → `doubleWell_curvature_zero`, _sqrt, _neg_sqrt
+  - `Potential.doubleWell_monotone` → `doubleWell_strictAntiOn_Iic`, `doubleWell_strictMonoOn_Icc_neg`, `doubleWell_strictAntiOn_Icc_pos`, `doubleWell_strictMonoOn_Ici`
+  - `Potential.doubleWell_weight_bimodal` → `doubleWell_weight_strictMonoOn_Iic`, _strictAntiOn_Icc_neg, _strictMonoOn_Icc_pos, _strictAntiOn_Ici, `doubleWell_weight_max`, `doubleWell_weight_zero_lt`
+  - `Frequency.LFC.netDiss_eq_zero` → `netXi_eq_zero_of_netDiss_eq_zero`, `netGap_mul_eq_zero_of_netDiss_eq_zero`
+  - `Stochastic.Markov.semigroup_not_markov` → `unifKernel_comp`, `feller_transition`, `feller_not_markov`
+  - narrowed (name kept, new siblings):
+    - `DAE.Signature.pantelides_terminates` (+`pantelides_exists_final`)
+    - `Dynamics.LaSalle.exists_globalization`
+    - `lieDeriv_feedback_le` (+`output_eq_zero_of_lieDeriv_feedback_eq_zero`)
+    - `GFL.LCLine.Params.fold_equilibrium_per_period` (+`fold_hZeros_eq`, `fold_reducedField_eq_zero`, `fold_jacobian_nilpotent`)
+    - `reduced_jacobian_nilpotent`
+    - `PLL.biased_fold` (+`biased_fold_eq_zero`)
+    - `PLL.trigPLL_saddleNode_nilpotent`
+    - `PLL.slowAngle_spec` (+`abs_slowAngle_lt`, `slowAngle_normal_neg`)
+    - `Linear.eigen_mobius` (+`eigen_mobius_denom_ne_zero`)
+    - `ScalarOscillator.forced_q_solves` (+`forced_q_eq_re`)
+    - `upper_branch_le` (+`upper_branch_max`)
+    - `flipProjection_calpha_pos_lowGain_isLUB` (+`deltaStarPlus_not_mem_…`)
+    - `Periodic.hill3_neg_similar` (+`hill3_neg_charpoly_eq`, _spectrum_eq)
+    - `exactHill_half_shift` (+…`charpoly_eq`, …`spectrum_eq`)
+    - `Potential.anharmonicWell_unique_min` (+`anharmonicWell_critical_iff`)
+    - `doubleWell_min` (+`doubleWell_eq_min_iff`)
+    - `LinearSP.exists_epsStar_exponentiallyStable` (+`exists_epsStar_isHurwitz`)
+  - `Asymptotics.Guard.guard_inside_bounds` → `guard_inside_ge`, `guard_inside_le`; `guard_ratio_bounds` → `guard_ratio_den_pos`, `guard_ratio_le`, `guard_ratio_ge`
+  - `Averaging.exp_smul_bounds` → `norm_exp_smul_le_of_norm_le`, `norm_exp_smul_sub_one_le_of_norm_le`
+  - `periodMap_schurStable_of_isHurwitz` (Schur part) + `periodMap_pow_norm_lt_one_of_isHurwitz`
+  - `slowSwitching_counterexample` → `slowSwitching_isHurwitz₁`, _isHurwitz₂, _isHurwitz_avg, _periodMap_eigen, _not_schurStable
+  - `Drives.Modulation.utilisation_bounds` → spwm/svpwm/`sixStep_utilisation_bounds`; `utilisation_values` → spwm/svpwm/`sixStep_utilisation_eq`
+  - `Dynamics.Degenerate.exp_spiral_bounds` → `exp_spiral_ge`, `exp_spiral_le`
+  - `Estimation.kalman_error_moments` → `kalman_error_memLp`, `kalman_error_integral_eq_zero`, `kalman_error_integral_sq`
+  - `LTV.ltv_cov_stateTransition` → _self, `hasDerivAt_ltv_cov_stateTransition`, _unique
+  - `GFL.DCLink.ModelB.boundaryWitnesses_mem_realize` → hopfCenter/hopfDamped/`cdcZero_mem_realize`; `boundaryWitnesses_not_mem_realize_offBoundary` → three …_not_mem_realize_offBoundary
+  - `GFL.LCLine.Params.reduced_node_iff` → existing `Params.fderiv_reducedField`, `piPLLJacobian_eigenvalues_real_iff`
+  - `GFL.RatePLL.imaginary_pair_at_boundary` → `trace_jac_eq_zero_of_tan_eq`, `det_jac_pos`, `imaginary_pair_at_boundary` (charpoly part)
+  - `GFM.VSMLPF.gfmAngle_mixed_partial` → `gfmAngle_delta_partial`, `gfmAngle_mixed_partial` (u-derivative; args ωc K₀ u z), `gfmAngle_mixed_partial_ne_zero`
+  - `PLL.pllHamiltonian_shifted_lyapunovFunction` → `pllHamiltonian_nonneg`, `pllHamiltonian_shifted_eq_zero`, `pllHamiltonian_shifted_lie_nonpos`
+  - `Nonlinear.Polynomial2.quarticEnergy_bounds` → `quarticEnergy_le_norm_pow`, `norm_pow_le_two_mul_quarticEnergy`
+  - `quartic_certificate_boundary` → `quartic_exponential`, `quarticModel_not_certified`
+  - `Numerics.ggl_projection_vanishes` (Gᵀμ = 0) + `ggl_hasDerivAt_velocity`
+  - `ParametricResonance.exp_victim_tuned` (+jω) + `exp_victim_tuned_conj`
+  - `Passive.Line.Phasor.exp_two_mul_gammaL` (identity) + `one_sub_Zsc_div_Zc_ne_zero`
+  - `Passive.Line.CableSchelkunoff.tendsto_norms` → `tendsto_besselI0Norm_mul`, _I1, _K0, _K1, `tendsto_cexp_neg_two_mul_sub`
+  - `exactZ_tendsto_omega` → six exactZ…_tendsto_… lemmas
+  - `besselNorm_sub_one_isBigO` → four bessel…`Norm_sub_one_isBigO`
+  - `Periodic.transition_spec` → `transition_self`, `isIntegralCurveOn_transition`
+  - `Frequency.FreqCov.swingCov_entries` → `swingCov_zero_one`, _one_zero, _one_one, _zero_zero
+  - `SpecialFunctions.besselI0_div_besselI1_sub_one_le` (rate) + `besselI0_ne_zero_of_sector`, `besselI1_ne_zero_of_sector`
+  - `besselK_laplace_le` → `besselK0_laplace_le`, `besselK1_laplace_le`
+  - `tendsto_bessel_div_gaussHalf` → four `tendsto_bessel…_div_gaussHalf`
+  - `Asymptotics.Guard.exp_tenth_bounds` → `exp_tenth_gt`, `exp_tenth_lt`
+  - `exp_two_point_one_bounds` → `exp_two_point_one_gt`, `exp_two_point_one_lt`
+  - `lifetime_ratio_num` → `lifetime_ratio_num_gt`, `lifetime_ratio_num_lt`, `lifetime_exp_factor_num_gt`
+  - `Criteria.quadratic_root_re_im` → `quadratic_root_re`, `quadratic_root_im`
+  - `eigen_ratio` (exact ratio) + `eigen_ratio_ge`, `eigen_ratio_le`
+  - `eigen_bounds` → `eigen_fast_bounds`, `eigen_slow_bounds`
+  - `Drives.DTC.sector_signs` → `sector_signs_add_one`, _add_two, _sub_one, _sub_two
+  - `Dynamics.forwardSolution_spec` → `forwardSolution_zero`, `lipschitzFlow_solution`, `forwardSolution_unique`
+  - `Estimation.predict_cov_hurwitz` → existing `Stochastic.Lyapunov.exists_solvesCovLyapunov`, `posSemidef_of_solvesCovLyapunov`, `solvesCovLyapunov_unique`, `covODE_unique`, `covSol_tendsto_norm`
+  - `GFL.DCLink.CarrierParams.carrier_jacobian_charpoly` → `carrier_jacobian_conj` (charpoly = `Linear.charpoly_conj`); `equilibrium_Vdc` (`V_dc` = 1) + `equilibrium_idr`
+  - `GFL.PowerLoop.QuasiStatic.hopfQS_c_apply` → `hopfQS_c1_apply`, _c2_apply, _c3_apply; `hopfQS_coords` → `hopfQS_z0_eq`, _z1_eq, _z2_eq
+  - `GFM.Matching.MatchingStiffGrid.sq_le_energy_of_no_sync` → `sq_u_err_`/`sq_d_err_`/`sq_q_err_le_energy_of_no_sync`; `red_identity_aux` → `rot_iHat_eq`, `rot_iHat_deriv_eq`
+  - `Modal.exists_eigenpair_branch_deriv` (existence) + `dotProduct_deriv_eq_zero_of_eventually`, `eigenvalue_deriv_left_of_eventually`
+  - `NormalForm.riccatiGraze_escape` (bound on T) + `riccatiGraze_above`
+  - `Frequency.SwingGovernor.arg_facts` → `arg_mk_pos`, `arg_mk_lt_pi`, `cos_arg_mk`, `norm_mk_pos`, `sq_norm_mk` (sine part: `Complex.sin_arg`)
+  - `Stochastic.Conv.skorokhod_representation` (a.s. part; law parts = `aemeasurable_quantile`, `map_quantile`)
+  - `Stochastic.Lyapunov.exists_unique_posSemidef_covLyapunov` → `posSemidef_of_solvesCovLyapunov` (+ `exists_solvesCovLyapunov`, `solvesCovLyapunov_unique`)
+  - `exists_unique_posSemidef_stationaryCov` → `exists_stationaryCov`, `stationaryCov_posSemidef`
+  - `cov_kernel_invariant` (Aᵀ-invariance) + `cov_kernel_transpose_eq_zero`
+  - `stationaryCov_gramian` → existing `exists_stationaryCov`, `solvesCovLyapunov_unique`, `tendsto_integral_gramian`, `stationaryCov_posSemidef`, `posDef_iff_isControllable`
+  - `Transform.PerUnit.transformer_pu` → `transformer_pu_voltage`, `transformer_pu_current`, `transformer_pu_impedance`
+
 ## 2026-11-08
 
 - Reduced the passive elements to two dual topologies. `Passive.SeriesRLC`

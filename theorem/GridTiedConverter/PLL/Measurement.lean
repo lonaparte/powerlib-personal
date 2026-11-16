@@ -70,9 +70,25 @@ open powerlib.LTI (derivModel)
 def bandwidth (ωn ζ : ℝ) : ℝ :=
   ωn * Real.sqrt (1 + 2 * ζ ^ 2 + Real.sqrt ((1 + 2 * ζ ^ 2) ^ 2 + 1))
 
+/-- The squared bandwidth is positive (`V K_i > 0`). -/
+@[tmio M, powerlib_domain] private lemma bandwidth_sq_pos {V Kp Ki : ℝ} (h : 0 < V * Ki) :
+    0 < bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 := by
+  set X := bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 with hXdef
+  have hω : 0 < omegaN V Ki := Real.sqrt_pos.mpr h
+  set ζ := zeta V Kp Ki
+  set ωn := omegaN V Ki
+  set r := Real.sqrt ((1 + 2 * ζ ^ 2) ^ 2 + 1) with hr
+  have hr0 : 0 ≤ r := Real.sqrt_nonneg _
+  have hin : 0 < 1 + 2 * ζ ^ 2 + r := by positivity
+  have hX : X = ωn ^ 2 * (1 + 2 * ζ ^ 2 + r) := by
+    rw [hXdef, bandwidth, mul_pow, Real.sq_sqrt hin.le]
+  rw [hX]
+  positivity
+
+/-- The squared bandwidth `X = ω_b²` is a root of `X² − (2b + a²) X − b²` (`a = V K_p`,
+`b = V K_i > 0`). -/
 @[tmio M, powerlib_domain] private lemma bandwidth_sq_root {V Kp Ki : ℝ} (h : 0 < V * Ki) :
-    0 < bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 ∧
-      (bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2) ^ 2 -
+    (bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2) ^ 2 -
         (2 * (V * Ki) + (V * Kp) ^ 2) * bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 -
         (V * Ki) ^ 2 = 0 := by
   set X := bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 with hXdef
@@ -87,7 +103,6 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
   have hin : 0 < 1 + 2 * ζ ^ 2 + r := by positivity
   have hX : X = ωn ^ 2 * (1 + 2 * ζ ^ 2 + r) := by
     rw [hXdef, bandwidth, mul_pow, Real.sq_sqrt hin.le]
-  refine ⟨by rw [hX]; positivity, ?_⟩
   rw [hX, ← hsq, ha]
   linear_combination ωn ^ 4 * hr2
 
@@ -96,7 +111,8 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
     2 * ((V * Ki) ^ 2 + (V * Kp * ω) ^ 2) - ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) =
       -((ω ^ 2 - bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2) *
         (ω ^ 2 + (V * Ki) ^ 2 / bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2)) := by
-  obtain ⟨hX, hroot⟩ := bandwidth_sq_root (Kp := Kp) h
+  have hX := bandwidth_sq_pos (Kp := Kp) h
+  have hroot := bandwidth_sq_root (Kp := Kp) h
   generalize bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2 = X at hX hroot ⊢
   have hdiv : (V * Ki) ^ 2 / X = X - (2 * (V * Ki) + (V * Kp) ^ 2) := by
     rw [div_eq_iff hX.ne']; linear_combination (-1 : ℝ) * hroot
@@ -128,7 +144,8 @@ transfer function of `frequencyModel`, `transfer_frequencyModel`). -/
     {ω : ℝ} (hω : 0 ≤ ω) :
     normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) = 1 / 2 ↔
       ω = bandwidth (omegaN V Ki) (zeta V Kp Ki) := by
-  obtain ⟨hX, hroot⟩ := bandwidth_sq_root (Kp := Kp) h
+  have hX := bandwidth_sq_pos (Kp := Kp) h
+  have hroot := bandwidth_sq_root (Kp := Kp) h
   have hb0 : 0 ≤ bandwidth (omegaN V Ki) (zeta V Kp Ki) := by
     unfold bandwidth omegaN; positivity
   have hfac := bandwidth_factor (Kp := Kp) h ω
@@ -167,7 +184,7 @@ transfer function of `frequencyModel`, `transfer_frequencyModel`). -/
       1 / 2 < normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I))) ∧
     (bandwidth (omegaN V Ki) (zeta V Kp Ki) < ω →
       normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) < 1 / 2) := by
-  obtain ⟨hX, -⟩ := bandwidth_sq_root (Kp := Kp) h
+  have hX := bandwidth_sq_pos (Kp := Kp) h
   have hfac := bandwidth_factor (Kp := Kp) h ω
   set X := bandwidth (omegaN V Ki) (zeta V Kp Ki) ^ 2
   have hpos : 0 < ω ^ 2 + (V * Ki) ^ 2 / X := by positivity

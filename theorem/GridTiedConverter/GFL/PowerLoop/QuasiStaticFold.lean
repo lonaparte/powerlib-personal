@@ -165,25 +165,44 @@ section FoldLocal
     f =O[𝓝 0] fun z => (|z 0| + |z 1| + |z 2|) ^ k :=
   hf.trans (Dynamics.isBigO_pow_of_tendsto size3_tendsto hk)
 
-@[tmio T, powerlib_foundation] private theorem trig3_isBigO :
-    ((fun z : Dynamics.State 3 => 1 - Real.cos (z 0)) =O[𝓝 0]
-        fun z => (|z 0| + |z 1| + |z 2|) ^ 2) ∧
-    ((fun z : Dynamics.State 3 => Real.sin (z 0) - z 0) =O[𝓝 0]
-        fun z => (|z 0| + |z 1| + |z 2|) ^ 3) ∧
-    ((fun z : Dynamics.State 3 => 1 - Real.cos (z 0) - z 0 ^ 2 / 2) =O[𝓝 0]
-        fun z => (|z 0| + |z 1| + |z 2|) ^ 4) ∧
-    ((fun z : Dynamics.State 3 => Real.sin (z 0)) =O[𝓝 0]
-        fun z => (|z 0| + |z 1| + |z 2|) ^ 1) := by
+/-- `1 − cos z₀ = O(s²)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
+@[tmio T, powerlib_foundation] private theorem one_sub_cos3_isBigO :
+    (fun z : Dynamics.State 3 => 1 - Real.cos (z 0)) =O[𝓝 0]
+      fun z => (|z 0| + |z 1| + |z 2|) ^ 2 := by
   have ht : Tendsto (fun z : Dynamics.State 3 => z 0) (𝓝 0) (𝓝 0) :=
     (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
       Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
-  have h0 := coord3_isBigO 0
   have h0' : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1| + |z 2| :=
-    h0.congr_right fun z => pow_one _
-  refine ⟨(Dynamics.one_sub_cos_isBigO.comp_tendsto ht).trans (h0'.pow 2),
-    (Dynamics.sin_sub_self_isBigO.comp_tendsto ht).trans (h0'.pow 3),
-    (Dynamics.one_sub_cos_sub_isBigO.comp_tendsto ht).trans (h0'.pow 4), ?_⟩
-  refine (IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_)).trans h0
+    (coord3_isBigO 0).congr_right fun z => pow_one _
+  exact (Dynamics.one_sub_cos_isBigO.comp_tendsto ht).trans (h0'.pow 2)
+
+/-- `sin z₀ − z₀ = O(s³)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
+@[tmio T, powerlib_foundation] private theorem sin_sub_self3_isBigO :
+    (fun z : Dynamics.State 3 => Real.sin (z 0) - z 0) =O[𝓝 0]
+      fun z => (|z 0| + |z 1| + |z 2|) ^ 3 := by
+  have ht : Tendsto (fun z : Dynamics.State 3 => z 0) (𝓝 0) (𝓝 0) :=
+    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
+      Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
+  have h0' : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1| + |z 2| :=
+    (coord3_isBigO 0).congr_right fun z => pow_one _
+  exact (Dynamics.sin_sub_self_isBigO.comp_tendsto ht).trans (h0'.pow 3)
+
+/-- `1 − cos z₀ − z₀²/2 = O(s⁴)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
+@[tmio T, powerlib_foundation] private theorem one_sub_cos_sub3_isBigO :
+    (fun z : Dynamics.State 3 => 1 - Real.cos (z 0) - z 0 ^ 2 / 2) =O[𝓝 0]
+      fun z => (|z 0| + |z 1| + |z 2|) ^ 4 := by
+  have ht : Tendsto (fun z : Dynamics.State 3 => z 0) (𝓝 0) (𝓝 0) :=
+    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
+      Dynamics.State 3 →L[ℝ] ℝ).continuous.tendsto' 0 0 (by simp)
+  have h0' : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1| + |z 2| :=
+    (coord3_isBigO 0).congr_right fun z => pow_one _
+  exact (Dynamics.one_sub_cos_sub_isBigO.comp_tendsto ht).trans (h0'.pow 4)
+
+/-- `sin z₀ = O(s)` at `0`, `s = |z₀| + |z₁| + |z₂|`. -/
+@[tmio T, powerlib_foundation] private theorem sin3_isBigO :
+    (fun z : Dynamics.State 3 => Real.sin (z 0)) =O[𝓝 0]
+      fun z => (|z 0| + |z 1| + |z 2|) ^ 1 := by
+  refine (IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_)).trans (coord3_isBigO 0)
   rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul]
   exact Real.abs_sin_le_abs
 
@@ -236,7 +255,10 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
           (κ * (A * B * (1 - Real.cos (z 0)) + A * Xg * (z 2 * (1 - Real.cos (z 0))) +
             B * Xg * (z 2 * Real.sin (z 0)) + A ^ 2 * (Real.sin (z 0) - z 0)))) =O[𝓝 0]
       fun z => (|z 0| + |z 1| + |z 2|) ^ 3 := by
-  obtain ⟨t2, t3, t4, ts⟩ := trig3_isBigO
+  have t2 := one_sub_cos3_isBigO
+  have t3 := sin_sub_self3_isBigO
+  have t4 := one_sub_cos_sub3_isBigO
+  have ts := sin3_isBigO
   have e0 := coord3_isBigO 0
   have e1 := coord3_isBigO 1
   have e2 := coord3_isBigO 2

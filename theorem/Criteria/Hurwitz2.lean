@@ -37,7 +37,8 @@ Results.
   and `(−b ± √D)/(2a)` are its roots when `D ≥ 0` (`quad_root`). For `λ² + aλ + b` with `a > 0`,
   `0 ≤ b`, `4b ≤ a²` (`ε = b/a²`): real roots iff `ε ≤ 1/4` (`eigen_real_iff`),
   `λ± = −(a/2)(1 ∓ √(1 − 4ε))` (`eigen_roots`), `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))² ∈ [ε, 4ε]`
-  (`eigen_ratio`), `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]` (`eigen_bounds`).
+  (`eigen_ratio`, `eigen_ratio_ge`, `eigen_ratio_le`), `λ₋ ∈ [−a, −a/2]` (`eigen_fast_bounds`),
+  `λ₊ ∈ [−2b/a, −b/a]` (`eigen_slow_bounds`).
 * `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`
   (`det_characteristicMatrix_fin_two`); `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det`
   (`isHurwitz_fin_two_iff`; for `SpectrallyStable` through `Linear.spectrallyStable_iff_isHurwitz`;
@@ -123,14 +124,23 @@ end General
 
 section Quadratic
 
-@[tmio T, powerlib_foundation] theorem quadratic_root_re_im {a1 a0 : ℝ} {s : ℂ}
+/-- Real part of a root of the monic real quadratic: `x² − y² + a1 x + a0 = 0` for `s = x + iy`. -/
+@[tmio T, powerlib_foundation] theorem quadratic_root_re {a1 a0 : ℝ} {s : ℂ}
     (h : s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
-    s.re ^ 2 - s.im ^ 2 + a1 * s.re + a0 = 0 ∧ s.im * (2 * s.re + a1) = 0 := by
+    s.re ^ 2 - s.im ^ 2 + a1 * s.re + a0 = 0 := by
   have hr := congrArg Complex.re h
-  have hi := congrArg Complex.im h
   simp only [pow_two, Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
-    Complex.zero_re, Complex.add_im, Complex.mul_im, Complex.zero_im] at hr hi
-  exact ⟨by linear_combination hr, by linear_combination hi⟩
+    Complex.zero_re] at hr
+  linear_combination hr
+
+/-- Imaginary part of a root of the monic real quadratic: `y (2x + a1) = 0` for `s = x + iy`. -/
+@[tmio T, powerlib_foundation] theorem quadratic_root_im {a1 a0 : ℝ} {s : ℂ}
+    (h : s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
+    s.im * (2 * s.re + a1) = 0 := by
+  have hi := congrArg Complex.im h
+  simp only [pow_two, Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.zero_im] at hi
+  linear_combination hi
 
 @[tmio T, powerlib_foundation] theorem quadratic_root_of_re_im {a1 a0 x y : ℝ}
     (hre : x ^ 2 - y ^ 2 + a1 * x + a0 = 0) (him : y * (2 * x + a1) = 0) :
@@ -189,7 +199,8 @@ Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
     exact ⟨by simpa [quadraticPoly, coeff_X] using h 1 (by omega),
       by simpa [quadraticPoly] using h 0 (by omega)⟩
   · rintro ⟨h1, h0⟩ s hs
-    obtain ⟨hr, hi⟩ := quadratic_root_re_im hs
+    have hr := quadratic_root_re hs
+    have hi := quadratic_root_im hs
     by_contra hx
     push Not at hx
     rcases mul_eq_zero.mp hi with hy | hx'
@@ -219,7 +230,8 @@ Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
     have := Real.sqrt_pos.mpr hpos
     linarith
   · intro hΔ s hs
-    obtain ⟨hr, hi⟩ := quadratic_root_re_im hs
+    have hr := quadratic_root_re hs
+    have hi := quadratic_root_im hs
     rcases mul_eq_zero.mp hi with hy | hx
     · exact hy
     · have hre : s.re = -a1 / 2 := by linarith
@@ -278,14 +290,32 @@ Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
   · linear_combination (1 / 4 : ℝ) * hs'
   · linear_combination (1 / 4 : ℝ) * hs'
 
-/-- Exact eigenvalue ratio: `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))²`, and `ε ≤ λ₊/λ₋ ≤ 4ε`
+/-- Exact eigenvalue ratio: `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))²` (`a > 0`, `4b ≤ a²`). -/
+@[tmio T, powerlib_foundation] theorem eigen_ratio {a b : ℝ} (ha : 0 < a) (hd : 4 * b ≤ a ^ 2) :
+    let ε := b / a ^ 2
+    let s := Real.sqrt (1 - 4 * ε)
+    (-(a / 2) * (1 - s)) / (-(a / 2) * (1 + s)) = 4 * ε / (1 + s) ^ 2 := by
+  intro ε s
+  have h1 : 0 ≤ 1 - 4 * ε := by
+    simp only [ε]
+    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
+    linarith
+  have hs : s ^ 2 = 1 - 4 * ε := Real.sq_sqrt h1
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  have hpos : 0 < 1 + s := by linarith
+  have : -(a / 2) * (1 + s) ≠ 0 := by
+    have : 0 < a / 2 * (1 + s) := by positivity
+    linarith
+  rw [div_eq_div_iff this (by positivity)]
+  linear_combination (a / 2) * (1 + s) * hs
+
+/-- Lower bound of the eigenvalue ratio: `ε ≤ 4ε/(1 + √(1 − 4ε))²`
 (`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
-@[tmio T, powerlib_foundation] theorem eigen_ratio {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
+@[tmio T, powerlib_foundation] theorem eigen_ratio_ge {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
     (hd : 4 * b ≤ a ^ 2) :
     let ε := b / a ^ 2
     let s := Real.sqrt (1 - 4 * ε)
-    (-(a / 2) * (1 - s)) / (-(a / 2) * (1 + s)) = 4 * ε / (1 + s) ^ 2 ∧
-      ε ≤ 4 * ε / (1 + s) ^ 2 ∧ 4 * ε / (1 + s) ^ 2 ≤ 4 * ε := by
+    ε ≤ 4 * ε / (1 + s) ^ 2 := by
   intro ε s
   have hε : 0 ≤ ε := by positivity
   have h1 : 0 ≤ 1 - 4 * ε := by
@@ -296,24 +326,42 @@ Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
   have hs0 : 0 ≤ s := Real.sqrt_nonneg _
   have hs1 : s ≤ 1 := by nlinarith
   have hpos : 0 < 1 + s := by linarith
-  refine ⟨?_, ?_, ?_⟩
-  · have : -(a / 2) * (1 + s) ≠ 0 := by
-      have : 0 < a / 2 * (1 + s) := by positivity
-      linarith
-    rw [div_eq_div_iff this (by positivity)]
-    linear_combination (a / 2) * (1 + s) * hs
-  · rw [le_div_iff₀ (by positivity)]
-    nlinarith
-  · rw [div_le_iff₀ (by positivity)]
-    nlinarith
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith
 
-/-- Fast and slow eigenvalue bounds: `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]`
+/-- Upper bound of the eigenvalue ratio: `4ε/(1 + √(1 − 4ε))² ≤ 4ε` (`0 ≤ b`). -/
+@[tmio T, powerlib_foundation] theorem eigen_ratio_le {a b : ℝ} (hb : 0 ≤ b) :
+    let ε := b / a ^ 2
+    let s := Real.sqrt (1 - 4 * ε)
+    4 * ε / (1 + s) ^ 2 ≤ 4 * ε := by
+  intro ε s
+  have hε : 0 ≤ ε := by positivity
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  have hpos : 0 < 1 + s := by linarith
+  rw [div_le_iff₀ (by positivity)]
+  nlinarith [mul_nonneg hε hs0, mul_nonneg hε (sq_nonneg s)]
+
+/-- Fast eigenvalue bounds: `λ₋ = −(a/2)(1 + √(1 − 4ε)) ∈ [−a, −a/2]`
 (`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
-@[tmio T, powerlib_foundation] theorem eigen_bounds {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
+@[tmio T, powerlib_foundation] theorem eigen_fast_bounds {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
     (hd : 4 * b ≤ a ^ 2) :
     let s := Real.sqrt (1 - 4 * (b / a ^ 2))
-    (-a ≤ -(a / 2) * (1 + s) ∧ -(a / 2) * (1 + s) ≤ -(a / 2)) ∧
-      (-(2 * b / a) ≤ -(a / 2) * (1 - s) ∧ -(a / 2) * (1 - s) ≤ -(b / a)) := by
+    (-a ≤ -(a / 2) * (1 + s)) ∧ -(a / 2) * (1 + s) ≤ -(a / 2) := by
+  intro s
+  have h1 : 0 ≤ 1 - 4 * (b / a ^ 2) := by
+    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
+    linarith
+  have hs : s ^ 2 = 1 - 4 * (b / a ^ 2) := Real.sq_sqrt h1
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  have hs1 : s ≤ 1 := by nlinarith [div_nonneg hb (sq_nonneg a)]
+  exact ⟨by nlinarith, by nlinarith⟩
+
+/-- Slow eigenvalue bounds: `λ₊ = −(a/2)(1 − √(1 − 4ε)) ∈ [−2b/a, −b/a]`
+(`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
+@[tmio T, powerlib_foundation] theorem eigen_slow_bounds {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
+    (hd : 4 * b ≤ a ^ 2) :
+    let s := Real.sqrt (1 - 4 * (b / a ^ 2))
+    (-(2 * b / a) ≤ -(a / 2) * (1 - s)) ∧ -(a / 2) * (1 - s) ≤ -(b / a) := by
   intro s
   have h1 : 0 ≤ 1 - 4 * (b / a ^ 2) := by
     rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
@@ -324,7 +372,7 @@ Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
   have hkey : a / 2 * (1 - s) * (1 + s) = 2 * b / a := by
     have : (1 - s) * (1 + s) = 4 * (b / a ^ 2) := by nlinarith
     rw [mul_assoc, this]; field_simp; ring
-  refine ⟨⟨by nlinarith, by nlinarith⟩, ?_, ?_⟩
+  constructor
   · -- `a/2 (1 − s) = (2b/a)/(1 + s) ≤ 2b/a`
     have h2 : a / 2 * (1 - s) ≤ 2 * b / a := by
       have : 0 ≤ a / 2 * (1 - s) := by nlinarith

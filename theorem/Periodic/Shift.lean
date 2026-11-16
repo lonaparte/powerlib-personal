@@ -39,7 +39,8 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
     transition (fun r => A (r + c)) t s = transition A (t + c) (s + c) := by
   have hAc : Continuous fun r => A (r + c) := hA.comp (continuous_id.add continuous_const)
   have hMc : ∀ r, ‖(fun r => A (r + c)) r‖ ≤ M := fun r => hM (r + c)
-  obtain ⟨h1, hΦ⟩ := transition_spec hA hM (s + c)
+  have h1 := transition_self hA hM (s + c)
+  have hΦ := isIntegralCurveOn_transition hA hM (s + c)
   have hY : IsIntegralCurveOn (fun r => transition A (r + c) (s + c))
       (matField fun r => A (r + c)) (Ici s) := by
     intro r hr

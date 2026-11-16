@@ -14,8 +14,8 @@ Model boundary.
 Source: work-sync projects/vsc-parametric-oscillation/notes/theory-draft.md §2.1.3.
 
 Results.
-* `forcedAmplitude_oscillator`, `forced_q_solves` — first-order forced response (linear part,
-  fixed equilibrium `q = 0`): with `A₀ = !![0, 1; −ω₀², −2ζω₀]`, `b = (0, F)` and
+* `forcedAmplitude_oscillator`, `forced_q_eq_re`, `forced_q_solves` — first-order forced response
+  (linear part, fixed equilibrium `q = 0`): with `A₀ = !![0, 1; −ω₀², −2ζω₀]`, `b = (0, F)` and
   `D = ω₀² − ω_p² + 2jζω₀ω_p ≠ 0`, the state-space amplitude is `χ = (Q, jω_p Q)` with
   `Q = F/D`, so `q₁(t) = Re(Q e^{jω_p t})` solves `q̈ + 2ζω₀q̇ + ω₀²q = F cos(ω_p t)`.
 * `hasFDerivAt_field`, `jacobian_indep_of_a_zero` — variational equation: the state Jacobian of
@@ -84,7 +84,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
   · simp only [forcing, drive]
     simp [Complex.exp_re, Complex.mul_re]
 
-/-- The first-order forced displacement `q₁(t) = Re(Q e^{jω_p t})` solves the linear oscillator
+/-- The first-order forced displacement `q₁` solves the linear oscillator
 `q̈ + 2ζω₀ q̇ + ω₀² q = F cos(ω_p t)` (written as a first-order system for `(q₁, q̇₁)`). -/
 @[tmio M, powerlib_foundation] theorem forced_q_solves {ζ ω₀ ωp : ℝ} (F : ℝ) (hD : denom ζ ω₀ ωp ≠ 0)
     (t : ℝ) :
@@ -92,21 +92,25 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
         (forcedOrbit (linPart ζ ω₀) (drive F) ωp t 1) t ∧
       HasDerivAt (fun s => forcedOrbit (linPart ζ ω₀) (drive F) ωp s 1)
         (-(2 * ζ * ω₀) * forcedOrbit (linPart ζ ω₀) (drive F) ωp t 1 -
-          ω₀ ^ 2 * forcedOrbit (linPart ζ ω₀) (drive F) ωp t 0 + F * Real.cos (ωp * t)) t ∧
-      forcedOrbit (linPart ζ ω₀) (drive F) ωp t 0 =
-        ((F : ℂ) / denom ζ ω₀ ωp * Complex.exp ((ωp : ℂ) * t * I)).re := by
+          ω₀ ^ 2 * forcedOrbit (linPart ζ ω₀) (drive F) ωp t 0 + F * Real.cos (ωp * t)) t := by
   have hdet : (Linear.characteristicMatrix (linPart ζ ω₀) ((ωp : ℂ) * I)).det ≠ 0 := by
     rw [det_characteristicMatrix_linPart]; exact hD
   have h := forcedOrbit_solves (drive F) hdet t
   rw [Dynamics.hasDerivAt_iff_coords] at h
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_⟩
   · convert h 0 using 1
     simp [forcing_drive, linPart, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   · convert h 1 using 1
     simp [forcing_drive, linPart, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
     ring
-  · simp only [forcedOrbit, forcedAmplitude_oscillator F hD]
-    rfl
+
+/-- The first-order forced displacement is `q₁(t) = Re(Q e^{jω_p t})`, `Q = F/D`. -/
+@[tmio M, powerlib_foundation] theorem forced_q_eq_re {ζ ω₀ ωp : ℝ} (F : ℝ)
+    (hD : denom ζ ω₀ ωp ≠ 0) (t : ℝ) :
+    forcedOrbit (linPart ζ ω₀) (drive F) ωp t 0 =
+      ((F : ℂ) / denom ζ ω₀ ωp * Complex.exp ((ωp : ℂ) * t * I)).re := by
+  simp only [forcedOrbit, forcedAmplitude_oscillator F hD]
+  rfl
 
 /-- State Jacobian of the full field: `!![0, 1; −(ω₀² + 2a q), −2ζω₀]`. -/
 @[tmio M, powerlib_foundation] theorem hasFDerivAt_field (ζ ω₀ a F ωp t : ℝ) (y : State 2) :

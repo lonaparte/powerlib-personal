@@ -27,7 +27,8 @@ Results.
 * Transcritical: equilibria `0, μ` (`transField_eq_zero_iff`); exchange of stability
   (`f_x(0) = μ`, `f_x(μ) = −μ`; `trans_stability_neg`, `trans_stability_pos`).
 * Supercritical pitchfork: equilibria `0` and `±√μ` (`μ > 0`, `superField_eq_zero_iff`);
-  `f_x(0) = μ`, `f_x(±√μ) = −2μ` (`super_slopes`); `0` is locally exponentially stable for
+  `f_x(0) = μ`, `f_x(±√μ) = −2μ` (`super_slope_zero`, `super_slope_sqrt`,
+  `super_slope_neg_sqrt`); `0` is locally exponentially stable for
   `μ < 0` and unstable for `μ > 0` (`super_origin_stable`, `super_origin_unstable`), where `±√μ`
   are locally exponentially stable (`super_branch_stable`).
 * At `μ = 0`: the origin of `ẋ = −x³` is globally asymptotically stable (`V = x²`,
@@ -138,12 +139,23 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
   have hfac : superField μ x = x * Fold.field μ x := by simp [superField, Fold.field]; ring
   rw [hfac, mul_eq_zero, Fold.field_eq_zero_iff]
 
-/-- Linearization slopes: `f_x(0) = μ`, `f_x(±√μ) = −2μ` (`μ ≥ 0`). -/
-@[tmio M, powerlib_foundation] theorem super_slopes {μ : ℝ} (hμ : 0 ≤ μ) :
-    deriv (superField μ) 0 = μ ∧ deriv (superField μ) √μ = -2 * μ ∧
-      deriv (superField μ) (-√μ) = -2 * μ := by
-  simp only [deriv_superField, neg_sq, Real.sq_sqrt hμ]
-  refine ⟨by ring, by ring, by ring⟩
+/-- Linearization slope at the origin: `f_x(0) = μ`. -/
+@[tmio M, powerlib_foundation] theorem super_slope_zero (μ : ℝ) :
+    deriv (superField μ) 0 = μ := by
+  rw [deriv_superField]
+  ring
+
+/-- Linearization slope at the branch `√μ`: `f_x(√μ) = −2μ` (`μ ≥ 0`). -/
+@[tmio M, powerlib_foundation] theorem super_slope_sqrt {μ : ℝ} (hμ : 0 ≤ μ) :
+    deriv (superField μ) √μ = -2 * μ := by
+  rw [deriv_superField, Real.sq_sqrt hμ]
+  ring
+
+/-- Linearization slope at the branch `−√μ`: `f_x(−√μ) = −2μ` (`μ ≥ 0`). -/
+@[tmio M, powerlib_foundation] theorem super_slope_neg_sqrt {μ : ℝ} (hμ : 0 ≤ μ) :
+    deriv (superField μ) (-√μ) = -2 * μ := by
+  rw [deriv_superField, neg_sq, Real.sq_sqrt hμ]
+  ring
 
 @[tmio TM, powerlib_foundation] theorem super_origin_stable {μ : ℝ} (hμ : μ < 0) :
     LocallyExponentiallyStable (superSystem μ) (embed 0) :=
@@ -158,7 +170,8 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 @[tmio TM, powerlib_foundation] theorem super_branch_stable {μ : ℝ} (hμ : 0 < μ) :
     LocallyExponentiallyStable (superSystem μ) (embed √μ) ∧
       LocallyExponentiallyStable (superSystem μ) (embed (-√μ)) := by
-  obtain ⟨-, h1, h2⟩ := super_slopes hμ.le
+  have h1 := super_slope_sqrt hμ.le
+  have h2 := super_slope_neg_sqrt hμ.le
   refine ⟨lift_locallyExponentiallyStable (superField_contDiff μ)
       ((superField_eq_zero_iff μ _).mpr (Or.inr ⟨hμ.le, Or.inl rfl⟩)) (by rw [h1]; linarith),
     lift_locallyExponentiallyStable (superField_contDiff μ)

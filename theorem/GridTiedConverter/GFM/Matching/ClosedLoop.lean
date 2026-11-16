@@ -66,12 +66,13 @@ Reduction (static and generic results; Rules §5):
   `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary differentiable `θ`, `z`.
 * `field_reduce` (static): the reduced field at `reduce X = (v_dc, R_θᵀ i_αβ, R_θᵀ v_αβ)`, with
   load `s_dq = R_θᵀ s_αβ`, equals the stationary field `F = abField X` transformed by that chain
-  rule; and `R_θᵀ s_αβ` has zero rotating-frame derivative. `abField_smooth` (static): the
-  stationary field is `C¹` (used by its explicit Euler integration,
-  `theorem/GridTiedConverter/GFM/Matching/Euler.lean`). `field_reduce` and the chain rule together
-  give the private trajectory statement `reduce_isTrajectoryOn` (implementation evidence: every
-  stationary-frame solution segment is mapped by `reduce` to a solution segment of the reduced model
-  with the constant load `s_dq` it starts with).
+  rule; `abField_load_stationary` (static): `R_θᵀ s_αβ` has zero rotating-frame derivative under
+  `F`. `abField_smooth` (static): the stationary field is `C¹` (used by its explicit Euler
+  integration, `theorem/GridTiedConverter/GFM/Matching/Euler.lean`). `field_reduce`,
+  `abField_load_stationary` and the chain rule together give the private trajectory statement
+  `reduce_isTrajectoryOn` (implementation evidence: every stationary-frame solution segment is
+  mapped by `reduce` to a solution segment of the reduced model with the constant load `s_dq` it
+  starts with).
 
 Family and connection conclusions.
 * `family : Family Model Requirement 5 3`: a model is read as the port system of its reduced field
@@ -509,11 +510,12 @@ asymptotic stability). -/
   unfold TMIO.Statement
   rw [(connection_proof% (Family.mem_den (F := family)))]
   change Flow.GloballyExponentiallyStable m.system.zeroInput 0
-  obtain ⟨aW, haW, bW, -, hW⟩ := Flow.quadratic_bounds m.dissipation (dissipation_continuous m)
+  obtain ⟨aW, haW, hW⟩ := Flow.quadratic_lower_bound m.dissipation (dissipation_continuous m)
     (dissipation_homogeneous m) (fun z hz => dissipation_pos m hR hG hδ z hz)
-  obtain ⟨aV, haV, bV, hbV, hV⟩ := Flow.quadratic_bounds m.energy (energy_smooth m).continuous
+  obtain ⟨aV, haV, hVlo⟩ := Flow.quadratic_lower_bound m.energy (energy_smooth m).continuous
     (energy_homogeneous m) (fun z hz => energy_pos m hCdc hL hC z hz)
-  have hbVpos : 0 < bV := lt_of_lt_of_le haV hbV
+  obtain ⟨bV, hbVpos, hVhi⟩ := Flow.quadratic_upper_bound m.energy (energy_smooth m).continuous
+    (energy_homogeneous m) (fun z hz => energy_pos m hCdc hL hC z hz)
   let c : Flow.QuadraticDecay m.system.zeroInput m.energy 0 :=
     { lower := aV
       upper := bV
@@ -526,16 +528,16 @@ asymptotic stability). -/
         show m.field (0 + m.point) 0 = 0
         rw [zero_add]
         exact he
-      lower_bound := fun x => by rw [sub_zero]; exact (hV x).1
-      upper_bound := fun x => by rw [sub_zero]; exact (hV x).2
+      lower_bound := fun x => by rw [sub_zero]; exact hVlo x
+      upper_bound := fun x => by rw [sub_zero]; exact hVhi x
       dissipation := fun x => by
         show fderiv ℝ m.energy x (m.system.field x 0) ≤ _
         rw [energy_lie m hCdc.ne' hL.ne' hC.ne' he x 0]
         simp only [Pi.zero_apply, zero_mul, add_zero]
-        have h1 := (hW x).1
+        have h1 := hW x
         have h2 : aW / bV * m.energy x ≤ aW * ‖x‖ ^ 2 :=
           calc aW / bV * m.energy x ≤ aW / bV * (bV * ‖x‖ ^ 2) :=
-                mul_le_mul_of_nonneg_left (hV x).2 (div_nonneg haW.le hbVpos.le)
+                mul_le_mul_of_nonneg_left (hVhi x) (div_nonneg haW.le hbVpos.le)
             _ = aW * ‖x‖ ^ 2 := by field_simp
         linarith }
   exact c.globallyExponentiallyStable (zeroInput_smooth m)
@@ -727,8 +729,7 @@ def Model.withLoad (m : Model) (sd sq : ℝ) : Model := { m with sd := sd, sq :=
 
 /-- The reduced field is the stationary field in the coordinates of `θ`: each reduced component
 equals the rotating-frame chain rule applied to the stationary field, with the load source
-`s_dq = R_θᵀ s_αβ`, whose own rotating-frame derivative vanishes. Static evidence on the model,
-not a connection conclusion. -/
+`s_dq = R_θᵀ s_αβ`. Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_reduce (m : Model) (X : State 8) :
     let F := m.abField X
     let m' := m.withLoad (rotD (X 0) (X 6) (X 7)) (rotQ (X 0) (X 6) (X 7))
@@ -736,12 +737,10 @@ not a connection conclusion. -/
     m'.field (reduce X) 0 1 = rotD (X 0) (F 2) (F 3) + F 0 * rotQ (X 0) (X 2) (X 3) ∧
     m'.field (reduce X) 0 2 = rotQ (X 0) (F 2) (F 3) - F 0 * rotD (X 0) (X 2) (X 3) ∧
     m'.field (reduce X) 0 3 = rotD (X 0) (F 4) (F 5) + F 0 * rotQ (X 0) (X 4) (X 5) ∧
-    m'.field (reduce X) 0 4 = rotQ (X 0) (F 4) (F 5) - F 0 * rotD (X 0) (X 4) (X 5) ∧
-    rotD (X 0) (F 6) (F 7) + F 0 * rotQ (X 0) (X 6) (X 7) = 0 ∧
-    rotQ (X 0) (F 6) (F 7) - F 0 * rotD (X 0) (X 6) (X 7) = 0 := by
+    m'.field (reduce X) 0 4 = rotQ (X 0) (F 4) (F 5) - F 0 * rotD (X 0) (X 4) (X 5) := by
   intro F m'
   have hsc := Real.sin_sq_add_cos_sq (X 0)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [F, m', Model.field, Model.abField, Model.withLoad, reduce, rotD, rotQ,
       div_eq_mul_inv, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.cons_val_two, Matrix.cons_val_three, Matrix.cons_val_four, Matrix.cons_val,
@@ -751,8 +750,19 @@ not a connection conclusion. -/
   · linear_combination (-(m.μ / 2) * X 1 * m.L⁻¹) * hsc
   · ring
   · ring
-  · ring
-  · ring
+
+/-- The load oscillator of the stationary field keeps the load phasor `R_θᵀ s_αβ` stationary:
+its rotating-frame chain-rule derivative vanishes (`d` and `q` components). Static evidence on
+the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem abField_load_stationary (m : Model) (X : State 8) :
+    let F := m.abField X
+    rotD (X 0) (F 6) (F 7) + F 0 * rotQ (X 0) (X 6) (X 7) = 0 ∧
+      rotQ (X 0) (F 6) (F 7) - F 0 * rotD (X 0) (X 6) (X 7) = 0 := by
+  intro F
+  refine ⟨?_, ?_⟩ <;>
+    simp only [F, Model.abField, rotD, rotQ, PiLp.toLp_apply, Matrix.cons_val_zero,
+      Matrix.cons_val] <;>
+    ring
 
 /-- The stationary-frame closed loop is `C¹`. Static evidence on the model, not a connection
 conclusion. -/
@@ -805,13 +815,13 @@ Implementation evidence: trajectory-level result outside the sentence language (
       HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
     intro t ht
     have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).1
-    rw [(field_reduce m (X t)).2.2.2.2.2.1] at h
+    rw [(abField_load_stationary m (X t)).1] at h
     exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
   have hzQ : ∀ t ∈ Set.Ico a b,
       HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
     intro t ht
     have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).2
-    rw [(field_reduce m (X t)).2.2.2.2.2.2] at h
+    rw [(abField_load_stationary m (X t)).2] at h
     exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
   intro t ht
   exact ⟨constant_of_has_deriv_right_zero hcontD hzD t ht,
@@ -840,7 +850,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hconst := load_const m hX
   intro t ht
   obtain ⟨hD, hQ⟩ := hconst t ht
-  obtain ⟨f0, f1, f2, f3, f4, -, -⟩ := field_reduce m (X t)
+  obtain ⟨f0, f1, f2, f3, f4⟩ := field_reduce m (X t)
   simp only [hD, hQ] at f0 f1 f2 f3 f4
   have d0 : HasDerivWithinAt (fun τ => reduce (X τ) 0)
       ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field

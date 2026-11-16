@@ -50,9 +50,10 @@ Results.
   memberships, below): for `V, k_p, k_i, ω_s > 0`,
   `D₀ > 0`, `cos θ > 0`: `tan θ < ω_s k_p / k_i` ⇒ locally exponentially stable,
   `tan θ > ω_s k_p / k_i` ⇒ unstable.  `det J = k_i V cos θ / D₀ > 0` always holds, so
-  `tan θ_H = ω_s k_p / k_i` is the stability boundary; on it the Jacobian has the purely
-  imaginary pair `± j √det J` (`imaginary_pair_at_boundary`; a Hopf *candidate* — no
-  transversality or Lyapunov-coefficient claim is made).
+  `tan θ_H = ω_s k_p / k_i` is the stability boundary; on it `tr J = 0`
+  (`trace_jac_eq_zero_of_tan_eq`) and the Jacobian has the purely imaginary pair `± j √det J`
+  (`imaginary_pair_at_boundary`; a Hopf *candidate* — no transversality or Lyapunov-coefficient
+  claim is made).
 * `zeta_ratio`: damping ratio of the rate-coupled Jacobian over the quasi-static closed form
   `(k_p/2) √(V cos θ / k_i)` equals `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`.
 * `jacobian_indep_Xg`: at a fixed equilibrium angle the Jacobian does not depend on `X_g`
@@ -291,19 +292,24 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rw [Criteria.isHurwitz_fin_two_iff, trace_jac_neg_iff p hD0 hV hki hωs hcos heq]
   exact ⟨fun h => h.1, fun h => ⟨h, det_jac_pos p hD0 hV hki hcos⟩⟩
 
-/-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has the imaginary pair `± j√det`. -/
+/-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has zero trace. -/
+@[tmio M, powerlib_domain] theorem trace_jac_eq_zero_of_tan_eq (_hD0 : 0 < p.D0) (_hV : 0 < p.V)
+    (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
+    (jac p θ).trace = 0 := by
+  rw [Real.tan_eq_sin_div_cos, div_eq_div_iff hcos.ne' hki.ne'] at htan
+  rw [trace_jac_eq p hωs.ne' heq]
+  have : p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ = 0 := by linarith
+  rw [this, mul_zero, zero_div]
+
+/-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has the imaginary pair `± j√det`
+(`det J > 0` is `det_jac_pos`). -/
 @[tmio M, powerlib_domain] theorem imaginary_pair_at_boundary (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
-    (jac p θ).trace = 0 ∧ 0 < (jac p θ).det ∧
-      (Linear.characteristicMatrix (jac p θ) (Complex.I * Real.sqrt (jac p θ).det)).det = 0 := by
-  have htr : (jac p θ).trace = 0 := by
-    rw [Real.tan_eq_sin_div_cos, div_eq_div_iff hcos.ne' hki.ne'] at htan
-    rw [trace_jac_eq p hωs.ne' heq]
-    have : p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ = 0 := by linarith
-    rw [this, mul_zero, zero_div]
+    (Linear.characteristicMatrix (jac p θ) (Complex.I * Real.sqrt (jac p θ).det)).det = 0 := by
+  have htr := trace_jac_eq_zero_of_tan_eq p hD0 hV hki hωs hcos heq htan
   have hdet := det_jac_pos p hD0 hV hki hcos
-  refine ⟨htr, hdet, ?_⟩
   have hs : ((Real.sqrt (jac p θ).det : ℝ) : ℂ) ^ 2 = ((jac p θ).det : ℂ) := by
     rw [← Complex.ofReal_pow, Real.sq_sqrt hdet.le]
   rw [Criteria.det_characteristicMatrix_fin_two, htr, mul_pow, Complex.I_sq, hs]

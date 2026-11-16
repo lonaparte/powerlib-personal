@@ -29,9 +29,10 @@ Source: standard spectral mapping for polynomial and Möbius images of a matrix;
 Results.
 * Polynomial images: `mulVec_aeval_of_eigen` (an eigenpair `(μ, v)` of `M` gives `(p(μ), v)` for
   `p(M)`, over any commutative ring), `mulVec_pow_of_eigen`.
-* Möbius images: `eigen_mobius` (an eigenpair `(λ, v)` of `A` gives `γ λ + δ ≠ 0` and the eigenpair
-  `((α λ + β)/(γ λ + δ), v)` of `M`, when `γ A + δ` is invertible), `exists_eigen_of_mobius` (every
-  eigenpair of `M` is such an image, when `α δ − β γ ≠ 0`), and `forall_eigen_mobius_iff`: a
+* Möbius images: `eigen_mobius_denom_ne_zero`, `eigen_mobius` (an eigenpair `(λ, v)` of `A` gives
+  `γ λ + δ ≠ 0` and the eigenpair `((α λ + β)/(γ λ + δ), v)` of `M`, when `γ A + δ` is
+  invertible), `exists_eigen_of_mobius` (every eigenpair of `M` is such an image, when
+  `α δ − β γ ≠ 0`), and `forall_eigen_mobius_iff`: a
   property holds for every eigenvalue of `M` exactly when it holds for the image of every
   eigenvalue of `A`. `isUnit_det_affine_of_forall_eigen`: `γ A + δ` is invertible when no eigenvalue
   has `γ λ + δ = 0`. Instances: `isHurwitz_mobius_iff`, `schurStable_mobius_iff`; positive
@@ -116,21 +117,29 @@ omit [Fintype ι] in
   rw [h]
   exact hQ.map _
 
+/-- **Eigenvalues of a Möbius image, denominator.** Let `(γ A + δ) M = α A + β` with `γ A + δ`
+invertible. An eigenpair `(λ, v)` of `A` has `γ λ + δ ≠ 0`. -/
+@[tmio T, powerlib_foundation] theorem eigen_mobius_denom_ne_zero {A M : Matrix ι ι ℝ}
+    {α β γ δ : ℝ} (hQ : IsUnit (γ • A + δ • 1).det) (_hM : (γ • A + δ • 1) * M = α • A + β • 1)
+    {lam : ℂ} {v : ι → ℂ} (hv : v ≠ 0) (h : complexify A *ᵥ v = lam • v) :
+    (γ : ℂ) * lam + δ ≠ 0 := by
+  have hQv := complexify_affine_mulVec h γ δ
+  have hinj := Matrix.mulVec_injective_iff_isUnit.mpr (isUnit_complexify hQ)
+  intro h0
+  rw [h0, zero_smul] at hQv
+  exact hv (hinj (hQv.trans (Matrix.mulVec_zero _).symm))
+
 /-- **Eigenvalues of a Möbius image, forward.** Let `(γ A + δ) M = α A + β` with `γ A + δ`
-invertible. An eigenpair `(λ, v)` of `A` has `γ λ + δ ≠ 0`, and `((α λ + β)/(γ λ + δ), v)` is an
-eigenpair of `M`. -/
+invertible. For an eigenpair `(λ, v)` of `A`, `((α λ + β)/(γ λ + δ), v)` is an eigenpair of `M`
+(the denominator is nonzero, `eigen_mobius_denom_ne_zero`). -/
 @[tmio T, powerlib_foundation] theorem eigen_mobius {A M : Matrix ι ι ℝ} {α β γ δ : ℝ}
     (hQ : IsUnit (γ • A + δ • 1).det) (hM : (γ • A + δ • 1) * M = α • A + β • 1) {lam : ℂ}
     {v : ι → ℂ} (hv : v ≠ 0) (h : complexify A *ᵥ v = lam • v) :
-    (γ : ℂ) * lam + δ ≠ 0 ∧
-      complexify M *ᵥ v = (((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)) • v := by
+    complexify M *ᵥ v = (((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)) • v := by
   have hQv := complexify_affine_mulVec h γ δ
   have hinj := Matrix.mulVec_injective_iff_isUnit.mpr (isUnit_complexify hQ)
-  have hq : (γ : ℂ) * lam + δ ≠ 0 := by
-    intro h0
-    rw [h0, zero_smul] at hQv
-    exact hv (hinj (hQv.trans (Matrix.mulVec_zero _).symm))
-  refine ⟨hq, hinj ?_⟩
+  have hq : (γ : ℂ) * lam + δ ≠ 0 := eigen_mobius_denom_ne_zero hQ hM hv h
+  refine hinj ?_
   change complexify (γ • A + δ • 1) *ᵥ (complexify M *ᵥ v) =
     complexify (γ • A + δ • 1) *ᵥ ((((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)) • v)
   rw [Matrix.mulVec_mulVec, ← complexify_mul, hM, complexify_affine_mulVec h, Matrix.mulVec_smul,
@@ -183,7 +192,7 @@ and `α δ − β γ ≠ 0`, a property holds for every eigenvalue of `M` exactl
         P (((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)) := by
   constructor
   · intro hP lam v hv h
-    exact hP _ v hv (eigen_mobius hQ hM hv h).2
+    exact hP _ v hv (eigen_mobius hQ hM hv h)
   · intro hP μ v hv h
     obtain ⟨lam, hA, -, rfl⟩ := exists_eigen_of_mobius hdet hM hv h
     exact hP lam v hv hA

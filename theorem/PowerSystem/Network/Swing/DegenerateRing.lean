@@ -18,7 +18,7 @@ Model boundary.
   `Bₑ = √(Wₑ² + fₑ²)`), power `Pₖ = fₖ − fₖ₋₁`, angles `θₖ = arg wₖ` of the Gaussian-integer
   node phasors `w₀ = 1`, `wₖ₊₁ = wₖ conj(zₖ)`, `zₑ = Wₑ + i fₑ` (the product of the `zₑ` is real
   positive, so the ring closes). For more machines, unit leaves are attached to machine `0`
-  (`addLeaf`, `degenerate_addLeaf`).
+  (`addLeaf`; `powerBalance_addLeaf`, `strictMin_addLeaf`, `kernel_addLeaf`).
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7, §2.2 (swing network and its
 energy); the characterization of local asymptotic stability is
@@ -35,9 +35,10 @@ Results.
   Hurwitz.
 * `not_exact_locallyAsymptoticallyStable`: for every number of machines `n + 5 ≥ 5` the local
   asymptotic translation `{powerFlow, jacobianStable}` of `Swing.family` is not exact.
-* Static evidence: `norm_mul_cos_arg_sub` (line angles from node phasors), `Ring5.balance`,
-  `Ring5.potential_ring`, `Ring5.crit_ring`, `Ring5.kernel_ring`, `Ring5.ring_gamma`,
-  `Ring5.ring_strictMin`, `degenerate_addLeaf`, `exists_degenerate`, `not_isHurwitz_of_kernel`.
+* Static evidence: `norm_mul_cos_arg_sub`, `norm_mul_sin_arg_sub` (line angles from node
+  phasors), `Ring5.balance`, `Ring5.potential_ring`, `Ring5.crit_ring`, `Ring5.kernel_ring`,
+  `Ring5.ring_gamma`, `Ring5.ring_strictMin`, `powerBalance_addLeaf`, `strictMin_addLeaf`,
+  `kernel_addLeaf`, `exists_degenerate`, `not_isHurwitz_of_kernel`.
 
 Family and connection conclusions.
 * Public behavioural conclusions are `connection%` statements on `Swing.family`; everything else
@@ -53,12 +54,11 @@ open powerlib.Network.Swing.CycleMinimum (edgeG edgeD edgeQ amp)
 
 variable {n : ℕ}
 
-/-- Line angle from node phasors: if `a · conj b = λ z` with `λ > 0`, then
-`‖z‖ cos(arg a − arg b) = Re z` and `‖z‖ sin(arg a − arg b) = Im z`. -/
-@[tmio T, powerlib_foundation] theorem norm_mul_cos_arg_sub {a b z : ℂ} {lam : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
-    (hl : 0 < lam) (h : a * conj b = lam * z) :
-    ‖z‖ * Real.cos (Complex.arg a - Complex.arg b) = z.re ∧
-      ‖z‖ * Real.sin (Complex.arg a - Complex.arg b) = z.im := by
+/-- Line angle from node phasors, cosine part: if `a · conj b = λ z` with `λ > 0`, then
+`‖z‖ cos(arg a − arg b) = Re z`. -/
+@[tmio T, powerlib_foundation] theorem norm_mul_cos_arg_sub {a b z : ℂ} {lam : ℝ} (ha : a ≠ 0)
+    (hb : b ≠ 0) (hl : 0 < lam) (h : a * conj b = lam * z) :
+    ‖z‖ * Real.cos (Complex.arg a - Complex.arg b) = z.re := by
   have hz : z ≠ 0 := by
     intro hz; rw [hz, mul_zero] at h
     exact mul_ne_zero ha ((map_ne_zero _).mpr hb) h
@@ -74,19 +74,35 @@ variable {n : ℕ}
     have := congrArg Complex.re h
     simp [Complex.mul_re] at this
     linarith
+  rw [Real.cos_sub, Complex.cos_arg ha, Complex.cos_arg hb, Complex.sin_arg, Complex.sin_arg]
+  have e : a.re / ‖a‖ * (b.re / ‖b‖) + a.im / ‖a‖ * (b.im / ‖b‖) =
+      (a.re * b.re + a.im * b.im) / (‖a‖ * ‖b‖) := by field_simp
+  rw [e, hre, hn]; field_simp
+
+/-- Line angle from node phasors, sine part: if `a · conj b = λ z` with `λ > 0`, then
+`‖z‖ sin(arg a − arg b) = Im z`. -/
+@[tmio T, powerlib_foundation] theorem norm_mul_sin_arg_sub {a b z : ℂ} {lam : ℝ} (ha : a ≠ 0)
+    (hb : b ≠ 0) (hl : 0 < lam) (h : a * conj b = lam * z) :
+    ‖z‖ * Real.sin (Complex.arg a - Complex.arg b) = z.im := by
+  have hz : z ≠ 0 := by
+    intro hz; rw [hz, mul_zero] at h
+    exact mul_ne_zero ha ((map_ne_zero _).mpr hb) h
+  have hna := norm_pos_iff.mpr ha
+  have hnb := norm_pos_iff.mpr hb
+  have hnz := norm_pos_iff.mpr hz
+  have hn : ‖a‖ * ‖b‖ = lam * ‖z‖ := by
+    have := congrArg norm h
+    rw [norm_mul, Complex.norm_conj, norm_mul, Complex.norm_real, Real.norm_of_nonneg hl.le]
+      at this
+    exact this
   have him : a.im * b.re - a.re * b.im = lam * z.im := by
     have := congrArg Complex.im h
     simp [Complex.mul_im] at this
     linarith
-  rw [Real.cos_sub, Real.sin_sub, Complex.cos_arg ha, Complex.cos_arg hb, Complex.sin_arg,
-    Complex.sin_arg]
-  constructor
-  · have e : a.re / ‖a‖ * (b.re / ‖b‖) + a.im / ‖a‖ * (b.im / ‖b‖) =
-        (a.re * b.re + a.im * b.im) / (‖a‖ * ‖b‖) := by field_simp
-    rw [e, hre, hn]; field_simp
-  · have e : a.im / ‖a‖ * (b.re / ‖b‖) - a.re / ‖a‖ * (b.im / ‖b‖) =
-        (a.im * b.re - a.re * b.im) / (‖a‖ * ‖b‖) := by field_simp
-    rw [e, him, hn]; field_simp
+  rw [Real.sin_sub, Complex.cos_arg ha, Complex.cos_arg hb, Complex.sin_arg, Complex.sin_arg]
+  have e : a.im / ‖a‖ * (b.re / ‖b‖) - a.re / ‖a‖ * (b.im / ‖b‖) =
+      (a.im * b.re - a.re * b.im) / (‖a‖ * ‖b‖) := by field_simp
+  rw [e, him, hn]; field_simp
 
 /-- A lossless line with weight `W = B cos φ` and flow `f = B sin φ`: its potential increment is
 the cycle edge potential. -/
@@ -139,10 +155,17 @@ def Br (i j : Fin 5) : ℝ := if j = i + 1 then Ar i else if i = j + 1 then Ar j
 @[tmio M, powerlib_domain] theorem norm_zr (e : Fin 5) : ‖zr e‖ = Ar e := by
   rw [Complex.norm_eq_sqrt_sq_add_sq]; rfl
 
-/-- `Bₑ cos(θₑ − θₑ₊₁) = Wₑ`, `Bₑ sin(θₑ − θₑ₊₁) = fₑ`. -/
-@[tmio M, powerlib_domain] theorem line_trig (e : Fin 5) :
-    Ar e * Real.cos (θr e - θr (e + 1)) = Wr e ∧ Ar e * Real.sin (θr e - θr (e + 1)) = fr e := by
+/-- `Bₑ cos(θₑ − θₑ₊₁) = Wₑ`. -/
+@[tmio M, powerlib_domain] theorem line_cos (e : Fin 5) :
+    Ar e * Real.cos (θr e - θr (e + 1)) = Wr e := by
   have h := norm_mul_cos_arg_sub (wr_ne e) (wr_ne (e + 1)) (lamr_pos e) (wr_conj e)
+  rw [norm_zr] at h
+  exact h
+
+/-- `Bₑ sin(θₑ − θₑ₊₁) = fₑ`. -/
+@[tmio M, powerlib_domain] theorem line_sin (e : Fin 5) :
+    Ar e * Real.sin (θr e - θr (e + 1)) = fr e := by
+  have h := norm_mul_sin_arg_sub (wr_ne e) (wr_ne (e + 1)) (lamr_pos e) (wr_conj e)
   rw [norm_zr] at h
   exact h
 
@@ -308,13 +331,20 @@ def params : Params 4 where
   B_symm := Br_symm
   B_nonneg := Br_nonneg
 
-@[tmio M, powerlib_domain] theorem line_trig' (k : Fin 5) :
-    Ar (k - 1) * Real.cos (θr k - θr (k - 1)) = Wr (k - 1) ∧
-      Ar (k - 1) * Real.sin (θr k - θr (k - 1)) = -fr (k - 1) := by
-  have h := line_trig (k - 1)
+/-- The line into machine `k`, seen from `k`: `Bₖ₋₁ cos(θₖ − θₖ₋₁) = Wₖ₋₁`. -/
+@[tmio M, powerlib_domain] theorem line_cos' (k : Fin 5) :
+    Ar (k - 1) * Real.cos (θr k - θr (k - 1)) = Wr (k - 1) := by
+  have h := line_cos (k - 1)
   rw [sub_add_cancel] at h
-  rw [show θr k - θr (k - 1) = -(θr (k - 1) - θr k) by ring, Real.cos_neg, Real.sin_neg]
-  exact ⟨h.1, by rw [mul_neg, h.2]⟩
+  rw [show θr k - θr (k - 1) = -(θr (k - 1) - θr k) by ring, Real.cos_neg]
+  exact h
+
+/-- The line into machine `k`, seen from `k`: `Bₖ₋₁ sin(θₖ − θₖ₋₁) = −fₖ₋₁`. -/
+@[tmio M, powerlib_domain] theorem line_sin' (k : Fin 5) :
+    Ar (k - 1) * Real.sin (θr k - θr (k - 1)) = -fr (k - 1) := by
+  have h := line_sin (k - 1)
+  rw [sub_add_cancel] at h
+  rw [show θr k - θr (k - 1) = -(θr (k - 1) - θr k) by ring, Real.sin_neg, mul_neg, h]
 
 @[tmio M, powerlib_domain] theorem balance :
     connection% ((⟨params, θr⟩ : Model 4) ∈ TMIO.realize Meets {.powerFlow}) := by
@@ -322,7 +352,7 @@ def params : Params 4 where
   change ∀ k, params.P k = powerInjection params.B θr k
   intro k
   show fr k - fr (k - 1) = ∑ j, Br k j * Real.sin (θr k - θr j)
-  rw [sum_Br (fun j => Real.sin (θr k - θr j)) k, (line_trig k).2, (line_trig' k).2]
+  rw [sum_Br (fun j => Real.sin (θr k - θr j)) k, line_sin k, line_sin' k]
   ring
 
 @[tmio M, powerlib_domain] theorem potential_ring (u : Fin (4 + 1) → ℝ) :
@@ -335,8 +365,8 @@ def params : Params 4 where
     intro k
     show ∑ j, Br k j * edgeIncrement (θr k - θr j) (u k - u j) = _
     rw [sum_Br (fun j => edgeIncrement (θr k - θr j) (u k - u j)) k,
-      mul_edgeIncrement (line_trig k).1 (line_trig k).2,
-      mul_edgeIncrement (line_trig' k).1 (line_trig' k).2]
+      mul_edgeIncrement (line_cos k) (line_sin k),
+      mul_edgeIncrement (line_cos' k) (line_sin' k)]
     simp only [edgeG]
     rw [show u k - u (k - 1) = -(u (k - 1) - u k) by ring, Real.cos_neg, Real.sin_neg]
     ring
@@ -356,10 +386,10 @@ def params : Params 4 where
   rw [sum_Br (fun j => Real.sin ((θr + u) k - (θr + u) j)) k]
   simp only [Pi.add_apply]
   rw [show θr k + u k - (θr (k + 1) + u (k + 1)) = (θr k - θr (k + 1)) + (u k - u (k + 1)) by ring,
-    mul_sin_add (line_trig k).1 (line_trig k).2,
+    mul_sin_add (line_cos k) (line_sin k),
     show θr k + u k - (θr (k - 1) + u (k - 1)) =
       -((θr (k - 1) - θr (k - 1 + 1)) + (u (k - 1) - u k)) by rw [sub_add_cancel]; ring,
-    Real.sin_neg, mul_neg, mul_sin_add (line_trig (k - 1)).1 (line_trig (k - 1)).2]
+    Real.sin_neg, mul_neg, mul_sin_add (line_cos (k - 1)) (line_sin (k - 1))]
   ring
 
 @[tmio M, powerlib_domain] theorem crit_ring {u : Fin (4 + 1) → ℝ} (h : ∀ k, params.P k = powerInjection params.B (θr + u) k) :
@@ -386,7 +416,7 @@ def params : Params 4 where
       Br k j * (Real.cos (θr k - θr j) * (ground ![9, 6, 4, 2] k - ground ![9, 6, 4, 2] j)) :=
     fun j => by simp only [flowWeights, of_apply]; rw [mul_assoc]; rfl
   rw [Finset.sum_congr rfl fun j _ => e j, sum_Br, ← mul_assoc, ← mul_assoc,
-    (line_trig k).1, (line_trig' k).1]
+    line_cos k, line_cos' k]
   have h41 : (-1 : Fin 5) = 4 := rfl
   fin_cases k <;> simp [ground, Wr, h41] <;> norm_num
 
@@ -548,23 +578,34 @@ def leafAngle (θ : Fin (n + 1) → ℝ) : Fin (n + 2) → ℝ := Fin.snoc (α :
 @[tmio T, powerlib_foundation] theorem norm_restrict_le (v : Fin (n + 1) → ℝ) : ‖(fun i : Fin n => v i.castSucc)‖ ≤ ‖v‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg v)).mpr fun i => norm_le_pi_norm v i.castSucc
 
-/-- **Adding a leaf machine preserves a degenerate strict minimum.** A unit line from machine `0`
-to a new machine at the same angle, without power, keeps power balance, the strict isolated
-minimum of the potential (the new relative angle adds `1 − cos y`), and a null vector of the
-linearization weights (extended by `0`). -/
-@[tmio M, powerlib_domain] theorem degenerate_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (hbal : ∀ k, p.P k = powerInjection p.B θ k)
+/-- **Adding a leaf machine preserves power balance.** A unit line from machine `0` to a new
+machine at the same angle, without power, keeps `P = p(θ)`. -/
+@[tmio M, powerlib_domain] theorem powerBalance_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (hbal : ∀ k, p.P k = powerInjection p.B θ k) :
+    ∀ k, (addLeaf p).P k = powerInjection (addLeaf p).B (leafAngle θ) k := by
+  intro k
+  refine Fin.lastCases ?_ (fun k => ?_) k
+  · change (addLeaf p).P _ = powerInjection (leafB p.B) _ _
+    rw [powerInjection_leaf_l, leafAngle_l, leafAngle_c]
+    simp [addLeaf]
+  · change (addLeaf p).P _ = powerInjection (leafB p.B) _ _
+    rw [powerInjection_leaf_c]
+    have e : (fun j => leafAngle θ j.castSucc) = θ := by funext j; simp
+    rw [e]
+    simp only [addLeaf, Fin.snoc_castSucc, leafAngle_c, leafAngle_l]
+    split_ifs with h
+    · rw [h, sub_self, Real.sin_zero, add_zero]; exact hbal 0
+    · rw [add_zero]; exact hbal k
+
+/-- **Adding a leaf machine preserves a strict isolated minimum of the potential**: the new
+relative angle adds `1 − cos y`. -/
+@[tmio M, powerlib_domain] theorem strictMin_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hmin : ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧
-        ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k)
-    (hker : ∃ v : Fin n → ℝ, v ≠ 0 ∧
-      ∀ k, ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) = 0) :
-    (∀ k, (addLeaf p).P k = powerInjection (addLeaf p).B (leafAngle θ) k) ∧
-    (∃ r > 0, ∀ v : Fin (n + 1) → ℝ, v ≠ 0 → ‖v‖ < r →
+        ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
+    ∃ r > 0, ∀ v : Fin (n + 1) → ℝ, v ≠ 0 → ‖v‖ < r →
       potential (addLeaf p) (leafAngle θ) < potential (addLeaf p) (leafAngle θ + ground v) ∧
-        ¬ ∀ k, (addLeaf p).P k = powerInjection (addLeaf p).B (leafAngle θ + ground v) k) ∧
-    (∃ v : Fin (n + 1) → ℝ, v ≠ 0 ∧
-      ∀ k, ∑ j, flowWeights (addLeaf p).B (leafAngle θ) k j * (ground v k - ground v j) = 0) := by
+        ¬ ∀ k, (addLeaf p).P k = powerInjection (addLeaf p).B (leafAngle θ + ground v) k := by
   -- the shifted profile in the old coordinates
   have hφ : ∀ v : Fin (n + 1) → ℝ, (fun j => (leafAngle θ + ground v) j.castSucc) =
       θ + ground (fun i => v i.castSucc) := fun v => by
@@ -573,101 +614,96 @@ linearization weights (extended by `0`). -/
     fun v => by simp only [Pi.add_apply, leafAngle_l, ground_l]
   have hφ0 : ∀ v : Fin (n + 1) → ℝ, (leafAngle θ + ground v) (0 : Fin (n + 1)).castSucc = θ 0 :=
     fun v => by simp only [Pi.add_apply, leafAngle_c, ground_c, ground_zero, add_zero]
-  refine ⟨fun k => ?_, ?_, ?_⟩
-  · refine Fin.lastCases ?_ (fun k => ?_) k
-    · change (addLeaf p).P _ = powerInjection (leafB p.B) _ _
-      rw [powerInjection_leaf_l, leafAngle_l, leafAngle_c]
-      simp [addLeaf]
-    · change (addLeaf p).P _ = powerInjection (leafB p.B) _ _
-      rw [powerInjection_leaf_c]
-      have e : (fun j => leafAngle θ j.castSucc) = θ := by funext j; simp
-      rw [e]
-      simp only [addLeaf, Fin.snoc_castSucc, leafAngle_c, leafAngle_l]
-      split_ifs with h
-      · rw [h, sub_self, Real.sin_zero, add_zero]; exact hbal 0
-      · rw [add_zero]; exact hbal k
-  · obtain ⟨r, hr, hv⟩ := hmin
-    have hpotv : ∀ v : Fin (n + 1) → ℝ, potential (addLeaf p) (leafAngle θ + ground v) =
-        potential p (θ + ground (fun i => v i.castSucc)) - Real.cos (v (Fin.last n)) := by
-      intro v
-      rw [potential_leaf, hφ, hφ0, hφl, show θ 0 - (θ 0 + v (Fin.last n)) = -v (Fin.last n) by
-        ring, Real.cos_neg]
-    have hpot0 : potential (addLeaf p) (leafAngle θ) = potential p θ - 1 := by
-      have := hpotv 0
-      simp only [ground_zero_vec, add_zero, Pi.zero_apply, Real.cos_zero] at this
-      rw [show (fun _ : Fin n => (0 : ℝ)) = 0 from rfl, ground_zero_vec, add_zero] at this
-      exact this
-    refine ⟨min r 1, lt_min hr one_pos, fun v hv0 hvr => ?_⟩
-    have hvr' : ‖(fun i : Fin n => v i.castSucc)‖ < r :=
-      (norm_restrict_le v).trans_lt (hvr.trans_le (min_le_left _ _))
-    have hy : |v (Fin.last n)| < 1 := by
-      have := (norm_le_pi_norm v (Fin.last n)).trans_lt (hvr.trans_le (min_le_right _ _))
-      rwa [Real.norm_eq_abs] at this
-    have hy' := abs_lt.mp hy
-    have hpi := Real.two_le_pi
-    refine ⟨?_, fun hcrit => ?_⟩
-    · rw [hpotv, hpot0]
-      by_cases hR : (fun i : Fin n => v i.castSucc) = 0
-      · have hyne : v (Fin.last n) ≠ 0 := fun h => hv0 (eq_zero_of_restrict hR h)
-        have hcos : Real.cos (v (Fin.last n)) < 1 := by
-          refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hyne ?_
-          exact (Real.cos_eq_one_iff_of_lt_of_lt (by linarith) (by linarith)).mp h
-        rw [hR, ground_zero_vec, add_zero]
-        linarith
-      · have := (hv _ hR hvr').1
-        linarith [Real.cos_le_one (v (Fin.last n))]
-    · have hl := hcrit (Fin.last _)
-      change (addLeaf p).P _ = powerInjection (leafB p.B) _ _ at hl
-      rw [powerInjection_leaf_l, hφl, hφ0, add_sub_cancel_left] at hl
-      simp only [addLeaf, Fin.snoc_last] at hl
-      have hy0 : v (Fin.last n) = 0 :=
-        (Real.sin_eq_zero_iff_of_lt_of_lt (by linarith) (by linarith)).mp hl.symm
-      have hR : (fun i : Fin n => v i.castSucc) = 0 := by
-        by_contra hR
-        refine (hv _ hR hvr').2 fun k => ?_
-        have hk := hcrit k.castSucc
-        change (addLeaf p).P _ = powerInjection (leafB p.B) _ _ at hk
-        rw [powerInjection_leaf_c, hφ] at hk
-        simp only [addLeaf, Fin.snoc_castSucc] at hk
-        rw [hk]
-        split_ifs with h0
-        · rw [h0, hφ0, hφl, hy0, add_zero, sub_self, Real.sin_zero, add_zero]
-        · rw [add_zero]
-      exact hv0 (eq_zero_of_restrict hR hy0)
-  · obtain ⟨v, hv0, hker⟩ := hker
-    refine ⟨Fin.snoc (α := fun _ => ℝ) v 0, fun h => hv0 ?_, fun k => ?_⟩
-    · funext i
-      have := congrFun h i.castSucc
-      simpa using this
-    · have hgc : ∀ j : Fin (n + 1), ground (Fin.snoc (α := fun _ => ℝ) v 0) j.castSucc =
-          ground v j := fun j => by
-        rw [ground_c]; congr 1; funext i; simp
-      have hgl : ground (Fin.snoc (α := fun _ => ℝ) v 0) (Fin.last _) = 0 := by
-        rw [ground_l]; simp
-      have hsplit : ∀ k : Fin (n + 2), ∑ j, flowWeights (addLeaf p).B (leafAngle θ) k j *
-          (ground (Fin.snoc (α := fun _ => ℝ) v 0) k - ground (Fin.snoc (α := fun _ => ℝ) v 0) j) =
-          ∑ j : Fin (n + 1), flowWeights (addLeaf p).B (leafAngle θ) k j.castSucc *
-            (ground (Fin.snoc (α := fun _ => ℝ) v 0) k -
-              ground (Fin.snoc (α := fun _ => ℝ) v 0) j.castSucc) +
-          flowWeights (addLeaf p).B (leafAngle θ) k (Fin.last _) *
-            (ground (Fin.snoc (α := fun _ => ℝ) v 0) k -
-              ground (Fin.snoc (α := fun _ => ℝ) v 0) (Fin.last _)) := fun k =>
-        Fin.sum_univ_castSucc _
-      rw [hsplit]
-      refine Fin.lastCases ?_ (fun k => ?_) k
-      · simp only [flowWeights, of_apply, hgc, hgl]
-        change ∑ j : Fin (n + 1), leafB p.B _ _ * _ * _ + leafB p.B _ _ * _ * _ = 0
-        simp only [leafB_lc, leafB_ll, zero_mul, add_zero, ite_mul, one_mul, zero_mul]
-        rw [Finset.sum_ite_eq' Finset.univ (0 : Fin (n + 1))]
-        simp
-      · simp only [flowWeights, of_apply, hgc, hgl]
-        change ∑ j : Fin (n + 1), leafB p.B _ _ * _ * _ + leafB p.B _ _ * _ * _ = 0
-        simp only [leafB_cc, leafB_cl, leafAngle_c, leafAngle_l]
-        rw [show ∑ j : Fin (n + 1), p.B k j * Real.cos (θ k - θ j) * (ground v k - ground v j) =
-          ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) from rfl, hker k]
-        split_ifs with h0
-        · rw [h0]; simp
-        · simp
+  obtain ⟨r, hr, hv⟩ := hmin
+  have hpotv : ∀ v : Fin (n + 1) → ℝ, potential (addLeaf p) (leafAngle θ + ground v) =
+      potential p (θ + ground (fun i => v i.castSucc)) - Real.cos (v (Fin.last n)) := by
+    intro v
+    rw [potential_leaf, hφ, hφ0, hφl, show θ 0 - (θ 0 + v (Fin.last n)) = -v (Fin.last n) by
+      ring, Real.cos_neg]
+  have hpot0 : potential (addLeaf p) (leafAngle θ) = potential p θ - 1 := by
+    have := hpotv 0
+    simp only [ground_zero_vec, add_zero, Pi.zero_apply, Real.cos_zero] at this
+    rw [show (fun _ : Fin n => (0 : ℝ)) = 0 from rfl, ground_zero_vec, add_zero] at this
+    exact this
+  refine ⟨min r 1, lt_min hr one_pos, fun v hv0 hvr => ?_⟩
+  have hvr' : ‖(fun i : Fin n => v i.castSucc)‖ < r :=
+    (norm_restrict_le v).trans_lt (hvr.trans_le (min_le_left _ _))
+  have hy : |v (Fin.last n)| < 1 := by
+    have := (norm_le_pi_norm v (Fin.last n)).trans_lt (hvr.trans_le (min_le_right _ _))
+    rwa [Real.norm_eq_abs] at this
+  have hy' := abs_lt.mp hy
+  have hpi := Real.two_le_pi
+  refine ⟨?_, fun hcrit => ?_⟩
+  · rw [hpotv, hpot0]
+    by_cases hR : (fun i : Fin n => v i.castSucc) = 0
+    · have hyne : v (Fin.last n) ≠ 0 := fun h => hv0 (eq_zero_of_restrict hR h)
+      have hcos : Real.cos (v (Fin.last n)) < 1 := by
+        refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hyne ?_
+        exact (Real.cos_eq_one_iff_of_lt_of_lt (by linarith) (by linarith)).mp h
+      rw [hR, ground_zero_vec, add_zero]
+      linarith
+    · have := (hv _ hR hvr').1
+      linarith [Real.cos_le_one (v (Fin.last n))]
+  · have hl := hcrit (Fin.last _)
+    change (addLeaf p).P _ = powerInjection (leafB p.B) _ _ at hl
+    rw [powerInjection_leaf_l, hφl, hφ0, add_sub_cancel_left] at hl
+    simp only [addLeaf, Fin.snoc_last] at hl
+    have hy0 : v (Fin.last n) = 0 :=
+      (Real.sin_eq_zero_iff_of_lt_of_lt (by linarith) (by linarith)).mp hl.symm
+    have hR : (fun i : Fin n => v i.castSucc) = 0 := by
+      by_contra hR
+      refine (hv _ hR hvr').2 fun k => ?_
+      have hk := hcrit k.castSucc
+      change (addLeaf p).P _ = powerInjection (leafB p.B) _ _ at hk
+      rw [powerInjection_leaf_c, hφ] at hk
+      simp only [addLeaf, Fin.snoc_castSucc] at hk
+      rw [hk]
+      split_ifs with h0
+      · rw [h0, hφ0, hφl, hy0, add_zero, sub_self, Real.sin_zero, add_zero]
+      · rw [add_zero]
+    exact hv0 (eq_zero_of_restrict hR hy0)
+
+/-- **Adding a leaf machine preserves a null vector of the linearization weights** (extended
+by `0`). -/
+@[tmio M, powerlib_domain] theorem kernel_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (hker : ∃ v : Fin n → ℝ, v ≠ 0 ∧
+      ∀ k, ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) = 0) :
+    ∃ v : Fin (n + 1) → ℝ, v ≠ 0 ∧
+      ∀ k, ∑ j, flowWeights (addLeaf p).B (leafAngle θ) k j * (ground v k - ground v j) = 0 := by
+  obtain ⟨v, hv0, hker⟩ := hker
+  refine ⟨Fin.snoc (α := fun _ => ℝ) v 0, fun h => hv0 ?_, fun k => ?_⟩
+  · funext i
+    have := congrFun h i.castSucc
+    simpa using this
+  · have hgc : ∀ j : Fin (n + 1), ground (Fin.snoc (α := fun _ => ℝ) v 0) j.castSucc =
+        ground v j := fun j => by
+      rw [ground_c]; congr 1; funext i; simp
+    have hgl : ground (Fin.snoc (α := fun _ => ℝ) v 0) (Fin.last _) = 0 := by
+      rw [ground_l]; simp
+    have hsplit : ∀ k : Fin (n + 2), ∑ j, flowWeights (addLeaf p).B (leafAngle θ) k j *
+        (ground (Fin.snoc (α := fun _ => ℝ) v 0) k - ground (Fin.snoc (α := fun _ => ℝ) v 0) j) =
+        ∑ j : Fin (n + 1), flowWeights (addLeaf p).B (leafAngle θ) k j.castSucc *
+          (ground (Fin.snoc (α := fun _ => ℝ) v 0) k -
+            ground (Fin.snoc (α := fun _ => ℝ) v 0) j.castSucc) +
+        flowWeights (addLeaf p).B (leafAngle θ) k (Fin.last _) *
+          (ground (Fin.snoc (α := fun _ => ℝ) v 0) k -
+            ground (Fin.snoc (α := fun _ => ℝ) v 0) (Fin.last _)) := fun k =>
+      Fin.sum_univ_castSucc _
+    rw [hsplit]
+    refine Fin.lastCases ?_ (fun k => ?_) k
+    · simp only [flowWeights, of_apply, hgc, hgl]
+      change ∑ j : Fin (n + 1), leafB p.B _ _ * _ * _ + leafB p.B _ _ * _ * _ = 0
+      simp only [leafB_lc, leafB_ll, zero_mul, add_zero, ite_mul, one_mul, zero_mul]
+      rw [Finset.sum_ite_eq' Finset.univ (0 : Fin (n + 1))]
+      simp
+    · simp only [flowWeights, of_apply, hgc, hgl]
+      change ∑ j : Fin (n + 1), leafB p.B _ _ * _ * _ + leafB p.B _ _ * _ * _ = 0
+      simp only [leafB_cc, leafB_cl, leafAngle_c, leafAngle_l]
+      rw [show ∑ j : Fin (n + 1), p.B k j * Real.cos (θ k - θ j) * (ground v k - ground v j) =
+        ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) from rfl, hker k]
+      split_ifs with h0
+      · rw [h0]; simp
+      · simp
 
 
 /-! ## The witness for every number of machines -/
@@ -722,7 +758,8 @@ minimum of the potential, and a null vector of the linearization weights. -/
     norm_num at this
   | succ n ih =>
     obtain ⟨p, θ, hbal, hmin, hker⟩ := ih
-    exact ⟨addLeaf p, leafAngle θ, degenerate_addLeaf hbal hmin hker⟩
+    exact ⟨addLeaf p, leafAngle θ, powerBalance_addLeaf hbal, strictMin_addLeaf hmin,
+      kernel_addLeaf hker⟩
 
 /-- The five-machine ring as a model of `Swing.family`. -/
 def ring5 : Model 4 := ⟨Ring5.params, Ring5.θr⟩

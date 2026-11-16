@@ -25,8 +25,9 @@ Results.
   solution from a compact positively invariant set converges to `0` (a positively invariant subset
   of `{V̇ = 0}` carries a forward solution along which `V` is constant and which converges to `0`,
   so `V = 0` on it).
-* `output_eq_zero_of_passive` (`H(0) = 0`), `lieDeriv_feedback_le` (`V̇ ≤ −⟪ψ(y), y⟫ ≤ 0`, and
-  `V̇ = 0` only on `{y = 0}`, where the closed loop is the unforced system).
+* `output_eq_zero_of_passive` (`H(0) = 0`), `lieDeriv_feedback_le` (`V̇ ≤ −⟪ψ(y), y⟫ ≤ 0`),
+  `output_eq_zero_of_lieDeriv_feedback_eq_zero` (`V̇ = 0` only on `{y = 0}`, where the closed
+  loop is the unforced system).
 * `globallyAsymptoticallyStable_of_passive_detectable`: with `V` radially unbounded, `0` is a
   globally asymptotically stable equilibrium of the closed loop (Flow semantics: equilibrium,
   forward completeness, LeanForControl's `GlobalAsymptoticStable`).
@@ -64,10 +65,11 @@ every forward solution starting in a compact positively invariant set converges 
   have hM : ∀ N ⊆ Dynamics.LaSalle.LieDerivZeroSet f V Ω, IsPositivelyInvariant N f →
       N ⊆ ({0} : Set (EuclideanSpace ℝ (Fin n))) := by
     intro N hN hNinv p hp
-    obtain ⟨g, -, ⟨K, hglip⟩, -, -, -, -, hgf⟩ := Dynamics.LaSalle.exists_globalization hf hΩc hΩi
+    obtain ⟨g, -, ⟨K, hglip⟩, hgfΩ, hΩi_g⟩ := Dynamics.LaSalle.exists_globalization hf hΩc hΩi
     obtain ⟨χ, hχ0, hχ⟩ := Flow.forwardComplete_of_lipschitzWith hglip 0 p
     have hχf : IsIntegralCurveOn χ (fun _ x => f x) (Ici 0) :=
-      hgf hχ (hχ0 ▸ (hN hp).1)
+      isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant (fun x hx => (hgfΩ x hx).symm) hΩi_g
+        hχ (hχ0 ▸ (hN hp).1)
     have hstay : ∀ t ∈ Ici (0 : ℝ), χ t ∈ N := fun t ht =>
       hNinv 0 t χ (hχf.mono Icc_subset_Ici_self) (hχ0 ▸ hp) t ⟨ht, le_rfl⟩
     have hzero : ∀ t ∈ Ici (0 : ℝ), fderiv ℝ V (χ t) (f (χ t)) = 0 := fun t ht =>
@@ -121,7 +123,7 @@ every forward solution starting in a compact positively invariant set converges 
     (le_antisymm this (sq_nonneg _)))
 
 /-- Output feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` (`y ≠ 0`), `ψ(0) = 0` on a passive system:
-`V̇ ≤ −⟪ψ(y), y⟫ ≤ 0`, and `V̇ = 0` only where `y = 0`. -/
+`V̇ ≤ −⟪ψ(y), y⟫ ≤ 0`. -/
 @[tmio T, powerlib_foundation] theorem lieDeriv_feedback_le
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
@@ -129,17 +131,28 @@ every forward solution starting in a compact positively invariant set converges 
     {V : EuclideanSpace ℝ (Fin n) → ℝ}
     (hpass : ∀ x u, fderiv ℝ V x (F x u) ≤ inner ℝ u (H x))
     (hψ0 : ψ 0 = 0) (hψ : ∀ y, y ≠ 0 → 0 < inner ℝ (ψ y) y) (x : EuclideanSpace ℝ (Fin n)) :
-    fderiv ℝ V x (F x (-ψ (H x))) ≤ 0 ∧
-      (fderiv ℝ V x (F x (-ψ (H x))) = 0 → H x = 0) := by
+    fderiv ℝ V x (F x (-ψ (H x))) ≤ 0 := by
   have h := hpass x (-ψ (H x))
   rw [inner_neg_left] at h
-  constructor
-  · rcases eq_or_ne (H x) 0 with h0 | h0
-    · simp only [h0, hψ0, inner_zero_left, neg_zero] at h ⊢; exact h
-    · linarith [hψ (H x) h0]
-  · intro hz
-    by_contra h0
-    linarith [hψ (H x) h0]
+  rcases eq_or_ne (H x) 0 with h0 | h0
+  · simp only [h0, hψ0, inner_zero_left, neg_zero] at h ⊢; exact h
+  · linarith [hψ (H x) h0]
+
+/-- Output feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` (`y ≠ 0`), `ψ(0) = 0` on a passive system:
+`V̇ = 0` only where `y = 0`. -/
+@[tmio T, powerlib_foundation] theorem output_eq_zero_of_lieDeriv_feedback_eq_zero
+    {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
+    {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
+    {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}
+    {V : EuclideanSpace ℝ (Fin n) → ℝ}
+    (hpass : ∀ x u, fderiv ℝ V x (F x u) ≤ inner ℝ u (H x))
+    (_hψ0 : ψ 0 = 0) (hψ : ∀ y, y ≠ 0 → 0 < inner ℝ (ψ y) y) (x : EuclideanSpace ℝ (Fin n)) :
+    fderiv ℝ V x (F x (-ψ (H x))) = 0 → H x = 0 := by
+  have h := hpass x (-ψ (H x))
+  rw [inner_neg_left] at h
+  intro hz
+  by_contra h0
+  linarith [hψ (H x) h0]
 
 /-- Zero-state detectability transported to the closed loop: a closed-loop solution along which
 `V̇` vanishes stays in `{y = 0}`, where the closed loop is the unforced system. -/
@@ -158,7 +171,7 @@ every forward solution starting in a compact positively invariant set converges 
         Tendsto φ atTop (𝓝 0) := by
   intro φ hφ hz
   have hH : ∀ t ∈ Ici (0 : ℝ), H (φ t) = 0 := fun t ht =>
-    (lieDeriv_feedback_le hpass hψ0 hψ (φ t)).2 (hz t ht)
+    output_eq_zero_of_lieDeriv_feedback_eq_zero hpass hψ0 hψ (φ t) (hz t ht)
   refine hzsd φ (Dynamics.isIntegralCurveOn_of_eq_on_curve hφ fun t ht => ?_) hH
   rw [hH t ht, hψ0, neg_zero]
 
@@ -185,7 +198,7 @@ provided the closed-loop field is `C¹`. -/
   set f := fun x => F x (-ψ (H x)) with hfdef
   have hVd : Differentiable ℝ V := hV.differentiable (by norm_num)
   have hH0 := output_eq_zero_of_passive hV0 hVpos hpass
-  have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := fun x => (lieDeriv_feedback_le hpass hψ0 hψ x).1
+  have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := lieDeriv_feedback_le hpass hψ0 hψ
   have hdet := closedLoop_detectable hpass hψ0 hψ hzsd
   have hsub : ∀ c : ℝ, IsCompact {x : EuclideanSpace ℝ (Fin n) | V x ≤ c} :=
     isCompact_sublevel_set V hV.continuous hradial
@@ -230,7 +243,7 @@ replaced by one compact sublevel set `{V ≤ c₀}`, `c₀ > 0`. -/
     LocalAsymptoticStable (fun x => F x (-ψ (H x))) 0 := by
   set f := fun x => F x (-ψ (H x)) with hfdef
   have hVd : Differentiable ℝ V := hV.differentiable (by norm_num)
-  have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := fun x => (lieDeriv_feedback_le hpass hψ0 hψ x).1
+  have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := lieDeriv_feedback_le hpass hψ0 hψ
   have hdet := closedLoop_detectable hpass hψ0 hψ hzsd
   obtain ⟨c₀, hc₀, hK⟩ := hcompact
   refine ⟨lyapunov_stable hn ⟨isOpen_univ, mem_univ _, hVd.continuous, hVd, hV0,

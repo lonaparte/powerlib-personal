@@ -544,27 +544,37 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
   Real.sqrt (z ^ 2 + ((Q - hs / 2 * z) / ω) ^ 2) *
     Real.exp (σ * K * Real.arctan ((Q - hs / 2 * z) / ω / z))
 
-/-- `exp(σ K arctan a)` lies between `exp(∓Kπ/2)`. -/
-@[tmio T, powerlib_foundation] theorem exp_spiral_bounds {K σ a : ℝ} (hK0 : 0 ≤ K) (hσ : σ = 1 ∨ σ = -1) :
-    Real.exp (-(K * (Real.pi / 2))) ≤ Real.exp (σ * K * Real.arctan a) ∧
-      Real.exp (σ * K * Real.arctan a) ≤ Real.exp (K * (Real.pi / 2)) := by
+/-- `exp(σ K arctan a)` is at least `exp(−Kπ/2)`. -/
+@[tmio T, powerlib_foundation] theorem exp_spiral_ge {K σ a : ℝ} (hK0 : 0 ≤ K)
+    (hσ : σ = 1 ∨ σ = -1) :
+    Real.exp (-(K * (Real.pi / 2))) ≤ Real.exp (σ * K * Real.arctan a) := by
   have h1 := Real.arctan_lt_pi_div_two a
   have h2 := Real.neg_pi_div_two_lt_arctan a
-  constructor <;> apply Real.exp_le_exp.mpr <;> rcases hσ with rfl | rfl <;> nlinarith
+  apply Real.exp_le_exp.mpr
+  rcases hσ with rfl | rfl <;> nlinarith
+
+/-- `exp(σ K arctan a)` is at most `exp(Kπ/2)`. -/
+@[tmio T, powerlib_foundation] theorem exp_spiral_le {K σ a : ℝ} (hK0 : 0 ≤ K)
+    (hσ : σ = 1 ∨ σ = -1) :
+    Real.exp (σ * K * Real.arctan a) ≤ Real.exp (K * (Real.pi / 2)) := by
+  have h1 := Real.arctan_lt_pi_div_two a
+  have h2 := Real.neg_pi_div_two_lt_arctan a
+  apply Real.exp_le_exp.mpr
+  rcases hσ with rfl | rfl <;> nlinarith
 
 /-- Upper bound of the spiral function by the radius. -/
 @[tmio T, powerlib_foundation] theorem spiralLyap_le {ω hs K σ z Q : ℝ} (hK0 : 0 ≤ K)
     (hσ : σ = 1 ∨ σ = -1) :
     spiralLyap ω hs K σ z Q ≤
       Real.sqrt (z ^ 2 + ((Q - hs / 2 * z) / ω) ^ 2) * Real.exp (K * (Real.pi / 2)) :=
-  mul_le_mul_of_nonneg_left (exp_spiral_bounds hK0 hσ).2 (Real.sqrt_nonneg _)
+  mul_le_mul_of_nonneg_left (exp_spiral_le hK0 hσ) (Real.sqrt_nonneg _)
 
 /-- Lower bound of the spiral function by the radius. -/
 @[tmio T, powerlib_foundation] theorem le_spiralLyap {ω hs K σ z Q : ℝ} (hK0 : 0 ≤ K)
     (hσ : σ = 1 ∨ σ = -1) :
     Real.sqrt (z ^ 2 + ((Q - hs / 2 * z) / ω) ^ 2) * Real.exp (-(K * (Real.pi / 2))) ≤
       spiralLyap ω hs K σ z Q :=
-  mul_le_mul_of_nonneg_left (exp_spiral_bounds hK0 hσ).1 (Real.sqrt_nonneg _)
+  mul_le_mul_of_nonneg_left (exp_spiral_ge hK0 hσ) (Real.sqrt_nonneg _)
 
 /-- Along a curve with `z' = Q / z` and `Q' = g + h Q / z` (`g, h` near `g*, h*`, discriminant
 `h*² + 4g* < 0`), the spiral function decreases at least at the rate `exp(−Kπ/2) / 2` while
@@ -603,7 +613,7 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
   have hsV0 : 0 < sV := Real.sqrt_pos.mpr hVpos
   set e := Real.exp (σ * K * Real.arctan (pt / z t)) with hedef
   have he0 : 0 < e := Real.exp_pos _
-  have heb := (exp_spiral_bounds (a := pt / z t) hK0 hσ).1
+  have heb := exp_spiral_ge (a := pt / z t) hK0 hσ
   -- the derivative in closed form
   set X := 2 * z t * z' + 2 * pt * p' + 2 * σ * K * (p' * z t - pt * z') with hX
   have hd : (2 * z t * z' + 2 * pt * p') / (2 * sV) * e +

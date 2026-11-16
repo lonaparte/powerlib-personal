@@ -401,7 +401,9 @@ energy itself. -/
     simp only [Linear.KYP.storage, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,
       smul_dotProduct, smul_eq_mul]
     ring
-  obtain ⟨a, ha, b, hab, hb⟩ := Flow.quadratic_bounds h.kyp.storage
+  obtain ⟨a, ha, hblo⟩ := Flow.quadratic_lower_bound h.kyp.storage
+    (storage_contDiff h).continuous hhom hpos
+  obtain ⟨b, hb0, hbhi⟩ := Flow.quadratic_upper_bound h.kyp.storage
     (storage_contDiff h).continuous hhom hpos
   let W : EuclideanSpace ℝ (Fin n) → ℝ := fun x =>
     (h.Q *ᵥ WithLp.ofLp x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ WithLp.ofLp x))
@@ -418,20 +420,19 @@ energy itself. -/
     have := h.energy_pos (WithLp.ofLp x) (by simpa using hx)
     rw [h0, dotProduct_zero] at this
     exact lt_irrefl 0 this
-  obtain ⟨α, hα, β, -, hW⟩ := Flow.quadratic_bounds W hWc hWh hWp
-  have hb0 : 0 < b := ha.trans_le hab
+  obtain ⟨α, hα, hW⟩ := Flow.quadratic_lower_bound W hWc hWh hWp
   refine ⟨⟨a, b, α / b, ha, hb0, div_pos hα hb0, storage_contDiff h, ?_, ?_, ?_, ?_⟩⟩
   · simp [Linear.Plant.system, Port.System.zeroInput]
   · intro x
-    simpa using (hb x).1
+    simpa using hblo x
   · intro x
-    simpa using (hb x).2
+    simpa using hbhi x
   · intro x
     have hz : WithLp.ofLp (h.plant.system.zeroInput x) = h.plant.A *ᵥ WithLp.ofLp x := by
       simp [Linear.Plant.system, Port.System.zeroInput]
     rw [fderiv_storage_apply, hz, energy_rate]
-    have h1 := (hW x).1
-    have h2 := (hb x).2
+    have h1 := hW x
+    have h2 := hbhi x
     change -W x ≤ -(α / b) * h.kyp.storage x
     have h3 : α / b * h.kyp.storage x ≤ α * ‖x‖ ^ 2 := by
       rw [div_mul_eq_mul_div, div_le_iff₀ hb0]

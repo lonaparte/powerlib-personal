@@ -29,8 +29,11 @@ Results.
   then `P(t) = e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞` (`Lyapunov.covSol`) solves
   `Ṗ = A P + P Aᵀ + Q`, `P(0) = P₀`; it is the only solution (`Lyapunov.covODE_unique`,
   `theorem/Stochastic/LyapunovCovariance.lean`).
-* `predict_cov_hurwitz` — for `A` Hurwitz and `Q ⪰ 0` such a `P∞ ⪰ 0` exists (uniquely), the
-  prediction ODE has the explicit solution above and `P(t) → P∞`.
+* Hurwitz prediction (`theorem/Stochastic/LyapunovCovariance.lean`): for `A` Hurwitz and
+  `Q ⪰ 0` such a `P∞` exists (`Lyapunov.exists_solvesCovLyapunov`), uniquely
+  (`Lyapunov.solvesCovLyapunov_unique`), and `P∞ ⪰ 0` (`Lyapunov.posSemidef_of_solvesCovLyapunov`);
+  the prediction ODE has the explicit solution above (`Lyapunov.covODE_unique`) and `P(t) → P∞`
+  (`Lyapunov.covSol_tendsto_norm`).
 -/
 
 noncomputable section
@@ -61,17 +64,5 @@ noncomputable local instance frobeniusENormedAddMonoid'' :
     covSol A Pinf P₀ 0 = P₀ ∧
       ∀ t, HasDerivAt (covSol A Pinf P₀) (A * covSol A Pinf P₀ t + covSol A Pinf P₀ t * Aᵀ + Q) t :=
   ⟨covSol_zero A Pinf P₀, covSol_hasDerivAt hinf P₀⟩
-
-/-- **Hurwitz prediction**: for `A` Hurwitz and `Q ⪰ 0` there is a unique `P∞ ⪰ 0` with
-`A P∞ + P∞ Aᵀ + Q = 0`; every solution of the prediction ODE with `P(0) = P₀` equals
-`e^{tA}(P₀ − P∞)e^{tAᵀ} + P∞`, and it converges to `P∞`. -/
-@[tmio T, powerlib_foundation] theorem predict_cov_hurwitz {A Q : Matrix (Fin n) (Fin n) ℝ}
-    (hA : LinearSystems.IsHurwitz A) (hQ : Q.PosSemidef) (P₀ : Matrix (Fin n) (Fin n) ℝ) :
-    ∃ Pinf : Matrix (Fin n) (Fin n) ℝ, Pinf.PosSemidef ∧ SolvesCovLyapunov A Pinf Q ∧
-      (∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q) t) →
-        P 0 = P₀ → P = covSol A Pinf P₀) ∧
-      Tendsto (fun t => ‖covSol A Pinf P₀ t - Pinf‖) atTop (𝓝 0) := by
-  obtain ⟨Pinf, hpsd, hsol, -⟩ := exists_unique_posSemidef_covLyapunov hA Q hQ
-  exact ⟨Pinf, hpsd, hsol, fun P hP h0 => covODE_unique hsol hP h0, covSol_tendsto_norm hA⟩
 
 end powerlib.Estimation

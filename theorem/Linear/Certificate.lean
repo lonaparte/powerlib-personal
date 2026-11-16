@@ -221,13 +221,17 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
 
 @[tmio T, powerlib_foundation] theorem Certificate.exists_energy_bounds {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) :
-    ∃ α > 0, ∃ β ≥ α, ∀ z : ℝⁿ, α * ‖z‖ ^ 2 ≤ ⟪z, op c.P z⟫ ∧ ⟪z, op c.P z⟫ ≤ β * ‖z‖ ^ 2 :=
-  Flow.quadratic_bounds (fun z => ⟪z, op c.P z⟫)
-    (continuous_id.inner (op c.P).continuous)
-    (fun a z => by simp only [map_smul, real_inner_smul_left, real_inner_smul_right]; ring)
-    (fun z hz => by
-      rw [inner_op]
-      exact c.positive _ (by simpa using hz))
+    ∃ α > 0, ∃ β ≥ α, ∀ z : ℝⁿ, α * ‖z‖ ^ 2 ≤ ⟪z, op c.P z⟫ ∧ ⟪z, op c.P z⟫ ≤ β * ‖z‖ ^ 2 := by
+  have hc : Continuous fun z : ℝⁿ => ⟪z, op c.P z⟫ := continuous_id.inner (op c.P).continuous
+  have hh : ∀ (a : ℝ) (z : ℝⁿ), ⟪a • z, op c.P (a • z)⟫ = a ^ 2 * ⟪z, op c.P z⟫ := fun a z => by
+    simp only [map_smul, real_inner_smul_left, real_inner_smul_right]; ring
+  have hp : ∀ z : ℝⁿ, z ≠ 0 → 0 < ⟪z, op c.P z⟫ := fun z hz => by
+    rw [inner_op]
+    exact c.positive _ (by simpa using hz)
+  obtain ⟨α, hα, hlo⟩ := Flow.quadratic_lower_bound _ hc hh hp
+  obtain ⟨β, -, hhi⟩ := Flow.quadratic_upper_bound _ hc hh hp
+  exact ⟨α, hα, max α β, le_max_left α β, fun z => ⟨hlo z, (hhi z).trans
+    (mul_le_mul_of_nonneg_right (le_max_right α β) (sq_nonneg ‖z‖))⟩⟩
 
 /-- A Lyapunov certificate is a quadratic-decay certificate of the affine linear field: its energy
 lies between two multiples of `‖x - e‖²` and decays at the rate `1 / β` of the upper one. -/

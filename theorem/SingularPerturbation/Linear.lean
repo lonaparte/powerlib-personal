@@ -26,11 +26,11 @@ Source: work-sync theory/T-singular-perturbation.md §1.1–§1.4, theory/T-tikh
 two-time-scale theorem is Kokotović–Khalil–O'Reilly (1986) Ch. 2, cited in both notes.
 
 Results.
-* `exists_epsStar_exponentiallyStable` — if the boundary-layer matrix `A₂₂` is Hurwitz and the
-  reduced (Schur-complement) matrix `A₀ = A₁₁ - A₁₂ A₂₂⁻¹ A₂₁` is Hurwitz, there is `ε* > 0` such
-  that for every `ε ∈ (0, ε*)` the full matrix is Hurwitz and the zero-input system is globally
-  exponentially stable (`Flow.GloballyExponentiallyStable` of the affine linear field, through
-  `Linear.globallyExponentiallyStable_of_isHurwitz`).
+* `exists_epsStar_isHurwitz`, `exists_epsStar_exponentiallyStable` — if the boundary-layer matrix
+  `A₂₂` is Hurwitz and the reduced (Schur-complement) matrix `A₀ = A₁₁ - A₁₂ A₂₂⁻¹ A₂₁` is
+  Hurwitz, there is `ε* > 0` such that for every `ε ∈ (0, ε*)` the full matrix is Hurwitz and
+  the zero-input system is globally exponentially stable (`Flow.GloballyExponentiallyStable` of
+  the affine linear field, through `Linear.globallyExponentiallyStable_of_isHurwitz`).
 * `isHurwitz_of_lt_epsStar` — the proof is Kokotović's composite Lyapunov argument, not spectral
   continuity: in the coordinates `η = z + A₂₂⁻¹ A₂₁ x`, `V = xᵀ P₀ x + ηᵀ P₂ η` with
   `P₀ A₀ + A₀ᵀ P₀ = -I`, `P₂ A₂₂ + A₂₂ᵀ P₂ = -I` (LeanForControl's Lyapunov solutions). Given
@@ -376,14 +376,11 @@ Hurwitz. -/
     exact h
   simpa using Criteria.re_neg_of_lyapunov (sp.compositeP_symm h0 h2) hpos hdiss hv' heig'
 
-/-- Kokotović's linear two-time-scale theorem: `A₂₂` and `A₀` Hurwitz ⇒ there is `ε* > 0`
-such that the full system is globally exponentially stable for every `ε ∈ (0, ε*)`. -/
-@[tmio T, powerlib_foundation] theorem exists_epsStar_exponentiallyStable
+/-- Kokotović's linear two-time-scale theorem, matrix form: `A₂₂` and `A₀` Hurwitz ⇒ there is
+`ε* > 0` such that the full matrix is Hurwitz for every `ε ∈ (0, ε*)`. -/
+@[tmio T, powerlib_foundation] theorem exists_epsStar_isHurwitz
     (hA22 : LinearSystems.IsHurwitz sp.A22) (hA0 : LinearSystems.IsHurwitz sp.reducedMatrix) :
-    ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
-      LinearSystems.IsHurwitz (sp.stateMatrix ε) ∧
-        Flow.GloballyExponentiallyStable
-          (LinearSystems.affineLinearVectorField (sp.stateMatrix ε) 0) 0 := by
+    ∃ εs > 0, ∀ ε, 0 < ε → ε < εs → LinearSystems.IsHurwitz (sp.stateMatrix ε) := by
   obtain ⟨P0, hP0, hL0, -⟩ :=
     LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov hA0 1
       Matrix.PosDef.one
@@ -400,8 +397,18 @@ such that the full system is globally exponentially stable for every `ε ∈ (0,
       positivity
     simp only [epsStar]
     positivity
-  have hH := sp.isHurwitz_of_lt_epsStar hU hP0 hP2 hL0 hL2 hε hεs
-  exact ⟨hH, Linear.globallyExponentiallyStable_of_isHurwitz 0 hH⟩
+  exact sp.isHurwitz_of_lt_epsStar hU hP0 hP2 hL0 hL2 hε hεs
+
+/-- Kokotović's linear two-time-scale theorem: `A₂₂` and `A₀` Hurwitz ⇒ there is `ε* > 0`
+such that the full system is globally exponentially stable for every `ε ∈ (0, ε*)`
+(`exists_epsStar_isHurwitz` and `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
+@[tmio T, powerlib_foundation] theorem exists_epsStar_exponentiallyStable
+    (hA22 : LinearSystems.IsHurwitz sp.A22) (hA0 : LinearSystems.IsHurwitz sp.reducedMatrix) :
+    ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
+      Flow.GloballyExponentiallyStable
+        (LinearSystems.affineLinearVectorField (sp.stateMatrix ε) 0) 0 := by
+  obtain ⟨εs, hεs, h⟩ := sp.exists_epsStar_isHurwitz hA22 hA0
+  exact ⟨εs, hεs, fun ε hε hlt => Linear.globallyExponentiallyStable_of_isHurwitz 0 (h ε hε hlt)⟩
 
 end LinearSP
 

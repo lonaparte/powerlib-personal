@@ -18,7 +18,7 @@ sentence and every period, as exact sampling is (`LTI.sampled_reading`,
 never fails for scalar systems. Without a constraint the realization is not sound in any
 dimension `n ≥ 2`: slow switching between two Hurwitz topologies with a Hurwitz average gives a
 period map with a multiplier below `−1` (`Averaging.slowSwitching_counterexample_of_two_le`, the
-`ℝ²` example `Averaging.slowSwitching_counterexample` embedded block-diagonally; a
+`ℝ²` example `Averaging.slowSwitching_not_schurStable` embedded block-diagonally; a
 period-doubling instability). The dimension boundary is exact: without a constraint the
 realization is sound for the attractive sentences (and sampled contraction) exactly when `n ≤ 1`.
 Scaffold: `theorem/Averaging/SwitchedAveraging.agda`.
@@ -155,7 +155,7 @@ there is a switching period `T₀ > 0` below which every switched system satisfi
   obtain ⟨T₀, hT₀, hS⟩ := periodMap_schurStable_of_isHurwitz hd.1 hd.2 A₁ A₂ h
   refine ⟨T₀, hT₀, fun T hT hle => ?_⟩
   rw [switchedFamily_isAutonomousMap.den_schurStable hP]
-  exact (hS T ⟨hT, hle⟩).1
+  exact hS T ⟨hT, hle⟩
 
 /-- Commuting topologies: the switched system is the exact sampling of its averaged model with the
 switching period. -/

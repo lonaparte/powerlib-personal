@@ -121,13 +121,15 @@ zero-input plant in the Flow semantics. -/
 @[tmio T, powerlib_foundation] theorem KYP.lyapunovStable_of_pos {M : Plant n p} (c : KYP M)
     (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (c.P *ᵥ x)) :
     LyapunovStable (affineLinearVectorField M.A 0) 0 := by
-  obtain ⟨a, ha, b, hab, hb⟩ := Flow.quadratic_bounds c.storage
-    (by unfold KYP.storage; fun_prop)
-    (fun r x => by
-      simp only [KYP.storage, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,
-        smul_dotProduct, smul_eq_mul]
-      ring)
-    (fun x hx => div_pos (hpos _ (by simpa using hx)) two_pos)
-  exact c.lyapunovStable ha hab hb
+  have hc : Continuous c.storage := by unfold KYP.storage; fun_prop
+  have hh : ∀ (r : ℝ) (x : ℝⁿ), c.storage (r • x) = r ^ 2 * c.storage x := fun r x => by
+    simp only [KYP.storage, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,
+      smul_dotProduct, smul_eq_mul]
+    ring
+  have hp : ∀ x ≠ 0, 0 < c.storage x := fun x hx => div_pos (hpos _ (by simpa using hx)) two_pos
+  obtain ⟨a, ha, hlo⟩ := Flow.quadratic_lower_bound c.storage hc hh hp
+  obtain ⟨b, -, hhi⟩ := Flow.quadratic_upper_bound c.storage hc hh hp
+  exact c.lyapunovStable ha (le_max_left a b) fun x => ⟨hlo x, (hhi x).trans
+    (mul_le_mul_of_nonneg_right (le_max_right a b) (sq_nonneg ‖x‖))⟩
 
 end powerlib.Linear

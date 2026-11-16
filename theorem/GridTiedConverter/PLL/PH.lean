@@ -84,11 +84,11 @@ Hamiltonian; without that context it is not exact
 (`not_exact_locallyAsymptoticallyStable`, the reversed amplitude). The Lyapunov translation is not
 exact (`not_exact_lyapunovStable`, the reversed amplitude), not even within nonnegative energy
 (`not_exactUnder_lyapunovStable`: the dead-grid loop `deadGrid`, `V = K_i = 0`, is Lyapunov stable,
-`deadGrid_mem_den_lyapunovStable`). The Lyapunov-function
-facts are static (`pllHamiltonian_shifted_lyapunovFunction`); the first integral of the lossless
-loop along solution segments (`pllPH_lossless_firstIntegral`) is private implementation evidence
-(a trajectory statement; the shifted energy is periodic in `θ`, so it is not a conservation
-sentence with a strict global minimum).
+`deadGrid_mem_den_lyapunovStable`). The Lyapunov-function facts are static
+(`pllHamiltonian_nonneg`, `pllHamiltonian_shifted_eq_zero`, `pllHamiltonian_shifted_lie_nonpos`);
+the first integral of the lossless loop along solution segments (`pllPH_lossless_firstIntegral`)
+is private implementation evidence (a trajectory statement; the shifted energy is periodic in
+`θ`, so it is not a conservation sentence with a strict global minimum).
 
 Sign note: T-pll-ph writes the integrator equilibrium as `η_eq = Δω/K_i`; with its input
 `δω_g` entering through `B = (−1, 0)ᵀ` this is `δω_g/K_i`, `δω_g = ω_g − ω_s`
@@ -209,20 +209,24 @@ closed loop is this system with the shifted set point `η* = δω/K_i`. -/
   rw [pllPH_zeroInputField, pllPH_dampingPower] at h
   exact h
 
-/-- The shifted Hamiltonian is a Lyapunov function at the locked equilibrium `(0, δω/K_i)`
-(`V, K_p, K_i > 0`): nonnegative, zero at the equilibrium and nonincreasing along the field.
-Static evidence on the model, not a connection conclusion; Lyapunov stability itself is
-`PLLPH.mem_den_lyapunovStable`. -/
-@[tmio TM, powerlib_domain] theorem pllHamiltonian_shifted_lyapunovFunction {V Kp Ki : ℝ} (hV : 0 < V)
-    (hKp : 0 ≤ Kp) (hKi : 0 < Ki) (δω : ℝ) :
-    (∀ x, 0 ≤ pllHamiltonian V Ki (δω / Ki) x) ∧
-      pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 ∧
-      (∀ x, fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) ≤ 0) :=
-  ⟨pllHamiltonian_nonneg hV.le hKi.le _, by simp [pllHamiltonian, PhasePlane.mk],
-    fun x => by
-      have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp (δω / Ki) x
-      rw [mul_div_cancel₀ δω hKi.ne'] at h
-      rw [h]; nlinarith [sq_nonneg (srfPD V (x 0))]⟩
+/-- The shifted Hamiltonian vanishes at the locked equilibrium `(0, δω/K_i)` (`V, K_i > 0`).
+With `pllHamiltonian_nonneg` and `pllHamiltonian_shifted_lie_nonpos` it is a Lyapunov function
+there; static evidence on the model, not a connection conclusion (Lyapunov stability itself is
+`PLLPH.mem_den_lyapunovStable`). -/
+@[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_eq_zero {V Ki : ℝ} (_hV : 0 < V)
+    (_hKi : 0 < Ki) (δω : ℝ) :
+    pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 := by
+  simp [pllHamiltonian, PhasePlane.mk]
+
+/-- The shifted Hamiltonian is nonincreasing along the SRF-PLL with constant offset `δω`
+(`K_p ≥ 0`, `K_i > 0`): `Ḣ = −K_p h(θ)² ≤ 0`. -/
+@[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_lie_nonpos {V Kp Ki : ℝ}
+    (_hV : 0 < V) (hKp : 0 ≤ Kp) (hKi : 0 < Ki) (δω : ℝ) :
+    ∀ x, fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) ≤ 0 := by
+  intro x
+  have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp (δω / Ki) x
+  rw [mul_div_cancel₀ δω hKi.ne'] at h
+  rw [h]; nlinarith [sq_nonneg (srfPD V (x 0))]
 
 /-- At a well bottom `cos θ* = 1` (`V, K_i > 0`) the Hamiltonian with set point `η*` has a strict
 local minimum at `(θ*, η*)`. -/

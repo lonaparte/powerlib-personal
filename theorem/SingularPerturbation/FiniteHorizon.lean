@@ -44,8 +44,9 @@ Correction 1: without the boundary-layer term the bound fails at `t = 0`), prove
 general linear system rather than the scalar test system.
 
 Proof (energy estimates, no matrix exponentials): coordinates `η = z + L x`
-(`LinearSP.coords_hasDerivAt`: `ẋ = A₀x + A₁₂η`, `η̇ = A₂₂η/ε + L ẋ`); with `P` the Lyapunov
-solution of `A₂₂` (`BoundedCertificate`, from LeanForControl's Lyapunov equation):
+(`LinearSP.coords_hasDerivAt_slow`: `ẋ = A₀x + A₁₂η`, `LinearSP.coords_hasDerivAt_fast`:
+`η̇ = A₂₂η/ε + L ẋ`); with `P` the Lyapunov solution of `A₂₂` (`BoundedCertificate`, from
+LeanForControl's Lyapunov equation):
 1. `apriori_le`: `V = |x|² + ηᵀPη` has `V̇ ≤ (K + 1) V` once `ε K ≤ 1`, so `x`, `η` are bounded on
    `[0, T]` uniformly in `ε`;
 2. `layer_error_le`: `e = η − η_b`, `η_b(t) = z_b(t/ε)`, has `e(0) = 0` and
@@ -507,25 +508,29 @@ namespace LinearSP
 
 variable (sp : LinearSP n m)
 
-/-- Slow/fast coordinates `η = z + L x`: the full system reads
-`ẋ = A₀x + A₁₂η`, `η̇ = A₂₂η/ε + L(A₀x + A₁₂η)`. -/
-@[tmio T, powerlib_foundation] theorem coords_hasDerivAt (hU : IsUnit sp.A22.det) {ε : ℝ}
-    {x : ℝ → Fin n → ℝ}
-    {z : ℝ → Fin m → ℝ} (hx : ∀ t, HasDerivAt x (sp.A11 *ᵥ x t + sp.A12 *ᵥ z t) t)
-    (hz : ∀ t, HasDerivAt z (ε⁻¹ • (sp.A21 *ᵥ x t + sp.A22 *ᵥ z t)) t) (t : ℝ) :
-    HasDerivAt x (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t)) t ∧
-      HasDerivAt (fun s => z s + sp.gain *ᵥ x s)
-        (ε⁻¹ • (sp.A22 *ᵥ (z t + sp.gain *ᵥ x t)) +
-          sp.gain *ᵥ (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t))) t := by
+/-- Slow/fast coordinates `η = z + L x`, slow part: the slow equation reads
+`ẋ = A₀x + A₁₂η`. -/
+@[tmio T, powerlib_foundation] theorem coords_hasDerivAt_slow {x : ℝ → Fin n → ℝ}
+    {z : ℝ → Fin m → ℝ} (hx : ∀ t, HasDerivAt x (sp.A11 *ᵥ x t + sp.A12 *ᵥ z t) t) (t : ℝ) :
+    HasDerivAt x (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t)) t := by
   have hslow : sp.A11 *ᵥ x t + sp.A12 *ᵥ z t =
       sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t) := by
     simp only [reducedMatrix, gain, mulVec_add, sub_mulVec, ← mulVec_mulVec, Matrix.mul_assoc]
     abel
+  rw [← hslow]; exact hx t
+
+/-- Slow/fast coordinates `η = z + L x`, fast part: the fast equation reads
+`η̇ = A₂₂η/ε + L(A₀x + A₁₂η)`. -/
+@[tmio T, powerlib_foundation] theorem coords_hasDerivAt_fast (hU : IsUnit sp.A22.det) {ε : ℝ}
+    {x : ℝ → Fin n → ℝ}
+    {z : ℝ → Fin m → ℝ} (hx : ∀ t, HasDerivAt x (sp.A11 *ᵥ x t + sp.A12 *ᵥ z t) t)
+    (hz : ∀ t, HasDerivAt z (ε⁻¹ • (sp.A21 *ᵥ x t + sp.A22 *ᵥ z t)) t) (t : ℝ) :
+    HasDerivAt (fun s => z s + sp.gain *ᵥ x s)
+      (ε⁻¹ • (sp.A22 *ᵥ (z t + sp.gain *ᵥ x t)) +
+        sp.gain *ᵥ (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t))) t := by
   have hAL : sp.A22 *ᵥ (sp.gain *ᵥ x t) = sp.A21 *ᵥ x t := by
     rw [mulVec_mulVec, gain, ← Matrix.mul_assoc, mul_nonsing_inv _ hU, Matrix.one_mul]
-  have hx' : HasDerivAt x (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t)) t := by
-    rw [← hslow]; exact hx t
-  refine ⟨hx', ?_⟩
+  have hx' := sp.coords_hasDerivAt_slow hx t
   have h := (hz t).add (Dynamics.hasDerivAt_mulVec sp.gain hx')
   rw [mulVec_add, hAL, add_comm (sp.A22 *ᵥ z t)]
   exact h
@@ -599,10 +604,10 @@ variable (sp : LinearSP n m)
   obtain ⟨η, hηdef⟩ : ∃ η : ℝ → Fin m → ℝ, η = fun s => z s + sp.gain *ᵥ x s := ⟨_, rfl⟩
   have hηs : ∀ s, η s = z s + sp.gain *ᵥ x s := fun s => by rw [hηdef]
   have hxη : ∀ s, HasDerivAt x (sp.reducedMatrix *ᵥ x s + sp.A12 *ᵥ η s) s := fun s => by
-    rw [hηs]; exact (sp.coords_hasDerivAt hU hx hz s).1
+    rw [hηs]; exact sp.coords_hasDerivAt_slow hx s
   have hη : ∀ s, HasDerivAt η (ε⁻¹ • (sp.A22 *ᵥ η s) +
       sp.gain *ᵥ (sp.reducedMatrix *ᵥ x s + sp.A12 *ᵥ η s)) s := fun s => by
-    rw [hηs, hηdef]; exact (sp.coords_hasDerivAt hU hx hz s).2
+    rw [hηs, hηdef]; exact sp.coords_hasDerivAt_fast hU hx hz s
   -- the boundary layer in the original time
   obtain ⟨ηb, hηbdef⟩ : ∃ ηb : ℝ → Fin m → ℝ, ηb = fun s => zb (s / ε) := ⟨_, rfl⟩
   have hηb : ∀ s, HasDerivAt ηb (ε⁻¹ • (sp.A22 *ᵥ ηb s)) s := by

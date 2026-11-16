@@ -11,8 +11,9 @@ nuisance-parameter bound, and the cancellation of the sampling bandwidth.
 Scope.
 * Linear algebra / real analysis, not an engineering result.
 * The lifetime sensitivity of §1.6 (`Asymptotics.Guard.lifetime_ratio`,
-  `Asymptotics.Guard.lifetime_ratio_num`: the closed-form ratio and its value `6.74 < … < 6.76`
-  at `X = 10`, `ε = 0.1`, the note's `6.75`) is in `theorem/Asymptotics/Guard/Potential.lean`.
+  `Asymptotics.Guard.lifetime_ratio_num_gt`, `lifetime_ratio_num_lt`: the closed-form ratio and
+  its value `6.74 < … < 6.76` at `X = 10`, `ε = 0.1`, the note's `6.75`) is in
+  `theorem/Asymptotics/Guard/Potential.lean`.
 
 Source: work-sync theory/T-cramer-rao-bound.md §1.3 (bandwidth cancellation
 `σ_n² = S_n² f_s/2`), §1.5 (conditional vs nuisance bound: the honest bound is the

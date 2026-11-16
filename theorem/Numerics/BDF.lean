@@ -18,7 +18,8 @@ Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).
 
 Results.
 * `bdf1_exactOrder`, …, `bdf6_exactOrder` — BDF1–BDF6 with the coefficients of the source table
-  (BDF5/BDF6 completed, the table lists only `β_k`) have exact order `k`; `bdf_consistent`.
+  (BDF5/BDF6 completed, the table lists only `β_k`) have exact order `k`; `bdf1_consistent`, …,
+  `bdf6_consistent`.
 
 Not formalized.
 * Zero-stability of BDF1–6. Failure of zero-stability (a root of `ρ` outside the closed unit
@@ -124,13 +125,34 @@ def bdf6 : LMM 6 := bdf 6 ![10/147, -72/147, 225/147, -400/147, 450/147, -360/14
   · interval_cases q <;> simp [LMM.C, bdf6, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf6, bdf, Fin.sum_univ_succ]; norm_num
 
-@[tmio T, powerlib_foundation] theorem bdf_consistent :
-    bdf1.Consistent ∧ bdf2.Consistent ∧ bdf3.Consistent ∧ bdf4.Consistent ∧
-      bdf5.Consistent ∧ bdf6.Consistent := by
-  simp only [LMM.consistent_iff_hasOrder_one]
-  exact ⟨fun q hq => bdf1_exactOrder.1 q hq,
-    fun q hq => bdf2_exactOrder.1 q (by omega), fun q hq => bdf3_exactOrder.1 q (by omega),
-    fun q hq => bdf4_exactOrder.1 q (by omega), fun q hq => bdf5_exactOrder.1 q (by omega),
-    fun q hq => bdf6_exactOrder.1 q (by omega)⟩
+/-- BDF1 (implicit Euler) is consistent. -/
+@[tmio T, powerlib_foundation] theorem bdf1_consistent : bdf1.Consistent := by
+  rw [LMM.consistent_iff_hasOrder_one]
+  exact fun q hq => bdf1_exactOrder.1 q hq
+
+/-- BDF2 is consistent. -/
+@[tmio T, powerlib_foundation] theorem bdf2_consistent : bdf2.Consistent := by
+  rw [LMM.consistent_iff_hasOrder_one]
+  exact fun q hq => bdf2_exactOrder.1 q (by omega)
+
+/-- BDF3 is consistent. -/
+@[tmio T, powerlib_foundation] theorem bdf3_consistent : bdf3.Consistent := by
+  rw [LMM.consistent_iff_hasOrder_one]
+  exact fun q hq => bdf3_exactOrder.1 q (by omega)
+
+/-- BDF4 is consistent. -/
+@[tmio T, powerlib_foundation] theorem bdf4_consistent : bdf4.Consistent := by
+  rw [LMM.consistent_iff_hasOrder_one]
+  exact fun q hq => bdf4_exactOrder.1 q (by omega)
+
+/-- BDF5 is consistent. -/
+@[tmio T, powerlib_foundation] theorem bdf5_consistent : bdf5.Consistent := by
+  rw [LMM.consistent_iff_hasOrder_one]
+  exact fun q hq => bdf5_exactOrder.1 q (by omega)
+
+/-- BDF6 is consistent. -/
+@[tmio T, powerlib_foundation] theorem bdf6_consistent : bdf6.Consistent := by
+  rw [LMM.consistent_iff_hasOrder_one]
+  exact fun q hq => bdf6_exactOrder.1 q (by omega)
 
 end powerlib.Numerics

@@ -58,7 +58,8 @@ Results.
   `cascadeModel`, `quarticModel` with `cubicModel_field`, `cubicModel_not_certified`,
   `cubicModel_linearization`, `cascadeModel_field`, `cascadeEnergy`, `cascadeEnergy_lie`,
   `cascade_rejected`, `quarticModel_field`, `quarticEnergy`, `quarticEnergy_smooth`,
-  `quarticEnergy_lie`, `quarticEnergy_bounds`, `quarticEnergy_compact`, `nonpos_of_sq_bound`,
+  `quarticEnergy_lie`, `quarticEnergy_le_norm_pow`, `norm_pow_le_two_mul_quarticEnergy`,
+  `quarticEnergy_compact`, `nonpos_of_sq_bound`,
   `quartic_leading_nonpos`.
 
 Family and connection conclusions.
@@ -82,7 +83,7 @@ Family and connection conclusions.
   globally exponentially stable (`cascade_not_exponential`), so no certificate of this language
   exists (`cascade_certificate_boundary`), a limitation of the language, not of its search.
 * The quartic rotation with linear damping `quarticModel` is globally exponentially stable
-  (`quartic_exponential`) without a quadratic certificate (`quartic_certificate_boundary`); the
+  (`quartic_exponential`) without a quadratic certificate (`quarticModel_not_certified`); the
   global exponential and the contractive translations are therefore not exact
   (`not_exact_exponential`, `not_exact_contractive`).
 -/
@@ -1009,8 +1010,9 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   simp [quarticEnergy, quarticModel_field, coord]
   ring
 
-@[tmio T, powerlib_foundation] theorem quarticEnergy_bounds (x : ℝ²) :
-    quarticEnergy x ≤ ‖x‖ ^ 4 ∧ ‖x‖ ^ 4 ≤ 2 * quarticEnergy x := by
+/-- The quartic energy is at most `‖x‖⁴`. -/
+@[tmio T, powerlib_foundation] theorem quarticEnergy_le_norm_pow (x : ℝ²) :
+    quarticEnergy x ≤ ‖x‖ ^ 4 := by
   have hn : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 := by
     rw [EuclideanSpace.norm_sq_eq]
     simp [Fin.sum_univ_two]
@@ -1018,9 +1020,19 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
     rw [show ‖x‖ ^ 4 = (‖x‖ ^ 2) ^ 2 by ring, hn]
   rw [hn4]
   dsimp [quarticEnergy]
-  constructor
-  · nlinarith [mul_nonneg (sq_nonneg (x 0)) (sq_nonneg (x 1))]
-  · nlinarith [sq_nonneg ((x 0) ^ 2 - (x 1) ^ 2)]
+  nlinarith [mul_nonneg (sq_nonneg (x 0)) (sq_nonneg (x 1))]
+
+/-- `‖x‖⁴` is at most twice the quartic energy. -/
+@[tmio T, powerlib_foundation] theorem norm_pow_le_two_mul_quarticEnergy (x : ℝ²) :
+    ‖x‖ ^ 4 ≤ 2 * quarticEnergy x := by
+  have hn : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 := by
+    rw [EuclideanSpace.norm_sq_eq]
+    simp [Fin.sum_univ_two]
+  have hn4 : ‖x‖ ^ 4 = ((x 0) ^ 2 + (x 1) ^ 2) ^ 2 := by
+    rw [show ‖x‖ ^ 4 = (‖x‖ ^ 2) ^ 2 by ring, hn]
+  rw [hn4]
+  dsimp [quarticEnergy]
+  nlinarith [sq_nonneg ((x 0) ^ 2 - (x 1) ^ 2)]
 
 @[tmio T, powerlib_foundation] theorem quarticEnergy_compact (c : ℝ) :
     IsCompact {x : ℝ² | quarticEnergy x ≤ c} := by
@@ -1028,7 +1040,8 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
     (isClosed_le quarticEnergy_smooth.continuous continuous_const) fun x hx => ?_
   rw [Metric.mem_closedBall, dist_zero_right]
   apply Real.le_sqrt_of_sq_le
-  have h := (quarticEnergy_bounds x).2.trans (mul_le_mul_of_nonneg_left hx (by norm_num))
+  have h := (norm_pow_le_two_mul_quarticEnergy x).trans
+    (mul_le_mul_of_nonneg_left hx (by norm_num))
   have hmax : c ≤ max c 0 := le_max_left _ _
   nlinarith [sq_nonneg ‖x‖, le_max_right c 0]
 
@@ -1049,9 +1062,9 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
     by norm_num, one_pos, fun t₀ t₁ φ hφ t ht => ?_⟩
   have he := Flow.energy_bound_of_dissipation quarticEnergy_smooth hd hφ ht
   have hfour : ‖φ t‖ ^ 4 ≤ 2 * Real.exp (-(4 * (t - t₀))) * ‖φ t₀‖ ^ 4 :=
-    ((quarticEnergy_bounds (φ t)).2.trans
+    ((norm_pow_le_two_mul_quarticEnergy (φ t)).trans
       (mul_le_mul_of_nonneg_left he (by norm_num))).trans (by
-        nlinarith [mul_le_mul_of_nonneg_left (quarticEnergy_bounds (φ t₀)).1
+        nlinarith [mul_le_mul_of_nonneg_left (quarticEnergy_le_norm_pow (φ t₀))
           (Real.exp_nonneg (-(4 * (t - t₀))))])
   have hexp : Real.exp (-(t - t₀)) ^ 4 = Real.exp (-(4 * (t - t₀))) := by
     rw [← Real.exp_nat_mul]
@@ -1110,12 +1123,11 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   apply (mul_le_mul_iff_right₀ (sq_pos_of_pos hs)).mp
   nlinarith [h]
 
-/-- The quadratic certificate language cannot describe this global exponential model. -/
-@[tmio TM, powerlib_foundation] theorem quartic_certificate_boundary :
-    connection% (quarticModel ∈ family.den (.flow .globallyExponentiallyStable) ∧
-      quarticModel ∉ TMIO.realize Meets {.certified}) := by
+/-- The quadratic certificate language cannot describe this global exponential model
+(`quartic_exponential`): the quartic rotation has no quadratic certificate. -/
+@[tmio M, powerlib_foundation] theorem quarticModel_not_certified :
+    connection% (quarticModel ∉ TMIO.realize Meets {.certified}) := by
   unfold powerlib.TMIO.Statement
-  refine ⟨quartic_exponential, ?_⟩
   intro h
   obtain ⟨c⟩ : Nonempty (Certificate quarticModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
   have hp := c.quadraticDecay.lower_bound (WithLp.toLp 2 ![1, 0])
@@ -1142,9 +1154,10 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
     connection% (¬ family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h
-  have hmem := quartic_certificate_boundary.1
+  have hmem : quarticModel ∈ family.den (.flow .globallyExponentiallyStable) :=
+    quartic_exponential
   rw [← h] at hmem
-  exact quartic_certificate_boundary.2 hmem
+  exact quarticModel_not_certified hmem
 
 
 /-- The same quartic model contracts at an integer horizon, although no certificate represents
@@ -1157,7 +1170,7 @@ it. -/
     family_isAutonomous.mem_den_flow.mpr
       ((family_isAutonomous.mem_den_flow.mp quartic_exponential).sampledContraction)
   rw [← h] at hmem
-  exact quartic_certificate_boundary.2 hmem
+  exact quarticModel_not_certified hmem
 
 
 end powerlib.Nonlinear.Polynomial2

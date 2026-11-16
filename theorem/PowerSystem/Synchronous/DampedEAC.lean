@@ -40,8 +40,8 @@ Results.
   a strict equal-area margin at clearing implies convergence of the post-fault trajectory to
   `(δ_s, 0)`.
 * **Damping strictly delays the critical clearing time** (bolted fault `P_e^f ≡ 0`, same `M`,
-  `P_m` in both stages, `D > 0` during the fault).  `dampedBolted_trajectory`: explicit damped
-  during-fault trajectory `ω = (P_m/D)(1 − e^{−Dτ/M})`,
+  `P_m` in both stages, `D > 0` during the fault).  `dampedBolted_omega`, `dampedBolted_delta`:
+  explicit damped during-fault trajectory `ω = (P_m/D)(1 − e^{−Dτ/M})`,
   `δ = δ₀ + (P_m/D)(τ − (M/D)(1 − e^{−Dτ/M}))`, `τ = t − t_f`, which stays strictly below the
   undamped `δ₀ + P_m τ²/(2M)` for `τ > 0` (`SpecialFunctions.exp_neg_lt_quadratic`:
   `e^{−u} < 1 − u + u²/2`).
@@ -66,8 +66,9 @@ Family and connection conclusions.
   (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttraction_well`,
   `tendsto_of_firstSwing_margin`, `clearing_energy_le`, `faultTrajectory_firstSwing_of_areas`,
   `faultTrajectory_tendsto_of_areas`) and the bolted-fault clearing-time results
-  (`dampedBolted_trajectory`, `boltedFault_damped_clearingAngle`, `boltedFault_damped_firstSwing`,
-  `boltedFault_damped_tendsto`) are private implementation evidence.
+  (`dampedBolted_omega`, `dampedBolted_delta`, `boltedFault_damped_clearingAngle`,
+  `boltedFault_damped_firstSwing`, `boltedFault_damped_tendsto`) are private implementation
+  evidence.
 * The local stability of `(δ_s, 0)` with `D > 0` is the connection conclusion
   `Swing.deltaS_mem_den_locallyExponentiallyStable`.
 * The elementary bounds `SpecialFunctions.exp_neg_lt_quadratic`,
@@ -322,16 +323,14 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [h0]
   exact ⟨⟨by simpa using hwell, by simpa using hδc⟩, le_rfl⟩
 
-/-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`,
-`ω = (P_m/D)(1 − e^{−D(t−t_f)/M})`, `δ = δ₀ + (P_m/D)((t − t_f) − (M/D)(1 − e^{−D(t−t_f)/M}))`.
+/-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`, the speed is
+`ω = (P_m/D)(1 − e^{−D(t−t_f)/M})`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
+@[tmio M, powerlib_domain] private theorem dampedBolted_omega (hM : 0 < p.M) (hD : 0 < p.D)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
-    ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) ∧
-      φ t 0 = δ₀ + p.Pm / p.D *
-        ((t - tf) - p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf)))) := by
+    ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) := by
   have hacc : ∀ x : State 2, p.field x 1 = (p.Pm - p.D * x 1) / p.M := by
     intro x; simp [accel, Pe, hk₁, hk₂]
   have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ
@@ -358,22 +357,34 @@ Implementation evidence: trajectory-level result outside the sentence language (
       · simp only [Function.comp_apply, PiLp.proj_apply, hacc]
         field_simp
         ring
-  have hω : ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) := by
-    intro t ht
-    have h := h1 t ht
-    simp only [sub_self, mul_zero, Real.exp_zero, h0, PhasePlane.mk_apply_one, zero_mul] at h
-    have hE : Real.exp (p.D / p.M * (t - tf)) ≠ 0 := (Real.exp_pos _).ne'
-    have hinv : Real.exp (-(p.D / p.M) * (t - tf)) = (Real.exp (p.D / p.M * (t - tf)))⁻¹ := by
-      rw [← Real.exp_neg]; ring_nf
-    have key : φ t 1 * Real.exp (p.D / p.M * (t - tf)) =
-        p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) := by
-      linear_combination h
-    rw [hinv]
-    calc φ t 1 = φ t 1 * Real.exp (p.D / p.M * (t - tf)) / Real.exp (p.D / p.M * (t - tf)) := by
-          field_simp
-      _ = p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) / Real.exp (p.D / p.M * (t - tf)) := by
-          rw [key]
-      _ = p.Pm / p.D * (1 - (Real.exp (p.D / p.M * (t - tf)))⁻¹) := by field_simp
+  intro t ht
+  have h := h1 t ht
+  simp only [sub_self, mul_zero, Real.exp_zero, h0, PhasePlane.mk_apply_one, zero_mul] at h
+  have hE : Real.exp (p.D / p.M * (t - tf)) ≠ 0 := (Real.exp_pos _).ne'
+  have hinv : Real.exp (-(p.D / p.M) * (t - tf)) = (Real.exp (p.D / p.M * (t - tf)))⁻¹ := by
+    rw [← Real.exp_neg]; ring_nf
+  have key : φ t 1 * Real.exp (p.D / p.M * (t - tf)) =
+      p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) := by
+    linear_combination h
+  rw [hinv]
+  calc φ t 1 = φ t 1 * Real.exp (p.D / p.M * (t - tf)) / Real.exp (p.D / p.M * (t - tf)) := by
+        field_simp
+    _ = p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) / Real.exp (p.D / p.M * (t - tf)) := by
+        rw [key]
+    _ = p.Pm / p.D * (1 - (Real.exp (p.D / p.M * (t - tf)))⁻¹) := by field_simp
+
+/-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`, the angle is
+`δ = δ₀ + (P_m/D)((t − t_f) − (M/D)(1 − e^{−D(t−t_f)/M}))`.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio M, powerlib_domain] private theorem dampedBolted_delta (hM : 0 < p.M) (hD : 0 < p.D)
+    (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) :
+    ∀ t ∈ Icc tf T, φ t 0 = δ₀ + p.Pm / p.D *
+      ((t - tf) - p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf)))) := by
+  have hω := p.dampedBolted_omega hM hD hk₁ hk₂ hφ h0
+  have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ
+  have hcont := hφ.continuousOn
   have h2 : ∀ t ∈ Icc tf T, φ t 0 - (δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D *
       (1 - Real.exp (-(p.D / p.M) * (t - tf))))) = φ tf 0 - (δ₀ + p.Pm / p.D * ((tf - tf) -
         p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (tf - tf))))) := by
@@ -401,7 +412,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
         field_simp
         ring
   intro t ht
-  refine ⟨hω t ht, ?_⟩
   have := h2 t ht
   simp only [sub_self, mul_zero, Real.exp_zero, h0, PhasePlane.mk_apply_zero] at this
   linarith
@@ -557,7 +567,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       exact hpos z hz
   refine ⟨ε / 2, half_pos hε, ?_⟩
   intro φ tf tc htc hφ h0 hle
-  have hδc := (fault.dampedBolted_trajectory hMf hDf hk₁ hk₂ hφ h0 tc ⟨htc, le_rfl⟩).2
+  have hδc := fault.dampedBolted_delta hMf hDf hk₁ hk₂ hφ h0 tc ⟨htc, le_rfl⟩
   have hδF : φ tc 0 = F (tc - tf) := hδc
   have hτ0 : 0 ≤ tc - tf := by linarith
   have hlt : φ tc 0 < δcc := by

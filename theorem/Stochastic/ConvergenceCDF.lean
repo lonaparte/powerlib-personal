@@ -37,7 +37,8 @@ Results.
   * `tendsto_quantile`, `ae_tendsto_quantile`: `F_n → F` at atom-free points ⇒ `Q_n(u) → Q(u)`
     at every continuity point `u` of `Q`, hence for a.e. `u` (countably many discontinuities);
   * `skorokhod_representation`: if `μ_n → μ` weakly, then `Y_n = Q_{μ_n}`, `Y = Q_μ` on `(0, 1)`
-    have laws `μ_n`, `μ` and `Y_n → Y` almost surely.
+    (laws `μ_n`, `μ` by `aemeasurable_quantile`, `map_quantile`) satisfy `Y_n → Y` almost
+    surely.
 -/
 
 noncomputable section
@@ -259,16 +260,12 @@ monotone `Q` on `(0, 1)` are countable). -/
 
 /-- **Skorokhod representation on `ℝ`** (quantile coupling).  If `μ_n → μ` weakly (convergence in
 distribution), then on the probability space `((0, 1), Lebesgue)` the random variables
-`Y_n = Q_{μ_n}` and `Y = Q_μ` have laws `μ_n` and `μ`, and `Y_n → Y` almost surely. -/
+`Y_n = Q_{μ_n}` converge almost surely to `Y = Q_μ`; their laws are `μ_n` and `μ`
+(`aemeasurable_quantile`, `map_quantile`). -/
 @[tmio T, powerlib_foundation] theorem skorokhod_representation {μs : ℕ → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ} (h : Tendsto μs atTop (𝓝 μ)) :
-    (∀ n, AEMeasurable (quantile (μs n : Measure ℝ)) unifI ∧
-        unifI.map (quantile (μs n : Measure ℝ)) = μs n) ∧
-      AEMeasurable (quantile (μ : Measure ℝ)) unifI ∧
-      unifI.map (quantile (μ : Measure ℝ)) = μ ∧
-      ∀ᵐ u ∂unifI, Tendsto (fun n => quantile (μs n : Measure ℝ) u) atTop
-        (𝓝 (quantile (μ : Measure ℝ) u)) :=
-  ⟨fun _ => ⟨aemeasurable_quantile _, map_quantile _⟩, aemeasurable_quantile _, map_quantile _,
-    ae_tendsto_quantile fun _ hx => cdf_tendsto_of_tendsto h hx⟩
+    ∀ᵐ u ∂unifI, Tendsto (fun n => quantile (μs n : Measure ℝ) u) atTop
+      (𝓝 (quantile (μ : Measure ℝ) u)) :=
+  ae_tendsto_quantile fun _ hx => cdf_tendsto_of_tendsto h hx
 
 end powerlib.Stochastic.Conv

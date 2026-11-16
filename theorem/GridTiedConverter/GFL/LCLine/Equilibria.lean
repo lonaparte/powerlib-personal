@@ -22,10 +22,11 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-a
 Results.
 Per period window `[a, a + 2π)` of the angle `θ_e`:
 * `two_equilibria_per_period` (`|c₀| < A`): exactly two equilibria `(θ_s, 0)`, `(θ_u, 0)`;
-  `two_equilibria_per_period_den`: `(θ_s, 0)` is locally exponentially stable and `(θ_u, 0)` is
-  unstable.
-* `fold_equilibrium_per_period` (`|c₀| = A`): exactly one equilibrium; its Jacobian is the
-  nonzero nilpotent `[[0, K_i], [0, 0]]` (saddle-node / fold).
+  `stableRoot_mem_den_locallyExponentiallyStable`: `(θ_s, 0)` is locally exponentially stable;
+  `saddleRoot_mem_den_unstable`: `(θ_u, 0)` is unstable.
+* `fold_equilibrium_per_period`, `fold_hZeros_eq`, `fold_reducedField_eq_zero` (`|c₀| = A`):
+  exactly one equilibrium `(θ_s, 0)`; its Jacobian is the nonzero nilpotent `[[0, K_i], [0, 0]]`
+  (`fold_jacobian_nilpotent`; saddle-node / fold).
 * `no_equilibrium` (`|c₀| > A`): the reduced field has no equilibrium.
 * `snSurface_iff` and companions: `|c₀| = A ⇔ [Δ i_d* − ((1 − b) i_d* + a i_q*)]² =
   (ω_g C_f V_g)² Δ` (IN-positive references; the square is the same for the source's
@@ -36,12 +37,13 @@ Family and connection conclusions.
 No new family: the stability conclusions are connection
 memberships of the reduced model's members `p.pllModel θ` of the PI-PLL family
 `PLL.PIPLL.family` (`theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`):
-`two_equilibria_per_period_den` (the stable root is locally exponentially stable, the saddle root
-unstable). The count and the explicit pair (`two_equilibria_per_period`), the fold Jacobian
-(`fold_equilibrium_per_period`), the absence of equilibria (`no_equilibrium`) and the existence
-criteria of the 10-state field (`field10_exists_equilibrium_iff`,
-`field10_exists_equilibrium_iff_explicit`) are static evidence on the model, not connection
-conclusions.
+`stableRoot_mem_den_locallyExponentiallyStable` (the stable root is locally exponentially stable)
+and `saddleRoot_mem_den_unstable` (the saddle root is unstable). The count and the explicit pair
+(`two_equilibria_per_period`), the fold equilibrium and Jacobian (`fold_equilibrium_per_period`,
+`fold_hZeros_eq`, `fold_reducedField_eq_zero`, `fold_jacobian_nilpotent`), the absence of
+equilibria (`no_equilibrium`) and the existence criteria of the 10-state field
+(`field10_exists_equilibrium_iff`, `field10_exists_equilibrium_iff_explicit`) are static evidence
+on the model, not connection conclusions.
 
 Correction (`equilibria-and-bifurcation.md` §2 and §7): the note allows "possibly four zeros per
 period (two stable, two saddles)" because of a `2θ_e` term and says that term makes the basin width
@@ -94,39 +96,69 @@ Static evidence on the model, not a connection conclusion. -/
   · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.ncard_sinusoidZeros_of_lt hc hA
   · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.sinusoidZeros_eq hc.le hA
 
-/-- A4, `|c₀| < A`, `K_p, K_i > 0`: of the two equilibria of every period window, `(θ_s, 0)` is
-locally exponentially stable and `(θ_u, 0)` is unstable. -/
-@[tmio TM, powerlib_domain] theorem two_equilibria_per_period_den (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) (hc : |p.c0| < p.amp) (a : ℝ) :
+/-- A4, `|c₀| < A`, `K_p, K_i > 0`: in every period window the equilibrium `(θ_s, 0)` is locally
+exponentially stable. -/
+@[tmio TM, powerlib_domain] theorem stableRoot_mem_den_locallyExponentiallyStable
+    (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki)
+    (hc : |p.c0| < p.amp) (a : ℝ) :
     connection% (p.pllModel (stableRoot p.c0 p.amp p.phase a) ∈
-        PLL.PIPLL.family.den (.flow .locallyExponentiallyStable) ∧
-      p.pllModel (saddleRoot p.c0 p.amp p.phase a) ∈ PLL.PIPLL.family.den (.flow .unstable)) := by
+      PLL.PIPLL.family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hA := p.amp_pos hVg hΔ
   have hs := SpecialFunctions.sqrt_one_sub_sq_pos hc hA
-  refine ⟨?_, ?_⟩
-  · refine p.reduced_mem_den_locallyExponentiallyStable hwC hΔ hKp hKi ?_ ?_
-    · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.stableRoot_zero hc.le hA
-    · rw [SpecialFunctions.cos_stableRoot]; nlinarith
-  · refine p.reduced_mem_den_unstable hwC hΔ hKi ?_ ?_
-    · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.saddleRoot_zero hc.le hA
-    · rw [SpecialFunctions.cos_saddleRoot]; nlinarith
+  refine p.reduced_mem_den_locallyExponentiallyStable hwC hΔ hKp hKi ?_ ?_
+  · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.stableRoot_zero hc.le hA
+  · rw [SpecialFunctions.cos_stableRoot]; nlinarith
 
-/-- A4, `|c₀| = A` (saddle-node): exactly one equilibrium per period, at which the Jacobian is the
-nonzero nilpotent `[[0, K_i], [0, 0]]`.
+/-- A4, `|c₀| < A`, `K_p, K_i > 0`: in every period window the equilibrium `(θ_u, 0)` is
+unstable. -/
+@[tmio TM, powerlib_domain] theorem saddleRoot_mem_den_unstable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hVg : 0 < p.Vg) (_hKp : 0 < p.Kp) (hKi : 0 < p.Ki) (hc : |p.c0| < p.amp) (a : ℝ) :
+    connection% (p.pllModel (saddleRoot p.c0 p.amp p.phase a) ∈
+      PLL.PIPLL.family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  have hA := p.amp_pos hVg hΔ
+  have hs := SpecialFunctions.sqrt_one_sub_sq_pos hc hA
+  refine p.reduced_mem_den_unstable hwC hΔ hKi ?_ ?_
+  · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.saddleRoot_zero hc.le hA
+  · rw [SpecialFunctions.cos_saddleRoot]; nlinarith
+
+/-- A4, `|c₀| = A` (saddle-node): exactly one equilibrium per period.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem fold_equilibrium_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hVg : 0 < p.Vg) (hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
-    (p.hZeros a).ncard = 1 ∧ p.hZeros a = {stableRoot p.c0 p.amp p.phase a} ∧
-      p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) = 0 ∧
-      fderiv ℝ p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) =
-        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian p.Kp p.Ki 0) ∧
-      piPLLJacobian p.Kp p.Ki 0 ≠ 0 ∧ (piPLLJacobian p.Kp p.Ki 0) ^ 2 = 0 := by
+    (hVg : 0 < p.Vg) (_hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
+    (p.hZeros a).ncard = 1 := by
+  rw [p.hZeros_eq hwC hΔ]
+  exact SpecialFunctions.ncard_sinusoidZeros_of_eq hc (p.amp_pos hVg hΔ)
+
+/-- A4, `|c₀| = A` (saddle-node): the equilibrium angle of every period window is the double
+root `θ_s = θ_u`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem fold_hZeros_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hVg : 0 < p.Vg) (_hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
+    p.hZeros a = {stableRoot p.c0 p.amp p.phase a} := by
   have hA := p.amp_pos hVg hΔ
-  refine ⟨?_, ?_, p.reduced_jacobian_nilpotent hwC hΔ hKi ?_ ?_⟩
-  · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.ncard_sinusoidZeros_of_eq hc hA
-  · rw [p.hZeros_eq hwC hΔ, SpecialFunctions.sinusoidZeros_eq hc.le hA,
-      SpecialFunctions.stableRoot_eq_saddleRoot hc hA, Set.pair_eq_singleton]
+  rw [p.hZeros_eq hwC hΔ, SpecialFunctions.sinusoidZeros_eq hc.le hA,
+    SpecialFunctions.stableRoot_eq_saddleRoot hc hA, Set.pair_eq_singleton]
+
+/-- A4, `|c₀| = A` (saddle-node): `(θ_s, 0)` is an equilibrium of the reduced field.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem fold_reducedField_eq_zero (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hVg : 0 < p.Vg) (hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
+    p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) = 0 := by
+  refine (p.reducedField_eq_zero_iff hKi _).mpr ⟨?_, rfl⟩
+  rw [p.h_eq_polar hwC hΔ]
+  exact SpecialFunctions.stableRoot_zero hc.le (p.amp_pos hVg hΔ)
+
+/-- A4, `|c₀| = A` (saddle-node): the Jacobian at `(θ_s, 0)` is the nonzero nilpotent
+`[[0, K_i], [0, 0]]` (`PLL.piPLLJacobian_zero_ne_zero`, `PLL.piPLLJacobian_zero_sq`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem fold_jacobian_nilpotent (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hVg : 0 < p.Vg) (hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
+    fderiv ℝ p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) =
+      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian p.Kp p.Ki 0) := by
+  have hA := p.amp_pos hVg hΔ
+  refine p.reduced_jacobian_nilpotent hwC hΔ hKi ?_ ?_
   · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.stableRoot_zero hc.le hA
   · rw [SpecialFunctions.cos_stableRoot, SpecialFunctions.sqrt_one_sub_sq_eq_zero hc hA, mul_zero]
 
@@ -174,19 +206,20 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
   have hs := p.sqrt_Δ_pos hΔ
   rw [amp, div_pow, Real.sq_sqrt p.Δ_nonneg]; field_simp
 
-@[tmio M, powerlib_domain] private lemma abs_c0_cmp (_hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
-    (|p.c0| < p.amp ↔ p.c0 ^ 2 < p.amp ^ 2) ∧ (|p.c0| = p.amp ↔ p.c0 ^ 2 = p.amp ^ 2) := by
-  have hA := p.amp_pos hVg hΔ
-  constructor
-  · rw [← abs_of_pos hA, sq_lt_sq, abs_abs]
-  · rw [sq_eq_sq_iff_abs_eq_abs, abs_of_pos hA]
+@[tmio M, powerlib_domain] private lemma abs_c0_lt_iff (_hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hVg : 0 < p.Vg) : |p.c0| < p.amp ↔ p.c0 ^ 2 < p.amp ^ 2 := by
+  rw [← abs_of_pos (p.amp_pos hVg hΔ), sq_lt_sq, abs_abs]
+
+@[tmio M, powerlib_domain] private lemma abs_c0_eq_iff (_hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+    (hVg : 0 < p.Vg) : |p.c0| = p.amp ↔ p.c0 ^ 2 = p.amp ^ 2 := by
+  rw [sq_eq_sq_iff_abs_eq_abs, abs_of_pos (p.amp_pos hVg hΔ)]
 
 /-- Saddle-node surface `Σ_SN`: `|c₀| = A ⇔ N² = (ω_g C_f V_g)² Δ`. -/
 @[tmio M, powerlib_domain] theorem snSurface_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     |p.c0| = p.amp ↔ p.snNumerator ^ 2 = (p.wC * p.Vg) ^ 2 * p.Δ := by
   have hD : 0 < p.Δ ^ 2 * p.wC ^ 2 := by
     have := p.Δ_pos hΔ; positivity
-  rw [(p.abs_c0_cmp hwC hΔ hVg).2, ← p.sq_c0_mul hwC hΔ, ← p.sq_amp_mul hwC hΔ]
+  rw [p.abs_c0_eq_iff hwC hΔ hVg, ← p.sq_c0_mul hwC hΔ, ← p.sq_amp_mul hwC hΔ]
   constructor
   · intro h; rw [h]
   · intro h; exact mul_right_cancel₀ hD.ne' h
@@ -196,7 +229,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
     |p.c0| < p.amp ↔ p.snNumerator ^ 2 < (p.wC * p.Vg) ^ 2 * p.Δ := by
   have hD : 0 < p.Δ ^ 2 * p.wC ^ 2 := by
     have := p.Δ_pos hΔ; positivity
-  rw [(p.abs_c0_cmp hwC hΔ hVg).1, ← p.sq_c0_mul hwC hΔ, ← p.sq_amp_mul hwC hΔ]
+  rw [p.abs_c0_lt_iff hwC hΔ hVg, ← p.sq_c0_mul hwC hΔ, ← p.sq_amp_mul hwC hΔ]
   exact (mul_lt_mul_iff_left₀ hD).symm
 
 /-- Existence of a PLL equilibrium in explicit parameters: `N² ≤ (ω_g C_f V_g)² Δ`.

@@ -201,36 +201,42 @@ that starts in `S` converges. -/
   have := hanti ⟨le_rfl, hxy.le⟩ (Ioo_subset_Icc_self ht) ht.1.le
   exact (show V (ψ t) ≤ V (ψ x) from this).trans hxV
 
-/-- Globalization of a `C¹` field around a compact positively invariant set. -/
+/-- Positive invariance transfers from `g` back to `f` on every subset `N` of a set `Ω` that is
+positively invariant for `f`, when `g` agrees with `f` on `Ω`. -/
+@[tmio T, powerlib_foundation] theorem IsPositivelyInvariant.of_eqOn_of_subset {f g : ℝⁿ → ℝⁿ}
+    {Ω N : Set ℝⁿ} (hgf : ∀ x ∈ Ω, g x = f x) (hΩ_inv : IsPositivelyInvariant Ω f)
+    (hNΩ : N ⊆ Ω) (hN : IsPositivelyInvariant N g) : IsPositivelyInvariant N f := by
+  intro t₀ t₁ ψ hψ hψ0 t ht
+  have hstay : ∀ s ∈ Icc t₀ t₁, ψ s ∈ Ω := hΩ_inv t₀ t₁ ψ hψ (hNΩ hψ0)
+  exact hN t₀ t₁ ψ
+    (isIntegralCurveOn_of_eq_on_curve hψ fun s hs => (hgf _ (hstay s hs)).symm) hψ0 t ht
+
+/-- A forward solution of `f` starting in a set `Ω` that is positively invariant for `f` is a
+forward solution of every field `g` that agrees with `f` on `Ω`. -/
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant
+    {f g : ℝⁿ → ℝⁿ} {Ω : Set ℝⁿ} (hgf : ∀ x ∈ Ω, g x = f x)
+    (hΩ_inv : IsPositivelyInvariant Ω f) {φ : ℝ → ℝⁿ}
+    (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) (hφ0 : φ 0 ∈ Ω) :
+    IsIntegralCurveOn φ (fun _ x => g x) (Ici 0) := by
+  apply isIntegralCurveOn_of_eq_on_curve hφ
+  intro t ht
+  exact (hgf _ (hΩ_inv 0 t φ (hφ.mono Icc_subset_Ici_self) hφ0 t ⟨ht, le_rfl⟩)).symm
+
+/-- Globalization of a `C¹` field around a compact positively invariant set `Ω`: a globally
+Lipschitz `C¹` field that agrees with `f` on `Ω` and for which `Ω` is positively invariant.
+Invariant subsets and forward solutions from `Ω` transfer between the two fields
+(`IsPositivelyInvariant.of_eqOn_of_subset`,
+`isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant`). -/
 @[tmio T, powerlib_foundation] theorem exists_globalization {f : ℝⁿ → ℝⁿ} {Ω : Set ℝⁿ}
     (hf : ContDiff ℝ 1 f) (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f) :
     ∃ g : ℝⁿ → ℝⁿ, ContDiff ℝ 1 g ∧ (∃ K, LipschitzWith K g) ∧ (∀ x ∈ Ω, g x = f x) ∧
-      IsPositivelyInvariant Ω g ∧
-      (∀ N ⊆ Ω, IsPositivelyInvariant N g → IsPositivelyInvariant N f) ∧
-      (∀ {φ : ℝ → ℝⁿ}, IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) → φ 0 ∈ Ω →
-        IsIntegralCurveOn φ (fun _ x => g x) (Ici 0)) ∧
-      (∀ {φ : ℝ → ℝⁿ}, IsIntegralCurveOn φ (fun _ x => g x) (Ici 0) → φ 0 ∈ Ω →
-        IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) := by
+      IsPositivelyInvariant Ω g := by
   obtain ⟨R, hR⟩ := hΩ_compact.isBounded.subset_ball (0 : ℝⁿ)
   obtain ⟨g, hg, hglip, hgf⟩ := exists_contDiff_lipschitz_extension hf R
   have hgfU : ∀ x ∈ ball (0 : ℝⁿ) R, g x = f x := fun x hx =>
     hgf x (by rw [mem_ball, dist_zero_right] at hx; exact hx.le)
-  have hgfΩ : ∀ x ∈ Ω, g x = f x := fun x hx => hgfU x (hR hx)
-  have hΩ_inv_g : IsPositivelyInvariant Ω g :=
-    IsPositivelyInvariant.of_eqOn_isOpen hΩ_compact.isClosed isOpen_ball hR hgfU hΩ_inv
-  refine ⟨g, hg, hglip, hgfΩ, hΩ_inv_g, ?_, ?_, ?_⟩
-  · intro N hNΩ hN t₀ t₁ ψ hψ hψ0 t ht
-    have hstay : ∀ s ∈ Icc t₀ t₁, ψ s ∈ Ω := hΩ_inv t₀ t₁ ψ hψ (hNΩ hψ0)
-    exact hN t₀ t₁ ψ
-      (isIntegralCurveOn_of_eq_on_curve hψ fun s hs => (hgfΩ _ (hstay s hs)).symm) hψ0 t ht
-  · intro φ hφ hφ0
-    apply isIntegralCurveOn_of_eq_on_curve hφ
-    intro t ht
-    exact (hgfΩ _ (hΩ_inv 0 t φ (hφ.mono Icc_subset_Ici_self) hφ0 t ⟨ht, le_rfl⟩)).symm
-  · intro φ hφ hφ0
-    apply isIntegralCurveOn_of_eq_on_curve hφ
-    intro t ht
-    exact hgfΩ _ (hΩ_inv_g 0 t φ (hφ.mono Icc_subset_Ici_self) hφ0 t ⟨ht, le_rfl⟩)
+  exact ⟨g, hg, hglip, fun x hx => hgfU x (hR hx),
+    IsPositivelyInvariant.of_eqOn_isOpen hΩ_compact.isClosed isOpen_ball hR hgfU hΩ_inv⟩
 
 /-! ## LaSalle without a global Lipschitz hypothesis -/
 
@@ -244,8 +250,7 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
     {φ : ℝ → ℝⁿ} (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) (hφ0 : φ 0 ∈ Ω)
     (hM : ∀ N ⊆ LieDerivZeroSet f V Ω, IsPositivelyInvariant N f → N ⊆ M) :
     Tendsto φ atTop (𝓝ˢ M) := by
-  obtain ⟨g, hg, ⟨K, hglip⟩, hgfΩ, hΩ_inv_g, hback, hfwd, -⟩ :=
-    exists_globalization hf_c1 hΩ_compact hΩ_inv
+  obtain ⟨g, hg, ⟨K, hglip⟩, hgfΩ, hΩ_inv_g⟩ := exists_globalization hf_c1 hΩ_compact hΩ_inv
   have hE : LieDerivZeroSet g V Ω = LieDerivZeroSet f V Ω := by
     ext x
     simp only [lieDerivZeroSet_def, mem_sep_iff]
@@ -255,11 +260,12 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
     · rintro ⟨hx, h⟩
       exact ⟨hx, by rw [hgfΩ x hx]; exact h⟩
   refine _root_.lasalle_invariance_principle hΩ_compact hΩ_inv_g hglip hg hV_c1
-    (fun x hx => by rw [hgfΩ x hx]; exact hLie x hx) (hfwd hφ hφ0) hφ0 ?_
+    (fun x hx => by rw [hgfΩ x hx]; exact hLie x hx)
+    (isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant hgfΩ hΩ_inv hφ hφ0) hφ0 ?_
   intro N hN hNinv
   change N ⊆ LieDerivZeroSet g V Ω at hN
   rw [hE] at hN
-  exact hM N hN (hback N (fun x hx => (hN hx).1) hNinv)
+  exact hM N hN (IsPositivelyInvariant.of_eqOn_of_subset hgfΩ hΩ_inv (fun x hx => (hN hx).1) hNinv)
 
 /-! ## Regions of attraction from LaSalle -/
 
@@ -276,11 +282,12 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
       ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
         Tendsto φ atTop (𝓝 x_eq) := by
-  obtain ⟨g, -, ⟨K, hglip⟩, -, -, -, -, hgf⟩ := exists_globalization hf_c1 hΩ_compact hΩ_inv
+  obtain ⟨g, -, ⟨K, hglip⟩, hgfΩ, hΩ_inv_g⟩ := exists_globalization hf_c1 hΩ_compact hΩ_inv
   intro x₀ hx₀
   refine ⟨?_, fun φ hφ0 hφ => ?_⟩
   · obtain ⟨φ, hφ0, hφ⟩ := Flow.forwardComplete_of_lipschitzWith hglip 0 x₀
-    exact ⟨φ, hφ0, hgf hφ (hφ0 ▸ hx₀)⟩
+    exact ⟨φ, hφ0, isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant
+      (fun x hx => (hgfΩ x hx).symm) hΩ_inv_g hφ (hφ0 ▸ hx₀)⟩
   · have h := lasalle_invariance_principle_of_contDiff hΩ_compact hΩ_inv hf_c1 hV_c1 hLie hφ
       (hφ0 ▸ hx₀) hLasalle
     rwa [nhdsSet_singleton] at h

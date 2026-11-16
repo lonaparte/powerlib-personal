@@ -37,8 +37,11 @@ Results.
   `δω = 0` (`piPLLField_point_eq_zero_iff` covers both cases at the selected point).
 * Jacobian at any point: `[[K_p g, K_i], [g, 0]]` with `g = h'(θ)`; trace `K_p g`, determinant
   `−K_i g` (so `K_i · tr + K_p · det = 0`); Hurwitz iff `K_p g < 0 ∧ K_i g < 0`.
-* `h'(θ*) = 0` (`K_i ≠ 0`): the Jacobian is a nonzero nilpotent matrix (loss of hyperbolicity;
-  linearization decides nothing).
+* `h'(θ*) = 0` (`K_i ≠ 0`): the Jacobian at the equilibrium `(θ*, δω / K_i)` is
+  `piPLLJacobian K_p K_i 0 = [[0, K_i], [0, 0]]` (`fderiv_piPLLField` at `g = 0`), a nonzero
+  nilpotent matrix (`piPLLJacobian_zero_ne_zero`, `piPLLJacobian_zero_sq`): a double zero
+  eigenvalue with a single Jordan block, not Hurwitz (`piPLLJacobian_zero_not_isHurwitz`). Loss of
+  hyperbolicity; linearization decides nothing.
 
 Correction (`T-gfl-dynamics` §1.12, `Σ_FD`, and §1.14 region D): the note claims that when
 `|δω| > K_p max |h|` "the system loses all equilibria". This is false for the reduced model of
@@ -190,6 +193,12 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
   simp [piPLLJacobian] at this
   exact hKi this
 
+/-- At `g = 0` the Jacobian is not Hurwitz (its trace and determinant vanish). -/
+@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_not_isHurwitz (Kp Ki : ℝ) :
+    ¬ LinearSystems.IsHurwitz (piPLLJacobian Kp Ki 0) := by
+  rw [piPLLJacobian_isHurwitz_iff]
+  simp
+
 /-- Every (complex) eigenvalue of the `g = 0` Jacobian is zero: `J² = 0`, so `μ² v = J² v = 0`
 (`Linear.mulVec_pow_of_eigen`). -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_zero_eigenvalue_eq_zero (Kp Ki : ℝ) {μ : ℂ}
@@ -271,24 +280,6 @@ Static evidence, not a connection conclusion. -/
     simp
   · rw [piPLLField_eq_zero_iff hKi]
     simp [hKi]
-
-/-! ## Loss of hyperbolicity -/
-
-/-- `h'(θ*) = 0` (`K_i ≠ 0`): the Jacobian of the field at the equilibrium `(θ*, δω / K_i)` is
-the nonzero nilpotent matrix `[[0, K_i], [0, 0]]` — a double zero eigenvalue with a single Jordan
-block. The equilibrium is not hyperbolic, and the linearization theorems decide nothing there.
-This is a statement about the linearization only, not a stability conclusion: static evidence,
-not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem piPLL_jacobian_nilpotent_of_deriv_zero {h : ℝ → ℝ}
-    {Kp Ki δω θ : ℝ} (hzero : h θ = 0) (hderiv : HasDerivAt h 0 θ) (hKi : Ki ≠ 0) :
-    piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0 ∧
-      fderiv ℝ (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
-        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧
-      piPLLJacobian Kp Ki 0 ≠ 0 ∧ (piPLLJacobian Kp Ki 0) ^ 2 = 0 ∧
-      ¬ LinearSystems.IsHurwitz (piPLLJacobian Kp Ki 0) :=
-  ⟨(piPLLField_eq_zero_iff hKi _).mpr ⟨hzero, rfl⟩, fderiv_piPLLField hderiv,
-    piPLLJacobian_zero_ne_zero hKi, piPLLJacobian_zero_sq Kp Ki,
-    by rw [piPLLJacobian_isHurwitz_iff]; simp⟩
 
 /-! ## Refutation of the frequency-drift boundary `Σ_FD` -/
 

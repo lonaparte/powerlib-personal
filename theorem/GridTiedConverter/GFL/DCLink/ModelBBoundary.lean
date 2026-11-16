@@ -33,7 +33,9 @@ Results.
   `Criteria.RouthViolationFin4`); a strict violation gives instability
   (`mem_den_unstable_of_violation`, linearization of the regularized field).
 * Three boundary witnesses, all equilibria with positive reference whose Jacobians lie on the
-  boundary (`boundaryWitnesses_mem_realize`, `boundaryWitnesses_not_mem_realize_offBoundary`):
+  boundary (`hopfCenter_mem_realize`, `hopfDamped_mem_realize`, `cdcZero_mem_realize`;
+  `hopfCenter_not_mem_realize_offBoundary`, `hopfDamped_not_mem_realize_offBoundary`,
+  `cdcZero_not_mem_realize_offBoundary`):
   - `hopfDamped` (lossy line `R_g = 2`, negative proportional DC gain): characteristic polynomial
     `(s² + 3s + 3)(s² + 1)`, yet locally asymptotically stable
     (`hopfDamped_mem_den_locallyAsymptoticallyStable`). Proof: an explicit strict Lyapunov
@@ -56,10 +58,11 @@ Results.
 Family and connection conclusions.
 Connection conclusions on `ModelB.family`: `exactUnder_offBoundary`,
 `not_exactUnder_lyapunovStable`, `not_exactUnder_locallyAsymptoticallyStable`,
-`mem_den_unstable_of_violation` and the witness memberships above; `boundaryWitnesses_mem_realize`,
-`boundaryWitnesses_not_mem_realize_offBoundary` are static facts about the requirement spaces. The
-field formulas, energies, their derivatives and the elementary inequalities are foundation; the
-trajectory-level statements behind the memberships are private implementation evidence.
+`mem_den_unstable_of_violation` and the witness memberships above; the `*_mem_realize` and
+`*_not_mem_realize_offBoundary` facts of the three witnesses are static facts about the
+requirement spaces. The field formulas, energies, their derivatives and the elementary
+inequalities are foundation; the trajectory-level statements behind the memberships are private
+implementation evidence.
 
 Not characterized: which boundary equilibria are (asymptotically) stable in general. This needs a
 center-manifold reduction or Lyapunov coefficients over the 13-parameter family (and higher-order
@@ -932,46 +935,89 @@ boundary. Off the boundary the translation is exact (`exactUnder_offBoundary`). 
 
 /-! ## The witnesses lie on the Routh boundary -/
 
-/-- The three boundary witnesses are equilibria with positive DC-voltage reference. -/
-@[tmio M, powerlib_domain] theorem boundaryWitnesses_mem_realize :
-    connection% ({hopfCenter, hopfDamped, cdcZero} ⊆
-      TMIO.realize Meets {.equilibrium, .positiveReference}) := by
+/-- The boundary witness `hopfCenter` is an equilibrium with positive DC-voltage reference. -/
+@[tmio M, powerlib_domain] theorem hopfCenter_mem_realize :
+    connection% (hopfCenter ∈ TMIO.realize Meets {.equilibrium, .positiveReference}) := by
   unfold powerlib.TMIO.Statement
-  intro m hm
   rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm hq
-  rcases hm with rfl | rfl | rfl <;> rcases hq with rfl | rfl
-  · exact (show hopfCenter.p.field hopfCenter.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_equilibrium)
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl
+  · exact (show hopfCenter.p.field hopfCenter.x = 0 from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
+        forall_eq, Meets] using hopfCenter_equilibrium)
   · show (0 : ℝ) < hopfCenter.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
       ModelBParams.Rg, ModelBParams.Xg, hopfCenter]
-  · exact (show hopfDamped.p.field hopfDamped.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_equilibrium)
+
+/-- The boundary witness `hopfDamped` is an equilibrium with positive DC-voltage reference. -/
+@[tmio M, powerlib_domain] theorem hopfDamped_mem_realize :
+    connection% (hopfDamped ∈ TMIO.realize Meets {.equilibrium, .positiveReference}) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% TMIO.mem_realize)]
+  intro q hq
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl
+  · exact (show hopfDamped.p.field hopfDamped.x = 0 from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
+        forall_eq, Meets] using hopfDamped_equilibrium)
   · show (0 : ℝ) < hopfDamped.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
       ModelBParams.Rg, ModelBParams.Xg, hopfDamped]
-  · exact (show cdcZero.p.field cdcZero.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using cdcZero_equilibrium)
+
+/-- The boundary witness `cdcZero` is an equilibrium with positive DC-voltage reference. -/
+@[tmio M, powerlib_domain] theorem cdcZero_mem_realize :
+    connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium, .positiveReference}) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% TMIO.mem_realize)]
+  intro q hq
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl
+  · exact (show cdcZero.p.field cdcZero.x = 0 from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
+        forall_eq, Meets] using cdcZero_equilibrium)
   · show (0 : ℝ) < cdcZero.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
       ModelBParams.Rg, ModelBParams.Xg, cdcZero]
 
-/-- None of the three boundary witnesses is off the 4×4 Routh boundary: their Jacobians neither
-meet the Routh conditions nor violate them strictly. -/
-@[tmio M, powerlib_domain] theorem boundaryWitnesses_not_mem_realize_offBoundary :
-    connection% ({hopfCenter, hopfDamped, cdcZero} ⊆
-      (TMIO.realize Meets {.offBoundary})ᶜ) := by
+/-- The boundary witness `hopfCenter` is not off the 4×4 Routh boundary: its Jacobian neither
+meets the Routh conditions nor violates them strictly. -/
+@[tmio M, powerlib_domain] theorem hopfCenter_not_mem_realize_offBoundary :
+    connection% (hopfCenter ∉ TMIO.realize Meets {.offBoundary}) := by
   unfold powerlib.TMIO.Statement
-  intro m hm hob
+  intro hob
   rw [(connection_proof% TMIO.mem_realize)] at hob
-  have h : Meets m .offBoundary := hob .offBoundary rfl
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm
-  rcases hm with rfl | rfl | rfl
-  · rcases h with h | h
-    · exact (show ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_not_routh) h
-    · exact hopfCenter_not_violation h
-  · rcases h with h | h
-    · exact (show ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_not_routh) h
-    · exact hopfDamped_not_violation h
-  · rcases h with h | h
-    · exact (show ¬ RouthFin4 (cdcZero.p.jacobian cdcZero.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using cdcZero_not_routh) h
-    · exact cdcZero_not_violation h
+  have h : Meets hopfCenter .offBoundary := hob .offBoundary rfl
+  rcases h with h | h
+  · exact (show ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
+        forall_eq, Meets] using hopfCenter_not_routh) h
+  · exact hopfCenter_not_violation h
+
+/-- The boundary witness `hopfDamped` is not off the 4×4 Routh boundary: its Jacobian neither
+meets the Routh conditions nor violates them strictly. -/
+@[tmio M, powerlib_domain] theorem hopfDamped_not_mem_realize_offBoundary :
+    connection% (hopfDamped ∉ TMIO.realize Meets {.offBoundary}) := by
+  unfold powerlib.TMIO.Statement
+  intro hob
+  rw [(connection_proof% TMIO.mem_realize)] at hob
+  have h : Meets hopfDamped .offBoundary := hob .offBoundary rfl
+  rcases h with h | h
+  · exact (show ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
+        forall_eq, Meets] using hopfDamped_not_routh) h
+  · exact hopfDamped_not_violation h
+
+/-- The boundary witness `cdcZero` is not off the 4×4 Routh boundary: its Jacobian neither
+meets the Routh conditions nor violates them strictly. -/
+@[tmio M, powerlib_domain] theorem cdcZero_not_mem_realize_offBoundary :
+    connection% (cdcZero ∉ TMIO.realize Meets {.offBoundary}) := by
+  unfold powerlib.TMIO.Statement
+  intro hob
+  rw [(connection_proof% TMIO.mem_realize)] at hob
+  have h : Meets cdcZero .offBoundary := hob .offBoundary rfl
+  rcases h with h | h
+  · exact (show ¬ RouthFin4 (cdcZero.p.jacobian cdcZero.x) from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
+        forall_eq, Meets] using cdcZero_not_routh) h
+  · exact cdcZero_not_violation h
 
 end ModelB
 end powerlib.GFL.DCLink

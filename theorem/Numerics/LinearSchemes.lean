@@ -190,7 +190,7 @@ well-posed implicit step): the Cayley map `λ ↦ (1 + hλ/2)/(1 - hλ/2)` of th
   have hM := trapezoidal_mobius hP
   rw [Linear.schurStable_mobius_iff (by linarith) hQ hM, Linear.isHurwitz_iff_forall_eigen]
   refine forall₄_congr fun lam v hv heig => ?_
-  have hz := (Linear.eigen_mobius hQ hM hv heig).1
+  have hz := Linear.eigen_mobius_denom_ne_zero hQ hM hv heig
   have e : ((h / 2 : ℝ) : ℂ) * lam + ((1 : ℝ) : ℂ) = 1 + ((h / 2 : ℝ) : ℂ) * lam := by
     push_cast; ring
   have e' : ((-(h / 2) : ℝ) : ℂ) * lam + ((1 : ℝ) : ℂ) = 1 - ((h / 2 : ℝ) : ℂ) * lam := by

@@ -38,16 +38,19 @@ Results.
 * An explicit algebraic layer (index-1 DAE whose algebraic variables are given by a DAG of
   explicit formulas) has the same solutions as the ODE obtained by substitution: the generic
   statement is `DAE.isIntegralCurveOn_dae_iff` (`theorem/DAE/Elimination.lean`).
-* Model B, necessary equilibrium conditions (`equilibrium_necessary`): `v_q = 0`,
-  `V_dc = V_dc*`, `x_pll = (ω_g − ω_s)/k_i`.
-* Model B with `R_g = 0`, `i_q0 = 0`: at an equilibrium `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`
+* Model B, necessary equilibrium conditions: `v_q = 0` (`equilibrium_vgq`) and
+  `x_pll = (ω_g − ω_s)/k_i` (`equilibrium_xpll`); `V_dc = V_dc*` is `equilibrium_Vdc`
+  (`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`).
+* Model B with `R_g = 0`, `i_q0 = 0`: at an equilibrium `X_g i_d = −V_g sin Δθ`
+  (`equilibrium_idRef`) and `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`
   (`equilibrium_powerAngle`), so an equilibrium exists iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)`
   (`ModelBParams.exists_equilibrium_iff`), and at the fold `|I₀| V_dc* = 3 V_g²/(4 X_g)` one has
   `|X_g i_d| = V_g / √2` (`fold_current`).
 
 Family and connection conclusions.
 This module states no behaviour and defines no family. The equilibrium results of model B
-(`equilibrium_necessary`, `equilibrium_powerAngle`, `exists_equilibrium_iff`, `fold_current`) are
+(`equilibrium_vgq`, `equilibrium_xpll`, `equilibrium_idRef`, `equilibrium_powerAngle`,
+`exists_equilibrium_iff`, `fold_current`) are
 algebraic facts about the zero set of `ModelBParams.field`; they are static evidence on the model,
 domain identities that do not require connection wrappers. The model-B family and its connection
 conclusions (local stability through the Jacobian, 4×4 Routh–Hurwitz) are in
@@ -178,14 +181,17 @@ def field (x : State 4) : State 4 :=
     · simpa [field] using h2
     · simpa [field] using h3
 
-/-- Necessary equilibrium conditions (`k_i ≠ 0`): `v_q = 0`, `V_dc = V_dc*`,
-`x_pll = (ω_g − ω_s)/k_i`.
+/-- At an equilibrium the q-axis PCC voltage vanishes: `v_q = 0`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem equilibrium_necessary (hki : p.ki ≠ 0) {x : State 4}
-    (hx : p.field x = 0) :
-    p.vgq (x 0) (p.idRef (x 2) (x 3)) = 0 ∧ x 2 = p.VdcRef ∧ x 1 = (p.ωg - p.ωs) / p.ki := by
-  obtain ⟨h0, h1, -, h3⟩ := (p.field_eq_zero_iff x).mp hx
-  refine ⟨h1, by linarith, ?_⟩
+@[tmio M, powerlib_domain] theorem equilibrium_vgq {x : State 4} (hx : p.field x = 0) :
+    p.vgq (x 0) (p.idRef (x 2) (x 3)) = 0 :=
+  ((p.field_eq_zero_iff x).mp hx).2.1
+
+/-- At an equilibrium (`k_i ≠ 0`) the PLL integrator state is `x_pll = (ω_g − ω_s)/k_i`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem equilibrium_xpll (hki : p.ki ≠ 0) {x : State 4}
+    (hx : p.field x = 0) : x 1 = (p.ωg - p.ωs) / p.ki := by
+  obtain ⟨h0, h1, -, -⟩ := (p.field_eq_zero_iff x).mp hx
   rw [h1, mul_zero, add_zero] at h0
   field_simp
   linarith
@@ -202,20 +208,25 @@ Static evidence on the model, not a connection conclusion. -/
   field_simp at h2 ⊢
   linarith
 
-/-- With `R_g = 0` and `i_q0 = 0`, every equilibrium satisfies the power-angle relation
-`I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ` (`C_dc ≠ 0`, `V_dc* ≠ 0`, `X_g ≠ 0`, `k_i ≠ 0`).
+/-- With `R_g = 0` and `i_q0 = 0`, every equilibrium satisfies `X_g i_d = −V_g sin Δθ`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem equilibrium_powerAngle (hki : p.ki ≠ 0) (hC : p.Cdc ≠ 0)
+@[tmio M, powerlib_domain] theorem equilibrium_idRef (hR : p.Rg = 0) (hq : p.iq0 = 0)
+    {x : State 4} (hx : p.field x = 0) :
+    p.Xg * p.idRef (x 2) (x 3) = -p.Vg * Real.sin (x 0) := by
+  have hvq := p.equilibrium_vgq hx
+  simp only [vgq, hR, hq, mul_zero, add_zero] at hvq
+  linarith
+
+/-- With `R_g = 0` and `i_q0 = 0`, every equilibrium satisfies the power-angle relation
+`I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ` (`C_dc ≠ 0`, `V_dc* ≠ 0`, `X_g ≠ 0`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem equilibrium_powerAngle (hC : p.Cdc ≠ 0)
     (hV : p.VdcRef ≠ 0) (hX : p.Xg ≠ 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) {x : State 4}
     (hx : p.field x = 0) :
-    p.I0 * p.VdcRef = 3 * p.Vg ^ 2 / (4 * p.Xg) * Real.sin (2 * x 0) ∧
-      p.Xg * p.idRef (x 2) (x 3) = -p.Vg * Real.sin (x 0) := by
-  obtain ⟨hvq, hVdc, -⟩ := p.equilibrium_necessary hki hx
-  obtain ⟨-, -, h2, -⟩ := (p.field_eq_zero_iff x).mp hx
-  have hid : p.Xg * p.idRef (x 2) (x 3) = -p.Vg * Real.sin (x 0) := by
-    simp only [vgq, hR, hq, mul_zero, add_zero] at hvq
-    linarith
-  refine ⟨?_, hid⟩
+    p.I0 * p.VdcRef = 3 * p.Vg ^ 2 / (4 * p.Xg) * Real.sin (2 * x 0) := by
+  obtain ⟨-, -, h2, h3⟩ := (p.field_eq_zero_iff x).mp hx
+  have hVdc : x 2 = p.VdcRef := by linarith
+  have hid := p.equilibrium_idRef hR hq hx
   have h2' := (div_eq_zero_iff.mp h2).resolve_right hC
   simp only [vgd, hR, hq, zero_mul, mul_zero, sub_zero, add_zero] at h2'
   have h := powerAngle_aux (by rw [hVdc]; exact hV) hX hid h2'
@@ -231,7 +242,7 @@ Static evidence on the model, not a connection conclusion. -/
   have hK : 0 < 3 * p.Vg ^ 2 / (4 * p.Xg) := by positivity
   constructor
   · rintro ⟨x, hx⟩
-    obtain ⟨hpa, -⟩ := p.equilibrium_powerAngle hki hC hV.ne' hX.ne' hR hq hx
+    have hpa := p.equilibrium_powerAngle hC hV.ne' hX.ne' hR hq hx
     rw [← abs_of_pos hV, ← abs_mul, hpa, abs_mul, abs_of_pos hK]
     exact mul_le_of_le_one_right hK.le (Real.abs_sin_le_one _)
   · intro hle
@@ -273,11 +284,12 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Fold of model B (`R_g = 0`, `i_q0 = 0`): at an equilibrium on the existence boundary
 `|I₀| V_dc* = 3 V_g² / (4 X_g)` the d-axis current satisfies `|X_g i_d| = |V_g| / √2`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem fold_current (hki : p.ki ≠ 0) (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef)
+@[tmio M, powerlib_domain] theorem fold_current (hC : p.Cdc ≠ 0) (hV : 0 < p.VdcRef)
     (hX : 0 < p.Xg) (hVg : p.Vg ≠ 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) {x : State 4}
     (hx : p.field x = 0) (hfold : |p.I0| * p.VdcRef = 3 * p.Vg ^ 2 / (4 * p.Xg)) :
     |p.Xg * p.idRef (x 2) (x 3)| = |p.Vg| / Real.sqrt 2 := by
-  obtain ⟨hpa, hid⟩ := p.equilibrium_powerAngle hki hC hV.ne' hX.ne' hR hq hx
+  have hpa := p.equilibrium_powerAngle hC hV.ne' hX.ne' hR hq hx
+  have hid := p.equilibrium_idRef hR hq hx
   have hK : 0 < 3 * p.Vg ^ 2 / (4 * p.Xg) := by positivity
   have habs : |Real.sin (2 * x 0)| = 1 := by
     have h1 : |p.I0 * p.VdcRef| = 3 * p.Vg ^ 2 / (4 * p.Xg) * |Real.sin (2 * x 0)| := by

@@ -33,7 +33,8 @@ Results.
   50 % duty is `2V_dc/π` (`sixStep_fundamental`), and the line-to-line fundamental is `√3`
   times a leg fundamental (`sin_sub_sin_two_pi_div_three`).
 * Utilisation (line-to-line rms / `V_dc`): SPWM `√6/4 ≈ 0.612`, SVPWM `1/√2 ≈ 0.707`, six-step
-  `√6/π ≈ 0.780` (`utilisation_values`, `utilisation_bounds`).
+  `√6/π ≈ 0.780` (`spwm_utilisation_eq`, `svpwm_utilisation_eq`, `sixStep_utilisation_eq`;
+  `spwm_utilisation_bounds`, `svpwm_utilisation_bounds`, `sixStep_utilisation_bounds`).
 -/
 
 noncomputable section
@@ -211,47 +212,70 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
   have h3 := Transform.sqrt3_sq
   linear_combination (-Real.sin θ / 2) * h3
 
-/-- Utilisation factors `V_LL,rms / V_dc`: SPWM `√(3/2)·(1/2) = √6/4 ∈ (0.612, 0.613)`,
-SVPWM `√(3/2)·(1/√3) = 1/√2 ∈ (0.707, 0.708)`, six-step `√3·(2/π)/√2 = √6/π ∈ (0.779, 0.780)`. -/
-@[tmio T, powerlib_foundation] theorem utilisation_bounds :
-    (0.612 < Real.sqrt 6 / 4 ∧ Real.sqrt 6 / 4 < 0.613) ∧
-      (0.707 < 1 / Real.sqrt 2 ∧ 1 / Real.sqrt 2 < 0.708) ∧
-      (0.779 < Real.sqrt 6 / Real.pi ∧ Real.sqrt 6 / Real.pi < 0.780) := by
+/-- SPWM utilisation factor `V_LL,rms / V_dc = √(3/2)·(1/2) = √6/4 ∈ (0.612, 0.613)`. -/
+@[tmio T, powerlib_foundation] theorem spwm_utilisation_bounds :
+    0.612 < Real.sqrt 6 / 4 ∧ Real.sqrt 6 / 4 < 0.613 := by
   have h6 : Real.sqrt 6 ^ 2 = 6 := Real.sq_sqrt (by norm_num)
   have h6p : 0 ≤ Real.sqrt 6 := Real.sqrt_nonneg 6
+  have hs6a : 2.4494 < Real.sqrt 6 := by nlinarith
+  have hs6b : Real.sqrt 6 < 2.4495 := by nlinarith
+  exact ⟨by linarith, by linarith⟩
+
+/-- SVPWM utilisation factor `V_LL,rms / V_dc = √(3/2)·(1/√3) = 1/√2 ∈ (0.707, 0.708)`. -/
+@[tmio T, powerlib_foundation] theorem svpwm_utilisation_bounds :
+    0.707 < 1 / Real.sqrt 2 ∧ 1 / Real.sqrt 2 < 0.708 := by
   have h2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
   have h2p : 0 < Real.sqrt 2 := by positivity
+  refine ⟨?_, ?_⟩
+  · rw [lt_div_iff₀ h2p]; nlinarith
+  · rw [div_lt_iff₀ h2p]; nlinarith
+
+/-- Six-step utilisation factor `V_LL,rms / V_dc = √3·(2/π)/√2 = √6/π ∈ (0.779, 0.780)`. -/
+@[tmio T, powerlib_foundation] theorem sixStep_utilisation_bounds :
+    0.779 < Real.sqrt 6 / Real.pi ∧ Real.sqrt 6 / Real.pi < 0.780 := by
+  have h6 : Real.sqrt 6 ^ 2 = 6 := Real.sq_sqrt (by norm_num)
+  have h6p : 0 ≤ Real.sqrt 6 := Real.sqrt_nonneg 6
   have hpi1 := Real.pi_gt_d6
   have hpi2 := Real.pi_lt_d6
   have hs6a : 2.4494 < Real.sqrt 6 := by nlinarith
   have hs6b : Real.sqrt 6 < 2.4495 := by nlinarith
-  refine ⟨⟨by linarith, by linarith⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-  · rw [lt_div_iff₀ h2p]; nlinarith
-  · rw [div_lt_iff₀ h2p]; nlinarith
+  refine ⟨?_, ?_⟩
   · rw [lt_div_iff₀ (by linarith)]; nlinarith
   · rw [div_lt_iff₀ (by linarith)]; nlinarith
 
-/-- The three utilisation constants are the stated combinations. -/
-@[tmio T, powerlib_foundation] theorem utilisation_values :
-    Real.sqrt (3 / 2) * (1 / 2) = Real.sqrt 6 / 4 ∧
-      Real.sqrt (3 / 2) * (1 / Real.sqrt 3) = 1 / Real.sqrt 2 ∧
-      Real.sqrt 3 * (2 / Real.pi) / Real.sqrt 2 = Real.sqrt 6 / Real.pi := by
+/-- The SPWM utilisation constant: `√(3/2)·(1/2) = √6/4`. -/
+@[tmio T, powerlib_foundation] theorem spwm_utilisation_eq :
+    Real.sqrt (3 / 2) * (1 / 2) = Real.sqrt 6 / 4 := by
+  have e1 : Real.sqrt (3 / 2) = Real.sqrt 6 / 2 := by
+    rw [show (3 / 2 : ℝ) = 6 / 4 by norm_num, Real.sqrt_div' 6 (by norm_num : (0 : ℝ) ≤ 4),
+      show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+  rw [e1]; ring
+
+/-- The SVPWM utilisation constant: `√(3/2)·(1/√3) = 1/√2`. -/
+@[tmio T, powerlib_foundation] theorem svpwm_utilisation_eq :
+    Real.sqrt (3 / 2) * (1 / Real.sqrt 3) = 1 / Real.sqrt 2 := by
   have e1 : Real.sqrt (3 / 2) = Real.sqrt 6 / 2 := by
     rw [show (3 / 2 : ℝ) = 6 / 4 by norm_num, Real.sqrt_div' 6 (by norm_num : (0 : ℝ) ≤ 4),
       show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
   have e6 : Real.sqrt 6 = Real.sqrt 2 * Real.sqrt 3 := by
     rw [← Real.sqrt_mul (by norm_num)]; norm_num
   have h2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
-  have h3 : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
   have h2p : 0 < Real.sqrt 2 := by positivity
   have h3p : 0 < Real.sqrt 3 := by positivity
+  rw [e1, e6]
+  field_simp
+  nlinarith
+
+/-- The six-step utilisation constant: `√3·(2/π)/√2 = √6/π`. -/
+@[tmio T, powerlib_foundation] theorem sixStep_utilisation_eq :
+    Real.sqrt 3 * (2 / Real.pi) / Real.sqrt 2 = Real.sqrt 6 / Real.pi := by
+  have e6 : Real.sqrt 6 = Real.sqrt 2 * Real.sqrt 3 := by
+    rw [← Real.sqrt_mul (by norm_num)]; norm_num
+  have h2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+  have h2p : 0 < Real.sqrt 2 := by positivity
   have hpi : 0 < Real.pi := Real.pi_pos
-  refine ⟨by rw [e1]; ring, ?_, ?_⟩
-  · rw [e1, e6]
-    field_simp
-    nlinarith
-  · rw [e6]
-    field_simp
-    nlinarith
+  rw [e6]
+  field_simp
+  nlinarith
 
 end powerlib.Drives.Modulation

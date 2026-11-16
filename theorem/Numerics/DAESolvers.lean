@@ -39,8 +39,9 @@ Results.
   `β ≠ 0` the constraint residual decays exponentially.
 * `baumgarte_index_one` — for `M ≻ 0` and `G` of full row rank, the stabilized acceleration
   constraint determines the multiplier `λ` uniquely and algebraically from `(q, q̇)`.
-* `ggl_projection_vanishes`, `ggl_multiplier_eq_zero` — along exact GGL solutions
-  `G(q)ᵀμ = 0` (so `q̇ = v`, the original kinematics), and `μ = 0` when `G(q)ᵀ` is injective.
+* `ggl_projection_vanishes`, `ggl_hasDerivAt_velocity`, `ggl_multiplier_eq_zero` — along exact
+  GGL solutions `G(q)ᵀμ = 0`, so `q̇ = v` (the original kinematics), and `μ = 0` when `G(q)ᵀ` is
+  injective.
 * `bdf_index2_exact` — on the index-2 DAE `ẋ = y`, `0 = x − p(t)`, BDF`k` of order `k`
   reproduces the algebraic variable exactly, `y_k = p'(t_k)`, for every polynomial `p` of
   degree `≤ k` (no order reduction); it applies to BDF1–BDF6 through the exact-order facts of
@@ -248,13 +249,12 @@ variable {E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Complet
 open scoped RealInnerProductSpace
 
 /-- **GGL: the projection term vanishes on exact solutions.** If `q̇ = v − G(q)ᵀμ`,
-`g(q(t)) = 0` for all `t` and `G(q)v = 0`, then `G(q)ᵀμ = 0`; hence `q̇ = v` and the GGL
-solution solves the original kinematics. -/
+`g(q(t)) = 0` for all `t` and `G(q)v = 0`, then `G(q)ᵀμ = 0`. -/
 @[tmio T, powerlib_foundation] theorem ggl_projection_vanishes {g : E → V} {G : E → E →L[ℝ] V}
     (hg : ∀ x, HasFDerivAt g (G x) x) {q v : ℝ → E} {μ : ℝ → V}
     (hq : ∀ t, HasDerivAt q (v t - ContinuousLinearMap.adjoint (G (q t)) (μ t)) t)
     (hcon : ∀ t, g (q t) = 0) (hvel : ∀ t, G (q t) (v t) = 0) (t : ℝ) :
-    ContinuousLinearMap.adjoint (G (q t)) (μ t) = 0 ∧ HasDerivAt q (v t) t := by
+    ContinuousLinearMap.adjoint (G (q t)) (μ t) = 0 := by
   set w := ContinuousLinearMap.adjoint (G (q t)) (μ t)
   have hchain := (hg (q t)).comp_hasDerivAt t (hq t)
   have hconst : (g ∘ q) = fun _ => (0 : V) := funext hcon
@@ -265,13 +265,20 @@ solution solves the original kinematics. -/
     rw [← real_inner_self_eq_norm_sq]
     change ⟪w, ContinuousLinearMap.adjoint (G (q t)) (μ t)⟫ = 0
     rw [ContinuousLinearMap.adjoint_inner_right, h0, inner_zero_left]
-  have hw0 : w = 0 := by
-    have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hw
-    exact norm_eq_zero.mp this
-  refine ⟨hw0, ?_⟩
+  have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hw
+  exact norm_eq_zero.mp this
+
+/-- **GGL solutions solve the original kinematics.** If `q̇ = v − G(q)ᵀμ`, `g(q(t)) = 0` for
+all `t` and `G(q)v = 0`, then `q̇ = v` (the projection term vanishes,
+`ggl_projection_vanishes`). -/
+@[tmio T, powerlib_foundation] theorem ggl_hasDerivAt_velocity {g : E → V}
+    {G : E → E →L[ℝ] V} (hg : ∀ x, HasFDerivAt g (G x) x) {q v : ℝ → E} {μ : ℝ → V}
+    (hq : ∀ t, HasDerivAt q (v t - ContinuousLinearMap.adjoint (G (q t)) (μ t)) t)
+    (hcon : ∀ t, g (q t) = 0) (hvel : ∀ t, G (q t) (v t) = 0) (t : ℝ) :
+    HasDerivAt q (v t) t := by
+  have hw0 := ggl_projection_vanishes hg hq hcon hvel t
   have := hq t
-  rwa [show v t - ContinuousLinearMap.adjoint (G (q t)) (μ t) = v t by
-    change v t - w = v t; rw [hw0, sub_zero]] at this
+  rwa [hw0, sub_zero] at this
 
 /-- **GGL multiplier is zero** when `G(q)ᵀ` is injective (full row rank constraint
 Jacobian). -/
@@ -281,7 +288,7 @@ Jacobian). -/
     (hcon : ∀ t, g (q t) = 0) (hvel : ∀ t, G (q t) (v t) = 0)
     (hrank : ∀ x, Function.Injective (ContinuousLinearMap.adjoint (G x))) (t : ℝ) :
     μ t = 0 := by
-  have h := (ggl_projection_vanishes hg hq hcon hvel t).1
+  have h := ggl_projection_vanishes hg hq hcon hvel t
   exact hrank (q t) (by rw [h, map_zero])
 
 end GGL

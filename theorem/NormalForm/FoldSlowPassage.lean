@@ -45,7 +45,8 @@ Results.
 * Escape threshold `λ* = 1` (trajectory level). Along every solution the adjoint-weighted
   deviation obeys `(e^{−τ²}(X − τ))' = e^{−τ²}(λ − 1 + (X − τ)²)` (`hasDerivAt_weighted_deviation`).
   For a solution leaving the attracting branch (`X(τ) − τ → 0` as `τ → −∞`):
-  `λ > 1` ⇒ `X > τ` and escape before `τ = π/(2√(λ − 1))` (`riccatiGraze_escape`);
+  `λ > 1` ⇒ `X > τ` (`riccatiGraze_above`) and escape before `τ = π/(2√(λ − 1))`
+  (`riccatiGraze_escape`);
   `λ < 1` ⇒ `X < τ` for as long as it exists (`riccatiGraze_below`, no crossing of the
   separatrix); `λ = 1` ⇒ a global such solution is exactly the separatrix `X = τ`
   (`riccatiGraze_critical_eq`); a global such solution forces `λ ≤ 1`
@@ -222,13 +223,13 @@ weighted by the adjoint weight `ζ = e^{−τ²}`, obeys `(e^{−τ²} η)' = e^
     ContinuousOn (fun s => Real.exp (-s ^ 2) * (X s - s)) (Iic T) := fun τ hτ =>
   (hasDerivAt_weighted_deviation (hX τ hτ)).continuousAt.continuousWithinAt
 
-/-- **Escape above the threshold (`λ > 1`).** A solution of the grazing inner problem that leaves
-the attracting branch (`X(τ) − τ → 0` as `τ → −∞`) and exists on `(−∞, T]` satisfies
-`X > τ` there, and `T < π / (2√(λ − 1))`: it escapes in finite time. -/
-@[tmio TM, powerlib_foundation] theorem riccatiGraze_escape (hlam : 1 < lam)
+/-- **Above the separatrix (`λ > 1`).** A solution of the grazing inner problem that leaves the
+attracting branch (`X(τ) − τ → 0` as `τ → −∞`) and exists on `(−∞, T]` satisfies `X > τ`
+there. -/
+@[tmio TM, powerlib_foundation] theorem riccatiGraze_above (hlam : 1 < lam)
     (hX : ∀ τ ≤ T, HasDerivAt X (riccatiGraze lam τ (X τ)) τ)
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) :
-    (∀ τ ≤ T, τ < X τ) ∧ T < π / (2 * √(lam - 1)) := by
+    ∀ τ ≤ T, τ < X τ := by
   set g : ℝ → ℝ := fun s => Real.exp (-s ^ 2) * (X s - s) with hgdef
   have hmono : StrictMonoOn g (Iic T) := by
     refine strictMonoOn_of_deriv_pos (convex_Iic T) (continuousOn_weighted_Iic hX) ?_
@@ -238,18 +239,25 @@ the attracting branch (`X(τ) − τ → 0` as `τ → −∞`) and exists on `(
     have : 0 < lam - 1 + (X τ - τ) ^ 2 := by nlinarith [sq_nonneg (X τ - τ)]
     positivity
   have hlim : Tendsto g atBot (𝓝 0) := weighted_deviation_tendsto hbranch
-  have hpos : ∀ τ ≤ T, τ < X τ := by
-    intro τ hτ
-    have h0 : 0 ≤ g (τ - 1) := by
-      refine le_of_tendsto hlim (eventually_atBot.2 ⟨τ - 1, fun σ hσ => ?_⟩)
-      exact hmono.monotoneOn (show σ ∈ Iic T from by simp only [mem_Iic]; linarith)
-        (show τ - 1 ∈ Iic T from by simp only [mem_Iic]; linarith) hσ
-    have h1 : g (τ - 1) < g τ := hmono (show τ - 1 ∈ Iic T from by simp only [mem_Iic]; linarith)
-      hτ (by linarith)
-    have : 0 < Real.exp (-τ ^ 2) * (X τ - τ) := lt_of_le_of_lt h0 h1
-    have := (mul_pos_iff_of_pos_left (Real.exp_pos _)).mp this
-    linarith
-  refine ⟨hpos, ?_⟩
+  intro τ hτ
+  have h0 : 0 ≤ g (τ - 1) := by
+    refine le_of_tendsto hlim (eventually_atBot.2 ⟨τ - 1, fun σ hσ => ?_⟩)
+    exact hmono.monotoneOn (show σ ∈ Iic T from by simp only [mem_Iic]; linarith)
+      (show τ - 1 ∈ Iic T from by simp only [mem_Iic]; linarith) hσ
+  have h1 : g (τ - 1) < g τ := hmono (show τ - 1 ∈ Iic T from by simp only [mem_Iic]; linarith)
+    hτ (by linarith)
+  have : 0 < Real.exp (-τ ^ 2) * (X τ - τ) := lt_of_le_of_lt h0 h1
+  have := (mul_pos_iff_of_pos_left (Real.exp_pos _)).mp this
+  linarith
+
+/-- **Escape above the threshold (`λ > 1`).** A solution of the grazing inner problem that leaves
+the attracting branch (`X(τ) − τ → 0` as `τ → −∞`) and exists on `(−∞, T]` has
+`T < π / (2√(λ − 1))`: it escapes in finite time. -/
+@[tmio TM, powerlib_foundation] theorem riccatiGraze_escape (hlam : 1 < lam)
+    (hX : ∀ τ ≤ T, HasDerivAt X (riccatiGraze lam τ (X τ)) τ)
+    (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) :
+    T < π / (2 * √(lam - 1)) := by
+  have hpos := riccatiGraze_above hlam hX hbranch
   set c := √(lam - 1) with hcdef
   have hc : 0 < c := Real.sqrt_pos.mpr (by linarith)
   have hc2 : c ^ 2 = lam - 1 := Real.sq_sqrt (by linarith)
@@ -457,7 +465,7 @@ attracting branch and exists for all `τ ∈ ℝ` is the separatrix `X = τ`. -/
   have hc : 0 < π / (2 * √(lam - 1)) := by
     have := Real.sqrt_pos.mpr (show 0 < lam - 1 by linarith)
     positivity
-  have := (riccatiGraze_escape (T := π / (2 * √(lam - 1))) h (fun τ _ => hX τ) hbranch).2
+  have := riccatiGraze_escape (T := π / (2 * √(lam - 1))) h (fun τ _ => hX τ) hbranch
   linarith
 
 end Threshold

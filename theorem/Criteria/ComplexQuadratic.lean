@@ -17,7 +17,8 @@ is the degree-two case of the Hermite–Biehler / Bilharz test for complex polyn
 Results.
 * `complexQuadratic_roots_re_neg_iff`: the criterion above, both directions; existence of a root
   comes from the algebraic closedness of `ℂ`. The proof uses Vieta's relations for a root pair
-  `s₁, s₂ = −α − s₁` (`quadratic_partner`):
+  `s₁, s₂ = −α − s₁` (`quadratic_partner` is the root fact, `quadratic_partner_sum` and
+  `quadratic_partner_prod` the sum and product):
   `(Re α)² Re β + Re α Im α Im β − (Im β)² = Re s₁ · Re s₂ · ((Re s₁ + Re s₂)² + (Im s₁ − Im s₂)²)`
   (`vieta_discriminant`).
 * `complexQuadratic_realConst_roots_re_neg_iff`: special case used for the decoupled current loop
@@ -37,10 +38,20 @@ namespace powerlib.Criteria
     Complex.mul_im]
   ring
 
+/-- Vieta sum: `s` and the partner `−α − s` sum to `−α`. -/
+@[tmio T, powerlib_foundation] theorem quadratic_partner_sum (α s : ℂ) :
+    α = -(s + (-α - s)) := by
+  ring
+
+/-- Vieta product: a root `s` and its partner `−α − s` multiply to `β`. -/
+@[tmio T, powerlib_foundation] theorem quadratic_partner_prod {α β s : ℂ}
+    (hs : s ^ 2 + α * s + β = 0) : β = s * (-α - s) := by
+  linear_combination hs
+
 /-- The second root of a monic quadratic. -/
-@[tmio T, powerlib_foundation] theorem quadratic_partner {α β s : ℂ} (hs : s ^ 2 + α * s + β = 0) :
-    α = -(s + (-α - s)) ∧ β = s * (-α - s) ∧ (-α - s) ^ 2 + α * (-α - s) + β = 0 := by
-  refine ⟨by ring, by linear_combination hs, by linear_combination hs⟩
+@[tmio T, powerlib_foundation] theorem quadratic_partner {α β s : ℂ}
+    (hs : s ^ 2 + α * s + β = 0) : (-α - s) ^ 2 + α * (-α - s) + β = 0 := by
+  linear_combination hs
 
 @[tmio T, powerlib_foundation] private lemma re_neg_of_pair {x₁ x₂ y₁ y₂ : ℝ} (h1 : 0 < -(x₁ + x₂))
     (h2 : 0 < x₁ * x₂ * ((x₁ + x₂) ^ 2 + (y₁ - y₂) ^ 2)) : x₁ < 0 := by
@@ -58,7 +69,9 @@ namespace powerlib.Criteria
     obtain ⟨d, hd⟩ := IsAlgClosed.exists_eq_mul_self (discrim (1 : ℂ) α β)
     obtain ⟨s, hs⟩ := exists_quadratic_eq_zero (one_ne_zero) ⟨d, hd⟩
     have hs' : s ^ 2 + α * s + β = 0 := by linear_combination hs
-    obtain ⟨hα, hβ, hs₂⟩ := quadratic_partner hs'
+    have hα := quadratic_partner_sum α s
+    have hβ := quadratic_partner_prod hs'
+    have hs₂ := quadratic_partner hs'
     have h₁ := h s hs'
     have h₂ := h _ hs₂
     rw [hα, hβ, vieta_discriminant]
@@ -69,7 +82,8 @@ namespace powerlib.Criteria
       nlinarith [pow_pos this 2, sq_nonneg (s.im - (-α - s).im)]
     exact mul_pos hp hq
   · rintro ⟨h1, h2⟩ s hs
-    obtain ⟨hα, hβ, -⟩ := quadratic_partner hs
+    have hα := quadratic_partner_sum α s
+    have hβ := quadratic_partner_prod hs
     rw [hα, hβ, vieta_discriminant] at h2
     rw [hα] at h1
     simp only [Complex.neg_re, Complex.add_re] at h1

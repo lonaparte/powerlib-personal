@@ -23,7 +23,8 @@ Family and connection conclusions.
 No new family and no connection conclusion. The integral identities concern solutions of the
 input-driven field `fieldAngle` of this specific model, which lies outside the autonomous sentence
 language of `FourState.family`; they are kept as private implementation evidence (Rules §3a). The
-public result is the static component form `fieldAngle_apply`.
+public results are the static component forms `fieldAngle_apply_zero`, `fieldAngle_apply_one`
+and `fieldAngle_apply_three`.
 -/
 
 noncomputable section
@@ -33,13 +34,20 @@ open FourState intervalIntegral
 
 variable (p : FourState.Params)
 
-/-- Component form of the angle-driven field. -/
-@[tmio M, powerlib_domain] theorem fieldAngle_apply (u ud : ℝ) (z : Dynamics.State 4) :
-    (fieldAngle p u ud z) 0 =
-        p.kp * vq p (z 0) (z 2) (z 3) + p.ki * z 1 - ud ∧
-      (fieldAngle p u ud z) 1 = vq p (z 0) (z 2) (z 3) ∧
-      (fieldAngle p u ud z) 3 = z 2 - 1 := by
-  refine ⟨?_, ?_, ?_⟩ <;> simp [fieldAngle, field, Dynamics.lift, coordField]
+/-- Angle component of the angle-driven field: `θ̇ = k_p v_q + k_i x − θ̇_g`. -/
+@[tmio M, powerlib_domain] theorem fieldAngle_apply_zero (u ud : ℝ) (z : Dynamics.State 4) :
+    (fieldAngle p u ud z) 0 = p.kp * vq p (z 0) (z 2) (z 3) + p.ki * z 1 - ud := by
+  simp [fieldAngle, field, Dynamics.lift, coordField]
+
+/-- Integrator component of the angle-driven field: `ẋ = v_q`. -/
+@[tmio M, powerlib_domain] theorem fieldAngle_apply_one (u ud : ℝ) (z : Dynamics.State 4) :
+    (fieldAngle p u ud z) 1 = vq p (z 0) (z 2) (z 3) := by
+  simp [fieldAngle, field, Dynamics.lift, coordField]
+
+/-- Voltage-integrator component of the angle-driven field: `η̇ = V − 1`. -/
+@[tmio M, powerlib_domain] theorem fieldAngle_apply_three (u ud : ℝ) (z : Dynamics.State 4) :
+    (fieldAngle p u ud z) 3 = z 2 - 1 := by
+  simp [fieldAngle, field, Dynamics.lift, coordField]
 
 @[tmio M, powerlib_domain] private theorem continuous_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) :
@@ -65,7 +73,7 @@ variable (p : FourState.Params)
   have hd : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => φ s 3) (φ t 2 - 1) t := by
     intro t _
     have := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 3
-    rwa [(fieldAngle_apply p _ _ _).2.2] at this
+    rwa [fieldAngle_apply_three] at this
   rw [integral_eq_sub_of_hasDerivAt hd
     (((continuous_coord p hφ 2).sub continuous_const).intervalIntegrable _ _), hT, sub_self]
 
@@ -77,7 +85,7 @@ variable (p : FourState.Params)
       HasDerivAt (fun s => φ s 1) (vq p (φ t 0) (φ t 2) (φ t 3)) t := by
     intro t _
     have := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 1
-    rwa [(fieldAngle_apply p _ _ _).2.1] at this
+    rwa [fieldAngle_apply_one] at this
   rw [integral_eq_sub_of_hasDerivAt hd ((continuous_vq p hφ).intervalIntegrable _ _), hT,
     sub_self]
 
@@ -93,7 +101,7 @@ variable (p : FourState.Params)
       (p.kp * vq p (φ t 0) (φ t 2) (φ t 3) + p.ki * φ t 1 - θgd t) t := by
     intro t _
     have := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 0
-    rwa [(fieldAngle_apply p _ _ _).1] at this
+    rwa [fieldAngle_apply_zero] at this
   have hi1 : IntervalIntegrable (fun y => p.kp * vq p (φ y 0) (φ y 2) (φ y 3))
       MeasureTheory.volume 0 T := (continuous_const.mul hvq).intervalIntegrable _ _
   have hi2 : IntervalIntegrable (fun y => p.ki * φ y 1) MeasureTheory.volume 0 T :=

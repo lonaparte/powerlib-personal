@@ -1193,23 +1193,39 @@ of the two semantics connections at the two members. -/
   unfold powerlib.TMIO.Statement at h
   exact h
 
-/-- The requirements of the swing reading in the loop's terms. -/
-@[tmio M, powerlib_domain] private theorem swing_meets_iff (m : Model) :
-    connection% ((m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced} ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
-      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} ↔ 0 < m.q.D / m.q.ωc) ∧
-      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.damped} ↔ 0 < m.q.D) ∧
-      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.synchronizing} ↔ 0 < m.q.K0 * Real.cos m.δ) ∧
-      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.destabilizing} ↔
-        m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0)) := by
+/-- The balance requirement of the swing reading in the loop's terms. -/
+@[tmio M, powerlib_domain] private theorem swing_meets_balanced_iff (m : Model) :
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced} ↔
+      m.q.K0 * Real.sin m.δ = m.q.P0) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
-  change (Synchronous.Swing.Meets m.toSwing .balanced ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
-      (Synchronous.Swing.Meets m.toSwing .inertia ↔ 0 < m.q.D / m.q.ωc) ∧
-      (Synchronous.Swing.Meets m.toSwing .damped ↔ 0 < m.q.D) ∧
-      (Synchronous.Swing.Meets m.toSwing .synchronizing ↔ 0 < m.q.K0 * Real.cos m.δ) ∧
-      (Synchronous.Swing.Meets m.toSwing .destabilizing ↔
-        m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0)
-  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
-    Synchronous.SwingParams.syncCoeff]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe]
+
+/-- The inertia requirement of the swing reading in the loop's terms. -/
+@[tmio M, powerlib_domain] private theorem swing_meets_inertia_iff (m : Model) :
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} ↔
+      0 < m.q.D / m.q.ωc) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams]
+
+/-- The damping requirement of the swing reading in the loop's terms. -/
+@[tmio M, powerlib_domain] private theorem swing_meets_damped_iff (m : Model) :
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.damped} ↔ 0 < m.q.D) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams]
+
+/-- The synchronizing requirement of the swing reading in the loop's terms. -/
+@[tmio M, powerlib_domain] private theorem swing_meets_synchronizing_iff (m : Model) :
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.synchronizing} ↔
+      0 < m.q.K0 * Real.cos m.δ) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff]
+
+/-- The destabilizing requirement of the swing reading in the loop's terms. -/
+@[tmio M, powerlib_domain] private theorem swing_meets_destabilizing_iff (m : Model) :
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.destabilizing} ↔
+      m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff]
 
 @[tmio M, powerlib_domain] private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
     (hm : m ∈ TMIO.realize Meets A) :
@@ -1226,12 +1242,9 @@ of the two semantics connections at the two members. -/
   intro r hr
   rw [Set.mem_singleton_iff] at hr
   subst hr
-  exact ((show (Synchronous.Swing.Meets (m).toSwing .balanced ↔ (m).q.K0 * Real.sin (m).δ = (m).q.P0) ∧
-      (Synchronous.Swing.Meets (m).toSwing .inertia ↔ 0 < (m).q.D / (m).q.ωc) ∧
-      (Synchronous.Swing.Meets (m).toSwing .damped ↔ 0 < (m).q.D) ∧
-      (Synchronous.Swing.Meets (m).toSwing .synchronizing ↔ 0 < (m).q.K0 * Real.cos (m).δ) ∧
-      (Synchronous.Swing.Meets (m).toSwing .destabilizing ↔
-        (m).q.K0 * Real.cos (m).δ < 0 ∨ (m).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff m))).2.1.mpr (div_pos hp.1 hp.2)
+  exact (show Synchronous.Swing.Meets m.toSwing .inertia ↔ 0 < m.q.D / m.q.ωc from
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_inertia_iff m).mpr (div_pos hp.1 hp.2)
 
 /-- Within positive droop gain and bandwidth the local requirements are those of the swing
 reading. -/
@@ -1242,12 +1255,18 @@ reading. -/
   change m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
         m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
           {.balanced, .inertia, .damped, .synchronizing}
-  obtain ⟨hb, hI, hd, hs, -⟩ := (show (Synchronous.Swing.Meets (m).toSwing .balanced ↔ (m).q.K0 * Real.sin (m).δ = (m).q.P0) ∧
-      (Synchronous.Swing.Meets (m).toSwing .inertia ↔ 0 < (m).q.D / (m).q.ωc) ∧
-      (Synchronous.Swing.Meets (m).toSwing .damped ↔ 0 < (m).q.D) ∧
-      (Synchronous.Swing.Meets (m).toSwing .synchronizing ↔ 0 < (m).q.K0 * Real.cos (m).δ) ∧
-      (Synchronous.Swing.Meets (m).toSwing .destabilizing ↔
-        (m).q.K0 * Real.cos (m).δ < 0 ∨ (m).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff m))
+  have hb : Synchronous.Swing.Meets m.toSwing .balanced ↔ m.q.K0 * Real.sin m.δ = m.q.P0 :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_balanced_iff m
+  have hI : Synchronous.Swing.Meets m.toSwing .inertia ↔ 0 < m.q.D / m.q.ωc :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_inertia_iff m
+  have hd : Synchronous.Swing.Meets m.toSwing .damped ↔ 0 < m.q.D :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_damped_iff m
+  have hs : Synchronous.Swing.Meets m.toSwing .synchronizing ↔ 0 < m.q.K0 * Real.cos m.δ :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_synchronizing_iff m
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, hb, hI, hd, hs]
   exact ⟨fun h => ⟨h.1, div_pos hp.1 hp.2, hp.1, h.2.2⟩, fun h => ⟨h.1, hp, h.2.2.2⟩⟩
@@ -1258,12 +1277,16 @@ reading's. -/
     (hm : m ∈ TMIO.realize Meets {.balanced, .physical, .antiSynchronizing}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}
-  obtain ⟨hb, hI, -, -, hs⟩ := (show (Synchronous.Swing.Meets (m).toSwing .balanced ↔ (m).q.K0 * Real.sin (m).δ = (m).q.P0) ∧
-      (Synchronous.Swing.Meets (m).toSwing .inertia ↔ 0 < (m).q.D / (m).q.ωc) ∧
-      (Synchronous.Swing.Meets (m).toSwing .damped ↔ 0 < (m).q.D) ∧
-      (Synchronous.Swing.Meets (m).toSwing .synchronizing ↔ 0 < (m).q.K0 * Real.cos (m).δ) ∧
-      (Synchronous.Swing.Meets (m).toSwing .destabilizing ↔
-        (m).q.K0 * Real.cos (m).δ < 0 ∨ (m).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff m))
+  have hb : Synchronous.Swing.Meets m.toSwing .balanced ↔ m.q.K0 * Real.sin m.δ = m.q.P0 :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_balanced_iff m
+  have hI : Synchronous.Swing.Meets m.toSwing .inertia ↔ 0 < m.q.D / m.q.ωc :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_inertia_iff m
+  have hs : Synchronous.Swing.Meets m.toSwing .destabilizing ↔
+      m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0 :=
+    by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      swing_meets_destabilizing_iff m
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, hb, hI, hs] at hm ⊢
   obtain ⟨h1, hp, h3⟩ := hm
@@ -1343,18 +1366,15 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
   unfold powerlib.TMIO.Statement
   have hm := Synchronous.Swing.mem_den_locallyExponentiallyStable q.atLoading.toSwing
     (div_pos hD hω) hD
-    (((show (Synchronous.Swing.Meets (q.atLoading).toSwing .balanced ↔ (q.atLoading).q.K0 * Real.sin (q.atLoading).δ = (q.atLoading).q.P0) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .inertia ↔ 0 < (q.atLoading).q.D / (q.atLoading).q.ωc) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .damped ↔ 0 < (q.atLoading).q.D) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .synchronizing ↔ 0 < (q.atLoading).q.K0 * Real.cos (q.atLoading).δ) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .destabilizing ↔
-        (q.atLoading).q.K0 * Real.cos (q.atLoading).δ < 0 ∨ (q.atLoading).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff q.atLoading))).1.mpr (SpecialFunctions.mul_sin_arcsin_div h.le hK0))
-    (((show (Synchronous.Swing.Meets (q.atLoading).toSwing .balanced ↔ (q.atLoading).q.K0 * Real.sin (q.atLoading).δ = (q.atLoading).q.P0) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .inertia ↔ 0 < (q.atLoading).q.D / (q.atLoading).q.ωc) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .damped ↔ 0 < (q.atLoading).q.D) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .synchronizing ↔ 0 < (q.atLoading).q.K0 * Real.cos (q.atLoading).δ) ∧
-      (Synchronous.Swing.Meets (q.atLoading).toSwing .destabilizing ↔
-        (q.atLoading).q.K0 * Real.cos (q.atLoading).δ < 0 ∨ (q.atLoading).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff q.atLoading))).2.2.2.1.mpr
+    ((show Synchronous.Swing.Meets q.atLoading.toSwing .balanced ↔
+        q.atLoading.q.K0 * Real.sin q.atLoading.δ = q.atLoading.q.P0 from
+      by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+        swing_meets_balanced_iff q.atLoading).mpr
+      (SpecialFunctions.mul_sin_arcsin_div h.le hK0))
+    ((show Synchronous.Swing.Meets q.atLoading.toSwing .synchronizing ↔
+        0 < q.atLoading.q.K0 * Real.cos q.atLoading.δ from
+      by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+        swing_meets_synchronizing_iff q.atLoading).mpr
       (mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)))
   unfold powerlib.TMIO.Statement at hm
   exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
@@ -1366,12 +1386,10 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     connection% (q.atAntiLoading ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   have hm := Synchronous.Swing.mem_den_unstable q.atAntiLoading.toSwing (div_pos hD hω)
-    (((show (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .balanced ↔ (q.atAntiLoading).q.K0 * Real.sin (q.atAntiLoading).δ = (q.atAntiLoading).q.P0) ∧
-      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .inertia ↔ 0 < (q.atAntiLoading).q.D / (q.atAntiLoading).q.ωc) ∧
-      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .damped ↔ 0 < (q.atAntiLoading).q.D) ∧
-      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .synchronizing ↔ 0 < (q.atAntiLoading).q.K0 * Real.cos (q.atAntiLoading).δ) ∧
-      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .destabilizing ↔
-        (q.atAntiLoading).q.K0 * Real.cos (q.atAntiLoading).δ < 0 ∨ (q.atAntiLoading).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff q.atAntiLoading))).1.mpr
+    ((show Synchronous.Swing.Meets q.atAntiLoading.toSwing .balanced ↔
+        q.atAntiLoading.q.K0 * Real.sin q.atAntiLoading.δ = q.atAntiLoading.q.P0 from
+      by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+        swing_meets_balanced_iff q.atAntiLoading).mpr
       (SpecialFunctions.mul_sin_pi_sub_arcsin_div h.le hK0))
     (by simpa [Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff, atAntiLoading]
       using mul_neg_of_pos_of_neg hK0 (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hK0))

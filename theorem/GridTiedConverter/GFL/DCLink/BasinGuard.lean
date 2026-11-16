@@ -46,8 +46,9 @@ Results.
   `F_{−s} ∘ S = S ∘ F_s` (in particular `F_{s=−1} ∘ S = S ∘ F_{s=1}`);
   `carrierField_neg_sign_eq_transport` expresses this as a coordinate
   transport, so equilibria correspond (`carrier_equilibrium_iff`), every sentence holds at
-  mirror points alike (`BasinGuard.flip_mem_den_iff`, below) and the Jacobians are similar with
-  equal characteristic polynomials (`carrier_jacobian_charpoly`).
+  mirror points alike (`BasinGuard.flip_mem_den_iff`, below) and the Jacobians are similar
+  (`carrier_jacobian_conj`), so they have equal characteristic polynomials
+  (`Linear.charpoly_conj`).
 * `dcNode_partial_Vdc` : the DC-node diagonal Jacobian entry at `V_dc = 1` is
   `−(3/(2C))(V cos θ_e (K_p^dvc + I_d0) − V sin θ_e I_q*)`, `I_d0 = i_d*|_{V_dc = 1}`;
   for `I_q* = 0` it vanishes iff `K_p^dvc = −I_d0` (`dcNode_partial_Vdc_eq_zero_iff`),
@@ -58,7 +59,8 @@ Results.
   (`integratorFlip = diag(1, 1, 1, −1)`: the carrier integrates `1 − V_dc`, the four-state model
   `V − 1`).
 * `carrierField_contDiffOn` : the carrier is `C¹` on `V_dc ≠ 0`; `equilibrium_Vdc`,
-  `equilibrium_Kip_xp` : every equilibrium has `V_dc = 1` and `K_i^pll x_p = 0`.
+  `equilibrium_Kip_xp` : every equilibrium has `V_dc = 1` and `K_i^pll x_p = 0`, so
+  `i_d* = K_i^dvc ξ` there (`equilibrium_idr`).
 
 Family and connection conclusions.
 A complete system (`BasinGuard.Model`) is a carrier parameter set, a drop sign `s` and a selected
@@ -266,25 +268,21 @@ Static evidence on the model, not a connection conclusion. -/
   exact carrierReflect.map_eq_zero_iff
 
 /-- `I_q* = 0`: if the IN-positive carrier has Jacobian `A` at `x`, the flipped writing has
-Jacobian `S A S` at `S x`, with the same characteristic polynomial (same spectrum). -/
-@[tmio M, powerlib_domain] theorem carrier_jacobian_charpoly (hIq : q.Iq = 0) {x : State 4}
+Jacobian `S A S⁻¹` at `S x`; it has the same characteristic polynomial (same spectrum) by
+`Linear.charpoly_conj`. -/
+@[tmio M, powerlib_domain] theorem carrier_jacobian_conj (hIq : q.Iq = 0) {x : State 4}
     (A : Matrix (Fin 4) (Fin 4) ℝ) (hf : DifferentiableAt ℝ (q.carrierField 1) x)
     (hJac : fderiv ℝ (q.carrierField 1) x = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A) :
     fderiv ℝ (q.carrierField (-1)) (carrierReflect x) =
-        Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
-          (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) ∧
-      (carrierReflectMatrix * A * carrierReflectMatrix⁻¹).charpoly = A.charpoly := by
-  refine ⟨?_, ?_⟩
-  · have h : fderiv ℝ (Dynamics.transportField carrierReflect 0 (q.carrierField 1))
-        (Dynamics.affineCoord carrierReflect 0 x) = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
-          (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) :=
-      Dynamics.fderiv_transportField_matrix carrierReflectMatrix carrierReflectMatrix_isUnit
-        0 A hf hJac
-    rw [← q.carrierField_neg_sign_eq_transport hIq 1] at h
-    simpa [Dynamics.affineCoord, carrierReflect] using h
-  · rw [Matrix.mul_assoc, Matrix.charpoly_mul_comm, Matrix.mul_assoc,
-      Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).mp carrierReflectMatrix_isUnit),
-      Matrix.mul_one]
+      Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
+        (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) := by
+  have h : fderiv ℝ (Dynamics.transportField carrierReflect 0 (q.carrierField 1))
+      (Dynamics.affineCoord carrierReflect 0 x) = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
+        (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) :=
+    Dynamics.fderiv_transportField_matrix carrierReflectMatrix carrierReflectMatrix_isUnit
+      0 A hf hJac
+  rw [← q.carrierField_neg_sign_eq_transport hIq 1] at h
+  simpa [Dynamics.affineCoord, carrierReflect] using h
 
 /-! ### The DC-node diagonal entry and `K_p^{dvc,*}` -/
 
@@ -328,14 +326,18 @@ def pt (θ xp v ξ : ℝ) : State 4 := WithLp.toLp 2 ![θ, xp, v, ξ]
     · linarith
   · intro h; rw [h]; ring
 
-/-- At every equilibrium of the carrier, `V_dc = 1`, so the value `i_d*|_{V_dc=1} = K_i^dvc ξ`
-is the operating current `I_d0`. -/
+/-- At every equilibrium of the carrier, `V_dc = 1`. -/
 @[tmio M, powerlib_domain] theorem equilibrium_Vdc (s : ℝ) {x : State 4}
-    (hx : q.carrierField s x = 0) : x 2 = 1 ∧ q.idr x = q.Kiv * x 3 := by
+    (hx : q.carrierField s x = 0) : x 2 = 1 := by
   have h3 := congrArg (fun y : State 4 => y 3) hx
   simp [carrierField] at h3
-  have hv : x 2 = 1 := by linarith
-  exact ⟨hv, by simp [idr, hv]⟩
+  linarith
+
+/-- At every equilibrium of the carrier the value `i_d*|_{V_dc=1} = K_i^dvc ξ` is the operating
+current `I_d0` (because `V_dc = 1`, `equilibrium_Vdc`). -/
+@[tmio M, powerlib_domain] theorem equilibrium_idr (s : ℝ) {x : State 4}
+    (hx : q.carrierField s x = 0) : q.idr x = q.Kiv * x 3 := by
+  simp [idr, q.equilibrium_Vdc s hx]
 
 end CarrierParams
 
@@ -435,7 +437,7 @@ Static evidence on the model, not a connection conclusion. -/
   have h1 := congrArg (fun y : State 4 => y 1) hx
   simp only [carrierField, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     PiLp.zero_apply] at h0 h1
-  refine ⟨(q.equilibrium_Vdc s hx).1, ?_⟩
+  refine ⟨q.equilibrium_Vdc s hx, ?_⟩
   rw [h1, mul_zero, zero_add] at h0
   exact h0
 

@@ -35,9 +35,9 @@ Results.
   `∑ᵢ 1/√qᵢ(μ) < 1/√q₀(μ)` for `0 < |μ| ≤ ρ` (`qₑ(μ) = Wₑ² − 2fₑμ − μ²`), then `0` is a strict
   local minimum and an isolated critical point of the cycle potential. The Hessian at `0` may be
   singular (`∑ₑ 1/Wₑ = 0`). Proof: along the critical curve `xₑ = Xₑ(μ)` the closing angle
-  `closure` decreases strictly (`closure_sign`) and the curve potential `curvePot` (derivative
-  `−closure`) is positive (`curvePot_pos`); supporting lines bound the potential below by
-  `curvePot` at `μ = G₀'(x₀)`.
+  `closure` decreases strictly through `0` (`closure_neg_of_pos`, `closure_pos_of_neg`) and the
+  curve potential `curvePot` (derivative `−closure`) is positive (`curvePot_pos`); supporting
+  lines bound the potential below by `curvePot` at `μ = G₀'(x₀)`.
 
 Family and connection conclusions.
 * None: foundation only; `theorem/PowerSystem/Network/Swing/DegenerateRing.lean` applies it to a
@@ -344,9 +344,10 @@ variable (hΓ : ∀ μ, μ ≠ 0 → |μ| ≤ ρ →
   ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) μ) < 1 / √(edgeQ (W 0) (f 0) μ))
 
 include hW0 hW hq hΓ in
-/-- The total angle of the critical curve is strictly decreasing near `μ = 0`. -/
-@[tmio T, powerlib_foundation] theorem closure_sign {μ : ℝ} (hμ : |μ| ≤ ρ) :
-    (0 < μ → closure W f μ < 0) ∧ (μ < 0 → 0 < closure W f μ) := by
+/-- The total angle of the critical curve is negative just above `μ = 0` (it decreases strictly
+through `closure 0 = 0`). -/
+@[tmio T, powerlib_foundation] theorem closure_neg_of_pos {μ : ℝ} (hμ : |μ| ≤ ρ) (hpos : 0 < μ) :
+    closure W f μ < 0 := by
   have hderiv : ∀ ν ∈ Icc (-ρ) ρ, HasDerivAt (closure W f) (-(1 / √(edgeQ (W 0) (f 0) ν)) +
       ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) ν)) ν := fun ν hν =>
     hasDerivAt_closure hW0 hW hq (abs_le.mpr hν)
@@ -357,21 +358,36 @@ include hW0 hW hq hΓ in
   have hcont : ∀ a b, -ρ ≤ a → b ≤ ρ → ContinuousOn (closure W f) (Icc a b) := fun a b ha hb ν hν =>
     (hderiv ν ⟨ha.trans hν.1, hν.2.trans hb⟩).continuousAt.continuousWithinAt
   have hρ : 0 ≤ ρ := (abs_nonneg μ).trans hμ
-  refine ⟨fun hpos => ?_, fun hneg' => ?_⟩
-  · have hanti : StrictAntiOn (closure W f) (Icc 0 ρ) :=
-      strictAntiOn_of_deriv_neg (convex_Icc 0 ρ) (hcont 0 ρ (by linarith) le_rfl)
-        fun ν hν => by
-          rw [interior_Icc] at hν
-          exact hneg ν hν.1.ne' (by rw [abs_of_pos hν.1]; exact hν.2.le)
-    have := hanti ⟨le_rfl, hρ⟩ ⟨hpos.le, (le_abs_self μ).trans hμ⟩ hpos
-    rwa [closure_zero] at this
-  · have hanti : StrictAntiOn (closure W f) (Icc (-ρ) 0) :=
-      strictAntiOn_of_deriv_neg (convex_Icc (-ρ) 0) (hcont (-ρ) 0 le_rfl hρ)
-        fun ν hν => by
-          rw [interior_Icc] at hν
-          exact hneg ν hν.2.ne (by rw [abs_of_neg hν.2]; linarith [hν.1])
-    have := hanti ⟨by linarith [neg_abs_le μ], hneg'.le⟩ ⟨by linarith, le_rfl⟩ hneg'
-    rwa [closure_zero] at this
+  have hanti : StrictAntiOn (closure W f) (Icc 0 ρ) :=
+    strictAntiOn_of_deriv_neg (convex_Icc 0 ρ) (hcont 0 ρ (by linarith) le_rfl)
+      fun ν hν => by
+        rw [interior_Icc] at hν
+        exact hneg ν hν.1.ne' (by rw [abs_of_pos hν.1]; exact hν.2.le)
+  have := hanti ⟨le_rfl, hρ⟩ ⟨hpos.le, (le_abs_self μ).trans hμ⟩ hpos
+  rwa [closure_zero] at this
+
+include hW0 hW hq hΓ in
+/-- The total angle of the critical curve is positive just below `μ = 0` (it decreases strictly
+through `closure 0 = 0`). -/
+@[tmio T, powerlib_foundation] theorem closure_pos_of_neg {μ : ℝ} (hμ : |μ| ≤ ρ) (hneg' : μ < 0) :
+    0 < closure W f μ := by
+  have hderiv : ∀ ν ∈ Icc (-ρ) ρ, HasDerivAt (closure W f) (-(1 / √(edgeQ (W 0) (f 0) ν)) +
+      ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) ν)) ν := fun ν hν =>
+    hasDerivAt_closure hW0 hW hq (abs_le.mpr hν)
+  have hneg : ∀ ν, ν ≠ 0 → |ν| ≤ ρ → deriv (closure W f) ν < 0 := by
+    intro ν hν0 hν
+    rw [(hasDerivAt_closure hW0 hW hq hν).deriv]
+    linarith [hΓ ν hν0 hν]
+  have hcont : ∀ a b, -ρ ≤ a → b ≤ ρ → ContinuousOn (closure W f) (Icc a b) := fun a b ha hb ν hν =>
+    (hderiv ν ⟨ha.trans hν.1, hν.2.trans hb⟩).continuousAt.continuousWithinAt
+  have hρ : 0 ≤ ρ := (abs_nonneg μ).trans hμ
+  have hanti : StrictAntiOn (closure W f) (Icc (-ρ) 0) :=
+    strictAntiOn_of_deriv_neg (convex_Icc (-ρ) 0) (hcont (-ρ) 0 le_rfl hρ)
+      fun ν hν => by
+        rw [interior_Icc] at hν
+        exact hneg ν hν.2.ne (by rw [abs_of_neg hν.2]; linarith [hν.1])
+  have := hanti ⟨by linarith [neg_abs_le μ], hneg'.le⟩ ⟨by linarith, le_rfl⟩ hneg'
+  rwa [closure_zero] at this
 
 include hW0 hW hq hΓ in
 /-- The potential along the critical curve is positive away from the degenerate point. -/
@@ -389,7 +405,7 @@ include hW0 hW hq hΓ in
         rw [interior_Icc] at hν
         have hν' : |ν| ≤ ρ := by rw [abs_of_neg hν.2]; linarith [hν.1]
         rw [(hasDerivAt_curvePot hW0 hW hq hν').deriv]
-        linarith [(closure_sign hW0 hW hq hΓ hν').2 hν.2]
+        linarith [closure_pos_of_neg hW0 hW hq hΓ hν' hν.2]
     have := hanti ⟨by linarith [neg_abs_le μ], hneg.le⟩ ⟨by linarith, le_rfl⟩ hneg
     rwa [curvePot_zero] at this
   · have hmono : StrictMonoOn (curvePot W f) (Icc 0 ρ) :=
@@ -397,7 +413,7 @@ include hW0 hW hq hΓ in
         rw [interior_Icc] at hν
         have hν' : |ν| ≤ ρ := by rw [abs_of_pos hν.1]; exact hν.2.le
         rw [(hasDerivAt_curvePot hW0 hW hq hν').deriv]
-        linarith [(closure_sign hW0 hW hq hΓ hν').1 hν.1]
+        linarith [closure_neg_of_pos hW0 hW hq hΓ hν' hν.1]
     have := hmono ⟨le_rfl, hρ⟩ ⟨hpos.le, (le_abs_self μ).trans hμ⟩ hpos
     rwa [curvePot_zero] at this
 
@@ -500,8 +516,8 @@ condition is put on the Hessian at `0`, which may be singular. -/
     have hμ0 : μ = 0 := by
       by_contra hne
       rcases lt_or_gt_of_ne hne with h | h
-      · linarith [(closure_sign hW0 hW hq hΓ hμ).2 h]
-      · linarith [(closure_sign hW0 hW hq hΓ hμ).1 h]
+      · linarith [closure_pos_of_neg hW0 hW hq hΓ hμ h]
+      · linarith [closure_neg_of_pos hW0 hW hq hΓ hμ h]
     apply hx0
     funext e
     refine Fin.cases ?_ (fun i => ?_) e

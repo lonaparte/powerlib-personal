@@ -188,13 +188,4 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 @[tmio M, powerlib_foundation] theorem varEtaW_eq (Kp Ki g : ℝ) : covW Kp Ki g 1 1 = 1 / (2 * Kp * Ki) := by
   simp [covW]
 
-/-- The model's q-axis EMF sensitivity is `σ_q = g/V_g` with `g = −h′(θ)` (gauge identity), so the
-q-channel value at an equilibrium of the model is `(K_i + K_p² g)/(2 K_p V_g²)`. -/
-@[tmio M, powerlib_domain] theorem Params.varThetaQ_model (p : Params) (hwC : p.wC ≠ 0)
-    (hΔ : p.Δ ≠ 0) (hVg : p.Vg ≠ 0) (hKp : p.Kp ≠ 0) (θ : ℝ) (hg : deriv p.h θ ≠ 0) :
-    HasDerivAt (fun Eq => p.hE θ p.Vg Eq) (-deriv p.h θ / p.Vg) 0 ∧
-      covV p.Kp p.Ki (-deriv p.h θ) (-deriv p.h θ / p.Vg) 0 0 =
-        (p.Ki + p.Kp ^ 2 * (-deriv p.h θ)) / (2 * p.Kp * p.Vg ^ 2) :=
-  ⟨p.sigma_q_eq hwC hΔ hVg θ, varThetaQ_eq hKp (neg_ne_zero.mpr hg) hVg⟩
-
 end powerlib.GFL.Noise

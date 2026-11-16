@@ -39,9 +39,12 @@ Results.
   fixed point after at most `Σ c* + Σ d*` steps; the fixed point is dual feasible, tight on
   `σ`, and componentwise below every such solution (the least offsets).
 * `example_noteIndex`, `example_pryceIndex`, `example_hidden_constraint`,
-  `example_inconsistent_initial`, `example_one_differentiation`, `pendulum_offsets`,
-  `synchronous_constraint_compatibility`, `synchronous_constraint_no_solution` — the index
-  formula and Case A corrections (see Corrections).
+  `example_inconsistent_initial`, `example_one_differentiation`, `pendulum_noteIndex`,
+  `pendulum_pryceIndex`, `synchronous_constraint_compatibility`,
+  `synchronous_constraint_no_solution` — the index formula and Case A corrections (see
+  Corrections). The offsets used there: `example_isTransversal`, `example_isDualFeasible`,
+  `example_isTight`, `example_offsets_least`; `pendulum_isTransversal`,
+  `pendulum_isDualFeasible`, `pendulum_isTight`.
 
 Corrections.
 * Index formula, T-pantelides-index-reduction §1.5: the note's rule
@@ -295,11 +298,23 @@ def exampleD : Fin 3 → ℕ := ![1, 1, 0]
 /-- Transversal `F₁ ↦ y, F₂ ↦ x₂, F₃ ↦ x₁`. -/
 def exampleσ : Equiv.Perm (Fin 3) := Equiv.swap 0 2
 
-@[tmio M, powerlib_foundation] theorem example_offsets :
-    exampleSig.IsTransversal exampleσ ∧ exampleSig.IsDualFeasible exampleC exampleD ∧
-      exampleSig.IsTight exampleσ exampleC exampleD := by
-  refine ⟨?_, ?_, ?_⟩ <;>
-    simp only [Signature.IsTransversal, Signature.IsDualFeasible, Signature.IsTight] <;> decide
+/-- `exampleσ` is a transversal of the counterexample. -/
+@[tmio M, powerlib_foundation] theorem example_isTransversal :
+    exampleSig.IsTransversal exampleσ := by
+  simp only [Signature.IsTransversal]
+  decide
+
+/-- The offsets `c = 0`, `d = (1,1,0)` of the counterexample are dual feasible. -/
+@[tmio M, powerlib_foundation] theorem example_isDualFeasible :
+    exampleSig.IsDualFeasible exampleC exampleD := by
+  simp only [Signature.IsDualFeasible]
+  decide
+
+/-- The offsets `c = 0`, `d = (1,1,0)` of the counterexample are tight on `exampleσ`. -/
+@[tmio M, powerlib_foundation] theorem example_isTight :
+    exampleSig.IsTight exampleσ exampleC exampleD := by
+  simp only [Signature.IsTight]
+  decide
 
 /-- `(0, (1,1,0))` are the least nonnegative dual-feasible offsets. -/
 @[tmio M, powerlib_foundation] theorem example_offsets_least (c d : Fin 3 → ℕ)
@@ -367,13 +382,35 @@ def pendulumD : Fin 5 → ℕ := ![2, 2, 1, 1, 0]
 def pendulumσ : Equiv.Perm (Fin 5) :=
   ⟨![0, 3, 2, 4, 1], ![0, 4, 2, 1, 3], by decide, by decide⟩
 
-@[tmio M, powerlib_foundation] theorem pendulum_offsets :
-    pendulumSig.IsTransversal pendulumσ ∧ pendulumSig.IsDualFeasible pendulumC pendulumD ∧
-      pendulumSig.IsTight pendulumσ pendulumC pendulumD ∧
-      pendulumSig.noteIndex pendulumC = 3 ∧ pendulumSig.pryceIndex pendulumC pendulumD = 3 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [Signature.IsTransversal, Signature.IsDualFeasible, Signature.IsTight,
-      Signature.noteIndex, Signature.pryceIndex] <;> decide
+/-- `pendulumσ` is a transversal of the pendulum. -/
+@[tmio M, powerlib_foundation] theorem pendulum_isTransversal :
+    pendulumSig.IsTransversal pendulumσ := by
+  simp only [Signature.IsTransversal]
+  decide
+
+/-- The pendulum offsets `c = (1,1,0,0,2)`, `d = (2,2,1,1,0)` are dual feasible. -/
+@[tmio M, powerlib_foundation] theorem pendulum_isDualFeasible :
+    pendulumSig.IsDualFeasible pendulumC pendulumD := by
+  simp only [Signature.IsDualFeasible]
+  decide
+
+/-- The pendulum offsets `c = (1,1,0,0,2)`, `d = (2,2,1,1,0)` are tight on `pendulumσ`. -/
+@[tmio M, powerlib_foundation] theorem pendulum_isTight :
+    pendulumSig.IsTight pendulumσ pendulumC pendulumD := by
+  simp only [Signature.IsTight]
+  decide
+
+/-- The note's index formula gives `3` on the pendulum. -/
+@[tmio M, powerlib_foundation] theorem pendulum_noteIndex :
+    pendulumSig.noteIndex pendulumC = 3 := by
+  simp only [Signature.noteIndex]
+  decide
+
+/-- Pryce's index formula gives `3` on the pendulum. -/
+@[tmio M, powerlib_foundation] theorem pendulum_pryceIndex :
+    pendulumSig.pryceIndex pendulumC pendulumD = 3 := by
+  simp only [Signature.pryceIndex]
+  decide
 
 /-! ## §1.9 Case A: synchronous constraint makes the system overdetermined -/
 

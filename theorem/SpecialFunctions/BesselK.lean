@@ -41,11 +41,12 @@ Results.
   `exp_mul_besselK1_eq` (`e^z K₁(z) = ∫₀^∞ e^{−zu²/2}(1 + u²/2)(1 + u²/4)^{−1/2} du`).
 * Large argument: `norm_exp_mul_besselK0_sub_le`, `norm_exp_mul_besselK1_sub_le`
   (`‖e^z K_ν(z) − G(z)‖ = O(x^{−3/2})`, `x = Re z`, explicit constants, every `x > 0`),
-  `besselK_laplace_le` (relative form `≤ (2√(2K)/x)‖G(z)‖` in the sector `‖z‖ ≤ K x`),
-  `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from `besselI_laplace_le`),
-  `tendsto_bessel_div_gaussHalf` (all four normalized functions `→ 1` as `Re z → ∞` in a sector,
-  the quotients `besselI0Norm`, … below), i.e. `K_ν(z) ∼ √(π/(2z)) e^{−z}` and
-  `I_ν(z) ∼ e^z/√(2πz)`.
+  `besselK0_laplace_le`, `besselK1_laplace_le` (relative form `≤ (2√(2K)/x)‖G(z)‖` in the sector
+  `‖z‖ ≤ K x`), `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from
+  `besselI_laplace_le`), `tendsto_besselI0_div_gaussHalf`, `tendsto_besselI1_div_gaussHalf`,
+  `tendsto_besselK0_div_gaussHalf`, `tendsto_besselK1_div_gaussHalf` (each normalized function
+  `→ 1` as `Re z → ∞` in a sector, the quotients `besselI0Norm`, … below), i.e.
+  `K_ν(z) ∼ √(π/(2z)) e^{−z}` and `I_ν(z) ∼ e^z/√(2πz)`.
 * The scale: `norm_integral_gaussian_half` (`BesselI`: `‖G(z)‖ = √(π/(‖z‖/2))/2`),
   `gaussHalf_ne_zero`, `gaussHalf_sq` (`G(z)² = π/(2z)`), `gaussHalf_ofReal_mul`
   (`G(rz) = G(z)/√r`, `r > 0`); normalized functions
@@ -475,12 +476,11 @@ theorem sqrt_div_four_le_mul_norm_gaussHalf {K : ℝ} {z : ℂ} (hz : 0 < z.re) 
   have h0 : 0 ≤ Real.sqrt (Real.pi / (‖z‖ / 2)) := Real.sqrt_nonneg _
   nlinarith
 
-/-- **Laplace bounds for `K₀`, `K₁` in a sector**: `‖e^z K_ν(z) − G(z)‖ ≤ (C/x)‖G(z)‖`,
-`C = 2√(2K)`, whenever `x = Re z > 0`, `‖z‖ ≤ K x` (`ν = 0, 1`). -/
+/-- **Laplace bound for `K₀` in a sector**: `‖e^z K₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖`,
+`C = 2√(2K)`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`. -/
 @[tmio T, powerlib_foundation]
-theorem besselK_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
-    ‖Complex.exp z * besselK0 z - gaussHalf z‖ ≤ 2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ ∧
-    ‖Complex.exp z * besselK1 z - gaussHalf z‖ ≤ 2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ := by
+theorem besselK0_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
+    ‖Complex.exp z * besselK0 z - gaussHalf z‖ ≤ 2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ := by
   have hw := sqrt_div_four_le_mul_norm_gaussHalf hz hzK
   have hs := Real.sqrt_nonneg (2 * K)
   have hG := norm_nonneg (gaussHalf z)
@@ -492,8 +492,22 @@ theorem besselK_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ �
   have h0 : 1 / 8 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) ≤
       1 / 2 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) := by
     gcongr; norm_num
-  exact ⟨(norm_exp_mul_besselK0_sub_le hz).trans (h0.trans h1),
-    (norm_exp_mul_besselK1_sub_le hz).trans h1⟩
+  exact (norm_exp_mul_besselK0_sub_le hz).trans (h0.trans h1)
+
+/-- **Laplace bound for `K₁` in a sector**: `‖e^z K₁(z) − G(z)‖ ≤ (C/x)‖G(z)‖`,
+`C = 2√(2K)`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`. -/
+@[tmio T, powerlib_foundation]
+theorem besselK1_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
+    ‖Complex.exp z * besselK1 z - gaussHalf z‖ ≤ 2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ := by
+  have hw := sqrt_div_four_le_mul_norm_gaussHalf hz hzK
+  have hs := Real.sqrt_nonneg (2 * K)
+  have hG := norm_nonneg (gaussHalf z)
+  have h1 : 1 / 2 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) ≤
+      2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ := by
+    calc 1 / 2 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) ≤
+          1 / 2 * (4 / z.re) * (Real.sqrt (2 * K) * ‖gaussHalf z‖) := by gcongr
+      _ = _ := by ring
+  exact (norm_exp_mul_besselK1_sub_le hz).trans h1
 
 /-- **Laplace bounds for `I₀`, `I₁` in a sector** (from `besselI_laplace_le`), in terms of
 `G`: `‖π e^{−z} I_ν(z) − G(z)‖ ≤ (C/x)‖G(z)‖`, `ν = 0, 1`. -/
@@ -537,27 +551,55 @@ theorem tendsto_div_of_rel_bound {α : Type*} {l : Filter α} {f X G : α → �
   gcongr
   exact le_abs_self C
 
-/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`, the four
-normalized Bessel functions tend to `1`: `π e^{−f} I₀(f)/G(f)`, `π e^{−f} I₁(f)/G(f)`,
-`e^f K₀(f)/G(f)`, `e^f K₁(f)/G(f)` (by definition `besselI0Norm f`, `besselI1Norm f`,
-`besselK0Norm f`, `besselK1Norm f`), i.e. `I_ν(z) ∼ e^z/√(2πz)`, `K_ν(z) ∼ √(π/(2z)) e^{−z}`. -/
+/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
+`π e^{−f} I₀(f)/G(f) → 1` (by definition `besselI0Norm f`), i.e. `I₀(z) ∼ e^z/√(2πz)`. -/
 @[tmio T, powerlib_foundation]
-theorem tendsto_bessel_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (hK : 0 < K)
+theorem tendsto_besselI0_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (hK : 0 < K)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
-    Tendsto (fun i => Real.pi * Complex.exp (-f i) * besselI0 (f i) / gaussHalf (f i)) l (𝓝 1) ∧
-    Tendsto (fun i => Real.pi * Complex.exp (-f i) * besselI1 (f i) / gaussHalf (f i)) l (𝓝 1) ∧
-    Tendsto (fun i => Complex.exp (f i) * besselK0 (f i) / gaussHalf (f i)) l (𝓝 1) ∧
-    Tendsto (fun i => Complex.exp (f i) * besselK1 (f i) / gaussHalf (f i)) l (𝓝 1) := by
+    Tendsto (fun i => Real.pi * Complex.exp (-f i) * besselI0 (f i) / gaussHalf (f i)) l (𝓝 1) := by
   obtain ⟨C, -, hC⟩ := besselI_laplace_le' hK
   have hpos := hre.eventually_gt_atTop 0
   have hG : ∀ᶠ i in l, gaussHalf (f i) ≠ 0 := hpos.mono fun i hi => gaussHalf_ne_zero hi
-  refine ⟨tendsto_div_of_rel_bound (C := C) hre hG ?_, tendsto_div_of_rel_bound (C := C) hre hG ?_,
-    tendsto_div_of_rel_bound (C := 2 * Real.sqrt (2 * K)) hre hG ?_,
-    tendsto_div_of_rel_bound (C := 2 * Real.sqrt (2 * K)) hre hG ?_⟩
-  · filter_upwards [hpos, hsec] with i hi hs; exact (hC _ hi hs).1
-  · filter_upwards [hpos, hsec] with i hi hs; exact (hC _ hi hs).2
-  · filter_upwards [hpos, hsec] with i hi hs; exact (besselK_laplace_le hi hs).1
-  · filter_upwards [hpos, hsec] with i hi hs; exact (besselK_laplace_le hi hs).2
+  refine tendsto_div_of_rel_bound (C := C) hre hG ?_
+  filter_upwards [hpos, hsec] with i hi hs; exact (hC _ hi hs).1
+
+
+/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
+`π e^{−f} I₁(f)/G(f) → 1` (by definition `besselI1Norm f`), i.e. `I₁(z) ∼ e^z/√(2πz)`. -/
+@[tmio T, powerlib_foundation]
+theorem tendsto_besselI1_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => Real.pi * Complex.exp (-f i) * besselI1 (f i) / gaussHalf (f i)) l (𝓝 1) := by
+  obtain ⟨C, -, hC⟩ := besselI_laplace_le' hK
+  have hpos := hre.eventually_gt_atTop 0
+  have hG : ∀ᶠ i in l, gaussHalf (f i) ≠ 0 := hpos.mono fun i hi => gaussHalf_ne_zero hi
+  refine tendsto_div_of_rel_bound (C := C) hre hG ?_
+  filter_upwards [hpos, hsec] with i hi hs; exact (hC _ hi hs).2
+
+
+/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
+`e^f K₀(f)/G(f) → 1` (by definition `besselK0Norm f`), i.e. `K₀(z) ∼ √(π/(2z)) e^{−z}`. -/
+@[tmio T, powerlib_foundation]
+theorem tendsto_besselK0_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (_hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => Complex.exp (f i) * besselK0 (f i) / gaussHalf (f i)) l (𝓝 1) := by
+  have hpos := hre.eventually_gt_atTop 0
+  have hG : ∀ᶠ i in l, gaussHalf (f i) ≠ 0 := hpos.mono fun i hi => gaussHalf_ne_zero hi
+  refine tendsto_div_of_rel_bound (C := 2 * Real.sqrt (2 * K)) hre hG ?_
+  filter_upwards [hpos, hsec] with i hi hs; exact besselK0_laplace_le hi hs
+
+
+/-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
+`e^f K₁(f)/G(f) → 1` (by definition `besselK1Norm f`), i.e. `K₁(z) ∼ √(π/(2z)) e^{−z}`. -/
+@[tmio T, powerlib_foundation]
+theorem tendsto_besselK1_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (_hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => Complex.exp (f i) * besselK1 (f i) / gaussHalf (f i)) l (𝓝 1) := by
+  have hpos := hre.eventually_gt_atTop 0
+  have hG : ∀ᶠ i in l, gaussHalf (f i) ≠ 0 := hpos.mono fun i hi => gaussHalf_ne_zero hi
+  refine tendsto_div_of_rel_bound (C := 2 * Real.sqrt (2 * K)) hre hG ?_
+  filter_upwards [hpos, hsec] with i hi hs; exact besselK1_laplace_le hi hs
+
 
 /-- Normalized `I₀`: `π e^{−z} I₀(z)/G(z)` (`→ 1` as `z → ∞` in a sector). -/
 def besselI0Norm (z : ℂ) : ℂ := Real.pi * Complex.exp (-z) * besselI0 z / gaussHalf z

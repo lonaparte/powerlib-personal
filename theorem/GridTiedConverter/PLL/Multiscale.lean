@@ -23,8 +23,9 @@ Source: work-sync `theory/T-gfl-multiscale-modeling.md` §1.5, §1.7, §1.8;
 
 Results.
 * Slow manifold (quasi-steady state of the `θ` equation with `ξ` frozen): on the domain
-  `|Δω + b ξ| < a` the branch `θ*(ξ) = arcsin((Δω + b ξ)/a)` solves `Δω − a sin θ + b ξ = 0`,
-  lies in `(−π/2, π/2)`, and has normal Jacobian `∂_θ(Δω − a sin θ + bξ) = −a cos θ* < 0`.
+  `|Δω + b ξ| < a` the branch `θ*(ξ) = arcsin((Δω + b ξ)/a)` solves `Δω − a sin θ + b ξ = 0`
+  (`slowAngle_spec`), lies in `(−π/2, π/2)` (`abs_slowAngle_lt`), and has normal Jacobian
+  `∂_θ(Δω − a sin θ + bξ) = −a cos θ* < 0` (`slowAngle_normal_neg`).
 * Reduced slow equation `ξ̇ = −sin θ*(ξ)`: on that domain it equals the linear field
   `−(Δω + b ξ)/a = −(b/a)(ξ − ξ*)`, `ξ* = −Δω/b`; the equilibrium `ξ*` is inside the domain;
   the shifted 1-state linear model `ẏ = −(b/a) y` is globally exponentially stable iff
@@ -36,7 +37,7 @@ Results.
   real roots iff `ε_od ≤ 1/4` (`ζ ≥ 1`); then `λ± = −(a/2)(1 ∓ √(1 − 4ε_od))`,
   `λ₊/λ₋ = 4ε_od/(1 + √(1 − 4ε_od))² ∈ [ε_od, 4ε_od]`, `λ₋ ∈ [−a, −a/2]`,
   `λ₊ ∈ [−2b/a, −b/a]` (`Criteria.eigen_real_iff`, `eigen_roots`, `eigen_ratio`,
-  `eigen_bounds`).
+  `eigen_ratio_ge`, `eigen_ratio_le`, `eigen_fast_bounds`, `eigen_slow_bounds`).
 
 Family and connection conclusions.
 `ReducedSlow.family` reads a pair `(a, b)` as the autonomous
@@ -63,18 +64,26 @@ open Matrix
 /-- Slow-manifold branch `θ*(ξ) = arcsin((Δω + b ξ)/a)`. -/
 def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
 
+/-- On the domain `|Δω + b ξ| < a` the slow-manifold branch solves the quasi-steady equation
+`Δω − a sin θ + b ξ = 0`. -/
 @[tmio M, powerlib_domain] theorem slowAngle_spec {a b Δω ξ : ℝ} (ha : 0 < a)
-    (hdom : |Δω + b * ξ| < a) :
-    Δω - a * Real.sin (slowAngle a b Δω ξ) + b * ξ = 0 ∧
-      |slowAngle a b Δω ξ| < Real.pi / 2 ∧
-      -(a * Real.cos (slowAngle a b Δω ξ)) < 0 := by
-  have hx : |(Δω + b * ξ) / a| < 1 := by rw [abs_div, abs_of_pos ha, div_lt_one ha]; exact hdom
-  have hx' := abs_lt.mp hx
+    (hdom : |Δω + b * ξ| < a) : Δω - a * Real.sin (slowAngle a b Δω ξ) + b * ξ = 0 := by
   have hsin : a * Real.sin (slowAngle a b Δω ξ) = Δω + b * ξ :=
     SpecialFunctions.mul_sin_arcsin_div hdom.le ha
-  refine ⟨by linarith, abs_lt.mpr ⟨Real.neg_pi_div_two_lt_arcsin.mpr hx'.1,
-    Real.arcsin_lt_pi_div_two.mpr hx'.2⟩, ?_⟩
-  exact neg_neg_of_pos (mul_pos ha (SpecialFunctions.cos_arcsin_div_pos hdom ha))
+  linarith
+
+/-- On the domain `|Δω + b ξ| < a` the slow-manifold branch lies in `(−π/2, π/2)`. -/
+@[tmio M, powerlib_domain] theorem abs_slowAngle_lt {a b Δω ξ : ℝ} (ha : 0 < a)
+    (hdom : |Δω + b * ξ| < a) : |slowAngle a b Δω ξ| < Real.pi / 2 := by
+  have hx : |(Δω + b * ξ) / a| < 1 := by rw [abs_div, abs_of_pos ha, div_lt_one ha]; exact hdom
+  have hx' := abs_lt.mp hx
+  exact abs_lt.mpr ⟨Real.neg_pi_div_two_lt_arcsin.mpr hx'.1, Real.arcsin_lt_pi_div_two.mpr hx'.2⟩
+
+/-- On the domain `|Δω + b ξ| < a` the normal Jacobian `−a cos θ*` of the slow manifold is
+negative. -/
+@[tmio M, powerlib_domain] theorem slowAngle_normal_neg {a b Δω ξ : ℝ} (ha : 0 < a)
+    (hdom : |Δω + b * ξ| < a) : -(a * Real.cos (slowAngle a b Δω ξ)) < 0 :=
+  neg_neg_of_pos (mul_pos ha (SpecialFunctions.cos_arcsin_div_pos hdom ha))
 
 /-- Reduced slow field on the domain: `−sin θ*(ξ) = −(Δω + b ξ)/a = −(b/a)(ξ − ξ*)`,
 `ξ* = −Δω/b`. -/

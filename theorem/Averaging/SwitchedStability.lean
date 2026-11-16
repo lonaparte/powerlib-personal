@@ -89,18 +89,21 @@ Results.
   (`‖x(t) − e^{tĀ} x(0)‖ ≤ C T ‖x(0)‖` for all `t ≥ 0`: the finite horizon of
   `stateSpaceAveraging_error_uniform` removed under stability).
 * Hurwitz average (`Fin n`): `exists_norm_exp_lt_one_of_isHurwitz`;
-  `periodMap_schurStable_of_isHurwitz` (for `T ∈ (0, T₀]` the period map is Schur stable with a
-  power of norm `< 1`); `switched_decay_of_isHurwitz` (uniform exponential decay of every switched
-  trajectory); `switched_averaging_error_of_isHurwitz` (averaging error `O(T)` on `[0, ∞)`);
+  `periodMap_schurStable_of_isHurwitz`, `periodMap_pow_norm_lt_one_of_isHurwitz` (for
+  `T ∈ (0, T₀]` the period map is Schur stable, with a power of norm `< 1`);
+  `switched_decay_of_isHurwitz` (uniform exponential decay of every switched trajectory);
+  `switched_averaging_error_of_isHurwitz` (averaging error `O(T)` on `[0, ∞)`);
   `isHurwitz_of_switched_decay` (converse: decay with `T`-independent constants for all
   `T ∈ (0, T₀]` forces `Ā` Hurwitz, via the averaging error, `exists_switched_trajectory` and the
   Floquet multiplier `e^{μ t}` of an eigenpair); with `switched_decay_of_isHurwitz` the transfer
   is exact in the fast-switching limit.
 * Slow switching (`d = 1/2`, `A₁ = N₁ − εI`, `A₂ = N₂ − εI`, `N₁ = [[0, 1], [0, 0]]`,
   `N₂ = [[0, 0], [−1, 0]]`): `periodMap_shear_pair` (`M_T = e^{−εT} [[1, T/2], [−T/2, 1 − T²/4]]`,
-  trace `e^{−εT}(2 − T²/4)`, determinant `e^{−2εT}`); `slowSwitching_counterexample` (`ε = 1/10`:
-  `A₁`, `A₂` and `Ā = [[−1/10, 1/2], [−1/2, −1/10]]` are Hurwitz, but `M_5 (1, −2) =
-  −4 e^{−1/2} (1, −2)`, `4 e^{−1/2} ≈ 2.43`, so `M_5` is not Schur stable);
+  trace `e^{−εT}(2 − T²/4)`, determinant `e^{−2εT}`); `ε = 1/10`: `A₁`, `A₂` and
+  `Ā = [[−1/10, 1/2], [−1/2, −1/10]]` are Hurwitz (`slowSwitching_isHurwitz₁`,
+  `slowSwitching_isHurwitz₂`, `slowSwitching_isHurwitz_avg`), but `M_5 (1, −2) =
+  −4 e^{−1/2} (1, −2)` (`slowSwitching_periodMap_eigen`), `4 e^{−1/2} ≈ 2.43`, so `M_5` is not
+  Schur stable (`slowSwitching_not_schurStable`);
   `slowSwitching_counterexample_of_two_le` (every dimension `n ≥ 2`: the example embedded
   block-diagonally, `Aᵢ ⊕ (−1)` on the remaining `n − 2` coordinates, keeps Hurwitz topologies, a
   Hurwitz average and a period map that is not Schur stable);
@@ -659,7 +662,7 @@ for every switching period `T ∈ (0, T₀]`, every switched trajectory and **ev
     have h := exp_add_smul Ab s ((k : ℝ) * T)
     rw [show s + (k : ℝ) * T = t by simp only [hsdef]; ring] at h
     exact h
-  obtain ⟨-, hbs⟩ := exp_smul_bounds hAb hs0 (hsT.trans hT1)
+  have hbs := norm_exp_smul_sub_one_le_of_norm_le hAb hs0 (hsT.trans hT1)
   have h3 : ‖NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0‖ ≤
       a * Real.exp a * (C₁ + C₀) * T * ‖x 0‖ := by
     have e : NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0 =
@@ -712,16 +715,41 @@ variable {n : ℕ}
 
 /-- **Stability transfer, sampled form.** A Hurwitz averaged matrix `Ā = d A₁ + (1 − d) A₂`
 makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for every switching period
-`T ∈ (0, T₀]`, with a power of `L∞` operator norm below one. -/
+`T ∈ (0, T₀]`. -/
 @[tmio T, powerlib_foundation] theorem periodMap_schurStable_of_isHurwitz {d : ℝ} (hd0 : 0 ≤ d)
     (hd1 : d ≤ 1) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ)
     (hA : LinearSystems.IsHurwitz (avgMatrix d A₁ A₂)) :
-    ∃ T₀ : ℝ, 0 < T₀ ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
-      LTI.SchurStable (periodMap d T A₁ A₂) ∧
-        ∃ N : ℕ, 0 < N ∧ ‖periodMap d T A₁ A₂ ^ N‖ < 1 := by
+    ∃ T₀ : ℝ, 0 < T₀ ∧ ∀ T ∈ Ioc (0 : ℝ) T₀, LTI.SchurStable (periodMap d T A₁ A₂) := by
   rcases isEmpty_or_nonempty (Fin n) with hn | hn
-  · refine ⟨1, one_pos, fun T _ => ⟨fun μ v hv _ => absurd (Subsingleton.elim v 0) hv,
-      1, one_pos, ?_⟩⟩
+  · exact ⟨1, one_pos, fun T _ μ v hv _ => absurd (Subsingleton.elim v 0) hv⟩
+  · obtain ⟨H, hH, hexp⟩ := exists_norm_exp_lt_one_of_isHurwitz hA
+    obtain ⟨T₀, hT₀, -, C, α, hC, hα, hdec⟩ := exists_periodMap_pow_decay hd0 hd1 A₁ A₂ hH hexp
+    refine ⟨T₀, hT₀, fun T hT => ?_⟩
+    set M := periodMap d T A₁ A₂ with hMdef
+    set ρ := Real.exp (-(α * T)) with hρdef
+    have hρ0 : 0 < ρ := Real.exp_pos _
+    have hρ1 : ρ < 1 := by
+      calc ρ < Real.exp 0 := Real.exp_lt_exp.mpr (by nlinarith [hT.1])
+        _ = 1 := Real.exp_zero
+    have hpow : ∀ k : ℕ, ‖M ^ k‖ ≤ C * ρ ^ k := fun k => by
+      have h := hdec T hT k
+      rwa [show -(α * ((k : ℝ) * T)) = (k : ℝ) * (-(α * T)) by ring, Real.exp_nat_mul] at h
+    apply (LTI.exponentiallyStable_iff_schurStable ⟨M⟩).mp
+    refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
+    rw [LTI.eq_response hx k, LTI.response]
+    exact (Matrix.linfty_opNorm_mulVec _ _).trans
+      (mul_le_mul_of_nonneg_right (hpow k) (norm_nonneg _))
+
+/-- **Stability transfer, contraction form.** A Hurwitz averaged matrix `Ā = d A₁ + (1 − d) A₂`
+gives, for every switching period `T ∈ (0, T₀]`, a power of the switched period map
+`e^{(1−d)TA₂} e^{dTA₁}` with `L∞` operator norm below one. -/
+@[tmio T, powerlib_foundation] theorem periodMap_pow_norm_lt_one_of_isHurwitz {d : ℝ}
+    (hd0 : 0 ≤ d) (hd1 : d ≤ 1) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ)
+    (hA : LinearSystems.IsHurwitz (avgMatrix d A₁ A₂)) :
+    ∃ T₀ : ℝ, 0 < T₀ ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
+      ∃ N : ℕ, 0 < N ∧ ‖periodMap d T A₁ A₂ ^ N‖ < 1 := by
+  rcases isEmpty_or_nonempty (Fin n) with hn | hn
+  · refine ⟨1, one_pos, fun T _ => ⟨1, one_pos, ?_⟩⟩
     rw [Subsingleton.elim (periodMap d T A₁ A₂ ^ 1) 0, norm_zero]
     norm_num
   · obtain ⟨H, hH, hexp⟩ := exists_norm_exp_lt_one_of_isHurwitz hA
@@ -736,19 +764,13 @@ makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for eve
     have hpow : ∀ k : ℕ, ‖M ^ k‖ ≤ C * ρ ^ k := fun k => by
       have h := hdec T hT k
       rwa [show -(α * ((k : ℝ) * T)) = (k : ℝ) * (-(α * T)) by ring, Real.exp_nat_mul] at h
-    refine ⟨?_, ?_⟩
-    · apply (LTI.exponentiallyStable_iff_schurStable ⟨M⟩).mp
-      refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
-      rw [LTI.eq_response hx k, LTI.response]
-      exact (Matrix.linfty_opNorm_mulVec _ _).trans
-        (mul_le_mul_of_nonneg_right (hpow k) (norm_nonneg _))
-    · obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr hC) hρ1
-      refine ⟨j + 1, Nat.succ_pos j, ?_⟩
-      calc ‖M ^ (j + 1)‖ ≤ C * ρ ^ (j + 1) := hpow _
-        _ ≤ C * ρ ^ j :=
-            mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hρ0.le hρ1.le (Nat.le_succ j)) hC.le
-        _ < C * C⁻¹ := by gcongr
-        _ = 1 := mul_inv_cancel₀ hC.ne'
+    obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr hC) hρ1
+    refine ⟨j + 1, Nat.succ_pos j, ?_⟩
+    calc ‖M ^ (j + 1)‖ ≤ C * ρ ^ (j + 1) := hpow _
+      _ ≤ C * ρ ^ j :=
+          mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hρ0.le hρ1.le (Nat.le_succ j)) hC.le
+      _ < C * C⁻¹ := by gcongr
+      _ = 1 := mul_inv_cancel₀ hC.ne'
 
 /-- **Stability transfer to the switched system** (Hurwitz averaged matrix). If
 `Ā = d A₁ + (1 − d) A₂` is Hurwitz, there are `T₀ > 0`, `C > 0`, `α > 0` such that for every
@@ -984,65 +1006,79 @@ section Counterexample
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.one_apply] <;> ring
 
-/-- **Slow switching destabilizes a Hurwitz average.** With `ε = 1/10`: both topologies
-`A₁ = [[−1/10, 1], [0, −1/10]]`, `A₂ = [[−1/10, 0], [−1, −1/10]]` and their average
-`Ā = [[−1/10, 1/2], [−1/2, −1/10]]` (`d = 1/2`) are Hurwitz, but at the switching period `T = 5`
-the period map has the real eigenvalue `−4 e^{−1/2}` (modulus `≈ 2.43 > 1`) with eigenvector
-`(1, −2)`, so it is not Schur stable. -/
-@[tmio T, powerlib_foundation] theorem slowSwitching_counterexample :
-    LinearSystems.IsHurwitz (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) ∧
-    LinearSystems.IsHurwitz (!![-1 / 10, 0; -1, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) ∧
+/-- Slow-switching example, first topology: `A₁ = [[−1/10, 1], [0, −1/10]]` is Hurwitz. -/
+@[tmio T, powerlib_foundation] theorem slowSwitching_isHurwitz₁ :
+    LinearSystems.IsHurwitz (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) := by
+  rw [Criteria.isHurwitz_fin_two_of_iff]; norm_num
+
+/-- Slow-switching example, second topology: `A₂ = [[−1/10, 0], [−1, −1/10]]` is Hurwitz. -/
+@[tmio T, powerlib_foundation] theorem slowSwitching_isHurwitz₂ :
+    LinearSystems.IsHurwitz (!![-1 / 10, 0; -1, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) := by
+  rw [Criteria.isHurwitz_fin_two_of_iff]; norm_num
+
+/-- Slow-switching example, average: `Ā = [[−1/10, 1/2], [−1/2, −1/10]]` of
+`A₁ = [[−1/10, 1], [0, −1/10]]` and `A₂ = [[−1/10, 0], [−1, −1/10]]` (`d = 1/2`) is Hurwitz. -/
+@[tmio T, powerlib_foundation] theorem slowSwitching_isHurwitz_avg :
     LinearSystems.IsHurwitz
       (avgMatrix (1 / 2) (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
-        !![-1 / 10, 0; -1, -1 / 10]) ∧
-    periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
-        !![-1 / 10, 0; -1, -1 / 10] *ᵥ ![1, -2] = (-4 * Real.exp (-1 / 2)) • ![1, -2] ∧
-    ¬ LTI.SchurStable (periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
         !![-1 / 10, 0; -1, -1 / 10]) := by
+  have hAb : avgMatrix (1 / 2) (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
+      !![-1 / 10, 0; -1, -1 / 10] = !![-1 / 10, 1 / 2; -1 / 2, -1 / 10] := by
+    unfold avgMatrix
+    ext i j; fin_cases i <;> fin_cases j <;> norm_num
+  rw [hAb, Criteria.isHurwitz_fin_two_of_iff]; norm_num
+
+/-- Slow-switching example, eigenpair: at the switching period `T = 5` the period map of
+`A₁ = [[−1/10, 1], [0, −1/10]]`, `A₂ = [[−1/10, 0], [−1, −1/10]]` (`d = 1/2`) has the real
+eigenvalue `−4 e^{−1/2}` with eigenvector `(1, −2)`. -/
+@[tmio T, powerlib_foundation] theorem slowSwitching_periodMap_eigen :
+    periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
+        !![-1 / 10, 0; -1, -1 / 10] *ᵥ ![1, -2] = (-4 * Real.exp (-1 / 2)) • ![1, -2] := by
   have hM := periodMap_shear_pair (1 / 10) 5
   have hneg : (!![-(1 / 10), 1; 0, -(1 / 10)] : Matrix (Fin 2) (Fin 2) ℝ) =
       !![-1 / 10, 1; 0, -1 / 10] := by ext i j; fin_cases i <;> fin_cases j <;> norm_num
   have hneg' : (!![-(1 / 10), 0; -1, -(1 / 10)] : Matrix (Fin 2) (Fin 2) ℝ) =
       !![-1 / 10, 0; -1, -1 / 10] := by ext i j; fin_cases i <;> fin_cases j <;> norm_num
   rw [hneg, hneg'] at hM
-  have heig : periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
-      !![-1 / 10, 0; -1, -1 / 10] *ᵥ ![1, -2] = (-4 * Real.exp (-1 / 2)) • ![1, -2] := by
-    rw [hM]
+  rw [hM]
+  ext i
+  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> norm_num <;> ring_nf
+
+/-- **Slow switching destabilizes a Hurwitz average.** With `ε = 1/10`: both topologies
+`A₁ = [[−1/10, 1], [0, −1/10]]`, `A₂ = [[−1/10, 0], [−1, −1/10]]` and their average
+`Ā = [[−1/10, 1/2], [−1/2, −1/10]]` (`d = 1/2`) are Hurwitz (`slowSwitching_isHurwitz₁`,
+`slowSwitching_isHurwitz₂`, `slowSwitching_isHurwitz_avg`), but at the switching period `T = 5`
+the period map has the real eigenvalue `−4 e^{−1/2}` (modulus `≈ 2.43 > 1`) with eigenvector
+`(1, −2)` (`slowSwitching_periodMap_eigen`), so it is not Schur stable. -/
+@[tmio T, powerlib_foundation] theorem slowSwitching_not_schurStable :
+    ¬ LTI.SchurStable (periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
+        !![-1 / 10, 0; -1, -1 / 10]) := by
+  intro hS
+  have heig := slowSwitching_periodMap_eigen
+  set w : Fin 2 → ℝ := ![1, -2] with hw
+  set μr : ℝ := -4 * Real.exp (-1 / 2) with hμr
+  have hc : (periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
+      !![-1 / 10, 0; -1, -1 / 10]).map (algebraMap ℝ ℂ) *ᵥ (algebraMap ℝ ℂ ∘ w) =
+      (μr : ℂ) • (algebraMap ℝ ℂ ∘ w) := by
     ext i
-    fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> norm_num <;> ring_nf
-  refine ⟨?_, ?_, ?_, heig, ?_⟩
-  · rw [Criteria.isHurwitz_fin_two_of_iff]; norm_num
-  · rw [Criteria.isHurwitz_fin_two_of_iff]; norm_num
-  · have hAb : avgMatrix (1 / 2) (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
-        !![-1 / 10, 0; -1, -1 / 10] = !![-1 / 10, 1 / 2; -1 / 2, -1 / 10] := by
-      unfold avgMatrix
-      ext i j; fin_cases i <;> fin_cases j <;> norm_num
-    rw [hAb, Criteria.isHurwitz_fin_two_of_iff]; norm_num
-  · intro hS
-    set w : Fin 2 → ℝ := ![1, -2] with hw
-    set μr : ℝ := -4 * Real.exp (-1 / 2) with hμr
-    have hc : (periodMap (1 / 2) 5 (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ)
-        !![-1 / 10, 0; -1, -1 / 10]).map (algebraMap ℝ ℂ) *ᵥ (algebraMap ℝ ℂ ∘ w) =
-        (μr : ℂ) • (algebraMap ℝ ℂ ∘ w) := by
-      ext i
-      rw [← RingHom.map_mulVec, heig]
-      simp
-    have hv : (algebraMap ℝ ℂ ∘ w) ≠ 0 := by
-      intro h
-      have := congrFun h 0
-      simp [hw] at this
-    have h1 := hS _ _ hv hc
-    have hexp : (1 / 2 : ℝ) ≤ Real.exp (-1 / 2) := by
-      have := Real.add_one_le_exp (-1 / 2 : ℝ)
-      linarith
-    have : ‖(μr : ℂ)‖ = 4 * Real.exp (-1 / 2) := by
-      rw [Complex.norm_real, Real.norm_eq_abs, hμr, abs_mul, abs_of_pos (Real.exp_pos _)]
-      norm_num
-    rw [this] at h1
+    rw [← RingHom.map_mulVec, heig]
+    simp
+  have hv : (algebraMap ℝ ℂ ∘ w) ≠ 0 := by
+    intro h
+    have := congrFun h 0
+    simp [hw] at this
+  have h1 := hS _ _ hv hc
+  have hexp : (1 / 2 : ℝ) ≤ Real.exp (-1 / 2) := by
+    have := Real.add_one_le_exp (-1 / 2 : ℝ)
     linarith
+  have : ‖(μr : ℂ)‖ = 4 * Real.exp (-1 / 2) := by
+    rw [Complex.norm_real, Real.norm_eq_abs, hμr, abs_mul, abs_of_pos (Real.exp_pos _)]
+    norm_num
+  rw [this] at h1
+  linarith
 
 /-- **Slow switching destabilizes a Hurwitz average in every dimension `n ≥ 2`.** The example of
-`slowSwitching_counterexample` embedded block-diagonally, `Aᵢ ⊕ (−1)` on the remaining `n − 2`
+`slowSwitching_not_schurStable` embedded block-diagonally, `Aᵢ ⊕ (−1)` on the remaining `n − 2`
 coordinates (`Fin n ≃ Fin 2 ⊕ Fin (n − 2)`): both topologies and their average (`d = 1/2`) are
 Hurwitz, but at the switching period `T = 5` the period map, block diagonal, carries the
 eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
@@ -1051,7 +1087,10 @@ eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
       LinearSystems.IsHurwitz A₂ ∧ LinearSystems.IsHurwitz (avgMatrix (1 / 2) A₁ A₂) ∧
       ¬ LTI.SchurStable (periodMap (1 / 2) 5 A₁ A₂) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  obtain ⟨h₁, h₂, havg, -, hnot⟩ := slowSwitching_counterexample
+  have h₁ := slowSwitching_isHurwitz₁
+  have h₂ := slowSwitching_isHurwitz₂
+  have havg := slowSwitching_isHurwitz_avg
+  have hnot := slowSwitching_not_schurStable
   have hD : LinearSystems.IsHurwitz (-1 : Matrix (Fin k) (Fin k) ℝ) := by
     intro μ v hv h
     rw [Matrix.map_neg _ (map_neg _), Matrix.map_one _ (map_zero _) (map_one _),
@@ -1069,7 +1108,7 @@ eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
   · rw [periodMap_reindex_fromBlocks]
     exact fun h => hnot (schurStable_of_reindex_fromBlocks e _ h)
 
-/-- **Slow switching, trajectory form.** For the example of `slowSwitching_counterexample`
+/-- **Slow switching, trajectory form.** For the example of `slowSwitching_not_schurStable`
 (`A₁ = [[−1/10, 1], [0, −1/10]]`, `A₂ = [[−1/10, 0], [−1, −1/10]]`, `d = 1/2`, `T = 5`; both
 topologies and the average Hurwitz) there is a switched trajectory from `(1, −2)` whose samples are
 `x(5k) = (−4 e^{−1/2})^k (1, −2)` and grow without bound. -/
@@ -1084,7 +1123,7 @@ topologies and the average Hurwitz) there is a switched trajectory from `(1, −
       x 0 = ![1, -2] ∧
       (∀ k : ℕ, x (k * 5) = (-4 * Real.exp (-1 / 2)) ^ k • ![1, -2]) ∧
       ∀ B : ℝ, ∃ k : ℕ, B < ‖x (k * 5)‖ := by
-  obtain ⟨-, -, -, heig, -⟩ := slowSwitching_counterexample
+  have heig := slowSwitching_periodMap_eigen
   obtain ⟨x, hx0, hx⟩ := exists_switched_trajectory (d := 1 / 2) (by norm_num) (by norm_num)
     (!![-1 / 10, 1; 0, -1 / 10] : Matrix (Fin 2) (Fin 2) ℝ) !![-1 / 10, 0; -1, -1 / 10]
     (T := 5) (by norm_num) ![1, -2]

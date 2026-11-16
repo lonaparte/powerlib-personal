@@ -58,11 +58,11 @@ Family and connection conclusions.
 * Connection conclusion for the module's own regime: under the standing assumptions the
   origin is unstable (`Admissible.mem_den_unstable`): solutions leave the origin, towards the limit
   cycle of the trajectory-level results.
-* The limit-cycle results above (`normSq_formula`, `norm_tendsto_rstar`, `phase_rotation`,
-  `norm_eq_rstar_of_start`, `limitCycle_isSolution`) are trajectory level and outside the sentence
-  language (Rules §3a): they are private implementation evidence, as is the explicit logistic
-  formula `inv_normSq_eq` (the parameter type `AHO` carries a family, so its public behavioural
-  statements must be connection statements).  `radial_zero_iff`
+* The limit-cycle results above (`normSq_solution_pos`, `normSq_formula`, `norm_tendsto_rstar`,
+  `phase_rotation`, `norm_eq_rstar_of_start`, `limitCycle_isSolution`) are trajectory level and
+  outside the sentence language (Rules §3a): they are private implementation evidence, as is the
+  explicit logistic formula `inv_normSq_eq` (the parameter type `AHO` carries a family, so its
+  public behavioural statements must be connection statements).  `radial_zero_iff`
   is static evidence on the model; the pointwise chain rules `hasDerivWithinAt_normSq`,
   `hasDerivWithinAt_norm` stay public foundation.
 
@@ -236,13 +236,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [Real.exp_neg]
   linarith
 
-/-- Solutions starting away from the origin never reach it, and `|v|²` is given by the explicit
-logistic formula.
+/-- Solutions starting away from the origin never reach it.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem normSq_solution_pos (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
-    ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) ∧ 1 / normSq (φ t) =
-      a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
+    ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) := by
   have hc : 0 < a.c := by
     simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
       using h.c_pos
@@ -292,8 +290,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
     have := hlow s ⟨hs.1, lt_of_le_of_ne hs.2 hst⟩
     linarith
   intro t ht
-  have hp := hposAll t ht t ⟨ht, le_rfl⟩
-  exact ⟨hp, a.inv_normSq_eq h hφ (hposAll t ht) t ⟨ht, le_rfl⟩⟩
+  exact hposAll t ht t ⟨ht, le_rfl⟩
+
+/-- For solutions starting away from the origin, `|v|²` is given by the explicit logistic
+formula.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio TM, powerlib_domain] private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
+    (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
+    ∀ t ∈ Ici (0 : ℝ), 1 / normSq (φ t) =
+      a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
+  intro t ht
+  exact a.inv_normSq_eq h hφ (T := t)
+    (fun s hs => a.normSq_solution_pos h hφ h0 s hs.1) t ⟨ht, le_rfl⟩
 
 /-- Every solution with `v(0) ≠ 0` converges in amplitude to the limit-cycle radius.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -316,7 +324,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     rw [inv_div] at h1
     apply h1.congr'
     filter_upwards [eventually_ge_atTop 0] with t ht
-    have := (hform t ht).2
+    have := hform t ht
     rw [← this, one_div, inv_inv]
   have hnorm : (fun t => ‖φ t‖) = fun t => Real.sqrt (normSq (φ t)) := by
     funext t; rw [← Complex.norm_def]
@@ -344,9 +352,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
 @[tmio M, powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), φ t = ((‖φ t‖ / ‖φ 0‖ : ℝ) : ℂ) * exp (I * a.ωs * t) * φ 0 := by
-  have hform := a.normSq_formula h hφ h0
+  have hpos := a.normSq_solution_pos h hφ h0
   have hne : ∀ t ∈ Ici (0 : ℝ), φ t ≠ 0 := fun t ht =>
-    normSq_pos.mp (hform t ht).1
+    normSq_pos.mp (hpos t ht)
   set u : ℝ → ℂ := fun t => φ t * exp (-(I * a.ωs * t)) * ((1 / ‖φ t‖ : ℝ) : ℂ) with hu
   have hconst : ∀ T : ℝ, 0 ≤ T → ∀ t ∈ Icc 0 T, u t = u 0 := by
     intro T _
@@ -414,7 +422,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hy0 : normSq (φ 0) = a.c / a.κv := by
     rw [Complex.normSq_eq_norm_sq, h0, h.rstar_sq]
   intro t ht
-  obtain ⟨hp, hf⟩ := hform t ht
+  have hf := hform t ht
   rw [hy0] at hf
   simp only [one_div, inv_div, sub_self, zero_mul, add_zero] at hf
   have hyt : normSq (φ t) = a.c / a.κv := by

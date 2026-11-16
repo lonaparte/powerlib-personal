@@ -32,8 +32,9 @@ the field translated so that the selected point `(θ*, δω / K_i)` is the origi
 saddle equilibria are connection statements on that family's semantics connection
 (`biased_mem_den_locallyExponentiallyStable`, `biased_mem_den_unstable`); loss of lock for
 `|μ| > V` is stated on its requirement connection (`biased_not_phaseLocked`). The absence of
-equilibria (`biased_no_equilibrium`), the zero set of `h` (`biasedPD_zeros`) and the fold
-Jacobian (`biased_fold`) are static evidence on the model, not connection conclusions.
+equilibria (`biased_no_equilibrium`), the zero set of `h` (`biasedPD_zeros`), the fold
+equilibrium (`biased_fold_eq_zero`) and the fold Jacobian (`biased_fold`) are static evidence on
+the model, not connection conclusions.
 -/
 
 noncomputable section
@@ -147,18 +148,24 @@ PLL meets the phase-locking requirement of the PI-PLL family. -/
   exact biased_no_equilibrium hV hμ Kp Ki δω _
     ((piPLLField_point_eq_zero_iff (Kp := Kp)).mpr hp)
 
-/-- Fold `μ = V` (`V ≠ 0`, `K_i ≠ 0`): `θ* = π/2` is an equilibrium with `h'(θ*) = 0`, and the
-Jacobian there is the nonzero nilpotent matrix `[[0, K_i], [0, 0]]` (non-hyperbolic). The case
-`μ = −V` is symmetric (`θ* = −π/2`). Static evidence on the model (linearization only), not a
+/-- Fold `μ = V` (`K_i ≠ 0`): `θ* = π/2` is a zero of `h`, so `(π/2, δω/K_i)` is an
+equilibrium. The case `μ = −V` is symmetric (`θ* = −π/2`). Static evidence on the model, not a
 connection conclusion. -/
-@[tmio M, powerlib_domain] theorem biased_fold {V Kp Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ) :
-    piPLLField (biasedPD V V) Kp Ki δω (PhasePlane.mk (Real.pi / 2) (δω / Ki)) = 0 ∧
-      fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (PhasePlane.mk (Real.pi / 2) (δω / Ki)) =
-        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧
-      piPLLJacobian Kp Ki 0 ≠ 0 ∧ (piPLLJacobian Kp Ki 0) ^ 2 = 0 ∧
-      ¬ LinearSystems.IsHurwitz (piPLLJacobian Kp Ki 0) := by
+@[tmio M, powerlib_domain] theorem biased_fold_eq_zero {V Kp Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ) :
+    piPLLField (biasedPD V V) Kp Ki δω (PhasePlane.mk (Real.pi / 2) (δω / Ki)) = 0 := by
+  have hz : biasedPD V V (Real.pi / 2) = 0 := by simp [biasedPD]
+  exact (piPLLField_eq_zero_iff hKi _).mpr ⟨hz, rfl⟩
+
+/-- Fold `μ = V` (`V ≠ 0`, `K_i ≠ 0`): `h'(π/2) = 0`, and the Jacobian at `(π/2, δω/K_i)` is
+`[[0, K_i], [0, 0]]`, the nonzero nilpotent, non-Hurwitz matrix of `piPLLJacobian_zero_ne_zero`,
+`piPLLJacobian_zero_sq`, `piPLLJacobian_zero_not_isHurwitz` (non-hyperbolic). The case `μ = −V` is
+symmetric (`θ* = −π/2`). Static evidence on the model (linearization only), not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem biased_fold {V Kp Ki : ℝ} (_hKi : Ki ≠ 0) (δω : ℝ) :
+    fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (PhasePlane.mk (Real.pi / 2) (δω / Ki)) =
+      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) := by
   have hd := hasDerivAt_biasedPD V V (Real.pi / 2)
   rw [Real.cos_pi_div_two, mul_zero, neg_zero] at hd
-  exact piPLL_jacobian_nilpotent_of_deriv_zero (by simp [biasedPD]) hd hKi
+  exact fderiv_piPLLField hd
 
 end powerlib.PLL

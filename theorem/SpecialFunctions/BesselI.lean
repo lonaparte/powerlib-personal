@@ -42,8 +42,9 @@ Results.
   `‖e^{−z}π I₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖` and `‖e^{−z}π(I₀(z) − I₁(z))‖ ≤ (C/x)‖G(z)‖`,
   `G(z) = ∫₀^∞ e^{−zθ²/2}`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`).
 * **Large argument**: `besselI0_div_besselI1_sub_one_le` (for every `K > 0` there are `C`, `x₀`
-  with `I₀(z), I₁(z) ≠ 0` and `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever `Re z ≥ x₀`,
-  `‖z‖ ≤ K Re z`), `tendsto_besselI0_div_besselI1` (`I₀/I₁ → 1` as `z → ∞` in a sector);
+  with `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever `Re z ≥ x₀`, `‖z‖ ≤ K Re z`),
+  `besselI0_ne_zero_of_sector`, `besselI1_ne_zero_of_sector` (`I₀(z), I₁(z) ≠ 0` there),
+  `tendsto_besselI0_div_besselI1` (`I₀/I₁ → 1` as `z → ∞` in a sector);
   along the ray `(1 + i)s`: `one_add_I_mul_re`, `norm_one_add_I_mul_le`.
 
 The second-kind functions `K₀`, `K₁` are in `theorem/SpecialFunctions/BesselK.lean`; the solid
@@ -644,11 +645,11 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
       _ = C₁ / x * γ₀ := by rw [hC₁]; field_simp
 
 /-- **Large-argument limit of `I₀/I₁` in a sector**, with rate: for every `K > 0` there are
-`C` and `x₀ > 0` such that `I₀(z) ≠ 0`, `I₁(z) ≠ 0` and `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever
-`Re z ≥ x₀` and `‖z‖ ≤ K Re z` (the closed sector `|arg z| ≤ arccos(1/K)`). -/
+`C` and `x₀ > 0` such that `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever `Re z ≥ x₀` and
+`‖z‖ ≤ K Re z` (the closed sector `|arg z| ≤ arccos(1/K)`). -/
 @[tmio T, powerlib_foundation] theorem besselI0_div_besselI1_sub_one_le {K : ℝ} (hK : 0 < K) :
     ∃ C x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re →
-      besselI0 z ≠ 0 ∧ besselI1 z ≠ 0 ∧ ‖besselI0 z / besselI1 z - 1‖ ≤ C / z.re := by
+      ‖besselI0 z / besselI1 z - 1‖ ≤ C / z.re := by
   obtain ⟨C, hC0, hC⟩ := besselI_laplace_le hK
   refine ⟨4 * C, max 1 (4 * C), lt_max_of_lt_left one_pos, ?_⟩
   intro z hx hzK
@@ -700,7 +701,6 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     intro h; rw [h, norm_zero] at h1q; linarith
   have hI1 : besselI1 z ≠ 0 := by
     intro h; apply h1q0; rw [← hqI, h, zero_div]
-  refine ⟨hI0, hI1, ?_⟩
   have e : besselI0 z / besselI1 z - 1 = q / (1 - q) := by
     have : besselI0 z / besselI1 z = 1 / (1 - q) := by
       rw [← hqI]; field_simp
@@ -710,6 +710,34 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   calc ‖q‖ ≤ 2 * C / x := hq
     _ = 4 * C / x * (1 / 2) := by ring
     _ ≤ 4 * C / x * ‖1 - q‖ := by gcongr
+
+/-- **`I₀` does not vanish far out in a sector**: for every `K > 0` there is `x₀ > 0` with
+`I₀(z) ≠ 0` whenever `Re z ≥ x₀` and `‖z‖ ≤ K Re z` (from the rate
+`besselI0_div_besselI1_sub_one_le`: `I₀(z) = 0` would give `‖I₀(z)/I₁(z) − 1‖ = 1`). -/
+@[tmio T, powerlib_foundation] theorem besselI0_ne_zero_of_sector {K : ℝ} (hK : 0 < K) :
+    ∃ x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re → besselI0 z ≠ 0 := by
+  obtain ⟨C, x₀, hx₀, hC⟩ := besselI0_div_besselI1_sub_one_le hK
+  refine ⟨max x₀ (|C| + 1), lt_max_of_lt_left hx₀, fun z hx hzK h0 => ?_⟩
+  have hxC : |C| + 1 ≤ z.re := le_trans (le_max_right _ _) hx
+  have hpos : 0 < z.re := by linarith [abs_nonneg C]
+  have hb := hC z (le_trans (le_max_left _ _) hx) hzK
+  rw [h0, zero_div, zero_sub, norm_neg, norm_one] at hb
+  have : C / z.re < 1 := by rw [div_lt_one hpos]; linarith [le_abs_self C]
+  linarith
+
+/-- **`I₁` does not vanish far out in a sector**: for every `K > 0` there is `x₀ > 0` with
+`I₁(z) ≠ 0` whenever `Re z ≥ x₀` and `‖z‖ ≤ K Re z` (from the rate
+`besselI0_div_besselI1_sub_one_le`: `I₁(z) = 0` would give `‖I₀(z)/I₁(z) − 1‖ = 1`). -/
+@[tmio T, powerlib_foundation] theorem besselI1_ne_zero_of_sector {K : ℝ} (hK : 0 < K) :
+    ∃ x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re → besselI1 z ≠ 0 := by
+  obtain ⟨C, x₀, hx₀, hC⟩ := besselI0_div_besselI1_sub_one_le hK
+  refine ⟨max x₀ (|C| + 1), lt_max_of_lt_left hx₀, fun z hx hzK h0 => ?_⟩
+  have hxC : |C| + 1 ≤ z.re := le_trans (le_max_right _ _) hx
+  have hpos : 0 < z.re := by linarith [abs_nonneg C]
+  have hb := hC z (le_trans (le_max_left _ _) hx) hzK
+  rw [h0, div_zero, zero_sub, norm_neg, norm_one] at hb
+  have : C / z.re < 1 := by rw [div_lt_one hpos]; linarith [le_abs_self C]
+  linarith
 
 /-- **`I₀(z)/I₁(z) → 1` as `z → ∞` in a sector**: along any `f` with `Re f → +∞` and eventually
 `‖f‖ ≤ K Re f`. -/
@@ -722,7 +750,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   have hlim : Tendsto (fun a => C / (f a).re) l (𝓝 0) := tendsto_const_nhds.div_atTop hre
   refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hlim
   filter_upwards [hsec, hre.eventually_ge_atTop x₀] with a ha hx
-  exact (hC (f a) hx ha).2.2
+  exact hC (f a) hx ha
 
 /-- `Re((1 + i)s) = s`. -/
 @[tmio T, powerlib_foundation] theorem one_add_I_mul_re (s : ℝ) : ((1 + Complex.I) * s).re = s := by

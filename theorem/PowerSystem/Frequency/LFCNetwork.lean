@@ -533,10 +533,31 @@ omit [Fintype α] [DecidableEq α] [Fintype β] in
   positivity
 
 omit [DecidableEq α] [Fintype β] in
-/-- A vanishing dissipation forces `ξ = 0` and `g ω = 0` in every area. -/
-@[tmio M, powerlib_domain] theorem netDiss_eq_zero (hg : ∀ a, 0 ≤ netGap area a)
+/-- A vanishing dissipation forces `g ω = 0` in every area. -/
+@[tmio M, powerlib_domain] theorem netGap_mul_eq_zero_of_netDiss_eq_zero
+    (hg : ∀ a, 0 ≤ netGap area a) (hB : ∀ a, 0 < (area a).B) {z : α ⊕ (β ⊕ α) → ℝ}
+    (h : netDiss area z = 0) (a : α) : netGap area a * z (.inl a) = 0 := by
+  have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun a _ => netDiss_term_nonneg hg hB z a).mp h a
+    (Finset.mem_univ a)
+  have hpos : 0 < netGap area a + (area a).B := add_pos_of_nonneg_of_pos (hg a) (hB a)
+  rw [div_eq_zero_iff, or_iff_left hpos.ne'] at hterm
+  have hB' := hB a
+  have hg' := hg a
+  have h2 : netGap area a * (area a).B * z (.inl a) ^ 2 = 0 := by
+    nlinarith [sq_nonneg (netXi area z a - netGap area a * z (.inl a)),
+      mul_nonneg (mul_nonneg hg' hB'.le) (sq_nonneg (z (.inl a)))]
+  have : (netGap area a * z (.inl a)) * z (.inl a) * (area a).B = 0 := by linear_combination h2
+  rcases mul_eq_zero.mp this with h | h
+  · rcases mul_eq_zero.mp h with h | h
+    · exact h
+    · rw [h, mul_zero]
+  · exact absurd h hB'.ne'
+
+omit [DecidableEq α] [Fintype β] in
+/-- A vanishing dissipation forces `ξ = 0` in every area. -/
+@[tmio M, powerlib_domain] theorem netXi_eq_zero_of_netDiss_eq_zero (hg : ∀ a, 0 ≤ netGap area a)
     (hB : ∀ a, 0 < (area a).B) {z : α ⊕ (β ⊕ α) → ℝ} (h : netDiss area z = 0) (a : α) :
-    netXi area z a = 0 ∧ netGap area a * z (.inl a) = 0 := by
+    netXi area z a = 0 := by
   have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun a _ => netDiss_term_nonneg hg hB z a).mp h a
     (Finset.mem_univ a)
   have hpos : 0 < netGap area a + (area a).B := add_pos_of_nonneg_of_pos (hg a) (hB a)
@@ -546,18 +567,9 @@ omit [DecidableEq α] [Fintype β] in
   have h1 : (netXi area z a - netGap area a * z (.inl a)) ^ 2 = 0 := by
     nlinarith [sq_nonneg (netXi area z a - netGap area a * z (.inl a)),
       mul_nonneg (mul_nonneg hg' hB'.le) (sq_nonneg (z (.inl a)))]
-  have h2 : netGap area a * (area a).B * z (.inl a) ^ 2 = 0 := by
-    nlinarith [sq_nonneg (netXi area z a - netGap area a * z (.inl a)),
-      mul_nonneg (mul_nonneg hg' hB'.le) (sq_nonneg (z (.inl a)))]
-  have h3 : netGap area a * z (.inl a) = 0 := by
-    have : (netGap area a * z (.inl a)) * z (.inl a) * (area a).B = 0 := by linear_combination h2
-    rcases mul_eq_zero.mp this with h | h
-    · rcases mul_eq_zero.mp h with h | h
-      · exact h
-      · rw [h, mul_zero]
-    · exact absurd h hB'.ne'
+  have h3 := netGap_mul_eq_zero_of_netDiss_eq_zero hg hB h a
   have h4 := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h1
-  exact ⟨by linear_combination h4 + h3, h3⟩
+  linear_combination h4 + h3
 
 /-- **Gain condition, `N` areas on a radial tie-line graph.** If every area has `M_a, K_I,a,
 B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, every line has `ω_s T_ℓ > 0`, and `𝓑` has trivial
@@ -596,8 +608,10 @@ strength and every radial topology. -/
   -- every area: `ω = 0` and `ξ = 0`
   have hω : ∀ a, u (.inl a) = 0 ∧ v (.inl a) = 0 := by
     intro a
-    obtain ⟨xu, gu⟩ := netDiss_eq_zero hg hB hDu0 a
-    obtain ⟨xv, gv⟩ := netDiss_eq_zero hg hB hDv0 a
+    have xu := netXi_eq_zero_of_netDiss_eq_zero hg hB hDu0 a
+    have gu := netGap_mul_eq_zero_of_netDiss_eq_zero hg hB hDu0 a
+    have xv := netXi_eq_zero_of_netDiss_eq_zero hg hB hDv0 a
+    have gv := netGap_mul_eq_zero_of_netDiss_eq_zero hg hB hDv0 a
     have ru := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 u a
     have rv := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 v a
     rw [hu, sub_eq_add_neg (x • u), ← neg_smul, netXi_combo, xu, xv] at ru
@@ -612,8 +626,8 @@ strength and every radial topology. -/
       exact (mul_eq_zero.mp this).resolve_left hKB
   have hC : ∀ a, u (.inr (.inr a)) = 0 ∧ v (.inr (.inr a)) = 0 := by
     intro a
-    obtain ⟨xu, -⟩ := netDiss_eq_zero hg hB hDu0 a
-    obtain ⟨xv, -⟩ := netDiss_eq_zero hg hB hDv0 a
+    have xu := netXi_eq_zero_of_netDiss_eq_zero hg hB hDu0 a
+    have xv := netXi_eq_zero_of_netDiss_eq_zero hg hB hDv0 a
     unfold netXi at xu xv
     rw [(hω a).1] at xu
     rw [(hω a).2] at xv

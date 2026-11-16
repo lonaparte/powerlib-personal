@@ -125,7 +125,8 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   local exponential stability then bounds `ũ` exponentially after the solution enters the ball, and
   `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge. Lyapunov stability
   (connection `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting
-  near `x*` the reduced error starts in the ball of local exponential stability (`red_bounds`),
+  near `x*` the reduced error starts in the ball of local exponential stability
+  (`abs_u_err_le_norm_red`, `abs_d_err_le_norm_red`, `abs_q_err_le_norm_red`, `norm_red_le`),
   stays exponentially small, and the angle moves by at most `|η| C K₁ ‖x₀ − x*‖ / a`
   (`Dynamics.abs_sub_le_of_abs_deriv_le_exp`).
 * Decision (connection `mem_den_lyapunovStable_iff_of_no_sync`): with `C_dc, L_s, R_s > 0`,
@@ -1265,29 +1266,43 @@ on the model, not a connection conclusion. -/
     (add_nonneg (sq_nonneg (x 2 - m.iHatD (x 0))) (sq_nonneg (x 3 - m.iHatQ (x 0))))
   nlinarith [mul_le_mul_of_nonneg_left (add_le_add a1 a2) hε]
 
-/-- Without synchronizing torque each error coordinate is bounded by the energy. Static evidence on
-the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem sq_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
-    (x 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy x ∧
-      (x 2 - m.iHatD (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x ∧
-      (x 3 - m.iHatQ (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x := by
+/-- Without synchronizing torque the DC-voltage error is bounded by the energy:
+`ũ² ≤ (2/C_dc) H`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem sq_u_err_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
+    (x 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy x := by
+  rw [energy_eq_of_no_sync m hs]
+  have b := sq_nonneg (x 2 - m.iHatD (x 0))
+  have c := sq_nonneg (x 3 - m.iHatQ (x 0))
+  rw [mul_add, ← mul_assoc, show 2 / m.Cdc * (m.Cdc / 2) = 1 by field_simp, one_mul]
+  nlinarith [mul_nonneg (div_pos two_pos hC).le
+    (mul_nonneg (div_pos hL two_pos).le (add_nonneg b c))]
+
+/-- Without synchronizing torque the `d`-current error is bounded by the energy:
+`ĩ_d² ≤ (2/L_s) H`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem sq_d_err_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
+    (x 2 - m.iHatD (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x := by
+  rw [energy_eq_of_no_sync m hs]
+  have a := sq_nonneg (x 1 - m.ustar)
+  have c := sq_nonneg (x 3 - m.iHatQ (x 0))
+  rw [mul_add,
+    show 2 / m.Ls * (m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
+      (x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2 by field_simp]
+  nlinarith [mul_nonneg (div_pos two_pos hL).le (mul_nonneg (div_pos hC two_pos).le a)]
+
+/-- Without synchronizing torque the `q`-current error is bounded by the energy:
+`ĩ_q² ≤ (2/L_s) H`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem sq_q_err_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
+    (x 3 - m.iHatQ (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x := by
   rw [energy_eq_of_no_sync m hs]
   have a := sq_nonneg (x 1 - m.ustar)
   have b := sq_nonneg (x 2 - m.iHatD (x 0))
-  have c := sq_nonneg (x 3 - m.iHatQ (x 0))
-  refine ⟨?_, ?_, ?_⟩
-  · rw [mul_add, ← mul_assoc, show 2 / m.Cdc * (m.Cdc / 2) = 1 by field_simp, one_mul]
-    nlinarith [mul_nonneg (div_pos two_pos hC).le
-      (mul_nonneg (div_pos hL two_pos).le (add_nonneg b c))]
-  · rw [mul_add,
-      show 2 / m.Ls * (m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
-        (x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2 by field_simp]
-    nlinarith [mul_nonneg (div_pos two_pos hL).le (mul_nonneg (div_pos hC two_pos).le a)]
-  · rw [mul_add,
-      show 2 / m.Ls * (m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
-        (x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2 by field_simp]
-    nlinarith [mul_nonneg (div_pos two_pos hL).le (mul_nonneg (div_pos hC two_pos).le a)]
+  rw [mul_add,
+    show 2 / m.Ls * (m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
+      (x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2 by field_simp]
+  nlinarith [mul_nonneg (div_pos two_pos hL).le (mul_nonneg (div_pos hC two_pos).le a)]
 
 /-- Exponential decay of the energy along every solution segment (no synchronizing torque,
 `margin > 0`). Implementation evidence. -/
@@ -1299,14 +1314,54 @@ the model, not a connection conclusion. -/
     (fun t ht => ((energy_differentiable m) (φ t)).hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht))
     (fun t _ => energy_lie_le_noSyncRate m hC hL hR hs hδ (φ t))
 
-/-- The coordinates `ũ, ĩ_d, ĩ_q` decay like `e^{−(rate/2)(t − t₀)}` along every segment. -/
-@[tmio TM, powerlib_domain] private theorem coord_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) {t₀ t₁ : ℝ} {φ : ℝ → State 4}
-    (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l) (hE : m.energy (φ t₀) ≤ E) :
+/-- The DC-voltage error `ũ` decays like `e^{−(rate/2)(t − t₀)}` along every segment. -/
+@[tmio TM, powerlib_domain] private theorem coord_decay_u (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
+    {t₀ t₁ : ℝ} {φ : ℝ → State 4} (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l)
+    (hE : m.energy (φ t₀) ≤ E) :
     ∀ t ∈ Icc t₀ t₁,
-      |φ t 1 - m.ustar| ≤ (2 / m.Cdc * E / l + l) / 2 * Real.exp (-(m.noSyncRate / 2) * (t - t₀)) ∧
+      |φ t 1 - m.ustar| ≤ (2 / m.Cdc * E / l + l) / 2 *
+        Real.exp (-(m.noSyncRate / 2) * (t - t₀)) := by
+  intro t ht
+  have hd := energy_decay m hC hL hR hs hδ hφ t ht
+  have hd' : m.energy (φ t) ≤ E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀)) := by
+    rw [show 2 * (m.noSyncRate / 2) = m.noSyncRate by ring]
+    nlinarith [Real.exp_pos (-m.noSyncRate * (t - t₀))]
+  have hCp : 0 ≤ 2 / m.Cdc := by positivity
+  refine Dynamics.abs_le_of_sq_le_exp hl ?_
+  calc (φ t 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy (φ t) :=
+        sq_u_err_le_energy_of_no_sync m hC hL hs (φ t)
+    _ ≤ 2 / m.Cdc * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
+        mul_le_mul_of_nonneg_left hd' hCp
+    _ = _ := by ring
+
+/-- The `d`-current error `ĩ_d` decays like `e^{−(rate/2)(t − t₀)}` along every segment. -/
+@[tmio TM, powerlib_domain] private theorem coord_decay_d (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
+    {t₀ t₁ : ℝ} {φ : ℝ → State 4} (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l)
+    (hE : m.energy (φ t₀) ≤ E) :
+    ∀ t ∈ Icc t₀ t₁,
       |φ t 2 - m.iHatD (φ t 0)| ≤ (2 / m.Ls * E / l + l) / 2 *
-        Real.exp (-(m.noSyncRate / 2) * (t - t₀)) ∧
+        Real.exp (-(m.noSyncRate / 2) * (t - t₀)) := by
+  intro t ht
+  have hd := energy_decay m hC hL hR hs hδ hφ t ht
+  have hd' : m.energy (φ t) ≤ E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀)) := by
+    rw [show 2 * (m.noSyncRate / 2) = m.noSyncRate by ring]
+    nlinarith [Real.exp_pos (-m.noSyncRate * (t - t₀))]
+  have hLp : 0 ≤ 2 / m.Ls := by positivity
+  refine Dynamics.abs_le_of_sq_le_exp hl ?_
+  calc (φ t 2 - m.iHatD (φ t 0)) ^ 2 ≤ 2 / m.Ls * m.energy (φ t) :=
+        sq_d_err_le_energy_of_no_sync m hC hL hs (φ t)
+    _ ≤ 2 / m.Ls * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
+        mul_le_mul_of_nonneg_left hd' hLp
+    _ = _ := by ring
+
+/-- The `q`-current error `ĩ_q` decays like `e^{−(rate/2)(t − t₀)}` along every segment. -/
+@[tmio TM, powerlib_domain] private theorem coord_decay_q (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
+    {t₀ t₁ : ℝ} {φ : ℝ → State 4} (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l)
+    (hE : m.energy (φ t₀) ≤ E) :
+    ∀ t ∈ Icc t₀ t₁,
       |φ t 3 - m.iHatQ (φ t 0)| ≤ (2 / m.Ls * E / l + l) / 2 *
         Real.exp (-(m.noSyncRate / 2) * (t - t₀)) := by
   intro t ht
@@ -1314,23 +1369,13 @@ the model, not a connection conclusion. -/
   have hd' : m.energy (φ t) ≤ E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀)) := by
     rw [show 2 * (m.noSyncRate / 2) = m.noSyncRate by ring]
     nlinarith [Real.exp_pos (-m.noSyncRate * (t - t₀))]
-  obtain ⟨a, b, c⟩ := sq_le_energy_of_no_sync m hC hL hs (φ t)
-  have hCp : 0 ≤ 2 / m.Cdc := by positivity
   have hLp : 0 ≤ 2 / m.Ls := by positivity
-  refine ⟨Dynamics.abs_le_of_sq_le_exp hl ?_, Dynamics.abs_le_of_sq_le_exp hl ?_,
-    Dynamics.abs_le_of_sq_le_exp hl ?_⟩
-  · calc (φ t 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy (φ t) := a
-      _ ≤ 2 / m.Cdc * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
-          mul_le_mul_of_nonneg_left hd' hCp
-      _ = _ := by ring
-  · calc (φ t 2 - m.iHatD (φ t 0)) ^ 2 ≤ 2 / m.Ls * m.energy (φ t) := b
-      _ ≤ 2 / m.Ls * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
-          mul_le_mul_of_nonneg_left hd' hLp
-      _ = _ := by ring
-  · calc (φ t 3 - m.iHatQ (φ t 0)) ^ 2 ≤ 2 / m.Ls * m.energy (φ t) := c
-      _ ≤ 2 / m.Ls * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
-          mul_le_mul_of_nonneg_left hd' hLp
-      _ = _ := by ring
+  refine Dynamics.abs_le_of_sq_le_exp hl ?_
+  calc (φ t 3 - m.iHatQ (φ t 0)) ^ 2 ≤ 2 / m.Ls * m.energy (φ t) :=
+        sq_q_err_le_energy_of_no_sync m hC hL hs (φ t)
+    _ ≤ 2 / m.Ls * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
+        mul_le_mul_of_nonneg_left hd' hLp
+    _ = _ := by ring
 
 @[tmio M, powerlib_domain] private theorem hasDerivWithinAt_angle (m : Model) {φ : ℝ → State 4} {s : Set ℝ} {t : ℝ}
     (h : HasDerivWithinAt φ (m.field (φ t)) s t) :
@@ -1349,13 +1394,26 @@ settles (`θ' = η ũ` is integrable), it does not drift. -/
     ∃ θ : ℝ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ])) := by
   have hρ := noSyncRate_pos m hC hL hR hδ
   set E₀ := m.energy (φ 0)
-  have hb : ∀ t, 0 ≤ t →
-      |φ t 1 - m.ustar| ≤ (2 / m.Cdc * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) ∧
-      |φ t 2 - m.iHatD (φ t 0)| ≤ (2 / m.Ls * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) ∧
+  have hbu : ∀ t, 0 ≤ t →
+      |φ t 1 - m.ustar| ≤ (2 / m.Cdc * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) :=
+    fun t ht => by
+      have := coord_decay_u m hC hL hR hs hδ
+        (hφ.mono Icc_subset_Ici_self : IsTrajectoryOn φ m.field 0 t)
+        one_pos le_rfl t ⟨ht, le_rfl⟩
+      simpa using this
+  have hbd : ∀ t, 0 ≤ t →
+      |φ t 2 - m.iHatD (φ t 0)| ≤
+        (2 / m.Ls * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) :=
+    fun t ht => by
+      have := coord_decay_d m hC hL hR hs hδ
+        (hφ.mono Icc_subset_Ici_self : IsTrajectoryOn φ m.field 0 t)
+        one_pos le_rfl t ⟨ht, le_rfl⟩
+      simpa using this
+  have hbq : ∀ t, 0 ≤ t →
       |φ t 3 - m.iHatQ (φ t 0)| ≤
         (2 / m.Ls * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) :=
     fun t ht => by
-      have := coord_decay m hC hL hR hs hδ
+      have := coord_decay_q m hC hL hR hs hδ
         (hφ.mono Icc_subset_Ici_self : IsTrajectoryOn φ m.field 0 t)
         one_pos le_rfl t ⟨ht, le_rfl⟩
       simpa using this
@@ -1375,11 +1433,11 @@ settles (`θ' = η ũ` is integrable), it does not drift. -/
     (t₀ := 0) (half_pos hρ) (fun t ht => hasDerivWithinAt_angle m (hφ t ht))
     (fun t ht => by
       rw [abs_mul, sub_zero, mul_assoc]
-      exact mul_le_mul_of_nonneg_left (hb t ht).1 (abs_nonneg _))
+      exact mul_le_mul_of_nonneg_left (hbu t ht) (abs_nonneg _))
   refine ⟨θ, Dynamics.tendsto_euclidean_of_coord fun i => ?_⟩
-  have hu := sq0 _ _ fun t ht => (hb t ht).1
-  have hd := sq0 _ _ fun t ht => (hb t ht).2.1
-  have hq := sq0 _ _ fun t ht => (hb t ht).2.2
+  have hu := sq0 _ _ fun t ht => hbu t ht
+  have hd := sq0 _ _ fun t ht => hbd t ht
+  have hq := sq0 _ _ fun t ht => hbq t ht
   fin_cases i
   · simpa using hθ
   · simpa using hu.add_const m.ustar
@@ -1468,7 +1526,9 @@ multiple of the initial deviation. -/
     have e : m.Ls / 2 * (((1 + Λ) * δ) ^ 2 + ((1 + Λ) * δ) ^ 2) = m.Ls * (1 + Λ) ^ 2 * δ ^ 2 := by
       ring
     linarith
-  have hcd := coord_decay m hC hL hR hs hδ hφ hδ0 hE0
+  have hdecu := coord_decay_u m hC hL hR hs hδ hφ hδ0 hE0
+  have hdecd := coord_decay_d m hC hL hR hs hδ hφ hδ0 hE0
+  have hdecq := coord_decay_q m hC hL hR hs hδ hφ hδ0 hE0
   have hsimp_u : (2 / m.Cdc * (κ₀ * δ ^ 2) / δ + δ) / 2 = (cu + 1) * δ / 2 := by
     rw [hcu]; field_simp
   have hsimp_e : (2 / m.Ls * (κ₀ * δ ^ 2) / δ + δ) / 2 = (ce + 1) * δ / 2 := by
@@ -1480,7 +1540,7 @@ multiple of the initial deviation. -/
       (fun τ hτ => hasDerivWithinAt_angle m (hφ τ hτ))
       (fun τ hτ => by
         rw [abs_mul, mul_assoc, ← hsimp_u]
-        exact mul_le_mul_of_nonneg_left (hcd τ hτ).1 (abs_nonneg _)) t ht
+        exact mul_le_mul_of_nonneg_left (hdecu τ hτ) (abs_nonneg _)) t ht
   have hθt : |φ t 0| ≤ δ * Kθ := by
     have h1 := abs_sub_abs_le_abs_sub (φ t 0) (φ t₀ 0)
     have h2 : |m.η| * ((cu + 1) * δ / 2) / (m.noSyncRate / 2) = δ * (Kθ - 1) := by
@@ -1489,7 +1549,9 @@ multiple of the initial deviation. -/
       ring
     rw [h2] at hθ
     linarith
-  obtain ⟨hut, hdt, hqt⟩ := hcd t ht
+  have hut := hdecu t ht
+  have hdt := hdecd t ht
+  have hqt := hdecq t ht
   rw [hsimp_u] at hut
   rw [hsimp_e] at hdt hqt
   have hx : Real.exp (-(m.noSyncRate / 2) * (t - t₀)) ≤ 1 := by
@@ -1951,29 +2013,35 @@ def red (x : State 4) : State 3 :=
 
 end Model
 
-/-- Rotated internal model and its slope. Static evidence on the model, not a connection
-conclusion. -/
-@[tmio M, powerlib_domain] theorem red_identity_aux (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
+/-- Rotated internal model `R_θᵀ î(θ)`, both components. Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem rot_iHat_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
     Real.cos θ * m.iHatD θ + Real.sin θ * m.iHatQ θ =
         (m.ω0 * m.Ls * m.v0 * Real.cos θ + m.Rs * m.v0 * Real.sin θ -
           m.ω0 * m.Ls * (m.μ * m.ustar)) / m.N ∧
       -Real.sin θ * m.iHatD θ + Real.cos θ * m.iHatQ θ =
         (-(m.ω0 * m.Ls * m.v0 * Real.sin θ) + m.Rs * m.v0 * Real.cos θ - m.Rs * (m.μ * m.ustar)) /
-          m.N ∧
-      Real.cos θ * (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N) +
-        Real.sin θ * (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
-        m.μ * m.ustar * m.Rs / m.N ∧
-      -Real.sin θ * (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N) +
-        Real.cos θ * (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
-        -(m.μ * m.ustar * m.ω0 * m.Ls) / m.N := by
+          m.N := by
   have hsc := Real.sin_sq_add_cos_sq θ
-  refine ⟨?_, ?_, ?_, ?_⟩
+  constructor
   · simp only [Model.iHatD, Model.iHatQ]
     field_simp
     linear_combination (-(m.ω0 * m.Ls * (m.μ * m.ustar))) * hsc
   · simp only [Model.iHatD, Model.iHatQ]
     field_simp
     linear_combination (-(m.Rs * (m.μ * m.ustar))) * hsc
+
+/-- Rotated slope `R_θᵀ î'(θ)` of the internal model, both components. Static evidence on the
+model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem rot_iHat_deriv_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
+    Real.cos θ * (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N) +
+        Real.sin θ * (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
+        m.μ * m.ustar * m.Rs / m.N ∧
+      -Real.sin θ * (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N) +
+        Real.cos θ * (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
+        -(m.μ * m.ustar * m.ω0 * m.Ls) / m.N := by
+  have hsc := Real.sin_sq_add_cos_sq θ
+  constructor
   · field_simp
     linear_combination (m.μ * m.ustar * m.Rs) * hsc
   · field_simp
@@ -1998,7 +2066,8 @@ evidence on the model, not a connection conclusion. -/
           Real.cos (x 0) * (m.field x 3 - m.μ * m.ustar *
             (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) / m.N * m.field x 0)) =
       m.redField (m.red x) 2 := by
-  obtain ⟨hY, hZ, hX, hW⟩ := red_identity_aux m hN (x 0)
+  obtain ⟨hY, hZ⟩ := rot_iHat_eq m hN (x 0)
+  obtain ⟨hX, hW⟩ := rot_iHat_deriv_eq m hN (x 0)
   have hsc := Real.sin_sq_add_cos_sq (x 0)
   have hN1 : (m.Rs ^ 2 + m.ω0 ^ 2 * m.Ls ^ 2) / m.N = 1 := by
     rw [div_eq_one_iff_eq hN]
@@ -2357,23 +2426,32 @@ the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L
         m.Rs * z 3 ^ 2 / m.Ls := by ring
   nlinarith [e]
 
-/-- The reduced error `red x = (ũ, R_θᵀ ĩ)` and the errors `(ũ, ĩ)` control each other.
+/-- `|a p + b q| ≤ |p| + |q|` for `|a|, |b| ≤ 1`. -/
+@[tmio T, powerlib_foundation] private theorem abs_mul_add_mul_le_add {a b p q : ℝ}
+    (ha : |a| ≤ 1) (hb : |b| ≤ 1) : |a * p + b * q| ≤ |p| + |q| :=
+  calc |a * p + b * q| ≤ |a| * |p| + |b| * |q| := by
+        rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
+    _ ≤ 1 * |p| + 1 * |q| := by gcongr
+    _ = |p| + |q| := by ring
+
+/-- The reduced error `red x = (ũ, R_θᵀ ĩ)` controls the DC-voltage error: `|ũ| ≤ ‖red x‖`.
 Implementation evidence (it names the model's reduction only; kept private with its users). -/
-@[tmio M, powerlib_domain] private theorem red_bounds (m : Model) (x : State 4) :
-    |x 1 - m.ustar| ≤ ‖m.red x‖ ∧ |x 2 - m.iHatD (x 0)| ≤ 2 * ‖m.red x‖ ∧
-      |x 3 - m.iHatQ (x 0)| ≤ 2 * ‖m.red x‖ ∧
-      ‖m.red x‖ ≤ |x 1 - m.ustar| + 2 * (|x 2 - m.iHatD (x 0)| + |x 3 - m.iHatQ (x 0)|) := by
+@[tmio M, powerlib_domain] private theorem abs_u_err_le_norm_red (m : Model) (x : State 4) :
+    |x 1 - m.ustar| ≤ ‖m.red x‖ := by
   have r0 : m.red x 0 = x 1 - m.ustar := by simp [Model.red]
+  have n0 := PiLp.norm_apply_le (m.red x) 0
+  rwa [r0, Real.norm_eq_abs] at n0
+
+/-- The reduced error controls the `d`-current error: `|ĩ_d| ≤ 2 ‖red x‖`.
+Implementation evidence (it names the model's reduction only; kept private with its users). -/
+@[tmio M, powerlib_domain] private theorem abs_d_err_le_norm_red (m : Model) (x : State 4) :
+    |x 2 - m.iHatD (x 0)| ≤ 2 * ‖m.red x‖ := by
   have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
       Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
   have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
       Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
-  have n0 := PiLp.norm_apply_le (m.red x) 0
   have n1 := PiLp.norm_apply_le (m.red x) 1
   have n2 := PiLp.norm_apply_le (m.red x) 2
-  have hn := Dynamics.norm_le_sum_abs (m.red x)
-  rw [Fin.sum_univ_three, r0, r1, r2] at hn
-  rw [r0, Real.norm_eq_abs] at n0
   rw [r1, Real.norm_eq_abs] at n1
   rw [r2, Real.norm_eq_abs] at n2
   set c := Real.cos (x 0)
@@ -2385,24 +2463,53 @@ Implementation evidence (it names the model's reduction only; kept private with 
   have hs := Real.abs_sin_le_one (x 0)
   have i1 : e1 = c * (c * e1 + s * e2) - s * (-s * e1 + c * e2) := by
     linear_combination (-e1) * hsc
+  rw [i1, sub_eq_add_neg, ← neg_mul]
+  have := abs_mul_add_mul_le_add (b := -s) (p := c * e1 + s * e2) (q := -s * e1 + c * e2) hc
+    (by rwa [abs_neg])
+  linarith
+
+/-- The reduced error controls the `q`-current error: `|ĩ_q| ≤ 2 ‖red x‖`.
+Implementation evidence (it names the model's reduction only; kept private with its users). -/
+@[tmio M, powerlib_domain] private theorem abs_q_err_le_norm_red (m : Model) (x : State 4) :
+    |x 3 - m.iHatQ (x 0)| ≤ 2 * ‖m.red x‖ := by
+  have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
+      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+  have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
+      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+  have n1 := PiLp.norm_apply_le (m.red x) 1
+  have n2 := PiLp.norm_apply_le (m.red x) 2
+  rw [r1, Real.norm_eq_abs] at n1
+  rw [r2, Real.norm_eq_abs] at n2
+  set c := Real.cos (x 0)
+  set s := Real.sin (x 0)
+  set e1 := x 2 - m.iHatD (x 0)
+  set e2 := x 3 - m.iHatQ (x 0)
+  have hsc : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq _
+  have hc := Real.abs_cos_le_one (x 0)
+  have hs := Real.abs_sin_le_one (x 0)
   have i2 : e2 = s * (c * e1 + s * e2) + c * (-s * e1 + c * e2) := by
     linear_combination (-e2) * hsc
-  have bnd : ∀ a b p q : ℝ, |a| ≤ 1 → |b| ≤ 1 → |a * p + b * q| ≤ |p| + |q| := by
-    intro a b p q ha hb
-    calc |a * p + b * q| ≤ |a| * |p| + |b| * |q| := by
-          rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
-      _ ≤ 1 * |p| + 1 * |q| := by gcongr
-      _ = |p| + |q| := by ring
-  refine ⟨n0, ?_, ?_, ?_⟩
-  · rw [i1, sub_eq_add_neg, ← neg_mul]
-    have := bnd c (-s) (c * e1 + s * e2) (-s * e1 + c * e2) hc (by rwa [abs_neg])
-    linarith
-  · rw [i2]
-    have := bnd s c (c * e1 + s * e2) (-s * e1 + c * e2) hs hc
-    linarith
-  · have b1 := bnd c s e1 e2 hc hs
-    have b2 := bnd (-s) c e1 e2 (by rwa [abs_neg]) hc
-    linarith
+  rw [i2]
+  have := abs_mul_add_mul_le_add (p := c * e1 + s * e2) (q := -s * e1 + c * e2) hs hc
+  linarith
+
+/-- The errors control the reduced error: `‖red x‖ ≤ |ũ| + 2 (|ĩ_d| + |ĩ_q|)`.
+Implementation evidence (it names the model's reduction only; kept private with its users). -/
+@[tmio M, powerlib_domain] private theorem norm_red_le (m : Model) (x : State 4) :
+    ‖m.red x‖ ≤ |x 1 - m.ustar| + 2 * (|x 2 - m.iHatD (x 0)| + |x 3 - m.iHatQ (x 0)|) := by
+  have r0 : m.red x 0 = x 1 - m.ustar := by simp [Model.red]
+  have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
+      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+  have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
+      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+  have hn := Dynamics.norm_le_sum_abs (m.red x)
+  rw [Fin.sum_univ_three, r0, r1, r2] at hn
+  have hc := Real.abs_cos_le_one (x 0)
+  have hs := Real.abs_sin_le_one (x 0)
+  have b1 := abs_mul_add_mul_le_add (p := x 2 - m.iHatD (x 0)) (q := x 3 - m.iHatQ (x 0)) hc hs
+  have b2 := abs_mul_add_mul_le_add (p := x 2 - m.iHatD (x 0)) (q := x 3 - m.iHatQ (x 0))
+    (a := -Real.sin (x 0)) (by rwa [abs_neg]) hc
+  linarith
 
 /-- **Lyapunov stability without synchronizing torque, with modulation**: with
 `C_dc, L_s, R_s > 0`, `μ ≠ 0`, `μ u* v₀ = 0` and `margin ≥ 0` (in particular at `margin = 0`) the
@@ -2461,7 +2568,7 @@ the angle moves by at most a multiple of the initial error. -/
     rw [abs_sub_comm (m.iHatQ 0)] at this
     linarith
   have hred0 : ‖m.red (φ t₀)‖ ≤ K₁ * ρ₀ := by
-    have := (red_bounds m (φ t₀)).2.2.2
+    have := norm_red_le m (φ t₀)
     rw [hK₁]
     linarith
   have hin : ‖m.red (φ t₀) - 0‖ < r := by
@@ -2487,7 +2594,7 @@ the angle moves by at most a multiple of the initial error. -/
       (fun τ hτ => hasDerivWithinAt_angle m (hφ τ hτ))
       (fun τ hτ => by
         rw [abs_mul, mul_assoc]
-        exact mul_le_mul_of_nonneg_left (((red_bounds m (φ τ)).1).trans (hdec τ hτ))
+        exact mul_le_mul_of_nonneg_left ((abs_u_err_le_norm_red m (φ τ)).trans (hdec τ hτ))
           (abs_nonneg _)) t ht
   have hx : Real.exp (-a * (t - t₀)) ≤ 1 := by
     rw [Real.exp_le_one_iff]
@@ -2498,7 +2605,9 @@ the angle moves by at most a multiple of the initial error. -/
     have hp : 0 ≤ Cc * K₁ * ρ₀ := by positivity
     have := mul_le_mul_of_nonneg_left hx hp
     linarith
-  obtain ⟨b0, b1, b2, -⟩ := red_bounds m (φ t)
+  have b0 := abs_u_err_le_norm_red m (φ t)
+  have b1 := abs_d_err_le_norm_red m (φ t)
+  have b2 := abs_q_err_le_norm_red m (φ t)
   have hθt : |φ t 0| ≤ ρ₀ * (1 + |m.η| * Cc * K₁ / a) := by
     have h1 := abs_sub_abs_le_abs_sub (φ t 0) (φ t₀ 0)
     have h2 : |m.η| * (Cc * K₁ * ρ₀) / a = ρ₀ * (|m.η| * Cc * K₁ / a) := by ring

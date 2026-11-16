@@ -32,7 +32,8 @@ Results.
   exactly the corrected criterion (`secondOrder_exponentiallyStable_iff`); the larger exponent
   `σ₊ = −a + h` is positive iff `a < 0 ∨ q(y) < 0` (`sigmaPlus_pos_iff`).
 * §8: `Λ* < 1 ↔ disc > 0` (`lamStar_lt_one_iff`, needs `α₀ > 0`, `g2 > 0`, `S > 0`);
-  `q < 0` exactly on `(y₋, y₊)`; Theorem 1 (`tongue_root_split`, `sqrt_root_le`); Theorem 2
+  `q < 0` exactly on `(y₋, y₊)`; Theorem 1 (`tongue_root_le`, `tongue_root_eq_iff`,
+  `sqrt_root_le`); Theorem 2
   (`pumpQ_bounds`, `tongue_root_pos`); the identity `q(α₀/c_α) = (α₀/c_α)(c_ω²α₀/c_α − g2/4)`;
   the ordering `√y₋ ≤ √y₊ ≤ |𝒢|/(2c_ω) < √(α₀/c_α)` under the side condition, and its
   breakdown `y₋ < α₀/c_α < y₊`; `a(y₋) > 0` whenever `disc ≥ 0`.
@@ -42,8 +43,9 @@ Results.
   `|𝒢| > 4c_ω√(α₀/c_α)` its supremum `g2/(16c_ω)` is attained and it is unbounded below; the
   two `c_α > 0` branches agree on the switching surface (`deltaStarPlus_switch`). In the
   low-gain case `|𝒢| ≤ 4c_ω√(α₀/c_α)` the projection contains `(Δ*₋, Δ*₊)` and lies below `Δ*₊`
-  (`flipProjection_calpha_pos_lowGain`), so `Δ_sup = Δ*₊`, not attained
-  (`flipProjection_calpha_pos_lowGain_isLUB`). The proof uses the detuned quadratic
+  (`Ioo_subset_flipProjection_calpha_pos_lowGain`, `flipProjection_calpha_pos_lowGain_subset_Iio`),
+  so `Δ_sup = Δ*₊` (`flipProjection_calpha_pos_lowGain_isLUB`), not attained
+  (`deltaStarPlus_not_mem_flipProjection_calpha_pos_lowGain`). The proof uses the detuned quadratic
   `P(Δ) = c_α²Δ² + Qc_ωΔ − (Q² − 4Sα₀²)/4 = min_y S(a² − D)` (`detunedP_eq`, `detunedP_neg_iff`).
   Limit `c_α → 0`: `Δ*₊ = (Q² − 4Sα₀²)/(2(√S√(Q² − 4c_α²α₀²) + c_ωQ))` (`deltaStarPlus_eq_rat`)
   tends to the `c_α = 0` value `g2/(16c_ω) − 4c_ωα₀²/g2` (`tendsto_deltaStarPlus`), and
@@ -250,12 +252,18 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
   rw [div_lt_iff₀ hg]
   constructor <;> intro h <;> nlinarith
 
-/-- Theorem 1: every root satisfies `c_ω² y² ≤ g2 y/4`, with equality iff `α₀ = c_α y`. -/
-@[tmio M, powerlib_foundation] theorem tongue_root_split {y : ℝ} (h : tongue α₀ cα cω g2 y = 0) :
-    cω ^ 2 * y ^ 2 ≤ g2 * y / 4 ∧ (cω ^ 2 * y ^ 2 = g2 * y / 4 ↔ α₀ = cα * y) := by
+/-- Theorem 1: every root satisfies `c_ω² y² ≤ g2 y/4`. -/
+@[tmio M, powerlib_foundation] theorem tongue_root_le {y : ℝ} (h : tongue α₀ cα cω g2 y = 0) :
+    cω ^ 2 * y ^ 2 ≤ g2 * y / 4 := by
   have he : g2 * y / 4 = (α₀ - cα * y) ^ 2 + cω ^ 2 * y ^ 2 := by
     simp only [tongue, pumpQ] at h; linarith
-  refine ⟨by nlinarith [sq_nonneg (α₀ - cα * y)], ?_⟩
+  nlinarith [sq_nonneg (α₀ - cα * y)]
+
+/-- Theorem 1, equality case: a root has `c_ω² y² = g2 y/4` iff `α₀ = c_α y`. -/
+@[tmio M, powerlib_foundation] theorem tongue_root_eq_iff {y : ℝ}
+    (h : tongue α₀ cα cω g2 y = 0) : cω ^ 2 * y ^ 2 = g2 * y / 4 ↔ α₀ = cα * y := by
+  have he : g2 * y / 4 = (α₀ - cα * y) ^ 2 + cω ^ 2 * y ^ 2 := by
+    simp only [tongue, pumpQ] at h; linarith
   constructor
   · intro h2
     have : (α₀ - cα * y) ^ 2 = 0 := by linarith
@@ -267,7 +275,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 /-- Theorem 1, amplitude form: every positive root has `√y ≤ |𝒢|/(2c_ω)` (`c_ω > 0`). -/
 @[tmio M, powerlib_foundation] theorem sqrt_root_le (hcω : 0 < cω) {y : ℝ} (hy : 0 < y)
     (h : tongue α₀ cα cω g2 y = 0) : √y ≤ √g2 / (2 * cω) := by
-  have h1 := (tongue_root_split h).1
+  have h1 := tongue_root_le h
   have hy' : y ≤ g2 / (4 * cω ^ 2) := by
     rw [le_div_iff₀ (by positivity)]; nlinarith
   rw [le_div_iff₀ (by positivity)]
@@ -571,25 +579,28 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     have : 0 < 4 * cω ^ 2 := by positivity
     nlinarith
 
-/-- On the `a < 0` segment the upper boundary is `Δ₊(y) = −c_ω y + |𝒢|√y/2`, maximal at
-`y* = g2/(16c_ω²)` with value `g2/(16c_ω)`. -/
+/-- On the `a < 0` segment the upper boundary `Δ₊(y) = −c_ω y + |𝒢|√y/2` is at most
+`g2/(16c_ω)`. -/
 @[tmio T, powerlib_foundation] theorem upper_branch_le (hcω : 0 < cω) (hg : 0 ≤ g2) {y : ℝ} (hy : 0 ≤ y) :
-    -cω * y + √g2 * √y / 2 ≤ g2 / (16 * cω) ∧
-      -cω * (g2 / (16 * cω ^ 2)) + √g2 * √(g2 / (16 * cω ^ 2)) / 2 = g2 / (16 * cω) := by
+    -cω * y + √g2 * √y / 2 ≤ g2 / (16 * cω) := by
   have hg2 : √g2 ^ 2 = g2 := Real.sq_sqrt hg
   have hy2 : √y ^ 2 = y := Real.sq_sqrt hy
-  constructor
-  · rw [le_div_iff₀ (by positivity)]
-    have key : (-cω * y + √g2 * √y / 2) * (16 * cω) = g2 - (4 * cω * √y - √g2) ^ 2 := by
-      linear_combination (16 * cω ^ 2) * hy2 + hg2
-    rw [key]
-    nlinarith [sq_nonneg (4 * cω * √y - √g2)]
-  · rw [Real.sqrt_div' _ (by positivity), show (16 : ℝ) * cω ^ 2 = (4 * cω) ^ 2 by ring,
-      Real.sqrt_sq (by positivity)]
-    have hm : √g2 * √g2 = g2 := Real.mul_self_sqrt hg
-    rw [show -cω * (g2 / (4 * cω) ^ 2) + √g2 * (√g2 / (4 * cω)) / 2 =
-      -cω * (g2 / (4 * cω) ^ 2) + (√g2 * √g2) / (8 * cω) by field_simp; ring, hm]
-    field_simp; ring
+  rw [le_div_iff₀ (by positivity)]
+  have key : (-cω * y + √g2 * √y / 2) * (16 * cω) = g2 - (4 * cω * √y - √g2) ^ 2 := by
+    linear_combination (16 * cω ^ 2) * hy2 + hg2
+  rw [key]
+  nlinarith [sq_nonneg (4 * cω * √y - √g2)]
+
+/-- The upper boundary `Δ₊(y) = −c_ω y + |𝒢|√y/2` attains the value `g2/(16c_ω)` at
+`y* = g2/(16c_ω²)`. -/
+@[tmio T, powerlib_foundation] theorem upper_branch_max (hcω : 0 < cω) (hg : 0 ≤ g2) :
+    -cω * (g2 / (16 * cω ^ 2)) + √g2 * √(g2 / (16 * cω ^ 2)) / 2 = g2 / (16 * cω) := by
+  rw [Real.sqrt_div' _ (by positivity), show (16 : ℝ) * cω ^ 2 = (4 * cω) ^ 2 by ring,
+    Real.sqrt_sq (by positivity)]
+  have hm : √g2 * √g2 = g2 := Real.mul_self_sqrt hg
+  rw [show -cω * (g2 / (4 * cω) ^ 2) + √g2 * (√g2 / (4 * cω)) / 2 =
+    -cω * (g2 / (4 * cω) ^ 2) + (√g2 * √g2) / (8 * cω) by field_simp; ring, hm]
+  field_simp; ring
 
 /-- Case `c_α > 0`, high gain `|𝒢| > 4c_ω √(α₀/c_α)` (i.e. `y* > α₀/c_α`): the supremum of the
 `Δ`-projection is `g2/(16c_ω)` and is attained (independent of `α₀, c_α`). -/
@@ -619,7 +630,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
         rw [div_pow, mul_pow, hg2, Real.sq_sqrt hy.le]; ring
       rw [this]; simp only [detunedD] at hD; linarith
     have h1 : Δ + cω * y ≤ √g2 * √y / 2 := (abs_le_of_sq_le_sq' hsq (by positivity)).2
-    have := (upper_branch_le hcω hg.le hy.le).1
+    have := upper_branch_le hcω hg.le hy.le
     linarith
 
 /-- For `c_α > 0` the projection is unbounded below (`Δ_inf = −∞`). -/
@@ -801,17 +812,24 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
   linarith
 
 /-- Case `c_α > 0`, low gain `|𝒢| ≤ 4c_ω√(α₀/c_α)` (i.e. `y* = g2/(16c_ω²) ≤ α₀/c_α`): the
-`Δ`-projection contains `(Δ*₋, Δ*₊)` and lies below `Δ*₊`. -/
-@[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_lowGain (hα : 0 < α₀) (hg : 0 < g2)
-    (hcα : 0 < cα) (hcω : 0 < cω) (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
-    Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) ⊆ flipProjection α₀ cα cω g2 ∧
-      flipProjection α₀ cα cω g2 ⊆ Iio (deltaStarPlus α₀ cα cω g2) := by
+`Δ`-projection contains `(Δ*₋, Δ*₊)`. -/
+@[tmio M, powerlib_foundation] theorem Ioo_subset_flipProjection_calpha_pos_lowGain (hα : 0 < α₀)
+    (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) (_hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
+    Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) ⊆
+      flipProjection α₀ cα cω g2 := by
+  have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
+  intro Δ hΔ
+  exact mem_flipProjection_of_detunedP_neg hcω ((detunedP_neg_iff hcα.ne').2 hΔ)
+    (hΔ.2.trans (deltaStarPlus_lt_div hα hcα.ne' hcω hQ))
+
+/-- Case `c_α > 0`, low gain `|𝒢| ≤ 4c_ω√(α₀/c_α)` (i.e. `y* = g2/(16c_ω²) ≤ α₀/c_α`): the
+`Δ`-projection lies below `Δ*₊`. -/
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_lowGain_subset_Iio (hα : 0 < α₀)
+    (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
+    flipProjection α₀ cα cω g2 ⊆ Iio (deltaStarPlus α₀ cα cω g2) := by
   set S := cα ^ 2 + cω ^ 2 with hSdef
   have hS : 0 < S := by positivity
-  have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
-  refine ⟨fun Δ hΔ => ?_, fun Δ hΔ => ?_⟩
-  · exact mem_flipProjection_of_detunedP_neg hcω ((detunedP_neg_iff hcα.ne').2 hΔ)
-      (hΔ.2.trans (deltaStarPlus_lt_div hα hcα.ne' hcω hQ))
+  intro Δ hΔ
   obtain ⟨y, hy, hD, hlt⟩ := mem_flipProjection.1 hΔ
   simp only at hD hlt
   show Δ < deltaStarPlus α₀ cα cω g2
@@ -885,13 +903,13 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
     rw [hs2] at hdec
     linarith
 
-/-- Case `c_α > 0`, low gain: `Δ_sup = Δ*₊` and, unlike the high-gain branch, it is **not**
-attained. -/
+/-- Case `c_α > 0`, low gain: `Δ_sup = Δ*₊` (not attained,
+`deltaStarPlus_not_mem_flipProjection_calpha_pos_lowGain`). -/
 @[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_lowGain_isLUB (hα : 0 < α₀)
     (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
-    IsLUB (flipProjection α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) ∧
-      deltaStarPlus α₀ cα cω g2 ∉ flipProjection α₀ cα cω g2 := by
-  obtain ⟨hsub, hsup⟩ := flipProjection_calpha_pos_lowGain hα hg hcα hcω hlow
+    IsLUB (flipProjection α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) := by
+  have hsub := Ioo_subset_flipProjection_calpha_pos_lowGain hα hg hcα hcω hlow
+  have hsup := flipProjection_calpha_pos_lowGain_subset_Iio hα hg hcα hcω hlow
   have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
   have hK : 0 < pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 := by
     have h1 : 2 * cα * α₀ < pumpQ α₀ cα g2 := by simp only [pumpQ]; nlinarith
@@ -903,8 +921,14 @@ attained. -/
     have : 0 < √(cα ^ 2 + cω ^ 2) * √(pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) :=
       mul_pos (Real.sqrt_pos.mpr (by positivity)) (Real.sqrt_pos.mpr hK)
     linarith
-  refine ⟨⟨fun Δ hΔ => (hsup hΔ).le, fun b hb => (isLUB_Ioo hlt).2 fun Δ hΔ => hb (hsub hΔ)⟩,
-    fun h => lt_irrefl _ (mem_Iio.mp (hsup h))⟩
+  exact ⟨fun Δ hΔ => (hsup hΔ).le, fun b hb => (isLUB_Ioo hlt).2 fun Δ hΔ => hb (hsub hΔ)⟩
+
+/-- Case `c_α > 0`, low gain: unlike the high-gain branch, `Δ_sup = Δ*₊` is **not** attained. -/
+@[tmio M, powerlib_foundation] theorem deltaStarPlus_not_mem_flipProjection_calpha_pos_lowGain
+    (hα : 0 < α₀) (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω)
+    (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
+    deltaStarPlus α₀ cα cω g2 ∉ flipProjection α₀ cα cω g2 := fun h =>
+  lt_irrefl _ (mem_Iio.mp (flipProjection_calpha_pos_lowGain_subset_Iio hα hg hcα hcω hlow h))
 
 /-- Rationalized form `Δ*₊ = (Q² − 4Sα₀²) / (2(√S √(Q² − 4c_α²α₀²) + c_ω Q))`, regular at
 `c_α = 0`. -/
@@ -1000,8 +1024,8 @@ attained. -/
       rw [div_le_div_iff₀ (by positivity) hpos]
       rw [lt_div_iff₀ hg] at hsmall
       nlinarith
-    obtain ⟨hlub, -⟩ := flipProjection_calpha_pos_lowGain_isLUB hα hg hpos hcω hlow
-    obtain ⟨hsub, -⟩ := flipProjection_calpha_pos_lowGain hα hg hpos hcω hlow
+    have hlub := flipProjection_calpha_pos_lowGain_isLUB hα hg hpos hcω hlow
+    have hsub := Ioo_subset_flipProjection_calpha_pos_lowGain hα hg hpos hcω hlow
     have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := by
       simp only [deltaStarMinus, deltaStarPlus]
       apply div_lt_div_of_pos_right _ (by positivity)

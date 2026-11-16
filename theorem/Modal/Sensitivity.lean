@@ -29,6 +29,9 @@ Results.
 
 Along a given branch (a global branch `∀ α` enters through `Filter.Eventually.of_forall`):
 * `eigen_branch_deriv_of_eventually` — `A' vᵢ + A v' = λ' vᵢ + λᵢ v'`.
+* `dotProduct_deriv_eq_zero_of_eventually` — a normalisation `wᵀ v(α) ≡ c` gives `wᵀ v' = 0`.
+* `eigenvalue_deriv_left_of_eventually` — `λ' (uᵀ v(α₀)) = uᵀ A' v(α₀)` for every left
+  eigenvector `uᵀ A(α₀) = λ(α₀) uᵀ` (no modal basis).
 * `eigenvalue_deriv_of_eventually` — `λ'(α₀) = ψᵢᵀ A' vᵢ`.
 * `eigenvector_deriv_coeff_of_eventually` — for `j ≠ i`, `ψⱼᵀ v' = ψⱼᵀ A' vᵢ / (λᵢ − λⱼ)`.
 * `eigenvector_deriv_of_eventually` —
@@ -57,8 +60,9 @@ Existence of branches:
   `wᵀ v` (not `wᴴ v`), so the map is complex-polynomial. `exists_eigenvector_branch_of_ne_zero`
   chooses `w = e_k` with `v₀ k ≠ 0`.
 * `exists_eigenpair_branch_deriv` — one real parameter, no diagonalisability: the branch has
-  derivatives `v'`, `λ'` with `A' v₀ + A₀ v' = λ' v₀ + λ₀ v'`, `wᵀ v' = 0`, and
-  `λ' (uᵀ v₀) = uᵀ A' v₀` for **every** left eigenvector `uᵀ A₀ = λ₀ uᵀ`.
+  derivatives `v'`, `λ'` at `α₀`; along it `A' v₀ + A₀ v' = λ' v₀ + λ₀ v'`, `wᵀ v' = 0`, and
+  `λ' (uᵀ v₀) = uᵀ A' v₀` for **every** left eigenvector `uᵀ A₀ = λ₀ uᵀ` (the given-branch
+  lemmas above).
 * `eigenpair_deriv_of_simple`, `eigenvalue_deriv_of_simple` — **unconditional** versions of
   `eigenvalue_deriv_of_eventually` / `eigenvector_deriv_of_eventually`: for `A(α)` with `C¹`
   entries, a modal basis at `α₀` and a simple `λᵢ`, there is a branch with `ψᵢᵀ v(α) ≡ 1`,
@@ -98,6 +102,35 @@ omit [DecidableEq n] in
   have := hL.unique hR'
   simp only [Pi.add_apply, mulVec, dotProduct, Pi.smul_apply, smul_eq_mul, ← Finset.sum_add_distrib]
   exact this
+
+omit [DecidableEq n] in
+/-- Along a branch normalised near `α₀` by `wᵀ v(α) = c`, the derivative is orthogonal to `w`:
+`wᵀ v'(α₀) = 0`. -/
+@[tmio T, powerlib_foundation] theorem dotProduct_deriv_eq_zero_of_eventually {v : ℝ → n → ℂ}
+    {v' : n → ℂ} {α₀ : ℝ} {w : n → ℂ} {c : ℂ}
+    (hv : ∀ k, HasDerivAt (fun α => v α k) (v' k) α₀) (hn : ∀ᶠ α in 𝓝 α₀, w ⬝ᵥ v α = c) :
+    w ⬝ᵥ v' = 0 := by
+  have h1 : HasDerivAt (fun α => w ⬝ᵥ v α) (w ⬝ᵥ v') α₀ := by
+    simp only [dotProduct]
+    exact HasDerivAt.fun_sum fun k _ => (hv k).const_mul (w k)
+  have h2 : HasDerivAt (fun α => w ⬝ᵥ v α) 0 α₀ :=
+    (hasDerivAt_const α₀ c).congr_of_eventuallyEq hn
+  exact h1.unique h2
+
+omit [DecidableEq n] in
+/-- Left-eigenvector form of the eigenvalue derivative along a branch defined near `α₀`:
+`λ' (uᵀ v(α₀)) = uᵀ A' v(α₀)` for every `uᵀ A(α₀) = λ(α₀) uᵀ`. -/
+@[tmio T, powerlib_foundation] theorem eigenvalue_deriv_left_of_eventually
+    {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ}
+    {lam' : ℂ} {α₀ : ℝ} (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
+    (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
+    (heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α) {u : n → ℂ}
+    (hu : vecMul u (A α₀) = lam α₀ • u) :
+    lam' * (u ⬝ᵥ v α₀) = u ⬝ᵥ (A' *ᵥ v α₀) := by
+  have h := congrArg (fun z => u ⬝ᵥ z) (eigen_branch_deriv_of_eventually hA hv hlam heig)
+  simp only [dotProduct_add, dotProduct_smul, smul_eq_mul] at h
+  rw [dotProduct_mulVec u (A α₀) v', hu, smul_dotProduct, smul_eq_mul] at h
+  linear_combination -h
 
 section GivenBranch
 
@@ -409,45 +442,27 @@ section OneParameter
 
 variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ}
 
-/-- **Derivatives of a simple eigenpair, one real parameter, no diagonalisability.** For `A(α)`
-with entries `C¹` at `α₀` and derivative `A'`, a simple eigenvalue `λ₀` of `A(α₀)` with
-eigenvector `v₀`, and `wᵀ v₀ ≠ 0`, the branch of `exists_eigenvector_branch` has derivatives
-`v'`, `λ'` at `α₀` with `A' v₀ + A(α₀) v' = λ' v₀ + λ₀ v'`, `wᵀ v' = 0`, and
-`λ' (uᵀ v₀) = uᵀ A' v₀` for every left eigenvector `uᵀ A(α₀) = λ₀ uᵀ`. -/
+/-- **Differentiable simple eigenpair branch, one real parameter, no diagonalisability.** For
+`A(α)` with entries `C¹` at `α₀`, a simple eigenvalue `λ₀` of `A(α₀)` with eigenvector `v₀`, and
+`wᵀ v₀ ≠ 0`, the branch of `exists_eigenvector_branch` has derivatives `v'`, `λ'` at `α₀`. Along
+it `A' v₀ + A(α₀) v' = λ' v₀ + λ₀ v'` (`eigen_branch_deriv_of_eventually`), `wᵀ v' = 0`
+(`dotProduct_deriv_eq_zero_of_eventually`), and `λ' (uᵀ v₀) = uᵀ A' v₀` for every left eigenvector
+`uᵀ A(α₀) = λ₀ uᵀ` (`eigenvalue_deriv_left_of_eventually`). -/
 @[tmio T, powerlib_foundation] theorem exists_eigenpair_branch_deriv {lam₀ : ℂ} {v₀ w : n → ℂ}
     (hA : ∀ k l, ContDiffAt ℝ 1 (fun α => A α k l) α₀)
-    (hA' : ∀ k l, HasDerivAt (fun α => A α k l) (A' k l) α₀)
     (hsimple : (A α₀).charpoly.rootMultiplicity lam₀ = 1) (hv₀ : A α₀ *ᵥ v₀ = lam₀ • v₀)
     (hw : w ⬝ᵥ v₀ ≠ 0) :
     ∃ (v : ℝ → n → ℂ) (lam : ℝ → ℂ) (v' : n → ℂ) (lam' : ℂ), v α₀ = v₀ ∧ lam α₀ = lam₀ ∧
       (∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α ∧ w ⬝ᵥ v α = w ⬝ᵥ v₀) ∧
-      (∀ k, HasDerivAt (fun α => v α k) (v' k) α₀) ∧ HasDerivAt lam lam' α₀ ∧
-      A' *ᵥ v₀ + A α₀ *ᵥ v' = lam' • v₀ + lam₀ • v' ∧ w ⬝ᵥ v' = 0 ∧
-      ∀ u : n → ℂ, vecMul u (A α₀) = lam₀ • u → lam' * (u ⬝ᵥ v₀) = u ⬝ᵥ (A' *ᵥ v₀) := by
+      (∀ k, HasDerivAt (fun α => v α k) (v' k) α₀) ∧ HasDerivAt lam lam' α₀ := by
   obtain ⟨v, lam, hv0, hl0, hvC, hlC, hev, -⟩ :=
     exists_eigenvector_branch (E := ℝ) hA hsimple hv₀ hw
   have hpn : (1 : WithTop ℕ∞) ≠ 0 := one_ne_zero
   have hvk : ∀ k, HasDerivAt (fun α => v α k) (deriv (fun α => v α k) α₀) α₀ := fun k =>
     ((contDiffAt_pi.mp hvC k).differentiableAt hpn).hasDerivAt
   have hlam : HasDerivAt lam (deriv lam α₀) α₀ := (hlC.differentiableAt hpn).hasDerivAt
-  set v' : n → ℂ := fun k => deriv (fun α => v α k) α₀ with hv'def
-  set lam' := deriv lam α₀ with hlam'def
-  have heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α := hev.mono fun α h => h.1
-  have hbr := eigen_branch_deriv_of_eventually hA' hvk hlam heig
-  rw [hv0, hl0] at hbr
-  have hnorm : w ⬝ᵥ v' = 0 := by
-    have h1 : HasDerivAt (fun α => w ⬝ᵥ v α) (w ⬝ᵥ v') α₀ := by
-      simp only [dotProduct]
-      exact HasDerivAt.fun_sum fun k _ => (hvk k).const_mul (w k)
-    have h2 : HasDerivAt (fun α => w ⬝ᵥ v α) 0 α₀ :=
-      (hasDerivAt_const α₀ (w ⬝ᵥ v₀)).congr_of_eventuallyEq (hev.mono fun α h => h.2.1)
-    exact h1.unique h2
-  refine ⟨v, lam, v', lam', hv0, hl0, hev.mono fun α h => ⟨h.1, h.2.1⟩, hvk, hlam, hbr, hnorm,
-    fun u hu => ?_⟩
-  have h := congrArg (fun z => u ⬝ᵥ z) hbr
-  simp only [dotProduct_add, dotProduct_smul, smul_eq_mul] at h
-  rw [dotProduct_mulVec u (A α₀) v', hu, smul_dotProduct, smul_eq_mul] at h
-  linear_combination -h
+  exact ⟨v, lam, fun k => deriv (fun α => v α k) α₀, deriv lam α₀, hv0, hl0,
+    hev.mono fun α h => ⟨h.1, h.2.1⟩, hvk, hlam⟩
 
 /-- **Unconditional eigenvalue and eigenvector derivatives of a simple eigenpair** (removes the
 branch premise of `eigenvalue_deriv_of_eventually` / `eigenvector_deriv_of_eventually`). For
@@ -472,8 +487,10 @@ by `ψᵢᵀ v(α) = 1`, through `(λᵢ, vᵢ)`, with `λ'(α₀) = ψᵢᵀ A'
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
     exact ⟨fun h => by_contra fun hj => hsimple j hj h, fun h => h ▸ rfl⟩
   have hψv : mb.ψ i ⬝ᵥ mb.v i = 1 := by rw [mb.ψ_dot_v]; simp
-  obtain ⟨v, lam, v', lam', hv0, hl0, hev, hvk, hlam, -, hnorm, -⟩ :=
-    exists_eigenpair_branch_deriv hA hA' hroot (mb.mulVec_v i) (by rw [hψv]; exact one_ne_zero)
+  obtain ⟨v, lam, v', lam', hv0, hl0, hev, hvk, hlam⟩ :=
+    exists_eigenpair_branch_deriv hA hroot (mb.mulVec_v i) (by rw [hψv]; exact one_ne_zero)
+  have hnorm : mb.ψ i ⬝ᵥ v' = 0 :=
+    dotProduct_deriv_eq_zero_of_eventually hvk (hev.mono fun α h => h.2)
   have heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α := hev.mono fun α h => h.1
   have hl' := eigenvalue_deriv_of_eventually mb hA' hvk hlam heig hv0 hl0
   have hv' := eigenvector_deriv_of_eventually mb hA' hvk hlam heig hv0 hl0 hsimple

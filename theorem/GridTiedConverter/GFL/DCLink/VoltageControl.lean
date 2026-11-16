@@ -1129,19 +1129,24 @@ matches the operating current, `i_ff = I_d0`. -/
       ring
     · simp [closedField, eqState]
 
-/-- `Kp` against the boundary `−I_dc0/V_d`: the sign of `I_d0 + V_dc* Kp`. -/
-@[tmio M, powerlib_domain] private theorem kp_sub_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
-    p.Vd * p.Kp + p.Idc0 = p.Vd / p.Vref * (p.Id0 + p.Vref * p.Kp) ∧
-      (-(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0) ∧
-      (-(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0) := by
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [Idc0]
-    field_simp
-    ring
-  · rw [← neg_div, div_lt_iff₀ hVd]
-    constructor <;> intro h <;> linarith
-  · rw [← neg_div, div_eq_iff hVd.ne']
-    constructor <;> intro h <;> linarith
+/-- `Kp` against the boundary `−I_dc0/V_d`: `V_d Kp + I_dc0 = (V_d/V_dc*) (I_d0 + V_dc* Kp)`. -/
+@[tmio M, powerlib_domain] private theorem kp_boundary_factor (_hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
+    p.Vd * p.Kp + p.Idc0 = p.Vd / p.Vref * (p.Id0 + p.Vref * p.Kp) := by
+  simp only [Idc0]
+  field_simp
+  ring
+
+/-- `Kp` above the boundary `−I_dc0/V_d` iff `V_d Kp + I_dc0 > 0`. -/
+@[tmio M, powerlib_domain] private theorem kp_sub_boundary_pos_iff (hVd : 0 < p.Vd)
+    (_hV : 0 < p.Vref) : -(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0 := by
+  rw [← neg_div, div_lt_iff₀ hVd]
+  constructor <;> intro h <;> linarith
+
+/-- `Kp` on the boundary `−I_dc0/V_d` iff `V_d Kp + I_dc0 = 0`. -/
+@[tmio M, powerlib_domain] private theorem kp_sub_boundary_eq_iff (hVd : 0 < p.Vd)
+    (_hV : 0 < p.Vref) : -(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0 := by
+  rw [← neg_div, div_eq_iff hVd.ne']
+  constructor <;> intro h <;> linarith
 
 end DCParams
 
@@ -1187,7 +1192,8 @@ voltage error is frozen and the integrator drifts; with `Kp < −I_dc0/V_d` the 
         (p.Ki = 0 ∧ p.iff = p.Id0 ∧ -(p.Idc0 / p.Vd) < p.Kp)}) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow, Set.mem_ofPred_eq]
-  obtain ⟨hsplit, hlt, -⟩ := p.kp_sub_boundary hVd hV
+  have hsplit := p.kp_boundary_factor hVd hV
+  have hlt := p.kp_sub_boundary_pos_iff hVd hV
   have hVV : 0 < p.Vd / p.Vref := div_pos hVd hV
   constructor
   · intro h

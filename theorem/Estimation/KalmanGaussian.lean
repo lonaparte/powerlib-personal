@@ -31,8 +31,9 @@ Results.
   mean (`gaussian_condExp_eq`).
 * `kalman_condVar_eq` — `E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s.: the Kalman posterior
   variance is the (deterministic) conditional variance (`gaussian_condCov_eq`).
-* `kalman_error_moments` — the error has mean `0` and second moment `(1 − k h) p`; `cov_lin_indep`
-  computes covariances of linear combinations of independent variables.
+* `kalman_error_memLp`, `kalman_error_integral_eq_zero`, `kalman_error_integral_sq` — the error
+  is square integrable, has mean `0` and second moment `(1 − k h) p`; `cov_lin_indep` computes
+  covariances of linear combinations of independent variables.
 -/
 
 noncomputable section
@@ -157,12 +158,35 @@ noise. -/
     ⟨by fun_prop, by rw [gaussianReal_map_sub_const, sub_self]⟩
   exact hmap.comp hX
 
-/-- The estimation error has mean `0` and second moment `(1 − k h) p`. -/
-@[tmio T, powerlib_foundation] theorem kalman_error_moments (hX : HasLaw X (gaussianReal m p) P)
-    (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
-    (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
-    MemLp (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m)) 2 P ∧
-    ∫ ω, (X ω - m - kgain p h r * (h * X ω + V ω - h * m)) ∂P = 0 ∧
+/-- The estimation error is square integrable. -/
+@[tmio T, powerlib_foundation] theorem kalman_error_memLp (hX : HasLaw X (gaussianReal m p) P)
+    (hV : HasLaw V (gaussianReal 0 r) P) (_hXV : IndepFun X V P)
+    (_hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
+    MemLp (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m)) 2 P := by
+  have hX2 : MemLp (fun ω => X ω - m) 2 P :=
+    (hasLaw_centred hX).memLp (memLp_id_gaussianReal 2)
+  have hV2 : MemLp V 2 P := hV.memLp (memLp_id_gaussianReal 2)
+  rw [kalman_error_eq]
+  exact (hX2.const_mul _).add (hV2.const_mul _)
+
+/-- The estimation error has mean `0`. -/
+@[tmio T, powerlib_foundation] theorem kalman_error_integral_eq_zero
+    (hX : HasLaw X (gaussianReal m p) P) (hV : HasLaw V (gaussianReal 0 r) P)
+    (_hXV : IndepFun X V P) (_hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
+    ∫ ω, (X ω - m - kgain p h r * (h * X ω + V ω - h * m)) ∂P = 0 := by
+  have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have hX' := hasLaw_centred hX
+  have hX2 : MemLp (fun ω => X ω - m) 2 P := hX'.memLp (memLp_id_gaussianReal 2)
+  have hV2 : MemLp V 2 P := hV.memLp (memLp_id_gaussianReal 2)
+  rw [kalman_error_eq, integral_add ((hX2.integrable one_le_two).const_mul _)
+    ((hV2.integrable one_le_two).const_mul _), integral_const_mul, integral_const_mul,
+    hX'.integral_eq, hV.integral_eq, integral_id_gaussianReal, integral_id_gaussianReal]
+  simp
+
+/-- The estimation error has second moment `(1 − k h) p`. -/
+@[tmio T, powerlib_foundation] theorem kalman_error_integral_sq
+    (hX : HasLaw X (gaussianReal m p) P) (hV : HasLaw V (gaussianReal 0 r) P)
+    (hXV : IndepFun X V P) (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
     ∫ ω, (X ω - m - kgain p h r * (h * X ω + V ω - h * m)) ^ 2 ∂P =
       (1 - kgain p h r * h) * p := by
   set k := kgain p h r with hk
@@ -180,7 +204,6 @@ noise. -/
       ((hV2.integrable one_le_two).const_mul _), integral_const_mul, integral_const_mul,
       hX'.integral_eq, hV.integral_eq, integral_id_gaussianReal, integral_id_gaussianReal]
     simp
-  refine ⟨hZ2, hmean0, ?_⟩
   have hvar := variance_eq_sub hZ2
   rw [hmean0] at hvar
   have e2 : ∫ ω, Z ω ^ 2 ∂P = Var[Z; P] := by rw [hvar]; simp

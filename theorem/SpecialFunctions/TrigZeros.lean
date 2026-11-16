@@ -302,11 +302,10 @@ variable {f : ℝ → ℝ}
     obtain ⟨c, hc, hfc⟩ := intermediate_value_Ioo' hab.le hf.continuousOn ⟨hb', ha'⟩
     exact hz c hc hfc
 
-/-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is negative on the left and positive on
-the right. -/
-@[tmio T, powerlib_foundation] private lemma exists_sign_near_simple_zero {θ₀ g l r : ℝ}
-    (hzero : f θ₀ = 0) (hd : HasDerivAt f g θ₀) (hg : g ≠ 0) (hl : l < θ₀) (hr : θ₀ < r) :
-    (∃ d ∈ Ioo l θ₀, f d * g < 0) ∧ (∃ c ∈ Ioo θ₀ r, 0 < f c * g) := by
+/-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is negative on the left. -/
+@[tmio T, powerlib_foundation] private lemma exists_sign_left_of_simple_zero {θ₀ g l : ℝ}
+    (hzero : f θ₀ = 0) (hd : HasDerivAt f g θ₀) (hg : g ≠ 0) (hl : l < θ₀) :
+    ∃ d ∈ Ioo l θ₀, f d * g < 0 := by
   have hslope := hasDerivAt_iff_tendsto_slope.mp hd
   have hlim : Tendsto (fun x => slope f θ₀ x * g) (𝓝[≠] θ₀) (𝓝 (g * g)) :=
     hslope.mul_const g
@@ -314,29 +313,40 @@ the right. -/
     hlim.eventually (lt_mem_nhds (mul_self_pos.mpr hg))
   have hsl (x : ℝ) : slope f θ₀ x = f x / (x - θ₀) := by
     rw [slope_def_field, hzero, sub_zero]
-  constructor
-  · have hev' : ∀ᶠ x in 𝓝[<] θ₀, 0 < slope f θ₀ x * g :=
-      hev.filter_mono (nhdsWithin_mono _ fun x hx => ne_of_lt hx)
-    obtain ⟨d, hd1, hd2⟩ := (hev'.and (Ioo_mem_nhdsLT hl)).exists
-    refine ⟨d, hd2, ?_⟩
-    rw [hsl] at hd1
-    have hneg : d - θ₀ < 0 := by linarith [hd2.2]
-    have hne : d - θ₀ ≠ 0 := hneg.ne
-    have : f d * g = (f d / (d - θ₀) * g) * (d - θ₀) := by
-      field_simp
-    rw [this]
-    exact mul_neg_of_pos_of_neg hd1 hneg
-  · have hev' : ∀ᶠ x in 𝓝[>] θ₀, 0 < slope f θ₀ x * g :=
-      hev.filter_mono (nhdsWithin_mono _ fun x hx => ne_of_gt hx)
-    obtain ⟨c, hc1, hc2⟩ := (hev'.and (Ioo_mem_nhdsGT hr)).exists
-    refine ⟨c, hc2, ?_⟩
-    rw [hsl] at hc1
-    have hpos : 0 < c - θ₀ := by linarith [hc2.1]
-    have hne : c - θ₀ ≠ 0 := hpos.ne'
-    have : f c * g = (f c / (c - θ₀) * g) * (c - θ₀) := by
-      field_simp
-    rw [this]
-    exact mul_pos hc1 hpos
+  have hev' : ∀ᶠ x in 𝓝[<] θ₀, 0 < slope f θ₀ x * g :=
+    hev.filter_mono (nhdsWithin_mono _ fun x hx => ne_of_lt hx)
+  obtain ⟨d, hd1, hd2⟩ := (hev'.and (Ioo_mem_nhdsLT hl)).exists
+  refine ⟨d, hd2, ?_⟩
+  rw [hsl] at hd1
+  have hneg : d - θ₀ < 0 := by linarith [hd2.2]
+  have hne : d - θ₀ ≠ 0 := hneg.ne
+  have : f d * g = (f d / (d - θ₀) * g) * (d - θ₀) := by
+    field_simp
+  rw [this]
+  exact mul_neg_of_pos_of_neg hd1 hneg
+
+/-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is positive on the right. -/
+@[tmio T, powerlib_foundation] private lemma exists_sign_right_of_simple_zero {θ₀ g r : ℝ}
+    (hzero : f θ₀ = 0) (hd : HasDerivAt f g θ₀) (hg : g ≠ 0) (hr : θ₀ < r) :
+    ∃ c ∈ Ioo θ₀ r, 0 < f c * g := by
+  have hslope := hasDerivAt_iff_tendsto_slope.mp hd
+  have hlim : Tendsto (fun x => slope f θ₀ x * g) (𝓝[≠] θ₀) (𝓝 (g * g)) :=
+    hslope.mul_const g
+  have hev : ∀ᶠ x in 𝓝[≠] θ₀, 0 < slope f θ₀ x * g :=
+    hlim.eventually (lt_mem_nhds (mul_self_pos.mpr hg))
+  have hsl (x : ℝ) : slope f θ₀ x = f x / (x - θ₀) := by
+    rw [slope_def_field, hzero, sub_zero]
+  have hev' : ∀ᶠ x in 𝓝[>] θ₀, 0 < slope f θ₀ x * g :=
+    hev.filter_mono (nhdsWithin_mono _ fun x hx => ne_of_gt hx)
+  obtain ⟨c, hc1, hc2⟩ := (hev'.and (Ioo_mem_nhdsGT hr)).exists
+  refine ⟨c, hc2, ?_⟩
+  rw [hsl] at hc1
+  have hpos : 0 < c - θ₀ := by linarith [hc2.1]
+  have hne : c - θ₀ ≠ 0 := hpos.ne'
+  have : f c * g = (f c / (c - θ₀) * g) * (c - θ₀) := by
+    field_simp
+  rw [this]
+  exact mul_pos hc1 hpos
 
 /-- Sign rule on an interval: with `n` zeros in `(a, b)`, all simple,
 `0 < f a · f b · (−1)ⁿ`. -/
@@ -371,8 +381,8 @@ the right. -/
         intro θ hθ hne
         exact absurd ⟨θ, hθ, hne⟩ hS'
     obtain ⟨g, hg, hderiv⟩ := hsimple θ₁ hθ₁S.2
-    obtain ⟨⟨d, hd, hdg⟩, ⟨c, hc, hcg⟩⟩ :=
-      exists_sign_near_simple_zero hθ₁S.2 hderiv hg hθ₁S.1.1 hθR
+    obtain ⟨d, hd, hdg⟩ := exists_sign_left_of_simple_zero hθ₁S.2 hderiv hg hθ₁S.1.1
+    obtain ⟨c, hc, hcg⟩ := exists_sign_right_of_simple_zero hθ₁S.2 hderiv hg hθR
     have hfd : f d ≠ 0 := fun h => by rw [h, zero_mul] at hdg; exact lt_irrefl _ hdg
     have hfc : f c ≠ 0 := fun h => by rw [h, zero_mul] at hcg; exact lt_irrefl _ hcg
     -- left piece `(a, d)`: no zeros
@@ -422,10 +432,8 @@ continuous `f` with no zero in between and `f'(θ₁) = g₁ ≠ 0`, `f'(θ₂) 
     {θ₁ θ₂ g₁ g₂ : ℝ} (h12 : θ₁ < θ₂) (h1 : f θ₁ = 0) (h2 : f θ₂ = 0)
     (hz : ∀ θ ∈ Ioo θ₁ θ₂, f θ ≠ 0) (hd1 : HasDerivAt f g₁ θ₁) (hd2 : HasDerivAt f g₂ θ₂)
     (hg1 : g₁ ≠ 0) (hg2 : g₂ ≠ 0) : g₁ * g₂ < 0 := by
-  obtain ⟨-, ⟨c, hc, hcg⟩⟩ :=
-    exists_sign_near_simple_zero h1 hd1 hg1 (by linarith : θ₁ - 1 < θ₁) h12
-  obtain ⟨⟨d, hd, hdg⟩, -⟩ :=
-    exists_sign_near_simple_zero h2 hd2 hg2 hc.2 (by linarith : θ₂ < θ₂ + 1)
+  obtain ⟨c, hc, hcg⟩ := exists_sign_right_of_simple_zero h1 hd1 hg1 h12
+  obtain ⟨d, hd, hdg⟩ := exists_sign_left_of_simple_zero h2 hd2 hg2 hc.2
   have hfc : f c ≠ 0 := hz c hc
   have hfd : f d ≠ 0 := hz d ⟨hc.1.trans hd.1, hd.2⟩
   have hcd : 0 < f c * f d := mul_pos_of_no_zero hf hd.1 hfc hfd

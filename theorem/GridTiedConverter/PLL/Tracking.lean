@@ -34,8 +34,9 @@ The stability of the linearized PLL is the family
 `LinearPLL.family` of `theorem/GridTiedConverter/PLL/Linear.lean`. The tracking limits here are
 statements about solutions under time-varying inputs (limits of tracking errors, unbounded phase
 error), which the sentence language (flow sentences about the origin of the zero-input field,
-passivity) cannot express: the five tracking results (`phaseStep_tracking`,
-`frequencyStep_tracking`, `frequencyRamp_tracking`, `frequencyRamp_limit_ne_note`,
+passivity) cannot express: the tracking results (`phaseStep_tracking`,
+`frequencyStep_phase_tendsto`, `frequencyStep_integrator_tendsto`, `frequencyStep_tracking`,
+`frequencyRamp_phase_tendsto`, `frequencyRamp_tracking`, `frequencyRamp_limit_ne_note`,
 `frequencyQuadratic_unbounded`) are kept as private implementation evidence. The generic convergence
 lemma `LTI.tendsto_sub_of_isHurwitz` (any plant with Hurwitz state matrix, `theorem/LTI/Plant.lean`)
 remains foundation. The explicit particular solutions for the selected PLL are domain model
@@ -112,28 +113,57 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ## Frequency step -/
 
-/-- Frequency step `w ≡ c`: `θ̃ → 0`, `η → c / K_i`, and the frequency-estimate error
-`Δω̂ − w → 0`, for every forward trajectory. 
+/-- Particular solution for `w ≡ c`: the constant state `(0, c / K_i)` is a forward trajectory
+of the error dynamics. -/
+@[tmio M, powerlib_domain] private theorem stepParticular_isTrajectory {V Kp Ki : ℝ}
+    (hKi : Ki ≠ 0) (c : ℝ) :
+    ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (fun _ : ℝ => (![0, c / Ki] : Fin 2 → ℝ))
+      ((frequencyModel V Kp Ki).A *ᵥ ![0, c / Ki] + (frequencyModel V Kp Ki).B *ᵥ ![c])
+        (Ici 0) t :=
+  isErrorTrajectory_of
+    (fun t => (hasDerivAt_const t (0 : ℝ)).congr_deriv (by simp; field_simp; ring))
+    (fun t => (hasDerivAt_const t (c / Ki)).congr_deriv (by simp))
+
+/-- Frequency step `w ≡ c`: the phase error `θ̃ → 0`, for every forward trajectory.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio TM, powerlib_domain] private theorem frequencyStep_phase_tendsto {V Kp Ki : ℝ}
+    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (c : ℝ) {x : ℝ → Fin 2 → ℝ}
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![c]) (Ici 0) t) :
+    Tendsto (fun t => x t 0) atTop (𝓝 0) := by
+  have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
+  have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
+    (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
+  have h0 := LTI.tendsto_sub_of_isHurwitz hA hx (stepParticular_isTrajectory hKi c) 0
+  simp only [Matrix.cons_val_zero, sub_zero] at h0
+  exact h0
+
+/-- Frequency step `w ≡ c`: the PI integrator `η → c / K_i`, for every forward trajectory.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio TM, powerlib_domain] private theorem frequencyStep_integrator_tendsto {V Kp Ki : ℝ}
+    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (c : ℝ) {x : ℝ → Fin 2 → ℝ}
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![c]) (Ici 0) t) :
+    Tendsto (fun t => x t 1) atTop (𝓝 (c / Ki)) := by
+  have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
+  have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
+    (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
+  have h1 := LTI.tendsto_sub_of_isHurwitz hA hx (stepParticular_isTrajectory hKi c) 1
+  simp only [Matrix.cons_val_one] at h1
+  simpa using h1.add_const (c / Ki)
+
+/-- Frequency step `w ≡ c`: the frequency-estimate error `Δω̂ − w → 0`, for every forward
+trajectory (from `frequencyStep_phase_tendsto` and `frequencyStep_integrator_tendsto`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem frequencyStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (c : ℝ) {x : ℝ → Fin 2 → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![c]) (Ici 0) t) :
-    Tendsto (fun t => x t 0) atTop (𝓝 0) ∧ Tendsto (fun t => x t 1) atTop (𝓝 (c / Ki)) ∧
-      Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![c] 0 - c) atTop (𝓝 0) := by
+    Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![c] 0 - c) atTop (𝓝 0) := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
-  have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
-    (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
-  have hp : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (fun _ : ℝ => (![0, c / Ki] : Fin 2 → ℝ))
-      ((frequencyModel V Kp Ki).A *ᵥ ![0, c / Ki] + (frequencyModel V Kp Ki).B *ᵥ ![c])
-        (Ici 0) t :=
-    isErrorTrajectory_of
-      (fun t => (hasDerivAt_const t (0 : ℝ)).congr_deriv (by simp; field_simp; ring))
-      (fun t => (hasDerivAt_const t (c / Ki)).congr_deriv (by simp))
-  have h0 := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
-  have h1 := LTI.tendsto_sub_of_isHurwitz hA hx hp 1
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, sub_zero] at h0 h1
-  refine ⟨h0, by simpa using h1.add_const (c / Ki), ?_⟩
+  have h0 := frequencyStep_phase_tendsto hVKp hVKi c hx
+  have h1 := (frequencyStep_integrator_tendsto hVKp hVKi c hx).sub_const (c / Ki)
+  rw [sub_self] at h1
   have := (h0.const_mul (-(V * Kp))).add (h1.const_mul Ki)
   simp only [mul_zero, add_zero] at this
   refine this.congr fun t => ?_
@@ -165,16 +195,30 @@ for `w = ρ t`. -/
         simp only [rampParticular, Matrix.cons_val_zero]
         field_simp)
 
-/-- Frequency ramp `w = ρ t` (constant ROCOF): `θ̃ → −ρ/(V K_i)` and the frequency estimate
-tracks the ramp (`Δω̂ − w → 0`), for every forward trajectory. 
+/-- Frequency ramp `w = ρ t` (constant ROCOF): the phase error `θ̃ → −ρ/(V K_i)`, for every
+forward trajectory.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio TM, powerlib_domain] private theorem frequencyRamp_phase_tendsto {V Kp Ki : ℝ}
+    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (ρ : ℝ) {x : ℝ → Fin 2 → ℝ}
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) :
+    Tendsto (fun t => x t 0) atTop (𝓝 (-ρ / (V * Ki))) := by
+  have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
+  have hV : V ≠ 0 := by rintro rfl; simp at hVKi
+  have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
+    (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
+  have h0 := LTI.tendsto_sub_of_isHurwitz hA hx (rampParticular_isTrajectory (Kp := Kp) hV hKi ρ) 0
+  simpa [rampParticular] using h0.add_const (-ρ / (V * Ki))
+
+/-- Frequency ramp `w = ρ t` (constant ROCOF): the frequency estimate tracks the ramp
+(`Δω̂ − w → 0`), for every forward trajectory.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem frequencyRamp_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (ρ : ℝ) {x : ℝ → Fin 2 → ℝ}
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) :
-    Tendsto (fun t => x t 0) atTop (𝓝 (-ρ / (V * Ki))) ∧
-      Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![ρ * t] 0 - ρ * t) atTop
-        (𝓝 0) := by
+    Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![ρ * t] 0 - ρ * t) atTop
+      (𝓝 0) := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
   have hV : V ≠ 0 := by rintro rfl; simp at hVKi
   have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
@@ -182,7 +226,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hp := rampParticular_isTrajectory (Kp := Kp) hV hKi ρ
   have h0 := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
   have h1 := LTI.tendsto_sub_of_isHurwitz hA hx hp 1
-  refine ⟨by simpa [rampParticular] using h0.add_const (-ρ / (V * Ki)), ?_⟩
   have := (h0.const_mul (-(V * Kp))).add (h1.const_mul Ki)
   simp only [mul_zero, add_zero] at this
   refine this.congr fun t => ?_
@@ -202,7 +245,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
   have hV : V ≠ 0 := by rintro rfl; simp at hVKi
   refine ⟨rampParticular V Kp Ki ρ, rampParticular_isTrajectory hV hKi ρ, fun h => ?_⟩
-  have h' := (frequencyRamp_tracking hVKp hVKi ρ (rampParticular_isTrajectory hV hKi ρ)).1
+  have h' := frequencyRamp_phase_tendsto hVKp hVKi ρ (rampParticular_isTrajectory hV hKi ρ)
   have := tendsto_nhds_unique h h'
   have hne : ρ / (V * Ki) ≠ -ρ / (V * Ki) := by
     rw [neg_div]

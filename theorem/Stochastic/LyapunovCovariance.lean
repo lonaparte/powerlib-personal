@@ -34,9 +34,9 @@ Source: work-sync theory/T-sde-systems.md §1.8.2 (stationary covariance
 `Ṗ = A P + P Aᵀ + B Bᵀ`), §2.5 ("A Hurwitz ⇔ P∞ exists, unique, positive definite").
 
 Results.
-* `exists_unique_posSemidef_covLyapunov`, `exists_unique_posSemidef_stationaryCov` — `A` Hurwitz
-  ⇒ a unique solution of `A P + P Aᵀ + Q = 0` exists for `Q ⪰ 0` (in particular `Q = B Bᵀ`), and
-  it is positive *semi*definite.
+* `exists_solvesCovLyapunov`, `solvesCovLyapunov_unique`, `posSemidef_of_solvesCovLyapunov` —
+  `A` Hurwitz ⇒ a solution of `A P + P Aᵀ + Q = 0` exists for `Q ⪰ 0`, it is unique, and it is
+  positive *semi*definite; for `Q = B Bᵀ`: `exists_stationaryCov`, `stationaryCov_posSemidef`.
 * `covSol_hasDerivAt`, `covODE_unique`, `covSol_tendsto_norm` — the differential Lyapunov
   equation `Ṗ = A P + P Aᵀ + Q` has the unique solution `e^{tA} (P₀ - P∞) e^{tAᵀ} + P∞`
   (`covSol`), which converges to `P∞` for Hurwitz `A`.
@@ -51,8 +51,7 @@ Results.
   * `isControllable_of_posDef`: `A` Hurwitz and some `P ≻ 0` solves the equation ⇒ `(A, B)`
     controllable (a vector orthogonal to the reachable subspace makes `xᵀ e^{tA} P e^{tAᵀ} x`
     constant and positive, while it tends to `0`).
-  * `posDef_iff_isControllable`, `stationaryCov_gramian`: for Hurwitz `A`, `P∞ ≻ 0 ⇔ (A, B)`
-    controllable.
+  * `posDef_iff_isControllable`: for Hurwitz `A`, `P∞ ≻ 0 ⇔ (A, B)` controllable.
 
 Corrections.
 * T-sde-systems §2.5, §1.12.2: "A Hurwitz ⇔ P∞ exists, is unique and positive definite" is false
@@ -60,8 +59,9 @@ Corrections.
   * `posDef_solution_not_imp_hurwitz`: `A = 0`, `B = 0`, `P = I` solves the equation with
     `P ≻ 0` although `A` is not Hurwitz (and every matrix solves it, so uniqueness fails too);
   * `hurwitz_not_imp_posDef_solution`: `A = -I`, `B = 0` is Hurwitz but every solution is `0`.
-  What holds is `exists_unique_posSemidef_covLyapunov`: `A` Hurwitz ⇒ a unique solution exists
-  and it is positive *semi*definite; it is positive *definite* exactly when `(A, B)` is
+  What holds is `exists_solvesCovLyapunov`, `solvesCovLyapunov_unique`,
+  `posSemidef_of_solvesCovLyapunov`: `A` Hurwitz ⇒ a unique solution exists and it is positive
+  *semi*definite; it is positive *definite* exactly when `(A, B)` is
   controllable (`posDef_iff_isControllable`).
 -/
 
@@ -142,18 +142,15 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   simpa using solvesCovLyapunov_sub ((solvesCovLyapunov_iff _ _ _).mpr hP₂)
     ((solvesCovLyapunov_iff _ _ _).mpr hP₁)
 
-/-- **Stationary covariance.** For Hurwitz `A` and positive-semidefinite forcing `Q`, the
-equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semidefinite. -/
-@[tmio T, powerlib_foundation] theorem exists_unique_posSemidef_covLyapunov
-    {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A)
-    (Q : Matrix (Fin n) (Fin n) ℝ) (hQ : Q.PosSemidef) :
-    ∃ P, P.PosSemidef ∧ SolvesCovLyapunov A P Q ∧
-      ∀ S, SolvesCovLyapunov A S Q → S = P := by
+/-- **Stationary covariance is positive semidefinite.** For Hurwitz `A` and positive-semidefinite
+forcing `Q`, the solution of `A P + P Aᵀ + Q = 0` (which exists, `exists_solvesCovLyapunov`, and is
+unique, `solvesCovLyapunov_unique`) is positive semidefinite. -/
+@[tmio T, powerlib_foundation] theorem posSemidef_of_solvesCovLyapunov
+    {A P Q : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A) (hQ : Q.PosSemidef)
+    (hP : SolvesCovLyapunov A P Q) : P.PosSemidef := by
   have hAt := Linear.isHurwitz_transpose_iff.mpr hA
-  obtain ⟨P, hP⟩ := exists_solvesCovLyapunov hA Q hQ
   obtain ⟨P₁, hP₁pd, hP₁, -⟩ := hAt.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
   have hP₁' : SolvesCovLyapunov A P₁ 1 := (solvesCovLyapunov_iff _ _ _).mpr hP₁
-  refine ⟨P, ?_, hP, fun S hS => solvesCovLyapunov_unique hA hS hP⟩
   -- symmetry: `Pᵀ` solves the same equation
   have hQt : Qᵀ = Q := by
     have := hQ.1; rwa [IsHermitian, conjTranspose_eq_transpose_of_trivial] at this
@@ -188,13 +185,21 @@ equation `A P + P Aᵀ + Q = 0` has a unique solution, and it is positive semide
   have h3 : a / (b + 1) < 0 := div_neg_of_neg_of_pos hneg (by linarith)
   linarith
 
-/-- The covariance equation of `dX = A X dt + B dW`: forcing `B Bᵀ`. -/
-@[tmio T, powerlib_foundation] theorem exists_unique_posSemidef_stationaryCov
+/-- The covariance equation of `dX = A X dt + B dW` (forcing `B Bᵀ`) has a solution for Hurwitz
+`A` (unique by `solvesCovLyapunov_unique`). -/
+@[tmio T, powerlib_foundation] theorem exists_stationaryCov
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A)
     (B : Matrix (Fin n) (Fin m) ℝ) :
-    ∃ P, P.PosSemidef ∧ SolvesCovLyapunov A P (B * Bᵀ) ∧
-      ∀ S, SolvesCovLyapunov A S (B * Bᵀ) → S = P := by
-  apply exists_unique_posSemidef_covLyapunov hA
+    ∃ P, SolvesCovLyapunov A P (B * Bᵀ) := by
+  apply exists_solvesCovLyapunov hA
+  simpa [conjTranspose_eq_transpose_of_trivial] using posSemidef_self_mul_conjTranspose B
+
+/-- For Hurwitz `A`, the solution of the covariance equation of `dX = A X dt + B dW` (forcing
+`B Bᵀ`) is positive semidefinite. -/
+@[tmio T, powerlib_foundation] theorem stationaryCov_posSemidef
+    {A P : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A)
+    (B : Matrix (Fin n) (Fin m) ℝ) (hP : SolvesCovLyapunov A P (B * Bᵀ)) : P.PosSemidef := by
+  refine posSemidef_of_solvesCovLyapunov hA ?_ hP
   simpa [conjTranspose_eq_transpose_of_trivial] using posSemidef_self_mul_conjTranspose B
 
 /-! ## Counterexamples to "A Hurwitz ⇔ P∞ unique positive definite" -/
@@ -426,13 +431,20 @@ open scoped Nat
   rw [e1, e2, e3] at h
   linarith
 
-/-- Kernel invariance: if `P x = 0` then `Bᵀ x = 0` and `P Aᵀ x = 0`. -/
+/-- The kernel of a symmetric solution lies in `ker Bᵀ`: if `P x = 0` then `Bᵀ x = 0`. -/
+@[tmio T, powerlib_foundation] theorem cov_kernel_transpose_eq_zero
+    {A P : Matrix (Fin n) (Fin n) ℝ} {B : Matrix (Fin n) (Fin m) ℝ}
+    (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hs : Pᵀ = P) {x : Fin n → ℝ} (hx : P *ᵥ x = 0) :
+    Bᵀ *ᵥ x = 0 := by
+  have hq := cov_quadratic hP hs x
+  rwa [hx, zero_dotProduct, mul_zero, zero_add, dotProduct_self_eq_zero] at hq
+
+/-- Kernel invariance: if `P x = 0` then `P Aᵀ x = 0` (the kernel of a symmetric solution is
+`Aᵀ`-invariant). -/
 @[tmio T, powerlib_foundation] theorem cov_kernel_invariant {A P : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin m) ℝ} (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hs : Pᵀ = P)
-    {x : Fin n → ℝ} (hx : P *ᵥ x = 0) : Bᵀ *ᵥ x = 0 ∧ P *ᵥ (Aᵀ *ᵥ x) = 0 := by
-  have hq := cov_quadratic hP hs x
-  rw [hx, zero_dotProduct, mul_zero, zero_add, dotProduct_self_eq_zero] at hq
-  refine ⟨hq, ?_⟩
+    {x : Fin n → ℝ} (hx : P *ᵥ x = 0) : P *ᵥ (Aᵀ *ᵥ x) = 0 := by
+  have hq := cov_kernel_transpose_eq_zero hP hs hx
   have h := congrArg (· *ᵥ x) hP
   simp only [add_mulVec, zero_mulVec] at h
   rw [← mulVec_mulVec, ← mulVec_mulVec, ← mulVec_mulVec, hx, hq, mulVec_zero, mulVec_zero,
@@ -445,8 +457,7 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
     {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
     (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hc : LinearSystems.IsControllable A B) :
     P.PosDef := by
-  obtain ⟨P', hpsd, hP', huniq⟩ := exists_unique_posSemidef_stationaryCov hA B
-  obtain rfl : P = P' := huniq P hP
+  have hpsd := stationaryCov_posSemidef hA B hP
   have hs : Pᵀ = P := by
     have := hpsd.isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
   refine PosDef.of_dotProduct_mulVec_pos hpsd.isHermitian fun x hx => ?_
@@ -460,9 +471,9 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
     | zero => simpa using hPx
     | succ k ih =>
       rw [pow_succ', ← mulVec_mulVec]
-      exact (cov_kernel_invariant hP hs ih).2
+      exact cov_kernel_invariant hP hs ih
   have hB : ∀ k : ℕ, Bᵀ *ᵥ ((Aᵀ) ^ k *ᵥ x) = 0 := fun k =>
-    (cov_kernel_invariant hP hs (hpow k)).1
+    cov_kernel_transpose_eq_zero hP hs (hpow k)
   obtain ⟨u, hu⟩ := hc x
   have hxx : x ⬝ᵥ x = 0 := by
     calc x ⬝ᵥ x = x ⬝ᵥ ∑ k : Fin n, (A ^ (k : ℕ) * B) *ᵥ u k := congrArg (x ⬝ᵥ ·) hu
@@ -654,18 +665,6 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
     simpa using (h1.mul_const ‖P‖).mul h2
   refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_) hprod
   exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
-
-/-- **Controllability Gramian.**  For Hurwitz `A`, the stationary covariance
-`P∞ = lim_{T→∞} ∫₀ᵀ e^{tA} B Bᵀ e^{tAᵀ} dt` of `dX = A X dt + B dW` exists, is the unique solution
-of `A P∞ + P∞ Aᵀ + B Bᵀ = 0`, and is positive definite exactly when `(A, B)` is controllable. -/
-@[tmio T, powerlib_foundation] theorem stationaryCov_gramian {A : Matrix (Fin n) (Fin n) ℝ}
-    (hA : LinearSystems.IsHurwitz A) (B : Matrix (Fin n) (Fin m) ℝ) :
-    ∃ P, SolvesCovLyapunov A P (B * Bᵀ) ∧ (∀ S, SolvesCovLyapunov A S (B * Bᵀ) → S = P) ∧
-      Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T,
-        NormedSpace.exp (t • A) * (B * Bᵀ) * NormedSpace.exp (t • Aᵀ)) atTop (𝓝 P) ∧
-      P.PosSemidef ∧ (P.PosDef ↔ LinearSystems.IsControllable A B) := by
-  obtain ⟨P, hpsd, hP, huniq⟩ := exists_unique_posSemidef_stationaryCov hA B
-  exact ⟨P, hP, huniq, tendsto_integral_gramian hA hP, hpsd, posDef_iff_isControllable hA hP⟩
 
 end Controllability
 

@@ -44,13 +44,18 @@ needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m 
   impedances), `tendsto_exactZmut_zero` (`Z_mut → 0`: complete screening, `Z_mut ∼
   (ρ m/(π√(ab))) e^{−m t}`); ray `s → ∞`: `exactZin_tendsto_surface`,
   `exactZout_tendsto_surface`, `exactZmut_tendsto_zero`.
-* High-frequency rates: `besselNorm_sub_one_isBigO` (`Î_ν − 1`, `K̂_ν − 1` are `O(1/Re m)`),
+* High-frequency rates: `besselI0Norm_sub_one_isBigO`, `besselI1Norm_sub_one_isBigO`,
+  `besselK0Norm_sub_one_isBigO`, `besselK1Norm_sub_one_isBigO` (`Î_ν − 1`, `K̂_ν − 1` are
+  `O(1/Re m)`),
   `innerRatio_sub_one_isBigO`, `outerRatio_sub_one_isBigO`; `exactZin_sub_surface_isBigO_of`,
   `exactZout_sub_surface_isBigO_of` and along the ray `exactZin_sub_surface_isBigO`,
   `exactZout_sub_surface_isBigO` (`Z_in = ρm/(2πa) + O(1)`, `Z_out = ρm/(2πb) + O(1)`);
   `tendsto_exactZmut_div_asymptotic`, `exactZmut_div_asymptotic_tendsto`
   (`Z_mut ∼ (ρ m/(π√(ab))) e^{−m(b−a)}`).
-* Angular frequency `m(ω) = (1 + j)√(ωμ/(2ρ))`: `exactZ_tendsto_omega` (all six limits).
+* Angular frequency `m(ω) = (1 + j)√(ωμ/(2ρ))`: `exactZin_tendsto_dc_omega`,
+  `exactZout_tendsto_dc_omega`, `exactZmut_tendsto_dc_omega` (`ω → 0⁺`),
+  `exactZin_tendsto_surface_omega`, `exactZout_tendsto_surface_omega`,
+  `exactZmut_tendsto_zero_omega` (`ω → ∞`).
 * Relation with the Wedepohl–Wilcox formulas: low frequency, all three ratios `→ 1`
   (`tendsto_exactZin_div_tubeZin_dc`, `tendsto_exactZout_div_tubeZout_dc`,
   `tendsto_exactZmut_div_tubeZmut_dc`); high frequency along the ray,
@@ -383,24 +388,46 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
   rw [numOut_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
     mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
 
-/-- The limits of the eight normalized quantities and of `e^{−2m(b−a)}` along a sector filter. -/
-@[tmio T, powerlib_foundation] theorem tendsto_norms {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK : 0 < K)
+/-- `Î₀(f r) → 1` along a sector filter (`r > 0`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_besselI0Norm_mul {r K : ℝ} (hr : 0 < r) (hK : 0 < K)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
-    (Tendsto (fun i => besselI0Norm (f i * a)) l (𝓝 1) ∧
-      Tendsto (fun i => besselI1Norm (f i * a)) l (𝓝 1) ∧
-      Tendsto (fun i => besselK0Norm (f i * a)) l (𝓝 1) ∧
-      Tendsto (fun i => besselK1Norm (f i * a)) l (𝓝 1)) ∧
-    (Tendsto (fun i => besselI0Norm (f i * b)) l (𝓝 1) ∧
-      Tendsto (fun i => besselI1Norm (f i * b)) l (𝓝 1) ∧
-      Tendsto (fun i => besselK0Norm (f i * b)) l (𝓝 1) ∧
-      Tendsto (fun i => besselK1Norm (f i * b)) l (𝓝 1)) ∧
-    Tendsto (fun i => Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) l (𝓝 0) := by
-  have hb : 0 < b := ha.trans hab
-  have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
+    Tendsto (fun i => besselI0Norm (f i * r)) l (𝓝 1) := by
+  have hrer : Tendsto (fun i => (f i * r).re) l atTop := by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  exact ⟨tendsto_bessel_div_gaussHalf hK (hrer ha) (sector_mul_ofReal ha hsec),
-    tendsto_bessel_div_gaussHalf hK (hrer hb) (sector_mul_ofReal hb hsec),
-    tendsto_cexp_neg_two_mul (hrer (by linarith))⟩
+  exact tendsto_besselI0_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
+
+/-- `Î₁(f r) → 1` along a sector filter (`r > 0`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_besselI1Norm_mul {r K : ℝ} (hr : 0 < r) (hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => besselI1Norm (f i * r)) l (𝓝 1) := by
+  have hrer : Tendsto (fun i => (f i * r).re) l atTop := by
+    simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
+  exact tendsto_besselI1_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
+
+/-- `K̂₀(f r) → 1` along a sector filter (`r > 0`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_besselK0Norm_mul {r K : ℝ} (hr : 0 < r) (hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => besselK0Norm (f i * r)) l (𝓝 1) := by
+  have hrer : Tendsto (fun i => (f i * r).re) l atTop := by
+    simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
+  exact tendsto_besselK0_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
+
+/-- `K̂₁(f r) → 1` along a sector filter (`r > 0`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_besselK1Norm_mul {r K : ℝ} (hr : 0 < r) (hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => besselK1Norm (f i * r)) l (𝓝 1) := by
+  have hrer : Tendsto (fun i => (f i * r).re) l atTop := by
+    simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
+  exact tendsto_besselK1_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
+
+/-- `e^{−2m(b−a)} → 0` along a sector filter (`a < b`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_cexp_neg_two_mul_sub {a b K : ℝ} (_ha : 0 < a)
+    (hab : a < b) (_hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
+    (_hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) l (𝓝 0) := by
+  have hrer : Tendsto (fun i => (f i * ((b - a : ℝ) : ℂ)).re) l atTop := by
+    simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const (sub_pos.mpr hab)
+  exact tendsto_cexp_neg_two_mul hrer
 
 /-- **High-frequency limit of the exact inner-surface impedance**: along any `m → ∞` in a sector
 (`Re m → ∞`, `‖m‖ ≤ K Re m`), `Z_in(m)/(ρ m/(2π a)) → 1` (the inner surface impedance). -/
@@ -409,8 +436,13 @@ theorem tendsto_exactZin_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) 
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZin ρ a b (f i) / ((ρ : ℂ) * f i / (2 * Real.pi * a))) l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
-    tendsto_norms ha hab hK hre hsec
+  have hI0a := tendsto_besselI0Norm_mul ha hK hre hsec
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK0a := tendsto_besselK0Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
   have h := (((hI0a.mul hK1b).mul hE).add (hK0a.mul hI1b)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
   rw [show ((1 : ℂ) * 1 * 0 + 1 * 1) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
@@ -428,8 +460,13 @@ theorem tendsto_exactZout_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZout ρ a b (f i) / ((ρ : ℂ) * f i / (2 * Real.pi * b))) l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
-    tendsto_norms ha hab hK hre hsec
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI0b := tendsto_besselI0Norm_mul (ha.trans hab) hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
   have h := (((hI0b.mul hK1a)).add ((hK0b.mul hI1a).mul hE)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
   rw [show ((1 : ℂ) * 1 + 1 * 1 * 0) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
@@ -502,7 +539,11 @@ theorem tendsto_exactZmut_zero {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZmut ρ a b (f i)) l (𝓝 0) := by
   have hb : 0 < b := ha.trans hab
-  obtain ⟨⟨-, hI1a, -, hK1a⟩, ⟨-, hI1b, -, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
   have hm := tendsto_mul_cexp_neg (t := b - a) (by linarith) hre hsec
   have h := (hm.const_mul ((ρ / (Real.pi * (Real.sqrt a * Real.sqrt b)) : ℝ) : ℂ)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
@@ -569,7 +610,11 @@ theorem tendsto_exactZmut_div_tubeZmut {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZmut ρ a b (f i) / tubeZmut ρ a b (f i)) l
       (𝓝 (((a + b) / (2 * Real.sqrt (a * b)) : ℝ) : ℂ)) := by
-  obtain ⟨⟨-, hI1a, -, hK1a⟩, ⟨-, hI1b, -, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
   have h := ((((tendsto_const_nhds (x := (1 : ℂ))).sub hE).div_const 2).const_mul
     (((a + b) / (Real.sqrt a * Real.sqrt b) : ℝ) : ℂ)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
@@ -771,27 +816,68 @@ theorem exactZmut_div_tubeZmut_tendsto_hf {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 
   · filter_upwards [self_mem_nhdsWithin] with ω (hω : 0 < ω)
     exact Real.sqrt_pos.mpr (by positivity)
 
-/-- **Exact tube impedances in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`:
-`ω → 0⁺` gives the DC resistance for all three impedances, `ω → ∞` the inner surface
-impedance, the outer surface impedance and complete screening. -/
+/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
+`ω → 0⁺`: the inner impedance tends to the DC resistance `ρ/(π(b² − a²))`. -/
 @[tmio M, powerlib_domain]
-theorem exactZ_tendsto_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a) (hab : a < b) :
+theorem exactZin_tendsto_dc_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
+    (hab : a < b) :
     let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
     Tendsto (fun ω => exactZin ρ a b (m ω)) (𝓝[>] 0)
-        (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) ∧
-      Tendsto (fun ω => exactZout ρ a b (m ω)) (𝓝[>] 0)
-        (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) ∧
-      Tendsto (fun ω => exactZmut ρ a b (m ω)) (𝓝[>] 0)
-        (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) ∧
-      Tendsto (fun ω => exactZin ρ a b (m ω) / ((ρ : ℂ) * m ω / (2 * Real.pi * a))) atTop (𝓝 1) ∧
-      Tendsto (fun ω => exactZout ρ a b (m ω) / ((ρ : ℂ) * m ω / (2 * Real.pi * b))) atTop (𝓝 1) ∧
-      Tendsto (fun ω => exactZmut ρ a b (m ω)) atTop (𝓝 0) := by
+      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   intro m
-  have h0 := sqrt_omega_tendsto_zero hμ hρ
-  have hinf := sqrt_omega_tendsto_atTop hμ hρ
-  exact ⟨(exactZin_tendsto_dc ha hab).comp h0, (exactZout_tendsto_dc ha hab).comp h0,
-    (exactZmut_tendsto_dc ha hab).comp h0, (exactZin_tendsto_surface hρ.ne' ha hab).comp hinf,
-    (exactZout_tendsto_surface hρ.ne' ha hab).comp hinf, (exactZmut_tendsto_zero ha hab).comp hinf⟩
+  exact (exactZin_tendsto_dc ha hab).comp (sqrt_omega_tendsto_zero hμ hρ)
+
+/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
+`ω → 0⁺`: the outer impedance tends to the DC resistance `ρ/(π(b² − a²))`. -/
+@[tmio M, powerlib_domain]
+theorem exactZout_tendsto_dc_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
+    (hab : a < b) :
+    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
+    Tendsto (fun ω => exactZout ρ a b (m ω)) (𝓝[>] 0)
+      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
+  intro m
+  exact (exactZout_tendsto_dc ha hab).comp (sqrt_omega_tendsto_zero hμ hρ)
+
+/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
+`ω → 0⁺`: the transfer impedance tends to the DC resistance `ρ/(π(b² − a²))`. -/
+@[tmio M, powerlib_domain]
+theorem exactZmut_tendsto_dc_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
+    (hab : a < b) :
+    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
+    Tendsto (fun ω => exactZmut ρ a b (m ω)) (𝓝[>] 0)
+      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
+  intro m
+  exact (exactZmut_tendsto_dc ha hab).comp (sqrt_omega_tendsto_zero hμ hρ)
+
+/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
+`ω → ∞`: the inner impedance tends to the inner surface impedance, `Z_in/(ρ m/(2π a)) → 1`. -/
+@[tmio M, powerlib_domain]
+theorem exactZin_tendsto_surface_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
+    (hab : a < b) :
+    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
+    Tendsto (fun ω => exactZin ρ a b (m ω) / ((ρ : ℂ) * m ω / (2 * Real.pi * a))) atTop (𝓝 1) := by
+  intro m
+  exact (exactZin_tendsto_surface hρ.ne' ha hab).comp (sqrt_omega_tendsto_atTop hμ hρ)
+
+/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
+`ω → ∞`: the outer impedance tends to the outer surface impedance, `Z_out/(ρ m/(2π b)) → 1`. -/
+@[tmio M, powerlib_domain]
+theorem exactZout_tendsto_surface_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
+    (hab : a < b) :
+    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
+    Tendsto (fun ω => exactZout ρ a b (m ω) / ((ρ : ℂ) * m ω / (2 * Real.pi * b))) atTop (𝓝 1) := by
+  intro m
+  exact (exactZout_tendsto_surface hρ.ne' ha hab).comp (sqrt_omega_tendsto_atTop hμ hρ)
+
+/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
+`ω → ∞`: the transfer impedance tends to `0` (complete screening). -/
+@[tmio M, powerlib_domain]
+theorem exactZmut_tendsto_zero_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
+    (hab : a < b) :
+    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
+    Tendsto (fun ω => exactZmut ρ a b (m ω)) atTop (𝓝 0) := by
+  intro m
+  exact (exactZmut_tendsto_zero ha hab).comp (sqrt_omega_tendsto_atTop hμ hρ)
 
 /-! ## High-frequency rates -/
 
@@ -801,32 +887,51 @@ section Rates
 
 variable {ι : Type*} {l : Filter ι} {f : ι → ℂ}
 
-/-- Rate of the normalized functions: in a sector, `Î_ν(f) − 1` and `K̂_ν(f) − 1` are
-`O(1/Re f)`. -/
-@[tmio T, powerlib_foundation]
-theorem besselNorm_sub_one_isBigO {K : ℝ} (hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
-    (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
-    (fun i => besselI0Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) ∧
-    (fun i => besselI1Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) ∧
-    (fun i => besselK0Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) ∧
-    (fun i => besselK1Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) := by
-  obtain ⟨C, hC0, hC⟩ := besselI_laplace_le' hK
+/-- A relative bound `‖X(z) − G(z)‖ ≤ (C/Re z)‖G(z)‖` in a sector gives
+`X(f)/G(f) − 1 = O(1/Re f)`. -/
+@[tmio T, powerlib_foundation] private theorem div_gaussHalf_sub_one_isBigO {K C : ℝ} {X : ℂ → ℂ}
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re)
+    (hb : ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re → ‖X z - gaussHalf z‖ ≤ C / z.re * ‖gaussHalf z‖) :
+    (fun i => X (f i) / gaussHalf (f i) - 1) =O[l] (fun i => 1 / (f i).re) := by
   have hpos := hre.eventually_gt_atTop 0
-  have key : ∀ {X : ℂ → ℂ} {C' : ℝ}, 0 ≤ C' →
-      (∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re → ‖X z - gaussHalf z‖ ≤ C' / z.re * ‖gaussHalf z‖) →
-      (fun i => X (f i) / gaussHalf (f i) - 1) =O[l] (fun i => 1 / (f i).re) := by
-    intro X C' hC' hb
-    refine IsBigO.of_bound C' ?_
-    filter_upwards [hpos, hsec] with i hi hs
-    have hG := gaussHalf_ne_zero hi
-    have hGn : 0 < ‖gaussHalf (f i)‖ := norm_pos_iff.mpr hG
-    rw [show X (f i) / gaussHalf (f i) - 1 = (X (f i) - gaussHalf (f i)) / gaussHalf (f i) by
-      field_simp, norm_div, div_le_iff₀ hGn, Real.norm_eq_abs, abs_of_pos (by positivity)]
-    refine (hb _ hi hs).trans_eq ?_
-    ring
-  exact ⟨key hC0 fun z hz hzK => (hC z hz hzK).1, key hC0 fun z hz hzK => (hC z hz hzK).2,
-    key (by positivity) fun z hz hzK => (besselK_laplace_le hz hzK).1,
-    key (by positivity) fun z hz hzK => (besselK_laplace_le hz hzK).2⟩
+  refine IsBigO.of_bound C ?_
+  filter_upwards [hpos, hsec] with i hi hs
+  have hG := gaussHalf_ne_zero hi
+  have hGn : 0 < ‖gaussHalf (f i)‖ := norm_pos_iff.mpr hG
+  rw [show X (f i) / gaussHalf (f i) - 1 = (X (f i) - gaussHalf (f i)) / gaussHalf (f i) by
+    field_simp, norm_div, div_le_iff₀ hGn, Real.norm_eq_abs, abs_of_pos (by positivity)]
+  refine (hb _ hi hs).trans_eq ?_
+  ring
+
+/-- Rate of the normalized `I₀`: in a sector, `Î₀(f) − 1 = O(1/Re f)`. -/
+@[tmio T, powerlib_foundation]
+theorem besselI0Norm_sub_one_isBigO {K : ℝ} (hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    (fun i => besselI0Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) := by
+  obtain ⟨C, -, hC⟩ := besselI_laplace_le' hK
+  exact div_gaussHalf_sub_one_isBigO hre hsec fun z hz hzK => (hC z hz hzK).1
+
+/-- Rate of the normalized `I₁`: in a sector, `Î₁(f) − 1 = O(1/Re f)`. -/
+@[tmio T, powerlib_foundation]
+theorem besselI1Norm_sub_one_isBigO {K : ℝ} (hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    (fun i => besselI1Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) := by
+  obtain ⟨C, -, hC⟩ := besselI_laplace_le' hK
+  exact div_gaussHalf_sub_one_isBigO hre hsec fun z hz hzK => (hC z hz hzK).2
+
+/-- Rate of the normalized `K₀`: in a sector, `K̂₀(f) − 1 = O(1/Re f)`. -/
+@[tmio T, powerlib_foundation]
+theorem besselK0Norm_sub_one_isBigO {K : ℝ} (_hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    (fun i => besselK0Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) :=
+  div_gaussHalf_sub_one_isBigO hre hsec fun _ hz hzK => besselK0_laplace_le hz hzK
+
+/-- Rate of the normalized `K₁`: in a sector, `K̂₁(f) − 1 = O(1/Re f)`. -/
+@[tmio T, powerlib_foundation]
+theorem besselK1Norm_sub_one_isBigO {K : ℝ} (_hK : 0 < K)
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    (fun i => besselK1Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) :=
+  div_gaussHalf_sub_one_isBigO hre hsec fun _ hz hzK => besselK1_laplace_le hz hzK
 
 /-- `1/Re(f r) = O(1/Re f)` (`r > 0`). -/
 @[tmio T, powerlib_foundation] theorem inv_re_mul_isBigO {r : ℝ} (hr : 0 < r) :
@@ -874,9 +979,14 @@ theorem innerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
-    tendsto_norms ha hab hK hre hsec
-  obtain ⟨-, -, rK0a, rK1a⟩ := besselNorm_sub_one_isBigO hK (hrer ha) (sector_mul_ofReal ha hsec)
+  have hI0a := tendsto_besselI0Norm_mul ha hK hre hsec
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have rK0a := besselK0Norm_sub_one_isBigO hK (hrer ha) (sector_mul_ofReal ha hsec)
+  have rK1a := besselK1Norm_sub_one_isBigO hK (hrer ha) (sector_mul_ofReal ha hsec)
   have rK0a' := rK0a.trans (inv_re_mul_isBigO ha)
   have rK1a' := rK1a.trans (inv_re_mul_isBigO ha)
   have rE := cexp_neg_two_mul_isBigO (t := b - a) (by linarith) hre
@@ -924,9 +1034,14 @@ theorem outerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
-    tendsto_norms ha hab hK hre hsec
-  obtain ⟨rI0b, rI1b, -, -⟩ := besselNorm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have rI0b := besselI0Norm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
+  have rI1b := besselI1Norm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
   have rI0b' := rI0b.trans (inv_re_mul_isBigO hb)
   have rI1b' := rI1b.trans (inv_re_mul_isBigO hb)
   have rE := cexp_neg_two_mul_isBigO (t := b - a) (by linarith) hre
@@ -1000,7 +1115,11 @@ theorem tendsto_exactZmut_div_asymptotic {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha :
       ((ρ / (Real.pi * Real.sqrt (a * b)) : ℝ) * (f i * Complex.exp (-(f i * ((b - a : ℝ) : ℂ))))))
       l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
-  obtain ⟨⟨-, hI1a, -, hK1a⟩, ⟨-, hI1b, -, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
   have hD := ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)).inv₀ (by norm_num)
   rw [show ((1 : ℂ) * 1 - 1 * 1 * 0)⁻¹ = 1 by norm_num] at hD
   refine hD.congr' ?_

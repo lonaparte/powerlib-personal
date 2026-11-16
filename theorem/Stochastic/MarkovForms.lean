@@ -31,7 +31,7 @@ Results.
   measurable space, the event form and the conditional-expectation form of the Markov property
   (`E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and bounded measurable `g`, written out
   in the statement) are equivalent (any index order, any state space).
-* `semigroup_not_markov` — counterexample: semigroup ⇏ Markov
+* `unifKernel_comp`, `feller_transition`, `feller_not_markov` — counterexample: semigroup ⇏ Markov
   (`theory/T-markov-processes.md` §1.2, "Markov ⇔ semigroup"), Feller's example: on
   `Ω = (Fin 3)²` with the uniform probability, the three-step process `X₀ = a`, `X₁ = b`,
   `X₂ = −(a + b) (mod 3)` has, for every pair of times `i ≠ j`, the elementary transition
@@ -41,7 +41,7 @@ Results.
   adapted: `X₂` is a function of `(X₀, X₁)`. Hence the semigroup (Chapman–Kolmogorov) relation
   of the two-dimensional transition laws does not imply the Markov property.
   Supporting facts: `feller_pair` (every pair `(X_i, X_j)` is uniform on `(Fin 3)²`),
-  `feller_marginal`, `feller_transition`, `unifKernel_comp`, `feller_not_markov`.
+  `feller_marginal`.
 -/
 
 noncomputable section
@@ -228,7 +228,9 @@ def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.u
   simp only [one_div, inv_inv]
   rw [← div_eq_mul_inv, ennreal_three_div_nine, one_div]
 
-/-- Feller's process is not Markov (event form) for any filtration to which it is adapted:
+/-- **Semigroup ⇏ Markov** (Feller's example). Feller's process, whose transition kernels between
+any two times are the uniform kernel `K` (`feller_transition`) with `K ∘ K = K`
+(`unifKernel_comp`), is not Markov (event form) for any filtration to which it is adapted:
 `P(X₂ = 0 | 𝓕₁)` equals `1` at `(0, 0)` and `0` at `(1, 0)`, while `P(X₂ = 0 | X₁)` cannot
 separate these two points (`X₁ = 0` at both). -/
 @[tmio T, powerlib_foundation] theorem feller_not_markov
@@ -276,19 +278,6 @@ separate these two points (`X₁ = 0` at both). -/
   have e2 : f (1, 0) = 0 := by simp [hf, fellerX]
   rw [← hFG, ← hFG, hF, hF, e1, e2] at hfib
   norm_num at hfib
-
-/-- **Semigroup ⇏ Markov** (Feller's example).  The process `fellerX` (`X₀ = a`, `X₁ = b`,
-`X₂ = −(a + b) mod 3` under the uniform law of `(a, b)`) has the constant uniform transition kernel
-`K` between any two times (`P(X_j = b | X_i = a) = K(a, {b}) = 1/3` for `i ≠ j`), and these
-kernels satisfy Chapman–Kolmogorov (`K ∘ K = K`); nevertheless `X` is not Markov (event form) for
-any filtration to which it is adapted. -/
-@[tmio T, powerlib_foundation] theorem semigroup_not_markov :
-    unifKernel ∘ₖ unifKernel = unifKernel ∧
-      (∀ i j : Fin 3, i ≠ j → ∀ a b : Fin 3,
-        fellerP[{ω | fellerX j ω = b} | {ω | fellerX i ω = a}] = unifKernel a {b}) ∧
-      ∀ 𝓕 : Filtration (Fin 3) (inferInstance : MeasurableSpace (Fin 3 × Fin 3)),
-        (∀ s, Measurable[𝓕 s] (fellerX s)) → ¬ MarkovEvent fellerP 𝓕 fellerX :=
-  ⟨unifKernel_comp, feller_transition, feller_not_markov⟩
 
 end Feller
 

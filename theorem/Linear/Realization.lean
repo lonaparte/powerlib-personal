@@ -111,26 +111,36 @@ variable (m : Plant n p)
   abel
 
 open scoped Matrix.Norms.Operator in
-@[tmio T, powerlib_foundation] private lemma resolvent_bound :
-    ∃ s₀ > 0, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 ∧
-      ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ ≤ 2 * ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖ / x := by
+/-- For large real `s` the plant has no pole: `det (sI − A) ≠ 0`. -/
+@[tmio T, powerlib_foundation] private lemma eventually_det_ne_zero :
+    ∃ s₀ > 0, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 := by
   refine ⟨2 * ‖complexify m.A‖ + 1, by positivity, fun x hx => ?_⟩
   have ha := norm_nonneg (complexify m.A)
   have hx0 : 0 < x := by linarith
   have hxn : ‖(x : ℂ)‖ = x := by rw [Complex.norm_real, Real.norm_of_nonneg hx0.le]
-  have hdet : (characteristicMatrix m.A (x : ℂ)).det ≠ 0 := by
-    intro h0
-    obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h0
-    have hAv : complexify m.A *ᵥ v = (x : ℂ) • v := by
-      rw [show characteristicMatrix m.A (x : ℂ) = (x : ℂ) • 1 - complexify m.A from rfl,
-        Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero] at hzero
-      exact hzero.symm
-    have hle : x * ‖v‖ ≤ ‖complexify m.A‖ * ‖v‖ := by
-      rw [← hxn, ← norm_smul, ← hAv]
-      exact Matrix.linfty_opNorm_mulVec _ _
-    have hv0 : 0 < ‖v‖ := norm_pos_iff.mpr hv
-    nlinarith
-  refine ⟨hdet, ?_⟩
+  intro h0
+  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h0
+  have hAv : complexify m.A *ᵥ v = (x : ℂ) • v := by
+    rw [show characteristicMatrix m.A (x : ℂ) = (x : ℂ) • 1 - complexify m.A from rfl,
+      Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero] at hzero
+    exact hzero.symm
+  have hle : x * ‖v‖ ≤ ‖complexify m.A‖ * ‖v‖ := by
+    rw [← hxn, ← norm_smul, ← hAv]
+    exact Matrix.linfty_opNorm_mulVec _ _
+  have hv0 : 0 < ‖v‖ := norm_pos_iff.mpr hv
+  nlinarith
+
+open scoped Matrix.Norms.Operator in
+/-- For large real `s` the resolvent is small: `‖(sI − A)⁻¹‖ ≤ 2 ‖1‖ / s`. -/
+@[tmio T, powerlib_foundation] private lemma resolvent_bound :
+    ∃ s₀ > 0, ∀ x : ℝ, s₀ ≤ x →
+      ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ ≤ 2 * ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖ / x := by
+  obtain ⟨s₁, hs₁, hd⟩ := eventually_det_ne_zero m
+  refine ⟨max s₁ (2 * ‖complexify m.A‖ + 1), lt_max_of_lt_left hs₁, fun x hx => ?_⟩
+  obtain ⟨hx₁, hx⟩ := max_le_iff.mp hx
+  have hdet := hd x hx₁
+  have hx0 : 0 < x := hs₁.trans_le hx₁
+  have hxn : ‖(x : ℂ)‖ = x := by rw [Complex.norm_real, Real.norm_of_nonneg hx0.le]
   have hR := mul_resolvent hdet
   generalize (characteristicMatrix m.A (x : ℂ))⁻¹ = R at hR ⊢
   have h1 : x * ‖R‖ ≤ ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖ + ‖complexify m.A‖ * ‖R‖ := by
@@ -144,8 +154,8 @@ end Expansion
 
 @[tmio T, powerlib_foundation] theorem exists_det_characteristicMatrix_ne_zero (m : Plant n p) :
     ∃ s₀ : ℝ, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 := by
-  obtain ⟨s₀, -, h⟩ := resolvent_bound m
-  exact ⟨s₀, fun x hx => (h x hx).1⟩
+  obtain ⟨s₀, -, h⟩ := eventually_det_ne_zero m
+  exact ⟨s₀, h⟩
 
 @[tmio T, powerlib_foundation] private lemma eq_zero_of_norm_le_div {E : Type*} [NormedAddCommGroup E]
     (X : E) (K s₀ : ℝ) (h : ∀ x : ℝ, s₀ ≤ x → ‖X‖ ≤ K / x) : X = 0 := by
@@ -158,16 +168,18 @@ open scoped Matrix.Norms.Operator in
     ∃ s₀ > 0, ∃ K, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 ∧
       ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A (x : ℂ))⁻¹ *
         complexify m.B‖ ≤ K / x := by
-  obtain ⟨s₀, hs₀, hb⟩ := resolvent_bound m
-  refine ⟨s₀, hs₀, ‖complexify m.C * complexify m.A ^ N‖ * (2 * ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖) *
-    ‖complexify m.B‖, fun x hx => ⟨(hb x hx).1, ?_⟩⟩
-  have hx0 : 0 < x := hs₀.trans_le hx
+  obtain ⟨s₁, hs₁, hd⟩ := eventually_det_ne_zero m
+  obtain ⟨s₂, -, hb⟩ := resolvent_bound m
+  refine ⟨max s₁ s₂, lt_max_of_lt_left hs₁,
+    ‖complexify m.C * complexify m.A ^ N‖ * (2 * ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖) *
+      ‖complexify m.B‖, fun x hx => ⟨hd x (le_of_max_le_left hx), ?_⟩⟩
+  have hx0 : 0 < x := hs₁.trans_le (le_of_max_le_left hx)
   calc _ ≤ ‖complexify m.C * complexify m.A ^ N‖ * ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ *
         ‖complexify m.B‖ :=
         (Matrix.linfty_opNorm_mul _ _).trans
           (by gcongr; exact Matrix.linfty_opNorm_mul _ _)
     _ ≤ ‖complexify m.C * complexify m.A ^ N‖ * (2 * ‖(1 : Matrix (Fin n) (Fin n) ℂ)‖ / x) *
-        ‖complexify m.B‖ := by gcongr; exact (hb x hx).2
+        ‖complexify m.B‖ := by gcongr; exact hb x (le_of_max_le_right hx)
     _ = _ := by field_simp
 
 open scoped Matrix.Norms.Operator in
@@ -268,8 +280,8 @@ open scoped Matrix.Norms.Operator in
 @[tmio T, powerlib_foundation] theorem transfer_eventually_eq_of_markov_eq {m : Plant n p}
     {m' : Plant n' p} (hD : m.D = m'.D) (hM : ∀ k, markov m k = markov m' k) :
     ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x := by
-  obtain ⟨a, ha, hb⟩ := resolvent_bound m
-  obtain ⟨a', ha', hb'⟩ := resolvent_bound m'
+  obtain ⟨a, ha, hb⟩ := eventually_det_ne_zero m
+  obtain ⟨a', ha', hb'⟩ := eventually_det_ne_zero m'
   refine ⟨max (max a a') (‖complexify m.A‖ + ‖complexify m'.A‖ + 1), fun x hx => ?_⟩
   obtain ⟨hxa₁, hxn⟩ := max_le_iff.mp hx
   obtain ⟨hxa, hxa'⟩ := max_le_iff.mp hxa₁
@@ -282,7 +294,7 @@ open scoped Matrix.Norms.Operator in
         complexify m.B - complexify m'.C * complexify m'.A ^ N *
         (characteristicMatrix m'.A (x : ℂ))⁻¹ * complexify m'.B) := by
     intro N
-    rw [transfer_expansion m hxc (hb x hxa).1 N, transfer_expansion m' hxc (hb' x hxa').1 N, hD]
+    rw [transfer_expansion m hxc (hb x hxa) N, transfer_expansion m' hxc (hb' x hxa') N, hD]
     simp only [hM, smul_sub]
     abel
   set K := ‖complexify m.C‖ * ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ * ‖complexify m.B‖
@@ -333,8 +345,8 @@ open scoped Matrix.Norms.Operator in
     (s : ℂ) (hs : (characteristicMatrix m.A s).det ≠ 0)
     (hs' : (characteristicMatrix m'.A s).det ≠ 0) : transfer m s = transfer m' s := by
   obtain ⟨s₁, hs₁⟩ := h
-  obtain ⟨a, -, ha⟩ := resolvent_bound m
-  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  obtain ⟨a, -, ha⟩ := eventually_det_ne_zero m
+  obtain ⟨a', -, ha'⟩ := eventually_det_ne_zero m'
   have hnum := transfer_eq_numerator m
   have hnum' := transfer_eq_numerator m'
   have hdet := det_characteristicMatrix_eq_eval m.A
@@ -363,8 +375,8 @@ open scoped Matrix.Norms.Operator in
     rintro _ ⟨x, hx, rfl⟩
     obtain ⟨hxa₁, hx₁⟩ := max_le_iff.mp (Set.mem_Ici.mp hx)
     obtain ⟨hxa, hxa'⟩ := max_le_iff.mp hxa₁
-    have hz := (ha x hxa).1
-    have hz' := (ha' x hxa').1
+    have hz := ha x hxa
+    have hz' := ha' x hxa'
     rw [hdet] at hz
     rw [hdet'] at hz'
     show Polynomial.IsRoot _ _
@@ -382,10 +394,10 @@ open scoped Matrix.Norms.Operator in
       transfer m s = transfer m' s) ↔ m.D = m'.D ∧ ∀ k, markov m k = markov m' k := by
   refine ⟨fun h => ?_, fun ⟨hD, hM⟩ =>
     transfer_eq_of_eventually_eq (transfer_eventually_eq_of_markov_eq hD hM)⟩
-  obtain ⟨a, -, ha⟩ := resolvent_bound m
-  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  obtain ⟨a, -, ha⟩ := eventually_det_ne_zero m
+  obtain ⟨a', -, ha'⟩ := eventually_det_ne_zero m'
   exact markov_eq_of_transfer_eventually_eq ⟨max a a', fun x hx =>
-    h x (ha x (le_of_max_le_left hx)).1 (ha' x (le_of_max_le_right hx)).1⟩
+    h x (ha x (le_of_max_le_left hx)) (ha' x (le_of_max_le_right hx))⟩
 
 section Minimal
 
@@ -522,10 +534,10 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
     Similar m m' ↔ ∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 →
       (characteristicMatrix m'.A s).det ≠ 0 → transfer m s = transfer m' s := by
   refine ⟨fun h s _ _ => (h.transfer_eq s).symm, fun h => ?_⟩
-  obtain ⟨a, -, ha⟩ := resolvent_bound m
-  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  obtain ⟨a, -, ha⟩ := eventually_det_ne_zero m
+  obtain ⟨a', -, ha'⟩ := eventually_det_ne_zero m'
   obtain ⟨hD, hM⟩ := markov_eq_of_transfer_eventually_eq ⟨max a a', fun x hx =>
-    h x (ha x (le_of_max_le_left hx)).1 (ha' x (le_of_max_le_right hx)).1⟩
+    h x (ha x (le_of_max_le_left hx)) (ha' x (le_of_max_le_right hx))⟩
   exact similar_of_markov_eq hc ho hc' ho' hD hM
 
 def basisMatrix {r : ℕ} {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis (Fin r) ℝ V) :

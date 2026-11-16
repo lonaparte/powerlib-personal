@@ -56,7 +56,8 @@ Results.
   only at the switching instants: for every horizon `L ≥ 0` there is `C` with
   `‖x(t) − x̄(t)‖ ≤ C T ‖x₀‖` for all `t ∈ [0, L]` (sampled error + ripple + the drift
   `‖e^{sĀ} − 1‖ = O(s)` of the averaged model within the partial period). Auxiliary:
-  `norm_avgMatrix_le`, `norm_periodMap_le`, `exp_smul_bounds`, `exp_add_smul`.
+  `norm_avgMatrix_le`, `norm_periodMap_le`, `norm_exp_smul_le_of_norm_le`,
+  `norm_exp_smul_sub_one_le_of_norm_le`, `exp_add_smul`.
 -/
 
 noncomputable section
@@ -274,15 +275,21 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
         nlinarith [mul_nonneg (norm_nonneg A₂) (mul_nonneg hd0 hT),
           mul_nonneg (norm_nonneg A₁) (mul_nonneg hd1' hT)]
 
-/-- `‖e^{sX}‖ ≤ e^{a}` and `‖e^{sX} − 1‖ ≤ a s e^{a}` for `‖X‖ ≤ a`, `0 ≤ s ≤ 1`. -/
-@[tmio T, powerlib_foundation] theorem exp_smul_bounds {X : 𝔸} {a s : ℝ} (hX : ‖X‖ ≤ a) (hs0 : 0 ≤ s)
-    (hs1 : s ≤ 1) :
-    ‖NormedSpace.exp (s • X)‖ ≤ Real.exp a ∧
-      ‖NormedSpace.exp (s • X) - 1‖ ≤ a * s * Real.exp a := by
+/-- `‖e^{sX}‖ ≤ e^{a}` for `‖X‖ ≤ a`, `0 ≤ s ≤ 1`. -/
+@[tmio T, powerlib_foundation] theorem norm_exp_smul_le_of_norm_le {X : 𝔸} {a s : ℝ}
+    (hX : ‖X‖ ≤ a) (hs0 : 0 ≤ s) (hs1 : s ≤ 1) :
+    ‖NormedSpace.exp (s • X)‖ ≤ Real.exp a := by
+  have hexp : Real.exp (‖X‖ * s) ≤ Real.exp a :=
+    Real.exp_le_exp.mpr (by nlinarith [norm_nonneg X])
+  exact (norm_exp_smul_le X hs0).trans hexp
+
+/-- `‖e^{sX} − 1‖ ≤ a s e^{a}` for `‖X‖ ≤ a`, `0 ≤ s ≤ 1`. -/
+@[tmio T, powerlib_foundation] theorem norm_exp_smul_sub_one_le_of_norm_le {X : 𝔸} {a s : ℝ}
+    (hX : ‖X‖ ≤ a) (hs0 : 0 ≤ s) (hs1 : s ≤ 1) :
+    ‖NormedSpace.exp (s • X) - 1‖ ≤ a * s * Real.exp a := by
   have ha : 0 ≤ a := (norm_nonneg X).trans hX
   have hexp : Real.exp (‖X‖ * s) ≤ Real.exp a :=
     Real.exp_le_exp.mpr (by nlinarith [norm_nonneg X])
-  refine ⟨(norm_exp_smul_le X hs0).trans hexp, ?_⟩
   calc ‖NormedSpace.exp (s • X) - 1‖ ≤ ‖X‖ * s * Real.exp (‖X‖ * s) :=
         norm_exp_smul_sub_one_le X hs0
     _ ≤ a * s * Real.exp a := by
@@ -456,7 +463,7 @@ switching period `T ∈ (0, 1]`, every switched trajectory, every period `k` and
     have e := const_solution_eq h1 ⟨ht.1, htd⟩
     have hs0 : 0 ≤ t - k * T := by linarith [ht.1]
     have hs1 : t - k * T ≤ T := by linarith
-    obtain ⟨-, hb⟩ := exp_smul_bounds ha1 hs0 (hs1.trans hT.2)
+    have hb := norm_exp_smul_sub_one_le_of_norm_le ha1 hs0 (hs1.trans hT.2)
     have hdiff : x t - x (k * T) =
         (NormedSpace.exp ((t - k * T) • A₁) - 1) *ᵥ x (k * T) := by
       rw [e, Matrix.sub_mulVec, Matrix.one_mulVec]
@@ -479,8 +486,9 @@ switching period `T ∈ (0, 1]`, every switched trajectory, every period `k` and
     set E₂ := NormedSpace.exp ((t - (k * T + d * T)) • A₂)
     have hs0 : 0 ≤ t - (k * T + d * T) := by linarith
     have hs1 : t - (k * T + d * T) ≤ T := by linarith [ht.2]
-    obtain ⟨hE₁, hb₁⟩ := exp_smul_bounds ha1 hdT0 (hdT.trans hT.2)
-    obtain ⟨-, hb₂⟩ := exp_smul_bounds ha2 hs0 (hs1.trans hT.2)
+    have hE₁ := norm_exp_smul_le_of_norm_le ha1 hdT0 (hdT.trans hT.2)
+    have hb₁ := norm_exp_smul_sub_one_le_of_norm_le ha1 hdT0 (hdT.trans hT.2)
+    have hb₂ := norm_exp_smul_sub_one_le_of_norm_le ha2 hs0 (hs1.trans hT.2)
     have hdiff : x t - x (k * T) = (E₂ * E₁ - 1) *ᵥ x (k * T) := by
       rw [e2, e1, Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.mulVec_mulVec]
     have hprod : ‖E₂ * E₁ - 1‖ ≤ a * T * K * K + a * T * K := by
@@ -557,7 +565,7 @@ state including its intra-period ripple to `O(T)`. -/
     have h := exp_add_smul Ab s ((k : ℝ) * T)
     rw [show s + (k : ℝ) * T = t by simp only [s]; ring] at h
     exact h
-  obtain ⟨-, hbs⟩ := exp_smul_bounds hAb hs0 (hsT.trans hT.2)
+  have hbs := norm_exp_smul_sub_one_le_of_norm_le hAb hs0 (hsT.trans hT.2)
   have hkexp : ‖NormedSpace.exp (((k : ℝ) * T) • Ab)‖ ≤ Real.exp (a * L) :=
     (norm_exp_smul_le Ab (by positivity)).trans
       (Real.exp_le_exp.mpr (by nlinarith [norm_nonneg Ab, mul_nonneg (Nat.cast_nonneg k) hT0.le]))

@@ -30,7 +30,8 @@ references/gfm-driven-gfl-parametric-resonance/notes/concepts/coupled-parametric
 (`Φ' = J Φ`, `Φ(0) = I`).
 
 Results.
-* `transition_spec`, `transition_unique`, `trajectory_eq` — existence; every forward matrix or
+* `transition_self`, `isIntegralCurveOn_transition`, `transition_unique`, `trajectory_eq` —
+  existence (`Φ(s, s) = I`, `Φ(·, s)` solves `Ẏ = A(t) Y` on `[s, ∞)`); every forward matrix or
   vector solution is `Φ(t, s) C`, resp. `Φ(t, s) x(s)`.
 * `transition_trans` — `Φ(t, s) Φ(s, τ) = Φ(t, τ)` for `τ ≤ s ≤ t`.
 * `norm_transition_le` — `‖Φ(t, s)‖ ≤ ‖I‖ e^{M (t - s)}` (Grönwall).
@@ -97,9 +98,9 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 
 /-! ## Existence and uniqueness -/
 
-@[tmio T, powerlib_foundation] theorem transition_spec (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
-    (s : ℝ) :
-    transition A s s = 1 ∧ IsIntegralCurveOn (fun t => transition A t s) (matField A) (Ici s) := by
+/-- `Φ(s, s) = I`: the chosen forward solution starts at the identity. -/
+@[tmio T, powerlib_foundation] theorem transition_self (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+    (s : ℝ) : transition A s s = 1 := by
   have hex : ∃ Y : ℝ → Matrix X X ℝ, Y s = 1 ∧ IsIntegralCurveOn Y (matField A) (Ici s) := by
     obtain ⟨Y, h0, hY, -⟩ := _root_.exists_isIntegralCurveOn_Ici
       (f := matField A) ((hA.comp continuous_fst).mul continuous_snd) (matField_lipschitz hM) s
@@ -109,22 +110,32 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
     funext t
     unfold transition
     simp only [hex, ↓reduceDIte]
-  refine ⟨?_, ?_⟩
-  · rw [show transition A s s = hex.choose s from congrFun hdef s]
-    exact hex.choose_spec.1
-  · rw [hdef]
-    exact hex.choose_spec.2
+  rw [show transition A s s = hex.choose s from congrFun hdef s]
+  exact hex.choose_spec.1
 
-@[tmio T, powerlib_foundation] theorem transition_self (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
-    (s : ℝ) : transition A s s = 1 :=
-  (transition_spec hA hM s).1
+/-- `Φ(·, s)` solves the matrix equation `Ẏ = A(t) Y` on `[s, ∞)`. -/
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_transition (hA : Continuous A)
+    (hM : ∀ t, ‖A t‖ ≤ M) (s : ℝ) :
+    IsIntegralCurveOn (fun t => transition A t s) (matField A) (Ici s) := by
+  have hex : ∃ Y : ℝ → Matrix X X ℝ, Y s = 1 ∧ IsIntegralCurveOn Y (matField A) (Ici s) := by
+    obtain ⟨Y, h0, hY, -⟩ := _root_.exists_isIntegralCurveOn_Ici
+      (f := matField A) ((hA.comp continuous_fst).mul continuous_snd) (matField_lipschitz hM) s
+      (1 : Matrix X X ℝ)
+    exact ⟨Y, h0, hY⟩
+  have hdef : (fun t => transition A t s) = hex.choose := by
+    funext t
+    unfold transition
+    simp only [hex, ↓reduceDIte]
+  rw [hdef]
+  exact hex.choose_spec.2
 
 /-- Every forward matrix solution of `Ẏ = A(t) Y` with `Y(s) = C` is `Φ(t, s) C`. -/
 @[tmio T, powerlib_foundation] theorem transition_unique (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {s : ℝ} {Y : ℝ → Matrix X X ℝ} (hY : IsIntegralCurveOn Y (matField A) (Ici s)) :
     ∀ t, s ≤ t → Y t = transition A t s * Y s := by
   intro t hst
-  obtain ⟨h1, hΦ⟩ := transition_spec hA hM s
+  have h1 := transition_self hA hM s
+  have hΦ := isIntegralCurveOn_transition hA hM s
   have hZ : IsIntegralCurveOn (fun r => transition A r s * Y s) (matField A) (Ici s) := by
     intro r hr
     have h := (hΦ r hr).mul_const (Y s)
@@ -139,7 +150,8 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
     {s : ℝ} {x : ℝ → X → ℝ} (hx : IsIntegralCurveOn x (vecField A) (Ici s)) :
     ∀ t, s ≤ t → x t = transition A t s *ᵥ x s := by
   intro t hst
-  obtain ⟨h1, hΦ⟩ := transition_spec hA hM s
+  have h1 := transition_self hA hM s
+  have hΦ := isIntegralCurveOn_transition hA hM s
   let L : Matrix X X ℝ →L[ℝ] (X → ℝ) :=
     LinearMap.toContinuousLinearMap
       { toFun := fun N => N *ᵥ x s
@@ -160,14 +172,15 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 @[tmio T, powerlib_foundation] theorem transition_trans (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {τ s t : ℝ} (hτs : τ ≤ s) (hst : s ≤ t) :
     transition A t s * transition A s τ = transition A t τ := by
-  have hY := (transition_spec hA hM τ).2.mono (Ici_subset_Ici.mpr hτs)
+  have hY := (isIntegralCurveOn_transition hA hM τ).mono (Ici_subset_Ici.mpr hτs)
   exact (transition_unique hA hM hY t hst).symm
 
 /-- Grönwall bound `‖Φ(t, s)‖ ≤ ‖I‖ e^{M (t - s)}`. -/
 @[tmio T, powerlib_foundation] theorem norm_transition_le (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {s t : ℝ} (hst : s ≤ t) :
     ‖transition A t s‖ ≤ ‖(1 : Matrix X X ℝ)‖ * Real.exp (Real.toNNReal M * (t - s)) := by
-  obtain ⟨h1, hΦ⟩ := transition_spec hA hM s
+  have h1 := transition_self hA hM s
+  have hΦ := isIntegralCurveOn_transition hA hM s
   have h0 : IsIntegralCurveOn (fun _ => (0 : Matrix X X ℝ)) (matField A) (Icc s t) := by
     intro r _
     simpa [matField] using (hasDerivWithinAt_const r (Icc s t) (0 : Matrix X X ℝ))
@@ -181,7 +194,8 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 @[tmio T, powerlib_foundation] theorem transition_add_period (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     {T : ℝ} (hP : Periodic A T) {s t : ℝ} (hst : s ≤ t) :
     transition A (t + T) (s + T) = transition A t s := by
-  obtain ⟨h1, hΦ⟩ := transition_spec hA hM (s + T)
+  have h1 := transition_self hA hM (s + T)
+  have hΦ := isIntegralCurveOn_transition hA hM (s + T)
   have hY : IsIntegralCurveOn (fun r => transition A (r + T) (s + T)) (matField A) (Ici s) := by
     intro r hr
     have hmaps : MapsTo (fun r : ℝ => r + T) (Ici s) (Ici (s + T)) :=

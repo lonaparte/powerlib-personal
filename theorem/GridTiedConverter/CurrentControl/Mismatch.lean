@@ -202,7 +202,7 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
   obtain ⟨d, hd⟩ := IsAlgClosed.exists_eq_mul_self (discrim (1 : ℂ) (⟨a, b⟩ : ℂ) (c : ℂ))
   obtain ⟨s, hs⟩ := exists_quadratic_eq_zero (one_ne_zero) ⟨d, hd⟩
   have hs' : s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0 := by linear_combination hs
-  obtain ⟨-, -, hs₂⟩ := Criteria.quadratic_partner hs'
+  have hs₂ := Criteria.quadratic_partner hs'
   have hsum : s.re + (-(⟨a, b⟩ : ℂ) - s).re = -a := by simp
   by_cases hpos : 0 < s.re
   · exact ⟨s, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ (eigenvector_ne_zero s)

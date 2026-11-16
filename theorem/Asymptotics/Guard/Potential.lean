@@ -42,7 +42,8 @@ Results.
 * `lifetime_ratio` — lifetime sensitivity: for `T(α) = c α⁻² e^{α²/(4 l D)}` and
   `X = α²/(4 l D)`, `T(α(1+ε))/T(α) = e^{X[(1+ε)²−1]}/(1+ε)²`; at `X = 10`, `ε = 0.1` it lies
   in `(6.74, 6.76)`, versus `8.16 < e^{2.1} < 8.17` for the exponential factor alone
-  (`lifetime_ratio_num`, `exp_tenth_bounds`, `exp_two_point_one_bounds`).
+  (`lifetime_ratio_num_gt`, `lifetime_ratio_num_lt`, `lifetime_exp_factor_num_gt`,
+  `exp_tenth_gt`, `exp_tenth_lt`, `exp_two_point_one_gt`, `exp_two_point_one_lt`).
 -/
 
 noncomputable section
@@ -207,39 +208,66 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   rw [h1]
   field_simp
 
-/-- `e^{0.1}` to four decimals (Taylor bound, Mathlib `Real.exp_bound`). -/
-@[tmio T, powerlib_foundation] theorem exp_tenth_bounds :
-    1.1047 < exp (0.1 : ℝ) ∧ exp (0.1 : ℝ) < 1.1053 := by
+/-- Lower bound `1.1047 < e^{0.1}` (Taylor bound, Mathlib `Real.exp_bound`). -/
+@[tmio T, powerlib_foundation] theorem exp_tenth_gt : 1.1047 < exp (0.1 : ℝ) := by
   have h := Real.exp_bound (x := (0.1 : ℝ)) (by norm_num [abs_of_pos]) (n := 3) (by norm_num)
   rw [abs_le] at h
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial] at h
   norm_num [abs_of_pos] at h
-  constructor <;> linarith [h.1, h.2]
+  linarith [h.1, h.2]
 
-@[tmio T, powerlib_foundation] theorem exp_two_point_one_bounds :
-    8.16 < exp (2.1 : ℝ) ∧ exp (2.1 : ℝ) < 8.17 := by
+/-- Upper bound `e^{0.1} < 1.1053` (Taylor bound, Mathlib `Real.exp_bound`). -/
+@[tmio T, powerlib_foundation] theorem exp_tenth_lt : exp (0.1 : ℝ) < 1.1053 := by
+  have h := Real.exp_bound (x := (0.1 : ℝ)) (by norm_num [abs_of_pos]) (n := 3) (by norm_num)
+  rw [abs_le] at h
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial] at h
+  norm_num [abs_of_pos] at h
+  linarith [h.1, h.2]
+
+/-- Lower bound `8.16 < e^{2.1}`, from `e^{2.1} = e · e · e^{0.1}`. -/
+@[tmio T, powerlib_foundation] theorem exp_two_point_one_gt : 8.16 < exp (2.1 : ℝ) := by
   have e : exp (2.1 : ℝ) = exp 1 * exp 1 * exp 0.1 := by
     rw [← exp_add, ← exp_add]; norm_num
-  obtain ⟨l1, u1⟩ := exp_tenth_bounds
+  have l1 := exp_tenth_gt
   have l0 := Real.exp_one_gt_d9
+  have p0 : 0 < exp (1 : ℝ) := exp_pos 1
+  rw [e]
+  nlinarith [mul_pos p0 p0, mul_lt_mul'' l0 l0 (by norm_num) (by norm_num)]
+
+/-- Upper bound `e^{2.1} < 8.17`, from `e^{2.1} = e · e · e^{0.1}`. -/
+@[tmio T, powerlib_foundation] theorem exp_two_point_one_lt : exp (2.1 : ℝ) < 8.17 := by
+  have e : exp (2.1 : ℝ) = exp 1 * exp 1 * exp 0.1 := by
+    rw [← exp_add, ← exp_add]; norm_num
+  have u1 := exp_tenth_lt
   have u0 := Real.exp_one_lt_d9
   have p0 : 0 < exp (1 : ℝ) := exp_pos 1
   rw [e]
-  constructor <;> nlinarith [mul_pos p0 p0, mul_lt_mul'' l0 l0 (by norm_num) (by norm_num),
-    mul_lt_mul'' u0 u0 (by positivity) (by positivity)]
+  nlinarith [mul_pos p0 p0, mul_lt_mul'' u0 u0 (by positivity) (by positivity)]
 
-/-- **Numeric check (§1.6)**: at `X = 10`, `ε = 0.1` the ratio `e^{10·0.21}/1.21` lies in
-`(6.74, 6.76)` (the note's closed form `6.75`), while the exponential factor alone exceeds
-`8.16`. -/
-@[tmio T, powerlib_foundation] theorem lifetime_ratio_num :
-    6.74 < exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) / (1 + 0.1) ^ 2 ∧
-      exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) / (1 + 0.1) ^ 2 < 6.76 ∧
-      8.16 < exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) := by
+/-- **Numeric check (§1.6)**: at `X = 10`, `ε = 0.1` the ratio `e^{10·0.21}/1.21` exceeds `6.74`
+(the note's closed form `6.75`). -/
+@[tmio T, powerlib_foundation] theorem lifetime_ratio_num_gt :
+    6.74 < exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) / (1 + 0.1) ^ 2 := by
   have e : (10 : ℝ) * ((1 + 0.1) ^ 2 - 1) = 2.1 := by norm_num
   rw [e]
-  obtain ⟨l, u⟩ := exp_two_point_one_bounds
-  refine ⟨?_, ?_, l⟩
-  · rw [lt_div_iff₀ (by norm_num)]; nlinarith
-  · rw [div_lt_iff₀ (by norm_num)]; nlinarith
+  have l := exp_two_point_one_gt
+  rw [lt_div_iff₀ (by norm_num)]; nlinarith
+
+/-- **Numeric check (§1.6)**: at `X = 10`, `ε = 0.1` the ratio `e^{10·0.21}/1.21` is below `6.76`
+(the note's closed form `6.75`). -/
+@[tmio T, powerlib_foundation] theorem lifetime_ratio_num_lt :
+    exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) / (1 + 0.1) ^ 2 < 6.76 := by
+  have e : (10 : ℝ) * ((1 + 0.1) ^ 2 - 1) = 2.1 := by norm_num
+  rw [e]
+  have u := exp_two_point_one_lt
+  rw [div_lt_iff₀ (by norm_num)]; nlinarith
+
+/-- **Numeric check (§1.6)**: at `X = 10`, `ε = 0.1` the exponential factor `e^{10·0.21}` alone
+exceeds `8.16`. -/
+@[tmio T, powerlib_foundation] theorem lifetime_exp_factor_num_gt :
+    8.16 < exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) := by
+  have e : (10 : ℝ) * ((1 + 0.1) ^ 2 - 1) = 2.1 := by norm_num
+  rw [e]
+  exact exp_two_point_one_gt
 
 end powerlib.Asymptotics.Guard

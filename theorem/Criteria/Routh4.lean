@@ -20,8 +20,8 @@ Results.
   negative real part **iff** `0 < a3`, `0 < a1`, `0 < a0` and
   `a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1` (`quartic_hurwitz_iff`). These are the Routh-array
   conditions; the remaining classical conditions `0 < a2` and `a1 < a3 * a2` follow from them
-  (`quartic_routh_consequences`). Sufficient direction: `quartic_roots_re_neg_of`; necessary
-  direction: `quartic_routh_of_roots_re_neg`.
+  (`quartic_routh_a2_pos`, `quartic_routh_a1_lt`). Sufficient direction:
+  `quartic_roots_re_neg_of`; necessary direction: `quartic_routh_of_roots_re_neg`.
 * Factorization: every monic real quartic is a product of two monic real quadratics
   (`quartic_factor_quadratics`, from the fundamental theorem of algebra `Complex.exists_root`
   and the real cubic root `exists_cubic_real_root`), and the third Hurwitz determinant of such
@@ -88,14 +88,18 @@ section Quartic
     Complex.zero_im] at hr hi
   exact ⟨by linear_combination hr, by linear_combination hi⟩
 
-/-- The two classical Routh conditions implied by the minimal set. -/
-@[tmio T, powerlib_foundation] theorem quartic_routh_consequences {a3 a2 a1 a0 : ℝ} (h3 : 0 < a3)
+/-- The classical Routh condition `a1 < a3 * a2`, implied by the minimal set. -/
+@[tmio T, powerlib_foundation] theorem quartic_routh_a1_lt {a3 a2 a1 a0 : ℝ} (h3 : 0 < a3)
     (h1 : 0 < a1) (h0 : 0 < a0) (hg : a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1) :
-    0 < a2 ∧ a1 < a3 * a2 := by
+    a1 < a3 * a2 := by
   have hpos : 0 < a3 ^ 2 * a0 := by positivity
   have hlt : a1 * a1 < a1 * (a3 * a2) := by nlinarith
-  have h32 : a1 < a3 * a2 := lt_of_mul_lt_mul_left hlt h1.le
-  refine ⟨?_, h32⟩
+  exact lt_of_mul_lt_mul_left hlt h1.le
+
+/-- The classical Routh condition `0 < a2`, implied by the minimal set. -/
+@[tmio T, powerlib_foundation] theorem quartic_routh_a2_pos {a3 a2 a1 a0 : ℝ} (h3 : 0 < a3)
+    (h1 : 0 < a1) (h0 : 0 < a0) (hg : a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1) : 0 < a2 := by
+  have h32 : a1 < a3 * a2 := quartic_routh_a1_lt h3 h1 h0 hg
   by_contra h2
   push Not at h2
   nlinarith
@@ -105,7 +109,7 @@ section Quartic
     (h1 : 0 < a1) (h0 : 0 < a0) (hg : a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1) (s : ℂ)
     (hs : s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
     s.re < 0 := by
-  obtain ⟨h2, -⟩ := quartic_routh_consequences h3 h1 h0 hg
+  have h2 := quartic_routh_a2_pos h3 h1 h0 hg
   obtain ⟨hr, hi⟩ := quartic_root_re_im hs
   set x := s.re
   set y := s.im

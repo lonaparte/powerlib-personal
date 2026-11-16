@@ -165,12 +165,11 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
   rw [this]
   exact ((h2.sub (h1.const_mul _)).add (integrable_const _)).const_mul _
 
-@[tmio T, powerlib_foundation] private theorem gaussian_moments :
-    Integrable (fun x => x) (gaussianReal μ v) ∧ Integrable (fun x => x ^ 2) (gaussianReal μ v) ∧
-      ∫ x, x ∂gaussianReal μ v = μ ∧ ∫ x, x ^ 2 ∂gaussianReal μ v = μ ^ 2 + v := by
+/-- Second moment of `N(μ, v)`: `∫ x² = μ² + v` (from the variance; the integrability of `x`,
+`x²` and the mean are Mathlib's `memLp_id_gaussianReal`, `integral_id_gaussianReal`). -/
+@[tmio T, powerlib_foundation] private theorem integral_sq_gaussianReal :
+    ∫ x, x ^ 2 ∂gaussianReal μ v = μ ^ 2 + v := by
   have hL2 : MemLp (fun x : ℝ => x) 2 (gaussianReal μ v) := memLp_id_gaussianReal 2
-  refine ⟨(memLp_id_gaussianReal 1).integrable le_rfl, hL2.integrable_sq,
-    integral_id_gaussianReal, ?_⟩
   have h := variance_eq_sub hL2
   rw [variance_fun_id_gaussianReal, integral_id_gaussianReal] at h
   simp only [Pi.pow_apply] at h
@@ -180,7 +179,12 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
 entropy is `(1/2) + log √(2πv) = (1/2) log (2πe v)`. -/
 @[tmio T, powerlib_foundation] theorem relEntropy_gaussianReal (hv : v ≠ 0) :
     relEntropy (gaussianReal μ v) volume = -(1 / 2) - log √(2 * π * v) := by
-  obtain ⟨h1, h2, hm, hs⟩ := gaussian_moments (μ := μ) (v := v)
+  have h1 : Integrable (fun x => x) (gaussianReal μ v) :=
+    (memLp_id_gaussianReal 1).integrable le_rfl
+  have h2 : Integrable (fun x => x ^ 2) (gaussianReal μ v) :=
+    (memLp_id_gaussianReal 2).integrable_sq
+  have hm : ∫ x, x ∂gaussianReal μ v = μ := integral_id_gaussianReal
+  have hs := integral_sq_gaussianReal (μ := μ) (v := v)
   have hvpos : (0 : ℝ) < v := lt_of_le_of_ne v.2 (by simpa [eq_comm] using hv)
   have hq := integrable_gaussTilt (μ := μ) (v := v) h1 h2
   rw [← tilted_gaussTilt hv] at hq ⊢
@@ -198,7 +202,12 @@ entropy, and it is the unique maximiser. -/
     (hmean : ∫ x, x ∂p = μ) (hsec : ∫ x, x ^ 2 ∂p = μ ^ 2 + v) :
     relEntropy (gaussianReal μ v) volume ≤ relEntropy p volume ∧
       (relEntropy p volume = relEntropy (gaussianReal μ v) volume ↔ p = gaussianReal μ v) := by
-  obtain ⟨g1, g2, gm, gs⟩ := gaussian_moments (μ := μ) (v := v)
+  have g1 : Integrable (fun x => x) (gaussianReal μ v) :=
+    (memLp_id_gaussianReal 1).integrable le_rfl
+  have g2 : Integrable (fun x => x ^ 2) (gaussianReal μ v) :=
+    (memLp_id_gaussianReal 2).integrable_sq
+  have gm : ∫ x, x ∂gaussianReal μ v = μ := integral_id_gaussianReal
+  have gs := integral_sq_gaussianReal (μ := μ) (v := v)
   have hgq : Integrable (gaussTilt μ v) ((volume : Measure ℝ).tilted (gaussTilt μ v)) := by
     rw [tilted_gaussTilt hv]; exact integrable_gaussTilt g1 g2
   have hmom : ∫ x, gaussTilt μ v x ∂p =

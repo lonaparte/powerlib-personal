@@ -65,8 +65,9 @@ Searched and not found (Rules §15): Mathlib and LeanForControl have no LaSalle 
 invariant manifold or modulo a period, no ω-limit result for non-compact sublevel sets, no angle
 lift for ODE solutions on the circle, and no set-attraction transfer through a reduction.
 Reused: LeanForControl `antitoneOn_V_comp_traj`, `IsPositivelyInvariant`, `LieDerivZeroSet`;
-this library's `lasalle_invariance_principle_of_contDiff`, `exists_globalization`
-(`theorem/Dynamics/LaSalle/Basin.lean`), `Flow.forwardComplete_of_lipschitzWith`; Mathlib
+this library's `lasalle_invariance_principle_of_contDiff`, `exists_globalization`,
+`isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant` (`theorem/Dynamics/LaSalle/Basin.lean`),
+`Flow.forwardComplete_of_lipschitzWith`; Mathlib
 `Real.mul_le_sin`, `Real.sin_sub_int_mul_pi`, `intermediate_value_Icc`, `Complex.cos_arg`,
 `Continuous.integral_hasStrictDerivAt`, `constant_of_has_deriv_right_zero`,
 `Continuous.tendsto_nhdsSet_nhds`.
@@ -157,9 +158,10 @@ converges to every set `M` that contains the positively invariant subsets of
     (hinv : IsPositivelyInvariant Ω g) {y₀ : State m} (hy₀ : y₀ ∈ Ω) :
     ∃ ψ : ℝ → State m, ψ 0 = y₀ ∧ IsIntegralCurveOn ψ (fun _ y => g y) (Ici 0) ∧
       ∀ t, 0 ≤ t → ψ t ∈ Ω := by
-  obtain ⟨g', -, ⟨K, hlip⟩, -, -, -, -, hgf⟩ := exists_globalization hg hΩ hinv
+  obtain ⟨g', -, ⟨K, hlip⟩, hg'g, hinv'⟩ := exists_globalization hg hΩ hinv
   obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hlip 0 y₀
-  have hψ' := hgf hψ (hψ0 ▸ hy₀)
+  have hψ' := isIntegralCurveOn_of_eqOn_of_isPositivelyInvariant (fun y hy => (hg'g y hy).symm)
+    hinv' hψ (hψ0 ▸ hy₀)
   exact ⟨ψ, hψ0, hψ', fun t ht =>
     hinv 0 t ψ (hψ'.mono Icc_subset_Ici_self) (hψ0 ▸ hy₀) t ⟨ht, le_rfl⟩⟩
 

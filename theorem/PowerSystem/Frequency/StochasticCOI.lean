@@ -29,7 +29,8 @@ Source: work-sync `theory/T-frequency-stability-stochastic.md` §1.3 (linearizat
 
 Results.
 * `swingCov_solves`, `swingCov_unique`: for `M, D, k > 0` the unique solution of (1.7) is
-  `p₁₂ = 0`, `p₂₂ = s²/(2MD)`, `p₁₁ = s²/(2Dk)` with `s² = σ_ω² + σ_v²` ((1.8), (1.9));
+  `p₁₂ = 0`, `p₂₂ = s²/(2MD)`, `p₁₁ = s²/(2Dk)` with `s² = σ_ω² + σ_v²` ((1.8), (1.9); entries
+  `swingCov_zero_one`, `swingCov_one_zero`, `swingCov_one_one`, `swingCov_zero_zero`);
   `swingCov_angle_eq`: `Var δ̃ = Var ω̃ / ω_n²`.
 * `swing_cov_tendsto`, `swing_mean_tendsto`: every solution of the moment ODEs converges to
   `(0, P∞)`.
@@ -127,10 +128,24 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   solvesCovLyapunov_unique (swingA_isHurwitz hM hD hk) hP
     (swingCov_solves hM.ne' hD.ne' hk.ne' sω sv)
 
-/-- Entries of the stationary covariance: `p₁₂ = 0`, `Var ω̃ = s²/(2MD)`, `Var δ̃ = s²/(2Dk)`. -/
-@[tmio M, powerlib_domain] theorem swingCov_entries (M D k s2 : ℝ) :
-    swingCov M D k s2 0 1 = 0 ∧ swingCov M D k s2 1 0 = 0 ∧
-      swingCov M D k s2 1 1 = s2 / (2 * M * D) ∧ swingCov M D k s2 0 0 = s2 / (2 * D * k) := by
+/-- Entry of the stationary covariance: the angle–speed covariance vanishes, `p₁₂ = 0`. -/
+@[tmio M, powerlib_domain] theorem swingCov_zero_one (M D k s2 : ℝ) :
+    swingCov M D k s2 0 1 = 0 := by
+  simp [swingCov]
+
+/-- Entry of the stationary covariance: the speed–angle covariance vanishes, `p₂₁ = 0`. -/
+@[tmio M, powerlib_domain] theorem swingCov_one_zero (M D k s2 : ℝ) :
+    swingCov M D k s2 1 0 = 0 := by
+  simp [swingCov]
+
+/-- Entry of the stationary covariance: `Var ω̃ = s²/(2MD)`. -/
+@[tmio M, powerlib_domain] theorem swingCov_one_one (M D k s2 : ℝ) :
+    swingCov M D k s2 1 1 = s2 / (2 * M * D) := by
+  simp [swingCov]
+
+/-- Entry of the stationary covariance: `Var δ̃ = s²/(2Dk)`. -/
+@[tmio M, powerlib_domain] theorem swingCov_zero_zero (M D k s2 : ℝ) :
+    swingCov M D k s2 0 0 = s2 / (2 * D * k) := by
   simp [swingCov]
 
 /-- `Var δ̃ = Var ω̃ / ω_n²`, `ω_n² = k/M` ((1.9)). -/

@@ -98,13 +98,23 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
   rw [div_eq_iff hS, hopfCoord_apply_zero, hopfCoord_apply_one, hopfCoord_apply_two]
   ring
 
-/-- Components of the translated field. -/
-@[tmio M, powerlib_domain] private theorem field_apply (m : Model) (z : State 3) :
-    m.field z 0 = z 1 ∧ m.field z 1 = (-z 2 - m.g.D * z 1) / m.g.M ∧
-      m.field z 2 = m.g.ωc * (m.g.K0 * Real.sin (z 0 + m.δ) - z 2 - m.g.P0) := by
-  simp only [Model.field, VSMLPF.field_apply_zero, VSMLPF.field_apply_one, VSMLPF.field_apply_two,
-    PiLp.add_apply, Model.point, mk3_zero, mk3_one, mk3_two]
-  exact ⟨by ring, by ring, by ring⟩
+/-- Angle component of the translated field: `δ̇ = ω`. -/
+@[tmio M, powerlib_domain] private theorem model_field_zero (m : Model) (z : State 3) :
+    m.field z 0 = z 1 := by
+  simp only [Model.field, VSMLPF.field_apply_zero, PiLp.add_apply, Model.point, mk3_one]
+  ring
+
+/-- Speed component of the translated field: `M ω̇ = −(P_f − P₀) − D ω`. -/
+@[tmio M, powerlib_domain] private theorem model_field_one (m : Model) (z : State 3) :
+    m.field z 1 = (-z 2 - m.g.D * z 1) / m.g.M := by
+  simp only [Model.field, VSMLPF.field_apply_one, PiLp.add_apply, Model.point, mk3_one, mk3_two]
+  ring
+
+/-- Filter component of the translated field: `Ṗ_f = ω_c (K₀ sin(z₀ + δ*) − P_f)`. -/
+@[tmio M, powerlib_domain] private theorem model_field_two (m : Model) (z : State 3) :
+    m.field z 2 = m.g.ωc * (m.g.K0 * Real.sin (z 0 + m.δ) - z 2 - m.g.P0) := by
+  simp only [Model.field, VSMLPF.field_apply_two, PiLp.add_apply, Model.point, mk3_zero, mk3_two]
+  ring
 
 /-- At a balanced angle the restoring power is `K₀ sin(x + δ*) − P₀ = K sin x + P₀ (cos x − 1)`. -/
 @[tmio M, powerlib_domain] private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x : ℝ) :
@@ -137,7 +147,9 @@ rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is no
     intro z; simp [hS]
   have hSlie : ∀ z : State 3, S (m.field z) = m.g.ωc * m.g.P0 * (1 - Real.cos (z 0)) := by
     intro z
-    obtain ⟨f0, f1, f2⟩ := field_apply m z
+    have f0 := model_field_zero m z
+    have f1 := model_field_one m z
+    have f2 := model_field_two m z
     have hs : m.g.K0 * Real.sin (z 0 + m.δ) = m.g.P0 * (Real.cos (z 0) - 1) + m.g.P0 := by
       have hr := restoring m hb (z 0)
       rw [hK, zero_mul, zero_add] at hr
@@ -208,11 +220,13 @@ every load. -/
     (H := m.g.D * m.g.ωc / m.g.M) (lam := m.g.ωc + m.g.D / m.g.M)
     (g2 := -(m.g.ωc / m.g.M * m.g.P0) / 2) (g3 := -(m.g.ωc / m.g.M * m.K) / 6)
     hC hT (by positivity) (by positivity) (fun z => ?_) (fun z => ?_) (fun z => ?_) ?_ ?_
-  · obtain ⟨f0, f1, -⟩ := field_apply m z
+  · have f0 := model_field_zero m z
+    have f1 := model_field_one m z
     rw [hopfCoord_apply_zero, hopfCoord_apply_one, f0, f1]
     field_simp
     ring
-  · obtain ⟨-, f1, f2⟩ := field_apply m z
+  · have f1 := model_field_one m z
+    have f2 := model_field_two m z
     have hs : m.g.K0 * Real.sin (z 0 + m.δ) =
         m.K * Real.sin (z 0) + m.g.P0 * (Real.cos (z 0) - 1) + m.g.P0 := by
       linarith [restoring m hb (z 0)]
@@ -221,7 +235,9 @@ every load. -/
     rw [hopfCoord_apply_one, hopfCoord_apply_zero, f1, f2, hs, hK]
     field_simp
     ring
-  · obtain ⟨f0, f1, f2⟩ := field_apply m z
+  · have f0 := model_field_zero m z
+    have f1 := model_field_one m z
+    have f2 := model_field_two m z
     have hs : m.g.K0 * Real.sin (z 0 + m.δ) =
         m.K * Real.sin (z 0) + m.g.P0 * (Real.cos (z 0) - 1) + m.g.P0 := by
       linarith [restoring m hb (z 0)]

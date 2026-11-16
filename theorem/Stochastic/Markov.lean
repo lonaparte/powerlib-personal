@@ -46,8 +46,9 @@ Corrections.
 * §1.2: "Markov ⇔ semigroup relation" is too strong: the Markov property only gives
   Chapman–Kolmogorov `P_{X_s}`-a.e. (`chapmanKolmogorov_ae`), and the converse direction
   (semigroup ⇒ Markov) is false: it is refuted by Feller's three-step example
-  `semigroup_not_markov` in `theorem/Stochastic/MarkovForms.lean` (transition kernels forming a
-  Chapman–Kolmogorov semigroup, process not Markov).
+  `unifKernel_comp`, `feller_transition`, `feller_not_markov` in
+  `theorem/Stochastic/MarkovForms.lean` (transition kernels forming a Chapman–Kolmogorov
+  semigroup, process not Markov).
 -/
 
 noncomputable section

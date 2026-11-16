@@ -21,8 +21,9 @@ Results.
   (`isIntegralCurveOn_piPLLVelocityCoord`, `isIntegralCurveOn_piPLLVelocityCoordInv`).
   The constant offset `δω` disappears from the Liénard form.
 * At a zero `θ*` of `h` with `h'(θ*) = 0` (the degenerate case of
-  `piPLL_jacobian_nilpotent_of_deriv_zero`) the equilibrium is `(θ*, 0)` in `(θ, w)`, the
-  Jacobian of the Liénard field is the Jordan block `[[0, 1], [0, 0]]`, and the second component
+  `fderiv_piPLLField`, `piPLLJacobian_zero_ne_zero`, `piPLLJacobian_zero_sq`) the equilibrium is
+  `(θ*, 0)` in `(θ, w)`, the Jacobian of the Liénard field is the Jordan block
+  `[[0, 1], [0, 0]]`, and the second component
   `F(u, w) = K_i h(θ* + u) + K_p h'(θ* + u) w` has, exactly,
   `F_uu(0,0) = b₂₀ = K_i h''(θ*)`, `F_uw(0,0) = b₁₁ = K_p h''(θ*)`, `F_ww = b₀₂ = 0`
   (`bt_b20`, `bt_b11`, `bt_b02`). With the first equation exactly `u̇ = w`, the quadratic

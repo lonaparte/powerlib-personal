@@ -38,8 +38,9 @@ Results.
 * `hasDerivAt_ltvCov`, `ltvCov_self`, `ltvCov_unique` — **LTV prediction covariance**:
   `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` (`ltvCov`) solves
   `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`, and is its only differentiable solution.
-* `lti_cov_integral_form` — constant `A`, continuous `Q(t)`, no Hurwitz assumption:
-  `P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ`.
+* `lti_cov_self`, `hasDerivAt_lti_cov`, `lti_cov_unique` — constant `A`, continuous `Q(t)`, no
+  Hurwitz assumption: `P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ`
+  is the unique solution.
 * `ltvCov_posSemidef` — `P₀ ⪰ 0`, `Q ⪰ 0`, `t ≥ t₀` ⇒ `P(t) ⪰ 0`.
 * `riccati_joseph_form` — **integral representation of the Riccati solution**: a symmetric
   solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` equals
@@ -282,24 +283,37 @@ section Constant
     NormedSpace.exp ((s - s) • A) = 1 := by
   simp [NormedSpace.exp_zero]
 
-/-- **Prediction covariance, constant `A`, integral form.**  For constant `A` and continuous
-`Q(t)` (no Hurwitz assumption and no algebraic solution `P∞` needed),
-`P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ` is the unique
-solution of `Ṗ = A P + P Aᵀ + Q(t)`, `P(t₀) = P₀`. -/
-@[tmio T, powerlib_foundation] theorem lti_cov_integral_form (A : Matrix (Fin n) (Fin n) ℝ)
+/-- **Prediction covariance, constant `A`, initial value.**  With `Φ(t, s) = e^{(t−s)A}`, the
+integral form `P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ`
+satisfies `P(t₀) = P₀`. -/
+@[tmio T, powerlib_foundation] theorem lti_cov_self (A : Matrix (Fin n) (Fin n) ℝ)
+    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (_hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
+    (t₀ : ℝ) : ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t₀ = P₀ :=
+  ltvCov_self _ (expFund_self A) Q P₀ t₀
+
+/-- **Prediction covariance, constant `A`, existence.**  For constant `A` and continuous `Q(t)`
+(no Hurwitz assumption and no algebraic solution `P∞` needed), the integral form
+`P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ` solves
+`Ṗ = A P + P Aᵀ + Q(t)`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_lti_cov (A : Matrix (Fin n) (Fin n) ℝ)
     {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
     (t₀ : ℝ) :
-    ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t₀ = P₀ ∧
-      (∀ t, HasDerivAt (ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀)
-        (A * ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t +
-          ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t * Aᵀ + Q t) t) ∧
-      ∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q t) t) →
-        P t₀ = P₀ → P = ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ :=
-  ⟨ltvCov_self _ (expFund_self A) Q P₀ t₀,
-    fun t => hasDerivAt_ltvCov (A := fun _ => A) continuous_const hQ (expFund_hasDerivAt A)
-      (expFund_self A) P₀ t₀ t,
-    fun _ hP h0 => ltvCov_unique (A := fun _ => A) continuous_const hQ (expFund_hasDerivAt A)
-      (expFund_self A) hP h0⟩
+    ∀ t, HasDerivAt (ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀)
+      (A * ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t +
+        ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t * Aᵀ + Q t) t :=
+  fun t => hasDerivAt_ltvCov (A := fun _ => A) continuous_const hQ (expFund_hasDerivAt A)
+    (expFund_self A) P₀ t₀ t
+
+/-- **Prediction covariance, constant `A`, uniqueness.**  For constant `A` and continuous `Q(t)`,
+every differentiable solution of `Ṗ = A P + P Aᵀ + Q(t)`, `P(t₀) = P₀` is the integral form
+`P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ`. -/
+@[tmio T, powerlib_foundation] theorem lti_cov_unique (A : Matrix (Fin n) (Fin n) ℝ)
+    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
+    (t₀ : ℝ) :
+    ∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q t) t) →
+      P t₀ = P₀ → P = ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ :=
+  fun _ hP h0 => ltvCov_unique (A := fun _ => A) continuous_const hQ (expFund_hasDerivAt A)
+    (expFund_self A) hP h0
 
 end Constant
 

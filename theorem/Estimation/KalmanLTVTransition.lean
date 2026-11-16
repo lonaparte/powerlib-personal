@@ -22,7 +22,8 @@ Results.
   theorem `hasDerivAt_stateTransitionMatrix` holds on open segments `(s, t₁)`; the anchor is
   shifted with `stateTransitionMatrix_comp`, `stateTransitionMatrix_comp_of_mem`,
   `stateTransitionMatrix_inv`); `Φ(s, s) = I` is upstream `stateTransitionMatrix_self`.
-* `ltv_cov_stateTransition` — **LTV prediction covariance**: for continuous `A(t)`, `Q(t)`,
+* `ltv_cov_stateTransition_self`, `hasDerivAt_ltv_cov_stateTransition`,
+  `ltv_cov_stateTransition_unique` — **LTV prediction covariance**: for continuous `A(t)`, `Q(t)`,
   `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` is the unique solution of
   `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`.
 * `riccati_joseph_form_stateTransition` — a symmetric Riccati solution equals its closed-loop
@@ -119,25 +120,40 @@ composition laws. -/
   rw [hfun, hcomp t, ← Matrix.mul_assoc]
   exact hda.mul_const _
 
-/-- **LTV prediction covariance with LeanForControl's state-transition matrix.**  For continuous
-`A(t)`, `Q(t)`, the matrix
+/-- **LTV prediction covariance with LeanForControl's state-transition matrix, initial value.**
+For continuous `A(t)`, `Q(t)`, the matrix
 `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
-state-transition matrix of `ẋ = A(t) x`, is the unique solution of
-`Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`. -/
-@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition (hA : Continuous A)
+state-transition matrix of `ẋ = A(t) x`, satisfies `P(t₀) = P₀`. -/
+@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition_self (_hA : Continuous A)
+    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (_hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
+    (t₀ : ℝ) :
+    ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t₀ = P₀ :=
+  ltvCov_self _ LinearSystems.stateTransitionMatrix_self Q P₀ t₀
+
+/-- **LTV prediction covariance with LeanForControl's state-transition matrix, existence.**
+For continuous `A(t)`, `Q(t)`, the matrix
+`P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
+state-transition matrix of `ẋ = A(t) x`, solves `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_ltv_cov_stateTransition (hA : Continuous A)
     {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
     (t₀ : ℝ) :
-    ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t₀ = P₀ ∧
-      (∀ t, HasDerivAt (ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀)
-        (A t * ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t +
-          ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t * (A t)ᵀ + Q t) t) ∧
-      ∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A t * P t + P t * (A t)ᵀ + Q t) t) →
-        P t₀ = P₀ → P = ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ :=
-  ⟨ltvCov_self _ LinearSystems.stateTransitionMatrix_self Q P₀ t₀,
-    fun t => hasDerivAt_ltvCov hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
-      P₀ t₀ t,
-    fun _ hP h0 => ltvCov_unique hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
-      hP h0⟩
+    ∀ t, HasDerivAt (ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀)
+      (A t * ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t +
+        ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t * (A t)ᵀ + Q t) t :=
+  fun t => hasDerivAt_ltvCov hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
+    P₀ t₀ t
+
+/-- **LTV prediction covariance with LeanForControl's state-transition matrix, uniqueness.**
+For continuous `A(t)`, `Q(t)`, every differentiable solution of `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`,
+`P(t₀) = P₀` is `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ`
+the Peano–Baker state-transition matrix of `ẋ = A(t) x`. -/
+@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition_unique (hA : Continuous A)
+    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
+    (t₀ : ℝ) :
+    ∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A t * P t + P t * (A t)ᵀ + Q t) t) →
+      P t₀ = P₀ → P = ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ :=
+  fun _ hP h0 => ltvCov_unique hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
+    hP h0
 
 variable {p : ℕ} {C : ℝ → Matrix (Fin p) (Fin n) ℝ} {Q : ℝ → Matrix (Fin n) (Fin n) ℝ}
   {R : ℝ → Matrix (Fin p) (Fin p) ℝ}

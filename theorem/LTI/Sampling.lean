@@ -57,7 +57,8 @@ Results.
   `(x(kT), ξ_k) = M^k (x(0), ξ_0)`.
 * `sampledLoop_exponentialDecay`: if `M` has spectral radius `< 1` there are `C, a > 0` with
   `‖x(t)‖ ≤ C e^{−at} (‖x(0)‖ + ‖ξ_0‖)` for every `t ≥ 0`, between samples included (uniform bounds
-  of `e^{sA}` and `Γ(s)` on `[0, T]`), and `‖ξ_k‖ ≤ C e^{−akT} (‖x(0)‖ + ‖ξ_0‖)`.
+  of `e^{sA}` and `Γ(s)` on `[0, T]`); `sampledLoop_controller_exponentialDecay`: likewise
+  `‖ξ_k‖ ≤ C e^{−akT} (‖x(0)‖ + ‖ξ_0‖)`.
 * `sampledLoop_exists_trajectory`: every initial state starts a sampled-data trajectory (explicit
   piecewise construction). `spectralRadius_lt_one_of_sampledLoop`: if every trajectory has
   `x(kT) → 0` and `ξ_k → 0`, then `M` has spectral radius `< 1` (Gelfand bound on a contractive
@@ -304,11 +305,11 @@ satisfies `(x(kT), ξ_k) = M^k (x(0), ξ_0)` with `M = sampledLoopMatrix`. -/
       abel
     · rw [add_comm]
 
-/-- **Lifted-matrix stability gives exponential decay of the sampled-data loop, between samples
-included.** If the lifted matrix `M` has spectral radius `< 1` (for `Fin`-indexed matrices this
-is `SchurStable`, `schurStable_iff_spectralRadius_lt_one`), there are `C, a > 0` such that every
-trajectory of the sampled-data loop satisfies `‖x(t)‖ ≤ C e^{−at} (‖x(0)‖ + ‖ξ_0‖)` for all
-`t ≥ 0` and `‖ξ_k‖ ≤ C e^{−a kT} (‖x(0)‖ + ‖ξ_0‖)`. -/
+/-- **Lifted-matrix stability gives exponential decay of the plant state of the sampled-data
+loop, between samples included.** If the lifted matrix `M` has spectral radius `< 1` (for
+`Fin`-indexed matrices this is `SchurStable`, `schurStable_iff_spectralRadius_lt_one`), there are
+`C, a > 0` such that every trajectory of the sampled-data loop satisfies
+`‖x(t)‖ ≤ C e^{−at} (‖x(0)‖ + ‖ξ_0‖)` for all `t ≥ 0`. -/
 @[tmio T, powerlib_foundation] theorem sampledLoop_exponentialDecay {T : ℝ} (hT : 0 < T)
     {A : Matrix X X ℝ} {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ}
     {Cc : Matrix U Z ℝ} {Dc : Matrix U X ℝ}
@@ -318,8 +319,7 @@ trajectory of the sampled-data loop satisfies `‖x(t)‖ ≤ C e^{−at} (‖x(
         (Icc (k * T) ((k + 1) * T))) →
       (∀ k : ℕ, ξ (k + 1) = Ac *ᵥ ξ k + Bc *ᵥ x (k * T)) →
       (∀ k : ℕ, u k = Cc *ᵥ ξ k + Dc *ᵥ x (k * T)) →
-      (∀ t : ℝ, 0 ≤ t → ‖x t‖ ≤ C * Real.exp (-(a * t)) * (‖x 0‖ + ‖ξ 0‖)) ∧
-      ∀ k : ℕ, ‖ξ k‖ ≤ C * Real.exp (-(a * (k * T))) * (‖x 0‖ + ‖ξ 0‖) := by
+      ∀ t : ℝ, 0 ≤ t → ‖x t‖ ≤ C * Real.exp (-(a * t)) * (‖x 0‖ + ‖ξ 0‖) := by
   set M := sampledLoopMatrix T A B Ac Bc Cc Dc
   obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one M hM
   obtain ⟨C₀, γ, hC₀, hγ, hpow⟩ := exists_pow_norm_le_exp hm hlt
@@ -342,62 +342,89 @@ trajectory of the sampled-data loop satisfies `‖x(t)‖ ≤ C e^{−at} (‖x(
           Matrix.linfty_opNorm_mulVec _ _
       _ ≤ C₀ * Real.exp (-(γ * k)) * N :=
           mul_le_mul (hpow k) (norm_sumElim_le _ _) (norm_nonneg _) (by positivity)
-  constructor
-  · intro t ht
-    set k := ⌊t / T⌋₊ with hkdef
-    have hk1 : (k : ℝ) * T ≤ t := by
-      have := Nat.floor_le (div_nonneg ht hT.le)
-      rwa [le_div_iff₀ hT] at this
-    have hk2 : t < ((k : ℝ) + 1) * T := by
-      have := Nat.lt_floor_add_one (t / T)
-      rwa [div_lt_iff₀ hT] at this
-    have hsol := zoh_solution (hx k) (t := t) ⟨hk1, hk2.le⟩
-    have hs : t - k * T ∈ Icc (0 : ℝ) T := ⟨by linarith, by linarith⟩
-    obtain ⟨hE, hG⟩ := hK _ hs
-    have hzk := hz k
-    have hxk : ‖x (k * T)‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_left _ _
-    have hξk : ‖ξ k‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_right _ _
-    have huk : ‖u k‖ ≤ (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
-      rw [hu k]
-      calc ‖Cc *ᵥ ξ k + Dc *ᵥ x (k * T)‖ ≤ ‖Cc‖ * ‖ξ k‖ + ‖Dc‖ * ‖x (k * T)‖ :=
-            (norm_add_le _ _).trans
-              (add_le_add (Matrix.linfty_opNorm_mulVec _ _) (Matrix.linfty_opNorm_mulVec _ _))
-        _ ≤ ‖Cc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ + ‖Dc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
-            gcongr
-        _ = (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by ring
-    have hxt : ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
-      rw [hsol]
-      calc ‖NormedSpace.exp ((t - k * T) • A) *ᵥ x (k * T) + zohGamma (t - k * T) A B *ᵥ u k‖
-          ≤ ‖NormedSpace.exp ((t - k * T) • A)‖ * ‖x (k * T)‖ +
-              ‖zohGamma (t - k * T) A B‖ * ‖u k‖ :=
-            (norm_add_le _ _).trans
-              (add_le_add (Matrix.linfty_opNorm_mulVec _ _) (Matrix.linfty_opNorm_mulVec _ _))
-        _ ≤ K * ‖Sum.elim (x (k * T)) (ξ k)‖ +
-              K * ((‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖) := by
-            gcongr
-        _ = K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by rw [hK']; ring
-    have hexp : Real.exp (-(γ * k)) ≤ Real.exp γ * Real.exp (-(γ / T * t)) := by
-      rw [← Real.exp_add]
-      apply Real.exp_le_exp.mpr
-      have h1 : t / T < k + 1 := by rw [div_lt_iff₀ hT]; linarith
-      have h2 : γ / T * t = γ * (t / T) := by ring
-      rw [h2]
-      nlinarith
-    have hP : 0 ≤ C₀ * Real.exp γ * Real.exp (-(γ / T * t)) * N := by positivity
-    have hQ : 0 ≤ Real.exp (-(γ / T * t)) * N := by positivity
-    calc ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := hxt
-      _ ≤ K' * (C₀ * Real.exp (-(γ * k)) * N) := mul_le_mul_of_nonneg_left hzk hK'0
-      _ ≤ K' * (C₀ * (Real.exp γ * Real.exp (-(γ / T * t))) * N) := by gcongr
-      _ ≤ ((K' + 1) * C₀ * Real.exp γ + 1) * Real.exp (-(γ / T * t)) * N := by
-          nlinarith
-  · intro k
-    have hξk : ‖ξ k‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_right _ _
-    have he : γ / T * ((k : ℝ) * T) = γ * k := by
-      have := hT.ne'
-      field_simp
-    rw [he]
-    calc ‖ξ k‖ ≤ C₀ * Real.exp (-(γ * k)) * N := hξk.trans (hz k)
-      _ ≤ ((K' + 1) * C₀ * Real.exp γ + 1) * Real.exp (-(γ * k)) * N := by gcongr
+  intro t ht
+  set k := ⌊t / T⌋₊ with hkdef
+  have hk1 : (k : ℝ) * T ≤ t := by
+    have := Nat.floor_le (div_nonneg ht hT.le)
+    rwa [le_div_iff₀ hT] at this
+  have hk2 : t < ((k : ℝ) + 1) * T := by
+    have := Nat.lt_floor_add_one (t / T)
+    rwa [div_lt_iff₀ hT] at this
+  have hsol := zoh_solution (hx k) (t := t) ⟨hk1, hk2.le⟩
+  have hs : t - k * T ∈ Icc (0 : ℝ) T := ⟨by linarith, by linarith⟩
+  obtain ⟨hE, hG⟩ := hK _ hs
+  have hzk := hz k
+  have hxk : ‖x (k * T)‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_left _ _
+  have hξk : ‖ξ k‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_right _ _
+  have huk : ‖u k‖ ≤ (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+    rw [hu k]
+    calc ‖Cc *ᵥ ξ k + Dc *ᵥ x (k * T)‖ ≤ ‖Cc‖ * ‖ξ k‖ + ‖Dc‖ * ‖x (k * T)‖ :=
+          (norm_add_le _ _).trans
+            (add_le_add (Matrix.linfty_opNorm_mulVec _ _) (Matrix.linfty_opNorm_mulVec _ _))
+      _ ≤ ‖Cc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ + ‖Dc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+          gcongr
+      _ = (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by ring
+  have hxt : ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+    rw [hsol]
+    calc ‖NormedSpace.exp ((t - k * T) • A) *ᵥ x (k * T) + zohGamma (t - k * T) A B *ᵥ u k‖
+        ≤ ‖NormedSpace.exp ((t - k * T) • A)‖ * ‖x (k * T)‖ +
+            ‖zohGamma (t - k * T) A B‖ * ‖u k‖ :=
+          (norm_add_le _ _).trans
+            (add_le_add (Matrix.linfty_opNorm_mulVec _ _) (Matrix.linfty_opNorm_mulVec _ _))
+      _ ≤ K * ‖Sum.elim (x (k * T)) (ξ k)‖ +
+            K * ((‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖) := by
+          gcongr
+      _ = K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by rw [hK']; ring
+  have hexp : Real.exp (-(γ * k)) ≤ Real.exp γ * Real.exp (-(γ / T * t)) := by
+    rw [← Real.exp_add]
+    apply Real.exp_le_exp.mpr
+    have h1 : t / T < k + 1 := by rw [div_lt_iff₀ hT]; linarith
+    have h2 : γ / T * t = γ * (t / T) := by ring
+    rw [h2]
+    nlinarith
+  have hP : 0 ≤ C₀ * Real.exp γ * Real.exp (-(γ / T * t)) * N := by positivity
+  have hQ : 0 ≤ Real.exp (-(γ / T * t)) * N := by positivity
+  calc ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := hxt
+    _ ≤ K' * (C₀ * Real.exp (-(γ * k)) * N) := mul_le_mul_of_nonneg_left hzk hK'0
+    _ ≤ K' * (C₀ * (Real.exp γ * Real.exp (-(γ / T * t))) * N) := by gcongr
+    _ ≤ ((K' + 1) * C₀ * Real.exp γ + 1) * Real.exp (-(γ / T * t)) * N := by
+        nlinarith
+
+/-- **Lifted-matrix stability gives exponential decay of the controller state of the
+sampled-data loop.** If the lifted matrix `M` has spectral radius `< 1`, there are `C, a > 0` such
+that every trajectory of the sampled-data loop satisfies `‖ξ_k‖ ≤ C e^{−a kT} (‖x(0)‖ + ‖ξ_0‖)`. -/
+@[tmio T, powerlib_foundation] theorem sampledLoop_controller_exponentialDecay {T : ℝ}
+    (hT : 0 < T) {A : Matrix X X ℝ} {B : Matrix X U ℝ} {Ac : Matrix Z Z ℝ} {Bc : Matrix Z X ℝ}
+    {Cc : Matrix U Z ℝ} {Dc : Matrix U X ℝ}
+    (hM : spectralRadius ℂ ((sampledLoopMatrix T A B Ac Bc Cc Dc).map (algebraMap ℝ ℂ)) < 1) :
+    ∃ C a : ℝ, 0 < C ∧ 0 < a ∧ ∀ (x : ℝ → X → ℝ) (ξ : ℕ → Z → ℝ) (u : ℕ → U → ℝ),
+      (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A *ᵥ y + B *ᵥ u k)
+        (Icc (k * T) ((k + 1) * T))) →
+      (∀ k : ℕ, ξ (k + 1) = Ac *ᵥ ξ k + Bc *ᵥ x (k * T)) →
+      (∀ k : ℕ, u k = Cc *ᵥ ξ k + Dc *ᵥ x (k * T)) →
+      ∀ k : ℕ, ‖ξ k‖ ≤ C * Real.exp (-(a * (k * T))) * (‖x 0‖ + ‖ξ 0‖) := by
+  set M := sampledLoopMatrix T A B Ac Bc Cc Dc
+  obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one M hM
+  obtain ⟨C₀, γ, hC₀, hγ, hpow⟩ := exists_pow_norm_le_exp hm hlt
+  refine ⟨C₀ + 1, γ / T, by positivity, div_pos hγ hT, ?_⟩
+  intro x ξ u hx hξ hu
+  set N := ‖x 0‖ + ‖ξ 0‖ with hN
+  have hN0 : 0 ≤ N := by positivity
+  have hz : ∀ k : ℕ, ‖Sum.elim (x (k * T)) (ξ k)‖ ≤ C₀ * Real.exp (-(γ * k)) * N := by
+    intro k
+    rw [sampledLoop_sample hT.le hx hξ hu k]
+    calc ‖M ^ k *ᵥ Sum.elim (x 0) (ξ 0)‖ ≤ ‖M ^ k‖ * ‖Sum.elim (x 0) (ξ 0)‖ :=
+          Matrix.linfty_opNorm_mulVec _ _
+      _ ≤ C₀ * Real.exp (-(γ * k)) * N :=
+          mul_le_mul (hpow k) (norm_sumElim_le _ _) (norm_nonneg _) (by positivity)
+  intro k
+  have hξk : ‖ξ k‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_right _ _
+  have he : γ / T * ((k : ℝ) * T) = γ * k := by
+    have := hT.ne'
+    field_simp
+  rw [he]
+  calc ‖ξ k‖ ≤ C₀ * Real.exp (-(γ * k)) * N := hξk.trans (hz k)
+    _ ≤ (C₀ + 1) * Real.exp (-(γ * k)) * N := by gcongr; linarith
 
 /-- **Existence of sampled-data trajectories.** Every initial state `(x(0), ξ_0)` starts a
 trajectory of the sampled-data loop. -/
@@ -551,17 +578,34 @@ matrix has spectral radius `< 1`. -/
       ∀ k : ℕ, ‖ξ k‖ ≤ C * Real.exp (-(a * (k * T))) * (‖x 0‖ + ‖ξ 0‖)) ↔
     spectralRadius ℂ ((sampledLoopMatrix T A B Ac Bc Cc Dc).map (algebraMap ℝ ℂ)) < 1 := by
   refine ⟨fun ⟨C, a, _, ha, hdec⟩ => spectralRadius_lt_one_of_sampledLoop hT
-    fun x ξ u hx hξ hu => ?_, sampledLoop_exponentialDecay hT⟩
-  obtain ⟨h1, h2⟩ := hdec x ξ u hx hξ hu
-  have hlim : Tendsto (fun k : ℕ => C * Real.exp (-(a * (k * T))) * (‖x 0‖ + ‖ξ 0‖)) atTop
-      (𝓝 0) := by
-    have hlin : Tendsto (fun k : ℕ => a * ((k : ℝ) * T)) atTop atTop :=
-      Tendsto.const_mul_atTop ha (Tendsto.atTop_mul_const hT tendsto_natCast_atTop_atTop)
-    have he : Tendsto (fun k : ℕ => Real.exp (-(a * (k * T)))) atTop (𝓝 0) :=
-      Real.tendsto_exp_neg_atTop_nhds_zero.comp hlin
-    simpa using (he.const_mul C).mul_const (‖x 0‖ + ‖ξ 0‖)
-  exact ⟨squeeze_zero_norm (fun k => h1 (k * T) (by positivity)) hlim,
-    squeeze_zero_norm (fun k => h2 k) hlim⟩
+    fun x ξ u hx hξ hu => ?_, fun hM => ?_⟩
+  · obtain ⟨h1, h2⟩ := hdec x ξ u hx hξ hu
+    have hlim : Tendsto (fun k : ℕ => C * Real.exp (-(a * (k * T))) * (‖x 0‖ + ‖ξ 0‖)) atTop
+        (𝓝 0) := by
+      have hlin : Tendsto (fun k : ℕ => a * ((k : ℝ) * T)) atTop atTop :=
+        Tendsto.const_mul_atTop ha (Tendsto.atTop_mul_const hT tendsto_natCast_atTop_atTop)
+      have he : Tendsto (fun k : ℕ => Real.exp (-(a * (k * T)))) atTop (𝓝 0) :=
+        Real.tendsto_exp_neg_atTop_nhds_zero.comp hlin
+      simpa using (he.const_mul C).mul_const (‖x 0‖ + ‖ξ 0‖)
+    exact ⟨squeeze_zero_norm (fun k => h1 (k * T) (by positivity)) hlim,
+      squeeze_zero_norm (fun k => h2 k) hlim⟩
+  · obtain ⟨C₁, a₁, hC₁, ha₁, h₁⟩ := sampledLoop_exponentialDecay hT hM
+    obtain ⟨C₂, a₂, hC₂, ha₂, h₂⟩ := sampledLoop_controller_exponentialDecay hT hM
+    -- common constants `max C₁ C₂` and `min a₁ a₂` for both estimates
+    have hmono : ∀ {Cᵢ aᵢ s : ℝ}, 0 < Cᵢ → Cᵢ ≤ max C₁ C₂ → min a₁ a₂ ≤ aᵢ → 0 ≤ s →
+        ∀ N : ℝ, 0 ≤ N → Cᵢ * Real.exp (-(aᵢ * s)) * N ≤
+          max C₁ C₂ * Real.exp (-(min a₁ a₂ * s)) * N := by
+      intro Cᵢ aᵢ s hCᵢ hC ha hs N hN
+      have he : Real.exp (-(aᵢ * s)) ≤ Real.exp (-(min a₁ a₂ * s)) :=
+        Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right ha hs))
+      exact mul_le_mul_of_nonneg_right
+        (mul_le_mul hC he (Real.exp_pos _).le (hCᵢ.le.trans hC)) hN
+    refine ⟨max C₁ C₂, min a₁ a₂, lt_max_of_lt_left hC₁, lt_min ha₁ ha₂,
+      fun x ξ u hx hξ hu => ⟨fun t ht => ?_, fun k => ?_⟩⟩
+    · exact (h₁ x ξ u hx hξ hu t ht).trans (hmono hC₁ (le_max_left _ _) (min_le_left _ _) ht _
+        (by positivity))
+    · exact (h₂ x ξ u hx hξ hu k).trans (hmono hC₂ (le_max_right _ _) (min_le_right _ _)
+        (by positivity) _ (by positivity))
 
 /-- Lifted matrix of the sampled-data loop with a one-sample computation delay: the output
 `C_c ξ_k + D_c x(kT)` computed at `kT` is applied on `[(k+1)T, (k+2)T]`. The controller state is
@@ -597,7 +641,7 @@ loop has spectral radius `< 1`, every trajectory with `u_{k+1} = C_c ξ_k + D_c 
   have hu' : ∀ k : ℕ, u k = Matrix.fromCols 0 1 *ᵥ Sum.elim (ξ k) (u k) + 0 *ᵥ x (k * T) := by
     intro k
     simp
-  have h' := (h x (fun k => Sum.elim (ξ k) (u k)) u hx hξ' hu').1 t ht
+  have h' := h x (fun k => Sum.elim (ξ k) (u k)) u hx hξ' hu' t ht
   have hs := norm_sumElim_le (ξ 0) (u 0)
   calc ‖x t‖ ≤ C * Real.exp (-(a * t)) * (‖x 0‖ + ‖Sum.elim (ξ 0) (u 0)‖) := h'
     _ ≤ C * Real.exp (-(a * t)) * (‖x 0‖ + ‖ξ 0‖ + ‖u 0‖) :=

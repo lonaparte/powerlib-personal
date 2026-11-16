@@ -33,9 +33,10 @@ source point `P_ref,exp = 3`, `I_d* = 1`; `supercriticalQS_trig`: `V cos θ* = 2
 `V sin θ* = 1`; `supercriticalQS_isEq`). Its characteristic polynomial is
 `s³ + (7/2)s² + 9s + 63/2 = (s + 7/2)(s² + 9)`: eigenvalues `±3i`, `−7/2`
 (`supercriticalQS_routh_boundary`: `tr J · m₂(J) = det J`, the strict Routh–Hurwitz condition
-fails). In the eigen-coordinates `c = M z` (`hopfQS_c1`, `hopfQS_c2`, `hopfQS_c3`, `z = T c`,
-`hopfQS_coords`) the linear part is a rotation of `(c₁, c₂)` with frequency `3` and the decay
-`ċ₃ = −(7/2)c₃`.
+fails). In the eigen-coordinates `c = M z` (`hopfQS_c1`, `hopfQS_c2`, `hopfQS_c3`, unfolded by
+`hopfQS_c1_apply`, `hopfQS_c2_apply`, `hopfQS_c3_apply`; `z = T c`, `hopfQS_z0_eq`,
+`hopfQS_z1_eq`, `hopfQS_z2_eq`) the linear part is a rotation of `(c₁, c₂)` with frequency `3`
+and the decay `ċ₃ = −(7/2)c₃`.
 
 Normal form (static, SymPy-generated, kernel-checked). `hopfQS_W` is the Lyapunov polynomial
 `(c₁² + c₂²)/2 + W₃ + W₄ + 32 (c₃ − h₂(c₁, c₂))²` with the quadratic centre-manifold approximation
@@ -298,21 +299,39 @@ def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
     (3 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
     (-7 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
-@[tmio T, powerlib_foundation] theorem hopfQS_c_apply (z : Dynamics.State 3) :
-    hopfQS_c1 z = 12 / 85 * z 0 + 49 / 170 * z 1 + -1 / 170 * z 2 ∧
-    hopfQS_c2 z = 14 / 85 * z 0 + -21 / 85 * z 1 + 13 / 170 * z 2 ∧
-    hopfQS_c3 z = -1 / 85 * z 0 + 3 / 170 * z 1 + -7 / 170 * z 2 := by
-  refine ⟨?_, ?_, ?_⟩ <;> simp [hopfQS_c1, hopfQS_c2, hopfQS_c3]
+/-- `c₁ = (12/85) z₀ + (49/170) z₁ − (1/170) z₂`. -/
+@[tmio T, powerlib_foundation] theorem hopfQS_c1_apply (z : Dynamics.State 3) :
+    hopfQS_c1 z = 12 / 85 * z 0 + 49 / 170 * z 1 + -1 / 170 * z 2 := by
+  simp [hopfQS_c1]
 
-/-- The state in terms of the eigen-coordinates: `z = T c`,
-`T = [[3, 4, 7], [2, −2, −4], [0, −2, −28]]`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_coords (z : Dynamics.State 3) :
-    z 0 = 3 * hopfQS_c1 z + 4 * hopfQS_c2 z + 7 * hopfQS_c3 z ∧
-    z 1 = 2 * hopfQS_c1 z - 2 * hopfQS_c2 z - 4 * hopfQS_c3 z ∧
+/-- `c₂ = (14/85) z₀ − (21/85) z₁ + (13/170) z₂`. -/
+@[tmio T, powerlib_foundation] theorem hopfQS_c2_apply (z : Dynamics.State 3) :
+    hopfQS_c2 z = 14 / 85 * z 0 + -21 / 85 * z 1 + 13 / 170 * z 2 := by
+  simp [hopfQS_c2]
+
+/-- `c₃ = −(1/85) z₀ + (3/170) z₁ − (7/170) z₂`. -/
+@[tmio T, powerlib_foundation] theorem hopfQS_c3_apply (z : Dynamics.State 3) :
+    hopfQS_c3 z = -1 / 85 * z 0 + 3 / 170 * z 1 + -7 / 170 * z 2 := by
+  simp [hopfQS_c3]
+
+/-- First row of `z = T c`, `T = [[3, 4, 7], [2, −2, −4], [0, −2, −28]]`:
+`z₀ = 3c₁ + 4c₂ + 7c₃`. -/
+@[tmio T, powerlib_foundation] theorem hopfQS_z0_eq (z : Dynamics.State 3) :
+    z 0 = 3 * hopfQS_c1 z + 4 * hopfQS_c2 z + 7 * hopfQS_c3 z := by
+  rw [hopfQS_c1_apply, hopfQS_c2_apply, hopfQS_c3_apply]
+  ring
+
+/-- Second row of `z = T c`: `z₁ = 2c₁ − 2c₂ − 4c₃`. -/
+@[tmio T, powerlib_foundation] theorem hopfQS_z1_eq (z : Dynamics.State 3) :
+    z 1 = 2 * hopfQS_c1 z - 2 * hopfQS_c2 z - 4 * hopfQS_c3 z := by
+  rw [hopfQS_c1_apply, hopfQS_c2_apply, hopfQS_c3_apply]
+  ring
+
+/-- Third row of `z = T c`: `z₂ = −2c₂ − 28c₃`. -/
+@[tmio T, powerlib_foundation] theorem hopfQS_z2_eq (z : Dynamics.State 3) :
     z 2 = -2 * hopfQS_c2 z - 28 * hopfQS_c3 z := by
-  obtain ⟨h1, h2, h3⟩ := hopfQS_c_apply z
-  rw [h1, h2, h3]
-  refine ⟨by ring, by ring, by ring⟩
+  rw [hopfQS_c2_apply, hopfQS_c3_apply]
+  ring
 
 /-- A supercritical quasi-static model: `V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`,
 `k_P = 4/3`, `P_ref = −3` at `(θ*, 0, i_d*) = (arctan(1/2), 0, −1)` (so `V cos θ* = 2`,
@@ -383,13 +402,13 @@ def supercriticalQS : Model :=
   have key := hopfQS_key (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) (Real.sin (z 0))
     (Real.cos (z 0))
   have hφ : 3 * hopfQS_c1 z + 4 * hopfQS_c2 z + 7 * hopfQS_c3 z = z 0 :=
-    (hopfQS_coords z).1.symm
+    (hopfQS_z0_eq z).symm
   rw [hφ] at key
   rw [← key]
   obtain ⟨f0, f1, f2⟩ := supercriticalQS_field z
-  obtain ⟨a1, a2, a3⟩ := hopfQS_c_apply (supercriticalQS.field z)
-  obtain ⟨b1, b2, b3⟩ := hopfQS_c_apply z
-  rw [a1, a2, a3, f0, f1, f2, b1, b2, b3]
+  rw [hopfQS_c1_apply (supercriticalQS.field z), hopfQS_c2_apply (supercriticalQS.field z),
+    hopfQS_c3_apply (supercriticalQS.field z), f0, f1, f2, hopfQS_c1_apply z, hopfQS_c2_apply z,
+    hopfQS_c3_apply z]
   exact congr (congr (congrArg _ (by ring)) (by ring)) (by ring)
 
 /-- `W = (c₁² + c₂²)/2 + 32 (c₃ − h₂)² + W₃₄(c₁, c₂)`. -/
@@ -453,7 +472,9 @@ def supercriticalQS : Model :=
 /-- The eigen-coordinates vanish only at the origin. -/
 @[tmio T, powerlib_foundation] private theorem hopfQS_eq_zero {z : Dynamics.State 3} (h1 : hopfQS_c1 z = 0)
     (h2 : hopfQS_c2 z = 0) (h3 : hopfQS_c3 z = 0) : z = 0 := by
-  obtain ⟨e0, e1, e2⟩ := hopfQS_coords z
+  have e0 := hopfQS_z0_eq z
+  have e1 := hopfQS_z1_eq z
+  have e2 := hopfQS_z2_eq z
   simp only [h1, h2, h3, mul_zero, add_zero, sub_zero] at e0 e1 e2
   ext i
   fin_cases i
@@ -517,7 +538,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     (hopfQS_c3_isBigO.trans (Dynamics.isBigO_pow_of_tendsto hopfQS_size_tendsto
       (by norm_num : 1 ≤ 2))).congr_right fun z => pow_one _
   exact (((hopfQS_c1_isBigO.const_mul_left 3).add (hopfQS_c2_isBigO.const_mul_left 4)).add
-    (hc1.const_mul_left 7)).congr_left fun z => ((hopfQS_coords z).1).symm
+    (hc1.const_mul_left 7)).congr_left fun z => (hopfQS_z0_eq z).symm
 
 /-- The remainder of `Ẇ` is `O(σ⁵)`. -/
 @[tmio T, powerlib_foundation] private theorem hopfQS_remainder_isBigO :

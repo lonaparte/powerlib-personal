@@ -22,15 +22,21 @@ washboard), theory/T-kramers-escape.md §1.4, §1.7–1.8, theory/T-nonlinear-ph
 Results.
 * Single well `V = kθ²/2` (`k > 0`, `singleWell`) and the anharmonic well `kθ²/2 + λθ⁴/4`
   (`λ ≥ 0`, `anharmonicWell`): unique critical point and strict global minimum at `0`
-  (`singleWell_min`, `anharmonicWell_unique_min`); Gaussian normalization
+  (`singleWell_min`, `anharmonicWell_critical_iff`, `anharmonicWell_unique_min`); Gaussian
+  normalization
   `∫ e^{−kθ²/(2D)} dθ = √(2πD/k)` (Mathlib `integral_gaussian`; `singleWell_normalization`).
 * Double well `V = −aθ²/2 + bθ⁴/4` (`a, b > 0`, `doubleWell`): critical points `0, ±√(a/b)`
-  (`doubleWell_critical_iff`); `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvatures`);
+  (`doubleWell_critical_iff`); `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvature_zero`,
+  `doubleWell_curvature_sqrt`, `doubleWell_curvature_neg_sqrt`);
   identity `V = (a²/4b) [1 − bθ²/a]² − a²/4b` (`doubleWell_identity`) and global minimum value
-  `−a²/4b`, attained exactly at `±√(a/b)` (`doubleWell_min`); barrier
+  `−a²/4b`, attained exactly at `±√(a/b)` (`doubleWell_min`, `doubleWell_eq_min_iff`); barrier
   `V(0) − V(±√(a/b)) = a²/4b` (`doubleWell_barrier`); for every `D > 0` the weight `e^{−V/D}` is
   strictly increasing on `(−∞, −r]`, decreasing on `[−r, 0]`, increasing on `[0, r]` and
-  decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_bimodal`).
+  decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_strictMonoOn_Iic`,
+  `doubleWell_weight_strictAntiOn_Icc_neg`, `doubleWell_weight_strictMonoOn_Icc_pos`,
+  `doubleWell_weight_strictAntiOn_Ici`; maxima `doubleWell_weight_max`, `doubleWell_weight_zero_lt`;
+  for `V` itself `doubleWell_strictAntiOn_Iic`, `doubleWell_strictMonoOn_Icc_neg`,
+  `doubleWell_strictAntiOn_Icc_pos`, `doubleWell_strictMonoOn_Ici`).
 * Washboard `V = V₀ (−cos θ − αθ)` (`V₀ > 0`, `washboard`; defined as the washboard of
   `theorem/Potential/Barrier.lean` with `c = V₀α`, `A = V₀`, `φ = 0`, `washboard_eq`):
   `V' = V₀ (sin θ − α)` (`Barrier.hasDerivAt_washboard`); a critical point exists iff `|α| ≤ 1`
@@ -62,7 +68,8 @@ Corrections. (T-potential-wells §1.2–1.3):
 * the double-well identity has the opposite sign: `V = +(a²/4b)[1 − (θ/√(a/b))²]² + const`
   (`doubleWell_identity`), not `−(a²/4b)[…]² + const`;
 * "if `D ~ ΔV` the two peaks merge into one" is false: `e^{−V/D}` is bimodal for every `D > 0`
-  (`doubleWell_weight_bimodal`);
+  (`doubleWell_weight_strictMonoOn_Iic`, `doubleWell_weight_strictAntiOn_Icc_neg`,
+  `doubleWell_weight_strictMonoOn_Icc_pos`, `doubleWell_weight_strictAntiOn_Ici`);
 * "for `0 < α < 1` the wells have different depths" is false: `V(θ + 2π) = V(θ) − 2πV₀α`, so every
   well has the same barriers `ΔV±` (`washboard_barrier_translate`).
 -/
@@ -97,19 +104,21 @@ def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
   convert h using 1
   push_cast; ring
 
-/-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has the unique critical point `0`, which is
-its strict global minimum. -/
-@[tmio T, powerlib_foundation] theorem anharmonicWell_unique_min {k lam : ℝ} (hk : 0 < k) (hl : 0 ≤ lam) :
-    (∀ θ, k * θ + lam * θ ^ 3 = 0 ↔ θ = 0) ∧
-      ∀ θ, θ ≠ 0 → anharmonicWell k lam 0 < anharmonicWell k lam θ := by
-  refine ⟨fun θ => ⟨fun h => ?_, fun h => by simp [h]⟩, fun θ hθ => ?_⟩
-  · have : θ * (k + lam * θ ^ 2) = 0 := by linarith
-    rcases mul_eq_zero.mp this with h | h
-    · exact h
-    · nlinarith [sq_nonneg θ]
-  · simp only [anharmonicWell]
-    have : 0 < θ ^ 2 := by positivity
-    nlinarith [sq_nonneg (θ ^ 2)]
+/-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has the unique critical point `0`. -/
+@[tmio T, powerlib_foundation] theorem anharmonicWell_critical_iff {k lam : ℝ} (hk : 0 < k)
+    (hl : 0 ≤ lam) (θ : ℝ) : k * θ + lam * θ ^ 3 = 0 ↔ θ = 0 := by
+  refine ⟨fun h => ?_, fun h => by simp [h]⟩
+  have : θ * (k + lam * θ ^ 2) = 0 := by linarith
+  rcases mul_eq_zero.mp this with h | h
+  · exact h
+  · nlinarith [sq_nonneg θ]
+
+/-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has its strict global minimum at `0`. -/
+@[tmio T, powerlib_foundation] theorem anharmonicWell_unique_min {k lam : ℝ} (hk : 0 < k)
+    (hl : 0 ≤ lam) (θ : ℝ) (hθ : θ ≠ 0) : anharmonicWell k lam 0 < anharmonicWell k lam θ := by
+  simp only [anharmonicWell]
+  have : 0 < θ ^ 2 := by positivity
+  nlinarith [sq_nonneg (θ ^ 2)]
 
 /-- Normalization of the Boltzmann weight of the harmonic well: `Z = √(2πD/k)`. -/
 @[tmio T, powerlib_foundation] theorem singleWell_normalization {k D : ℝ} (hk : 0 < k) (hD : 0 < D) :
@@ -159,23 +168,37 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
         rw [show (-√(a / b)) ^ 3 = -(√(a / b) ^ 2 * √(a / b)) by ring, hr]
       rw [this]; field_simp; ring
 
-@[tmio T, powerlib_foundation] theorem doubleWell_curvatures {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    (-a + 3 * b * (0 : ℝ) ^ 2 = -a) ∧ (-a + 3 * b * √(a / b) ^ 2 = 2 * a) ∧
-      (-a + 3 * b * (-√(a / b)) ^ 2 = 2 * a) := by
-  have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
-  refine ⟨by ring, ?_, ?_⟩
-  · rw [hr]; field_simp; ring
-  · rw [neg_sq, hr]; field_simp; ring
+/-- Curvature of the double well at the barrier top: `V''(0) = −a`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_curvature_zero {a b : ℝ} (_ha : 0 < a)
+    (_hb : 0 < b) : -a + 3 * b * (0 : ℝ) ^ 2 = -a := by
+  ring
 
-/-- Global minimum value `−a²/4b`, attained exactly at `±√(a/b)`. -/
+/-- Curvature of the double well at the right well: `V''(√(a/b)) = 2a`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_curvature_sqrt {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) : -a + 3 * b * √(a / b) ^ 2 = 2 * a := by
+  rw [Real.sq_sqrt (by positivity)]; field_simp; ring
+
+/-- Curvature of the double well at the left well: `V''(−√(a/b)) = 2a`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_curvature_neg_sqrt {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) : -a + 3 * b * (-√(a / b)) ^ 2 = 2 * a := by
+  rw [neg_sq, Real.sq_sqrt (by positivity)]; field_simp; ring
+
+/-- Global minimum value of the double well: `−a²/4b ≤ V(θ)`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_min {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
-    -a ^ 2 / (4 * b) ≤ doubleWell a b θ ∧
-      (doubleWell a b θ = -a ^ 2 / (4 * b) ↔ θ = √(a / b) ∨ θ = -√(a / b)) := by
+    -a ^ 2 / (4 * b) ≤ doubleWell a b θ := by
+  have hid := doubleWell_identity ha.ne' hb.ne' θ
+  have hc : 0 < a ^ 2 / (4 * b) := by positivity
+  have hn : -a ^ 2 / (4 * b) = -(a ^ 2 / (4 * b)) := neg_div _ _
+  rw [hid, hn]
+  nlinarith [mul_nonneg hc.le (sq_nonneg (1 - b * θ ^ 2 / a))]
+
+/-- The global minimum value `−a²/4b` of the double well is attained exactly at `±√(a/b)`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_eq_min_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (θ : ℝ) : doubleWell a b θ = -a ^ 2 / (4 * b) ↔ θ = √(a / b) ∨ θ = -√(a / b) := by
   have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
   have hid := doubleWell_identity ha.ne' hb.ne' θ
   have hc : 0 < a ^ 2 / (4 * b) := by positivity
   have hn : -a ^ 2 / (4 * b) = -(a ^ 2 / (4 * b)) := neg_div _ _
-  refine ⟨by rw [hid, hn]; nlinarith [mul_nonneg hc.le (sq_nonneg (1 - b * θ ^ 2 / a))], ?_⟩
   rw [hid]
   constructor
   · intro h
@@ -193,8 +216,8 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
 @[tmio T, powerlib_foundation] theorem doubleWell_barrier {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     doubleWell a b 0 - doubleWell a b √(a / b) = a ^ 2 / (4 * b) ∧
       doubleWell a b 0 - doubleWell a b (-√(a / b)) = a ^ 2 / (4 * b) := by
-  have h1 := ((doubleWell_min ha hb √(a / b)).2).mpr (Or.inl rfl)
-  have h2 := ((doubleWell_min ha hb (-√(a / b))).2).mpr (Or.inr rfl)
+  have h1 := (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
+  have h2 := (doubleWell_eq_min_iff ha hb (-√(a / b))).mpr (Or.inr rfl)
   have h0 : doubleWell a b 0 = 0 := by simp [doubleWell]
   rw [h1, h2, h0]
   constructor <;> ring
@@ -203,83 +226,138 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
     doubleWell a b x - doubleWell a b y = (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) := by
   simp only [doubleWell]; ring
 
-/-- Monotonicity pattern of the double well on the four intervals cut by `−r, 0, r`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_monotone {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    StrictAntiOn (doubleWell a b) (Iic (-√(a / b))) ∧
-      StrictMonoOn (doubleWell a b) (Icc (-√(a / b)) 0) ∧
-      StrictAntiOn (doubleWell a b) (Icc 0 √(a / b)) ∧
-      StrictMonoOn (doubleWell a b) (Ici √(a / b)) := by
+/-- The double well is strictly decreasing on `(−∞, −√(a/b)]`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_strictAntiOn_Iic {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) : StrictAntiOn (doubleWell a b) (Iic (-√(a / b))) := by
   set r := √(a / b)
   have hr0 : 0 ≤ r := Real.sqrt_nonneg _
   have hr : b * r ^ 2 = a := by rw [Real.sq_sqrt (by positivity)]; field_simp
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · intro x hx y hy hxy
-    have hx' : x ≤ -r := hx
-    have hy' : y ≤ -r := hy
-    have h := doubleWell_sub a b x y
-    have hxy2 : y ^ 2 < x ^ 2 := by nlinarith
-    have hy2 : r ^ 2 ≤ y ^ 2 := by nlinarith
-    have : 0 < (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) := by
-      apply mul_pos (by linarith)
-      nlinarith
-    linarith
-  · intro x hx y hy hxy
-    have h := doubleWell_sub a b x y
-    have hxy2 : y ^ 2 < x ^ 2 := by nlinarith [hx.1, hy.2]
-    have hx2 : x ^ 2 ≤ r ^ 2 := by nlinarith [hx.1, hx.2]
-    have : (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) < 0 := by
-      apply mul_neg_of_pos_of_neg (by linarith)
-      nlinarith
-    linarith
-  · intro x hx y hy hxy
-    have h := doubleWell_sub a b x y
-    have hxy2 : x ^ 2 < y ^ 2 := by nlinarith [hx.1]
-    have hy2 : y ^ 2 ≤ r ^ 2 := by nlinarith [hy.1, hy.2]
-    have : (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) > 0 := by
-      apply mul_pos_of_neg_of_neg (by linarith)
-      nlinarith
-    linarith
-  · intro x hx y hy hxy
-    have hx' : r ≤ x := hx
-    have h := doubleWell_sub a b x y
-    have hxy2 : x ^ 2 < y ^ 2 := by nlinarith
-    have hx2 : r ^ 2 ≤ x ^ 2 := by nlinarith
-    have : (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) < 0 := by
-      apply mul_neg_of_neg_of_pos (by linarith)
-      nlinarith
-    linarith
+  intro x hx y hy hxy
+  have hx' : x ≤ -r := hx
+  have hy' : y ≤ -r := hy
+  have h := doubleWell_sub a b x y
+  have hxy2 : y ^ 2 < x ^ 2 := by nlinarith
+  have hy2 : r ^ 2 ≤ y ^ 2 := by nlinarith
+  have : 0 < (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) := by
+    apply mul_pos (by linarith)
+    nlinarith
+  linarith
 
-/-- Correction: for every temperature `D > 0` the Boltzmann weight `e^{−V/D}` of the double well
-stays bimodal — increasing, decreasing, increasing, decreasing on the four intervals, with
-global maxima exactly at `±√(a/b)` and a strict local minimum at `0`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_weight_bimodal {a b D : ℝ} (ha : 0 < a) (hb : 0 < b)
+/-- The double well is strictly increasing on `[−√(a/b), 0]`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_strictMonoOn_Icc_neg {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) : StrictMonoOn (doubleWell a b) (Icc (-√(a / b)) 0) := by
+  set r := √(a / b)
+  have hr0 : 0 ≤ r := Real.sqrt_nonneg _
+  have hr : b * r ^ 2 = a := by rw [Real.sq_sqrt (by positivity)]; field_simp
+  intro x hx y hy hxy
+  have h := doubleWell_sub a b x y
+  have hxy2 : y ^ 2 < x ^ 2 := by nlinarith [hx.1, hy.2]
+  have hx2 : x ^ 2 ≤ r ^ 2 := by nlinarith [hx.1, hx.2]
+  have : (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) < 0 := by
+    apply mul_neg_of_pos_of_neg (by linarith)
+    nlinarith
+  linarith
+
+/-- The double well is strictly decreasing on `[0, √(a/b)]`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_strictAntiOn_Icc_pos {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) : StrictAntiOn (doubleWell a b) (Icc 0 √(a / b)) := by
+  set r := √(a / b)
+  have hr0 : 0 ≤ r := Real.sqrt_nonneg _
+  have hr : b * r ^ 2 = a := by rw [Real.sq_sqrt (by positivity)]; field_simp
+  intro x hx y hy hxy
+  have h := doubleWell_sub a b x y
+  have hxy2 : x ^ 2 < y ^ 2 := by nlinarith [hx.1]
+  have hy2 : y ^ 2 ≤ r ^ 2 := by nlinarith [hy.1, hy.2]
+  have : (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) > 0 := by
+    apply mul_pos_of_neg_of_neg (by linarith)
+    nlinarith
+  linarith
+
+/-- The double well is strictly increasing on `[√(a/b), ∞)`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_strictMonoOn_Ici {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) : StrictMonoOn (doubleWell a b) (Ici √(a / b)) := by
+  set r := √(a / b)
+  have hr0 : 0 ≤ r := Real.sqrt_nonneg _
+  have hr : b * r ^ 2 = a := by rw [Real.sq_sqrt (by positivity)]; field_simp
+  intro x hx y hy hxy
+  have hx' : r ≤ x := hx
+  have h := doubleWell_sub a b x y
+  have hxy2 : x ^ 2 < y ^ 2 := by nlinarith
+  have hx2 : r ^ 2 ≤ x ^ 2 := by nlinarith
+  have : (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) < 0 := by
+    apply mul_neg_of_neg_of_pos (by linarith)
+    nlinarith
+  linarith
+
+/-- The Boltzmann weight `v ↦ e^{−v/D}` (`D > 0`) is strictly decreasing in the energy. -/
+@[tmio T, powerlib_foundation] private theorem strictAnti_exp_neg_div {D : ℝ} (hD : 0 < D) :
+    StrictAnti (fun v : ℝ => Real.exp (-v / D)) := by
+  intro u v huv
+  apply Real.exp_lt_exp.mpr
+  rw [neg_div, neg_div, neg_lt_neg_iff]
+  exact div_lt_div_of_pos_right huv hD
+
+/-- Correction (bimodality, first piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of the
+double well is strictly increasing on `(−∞, −√(a/b)]`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_strictMonoOn_Iic {a b D : ℝ} (ha : 0 < a)
+    (hb : 0 < b) (hD : 0 < D) :
+    let p := fun θ => Real.exp (-doubleWell a b θ / D)
+    StrictMonoOn p (Iic (-√(a / b))) := fun _ hx _ hy hxy =>
+  strictAnti_exp_neg_div hD (doubleWell_strictAntiOn_Iic ha hb hx hy hxy)
+
+/-- Correction (bimodality, second piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of
+the double well is strictly decreasing on `[−√(a/b), 0]`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_strictAntiOn_Icc_neg {a b D : ℝ}
+    (ha : 0 < a) (hb : 0 < b) (hD : 0 < D) :
+    let p := fun θ => Real.exp (-doubleWell a b θ / D)
+    StrictAntiOn p (Icc (-√(a / b)) 0) := fun _ hx _ hy hxy =>
+  strictAnti_exp_neg_div hD (doubleWell_strictMonoOn_Icc_neg ha hb hx hy hxy)
+
+/-- Correction (bimodality, third piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of the
+double well is strictly increasing on `[0, √(a/b)]`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_strictMonoOn_Icc_pos {a b D : ℝ}
+    (ha : 0 < a) (hb : 0 < b) (hD : 0 < D) :
+    let p := fun θ => Real.exp (-doubleWell a b θ / D)
+    StrictMonoOn p (Icc 0 √(a / b)) := fun _ hx _ hy hxy =>
+  strictAnti_exp_neg_div hD (doubleWell_strictAntiOn_Icc_pos ha hb hx hy hxy)
+
+/-- Correction (bimodality, fourth piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of
+the double well is strictly decreasing on `[√(a/b), ∞)`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_strictAntiOn_Ici {a b D : ℝ} (ha : 0 < a)
+    (hb : 0 < b) (hD : 0 < D) :
+    let p := fun θ => Real.exp (-doubleWell a b θ / D)
+    StrictAntiOn p (Ici √(a / b)) := fun _ hx _ hy hxy =>
+  strictAnti_exp_neg_div hD (doubleWell_strictMonoOn_Ici ha hb hx hy hxy)
+
+/-- For every `D > 0` the global maxima of the Boltzmann weight `e^{−V/D}` of the double well are
+exactly `±√(a/b)`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_max {a b D : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hD : 0 < D) :
     let p := fun θ => Real.exp (-doubleWell a b θ / D)
-    StrictMonoOn p (Iic (-√(a / b))) ∧ StrictAntiOn p (Icc (-√(a / b)) 0) ∧
-      StrictMonoOn p (Icc 0 √(a / b)) ∧ StrictAntiOn p (Ici √(a / b)) ∧
-      (∀ θ, p θ ≤ p √(a / b) ∧ (p θ = p √(a / b) ↔ θ = √(a / b) ∨ θ = -√(a / b))) ∧
-      p 0 < p √(a / b) := by
+    ∀ θ, p θ ≤ p √(a / b) ∧ (p θ = p √(a / b) ↔ θ = √(a / b) ∨ θ = -√(a / b)) := by
+  intro p θ
+  have hanti := strictAnti_exp_neg_div hD
+  have hrval : doubleWell a b √(a / b) = -a ^ 2 / (4 * b) :=
+    (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
+  refine ⟨hanti.antitone (by rw [hrval]; exact doubleWell_min ha hb θ), ?_⟩
+  rw [hanti.injective.eq_iff, hrval]
+  exact doubleWell_eq_min_iff ha hb θ
+
+/-- For every `D > 0` the Boltzmann weight `e^{−V/D}` of the double well has a strict local minimum
+at `0`, below its maxima at `±√(a/b)`. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_zero_lt {a b D : ℝ} (ha : 0 < a)
+    (hb : 0 < b) (hD : 0 < D) :
+    let p := fun θ => Real.exp (-doubleWell a b θ / D)
+    p 0 < p √(a / b) := by
   intro p
-  obtain ⟨h1, h2, h3, h4⟩ := doubleWell_monotone ha hb
-  have hanti : StrictAnti (fun v : ℝ => Real.exp (-v / D)) := by
-    intro u v huv
-    apply Real.exp_lt_exp.mpr
-    rw [neg_div, neg_div, neg_lt_neg_iff]
-    exact div_lt_div_of_pos_right huv hD
-  have hmin := doubleWell_min ha hb
-  have hrval : doubleWell a b √(a / b) = -a ^ 2 / (4 * b) := (hmin √(a / b)).2.mpr (Or.inl rfl)
-  refine ⟨fun x hx y hy hxy => hanti (h1 hx hy hxy), fun x hx y hy hxy => hanti (h2 hx hy hxy),
-    fun x hx y hy hxy => hanti (h3 hx hy hxy), fun x hx y hy hxy => hanti (h4 hx hy hxy), ?_, ?_⟩
-  · intro θ
-    refine ⟨hanti.antitone (by rw [hrval]; exact (hmin θ).1), ?_⟩
-    rw [hanti.injective.eq_iff, hrval]
-    exact (hmin θ).2
-  · apply hanti
-    rw [hrval]
-    have : doubleWell a b 0 = 0 := by simp [doubleWell]
-    rw [this]
-    have : 0 < a ^ 2 / (4 * b) := by positivity
-    rw [neg_div]; linarith
+  apply strictAnti_exp_neg_div hD
+  have hrval : doubleWell a b √(a / b) = -a ^ 2 / (4 * b) :=
+    (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
+  rw [hrval]
+  have : doubleWell a b 0 = 0 := by simp [doubleWell]
+  rw [this]
+  have : 0 < a ^ 2 / (4 * b) := by positivity
+  rw [neg_div]; linarith
 
 /-! ## Washboard -/
 

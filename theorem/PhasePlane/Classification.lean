@@ -62,7 +62,7 @@ variable (A : Matrix (Fin 2) (Fin 2) ℝ)
     at hs
   have him : s.im = 0 :=
     (Criteria.quadratic_roots_real_iff (-A.trace) A.det).mpr (by nlinarith) s hs
-  obtain ⟨hr, -⟩ := Criteria.quadratic_root_re_im hs
+  have hr := Criteria.quadratic_root_re hs
   rw [him] at hr
   refine ⟨him, fun ht => ?_, fun ht => ?_⟩
   · by_contra hc; push Not at hc; nlinarith
@@ -73,7 +73,8 @@ variable (A : Matrix (Fin 2) (Fin 2) ℝ)
     (hs : (Linear.characteristicMatrix A s).det = 0) : s.im ≠ 0 ∧ s.re = A.trace / 2 := by
   rw [Criteria.det_characteristicMatrix_fin_two, sub_eq_add_neg, ← neg_mul, ← ofReal_neg]
     at hs
-  obtain ⟨hr, hi⟩ := Criteria.quadratic_root_re_im hs
+  have hr := Criteria.quadratic_root_re hs
+  have hi := Criteria.quadratic_root_im hs
   have him : s.im ≠ 0 := by
     intro h0
     rw [h0] at hr
