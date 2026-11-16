@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.Matrix.Normed
+import theorem.LinearAlgebra.Frobenius
 
 /-! # Kalman covariance for time-varying systems: variation-of-constants and Riccati forms
 
@@ -13,12 +14,13 @@ Scope.
   deterministic covariance ODEs; that `P(t)` is the conditional covariance of a continuous-time
   linear-Gaussian model needs Itô/Kalman–Bucy filtering theory and is not formalized.
 * Matrices are real `n × n` (`p × n` for `C`), coefficients `A(t), C(t), Q(t), R(t)` are
-  continuous in `t ∈ ℝ`; norms are Frobenius norms (local instances, as in
-  `theorem/Stochastic/LyapunovCovariance.lean`).
+  continuous in `t ∈ ℝ`; norms are Frobenius norms (with
+  `LinearAlgebra.frobeniusENormedAddMonoid` enabled locally,
+  `theorem/LinearAlgebra/Frobenius.lean`).
 * Transition matrix. `Φ : ℝ → ℝ → Matrix` is a fundamental matrix of `ẋ = A(t) x`, assumed via
   its defining properties `∂_t Φ(t, s) = A(t) Φ(t, s)` (all `t, s`) and `Φ(s, s) = I` — exactly
   the content of LeanForControl's Peano–Baker theorem for `LinearSystems.stateTransitionMatrix`
-  (Theorem 5.1, P5.1). This module keeps `Φ` abstract (and imports only Mathlib); for constant
+  (Theorem 5.1, P5.1). This module keeps `Φ` abstract (and imports no LeanForControl); for constant
   `A` the hypothesis is discharged by `Φ(t, s) = e^{(t−s)A}` (`expFund_hasDerivAt`,
   `expFund_self`), and for continuous time-varying `A` by LeanForControl's state-transition
   matrix in `theorem/Estimation/KalmanLTVTransition.lean`.
@@ -62,10 +64,7 @@ open scoped Matrix.Norms.Frobenius Topology
 
 variable {n : ℕ}
 
-noncomputable local instance frobeniusENormedAddMonoidLTV :
-    ENormedAddMonoid (Matrix (Fin n) (Fin n) ℝ) :=
-  (NormedAddCommGroup.toENormedAddCommMonoid :
-    ENormedAddCommMonoid (Matrix (Fin n) (Fin n) ℝ)).toENormedAddMonoid
+attribute [local instance] powerlib.LinearAlgebra.frobeniusENormedAddMonoid
 
 /-! ## Grönwall uniqueness on the whole line -/
 

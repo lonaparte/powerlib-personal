@@ -1,5 +1,5 @@
 import theorem.GridTiedConverter.GFL.LCLine.Reduction
-import theorem.GridTiedConverter.PLL.PIPLL
+import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.Dynamics.Transport
 
 /-! # Second-order form and closed-form Lyapunov-equation solutions of the linearized GFL-PLL
@@ -16,7 +16,8 @@ linearization is written in the project-code convention of
 `sn-critical-scaling.md` §2: `A = [[−K_p g, −K_i], [g, 0]]` with `g > 0` at a stable point.
 It is the text-convention Jacobian `piPLLJacobian K_p K_i h′` with `h′ = −g`, conjugated by
 `diag(1, −1)` (`linA_eq_conj`). Voltage-channel input `B_v = (−K_p σ, σ)ᵀ` (unit intensity,
-sensitivity `σ`), frequency-channel input `B_ω = (−1, 0)ᵀ`.
+sensitivity `σ`), frequency-channel input `B_ω = (−1, 0)ᵀ`, the PLL input port `PLL.pllB`
+(`theorem/GridTiedConverter/PLL/PIPLLPH.lean`; its `θ` row is unchanged by the sign of `η`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/sn-critical-scaling.md`
 §1–§3.
@@ -81,9 +82,6 @@ conjugated by `diag(1, −1)` (the sign of `η`). -/
 /-- Voltage-channel input `B_v = (−K_p σ, σ)ᵀ`. -/
 def portV (Kp σ : ℝ) : Matrix (Fin 2) (Fin 1) ℝ := !![-(Kp * σ); σ]
 
-/-- Frequency-channel input `B_ω = (−1, 0)ᵀ`. -/
-def portW : Matrix (Fin 2) (Fin 1) ℝ := !![-1; 0]
-
 /-- Closed-form solution for the voltage channel. -/
 def covV (Kp Ki g σ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![σ ^ 2 * (Ki + Kp ^ 2 * g) / (2 * Kp * g ^ 2), -(σ ^ 2 / (2 * g));
@@ -105,11 +103,11 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- `covW` solves `A P + P Aᵀ + B_ω B_ωᵀ = 0`. -/
 @[tmio M, powerlib_domain] theorem covW_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hKi : Ki ≠ 0)
     (hg : g ≠ 0) :
-    linA Kp Ki g * covW Kp Ki g + covW Kp Ki g * (linA Kp Ki g)ᵀ + portW * portWᵀ = 0 := by
+    linA Kp Ki g * covW Kp Ki g + covW Kp Ki g * (linA Kp Ki g)ᵀ + pllB * pllBᵀ = 0 := by
   ext i j
   simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
     Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [linA, covW, portW] <;> field_simp <;> ring
+  fin_cases i <;> fin_cases j <;> simp [linA, covW, pllB] <;> field_simp <;> ring
 
 /-- Uniqueness: the Lyapunov operator `X ↦ A X + X Aᵀ` is injective when `K_p g ≠ 0`, `g ≠ 0`,
 `K_i ≠ 0`. -/
@@ -163,7 +161,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- The Lyapunov equation of the frequency channel has the unique solution `covW`. -/
 @[tmio M, powerlib_domain] theorem covW_unique {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) {P : Matrix (Fin 2) (Fin 2) ℝ}
-    (hP : linA Kp Ki g * P + P * (linA Kp Ki g)ᵀ + portW * portWᵀ = 0) :
+    (hP : linA Kp Ki g * P + P * (linA Kp Ki g)ᵀ + pllB * pllBᵀ = 0) :
     P = covW Kp Ki g :=
   lyapunov_unique (mul_ne_zero hKp hg) hg hKi hP (covW_lyapunov hKp hKi hg)
 

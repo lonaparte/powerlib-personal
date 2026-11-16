@@ -287,6 +287,43 @@ in Git; working statistics, build receipts and development plans are not kept he
   - Classified theorems 7537 → 7521 (GFL 826 → 807); public connection theorems
     1064 → 1051.
 
+- Removed definitions that were literal copies of library objects:
+  - GFL noise models use the PLL objects: `GFL.Noise.Embed.embJ` → `PLL.pllJ`,
+    `Embed.embR`, `GFL.Noise.RB` → `PLL.pllR` (`Embed.embR_posSemidef` →
+    `PLL.pllR_posSemidef`), `GFL.Noise.portW` → `PLL.pllB` (`pllJ`, `pllR`, `pllB` now
+    live in `PLL/PIPLLPH` and build `PLL.gflPHModel`), `classB_frequency_fdt` →
+    `Embed.freqNoise_fdt`, `Escape.saddleJac` → `PLL.piPLLJacobian`
+    (`saddleJac_partials` → `PLL.hasFDerivAt_piPLLField`), `Escape.omegaB` →
+    `PLL.omegaN`, `Escape.zetaB` → `PLL.zeta`.
+  - GFM matching control uses the Park rows: `MatchingClosedLoop.rotD/rotQ` →
+    `Transform.parkD/parkQ`, `rotD_rot`/`rotQ_rot` → `Transform.parkD_ipark`/
+    `parkQ_ipark`, `rot_dist_sq` → `Transform.park_dist_sq`, `hasDerivWithinAt_rot` →
+    `Transform.hasDerivWithinAt_parkD_parkQ`.
+  - The planar rotation generator and complex form move to a new foundation module
+    `Transform/Planar` (`Transform.J`, `toComplex`, `ofComplex`, `complexEquiv`, names
+    unchanged); `PH.losslessJ` → `Transform.J`, `PH.losslessJ_skew` →
+    `Transform.J_transpose`.
+  - The matrix Frobenius `ENormedAddMonoid` instance is defined once,
+    `LinearAlgebra.frobeniusENormedAddMonoid` (new module `LinearAlgebra/Frobenius`),
+    instead of four local copies in the Kalman, Lyapunov-covariance and stochastic COI
+    modules.
+  - `Linear.Synthesis.real`, `Linear.VerifiedSynthesis.real` → `Linear.Positive.real`.
+  - `PLL.gridAlphaBeta` is an abbreviation of `PLL.posSeq`; `PLL.park_gridAlphaBeta`,
+    `park_posSeq_q` → `PLL.park_posSeq`.
+- The PLL–DC model no longer needs a regularized field: its local results use the
+  local tools on `V_dc ≠ 0`. Removed `PLLDC.Params.regField`, `contDiff_regField`,
+  `field_eq_regField`, `field_eq_regField_of_mem_ball`,
+  `regField_equilibrium_jacobian` and the unused `Dynamics.invDen`, `invExt` and their
+  lemmas; `exists_contDiff_eq_field_of_sign` moves to `PLLDC/Stability`. The private
+  per-family `mem_den_flow_iff` copies stay: they fix the field and point for
+  rewriting a non-reducible family, which a generic constructor cannot replace.
+- BDF methods: `Numerics.LMM.consistent_of_hasOrder` (order `p ≥ 1` implies
+  consistency) and `LMM.not_rootCondition_of_rho_eq` (the root condition fails
+  through `ρ` alone) replace `bdf1_consistent`, …, `bdf9_consistent`,
+  `bdf7/8/9_exists_root_norm_gt_one`, `bdf7/8/9_not_rootCondition` and
+  `bdf7/8/9_rho_eq_sum`.
+- Classified theorems 7521 → 7488; public connection theorems unchanged (1051).
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

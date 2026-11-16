@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Transform.ParkABC
+import theorem.Transform.Planar
 import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-! # Clarke and Park coordinate transformations
@@ -10,19 +11,22 @@ Domain identities of the chosen Clarke and Park transformations, with general al
 Scope.
 Conventions fixed by this module:
 * A planar (αβ or dq) vector is `Fin 2 → ℝ`, component `0` = α (resp. d), component `1` = β
-  (resp. q). Its complex form is `toComplex x = x 0 + x 1 * I`.
+  (resp. q). Its complex form `toComplex x = x 0 + x 1 * I` and the rotation generator `J` are
+  the generic planar algebra of `theorem/Transform/Planar.lean`.
 * `rot θ` is the counter-clockwise rotation by `θ` (dq → αβ). The Park matrix is
   `park θ = [[cos θ, sin θ], [-sin θ, cos θ]]` (αβ → dq), exactly `conventions.md` §4.
   Hence `park θ = rot (-θ)` (`park_eq_rot_neg`) and, in complex form,
   `x^{dq} = x^{αβ} · e^{-jθ}`. `park_mul_rot`, `rot_mul_park`: the two are mutually inverse;
   `frameRotation_power_invariant`: `rot δ` preserves the port power `v·i` (machine frame vs
   common DQ frame, `theory/T-power-system-ph.md` §1.2).
-* `J = [[0, -1], [1, 0]]` is the rotation generator (`d/dθ rot θ = J · rot θ`); in complex
-  form it is multiplication by `j`.
+* `J = [[0, -1], [1, 0]]` generates the rotation (`d/dθ rot θ = J · rot θ`, `rot_mul_J`); in
+  complex form it is multiplication by `j` (`toComplex_J_mulVec`).
 * Scalar components: `parkD θ x_d x_q`, `parkQ θ x_d x_q` are the two rows of `park θ` applied to
   `(x_d, x_q)` (system → controller frame, `conventions.md` §D4) and `iparkD`, `iparkQ` those of
   `rot θ` (controller → system); `parkD_ipark` … `iparkQ_park` (inverse pairs), `park_dot` (dot
-  product preserved), `parkD_J`, `parkQ_J` (commutation with `J`).
+  product preserved), `park_dist_sq` (`‖z − rot θ w‖ = ‖park θ z − w‖`), `parkD_J`, `parkQ_J`
+  (commutation with `J`), `hasDerivWithinAt_parkD_parkQ` (their rotating-frame chain rule
+  `(park θ z)' = park θ z' − θ' J park θ z`, on any set).
 * `clarke` is the amplitude-invariant Clarke matrix `(2/3)[[1, -1/2, -1/2], [0, √3/2, -√3/2]]`
   (`conventions.md` §4). `clarkePI` is the 3 × 3 power-invariant Clarke matrix with the
   zero-sequence row (`T-impedance-modeling.md` §1.1); it is orthogonal.
@@ -66,15 +70,6 @@ def rot (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 def park (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ]
 
-/-- Rotation generator `J = [[0, -1], [1, 0]]`. -/
-def J : Matrix (Fin 2) (Fin 2) ℝ := !![0, -1; 1, 0]
-
-/-- Complex form `x₀ + j x₁` of a planar vector. -/
-def toComplex (x : Fin 2 → ℝ) : ℂ := ⟨x 0, x 1⟩
-
-/-- Planar vector `(Re z, Im z)` of a complex number. -/
-def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
-
 /-! ## Elementary identities -/
 
 @[tmio M, simp, powerlib_domain] theorem rot_apply_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
@@ -86,9 +81,6 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
 @[tmio M, simp, powerlib_domain] theorem park_apply_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     park θ *ᵥ x = ![Real.cos θ * x 0 + Real.sin θ * x 1, -Real.sin θ * x 0 + Real.cos θ * x 1] := by
   ext i; fin_cases i <;> simp [park, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-
-@[tmio T, simp, powerlib_foundation] theorem J_mulVec (x : Fin 2 → ℝ) : J *ᵥ x = ![-x 1, x 0] := by
-  ext i; fin_cases i <;> simp [J, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 @[tmio M, powerlib_domain] theorem park_eq_rot_neg (θ : ℝ) : park θ = rot (-θ) := by
   simp [park, rot]
@@ -132,54 +124,11 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
   rw [show (park θ)ᵀ = rot θ by rw [park_eq_transpose_rot, transpose_transpose]]
   exact park_mul_rot θ
 
-@[tmio T, powerlib_foundation] theorem J_mul_J : J * J = -1 := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [J]
-
-@[tmio T, powerlib_foundation] theorem J_transpose : Jᵀ = -J := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [J]
-
 @[tmio M, powerlib_domain] theorem rot_mul_J (θ : ℝ) : rot θ * J = J * rot θ := by
   simp only [rot, J, mul_fin_two]
   ext i j; fin_cases i <;> fin_cases j <;> simp
 
 /-! ## Complex form versus matrix form (`T-park-transformation.md` §1.2) -/
-
-@[tmio T, simp, powerlib_foundation] theorem toComplex_re (x : Fin 2 → ℝ) : (toComplex x).re = x 0 := rfl
-
-@[tmio T, simp, powerlib_foundation] theorem toComplex_im (x : Fin 2 → ℝ) : (toComplex x).im = x 1 := rfl
-
-@[tmio T, simp, powerlib_foundation] theorem toComplex_ofComplex (z : ℂ) : toComplex (ofComplex z) = z := by
-  apply Complex.ext <;> simp [toComplex, ofComplex]
-
-@[tmio T, simp, powerlib_foundation] theorem ofComplex_toComplex (x : Fin 2 → ℝ) :
-    ofComplex (toComplex x) = x := by
-  ext i; fin_cases i <;> simp [toComplex, ofComplex]
-
-@[tmio T, powerlib_foundation] theorem toComplex_eq (x : Fin 2 → ℝ) :
-    toComplex x = (x 0 : ℂ) + (x 1 : ℂ) * Complex.I := by
-  apply Complex.ext <;> simp [toComplex]
-
-/-- The complex-form coordinate map as a real linear equivalence. -/
-def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
-  toFun := toComplex
-  invFun := ofComplex
-  map_add' x y := by apply Complex.ext <;> simp [toComplex]
-  map_smul' c x := by apply Complex.ext <;> simp [toComplex]
-  left_inv := ofComplex_toComplex
-  right_inv := toComplex_ofComplex
-
-@[tmio T, simp, powerlib_foundation] theorem complexEquiv_apply (x : Fin 2 → ℝ) :
-    complexEquiv x = toComplex x := rfl
-
-@[tmio T, simp, powerlib_foundation] theorem toComplex_add (x y : Fin 2 → ℝ) :
-    toComplex (x + y) = toComplex x + toComplex y := complexEquiv.map_add x y
-
-@[tmio T, simp, powerlib_foundation] theorem toComplex_sub (x y : Fin 2 → ℝ) :
-    toComplex (x - y) = toComplex x - toComplex y := complexEquiv.map_sub x y
-
-@[tmio T, simp, powerlib_foundation] theorem toComplex_smul (c : ℝ) (x : Fin 2 → ℝ) :
-    toComplex (c • x) = (c : ℂ) * toComplex x := by
-  apply Complex.ext <;> simp [toComplex]
 
 /-- Matrix rotation is complex multiplication by `e^{jθ}`. -/
 @[tmio M, powerlib_domain] theorem toComplex_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
@@ -194,11 +143,6 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   rw [park_eq_rot_neg, toComplex_rot_mulVec]
   push_cast
   ring_nf
-
-/-- `J` is complex multiplication by `j`. -/
-@[tmio T, powerlib_foundation] theorem toComplex_J_mulVec (x : Fin 2 → ℝ) :
-    toComplex (J *ᵥ x) = Complex.I * toComplex x := by
-  apply Complex.ext <;> simp [toComplex]
 
 /-- Rotation preserves the Euclidean norm. -/
 @[tmio M, powerlib_domain] theorem norm_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
@@ -298,6 +242,36 @@ def iparkQ (θ xd xq : ℝ) : ℝ := sin θ * xd + cos θ * xq
 
 @[tmio M, powerlib_domain] theorem parkQ_J (θ x y : ℝ) : parkQ θ (-y) x = parkD θ x y := by
   unfold parkD parkQ; ring
+
+/-- The distance of `z` to the rotated vector `rot θ w` is the distance of `park θ z` to `w`. -/
+@[tmio M, powerlib_domain] theorem park_dist_sq (θ a b d q : ℝ) :
+    (a - iparkD θ d q) ^ 2 + (b - iparkQ θ d q) ^ 2 =
+      (parkD θ a b - d) ^ 2 + (parkQ θ a b - q) ^ 2 := by
+  unfold parkD parkQ iparkD iparkQ
+  linear_combination (d ^ 2 + q ^ 2 - a ^ 2 - b ^ 2) * sin_sq_add_cos_sq θ
+
+/-- The chain rule of the Park rows in a rotating frame, for arbitrary differentiable `θ`, `a`,
+`b` on any set: `(park θ (a, b))' = park θ (a', b') − θ' J park θ (a, b)`. -/
+@[tmio M, powerlib_domain] theorem hasDerivWithinAt_parkD_parkQ {θ a b : ℝ → ℝ}
+    {θ' a' b' t : ℝ} {s : Set ℝ} (hθ : HasDerivWithinAt θ θ' s t)
+    (ha : HasDerivWithinAt a a' s t) (hb : HasDerivWithinAt b b' s t) :
+    HasDerivWithinAt (fun τ => parkD (θ τ) (a τ) (b τ))
+        (parkD (θ t) a' b' + θ' * parkQ (θ t) (a t) (b t)) s t ∧
+      HasDerivWithinAt (fun τ => parkQ (θ τ) (a τ) (b τ))
+        (parkQ (θ t) a' b' - θ' * parkD (θ t) (a t) (b t)) s t := by
+  have hc := hθ.cos
+  have hs := hθ.sin
+  constructor
+  · convert (hc.mul ha).add (hs.mul hb) using 1
+    · funext τ
+      simp [parkD]
+    · simp only [parkD, parkQ]
+      ring
+  · convert (hs.neg.mul ha).add (hc.mul hb) using 1
+    · funext τ
+      simp [parkQ]
+    · simp only [parkD, parkQ, Pi.neg_apply]
+      ring
 
 end Components
 

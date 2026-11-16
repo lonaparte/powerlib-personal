@@ -79,11 +79,11 @@ namespace LTIAdmission
 
 def submittedMatrix : Matrix (Fin 2) (Fin 2) ℚ := !![-1, 10; 0, -1]
 
-def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
+def accepted : Linear.Certificate (Linear.Positive.real submittedMatrix) :=
   Linear.Synthesis.certificateOf submittedMatrix (by decide +kernel)
 
 @[powerlib_foundation] theorem real_submittedMatrix :
-    Linear.Synthesis.real submittedMatrix = !![(-1 : ℝ), 10; 0, -1] := by
+    Linear.Positive.real submittedMatrix = !![(-1 : ℝ), 10; 0, -1] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [submittedMatrix]
 
@@ -114,7 +114,7 @@ def differentMatrix : Matrix (Fin 2) (Fin 2) ℚ := !![-2, 10; 0, -1]
 -- A certificate for another matrix is not a certificate for the submitted one.
 @[powerlib_foundation] theorem another_model_rejected : True := by
   fail_if_success
-    have wrong : Linear.Certificate (Linear.Synthesis.real differentMatrix) := accepted
+    have wrong : Linear.Certificate (Linear.Positive.real differentMatrix) := accepted
   trivial
 
 end LTIAdmission
@@ -128,7 +128,7 @@ def submittedMatrix : Matrix (Fin 8) (Fin 8) ℚ :=
     0, 1, 0, -8, 1, 1, 0, 0; 1, 0, 1, 0, -8, 1, 1, 0; 0, 2, 0, 1, 0, -8, 0, 1;
     1, 0, 0, 0, 1, 0, -8, 1; 0, 0, 1, 1, 0, 1, 0, -8]
 
-def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
+def accepted : Linear.Certificate (Linear.Positive.real submittedMatrix) :=
   lyapunov_certificate% submittedMatrix
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
@@ -250,13 +250,13 @@ open Linear
 def shiftedLCL : Matrix (Fin 3) (Fin 3) ℚ :=
   !![-3 / 4, -1, 0; 1, 1 / 4, -1; 0, 1, -3 / 4]
 
-def marginCertificate : Certificate (Synthesis.real shiftedLCL) :=
+def marginCertificate : Certificate (Positive.real shiftedLCL) :=
   lyapunov_certificate% shiftedLCL
 
 @[powerlib_foundation] theorem lcl_margin :
     RateMargin LCLAdmission.submittedModel.plant.A (1 / 4) := by
   have hA : LCLAdmission.submittedModel.plant.A + (1 / 4 : ℝ) • 1 =
-      Synthesis.real shiftedLCL := by
+      Positive.real shiftedLCL := by
     ext i j
     fin_cases i <;> fin_cases j <;>
       norm_num [LCLAdmission.submittedModel, Passive.LCL.Circuit.plant,

@@ -12,14 +12,15 @@ Model boundary.
   `C_q = Σᵢ αᵢ iᵠ - q Σᵢ βᵢ i^{q-1}` vanish for `q ≤ p`, which is equivalent to the method being
   exact on all monomials `t^q`, `q ≤ p` (`residual_monomial`), and `C_{p+1} ≠ 0` makes the order
   exactly `p`. Consistency (`ρ(1) = 0`, `ρ'(1) = σ(1)`) is order `≥ 1`
-  (`consistent_iff_hasOrder_one`).
+  (`consistent_iff_hasOrder_one`); every method of order `p ≥ 1` is consistent
+  (`consistent_of_hasOrder`).
 
 Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).
 
 Results.
 * `bdf1_exactOrder`, …, `bdf6_exactOrder` — BDF1–BDF6 with the coefficients of the source table
-  (BDF5/BDF6 completed, the table lists only `β_k`) have exact order `k`; `bdf1_consistent`, …,
-  `bdf6_consistent`.
+  (BDF5/BDF6 completed, the table lists only `β_k`) have exact order `k`; their consistency is
+  `LMM.consistent_of_hasOrder` applied to `bdfk_exactOrder.1`.
 
 Not formalized.
 * Zero-stability of BDF1–6. Failure of zero-stability (a root of `ρ` outside the closed unit
@@ -66,6 +67,11 @@ def Consistent (m : LMM k) : Prop :=
     have h1 := h 1 le_rfl
     simp [C] at h0 h1
     exact ⟨h0, by linarith⟩
+
+/-- Every method of order `p ≥ 1` is consistent. -/
+@[tmio T, powerlib_foundation] theorem consistent_of_hasOrder (m : LMM k) {p : ℕ}
+    (h : m.HasOrder p) (hp : 1 ≤ p) : m.Consistent :=
+  (consistent_iff_hasOrder_one m).2 fun q hq => h q (hq.trans hp)
 
 /-- Order conditions are exactness on monomials: the LMM residual of `x(t) = tᵠ` on the grid
 `tᵢ = i h` equals `C_q hᵠ`. -/
@@ -124,35 +130,5 @@ def bdf6 : LMM 6 := bdf 6 ![10/147, -72/147, 225/147, -400/147, 450/147, -360/14
   refine ⟨fun q hq => ?_, ?_⟩
   · interval_cases q <;> simp [LMM.C, bdf6, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf6, bdf, Fin.sum_univ_succ]; norm_num
-
-/-- BDF1 (implicit Euler) is consistent. -/
-@[tmio T, powerlib_foundation] theorem bdf1_consistent : bdf1.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf1_exactOrder.1 q hq
-
-/-- BDF2 is consistent. -/
-@[tmio T, powerlib_foundation] theorem bdf2_consistent : bdf2.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf2_exactOrder.1 q (by omega)
-
-/-- BDF3 is consistent. -/
-@[tmio T, powerlib_foundation] theorem bdf3_consistent : bdf3.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf3_exactOrder.1 q (by omega)
-
-/-- BDF4 is consistent. -/
-@[tmio T, powerlib_foundation] theorem bdf4_consistent : bdf4.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf4_exactOrder.1 q (by omega)
-
-/-- BDF5 is consistent. -/
-@[tmio T, powerlib_foundation] theorem bdf5_consistent : bdf5.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf5_exactOrder.1 q (by omega)
-
-/-- BDF6 is consistent. -/
-@[tmio T, powerlib_foundation] theorem bdf6_consistent : bdf6.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf6_exactOrder.1 q (by omega)
 
 end powerlib.Numerics

@@ -32,7 +32,7 @@ Results.
   exact within the context `{equilibrium, positiveReference, offBoundary}` (requirement
   `Requirement.offBoundary`: Routh conditions or a strict violation,
   `Criteria.RouthViolationFin4`); a strict violation gives instability
-  (`mem_den_unstable_of_violation`, linearization of the regularized field).
+  (`mem_den_unstable_of_violation`, linearization of the field, `C¹` on `V_dc ≠ 0`).
 * Three boundary witnesses, all equilibria with positive reference whose Jacobians lie on the
   boundary (`hopfCenter_mem_realize`, `hopfDamped_mem_realize`, `cdcZero_mem_realize`;
   `hopfCenter_not_mem_realize_offBoundary`, `hopfDamped_not_mem_realize_offBoundary`,
@@ -92,8 +92,9 @@ namespace PLLDC
 /-! ## Off the Routh boundary -/
 
 /-- At an equilibrium with positive reference, a strict violation of the 4×4 Routh conditions gives
-instability (a characteristic root in the open right half plane; LeanForControl's linearization
-theorem for the regularized field, transferred through the ball on which it is the PLL–DC model). -/
+instability (a characteristic root in the open right half plane; the linearization theorem for a
+field `C¹` on the open set `V_dc ≠ 0` around the equilibrium,
+`Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local`). -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_violation (m : Model)
     (hV : 0 < m.p.VdcRef) (hx : m.p.field m.x = 0)
     (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
@@ -101,12 +102,10 @@ theorem for the regularized field, transferred through the ball on which it is t
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow_iff')]
   change Unstable m.p.field m.x
-  obtain ⟨hreg0, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
-  have hreg := Criteria.unstable_of_jacobian_violation_fin_four (m.p.jacobian m.x)
-    (m.p.contDiff_regField hV) hreg0 hJ hviol
-  exact (Dynamics.unstable_congr_nhds (Dynamics.eventuallyEq_of_eqOn_ball (by positivity)
-    fun y hy => m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
-      (mem_ball_iff_norm.mpr hy))).mpr hreg
+  have hx2 : m.x 2 ≠ 0 := by rw [m.p.equilibrium_Vdc hx]; exact hV.ne'
+  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local PLLDC.Params.isOpen_nonzeroVdc hx2
+    (m.p.jacobian m.x) m.p.field_contDiffOn hx (m.p.fderiv_field hx2)
+    (Criteria.exists_eigenvalue_re_pos_of_violation_fin_four _ hviol)
 
 /-- **Off the Routh boundary the Lyapunov and the local asymptotic translations are exact.** At an
 equilibrium with positive reference whose Jacobian is not on the 4×4 Routh boundary, Lyapunov
@@ -283,28 +282,18 @@ decides nothing. -/
 
 /-- The undamped DC loop is not locally asymptotically stable: `centerEnergy (−1)` does not
 increase near `x*` and is negative at `x*` displaced along `ξ_v`, so the solution from there keeps
-it negative and cannot converge (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`, on the
-regularized field, which is the PLL–DC model on the ball of radius `1/4`). -/
+it negative and cannot converge (`Dynamics.not_localAsymptoticStable_of_lie_nonpos_local`, the
+PLL–DC model being `C¹` on `V_dc ≠ 0`). -/
 @[tmio TM, powerlib_domain] theorem hopfCenter_not_mem_den_locallyAsymptoticallyStable :
     connection% (hopfCenter ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro hm
   rw [mem_den_flow_iff'] at hm
   have hlas : LocalAsymptoticStable hopfCenter.p.field hopfCenter.x := hm
-  have hV : 0 < hopfCenter.p.VdcRef := by norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc,
-      PLLDC.Params.Rg, PLLDC.Params.Xg, hopfCenter]
-  have hx2 : hopfCenter.x 2 = hopfCenter.p.VdcRef := by simp [hopfCenter]
-  have hball : ∀ y : State 4, ‖y - hopfCenter.x‖ < 1 / 4 →
-      hopfCenter.p.regField y = hopfCenter.p.field y := fun y hy =>
-    (hopfCenter.p.field_eq_regField_of_mem_ball hV hx2
-      (by rw [Metric.mem_ball, dist_eq_norm]; simpa [hopfCenter] using hy)).symm
-  have hreg := Dynamics.localAsymptoticStable_congr_nhds
-    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num) hball) hlas
-  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (hopfCenter.p.contDiff_regField hV)
-    ((contDiff_centerEnergy (-1)).differentiable one_ne_zero) (by norm_num : (0 : ℝ) < 1 / 4)
-    (fun y hy => ?_) (fun ε hε => ?_) hreg
-  · rw [hball y hy]
-    exact centerEnergy_lie_nonpos (by norm_num) (by linarith)
+  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos_local PLLDC.Params.isOpen_nonzeroVdc
+    (by simp [PLLDC.Params.nonzeroVdc, hopfCenter_x]) hopfCenter.p.field_contDiffOn
+    ((contDiff_centerEnergy (-1)).differentiable one_ne_zero) (by norm_num : (0 : ℝ) < 1 / 2)
+    (fun y _ hy => centerEnergy_lie_nonpos (by norm_num) hy) (fun ε hε => ?_) hlas
   · refine ⟨WithLp.toLp 2 ![0, 0, 1, ε / 2], ?_, ?_⟩
     · rw [hopfCenter_x, EuclideanSpace.norm_eq]
       simp [Fin.sum_univ_four]

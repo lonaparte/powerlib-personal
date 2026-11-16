@@ -39,7 +39,9 @@ discriminant `D = H² + 4G` (`planeDisc`).
   `{P(x*) = 0, I₀ / C_dc ≠ 0, D = 0}`: LES ⇔ `I₀ / C_dc ≠ 0 ∧ (P / C_dc < 0 ∨ (P = 0 ∧ D < 0))`.
 * Static support (foundation): `dP0`, `dP2`, `dP3` (partial derivatives of `P`), `planeQ`,
   `planeG`, `planeH`, `planeDisc`, `hasFDerivAt_planeQ`, `planeQ_lie`, `field_two_eq_planeQ_div`,
-  `contDiff_planeG`, `contDiff_planeH`, `exists_contDiff_eq_field_of_sign`.
+  `contDiff_planeG`, `contDiff_planeH`; the `C¹` fields equal to the PLL–DC model on a half
+  space `σ V_dc ≥ s` are `PLLDC.Params.exists_contDiff_eq_field_of_sign`
+  (`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`).
 
 Family and connection conclusions.
 Connection conclusions on `PLLDC.family`: `mem_den_unstable_of_disc_pos`,
@@ -137,56 +139,6 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
 @[tmio M, powerlib_domain] theorem contDiff_planeH : ContDiff ℝ 1 p.planeH := by
   unfold planeH dP2 vgd idRef
   fun_prop
-
-/-- A `C¹` field equal to the PLL–DC model on the half space `σ V_dc ≥ s` (`σ = ±1`, `s > 0`): the
-denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
-@[tmio M, powerlib_domain] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
-    {s : ℝ} (hs : 0 < s) :
-    ∃ g : State 4 → State 4, ContDiff ℝ 1 g ∧
-      ∀ y : State 4, s ≤ σ * y 2 → g y = p.field y := by
-  have hσ2 : σ * σ = 1 := by rcases hσ with rfl | rfl <;> norm_num
-  refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
-      (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc,
-      p.field y 3] : State 4),
-    ?_, ?_⟩
-  · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * (σ * Dynamics.regDen s (σ * y 2))) :=
-      contDiff_const.mul (contDiff_const.mul ((Dynamics.contDiff_regDen _).comp
-        (contDiff_const.mul (Dynamics.contDiff_coord 2))))
-    have hden0 : ∀ y : State 4, 2 * (σ * Dynamics.regDen s (σ * y 2)) ≠ 0 := fun y => by
-      have h1 := Dynamics.half_le_regDen hs (σ * y 2)
-      have h2 : 0 < Dynamics.regDen s (σ * y 2) := lt_of_lt_of_le (by positivity) h1
-      rcases hσ with rfl | rfl
-      · positivity
-      · have : 0 < 2 * Dynamics.regDen s (-1 * y 2) := by positivity
-        intro h; linarith
-    have hoff := p.contDiff_field_offDC
-    apply contDiff_euclidean.2
-    intro i
-    fin_cases i
-    · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)
-      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 0).comp hoff
-      exact h
-    · show ContDiff ℝ 1 (fun y : State 4 => p.field y 1)
-      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 1).comp hoff
-      exact h
-    · show ContDiff ℝ 1 (fun y : State 4 =>
-        (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc)
-      exact (contDiff_const.add ((contDiff_const.mul p.contDiff_pccP).div hden hden0)).div_const _
-    · show ContDiff ℝ 1 (fun y : State 4 => p.field y 3)
-      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 3).comp hoff
-      exact h
-  · intro y hy
-    have hr : σ * Dynamics.regDen s (σ * y 2) = y 2 := by
-      rw [Dynamics.regDen_eq hs (by linarith)]
-      rw [← mul_assoc, hσ2, one_mul]
-    ext i
-    fin_cases i
-    · rfl
-    · rfl
-    · show (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc = p.field y 2
-      rw [hr]
-      simp [field, pccP]
-    · rfl
 
 end PLLDC.Params
 

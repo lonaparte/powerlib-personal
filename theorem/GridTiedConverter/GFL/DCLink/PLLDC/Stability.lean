@@ -33,16 +33,14 @@ currents,
 feed-forward filter or decoupling mismatch. Parameters are arbitrary reals except `V_dc* > 0`.
 Level: local behaviour at an equilibrium (linearization), not a basin estimate.
 
-The field contains `1/V_dc` and is therefore not globally `C¹`; the powerlib linearization
-theorems need a globally `C¹` field. This module
-* uses that local exponential stability and instability only depend on the field on a ball
-  around the equilibrium (`Dynamics.locallyExponentiallyStable_congr_nhds`,
-  `Dynamics.unstable_congr_nhds` with `Dynamics.eventuallyEq_of_eqOn_ball` in
-  `theorem/Dynamics/Locality.lean`, first-exit argument on
-  finite solution segments);
-* builds a globally `C¹` field `regField` that coincides with `field` on `{V_dc > 3V_dc*/4}`
-  (the denominator `V_dc` is replaced by a smooth `Dynamics.regDen ≥ V_dc*/2`), which contains a
-  ball around every equilibrium (equilibria have `V_dc = V_dc*`);
+The field contains `1/V_dc` and is therefore not globally `C¹`, only `C¹` on the open set
+`V_dc ≠ 0` (`field_contDiffOn`). This module
+* uses the linearization theorems for fields that are `C¹` on an open neighbourhood of the
+  equilibrium (`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local`,
+  `Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local`,
+  `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`, in
+  `theorem/Dynamics/Locality.lean` and `theorem/Dynamics/ConverseLinearization.lean`), on
+  `V_dc ≠ 0`, which contains every equilibrium (equilibria have `V_dc = V_dc* > 0`);
 * computes the Jacobian of `field` at any state with `V_dc ≠ 0` from the field with `fderiv`
   (`hasFDerivAt_field`, `jacobian`), with `c = cos Δθ`, `s = sin Δθ`, `i_d = i_d*(x)`,
   `v_d = v_{g,d}(x)`, `P = v_d i_d + v_q i_q0`:
@@ -83,12 +81,12 @@ conclusions: soundness (`chain_le_semantics`), exact passivity
 (`mem_den_locallyExponentiallyStable`, `mem_den_unstable_of_det_neg`,
 `noLoad_mem_den_locallyExponentiallyStable`). At equilibria with positive reference the local
 exponential translation is exact (`exactUnder_locallyExponentiallyStable`, context
-`{equilibrium, positiveReference}`): by the converse linearization theorem applied to `regField`
-(`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces a
+`{equilibrium, positiveReference}`): by the converse linearization theorem for the field `C¹` on
+`V_dc ≠ 0` (`Spectral.exactUnder_les_of_jacobian_local`) local exponential stability forces a
 Hurwitz Jacobian, i.e. the 4×4 Routh conditions
 (`Criteria.isHurwitz_fin_four_iff`). The untranslated
-local-stability statements are private implementation evidence; the ball-locality lemmas, the
-regularized field and the Jacobian are domain model identities.
+local-stability statements are private implementation evidence; the smoothness off the singular
+plane and the Jacobian are domain model identities.
 
 Without that context the local exponential translation is not exact
 (`not_exact_locallyExponentiallyStable`, and not even within the context of an equilibrium,
@@ -96,8 +94,8 @@ Without that context the local exponential translation is not exact
 with a negative DC-voltage reference `V_dc* = −1` and negative DC-loop gains is locally
 exponentially stable (`negativeReference_mem_den_locallyExponentiallyStable`). The PLL–DC model is
 `C¹` on `V_dc ≠ 0` (`PLLDC.Params.field_contDiffOn`, both signs), so on either side the converse
-linearization theorem for locally `C¹` fields applies directly and no separate negative-side
-regularization is needed: for every selected state with `V_dc* ≠ 0`,
+linearization theorem for locally `C¹` fields applies directly: for every selected state with
+`V_dc* ≠ 0`,
 `mem_den_locallyExponentiallyStable_iff` (an equilibrium whose Jacobian satisfies the 4×4 Routh
 conditions; at an equilibrium `V_dc* = V_dc,ref`, so the positive-reference requirement is what
 excludes the negative side from the translation). Off the singular plane a selected state that is
@@ -178,63 +176,6 @@ variable (p : PLLDC.Params)
 def pccP (x : State 4) : ℝ :=
   p.vgd (x 0) (p.idRef (x 2) (x 3)) * p.idRef (x 2) (x 3) +
     p.vgq (x 0) (p.idRef (x 2) (x 3)) * p.iq0
-
-/-- The PLL–DC model with the denominator `V_dc` replaced by `regDen V_dc* V_dc`. -/
-def regField (x : State 4) : State 4 :=
-  let id := p.idRef (x 2) (x 3)
-  WithLp.toLp 2 ![p.ωs - p.ωg + p.kp * p.vgq (x 0) id + p.ki * x 1,
-    p.vgq (x 0) id,
-    (p.I0 + 3 * (p.vgd (x 0) id * id + p.vgq (x 0) id * p.iq0) /
-      (2 * Dynamics.regDen p.VdcRef (x 2))) / p.Cdc,
-    p.VdcRef - x 2]
-
-@[tmio M, powerlib_domain] theorem contDiff_regField (hV : 0 < p.VdcRef) : ContDiff ℝ 1 p.regField := by
-  have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * Dynamics.regDen p.VdcRef (y 2)) :=
-    contDiff_const.mul ((Dynamics.contDiff_regDen _).comp (Dynamics.contDiff_coord 2))
-  have hden0 : ∀ y : State 4, 2 * Dynamics.regDen p.VdcRef (y 2) ≠ 0 := fun y => by
-    have := Dynamics.half_le_regDen hV (y 2)
-    have : 0 < Dynamics.regDen p.VdcRef (y 2) := lt_of_lt_of_le (by positivity) this
-    positivity
-  have hP : ContDiff ℝ 1 p.pccP := by
-    unfold pccP vgd vgq idRef
-    fun_prop
-  have hq : ContDiff ℝ 1 (fun y : State 4 => p.vgq (y 0) (p.idRef (y 2) (y 3))) := by
-    unfold vgq idRef
-    fun_prop
-  have h0 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 0) := by
-    show ContDiff ℝ 1 (fun y : State 4 =>
-      p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1)
-    fun_prop
-  have h1 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 1) := hq
-  have h2 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 2) := by
-    show ContDiff ℝ 1 (fun y : State 4 =>
-      (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen p.VdcRef (y 2))) / p.Cdc)
-    exact (contDiff_const.add ((contDiff_const.mul hP).div hden hden0)).div_const _
-  have h3 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 3) := by
-    show ContDiff ℝ 1 (fun y : State 4 => p.VdcRef - y 2)
-    fun_prop
-  apply contDiff_euclidean.2
-  intro i
-  fin_cases i
-  exacts [h0, h1, h2, h3]
-
-/-- On the half-space `V_dc > 3 V_dc*/4` the regularized field is the PLL–DC model. -/
-@[tmio M, powerlib_domain] theorem field_eq_regField {y : State 4} (hV : 0 < p.VdcRef)
-    (hy : 3 * p.VdcRef / 4 ≤ y 2) : p.field y = p.regField y := by
-  unfold field regField
-  rw [Dynamics.regDen_eq hV hy]
-
-/-- Every point of the ball of radius `V_dc*/4` around a state with `V_dc = V_dc*` lies in the
-half-space where the two fields agree. -/
-@[tmio M, powerlib_domain] theorem field_eq_regField_of_mem_ball (hV : 0 < p.VdcRef) {x y : State 4}
-    (hx : x 2 = p.VdcRef) (hy : y ∈ Metric.ball x (p.VdcRef / 4)) :
-    p.field y = p.regField y := by
-  apply p.field_eq_regField hV
-  have h1 : dist (y 2) (x 2) ≤ dist y x := PiLp.dist_apply_le (p := 2) y x 2
-  rw [Real.dist_eq] at h1
-  rw [Metric.mem_ball] at hy
-  have h2 := (abs_lt.mp (lt_of_le_of_lt h1 hy)).1
-  linarith
 
 /-! ## Jacobian of the PLL–DC model -/
 
@@ -381,20 +322,6 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
     x 2 = p.VdcRef := by
   obtain ⟨-, -, -, h3⟩ := (p.field_eq_zero_iff x).mp hx
   linarith
-
-/-- Near an equilibrium the regularized field has the same equilibrium and Jacobian. -/
-@[tmio M, powerlib_domain] theorem regField_equilibrium_jacobian (hV : 0 < p.VdcRef) {x : State 4}
-    (hx : p.field x = 0) :
-    p.regField x = 0 ∧
-      fderiv ℝ p.regField x = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (p.jacobian x) := by
-  have hx2 := p.equilibrium_Vdc hx
-  have hR : 0 < p.VdcRef / 4 := by positivity
-  have hball : ∀ y ∈ Metric.ball x (p.VdcRef / 4), p.field y = p.regField y :=
-    fun y hy => p.field_eq_regField_of_mem_ball hV hx2 hy
-  refine ⟨by rw [← hball x (Metric.mem_ball_self hR)]; exact hx, ?_⟩
-  have hev : p.regField =ᶠ[𝓝 x] p.field :=
-    Filter.eventually_of_mem (Metric.ball_mem_nhds x hR) fun y hy => (hball y hy).symm
-  exact ((p.hasFDerivAt_field (by rw [hx2]; exact hV.ne')).congr_of_eventuallyEq hev).fderiv
 
 end PLLDC.Params
 
@@ -575,6 +502,56 @@ the whole space. -/
   rw [h]
   exact p.contDiff_field_offDC
 
+/-- A `C¹` field equal to the PLL–DC model on the half space `σ V_dc ≥ s` (`σ = ±1`, `s > 0`): the
+denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
+@[tmio M, powerlib_domain] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
+    {s : ℝ} (hs : 0 < s) :
+    ∃ g : State 4 → State 4, ContDiff ℝ 1 g ∧
+      ∀ y : State 4, s ≤ σ * y 2 → g y = p.field y := by
+  have hσ2 : σ * σ = 1 := by rcases hσ with rfl | rfl <;> norm_num
+  refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
+      (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc,
+      p.field y 3] : State 4),
+    ?_, ?_⟩
+  · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * (σ * Dynamics.regDen s (σ * y 2))) :=
+      contDiff_const.mul (contDiff_const.mul ((Dynamics.contDiff_regDen _).comp
+        (contDiff_const.mul (Dynamics.contDiff_coord 2))))
+    have hden0 : ∀ y : State 4, 2 * (σ * Dynamics.regDen s (σ * y 2)) ≠ 0 := fun y => by
+      have h1 := Dynamics.half_le_regDen hs (σ * y 2)
+      have h2 : 0 < Dynamics.regDen s (σ * y 2) := lt_of_lt_of_le (by positivity) h1
+      rcases hσ with rfl | rfl
+      · positivity
+      · have : 0 < 2 * Dynamics.regDen s (-1 * y 2) := by positivity
+        intro h; linarith
+    have hoff := p.contDiff_field_offDC
+    apply contDiff_euclidean.2
+    intro i
+    fin_cases i
+    · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)
+      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 0).comp hoff
+      exact h
+    · show ContDiff ℝ 1 (fun y : State 4 => p.field y 1)
+      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 1).comp hoff
+      exact h
+    · show ContDiff ℝ 1 (fun y : State 4 =>
+        (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc)
+      exact (contDiff_const.add ((contDiff_const.mul p.contDiff_pccP).div hden hden0)).div_const _
+    · show ContDiff ℝ 1 (fun y : State 4 => p.field y 3)
+      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 3).comp hoff
+      exact h
+  · intro y hy
+    have hr : σ * Dynamics.regDen s (σ * y 2) = y 2 := by
+      rw [Dynamics.regDen_eq hs (by linarith)]
+      rw [← mul_assoc, hσ2, one_mul]
+    ext i
+    fin_cases i
+    · rfl
+    · rfl
+    · show (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc = p.field y 2
+      rw [hr]
+      simp [field, pccP]
+    · rfl
+
 end PLLDC.Params
 
 
@@ -611,12 +588,10 @@ locally exponentially stable. -/
   dsimp only at hV hx htr hm3 hdet hg
   unfold TMIO.Statement
   rw [PLLDC.mem_den_flow_iff]
-  obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
-  have hreg := Criteria.locallyExponentiallyStable_of_jacobian_fin_four (p.jacobian x)
-    (p.contDiff_regField hV) hreg0 hJ htr hm3 hdet hg
-  exact Dynamics.locallyExponentiallyStable_congr_nhds
-    (Dynamics.eventuallyEq_of_eqOn_ball (by positivity) fun y hy =>
-      p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx) (mem_ball_iff_norm.mpr hy)) hreg
+  have hx2 : x 2 ≠ 0 := by rw [p.equilibrium_Vdc hx]; exact hV.ne'
+  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
+    PLLDC.Params.isOpen_nonzeroVdc hx2 (p.jacobian x) p.field_contDiffOn hx (p.fderiv_field hx2)
+    ((Criteria.isHurwitz_fin_four_iff _).2 ⟨htr, hm3, hdet, hg⟩)
 
 /-- **The PLL–DC model, instability.** At an equilibrium of the PLL–DC model (`V_dc* > 0`) with
 `det J < 0` the Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
@@ -627,12 +602,11 @@ locally exponentially stable. -/
   dsimp only at hV hx hdet
   unfold TMIO.Statement
   rw [PLLDC.mem_den_flow_iff]
-  obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
-  have hreg := Criteria.unstable_of_jacobian_violation_fin_four (p.jacobian x)
-    (p.contDiff_regField hV) hreg0 hJ (Or.inr (Or.inr (Or.inr (Or.inl hdet))))
-  exact (Dynamics.unstable_congr_nhds (Dynamics.eventuallyEq_of_eqOn_ball (by positivity)
-    fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
-      (mem_ball_iff_norm.mpr hy))).mpr hreg
+  have hx2 : x 2 ≠ 0 := by rw [p.equilibrium_Vdc hx]; exact hV.ne'
+  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local PLLDC.Params.isOpen_nonzeroVdc hx2
+    (p.jacobian x) p.field_contDiffOn hx (p.fderiv_field hx2)
+    (Criteria.exists_eigenvalue_re_pos_of_violation_fin_four _
+      (Or.inr (Or.inr (Or.inr (Or.inl hdet)))))
 
 /-- **The PLL–DC model, instability off equilibrium.** A selected state off the singular plane
 (`V_dc* ≠ 0`, where the PLL–DC model is `C¹`, `PLLDC.Params.field_contDiffOn`) that is not an
@@ -646,8 +620,8 @@ equilibrium is unstable: the solution through it leaves it
 
 /-- Every translation of the PLL–DC family is sound: the Routh conditions at an equilibrium
 prove the local sentences, a negative Jacobian determinant proves instability (LeanForControl's
-linearization theorems, applied to the regularized field and transferred through the ball on
-which it agrees with the PLL–DC model), and passivity holds without requirement. -/
+linearization theorems for a field `C¹` on the open set `V_dc ≠ 0` around the equilibrium), and
+passivity holds without requirement. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -739,8 +713,8 @@ which it agrees with the PLL–DC model), and passivity holds without requiremen
 
 /-- At an equilibrium with positive DC-voltage reference, local exponential stability is
 translated exactly: the equilibrium is locally exponentially stable exactly when its Jacobian
-satisfies the 4×4 Routh conditions. Converse linearization of the regularized field, which is
-the PLL–DC model on a ball around the equilibrium, and the quartic Routh–Hurwitz criterion. -/
+satisfies the 4×4 Routh conditions. Converse linearization of the PLL–DC model, which is `C¹`
+on the open set `V_dc ≠ 0` around the equilibrium, and the quartic Routh–Hurwitz criterion. -/
 @[tmio TM, powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .locallyExponentiallyStable)) := by
@@ -751,10 +725,10 @@ the PLL–DC model on a ball around the equilibrium, and the quartic Routh–Hur
       (TMIO.mem_realize _ _ _).mp hm .positiveReference (by simp)⟩
   refine Spectral.exactUnder_les_of_jacobian_local (fun m P => mem_den_flow_iff)
     {.equilibrium, .positiveReference} (fun m => m.p.jacobian m.x) (fun m _ hm => ?_)
-    (fun m => Metric.ball m.x (m.p.VdcRef / 4)) (fun _ _ => Metric.isOpen_ball)
-    (fun m hm => Metric.mem_ball_self (by linarith [(hΔ m hm).2]))
-    (fun m hm => (m.p.contDiff_regField (hΔ m hm).2).contDiffOn.congr fun y hy =>
-      m.p.field_eq_regField_of_mem_ball (hΔ m hm).2 (m.p.equilibrium_Vdc (hΔ m hm).1) hy)
+    (fun _ => PLLDC.Params.nonzeroVdc) (fun _ _ => PLLDC.Params.isOpen_nonzeroVdc)
+    (fun m hm => show m.x 2 ≠ 0 by
+      rw [m.p.equilibrium_Vdc (hΔ m hm).1]; exact (hΔ m hm).2.ne')
+    (fun m _ => m.p.field_contDiffOn)
     (fun m hm => m.p.fderiv_field (by rw [m.p.equilibrium_Vdc (hΔ m hm).1]; exact (hΔ m hm).2.ne'))
     fun m hm _ hH => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
@@ -775,8 +749,7 @@ the PLL–DC model on a ball around the equilibrium, and the quartic Routh–Hur
 stability holds exactly when the state is an equilibrium whose Jacobian satisfies the 4×4 Routh
 conditions. The PLL–DC model is `C¹` on `V_dc ≠ 0` (`PLLDC.Params.field_contDiffOn`), so the
 converse linearization theorem for fields that are `C¹` on an open neighbourhood applies
-(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`): the negative side needs no
-separate regularization. -/
+(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`) on either side. -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model) (hx : m.x 2 ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
       m ∈ {m : Model | m.p.field m.x = 0 ∧ RouthFin4 (m.p.jacobian m.x)}) := by
@@ -1106,41 +1079,8 @@ while it stays near `x*` (`Dynamics.Degenerate.unstable_of_repel`). -/
     have h2 := (abs_lt.mp h1).1
     show a ≤ g y
     linarith
-  · refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
-      (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc, p.field y 3] : State 4),
-      ?_, ?_⟩
-    · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * Dynamics.regDen s (y 2)) :=
-        contDiff_const.mul ((Dynamics.contDiff_regDen _).comp (Dynamics.contDiff_coord 2))
-      have hden0 : ∀ y : State 4, 2 * Dynamics.regDen s (y 2) ≠ 0 := fun y => by
-        have := Dynamics.half_le_regDen hs (y 2)
-        have : 0 < Dynamics.regDen s (y 2) := lt_of_lt_of_le (by positivity) this
-        positivity
-      have hoff := p.contDiff_field_offDC
-      apply contDiff_euclidean.2
-      intro i
-      fin_cases i
-      · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)
-        have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 0).comp hoff
-        exact h
-      · show ContDiff ℝ 1 (fun y : State 4 => p.field y 1)
-        have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 1).comp hoff
-        exact h
-      · show ContDiff ℝ 1 (fun y : State 4 =>
-          (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc)
-        exact (contDiff_const.add ((contDiff_const.mul p.contDiff_pccP).div hden hden0)).div_const _
-      · show ContDiff ℝ 1 (fun y : State 4 => p.field y 3)
-        have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 3).comp hoff
-        exact h
-    · intro y _ hy2
-      have hr : Dynamics.regDen s (y 2) = y 2 := Dynamics.regDen_eq hs (by linarith)
-      ext i
-      fin_cases i
-      · rfl
-      · rfl
-      · show (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc = p.field y 2
-        rw [hr]
-        simp [PLLDC.Params.field, PLLDC.Params.pccP]
-      · rfl
+  · obtain ⟨g, hg, hgf⟩ := p.exists_contDiff_eq_field_of_sign (Or.inl rfl) hs
+    exact ⟨g, hg, fun y _ hy2 => hgf y (by rw [one_mul]; exact hy2)⟩
 
 /-- **Local exponential stability on the singular plane.** For a selected state with `V_dc* = 0`
 and nonzero power term `P(x*) / C_dc ≠ 0` (so `C_dc ≠ 0`), the segment-based local exponential

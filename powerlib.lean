@@ -196,6 +196,7 @@ import theorem.LinearAlgebra.ConjugateGradient
 import theorem.LinearAlgebra.LU
 import theorem.LinearAlgebra.QR
 import theorem.LinearAlgebra.Eigen
+import theorem.LinearAlgebra.Frobenius
 import theorem.Drives.CascadeControl
 import theorem.Drives.DirectTorqueControl
 import theorem.Drives.InductionMachine
@@ -353,6 +354,7 @@ import theorem.Transform.ParkABC
 import theorem.Transform.PerUnit
 import theorem.Transform.PerUnitDq
 import theorem.Transform.PerUnitLTI
+import theorem.Transform.Planar
 import theorem.Transform.Rebase
 import theorem.Transform.SpaceVector
 import theorem.Asymptotics.Guard.MFPT

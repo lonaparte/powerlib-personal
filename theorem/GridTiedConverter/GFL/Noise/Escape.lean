@@ -1,6 +1,8 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.MeasureTheory.Integral.Prod
+import theorem.GridTiedConverter.PLL.PIPLL
+import theorem.GridTiedConverter.PLL.Linear
 
 /-! # Escape analysis of the reduced 2D GFL–PLL model: algebraic and calculus facts
 
@@ -29,9 +31,14 @@ Results.
 * `fpFreq_gibbs` (with `gibbs2_hasDerivAt_θ`, `gibbs2_hasDerivAt_η`): if `ε² = 2 K_p T`
   (`B Bᵀ = 2 T R`, `T = T_eff`), then `e^{−𝓗/T}` solves the stationary Fokker–Planck equation
   pointwise; `gibbs2_not_integrable`: it is not normalizable in general (Corrections).
-* `saddleJac_partials`, `saddleJac_det_sub`, `saddleJac_eigen`, `saddle_stable_eigen_neg`,
-  `langer_factor`, `langer_factor_gt_one`, `langer_factor_mul_textbook`: the saddle Jacobian, its
-  eigenvalues and the Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`.
+* The saddle Jacobian is the PI-PLL Jacobian `PLL.piPLLJacobian K_p K_i c` at the slope
+  `c = h'(θ_s)` (the derivative of the drift, `PLL.hasFDerivAt_piPLLField`; characteristic
+  polynomial `λ² − K_p c λ − K_i c` by `Criteria.det_real_characteristic_fin_two` with
+  `PLL.piPLLJacobian_trace`, `PLL.piPLLJacobian_det`); its barrier frequency and damping ratio are
+  the PI-PLL's `ω_b = PLL.omegaN c K_i = √(c K_i)` and `ζ_b = PLL.zeta c K_p K_i`
+  (`= (K_p/2)√(c/K_i)`, `PLL.zeta_eq`). `lambdaB_eigen`, `saddle_stable_eigen_neg`,
+  `langer_factor`, `langer_factor_gt_one`, `langer_factor_mul_textbook`: its eigenvalues and the
+  Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`.
 * `truncExp_mean`, `truncExp_mean_lt`: `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ}) < μ` for
   the exponential density with mean `μ`.
 
@@ -177,46 +184,20 @@ integrable on the plane. -/
 
 /-! ## Langer factor at the saddle (§5b–§5c) -/
 
-/-- Saddle Jacobian of the drift `(K_p h + K_i η, h)` at `(θ_s, 0)` with `h(θ_s) = 0`,
+/-- Unstable eigenvalue `λ_b = K_p c/2 + √(K_p² c²/4 + K_i c)` of the saddle Jacobian
+`PLL.piPLLJacobian K_p K_i c` of the drift `(K_p h + K_i η, h)` at `(θ_s, 0)` with `h(θ_s) = 0`,
 `h'(θ_s) = c` (`c > 0` on the saddle side, `𝒱''(θ_s) = −c`). -/
-def saddleJac (Kp Ki c : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * c, Ki; c, 0]
-
-/-- The entries of `saddleJac` are the partial derivatives of the drift field. -/
-@[tmio M, powerlib_domain] theorem saddleJac_partials {Kp Ki c θs η : ℝ} {h : ℝ → ℝ}
-    (hh : HasDerivAt h c θs) :
-    HasDerivAt (fun θ => Kp * h θ + Ki * η) (saddleJac Kp Ki c 0 0) θs ∧
-      HasDerivAt (fun y => Kp * h θs + Ki * y) (saddleJac Kp Ki c 0 1) η ∧
-      HasDerivAt h (saddleJac Kp Ki c 1 0) θs ∧
-      HasDerivAt (fun _ : ℝ => h θs) (saddleJac Kp Ki c 1 1) η := by
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simpa [saddleJac] using (hh.const_mul Kp).add_const (Ki * η)
-  · simpa [saddleJac] using ((hasDerivAt_id η).const_mul Ki).const_add (Kp * h θs)
-  · simpa [saddleJac] using hh
-  · simpa [saddleJac] using hasDerivAt_const η (h θs)
-
-/-- Undamped barrier frequency `ω_b = √(K_i c)`. -/
-def omegaB (Ki c : ℝ) : ℝ := √(Ki * c)
-
-/-- Barrier damping ratio `ζ_b = (K_p/2) √(c/K_i)`. -/
-def zetaB (Kp Ki c : ℝ) : ℝ := Kp / 2 * √(c / Ki)
-
-/-- Unstable eigenvalue `λ_b = K_p c/2 + √(K_p² c²/4 + K_i c)`. -/
 def lambdaB (Kp Ki c : ℝ) : ℝ := Kp * c / 2 + √(Kp ^ 2 * c ^ 2 / 4 + Ki * c)
 
-/-- Characteristic polynomial of the saddle Jacobian: `λ² − K_p c λ − K_i c`. -/
-@[tmio M, powerlib_domain] theorem saddleJac_det_sub (Kp Ki c l : ℝ) :
-    (l • (1 : Matrix (Fin 2) (Fin 2) ℝ) - saddleJac Kp Ki c).det = l ^ 2 - Kp * c * l - Ki * c := by
-  rw [Matrix.det_fin_two]
-  simp [saddleJac]
-  ring
-
 /-- `λ_b` is an eigenvalue of the saddle Jacobian with eigenvector `(λ_b, c)`. -/
-@[tmio M, powerlib_domain] theorem saddleJac_eigen {Kp Ki c : ℝ} (hKi : 0 ≤ Ki) (hc : 0 ≤ c) :
-    saddleJac Kp Ki c *ᵥ ![lambdaB Kp Ki c, c] = lambdaB Kp Ki c • ![lambdaB Kp Ki c, c] := by
+@[tmio M, powerlib_domain] theorem lambdaB_eigen {Kp Ki c : ℝ} (hKi : 0 ≤ Ki) (hc : 0 ≤ c) :
+    PLL.piPLLJacobian Kp Ki c *ᵥ ![lambdaB Kp Ki c, c] =
+      lambdaB Kp Ki c • ![lambdaB Kp Ki c, c] := by
   have hs : 0 ≤ Kp ^ 2 * c ^ 2 / 4 + Ki * c := by positivity
   have hsq := Real.sq_sqrt hs
   ext i; fin_cases i <;>
-    simp [saddleJac, lambdaB, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> nlinarith [hsq]
+    simp [PLL.piPLLJacobian, lambdaB, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;>
+    nlinarith [hsq]
 
 /-- The other eigenvalue `K_p c/2 − √(K_p² c²/4 + K_i c)` is negative (`K_i, c > 0`): the
 equilibrium is a saddle. -/
@@ -229,21 +210,23 @@ equilibrium is a saddle. -/
   rw [h2] at h1
   linarith [le_abs_self (Kp * c / 2)]
 
-/-- **Langer factor (§5b boxed)**: `λ_b / ω_b = √(1 + ζ_b²) + ζ_b`. -/
+/-- **Langer factor (§5b boxed)**: `λ_b / ω_b = √(1 + ζ_b²) + ζ_b`, with the barrier frequency
+`ω_b = PLL.omegaN c K_i` and damping ratio `ζ_b = PLL.zeta c K_p K_i` of the saddle Jacobian. -/
 @[tmio M, powerlib_domain] theorem langer_factor {Kp Ki c : ℝ} (hKi : 0 < Ki) (hc : 0 < c) :
-    lambdaB Kp Ki c / omegaB Ki c = √(1 + zetaB Kp Ki c ^ 2) + zetaB Kp Ki c := by
-  have hω : 0 < omegaB Ki c := Real.sqrt_pos.mpr (mul_pos hKi hc)
-  rw [div_eq_iff hω.ne']
-  have hωζ : zetaB Kp Ki c * omegaB Ki c = Kp * c / 2 := by
-    unfold zetaB omegaB
+    lambdaB Kp Ki c / PLL.omegaN c Ki =
+      √(1 + PLL.zeta c Kp Ki ^ 2) + PLL.zeta c Kp Ki := by
+  have hω : 0 < PLL.omegaN c Ki := Real.sqrt_pos.mpr (mul_pos hc hKi)
+  rw [div_eq_iff hω.ne', PLL.zeta_eq hc hKi]
+  have hωζ : Kp / 2 * √(c / Ki) * PLL.omegaN c Ki = Kp * c / 2 := by
+    unfold PLL.omegaN
     rw [mul_assoc, ← Real.sqrt_mul (div_pos hc hKi).le]
-    rw [show c / Ki * (Ki * c) = c ^ 2 by field_simp, Real.sqrt_sq hc.le]
+    rw [show c / Ki * (c * Ki) = c ^ 2 by field_simp, Real.sqrt_sq hc.le]
     ring
-  have hsq : √(1 + zetaB Kp Ki c ^ 2) * omegaB Ki c = √(Kp ^ 2 * c ^ 2 / 4 + Ki * c) := by
-    unfold omegaB
+  have hsq : √(1 + (Kp / 2 * √(c / Ki)) ^ 2) * PLL.omegaN c Ki =
+      √(Kp ^ 2 * c ^ 2 / 4 + Ki * c) := by
+    unfold PLL.omegaN
     rw [← Real.sqrt_mul (by positivity)]
     congr 1
-    unfold zetaB
     rw [mul_pow, Real.sq_sqrt (div_pos hc hKi).le]
     field_simp
     ring
@@ -252,11 +235,11 @@ equilibrium is a saddle. -/
 
 /-- With `K_p > 0` the factor exceeds one: escape is **accelerated** relative to the undamped
 barrier frequency. -/
-@[tmio M, powerlib_domain] theorem langer_factor_gt_one {Kp Ki c : ℝ} (hKp : 0 < Kp) (hKi : 0 < Ki)
-    (hc : 0 < c) : 1 < √(1 + zetaB Kp Ki c ^ 2) + zetaB Kp Ki c := by
-  have hz : 0 < zetaB Kp Ki c := by
-    unfold zetaB; exact mul_pos (by positivity) (Real.sqrt_pos.mpr (div_pos hc hKi))
-  have : 1 ≤ √(1 + zetaB Kp Ki c ^ 2) := Real.one_le_sqrt.mpr (by nlinarith)
+@[tmio M, powerlib_domain] theorem langer_factor_gt_one {Kp Ki c : ℝ} (hKp : 0 < Kp)
+    (hKi : 0 < Ki) (hc : 0 < c) : 1 < √(1 + PLL.zeta c Kp Ki ^ 2) + PLL.zeta c Kp Ki := by
+  have hz : 0 < PLL.zeta c Kp Ki := by
+    rw [PLL.zeta_eq hc hKi]; exact mul_pos (by positivity) (Real.sqrt_pos.mpr (div_pos hc hKi))
+  have : 1 ≤ √(1 + PLL.zeta c Kp Ki ^ 2) := Real.one_le_sqrt.mpr (by nlinarith)
   linarith
 
 /-- **Correction (sign of the Langer factor)**: the pH value is the reciprocal of the textbook

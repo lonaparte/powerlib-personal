@@ -26,7 +26,8 @@ Source: work-sync `theory/T-pll-dynamics.md` §1.2, §1.6, §1.7, §1.8, §1.9.
 
 Results.
 * Grid voltage `gridAlphaBeta`, the Clarke image of the balanced three-phase voltage
-  (`Transform.clarke_mulVec_balanced` at `φ = 0`), Park projection
+  (`Transform.clarke_mulVec_balanced` at `φ = 0`), which is the positive-sequence vector
+  `posSeq V θ_g`; Park projection of a positive-sequence vector (`park_posSeq`), for the grid
   `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))`, phase-detector characteristic `V_q = −V sin θ̃`,
   and the perturbation projection `V_q^p = −V sin θ_e + (−sin θ_e, cos θ_e)·(δv_d, δv_q)`
   (T-pll-dynamics §1.2), with `‖(−sin θ_e, cos θ_e)‖ = 1` (`StochasticPH.sigmaBare_dot_self`).
@@ -64,16 +65,20 @@ open powerlib.Transform (park rot)
 
 /-! ## Balanced grid voltage and the SRF phase detector -/
 
-/-- Grid voltage space vector `V (cos θ_g, sin θ_g)` in the stationary αβ frame: the Clarke
-image of the balanced phase voltages (`Transform.clarke_mulVec_balanced` at `φ = 0`). -/
-def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.sin θg]
+/-- Positive-sequence component `A (cos α, sin α)` (counter-clockwise rotation). -/
+def posSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, A * Real.sin α]
 
-/-- Park projection of the grid voltage onto the PLL frame `θ̂`:
-`V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/
-@[tmio M, powerlib_domain] theorem park_gridAlphaBeta (V θg θh : ℝ) :
-    park θh *ᵥ gridAlphaBeta V θg =
-      ![V * Real.cos (θg - θh), V * Real.sin (θg - θh)] := by
-  ext i; fin_cases i <;> simp [gridAlphaBeta, Real.cos_sub, Real.sin_sub] <;> ring
+/-- Grid voltage space vector `V (cos θ_g, sin θ_g)` in the stationary αβ frame: the Clarke
+image of the balanced phase voltages (`Transform.clarke_mulVec_balanced` at `φ = 0`), the
+positive-sequence vector of amplitude `V` at the grid angle. -/
+abbrev gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := posSeq V θg
+
+/-- Park projection of a positive-sequence vector onto the PLL frame `θ̂`:
+`park θ̂ · A (cos α, sin α) = A (cos(α − θ̂), sin(α − θ̂))`; for the grid voltage
+(`gridAlphaBeta`) this is `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/
+@[tmio M, powerlib_domain] theorem park_posSeq (A α θh : ℝ) :
+    park θh *ᵥ posSeq A α = ![A * Real.cos (α - θh), A * Real.sin (α - θh)] := by
+  ext i; fin_cases i <;> simp [posSeq, Real.cos_sub, Real.sin_sub] <;> ring
 
 /-- The SRF-PLL phase detector: the q-axis grid voltage in the PLL frame. -/
 def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg) 1
@@ -81,7 +86,7 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
 /-- Phase-detector characteristic `V_q = −V sin θ̃`, `θ̃ = θ̂ − θ_g`. -/
 @[tmio M, simp, powerlib_domain] theorem phaseDetector_eq (V θg θh : ℝ) :
     phaseDetector V θg θh = -(V * Real.sin (θh - θg)) := by
-  rw [phaseDetector, park_gridAlphaBeta]
+  rw [phaseDetector, park_posSeq]
   simp only [Matrix.cons_val_one, Matrix.cons_val_zero]
   rw [show θg - θh = -(θh - θg) by ring, Real.sin_neg]; ring
 
@@ -101,15 +106,8 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
 
 /-! ## Unbalanced and harmonic voltages in the PLL frame (T-pll-dynamics §1.6) -/
 
-/-- Positive-sequence component `A (cos α, sin α)` (counter-clockwise rotation). -/
-def posSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, A * Real.sin α]
-
 /-- Negative-sequence component `A (cos α, −sin α)` (clockwise rotation). -/
 def negSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, -(A * Real.sin α)]
-
-@[tmio M, powerlib_domain] theorem park_posSeq_q (A α θh : ℝ) :
-    (park θh *ᵥ posSeq A α) 1 = A * Real.sin (α - θh) := by
-  simp [posSeq, Real.sin_sub]; ring
 
 @[tmio M, powerlib_domain] theorem park_negSeq_q (A α θh : ℝ) :
     (park θh *ᵥ negSeq A α) 1 = -(A * Real.sin (α + θh)) := by
@@ -120,7 +118,8 @@ at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (c
 @[tmio M, powerlib_domain] theorem park_unbalanced_q (Vp Vn θg θh φn : ℝ) :
     (park θh *ᵥ (posSeq Vp θg + negSeq Vn (θg + φn))) 1 =
       -(Vp * Real.sin (θh - θg)) - Vn * Real.sin (θg + θh + φn) := by
-  rw [Matrix.mulVec_add, Pi.add_apply, park_posSeq_q, park_negSeq_q,
+  rw [Matrix.mulVec_add, Pi.add_apply, park_posSeq, Matrix.cons_val_one, Matrix.cons_val_zero,
+    park_negSeq_q,
     show θg - θh = -(θh - θg) by ring, Real.sin_neg, show θg + φn + θh = θg + θh + φn by ring]
   ring
 
@@ -133,7 +132,7 @@ at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (c
 /-- Locked PLL: an `h`-th harmonic positive-sequence component gives a `(h − 1)θ_g` term. -/
 @[tmio M, powerlib_domain] theorem park_posSeq_harmonic_locked (A h φ θg : ℝ) :
     (park θg *ᵥ posSeq A (h * θg + φ)) 1 = A * Real.sin ((h - 1) * θg + φ) := by
-  rw [park_posSeq_q]; ring_nf
+  rw [park_posSeq, Matrix.cons_val_one, Matrix.cons_val_zero]; ring_nf
 
 /-- Locked PLL: an `h`-th harmonic negative-sequence component gives a `(h + 1)θ_g` term. -/
 @[tmio M, powerlib_domain] theorem park_negSeq_harmonic_locked (A h φ θg : ℝ) :

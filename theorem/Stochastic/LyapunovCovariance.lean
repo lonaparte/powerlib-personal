@@ -3,6 +3,7 @@ import dependencies.LeanForControl
 import theorem.Attributes
 import theorem.Linear.Transfer
 import theorem.Linear.EigenMap
+import theorem.LinearAlgebra.Frobenius
 
 /-! # Covariance Lyapunov equation of a vector OU process
 
@@ -73,12 +74,7 @@ open scoped Matrix.Norms.Frobenius Topology
 
 variable {n m : ℕ}
 
--- Compatibility with the pinned Mathlib (same local instances as LeanForControl's
--- `LyapunovEquation`): expose the Frobenius-derived instances explicitly.
-noncomputable local instance frobeniusENormedAddMonoid' :
-    ENormedAddMonoid (Matrix (Fin n) (Fin n) ℝ) :=
-  (NormedAddCommGroup.toENormedAddCommMonoid :
-    ENormedAddCommMonoid (Matrix (Fin n) (Fin n) ℝ)).toENormedAddMonoid
+attribute [local instance] powerlib.LinearAlgebra.frobeniusENormedAddMonoid
 
 /-- The covariance Lyapunov equation `A P + P Aᵀ + Q = 0`. -/
 def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=

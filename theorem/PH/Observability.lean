@@ -1,6 +1,7 @@
 import theorem.PH.PositiveReal
 import theorem.Criteria.Hurwitz2
 import theorem.Modal.Poles
+import theorem.Transform.Planar
 
 /-! # Passivity, zero-state observability and asymptotic stability of linear pH systems
 
@@ -15,8 +16,9 @@ Model boundary.
 * For a linear system zero-state observability is observability of the pair
   `(A, C) = ((J − R) Q, gᵀ Q)` (`LinearSystems.IsObservable`).
 * The counterexample is the lossless series `LC` loop `losslessLC`
-  (`J = [[0, −1], [1, 0]]`, `R = 0`, `g = (1, 0)ᵀ`, `Q = I`, output the loop current) — the
-  `r = 0`, `L = C = 1` case of the series RLC loop `seriesRLCPH` of
+  (`J = [[0, −1], [1, 0]]`, the planar rotation generator `Transform.J` of
+  `theorem/Transform/Planar.lean`; `R = 0`, `g = (1, 0)ᵀ`, `Q = I`, output the loop current) —
+  the `r = 0`, `L = C = 1` case of the series RLC loop `seriesRLCPH` of
   `theorem/Passive/PH/RLC.lean`.
 * The corrected statement uses the output feedback `u = −k y` (`k > 0`), closed loop
   `phOutputFeedback` with dissipation `R + k g gᵀ`.
@@ -87,24 +89,19 @@ variable {n m : ℕ}
 
 /-! ## Counterexample: the lossless `LC` loop -/
 
-/-- Interconnection of the lossless `LC` loop, state `(φ, q)` with `L = C = 1`. -/
-def losslessJ : Matrix (Fin 2) (Fin 2) ℝ := !![0, -1; 1, 0]
-
 /-- Input matrix: the source drives the inductor; the output is the loop current. -/
 def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
 
-@[tmio M, powerlib_foundation] theorem losslessJ_skew : losslessJᵀ = -losslessJ := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [losslessJ]
-
 @[tmio M, powerlib_foundation] theorem losslessLC_stateMatrix :
-    linearStateMatrix losslessJ 0 1 = !![0, -1; 1, 0] := by
-  simp [linearStateMatrix, losslessJ]
+    linearStateMatrix Transform.J 0 1 = !![0, -1; 1, 0] := by
+  simp [linearStateMatrix, Transform.J]
 
-/-- The lossless `LC` loop as a linear port-Hamiltonian plant: `J = losslessJ`, `R = 0`,
-`g = losslessG`, `Q = 1`. These are the data of the series RLC loop `Passive.seriesRLCPH`
-(`theorem/Passive/PH/RLC.lean`) with `r = 0`, `L = C = 1`. -/
+/-- The lossless `LC` loop as a linear port-Hamiltonian plant, state `(φ, q)` with `L = C = 1`:
+`J = Transform.J` (skew, `Transform.J_transpose`), `R = 0`, `g = losslessG`, `Q = 1`. These are
+the data of the series RLC loop `Passive.seriesRLCPH` (`theorem/Passive/PH/RLC.lean`) with
+`r = 0`, `L = C = 1`. -/
 def losslessLC : Port.PortHamiltonian 2 1 :=
-  toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one
+  toPortHamiltonian Transform.J 0 losslessG 1 Transform.J_transpose PosSemidef.zero PosDef.one
 
 /-- The lossless loop is passive (storage `H = ½ |x|²`). -/
 @[tmio TM, powerlib_domain] theorem losslessLC_mem_den_passive :
@@ -119,12 +116,12 @@ def losslessLC : Port.PortHamiltonian 2 1 :=
 /-- The lossless loop is (zero-state) observable from the loop current.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem losslessLC_observable :
-    LinearSystems.IsObservable (linearLTIModel losslessJ 0 losslessG 1).A
-      (linearLTIModel losslessJ 0 losslessG 1).C := by
+    LinearSystems.IsObservable (linearLTIModel Transform.J 0 losslessG 1).A
+      (linearLTIModel Transform.J 0 losslessG 1).C := by
   intro x hx
   have h0 := congrFun (hx ⟨0, by norm_num⟩) 0
   have h1 := congrFun (hx ⟨1, by norm_num⟩) 0
-  simp [linearLTIModel, linearStateMatrix, losslessJ, losslessG, mulVec, dotProduct,
+  simp [linearLTIModel, linearStateMatrix, Transform.J, losslessG, mulVec, dotProduct,
     Fin.sum_univ_two, Matrix.mul_apply] at h0 h1
   funext i; fin_cases i <;> simp [h0, h1]
 
@@ -147,7 +144,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   apply WithLp.ofLp_injective
   ext i; fin_cases i <;>
     simp [Linear.Plant.system, Port.System.zeroInput, losslessLC, toPortHamiltonian,
-      Port.PortHamiltonian.plant, losslessJ, Linear.op]
+      Port.PortHamiltonian.plant, Transform.J, Linear.op]
 
 /-- That trajectory keeps unit energy, so it does not converge to the origin.
 Static evidence on the model, not a connection conclusion. -/
@@ -172,9 +169,9 @@ equivalently its state matrix is not Hurwitz (trace zero). -/
   unfold TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz (P := .locallyAsymptoticallyStable)
     (Or.inl trivial)]
-  change ¬ LinearSystems.IsHurwitz (linearLTIModel losslessJ 0 losslessG 1).A
+  change ¬ LinearSystems.IsHurwitz (linearLTIModel Transform.J 0 losslessG 1).A
   intro h
-  rw [show (linearLTIModel losslessJ 0 losslessG 1).A = !![0, -1; 1, 0] from
+  rw [show (linearLTIModel Transform.J 0 losslessG 1).A = !![0, -1; 1, 0] from
     losslessLC_stateMatrix, Criteria.isHurwitz_fin_two_of_iff] at h
   linarith [h.1]
 

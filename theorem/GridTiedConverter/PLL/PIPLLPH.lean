@@ -21,7 +21,9 @@ Source: work-sync `theory/T-gfl-ph.md` (1.1)–(1.4), §1.2 "复用 [[T-pll-ph]]
 
 Results.
 pH data (T-gfl-ph (1.2)): `H(θ, η) = V(θ) + (K_i / 2) η²`, `∇H = (−h(θ), K_i η)`,
-`J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0) ⪰ 0`, `B = (−1, 0)ᵀ`, output `y = Bᵀ ∇H = h(θ)`.
+`J = [[0, 1], [−1, 0]]` (`pllJ`), `R = diag(K_p, 0) ⪰ 0` (`pllR`, `pllR_posSemidef`),
+`B = (−1, 0)ᵀ` (`pllB`), output `y = Bᵀ ∇H = h(θ)`. The three matrices are those of every PI-PLL
+pH model of the library (`PLL.pllPH`, `GFL.Noise`).
 * `gflPH_field`: `(J − R) ∇H + B δω` is exactly the PI-PLL field.
 * `piPLL_energy_rate`: for any `h` and any `V` with `V′ = −h` at `θ` (a local primitive),
   `H = V(θ) + (K_i / 2) η²` has `Ḣ = −K_p h(θ)² + h(θ) δω` along the PI-PLL field;
@@ -59,23 +61,32 @@ open powerlib.Dynamics (State)
 
 /-! ## The pH model -/
 
+/-- Interconnection matrix `J = [[0, 1], [−1, 0]]` of the PI-PLL. -/
+def pllJ : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -1, 0]
+
+/-- Dissipation matrix `R = diag(K_p, 0)` of the PI-PLL (proportional path). -/
+def pllR (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := Matrix.diagonal ![Kp, 0]
+
+/-- Input matrix `B = (−1, 0)ᵀ` of the PI-PLL (frequency offset enters the `θ` equation). -/
+def pllB : Matrix (Fin 2) (Fin 1) ℝ := !![-1; 0]
+
+/-- The dissipation matrix is positive semidefinite for `K_p ≥ 0`. -/
+@[tmio M, powerlib_domain] theorem pllR_posSemidef {Kp : ℝ} (hKp : 0 ≤ Kp) :
+    (pllR Kp).PosSemidef := by
+  rw [pllR, Matrix.posSemidef_diagonal_iff]
+  intro i; fin_cases i <;> simp [hKp]
+
 /-- The port-Hamiltonian model of the reduced PI-PLL with phase detector `h` and a primitive `V`
 of `−h`. -/
 def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki : ℝ) (hKp : 0 ≤ Kp) :
     PH.NonlinearModel 2 1 where
-  J := fun _ => !![0, 1; -1, 0]
-  R := fun _ => Matrix.diagonal ![Kp, 0]
-  g := fun _ => !![-1; 0]
+  J := fun _ => pllJ
+  R := fun _ => pllR Kp
+  g := fun _ => pllB
   H := fun x => V (x 0) + Ki / 2 * x 1 ^ 2
   dH := fun x => PhasePlane.mk (-h (x 0)) (Ki * x 1)
   skew := fun _ => PH.transpose_symplectic_two
-  dissipation_posSemidef := by
-    intro _
-    refine Matrix.PosSemidef.diagonal ?_
-    intro i
-    fin_cases i
-    · simpa using hKp
-    · simp
+  dissipation_posSemidef := fun _ => pllR_posSemidef hKp
   hasGradient := by
     intro x
     set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
@@ -100,8 +111,8 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem gflPH_field (x : State 2) (δω : ℝ) :
     (gflPHModel h V hV Kp Ki hKp).field x ![δω] = piPLLField h Kp Ki δω x := by
   rw [PhasePlane.ext_iff']
-  simp [PH.NonlinearModel.field, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
-    Fin.sum_univ_two]
+  simp [PH.NonlinearModel.field, gflPHModel, pllJ, pllR, pllB, PhasePlane.mk, Matrix.mulVec,
+    dotProduct, Fin.sum_univ_two]
   constructor
 
 /-- The output is the phase-detector signal `y = h(θ)`. -/
@@ -109,7 +120,7 @@ Static evidence on the model, not a connection conclusion. -/
     (gflPHModel h V hV Kp Ki hKp).output x = ![h (x 0)] := by
   ext i
   fin_cases i
-  simp [PH.NonlinearModel.output, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
+  simp [PH.NonlinearModel.output, gflPHModel, pllB, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two]
 
 @[tmio M, powerlib_domain] theorem gflPH_supply (x : State 2) (δω : ℝ) :
@@ -119,8 +130,8 @@ Static evidence on the model, not a connection conclusion. -/
 
 @[tmio M, powerlib_domain] theorem gflPH_dampingPower (x : State 2) :
     (gflPHModel h V hV Kp Ki hKp).dampingPower x = Kp * h (x 0) ^ 2 := by
-  simp [PH.NonlinearModel.dampingPower, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
-    Fin.sum_univ_two, Matrix.diagonal]
+  simp [PH.NonlinearModel.dampingPower, gflPHModel, pllR, PhasePlane.mk, Matrix.mulVec,
+    dotProduct, Fin.sum_univ_two, Matrix.diagonal]
   ring
 
 /-- **Energy rate of the PI-PLL** (T-gfl-ph §1.2), pointwise, for every phase-detector

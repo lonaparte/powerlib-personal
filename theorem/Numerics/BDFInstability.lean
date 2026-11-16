@@ -45,11 +45,13 @@ Results.
   - `bdfRhoSum_exists_root_norm_gt_one`: for every `k ≥ 7`, `bdfRhoSum k` has a root `ζ` with
     `1 < ‖ζ‖`; hence `bdfLMM_exists_root_norm_gt_one` and `bdfLMM_not_rootCondition`:
     **the `k`-step BDF is not zero-stable for every `k ≥ 7`**.
+  - `LMM.not_rootCondition_of_rho_eq`: a method with the same `ρ` as one having a root outside
+    the closed unit disk violates the root condition.
   - `bdf7`, `bdf8`, `bdf9`: the coefficient tables, each of exact order `k`
-    (`bdf7_exactOrder`), with `bdf7.rho = β_7 · bdfRhoSum 7` (`bdf7_rho_eq_sum`),
-    `bdf7_rho_eq_bdfLMM` (same `ρ` as `bdfLMM 7`), `bdf7_exists_root_norm_gt_one`
-    and `bdf7_not_rootCondition`, and likewise `bdf8_…`, `bdf9_…` (numerically the unstable
-    roots have `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475` for `k = 7, 8, 9`).
+    (`bdf7_exactOrder`) and with the same `ρ` as `bdfLMM 7` (`bdf7_rho_eq_bdfLMM`, i.e.
+    `ρ = β_7 · bdfRhoSum 7`), and likewise `bdf8_…`, `bdf9_…`; their failure of the root
+    condition is `LMM.not_rootCondition_of_rho_eq` with `bdfLMM_exists_root_norm_gt_one`
+    (numerically the unstable roots have `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475` for `k = 7, 8, 9`).
 
 Proof method (exact, kernel-checked; no floating point, Rules §12). Two arguments.
 
@@ -106,6 +108,14 @@ def RootCondition (m : LMM k) : Prop :=
 /-- A root of `ρ` outside the closed unit disk violates the root condition. -/
 @[tmio T, powerlib_foundation] theorem not_rootCondition_of_root (m : LMM k) {ζ : ℂ} (h : m.rho ζ = 0)
     (h1 : 1 < ‖ζ‖) : ¬ m.RootCondition := fun hm => absurd (hm ζ h).1 (not_le.mpr h1)
+
+/-- A method whose `ρ` agrees with that of `m'` violates the root condition as soon as `ρ'` has a
+root outside the closed unit disk. -/
+@[tmio T, powerlib_foundation] theorem not_rootCondition_of_rho_eq {k' : ℕ} {m : LMM k}
+    {m' : LMM k'} (h : ∀ ζ, m.rho ζ = m'.rho ζ) (h' : ∃ ζ, m'.rho ζ = 0 ∧ 1 < ‖ζ‖) :
+    ¬ m.RootCondition := by
+  obtain ⟨ζ, hζ, h1⟩ := h'
+  exact m.not_rootCondition_of_root ((h ζ).trans hζ) h1
 
 end LMM
 
@@ -1039,7 +1049,11 @@ modulus `> 1`. -/
   obtain ⟨ζ, hζ, h1⟩ := bdfLMM_exists_root_norm_gt_one hk
   exact (bdfLMM k).not_rootCondition_of_root hζ h1
 
-/-! ## The coefficient tables BDF7–BDF9 -/
+/-! ## The coefficient tables BDF7–BDF9
+
+Each table has exact order `k` and the same `ρ` as `bdfLMM k`, so it is not zero-stable by
+`LMM.not_rootCondition_of_rho_eq` and `bdfLMM_exists_root_norm_gt_one`; it is consistent by
+`LMM.consistent_of_hasOrder`. -/
 
 /-! ### BDF7 -/
 
@@ -1052,32 +1066,16 @@ def bdf7 : LMM 7 :=
   · interval_cases q <;> simp [LMM.C, bdf7, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf7, bdf, Fin.sum_univ_succ]; norm_num
 
-@[tmio T, powerlib_foundation] theorem bdf7_consistent : bdf7.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf7_exactOrder.1 q (by omega)
-
-/-- The BDF7 first characteristic polynomial is `β_7 · bdfRhoSum 7`. -/
-@[tmio T, powerlib_foundation] theorem bdf7_rho_eq_sum (ζ : ℂ) :
-    bdf7.rho ζ = ((140 / 363) : ℂ) * bdfRhoSum 7 ζ := by
-  simp [LMM.rho, bdf7, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
-  ring
-
-/-- The table `bdf7` has the same first characteristic polynomial as `bdfLMM 7`. -/
-@[tmio T, powerlib_foundation] theorem bdf7_rho_eq_bdfLMM (ζ : ℂ) : bdf7.rho ζ = (bdfLMM 7).rho ζ := by
-  rw [bdf7_rho_eq_sum, bdfLMM_rho_eq]
+/-- The table `bdf7` has the same first characteristic polynomial as `bdfLMM 7`
+(`= β_7 · bdfRhoSum 7`). -/
+@[tmio T, powerlib_foundation] theorem bdf7_rho_eq_bdfLMM (ζ : ℂ) :
+    bdf7.rho ζ = (bdfLMM 7).rho ζ := by
+  have h : bdf7.rho ζ = (140 / 363 : ℂ) * bdfRhoSum 7 ζ := by
+    simp [LMM.rho, bdf7, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
+    ring
+  rw [h, bdfLMM_rho_eq]
   congr 1
   norm_num [bdfHarmonic, Finset.sum_range_succ]
-
-/-- **BDF7 is not zero-stable**: `ρ_7` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[tmio T, powerlib_foundation] theorem bdf7_exists_root_norm_gt_one :
-    ∃ ζ : ℂ, bdf7.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
-  obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_7
-  exact ⟨ζ, by rw [bdf7_rho_eq_sum, h, mul_zero], h1⟩
-
-/-- BDF7 violates the root condition (it is not zero-stable). -/
-@[tmio T, powerlib_foundation] theorem bdf7_not_rootCondition : ¬ bdf7.RootCondition := by
-  obtain ⟨ζ, hζ, h1⟩ := bdf7_exists_root_norm_gt_one
-  exact bdf7.not_rootCondition_of_root hζ h1
 
 /-! ### BDF8 -/
 
@@ -1091,32 +1089,16 @@ def bdf8 : LMM 8 :=
   · interval_cases q <;> simp [LMM.C, bdf8, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf8, bdf, Fin.sum_univ_succ]; norm_num
 
-@[tmio T, powerlib_foundation] theorem bdf8_consistent : bdf8.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf8_exactOrder.1 q (by omega)
-
-/-- The BDF8 first characteristic polynomial is `β_8 · bdfRhoSum 8`. -/
-@[tmio T, powerlib_foundation] theorem bdf8_rho_eq_sum (ζ : ℂ) :
-    bdf8.rho ζ = ((280 / 761) : ℂ) * bdfRhoSum 8 ζ := by
-  simp [LMM.rho, bdf8, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
-  ring
-
-/-- The table `bdf8` has the same first characteristic polynomial as `bdfLMM 8`. -/
-@[tmio T, powerlib_foundation] theorem bdf8_rho_eq_bdfLMM (ζ : ℂ) : bdf8.rho ζ = (bdfLMM 8).rho ζ := by
-  rw [bdf8_rho_eq_sum, bdfLMM_rho_eq]
+/-- The table `bdf8` has the same first characteristic polynomial as `bdfLMM 8`
+(`= β_8 · bdfRhoSum 8`). -/
+@[tmio T, powerlib_foundation] theorem bdf8_rho_eq_bdfLMM (ζ : ℂ) :
+    bdf8.rho ζ = (bdfLMM 8).rho ζ := by
+  have h : bdf8.rho ζ = (280 / 761 : ℂ) * bdfRhoSum 8 ζ := by
+    simp [LMM.rho, bdf8, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
+    ring
+  rw [h, bdfLMM_rho_eq]
   congr 1
   norm_num [bdfHarmonic, Finset.sum_range_succ]
-
-/-- **BDF8 is not zero-stable**: `ρ_8` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[tmio T, powerlib_foundation] theorem bdf8_exists_root_norm_gt_one :
-    ∃ ζ : ℂ, bdf8.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
-  obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_8
-  exact ⟨ζ, by rw [bdf8_rho_eq_sum, h, mul_zero], h1⟩
-
-/-- BDF8 violates the root condition (it is not zero-stable). -/
-@[tmio T, powerlib_foundation] theorem bdf8_not_rootCondition : ¬ bdf8.RootCondition := by
-  obtain ⟨ζ, hζ, h1⟩ := bdf8_exists_root_norm_gt_one
-  exact bdf8.not_rootCondition_of_root hζ h1
 
 /-! ### BDF9 -/
 
@@ -1130,31 +1112,15 @@ def bdf9 : LMM 9 :=
   · interval_cases q <;> simp [LMM.C, bdf9, bdf, Fin.sum_univ_succ] <;> norm_num
   · simp [LMM.C, bdf9, bdf, Fin.sum_univ_succ]; norm_num
 
-@[tmio T, powerlib_foundation] theorem bdf9_consistent : bdf9.Consistent := by
-  rw [LMM.consistent_iff_hasOrder_one]
-  exact fun q hq => bdf9_exactOrder.1 q (by omega)
-
-/-- The BDF9 first characteristic polynomial is `β_9 · bdfRhoSum 9`. -/
-@[tmio T, powerlib_foundation] theorem bdf9_rho_eq_sum (ζ : ℂ) :
-    bdf9.rho ζ = ((2520 / 7129) : ℂ) * bdfRhoSum 9 ζ := by
-  simp [LMM.rho, bdf9, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
-  ring
-
-/-- The table `bdf9` has the same first characteristic polynomial as `bdfLMM 9`. -/
-@[tmio T, powerlib_foundation] theorem bdf9_rho_eq_bdfLMM (ζ : ℂ) : bdf9.rho ζ = (bdfLMM 9).rho ζ := by
-  rw [bdf9_rho_eq_sum, bdfLMM_rho_eq]
+/-- The table `bdf9` has the same first characteristic polynomial as `bdfLMM 9`
+(`= β_9 · bdfRhoSum 9`). -/
+@[tmio T, powerlib_foundation] theorem bdf9_rho_eq_bdfLMM (ζ : ℂ) :
+    bdf9.rho ζ = (bdfLMM 9).rho ζ := by
+  have h : bdf9.rho ζ = (2520 / 7129 : ℂ) * bdfRhoSum 9 ζ := by
+    simp [LMM.rho, bdf9, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
+    ring
+  rw [h, bdfLMM_rho_eq]
   congr 1
   norm_num [bdfHarmonic, Finset.sum_range_succ]
-
-/-- **BDF9 is not zero-stable**: `ρ_9` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[tmio T, powerlib_foundation] theorem bdf9_exists_root_norm_gt_one :
-    ∃ ζ : ℂ, bdf9.rho ζ = 0 ∧ 1 < ‖ζ‖ := by
-  obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_9
-  exact ⟨ζ, by rw [bdf9_rho_eq_sum, h, mul_zero], h1⟩
-
-/-- BDF9 violates the root condition (it is not zero-stable). -/
-@[tmio T, powerlib_foundation] theorem bdf9_not_rootCondition : ¬ bdf9.RootCondition := by
-  obtain ⟨ζ, hζ, h1⟩ := bdf9_exists_root_norm_gt_one
-  exact bdf9.not_rootCondition_of_root hζ h1
 
 end powerlib.Numerics

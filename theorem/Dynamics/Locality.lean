@@ -16,7 +16,7 @@ Scope.
 Source: standard (Khalil, *Nonlinear Systems*, Thm 4.7 is stated for `C¹` on a domain);
 needed by work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.4, and as infrastructure for
 work-sync `projects/vsc-parametric-oscillation` and `projects/gfl-gfm-stability-tree` (ball form,
-`invExt`, `regDen`).
+`regDen`).
 
 Results.
 * Curve transfer: `isIntegralCurveOn_of_eq_on_curve` (an integral curve of `g` along which
@@ -40,9 +40,9 @@ Results.
   `theorem/Dynamics/Linearization.lean` do not cover; a field that agrees on a ball with a
   globally `C¹` field is handled by the ball form above composed with those wrappers. Typical
   use: power-balance fields with a `1/V_dc` factor, which are smooth only on `V_dc > 0`.
-* Smooth regularizations of a denominator away from zero: `invDen`, `invExt` (a globally smooth
-  function equal to `V⁻¹` for `V ≥ 1/2`) and `regDen V` (equal to `v` for `v ≥ 3V/4`, at least
-  `V/2` everywhere).
+* A smooth regularization of a denominator away from zero: `regDen V` (equal to `v` for
+  `v ≥ 3V/4`, at least `V/2` everywhere), for `C¹` fields that agree with a `1/V_dc` field on a
+  half space (the obligations of `theorem/Dynamics/Degenerate/PlaneCollapse.lean`).
 -/
 
 noncomputable section
@@ -441,43 +441,6 @@ end Ball
 section Denominator
 
 open Set Filter Topology
-
-/-- The smooth denominator: equal to `V` for `V ≥ 1/2` and at least `1/4` everywhere. -/
-def invDen (V : ℝ) : ℝ := 1 / 4 + (V - 1 / 4) * Real.smoothTransition (4 * V - 1)
-
-/-- A globally smooth function equal to `V⁻¹` for `V ≥ 1/2`. -/
-def invExt (V : ℝ) : ℝ := (invDen V)⁻¹
-
-@[tmio T, powerlib_foundation] theorem invDen_ge (V : ℝ) : 1 / 4 ≤ invDen V := by
-  unfold invDen
-  rcases le_or_gt V (1 / 4) with h | h
-  · rw [Real.smoothTransition.zero_of_nonpos (by linarith)]
-    simp
-  · have := Real.smoothTransition.nonneg (4 * V - 1)
-    have : 0 ≤ (V - 1 / 4) * Real.smoothTransition (4 * V - 1) :=
-      mul_nonneg (by linarith) this
-    linarith
-
-@[tmio T, powerlib_foundation] theorem invDen_pos (V : ℝ) : 0 < invDen V :=
-  lt_of_lt_of_le (by norm_num) (invDen_ge V)
-
-@[tmio T, powerlib_foundation] theorem invDen_eq {V : ℝ} (h : 1 / 2 ≤ V) : invDen V = V := by
-  unfold invDen
-  rw [Real.smoothTransition.one_of_one_le (by linarith)]
-  ring
-
-@[tmio T, powerlib_foundation] theorem invExt_eq {V : ℝ} (h : 1 / 2 ≤ V) : invExt V = V⁻¹ := by
-  rw [invExt, invDen_eq h]
-
-@[tmio T, powerlib_foundation] theorem contDiff_invDen {k : ℕ∞} : ContDiff ℝ k invDen := by
-  unfold invDen
-  have hs : ContDiff ℝ k (fun V : ℝ => Real.smoothTransition (4 * V - 1)) :=
-    Real.smoothTransition.contDiff.comp (by fun_prop)
-  fun_prop
-
-@[tmio T, powerlib_foundation] theorem contDiff_invExt {k : ℕ∞} : ContDiff ℝ k invExt := by
-  unfold invExt
-  exact contDiff_invDen.inv fun V => (invDen_pos V).ne'
 
 /-- Smooth denominator: `regDen V v = v` for `v ≥ 3V/4` and `regDen V v ≥ V/2` (`V > 0`). -/
 def regDen (V v : ℝ) : ℝ :=

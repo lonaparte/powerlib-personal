@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.PLL.Invariant
+import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.Dynamics.ConverseLinearization
 import theorem.PH.Nonlinear
 import theorem.TMIO.ClaimElab
@@ -17,7 +18,8 @@ Model boundary.
   continuous time, state `x = (θ_e, η)` in this order (`θ_e = θ̂ − θ_g`, `η = ∫ V_q dt`), with the
   frequency offset `δω_g = ω_g − ω_s` as the single port input `u` (constant or time-varying).
 * Port-Hamiltonian structure (T-pll-ph (1.2)–(1.4)), `powerlib.PH.NonlinearModel 2 1`:
-  `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)` (needs `K_p ≥ 0`), input matrix `B = (−1, 0)ᵀ`,
+  `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)` (needs `K_p ≥ 0`), input matrix `B = (−1, 0)ᵀ`
+  (`pllJ`, `pllR`, `pllB` of the general PI-PLL, `theorem/GridTiedConverter/PLL/PIPLLPH.lean`),
   Hamiltonian `H(θ, η) = V(1 − cos θ) + ½ K_i (η − η*)²` (`η* = 0` is T-pll-ph (1.2); a
   shifted `η* = δω/K_i` is used for a constant offset), gradient `(V sin θ, K_i (η − η*))`,
   output `y = Bᵀ∇H = −V sin θ = h(θ)`. Power sign: `u y` is power into the system
@@ -109,15 +111,6 @@ def pllHamiltonian (V Ki ηs : ℝ) (x : State 2) : ℝ :=
 def pllGradient (V Ki ηs : ℝ) (x : State 2) : State 2 :=
   PhasePlane.mk (V * Real.sin (x 0)) (Ki * (x 1 - ηs))
 
-/-- Interconnection matrix `J = [[0, 1], [−1, 0]]`. -/
-def pllJ : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -1, 0]
-
-/-- Dissipation matrix `R = diag(K_p, 0)`. -/
-def pllR (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := Matrix.diagonal ![Kp, 0]
-
-/-- Input matrix `B = (−1, 0)ᵀ` (frequency offset enters the `θ` equation). -/
-def pllB : Matrix (Fin 2) (Fin 1) ℝ := !![-1; 0]
-
 @[tmio M, powerlib_domain] theorem hasGradientAt_pllHamiltonian (V Ki ηs : ℝ) (x : State 2) :
     HasGradientAt (pllHamiltonian V Ki ηs) (pllGradient V Ki ηs x) x := by
   set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
@@ -141,9 +134,7 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
   H := pllHamiltonian V Ki ηs
   dH := pllGradient V Ki ηs
   skew := fun _ => PH.transpose_symplectic_two
-  dissipation_posSemidef := fun _ => by
-    rw [pllR, Matrix.posSemidef_diagonal_iff]
-    intro i; fin_cases i <;> simp [hKp]
+  dissipation_posSemidef := fun _ => pllR_posSemidef hKp
   hasGradient := hasGradientAt_pllHamiltonian V Ki ηs
 
 /-- T-pll-ph (1.3): with the integrator set point `η*`, `(J − R)∇H + B u` is the SRF-PLL field

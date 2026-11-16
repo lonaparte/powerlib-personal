@@ -11,7 +11,8 @@ No stochastic statement is made: `B Bᵀ = 2 T R` is stated only as a matrix ide
 
 Model boundary.
 * Class B: the reduced GFL-PLL of `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`, state
-  `(θ_e, η)`, `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)` (`Params.pHModel`).
+  `(θ_e, η)`, `J = [[0, 1], [−1, 0]]`, `R_B = diag(K_p, 0)` (`Params.pHModel`; its matrices are
+  the PI-PLL's `PLL.pllJ`, `PLL.pllR`).
 * Class A: single-machine infinite-bus swing equation (or droop / VSM with first-order filter,
   which has the same synchronizing-loop form), state `x 0 = δ` (load angle), `x 1 = p`
   (momentum deviation `M (ω_r − ω_0)`), field `δ̇ = p/M`, `ṗ = P_m − P_max sin δ − D p/M`;
@@ -31,7 +32,8 @@ Results.
   (`Synchronous.classicalSM_power_balance`, `Ḣ = −D (p/M)²` at `u = 0`) and its dissipation matrix
   `R_A` (`swingPH_R`).
 * Port inversion (`damping-class-dichotomy.md` §2): grid-frequency noise enters the class-B
-  dissipation port exactly, `B Bᵀ = 2 (ε²/2K_p) R_B` (`classB_frequency_fdt`), while for class A it
+  dissipation port exactly, `B Bᵀ = 2 (ε²/2K_p) R_B` (`Embed.freqNoise_fdt`,
+  `theorem/GridTiedConverter/GFL/Noise/Embedding.lean`, `R_B = PLL.pllR K_p`), while for class A it
   is orthogonal to `R_A` and never proportional to it (`classA_frequency_orthogonal`,
   `classA_frequency_not_fdt`); mechanical-power noise is exactly in the class-A port
   (`classA_torque_fdt`), and the class-B voltage channel is not (`classB_voltage_not_fdt`).
@@ -91,10 +93,9 @@ end SwingParams
 
 /-! ### Noise ports and the fluctuation–dissipation structure (matrix algebra) -/
 
-/-- Class-A dissipation matrix `R_A = diag(0, D)`. -/
+/-- Class-A dissipation matrix `R_A = diag(0, D)`. The class-B dissipation matrix
+`R_B = diag(K_p, 0)` is the PI-PLL's `PLL.pllR K_p`. -/
 def RA (D : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 0; 0, D]
-/-- Class-B dissipation matrix `R_B = diag(K_p, 0)`. -/
-def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 
 /-- The class-A pH model is the classical machine `Synchronous.classicalSM` (`b = P_max`): its
 dissipation matrix is `R_A`. -/
@@ -103,15 +104,10 @@ dissipation matrix is `R_A`. -/
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
+/-- The class-B pH model has the dissipation matrix `R_B = PLL.pllR K_p`. Grid-frequency noise
+`B = (−ε, 0)ᵀ` meets `B Bᵀ = 2 T R_B` with `T = ε²/(2K_p)` (`Embed.freqNoise_fdt`). -/
 @[tmio M, powerlib_domain] theorem pHModel_R (p : Params) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hKp : 0 ≤ p.Kp) (y : State 2) : (p.pHModel hwC hΔ hKp).R y = RB p.Kp := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
-/-- Grid-frequency noise in class B, `B = (−ε, 0)ᵀ`: `B Bᵀ = 2 T R_B` with `T = ε²/(2K_p)`. -/
-@[tmio M, powerlib_domain] theorem classB_frequency_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
-    !![-ε; 0] * (!![-ε; 0])ᵀ = (2 * (ε ^ 2 / (2 * Kp))) • RB Kp := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [RB, Matrix.mul_apply]; field_simp
+    (hKp : 0 ≤ p.Kp) (y : State 2) : (p.pHModel hwC hΔ hKp).R y = pllR p.Kp := rfl
 
 /-- Grid-frequency noise in class A, `B = (−σ, 0)ᵀ`: orthogonal to `R_A`, `tr(B Bᵀ R_A) = 0`. -/
 @[tmio M, powerlib_domain] theorem classA_frequency_orthogonal (D σ : ℝ) :
@@ -136,10 +132,10 @@ dissipation matrix is `R_A`. -/
 
 /-- Voltage noise in class B enters both rows, `B = (K_p σ, σ)ᵀ`: never of the form `2 T R_B`. -/
 @[tmio M, powerlib_domain] theorem classB_voltage_not_fdt {Kp σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :
-    !![Kp * σ; σ] * (!![Kp * σ; σ])ᵀ ≠ (2 * T) • RB Kp := by
+    !![Kp * σ; σ] * (!![Kp * σ; σ])ᵀ ≠ (2 * T) • pllR Kp := by
   intro h
   have := congrFun (congrFun h 1) 1
-  simp [RB, Matrix.mul_apply] at this
+  simp [pllR, Matrix.mul_apply] at this
   exact hσ this
 
 /-! ### Linearization invariants -/

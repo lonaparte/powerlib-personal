@@ -4,6 +4,7 @@ import theorem.Passive.Series
 import theorem.Passive.Parallel
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.Spectral.Global
+import theorem.Transform.Park
 
 /-! # Matching control in closed loop: global exponential stability in the rotating frame
 
@@ -62,8 +63,9 @@ stability *condition*; none of the equations below comes from the notes.
 
 Results.
 Reduction (static domain results; Rules §5):
-* `hasDerivWithinAt_rot` (domain, Rules §3): the rotating-frame chain rule
-  `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary differentiable `θ`, `z`.
+* `R_θᵀ` is the Park rotation `Transform.park θ`, read through its rows `Transform.parkD`,
+  `Transform.parkQ` (and `R_θ` through `Transform.iparkD`, `iparkQ`); the rotating-frame chain
+  rule `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z` is `Transform.hasDerivWithinAt_parkD_parkQ`.
 * `field_reduce` (static): the reduced field at `reduce X = (v_dc, R_θᵀ i_αβ, R_θᵀ v_αβ)`, with
   load `s_dq = R_θᵀ s_αβ`, equals the stationary field `F = abField X` transformed by that chain
   rule; `abField_load_stationary` (static): `R_θᵀ s_αβ` has zero rotating-frame derivative under
@@ -113,8 +115,9 @@ Family and connection conclusions.
   `Dynamics.LaSalle.infDist_le_of_reduction'` of `theorem.Dynamics.LaSalle.Periodic`). The
   steady-state orbit is `O = range orbitPoint`,
   `orbitPoint θ = (θ, v*, R_θ i*_dq, R_θ v*_dq, R_θ s_dq)`;
-  static: `reduce_orbitPoint` (`O` reduces to `x*`), `orbitPoint_load`, `rotD_rot`, `rotQ_rot`,
-  `rot_dist_sq`, `rot_sub_rot_sq`, `norm_sub_orbitPoint` (with the model's load phasor,
+  static: `reduce_orbitPoint` (`O` reduces to `x*`), `orbitPoint_load` (both from the inverse
+  pairs `Transform.parkD_ipark`, `parkQ_ipark`), `rot_sub_rot_sq`, `norm_sub_orbitPoint` (from
+  `Transform.park_dist_sq`; with the model's load phasor,
   `‖X − orbitPoint (X θ)‖ = ‖reduce X − x*‖`), `norm_orbitPoint_sub_le` (`O` is Lipschitz in `θ`).
   Private: `norm_reduce_sub_le` (`‖reduce X − x*‖ ≤ (1 + Λ) dist(X, O)`), `load_const` (the load
   phasor `R_θᵀ s_αβ` is constant along stationary solutions), `orbit_exponentiallyAttractive`
@@ -149,6 +152,8 @@ Corrections (to the work-sync notes).
 noncomputable section
 namespace powerlib.GFM.Matching.MatchingClosedLoop
 open powerlib.Dynamics (State)
+open powerlib.Transform (parkD parkQ iparkD iparkQ park_dist_sq parkD_ipark parkQ_ipark
+  hasDerivWithinAt_parkD_parkQ)
 
 /-- Parameters of the reduced matching closed loop and a selected point
 `x* = (v*, i_d*, i_q*, v_d*, v_q*)`: DC capacitance, DC conductance, DC P-gain, DC current and
@@ -676,34 +681,6 @@ def example1 : Model :=
 
 /-! ## Stationary frame -/
 
-/-- The `d` component `cos θ a + sin θ b` of `R_θᵀ (a, b)`. -/
-def rotD (θ a b : ℝ) : ℝ := Real.cos θ * a + Real.sin θ * b
-
-/-- The `q` component `−sin θ a + cos θ b` of `R_θᵀ (a, b)`. -/
-def rotQ (θ a b : ℝ) : ℝ := -Real.sin θ * a + Real.cos θ * b
-
-/-- The rotating-frame chain rule `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary functions. -/
-@[tmio M, powerlib_domain] theorem hasDerivWithinAt_rot {θ a b : ℝ → ℝ} {θ' a' b' t : ℝ}
-    {s : Set ℝ} (hθ : HasDerivWithinAt θ θ' s t) (ha : HasDerivWithinAt a a' s t)
-    (hb : HasDerivWithinAt b b' s t) :
-    HasDerivWithinAt (fun τ => rotD (θ τ) (a τ) (b τ))
-        (rotD (θ t) a' b' + θ' * rotQ (θ t) (a t) (b t)) s t ∧
-      HasDerivWithinAt (fun τ => rotQ (θ τ) (a τ) (b τ))
-        (rotQ (θ t) a' b' - θ' * rotD (θ t) (a t) (b t)) s t := by
-  have hc := hθ.cos
-  have hs := hθ.sin
-  constructor
-  · convert (hc.mul ha).add (hs.mul hb) using 1
-    · funext τ
-      simp [rotD]
-    · simp only [rotD, rotQ]
-      ring
-  · convert (hs.neg.mul ha).add (hc.mul hb) using 1
-    · funext τ
-      simp [rotQ]
-    · simp only [rotD, rotQ, Pi.neg_apply]
-      ring
-
 /-- The stationary-frame closed loop, state `(θ, v_dc, i_α, i_β, v_α, v_β, s_α, s_β)`: matching
 `θ' = η v_dc`, DC node with P-control, inductor, capacitor with load `(G_l I + B_l J) v_αβ + s_αβ`,
 and the load oscillator `s' = η v_dc J s`. -/
@@ -721,8 +698,8 @@ def Model.abField (m : Model) (X : State 8) : State 8 :=
 
 /-- The reduction `(θ, v_dc, i_αβ, v_αβ, s_αβ) ↦ (v_dc, R_θᵀ i_αβ, R_θᵀ v_αβ)`. -/
 def reduce (X : State 8) : State 5 :=
-  WithLp.toLp 2 ![X 1, rotD (X 0) (X 2) (X 3), rotQ (X 0) (X 2) (X 3), rotD (X 0) (X 4) (X 5),
-    rotQ (X 0) (X 4) (X 5)]
+  WithLp.toLp 2 ![X 1, parkD (X 0) (X 2) (X 3), parkQ (X 0) (X 2) (X 3), parkD (X 0) (X 4) (X 5),
+    parkQ (X 0) (X 4) (X 5)]
 
 /-- The parameters with the load source `s_dq` replaced. -/
 def Model.withLoad (m : Model) (sd sq : ℝ) : Model := { m with sd := sd, sq := sq }
@@ -732,16 +709,16 @@ equals the rotating-frame chain rule applied to the stationary field, with the l
 `s_dq = R_θᵀ s_αβ`. Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_reduce (m : Model) (X : State 8) :
     let F := m.abField X
-    let m' := m.withLoad (rotD (X 0) (X 6) (X 7)) (rotQ (X 0) (X 6) (X 7))
+    let m' := m.withLoad (parkD (X 0) (X 6) (X 7)) (parkQ (X 0) (X 6) (X 7))
     m'.field (reduce X) 0 0 = F 1 ∧
-    m'.field (reduce X) 0 1 = rotD (X 0) (F 2) (F 3) + F 0 * rotQ (X 0) (X 2) (X 3) ∧
-    m'.field (reduce X) 0 2 = rotQ (X 0) (F 2) (F 3) - F 0 * rotD (X 0) (X 2) (X 3) ∧
-    m'.field (reduce X) 0 3 = rotD (X 0) (F 4) (F 5) + F 0 * rotQ (X 0) (X 4) (X 5) ∧
-    m'.field (reduce X) 0 4 = rotQ (X 0) (F 4) (F 5) - F 0 * rotD (X 0) (X 4) (X 5) := by
+    m'.field (reduce X) 0 1 = parkD (X 0) (F 2) (F 3) + F 0 * parkQ (X 0) (X 2) (X 3) ∧
+    m'.field (reduce X) 0 2 = parkQ (X 0) (F 2) (F 3) - F 0 * parkD (X 0) (X 2) (X 3) ∧
+    m'.field (reduce X) 0 3 = parkD (X 0) (F 4) (F 5) + F 0 * parkQ (X 0) (X 4) (X 5) ∧
+    m'.field (reduce X) 0 4 = parkQ (X 0) (F 4) (F 5) - F 0 * parkD (X 0) (X 4) (X 5) := by
   intro F m'
   have hsc := Real.sin_sq_add_cos_sq (X 0)
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [F, m', Model.field, Model.abField, Model.withLoad, reduce, rotD, rotQ,
+    simp only [F, m', Model.field, Model.abField, Model.withLoad, reduce, parkD, parkQ,
       div_eq_mul_inv, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.cons_val_two, Matrix.cons_val_three, Matrix.cons_val_four, Matrix.cons_val,
       Pi.zero_apply, Matrix.head_cons, Matrix.tail_cons]
@@ -756,11 +733,11 @@ its rotating-frame chain-rule derivative vanishes (`d` and `q` components). Stat
 the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem abField_load_stationary (m : Model) (X : State 8) :
     let F := m.abField X
-    rotD (X 0) (F 6) (F 7) + F 0 * rotQ (X 0) (X 6) (X 7) = 0 ∧
-      rotQ (X 0) (F 6) (F 7) - F 0 * rotD (X 0) (X 6) (X 7) = 0 := by
+    parkD (X 0) (F 6) (F 7) + F 0 * parkQ (X 0) (X 6) (X 7) = 0 ∧
+      parkQ (X 0) (F 6) (F 7) - F 0 * parkD (X 0) (X 6) (X 7) = 0 := by
   intro F
   refine ⟨?_, ?_⟩ <;>
-    simp only [F, Model.abField, rotD, rotQ, PiLp.toLp_apply, Matrix.cons_val_zero,
+    simp only [F, Model.abField, parkD, parkQ, PiLp.toLp_apply, Matrix.cons_val_zero,
       Matrix.cons_val] <;>
     ring
 
@@ -794,31 +771,31 @@ conclusion. -/
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem load_const (m : Model) {X : ℝ → State 8} {a b : ℝ}
     (hX : IsTrajectoryOn X m.abField a b) :
-    ∀ t ∈ Set.Icc a b, rotD (X t 0) (X t 6) (X t 7) = rotD (X a 0) (X a 6) (X a 7) ∧
-      rotQ (X t 0) (X t 6) (X t 7) = rotQ (X a 0) (X a 6) (X a 7) := by
+    ∀ t ∈ Set.Icc a b, parkD (X t 0) (X t 6) (X t 7) = parkD (X a 0) (X a 6) (X a 7) ∧
+      parkQ (X t 0) (X t 6) (X t 7) = parkQ (X a 0) (X a 6) (X a 7) := by
   have hc : ∀ t ∈ Set.Icc a b, ∀ k : Fin 8,
       HasDerivWithinAt (fun τ => X τ k) (m.abField (X t) k) (Set.Icc a b) t :=
     fun t ht k => Dynamics.HasDerivWithinAt.euclidean_coord (hX t ht) k
   have hrot : ∀ t ∈ Set.Icc a b, ∀ j k : Fin 8,
-      HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ j) (X τ k))
-          (rotD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
-            m.abField (X t) 0 * rotQ (X t 0) (X t j) (X t k)) (Set.Icc a b) t ∧
-        HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ j) (X τ k))
-          (rotQ (X t 0) (m.abField (X t) j) (m.abField (X t) k) -
-            m.abField (X t) 0 * rotD (X t 0) (X t j) (X t k)) (Set.Icc a b) t :=
-    fun t ht j k => hasDerivWithinAt_rot (hc t ht 0) (hc t ht j) (hc t ht k)
-  have hcontD : ContinuousOn (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
+      HasDerivWithinAt (fun τ => parkD (X τ 0) (X τ j) (X τ k))
+          (parkD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
+            m.abField (X t) 0 * parkQ (X t 0) (X t j) (X t k)) (Set.Icc a b) t ∧
+        HasDerivWithinAt (fun τ => parkQ (X τ 0) (X τ j) (X τ k))
+          (parkQ (X t 0) (m.abField (X t) j) (m.abField (X t) k) -
+            m.abField (X t) 0 * parkD (X t 0) (X t j) (X t k)) (Set.Icc a b) t :=
+    fun t ht j k => hasDerivWithinAt_parkD_parkQ (hc t ht 0) (hc t ht j) (hc t ht k)
+  have hcontD : ContinuousOn (fun τ => parkD (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
     fun t ht => ((hrot t ht 6 7).1).continuousWithinAt
-  have hcontQ : ContinuousOn (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
+  have hcontQ : ContinuousOn (fun τ => parkQ (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
     fun t ht => ((hrot t ht 6 7).2).continuousWithinAt
   have hzD : ∀ t ∈ Set.Ico a b,
-      HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
+      HasDerivWithinAt (fun τ => parkD (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
     intro t ht
     have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).1
     rw [(abField_load_stationary m (X t)).1] at h
     exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
   have hzQ : ∀ t ∈ Set.Ico a b,
-      HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
+      HasDerivWithinAt (fun τ => parkQ (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
     intro t ht
     have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).2
     rw [(abField_load_stationary m (X t)).2] at h
@@ -833,19 +810,19 @@ Implementation evidence: trajectory-level result outside the sentence language (
 @[tmio M, powerlib_domain] private theorem reduce_isTrajectoryOn (m : Model) {X : ℝ → State 8} {a b : ℝ}
     (hX : IsTrajectoryOn X m.abField a b) :
     IsTrajectoryOn (fun t => reduce (X t))
-      (fun y => (m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
+      (fun y => (m.withLoad (parkD (X a 0) (X a 6) (X a 7)) (parkQ (X a 0) (X a 6) (X a 7))).field
         y 0) a b := by
   have hc : ∀ t ∈ Set.Icc a b, ∀ k : Fin 8,
       HasDerivWithinAt (fun τ => X τ k) (m.abField (X t) k) (Set.Icc a b) t :=
     fun t ht k => Dynamics.HasDerivWithinAt.euclidean_coord (hX t ht) k
   have hrot : ∀ t ∈ Set.Icc a b, ∀ j k : Fin 8,
-      HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ j) (X τ k))
-          (rotD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
-            m.abField (X t) 0 * rotQ (X t 0) (X t j) (X t k)) (Set.Icc a b) t ∧
-        HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ j) (X τ k))
-          (rotQ (X t 0) (m.abField (X t) j) (m.abField (X t) k) -
-            m.abField (X t) 0 * rotD (X t 0) (X t j) (X t k)) (Set.Icc a b) t :=
-    fun t ht j k => hasDerivWithinAt_rot (hc t ht 0) (hc t ht j) (hc t ht k)
+      HasDerivWithinAt (fun τ => parkD (X τ 0) (X τ j) (X τ k))
+          (parkD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
+            m.abField (X t) 0 * parkQ (X t 0) (X t j) (X t k)) (Set.Icc a b) t ∧
+        HasDerivWithinAt (fun τ => parkQ (X τ 0) (X τ j) (X τ k))
+          (parkQ (X t 0) (m.abField (X t) j) (m.abField (X t) k) -
+            m.abField (X t) 0 * parkD (X t 0) (X t j) (X t k)) (Set.Icc a b) t :=
+    fun t ht j k => hasDerivWithinAt_parkD_parkQ (hc t ht 0) (hc t ht j) (hc t ht k)
   -- the load source is constant in the rotating frame
   have hconst := load_const m hX
   intro t ht
@@ -853,23 +830,23 @@ Implementation evidence: trajectory-level result outside the sentence language (
   obtain ⟨f0, f1, f2, f3, f4⟩ := field_reduce m (X t)
   simp only [hD, hQ] at f0 f1 f2 f3 f4
   have d0 : HasDerivWithinAt (fun τ => reduce (X τ) 0)
-      ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
+      ((m.withLoad (parkD (X a 0) (X a 6) (X a 7)) (parkQ (X a 0) (X a 6) (X a 7))).field
         (reduce (X t)) 0 0) (Set.Icc a b) t := by
     rw [f0]; simpa [reduce] using hc t ht 1
   have d1 : HasDerivWithinAt (fun τ => reduce (X τ) 1)
-      ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
+      ((m.withLoad (parkD (X a 0) (X a 6) (X a 7)) (parkQ (X a 0) (X a 6) (X a 7))).field
         (reduce (X t)) 0 1) (Set.Icc a b) t := by
     rw [f1]; simpa [reduce] using (hrot t ht 2 3).1
   have d2 : HasDerivWithinAt (fun τ => reduce (X τ) 2)
-      ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
+      ((m.withLoad (parkD (X a 0) (X a 6) (X a 7)) (parkQ (X a 0) (X a 6) (X a 7))).field
         (reduce (X t)) 0 2) (Set.Icc a b) t := by
     rw [f2]; simpa [reduce] using (hrot t ht 2 3).2
   have d3 : HasDerivWithinAt (fun τ => reduce (X τ) 3)
-      ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
+      ((m.withLoad (parkD (X a 0) (X a 6) (X a 7)) (parkQ (X a 0) (X a 6) (X a 7))).field
         (reduce (X t)) 0 3) (Set.Icc a b) t := by
     rw [f3]; simpa [reduce] using (hrot t ht 4 5).1
   have d4 : HasDerivWithinAt (fun τ => reduce (X τ) 4)
-      ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
+      ((m.withLoad (parkD (X a 0) (X a 6) (X a 7)) (parkQ (X a 0) (X a 6) (X a 7))).field
         (reduce (X t)) 0 4) (Set.Icc a b) t := by
     rw [f4]; simpa [reduce] using (hrot t ht 4 5).2
   apply Dynamics.hasDerivWithinAt_euclidean_of_coord
@@ -1014,28 +991,9 @@ vanishes where `η v_dc = 0` and `s_β = s_β*`, so `ℓ` kills the range of the
 steady-state rotating orbit in the stationary frame. -/
 def Model.orbitPoint (m : Model) (θ : ℝ) : State 8 :=
   WithLp.toLp 2 ![θ, m.vStar,
-    Real.cos θ * m.idStar - Real.sin θ * m.iqStar, Real.sin θ * m.idStar + Real.cos θ * m.iqStar,
-    Real.cos θ * m.vdStar - Real.sin θ * m.vqStar, Real.sin θ * m.vdStar + Real.cos θ * m.vqStar,
-    Real.cos θ * m.sd - Real.sin θ * m.sq, Real.sin θ * m.sd + Real.cos θ * m.sq]
-
-/-- `R_θᵀ R_θ = 1`, `d` component. Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem rotD_rot (θ d q : ℝ) :
-    rotD θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = d := by
-  simp only [rotD]
-  linear_combination d * Real.sin_sq_add_cos_sq θ
-
-/-- `R_θᵀ R_θ = 1`, `q` component. Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem rotQ_rot (θ d q : ℝ) :
-    rotQ θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = q := by
-  simp only [rotQ]
-  linear_combination q * Real.sin_sq_add_cos_sq θ
-
-/-- `‖z − R_θ w‖ = ‖R_θᵀ z − w‖`. Static evidence, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem rot_dist_sq (θ a b d q : ℝ) :
-    (a - (Real.cos θ * d - Real.sin θ * q)) ^ 2 + (b - (Real.sin θ * d + Real.cos θ * q)) ^ 2 =
-      (rotD θ a b - d) ^ 2 + (rotQ θ a b - q) ^ 2 := by
-  simp only [rotD, rotQ]
-  linear_combination (d ^ 2 + q ^ 2 - a ^ 2 - b ^ 2) * Real.sin_sq_add_cos_sq θ
+    iparkD θ m.idStar m.iqStar, iparkQ θ m.idStar m.iqStar,
+    iparkD θ m.vdStar m.vqStar, iparkQ θ m.vdStar m.vqStar,
+    iparkD θ m.sd m.sq, iparkQ θ m.sd m.sq]
 
 /-- `‖R_a w − R_b w‖² = 2 ‖w‖² (1 − cos (a − b))`. Static evidence, not a connection conclusion. -/
 @[tmio T, powerlib_foundation] theorem rot_sub_rot_sq (a b d q : ℝ) :
@@ -1050,24 +1008,24 @@ def Model.orbitPoint (m : Model) (θ : ℝ) : State 8 :=
 @[tmio M, powerlib_domain] theorem reduce_orbitPoint (m : Model) (θ : ℝ) :
     reduce (m.orbitPoint θ) = m.point := by
   ext i
-  fin_cases i <;> simp [reduce, Model.orbitPoint, Model.point, rotD_rot, rotQ_rot]
+  fin_cases i <;> simp [reduce, Model.orbitPoint, Model.point, parkD_ipark, parkQ_ipark]
 
 /-- The orbit carries the model's load phasor. Static evidence, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem orbitPoint_load (m : Model) (θ : ℝ) :
-    rotD (m.orbitPoint θ 0) (m.orbitPoint θ 6) (m.orbitPoint θ 7) = m.sd ∧
-      rotQ (m.orbitPoint θ 0) (m.orbitPoint θ 6) (m.orbitPoint θ 7) = m.sq := by
-  simp [Model.orbitPoint, rotD_rot, rotQ_rot]
+    parkD (m.orbitPoint θ 0) (m.orbitPoint θ 6) (m.orbitPoint θ 7) = m.sd ∧
+      parkQ (m.orbitPoint θ 0) (m.orbitPoint θ 6) (m.orbitPoint θ 7) = m.sq := by
+  simp [Model.orbitPoint, parkD_ipark, parkQ_ipark]
 
 /-- With the model's load phasor, the distance to the orbit point of the same angle is the
 rotating-frame deviation. Static evidence, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem norm_sub_orbitPoint (m : Model) (X : State 8)
-    (hD : rotD (X 0) (X 6) (X 7) = m.sd) (hQ : rotQ (X 0) (X 6) (X 7) = m.sq) :
+    (hD : parkD (X 0) (X 6) (X 7) = m.sd) (hQ : parkQ (X 0) (X 6) (X 7) = m.sq) :
     ‖X - m.orbitPoint (X 0)‖ = ‖reduce X - m.point‖ := by
   rw [EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
   congr 1
-  have h1 := rot_dist_sq (X 0) (X 2) (X 3) m.idStar m.iqStar
-  have h2 := rot_dist_sq (X 0) (X 4) (X 5) m.vdStar m.vqStar
-  have h3 := rot_dist_sq (X 0) (X 6) (X 7) m.sd m.sq
+  have h1 := park_dist_sq (X 0) (X 2) (X 3) m.idStar m.iqStar
+  have h2 := park_dist_sq (X 0) (X 4) (X 5) m.vdStar m.vqStar
+  have h3 := park_dist_sq (X 0) (X 6) (X 7) m.sd m.sq
   rw [hD, hQ, sub_self, sub_self] at h3
   simp [Fin.sum_univ_eight, Fin.sum_univ_five, Model.orbitPoint, reduce, Model.point]
   linarith
@@ -1087,14 +1045,14 @@ rotating-frame deviation. Static evidence, not a connection conclusion. -/
   have k1 := mul_le_mul_of_nonneg_left hc (by positivity : 0 ≤ m.idStar ^ 2 + m.iqStar ^ 2)
   have k2 := mul_le_mul_of_nonneg_left hc (by positivity : 0 ≤ m.vdStar ^ 2 + m.vqStar ^ 2)
   have k3 := mul_le_mul_of_nonneg_left hc (by positivity : 0 ≤ m.sd ^ 2 + m.sq ^ 2)
-  simp [Fin.sum_univ_eight, Model.orbitPoint]
+  simp [Fin.sum_univ_eight, Model.orbitPoint, iparkD, iparkQ]
   linarith
 
 /-- On the load-matched set the rotating-frame deviation is at most `(1 + Λ)` times the distance
 to the orbit (`Λ` the Lipschitz constant of the orbit). Implementation evidence (it names the
 orbit `range orbitPoint` of the model, Rules §3a). -/
 @[tmio M, powerlib_domain] private theorem norm_reduce_sub_le (m : Model) (X : State 8)
-    (hD : rotD (X 0) (X 6) (X 7) = m.sd) (hQ : rotQ (X 0) (X 6) (X 7) = m.sq) :
+    (hD : parkD (X 0) (X 6) (X 7) = m.sd) (hQ : parkQ (X 0) (X 6) (X 7) = m.sq) :
     ‖reduce X - m.point‖ ≤ (1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
       (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))) *
       Metric.infDist X (Set.range m.orbitPoint) := by
@@ -1125,7 +1083,7 @@ orbit `range orbitPoint` of the model, Rules §3a). -/
 @[tmio M, powerlib_domain] private theorem orbitPoint_continuous (m : Model) : Continuous m.orbitPoint := by
   apply (PiLp.continuous_toLp 2 (fun _ : Fin 8 => ℝ)).comp
   refine continuous_pi fun i => ?_
-  fin_cases i <;> simp <;> fun_prop
+  fin_cases i <;> simp [iparkD, iparkQ] <;> fun_prop
 
 @[tmio M, powerlib_domain] private theorem isClosed_orbit (m : Model) : IsClosed (Set.range m.orbitPoint) := by
   have e : Set.range m.orbitPoint = {X : State 8 | X = m.orbitPoint (X 0)} := by
@@ -1154,7 +1112,7 @@ Implementation evidence: set attraction is outside the sentence language (Rules 
     (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
     (hδ : 0 < m.margin) :
     ∃ K a : ℝ, 0 ≤ K ∧ 0 < a ∧ ∀ (t₀ t₁ : ℝ) (X : ℝ → State 8), IsTrajectoryOn X m.abField t₀ t₁ →
-      rotD (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sd → rotQ (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sq →
+      parkD (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sd → parkQ (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sq →
       ∀ t ∈ Set.Icc t₀ t₁, Metric.infDist (X t) (Set.range m.orbitPoint) ≤
         K * Real.exp (-a * (t - t₀)) * Metric.infDist (X t₀) (Set.range m.orbitPoint) := by
   have hges : Flow.GloballyExponentiallyStable (fun y => m.field y 0) m.point :=
@@ -1167,22 +1125,23 @@ Implementation evidence: set attraction is outside the sentence language (Rules 
       (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))
     linarith
   have hred : ∀ (t₀ t₁ : ℝ) (X : ℝ → State 8), IsTrajectoryOn X m.abField t₀ t₁ →
-      X t₀ ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq} →
+      X t₀ ∈ {X : State 8 | parkD (X 0) (X 6) (X 7) = m.sd ∧ parkQ (X 0) (X 6) (X 7) = m.sq} →
       IsTrajectoryOn (fun t => reduce (X t)) (fun y => m.field y 0) t₀ t₁ ∧
         ∀ t ∈ Set.Icc t₀ t₁,
-          X t ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq} := by
+          X t ∈ {X : State 8 | parkD (X 0) (X 6) (X 7) = m.sd ∧
+            parkQ (X 0) (X 6) (X 7) = m.sq} := by
     rintro t₀ t₁ X hX ⟨hD, hQ⟩
     have hr := reduce_isTrajectoryOn m hX
     rw [hD, hQ, hwl] at hr
     refine ⟨hr, fun t ht => ?_⟩
     obtain ⟨h1, h2⟩ := load_const m hX t ht
     exact ⟨h1.trans hD, h2.trans hQ⟩
-  have hO : ∀ X ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq},
+  have hO : ∀ X ∈ {X : State 8 | parkD (X 0) (X 6) (X 7) = m.sd ∧ parkQ (X 0) (X 6) (X 7) = m.sq},
       Metric.infDist X (Set.range m.orbitPoint) ≤ 1 * ‖reduce X - m.point‖ := by
     rintro X ⟨hD, hQ⟩
     rw [one_mul, ← norm_sub_orbitPoint m X hD hQ, ← dist_eq_norm]
     exact Metric.infDist_le_dist_of_mem (Set.mem_range_self (X 0))
-  have hO' : ∀ X ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq},
+  have hO' : ∀ X ∈ {X : State 8 | parkD (X 0) (X 6) (X 7) = m.sd ∧ parkQ (X 0) (X 6) (X 7) = m.sq},
       ‖reduce X - m.point‖ ≤ (1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
         (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))) *
         Metric.infDist X (Set.range m.orbitPoint) := by
@@ -1198,7 +1157,7 @@ Implementation evidence (Rules §3a). -/
     (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
     (hδ : 0 < m.margin) {X : ℝ → State 8} {t₀ : ℝ}
     (hX : IsIntegralCurveOn X (fun _ x => m.abField x) (Set.Ici t₀))
-    (hD : rotD (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sd) (hQ : rotQ (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sq) :
+    (hD : parkD (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sd) (hQ : parkQ (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sq) :
     Filter.Tendsto (fun t => Metric.infDist (X t) (Set.range m.orbitPoint)) Filter.atTop
       (nhds 0) := by
   obtain ⟨K, a, hK, ha, h⟩ := orbit_exponentiallyAttractive m hCdc hL hC hR hG he hδ

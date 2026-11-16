@@ -3,6 +3,7 @@ import dependencies.LeanForControl
 import theorem.Attributes
 import theorem.Stochastic.LyapunovCovariance
 import Mathlib.Analysis.Matrix.Order
+import theorem.LinearAlgebra.Frobenius
 
 /-! # Kalman prediction step: covariance propagation
 
@@ -44,10 +45,7 @@ open scoped Matrix.Norms.Frobenius Topology
 
 variable {n : ℕ}
 
-noncomputable local instance frobeniusENormedAddMonoid'' :
-    ENormedAddMonoid (Matrix (Fin n) (Fin n) ℝ) :=
-  (NormedAddCommGroup.toENormedAddCommMonoid :
-    ENormedAddCommMonoid (Matrix (Fin n) (Fin n) ℝ)).toENormedAddMonoid
+attribute [local instance] powerlib.LinearAlgebra.frobeniusENormedAddMonoid
 
 /-- Discrete prediction preserves positive semidefiniteness: `Φ P Φᵀ + Q ⪰ 0`. -/
 @[tmio T, powerlib_foundation] theorem predict_posSemidef {m : Type*} [Fintype m] {k : Type*}

@@ -45,6 +45,7 @@ noncomputable section
 namespace powerlib.Linear.Rational
 
 open LinearSystems TMIO Synthesis
+open powerlib.Linear.Positive (real)
 
 variable {n : ℕ}
 

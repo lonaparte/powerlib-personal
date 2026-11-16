@@ -383,7 +383,7 @@ def RationalCircuit.matrix (r : RationalCircuit) : Matrix (Fin 3) (Fin 3) ℚ :=
 
 /-- The exact rational matrix is the circuit's plant matrix. -/
 @[tmio M, powerlib_domain] theorem RationalCircuit.real_matrix (r : RationalCircuit) :
-    Linear.Synthesis.real r.matrix = r.circuit.plant.A := by
+    Linear.Positive.real r.matrix = r.circuit.plant.A := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [RationalCircuit.matrix, RationalCircuit.circuit, Circuit.plant, StateSpace.plant,

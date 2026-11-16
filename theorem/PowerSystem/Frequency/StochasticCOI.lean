@@ -6,6 +6,7 @@ import theorem.Stochastic.LyapunovCovariance
 import theorem.Stochastic.OUMoments
 import theorem.LTI.Oscillator2
 import Mathlib.Probability.Moments.Variance
+import theorem.LinearAlgebra.Frobenius
 
 /-! # Linearized stochastic COI swing: stationary covariance, moment equations, lag covariance
 
@@ -74,11 +75,7 @@ open powerlib.Stochastic.Lyapunov
 
 variable {n : ℕ}
 
--- Same compatibility instance as `theorem/Stochastic/LyapunovCovariance.lean`.
-noncomputable local instance frobeniusENormedAddMonoid'' :
-    ENormedAddMonoid (Matrix (Fin n) (Fin n) ℝ) :=
-  (NormedAddCommGroup.toENormedAddCommMonoid :
-    ENormedAddCommMonoid (Matrix (Fin n) (Fin n) ℝ)).toENormedAddMonoid
+attribute [local instance] powerlib.LinearAlgebra.frobeniusENormedAddMonoid
 
 /-! ## The linearized model -/
 

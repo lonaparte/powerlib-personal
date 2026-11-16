@@ -580,7 +580,7 @@ abbrev coord (j : Fin 2) : ℝ² →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => 
 
 /-- The linearization at the origin: the matrix of linear coefficients. -/
 def Model.linearization (model : Model) : Matrix (Fin 2) (Fin 2) ℝ :=
-  Linear.Synthesis.real model.linearPart
+  Linear.Positive.real model.linearPart
 
 /-- The linearization is the Jacobian of the field at the origin. -/
 @[tmio M, powerlib_foundation] theorem hasFDerivAt_field_zero (model : Model) :

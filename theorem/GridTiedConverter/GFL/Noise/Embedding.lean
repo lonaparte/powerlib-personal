@@ -2,6 +2,7 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.SPH
 import theorem.GridTiedConverter.PLL.StochasticPH
+import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.PH.Nonlinear
 
 /-! # SPHS embedding of the reduced 2D GFL–PLL equation: port geometry and the generator
@@ -24,9 +25,10 @@ form, `h_noise` with columns `(d, q, ω)`), §2b (invariant noise coordinates: r
 `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`).
 
 Results.
-* `embDrift_eq_pH`, `embDrift_dot_grad`, `embR_posSemidef`: the drift is the pH field
-  `(J − R)∇𝓗` with skew `J` (`embJ` is `[[0, 1], [−1, 0]]`, skew by
-  `PH.transpose_symplectic_two`) and `R ⪰ 0` (`K_p ≥ 0`).
+* `embDrift_eq_pH`, `embDrift_dot_grad`: the drift is the pH field `(J − R)∇𝓗` of the PI-PLL,
+  with its skew `J = PLL.pllJ = [[0, 1], [−1, 0]]` (skew by `PH.transpose_symplectic_two`) and
+  `R = PLL.pllR K_p ⪰ 0` (`PLL.pllR_posSemidef`, `K_p ≥ 0`); the frequency column is
+  `ε` times the PLL input port `PLL.pllB` (`theorem/GridTiedConverter/PLL/PIPLLPH.lean`).
 * `voltageBlock_eq_vecMulVec`, `voltageBlock_det`, `voltageBlock_rank_le`: the voltage block is
   the rank-one matrix `(K_p, 1)ᵀ(σ_d, g)`.
 * `freqNoise_fdt`: the frequency channel satisfies `B Bᵀ = 2 T_eff R`, `T_eff = ε²/(2K_p)`
@@ -50,14 +52,12 @@ namespace powerlib.GFL.Noise.Embed
 
 open Matrix
 open powerlib.Stochastic.SPH powerlib.PLL.StochasticPH
+open powerlib.PLL (pllJ pllR)
 
-/-! ## Constant-structure pH form -/
+/-! ## Constant-structure pH form
 
-/-- Interconnection `J = [[0, 1], [−1, 0]]`. -/
-def embJ : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -1, 0]
-
-/-- Dissipation `R = diag(K_p, 0)` (PLL proportional path). -/
-def embR (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
+The interconnection and dissipation are those of the PI-PLL, `PLL.pllJ = [[0, 1], [−1, 0]]` and
+`PLL.pllR K_p = diag(K_p, 0)` (proportional path). -/
 
 /-- Gradient `∇𝓗 = (𝒱'(θ_e), K_i η) = (−h(θ_e), K_i η)`. -/
 def embGrad (Ki hθ η : ℝ) : Fin 2 → ℝ := ![-hθ, Ki * η]
@@ -65,17 +65,10 @@ def embGrad (Ki hθ η : ℝ) : Fin 2 → ℝ := ![-hθ, Ki * η]
 /-- Drift `f = (K_p h + K_i η, h)` of the 2D slow model. -/
 def embDrift (Kp Ki hθ η : ℝ) : Fin 2 → ℝ := ![Kp * hθ + Ki * η, hθ]
 
-@[tmio M, powerlib_domain] theorem embR_posSemidef {Kp : ℝ} (hKp : 0 ≤ Kp) :
-    (embR Kp).PosSemidef := by
-  have : embR Kp = Matrix.diagonal ![Kp, 0] := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp [embR]
-  rw [this, Matrix.posSemidef_diagonal_iff]
-  intro i; fin_cases i <;> simp [hKp]
-
 /-- The drift is the pH vector field `(J − R)∇𝓗` (escape-quasipotential §0). -/
 @[tmio M, powerlib_domain] theorem embDrift_eq_pH (Kp Ki hθ η : ℝ) :
-    embDrift Kp Ki hθ η = (embJ - embR Kp) *ᵥ embGrad Ki hθ η := by
-  ext i; fin_cases i <;> simp [embDrift, embJ, embR, embGrad, mulVec, dotProduct,
+    embDrift Kp Ki hθ η = (pllJ - pllR Kp) *ᵥ embGrad Ki hθ η := by
+  ext i; fin_cases i <;> simp [embDrift, pllJ, pllR, embGrad, mulVec, dotProduct,
     Fin.sum_univ_two]
 
 /-- Power balance of the drift: `f ⬝ ∇𝓗 = −K_p h²`. -/
@@ -112,9 +105,9 @@ def freqNoise (ε : ℝ) : Matrix (Fin 2) (Fin 1) ℝ := !![-ε; 0]
 
 /-- **Frequency channel FDT (exact)**: `B Bᵀ = 2 T_eff R` with `T_eff = ε²/(2K_p)`. -/
 @[tmio M, powerlib_domain] theorem freqNoise_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
-    freqNoise ε * (freqNoise ε)ᵀ = (2 * (ε ^ 2 / (2 * Kp))) • embR Kp := by
+    freqNoise ε * (freqNoise ε)ᵀ = (2 * (ε ^ 2 / (2 * Kp))) • pllR Kp := by
   ext i j; fin_cases i <;> fin_cases j <;>
-    simp [freqNoise, embR, Matrix.mul_apply]
+    simp [freqNoise, pllR, Matrix.mul_apply]
   field_simp
 
 /-- Voltage covariance `v vᵀ = (σ_d² + g²) [[K_p², K_p], [K_p, 1]]`. -/
@@ -130,20 +123,20 @@ def frobInner (A B : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := (Aᵀ * B).trace
 is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_p > 0`). -/
 @[tmio M, powerlib_domain] theorem voltage_alignment {Kp σd g : ℝ} (hKp : 0 < Kp)
     (hs : σd ^ 2 + g ^ 2 ≠ 0) :
-    frobInner (voltageBlock Kp σd g * (voltageBlock Kp σd g)ᵀ) (embR Kp) /
+    frobInner (voltageBlock Kp σd g * (voltageBlock Kp σd g)ᵀ) (pllR Kp) /
         (Real.sqrt (frobInner (voltageBlock Kp σd g * (voltageBlock Kp σd g)ᵀ)
             (voltageBlock Kp σd g * (voltageBlock Kp σd g)ᵀ)) *
-          Real.sqrt (frobInner (embR Kp) (embR Kp))) = Kp ^ 2 / (1 + Kp ^ 2) := by
+          Real.sqrt (frobInner (pllR Kp) (pllR Kp))) = Kp ^ 2 / (1 + Kp ^ 2) := by
   have hs' : 0 < σd ^ 2 + g ^ 2 := lt_of_le_of_ne (by positivity) (Ne.symm hs)
   rw [voltageBlock_mul_transpose]
-  have h1 : frobInner ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1]) (embR Kp) =
+  have h1 : frobInner ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1]) (pllR Kp) =
       (σd ^ 2 + g ^ 2) * Kp ^ 3 := by
-    simp [frobInner, embR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
+    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
   have h2 : frobInner ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1])
       ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1]) = ((σd ^ 2 + g ^ 2) * (1 + Kp ^ 2)) ^ 2 := by
     simp [frobInner, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
-  have h3 : frobInner (embR Kp) (embR Kp) = Kp ^ 2 := by
-    simp [frobInner, embR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
+  have h3 : frobInner (pllR Kp) (pllR Kp) = Kp ^ 2 := by
+    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
   rw [h1, h2, h3, Real.sqrt_sq (by positivity), Real.sqrt_sq hKp.le]
   field_simp
 
@@ -154,18 +147,18 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
 
 /-- The frequency column has alignment exactly one with `R`. -/
 @[tmio M, powerlib_domain] theorem freq_alignment {Kp ε : ℝ} (hKp : 0 < Kp) (hε : ε ≠ 0) :
-    frobInner (freqNoise ε * (freqNoise ε)ᵀ) (embR Kp) /
+    frobInner (freqNoise ε * (freqNoise ε)ᵀ) (pllR Kp) /
         (Real.sqrt (frobInner (freqNoise ε * (freqNoise ε)ᵀ) (freqNoise ε * (freqNoise ε)ᵀ)) *
-          Real.sqrt (frobInner (embR Kp) (embR Kp))) = 1 := by
+          Real.sqrt (frobInner (pllR Kp) (pllR Kp))) = 1 := by
   have e : freqNoise ε * (freqNoise ε)ᵀ = !![ε ^ 2, 0; 0, 0] := by
     ext i j; fin_cases i <;> fin_cases j <;> simp [freqNoise, Matrix.mul_apply]; ring
   rw [e]
-  have h1 : frobInner !![ε ^ 2, 0; 0, 0] (embR Kp) = ε ^ 2 * Kp := by
-    simp [frobInner, embR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
+  have h1 : frobInner !![ε ^ 2, 0; 0, 0] (pllR Kp) = ε ^ 2 * Kp := by
+    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
   have h2 : frobInner !![ε ^ 2, 0; 0, 0] !![ε ^ 2, 0; 0, 0] = (ε ^ 2) ^ 2 := by
     simp [frobInner, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
-  have h3 : frobInner (embR Kp) (embR Kp) = Kp ^ 2 := by
-    simp [frobInner, embR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
+  have h3 : frobInner (pllR Kp) (pllR Kp) = Kp ^ 2 := by
+    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
   have hε2 : 0 < ε ^ 2 := by positivity
   rw [h1, h2, h3, Real.sqrt_sq hε2.le, Real.sqrt_sq hKp.le]
   field_simp

@@ -9,7 +9,7 @@ backend is also the fallback for an untrusted faster proposal; no invariant of t
 algorithm is assumed.
 
 Scope.
-* Generic: square rational matrices of every dimension, read in `ℝ` through `real`; the
+* Generic: square rational matrices of every dimension, read in `ℝ` through `Positive.real`; the
   Lyapunov equation `Aᵀ P + P A = -1` with the full operator, without assuming a symmetric
   solution. No model. The front end is `theorem/Linear/Synthesis.lean`.
 
@@ -19,7 +19,8 @@ uniqueness of the solution for a Hurwitz matrix).
 
 Results.
 * The backend: `operatorMap`, `operator`, `inverse` (by cofactors), `candidate` (singular
-  operators produce a candidate that the check rejects), `solutionCheck`, `check`, `real`.
+  operators produce a candidate that the check rejects), `solutionCheck`, `check`; matrices are
+  read in `ℝ` through `Positive.real` (`theorem/Linear/Positive.lean`).
 * Soundness: `inverse_eq`, `real_lyapunov`, `certificate` (the checked data constructs the real
   certificate used throughout the library), `isHurwitz_of_check`.
 * Completeness: `operator_injective` (a Hurwitz real image makes the full rational operator
@@ -30,6 +31,7 @@ Results.
 
 namespace powerlib.Linear.VerifiedSynthesis
 open Matrix LinearSystems
+open powerlib.Linear.Positive (real)
 variable {n : ℕ}
 
 /-- Flatten the full Lyapunov operator, without assuming a symmetric solution. -/
@@ -63,7 +65,6 @@ def check (A P : Matrix (Fin n) (Fin n) ℚ) : Bool :=
   solutionCheck A P && Positive.check n P
 
 noncomputable section
-abbrev real (P : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℝ := Positive.real P
 
 @[tmio T, powerlib_foundation] theorem inverse_eq (M : Matrix (Fin n × Fin n) (Fin n × Fin n) ℚ) :
     inverse M = M⁻¹ := by

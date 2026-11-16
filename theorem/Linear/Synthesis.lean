@@ -15,7 +15,8 @@ full-operator backend, with positive definiteness decided by verified Schur elim
 fast candidate; both entry points use the complete backend when it supplies no checked solution.
 
 Scope.
-* Generic: square rational matrices of every dimension, read in `ℝ` through `real`; no model.
+* Generic: square rational matrices of every dimension, read in `ℝ` through `Positive.real`
+  (`theorem/Linear/Positive.lean`); no model.
 * There are two ways to run it. `certificateOf A (by decide +kernel)` lets the kernel run both
   the synthesizer and the check. `lyapunov_certificate% A` evaluates the synthesizer during
   elaboration, outside the kernel, writes its proposal out as rational literals, and leaves only
@@ -29,7 +30,7 @@ Results.
 * The untrusted synthesizer: `eliminate`, `solve`, `pairs`, `lyapunovSystem`, `ldlStep`, `ldl`,
   `ofRows`, `Witness`, `synth`.
 * The legacy witness check: `Witness.Valid`, `Witness.check`, `Witness.valid_of_check`,
-  `real`, `real_eq_mapMatrix`, `Witness.lyapunov_eq`, `Witness.factor_eq`,
+  `real_eq_mapMatrix`, `Witness.lyapunov_eq`, `Witness.factor_eq`,
   `Witness.certificate`.
 * Acceptance: `selectedMatrix`, `accepts`, `certificateOf`, `accepts_of_isHurwitz` (no Hurwitz
   matrix is lost), `accepts_iff_isHurwitz` (the synthesizer decides the Hurwitz property of every
@@ -41,6 +42,7 @@ Results.
 namespace powerlib.Linear.Synthesis
 
 open Matrix
+open powerlib.Linear.Positive (real)
 
 variable {n : ℕ}
 
@@ -162,9 +164,6 @@ def accepts (A : Matrix (Fin n) (Fin n) ℚ) : Bool :=
   · exact (((h i i).2).resolve_left (not_not.mpr rfl)).2
 
 noncomputable section
-
-/-- The real matrix of a rational one. -/
-abbrev real (M : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℝ := M.map (Rat.cast : ℚ → ℝ)
 
 @[tmio T, powerlib_foundation] theorem real_eq_mapMatrix (M : Matrix (Fin n) (Fin n) ℚ) :
     real M = (Rat.castHom ℝ).mapMatrix M := rfl
