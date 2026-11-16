@@ -123,6 +123,16 @@ in Git; working statistics, build receipts and development plans are not kept he
     voltage-limited PI platform are T–M or M (18).
   - Kinds now T 3633, M 2662, T–M 1175, M–I 69, I–O 11; labels foundation 4394,
     domain 3155; public connection theorems unchanged (1052).
+- Power-system frequency quantities are domain objects: the centre-of-inertia
+  frequency and its aggregation identities (droop aggregation, virtual inertia,
+  synchronous-speed kinetic energy), the PMU window phasor and the Hz/rad·s⁻¹
+  ROCOF conversion, the noisy-swing frequency variance, the UFLS post-shedding
+  threshold and ROCOF load estimate, the LFC tie-flow slope and ACE in Hz, and the
+  SRF-PLL frequency meter's closed-loop denominator (18 theorems, T → M,
+  foundation → domain). Generic probability and analysis lemmas of these modules
+  (Gaussian standardization, variance of a difference quotient, trip predicates of
+  an arbitrary signal) stay foundation. Kinds now T 3615, M 2680; labels
+  foundation 4376, domain 3173.
 
 ## 2026-11-15
 

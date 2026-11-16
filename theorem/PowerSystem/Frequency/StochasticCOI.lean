@@ -266,13 +266,13 @@ open powerlib.Stochastic.OU (ouStatVar ouVar ouVar_tendsto)
 
 /-- Writing `M dΔω = -DΔω dt + β dW` as an OU with `θ = D/M`, `σ = β/M`, the stationary
 variance `σ²/(2θ)` equals `β²/(2DM)` (algebraic part only). -/
-@[tmio T, powerlib_foundation] theorem swing_ouStatVar {M D : ℝ} (hM : M ≠ 0) (hD : D ≠ 0) (β : ℝ) :
+@[tmio M, powerlib_domain] theorem swing_ouStatVar {M D : ℝ} (hM : M ≠ 0) (hD : D ≠ 0) (β : ℝ) :
     ouStatVar (D / M) (β / M) = β ^ 2 / (2 * D * M) := by
   unfold ouStatVar
   field_simp
 
 /-- The variance function of the noisy swing tends to `β²/(2DM)` when `D, M > 0`. -/
-@[tmio T, powerlib_foundation] theorem swing_ouVar_tendsto {M D : ℝ} (hM : 0 < M) (hD : 0 < D) (β : ℝ) :
+@[tmio M, powerlib_domain] theorem swing_ouVar_tendsto {M D : ℝ} (hM : 0 < M) (hD : 0 < D) (β : ℝ) :
     Tendsto (ouVar (D / M) (β / M)) atTop (𝓝 (β ^ 2 / (2 * D * M))) := by
   rw [← swing_ouStatVar hM.ne' hD.ne']
   exact ouVar_tendsto (div_pos hD hM) _

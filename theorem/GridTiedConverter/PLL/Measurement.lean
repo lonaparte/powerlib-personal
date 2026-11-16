@@ -119,7 +119,8 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
   rw [hdiv]
   linear_combination (-1 : ℝ) * hroot
 
-@[tmio T, powerlib_foundation] private lemma closedLoop_den_pos_or {V Kp Ki : ℝ} (h : 0 < V * Ki) (ω : ℝ) :
+@[tmio M, powerlib_domain] private lemma closedLoop_den_pos_or {V Kp Ki : ℝ} (h : 0 < V * Ki)
+    (ω : ℝ) :
     0 < (V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 ∨
       ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 = 0 ∧ ω ^ 2 = V * Ki ∧ V * Kp = 0) := by
   rcases (add_nonneg (sq_nonneg (V * Ki - ω ^ 2)) (sq_nonneg (V * Kp * ω))).lt_or_eq with hp | h0

@@ -34,9 +34,9 @@ linearization), §1.3 (governor), §1.4 (ACE, `B^Hz = B/f₀`, sign of `ACE_b`),
 integral), §1.6 (steady state / non-interactive control), §1.7 (two-area state matrix).
 
 Results.
-* `tiePower_hasDerivAt` (domain), `tieFlow_hasDerivAt` (foundation, §1.2): `T = V_a V_b cos δ⁰/X`
+* `tiePower_hasDerivAt`, `tieFlow_hasDerivAt` (domain, §1.2): `T = V_a V_b cos δ⁰/X`
   is the slope of `V_a V_b sin δ / X`, and the linearised flow obeys `ΔṖ_tie = ω_s T (Δω_a − Δω_b)`.
-* `ace_hz` (foundation, §1.4): `B Δω̂ = (B/f₀) Δf` with `Δf = f₀ Δω̂`.
+* `ace_hz` (domain, §1.4): `B Δω̂ = (B/f₀) Δf` with `Δf = f₀ Δω̂`.
 * `field_*` (domain): every row of the §1.7 matrix is the corresponding §1.1–§1.5
   equation (including the opposite sign of `ΔP_tie,ab` in the two AGC rows).
 * `isEquilibrium_iff`, `plant7_isEquilibrium_iff` (domain, static, §1.6): for
@@ -118,7 +118,7 @@ def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
 
 /-- §1.2 boxed: with `δ̇_a = ω_s Δω̂_a`, `δ̇_b = ω_s Δω̂_b`, the linearised tie flow
 `ΔP_tie = T (δ_a − δ_b − δ⁰)` has rate `ω_s T (Δω̂_a − Δω̂_b)`. -/
-@[tmio T, powerlib_foundation] theorem tieFlow_hasDerivAt {δa δb : ℝ → ℝ} {wa wb ωs T δ0 t : ℝ}
+@[tmio M, powerlib_domain] theorem tieFlow_hasDerivAt {δa δb : ℝ → ℝ} {wa wb ωs T δ0 t : ℝ}
     (ha : HasDerivAt δa (ωs * wa) t) (hb : HasDerivAt δb (ωs * wb) t) :
     HasDerivAt (fun t => T * (δa t - δb t - δ0)) (ωs * T * (wa - wb)) t := by
   have h := ((ha.sub hb).sub_const δ0).const_mul T
@@ -126,7 +126,7 @@ def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
   ring
 
 /-- §1.4: `ACE = ΔP_tie + B Δω̂ = ΔP_tie + B^Hz Δf` with `Δf = f₀ Δω̂`, `B^Hz = B/f₀`. -/
-@[tmio T, powerlib_foundation] theorem ace_hz {f₀ : ℝ} (hf : f₀ ≠ 0) (Ptie B w : ℝ) :
+@[tmio M, powerlib_domain] theorem ace_hz {f₀ : ℝ} (hf : f₀ ≠ 0) (Ptie B w : ℝ) :
     Ptie + B * w = Ptie + B / f₀ * (f₀ * w) := by
   field_simp
 

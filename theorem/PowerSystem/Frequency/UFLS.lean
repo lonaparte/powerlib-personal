@@ -19,7 +19,7 @@ Source: work-sync `theory/T-ufls.md` §1.1 (single-stage threshold shedding), §
 shedding with confirmation delay), §1.4 ("切赢了" condition), §1.5 (load estimate from RoCoF).
 
 Results.
-* `postShed_steadyState_above_iff` (foundation) and `postShed_necessary` (private): the
+* `postShed_steadyState_above_iff` (domain) and `postShed_necessary` (private): the
   post-shedding frequency can stay above the threshold `−Δf_th` only if
   `ΔP_L − p P⁰ ≤ (K_R + D) Δf_th / f₀` (strictly: the steady state is above the threshold iff
   `ΔP_L − p P⁰ < (K_R + D) Δf_th / f₀`).
@@ -43,8 +43,8 @@ Family and connection conclusions.
   `postShed_necessary`, `postShed_not_sufficient` and `load_eq_of_rocof` are private
   implementation evidence (Rules §3a). They are derived from the generic
   `LTI.tendsto_apply_of_isHurwitz`, `LTI.trajectory_eq_osc2`, `LTI.hasDerivWithinAt_apply_zero`
-  and static facts of the plant. The steady-state inequality, the corrected load estimate and
-  the trip logic are foundation.
+  and static facts of the plant. The steady-state inequality and the corrected load estimate
+  are domain; the trip logic, stated for an arbitrary signal, is foundation.
 
 Corrections.
 * §1.4 states the condition as `ΔP_L − p ΔP_L⁰ < D_eff Δf_th`; the primary response `K_R` is
@@ -74,7 +74,7 @@ variable {M D K Tg ΔPL f₀ th : ℝ}
 
 /-- The post-shedding steady state `−ΔP'/(K_R + D)` lies strictly above the threshold
 `−Δf_th/f₀` iff `ΔP' < (K_R + D) Δf_th / f₀`. -/
-@[tmio T, powerlib_foundation] theorem postShed_steadyState_above_iff {ΔP' : ℝ} (hKD : 0 < K + D)
+@[tmio M, powerlib_domain] theorem postShed_steadyState_above_iff {ΔP' : ℝ} (hKD : 0 < K + D)
     (hf : 0 < f₀) : -(th / f₀) < -ΔP' / (K + D) ↔ ΔP' < (K + D) * th / f₀ := by
   rw [neg_div, neg_lt_neg_iff, div_lt_div_iff₀ hKD hf, lt_div_iff₀ hf]
   constructor <;> intro h <;> linarith
@@ -149,7 +149,7 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
   field_simp
 
 /-- Correction: the note's estimate `M |ḟ| · 2π` differs from `ΔP_L > 0` unless `2π f₀ = 1`. -/
-@[tmio T, powerlib_foundation] theorem noteLoadEstimate_ne {ρ : ℝ} (hM : 0 < M) (hf : 0 < f₀)
+@[tmio M, powerlib_domain] theorem noteLoadEstimate_ne {ρ : ℝ} (hM : 0 < M) (hf : 0 < f₀)
     (hP : 0 < ΔPL) (hρ : ΔPL = M * |ρ| / f₀) (h2π : 2 * Real.pi * f₀ ≠ 1) :
     M * |ρ| * (2 * Real.pi) ≠ ΔPL := by
   intro h
