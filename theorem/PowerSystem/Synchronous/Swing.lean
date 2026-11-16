@@ -821,11 +821,6 @@ proves instability; passivity holds without requirement. -/
   · rw [family_isAutonomous.den_passive]
     trivial
 
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
 /-! ### Members of the local denotations -/
 
 /-- The same conditions place a swing model in local asymptotic stability. -/

@@ -72,16 +72,17 @@ Family and connection conclusions.
   local sentences translate into `{design stable, headroom}`, instability into
   `{design unstable, headroom}`, passivity into nothing, the remaining flow sentences into the
   whole, inconsistent, language (`realize_univ`).
-  `chain_le_semantics`: every translation is sound. `exact_passive`. `exactUnder_attractive`:
-  within `headroom` the local asymptotic and local exponential translations are exact
-  (`mem_den_iff`: with `L > 0`, LAS / LES iff `R + Kp > 0 ∧ Ki > 0`). `exactUnder_unstable`:
-  within `{inductance, integral, headroom}` instability is exact (a design that is not unstable,
-  `(R + Kp)/L ≥ 0` and `Ki/L > 0`, is Lyapunov stable). `not_exactUnder_lyapunovStable`: Lyapunov
-  stability is not exact within all realistic constraints (`center`, a lossless design
-  `R + Kp = 0`). `exact_globallyExponentiallyStable`: no platform is globally exponentially
-  stable (`not_mem_den_globallyExponentiallyStable`), so the whole-language translation is exact.
-  `mem_den_unstable_of_overload`: with `L ≠ 0`, `Ki ≠ 0`, `V_dc > 0` and overload the platform is
-  unstable, whatever the design. Global asymptotic stability is not decided here.
+  `chain_le_semantics`: every translation is sound. `family_isAutonomous.exact_passive`.
+  `exactUnder_attractive`: within `headroom` the local asymptotic and local exponential
+  translations are exact (`mem_den_iff`: with `L > 0`, LAS / LES iff `R + Kp > 0 ∧ Ki > 0`).
+  `exactUnder_unstable`: within `{inductance, integral, headroom}` instability is exact (a design
+  that is not unstable, `(R + Kp)/L ≥ 0` and `Ki/L > 0`, is Lyapunov stable).
+  `not_exactUnder_lyapunovStable`: Lyapunov stability is not exact within all realistic constraints
+  (`center`, a lossless design `R + Kp = 0`). `exact_globallyExponentiallyStable`: no platform is
+  globally exponentially stable (`not_mem_den_globallyExponentiallyStable`), so the whole-language
+  translation is exact. `mem_den_unstable_of_overload`: with `L ≠ 0`, `Ki ≠ 0`, `V_dc > 0` and
+  overload the platform is unstable, whatever the design. Global asymptotic stability is not
+  decided here.
 * M–I: `implementation : Implementation PIParams Spectral.Requirement LimitedPI LimitRequirement
   2 1 2 0`, every platform realizing its design (`Implementation.ofDesign design`).
   `realizationExactUnder_local`: within `{integral, headroom}` Lyapunov stability, local
@@ -499,11 +500,6 @@ passivity holds without requirement. -/
   · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact family_isAutonomous.mem_den_flow.mpr
       ((family_isAutonomous.mem_den_flow.mp (unstable_of_unstable (hy (.design .unstable) (by simp)) (hy .headroom (by simp)))))
-
-/-- Passivity is translated exactly: a platform without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- Within headroom the local asymptotic and local exponential translations are exact: the
 platform is locally asymptotically (exponentially) stable exactly when its design is stable,

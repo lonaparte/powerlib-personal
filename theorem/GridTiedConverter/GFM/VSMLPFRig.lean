@@ -69,9 +69,9 @@ Family and connection conclusions.
   local sentences translate into `{design balanced, design physical, design synchronizing, lag,
   routh}`, instability into `{design balanced, design physical, lag, lagged}`, passivity into
   nothing, the remaining flow sentences into the whole, inconsistent, language
-  (`rig_realize_univ`). `rig_chain_le_semantics`: every translation is sound; `rig_exact_passive`;
-  `rig_exactUnder_locallyExponentiallyStable`: within a physical design and a positive delay the
-  local exponential translation is exact.
+  (`rig_realize_univ`). `rig_chain_le_semantics`: every translation is sound; exact passivity
+  (`rigFamily_isAutonomous.exact_passive`); `rig_exactUnder_locallyExponentiallyStable`: within a
+  physical design and a positive delay the local exponential translation is exact.
 * M–I (realization). `realizationSoundUnder_locallyExponentiallyStable`: within
   `{design physical, lag, fastLag}` a platform with a locally exponentially stable design is
   locally exponentially stable, by the static reduction for a design map
@@ -381,11 +381,6 @@ instability, and passivity holds without requirement. -/
   · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact rig_mem_den_flow_iff.mpr ((rig_mem_den_flow_iff.mp (rig_unstable_of (hy (.design .physical) (by simp))
       (hy .lag (by simp)) (hy (.design .balanced) (by simp)) (hy .lagged (by simp)))))
-
-/-- Passivity is translated exactly: a platform without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem rig_exact_passive : connection% (rigFamily.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl rigFamily_isAutonomous.den_passive
 
 /-- Within a physical design and a positive delay, local exponential stability of the platform is
 translated exactly: the operating point is locally exponentially stable exactly when the design

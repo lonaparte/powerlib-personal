@@ -45,7 +45,7 @@ one-state field `ẏ = −(b/a) y` (`y = ξ − ξ*`, origin = reduced equilibri
 static (`b/a > 0` or `b/a < 0`). Connection conclusions: soundness of every translation
 (`chain_le_semantics`), exactness for the attractive sentences and sampled contraction
 (`exact_hurwitz`), the membership equivalence for these sentences (`mem_den_iff`, global
-exponential stability included) and exact passivity (`exact_passive`). The slow
+exponential stability included) and exact passivity (`family_isAutonomous.exact_passive`). The slow
 manifold and eigenvalue results are static.
 
 Correction (§1.5): the reduced equation `ξ̇ = −(Δω + V K_i ξ)/(V K_p)` is stated without its
@@ -217,11 +217,6 @@ stability) or sampled contraction iff `b/a > 0`. -/
   ext m
   rw [(connection_proof% mem_den_iff hP)]
   simp [Meets]
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 end ReducedSlow
 

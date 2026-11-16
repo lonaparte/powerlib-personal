@@ -61,9 +61,9 @@ Family and connection conclusions.
   nonlinear field with `i_d* = I_d0` translated so that `eqState` is the origin
   (`Spectral.localFamily`, `Flow.Property.holds_shift_iff`). Requirements: `stable` —
   `L, C, V0 > 0`, `R + Kp > 0`, `Ki > 0`, `I_dc0 > 0`; `unstable` — `C, V0 > 0`, `Ki ≠ 0`,
-  `I_dc0 < 0`. `chain_le_semantics`, `exact_passive`; `mem_den_locallyExponentiallyStable`:
-  rectifier mode with a stable current loop is locally exponentially stable;
-  `mem_den_unstable_of_inverter`: in
+  `I_dc0 < 0`. `chain_le_semantics`, exact passivity (`Family.IsAutonomous.exact_passive`);
+  `mem_den_locallyExponentiallyStable`: rectifier mode with a stable current loop is locally
+  exponentially stable; `mem_den_unstable_of_inverter`: in
   inverter mode (`I_dc0 < 0`) the plant is unstable, whatever the current-loop gains (the
   open-loop pole `−I_dc0/(C V0)` of §1.4 survives the inner loop).
   Within `L, C, V0 > 0` the local exponential translation is exact
@@ -584,11 +584,6 @@ sentence iff the current loop is stable and the converter rectifies (`I_dc0 > 0`
   · obtain ⟨hC, hV, hKi, hI⟩ := h
     exact (Flow.Property.holds_shift_iff .unstable).mpr
       ((mem_den_flow.mp (mem_den_unstable_of_inverter p hC hV hKi hI)))
-
-/-- Passivity is translated exactly: the autonomous cascade has no ports. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.local_exact_passive _ _ _
 
 /-! ## Exactness within the physical range -/
 

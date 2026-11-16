@@ -36,14 +36,15 @@ Results.
   the local sentences to `stable`, instability to `unstable`, passivity to nothing and the global
   sentences, decay rates, sampled contraction and conservation to the whole language.
   `local_chain_le_semantics` proves every translation sound when `S` gives local exponential
-  stability and `U` instability of the field at the origin; `local_exact_passive` is exact.
-  `local_exact_locallyExponentiallyStable` proves the local exponential translation exact when
-  `S` is equivalent to local exponential stability at the origin, and `local_exact_of_jacobian`
-  when, for `C¹` fields, `S` is equivalent to an equilibrium at the origin with a Hurwitz Jacobian
-  (converse linearization, `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`). A
-  stability condition that also fixes physical signs (positive inertia, capacitance, …) is not of
-  this form; such families publish the exact membership within the physical range and a
-  witness that the translation itself is not exact.
+  stability and `U` instability of the field at the origin; passivity is exact
+  (`(localFamily_isAutonomous field S U).exact_passive`). `local_exact_locallyExponentiallyStable`
+  proves the local exponential translation exact when `S` is equivalent to local exponential
+  stability at the origin, and `local_exact_of_jacobian` when, for `C¹` fields, `S` is equivalent
+  to an equilibrium at the origin with a Hurwitz Jacobian (converse linearization,
+  `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`). A stability condition that also
+  fixes physical signs (positive inertia, capacitance, …) is not of this form; such families
+  publish the exact membership within the physical range and a witness that the translation itself
+  is not exact.
 * The local laws are the two-requirement instance of the named-requirement template
   `theorem/Spectral/Local.lean` (`localTable`, `chain_le_semantics_of_localTable_same`,
   `realize_univ_eq_empty_of`), which families with their own requirement languages use directly.
@@ -201,12 +202,6 @@ local exponential stability of the field at the origin, the instability conditio
   · cases P <;> rfl
   · rfl
   · rfl
-
-/-- Passivity is translated exactly in a local spectral family: a system without ports is
-passive. -/
-@[tmio TM, powerlib_foundation] theorem local_exact_passive (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) :
-    connection% ((localFamily field S U).Exact .passive) := show (localFamily field S U).Exact .passive from
-  Family.exact_of_translate_eq_empty rfl (localFamily_isAutonomous field S U).den_passive
 
 /-- With a stability condition equivalent to local exponential stability of the field at the
 origin, the local exponential translation of a local spectral family is exact. -/

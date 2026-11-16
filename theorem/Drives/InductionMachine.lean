@@ -71,9 +71,10 @@ Family and connection conclusions.
   into `positiveRotor`, decay at the rate `a` into `decayRateAtMost a`, passivity into nothing,
   instability and conservation into the whole (inconsistent) language.
 * Connection conclusions: `chain_le_semantics` (every translation sound, by the quadratic decay
-  certificate `fluxCertificate`), `exact_passive`, `ifocFlux_globallyExponentiallyStable` and
-  `ifocFlux_decay` (the segment bound with constant `1`, `ifocFlux_norm_bound`, is private
-  evidence). Equilibria, the flux algebra and the dissipation identity are static evidence.
+  certificate `fluxCertificate`), `family_isAutonomous.exact_passive`,
+  `ifocFlux_globallyExponentiallyStable` and `ifocFlux_decay` (the segment bound with constant `1`,
+  `ifocFlux_norm_bound`, is private evidence). Equilibria, the flux algebra and the dissipation
+  identity are static evidence.
 * Boundary witness (`not_exact`): only `r_r / L_r` enters the rotor-flux field, so the drive
   `negativeRotor` with `r_r = L_r = −1` has the field of the unit-rotor drive and satisfies every
   attractive sentence, sampled contraction and Lyapunov stability (`negativeRotor_mem_den`)
@@ -631,11 +632,6 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
   · have hm : Meets d (.decayRateAtMost a) := (TMIO.mem_realize _ _ _).mp hd _ rfl
     exact mem_den_flow.mpr
       (Flow.Decay.mono (mem_den_flow.mp (ifocFlux_decay d hm.1 hm.2.1)) hm.2.2)
-
-/-- Passivity is translated exactly: the autonomous rotor-flux model has no ports. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-! ## Boundary witness: a negative rotor -/
 

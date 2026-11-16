@@ -84,7 +84,7 @@ GFL model of `fourStateParams s ξ*` at the selected angle `θ_e*`.
   four-state reading (`BasinGuard.mem_den_iff_fourState`, below), and its reading meets the
   four-state translation, which is sound (`FourState.chain_le_semantics`, carried over by
   `Spectral.realize_subset_den_of_hub`). Passivity is translated exactly
-  (`BasinGuard.exact_passive`).
+  (`BasinGuard.family_isAutonomous.exact_passive`).
 * Exactness within `I_q* = 0`, `V_dc* ≠ 0` (the context `{iqZero, vdcNonzero}`): the local
   exponential translation is exact (`BasinGuard.exactUnder_locallyExponentiallyStable`, from
   `BasinGuard.mem_den_locallyExponentiallyStable_iff`, below). The Lyapunov, local asymptotic and
@@ -521,11 +521,6 @@ def family : Family Model Requirement 4 0 :=
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   exact h .unavailable
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- The flipped field about the mirror point is the transported field about the origin. -/
 @[tmio TM, powerlib_domain] private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Property) :

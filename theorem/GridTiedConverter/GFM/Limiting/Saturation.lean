@@ -39,7 +39,7 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
 `M, D > 0` and `P_sat sin(δ* − φ) < 0`; `unstable` — an equilibrium, `M > 0` and
 `P_sat sin(δ* − φ) > 0` (saddle). The local sentences translate into `stable`, instability into
 `unstable`, passivity into nothing, the rest into the whole (inconsistent) language.
-* `chain_le_semantics`, `exact_passive`.
+* `chain_le_semantics`; exact passivity is `Family.IsAutonomous.exact_passive`.
 * `saturated_stable_equilibrium` (connection): for `|P_ref| < P_sat` the equilibrium
   `δ_s = φ − arccos(P_ref/P_sat)` is locally exponentially stable;
   `saturated_unstable_equilibrium` (connection): `δ_u = φ + arccos(P_ref/P_sat)` is unstable
@@ -276,11 +276,6 @@ selected equilibrium). -/
   · exact (Flow.Property.holds_shift_iff .locallyExponentiallyStable).mpr
       ((mem_den_flow.mp (satField_les_of h.2.1 h.2.2.1 h.1 h.2.2.2)))
   · exact (Flow.Property.holds_shift_iff .unstable).mpr ((mem_den_flow.mp (satField_unstable_of h.2.1 h.1 h.2.2)))
-
-/-- Passivity is translated exactly: the autonomous model has no ports. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.local_exact_passive _ _ _
 
 @[tmio T, powerlib_foundation] private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < Psat) :
     0 < Real.sin (Real.arccos (Pref / Psat)) := by

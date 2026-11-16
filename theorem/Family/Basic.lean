@@ -51,6 +51,7 @@ Results.
 * Changes of representation: `den_comap`, `realize_comap`, `den_extend`, `realize_extend_inl`,
   `Exact.comap`, `Sound.comap`, `Exact.extend`, `Sound.extend`.
 * Autonomous families: `IsAutonomous.mem_den_flow`, `IsAutonomous.den_passive`,
+  `IsAutonomous.exact_passive` (exact for passivity when passivity translates into nothing),
   `IsAutonomousMap.mem_den_flow`, `IsAutonomousMap.den_passive` (a system without ports is
   passive).
 * Families read without an envelope: `den_envelope_of_continuous`, `IsAutonomous.den_envelope`,
@@ -372,6 +373,13 @@ def IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :
   ext x
   simp only [mem_den, Set.mem_univ, iff_true, hF x, Sentence.holds_passive]
   exact Port.System.passive_of_noPorts _
+
+/-- An autonomous family whose passivity sentence translates into no requirement is exact for
+passivity: a system without ports is passive. -/
+@[tmio TM, powerlib_foundation] theorem IsAutonomous.exact_passive {F : Family X Q n 0}
+    {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) (hs : F.translate .passive = ∅) :
+    connection% (F.Exact .passive) := show F.Exact .passive from
+  exact_of_translate_eq_empty hs hF.den_passive
 
 /-- A family read without an envelope satisfies every envelope sentence. -/
 @[tmio TM, powerlib_foundation] theorem IsAutonomous.den_envelope {F : Family X Q n 0}

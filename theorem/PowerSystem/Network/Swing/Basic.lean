@@ -68,7 +68,7 @@ Family and connection conclusions.
   With the Hurwitz test the local exponential translation is exact
   (`exact_locallyExponentiallyStable`, by the converse linearization theorem
   `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`).
-* Connection theorems: `chain_le_semantics`, `exact_passive`,
+* Connection theorems: `chain_le_semantics`, `family_isAutonomous.exact_passive`,
   `exact_locallyExponentiallyStable`, `mem_den_locallyExponentiallyStable` and
   `mem_den_unstable`. Boundary witness: the instability translation is not exact
   (`not_exact_unstable`): instability is the failure of Lyapunov stability, so an unbalanced
@@ -689,11 +689,6 @@ holds without requirement. -/
     exact les_of_meets (hm .powerFlow (by simp)) (hm .jacobianStable (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .powerFlow (by simp)) (hm .jacobianUnstable (by simp))
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% ((family (n := n)).Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- An equilibrium of the reduced field at the selected point is a power-balance point (the
 converse of `reducedField_equilibrium`). Read through the existing family endpoint.

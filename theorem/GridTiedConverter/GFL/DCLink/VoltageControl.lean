@@ -65,9 +65,10 @@ as its nonlinear field translated so that the selected operating point is the or
 The local sentences translate into `stable`, instability into `unstable`, passivity into nothing
 and the global sentences, decay rates, sampled contraction and conservation into the whole
 (inconsistent) language. Connection conclusions: `openChain_le_semantics`,
-`closedChain_le_semantics` (soundness), `openExact_passive`, `closedExact_passive`, and the
-memberships listed above. Exactness within the physical range (converse linearization for fields
-that are `C¹` on `V_dc > 0`, `Dynamics.isHurwitz_of_locallyExponentiallyStable_local`):
+`closedChain_le_semantics` (soundness), exact passivity of both
+(`Family.IsAutonomous.exact_passive`), and the memberships listed above. Exactness within the
+physical range (converse linearization for fields that are `C¹` on `V_dc > 0`,
+`Dynamics.isHurwitz_of_locallyExponentiallyStable_local`):
 `openLoop_mem_den_locallyExponentiallyStable_iff` (`C, V0 > 0`: locally exponentially stable iff
 rectifier, `P/V0 > 0`) and `closedLoop_mem_den_locallyExponentiallyStable_iff`
 (`V_d, V_dc*, C > 0`: iff `Kp > −I_dc0/V_d ∧ Ki > 0`; with `Ki = 0` the integrator direction is
@@ -567,11 +568,6 @@ exponential stability, inverter operation instability (local linearization on `V
   · exact (Flow.Property.holds_shift_iff .unstable).mpr
       (open_mem_den_flow.mp (openLoop_mem_den_unstable m h.2.1 h.1 h.2.2))
 
-/-- Passivity is translated exactly: the autonomous DC node has no ports. -/
-@[tmio TM, powerlib_domain] theorem openExact_passive : connection% (openFamily.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.local_exact_passive _ _ _
-
 /-- Every translation of the DC-voltage loop family is sound: the §1.4 conditions give local
 exponential stability, their strict violation instability. -/
 @[tmio TM, powerlib_domain] theorem closedChain_le_semantics :
@@ -588,11 +584,6 @@ exponential stability, their strict violation instability. -/
         ((closed_mem_den_flow.mp (closedLoop_mem_den_unstable_of_kp p hVd hV hC h.1 h.2)))
     · exact (Flow.Property.holds_shift_iff .unstable).mpr
         ((closed_mem_den_flow.mp (closedLoop_mem_den_unstable_of_ki p hVd hV hC h)))
-
-/-- Passivity is translated exactly: the autonomous closed loop has no ports. -/
-@[tmio TM, powerlib_domain] theorem closedExact_passive : connection% (closedFamily.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.local_exact_passive _ _ _
 
 /-! ## Exactness within the physical range -/
 

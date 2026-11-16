@@ -671,11 +671,6 @@ contraction and decay rates, and passivity without requirement (the global table
       (mem_den_decay a (ha .stiff (by simp)) (ha (.decayRate r) (by simp)))
   · exact family_isAutonomous.mem_den_flow.mp (mem_den_unstable a (ha .growing rfl))
 
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
 /-- The local exponential translation is exact: the origin of the no-load AHO is locally
 exponentially stable exactly when it decays, `c = κ_v v*² − σ < 0`. Converse linearization: local
 exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (trace `2c`). -/

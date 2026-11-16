@@ -669,11 +669,6 @@ and passivity holds without requirement. -/
     exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .physical (by simp)) (hm .balanced (by simp))
       (hm .destabilizing (by simp)))))
 
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
 /-- Within positive inertia, damping and filter bandwidth, local exponential stability is
 translated exactly: a model with `M, D, ω_c > 0` is locally exponentially stable at
 `(δ*, 0, P₀)` exactly when the angle is balanced with `0 < K < D ω_c + D²/M`. Converse
@@ -1328,11 +1323,6 @@ are those of its swing reading (`mem_den_iff_swing`, `Synchronous.Swing.chain_le
   · cases P <;> rfl
   · rfl
   · rfl
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- Within positive droop damping and filter bandwidth, local exponential stability is translated
 exactly: a model with `D, ω_c > 0` is locally exponentially stable at `(δ*, P₀)` exactly when the

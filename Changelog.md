@@ -597,6 +597,20 @@ in Git; working statistics, build receipts and development plans are not kept he
   - `stationaryCov_gramian` → existing `exists_stationaryCov`, `solvesCovLyapunov_unique`, `tendsto_integral_gramian`, `stationaryCov_posSemidef`, `posDef_iff_isControllable`
   - `Transform.PerUnit.transformer_pu` → `transformer_pu_voltage`, `transformer_pu_current`, `transformer_pu_impedance`
 
+- Replaced the per-family copies of the passivity exactness theorem by one
+  generic law, `Family.IsAutonomous.exact_passive`: an autonomous family whose
+  passivity sentence translates into no requirement is exact for passivity.
+  The 22 copies with the identical proof (`exact_passive` of the induction
+  machine, the voltage-limited PI loop, basin guard, cascade, four-state, model B,
+  quasi-static power loop, rate PLL, saturation-limited GFM, stiff-grid matching,
+  PSC, VOC, both VSM-LPF families, PI-PLL family, multiscale PLL, networked and
+  single-machine swing; `openExact_passive`, `closedExact_passive`,
+  `vsmFamily_exact_passive`, `rig_exact_passive`) and `Spectral.local_exact_passive`
+  are removed; a family's statement is now `<family>_isAutonomous.exact_passive rfl`.
+  Families whose passivity exactness has its own proof (LCL, port-Hamiltonian and
+  machine families) keep their theorem. Classified theorems 7601 → 7579, public
+  connection theorems 1074 → 1052.
+
 ## 2026-11-08
 
 - Reduced the passive elements to two dual topologies. `Passive.SeriesRLC`

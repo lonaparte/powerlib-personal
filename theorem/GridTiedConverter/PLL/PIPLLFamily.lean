@@ -55,37 +55,38 @@ conservation — which a local linearization cannot decide — into the whole (i
 
 The translation chain lies below the semantics connection (`chain_le_semantics`): LeanForControl's
 linearization theorems, applied to the field at `x*` and moved to the origin. Passivity is exact
-(`exact_passive`). Members are placed in the local denotations by slope and gain conditions alone
-(`mem_den_locallyExponentiallyStable`, `mem_den_unstable`, …), and the synchronous-reference-frame
-detector `h = −V sin` gives a stable and an unstable member for every `δω`. A negative slope with
-`K_p ≥ 0`, `K_i > 0` gives Lyapunov stability through the PLL energy `U(θ) + ½ K_i (η − δω/K_i)²`,
-`U = −∫_{θ*} h`, also for the lossless loop `K_p = 0` whose linearization is a centre
-(`mem_den_lyapunovStable_of_slope`). At a hyperbolic slope (`K_p h'(θ*) ≠ 0`, `K_i h'(θ*) ≠ 0`)
-local asymptotic stability is decided by the linearization: it holds exactly at a phase-locked
-point with both products negative (`mem_den_las_iff_of_nondegenerate`). The frequency-drift
-boundary `Σ_FD` as `T-gfl-dynamics` §1.12 first stated it — a constant offset `|δω| > K_p sup |h|`
-removes phase lock — is refuted on both the requirement connection and the semantics connection
-(`frequencyDriftBoundary_refuted`, `frequencyDriftBoundary_stable`): the integrator absorbs a
-constant offset. The note now states the boundary for a frequency ramp `δω(t) = δω + ρ t`, which
-in the coordinates `(θ, η − δω(t)/K_i + K_p ρ/K_i²)` is the member `m.ramp ρ` of this family, with
-the detector `h − ρ/K_i` and no offset (`ramp_hasDerivAt_iff`). Its phase-locked phases are the
-solutions of `h(θ*) = ρ/K_i` (`ramp_phaseLocked_iff`). When `ρ/K_i` leaves the range of `h` —
-across `Σ_FD`: `ρ = K_i max h` or `ρ = K_i min h` — no phase is locked and every ramp model is
-unstable: the loop loses lock (`frequencyRampBoundary`). Within the range, local exponential
-stability of a ramp model is decided by the slope `h'(θ*)` at a locked phase as for any model
-(`ramp_mem_den_locallyExponentiallyStable_iff`), and local asymptotic stability too at a
-hyperbolic slope (`ramp_mem_den_las_iff_of_nondegenerate`). The global sentences have no
-available translation: the linear detector `h = −θ` is globally exponentially stable, so that
-translation is sound but not exact (`not_exact_globallyExponentiallyStable`). At a degenerate
-slope the local connections part: the cubic detector `h = −θ³` is Lyapunov stable through the PLL
-energy `θ⁴/4 + η²/2` (LeanForControl's `lyapunov_stable`) with a nilpotent Jacobian
-(`not_exact_lyapunovStable`).
-The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the converse
-linearization theorem (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), the selected
-point is locally exponentially stable exactly when it is an equilibrium with a Hurwitz Jacobian,
-i.e. phase-locked with both slope-gain products negative. The instability translation is not
-exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so every model
-whose selected point is not phase-locked is unstable (`mem_den_unstable_of_not_phaseLocked`,
+(`family_isAutonomous.exact_passive`). Members are placed in the local denotations by slope and
+gain conditions alone (`mem_den_locallyExponentiallyStable`, `mem_den_unstable`, …), and the
+synchronous-reference-frame detector `h = −V sin` gives a stable and an unstable member for every
+`δω`. A negative slope with `K_p ≥ 0`, `K_i > 0` gives Lyapunov stability through the PLL energy
+`U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, also for the lossless loop `K_p = 0` whose
+linearization is a centre (`mem_den_lyapunovStable_of_slope`). At a hyperbolic slope
+(`K_p h'(θ*) ≠ 0`, `K_i h'(θ*) ≠ 0`) local asymptotic stability is decided by the linearization: it
+holds exactly at a phase-locked point with both products negative
+(`mem_den_las_iff_of_nondegenerate`). The frequency-drift boundary `Σ_FD` as `T-gfl-dynamics` §1.12
+first stated it — a constant offset `|δω| > K_p sup |h|` removes phase lock — is refuted on both
+the requirement connection and the semantics connection (`frequencyDriftBoundary_refuted`,
+`frequencyDriftBoundary_stable`): the integrator absorbs a constant offset. The note now states the
+boundary for a frequency ramp `δω(t) = δω + ρ t`, which in the coordinates
+`(θ, η − δω(t)/K_i + K_p ρ/K_i²)` is the member `m.ramp ρ` of this family, with the detector
+`h − ρ/K_i` and no offset (`ramp_hasDerivAt_iff`). Its phase-locked phases are the solutions of
+`h(θ*) = ρ/K_i` (`ramp_phaseLocked_iff`). When `ρ/K_i` leaves the range of `h` — across `Σ_FD`:
+`ρ = K_i max h` or `ρ = K_i min h` — no phase is locked and every ramp model is unstable: the loop
+loses lock (`frequencyRampBoundary`). Within the range, local exponential stability of a ramp model
+is decided by the slope `h'(θ*)` at a locked phase as for any model
+(`ramp_mem_den_locallyExponentiallyStable_iff`), and local asymptotic stability too at a hyperbolic
+slope (`ramp_mem_den_las_iff_of_nondegenerate`). The global sentences have no available
+translation: the linear detector `h = −θ` is globally exponentially stable, so that translation is
+sound but not exact (`not_exact_globallyExponentiallyStable`). At a degenerate slope the local
+connections part: the cubic detector `h = −θ³` is Lyapunov stable through the PLL energy
+`θ⁴/4 + η²/2` (LeanForControl's `lyapunov_stable`) with a nilpotent Jacobian
+(`not_exact_lyapunovStable`). The local exponential translation is exact
+(`exact_locallyExponentiallyStable`): by the converse linearization theorem
+(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), the selected point is locally
+exponentially stable exactly when it is an equilibrium with a Hurwitz Jacobian, i.e. phase-locked
+with both slope-gain products negative. The instability translation is not exact
+(`not_exact_unstable`): instability is the failure of Lyapunov stability, so every model whose
+selected point is not phase-locked is unstable (`mem_den_unstable_of_not_phaseLocked`,
 `Dynamics.unstable_of_ne_zero`), e.g. `offEquilibrium` (`offEquilibrium_mem_den_unstable`). The
 local asymptotic translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the
 cubic detector is locally asymptotically stable
@@ -257,11 +258,6 @@ selected point, moved to the origin), and passivity holds without requirement. -
     exact les_of_meets (hm .phaseLocked (by simp)) (hm .slopeStable (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .phaseLocked (by simp)) (hm .slopeUnstable (by simp))
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- The local exponential translation is exact: a model is locally exponentially stable at its
 selected point exactly when the point is phase-locked (`h θ* = 0`, and `K_i ≠ 0` or `δω = 0`) and

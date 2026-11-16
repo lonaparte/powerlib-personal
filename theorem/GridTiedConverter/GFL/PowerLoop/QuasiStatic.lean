@@ -71,8 +71,8 @@ to be the `fderiv`) satisfies the strict 3×3 Routh–Hurwitz conditions (`tr < 
 first two, instability into the first and the third, passivity into nothing, and the global
 sentences, decay rates, sampled contraction and conservation into the whole (inconsistent) language:
 unavailable translation coverage. `chain_le_semantics` proves every translation sound;
-`exact_passive` proves the passivity translation exact. The stability results are connection
-memberships (`mem_den_locallyExponentiallyStable_of_cos_two_mul_pos`, `…_of_abs_lt`,
+`family_isAutonomous.exact_passive` proves the passivity translation exact. The stability results
+are connection memberships (`mem_den_locallyExponentiallyStable_of_cos_two_mul_pos`, `…_of_abs_lt`,
 `mem_den_unstable_of_cos_two_mul_neg`, `…_of_pi_div_four_lt`, with
 `not_mem_den_lyapunovStable_of_cos_two_mul_neg`); `equilibrium_exists_iff` is static evidence on the
 model. The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the
@@ -542,11 +542,6 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
   rintro q (rfl | rfl)
   · exact (TMIO.mem_realize _ _ _).mp (isEq_of_field_eq_zero hkP he) .equilibrium (by simp)
   · exact hH
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-! ### Stability and instability of the operating point -/
 

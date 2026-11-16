@@ -79,8 +79,8 @@ the closed-form Jacobian `jac p θ*` (proved to be the `fderiv`) has `tr < 0`, `
 `tr > 0` or `det < 0`. The local sentences translate into the first two, instability into the
 first and the third, passivity into nothing, and the global sentences, decay rates, sampled
 contraction and conservation into the whole (inconsistent) language: unavailable translation
-coverage. `chain_le_semantics` proves every translation sound; `exact_passive` proves the
-passivity translation exact. The stability results are connection memberships:
+coverage. `chain_le_semantics` proves every translation sound; `family_isAutonomous.exact_passive`
+proves the passivity translation exact. The stability results are connection memberships:
 `mem_den_locallyExponentiallyStable_of_tan_lt` and `mem_den_unstable_of_tan_gt`, together with
 `not_mem_den_lyapunovStable_of_tan_gt`. The local exponential translation is exact
 (`exact_locallyExponentiallyStable`): by the converse linearization theorem
@@ -576,11 +576,6 @@ the origin), and passivity holds without requirement. -/
     exact les_of_meets (hm .equilibrium (by simp)) (hm .jacobianStable (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .jacobianUnstable (by simp))
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-! ### Exactness of the local exponential translation -/
 

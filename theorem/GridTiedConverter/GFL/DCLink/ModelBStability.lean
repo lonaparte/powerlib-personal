@@ -70,12 +70,12 @@ static: `x*` is a zero of the field, `V_dc* > 0`, the 4×4 Routh conditions on `
 context). The local sentences translate into the first three, instability into the
 first two and the determinant condition, passivity into nothing; the global sentences, decay
 rates, sampled contraction and conservation into the whole (inconsistent) language. Connection
-conclusions: soundness (`chain_le_semantics`), exact passivity (`exact_passive`), and the
-stability results as memberships (`mem_den_locallyExponentiallyStable`,
-`mem_den_unstable_of_det_neg`, `noLoad_mem_den_locallyExponentiallyStable`). At equilibria with
-positive reference the local exponential translation is exact
-(`exactUnder_locallyExponentiallyStable`, context `{equilibrium, positiveReference}`): by the
-converse linearization theorem applied to `regField`
+conclusions: soundness (`chain_le_semantics`), exact passivity
+(`family_isAutonomous.exact_passive`), and the stability results as memberships
+(`mem_den_locallyExponentiallyStable`, `mem_den_unstable_of_det_neg`,
+`noLoad_mem_den_locallyExponentiallyStable`). At equilibria with positive reference the local
+exponential translation is exact (`exactUnder_locallyExponentiallyStable`, context
+`{equilibrium, positiveReference}`): by the converse linearization theorem applied to `regField`
 (`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces a
 Hurwitz Jacobian, i.e. the 4×4 Routh conditions
 (`Criteria.isHurwitz_fin_four_iff`). The untranslated
@@ -643,11 +643,6 @@ which it agrees with model B), and passivity holds without requirement. -/
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_unstable_of_det_neg m (hm .positiveReference (by simp))
       (hm .equilibrium (by simp)) (hm .detNeg (by simp))
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- Concrete non-vacuous instance: the no-load operating point. With `I₀ = 0`, `R_g = 0`,
 `i_q0 = 0`, `V_dc* > 0`, `V_g > 0` and positive gains `k_p, k_i, k_pv, k_iv` and `C_dc > 0`

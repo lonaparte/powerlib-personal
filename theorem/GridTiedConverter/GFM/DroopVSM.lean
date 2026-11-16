@@ -417,11 +417,6 @@ place a VSM model in local exponential stability. -/
     exact vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
       (hm .inertia (by simp)) (hm .destabilizing (by simp))
 
-/-- Passivity is translated exactly for the VSM family. -/
-@[tmio TM, powerlib_domain] theorem vsmFamily_exact_passive : connection% (vsmFamily.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl vsmFamily_isAutonomous.den_passive
-
 /-- On a sinusoidal power curve `P(θ) = k₁ + k₂ sin(θ − k₃)`, in any rotating frame, a VSM model
 at a state with `ω* = 0` is the swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` read about `θ*`
 (the damping reference `ω_s` shifts the mechanical power to `P_ref + D ω_s`): the two families

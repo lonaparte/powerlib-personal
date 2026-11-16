@@ -68,7 +68,7 @@ Family and connection conclusions.
   `{physical, synchronizing, dissipative}`; local asymptotic and exponential stability into
   `{physical, synchronizing, damped, matching}`; passivity into nothing (exact); every other
   flow sentence into the whole, inconsistent, language (unavailable coverage). Connection
-  results: `chain_le_semantics`, `exact_passive`,
+  results: `chain_le_semantics`, `family_isAutonomous.exact_passive`,
   `mem_den_lyapunovStable` (the operating point is Lyapunov stable: `H − S(0)` is a local
   Lyapunov function on `|θ_dq| < 2π`), `not_mem_den_globallyAsymptoticallyStable`,
   `not_mem_den_globallyExponentiallyStable` (no model is globally asymptotically stable on `ℝ⁴`:
@@ -918,11 +918,6 @@ Static evidence on the model, not a connection conclusion. -/
   · exact Spectral.realize_univ_subset_of_eq_empty realize_univ _ hm
   · rw [family_isAutonomous.den_passive]
     trivial
-
-/-- Passivity is translated exactly: the closed loop has no ports. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- **Boundary**: no stiff-grid matching closed loop is globally asymptotically stable on `ℝ⁴`
 (`2π`-periodicity gives a second equilibrium whenever the operating point is one). -/

@@ -225,11 +225,6 @@ without requirement. -/
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .balanced (by simp)) (hm .unstableSlope (by simp)))))
 
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
 /-- The local exponential translation is exact: a PSC model is locally exponentially stable at
 `δ*` exactly when the angle is balanced (`P_max sin δ* = P*`) with a negative slope
 (`K_p P_max cos δ* > 0`). Converse linearization of the scalar field
