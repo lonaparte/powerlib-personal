@@ -44,7 +44,12 @@ Results.
   `isHurwitz_fin_four_iff` is the 4×4 iff in trace / principal-minor / determinant form and
   `isHurwitz_companion_four_iff` the companion form. `RouthFin4 J` is that condition list and
   `RouthViolationFin4 J` its strict violation (each disjunct places a characteristic root in the
-  open right half plane, `exists_eigenvalue_re_pos_of_violation_fin_four`).
+  open right half plane, `exists_eigenvalue_re_pos_of_violation_fin_four`). For a matrix whose
+  characteristic determinant is a given monic quartic, its trace, principal-minor sums and
+  determinant are the quartic's coefficients (`coeffs_of_det_characteristicMatrix_quartic`), so
+  `RouthFin4` and `RouthViolationFin4` are the quartic Routh conditions and their strict violation
+  (`routhFin4_iff_of_det_characteristicMatrix_quartic`,
+  `routhViolationFin4_iff_of_det_characteristicMatrix_quartic`).
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial:
   `locallyExponentiallyStable_of_jacobian_quartic`, `unstable_of_jacobian_quartic_violation`)
@@ -465,6 +470,55 @@ def RouthViolationFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
   0 < J.trace ∨ Criteria.principalMinorSum2Fin4 J < 0 ∨ 0 < Criteria.principalMinorSum3Fin4 J ∨
     J.det < 0 ∨ J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J <
       Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det
+
+
+/-- A 4×4 matrix whose characteristic determinant is the monic quartic with coefficients
+`a3, a2, a1, a0` has `tr A = −a3`, `m₂(A) = a2`, `m₃(A) = −a1` and `det A = a0`: the two monic
+quartics agree at `s = 0, 1, −1, 2` (`det_characteristicMatrix_fin_four`). -/
+@[tmio T, powerlib_foundation] theorem coeffs_of_det_characteristicMatrix_quartic
+    (A : Matrix (Fin 4) (Fin 4) ℝ) {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ)) :
+    A.trace = -a3 ∧ principalMinorSum2Fin4 A = a2 ∧ principalMinorSum3Fin4 A = -a1 ∧
+      A.det = a0 := by
+  have h : ∀ s : ℝ, s ^ 4 - A.trace * s ^ 3 + principalMinorSum2Fin4 A * s ^ 2 -
+      principalMinorSum3Fin4 A * s + A.det = s ^ 4 + a3 * s ^ 3 + a2 * s ^ 2 + a1 * s + a0 := by
+    intro s
+    have hs := hchar s
+    rw [det_characteristicMatrix_fin_four] at hs
+    exact_mod_cast hs
+  have h0 := h 0
+  have h1 := h 1
+  have h2 := h (-1)
+  have h3 := h 2
+  norm_num at h0 h1 h2 h3
+  refine ⟨by linarith, by linarith, by linarith, by linarith⟩
+
+/-- The 4×4 Routh conditions of a matrix are the quartic Routh conditions of its characteristic
+polynomial (`coeffs_of_det_characteristicMatrix_quartic`). -/
+@[tmio T, powerlib_foundation] theorem routhFin4_iff_of_det_characteristicMatrix_quartic
+    (A : Matrix (Fin 4) (Fin 4) ℝ) {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ)) :
+    RouthFin4 A ↔ 0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  obtain ⟨ht, h2, h3, hd⟩ := coeffs_of_det_characteristicMatrix_quartic A hchar
+  have e1 : (-a1) ^ 2 + (-a3) ^ 2 * a0 = a1 ^ 2 + a3 ^ 2 * a0 := by ring
+  have e2 : -a3 * a2 * -a1 = a3 * a2 * a1 := by ring
+  simp only [RouthFin4, ht, h2, h3, hd, neg_lt_zero, e1, e2]
+
+/-- A strict violation of the 4×4 Routh conditions of a matrix is a strict violation of the
+quartic Routh conditions of its characteristic polynomial: a negative coefficient or a negative
+third Hurwitz determinant (`coeffs_of_det_characteristicMatrix_quartic`). -/
+@[tmio T, powerlib_foundation] theorem routhViolationFin4_iff_of_det_characteristicMatrix_quartic
+    (A : Matrix (Fin 4) (Fin 4) ℝ) {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ)) :
+    RouthViolationFin4 A ↔
+      a3 < 0 ∨ a2 < 0 ∨ a1 < 0 ∨ a0 < 0 ∨ a3 * a2 * a1 < a1 ^ 2 + a3 ^ 2 * a0 := by
+  obtain ⟨ht, h2, h3, hd⟩ := coeffs_of_det_characteristicMatrix_quartic A hchar
+  have e1 : (-a1) ^ 2 + (-a3) ^ 2 * a0 = a1 ^ 2 + a3 ^ 2 * a0 := by ring
+  have e2 : -a3 * a2 * -a1 = a3 * a2 * a1 := by ring
+  simp only [RouthViolationFin4, ht, h2, h3, hd, neg_pos, e1, e2]
 
 end FinFour
 

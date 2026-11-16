@@ -1,50 +1,51 @@
-import theorem.GridTiedConverter.GFL.DCLink.ModelBCollapse
+import theorem.GridTiedConverter.GFL.DCLink.PLLDC.Collapse
 
-/-! # GFL model B on the singular plane: the degenerate discriminant `D = 0`
+/-! # The GFL PLL–DC model on the singular plane: the degenerate discriminant `D = 0`
 
 Model boundary.
-The model-B family `ModelB.family` of `theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`
-(field `ModelBParams.field`, state `(Δθ, x_pll, V_dc, ξ_v)`, continuous-time autonomous, constant
+The PLL–DC family `PLLDC.family` of `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`
+(field `PLLDC.Params.field`, state `(Δθ, x_pll, V_dc, ξ_v)`, continuous-time autonomous, constant
 grid frequency, inner current loop eliminated, reactive current frozen, no saturation, PWM, delay or
 filters), read at a selected state `x*` on the singular plane `V_dc* = 0` with the degenerate power
 balance `P(x*) = 0` (`P = pccP`), where the field is read with Lean's `x / 0 = 0`. This module
 treats the discriminant `D = H² + 4G = 0` (`planeDisc`) left open in
-`theorem/GridTiedConverter/GFL/DCLink/ModelBCollapse.lean`, with `q = planeQ`, `G = planeG`,
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Collapse.lean`, with `q = planeQ`, `G = planeG`,
 `H = planeH` as there (`V_dc V_dc' = q`, `q' = G + H q / V_dc` off the plane).
 
-Convention: port current IN-positive (work-sync conventions §D1), as in `ModelBStability`.
+Convention: port current IN-positive (work-sync conventions §D1), as in
+`GFL.DCLink.PLLDC.Stability`.
 
-Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the analysis is new
-(answers the residual case of the `V_dc* = 0` question). Candidate behaviour checked numerically
+Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (the PLL–DC model); the analysis is
+new (answers the residual case of the `V_dc* = 0` question). Candidate behaviour checked numerically
 (untrusted); Lean proves every statement.
 
 Results.
-* `ModelB.mem_den_unstable_of_disc_eq_zero`: `D = 0` and `H(x*) ≠ 0` (a degenerate node of the
+* `PLLDC.mem_den_unstable_of_disc_eq_zero`: `D = 0` and `H(x*) ≠ 0` (a degenerate node of the
   reduced linear system, double root `H/2`) ⇒ unstable, whatever the sign of `D` near `x*`. On the
   side `σ = sign H` the shrinking cone `q ≥ (|H(x*)|/2 − √w) w` (`w = σ V_dc`), cut down to a horn
   `‖y − x*‖ ≤ (K + 1) w`, traps solutions along which `w' ≥ |H(x*)|/4`: its margin `√w` dominates
   the Lipschitz variation `O(w)` of the `C¹` coefficients `G, H` (`contDiff_planeG`,
   `contDiff_planeH`; `Dynamics.Degenerate.unstable_of_degenerate_node`). Witness `degenerateNode`
   (`degenerateNode_mem_den_unstable`, `G = −1/4`, `H = 1`).
-* `ModelB.not_mem_den_locallyExponentiallyStable_of_nilpotent`: `H(x*) = G(x*) = 0` (nilpotent) and
+* `PLLDC.not_mem_den_locallyExponentiallyStable_of_nilpotent`: `H(x*) = G(x*) = 0` (nilpotent) and
   a nonzero drift `(f_Δθ, f_pll, f_ξ)(x*) ≠ 0` ⇒ the local exponential estimate fails
   (`Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent`): under it, the solution from
   `x* + s³ e_{V_dc}` would stay `O(s³)`-close, so `q = O(s⁵)` and it lives long enough for the drift
   to carry it to distance `2 C s³`. Witness `nilpotentDrift`
   (`nilpotentDrift_not_mem_den_locallyExponentiallyStable`).
-* `ModelB.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual`: the
-  characterization of `theorem/GridTiedConverter/GFL/DCLink/ModelBCollapse.lean` extends to the
+* `PLLDC.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual`: the
+  characterization of `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Collapse.lean` extends to the
   whole plane except the residual set
   `{P(x*) = 0, I₀ / C_dc ≠ 0, H(x*) = 0, f_Δθ(x*) = f_pll(x*) = f_ξ(x*) = 0}` (then `G(x*) = 0`,
   `D = 0`): LES ⇔ `I₀ / C_dc ≠ 0 ∧ (P / C_dc < 0 ∨ (P = 0 ∧ D < 0))`.
-* `ModelB.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_VdcRef`: in particular the
+* `PLLDC.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_VdcRef`: in particular the
   characterization is complete when `V_dc,ref ≠ 0` (on the plane `f_ξ = V_dc,ref`).
 * Static support (foundation): `fderiv_planeQ_single`, `field_sub_single` (the coefficient
   regularity `contDiff_planeG`, `contDiff_planeH` is in
-  `theorem/GridTiedConverter/GFL/DCLink/ModelBCollapse.lean`).
+  `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Collapse.lean`).
 
 Family and connection conclusions.
-Connection conclusions on `ModelB.family`: `mem_den_unstable_of_disc_eq_zero`,
+Connection conclusions on `PLLDC.family`: `mem_den_unstable_of_disc_eq_zero`,
 `degenerateNode_mem_den_unstable`, `not_mem_den_locallyExponentiallyStable_of_nilpotent`,
 `nilpotentDrift_not_mem_den_locallyExponentiallyStable`,
 `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual`,
@@ -62,9 +63,9 @@ open Set Filter Matrix
 open scoped Topology
 open powerlib.Dynamics (State)
 
-namespace ModelBParams
+namespace PLLDC.Params
 
-variable (p : ModelBParams)
+variable (p : PLLDC.Params)
 
 /-- `∂q/∂V_dc = H` everywhere. -/
 @[tmio M, powerlib_domain] theorem fderiv_planeQ_single (y : State 4) :
@@ -91,9 +92,9 @@ variable (p : ModelBParams)
   rw [p.field_two_eq_planeQ_div hy]
   field_simp
 
-end ModelBParams
+end PLLDC.Params
 
-namespace ModelB
+namespace PLLDC
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
 @[tmio TM, powerlib_domain] private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
@@ -154,7 +155,7 @@ exponentially stable. -/
 /-- A converter at rest on the singular plane with zero power and a degenerate node:
 `degenerateFocus` with `V_dc,ref = −1/4`, so `G = −1/4`, `H = 1`, `D = 0`. -/
 def degenerateNode : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, -1 / 4, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩,
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, -1 / 4, 0, 1, 1, ⟨0, 0, 0⟩, 0, 0, rfl, rfl⟩,
     WithLp.toLp 2 ![0, 0, 0, 0]⟩
 
 /-- The degenerate node is unstable. -/
@@ -162,14 +163,14 @@ def degenerateNode : Model :=
     connection% (degenerateNode ∈ family.den (.flow .unstable)) := by
   have h := mem_den_unstable_of_disc_eq_zero degenerateNode
     (by simp [degenerateNode])
-    (by simp [degenerateNode, ModelBParams.pccP, ModelBParams.idRef, ModelBParams.vgd,
-      ModelBParams.vgq])
+    (by simp [degenerateNode, PLLDC.Params.pccP, PLLDC.Params.idRef, PLLDC.Params.vgd,
+      PLLDC.Params.vgq])
     (by
-      simp [degenerateNode, ModelBParams.planeDisc, ModelBParams.planeH, ModelBParams.planeG,
-        ModelBParams.dP0, ModelBParams.dP2, ModelBParams.dP3, ModelBParams.idRef,
-        ModelBParams.vgd, ModelBParams.vgq, ModelBParams.field]
+      simp [degenerateNode, PLLDC.Params.planeDisc, PLLDC.Params.planeH, PLLDC.Params.planeG,
+        PLLDC.Params.dP0, PLLDC.Params.dP2, PLLDC.Params.dP3, PLLDC.Params.idRef,
+        PLLDC.Params.vgd, PLLDC.Params.vgq, PLLDC.Params.field]
       norm_num)
-    (by simp [degenerateNode, ModelBParams.planeH, ModelBParams.dP2])
+    (by simp [degenerateNode, PLLDC.Params.planeH, PLLDC.Params.dP2])
   unfold powerlib.TMIO.Statement at h ⊢
   exact h
 
@@ -178,7 +179,7 @@ def degenerateNode : Model :=
 `P = 0`, `H = (I₀ − (3/2) k_pv V_g) / C_dc = 0`, `G = 0`, `I₀ / C_dc = 1` and the PLL drifts:
 `f_Δθ = k_i x_pll = 1`. -/
 def nilpotentDrift : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, 0, 1, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩,
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, 0, 1, 1, 1, ⟨0, 0, 0⟩, 0, 0, rfl, rfl⟩,
     WithLp.toLp 2 ![0, 1, 0, 0]⟩
 
 /-- The nilpotent plane point with drift is not locally exponentially stable. -/
@@ -186,15 +187,15 @@ def nilpotentDrift : Model :=
     connection% (nilpotentDrift ∉ family.den (.flow .locallyExponentiallyStable)) := by
   have h := not_mem_den_locallyExponentiallyStable_of_nilpotent nilpotentDrift
     (by simp [nilpotentDrift])
-    (by simp [nilpotentDrift, ModelBParams.pccP, ModelBParams.idRef, ModelBParams.vgd,
-      ModelBParams.vgq])
+    (by simp [nilpotentDrift, PLLDC.Params.pccP, PLLDC.Params.idRef, PLLDC.Params.vgd,
+      PLLDC.Params.vgq])
     (by
-      simp [nilpotentDrift, ModelBParams.planeH, ModelBParams.dP2, ModelBParams.idRef,
-        ModelBParams.vgd])
+      simp [nilpotentDrift, PLLDC.Params.planeH, PLLDC.Params.dP2, PLLDC.Params.idRef,
+        PLLDC.Params.vgd])
     (by
-      simp [nilpotentDrift, ModelBParams.planeG, ModelBParams.dP0, ModelBParams.dP3,
-        ModelBParams.idRef, ModelBParams.vgd, ModelBParams.vgq, ModelBParams.field])
-    (Or.inl (by simp [nilpotentDrift, ModelBParams.field, ModelBParams.vgq, ModelBParams.idRef]))
+      simp [nilpotentDrift, PLLDC.Params.planeG, PLLDC.Params.dP0, PLLDC.Params.dP3,
+        PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.vgq, PLLDC.Params.field])
+    (Or.inl (by simp [nilpotentDrift, PLLDC.Params.field, PLLDC.Params.vgq, PLLDC.Params.idRef]))
   unfold powerlib.TMIO.Statement at h ⊢
   exact h
 
@@ -244,8 +245,8 @@ local exponential estimate holds exactly when `I₀ / C_dc ≠ 0` and either `P 
       m ∈ {m : Model | m.p.I0 / m.p.Cdc ≠ 0 ∧ (m.p.pccP m.x / m.p.Cdc < 0 ∨
         (m.p.pccP m.x = 0 ∧ m.p.planeDisc m.x < 0))}) :=
   mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual m hx
-    (fun _ _ _ => Or.inr (Or.inr (by simp [ModelBParams.field, hx, hV])))
+    (fun _ _ _ => Or.inr (Or.inr (by simp [PLLDC.Params.field, hx, hV])))
 
-end ModelB
+end PLLDC
 
 end powerlib.GFL.DCLink

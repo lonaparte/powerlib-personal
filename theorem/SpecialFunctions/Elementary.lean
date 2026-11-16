@@ -14,8 +14,8 @@ Scope.
   is defined.
 
 Source: elementary analysis, used by the swing-equation damping estimates
-(`theorem/PowerSystem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
-(`theorem/GridTiedConverter/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
+(`theorem/PowerSystem/Synchronous/DampedEAC.lean`), the PLL–DC boundary analysis
+(`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Boundary.lean`), the sensorless drive averaging
 (`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
 (`theorem/Grid/ModulationTransfer.lean`) and the SFR nadir-time
 correction (`theorem/PowerSystem/Frequency/SFR.lean`).

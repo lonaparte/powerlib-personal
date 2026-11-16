@@ -1,13 +1,13 @@
-import theorem.GridTiedConverter.GFL.DCLink.ModelBStability
+import theorem.GridTiedConverter.GFL.DCLink.PLLDC.Stability
 import theorem.Dynamics.Degenerate.PlaneCollapse
 import theorem.Dynamics.Lyapunov
 import theorem.SpecialFunctions.Elementary
 
-/-! # GFL reduced-order model B on the 4×4 Routh boundary
+/-! # The PLL–DC model on the 4×4 Routh boundary
 
 Model boundary.
-The model-B family `ModelB.family` of `theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`:
-the field `ModelBParams.field` of `theorem/GridTiedConverter/GFL/DCLink/ReducedOrder.lean`
+The PLL–DC family `PLLDC.family` of `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`:
+the field `PLLDC.Params.field` of `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Basic.lean`
 (T-gfl-reduced-order-dynamics §1.6), continuous-time autonomous, state order
 `x = (Δθ, x_pll, V_dc, ξ_v)`, constant grid frequency, infinite bus behind `R_g + j X_g`, inner
 current loop eliminated, reactive current frozen at `i_q0`, IN-positive currents, no saturation,
@@ -21,10 +21,11 @@ equilibria with positive reference: on the Routh boundary (Jacobian neither Rout
 violating it: an eigenvalue on the imaginary axis and none to its right) the linearization decides
 nothing, and every behaviour occurs. Off the boundary it is exact.
 
-Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B), §1.7 (equilibria); the
-local-stability question is the item "4×4 Routh–Hurwitz of model B" (the note states no stability
-condition). Lyapunov's and Chetaev's theorems: Khalil, *Nonlinear Systems* (3rd ed.), Thm 4.1,
-Thm 4.3. Candidate Lyapunov functions were computed with SymPy (untrusted); Lean checks them.
+Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (the PLL–DC model), §1.7
+(equilibria); the local-stability question is the item "4×4 Routh–Hurwitz of the PLL–DC model" (the
+note states no stability condition). Lyapunov's and Chetaev's theorems: Khalil, *Nonlinear Systems*
+(3rd ed.), Thm 4.1, Thm 4.3. Candidate Lyapunov functions were computed with SymPy (untrusted);
+Lean checks them.
 
 Results.
 * `exactUnder_offBoundary`: the Lyapunov and the local asymptotic translations are
@@ -49,14 +50,17 @@ Results.
     asymptotically stable (`hopfCenter_not_mem_den_locallyAsymptoticallyStable`: the DC loop is a
     nonlinear center when `Δθ = 0`, `centerEnergy (−1)` does not increase).
   - `cdcZero` (`C_dc = 0`, `V_dc` a first integral): characteristic polynomial
-    `s² (s² + s + 1)`, unstable (`cdcZero_mem_den_unstable`, Chetaev function `(1 − V_dc) ξ_v`).
+    `s² (s² + s + 1)`, unstable (`cdcZero_mem_den_unstable`), an instance of
+    `mem_den_unstable_of_Cdc_eq_zero`: without DC-link capacitance every selected state is
+    unstable (off equilibrium the field is smooth and nonzero; at an equilibrium Chetaev's function
+    `(V_dc* − V_dc)(ξ_v − ξ_v*)` grows at the rate `(V_dc* − V_dc)²`).
 * REFUTED exactness at equilibria with positive reference:
   `not_exactUnder_lyapunovStable` (witness `hopfCenter`) and
   `not_exactUnder_locallyAsymptoticallyStable` (witness `hopfDamped`), context
   `{equilibrium, positiveReference}`.
 
 Family and connection conclusions.
-Connection conclusions on `ModelB.family`: `exactUnder_offBoundary`,
+Connection conclusions on `PLLDC.family`: `exactUnder_offBoundary`,
 `not_exactUnder_lyapunovStable`, `not_exactUnder_locallyAsymptoticallyStable`,
 `mem_den_unstable_of_violation` and the witness memberships above; the `*_mem_realize` and
 `*_not_mem_realize_offBoundary` facts of the three witnesses are static facts about the
@@ -77,7 +81,7 @@ open scoped Topology
 open powerlib.Dynamics (State)
 open powerlib.Criteria (RouthFin4 RouthViolationFin4)
 
-namespace ModelB
+namespace PLLDC
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
 @[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
@@ -89,7 +93,7 @@ namespace ModelB
 
 /-- At an equilibrium with positive reference, a strict violation of the 4×4 Routh conditions gives
 instability (a characteristic root in the open right half plane; LeanForControl's linearization
-theorem for the regularized field, transferred through the ball on which it is model B). -/
+theorem for the regularized field, transferred through the ball on which it is the PLL–DC model). -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_violation (m : Model)
     (hV : 0 < m.p.VdcRef) (hx : m.p.field m.x = 0)
     (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
@@ -146,21 +150,22 @@ Routh conditions give local exponential stability, a strict violation instabilit
 `(−sin Δθ + x_pll, −sin Δθ, cos Δθ ξ_v / V_dc, 1 − V_dc)`: a damped PLL pendulum driving, through
 `cos Δθ`, a DC loop that is a nonlinear center when `Δθ = 0`. -/
 def hopfCenter : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 0, 1, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 0, 1, 0, 1, 1, ⟨0, 0, 0⟩, 0, 0, rfl, rfl⟩,
+    WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
 @[tmio M, powerlib_domain] theorem hopfCenter_field (y : State 4) (hy : y 2 ≠ 0) :
     hopfCenter.p.field y = WithLp.toLp 2 ![-Real.sin (y 0) + y 1, -Real.sin (y 0),
       Real.cos (y 0) * y 3 / y 2, 1 - y 2] := by
   ext i
   fin_cases i
-  · simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-      hopfCenter, ModelBParams.field, ModelBParams.vgq]
-  · simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-      hopfCenter, ModelBParams.field, ModelBParams.vgq]
-  · simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-      hopfCenter, ModelBParams.field, ModelBParams.vgq, ModelBParams.vgd, ModelBParams.idRef]
+  · simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+      hopfCenter, PLLDC.Params.field, PLLDC.Params.vgq]
+  · simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+      hopfCenter, PLLDC.Params.field, PLLDC.Params.vgq]
+  · simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+      hopfCenter, PLLDC.Params.field, PLLDC.Params.vgq, PLLDC.Params.vgd, PLLDC.Params.idRef]
     field_simp
-  · simp [ModelBParams.Cdc, hopfCenter, ModelBParams.field]
+  · simp [PLLDC.Params.Cdc, hopfCenter, PLLDC.Params.field]
 
 /-- The PLL energy plus `σ` times the DC-loop energy `ξ²/2 + w²/2 + w³/3` (`w = V_dc − 1`), which
 the DC loop conserves when `Δθ = 0`. -/
@@ -169,7 +174,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
     σ * (1 / 2 * y 3 ^ 2 + 1 / 2 * (y 2 - 1) ^ 2 + 1 / 3 * (y 2 - 1) ^ 3)
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_centerEnergy (σ : ℝ) (y : State 4) :
-    HasFDerivAt (centerEnergy σ) (ModelBParams.row4 (Real.sin (y 0)) (y 1)
+    HasFDerivAt (centerEnergy σ) (PLLDC.Params.row4 (Real.sin (y 0)) (y 1)
       (σ * ((y 2 - 1) + (y 2 - 1) ^ 2)) (σ * y 3)) y := by
   have h0 := Dynamics.hasFDerivAt_coord 0 y
   have h1 := Dynamics.hasFDerivAt_coord 1 y
@@ -181,7 +186,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
       ((h2.pow 3).const_mul (1 / 3))).const_mul σ)
   refine h.congr_fderiv ?_
   ext v
-  simp [ModelBParams.row4]
+  simp [PLLDC.Params.row4]
   ring
 
 @[tmio M, powerlib_domain] theorem contDiff_centerEnergy (σ : ℝ) : ContDiff ℝ 1
@@ -195,7 +200,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
     fderiv ℝ (centerEnergy σ) y (hopfCenter.p.field y) =
       -Real.sin (y 0) ^ 2 - σ * ((y 2 - 1) * y 3 * (1 - Real.cos (y 0))) := by
   rw [(hasFDerivAt_centerEnergy σ y).fderiv, hopfCenter_field y hy]
-  simp [ModelBParams.row4]
+  simp [PLLDC.Params.row4]
   field_simp
   ring
 
@@ -279,15 +284,15 @@ decides nothing. -/
 /-- The undamped DC loop is not locally asymptotically stable: `centerEnergy (−1)` does not
 increase near `x*` and is negative at `x*` displaced along `ξ_v`, so the solution from there keeps
 it negative and cannot converge (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`, on the
-regularized field, which is model B on the ball of radius `1/4`). -/
+regularized field, which is the PLL–DC model on the ball of radius `1/4`). -/
 @[tmio TM, powerlib_domain] theorem hopfCenter_not_mem_den_locallyAsymptoticallyStable :
     connection% (hopfCenter ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro hm
   rw [mem_den_flow_iff'] at hm
   have hlas : LocalAsymptoticStable hopfCenter.p.field hopfCenter.x := hm
-  have hV : 0 < hopfCenter.p.VdcRef := by norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
-      ModelBParams.Rg, ModelBParams.Xg, hopfCenter]
+  have hV : 0 < hopfCenter.p.VdcRef := by norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc,
+      PLLDC.Params.Rg, PLLDC.Params.Xg, hopfCenter]
   have hx2 : hopfCenter.x 2 = hopfCenter.p.VdcRef := by simp [hopfCenter]
   have hball : ∀ y : State 4, ‖y - hopfCenter.x‖ < 1 / 4 →
       hopfCenter.p.regField y = hopfCenter.p.field y := fun y hy =>
@@ -315,9 +320,9 @@ regularized field, which is model B on the ball of radius `1/4`). -/
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   change hopfCenter.p.field hopfCenter.x = 0
-  rw [ModelBParams.field_eq_zero_iff]
-  simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfCenter,
-      ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+  rw [PLLDC.Params.field_eq_zero_iff]
+  simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, hopfCenter,
+      PLLDC.Params.idRef, PLLDC.Params.vgq, PLLDC.Params.vgd]
 
 @[tmio M, powerlib_domain] private theorem hopfCenter_invariants :
     (hopfCenter.p.jacobian hopfCenter.x).trace = -1 ∧
@@ -327,33 +332,33 @@ regularized field, which is model B on the ball of radius `1/4`). -/
   have h := Criteria.invariants_of_blockDiag_fin_four (J := hopfCenter.p.jacobian hopfCenter.x)
     (a := -1) (b := 1)
     (c := -1) (d := 0) (e := 1)
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter, ModelBParams.idRef])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter, ModelBParams.idRef, ModelBParams.vgd, ModelBParams.vgq,
-        ModelBParams.pccP])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfCenter, ModelBParams.idRef, ModelBParams.vgd]; norm_num)
-    (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
-    (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.vgq,
+        PLLDC.Params.pccP])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef, PLLDC.Params.vgd]; norm_num)
+    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
+    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
   obtain ⟨h1, h2, h3, h4⟩ := h
   refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
 
@@ -392,7 +397,7 @@ translation is exact (`exactUnder_offBoundary`). -/
   rintro q (rfl | rfl)
   · exact (show hopfCenter.p.field hopfCenter.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_equilibrium)
   · show (0 : ℝ) < hopfCenter.p.VdcRef
-    norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
+    norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
         hopfCenter]
 
 /-! ## The Routh boundary: a disconnected DC link (unstable) -/
@@ -401,16 +406,16 @@ translation is exact (`exactUnder_offBoundary`). -/
 component of the field vanishes (`x / 0 = 0`) and `V_dc` is a first integral; otherwise as
 `hopfCenter`. The field is `(−sin Δθ + x_pll, −sin Δθ, 0, 1 − V_dc)`. -/
 def cdcZero : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 0, 0⟩, 0, 1, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  ⟨⟨0, 0, 1, 1, ⟨0, 0, 0⟩, 0, 1, 0, 1, 1, ⟨0, 0, 0⟩, 0, 0, rfl, rfl⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
 @[tmio M, powerlib_domain] private theorem cdcZero_equilibrium :
     connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   change cdcZero.p.field cdcZero.x = 0
-  rw [ModelBParams.field_eq_zero_iff]
-  simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, cdcZero,
-      ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+  rw [PLLDC.Params.field_eq_zero_iff]
+  simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, cdcZero,
+      PLLDC.Params.idRef, PLLDC.Params.vgq, PLLDC.Params.vgd]
 
 @[tmio M, powerlib_domain] private theorem cdcZero_invariants :
     (cdcZero.p.jacobian cdcZero.x).trace = -1 ∧
@@ -420,32 +425,32 @@ def cdcZero : Model :=
   have h := Criteria.invariants_of_blockDiag_fin_four (J := cdcZero.p.jacobian cdcZero.x)
     (a := -1) (b := 1)
     (c := -1) (d := 0) (e := 0)
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, cdcZero])
-    (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
-    (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, cdcZero])
+    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
+    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
   obtain ⟨h1, h2, h3, h4⟩ := h
   refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
 
@@ -465,47 +470,61 @@ def cdcZero : Model :=
   rw [h1, h2, h3, h4]
   norm_num
 
-/-- The disconnected DC link is unstable although its Jacobian (characteristic polynomial
-`s² (s² + s + 1)`) lies on the 4×4 Routh boundary: `V_dc` is conserved, so off `V_dc = 1` the
-integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the rate `(1 − V_dc)²`
-(`Dynamics.unstable_of_chetaev`; the field is smooth since `C_dc = 0`). -/
-@[tmio TM, powerlib_domain] theorem cdcZero_mem_den_unstable :
-    connection% (cdcZero ∈ family.den (.flow .unstable)) := by
+/-- **Without DC-link capacitance every selected state is unstable** (`C_dc = 0`). The DC-link
+component of the field vanishes (`x / 0 = 0`), so `V_dc` is a first integral and the field is
+smooth (`PLLDC.Params.contDiff_field_of_Cdc_eq_zero`). A state that is not an equilibrium is
+unstable (`Dynamics.unstable_of_ne_zero`); at an equilibrium `x*` (`V_dc* = V_dc,ref`) the
+integrator `ξ_v` drifts off the level `V_dc = V_dc*`: Chetaev's function
+`(V_dc* − V_dc)(ξ_v − ξ_v*)` grows at the rate `(V_dc* − V_dc)²` (`Dynamics.unstable_of_chetaev`).
+-/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_Cdc_eq_zero (m : Model)
+    (hC : m.p.Cdc = 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
-  show Unstable cdcZero.p.field cdcZero.x
-  have hf : ContDiff ℝ 1 cdcZero.p.field :=
-    cdcZero.p.contDiff_field_of_Cdc_eq_zero (by simp [ModelBParams.Cdc,
-        cdcZero])
-  set W : State 4 → ℝ := fun y => (1 - y 2) * y 3 with hW
-  have hWd : ∀ y : State 4, HasFDerivAt W (ModelBParams.row4 0 0 (-y 3) (1 - y 2)) y := by
+  have hf : ContDiff ℝ 1 m.p.field := m.p.contDiff_field_of_Cdc_eq_zero hC
+  by_cases h0 : m.p.field m.x = 0
+  swap
+  · exact Dynamics.unstable_of_ne_zero hf h0
+  have hx2 : m.x 2 = m.p.VdcRef := m.p.equilibrium_Vdc h0
+  set W : State 4 → ℝ := fun y => (m.x 2 - y 2) * (y 3 - m.x 3) with hW
+  have hWd : ∀ y : State 4,
+      HasFDerivAt W (PLLDC.Params.row4 0 0 (-(y 3 - m.x 3)) (m.x 2 - y 2)) y := by
     intro y
-    have h := ((Dynamics.hasFDerivAt_coord 2 y).const_sub 1).mul (Dynamics.hasFDerivAt_coord 3 y)
+    have h := ((Dynamics.hasFDerivAt_coord 2 y).const_sub (m.x 2)).mul
+      ((Dynamics.hasFDerivAt_coord 3 y).sub_const (m.x 3))
     refine h.congr_fderiv ?_
     ext v
-    simp [ModelBParams.row4]
+    simp [PLLDC.Params.row4]
     ring
   have hWc : ContDiff ℝ 1 W := by
     rw [hW]
     fun_prop
   refine Dynamics.unstable_of_chetaev hf hWc (r := 1) one_pos (fun ε hε => ?_) (fun y _ hy => ?_)
-  · refine ⟨WithLp.toLp 2 ![0, 0, 1 - ε / 4, ε / 4], ?_, ?_⟩
-    · rw [EuclideanSpace.norm_eq, Real.sqrt_lt' hε]
-      simp [cdcZero, Fin.sum_univ_four]
+  · refine ⟨m.x + WithLp.toLp 2 ![0, 0, -(ε / 4), ε / 4], ?_, ?_⟩
+    · rw [add_sub_cancel_left, EuclideanSpace.norm_eq, Real.sqrt_lt' hε]
+      simp [Fin.sum_univ_four]
       nlinarith
     · simp only [hW]
       simp
       positivity
   · rw [(hWd y).fderiv]
-    have hy2 : 1 - y 2 ≠ 0 := by
+    have hy2 : m.x 2 - y 2 ≠ 0 := by
       intro h
       simp only [hW, h, zero_mul] at hy
       exact lt_irrefl _ hy
-    have : cdcZero.p.field y 2 = 0 := by simp [ModelBParams.Cdc,
-        cdcZero, ModelBParams.field]
-    simp [ModelBParams.Cdc, ModelBParams.row4, cdcZero,
-        ModelBParams.field]
-    positivity
+    have h2 : m.p.field y 2 = 0 := by simp [PLLDC.Params.field, hC]
+    have h3 : m.p.field y 3 = m.x 2 - y 2 := by simp [PLLDC.Params.field, hx2]
+    simp only [PLLDC.Params.row4_apply, h2, h3]
+    have : 0 < (m.x 2 - y 2) ^ 2 := by positivity
+    nlinarith
+
+/-- The disconnected DC link `cdcZero` is unstable although its Jacobian (characteristic
+polynomial `s² (s² + s + 1)`) lies on the 4×4 Routh boundary: `V_dc` is conserved, so off
+`V_dc = 1` the integrator `ξ_v` drifts (`mem_den_unstable_of_Cdc_eq_zero`). -/
+@[tmio TM, powerlib_domain] theorem cdcZero_mem_den_unstable :
+    connection% (cdcZero ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable_of_Cdc_eq_zero cdcZero (by simp [PLLDC.Params.Cdc, cdcZero])
 
 /-! ## The Routh boundary: a weakly damped DC loop (locally asymptotically stable) -/
 
@@ -536,7 +555,7 @@ def dampedEnergy (y : State 4) : ℝ :=
     dcEnergy (y 2 - 1) (y 3 - 1 / 2)
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_dampedEnergy (y : State 4) :
-    HasFDerivAt dampedEnergy (ModelBParams.row4 (3 * Real.sin (y 0) - y 1 * Real.cos (y 0))
+    HasFDerivAt dampedEnergy (PLLDC.Params.row4 (3 * Real.sin (y 0) - y 1 * Real.cos (y 0))
       (y 1 - Real.sin (y 0)) (dcEnergyW (y 2 - 1) (y 3 - 1 / 2))
       (dcEnergyXi (y 2 - 1) (y 3 - 1 / 2))) y := by
   have h0 := Dynamics.hasFDerivAt_coord 0 y
@@ -554,7 +573,7 @@ def dampedEnergy (y : State 4) : ℝ :=
   refine ((hP.add hE).congr_fderiv ?_).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun z => ?_)
   · ext w
-    simp [ModelBParams.row4, dcEnergyW, dcEnergyXi]
+    simp [PLLDC.Params.row4, dcEnergyW, dcEnergyXi]
     ring
   · simp only [dampedEnergy, dcEnergy, Pi.add_apply, Pi.sub_apply, Pi.mul_apply,
       Function.comp_apply]
@@ -569,7 +588,7 @@ def dampedEnergy (y : State 4) : ℝ :=
 The PLL is decoupled and damped; the DC loop has a Hopf-type linearization (pure imaginary pair
 `±i`) whose cubic damping comes from the line loss `R_g i_d²`. -/
 def hopfDamped : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, -3 / 2, 1, -1, 1, 3, ⟨2, 0, 0⟩, 0, rfl, rfl⟩,
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, -3 / 2, 1, -1, 1, 3, ⟨2, 0, 0⟩, 0, 0, rfl, rfl⟩,
     WithLp.toLp 2 ![0, 0, 1, 1 / 2]⟩
 
 @[tmio M, powerlib_domain] theorem hopfDamped_x : hopfDamped.x = WithLp.toLp 2 ![0, 0, 1, 1 / 2] :=
@@ -580,14 +599,14 @@ def hopfDamped : Model :=
       -1 + (3 * Real.cos (y 0) - 2 * (y 2 - 1 + y 3)) * (y 2 - 1 + y 3) / y 2, 1 - y 2] := by
   ext i
   fin_cases i
-  · simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-      hopfDamped, ModelBParams.field, ModelBParams.vgq]
-  · simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-      hopfDamped, ModelBParams.field, ModelBParams.vgq]
-  · simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-      hopfDamped, ModelBParams.field, ModelBParams.vgq, ModelBParams.vgd, ModelBParams.idRef]
+  · simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+      hopfDamped, PLLDC.Params.field, PLLDC.Params.vgq]
+  · simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+      hopfDamped, PLLDC.Params.field, PLLDC.Params.vgq]
+  · simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+      hopfDamped, PLLDC.Params.field, PLLDC.Params.vgq, PLLDC.Params.vgd, PLLDC.Params.idRef]
     field_simp
-  · simp [ModelBParams.Cdc, hopfDamped, ModelBParams.field]
+  · simp [PLLDC.Params.Cdc, hopfDamped, PLLDC.Params.field]
 
 /-- The Lie derivative of `dampedEnergy`, multiplied by `V_dc`, as a polynomial in
 `s = sin Δθ`, `c = cos Δθ`, `x_pll`, `w = V_dc − 1`, `ξ = ξ_v − 1/2`. -/
@@ -600,7 +619,7 @@ def hopfDamped : Model :=
         3 * (Real.cos (y 0) - 1) * ((y 2 - 1) + (y 3 - 1 / 2) + 1 / 2) *
           dcEnergyW (y 2 - 1) (y 3 - 1 / 2) := by
   rw [(hasFDerivAt_dampedEnergy y).fderiv, hopfDamped_field y hy]
-  simp [ModelBParams.row4, dcEnergyW, dcEnergyXi, dcQuintic]
+  simp [PLLDC.Params.row4, dcEnergyW, dcEnergyXi, dcQuintic]
   field_simp
   ring
 
@@ -729,9 +748,9 @@ def hopfDamped : Model :=
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   change hopfDamped.p.field hopfDamped.x = 0
-  rw [ModelBParams.field_eq_zero_iff]
-  simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg, hopfDamped,
-      ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+  rw [PLLDC.Params.field_eq_zero_iff]
+  simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, hopfDamped,
+      PLLDC.Params.idRef, PLLDC.Params.vgq, PLLDC.Params.vgd]
   norm_num
 
 @[tmio M, powerlib_domain] private theorem hopfDamped_invariants :
@@ -742,33 +761,33 @@ def hopfDamped : Model :=
   have h := Criteria.invariants_of_blockDiag_fin_four (J := hopfDamped.p.jacobian hopfDamped.x)
     (a := -3) (b := 1)
     (c := -3) (d := 0) (e := 1)
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped, ModelBParams.idRef])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped, ModelBParams.idRef, ModelBParams.vgd, ModelBParams.vgq,
-        ModelBParams.pccP]; norm_num)
-    (by simp [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
-        ModelBParams.jacobian, hopfDamped, ModelBParams.idRef, ModelBParams.vgd]; norm_num)
-    (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
-    (by simp [ModelBParams.jacobian]) (by simp [ModelBParams.jacobian])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped])
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.vgq,
+        PLLDC.Params.pccP]; norm_num)
+    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
+        PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef, PLLDC.Params.vgd]; norm_num)
+    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
+    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
   obtain ⟨h1, h2, h3, h4⟩ := h
   refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
 
@@ -916,7 +935,7 @@ boundary. Off the boundary the translation is exact (`exactUnder_offBoundary`). 
   rintro q (rfl | rfl)
   · exact (show hopfDamped.p.field hopfDamped.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_equilibrium)
   · show (0 : ℝ) < hopfDamped.p.VdcRef
-    norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc, ModelBParams.Rg, ModelBParams.Xg,
+    norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
         hopfDamped]
 
 /-! ## The witnesses lie on the Routh boundary -/
@@ -932,8 +951,8 @@ boundary. Off the boundary the translation is exact (`exactUnder_offBoundary`). 
   · exact (show hopfCenter.p.field hopfCenter.x = 0 from by
       simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
         forall_eq, Meets] using hopfCenter_equilibrium)
-  · show (0 : ℝ) < hopfCenter.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
-      ModelBParams.Rg, ModelBParams.Xg, hopfCenter]
+  · show (0 : ℝ) < hopfCenter.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc,
+      PLLDC.Params.Rg, PLLDC.Params.Xg, hopfCenter]
 
 /-- The boundary witness `hopfDamped` is an equilibrium with positive DC-voltage reference. -/
 @[tmio M, powerlib_domain] theorem hopfDamped_mem_realize :
@@ -946,8 +965,8 @@ boundary. Off the boundary the translation is exact (`exactUnder_offBoundary`). 
   · exact (show hopfDamped.p.field hopfDamped.x = 0 from by
       simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
         forall_eq, Meets] using hopfDamped_equilibrium)
-  · show (0 : ℝ) < hopfDamped.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
-      ModelBParams.Rg, ModelBParams.Xg, hopfDamped]
+  · show (0 : ℝ) < hopfDamped.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc,
+      PLLDC.Params.Rg, PLLDC.Params.Xg, hopfDamped]
 
 /-- The boundary witness `cdcZero` is an equilibrium with positive DC-voltage reference. -/
 @[tmio M, powerlib_domain] theorem cdcZero_mem_realize :
@@ -960,8 +979,8 @@ boundary. Off the boundary the translation is exact (`exactUnder_offBoundary`). 
   · exact (show cdcZero.p.field cdcZero.x = 0 from by
       simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
         forall_eq, Meets] using cdcZero_equilibrium)
-  · show (0 : ℝ) < cdcZero.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, ModelBParams.Cdc,
-      ModelBParams.Rg, ModelBParams.Xg, cdcZero]
+  · show (0 : ℝ) < cdcZero.p.VdcRef; norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc,
+      PLLDC.Params.Rg, PLLDC.Params.Xg, cdcZero]
 
 /-- The boundary witness `hopfCenter` is not off the 4×4 Routh boundary: its Jacobian neither
 meets the Routh conditions nor violates them strictly. -/
@@ -1005,5 +1024,5 @@ meets the Routh conditions nor violates them strictly. -/
         forall_eq, Meets] using cdcZero_not_routh) h
   · exact cdcZero_not_violation h
 
-end ModelB
+end PLLDC
 end powerlib.GFL.DCLink

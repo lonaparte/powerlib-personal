@@ -28,8 +28,8 @@ Results.
   (`mul_cos_mul_eq_neg_sin_two_mul`); `K sin 2θ = c` is solvable iff `|c| ≤ K`
   (`exists_mul_sin_two_mul_eq_iff`, `K > 0`); at its extremes `|sin 2θ| = 1` one has
   `sin² θ = 1/2` (`sin_sq_eq_half_of_abs_sin_two_mul`). Used by the quasi-static GFL power loop
-  and model B (`theorem/GridTiedConverter/GFL/PowerLoop/QuasiStatic.lean`,
-  `theorem/GridTiedConverter/GFL/DCLink/ReducedOrder.lean`).
+  and the PLL–DC model (`theorem/GridTiedConverter/GFL/PowerLoop/QuasiStatic.lean`,
+  `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Basic.lean`).
 -/
 
 noncomputable section

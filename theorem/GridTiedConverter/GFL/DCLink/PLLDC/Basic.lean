@@ -4,27 +4,38 @@ import theorem.Passive.Parallel
 import theorem.Dynamics.State
 import theorem.SpecialFunctions.Sinusoid
 
-/-! # GFL reduced-order models with DC link: algebra and model-B equilibria
+/-! # The PLL–DC model: the four-state DC-link GFL model, its algebra and equilibria
 
-Algebraic identities of the GFL reduced-order models and the equilibrium set of
-model B.
+Algebraic identities of the GFL reduced-order models and the parameters, field and equilibrium set
+of the PLL–DC model, the library's single four-state DC-link model (PLL + DC-voltage loop).
 
 Model boundary.
 * L-filter closed loop in the PLL frame (§1.2.6): the frame rotates at the PLL speed `ω̂`, so the
   KVL cross-coupling is `ω̂ L_f i` and the decoupling uses `ω̂ L̂_f i`.
-* Model B (§1.6–§1.7): continuous-time autonomous model on `State 4`, state order
-  `x = (Δθ, x_pll, V_dc, ξ_v)`: PLL phase error `Δθ = θ̂ − θ_g` (swing sign, `conventions.md`
-  §D5), PLL integrator, DC-link voltage, DC-voltage-loop integrator. Inner current loop eliminated
-  (`i = i*`), reactive loop frozen (`i_q* = i_q0` constant), feed-forward LPF and decoupling
-  mismatch removed (assumptions (S1)–(S3) of §1.2.9), `P_bridge` replaced by the PCC power,
-  constant grid frequency `ω_g`, infinite bus `V_g` behind `Z_g = R_g + j X_g`, IN-positive
-  currents. No saturation, no PWM, no delay. The field contains `1 / V_dc`; at `V_dc = 0` Lean's
-  convention `1/0 = 0` applies, and only equilibrium-level statements are made here (no
-  linearization, so global smoothness is not needed).
+* The PLL–DC model (`PLLDC.Params`, `PLLDC.Params.field`): continuous-time autonomous model on
+  `State 4`, state order `x = (Δθ, x_pll, V_dc, ξ_v)`: PLL phase error `Δθ = θ̂ − θ_g` (swing sign,
+  `conventions.md` §D5), PLL integrator, DC-link voltage, DC-voltage-loop integrator. Inner current
+  loop eliminated (`i = i*`), `i_d* = i_d0 + k_pv (V_dc* − V_dc) + k_iv ξ_v` with a reference offset
+  `i_d0`, reactive loop frozen (`i_q* = i_q0` constant), feed-forward LPF and decoupling mismatch
+  removed (assumptions (S1)–(S3) of §1.2.9), `P_bridge` replaced by the PCC power, constant grid
+  frequency `ω_g`, infinite bus `V_g` behind `Z_g = R_g + j X_g`, IN-positive currents. No
+  saturation, no PWM, no delay. The field contains `1 / V_dc`; at `V_dc = 0` Lean's convention
+  `1/0 = 0` applies, and only equilibrium-level statements are made here (no linearization, so
+  global smoothness is not needed).
+* Source models read into it (each a parameterization with an explicit map into `PLLDC.Params`):
+  the reduced-order model B of §1.6–§1.7 is the slice `i_d0 = 0`; the four-state GFL model of
+  `theorem/GridTiedConverter/GFL/DCLink/FourState.lean` is `FourState.Params.toPLLDC`
+  (`ω_s = ω_g = 1`, `V_dc* = 1`, `R_g = i_q0 = 0`, its operating current as `i_d0`, coordinates
+  with the DC-voltage integrator sign flipped); the `basin-guard` carrier of
+  `theorem/GridTiedConverter/GFL/DCLink/BasinGuard.lean` is `CarrierParams.toPLLDC`
+  (`ω_s = ω_g = 1`, `V_dc* = 1`, `i_d0 = 0`, the same coordinates). The family, Jacobian,
+  regularization, Routh criterion and exactness results are proved once, on this model, in
+  `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean` and the boundary and collapse
+  modules of this directory.
 
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.1 (complex power), §1.2.6
 (closed loop with feed-forward LPF and decoupling mismatch), §1.2.8 (d–q cancellation in
-`P_bridge`, DAE → ODE), §1.6–§1.7 (model B and its steady state).
+`P_bridge`, DAE → ODE), §1.6–§1.7 (model B and its steady state; here the slice `i_d0 = 0`).
 
 Results.
 * Complex power from `S̄ = V̄ Ī*` (`conventions.md` §D0, IN-positive / absorb-positive):
@@ -38,24 +49,24 @@ Results.
 * An explicit algebraic layer (index-1 DAE whose algebraic variables are given by a DAG of
   explicit formulas) has the same solutions as the ODE obtained by substitution: the generic
   statement is `DAE.isIntegralCurveOn_dae_iff` (`theorem/DAE/Elimination.lean`).
-* Model B, necessary equilibrium conditions: `v_q = 0` (`equilibrium_vgq`),
+* The PLL–DC model, necessary equilibrium conditions: `v_q = 0` (`equilibrium_vgq`),
   `ω_s − ω_g + k_i x_pll = 0` (`equilibrium_ki_xpll`), so `x_pll = (ω_g − ω_s)/k_i` for `k_i ≠ 0`
   (`equilibrium_xpll`); `V_dc = V_dc*` is `equilibrium_Vdc`
-  (`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`).
-* Model B with `R_g = 0`, `i_q0 = 0`: at an equilibrium `X_g i_d = −V_g sin Δθ`
+  (`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`).
+* The PLL–DC model with `R_g = 0`, `i_q0 = 0`: at an equilibrium `X_g i_d = −V_g sin Δθ`
   (`equilibrium_idRef`) and `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`
   (`equilibrium_powerAngle`), so an equilibrium exists iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)`
-  (`ModelBParams.exists_equilibrium_iff`), and at the fold `|I₀| V_dc* = 3 V_g²/(4 X_g)` one has
+  (`PLLDC.Params.exists_equilibrium_iff`), and at the fold `|I₀| V_dc* = 3 V_g²/(4 X_g)` one has
   `|X_g i_d| = V_g / √2` (`fold_current`).
 
 Family and connection conclusions.
-This module states no behaviour and defines no family. The equilibrium results of model B
-(`equilibrium_vgq`, `equilibrium_ki_xpll`, `equilibrium_xpll`, `equilibrium_idRef`,
+This module states no behaviour and defines no family. The equilibrium results of the PLL–DC
+model (`equilibrium_vgq`, `equilibrium_ki_xpll`, `equilibrium_xpll`, `equilibrium_idRef`,
 `equilibrium_powerAngle`, `exists_equilibrium_iff`, `fold_current`) are
-algebraic facts about the zero set of `ModelBParams.field`; they are static evidence on the model,
-domain identities that do not require connection wrappers. The model-B family and its connection
+algebraic facts about the zero set of `PLLDC.Params.field`; they are static evidence on the model,
+domain identities that do not require connection wrappers. The PLL–DC family and its connection
 conclusions (local stability through the Jacobian, 4×4 Routh–Hurwitz) are in
-`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`.
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`.
 
 Correction (§1.2.6): the note writes the residual as `(ω L_f − ω̂ L̂_f) i_q` and says it reduces
 to `ω̂ ΔL_f i_q` only "when the PLL is locked (`ω̂ ≈ ω`)". In the PLL-frame model of §1.2.2
@@ -63,9 +74,9 @@ to `ω̂ ΔL_f i_q` only "when the PLL is locked (`ω̂ ≈ ω`)". In the PLL-fr
 with no locking assumption (`closedLoop_d`, `closedLoop_q`).
 
 Correction (§1.7): the note's boundary `|X_g i_d*| ≤ V_g` is only the solvability of
-`sin Δθ = −X_g i_d / V_g` for a *given* `i_d`; in model B `i_d` is fixed by the DC power balance,
-the existence boundary is `|I₀| V_dc* = 3 V_g² / (4 X_g)`, and the fold sits at
-`|X_g i_d| = V_g / √2`, not at `|X_g i_d| = V_g`.
+`sin Δθ = −X_g i_d / V_g` for a *given* `i_d`; in model B (and every PLL–DC model) `i_d` is fixed
+by the DC power balance, the existence boundary is `|I₀| V_dc* = 3 V_g² / (4 X_g)`, and the fold
+sits at `|X_g i_d| = V_g / √2`, not at `|X_g i_d| = V_g`.
 
 Not formalized: model A (§1.4) contains the implicit loop `Q ↔ i_q* ↔ |v_g|` (a DAE) and is
 excluded.
@@ -101,10 +112,11 @@ KVL is `L_f i̇_d = v_gd − V_d^conv − R_f i_d + ω̂ L_f i_q`. -/
   unfold bridgeVoltageQ
   ring
 
-/-! ## Model B (§1.6) -/
+/-! ## The PLL–DC model (§1.6, with a reference offset) -/
 
-/-- Parameters of model B. -/
-structure ModelBParams where
+/-- Parameters of the PLL–DC model, the four-state DC-link GFL model (model B of §1.6 is the slice
+`id0 = 0`). -/
+structure PLLDC.Params where
   /-- PLL nominal frequency `ω_s` and constant grid frequency `ω_g`. -/
   ωs : ℝ
   ωg : ℝ
@@ -124,26 +136,29 @@ structure ModelBParams where
   line : Passive.SeriesRLC
   /-- Frozen reactive current reference. -/
   iq0 : ℝ
+  /-- Offset of the d-axis current reference (feed-forward `i_d0`); zero in the note's the PLL–DC
+  model, the operating current of the four-state GFL model. -/
+  id0 : ℝ
   /-- The DC link is lossless. -/
   dcLink_lossless : dcLink.G = 0
   /-- The DC link has no shunt inductor. -/
   dcLink_noInd : dcLink.Γ = 0
 
 /-- The DC-link capacitance. -/
-abbrev ModelBParams.Cdc (p : ModelBParams) : ℝ := p.dcLink.C
+abbrev PLLDC.Params.Cdc (p : PLLDC.Params) : ℝ := p.dcLink.C
 
 /-- The line resistance `R_g`. -/
-abbrev ModelBParams.Rg (p : ModelBParams) : ℝ := p.line.R
+abbrev PLLDC.Params.Rg (p : PLLDC.Params) : ℝ := p.line.R
 
 /-- The line reactance `X_g`. -/
-abbrev ModelBParams.Xg (p : ModelBParams) : ℝ := p.line.reactance p.ωg
+abbrev PLLDC.Params.Xg (p : PLLDC.Params) : ℝ := p.line.reactance p.ωg
 
-namespace ModelBParams
+namespace PLLDC.Params
 
-variable (p : ModelBParams)
+variable (p : PLLDC.Params)
 
-/-- d-axis current reference `i_d* = k_pv (V_dc* − V_dc) + k_iv ξ_v`. -/
-def idRef (Vdc ξv : ℝ) : ℝ := p.kpv * (p.VdcRef - Vdc) + p.kiv * ξv
+/-- d-axis current reference `i_d* = i_d0 + k_pv (V_dc* − V_dc) + k_iv ξ_v`. -/
+def idRef (Vdc ξv : ℝ) : ℝ := p.id0 + p.kpv * (p.VdcRef - Vdc) + p.kiv * ξv
 
 /-- PCC voltage in the PLL frame, d component: `V_g cos Δθ − (R_g i_d − X_g i_q)`. -/
 def vgd (Δθ id : ℝ) : ℝ := p.Vg * Real.cos Δθ - (p.Rg * id - p.Xg * p.iq0)
@@ -235,7 +250,7 @@ Static evidence on the model, not a connection conclusion. -/
   rw [← hVdc]
   linear_combination h2'' - 3 / 2 * hP
 
-/-- Existence of an equilibrium of model B (`R_g = 0`, `i_q0 = 0`, `X_g > 0`, `V_dc* > 0`,
+/-- Existence of an equilibrium of the PLL–DC model (`R_g = 0`, `i_q0 = 0`, `X_g > 0`, `V_dc* > 0`,
 `V_g ≠ 0`, nonzero `C_dc`, `k_i`, `k_iv`): iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)` (the power-angle
 law `SpecialFunctions.exists_mul_sin_two_mul_eq_iff`).
 Static evidence on the model, not a connection conclusion. -/
@@ -255,10 +270,11 @@ Static evidence on the model, not a connection conclusion. -/
       rw [hs, eq_div_iff hK.ne']
       linarith
     set id := -p.Vg * Real.sin Δθ / p.Xg with hid
-    refine ⟨WithLp.toLp 2 ![Δθ, (p.ωg - p.ωs) / p.ki, p.VdcRef, id / p.kiv], ?_⟩
-    have hidRef : p.idRef p.VdcRef (id / p.kiv) = id := by
-      simp only [idRef, sub_self, mul_zero, zero_add]
+    refine ⟨WithLp.toLp 2 ![Δθ, (p.ωg - p.ωs) / p.ki, p.VdcRef, (id - p.id0) / p.kiv], ?_⟩
+    have hidRef : p.idRef p.VdcRef ((id - p.id0) / p.kiv) = id := by
+      simp only [idRef, sub_self, mul_zero, add_zero]
       field_simp
+      ring
     have hvq : p.vgq Δθ id = 0 := by
       simp only [vgq, hR, hq, mul_zero, add_zero, hid]
       field_simp
@@ -279,7 +295,7 @@ Static evidence on the model, not a connection conclusion. -/
       field_simp at hsin2' ⊢
       linear_combination (-1 / 2 : ℝ) * hsin2'
 
-/-- Fold of model B (`R_g = 0`, `i_q0 = 0`): at an equilibrium on the existence boundary
+/-- Fold of the PLL–DC model (`R_g = 0`, `i_q0 = 0`): at an equilibrium on the existence boundary
 `|I₀| V_dc* = 3 V_g² / (4 X_g)` the d-axis current satisfies `|X_g i_d| = |V_g| / √2`
 (`|sin 2Δθ| = 1`, `SpecialFunctions.sin_sq_eq_half_of_abs_sin_two_mul`).
 Static evidence on the model, not a connection conclusion. -/
@@ -308,6 +324,6 @@ Static evidence on the model, not a connection conclusion. -/
     ring
   exact (sq_eq_sq₀ (abs_nonneg _) (by positivity)).mp e1
 
-end ModelBParams
+end PLLDC.Params
 
 end powerlib.GFL.DCLink

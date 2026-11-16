@@ -12,8 +12,10 @@ import theorem.Dynamics.Pendulum
 import theorem.SpecialFunctions.Sinusoid
 import theorem.GridTiedConverter.PLL.Linear
 import theorem.GridTiedConverter.GFL.DCLink.VoltageControl
+import theorem.Dynamics.Transport
+import theorem.GridTiedConverter.GFL.DCLink.PLLDC.Stability
 
-/-! # Four-state GFL with PLL and dc-bus voltage loop
+/-! # Four-state GFL with PLL and dc-bus voltage loop: a parameterization of the PLL–DC model
 
 Model boundary.
 Single grid-following VSC on an infinite ac source of amplitude `V₀`
@@ -31,12 +33,25 @@ algebraic network, quasi-steady (ideal) current loop, continuous time.
 * No PWM, delay, limiter, line resistance, `L_f`, or current-loop dynamics.  Results are at
   the equilibrium (linearization) level for the full nonlinear four-state field.
 
-The `1/V` term. The physical field contains `P_abs / V`, so it is not globally `C¹`
-(Lean's `x / 0 = 0` makes it discontinuous at `V = 0`).  The powerlib linearization theorems
-need a globally `C¹` field, so they are applied to `regField`, where `V⁻¹` is replaced by the
-smooth `Dynamics.invExt V` (equal to `V⁻¹` for `V ≥ 1/2`); `regField` coincides with `field` on the
-ball of radius `1/2` around the operating point, and the locality lemmas of
-`Dynamics.Locality` transport local exponential stability / instability back to `field`.
+Reading into the PLL–DC model. The four-state model is a parameterization of the library's single
+four-state DC-link model, the PLL–DC model (`PLLDC.Params`, `PLLDC.family`,
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`); it has no family of its own.
+`Params.toPLLDC` sends every parameter set to the PLL–DC model with `ω_s = ω_g = 1`, `V_dc* = 1`,
+`i_q0 = 0`, `V_g = V₀`, the same lossless line (`R_g = 0`, `X_g` at `ω = 1`), the reference
+offset `i_d0`, `I₀ = I_dc0` and the same gains and DC link. The note's state `(θ, x, V, η)` is
+the PLL–DC model's `(Δθ, x_pll, V_dc, ξ_v)` with the DC-voltage integrator sign flipped
+(`integratorFlip`, `ξ_v = −η`: the PLL–DC model integrates `V_dc* − V_dc`, the note `V − 1`), which
+fixes the operating point (`field_eq_transport`). A complete system (`Model`) is a parameter set
+with a selected angle `θ₀`; its PLL–DC image `Model.toPLLDC` is the PLL–DC system of `toPLLDC` about
+`(θ₀, 0, 1, 0)`, and its behaviour is that of the image: every behavioural statement below is a
+membership of the image in a denotation of `PLLDC.family`. Smoothness and the Jacobian are the
+PLL–DC model's read through the flip (`field_contDiffOn`, `hasFDerivAt_field`, `jacGen_eq_jacobian`,
+`A0_eq_jacobian`). Scaffold: `theorem/GridTiedConverter/GFL/DCLink/FourStatePLLDC.agda`.
+
+The `1/V` term. The physical field contains `P_abs / V`; read with Lean's `x / 0 = 0` it is `C¹`
+on `V ≠ 0` (the PLL–DC model, `PLLDC.Params.field_contDiffOn`), an open set containing every
+operating point, where the PLL–DC model's local linearization laws apply without a separate
+regularization.
 
 Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2, §2.3;
 `.../references/gfm-driven-gfl-parametric-resonance/notes/concepts/
@@ -47,8 +62,10 @@ Results.
 * Equilibrium `(θ₀, 0, 1, 0)` iff `V₀ sin θ₀ = −X_g i_{d0}` and `I_dc0 = −(3/2) V₀ cos θ₀ i_{d0}`;
   `θ₀ = arcsin(−X_g i_{d0}/V₀)` with `|X_g i_{d0}| < V₀` gives the principal branch
   (`cos θ₀ > 0`).
-* `A₀` derived with `fderiv`; `A₁`, `b₁` of the amplitude modulation `V₀ ↦ V₀(1 + ε)` are exact:
-  `J(z₀; ε) = A₀ + ε A₁` and `f_ε(z₀) = ε b₁`.
+* The closed-form Jacobian `jacGen` at every state with `V ≠ 0` is the PLL–DC model's Jacobian
+  conjugated by the flip (`jacGen_eq_jacobian`, `hasFDerivAt_field`); `A₀ = jacGen` at the
+  operating point (`jacGen_opPoint`, `fderiv_field_opPoint`, `A0_eq_jacobian`). `A₁`, `b₁` of the
+  amplitude modulation `V₀ ↦ V₀(1 + ε)` are exact: `J(z₀; ε) = A₀ + ε A₁` and `f_ε(z₀) = ε b₁`.
 * Characteristic polynomial
   `det(λI − A₀) = L_PLL(λ)(λ² + 2α_cl λ + ω_cl²) − Γ(k_p λ + k_i)(k_pv λ + k_iv)` with
   `L_PLL = λ² + k_p v_{d0} λ + k_i v_{d0}` (`PLL.loopPoly` at `v_{d0}`),
@@ -59,51 +76,45 @@ Results.
   `V_dc* = 1`, `K_p = k_pv`, `K_i = k_iv`, `I_d0 = i_d0` (`dcLoop`, `A0_dcBlock`), whose negated
   trace and determinant are `2α_cl` and `ω_cl²` (`twoAlphaCl`, `omegaClSq`; closed forms
   `twoAlphaCl_eq`, `omegaClSq_eq`);
-  `det A₀ = γ k_i k_iv V₀² cos 2θ₀`.
-* Domain: quartic Routh–Hurwitz conditions ⇒ local exponential stability;
-  `cos 2θ₀ < 0` ⇒ positive real eigenvalue ⇒ unstable; hence local exponential stability
-  forces `cos 2θ₀ ≥ 0` (necessary condition `|θ₀| ≤ 45°`).
+  `det A₀ = γ k_i k_iv V₀² cos 2θ₀`. The PLL–DC model's Jacobian at the image has the same quartic
+  (`det_characteristicMatrix_jacobian`).
 * Angle input: in error-angle coordinates `θ_g` enters only additively through `−θ̇_g`, so
   the state Jacobian does not depend on the input (`A₁^GFL = 0`, `b(jω_p) = −jω_p e_θ`).
 
-Family and connection conclusions.
-A complete system (`Model`) is a parameter set with a
-selected angle `θ₀`; the system map reads it as the physical field (with its `1/V` term)
-translated so that the operating point `(θ₀, 0, 1, 0)` is the origin,
-`z ↦ field p (z + opPoint θ₀)` (every flow sentence is invariant under this translation,
-`Flow.Property.holds_shift_iff`). The requirement language is static: the operating point is an
-equilibrium (`IsEq p θ₀`, `C ≠ 0`); the quartic coefficients of `det(λI − A₀)` satisfy the Routh
-conditions; or `a₀ < 0`. The local sentences translate into the first two, instability into the
-first and the third, passivity into nothing, and the global sentences, decay rates, sampled
-contraction and conservation into the whole (inconsistent) language: unavailable translation
-coverage. `chain_le_semantics` proves every translation sound (linearization of the smooth
-`regField`, transported back through the locality lemmas of `Dynamics.Locality`, then moved to
-the origin); `family_isAutonomous.exact_passive` proves the passivity translation exact. The
-stability results are connection conclusions: `mem_den_locallyExponentiallyStable_of_routh`,
-`mem_den_unstable_of_cos_two_mul_neg`, and the necessary condition `cos 2θ₀ ≥ 0` in
-contrapositive form, `not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg` (with the stronger
-`not_mem_den_lyapunovStable_of_cos_two_mul_neg`). The local exponential translation is exact
-(`exact_locallyExponentiallyStable`): the physical field agrees with `regField` on a ball around
-the operating point, and by the converse linearization theorem
-(`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces an
-equilibrium (`IsEq`) with `A₀` Hurwitz, i.e. the quartic Routh conditions
-(`Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic`); with `C = 0` the dc-bus voltage
-is a linear first integral and excludes it. The instability translation is not exact
-(`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
-selected point is not an equilibrium (`offEquilibrium`, no ac source and a constant dc source
-current) is unstable (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not exact
-(`not_exact_lyapunovStable`): the undamped PLL (`k_p = 0`, `X_g = 0`) driving a damped dc loop
-`undampedPLL` is Lyapunov stable (`undampedPLL_mem_den_lyapunovStable`) through the sum of the
-conserved pendulum energy `1 − cos θ + x²/2` and the dc quadratic `u² + u η + (3/2) η²`, which
-does not increase while the loop gain `cos θ / V` stays in `[3/4, 5/4]`; its quartic
-`(λ² + 1)(λ² + λ + 1)` fails the strict Routh inequality. The local asymptotic translation is
-not exact either (`GFL.DCLink.FourStateBoundary.not_exact_locallyAsymptoticallyStable`): the
-weak focus `FourStateBoundary.weakFocus` on the Hopf boundary of the undamped dc loop is locally
-asymptotically stable. `GFL.DCLink.FourStateBoundary` also proves the necessary closed Routh
-conditions for Lyapunov stability and that no translation into this requirement language is exact
-for Lyapunov stability, local asymptotic stability or instability (`realize_ne_den_*`): models
-with the same requirement profile on the Routh boundary fall on both sides. The angle-input field
-`fieldAngle` and its Jacobian identities are static.
+Connection conclusions (readings into the PLL–DC model).
+The four-state closed forms read the PLL–DC model's requirements at the image: the equilibrium
+requirement is `IsEq` when `C ≠ 0` (`meets_equilibrium_iff`); at a point with `v_q = 0` the 4×4
+Routh conditions are the quartic Routh conditions on `det(λI − A₀)` (`meets_routh_iff`, through
+`Criteria.routhFin4_iff_of_det_characteristicMatrix_quartic`), a negative determinant is
+`a₀ < 0` (`meets_detNeg_iff`) and the Routh boundary is the quartic's (`meets_offBoundary_iff`).
+Every image has positive reference, and the Routh conditions or `det < 0` force `C ≠ 0`, so the
+PLL–DC model's translation read through `toPLLDC` is the note's (equilibrium and Routh conditions
+for the local sentences, equilibrium and `a₀ < 0` for instability).
+* Domain: the quartic Routh–Hurwitz conditions ⇒ local exponential stability
+  (`mem_den_locallyExponentiallyStable_of_routh`, from `PLLDC.mem_den_locallyExponentiallyStable`);
+  `a₀ < 0` ⇒ instability (`mem_den_unstable_of_a0_neg`, from `PLLDC.mem_den_unstable_of_det_neg`);
+  `cos 2θ₀ < 0` ⇒ `a₀ < 0` ⇒ unstable (`mem_den_unstable_of_cos_two_mul_neg`), hence not
+  Lyapunov stable (`not_mem_den_lyapunovStable_of_cos_two_mul_neg`) and the necessary condition
+  `cos 2θ₀ ≥ 0` for local exponential stability in contrapositive form
+  (`not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg`, `|θ₀| ≤ 45°` on the branch).
+* Characterization: a four-state model is locally exponentially stable exactly when it is an
+  equilibrium (`IsEq`, `C ≠ 0`) whose quartic meets the Routh conditions
+  (`mem_den_locallyExponentiallyStable_iff`: the PLL–DC model's converse linearization off the
+  singular plane, `PLLDC.mem_den_locallyExponentiallyStable_iff`; with `C = 0` the determinant
+  vanishes).
+* Instability off equilibrium: the unbalanced model `offEquilibrium` (no ac source, constant dc
+  source current) is unstable without being an equilibrium (`offEquilibrium_mem_den_unstable`,
+  `PLLDC.mem_den_unstable_of_field_ne_zero`), so the PLL–DC model's instability translation is not
+  exact even within positive reference (`PLLDC.not_exactUnder_positiveReference_unstable`,
+  `theorem/GridTiedConverter/GFL/DCLink/PLLDC/FourStateSlice.lean`).
+* The undamped PLL (`k_p = 0`, `X_g = 0`) driving a damped dc loop, `undampedPLL`, is Lyapunov
+  stable (`undampedPLL_mem_den_lyapunovStable`) through the sum of the conserved pendulum energy
+  `1 − cos θ + x²/2` and the dc quadratic `u² + u η + (3/2) η²`, which does not increase while the
+  loop gain `cos θ / V` stays in `[3/4, 5/4]`; its quartic `(λ² + 1)(λ² + λ + 1)` fails the strict
+  Routh inequality. The Routh boundary of the four-state models (necessary closed Routh
+  conditions, a weak focus, a frozen PLL, and inexpressibility of Lyapunov stability, local
+  asymptotic stability and instability in the PLL–DC model's language) is
+  `GFL.DCLink.FourStateBoundary`.
 
 Correction: theory-draft §1.2 gives the equilibrium `θ₀ = arcsin(−X_g i_{d0}/V₀)` without
 any stability restriction; the formal statements show that local exponential stability
@@ -112,6 +123,19 @@ positive `k_i, k_iv, C`.  Also `|X_g i_{d0}| < V₀` is required for the princip
 -/
 
 noncomputable section
+
+namespace powerlib.GFL.DCLink
+
+/-- The sign change of the DC-voltage integrator, `diag(1, 1, 1, −1)`: the PLL–DC model and the
+carrier integrate `1 − V_dc`, the four-state GFL model `V − 1`. -/
+abbrev integratorFlipMatrix : Matrix (Fin 4) (Fin 4) ℝ := Dynamics.signMatrix ![1, 1, 1, -1]
+
+/-- `(θ, x, V, η) ↦ (θ, x, V, −η)` as a coordinate change. -/
+abbrev integratorFlip : Dynamics.State 4 ≃L[ℝ] Dynamics.State 4 :=
+  Dynamics.signCoord ![1, 1, 1, -1]
+
+end powerlib.GFL.DCLink
+
 namespace powerlib.GFL.DCLink.FourState
 open Matrix
 
@@ -174,15 +198,6 @@ def coordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
 /-- The physical (nonlinear) four-state field. -/
 def field : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift (coordField p)
 
-/-- Coordinate field with `V⁻¹` replaced by the smooth `invExt V`. -/
-def regCoordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
-  ![p.kp * vq p (y 0) (y 2) (y 3) + p.ki * y 1, vq p (y 0) (y 2) (y 3),
-    p.Idc0 / p.C + p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3)) * Dynamics.invExt (y 2),
-    y 2 - 1]
-
-/-- Globally smooth field agreeing with `field` for `V ≥ 1/2`. -/
-def regField : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift (regCoordField p)
-
 /-- The operating point `(θ₀, 0, 1, 0)`. -/
 def opPoint (θ0 : ℝ) : Dynamics.State 4 := WithLp.toLp 2 ![θ0, 0, 1, 0]
 
@@ -193,22 +208,56 @@ def IsEq (θ0 : ℝ) : Prop :=
 /-- `v_{d0} = V₀ cos θ₀` -/
 def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
 
-@[tmio M, powerlib_domain] theorem field_eq_regField {y : Dynamics.State 4}
-    (hy : 1 / 2 ≤ WithLp.ofLp y 2) : field p y = regField p y := by
-  simp only [field, regField, Dynamics.lift]
-  congr 1
-  ext i
-  fin_cases i <;> simp [coordField, regCoordField, Dynamics.invExt_eq hy, div_eq_mul_inv]
+/-- The PLL–DC parameters of the four-state model (`PLLDC.Params`,
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Basic.lean`): `ω_s = ω_g = 1` (per-unit grid
+frequency), `V_dc* = 1`, `i_q0 = 0`, `V_g = V₀`, the same lossless line, the reference offset
+`i_d0`, `I₀ = I_dc0`, the same gains and DC link. -/
+def Params.toPLLDC : PLLDC.Params where
+  ωs := 1
+  ωg := 1
+  kp := p.kp
+  ki := p.ki
+  dcLink := p.dcLink
+  I0 := p.Idc0
+  VdcRef := 1
+  kpv := p.kpv
+  kiv := p.kiv
+  Vg := p.V0
+  line := p.line
+  iq0 := 0
+  id0 := p.id0
+  dcLink_lossless := p.dcLink_lossless
+  dcLink_noInd := p.dcLink_noInd
 
-@[tmio M, powerlib_domain] theorem field_eq_regField_of_near {θ0 : ℝ} {y : Dynamics.State 4}
-    (hy : ‖y - opPoint θ0‖ < 1 / 2) : field p y = regField p y := by
-  apply field_eq_regField
-  have h := Dynamics.abs_coord_sub_le (opPoint θ0) y 2
-  have h2 : (opPoint θ0) 2 = 1 := rfl
-  rw [h2] at h
-  have := (abs_lt.mp (lt_of_le_of_lt h hy)).1
-  show 1 / 2 ≤ y 2
-  linarith
+/-- **The four-state model is the PLL–DC model.** For every parameter set the note's field is the
+PLL–DC field of `toPLLDC` in the coordinates `(θ, x, V, η) = (Δθ, x_pll, V_dc, −ξ_v)`: the PLL–DC
+model transported by the integrator flip, which fixes the operating point.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_eq_transport :
+    field p = Dynamics.transportField integratorFlip 0 p.toPLLDC.field := by
+  funext y
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;>
+    simp [Dynamics.transportField, field, Dynamics.lift, coordField, vq, idc, Params.γ,
+      Params.toPLLDC, PLLDC.Params.field, PLLDC.Params.vgq, PLLDC.Params.vgd, PLLDC.Params.idRef,
+      PLLDC.Params.Rg, PLLDC.Params.Xg, PLLDC.Params.Cdc, p.line_lossless,
+      -mul_eq_mul_left_iff, -mul_eq_mul_right_iff] <;> ring
+
+/-- The integrator flip fixes the operating point. -/
+@[tmio M, powerlib_domain] private theorem affineCoord_opPoint (θ0 : ℝ) :
+    Dynamics.affineCoord integratorFlip 0 (opPoint θ0) = opPoint θ0 := by
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;> simp [Dynamics.affineCoord, opPoint]
+
+/-- The operating point is an equilibrium of the note's field exactly when it is one of the PLL–DC
+model. -/
+@[tmio M, powerlib_domain] private theorem field_opPoint_eq_zero_iff (θ0 : ℝ) :
+    field p (opPoint θ0) = 0 ↔ p.toPLLDC.field (opPoint θ0) = 0 := by
+  rw [field_eq_transport]
+  conv_lhs => rw [← affineCoord_opPoint θ0]
+  exact Dynamics.transportField_affineCoord_eq_zero_iff integratorFlip 0 _ _
 
 @[tmio M, powerlib_domain] theorem isEq_iff (hC : p.C ≠ 0) (θ0 : ℝ) :
     field p (opPoint θ0) = 0 ↔ IsEq p θ0 := by
@@ -234,11 +283,6 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
     · simp [coordField, idc, Params.γ, h2]; field_simp; ring
     · simp [coordField]
 
-@[tmio M, powerlib_domain] theorem regField_opPoint {θ0 : ℝ} (hC : p.C ≠ 0) (h : IsEq p θ0) :
-    regField p (opPoint θ0) = 0 := by
-  rw [← field_eq_regField p (by simp [opPoint]; norm_num)]
-  exact (isEq_iff p hC θ0).2 h
-
 /-- Principal equilibrium branch: `θ₀ = arcsin(−X_g i_{d0}/V₀)`, `|X_g i_{d0}| < V₀`. -/
 @[tmio M, powerlib_domain] theorem principal_branch (hV0 : 0 < p.V0)
     (hlt : |p.Xg * p.id0| < p.V0) :
@@ -247,23 +291,19 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
   have hc : |-(p.Xg * p.id0)| < p.V0 := by rwa [abs_neg]
   exact ⟨SpecialFunctions.mul_sin_arcsin_div hc.le hV0, SpecialFunctions.cos_arcsin_div_pos hc hV0⟩
 
-@[tmio M, powerlib_domain] theorem contDiff_regField : ContDiff ℝ 1 (regField p) := by
-  have hinv : ContDiff ℝ 1 Dynamics.invExt := Dynamics.contDiff_invExt
-  apply Dynamics.contDiff_lift
-  apply contDiff_pi.2
-  intro i
-  fin_cases i
-  · simp [regCoordField, vq, idc]; fun_prop
-  · simp [regCoordField, vq, idc]; fun_prop
-  · simp only [regCoordField]
-    simp
-    have h2 : ContDiff ℝ 1 (fun y : Fin 4 → ℝ => Dynamics.invExt (y 2)) :=
-      hinv.comp (contDiff_apply ℝ ℝ (2 : Fin 4))
-    have h1 : ContDiff ℝ 1 (fun y : Fin 4 → ℝ =>
-        p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3))) := by
-      simp [idc]; fun_prop
-    exact contDiff_const.add (h1.mul h2)
-  · simp [regCoordField]; fun_prop
+/-- The note's field is `C¹` off the plane `V = 0` (the PLL–DC model,
+`PLLDC.Params.field_contDiffOn`, read through the integrator flip); every operating point lies
+there. -/
+@[tmio M, powerlib_domain] theorem field_contDiffOn :
+    ContDiffOn ℝ 1 (field p) PLLDC.Params.nonzeroVdc := by
+  rw [field_eq_transport]
+  have hin : ContDiff ℝ 1 (fun y : Dynamics.State 4 => integratorFlip.symm (y - 0)) :=
+    integratorFlip.symm.contDiff.comp (contDiff_id.sub contDiff_const)
+  have hmaps : Set.MapsTo (fun y : Dynamics.State 4 => integratorFlip.symm (y - 0))
+      PLLDC.Params.nonzeroVdc PLLDC.Params.nonzeroVdc := fun y hy => by
+    simpa [PLLDC.Params.nonzeroVdc] using hy
+  exact integratorFlip.contDiff.comp_contDiffOn
+    (p.toPLLDC.field_contDiffOn.comp hin.contDiffOn hmaps)
 
 /-! ## Jacobian -/
 
@@ -288,62 +328,53 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
   ext i j
   fin_cases i <;> fin_cases j <;> simp [jacGen, A0, vd0, idc] <;> first | ring1 | (left; ring1)
 
-@[tmio M, powerlib_domain] theorem hasFDerivAt_regCoordField {y : Fin 4 → ℝ} (hy : 1 / 2 < y 2) :
-    HasFDerivAt (regCoordField p)
-      (Matrix.toLin' (jacGen p (y 0) (y 2) (y 3))).toContinuousLinearMap y := by
-  have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 4) y
-  have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 4) y
-  have h2 := hasFDerivAt_apply (𝕜 := ℝ) (2 : Fin 4) y
-  have h3 := hasFDerivAt_apply (𝕜 := ℝ) (3 : Fin 4) y
-  have hy0 : y 2 ≠ 0 := by linarith
-  have hidc := ((h2.sub_const 1).const_mul p.kpv).const_sub p.id0 |>.sub (h3.const_mul p.kiv)
-  have hq := (h0.sin.const_mul (-p.V0)).sub (hidc.const_mul p.Xg)
-  have hinvd : HasDerivAt Dynamics.invExt (-(y 2 ^ 2)⁻¹) (y 2) := by
-    have hev : Dynamics.invExt =ᶠ[nhds (y 2)] fun V => V⁻¹ := by
-      filter_upwards [Ioi_mem_nhds hy] with V hV
-      exact Dynamics.invExt_eq (le_of_lt hV)
-    exact (hasDerivAt_inv hy0).congr_of_eventuallyEq hev
-  have hinv := hinvd.comp_hasFDerivAt y h2
-  rw [hasFDerivAt_pi']
-  intro i
-  fin_cases i
-  · refine Dynamics.hasFDerivAt_of_eq ((hq.const_mul p.kp).add (h1.const_mul p.ki))
-      (fun z => by simp [regCoordField, vq, idc]) ?_
-    ext v
-    simp [jacGen, dotProduct, Fin.sum_univ_four]
-    ring
-  · refine Dynamics.hasFDerivAt_of_eq hq (fun z => by simp [regCoordField, vq, idc]) ?_
-    ext v
-    simp [jacGen, dotProduct, Fin.sum_univ_four]
-    ring
-  · have hP := ((h0.cos.const_mul p.V0).mul hidc).const_mul p.γ
-    refine Dynamics.hasFDerivAt_of_eq ((hP.mul hinv).const_add (p.Idc0 / p.C))
-      (fun z => by simp [regCoordField, idc]) ?_
-    ext v
-    simp [jacGen, dotProduct, Fin.sum_univ_four, idc,
-      Dynamics.invExt_eq (le_of_lt hy)]
-    field_simp
-    ring
-  · refine Dynamics.hasFDerivAt_of_eq (h2.sub_const 1) (fun z => by simp [regCoordField]) ?_
-    ext v
-    simp [jacGen, dotProduct, Fin.sum_univ_four]
+/-- The closed-form Jacobian is the PLL–DC model's Jacobian conjugated by the integrator flip, at
+every state with `V ≠ 0` (the PLL–DC state `(θ, x, V, −η)`). -/
+@[tmio M, powerlib_domain] theorem jacGen_eq_jacobian (y : Dynamics.State 4) (hy : y 2 ≠ 0) :
+    jacGen p (y 0) (y 2) (y 3) =
+      integratorFlipMatrix * p.toPLLDC.jacobian (integratorFlip y) * integratorFlipMatrix := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [jacGen, PLLDC.Params.jacobian, Dynamics.signMatrix, Params.toPLLDC, PLLDC.Params.idRef,
+      PLLDC.Params.vgd, PLLDC.Params.vgq, PLLDC.Params.pccP, idc, Params.γ, PLLDC.Params.Rg,
+      PLLDC.Params.Xg, PLLDC.Params.Cdc, p.line_lossless, -mul_eq_mul_left_iff,
+      -mul_eq_mul_right_iff] <;>
+    field_simp <;> ring
 
-/-- `A₀` is the Jacobian of the (regularized) field at the operating point. -/
-@[tmio M, powerlib_domain] theorem fderiv_regField_opPoint (θ0 : ℝ) :
-    fderiv ℝ (regField p) (opPoint θ0) =
-      Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (A0 p θ0) := by
-  have := hasFDerivAt_regCoordField p (y := ![θ0, 0, 1, 0]) (by simp; norm_num)
-  rw [← jacGen_opPoint]
-  exact (Dynamics.hasFDerivAt_lift (by simpa [opPoint] using this)).fderiv
+/-- **The Jacobian of the note's field** at every state with `V ≠ 0` is `jacGen`: the PLL–DC model's
+derivative (`PLLDC.Params.hasFDerivAt_field`) read through the integrator flip
+(`Dynamics.hasFDerivAt_transportField`, `jacGen_eq_jacobian`). -/
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field {y : Dynamics.State 4} (hy : y 2 ≠ 0) :
+    HasFDerivAt (field p)
+      (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (jacGen p (y 0) (y 2) (y 3))) y := by
+  have hx : integratorFlip y 2 ≠ 0 := by simpa using hy
+  have h := Dynamics.hasFDerivAt_transportField integratorFlip 0
+    (p.toPLLDC.hasFDerivAt_field hx)
+  have hxy : Dynamics.affineCoord integratorFlip 0 (integratorFlip y) = y := by
+    apply WithLp.ofLp_injective
+    ext i
+    fin_cases i <;> simp [Dynamics.affineCoord]
+  rw [hxy, ← field_eq_transport] at h
+  refine h.congr_fderiv ?_
+  rw [jacGen_eq_jacobian p y hy, map_mul, map_mul, Dynamics.signCoord_symm]
+  rfl
 
-/-- The physical field has the same Jacobian `A₀` at the operating point. -/
+/-- `A₀` is the PLL–DC model's Jacobian at the operating point conjugated by the integrator flip. -/
+@[tmio M, powerlib_domain] theorem A0_eq_jacobian (θ0 : ℝ) :
+    A0 p θ0 = integratorFlipMatrix * p.toPLLDC.jacobian (opPoint θ0) * integratorFlipMatrix := by
+  have h := jacGen_eq_jacobian p (opPoint θ0) (by simp [opPoint])
+  have hflip : integratorFlip (opPoint θ0) = opPoint θ0 := by
+    simpa [Dynamics.affineCoord] using affineCoord_opPoint θ0
+  rw [hflip] at h
+  rw [← jacGen_opPoint, ← h]
+  simp [opPoint]
+
+/-- The physical field has the Jacobian `A₀` at the operating point (`hasFDerivAt_field`). -/
 @[tmio M, powerlib_domain] theorem fderiv_field_opPoint (θ0 : ℝ) :
     fderiv ℝ (field p) (opPoint θ0) =
       Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (A0 p θ0) := by
-  rw [← fderiv_regField_opPoint]
-  apply Filter.EventuallyEq.fderiv_eq
-  filter_upwards [Metric.ball_mem_nhds (opPoint θ0) (by norm_num : (0 : ℝ) < 1 / 2)] with y hy
-  exact field_eq_regField_of_near p (by simpa [dist_eq_norm] using hy)
+  rw [(hasFDerivAt_field p (by simp [opPoint] : (opPoint θ0) 2 ≠ 0)).fderiv, ← jacGen_opPoint]
+  simp [opPoint]
 
 /-! ## Amplitude modulation: `A₁` and `b₁` -/
 
@@ -509,7 +540,23 @@ def a0 (θ0 : ℝ) : ℝ := p.ki * vd0 p θ0 * omegaClSq p θ0 - Γc p * p.ki * 
   linarith
 
 
-/-! ## The four-state GFL family -/
+/-- The PLL–DC model's Jacobian at the image of the operating point has the quartic of `A₀` (it is
+`A₀` conjugated by the involution `integratorFlipMatrix`, `A0_eq_jacobian`). -/
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix_jacobian {θ0 : ℝ}
+    (h : p.V0 * Real.sin θ0 = -(p.Xg * p.id0)) (s : ℂ) :
+    (Linear.characteristicMatrix (p.toPLLDC.jacobian (opPoint θ0)) s).det =
+      s ^ 4 + (a3 p θ0 : ℂ) * s ^ 3 + (a2 p θ0 : ℂ) * s ^ 2 + (a1 p θ0 : ℂ) * s +
+        (a0 p θ0 : ℂ) := by
+  have hF : integratorFlipMatrix * integratorFlipMatrix = 1 := Dynamics.signMatrix_mul_self _
+  have hJ : p.toPLLDC.jacobian (opPoint θ0) =
+      integratorFlipMatrix * A0 p θ0 * integratorFlipMatrix := by
+    rw [A0_eq_jacobian, ← Matrix.mul_assoc, ← Matrix.mul_assoc, hF, Matrix.one_mul,
+      Matrix.mul_assoc, hF, Matrix.mul_one]
+  rw [hJ, Linear.characteristicMatrix_conj hF, Matrix.det_conj_of_mul_eq_one
+    (Linear.complexify_mul_eq_one hF) (Linear.complexify_mul_eq_one hF)]
+  exact det_characteristicMatrix_A0_quartic p h s
+
+/-! ## The four-state models read as the PLL–DC model -/
 
 /-- A four-state GFL model read about a selected angle `θ₀`: the operating point is
 `(θ₀, 0, 1, 0)`. -/
@@ -519,134 +566,150 @@ structure Model where
   /-- The selected angle `θ₀`. -/
   θ : ℝ
 
-/-- The physical field translated so that the selected operating point is the origin. -/
+/-- The note's field translated so that the selected operating point is the origin (the
+coordinates of the boundary analyses, `GFL.DCLink.FourStateBoundary`). -/
 def Model.field (m : Model) (z : Dynamics.State 4) : Dynamics.State 4 :=
   FourState.field m.params (z + opPoint m.θ)
 
-/-- Requirements on the four-state GFL models, all static. -/
-inductive Requirement
-  /-- `(θ₀, 0, 1, 0)` is an equilibrium (`IsEq p θ₀`) and `C ≠ 0`. -/
-  | equilibrium
-  /-- The quartic coefficients of `det(λI − A₀)` satisfy the Routh conditions
-  `a₃, a₁, a₀ > 0`, `a₁² + a₃² a₀ < a₃ a₂ a₁`. -/
-  | routh
-  /-- The constant coefficient is negative, `a₀ < 0`. -/
-  | constNeg
+/-- The PLL–DC reading of a four-state model: the PLL–DC system of `toPLLDC` about the
+operating point `(θ₀, 0, 1, 0)` (fixed by the integrator flip). The behaviour of a four-state
+model is that of its image. -/
+def Model.toPLLDC (m : Model) : PLLDC.Model := ⟨m.params.toPLLDC, opPoint m.θ⟩
 
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model) : Requirement → Prop
-  | .equilibrium => IsEq m.params m.θ ∧ m.params.C ≠ 0
-  | .routh => 0 < a3 m.params m.θ ∧ 0 < a1 m.params m.θ ∧ 0 < a0 m.params m.θ ∧
-      a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ <
-        a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ
-  | .constNeg => a0 m.params m.θ < 0
-
-/-- The translation of the sentences: the local ones into an equilibrium meeting the Routh
-conditions, instability into an equilibrium with `a₀ < 0`, passivity into nothing. The global
-sentences, decay rates, sampled contraction and conservation are not decided by the
-linearization and are translated into the whole language, which no model meets (unavailable
-translation coverage). -/
-def translate : Sentence → Set Requirement
-  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
-  | .flow .locallyExponentiallyStable => {.equilibrium, .routh}
-  | .flow .unstable => {.equilibrium, .constNeg}
-  | .flow _ => Set.univ
-  | .passive => ∅
-  | .envelope _ => Set.univ
-
-/-- The four-state GFL family: every model read as its physical field translated to the
-selected operating point. -/
-def family : Family Model Requirement 4 0 :=
-  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
-
-@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
-  fun _ => rfl
-
-/-! ### Implementation evidence (private) -/
-
-/-- A flow sentence of a model is the sentence of the untranslated field at `(θ₀, 0, 1, 0)`. -/
+/-- A flow sentence of the image is the sentence of the note's field at the operating point
+(`field_eq_transport`, `Dynamics.holds_transport_iff`). -/
 @[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
-    (pt := fun m => opPoint m.θ) family_isAutonomous
+    m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔
+      P.holds (FourState.field m.params) (opPoint m.θ) := by
+  have h : m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔
+      P.holds m.params.toPLLDC.field (opPoint m.θ) :=
+    Spectral.mem_den_flow_iff_shift (f := fun m : PLLDC.Model => m.p.field)
+      (pt := PLLDC.Model.x) PLLDC.family_isAutonomous
+  rw [h, field_eq_transport]
+  conv_rhs => rw [← affineCoord_opPoint m.θ]
+  exact (Dynamics.holds_transport_iff integratorFlip 0 P).symm
+
+/-! ### The PLL–DC model's requirements at the image -/
+
+/-- With `C ≠ 0` the image meets the PLL–DC model's equilibrium requirement exactly when `IsEq`
+holds. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem meets_equilibrium_iff (m : Model) (hC : m.params.C ≠ 0) :
+    PLLDC.Meets m.toPLLDC .equilibrium ↔ IsEq m.params m.θ := by
+  change m.params.toPLLDC.field (opPoint m.θ) = 0 ↔ _
+  rw [← field_opPoint_eq_zero_iff, isEq_iff m.params hC]
+
+/-- At a point with `v_q = 0` the image meets the PLL–DC model's 4×4 Routh conditions exactly when
+the quartic coefficients of `det(λI − A₀)` meet the quartic Routh conditions
+(`det_characteristicMatrix_jacobian`, `Criteria.routhFin4_iff_of_det_characteristicMatrix_quartic`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem meets_routh_iff (m : Model)
+    (h : m.params.V0 * Real.sin m.θ = -(m.params.Xg * m.params.id0)) :
+    PLLDC.Meets m.toPLLDC .routh ↔ 0 < a3 m.params m.θ ∧ 0 < a1 m.params m.θ ∧
+      0 < a0 m.params m.θ ∧ a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ <
+        a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ :=
+  Criteria.routhFin4_iff_of_det_characteristicMatrix_quartic _
+    (det_characteristicMatrix_jacobian m.params h)
+
+/-- At a point with `v_q = 0` the image meets the PLL–DC model's negative-determinant requirement
+exactly when `a₀ < 0`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem meets_detNeg_iff (m : Model)
+    (h : m.params.V0 * Real.sin m.θ = -(m.params.Xg * m.params.id0)) :
+    PLLDC.Meets m.toPLLDC .detNeg ↔ a0 m.params m.θ < 0 := by
+  obtain ⟨-, -, -, hd⟩ := Criteria.coeffs_of_det_characteristicMatrix_quartic _
+    (det_characteristicMatrix_jacobian m.params h)
+  change (m.params.toPLLDC.jacobian (opPoint m.θ)).det < 0 ↔ _
+  rw [hd]
+
+/-- At a point with `v_q = 0` the image is off the PLL–DC model's Routh boundary exactly when the
+quartic of `A₀` meets the quartic Routh conditions or violates them strictly
+(`Criteria.routhViolationFin4_iff_of_det_characteristicMatrix_quartic`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem meets_offBoundary_iff (m : Model)
+    (h : m.params.V0 * Real.sin m.θ = -(m.params.Xg * m.params.id0)) :
+    PLLDC.Meets m.toPLLDC .offBoundary ↔
+      (0 < a3 m.params m.θ ∧ 0 < a1 m.params m.θ ∧ 0 < a0 m.params m.θ ∧
+        a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ <
+          a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ) ∨
+      (a3 m.params m.θ < 0 ∨ a2 m.params m.θ < 0 ∨ a1 m.params m.θ < 0 ∨ a0 m.params m.θ < 0 ∨
+        a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ <
+          a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ) :=
+  Iff.or (meets_routh_iff m h)
+    (Criteria.routhViolationFin4_iff_of_det_characteristicMatrix_quartic _
+      (det_characteristicMatrix_jacobian m.params h))
+
+/-- Without capacitance the DC row of the PLL–DC model's Jacobian at the image vanishes
+(`x / 0 = 0`), so its determinant is zero. -/
+@[tmio M, powerlib_domain] private theorem det_jacobian_eq_zero_of_C_eq_zero {m : Model}
+    (hC : m.params.C = 0) : (m.params.toPLLDC.jacobian (opPoint m.θ)).det = 0 := by
+  have hC' : m.params.dcLink.C = 0 := hC
+  refine Matrix.det_eq_zero_of_row_eq_zero 2 fun j => ?_
+  fin_cases j <;> simp [PLLDC.Params.jacobian, Params.toPLLDC, PLLDC.Params.Cdc, hC']
 
 /-! ### Local exponential stability of the operating point -/
 
 /-- Four-state GFL (PLL + dc-voltage loop): the quartic Routh–Hurwitz conditions on the
-coefficients of `det(λI − A₀)` place the operating point in local exponential stability. -/
+coefficients of `det(λI − A₀)` at an equilibrium place the PLL–DC image in local exponential
+stability (`PLLDC.mem_den_locallyExponentiallyStable_iff`, `meets_routh_iff`). -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_routh (p : Params)
     (hC : p.C ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0) (h3 : 0 < a3 p θ0) (h1 : 0 < a1 p θ0)
     (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
-    connection% (Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)) := by
-  change Model.mk p θ0 ∈ family.den (.flow .locallyExponentiallyStable)
-  exact mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_congr_nhds
-    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-      fun y hy => field_eq_regField_of_near p hy)
-    (Criteria.locallyExponentiallyStable_of_jacobian_quartic (A0 p θ0)
-      (contDiff_regField p) (regField_opPoint p hC heq)
-      (fderiv_regField_opPoint p θ0) (det_characteristicMatrix_A0_quartic p heq.1)
-      h3 h1 h0 hg))
+    connection% ((Model.mk p θ0).toPLLDC ∈
+      PLLDC.family.den (.flow .locallyExponentiallyStable)) := by
+  have h := PLLDC.mem_den_locallyExponentiallyStable_iff (Model.mk p θ0).toPLLDC
+    (by simp [Model.toPLLDC, opPoint])
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h]
+  exact ⟨(meets_equilibrium_iff ⟨p, θ0⟩ hC).mpr heq,
+    (meets_routh_iff ⟨p, θ0⟩ heq.1).mpr ⟨h3, h1, h0, hg⟩⟩
 
-/-! ### Implementation evidence: instability (private) -/
+/-- **Local exponential stability of a four-state model.** The PLL–DC image is locally
+exponentially stable exactly when the operating point is an equilibrium (`IsEq`, `C ≠ 0`) whose
+quartic `det(λI − A₀)` meets the Routh conditions: the PLL–DC model's converse linearization off the
+singular plane (`PLLDC.mem_den_locallyExponentiallyStable_iff`) read through
+`meets_equilibrium_iff` and `meets_routh_iff`; with `C = 0` the determinant vanishes, which the
+Routh conditions exclude. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model) :
+    connection% (m.toPLLDC ∈ PLLDC.family.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : Model | IsEq m.params m.θ ∧ m.params.C ≠ 0 ∧ 0 < a3 m.params m.θ ∧
+        0 < a1 m.params m.θ ∧ 0 < a0 m.params m.θ ∧
+        a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ <
+          a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ}) := by
+  have h := PLLDC.mem_den_locallyExponentiallyStable_iff m.toPLLDC
+    (by simp [Model.toPLLDC, opPoint])
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h]
+  constructor
+  · rintro ⟨he, hr⟩
+    have hC : m.params.C ≠ 0 := fun hC => by
+      obtain ⟨-, -, hdet, -⟩ := hr
+      have h0 := det_jacobian_eq_zero_of_C_eq_zero hC
+      change 0 < (m.params.toPLLDC.jacobian (opPoint m.θ)).det at hdet
+      rw [h0] at hdet
+      exact lt_irrefl _ hdet
+    have heq : IsEq m.params m.θ := (meets_equilibrium_iff m hC).mp he
+    exact ⟨heq, hC, (meets_routh_iff m heq.1).mp hr⟩
+  · rintro ⟨heq, hC, hr⟩
+    exact ⟨(meets_equilibrium_iff m hC).mpr heq, (meets_routh_iff m heq.1).mpr hr⟩
 
-/-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field. -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hn : Meets m .constNeg) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
-  change m ∈ family.den (.flow .unstable)
-  obtain ⟨heq, hC⟩ := he
-  exact mem_den_flow_iff.mpr ((Dynamics.unstable_congr_nhds
-    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-      fun y hy => field_eq_regField_of_near m.params hy)).mpr
-    (Criteria.unstable_of_jacobian_quartic_violation (A0 m.params m.θ)
-      (contDiff_regField m.params) (regField_opPoint m.params hC heq)
-      (fderiv_regField_opPoint m.params m.θ) (det_characteristicMatrix_A0_quartic m.params heq.1)
-      (Or.inr (Or.inr (Or.inr (Or.inl hn))))))
+/-! ### Instability of the operating point -/
 
-/-! ### Soundness of the translation -/
-
-/-- No model has `a₀ > 0` and `a₀ < 0`: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_domain] theorem realize_univ :
-    connection% (TMIO.realize Meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.realize_univ_eq_empty_of .routh .constNeg fun m hr hn => ?_
-  obtain ⟨-, -, h0, -⟩ : Meets m .routh := hr
-  exact lt_asymm h0 hn
-
-/-- Every translation of the four-state GFL family is sound: its translation chain lies below
-its semantics connection. The Routh conditions at an equilibrium prove the local sentences,
-`a₀ < 0` proves instability (LeanForControl's linearization theorems for the smooth `regField`,
-transported to the physical field by locality and moved to the origin), and passivity holds
-without requirement. -/
-@[tmio TM, powerlib_domain] theorem chain_le_semantics :
-    connection% (∀ P, family.chain P ≤ family.semantics P) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.chain_le_semantics_of_localTable_same
-    (Rs := {.equilibrium, .routh}) (Ru := {.equilibrium, .constNeg})
-    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _ | _
-    · cases P <;> rfl
-    · rfl
-    · rfl
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    obtain ⟨heq, hC⟩ : Meets m .equilibrium := hm .equilibrium (by simp)
-    obtain ⟨h3, h1, h0, hg⟩ : Meets m .routh := hm .routh (by simp)
-    exact mem_den_locallyExponentiallyStable_of_routh m.params hC heq h3 h1 h0 hg
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact unstable_of_meets (hm .equilibrium (by simp)) (hm .constNeg (by simp))
-
-/-! ### Stability of the operating point -/
+/-- `a₀ < 0` at an equilibrium gives a positive real eigenvalue and instability of the PLL–DC
+image (`PLLDC.mem_den_unstable_of_det_neg`, `meets_detNeg_iff`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_a0_neg (p : Params) (hC : p.C ≠ 0)
+    {θ0 : ℝ} (heq : IsEq p θ0) (h0 : a0 p θ0 < 0) :
+    connection% ((Model.mk p θ0).toPLLDC ∈ PLLDC.family.den (.flow .unstable)) :=
+  PLLDC.mem_den_unstable_of_det_neg _ (by norm_num [Model.toPLLDC, Params.toPLLDC])
+    ((meets_equilibrium_iff ⟨p, θ0⟩ hC).mpr heq) ((meets_detNeg_iff ⟨p, θ0⟩ heq.1).mpr h0)
 
 /-- Four-state GFL: `cos 2θ₀ < 0` (operating angle beyond 45°) gives `a₀ = det A₀ < 0`, a
-positive real eigenvalue, and instability of the physical field, for all positive `C, k_i, k_iv`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_cos_two_mul_neg (p : Params) (hC : 0 < p.C)
-    (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0)
-    (hcos : Real.cos (2 * θ0) < 0) :
-    connection% (Model.mk p θ0 ∈ family.den (.flow .unstable)) := by
+positive real eigenvalue, and instability, for all positive `C, k_i, k_iv`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_cos_two_mul_neg (p : Params)
+    (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
+    (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :
+    connection% ((Model.mk p θ0).toPLLDC ∈ PLLDC.family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   have hγ : 0 < p.γ := by unfold Params.γ; positivity
-  refine unstable_of_meets ⟨heq, hC.ne'⟩ ?_
-  show a0 p θ0 < 0
+  refine mem_den_unstable_of_a0_neg p hC.ne' heq ?_
   rw [a0_eq p heq.1]
   have : 0 < p.γ * p.ki * p.kiv * p.V0 ^ 2 := by positivity
   nlinarith
@@ -655,7 +718,7 @@ positive real eigenvalue, and instability of the physical field, for all positiv
 @[tmio TM, powerlib_domain] theorem not_mem_den_lyapunovStable_of_cos_two_mul_neg (p : Params)
     (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
     (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :
-    connection% (Model.mk p θ0 ∉ family.den (.flow .lyapunovStable)) := by
+    connection% ((Model.mk p θ0).toPLLDC ∉ PLLDC.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_mem_den_lyapunovStable_of_unstable
     (mem_den_unstable_of_cos_two_mul_neg p hC hki hkiv hV0 heq hcos)
@@ -663,10 +726,11 @@ positive real eigenvalue, and instability of the physical field, for all positiv
 /-- Necessary condition (`cos 2θ₀ ≥ 0`, in contrapositive form): if `cos 2θ₀ < 0` the operating
 point is not locally exponentially stable, i.e. local exponential stability forces
 `cos 2θ₀ ≥ 0` (`|θ₀| ≤ 45°` on the principal branch). -/
-@[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg (p : Params)
-    (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
+@[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg
+    (p : Params) (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
     (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :
-    connection% (Model.mk p θ0 ∉ family.den (.flow .locallyExponentiallyStable)) := by
+    connection% ((Model.mk p θ0).toPLLDC ∉
+      PLLDC.family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have h := not_mem_den_lyapunovStable_of_cos_two_mul_neg p hC hki hkiv hV0 heq hcos
   unfold powerlib.TMIO.Statement at h
@@ -695,83 +759,28 @@ def fieldAngle (_u ud : ℝ) (z : Dynamics.State 4) : Dynamics.State 4 :=
   show HasDerivAt (fun _ : ℝ => fderiv ℝ (fieldAngle p 0 ud) z) 0 u
   exact hasDerivAt_const u _
 
-/-! ### Exactness of the local exponential translation -/
-
-/-- Without capacitance (`C = 0`) the dc-bus voltage is frozen: `V` is a linear first integral
-of the regularized field, so it has no locally exponentially stable point. -/
-@[tmio TM, powerlib_domain] private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : Dynamics.State 4) :
-    ¬ LocallyExponentiallyStable (regField p) x := by
-  refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral (contDiff_regField p)
-    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 2) ?_ fun y => ?_
-  · intro h
-    have := congrArg (fun L : Dynamics.State 4 →L[ℝ] ℝ => L (EuclideanSpace.single 2 1)) h
-    simp at this
-  · simp [regField, Dynamics.lift, regCoordField, Params.γ, hC]
-
-/-- The local exponential translation is exact: a model is locally exponentially stable at
-`(θ₀, 0, 1, 0)` exactly when the point is an equilibrium (`IsEq`, `C ≠ 0`) whose quartic
-`det(λI − A₀)` meets the Routh conditions. Converse linearization of the regularized field
-(which is the physical field on a ball around the point) and the quartic Routh–Hurwitz
-criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential stability. -/
-@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
-    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian_local
-    (fun m P => mem_den_flow_iff) ∅ (fun m => A0 m.params m.θ) (fun m _ hm => ?_)
-    (fun m => Metric.ball (opPoint m.θ) (1 / 2)) (fun _ _ => Metric.isOpen_ball)
-    (fun _ _ => Metric.mem_ball_self (by norm_num))
-    (fun m _ => (contDiff_regField m.params).contDiffOn.congr fun y hy =>
-      field_eq_regField_of_near m.params (mem_ball_iff_norm.mp hy))
-    (fun m _ => fderiv_field_opPoint m.params m.θ) fun m _ he hH => ?_)
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    obtain ⟨heq, hC⟩ : Meets m .equilibrium := hm .equilibrium (by simp [family, translate])
-    obtain ⟨h3, h1, h0, hg⟩ : Meets m .routh := hm .routh (by simp [family, translate])
-    exact mem_den_locallyExponentiallyStable_of_routh m.params hC heq h3 h1 h0 hg
-  rw [(connection_proof% TMIO.mem_realize)]
-  by_cases hC : m.params.C = 0
-  · -- the regularized field would be locally exponentially stable, but `V` is frozen
-    have hreg : regField m.params (opPoint m.θ) = 0 := by
-      rwa [← field_eq_regField_of_near m.params (by simp : ‖opPoint m.θ - opPoint m.θ‖ < 1 / 2)]
-    exact absurd ((Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
-      (contDiff_regField m.params) (fderiv_regField_opPoint m.params m.θ)).mpr ⟨hreg, hH⟩)
-      (not_les_regField_of_C_eq_zero hC _)
-  have heq : IsEq m.params m.θ := (isEq_iff m.params hC m.θ).mp he
-  rw [Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
-    (det_characteristicMatrix_A0_quartic m.params heq.1)] at hH
-  rintro q (rfl | rfl)
-  · exact ⟨heq, hC⟩
-  · exact hH
-
 /-! ### Instability away from equilibrium -/
 
 /-- An unbalanced model: no ac source (`V₀ = 0`), unit capacitance and dc source current, all
 gains and references zero, at `θ₀ = 0`; the dc-bus voltage ramps, `V̇ = I_dc0 / C = 1`. -/
 def offEquilibrium : Model := ⟨⟨0, ⟨0, 0, 0⟩, 0, 0, 0, 0, 0, ⟨0, 1, 0⟩, 1, rfl, rfl, rfl⟩, 0⟩
 
-/-- A point that is not an equilibrium is unstable: the solution through it leaves it (the field
-is the smooth `regField` near the point, `Spectral.mem_den_unstable_of_ne_zero_local`). -/
-@[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
-    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.mem_den_unstable_of_ne_zero_local (fun m P => mem_den_flow_iff)
-    Metric.isOpen_ball (Metric.mem_ball_self (by norm_num : (0 : ℝ) < 1 / 2))
-    ((contDiff_regField _).contDiffOn.congr fun y hy =>
-      field_eq_regField_of_near _ (mem_ball_iff_norm.mp hy)) fun h => ?_
+/-- The image of `offEquilibrium` is not an equilibrium: its DC-link component is `1`. -/
+@[tmio M, powerlib_domain] private theorem offEquilibrium_field_ne_zero :
+    offEquilibrium.toPLLDC.p.field offEquilibrium.toPLLDC.x ≠ 0 := fun h => by
   have := congrArg (fun y : Dynamics.State 4 => y 2) h
-  simp [Params.C, offEquilibrium, FourState.field, Dynamics.lift, coordField, opPoint,
-      Params.γ] at this
+  simp [Model.toPLLDC, offEquilibrium, opPoint, Params.toPLLDC, PLLDC.Params.field,
+    PLLDC.Params.Cdc, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.vgq] at this
 
-/-- The instability translation is sound but not exact: instability is the failure of Lyapunov
-stability, so the non-equilibrium point `offEquilibrium` is unstable, while the translation asks
-for an equilibrium. -/
-@[tmio TM, powerlib_domain] theorem not_exact_unstable :
-    connection% (¬ family.Exact (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
-    (by simp [family, translate]) (by simp [Passive.SeriesRLC.reactance,
-        Params.Xg, Params.C, family, Meets, IsEq, offEquilibrium])
+/-- A point that is not an equilibrium is unstable: the PLL–DC image of `offEquilibrium`
+(`V_dc* = 1`, off the singular plane) leaves its point
+(`PLLDC.mem_den_unstable_of_field_ne_zero`). -/
+@[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium.toPLLDC ∈ PLLDC.family.den (.flow .unstable)) :=
+  PLLDC.mem_den_unstable_of_field_ne_zero _ (by simp [Model.toPLLDC, opPoint])
+    offEquilibrium_field_ne_zero
 
-/-! ### The Lyapunov translation -/
+/-! ### The Lyapunov stable undamped PLL -/
 
 /-- Undamped PLL with a damped dc loop: `V₀ = k_i = 1`, `X_g = i_{d0} = k_p = I_dc0 = 0`,
 `k_pv = k_iv = 1`, `C = 3/2` (so `γ = 1`), at `θ₀ = 0`. The field is the pendulum `θ̇ = x`,
@@ -822,7 +831,7 @@ energy `1 − cos θ + x²/2` of the PLL is conserved, and the dc quadratic `u²
 input-to-state argument: the sum is a local Lyapunov function, positive away from the point
 (`Dynamics.pendulumEnergy_pos`). -/
 @[tmio TM, powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
-    connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
+    connection% (undampedPLL.toPLLDC ∈ PLLDC.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff.mpr ?_
   change LyapunovStable _ _
@@ -879,18 +888,5 @@ input-to-state argument: the sum is a local Lyapunov function, positive away fro
       ring
     rw [hgoal]
     exact div_nonpos_of_nonpos_of_nonneg (by linarith) hVpos.le
-
-/-- The Lyapunov translation is sound but not exact: `undampedPLL` is Lyapunov stable, but its
-quartic `(λ² + 1)(λ² + λ + 1)` has the imaginary pair `±i`, so the Routh inequality
-`a₁² + a₃² a₀ < a₃ a₂ a₁` fails with equality (`2 = 2`). -/
-@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
-    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .routh)
-    (by simp [family, translate]) fun hr => ?_
-  obtain ⟨-, -, -, hg⟩ : Meets undampedPLL .routh := hr
-  norm_num [Passive.SeriesRLC.reactance, Params.Xg, Params.C, a1, a2, a3, a0, twoAlphaCl_eq,
-      omegaClSq_eq, Γc, vd0, undampedPLL, Params.γ] at hg
-
 
 end powerlib.GFL.DCLink.FourState

@@ -22,9 +22,9 @@ Results.
 Family and connection conclusions.
 No new family and no connection conclusion. The integral identities concern solutions of the
 input-driven field `fieldAngle` of this specific model, which lies outside the autonomous sentence
-language of `FourState.family`; they are kept as private implementation evidence (Rules §3a). The
-public results are the static component forms `fieldAngle_apply_zero`, `fieldAngle_apply_one`
-and `fieldAngle_apply_three`.
+language of `PLLDC.family`, through which the four-state models are read; they are kept as private
+implementation evidence (Rules §3a). The public results are the static component forms
+`fieldAngle_apply_zero`, `fieldAngle_apply_one` and `fieldAngle_apply_three`.
 -/
 
 noncomputable section

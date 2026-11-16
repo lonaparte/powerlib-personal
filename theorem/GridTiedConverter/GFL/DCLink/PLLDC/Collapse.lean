@@ -1,22 +1,23 @@
-import theorem.GridTiedConverter.GFL.DCLink.ModelBStability
+import theorem.GridTiedConverter.GFL.DCLink.PLLDC.Stability
 import theorem.Dynamics.Degenerate.PlaneCollapse
 
-/-! # GFL model B on the singular plane: the degenerate power balance
+/-! # The GFL PLL–DC model on the singular plane: the degenerate power balance
 
 Model boundary.
-The model-B family `ModelB.family` of `theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`
-(field `ModelBParams.field`, state `(Δθ, x_pll, V_dc, ξ_v)`, continuous-time autonomous, constant
+The PLL–DC family `PLLDC.family` of `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`
+(field `PLLDC.Params.field`, state `(Δθ, x_pll, V_dc, ξ_v)`, continuous-time autonomous, constant
 grid frequency, inner current loop eliminated, reactive current frozen, no saturation, PWM, delay or
 filters), read at a selected state `x*` on the singular plane `V_dc* = 0`, where the field is read
 with Lean's `x / 0 = 0` (DC-link component `I₀ / C_dc`). This module settles the case left open in
-`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`: the degenerate power balance
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`: the degenerate power balance
 `P(x*) = 0` (`P = pccP`).
 
-Convention: port current IN-positive (work-sync conventions §D1), as in `ModelBStability`.
+Convention: port current IN-positive (work-sync conventions §D1), as in
+`GFL.DCLink.PLLDC.Stability`.
 
-Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the reduction is new
-(answers the residual case of the `V_dc* = 0` question). Candidate analysis checked numerically
-(untrusted); Lean proves every statement.
+Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (the PLL–DC model); the reduction
+is new (answers the residual case of the `V_dc* = 0` question). Candidate analysis checked
+numerically (untrusted); Lean proves every statement.
 
 Results.
 Reduction. With `q = (I₀ V_dc + (3/2) P) / C_dc` (`planeQ`) the field satisfies, off the plane,
@@ -25,15 +26,15 @@ continuous coefficients `G = (3/2)(∂_Δθ P · f_Δθ + ∂_ξ P · f_ξ) / C_
 `H = (I₀ + (3/2) ∂_{V_dc} P) / C_dc` (`planeH`). In the time `dτ = dt / V_dc` this is the linear
 system `(V_dc, q)' = [[0, 1], [G, H]] (V_dc, q)`, whose type at `x*` is decided by the
 discriminant `D = H² + 4G` (`planeDisc`).
-* `ModelB.mem_den_unstable_of_disc_pos`: `D > 0` ⇒ unstable. A root `λ₊ > 0` of `λ² − Hλ − G`
+* `PLLDC.mem_den_unstable_of_disc_pos`: `D > 0` ⇒ unstable. A root `λ₊ > 0` of `λ² − Hλ − G`
   on one side of the plane gives an invariant cone `{σ V_dc > 0, q ≥ μ σ V_dc}` in which
   `σ V_dc` grows linearly (`Dynamics.Degenerate.unstable_of_cone`).
-* `ModelB.mem_den_locallyExponentiallyStable_of_disc_neg`: `D < 0` and `I₀ / C_dc ≠ 0` ⇒ the
+* `PLLDC.mem_den_locallyExponentiallyStable_of_disc_neg`: `D < 0` and `I₀ / C_dc ≠ 0` ⇒ the
   segment-based local exponential estimate holds although `x*` is not an equilibrium: the focus
   winds every solution segment into the plane within a time `O(‖x(t₀) − x*‖)`
   (`Dynamics.Degenerate.locallyExponentiallyStable_of_spiral`). Witness `degenerateFocus`
   (`degenerateFocus_mem_den_locallyExponentiallyStable`, `D = −3`).
-* `ModelB.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate`: complete
+* `PLLDC.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate`: complete
   characterization of local exponential stability on the singular plane outside the degenerate set
   `{P(x*) = 0, I₀ / C_dc ≠ 0, D = 0}`: LES ⇔ `I₀ / C_dc ≠ 0 ∧ (P / C_dc < 0 ∨ (P = 0 ∧ D < 0))`.
 * Static support (foundation): `dP0`, `dP2`, `dP3` (partial derivatives of `P`), `planeQ`,
@@ -41,14 +42,14 @@ discriminant `D = H² + 4G` (`planeDisc`).
   `contDiff_planeG`, `contDiff_planeH`, `exists_contDiff_eq_field_of_sign`.
 
 Family and connection conclusions.
-Connection conclusions on `ModelB.family`: `mem_den_unstable_of_disc_pos`,
+Connection conclusions on `PLLDC.family`: `mem_den_unstable_of_disc_pos`,
 `mem_den_locallyExponentiallyStable_of_disc_neg`,
 `degenerateFocus_mem_den_locallyExponentiallyStable`,
 `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate`. The plane coefficients and
 their identities are foundation.
 
 The degenerate discriminant `D = 0` (with `P(x*) = 0`, `I₀ / C_dc ≠ 0`) is treated in
-`theorem/GridTiedConverter/GFL/DCLink/ModelBCollapseDegenerate.lean`: `H ≠ 0` ⇒ unstable,
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/CollapseDegenerate.lean`: `H ≠ 0` ⇒ unstable,
 `H = G = 0` with nonzero drift `(f₀, f₁, f₃)(x*)` ⇒ not locally exponentially stable; it leaves
 (UNPROVED) only the residual set `{P = 0, I₀ / C_dc ≠ 0, H = 0, f₀ = f₁ = f₃ = 0}`, which forces
 `V_dc,ref = 0`.
@@ -60,9 +61,9 @@ open Set Filter Matrix
 open scoped Topology
 open powerlib.Dynamics (State)
 
-namespace ModelBParams
+namespace PLLDC.Params
 
-variable (p : ModelBParams)
+variable (p : PLLDC.Params)
 
 /-- `∂P/∂Δθ` (`P = pccP`). -/
 def dP0 (y : State 4) : ℝ :=
@@ -137,7 +138,7 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
   unfold planeH dP2 vgd idRef
   fun_prop
 
-/-- A `C¹` field equal to model B on the half space `σ V_dc ≥ s` (`σ = ±1`, `s > 0`): the
+/-- A `C¹` field equal to the PLL–DC model on the half space `σ V_dc ≥ s` (`σ = ±1`, `s > 0`): the
 denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
 @[tmio M, powerlib_domain] theorem exists_contDiff_eq_field_of_sign {σ : ℝ} (hσ : σ = 1 ∨ σ = -1)
     {s : ℝ} (hs : 0 < s) :
@@ -187,9 +188,9 @@ denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
       simp [field, pccP]
     · rfl
 
-end ModelBParams
+end PLLDC.Params
 
-namespace ModelB
+namespace PLLDC
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
 @[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
@@ -215,7 +216,7 @@ singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) i
   obtain ⟨a0, ha0⟩ : ∃ a, a = 3 / 2 * p.dP0 x / p.Cdc := ⟨_, rfl⟩
   obtain ⟨a3, ha3⟩ : ∃ a, a = 3 / 2 * p.dP3 x / p.Cdc := ⟨_, rfl⟩
   have hG : p.planeG x = a0 * p.field x 0 + a3 * p.field x 3 := by
-    rw [ha0, ha3, ModelBParams.planeG]; ring
+    rw [ha0, ha3, PLLDC.Params.planeG]; ring
   have hDHG : p.planeDisc x = p.planeH x ^ 2 + 4 * p.planeG x := rfl
   have hS : 0 < a0 ^ 2 + a3 ^ 2 + |p.planeH x| / 2 := by
     by_contra hS
@@ -249,13 +250,13 @@ singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) i
   have hWc : ContDiff ℝ 1 (fun y : State 4 => p.planeQ y - μ * σ * y 2) :=
     p.contDiff_planeQ.sub (contDiff_const.mul (Dynamics.contDiff_coord 2))
   have hWd : ∀ y : State 4, HasFDerivAt (fun y : State 4 => p.planeQ y - μ * σ * y 2)
-      (ModelBParams.row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
+      (PLLDC.Params.row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
         (3 / 2 * p.dP3 y / p.Cdc)) y := by
     intro y
     have h := (p.hasFDerivAt_planeQ y).sub ((Dynamics.hasFDerivAt_coord 2 y).const_mul (μ * σ))
     refine h.congr_fderiv ?_
     ext v
-    simp only [ModelBParams.row4_apply, _root_.sub_apply, _root_.smul_apply, Dynamics.coord_apply,
+    simp only [PLLDC.Params.row4_apply, _root_.sub_apply, _root_.smul_apply, Dynamics.coord_apply,
       smul_eq_mul]
     ring
   have hW0 : p.planeQ x - μ * σ * x 2 = 0 := by rw [p.planeQ_eq_zero hx hP, hx]; ring
@@ -280,16 +281,16 @@ singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) i
     have hrate' := (abs_lt.mp hrate).1
     have hf2' : p.field y 2 = μ * σ := by
       rw [p.field_two_eq_planeQ_div hy2, hq]; field_simp
-    have hlie : ModelBParams.row4 (3 / 2 * p.dP0 y / p.Cdc) 0
+    have hlie : PLLDC.Params.row4 (3 / 2 * p.dP0 y / p.Cdc) 0
         ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
         (3 / 2 * p.dP3 y / p.Cdc) (p.field y) =
         p.planeG y + σ * p.planeH y * μ - μ ^ 2 := by
-      rw [ModelBParams.row4_apply, hf2', ModelBParams.planeG, ModelBParams.planeH]
+      rw [PLLDC.Params.row4_apply, hf2', PLLDC.Params.planeG, PLLDC.Params.planeH]
       linear_combination (-(μ ^ 2)) * hσ2
     rw [hlie]
     linarith
   · simp [hσ2]
-  · rw [(hWd x).fderiv, ModelBParams.row4_apply]
+  · rw [(hWd x).fderiv, PLLDC.Params.row4_apply]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
     have h1 : (p.I0 + 3 / 2 * p.dP2 x) / p.Cdc = p.planeH x := rfl
@@ -345,7 +346,7 @@ segments spiral into the plane within a time `O(‖x(t₀) − x*‖)`. -/
 `k_pv = R_g = X_g = i_q0 = 0`, `ω_s = ω_g = 0`. Then `G = V_dc,ref = −1`, `H = I₀ / C_dc = 1`,
 `D = −3`. -/
 def degenerateFocus : Model :=
-  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, -1, 0, 1, 1, ⟨0, 0, 0⟩, 0, rfl, rfl⟩,
+  ⟨⟨0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 3 / 2, -1, 0, 1, 1, ⟨0, 0, 0⟩, 0, 0, rfl, rfl⟩,
     WithLp.toLp 2 ![0, 0, 0, 0]⟩
 
 /-- The degenerate focus is locally exponentially stable in the segment semantics (it is not an
@@ -354,13 +355,13 @@ equilibrium: its DC-link component is `I₀ / C_dc = 1`). -/
     connection% (degenerateFocus ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have h := mem_den_locallyExponentiallyStable_of_disc_neg degenerateFocus
     (by simp [degenerateFocus])
-    (by simp [degenerateFocus, ModelBParams.pccP, ModelBParams.idRef, ModelBParams.vgd,
-      ModelBParams.vgq])
+    (by simp [degenerateFocus, PLLDC.Params.pccP, PLLDC.Params.idRef, PLLDC.Params.vgd,
+      PLLDC.Params.vgq])
     (by norm_num [degenerateFocus])
     (by
-      simp [degenerateFocus, ModelBParams.planeDisc, ModelBParams.planeH, ModelBParams.planeG,
-        ModelBParams.dP0, ModelBParams.dP2, ModelBParams.dP3, ModelBParams.idRef,
-        ModelBParams.vgd, ModelBParams.vgq, ModelBParams.field])
+      simp [degenerateFocus, PLLDC.Params.planeDisc, PLLDC.Params.planeH, PLLDC.Params.planeG,
+        PLLDC.Params.dP0, PLLDC.Params.dP2, PLLDC.Params.dP3, PLLDC.Params.idRef,
+        PLLDC.Params.vgd, PLLDC.Params.vgq, PLLDC.Params.field])
   unfold powerlib.TMIO.Statement at h ⊢
   exact h
 
@@ -405,6 +406,6 @@ power balance is degenerate with a focus (`P = 0`, `D < 0`). -/
       · exact ⟨h1, h2⟩
       · exact absurd h3 hP
 
-end ModelB
+end PLLDC
 
 end powerlib.GFL.DCLink

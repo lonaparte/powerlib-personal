@@ -1,19 +1,24 @@
 import theorem.GridTiedConverter.GFL.DCLink.FourState
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
+import theorem.GridTiedConverter.GFL.DCLink.PLLDC.Boundary
 
 /-! # Four-state GFL: the boundary of the quartic Routh region
 
 Model boundary.
-The four-state GFL family `GFL.DCLink.FourState.family`: a single
-grid-following VSC on an infinite ac source of amplitude `V₀` behind a lossless reactance `X_g`,
-balanced averaged dq model in the PLL frame, algebraic network, ideal current loop, constant grid
-angle, continuous time; states in order `θ` (PLL error angle), `x` (PLL integrator), `V` (dc-bus
-voltage, p.u.), `η` (dc-voltage PI integrator); port current IN-positive, absorbed power
-`P_abs = (3/2) v_d i_d`, `i_q = 0`; the full nonlinear field with its `1 / V` term, read at the
-selected operating point `(θ₀, 0, 1, 0)` moved to the origin. No PWM, delay, limiter, line
-resistance or current-loop dynamics. The named members, all at `θ₀ = 0` with `V₀ = 1`,
-`i_{d0} = I_dc0 = 0`, `C = 3/2` (so `γ = 1`):
+The four-state GFL models of `theorem/GridTiedConverter/GFL/DCLink/FourState.lean`, read as the
+PLL–DC model (`FourState.Model.toPLLDC`, `PLLDC.family`; scaffold
+`theorem/GridTiedConverter/GFL/DCLink/FourStatePLLDC.agda`): a single grid-following VSC on an
+infinite ac source of amplitude `V₀` behind a lossless reactance `X_g`, balanced averaged dq model
+in the PLL frame, algebraic network, ideal current loop, constant grid angle, continuous time;
+states in order `θ` (PLL error angle), `x` (PLL integrator), `V` (dc-bus voltage, p.u.), `η`
+(dc-voltage PI integrator); port current IN-positive, absorbed power `P_abs = (3/2) v_d i_d`,
+`i_q = 0`; the full nonlinear field with its `1 / V` term, read at the selected operating point
+`(θ₀, 0, 1, 0)` moved to the origin. The trajectory arguments are made on the note's field, which
+is the PLL–DC model's in the coordinates of the integrator flip (`FourState.field_eq_transport`),
+and are read as statements about the PLL–DC image. No PWM, delay, limiter, line resistance or
+current-loop dynamics. The named members, all at `θ₀ = 0` with `V₀ = 1`, `i_{d0} = I_dc0 = 0`,
+`C = 3/2` (so `γ = 1`):
 * `weakFocus`: `X_g = k_p = k_iv = 1`, `k_i = 2`, `k_pv = 0`. In translated coordinates
   `(θ, x, u, η)`, `u = V − 1`, its field is `θ̇ = −sin θ + η + 2x`, `ẋ = −sin θ + η`,
   `u̇ = −cos θ · η / (1 + u)`, `η̇ = u`; quartic `(λ² + 1)(λ² + λ + 2)`.
@@ -30,13 +35,15 @@ Lean kernel.
 
 Results.
 * `closedRouth_of_mem_den_lyapunovStable` (hence also for local asymptotic stability, through
-  `Spectral.den_las_subset_lyapunovStable`): every Lyapunov stable model has
-  `C ≠ 0` (otherwise `W = (V − 1) η` is a Chetaev function), an equilibrium at the selected
-  point (`IsEq`), and quartic coefficients in the closed Routh region
-  `a₃, a₂, a₁, a₀ ≥ 0`, `a₁² + a₃² a₀ ≤ a₃ a₂ a₁` (a strict violation gives an eigenvalue with
-  positive real part, `Criteria.unstable_of_jacobian_quartic_violation`). With
-  `FourState.chain_le_semantics`, the Lyapunov and local asymptotic denotations therefore lie
-  between the strict and the closed Routh sets (with equilibrium and `C ≠ 0`).
+  `Spectral.den_las_subset_lyapunovStable`): every four-state model whose PLL–DC image is
+  Lyapunov stable has `C ≠ 0` (otherwise the image is unstable,
+  `PLLDC.mem_den_unstable_of_Cdc_eq_zero`), an equilibrium at the selected point (`IsEq`), and
+  quartic coefficients in the closed Routh region `a₃, a₂, a₁, a₀ ≥ 0`, `a₁² + a₃² a₀ ≤ a₃ a₂ a₁`
+  (a strict violation is a strict violation of the PLL–DC model's 4×4 Routh conditions and gives
+  instability, `PLLDC.mem_den_unstable_of_violation`). With
+  `FourState.mem_den_locallyExponentiallyStable_of_routh`, the Lyapunov and local asymptotic
+  denotations of the four-state models therefore lie between the strict and the closed Routh sets
+  (with equilibrium and `C ≠ 0`).
 * `weakFocus_mem_den_locallyAsymptoticallyStable`: `weakFocus` is locally asymptotically stable
   (hence Lyapunov stable). The dc loop is undamped (`k_pv + i_{d0} = 0`, imaginary pair `±i`),
   the PLL is Hurwitz, and the coupling `X_g` lets the nonlinear terms decide (a weak focus). The
@@ -55,38 +62,42 @@ Results.
   `−(3/64)(u² + η²)² − (1/2000)|ξ|²` (Taylor bounds `Real.sin_bound`, `Real.cos_bound`;
   private `lie_bound`), and `W ≥ (u² + η²)/4 + |ξ|²/1000` (private `wf_lower`), so
   `Dynamics.localAsymptoticStable_of_lie_neg` applies (the field is continuous on the ball, where
-  it agrees with the smooth `FourState.regField`).
-* `not_exact_locallyAsymptoticallyStable`: the local asymptotic translation of the family
-  (equilibrium and the strict quartic Routh conditions) is sound (`FourState.chain_le_semantics`)
-  but not exact: for `weakFocus`, `a₁² + a₃² a₀ = a₃ a₂ a₁ = 3`.
+  `V ≠ 0`, `FourState.field_contDiffOn`). Its quartic meets the Routh conditions with equality,
+  `a₁² + a₃² a₀ = a₃ a₂ a₁ = 3`, so it also witnesses that the PLL–DC model's local asymptotic
+  translation is not exact (as `PLLDC.not_exactUnder_locallyAsymptoticallyStable` does with another
+  witness).
 * `undampedPLL_not_mem_den_locallyAsymptoticallyStable`: `FourState.undampedPLL` (Lyapunov
   stable) is not locally asymptotically stable: its decoupled PLL conserves
-  `1 − cos θ + x²/2` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`).
+  `1 − cos θ + x²/2` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos_local`).
 * `frozenPLL_mem_den_unstable`: `frozenPLL` is unstable: `W = −x sin θ` has `Ẇ = sin² θ`
-  (`Dynamics.unstable_of_chetaev`).
-* Inexpressibility, `realize_ne_den_lyapunovStable`, `realize_ne_den_locallyAsymptoticallyStable`,
-  `realize_ne_den_unstable`: for every set `T` of requirements, `TMIO.realize Meets T` differs from
-  the Lyapunov, local asymptotic and instability denotations
-  (`Spectral.realize_ne_den_of_indistinguishable`). `undampedPLL` and `frozenPLL` meet
-  exactly the same requirements (equilibrium, neither Routh nor `a₀ < 0`) but only the first is
-  Lyapunov stable; `weakFocus` and `undampedPLL` meet the same requirements but only the first is
-  locally asymptotically stable. So no translation into the requirement language of the family
-  (equilibrium, strict Routh, `a₀ < 0`) is exact for these sentences; in particular
-  `FourState.not_exact_lyapunovStable`, `FourState.not_exact_unstable` and
-  `not_exact_locallyAsymptoticallyStable` are instances.
+  (`Dynamics.unstable_of_chetaev_local`).
+* Inexpressibility in the PLL–DC model's language, `realize_ne_den_lyapunovStable`,
+  `realize_ne_den_locallyAsymptoticallyStable`, `realize_ne_den_unstable`: for every set `T` of
+  the PLL–DC model's requirements, `TMIO.realize PLLDC.Meets T` differs from the Lyapunov, local
+  asymptotic and instability denotations of `PLLDC.family`
+  (`Spectral.realize_ne_den_of_indistinguishable`). The images of `undampedPLL` and `frozenPLL`
+  meet exactly the same requirements (equilibrium, positive reference, neither Routh, `det < 0`
+  nor off the Routh boundary: `FourState.meets_routh_iff`, `FourState.meets_detNeg_iff`,
+  `FourState.meets_offBoundary_iff`) but only the first is Lyapunov stable; `weakFocus` and
+  `undampedPLL` meet the same requirements but only the first is locally asymptotically stable. So
+  no translation into the PLL–DC model's requirement language is exact for these sentences; in
+  particular the PLL–DC model's own translations of them are not (`PLLDC.not_exact_lyapunovStable`,
+  `PLLDC.not_exact_locallyAsymptoticallyStable` with another witness;
+  `PLLDC.not_exactUnder_positiveReference_unstable`).
 
 Family and connection conclusions.
-No new family: all results are connection statements on `FourState.family` (memberships and
-inclusions of its generated denotations, comparisons with the generated requirement spaces); the
-polynomial estimates are private implementation evidence.
+No family: all results are connection statements on `PLLDC.family` at the images of four-state
+models (memberships, inclusions of the preimages of its generated denotations, comparisons with
+its generated requirement spaces); the polynomial estimates are private implementation evidence.
 
-Remaining exact set (not characterized here). Let `S` be the translation set
-`{IsEq, C ≠ 0, strict Routh conditions}` and `B = {IsEq, C ≠ 0, closed Routh conditions} \ S`
-the Routh boundary. For `P` Lyapunov or local asymptotic stability, `den P = S ∪ (den P ∩ B)`,
-and the instability denotation is the complement of the Lyapunov one. On `B` membership is
-decided by the nonlinear terms (first Lyapunov coefficients at Hopf points, centre-manifold
-reductions at zero eigenvalues, higher codimension); `den P ∩ B` and `B \ den P` are both
-nonempty for both sentences, and the requirement language cannot separate them.
+Remaining exact set (not characterized here). Let `S` be the four-state models with
+`{IsEq, C ≠ 0, strict Routh conditions}` and `B` those with `{IsEq, C ≠ 0, closed Routh
+conditions}` not in `S`, the Routh boundary. For `P` Lyapunov or local asymptotic stability, the
+preimage of `den P` is `S ∪ (den P ∩ B)`, and the instability denotation is the complement of the
+Lyapunov one. On `B` membership is decided by the nonlinear terms (first Lyapunov coefficients at
+Hopf points, centre-manifold reductions at zero eigenvalues, higher codimension); `den P ∩ B` and
+`B \ den P` are both nonempty for both sentences, and the PLL–DC model's requirement language cannot
+separate them.
 -/
 
 noncomputable section
@@ -386,6 +397,31 @@ private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
       sq_nonneg (x - u / 2 - η / 2)]
   nlinarith
 
+/-! ## Reading the note's field as the PLL–DC model (implementation evidence) -/
+
+/-- A flow sentence of the PLL–DC image is the sentence of the note's field at the operating
+point (`FourState.field_eq_transport`, `Dynamics.holds_transport_iff`). -/
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
+    m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔
+      P.holds (FourState.field m.params) (opPoint m.θ) := by
+  have h : m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔
+      P.holds m.params.toPLLDC.field (opPoint m.θ) :=
+    Spectral.mem_den_flow_iff_shift (f := fun m : PLLDC.Model => m.p.field)
+      (pt := PLLDC.Model.x) PLLDC.family_isAutonomous
+  have hpt : Dynamics.affineCoord integratorFlip 0 (opPoint m.θ) = opPoint m.θ := by
+    apply WithLp.ofLp_injective
+    ext i
+    fin_cases i <;> simp [Dynamics.affineCoord, opPoint]
+  rw [h, field_eq_transport]
+  conv_rhs => rw [← hpt]
+  exact (Dynamics.holds_transport_iff integratorFlip 0 P).symm
+
+/-- The same sentence, in the translated coordinates of `Model.field`. -/
+@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff_translated {m : Model}
+    {P : Flow.Property} : m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔ P.holds m.field 0 := by
+  rw [mem_den_flow_iff']
+  exact (Flow.Property.holds_shift_iff P).symm
+
 /-! ## The weak focus -/
 
 /-- The composite Lyapunov function in translated coordinates `(θ, x, u, η)`, `u = V − 1`:
@@ -497,22 +533,23 @@ loop; the PLL response to the dc oscillation (phase lag with `sin 2φ = 3/5`) gi
 first Lyapunov coefficient, certified by a composite Lyapunov function whose derivative is at most
 `−(3/64)(u² + η²)² − (1/2000)|ξ|²` on the ball of radius `1/1000`. -/
 @[tmio TM, powerlib_domain] theorem weakFocus_mem_den_locallyAsymptoticallyStable :
-    connection% (weakFocus ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
+    connection% (weakFocus.toPLLDC ∈
+      PLLDC.family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change LocalAsymptoticStable weakFocus.field 0
-  have hg : ContDiff ℝ 1
-      (fun z : Dynamics.State 4 => regField weakFocus.params (z + opPoint weakFocus.θ)) :=
-    (contDiff_regField _).comp (contDiff_id.add contDiff_const)
-  refine Dynamics.localAsymptoticStable_of_lie_neg (by norm_num)
-    (by norm_num : (0 : ℝ) < 1 / 1000) wfLyap_contDiff
-    (hg.continuous.continuousOn.congr fun z hz' => ?_) (by simp [wfLyap]) ?_ ?_
-  · have hz : ‖z - 0‖ < 1 / 1000 := mem_ball_iff_norm.mp hz'
-    show FourState.field _ (z + opPoint _) = _
-    refine field_eq_regField_of_near (θ0 := weakFocus.θ) _ ?_
-    rw [add_sub_cancel_right]
-    rw [sub_zero] at hz
+  rw [mem_den_flow_iff_translated]
+  have hcont : ContinuousOn weakFocus.field (Metric.ball 0 (1 / 1000)) := by
+    refine (field_contDiffOn weakFocus.params).continuousOn.comp
+      (continuous_id.add continuous_const).continuousOn fun z hz' => ?_
+    have hr := coords_small (mem_ball_iff_norm.mp hz')
+    have h2sq : z 2 ^ 2 ≤ (1 / 1000) ^ 2 := by
+      nlinarith [sq_nonneg (z 1), sq_nonneg (z 0), sq_nonneg (z 3)]
+    have hu := (abs_le.mp (abs_le_of_sq_le_sq h2sq (by norm_num))).1
+    show (z + opPoint weakFocus.θ) 2 ≠ 0
+    simp only [PiLp.add_apply, opPoint, weakFocus]
+    norm_num
     linarith
+  refine Dynamics.localAsymptoticStable_of_lie_neg (by norm_num)
+    (by norm_num : (0 : ℝ) < 1 / 1000) wfLyap_contDiff hcont (by simp [wfLyap]) ?_ ?_
   · intro z hz hne
     have hr := coords_small hz
     have hlow := wf_lower hr
@@ -550,105 +587,50 @@ first Lyapunov coefficient, certified by a composite Lyapunov function whose der
     simp
     linarith
 
-/-- The local asymptotic translation is sound but not exact: the weak focus `weakFocus` is
-locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has the imaginary pair
-`±i`, so the Routh inequality `a₁² + a₃² a₀ < a₃ a₂ a₁` fails with equality (`3 = 3`). -/
-@[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
-    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.not_exact_of_witness weakFocus_mem_den_locallyAsymptoticallyStable
-    (q := .routh) (by simp [family, translate]) fun hs => ?_
-  obtain ⟨-, -, -, hg⟩ : Meets weakFocus .routh := hs
-  norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3, a0,
-      twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, weakFocus, Params.γ] at hg
-
 /-! ## The Routh boundary: necessary conditions and inexpressibility -/
-
-@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
-    (pt := fun m => opPoint m.θ) family_isAutonomous
-
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_regField {p : Params} {θ0 : ℝ}
-    (h : LyapunovStable (FourState.field p) (opPoint θ0)) :
-    LyapunovStable (regField p) (opPoint θ0) :=
-  Dynamics.lyapunovStable_congr_nhds (Dynamics.eventuallyEq_of_eqOn_ball
-    (by norm_num : (0 : ℝ) < 1 / 2) (fun _ hy => (field_eq_regField_of_near p hy).symm)) h
-
-@[tmio TM, powerlib_domain] private theorem localAsymptoticStable_regField {p : Params} {θ0 : ℝ}
-    (h : LocalAsymptoticStable (FourState.field p) (opPoint θ0)) :
-    LocalAsymptoticStable (regField p) (opPoint θ0) := by
-  obtain ⟨hLS, c, hc, hconv⟩ := h
-  have hLSg := lyapunovStable_regField hLS
-  refine ⟨hLSg, ?_⟩
-  obtain ⟨δ, hδ, hb⟩ := hLSg (1 / 2) (by norm_num)
-  refine ⟨min c δ, lt_min hc hδ, fun t₀ φ hφ hφ0 => ?_⟩
-  have hstay : ∀ t ∈ Ici t₀, ‖φ t - opPoint θ0‖ < 1 / 2 := fun t ht =>
-    hb t₀ t φ (hφ.mono Icc_subset_Ici_self) (hφ0.trans_le (min_le_right _ _)) t ⟨ht, le_rfl⟩
-  refine hconv t₀ φ (fun t ht => ?_) (hφ0.trans_le (min_le_left _ _))
-  have := hφ t ht
-  simp only at this ⊢
-  rwa [← field_eq_regField_of_near p (hstay t ht)] at this
 
 /-! ### Necessary conditions: the closed Routh region -/
 
-/-- With no capacitance the dc-bus voltage is frozen while the dc integrator integrates its
-deviation: `W = (V − 1) η` has `Ẇ = (V − 1)²` (Chetaev), so the regularized field is unstable at
-every operating point. -/
-@[tmio TM, powerlib_domain] private theorem unstable_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (θ0 : ℝ) :
-    Unstable (regField p) (opPoint θ0) := by
-  have c2 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 2) := contDiff_piLp_apply 2
-  have c3 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 3) := contDiff_piLp_apply 2
-  have hW : ContDiff ℝ 1 (fun y : Dynamics.State 4 => (y 2 - 1) * y 3) := by fun_prop
-  refine Dynamics.unstable_of_chetaev (contDiff_regField p) hW one_pos (fun ε hε => ?_) ?_
-  · refine ⟨opPoint θ0 + WithLp.toLp 2 ![0, 0, ε / 4, ε / 4], ?_, ?_⟩
-    · rw [add_sub_cancel_left]
-      have h2 := norm_sq_coords (WithLp.toLp 2 ![0, 0, ε / 4, ε / 4])
-      simp only [Matrix.cons_val] at h2
-      have h0 := norm_nonneg (WithLp.toLp 2 ![0, 0, ε / 4, ε / 4] : Dynamics.State 4)
-      nlinarith
-    · simp [opPoint]
-      positivity
-  · intro y _ hWy
-    have h2 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4) :
-      Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := y)
-    have h3 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (3 : Fin 4) :
-      Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := y)
-    have hd : HasFDerivAt (fun y : Dynamics.State 4 => (y 2 - 1) * y 3) _ y :=
-      (h2.sub_const 1).mul h3
-    rw [hd.fderiv]
-    have hne : y 2 - 1 ≠ 0 := fun h => by
-      have : (y 2 - 1) * y 3 = 0 := by rw [h, zero_mul]
-      linarith
-    simp [regField, Dynamics.lift, regCoordField, Params.γ, hC]
-    positivity
-
-/-- **Necessary condition (closed Routh region).** A Lyapunov stable model has `C ≠ 0`, its
-selected point is an equilibrium (`IsEq`), and the quartic coefficients of `det(λI − A₀)` lie in
-the closure of the Routh region: `a₃, a₂, a₁, a₀ ≥ 0` and `a₁² + a₃² a₀ ≤ a₃ a₂ a₁`. Hence the
-same holds for local asymptotic and local exponential stability. -/
+/-- **Necessary condition (closed Routh region).** A four-state model whose PLL–DC image is
+Lyapunov stable has `C ≠ 0` (without capacitance the image is unstable,
+`PLLDC.mem_den_unstable_of_Cdc_eq_zero`), its operating point is an equilibrium (`IsEq`; the
+note's field is `C¹` near it, `field_contDiffOn`), and the quartic coefficients of
+`det(λI − A₀)` lie in the closure of the Routh region: `a₃, a₂, a₁, a₀ ≥ 0` and
+`a₁² + a₃² a₀ ≤ a₃ a₂ a₁` (a strict violation is one of the PLL–DC model's 4×4 Routh conditions,
+`Criteria.routhViolationFin4_iff_of_det_characteristicMatrix_quartic`, and gives instability,
+`PLLDC.mem_den_unstable_of_violation`). Hence the same holds for local asymptotic and local
+exponential stability. -/
 @[tmio TM, powerlib_domain] theorem closedRouth_of_mem_den_lyapunovStable :
-    connection% (family.den (.flow .lyapunovStable) ⊆
+    connection% (Model.toPLLDC ⁻¹' PLLDC.family.den (.flow .lyapunovStable) ⊆
       {m : Model | IsEq m.params m.θ ∧ m.params.C ≠ 0 ∧ 0 ≤ a3 m.params m.θ ∧
         0 ≤ a2 m.params m.θ ∧ 0 ≤ a1 m.params m.θ ∧ 0 ≤ a0 m.params m.θ ∧
         a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ ≤
           a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ}) := by
   unfold powerlib.TMIO.Statement
   intro m h
-  rw [mem_den_flow_iff'] at h
-  have hg := lyapunovStable_regField (p := m.params) (θ0 := m.θ) h
-  have hC : m.params.C ≠ 0 := fun hC => unstable_regField_of_C_eq_zero hC m.θ hg
-  have h0 := Dynamics.isEquilibrium_of_lyapunovStable (contDiff_regField m.params) hg
-  have heq : IsEq m.params m.θ := by
-    rw [← isEq_iff m.params hC,
-      field_eq_regField_of_near m.params (by simp : ‖opPoint m.θ - opPoint m.θ‖ < 1 / 2)]
-    exact h0
+  have h' : m.toPLLDC ∈ PLLDC.family.den (.flow .lyapunovStable) := h
+  have hns : m.toPLLDC ∉ PLLDC.family.den (.flow .unstable) := fun hu => by
+    have hn := Spectral.not_mem_den_lyapunovStable_of_unstable hu
+    unfold powerlib.TMIO.Statement at hn
+    exact hn h'
+  have hC : m.params.C ≠ 0 := fun hC => by
+    have hu := PLLDC.mem_den_unstable_of_Cdc_eq_zero m.toPLLDC hC
+    unfold powerlib.TMIO.Statement at hu
+    exact hns hu
+  have h0 : FourState.field m.params (opPoint m.θ) = 0 :=
+    Dynamics.isEquilibrium_of_lyapunovStable_local PLLDC.Params.isOpen_nonzeroVdc
+      (by simp [PLLDC.Params.nonzeroVdc, opPoint]) (field_contDiffOn m.params)
+      (mem_den_flow_iff'.mp h')
+  have heq : IsEq m.params m.θ := (isEq_iff m.params hC m.θ).mp h0
   have hnot : ¬ (a3 m.params m.θ < 0 ∨ a2 m.params m.θ < 0 ∨ a1 m.params m.θ < 0 ∨
       a0 m.params m.θ < 0 ∨ a3 m.params m.θ * a2 m.params m.θ * a1 m.params m.θ <
-        a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ) := fun hv =>
-    Criteria.unstable_of_jacobian_quartic_violation (A0 m.params m.θ) (contDiff_regField _)
-      (regField_opPoint _ hC heq) (fderiv_regField_opPoint _ _)
-      (det_characteristicMatrix_A0_quartic _ heq.1) hv hg
+        a1 m.params m.θ ^ 2 + a3 m.params m.θ ^ 2 * a0 m.params m.θ) := fun hv => by
+    have hviol := (Criteria.routhViolationFin4_iff_of_det_characteristicMatrix_quartic _
+      (det_characteristicMatrix_jacobian m.params heq.1)).mpr hv
+    have hu := PLLDC.mem_den_unstable_of_violation m.toPLLDC
+      (by norm_num [Model.toPLLDC, Params.toPLLDC]) ((meets_equilibrium_iff m hC).mpr heq) hviol
+    unfold powerlib.TMIO.Statement at hu
+    exact hns hu
   push Not at hnot
   exact ⟨heq, hC, hnot⟩
 
@@ -660,17 +642,18 @@ constant and its integrator drifts, `ẋ = −sin θ`. Its quartic is `λ²(λ²
 boundary of the Routh region. -/
 def frozenPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩
 
-/-- The frozen PLL is unstable: `W = −x sin θ` has `Ẇ = sin² θ` (Chetaev). -/
+/-- The frozen PLL is unstable: `W = −x sin θ` has `Ẇ = sin² θ` (Chetaev, for the note's field,
+`C¹` off `V = 0`). -/
 @[tmio TM, powerlib_domain] theorem frozenPLL_mem_den_unstable :
-    connection% (frozenPLL ∈ family.den (.flow .unstable)) := by
+    connection% (frozenPLL.toPLLDC ∈ PLLDC.family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff'.mpr ((Dynamics.unstable_congr_nhds
-    (Dynamics.eventuallyEq_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-      fun y hy => field_eq_regField_of_near _ hy)).mpr ?_)
+  refine mem_den_flow_iff'.mpr ?_
   have c0 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 0) := contDiff_piLp_apply 2
   have c1 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 1) := contDiff_piLp_apply 2
   have hW : ContDiff ℝ 1 (fun y : Dynamics.State 4 => -(y 1 * Real.sin (y 0))) := by fun_prop
-  refine Dynamics.unstable_of_chetaev (contDiff_regField _) hW one_pos (fun ε hε => ?_) ?_
+  refine Dynamics.unstable_of_chetaev_local PLLDC.Params.isOpen_nonzeroVdc
+    (by simp [PLLDC.Params.nonzeroVdc, opPoint]) (field_contDiffOn _) hW one_pos
+    (fun ε hε => ?_) ?_
   · set a := min (ε / 4) 1 with ha
     have ha0 : 0 < a := lt_min (by positivity) one_pos
     have ha1 : a ≤ ε / 4 := min_le_left _ _
@@ -685,7 +668,7 @@ def frozenPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2, 0�
         Real.sin_pos_of_pos_of_lt_pi ha0 (by linarith [Real.two_le_pi])
       simp [opPoint, frozenPLL]
       positivity
-  · intro y _ hWy
+  · intro y _ _ hWy
     have h0 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) :
       Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := y)
     have h1 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (1 : Fin 4) :
@@ -697,18 +680,18 @@ def frozenPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2, 0�
     have hs : Real.sin (y 0) ≠ 0 := fun h => by
       have : -(y 1 * Real.sin (y 0)) = 0 := by rw [h, mul_zero, neg_zero]
       linarith
-    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, regField,
-        Dynamics.lift, regCoordField, frozenPLL, vq, idc]
+    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, FourState.field,
+        Dynamics.lift, coordField, frozenPLL, vq, idc]
     positivity
 
 /-- The undamped PLL with a damped dc loop is not locally asymptotically stable: the PLL is
 decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. -/
 @[tmio TM, powerlib_domain] theorem undampedPLL_not_mem_den_locallyAsymptoticallyStable :
-    connection% (undampedPLL ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+    connection% (undampedPLL.toPLLDC ∉
+      PLLDC.family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h
   rw [mem_den_flow_iff'] at h
-  have hg := localAsymptoticStable_regField (p := undampedPLL.params) (θ0 := undampedPLL.θ) h
   have hd : ∀ y : Dynamics.State 4, HasFDerivAt
       (fun y : Dynamics.State 4 => -(1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2))
       (-(Real.sin (y 0) • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 : Dynamics.State 4 →L[ℝ] ℝ) +
@@ -724,12 +707,13 @@ decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. 
     intro v
     simp
     ring
-  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (contDiff_regField _)
-    (fun y => (hd y).differentiableAt) (by norm_num : (0 : ℝ) < 1) (fun y _ => ?_)
-    (fun ε hε => ?_) hg
+  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos_local PLLDC.Params.isOpen_nonzeroVdc
+    (by simp [PLLDC.Params.nonzeroVdc, opPoint]) (field_contDiffOn _)
+    (fun y => (hd y).differentiableAt) (by norm_num : (0 : ℝ) < 1) (fun y _ _ => ?_)
+    (fun ε hε => ?_) h
   · rw [(hd y).fderiv]
-    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, regField, Dynamics.lift, regCoordField,
-        undampedPLL, vq, idc]
+    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.field, Dynamics.lift,
+        coordField, undampedPLL, vq, idc]
     ring_nf
     rfl
   · refine ⟨opPoint undampedPLL.θ + WithLp.toLp 2 ![0, ε / 2, 0, 0], ?_, ?_⟩
@@ -741,89 +725,95 @@ decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. 
     · simp [opPoint, undampedPLL]
       positivity
 
-/-- `undampedPLL` and `frozenPLL` meet the same requirements: both are equilibria with `C ≠ 0`,
-and neither meets the strict Routh conditions nor `a₀ < 0`. -/
-@[tmio M, powerlib_domain] private theorem meets_undamped_iff_frozen (q : Requirement) :
-    connection% (undampedPLL ∈ TMIO.realize Meets {q} ↔ frozenPLL ∈ TMIO.realize Meets {q}) := by
-  unfold TMIO.Statement
-  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+/-- The images of `undampedPLL` and `frozenPLL` meet the same requirements of the PLL–DC model:
+both are equilibria with positive reference, and neither quartic meets the strict Routh conditions,
+has `a₀ < 0` or violates the Routh conditions strictly (`meets_routh_iff`, `meets_detNeg_iff`,
+`meets_offBoundary_iff`). -/
+@[tmio M, powerlib_domain] private theorem meets_undamped_iff_frozen (q : PLLDC.Requirement) :
+    PLLDC.Meets undampedPLL.toPLLDC q ↔ PLLDC.Meets frozenPLL.toPLLDC q := by
+  have hu : undampedPLL.params.V0 * Real.sin undampedPLL.θ =
+      -(undampedPLL.params.Xg * undampedPLL.params.id0) := by simp [undampedPLL]
+  have hf : frozenPLL.params.V0 * Real.sin frozenPLL.θ =
+      -(frozenPLL.params.Xg * frozenPLL.params.id0) := by simp [frozenPLL]
   cases q
-  · simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, Meets, IsEq,
-      undampedPLL, frozenPLL]
-  · constructor
-    · rintro ⟨-, -, -, hg⟩
-      norm_num [a1, a2, a3, a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, Params.γ] at hg
-    · rintro ⟨-, h1, -, -⟩
-      norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1,
-          twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, frozenPLL, Params.γ] at h1
-  · simp only [Meets]
+  · rw [meets_equilibrium_iff _ (by norm_num [FourState.Params.C, undampedPLL]),
+      meets_equilibrium_iff _ (by norm_num [FourState.Params.C, frozenPLL])]
+    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, IsEq, undampedPLL, frozenPLL]
+  · exact Iff.rfl
+  · rw [meets_routh_iff _ hu, meets_routh_iff _ hf]
+    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3,
+      a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
+  · rw [meets_detNeg_iff _ hu, meets_detNeg_iff _ hf]
     norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a0,
-        omegaClSq_eq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
+      omegaClSq_eq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
+  · rw [meets_offBoundary_iff _ hu, meets_offBoundary_iff _ hf]
+    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3,
+      a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
 
-/-- `weakFocus` and `undampedPLL` meet the same requirements. -/
-@[tmio M, powerlib_domain] private theorem meets_weakFocus_iff_undamped (q : Requirement) :
-    connection% (weakFocus ∈ TMIO.realize Meets {q} ↔ undampedPLL ∈ TMIO.realize Meets {q}) := by
-  unfold TMIO.Statement
-  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+/-- The images of `weakFocus` and `undampedPLL` meet the same requirements of the PLL–DC model. -/
+@[tmio M, powerlib_domain] private theorem meets_weakFocus_iff_undamped (q : PLLDC.Requirement) :
+    PLLDC.Meets weakFocus.toPLLDC q ↔ PLLDC.Meets undampedPLL.toPLLDC q := by
+  have hw : weakFocus.params.V0 * Real.sin weakFocus.θ =
+      -(weakFocus.params.Xg * weakFocus.params.id0) := by simp [weakFocus]
+  have hu : undampedPLL.params.V0 * Real.sin undampedPLL.θ =
+      -(undampedPLL.params.Xg * undampedPLL.params.id0) := by simp [undampedPLL]
   cases q
-  · simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, Meets, IsEq,
-      undampedPLL, weakFocus]
-  · constructor
-    · rintro ⟨-, -, -, hg⟩
-      norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3,
-          a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, weakFocus, Params.γ] at hg
-    · rintro ⟨-, -, -, hg⟩
-      norm_num [a1, a2, a3, a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, Params.γ] at hg
-  · simp only [Meets]
+  · rw [meets_equilibrium_iff _ (by norm_num [FourState.Params.C, weakFocus]),
+      meets_equilibrium_iff _ (by norm_num [FourState.Params.C, undampedPLL])]
+    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, IsEq, undampedPLL, weakFocus]
+  · exact Iff.rfl
+  · rw [meets_routh_iff _ hw, meets_routh_iff _ hu]
+    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3,
+      a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, weakFocus, Params.γ]
+  · rw [meets_detNeg_iff _ hw, meets_detNeg_iff _ hu]
     norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a0,
-        omegaClSq_eq, Γc, vd0, undampedPLL, weakFocus, Params.γ]
+      omegaClSq_eq, Γc, vd0, undampedPLL, weakFocus, Params.γ]
+  · rw [meets_offBoundary_iff _ hw, meets_offBoundary_iff _ hu]
+    norm_num [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, a1, a2, a3,
+      a0, twoAlphaCl_eq, omegaClSq_eq, Γc, vd0, undampedPLL, weakFocus, Params.γ]
 
-/-- **Inexpressibility of Lyapunov stability.** No translation into the requirement language
-of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) and `frozenPLL`
-(unstable) meet the same requirements. -/
+/-- **Inexpressibility of Lyapunov stability in the PLL–DC model's language.** No requirement set
+of the PLL–DC model denotes Lyapunov stability: the images of `undampedPLL` (Lyapunov stable) and
+`frozenPLL` (unstable) meet the same requirements. -/
 @[tmio TM, powerlib_domain] theorem realize_ne_den_lyapunovStable :
-    connection% (∀ T : Set Requirement,
-      TMIO.realize Meets T ≠ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  have h2 := frozenPLL_mem_den_unstable
-  unfold powerlib.TMIO.Statement at h2
-  refine Spectral.realize_ne_den_of_indistinguishable (F := family) (y := frozenPLL)
-    (fun q => ?_) undampedPLL_mem_den_lyapunovStable fun h3 => ?_
-  · change Meets _ q ↔ Meets _ q
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
-      meets_undamped_iff_frozen q
-  · rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h2 h3
-    exact h2 h3
-
-/-- **Inexpressibility of instability.** No translation into the requirement language of the
-family is exact for instability: `frozenPLL` (unstable) and `undampedPLL` (Lyapunov stable) meet
-the same requirements. -/
-@[tmio TM, powerlib_domain] theorem realize_ne_den_unstable :
-    connection% (∀ T : Set Requirement, TMIO.realize Meets T ≠ family.den (.flow .unstable)) := by
+    connection% (∀ T : Set PLLDC.Requirement,
+      TMIO.realize PLLDC.Meets T ≠ PLLDC.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   have h1 := undampedPLL_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at h1
-  refine Spectral.realize_ne_den_of_indistinguishable (F := family) (y := undampedPLL)
-    (fun q => ?_) frozenPLL_mem_den_unstable fun h3 => ?_
-  · change Meets _ q ↔ Meets _ q
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
-      (meets_undamped_iff_frozen q).symm
-  · rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h1 h3
-    exact h3 h1
+  have h2 := frozenPLL_mem_den_unstable
+  unfold powerlib.TMIO.Statement at h1 h2
+  have h3 := Spectral.not_mem_den_lyapunovStable_of_unstable h2
+  unfold powerlib.TMIO.Statement at h3
+  exact Spectral.realize_ne_den_of_indistinguishable (F := PLLDC.family)
+    (fun q => meets_undamped_iff_frozen q) h1 h3
 
-/-- **Inexpressibility of local asymptotic stability.** No translation into the requirement
-language of the family is exact for local asymptotic stability: `weakFocus` (locally
-asymptotically stable) and `undampedPLL` (not) meet the same requirements. -/
-@[tmio TM, powerlib_domain] theorem realize_ne_den_locallyAsymptoticallyStable :
-    connection% (∀ T : Set Requirement,
-      TMIO.realize Meets T ≠ family.den (.flow .locallyAsymptoticallyStable)) := by
+/-- **Inexpressibility of instability in the PLL–DC model's language.** No requirement set of the
+PLL–DC model denotes instability: the images of `frozenPLL` (unstable) and `undampedPLL` (Lyapunov
+stable) meet the same requirements. -/
+@[tmio TM, powerlib_domain] theorem realize_ne_den_unstable :
+    connection% (∀ T : Set PLLDC.Requirement,
+      TMIO.realize PLLDC.Meets T ≠ PLLDC.family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.realize_ne_den_of_indistinguishable (F := family)
-    (fun q => by
-      change Meets _ q ↔ Meets _ q
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
-        meets_weakFocus_iff_undamped q)
-    weakFocus_mem_den_locallyAsymptoticallyStable
-    undampedPLL_not_mem_den_locallyAsymptoticallyStable
+  have h1 := undampedPLL_mem_den_lyapunovStable
+  have h2 := frozenPLL_mem_den_unstable
+  unfold powerlib.TMIO.Statement at h1 h2
+  refine Spectral.realize_ne_den_of_indistinguishable (F := PLLDC.family)
+    (fun q => (meets_undamped_iff_frozen q).symm) h2 fun h3 => ?_
+  have h4 := Spectral.not_mem_den_lyapunovStable_of_unstable h3
+  unfold powerlib.TMIO.Statement at h4
+  exact h4 h1
+
+/-- **Inexpressibility of local asymptotic stability in the PLL–DC model's language.** No
+requirement set of the PLL–DC model denotes local asymptotic stability: the images of `weakFocus`
+(locally asymptotically stable) and `undampedPLL` (not) meet the same requirements. -/
+@[tmio TM, powerlib_domain] theorem realize_ne_den_locallyAsymptoticallyStable :
+    connection% (∀ T : Set PLLDC.Requirement,
+      TMIO.realize PLLDC.Meets T ≠ PLLDC.family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h1 := weakFocus_mem_den_locallyAsymptoticallyStable
+  have h2 := undampedPLL_not_mem_den_locallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at h1 h2
+  exact Spectral.realize_ne_den_of_indistinguishable (F := PLLDC.family)
+    (fun q => meets_weakFocus_iff_undamped q) h1 h2
 
 end powerlib.GFL.DCLink.FourStateBoundary

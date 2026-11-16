@@ -1,6 +1,4 @@
-import theorem.GridTiedConverter.GFL.DCLink.FourState
-import theorem.GridTiedConverter.GFL.DCLink.BasinGuard
-import theorem.GridTiedConverter.GFL.DCLink.ModelBStability
+import theorem.GridTiedConverter.GFL.DCLink.PLLDC.Stability
 import theorem.GridTiedConverter.GFL.DCLink.Cascade
 import theorem.GridTiedConverter.GFL.DCLink.VoltageControl
 import theorem.Numerics.EulerRealization
@@ -20,42 +18,40 @@ without a step constraint the realization is not sound; in the pattern of
 
 Model boundary.
 * Model layer (M), each family with the model boundary of its module, read about its selected
-  point (continuous time, autonomous, no input): `FourState.family` (four-state GFL with PLL and
-  DC-voltage loop, `theorem/GridTiedConverter/GFL/DCLink/FourState.lean`; every operating point has
-  `V = 1`); `BasinGuard.family` (the `basin-guard` carrier,
-  `theorem/GridTiedConverter/GFL/DCLink/BasinGuard.lean`); `ModelB.family` (reduced-order model B,
-  `theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`); `DCLink.family` (current loop
+  point (continuous time, autonomous, no input): `PLLDC.family` (the four-state DC-link model,
+  `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`; the four-state GFL model of
+  `theorem/GridTiedConverter/GFL/DCLink/FourState.lean` and the `basin-guard` carrier of
+  `theorem/GridTiedConverter/GFL/DCLink/BasinGuard.lean` are parameterizations of it and are
+  integrated as their PLL–DC images, `FourState.Model.toPLLDC`, `BasinGuard.Model.toPLLDC`);
+  `DCLink.family` (current loop
   feeding the DC link, `theorem/GridTiedConverter/GFL/DCLink/Cascade.lean`); `openFamily` and
   `closedFamily` (DC node in open loop and with the PI outer loop,
   `theorem/GridTiedConverter/GFL/DCLink/VoltageControl.lean`).
 * Implementation layer (I). For each family the integrations `Euler := Numerics.EulerStep` of its
-  model type (in the namespace of the model type: `FourState`, `BasinGuard`, `ModelB`,
-  `CascadeParams`, `OpenLoop`, `DCParams`): a model and a step `h > 0`; the system is the explicit
+  model type (in the namespace of the model type: `PLLDC`, `CascadeParams`, `OpenLoop`,
+  `DCParams`): a model and a step `h > 0`; the system is the explicit
   Euler map `z ↦ z + h f(z)` of the model's translated field (with its `1/V_dc` term, read with
   Lean's `x / 0 = 0`), with step length `h`, discrete time, exact arithmetic (no round-off), fixed
   step. Excluded: step-size control, implicit or higher-order schemes, the integration error against
   the continuous trajectory.
 * Smoothness at the selected point, as a hypothesis on the model where the family admits points
-  off it: none for `FourState` (its fields agree with the smooth `regField` near every operating
-  point); `V_dc* ≠ 0` for `ModelB` (`ModelBParams.field_contDiffOn`) and `BasinGuard` (the
-  carrier is model B, `CarrierParams.carrierField_eq_modelB_field`);
+  off it: `V_dc* ≠ 0` for `PLLDC` (`PLLDC.Params.field_contDiffOn`; every four-state operating
+  point has `V = 1`);
   `V0 > 0` for the cascade (`CascadeParams.field_contDiffOn`) and the open loop
   (`openField_contDiffOn`); `V_dc,ref > 0` for the closed loop
   (`DCParams.closedField_contDiffOn`). Without it the laws are
-  not stated: model B has selected points on the plane `V_dc = 0` that satisfy the local
-  exponential estimate without being equilibria (`ModelB.collapsePoint`), where no Jacobian exists.
+  not stated: the PLL–DC model has selected points on the plane `V_dc = 0` that satisfy the local
+  exponential estimate without being equilibria (`PLLDC.collapsePoint`), where no Jacobian exists.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
 `not_eulerStep_realizationSoundUnder_local`,
 `contDiffAt_shift`) and the family modules (autonomy, smoothness on `V_dc ≠ 0`, members of local
-exponential stability; for the carrier its four-state reading `BasinGuard.mem_den_iff_fourState`);
-work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
+exponential stability); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
 * The smoothness hypotheses of the local generic laws, one per family:
-  `FourState.contDiffAt_modelField`, `BasinGuard.contDiffAt_modelField` (`V_dc* ≠ 0`),
-  `ModelB.contDiffAt_modelField` (`V_dc* ≠ 0`), `CascadeParams.contDiffAt_shiftedField`
+  `PLLDC.contDiffAt_modelField` (`V_dc* ≠ 0`), `CascadeParams.contDiffAt_shiftedField`
   (`V0 > 0`), `OpenLoop.contDiffAt_field` (`V0 > 0`), `DCParams.contDiffAt_shiftedField`
   (`V_dc,ref > 0`): the translated field is `C¹` near the origin.
 
@@ -72,11 +68,7 @@ Family and connection conclusions.
   `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
   certification). `N.not_euler_realizationSoundUnder`
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — a
-  locally exponentially stable member (`FourState`: `V₀ = k_p = k_i = k_pv = k_iv = C = 1`,
-  `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`, `FourState.mem_den_locallyExponentiallyStable_of_routh`;
-  `BasinGuard`: `s = 1`, `I_dc = I_q* = X_g = 0`, `V = K_p^pll = K_i^pll = K_p^dvc = K_i^dvc =
-  C = 1` at `(0, 0, 1, 0)`, whose four-state reading is the `FourState` witness,
-  `BasinGuard.mem_den_iff_fourState`; `ModelB.negativeReference`; `CascadeParams`:
+  locally exponentially stable member (`PLLDC.negativeReference`; `CascadeParams`:
   `negativeInductance`; `OpenLoop`: `C = P = V0 = 1`; `DCParams`: `C = V_d = V_dc* = Kp = Ki = 1`,
   `i_ff = I_d0 = 0`) has Euler integrations with every multiplier outside the unit disk.
 -/
@@ -85,9 +77,9 @@ noncomputable section
 
 open powerlib.Dynamics (State)
 
-namespace powerlib.GFL.DCLink.FourState
+namespace powerlib.GFL.DCLink.PLLDC
 
-/-- The explicit Euler integration of a four-state GFL model about its operating point with step
+/-- The explicit Euler integration of a PLL–DC system about its selected state with step
 `h > 0`. -/
 abbrev Euler := Numerics.EulerStep Model
 
@@ -96,63 +88,7 @@ translated field, with step length its step. -/
 def eulerFamily : Family Euler Requirement 4 0 :=
   Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
-/-- The Euler realization: every integration realizes its four-state GFL model. -/
-def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
-  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The translated field is `C¹` near the origin: near the operating point (`V = 1`) the physical
-field is the smooth `regField`. The smoothness hypothesis of the local generic Euler laws
-(`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiffAt_modelField (m : Model) : ContDiffAt ℝ 1 m.field 0 := by
-  refine Numerics.contDiffAt_shift (g := FourState.field m.params) (x₀ := opPoint m.θ)
-    ((contDiff_regField m.params).contDiffAt.congr_of_eventuallyEq ?_)
-  filter_upwards [Metric.ball_mem_nhds (opPoint m.θ) (by norm_num : (0 : ℝ) < 1 / 2)] with y hy
-  exact field_eq_regField_of_near m.params (by simpa [dist_eq_norm] using hy)
-
-/-- The unit model `V₀ = k_p = k_i = k_pv = k_iv = C = 1`, `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`
-is locally exponentially stable: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh conditions met
-(`mem_den_locallyExponentiallyStable_of_routh`). -/
-@[tmio TM, powerlib_domain] private theorem unitModel_mem_den :
-    connection% ((⟨⟨1, ⟨0, 0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩ : Model) ∈
-      family.den (.flow .locallyExponentiallyStable)) := by
-  change (⟨⟨1, ⟨0, 0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩ : Model) ∈
-        family.den (.flow .locallyExponentiallyStable)
-  have hm := mem_den_locallyExponentiallyStable_of_routh ⟨1, ⟨0, 0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1, 0⟩,
-      0, rfl, rfl, rfl⟩ one_ne_zero
-    (θ0 := 0) ⟨by simp, by simp⟩
-    (by norm_num [a3, vd0, twoAlphaCl_eq, Params.γ])
-    (by norm_num [a1, vd0, twoAlphaCl_eq, omegaClSq_eq, Γc, Params.γ])
-    (by norm_num [a0, vd0, omegaClSq_eq, Γc, Params.γ])
-    (by norm_num [a1, a2, a3, a0, vd0, twoAlphaCl_eq, omegaClSq_eq, Γc, Params.γ])
-  unfold powerlib.TMIO.Statement at hm
-  exact hm
-
-/-- **Without a step constraint the Euler realization of the four-state GFL models is not
-sound.** A locally exponentially stable model (`V₀ = k_p = k_i = k_pv = k_iv = C = 1`,
-`X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh
-conditions met) integrated with a large enough step is not locally exponentially stable: every
-Euler multiplier `1 + hλ` leaves the unit disk
-(`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
-@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
-    connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  exact Numerics.not_eulerStep_realizationSoundUnder_local family_isAutonomous
-    (by norm_num) (contDiffAt_modelField _) unitModel_mem_den
-
-end powerlib.GFL.DCLink.FourState
-
-namespace powerlib.GFL.DCLink.ModelB
-
-/-- The explicit Euler integration of a model-B system about its selected state with step
-`h > 0`. -/
-abbrev Euler := Numerics.EulerStep Model
-
-/-- The Euler integration family: every integration read as the Euler map of its model's
-translated field, with step length its step. -/
-def eulerFamily : Family Euler Requirement 4 0 :=
-  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The Euler realization: every integration realizes its model-B system. -/
+/-- The Euler realization: every integration realizes its PLL–DC system. -/
 def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
   Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
@@ -161,9 +97,9 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
 @[tmio M, powerlib_domain] theorem contDiffAt_modelField {m : Model} (hV : m.x 2 ≠ 0) :
     ContDiffAt ℝ 1 m.field 0 :=
   Numerics.contDiffAt_shift (g := m.p.field) (x₀ := m.x)
-    (m.p.field_contDiffOn.contDiffAt (ModelBParams.isOpen_nonzeroVdc.mem_nhds hV))
+    (m.p.field_contDiffOn.contDiffAt (PLLDC.Params.isOpen_nonzeroVdc.mem_nhds hV))
 
-/-- **Without a step constraint the Euler realization of model B is not sound.** The
+/-- **Without a step constraint the Euler realization of the PLL–DC model is not sound.** The
 negative-reference converter (`V_dc* = −1`, `negativeReference`) is locally exponentially stable;
 integrated with a large enough step it is not: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
@@ -175,54 +111,7 @@ disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
   exact Numerics.not_eulerStep_realizationSoundUnder_local family_isAutonomous
     (by norm_num) (contDiffAt_modelField (by simp [negativeReference])) hm
 
-end powerlib.GFL.DCLink.ModelB
-
-namespace powerlib.GFL.DCLink.BasinGuard
-
-/-- The explicit Euler integration of a `basin-guard` carrier model about its selected operating
-point with step `h > 0`. -/
-abbrev Euler := Numerics.EulerStep Model
-
-/-- The Euler integration family: every integration read as the Euler map of its model's
-translated carrier field, with step length its step. -/
-def eulerFamily : Family Euler Requirement 4 0 :=
-  Numerics.eulerFamily family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The Euler realization: every integration realizes its carrier model. -/
-def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
-  Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The translated carrier field is `C¹` near the origin when the selected point has
-`V_dc ≠ 0`: the smoothness hypothesis of the local generic Euler laws
-(`Numerics.euler_sound_small_step_local`); it is the translated field of the model-B reading
-(`Model.field_eq_modelB`, `ModelB.contDiffAt_modelField`). -/
-@[tmio M, powerlib_domain] theorem contDiffAt_modelField {m : Model} (hV : m.point 2 ≠ 0) :
-    ContDiffAt ℝ 1 m.field 0 := by
-  rw [m.field_eq_modelB]
-  exact ModelB.contDiffAt_modelField hV
-
-/-- **Without a step constraint the Euler realization of the carrier models is not sound.** The
-IN-positive carrier (`s = 1`) with `I_dc = I_q* = X_g = 0`,
-`V = K_p^pll = K_i^pll = K_p^dvc = K_i^dvc = C = 1` at `(θ_e, x_p, V_dc, ξ) = (0, 0, 1, 0)` is
-locally exponentially stable: its four-state reading (`mem_den_iff_fourState`) is the unit
-four-state model above. Integrated with a large enough step it is not: every Euler multiplier
-`1 + hλ` leaves the unit disk (`Numerics.not_eulerStep_realizationSoundUnder_local`). -/
-@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
-    connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  set m : Model := ⟨⟨0, 0, 1, ⟨0, 0, 0⟩, 1, 1, 1, 1, ⟨0, 1, 0⟩, rfl, rfl, rfl⟩, 1,
-      WithLp.toLp 2 ![0, 0, 1, 0]⟩
-  have h := mem_den_iff_fourState m rfl (by simp [m]) (by simp [m])
-    (.flow .locallyExponentiallyStable)
-  unfold powerlib.TMIO.Statement at h
-  have hto : m.toFourState = ⟨⟨1, ⟨0, 0, 0⟩, 0, 1, 1, 1, 1, ⟨0, 1, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩ := by
-    simp [m, Model.toFourState, CarrierParams.fourStateParams, ModelBParams.fourStateParams,
-      CarrierParams.toModelB, ModelBParams.Xg, CarrierParams.Xg, Passive.SeriesRLC.reactance]
-  rw [hto] at h
-  exact Numerics.not_eulerStep_realizationSoundUnder_local family_isAutonomous
-    (by norm_num) (contDiffAt_modelField (by simp [m])) (h.mpr FourState.unitModel_mem_den)
-
-end powerlib.GFL.DCLink.BasinGuard
+end powerlib.GFL.DCLink.PLLDC
 
 namespace powerlib.GFL.DCLink.CascadeParams
 

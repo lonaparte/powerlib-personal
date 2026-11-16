@@ -225,6 +225,68 @@ in Git; working statistics, build receipts and development plans are not kept he
   - Classified theorems 7530 → 7537 (GFL 837 → 826); public connection theorems
     1059 → 1064.
 
+- Consolidated the grid-following converter models, third round: the four-state
+  DC-link GFL (PLL + DC-voltage loop) is one model, `GFL.DCLink.PLLDC`, with one
+  family; the source models are its parameterizations.
+  - The hub is the former model B with one new parameter, the d-axis reference
+    offset `PLLDC.Params.id0`; the source note's model B is the slice `id0 = 0`.
+    Renamed: `GFL.DCLink.ModelBParams.*` → `GFL.DCLink.PLLDC.Params.*`,
+    `GFL.DCLink.ModelB.*` → `GFL.DCLink.PLLDC.*` (same short names), `toModelB` →
+    `toPLLDC`, `carrierField_eq_modelB_field` → `carrierField_eq_PLLDC_field`.
+    Modules `DCLink/ReducedOrder`, `ModelBStability`, `ModelBBoundary`,
+    `ModelBCollapse`, `ModelBCollapseDegenerate`, `ModelBFourState` →
+    `DCLink/PLLDC/{Basic, Stability, Boundary, Collapse, CollapseDegenerate,
+    FourStateSlice}`; scaffolds `FourStatePLLDC.agda`, `BasinGuardPLLDC.agda`,
+    `PLLDC/FourStateSlice.agda`, `BasinGuardFourState.agda`. Changed under the same
+    name: `noLoad_mem_den_locallyExponentiallyStable` assumes `id0 = 0`;
+    `field_eq_zero_iff_of_Vdc_eq_zero` reads the reference as `id0 + k_iv ξ`.
+  - The four-state model of its note (`FourState`) and the basin-guard carrier
+    (`BasinGuard`) keep their parameters, coordinates, closed forms and sign
+    conventions and map into the hub (`FourState.Params.toPLLDC`,
+    `FourState.Model.toPLLDC` with `FourState.field_eq_transport` through the
+    integrator flip; `CarrierParams.toPLLDC`); their own families, requirement
+    languages, regularized fields and Euler realizations are removed. Their
+    behavioural results are stated on the image in the hub, with unchanged
+    hypotheses: `FourState.mem_den_locallyExponentiallyStable_of_routh`,
+    `mem_den_unstable_of_cos_two_mul_neg`, the `cos 2θ₀` non-membership results,
+    `offEquilibrium_mem_den_unstable`, `undampedPLL_mem_den_lyapunovStable`, the
+    FourStateBoundary weak-focus, frozen-PLL and undamped-PLL results,
+    `closedRouth_of_mem_den_lyapunovStable` (as a preimage inclusion),
+    `BasinGuard.flip_mem_den_iff`, `mem_den_iff_fourState`,
+    `mem_den_locallyExponentiallyStable_iff`, `PLLDC.mem_den_iff_fourState`.
+    `FourState.exact_locallyExponentiallyStable` →
+    `FourState.mem_den_locallyExponentiallyStable_iff` (the image is locally
+    exponentially stable iff `IsEq`, `C ≠ 0` and the quartic Routh conditions);
+    FourStateBoundary's three inexpressibility results now hold in the hub's
+    requirement language. Removed with replacements: FourState's `field_eq_regField`,
+    `field_eq_regField_of_near`, `regField_opPoint`, `contDiff_regField`,
+    `hasFDerivAt_regCoordField`, `fderiv_regField_opPoint`, `family_isAutonomous`,
+    `realize_univ`, `chain_le_semantics`, `not_exact_lyapunovStable`,
+    `not_exact_unstable` and FourStateBoundary's
+    `not_exact_locallyAsymptoticallyStable` → the hub's regularization, `FourState.hasFDerivAt_field`,
+    `field_contDiffOn`, `A0_eq_jacobian`, `PLLDC.family_isAutonomous`, `realize_univ`,
+    `chain_le_semantics`, `not_exact_lyapunovStable`,
+    `not_exact_locallyAsymptoticallyStable` and the new
+    `PLLDC.not_exactUnder_positiveReference_unstable`; BasinGuard's
+    `Model.field_eq_modelB`, `family_isAutonomous`, `realize_univ`,
+    `chain_le_semantics`, `mem_den_iff_modelB`,
+    `mem_den_locallyExponentiallyStable_iff_modelB`,
+    `exactUnder_locallyExponentiallyStable`, `not_exactUnder_{lyapunovStable,
+    locallyAsymptoticallyStable, unstable}`,
+    `collapsePoint_mem_den_locallyExponentiallyStable` and
+    `not_exactUnder_iqZero_locallyExponentiallyStable` → the corresponding `PLLDC`
+    results at the image; the Euler realizations of both → `PLLDC.euler`.
+  - New: `PLLDC.mem_den_unstable_of_field_ne_zero`,
+    `PLLDC.mem_den_unstable_of_Cdc_eq_zero`, FourState's requirement correspondences
+    `meets_{equilibrium, routh, detNeg, offBoundary}_iff`,
+    `FourState.mem_den_unstable_of_a0_neg`, `jacGen_eq_jacobian`,
+    `det_characteristicMatrix_jacobian`, and the generic
+    `Criteria.coeffs_of_det_characteristicMatrix_quartic`,
+    `routhFin4_iff_of_det_characteristicMatrix_quartic`,
+    `routhViolationFin4_iff_of_det_characteristicMatrix_quartic`.
+  - Classified theorems 7537 → 7521 (GFL 826 → 807); public connection theorems
+    1064 → 1051.
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

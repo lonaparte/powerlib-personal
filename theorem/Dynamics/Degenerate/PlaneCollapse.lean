@@ -5,9 +5,9 @@ import theorem.Dynamics.Locality
 /-! # Local tools for fields that are singular or only locally regular
 
 Stability and instability criteria at points where the field collapses onto, or is repelled from,
-a coordinate plane; written for GFL model B
-(`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`,
-`theorem/GridTiedConverter/GFL/DCLink/ModelBBoundary.lean`), whose field contains `1 / V_dc`.
+a coordinate plane; written for the GFL PLL–DC model
+(`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`,
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Boundary.lean`), whose field contains `1 / V_dc`.
 
 Scope.
 * Generic foundation, independent of any model: an arbitrary autonomous field `f : ℝⁿ → ℝⁿ`
@@ -15,11 +15,11 @@ Scope.
   (solution segments, i.e. Mathlib integral curves on `[t₀, t₁]`). No global regularity of `f` is
   assumed.
 * This module defines no family. All results are generic semantic implications (foundation);
-  model-specific conclusions are drawn in the GFL model-B modules.
+  model-specific conclusions are drawn in the GFL PLL–DC modules.
 
 Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem); the collapse
 estimate is new (it answers the `V_dc* = 0` question of
-`theorem/GridTiedConverter/GFL/DCLink/ModelBStability.lean`).
+`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Stability.lean`).
 
 Results.
 * `locallyExponentiallyStable_of_collapse`: if the flow collapses onto a coordinate plane

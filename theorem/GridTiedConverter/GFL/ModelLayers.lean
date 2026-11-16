@@ -73,7 +73,8 @@ Family and connection conclusions.
 No family and no connection conclusion: the module solves
 algebraic loop relations and proves field identities; it states no behaviour. The behavioural
 conclusions about the rate-coupled carrier and the four-state model are made through
-`RatePLL.family` and `FourState.family`.
+`RatePLL.family` and `PLLDC.family` (the four-state model read through
+`FourState.Model.toPLLDC`).
 -/
 
 noncomputable section
