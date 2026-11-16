@@ -137,7 +137,7 @@ def openField (C isrc P : ℝ) (x : State 1) : State 1 :=
 /-- Equilibrium state `V_dc = V0`. -/
 def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
 
-@[tmio M, powerlib_domain] theorem openField_eq_zero {C P V0 : ℝ} (_hV : V0 ≠ 0) :
+@[tmio M, powerlib_domain] theorem openField_eq_zero {C P V0 : ℝ} :
     openField C (-(P / V0)) P (dcState V0) = 0 := by
   ext i
   fin_cases i
@@ -232,7 +232,7 @@ stable exactly in rectifier operation, `P/V0 > 0`. -/
   · rintro ⟨-, h⟩
     exact (div_pos_iff_of_pos_right hCV).mp h
   · intro h
-    exact ⟨openField_eq_zero hV.ne', div_pos h hCV⟩
+    exact ⟨openField_eq_zero, div_pos h hCV⟩
 
 /-- Inverter (`I_dc0 = P/V0 < 0`, constant-power load on the DC side): the open-loop DC
 voltage is unstable. -/
@@ -243,7 +243,7 @@ voltage is unstable. -/
   rw [open_mem_den_flow]
   refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 1)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _)
-    (openField_eq_zero hV.ne') (openJacobian hV.ne')
+    openField_eq_zero (openJacobian hV.ne')
     ⟨_, _, fun h => one_ne_zero (congrFun h 0), eigenpair_fin_one _, ?_⟩
   rw [Complex.ofReal_re, neg_div]
   exact neg_pos.mpr (div_neg_of_neg_of_pos hP (mul_pos hC hV))
@@ -297,7 +297,7 @@ def eqState : State 2 := WithLp.toLp 2 ![p.Vref, (p.iff - p.Id0) / p.Ki]
   field_simp
   ring
 
-@[tmio M, powerlib_domain] theorem closedField_eqState (hKi : p.Ki ≠ 0) (_hV : p.Vref ≠ 0) :
+@[tmio M, powerlib_domain] theorem closedField_eqState (hKi : p.Ki ≠ 0) :
     p.closedField p.eqState = 0 := by
   ext i
   fin_cases i
@@ -480,7 +480,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
   · rintro ⟨hkp, hki⟩
     exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 2)
       (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
-      (p.closedField_eqState hki.ne' hV.ne') (p.closedJacobian hki.ne' hV.ne' hC.ne')
+      (p.closedField_eqState hki.ne') (p.closedJacobian hki.ne' hV.ne' hC.ne')
       ((p.closed_isHurwitz_iff hVd hV hC).2 ⟨hkp, hki⟩)
 
 /-- `Kp < −I_dc0/V_d` (insufficient proportional gain in inverter mode): unstable. -/
@@ -492,7 +492,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
   rw [closed_mem_den_flow]
   refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
     (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
-    (p.closedField_eqState hKi hV.ne') (p.closedJacobian hKi hV.ne' hC.ne')
+    (p.closedField_eqState hKi) (p.closedJacobian hKi hV.ne' hC.ne')
     (Criteria.exists_eigenpair_re_pos_of_trace_pos _ ?_)
   rw [DCParams.jacobian_trace]
   have hVC : 0 < p.Vref * p.C := mul_pos hV hC
@@ -512,7 +512,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
   rw [closed_mem_den_flow]
   exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
     (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
-    (p.closedField_eqState hki.ne hV.ne') (p.closedJacobian hki.ne hV.ne' hC.ne')
+    (p.closedField_eqState hki.ne) (p.closedJacobian hki.ne hV.ne' hC.ne')
     (Criteria.exists_eigenvalue_re_pos_of_det_neg _ (by
       rw [DCParams.jacobian_det]
       exact mul_neg_of_pos_of_neg (div_pos hVd (mul_pos hV hC)) hki))
@@ -596,7 +596,7 @@ def negativeCapacitance : OpenLoop := ⟨⟨0, -1, 0⟩, -1, 1, rfl, rfl⟩
   unfold powerlib.TMIO.Statement
   refine open_mem_den_flow.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
     (isOpen_posDC 1) (by simp [posDC, dcState, negativeCapacitance]) _
-    (openField_contDiffOn _ _ _) (openField_eq_zero (by norm_num [negativeCapacitance]))
+    (openField_contDiffOn _ _ _) openField_eq_zero
     (openJacobian (by norm_num [negativeCapacitance])) ?_)
   rw [Linear.isHurwitz_one_iff]
   norm_num [negativeCapacitance]
@@ -629,7 +629,7 @@ def negativeCapacitanceLoop : DCParams := ⟨⟨0, -1, 0⟩, 1, 1, -1, -1, 0, 0,
   refine closed_mem_den_flow.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
     (isOpen_posDC 2) (by simp [posDC, DCParams.eqState, negativeCapacitanceLoop]) _
     negativeCapacitanceLoop.closedField_contDiffOn
-    (negativeCapacitanceLoop.closedField_eqState hKi hV)
+    (negativeCapacitanceLoop.closedField_eqState hKi)
     (negativeCapacitanceLoop.closedJacobian hKi hV hC) ?_)
   rw [Criteria.isHurwitz_fin_two_iff, DCParams.jacobian_trace, DCParams.jacobian_det]
   norm_num [negativeCapacitanceLoop, DCParams.a, DCParams.b, DCParams.Idc0]
@@ -1121,21 +1121,21 @@ matches the operating current, `i_ff = I_d0`. -/
     · simp [closedField, eqState]
 
 /-- `Kp` against the boundary `−I_dc0/V_d`: `V_d Kp + I_dc0 = (V_d/V_dc*) (I_d0 + V_dc* Kp)`. -/
-@[tmio M, powerlib_domain] private theorem kp_boundary_factor (_hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
+@[tmio M, powerlib_domain] private theorem kp_boundary_factor (hV : 0 < p.Vref) :
     p.Vd * p.Kp + p.Idc0 = p.Vd / p.Vref * (p.Id0 + p.Vref * p.Kp) := by
   simp only [Idc0]
   field_simp
   ring
 
 /-- `Kp` above the boundary `−I_dc0/V_d` iff `V_d Kp + I_dc0 > 0`. -/
-@[tmio M, powerlib_domain] private theorem kp_sub_boundary_pos_iff (hVd : 0 < p.Vd)
-    (_hV : 0 < p.Vref) : -(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0 := by
+@[tmio M, powerlib_domain] private theorem kp_sub_boundary_pos_iff (hVd : 0 < p.Vd) :
+    -(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0 := by
   rw [← neg_div, div_lt_iff₀ hVd]
   constructor <;> intro h <;> linarith
 
 /-- `Kp` on the boundary `−I_dc0/V_d` iff `V_d Kp + I_dc0 = 0`. -/
-@[tmio M, powerlib_domain] private theorem kp_sub_boundary_eq_iff (hVd : 0 < p.Vd)
-    (_hV : 0 < p.Vref) : -(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0 := by
+@[tmio M, powerlib_domain] private theorem kp_sub_boundary_eq_iff (hVd : 0 < p.Vd) :
+    -(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0 := by
   rw [← neg_div, div_eq_iff hVd.ne']
   constructor <;> intro h <;> linarith
 
@@ -1183,8 +1183,8 @@ voltage error is frozen and the integrator drifts; with `Kp < −I_dc0/V_d` the 
         (p.Ki = 0 ∧ p.iff = p.Id0 ∧ -(p.Idc0 / p.Vd) < p.Kp)}) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow, Set.mem_ofPred_eq]
-  have hsplit := p.kp_boundary_factor hVd hV
-  have hlt := p.kp_sub_boundary_pos_iff hVd hV
+  have hsplit := p.kp_boundary_factor hV
+  have hlt := p.kp_sub_boundary_pos_iff hVd
   have hVV : 0 < p.Vd / p.Vref := div_pos hVd hV
   constructor
   · intro h

@@ -21,7 +21,7 @@ Results.
   `v ≠ 0`, `Φ'(x) = v̇ / v = f(x, v) / v`.
 * Energy balance `dE/dt = −γ v²` along every solution (`energy_lie`,
   `energy_hasDerivWithinAt`); conservation for `γ = 0` (`energy_conserved`), monotone decay for
-  `γ ≥ 0` (`energy_antitone`).
+  `γ ≥ 0` (`energy_lie_nonpos`; `energy_antitone`, on every convex time set).
 * Equilibria are `(x*, 0)` with `V'(x*) = 0` (`field_eq_zero_iff`).
 * A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for `γ ≥ 0`
   (energy as local Lyapunov function; LeanForControl `lyapunov_stable`;
@@ -118,18 +118,22 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
     (fun τ hτ => ((hc τ (Ico_subset_Icc_self hτ)).mono (Icc_subset_Icc_left hτ.1))
       |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hτ.2)) t ht
 
-/-- Damped case `γ ≥ 0`: the energy is nonincreasing along every solution segment. -/
-@[tmio T, powerlib_foundation] theorem energy_antitone {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0) (hγ : 0 ≤ γ)
-    (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {a b : ℝ}
-    (hφ : IsTrajectoryOn φ (field m γ dV) a b) :
-    AntitoneOn (fun t => energy m V (φ t)) (Icc a b) := by
-  apply antitoneOn_of_hasDerivWithinAt_nonpos (convex_Icc a b)
-    (f' := fun t => -γ * φ t 1 ^ 2)
+/-- Damped case `γ ≥ 0`: the energy does not increase along the field, `Ė = −γ v² ≤ 0`. -/
+@[tmio T, powerlib_foundation] theorem energy_lie_nonpos {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
+    (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
+    fderiv ℝ (energy m V) y (field m γ dV y) ≤ 0 := by
+  rw [energy_lie hm hV]
+  nlinarith [sq_nonneg (y 1)]
+
+/-- Damped case `γ ≥ 0`: the energy is nonincreasing along every solution on a convex time set
+(a solution segment `Icc a b`, a forward ray `Ici a`, …). -/
+@[tmio T, powerlib_foundation] theorem energy_antitone {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
+    (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {s : Set ℝ}
+    (hs : Convex ℝ s) (hφ : IsIntegralCurveOn φ (fun _ y => field m γ dV y) s) :
+    AntitoneOn (fun t => energy m V (φ t)) s := by
+  apply antitoneOn_of_hasDerivWithinAt_nonpos hs (f' := fun t => -γ * φ t 1 ^ 2)
   · exact fun t ht => (energy_hasDerivWithinAt hm hV hφ ht).continuousWithinAt
-  · intro t ht
-    rw [interior_Icc] at ht
-    exact ((energy_hasDerivWithinAt hm hV hφ (Ioo_subset_Icc_self ht)).mono
-      Ioo_subset_Icc_self).mono_of_mem_nhdsWithin (by rw [interior_Icc]; exact self_mem_nhdsWithin)
+  · exact fun t ht => (energy_hasDerivWithinAt hm hV hφ (interior_subset ht)).mono interior_subset
   · intro t _
     have := sq_nonneg (φ t 1)
     nlinarith
@@ -175,8 +179,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   · intro y _
     have h : fderiv ℝ (fun y => energy m V y - V x₀) y = fderiv ℝ (energy m V) y :=
       fderiv_sub_const _
-    rw [h, energy_lie hm.ne' hV]
-    have := sq_nonneg (y 1)
-    nlinarith
+    rw [h]
+    exact energy_lie_nonpos hm.ne' hγ hV y
 
 end powerlib.PhasePlane.Conservative

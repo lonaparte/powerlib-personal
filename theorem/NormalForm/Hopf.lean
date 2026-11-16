@@ -196,7 +196,7 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
 /-- For `μ > 0` the origin is unstable. -/
 @[tmio TM, powerlib_foundation] theorem origin_unstable (p : Params) (hμ : 0 < p.μ) :
     Unstable (field p) 0 :=
-  Criteria.unstable_of_jacobian_trace_pos_fin_two (linPart p) (field_contDiff p)
+  Criteria.unstable_of_jacobian_trace_pos (linPart p) (field_contDiff p)
     (field_zero p) (fderiv_field_zero p) (by rw [trace_linPart]; linarith)
 
 /-! ## Polar form -/

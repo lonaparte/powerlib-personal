@@ -729,7 +729,7 @@ exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is 
     (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     connection% (Model.mk p θ ∈ family.den (.flow .unstable)) := by
-  have htr := trace_jac_eq_zero_of_tan_eq p hD0 hV hki hωs hcos heq htan
+  have htr := trace_jac_eq_zero_of_tan_eq p hki hωs hcos heq htan
   have hdet := det_jac_pos p hD0 hV hki hcos
   exact mem_den_unstable_of_hopf (Model.mk p θ) heq hD0.ne' htr hdet (mul_pos hkp hki)
 

@@ -293,8 +293,8 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   exact ⟨fun h => h.1, fun h => ⟨h, det_jac_pos p hD0 hV hki hcos⟩⟩
 
 /-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has zero trace. -/
-@[tmio M, powerlib_domain] theorem trace_jac_eq_zero_of_tan_eq (_hD0 : 0 < p.D0) (_hV : 0 < p.V)
-    (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
+@[tmio M, powerlib_domain] theorem trace_jac_eq_zero_of_tan_eq (hki : 0 < p.ki) (hωs : 0 < p.ωs)
+    {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     (jac p θ).trace = 0 := by
   rw [Real.tan_eq_sin_div_cos, div_eq_div_iff hcos.ne' hki.ne'] at htan
@@ -308,7 +308,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     (Linear.characteristicMatrix (jac p θ) (Complex.I * Real.sqrt (jac p θ).det)).det = 0 := by
-  have htr := trace_jac_eq_zero_of_tan_eq p hD0 hV hki hωs hcos heq htan
+  have htr := trace_jac_eq_zero_of_tan_eq p hki hωs hcos heq htan
   have hdet := det_jac_pos p hD0 hV hki hcos
   have hs : ((Real.sqrt (jac p θ).det : ℝ) : ℂ) ^ 2 = ((jac p θ).det : ℂ) := by
     rw [← Complex.ofReal_pow, Real.sq_sqrt hdet.le]
@@ -540,7 +540,7 @@ def family : Family Model Requirement 2 0 :=
   change m ∈ family.den (.flow .unstable)
   refine mem_den_flow_iff.mpr ?_
   rcases hs with htr | hdet
-  · exact Criteria.unstable_of_jacobian_trace_pos_fin_two (jac m.params m.θ)
+  · exact Criteria.unstable_of_jacobian_trace_pos (jac m.params m.θ)
       (contDiff_field m.params) (field_equilibrium m.params he.1)
       (fderiv_field m.params he.2 m.θ 0) htr
   · exact Criteria.unstable_of_jacobian_det_neg_fin_two (jac m.params m.θ)

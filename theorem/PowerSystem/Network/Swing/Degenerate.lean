@@ -21,13 +21,18 @@ Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing 
 
 Results.
 * Energy (static foundation): `potential` `U(θ) = −∑ Pₖθₖ − ½∑ₖ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)` with
-  gradient `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`), `energy` (kinetic plus potential of the
-  absolute angles) and the energy balance `lie_energy` (`Ė = −∑ Dₖωₖ² + ω₀ ∑ Pₖ`, so `Ė ≤ 0` at a
-  power-balance point, `lie_energy_nonpos`).
+  gradient `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`). The energy is the mechanical energy
+  `Dynamics.Mechanical.energy M (U ∘ ground)` (kinetic energy plus the potential of the absolute
+  angles `angleMap z = ground (pos z)`, `angleMap_eq_ground`); its balance along the reduced field
+  is `lie_energy` (`Ė = −∑ Dₖωₖ² + ω₀ ∑ Pₖ`, every total power). At a power-balance point the
+  reduced field is mechanical (below) and the energy laws are those of
+  `theorem/Dynamics/Mechanical.lean` (`Dynamics.Mechanical.lie_energy_nonpos`, `energy_point`,
+  `energy_sub_point`, with `equilibrium_eq_point`).
 * Mechanical structure (static): `reducedField_eq_mechanical` — with zero total power the reduced
   field is the damped mechanical field `Dynamics.Mechanical.field relRate M D (U ∘ ground)` of
   `theorem/Dynamics/Mechanical.lean` (positions the relative angles, velocities the frequency
-  deviations, `relRate ω = (ωᵢ₊₁ − ω₀)ᵢ`); `equilibrium_eq_point`,
+  deviations, `relRate ω = (ωᵢ₊₁ − ω₀)ᵢ`); `equilibrium_eq_point` (the selected point is the rest
+  point `Dynamics.Mechanical.point (relAngles θ)`),
   `potential_ground_relAngles_add` (the potential in relative angles about `relAngles θ` is
   `U(θ + ground v)`), `critical_iff_balance` (its critical points along the reachable directions
   are the power-balance points), `fderiv_potential_comp_ground_relRate`.
@@ -91,11 +96,6 @@ variable {n : ℕ}
 /-- Network potential `U(θ) = −∑ₖ Pₖ θₖ − ½ ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)`. -/
 def potential (p : Params n) (θ : Fin (n + 1) → ℝ) : ℝ :=
   -(∑ k, p.P k * θ k) - (∑ k, ∑ j, p.B k j * Real.cos (θ k - θ j)) / 2
-
-/-- Swing energy on the reduced state: kinetic energy plus the potential of the absolute angles
-`angleMap z` (with `θ₀ = 0`). -/
-def energy (p : Params n) (z : State (n + (n + 1))) : ℝ :=
-  (∑ k, p.M k * z (wIdx k) ^ 2) / 2 + potential p (angleMap z)
 
 @[tmio M, powerlib_domain] theorem sum_powerInjection (p : Params n) (θ : Fin (n + 1) → ℝ) :
     ∑ k, powerInjection p.B θ k = 0 := by
@@ -175,13 +175,6 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
     exact ContDiff.sum fun k _ => ContDiff.sum fun j _ => contDiff_const.mul
       (Real.contDiff_cos.comp ((contDiff_apply ℝ ℝ k).sub (contDiff_apply ℝ ℝ j)))
 
-@[tmio M, powerlib_domain] theorem energy_contDiff (p : Params n) : ContDiff ℝ 1 (energy p) := by
-  unfold energy
-  apply ContDiff.add
-  · apply ContDiff.div_const
-    exact ContDiff.sum fun k _ => contDiff_const.mul ((contDiff_piLp_apply 2).pow 2)
-  · exact (potential_contDiff p).comp angleMap.contDiff
-
 /-- The absolute angles move with the frequency differences: `(angleMap ż)ₖ = ωₖ − ω₀`. -/
 @[tmio M, powerlib_domain] theorem angleMap_reducedField (p : Params n) (z : State (n + (n + 1)))
     (k : Fin (n + 1)) : angleMap (reducedField p z) k = z (wIdx k) - z (wIdx 0) := by
@@ -189,71 +182,7 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
   · simp
   · simp [reducedField_dIdx]
 
-/-- The derivative of the energy. -/
-def energyGrad (p : Params n) (z : State (n + (n + 1))) : State (n + (n + 1)) →L[ℝ] ℝ :=
-  (∑ k, (p.M k * z (wIdx k)) • PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (n + (n + 1)) => ℝ) (wIdx k)) +
-    (potentialGrad p (angleMap z)).comp angleMap
-
-@[tmio M, powerlib_domain] theorem energyGrad_apply (p : Params n) (z v : State (n + (n + 1))) :
-    energyGrad p z v = ∑ k, p.M k * z (wIdx k) * v (wIdx k) +
-      ∑ k, (powerInjection p.B (angleMap z) k - p.P k) * angleMap v k := by
-  simp [energyGrad, potentialGrad_apply]
-
-@[tmio M, powerlib_domain] theorem hasFDerivAt_energy (p : Params n) (z : State (n + (n + 1))) :
-    HasFDerivAt (energy p) (energyGrad p z) z := by
-  have hkin : HasFDerivAt (fun y : State (n + (n + 1)) => (∑ k, p.M k * y (wIdx k) ^ 2) / 2)
-      (∑ k, (p.M k * z (wIdx k)) • PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (n + (n + 1)) => ℝ)
-        (wIdx k)) z := by
-    have hs : HasFDerivAt (fun y : State (n + (n + 1)) => ∑ k, p.M k * y (wIdx k) ^ 2)
-        (∑ k, (2 * (p.M k * z (wIdx k))) • PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (n + (n + 1)) => ℝ)
-          (wIdx k)) z := by
-      refine HasFDerivAt.fun_sum fun k _ => ?_
-      have h1 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z (wIdx k)
-      have h2 := (h1.mul h1).const_mul (p.M k)
-      convert h2 using 1
-      · funext y; simp only [Pi.mul_apply]; ring
-      · ext v
-        simp [smul_eq_mul]
-        ring
-    convert hs.const_mul (1 / 2 : ℝ) using 1
-    · funext y; ring
-    · ext v
-      simp [smul_eq_mul, Finset.mul_sum]
-      exact Finset.sum_congr rfl fun k _ => by ring
-  exact hkin.add ((hasFDerivAt_potential p (angleMap z)).comp z angleMap.hasFDerivAt)
-
-/-- **Energy balance.** Along the reduced swing field the energy changes at the rate
-`−∑ₖ Dₖ ωₖ² + ω₀ ∑ₖ Pₖ`; at a power-balance point `∑ₖ Pₖ = 0`, so the energy dissipates. -/
-@[tmio M, powerlib_domain] theorem lie_energy (p : Params n) (z : State (n + (n + 1))) :
-    fderiv ℝ (energy p) z (reducedField p z) =
-      -(∑ k, p.D k * z (wIdx k) ^ 2) + z (wIdx 0) * ∑ k, p.P k := by
-  rw [(hasFDerivAt_energy p z).fderiv, energyGrad_apply]
-  simp only [reducedField_wIdx, angleMap_reducedField]
-  have hPI := sum_powerInjection p (angleMap z)
-  have key : ∀ k, p.M k * z (wIdx k) * ((p.P k - p.D k * z (wIdx k) -
-      powerInjection p.B (angleMap z) k) / p.M k) +
-      (powerInjection p.B (angleMap z) k - p.P k) * (z (wIdx k) - z (wIdx 0)) =
-      -(p.D k * z (wIdx k) ^ 2) - (powerInjection p.B (angleMap z) k - p.P k) * z (wIdx 0) := by
-    intro k
-    field_simp [(p.M_pos k).ne']
-    ring
-  rw [← Finset.sum_add_distrib, Finset.sum_congr rfl fun k _ => key k, Finset.sum_sub_distrib,
-    Finset.sum_neg_distrib, ← Finset.sum_mul, Finset.sum_sub_distrib, hPI]
-  ring
-
-/-! ## Angle-only displacements and the potential difference -/
-
-/-- The reduced state with relative angles `v` and zero frequencies. -/
-def angleState (v : Fin n → ℝ) : State (n + (n + 1)) :=
-  WithLp.toLp 2 fun r => Fin.addCases (motive := fun _ => ℝ) v (fun _ => 0) r
-
-@[tmio T, simp, powerlib_foundation] theorem angleState_dIdx (v : Fin n → ℝ) (i : Fin n) :
-    angleState v (dIdx i) = v i := by
-  simp [angleState]
-
-@[tmio T, simp, powerlib_foundation] theorem angleState_wIdx (v : Fin n → ℝ) (k : Fin (n + 1)) :
-    angleState v (wIdx k) = 0 := by
-  simp [angleState]
+/-! ## Relative-angle displacements and the potential difference -/
 
 /-- Absolute angle displacement of relative angles `v` (reference angle `0`). -/
 def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
@@ -270,25 +199,6 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 @[tmio T, powerlib_foundation] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
   funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
-@[tmio T, powerlib_foundation] theorem angleMap_angleState (v : Fin n → ℝ) :
-    angleMap (angleState v) = ground v := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k <;> simp
-
-@[tmio T, powerlib_foundation] theorem angleState_smul (c : ℝ) (v : Fin n → ℝ) :
-    angleState (c • v) = c • angleState v := by
-  apply Dynamics.state_ext_blocks <;> intro _ <;> simp
-
-@[tmio T, powerlib_foundation] theorem angleState_eq_zero_iff (v : Fin n → ℝ) :
-    angleState v = 0 ↔ v = 0 := by
-  constructor
-  · intro h
-    funext i
-    have := congrArg (fun y : State (n + (n + 1)) => y (dIdx i)) h
-    simpa using this
-  · rintro rfl
-    apply Dynamics.state_ext_blocks <;> intro _ <;> simp
-
 @[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     potential p (fun k => θ k + c) = potential p θ - c * ∑ k, p.P k := by
   simp only [potential, add_sub_add_right_eq_sub]
@@ -302,44 +212,14 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) : ∑ k, p.P k = 0 := by
   rw [Finset.sum_congr rfl fun k _ => hbal k, sum_powerInjection]
 
-/-- The energy at an angle-only displacement of the selected point is the potential there. -/
-@[tmio M, powerlib_domain] theorem energy_equilibrium_add_angleState {p : Params n}
-    {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ) :
-    energy p (equilibrium θ + angleState v) = potential p (θ + ground v) := by
-  have hz : ∀ k, (equilibrium θ + angleState v) (wIdx k) = 0 := fun k => by
-    simp [equilibrium]
-  have ha : angleMap (equilibrium θ + angleState v) = fun k => (θ + ground v) k + -θ 0 := by
-    rw [map_add, equilibrium, angleMap_reduce, angleMap_angleState]
-    funext k
-    simp only [Pi.add_apply]
-    ring
-  rw [energy, ha, potential_add_const, sum_P_of_balance hbal]
-  simp [hz]
-
-@[tmio M, powerlib_domain] theorem energy_equilibrium {p : Params n}
-    {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) :
-    energy p (equilibrium θ) = potential p θ := by
-  have := energy_equilibrium_add_angleState hbal (0 : Fin n → ℝ)
-  have h0 : angleState (0 : Fin n → ℝ) = 0 := (angleState_eq_zero_iff 0).mpr rfl
-  rwa [h0, add_zero, ground_zero_vec, add_zero] at this
-
-/-- The energy does not increase along the reduced field at a power-balance point. -/
-@[tmio M, powerlib_domain] theorem lie_energy_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (hbal : ∀ k, p.P k = powerInjection p.B θ k) (z : State (n + (n + 1))) :
-    fderiv ℝ (energy p) z (reducedField p z) ≤ 0 := by
-  rw [lie_energy, sum_P_of_balance hbal, mul_zero, add_zero, neg_nonpos]
-  exact Finset.sum_nonneg fun k _ => mul_nonneg (p.D_pos k).le (sq_nonneg _)
-
 /-! ## The reduced field as a damped mechanical system -/
 
+/-- The absolute angles of a reduced state are the grounded relative angles, its positions
+`Dynamics.Mechanical.pos`. -/
 @[tmio T, powerlib_foundation] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
-    angleMap w = ground fun i => w (dIdx i) := by
+    angleMap w = ground (Dynamics.Mechanical.pos w) := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k <;> simp
-
-@[tmio T, powerlib_foundation] theorem norm_le_of_dIdx (w : State (n + (n + 1))) :
-    ‖(fun i => w (dIdx i) : Fin n → ℝ)‖ ≤ ‖w‖ :=
-  (pi_norm_le_iff_of_nonneg (norm_nonneg w)).mpr fun i => PiLp.norm_apply_le w (dIdx i)
 
 /-- `ground` as a continuous linear map. -/
 def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
@@ -433,22 +313,48 @@ in relative angles `q ↦ U(ground q)`. Static identity: the dynamics results of
     reducedField p =
       Dynamics.Mechanical.field relRate p.M p.D (fun q => potential p (ground q)) := by
   funext z
-  have hpos : Dynamics.Mechanical.pos z = fun i => z (dIdx i) := by
-    ext i
-    simp
   apply Dynamics.state_ext_blocks
   · intro i
     rw [reducedField_dIdx, Dynamics.Mechanical.field_qIdx]
     simp
   · intro k
     rw [reducedField_wIdx, Dynamics.Mechanical.field_vIdx, fderiv_potential_comp_ground_relRate hP,
-      angleMap_eq_ground, hpos]
-    have hsum : ∑ l, (powerInjection p.B (ground fun i => z (dIdx i)) l - p.P l) *
+      angleMap_eq_ground]
+    have hsum : ∑ l, (powerInjection p.B (ground (Dynamics.Mechanical.pos z)) l - p.P l) *
         (Pi.single k (1 : ℝ) : Fin (n + 1) → ℝ) l =
-          powerInjection p.B (ground fun i => z (dIdx i)) k - p.P k := by
+          powerInjection p.B (ground (Dynamics.Mechanical.pos z)) k - p.P k := by
       simp [Pi.single_apply]
     rw [hsum]
     ring
+
+/-- **Energy balance.** Along the reduced swing field the mechanical energy
+`Dynamics.Mechanical.energy M (U ∘ ground)` (kinetic energy plus the network potential of the
+absolute angles, `angleMap_eq_ground`) changes at the rate `−∑ₖ Dₖ ωₖ² + ω₀ ∑ₖ Pₖ`, for every
+total power. At a power-balance point `∑ₖ Pₖ = 0`, the reduced field is mechanical
+(`reducedField_eq_mechanical`) and the energy dissipates (`Dynamics.Mechanical.lie_energy`,
+`Dynamics.Mechanical.lie_energy_nonpos`). -/
+@[tmio M, powerlib_domain] theorem lie_energy (p : Params n) (z : State (n + (n + 1))) :
+    fderiv ℝ (Dynamics.Mechanical.energy p.M fun q => potential p (ground q)) z
+        (reducedField p z) =
+      -(∑ k, p.D k * z (wIdx k) ^ 2) + z (wIdx 0) * ∑ k, p.P k := by
+  rw [(Dynamics.Mechanical.hasFDerivAt_energy
+      (hasFDerivAt_potential_comp_ground p _).differentiableAt).fderiv,
+    (hasFDerivAt_potential_comp_ground p _).fderiv]
+  simp only [_root_.add_apply, FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply,
+    PiLp.proj_apply, smul_eq_mul, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    groundCLM_apply, potentialGrad_apply, ← angleMap_eq_ground, reducedField_wIdx,
+    angleMap_reducedField]
+  have hPI := sum_powerInjection p (angleMap z)
+  have key : ∀ k, p.M k * z (wIdx k) * ((p.P k - p.D k * z (wIdx k) -
+      powerInjection p.B (angleMap z) k) / p.M k) +
+      (powerInjection p.B (angleMap z) k - p.P k) * (z (wIdx k) - z (wIdx 0)) =
+      -(p.D k * z (wIdx k) ^ 2) - (powerInjection p.B (angleMap z) k - p.P k) * z (wIdx 0) := by
+    intro k
+    field_simp [(p.M_pos k).ne']
+    ring
+  rw [← Finset.sum_add_distrib, Finset.sum_congr rfl fun k _ => key k, Finset.sum_sub_distrib,
+    Finset.sum_neg_distrib, ← Finset.sum_mul, Finset.sum_sub_distrib, hPI]
+  ring
 
 /-- At a network with zero total power, the critical points of the potential in relative angles
 along the reachable directions are the power-balance points. -/
@@ -501,7 +407,7 @@ displacements arbitrarily close to it with a lower potential rule out local asym
 stability. -/
 @[tmio TM, powerlib_domain] private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
-    (hseed : ∀ ε > 0, ∃ v : Fin n → ℝ, ‖angleState v‖ < ε ∧
+    (hseed : ∀ ε > 0, ∃ v : Fin n → ℝ, ‖v‖ < ε ∧
       potential p (θ + ground v) < potential p θ) :
     connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
@@ -512,9 +418,8 @@ stability. -/
     (potential_comp_ground_contDiff p) (fun j => (p.M_pos j).ne') (fun j => (p.D_pos j).le)
     fun ε hε => ?_
   obtain ⟨v, hv, hlt⟩ := hseed ε hε
-  refine ⟨v, lt_of_le_of_lt ?_ hv, ?_⟩
-  · simpa using norm_le_of_dIdx (angleState v)
-  · rwa [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
+  refine ⟨v, hv, ?_⟩
+  rwa [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
 
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line` on the
 reduced field. If the network stays power balanced along the relative-angle displacements `t • v`
@@ -931,13 +836,13 @@ the model is not in the denotation of the local asymptotic sentence. -/
     (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0) at h
   unfold powerlib.TMIO.Statement
   refine reducedSwing_not_localAsymptoticStable_of_potential_lt hbal fun ε hε => ?_
-  have hN : 0 < ‖angleState v‖ + 1 := by positivity
+  have hN : 0 < ‖v‖ + 1 := by positivity
   obtain ⟨t, -, ht, hlt⟩ := exists_potential_lt hbal (ground v) h (div_pos hε hN)
   refine ⟨t • v, ?_, by rwa [ground_smul]⟩
-  rw [angleState_smul, norm_smul, Real.norm_eq_abs]
-  calc |t| * ‖angleState v‖ ≤ |t| * (‖angleState v‖ + 1) :=
+  rw [norm_smul, Real.norm_eq_abs]
+  calc |t| * ‖v‖ ≤ |t| * (‖v‖ + 1) :=
         mul_le_mul_of_nonneg_left (by linarith) (abs_nonneg t)
-    _ < ε / (‖angleState v‖ + 1) * (‖angleState v‖ + 1) :=
+    _ < ε / (‖v‖ + 1) * (‖v‖ + 1) :=
         mul_lt_mul_of_pos_right ht hN
     _ = ε := by field_simp
 
@@ -1526,42 +1431,6 @@ which contradicts the positive Hessian along it. -/
 
 /-! ## Local asymptotic stability at a strict, isolated minimum of the potential -/
 
-/-- The energy relative to the selected point, at a displacement `w`: kinetic energy of `w` plus
-the potential increment of its relative angles. -/
-@[tmio M, powerlib_domain] theorem energy_equilibrium_add {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (hbal : ∀ k, p.P k = powerInjection p.B θ k) (w : State (n + (n + 1))) :
-    energy p (equilibrium θ + w) - energy p (equilibrium θ) =
-      (∑ k, p.M k * w (wIdx k) ^ 2) / 2 +
-        (potential p (θ + ground fun i => w (dIdx i)) - potential p θ) := by
-  have ha : angleMap (equilibrium θ + w) =
-      fun k => (θ + ground fun i => w (dIdx i)) k + -θ 0 := by
-    rw [map_add, equilibrium, angleMap_reduce, angleMap_eq_ground]
-    funext k
-    simp only [Pi.add_apply]
-    ring
-  rw [energy, ha, potential_add_const, sum_P_of_balance hbal, energy_equilibrium hbal]
-  simp only [PiLp.add_apply, equilibrium, reduce_wIdx, Pi.zero_apply, zero_add, mul_zero,
-    sub_zero]
-  ring
-
-/-- A relative-angle displacement that keeps power balance is an equilibrium of the reduced
-field. -/
-@[tmio M, powerlib_domain] theorem reducedField_equilibrium_add_angleState {p : Params n}
-    {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ}
-    (hv : ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
-    reducedField p (equilibrium θ + angleState v) = 0 := by
-  apply Dynamics.state_ext_blocks
-  · intro i; simp [reducedField_dIdx, equilibrium]
-  · intro k
-    rw [reducedField_wIdx]
-    have ha : angleMap (equilibrium θ + angleState v) = fun j => (θ + ground v) j + -θ 0 := by
-      rw [map_add, equilibrium, angleMap_reduce, angleMap_angleState]
-      funext j
-      simp only [Pi.add_apply]
-      ring
-    rw [ha, powerInjection_add_const, ← hv k]
-    simp [equilibrium]
-
 /-- Implementation evidence: `Dynamics.Mechanical.localAsymptoticStable_of_strictMin` (LaSalle) on
 the reduced field (`reducedField_eq_mechanical`). At a power-balance point whose relative angles
 are a strict local minimum of the potential and an isolated power-balance point, the reduced swing
@@ -1582,16 +1451,6 @@ field is locally asymptotically stable, whatever its linearization. -/
     (fun v hv0 hv hc => hcrit v hv0 hv ((critical_iff_balance hP θ v).mp hc))
   rw [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
   exact hmin v hv0 hv
-
-/-- `angleState` as a continuous linear map. -/
-def angleStateCLM : (Fin n → ℝ) →L[ℝ] State (n + (n + 1)) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := angleState
-      map_add' := fun v w => by apply Dynamics.state_ext_blocks <;> intro _ <;> simp
-      map_smul' := fun c v => by apply Dynamics.state_ext_blocks <;> intro _ <;> simp }
-
-@[tmio T, simp, powerlib_foundation] theorem angleStateCLM_apply (v : Fin n → ℝ) :
-    angleStateCLM v = angleState v := rfl
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_potential_ground (p : Params n)
     (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :

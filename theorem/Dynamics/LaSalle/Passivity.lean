@@ -138,15 +138,15 @@ every forward solution starting in a compact positively invariant set converges 
   · simp only [h0, hψ0, inner_zero_left, neg_zero] at h ⊢; exact h
   · linarith [hψ (H x) h0]
 
-/-- Output feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` (`y ≠ 0`), `ψ(0) = 0` on a passive system:
-`V̇ = 0` only where `y = 0`. -/
+/-- Output feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` (`y ≠ 0`) on a passive system: `V̇ = 0` only
+where `y = 0`. -/
 @[tmio T, powerlib_foundation] theorem output_eq_zero_of_lieDeriv_feedback_eq_zero
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}
     {V : EuclideanSpace ℝ (Fin n) → ℝ}
     (hpass : ∀ x u, fderiv ℝ V x (F x u) ≤ inner ℝ u (H x))
-    (_hψ0 : ψ 0 = 0) (hψ : ∀ y, y ≠ 0 → 0 < inner ℝ (ψ y) y) (x : EuclideanSpace ℝ (Fin n)) :
+    (hψ : ∀ y, y ≠ 0 → 0 < inner ℝ (ψ y) y) (x : EuclideanSpace ℝ (Fin n)) :
     fderiv ℝ V x (F x (-ψ (H x))) = 0 → H x = 0 := by
   have h := hpass x (-ψ (H x))
   rw [inner_neg_left] at h
@@ -171,7 +171,7 @@ every forward solution starting in a compact positively invariant set converges 
         Tendsto φ atTop (𝓝 0) := by
   intro φ hφ hz
   have hH : ∀ t ∈ Ici (0 : ℝ), H (φ t) = 0 := fun t ht =>
-    output_eq_zero_of_lieDeriv_feedback_eq_zero hpass hψ0 hψ (φ t) (hz t ht)
+    output_eq_zero_of_lieDeriv_feedback_eq_zero hpass hψ (φ t) (hz t ht)
   refine hzsd φ (Dynamics.isIntegralCurveOn_of_eq_on_curve hφ fun t ht => ?_) hH
   rw [hH t ht, hψ0, neg_zero]
 

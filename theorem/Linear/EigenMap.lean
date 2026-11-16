@@ -117,11 +117,11 @@ omit [Fintype ι] in
   rw [h]
   exact hQ.map _
 
-/-- **Eigenvalues of a Möbius image, denominator.** Let `(γ A + δ) M = α A + β` with `γ A + δ`
-invertible. An eigenpair `(λ, v)` of `A` has `γ λ + δ ≠ 0`. -/
-@[tmio T, powerlib_foundation] theorem eigen_mobius_denom_ne_zero {A M : Matrix ι ι ℝ}
-    {α β γ δ : ℝ} (hQ : IsUnit (γ • A + δ • 1).det) (_hM : (γ • A + δ • 1) * M = α • A + β • 1)
-    {lam : ℂ} {v : ι → ℂ} (hv : v ≠ 0) (h : complexify A *ᵥ v = lam • v) :
+/-- **Eigenvalues of a Möbius image, denominator.** Let `γ A + δ` be invertible (for instance the
+denominator of `(γ A + δ) M = α A + β`). An eigenpair `(λ, v)` of `A` has `γ λ + δ ≠ 0`. -/
+@[tmio T, powerlib_foundation] theorem eigen_mobius_denom_ne_zero {A : Matrix ι ι ℝ} {γ δ : ℝ}
+    (hQ : IsUnit (γ • A + δ • 1).det) {lam : ℂ} {v : ι → ℂ} (hv : v ≠ 0)
+    (h : complexify A *ᵥ v = lam • v) :
     (γ : ℂ) * lam + δ ≠ 0 := by
   have hQv := complexify_affine_mulVec h γ δ
   have hinj := Matrix.mulVec_injective_iff_isUnit.mpr (isUnit_complexify hQ)
@@ -138,7 +138,7 @@ invertible. For an eigenpair `(λ, v)` of `A`, `((α λ + β)/(γ λ + δ), v)` 
     complexify M *ᵥ v = (((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)) • v := by
   have hQv := complexify_affine_mulVec h γ δ
   have hinj := Matrix.mulVec_injective_iff_isUnit.mpr (isUnit_complexify hQ)
-  have hq : (γ : ℂ) * lam + δ ≠ 0 := eigen_mobius_denom_ne_zero hQ hM hv h
+  have hq : (γ : ℂ) * lam + δ ≠ 0 := eigen_mobius_denom_ne_zero hQ hv h
   refine hinj ?_
   change complexify (γ • A + δ • 1) *ᵥ (complexify M *ᵥ v) =
     complexify (γ • A + δ • 1) *ᵥ ((((α : ℂ) * lam + β) / ((γ : ℂ) * lam + δ)) • v)

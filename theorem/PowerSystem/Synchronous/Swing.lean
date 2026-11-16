@@ -2,6 +2,7 @@ import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.State
 import theorem.PhasePlane.Planar
+import theorem.PhasePlane.Conservative
 import theorem.Flow.Certificate
 import theorem.Dynamics.Shift
 import theorem.Linear.Family
@@ -59,9 +60,14 @@ Results (static evidence on the model).
 * `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `eigenvalues_real_iff` — the
   linearization has `M det(sI − J) = M s² + D s + K`, `K = k₂ cos(δ₀ − k₃)`; it is Hurwitz iff
   `D > 0` and `K > 0`; exact overdamping threshold.
-* `energy_lie`, `potential_pos` — the energy `W = ½ M ω² + U(δ)` has `Ẇ = −D ω²`, and the
-  potential is positive on a punctured neighbourhood of an equilibrium angle where the
-  synchronizing coefficient stays positive.
+* `field_eq_conservative`, `energy_eq_conservative` — the swing field and the energy
+  `W = ½ M ω² + U(δ)` are the conservative phase-plane field and energy
+  (`theorem/PhasePlane/Conservative.lean`) with mass `M`, damping `D` and potential
+  `U(δ) = ∫_{δ₀}^{δ} (P_e − P_m)` (`hasDerivAt_potential`); the energy balance `Ẇ = −D ω²`,
+  conservation and monotone decay are the conservative ones (`PhasePlane.Conservative.energy_lie`,
+  `energy_lie_nonpos`, `energy_conserved`, `energy_antitone`). `potential_pos`: the potential is
+  positive on a punctured neighbourhood of an equilibrium angle where the synchronizing
+  coefficient stays positive.
 * `lipschitzWith_field` — the field is globally Lipschitz.
 
 Family and connection conclusions.
@@ -171,6 +177,15 @@ def field (x : State 2) : State 2 := PhasePlane.mk (x 1) (p.accel (x 0) (x 1))
     p.field x 1 = p.accel (x 0) (x 1) := by
   simp [field]
 
+/-- The swing field is the conservative second-order field `PhasePlane.Conservative.field` with
+mass `M`, damping `D` and restoring force `V'(δ) = P_e(δ) − P_m`. -/
+@[tmio M, powerlib_domain] theorem field_eq_conservative :
+    p.field = PhasePlane.Conservative.field p.M p.D (fun δ => p.Pe δ - p.Pm) := by
+  funext x
+  refine PhasePlane.ext_iff'.2 ⟨by simp, ?_⟩
+  rw [field_apply_one, PhasePlane.Conservative.field_apply_one, accel]
+  ring
+
 /-- Synchronizing coefficient `K(δ) = P_e'(δ) = k₂ cos(δ − k₃)`. -/
 def syncCoeff (δ : ℝ) : ℝ := p.k₂ * Real.cos (δ - p.k₃)
 
@@ -229,12 +244,8 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; -p.syncCoeff δ / p.M, -p.D / p.M]
 
 @[tmio M, powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k p.field := by
-  rw [contDiff_euclidean]
-  intro i
-  fin_cases i
-  · simpa using Dynamics.contDiff_coord (k := k) 1
-  · simp only [Fin.mk_one, Fin.isValue, field_apply_one, accel, Pe]
-    fun_prop
+  rw [field_eq_conservative]
+  exact PhasePlane.Conservative.field_contDiff (by unfold Pe; fun_prop)
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_field (x : State 2) :
     HasFDerivAt p.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (p.jacobian (x 0))) x := by
@@ -279,18 +290,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_eq_zero_iff (hM : p.M ≠ 0) (x : State 2) :
     p.field x = 0 ↔ x 1 = 0 ∧ p.Pe (x 0) = p.Pm := by
-  constructor
-  · intro h
-    have h0 := congrArg (fun y : State 2 => y 0) h
-    have h1 := congrArg (fun y : State 2 => y 1) h
-    simp only [field_apply_zero, field_apply_one, PiLp.zero_apply] at h0 h1
-    refine ⟨h0, ?_⟩
-    simp only [accel, h0, mul_zero, sub_zero, div_eq_zero_iff, hM, or_false] at h1
-    linarith
-  · rintro ⟨h0, h1⟩
-    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-    · simp [h0]
-    · simp [accel, h0, h1]
+  rw [field_eq_conservative, PhasePlane.Conservative.field_eq_zero_iff hM, sub_eq_zero]
 
 /-- Equilibrium existence: the power-angle curve reaches the mechanical power,
 `|P_m − k₁| ≤ k₂` (`k₂ > 0`): the zeros of the sinusoid `P_m − k₁ − k₂ sin(δ − k₃)`
@@ -432,6 +432,17 @@ def potential (δ₀ δ : ℝ) : ℝ :=
 /-- Kinetic plus potential energy `W(δ, ω) = ½ M ω² + U(δ)`. -/
 def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential δ₀ (x 0)
 
+/-- The swing energy is the conservative energy `PhasePlane.Conservative.energy` with mass `M`
+and the potential `U = potential δ₀`; with `field_eq_conservative` and `hasDerivAt_potential`
+(`U' = P_e − P_m`) the energy balance `Ẇ = −D ω²`, its sign, conservation and monotone decay are
+`PhasePlane.Conservative.energy_lie`, `energy_lie_nonpos`, `energy_conserved` and
+`energy_antitone`. -/
+@[tmio M, powerlib_domain] theorem energy_eq_conservative (δ₀ : ℝ) :
+    p.energy δ₀ = PhasePlane.Conservative.energy p.M (p.potential δ₀) := by
+  funext x
+  simp only [energy, PhasePlane.Conservative.energy]
+  ring
+
 @[tmio M, powerlib_domain] theorem hasDerivAt_potential (δ₀ δ : ℝ) :
     HasDerivAt (p.potential δ₀) (p.Pe δ - p.Pm) δ := by
   have h := (((hasDerivAt_id δ).sub_const δ₀).const_mul (-(p.Pm - p.k₁))).sub
@@ -448,30 +459,6 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential 
     ContDiff ℝ k (p.energy δ₀) := by
   unfold energy potential
   fun_prop
-
-@[tmio M, powerlib_domain] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
-    HasFDerivAt (p.energy δ₀)
-      ((p.M * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
-        (p.Pe (x 0) - p.Pm) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ))
-      x := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have hU := (p.hasDerivAt_potential δ₀ (x 0)).comp_hasFDerivAt x h0
-  have h := ((h1.pow 2).const_mul (p.M / 2)).add hU
-  convert h using 1
-  · funext y; simp [energy]
-  apply ContinuousLinearMap.ext; intro v
-  simp
-  ring
-
-/-- Lie derivative of the energy along the full nonlinear field: `Ẇ = −D ω²`. -/
-@[tmio M, powerlib_domain] theorem energy_lie (hM : p.M ≠ 0) (δ₀ : ℝ) (x : State 2) :
-    fderiv ℝ (p.energy δ₀) x (p.field x) = -p.D * x 1 ^ 2 := by
-  rw [(p.hasFDerivAt_energy δ₀ x).fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
-    smul_eq_mul, field_apply_one, field_apply_zero, accel]
-  field_simp
-  ring
 
 /-- The potential is positive on a punctured neighbourhood of an equilibrium angle where the
 synchronizing coefficient stays positive. -/
@@ -689,51 +676,31 @@ coefficient (`M > 0`). -/
     simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
     exact ⟨trivial, hzero.symm⟩
   rw [hpoint]
-  exact Criteria.unstable_of_jacobian_trace_pos_fin_two (p.jacobian (x 0)) p.contDiff_field heq
+  exact Criteria.unstable_of_jacobian_trace_pos (p.jacobian (x 0)) p.contDiff_field heq
     (p.fderiv_field x)
     (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
 
 /-- With nonnegative damping (in particular `D = 0`, the conservative swing equation), every
-equilibrium with positive synchronizing coefficient is Lyapunov stable: the energy
-`½ M ω² + U(δ)` is a local Lyapunov function (`M > 0`). Implementation evidence. -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
-    {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
+equilibrium with positive synchronizing coefficient is Lyapunov stable (`M > 0`): the potential has
+a strict local minimum there (`potential_pos`), so the energy `½ M ω² + U(δ)` is a local Lyapunov
+function (`PhasePlane.Conservative.center_lyapunovStable` through `field_eq_conservative`).
+Implementation evidence. -/
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M)
+    (hD : 0 ≤ p.D) {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
     connection% ((⟨p, x₀ 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [Swing.mem_den_flow_iff]
-  have hzero : x₀ 1 = 0 := by
-    have he := congrArg (fun y : State 2 => y 0) heq
-    simpa only [field_apply_zero, PiLp.zero_apply] using he
-  have hpoint : (⟨p, x₀ 0⟩ : Swing.Model).point = x₀ := by
-    apply PhasePlane.ext_iff'.mpr
-    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-    exact ⟨trivial, hzero.symm⟩
-  rw [hpoint]
-  obtain ⟨h1, hbal⟩ := (p.field_eq_zero_iff hM.ne' x₀).mp heq
+  obtain ⟨-, hbal⟩ := (p.field_eq_zero_iff hM.ne' x₀).mp heq
   have hcont : Continuous p.syncCoeff := by unfold syncCoeff; fun_prop
   obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp (isOpen_lt continuous_const hcont) (x₀ 0) hK
   have hr' : ∀ θ, |θ - x₀ 0| < r → 0 < p.syncCoeff θ := fun θ hθ =>
     hr (by simpa [Real.dist_eq] using hθ)
-  apply lyapunov_stable (D := {x : State 2 | |x 0 - x₀ 0| < r}) (V := p.energy (x₀ 0))
-    (by norm_num)
-  refine ⟨?_, ?_, (p.contDiff_energy (k := 1) _).continuous,
-    (p.contDiff_energy (k := 1) _).differentiable (by norm_num), ?_, ?_, ?_⟩
-  · exact isOpen_lt (by fun_prop) continuous_const
-  · simpa using hr0
-  · simp [energy, h1]
-  · intro x hx hne
-    have hx' : |x 0 - x₀ 0| < r := hx
-    by_cases h0 : x 0 = x₀ 0
-    · have h1' : x 1 ≠ 0 := by
-        intro h1'; apply hne; exact PhasePlane.ext_iff'.2 ⟨h0, by rw [h1', h1]⟩
-      have : 0 < p.M / 2 * x 1 ^ 2 := by positivity
-      simpa [energy, h0] using this
-    · have hU := p.potential_pos hbal hr' hx' h0
-      have : 0 ≤ p.M / 2 * x 1 ^ 2 := by positivity
-      simp only [energy]; linarith
-  · intro x _
-    rw [p.energy_lie hM.ne']
-    nlinarith [sq_nonneg (x 1)]
+  have hpoint : (⟨p, x₀ 0⟩ : Swing.Model).point = PhasePlane.mk (x₀ 0) 0 := rfl
+  rw [hpoint, field_eq_conservative]
+  refine PhasePlane.Conservative.center_lyapunovStable hM hD (p.hasDerivAt_potential (x₀ 0)) hr0
+    fun δ hδ hne => ?_
+  rw [potential_self]
+  exact p.potential_pos hbal hr' hδ hne
 
 end SwingParams
 
@@ -977,8 +944,8 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
         (V := fun x => -m.p.energy m.δ x) (ρ := 1) hC hEd.neg one_pos (fun x _ => ?_)
         (fun ε hε => ⟨PhasePlane.mk (m.δ + 0) (ε / 2), ?_, ?_⟩) hlas
-      · rw [fderiv_fun_neg]
-        simp [m.p.energy_lie hM.ne', hD]
+      · rw [fderiv_fun_neg, m.p.energy_eq_conservative, m.p.field_eq_conservative]
+        simp [PhasePlane.Conservative.energy_lie hM.ne' (m.p.hasDerivAt_potential m.δ), hD]
       · refine (norm_mkState_sub_point m 0 (ε / 2)).trans_lt ?_
         rw [abs_zero, zero_add, abs_of_pos (by linarith)]
         linarith
@@ -1008,8 +975,8 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
         linarith
     · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := m.p.energy m.δ) (ρ := 1) hC
         hEd one_pos (fun x _ => ?_) (fun ε hε => ?_) hlas
-      · rw [m.p.energy_lie hM.ne']
-        nlinarith [sq_nonneg (x 1)]
+      · rw [m.p.energy_eq_conservative, m.p.field_eq_conservative]
+        exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (m.p.hasDerivAt_potential _) x
       · rw [hE0]
         have hε2 : 0 < ε / 2 := by linarith
         rcases lt_or_gt_of_ne ha with hneg | hpos
@@ -1221,8 +1188,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
           (W := fun x : State 2 => a * (m.p.M * x 1 + m.p.D * x 0)) (r := 1) hC
           (m.p.contDiff_energy _) hW one_pos (fun x _ => ?_) (fold_seeds hb hK ha)
           (fun x hx hEx => ?_) hls
-        · rw [m.p.energy_lie hM.ne']
-          nlinarith [sq_nonneg (x 1)]
+        · rw [m.p.energy_eq_conservative, m.p.field_eq_conservative]
+          exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD (m.p.hasDerivAt_potential _) x
         · have hd : HasFDerivAt (fun y : State 2 => a * (m.p.M * y 1 + m.p.D * y 0))
               (a • (m.p.M • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
                 m.p.D • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ))) x :=

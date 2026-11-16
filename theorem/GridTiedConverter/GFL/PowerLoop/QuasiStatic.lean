@@ -463,7 +463,7 @@ stability. -/
   · exact Criteria.unstable_of_jacobian_det_pos_fin_three (jac m.params m.θ m.Id)
       (contDiff_field m.params) (field_point_eq_zero m.params he)
       (fderiv_field m.params m.θ 0 m.Id) hdet
-  · exact Criteria.unstable_of_jacobian_trace_pos_fin_three (jac m.params m.θ m.Id)
+  · exact Criteria.unstable_of_jacobian_trace_pos (jac m.params m.θ m.Id)
       (contDiff_field m.params) (field_point_eq_zero m.params he)
       (fderiv_field m.params m.θ 0 m.Id) htr
 

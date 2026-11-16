@@ -51,7 +51,8 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
 @[tmio TM, powerlib_foundation] theorem sublevel_positivelyInvariant {δ : ℝ} (hδ : 0 ≤ δ) (c : ℝ) :
     IsPositivelyInvariant {y : State 2 | energy y ≤ c} (field δ) := by
   intro t₀ t₁ φ hφ h0 t ht
-  have hanti := Conservative.energy_antitone one_ne_zero hδ hasDerivAt_potential hφ
+  have hanti := Conservative.energy_antitone one_ne_zero hδ hasDerivAt_potential (convex_Icc _ _)
+    hφ
   have := hanti ⟨le_rfl, ht.1.trans ht.2⟩ ht ht.1
   exact le_trans this h0
 
@@ -61,8 +62,10 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
     Tendsto φ atTop (𝓝ˢ equilibria) := by
   refine Dynamics.LaSalle.lasalle_invariance_principle_of_contDiff (V := energy)
     (Ω := {y | energy y ≤ energy (φ 0)}) (energy_sublevel_compact _)
-    (sublevel_positivelyInvariant hδ.le _) (field_contDiff δ) energy_contDiff
-    (fun x _ => energy_lie_nonpos hδ.le x) hφ (by simp) ?_
+    (sublevel_positivelyInvariant hδ.le _) (Conservative.field_contDiff force_contDiff)
+    energy_contDiff
+    (fun x _ => Conservative.energy_lie_nonpos one_ne_zero hδ.le hasDerivAt_potential x) hφ
+    (by simp) ?_
   intro N hN hNinv x hx
   -- on `N` the Lie derivative vanishes, so `y = 0` there
   have hzero : ∀ z ∈ N, z 1 = 0 := by
@@ -74,7 +77,8 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
     exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
   -- a local solution from `x` stays in `N`, so its `y`-coordinate vanishes identically
   obtain ⟨T, ψ, hT, hψ0, hψ⟩ :=
-    ((field_contDiff δ (k := 1)).contDiffAt (x := x)).exists_isIntegralCurveOn_Icc
+    ((Conservative.field_contDiff (m := 1) (γ := δ) (k := 1) force_contDiff).contDiffAt
+      (x := x)).exists_isIntegralCurveOn_Icc
   have hstay : ∀ t ∈ Icc 0 T, ψ t ∈ N := hNinv 0 T ψ hψ (hψ0 ▸ hx)
   have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
   have hchain : HasDerivWithinAt (fun t => ψ t 1) (field δ (ψ 0) 1) (Icc 0 T) 0 :=

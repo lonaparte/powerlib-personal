@@ -156,12 +156,12 @@ connection conclusion. -/
   have hz : biasedPD V V (Real.pi / 2) = 0 := by simp [biasedPD]
   exact (piPLLField_eq_zero_iff hKi _).mpr ⟨hz, rfl⟩
 
-/-- Fold `μ = V` (`V ≠ 0`, `K_i ≠ 0`): `h'(π/2) = 0`, and the Jacobian at `(π/2, δω/K_i)` is
-`[[0, K_i], [0, 0]]`, the nonzero nilpotent, non-Hurwitz matrix of `piPLLJacobian_zero_ne_zero`,
-`piPLLJacobian_zero_sq`, `piPLLJacobian_zero_not_isHurwitz` (non-hyperbolic). The case `μ = −V` is
+/-- Fold `μ = V`: `h'(π/2) = 0`, and the Jacobian at `(π/2, δω/K_i)` is `[[0, K_i], [0, 0]]`, the
+nilpotent, non-Hurwitz matrix of `piPLLJacobian_zero_sq`, `piPLLJacobian_zero_not_isHurwitz`
+(non-hyperbolic), nonzero for `K_i ≠ 0` (`piPLLJacobian_zero_ne_zero`). The case `μ = −V` is
 symmetric (`θ* = −π/2`). Static evidence on the model (linearization only), not a connection
 conclusion. -/
-@[tmio M, powerlib_domain] theorem biased_fold {V Kp Ki : ℝ} (_hKi : Ki ≠ 0) (δω : ℝ) :
+@[tmio M, powerlib_domain] theorem biased_fold {V Kp Ki : ℝ} (δω : ℝ) :
     fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (PhasePlane.mk (Real.pi / 2) (δω / Ki)) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) := by
   have hd := hasDerivAt_biasedPD V V (Real.pi / 2)

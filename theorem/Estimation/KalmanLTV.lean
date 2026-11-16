@@ -285,10 +285,10 @@ section Constant
 
 /-- **Prediction covariance, constant `A`, initial value.**  With `Φ(t, s) = e^{(t−s)A}`, the
 integral form `P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ`
-satisfies `P(t₀) = P₀`. -/
+satisfies `P(t₀) = P₀`, for every `Q`. -/
 @[tmio T, powerlib_foundation] theorem lti_cov_self (A : Matrix (Fin n) (Fin n) ℝ)
-    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (_hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
-    (t₀ : ℝ) : ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t₀ = P₀ :=
+    (Q : ℝ → Matrix (Fin n) (Fin n) ℝ) (P₀ : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) :
+    ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t₀ = P₀ :=
   ltvCov_self _ (expFund_self A) Q P₀ t₀
 
 /-- **Prediction covariance, constant `A`, existence.**  For constant `A` and continuous `Q(t)`

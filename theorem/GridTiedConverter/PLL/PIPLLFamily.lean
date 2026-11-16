@@ -212,7 +212,7 @@ trace of the Jacobian gives instability. -/
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
     rw [piPLLJacobian_det]
     linarith
-  · refine Criteria.unstable_of_jacobian_trace_pos_fin_two (piPLLJacobian Kp Ki g)
+  · refine Criteria.unstable_of_jacobian_trace_pos (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
     rw [piPLLJacobian_trace]
     exact htr

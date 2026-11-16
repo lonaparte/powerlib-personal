@@ -3,6 +3,72 @@
 Completed architectural and library changes, newest first. Detailed diffs remain
 in Git; working statistics, build receipts and development plans are not kept here.
 
+## 2026-11-16
+
+- Structural reuse (last pass of the redundancy audit). Removed names are listed
+  with their replacements; no aliases are kept.
+  - The single-machine swing equation is read on the conservative phase plane.
+    New bridges `Synchronous.SwingParams.field_eq_conservative`
+    (`p.field = PhasePlane.Conservative.field p.M p.D (fun δ => p.Pe δ - p.Pm)`)
+    and `SwingParams.energy_eq_conservative`
+    (`p.energy δ₀ = PhasePlane.Conservative.energy p.M (p.potential δ₀)`); the
+    swing energy laws now come from the conservative ones.
+    `SwingParams.hasFDerivAt_energy` → `PhasePlane.Conservative.hasFDerivAt_energy`
+    with the bridge; `SwingParams.energy_lie` → `PhasePlane.Conservative.energy_lie`
+    or the new `PhasePlane.Conservative.energy_lie_nonpos` (`Ė ≤ 0` for `γ ≥ 0`);
+    the private antitonicity and conservation copies in DampedEAC and
+    FaultSequence → `Conservative.energy_antitone` / `energy_conserved`.
+    `Conservative.energy_antitone` now holds on any convex time set.
+    `Pendulum.energy_conserved`, `Duffing.energy_conserved` →
+    `Conservative.energy_conserved`; `Pendulum.field_contDiff`,
+    `Duffing.field_contDiff` → `Conservative.field_contDiff`;
+    `Duffing.energy_lie_nonpos` → `Conservative.energy_lie_nonpos`. Swing-specific
+    content (power-balance equilibria, the potential, `contDiff_field`) stays.
+  - The networked swing model reuses `Dynamics.Mechanical`.
+    `Network.Swing.energy` → `Dynamics.Mechanical.energy p.M (fun q => potential
+    p (ground q))`; `energy_contDiff` → `Mechanical.energy_contDiff`; `energyGrad`,
+    `energyGrad_apply`, `hasFDerivAt_energy` → `Mechanical.hasFDerivAt_energy`;
+    `lie_energy_nonpos` → `Mechanical.lie_energy_nonpos` through
+    `reducedField_eq_mechanical`; `angleState`, `angleStateCLM`,
+    `angleStateCLM_apply` → `Mechanical.point`; `angleState_dIdx` →
+    `Mechanical.point_qIdx`; `angleState_wIdx` → `Mechanical.point_vIdx`;
+    `angleMap_angleState`, `angleState_eq_zero_iff` → `Mechanical.pos_point`
+    (with `angleMap_eq_ground`); `angleState_smul` → `map_smul`;
+    `energy_equilibrium`, `energy_equilibrium_add`,
+    `energy_equilibrium_add_angleState` → `Mechanical.energy_point` /
+    `energy_sub_point` with `equilibrium_eq_point`;
+    `reducedField_equilibrium_add_angleState` → `Mechanical.field_point_eq_zero`
+    with `reducedField_eq_mechanical`; `norm_le_of_dIdx` →
+    `Mechanical.norm_pos_le`. `Network.Swing.lie_energy` (any total power) is kept,
+    stated on `Mechanical.energy`; `angleMap_eq_ground` now reads
+    `angleMap w = ground (Dynamics.Mechanical.pos w)`.
+  - Per-dimension copies: `Criteria.unstable_of_jacobian_trace_pos_fin_two` and
+    `_fin_three` → `Criteria.unstable_of_jacobian_trace_pos` (any dimension);
+    `Criteria.exists_eigenvalue_re_pos_of_det_neg_fin_four` →
+    `Criteria.exists_pos_real_eigenvalue_of_det`;
+    `Criteria.exists_eigenpair_of_quadratic_fin_two` →
+    `Linear.exists_eigenvector_of_root` with `det_characteristicMatrix_fin_two`.
+    Routh–Hurwitz criteria in coefficients, closed forms and matrix literals keep
+    their fixed size.
+  - Hypotheses the proofs do not use were dropped (the theorems become more
+    general): `Dynamics.LaSalle.output_eq_zero_of_lieDeriv_feedback_eq_zero`,
+    `Estimation.kalman_error_memLp`, `kalman_error_integral_eq_zero`,
+    `Estimation.LTV.lti_cov_self`, `ltv_cov_stateTransition_self`,
+    `GFL.DCLink.openField_eq_zero`, `DCParams.closedField_eqState`,
+    `GFL.LCLine.Params.saddleRoot_mem_den_unstable`, `fold_equilibrium_per_period`,
+    `fold_hZeros_eq`, `reduced_jacobian_nilpotent`, `fold_jacobian_nilpotent`,
+    `GFL.RatePLL.trace_jac_eq_zero_of_tan_eq`, `PLL.biased_fold`,
+    `PLL.pllHamiltonian_shifted_eq_zero`, `pllHamiltonian_shifted_lie_nonpos`,
+    `PLL.trigPLL_saddleNode_nilpotent`, `Linear.eigen_mobius_denom_ne_zero`,
+    `Passive.Line.CableSchelkunoff.tendsto_cexp_neg_two_mul_sub`,
+    `besselK0Norm_sub_one_isBigO`, `besselK1Norm_sub_one_isBigO`,
+    `tendsto_besselK0Norm_mul`, `tendsto_besselK1Norm_mul`,
+    `SpecialFunctions.tendsto_besselK0_div_gaussHalf`,
+    `tendsto_besselK1_div_gaussHalf`, `Potential.doubleWell_curvature_zero`.
+    `ParametricResonance.Ioo_subset_flipProjection_calpha_pos_lowGain` holds for
+    every gain and is renamed `Ioo_subset_flipProjection_calpha_pos`.
+  - Classified theorems 7579 → 7555; public connection theorems unchanged (1052).
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

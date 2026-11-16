@@ -42,8 +42,9 @@ Results.
   `(−∞, g2/(16c_ω) − 4c_ωα₀²/g2)` for `c_α = 0`; for `c_α > 0` in the high-gain case
   `|𝒢| > 4c_ω√(α₀/c_α)` its supremum `g2/(16c_ω)` is attained and it is unbounded below; the
   two `c_α > 0` branches agree on the switching surface (`deltaStarPlus_switch`). In the
-  low-gain case `|𝒢| ≤ 4c_ω√(α₀/c_α)` the projection contains `(Δ*₋, Δ*₊)` and lies below `Δ*₊`
-  (`Ioo_subset_flipProjection_calpha_pos_lowGain`, `flipProjection_calpha_pos_lowGain_subset_Iio`),
+  low-gain case `|𝒢| ≤ 4c_ω√(α₀/c_α)` the projection contains `(Δ*₋, Δ*₊)` (for every gain,
+  `Ioo_subset_flipProjection_calpha_pos`) and lies below `Δ*₊`
+  (`flipProjection_calpha_pos_lowGain_subset_Iio`),
   so `Δ_sup = Δ*₊` (`flipProjection_calpha_pos_lowGain_isLUB`), not attained
   (`deltaStarPlus_not_mem_flipProjection_calpha_pos_lowGain`). The proof uses the detuned quadratic
   `P(Δ) = c_α²Δ² + Qc_ωΔ − (Q² − 4Sα₀²)/4 = min_y S(a² − D)` (`detunedP_eq`, `detunedP_neg_iff`).
@@ -811,10 +812,9 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
   have := (neg_of_mul_neg_right this hS.le)
   linarith
 
-/-- Case `c_α > 0`, low gain `|𝒢| ≤ 4c_ω√(α₀/c_α)` (i.e. `y* = g2/(16c_ω²) ≤ α₀/c_α`): the
-`Δ`-projection contains `(Δ*₋, Δ*₊)`. -/
-@[tmio M, powerlib_foundation] theorem Ioo_subset_flipProjection_calpha_pos_lowGain (hα : 0 < α₀)
-    (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) (_hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
+/-- Case `c_α > 0`, every gain `𝒢`: the `Δ`-projection contains `(Δ*₋, Δ*₊)`. -/
+@[tmio M, powerlib_foundation] theorem Ioo_subset_flipProjection_calpha_pos (hα : 0 < α₀)
+    (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) :
     Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) ⊆
       flipProjection α₀ cα cω g2 := by
   have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
@@ -908,7 +908,7 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
 @[tmio M, powerlib_foundation] theorem flipProjection_calpha_pos_lowGain_isLUB (hα : 0 < α₀)
     (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) (hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα) :
     IsLUB (flipProjection α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) := by
-  have hsub := Ioo_subset_flipProjection_calpha_pos_lowGain hα hg hcα hcω hlow
+  have hsub := Ioo_subset_flipProjection_calpha_pos hα hg hcα hcω
   have hsup := flipProjection_calpha_pos_lowGain_subset_Iio hα hg hcα hcω hlow
   have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
   have hK : 0 < pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 := by
@@ -1025,7 +1025,7 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
       rw [lt_div_iff₀ hg] at hsmall
       nlinarith
     have hlub := flipProjection_calpha_pos_lowGain_isLUB hα hg hpos hcω hlow
-    have hsub := Ioo_subset_flipProjection_calpha_pos_lowGain hα hg hpos hcω hlow
+    have hsub := Ioo_subset_flipProjection_calpha_pos hα hg hpos hcω
     have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := by
       simp only [deltaStarMinus, deltaStarPlus]
       apply div_lt_div_of_pos_right _ (by positivity)

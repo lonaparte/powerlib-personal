@@ -379,15 +379,6 @@ def principalMinorSum3Fin4 (A : Matrix (Fin 4) (Fin 4) ℝ) : ℝ :=
   simp [Fin.succAbove, Fin.lt_def, Fin.ext_iff]
   ring
 
-/-- `det A < 0` for a real 4×4 matrix: a positive real eigenvalue
-(`Criteria.exists_pos_real_eigenvalue_of_det`). -/
-@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_neg_fin_four
-    (A : Matrix (Fin 4) (Fin 4) ℝ) (h : A.det < 0) :
-    ∃ (μ : ℂ) (v : Fin 4 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det A (by norm_num; exact h)
-  exact ⟨r, v, hv, heig, by rw [Complex.ofReal_re]; exact hr⟩
-
 /-- **Routh–Hurwitz for real 4×4 matrices, both directions** in trace / principal-minor /
 determinant form. -/
 @[tmio T, powerlib_foundation] theorem isHurwitz_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ) :

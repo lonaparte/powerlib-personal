@@ -228,24 +228,24 @@ linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` r
     have h0 := hpot t
     rw [hK, zero_mul] at h0
     linarith
-  · have hseed : ∀ ε > 0, ∃ w : Fin n → ℝ, ‖angleState w‖ < ε ∧
+  · have hseed : ∀ ε > 0, ∃ w : Fin n → ℝ, ‖w‖ < ε ∧
         potential p (θ + ground w) < potential p θ := by
       intro ε hε
-      have hA : 0 < ‖angleState v‖ := norm_pos_iff.mpr ((angleState_eq_zero_iff v).not.mpr hv0)
-      set τ := ε / (2 * ‖angleState v‖) with hτ
+      have hA : 0 < ‖v‖ := norm_pos_iff.mpr hv0
+      set τ := ε / (2 * ‖v‖) with hτ
       have hτpos : 0 < τ := by positivity
-      have hτε : τ * ‖angleState v‖ < ε := by
+      have hτε : τ * ‖v‖ < ε := by
         rw [hτ]; field_simp; linarith
       rcases lt_or_gt_of_ne hK with hneg | hpos
       · refine ⟨(-τ) • v, ?_, ?_⟩
-        · rw [angleState_smul, norm_smul, Real.norm_eq_abs, abs_neg, abs_of_pos hτpos]
+        · rw [norm_smul, Real.norm_eq_abs, abs_neg, abs_of_pos hτpos]
           exact hτε
         · have h0 := hpot (-τ)
           have hs : -τ < Real.sin (-τ) := by
             rw [Real.sin_neg]; linarith [Real.sin_lt hτpos]
           nlinarith
       · refine ⟨τ • v, ?_, ?_⟩
-        · rw [angleState_smul, norm_smul, Real.norm_of_nonneg hτpos.le]
+        · rw [norm_smul, Real.norm_of_nonneg hτpos.le]
           exact hτε
         · have h0 := hpot τ
           have hs := Real.sin_lt hτpos
@@ -257,8 +257,7 @@ linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` r
     have hw0 : w ≠ 0 := by
       rintro rfl
       simp [ground_zero_vec] at hlt
-    have hwr : ‖w‖ < r := lt_of_le_of_lt (by simpa using norm_le_of_dIdx (angleState w)) hw
-    exact absurd (hmin w hw0 hwr).1 (not_lt.mpr hlt.le)
+    exact absurd (hmin w hw0 hw).1 (not_lt.mpr hlt.le)
 
 /-- **A cut of zero-weight lines** (each line between `X` and the rest open or at `±π/2`) rules
 out local asymptotic stability. -/

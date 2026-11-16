@@ -609,7 +609,7 @@ sign of `κ_v`. -/
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Unstable a.realField 0
-  exact Criteria.unstable_of_jacobian_trace_pos_fin_two _ a.contDiff_realField a.realField_zero
+  exact Criteria.unstable_of_jacobian_trace_pos _ a.contDiff_realField a.realField_zero
     (a.hasFDerivAt_realField 0).fderiv
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
 

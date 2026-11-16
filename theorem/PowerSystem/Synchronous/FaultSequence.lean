@@ -33,7 +33,8 @@ All are private implementation evidence (trajectory-level results outside the se
 of `Synchronous.Swing.family`, Rules §3a); the static areas are in
 `theorem/PowerSystem/Synchronous/EqualArea.lean`.
 * Single stage (kept next to the switched-model proofs that use them): energy conservation for
-  `D = 0` (`energy_conserved_Icc`) and the **exact first-swing equal-area criterion**
+  `D = 0` (`PhasePlane.Conservative.energy_conserved` through `SwingParams.field_eq_conservative`
+  and `SwingParams.energy_eq_conservative`) and the **exact first-swing equal-area criterion**
   (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a post-fault trajectory
   starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never exceeds the unstable
   equilibrium angle `δ_u` iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)`; bolted three-phase fault
@@ -79,23 +80,11 @@ namespace SwingParams
 
 variable (p : SwingParams)
 
-/-! ## Single stage: energy conservation and the exact first-swing criterion (`D = 0`) -/
+/-! ## Single stage: the exact first-swing criterion (`D = 0`)
 
-/-- Energy conservation (`D = 0`) along a solution on a compact time interval.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem energy_conserved_Icc (hM : p.M ≠ 0) (hD : p.D = 0)
-    (δ₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
-    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc a b)) :
-    ∀ t ∈ Icc a b, p.energy δ₀ (φ t) = p.energy δ₀ (φ a) := by
-  have hdiff : Differentiable ℝ (p.energy δ₀) :=
-    (p.contDiff_energy (k := 1) δ₀).differentiable (by norm_num)
-  apply constant_of_has_deriv_right_zero (f := fun t => p.energy δ₀ (φ t))
-    (hdiff.continuous.comp_continuousOn hφ.continuousOn)
-  intro x hx
-  have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ x hx
-  have h := (hdiff (φ x)).hasFDerivAt.comp_hasDerivWithinAt x hd
-  rw [p.energy_lie hM, hD, neg_zero, zero_mul] at h
-  exact h
+With `D = 0` the energy is conserved along every solution segment:
+`PhasePlane.Conservative.energy_conserved` through `field_eq_conservative` and
+`energy_eq_conservative`. -/
 
 /-- Sufficiency: if the clearing kinetic energy does not exceed the decelerating area up to the
 unstable angle, the post-fault trajectory never goes beyond `δ_u`.
@@ -114,9 +103,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
   obtain ⟨ts, hts, hδs⟩ := intermediate_value_Icc ht hcont
     ⟨by simpa [h0] using hδc, hlt.le⟩
   simp only at hδs
-  have hcons := p.energy_conserved_Icc hM.ne' hD δc (b := ts) (hφ.mono Icc_subset_Ici_self) ts
-    ⟨hts.1, le_rfl⟩
-  rw [h0] at hcons
+  have hφc := hφ
+  rw [p.field_eq_conservative, hD] at hφc
+  have hcons := PhasePlane.Conservative.energy_conserved hM.ne' (p.hasDerivAt_potential δc)
+    (b := ts) (hφc.mono Icc_subset_Ici_self) ts ⟨hts.1, le_rfl⟩
+  rw [← p.energy_eq_conservative, h0] at hcons
   simp only [energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self, add_zero,
     hδs] at hcons
   rw [← potential_eq_integral] at hE
@@ -152,11 +143,13 @@ Implementation evidence: trajectory-level result outside the sentence language (
   set c := min W0 (W0 - p.potential δc p.deltaU) with hcdef
   have hW0 : 0 < W0 := by positivity
   have hc : 0 < c := lt_min hW0 (by linarith)
+  have hφc := hφ
+  rw [p.field_eq_conservative, hD] at hφc
   have hcons : ∀ t ∈ Ici tc, p.M / 2 * φ t 1 ^ 2 + p.potential δc (φ t 0) = W0 := by
     intro t ht
-    have := p.energy_conserved_Icc hM.ne' hD δc (b := t) (hφ.mono Icc_subset_Ici_self) t
-      ⟨ht, le_rfl⟩
-    rw [h0] at this
+    have := PhasePlane.Conservative.energy_conserved hM.ne' (p.hasDerivAt_potential δc) (b := t)
+      (hφc.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
+    rw [← p.energy_eq_conservative, h0] at this
     simpa [energy] using this
   -- inside the window `[δ_c, δ_u]` the kinetic energy is at least `c`
   have hkin : ∀ t ∈ Ici tc, φ t 0 ∈ Icc δc p.deltaU → c ≤ p.M / 2 * φ t 1 ^ 2 := by
@@ -472,8 +465,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hφ : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)) (htc : tf ≤ tc)
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     fault.M / 2 * φ tc 1 ^ 2 = fault.Aacc δ₀ (φ tc 0) := by
-  have h := fault.energy_conserved_Icc hM hD δ₀ hφ tc ⟨htc, le_rfl⟩
-  rw [h0] at h
+  have hφc := hφ
+  rw [fault.field_eq_conservative, hD] at hφc
+  have h := PhasePlane.Conservative.energy_conserved hM (fault.hasDerivAt_potential δ₀) hφc tc
+    ⟨htc, le_rfl⟩
+  rw [← fault.energy_eq_conservative, h0] at h
   simp only [SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
     SwingParams.potential_self, add_zero] at h
   rw [SwingParams.Aacc_eq_neg_potential]

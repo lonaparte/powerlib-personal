@@ -114,8 +114,8 @@ imaginary eigenvalue `j √(−K_i g)`. -/
     ∃ v : Fin 2 → ℂ, v ≠ 0 ∧
       (piPLLJacobian 0 Ki g).map (algebraMap ℝ ℂ) *ᵥ v =
         (⟨0, Real.sqrt (-(Ki * g))⟩ : ℂ) • v := by
-  apply Criteria.exists_eigenpair_of_quadratic_fin_two
-  rw [piPLLJacobian_trace, piPLLJacobian_det]
+  apply Linear.exists_eigenvector_of_root
+  rw [Criteria.det_characteristicMatrix_fin_two, piPLLJacobian_trace, piPLLJacobian_det]
   have hs := Real.sq_sqrt (show 0 ≤ -(Ki * g) by linarith)
   apply Complex.ext
   · simp only [pow_two, Complex.add_re, Complex.sub_re, Complex.mul_re, Complex.ofReal_re,

@@ -169,8 +169,8 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
       rw [this]; field_simp; ring
 
 /-- Curvature of the double well at the barrier top: `V''(0) = −a`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_curvature_zero {a b : ℝ} (_ha : 0 < a)
-    (_hb : 0 < b) : -a + 3 * b * (0 : ℝ) ^ 2 = -a := by
+@[tmio T, powerlib_foundation] theorem doubleWell_curvature_zero {a b : ℝ} :
+    -a + 3 * b * (0 : ℝ) ^ 2 = -a := by
   ring
 
 /-- Curvature of the double well at the right well: `V''(√(a/b)) = 2a`. -/

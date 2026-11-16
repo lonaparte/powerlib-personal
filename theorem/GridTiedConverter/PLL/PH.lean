@@ -209,19 +209,18 @@ closed loop is this system with the shifted set point `η* = δω/K_i`. -/
   rw [pllPH_zeroInputField, pllPH_dampingPower] at h
   exact h
 
-/-- The shifted Hamiltonian vanishes at the locked equilibrium `(0, δω/K_i)` (`V, K_i > 0`).
-With `pllHamiltonian_nonneg` and `pllHamiltonian_shifted_lie_nonpos` it is a Lyapunov function
+/-- The shifted Hamiltonian vanishes at the locked equilibrium `(0, δω/K_i)`. For `V, K_i > 0`,
+with `pllHamiltonian_nonneg` and `pllHamiltonian_shifted_lie_nonpos` it is a Lyapunov function
 there; static evidence on the model, not a connection conclusion (Lyapunov stability itself is
 `PLLPH.mem_den_lyapunovStable`). -/
-@[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_eq_zero {V Ki : ℝ} (_hV : 0 < V)
-    (_hKi : 0 < Ki) (δω : ℝ) :
+@[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_eq_zero {V Ki : ℝ} (δω : ℝ) :
     pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 := by
   simp [pllHamiltonian, PhasePlane.mk]
 
 /-- The shifted Hamiltonian is nonincreasing along the SRF-PLL with constant offset `δω`
 (`K_p ≥ 0`, `K_i > 0`): `Ḣ = −K_p h(θ)² ≤ 0`. -/
 @[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_lie_nonpos {V Kp Ki : ℝ}
-    (_hV : 0 < V) (hKp : 0 ≤ Kp) (hKi : 0 < Ki) (δω : ℝ) :
+    (hKp : 0 ≤ Kp) (hKi : 0 < Ki) (δω : ℝ) :
     ∀ x, fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) ≤ 0 := by
   intro x
   have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp (δω / Ki) x

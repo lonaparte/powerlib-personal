@@ -405,25 +405,24 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
   exact tendsto_besselI1_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
 
 /-- `K̂₀(f r) → 1` along a sector filter (`r > 0`). -/
-@[tmio T, powerlib_foundation] theorem tendsto_besselK0Norm_mul {r K : ℝ} (hr : 0 < r) (hK : 0 < K)
+@[tmio T, powerlib_foundation] theorem tendsto_besselK0Norm_mul {r K : ℝ} (hr : 0 < r)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => besselK0Norm (f i * r)) l (𝓝 1) := by
   have hrer : Tendsto (fun i => (f i * r).re) l atTop := by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  exact tendsto_besselK0_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
+  exact tendsto_besselK0_div_gaussHalf hrer (sector_mul_ofReal hr hsec)
 
 /-- `K̂₁(f r) → 1` along a sector filter (`r > 0`). -/
-@[tmio T, powerlib_foundation] theorem tendsto_besselK1Norm_mul {r K : ℝ} (hr : 0 < r) (hK : 0 < K)
+@[tmio T, powerlib_foundation] theorem tendsto_besselK1Norm_mul {r K : ℝ} (hr : 0 < r)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => besselK1Norm (f i * r)) l (𝓝 1) := by
   have hrer : Tendsto (fun i => (f i * r).re) l atTop := by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  exact tendsto_besselK1_div_gaussHalf hK hrer (sector_mul_ofReal hr hsec)
+  exact tendsto_besselK1_div_gaussHalf hrer (sector_mul_ofReal hr hsec)
 
-/-- `e^{−2m(b−a)} → 0` along a sector filter (`a < b`). -/
-@[tmio T, powerlib_foundation] theorem tendsto_cexp_neg_two_mul_sub {a b K : ℝ} (_ha : 0 < a)
-    (hab : a < b) (_hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
-    (_hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+/-- `e^{−2m(b−a)} → 0` along every filter with `Re m → ∞` (`a < b`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_cexp_neg_two_mul_sub {a b : ℝ} (hab : a < b)
+    (hre : Tendsto (fun i => (f i).re) l atTop) :
     Tendsto (fun i => Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) l (𝓝 0) := by
   have hrer : Tendsto (fun i => (f i * ((b - a : ℝ) : ℂ)).re) l atTop := by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const (sub_pos.mpr hab)
@@ -438,11 +437,11 @@ theorem tendsto_exactZin_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) 
   have hb : 0 < b := ha.trans hab
   have hI0a := tendsto_besselI0Norm_mul ha hK hre hsec
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK0a := tendsto_besselK0Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK0a := tendsto_besselK0Norm_mul ha hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have h := (((hI0a.mul hK1b).mul hE).add (hK0a.mul hI1b)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
   rw [show ((1 : ℂ) * 1 * 0 + 1 * 1) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
@@ -461,12 +460,12 @@ theorem tendsto_exactZout_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
     Tendsto (fun i => exactZout ρ a b (f i) / ((ρ : ℂ) * f i / (2 * Real.pi * b))) l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI0b := tendsto_besselI0Norm_mul (ha.trans hab) hK hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have h := (((hI0b.mul hK1a)).add ((hK0b.mul hI1a).mul hE)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
   rw [show ((1 : ℂ) * 1 + 1 * 1 * 0) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
@@ -540,10 +539,10 @@ theorem tendsto_exactZmut_zero {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     Tendsto (fun i => exactZmut ρ a b (f i)) l (𝓝 0) := by
   have hb : 0 < b := ha.trans hab
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have hm := tendsto_mul_cexp_neg (t := b - a) (by linarith) hre hsec
   have h := (hm.const_mul ((ρ / (Real.pi * (Real.sqrt a * Real.sqrt b)) : ℝ) : ℂ)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
@@ -611,10 +610,10 @@ theorem tendsto_exactZmut_div_tubeZmut {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0
     Tendsto (fun i => exactZmut ρ a b (f i) / tubeZmut ρ a b (f i)) l
       (𝓝 (((a + b) / (2 * Real.sqrt (a * b)) : ℝ) : ℂ)) := by
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have h := ((((tendsto_const_nhds (x := (1 : ℂ))).sub hE).div_const 2).const_mul
     (((a + b) / (Real.sqrt a * Real.sqrt b) : ℝ) : ℂ)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
@@ -921,14 +920,14 @@ theorem besselI1Norm_sub_one_isBigO {K : ℝ} (hK : 0 < K)
 
 /-- Rate of the normalized `K₀`: in a sector, `K̂₀(f) − 1 = O(1/Re f)`. -/
 @[tmio T, powerlib_foundation]
-theorem besselK0Norm_sub_one_isBigO {K : ℝ} (_hK : 0 < K)
+theorem besselK0Norm_sub_one_isBigO {K : ℝ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     (fun i => besselK0Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) :=
   div_gaussHalf_sub_one_isBigO hre hsec fun _ hz hzK => besselK0_laplace_le hz hzK
 
 /-- Rate of the normalized `K₁`: in a sector, `K̂₁(f) − 1 = O(1/Re f)`. -/
 @[tmio T, powerlib_foundation]
-theorem besselK1Norm_sub_one_isBigO {K : ℝ} (_hK : 0 < K)
+theorem besselK1Norm_sub_one_isBigO {K : ℝ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     (fun i => besselK1Norm (f i) - 1) =O[l] (fun i => 1 / (f i).re) :=
   div_gaussHalf_sub_one_isBigO hre hsec fun _ hz hzK => besselK1_laplace_le hz hzK
@@ -981,12 +980,12 @@ theorem innerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
   have hI0a := tendsto_besselI0Norm_mul ha hK hre hsec
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
-  have rK0a := besselK0Norm_sub_one_isBigO hK (hrer ha) (sector_mul_ofReal ha hsec)
-  have rK1a := besselK1Norm_sub_one_isBigO hK (hrer ha) (sector_mul_ofReal ha hsec)
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
+  have rK0a := besselK0Norm_sub_one_isBigO (hrer ha) (sector_mul_ofReal ha hsec)
+  have rK1a := besselK1Norm_sub_one_isBigO (hrer ha) (sector_mul_ofReal ha hsec)
   have rK0a' := rK0a.trans (inv_re_mul_isBigO ha)
   have rK1a' := rK1a.trans (inv_re_mul_isBigO ha)
   have rE := cexp_neg_two_mul_isBigO (t := b - a) (by linarith) hre
@@ -1035,11 +1034,11 @@ theorem outerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have rI0b := besselI0Norm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
   have rI1b := besselI1Norm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
   have rI0b' := rI0b.trans (inv_re_mul_isBigO hb)
@@ -1116,10 +1115,10 @@ theorem tendsto_exactZmut_div_asymptotic {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha :
       l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hK hre hsec
+  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hK hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub ha hab hK hre hsec
+  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
+  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have hD := ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)).inv₀ (by norm_num)
   rw [show ((1 : ℂ) * 1 - 1 * 1 * 0)⁻¹ = 1 by norm_num] at hD
   refine hD.congr' ?_

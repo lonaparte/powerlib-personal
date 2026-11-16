@@ -717,7 +717,8 @@ by `0`). -/
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
   change ¬ LinearSystems.IsHurwitz (jacobian p θ)
   intro hH
-  apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := fun r => angleState v r)
+  apply Dynamics.mulVec_ne_zero_of_isHurwitz hH
+    (v := fun r => Dynamics.Mechanical.point (k := n + 1) v r)
   · intro h
     apply hv
     funext i
@@ -730,11 +731,13 @@ by `0`). -/
       simp
     · simp only [mulVec, dotProduct, Pi.zero_apply]
       rw [Fin.sum_univ_add]
-      simp only [jacobian_wd, jacobian_ww, angleState_dIdx, angleState_wIdx, mul_zero,
+      simp only [jacobian_wd, jacobian_ww, Dynamics.Mechanical.point_qIdx,
+        Dynamics.Mechanical.point_vIdx, mul_zero,
         Finset.sum_const_zero, add_zero]
       have hL : ∑ i : Fin n, laplacian (flowWeights p.B θ) k i.succ * v i = 0 := by
-        have h1 := laplacian_angleMap p θ (angleState v) k
-        simp only [angleState_dIdx, angleMap_angleState, laplacian_mulVec_apply] at h1
+        have h1 := laplacian_angleMap p θ (Dynamics.Mechanical.point v) k
+        simp only [Dynamics.Mechanical.point_qIdx, angleMap_eq_ground,
+          Dynamics.Mechanical.pos_point, laplacian_mulVec_apply] at h1
         rw [← h1, hker k]
       have e : ∀ i : Fin n, -laplacian (flowWeights p.B θ) k i.succ / p.M k * v i =
           -(laplacian (flowWeights p.B θ) k i.succ * v i) / p.M k := fun i => by ring

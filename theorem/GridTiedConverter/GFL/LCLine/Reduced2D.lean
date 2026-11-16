@@ -150,12 +150,13 @@ stable for the reduced 2-state PLL model. -/
     connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .unstable)) :=
   PLL.PIPLL.mem_den_unstable_of_pos _ hKi hθ (by rw [← p.deriv_h hwC hΔ θ] at hslope; exact hslope)
 
-/-- A1: at an equilibrium with `h′(θ*) = 0` (fold), the Jacobian of the reduced field is
-`[[0, K_i], [0, 0]]`, the nonzero nilpotent matrix of `PLL.piPLLJacobian_zero_ne_zero` and
-`PLL.piPLLJacobian_zero_sq` (`K_i ≠ 0`); the equilibrium (`reducedField_eq_zero_iff`) is not
-hyperbolic. Static evidence on the model, not a connection conclusion. -/
+/-- A1: at every angle with `h′(θ) = 0`, in particular at an equilibrium `h(θ*) = 0` that is a
+fold, the Jacobian of the reduced field at `(θ, 0)` is `[[0, K_i], [0, 0]]`, the nilpotent matrix
+of `PLL.piPLLJacobian_zero_sq`, nonzero for `K_i ≠ 0` (`PLL.piPLLJacobian_zero_ne_zero`); such an
+equilibrium (`reducedField_eq_zero_iff`) is not hyperbolic. Static evidence on the model, not a
+connection conclusion. -/
 @[tmio M, powerlib_domain] theorem reduced_jacobian_nilpotent (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (_hKi : p.Ki ≠ 0) {θ : ℝ} (_hθ : p.h θ = 0) (hslope : p.amp * cos (θ + p.phase) = 0) :
+    {θ : ℝ} (hslope : p.amp * cos (θ + p.phase) = 0) :
     fderiv ℝ p.reducedField (PhasePlane.mk θ 0) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian p.Kp p.Ki 0) := by
   rw [p.fderiv_reducedField hwC hΔ, hslope, neg_zero]

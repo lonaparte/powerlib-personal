@@ -121,12 +121,11 @@ composition laws. -/
   exact hda.mul_const _
 
 /-- **LTV prediction covariance with LeanForControl's state-transition matrix, initial value.**
-For continuous `A(t)`, `Q(t)`, the matrix
+For every `A(t)`, `Q(t)`, the matrix
 `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
 state-transition matrix of `ẋ = A(t) x`, satisfies `P(t₀) = P₀`. -/
-@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition_self (_hA : Continuous A)
-    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (_hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
-    (t₀ : ℝ) :
+@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition_self
+    (Q : ℝ → Matrix (Fin n) (Fin n) ℝ) (P₀ : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) :
     ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t₀ = P₀ :=
   ltvCov_self _ LinearSystems.stateTransitionMatrix_self Q P₀ t₀
 

@@ -177,12 +177,12 @@ exponentially stable and the other is unstable. -/
     exact ⟨trigPLL_mem_den_unstable hKi hz1 h1,
       trigPLL_mem_den_locallyExponentiallyStable hKp hKi hz2 h2⟩
 
-/-- On the saddle-node set `Σ_SN` (`h(θ*) = h'(θ*) = 0`, `K_i ≠ 0`) the Jacobian at
-`(θ*, δω/K_i)` is `[[0, K_i], [0, 0]]`, the nonzero nilpotent matrix of
-`piPLLJacobian_zero_ne_zero` and `piPLLJacobian_zero_sq`: not hyperbolic.
+/-- Wherever `h'(θ*) = 0`, in particular on the saddle-node set `Σ_SN` (`h(θ*) = h'(θ*) = 0`),
+the Jacobian at `(θ*, δω/K_i)` is `[[0, K_i], [0, 0]]`, the nilpotent matrix of
+`piPLLJacobian_zero_sq`, nonzero for `K_i ≠ 0` (`piPLLJacobian_zero_ne_zero`): not hyperbolic.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_foundation] theorem trigPLL_saddleNode_nilpotent {a b c d e Kp Ki δω θ : ℝ}
-    (_hKi : Ki ≠ 0) (_hz : trigPD a b c d e θ = 0) (hd : trigPDDeriv a b c d θ = 0) :
+    (hd : trigPDDeriv a b c d θ = 0) :
     fderiv ℝ (piPLLField (trigPD a b c d e) Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) := by
   have hder : HasDerivAt (trigPD a b c d e) (trigPDDeriv a b c d θ) θ :=

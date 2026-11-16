@@ -393,7 +393,7 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
   · filter_upwards [hlt, nhdsWithin_le_nhds hdet] with μ h1 h2
     exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two (A μ) (hF μ) (heq μ) (hJ μ) h1 h2
   · filter_upwards [hgt] with μ h1
-    exact Criteria.unstable_of_jacobian_trace_pos_fin_two (A μ) (hF μ) (heq μ) (hJ μ) h1
+    exact Criteria.unstable_of_jacobian_trace_pos (A μ) (hF μ) (heq μ) (hJ μ) h1
 
 /-- Saddle-node-type `Σ_WS` crossing: `tr A < 0` near `μ₀`, `det A(μ₀) = 0`,
 `d det/dμ (μ₀) < 0`. -/

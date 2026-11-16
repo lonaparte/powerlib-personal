@@ -26,8 +26,9 @@ Model boundary.
 Source: work-sync `theory/T-transient-stability.md` §1.3, §1.5, §1.6, §1.8, §2.2.
 
 Results.
-* `energy_antitoneOn` (`D ≥ 0`): the energy `W = ½ M ω² + U(δ)` is non-increasing along every
-  solution on any interval.
+* `D ≥ 0`: the energy `W = ½ M ω² + U(δ)` is non-increasing along every solution on any
+  interval (`PhasePlane.Conservative.energy_antitone` through
+  `SwingParams.field_eq_conservative` and `SwingParams.energy_eq_conservative`).
 * `firstSwing_le_deltaU_of_damping` (`D ≥ 0`): the undamped equal-area condition
   `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)` still guarantees `δ(t) ≤ δ_u` for all `t ≥ t_c`;
   `faultTrajectory_firstSwing_of_areas`: for the switched model with damping in the fault and
@@ -63,7 +64,7 @@ Family and connection conclusions.
 * None: energy dissipation along solutions, first-swing bounds, region-of-attraction estimates
   (LaSalle on the well) and convergence of switched trajectories are outside the sentence
   language of `Synchronous.Swing.family` (Rules §3a).  The trajectory theorems
-  (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttraction_well`,
+  (`firstSwing_le_deltaU_of_damping`, `regionOfAttraction_well`,
   `tendsto_of_firstSwing_margin`, `clearing_energy_le`, `faultTrajectory_firstSwing_of_areas`,
   `faultTrajectory_tendsto_of_areas`) and the bolted-fault clearing-time results
   (`dampedBolted_omega`, `dampedBolted_delta`, `boltedFault_damped_clearingAngle`,
@@ -96,23 +97,6 @@ namespace SwingParams
 
 variable (p : SwingParams)
 
-/-- With `D ≥ 0` the energy is non-increasing along every solution on a convex time set.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem energy_antitoneOn (hM : p.M ≠ 0) (hD : 0 ≤ p.D) (δ₀ : ℝ)
-    {φ : ℝ → State 2} {s : Set ℝ} (hs : Convex ℝ s)
-    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) s) :
-    AntitoneOn (fun t => p.energy δ₀ (φ t)) s := by
-  have hV : Differentiable ℝ (p.energy δ₀) :=
-    (p.contDiff_energy (k := 1) δ₀).differentiable (by norm_num)
-  apply antitoneOn_of_hasDerivWithinAt_nonpos hs (hV.continuous.comp_continuousOn hφ.continuousOn)
-    (f' := fun t => fderiv ℝ (p.energy δ₀) (φ t) (p.field (φ t)))
-  · intro t ht
-    exact (hV (φ t)).hasFDerivAt.comp_hasDerivWithinAt t
-      ((hφ t (interior_subset ht)).mono interior_subset)
-  · intro t _
-    rw [p.energy_lie hM]
-    nlinarith [sq_nonneg (φ t 1)]
-
 /-- `U(δ − 2π) = U(δ) + 2π (P_m − k₁)`. -/
 @[tmio M, powerlib_domain] theorem potential_sub_two_pi (δ₀ δ : ℝ) :
     p.potential δ₀ (δ - 2 * Real.pi) = p.potential δ₀ δ + 2 * Real.pi * (p.Pm - p.k₁) := by
@@ -139,8 +123,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
   obtain ⟨ts, hts, hδs⟩ := intermediate_value_Icc ht hcont
     ⟨by simpa [h0] using hδc, hlt.le⟩
   simp only at hδs
-  have hdec := p.energy_antitoneOn hM.ne' hD δc (convex_Ici tc) hφ (mem_Ici.mpr le_rfl) hts.1
-    hts.1
+  have hφc := hφ
+  rw [p.field_eq_conservative] at hφc
+  have hdec := PhasePlane.Conservative.energy_antitone hM.ne' hD (p.hasDerivAt_potential δc)
+    (convex_Ici tc) hφc (mem_Ici.mpr le_rfl) hts.1 hts.1
+  rw [← p.energy_eq_conservative] at hdec
   simp only [h0, energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self,
     add_zero, hδs] at hdec
   rw [← potential_eq_integral] at hE
@@ -273,15 +260,16 @@ Implementation evidence: trajectory-level result outside the sentence language (
         Tendsto φ atTop (𝓝 (PhasePlane.mk p.deltaS 0)) := by
   have hω : ∀ x : State 2, fderiv ℝ (p.energy p.deltaS) x (p.field x) = 0 → x 1 = 0 := by
     intro x hx
-    rw [p.energy_lie hM.ne'] at hx
+    rw [p.energy_eq_conservative, p.field_eq_conservative,
+      PhasePlane.Conservative.energy_lie hM.ne' (p.hasDerivAt_potential _)] at hx
     have : p.D * x 1 ^ 2 = 0 := by linarith
     rcases mul_eq_zero.mp this with h0 | h0
     · exact absurd h0 hD.ne'
     · exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h0
   refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow
     p.contDiff_field (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
-  · rw [p.energy_lie hM.ne']
-    nlinarith [sq_nonneg (x 1)]
+  · rw [p.energy_eq_conservative, p.field_eq_conservative]
+    exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (p.hasDerivAt_potential _) x
   · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem p.contDiff_field
       (h := fun x : State 2 => x 1) (Dynamics.contDiff_coord 1) ?_ ?_
     · intro x hx
@@ -428,8 +416,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hφ : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)) (htc : tf ≤ tc)
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     fault.M / 2 * φ tc 1 ^ 2 ≤ fault.Aacc δ₀ (φ tc 0) := by
-  have h := fault.energy_antitoneOn hM.ne' hD δ₀ (convex_Icc tf tc) hφ ⟨le_rfl, htc⟩
-    ⟨htc, le_rfl⟩ htc
+  have hφc := hφ
+  rw [fault.field_eq_conservative] at hφc
+  have h := PhasePlane.Conservative.energy_antitone hM.ne' hD (fault.hasDerivAt_potential δ₀)
+    (convex_Icc tf tc) hφc ⟨le_rfl, htc⟩ ⟨htc, le_rfl⟩ htc
+  rw [← fault.energy_eq_conservative] at h
   simp only [h0, SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
     SwingParams.potential_self, add_zero] at h
   rw [SwingParams.Aacc_eq_neg_potential]

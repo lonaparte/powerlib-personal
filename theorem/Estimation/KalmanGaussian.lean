@@ -160,8 +160,7 @@ noise. -/
 
 /-- The estimation error is square integrable. -/
 @[tmio T, powerlib_foundation] theorem kalman_error_memLp (hX : HasLaw X (gaussianReal m p) P)
-    (hV : HasLaw V (gaussianReal 0 r) P) (_hXV : IndepFun X V P)
-    (_hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
+    (hV : HasLaw V (gaussianReal 0 r) P) :
     MemLp (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m)) 2 P := by
   have hX2 : MemLp (fun ω => X ω - m) 2 P :=
     (hasLaw_centred hX).memLp (memLp_id_gaussianReal 2)
@@ -171,8 +170,7 @@ noise. -/
 
 /-- The estimation error has mean `0`. -/
 @[tmio T, powerlib_foundation] theorem kalman_error_integral_eq_zero
-    (hX : HasLaw X (gaussianReal m p) P) (hV : HasLaw V (gaussianReal 0 r) P)
-    (_hXV : IndepFun X V P) (_hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
+    (hX : HasLaw X (gaussianReal m p) P) (hV : HasLaw V (gaussianReal 0 r) P) :
     ∫ ω, (X ω - m - kgain p h r * (h * X ω + V ω - h * m)) ∂P = 0 := by
   have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hX' := hasLaw_centred hX

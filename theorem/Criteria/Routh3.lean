@@ -46,7 +46,8 @@ Results.
   `unstable_of_exists_complex_eigenvalue_re_pos`.
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin 3)` (`locallyExponentiallyStable_of_jacobian_fin_three`,
-  `unstable_of_jacobian_det_pos_fin_three`, `unstable_of_jacobian_trace_pos_fin_three`), and the
+  `unstable_of_jacobian_det_pos_fin_three`; `0 < tr` is the any-dimension
+  `Criteria.unstable_of_jacobian_trace_pos`), and the
   attractive sentences of a three-state linear field `x' = A (x - e)`, for every attractive
   sentence (`holds_affine_fin_three_iff`). They only repackage
   `hurwitz_linearization_locally_exponentially_stable`,
@@ -364,16 +365,6 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
     (hdet : 0 < A.det) : Unstable f x_eq :=
   unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_det_pos_fin_three A hdet)
-
-/-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < tr` gives
-instability. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_trace_pos_fin_three
-    {f : ℝ³ → ℝ³} {x_eq : ℝ³}
-    (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
-    (htr : 0 < A.trace) : Unstable f x_eq :=
-  unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenpair_re_pos_of_trace_pos A htr)
 
 /-- Three-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
 Flow semantics (in particular global exponential stability) holds at `e` iff the strict 3×3

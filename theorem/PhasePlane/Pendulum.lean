@@ -16,7 +16,8 @@ Source: work-sync theory/T-nonlinear-phase-plane.md §1.2–1.3, theory/T-dynami
 (codes example: pendulum equilibria, energy).
 
 Results.
-* Energy is conserved along every solution (`energy_conserved`).
+* Energy is conserved along every solution: `Conservative.energy_conserved` with `m = 1`,
+  `V = ω₀²(1 − cos θ)` (`hasDerivAt_potential`), used by `libration` and `rotation`.
 * `(0, 0)` is Lyapunov stable (strict minimum of `V` on `(−π, π)`; `origin_lyapunovStable`).
 * `(π, 0)` is unstable: the Jacobian there is `!![0, 1; ω₀², 0]` with `det = −ω₀² < 0` (saddle;
   `top_unstable`).
@@ -54,15 +55,6 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 @[tmio M, powerlib_foundation] theorem torque_contDiff (ω₀ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (torque ω₀) := by
   unfold torque; fun_prop
-
-@[tmio M, powerlib_foundation] theorem field_contDiff (ω₀ : ℝ) {k : WithTop ℕ∞} :
-    ContDiff ℝ k (field ω₀) :=
-  Conservative.field_contDiff (torque_contDiff ω₀)
-
-@[tmio TM, powerlib_foundation] theorem energy_conserved (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
-    (hφ : IsTrajectoryOn φ (field ω₀) a b) :
-    ∀ t ∈ Icc a b, energy ω₀ (φ t) = energy ω₀ (φ a) :=
-  Conservative.energy_conserved one_ne_zero (hasDerivAt_potential ω₀) hφ
 
 @[tmio M, powerlib_foundation] theorem potential_le (ω₀ θ : ℝ) : potential ω₀ θ ≤ 2 * ω₀ ^ 2 := by
   unfold potential
@@ -111,7 +103,8 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 /-- The upper equilibrium `(π, 0)` is a saddle, hence unstable. -/
 @[tmio TM, powerlib_foundation] theorem top_unstable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
     Unstable (field ω₀) (mk Real.pi 0) := by
-  refine Criteria.unstable_of_jacobian_det_neg_fin_two _ (field_contDiff ω₀) ?_
+  refine Criteria.unstable_of_jacobian_det_neg_fin_two _
+    (Conservative.field_contDiff (torque_contDiff ω₀)) ?_
     (hasFDerivAt_field ω₀ (mk Real.pi 0)).fderiv ?_
   · rw [field, Conservative.field_eq_zero_iff one_ne_zero]; simp [torque]
   · simp [Matrix.det_fin_two]; positivity
@@ -134,7 +127,8 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
       (Icc_subset_Icc_right ht.2)
   obtain ⟨s, hs, hseq⟩ := intermediate_value_Icc ht.1 hcont ⟨hθ.le, hle⟩
   have hsmem : s ∈ Icc a b := ⟨hs.1, hs.2.trans ht.2⟩
-  have hcons := energy_conserved ω₀ hφ s hsmem
+  have hcons : energy ω₀ (φ s) = energy ω₀ (φ a) :=
+    Conservative.energy_conserved one_ne_zero (hasDerivAt_potential ω₀) hφ s hsmem
   have hcos : Real.cos (φ s 0) = -1 := by
     rcases abs_eq Real.pi_pos.le |>.mp hseq with h | h <;> rw [h] <;> simp
   have : 2 * ω₀ ^ 2 ≤ energy ω₀ (φ s) := by
@@ -152,7 +146,7 @@ advances at least linearly. -/
   have hcpos : 0 < c := Real.sqrt_pos.mpr (by linarith)
   have hvsq : ∀ t ∈ Icc a b, c ^ 2 ≤ φ t 1 ^ 2 := by
     intro t ht
-    have hcons := energy_conserved ω₀ hφ t ht
+    have hcons := Conservative.energy_conserved one_ne_zero (hasDerivAt_potential ω₀) hφ t ht
     have hV := potential_le ω₀ (φ t 0)
     rw [Real.sq_sqrt (by linarith)]
     simp only [energy, Conservative.energy] at hcons ⊢

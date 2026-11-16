@@ -580,7 +580,7 @@ theorem tendsto_besselI1_div_gaussHalf {α : Type*} {l : Filter α} {f : α → 
 /-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
 `e^f K₀(f)/G(f) → 1` (by definition `besselK0Norm f`), i.e. `K₀(z) ∼ √(π/(2z)) e^{−z}`. -/
 @[tmio T, powerlib_foundation]
-theorem tendsto_besselK0_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (_hK : 0 < K)
+theorem tendsto_besselK0_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => Complex.exp (f i) * besselK0 (f i) / gaussHalf (f i)) l (𝓝 1) := by
   have hpos := hre.eventually_gt_atTop 0
@@ -592,7 +592,7 @@ theorem tendsto_besselK0_div_gaussHalf {α : Type*} {l : Filter α} {f : α → 
 /-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
 `e^f K₁(f)/G(f) → 1` (by definition `besselK1Norm f`), i.e. `K₁(z) ∼ √(π/(2z)) e^{−z}`. -/
 @[tmio T, powerlib_foundation]
-theorem tendsto_besselK1_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (_hK : 0 < K)
+theorem tendsto_besselK1_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => Complex.exp (f i) * besselK1 (f i) / gaussHalf (f i)) l (𝓝 1) := by
   have hpos := hre.eventually_gt_atTop 0

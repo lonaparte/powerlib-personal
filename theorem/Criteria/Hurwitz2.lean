@@ -58,10 +58,10 @@ Results.
   (`isNilpotent_iff_trace_det_eq_zero_fin_two`).
 * Semantic corollaries: linearization at an equilibrium of a `ContDiff ℝ 1` vector field on
   `EuclideanSpace ℝ (Fin 2)` (local exponential stability / instability:
-  `locallyExponentiallyStable_of_jacobian_fin_two`, `unstable_of_jacobian_det_neg_fin_two`,
-  `unstable_of_jacobian_trace_pos_fin_two`) and the attractive sentences of a two-state linear
-  field (`holds_affine_fin_two_iff`). These only repackage LeanForControl's
-  `hurwitz_linearization_locally_exponentially_stable`,
+  `locallyExponentiallyStable_of_jacobian_fin_two`, `unstable_of_jacobian_det_neg_fin_two`; for
+  every dimension `0 < tr` gives instability, `unstable_of_jacobian_trace_pos`) and the attractive
+  sentences of a two-state linear field (`holds_affine_fin_two_iff`). These only repackage
+  LeanForControl's `hurwitz_linearization_locally_exponentially_stable`,
   `unstable_of_exists_complex_eigenvalue_re_pos` and the linear hub
   `Linear.holds_iff_isHurwitz`; the model boundary is whatever vector field the caller supplies.
 -/
@@ -425,13 +425,6 @@ section FinTwo
   · rintro ⟨h0, h1⟩
     exact ⟨by linarith, by linarith⟩
 
-@[tmio T, powerlib_foundation] theorem exists_eigenpair_of_quadratic_fin_two
-    (A : Matrix (Fin 2) (Fin 2) ℝ) {s : ℂ}
-    (hs : s ^ 2 - (A.trace : ℂ) * s + (A.det : ℂ) = 0) :
-    ∃ v : Fin 2 → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
-  Linear.exists_eigenvector_of_root
-    (by rw [det_characteristicMatrix_fin_two]; exact hs)
-
 /-! ### Instability witnesses -/
 
 @[tmio T, powerlib_foundation] theorem det_real_characteristic_fin_two
@@ -560,12 +553,12 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
   unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_det_neg A hdet)
 
-/-- Linearization at an equilibrium of a `C¹` field on `ℝ²`: a Jacobian with
-`tr > 0` gives instability. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_trace_pos_fin_two
-    {f : ℝ² → ℝ²} {x_eq : ℝ²}
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A)
+/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ`, any dimension: a Jacobian with
+`tr > 0` gives instability (`exists_eigenpair_re_pos_of_trace_pos`). -/
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_trace_pos {n : ℕ}
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x_eq : EuclideanSpace ℝ (Fin n)}
+    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
+    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
     (htr : 0 < A.trace) : Unstable f x_eq :=
   unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
     (exists_eigenpair_re_pos_of_trace_pos A htr)
