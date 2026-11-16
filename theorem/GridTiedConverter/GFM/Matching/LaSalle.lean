@@ -30,8 +30,8 @@ nonincreasing and, "by LaSalle", every trajectory converges to `{ũ_dc = 0, ∇S
 §1.6, `theory/papers/@arghir2020matching.md`) contain only the condition.
 
 Results.
-* Static (public foundation, about the model's maps, not connection conclusions): `cylField_cyl`,
-  `hasDerivAt_cyl_line`, `fderiv_cyl_field`, `cyl_contDiff`, `cylField_contDiff`,
+* Static (public domain model identities, about the model's maps, not connection conclusions):
+  `cylField_cyl`, `hasDerivAt_cyl_line`, `fderiv_cyl_field`, `cyl_contDiff`, `cylField_contDiff`,
   `cylEnergy_contDiff`, `energy_eq_cylEnergy`, `cylLie_cyl`, `cyl_apply`, `cD_cos_sin`,
   `cQ_cos_sin`, `fderiv_circle_cylField`, `exists_cyl_eq`, `cylLie_le`, `cylLie_eq_zero`,
   `cylField_two_of_mem`, `cD_sq_add_cQ_sq`, `isCompact_cylSublevel`,
@@ -186,7 +186,7 @@ Static evidence on the model, not a connection conclusion. -/
       Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[tmio T, powerlib_foundation] theorem cyl_contDiff : ContDiff ℝ 1 cyl := by
+@[tmio M, powerlib_domain] theorem cyl_contDiff : ContDiff ℝ 1 cyl := by
   have h0 := Dynamics.contDiff_coord (k := 1) (n := 4) 0
   have h1 := Dynamics.contDiff_coord (k := 1) (n := 4) 1
   have h2 := Dynamics.contDiff_coord (k := 1) (n := 4) 2
@@ -197,7 +197,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The derivative of the cylinder map along a line. Static evidence, not a connection
 conclusion. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_cyl_line (x v : State 4) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_cyl_line (x v : State 4) :
     HasDerivAt (fun t : ℝ => cyl (x + t • v))
       (WithLp.toLp 2 ![-Real.sin (x 0) * v 0, Real.cos (x 0) * v 0, v 1, v 2, v 3]) 0 := by
   rw [← hasDerivWithinAt_univ]
@@ -271,7 +271,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-! ## The cylinder -/
 
 /-- Coordinates of the cylinder map. Static evidence on the model, not a connection conclusion. -/
-@[tmio T, simp, powerlib_foundation] theorem cyl_apply (x : State 4) :
+@[tmio M, simp, powerlib_domain] theorem cyl_apply (x : State 4) :
     cyl x 0 = Real.cos (x 0) ∧ cyl x 1 = Real.sin (x 0) ∧ cyl x 2 = x 1 ∧ cyl x 3 = x 2 ∧
       cyl x 4 = x 3 := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [cyl]
@@ -303,7 +303,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Every point of the cylinder `c² + s² = 1` is the image of a state.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio T, powerlib_foundation] theorem exists_cyl_eq {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1) :
+@[tmio M, powerlib_domain] theorem exists_cyl_eq {y : State 5} (hy : y 0 ^ 2 + y 1 ^ 2 = 1) :
     ∃ x : State 4, cyl x = y := by
   obtain ⟨θ, hc, hs⟩ := Dynamics.LaSalle.exists_cos_sin hy
   refine ⟨WithLp.toLp 2 ![θ, y 2, y 3, y 4], ?_⟩
@@ -1704,7 +1704,8 @@ def noSyncModel : Model :=
 
 /-- With `μ = 0`, `margin = 0` and `R_s > 0`, for every `a` and `θ₀` the drifting motion
 `(θ₀ + η a t, u* + a, î(θ₀))` is a solution: the angle drifts linearly whenever `η a ≠ 0`. -/
-@[tmio M, powerlib_domain] private theorem drift_isIntegralCurveOn (m : Model) (hR : 0 < m.Rs) (hμ : m.μ = 0)
+@[tmio TM, powerlib_domain] private theorem drift_isIntegralCurveOn (m : Model) (hR : 0 < m.Rs)
+    (hμ : m.μ = 0)
     (hm : m.margin = 0) (a θ₀ : ℝ) :
     IsIntegralCurveOn (fun t => WithLp.toLp 2 ![θ₀ + m.η * a * t, m.ustar + a, m.iHatD θ₀,
       m.iHatQ θ₀]) (fun _ x => m.field x) univ := by
@@ -2224,7 +2225,7 @@ conclusion. -/
 (Routh–Hurwitz: `tr < 0`, `det < 0`, `tr · Σ minors < det`; at `margin = 0` the determinant is
 `−μ²(X² − 3R_s²X + 4R_s⁴)/(4R_s C_dc L_s² N) < 0`, `X = ω₀²L_s²`). Static evidence on the model,
 not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem redJac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio TM, powerlib_domain] theorem redJac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hδ : 0 ≤ m.margin) : LinearSystems.IsHurwitz m.redJac := by
   have hN := N_pos m hR
   have hP : m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 ≤ 4 * m.Rs * m.N * (m.Gdc + m.Kp) := by

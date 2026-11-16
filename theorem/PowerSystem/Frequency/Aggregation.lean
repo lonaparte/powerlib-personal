@@ -4,9 +4,9 @@ import theorem.Attributes
 /-! # Frequency-response aggregation identities
 
 Static foundation: algebraic and differential identities between frequency-response signals (COI
-aggregation, droop aggregation, virtual inertia, kinetic energy, current-limited power), with the
-premises the source notes leave implicit.  They do not by themselves claim stability of any
-system.
+aggregation, droop aggregation, virtual inertia, kinetic energy; the current-limited power bound
+is domain), with the premises the source notes leave implicit.  They do not by themselves claim
+stability of any system.
 
 Model boundary.
 * Conventions: Kundur per-unit (`Δω` per-unit, `M = 2H` [s]); generator-side balance
@@ -153,7 +153,7 @@ def complexPower (V I : ℂ) : ℂ := 3 * V * (starRingEnd ℂ) I
 
 /-- `|P| ≤ |S̄| = √3 V_LL |Ī| ≤ √3 V_LL i_max`, with `V_LL = √3 |V̄|`. The bound is on the
 total active power `P = Re S̄`. -/
-@[tmio T, powerlib_foundation] theorem activePower_abs_le {V I : ℂ} {imax : ℝ} (hI : ‖I‖ ≤ imax) :
+@[tmio M, powerlib_domain] theorem activePower_abs_le {V I : ℂ} {imax : ℝ} (hI : ‖I‖ ≤ imax) :
     |(complexPower V I).re| ≤ Real.sqrt 3 * (Real.sqrt 3 * ‖V‖) * imax := by
   have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
   have hS : ‖complexPower V I‖ = 3 * ‖V‖ * ‖I‖ := by
@@ -166,7 +166,7 @@ total active power `P = Re S̄`. -/
 /-- Correction: the current limit does not bound the *change* `ΔP` by `√3 V_LL i_max`.
 Reversing an admissible current from `+i_max` (in phase with `V̄`) to `−i_max` changes the
 active power by `−2 · √3 V_LL i_max`. -/
-@[tmio T, powerlib_foundation] theorem deltaPower_counterexample {v imax : ℝ} (hv : 0 < v)
+@[tmio M, powerlib_domain] theorem deltaPower_counterexample {v imax : ℝ} (hv : 0 < v)
     (himax : 0 < imax) :
     ∃ I₀ I₁ : ℂ, ‖I₀‖ ≤ imax ∧ ‖I₁‖ ≤ imax ∧
       |(complexPower v I₁).re - (complexPower v I₀).re| =

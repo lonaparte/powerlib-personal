@@ -125,7 +125,7 @@ open powerlib.Dynamics LinearSystems
 /-- The open set `V_dc > 0` of DC states. -/
 def posDC (n : ℕ) [NeZero n] : Set (State n) := {x | 0 < x 0}
 
-@[tmio T, powerlib_foundation] theorem isOpen_posDC (n : ℕ) [NeZero n] : IsOpen (posDC n) :=
+@[tmio M, powerlib_domain] theorem isOpen_posDC (n : ℕ) [NeZero n] : IsOpen (posDC n) :=
   isOpen_lt continuous_const ((EuclideanSpace.proj (0 : Fin n)).continuous)
 
 /-! ## Open loop -/
@@ -383,7 +383,7 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
 
 /-- Closed-loop Routh–Hurwitz (§1.4 boxed): `Kp > −I_dc0/V_d ∧ Ki > 0`. Static evidence on the
 model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem closed_isHurwitz_iff (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+@[tmio TM, powerlib_domain] theorem closed_isHurwitz_iff (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) :
     LinearSystems.IsHurwitz p.jacobian ↔ -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki := by
   rw [Criteria.isHurwitz_fin_two_iff, jacobian_trace, jacobian_det]

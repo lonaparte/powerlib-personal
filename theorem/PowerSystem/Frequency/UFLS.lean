@@ -131,7 +131,8 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 corrected: `ΔP_L = M |ḟ(0⁺)| / f₀` for a load increase `ΔP_L ≥ 0`. -/
-@[tmio M, powerlib_domain] private theorem load_eq_of_rocof (hM : 0 < M) (hf : 0 < f₀) (hP : 0 ≤ ΔPL)
+@[tmio TM, powerlib_domain] private theorem load_eq_of_rocof (hM : 0 < M) (hf : 0 < f₀)
+    (hP : 0 ≤ ΔPL)
     {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) {ρ : ℝ} (hρ : HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) ρ (Ici 0) 0) :
@@ -217,7 +218,7 @@ instant of the window below it) and, after `τ_d`, the latched trip. -/
 /-- The note's §1.1 indicator is not latched: a record that dips below the threshold and
 recovers (`Δf(t) = −2 Δf_th + 3 Δf_th t`) trips at `t = 0` and un-trips at `t = 1`, while the
 latched indicator stays tripped. -/
-@[tmio T, powerlib_foundation] theorem instantTrip_not_latched (hth : 0 < th) :
+@[tmio M, powerlib_domain] theorem instantTrip_not_latched (hth : 0 < th) :
     instantTrip (fun t => -2 * th + 3 * th * t) th 0 ∧
       ¬ instantTrip (fun t => -2 * th + 3 * th * t) th 1 ∧
       ∃ τ ∈ Icc (0 : ℝ) 1, -2 * th + 3 * th * τ ≤ -th := by

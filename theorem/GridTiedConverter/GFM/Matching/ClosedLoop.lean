@@ -61,8 +61,8 @@ globally asymptotically stable "for stationary loads `s_l,dq = s*`". The work-sy
 stability *condition*; none of the equations below comes from the notes.
 
 Results.
-Reduction (static and generic results; Rules §5):
-* `hasDerivWithinAt_rot` (generic): the rotating-frame chain rule
+Reduction (static domain results; Rules §5):
+* `hasDerivWithinAt_rot` (domain, Rules §3): the rotating-frame chain rule
   `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary differentiable `θ`, `z`.
 * `field_reduce` (static): the reduced field at `reduce X = (v_dc, R_θᵀ i_αβ, R_θᵀ v_αβ)`, with
   load `s_dq = R_θᵀ s_αβ`, equals the stationary field `F = abField X` transformed by that chain
@@ -683,7 +683,7 @@ def rotD (θ a b : ℝ) : ℝ := Real.cos θ * a + Real.sin θ * b
 def rotQ (θ a b : ℝ) : ℝ := -Real.sin θ * a + Real.cos θ * b
 
 /-- The rotating-frame chain rule `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary functions. -/
-@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_rot {θ a b : ℝ → ℝ} {θ' a' b' t : ℝ}
+@[tmio M, powerlib_domain] theorem hasDerivWithinAt_rot {θ a b : ℝ → ℝ} {θ' a' b' t : ℝ}
     {s : Set ℝ} (hθ : HasDerivWithinAt θ θ' s t) (ha : HasDerivWithinAt a a' s t)
     (hb : HasDerivWithinAt b b' s t) :
     HasDerivWithinAt (fun τ => rotD (θ τ) (a τ) (b τ))
@@ -1019,19 +1019,19 @@ def Model.orbitPoint (m : Model) (θ : ℝ) : State 8 :=
     Real.cos θ * m.sd - Real.sin θ * m.sq, Real.sin θ * m.sd + Real.cos θ * m.sq]
 
 /-- `R_θᵀ R_θ = 1`, `d` component. Static evidence, not a connection conclusion. -/
-@[tmio T, powerlib_foundation] theorem rotD_rot (θ d q : ℝ) :
+@[tmio M, powerlib_domain] theorem rotD_rot (θ d q : ℝ) :
     rotD θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = d := by
   simp only [rotD]
   linear_combination d * Real.sin_sq_add_cos_sq θ
 
 /-- `R_θᵀ R_θ = 1`, `q` component. Static evidence, not a connection conclusion. -/
-@[tmio T, powerlib_foundation] theorem rotQ_rot (θ d q : ℝ) :
+@[tmio M, powerlib_domain] theorem rotQ_rot (θ d q : ℝ) :
     rotQ θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = q := by
   simp only [rotQ]
   linear_combination q * Real.sin_sq_add_cos_sq θ
 
 /-- `‖z − R_θ w‖ = ‖R_θᵀ z − w‖`. Static evidence, not a connection conclusion. -/
-@[tmio T, powerlib_foundation] theorem rot_dist_sq (θ a b d q : ℝ) :
+@[tmio M, powerlib_domain] theorem rot_dist_sq (θ a b d q : ℝ) :
     (a - (Real.cos θ * d - Real.sin θ * q)) ^ 2 + (b - (Real.sin θ * d + Real.cos θ * q)) ^ 2 =
       (rotD θ a b - d) ^ 2 + (rotQ θ a b - q) ^ 2 := by
   simp only [rotD, rotQ]

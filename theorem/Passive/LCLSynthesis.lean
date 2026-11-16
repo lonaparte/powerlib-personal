@@ -193,34 +193,34 @@ def matrix (a d b e k : ℝ) : SymmetricMatrix :=
   ⟨n11 a d b e k / q, n12 a d b e k / q, n13 a d b e k / q,
     n22 a d b e k / q, n23 a d b e k / q, n33 a d b e k / q⟩
 
-@[tmio T, powerlib_foundation] theorem coupling_pos {a d b e : ℝ}
+@[tmio M, powerlib_domain] theorem coupling_pos {a d b e : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (had : 0 < a ∨ 0 < d) :
     0 < coupling a d b e := by
   rcases had with ha' | hd' <;> dsimp [coupling] <;> positivity
 
-@[tmio T, powerlib_foundation] theorem gap_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] theorem gap_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < gap a d b e k := by
   rcases had with ha' | hd' <;> dsimp [gap] <;> positivity
 
-@[tmio T, powerlib_foundation] theorem n11_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] theorem n11_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < n11 a d b e k := by
   rcases had with ha' | hd' <;> dsimp [n11] <;> positivity
 
-@[tmio T, powerlib_foundation] theorem minorNumerator_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] theorem minorNumerator_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < minorNumerator a d b e k := by
   rcases had with ha' | hd' <;> dsimp [minorNumerator] <;> positivity
 
-@[tmio T, powerlib_foundation] theorem detNumerator_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] theorem detNumerator_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k) :
     0 < detNumerator a d b e k := by
   dsimp [detNumerator]
   positivity
 
 set_option maxHeartbeats 4000000 in
-@[tmio T, powerlib_foundation] theorem minor_identity (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem minor_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     (matrix a d b e k).minor2 =
       k * coupling a d b e * minorNumerator a d b e k / (denominator a d b e k)^2 := by
@@ -230,7 +230,7 @@ set_option maxHeartbeats 4000000 in
   ring
 
 set_option maxHeartbeats 4000000 in
-@[tmio T, powerlib_foundation] theorem det_identity (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem det_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     (matrix a d b e k).det =
       k^2 * (coupling a d b e)^2 * gap a d b e k * detNumerator a d b e k /
@@ -240,7 +240,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, coupling, gap, detNumerator]
   ring
 
-@[tmio T, powerlib_foundation] theorem eq11 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem eq11 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * a * (matrix a d b e k).p11 + 2 * k * (matrix a d b e k).p12 = -1 := by
   dsimp [matrix]
@@ -248,7 +248,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio T, powerlib_foundation] theorem eq12 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem eq12 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -b * (matrix a d b e k).p11 - a * (matrix a d b e k).p12 + k * (matrix a d b e k).p22 +
       e * (matrix a d b e k).p13 = 0 := by
@@ -257,7 +257,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio T, powerlib_foundation] theorem eq13 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem eq13 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -(a + d) * (matrix a d b e k).p13 - k * (matrix a d b e k).p12 +
       k * (matrix a d b e k).p23 = 0 := by
@@ -266,7 +266,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio T, powerlib_foundation] theorem eq22 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem eq22 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * b * (matrix a d b e k).p12 + 2 * e * (matrix a d b e k).p23 = -1 := by
   dsimp [matrix]
@@ -274,7 +274,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio T, powerlib_foundation] theorem eq23 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem eq23 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -b * (matrix a d b e k).p13 - k * (matrix a d b e k).p22 - d * (matrix a d b e k).p23 +
       e * (matrix a d b e k).p33 = 0 := by
@@ -283,7 +283,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio T, powerlib_foundation] theorem eq33 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] theorem eq33 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * k * (matrix a d b e k).p23 - 2 * d * (matrix a d b e k).p33 = -1 := by
   dsimp [matrix]

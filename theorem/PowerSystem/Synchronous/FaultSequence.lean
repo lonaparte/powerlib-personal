@@ -250,7 +250,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Bolted fault at the receiving bus (`P_e^f ≡ 0`, `D = 0`): the during-fault speed from the
 pre-fault equilibrium `(δ₀, 0)` is `ω = (P_m/M)(t − t_f)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem boltedFault_speed (hD : p.D = 0)
+@[tmio TM, powerlib_domain] private theorem boltedFault_speed (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
@@ -275,7 +275,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Bolted fault at the receiving bus (`P_e^f ≡ 0`, `D = 0`): the during-fault angle from the
 pre-fault equilibrium `(δ₀, 0)` is `δ = δ₀ + (P_m/(2M))(t − t_f)²`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem boltedFault_angle (hM : 0 < p.M) (hD : p.D = 0)
+@[tmio TM, powerlib_domain] private theorem boltedFault_angle (hM : 0 < p.M) (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :

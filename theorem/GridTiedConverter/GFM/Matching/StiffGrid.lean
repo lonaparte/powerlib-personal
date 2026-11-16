@@ -531,7 +531,7 @@ end Model
 the quadratic energy gives `2 Re λ (E(v_r) + E(v_i)) = B(v_r, J v_r) + B(v_i, J v_i) ≤ 0`; on the
 boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC row then forces
 `κ δθ = 0`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem jac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio TM, powerlib_domain] theorem jac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
     LinearSystems.IsHurwitz m.jac := by
   intro lam v hv hev

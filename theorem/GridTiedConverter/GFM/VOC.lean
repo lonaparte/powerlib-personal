@@ -30,7 +30,8 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
 * `|v(t)| → r*`.
 * Phase: `v(t) = (|v(t)| / |v(0)|) e^{j ω_s t} v(0)` — the phase rotates uniformly at `ω_s`.
 * The circle `|v| = r*` is invariant and carries exactly the solutions `r* e^{j(ω_s t + φ₀)}`.
-* Algebra (foundation): polar decomposition of the loaded AHO and the dVOC complex frequency.
+* Algebra: polar decomposition of the loaded AHO (domain) and the dVOC complex frequency
+  (foundation).
 
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
@@ -64,7 +65,7 @@ Family and connection conclusions.
   explicit logistic formula `inv_normSq_eq` (the parameter type `AHO` carries a family, so its
   public behavioural statements must be connection statements).  `radial_zero_iff`
   is static evidence on the model; the pointwise chain rules `hasDerivWithinAt_normSq`,
-  `hasDerivWithinAt_norm` stay public foundation.
+  `hasDerivWithinAt_norm` stay public (static domain identities).
 
 Corrections.
 * T-voc-dvoc §1.8 writes the dVOC complex frequency as
@@ -194,7 +195,7 @@ variable (a)
 
 /-- On any interval where `|v|² > 0`, `1/|v|² = κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct}`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) {T : ℝ}
     (hpos : ∀ t ∈ Icc 0 T, 0 < normSq (φ t)) :
     ∀ t ∈ Icc 0 T, 1 / normSq (φ t) =
@@ -349,7 +350,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Uniform phase rotation: `v(t) = (|v(t)|/|v(0)|) e^{j ω_s t} v(0)` for every solution with
 `v(0) ≠ 0`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), φ t = ((‖φ t‖ / ‖φ 0‖ : ℝ) : ℂ) * exp (I * a.ωs * t) * φ 0 := by
   have hpos := a.normSq_solution_pos h hφ h0
@@ -434,7 +435,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- The limit-cycle solutions `r* e^{j(ω_s t + φ₀)}` solve the AHO.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
+@[tmio TM, powerlib_domain] private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
     IsIntegralCurveOn
       (fun t : ℝ => (a.rstar : ℂ) * exp (I * (a.ωs * t + φ₀))) (fun _ v => a.field v) univ := by
   intro t _
@@ -545,7 +546,7 @@ variable {a}
 /-- The energy `|v|² = v_α² + v_β²`. -/
 private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
 
-@[tmio T, powerlib_foundation] private theorem hasFDerivAt_energy (x : State 2) :
+@[tmio M, powerlib_domain] private theorem hasFDerivAt_energy (x : State 2) :
     HasFDerivAt energy
       ((2 * x 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ) +
         (2 * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
@@ -557,7 +558,7 @@ private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
   apply ContinuousLinearMap.ext; intro v
   simp
 
-@[tmio T, powerlib_foundation] private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
+@[tmio M, powerlib_domain] private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
   rw [sub_zero, PhasePlane.norm_sq_eq, energy]
 
 @[tmio M, powerlib_domain] private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
@@ -699,7 +700,8 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
     smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   ring
 
-@[tmio T, powerlib_foundation] private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
+@[tmio M, powerlib_domain] private theorem energy_pos {x : State 2}
+    (hx : x ≠ 0) : 0 < energy x := by
   rw [energy_eq, sub_zero]
   have : 0 < ‖x‖ := norm_pos_iff.mpr hx
   positivity
@@ -784,10 +786,11 @@ stability is not decided by the linearization. -/
 
 /-! ### The local asymptotic and Lyapunov denotations -/
 
-@[tmio T, powerlib_foundation] private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
+@[tmio M, powerlib_domain] private theorem energy_differentiable :
+    Differentiable ℝ energy := fun x =>
   (hasFDerivAt_energy x).differentiableAt
 
-@[tmio T, powerlib_foundation] private theorem seed (ε : ℝ) (hε : 0 < ε) :
+@[tmio M, powerlib_domain] private theorem seed (ε : ℝ) (hε : 0 < ε) :
     ‖PhasePlane.mk (ε / 2) 0 - 0‖ < ε ∧ 0 < energy (PhasePlane.mk (ε / 2) 0) := by
   have hne : PhasePlane.mk (ε / 2) 0 ≠ 0 := by
     intro h
@@ -865,7 +868,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
             rw [energy_lie, hc]
             nlinarith [mul_nonneg hκ (sq_nonneg (energy x))]⟩
 
-/-! ## Algebra (foundation) -/
+/-! ## Algebra (AHO polar form: domain; dVOC frequency: foundation) -/
 
 /-- Polar decomposition of the loaded AHO `v̇ = (jω_s − σ + κ_v(v*² − r²)) v − κ_i i`:
 with `v = r e^{jϕ}`, `ṙ = (κ_v(v*² − r²) − σ) r − Re(κ_i i e^{−jϕ})` and

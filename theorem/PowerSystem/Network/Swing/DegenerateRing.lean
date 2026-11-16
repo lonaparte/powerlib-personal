@@ -106,12 +106,12 @@ variable {n : ℕ}
 
 /-- A lossless line with weight `W = B cos φ` and flow `f = B sin φ`: its potential increment is
 the cycle edge potential. -/
-@[tmio M, powerlib_foundation] theorem mul_edgeIncrement {B φ W f : ℝ} (hW : B * Real.cos φ = W)
+@[tmio M, powerlib_domain] theorem mul_edgeIncrement {B φ W f : ℝ} (hW : B * Real.cos φ = W)
     (hf : B * Real.sin φ = f) (x : ℝ) : B * edgeIncrement φ x = edgeG W f x := by
   simp only [edgeIncrement, edgeG, Real.cos_add, ← hW, ← hf]; ring
 
 /-- … and its flow at the displaced angle is `f + G'(x)`. -/
-@[tmio T, powerlib_foundation] theorem mul_sin_add {B φ W f : ℝ} (hW : B * Real.cos φ = W)
+@[tmio M, powerlib_domain] theorem mul_sin_add {B φ W f : ℝ} (hW : B * Real.cos φ = W)
     (hf : B * Real.sin φ = f) (x : ℝ) : B * Real.sin (φ + x) = f + edgeD W f x := by
   simp only [edgeD, Real.sin_add, ← hW, ← hf]; ring
 
@@ -424,7 +424,8 @@ def params : Params 4 where
   have hb := abs_le.mp hμ
   fin_cases e <;> simp [edgeQ, Wr, fr] <;> nlinarith
 
-@[tmio T, powerlib_foundation] theorem abs_ground_le (v : Fin 4 → ℝ) (k : Fin (4 + 1)) : |ground v k| ≤ ‖v‖ := by
+@[tmio M, powerlib_domain] theorem abs_ground_le (v : Fin 4 → ℝ)
+    (k : Fin (4 + 1)) : |ground v k| ≤ ‖v‖ := by
   refine Fin.cases ?_ (fun i => ?_) k
   · simp
   · rw [ground_succ, ← Real.norm_eq_abs]; exact norm_le_pi_norm v i
@@ -477,13 +478,16 @@ def leafB (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) : Matrix (Fin (n + 2)) (F
     (fun i => Fin.snoc (α := fun _ => ℝ) (B i) (if i = 0 then 1 else 0))
     (Fin.snoc (α := fun _ => ℝ) (fun j => if j = 0 then 1 else 0) 0)
 
-@[tmio T, simp, powerlib_foundation] theorem leafB_cc (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (i j : Fin (n + 1)) :
+@[tmio M, simp, powerlib_domain] theorem leafB_cc (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+    (i j : Fin (n + 1)) :
     leafB B i.castSucc j.castSucc = B i j := by simp [leafB]
-@[tmio T, simp, powerlib_foundation] theorem leafB_cl (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (i : Fin (n + 1)) :
+@[tmio M, simp, powerlib_domain] theorem leafB_cl (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+    (i : Fin (n + 1)) :
     leafB B i.castSucc (Fin.last _) = if i = 0 then 1 else 0 := by simp [leafB]
-@[tmio T, simp, powerlib_foundation] theorem leafB_lc (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (j : Fin (n + 1)) :
+@[tmio M, simp, powerlib_domain] theorem leafB_lc (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+    (j : Fin (n + 1)) :
     leafB B (Fin.last _) j.castSucc = if j = 0 then 1 else 0 := by simp [leafB]
-@[tmio T, simp, powerlib_foundation] theorem leafB_ll (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
+@[tmio M, simp, powerlib_domain] theorem leafB_ll (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
     leafB B (Fin.last _) (Fin.last _) = 0 := by simp [leafB]
 
 /-- The network with a leaf machine: unit inertia, damping and line, no power. -/
@@ -554,18 +558,20 @@ def leafAngle (θ : Fin (n + 1) → ℝ) : Fin (n + 2) → ℝ := Fin.snoc (α :
     -(φ (0 : Fin (n + 1)).castSucc - φ (Fin.last (n + 1))) by ring, Real.cos_neg]
   ring
 
-@[tmio T, simp, powerlib_foundation] theorem leafAngle_c (θ : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
+@[tmio M, simp, powerlib_domain] theorem leafAngle_c (θ : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     leafAngle θ k.castSucc = θ k := by simp [leafAngle]
-@[tmio T, simp, powerlib_foundation] theorem leafAngle_l (θ : Fin (n + 1) → ℝ) : leafAngle θ (Fin.last _) = θ 0 := by
+@[tmio M, simp, powerlib_domain] theorem leafAngle_l (θ : Fin (n + 1) → ℝ) : leafAngle θ
+    (Fin.last _) = θ 0 := by
   simp [leafAngle]
 
-@[tmio T, powerlib_foundation] theorem ground_c (v : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
+@[tmio M, powerlib_domain] theorem ground_c (v : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     ground v k.castSucc = ground (fun i => v i.castSucc) k := by
   refine Fin.cases ?_ (fun i => ?_) k
   · rfl
   · rw [← Fin.succ_castSucc]; rfl
 
-@[tmio T, powerlib_foundation] theorem ground_l (v : Fin (n + 1) → ℝ) : ground v (Fin.last _) = v (Fin.last n) := by
+@[tmio M, powerlib_domain] theorem ground_l (v : Fin (n + 1) → ℝ) : ground v (Fin.last _) = v
+    (Fin.last n) := by
   rw [← Fin.succ_last]; rfl
 
 @[tmio T, powerlib_foundation] theorem eq_zero_of_restrict {v : Fin (n + 1) → ℝ} (h1 : (fun i : Fin n => v i.castSucc) = 0)

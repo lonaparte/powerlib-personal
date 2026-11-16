@@ -344,7 +344,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 (`v = −ω σL i_q − ê + u`, `ê = e`), the d-axis of FOC note §1.5,
 `σL_s di_d/dt = v_d − r' i_d + ω σL_s i_q + e_d`, reduces to the RL plant driven by the PI
 output `u`. -/
-@[tmio T, powerlib_foundation] theorem decoupled_axis_eq_rl (σL r' ω id iq ed u : ℝ) :
+@[tmio M, powerlib_domain] theorem decoupled_axis_eq_rl (σL r' ω id iq ed u : ℝ) :
     ((-ω * σL * iq - ed + u) - r' * id + ω * σL * iq + ed) / σL = rlField σL r' id u := by
   unfold rlField
   congr 1

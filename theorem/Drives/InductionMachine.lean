@@ -50,7 +50,7 @@ Source: work-sync `theory/T-field-oriented-control.md` §1.1–§1.4 (and §1.3 
 `theory/T-sensorless-machine-control.md` §1.2 / §1.9 (voltage / current model).
 
 Results.
-* Foundation (algebra of §1.1–§1.4 of the FOC note): torque in rotor-flux form
+* Domain model identities (algebra of §1.1–§1.4 of the FOC note): torque in rotor-flux form
   (`torque_rotorFlux`), the oriented torque `T_e = (3/2) np (L_m/L_r) ψ_r i_sq`
   (`torque_oriented`), slip relation and `T_r ψ̇_r + ψ_r = L_m i_sd` under orientation
   (`oriented_slip_and_flux`, `oriented_steadyState`), the voltage-model flux estimate
@@ -372,7 +372,8 @@ def fluxMatrix (p : Params) (ωsl : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- `fluxMatrix` is Hurwitz for every slip (`tr = −2/T_r < 0`, `det = 1/T_r² + ω_sl² > 0`);
 intermediate evidence only. -/
-@[tmio M, powerlib_domain] theorem fluxMatrix_isHurwitz (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr)
+@[tmio TM, powerlib_domain] theorem fluxMatrix_isHurwitz (p : Params) (hrr : 0 < p.rr)
+    (hLr : 0 < p.Lr)
     (ωsl : ℝ) : LinearSystems.IsHurwitz (fluxMatrix p ωsl) := by
   have hTr : 0 < p.Tr := div_pos hLr hrr
   rw [fluxMatrix, Criteria.isHurwitz_fin_two_of_iff]

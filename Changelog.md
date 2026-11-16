@@ -100,6 +100,30 @@ in Git; working statistics, build receipts and development plans are not kept he
     strict minimum).
   - Classified theorems 7555 → 7550; public connection theorems unchanged (1052).
 
+- Reviewed the knowledge-kind and foundation/domain tags against Rules §2a–§3
+  and corrected 395 of the 7550 classified theorems (attributes and the module
+  prose that described them; no statement changed):
+  - 320 results about selected engineering models moved from foundation to
+    domain (T → M where needed): static or algebraic identities of the
+    low-inertia, frequency-nadir, stochastic PLL, GFL noise, current-limiting,
+    line and current-control models; the Clarke transform, space-vector
+    modulation and per-unit bases; and auxiliary objects built for one model —
+    its Lyapunov functions, Hopf coefficients, sign-reversal and reflection
+    matrices, passivity witness, coordinate maps of the networked swing model.
+    Objects meaningful for arbitrary data (weighted Laplacians, the feedback
+    interconnection of arbitrary plants, generic rotations, filters, normal
+    forms) stay foundation.
+  - M and T–M separated by one reading: a model's own structure (parameter
+    identities, equilibria, Jacobians, pointwise formulas, requirement facts) is
+    M; a theory property evaluated on the model — stability or Hurwitz criteria
+    in its parameters, statements over its solutions — is T–M (47 to T–M,
+    10 back to M).
+  - M–I is kept for statements with an actual realization relation: the
+    stability results of the EMT-discretized RL/LCL plants and of the
+    voltage-limited PI platform are T–M or M (18).
+  - Kinds now T 3633, M 2662, T–M 1175, M–I 69, I–O 11; labels foundation 4394,
+    domain 3155; public connection theorems unchanged (1052).
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

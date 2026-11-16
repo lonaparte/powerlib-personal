@@ -127,7 +127,7 @@ def model : Plant 4 2 :=
     by linear_combination h3⟩
 
 /-- Every eigenvalue is a root of `s² + (a ± j b) s + c`. -/
-@[tmio M, powerlib_foundation] theorem eigenvalue_root {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
+@[tmio M, powerlib_domain] theorem eigenvalue_root {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
     (hv : v ≠ 0) (h : (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     μ ^ 2 + (⟨a, b⟩ : ℂ) * μ + (c : ℂ) = 0 ∨ μ ^ 2 + (⟨a, -b⟩ : ℂ) * μ + (c : ℂ) = 0 := by
   obtain ⟨e0, e1, e2, e3⟩ := eig_equations h
@@ -160,7 +160,7 @@ def model : Plant 4 2 :=
   · exact Or.inl ((mul_eq_zero.mp hp).resolve_right hWp)
 
 /-- A root of `s² + (a + j b) s + c` is an eigenvalue, with eigenvector `(s, −j s, −1, j)`. -/
-@[tmio M, powerlib_foundation] theorem eigenpair_of_root {a b c : ℝ} {s : ℂ}
+@[tmio M, powerlib_domain] theorem eigenpair_of_root {a b c : ℝ} {s : ℂ}
     (hs : s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0) :
     (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ ![s, -Complex.I * s, -1, Complex.I] =
       s • ![s, -Complex.I * s, -1, Complex.I] := by
@@ -179,7 +179,7 @@ def model : Plant 4 2 :=
   simp at this
 
 /-- Exact Hurwitz region of the mismatched loop matrix. -/
-@[tmio TM, powerlib_foundation] theorem stateMatrix_isHurwitz_iff (a b c : ℝ) :
+@[tmio TM, powerlib_domain] theorem stateMatrix_isHurwitz_iff (a b c : ℝ) :
     IsHurwitz (stateMatrix a b c) ↔ 0 < a ∧ 0 < c := by
   constructor
   · intro h
@@ -197,7 +197,7 @@ def model : Plant 4 2 :=
 
 /-- A negative damping coefficient `a < 0` gives a characteristic root in the open right half
 plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
-@[tmio TM, powerlib_foundation] theorem stateMatrix_exists_root_of_neg {a b c : ℝ} (ha : a < 0) :
+@[tmio TM, powerlib_domain] theorem stateMatrix_exists_root_of_neg {a b c : ℝ} (ha : a < 0) :
     ∃ s : ℂ, (characteristicMatrix (stateMatrix a b c) s).det = 0 ∧ 0 < s.re := by
   obtain ⟨d, hd⟩ := IsAlgClosed.exists_eq_mul_self (discrim (1 : ℂ) (⟨a, b⟩ : ℂ) (c : ℂ))
   obtain ⟨s, hs⟩ := exists_quadratic_eq_zero (one_ne_zero) ⟨d, hd⟩
@@ -232,7 +232,7 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
   ring
 
 /-- Characteristic determinant: the product of the two complex-conjugate quadratics. -/
-@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
+@[tmio M, powerlib_domain] theorem det_characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
     (characteristicMatrix (stateMatrix a b c) s).det =
       (s ^ 2 + (a + b * Complex.I) * s + c) * (s ^ 2 + (a - b * Complex.I) * s + c) := by
   rw [characteristicMatrix_stateMatrix, det_four]

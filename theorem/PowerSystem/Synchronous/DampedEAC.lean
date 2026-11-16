@@ -56,7 +56,7 @@ Results.
   exactly for `t_c − t_f ≤ t_cc^EAC` (`boltedFault_firstSwing_iff`, `FaultSequence.lean`), the
   true (damped) critical clearing time is at least `t_cc^EAC + ε`, strictly larger than the EAC
   value.
-* Public foundation: the well geometry (`wellWindow`, `isOpen_wellWindow`,
+* Public domain model identities: the well geometry (`wellWindow`, `isOpen_wellWindow`,
   `isCompact_wellSublevel`, `potential_le_energy`, `eq_deltaS_of_field_eq_zero`: the only
   equilibrium in the window).
 
@@ -314,7 +314,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`, the speed is
 `ω = (P_m/D)(1 − e^{−D(t−t_f)/M})`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem dampedBolted_omega (hM : 0 < p.M) (hD : 0 < p.D)
+@[tmio TM, powerlib_domain] private theorem dampedBolted_omega (hM : 0 < p.M) (hD : 0 < p.D)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
@@ -364,7 +364,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`, the angle is
 `δ = δ₀ + (P_m/D)((t − t_f) − (M/D)(1 − e^{−D(t−t_f)/M}))`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem dampedBolted_delta (hM : 0 < p.M) (hD : 0 < p.D)
+@[tmio TM, powerlib_domain] private theorem dampedBolted_delta (hM : 0 < p.M) (hD : 0 < p.D)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :

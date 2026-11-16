@@ -277,7 +277,7 @@ def dqLCPH (p : DqLCParams) : Port.PortHamiltonian 4 4 :=
 
 /-- Along every solution segment, `d/dt H = P_src − P_conv`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
+@[tmio TM, powerlib_domain] private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
     {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 4)} {t₀ t₁ t : ℝ}
     (hx : (dqLCPH p).plant.system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => (dqLC p).energy (WithLp.ofLp (x τ)))

@@ -110,7 +110,7 @@ def Texact (α0 ν β : ℝ) (s : ℂ) : ℂ :=
   ((β * ν ^ 2 : ℝ) : ℂ) / ((s + β) * (s ^ 2 + 2 * α0 * s + ν ^ 2))
 
 /-- `∂_{β₃} ln |T_exact(2jω)| = 4ω² / [β₃(β₃² + 4ω²)]`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_log_norm_Texact {α0 ν ω β : ℝ} (hβ : 0 < β)
+@[tmio M, powerlib_domain] theorem hasDerivAt_log_norm_Texact {α0 ν ω β : ℝ} (hβ : 0 < β)
     (hν : ν ≠ 0)
     (hq : (2 * Complex.I * ω) ^ 2 + 2 * α0 * (2 * Complex.I * ω) + (ν : ℂ) ^ 2 ≠ 0) :
     HasDerivAt (fun b => Real.log ‖Texact α0 ν b (2 * Complex.I * ω)‖)

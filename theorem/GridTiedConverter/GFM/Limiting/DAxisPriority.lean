@@ -3,7 +3,7 @@ import dependencies.Mathlib
 
 /-! # d-axis-priority current limiting
 
-Static current-reference limiter (foundation), with a Correction of the note's rule.
+Static current-reference limiter (domain), with a Correction of the note's rule.
 
 Model boundary.
 Current reference `(i_d, i_q)` in the dq frame, limit `I ≥ 0`; a static map, no converter
@@ -60,7 +60,7 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   (min id I, sgn iq * Real.sqrt (I ^ 2 - (min id I) ^ 2))
 
 /-- The corrected limiter never exceeds the limit. -/
-@[tmio M, powerlib_foundation] theorem dPriority_norm_le {I : ℝ} (hI : 0 ≤ I) (id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem dPriority_norm_le {I : ℝ} (hI : 0 ≤ I) (id iq : ℝ) :
     (dPriority I id iq).1 ^ 2 + (dPriority I id iq).2 ^ 2 ≤ I ^ 2 := by
   simp only [dPriority]
   have h1 := clampSym_sq_le hI id
@@ -69,7 +69,7 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   linarith
 
 /-- No action inside the limit disc. -/
-@[tmio M, powerlib_foundation] theorem dPriority_of_within {I id iq : ℝ} (hI : 0 ≤ I)
+@[tmio M, powerlib_domain] theorem dPriority_of_within {I id iq : ℝ} (hI : 0 ≤ I)
     (h : id ^ 2 + iq ^ 2 ≤ I ^ 2) : dPriority I id iq = (id, iq) := by
   have hd : |id| ≤ I :=
     abs_le_of_sq_le_sq' (by nlinarith [sq_nonneg iq]) hI |> fun h => abs_le.mpr h
@@ -88,13 +88,13 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   max_le (by linarith) ((min_le_left _ _).trans hx)
 
 /-- The sign of `i_q` is preserved. -/
-@[tmio M, powerlib_foundation] theorem dPriority_snd_sign (I id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem dPriority_snd_sign (I id iq : ℝ) :
     (0 ≤ iq → 0 ≤ (dPriority I id iq).2) ∧ (iq ≤ 0 → (dPriority I id iq).2 ≤ 0) :=
   ⟨fun h => clampSym_nonneg (Real.sqrt_nonneg _) h,
     fun h => clampSym_nonpos (Real.sqrt_nonneg _) h⟩
 
 /-- Correction (a): the note's rule changes a reference that is inside the limit. -/
-@[tmio M, powerlib_foundation] theorem dPriorityNote_overwrites :
+@[tmio M, powerlib_domain] theorem dPriorityNote_overwrites :
     (0 : ℝ) ^ 2 + (1 / 2) ^ 2 ≤ 1 ^ 2 ∧ dPriorityNote 1 0 (1 / 2) ≠ (0, 1 / 2) := by
   refine ⟨by norm_num, ?_⟩
   intro h
@@ -102,7 +102,7 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   simp [dPriorityNote, sgn] at h2
 
 /-- Correction (b): the note's rule does not limit a negative `i_d` (exported power). -/
-@[tmio M, powerlib_foundation] theorem dPriorityNote_exceeds :
+@[tmio M, powerlib_domain] theorem dPriorityNote_exceeds :
     1 ^ 2 < (dPriorityNote 1 (-2) 0).1 ^ 2 + (dPriorityNote 1 (-2) 0).2 ^ 2 := by
   simp [dPriorityNote]
   norm_num

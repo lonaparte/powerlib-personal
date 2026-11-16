@@ -132,7 +132,7 @@ def current (V₀ I₀ : ℂ) (x : ℝ) : ℂ := I₀ * cosh (p.γ * x) - V₀ /
   simp [voltage, current]
 
 /-- Uniqueness: every solution of the line ODE is the propagation of its sending-end data. -/
-@[tmio M, powerlib_domain] theorem eq_propagation {V I : ℝ → ℂ}
+@[tmio TM, powerlib_domain] theorem eq_propagation {V I : ℝ → ℂ}
     (hV : ∀ x, HasDerivAt V (-p.Z * I x) x) (hI : ∀ x, HasDerivAt I (-p.Y * V x) x) (x : ℝ) :
     V x = voltage p (V 0) (I 0) x ∧ I x = current p (V 0) (I 0) x := by
   let F : ℂ × ℂ →L[ℝ] ℂ × ℂ :=

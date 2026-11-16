@@ -258,7 +258,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
   (f (q.1 - p.c * q.2) - g (q.1 + p.c * q.2)) / p.Zc
 
 /-- Travelling waves solve the lossless telegrapher equations on every strip. -/
-@[tmio M, powerlib_domain] theorem travelling_isSolution {f g f' g' : ℝ → ℝ}
+@[tmio TM, powerlib_domain] theorem travelling_isSolution {f g f' g' : ℝ → ℝ}
     (hf : ∀ y, HasDerivAt f (f' y) y) (hg : ∀ y, HasDerivAt g (g' y) y) (a b : ℝ) :
     IsTelegrapherSolution p.series p.shunt a b (travellingV p f g) (travellingI p f g) := by
   have hZ := p.Zc_pos.ne'

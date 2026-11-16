@@ -120,15 +120,15 @@ variable (ic : Interconnection n₁ n₂ p) {b₁ : Fin n₁ → ℝ} {b₂ : Fi
   {ωB : ℝ}
 
 /-- The per-unit source and load are the per-unit transforms of the SI ones. -/
-@[tmio M, powerlib_foundation] theorem source_perUnit :
+@[tmio M, powerlib_domain] theorem source_perUnit :
     (perUnit ic b₁ b₂ vb ib ωB).source = puIO b₁ ib vb ωB ic.source := rfl
 
-@[tmio M, powerlib_foundation] theorem load_perUnit :
+@[tmio M, powerlib_domain] theorem load_perUnit :
     (perUnit ic b₁ b₂ vb ib ωB).load = puIO b₂ vb ib ωB ic.load := rfl
 
 /-- The per-unit closed loop is the per-unit transformation of the SI closed loop, with the
 stacked state bases. -/
-@[tmio M, powerlib_foundation] theorem closedLoopBlocks_perUnit (hv : ∀ k, vb k ≠ 0)
+@[tmio M, powerlib_domain] theorem closedLoopBlocks_perUnit (hv : ∀ k, vb k ≠ 0)
     (hi : ∀ k, ib k ≠ 0) :
     (perUnit ic b₁ b₂ vb ib ωB).closedLoopBlocks =
       puMatrix (Sum.elim b₁ b₂) ωB ic.closedLoopBlocks := by

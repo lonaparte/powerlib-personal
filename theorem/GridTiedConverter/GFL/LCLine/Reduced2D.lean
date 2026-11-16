@@ -323,13 +323,13 @@ end Params
 /-- The reflection `(θ, η) ↦ (−θ, η)` as a matrix. -/
 def reflectMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![-1, 0; 0, 1]
 
-@[tmio T, powerlib_foundation] theorem reflectMatrix_isUnit : IsUnit reflectMatrix :=
+@[tmio M, powerlib_domain] theorem reflectMatrix_isUnit : IsUnit reflectMatrix :=
   (Matrix.isUnit_iff_isUnit_det _).mpr (by simp [reflectMatrix, Matrix.det_fin_two])
 
 /-- The reflection `(θ, η) ↦ (−θ, η)` as a coordinate change. -/
 def reflect : State 2 ≃L[ℝ] State 2 := Dynamics.matrixCoord reflectMatrix reflectMatrix_isUnit
 
-@[tmio T, powerlib_foundation] theorem reflect_apply (y : State 2) :
+@[tmio M, powerlib_domain] theorem reflect_apply (y : State 2) :
     reflect y = PhasePlane.mk (-(y 0)) (y 1) := by
   rw [PhasePlane.ext_iff']
   simp [reflect, reflectMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]

@@ -20,7 +20,7 @@ Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing 
 `Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function).
 
 Results.
-* Energy (static foundation): `potential` `U(θ) = −∑ Pₖθₖ − ½∑ₖ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)` with
+* Energy (static, domain): `potential` `U(θ) = −∑ Pₖθₖ − ½∑ₖ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)` with
   gradient `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`). The energy is the mechanical energy
   `Dynamics.Mechanical.energy M (U ∘ ground)` (kinetic energy plus the potential of the absolute
   angles `angleMap z = ground (pos z)`, `angleMap_eq_ground`); its balance along the reduced field
@@ -187,16 +187,16 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
 /-- Absolute angle displacement of relative angles `v` (reference angle `0`). -/
 def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
-@[tmio T, simp, powerlib_foundation] theorem ground_zero (v : Fin n → ℝ) : ground v 0 = 0 := rfl
+@[tmio M, simp, powerlib_domain] theorem ground_zero (v : Fin n → ℝ) : ground v 0 = 0 := rfl
 
-@[tmio T, simp, powerlib_foundation] theorem ground_succ (v : Fin n → ℝ) (i : Fin n) :
+@[tmio M, simp, powerlib_domain] theorem ground_succ (v : Fin n → ℝ) (i : Fin n) :
     ground v i.succ = v i := rfl
 
-@[tmio T, powerlib_foundation] theorem ground_smul (c : ℝ) (v : Fin n → ℝ) :
+@[tmio M, powerlib_domain] theorem ground_smul (c : ℝ) (v : Fin n → ℝ) :
     ground (c • v) = c • ground v := by
   funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
-@[tmio T, powerlib_foundation] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
+@[tmio M, powerlib_domain] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
   funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
 
 @[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
@@ -216,7 +216,7 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
 /-- The absolute angles of a reduced state are the grounded relative angles, its positions
 `Dynamics.Mechanical.pos`. -/
-@[tmio T, powerlib_foundation] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
+@[tmio M, powerlib_domain] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
     angleMap w = ground (Dynamics.Mechanical.pos w) := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k <;> simp
@@ -230,7 +230,7 @@ def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
       map_smul' := fun c v => by
         funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp }
 
-@[tmio T, simp, powerlib_foundation] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
+@[tmio M, simp, powerlib_domain] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
   rfl
 
 /-- The relative angle rates `ωᵢ₊₁ − ω₀` of the frequency deviations. -/
@@ -239,14 +239,14 @@ def relRate : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) :=
     ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) i.succ -
       ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) 0
 
-@[tmio T, simp, powerlib_foundation] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
+@[tmio M, simp, powerlib_domain] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
     relRate w i = w i.succ - w 0 := by
   simp [relRate]
 
 /-- The relative angles `θᵢ₊₁ − θ₀` of an angle profile. -/
 def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ - θ 0
 
-@[tmio T, powerlib_foundation] theorem ground_relAngles_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
+@[tmio M, powerlib_domain] theorem ground_relAngles_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
     ground (relAngles θ + v) = fun k => (θ + ground v) k + -θ 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
@@ -255,7 +255,7 @@ def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ -
     ring
 
 /-- The selected point is the rest point at the relative angles of the profile. -/
-@[tmio T, powerlib_foundation] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
     equilibrium θ = Dynamics.Mechanical.point (relAngles θ) := by
   apply Dynamics.state_ext_blocks
   · intro i
@@ -478,7 +478,7 @@ def hessForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
 def cubicForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
   ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * (u k - u j) ^ 3
 
-@[tmio T, powerlib_foundation] theorem edgeIncrement_taylor (φ x : ℝ) (hx : |x| ≤ 1) :
+@[tmio M, powerlib_domain] theorem edgeIncrement_taylor (φ x : ℝ) (hx : |x| ≤ 1) :
     |edgeIncrement φ x - (Real.cos φ * x ^ 2 / 2 - Real.sin φ * x ^ 3 / 6)| ≤ x ^ 4 / 8 := by
   have hc := Real.cos_bound hx
   have hs := Real.sin_bound hx
@@ -848,7 +848,7 @@ the model is not in the denotation of the local asymptotic sentence. -/
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
-@[tmio M, powerlib_domain] theorem exists_hessForm_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio TM, powerlib_domain] theorem exists_hessForm_nonpos {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     ∃ u : Fin (n + 1) → ℝ, u 0 = 0 ∧ u ≠ 0 ∧ hessForm p θ u ≤ 0 := by
   by_contra hne
@@ -1201,7 +1201,7 @@ one strict sign: `∑ Bᵢ sin φᵢ xᵢ³ ≠ 0` for `Bᵢ cos φᵢ xᵢ = κ
   lt_of_le_of_ne hB fun h0 => h (by rw [← h0, zero_mul])
 
 /-- The grounded vector `(0, u₁, u₂)`. -/
-@[tmio T, powerlib_foundation] private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
+@[tmio M, powerlib_domain] private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
     u = ground ![u 1, u 2] := by
   funext k
   fin_cases k

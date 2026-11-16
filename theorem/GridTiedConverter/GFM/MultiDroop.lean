@@ -29,7 +29,7 @@ None.  A synchronous steady state is a relative equilibrium
 (an equilibrium of the closed loop in the frame rotating with `ω`), characterized by static
 conditions exactly as an equilibrium set is characterized; the sharing, frequency and
 proportional-sharing formulas take this static condition as their premise and are static
-evidence on the model (foundation), not connection conclusions.  That the rotating curve is then
+evidence on the model (domain), not connection conclusions.  That the rotating curve is then
 a solution of the field (`synchronous_solution_iff`) is trajectory-level and kept as private
 implementation evidence (Rules §3a).  No stability of the synchronous state is claimed (the
 multi-machine closed loop has no family in the library, and its stability is not formalized).
@@ -58,7 +58,7 @@ def field (x : (Fin N → ℝ) × (Fin N → ℝ)) : (Fin N → ℝ) × (Fin N �
 def syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω : ℝ) (t : ℝ) : (Fin N → ℝ) × (Fin N → ℝ) :=
   (fun k => θ₀ k + ω * t, Pf₀)
 
-@[tmio T, powerlib_foundation] theorem hasDerivAt_syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω t : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω t : ℝ) :
     HasDerivAt (syncCurve θ₀ Pf₀ ω) ((fun _ => ω), (0 : Fin N → ℝ)) t := by
   apply HasDerivAt.prodMk
   · apply hasDerivAt_pi.mpr

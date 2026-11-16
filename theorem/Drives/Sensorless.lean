@@ -275,7 +275,7 @@ state `(θ̂, ξ)`, input `θ`, output `θ̂`. -/
 def trackingLoopModel (kε Kp Ki : ℝ) : Linear.Plant 2 1 :=
   CascadeControl.siso2 (-(Kp * kε)) Ki (-kε) 0 (Kp * kε) kε 1 0
 
-@[tmio M, powerlib_foundation] theorem trackingLoop_transfer (kε Kp Ki : ℝ) (s : ℂ)
+@[tmio M, powerlib_domain] theorem trackingLoop_transfer (kε Kp Ki : ℝ) (s : ℂ)
     (hden : s ^ 2 + kε * Kp * s + kε * Ki ≠ 0) :
     Linear.transfer (trackingLoopModel kε Kp Ki) s 0 0 =
       kε * (Kp * s + Ki) / (s ^ 2 + kε * Kp * s + kε * Ki) := by

@@ -194,7 +194,7 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
   exact hKi this
 
 /-- At `g = 0` the Jacobian is not Hurwitz (its trace and determinant vanish). -/
-@[tmio M, powerlib_domain] theorem piPLLJacobian_zero_not_isHurwitz (Kp Ki : ℝ) :
+@[tmio TM, powerlib_domain] theorem piPLLJacobian_zero_not_isHurwitz (Kp Ki : ℝ) :
     ¬ LinearSystems.IsHurwitz (piPLLJacobian Kp Ki 0) := by
   rw [piPLLJacobian_isHurwitz_iff]
   simp

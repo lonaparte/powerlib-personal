@@ -351,7 +351,7 @@ def lineOp (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ) (w : (Fin 2 → ℂ) ×
 
 /-- `Y₂ = 0`: the zero mode is a 2×2 Jordan block — its kernel is the screen-voltage line,
 and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
-@[tmio M, powerlib_foundation] theorem lineOp_jordan (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
+@[tmio M, powerlib_domain] theorem lineOp_jordan (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
     (hZ : Z.det ≠ 0) :
     ∃ w, lineOp Z Y₁ w ≠ 0 ∧ lineOp Z Y₁ (lineOp Z Y₁ w) = 0 := by
   have hu : IsUnit Z.det := isUnit_iff_ne_zero.mpr hZ
@@ -367,7 +367,7 @@ and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
     ext i <;> fin_cases i <;> simp [Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
 
 /-- Kernel of the `Y₂ = 0` line operator: only the screen voltage `U₂` (one-dimensional). -/
-@[tmio M, powerlib_foundation] theorem lineOp_ker (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
+@[tmio M, powerlib_domain] theorem lineOp_ker (Z : Matrix (Fin 2) (Fin 2) ℂ) (Y₁ : ℂ)
     (hY : Y₁ ≠ 0) (hZ : Z.det ≠ 0) (w : (Fin 2 → ℂ) × (Fin 2 → ℂ)) :
     lineOp Z Y₁ w = 0 ↔ w.2 = 0 ∧ w.1 0 = 0 := by
   have hu : IsUnit Z.det := isUnit_iff_ne_zero.mpr hZ

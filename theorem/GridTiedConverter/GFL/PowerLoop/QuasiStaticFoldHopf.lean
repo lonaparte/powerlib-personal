@@ -261,7 +261,7 @@ def hopfQS_w4 (c1 c2 c3 : ℝ) : ℝ :=
 `c = M z` (`φ = 3c₁ + 4c₂ + 7c₃`, `S = sin φ`, `C = cos φ` kept as atoms), the derivative of `W`
 is its weight-four part plus a remainder of weight `≥ 5` and the Taylor remainders of `sin`, `cos`
 times polynomials of weight `≥ 1`. -/
-@[tmio M, powerlib_foundation] theorem hopfQS_key (c1 c2 c3 S C : ℝ) :
+@[tmio M, powerlib_domain] theorem hopfQS_key (c1 c2 c3 S C : ℝ) :
     dpoly3 hopfQS_W c1 c2 c3
         (-4*C*c2/85 - 56*C*c3/85 - 47*C/170 + 2*S*c2/85 + 28*S*c3/85 - 42*S/85 + 126*c1/85 -
           83*c2/85 + 70*c3/17 + 47/170)
@@ -300,35 +300,35 @@ def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
     (-7 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 /-- `c₁ = (12/85) z₀ + (49/170) z₁ − (1/170) z₂`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_c1_apply (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hopfQS_c1_apply (z : Dynamics.State 3) :
     hopfQS_c1 z = 12 / 85 * z 0 + 49 / 170 * z 1 + -1 / 170 * z 2 := by
   simp [hopfQS_c1]
 
 /-- `c₂ = (14/85) z₀ − (21/85) z₁ + (13/170) z₂`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_c2_apply (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hopfQS_c2_apply (z : Dynamics.State 3) :
     hopfQS_c2 z = 14 / 85 * z 0 + -21 / 85 * z 1 + 13 / 170 * z 2 := by
   simp [hopfQS_c2]
 
 /-- `c₃ = −(1/85) z₀ + (3/170) z₁ − (7/170) z₂`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_c3_apply (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hopfQS_c3_apply (z : Dynamics.State 3) :
     hopfQS_c3 z = -1 / 85 * z 0 + 3 / 170 * z 1 + -7 / 170 * z 2 := by
   simp [hopfQS_c3]
 
 /-- First row of `z = T c`, `T = [[3, 4, 7], [2, −2, −4], [0, −2, −28]]`:
 `z₀ = 3c₁ + 4c₂ + 7c₃`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_z0_eq (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hopfQS_z0_eq (z : Dynamics.State 3) :
     z 0 = 3 * hopfQS_c1 z + 4 * hopfQS_c2 z + 7 * hopfQS_c3 z := by
   rw [hopfQS_c1_apply, hopfQS_c2_apply, hopfQS_c3_apply]
   ring
 
 /-- Second row of `z = T c`: `z₁ = 2c₁ − 2c₂ − 4c₃`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_z1_eq (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hopfQS_z1_eq (z : Dynamics.State 3) :
     z 1 = 2 * hopfQS_c1 z - 2 * hopfQS_c2 z - 4 * hopfQS_c3 z := by
   rw [hopfQS_c1_apply, hopfQS_c2_apply, hopfQS_c3_apply]
   ring
 
 /-- Third row of `z = T c`: `z₂ = −2c₂ − 28c₃`. -/
-@[tmio T, powerlib_foundation] theorem hopfQS_z2_eq (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hopfQS_z2_eq (z : Dynamics.State 3) :
     z 2 = -2 * hopfQS_c2 z - 28 * hopfQS_c3 z := by
   rw [hopfQS_c2_apply, hopfQS_c3_apply]
   ring
@@ -412,7 +412,7 @@ def supercriticalQS : Model :=
   exact congr (congr (congrArg _ (by ring)) (by ring)) (by ring)
 
 /-- `W = (c₁² + c₂²)/2 + 32 (c₃ − h₂)² + W₃₄(c₁, c₂)`. -/
-@[tmio T, powerlib_foundation] private theorem hopfQS_W_eq (c1 c2 c3 : ℝ) :
+@[tmio M, powerlib_domain] private theorem hopfQS_W_eq (c1 c2 c3 : ℝ) :
     poly3 hopfQS_W c1 c2 c3 = (c1 ^ 2 + c2 ^ 2) / 2 + 32 * (c3 - hopfQS_h c1 c2) ^ 2 +
       poly3 hopfQS_W34 c1 c2 0 := by
   simp only [hopfQS_W, hopfQS_W34, hopfQS_h, poly3_cons, poly3_nil]
@@ -420,7 +420,7 @@ def supercriticalQS : Model :=
   ring
 
 /-- `w₄ ≤ −((c₁² + c₂²)² + (c₃ − h₂)²)`. -/
-@[tmio T, powerlib_foundation] private theorem hopfQS_w4_le (c1 c2 c3 : ℝ) :
+@[tmio M, powerlib_domain] private theorem hopfQS_w4_le (c1 c2 c3 : ℝ) :
     hopfQS_w4 c1 c2 c3 ≤ -((c1 ^ 2 + c2 ^ 2) ^ 2 + (c3 - hopfQS_h c1 c2) ^ 2) := by
   set v := c3 - hopfQS_h c1 c2 with hv
   set Q := c1 ^ 2 + c2 ^ 2 with hQ
@@ -454,7 +454,8 @@ def supercriticalQS : Model :=
   nlinarith
 
 /-- `|h₂(c₁, c₂)| ≤ (|c₁| + |c₂|)²`. -/
-@[tmio T, powerlib_foundation] private theorem abs_hopfQS_h_le (c1 c2 : ℝ) : |hopfQS_h c1 c2| ≤ (|c1| + |c2|) ^ 2 := by
+@[tmio M, powerlib_domain] private theorem abs_hopfQS_h_le (c1 c2 : ℝ) : |hopfQS_h c1 c2| ≤
+    (|c1| + |c2|) ^ 2 := by
   unfold hopfQS_h
   have h12 : |c1 * c2| = |c1| * |c2| := abs_mul _ _
   have := abs_add_three (13689 * c1 ^ 2 / 65620) (567 * c1 * c2 / 16405) (10522 * c2 ^ 2 / 16405)
@@ -470,7 +471,8 @@ def supercriticalQS : Model :=
     (abs_nonneg c2)]
 
 /-- The eigen-coordinates vanish only at the origin. -/
-@[tmio T, powerlib_foundation] private theorem hopfQS_eq_zero {z : Dynamics.State 3} (h1 : hopfQS_c1 z = 0)
+@[tmio M, powerlib_domain] private theorem hopfQS_eq_zero {z : Dynamics.State 3}
+    (h1 : hopfQS_c1 z = 0)
     (h2 : hopfQS_c2 z = 0) (h3 : hopfQS_c3 z = 0) : z = 0 := by
   have e0 := hopfQS_z0_eq z
   have e1 := hopfQS_z1_eq z
@@ -495,30 +497,34 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   (hopfQS_c1 z ^ 2 + hopfQS_c2 z ^ 2) / 2 +
     32 * (hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)) ^ 2
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_size_nonneg (z : Dynamics.State 3) : 0 ≤ hopfQS_size z := by
+@[tmio M, powerlib_domain] private theorem hopfQS_size_nonneg
+    (z : Dynamics.State 3) : 0 ≤ hopfQS_size z := by
   unfold hopfQS_size; positivity
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_size_tendsto : Tendsto hopfQS_size (𝓝 0) (𝓝 0) := by
+@[tmio M, powerlib_domain] private theorem hopfQS_size_tendsto : Tendsto hopfQS_size (𝓝 0)
+    (𝓝 0) := by
   have hc : Continuous hopfQS_size := by
     unfold hopfQS_size hopfQS_h
     fun_prop
   simpa [hopfQS_size, hopfQS_h] using hc.tendsto 0
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_c1_isBigO : (fun z => hopfQS_c1 z) =O[𝓝 0] hopfQS_size :=
+@[tmio M, powerlib_domain] private theorem hopfQS_c1_isBigO :
+    (fun z => hopfQS_c1 z) =O[𝓝 0] hopfQS_size :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, abs_of_nonneg (hopfQS_size_nonneg z)]
     unfold hopfQS_size
     have := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     linarith [abs_nonneg (hopfQS_c2 z)])
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_c2_isBigO : (fun z => hopfQS_c2 z) =O[𝓝 0] hopfQS_size :=
+@[tmio M, powerlib_domain] private theorem hopfQS_c2_isBigO :
+    (fun z => hopfQS_c2 z) =O[𝓝 0] hopfQS_size :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, one_mul, abs_of_nonneg (hopfQS_size_nonneg z)]
     unfold hopfQS_size
     have := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     linarith [abs_nonneg (hopfQS_c1 z)])
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_c3_isBigO :
+@[tmio M, powerlib_domain] private theorem hopfQS_c3_isBigO :
     (fun z => hopfQS_c3 z) =O[𝓝 0] fun z => hopfQS_size z ^ 2 :=
   IsBigO.of_bound 2 (Eventually.of_forall fun z => by
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg (hopfQS_size z))]
@@ -533,7 +539,8 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     have hw := Real.sqrt_nonneg |hopfQS_c3 z - hopfQS_h (hopfQS_c1 z) (hopfQS_c2 z)|
     nlinarith [abs_nonneg (hopfQS_c1 z), abs_nonneg (hopfQS_c2 z)])
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_z0_isBigO : (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] hopfQS_size := by
+@[tmio M, powerlib_domain] private theorem hopfQS_z0_isBigO :
+    (fun z : Dynamics.State 3 => z 0) =O[𝓝 0] hopfQS_size := by
   have hc1 : (fun z => hopfQS_c3 z) =O[𝓝 0] hopfQS_size :=
     (hopfQS_c3_isBigO.trans (Dynamics.isBigO_pow_of_tendsto hopfQS_size_tendsto
       (by norm_num : 1 ≤ 2))).congr_right fun z => pow_one _
@@ -541,7 +548,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     (hc1.const_mul_left 7)).congr_left fun z => (hopfQS_z0_eq z).symm
 
 /-- The remainder of `Ẇ` is `O(σ⁵)`. -/
-@[tmio T, powerlib_foundation] private theorem hopfQS_remainder_isBigO :
+@[tmio M, powerlib_domain] private theorem hopfQS_remainder_isBigO :
     (fun z : Dynamics.State 3 => poly3 hopfQS_R (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) +
       (Real.sin (z 0) - (z 0 - z 0 ^ 3 / 6)) *
         poly3 hopfQS_KS (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) +
@@ -568,7 +575,8 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     ((hc4.mul hKC).congr_right fun z => by ring)
 
 /-- `σ⁴ ≤ 27 ((c₁² + c₂²)² + (c₃ − h₂)²)`. -/
-@[tmio T, powerlib_foundation] private theorem hopfQS_size4_isBigO : (fun z => hopfQS_size z ^ 4) =O[𝓝 0] hopfQS_q4 :=
+@[tmio M, powerlib_domain] private theorem hopfQS_size4_isBigO :
+    (fun z => hopfQS_size z ^ 4) =O[𝓝 0] hopfQS_q4 :=
   IsBigO.of_bound 27 (Eventually.of_forall fun z => by
     have hq0 : 0 ≤ hopfQS_q4 z := by unfold hopfQS_q4; positivity
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (hopfQS_size_nonneg z) 4),
@@ -594,7 +602,8 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     rw [← hx, ← hy, ← hw]
     nlinarith [sq_nonneg (x ^ 2), sq_nonneg (y ^ 2), mul_nonneg (sq_nonneg x) (sq_nonneg y)])
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_q4_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 < hopfQS_q4 z := by
+@[tmio M, powerlib_domain] private theorem hopfQS_q4_pos : ∀ᶠ z in 𝓝[≠]
+    (0 : Dynamics.State 3), 0 < hopfQS_q4 z := by
   refine eventually_nhdsWithin_of_forall fun z hz => ?_
   have hz' : z ≠ 0 := hz
   unfold hopfQS_q4
@@ -613,7 +622,8 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
     simpa [hopfQS_h] using this
   exact hz' (hopfQS_eq_zero h1 h2 h3)
 
-@[tmio T, powerlib_foundation] private theorem hopfQS_q2_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3), 0 < hopfQS_q2 z := by
+@[tmio M, powerlib_domain] private theorem hopfQS_q2_pos : ∀ᶠ z in 𝓝[≠]
+    (0 : Dynamics.State 3), 0 < hopfQS_q2 z := by
   filter_upwards [hopfQS_q4_pos] with z hz
   unfold hopfQS_q4 at hz
   unfold hopfQS_q2
@@ -629,7 +639,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   norm_num at hz
 
 /-- `W > 0` on a punctured neighbourhood: `W = q₂ + O(τ³)`, `τ = |c₁| + |c₂|`. -/
-@[tmio T, powerlib_foundation] private theorem hopfQS_W_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
+@[tmio M, powerlib_domain] private theorem hopfQS_W_pos : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
     0 < poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z) := by
   have hτ0 : Tendsto (fun z : Dynamics.State 3 => |hopfQS_c1 z| + |hopfQS_c2 z|) (𝓝 0)
       (𝓝 0) := by

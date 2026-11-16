@@ -153,7 +153,7 @@ the statements below:
   i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t`. -/
 
 /-- Componentwise form: `i̇_d = (v_d − R i_d)/L + ω i_q`, `i̇_q = (v_q − R i_q)/L − ω i_d`. -/
-@[tmio T, powerlib_foundation] theorem dqRL_field_apply (b : Passive.SeriesRLC) (ω : ℝ)
+@[tmio M, powerlib_domain] theorem dqRL_field_apply (b : Passive.SeriesRLC) (ω : ℝ)
     (v i : Fin 2 → ℝ) :
     b.L⁻¹ • (v - b.R • i) - ω • (J *ᵥ i) =
       ![b.L⁻¹ * (v 0 - b.R * i 0) + ω * i 1, b.L⁻¹ * (v 1 - b.R * i 1) - ω * i 0] := by

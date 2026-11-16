@@ -133,7 +133,8 @@ Static evidence on the model, not a connection conclusion. -/
 /-- Along every input/state solution on a time set `s` (input `u(t) = (δω(t))`):
 `d/dt H(x(t)) = −K_p h(θ(t))² + h(θ(t)) δω(t)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem gflPH_trajectory_energy {u : ℝ → (Fin 1 → ℝ)} {x : ℝ → State 2} {s : Set ℝ}
+@[tmio TM, powerlib_domain] private theorem gflPH_trajectory_energy {u : ℝ → (Fin 1 → ℝ)}
+    {x : ℝ → State 2} {s : Set ℝ}
     (hx : IsIntegralCurveOn x (fun t y => (gflPHModel h V hV Kp Ki hKp).field y (u t)) s)
     {t : ℝ} (ht : t ∈ s) :
     HasDerivWithinAt (fun τ => (gflPHModel h V hV Kp Ki hKp).H (x τ))

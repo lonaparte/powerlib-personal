@@ -104,7 +104,7 @@ That module proves the complete membership `mem_den_locallyAsymptoticallyStable_
 `tr J = 0` with `k_p k_i < 0`; `k_i = 0` and `V = 0` give lines of equilibria, `cos θ* = 0` a fold
 with a monotone coordinate, `k_p = 0` on the boundary a conserved energy). The boundary pair,
 damping ratio, `X_g` elimination and the
-frozen-coefficient threshold remain static foundation results (`frozen_hurwitz_forall_iff` is
+frozen-coefficient threshold remain static domain results (`frozen_hurwitz_forall_iff` is
 about constant matrices, not the time-varying system).
 -/
 
@@ -285,7 +285,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     exact div_pos (mul_pos hVw (by linarith)) hD0
 
 /-- The Jacobian is Hurwitz exactly below the boundary angle. -/
-@[tmio M, powerlib_domain] theorem isHurwitz_jac_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
+@[tmio TM, powerlib_domain] theorem isHurwitz_jac_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     LinearSystems.IsHurwitz (jac p θ) ↔ Real.tan θ < p.ωs * p.kp / p.ki := by
@@ -421,7 +421,7 @@ def epsFrozen (Vg θ : ℝ) : ℝ := Vg + p.ki * p.Lg * p.Id / (p.kp * Real.cos 
 
 /-- The frozen Jacobian at the fixed angle `θ` and grid amplitude `V'` is Hurwitz iff
 `V' > −k_i L_g i_d / (k_p cos θ)` (when `L_g i_d ≤ 0`, an exporting converter). -/
-@[tmio M, powerlib_domain] theorem frozen_isHurwitz_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
+@[tmio TM, powerlib_domain] theorem frozen_isHurwitz_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : p.Lg * p.Id ≤ 0) (V' : ℝ) :
     LinearSystems.IsHurwitz (jac (withV p V') θ) ↔
       -(p.ki * p.Lg * p.Id / (p.kp * Real.cos θ)) < V' := by
@@ -449,7 +449,7 @@ def epsFrozen (Vg θ : ℝ) : ℝ := Vg + p.ki * p.Lg * p.Id / (p.kp * Real.cos 
 the frozen Jacobian is Hurwitz at every instant iff `ε < ε_frozen`.  Frozen-time Hurwitz
 stability is a property of a family of constant matrices; it does not imply stability of the
 periodic linear time-varying system. -/
-@[tmio M, powerlib_domain] theorem frozen_hurwitz_forall_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
+@[tmio TM, powerlib_domain] theorem frozen_hurwitz_forall_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : p.Lg * p.Id ≤ 0)
     {Vg ε ωp : ℝ} (hε : 0 ≤ ε) (hωp : ωp ≠ 0) :
     (∀ t : ℝ, LinearSystems.IsHurwitz (jac (withV p (Vg + ε * Real.cos (ωp * t))) θ)) ↔

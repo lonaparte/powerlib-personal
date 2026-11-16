@@ -655,7 +655,7 @@ def balancedEnergy : Matrix (Fin 3) (Fin 3) ℝ := !![2, 2, 1; 2, 3, 2; 1, 2, 2]
     norm_num [balancedCircuit, balancedEnergy, Circuit.plant, StateSpace.plant, Matrix.mul_apply,
       Fin.sum_univ_three, RL.toStateSpace_decay]
 
-@[tmio M, powerlib_foundation] theorem balancedEnergy_pos (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+@[tmio M, powerlib_domain] theorem balancedEnergy_pos (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     0 < v ⬝ᵥ (balancedEnergy *ᵥ v) := by
   have hform : v ⬝ᵥ (balancedEnergy *ᵥ v) =
       2 * (v 0 + v 1 + v 2 / 2) ^ 2 + (v 1 + v 2) ^ 2 + v 2 ^ 2 / 2 := by

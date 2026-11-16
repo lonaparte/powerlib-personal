@@ -222,7 +222,7 @@ evidence on the implementation. -/
 
 /-- Wherever the command is in range the platform field is the design field. Static evidence on
 the implementation. -/
-@[tmio MI, powerlib_domain] theorem limitedField_eq_of_abs_le {x : ℝ²}
+@[tmio M, powerlib_domain] theorem limitedField_eq_of_abs_le {x : ℝ²}
     (h : |y.design.control y.iref x| ≤ y.Vmax) :
     y.limitedField x = y.design.field y.iref x := by
   simp only [limitedField, applied, sat_of_abs_le h, PIParams.field]
@@ -270,7 +270,8 @@ voltages in `[0, V_dc]` iff `ρ ≤ V_max` (`Drives.Modulation.maxCircle_radius_
 /-! ### Implementation evidence (private) -/
 
 /-- With headroom, near the operating point the limit is inactive. -/
-@[tmio MI, powerlib_domain] private theorem field_eventuallyEq_design (hh : |y.design.R * y.iref| < y.Vmax) :
+@[tmio M, powerlib_domain] private theorem field_eventuallyEq_design
+    (hh : |y.design.R * y.iref| < y.Vmax) :
     y.field =ᶠ[𝓝 0] fun z => y.design.field y.iref (z + y.point) := by
   have hc := (continuous_abs.comp y.continuous_control_shift).tendsto 0
   have h0 : |y.design.control y.iref (0 + y.point)| < y.Vmax := by
@@ -308,7 +309,7 @@ zero-input field of the design plant. -/
 
 /-- With headroom and integral action, near the operating point the platform field is the design's
 linear zero-input field. -/
-@[tmio MI, powerlib_domain] private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
+@[tmio M, powerlib_domain] private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     y.field =ᶠ[𝓝 0] affineLinearVectorField y.design.model.A 0 := by
   rw [← y.designField_shift hKi]
@@ -415,7 +416,8 @@ def family : Family LimitedPI LimitRequirement 2 0 :=
   exact lt_irrefl _ this
 
 /-- Within headroom a stable design makes the platform locally exponentially stable. -/
-@[tmio MI, powerlib_domain] private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
+@[tmio TM, powerlib_domain] private theorem les_of_stable {y : LimitedPI}
+    (hs : PIParams.Stable y.design)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     connection% (y ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -429,7 +431,8 @@ def family : Family LimitedPI LimitRequirement 2 0 :=
 /-- Within headroom an unstable design makes the platform unstable: near the operating point the
 platform is the affine design field, unstable at a root in the right half plane or because the
 point is not an equilibrium. -/
-@[tmio MI, powerlib_domain] private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.design)
+@[tmio TM, powerlib_domain] private theorem unstable_of_unstable {y : LimitedPI}
+    (hu : PIParams.Unstable y.design)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -446,7 +449,8 @@ point is not an equilibrium. -/
 /-- Within headroom local asymptotic and local exponential stability of the platform hold exactly
 for a stable design: near the operating point the platform is the design's affine loop, so these
 sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_inputField`). -/
-@[tmio MI, powerlib_domain] private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.iref| < y.Vmax)
+@[tmio TM, powerlib_domain] private theorem mem_den_attractive_iff {y : LimitedPI}
+    (hh : |y.design.R * y.iref| < y.Vmax)
     {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (y ∈ family.den (.flow P) ↔ PIParams.Stable y.design) := by

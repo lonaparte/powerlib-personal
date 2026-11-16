@@ -3,7 +3,7 @@ import theorem.Dynamics.Calculus
 
 /-! # Equal-area criterion for the single-machine infinite-bus swing equation: static part
 
-Static and generic foundation for the equal-area criterion: closed-form areas, the critical
+Domain results for the equal-area criterion: closed-form areas, the critical
 clearing angle and trajectory calculus of the swing field.  The trajectory-level criteria are in
 `theorem/PowerSystem/Synchronous/FaultSequence.lean` and
 `theorem/PowerSystem/Synchronous/DampedEAC.lean`.
@@ -17,7 +17,7 @@ Model boundary.
 
 Source: work-sync `theory/T-transient-stability.md` §1.3–§1.6, §1.8.
 
-Results (all static or generic foundation).
+Results (all domain, Rules §3: static model identities and trajectory calculus).
 * Closed-form integrals of the power-angle curve (`integral_Pe`, `potential_eq_integral`);
   accelerating and decelerating areas `A_acc`, `A_dec` in closed form (`Aacc_eq`, `Adec_eq`), and
   their expression through the potential (`Aacc_eq_neg_potential`, `Adec_eq_potential_sub`).
@@ -159,21 +159,21 @@ variable (p : SwingParams)
 /-! ## Trajectory calculus for the swing field -/
 
 /-- Coordinate derivatives along a solution, at interior points of the time set. -/
-@[tmio M, powerlib_domain] theorem coord_hasDerivAt {φ : ℝ → State 2} {s : Set ℝ} {t : ℝ}
+@[tmio TM, powerlib_domain] theorem coord_hasDerivAt {φ : ℝ → State 2} {s : Set ℝ} {t : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) s) (ht : t ∈ s) (hs : s ∈ 𝓝 t)
     (j : Fin 2) : HasDerivAt (fun τ => φ τ j) (p.field (φ t) j) t := by
   have h := ((hφ t ht).hasDerivAt hs)
   have := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t h
   simpa [Function.comp_def] using this
 
-@[tmio M, powerlib_domain] theorem coord_continuousOn {φ : ℝ → State 2} {s : Set ℝ}
+@[tmio TM, powerlib_domain] theorem coord_continuousOn {φ : ℝ → State 2} {s : Set ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) s) (j : Fin 2) :
     ContinuousOn (fun τ => φ τ j) s :=
   ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
     hφ.continuousOn
 
 /-- A constant curve at an equilibrium is a solution. -/
-@[tmio M, powerlib_domain] theorem isIntegralCurveOn_const {x : State 2} (hx : p.field x = 0)
+@[tmio TM, powerlib_domain] theorem isIntegralCurveOn_const {x : State 2} (hx : p.field x = 0)
     (s : Set ℝ) : IsIntegralCurveOn (fun _ => x) (fun _ y => p.field y) s := by
   intro t _
   show HasDerivWithinAt _ (p.field x) s t

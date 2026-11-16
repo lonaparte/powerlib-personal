@@ -683,7 +683,7 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.7: from rest, `Δω̇(0⁺) = −ΔP_L/M` (the turbine zero does not change the initial slope). -/
-@[tmio M, powerlib_domain] private theorem rocof {x : ℝ → ℝ³}
+@[tmio TM, powerlib_domain] private theorem rocof {x : ℝ → ℝ³}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K F Tg TR).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
@@ -763,7 +763,7 @@ over `t ≥ 0` there, and the minimum is
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Reduced model: from rest, `Δω̇(0⁺) = −ΔP_L/M` (§1.7). -/
-@[tmio M, powerlib_domain] private theorem reduced_rocof {x : ℝ → EuclideanSpace ℝ (Fin 2)}
+@[tmio TM, powerlib_domain] private theorem reduced_rocof {x : ℝ → EuclideanSpace ℝ (Fin 2)}
     (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by

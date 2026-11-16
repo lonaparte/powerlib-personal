@@ -52,7 +52,7 @@ open powerlib.Stochastic.SPH
 def pllV (Vg θ : ℝ) : ℝ := Vg * (1 - cos θ)
 
 /-- `𝒱' = V_g sin θ = −h(θ)` with the phase detector `h(θ) = −V_g sin θ`. -/
-@[tmio M, powerlib_foundation] theorem pllV_hasDerivAt (Vg θ : ℝ) :
+@[tmio M, powerlib_domain] theorem pllV_hasDerivAt (Vg θ : ℝ) :
     HasDerivAt (pllV Vg) (Vg * sin θ) θ := by
   have := ((hasDerivAt_cos θ).const_sub 1).const_mul Vg
   unfold pllV
@@ -73,13 +73,13 @@ def pllHess (V2 Ki : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![V2, 0; 0, Ki]
 def pllNoise (Kp : ℝ) (σv : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![Kp * σv 0, Kp * σv 1; σv 0, σv 1]
 
-@[tmio M, powerlib_foundation] theorem pllNoise_mul_transpose (Kp : ℝ) (σv : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pllNoise_mul_transpose (Kp : ℝ) (σv : Fin 2 → ℝ) :
     pllNoise Kp σv * (pllNoise Kp σv)ᵀ = (σv ⬝ᵥ σv) • !![Kp ^ 2, Kp; Kp, 1] := by
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [pllNoise, mul_apply, Fin.sum_univ_two, dotProduct] <;> ring
 
 /-- `Δ_Itô^PLL = ½ (σ_v σ_vᵀ) (K_p² 𝒱'' + K_i)`. -/
-@[tmio M, powerlib_foundation] theorem pllIto (Kp Ki V2 : ℝ) (σv : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pllIto (Kp Ki V2 : ℝ) (σv : Fin 2 → ℝ) :
     itoCorrection (pllNoise Kp σv) (pllHess V2 Ki)
       = (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * (Kp ^ 2 * V2 + Ki) := by
   unfold itoCorrection
@@ -90,7 +90,7 @@ def pllNoise (Kp : ℝ) (σv : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- PLL damping ratio `ζ = K_p √V_g / (2 √K_i)` (T-pll-dynamics §1.3). -/
 def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
 
-@[tmio M, powerlib_foundation] theorem four_zeta_sq {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki) :
+@[tmio M, powerlib_domain] theorem four_zeta_sq {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki) :
     4 * zeta Kp Vg Ki ^ 2 = Kp ^ 2 * Vg / Ki := by
   unfold zeta
   rw [div_pow, mul_pow, mul_pow, sq_sqrt hVg, sq_sqrt hKi.le]
@@ -98,7 +98,7 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
   ring
 
 /-- Saddle value: `Δ_Itô^PLL(π) = ½ σ_v σ_vᵀ K_i (1 − 4ζ²)`. -/
-@[tmio M, powerlib_foundation] theorem pllIto_saddle {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki)
+@[tmio M, powerlib_domain] theorem pllIto_saddle {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki)
     (σv : Fin 2 → ℝ) :
     itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki)
       = (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki * (1 - 4 * zeta Kp Vg Ki ^ 2) := by
@@ -107,7 +107,7 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
   ring
 
 /-- **ζ = 1/2 threshold**: for nonzero voltage noise, `Δ_Itô^PLL(π) < 0 ⇔ ζ > 1/2`. -/
-@[tmio M, powerlib_foundation] theorem pllIto_saddle_neg_iff {Kp Vg Ki : ℝ} (hKp : 0 ≤ Kp)
+@[tmio M, powerlib_domain] theorem pllIto_saddle_neg_iff {Kp Vg Ki : ℝ} (hKp : 0 ≤ Kp)
     (hVg : 0 ≤ Vg) (hKi : 0 < Ki) {σv : Fin 2 → ℝ} (hσ : σv ≠ 0) :
     itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki) < 0 ↔ 1 / 2 < zeta Kp Vg Ki := by
   have hs : 0 < σv ⬝ᵥ σv := by
@@ -128,7 +128,7 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
     exact mul_neg_of_pos_of_neg hpos this
 
 /-- Conversely `Δ_Itô^PLL(π) > 0 ⇔ ζ < 1/2` (PI-channel diffusion dominates). -/
-@[tmio M, powerlib_foundation] theorem pllIto_saddle_pos_iff {Kp Vg Ki : ℝ} (hKp : 0 ≤ Kp)
+@[tmio M, powerlib_domain] theorem pllIto_saddle_pos_iff {Kp Vg Ki : ℝ} (hKp : 0 ≤ Kp)
     (hVg : 0 ≤ Vg) (hKi : 0 < Ki) {σv : Fin 2 → ℝ} (hσ : σv ≠ 0) :
     0 < itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki) ↔ zeta Kp Vg Ki < 1 / 2 := by
   have hs : 0 < σv ⬝ᵥ σv := by
@@ -144,7 +144,7 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
     exact mul_pos hpos (by nlinarith)
 
 /-- Well bottom `θ_e = 0`: `Δ_Itô^PLL > 0` (noise rectification). -/
-@[tmio M, powerlib_foundation] theorem pllIto_bottom_pos {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki)
+@[tmio M, powerlib_domain] theorem pllIto_bottom_pos {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki)
     {σv : Fin 2 → ℝ} (hσ : σv ≠ 0) :
     0 < itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos 0) Ki) := by
   have hs : 0 < σv ⬝ᵥ σv := by
@@ -155,12 +155,12 @@ def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
 /-- Park geometry `σ_v^bare(θ) = (−sin θ, cos θ)` has unit norm. -/
 def sigmaBare (θ : ℝ) : Fin 2 → ℝ := ![-sin θ, cos θ]
 
-@[tmio T, powerlib_foundation] theorem sigmaBare_dot_self (θ : ℝ) : sigmaBare θ ⬝ᵥ sigmaBare θ = 1 := by
+@[tmio M, powerlib_domain] theorem sigmaBare_dot_self (θ : ℝ) : sigmaBare θ ⬝ᵥ sigmaBare θ = 1 := by
   simp [sigmaBare, dotProduct, Fin.sum_univ_two]
   nlinarith [sin_sq_add_cos_sq θ]
 
 /-- Bare SRF-PLL: `Δ_Itô = ½ (K_p² 𝒱'' + K_i)`. -/
-@[tmio M, powerlib_foundation] theorem pllIto_bare (Kp Ki V2 θ : ℝ) :
+@[tmio M, powerlib_domain] theorem pllIto_bare (Kp Ki V2 θ : ℝ) :
     itoCorrection (pllNoise Kp (sigmaBare θ)) (pllHess V2 Ki)
       = (1 / 2 : ℝ) * (Kp ^ 2 * V2 + Ki) := by
   rw [pllIto, sigmaBare_dot_self]; ring
@@ -169,7 +169,7 @@ def sigmaBare (θ : ℝ) : Fin 2 → ℝ := ![-sin θ, cos θ]
 def pllNoiseFreq (Kp : ℝ) (σv : Fin 2 → ℝ) (σω : ℝ) : Matrix (Fin 2) (Fin 3) ℝ :=
   !![Kp * σv 0, Kp * σv 1, σω; σv 0, σv 1, 0]
 
-@[tmio M, powerlib_foundation] theorem pllNoiseFreq_mul_transpose (Kp σω : ℝ) (σv : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pllNoiseFreq_mul_transpose (Kp σω : ℝ) (σv : Fin 2 → ℝ) :
     pllNoiseFreq Kp σv σω * (pllNoiseFreq Kp σv σω)ᵀ
       = pllNoise Kp σv * (pllNoise Kp σv)ᵀ + !![σω ^ 2, 0; 0, 0] := by
   rw [pllNoise_mul_transpose]
@@ -177,7 +177,7 @@ def pllNoiseFreq (Kp : ℝ) (σv : Fin 2 → ℝ) (σω : ℝ) : Matrix (Fin 2) 
     simp [pllNoiseFreq, mul_apply, Fin.sum_univ_three, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- The frequency channel adds `½ σ_ω² 𝒱''` (no `K_p²` factor, no PI-channel term). -/
-@[tmio M, powerlib_foundation] theorem pllIto_freq (Kp Ki V2 σω : ℝ) (σv : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pllIto_freq (Kp Ki V2 σω : ℝ) (σv : Fin 2 → ℝ) :
     itoCorrection (pllNoiseFreq Kp σv σω) (pllHess V2 Ki)
       = itoCorrection (pllNoise Kp σv) (pllHess V2 Ki) + (1 / 2 : ℝ) * σω ^ 2 * V2 := by
   unfold itoCorrection
@@ -203,7 +203,7 @@ def pllNoiseFreq (Kp : ℝ) (σv : Fin 2 → ℝ) (σω : ℝ) : Matrix (Fin 2) 
 
 /-- Anisotropic disturbance `diag(s_d, s_q)`: the projected `q` variance
 `sin²θ s_d + cos²θ s_q` depends on `θ_e` (state-dependent N port) unless `s_d = s_q`. -/
-@[tmio T, powerlib_foundation] theorem park_q_variance (θ sd sq : ℝ) :
+@[tmio M, powerlib_domain] theorem park_q_variance (θ sd sq : ℝ) :
     sigmaBare θ ⬝ᵥ (!![sd, 0; 0, sq] *ᵥ sigmaBare θ) = sin θ ^ 2 * sd + cos θ ^ 2 * sq := by
   simp [sigmaBare, dotProduct, Fin.sum_univ_two, mulVec]
   ring

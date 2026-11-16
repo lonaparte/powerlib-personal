@@ -153,7 +153,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   linarith
 
 /-- The slip time: the solution advances by `2π` in exactly `T = 2π/√(B² − A²)`. -/
-@[tmio M, powerlib_foundation] theorem adler_slip_time (h : |A| < B) {θ : ℝ → ℝ}
+@[tmio TM, powerlib_foundation] theorem adler_slip_time (h : |A| < B) {θ : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (B - A * Real.sin (θ t)) t) {t₁ t₂ : ℝ}
     (h12 : θ t₂ = θ t₁ + 2 * π) : t₂ - t₁ = 2 * π / √(B ^ 2 - A ^ 2) := by
   have e1 := adler_time h hθ t₁
@@ -163,7 +163,7 @@ def adlerPrimitive (A B θ : ℝ) : ℝ :=
   linarith
 
 /-- Bounded deviation from uniform rotation: `|θ(t) − θ(0) − √(B² − A²) t| ≤ 2π`. -/
-@[tmio M, powerlib_foundation] theorem adler_deviation (h : |A| < B) {θ : ℝ → ℝ}
+@[tmio TM, powerlib_foundation] theorem adler_deviation (h : |A| < B) {θ : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (B - A * Real.sin (θ t)) t) (t : ℝ) :
     |θ t - θ 0 - √(B ^ 2 - A ^ 2) * t| ≤ 2 * π := by
   have e := adler_time h hθ t

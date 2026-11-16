@@ -338,7 +338,7 @@ def exampleσ : Equiv.Perm (Fin 3) := Equiv.swap 0 2
 
 /-- Hidden constraint: every solution of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` (hypothesis `h`)
 satisfies `y = 2 x₁`. -/
-@[tmio M, powerlib_foundation] theorem example_hidden_constraint {x₁ x₂ y : ℝ → ℝ}
+@[tmio TM, powerlib_foundation] theorem example_hidden_constraint {x₁ x₂ y : ℝ → ℝ}
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : y t = 2 * x₁ t := by
   obtain ⟨h1, h2, h3⟩ := h t
@@ -347,7 +347,7 @@ satisfies `y = 2 x₁`. -/
 
 /-- Index ≠ 0: the initial point `(x₁, x₂, y) = (0, 0, 1)` is inconsistent: no solution of
 `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` starts there. -/
-@[tmio M, powerlib_foundation] theorem example_inconsistent_initial {x₁ x₂ y : ℝ → ℝ}
+@[tmio TM, powerlib_foundation] theorem example_inconsistent_initial {x₁ x₂ y : ℝ → ℝ}
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) : ¬ (x₁ 0 = 0 ∧ y 0 = 1) := by
   rintro ⟨h1, h2⟩
@@ -358,7 +358,7 @@ satisfies `y = 2 x₁`. -/
 /-- Index ≤ 1: along every solution of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0`, one
 differentiation of the hidden constraint gives `ẏ = 2 y`, so `(x₁, x₂, y)` solves an explicit
 ODE. -/
-@[tmio M, powerlib_foundation] theorem example_one_differentiation {x₁ x₂ y : ℝ → ℝ}
+@[tmio TM, powerlib_foundation] theorem example_one_differentiation {x₁ x₂ y : ℝ → ℝ}
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : HasDerivAt y (2 * y t) t := by
   have hd := ((h t).1).const_mul 2

@@ -255,13 +255,13 @@ end CCParams
 `(i_d, i_q, ξ_d, ξ_q)` of the six-state carrier. -/
 def ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Matrix.diagonal ![1, 1, -1, -1, -1, -1]
 
-@[tmio T, powerlib_foundation] theorem ccReversal_mul_self : ccReversal * ccReversal = 1 := by
+@[tmio M, powerlib_domain] theorem ccReversal_mul_self : ccReversal * ccReversal = 1 := by
   rw [ccReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
   ext i
   fin_cases i <;> norm_num
 
-@[tmio T, powerlib_foundation] theorem ccReversal_isUnit : IsUnit ccReversal :=
+@[tmio M, powerlib_domain] theorem ccReversal_isUnit : IsUnit ccReversal :=
   (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse ccReversal_mul_self)
 
 /-- §D8 boundary translation of the six-state carrier: its field is the OUT-positive source field

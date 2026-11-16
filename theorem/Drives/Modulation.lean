@@ -5,8 +5,8 @@ import theorem.Transform.SpaceVector
 
 /-! # Two-level inverter modulation limits
 
-Static foundation: the linear-modulation range `|u| ≤ V_dc/√3` of a two-level inverter, SPWM and
-six-step limits, and the DC-bus utilisation of the three schemes.
+Static results: the linear-modulation range `|u| ≤ V_dc/√3` of a two-level inverter (domain), SPWM
+and six-step limits, and the DC-bus utilisation of the three schemes (foundation).
 
 Model boundary.
 * Ideal two-level three-phase inverter, DC link `V_dc > 0`; each leg voltage (with respect to
@@ -46,14 +46,14 @@ open powerlib.Transform.SpaceVector
 /-- Projection of a space vector on the unit vector `e^{jπ/6} = (√3/2, 1/2)`. -/
 def apothemProjection (u : ℂ) : ℝ := Real.sqrt 3 / 2 * u.re + 1 / 2 * u.im
 
-@[tmio T, powerlib_foundation] theorem apothemProjection_clarke (xa xb xc : ℝ) :
+@[tmio M, powerlib_domain] theorem apothemProjection_clarke (xa xb xc : ℝ) :
     apothemProjection (clarke xa xb xc) = Real.sqrt 3 / 3 * (xa - xc) := by
   simp only [apothemProjection, clarke_re, clarke_im]
   ring
 
 /-- No leg pattern in `[0, V_dc]` produces a vector beyond `V_dc/√3` in the apothem
 direction. -/
-@[tmio T, powerlib_foundation] theorem linearRange_projection_le (V xa xb xc : ℝ)
+@[tmio M, powerlib_domain] theorem linearRange_projection_le (V xa xb xc : ℝ)
     (ha : xa ∈ Set.Icc 0 V) (hc : xc ∈ Set.Icc 0 V) :
     apothemProjection (clarke xa xb xc) ≤ V / Real.sqrt 3 := by
   rw [apothemProjection_clarke]
@@ -69,7 +69,7 @@ direction. -/
 def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
   (u.re, -u.re / 2 + Real.sqrt 3 / 2 * u.im, -u.re / 2 - Real.sqrt 3 / 2 * u.im)
 
-@[tmio T, powerlib_foundation] theorem clarke_invClarke (u : ℂ) :
+@[tmio M, powerlib_domain] theorem clarke_invClarke (u : ℂ) :
     clarke (invClarke u).1 (invClarke u).2.1 (invClarke u).2.2 = u := by
   have h3 := Transform.sqrt3_sq
   apply Complex.ext
@@ -78,7 +78,7 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
     linear_combination (u.im / 3) * h3
 
 /-- Pairwise phase differences are bounded by `√3 |u|` (line-to-line peak). -/
-@[tmio T, powerlib_foundation] theorem invClarke_diff_le (u : ℂ) :
+@[tmio M, powerlib_domain] theorem invClarke_diff_le (u : ℂ) :
     |(invClarke u).1 - (invClarke u).2.1| ≤ Real.sqrt 3 * ‖u‖ ∧
       |(invClarke u).2.1 - (invClarke u).2.2| ≤ Real.sqrt 3 * ‖u‖ ∧
       |(invClarke u).2.2 - (invClarke u).1| ≤ Real.sqrt 3 * ‖u‖ := by
@@ -109,7 +109,7 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
 
 /-- **SVPWM linear range.** Every vector with `|u| ≤ V_dc/√3` is the space vector of some
 leg voltages in `[0, V_dc]`. -/
-@[tmio T, powerlib_foundation] theorem svpwm_linearRange (V : ℝ) (u : ℂ) (hu : ‖u‖ ≤ V / Real.sqrt 3) :
+@[tmio M, powerlib_domain] theorem svpwm_linearRange (V : ℝ) (u : ℂ) (hu : ‖u‖ ≤ V / Real.sqrt 3) :
     ∃ xa xb xc : ℝ, xa ∈ Set.Icc 0 V ∧ xb ∈ Set.Icc 0 V ∧ xc ∈ Set.Icc 0 V ∧
       clarke xa xb xc = u := by
   obtain ⟨d1, d2, d3⟩ := invClarke_diff_le u
@@ -143,7 +143,7 @@ leg voltages in `[0, V_dc]`. -/
 
 /-- `V_dc/√3` is the largest synthesizable circle: if every vector of modulus `ρ ≥ 0` can be
 produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
-@[tmio T, powerlib_foundation] theorem maxCircle_radius_le (V ρ : ℝ) (hρ : 0 ≤ ρ)
+@[tmio M, powerlib_domain] theorem maxCircle_radius_le (V ρ : ℝ) (hρ : 0 ≤ ρ)
     (h : ∀ u : ℂ, ‖u‖ = ρ → ∃ xa xb xc : ℝ, xa ∈ Set.Icc 0 V ∧ xb ∈ Set.Icc 0 V ∧
       xc ∈ Set.Icc 0 V ∧ clarke xa xb xc = u) :
     ρ ≤ V / Real.sqrt 3 := by
@@ -178,7 +178,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
     have h2 := Real.cos_le_one θ
     constructor <;> nlinarith
 
-@[tmio T, powerlib_foundation] theorem spwm_spaceVector (V M θ : ℝ) :
+@[tmio M, powerlib_domain] theorem spwm_spaceVector (V M θ : ℝ) :
     clarke (V / 2 + M * Real.cos θ) (V / 2 + M * Real.cos (θ - 2 * Real.pi / 3))
       (V / 2 + M * Real.cos (θ + 2 * Real.pi / 3)) = ⟨M * Real.cos θ, M * Real.sin θ⟩ := by
   have := clarke_add_const (M * Real.cos θ) (M * Real.cos (θ - 2 * Real.pi / 3))

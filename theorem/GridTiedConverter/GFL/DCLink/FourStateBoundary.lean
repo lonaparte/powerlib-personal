@@ -398,7 +398,7 @@ private def wfLyap (z : Dynamics.State 4) : ℝ :=
       1 / 2 * (z 0 + z 2 / 2 - 3 * z 3 / 2) * (z 1 - z 2 / 2 - z 3 / 2) +
       7 / 4 * (z 1 - z 2 / 2 - z 3 / 2) ^ 2)
 
-@[tmio T, powerlib_foundation] private theorem wfLyap_hasFDerivAt (z : Dynamics.State 4) :
+@[tmio M, powerlib_domain] private theorem wfLyap_hasFDerivAt (z : Dynamics.State 4) :
     HasFDerivAt wfLyap
       ((1 / 500 * (3 / 2 * (z 0 + z 2 / 2 - 3 * z 3 / 2) - (z 1 - z 2 / 2 - z 3 / 2) / 2)) •
           (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 : Dynamics.State 4 →L[ℝ] ℝ) +
@@ -451,7 +451,7 @@ def weakFocus : Model := ⟨⟨1, ⟨0, 1, 0⟩, 0, 1, 2, 0, 1, ⟨0, 3 / 2, 0�
       Params.γ]
   ring
 
-@[tmio T, powerlib_foundation] private theorem wfLyap_contDiff : ContDiff ℝ 1 wfLyap := by
+@[tmio M, powerlib_domain] private theorem wfLyap_contDiff : ContDiff ℝ 1 wfLyap := by
   have c0 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 0) := contDiff_piLp_apply 2
   have c1 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 1) := contDiff_piLp_apply 2
   have c2 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 2) := contDiff_piLp_apply 2

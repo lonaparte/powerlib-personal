@@ -61,8 +61,8 @@ Connection conclusions on `ModelB.family`: `exactUnder_offBoundary`,
 `mem_den_unstable_of_violation` and the witness memberships above; the `*_mem_realize` and
 `*_not_mem_realize_offBoundary` facts of the three witnesses are static facts about the
 requirement spaces. The field formulas, energies, their derivatives and the elementary
-inequalities are foundation; the trajectory-level statements behind the memberships are private
-implementation evidence.
+inequalities are domain model identities; the trajectory-level statements behind the memberships
+are private implementation evidence.
 
 Not characterized: which boundary equilibria are (asymptotically) stable in general. This needs a
 center-manifold reduction or Lyapunov coefficients over the 13-parameter family (and higher-order
@@ -168,7 +168,7 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
   (1 - Real.cos (y 0)) + 1 / 2 * y 1 ^ 2 +
     σ * (1 / 2 * y 3 ^ 2 + 1 / 2 * (y 2 - 1) ^ 2 + 1 / 3 * (y 2 - 1) ^ 3)
 
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_centerEnergy (σ : ℝ) (y : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_centerEnergy (σ : ℝ) (y : State 4) :
     HasFDerivAt (centerEnergy σ) (ModelBParams.row4 (Real.sin (y 0)) (y 1)
       (σ * ((y 2 - 1) + (y 2 - 1) ^ 2)) (σ * y 3)) y := by
   have h0 := Dynamics.hasFDerivAt_coord 0 y
@@ -184,7 +184,8 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
   simp [ModelBParams.row4]
   ring
 
-@[tmio T, powerlib_foundation] theorem contDiff_centerEnergy (σ : ℝ) : ContDiff ℝ 1 (centerEnergy σ) := by
+@[tmio M, powerlib_domain] theorem contDiff_centerEnergy (σ : ℝ) : ContDiff ℝ 1
+    (centerEnergy σ) := by
   unfold centerEnergy
   fun_prop
 
@@ -554,7 +555,7 @@ def dampedEnergy (y : State 4) : ℝ :=
   3 * (1 - Real.cos (y 0)) + 1 / 2 * y 1 ^ 2 - y 1 * Real.sin (y 0) +
     dcEnergy (y 2 - 1) (y 3 - 1 / 2)
 
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_dampedEnergy (y : State 4) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_dampedEnergy (y : State 4) :
     HasFDerivAt dampedEnergy (ModelBParams.row4 (3 * Real.sin (y 0) - y 1 * Real.cos (y 0))
       (y 1 - Real.sin (y 0)) (dcEnergyW (y 2 - 1) (y 3 - 1 / 2))
       (dcEnergyXi (y 2 - 1) (y 3 - 1 / 2))) y := by
@@ -578,7 +579,7 @@ def dampedEnergy (y : State 4) : ℝ :=
   · simp only [dampedEnergy, dcEnergy, Pi.add_apply, Pi.sub_apply, Pi.mul_apply,
       Function.comp_apply]
 
-@[tmio T, powerlib_foundation] theorem contDiff_dampedEnergy : ContDiff ℝ 1 dampedEnergy := by
+@[tmio M, powerlib_domain] theorem contDiff_dampedEnergy : ContDiff ℝ 1 dampedEnergy := by
   unfold dampedEnergy dcEnergy
   fun_prop
 
@@ -629,7 +630,7 @@ def hopfDamped : Model :=
     mul_nonneg (by linarith : (0:ℝ) ≤ 1 - c) (sq_nonneg s),
     mul_nonneg (by linarith : (0:ℝ) ≤ c - 1 / 2) (sq_nonneg y)]
 
-@[tmio T, powerlib_foundation] private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
+@[tmio M, powerlib_domain] private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
     dcQuintic w ξ ≤ 128 * m ^ 5 := by
   have b0 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 5 0)
   have b1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 4 1)
@@ -642,7 +643,8 @@ def hopfDamped : Model :=
   unfold dcQuintic
   linarith [b0.1, b0.2, b1.1, b1.2, b2.1, b2.2, b3.1, b3.2, b4.1, b4.2, b5.1, b5.2]
 
-@[tmio T, powerlib_foundation] private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
+@[tmio M, powerlib_domain] private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m)
+    (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
     |dcEnergyW w ξ| ≤ 2 * m := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
   have a1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 0)
@@ -659,7 +661,8 @@ def hopfDamped : Model :=
   rw [abs_le]
   constructor <;> nlinarith [a1.1, a1.2, a2.1, a2.2, a3.1, a3.2, a4.1, a4.2, a5.1, a5.2, a6.1, a6.2]
 
-@[tmio T, powerlib_foundation] private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200)
+@[tmio M, powerlib_domain] private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m)
+    (hm : m ≤ 1 / 200)
     (hmS : m ^ 2 ≤ w ^ 2 + ξ ^ 2) :
     1 / 4 * (w ^ 2 + ξ ^ 2) ≤ dcEnergy w ξ := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
@@ -678,7 +681,8 @@ def hopfDamped : Model :=
   nlinarith [c1.1, c2.1, c2.2, c3.1, q1.1, q2.1, q2.2, q3.1, q3.2, q4.1]
 
 /-- The combined Lie-derivative bound of the weakly damped loop. -/
-@[tmio T, powerlib_foundation] private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 / 2 ≤ c)
+@[tmio M, powerlib_domain] private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1)
+    (hc : 1 / 2 ≤ c)
     (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
     (1 + w) * (-6 * s ^ 2 + 3 * c * s * y - c * y ^ 2) +
         (-(3 / 2) * (w ^ 2 + ξ ^ 2) ^ 2 + dcQuintic w ξ) +
@@ -724,7 +728,8 @@ def hopfDamped : Model :=
   nlinarith [sq_nonneg s, sq_nonneg (w ^ 2 + ξ ^ 2)]
 
 /-- Lower bound of the Lyapunov function of the weakly damped loop by a sum of nonnegative parts. -/
-@[tmio T, powerlib_foundation] private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200) (hξ : |ξ| ≤ 1 / 200) :
+@[tmio M, powerlib_domain] private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200)
+    (hξ : |ξ| ≤ 1 / 200) :
     (3 * (1 - c) - 3 / 2 * s ^ 2) + (s ^ 2 + 1 / 2 * (s - y) ^ 2) + 1 / 4 * (w ^ 2 + ξ ^ 2) ≤
       3 * (1 - c) + 1 / 2 * y ^ 2 - y * s + dcEnergy w ξ := by
   have hE := dcEnergy_ge (le_max_left |w| |ξ|) (le_max_right |w| |ξ|) (max_le hw hξ)

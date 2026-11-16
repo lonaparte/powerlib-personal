@@ -54,13 +54,13 @@ def trigPD (a b c d e : ℝ) : ℝ → ℝ := trigPoly2 e b a d c
 (`SpecialFunctions.hasDerivAt_trigPoly2 e b a d c`). -/
 def trigPDDeriv (a b c d : ℝ) : ℝ → ℝ := trigPoly2Deriv b a d c
 
-@[tmio M, powerlib_foundation] theorem trigPD_apply (a b c d e θ : ℝ) :
+@[tmio M, powerlib_domain] theorem trigPD_apply (a b c d e θ : ℝ) :
     trigPD a b c d e θ = a * Real.sin θ + b * Real.cos θ + c * Real.sin (2 * θ) +
       d * Real.cos (2 * θ) + e := by
   simp only [trigPD, trigPoly2]
   ring
 
-@[tmio T, powerlib_foundation] theorem trigPDDeriv_apply (a b c d θ : ℝ) :
+@[tmio M, powerlib_domain] theorem trigPDDeriv_apply (a b c d θ : ℝ) :
     trigPDDeriv a b c d θ = a * Real.cos θ - b * Real.sin θ + 2 * c * Real.cos (2 * θ) -
       2 * d * Real.sin (2 * θ) := by
   simp only [trigPDDeriv, trigPoly2Deriv]
@@ -68,7 +68,7 @@ def trigPDDeriv (a b c d : ℝ) : ℝ → ℝ := trigPoly2Deriv b a d c
 
 /-- Equilibria with `θ_e ∈ [α, α + 2π)` are the points `(θ*, δω/K_i)`, `h(θ*) = 0`.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem trigPLL_equilibria_window {a b c d e Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
+@[tmio M, powerlib_domain] theorem trigPLL_equilibria_window {a b c d e Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
     (α : ℝ) :
     {x : ℝ² | piPLLField (trigPD a b c d e) Kp Ki δω x = 0 ∧
         x 0 ∈ Ico α (α + 2 * Real.pi)} =
@@ -84,7 +84,7 @@ Static evidence on the model, not a connection conclusion. -/
     simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
     exact ⟨⟨hz, trivial⟩, hw⟩
 
-@[tmio M, powerlib_foundation] private lemma ncard_equilibria_window {a b c d e Kp Ki δω : ℝ}
+@[tmio M, powerlib_domain] private lemma ncard_equilibria_window {a b c d e Kp Ki δω : ℝ}
     (hKi : Ki ≠ 0) (α : ℝ) :
     {x : ℝ² | piPLLField (trigPD a b c d e) Kp Ki δω x = 0 ∧
         x 0 ∈ Ico α (α + 2 * Real.pi)}.ncard = (trigPoly2ZeroSet e b a d c α).ncard := by
@@ -95,7 +95,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- At most four equilibria per period window (coefficients not all zero, `K_i ≠ 0`).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem trigPLL_equilibria_ncard_le_four {a b c d e Kp Ki δω : ℝ}
+@[tmio M, powerlib_domain] theorem trigPLL_equilibria_ncard_le_four {a b c d e Kp Ki δω : ℝ}
     (hne : ¬ (a = 0 ∧ b = 0 ∧ c = 0 ∧ d = 0 ∧ e = 0)) (hKi : Ki ≠ 0) (α : ℝ) :
     {x : ℝ² | piPLLField (trigPD a b c d e) Kp Ki δω x = 0 ∧
         x 0 ∈ Ico α (α + 2 * Real.pi)}.ncard ≤ 4 := by
@@ -106,7 +106,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- If every zero of `h` is simple, the number of equilibria per period window is `0`, `2` or
 `4` (`K_i ≠ 0`).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem trigPLL_equilibria_ncard_mem {a b c d e Kp Ki δω : ℝ}
+@[tmio M, powerlib_domain] theorem trigPLL_equilibria_ncard_mem {a b c d e Kp Ki δω : ℝ}
     (hsimple : ∀ θ, trigPD a b c d e θ = 0 → trigPDDeriv a b c d θ ≠ 0) (hKi : Ki ≠ 0)
     (α : ℝ) :
     let N := {x : ℝ² | piPLLField (trigPD a b c d e) Kp Ki δω x = 0 ∧
@@ -181,7 +181,7 @@ exponentially stable and the other is unstable. -/
 the Jacobian at `(θ*, δω/K_i)` is `[[0, K_i], [0, 0]]`, the nilpotent matrix of
 `piPLLJacobian_zero_sq`, nonzero for `K_i ≠ 0` (`piPLLJacobian_zero_ne_zero`): not hyperbolic.
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_foundation] theorem trigPLL_saddleNode_nilpotent {a b c d e Kp Ki δω θ : ℝ}
+@[tmio M, powerlib_domain] theorem trigPLL_saddleNode_nilpotent {a b c d e Kp Ki δω θ : ℝ}
     (hd : trigPDDeriv a b c d θ = 0) :
     fderiv ℝ (piPLLField (trigPD a b c d e) Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) := by

@@ -80,7 +80,7 @@ exponential translation is exact (`exactUnder_locallyExponentiallyStable`, conte
 Hurwitz Jacobian, i.e. the 4×4 Routh conditions
 (`Criteria.isHurwitz_fin_four_iff`). The untranslated
 local-stability statements are private implementation evidence; the ball-locality lemmas, the
-regularized field and the Jacobian are foundation.
+regularized field and the Jacobian are domain model identities.
 
 Without that context the local exponential translation is not exact
 (`not_exact_locallyExponentiallyStable`, and not even within the context of an equilibrium,
@@ -457,7 +457,7 @@ variable (p : ModelBParams)
 /-- The states with nonzero DC-link voltage, where the field is smooth. -/
 def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
 
-@[tmio T, powerlib_foundation] theorem isOpen_nonzeroVdc : IsOpen nonzeroVdc :=
+@[tmio M, powerlib_domain] theorem isOpen_nonzeroVdc : IsOpen nonzeroVdc :=
   isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous continuous_const
 
 /-- Model B is `C¹` on `V_dc ≠ 0` (both signs of the DC-link voltage). -/

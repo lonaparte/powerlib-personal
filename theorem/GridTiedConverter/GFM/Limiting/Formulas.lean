@@ -102,7 +102,7 @@ def deltaExit (E V : ℝ) (Z : Passive.SeriesRLC) (ω Imax : ℝ) : ℝ :=
   constructor <;> rintro ⟨a, b⟩ <;> constructor <;> nlinarith
 
 /-- On `[0, π]` the current is below `I_max` iff `δ < δ_exit`. -/
-@[tmio TM, powerlib_domain] theorem current_lt_iff {E V Imax δ : ℝ} {Z : Passive.SeriesRLC}
+@[tmio M, powerlib_domain] theorem current_lt_iff {E V Imax δ : ℝ} {Z : Passive.SeriesRLC}
     {ω : ℝ} (hE : 0 < E) (hV : 0 < V)
     (hZ : 0 < Z.absSq ω) (hI : 0 ≤ Imax)
     (hdom1 : -1 ≤ (E ^ 2 + V ^ 2 - Imax ^ 2 * Z.absSq ω) / (2 * E * V))
@@ -177,7 +177,7 @@ def qStar (S Vpu : ℝ) : ℝ := if Vpu ≤ 1 / 2 then S else 2 * S * (1 - Vpu)
 /-- `R_v = k (I_o − I_th)` for `I_o ≥ I_th`, `0` otherwise. -/
 def adaptiveRv (k Ith Io : ℝ) : ℝ := if Ith ≤ Io then k * (Io - Ith) else 0
 
-@[tmio M, powerlib_foundation] theorem adaptiveRv_eq_max (k Ith Io : ℝ) :
+@[tmio M, powerlib_domain] theorem adaptiveRv_eq_max (k Ith Io : ℝ) :
     adaptiveRv k Ith Io = k * max (Io - Ith) 0 := by
   unfold adaptiveRv
   split_ifs with h
@@ -185,22 +185,22 @@ def adaptiveRv (k Ith Io : ℝ) : ℝ := if Ith ≤ Io then k * (Io - Ith) else 
   · rw [max_eq_right (by linarith), mul_zero]
 
 /-- The adaptive virtual resistance is continuous (no jump at the threshold). -/
-@[tmio M, powerlib_foundation] theorem adaptiveRv_continuous (k Ith : ℝ) :
+@[tmio M, powerlib_domain] theorem adaptiveRv_continuous (k Ith : ℝ) :
     Continuous (adaptiveRv k Ith) := by
   have : adaptiveRv k Ith = fun Io => k * max (Io - Ith) 0 :=
     funext (adaptiveRv_eq_max k Ith)
   rw [this]
   fun_prop
 
-@[tmio M, powerlib_foundation] theorem adaptiveRv_threshold (k Ith : ℝ) : adaptiveRv k Ith Ith = 0 := by
+@[tmio M, powerlib_domain] theorem adaptiveRv_threshold (k Ith : ℝ) : adaptiveRv k Ith Ith = 0 := by
   simp [adaptiveRv]
 
-@[tmio M, powerlib_foundation] theorem adaptiveRv_nonneg {k : ℝ} (hk : 0 ≤ k) (Ith Io : ℝ) :
+@[tmio M, powerlib_domain] theorem adaptiveRv_nonneg {k : ℝ} (hk : 0 ≤ k) (Ith Io : ℝ) :
     0 ≤ adaptiveRv k Ith Io := by
   rw [adaptiveRv_eq_max]
   exact mul_nonneg hk (le_max_right _ _)
 
-@[tmio M, powerlib_foundation] theorem adaptiveRv_monotone {k : ℝ} (hk : 0 ≤ k) (Ith : ℝ) :
+@[tmio M, powerlib_domain] theorem adaptiveRv_monotone {k : ℝ} (hk : 0 ≤ k) (Ith : ℝ) :
     Monotone (adaptiveRv k Ith) := by
   intro a b hab
   rw [adaptiveRv_eq_max, adaptiveRv_eq_max]
@@ -212,7 +212,7 @@ def adaptiveRv (k Ith Io : ℝ) : ℝ := if Ith ≤ Io then k * (Io - Ith) else 
 def barrier (Dmin β ith x : ℝ) : ℝ :=
   (1 - Dmin) * Real.exp (β * (x - ith)) / (1 + (1 - Dmin) * (Real.exp (β * (x - ith)) - 1))
 
-@[tmio M, powerlib_foundation] theorem barrier_threshold (Dmin β ith : ℝ) :
+@[tmio M, powerlib_domain] theorem barrier_threshold (Dmin β ith : ℝ) :
     barrier Dmin β ith ith = 1 - Dmin := by
   simp [barrier]
 
@@ -220,7 +220,7 @@ def barrier (Dmin β ith x : ℝ) : ℝ :=
     (u : ℝ) (hu : 0 < u) : 0 < 1 + (1 - Dmin) * (u - 1) := by
   nlinarith
 
-@[tmio M, powerlib_foundation] theorem barrier_mem {Dmin : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
+@[tmio M, powerlib_domain] theorem barrier_mem {Dmin : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
     (β ith x : ℝ) : 0 < barrier Dmin β ith x ∧ barrier Dmin β ith x < 1 := by
   have hu := Real.exp_pos (β * (x - ith))
   have hd := barrier_den_pos h0 h1 _ hu
@@ -230,7 +230,7 @@ def barrier (Dmin β ith x : ℝ) : ℝ :=
   · rw [div_lt_one hd]
     nlinarith
 
-@[tmio M, powerlib_foundation] theorem barrier_strictMono {Dmin β : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
+@[tmio M, powerlib_domain] theorem barrier_strictMono {Dmin β : ℝ} (h0 : 0 < Dmin) (h1 : Dmin < 1)
     (hβ : 0 < β) (ith : ℝ) : StrictMono (barrier Dmin β ith) := by
   intro x y hxy
   have hux := Real.exp_pos (β * (x - ith))

@@ -51,7 +51,7 @@ def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq
 
 /-- SPMSM MTPA: on the disk `i_d² + i_q² ≤ I²` the torque is maximised exactly at
 `(i_d, i_q) = (0, I)` (for `np ψ_f > 0`). -/
-@[tmio TM, powerlib_domain] theorem spmsm_mtpa (np ψf L I : ℝ) (hk : 0 < np * ψf) (hI : 0 ≤ I)
+@[tmio M, powerlib_domain] theorem spmsm_mtpa (np ψf L I : ℝ) (hk : 0 < np * ψf) (hI : 0 ≤ I)
     (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2) :
     torque np ψf L L id iq ≤ torque np ψf L L 0 I ∧
       (torque np ψf L L id iq = torque np ψf L L 0 I → id = 0 ∧ iq = I) := by
@@ -73,7 +73,7 @@ def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq
 
 /-- SPMSM minimum current for a given torque: every current producing the torque `T` has
 `|i|² ≥ (T/c)²` with equality iff `i_d = 0`, `c = (3/2) np ψ_f`. -/
-@[tmio TM, powerlib_domain] theorem spmsm_minCurrent (np ψf L T id iq : ℝ) (hk : np * ψf ≠ 0)
+@[tmio M, powerlib_domain] theorem spmsm_minCurrent (np ψf L T id iq : ℝ) (hk : np * ψf ≠ 0)
     (hT : torque np ψf L L id iq = T) :
     (T / (3 / 2 * np * ψf)) ^ 2 ≤ id ^ 2 + iq ^ 2 ∧
       ((T / (3 / 2 * np * ψf)) ^ 2 = id ^ 2 + iq ^ 2 ↔ id = 0) := by
@@ -191,7 +191,7 @@ end MTPA
 /-- **IPMSM MTPA.** For `ΔL = L_q − L_d > 0`, `ψ_f > 0`, `I > 0`, the point
 `(mtpaId, mtpaIq)` maximises the torque over the current disk `i_d² + i_q² ≤ I²`, and it is
 the unique maximiser. -/
-@[tmio TM, powerlib_domain] theorem ipmsm_mtpa_unique_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
+@[tmio M, powerlib_domain] theorem ipmsm_mtpa_unique_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
     (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2)
     (hne : (id, iq) ≠ (mtpaId ψf (Lq - Ld) I, mtpaIq ψf (Lq - Ld) I)) :
     torque np ψf Ld Lq id iq <
@@ -232,7 +232,7 @@ the unique maximiser. -/
   linarith
 
 /-- The maximum is attained: the MTPA torque bounds every feasible torque. -/
-@[tmio TM, powerlib_domain] theorem ipmsm_mtpa_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
+@[tmio M, powerlib_domain] theorem ipmsm_mtpa_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
     (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2) :
     torque np ψf Ld Lq id iq ≤
       torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
@@ -265,7 +265,7 @@ def noteMtpaId (ψf ΔL I : ℝ) : ℝ := ψf / (2 * ΔL) - Real.sqrt (ψf ^ 2 /
 /-- **Correction witness**: for `ψ_f = ΔL = 1`, `I = 2` the note's formula gives `i_d = −1`,
 which differs from the MTPA value, and the corresponding point on the current circle
 `(−1, √3)` produces strictly less torque than MTPA (`L_d = 1`, `L_q = 2`, `np = 1`). -/
-@[tmio TM, powerlib_domain] theorem noteMTPA_not_optimal :
+@[tmio M, powerlib_domain] theorem noteMTPA_not_optimal :
     noteMtpaId 1 1 2 = -1 ∧ mtpaId 1 1 2 ≠ -1 ∧
       torque 1 1 1 2 (-1) (Real.sqrt 3) < torque 1 1 1 2 (mtpaId 1 1 2) (mtpaIq 1 1 2) := by
   have hne1 : mtpaId 1 1 2 ≠ -1 := by

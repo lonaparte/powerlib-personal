@@ -220,7 +220,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     exact ⟨h1, by rw [h1]; linarith⟩
 
 /-- An equilibrium exists iff the discriminant `β₂² − 4 a β₁` is nonnegative. -/
-@[tmio TM, powerlib_foundation] theorem exists_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
+@[tmio M, powerlib_foundation] theorem exists_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
     (∃ y, field p y = 0) ↔ 0 ≤ p.β₂ ^ 2 - 4 * p.a * p.β₁ := by
   constructor
   · rintro ⟨y, hy⟩
@@ -258,7 +258,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     nlinarith [hT]
 
 /-- The equilibrium is unique iff the parameters lie on `T`. -/
-@[tmio TM, powerlib_foundation] theorem existsUnique_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
+@[tmio M, powerlib_foundation] theorem existsUnique_equilibrium_iff (p : Params) (ha : p.a ≠ 0) :
     (∃! y, field p y = 0) ↔ p.β₂ ^ 2 = 4 * p.a * p.β₁ := by
   constructor
   · rintro ⟨y, hy, huniq⟩
@@ -293,7 +293,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rw [det_jacobian]; field_simp; ring
 
 /-- (`b ≠ 0`) An equilibrium with `tr = 0` and `det > 0` exists iff `β₁ = 0 ∧ β₂ < 0`. -/
-@[tmio TM, powerlib_foundation] theorem hopf_condition_iff (p : Params) (hb : p.b ≠ 0) :
+@[tmio M, powerlib_foundation] theorem hopf_condition_iff (p : Params) (hb : p.b ≠ 0) :
     (∃ y, field p y = 0 ∧ (jacobian p (y 0) (y 1)).trace = 0 ∧ 0 < (jacobian p (y 0) (y 1)).det) ↔
       p.β₁ = 0 ∧ p.β₂ < 0 := by
   constructor
@@ -312,7 +312,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     · simp only [PiLp.zero_apply]; rw [det_jacobian]; linarith
 
 /-- (`b ≠ 0`) `tr = det = 0` at an equilibrium only at the BT point, and only at the origin. -/
-@[tmio TM, powerlib_foundation] theorem bt_point_iff (p : Params) (hb : p.b ≠ 0) (y : State 2) :
+@[tmio M, powerlib_foundation] theorem bt_point_iff (p : Params) (hb : p.b ≠ 0) (y : State 2) :
     (field p y = 0 ∧ (jacobian p (y 0) (y 1)).trace = 0 ∧ (jacobian p (y 0) (y 1)).det = 0) ↔
       p.β₁ = 0 ∧ p.β₂ = 0 ∧ y = 0 := by
   constructor

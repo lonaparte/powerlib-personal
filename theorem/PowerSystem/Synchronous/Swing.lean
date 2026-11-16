@@ -413,7 +413,7 @@ period of the power-angle curve). Static evidence on the model, not a connection
 
 /-- The linearization is Hurwitz iff all coefficients of `M s² + D s + K` are positive
 (`M > 0`). -/
-@[tmio M, powerlib_domain] theorem isHurwitz_jacobian_iff (hM : 0 < p.M) (δ₀ : ℝ) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_jacobian_iff (hM : 0 < p.M) (δ₀ : ℝ) :
     LinearSystems.IsHurwitz (p.jacobian δ₀) ↔ 0 < p.D ∧ 0 < p.syncCoeff δ₀ := by
   rw [Criteria.isHurwitz_fin_two_iff, trace_jacobian, det_jacobian, neg_div,
     neg_lt_zero, div_pos_iff_of_pos_right hM, div_pos_iff_of_pos_right hM]

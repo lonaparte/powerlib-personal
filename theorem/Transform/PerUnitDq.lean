@@ -82,7 +82,7 @@ zero-sequence-free current. -/
   field_simp
 
 /-- RMS dq bases (`V_dq = V_LN`, `I_dq = I_B`) give the factor `1/2`, not `1`. -/
-@[tmio T, powerlib_foundation] theorem power_factor_rms_bases (b : ThreePhaseBase) :
+@[tmio M, powerlib_domain] theorem power_factor_rms_bases (b : ThreePhaseBase) :
     3 / 2 * b.VLN * b.I / b.S = 1 / 2 := by
   have h := b.S_eq_three_VLN_I
   have hS := b.S_pos.ne'
@@ -90,7 +90,7 @@ zero-sequence-free current. -/
   linear_combination (-1 / 2) * h
 
 /-- Peak dq bases (`V_dq = √2 V_LN`, `I_dq = √2 I_B`) give the factor `1`. -/
-@[tmio T, powerlib_foundation] theorem power_factor_peak_bases (b : ThreePhaseBase) :
+@[tmio M, powerlib_domain] theorem power_factor_peak_bases (b : ThreePhaseBase) :
     3 / 2 * (Real.sqrt 2 * b.VLN) * (Real.sqrt 2 * b.I) / b.S = 1 := by
   have h := b.S_eq_three_VLN_I
   have hS := b.S_pos.ne'

@@ -282,7 +282,7 @@ def qss13 (θ i : ℝ) : State 13 :=
   · intro h; ext i; exact h i
 
 /-- Coordinates `0 … 9` of a 13-state vector are those of its projection. -/
-@[tmio T, powerlib_foundation] private lemma apply_eq_proj10 (x : State 13) (j : Fin 13)
+@[tmio M, powerlib_domain] private lemma apply_eq_proj10 (x : State 13) (j : Fin 13)
     (hj : (j : ℕ) < 10) : x j = proj10 x ⟨j, hj⟩ := by
   simp [proj10]
 
@@ -395,14 +395,14 @@ of the 13-state model. -/
 def currentReversal13 : Matrix (Fin 13) (Fin 13) ℝ :=
   Matrix.diagonal ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1]
 
-@[tmio T, powerlib_foundation] theorem currentReversal13_mul_self :
+@[tmio M, powerlib_domain] theorem currentReversal13_mul_self :
     currentReversal13 * currentReversal13 = 1 := by
   rw [currentReversal13, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
   ext i
   fin_cases i <;> norm_num
 
-@[tmio T, powerlib_foundation] theorem currentReversal13_isUnit : IsUnit currentReversal13 :=
+@[tmio M, powerlib_domain] theorem currentReversal13_isUnit : IsUnit currentReversal13 :=
   (Matrix.isUnit_iff_isUnit_det _).mpr
     (Matrix.isUnit_det_of_right_inverse currentReversal13_mul_self)
 
@@ -432,7 +432,7 @@ transported by the reversal of the current coordinates, with the frozen q-axis r
 /-- For the PI-PLL field with any phase-detector signal `h_cp` (for the constant-power layer,
 `h_cp(θ) = h(θ, r_±(θ))`, defined where the discriminant is `≥ 0`): at every point where a local
 potential `V` has `V′ = −h_cp`, the energy `H = ½ K_i η² + V(θ)` satisfies `Ḣ = −K_p h_cp² ≤ 0`. -/
-@[tmio T, powerlib_foundation] theorem cp_energy_rate {hcp V : ℝ → ℝ} (Kp Ki : ℝ) {y : State 2}
+@[tmio M, powerlib_domain] theorem cp_energy_rate {hcp V : ℝ → ℝ} (Kp Ki : ℝ) {y : State 2}
     (hV : HasDerivAt V (-hcp (y 0)) (y 0)) :
     fderiv ℝ (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) y (piPLLField hcp Kp Ki 0 y) =
       -(Kp * hcp (y 0) ^ 2) := by
@@ -447,7 +447,7 @@ potential `V` has `V′ = −h_cp`, the energy `H = ½ K_i η² + V(θ)` satisfi
   simp [π0, π1, piPLLField]
   ring
 
-@[tmio T, powerlib_foundation] theorem cp_energy_rate_nonpos {hcp V : ℝ → ℝ} {Kp : ℝ} (Ki : ℝ)
+@[tmio M, powerlib_domain] theorem cp_energy_rate_nonpos {hcp V : ℝ → ℝ} {Kp : ℝ} (Ki : ℝ)
     (hKp : 0 ≤ Kp) {y : State 2} (hV : HasDerivAt V (-hcp (y 0)) (y 0)) :
     fderiv ℝ (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) y (piPLLField hcp Kp Ki 0 y) ≤ 0 := by
   rw [cp_energy_rate Kp Ki hV]

@@ -73,20 +73,20 @@ def I : ℝ := b.S / b.V
 /-- Impedance base `Z_B = V_B² / S_B`. -/
 def Z : ℝ := b.V ^ 2 / b.S
 
-@[tmio T, powerlib_foundation] theorem I_pos : 0 < b.I := div_pos b.S_pos b.V_pos
+@[tmio M, powerlib_domain] theorem I_pos : 0 < b.I := div_pos b.S_pos b.V_pos
 
-@[tmio T, powerlib_foundation] theorem Z_pos : 0 < b.Z := div_pos (pow_pos b.V_pos 2) b.S_pos
+@[tmio M, powerlib_domain] theorem Z_pos : 0 < b.Z := div_pos (pow_pos b.V_pos 2) b.S_pos
 
-@[tmio T, powerlib_foundation] theorem Z_eq_V_div_I : b.Z = b.V / b.I := by
+@[tmio M, powerlib_domain] theorem Z_eq_V_div_I : b.Z = b.V / b.I := by
   have := b.S_pos.ne'; have := b.V_pos.ne'
   simp only [Z, I]; field_simp
 
-@[tmio T, powerlib_foundation] theorem S_eq_V_mul_I : b.S = b.V * b.I := by
+@[tmio M, powerlib_domain] theorem S_eq_V_mul_I : b.S = b.V * b.I := by
   have := b.V_pos.ne'
   simp only [I]; field_simp
 
 /-- Ohm's law keeps its form in per unit: `V = Z I ⇔ V̂ = Ẑ Î`. -/
-@[tmio T, powerlib_foundation] theorem ohm_pu_iff (v z i : ℂ) :
+@[tmio M, powerlib_domain] theorem ohm_pu_iff (v z i : ℂ) :
     v = z * i ↔ v / b.V = (z / b.Z) * (i / b.I) := by
   have hV : (b.V : ℂ) ≠ 0 := by exact_mod_cast b.V_pos.ne'
   have hZ : (b.Z : ℂ) ≠ 0 := by exact_mod_cast b.Z_pos.ne'
@@ -100,7 +100,7 @@ def Z : ℝ := b.V ^ 2 / b.S
   · intro h; field_simp at h; linear_combination h
 
 /-- Complex power keeps its form in per unit: `S = V I* ⇔ Ŝ = V̂ Î*`. -/
-@[tmio T, powerlib_foundation] theorem power_pu_iff (s v i : ℂ) :
+@[tmio M, powerlib_domain] theorem power_pu_iff (s v i : ℂ) :
     s = v * star i ↔ s / b.S = (v / b.V) * star (i / b.I) := by
   have hV : (b.V : ℂ) ≠ 0 := by exact_mod_cast b.V_pos.ne'
   have hS : (b.S : ℂ) ≠ 0 := by exact_mod_cast b.S_pos.ne'
@@ -140,20 +140,20 @@ def Z : ℝ := b.VLL ^ 2 / b.S
 @[tmio T, powerlib_foundation] private lemma sqrt3_pos : 0 < Real.sqrt 3 := by positivity
 
 /-- `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`: line and phase pairings give the same base. -/
-@[tmio T, powerlib_foundation] theorem Z_eq_phase : b.Z = b.VLN ^ 2 / (b.S / 3) := by
+@[tmio M, powerlib_domain] theorem Z_eq_phase : b.Z = b.VLN ^ 2 / (b.S / 3) := by
   have := b.S_pos.ne'; have := sqrt3_pos.ne'
   simp only [Z, VLN]
   field_simp
   rw [sqrt3_sq]
 
 /-- `S_B = 3 V_LN I_B` and `S_B = √3 V_LL I_B`. -/
-@[tmio T, powerlib_foundation] theorem S_eq_three_VLN_I : b.S = 3 * b.VLN * b.I := by
+@[tmio M, powerlib_domain] theorem S_eq_three_VLN_I : b.S = 3 * b.VLN * b.I := by
   have := b.VLL_pos.ne'; have := sqrt3_pos.ne'
   simp only [VLN, I]
   field_simp
   rw [sqrt3_sq]
 
-@[tmio T, powerlib_foundation] theorem Z_eq_VLN_div_I : b.Z = b.VLN / b.I := by
+@[tmio M, powerlib_domain] theorem Z_eq_VLN_div_I : b.Z = b.VLN / b.I := by
   have := b.VLL_pos.ne'; have := b.S_pos.ne'; have := sqrt3_pos.ne'
   simp only [Z, VLN, I]
   field_simp

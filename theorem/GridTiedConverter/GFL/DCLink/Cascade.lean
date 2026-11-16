@@ -204,7 +204,7 @@ def model : Linear.Plant 3 1 :=
 /-- `C¹` on `V_dc > 0`. -/
 def posV : Set (State 3) := {x | 0 < x 2}
 
-@[tmio T, powerlib_foundation] theorem isOpen_posV : IsOpen posV :=
+@[tmio M, powerlib_domain] theorem isOpen_posV : IsOpen posV :=
   isOpen_lt continuous_const ((EuclideanSpace.proj (2 : Fin 3)).continuous)
 
 @[tmio M, powerlib_domain] theorem field_contDiffOn (r : ℝ) : ContDiffOn ℝ 1 (p.field r) posV := by
@@ -340,7 +340,7 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
   rfl
 
 /-- Hurwitz iff the current loop is Hurwitz and the DC node pole `−I_dc0/(C V0)` is stable. -/
-@[tmio M, powerlib_domain] theorem isHurwitz_iff_pi :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff_pi :
     LinearSystems.IsHurwitz p.stateMatrix ↔
       LinearSystems.IsHurwitz p.pi.model.A ∧ 0 < p.Idc0 / (p.C * p.V0) := by
   simp only [← Linear.spectrallyStable_iff_isHurwitz, Linear.SpectrallyStable,
@@ -358,7 +358,7 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
 
 /-- With `L, C, V0 > 0`: Hurwitz iff `R + Kp > 0`, `Ki > 0` and `I_dc0 > 0` (rectifier). Static
 evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
     LinearSystems.IsHurwitz p.stateMatrix ↔
       (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0 := by
   rw [p.isHurwitz_iff_pi,
@@ -495,7 +495,7 @@ def LinStable : Prop := p.pi.Stable ∧ 0 < p.Idc0 / (p.C * p.V0)
 DC-node coefficient. -/
 def LinUnstable : Prop := p.pi.Unstable ∨ p.Idc0 / (p.C * p.V0) < 0
 
-@[tmio M, powerlib_domain] theorem isHurwitz_iff_linStable :
+@[tmio TM, powerlib_domain] theorem isHurwitz_iff_linStable :
     IsHurwitz p.model.A ↔ p.LinStable := by
   change IsHurwitz p.stateMatrix ↔ _
   rw [p.isHurwitz_iff_pi, ← (connection_proof% CurrentControl.PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),

@@ -44,7 +44,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 /-- Biased sinusoidal phase detector `h(θ) = −V sin θ + μ`. -/
 def biasedPD (V μ θ : ℝ) : ℝ := -(V * Real.sin θ) + μ
 
-@[tmio M, powerlib_foundation] theorem hasDerivAt_biasedPD (V μ θ : ℝ) :
+@[tmio M, powerlib_domain] theorem hasDerivAt_biasedPD (V μ θ : ℝ) :
     HasDerivAt (biasedPD V μ) (-(V * Real.cos θ)) θ := by
   have := (((Real.hasDerivAt_sin θ).const_mul V).neg).add_const μ
   exact this

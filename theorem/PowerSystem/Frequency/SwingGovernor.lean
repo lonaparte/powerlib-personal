@@ -518,7 +518,7 @@ forward solution under a load step are trajectory-level results outside the sent
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5: from rest, the right derivative of `Δω` at `0⁺` is `−ΔP_L / M_eff`. -/
-@[tmio M, powerlib_domain] private theorem rocof {x : ℝ → ℝ²}
+@[tmio TM, powerlib_domain] private theorem rocof {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
@@ -530,7 +530,7 @@ forward solution under a load step are trajectory-level results outside the sent
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 in Hz/s: with `f = f₀ (1 + Δω)` and `M_eff = 2 H_eff`, `ḟ(0⁺) = −ΔP_L f₀ / (2 H_eff)`. -/
-@[tmio M, powerlib_domain] private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
+@[tmio TM, powerlib_domain] private theorem rocof_hz {H f₀ : ℝ} {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant (2 * H) D K Tg).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) (-(ΔPL * f₀) / (2 * H)) (Ici 0) 0 := by

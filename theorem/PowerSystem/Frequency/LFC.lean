@@ -34,12 +34,12 @@ linearization), §1.3 (governor), §1.4 (ACE, `B^Hz = B/f₀`, sign of `ACE_b`),
 integral), §1.6 (steady state / non-interactive control), §1.7 (two-area state matrix).
 
 Results.
-* `tiePower_hasDerivAt`, `tieFlow_hasDerivAt` (foundation, §1.2): `T = V_a V_b cos δ⁰/X` is the
-  slope of `V_a V_b sin δ / X`, and the linearised flow obeys `ΔṖ_tie = ω_s T (Δω_a − Δω_b)`.
+* `tiePower_hasDerivAt` (domain), `tieFlow_hasDerivAt` (foundation, §1.2): `T = V_a V_b cos δ⁰/X`
+  is the slope of `V_a V_b sin δ / X`, and the linearised flow obeys `ΔṖ_tie = ω_s T (Δω_a − Δω_b)`.
 * `ace_hz` (foundation, §1.4): `B Δω̂ = (B/f₀) Δf` with `Δf = f₀ Δω̂`.
-* `field_*` (foundation): every row of the §1.7 matrix is the corresponding §1.1–§1.5
+* `field_*` (domain): every row of the §1.7 matrix is the corresponding §1.1–§1.5
   equation (including the opposite sign of `ΔP_tie,ab` in the two AGC rows).
-* `isEquilibrium_iff`, `plant7_isEquilibrium_iff` (foundation, static, §1.6): for
+* `isEquilibrium_iff`, `plant7_isEquilibrium_iff` (domain, static, §1.6): for
   `B_a + B_b ≠ 0`, `K_I ≠ 0`, `ω_s T ≠ 0` (and `M, T_g ≠ 0`) the unique equilibrium for
   constant loads is `Δω = 0`, `ΔP_tie = 0`, `ΔP_C,a = ΔP_L,a`, `ΔP_C,b = ΔP_L,b`
   (non-interactive control). The steady state is an equilibrium for every parameter value
@@ -109,7 +109,7 @@ structure Area where
 def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
 
 /-- §1.2: `T` is the slope of `P_tie(δ) = V_a V_b sin δ / X` at `δ⁰`. -/
-@[tmio M, powerlib_foundation] theorem tiePower_hasDerivAt (Va Vb X δ0 : ℝ) :
+@[tmio M, powerlib_domain] theorem tiePower_hasDerivAt (Va Vb X δ0 : ℝ) :
     HasDerivAt (fun δ => Va * Vb / X * Real.sin δ) (syncCoeff Va Vb X δ0) δ0 := by
   have h := (Real.hasDerivAt_sin δ0).const_mul (Va * Vb / X)
   convert h using 1

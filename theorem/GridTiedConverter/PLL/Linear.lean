@@ -484,7 +484,7 @@ language for decay rates, conservation and passivity. -/
   · rfl
 
 /-- Both positive loop gains are the Hurwitz property of the state matrix. -/
-@[tmio M, powerlib_domain] private theorem mem_realize_iff_isHurwitz (m : Model) :
+@[tmio TM, powerlib_domain] private theorem mem_realize_iff_isHurwitz (m : Model) :
     connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
   change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,

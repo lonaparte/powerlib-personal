@@ -95,7 +95,7 @@ def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
     (⟨0, X1, 0⟩ : Passive.SeriesRLC).series ⟨0, Xeq X2 X3, 0⟩ = ⟨0, Xg X1 X2 X3, 0⟩ := by
   simp [Passive.SeriesRLC.series, Xg]
 
-@[tmio T, powerlib_foundation] theorem one_sub_beta {X2 X3 : ℝ} (h : X2 + X3 ≠ 0) :
+@[tmio M, powerlib_domain] theorem one_sub_beta {X2 X3 : ℝ} (h : X2 + X3 ≠ 0) :
     1 - beta X2 X3 = X2 / (X2 + X3) := by
   unfold beta; field_simp; ring
 
@@ -371,14 +371,14 @@ end Fourier
 def modeMatrix (N : ℕ) (x Xe : ℝ) : Matrix (Fin N) (Fin N) ℝ :=
   x • (1 : Matrix (Fin N) (Fin N) ℝ) + Xe • Matrix.of (fun _ _ => (1 : ℝ))
 
-@[tmio M, powerlib_foundation] theorem commonMode (N : ℕ) (x Xe : ℝ) :
+@[tmio M, powerlib_domain] theorem commonMode (N : ℕ) (x Xe : ℝ) :
     modeMatrix N x Xe *ᵥ (fun _ => 1) = (x + N * Xe) • (fun _ => (1 : ℝ)) := by
   rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
   funext i
   simp [mulVec, dotProduct]
   ring
 
-@[tmio M, powerlib_foundation] theorem diffMode (N : ℕ) (x Xe : ℝ) (v : Fin N → ℝ) (hv : ∑ k, v k = 0) :
+@[tmio M, powerlib_domain] theorem diffMode (N : ℕ) (x Xe : ℝ) (v : Fin N → ℝ) (hv : ∑ k, v k = 0) :
     modeMatrix N x Xe *ᵥ v = x • v := by
   rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
   funext i
@@ -413,7 +413,7 @@ def modeMatrix (N : ℕ) (x Xe : ℝ) : Matrix (Fin N) (Fin N) ℝ :=
 
 /-- `det(sI − (xI + X_eq 𝟙𝟙ᵀ)) = (s − x)^{N−1}(s − x − N X_eq)` (`N ≥ 1` branches): the
 differential eigenvalue `x` has algebraic multiplicity `N − 1`. -/
-@[tmio M, powerlib_foundation] theorem det_modes (N : ℕ) (x Xe s : ℝ) :
+@[tmio M, powerlib_domain] theorem det_modes (N : ℕ) (x Xe s : ℝ) :
     (s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe).det =
       (s - x) ^ N * (s - x - (N + 1) * Xe) := by
   have : s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe =

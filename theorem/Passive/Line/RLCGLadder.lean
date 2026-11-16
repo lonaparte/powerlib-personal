@@ -114,7 +114,7 @@ def J : Matrix (Idx N) (Idx N) ℝ := Matrix.of (Jfun N)
 
 def B : Matrix (Idx N) (Fin 2) ℝ := Matrix.of (Bfun N)
 
-@[tmio M, powerlib_foundation] theorem J_skew : (J N).transpose = -(J N) := by
+@[tmio M, powerlib_domain] theorem J_skew : (J N).transpose = -(J N) := by
   ext a b
   rcases a with k | k <;> rcases b with j | j <;>
     simp only [transpose_apply, J, of_apply, Jfun, Matrix.neg_apply, neg_zero]

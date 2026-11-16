@@ -152,11 +152,11 @@ def angleMap : State (n + (n + 1)) →L[ℝ] (Fin (n + 1) → ℝ) :=
     Fin.cases (0 : State (n + (n + 1)) →L[ℝ] ℝ)
       (fun i => PiLp.proj 2 (fun _ => ℝ) (dIdx i)) k
 
-@[tmio T, simp, powerlib_foundation] theorem angleMap_zero (z : State (n + (n + 1))) :
+@[tmio M, simp, powerlib_domain] theorem angleMap_zero (z : State (n + (n + 1))) :
     angleMap z 0 = 0 := by
   simp [angleMap]
 
-@[tmio T, simp, powerlib_foundation] theorem angleMap_succ (z : State (n + (n + 1))) (i : Fin n) :
+@[tmio M, simp, powerlib_domain] theorem angleMap_succ (z : State (n + (n + 1))) (i : Fin n) :
     angleMap z i.succ = z (dIdx i) := by
   simp [angleMap]
 
@@ -180,15 +180,15 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
   WithLp.toLp 2 fun r => Fin.addCases (motive := fun _ => ℝ)
     (fun i => x.1 i.succ - x.1 0) (fun k => x.2 k) r
 
-@[tmio T, simp, powerlib_foundation] theorem reduce_dIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
+@[tmio M, simp, powerlib_domain] theorem reduce_dIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
     (i : Fin n) : reduce x (dIdx i) = x.1 i.succ - x.1 0 := by
   simp [reduce]
 
-@[tmio T, simp, powerlib_foundation] theorem reduce_wIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
+@[tmio M, simp, powerlib_domain] theorem reduce_wIdx (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ))
     (k : Fin (n + 1)) : reduce x (wIdx k) = x.2 k := by
   simp [reduce]
 
-@[tmio T, powerlib_foundation] theorem angleMap_reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
+@[tmio M, powerlib_domain] theorem angleMap_reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
     angleMap (reduce x) = fun k => x.1 k + -x.1 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
@@ -810,15 +810,18 @@ private def conservedLin (m : ℕ) : State (m + (m + 1)) →ₗ[ℝ] State (m + 
     · intro i; simp; ring
     · intro k; simp
 
-@[tmio T, powerlib_foundation] private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1))) (i : Fin m) :
+@[tmio M, powerlib_domain] private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1)))
+    (i : Fin m) :
     conservedLin m z (dIdx i) = z (dIdx i) + z (wIdx i.succ) - z (wIdx 0) := by
   simp [conservedLin]
 
-@[tmio T, powerlib_foundation] private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1))) (k : Fin (m + 1)) :
+@[tmio M, powerlib_domain] private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1)))
+    (k : Fin (m + 1)) :
     conservedLin m z (wIdx k) = z (wIdx k) := by
   simp [conservedLin]
 
-@[tmio T, powerlib_foundation] private theorem conservedLin_injective (m : ℕ) : Function.Injective (conservedLin m) := by
+@[tmio M, powerlib_domain] private theorem conservedLin_injective (m : ℕ) : Function.Injective
+    (conservedLin m) := by
   intro z w h
   have hw : ∀ k, z (wIdx k) = w (wIdx k) := fun k => by
     have := congrArg (fun y : State (m + (m + 1)) => y (wIdx k)) h

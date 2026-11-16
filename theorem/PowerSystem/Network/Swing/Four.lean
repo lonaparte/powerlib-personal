@@ -42,9 +42,9 @@ Results.
 
 Family and connection conclusions.
 * The family is `Swing.family`; the public behavioural conclusions are `connection%` statements
-  on its generated denotation, with static premises. The cut, form and trigonometric lemmas are
-  static or generic implications (foundation); the field-level forms of the statements below are
-  private implementation evidence.
+  on its generated denotation, with static premises. The cut and form lemmas are static domain
+  identities, the trigonometric lemmas generic implications (foundation); the field-level forms
+  of the statements below are private implementation evidence.
 * Necessary conditions for local asymptotic stability, every number of machines (the model is
   outside the local asymptotic denotation): `not_localAsymptoticStable_of_cut` (a nonempty proper
   group `X` of machines whose lines to the rest have total weight `W ≤ 0`: a saddle if `W < 0`, a
@@ -155,7 +155,7 @@ the lines leaving `X`. -/
   by_cases hk : k ∈ X <;> by_cases hj : j ∈ X <;> simp [hk, hj]
   rw [p.B_symm, show θ j - θ k = -(θ k - θ j) by ring, Real.cos_neg]
 
-@[tmio T, powerlib_foundation] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_domain] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
     ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k

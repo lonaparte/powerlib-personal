@@ -115,7 +115,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-- Particular solution for `w ≡ c`: the constant state `(0, c / K_i)` is a forward trajectory
 of the error dynamics. -/
-@[tmio M, powerlib_domain] private theorem stepParticular_isTrajectory {V Kp Ki : ℝ}
+@[tmio TM, powerlib_domain] private theorem stepParticular_isTrajectory {V Kp Ki : ℝ}
     (hKi : Ki ≠ 0) (c : ℝ) :
     ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (fun _ : ℝ => (![0, c / Ki] : Fin 2 → ℝ))
       ((frequencyModel V Kp Ki).A *ᵥ ![0, c / Ki] + (frequencyModel V Kp Ki).B *ᵥ ![c])
@@ -179,7 +179,7 @@ def rampParticular (V Kp Ki ρ : ℝ) (t : ℝ) : Fin 2 → ℝ :=
 
 /-- The particular solution `rampParticular` is a forward trajectory of the error dynamics
 for `w = ρ t`. -/
-@[tmio M, powerlib_domain] theorem rampParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
+@[tmio TM, powerlib_domain] theorem rampParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
     (hKi : Ki ≠ 0) (ρ : ℝ) :
     ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (rampParticular V Kp Ki ρ)
       ((frequencyModel V Kp Ki).A *ᵥ rampParticular V Kp Ki ρ t +
@@ -264,7 +264,7 @@ def quadParticular (V Kp Ki α : ℝ) (t : ℝ) : Fin 2 → ℝ :=
 
 /-- The particular solution `quadParticular` is a forward trajectory of the error dynamics
 for `w = α t²`. -/
-@[tmio M, powerlib_domain] theorem quadParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
+@[tmio TM, powerlib_domain] theorem quadParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
     (hKi : Ki ≠ 0) (α : ℝ) :
     ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (quadParticular V Kp Ki α)
       ((frequencyModel V Kp Ki).A *ᵥ quadParticular V Kp Ki α t +

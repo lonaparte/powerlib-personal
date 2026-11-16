@@ -215,14 +215,14 @@ def literatureField : Dynamics.State 3 → Dynamics.State 3 :=
 /-- The reversal `diag(1, 1, −1)` of the current coordinate. -/
 def currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Matrix.diagonal ![1, 1, -1]
 
-@[tmio T, powerlib_foundation] theorem currentReversal_mul_self :
+@[tmio M, powerlib_domain] theorem currentReversal_mul_self :
     currentReversal * currentReversal = 1 := by
   rw [currentReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
   congr 1
   ext i
   fin_cases i <;> norm_num
 
-@[tmio T, powerlib_foundation] theorem currentReversal_isUnit : IsUnit currentReversal :=
+@[tmio M, powerlib_domain] theorem currentReversal_isUnit : IsUnit currentReversal :=
   (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse currentReversal_mul_self)
 
 /-- §D8 boundary translation: the IN-positive field is the OUT-positive source field transported

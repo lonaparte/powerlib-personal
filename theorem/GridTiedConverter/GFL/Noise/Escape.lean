@@ -8,7 +8,8 @@ Model boundary.
 Same 2D slow model as `theorem/GridTiedConverter/GFL/Noise/Embedding.lean`: state
 `(θ_e, η)`, drift `(K_p h(θ_e) + K_i η, h(θ_e))`, `h : ℝ → ℝ` the reduced phase-detector
 characteristic (assumed differentiable where stated), `𝒱' = −h`.  Only the frequency noise channel
-`(−ε, 0)ᵀ` is used for the stationary density.  Continuous time.  Foundation results (Rules §3):
+`(−ε, 0)ᵀ` is used for the stationary density.  Continuous time.  Foundation results and domain
+model identities (Rules §3):
 * the trajectory statement is about the deterministic ODE;
 * the stationary statement is that `e^{−𝓗/T}` solves the stationary Fokker–Planck **equation**
   pointwise (a PDE identity); that it is the law of the SDE solution is not claimed;
@@ -107,7 +108,8 @@ def fpFreq (Kp Ki ε : ℝ) (h : ℝ → ℝ) (ρ : ℝ → ℝ → ℝ) (θ η 
 /-- Gibbs function `e^{−𝓗/T}`, `𝓗 = 𝒱(θ) + ½ K_i η²`. -/
 def gibbs2 (V : ℝ → ℝ) (Ki T θ η : ℝ) : ℝ := exp (-(V θ + Ki / 2 * η ^ 2) / T)
 
-@[tmio T, powerlib_foundation] theorem gibbs2_hasDerivAt_θ {V h : ℝ → ℝ} (hV : ∀ x, HasDerivAt V (-h x) x)
+@[tmio M, powerlib_domain] theorem gibbs2_hasDerivAt_θ {V h : ℝ → ℝ}
+    (hV : ∀ x, HasDerivAt V (-h x) x)
     (Ki T η x : ℝ) :
     HasDerivAt (fun x => gibbs2 V Ki T x η) (h x / T * gibbs2 V Ki T x η) x := by
   have hq : HasDerivAt (fun x => -(V x + Ki / 2 * η ^ 2) / T) (h x / T) x := by
@@ -118,7 +120,7 @@ def gibbs2 (V : ℝ → ℝ) (Ki T θ η : ℝ) : ℝ := exp (-(V θ + Ki / 2 * 
   convert! this using 1
   ring
 
-@[tmio T, powerlib_foundation] theorem gibbs2_hasDerivAt_η (V : ℝ → ℝ) (Ki T θ y : ℝ) :
+@[tmio M, powerlib_domain] theorem gibbs2_hasDerivAt_η (V : ℝ → ℝ) (Ki T θ y : ℝ) :
     HasDerivAt (fun y => gibbs2 V Ki T θ y) (-(Ki * y) / T * gibbs2 V Ki T θ y) y := by
   have hq : HasDerivAt (fun y : ℝ => V θ + Ki / 2 * y ^ 2) (Ki * y) y := by
     have := ((hasDerivAt_pow 2 y).const_mul (Ki / 2)).const_add (V θ)
@@ -134,7 +136,7 @@ def gibbs2 (V : ℝ → ℝ) (Ki T θ η : ℝ) : ℝ := exp (-(V θ + Ki / 2 * 
 /-- **Frequency-channel Gibbs law (§2)**: if `ε² = 2 K_p T` (i.e. `B Bᵀ = 2 T R`,
 `T = T_eff`), then `e^{−𝓗/T}` solves the stationary Fokker–Planck equation pointwise, for any
 damping and any `C¹` characteristic `h`. -/
-@[tmio T, powerlib_foundation] theorem fpFreq_gibbs {Kp Ki ε T : ℝ} {h h' V : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem fpFreq_gibbs {Kp Ki ε T : ℝ} {h h' V : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (-h x) x) (hh : ∀ x, HasDerivAt h (h' x) x) (hT : T ≠ 0)
     (hε : ε ^ 2 = 2 * Kp * T) (θ η : ℝ) :
     fpFreq Kp Ki ε h (gibbs2 V Ki T) θ η = 0 := by
@@ -159,7 +161,7 @@ damping and any `C¹` characteristic `h`. -/
 
 /-- **Not normalizable**: if `𝒱 ≤ C` on a measurable set of infinite length, `e^{−𝓗/T}` is not
 integrable on the plane. -/
-@[tmio T, powerlib_foundation] theorem gibbs2_not_integrable {V : ℝ → ℝ} {Ki T C : ℝ} (hT : 0 < T)
+@[tmio M, powerlib_domain] theorem gibbs2_not_integrable {V : ℝ → ℝ} {Ki T C : ℝ} (hT : 0 < T)
     {S : Set ℝ} (hSm : MeasurableSet S) (hS : volume S = ∞) (hVS : ∀ x ∈ S, V x ≤ C) :
     ¬ Integrable (fun p : ℝ × ℝ => gibbs2 V Ki T p.1 p.2) (volume.prod volume) := by
   intro hint
@@ -191,7 +193,7 @@ integrable on the plane. -/
 def saddleJac (Kp Ki c : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * c, Ki; c, 0]
 
 /-- The entries of `saddleJac` are the partial derivatives of the drift field. -/
-@[tmio M, powerlib_foundation] theorem saddleJac_partials {Kp Ki c θs η : ℝ} {h : ℝ → ℝ}
+@[tmio M, powerlib_domain] theorem saddleJac_partials {Kp Ki c θs η : ℝ} {h : ℝ → ℝ}
     (hh : HasDerivAt h c θs) :
     HasDerivAt (fun θ => Kp * h θ + Ki * η) (saddleJac Kp Ki c 0 0) θs ∧
       HasDerivAt (fun y => Kp * h θs + Ki * y) (saddleJac Kp Ki c 0 1) η ∧
@@ -213,14 +215,14 @@ def zetaB (Kp Ki c : ℝ) : ℝ := Kp / 2 * √(c / Ki)
 def lambdaB (Kp Ki c : ℝ) : ℝ := Kp * c / 2 + √(Kp ^ 2 * c ^ 2 / 4 + Ki * c)
 
 /-- Characteristic polynomial of the saddle Jacobian: `λ² − K_p c λ − K_i c`. -/
-@[tmio M, powerlib_foundation] theorem saddleJac_det_sub (Kp Ki c l : ℝ) :
+@[tmio M, powerlib_domain] theorem saddleJac_det_sub (Kp Ki c l : ℝ) :
     (l • (1 : Matrix (Fin 2) (Fin 2) ℝ) - saddleJac Kp Ki c).det = l ^ 2 - Kp * c * l - Ki * c := by
   rw [Matrix.det_fin_two]
   simp [saddleJac]
   ring
 
 /-- `λ_b` is an eigenvalue of the saddle Jacobian with eigenvector `(λ_b, c)`. -/
-@[tmio M, powerlib_foundation] theorem saddleJac_eigen {Kp Ki c : ℝ} (hKi : 0 ≤ Ki) (hc : 0 ≤ c) :
+@[tmio M, powerlib_domain] theorem saddleJac_eigen {Kp Ki c : ℝ} (hKi : 0 ≤ Ki) (hc : 0 ≤ c) :
     saddleJac Kp Ki c *ᵥ ![lambdaB Kp Ki c, c] = lambdaB Kp Ki c • ![lambdaB Kp Ki c, c] := by
   have hs : 0 ≤ Kp ^ 2 * c ^ 2 / 4 + Ki * c := by positivity
   have hsq := Real.sq_sqrt hs
@@ -239,7 +241,7 @@ equilibrium is a saddle. -/
   linarith [le_abs_self (Kp * c / 2)]
 
 /-- **Langer factor (§5b boxed)**: `λ_b / ω_b = √(1 + ζ_b²) + ζ_b`. -/
-@[tmio M, powerlib_foundation] theorem langer_factor {Kp Ki c : ℝ} (hKi : 0 < Ki) (hc : 0 < c) :
+@[tmio M, powerlib_domain] theorem langer_factor {Kp Ki c : ℝ} (hKi : 0 < Ki) (hc : 0 < c) :
     lambdaB Kp Ki c / omegaB Ki c = √(1 + zetaB Kp Ki c ^ 2) + zetaB Kp Ki c := by
   have hω : 0 < omegaB Ki c := Real.sqrt_pos.mpr (mul_pos hKi hc)
   rw [div_eq_iff hω.ne']
@@ -261,7 +263,7 @@ equilibrium is a saddle. -/
 
 /-- With `K_p > 0` the factor exceeds one: escape is **accelerated** relative to the undamped
 barrier frequency. -/
-@[tmio M, powerlib_foundation] theorem langer_factor_gt_one {Kp Ki c : ℝ} (hKp : 0 < Kp) (hKi : 0 < Ki)
+@[tmio M, powerlib_domain] theorem langer_factor_gt_one {Kp Ki c : ℝ} (hKp : 0 < Kp) (hKi : 0 < Ki)
     (hc : 0 < c) : 1 < √(1 + zetaB Kp Ki c ^ 2) + zetaB Kp Ki c := by
   have hz : 0 < zetaB Kp Ki c := by
     unfold zetaB; exact mul_pos (by positivity) (Real.sqrt_pos.mpr (div_pos hc hKi))

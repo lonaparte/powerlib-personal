@@ -140,7 +140,7 @@ variable {e₁ e₂ : EuclideanSpace ℝ (Fin n)} (he₁ : IsEquilibrium (m.inpu
 include he₁
 
 /-- Before the first trip, a latched trajectory is the unshed response. -/
-@[tmio M, powerlib_foundation] theorem latched_eqOn_unshed {x : ℝ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem latched_eqOn_unshed {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -154,7 +154,7 @@ include he₁
   rwa [latched_input_of_not (hun t ht)] at h
 
 /-- If the unshed response never reaches `−θ`, the latched trajectory is the unshed response. -/
-@[tmio M, powerlib_foundation] theorem latched_representation_noTrip {x : ℝ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem latched_representation_noTrip {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
@@ -178,7 +178,7 @@ include he₁
 include he₂ in
 /-- If the unshed response first reaches `−θ` at `T`, the latched trajectory equals it on
 `[0, T]` and equals the post-shedding response from its state at `T` afterwards. -/
-@[tmio M, powerlib_foundation] theorem latched_representation_trip {x : ℝ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem latched_representation_trip {x : ℝ → ℝⁿ}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
         HasDerivWithinAt x (m.inputField (load (ΔPL -
           {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))

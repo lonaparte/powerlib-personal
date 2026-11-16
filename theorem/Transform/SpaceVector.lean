@@ -4,9 +4,10 @@ import theorem.Transform.ParkABC
 
 /-! # Space vectors for three-phase machines
 
-Foundation layer for the `theorem/Drives/` family. Nothing here is a statement about a
+Shared layer for the `theorem/Drives/` family. Nothing here is a statement about a
 particular machine or controller; the results are algebraic identities about complex space
-vectors that the machine modules reuse.
+vectors that the machine modules reuse. Generic identities are foundation; those of the chosen
+Clarke transform, the inverter vectors and `torque_mul_mechanicalSpeed` are domain (Rules §3).
 
 Scope.
 Conventions (shared by every `Drives` module unless a module states otherwise):
@@ -54,13 +55,13 @@ def a : ℂ := ⟨-1 / 2, Real.sqrt 3 / 2⟩
 /-- Amplitude-invariant Clarke transform `(2/3)(x_a + a x_b + a² x_c)`. -/
 def clarke (xa xb xc : ℝ) : ℂ := (2 / 3 : ℂ) * ((xa : ℂ) + a * xb + a ^ 2 * xc)
 
-@[tmio T, simp, powerlib_foundation] theorem clarke_re (xa xb xc : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem clarke_re (xa xb xc : ℝ) :
     (clarke xa xb xc).re = (2 / 3) * (xa - xb / 2 - xc / 2) := by
   rw [clarke, a_sq]
   simp [a]
   ring
 
-@[tmio T, simp, powerlib_foundation] theorem clarke_im (xa xb xc : ℝ) :
+@[tmio M, simp, powerlib_domain] theorem clarke_im (xa xb xc : ℝ) :
     (clarke xa xb xc).im = Real.sqrt 3 / 3 * (xb - xc) := by
   rw [clarke, a_sq]
   simp [a]
@@ -68,14 +69,14 @@ def clarke (xa xb xc : ℝ) : ℂ := (2 / 3 : ℂ) * ((xa : ℂ) + a * xb + a ^ 
 
 /-- Common-mode invariance: adding the same voltage to all three legs leaves the space
 vector unchanged. -/
-@[tmio T, powerlib_foundation] theorem clarke_add_const (xa xb xc c : ℝ) :
+@[tmio M, powerlib_domain] theorem clarke_add_const (xa xb xc c : ℝ) :
     clarke (xa + c) (xb + c) (xc + c) = clarke xa xb xc := by
   apply Complex.ext <;> simp
   ring
 
 /-- Amplitude invariance: a balanced positive-sequence set of peak `X` and angle `θ` has the
 space vector `X e^{jθ}`. -/
-@[tmio T, powerlib_foundation] theorem clarke_balanced (X θ : ℝ) :
+@[tmio M, powerlib_domain] theorem clarke_balanced (X θ : ℝ) :
     clarke (X * Real.cos θ) (X * Real.cos (θ - 2 * Real.pi / 3))
       (X * Real.cos (θ + 2 * Real.pi / 3)) =
       ⟨X * Real.cos θ, X * Real.sin θ⟩ := by

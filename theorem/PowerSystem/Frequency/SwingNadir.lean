@@ -74,7 +74,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   -(c * (σ ^ 2 + ωd ^ 2) * Tg / ωd) * Real.exp (-(σ * t)) *
     (ωd * Real.cos (ωd * t) - (σ - 1 / Tg) * Real.sin (ωd * t))
 
-@[tmio M, powerlib_foundation] theorem hasDerivAt_respC {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_domain] theorem hasDerivAt_respC {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
     (t : ℝ) : HasDerivAt (respC c σ ωd Tg) (rateC c σ ωd Tg t) t := by
   have he : HasDerivAt (fun s => Real.exp (-(σ * s))) (Real.exp (-(σ * t)) * (-σ)) t := by
     have := ((hasDerivAt_id t).const_mul σ).neg.exp
@@ -95,7 +95,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   ring
 
 /-- `rateC` as the derivative bracket of `e^{−σt}(a cos ω_d t + b sin ω_d t)`. -/
-@[tmio M, powerlib_foundation] theorem rateC_eq_bracket {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_domain] theorem rateC_eq_bracket {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
     (t : ℝ) :
     rateC c σ ωd Tg t = Real.exp (-(σ * t)) *
       (-σ * (c * Real.cos (ωd * t) + (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd *
@@ -162,7 +162,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   rw [Complex.sq_norm, Complex.normSq_mk]; ring
 
 /-- `rateC` in phase form: `−(c ω_n² T_g/ω_d) e^{−σt} ρ sin(θ − ω_d t)`. -/
-@[tmio M, powerlib_foundation] theorem rateC_eq_sin {c σ ωd Tg : ℝ} (hωd : 0 < ωd) (t : ℝ) :
+@[tmio M, powerlib_domain] theorem rateC_eq_sin {c σ ωd Tg : ℝ} (hωd : 0 < ωd) (t : ℝ) :
     rateC c σ ωd Tg t = -(c * (σ ^ 2 + ωd ^ 2) * Tg / ωd) * Real.exp (-(σ * t)) *
       (‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ *
         Real.sin (Complex.arg ⟨σ - 1 / Tg, ωd⟩ - ωd * t)) := by
@@ -181,14 +181,14 @@ variable {c σ ωd Tg : ℝ}
 /-- `t_nadir` of the scalar core: `arg (σ − 1/T_g + j ω_d)/ω_d`. -/
 def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
 
-@[tmio M, powerlib_foundation] theorem tCrit_pos (hωd : 0 < ωd) : 0 < tCrit σ ωd Tg :=
+@[tmio M, powerlib_domain] theorem tCrit_pos (hωd : 0 < ωd) : 0 < tCrit σ ωd Tg :=
   div_pos (arg_mk_pos hωd) hωd
 
-@[tmio M, powerlib_foundation] theorem mul_tCrit (hωd : 0 < ωd) :
+@[tmio M, powerlib_domain] theorem mul_tCrit (hωd : 0 < ωd) :
     ωd * tCrit σ ωd Tg = Complex.arg ⟨σ - 1 / Tg, ωd⟩ := by
   unfold tCrit; field_simp
 
-@[tmio M, powerlib_foundation] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
+@[tmio M, powerlib_domain] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
     rateC c σ ωd Tg (tCrit σ ωd Tg + k * (Real.pi / ωd)) = 0 := by
   have harg : ωd * (tCrit σ ωd Tg + k * (Real.pi / ωd)) =
       Complex.arg ⟨σ - 1 / Tg, ωd⟩ + k * Real.pi := by
@@ -197,7 +197,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     Real.sin_neg, Real.sin_nat_mul_pi]
   ring
 
-@[tmio M, powerlib_foundation] theorem rateC_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) {t : ℝ}
+@[tmio M, powerlib_domain] theorem rateC_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) {t : ℝ}
     (ht : t ∈ Ico 0 (tCrit σ ωd Tg)) : rateC c σ ωd Tg t < 0 := by
   have hθ0 := arg_mk_pos (b := σ - 1 / Tg) hωd
   have hθπ := arg_mk_lt_pi (b := σ - 1 / Tg) hωd
@@ -212,7 +212,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
   have := mul_pos (mul_pos hk (Real.exp_pos (-(σ * t)))) (mul_pos hn hsin)
   linarith [this]
 
-@[tmio M, powerlib_foundation] theorem respC_tCrit (hωd : 0 < ωd) (hTg : 0 < Tg) :
+@[tmio M, powerlib_domain] theorem respC_tCrit (hωd : 0 < ωd) (hTg : 0 < Tg) :
     respC c σ ωd Tg (tCrit σ ωd Tg) =
       -c - c * (Tg * ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖) * Real.exp (-(σ * tCrit σ ωd Tg)) := by
   have hcos := cos_arg_mk (b := σ - 1 / Tg) hωd
@@ -244,7 +244,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     rw [mul_pow, hsq]; field_simp; ring]
   exact (Real.sqrt_sq (by positivity)).symm
 
-@[tmio M, powerlib_foundation] theorem respC_strictAntiOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
+@[tmio M, powerlib_domain] theorem respC_strictAntiOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
     StrictAntiOn (respC c σ ωd Tg) (Icc 0 (tCrit σ ωd Tg)) := by
   apply strictAntiOn_of_deriv_neg (convex_Icc _ _)
   · exact fun t _ => (hasDerivAt_respC hωd.ne' hTg.ne' t).continuousAt.continuousWithinAt
@@ -253,7 +253,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     rw [(hasDerivAt_respC hωd.ne' hTg.ne' t).deriv]
     exact rateC_neg hωd hTg hc ⟨ht.1.le, ht.2⟩
 
-@[tmio M, powerlib_foundation] theorem respC_shift (hωd : 0 < ωd) (hTg : 0 < Tg) (u : ℝ) :
+@[tmio M, powerlib_domain] theorem respC_shift (hωd : 0 < ωd) (hTg : 0 < Tg) (u : ℝ) :
     respC c σ ωd Tg (tCrit σ ωd Tg + u) + c =
       (respC c σ ωd Tg (tCrit σ ωd Tg) + c) *
         (Real.exp (-(σ * u)) * (Real.cos (ωd * u) + σ / ωd * Real.sin (ωd * u))) := by
@@ -265,14 +265,15 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
   simp only [neg_add_cancel_comm]
   rw [h]
 
-@[tmio M, powerlib_foundation] theorem respC_tCrit_add_c_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
+@[tmio M, powerlib_domain] theorem respC_tCrit_add_c_neg (hωd : 0 < ωd) (hTg : 0 < Tg)
+    (hc : 0 < c) :
     respC c σ ωd Tg (tCrit σ ωd Tg) + c < 0 := by
   rw [respC_tCrit hωd hTg]
   have hn := norm_mk_pos (b := σ - 1 / Tg) hωd
   have := mul_pos (mul_pos hc (mul_pos hTg hn)) (Real.exp_pos (-(σ * tCrit σ ωd Tg)))
   linarith
 
-@[tmio M, powerlib_foundation] theorem respC_isMinOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hσ : 0 ≤ σ)
+@[tmio M, powerlib_domain] theorem respC_isMinOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hσ : 0 ≤ σ)
     (hc : 0 < c) : IsMinOn (respC c σ ωd Tg) (Ici 0) (tCrit σ ωd Tg) := by
   intro t ht
   simp only [Set.mem_ofPred_eq]
@@ -285,7 +286,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     have hneg := respC_tCrit_add_c_neg (σ := σ) hωd hTg hc
     nlinarith
 
-@[tmio M, powerlib_foundation] theorem respC_add_half_period (hωd : 0 < ωd) (t : ℝ) :
+@[tmio M, powerlib_domain] theorem respC_add_half_period (hωd : 0 < ωd) (t : ℝ) :
     respC c σ ωd Tg (t + Real.pi / ωd) + c =
       -Real.exp (-(σ * (Real.pi / ωd))) * (respC c σ ωd Tg t + c) := by
   have harg : ωd * (t + Real.pi / ωd) = ωd * t + Real.pi := by field_simp
@@ -418,7 +419,8 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Every forward solution from rest is the closed form `respC` on `t ≥ 0`. -/
-@[tmio M, powerlib_domain] private theorem trajectory_freq_eq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+@[tmio TM, powerlib_domain] private theorem trajectory_freq_eq (hM : 0 < M) (hTg : 0 < Tg)
+    (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) {t : ℝ} (ht : 0 ≤ t) :

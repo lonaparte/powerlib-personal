@@ -91,7 +91,7 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
 /-- The quadratic Lyapunov identity at the fold: with
 `J = [[−k_pA, k_i, k_p], [−A, 0, 1], [κA², 0, −κA]]` (coordinates `(φ, x, ι')`),
 `2 (Sz)·(Jz) − κAφ(Aφ + ι') = −(κA²φ² + 2k_i(k_p + κ)x² + κι'²)`. -/
-@[tmio M, powerlib_foundation] theorem fold_quad_identity {A : ℝ} (hA : A ≠ 0) (Xg kp ki κ φ x ι : ℝ) :
+@[tmio M, powerlib_domain] theorem fold_quad_identity {A : ℝ} (hA : A ≠ 0) (Xg kp ki κ φ x ι : ℝ) :
     2 * (foldS0 A Xg kp κ φ x ι * (-kp * A * φ + ki * x + kp * (Xg * ι)) +
         foldS1 A Xg kp ki κ φ x ι * (-A * φ + Xg * ι) +
         foldS2 A kp κ φ x * (κ * A ^ 2 * φ - κ * A * (Xg * ι))) -
@@ -102,7 +102,7 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
   ring
 
 /-- Derivative of the fold function. -/
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_foldU (A B Xg kp ki κ : ℝ) (z : Dynamics.State 3) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_foldU (A B Xg kp ki κ : ℝ) (z : Dynamics.State 3) :
     HasFDerivAt (fun z : Dynamics.State 3 => foldU A B Xg kp ki κ (z 0) (z 1) (z 2))
       ((2 * foldS0 A Xg kp κ (z 0) (z 1) (z 2)) •
           (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ) +
@@ -128,7 +128,7 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
   simp [foldS0, foldS1, foldS2]
   ring
 
-@[tmio T, powerlib_foundation] theorem contDiff_foldU (A B Xg kp ki κ : ℝ) :
+@[tmio M, powerlib_domain] theorem contDiff_foldU (A B Xg kp ki κ : ℝ) :
     ContDiff ℝ 1 (fun z : Dynamics.State 3 => foldU A B Xg kp ki κ (z 0) (z 1) (z 2)) := by
   unfold foldU
   fun_prop
@@ -210,7 +210,7 @@ variable {A B Xg kp ki κ : ℝ}
 
 /-- The fold Lie derivative: `U̇ = Φ + D` with the negative definite quadratic form `Φ` and a
 remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
-@[tmio T, powerlib_foundation] private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
+@[tmio M, powerlib_domain] private theorem fold_lie_eq (hA : A ≠ 0) (hAB : B ^ 2 = A ^ 2)
     {g : Dynamics.State 3 → Dynamics.State 3}
     (hg0 : ∀ z, g z 0 =
       kp * (-A * Real.sin (z 0) + B * (1 - Real.cos (z 0)) + Xg * z 2) + ki * z 1)
@@ -243,7 +243,7 @@ remainder `D` built from the Taylor remainders of `sin` and `cos`. -/
     κ ^ 2 * z 1 * A * Real.sin (z 0)) * hAB
 
 /-- The fold remainder is `O(s³)`. -/
-@[tmio T, powerlib_foundation] private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
+@[tmio M, powerlib_domain] private theorem fold_D_isBigO (A B Xg kp ki κ : ℝ) :
     (fun z : Dynamics.State 3 =>
       -κ * (2 * A ^ 2 * (1 - Real.cos (z 0) - z 0 ^ 2 / 2) +
           B * Xg * (z 2 * (1 - Real.cos (z 0))) + A * Xg * (z 2 * (Real.sin (z 0) - z 0))) +
