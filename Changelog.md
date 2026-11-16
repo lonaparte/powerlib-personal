@@ -69,6 +69,37 @@ in Git; working statistics, build receipts and development plans are not kept he
     every gain and is renamed `Ioo_subset_flipProjection_calpha_pos`.
   - Classified theorems 7579 → 7555; public connection theorems unchanged (1052).
 
+- Follow-up to the structural reuse pass.
+  - The droop + low-pass loop is read as the swing equation through the existing
+    droop/VSM transport: new `GFM.DroopLPF.droopVSM` (its `DroopVSM` data),
+    `DroopLPF.field_eq_droopField`, `DroopLPF.swingField_eq_transport` (the swing
+    field is the droop + LPF field in coordinates `(δ, (P₀ − P_f)/D)`) and
+    `DroopLPF.energy_eq_conservative` (the energy is
+    `PhasePlane.Conservative.energy (D/ω_c)` of the swing potential in those
+    coordinates). `DroopLPF.field_eq_transport` (a second, hand-computed
+    coordinate change) → `swingField_eq_transport`; `DroopLPF.contDiff_energy`,
+    `hasFDerivAt_energy`, `energy_lie` → the `PhasePlane.Conservative` energy laws
+    through `energy_eq_conservative` and `Dynamics.isIntegralCurveOn_transport`.
+  - Determinant-sign instability in any dimension: new
+    `Criteria.unstable_of_jacobian_det` and `Criteria.exists_root_re_pos_of_det`
+    (`(−1)ⁿ det A < 0`), next to `exists_pos_real_eigenvalue_of_det` in
+    `Criteria/Hurwitz`; `unstable_of_jacobian_trace_pos` moves there from
+    `Criteria/Hurwitz2` (same name). `Criteria.unstable_of_jacobian_det_neg_fin_two`,
+    `unstable_of_jacobian_det_pos_fin_three` → `unstable_of_jacobian_det`;
+    `Criteria.exists_eigenvalue_re_pos_of_det_neg`,
+    `exists_characteristic_root_re_pos_of_det_neg`,
+    `exists_eigenvalue_re_pos_of_det_pos_fin_three` → `exists_root_re_pos_of_det`
+    (or `exists_pos_real_eigenvalue_of_det` for an eigenpair).
+  - Further unused hypotheses dropped: `Transform.Rebase.spectrallyStable_rebaseMatrix_iff`
+    and `holds_rebaseMatrix_iff` (`T * S = 1`, implied by `S * T = 1`),
+    `PLL.piPLLVelocityCoord_pushforward` (differentiability of `h`),
+    `Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball`,
+    `Dynamics.localAsymptoticStable_of_eventually_lyapunov` (`f x* = 0`: the other
+    hypotheses make `x*` Lyapunov stable, hence an equilibrium) and
+    `Dynamics.Mechanical.localAsymptoticStable_of_strictMin` (criticality of the
+    strict minimum).
+  - Classified theorems 7555 → 7550; public connection theorems unchanged (1052).
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

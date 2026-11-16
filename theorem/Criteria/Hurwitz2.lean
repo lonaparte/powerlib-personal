@@ -44,26 +44,22 @@ Results.
   (`isHurwitz_fin_two_iff`; for `SpectrallyStable` through `Linear.spectrallyStable_iff_isHurwitz`;
   for the literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
   `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`).
-* Instability witnesses: `A.det < 0` gives an eigenpair with positive real part
-  (`exists_eigenvalue_re_pos_of_det_neg`, characteristic-root form
-  `exists_characteristic_root_re_pos_of_det_neg`), the case `n = 2` of
-  `Criteria.exists_pos_real_eigenvalue_of_det`; the generic witnesses
-  `Criteria.exists_pos_real_eigenvector_of_det` (`(-1) ^ 2 * A.det = A.det`),
-  `Criteria.exists_eigenpair_re_pos_of_trace_pos` and `Criteria.exists_root_re_pos_of_trace_pos`
-  (`0 < A.trace`) apply directly. The conclusion shape matches LeanForControl's
-  `unstable_of_exists_complex_eigenvalue_re_pos`.
+* Instability witnesses: `A.det < 0` and `0 < A.trace` are the cases `n = 2` of the generic
+  witnesses `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`
+  (`(-1) ^ 2 * A.det = A.det`), `Criteria.exists_eigenpair_re_pos_of_trace_pos` and
+  `Criteria.exists_root_re_pos_of_trace_pos`, which apply directly.
 * Discriminant: all eigenvalues real iff `0 ≤ tr² − 4 det`
   (`eigenvalues_real_iff_discriminant_nonneg`); nilpotency: `A ^ 2 = 0 ↔ tr A = 0 ∧ det A = 0`
   (`sq_eq_zero_iff_trace_det_eq_zero_fin_two`) and `IsNilpotent A ↔ tr A = 0 ∧ det A = 0`
   (`isNilpotent_iff_trace_det_eq_zero_fin_two`).
 * Semantic corollaries: linearization at an equilibrium of a `ContDiff ℝ 1` vector field on
-  `EuclideanSpace ℝ (Fin 2)` (local exponential stability / instability:
-  `locallyExponentiallyStable_of_jacobian_fin_two`, `unstable_of_jacobian_det_neg_fin_two`; for
-  every dimension `0 < tr` gives instability, `unstable_of_jacobian_trace_pos`) and the attractive
-  sentences of a two-state linear field (`holds_affine_fin_two_iff`). These only repackage
-  LeanForControl's `hurwitz_linearization_locally_exponentially_stable`,
-  `unstable_of_exists_complex_eigenvalue_re_pos` and the linear hub
-  `Linear.holds_iff_isHurwitz`; the model boundary is whatever vector field the caller supplies.
+  `EuclideanSpace ℝ (Fin 2)` (local exponential stability,
+  `locallyExponentiallyStable_of_jacobian_fin_two`; instability from `det < 0` or `0 < tr` is the
+  any-dimension `Criteria.unstable_of_jacobian_det`, `Criteria.unstable_of_jacobian_trace_pos`)
+  and the attractive sentences of a two-state linear field (`holds_affine_fin_two_iff`). These
+  only repackage LeanForControl's `hurwitz_linearization_locally_exponentially_stable` and the
+  linear hub `Linear.holds_iff_isHurwitz`; the model boundary is whatever vector field the caller
+  supplies.
 -/
 
 noncomputable section
@@ -435,23 +431,6 @@ section FinTwo
     Matrix.one_apply_ne (show (1 : Fin 2) ≠ 0 by decide), smul_eq_mul]
   ring
 
-/-- `det A < 0`: eigenpair shaped for LeanForControl's
-`unstable_of_exists_complex_eigenvalue_re_pos`. -/
-@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_neg
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
-    ∃ (μ : ℂ) (v : Fin 2 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det A (by simpa using h)
-  exact ⟨r, v, hv, heig, by rw [Complex.ofReal_re]; exact hr⟩
-
-/-- Characteristic-root form of the `det A < 0` witness, for
-`Linear.unstable_of_root`. -/
-@[tmio T, powerlib_foundation] theorem exists_characteristic_root_re_pos_of_det_neg
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
-    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
-  obtain ⟨μ, v, hv, heig, hre⟩ := exists_eigenvalue_re_pos_of_det_neg A h
-  exact ⟨μ, det_characteristicMatrix_eq_zero_of_eigenpair A hv heig, hre⟩
-
 /-! ### Discriminant and nilpotency -/
 
 /-- All eigenvalues of a real 2×2 matrix are real iff `0 ≤ tr² − 4 det`. -/
@@ -541,27 +520,6 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     (htr : A.trace < 0) (hdet : 0 < A.det) : LocallyExponentiallyStable f x_eq :=
   hurwitz_linearization_locally_exponentially_stable A hf heq hJac
     ((isHurwitz_fin_two_iff A).2 ⟨htr, hdet⟩)
-
-/-- Linearization at an equilibrium of a `C¹` field on `ℝ²`: a Jacobian with
-`det < 0` (saddle) gives instability (LeanForControl's
-`unstable_of_exists_complex_eigenvalue_re_pos`). -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_det_neg_fin_two
-    {f : ℝ² → ℝ²} {x_eq : ℝ²}
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A)
-    (hdet : A.det < 0) : Unstable f x_eq :=
-  unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenvalue_re_pos_of_det_neg A hdet)
-
-/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ`, any dimension: a Jacobian with
-`tr > 0` gives instability (`exists_eigenpair_re_pos_of_trace_pos`). -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_trace_pos {n : ℕ}
-    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x_eq : EuclideanSpace ℝ (Fin n)}
-    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    (htr : 0 < A.trace) : Unstable f x_eq :=
-  unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenpair_re_pos_of_trace_pos A htr)
 
 /-- Two-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
 Flow semantics (in particular global exponential stability) holds at `e` iff

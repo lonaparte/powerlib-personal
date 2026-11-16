@@ -275,21 +275,6 @@ variable {A B α β b : ℝ}
   exact (lyapPoly_sub_isBigO b _ _ _ _ _ _ _).trans_isLittleO
     ((Dynamics.isLittleO_pow_of_tendsto (size_tendsto b) (by norm_num : 2 < 3)).trans_isBigO hs2)
 
-/-- A field in normal form vanishes at the origin. -/
-@[tmio T, powerlib_foundation] private theorem hopf_field_zero {g : Dynamics.State 2 → Dynamics.State 2}
-    (hg0 : ∀ z, g z 0 = α * (z 1 - b * z 0) + β * hopfN A B (z 0))
-    (hg1 : ∀ z, g z 1 - b * g z 0 = -A * z 0 + hopfN A B (z 0)) : g 0 = 0 := by
-  have h0 := hg0 0
-  have h1 := hg1 0
-  simp only [PiLp.zero_apply, mul_zero, hopfN, Real.sin_zero, Real.cos_zero,
-    sub_self, add_zero] at h0 h1
-  ext i
-  fin_cases i
-  · simpa using h0
-  · simp only [Fin.mk_one, PiLp.zero_apply]
-    rw [h0, mul_zero, sub_zero] at h1
-    exact h1
-
 /-- **Supercritical boundary.** A `C¹` field in normal form with `κ > 0` is locally
 asymptotically stable at the origin. -/
 @[tmio TM, powerlib_foundation] private theorem hopf_las (hA : A ≠ 0) (hα : α ≠ 0) (hq : 0 < α / A) (hκ : 0 < hopfκ A B β)
@@ -300,7 +285,7 @@ asymptotically stable at the origin. -/
   have hQ : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 2), 0 < z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2 :=
     eventually_nhdsWithin_of_forall fun z hz => quad_pos hq hz
   refine Dynamics.localAsymptoticStable_of_eventually_lyapunov
-    (W := fun z => hopfW A B α β (z 0) (z 1 - b * z 0)) two_pos hgc (hopf_field_zero hg0 hg1)
+    (W := fun z => hopfW A B α β (z 0) (z 1 - b * z 0)) two_pos hgc
     (contDiff_lyapPoly _ _ _ _ _ _ _ b) (by simp [hopfW, lyapPoly]) ?_ ?_
   · exact Dynamics.eventually_pos_of_isLittleO
       (q := fun z => 1 / 2 * (z 0 ^ 2 + α / A * (z 1 - b * z 0) ^ 2))

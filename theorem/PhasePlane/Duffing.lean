@@ -127,7 +127,7 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
 
 /-- The origin is a saddle (`det = −1 < 0`), hence unstable, for every damping. -/
 @[tmio TM, powerlib_foundation] theorem origin_unstable (δ : ℝ) : Unstable (field δ) (mk 0 0) := by
-  refine Criteria.unstable_of_jacobian_det_neg_fin_two _
+  refine Criteria.unstable_of_jacobian_det _
     (Conservative.field_contDiff force_contDiff) ?_
     (hasFDerivAt_field δ (mk 0 0)).fderiv ?_
   · rw [field_eq_zero_iff]; simp

@@ -460,9 +460,10 @@ stability. -/
   change m ∈ family.den (.flow .unstable)
   refine mem_den_flow_iff.mpr ?_
   rcases hs with hdet | htr
-  · exact Criteria.unstable_of_jacobian_det_pos_fin_three (jac m.params m.θ m.Id)
+  · exact Criteria.unstable_of_jacobian_det (jac m.params m.θ m.Id)
       (contDiff_field m.params) (field_point_eq_zero m.params he)
-      (fderiv_field m.params m.θ 0 m.Id) hdet
+      (fderiv_field m.params m.θ 0 m.Id)
+      (by rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero]; exact hdet)
   · exact Criteria.unstable_of_jacobian_trace_pos (jac m.params m.θ m.Id)
       (contDiff_field m.params) (field_point_eq_zero m.params he)
       (fderiv_field m.params m.θ 0 m.Id) htr

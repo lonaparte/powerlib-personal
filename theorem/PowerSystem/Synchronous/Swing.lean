@@ -658,8 +658,9 @@ damping `D` (`M > 0`). -/
     simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
     exact ⟨trivial, hzero.symm⟩
   rw [hpoint]
-  exact Criteria.unstable_of_jacobian_det_neg_fin_two (p.jacobian (x 0)) p.contDiff_field heq
-    (p.fderiv_field x) (by rw [det_jacobian]; exact div_neg_of_neg_of_pos hK hM)
+  exact Criteria.unstable_of_jacobian_det (p.jacobian (x 0)) p.contDiff_field heq
+    (p.fderiv_field x)
+    (by rw [neg_one_sq, one_mul, det_jacobian]; exact div_neg_of_neg_of_pos hK hM)
 
 /-- An equilibrium with negative damping is unstable (positive trace), for every synchronizing
 coefficient (`M > 0`). -/
@@ -1395,10 +1396,10 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant m).A s).det = 0 ∧ 0 < s.re := by
   rcases hs with hK | hD
-  · obtain ⟨μ, v, hv, heig, hre⟩ := Criteria.exists_eigenvalue_re_pos_of_det_neg (plant m).A
-      (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.det_jacobian]
-          exact div_neg_of_neg_of_pos hK hM)
-    exact ⟨μ, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig, hre⟩
+  · refine Criteria.exists_root_re_pos_of_det _ ?_
+    rw [neg_one_sq, one_mul, show (plant m).A = m.p.jacobian m.δ from rfl,
+      SwingParams.det_jacobian]
+    exact div_neg_of_neg_of_pos hK hM
   · exact Criteria.exists_root_re_pos_of_trace_pos _
       (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.trace_jacobian, neg_div]
           exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))

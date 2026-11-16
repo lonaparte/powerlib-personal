@@ -444,7 +444,8 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
   · filter_upwards [hlt, nhdsWithin_le_nhds htr] with μ h1 h2
     exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two (A μ) (hF μ) (heq μ) (hJ μ) h2 h1
   · filter_upwards [hgt] with μ h1
-    exact Criteria.unstable_of_jacobian_det_neg_fin_two (A μ) (hF μ) (heq μ) (hJ μ) h1
+    exact Criteria.unstable_of_jacobian_det (A μ) (hF μ) (heq μ) (hJ μ)
+      (by rw [neg_one_sq, one_mul]; exact h1)
 
 /-! ## 3. `Σ_DOC` is not a stability boundary -/
 

@@ -193,8 +193,8 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
   · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [Matrix.trace_fin_two_of, neg_div]
     linarith
-  · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
-    rw [Matrix.det_fin_two_of]
+  · refine Criteria.exists_root_re_pos_of_det _ ?_
+    rw [neg_one_sq, one_mul, Matrix.det_fin_two_of]
     linarith
 
 /-- Closed-loop reference-to-current transfer function. Static evidence on the model, not a
@@ -294,8 +294,9 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
   · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [Matrix.trace_fin_two_of, neg_div]
     linarith
-  · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
-    rw [Matrix.det_fin_two_of, mul_zero, zero_sub, mul_neg, neg_neg, div_mul_eq_mul_div]
+  · refine Criteria.exists_root_re_pos_of_det _ ?_
+    rw [neg_one_sq, one_mul, Matrix.det_fin_two_of, mul_zero, zero_sub, mul_neg, neg_neg,
+      div_mul_eq_mul_div]
     linarith
 
 /-- GFL reactive-power outer loop with `ξ_Q` frozen, PLL-aligned `v_q = 0` and `|v_g| = v_d`:

@@ -154,11 +154,12 @@ global sublevel set needs to be compact. -/
   exact hbη T t φ (hφ.mono fun u hu => le_trans hT hu.1) hTδ t ⟨ht, le_rfl⟩
 
 /-- **Local asymptotic stability from a local strict Lyapunov function.** A `C¹` function that
-vanishes at an equilibrium of a `C¹` field and is positive with negative derivative along the
-field on a punctured neighbourhood makes the equilibrium locally asymptotically stable. No
-global compactness of sublevel sets is needed. -/
+vanishes at a point and is positive with negative derivative along a `C¹` field on a punctured
+neighbourhood makes the point locally asymptotically stable (no equilibrium hypothesis: the point
+is then Lyapunov stable, hence an equilibrium). No global compactness of sublevel sets is
+needed. -/
 @[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_eventually_lyapunov (hn : 0 < n)
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (_hfx : f x_eq = 0)
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f)
     (hW : ContDiff ℝ 1 W) (hW0 : W x_eq = 0) (hpos : ∀ᶠ x in 𝓝[≠] x_eq, 0 < W x)
     (hLie : ∀ᶠ x in 𝓝[≠] x_eq, fderiv ℝ W x (f x) < 0) :
     LocalAsymptoticStable f x_eq := by

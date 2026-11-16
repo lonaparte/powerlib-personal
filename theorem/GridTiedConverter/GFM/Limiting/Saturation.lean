@@ -260,10 +260,10 @@ unstable (saddle). Implementation evidence for the family's soundness. -/
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
   change Unstable (satField M D Pref Psat φ) (angleState δ)
-  refine Criteria.unstable_of_jacobian_det_neg_fin_two _ (satField_contDiff _ _ _ _ _)
+  refine Criteria.unstable_of_jacobian_det _ (satField_contDiff _ _ _ _ _)
     ((satField_eq_zero_iff hM.ne' _).mpr ⟨by simp [angleState], by simpa [angleState] using heq⟩)
     (satField_fderiv _ _ _ _ _ _) ?_
-  simp only [satJacobian, Matrix.det_fin_two_of]
+  simp only [neg_one_sq, one_mul, satJacobian, Matrix.det_fin_two_of]
   have : 0 < Psat * Real.sin (δ - φ) / M := div_pos hsin hM
   linarith
 

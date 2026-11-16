@@ -354,17 +354,14 @@ right half plane. -/
     (hTR : 0 < TR) (h : coeff0 D K < 0 ∨ coeff2 M D Tg TR < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant M D K F Tg TR).A s).det = 0 ∧ 0 < s.re := by
   have h3 : 0 < coeff3 M Tg TR := by unfold coeff3; positivity
-  have key : ∃ (μ : ℂ) (v : Fin 3 → ℂ), v ≠ 0 ∧
-      (plant M D K F Tg TR).A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-    rcases h with h | h
-    · refine Criteria.exists_eigenvalue_re_pos_of_det_pos_fin_three _ ?_
-      rw [det_A hM.ne' hTg.ne' hTR.ne', neg_div]
-      exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
-    · refine Criteria.exists_eigenpair_re_pos_of_trace_pos _ ?_
-      rw [trace_A hM.ne' hTg.ne' hTR.ne', neg_div]
-      exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
-  obtain ⟨μ, v, hv, heig, hre⟩ := key
-  exact ⟨μ, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig, hre⟩
+  rcases h with h | h
+  · refine Criteria.exists_root_re_pos_of_det _ ?_
+    rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero,
+      det_A hM.ne' hTg.ne' hTR.ne', neg_div]
+    exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
+  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
+    rw [trace_A hM.ne' hTg.ne' hTR.ne', neg_div]
+    exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
 
 /-! ## Steady state (§1.7) -/
 

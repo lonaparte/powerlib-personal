@@ -338,9 +338,10 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 @[tmio TM, powerlib_foundation] theorem saddle_unstable (p : Params) {y₁ : ℝ}
     (heq : p.a * y₁ ^ 2 + p.β₂ * y₁ + p.β₁ = 0) (hs : 0 < p.β₂ + 2 * p.a * y₁) :
     Unstable (field p) (mk y₁ 0) :=
-  Criteria.unstable_of_jacobian_det_neg_fin_two (jacobian p y₁ 0) (field_contDiff p)
+  Criteria.unstable_of_jacobian_det (jacobian p y₁ 0) (field_contDiff p)
     ((field_eq_zero_iff p _).mpr ⟨rfl, by simpa using heq⟩)
-    (by simpa using fderiv_field p (mk y₁ 0)) (by rw [det_jacobian]; linarith)
+    (by simpa using fderiv_field p (mk y₁ 0))
+    (by rw [neg_one_sq, one_mul, det_jacobian]; linarith)
 
 /-- An equilibrium `(y₁, 0)` with `β₂ + 2 a y₁ < 0` and `b y₁ < 0` is locally exponentially
 stable. -/

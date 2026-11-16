@@ -208,9 +208,9 @@ trace of the Jacobian gives instability. -/
   rw [(connection_proof% mem_den_flow_iff)]
   change Unstable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki))
   rcases hg with hdet | htr
-  · refine Criteria.unstable_of_jacobian_det_neg_fin_two (piPLLJacobian Kp Ki g)
+  · refine Criteria.unstable_of_jacobian_det (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
-    rw [piPLLJacobian_det]
+    rw [neg_one_sq, one_mul, piPLLJacobian_det]
     linarith
   · refine Criteria.unstable_of_jacobian_trace_pos (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_

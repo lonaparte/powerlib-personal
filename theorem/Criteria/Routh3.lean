@@ -37,21 +37,17 @@ Results.
   `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`
   (`isHurwitz_fin_three_iff`; for `SpectrallyStable` through
   `Linear.spectrallyStable_iff_isHurwitz`; companion form `isHurwitz_companion_three_iff`).
-* Instability witnesses, the case `n = 3` of the any-dimension witnesses
-  `Criteria.exists_pos_real_eigenvector_of_det` and `Criteria.exists_eigenpair_re_pos_of_trace_pos`:
-  `0 < det A` gives a positive real eigenvalue (real eigenvector: the generic
-  `exists_pos_real_eigenvector_of_det`; complex eigenvector:
-  `exists_eigenvalue_re_pos_of_det_pos_fin_three`); `0 < tr A` gives an eigenvalue with positive
-  real part (the generic `exists_eigenpair_re_pos_of_trace_pos`), in the shape of
-  `unstable_of_exists_complex_eigenvalue_re_pos`.
+* Instability witnesses: `0 < det A` and `0 < tr A` are the cases `n = 3` of the any-dimension
+  witnesses (`(-1) ^ 3 * A.det < 0`: `Criteria.exists_pos_real_eigenvector_of_det`,
+  `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`;
+  `Criteria.exists_eigenpair_re_pos_of_trace_pos`, `Criteria.exists_root_re_pos_of_trace_pos`).
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
-  field on `EuclideanSpace ℝ (Fin 3)` (`locallyExponentiallyStable_of_jacobian_fin_three`,
-  `unstable_of_jacobian_det_pos_fin_three`; `0 < tr` is the any-dimension
+  field on `EuclideanSpace ℝ (Fin 3)` (`locallyExponentiallyStable_of_jacobian_fin_three`;
+  instability from `0 < det` or `0 < tr` is the any-dimension `Criteria.unstable_of_jacobian_det`,
   `Criteria.unstable_of_jacobian_trace_pos`), and the
   attractive sentences of a three-state linear field `x' = A (x - e)`, for every attractive
   sentence (`holds_affine_fin_three_iff`). They only repackage
-  `hurwitz_linearization_locally_exponentially_stable`,
-  `unstable_of_exists_complex_eigenvalue_re_pos` (LeanForControl's indirect method) and the
+  `hurwitz_linearization_locally_exponentially_stable` (LeanForControl's indirect method) and the
   linear hub `Linear.holds_iff_isHurwitz`; the model boundary is whatever field or matrix the
   caller supplies.
 -/
@@ -324,14 +320,6 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     Matrix.one_apply_ne (show (2 : Fin 3) ≠ 1 by decide), smul_eq_mul]
   ring
 
-/-- `0 < det A`: eigenpair shaped for `unstable_of_exists_complex_eigenvalue_re_pos`. -/
-@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_pos_fin_three
-    (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
-    ∃ (μ : ℂ) (v : Fin 3 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det A (by norm_num; exact h)
-  exact ⟨r, v, hv, heig, by rw [Complex.ofReal_re]; exact hr⟩
-
 end FinThree
 
 /-! ## Semantic corollaries (linearization and linear fields)
@@ -355,16 +343,6 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
     LocallyExponentiallyStable f x_eq :=
   hurwitz_linearization_locally_exponentially_stable A hf heq hJac
     ((isHurwitz_fin_three_iff A).2 ⟨htr, hdet, hg⟩)
-
-/-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < det`
-(a positive real eigenvalue) gives instability. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_det_pos_fin_three
-    {f : ℝ³ → ℝ³} {x_eq : ℝ³}
-    (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
-    (hdet : 0 < A.det) : Unstable f x_eq :=
-  unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenvalue_re_pos_of_det_pos_fin_three A hdet)
 
 /-- Three-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
 Flow semantics (in particular global exponential stability) holds at `e` iff the strict 3×3

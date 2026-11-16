@@ -499,7 +499,7 @@ language for decay rates, conservation and passivity. -/
   rw [Model.plant_A]
   rcases h with h | h
   · exact Criteria.exists_root_re_pos_of_trace_pos _ (by rw [trace_linA]; linarith)
-  · exact Criteria.exists_characteristic_root_re_pos_of_det_neg _ (by rw [det_linA]; exact h)
+  · exact Criteria.exists_root_re_pos_of_det _ (by rw [neg_one_sq, one_mul, det_linA]; exact h)
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its
 semantics connection. The translation is the linear table (`Spectral.linearTable`): both positive

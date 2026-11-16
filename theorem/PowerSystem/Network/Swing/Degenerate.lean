@@ -1446,8 +1446,7 @@ field is locally asymptotically stable, whatever its linearization. -/
   have hP := sum_P_of_balance hbal
   rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
   refine Dynamics.Mechanical.localAsymptoticStable_of_strictMin (by omega)
-    (potential_comp_ground_contDiff p) p.M_pos p.D_pos ((critical_iff_balance_zero hP θ).mpr hbal)
-    hr (fun v hv0 hv => ?_)
+    (potential_comp_ground_contDiff p) p.M_pos p.D_pos hr (fun v hv0 hv => ?_)
     (fun v hv0 hv hc => hcrit v hv0 hv ((critical_iff_balance hP θ v).mp hc))
   rw [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
   exact hmin v hv0 hv

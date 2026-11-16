@@ -103,7 +103,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 /-- The upper equilibrium `(π, 0)` is a saddle, hence unstable. -/
 @[tmio TM, powerlib_foundation] theorem top_unstable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
     Unstable (field ω₀) (mk Real.pi 0) := by
-  refine Criteria.unstable_of_jacobian_det_neg_fin_two _
+  refine Criteria.unstable_of_jacobian_det _
     (Conservative.field_contDiff (torque_contDiff ω₀)) ?_
     (hasFDerivAt_field ω₀ (mk Real.pi 0)).fderiv ?_
   · rw [field, Conservative.field_eq_zero_iff one_ne_zero]; simp [torque]

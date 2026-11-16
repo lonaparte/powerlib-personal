@@ -38,7 +38,7 @@ Results.
   Hurwitz state matrix, a trajectory that trips converges to the post-shedding equilibrium, one
   that never trips to the pre-shedding equilibrium.
 * `swingGovernor_latched_trip` (private): two-state swing + governor plant from rest,
-  underdamped, `ΔP_L > 0`: if the unprotected nadir is at or below `−θ`, the relay trips and
+  underdamped: if the unprotected nadir is at or below `−θ`, the relay trips and
   `Δω(t) → −(ΔP_L − p P⁰)/(K_R + D)` (§1.4 post-shedding steady state).
 * `sfr_latched_tendsto` (private): the third-order SFR plant with the stability condition of
   `SFR.mem_den_globallyExponentiallyStable`: a trajectory that trips converges to
@@ -362,10 +362,10 @@ end Convergence
 /-! ## Instances (implementation evidence, private) -/
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Swing + governor plant from rest, underdamped, load increase: if the unprotected nadir is at or
-below `−θ`, the latched relay trips and `Δω → −(ΔP_L − p P⁰)/(K_R + D)`. -/
+Swing + governor plant from rest, underdamped: if the unprotected nadir is at or below `−θ`, the
+latched relay trips and `Δω → −(ΔP_L − p P⁰)/(K_R + D)`. -/
 @[tmio TM, powerlib_domain] private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
-    (hD : 0 ≤ D) (hKD : 0 < K + D) (_hP : 0 < ΔPL)
+    (hD : 0 ≤ D) (hKD : 0 < K + D)
     (hζ : SwingGovernor.dampingRatio M D K Tg < 1)
     (hnadir : SwingGovernor.nadirValue M D K Tg ΔPL ≤ -θ) {x : ℝ → EuclideanSpace ℝ (Fin 2)}
     (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →

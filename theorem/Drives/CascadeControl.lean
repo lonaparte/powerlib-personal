@@ -166,8 +166,8 @@ that is not a closed-loop eigenvalue. -/
   · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [Matrix.trace_fin_two_of]
     linarith
-  · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
-    rw [Matrix.det_fin_two_of]
+  · refine Criteria.exists_root_re_pos_of_det _ ?_
+    rw [neg_one_sq, one_mul, Matrix.det_fin_two_of]
     linarith
 
 /-- Closed-loop equilibrium `(i*, i*/α)`. -/

@@ -236,8 +236,8 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
   simp only [Matrix.mulVec_mulVec, hST, Matrix.one_mulVec, mul_div_cancel_left₀ _ hw] at h'
   exact h'
 
-@[tmio T, powerlib_foundation] theorem spectrallyStable_rebaseMatrix_iff (_hTS : T * S = 1)
-    (hST : S * T = 1) (hw : 0 < w) (A : Matrix ι ι ℝ) :
+@[tmio T, powerlib_foundation] theorem spectrallyStable_rebaseMatrix_iff (hST : S * T = 1)
+    (hw : 0 < w) (A : Matrix ι ι ℝ) :
     SpectrallyStable (rebaseMatrix T S w A) ↔ SpectrallyStable A := by
   rw [rebaseMatrix, spectrallyStable_smul_iff (inv_pos.mpr hw)]
   exact spectrallyStable_conj hST A
@@ -250,12 +250,12 @@ variable {n p : ℕ} {T S : Matrix (Fin n) (Fin n) ℝ} {w : ℝ}
 
 /-- The attractive sentences of the linear field are invariant under every change of state bases
 and every positive time base. -/
-@[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
-    (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) {P : Flow.Property} (hP : P.Attractive) :
+@[tmio T, powerlib_foundation] theorem holds_rebaseMatrix_iff (hST : S * T = 1) (hw : 0 < w)
+    (A : Matrix (Fin n) (Fin n) ℝ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField (rebaseMatrix T S w A) 0) 0 ↔
       P.holds (affineLinearVectorField A 0) 0 := by
   rw [holds_iff_isHurwitz 0 hP, holds_iff_isHurwitz 0 hP, ← spectrallyStable_iff_isHurwitz,
-    ← spectrallyStable_iff_isHurwitz, spectrallyStable_rebaseMatrix_iff hTS hST hw]
+    ← spectrallyStable_iff_isHurwitz, spectrallyStable_rebaseMatrix_iff hST hw]
 
 /-- For every positive time base, every flow sentence of the linear field is the rebased one with
 its decay rate scaled by `w`: `P` holds for the rebased field exactly when `P.timeScale w` holds
@@ -579,9 +579,7 @@ base: the step of `den_rebase` at the globally exponentially stable sentence. -/
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   change IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A
   rw [closedLoop_rebase hv hi, ← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
-  exact spectrallyStable_rebaseMatrix_iff
-    (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
-    (blockCoordinates_inv h₁ h₂) hw _
+  exact spectrallyStable_rebaseMatrix_iff (blockCoordinates_inv h₁ h₂) hw _
 
 /-! ## Instances: coordinates and the current direction -/
 

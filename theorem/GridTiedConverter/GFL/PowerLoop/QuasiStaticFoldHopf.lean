@@ -685,12 +685,9 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change LocalAsymptoticStable supercriticalQS.field 0
-  have hfz : supercriticalQS.field 0 = 0 := by
-    have := field_point_eq_zero supercriticalQS.params (show IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using supercriticalQS_isEq)
-    simpa [Model.field] using this
   exact Dynamics.localAsymptoticStable_of_eventually_lyapunov
     (W := fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) (by norm_num)
-    (contDiff_model_field _) hfz (contDiff_poly3 _ _ _ _) (by simp [hopfQS_W]) hopfQS_W_pos
+    (contDiff_model_field _) (contDiff_poly3 _ _ _ _) (by simp [hopfQS_W]) hopfQS_W_pos
     hopfQS_lie_neg
 
 /-- The witness Jacobian is on the Hopf boundary: `a₂ = 7/2`, `a₁ = 9`, `a₀ = 63/2 = a₂a₁`, so

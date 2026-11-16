@@ -404,8 +404,8 @@ right half plane. -/
     (h : K + D < 0 ∨ M + D * Tg < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant M D K Tg).A s).det = 0 ∧ 0 < s.re := by
   rcases h with h | h
-  · refine Criteria.exists_characteristic_root_re_pos_of_det_neg _ ?_
-    rw [det_plant hM.ne' hTg.ne']
+  · refine Criteria.exists_root_re_pos_of_det _ ?_
+    rw [neg_one_sq, one_mul, det_plant hM.ne' hTg.ne']
     exact div_neg_of_neg_of_pos h (mul_pos hM hTg)
   · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
     rw [trace_plant]

@@ -1,6 +1,7 @@
 import theorem.Criteria.Routh3
 import theorem.Dynamics.ConverseLinearization
 import theorem.PowerSystem.Synchronous.Swing
+import theorem.GridTiedConverter.GFM.DroopVSM
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
@@ -90,7 +91,8 @@ Family and connection conclusions.
   instability translation is not exact, `DroopLPF.not_exact_unstable` with the unbalanced
   `DroopLPF.offEquilibrium`); within positive `D, ω_c` the local asymptotic translation is exact too
   (`DroopLPF.exactUnder_locallyAsymptoticallyStable`: the loop is the swing equation
-  `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ` with the dissipated energy `DroopLPF.energy`; a vanishing
+  `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ` with the dissipated energy `DroopLPF.energy`, the
+  conservative energy in the swing coordinates, `DroopLPF.energy_eq_conservative`; a vanishing
   power curve has a continuum of equilibria and a fold leaves the energy below its value on one
   side, `DroopLPF.energy_fold`), and the Lyapunov denotation is
   `DroopLPF.mem_den_lyapunovStable_iff_of_physical` (balanced with `K₀ cos δ* > 0` or `K₀ = 0`; a
@@ -100,8 +102,10 @@ Family and connection conclusions.
   `DroopLPF.not_exact_lyapunovStable`, the negative-damping model);
   `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) and `DroopLPF.unstable_atAntiLoading` are
   connection conclusions.
-  The loop is the swing machine `⟨D/ω_c, D, P₀, 0, K₀, 0⟩` in the coordinates `P_f = P₀ − D ω`
-  (`DroopLPF.field_eq_transport`), so for `D, ω_c ≠ 0` every sentence is read through the swing
+  The loop is the swing machine `⟨D/ω_c, D, P₀, 0, K₀, 0⟩` in the coordinates `ω = (P₀ − P_f)/D`
+  (`DroopLPF.swingField_eq_transport`: the loop is the droop + LPF closed loop of
+  `theorem/GridTiedConverter/GFM/DroopVSM.lean` on an infinite bus, `DroopLPF.field_eq_droopField`,
+  and the swing field its VSM image), so for `D, ω_c ≠ 0` every sentence is read through the swing
   family (`DroopLPF.mem_den_iff_swing`), and the laws above are the swing family's, carried over
   within `D, ω_c > 0` by the hub transfer of `theorem/Family/Reading.lean`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
@@ -629,9 +633,8 @@ Routh–Hurwitz conditions of the Jacobian at the selected point). -/
       (fderiv_point m) (s := s) ?_ hre
     rw [Criteria.det_characteristicMatrix_fin_three']
     exact hs
-  · refine Criteria.unstable_of_jacobian_det_pos_fin_three _ m.g.contDiff_field heq
-      (fderiv_point m) ?_
-    rw [det_jacobian]
+  · refine Criteria.unstable_of_jacobian_det _ m.g.contDiff_field heq (fderiv_point m) ?_
+    rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero, det_jacobian]
     exact div_pos (neg_pos.mpr (mul_neg_of_pos_of_neg hwc hK)) hM
 
 /-! ### Soundness of the translation -/
@@ -1139,38 +1142,61 @@ def swingParams : Synchronous.SwingParams := ⟨q.D / q.ωc, q.D, q.P0, 0, q.K0,
 /-- A droop + LPF model read as the swing model of its parameters at the same angle. -/
 def Model.toSwing (m : Model) : Synchronous.Swing.Model := ⟨m.q.swingParams, m.δ⟩
 
-/-- **Large-signal equivalence.** In the coordinates `P_f = P₀ − D ω` the swing field of
-`swingParams` is the droop + LPF field (`D, ω_c ≠ 0`): the loop is the swing equation
-`(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem field_eq_transport (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) :
-    q.field = Dynamics.transportField (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
-      (PhasePlane.mk 0 q.P0) q.swingParams.field := by
-  funext y
+/-- The loop as a `DroopVSM` closed loop on an infinite bus in the synchronous frame: droop gain
+`K_R = D`, filter time constant `τ_p = 1/ω_c`, `P_ref = P₀`, `ω_s = 0`, power map `K₀ sin`. -/
+def droopVSM : DroopVSM := ⟨q.D, q.ωc⁻¹, q.P0, 0, fun δ => q.K0 * Real.sin δ⟩
+
+/-- The droop + LPF field is the droop field `DroopVSM.droopField` of `droopVSM`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_eq_droopField : q.field = q.droopVSM.droopField := by
+  funext x
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp [Dynamics.transportField, field, swingParams, Synchronous.SwingParams.field]
-    field_simp
+  · simp only [field, droopVSM, DroopVSM.droopField, PhasePlane.mk_apply_zero]
     ring
-  · simp [Dynamics.transportField, field, swingParams, Synchronous.SwingParams.field,
-      Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe]
-    field_simp
+  · simp only [field, droopVSM, DroopVSM.droopField, PhasePlane.mk_apply_one, div_inv_eq_mul]
     ring
 
-/-- The operating point is the image of the swing model's. -/
-@[tmio M, powerlib_domain] private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
-    m.point = Dynamics.affineCoord (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
-      (PhasePlane.mk 0 m.q.P0) m.toSwing.point := by
+/-- **Large-signal equivalence** (`D, ω_c ≠ 0`). In the coordinates `(δ, ω) = (δ, (P₀ − P_f)/D)`
+(`DroopVSM.affineCoord_apply`) the droop + LPF field is the swing field of `swingParams`, i.e. the
+conservative field `PhasePlane.Conservative.field (D/ω_c) D (K₀ sin − P₀)`
+(`Synchronous.SwingParams.field_eq_conservative`): the loop is the swing equation
+`(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ`. This is the infinite-bus case of the droop–VSM equivalence
+(`field_eq_droopField`, `DroopVSM.vsmField_eq_transport`, `DroopVSM.vsmField_infiniteBus`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem swingField_eq_transport (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) :
+    q.swingParams.field =
+      Dynamics.transportField (q.droopVSM.coord hD) q.droopVSM.offset q.field := by
+  rw [q.field_eq_droopField, ← q.droopVSM.vsmField_eq_transport hD (inv_ne_zero hω),
+    q.droopVSM.vsmField_infiniteBus q.K0 rfl rfl]
+  show (⟨q.D / q.ωc, q.D, q.P0, 0, q.K0, 0⟩ : Synchronous.SwingParams).field =
+    (⟨q.ωc⁻¹ * q.D, q.D, q.P0, 0, q.K0, 0⟩ : Synchronous.SwingParams).field
+  rw [div_eq_inv_mul]
+
+/-- The coordinate change maps the operating point to the swing model's. -/
+@[tmio M, powerlib_domain] private theorem affineCoord_point (m : Model) (hD : m.q.D ≠ 0) :
+    Dynamics.affineCoord (m.q.droopVSM.coord hD) m.q.droopVSM.offset m.point =
+      m.toSwing.point := by
+  rw [DroopVSM.affineCoord_apply m.q.droopVSM hD]
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
-    simp [Dynamics.affineCoord, Model.point, Model.toSwing, Synchronous.Swing.Model.point]
+    simp [Model.point, Model.toSwing, Synchronous.Swing.Model.point, droopVSM]
 
 /-- With nonzero droop gain and bandwidth a droop + LPF model satisfies exactly the sentences of
-its swing reading (`field_eq_transport`, `Spectral.mem_den_flow_iff_of_transport`). A comparison
-of the two semantics connections at the two members. -/
+its swing reading (`swingField_eq_transport`, inverted by
+`Dynamics.transportField_symm_transportField`, and `Spectral.mem_den_flow_iff_of_transport`). A
+comparison of the two semantics connections at the two members. -/
 @[tmio TM, powerlib_domain] theorem mem_den_iff_swing (m : Model) (hD : m.q.D ≠ 0) (hω : m.q.ωc ≠ 0)
     (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_iff_of_flow (g := Model.toSwing) family_isAutonomous
     Synchronous.Swing.family_isAutonomous (fun P => ?_) s
+  have hf : m.q.field = Dynamics.transportField (m.q.droopVSM.coord hD).symm
+      (-((m.q.droopVSM.coord hD).symm m.q.droopVSM.offset)) m.toSwing.p.field := by
+    rw [show m.toSwing.p = m.q.swingParams from rfl, m.q.swingField_eq_transport hD hω,
+      Dynamics.transportField_symm_transportField]
+  have hpt : m.point = Dynamics.affineCoord (m.q.droopVSM.coord hD).symm
+      (-((m.q.droopVSM.coord hD).symm m.q.droopVSM.offset)) m.toSwing.point := by
+    rw [← affineCoord_point m hD, Dynamics.affineCoord_symm_affineCoord]
   exact Spectral.mem_den_flow_iff_of_transport (f := fun m : Model => m.q.field)
     (pt := Model.point) (φ := fun y : Synchronous.Swing.Model => y.p.field)
     (ψ := Synchronous.Swing.Model.point) (g := Model.toSwing)
@@ -1178,8 +1204,7 @@ of the two semantics connections at the two members. -/
       (pt := Model.point) family_isAutonomous)
     (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun y : Synchronous.Swing.Model => y.p.field)
       (pt := Synchronous.Swing.Model.point) Synchronous.Swing.family_isAutonomous)
-    _ _ (m.q.field_eq_transport hD hω)
-    (point_eq_affineCoord m hD) P
+    _ _ hf hpt P
 
 @[tmio TM, powerlib_domain] private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
@@ -1446,45 +1471,33 @@ exact: the negative-damping model is locally exponentially stable. -/
 /-! ### The local asymptotic and Lyapunov translations -/
 
 /-- The droop + LPF energy relative to `δ₀`: `(P₀ − P_f)² / (2 D ω_c) + U(δ)` with
-`U(δ) = ∫_{δ₀}^{δ} (K₀ sin − P₀) = K₀ (cos δ₀ − cos δ) − P₀ (δ − δ₀)`: the loop is the swing
-equation `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ`. -/
+`U(δ) = ∫_{δ₀}^{δ} (K₀ sin − P₀) = K₀ (cos δ₀ − cos δ) − P₀ (δ − δ₀)`: the energy of the swing
+equation `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ` (`energy_eq_conservative`). -/
 def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
   (q.P0 - x 1) ^ 2 / (2 * q.D * q.ωc) +
     (q.K0 * (Real.cos δ₀ - Real.cos (x 0)) - q.P0 * (x 0 - δ₀))
 
-@[tmio M, powerlib_domain] theorem contDiff_energy (δ₀ : ℝ) : ContDiff ℝ 1 (q.energy δ₀) := by
-  unfold energy
-  fun_prop
-
-@[tmio M, powerlib_domain] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
-    HasFDerivAt (q.energy δ₀)
-      ((-(q.P0 - x 1) / (q.D * q.ωc)) •
-          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
-        (q.K0 * Real.sin (x 0) - q.P0) •
-          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have hk := ((h1.const_sub q.P0).pow 2).mul_const (2 * q.D * q.ωc)⁻¹
-  have hc := (Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x h0
-  have hU := ((hc.const_sub (Real.cos δ₀)).const_mul q.K0).sub ((h0.sub_const δ₀).const_mul q.P0)
-  have h := hk.add hU
-  convert h using 1
-  · funext y
-    simp only [energy, Pi.add_apply, Pi.sub_apply, PiLp.proj_apply, Function.comp_apply]
+/-- The energy is the conservative energy `PhasePlane.Conservative.energy` with mass `D/ω_c` and
+the swing potential `U = swingParams.potential δ₀` (`U' = K₀ sin − P₀`,
+`Synchronous.SwingParams.hasDerivAt_potential`) in the coordinates `(δ, (P₀ − P_f)/D)` of
+`swingField_eq_transport` (`D ≠ 0`). Solutions of the loop are mapped to solutions of the
+conservative field (`Dynamics.isIntegralCurveOn_transport`,
+`Synchronous.SwingParams.field_eq_conservative`), so along them the energy balance
+`Ė = −D ω² = −(P₀ − P_f)²/D` and its decay for `D ≥ 0` are
+`PhasePlane.Conservative.energy_hasDerivWithinAt` and `PhasePlane.Conservative.energy_antitone`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem energy_eq_conservative (hD : q.D ≠ 0) (δ₀ : ℝ) :
+    q.energy δ₀ = PhasePlane.Conservative.energy (q.D / q.ωc) (q.swingParams.potential δ₀) ∘
+      Dynamics.affineCoord (q.droopVSM.coord hD) q.droopVSM.offset := by
+  funext x
+  rw [Function.comp_apply, DroopVSM.affineCoord_apply q.droopVSM hD]
+  simp only [energy, PhasePlane.Conservative.energy, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one, Synchronous.SwingParams.potential, swingParams, droopVSM, sub_zero]
+  rcases eq_or_ne q.ωc 0 with hω | hω
+  · simp only [hω, mul_zero, div_zero, zero_mul, zero_div, zero_add]
     ring
-  · apply ContinuousLinearMap.ext
-    intro v
-    simp
+  · field_simp
     ring
-
-/-- Lie derivative of the energy along the field: `Ė = −(P₀ − P_f)² / D` (`D, ω_c ≠ 0`). -/
-@[tmio M, powerlib_domain] theorem energy_lie (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) (δ₀ : ℝ) (x : State 2) :
-    fderiv ℝ (q.energy δ₀) x (q.field x) = -((q.P0 - x 1) ^ 2 / q.D) := by
-  rw [(q.hasFDerivAt_energy δ₀ x).fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply, smul_eq_mul, field,
-    PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-  field_simp
-  ring
 
 /-- At a balanced fold angle (`cos δ* = 0`) the energy at `(δ* + s, P₀)` is `−P₀ (s − sin s)`.
 Static evidence on the model, not a connection conclusion. -/

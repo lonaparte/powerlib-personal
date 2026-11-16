@@ -120,7 +120,7 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
 
 /-- Conjugacy identity: `DΦ(x) f(x) = G(Φ(x))`. -/
 @[tmio M, powerlib_domain] theorem piPLLVelocityCoord_pushforward {h h' : ℝ → ℝ} {Kp Ki δω : ℝ}
-    (_hh : ∀ θ, HasDerivAt h (h' θ) θ) (x : ℝ²) :
+    (x : ℝ²) :
     Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; Kp * h' (x 0), Ki]
         (piPLLField h Kp Ki δω x) =
       piPLLLienardField h h' Kp Ki (piPLLVelocityCoord h Kp Ki δω x) := by
@@ -158,7 +158,7 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
   intro t ht
   have hd := (hasFDerivAt_piPLLVelocityCoord (Kp := Kp) (Ki := Ki) (δω := δω)
     (hh ((φ t) 0))).comp_hasDerivWithinAt t (hφ t ht)
-  rw [piPLLVelocityCoord_pushforward hh] at hd
+  rw [piPLLVelocityCoord_pushforward (h' := h')] at hd
   exact hd
 
 /-- Solutions of the Liénard field are mapped back to solutions of the PI-PLL field

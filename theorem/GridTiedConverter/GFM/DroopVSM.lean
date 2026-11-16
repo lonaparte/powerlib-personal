@@ -376,9 +376,9 @@ place a VSM model in local exponential stability. -/
   have hM' : 0 < m.M := hM
   have hsm' : ContDiff ℝ 1 m.P := hsm
   rcases (hs : deriv m.P (m.point 0) < 0 ∨ m.D < 0) with hK | hD
-  · refine Criteria.unstable_of_jacobian_det_neg_fin_two (m.jacobian (m.point 0))
+  · refine Criteria.unstable_of_jacobian_det (m.jacobian (m.point 0))
       (m.contDiff_vector hsm') (vsm_point_eq_zero hM' hb) (m.hasFDerivAt_vector hsm' _).fderiv ?_
-    simp only [VSMModel.jacobian, Matrix.det_fin_two_of, neg_div]
+    simp only [neg_one_sq, one_mul, VSMModel.jacobian, Matrix.det_fin_two_of, neg_div]
     have : deriv m.P (m.point 0) / m.M < 0 := div_neg_of_neg_of_pos hK hM'
     linarith
   · refine Criteria.unstable_of_jacobian_trace_pos (m.jacobian (m.point 0))

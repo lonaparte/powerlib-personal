@@ -14,7 +14,8 @@ Scope.
   `aeval s p`, and of one real square matrix `A : Matrix (Fin n) (Fin n) ℝ` with the
   LeanForControl eigenpair predicate `LinearSystems.IsHurwitz` and the characteristic matrix
   `Linear.characteristicMatrix A s = s • 1 - A`. Nothing here describes a physical system and no
-  model family is defined.
+  model family is defined; the instability corollaries hold for an arbitrary caller-supplied
+  `C¹` field whose Jacobian at an equilibrium is `A`.
 
 Source: the standard necessary condition of Stodola and the factorization of real polynomials
 into real linear and quadratic factors (shared criteria interface for the work-sync
@@ -39,7 +40,12 @@ Results.
   (`exists_root_re_pos_of_trace_pos`, eigenpair form
   `exists_eigenpair_re_pos_of_trace_pos`; `tr A = -coeff (n - 1)`), and `(-1)ⁿ det A < 0` a positive
   real eigenvalue (real eigenvector: `exists_pos_real_eigenvector_of_det`; complex eigenvector:
-  `exists_pos_real_eigenvalue_of_det`; `det A = (-1)ⁿ coeff 0`).
+  `exists_pos_real_eigenvalue_of_det`; characteristic-root form: `exists_root_re_pos_of_det`;
+  `det A = (-1)ⁿ coeff 0`; for `n = 2` the sign condition is `det A < 0`, for `n = 3` `det A > 0`).
+* Instability by linearization (any dimension): at an equilibrium of a `C¹` field with Jacobian
+  `A`, `0 < tr A` (`unstable_of_jacobian_trace_pos`) or `(-1)ⁿ det A < 0`
+  (`unstable_of_jacobian_det`) gives instability (LeanForControl's
+  `unstable_of_exists_complex_eigenvalue_re_pos`).
 * No characteristic root to the right of the spectrum: if every eigenvalue has real part below
   `Re s`, `s` is not a characteristic root (`det_characteristicMatrix_ne_zero_of_re_lt`); for a
   Hurwitz matrix every `s` with `0 ≤ Re s` (`det_characteristicMatrix_ne_zero_of_isHurwitz`), and
@@ -349,6 +355,17 @@ LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`. -/
   rw [det_characteristicMatrix_eq_aeval, ← Complex.coe_algebraMap, aeval_algebraMap_apply,
     coe_aeval_eq_eval, hroot, map_zero]
 
+/-- `(-1)ⁿ det A < 0`: a characteristic root with positive real part (a positive real one;
+`det A = (-1)ⁿ coeff 0`). -/
+@[tmio T, powerlib_foundation] theorem exists_root_re_pos_of_det (A : Matrix (Fin n) (Fin n) ℝ)
+    (h : (-1) ^ n * A.det < 0) :
+    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
+  obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg A.charpoly_monic
+    (charpoly_coeff_zero_neg h)
+  refine ⟨r, ?_, by rwa [Complex.ofReal_re]⟩
+  rw [det_characteristicMatrix_eq_aeval, ← Complex.coe_algebraMap, aeval_algebraMap_apply,
+    coe_aeval_eq_eval, hroot, map_zero]
+
 /-- No characteristic root to the right of the spectrum: if every eigenvalue of `A` has real part
 below `Re s`, then `s` is not a root of `det (s • 1 - A)`. -/
 @[tmio T, powerlib_foundation] theorem det_characteristicMatrix_ne_zero_of_re_lt
@@ -377,5 +394,39 @@ below `Re s`, then `s` is not a root of `det (s • 1 - A)`. -/
     coe_aeval_eq_eval, eval_charpoly, scalar_apply, ← smul_one_eq_diagonal, h0, map_zero]
 
 end Matrix
+
+/-! ## Semantic corollaries: instability from the Jacobian
+
+Generic implications about an arbitrary caller-supplied `C¹` field on `ℝⁿ`, any dimension:
+foundation results (Rules §3) repackaging LeanForControl's
+`unstable_of_exists_complex_eigenvalue_re_pos` with the witnesses above. -/
+
+section Semantic
+
+variable {n : ℕ}
+
+/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ`: a Jacobian with `tr > 0` gives
+instability (`exists_eigenpair_re_pos_of_trace_pos`). -/
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_trace_pos
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x_eq : EuclideanSpace ℝ (Fin n)}
+    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
+    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
+    (htr : 0 < A.trace) : Unstable f x_eq :=
+  unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
+    (exists_eigenpair_re_pos_of_trace_pos A htr)
+
+/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ`: a Jacobian with `(-1)ⁿ det < 0`
+gives instability through a positive real eigenvalue (`exists_pos_real_eigenvalue_of_det`): for
+`n = 2` a saddle, `det < 0`; for `n = 3`, `det > 0`. -/
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_det
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x_eq : EuclideanSpace ℝ (Fin n)}
+    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
+    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
+    (hdet : (-1) ^ n * A.det < 0) : Unstable f x_eq := by
+  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det A hdet
+  exact unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
+    ⟨r, v, hv, heig, by rwa [Complex.ofReal_re]⟩
+
+end Semantic
 
 end powerlib.Criteria

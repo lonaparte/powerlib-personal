@@ -42,9 +42,9 @@ Results.
 * `not_localAsymptoticStable_of_critical` (critical points accumulating at `q`) and
   `not_localAsymptoticStable_of_critical_line` (a line of critical points through `q`): a
   continuum of equilibria rules it out (`Dynamics.not_localAsymptoticStable_of_equilibria`).
-* `localAsymptoticStable_of_strictMin`: a critical point `q` that is a strict local minimum of `U`
-  and an isolated critical point is locally asymptotically stable (`Mⱼ > 0`, `Dⱼ > 0`; LaSalle on
-  a ball, `LaSalle.localAsymptoticStable_of_lasalle_ball`, with the energy relative to `q`).
+* `localAsymptoticStable_of_strictMin`: a strict local minimum `q` of `U` (hence a critical point)
+  that is an isolated critical point is locally asymptotically stable (`Mⱼ > 0`, `Dⱼ > 0`; LaSalle
+  on a ball, `LaSalle.localAsymptoticStable_of_lasalle_ball`, with the energy relative to `q`).
 * `strictMin_of_localAsymptoticStable`: conversely (`Mⱼ ≠ 0`, `Dⱼ ≥ 0`, `U` of class `C²`), a
   locally asymptotically stable rest point is a strict local minimum of `U` and an isolated
   critical point.
@@ -335,12 +335,12 @@ the field near `point q`. -/
 
 /-! ## Strict isolated minima -/
 
-/-- **LaSalle at a strict isolated minimum.** A critical point `q` of the potential that is a
-strict local minimum and an isolated critical point gives a locally asymptotically stable rest
+/-- **LaSalle at a strict isolated minimum.** A strict local minimum `q` of the potential (hence a
+critical point) that is an isolated critical point gives a locally asymptotically stable rest
 point, whatever the linearization (positive masses and dampings). -/
 @[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_strictMin (hmk : 0 < m + k)
     (hU : ContDiff ℝ 2 U) (hM : ∀ j, 0 < M j) (hD : ∀ j, 0 < D j) {q : Fin m → ℝ}
-    (hq : (fderiv ℝ U q).comp G = 0) {r : ℝ} (hr : 0 < r)
+    {r : ℝ} (hr : 0 < r)
     (hmin : ∀ v : Fin m → ℝ, v ≠ 0 → ‖v‖ < r → U q < U (q + v))
     (hcrit : ∀ v : Fin m → ℝ, v ≠ 0 → ‖v‖ < r → (fderiv ℝ U (q + v)).comp G ≠ 0) :
     LocalAsymptoticStable (field G M D U) (point q) := by
@@ -348,7 +348,7 @@ point, whatever the linearization (positive masses and dampings). -/
   have hUd : Differentiable ℝ U := hU1.differentiable one_ne_zero
   have hM0 : ∀ j, M j ≠ 0 := fun j => (hM j).ne'
   refine LaSalle.localAsymptoticStable_of_lasalle_ball hmk (field_contDiff hU)
-    (field_point_eq_zero hq) (W := fun z => energy M U z - energy M U (point q))
+    (W := fun z => energy M U z - energy M U (point q))
     ((energy_contDiff hU1).sub contDiff_const) (sub_self _) hr ?_ ?_ ?_
   · intro x hx hne
     show 0 < energy M U x - energy M U (point q)

@@ -543,9 +543,9 @@ def family : Family Model Requirement 2 0 :=
   · exact Criteria.unstable_of_jacobian_trace_pos (jac m.params m.θ)
       (contDiff_field m.params) (field_equilibrium m.params he.1)
       (fderiv_field m.params he.2 m.θ 0) htr
-  · exact Criteria.unstable_of_jacobian_det_neg_fin_two (jac m.params m.θ)
+  · exact Criteria.unstable_of_jacobian_det (jac m.params m.θ)
       (contDiff_field m.params) (field_equilibrium m.params he.1)
-      (fderiv_field m.params he.2 m.θ 0) hdet
+      (fderiv_field m.params he.2 m.θ 0) (by rw [neg_one_sq, one_mul]; exact hdet)
 
 /-! ### Soundness of the translation -/
 

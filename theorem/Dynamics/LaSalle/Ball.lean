@@ -21,9 +21,10 @@ Source: LaSalle's invariance principle (Khalil, *Nonlinear Systems*, 3rd ed., Th
 Corollary 4.1) and Lyapunov's stability theorem (Theorem 4.1).
 
 Results.
-* `localAsymptoticStable_of_lasalle_ball`: `f(x*) = 0`, a `C¹` function `W` with `W(x*) = 0`,
-  `W > 0` on a punctured ball, `Ẇ ≤ 0` on the ball, and every solution segment of positive length
-  that stays in the ball inside `{Ẇ = 0}` starts at `x*` ⇒ local asymptotic stability. Lyapunov
+* `localAsymptoticStable_of_lasalle_ball`: a `C¹` function `W` with `W(x*) = 0`, `W > 0` on a
+  punctured ball, `Ẇ ≤ 0` on the ball, and every solution segment of positive length that stays
+  in the ball inside `{Ẇ = 0}` starts at `x*` ⇒ local asymptotic stability (no equilibrium
+  hypothesis: these make `x*` Lyapunov stable, hence an equilibrium of the `C¹` field). Lyapunov
   stability comes from LeanForControl's `lyapunov_stable` on the ball; attraction from LaSalle's
   principle for `C¹` fields (`regionOfAttraction_of_lasalle_sublevel`,
   `lasalle_condition_of_trajectories_mem`, `theorem/Dynamics/LaSalle/Basin.lean`) on a sublevel set
@@ -40,7 +41,7 @@ local notation "ℝⁿ" => State n
 
 /-- **Local asymptotic stability by LaSalle on a ball.** -/
 @[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_lasalle_ball (hn : 0 < n)
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} {r : ℝ} (hf : ContDiff ℝ 1 f) (_hfx : f x_eq = 0)
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} {r : ℝ} (hf : ContDiff ℝ 1 f)
     (hW : ContDiff ℝ 1 W) (hW0 : W x_eq = 0) (hr : 0 < r)
     (hpos : ∀ x, ‖x - x_eq‖ < r → x ≠ x_eq → 0 < W x)
     (hLie : ∀ x, ‖x - x_eq‖ < r → fderiv ℝ W x (f x) ≤ 0)
