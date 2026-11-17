@@ -691,22 +691,17 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
   have hp : Meets m .physical := (TMIO.mem_realize _ _ _).mp hI .physical rfl
   obtain ⟨hM, hD, hω⟩ := hp
   rw [m.g.field_eq_zero_iff hM.ne' hω.ne'] at heq
-  rw [Criteria.isHurwitz_fin_three_iff, trace_jacobian, det_jacobian,
-    principalMinorSum_jacobian] at hH
-  obtain ⟨-, hdet, hg⟩ := hH
-  have hwM : 0 < m.g.ωc / m.g.M := div_pos hω hM
-  have hK : 0 < m.K := by
-    have e : -(m.g.ωc * (m.g.K0 * Real.cos m.δ)) / m.g.M = -(m.g.ωc / m.g.M * m.K) := by
-      unfold Model.K; ring
-    rw [e] at hdet
-    exact pos_of_mul_pos_right (by linarith) hwM.le
+  -- the cubic Routh criterion on `M s³ + (D + M ω_c) s² + D ω_c s + ω_c K`
+  rw [Criteria.isHurwitz_iff_of_coeffs_cubic _ hM (a2 := m.g.D + m.g.M * m.g.ωc)
+    (a1 := m.g.D * m.g.ωc) (a0 := m.g.ωc * m.K) (by rw [trace_jacobian]; field_simp; ring)
+    (principalMinorSum_jacobian _ _) (by rw [det_jacobian]; rfl)] at hH
+  obtain ⟨-, h0, hg⟩ := hH
+  have hK : 0 < m.K := pos_of_mul_pos_right h0 hω.le
   have hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M := by
-    have e1 : (-m.g.D / m.g.M - m.g.ωc) * (m.g.D * m.g.ωc / m.g.M) =
-        -(m.g.ωc / m.g.M * (m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M)) := by ring
-    have e2 : -(m.g.ωc * (m.g.K0 * Real.cos m.δ)) / m.g.M = -(m.g.ωc / m.g.M * m.K) := by
-      unfold Model.K; ring
-    rw [e1, e2] at hg
-    exact lt_of_mul_lt_mul_left (by linarith) hwM.le
+    refine lt_of_mul_lt_mul_left ?_ (mul_pos hM hω).le
+    rw [show m.g.M * m.g.ωc * (m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) =
+      (m.g.D + m.g.M * m.g.ωc) * (m.g.D * m.g.ωc) by field_simp; ring]
+    linarith
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl | rfl)
   · show m.g.K0 * Real.sin m.δ = m.g.P0
@@ -998,12 +993,17 @@ without an oscillatory mode is `B = 1 − √(1 − ζ₀⁴)` (for `ζ₀ ≤ 1
       calc Real.sqrt (1 - x ^ 2) ≤ Real.sqrt (z ^ 2) := Real.sqrt_le_sqrt (by linarith)
         _ = z := Real.sqrt_sq hz0
 
-/-- The damping ratio of the second-order swing reduction equals one exactly when
-`cos δ = ζ₀²` (`ζ(δ) = D / (2√(M K₀ cos δ))`, `cos δ > 0`). -/
-@[tmio T, powerlib_foundation] theorem dampingRatio_eq_one_iff {M D K0 δ : ℝ} (hM : 0 < M)
+/-- The damping ratio of the second-order swing reduction at the angle `δ`
+(`Criteria.dampingRatio` of its Jacobian, `ζ(δ) = D / (2√(M K₀ cos δ))`,
+`Synchronous.SwingParams.dampingRatio_jacobian`) equals one exactly when `cos δ = ζ₀²`,
+`ζ₀ = D / (2√(M K₀))` (`cos δ > 0`). -/
+@[tmio M, powerlib_domain] theorem dampingRatio_eq_one_iff {M D P K0 δ : ℝ} (hM : 0 < M)
     (hK0 : 0 < K0) (hD : 0 ≤ D) (hc : 0 < Real.cos δ) :
-    D / (2 * Real.sqrt (M * K0 * Real.cos δ)) = 1 ↔
+    Criteria.dampingRatio ((swingReduced M D P K0).jacobian δ) = 1 ↔
       Real.cos δ = (D / (2 * Real.sqrt (M * K0))) ^ 2 := by
+  rw [Synchronous.SwingParams.dampingRatio_jacobian _ hM
+    (by simpa [swingReduced, Synchronous.SwingParams.syncCoeff] using mul_pos hK0 hc)]
+  simp only [swingReduced, Synchronous.SwingParams.syncCoeff, sub_zero, ← mul_assoc]
   have hs1 : 0 < Real.sqrt (M * K0 * Real.cos δ) := Real.sqrt_pos.mpr (by positivity)
   have hs2 : 0 < Real.sqrt (M * K0) := Real.sqrt_pos.mpr (by positivity)
   rw [div_eq_one_iff_eq (by positivity), div_pow, mul_pow, Real.sq_sqrt (by positivity)]

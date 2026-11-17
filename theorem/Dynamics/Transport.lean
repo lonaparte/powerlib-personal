@@ -45,7 +45,10 @@ Results.
   `scaleCoord_symm_apply`). Sign changes `x ↦ (σᵢ xᵢ)ᵢ`, `σ : Fin n → ℤˣ` (`signMatrix`, an
   involution: `signMatrix_mul_self`, `signMatrix_isUnit`, `signMatrix_inv`; `signCoord`,
   `signCoord_apply`, `signCoord_symm`). A field is the transport of `g` by `T` about the origin
-  exactly when `T` conjugates them (`transportField_zero_eq_iff_comp`).
+  exactly when `T` conjugates them (`transportField_zero_eq_iff_comp`). Linear fields: the field
+  of `T A S` (`S = T⁻¹`) is that of `A` in the coordinates `x' = T x`, so every sentence at the
+  origin is invariant (`Linear.holds_conj`), and similar plants satisfy the same sentences
+  (`Linear.Similar.holds_iff`).
 * Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): the solutions of `c • f` are the
   solutions of `f` read at `t = c τ` (`isTrajectoryOn_timeScale`,
   `isIntegralCurveOn_Ici_timeScale`).
@@ -918,3 +921,44 @@ sampled contraction is invariant here, since for linear fields it is the Hurwitz
     exact holds_timeScale_iff hc hP
 
 end powerlib.Dynamics
+
+/-! ### Linear fields in matrix coordinates
+
+The linear field of `T A S` (`T S = S T = 1`) is the field of `A` in the coordinates `x' = T x`
+(`matrixCoord T`), so every sentence at the origin is read through the transport law. -/
+
+namespace powerlib.Linear
+
+open LinearSystems
+
+variable {n p : ℕ}
+
+/-- A coordinate change preserves every behavioural sentence at the origin: the linear field of
+`T A S` is the transport of that of `A` by `x' = T x` (`Dynamics.holds_transport_iff`). -/
+@[tmio T, powerlib_foundation] theorem holds_conj (P : Flow.Property)
+    {T S : Matrix (Fin n) (Fin n) ℝ} (hTS : T * S = 1) (hST : S * T = 1)
+    (A : Matrix (Fin n) (Fin n) ℝ) :
+    P.holds (affineLinearVectorField (T * A * S) 0) 0 ↔
+      P.holds (affineLinearVectorField A 0) 0 := by
+  have hT : IsUnit T :=
+    (Matrix.isUnit_iff_isUnit_det T).mpr (Matrix.isUnit_det_of_left_inverse hST)
+  have hf : affineLinearVectorField (T * A * S) 0 =
+      Dynamics.transportField (Dynamics.matrixCoord T hT) 0 (affineLinearVectorField A 0) := by
+    funext y
+    rw [Dynamics.transportField_zero_apply, Dynamics.matrixCoord_symm_apply,
+      Matrix.inv_eq_right_inv hTS, affine_apply, affine_apply, sub_zero, sub_zero, op_mul_apply,
+      op_mul_apply]
+    rfl
+  have h := Dynamics.holds_transport_iff (Dynamics.matrixCoord T hT) 0 P
+    (f := affineLinearVectorField A 0) (x := 0)
+  rw [Dynamics.affineCoord_zero_apply, map_zero] at h
+  rw [hf, h]
+
+/-- Similar plants of the same dimension satisfy the same behavioural sentences. -/
+@[tmio T, powerlib_foundation] theorem Similar.holds_iff {m m' : Plant n p} (h : Similar m m')
+    (P : Flow.Property) :
+    P.holds (affineLinearVectorField m'.A 0) 0 ↔ P.holds (affineLinearVectorField m.A 0) 0 := by
+  obtain ⟨T, S, hTS, hST, rfl⟩ := h
+  exact holds_conj P hTS hST m.A
+
+end powerlib.Linear

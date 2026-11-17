@@ -5,8 +5,11 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 /-! # Algebraic identities of droop, VSM and matching control
 
 Every statement here is an algebraic identity, a Laplace-domain relation or a
-fundamental-theorem-of-calculus identity (foundation); none asserts a stability property of a
-power system.
+fundamental-theorem-of-calculus identity; none asserts a stability property of a power system.
+The generic static droop law and the energy identity are foundation; the identities of the
+power-system frequency models (the inertia conversion, the governor, the multi-unit droop and
+its sharing) are parameter identities of those engineering models, domain like
+`theorem/PowerSystem/Frequency/Aggregation.lean` (Rules §3).
 
 Scope.
 Static droop laws, the governor and inertia conversions, multi-unit droop sharing and the
@@ -42,7 +45,9 @@ Results.
   `Grid.rotation_resistive`.
 
 Family and connection conclusions.
-None.  The module has no behavioural content; every statement is public foundation (Rules §3).
+None.  The module has no behavioural content; the model identities are static evidence (M, domain:
+`Mvsm_eq_Kd`, `governor_transfer`, `steadyState_frequency`, `proportionalSharing_iff`), the
+others foundation (Rules §3).
 -/
 
 noncomputable section
@@ -52,7 +57,7 @@ open Complex
 /-! ## Inertia conversions -/
 
 /-- `M_vsm = 2H/ω_s` equals `K_d = J ω_s / S_b` when `H = ½ J ω_s² / S_b`. -/
-@[tmio T, powerlib_foundation] theorem Mvsm_eq_Kd {J ωs Sb : ℝ} (hω : ωs ≠ 0) (hS : Sb ≠ 0) :
+@[tmio M, powerlib_domain] theorem Mvsm_eq_Kd {J ωs Sb : ℝ} (hω : ωs ≠ 0) (hS : Sb ≠ 0) :
     2 * (J * ωs ^ 2 / (2 * Sb)) / ωs = J * ωs / Sb := by
   field_simp
 
@@ -71,7 +76,7 @@ open Complex
   linarith
 
 /-- Governor: from `T_g s ΔP_m = −ΔP_m − K_R Δω`, `ΔP_m = −K_R/(1 + T_g s) Δω`. -/
-@[tmio T, powerlib_foundation] theorem governor_transfer {KR Tg : ℝ} {s ΔPm Δω : ℂ}
+@[tmio M, powerlib_domain] theorem governor_transfer {KR Tg : ℝ} {s ΔPm Δω : ℂ}
     (hden : 1 + (Tg : ℂ) * s ≠ 0) (h : (Tg : ℂ) * s * ΔPm = -ΔPm - (KR : ℂ) * Δω) :
     ΔPm = -(KR : ℂ) / (1 + (Tg : ℂ) * s) * Δω := by
   field_simp
@@ -79,7 +84,8 @@ open Complex
 
 /-- Multi-unit droop: if `ΔP_k = −K_k Δω` and the units together balance `ΔP_L` with frequency
 damping `D_eff Δω`, i.e. `Σ ΔP_k − D_eff Δω = ΔP_L`, then `Δω = −ΔP_L/(Σ K_k + D_eff)`. -/
-@[tmio T, powerlib_foundation] theorem steadyState_frequency {N : ℕ} (K ΔP : Fin N → ℝ) {Δω ΔPL Deff : ℝ}
+@[tmio M, powerlib_domain] theorem steadyState_frequency {N : ℕ} (K ΔP : Fin N → ℝ)
+    {Δω ΔPL Deff : ℝ}
     (hden : ∑ k, K k + Deff ≠ 0) (hk : ∀ k, ΔP k = -K k * Δω)
     (hbal : ∑ k, ΔP k - Deff * Δω = ΔPL) : Δω = -ΔPL / (∑ k, K k + Deff) := by
   rw [Finset.sum_congr rfl (fun k _ => hk k), ← Finset.sum_mul] at hbal
@@ -89,7 +95,8 @@ damping `D_eff Δω`, i.e. `Σ ΔP_k − D_eff Δω = ΔP_L`, then `Δω = −Δ
 
 /-- Proportional sharing: with `ΔP_k = −K_k Δω`, `Δω ≠ 0`, the per-rating shares `ΔP_k / S_k`
 are all equal iff the gains are proportional to the ratings. -/
-@[tmio T, powerlib_foundation] theorem proportionalSharing_iff {N : ℕ} (K S ΔP : Fin N → ℝ) {Δω : ℝ}
+@[tmio M, powerlib_domain] theorem proportionalSharing_iff {N : ℕ} (K S ΔP : Fin N → ℝ)
+    {Δω : ℝ}
     (hS : ∀ k, S k ≠ 0) (hω : Δω ≠ 0) (hk : ∀ k, ΔP k = -K k * Δω) :
     (∃ ρ, ∀ k, ΔP k / S k = ρ) ↔ ∃ κ, ∀ k, K k = κ * S k := by
   constructor

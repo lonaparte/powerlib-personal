@@ -3,6 +3,80 @@
 Completed architectural and library changes, newest first. Detailed diffs remain
 in Git; working statistics, build receipts and development plans are not kept here.
 
+## 2026-11-17
+
+- Second consolidation wave: the models now use the generic laws of the first wave
+  (removed names have no aliases):
+  - Swing and grid-forming models: the swing hub, the VSM and the reduced VSM-LPF are
+    linearized through `PhasePlane.Conservative` (`VSMModel.vector_eq_conservative`;
+    `VSMModel.jacobian`, `contDiff_vector`, `hasFDerivAt_vector`, `VSMLPF.K_eq_deriv` →
+    the conservative laws and `SwingParams.hasDerivAt_Pe`); the swing equation with an
+    arbitrary power law is one family `Synchronous.GeneralSwing` (module
+    `Synchronous/GeneralSwing`; `GFM.Matching.swingField`, `SwingModel`, `swingFamily`,
+    `swingChain_le_semantics`, `swing_mem_den_iff_hub_of_sinusoid`,
+    `swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`, `SwingEuler`,
+    `swingEulerFamily`, `swingEuler`, `swing_contDiffAt_field`,
+    `swing_not_euler_realizationSoundUnder` → `GeneralSwing.{field, Model, family,
+    chain_le_semantics, mem_den_iff_hub_of_sinusoid,
+    mem_den_locallyExponentiallyStable_iff_of_sinusoid, Euler, eulerFamily, euler,
+    contDiffAt_field, not_euler_realizationSoundUnder}`), read by the VSM
+    (`VSMModel.toSwing`, `field_eq_toSwing`, `vsm_den_eq_preimage`) and by matching
+    control; `SwingParams.dampingRatio_jacobian`, `contDiff_restoring`
+    (`GFM.dampingRatio_eq_one_iff` is stated on `Criteria.dampingRatio`);
+    `SMIB11Params extends SyncMachine7Params` with the machine block
+    (`smib11_machine`, `smib11_machineInput`, `smib11_field_machine`; `smib11_H` is the
+    machine storage plus node and link energies); `Mvsm_eq_Kd`, `governor_transfer`,
+    `steadyState_frequency`, `proportionalSharing_iff` are domain results. Scaffolds
+    `Synchronous/GeneralSwing.agda`, `Synchronous/SMIB11Machine.agda`; `VSMSwing.agda`
+    and `MatchingSwing.agda` re-cut.
+  - Frequency models: `SwingGovernor.family`, `reducedFamily` and `SFR.family` are
+    `Spectral.rateFamily` (`Requirement` an abbreviation of `RateRequirement`; `Meets`,
+    `translate`, `ReducedMeets`, `reducedTranslate`, `ReducedRequirement`,
+    `realize_univ`, `reduced_realize_univ` → the rate laws); the Routh conditions come
+    from the coefficient laws (`SwingGovernor.isHurwitz_plant_iff`,
+    `isHurwitz_reducedPlant_iff`, `SFR.isHurwitz_plant_iff`; `DigitalPI`, `PILoop`
+    proofs); the four nadir chains (swing-governor nadir, `SFR.reduced_nadir`,
+    `UFLS.postShed_not_sufficient`, `UFLSLatched.swingGovernor_latched_trip`) are
+    instances of `LTI.trajectory_nadir_osc2` (`SwingNadir.respC`, `rateC`, `tCrit` and
+    their 16 laws, `damped_shift`, `norm_mk_pos`, `arg_mk_pos`, `arg_mk_lt_pi`,
+    `cos_arg_mk`, `sq_norm_mk`, `tg_mul_norm` → `LTI.dampedResp*`,
+    `nadirTime_eq_dampedRespCrit`, `nadirValue_eq`, `rest_deviation`, `rest_slope`,
+    `dampedRespPhase_eq`); RoCoF via `SwingGovernor.field_zero`;
+    `SwingGovernor.natFreq`, `dampingRatio` abbreviations of the `Criteria` objects
+    (`det_characteristicMatrix_eq` → `Criteria.det_characteristicMatrix_standard`;
+    `dampingRatio_eq`).
+  - Passive elements, lines, transforms: `complexSymm` lives in `Transform/Planar`
+    (`rot_eq_complexSymm`; `complexSymm_inv` over any field;
+    `GFL.LCLine.Params.lineMatrix`, `PLL.StochasticPH.lineMatrix` through it,
+    `StochasticPH.lineMatrix_det` → `det_complexSymm`); a passive LCL is a linear
+    port-Hamiltonian plant (`Passive.LCL.Circuit.toPH`, `plant_toPH`; its passivity,
+    Lyapunov stability and conservation from the pH laws; `energy_identity`,
+    `energy_pos`, `energy_lossless`, `energyMatrix_symmetric` → the pH laws on
+    `toPH`); one per-unit-length record `Passive.Line.UnitLength` extended by
+    `LosslessLine` and `LadderParams` (`L'`, `C'`, `R'`, `G'` → `L`, `C`, `R`, `G`);
+    `telegrapher_pu_iff` on `IsTelegrapherSolution`
+    (`Telegrapher.dx_eq_of_isTelegrapherSolution`); the cable ray and decay limits in
+    `SpecialFunctions/BesselI` (`CableSchelkunoff.{tendsto_mul_cexp_neg,
+    ray_re_tendsto, ray_sector, ray_tendsto_zero, ray_re_pos,
+    sqrt_omega_tendsto_atTop, sqrt_omega_tendsto_zero}`,
+    `CableBessel.one_add_I_mul_sqrt_sq` → `SpecialFunctions.*`;
+    `ray_mul_re_tendsto`); `Grid.signedIncidence_mulVec` →
+    `Network.signedIncidence_mulVec`; `LCLSynthesis.SymmetricMatrix.form_pos` via
+    `posDef_schur_iff`.
+  - PLL, limiting, linear layer: the AHO limit cycle from the Hopf normal form
+    (radius laws via `Logistic` and `NormalForm.Hopf`); the PLL pendulum coordinates as
+    the Liénard conjugacy at `srfPD 1`; one symmetric clamp
+    `SpecialFunctions.clampSym` (module `SpecialFunctions/Clamp`;
+    `Limiting.clampSym`, `clampSym_of_abs_le`, `clampSym_nonneg`, `clampSym_nonpos`,
+    `CurrentControl.LimitedPI.sat`, `sat_of_abs_le`, `abs_sat_le`,
+    `sat_eventually_eq`, `sat_ne_of_lt_abs` → `clampSym`, `clampSym_of_abs_le`,
+    `abs_clampSym_le`, `clampSym_eventually_eq`, `clampSym_ne_of_lt_abs`;
+    `Limiting.clampSym_sq_le` → `abs_clampSym_le`); `Linear.holds_conj` and
+    `Similar.holds_iff` follow from `Dynamics.holds_transport_iff` (moved to
+    `Dynamics/Transport`; `Linear.conj_iff` removed); `Limiting.dPriority_norm_le`
+    without its unused hypothesis.
+  - Classified theorems 7407 → 7375; public connection theorems 1024 → 1022.
+
 ## 2026-11-16
 
 - Structural reuse (last pass of the redundancy audit). Removed names are listed

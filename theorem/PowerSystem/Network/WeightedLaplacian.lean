@@ -37,7 +37,8 @@ Results.
   `theory/T-dae-systems.md` §2.1).
 * The signed node–branch incidence matrix `signedIncidence tail head` of a directed multigraph
   (`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
-  (`signedIncidence_transpose_mulVec`), and every column sums to zero
+  (`signedIncidence_transpose_mulVec`), and KCL, `(𝓑 c)_j` is the total current leaving node `j`
+  (`signedIncidence_mulVec`); every column sums to zero
   (`signedIncidence_col_sum`). The RL-network pH models built on it are in
   `theorem/Grid/RLNetwork.lean`, the multi-area tie-line graph in
   `theorem/PowerSystem/Frequency/LFCNetwork.lean`.
@@ -454,6 +455,15 @@ omit [Fintype β] [DecidableEq β] in
     (v : ν → ℝ) (k : β) :
     ((signedIncidence tail head)ᵀ *ᵥ v) k = v (tail k) - v (head k) := by
   simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul]
+
+omit [Fintype ν] [DecidableEq β] in
+/-- KCL: `(𝓑 i)_j` is the total current leaving node `j` through the branches. -/
+@[tmio T, powerlib_foundation] theorem signedIncidence_mulVec (tail head : β → ν) (c : β → ℝ)
+    (j : ν) :
+    (signedIncidence tail head *ᵥ c) j =
+      (∑ k with tail k = j, c k) - ∑ k with head k = j, c k := by
+  simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul,
+    Finset.sum_filter, eq_comm]
 
 end Incidence
 

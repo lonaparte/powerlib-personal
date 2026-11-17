@@ -45,8 +45,10 @@ Model boundary.
 Scaffold: `theorem/PowerSystem/Synchronous/Swing.agda` (the hub content its spokes read: models,
 requirements, translation, published laws); the readings through it are
 `theorem/GridTiedConverter/GFM/DroopSwing.agda`,
-`theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda` and
-`theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda`.
+`theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda`,
+`theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda` and
+`theorem/PowerSystem/Synchronous/GeneralSwing.agda` (the swing equation with an arbitrary power law,
+`theorem/PowerSystem/Synchronous/GeneralSwing.lean`, on a sinusoid).
 
 Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machine.md` §1.9;
 `theory/T-transient-stability.md` §1.3, §1.4, §1.7;
@@ -58,9 +60,10 @@ Results (static evidence on the model).
   curve reaches `P_m`; the equilibrium set is `ω = 0`, `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}`, with
   `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches; `hasDerivAt_Pe` — the
   synchronizing coefficient `K(δ) = k₂ cos(δ − k₃)` is the slope `P_e'(δ)`.
-* `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `eigenvalues_real_iff` — the
-  linearization has `M det(sI − J) = M s² + D s + K`, `K = k₂ cos(δ₀ − k₃)`; it is Hurwitz iff
-  `D > 0` and `K > 0`; exact overdamping threshold.
+* `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `dampingRatio_jacobian`,
+  `eigenvalues_real_iff` — the linearization has `M det(sI − J) = M s² + D s + K`,
+  `K = k₂ cos(δ₀ − k₃)`; it is Hurwitz iff `D > 0` and `K > 0`; its damping ratio
+  (`Criteria.dampingRatio`) is `D / (2 √(M K))`; exact overdamping threshold.
 * `field_eq_conservative`, `energy_eq_conservative` — the swing field and the energy
   `W = ½ M ω² + U(δ)` are the conservative phase-plane field and energy
   (`theorem/PhasePlane/Conservative.lean`) with mass `M`, damping `D` and potential
@@ -120,12 +123,14 @@ Family and connection conclusions.
   attractive sentences and sampled contraction are translated exactly
   (`Swing.Linearized.exactUnder_hurwitz`): `M s² + D s + K` is Hurwitz iff `D > 0` and `K > 0`
   (`Swing.Linearized.mem_den_iff`).
-* The behavioural theorems on the untranslated field (`locallyExponentiallyStable_*`,
-  `unstable_*`, `lyapunovStable_*`, `forwardComplete`) are private implementation evidence; their
-  conclusions are published as the connection statements `Swing.mem_den_*`,
-  `Swing.deltaS_mem_den_*`, `Swing.deltaU_mem_den_unstable`. The equilibrium-set theorems are
-  static evidence on the model. Forward completeness is not a sentence; other modules obtain it
-  from the public Lipschitz bound `lipschitzWith_field` and
+* The connection statements `Swing.mem_den_*`, `Swing.deltaS_mem_den_*`,
+  `Swing.deltaU_mem_den_unstable` are the conservative oscillator's laws at the restoring force
+  `P_e − P_m` (`field_eq_conservative`, slope `K = P_e'`, `hasDerivAt_Pe`):
+  `PhasePlane.Conservative.locallyExponentiallyStable_of_slope_pos`, `unstable_of_slope_neg`,
+  `unstable_of_damping_neg` and `center_lyapunovStable`; `hasFDerivAt_field`, `trace_jacobian`
+  and `det_jacobian` are its Jacobian laws. The equilibrium-set theorems are static evidence on the
+  model; `forwardComplete` is private implementation evidence. Forward completeness is not a
+  sentence; other modules obtain it from the public Lipschitz bound `lipschitzWith_field` and
   `Flow.forwardComplete_of_lipschitzWith`.
 * Instances (`theorem/PowerSystem/Synchronous/Instances.lean`): VSG / VSM on an infinite bus
   (`k₁ = 0, k₃ = 0, k₂ = E V_g / X_g`), the classical SMIB model (`k₂ = E' V_∞ / X_d'`), and the
@@ -248,50 +253,39 @@ namespace SwingParams
 
 variable (p : SwingParams)
 
-/-- Jacobian of the swing field at angle `δ` (it does not depend on `ω`). -/
+/-- Jacobian of the swing field at angle `δ` (it does not depend on `ω`): definitionally the
+conservative Jacobian `PhasePlane.Conservative.jacobian M D K(δ)` at the synchronizing
+coefficient. -/
 def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; -p.syncCoeff δ / p.M, -p.D / p.M]
 
+/-- The restoring force `P_e − P_m` of the conservative form is smooth. -/
+@[tmio M, powerlib_domain] theorem contDiff_restoring {k : WithTop ℕ∞} :
+    ContDiff ℝ k fun δ => p.Pe δ - p.Pm := by
+  unfold Pe; fun_prop
+
 @[tmio M, powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k p.field := by
   rw [field_eq_conservative]
-  exact PhasePlane.Conservative.field_contDiff (by unfold Pe; fun_prop)
+  exact PhasePlane.Conservative.field_contDiff p.contDiff_restoring
 
+/-- The Jacobian of the conservative field (`PhasePlane.Conservative.hasFDerivAt_field`) at the
+slope `P_e'(δ) = K(δ)` (`hasDerivAt_Pe`). -/
 @[tmio M, powerlib_domain] theorem hasFDerivAt_field (x : State 2) :
     HasFDerivAt p.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (p.jacobian (x 0))) x := by
-  rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
-  intro i
-  rw [hasFDerivWithinAt_univ]
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  fin_cases i
-  · simp only [Fin.zero_eta, Fin.isValue, field_apply_zero]
-    convert h1 using 1
-    · rfl
-    apply ContinuousLinearMap.ext; intro v
-    simp [jacobian, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  · simp only [Fin.mk_one, Fin.isValue, field_apply_one]
-    have hs := ((Real.hasDerivAt_sin (x 0 - p.k₃)).comp_hasFDerivAt x (h0.sub_const p.k₃))
-    have h := (((hasFDerivAt_const p.Pm x).sub ((hasFDerivAt_const p.k₁ x).add
-      (hs.const_mul p.k₂))).sub (h1.const_mul p.D)).const_mul p.M⁻¹
-    convert h using 1
-    · funext y; simp [accel, Pe, div_eq_inv_mul]
-    · apply ContinuousLinearMap.ext; intro v
-      simp [jacobian, syncCoeff, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct,
-        Fin.sum_univ_two]
-      ring
+  rw [field_eq_conservative]
+  exact PhasePlane.Conservative.hasFDerivAt_field ((p.hasDerivAt_Pe (x 0)).sub_const p.Pm)
 
 @[tmio M, powerlib_domain] theorem fderiv_field (x : State 2) :
     fderiv ℝ p.field x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (p.jacobian (x 0)) :=
   (p.hasFDerivAt_field x).fderiv
 
 @[tmio M, simp, powerlib_domain] theorem trace_jacobian (δ : ℝ) :
-    (p.jacobian δ).trace = -p.D / p.M := by
-  simp [jacobian, Matrix.trace_fin_two]
+    (p.jacobian δ).trace = -p.D / p.M :=
+  PhasePlane.Conservative.trace_jacobian _ _ _
 
 @[tmio M, simp, powerlib_domain] theorem det_jacobian (δ : ℝ) :
-    (p.jacobian δ).det = p.syncCoeff δ / p.M := by
-  simp [jacobian, Matrix.det_fin_two]
-  ring
+    (p.jacobian δ).det = p.syncCoeff δ / p.M :=
+  PhasePlane.Conservative.det_jacobian _ _ _
 
 /-! ## Equilibria (static evidence) -/
 
@@ -421,16 +415,22 @@ period of the power-angle curve). Static evidence on the model, not a connection
   ring
 
 /-- The linearization is Hurwitz iff all coefficients of `M s² + D s + K` are positive
-(`M > 0`). -/
+(`M > 0`; `Criteria.isHurwitz_iff_of_coeffs_quadratic`). -/
 @[tmio TM, powerlib_domain] theorem isHurwitz_jacobian_iff (hM : 0 < p.M) (δ₀ : ℝ) :
-    LinearSystems.IsHurwitz (p.jacobian δ₀) ↔ 0 < p.D ∧ 0 < p.syncCoeff δ₀ := by
-  rw [Criteria.isHurwitz_fin_two_iff, trace_jacobian, det_jacobian, neg_div,
-    neg_lt_zero, div_pos_iff_of_pos_right hM, div_pos_iff_of_pos_right hM]
+    LinearSystems.IsHurwitz (p.jacobian δ₀) ↔ 0 < p.D ∧ 0 < p.syncCoeff δ₀ :=
+  Criteria.isHurwitz_iff_of_coeffs_quadratic _ hM (p.trace_jacobian δ₀) (p.det_jacobian δ₀)
 
-/-! ## Local stability and instability of the nonlinear field (implementation evidence)
-
-Behavioural theorems at an equilibrium of the untranslated field. They are private: the public
-conclusions are the connection statements of `Swing.family` below. -/
+/-- Damping ratio of the linearization (`Criteria.dampingRatio`, `ζ = −tr J / (2 √det J)`):
+`ζ = D / (2 √(M K))`, `K = k₂ cos(δ − k₃)` (`M, K > 0`). -/
+@[tmio M, powerlib_domain] theorem dampingRatio_jacobian (hM : 0 < p.M) {δ : ℝ}
+    (hK : 0 < p.syncCoeff δ) :
+    Criteria.dampingRatio (p.jacobian δ) = p.D / (2 * Real.sqrt (p.M * p.syncCoeff δ)) := by
+  have hs : Real.sqrt (p.syncCoeff δ / p.M) = Real.sqrt (p.M * p.syncCoeff δ) / p.M := by
+    rw [show p.syncCoeff δ / p.M = p.M * p.syncCoeff δ / p.M ^ 2 by field_simp,
+      Real.sqrt_div' _ (by positivity), Real.sqrt_sq hM.le]
+  have hpos : 0 < Real.sqrt (p.M * p.syncCoeff δ) := Real.sqrt_pos.mpr (mul_pos hM hK)
+  rw [Criteria.dampingRatio, trace_jacobian, det_jacobian, hs]
+  field_simp
 
 /-! ## Energy function -/
 
@@ -621,99 +621,6 @@ def family : Family Model Requirement 2 0 :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.point)
     family_isAutonomous
 
-end Swing
-
-namespace SwingParams
-
-variable (p : SwingParams)
-
-/-- An equilibrium with positive synchronizing coefficient (`k₂ cos(δ₀ − k₃) > 0`) is locally
-exponentially stable when `M > 0` and `D > 0`. -/
-@[tmio TM, powerlib_domain] private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
-    (hD : 0 < p.D) {x : State 2} (heq : p.field x = 0) (hK : 0 < p.syncCoeff (x 0)) :
-    connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .locallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [Swing.mem_den_flow_iff]
-  have hzero : x 1 = 0 := by
-    have he := congrArg (fun y : State 2 => y 0) heq
-    simpa only [field_apply_zero, PiLp.zero_apply] using he
-  have hpoint : (⟨p, x 0⟩ : Swing.Model).point = x := by
-    apply PhasePlane.ext_iff'.mpr
-    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-    exact ⟨trivial, hzero.symm⟩
-  rw [hpoint]
-  exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two (p.jacobian (x 0)) p.contDiff_field
-    heq (p.fderiv_field x) (by rw [trace_jacobian, neg_div]; exact neg_neg_of_pos (div_pos hD hM))
-    (by rw [det_jacobian]; exact div_pos hK hM)
-
-/-- An equilibrium with negative synchronizing coefficient is unstable (saddle), for every
-damping `D` (`M > 0`). -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
-    (heq : p.field x = 0) (hK : p.syncCoeff (x 0) < 0) :
-    connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
-  unfold TMIO.Statement
-  rw [Swing.mem_den_flow_iff]
-  have hzero : x 1 = 0 := by
-    have he := congrArg (fun y : State 2 => y 0) heq
-    simpa only [field_apply_zero, PiLp.zero_apply] using he
-  have hpoint : (⟨p, x 0⟩ : Swing.Model).point = x := by
-    apply PhasePlane.ext_iff'.mpr
-    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-    exact ⟨trivial, hzero.symm⟩
-  rw [hpoint]
-  exact Criteria.unstable_of_jacobian_det (p.jacobian (x 0)) p.contDiff_field heq
-    (p.fderiv_field x)
-    (by rw [neg_one_sq, one_mul, det_jacobian]; exact div_neg_of_neg_of_pos hK hM)
-
-/-- An equilibrium with negative damping is unstable (positive trace), for every synchronizing
-coefficient (`M > 0`). -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
-    (heq : p.field x = 0) (hD : p.D < 0) :
-    connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
-  unfold TMIO.Statement
-  rw [Swing.mem_den_flow_iff]
-  have hzero : x 1 = 0 := by
-    have he := congrArg (fun y : State 2 => y 0) heq
-    simpa only [field_apply_zero, PiLp.zero_apply] using he
-  have hpoint : (⟨p, x 0⟩ : Swing.Model).point = x := by
-    apply PhasePlane.ext_iff'.mpr
-    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-    exact ⟨trivial, hzero.symm⟩
-  rw [hpoint]
-  exact Criteria.unstable_of_jacobian_trace_pos (p.jacobian (x 0)) p.contDiff_field heq
-    (p.fderiv_field x)
-    (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
-
-/-- With nonnegative damping (in particular `D = 0`, the conservative swing equation), every
-equilibrium with positive synchronizing coefficient is Lyapunov stable (`M > 0`): the potential has
-a strict local minimum there (`potential_pos`), so the energy `½ M ω² + U(δ)` is a local Lyapunov
-function (`PhasePlane.Conservative.center_lyapunovStable` through `field_eq_conservative`).
-Implementation evidence. -/
-@[tmio TM, powerlib_domain] private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M)
-    (hD : 0 ≤ p.D) {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
-    connection% ((⟨p, x₀ 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .lyapunovStable)) := by
-  unfold TMIO.Statement
-  rw [Swing.mem_den_flow_iff]
-  obtain ⟨-, hbal⟩ := (p.field_eq_zero_iff hM.ne' x₀).mp heq
-  have hcont : Continuous p.syncCoeff := by unfold syncCoeff; fun_prop
-  obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp (isOpen_lt continuous_const hcont) (x₀ 0) hK
-  have hr' : ∀ θ, |θ - x₀ 0| < r → 0 < p.syncCoeff θ := fun θ hθ =>
-    hr (by simpa [Real.dist_eq] using hθ)
-  have hpoint : (⟨p, x₀ 0⟩ : Swing.Model).point = PhasePlane.mk (x₀ 0) 0 := rfl
-  rw [hpoint, field_eq_conservative]
-  refine PhasePlane.Conservative.center_lyapunovStable hM hD (p.hasDerivAt_potential (x₀ 0)) hr0
-    fun δ hδ hne => ?_
-  rw [potential_self]
-  exact p.potential_pos hbal hr' hδ hne
-
-end SwingParams
-
-namespace Swing
-
-@[tmio M, powerlib_domain] private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm) :
-    m.p.field m.point = 0 :=
-  (m.p.field_eq_zero_iff hM.ne' _).mpr ⟨by simp, by simpa using hb⟩
-
 /-- An equilibrium at the selected point is a balanced angle. -/
 @[tmio M, powerlib_domain] private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.point = 0) :
     connection% (m ∈ TMIO.realize Meets {.balanced}) := by
@@ -721,33 +628,48 @@ namespace Swing
   simpa using ((m.p.field_eq_zero_iff hM _).mp heq).2
 
 /-- Positive inertia, damping and synchronizing coefficient at a balanced angle place a swing
-model in local exponential stability. -/
+model in local exponential stability: the conservative linearization law
+(`PhasePlane.Conservative.locallyExponentiallyStable_of_slope_pos`, `tr J = −D/M`,
+`det J = K/M`) at the restoring force `P_e − P_m` (`SwingParams.field_eq_conservative`). -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hM : 0 < m.p.M)
     (hD : 0 < m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
-  rw [mem_den_flow_iff]
-  exact (mem_den_flow_iff.mp (m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD
-    (point_eq_zero hM hb) (by simpa using hK)))
+  rw [mem_den_flow_iff, Model.point, SwingParams.field_eq_conservative]
+  exact PhasePlane.Conservative.locallyExponentiallyStable_of_slope_pos hM hD
+    m.p.contDiff_restoring (sub_eq_zero.2 hb) ((m.p.hasDerivAt_Pe m.δ).sub_const m.p.Pm) hK
 
 /-- With nonnegative damping — in particular the undamped swing equation — positive inertia and
-synchronizing coefficient at a balanced angle place a swing model in Lyapunov stability (energy
-function). -/
+synchronizing coefficient at a balanced angle place a swing model in Lyapunov stability: the
+potential has a strict local minimum there (`SwingParams.potential_pos`), so the energy
+`½ M ω² + U(δ)` is a local Lyapunov function (`PhasePlane.Conservative.center_lyapunovStable`
+through `SwingParams.field_eq_conservative`). -/
 @[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hM : 0 < m.p.M)
     (hD : 0 ≤ m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
-  rw [mem_den_flow_iff]
-  exact (mem_den_flow_iff.mp (m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb)
-    (by simpa using hK)))
+  rw [mem_den_flow_iff, Model.point, SwingParams.field_eq_conservative]
+  have hcont : Continuous m.p.syncCoeff := by unfold SwingParams.syncCoeff; fun_prop
+  obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp (isOpen_lt continuous_const hcont) m.δ hK
+  refine PhasePlane.Conservative.center_lyapunovStable hM hD (m.p.hasDerivAt_potential m.δ) hr0
+    fun δ hδ hne => ?_
+  rw [SwingParams.potential_self]
+  exact m.p.potential_pos hb (fun θ hθ => hr (by simpa [Real.dist_eq] using hθ)) hδ hne
 
-@[tmio TM, powerlib_domain] private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
-    (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : connection% (m ∈ family.den (.flow .unstable)) := by
+/-- A destabilizing sign at a balanced angle with positive inertia: a saddle (`K < 0`,
+`PhasePlane.Conservative.unstable_of_slope_neg`) or negative damping (`D < 0`,
+`PhasePlane.Conservative.unstable_of_damping_neg`). -/
+@[tmio TM, powerlib_domain] private theorem unstable_of {m : Model} (hM : 0 < m.p.M)
+    (hb : m.p.Pe m.δ = m.p.Pm) (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
-  rw [mem_den_flow_iff]
+  rw [mem_den_flow_iff, Model.point, SwingParams.field_eq_conservative]
+  have hd := (m.p.hasDerivAt_Pe m.δ).sub_const m.p.Pm
   rcases hs with hK | hD
-  · exact (mem_den_flow_iff.mp (m.p.unstable_of_syncCoeff_neg hM (point_eq_zero hM hb) (by simpa using hK)))
-  · exact (mem_den_flow_iff.mp (m.p.unstable_of_damping_neg hM (point_eq_zero hM hb) hD))
+  · exact PhasePlane.Conservative.unstable_of_slope_neg hM m.p.contDiff_restoring
+      (sub_eq_zero.2 hb) hd hK
+  · exact PhasePlane.Conservative.unstable_of_damping_neg hM hD m.p.contDiff_restoring
+      (sub_eq_zero.2 hb) hd
 
 /-! ### Soundness of the translation -/
 
@@ -926,6 +848,31 @@ conclusion. -/
     p.energy δ₀ (PhasePlane.mk (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
   simp [SwingParams.energy]
 
+/-- At a fold of the power-angle curve the energy takes values below its value at `(δ*, 0)`
+arbitrarily close to it (on the side where the accelerating power pushes). -/
+@[tmio M, powerlib_domain] private theorem fold_seeds {m : Model} (hb : m.p.Pe m.δ = m.p.Pm)
+    (hK : m.p.syncCoeff m.δ = 0) (ha : m.p.Pm - m.p.k₁ ≠ 0) :
+    ∀ ε > 0, ∃ x, ‖x - m.point‖ < ε ∧ m.p.energy m.δ x < m.p.energy m.δ m.point := by
+  intro ε hε
+  have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
+  rw [hE0]
+  have hε2 : 0 < ε / 2 := by linarith
+  rcases lt_or_gt_of_ne ha with hneg | hpos
+  · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) 0, ?_, ?_⟩
+    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
+      rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
+      linarith
+    · rw [energy_mkState, potential_fold m.p hb hK, Real.sin_neg]
+      have := Real.sin_lt hε2
+      nlinarith
+  · refine ⟨PhasePlane.mk (m.δ + ε / 2) 0, ?_, ?_⟩
+    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
+      rw [abs_zero, add_zero, abs_of_pos hε2]
+      linarith
+    · rw [energy_mkState, potential_fold m.p hb hK]
+      have := Real.sin_lt hε2
+      nlinarith
+
 /-- Within positive inertia, local asymptotic stability at a balanced angle forces positive
 damping and a positive synchronizing coefficient. Negative damping or synchronization is unstable;
 an undamped machine conserves its energy; a flat power-angle curve has a continuum of
@@ -978,26 +925,9 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
         simp only [PhasePlane.mk_apply_zero, SwingParams.Pe, hk2, zero_mul, add_zero]
         linarith
     · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := m.p.energy m.δ) (ρ := 1) hC
-        hEd one_pos (fun x _ => ?_) (fun ε hε => ?_) hlas
-      · rw [m.p.energy_eq_conservative, m.p.field_eq_conservative]
-        exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (m.p.hasDerivAt_potential _) x
-      · rw [hE0]
-        have hε2 : 0 < ε / 2 := by linarith
-        rcases lt_or_gt_of_ne ha with hneg | hpos
-        · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) 0, ?_, ?_⟩
-          · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-            rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
-            linarith
-          · rw [energy_mkState, potential_fold m.p hb hK, Real.sin_neg]
-            have := Real.sin_lt hε2
-            nlinarith
-        · refine ⟨PhasePlane.mk (m.δ + ε / 2) 0, ?_, ?_⟩
-          · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-            rw [abs_zero, add_zero, abs_of_pos hε2]
-            linarith
-          · rw [energy_mkState, potential_fold m.p hb hK]
-            have := Real.sin_lt hε2
-            nlinarith
+        hEd one_pos (fun x _ => ?_) (fold_seeds hb hK ha) hlas
+      rw [m.p.energy_eq_conservative, m.p.field_eq_conservative]
+      exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (m.p.hasDerivAt_potential _) x
   · exact hK
 
 /-- Within positive inertia the local asymptotic translation is exact: a swing model with `M > 0`
@@ -1095,31 +1025,6 @@ Static evidence on the model, not a connection conclusion. -/
   refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp hc
   · linarith [neg_abs_le s, Real.two_le_pi]
   · linarith [le_abs_self s, Real.two_le_pi]
-
-/-- At a fold of the power-angle curve the energy takes values below its value at `(δ*, 0)`
-arbitrarily close to it (on the side where the accelerating power pushes). -/
-@[tmio M, powerlib_domain] private theorem fold_seeds {m : Model} (hb : m.p.Pe m.δ = m.p.Pm)
-    (hK : m.p.syncCoeff m.δ = 0) (ha : m.p.Pm - m.p.k₁ ≠ 0) :
-    ∀ ε > 0, ∃ x, ‖x - m.point‖ < ε ∧ m.p.energy m.δ x < m.p.energy m.δ m.point := by
-  intro ε hε
-  have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
-  rw [hE0]
-  have hε2 : 0 < ε / 2 := by linarith
-  rcases lt_or_gt_of_ne ha with hneg | hpos
-  · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) 0, ?_, ?_⟩
-    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-      rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
-      linarith
-    · rw [energy_mkState, potential_fold m.p hb hK, Real.sin_neg]
-      have := Real.sin_lt hε2
-      nlinarith
-  · refine ⟨PhasePlane.mk (m.δ + ε / 2) 0, ?_, ?_⟩
-    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-      rw [abs_zero, add_zero, abs_of_pos hε2]
-      linarith
-    · rw [energy_mkState, potential_fold m.p hb hK]
-      have := Real.sin_lt hε2
-      nlinarith
 
 /-- Within positive inertia, Lyapunov stability of `(δ*, 0)` holds exactly at a balanced angle
 with nonnegative damping and a positive synchronizing coefficient, or on a flat power-angle

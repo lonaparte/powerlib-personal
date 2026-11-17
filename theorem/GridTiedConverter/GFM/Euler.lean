@@ -3,6 +3,7 @@ import theorem.GridTiedConverter.GFM.VSMLPF
 import theorem.GridTiedConverter.GFM.VSMLPFRig
 import theorem.GridTiedConverter.GFM.VOC
 import theorem.GridTiedConverter.GFM.DroopVSM
+import theorem.PowerSystem.Synchronous.SwingEuler
 import theorem.Numerics.EulerRealization
 
 /-! # The explicit Euler integration of the grid-forming families: realizations
@@ -273,20 +274,13 @@ def vsmEuler : Implementation VSMModel VSMRequirement VSMEuler VSMRequirement 2 
 
 /-- The translated VSM field is `C¹` near the origin when the power map is `C¹` near the selected
 angle: the smoothness hypothesis of the local generic Euler laws
-(`Numerics.euler_sound_small_step_local`). -/
+(`Numerics.euler_sound_small_step_local`); the field is its swing image's
+(`VSMModel.field_eq_toSwing`, `Synchronous.GeneralSwing.contDiffAt_field`). -/
 @[tmio M, powerlib_domain] theorem vsm_contDiffAt_field {m : VSMModel}
     (hs : ContDiffAt ℝ 1 m.P (m.point 0)) :
     ContDiffAt ℝ 1 m.field 0 := by
-  refine Numerics.contDiffAt_shift (g := m.vector) (x₀ := m.point) ?_
-  have hP : ContDiffAt ℝ 1 (fun x : State 2 => m.P (x 0)) m.point :=
-    hs.comp (f := fun x : State 2 => x 0) m.point (Dynamics.contDiff_coord 0).contDiffAt
-  rw [contDiffAt_euclidean]
-  intro i
-  fin_cases i
-  · simpa [VSMModel.vector] using (Dynamics.contDiff_coord (k := 1) 1).contDiffAt (x := m.point)
-  · simp only [VSMModel.vector, Fin.mk_one, Fin.isValue, PhasePlane.mk_apply_one]
-    exact ((contDiffAt_const.sub hP).sub (contDiffAt_const.mul
-      ((Dynamics.contDiff_coord 1).contDiffAt.sub contDiffAt_const))).div_const _
+  rw [m.field_eq_toSwing]
+  exact Synchronous.GeneralSwing.contDiffAt_field (hs.comp (m.point 0, m.point 1) contDiffAt_fst)
 
 /-- **Without a step constraint the Euler realization of the VSM models is not sound.** A locally
 exponentially stable VSM model (`P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the origin)

@@ -16,8 +16,10 @@ gfl-gfm-parametric-contrast.md` §15 ("摆动二阶约化", "混合张量"); `no
 nonautonomous-criteria.md` (GFM `P_ref` 通道 `A_u = 0`).
 
 Results.
-* `K_eq_deriv`: `K = ∂P/∂δ = K₀ cos δ₀` (`= E V_g cos δ₀ / X_g`); with `K₀ = E V_g / X_g`
-  equilibria exist iff `|P₀| ≤ E V_g / X_g` (`VSMLPF.exists_equilibrium_iff`).
+* The synchronizing coefficient `K = ∂P/∂δ = K₀ cos δ₀` (`= E V_g cos δ₀ / X_g`) is the slope of
+  the power-angle curve at the loading angle: `Synchronous.SwingParams.hasDerivAt_Pe` of the
+  second-order swing reduction `swingReduced M D P₀ K₀` (`GFM.swingReduced`) at `δ₀`; with
+  `K₀ = E V_g / X_g` equilibria exist iff `|P₀| ≤ E V_g / X_g` (`VSMLPF.exists_equilibrium_iff`).
 * `texact_denominator_expansion`: the exact identity
   `[(s + ω_c)(M s² + D s) + ω_c K] / (M (s + ω_c)) = s² + 2α_red s + K/M + R(s)`,
   `2α_red = D/M − K/(M ω_c)`, `R(s) = K s² / (M ω_c (s + ω_c))` (the first-order filter
@@ -46,12 +48,6 @@ open Set Matrix
 namespace VSMLPF
 
 variable (g : VSMLPF)
-
-/-- The synchronizing coefficient is the slope of the power-angle curve at `δ₀`:
-`K = K₀ cos δ₀ = ∂(K₀ sin δ)/∂δ |_{δ₀}`. -/
-@[tmio M, powerlib_domain] theorem K_eq_deriv :
-    HasDerivAt (fun x => g.K0 * Real.sin x) g.K g.δ0 :=
-  (Real.hasDerivAt_sin g.δ0).const_mul g.K0
 
 /-- Reduced-layer damping `2α_red = D/M − K/(M ω_c)`. -/
 def twoAlphaRed : ℝ := g.D / g.M - g.K / (g.M * g.ωc)

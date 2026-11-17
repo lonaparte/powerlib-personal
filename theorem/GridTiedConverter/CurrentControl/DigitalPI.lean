@@ -54,7 +54,8 @@ Results.
   (`Delay.pureDelay_three_half_periods`, `τ = 3 Tₛ / 2`), the hold leaving the real factor
   `Tₛ sinc (ω Tₛ/2)` (`Delay.zoh_jω`).
 * Static, Routh–Hurwitz of the platform: with `L > 0`, `Tₛ > 0` the plant is Hurwitz iff
-  `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁` (`mem_den_iff`); a strict violation gives a root in the open
+  `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁` (`mem_den_iff`, the cubic Routh law in the coefficients
+  `Criteria.isHurwitz_iff_of_coeffs_cubic`); a strict violation gives a root in the open
   right half plane (`exists_root_of_lagged`); for every `Tₛ > 0` and every inductance a Hurwitz
   platform has a stable design (`design_stable_of_isHurwitz`: `a₀ > 0` and `a₁ > 0` give
   `(R + Kp)/L > (τ/2) Ki/L > 0`); fast sampling and a stable design give the platform conditions
@@ -451,17 +452,9 @@ exponential stability) iff `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
   unfold TMIO.Statement
   rw [(connection_proof% (family_isLinear.mem_den_hurwitz hP))]
   change IsHurwitz y.model.A ↔ 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1
-  have ha3 := a3_pos hL hT
-  have htr : y.model.A.trace = -(y.a2 / y.a3) := by
-    rw [← neg_trace_A y hL.ne' hT.ne', neg_neg]
-  have hdet : y.model.A.det = -(y.a0 / y.a3) := by
-    rw [← neg_det_A y hL.ne' hT.ne', neg_neg]
-  rw [Criteria.isHurwitz_fin_three_iff, htr, hdet, principalMinorSum_A_eq y hL.ne' hT.ne',
-    neg_lt_zero, neg_lt_zero, div_pos_iff_of_pos_right ha3, div_pos_iff_of_pos_right ha3]
-  have key : -(y.a2 / y.a3) * (y.a1 / y.a3) < -(y.a0 / y.a3) ↔ y.a3 * y.a0 < y.a2 * y.a1 := by
-    rw [neg_mul, neg_lt_neg_iff, div_mul_div_comm, div_lt_div_iff₀ ha3 (mul_pos ha3 ha3)]
-    constructor <;> intro h <;> nlinarith
-  rw [key]
+  exact Criteria.isHurwitz_iff_of_coeffs_cubic _ (a3_pos hL hT)
+    (by rw [neg_div, ← neg_trace_A y hL.ne' hT.ne', neg_neg])
+    (principalMinorSum_A_eq y hL.ne' hT.ne') (by rw [neg_div, ← neg_det_A y hL.ne' hT.ne', neg_neg])
 
 /-- Fast sampling against a stable design gives the platform Routh conditions:
 `a₂ > L/2`, `a₁ ≥ 3 (R + Kp)/4` and `a₃ a₀ ≤ L (R + Kp)/4 < (L/2)(3 (R + Kp)/4)`. Read through the existing requirement satisfaction. -/

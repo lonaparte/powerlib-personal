@@ -31,11 +31,13 @@ Results.
 * Coordinate changes: `Plant.changeCoordinates` (`x' = T x`, `x = S x'`),
   `characteristicMatrix_conj`, `isHurwitz_conj`, `transfer_changeCoordinates`; behaviour under
   linear conjugation (`isTrajectoryOn_conj`, `lyapunovStable_conj`, `decay_conj`,
-  `conservative_conj`, `conj_iff`, `holds_conj`: every behavioural sentence at the origin).
+  `conservative_conj`). With the other sentences they make the transport law of
+  `theorem/Dynamics/Transport.lean`, which reads every behavioural sentence at the origin of a
+  linear field in matrix coordinates (`holds_conj`) and of similar plants (`Similar.holds_iff`).
 * Similarity: `Similar`, `Plant.changeCoordinates_changeCoordinates`,
   `Plant.changeCoordinates_one`, `Similar.refl`, `Similar.symm`, `Similar.trans`,
-  `Similar.transfer_eq`, `Similar.isHurwitz_iff`, `Similar.holds_iff`, and the equivalence of
-  plants `Plant.similarity`.
+  `Similar.transfer_eq`, `Similar.isHurwitz_iff`, and the equivalence of plants
+  `Plant.similarity`.
 * Hidden modes: `hiddenMode`, `quietMode`, `transfer_not_determines_stability`.
 -/
 
@@ -289,56 +291,6 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   have hKx : K x ≠ 0 := fun h => hx (by rw [← hLK x, h, map_zero])
   simpa [Function.comp_apply, map_zero] using hmin (K x) hKx
 
-/-- A property of fields preserved by every linear change of coordinates holds for the conjugated
-linear field exactly when it holds for the original one. -/
-@[tmio T, powerlib_foundation] theorem conj_iff {Q : (ℝⁿ → ℝⁿ) → Prop}
-    (hQ : ∀ (f : ℝⁿ → ℝⁿ) (L K : ℝⁿ →L[ℝ] ℝⁿ), (∀ x, K (L x) = x) → (∀ x, L (K x) = x) →
-      Q f → Q fun x => L (f (K x)))
-    {T S : Matrix (Fin n) (Fin n) ℝ} (hTS : T * S = 1) (hST : S * T = 1)
-    (A : Matrix (Fin n) (Fin n) ℝ) :
-    Q (affineLinearVectorField (T * A * S) 0) ↔ Q (affineLinearVectorField A 0) := by
-  have h₁ : affineLinearVectorField (T * A * S) 0 =
-      fun x => op T (affineLinearVectorField A 0 (op S x)) := by
-    funext x
-    simp only [affine_apply, sub_zero, op_mul_apply]
-  have h₂ : affineLinearVectorField A 0 =
-      fun x => op S (affineLinearVectorField (T * A * S) 0 (op T x)) := by
-    funext x
-    simp only [affine_apply, sub_zero, op_mul_apply, op_cancel hST]
-  constructor
-  · intro h
-    rw [h₂]
-    exact hQ _ (op S) (op T) (op_cancel hTS) (op_cancel hST) h
-  · intro h
-    rw [h₁]
-    exact hQ _ (op T) (op S) (op_cancel hST) (op_cancel hTS) h
-
-/-- A coordinate change preserves every behavioural sentence at the origin. -/
-@[tmio T, powerlib_foundation] theorem holds_conj (P : Flow.Property) {T S : Matrix (Fin n) (Fin n) ℝ}
-    (hTS : T * S = 1) (hST : S * T = 1) (A : Matrix (Fin n) (Fin n) ℝ) :
-    P.holds (affineLinearVectorField (T * A * S) 0) 0 ↔
-      P.holds (affineLinearVectorField A 0) 0 := by
-  by_cases hP : P.Attractive
-  · rw [holds_iff_isHurwitz 0 hP, holds_iff_isHurwitz 0 hP, isHurwitz_conj hTS hST]
-  · cases P
-    case lyapunovStable =>
-      exact conj_iff (Q := fun f => LyapunovStable f 0)
-        (fun f L K h₁ h₂ => lyapunovStable_conj L K h₁ h₂) hTS hST A
-    case unstable =>
-      exact not_congr (conj_iff (Q := fun f => LyapunovStable f 0)
-        (fun f L K h₁ h₂ => lyapunovStable_conj L K h₁ h₂) hTS hST A)
-    case decay a =>
-      exact conj_iff (Q := fun f => Flow.Decay f 0 a)
-        (fun f L K h₁ h₂ => decay_conj L K h₁ h₂) hTS hST A
-    case contractive =>
-      change Flow.SampledContraction _ _ ↔ Flow.SampledContraction _ _
-      rw [sampledContraction_iff_isHurwitz, sampledContraction_iff_isHurwitz,
-        isHurwitz_conj hTS hST]
-    case conservative =>
-      exact conj_iff (Q := fun f => Flow.Conservative f 0)
-        (fun f L K h₁ h₂ => conservative_conj L K h₁ h₂) hTS hST A
-    all_goals exact absurd trivial hP
-
 /-! ## Similar plants -/
 
 /-- Two plants are similar when a state coordinate change carries one into the other. -/
@@ -383,13 +335,6 @@ def Similar {n' : ℕ} (m : Plant n p) (m' : Plant n' p) : Prop :=
     (h : Similar m m') : IsHurwitz m'.A ↔ IsHurwitz m.A := by
   obtain ⟨T, S, hTS, hST, rfl⟩ := h
   exact isHurwitz_conj hTS hST m.A
-
-/-- Similar plants of the same dimension satisfy the same behavioural sentences. -/
-@[tmio T, powerlib_foundation] theorem Similar.holds_iff {m m' : Plant n p} (h : Similar m m')
-    (P : Flow.Property) :
-    P.holds (affineLinearVectorField m'.A 0) 0 ↔ P.holds (affineLinearVectorField m.A 0) 0 := by
-  obtain ⟨T, S, hTS, hST, rfl⟩ := h
-  exact holds_conj P hTS hST m.A
 
 /-- A coordinate change, as an equivalence of plants. -/
 def Plant.similarity (T S : Matrix (Fin n) (Fin n) ℝ) (hTS : T * S = 1) (hST : S * T = 1) :

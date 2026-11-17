@@ -1,4 +1,4 @@
-import theorem.PowerSystem.Synchronous.Swing
+import theorem.PowerSystem.Synchronous.GeneralSwing
 import theorem.Dynamics.Transport
 import theorem.Spectral.Local
 
@@ -51,20 +51,29 @@ Family and connection conclusions.
   equivalence `m ∈ droopFamily.den s ↔ m.toVSM ∈ vsmFamily.den s` of the two families.
   Consequently the droop translation is sound
   (`droopFamily_chain_le_semantics`). Scaffold: `theorem/GridTiedConverter/GFM/DroopVSM.agda`.
-* On a sinusoidal power curve (`P = k₁ + k₂ sin(θ − k₃)`, any `ω_s`, `ω* = 0`) the VSM family
-  agrees with the swing family `Synchronous.Swing.family` sentence by sentence: the model is the
-  swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` about `θ*`
-  (`vsm_mem_den_iff_swing_of_sinusoid`; on an infinite bus in the synchronous frame take
-  `k₁ = k₃ = 0`, `ω_s = 0`). Through it `infiniteBus_locallyExponentiallyStable`, a connection
-  conclusion on the droop family, is the swing family's local exponential stability
-  (`Synchronous.Swing.mem_den_locallyExponentiallyStable`). The VSM family keeps its own laws
-  (`vsmFamily_chain_le_semantics`, `vsm_mem_den_locallyExponentiallyStable`): they hold for an
-  arbitrary `C¹` power map `P` and a selected state with `ω* ≠ 0`, which the swing family, with
-  its sinusoidal curve and selected point `(δ*, 0)`, does not cover. Scaffold:
+* The VSM is the swing equation with an arbitrary law: `VSMModel.toSwing` maps a model to the
+  swing model `⟨M, D, P_ref + D ω_s, P(θ), θ*, ω*⟩` of `Synchronous.GeneralSwing.family` (the
+  damping reference `ω_s` shifts the driving power), whose translated field is the VSM's
+  (`VSMModel.field_eq_toSwing`), so every sentence of a VSM model denotes the preimage of its
+  image's denotation (`vsm_den_eq_preimage`). Composed with the hub reading of the swing family
+  on a sinusoid (`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`): on a sinusoidal power
+  curve (`P = k₁ + k₂ sin(θ − k₃)`, any `ω_s`, `ω* = 0`) the VSM family agrees with the swing hub
+  `Synchronous.Swing.family` sentence by sentence, the model being the swing model
+  `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` about `θ*` (`vsm_mem_den_iff_swing_of_sinusoid`; on an
+  infinite bus in the synchronous frame take `k₁ = k₃ = 0`, `ω_s = 0`). Through it
+  `infiniteBus_locallyExponentiallyStable`, a connection conclusion on the droop family, is the
+  swing family's local exponential stability
+  (`Synchronous.Swing.mem_den_locallyExponentiallyStable`). The VSM family keeps its own
+  requirement language and laws (`vsmFamily_chain_le_semantics`,
+  `vsm_mem_den_locallyExponentiallyStable`, the conservative oscillator's linearization laws
+  through `VSMModel.vector_eq_conservative`): they hold for an arbitrary `C¹` power map `P`, which
+  the swing hub, with its sinusoidal curve and selected point `(δ*, 0)`, does not cover, and the
+  swing family with an arbitrary law has no requirement language. Scaffold:
   `theorem/GridTiedConverter/GFM/VSMSwing.agda` (the composite with the droop reading,
   `infiniteBus_locallyExponentiallyStable`, in `theorem/GridTiedConverter/GFM/DroopVSM.agda`).
-* `vsmField_eq_transport` and `equilibrium_iff` are static evidence on the model (a field
-  identity and an equilibrium correspondence).  The trajectory maps `isTrajectoryOn_vsm_of_droop`,
+* `vsmField_eq_transport`, `VSMModel.vector_eq_conservative`, `VSMModel.field_eq_toSwing`,
+  `VSMModel.vector_eq_zero_iff` and `equilibrium_iff` are static evidence on the model (field
+  identities and equilibrium correspondences).  The trajectory maps `isTrajectoryOn_vsm_of_droop`,
   `isTrajectoryOn_droop_of_vsm` are private implementation evidence (trajectory level).
 
 Corrections.
@@ -241,60 +250,36 @@ def vector (m : VSMModel) (x : State 2) : State 2 :=
 /-- The VSM field translated so that the selected state is the origin. -/
 def field (m : VSMModel) (z : State 2) : State 2 := m.vector (z + m.point)
 
-/-- The Jacobian of the VSM field at the angle `θ`. -/
-def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![0, 1; -deriv m.P θ / m.M, -m.D / m.M]
+/-- The VSM field is the conservative second-order field `PhasePlane.Conservative.field` with mass
+`M`, damping `D` and restoring force `P(θ) − (P_ref + D ω_s)` (the damping reference shifts the
+reference power). -/
+@[tmio M, powerlib_domain] theorem vector_eq_conservative (m : VSMModel) :
+    m.vector = PhasePlane.Conservative.field m.M m.D (fun θ => m.P θ - (m.Pref + m.D * m.ωs)) := by
+  funext x
+  refine PhasePlane.ext_iff'.2 ⟨by simp [vector], ?_⟩
+  simp only [vector, PhasePlane.mk_apply_one, PhasePlane.Conservative.field_apply_one]
+  ring
 
-@[tmio M, powerlib_domain] theorem contDiff_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P) :
-    ContDiff ℝ 1 m.vector := by
-  rw [contDiff_euclidean]
-  intro i
-  have hP : ContDiff ℝ 1 (fun x : State 2 => m.P (x 0)) :=
-    hs.comp (Dynamics.contDiff_coord 0)
-  fin_cases i
-  · simpa [vector] using Dynamics.contDiff_coord (k := 1) 1
-  · simp only [vector, Fin.mk_one, Fin.isValue, PhasePlane.mk_apply_one]
-    exact (((contDiff_const.sub hP).sub (contDiff_const.mul
-      ((Dynamics.contDiff_coord 1).sub contDiff_const))).div_const _)
-
-@[tmio M, powerlib_domain] theorem hasFDerivAt_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P)
-    (x : State 2) :
-    HasFDerivAt m.vector (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (m.jacobian (x 0))) x := by
-  rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
-  intro i
-  rw [hasFDerivWithinAt_univ]
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have hd : HasDerivAt m.P (deriv m.P (x 0)) (x 0) :=
-    ((hs.differentiable one_ne_zero) (x 0)).hasDerivAt
-  fin_cases i
-  · simp only [Fin.zero_eta, Fin.isValue, vector, PhasePlane.mk_apply_zero]
-    convert h1 using 1
-    · rfl
-    apply ContinuousLinearMap.ext; intro v
-    simp [jacobian, PhasePlane.toEuclideanCLM_apply_zero]
-  · simp only [Fin.mk_one, Fin.isValue, vector, PhasePlane.mk_apply_one]
-    have hs := hd.comp_hasFDerivAt x h0
-    have h := (((hasFDerivAt_const m.Pref x).sub hs).sub
-      ((h1.sub_const m.ωs).const_mul m.D)).const_mul m.M⁻¹
-    convert h using 1
-    · funext y; simp [div_eq_inv_mul]
-    · apply ContinuousLinearMap.ext; intro v
-      simp [jacobian, PhasePlane.toEuclideanCLM_apply_one]
-      ring
-
+/-- Equilibria: `ω = 0` and `P(θ) = P_ref + D ω_s` (`PhasePlane.Conservative.field_eq_zero_iff`).
+Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem vector_eq_zero_iff (m : VSMModel) (hM : m.M ≠ 0) (x : State 2) :
     m.vector x = 0 ↔ x 1 = 0 ∧ m.P (x 0) = m.Pref + m.D * m.ωs := by
-  constructor
-  · intro h
-    have h0 := congrArg (fun y : State 2 => y 0) h
-    have h1 := congrArg (fun y : State 2 => y 1) h
-    simp only [vector, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, PiLp.zero_apply] at h0 h1
-    refine ⟨h0, ?_⟩
-    rw [h0, div_eq_zero_iff, or_iff_left hM] at h1
-    linarith
-  · rintro ⟨h0, h1⟩
-    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [vector, h0, h1]
+  rw [vector_eq_conservative, PhasePlane.Conservative.field_eq_zero_iff hM, sub_eq_zero]
+
+/-- The VSM model as a swing model with the speed-independent power law `P(θ)` and the driving
+power `P_ref + D ω_s`, about the same state (`Synchronous.GeneralSwing.Model`). -/
+def toSwing (m : VSMModel) : Synchronous.GeneralSwing.Model :=
+  ⟨m.M, m.D, m.Pref + m.D * m.ωs, fun θ _ => m.P θ, m.point 0, m.point 1⟩
+
+/-- The translated VSM field is the translated field of its swing image. Static evidence on the
+model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_eq_toSwing (m : VSMModel) : m.field = m.toSwing.field := by
+  funext z
+  have hpt : m.toSwing.point = m.point := PhasePlane.mk_coords m.point
+  rw [Synchronous.GeneralSwing.Model.field, hpt]
+  refine PhasePlane.ext_iff'.2 ⟨by simp [field, vector, Synchronous.GeneralSwing.field], ?_⟩
+  simp only [field, vector, Synchronous.GeneralSwing.field, PhasePlane.mk_apply_one, toSwing]
+  ring
 
 end VSMModel
 
@@ -347,45 +332,46 @@ def vsmFamily : Family VSMModel VSMRequirement 2 0 :=
   Spectral.mem_den_flow_iff_shift (f := VSMModel.vector) (pt := VSMModel.point)
     vsmFamily_isAutonomous
 
-@[tmio M, powerlib_domain] private theorem vsm_point_eq_zero {m : VSMModel} (hM : 0 < m.M) (hb : vsmMeets m .balanced) :
-    m.vector m.point = 0 :=
-  (m.vector_eq_zero_iff hM.ne' _).mpr hb
+/-- At a selected state with `ω* = 0` a flow sentence of a VSM model is the sentence of the
+conservative field (`VSMModel.vector_eq_conservative`) at `(θ*, 0)`. -/
+@[tmio TM, powerlib_domain] private theorem vsm_mem_den_flow_iff_conservative {m : VSMModel}
+    (hω : m.point 1 = 0) {P : Flow.Property} :
+    m ∈ vsmFamily.den (.flow P) ↔ P.holds (PhasePlane.Conservative.field m.M m.D
+      (fun θ => m.P θ - (m.Pref + m.D * m.ωs))) (PhasePlane.mk (m.point 0) 0) := by
+  have hpt : m.point = PhasePlane.mk (m.point 0) 0 := PhasePlane.ext_iff'.2 ⟨by simp, by simp [hω]⟩
+  rw [vsm_mem_den_flow_iff, m.vector_eq_conservative, ← hpt]
 
 /-- A `C¹` power map, balance, positive inertia and damping and a positive synchronizing slope
-place a VSM model in local exponential stability. -/
+place a VSM model in local exponential stability: the conservative linearization law
+(`PhasePlane.Conservative.locallyExponentiallyStable_of_slope_pos`, `tr J = −D/M`,
+`det J = P'(θ*)/M`). -/
 @[tmio TM, powerlib_domain] theorem vsm_mem_den_locallyExponentiallyStable (m : VSMModel)
     (hs : ContDiff ℝ 1 m.P) (hω : m.point 1 = 0) (hb : m.P (m.point 0) = m.Pref + m.D * m.ωs)
     (hM : 0 < m.M) (hD : 0 < m.D) (hK : 0 < deriv m.P (m.point 0)) :
     connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  apply vsm_mem_den_flow_iff.mpr
-  refine Criteria.locallyExponentiallyStable_of_jacobian_fin_two (m.jacobian (m.point 0))
-    (m.contDiff_vector hs) (vsm_point_eq_zero hM ⟨hω, hb⟩) (m.hasFDerivAt_vector hs _).fderiv
-    ?_ ?_
-  · simp only [VSMModel.jacobian, Matrix.trace_fin_two_of]
-    have : 0 < m.D / m.M := div_pos hD hM
-    rw [neg_div]; linarith
-  · simp only [VSMModel.jacobian, Matrix.det_fin_two_of, neg_div]
-    have : 0 < deriv m.P (m.point 0) / m.M := div_pos hK hM
-    linarith
+  rw [vsm_mem_den_flow_iff_conservative hω]
+  exact PhasePlane.Conservative.locallyExponentiallyStable_of_slope_pos hM hD
+    (hs.sub contDiff_const) (sub_eq_zero.2 hb)
+    (((hs.differentiable one_ne_zero) _).hasDerivAt.sub_const _) hK
 
+/-- A destabilizing sign at a balanced state with positive inertia: a saddle (`P'(θ*) < 0`,
+`PhasePlane.Conservative.unstable_of_slope_neg`) or negative damping
+(`PhasePlane.Conservative.unstable_of_damping_neg`). -/
 @[tmio TM, powerlib_domain] private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     (hb : vsmMeets m .balanced) (hM : vsmMeets m .inertia) (hs : vsmMeets m .destabilizing) :
     connection% (m ∈ vsmFamily.den (.flow .unstable)) := by
-  apply vsm_mem_den_flow_iff.mpr
+  obtain ⟨hω, hb⟩ := hb
   have hM' : 0 < m.M := hM
   have hsm' : ContDiff ℝ 1 m.P := hsm
+  have hd := ((hsm'.differentiable one_ne_zero) (m.point 0)).hasDerivAt.sub_const
+    (m.Pref + m.D * m.ωs)
+  apply (vsm_mem_den_flow_iff_conservative hω).mpr
   rcases (hs : deriv m.P (m.point 0) < 0 ∨ m.D < 0) with hK | hD
-  · refine Criteria.unstable_of_jacobian_det (m.jacobian (m.point 0))
-      (m.contDiff_vector hsm') (vsm_point_eq_zero hM' hb) (m.hasFDerivAt_vector hsm' _).fderiv ?_
-    simp only [neg_one_sq, one_mul, VSMModel.jacobian, Matrix.det_fin_two_of, neg_div]
-    have : deriv m.P (m.point 0) / m.M < 0 := div_neg_of_neg_of_pos hK hM'
-    linarith
-  · refine Criteria.unstable_of_jacobian_trace_pos (m.jacobian (m.point 0))
-      (m.contDiff_vector hsm') (vsm_point_eq_zero hM' hb) (m.hasFDerivAt_vector hsm' _).fderiv ?_
-    simp only [VSMModel.jacobian, Matrix.trace_fin_two_of]
-    have : m.D / m.M < 0 := div_neg_of_neg_of_pos hD hM'
-    rw [neg_div]; linarith
+  · exact PhasePlane.Conservative.unstable_of_slope_neg hM' (hsm'.sub contDiff_const)
+      (sub_eq_zero.2 hb) hd hK
+  · exact PhasePlane.Conservative.unstable_of_damping_neg hM' hD (hsm'.sub contDiff_const)
+      (sub_eq_zero.2 hb) hd
 
 /-- The whole VSM requirement language is inconsistent. -/
 @[tmio M, powerlib_domain] theorem vsm_realize_univ :
@@ -417,32 +403,38 @@ place a VSM model in local exponential stability. -/
     exact vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
       (hm .inertia (by simp)) (hm .destabilizing (by simp))
 
+/-- **The VSM family is the swing family with an arbitrary law read through `toSwing`**: every
+sentence of a VSM model denotes the preimage of the denotation of its swing image
+`⟨M, D, P_ref + D ω_s, P(θ), θ*, ω*⟩` (`Synchronous.GeneralSwing.family`), because the two
+translated fields are equal (`VSMModel.field_eq_toSwing`). -/
+@[tmio TM, powerlib_domain] theorem vsm_den_eq_preimage :
+    connection% (∀ s, vsmFamily.den s =
+      VSMModel.toSwing ⁻¹' Synchronous.GeneralSwing.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  intro s
+  ext m
+  rw [Set.mem_preimage, (connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
+  change s.holds (.continuous (Port.System.autonomous m.field)) ↔
+    s.holds (.continuous (Port.System.autonomous m.toSwing.field))
+  rw [m.field_eq_toSwing]
+
 /-- On a sinusoidal power curve `P(θ) = k₁ + k₂ sin(θ − k₃)`, in any rotating frame, a VSM model
 at a state with `ω* = 0` is the swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` read about `θ*`
 (the damping reference `ω_s` shifts the mechanical power to `P_ref + D ω_s`): the two families
-agree on every sentence, because the two translated fields are equal. -/
+agree on every sentence. The composite of the reading through the swing family with an arbitrary
+law (`vsm_den_eq_preimage`) and its hub reading on a sinusoid
+(`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`). -/
 @[tmio TM, powerlib_domain] theorem vsm_mem_den_iff_swing_of_sinusoid (m : VSMModel) (k₁ k₂ k₃ : ℝ)
     (hP : m.P = fun θ => k₁ + k₂ * Real.sin (θ - k₃)) (h1 : m.point 1 = 0) (s : Sentence) :
     connection% (m ∈ vsmFamily.den s ↔
       Synchronous.Swing.Model.mk ⟨m.M, m.D, m.Pref + m.D * m.ωs, k₁, k₂, k₃⟩ (m.point 0) ∈
         Synchronous.Swing.family.den s) := by
-  unfold powerlib.TMIO.Statement
-  have hfield : m.field = Synchronous.Swing.Model.field
-      ⟨⟨m.M, m.D, m.Pref + m.D * m.ωs, k₁, k₂, k₃⟩, m.point 0⟩ := by
-    funext z
-    have hpt : m.point = PhasePlane.mk (m.point 0) 0 :=
-      PhasePlane.ext_iff'.2 ⟨by simp, by simp [h1]⟩
-    simp only [VSMModel.field, Synchronous.Swing.Model.field, Synchronous.Swing.Model.point]
-    rw [← hpt]
-    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-    · simp [VSMModel.vector]
-    · simp only [VSMModel.vector, Synchronous.SwingParams.field_apply_one,
-        Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, PhasePlane.mk_apply_one, hP]
-      ring
-  rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
-  change s.holds (.continuous (Port.System.autonomous m.field)) ↔
-    s.holds (.continuous (Port.System.autonomous _))
-  rw [hfield]
+  have hd := vsm_den_eq_preimage
+  have hr := Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid m.toSwing k₁ k₂ k₃
+    (by funext θ _; simp [VSMModel.toSwing, hP]) h1 s
+  unfold powerlib.TMIO.Statement at hd hr ⊢
+  rw [hd s, Set.mem_preimage]
+  exact hr
 
 /-! ## The droop + LPF family and the large-signal equivalence -/
 

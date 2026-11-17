@@ -66,7 +66,7 @@ Family and connection conclusions.
   stability conclusions are the connection statements of `Frequency.SwingGovernor.family`).
 * `rocof_le_iff_criticalInertia` quantifies over a forward solution and its initial slope,
   outside the sentence language: it is private implementation evidence (Rules §3a), derived
-  from the generic `LTI.hasDerivWithinAt_apply_zero` and the static `SwingGovernor.field_apply`.
+  from the generic `LTI.hasDerivWithinAt_apply_zero` and the static `SwingGovernor.field_zero`.
 
 Correction (§1.1).
 * The electromechanical time constant `T_em = 2H/ω_s` is about 25 ms for `H = 4 s` at 50 Hz
@@ -161,10 +161,7 @@ initial RoCoF `ḟ(0⁺)` (Hz/s, `f = f₀(1 + Δω)`) satisfies `|ḟ(0⁺)| �
     |ρ| ≤ r ↔ criticalInertia ΔPL f₀ r ≤ H := by
   have hr0 : HasDerivWithinAt (fun t => x t 0) (-ΔPL / (2 * H)) (Ici 0) 0 := by
     have h := LTI.hasDerivWithinAt_apply_zero hx 0
-    rw [SwingGovernor.field_apply, h0] at h
-    convert h using 1
-    simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
-    ring
+    rwa [h0, SwingGovernor.field_zero] at h
   have h : HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) (-(ΔPL * f₀) / (2 * H)) (Ici 0) 0 := by
     have h := (hr0.const_add 1).const_mul f₀
     convert h using 1
@@ -490,7 +487,10 @@ end Asymptotics
 
 /-! ## Time scales (§1.1) -/
 
-/-- Electromechanical time constant `T_em = 2H/ω_s`. -/
+/-- Electromechanical time constant `T_em = 2H/ω_s`: the inertia coefficient of the swing
+equation with the speed in rad/s (form 1 of `Transform.PerUnit.swingPowerSI_iff_swingPowerPU`, the
+`M_vsm = 2H/ω_s` of `GFM.Mvsm_eq_Kd`); with the per-unit speed the coefficient is `M = 2H`, the
+inertia of the frequency models (`SwingGovernor.plant (2 * H)`). -/
 def electromechanicalTime (H ωs : ℝ) : ℝ := 2 * H / ωs
 
 /-- Correction (§1.1): `T_em` is about 25 ms (`H = 4 s`, 50 Hz), not "several seconds". -/

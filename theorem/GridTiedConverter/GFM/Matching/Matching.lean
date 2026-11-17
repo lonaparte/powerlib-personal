@@ -4,7 +4,7 @@ import theorem.Spectral.Family
 import theorem.Spectral.Global
 import theorem.LTI.Plant
 import theorem.Dynamics.Shift
-import theorem.PowerSystem.Synchronous.Swing
+import theorem.PowerSystem.Synchronous.GeneralSwing
 import Mathlib.Analysis.Real.Pi.Bounds
 import theorem.Passive.Parallel
 
@@ -18,8 +18,9 @@ export-positive (`v i_x = P_ac,export`, lossless converter). Continuous time, pe
 * Matching control (§1.2, Arghir–Jouini–Dörfler): state order `(θ, v)` (converter modulation
   angle, DC voltage); matching law `θ' = η v`; DC node `C v' = i_dc − i_x(θ, v) − G v` with an
   **arbitrary** load-current law `i_x` (the AC network, filter and grid are hidden in `i_x`; no
-  current limits, no PLL, no inner loops); `η, C ≠ 0`. Swing model: state `(θ, ω)`,
-  `θ' = ω`, `M ω' = τ − P_e(θ, ω) − D ω`.
+  current limits, no PLL, no inner loops); `η, C ≠ 0`. Swing model: the swing equation with an
+  arbitrary law, `Synchronous.GeneralSwing` (`theorem/PowerSystem/Synchronous/GeneralSwing.lean`),
+  state `(θ, ω)`, `θ' = ω`, `M ω' = τ − P_e(θ, ω) − D ω`.
 * DC-voltage droop (§1.4): `ω − ω_s = K (v − v*)` on the linearized DC node
   `C Δv' = −(3/2) ΔP_export / v* − G Δv`.
 
@@ -34,8 +35,8 @@ Results.
 * `droop_transfer`, `droop_dcGain`: the droop has `Δω/ΔP_export = −(3/2) K /(v* (C s + G))`;
   its DC gain `−(3/2) K /(G v*)` needs `G ≠ 0` (§1.4).
 * `matching_eq_swing`: with `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
-  `P_e(θ, ω) = i_x(θ, ω/η)/η`, the swing field is exactly the matching field in the
-  coordinates `(θ, ω) = (θ, η v)`.
+  `P_e(θ, ω) = i_x(θ, ω/η)/η`, the swing field `Synchronous.GeneralSwing.field` is exactly the
+  matching field in the coordinates `(θ, ω) = (θ, η v)`.
 * `matching_equilibrium_iff` (static): equilibria correspond.
 * `matching_swing`: along a solution, the converter frequency `ω = η u_dc` obeys
   `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η` (T-gfm-control §1.6 table).
@@ -46,29 +47,22 @@ Family and connection conclusions.
   `droopChain_le_semantics`, `droopExact`; `droop_mem_den_iff`: with `C > 0` the small-signal
   model satisfies an attractive sentence iff `G > 0`.
 * `matchingFamily : Family MatchingModel Spectral.Requirement 2 0` reads a matching model
-  together with a selected point `(θ*, v*)` as its field translated to that point;
-  `swingFamily : Family SwingModel Spectral.Requirement 2 0` does the same for a swing model and
-  a selected point `(θ*, ω*)`. Neither has a requirement language of its own (both conditions
-  are `False`): every flow translation is unavailable coverage, sound because it is empty
-  (`matchingChain_le_semantics`, `swingChain_le_semantics`), and passivity is exact. Their
-  content is their semantics.
+  together with a selected point `(θ*, v*)` as its field translated to that point. It has no
+  requirement language of its own (both conditions are `False`): every flow translation is
+  unavailable coverage, sound because it is empty (`matchingChain_le_semantics`), and passivity is
+  exact. Its content is its semantics.
 * `matching_den_eq` (connection comparison): for **every** behavioural sentence the matching
-  family's denotation is the swing family's pulled back along `MatchingModel.toSwing`
+  family's denotation is the denotation of the swing family with an arbitrary law
+  (`Synchronous.GeneralSwing.family`) pulled back along `MatchingModel.toSwing`
   (`M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`, point `(θ*, η v*)`):
   the coordinate change `(θ, v) ↦ (θ, η v)` (`Dynamics.scaleCoord`) transports every sentence
   (`Dynamics.holds_transport_iff`); read member-wise it gives every sentence-by-sentence
-  equivalence. The solution correspondence `matching_trajectory_iff` (a trajectory-level
-  statement outside the sentence language) is private implementation evidence.
-* `swing_mem_den_iff_hub_of_sinusoid` (connection comparison): on a speed-independent sinusoidal
-  law `P_e(θ, ω) = k₁ + k₂ sin(θ − k₃)` with `ω* = 0` a swing model is the canonical swing model
-  `⟨M, D, τ, k₁, k₂, k₃⟩` of `Synchronous.Swing.family` about `θ*`; through that hub
-  `swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid` characterizes local exponential
-  stability (`M > 0`) by balance, `D > 0` and `k₂ cos(θ* − k₃) > 0`. The swing family here stays
-  a family of its own: its power law `P_e(θ, ω)` is arbitrary and may depend on the speed — the
-  matched law `i_x(θ, ω/η)/η` does whenever the load current depends on the DC voltage — and its
-  selected speed `ω*` is free, while the hub has the speed-independent sinusoid and the point
-  `(δ*, 0)`. Without a requirement language there is nothing for `Spectral.exactUnder_of_hub` to
-  carry: the hub supplies the denotations themselves on the sinusoidal case. Scaffold:
+  equivalence. The matched law `i_x(θ, ω/η)/η` depends on the speed whenever the load current
+  depends on the DC voltage, so the matching family reads through the swing family with an
+  arbitrary law, and through the canonical swing hub only on a speed-independent sinusoidal law
+  (`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`). The solution correspondence
+  `matching_trajectory_iff` (a trajectory-level statement outside the sentence language) is
+  private implementation evidence. Scaffold:
   `theorem/GridTiedConverter/GFM/Matching/MatchingSwing.agda`.
 * Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
   `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian
@@ -111,14 +105,10 @@ open powerlib.Dynamics LinearSystems
 def matchingField (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) (x : State 2) : State 2 :=
   WithLp.toLp 2 ![η * x 1, (idc - ix (x 0) (x 1) - G * x 1) / C]
 
-/-- Swing field, state `(θ, ω)`: `M ω' = τ − P_e(θ, ω) − D ω`. -/
-def swingField (M D τ : ℝ) (Pe : ℝ → ℝ → ℝ) (y : State 2) : State 2 :=
-  WithLp.toLp 2 ![y 1, (τ - Pe (y 0) (y 1) - D * y 1) / M]
-
-/-- Swing parameters of the matching law: `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
-`P_e(θ, ω) = i_x(θ, ω/η)/η`. -/
+/-- The swing field (`Synchronous.GeneralSwing.field`) at the swing parameters of the matching law:
+`M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`. -/
 def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → State 2 :=
-  swingField (C / η ^ 2) (G / η ^ 2) (idc / η) (fun θ ω => ix θ (ω / η) / η)
+  Synchronous.GeneralSwing.field (C / η ^ 2) (G / η ^ 2) (idc / η) (fun θ ω => ix θ (ω / η) / η)
 
 /-- The swing field is the matching field in the coordinates `(θ, η v)`. -/
 @[tmio M, powerlib_domain] theorem matching_eq_swing {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
@@ -128,9 +118,9 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
   funext y
   ext i
   fin_cases i
-  · simp [transportField, matchingField, matchedSwing, swingField]
+  · simp [transportField, matchingField, matchedSwing, Synchronous.GeneralSwing.field]
     field_simp
-  · simp [transportField, matchingField, matchedSwing, swingField]
+  · simp [transportField, matchingField, matchedSwing, Synchronous.GeneralSwing.field]
     field_simp
 
 /-- Solutions correspond one to one: `φ = (θ, v)` solves the matching model on `[a, b]` iff
@@ -312,7 +302,7 @@ exponential stability) iff `G > 0`. -/
   rw [droopDen_flow hP]
   exact Passive.SeriesRLC.decay_pos_iff (b := m.node.toSeries) hC
 
-/-! ## The matching and swing families -/
+/-! ## The matching family and its swing reading -/
 
 /-- A matching-control model with a selected point `(θ*, v*)`; `C, η ≠ 0`. -/
 structure MatchingModel where
@@ -337,18 +327,6 @@ abbrev MatchingModel.C (m : MatchingModel) : ℝ := m.node.C
 /-- The DC-node conductance. -/
 abbrev MatchingModel.G (m : MatchingModel) : ℝ := m.node.G
 
-/-- A swing model with an arbitrary electrical power law and a selected point `(θ*, ω*)`. -/
-structure SwingModel where
-  M : ℝ
-  D : ℝ
-  τ : ℝ
-  /-- The electrical power law `P_e(θ, ω)`. -/
-  Pe : ℝ → ℝ → ℝ
-  /-- The selected angle `θ*`. -/
-  θ : ℝ
-  /-- The selected speed `ω*`. -/
-  ω : ℝ
-
 namespace MatchingModel
 
 /-- The selected point `(θ*, v*)`. -/
@@ -360,31 +338,16 @@ def field (m : MatchingModel) (z : State 2) : State 2 :=
 
 /-- The matched swing model: `M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`,
 point `(θ*, η v*)`. -/
-def toSwing (m : MatchingModel) : SwingModel :=
+def toSwing (m : MatchingModel) : Synchronous.GeneralSwing.Model :=
   ⟨m.C / m.η ^ 2, m.G / m.η ^ 2, m.idc / m.η, fun θ ω => m.ix θ (ω / m.η) / m.η, m.θ,
     m.η * m.v⟩
 
 end MatchingModel
 
-namespace SwingModel
-
-/-- The selected point `(θ*, ω*)`. -/
-def point (m : SwingModel) : State 2 := WithLp.toLp 2 ![m.θ, m.ω]
-
-/-- The swing field translated so that the selected point is the origin. -/
-def field (m : SwingModel) (z : State 2) : State 2 := swingField m.M m.D m.τ m.Pe (z + m.point)
-
-end SwingModel
-
 /-- The matching-control family: no requirement language of its own; its content is its
 semantics. -/
 def matchingFamily : Family MatchingModel Spectral.Requirement 2 0 :=
   Spectral.localFamily MatchingModel.field (fun _ => False) (fun _ => False)
-
-/-- The swing family with an arbitrary electrical power law: no requirement language of its
-own; its content is its semantics. -/
-def swingFamily : Family SwingModel Spectral.Requirement 2 0 :=
-  Spectral.localFamily SwingModel.field (fun _ => False) (fun _ => False)
 
 @[tmio TM, powerlib_domain] private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
     m ∈ matchingFamily.den (.flow P) ↔ P.holds (matchingField m.C m.G m.η m.idc m.ix) m.point :=
@@ -392,90 +355,32 @@ def swingFamily : Family SwingModel Spectral.Requirement 2 0 :=
     (f := fun m : MatchingModel => matchingField m.C m.G m.η m.idc m.ix)
     (pt := MatchingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
 
-@[tmio TM, powerlib_domain] private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
-    m ∈ swingFamily.den (.flow P) ↔ P.holds (swingField m.M m.D m.τ m.Pe) m.point :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : SwingModel => swingField m.M m.D m.τ m.Pe)
-    (pt := SwingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
-
 /-- Every translation of the matching family is sound: no member meets a requirement. -/
 @[tmio TM, powerlib_domain] theorem matchingChain_le_semantics :
     connection% (∀ P, matchingFamily.chain P ≤ matchingFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.local_chain_le_semantics (fun _ h => h.elim) (fun _ h => h.elim)
 
-/-- Every translation of the swing family is sound: no member meets a requirement. -/
-@[tmio TM, powerlib_domain] theorem swingChain_le_semantics :
-    connection% (∀ P, swingFamily.chain P ≤ swingFamily.semantics P) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.local_chain_le_semantics (fun _ h => h.elim) (fun _ h => h.elim)
-
 /-- Matching control is the swing equation: for every behavioural sentence, a matching model
-satisfies it at its selected point exactly when its matched swing model does at the scaled
-point `(θ*, η v*)`. -/
+satisfies it at its selected point exactly when its matched swing model
+(`Synchronous.GeneralSwing.family`) does at the scaled point `(θ*, η v*)`. -/
 @[tmio TM, powerlib_domain] theorem matching_den_eq (P : Flow.Property) :
     connection% (matchingFamily.den (.flow P) =
-      MatchingModel.toSwing ⁻¹' swingFamily.den (.flow P)) := by
+      MatchingModel.toSwing ⁻¹' Synchronous.GeneralSwing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext m
-  rw [Set.mem_preimage, matching_mem_den_flow, swing_mem_den_flow]
+  rw [Set.mem_preimage, matching_mem_den_flow, connection_proof% Spectral.mem_den_flow_iff_shift
+    (f := fun m : Synchronous.GeneralSwing.Model => Synchronous.GeneralSwing.field m.M m.D m.τ m.Pe)
+    (pt := Synchronous.GeneralSwing.Model.point) Synchronous.GeneralSwing.family_isAutonomous]
   have hpt : (m.toSwing).point = affineCoord (scaleCoord m.η_ne) 0 m.point := by
     rw [affineCoord_zero_apply]
-    simp [SwingModel.point, MatchingModel.toSwing, MatchingModel.point]
-  have hfield : swingField m.toSwing.M m.toSwing.D m.toSwing.τ m.toSwing.Pe =
+    simp [Synchronous.GeneralSwing.Model.point, MatchingModel.toSwing, MatchingModel.point,
+      PhasePlane.mk]
+  have hfield : Synchronous.GeneralSwing.field m.toSwing.M m.toSwing.D m.toSwing.τ m.toSwing.Pe =
       transportField (scaleCoord m.η_ne) 0 (matchingField m.C m.G m.η m.idc m.ix) := by
     rw [matching_eq_swing m.C_ne m.η_ne]
     rfl
   rw [hpt, hfield, holds_transport_iff]
-
-/-! ## The swing family read through the swing hub -/
-
-/-- On a speed-independent sinusoidal power law `P_e(θ, ω) = k₁ + k₂ sin(θ − k₃)` and at a selected
-point with `ω* = 0`, a swing model is the canonical swing model `⟨M, D, τ, k₁, k₂, k₃⟩` of
-`Synchronous.Swing.family` read about `θ*`: the two families agree on every sentence, because the
-two translated fields are equal. -/
-@[tmio TM, powerlib_domain] theorem swing_mem_den_iff_hub_of_sinusoid (m : SwingModel) (k₁ k₂ k₃ : ℝ)
-    (hP : m.Pe = fun θ _ => k₁ + k₂ * Real.sin (θ - k₃)) (hω : m.ω = 0) (s : Sentence) :
-    connection% (m ∈ swingFamily.den s ↔
-      Synchronous.Swing.Model.mk ⟨m.M, m.D, m.τ, k₁, k₂, k₃⟩ m.θ ∈
-        Synchronous.Swing.family.den s) := by
-  unfold powerlib.TMIO.Statement
-  have hfield : m.field = Synchronous.Swing.Model.field ⟨⟨m.M, m.D, m.τ, k₁, k₂, k₃⟩, m.θ⟩ := by
-    funext z
-    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-    · simp [SwingModel.field, swingField, SwingModel.point, hω, Synchronous.Swing.Model.field,
-        Synchronous.Swing.Model.point]
-    · simp only [SwingModel.field, swingField, Synchronous.Swing.Model.field,
-        Synchronous.SwingParams.field_apply_one, Synchronous.SwingParams.accel,
-        Synchronous.SwingParams.Pe, hP]
-      simp [SwingModel.point, hω, Synchronous.Swing.Model.point]
-  rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
-  change s.holds (.continuous (Port.System.autonomous m.field)) ↔
-    s.holds (.continuous (Port.System.autonomous _))
-  rw [hfield]
-
-/-- Through the swing hub (`Synchronous.Swing.exactUnder_locallyExponentiallyStable`): with
-positive inertia, a speed-independent sinusoidal law and `ω* = 0`, a swing model is locally
-exponentially stable exactly when the angle is balanced, `k₁ + k₂ sin(θ* − k₃) = τ`, with positive
-damping and synchronizing coefficient `k₂ cos(θ* − k₃) > 0`. -/
-@[tmio TM, powerlib_domain] theorem swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid
-    (m : SwingModel) (k₁ k₂ k₃ : ℝ) (hP : m.Pe = fun θ _ => k₁ + k₂ * Real.sin (θ - k₃))
-    (hω : m.ω = 0) (hM : 0 < m.M) :
-    connection% (m ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
-      m ∈ {m : SwingModel | k₁ + k₂ * Real.sin (m.θ - k₃) = m.τ ∧ 0 < m.D ∧
-        0 < k₂ * Real.cos (m.θ - k₃)}) := by
-  have hr := swing_mem_den_iff_hub_of_sinusoid m k₁ k₂ k₃ hP hω (.flow .locallyExponentiallyStable)
-  have hx := Synchronous.Swing.exactUnder_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hr hx ⊢
-  rw [(connection_proof% Spectral.exactUnder_iff_forall)] at hx
-  rw [hr, ← hx _ ((TMIO.mem_realize _ _ _).mpr fun q hq => by
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    exact hM)]
-  simp only [TMIO.mem_realize, Synchronous.Swing.family, Synchronous.Swing.translate,
-    Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq, Set.mem_ofPred_eq]
-  simp [Synchronous.Swing.Meets, Synchronous.SwingParams.Pe, Synchronous.SwingParams.syncCoeff,
-    hM]
-
 
 /-! ## Global stability of matching control: the sentence-language boundary -/
 

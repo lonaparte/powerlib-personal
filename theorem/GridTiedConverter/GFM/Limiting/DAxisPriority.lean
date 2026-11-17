@@ -1,5 +1,4 @@
-import theorem.Attributes
-import dependencies.Mathlib
+import theorem.SpecialFunctions.Clamp
 
 /-! # d-axis-priority current limiting
 
@@ -11,13 +10,14 @@ dynamics. The note's rule (T-current-limiting §1.2 table): `i_d ← min(i_d, I)
 `i_q ← sgn(i_q) √(I² − i_d²)` (`dPriorityNote`). The corrected rule (`dPriority`) clamps `i_d`
 to `[−I, I]` and then clamps `i_q` to `[−r, r]`, `r = √(I² − i_d'²)`.
 
-Source: work-sync `theory/T-current-limiting.md` §1.1, §1.2.
+Source: work-sync `theory/T-current-limiting.md` §1.1, §1.2; the symmetric clamp
+`SpecialFunctions.clampSym` (`theorem/SpecialFunctions/Clamp.lean`).
 
 Results.
 * `dPriority_norm_le`: `i_d'² + i_q'² ≤ I²` always;
 * `dPriority_of_within`: the limiter is the identity inside the disc `i_d² + i_q² ≤ I²`;
-* `clampSym_of_abs_le`: d-axis priority, `(dPriority I i_d i_q).1 = clampSym I i_d = i_d` whenever
-  `|i_d| ≤ I`;
+* d-axis priority: `(dPriority I i_d i_q).1 = clampSym I i_d = i_d` whenever `|i_d| ≤ I`
+  (`SpecialFunctions.clampSym_of_abs_le`);
 * `dPriority_snd_sign`: the sign of `i_q` is kept.
 * `clamp_not_rotation_invariant`: component-wise clipping in dq does not commute with a frame
   rotation (unlike the circular limiter, `radialLimit_isometry`), which is the formal content of
@@ -34,19 +34,7 @@ and the remaining capacity.
 noncomputable section
 namespace powerlib.Limiting
 
-/-- Clamp to `[-r, r]`. -/
-def clampSym (r x : ℝ) : ℝ := max (-r) (min x r)
-
-@[tmio T, powerlib_foundation] theorem clampSym_sq_le {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
-    clampSym r x ^ 2 ≤ r ^ 2 := by
-  have h1 : -r ≤ clampSym r x := le_max_left _ _
-  have h2 : clampSym r x ≤ r := max_le (by linarith) (min_le_right _ _)
-  nlinarith
-
-@[tmio T, powerlib_foundation] theorem clampSym_of_abs_le {r x : ℝ} (h : |x| ≤ r) : clampSym r x = x := by
-  have := abs_le.mp h
-  simp only [clampSym]
-  rw [min_eq_left this.2, max_eq_right this.1]
+open powerlib.SpecialFunctions
 
 /-- Corrected d-axis-priority limiter. -/
 def dPriority (I id iq : ℝ) : ℝ × ℝ :=
@@ -60,11 +48,11 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   (min id I, sgn iq * Real.sqrt (I ^ 2 - (min id I) ^ 2))
 
 /-- The corrected limiter never exceeds the limit. -/
-@[tmio M, powerlib_domain] theorem dPriority_norm_le {I : ℝ} (hI : 0 ≤ I) (id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem dPriority_norm_le (I id iq : ℝ) :
     (dPriority I id iq).1 ^ 2 + (dPriority I id iq).2 ^ 2 ≤ I ^ 2 := by
   simp only [dPriority]
-  have h1 := clampSym_sq_le hI id
-  have h2 := clampSym_sq_le (Real.sqrt_nonneg (I ^ 2 - clampSym I id ^ 2)) iq
+  have h1 : clampSym I id ^ 2 ≤ I ^ 2 := sq_le_sq.mpr (abs_clampSym_le I id)
+  have h2 := sq_le_sq.mpr (abs_clampSym_le (Real.sqrt (I ^ 2 - clampSym I id ^ 2)) iq)
   rw [Real.sq_sqrt (by linarith)] at h2
   linarith
 
@@ -78,14 +66,6 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
     rw [← Real.sqrt_sq_eq_abs]
     exact Real.sqrt_le_sqrt (by linarith)
   simp only [dPriority, hcd, clampSym_of_abs_le hq]
-
-@[tmio T, powerlib_foundation] theorem clampSym_nonneg {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) :
-    0 ≤ clampSym r x :=
-  le_max_of_le_right (le_min hx hr)
-
-@[tmio T, powerlib_foundation] theorem clampSym_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : x ≤ 0) :
-    clampSym r x ≤ 0 :=
-  max_le (by linarith) ((min_le_left _ _).trans hx)
 
 /-- The sign of `i_q` is preserved. -/
 @[tmio M, powerlib_domain] theorem dPriority_snd_sign (I id iq : ℝ) :

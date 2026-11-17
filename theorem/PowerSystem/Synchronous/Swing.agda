@@ -7,9 +7,10 @@ module theorem.PowerSystem.Synchronous.Swing where
 -- `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))` read at a selected angle, its requirement language,
 -- its translation, and the laws it publishes for its spokes. The readings through it are
 -- `theorem/GridTiedConverter/GFM/DroopSwing.agda` (the droop loop with a power filter),
--- `theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda` (the saturated converter) and
--- `theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda` (the classical machine). Nothing
--- here is exported.
+-- `theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda` (the saturated converter),
+-- `theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda` (the classical machine) and
+-- `theorem/PowerSystem/Synchronous/GeneralSwing.agda` (the swing equation with an arbitrary law,
+-- on a sinusoid). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

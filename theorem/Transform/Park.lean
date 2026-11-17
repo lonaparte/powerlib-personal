@@ -13,7 +13,8 @@ Conventions fixed by this module:
 * A planar (αβ or dq) vector is `Fin 2 → ℝ`, component `0` = α (resp. d), component `1` = β
   (resp. q). Its complex form `toComplex x = x 0 + x 1 * I` and the rotation generator `J` are
   the generic planar algebra of `theorem/Transform/Planar.lean`.
-* `rot θ` is the counter-clockwise rotation by `θ` (dq → αβ). The Park matrix is
+* `rot θ` is the counter-clockwise rotation by `θ` (dq → αβ), the complex-symmetric matrix
+  `complexSymm (cos θ) (sin θ)` of `e^{jθ}` (`rot_eq_complexSymm`). The Park matrix is
   `park θ = [[cos θ, sin θ], [-sin θ, cos θ]]` (αβ → dq), exactly `conventions.md` §4.
   Hence `park θ = rot (-θ)` (`park_eq_rot_neg`) and, in complex form,
   `x^{dq} = x^{αβ} · e^{-jθ}`. `park_mul_rot`, `rot_mul_park`: the two are mutually inverse;
@@ -89,6 +90,10 @@ def park (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     park θ *ᵥ x = ![Real.cos θ * x 0 + Real.sin θ * x 1, -Real.sin θ * x 0 + Real.cos θ * x 1] := by
   ext i; fin_cases i <;> simp [park, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
+/-- The rotation is the complex-symmetric matrix of `cos θ + j sin θ`. -/
+@[tmio M, powerlib_domain] theorem rot_eq_complexSymm (θ : ℝ) :
+    rot θ = complexSymm (Real.cos θ) (Real.sin θ) := rfl
+
 @[tmio M, powerlib_domain] theorem park_eq_rot_neg (θ : ℝ) : park θ = rot (-θ) := by
   simp [park, rot]
 
@@ -102,8 +107,7 @@ def park (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j; fin_cases i <;> fin_cases j <;> simp [park]
 
 @[tmio M, powerlib_domain] theorem rot_add (a b : ℝ) : rot (a + b) = rot a * rot b := by
-  simp only [rot, mul_fin_two, Real.cos_add, Real.sin_add]
-  ext i j; fin_cases i <;> fin_cases j <;> simp <;> ring
+  simp only [rot_eq_complexSymm, complexSymm_mul, Real.cos_add, Real.sin_add]; ring_nf
 
 @[tmio M, powerlib_domain] theorem rot_mul_park (θ : ℝ) : rot θ * park θ = 1 := by
   rw [park_eq_rot_neg, ← rot_add, add_neg_cancel, rot_zero]
@@ -118,7 +122,7 @@ def park (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   orthogonal_dotProduct (by rw [← park_eq_transpose_rot]; exact park_mul_rot δ) v i
 
 @[tmio M, powerlib_domain] theorem det_rot (θ : ℝ) : (rot θ).det = 1 := by
-  rw [rot, det_fin_two_of]; nlinarith [Real.sin_sq_add_cos_sq θ]
+  rw [rot_eq_complexSymm, det_complexSymm, Real.cos_sq_add_sin_sq]
 
 /-- Park is a proper rotation: it lies in `SO(2)`. -/
 @[tmio M, powerlib_domain] theorem park_mem_specialOrthogonalGroup (θ : ℝ) :
@@ -137,9 +141,8 @@ def park (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- Matrix rotation is complex multiplication by `e^{jθ}`. -/
 @[tmio M, powerlib_domain] theorem toComplex_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     toComplex (rot θ *ᵥ x) = toComplex x * Complex.exp (θ * Complex.I) := by
-  apply Complex.ext <;>
-    simp [toComplex, Complex.mul_re, Complex.mul_im, Complex.exp_ofReal_mul_I_re,
-      Complex.exp_ofReal_mul_I_im] <;> ring
+  rw [rot_eq_complexSymm, toComplex_complexSymm_mulVec, mul_comm, ← Complex.exp_ofReal_mul_I_re,
+    ← Complex.exp_ofReal_mul_I_im, Complex.eta]
 
 /-- Park is complex multiplication by `e^{-jθ}`: `x^{dq} = x^{αβ} e^{-jθ}` (§1.2 boxed). -/
 @[tmio M, powerlib_domain] theorem toComplex_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :

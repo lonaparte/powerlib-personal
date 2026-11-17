@@ -34,7 +34,8 @@ Source: work-sync `theory/T-ph.md` §1.6.bis (RL network pH form and energy chec
 §1.6.ter (node capacitors, transformers, constant-impedance loads).
 
 Results (static evidence on the models).
-* `signedIncidence_mulVec` (KCL), `rlNetwork_field_signedIncidence` (KVL around each branch),
+* `rlNetwork_field_signedIncidence` (KVL around each branch, from
+  `Network.signedIncidence_transpose_mulVec`; KCL is `Network.signedIncidence_mulVec`),
   `rlNetwork_power_balance` — `Ḣ = i_nodeᵀ v_node − Σ r_k i_k²`; `rlcNetwork_field_branch`,
   `rlcNetwork_field_node`, `rlcNetwork_power_balance` —
   `Ḣ = Σ u_j v_j − Σ r_k i_k² − Σ G_j v_j²`.
@@ -77,16 +78,6 @@ open Matrix Set
 open powerlib.Network (signedIncidence signedIncidence_transpose_mulVec)
 
 variable {β ν : Type*} [Fintype β] [DecidableEq β] [Fintype ν] [DecidableEq ν]
-
-/-! ## Signed incidence matrix -/
-
-omit [Fintype ν] [DecidableEq β] in
-/-- KCL: `(𝓑 i)_j` is the total current leaving node `j` through the branches. -/
-@[tmio T, powerlib_foundation] theorem signedIncidence_mulVec (tail head : β → ν) (c : β → ℝ) (j : ν) :
-    (signedIncidence tail head *ᵥ c) j =
-      (∑ k with tail k = j, c k) - ∑ k with head k = j, c k := by
-  simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul,
-    Finset.sum_filter, eq_comm]
 
 /-! ## Pure RL network (node potentials as inputs) -/
 

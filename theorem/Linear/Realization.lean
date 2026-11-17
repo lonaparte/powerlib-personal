@@ -1,4 +1,5 @@
 import theorem.Linear.Transfer
+import theorem.Dynamics.Transport
 import theorem.TMIO.Relation
 import theorem.Spectral.Family
 
@@ -21,7 +22,8 @@ Scope.
   equality of the Markov parameters `C Aᵏ B` and of the feedthrough.
 
 Source: LeanForControl's controllability and observability (`IsControllable`, `IsObservable`,
-`reachableSubspace`); the transfer functions and similarity of `theorem/Linear/Transfer.lean`;
+`reachableSubspace`); the transfer functions and similarity of `theorem/Linear/Transfer.lean`
+(the flow sentences of similar plants, `Similar.holds_iff`, `theorem/Dynamics/Transport.lean`);
 certification by an observation (`TMIO.certify`, `theorem/TMIO/Relation.lean`).
 
 Results.

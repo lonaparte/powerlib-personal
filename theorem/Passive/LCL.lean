@@ -4,6 +4,7 @@ import theorem.Linear.Rate
 import theorem.Passive.RL
 import theorem.Passive.Parallel
 import theorem.Criteria.Routh3
+import theorem.PH.Composition
 import theorem.generated.LCLConversion
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
@@ -27,7 +28,8 @@ Source: scaffold `theorem/Passive/LCLConversion.agda` (circuit parameters ↔ st
 its generated conversion `theorem/generated/LCLConversion.lean`; the RL branch
 (`theorem/Passive/RL.lean`); the linear family laws (`theorem/Linear/Family.lean`), rate margins
 (`theorem/Linear/Rate.lean`) and zero Jordan chains (`theorem/Linear/Jordan.lean`); the cubic
-Routh–Hurwitz criterion.
+Routh–Hurwitz criterion; the linear port-Hamiltonian plants (`theorem/Port/PortHamiltonian.lean`,
+`theorem/PH/Composition.lean`).
 
 Results.
 * Representations: `Circuit`, `StateSpace`, `toStateSpace`, `toCircuit`, `circuit_roundtrip`,
@@ -40,8 +42,12 @@ Results.
   `Criteria.cubic_hurwitz`, `theorem/Criteria/Routh3.lean`), `routhHurwitz_of_passive`,
   `passive_stable_iff` (with passive resistances, pole stability is exactly damping).
 * Energy: `toStateSpace_first`, `toStateSpace_second`, `toStateSpace_capacitorGain`,
-  `energyMatrix` (`diag(L₁, C, L₂)`), `energy_identity`, `kyp` (a KYP certificate for a passive
-  circuit), `energy_pos`, `energy_lossless`, `energyMatrix_symmetric`.
+  `energyMatrix` (`diag(L₁, C, L₂)`); a passive circuit is a linear port-Hamiltonian plant in
+  its own coordinates (`Circuit.toPH`, energy matrix `diag(L₁, C, L₂)`, `plant_toPH`), so its
+  passivity, Lyapunov stability and, without resistance, conservation of the physical energy
+  are the generic port-Hamiltonian laws (`Port.PortHamiltonian.mem_den_passive`,
+  `mem_den_lyapunovStable`, `PH.mem_den_conservative_of_lossless`); `kyp` is its energy matrix
+  as a KYP certificate of the circuit's plant.
 * Static evidence: `family_isLinear`, `not_stable_of_conservative`,
   `hasDerivAt_three`, `integral_cycle`; the circuits `negativeCircuit`, `balancedCircuit`,
   `balancedEnergy`, `jordanCircuit` with `negativeCircuit_routhHurwitz`,
@@ -336,78 +342,81 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
 def energyMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
   !![m.first.inductance.val, 0, 0; 0, m.capacitance.val, 0; 0, 0, m.second.inductance.val]
 
-@[tmio M, powerlib_domain] theorem energy_identity (m : Circuit) :
-    m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A =
-      !![-2 * m.first.resistance, 0, 0; 0, 0, 0; 0, 0, -2 * m.second.resistance] := by
-  have hL1 := m.first.inductance.property.ne'
-  have hL2 := m.second.inductance.property.ne'
-  have hC := m.capacitance.property.ne'
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Circuit.plant, StateSpace.plant, energyMatrix, Matrix.mul_apply, Fin.sum_univ_three] <;>
-    field_simp <;> ring
-
-/-- The physical energy is a KYP certificate for a passive circuit. -/
-def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant where
-  P := energyMatrix m
-  symmetric := by
+/-- A passive circuit as a linear port-Hamiltonian plant in its own coordinates
+`x = (i₁, v_C, i₂)`: energy matrix `Q = diag(L₁, C, L₂)` (stored energy `xᵀ Q x / 2`), the
+interconnection `[[0, −1, 0], [1, 0, −1], [0, 1, 0]]` and damping `diag(R₁, 0, R₂)` of the
+energy variables `Q x` read through `Q⁻¹` on both sides, and the plant's input matrix. -/
+def Circuit.toPH (m : Circuit) (hp : m.Passive) : Port.PortHamiltonian 3 2 where
+  J := !![0, -(m.first.inductance.val * m.capacitance.val)⁻¹, 0;
+    (m.first.inductance.val * m.capacitance.val)⁻¹, 0,
+      -(m.capacitance.val * m.second.inductance.val)⁻¹;
+    0, (m.capacitance.val * m.second.inductance.val)⁻¹, 0]
+  R := !![m.first.resistance / m.first.inductance.val ^ 2, 0, 0; 0, 0, 0;
+    0, 0, m.second.resistance / m.second.inductance.val ^ 2]
+  Q := energyMatrix m
+  B := m.plant.B
+  skew := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  dissipation_symmetric := by
     ext i j
     fin_cases i <;> fin_cases j <;> rfl
-  nonneg x := by
+  dissipation_nonneg x := by
+    have h1 : 0 ≤ m.first.resistance / m.first.inductance.val ^ 2 :=
+      div_nonneg hp.1 (sq_nonneg _)
+    have h2 : 0 ≤ m.second.resistance / m.second.inductance.val ^ 2 :=
+      div_nonneg hp.2 (sq_nonneg _)
+    simp [dotProduct, Matrix.mulVec, Fin.sum_univ_three]
+    nlinarith [mul_nonneg h1 (mul_self_nonneg (x 0)), mul_nonneg h2 (mul_self_nonneg (x 2))]
+  energy_symmetric := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> rfl
+  energy_pos x hx := by
     have hL1 := m.first.inductance.property
     have hL2 := m.second.inductance.property
     have hC := m.capacitance.property
+    have hsome : x 0 ≠ 0 ∨ x 1 ≠ 0 ∨ x 2 ≠ 0 := by
+      by_contra h
+      push Not at h
+      apply hx
+      funext i
+      fin_cases i
+      · exact h.1
+      · exact h.2.1
+      · exact h.2.2
     simp [energyMatrix, dotProduct, Matrix.mulVec, Fin.sum_univ_three]
-    nlinarith [mul_nonneg hL1.le (mul_self_nonneg (x 0)), mul_nonneg hC.le (mul_self_nonneg (x 1)),
-      mul_nonneg hL2.le (mul_self_nonneg (x 2))]
-  dissipation x := by
-    rw [energy_identity]
-    simp [dotProduct, Matrix.mulVec, Fin.sum_univ_three]
-    nlinarith [mul_nonneg hp.1 (mul_self_nonneg (x 0)), mul_nonneg hp.2 (mul_self_nonneg (x 2))]
-  output := by
-    have hL1 := m.first.inductance.property.ne'
-    have hL2 := m.second.inductance.property.ne'
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Circuit.plant, StateSpace.plant, energyMatrix, Matrix.mul_apply, Fin.sum_univ_three,
-        inv_mul_cancel₀ hL1, inv_mul_cancel₀ hL2]
-  feedthrough u := by simp [Circuit.plant, StateSpace.plant]
+    rcases hsome with h | h | h
+    · nlinarith [mul_pos hL1 (mul_self_pos.mpr h), mul_nonneg hC.le (mul_self_nonneg (x 1)),
+        mul_nonneg hL2.le (mul_self_nonneg (x 2))]
+    · nlinarith [mul_pos hC (mul_self_pos.mpr h), mul_nonneg hL1.le (mul_self_nonneg (x 0)),
+        mul_nonneg hL2.le (mul_self_nonneg (x 2))]
+    · nlinarith [mul_pos hL2 (mul_self_pos.mpr h), mul_nonneg hL1.le (mul_self_nonneg (x 0)),
+        mul_nonneg hC.le (mul_self_nonneg (x 1))]
 
-@[tmio M, powerlib_domain] theorem energy_pos (m : Circuit) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
-    0 < x ⬝ᵥ (energyMatrix m *ᵥ x) := by
-  have hL1 := m.first.inductance.property
-  have hL2 := m.second.inductance.property
-  have hC := m.capacitance.property
-  have hsome : x 0 ≠ 0 ∨ x 1 ≠ 0 ∨ x 2 ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hx
-    funext i
-    fin_cases i
-    · exact h.1
-    · exact h.2.1
-    · exact h.2.2
-  simp [energyMatrix, dotProduct, Matrix.mulVec, Fin.sum_univ_three]
-  rcases hsome with h | h | h
-  · nlinarith [mul_pos hL1 (mul_self_pos.mpr h), mul_nonneg hC.le (mul_self_nonneg (x 1)),
-      mul_nonneg hL2.le (mul_self_nonneg (x 2))]
-  · nlinarith [mul_pos hC (mul_self_pos.mpr h), mul_nonneg hL1.le (mul_self_nonneg (x 0)),
-      mul_nonneg hL2.le (mul_self_nonneg (x 2))]
-  · nlinarith [mul_pos hL2 (mul_self_pos.mpr h), mul_nonneg hL1.le (mul_self_nonneg (x 0)),
-      mul_nonneg hC.le (mul_self_nonneg (x 1))]
+/-- The plant of a passive circuit is the plant of its port-Hamiltonian reading. -/
+@[tmio M, powerlib_domain] theorem plant_toPH (m : Circuit) (hp : m.Passive) :
+    (m.toPH hp).plant = m.plant := by
+  have hL1 := m.first.inductance.property.ne'
+  have hL2 := m.second.inductance.property.ne'
+  have hC := m.capacitance.property.ne'
+  ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [Port.PortHamiltonian.plant, Circuit.toPH, energyMatrix, Circuit.plant,
+      StateSpace.plant, Matrix.mul_apply, Fin.sum_univ_three] <;>
+    field_simp
 
-/-- With both resistances zero the plant conserves the physical energy. -/
-@[tmio M, powerlib_domain] theorem energy_lossless (m : Circuit) (h1 : m.first.resistance = 0)
-    (h2 : m.second.resistance = 0) :
-    m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A = 0 := by
-  rw [energy_identity, h1, h2]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+/-- The physical energy is a KYP certificate for a passive circuit: the energy matrix of its
+port-Hamiltonian reading (`plant_toPH`). -/
+def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant :=
+  plant_toPH m hp ▸ (m.toPH hp).kyp
 
-@[tmio M, powerlib_domain] theorem energyMatrix_symmetric (m : Circuit) :
-    (energyMatrix m)ᵀ = energyMatrix m := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
+/-- A passive circuit and its port-Hamiltonian reading satisfy the same sentences. -/
+@[tmio TM, powerlib_domain] private theorem mem_den_iff_toPH (m : Circuit) (hp : m.Passive)
+    (s : Sentence) :
+    connection% (m ∈ family.den s ↔ m.toPH hp ∈ Port.PortHamiltonian.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
+  rw [Port.PortHamiltonian.family_isLinear (m.toPH hp), family_isLinear m]
+  simp only [plant_toPH]
 
 /-! ## Requirements and the family -/
 
@@ -453,9 +462,8 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
   rcases s with P | _ | E
   · cases P
     case lyapunovStable =>
-      have hp : m.Passive := hm .passive rfl
-      exact family_isLinear.mem_den_flow.mpr
-        ((kyp m hp).lyapunovStable_of_pos (energy_pos m))
+      exact (mem_den_iff_toPH m (hm .passive rfl) _).mpr
+        (Port.PortHamiltonian.mem_den_lyapunovStable _)
     case unstable =>
       obtain ⟨s, hs, hre⟩ := hm .rightHalfPlanePole rfl
       refine family_isLinear.mem_den_flow.mpr (Linear.unstable_of_root 0 ?_ hre)
@@ -464,15 +472,17 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
       exact family_isLinear.mem_den_decay_of_rateMargin (hm (.rate a) rfl)
     case conservative =>
       obtain ⟨h1, h2⟩ := hm .lossless rfl
-      exact family_isLinear.mem_den_conservative (energyMatrix_symmetric m) (energy_pos m)
-        (energy_lossless m h1 h2)
+      refine (mem_den_iff_toPH m ⟨h1.ge, h2.ge⟩ _).mpr
+        (PH.mem_den_conservative_of_lossless _ ?_)
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [Circuit.toPH, h1, h2]
     all_goals
       rw [family_isLinear.den_hurwitz (by simp), Set.mem_ofPred_eq, (show ∀ m : Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
         simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
           (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
             (isHurwitz_iff_stable m))]
       exact hm .poleStable rfl
-  · exact family_isLinear.mem_den_passive (kyp m (hm .passive rfl))
+  · exact (mem_den_iff_toPH m (hm .passive rfl) _).mpr (Port.PortHamiltonian.mem_den_passive _)
   · rw [family_isLinear.den_envelope]
     trivial
 

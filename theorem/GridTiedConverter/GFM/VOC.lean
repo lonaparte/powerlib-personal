@@ -29,6 +29,10 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
 * `|v|²` solves the logistic equation `y' = 2 (c − κ_v y) y` and equals
   `1 / (κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct})`; in particular `v(t) ≠ 0` for all `t ≥ 0`.
 * `|v(t)| → r*`.
+  The amplitude results and the invariant circle below are the scalar logistic equation and the
+  supercritical Hopf normal form: in the coordinates `(v_α, v_β)` a solution solves
+  `NormalForm.Hopf.field a.toHopf`, so `NormalForm.Logistic.pos`, `reciprocal_formula`,
+  `NormalForm.Hopf.supercritical_norm_tendsto` and `circle_invariant` apply.
 * Phase: `v(t) = (|v(t)| / |v(0)|) e^{j ω_s t} v(0)` — the phase rotates uniformly at `ω_s`.
 * The circle `|v| = r*` is invariant and carries exactly the solutions `r* e^{j(ω_s t + φ₀)}`.
 * Algebra: polar decomposition of the loaded AHO (domain) and the dVOC complex frequency
@@ -68,9 +72,9 @@ Family and connection conclusions.
   cycle of the trajectory-level results.
 * The limit-cycle results above (`normSq_solution_pos`, `normSq_formula`, `norm_tendsto_rstar`,
   `phase_rotation`, `norm_eq_rstar_of_start`, `limitCycle_isSolution`) are trajectory level and
-  outside the sentence language (Rules §3a): they are private implementation evidence, as is the
-  explicit logistic formula `inv_normSq_eq` (the parameter type `AHO` carries a family, so its
-  public behavioural statements must be connection statements).  `radial_zero_iff`
+  outside the sentence language (Rules §3a): they are private implementation evidence (the
+  parameter type `AHO` carries a family, so its public behavioural statements must be connection
+  statements).  `radial_zero_iff`
   is static evidence on the model; the pointwise chain rules `hasDerivWithinAt_normSq`,
   `hasDerivWithinAt_norm` stay public (static domain identities).
 
@@ -181,163 +185,111 @@ Static evidence on the model, not a connection conclusion. -/
 
 variable (a)
 
+/-! ## Real coordinates: the Hopf normal form -/
+
+/-- The AHO as a parameterization of the Hopf normal form (`theorem/NormalForm/Hopf.lean`):
+`μ = c`, `ω₀ = ω_s`, cubic coefficient `l₁ + iκ = −κ_v`. -/
+def toHopf : NormalForm.Hopf.Params := ⟨a.c, a.ωs, -a.κv, 0⟩
+
+/-- The no-load AHO field in the real coordinates `(v_α, v_β)`: the Hopf normal form of `toHopf`,
+`(c − κ_v (v_α² + v_β²)) (v_α, v_β) + ω_s (−v_β, v_α)`. Its smoothness, equilibrium at the origin
+and linearization there are those of the normal form (`NormalForm.Hopf.field_contDiff`,
+`field_zero`, `fderiv_field_zero`: Jacobian `linPart = [[c, −ω_s], [ω_s, c]]`). -/
+def realField (x : State 2) : State 2 := NormalForm.Hopf.field a.toHopf x
+
+@[tmio M, powerlib_domain] private theorem realField_apply (x : State 2) :
+    a.realField x = PhasePlane.mk ((a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 0 - a.ωs * x 1)
+      (a.ωs * x 0 + (a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 1) := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
+    simp only [realField, NormalForm.Hopf.field_apply_zero, NormalForm.Hopf.field_apply_one,
+      PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, toHopf] <;> ring
+
+/-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
+`v = v_α + j v_β`. -/
+@[tmio M, powerlib_domain] theorem realField_eq (x : State 2) :
+    a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
+  rw [realField_apply]
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
+  · simp only [PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
+    ring
+  · simp only [PhasePlane.mk_apply_one, aho_im, normSq_mk, c]
+    ring
+
+/-! ## Trajectories: the logistic amplitude and the limit cycle -/
+
 /-- `d|v|²/dt = 2 (c − κ_v |v|²) |v|²` along the field. -/
 @[tmio M, powerlib_domain] theorem hasDerivWithinAt_normSq {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
     (hφ : HasDerivWithinAt φ (a.field (φ t)) s t) :
     HasDerivWithinAt (fun τ => normSq (φ τ))
       (2 * a.gain (φ t) * normSq (φ t)) s t := by
-  have hre := Complex.reCLM.hasFDerivAt.comp_hasDerivWithinAt t hφ
-  have him := Complex.imCLM.hasFDerivAt.comp_hasDerivWithinAt t hφ
-  have h := (hre.mul hre).add (him.mul him)
-  convert h using 1
-  · funext τ; simp [normSq_apply, Function.comp_def]
-  · simp only [Function.comp_apply, reCLM_apply, imCLM_apply]
-    rw [show (a.field (φ t)).re = a.gain (φ t) * (φ t).re - a.ωs * (φ t).im by
-      simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
-    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]; ring,
-      show (a.field (φ t)).im = a.ωs * (φ t).re + a.gain (φ t) * (φ t).im by
-      simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
-    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]; ring]
-    rw [normSq_apply]; ring
+  convert hφ.norm_sq using 1
+  · funext τ; exact Complex.normSq_eq_norm_sq _
+  · rw [Complex.inner, field, mul_assoc (I * _ + _), Complex.mul_conj]
+    simp only [Complex.mul_re, Complex.add_re, Complex.add_im, Complex.mul_im, Complex.I_re,
+      Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
+    ring
 
-/-- On any interval where `|v|² > 0`, `1/|v|² = κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct}`.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
-    (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) {T : ℝ}
-    (hpos : ∀ t ∈ Icc 0 T, 0 < normSq (φ t)) :
-    ∀ t ∈ Icc 0 T, 1 / normSq (φ t) =
-      a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
-  have hc : 0 < a.c := by
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-      using h.c_pos
-  set w : ℝ → ℝ := fun t => (1 / normSq (φ t) - a.κv / a.c) * Real.exp (2 * a.c * t) with hw
-  have hcont : ContinuousOn (fun t => normSq (φ t)) (Icc 0 T) :=
-    (Complex.continuous_normSq.comp_continuousOn hφ.continuousOn).mono Icc_subset_Ici_self
-  have hconst := constant_of_has_deriv_right_zero (f := w) (a := 0) (b := T)
-    (by
-      apply ContinuousOn.mul _ (by fun_prop)
-      apply ContinuousOn.sub _ continuousOn_const
-      exact continuousOn_const.div hcont (fun t ht => (hpos t ht).ne'))
-    (by
-      intro x hx
-      have hx' : x ∈ Ici (0 : ℝ) := hx.1
-      have hy := (a.hasDerivWithinAt_normSq (hφ x hx')).mono (Ici_subset_Ici.mpr hx.1)
-      have hyx := hpos x ⟨hx.1, hx.2.le⟩
-      have hinv := (hy.inv hyx.ne').const_mul 1
-      have he : HasDerivWithinAt (fun t => Real.exp (2 * a.c * t))
-          (Real.exp (2 * a.c * x) * (2 * a.c)) (Ici x) x := by
-        have := ((hasDerivAt_id x).const_mul (2 * a.c)).exp
-        simpa using this.hasDerivWithinAt
-      have hp := (hinv.sub_const (a.κv / a.c)).mul he
-      convert hp using 1
-      · funext t; simp [hw, div_eq_mul_inv]
-      · simp only [gain, Pi.inv_apply]
-        field_simp
-        ring)
-  intro t ht
-  have h1 := hconst t ht
-  simp only [hw, mul_zero, Real.exp_zero, mul_one] at h1
-  have hEpos := Real.exp_pos (2 * a.c * t)
-  have h2 : 1 / normSq (φ t) - a.κv / a.c =
-      (1 / normSq (φ 0) - a.κv / a.c) * (Real.exp (2 * a.c * t))⁻¹ := by
-    rw [← h1, mul_assoc, mul_inv_cancel₀ hEpos.ne', mul_one]
-  rw [Real.exp_neg]
-  linarith
+/-- The plane point `(Re z, Im z)` has the modulus of `z` as its Euclidean norm. -/
+@[tmio T, powerlib_foundation] private theorem norm_mk_re_im (z : ℂ) :
+    ‖PhasePlane.mk z.re z.im‖ = ‖z‖ := by
+  rw [PhasePlane.norm_mk, Complex.norm_def, Complex.normSq_apply, sq, sq]
 
-/-- Solutions starting away from the origin never reach it.
+/-- A solution of the complex field, read in the coordinates `(v_α, v_β)`, solves the Hopf normal
+form of `toHopf`. -/
+@[tmio M, powerlib_domain] private theorem isIntegralCurveOn_hopf {φ : ℝ → ℂ} {s : Set ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) s) :
+    IsIntegralCurveOn (fun t => PhasePlane.mk (φ t).re (φ t).im)
+      (fun _ x => NormalForm.Hopf.field a.toHopf x) s := fun t ht => by
+  change HasDerivWithinAt _ (a.realField _) s t
+  rw [PhasePlane.hasDerivWithinAt_iff_components, realField_eq]
+  simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, Complex.eta]
+  exact ⟨Complex.reCLM.hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht),
+    Complex.imCLM.hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht)⟩
+
+/-- Along a solution, `|v|²` solves the logistic equation `ρ̇ = 2cρ − 2κ_v ρ²`
+(`NormalForm.Hopf.normSq_isIntegralCurveOn`). -/
+@[tmio M, powerlib_domain] private theorem normSq_logistic {φ : ℝ → ℂ} {s : Set ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) s) :
+    IsIntegralCurveOn (fun t => normSq (φ t))
+      (fun _ r => NormalForm.Logistic.field a.c (-a.κv) r) s := by
+  simpa only [norm_mk_re_im, ← Complex.normSq_eq_norm_sq, toHopf] using
+    NormalForm.Hopf.normSq_isIntegralCurveOn a.toHopf (a.isIntegralCurveOn_hopf hφ)
+
+/-- Solutions starting away from the origin never reach it (`NormalForm.Logistic.pos`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem normSq_solution_pos (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem normSq_solution_pos {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
-    ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) := by
-  have hc : 0 < a.c := by
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-      using h.c_pos
-  have hk := h.κv
-  have hy0 : 0 < normSq (φ 0) := normSq_pos.mpr h0
-  set Z := max (a.κv / a.c) (1 / normSq (φ 0)) with hZ
-  have hZpos : 0 < Z := lt_max_of_lt_left (div_pos hk hc)
-  have hbound : ∀ t : ℝ, 0 ≤ t →
-      a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) ≤ Z := by
-    intro t ht
-    have he1 : Real.exp (-(2 * a.c * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
-    have he0 : 0 < Real.exp (-(2 * a.c * t)) := Real.exp_pos _
-    have h1 := le_max_left (a.κv / a.c) (1 / normSq (φ 0))
-    have h2 := le_max_right (a.κv / a.c) (1 / normSq (φ 0))
-    nlinarith
-  have hcontAll : ContinuousOn (fun t => normSq (φ t)) (Ici 0) :=
-    Complex.continuous_normSq.comp_continuousOn hφ.continuousOn
-  have hposAll : ∀ T : ℝ, 0 ≤ T → ∀ t ∈ Icc 0 T, 0 < normSq (φ t) := by
-    intro T _
-    apply Dynamics.pos_on_Icc_of_propagate (hcontAll.mono Icc_subset_Ici_self) hy0
-    intro t ht hbefore
-    -- lower bound `1/Z` on `[0, t)`
-    have hlow : ∀ s ∈ Ico 0 t, 1 / Z ≤ normSq (φ s) := by
-      intro s hs
-      have hf := a.inv_normSq_eq h hφ (T := s) (fun r hr => hbefore r ⟨hr.1, lt_of_le_of_lt hr.2
-        hs.2⟩) s ⟨hs.1, le_rfl⟩
-      have hb := hbound s hs.1
-      have hys := hbefore s hs
-      rw [← hf] at hb
-      rw [div_le_iff₀ hZpos]
-      rw [div_le_iff₀ hys] at hb
-      linarith
-    by_contra hneg
-    push Not at hneg
-    have hlt : normSq (φ t) < 1 / Z := lt_of_le_of_lt hneg (by positivity)
-    have hy0Z : 1 / Z ≤ normSq (φ 0) := by
-      rw [div_le_iff₀ hZpos]
-      have := le_max_right (a.κv / a.c) (1 / normSq (φ 0))
-      rw [← hZ, div_le_iff₀ hy0] at this
-      linarith [mul_comm (normSq (φ 0)) Z]
-    obtain ⟨s, hs, hsv⟩ := intermediate_value_Icc' ht.1.le
-      (hcontAll.mono Icc_subset_Ici_self)
-      (show (normSq (φ t) + 1 / Z) / 2 ∈ Icc (normSq (φ t)) (normSq (φ 0)) from
-        ⟨by linarith, by linarith⟩)
-    simp only at hsv
-    have hst : s ≠ t := by rintro rfl; linarith
-    have := hlow s ⟨hs.1, lt_of_le_of_ne hs.2 hst⟩
-    linarith
-  intro t ht
-  exact hposAll t ht t ⟨ht, le_rfl⟩
+    ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) := fun t ht =>
+  NormalForm.Logistic.pos (a.normSq_logistic (hφ.mono Icc_subset_Ici_self)) (normSq_pos.mpr h0)
+    t ⟨ht, le_rfl⟩
 
 /-- For solutions starting away from the origin, `|v|²` is given by the explicit logistic
-formula.
+formula `1/|v|² = κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct}` (`NormalForm.Logistic.reciprocal_formula`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), 1 / normSq (φ t) =
       a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
   intro t ht
-  exact a.inv_normSq_eq h hφ (T := t)
-    (fun s hs => a.normSq_solution_pos h hφ h0 s hs.1) t ⟨ht, le_rfl⟩
+  have hc : a.c ≠ 0 := (sub_pos.mpr h.gap).ne'
+  have hf := NormalForm.Logistic.reciprocal_formula hc
+    (a.normSq_logistic (hφ.mono Icc_subset_Ici_self)) (normSq_pos.mpr h0) t ⟨ht, le_rfl⟩
+  rw [sub_zero, neg_mul, neg_mul, neg_div] at hf
+  linear_combination hf
 
-/-- Every solution with `v(0) ≠ 0` converges in amplitude to the limit-cycle radius.
+/-- Every solution with `v(0) ≠ 0` converges in amplitude to the limit-cycle radius
+(`NormalForm.Hopf.supercritical_norm_tendsto`; the normal form's radius is `r*`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 a.rstar) := by
-  have hc : 0 < a.c := by
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-      using h.c_pos
-  have hk := h.κv
-  have hform := a.normSq_formula h hφ h0
-  have hexp : Tendsto (fun t : ℝ => Real.exp (-(2 * a.c * t))) atTop (𝓝 0) := by
-    apply Real.tendsto_exp_neg_atTop_nhds_zero.comp
-    exact tendsto_id.const_mul_atTop (by positivity)
-  have hinv : Tendsto (fun t => a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) *
-      Real.exp (-(2 * a.c * t))) atTop (𝓝 (a.κv / a.c)) := by
-    simpa using (hexp.const_mul (1 / normSq (φ 0) - a.κv / a.c)).const_add (a.κv / a.c)
-  have hy : Tendsto (fun t => normSq (φ t)) atTop (𝓝 (a.c / a.κv)) := by
-    have h1 := hinv.inv₀ (div_pos hk hc).ne'
-    rw [inv_div] at h1
-    apply h1.congr'
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    have := hform t ht
-    rw [← this, one_div, inv_inv]
-  have hnorm : (fun t => ‖φ t‖) = fun t => Real.sqrt (normSq (φ t)) := by
-    funext t; rw [← Complex.norm_def]
-  rw [hnorm, rstar, show a.vstar ^ 2 - a.σ / a.κv = a.c / a.κv by simp only [c]; field_simp]
-  exact (Real.continuous_sqrt.tendsto _).comp hy
+  have hR : NormalForm.Hopf.radius a.toHopf = a.rstar := by
+    simp only [NormalForm.Hopf.radius, rstar, toHopf, c, neg_div_neg_eq]
+    rw [sub_div, mul_div_cancel_left₀ _ h.κv.ne']
+  have h0' : PhasePlane.mk (φ 0).re (φ 0).im ≠ 0 := by
+    rw [← norm_ne_zero_iff, norm_mk_re_im]; exact norm_ne_zero_iff.mpr h0
+  simpa only [norm_mk_re_im, hR] using NormalForm.Hopf.supercritical_norm_tendsto a.toHopf
+    (sub_pos.mpr h.gap) (neg_neg_of_pos h.κv) (a.isIntegralCurveOn_hopf hφ) h0'
 
 /-- `d‖v‖/dt = gain · ‖v‖` along the field (away from the origin). -/
 @[tmio M, powerlib_domain] theorem hasDerivWithinAt_norm {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
@@ -357,10 +309,10 @@ Implementation evidence: trajectory-level result outside the sentence language (
 /-- Uniform phase rotation: `v(t) = (|v(t)|/|v(0)|) e^{j ω_s t} v(0)` for every solution with
 `v(0) ≠ 0`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
+@[tmio TM, powerlib_domain] private theorem phase_rotation {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), φ t = ((‖φ t‖ / ‖φ 0‖ : ℝ) : ℂ) * exp (I * a.ωs * t) * φ 0 := by
-  have hpos := a.normSq_solution_pos h hφ h0
+  have hpos := a.normSq_solution_pos hφ h0
   have hne : ∀ t ∈ Ici (0 : ℝ), φ t ≠ 0 := fun t ht =>
     normSq_pos.mp (hpos t ht)
   set u : ℝ → ℂ := fun t => φ t * exp (-(I * a.ωs * t)) * ((1 / ‖φ t‖ : ℝ) : ℂ) with hu
@@ -415,30 +367,21 @@ Implementation evidence: trajectory-level result outside the sentence language (
     _ = (‖φ t‖ : ℂ) / (‖φ 0‖ : ℂ) * exp (I * a.ωs * t) * φ 0 := by
           field_simp
 
-/-- The circle `|v| = r*` is invariant: a solution starting on it stays on it.
+/-- The circle `|v| = r*` is invariant: a solution starting on it stays on it
+(`NormalForm.Hopf.circle_invariant`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0))
     (h0 : ‖φ 0‖ = a.rstar) : ∀ t ∈ Ici (0 : ℝ), ‖φ t‖ = a.rstar := by
-  have hc : 0 < a.c := by
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-      using h.c_pos
-  have hk := h.κv
-  have hne : φ 0 ≠ 0 := by
-    intro hz; rw [hz, norm_zero] at h0; exact h.rstar_pos.ne' h0.symm
-  have hform := a.normSq_formula h hφ hne
-  have hy0 : normSq (φ 0) = a.c / a.κv := by
-    rw [Complex.normSq_eq_norm_sq, h0, h.rstar_sq]
+  have hc : 0 < a.c := sub_pos.mpr h.gap
+  have hR : -a.toHopf.μ / a.toHopf.l₁ = a.rstar ^ 2 := by
+    rw [h.rstar_sq]; exact neg_div_neg_eq _ _
   intro t ht
-  have hf := hform t ht
-  rw [hy0] at hf
-  simp only [one_div, inv_div, sub_self, zero_mul, add_zero] at hf
-  have hyt : normSq (φ t) = a.c / a.κv := by
-    have := congrArg (·⁻¹) hf
-    simpa [inv_div] using this
-  have := Complex.normSq_eq_norm_sq (φ t)
-  rw [hyt, ← h.rstar_sq] at this
-  exact ((pow_left_inj₀ (norm_nonneg _) h.rstar_pos.le two_ne_zero).mp this.symm)
+  have key := NormalForm.Hopf.circle_invariant a.toHopf hc.ne' (neg_ne_zero.mpr h.κv.ne')
+    (hR ▸ pow_pos h.rstar_pos 2) ((a.isIntegralCurveOn_hopf hφ).mono Icc_subset_Ici_self)
+    (by rw [norm_mk_re_im, h0, hR]) t ⟨ht, le_rfl⟩
+  rw [norm_mk_re_im, hR] at key
+  exact (pow_left_inj₀ (norm_nonneg _) h.rstar_pos.le two_ne_zero).mp key
 
 /-- The limit-cycle solutions `r* e^{j(ω_s t + φ₀)}` solve the AHO.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -468,34 +411,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 
 /-! ## The no-load AHO family: the origin in real coordinates -/
-
-/-- The AHO as a parameterization of the Hopf normal form (`theorem/NormalForm/Hopf.lean`):
-`μ = c`, `ω₀ = ω_s`, cubic coefficient `l₁ + iκ = −κ_v`. -/
-def toHopf : NormalForm.Hopf.Params := ⟨a.c, a.ωs, -a.κv, 0⟩
-
-/-- The no-load AHO field in the real coordinates `(v_α, v_β)`: the Hopf normal form of `toHopf`,
-`(c − κ_v (v_α² + v_β²)) (v_α, v_β) + ω_s (−v_β, v_α)`. Its smoothness, equilibrium at the origin
-and linearization there are those of the normal form (`NormalForm.Hopf.field_contDiff`,
-`field_zero`, `fderiv_field_zero`: Jacobian `linPart = [[c, −ω_s], [ω_s, c]]`). -/
-def realField (x : State 2) : State 2 := NormalForm.Hopf.field a.toHopf x
-
-@[tmio M, powerlib_domain] private theorem realField_apply (x : State 2) :
-    a.realField x = PhasePlane.mk ((a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 0 - a.ωs * x 1)
-      (a.ωs * x 0 + (a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 1) := by
-  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
-    simp only [realField, NormalForm.Hopf.field_apply_zero, NormalForm.Hopf.field_apply_one,
-      PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, toHopf] <;> ring
-
-/-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
-`v = v_α + j v_β`. -/
-@[tmio M, powerlib_domain] theorem realField_eq (x : State 2) :
-    a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
-  rw [realField_apply]
-  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp only [PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
-    ring
-  · simp only [PhasePlane.mk_apply_one, aho_im, normSq_mk, c]
-    ring
 
 /-- The translation of the sentences about the origin: instability into growth; the local
 sentences into decay; the global sentences and sampled contraction into decay and stiffness; a

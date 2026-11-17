@@ -1,7 +1,6 @@
 import theorem.GridTiedConverter.GFL.LCLine.FullModel
 import theorem.Passive.Parallel
 import theorem.GridTiedConverter.PLL.PIPLLPH
-import theorem.GridTiedConverter.CurrentControl.Decoupling
 
 /-! # The 13-state GFL-VSC with DC-link dynamics: constant-power equilibria
 

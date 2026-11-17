@@ -38,7 +38,8 @@ Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impe
 
 Results.
 * With `L > 0` the closed-loop state matrix is Hurwitz iff `R + Kp > 0 ∧ Ki > 0` (`mem_den_iff`;
-  equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`).
+  equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`, the quadratic
+  Routh law in the monic coefficients `Criteria.isHurwitz_iff_of_coeffs_quadratic`).
 * `equilibrium_current`: every equilibrium for a constant reference has `i = i*`.
 * `transfer_eq`: `I/I* = (Kp s + Ki)/(L s² + (R + Kp) s + Ki)` via `Linear.transfer`.
 * `stable_iff`: with `L > 0` the monic coefficient condition `Stable` is `R + Kp > 0 ∧ Ki > 0`.
@@ -184,12 +185,8 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
   unfold TMIO.Statement
   rw [connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   change IsHurwitz !![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] ↔ _
-  rw [Criteria.isHurwitz_fin_two_of_iff]
-  have h1 : -(p.R + p.Kp) / p.L + 0 < 0 ↔ 0 < (p.R + p.Kp) / p.L := by
-    rw [add_zero, neg_div, neg_lt_zero]
-  have h2 : 0 < -(p.R + p.Kp) / p.L * 0 - p.Ki / p.L * -1 ↔ 0 < p.Ki / p.L := by
-    rw [mul_zero, zero_sub, mul_neg_one, neg_neg]
-  rw [h1, h2]
+  exact Criteria.isHurwitz_iff_of_coeffs_quadratic _ one_pos
+    (by rw [Matrix.trace_fin_two_of]; ring) (by rw [Matrix.det_fin_two_of]; ring)
 
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
 @[tmio M, powerlib_domain] theorem exists_root_of_unstable
@@ -277,13 +274,8 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
   unfold TMIO.Statement
   rw [connection_proof% refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   change IsHurwitz !![-(p.R + p.Kp * (1 - κ)) / p.L, p.Ki / p.L; -(1 - κ), 0] ↔ _
-  rw [Criteria.isHurwitz_fin_two_of_iff]
-  have h1 : -(p.R + p.Kp * (1 - κ)) / p.L + 0 < 0 ↔ 0 < (p.R + p.Kp * (1 - κ)) / p.L := by
-    rw [add_zero, neg_div, neg_lt_zero]
-  have h2 : 0 < -(p.R + p.Kp * (1 - κ)) / p.L * 0 - p.Ki / p.L * -(1 - κ) ↔
-      0 < p.Ki * (1 - κ) / p.L := by
-    rw [mul_zero, zero_sub, mul_neg, neg_neg, div_mul_eq_mul_div]
-  rw [h1, h2]
+  exact Criteria.isHurwitz_iff_of_coeffs_quadratic _ one_pos
+    (by rw [Matrix.trace_fin_two_of]; ring) (by rw [Matrix.det_fin_two_of]; ring)
 
 @[tmio M, powerlib_domain] theorem refFeedback_exists_root_of_unstable {κ : ℝ}
     (h : (p.R + p.Kp * (1 - κ)) / p.L < 0 ∨ p.Ki * (1 - κ) / p.L < 0) :

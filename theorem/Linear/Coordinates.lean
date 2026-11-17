@@ -1,4 +1,5 @@
 import theorem.Linear.Family
+import theorem.Dynamics.Transport
 
 /-! # Coordinate changes and port passivity (foundation)
 
@@ -10,7 +11,8 @@ Scope.
   families (`Family.IsLinear`). No model.
 
 Source: the port semantics (`theorem/Port/Defs.lean`); coordinate changes and similarity of
-plants (`theorem/Linear/Transfer.lean`); the port systems of plants (`theorem/Port/Linear.lean`);
+plants (`theorem/Linear/Transfer.lean`; their flow sentences, `Similar.holds_iff`, by the transport
+law of `theorem/Dynamics/Transport.lean`); the port systems of plants (`theorem/Port/Linear.lean`);
 linear families (`theorem/Linear/Family.lean`). Scaffold: `theorem/Linear/Similarity.agda`.
 
 Results.

@@ -241,14 +241,14 @@ namespace powerlib.Synchronous
   have h1 := congrFun h 1
   simp only [NonlinearModel.output] at h1
   rw [smib11_dH] at h1
-  simp [smib11, smib11_g, smib11_speed, smib11_current, smib11_flux, Matrix.mulVec, dotProduct,
-    Fin.sum_univ_succ, p.M_pos.ne'] at h1
+  simp [smib11, smib11_g, smib11_speed, smib11_current, smib11_machine, syncMachine7_speed,
+    Matrix.mulVec, dotProduct, p.M_pos.ne'] at h1
 
 /-- The 11-state system with `Γ = I`, `M = C = L_l = 1` and zero resistances, damping and
 frame speed. -/
 private def smib11Unit : SMIB11Params :=
-  ⟨1, 1, 0, 0, 0, 0, 0, ⟨0, 1, 0⟩, ⟨0, 1, 0⟩, 0, Matrix.PosDef.one, one_pos, le_rfl, le_rfl,
-    le_rfl, le_rfl, le_rfl, one_pos, one_pos, le_rfl, rfl, rfl, rfl⟩
+  ⟨⟨1, 1, 0, 0, 0, 0, 0, Matrix.PosDef.one, one_pos, le_rfl, le_rfl, le_rfl, le_rfl, le_rfl⟩,
+    ⟨0, 1, 0⟩, ⟨0, 1, 0⟩, 0, one_pos, one_pos, le_rfl, rfl, rfl, rfl⟩
 
 namespace SMIB11
 

@@ -54,6 +54,7 @@ import theorem.LTI.Oscillator2
 import theorem.SpecialFunctions.AmplitudePhase
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
+import theorem.SpecialFunctions.Clamp
 import theorem.SpecialFunctions.Elementary
 import theorem.SpecialFunctions.Sinusoid
 import theorem.SpecialFunctions.TrigZeros
@@ -326,6 +327,7 @@ import theorem.Stochastic.StochStability
 import theorem.PowerSystem.Synchronous.DampedEAC
 import theorem.PowerSystem.Synchronous.EqualArea
 import theorem.PowerSystem.Synchronous.FaultSequence
+import theorem.PowerSystem.Synchronous.GeneralSwing
 import theorem.PowerSystem.Synchronous.Instances
 import theorem.PowerSystem.Synchronous.PH
 import theorem.PowerSystem.Synchronous.ParkModel

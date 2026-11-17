@@ -42,9 +42,11 @@ Family and connection conclusions.
   excursions, initial slope), which the sentence language does not express:
   `postShed_necessary`, `postShed_not_sufficient` and `load_eq_of_rocof` are private
   implementation evidence (Rules §3a). They are derived from the generic
-  `LTI.tendsto_apply_of_isHurwitz`, `LTI.trajectory_eq_osc2`, `LTI.hasDerivWithinAt_apply_zero`
-  and static facts of the plant. The steady-state inequality and the corrected load estimate
-  are domain; the trip logic, stated for an arbitrary signal, is foundation.
+  `LTI.tendsto_apply_of_isHurwitz`, `LTI.trajectory_nadir_osc2`,
+  `LTI.hasDerivWithinAt_apply_zero` and static facts of the plant (`SwingGovernor.field_zero`
+  and the nadir identities of `Frequency.SwingNadir`). The steady-state inequality and the
+  corrected load estimate are domain; the trip logic, stated for an arbitrary signal, is
+  foundation.
 
 Corrections.
 * §1.4 states the condition as `ΔP_L − p ΔP_L⁰ < D_eff Δf_th`; the primary response `K_R` is
@@ -105,14 +107,15 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔP') y) (Ici 0))
     (h0 : x 0 = 0) :
     ∃ th > 0, ΔP' < (K + D) * th / f₀ ∧ ∃ t ≥ 0, x t 0 < -(th / f₀) := by
-  have hωd := SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ
-  have hT0 : 0 < SwingGovernor.nadirTime M D K Tg := SwingGovernor.tCrit_pos hωd
-  have hval : x (SwingGovernor.nadirTime M D K Tg) 0 = SwingGovernor.nadirValue M D K Tg ΔP' := by
-    rw [LTI.trajectory_eq_osc2 (plant M D K Tg)
-      ((SwingGovernor.isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl)
-      (SwingGovernor.trace_A hM hTg hKD) (SwingGovernor.det_A hM hTg hD hKD hζ) hωd.ne' hx
-      hT0.le, h0, SwingGovernor.osc2_freq hM hTg hD hKD hζ,
-      SwingGovernor.respC_nadirTime hM hTg hD hKD hζ]
+  have hr : -ΔP' / M < 0 := by rw [neg_div]; exact neg_neg_of_pos (div_pos hP hM)
+  obtain ⟨hT0, -, -, hval⟩ := LTI.trajectory_nadir_osc2 (plant M D K Tg)
+    ((SwingGovernor.isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl)
+    (SwingGovernor.trace_A hM hTg hKD) (SwingGovernor.det_A hM hTg hD hKD hζ)
+    (SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ) (SwingGovernor.decayRate_nonneg hM hTg hD hKD)
+    hx 0 (a := ΔP' / (K + D)) (r := -ΔP' / M) (by rw [h0]; exact SwingGovernor.rest_deviation)
+    (by rw [h0]; exact SwingGovernor.rest_slope hKD.ne') hr
+  rw [← SwingGovernor.nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ] at hT0 hval
+  rw [SwingGovernor.steadyState_zero, ← SwingGovernor.nadirValue_eq hM hTg hD hKD hP hζ] at hval
   have hlt := SwingGovernor.nadirValue_lt hM hTg hD hKD hP hζ
   set n := SwingGovernor.nadirValue M D K Tg ΔP'
   set c := ΔP' / (K + D) with hc
@@ -139,10 +142,7 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
     ΔPL = M * |ρ| / f₀ := by
   have hr : HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
     have h := LTI.hasDerivWithinAt_apply_zero hx 0
-    rw [SwingGovernor.field_apply, h0] at h
-    convert h using 1
-    simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
-    ring
+    rwa [h0, SwingGovernor.field_zero] at h
   have h := (hr.const_add 1).const_mul f₀
   have hρ' : ρ = f₀ * (-ΔPL / M) := (uniqueDiffWithinAt_Ici 0).eq_deriv _ hρ h
   rw [hρ', abs_mul, abs_of_pos hf, abs_div, abs_neg, abs_of_nonneg hP, abs_of_pos hM]

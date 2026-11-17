@@ -23,35 +23,42 @@ Source: work-sync `theory/T-frequency-stability.md` §1.7 (boxed `t_nadir` with 
 step response `Δω(t) = −ΔP_L/(K_R + D)[1 − e^{−σt}(cos ω_d t − α sin ω_d t)]`).
 
 Results.
-* `nadirTime_pos`, `freq_strictAntiOn_nadir`, `freq_isMinOn_nadir`, `freq_nadirTime_eq`
-  (implementation evidence, private): `0 < t_nadir`; `Δω` is strictly decreasing on
-  `[0, t_nadir]`; `Δω(t_nadir)` is the minimum of `Δω` over all `t ≥ 0`; and it equals
-  `nadirValue`.
+* `decayRate_eq`, `decayRate_nonneg`, `dampedFreq_pos`, `dampingRatio_pos`,
+  `decayRate_sq_add_dampedFreq_sq`, `trace_A`, `det_A` (domain): in the underdamped case the
+  state matrix has the eigenvalues `−σ ± j ω_d` (`tr A = −2σ`, `det A = σ² + ω_d²`).
+* `rest_deviation`, `rest_slope` (domain): from rest the deviation of `Δω` from the
+  quasi-steady state starts at `ΔP_L/(K_R + D)` with the slope `−ΔP_L/M`.
+* `dampedRespPhase_eq`, `nadirTime_eq_dampedRespCrit`, `nadirValue_eq` (domain): for a load
+  increase the phase point of that damped response (`LTI.dampedRespPhase`) is
+  `ΔP_L/(M ω_d) · (σ − 1/T_g + j ω_d)`, so `nadirTime` is its first critical time
+  (`LTI.dampedRespCrit`) and `nadirValue` its value there (`LTI.trajectory_nadir_osc2`).
 * `nadirValue_lt` (domain): the nadir lies strictly below the quasi-steady state
   `−ΔP_L/(K_R + D)` (overshoot is unavoidable in the underdamped case).
+* `freq_nadir` (implementation evidence, private): `0 < t_nadir`; `Δω` is strictly decreasing on
+  `[0, t_nadir]`; `Δω(t_nadir)` is the minimum of `Δω` over all `t ≥ 0`; and it equals
+  `nadirValue`.
 * `nadir_successive` (implementation evidence, private): at `t_nadir + kπ/ω_d` the derivative
   vanishes again and the deviation from the quasi-steady state is multiplied by
   `(−e^{−σπ/ω_d})^k`.
 
 Family and connection conclusions.
 * This module adds no family: the model is the swing + governor family of
-  `Frequency.SwingGovernor`. The scalar core (`respC`, `rateC`, `tCrit`, …), the closed-form
-  identity `osc2_freq` (the first component of the explicit solution from rest is `respC`, a
-  static identity of closed forms), `respC_nadirTime` and `nadirValue_lt` are domain model identities.
+  `Frequency.SwingGovernor`. The identities above are domain model identities.
 * The nadir statements quantify over forward solutions and their extrema in time, which the
-  sentence language does not express: `trajectory_freq_eq`, `freq_strictAntiOn_nadir`,
-  `freq_isMinOn_nadir`, `freq_nadirTime_eq` and `nadir_successive` are private implementation
-  evidence (Rules §3a). Modules that need a nadir of a forward solution
-  re-derive it from the generic `LTI.trajectory_eq_osc2`, `osc2_freq` and the scalar core.
+  sentence language does not express: `freq_nadir` and `nadir_successive` are private
+  implementation evidence (Rules §3a). They instantiate the generic first extremum of a
+  two-state plant (`LTI.trajectory_nadir_osc2`, `LTI.trajectory_apply_eq_dampedResp`,
+  `LTI.hasDerivAt_dampedResp_crit_add`, `LTI.dampedResp_add_half_period`) with the static
+  identities above; modules that need a nadir of a forward solution (`SFR`, `UFLS`,
+  `UFLSLatched`) instantiate them the same way.
 
 Proof outline (no Laplace inversion is assumed).
-* The explicit closed form `osc2` solves the state equations (`hasDerivAt_osc2`), trajectory
-  uniqueness identifies it with every trajectory (`trajectory_eq_osc2`); its first component is
-  the scalar `respC`, whose derivative is `−(ΔP_L ρ/(M ω_d)) e^{−σt} sin(θ − ω_d t)` with
-  `θ = ω_d t_nadir`, `ρ = |σ − 1/T_g + j ω_d|`; this gives the first critical point and the
-  strict decrease before it. After it, the critical-point shift identity `damped_shift` writes
-  the deviation as `(Δω(t_nadir) − Δω^∞)·e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`, which is
-  bounded by its first value via `one_add_ratio_sin_le_exp`.
+* Every coordinate of a forward solution of a two-state plant with eigenvalues `−σ ± j ω_d` is
+  the equilibrium plus the damped response `LTI.dampedResp σ ω_d a r` with initial deviation `a`
+  and initial slope `r` (`theorem/LTI/Oscillator2.lean`); its first critical time and value are
+  `LTI.dampedRespCrit` and `LTI.dampedResp_crit`. Here `a = ΔP_L/(K_R + D)` and
+  `r = −ΔP_L/M` (`rest_deviation`, `rest_slope`), and the phase point is a positive multiple of
+  `σ − 1/T_g + j ω_d` (`dampedRespPhase_eq`, `Complex.arg_real_mul`).
 -/
 
 noncomputable section
@@ -59,247 +66,7 @@ namespace powerlib.Frequency.SwingGovernor
 open Set Filter Matrix LinearSystems
 open scoped Topology
 
-/-! ## Scalar core
-
-`respC c σ ω_d T_g` is the closed-form frequency deviation written with `c = ΔP_L/(K_R + D)`
-and `ω_n² = σ² + ω_d²` (so that `ΔP_L/M = c ω_n² T_g`); `rateC` is its derivative. -/
-
-/-- Closed-form `Δω(t)` in terms of `c`, `σ`, `ω_d`, `T_g`. -/
-def respC (c σ ωd Tg t : ℝ) : ℝ :=
-  -c + Real.exp (-(σ * t)) * (c * Real.cos (ωd * t) +
-    (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd * Real.sin (ωd * t))
-
-/-- Closed-form `Δω̇(t)`. -/
-def rateC (c σ ωd Tg t : ℝ) : ℝ :=
-  -(c * (σ ^ 2 + ωd ^ 2) * Tg / ωd) * Real.exp (-(σ * t)) *
-    (ωd * Real.cos (ωd * t) - (σ - 1 / Tg) * Real.sin (ωd * t))
-
-@[tmio M, powerlib_domain] theorem hasDerivAt_respC {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
-    (t : ℝ) : HasDerivAt (respC c σ ωd Tg) (rateC c σ ωd Tg t) t := by
-  have he : HasDerivAt (fun s => Real.exp (-(σ * s))) (Real.exp (-(σ * t)) * (-σ)) t := by
-    have := ((hasDerivAt_id t).const_mul σ).neg.exp
-    simpa using this
-  have hc : HasDerivAt (fun s => Real.cos (ωd * s)) (-Real.sin (ωd * t) * ωd) t := by
-    have := ((hasDerivAt_id t).const_mul ωd).cos
-    simpa using this
-  have hs : HasDerivAt (fun s => Real.sin (ωd * s)) (Real.cos (ωd * t) * ωd) t := by
-    have := ((hasDerivAt_id t).const_mul ωd).sin
-    simpa using this
-  have h := (he.mul ((hc.const_mul c).add
-    (hs.const_mul ((σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd)))).const_add (-c)
-  convert h using 1
-  · funext s; simp only [respC, Pi.mul_apply, Pi.add_apply]
-  unfold rateC
-  simp only [Pi.add_apply]
-  field_simp
-  ring
-
-/-- `rateC` as the derivative bracket of `e^{−σt}(a cos ω_d t + b sin ω_d t)`. -/
-@[tmio M, powerlib_domain] theorem rateC_eq_bracket {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
-    (t : ℝ) :
-    rateC c σ ωd Tg t = Real.exp (-(σ * t)) *
-      (-σ * (c * Real.cos (ωd * t) + (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd *
-        Real.sin (ωd * t)) + ωd * ((σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd *
-          Real.cos (ωd * t) - c * Real.sin (ωd * t))) := by
-  unfold rateC
-  field_simp
-  ring
-
-/-- Critical-point shift: if `t ↦ e^{−σt}(a cos ω_d t + b sin ω_d t)` has zero derivative at
-`T`, then its value at `T + u` is its value at `T` times
-`e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`. -/
-@[tmio T, powerlib_foundation] theorem damped_shift {σ ωd a b T : ℝ} (hωd : ωd ≠ 0)
-    (hcrit : -σ * (a * Real.cos (ωd * T) + b * Real.sin (ωd * T)) +
-      ωd * (b * Real.cos (ωd * T) - a * Real.sin (ωd * T)) = 0) (u : ℝ) :
-    Real.exp (-(σ * (T + u))) * (a * Real.cos (ωd * (T + u)) + b * Real.sin (ωd * (T + u))) =
-      Real.exp (-(σ * T)) * (a * Real.cos (ωd * T) + b * Real.sin (ωd * T)) *
-        (Real.exp (-(σ * u)) * (Real.cos (ωd * u) + σ / ωd * Real.sin (ωd * u))) := by
-  have hk : b * Real.cos (ωd * T) - a * Real.sin (ωd * T) =
-      σ / ωd * (a * Real.cos (ωd * T) + b * Real.sin (ωd * T)) := by
-    field_simp
-    linarith
-  rw [show ωd * (T + u) = ωd * T + ωd * u by ring, Real.cos_add, Real.sin_add,
-    show -(σ * (T + u)) = -(σ * T) + -(σ * u) by ring, Real.exp_add]
-  linear_combination (Real.exp (-(σ * T)) * Real.exp (-(σ * u)) * Real.sin (ωd * u)) * hk
-
-/-- `|b + j ω_d| > 0` for `ω_d > 0`. -/
-@[tmio T, powerlib_foundation] theorem norm_mk_pos {b ωd : ℝ} (hωd : 0 < ωd) :
-    0 < ‖(⟨b, ωd⟩ : ℂ)‖ := by
-  refine norm_pos_iff.2 fun h => ?_
-  have := congrArg Complex.im h
-  simp at this
-  linarith
-
-/-- `θ = atan2(ω_d, b) = arg (b + j ω_d)` is positive for `ω_d > 0`. -/
-@[tmio T, powerlib_foundation] theorem arg_mk_pos {b ωd : ℝ} (hωd : 0 < ωd) :
-    0 < Complex.arg ⟨b, ωd⟩ := by
-  have hsinpos : 0 < Real.sin (Complex.arg ⟨b, ωd⟩) := by
-    rw [Complex.sin_arg]; exact div_pos hωd (norm_mk_pos hωd)
-  have hnn : 0 ≤ Complex.arg ⟨b, ωd⟩ := Complex.arg_nonneg_iff.2 hωd.le
-  rcases hnn.lt_or_eq with h | h
-  · exact h
-  · rw [← h, Real.sin_zero] at hsinpos; exact absurd hsinpos (lt_irrefl 0)
-
-/-- `θ = atan2(ω_d, b) = arg (b + j ω_d)` is below `π` for `ω_d > 0`. -/
-@[tmio T, powerlib_foundation] theorem arg_mk_lt_pi {b ωd : ℝ} (hωd : 0 < ωd) :
-    Complex.arg ⟨b, ωd⟩ < Real.pi := by
-  have hsinpos : 0 < Real.sin (Complex.arg ⟨b, ωd⟩) := by
-    rw [Complex.sin_arg]; exact div_pos hωd (norm_mk_pos hωd)
-  have hle : Complex.arg ⟨b, ωd⟩ ≤ Real.pi := Complex.arg_le_pi _
-  rcases hle.lt_or_eq with h | h
-  · exact h
-  · rw [h, Real.sin_pi] at hsinpos; exact absurd hsinpos (lt_irrefl 0)
-
-/-- `cos θ = b / |b + j ω_d|` for `θ = arg (b + j ω_d)`, `ω_d > 0` (the sine is Mathlib's
-`Complex.sin_arg`: `sin θ = ω_d / |b + j ω_d|`). -/
-@[tmio T, powerlib_foundation] theorem cos_arg_mk {b ωd : ℝ} (hωd : 0 < ωd) :
-    Real.cos (Complex.arg ⟨b, ωd⟩) = b / ‖(⟨b, ωd⟩ : ℂ)‖ :=
-  Complex.cos_arg (norm_pos_iff.1 (norm_mk_pos hωd))
-
-/-- `|b + j ω_d|² = b² + ω_d²`. -/
-@[tmio T, powerlib_foundation] theorem sq_norm_mk (b ωd : ℝ) :
-    ‖(⟨b, ωd⟩ : ℂ)‖ ^ 2 = b ^ 2 + ωd ^ 2 := by
-  rw [Complex.sq_norm, Complex.normSq_mk]; ring
-
-/-- `rateC` in phase form: `−(c ω_n² T_g/ω_d) e^{−σt} ρ sin(θ − ω_d t)`. -/
-@[tmio M, powerlib_domain] theorem rateC_eq_sin {c σ ωd Tg : ℝ} (hωd : 0 < ωd) (t : ℝ) :
-    rateC c σ ωd Tg t = -(c * (σ ^ 2 + ωd ^ 2) * Tg / ωd) * Real.exp (-(σ * t)) *
-      (‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ *
-        Real.sin (Complex.arg ⟨σ - 1 / Tg, ωd⟩ - ωd * t)) := by
-  have hcos := cos_arg_mk (b := σ - 1 / Tg) hωd
-  have hsin : Real.sin (Complex.arg ⟨σ - 1 / Tg, ωd⟩) = ωd / ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ :=
-    Complex.sin_arg _
-  have hn := norm_mk_pos (b := σ - 1 / Tg) hωd
-  rw [Real.sin_sub, hcos, hsin]
-  unfold rateC
-  field_simp
-
-section Core
-
-variable {c σ ωd Tg : ℝ}
-
-/-- `t_nadir` of the scalar core: `arg (σ − 1/T_g + j ω_d)/ω_d`. -/
-def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
-
-@[tmio M, powerlib_domain] theorem tCrit_pos (hωd : 0 < ωd) : 0 < tCrit σ ωd Tg :=
-  div_pos (arg_mk_pos hωd) hωd
-
-@[tmio M, powerlib_domain] theorem mul_tCrit (hωd : 0 < ωd) :
-    ωd * tCrit σ ωd Tg = Complex.arg ⟨σ - 1 / Tg, ωd⟩ := by
-  unfold tCrit; field_simp
-
-@[tmio M, powerlib_domain] theorem rateC_tCrit_add (hωd : 0 < ωd) (k : ℕ) :
-    rateC c σ ωd Tg (tCrit σ ωd Tg + k * (Real.pi / ωd)) = 0 := by
-  have harg : ωd * (tCrit σ ωd Tg + k * (Real.pi / ωd)) =
-      Complex.arg ⟨σ - 1 / Tg, ωd⟩ + k * Real.pi := by
-    rw [mul_add, mul_tCrit hωd]; field_simp
-  rw [rateC_eq_sin hωd, harg, show ∀ a b : ℝ, a - (a + b) = -b from fun a b => by ring,
-    Real.sin_neg, Real.sin_nat_mul_pi]
-  ring
-
-@[tmio M, powerlib_domain] theorem rateC_neg (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) {t : ℝ}
-    (ht : t ∈ Ico 0 (tCrit σ ωd Tg)) : rateC c σ ωd Tg t < 0 := by
-  have hθ0 := arg_mk_pos (b := σ - 1 / Tg) hωd
-  have hθπ := arg_mk_lt_pi (b := σ - 1 / Tg) hωd
-  have hn := norm_mk_pos (b := σ - 1 / Tg) hωd
-  rw [rateC_eq_sin hωd]
-  have h1 : ωd * t < Complex.arg ⟨σ - 1 / Tg, ωd⟩ := by
-    rw [← mul_tCrit hωd]; exact mul_lt_mul_of_pos_left ht.2 hωd
-  have h2 : 0 ≤ ωd * t := mul_nonneg hωd.le ht.1
-  have hsin : 0 < Real.sin (Complex.arg ⟨σ - 1 / Tg, ωd⟩ - ωd * t) :=
-    Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
-  have hk : 0 < c * (σ ^ 2 + ωd ^ 2) * Tg / ωd := by positivity
-  have := mul_pos (mul_pos hk (Real.exp_pos (-(σ * t)))) (mul_pos hn hsin)
-  linarith [this]
-
-@[tmio M, powerlib_domain] theorem respC_tCrit (hωd : 0 < ωd) (hTg : 0 < Tg) :
-    respC c σ ωd Tg (tCrit σ ωd Tg) =
-      -c - c * (Tg * ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖) * Real.exp (-(σ * tCrit σ ωd Tg)) := by
-  have hcos := cos_arg_mk (b := σ - 1 / Tg) hωd
-  have hsin : Real.sin (Complex.arg ⟨σ - 1 / Tg, ωd⟩) = ωd / ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ :=
-    Complex.sin_arg _
-  have hn := norm_mk_pos (b := σ - 1 / Tg) hωd
-  have hsq := sq_norm_mk (σ - 1 / Tg) ωd
-  unfold respC
-  rw [mul_tCrit hωd, hcos, hsin]
-  generalize ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ = ρ at hn hsq ⊢
-  generalize Real.exp (-(σ * tCrit σ ωd Tg)) = E
-  have e1 : (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ωd * (ωd / ρ) =
-      (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ρ := by
-    field_simp
-  have e2 : c * ((σ - 1 / Tg) / ρ) + (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) / ρ =
-      (c * (σ - 1 / Tg) + (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg)) / ρ := by ring
-  have e3 : c * (σ - 1 / Tg) + (σ * c - c * (σ ^ 2 + ωd ^ 2) * Tg) = -(c * Tg) * ρ ^ 2 := by
-    rw [hsq]; field_simp; ring
-  rw [e1, e2, e3]
-  field_simp
-  ring
-
-@[tmio T, powerlib_foundation] theorem tg_mul_norm (hTg : 0 < Tg) (hωd : 0 < ωd) :
-    Tg * ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖ =
-      Real.sqrt (1 - 2 * σ * Tg + (σ ^ 2 + ωd ^ 2) * Tg ^ 2) := by
-  have hn := norm_mk_pos (b := σ - 1 / Tg) hωd
-  have hsq := sq_norm_mk (σ - 1 / Tg) ωd
-  rw [show 1 - 2 * σ * Tg + (σ ^ 2 + ωd ^ 2) * Tg ^ 2 = (Tg * ‖(⟨σ - 1 / Tg, ωd⟩ : ℂ)‖) ^ 2 by
-    rw [mul_pow, hsq]; field_simp; ring]
-  exact (Real.sqrt_sq (by positivity)).symm
-
-@[tmio M, powerlib_domain] theorem respC_strictAntiOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hc : 0 < c) :
-    StrictAntiOn (respC c σ ωd Tg) (Icc 0 (tCrit σ ωd Tg)) := by
-  apply strictAntiOn_of_deriv_neg (convex_Icc _ _)
-  · exact fun t _ => (hasDerivAt_respC hωd.ne' hTg.ne' t).continuousAt.continuousWithinAt
-  · intro t ht
-    rw [interior_Icc] at ht
-    rw [(hasDerivAt_respC hωd.ne' hTg.ne' t).deriv]
-    exact rateC_neg hωd hTg hc ⟨ht.1.le, ht.2⟩
-
-@[tmio M, powerlib_domain] theorem respC_shift (hωd : 0 < ωd) (hTg : 0 < Tg) (u : ℝ) :
-    respC c σ ωd Tg (tCrit σ ωd Tg + u) + c =
-      (respC c σ ωd Tg (tCrit σ ωd Tg) + c) *
-        (Real.exp (-(σ * u)) * (Real.cos (ωd * u) + σ / ωd * Real.sin (ωd * u))) := by
-  have hcrit := rateC_tCrit_add (c := c) hωd (Tg := Tg) (σ := σ) 0
-  rw [Nat.cast_zero, zero_mul, add_zero, rateC_eq_bracket hωd.ne' hTg.ne'] at hcrit
-  have hcrit' := (mul_eq_zero.1 hcrit).resolve_left (Real.exp_pos _).ne'
-  have h := damped_shift hωd.ne' hcrit' u
-  unfold respC
-  simp only [neg_add_cancel_comm]
-  rw [h]
-
-@[tmio M, powerlib_domain] theorem respC_tCrit_add_c_neg (hωd : 0 < ωd) (hTg : 0 < Tg)
-    (hc : 0 < c) :
-    respC c σ ωd Tg (tCrit σ ωd Tg) + c < 0 := by
-  rw [respC_tCrit hωd hTg]
-  have hn := norm_mk_pos (b := σ - 1 / Tg) hωd
-  have := mul_pos (mul_pos hc (mul_pos hTg hn)) (Real.exp_pos (-(σ * tCrit σ ωd Tg)))
-  linarith
-
-@[tmio M, powerlib_domain] theorem respC_isMinOn (hωd : 0 < ωd) (hTg : 0 < Tg) (hσ : 0 ≤ σ)
-    (hc : 0 < c) : IsMinOn (respC c σ ωd Tg) (Ici 0) (tCrit σ ωd Tg) := by
-  intro t ht
-  simp only [Set.mem_ofPred_eq]
-  rcases le_total t (tCrit σ ωd Tg) with h | h
-  · exact (respC_strictAntiOn hωd hTg hc).antitoneOn ⟨ht, h⟩
-      ⟨(tCrit_pos hωd).le, le_rfl⟩ h
-  · have hs := respC_shift (c := c) (σ := σ) hωd hTg (t - tCrit σ ωd Tg)
-    rw [add_sub_cancel] at hs
-    have hG := LTI.one_add_ratio_sin_le_exp hσ hωd (sub_nonneg.2 h)
-    have hneg := respC_tCrit_add_c_neg (σ := σ) hωd hTg hc
-    nlinarith
-
-@[tmio M, powerlib_domain] theorem respC_add_half_period (hωd : 0 < ωd) (t : ℝ) :
-    respC c σ ωd Tg (t + Real.pi / ωd) + c =
-      -Real.exp (-(σ * (Real.pi / ωd))) * (respC c σ ωd Tg t + c) := by
-  have harg : ωd * (t + Real.pi / ωd) = ωd * t + Real.pi := by field_simp
-  have hexp : Real.exp (-(σ * (t + Real.pi / ωd))) =
-      Real.exp (-(σ * (Real.pi / ωd))) * Real.exp (-(σ * t)) := by
-    rw [← Real.exp_add]; ring_nf
-  unfold respC
-  rw [harg, hexp, Real.cos_add_pi, Real.sin_add_pi]
-  ring
-
-end Core
-
-/-! ## The swing + governor model -/
+local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- `σ = ζ_n ω_n`. -/
 def decayRate (M D K Tg : ℝ) : ℝ := dampingRatio M D K Tg * natFreq M D K Tg
@@ -321,7 +88,7 @@ variable {M D K Tg ΔPL : ℝ}
 
 @[tmio M, powerlib_domain] theorem dampingRatio_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) : 0 < dampingRatio M D K Tg := by
-  unfold dampingRatio
+  rw [dampingRatio_eq hM hTg]
   have : 0 < M * Tg * (D + K) := mul_pos (mul_pos hM hTg) (by linarith)
   exact div_pos (by nlinarith) (by positivity)
 
@@ -366,37 +133,77 @@ variable {M D K Tg ΔPL : ℝ}
     det_plant hM.ne' hTg.ne']
   ring
 
-@[tmio M, powerlib_domain] theorem A_mulVec (v : Fin 2 → ℝ) :
-    (plant M D K Tg).A *ᵥ v = ![-D / M * v 0 + 1 / M * v 1, -K / Tg * v 0 + -1 / Tg * v 1] := by
-  ext i; fin_cases i <;> simp [plant, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+/-- At rest the deviation from the quasi-steady state has the `Δω` component `ΔP_L/(K_R + D)`. -/
+@[tmio M, powerlib_domain] theorem rest_deviation :
+    WithLp.ofLp ((0 : ℝ²) - steadyState D K ΔPL) 0 = ΔPL / (K + D) := by
+  simp [steadyState, neg_div]
 
-/-- The first component of the explicit solution from rest under the load step is the scalar
-closed form `respC`. A static identity of closed forms. -/
-@[tmio M, powerlib_domain] theorem osc2_freq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
-    (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) (t : ℝ) :
-    (steadyState D K ΔPL + WithLp.toLp 2 (LTI.osc2 (plant M D K Tg).A (decayRate M D K Tg)
-      (dampedFreq M D K Tg) (WithLp.ofLp (0 - steadyState D K ΔPL)) t)) 0 =
-      respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg t := by
-  have hsum := decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ
-  rw [natFreq_sq hM hTg (by linarith)] at hsum
-  have hωd := (dampedFreq_pos hM hTg hD hKD hζ).ne'
-  unfold respC
-  rw [hsum]
-  simp only [LTI.osc2, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, A_mulVec]
-  simp [steadyState]
+/-- From rest the deviation from the quasi-steady state has the initial `Δω` slope `−ΔP_L/M`
+(the initial RoCoF). -/
+@[tmio M, powerlib_domain] theorem rest_slope (hKD : K + D ≠ 0) :
+    ((plant M D K Tg).A *ᵥ WithLp.ofLp ((0 : ℝ²) - steadyState D K ΔPL)) 0 = -ΔPL / M := by
+  simp [plant, steadyState, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   field_simp
   ring
 
-/-- The closed form at the nadir time is the nadir value. -/
-@[tmio M, powerlib_domain] theorem respC_nadirTime (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+/-- For a load increase the phase point of the response from rest is
+`ΔP_L/(M ω_d) · (σ − 1/T_g + j ω_d)`. -/
+@[tmio M, powerlib_domain] theorem dampedRespPhase_eq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) :
-    respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg (nadirTime M D K Tg) =
-      nadirValue M D K Tg ΔPL := by
+    LTI.dampedRespPhase (decayRate M D K Tg) (dampedFreq M D K Tg) (ΔPL / (K + D)) (-ΔPL / M) =
+      ((ΔPL / (M * dampedFreq M D K Tg) : ℝ) : ℂ) *
+        ⟨decayRate M D K Tg - 1 / Tg, dampedFreq M D K Tg⟩ := by
+  have hsum := decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ
+  rw [natFreq_sq hM hTg (by linarith)] at hsum
+  have hωd := (dampedFreq_pos hM hTg hD hKD hζ).ne'
+  have hM' := hM.ne'
+  have hTg' := hTg.ne'
+  have hKD' := hKD.ne'
+  apply Complex.ext
+  · simp only [LTI.dampedRespPhase, Complex.re_ofReal_mul]
+    rw [hsum]
+    field_simp
+    ring
+  · simp only [LTI.dampedRespPhase, Complex.im_ofReal_mul]
+    field_simp
+
+/-- For a load increase the nadir time is the first critical time of the response from rest. -/
+@[tmio M, powerlib_domain] theorem nadirTime_eq_dampedRespCrit (hM : 0 < M) (hTg : 0 < Tg)
+    (hD : 0 ≤ D) (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1) :
+    nadirTime M D K Tg = LTI.dampedRespCrit (decayRate M D K Tg) (dampedFreq M D K Tg)
+      (ΔPL / (K + D)) (-ΔPL / M) := by
+  rw [LTI.dampedRespCrit, dampedRespPhase_eq hM hTg hD hKD hζ, Complex.arg_real_mul _
+    (div_pos hP (mul_pos hM (dampedFreq_pos hM hTg hD hKD hζ))), nadirTime]
+
+/-- For a load increase the nadir value is the value of the response from rest at its first
+critical time: `−ΔP_L/(K_R + D) − (ω_d ρ/(σ² + ω_d²)) e^{−σ t_nadir}`, `ρ` the norm of the phase
+point. -/
+@[tmio M, powerlib_domain] theorem nadirValue_eq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+    (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1) :
+    nadirValue M D K Tg ΔPL = -ΔPL / (K + D) - dampedFreq M D K Tg *
+      ‖LTI.dampedRespPhase (decayRate M D K Tg) (dampedFreq M D K Tg) (ΔPL / (K + D))
+        (-ΔPL / M)‖ / (decayRate M D K Tg ^ 2 + dampedFreq M D K Tg ^ 2) *
+          Real.exp (-(decayRate M D K Tg * nadirTime M D K Tg)) := by
   have hωd := dampedFreq_pos hM hTg hD hKD hζ
-  have hT : nadirTime M D K Tg = tCrit (decayRate M D K Tg) (dampedFreq M D K Tg) Tg := rfl
-  rw [hT, respC_tCrit hωd hTg, tg_mul_norm hTg hωd, ← hT]
+  have hsum := decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ
+  have hn := natFreq_sq (D := D) (K := K) hM hTg (by linarith)
+  have hsq : Real.sqrt (1 - 2 * decayRate M D K Tg * Tg + natFreq M D K Tg ^ 2 * Tg ^ 2) =
+      Tg * ‖(⟨decayRate M D K Tg - 1 / Tg, dampedFreq M D K Tg⟩ : ℂ)‖ := by
+    rw [← hsum, show 1 - 2 * decayRate M D K Tg * Tg +
+        (decayRate M D K Tg ^ 2 + dampedFreq M D K Tg ^ 2) * Tg ^ 2 =
+        (Tg * ‖(⟨decayRate M D K Tg - 1 / Tg, dampedFreq M D K Tg⟩ : ℂ)‖) ^ 2 by
+      rw [mul_pow, Complex.sq_norm, Complex.normSq_mk]
+      field_simp
+      ring]
+    exact Real.sqrt_sq (by positivity)
+  have hM' := hM.ne'
+  have hTg' := hTg.ne'
+  have hKD' := hKD.ne'
+  have hDK : D + K ≠ 0 := by linarith
   unfold nadirValue
-  rw [← decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ]
+  rw [dampedRespPhase_eq hM hTg hD hKD hζ, norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (div_pos hP (mul_pos hM hωd)).le, hsq, hsum, hn]
+  field_simp
   ring
 
 /-- The nadir is strictly below the quasi-steady state `−ΔP_L/(K_R + D)`. -/
@@ -405,8 +212,10 @@ closed form `respC`. A static identity of closed forms. -/
     nadirValue M D K Tg ΔPL < -ΔPL / (K + D) := by
   have hωd := dampedFreq_pos hM hTg hD hKD hζ
   have hR : 0 < Real.sqrt (1 - 2 * decayRate M D K Tg * Tg + natFreq M D K Tg ^ 2 * Tg ^ 2) := by
-    rw [← decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ, ← tg_mul_norm hTg hωd]
-    exact mul_pos hTg (norm_mk_pos hωd)
+    rw [← decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ]
+    have h1 := sq_nonneg (1 - decayRate M D K Tg * Tg)
+    have h2 := mul_pos (mul_pos hωd hωd) (mul_pos hTg hTg)
+    exact Real.sqrt_pos.2 (by nlinarith)
   have hc : 0 < ΔPL / (K + D) := div_pos hP hKD
   unfold nadirValue
   have := mul_pos (mul_pos hc hR) (Real.exp_pos (-(decayRate M D K Tg * nadirTime M D K Tg)))
@@ -415,80 +224,33 @@ closed form `respC`. A static identity of closed forms. -/
 
 /-! ## Implementation evidence (private, trajectory level) -/
 
-local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Every forward solution from rest is the closed form `respC` on `t ≥ 0`. -/
-@[tmio TM, powerlib_domain] private theorem trajectory_freq_eq (hM : 0 < M) (hTg : 0 < Tg)
-    (hD : 0 ≤ D)
-    (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
-    (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
-    (h0 : x 0 = 0) {t : ℝ} (ht : 0 ≤ t) :
-    x t 0 = respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg t := by
-  rw [LTI.trajectory_eq_osc2 (plant M D K Tg) ((isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl)
-    (trace_A hM hTg hKD) (det_A hM hTg hD hKD hζ) (dampedFreq_pos hM hTg hD hKD hζ).ne' hx ht,
-    h0]
-  exact osc2_freq hM hTg hD hKD hζ t
-
-/-- §1.7 frequency nadir: the nadir time is positive. -/
-@[tmio M, powerlib_domain] private theorem nadirTime_pos (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
-    (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) : 0 < nadirTime M D K Tg :=
-  tCrit_pos (dampedFreq_pos hM hTg hD hKD hζ)
-
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-§1.7 frequency nadir: the frequency deviation of every forward solution from rest is strictly
-decreasing up to the nadir time. -/
-@[tmio TM, powerlib_domain] private theorem freq_strictAntiOn_nadir (hM : 0 < M) (hTg : 0 < Tg)
-    (hD : 0 ≤ D) (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1)
-    {x : ℝ → ℝ²}
+§1.7 frequency nadir: from rest under a load increase, the frequency deviation of every forward
+solution is strictly decreasing up to the nadir time `t_nadir > 0`, attains there its minimum
+over all `t ≥ 0`, and that minimum is the closed-form `nadirValue` (the generic first extremum
+`LTI.trajectory_nadir_osc2`). -/
+@[tmio TM, powerlib_domain] private theorem freq_nadir (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
+    (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) :
-    StrictAntiOn (fun t => x t 0) (Icc 0 (nadirTime M D K Tg)) := by
-  have hωd := dampedFreq_pos hM hTg hD hKD hζ
-  have hc : 0 < ΔPL / (K + D) := div_pos hP hKD
-  have hT : nadirTime M D K Tg = tCrit (decayRate M D K Tg) (dampedFreq M D K Tg) Tg := rfl
-  have hfreq := fun {t : ℝ} (ht : 0 ≤ t) => trajectory_freq_eq hM hTg hD hKD hζ hx h0 ht
-  intro a ha b hb hab
-  simp only
-  rw [hfreq ha.1, hfreq hb.1]
-  exact respC_strictAntiOn hωd hTg hc (hT ▸ ha) (hT ▸ hb) hab
-
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-§1.7 frequency nadir: at the nadir time the frequency deviation of every forward solution from
-rest attains its minimum over all `t ≥ 0`. -/
-@[tmio TM, powerlib_domain] private theorem freq_isMinOn_nadir (hM : 0 < M) (hTg : 0 < Tg)
-    (hD : 0 ≤ D) (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1)
-    {x : ℝ → ℝ²}
-    (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
-    (h0 : x 0 = 0) :
-    IsMinOn (fun t => x t 0) (Ici 0) (nadirTime M D K Tg) := by
-  have hωd := dampedFreq_pos hM hTg hD hKD hζ
-  have hσ := decayRate_nonneg hM hTg hD hKD
-  have hc : 0 < ΔPL / (K + D) := div_pos hP hKD
-  have hT : nadirTime M D K Tg = tCrit (decayRate M D K Tg) (dampedFreq M D K Tg) Tg := rfl
-  have hfreq := fun {t : ℝ} (ht : 0 ≤ t) => trajectory_freq_eq hM hTg hD hKD hζ hx h0 ht
-  have hT0 := nadirTime_pos hM hTg hD hKD hζ
-  intro t ht
-  simp only [Set.mem_ofPred_eq]
-  rw [hfreq ht, hfreq hT0.le, hT]
-  exact respC_isMinOn hωd hTg hσ hc ht
-
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-§1.7 frequency nadir: at the nadir time the frequency deviation of every forward solution from
-rest is the closed-form `nadirValue`. -/
-@[tmio TM, powerlib_domain] private theorem freq_nadirTime_eq (hM : 0 < M) (hTg : 0 < Tg)
-    (hD : 0 ≤ D) (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
-    (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
-    (h0 : x 0 = 0) :
-    x (nadirTime M D K Tg) 0 = nadirValue M D K Tg ΔPL := by
-  rw [trajectory_freq_eq hM hTg hD hKD hζ hx h0 (nadirTime_pos hM hTg hD hKD hζ).le]
-  exact respC_nadirTime hM hTg hD hKD hζ
+    0 < nadirTime M D K Tg ∧ StrictAntiOn (fun t => x t 0) (Icc 0 (nadirTime M D K Tg)) ∧
+      IsMinOn (fun t => x t 0) (Ici 0) (nadirTime M D K Tg) ∧
+      x (nadirTime M D K Tg) 0 = nadirValue M D K Tg ΔPL := by
+  have hr : -ΔPL / M < 0 := by rw [neg_div]; exact neg_neg_of_pos (div_pos hP hM)
+  have h := LTI.trajectory_nadir_osc2 (plant M D K Tg)
+    ((isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl) (trace_A hM hTg hKD)
+    (det_A hM hTg hD hKD hζ) (dampedFreq_pos hM hTg hD hKD hζ) (decayRate_nonneg hM hTg hD hKD)
+    hx 0 (a := ΔPL / (K + D)) (r := -ΔPL / M) (by rw [h0]; exact rest_deviation)
+    (by rw [h0]; exact rest_slope hKD.ne') hr
+  rwa [steadyState_zero, ← nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ,
+    ← nadirValue_eq hM hTg hD hKD hP hζ] at h
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Successive extrema: at `t_nadir + kπ/ω_d` the frequency derivative vanishes and the deviation
 from the quasi-steady state is multiplied by `(−e^{−σπ/ω_d})^k`. -/
-@[tmio TM, powerlib_domain] private theorem nadir_successive (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
-    (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) {x : ℝ → ℝ²}
+@[tmio TM, powerlib_domain] private theorem nadir_successive (hM : 0 < M) (hTg : 0 < Tg)
+    (hD : 0 ≤ D) (hKD : 0 < K + D) (hP : 0 < ΔPL) (hζ : dampingRatio M D K Tg < 1)
+    {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) (k : ℕ) :
     HasDerivWithinAt (fun t => x t 0) 0 (Ici 0)
@@ -497,26 +259,31 @@ from the quasi-steady state is multiplied by `(−e^{−σπ/ω_d})^k`. -/
         (-Real.exp (-(decayRate M D K Tg * (Real.pi / dampedFreq M D K Tg)))) ^ k *
           (x (nadirTime M D K Tg) 0 + ΔPL / (K + D)) := by
   have hωd := dampedFreq_pos hM hTg hD hKD hζ
-  have hT : nadirTime M D K Tg = tCrit (decayRate M D K Tg) (dampedFreq M D K Tg) Tg := rfl
-  have hT0 : 0 < nadirTime M D K Tg := hT ▸ tCrit_pos hωd
-  have hfreq := fun {t : ℝ} (ht : 0 ≤ t) => trajectory_freq_eq hM hTg hD hKD hζ hx h0 ht
+  have hT := nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ
+  have hT0 : 0 < nadirTime M D K Tg := (freq_nadir hM hTg hD hKD hP hζ hx h0).1
+  have hx' : ∀ {t : ℝ}, 0 ≤ t → x t 0 + ΔPL / (K + D) = LTI.dampedResp (decayRate M D K Tg)
+      (dampedFreq M D K Tg) (ΔPL / (K + D)) (-ΔPL / M) t := fun ht => by
+    rw [LTI.trajectory_apply_eq_dampedResp (plant M D K Tg)
+      ((isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl) (trace_A hM hTg hKD)
+      (det_A hM hTg hD hKD hζ) hωd.ne' hx 0 ht, h0, rest_deviation,
+      rest_slope hKD.ne', steadyState_zero]
+    ring
   have hpt : ∀ j : ℕ, 0 ≤ nadirTime M D K Tg + j * (Real.pi / dampedFreq M D K Tg) :=
     fun j => by have := Real.pi_pos; positivity
   refine ⟨?_, ?_⟩
-  · have hd := (hasDerivAt_respC (c := ΔPL / (K + D)) (σ := decayRate M D K Tg) hωd.ne'
-      hTg.ne' (nadirTime M D K Tg + k * (Real.pi / dampedFreq M D K Tg))).hasDerivWithinAt
-      (s := Ici 0)
-    rw [hT, rateC_tCrit_add hωd, ← hT] at hd
-    exact hd.congr (fun y hy => hfreq hy) (hfreq (hpt k))
-  · rw [hfreq (hpt k), hfreq hT0.le]
+  · have hd := (LTI.hasDerivAt_dampedResp_crit_add (σ := decayRate M D K Tg)
+      (a := ΔPL / (K + D)) (r := -ΔPL / M) hωd.ne' k).hasDerivWithinAt (s := Ici 0)
+    rw [← hT] at hd
+    exact (hd.sub_const (ΔPL / (K + D))).congr (fun y hy => eq_sub_of_add_eq (hx' hy))
+      (eq_sub_of_add_eq (hx' (hpt k)))
+  · rw [hx' (hpt k), hx' hT0.le]
     induction k with
     | zero => simp
     | succ j ih =>
-      have := respC_add_half_period (c := ΔPL / (K + D)) (σ := decayRate M D K Tg) (Tg := Tg)
-        hωd (nadirTime M D K Tg + j * (Real.pi / dampedFreq M D K Tg))
       rw [show nadirTime M D K Tg + ((j + 1 : ℕ) : ℝ) * (Real.pi / dampedFreq M D K Tg) =
         nadirTime M D K Tg + j * (Real.pi / dampedFreq M D K Tg) +
-          Real.pi / dampedFreq M D K Tg by push_cast; ring, this, ih, pow_succ]
+          Real.pi / dampedFreq M D K Tg by push_cast; ring,
+        LTI.dampedResp_add_half_period hωd.ne', ih, pow_succ]
       ring
 
 end powerlib.Frequency.SwingGovernor

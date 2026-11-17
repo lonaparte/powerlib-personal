@@ -4,6 +4,7 @@ import theorem.Dynamics.Shift
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.PiecewiseAffine
 import theorem.Stack.Implementation
+import theorem.SpecialFunctions.Clamp
 
 /-! # PI current loop under the inverter's modulation voltage limit: an implementation layer
 
@@ -18,9 +19,10 @@ Model boundary.
 * State order `(i, ξ) ∈ ℝ² = EuclideanSpace ℝ (Fin 2)` as in the design: `i` the branch current,
   IN-positive (work-sync `conventions.md` §D1), in the PLL-aligned dq frame; `ξ = ∫ (i* − i) dt`.
 * Platform field (`limitedField`): `L di/dt = −R i + sat_{V_max}(Kp (i* − i) + Ki ξ)`,
-  `dξ/dt = i* − i`, with `sat_V(u) = max (−V) (min V u)` (`sat`) and the applied voltage
-  `applied`. Continuous time, autonomous: the reference `i*` is a parameter of the platform, held
-  constant (outer loops frozen), because whether the limit acts depends on the operating point.
+  `dξ/dt = i* − i`, with `sat_V(u) = max (−V) (min u V)` (`SpecialFunctions.clampSym`) and the
+  applied voltage `applied`. Continuous time, autonomous: the reference `i*` is a parameter of the
+  platform, held constant (outer loops frozen), because whether the limit acts depends on the
+  operating point.
   Any signs of `L, R, Kp, Ki, V_dc`; the engineering range is `L > 0`, `V_dc > 0`.
 * Operating point `(i*, R i*/Ki)` (`point`, the design equilibrium `PIParams.equilibrium`), whose
   steady voltage is `R i*` (`control_point_of_ne`). A platform is read as its field translated so
@@ -49,8 +51,9 @@ Results.
 * Modulation (static): `circle_synthesizable_iff` — every vector of modulus `ρ ≥ 0` is produced
   by leg voltages in `[0, V_dc]` iff `ρ ≤ V_max`; `abs_applied_le`, `applied_synthesizable` —
   every voltage the platform applies, at every frame angle, is produced by the inverter.
-* Saturation (static): `sat_of_abs_le`, `abs_sat_le`, `sat_eventually_eq` (constant near every
-  command beyond the limit), `sat_ne_of_lt_abs`; `limitedField_eq_of_abs_le` (the platform field
+* Saturation (static): the symmetric clamp of `theorem/SpecialFunctions/Clamp.lean`
+  (`clampSym_of_abs_le`, `abs_clampSym_le`, `clampSym_eventually_eq`: constant near every command
+  beyond the limit, `clampSym_ne_of_lt_abs`); `limitedField_eq_of_abs_le` (the platform field
   is the design field wherever the command is in range); `control_point`, `abs_control_point_le`;
   `contDiffAt_field` (with headroom the platform field is `C¹` near the operating point; used by
   its explicit Euler integration, `theorem/GridTiedConverter/CurrentControl/Euler.lean`).
@@ -134,46 +137,6 @@ structure LimitedPI where
 
 namespace LimitedPI
 
-/-! ## Saturation -/
-
-/-- Saturation of a command `u` to `[−V, V]`. -/
-def sat (V u : ℝ) : ℝ := max (-V) (min V u)
-
-/-- A command in range passes unchanged. -/
-@[tmio T, powerlib_foundation] theorem sat_of_abs_le {V u : ℝ} (h : |u| ≤ V) : sat V u = u := by
-  rw [abs_le] at h
-  simp [sat, min_eq_right h.2, max_eq_right h.1]
-
-/-- The saturated command is bounded by the limit. -/
-@[tmio T, powerlib_foundation] theorem abs_sat_le (V u : ℝ) : |sat V u| ≤ |V| := by
-  unfold sat
-  rcases le_total 0 V with hV | hV
-  · rw [abs_of_nonneg hV, abs_le]
-    exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
-  · rw [max_eq_left ((min_le_left _ _).trans (by linarith)), abs_neg]
-
-/-- Beyond the limit the saturation is constant near the command. -/
-@[tmio T, powerlib_foundation] theorem sat_eventually_eq {V u₀ : ℝ} (h : V < |u₀|) :
-    ∀ᶠ u in 𝓝 u₀, sat V u = sat V u₀ := by
-  rcases lt_abs.mp h with h | h
-  · filter_upwards [eventually_gt_nhds h] with u hu
-    simp [sat, min_eq_left hu.le, min_eq_left h.le]
-  · have h' : u₀ < -V := by linarith
-    have e : ∀ w, w < -V → sat V w = -V := fun w hw =>
-      max_eq_left ((min_le_right _ _).trans hw.le)
-    filter_upwards [eventually_lt_nhds h'] with u hu
-    rw [e u hu, e u₀ h']
-
-/-- With a nonnegative limit, a command beyond it is changed by the saturation. -/
-@[tmio T, powerlib_foundation] theorem sat_ne_of_lt_abs {V u : ℝ} (hV : 0 ≤ V) (h : V < |u|) :
-    sat V u ≠ u := by
-  rcases lt_abs.mp h with h | h
-  · rw [show sat V u = V by simp [sat, min_eq_left h.le, max_eq_right (by linarith : -V ≤ V)]]
-    exact h.ne
-  · rw [show sat V u = -V from max_eq_left ((min_le_right _ _).trans (by linarith))]
-    intro e
-    linarith
-
 /-! ## The platform -/
 
 variable (y : LimitedPI)
@@ -182,7 +145,7 @@ variable (y : LimitedPI)
 def Vmax : ℝ := y.Vdc / Real.sqrt 3
 
 /-- The voltage the inverter applies: the PI command saturated to the linear range. -/
-def applied (x : ℝ²) : ℝ := sat y.Vmax (y.design.control y.iref x)
+def applied (x : ℝ²) : ℝ := SpecialFunctions.clampSym y.Vmax (y.design.control y.iref x)
 
 /-- The platform field `(di/dt, dξ/dt)` with `L di/dt = −R i + sat_{V_max}(Kp (i* − i) + Ki ξ)`,
 `dξ/dt = i* − i`. -/
@@ -225,7 +188,7 @@ the implementation. -/
 @[tmio M, powerlib_domain] theorem limitedField_eq_of_abs_le {x : ℝ²}
     (h : |y.design.control y.iref x| ≤ y.Vmax) :
     y.limitedField x = y.design.field y.iref x := by
-  simp only [limitedField, applied, sat_of_abs_le h, PIParams.field]
+  simp only [limitedField, applied, SpecialFunctions.clampSym_of_abs_le h, PIParams.field]
 
 @[tmio M, powerlib_domain] theorem continuous_control_shift :
     Continuous fun z : ℝ² => y.design.control y.iref (z + y.point) := by
@@ -244,7 +207,7 @@ the implementation. -/
 /-- With `V_dc ≥ 0` the applied voltage lies in the linear range. -/
 @[tmio M, powerlib_domain] theorem abs_applied_le (hV : 0 ≤ y.Vdc) (x : ℝ²) :
     |y.applied x| ≤ y.Vmax := by
-  have h := abs_sat_le y.Vmax (y.design.control y.iref x)
+  have h := SpecialFunctions.abs_clampSym_le y.Vmax (y.design.control y.iref x)
   have hm : 0 ≤ y.Vmax := div_nonneg hV (Real.sqrt_nonneg 3)
   rwa [abs_of_nonneg hm] at h
 
@@ -467,11 +430,12 @@ sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_
 @[tmio M, powerlib_domain] private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki ≠ 0)
     (ho : y.Vmax < |y.design.R * y.iref|) :
     y.field =ᶠ[𝓝 0] fun z => WithLp.toLp 2
-      ![(-y.design.R * (z + y.point) 0 + sat y.Vmax (y.design.R * y.iref)) / y.design.L,
+      ![(-y.design.R * (z + y.point) 0 +
+          SpecialFunctions.clampSym y.Vmax (y.design.R * y.iref)) / y.design.L,
         y.iref - (z + y.point) 0] := by
   have hc := y.continuous_control_shift.tendsto 0
   rw [zero_add, y.control_point_of_ne hKi] at hc
-  filter_upwards [hc.eventually (sat_eventually_eq ho)] with z hz
+  filter_upwards [hc.eventually (SpecialFunctions.clampSym_eventually_eq ho)] with z hz
   simp only [field, limitedField, applied, hz]
 
 /-! ### Translation of the platform family (I) -/
@@ -637,7 +601,7 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
   have hbound0 : ∀ z : ℝ², ‖y.field z 0‖ ≤ K * ‖z 0‖ + ε := by
     intro z
     rw [hf0, Real.norm_eq_abs, Real.norm_eq_abs, abs_div]
-    have hs := abs_sat_le y.Vmax (y.design.control y.iref (z + y.point))
+    have hs := SpecialFunctions.abs_clampSym_le y.Vmax (y.design.control y.iref (z + y.point))
     have hn : |-y.design.R * (z 0 + y.iref) + y.applied (z + y.point)| ≤
         |y.design.R| * |z 0| + (|y.design.R * y.iref| + |y.Vmax|) := by
       have e : -y.design.R * (z 0 + y.iref) + y.applied (z + y.point) =
@@ -712,7 +676,7 @@ which is not an equilibrium. -/
     have h0 := congrArg (fun z : ℝ² => z 0) h
     simp [hL] at h0
     have hVm : 0 ≤ y.Vmax := div_nonneg hV.le (Real.sqrt_nonneg 3)
-    exact sat_ne_of_lt_abs hVm ho (by linarith)
+    exact SpecialFunctions.clampSym_ne_of_lt_abs hVm ho (by linarith)
 
 /-! ## The implementation over the PI design (M–I) -/
 

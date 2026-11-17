@@ -20,7 +20,8 @@ module theorem.PowerSystem.Frequency.GovernorReduction where
 -- the rate `a` exactly when `r` does (`decay-threshold`: below the pole the full model has the rate
 -- margin, above it its slow root bounds the rate; at the pole the full model is not decided).
 -- Instability, Lyapunov stability, conservation and passivity are not compared; each family keeps
--- its own translation and laws (the requirement languages take no part and are left empty here),
+-- its own satisfaction of the shared rate language and translation (`Spectral.rateFamily`) and
+-- its laws (the requirement languages take no part and are left empty here),
 -- and the finite-horizon trajectory estimate of the limit is implementation evidence outside the
 -- sentences. Lean: `full-hurwitz`, `red-hurwitz` are `Family.IsLinear.den_hurwitz`
 -- (`SwingGovernor.family_isLinear`, `SwingGovernor.reducedFamily_isLinear`), `hurwitz-reduce` is

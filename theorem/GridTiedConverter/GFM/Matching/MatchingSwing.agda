@@ -2,101 +2,100 @@
 module theorem.GridTiedConverter.GFM.Matching.MatchingSwing where
 -- Lean modules: theorem.GridTiedConverter.GFM.Matching.Matching
 
--- Scaffold of the reading of the swing family of matching control through the swing hub
--- (`GFM.Matching.swingFamily` of `theorem/GridTiedConverter/GFM/Matching/Matching.lean` read
--- through `Synchronous.Swing.family`). The matching swing model `M θ̈ + D θ̇ = τ − P_e(θ, θ̇)` has
--- an arbitrary power law, which may depend on the speed (the matched law `i_x(θ, ω/η)/η` does when
--- the load current depends on the DC voltage), and a free selected speed `ω*`; so it stays a family
--- of its own and reads through the hub only on a context: a speed-independent sinusoidal law
--- `P_e(θ, ω) = k₁ + k₂ sin(θ − k₃)` and `ω* = 0`. There it is the swing machine
--- `⟨M, D, τ, k₁, k₂, k₃⟩` at `θ*`, with the same field, so the reading is an equality of systems on
--- every sentence. The matching swing family has no satisfiable requirement (both conditions of its
--- language are empty), so nothing carries over by `exactUnder-pullback`; the hub supplies the
--- denotations themselves: with positive inertia, local exponential stability is the swing
--- conditions of the image (`les↔`). Lean proves the reading
--- (`GFM.Matching.swing_mem_den_iff_hub_of_sinusoid`) and the characterization
--- (`GFM.Matching.swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`, through
--- `Synchronous.Swing.exactUnder_locallyExponentiallyStable`). Nothing here is exported.
+-- Scaffold of the reading of matching control through the swing family with an arbitrary law
+-- (`GFM.Matching.matchingFamily` of `theorem/GridTiedConverter/GFM/Matching/Matching.lean` read
+-- through `Synchronous.GeneralSwing.family`, `theorem/PowerSystem/Synchronous/GeneralSwing.agda`).
+-- The matching model `θ' = η v`, `C v' = i_dc − i_x(θ, v) − G v` has an arbitrary load-current
+-- law and a free selected point `(θ*, v*)` (`C, η ≠ 0`, carried by the Lean model). In the
+-- coordinates `(θ, η v)` (`Dynamics.scaleCoord`, `scaleCoords`) it is, for every model and every
+-- sentence, the swing model `M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η` at
+-- `(θ*, η v*)` (`toGeneral`): the reading is a conjugacy, not on a context. The matched law depends
+-- on the speed whenever the load current depends on the DC voltage, so matching control reads
+-- through the swing family with an arbitrary law, and through the swing hub only where that family
+-- does: on a speed-independent sinusoidal law with `ω* = 0` (`compose` with `hubReading`). Like the
+-- general family, the matching family has no satisfiable requirement (both conditions of its
+-- language are empty); its content is its semantics. Lean: `conjugate` is
+-- `GFM.Matching.matching_eq_swing` (read by `Dynamics.holds_transport_iff`), `den↔` is
+-- `GFM.Matching.matching_den_eq`; the composite with the hub on a sinusoid is the step of
+-- `GFM.Matching.matching_not_euler_realizationSoundUnder` through
+-- `Synchronous.GeneralSwing.mem_den_locallyExponentiallyStable_iff_of_sinusoid`. Nothing here is
+-- exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
 open import Cubical.Data.Sigma
+open import Cubical.Data.Empty using (⊥)
 
 open import theorem.Family.FamilyReading
 open import theorem.Flow.FlowSemantics
 open import theorem.PowerSystem.Synchronous.Swing
+open import theorem.PowerSystem.Synchronous.GeneralSwing
 
 module _ (Sc : Scalars) where
   open Scalars Sc
   open SwingContent Sc
+  open GeneralSwingContent Sc
 
-  record MatchingSwingModel : Type where
-    constructor matchingSwingModel
+  -- A matching model with a selected point `(θ*, v*)`.
+  record MatchingModel : Type where
+    constructor matchingModel
     field
-      M D τ : ℝ
-      law : ℝ → ℝ → ℝ
-      θ ω : ℝ
+      C G η idc : ℝ
+      ix : ℝ → ℝ → ℝ
+      θ v : ℝ
 
-  open MatchingSwingModel
+  open MatchingModel
 
-  mField : MatchingSwingModel → ℝ × ℝ → ℝ × ℝ
-  mField m (x , v) = v , ((τ m - law m x v) - D m * v) / M m
+  matchingField : MatchingModel → ℝ × ℝ → ℝ × ℝ
+  matchingField m (x , u) = η m * u , ((idc m - ix m x u) - G m * u) / C m
 
-  mSystem : MatchingSwingModel → System (ℝ × ℝ)
-  mSystem m = mField m , (θ m , ω m)
+  matchingSystem : MatchingModel → System (ℝ × ℝ)
+  matchingSystem m = matchingField m , (θ m , v m)
 
-  -- The coefficients of a sinusoidal law.
-  record Sinusoid : Type where
-    constructor sinusoid
-    field
-      c₁ c₂ c₃ : ℝ
+  -- The coordinates `(θ, v) ↦ (θ, η v)`, their inverse and their linear part.
+  scaleCoords : MatchingModel → Affine (ℝ × ℝ)
+  scaleCoords m = record
+    { point = λ { (x , u) → x , η m * u }
+    ; pointInv = λ { (x , w) → x , w / η m }
+    ; vector = λ { (a , b) → a , η m * b } }
 
-  open Sinusoid
-
-  -- The context: the law is the sinusoid `k` (independent of the speed) and `ω* = 0`.
-  SinusoidalAt : Sinusoid → MatchingSwingModel → Type
-  SinusoidalAt k m = (law m ≡ (λ x _ → c₁ k + c₂ k * sin (x - c₃ k))) × (ω m ≡ 0r)
-
-  toSwing : Sinusoid → MatchingSwingModel → SwingModel
-  toSwing k m = swingModel (swingParams (M m) (D m) (τ m) (c₁ k) (c₂ k) (c₃ k)) (θ m)
+  -- The matched swing model with an arbitrary law at `(θ*, η v*)`.
+  toGeneral : MatchingModel → GeneralModel
+  toGeneral m = generalModel (C m / (η m * η m)) (G m / (η m * η m)) (idc m / η m)
+    (λ x w → ix m x (w / η m) / η m) (θ m) (η m * v m)
 
   module Reading (holds : System (ℝ × ℝ) → Sentence → Type)
     (invariant : (A : Affine (ℝ × ℝ)) (a : System (ℝ × ℝ)) (s : Sentence) →
       holds (transportSystem A a) s ≃ holds a s)
-    (laws : SwingFamily.SwingLaws holds invariant)
-    (Req : Type) (meets : MatchingSwingModel → Req → Type) (translate : Sentence → Req → Type)
-    (k : Sinusoid)
     where
 
-    open SwingFamily holds invariant
+    open GeneralSwingFamily holds invariant
 
-    matchingSwingFamily : Family
-    matchingSwingFamily = record
-      { Model = MatchingSwingModel ; Req = Req ; system = mSystem ; meets = meets
-      ; translate = translate }
+    -- The matching family: the language of the general family, met by no model.
+    matchingFamily : Family
+    matchingFamily = record
+      { Model = MatchingModel ; Req = GeneralReq ; system = matchingSystem
+      ; meets = λ _ _ → ⊥ ; translate = generalTranslate }
 
-    -- What Lean proves by field algebra.
-    module _ (sameField : (m : MatchingSwingModel) → SinusoidalAt k m →
-               mSystem m ≡ swingSystem (toSwing k m)) where
+    -- What Lean proves by field algebra (with `C, η ≠ 0`, carried by the model).
+    module _ (conjugate : (m : MatchingModel) →
+               generalSystem (toGeneral m) ≡ transportSystem (scaleCoords m) (matchingSystem m))
+      where
 
-      sinusoidal : Family
-      sinusoidal = restrictBy matchingSwingFamily (SinusoidalAt k)
+      matched : Hub matchingFamily generalFamily
+      matched = record
+        { map = toGeneral
+        ; read = λ m s → invEquiv (conjugateReading affine (scaleCoords m) (conjugate m) s) }
 
-      reading : Hub sinusoidal swingFamily
-      reading = viaEquality (λ x → toSwing k (fst x)) (λ x → sameField (fst x) (snd x))
+      -- Every sentence of a matching model is the sentence of its matched swing model.
+      den↔ : (m : MatchingModel) (s : Sentence) →
+        den matchingFamily s m ↔ den generalFamily s (toGeneral m)
+      den↔ m s = ↔-of-≃ (Hub.read matched m s)
 
-      -- On the context, the sentences of a model are those of its image
-      -- (`swing_mem_den_iff_hub_of_sinusoid`).
-      den↔ : (m : MatchingSwingModel) → SinusoidalAt k m → (s : Sentence) →
-        den matchingSwingFamily s m ↔ den swingFamily s (toSwing k m)
-      den↔ m c s = ↔-of-≃ (Hub.read reading (m , c) s)
-
-      -- With positive inertia, local exponential stability is the swing conditions of the image
-      -- (`swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`).
-      les↔ : (m : MatchingSwingModel) → SinusoidalAt k m → 0r < M m →
-        den matchingSwingFamily locallyExponentiallyStable m ↔
-          realize swingFamily swingLocal (toSwing k m)
-      les↔ m c hM =
-        let h = SwingFamily.SwingLaws.exactUnder-les laws (toSwing k m)
-                  (λ r e → subst (swingMeets (toSwing k m)) (sym e) hM)
-        in ↔-trans (den↔ m c locallyExponentiallyStable) (snd h , fst h)
+      -- On a sinusoidal matched law, through the swing hub.
+      hub↔ : (hubField : (k₁ k₂ k₃ : ℝ) (g : GeneralModel) → SinusoidalLaw k₁ k₂ k₃ g →
+               generalSystem g ≡ swingSystem (toHub k₁ k₂ k₃ g))
+        (k₁ k₂ k₃ : ℝ) (m : MatchingModel) (c : SinusoidalLaw k₁ k₂ k₃ (toGeneral m))
+        (s : Sentence) → den matchingFamily s m ↔ den swingFamily s (toHub k₁ k₂ k₃ (toGeneral m))
+      hub↔ hubField k₁ k₂ k₃ m c s =
+        ↔-trans (den↔ m s) (general-den↔ hubField k₁ k₂ k₃ (toGeneral m) c s)

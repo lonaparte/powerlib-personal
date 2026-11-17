@@ -1,16 +1,17 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! # Planar vectors: the rotation generator and the complex form
+/-! # Planar vectors: the rotation generator, the complex form and complex-symmetric matrices
 
-Generic algebra of planar vectors `Fin 2 → ℝ`: the rotation generator `J` and the identification
-of the plane with `ℂ`. No electrical frame is chosen here; the Clarke and Park transforms built
-on them are in `theorem/Transform/Park.lean`.
+Generic algebra of planar vectors `Fin 2 → ℝ`: the rotation generator `J`, the identification
+of the plane with `ℂ` and the complex-symmetric 2 × 2 matrices (multiplication by a complex
+number). No electrical frame is chosen here; the Clarke and Park transforms built on them are in
+`theorem/Transform/Park.lean`.
 
 Scope.
-* Generic: planar vectors `Fin 2 → ℝ` (components `0`, `1`) and real 2 × 2 matrices, and the
-  dot-product invariance of orthogonal coordinate changes in any dimension; no model, no axis,
-  sign or normalization convention of an electrical transform.
+* Generic: planar vectors `Fin 2 → ℝ` (components `0`, `1`), 2 × 2 matrices over a commutative
+  ring, and the dot-product invariance of orthogonal coordinate changes in any dimension; no
+  model, no axis, sign or normalization convention of an electrical transform.
 
 Source: work-sync `theory/T-park-transformation.md` §1.2 (complex form of a planar vector, the
 rotation generator as multiplication by `j`).
@@ -23,6 +24,14 @@ Results.
   `ofComplex_toComplex`, `toComplex_eq`), the real linear equivalence `complexEquiv`
   (`toComplex_add`, `toComplex_sub`, `toComplex_smul`), and `toComplex_J_mulVec` (`J` is
   multiplication by `j`).
+* Complex-symmetric matrices `complexSymm a b = [[a, −b], [b, a]]` over any commutative ring:
+  the matrix of multiplication by `a + jb` (`toComplex_complexSymm_mulVec`); closed under sum,
+  difference and product (`complexSymm_add`, `complexSymm_sub`, `complexSymm_mul`, `a + jb`
+  arithmetic), scalars `s • 1 = complexSymm s 0`, ring maps (`complexSymm_map`), determinant
+  `a² + b²` (`det_complexSymm`) and, over a field, inverse
+  `complexSymm (a/(a² + b²)) (−b/(a² + b²))` (`complexSymm_inv`). The rotation `rot θ` is
+  `complexSymm (cos θ) (sin θ)` (`rot_eq_complexSymm`, `theorem/Transform/Park.lean`); dq
+  impedances, transfer functions and the line matrices of the GFL models are instances.
 * `orthogonal_dotProduct`: a coordinate change `A` with `Aᵀ A = 1` preserves the dot product,
   `(A v)·(A w) = v·w` (power invariance of the orthogonal Park, Clarke and frame rotations).
 -/
@@ -98,6 +107,58 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 @[tmio T, powerlib_foundation] theorem toComplex_J_mulVec (x : Fin 2 → ℝ) :
     toComplex (J *ᵥ x) = Complex.I * toComplex x := by
   apply Complex.ext <;> simp [toComplex]
+
+/-! ## Complex-symmetric 2 × 2 matrices -/
+
+/-- Complex-symmetric 2 × 2 matrix `[[a, −b], [b, a]]`. -/
+def complexSymm {R : Type*} [CommRing R] (a b : R) : Matrix (Fin 2) (Fin 2) R := !![a, -b; b, a]
+
+section complexSymm
+variable {R : Type*} [CommRing R]
+
+@[tmio T, powerlib_foundation] theorem complexSymm_mul (a b c d : R) :
+    complexSymm a b * complexSymm c d = complexSymm (a * c - b * d) (a * d + b * c) := by
+  simp only [complexSymm, mul_fin_two]
+  ext i j; fin_cases i <;> fin_cases j <;> simp <;> ring
+
+@[tmio T, powerlib_foundation] theorem complexSymm_add (a b c d : R) :
+    complexSymm a b + complexSymm c d = complexSymm (a + c) (b + d) := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]; ring
+
+@[tmio T, powerlib_foundation] theorem complexSymm_sub (a b c d : R) :
+    complexSymm a b - complexSymm c d = complexSymm (a - c) (b - d) := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]; ring
+
+@[tmio T, powerlib_foundation] theorem smul_one_eq_complexSymm (s : R) :
+    s • (1 : Matrix (Fin 2) (Fin 2) R) = complexSymm s 0 := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
+
+@[tmio T, powerlib_foundation] theorem det_complexSymm (a b : R) :
+    (complexSymm a b).det = a ^ 2 + b ^ 2 := by
+  rw [complexSymm, det_fin_two_of]; ring
+
+@[tmio T, powerlib_foundation] theorem complexSymm_map {S : Type*} [CommRing S] (f : R →+* S)
+    (a b : R) : (complexSymm a b).map f = complexSymm (f a) (f b) := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
+
+end complexSymm
+
+/-- Inverse of a nonsingular complex-symmetric matrix over any field. -/
+@[tmio T, powerlib_foundation] theorem complexSymm_inv {K : Type*} [Field K] {a b : K}
+    (h : a ^ 2 + b ^ 2 ≠ 0) :
+    (complexSymm a b)⁻¹ = complexSymm (a / (a ^ 2 + b ^ 2)) (-b / (a ^ 2 + b ^ 2)) := by
+  apply Matrix.inv_eq_right_inv
+  rw [complexSymm_mul, show (1 : Matrix (Fin 2) (Fin 2) K) = complexSymm 1 0 by
+    simpa using smul_one_eq_complexSymm (1 : K)]
+  congr 1
+  · field_simp; ring
+  · field_simp; ring
+
+/-- Real action: `[[a, −b], [b, a]] x` is `(a + jb) (x₀ + j x₁)` in complex form. -/
+@[tmio T, powerlib_foundation] theorem toComplex_complexSymm_mulVec (a b : ℝ) (x : Fin 2 → ℝ) :
+    toComplex (complexSymm a b *ᵥ x) = (⟨a, b⟩ : ℂ) * toComplex x := by
+  apply Complex.ext <;>
+    simp [toComplex, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-! ## Orthogonal coordinate changes -/
 

@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.PLL.Model
+import theorem.GridTiedConverter.PLL.PIPLLLienard
 
 /-! # Invariant coordinates: pendulum form of the SRF-PLL, amplitude–phase and normal modes
 
@@ -13,14 +14,17 @@ Model boundary.
 * The amplitude–phase and normal-mode items are pointers to the modules that hold them.
 
 Source: work-sync `theory/T-invariant-coordinates.md` §1.2, §1.3, §1.4;
-`theory/T-gfl-multiscale-modeling.md` §1.8.
+`theory/T-gfl-multiscale-modeling.md` §1.8; the Liénard (velocity) coordinates of the PI-PLL
+(`theorem/GridTiedConverter/PLL/PIPLLLienard.lean`).
 
 Results.
 * Pendulum form (T-invariant-coordinates §1.2, T-gfl-multiscale §1.8). For the `(θ, ξ)` field
   `xiField a b Δω` (`θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`, constant `Δω`, `a = V K_p`,
   `b = V K_i`): every solution has `θ ∈ C²` with
   `θ̈ + a cos θ · θ̇ + b sin θ = 0`; conversely (`b ≠ 0`) every `C²` solution of the pendulum
-  equation gives a solution of the first-order system with `ξ = (θ̇ − Δω + a sin θ)/b`.
+  equation gives a solution of the first-order system with `ξ = (θ̇ − Δω + a sin θ)/b`
+  (`xiField_pendulum`, `pendulum_xiField`: the Liénard form `θ̇ = w`, `ẇ = K_i h + K_p h' w` of the
+  unit-amplitude SRF member, `h = srfPD 1`, read through its velocity coordinates `w = θ̇`).
   (The note's right-hand side `dΔω/dt` vanishes for the constant offset modelled here.)
 * Amplitude–phase coordinates of a dq current (T-invariant-coordinates §1.3): the identities
   for the dq R–L filter (`Passive.SeriesRLC.dq_power_balance` for the amplitude,
@@ -50,49 +54,51 @@ open Matrix
 open powerlib.Dynamics (State)
 open powerlib.PLL.PIPLL (srf)
 
-@[tmio T, powerlib_foundation] private lemma hasDerivAt_state {f g : ℝ → ℝ} {f' g' t : ℝ}
-    (hf : HasDerivAt f f' t) (hg : HasDerivAt g g' t) :
-    HasDerivAt (fun τ => PhasePlane.mk (f τ) (g τ)) (PhasePlane.mk f' g') t := by
-  have h : HasDerivAt (fun τ => ![f τ, g τ]) ![f', g'] t := by
-    refine hasDerivAt_pi.2 fun i => ?_
-    fin_cases i
-    · simpa using hf
-    · simpa using hg
-  exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp_hasDerivAt t h
-
 /-! ## Pendulum form -/
 
 /-- First-order `(θ, ξ)` system ⇒ second-order pendulum: along any solution of `xiField`,
-`θ̇ = Δω − a sin θ + b ξ` and `θ̈ = −a cos θ · θ̇ − b sin θ`. -/
+`θ̇ = Δω − a sin θ + b ξ` and `θ̈ = −a cos θ · θ̇ − b sin θ`. The velocity coordinates of the
+unit-amplitude SRF member (`isIntegralCurveOn_piPLLVelocityCoord` at `h = srfPD 1`) map the
+solution to one of the Liénard field. -/
 @[tmio M, powerlib_domain] theorem xiField_pendulum {a b Δω : ℝ} {φ : ℝ → State 2}
     (hφ : ∀ t, HasDerivAt φ (xiField a b Δω (φ t)) t) (t : ℝ) :
     HasDerivAt (fun τ => φ τ 0) (Δω - a * Real.sin (φ t 0) + b * φ t 1) t ∧
       HasDerivAt (fun τ => Δω - a * Real.sin (φ τ 0) + b * φ τ 1)
         (-(a * Real.cos (φ t 0) * (Δω - a * Real.sin (φ t 0) + b * φ t 1)) -
           b * Real.sin (φ t 0)) t := by
-  have h0 := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 0
-  have h1 := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 1
-  simp only [xiField] at h0 h1
-  refine ⟨by simpa using h0, ?_⟩
-  have hs := (h0.sin.const_mul a)
-  have h := ((hasDerivAt_const t Δω).sub hs).add (h1.const_mul b)
-  convert h using 1
-  simp; ring
+  rw [xiField_eq_srfField] at hφ
+  obtain ⟨h0, h1⟩ := PhasePlane.hasDerivWithinAt_iff_components.mp
+    (isIntegralCurveOn_piPLLVelocityCoord (Kp := a) (Ki := b) (δω := -Δω) (hasDerivAt_srfPD 1)
+      (s := Set.univ) (fun τ _ => (hφ τ).hasDerivWithinAt) t (Set.mem_univ t))
+  simp only [hasDerivWithinAt_univ, piPLLVelocityCoord, piPLLLienardField, srfPD,
+    PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one] at h0 h1
+  refine ⟨h0.congr_deriv (by ring), ?_⟩
+  convert h1 using 1
+  · funext τ; ring
+  · ring
 
 /-- Second-order pendulum ⇒ first-order system (`b ≠ 0`): a solution `θ` of
-`θ̈ + a cos θ · θ̇ + b sin θ = 0` with `ξ := (θ̇ − Δω + a sin θ)/b` solves `xiField a b Δω`. -/
+`θ̈ + a cos θ · θ̇ + b sin θ = 0` with `ξ := (θ̇ − Δω + a sin θ)/b` solves `xiField a b Δω` (the
+inverse velocity coordinates, `isIntegralCurveOn_piPLLVelocityCoordInv` at `h = srfPD 1`). -/
 @[tmio M, powerlib_domain] theorem pendulum_xiField {a b Δω : ℝ} (hb : b ≠ 0) {θ θ' : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (θ' t) t)
     (hθ' : ∀ t, HasDerivAt θ' (-(a * Real.cos (θ t) * θ' t) - b * Real.sin (θ t)) t) (t : ℝ) :
     HasDerivAt (fun τ => PhasePlane.mk (θ τ) ((θ' τ - Δω + a * Real.sin (θ τ)) / b))
       (xiField a b Δω (PhasePlane.mk (θ t) ((θ' t - Δω + a * Real.sin (θ t)) / b))) t := by
-  have hξ := ((((hθ' t).sub_const Δω).add ((hθ t).sin.const_mul a))).div_const b
-  convert hasDerivAt_state (hθ t) hξ using 1
-  rw [PhasePlane.ext_iff']
-  simp [xiField]
-  constructor
-  · field_simp; ring
-  · field_simp; ring
+  have hψ : IsIntegralCurveOn (fun τ => PhasePlane.mk (θ τ) (θ' τ))
+      (fun _ y => piPLLLienardField (srfPD 1) (fun x => -(1 * Real.cos x)) a b y) Set.univ :=
+    fun τ _ => PhasePlane.hasDerivWithinAt_iff_components.mpr ⟨(hθ τ).hasDerivWithinAt,
+      (hθ' τ).hasDerivWithinAt.congr_deriv (by
+        simp only [piPLLLienardField, srfPD, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+        ring)⟩
+  have e (τ : ℝ) : piPLLVelocityCoordInv (srfPD 1) a b (-Δω) (PhasePlane.mk (θ τ) (θ' τ)) =
+      PhasePlane.mk (θ τ) ((θ' τ - Δω + a * Real.sin (θ τ)) / b) := by
+    simp only [piPLLVelocityCoordInv, srfPD, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+    congr 1; field_simp; ring
+  have h := isIntegralCurveOn_piPLLVelocityCoordInv (δω := -Δω) hb (hasDerivAt_srfPD 1) hψ t
+    (Set.mem_univ t)
+  rw [hasDerivWithinAt_univ, ← srfField, ← xiField_eq_srfField] at h
+  simpa only [e] using h
 
 /-! ## The `(θ_err, ξ)` field as a PI-PLL family member -/
 

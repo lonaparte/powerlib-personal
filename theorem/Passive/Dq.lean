@@ -35,7 +35,7 @@ Results.
   element `ParallelRLC.toSeries`, so every law below is stated once, for the series element;
   `SeriesRLC.dqImpedance_of_noCap`: the entries without a series capacitor.
 * Both are `Transform.complexSymm a b = [[a, −b], [b, a]]`
-  (`theorem/Transform/ComplexImpedance.lean`, with its determinant `Transform.det_complexSymm` and
+  (`theorem/Transform/Planar.lean`, with its determinant `Transform.det_complexSymm` and
   inverse `Transform.complexSymm_inv`).
 * `SeriesRLC.toSeq_dqImpedance`, `SeriesRLC.det_dqImpedance`: the dq element is the stationary
   element at `s ± jω` — in the complex-vector form `Transform.toSeq` the dq impedance is

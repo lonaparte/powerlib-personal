@@ -84,7 +84,8 @@ Correction (`sn-critical-scaling.md` §3): the note supports `σ_q = g/V_g` by a
 noncomputable section
 namespace powerlib.GFL.LCLine
 open Real Matrix
-open powerlib.Transform (parkD parkQ iparkD iparkQ iparkD_park iparkQ_park)
+open powerlib.Transform (parkD parkQ iparkD iparkQ iparkD_park iparkQ_park complexSymm
+  det_complexSymm)
 
 /-- The network of the single GFL-VSC: filter capacitor, R–L line, infinite bus and the frozen
 current references, the part of `Params` that the quasi-steady algebra (and `h`) depends on; also
@@ -179,14 +180,15 @@ def Δ : ℝ := (1 - p.b) ^ 2 + p.a ^ 2
 /-- `ω_g C_f`. -/
 def wC : ℝ := p.ωg * p.Cf
 
-/-- The corrected line-system matrix `[[1 − b, −a], [a, 1 − b]]`. -/
-def lineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; p.a, 1 - p.b]
+/-- The corrected line-system matrix `[[1 − b, −a], [a, 1 − b]]`, the complex-symmetric matrix
+of `(1 − b) + j a`. -/
+def lineMatrix : Matrix (Fin 2) (Fin 2) ℝ := complexSymm (1 - p.b) p.a
 
 /-- The matrix printed in `reduction-pipeline.md` §4 (wrong (2,1) entry). -/
 def noteLineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; -p.a, 1 - p.b]
 
-@[tmio M, powerlib_domain] theorem det_lineMatrix : p.lineMatrix.det = p.Δ := by
-  simp [lineMatrix, Δ, Matrix.det_fin_two]; ring
+@[tmio M, powerlib_domain] theorem det_lineMatrix : p.lineMatrix.det = p.Δ :=
+  det_complexSymm _ _
 
 @[tmio M, powerlib_domain] theorem Δ_nonneg : 0 ≤ p.Δ := by
   unfold Δ; positivity
@@ -245,14 +247,14 @@ and `i_g` solves the corrected line system. -/
     have hvq : vcq = (id - igd) / p.wC := by field_simp; linarith
     refine ⟨?_, hvd, hvq⟩
     ext i; fin_cases i
-    · simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb]
+    · simp [lineMatrix, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb]
       linear_combination h1 + p.wC * h4
-    · simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb]
+    · simp [lineMatrix, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb]
       linear_combination h2 - p.wC * h3
   · rintro ⟨hM, hvd, hvq⟩
     have hM0 := congrFun hM 0
     have hM1 := congrFun hM 1
-    simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb] at hM0 hM1
+    simp [lineMatrix, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb] at hM0 hM1
     have e1 : p.wC * vcq = id - igd := by rw [hvq]; field_simp
     have e2 : p.wC * vcd = igq - iq := by rw [hvd]; field_simp
     refine ⟨by linarith, by linarith, ?_, ?_⟩
@@ -279,7 +281,8 @@ capacitor and line equations, forces `a · i_gd = 0`. -/
   obtain ⟨hM, -, -⟩ := (p.lc_line_qss_iff hwC Ed Eq id iq vcd vcq igd igq).mp hqss
   have h1 := congrFun hM 1
   have h2 := congrFun hnote 1
-  simp [lineMatrix, noteLineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two] at h1 h2
+  simp [lineMatrix, complexSymm, noteLineMatrix, Matrix.mulVec, dotProduct,
+    Fin.sum_univ_two] at h1 h2
   linarith
 
 /-- Solution of the corrected line system (Cramer's rule), d-axis. -/
@@ -298,7 +301,7 @@ def solQ (id iq Ed Eq : ℝ) : ℝ :=
   · intro hM
     have h0 := congrFun hM 0
     have h1 := congrFun hM 1
-    simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two] at h0 h1
+    simp [lineMatrix, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] at h0 h1
     refine ⟨?_, ?_⟩
     · rw [solD, Δ, eq_div_iff hΔ']
       linear_combination (1 - p.b) * h0 + p.a * h1
@@ -306,9 +309,9 @@ def solQ (id iq Ed Eq : ℝ) : ℝ :=
       linear_combination -p.a * h0 + (1 - p.b) * h1
   · rintro ⟨rfl, rfl⟩
     ext i; fin_cases i
-    · simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, solD, solQ, Δ]
+    · simp [lineMatrix, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two, solD, solQ, Δ]
       field_simp; ring
-    · simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, solD, solQ, Δ]
+    · simp [lineMatrix, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two, solD, solQ, Δ]
       field_simp; ring
 
 /-! ### The algebraic chain as functions of `θ_e` -/

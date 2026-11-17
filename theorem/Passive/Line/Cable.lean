@@ -611,26 +611,10 @@ DC resistance of the tube (no screening at DC). -/
 @[tmio M, powerlib_domain] theorem tubeZmut_tendsto_zero {ρ a b : ℝ} (hab : a < b) :
     Tendsto (fun s : ℝ => tubeZmut ρ a b ((1 + Complex.I) * s)) atTop (𝓝 0) := by
   have ht : 0 < b - a := by linarith
-  have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
-    simpa [Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re] using
-      tendsto_id.atTop_mul_const ht
-  have hq := tendsto_exp_div_sinh hre
+  have hq := tendsto_exp_div_sinh (SpecialFunctions.ray_mul_re_tendsto ht)
   -- `m e^{−m t} → 0`
-  have hdecay : Tendsto (fun s : ℝ => (1 + Complex.I) * s *
-      Complex.exp (-((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)))) atTop (𝓝 0) := by
-    rw [tendsto_zero_iff_norm_tendsto_zero]
-    have h1 : Tendsto (fun s : ℝ => ‖(1 + Complex.I)‖ / (b - a) * ((s * (b - a)) ^ 1 *
-        Real.exp (-(s * (b - a))))) atTop (𝓝 (‖(1 + Complex.I)‖ / (b - a) * 0)) :=
-      ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp
-        (tendsto_id.atTop_mul_const ht)).const_mul _
-    rw [mul_zero] at h1
-    refine h1.congr' ?_
-    filter_upwards [eventually_ge_atTop 0] with s hs
-    rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hs, Complex.norm_exp]
-    have : (-((1 + Complex.I) * s * ((b - a : ℝ) : ℂ))).re = -(s * (b - a)) := by
-      rw [Complex.neg_re, Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re]
-    rw [this]
-    field_simp
+  have hdecay := SpecialFunctions.tendsto_mul_cexp_neg ht SpecialFunctions.ray_re_tendsto
+    (SpecialFunctions.ray_sector (eventually_ge_atTop 0))
   have h := (hdecay.mul hq).const_mul ((ρ / (Real.pi * (a + b)) : ℝ) : ℂ)
   rw [zero_mul, mul_zero] at h
   refine h.congr fun s => ?_
@@ -660,10 +644,7 @@ DC resistance of the tube (no screening at DC). -/
     Tendsto (fun s : ℝ => tubeZin ρ a b ((1 + Complex.I) * s) /
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * a))) atTop (𝓝 1) := by
   have ht : 0 < b - a := by linarith
-  have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
-    simpa [Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re] using
-      tendsto_id.atTop_mul_const ht
-  have h := (tendsto_cosh_div_sinh hre).sub
+  have h := (tendsto_cosh_div_sinh (SpecialFunctions.ray_mul_re_tendsto ht)).sub
     (tendsto_const_mul_inv_ofReal (1 / ((1 + Complex.I) * ((a + b : ℝ) : ℂ))))
   rw [sub_zero] at h
   refine h.congr' ?_
@@ -690,10 +671,7 @@ DC resistance of the tube (no screening at DC). -/
     Tendsto (fun s : ℝ => tubeZout ρ a b ((1 + Complex.I) * s) /
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * b))) atTop (𝓝 1) := by
   have ht : 0 < b - a := by linarith
-  have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
-    simpa [Complex.re_mul_ofReal, SpecialFunctions.one_add_I_mul_re] using
-      tendsto_id.atTop_mul_const ht
-  have h := (tendsto_cosh_div_sinh hre).add
+  have h := (tendsto_cosh_div_sinh (SpecialFunctions.ray_mul_re_tendsto ht)).add
     (tendsto_const_mul_inv_ofReal (1 / ((1 + Complex.I) * ((a + b : ℝ) : ℂ))))
   rw [add_zero] at h
   refine h.congr' ?_

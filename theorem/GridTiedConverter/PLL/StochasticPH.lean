@@ -4,7 +4,6 @@ import theorem.Passive.Parallel
 import theorem.Attributes
 import theorem.Stochastic.SPH
 import theorem.Transform.Park
-import theorem.Transform.ComplexImpedance
 import theorem.GridTiedConverter.PLL.Linear
 
 /-! # Itô correction of the SRF-PLL SPHS and its GFL form-B / grid-disturbance specializations
@@ -237,11 +236,8 @@ def lineDrive (C ω Vg : ℝ) (idq : Fin 2 → ℝ) : Fin 2 → ℝ :=
     · simp [lineResidual]; linear_combination h0
     · simp [lineResidual]; linear_combination h1
 
-@[tmio M, powerlib_domain] theorem lineMatrix_det (R X : ℝ) :
-    (lineMatrix R X).det = R ^ 2 + X ^ 2 := by
-  rw [lineMatrix, Transform.det_complexSymm, neg_sq, neg_sq]
-
-/-- Line sensitivity `G = M⁻¹`. -/
+/-- Line sensitivity `G = M⁻¹` (for `R² + X² ≠ 0` the complex-symmetric matrix of
+`−1/(R + jX)`, `Transform.complexSymm_inv`). -/
 def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹
 
 /-- Superposition: for a lossy line (`R ≠ 0`) the unique solution splits as
@@ -251,7 +247,8 @@ def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹
     lineResidual R L C ω Vg idq ig ξ = 0 ↔
       ig = lineG R (lineX L C ω) *ᵥ lineDrive C ω Vg idq + lineG R (lineX L C ω) *ᵥ ξ := by
   have hdet : IsUnit (lineMatrix R (lineX L C ω)).det := by
-    rw [lineMatrix_det]; exact isUnit_iff_ne_zero.mpr (by positivity)
+    rw [lineMatrix, Transform.det_complexSymm, neg_sq, neg_sq]
+    exact isUnit_iff_ne_zero.mpr (by positivity)
   rw [lineResidual_eq_zero_iff, lineG, ← mulVec_add]
   constructor
   · intro h; rw [← h, mulVec_mulVec, nonsing_inv_mul _ hdet, one_mulVec]

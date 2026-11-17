@@ -281,7 +281,7 @@ The per-unit field of a field `x` of `(z, t)` scales space by `z_B`, time by `ω
 by `X_B`; the telegrapher equations keep their form under it (`Passive.Line.telegrapher_pu_iff`). -/
 
 /-- Per-unit field `x̂(ẑ, τ) = x(z_B ẑ, τ / ω_B) / X_B`. -/
-def puField (Xb zb ωB : ℝ) (x : ℝ → ℝ → ℝ) : ℝ → ℝ → ℝ := fun z τ => x (zb * z) (τ / ωB) / Xb
+def puField (Xb zb ωB : ℝ) (x : ℝ × ℝ → ℝ) : ℝ × ℝ → ℝ := fun q => x (zb * q.1, q.2 / ωB) / Xb
 
 /-! ## Converter DC side (§1.12) -/
 

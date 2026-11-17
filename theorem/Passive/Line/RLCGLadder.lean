@@ -1,6 +1,5 @@
 import theorem.PH.Composition
-import theorem.Passive.Series
-import theorem.Passive.Parallel
+import theorem.Passive.Line.Bergeron
 
 /-! # Staggered-grid RLCG ladder as a port-Hamiltonian model
 
@@ -19,7 +18,8 @@ Model boundary.
   `N-1` at the receiving end. Through-convention (work-sync `conventions` §D10):
   `i_0` flows into the line at end 1, `i₂` flows out of it at end 2; the port
   supply is `v₁ i_0 - v_{N-1} i₂`.
-* Constant parameters `L', C' > 0`, `R', G' ≥ 0`; no frequency dependence, no PWM,
+* Constant parameters `L', C' > 0`, `R', G' ≥ 0` (`LadderParams`: a unit length of line,
+  `UnitLength` of `theorem/Passive/Line/Bergeron.lean`, and `Δx`); no frequency dependence, no PWM,
   no delay, no controller, continuous time. The theorems concern this finite
   lumped ladder only: nothing here claims convergence to the telegrapher PDE.
 
@@ -66,33 +66,13 @@ open Matrix Set PH
 
 /-! ## The RLCG ladder -/
 
-/-- Per-unit-length line constants and the cell length: a unit length of line is the series
-branch `series` (`R'`, `L'`) and the shunt `shunt` (`G'`, `C'`). -/
-structure LadderParams where
-  series : Passive.SeriesRLC
-  shunt : Passive.ParallelRLC
+/-- The ladder parameters: a unit length of line (`UnitLength`: the series branch `R'`, `L'` and
+the shunt `G'`, `C'`) with nonnegative losses, and the cell length `Δx > 0`. -/
+structure LadderParams extends UnitLength where
   Δx : ℝ
-  L'_pos : 0 < series.L
-  C'_pos : 0 < shunt.C
-  R'_nonneg : 0 ≤ series.R
-  G'_nonneg : 0 ≤ shunt.G
+  R_nonneg : 0 ≤ series.R
+  G_nonneg : 0 ≤ shunt.G
   Δx_pos : 0 < Δx
-  /-- The unit length has no series capacitance. -/
-  series_noCap : series.S = 0
-  /-- The unit length has no shunt inductance. -/
-  shunt_noInd : shunt.Γ = 0
-
-/-- The inductance per unit length. -/
-abbrev LadderParams.L' (p : LadderParams) : ℝ := p.series.L
-
-/-- The capacitance per unit length. -/
-abbrev LadderParams.C' (p : LadderParams) : ℝ := p.shunt.C
-
-/-- The resistance per unit length. -/
-abbrev LadderParams.R' (p : LadderParams) : ℝ := p.series.R
-
-/-- The conductance per unit length. -/
-abbrev LadderParams.G' (p : LadderParams) : ℝ := p.shunt.G
 
 namespace Ladder
 
@@ -127,24 +107,24 @@ def B : Matrix (Idx N) (Fin 2) ℝ := Matrix.of (Bfun N)
 /-- The staggered RLCG ladder as diagonal port-Hamiltonian data. -/
 def model : DiagonalPH (Idx N) (Fin 2) where
   J := J N
-  d := Sum.elim (fun _ => p.R' * p.Δx) (fun _ => p.G' * p.Δx)
-  w := Sum.elim (fun _ => 1 / (p.L' * p.Δx)) (fun _ => 1 / (p.C' * p.Δx))
+  d := Sum.elim (fun _ => p.R * p.Δx) (fun _ => p.G * p.Δx)
+  w := Sum.elim (fun _ => 1 / (p.L * p.Δx)) (fun _ => 1 / (p.C * p.Δx))
   B := B N
   skew := J_skew N
   damping_nonneg := fun a => by
     rcases a with _ | _
-    · exact mul_nonneg p.R'_nonneg p.Δx_pos.le
-    · exact mul_nonneg p.G'_nonneg p.Δx_pos.le
+    · exact mul_nonneg p.R_nonneg p.Δx_pos.le
+    · exact mul_nonneg p.G_nonneg p.Δx_pos.le
   weights_pos := fun a => by
     rcases a with _ | _
-    · exact one_div_pos.mpr (mul_pos p.L'_pos p.Δx_pos)
-    · exact one_div_pos.mpr (mul_pos p.C'_pos p.Δx_pos)
+    · exact one_div_pos.mpr (mul_pos p.L_pos p.Δx_pos)
+    · exact one_div_pos.mpr (mul_pos p.C_pos p.Δx_pos)
 
 /-- Inductor current `i_k = φ_k / (L'Δx)`. -/
-def current (x : Idx N → ℝ) (k : Fin N) : ℝ := x (.inl k) / (p.L' * p.Δx)
+def current (x : Idx N → ℝ) (k : Fin N) : ℝ := x (.inl k) / (p.L * p.Δx)
 
 /-- Node voltage `v_k = q_k / (C'Δx)`. -/
-def voltage (x : Idx N → ℝ) (k : Fin N) : ℝ := x (.inr k) / (p.C' * p.Δx)
+def voltage (x : Idx N → ℝ) (k : Fin N) : ℝ := x (.inr k) / (p.C * p.Δx)
 
 /-- Voltage at the left terminal of inductor `k`: the source for `k = 0`, else node `k-1`. -/
 def leftVoltage (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) : ℝ :=
@@ -218,7 +198,7 @@ omit p in
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_flux (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) :
     (model p N).field x u (.inl k) =
-      leftVoltage p N x u k - voltage p N x k - p.R' * p.Δx * current p N x k := by
+      leftVoltage p N x u k - voltage p N x k - p.R * p.Δx * current p N x k := by
   simp only [DiagonalPH.field, sub_mulVec, Pi.add_apply, Pi.sub_apply, mulVec,
     dotProduct, Fintype.sum_sum_type, Fin.sum_univ_two, gradient_inl, gradient_inr]
   simp only [model, J, B, of_apply, Jfun, Bfun, diagonal_apply, Sum.elim_inl,
@@ -231,7 +211,7 @@ Static evidence on the model, not a connection conclusion. -/
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_charge (x : Idx N → ℝ) (u : Fin 2 → ℝ) (k : Fin N) :
     (model p N).field x u (.inr k) =
-      current p N x k - rightCurrent p N x u k - p.G' * p.Δx * voltage p N x k := by
+      current p N x k - rightCurrent p N x u k - p.G * p.Δx * voltage p N x k := by
   simp only [DiagonalPH.field, sub_mulVec, Pi.add_apply, Pi.sub_apply, mulVec,
     dotProduct, Fintype.sum_sum_type, Fin.sum_univ_two, gradient_inl, gradient_inr]
   simp only [model, J, B, of_apply, Jfun, Bfun, diagonal_apply, Sum.elim_inr,
@@ -273,13 +253,13 @@ Static evidence on the model, not a connection conclusion. -/
 def ladderPH : Port.PortHamiltonian (N + N) 2 :=
   (model p N).toPH finSumFinEquiv (Equiv.refl _)
 
-@[tmio M, powerlib_domain] theorem damping_pos (hR : 0 < p.R') (hG : 0 < p.G') (a : Idx N) :
+@[tmio M, powerlib_domain] theorem damping_pos (hR : 0 < p.R) (hG : 0 < p.G) (a : Idx N) :
     0 < (model p N).d a := by
   rcases a with _ | _
   · exact mul_pos hR p.Δx_pos
   · exact mul_pos hG p.Δx_pos
 
-@[tmio M, powerlib_domain] theorem ladderPH_dissipation_pos (hR : 0 < p.R') (hG : 0 < p.G') :
+@[tmio M, powerlib_domain] theorem ladderPH_dissipation_pos (hR : 0 < p.R) (hG : 0 < p.G) :
     ∀ x : Fin (N + N) → ℝ, x ≠ 0 → 0 < x ⬝ᵥ ((ladderPH p N).R *ᵥ x) :=
   (model p N).toPH_dissipation_pos _ _ (damping_pos p N hR hG)
 
@@ -287,20 +267,21 @@ def ladderPH : Port.PortHamiltonian (N + N) 2 :=
 exponentially stable: every solution exists for all forward time and decays
 exponentially, for every initial flux and charge distribution. -/
 @[tmio TM, powerlib_domain] theorem lossyLadder_mem_den_globallyExponentiallyStable
-    (hR : 0 < p.R') (hG : 0 < p.G') :
+    (hR : 0 < p.R) (hG : 0 < p.G) :
     connection% (ladderPH p N ∈
       Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
   mem_den_of_dissipation_pos _ (ladderPH_dissipation_pos p N hR hG) (Or.inl trivial)
 
 /-- Correction of "the telegrapher line conserves energy": a lossy ladder with at least one cell
 conserves no positive definite energy. -/
-@[tmio TM, powerlib_domain] theorem lossyLadder_not_mem_den_conservative (hR : 0 < p.R') (hG : 0 < p.G')
-    (hN : 0 < N) :
+@[tmio TM, powerlib_domain] theorem lossyLadder_not_mem_den_conservative (hR : 0 < p.R)
+    (hG : 0 < p.G) (hN : 0 < N) :
     connection% (ladderPH p N ∉ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   not_mem_den_conservative_of_dissipation_pos _ (by omega) (ladderPH_dissipation_pos p N hR hG)
 
 /-- In the lossless case `R' = G' = 0` the zero-input ladder conserves its stored energy. -/
-@[tmio TM, powerlib_domain] theorem losslessLadder_mem_den_conservative (hR : p.R' = 0) (hG : p.G' = 0) :
+@[tmio TM, powerlib_domain] theorem losslessLadder_mem_den_conservative (hR : p.R = 0)
+    (hG : p.G = 0) :
     connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den (.flow .conservative)) := by
   refine mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ ?_)
   ext a
@@ -312,7 +293,7 @@ conserves no positive definite energy. -/
 that does not start at 0.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem lossyLadder_energy_strictly_decreases
-    (hR : 0 < p.R') (hG : 0 < p.G') {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b t : ℝ}
+    (hR : 0 < p.R) (hG : 0 < p.G) {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ (ladderPH p N).plant.system.zeroInput a b)
     (ht : t ∈ Set.Ioc a b) (h0 : φ a ≠ 0) :
     (model p N).energy (WithLp.ofLp (φ t) ∘ finSumFinEquiv) <
@@ -336,7 +317,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 solution segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem losslessLadder_energy_conserved
-    (hR : p.R' = 0) (hG : p.G' = 0) {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b : ℝ}
+    (hR : p.R = 0) (hG : p.G = 0) {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b : ℝ}
     (hφ : IsTrajectoryOn φ (ladderPH p N).plant.system.zeroInput a b) :
     ∀ t ∈ Set.Icc a b, (model p N).energy (WithLp.ofLp (φ t) ∘ finSumFinEquiv) =
       (model p N).energy (WithLp.ofLp (φ a) ∘ finSumFinEquiv) := by

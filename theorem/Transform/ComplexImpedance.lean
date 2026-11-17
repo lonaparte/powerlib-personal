@@ -17,10 +17,12 @@ Source: work-sync `theory/T-impedance-modeling.md` §1.4 (complex transfer funct
 `s ↔ s ± jω₁` between dq and αβ descriptions).
 
 Results.
-* `complexSymm a b = [[a, −b], [b, a]]` over any commutative ring. Over `ℝ` it is the matrix of
+* `complexSymm a b = [[a, −b], [b, a]]` and its ring laws (product, determinant, inverse) are
+  the generic planar algebra of `theorem/Transform/Planar.lean`; over `ℝ` it is the matrix of
   multiplication by `a + jb` (Mathlib's `Algebra.leftMulMatrix_complex`, `complexSymm`
-  unfolded). Over `ℂ` (entries evaluated at a complex Laplace variable)
-  `toSISO M = M₀₀ + j M₁₀` is multiplicative on complex-symmetric matrices.
+  unfolded). `IsComplexSymm M` (`M_dd = M_qq`, `M_dq = −M_qd`) is closed under sum and product.
+  Over `ℂ` (entries evaluated at a complex Laplace variable) `toSISO M = M₀₀ + j M₁₀` is
+  multiplicative on complex-symmetric matrices and inverts them (`toSISO_complexSymm_inv`).
 * `transfer_csModel`: a real 2 × 2 linear plant whose four matrices are complex-symmetric has
   a complex-symmetric transfer matrix, and its SISO complex transfer function is
   `(c + jd)(s − (a + jb))⁻¹(p + jq) + (e + jf)`, at every `s` that is not a pole of the real
@@ -48,9 +50,6 @@ open Matrix
 
 /-! ## Complex-symmetric 2 × 2 matrices -/
 
-/-- Complex-symmetric 2 × 2 matrix `[[a, −b], [b, a]]`. -/
-def complexSymm {R : Type*} [CommRing R] (a b : R) : Matrix (Fin 2) (Fin 2) R := !![a, -b; b, a]
-
 /-- `M` is complex symmetric: `M_dd = M_qq` and `M_dq = −M_qd`. -/
 def IsComplexSymm {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2) R) : Prop :=
   M 1 1 = M 0 0 ∧ M 0 1 = -M 1 0
@@ -71,37 +70,6 @@ variable {R : Type*} [CommRing R]
 @[tmio T, powerlib_foundation] theorem isComplexSymm_complexSymm (a b : R) :
     IsComplexSymm (complexSymm a b) := by
   simp [IsComplexSymm, complexSymm]
-
-@[tmio T, powerlib_foundation] theorem complexSymm_mul (a b c d : R) :
-    complexSymm a b * complexSymm c d = complexSymm (a * c - b * d) (a * d + b * c) := by
-  simp only [complexSymm, mul_fin_two]
-  ext i j; fin_cases i <;> fin_cases j <;> simp <;> ring
-
-@[tmio T, powerlib_foundation] theorem complexSymm_add (a b c d : R) :
-    complexSymm a b + complexSymm c d = complexSymm (a + c) (b + d) := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]; ring
-
-@[tmio T, powerlib_foundation] theorem complexSymm_sub (a b c d : R) :
-    complexSymm a b - complexSymm c d = complexSymm (a - c) (b - d) := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]; ring
-
-@[tmio T, powerlib_foundation] theorem smul_one_eq_complexSymm (s : R) :
-    s • (1 : Matrix (Fin 2) (Fin 2) R) = complexSymm s 0 := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
-
-@[tmio T, powerlib_foundation] theorem det_complexSymm (a b : R) :
-    (complexSymm a b).det = a ^ 2 + b ^ 2 := by
-  rw [complexSymm, det_fin_two_of]; ring
-
-@[tmio T, powerlib_foundation] theorem complexSymm_map {S : Type*} [CommRing S] (f : R →+* S) (a b : R) :
-    (complexSymm a b).map f = complexSymm (f a) (f b) := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
-
-/-- Real action: `[[a, −b], [b, a]] x` is `(a + jb) (x_d + j x_q)` in complex form. -/
-@[tmio T, powerlib_foundation] theorem toComplex_complexSymm_mulVec (a b : ℝ) (x : Fin 2 → ℝ) :
-    toComplex (complexSymm a b *ᵥ x) = (⟨a, b⟩ : ℂ) * toComplex x := by
-  apply Complex.ext <;>
-    simp [toComplex, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- Frequency-domain action on complex phasors: the positive-sequence combination
 `Y_d + j Y_q` equals `(α + jβ)(U_d + j U_q)`. -/
@@ -143,16 +111,6 @@ variable {R : Type*} [CommRing R]
 @[tmio T, powerlib_foundation] theorem toSISO_add (M N : Matrix (Fin 2) (Fin 2) ℂ) :
     toSISO (M + N) = toSISO M + toSISO N := by
   simp [toSISO]; ring
-
-/-- Inverse of a nonsingular complex-symmetric matrix. -/
-@[tmio T, powerlib_foundation] theorem complexSymm_inv {α β : ℂ} (h : α ^ 2 + β ^ 2 ≠ 0) :
-    (complexSymm α β)⁻¹ = complexSymm (α / (α ^ 2 + β ^ 2)) (-β / (α ^ 2 + β ^ 2)) := by
-  apply Matrix.inv_eq_right_inv
-  rw [complexSymm_mul, show (1 : Matrix (Fin 2) (Fin 2) ℂ) = complexSymm 1 0 by
-    simpa using smul_one_eq_complexSymm (1 : ℂ)]
-  congr 1
-  · field_simp; ring
-  · field_simp; ring
 
 @[tmio T, powerlib_foundation] theorem sq_add_sq_eq_mul (α β : ℂ) :
     α ^ 2 + β ^ 2 = (α + Complex.I * β) * (α - Complex.I * β) := by

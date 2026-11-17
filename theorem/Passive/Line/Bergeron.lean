@@ -44,6 +44,9 @@ Results.
   `PDE.const_along_segment` are in `theorem/PDE/Partial.lean`; the transport equation
   `u_t + a u_x = 0` is in `theorem/PDE/Transport.lean` (each travelling wave solves it,
   `PDE.transport_solution`).
+* `UnitLength`: a unit length of line (series branch `R'`, `L'` and shunt `G'`, `C'`,
+  `L', C' > 0`), extended by `LosslessLine` (`R' = G' = 0`) and by the ladder parameters of
+  `theorem/Passive/Line/RLCGLadder.lean`.
 * `IsTelegrapherSolution.reflect`: the mirror image `x ↦ a + b − x` of a solution on `[a, b]`,
   with the current reversed, is a solution; the backward invariant is the forward invariant of
   the reflected solution.
@@ -85,25 +88,36 @@ the mirror image `x ↦ a + b − x` with the current reversed, `(v, −i)(a + b
   · simp only; linear_combination -hkvl
   · simp only; linear_combination hkcl
 
-/-- Lossless line constants: a unit length of line is the series branch `series` (`L'`) and
-the shunt `shunt` (`C'`), both lossless. -/
-structure LosslessLine where
+/-- A unit length of a uniform line: the series branch `series` (`R'`, `L'`) and the shunt
+`shunt` (`G'`, `C'`), with `L', C' > 0`, no series capacitance and no shunt inductance. The
+lossless line (`LosslessLine`) and the staggered ladder (`LadderParams`,
+`theorem/Passive/Line/RLCGLadder.lean`) extend it. -/
+structure UnitLength where
   series : Passive.SeriesRLC
   shunt : Passive.ParallelRLC
   L_pos : 0 < series.L
   C_pos : 0 < shunt.C
-  series_lossless : series.R = 0
-  shunt_lossless : shunt.G = 0
   /-- The unit length has no series capacitance. -/
   series_noCap : series.S = 0
   /-- The unit length has no shunt inductance. -/
   shunt_noInd : shunt.Γ = 0
 
-/-- The inductance per unit length. -/
-abbrev LosslessLine.L (p : LosslessLine) : ℝ := p.series.L
+/-- The inductance per unit length `L'`. -/
+abbrev UnitLength.L (p : UnitLength) : ℝ := p.series.L
 
-/-- The capacitance per unit length. -/
-abbrev LosslessLine.C (p : LosslessLine) : ℝ := p.shunt.C
+/-- The capacitance per unit length `C'`. -/
+abbrev UnitLength.C (p : UnitLength) : ℝ := p.shunt.C
+
+/-- The resistance per unit length `R'`. -/
+abbrev UnitLength.R (p : UnitLength) : ℝ := p.series.R
+
+/-- The conductance per unit length `G'`. -/
+abbrev UnitLength.G (p : UnitLength) : ℝ := p.shunt.G
+
+/-- Lossless line constants: a lossless unit length (`R' = G' = 0`). -/
+structure LosslessLine extends UnitLength where
+  series_lossless : series.R = 0
+  shunt_lossless : shunt.G = 0
 
 namespace LosslessLine
 

@@ -1,4 +1,4 @@
-import theorem.PH.Linear
+import theorem.PowerSystem.Synchronous.PH
 import theorem.Passive.Series
 import theorem.Passive.Parallel
 import theorem.PH.Linearization
@@ -43,6 +43,13 @@ linearization).
 Results.
 * `smib11`: the note's ODE verbatim (`δ̇ = ω_r`); its energy balance (`smib11_power_balance`)
   and passivity hold.
+* The machine block is the seven-state machine: the parameters extend `SyncMachine7Params`, the
+  flux, current and speed of the block are the machine's (`smib11_machine`), the first seven state
+  equations are `syncMachine7`'s driven by the node voltage in the rotor frame `R(δ)ᵀ V`, `v_f`
+  and `T_m` (`smib11_field_machine`, `smib11_machineInput`), and `H^tot` is the machine storage at
+  the block plus the node and link energies (`smib11_H`), whence `H^tot ≥ 0` from
+  `syncMachine7_H_nonneg` (`smib11_H_nonneg`). Scaffold:
+  `theorem/PowerSystem/Synchronous/SMIB11Machine.agda`.
 * `smib11Rel_field`: the corrected relative-angle ODE `δ̇ = ω_r − ω_s`, obtained by adding the
   drift `−ω_s e_δ`. Since `∂H/∂δ = 0` this drift does no work, so the same energy balance
   (`smib11Rel_power_balance`) and the same passivity statement hold, and every equilibrium has
@@ -94,27 +101,15 @@ open Matrix Set Filter
 open powerlib.Dynamics (State)
 open powerlib.PH
 
-/-- Parameters of the 11-state test system. -/
-structure SMIB11Params where
-  Γ : Matrix (Fin 5) (Fin 5) ℝ
-  M : ℝ
-  rs : ℝ
-  rf : ℝ
-  rkd : ℝ
-  rkq : ℝ
-  D : ℝ
+/-- Parameters of the 11-state test system: the seven-state machine (`SyncMachine7Params`,
+`theorem/PowerSystem/Synchronous/PH.lean`), the node capacitor, the RL link and the frame
+speed. -/
+structure SMIB11Params extends SyncMachine7Params where
   /-- The terminal capacitor (lossless). -/
   capacitor : Passive.ParallelRLC
   /-- The RL link to the infinite bus. -/
   link : Passive.SeriesRLC
   ωs : ℝ
-  Γ_posDef : Γ.PosDef
-  M_pos : 0 < M
-  rs_nonneg : 0 ≤ rs
-  rf_nonneg : 0 ≤ rf
-  rkd_nonneg : 0 ≤ rkd
-  rkq_nonneg : 0 ≤ rkq
-  D_nonneg : 0 ≤ D
   C_pos : 0 < capacitor.C
   Ll_pos : 0 < link.L
   rl_nonneg : 0 ≤ link.R
@@ -159,14 +154,20 @@ def smib11_Q (p : SMIB11Params) : Matrix (Fin 11) (Fin 11) ℝ :=
       rfl
     · simp [hij, Ne.symm hij]
 
-/-- Flux linkages of the machine windings. -/
-def smib11_flux (x : State 11) : Fin 5 → ℝ := ![x 0, x 1, x 2, x 3, x 4]
+/-- The machine block `(Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ)` of the state: the state of the
+seven-state machine `syncMachine7`. -/
+def smib11_machine (x : State 11) : State 7 := WithLp.toLp 2 ![x 0, x 1, x 2, x 3, x 4, x 5, x 6]
 
-/-- Winding currents `i = Γ Ψ` (IN-positive stator currents). -/
-def smib11_current (p : SMIB11Params) (x : State 11) : Fin 5 → ℝ := p.Γ *ᵥ smib11_flux x
+/-- Flux linkages of the machine windings (`syncMachine7_flux` of the machine block). -/
+def smib11_flux (x : State 11) : Fin 5 → ℝ := syncMachine7_flux (smib11_machine x)
 
-/-- Rotor speed `ω_r = p / M`. -/
-def smib11_speed (p : SMIB11Params) (x : State 11) : ℝ := x 5 / p.M
+/-- Winding currents `i = Γ Ψ` (IN-positive stator currents; `syncMachine7_current`). -/
+def smib11_current (p : SMIB11Params) (x : State 11) : Fin 5 → ℝ :=
+  syncMachine7_current p.toSyncMachine7Params (smib11_machine x)
+
+/-- Rotor speed `ω_r = p / M` (`syncMachine7_speed`). -/
+def smib11_speed (p : SMIB11Params) (x : State 11) : ℝ :=
+  syncMachine7_speed p.toSyncMachine7Params (smib11_machine x)
 
 /-- `J^tot(x)` of §1.5.1. -/
 def smib11_J (p : SMIB11Params) (x : State 11) : Matrix (Fin 11) (Fin 11) ℝ :=
@@ -216,7 +217,8 @@ def smib11 (p : SMIB11Params) : NonlinearModel 11 4 where
   show smib11_Q p *ᵥ WithLp.ofLp x = _
   ext i
   fin_cases i <;>
-    simp [smib11_Q, smib11_w, smib11_current, smib11_flux, smib11_speed, mulVec, dotProduct,
+    simp [smib11_Q, smib11_w, smib11_current, smib11_speed, smib11_machine,
+      syncMachine7_current, syncMachine7_flux, syncMachine7_speed, mulVec, dotProduct,
       Fin.sum_univ_succ]
   all_goals ring
 
@@ -249,6 +251,27 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
   all_goals field_simp
   all_goals ring
 
+/-- Input of the machine block: the node voltage in the rotor frame, `R(δ)ᵀ (q_D, q_Q)/C`, the field
+voltage `v_f` and the mechanical torque `T_m^ext` (the input order of `syncMachine7`). -/
+def smib11_machineInput (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) : Fin 4 → ℝ :=
+  ![Real.cos (x 6) * (x 7 / p.C) + Real.sin (x 6) * (x 8 / p.C),
+    -Real.sin (x 6) * (x 7 / p.C) + Real.cos (x 6) * (x 8 / p.C), u 0, u 1]
+
+/-- The machine block of the 11-state system is the seven-state machine: its first seven state
+equations are those of `syncMachine7` at the machine block, driven by the node voltage in the rotor
+frame, the field voltage and the mechanical torque (`smib11_machineInput`). Static evidence on the
+model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem smib11_field_machine (p : SMIB11Params) (x : State 11)
+    (u : Fin 4 → ℝ) :
+    smib11_machine ((smib11 p).field x u) =
+      (syncMachine7 p.toSyncMachine7Params).field (smib11_machine x)
+        (smib11_machineInput p x u) := by
+  apply WithLp.ofLp_injective
+  rw [syncMachine7_field]
+  simp only [smib11_machine, WithLp.ofLp_toLp, PiLp.toLp_apply, smib11_field]
+  ext i
+  fin_cases i <;> simp [smib11_machineInput, smib11_current, smib11_speed, smib11_machine]
+
 @[tmio M, powerlib_domain] theorem smib11_dampingPower (p : SMIB11Params) (x : State 11) :
     (smib11 p).dampingPower x =
       p.rs * (smib11_current p x 0 ^ 2 + smib11_current p x 1 ^ 2) +
@@ -280,26 +303,24 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
         p.rl * ((x 9 / p.Ll) ^ 2 + (x 10 / p.Ll) ^ 2)) := by
   rw [NonlinearModel.power_balance, smib11_supply, smib11_dampingPower]
 
-/-- `H^tot` is the block sum of the machine, node-capacitor and link energies (§1.4). -/
+/-- `H^tot` is the block sum of the machine energy (`syncMachine7` at the machine block), the
+node-capacitor and the link energies (§1.4). -/
 @[tmio M, powerlib_domain] theorem smib11_H (p : SMIB11Params) (x : State 11) :
-    (smib11 p).H x =
-      ((1 / 2 : ℝ) * (smib11_flux x ⬝ᵥ (p.Γ *ᵥ smib11_flux x)) + x 5 ^ 2 / (2 * p.M)) +
+    (smib11 p).H x = (syncMachine7 p.toSyncMachine7Params).H (smib11_machine x) +
         (x 7 ^ 2 + x 8 ^ 2) / (2 * p.C) + (x 9 ^ 2 + x 10 ^ 2) / (2 * p.Ll) := by
   have hQ : smib11_Q p *ᵥ WithLp.ofLp x = _ := smib11_dH p x
   simp only [smib11, Linear.quadraticEnergy]
-  rw [hQ]
-  simp [smib11_current, smib11_flux, smib11_speed, dotProduct, Fin.sum_univ_succ]
+  rw [hQ, syncMachine7_H]
+  simp [smib11_current, smib11_speed, smib11_machine, syncMachine7_current,
+    syncMachine7_flux, syncMachine7_speed, dotProduct, Fin.sum_univ_succ]
   ring
 
 @[tmio M, powerlib_domain] theorem smib11_H_nonneg (p : SMIB11Params) (x : State 11) :
     0 ≤ (smib11 p).H x := by
   rw [smib11_H]
-  have h := p.Γ_posDef.posSemidef.dotProduct_mulVec_nonneg (smib11_flux x)
-  rw [star_trivial] at h
-  have hM := p.M_pos
   have hC := p.C_pos
   have hL := p.Ll_pos
-  positivity
+  exact add_nonneg (add_nonneg (syncMachine7_H_nonneg _ _) (by positivity)) (by positivity)
 
 /-- The unit vector along the rotor-angle coordinate. -/
 def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
@@ -307,11 +328,11 @@ def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
 /-- `H` vanishes along the rotor-angle axis: it does not depend on `δ`. -/
 @[tmio M, powerlib_domain] theorem smib11_H_angleAxis (p : SMIB11Params) (θ : ℝ) :
     (smib11 p).H (smib11_angleAxis θ) = 0 := by
-  have hflux : smib11_flux (smib11_angleAxis θ) = 0 := by
+  have hflux : syncMachine7_flux (smib11_machine (smib11_angleAxis θ)) = 0 := by
     ext i
-    fin_cases i <;> simp [smib11_flux, smib11_angleAxis]
-  rw [smib11_H, hflux]
-  simp [smib11_angleAxis]
+    fin_cases i <;> simp [syncMachine7_flux, smib11_machine, smib11_angleAxis]
+  rw [smib11_H, syncMachine7_H, hflux]
+  simp [smib11_machine, smib11_angleAxis]
 
 /-- The rotor-angle axis is a nonzero direction. -/
 @[tmio M, powerlib_domain] private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
@@ -509,7 +530,7 @@ the origin). With `ω_s = 0` the origin is an equilibrium. -/
     (by rw [smib11Rel_zeroInput]; exact (smib11_contDiff_zeroInputField p).sub contDiff_const)
     fun h0 => hωs ?_
   have h := smib11Rel_speed_eq_of_equilibrium p 0 0 h0
-  simpa [smib11_speed] using h.symm
+  simpa [smib11_speed, syncMachine7_speed, smib11_machine] using h.symm
 
 end SMIB11Rel
 

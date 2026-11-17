@@ -207,17 +207,19 @@ stable (energy function). -/
   field_simp
 
 /-- Damping ratio of the corrected linearization: `ζ = −tr J / (2 √det J)`
-(`Criteria.dampingRatio`) is `D_p / (2 √(2H ω_s K_E))`. -/
+(`Criteria.dampingRatio`) is `D / (2 √(M K_E)) = D_p / (2 √(2H ω_s K_E))`
+(`SwingParams.dampingRatio_jacobian`). -/
 @[tmio M, powerlib_domain] theorem dampingRatio_eq (h : v.Pos) (δ₀ : ℝ) (hK : 0 < v.KE δ₀) :
     Criteria.dampingRatio (v.toSwing.jacobian δ₀) =
       v.Dp / (2 * Real.sqrt (2 * v.H * v.ωs * v.KE δ₀)) := by
-  have hH := h.H; have hω := h.ωs
-  have hs : Real.sqrt (v.ωs * v.KE δ₀ / (2 * v.H)) =
-      Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) / (2 * v.H) := by
-    rw [show v.ωs * v.KE δ₀ / (2 * v.H) = 2 * v.H * v.ωs * v.KE δ₀ / (2 * v.H) ^ 2 by
-        field_simp, Real.sqrt_div' _ (by positivity), Real.sqrt_sq (by positivity)]
-  have hpos : 0 < Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) := Real.sqrt_pos.mpr (by positivity)
-  rw [Criteria.dampingRatio, SwingParams.trace_jacobian, v.naturalFrequency_sq h, hs]
+  have hω := h.ωs
+  have hs : Real.sqrt (v.toSwing.M * v.KE δ₀) =
+      Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) / v.ωs := by
+    rw [show v.toSwing.M * v.KE δ₀ = 2 * v.H * v.ωs * v.KE δ₀ / v.ωs ^ 2 by
+        simp only [toSwing]; field_simp, Real.sqrt_div' _ (by positivity), Real.sqrt_sq hω.le]
+  have hpos : 0 < Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) :=
+    Real.sqrt_pos.mpr (by have := h.H; positivity)
+  rw [v.toSwing.dampingRatio_jacobian h.M hK, hs]
   simp only [toSwing]
   field_simp
 

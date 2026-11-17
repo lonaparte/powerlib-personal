@@ -29,7 +29,7 @@ certificates of `theorem/Linear/Certificate.lean`; the rational synthesizer
 Results.
 * Symmetric matrices: `SymmetricMatrix`, `SymmetricMatrix.minor2`, `SymmetricMatrix.det`,
   `SymmetricMatrix.toMatrix`, `SymmetricMatrix.form_pos` (positive leading minors make the form
-  positive).
+  positive; three Schur elimination steps of `Linear.Positive.posDef_schur_iff`).
 * The symbolic witness (`PassiveWitness`): `coupling`, `gap`, `denominator`, the numerators
   `n11` … `n33`, `minorNumerator`, `detNumerator`, `matrix`; positivity (`coupling_pos`,
   `gap_pos`, `n11_pos`, `minorNumerator_pos`, `detNumerator_pos`), the minor and determinant
@@ -75,42 +75,33 @@ def SymmetricMatrix.det (p : SymmetricMatrix) : ℝ :=
 def SymmetricMatrix.toMatrix (p : SymmetricMatrix) : Matrix (Fin 3) (Fin 3) ℝ :=
   !![p.p11, p.p12, p.p13; p.p12, p.p22, p.p23; p.p13, p.p23, p.p33]
 
-/-- Positive leading minors make the quadratic form positive. -/
-@[tmio T, powerlib_foundation] theorem SymmetricMatrix.form_pos (p : SymmetricMatrix) (h1 : 0 < p.p11)
-    (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
+/-- Positive leading minors make the quadratic form positive: three steps of Schur elimination
+(`Linear.Positive.posDef_schur_iff`), with pivots `p₁₁`, `m₂/p₁₁` and `det/m₂`. -/
+@[tmio T, powerlib_foundation] theorem SymmetricMatrix.form_pos (p : SymmetricMatrix)
+    (h1 : 0 < p.p11) (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
     0 < x ⬝ᵥ (p.toMatrix *ᵥ x) := by
-  have hform : x ⬝ᵥ (p.toMatrix *ᵥ x) =
-      p.p11 * (x 0 + p.p12 / p.p11 * x 1 + p.p13 / p.p11 * x 2) ^ 2 +
-      (p.minor2 / p.p11) * (x 1 + (p.p11 * p.p23 - p.p12 * p.p13) / p.minor2 * x 2) ^ 2 +
-      (p.det / p.minor2) * x 2 ^ 2 := by
-    simp only [SymmetricMatrix.toMatrix, dotProduct, Matrix.mulVec, Fin.sum_univ_three,
-      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.empty_val', Matrix.cons_val_fin_one, Matrix.head_cons,
-      Matrix.tail_cons]
-    field_simp [ne_of_gt h1, ne_of_gt h2]
-    dsimp [SymmetricMatrix.minor2, SymmetricMatrix.det]
+  open Linear.Positive in
+  have h1' := h1.ne'
+  have h2' := h2.ne'
+  have hs : p.toMatrixᵀ = p.toMatrix := by
+    ext i j; fin_cases i <;> fin_cases j <;> rfl
+  have hs2 := schur_symmetric hs
+  have hs3 := schur_symmetric hs2
+  have hp2 : schurReal p.toMatrix 0 0 = p.minor2 / p.p11 := by
+    simp [schurReal, SymmetricMatrix.toMatrix, SymmetricMatrix.minor2]
+    field_simp
+  have hp3 : schurReal (schurReal p.toMatrix) 0 0 = p.det / p.minor2 := by
+    have hm : p.p11 * p.p22 - p.p12 ^ 2 ≠ 0 := h2'
+    simp [schurReal, SymmetricMatrix.toMatrix, SymmetricMatrix.minor2, SymmetricMatrix.det]
+    field_simp
     ring
-  rw [hform]
-  by_cases hz : x 2 = 0
-  · by_cases hy : x 1 = 0
-    · have h0 : x 0 ≠ 0 := by
-        intro h
-        apply hx
-        funext i
-        fin_cases i
-        · exact h
-        · exact hy
-        · exact hz
-      simp only [hz, hy, mul_zero, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
-        zero_pow]
-      exact mul_pos h1 (sq_pos_of_ne_zero h0)
-    · simp only [hz, mul_zero, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow]
-      exact add_pos_of_nonneg_of_pos (mul_nonneg (le_of_lt h1) (sq_nonneg _))
-        (mul_pos (div_pos h2 h1) (sq_pos_of_ne_zero hy))
-  · exact add_pos_of_nonneg_of_pos
-      (add_nonneg (mul_nonneg (le_of_lt h1) (sq_nonneg _))
-        (mul_nonneg (le_of_lt (div_pos h2 h1)) (sq_nonneg _)))
-      (mul_pos (div_pos h3 h2) (sq_pos_of_ne_zero hz))
+  have hP : p.toMatrix.PosDef := by
+    rw [posDef_schur_iff hs (by simpa [SymmetricMatrix.toMatrix] using h1),
+      posDef_schur_iff hs2 (by rw [hp2]; exact div_pos h2 h1),
+      posDef_schur_iff hs3 (by rw [hp3]; exact div_pos h3 h2)]
+    exact Matrix.posDef_iff_dotProduct_mulVec.mpr
+      ⟨by ext i; exact Fin.elim0 i, fun y hy => (hy (funext fun i => Fin.elim0 i)).elim⟩
+  simpa using hP.dotProduct_mulVec_pos hx
 
 namespace PassiveWitness
 

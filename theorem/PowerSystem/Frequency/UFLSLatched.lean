@@ -51,7 +51,7 @@ Family and connection conclusions.
   (foundation, Rules §3).
 * The two instances on the swing + governor and SFR plants are trajectory-level results about
   specific engineering models: private implementation evidence (Rules §3a), derived from the
-  generic statements, the generic closed form `LTI.trajectory_eq_osc2` and static facts of
+  generic statements, the generic first extremum `LTI.trajectory_nadir_osc2` and static facts of
   `SwingGovernor`, `SwingNadir` and `SFR`. The stability of the two plants themselves is
   published by `SwingGovernor.family` and `SFR.family`.
 -/
@@ -394,13 +394,24 @@ latched relay trips and `Δω → −(ΔP_L − p P⁰)/(K_R + D)`. -/
     have hφ : IsIntegralCurveOn φ
         (fun _ y => (SwingGovernor.plant M D K Tg).inputField (load ΔPL) y) (Ici 0) :=
       fun t _ => (LTI.solution_hasDerivAt _ he₁ 0 (x 0) t).hasDerivWithinAt
-    have hωd := SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ
-    have hT0 : 0 < SwingGovernor.nadirTime M D K Tg := SwingGovernor.tCrit_pos hωd
     have hφ0 : φ 0 = 0 := by simp [φ, h0]
-    have hval : φ (SwingGovernor.nadirTime M D K Tg) 0 = SwingGovernor.nadirValue M D K Tg ΔPL := by
-      rw [LTI.trajectory_eq_osc2 _ he₁ (SwingGovernor.trace_A hM hTg hKD)
-        (SwingGovernor.det_A hM hTg hD hKD hζ) hωd.ne' hφ hT0.le, hφ0,
-        SwingGovernor.osc2_freq hM hTg hD hKD hζ, SwingGovernor.respC_nadirTime hM hTg hD hKD hζ]
+    rcases le_or_gt ΔPL 0 with hP | hP
+    · -- no load increase: the nadir value is nonnegative, so the threshold is reached at rest
+      have hn : 0 ≤ SwingGovernor.nadirValue M D K Tg ΔPL :=
+        mul_nonneg (div_nonneg (by linarith) hKD.le) (by positivity)
+      have := hno 0 le_rfl
+      rw [h0] at this
+      simp only [PiLp.zero_apply] at this
+      linarith
+    have hr : -ΔPL / M < 0 := by rw [neg_div]; exact neg_neg_of_pos (div_pos hP hM)
+    obtain ⟨hT0, -, -, hval⟩ := LTI.trajectory_nadir_osc2 _ he₁
+      (SwingGovernor.trace_A hM hTg hKD) (SwingGovernor.det_A hM hTg hD hKD hζ)
+      (SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ) (SwingGovernor.decayRate_nonneg hM hTg hD hKD)
+      hφ 0 (a := ΔPL / (K + D)) (r := -ΔPL / M)
+      (by rw [hφ0]; exact SwingGovernor.rest_deviation)
+      (by rw [hφ0]; exact SwingGovernor.rest_slope hKD.ne') hr
+    rw [← SwingGovernor.nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ] at hT0 hval
+    rw [SwingGovernor.steadyState_zero, ← SwingGovernor.nadirValue_eq hM hTg hD hKD hP hζ] at hval
     have := hno _ hT0.le
     rw [hrep _ hT0.le, hval] at this
     linarith

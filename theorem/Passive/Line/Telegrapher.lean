@@ -19,6 +19,9 @@ factorization and undistorted attenuated travelling waves); `theory/T-pde-system
 Results.
 * `dx F`, `dt F` are the partial derivatives `fderiv ℝ F p (1,0)`, `fderiv ℝ F p (0,1)`
   (`PDE.dx`, `PDE.dt`, with the mixed-partial lemmas, in `theorem/PDE/Partial.lean`).
+* `dx_eq_of_isTelegrapherSolution`: the telegrapher solutions of
+  `theorem/Passive/Line/Bergeron.lean` (`IsTelegrapherSolution`) on every strip solve the
+  equations in `dx`, `dt` at every point, so the second-order form below applies to them.
 * `second_order_v`: if `v, i ∈ C²` solve `∂ₓv = −L'∂ₜi − R'i`, `∂ₓi = −C'∂ₜv − G'v`, then
   `∂ₓₓv = L'C' ∂ₜₜv + (L'G' + R'C') ∂ₜv + R'G' v`; the same holds for `i`
   (`second_order_v C L G R hi hv h2 h1`, roles `v ↔ i`, `L ↔ C`, `R ↔ G`). (The proof uses the
@@ -56,6 +59,28 @@ open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiab
     rw [e2]; exact fderiv_combo (differentiable_dt hv) hdv (-C) G (0, 1) p
   rw [step1, dx_dt_comm hi, step2, h2 p]
   ring
+
+/-- The telegrapher solutions of `theorem/Passive/Line/Bergeron.lean` in partial derivatives: a
+pair solving the equations on every strip satisfies `∂ₓv = −L'∂ₜi − R'i`, `∂ₓi = −C'∂ₜv − G'v`
+in `dx`, `dt` at every point (the hypotheses of `second_order_v`, for `v`, and with the roles
+exchanged, for `i`). -/
+@[tmio M, powerlib_domain] theorem dx_eq_of_isTelegrapherSolution {series : Passive.SeriesRLC}
+    {shunt : Passive.ParallelRLC} {v i : ℝ × ℝ → ℝ}
+    (h : ∀ a b, IsTelegrapherSolution series shunt a b v i) (p : ℝ × ℝ) :
+    dx v p = -series.L * dt i p - series.R * i p ∧
+      dx i p = -shunt.C * dt v p - shunt.G * v p := by
+  obtain ⟨-, -, vx, vt, ix, it, hsol⟩ := h (p.1 - 1) (p.1 + 1)
+  have hmem : PDE.strip (p.1 - 1) (p.1 + 1) ∈ nhds p :=
+    prod_mem_nhds (Icc_mem_nhds (by linarith) (by linarith)) Filter.univ_mem
+  obtain ⟨hv, hi, hkvl, hkcl⟩ := hsol p ⟨⟨by linarith, by linarith⟩, trivial⟩
+  have hv' := (hv.hasFDerivAt hmem).fderiv
+  have hi' := (hi.hasFDerivAt hmem).fderiv
+  have e1 : dx v p = vx p := by simp [dx, hv']
+  have e2 : dt v p = vt p := by simp [dt, hv']
+  have e3 : dx i p = ix p := by simp [dx, hi']
+  have e4 : dt i p = it p := by simp [dt, hi']
+  rw [e1, e2, e3, e4]
+  exact ⟨hkvl, hkcl⟩
 
 /-- The first-order factor `(∂ₜ + κ∂ₓ + τ) F`. -/
 def factorOp (κ τ : ℝ) (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := dt F p + κ * dx F p + τ * F p

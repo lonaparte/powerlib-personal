@@ -45,13 +45,17 @@ Two-state model (static, domain):
 * `field_swing`, `field_governor`: the state equations are exactly the §1.7 pair.
 * `transfer_apply`: `Linear.transfer` from `ΔP_L` to `Δω` is
   `−(1 + T_g s)/(M T_g s² + (M + D T_g) s + (D + K_R))` (§1.7).
-* `det_characteristicMatrix_eq`: `det(sI − A) = s² + 2 ζ_n ω_n s + ω_n²` with the §1.7 boxed
-  `ω_n`, `ζ_n`; `dampingRatio_strictAntiOn`: `ζ_n` strictly decreases in `K_R` (§2.5).
+* `natFreq`, `dampingRatio` are the natural frequency and damping ratio of the state matrix
+  (`Criteria.naturalFrequency`, `Criteria.dampingRatio`), so `det(sI − A) = s² + 2 ζ_n ω_n s +
+  ω_n²` is the generic `Criteria.det_characteristicMatrix_standard`; the §1.7 boxed values are
+  `natFreq_sq`, `dampingRatio_eq`, `two_mul_dampingRatio_mul_natFreq`;
+  `dampingRatio_strictAntiOn`: `ζ_n` strictly decreases in `K_R` (§2.5).
+* `field_zero`: at rest the field is `Δω̇ = −ΔP_L/M` (§1.5, the initial RoCoF).
 * `isEquilibrium_iff`: the unique equilibrium for the step `ΔP_L` is
   `(−ΔP_L/(K_R + D), K_R ΔP_L/(K_R + D))` (§1.6).
 * Hurwitz criterion: for `0 < M`, `0 < T_g` the state matrix is Hurwitz iff `0 < M + D T_g`
-  and `0 < K_R + D` (`mem_den_attractive_iff`); with `0 ≤ D` this is `0 < K_R + D`
-  (`isHurwitz_iff_of_nonneg`).
+  and `0 < K_R + D` (`isHurwitz_plant_iff`, `Criteria.isHurwitz_iff_of_coeffs_quadratic`;
+  `mem_den_attractive_iff`); with `0 ≤ D` this is `0 < K_R + D` (`isHurwitz_iff_of_nonneg`).
 Singular-perturbation limit:
 * Static model identities (domain): `plant_A_eq_stateMatrix` (the state matrix is the generic
   two-time-scale matrix at `ε = T_g`), `twoTimeScale_gain` (quasi-steady state
@@ -72,7 +76,8 @@ Singular-perturbation limit:
   (`ζ_n → ∞`: overdamped in the limit).
 * Transfer function: `reduced_field_apply`, `firstOrder_transfer` (`−1/(M s + K_R + D)`),
   `tendsto_transfer` (pointwise convergence off the first-order pole).
-* Stability (static): `reduced_isHurwitz_iff` (`0 < K_R + D`), `mem_den_iff_reduce`
+* Stability (static): `isHurwitz_reducedPlant_iff`, `reduced_isHurwitz_iff` (`0 < K_R + D`),
+  `mem_den_iff_reduce`
   (Hurwitz iff the reduction is, whenever `0 < M + D T_g`), `eventually_isHurwitz_iff_reduced`;
   `rateMargin_iff`, `reduced_rateMargin_iff`, `eventually_rateMargin_iff_reduced` (off the pole
   `a M = K_R + D` the rate margins agree for small `T_g`); generic `LTI.not_decay_of_eigenvector`
@@ -86,12 +91,15 @@ Family and connection conclusions.
   `Δω`. The flow sentences therefore speak about the zero-load operating point; since the plant
   is linear, the same attractive sentences hold at the quasi-steady state of every constant load
   step (`Linear.holds_input_iff` with `isEquilibrium_iff`).
-* Requirements (static): `stable` (`0 < M + D T_g`, `0 < K_R + D`: Jacobian trace `< 0`,
-  determinant `> 0`), `unstable` (`K_R + D < 0` or `M + D T_g < 0`), `rate a`
+* Requirements (static): the rate language of `Spectral.rateFamily`
+  (`theorem/Spectral/LinearNamed.lean`): `stable` (`0 < M + D T_g`, `0 < K_R + D`: Jacobian
+  trace `< 0`, determinant `> 0`), `unstable` (`K_R + D < 0` or `M + D T_g < 0`), `rate a`
   (`Linear.RateMargin A a`). Lyapunov stability and the attractive sentences translate into
   `stable`, instability into `unstable`, a decay rate into its margin; conservation and
-  passivity have no translation (the whole, inconsistent, language).
-* Connection theorems: `chain_le_semantics` (soundness of every translation), `exact_hurwitz`
+  passivity have no translation (the whole, inconsistent, language:
+  `Spectral.realize_univ_of_rate`).
+* Connection theorems: `chain_le_semantics` (soundness of every translation, the rate law
+  `Spectral.chain_le_semantics_of_rate`), `exact_hurwitz` (`Spectral.exact_of_rate`)
   (the attractive sentences and sampled contraction are translated exactly),
   `mem_den_attractive_iff` (the member characterization), `isHurwitz_iff_of_nonneg`
   (§1.6: with `0 ≤ D`, global exponential stability iff `0 < K_R + D`), `mem_den_unstable`, and
@@ -103,9 +111,9 @@ Family and connection conclusions.
   stability of the quasi-steady state of the load step (`exponentiallyConvergesTo_steadyState`)
   and the convergence `Δω(t) → −ΔP_L/(K_R + D)` of every forward solution under the load step
   (`tendsto_freq`, §1.6).
-* First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; requirements
-  `stable` `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`; `Model.reduce`
-  forgets `T_g`, `reduce_plant`): `reducedFamily_isLinear`, `reduced_realize_univ`,
+* First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; the rate language
+  with `stable` `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`;
+  `Model.reduce` forgets `T_g`, `reduce_plant`): `reducedFamily_isLinear`,
   `reduced_chain_le_semantics`, `reduced_exact_hurwitz`, `reduced_exact_decay` (the decay
   translation is exact at every rate: the solutions are `e^{−(K_R + D) t/M}`).
 * Connection conclusions of the limit: `mem_den_iff_reduce` (for `0 < M + D T_g` a model
@@ -145,11 +153,13 @@ def plant (M D K Tg : ℝ) : Linear.Plant 2 1 where
 /-- Quasi-steady state `(Δω^∞, ΔP_m^∞) = (−ΔP_L/(K_R + D), K_R ΔP_L/(K_R + D))`. -/
 def steadyState (D K ΔPL : ℝ) : ℝ² := WithLp.toLp 2 ![-ΔPL / (K + D), K * ΔPL / (K + D)]
 
-/-- Undamped natural frequency `ω_n = √((D + K_R)/(M T_g))` (§1.7). -/
-def natFreq (M D K Tg : ℝ) : ℝ := Real.sqrt ((D + K) / (M * Tg))
+/-- Undamped natural frequency `ω_n`: the natural frequency `√det A` of the state matrix
+(`Criteria.naturalFrequency`); §1.7: `ω_n² = (D + K_R)/(M T_g)` (`natFreq_sq`). -/
+abbrev natFreq (M D K Tg : ℝ) : ℝ := Criteria.naturalFrequency (plant M D K Tg).A
 
-/-- Damping ratio `ζ_n = (M + D T_g)/(2 √(M T_g (D + K_R)))` (§1.7). -/
-def dampingRatio (M D K Tg : ℝ) : ℝ := (M + D * Tg) / (2 * Real.sqrt (M * Tg * (D + K)))
+/-- Damping ratio `ζ_n`: the damping ratio `−tr A/(2 √det A)` of the state matrix
+(`Criteria.dampingRatio`); §1.7: `ζ_n = (M + D T_g)/(2 √(M T_g (D + K_R)))` (`dampingRatio_eq`). -/
+abbrev dampingRatio (M D K Tg : ℝ) : ℝ := Criteria.dampingRatio (plant M D K Tg).A
 
 variable {M D K Tg ΔPL : ℝ}
 
@@ -184,6 +194,14 @@ variable {M D K Tg ΔPL : ℝ}
   field_simp
   ring
 
+/-- §1.5: at rest under the load step the frequency rate is `Δω̇ = −ΔP_L/M` (the initial RoCoF
+of every forward solution from rest, by `LTI.hasDerivWithinAt_apply_zero`). -/
+@[tmio M, powerlib_domain] theorem field_zero :
+    (plant M D K Tg).inputField (load ΔPL) 0 0 = -ΔPL / M := by
+  rw [field_apply]
+  simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
+  ring
+
 /-! ## Transfer function, characteristic polynomial, `ω_n`, `ζ_n` -/
 
 /-- §1.7: `Δω(s)/ΔP_L(s) = −(1 + T_g s)/(M T_g s² + (M + D T_g) s + (D + K_R))`.
@@ -212,48 +230,56 @@ At the poles both sides are `0` (Lean's `x / 0 = 0`), so the identity holds for 
   simp [plant, Linear.characteristicMatrix, Matrix.det_fin_two]
   ring
 
+@[tmio M, powerlib_domain] theorem trace_plant :
+    (plant M D K Tg).A.trace = -D / M + -1 / Tg := Matrix.trace_fin_two_of _ _ _ _
+
+@[tmio M, powerlib_domain] theorem det_plant (hM : M ≠ 0) (hTg : Tg ≠ 0) :
+    (plant M D K Tg).A.det = (K + D) / (M * Tg) := by
+  change Matrix.det !![-D / M, 1 / M; -K / Tg, -1 / Tg] = _
+  rw [Matrix.det_fin_two_of]
+  field_simp
+  ring
+
+/-- §1.7 boxed: `ω_n² = (D + K_R)/(M T_g)`. With `2 ζ_n ω_n = (M + D T_g)/(M T_g)`
+(`two_mul_dampingRatio_mul_natFreq`) this identifies the §1.7 standard second-order form
+`det(sI − A) = s² + 2 ζ_n ω_n s + ω_n²`, the generic `Criteria.det_characteristicMatrix_standard`
+of the state matrix. -/
 @[tmio M, powerlib_domain] theorem natFreq_sq (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 ≤ D + K) :
-    natFreq M D K Tg ^ 2 = (D + K) / (M * Tg) :=
-  Real.sq_sqrt (div_nonneg hKD (mul_pos hM hTg).le)
+    natFreq M D K Tg ^ 2 = (D + K) / (M * Tg) := by
+  rw [natFreq, Criteria.naturalFrequency, det_plant hM.ne' hTg.ne', add_comm K D]
+  exact Real.sq_sqrt (div_nonneg hKD (mul_pos hM hTg).le)
 
 @[tmio M, powerlib_domain] theorem natFreq_pos (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < D + K) :
-    0 < natFreq M D K Tg :=
-  Real.sqrt_pos.2 (div_pos hKD (mul_pos hM hTg))
+    0 < natFreq M D K Tg := by
+  rw [natFreq, Criteria.naturalFrequency, det_plant hM.ne' hTg.ne', add_comm K D]
+  exact Real.sqrt_pos.2 (div_pos hKD (mul_pos hM hTg))
 
-/-- `2 ζ_n ω_n = (M + D T_g)/(M T_g)` (§1.7 boxed). -/
+/-- §1.7 boxed: `ζ_n = (M + D T_g)/(2 √(M T_g (D + K_R)))`. -/
+@[tmio M, powerlib_domain] theorem dampingRatio_eq (hM : 0 < M) (hTg : 0 < Tg) :
+    dampingRatio M D K Tg = (M + D * Tg) / (2 * Real.sqrt (M * Tg * (D + K))) := by
+  have hMT : 0 < M * Tg := mul_pos hM hTg
+  have hr : Real.sqrt ((K + D) / (M * Tg)) = Real.sqrt (M * Tg * (D + K)) / (M * Tg) := by
+    rw [show (K + D) / (M * Tg) = M * Tg * (D + K) / (M * Tg) ^ 2 by field_simp; ring,
+      Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq hMT.le]
+  rw [dampingRatio, Criteria.dampingRatio, trace_plant, det_plant hM.ne' hTg.ne', hr]
+  by_cases h : Real.sqrt (M * Tg * (D + K)) = 0
+  · simp [h]
+  · have hM' := hM.ne'
+    have hTg' := hTg.ne'
+    field_simp
+    ring
+
+/-- §1.7 boxed: `2 ζ_n ω_n = −tr A = (M + D T_g)/(M T_g)`. -/
 @[tmio M, powerlib_domain] theorem two_mul_dampingRatio_mul_natFreq (hM : 0 < M) (hTg : 0 < Tg)
     (hKD : 0 < D + K) :
     2 * dampingRatio M D K Tg * natFreq M D K Tg = (M + D * Tg) / (M * Tg) := by
-  have hMT : 0 < M * Tg := mul_pos hM hTg
-  have hprod : 0 < M * Tg * (D + K) := mul_pos hMT hKD
-  have h1 : Real.sqrt ((D + K) / (M * Tg)) * Real.sqrt (M * Tg * (D + K)) = D + K := by
-    rw [← Real.sqrt_mul (div_nonneg hKD.le hMT.le)]
-    rw [show (D + K) / (M * Tg) * (M * Tg * (D + K)) = (D + K) ^ 2 by field_simp]
-    exact Real.sqrt_sq hKD.le
-  have h2 : 0 < Real.sqrt (M * Tg * (D + K)) := Real.sqrt_pos.2 hprod
-  have h3 : Real.sqrt (M * Tg * (D + K)) ^ 2 = M * Tg * (D + K) := Real.sq_sqrt hprod.le
-  have hr : Real.sqrt ((D + K) / (M * Tg)) = Real.sqrt (M * Tg * (D + K)) / (M * Tg) := by
-    rw [eq_div_iff hMT.ne']
-    have : Real.sqrt ((D + K) / (M * Tg)) * (M * Tg) * Real.sqrt (M * Tg * (D + K)) =
-        Real.sqrt (M * Tg * (D + K)) * Real.sqrt (M * Tg * (D + K)) := by
-      rw [mul_right_comm, h1, ← sq, h3]; ring
-    exact mul_right_cancel₀ h2.ne' this
-  unfold dampingRatio natFreq
-  rw [hr]
+  have hn := (natFreq_pos hM hTg hKD).ne'
+  have hM' := hM.ne'
+  have hTg' := hTg.ne'
+  rw [natFreq] at hn
+  rw [dampingRatio, natFreq, Criteria.dampingRatio, ← Criteria.naturalFrequency, trace_plant]
   field_simp
-
-/-- §1.7 standard second-order form `det(sI − A) = s² + 2 ζ_n ω_n s + ω_n²`. -/
-@[tmio M, powerlib_domain] theorem det_characteristicMatrix_eq (hM : 0 < M) (hTg : 0 < Tg)
-    (hKD : 0 < D + K) (s : ℂ) :
-    (Linear.characteristicMatrix (plant M D K Tg).A s).det =
-      s ^ 2 + ((2 * dampingRatio M D K Tg * natFreq M D K Tg : ℝ) : ℂ) * s +
-        ((natFreq M D K Tg ^ 2 : ℝ) : ℂ) := by
-  rw [det_characteristicMatrix, two_mul_dampingRatio_mul_natFreq hM hTg hKD,
-    natFreq_sq hM hTg hKD.le]
-  have : D / M + 1 / Tg = (M + D * Tg) / (M * Tg) := by
-    field_simp
-    ring
-  rw [this]
+  ring
 
 /-- §2.5: the damping ratio strictly decreases as the droop gain `K_R` increases. -/
 @[tmio M, powerlib_domain] theorem dampingRatio_strictAntiOn (hM : 0 < M) (hTg : 0 < Tg)
@@ -261,6 +287,8 @@ At the poles both sides are `0` (Lean's `x / 0 = 0`), so the identity holds for 
     StrictAntiOn (fun K => dampingRatio M D K Tg) (Ioi (-D)) := by
   intro K₁ h₁ K₂ h₂ hlt
   simp only [mem_Ioi] at h₁ h₂
+  show dampingRatio M D K₂ Tg < dampingRatio M D K₁ Tg
+  rw [dampingRatio_eq hM hTg, dampingRatio_eq hM hTg]
   have hMT : 0 < M * Tg := mul_pos hM hTg
   have hnum : 0 < M + D * Tg := by nlinarith
   have hs₁ : 0 < Real.sqrt (M * Tg * (D + K₁)) := Real.sqrt_pos.2 (mul_pos hMT (by linarith))
@@ -320,59 +348,28 @@ structure Model where
 /-- The plant of a model. -/
 def Model.plant (m : Model) : Linear.Plant 2 1 := SwingGovernor.plant m.M m.D m.K m.Tg
 
-/-- Requirements on the swing + governor models, all static. -/
-inductive Requirement
-  /-- Trace `< 0` and determinant `> 0`: `0 < M + D T_g` and `0 < K_R + D`. -/
-  | stable
-  /-- Determinant `< 0` or trace `> 0`: `K_R + D < 0` or `M + D T_g < 0`. -/
-  | unstable
-  /-- A strict spectral margin at the rate `a`. -/
-  | rate (a : ℝ)
+/-- Routh–Hurwitz for the two-state model (`Criteria.isHurwitz_iff_of_coeffs_quadratic` on
+`M T_g s² + (M + D T_g) s + (K_R + D)`): for `0 < M`, `0 < T_g` the state matrix is Hurwitz iff
+`0 < M + D T_g` (trace) and `0 < K_R + D` (determinant). -/
+@[tmio TM, powerlib_domain] theorem isHurwitz_plant_iff (hM : 0 < M) (hTg : 0 < Tg) :
+    IsHurwitz (plant M D K Tg).A ↔ 0 < M + D * Tg ∧ 0 < K + D :=
+  Criteria.isHurwitz_iff_of_coeffs_quadratic _ (mul_pos hM hTg)
+    (by rw [trace_plant]; field_simp; ring) (det_plant hM.ne' hTg.ne')
 
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model) : Requirement → Prop
-  | .stable => 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D
-  | .unstable => m.K + m.D < 0 ∨ m.M + m.D * m.Tg < 0
-  | .rate a => Linear.RateMargin m.plant.A a
+/-- Requirements on the swing + governor models, all static: the rate language
+(`Spectral.RateRequirement`; its satisfaction is fixed by `family`). -/
+abbrev Requirement := Spectral.RateRequirement
 
-/-- The translation of the sentences: Lyapunov stability, the attractive sentences and sampled
-contraction into `stable`, instability into `unstable`, a decay rate into its margin.
-Conservation and passivity are translated into the whole language, which no model meets
-(unavailable translation coverage, not a usable translation). -/
-def translate : Sentence → Set Requirement
-  | .flow .unstable => {.unstable}
-  | .flow (.decay a) => {.rate a}
-  | .flow .conservative => Set.univ
-  | .flow _ => {.stable}
-  | .passive => Set.univ
-  | .envelope _ => ∅
+/-- The swing + governor family (`Spectral.rateFamily`): every model read as the port system of
+its plant (load deviation in, frequency deviation out); `stable` is `0 < M + D T_g` and
+`0 < K_R + D` (trace `< 0`, determinant `> 0`), `unstable` is `K_R + D < 0` or `M + D T_g < 0`
+(determinant `< 0` or trace `> 0`), `rate a` a strict spectral margin at the rate `a`. -/
+def family : Family Model Requirement 2 1 :=
+  Spectral.rateFamily Model.plant (fun m => 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D)
+    (fun m => m.K + m.D < 0 ∨ m.M + m.D * m.Tg < 0) fun m a => Linear.RateMargin m.plant.A a
 
-/-- The swing + governor family: every model read as the port system of its plant (load
-deviation in, frequency deviation out). -/
-def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
-
-@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
-
-/-- For `0 < M`, `0 < T_g`: Hurwitz iff `0 < M + D T_g` (trace) and `0 < K_R + D`
-(determinant), so the attractive sentences and sampled contraction denote the members satisfying
-`stable`. -/
-@[tmio TM, powerlib_domain] private theorem den_hurwitz {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) :
-    connection% (family.den (.flow P) = {m | Meets m .stable}) := by
-  change family.den (.flow P) = {m | Meets m .stable}
-  rw [family_isLinear.den_hurwitz hP]
-  ext ⟨M, D, K, Tg, hM, hTg⟩
-  change IsHurwitz (plant M D K Tg).A ↔ 0 < M + D * Tg ∧ 0 < K + D
-  change IsHurwitz !![-D / M, 1 / M; -K / Tg, -1 / Tg] ↔ _
-  rw [Criteria.isHurwitz_fin_two_of_iff]
-  have htr : -D / M + -1 / Tg = -((M + D * Tg) / (M * Tg)) := by
-    field_simp
-    ring
-  have hdet : -D / M * (-1 / Tg) - 1 / M * (-K / Tg) = (K + D) / (M * Tg) := by
-    field_simp
-    ring
-  rw [htr, hdet, neg_lt_zero, div_pos_iff_of_pos_right (mul_pos hM hTg),
-    div_pos_iff_of_pos_right (mul_pos hM hTg)]
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant :=
+  Spectral.rateFamily_isLinear _ _ _ _
 
 /-- §1.6: for `0 < M`, `0 < T_g`, `0 ≤ D` the model is globally exponentially stable (Hurwitz)
 iff `0 < K_R + D`; by linearity so is the quasi-steady state of every constant load step. -/
@@ -381,23 +378,8 @@ iff `0 < K_R + D`; by linearity so is the quasi-steady state of every constant l
   unfold TMIO.Statement
   rw [(connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   change IsHurwitz (plant M D K Tg).A ↔ 0 < K + D
-  have criterion : IsHurwitz (plant M D K Tg).A ↔ 0 < M + D * Tg ∧ 0 < K + D :=
-    (connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz
-      (P := .globallyExponentiallyStable) (Or.inl trivial)
-      (x := (⟨M, D, K, Tg, hM, hTg⟩ : Model))).symm.trans
-      (Set.ext_iff.mp (den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)) _)
-  rw [criterion]
+  rw [isHurwitz_plant_iff hM hTg]
   exact ⟨fun h => h.2, fun h => ⟨by nlinarith, h⟩⟩
-
-@[tmio M, powerlib_domain] theorem trace_plant :
-    (plant M D K Tg).A.trace = -D / M + -1 / Tg := Matrix.trace_fin_two_of _ _ _ _
-
-@[tmio M, powerlib_domain] theorem det_plant (hM : M ≠ 0) (hTg : Tg ≠ 0) :
-    (plant M D K Tg).A.det = (K + D) / (M * Tg) := by
-  change Matrix.det !![-D / M, 1 / M; -K / Tg, -1 / Tg] = _
-  rw [Matrix.det_fin_two_of]
-  field_simp
-  ring
 
 /-- A positive-trace or negative-determinant state matrix has a characteristic root in the open
 right half plane. -/
@@ -418,50 +400,16 @@ right half plane. -/
 
 /-! ## The family -/
 
-/-- No model is both stable and unstable: the whole requirement language is inconsistent. -/
-@[tmio M, powerlib_domain] theorem realize_univ :
-    connection% (realize Meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
-  obtain ⟨h1, h2⟩ : Meets m .stable := h .stable
-  rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
-
-@[tmio TM, powerlib_domain] private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) :
-    connection% (m ∈ family.den (.flow P)) := by
-  change m ∈ family.den (.flow P)
-  rw [den_hurwitz hP]
-  exact h
-
-/-- The swing + governor translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM, powerlib_domain] private theorem translate_eq_linearTable (s : Sentence) :
-    connection% (generate (cover (table translate)) {s} =
-      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
-  unfold TMIO.Statement
-  rw [TMIO.image_table_singleton]
-  rcases s with P | _ | _
-  · cases P <;> rfl
-  · rfl
-  · rfl
-
 /-- Every translation of the swing + governor family is sound: its translation chain lies below
 its semantics connection. `stable` is the Hurwitz condition of the plant, a right-half-plane root
-gives instability, a spectral margin gives the decay rate (the linear table,
-`Spectral.chain_le_semantics_of_linearTable_univ`). -/
+gives instability, a spectral margin gives the decay rate (the rate law
+`Spectral.chain_le_semantics_of_rate`). -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
-    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
-      (connection_proof% translate_eq_linearTable s))
-    (fun m hm => ((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz
-        (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
-        (Set.ext_iff.mp (den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)) m)).mpr
-      ((mem_realize _ _ _).mp hm .stable rfl))
-    (fun m hm => exists_root_of_unstable m.M_pos m.Tg_pos
-      ((mem_realize _ _ _).mp hm .unstable rfl))
-    fun a m hm => family_isLinear.mem_den_decay_of_rateMargin
-      ((mem_realize _ _ _).mp hm (.rate a) rfl)
+  exact Spectral.chain_le_semantics_of_rate family_isLinear rfl
+    (fun m h => (isHurwitz_plant_iff m.M_pos m.Tg_pos).2 h)
+    (fun m h => exists_root_of_unstable m.M_pos m.Tg_pos h) fun _ _ h => h
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics:
 `stable` (`0 < M + D T_g`, `0 < K_R + D`) is their exact translation. -/
@@ -469,14 +417,8 @@ gives instability, a spectral margin gives the decay rate (the linear table,
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.exact_of_linearTable (F := family) family_isLinear
-    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
-      (connection_proof% translate_eq_linearTable s))
-    (fun m => Spectral.mem_realize_singleton.trans ((connection_proof%
-        SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
-        (Or.inl trivial)).symm.trans
-        (Set.ext_iff.mp (den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)) m)).symm)
-    hP
+  exact Spectral.exact_of_rate family_isLinear rfl
+    (fun m => (isHurwitz_plant_iff m.M_pos m.Tg_pos).symm) hP
 
 /-- The member characterization: a model satisfies an attractive sentence exactly when
 `0 < M + D T_g` and `0 < K_R + D`. -/
@@ -485,8 +427,8 @@ gives instability, a spectral margin gives the decay rate (the linear table,
     connection% (m ∈ family.den (.flow P) ↔
       m ∈ {m : Model | 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D}) := by
   unfold powerlib.TMIO.Statement
-  rw [den_hurwitz (Or.inl hP)]
-  rfl
+  rw [family_isLinear.den_hurwitz (Or.inl hP)]
+  exact isHurwitz_plant_iff m.M_pos m.Tg_pos
 
 /-- A negative determinant (`K_R + D < 0`) or a positive trace (`M + D T_g < 0`) places a model
 in instability. -/
@@ -524,10 +466,7 @@ forward solution under a load step are trajectory-level results outside the sent
     (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
   have h := LTI.hasDerivWithinAt_apply_zero hx 0
-  rw [field_apply, h0] at h
-  convert h using 1
-  simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
-  ring
+  rwa [h0, field_zero] at h
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 §1.5 in Hz/s: with `f = f₀ (1 + Δω)` and `M_eff = 2 H_eff`, `ḟ(0⁺) = −ΔP_L f₀ / (2 H_eff)`. -/
@@ -854,8 +793,9 @@ second-order response becomes overdamped. -/
       exact mul_pos two_pos (Real.sqrt_pos.2 (by positivity))
   have h := Filter.Tendsto.pos_mul_atTop hM hnum (tendsto_inv_nhdsGT_zero.comp hden)
   refine h.congr' ?_
-  filter_upwards with Tg
-  simp [dampingRatio, div_eq_mul_inv]
+  filter_upwards [self_mem_nhdsWithin] with Tg (hTg : 0 < Tg)
+  rw [dampingRatio_eq hM hTg]
+  simp [div_eq_mul_inv]
 
 /-! ### The reduced model, transfer function and stability -/
 
@@ -941,48 +881,29 @@ def ReducedModel.plant (r : ReducedModel) : Linear.Plant 1 1 := reducedPlant r.M
 /-- The first-order reduction of a swing + governor model (forget `T_g`). -/
 def Model.reduce (m : Model) : ReducedModel := ⟨m.M, m.D, m.K, m.M_pos⟩
 
-/-- Requirements on the first-order models, all static. -/
-inductive ReducedRequirement
-  /-- `0 < K_R + D`. -/
-  | stable
-  /-- `K_R + D < 0`. -/
-  | unstable
-  /-- `a M ≤ K_R + D`: the rate `a` does not exceed the pole magnitude `(K_R + D)/M`. -/
-  | rate (a : ℝ)
-
-/-- Satisfaction of a requirement by a first-order model. -/
-def ReducedMeets (r : ReducedModel) : ReducedRequirement → Prop
-  | .stable => 0 < r.K + r.D
-  | .unstable => r.K + r.D < 0
-  | .rate a => a * r.M ≤ r.K + r.D
-
-/-- Lyapunov stability, the attractive sentences and sampled contraction into `stable`,
-instability into `unstable`, a decay rate into `rate`; conservation and passivity into the whole
-(inconsistent) language. -/
-def reducedTranslate : Sentence → Set ReducedRequirement
-  | .flow .unstable => {.unstable}
-  | .flow (.decay a) => {.rate a}
-  | .flow .conservative => Set.univ
-  | .flow _ => {.stable}
-  | .passive => Set.univ
-  | .envelope _ => ∅
-
-/-- The first-order family: every model read as the port system of its plant (load deviation
-in, frequency deviation out). -/
-def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
-  ⟨fun r => r.plant.system, ReducedMeets, reducedTranslate⟩
+/-- The first-order family (`Spectral.rateFamily`): every model read as the port system of its
+plant (load deviation in, frequency deviation out); `stable` is `0 < K_R + D`, `unstable`
+`K_R + D < 0`, `rate a` is `a M ≤ K_R + D` (the rate `a` does not exceed the pole magnitude
+`(K_R + D)/M`). -/
+def reducedFamily : Family ReducedModel Requirement 1 1 :=
+  Spectral.rateFamily ReducedModel.plant (fun r => 0 < r.K + r.D) (fun r => r.K + r.D < 0)
+    fun r a => a * r.M ≤ r.K + r.D
 
 @[tmio M, powerlib_domain] theorem reducedFamily_isLinear :
-    reducedFamily.IsLinear ReducedModel.plant := fun _ => rfl
+    reducedFamily.IsLinear ReducedModel.plant := Spectral.rateFamily_isLinear _ _ _ _
+
+/-- The state matrix `−(K_R + D)/M` of the first-order model is Hurwitz iff `0 < K_R + D`. -/
+@[tmio TM, powerlib_domain] theorem isHurwitz_reducedPlant_iff (hM : 0 < M) :
+    IsHurwitz (reducedPlant M D K).A ↔ 0 < K + D := by
+  change IsHurwitz !![-(K + D) / M] ↔ _
+  rw [Linear.isHurwitz_one_iff, neg_div, neg_lt_zero, div_pos_iff_of_pos_right hM]
 
 /-- The first-order model is Hurwitz iff `0 < K_R + D`. -/
 @[tmio TM, powerlib_domain] theorem reduced_isHurwitz_iff (hM : 0 < M) :
     connection% ((⟨M, D, K, hM⟩ : ReducedModel) ∈ reducedFamily.den (.flow .globallyExponentiallyStable) ↔ 0 < K + D) := by
   unfold TMIO.Statement
   rw [(connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
-  change IsHurwitz (reducedPlant M D K).A ↔ 0 < K + D
-  change IsHurwitz !![-(K + D) / M] ↔ _
-  rw [Linear.isHurwitz_one_iff, neg_div, neg_lt_zero, div_pos_iff_of_pos_right hM]
+  exact isHurwitz_reducedPlant_iff hM
 
 /-- **Stability is preserved by the reduction `T_g → 0`**: whenever `0 < M + D T_g` (in particular
 for every `T_g` when `0 ≤ D`, and for every small `T_g`), a swing + governor model satisfies an
@@ -994,16 +915,7 @@ first-order reduction does. -/
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz hP, reducedFamily_isLinear.den_hurwitz hP]
   change IsHurwitz (plant m.M m.D m.K m.Tg).A ↔ IsHurwitz (reducedPlant m.M m.D m.K).A
-  have criterion : IsHurwitz (plant m.M m.D m.K m.Tg).A ↔ 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D :=
-    (connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz
-      (P := .globallyExponentiallyStable) (Or.inl trivial) (x := m)).symm.trans
-      (Set.ext_iff.mp (den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)) m)
-  have reduced : IsHurwitz (reducedPlant m.M m.D m.K).A ↔ 0 < m.K + m.D :=
-    (connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz
-      (P := .globallyExponentiallyStable) (Or.inl trivial)
-      (x := (⟨m.M, m.D, m.K, m.M_pos⟩ : ReducedModel))).symm.trans
-      (reduced_isHurwitz_iff (D := m.D) (K := m.K) m.M_pos)
-  rw [criterion, reduced]
+  rw [isHurwitz_plant_iff m.M_pos m.Tg_pos, isHurwitz_reducedPlant_iff m.M_pos]
   exact ⟨fun h' => h'.2, fun h' => ⟨h, h'⟩⟩
 
 @[tmio TM, powerlib_domain] theorem eventually_isHurwitz_iff_reduced (hM : 0 < M) :
@@ -1011,21 +923,16 @@ first-order reduction does. -/
   have hc : Continuous (fun Tg : ℝ => M + D * Tg) := by fun_prop
   have h : ∀ᶠ Tg in 𝓝 0, 0 < M + D * Tg := (hc.tendsto' 0 M (by simp)).eventually_const_lt hM
   filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with Tg h1 (h2 : 0 < Tg)
-  exact ((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz
-    (P := .globallyExponentiallyStable) (Or.inl trivial)
-    (x := (⟨M, D, K, Tg, hM, h2⟩ : Model))).symm.trans
-    ((mem_den_iff_reduce ⟨M, D, K, Tg, hM, h2⟩ (P := .globallyExponentiallyStable) (Or.inl trivial)
-      h1).trans (connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz
-        (P := .globallyExponentiallyStable) (Or.inl trivial)
-        (x := (⟨M, D, K, hM⟩ : ReducedModel)))))
+  rw [isHurwitz_plant_iff hM h2, isHurwitz_reducedPlant_iff hM]
+  exact ⟨fun h' => h'.2, fun h' => ⟨h1, h'⟩⟩
 
 /-- The rate margin of the swing + governor model: `A + aI` Hurwitz iff
 `T_g (2 a M − D) < M` and `0 < K_R + D − a M + a T_g (a M − D)`. -/
 @[tmio M, powerlib_domain] theorem rateMargin_iff (hM : 0 < M) (hTg : 0 < Tg) (a : ℝ) :
-    connection% ((⟨M, D, K, Tg, hM, hTg⟩ : Model) ∈ realize Meets {.rate a} ↔
+    connection% ((⟨M, D, K, Tg, hM, hTg⟩ : Model) ∈ realize family.meets {.rate a} ↔
       Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D)) := by
   unfold TMIO.Statement
-  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  rw [(connection_proof% Spectral.mem_realize_singleton)]
   change Linear.RateMargin (plant M D K Tg).A a ↔
       Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D)
   unfold Linear.RateMargin
@@ -1068,32 +975,28 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
   have h1 := hc1.tendsto' 0 0 (by simp)
   have h2 := hc2.tendsto' 0 (K + D - a * M) (by simp)
   have e1 : ∀ᶠ Tg in 𝓝 0, Tg * (2 * a * M - D) < M := h1.eventually_lt_const hM
+  have hrm : ∀ Tg (h3 : 0 < Tg), Linear.RateMargin (plant M D K Tg).A a ↔
+      Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D) := fun Tg h3 =>
+    (Spectral.mem_realize_singleton (meets := family.meets)
+      (x := (⟨M, D, K, Tg, hM, h3⟩ : Model))).symm.trans
+      (rateMargin_iff (D := D) (K := K) hM h3 a)
   rcases lt_or_gt_of_ne ha with hlt | hgt
   · have e2 : ∀ᶠ Tg in 𝓝 0, 0 < K + D - a * M + a * Tg * (a * M - D) :=
       h2.eventually_const_lt (by linarith)
     filter_upwards [nhdsWithin_le_nhds e1, nhdsWithin_le_nhds e2, self_mem_nhdsWithin]
       with Tg h1 h2 (h3 : 0 < Tg)
-    rw [(show Linear.RateMargin (plant M D K Tg).A a ↔ Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D) from
-      (connection_proof% Spectral.mem_realize_singleton (meets := Meets) (x := (⟨M, D, K, Tg, hM, h3⟩ : Model))).symm.trans (rateMargin_iff (D := D) (K := K) hM h3 a)), reduced_rateMargin_iff hM]
+    rw [hrm Tg h3, reduced_rateMargin_iff hM]
     exact iff_of_true ⟨h1, h2⟩ hlt
   · have e2 : ∀ᶠ Tg in 𝓝 0, K + D - a * M + a * Tg * (a * M - D) < 0 :=
       h2.eventually_lt_const (by linarith)
     filter_upwards [nhdsWithin_le_nhds e2, self_mem_nhdsWithin] with Tg h2 (h3 : 0 < Tg)
-    rw [(show Linear.RateMargin (plant M D K Tg).A a ↔ Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D) from
-      (connection_proof% Spectral.mem_realize_singleton (meets := Meets) (x := (⟨M, D, K, Tg, hM, h3⟩ : Model))).symm.trans (rateMargin_iff (D := D) (K := K) hM h3 a)), reduced_rateMargin_iff hM]
+    rw [hrm Tg h3, reduced_rateMargin_iff hM]
     exact iff_of_false (fun h => by linarith [h.2]) (by linarith)
 
 /-! ### The first-order family and the connection conclusions of the limit -/
 
 @[tmio M, powerlib_domain] theorem reduce_plant (m : Model) :
     m.reduce.plant = reducedPlant m.M m.D m.K := rfl
-
-/-- No first-order model is both stable and unstable. -/
-@[tmio M, powerlib_domain] theorem reduced_realize_univ :
-    connection% (realize ReducedMeets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.realize_univ_eq_empty_of .stable .unstable fun r (h1 : 0 < r.K + r.D)
-    (h2 : r.K + r.D < 0) => absurd (lt_trans h1 h2) (lt_irrefl _)
 
 @[tmio TM, powerlib_domain] private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
     connection% (r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D) := by
@@ -1105,30 +1008,19 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
   change Flow.Decay (affineLinearVectorField r.plant.A 0) 0 a ↔ _
   rw [hA, Linear.decay_scalar_iff, le_div_iff₀ r.M_pos]
 
-/-- The first-order translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM, powerlib_domain] private theorem reducedTranslate_eq_linearTable (s : Sentence) :
-    connection% (generate (cover (table reducedTranslate)) {s} =
-      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
-  unfold TMIO.Statement
-  rw [TMIO.image_table_singleton]
-  rcases s with P | _ | _
-  · cases P <;> rfl
-  · rfl
-  · rfl
-
-/-- Every translation of the first-order family is sound (the linear table,
-`Spectral.chain_le_semantics_of_linearTable_univ`). -/
+/-- Every translation of the first-order family is sound (the linear table of the rate language,
+`Spectral.chain_le_semantics_of_linearTable_univ`: `rate a` is the exact, non-strict, decay
+condition, `reduced_mem_den_decay_iff`). -/
 @[tmio TM, powerlib_domain] theorem reduced_chain_le_semantics :
     connection% (∀ P, reducedFamily.chain P ≤ reducedFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.chain_le_semantics_of_linearTable_univ (F := reducedFamily)
-    reducedFamily_isLinear
-    (fun s => (connection_proof% TMIO.image_table_singleton reducedTranslate s).symm.trans
-      (connection_proof% reducedTranslate_eq_linearTable s))
-    (fun r hm => (((connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (reduced_isHurwitz_iff r.M_pos))).mpr ((mem_realize _ _ _).mp hm .stable rfl))
-    (fun r hm => ?_) fun a r hm => (reduced_mem_den_decay_iff r a).2
-      ((mem_realize _ _ _).mp hm (.rate a) rfl)
-  have hu : r.K + r.D < 0 := (mem_realize _ _ _).mp hm .unstable rfl
+  have hm1 {r q} :=
+    (Spectral.mem_realize_singleton (meets := reducedFamily.meets) (x := r) (q := q)).mp
+  refine Spectral.chain_le_semantics_of_linearTable_univ (F := reducedFamily) (Rs := {.stable})
+    (Ru := {.unstable}) (Rd := fun a => {.rate a}) reducedFamily_isLinear (fun _ => rfl)
+    (fun r hm => (isHurwitz_reducedPlant_iff r.M_pos).2 (hm1 (q := .stable) hm))
+    (fun r hm => ?_) fun a r hm => (reduced_mem_den_decay_iff r a).2 (hm1 (q := .rate a) hm)
+  have hu : r.K + r.D < 0 := hm1 (q := .unstable) hm
   refine ⟨((-(r.K + r.D) / r.M : ℝ) : ℂ), ?_, ?_⟩
   · simp [ReducedModel.plant, reducedPlant, firstOrderModel, Linear.characteristicMatrix]
   · simp only [Complex.ofReal_re]
@@ -1140,10 +1032,8 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (reducedFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.exact_of_linearTable (F := reducedFamily) reducedFamily_isLinear
-    (fun s => (connection_proof% TMIO.image_table_singleton reducedTranslate s).symm.trans
-      (connection_proof% reducedTranslate_eq_linearTable s))
-    (fun r => Spectral.mem_realize_singleton.trans (((connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (reduced_isHurwitz_iff r.M_pos))).symm) hP
+  exact Spectral.exact_of_rate reducedFamily_isLinear rfl
+    (fun r => (isHurwitz_reducedPlant_iff r.M_pos).symm) hP
 
 /-- The first-order decay translation is exact at every rate: the model decays at the rate `a`
 exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
@@ -1152,9 +1042,10 @@ exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
   unfold powerlib.TMIO.Statement
   unfold Family.Exact
   ext r
-  change r ∈ realize ReducedMeets {.rate a} ↔ _
-  rw [(connection_proof% reduced_mem_den_decay_iff)]
-  simp [mem_realize, ReducedMeets]
+  change r ∈ realize reducedFamily.meets {.rate a} ↔ _
+  rw [(connection_proof% reduced_mem_den_decay_iff),
+    (connection_proof% Spectral.mem_realize_singleton)]
+  rfl
 
 /-- With nonnegative damping the reduction preserves the attractive sentences for every `T_g`. -/
 @[tmio TM, powerlib_domain] theorem mem_den_iff_reduce_of_nonneg (m : Model) {P : Flow.Property}
@@ -1172,7 +1063,7 @@ exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
   refine ⟨⟨1, -1, 2, 2, one_pos, two_pos⟩, ?_, ?_⟩
   · exact mem_den_unstable ⟨1, -1, 2, 2, one_pos, two_pos⟩ (Or.inr (by norm_num))
   · rw [reducedFamily_isLinear.den_hurwitz (Or.inl (by simp))]
-    exact (((connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (reduced_isHurwitz_iff one_pos))).2 (by change (0 : ℝ) < 2 + -1; norm_num)
+    exact (isHurwitz_reducedPlant_iff (D := -1) (K := 2) one_pos).2 (by norm_num)
 
 /-- The slow root bounds every decay rate: if `−a < λ_s` (real roots, `M + D T_g + √disc ≠ 0`),
 the model does not decay at the rate `a` (its slow eigenmode decays like `e^{λ_s t}`). -/
