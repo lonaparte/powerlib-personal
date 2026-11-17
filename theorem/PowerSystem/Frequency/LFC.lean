@@ -60,18 +60,18 @@ Family and connection conclusions.
   deviation coordinates about it is the zero-input field; so the flow sentences about the origin
   are exactly the sentences about the non-interactive steady state of every constant load
   (`Linear.holds_input_iff`, `Flow.Property.holds_shift_iff`).
-* Requirements (static): `hurwitz` (the state matrix is Hurwitz), `rhpRoot` (a characteristic
+* Requirements (static): the rate language `Spectral.RateRequirement` read on the state matrix
+  (`Spectral.MeetsMatrix`): `stable` (the state matrix is Hurwitz), `unstable` (a characteristic
   root in the open right half plane), `rate a` (`Linear.RateMargin`). Lyapunov stability and the
-  attractive sentences translate into `hurwitz`, instability into `rhpRoot`, decay into its
+  attractive sentences translate into `stable`, instability into `unstable`, decay into its
   margin; conservation and passivity into the whole (inconsistent) language.
 * Connection theorems: `chain_le_semantics`, `exact_hurwitz`,
   `mem_den_globallyExponentiallyStable` (Hurwitz premise) and the same three for the
   seven-state family (`chain_le_semantics7`, `exact_hurwitz7`,
   `mem_den_globallyExponentiallyStable7`).
-* The matrix requirement language (`MeetsMatrix`) and its soundness and exactness for any linear
-  family read through it (`sound_of_meetsMatrix`, `exact_of_meetsMatrix`, instances of the linear
-  table `Spectral.chain_le_semantics_of_linearTable_univ`, `Spectral.exact_of_linearTable` of
-  `theorem/Spectral/LinearNamed.lean`) are generic foundation, reused by the multi-area family of
+* Soundness and exactness are the generic rate laws `Spectral.chain_le_semantics_of_rate`,
+  `Spectral.exact_of_rate` and `Spectral.realize_univ_of_rate` of
+  `theorem/Spectral/LinearNamed.lean`, also used by the multi-area family of
   `Frequency.LFCNetwork`.
 * Static evidence: `isEquilibrium_iff`, `steadyState_isEquilibrium`, `plant7_isEquilibrium_iff`,
   `plant7_steadyState_isEquilibrium`. Private implementation evidence (trajectory level, Rules
@@ -371,113 +371,49 @@ structure Model7 where
 /-- The seven-state plant of a model. -/
 def Model7.plant (m : Model7) : Linear.Plant 7 2 := LFC.plant7 m.a m.b m.ωs m.T
 
-/-- Requirements on the state matrix of an LFC plant, all static. -/
-inductive Requirement
-  /-- The state matrix is Hurwitz. -/
-  | hurwitz
-  /-- A characteristic root in the open right half plane. -/
-  | rhpRoot
-  /-- A strict spectral margin at the rate `a`. -/
-  | rate (a : ℝ)
+/-- Requirements on the state matrix of an LFC plant, all static: the rate language of
+`theorem/Spectral/LinearNamed.lean` read on the state matrix (`Spectral.MeetsMatrix`): `stable`
+(the state matrix is Hurwitz), `unstable` (a characteristic root in the open right half plane),
+`rate a` (a strict spectral margin at the rate `a`). -/
+abbrev Requirement := Spectral.RateRequirement
 
-/-- Satisfaction of a requirement by a state matrix. -/
-def MeetsMatrix {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ) : Requirement → Prop
-  | .hurwitz => IsHurwitz A
-  | .rhpRoot => ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re
-  | .rate a => Linear.RateMargin A a
-
-/-- The translation of the sentences: Lyapunov stability, the attractive sentences and sampled
-contraction into `hurwitz`, instability into `rhpRoot`, a decay rate into its margin.
-Conservation and passivity are translated into the whole language, which no model meets
-(unavailable translation coverage, not a usable translation). -/
-def translate : Sentence → Set Requirement
-  | .flow .unstable => {.rhpRoot}
-  | .flow (.decay a) => {.rate a}
-  | .flow .conservative => Set.univ
-  | .flow _ => {.hurwitz}
-  | .passive => Set.univ
-  | .envelope _ => ∅
+/-- The translation of the sentences (`Spectral.rateTranslate`): Lyapunov stability, the
+attractive sentences and sampled contraction into `stable`, instability into `unstable`, a decay
+rate into its margin. Conservation and passivity are translated into the whole language, which no
+model meets (unavailable translation coverage, not a usable translation). -/
+abbrev translate : Sentence → Set Requirement := Spectral.rateTranslate
 
 /-- The five-state LFC family: every model read as the port system of its plant (area loads in,
 area frequencies out). -/
 def family : Family Model Requirement 5 2 :=
-  ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
+  ⟨fun m => m.plant.system, fun m => Spectral.MeetsMatrix m.plant.A, translate⟩
 
 /-- The seven-state LFC family. -/
 def family7 : Family Model7 Requirement 7 2 :=
-  ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
+  ⟨fun m => m.plant.system, fun m => Spectral.MeetsMatrix m.plant.A, translate⟩
 
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 @[tmio M, powerlib_domain] theorem family7_isLinear : family7.IsLinear Model7.plant := fun _ => rfl
 
-/-- A matrix is not both Hurwitz and with a right-half-plane root. -/
-@[tmio M, powerlib_foundation] theorem meetsMatrix_univ {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
-    (h : ∀ q, MeetsMatrix A q) : False := by
-  obtain ⟨s, hs, hre⟩ : MeetsMatrix A .rhpRoot := h .rhpRoot
-  have := (Linear.spectrallyStable_iff_isHurwitz A).2 (h .hurwitz) s hs
-  linarith
-
 /-- No five-state model meets every requirement. -/
 @[tmio M, powerlib_domain] theorem realize_univ :
     connection% (realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
+  exact Spectral.realize_univ_of_rate (plant := fun m => m.plant) (fun _ h => h) (fun _ h => h)
 
 /-- No seven-state model meets every requirement. -/
 @[tmio M, powerlib_domain] theorem realize_univ7 :
     connection% (realize family7.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
-
-/-- The LFC translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-@[tmio TM, powerlib_domain] private theorem translate_eq_linearTable (s : Sentence) :
-    connection% (generate (cover (table translate)) {s} =
-      Spectral.linearTable {.hurwitz} {.rhpRoot} univ univ (fun a => {.rate a}) s) := by
-  unfold TMIO.Statement
-  rw [TMIO.image_table_singleton]
-  rcases s with P | _ | _
-  · cases P <;> rfl
-  · rfl
-  · rfl
-
-/-- Soundness of the matrix requirements for any linear family read through `MeetsMatrix`
-(generic: an arbitrary family with an arbitrary plant map); the instance of
-`Spectral.chain_le_semantics_of_linearTable_univ`. -/
-@[tmio TM, powerlib_foundation] theorem sound_of_meetsMatrix {X : Type*} {n p : ℕ}
-    {F : Family X Requirement n p}
-    {plant : X → Linear.Plant n p} (hF : F.IsLinear plant)
-    (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate) :
-    connection% (∀ P, F.chain P ≤ F.semantics P) := show ∀ P, F.chain P ≤ F.semantics P from
-  Spectral.chain_le_semantics_of_linearTable_univ (Rs := {.hurwitz}) (Ru := {.rhpRoot})
-    (Rd := fun a => {.rate a}) hF (fun s => by
-      rw [htr]
-      simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq_linearTable s)
-    (fun x hx => (hmeets x .hurwitz).1 ((mem_realize _ _ _).mp hx _ rfl))
-    (fun x hx => (hmeets x .rhpRoot).1 ((mem_realize _ _ _).mp hx _ rfl))
-    fun a x hx => hF.mem_den_decay_of_rateMargin
-      ((hmeets x (.rate a)).1 ((mem_realize _ _ _).mp hx _ rfl))
-
-/-- Exactness of the Hurwitz requirement for the attractive sentences and sampled contraction,
-for any linear family read through `MeetsMatrix` (generic); the instance of
-`Spectral.exact_of_linearTable`. -/
-@[tmio TM, powerlib_foundation] theorem exact_of_meetsMatrix {X : Type*} {n p : ℕ}
-    {F : Family X Requirement n p}
-    {plant : X → Linear.Plant n p} (hF : F.IsLinear plant)
-    (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate)
-    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (F.Exact (.flow P)) := show F.Exact (.flow P) from
-  Spectral.exact_of_linearTable (Rs := {.hurwitz}) (Ru := {.rhpRoot}) (Rd := fun a => {.rate a})
-    hF (fun s => by
-      rw [htr]
-      simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq_linearTable s)
-    (fun x => by simp [mem_realize, hmeets, MeetsMatrix]) hP
+  exact Spectral.realize_univ_of_rate (plant := fun m => m.plant) (fun _ h => h) (fun _ h => h)
 
 /-- Every translation of the five-state LFC family is sound. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact sound_of_meetsMatrix family_isLinear (fun _ _ => Iff.rfl) rfl
+  exact Spectral.chain_le_semantics_of_rate family_isLinear rfl (fun _ h => h) (fun _ h => h)
+    fun _ _ h => h
 
 /-- The attractive sentences and sampled contraction of the five-state family are translated
 exactly by the Hurwitz property of the state matrix. -/
@@ -485,7 +421,7 @@ exactly by the Hurwitz property of the state matrix. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_of_meetsMatrix family_isLinear (fun _ _ => Iff.rfl) rfl hP
+  exact Spectral.exact_of_rate family_isLinear rfl (fun _ => Iff.rfl) hP
 
 /-- With a Hurwitz state matrix (explicit premise) the five-state model is globally
 exponentially stable; in deviation coordinates this is the exponential convergence of every
@@ -501,7 +437,8 @@ trajectory under constant loads to the non-interactive steady state. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics7 :
     connection% (∀ P, family7.chain P ≤ family7.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact sound_of_meetsMatrix family7_isLinear (fun _ _ => Iff.rfl) rfl
+  exact Spectral.chain_le_semantics_of_rate family7_isLinear rfl (fun _ h => h) (fun _ h => h)
+    fun _ _ h => h
 
 /-- The attractive sentences and sampled contraction of the seven-state family are translated
 exactly by the Hurwitz property of the state matrix. -/
@@ -509,7 +446,7 @@ exactly by the Hurwitz property of the state matrix. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family7.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_of_meetsMatrix family7_isLinear (fun _ _ => Iff.rfl) rfl hP
+  exact Spectral.exact_of_rate family7_isLinear rfl (fun _ => Iff.rfl) hP
 
 /-- Seven-state model: Hurwitz premise ⇒ global exponential stability (convergence to the
 steady state in deviation coordinates). -/

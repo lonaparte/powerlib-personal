@@ -11,24 +11,28 @@ the port input (allowed to be time-varying along trajectories, `u(t) = δω(t)`)
 real, `h` an arbitrary phase-detector characteristic with a chosen primitive `V`, `V' = −h`.
 No current loop, LC, line, outer loop, saturation, delay or PWM dynamics (they are eliminated
 in the form-B reduction, which is not formalized here). Power sign: `u y` is the power entering
-through the port (incoming-positive, matching `theorem/PH/Nonlinear.lean`). Related
-port-Hamiltonian constructions of the PI-PLL: `theorem/GridTiedConverter/PLL/PH.lean` (SRF detector
-`h = −V sin`, family `PLLPH.family`) and `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`
-(`pHModel` of the reduced 2-state GFL-PLL, detector `h(θ) = c₀ − A sin(θ + φ)`).
+through the port (incoming-positive, matching `theorem/PH/Nonlinear.lean`). Instances:
+`theorem/GridTiedConverter/PLL/PH.lean` (`pllPH`, SRF detector `h = −V sin`, family
+`PLLPH.family`) and `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean` (`pHModel` of the reduced
+2-state GFL-PLL, detector `h(θ) = c₀ − A sin(θ + φ)`).
 
 Source: work-sync `theory/T-gfl-ph.md` (1.1)–(1.4), §1.2 "复用 [[T-pll-ph]] 的所有结构性结论",
 §1.3 bare-PLL degeneration; parent `theory/T-ph.md` assumption 3.
 
 Results.
-pH data (T-gfl-ph (1.2)): `H(θ, η) = V(θ) + (K_i / 2) η²`, `∇H = (−h(θ), K_i η)`,
+pH data (T-gfl-ph (1.2)), with an integrator set point `η*` (T-pll-ph (1.3)):
+`H(θ, η) = V(θ) + (K_i / 2)(η − η*)²` (`PLL.piPLLEnergy`), `∇H = (−h(θ), K_i (η − η*))`,
 `J = [[0, 1], [−1, 0]]` (`pllJ`), `R = diag(K_p, 0) ⪰ 0` (`pllR`, `pllR_posSemidef`),
-`B = (−1, 0)ᵀ` (`pllB`), output `y = Bᵀ ∇H = h(θ)`. The three matrices are those of every PI-PLL
-pH model of the library (`PLL.pllPH`, `GFL.Noise`).
-* `gflPH_field`: `(J − R) ∇H + B δω` is exactly the PI-PLL field.
-* `piPLL_energy_rate`: for any `h` and any `V` with `V′ = −h` at `θ` (a local primitive),
-  `H = V(θ) + (K_i / 2) η²` has `Ḣ = −K_p h(θ)² + h(θ) δω` along the PI-PLL field;
-  `gflPH_power_balance`: the same for the pH model at every state and input.
-* `gflPH_trajectory_energy` (private): the same along every input/state solution.
+`B = (−1, 0)ᵀ` (`pllB`), output `y = Bᵀ ∇H = h(θ)`. Every PI-PLL pH model of the library is this
+model: the SRF-PLL `PLL.pllPH` (`theorem/GridTiedConverter/PLL/PH.lean`, `h = srfPD V`), the reduced
+GFL-PLL `GFL.LCLine.Params.pHModel` and the form-B model `formBPHModel`; `GFL.Noise` uses the same
+matrices.
+* `gflPH_field`: `(J − R) ∇H + B u` is exactly the PI-PLL field with offset `K_i η* + u`;
+  `gflPH_zeroInputField`: under zero input, the PI-PLL with offset `K_i η*`.
+* `gflPH_output`, `gflPH_supply`, `gflPH_dampingPower`: `y = h(θ)`, `u y = h(θ) u`,
+  `∇Hᵀ R ∇H = K_p h(θ)²`. The energy rate `Ḣ = −K_p h(θ)² + h(θ)(δω − K_i η*)` is the PI-PLL's
+  `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLL.lean`), for any local primitive.
+* `gflPH_trajectory_energy` (private): the energy rate along every input/state solution.
 * Form-B characteristic `h = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ]`
   (`formBH`), its potential (1.4) (`formBPotential`, proved to be a primitive of `−h` and equal to
   `−∫₀^θ h`), and the fact that for `c₀ ≠ 0` the Hamiltonian is **unbounded below**
@@ -41,8 +45,8 @@ Family and connection conclusions.
 No family is defined here (and none may take
 `PH.NonlinearModel` itself as its model type): the autonomous behaviour of this model with
 constant `δω` is the PI-PLL family `PLL.PIPLL.family` (`gflPH_field` identifies the fields). The
-field identity (`gflPH_field`), the pointwise energy rate and power
-balance (`piPLL_energy_rate`, `gflPH_power_balance`) and the unboundedness of the form-B Hamiltonian
+field identities (`gflPH_field`, `gflPH_zeroInputField`), the port quantities and the
+unboundedness of the form-B Hamiltonian
 (`formBHamiltonian_not_bddBelow`) are static evidence on the model, not connection conclusions;
 the energy identity along solutions (`gflPH_trajectory_energy`) and the failure of passivity with
 the particular storages `H − c` (`formB_not_passiveWithStorage`, a statement about one storage,
@@ -76,102 +80,73 @@ def pllB : Matrix (Fin 2) (Fin 1) ℝ := !![-1; 0]
   rw [pllR, Matrix.posSemidef_diagonal_iff]
   intro i; fin_cases i <;> simp [hKp]
 
-/-- The port-Hamiltonian model of the reduced PI-PLL with phase detector `h` and a primitive `V`
-of `−h`. -/
-def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki : ℝ) (hKp : 0 ≤ Kp) :
+/-- The port-Hamiltonian model of the reduced PI-PLL with phase detector `h`, a primitive `V`
+of `−h` and integrator set point `η*`: `H = piPLLEnergy V K_i η* = V(θ) + (K_i / 2)(η − η*)²`. -/
+def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) :
     PH.NonlinearModel 2 1 where
   J := fun _ => pllJ
   R := fun _ => pllR Kp
   g := fun _ => pllB
-  H := fun x => V (x 0) + Ki / 2 * x 1 ^ 2
-  dH := fun x => PhasePlane.mk (-h (x 0)) (Ki * x 1)
+  H := piPLLEnergy V Ki ηs
+  dH := fun x => PhasePlane.mk (-h (x 0)) (Ki * (x 1 - ηs))
   skew := fun _ => PH.transpose_symplectic_two
   dissipation_posSemidef := fun _ => pllR_posSemidef hKp
-  hasGradient := by
-    intro x
-    set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
-    set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
-    have h0 : HasFDerivAt (fun z : State 2 => z 0) π0 x := π0.hasFDerivAt
-    have h1 : HasFDerivAt (fun z : State 2 => z 1) π1 x := π1.hasFDerivAt
-    have hp := (hV (x 0)).comp_hasFDerivAt x h0
-    have hq := (h1.pow 2).const_mul (Ki / 2)
-    have hH := hp.add hq
-    refine PH.hasGradientAt_of_hasFDerivAt hH ?_
-    intro v
-    simp [π0, π1, dotProduct, Fin.sum_univ_two, PhasePlane.mk]
-    ring
+  hasGradient := fun x => PH.hasGradientAt_of_hasFDerivAt (hasFDerivAt_piPLLEnergy (hV (x 0)))
+    (fun v => by simp [dotProduct, Fin.sum_univ_two, PhasePlane.mk])
 
-variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki : ℝ} {hKp : 0 ≤ Kp}
+variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki ηs : ℝ} {hKp : 0 ≤ Kp}
 
-@[tmio M, simp, powerlib_domain] theorem gflPHModel_H (x : State 2) :
-    (gflPHModel h V hV Kp Ki hKp).H x = V (x 0) + Ki / 2 * x 1 ^ 2 := rfl
+@[tmio M, simp, powerlib_domain] theorem gflPHModel_H :
+    (gflPHModel h V hV Kp Ki ηs hKp).H = piPLLEnergy V Ki ηs := rfl
 
-/-- `(J − R) ∇H + B δω` equals the PI-PLL field: T-gfl-ph (1.1) ⇔ (1.2).
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem gflPH_field (x : State 2) (δω : ℝ) :
-    (gflPHModel h V hV Kp Ki hKp).field x ![δω] = piPLLField h Kp Ki δω x := by
+/-- `(J − R) ∇H + B u` equals the PI-PLL field with offset `K_i η* + u`: T-gfl-ph (1.1) ⇔ (1.2)
+(T-pll-ph (1.3) for the SRF detector). Static evidence on the model, not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem gflPH_field (x : State 2) (u : ℝ) :
+    (gflPHModel h V hV Kp Ki ηs hKp).field x ![u] = piPLLField h Kp Ki (Ki * ηs + u) x := by
   rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.field, gflPHModel, pllJ, pllR, pllB, PhasePlane.mk, Matrix.mulVec,
     dotProduct, Fin.sum_univ_two]
-  constructor
+  ring
+
+/-- Under zero input the pH model with set point `η*` is the PI-PLL with the constant offset
+`K_i η*`. -/
+@[tmio M, powerlib_domain] theorem gflPH_zeroInputField :
+    (gflPHModel h V hV Kp Ki ηs hKp).zeroInputField = piPLLField h Kp Ki (Ki * ηs) := by
+  funext x
+  have h0 : (0 : Fin 1 → ℝ) = ![0] := by ext i; fin_cases i; rfl
+  rw [PH.NonlinearModel.zeroInputField, h0, gflPH_field, add_zero]
 
 /-- The output is the phase-detector signal `y = h(θ)`. -/
 @[tmio M, powerlib_domain] theorem gflPH_output (x : State 2) :
-    (gflPHModel h V hV Kp Ki hKp).output x = ![h (x 0)] := by
+    (gflPHModel h V hV Kp Ki ηs hKp).output x = ![h (x 0)] := by
   ext i
   fin_cases i
   simp [PH.NonlinearModel.output, gflPHModel, pllB, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two]
 
 @[tmio M, powerlib_domain] theorem gflPH_supply (x : State 2) (δω : ℝ) :
-    (gflPHModel h V hV Kp Ki hKp).supply x ![δω] = h (x 0) * δω := by
+    (gflPHModel h V hV Kp Ki ηs hKp).supply x ![δω] = h (x 0) * δω := by
   simp [PH.NonlinearModel.supply, gflPH_output, dotProduct]
   ring
 
+/-- Damping power `∇Hᵀ R ∇H = K_p h(θ)²`. -/
 @[tmio M, powerlib_domain] theorem gflPH_dampingPower (x : State 2) :
-    (gflPHModel h V hV Kp Ki hKp).dampingPower x = Kp * h (x 0) ^ 2 := by
+    (gflPHModel h V hV Kp Ki ηs hKp).dampingPower x = Kp * h (x 0) ^ 2 := by
   simp [PH.NonlinearModel.dampingPower, gflPHModel, pllR, PhasePlane.mk, Matrix.mulVec,
     dotProduct, Fin.sum_univ_two, Matrix.diagonal]
   ring
-
-/-- **Energy rate of the PI-PLL** (T-gfl-ph §1.2), pointwise, for every phase-detector
-characteristic `h` and every gain: where `V′ = −h` at `θ` (a local primitive suffices, e.g. the
-potential of the constant-power layer of `theorem/GridTiedConverter/GFL/LCLine/FullModelDC.lean`,
-defined where its discriminant is nonnegative), the energy `H = V(θ) + (K_i / 2) η²` changes
-along the PI-PLL field with input `δω` at the rate `Ḣ = −K_p h(θ)² + h(θ) δω`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem piPLL_energy_rate {h V : ℝ → ℝ} (Kp Ki δω : ℝ) {x : State 2}
-    (hV : HasDerivAt V (-h (x 0)) (x 0)) :
-    fderiv ℝ (fun z : State 2 => V (z 0) + Ki / 2 * z 1 ^ 2) x (piPLLField h Kp Ki δω x) =
-      -(Kp * h (x 0) ^ 2) + h (x 0) * δω := by
-  set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
-  set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
-  have h0 : HasFDerivAt (fun z : State 2 => z 0) π0 x := π0.hasFDerivAt
-  have h1 : HasFDerivAt (fun z : State 2 => z 1) π1 x := π1.hasFDerivAt
-  have hH : HasFDerivAt (fun z : State 2 => V (z 0) + Ki / 2 * z 1 ^ 2)
-      (-h (x 0) • π0 + (Ki / 2) • (2 • x 1 ^ (2 - 1)) • π1) x :=
-    (hV.comp_hasFDerivAt x h0).add ((h1.pow 2).const_mul (Ki / 2))
-  rw [hH.fderiv]
-  simp [π0, π1, piPLLField]
-  ring
-
-/-- Energy balance `Ḣ = −K_p h² + h δω` of the pH model (T-gfl-ph §1.2), pointwise
-(`piPLL_energy_rate`). Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem gflPH_power_balance (x : State 2) (δω : ℝ) :
-    fderiv ℝ (gflPHModel h V hV Kp Ki hKp).H x (piPLLField h Kp Ki δω x) =
-      -(Kp * h (x 0) ^ 2) + h (x 0) * δω :=
-  piPLL_energy_rate Kp Ki δω (hV (x 0))
 
 /-- Along every input/state solution on a time set `s` (input `u(t) = (δω(t))`):
 `d/dt H(x(t)) = −K_p h(θ(t))² + h(θ(t)) δω(t)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem gflPH_trajectory_energy {u : ℝ → (Fin 1 → ℝ)}
     {x : ℝ → State 2} {s : Set ℝ}
-    (hx : IsIntegralCurveOn x (fun t y => (gflPHModel h V hV Kp Ki hKp).field y (u t)) s)
+    (hx : IsIntegralCurveOn x (fun t y => (gflPHModel h V hV Kp Ki ηs hKp).field y (u t)) s)
     {t : ℝ} (ht : t ∈ s) :
-    HasDerivWithinAt (fun τ => (gflPHModel h V hV Kp Ki hKp).H (x τ))
+    HasDerivWithinAt (fun τ => (gflPHModel h V hV Kp Ki ηs hKp).H (x τ))
       (-(Kp * h ((x t) 0) ^ 2) + h ((x t) 0) * u t 0) s t := by
-  have hd := (gflPHModel h V hV Kp Ki hKp).trajectory_energy_derivative hx ht
+  have hd := (gflPHModel h V hV Kp Ki ηs hKp).trajectory_energy_derivative hx ht
   have hu : u t = ![u t 0] := by
     ext i
     fin_cases i
@@ -246,7 +221,7 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
 /-- The form-B pH model with the potential (1.4). -/
 def formBPHModel (ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 :=
   gflPHModel (formBH ωg Cf c₀ c₁ c₂ c₃ c₄) (formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄)
-    (hasDerivAt_formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄) Kp Ki hKp
+    (hasDerivAt_formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄) Kp Ki 0 hKp
 
 /-- For `c₀ ≠ 0` the form-B Hamiltonian is unbounded below (it contains `−c₀θ/(ω_g C_f)`).
 Static evidence on the model, not a connection conclusion. -/
@@ -295,7 +270,8 @@ Static evidence on the model, not a connection conclusion. -/
     field_simp
     ring
   have h1 := hc (PhasePlane.mk θ 0)
-  simp only [formBPHModel, gflPHModel_H, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one] at h1
+  simp only [formBPHModel, gflPHModel_H, piPLLEnergy, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one] at h1
   have h2 := hbound θ
   nlinarith
 

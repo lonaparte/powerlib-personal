@@ -37,8 +37,9 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/dc-link-dyna
 `_idref_const_power`).
 
 Results.
-* `bridge_power_invariant` : `u = v_c + (R_f + jω L_f) i ⇒ u·i = v_c·i + R_f |i|²` (an identity
-  of reals; with the IN-positive current the bridge voltage is `u = v_c − (R_f + jω L_f) i`).
+* Bridge-power invariant: `u = v_c + (R_f + jω L_f) i ⇒ u·i = v_c·i + R_f |i|²` is the filter's
+  power identity `Passive.SeriesRLC.dq_power_identity` at `i' = 0` (with the IN-positive current
+  the bridge voltage is `u = v_c − (R_f + jω L_f) i`).
 * `bridgePower_qss` / `PbrAlg_eq` : on the quasi-steady set the absorbed bridge power is
   `P_br = (3/2)[−(R_f + R_g/Δ)(i_d*² + i_q*²) +
   (V_g/Δ)(i_d*((1 − b)cos θ − a sin θ) − i_q*((1 − b) sin θ + a cos θ))]`, a polynomial of degree
@@ -92,14 +93,6 @@ structure DCParams where
 
 /-- The DC-link capacitance. -/
 abbrev DCParams.Cdc (p : DCParams) : ℝ := p.dcLink.C
-
-/-- Bridge-power invariant: with `u = v_c + R_f i + ω L_f J i`, `u·i = v_c·i + R_f |i|²`
-(the `ω L_f` cross terms cancel in the dot product, `CurrentControl.bridgePower_decoupling`). -/
-@[tmio T, powerlib_foundation] theorem bridge_power_invariant (vd vq id iq Rf ωL : ℝ) :
-    (vd + Rf * id - ωL * iq) * id + (vq + Rf * iq + ωL * id) * iq =
-      (vd * id + vq * iq) + Rf * (id ^ 2 + iq ^ 2) := by
-  linear_combination
-    CurrentControl.bridgePower_decoupling (vd + Rf * id) (vq + Rf * iq) (-ωL) 1 id iq
 
 namespace Params
 
@@ -425,9 +418,9 @@ potential `V` has `V′ = −h_cp`, the energy `H = ½ K_i η² + V(θ)` satisfi
 @[tmio M, powerlib_domain] theorem cp_energy_rate_nonpos {hcp V : ℝ → ℝ} {Kp : ℝ} (Ki : ℝ)
     (hKp : 0 ≤ Kp) {y : State 2} (hV : HasDerivAt V (-hcp (y 0)) (y 0)) :
     fderiv ℝ (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) y (piPLLField hcp Kp Ki 0 y) ≤ 0 := by
-  have hH : (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) =
-      fun z => V (z 0) + Ki / 2 * z 1 ^ 2 := funext fun _ => add_comm _ _
-  rw [hH, piPLL_energy_rate Kp Ki 0 hV]
+  have hH : (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) = piPLLEnergy V Ki 0 :=
+    funext fun _ => by rw [piPLLEnergy, sub_zero, add_comm]
+  rw [hH, piPLL_energy_rate Kp Ki 0 0 hV, mul_zero, sub_self, mul_zero, add_zero]
   have := mul_nonneg hKp (sq_nonneg (hcp (y 0)))
   linarith
 

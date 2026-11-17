@@ -8,8 +8,9 @@ Frequency-domain modal algebra of cyclically symmetric three-phase lines.
 Model boundary.
 A three-phase line (no ground wires) whose per-unit-length matrices `R', L', G', C'` are 3 × 3,
 symmetric (reciprocity) and circulant (cyclic phase symmetry, e.g. a fully transposed line). Phases
-`a, b, c` in this order; the modal transformation is the power-invariant Clarke matrix `clarkePI` of
-`theorem/Transform/Park.lean` (rows `α, β, 0`). Frequency-domain algebra only.
+`a, b, c` in this order; the modal transformation is the power-invariant Clarke matrix
+`clarkePI = parkMatrix 0` of `theorem/Transform/Park.lean` (rows `α, β, 0`; orthogonal by
+`parkMatrix_mul_transpose`). Frequency-domain algebra only.
 
 Source: work-sync `theory/T-telegrapher-bergeron.md` §1.7, §1.7.1 ("三相对称线（`L', C'` 循环对称）：
 Karrenbauer / Clarke 变换是频率无关常数阵——直接 αβ0 三模独立").
@@ -60,7 +61,7 @@ def symCirc {R : Type*} [Ring R] (a b : R) : Matrix (Fin 3) (Fin 3) R := circula
 def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)
 
 @[tmio M, powerlib_domain] theorem clarkeC_mul_transpose : clarkeC * clarkeCᵀ = 1 := by
-  have h := clarkePI_mul_transpose
+  have h : clarkePI * clarkePIᵀ = 1 := parkMatrix_mul_transpose 0
   have : (clarkePI * clarkePIᵀ).map (algebraMap ℝ ℂ) = (1 : Matrix (Fin 3) (Fin 3) ℝ).map
       (algebraMap ℝ ℂ) := by rw [h]
   rw [Matrix.map_mul, Matrix.transpose_map, Matrix.map_one _ (map_zero _) (map_one _)] at this
@@ -72,12 +73,13 @@ def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)
 /-- The all-ones matrix is mapped to `diag(0, 0, 3)` (only the zero sequence sees it). -/
 @[tmio M, powerlib_domain] theorem clarkePI_ones :
     clarkePI * Matrix.of (fun _ _ => (1 : ℝ)) * clarkePIᵀ = diagonal ![0, 0, 3] := by
-  have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
-  have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
+  have h3 := sqrt3_sq
+  have h2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
   have h3' : (0 : ℝ) < Real.sqrt 3 := by positivity
   have h2' : (0 : ℝ) < Real.sqrt 2 := by positivity
+  rw [clarkePI_explicit]
   ext i j; fin_cases i <;> fin_cases j <;>
-    simp [clarkePI, Matrix.mul_apply, Fin.sum_univ_three, diagonal, Matrix.vecHead,
+    simp [Matrix.mul_apply, Fin.sum_univ_three, diagonal, Matrix.vecHead,
       Matrix.vecTail] <;>
     first | ring1 | (field_simp; nlinarith [h3, h2])
 

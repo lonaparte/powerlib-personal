@@ -12,7 +12,8 @@ Scope.
 * Probability theory, not an engineering result.
 * Finite parameter set `Θ` (`Fintype ι`), strictly positive prior `π` (`Σ π = 1`) and
   likelihood values `L θ = p(D | θ) > 0` at the observed data; evidence `Z = Σ π L`, posterior
-  `post = π L / Z`. `klSum` is the discrete relative entropy of
+  `post = π L / Z`: the partition sum and Gibbs vector of the prior with log-tilt `log L`
+  (`partitionSum`, `gibbsVec`). `klSum` is the discrete relative entropy of
   `theorem/Information/Finite.lean`. The Metropolis–Hastings chain is a stochastic matrix on `ι`.
 
 Source: work-sync theory/T-bayesian-inference.md §1.12 (information gain
@@ -22,8 +23,10 @@ Source: work-sync theory/T-bayesian-inference.md §1.12 (information gain
 gap `= KL(q ‖ p(θ|D))`.
 
 Results.
-* `kl_posterior_prior` — `KL(post ‖ π) = Σ post log L − log Z` (§1.12).
-* `elbo_add_kl` — `log Z = ELBO(q) + KL(q ‖ post)` for every probability vector `q`;
+* `finEvidence_eq`, `finPost_eq` — `Z = Σ π L`, `post = π L / Z`; the information gain
+  `KL(post ‖ π) = Σ post log L − log Z` (§1.12) is `Information.klSum_gibbsVec` at `g = log L`.
+* `elbo_add_kl` — `log Z = ELBO(q) + KL(q ‖ post)` for every `q` with `Σ q = 1` (the Gibbs
+  decomposition `Information.klSum_eq_klSum_gibbsVec_add_sub` at `g = log L`);
   `elbo_le_log_evidence`, `elbo_eq_log_evidence_iff`: `ELBO ≤ log Z` with equality iff
   `q = post` (§1.14 (b)).
 * `invariant_of_detailedBalance` — detailed balance `π_i P_ij = π_j P_ji` of a stochastic matrix
@@ -41,71 +44,52 @@ open Real Finset powerlib.Information
 
 variable {ι : Type*} [Fintype ι]
 
-/-- Evidence `Z = Σ_θ π(θ) L(θ)`. -/
-def finEvidence (p₀ L : ι → ℝ) : ℝ := ∑ i, p₀ i * L i
+/-- Evidence `Z = Σ_θ π(θ) L(θ)` for positive likelihoods: the partition sum of the prior with
+log-tilt `log L` (`Information.partitionSum`). -/
+abbrev finEvidence (p₀ L : ι → ℝ) : ℝ := partitionSum p₀ fun i => log (L i)
 
-/-- Posterior `π L / Z`. -/
-def finPost (p₀ L : ι → ℝ) (i : ι) : ℝ := p₀ i * L i / finEvidence p₀ L
+/-- Posterior `π L / Z` for positive likelihoods: the Gibbs vector of the prior with log-tilt
+`log L` (`Information.gibbsVec`); positivity, normalization and the information gain
+`KL(post ‖ π) = E_post[log L] − log Z` (§1.12) are `gibbsVec_pos`, `sum_gibbsVec`,
+`klSum_gibbsVec`. -/
+abbrev finPost (p₀ L : ι → ℝ) : ι → ℝ := gibbsVec p₀ fun i => log (L i)
 
 variable {p₀ L : ι → ℝ}
 
-@[tmio T, powerlib_foundation] theorem finEvidence_pos [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
-    (hL : ∀ i, 0 < L i) : 0 < finEvidence p₀ L :=
-  sum_pos (fun i _ => mul_pos (hp₀ i) (hL i)) univ_nonempty
+@[tmio T, powerlib_foundation] theorem finEvidence_eq [Nonempty ι] (hL : ∀ i, 0 < L i) :
+    finEvidence p₀ L = ∑ i, p₀ i * L i := by
+  simp only [finEvidence, partitionSum, exp_log (hL _)]
 
-@[tmio T, powerlib_foundation] theorem finPost_pos [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i)
-    (i : ι) : 0 < finPost p₀ L i :=
-  div_pos (mul_pos (hp₀ i) (hL i)) (finEvidence_pos hp₀ hL)
-
-@[tmio T, powerlib_foundation] theorem sum_finPost [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i) :
-    ∑ i, finPost p₀ L i = 1 := by
-  simp only [finPost, ← sum_div]
-  exact div_self (finEvidence_pos hp₀ hL).ne'
-
-/-- **Information gain (§1.12)**: `KL(post ‖ prior) = E_post[log L] − log Z`. -/
-@[tmio T, powerlib_foundation] theorem kl_posterior_prior [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
-    (hL : ∀ i, 0 < L i) :
-    klSum (finPost p₀ L) p₀ = ∑ i, finPost p₀ L i * log (L i) - log (finEvidence p₀ L) := by
-  have hZ := finEvidence_pos hp₀ hL
-  have h : ∀ i, finPost p₀ L i * log (finPost p₀ L i / p₀ i) =
-      finPost p₀ L i * log (L i) - finPost p₀ L i * log (finEvidence p₀ L) := by
-    intro i
-    rw [show finPost p₀ L i / p₀ i = L i / finEvidence p₀ L by
-      simp only [finPost]; field_simp [(hp₀ i).ne'],
-      log_div (hL i).ne' hZ.ne']
-    ring
-  simp only [klSum, h, sum_sub_distrib, ← sum_mul, sum_finPost hp₀ hL, one_mul]
+@[tmio T, powerlib_foundation] theorem finPost_eq [Nonempty ι] (hL : ∀ i, 0 < L i) (i : ι) :
+    finPost p₀ L i = p₀ i * L i / ∑ j, p₀ j * L j := by
+  rw [finPost, gibbsVec, exp_log (hL i), ← finEvidence, finEvidence_eq hL]
 
 /-- Evidence lower bound `ELBO(q) = Σ q log(π L) − Σ q log q`. -/
 def elbo (p₀ L q : ι → ℝ) : ℝ := ∑ i, q i * log (p₀ i * L i) - ∑ i, q i * log (q i)
 
 /-- **ELBO decomposition (§1.14 (b))**: `log Z = ELBO(q) + KL(q ‖ post)` for every probability
 vector `q` (`0 log 0 = 0`). -/
-@[tmio T, powerlib_foundation] theorem elbo_add_kl [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i)
-    {q : ι → ℝ} (hq1 : ∑ i, q i = 1) :
+@[tmio T, powerlib_foundation] theorem elbo_add_kl [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
+    (hL : ∀ i, 0 < L i) {q : ι → ℝ} (hq1 : ∑ i, q i = 1) :
     elbo p₀ L q + klSum q (finPost p₀ L) = log (finEvidence p₀ L) := by
-  have hZ := finEvidence_pos hp₀ hL
-  have h : ∀ i, q i * log (p₀ i * L i) - q i * log (q i) + q i * log (q i / finPost p₀ L i) =
-      q i * log (finEvidence p₀ L) := by
+  have h : ∀ i, q i * log (p₀ i * L i) - q i * log (q i) =
+      q i * log (L i) - q i * log (q i / p₀ i) := by
     intro i
     by_cases hqi : q i = 0
     · simp [hqi]
-    have hpl : 0 < p₀ i * L i := mul_pos (hp₀ i) (hL i)
-    rw [show q i / finPost p₀ L i = q i * finEvidence p₀ L / (p₀ i * L i) by
-      simp only [finPost]; field_simp,
-      log_div (mul_ne_zero hqi hZ.ne') hpl.ne', log_mul hqi hZ.ne']
+    rw [log_mul (hp₀ i).ne' (hL i).ne', log_div hqi (hp₀ i).ne']
     ring
-  have hs : elbo p₀ L q + klSum q (finPost p₀ L) =
-      ∑ i, (q i * log (p₀ i * L i) - q i * log (q i) + q i * log (q i / finPost p₀ L i)) := by
-    simp only [elbo, klSum, sum_add_distrib, sum_sub_distrib]
-  rw [hs]
-  simp only [h, ← sum_mul, hq1, one_mul]
+  have he : elbo p₀ L q = ∑ i, q i * log (L i) - klSum q p₀ := by
+    rw [elbo, ← sum_sub_distrib, sum_congr rfl fun i _ => h i, sum_sub_distrib, klSum]
+  rw [he, klSum_eq_klSum_gibbsVec_add_sub (g := fun i => log (L i)) hp₀ hq1]
+  ring
 
 /-- **`ELBO ≤ log p(D)`**. -/
 @[tmio T, powerlib_foundation] theorem elbo_le_log_evidence [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
     (hL : ∀ i, 0 < L i) {q : ι → ℝ} (hq : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1) :
     elbo p₀ L q ≤ log (finEvidence p₀ L) := by
-  have := klSum_nonneg hq (finPost_pos hp₀ hL) hq1 (sum_finPost hp₀ hL)
+  have := klSum_nonneg hq (gibbsVec_pos (g := fun i => log (L i)) hp₀) hq1
+    (sum_gibbsVec hp₀)
   linarith [elbo_add_kl hp₀ hL hq1]
 
 /-- Equality in the ELBO bound exactly at the posterior: maximizing the ELBO is minimizing
@@ -113,7 +97,8 @@ vector `q` (`0 log 0 = 0`). -/
 @[tmio T, powerlib_foundation] theorem elbo_eq_log_evidence_iff [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
     (hL : ∀ i, 0 < L i) {q : ι → ℝ} (hq : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1) :
     elbo p₀ L q = log (finEvidence p₀ L) ↔ q = finPost p₀ L := by
-  rw [← klSum_eq_zero_iff hq (finPost_pos hp₀ hL) hq1 (sum_finPost hp₀ hL)]
+  rw [← klSum_eq_zero_iff hq (gibbsVec_pos (g := fun i => log (L i)) hp₀) hq1
+    (sum_gibbsVec hp₀)]
   have := elbo_add_kl hp₀ hL hq1
   constructor <;> intro h <;> linarith
 

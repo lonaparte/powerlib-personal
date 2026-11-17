@@ -11,10 +11,14 @@ transforms, and explicitly given dq voltage, current and power bases; no physica
 
 Source: work-sync `theory/T-PU.md` §1.7 and §2.4; `conventions.md` §8 (dq base default).
 
+Scaffold: `theorem/Transform/ClarkePark.agda` (the abc, αβ0 and dq0 representations and the
+power-preserving changes between them).
+
 Results.
 * `parkABC θ = park θ · clarke` is the amplitude-invariant three-phase Park `T^A`
-  (`theorem/Transform/Park.lean`); `parkABCPI θ = √(3/2) T^A` is the power-invariant `T^P`
-  (zero-sequence row omitted). `T^P` has orthonormal rows; `T^A T^Aᵀ = (2/3) I`.
+  (`theorem/Transform/Park.lean`); the power-invariant `T^P = parkABCPI θ` is the d and q rows of
+  the power-invariant Park matrix `parkMatrix θ` (`theorem/Transform/ParkABC.lean`, zero-sequence
+  row omitted), and `T^P = √(3/2) T^A` (`parkABCPI_eq_smul`). `T^A T^Aᵀ = (2/3) I`.
 * Three-phase instantaneous power `p = v_abc · i_abc` (zero-sequence-free current) equals
   `(3/2)(v_d i_d + v_q i_q)` for `T^A` and `v_d i_d + v_q i_q` for `T^P`.
 * With dq bases `V_dq`, `I_dq` and power base `S_B`, `p / S_B = κ (v̂_d î_d + v̂_q î_q)` with
@@ -35,27 +39,27 @@ namespace powerlib.Transform.PerUnit
 open Matrix
 open powerlib.Transform
 
-/-- Power-invariant three-phase Park `T^P(θ) = √(3/2) T^A(θ)` (dq rows). -/
-def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • parkABC θ
+/-- Power-invariant three-phase Park `T^P(θ)`: the d and q rows of `parkMatrix θ`. -/
+def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := (parkMatrix θ).submatrix Fin.castSucc id
 
-@[tmio M, powerlib_domain] private lemma park_mul_transpose (θ : ℝ) : park θ * (park θ)ᵀ = 1 := by
-  rw [show (park θ)ᵀ = rot θ by rw [park_eq_transpose_rot, transpose_transpose]]
-  exact park_mul_rot θ
+/-- `T^P(θ) = √(3/2) T^A(θ)`: the two three-phase Park transforms differ by the row scale. -/
+@[tmio M, powerlib_domain] theorem parkABCPI_eq_smul (θ : ℝ) :
+    parkABCPI θ = Real.sqrt (3 / 2) • parkABC θ := by
+  have hk : k = Real.sqrt (3 / 2) * (2 / 3) := by
+    rw [k, show (2 / 3 : ℝ) = 3 / 2 * (2 / 3) ^ 2 by norm_num, Real.sqrt_mul (by norm_num),
+      Real.sqrt_sq (by norm_num)]
+    norm_num
+  ext i j; fin_cases i <;> fin_cases j <;>
+    simp [parkABCPI, parkMatrix, parkRow, cvec_explicit, svec_explicit, parkABC, park, clarke,
+      hk] <;> ring
 
 /-- `T^A T^Aᵀ = (2/3) I`. -/
 @[tmio M, powerlib_domain] theorem parkABC_mul_transpose (θ : ℝ) :
     parkABC θ * (parkABC θ)ᵀ = (2 / 3 : ℝ) • 1 := by
   rw [parkABC, transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc clarke, clarke_mul_transpose,
-    Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul, park_mul_transpose]
-
-/-- The power-invariant Park has orthonormal rows. -/
-@[tmio M, powerlib_domain] theorem parkABCPI_mul_transpose (θ : ℝ) :
-    parkABCPI θ * (parkABCPI θ)ᵀ = 1 := by
-  rw [parkABCPI, transpose_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul,
-    parkABC_mul_transpose, smul_smul, ← Real.sqrt_mul (by norm_num),
-    show Real.sqrt (3 / 2 * (3 / 2)) = 3 / 2 by
-      rw [Real.sqrt_mul_self (by norm_num)]]
-  norm_num
+    Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul,
+    (mem_orthogonalGroup_iff _ _).mp (mem_specialOrthogonalGroup_iff.mp
+      (park_mem_specialOrthogonalGroup θ)).1]
 
 /-- Amplitude-invariant dq power: `v_abc · i_abc = (3/2)(v_d i_d + v_q i_q)` for
 zero-sequence-free current. -/
@@ -69,7 +73,7 @@ zero-sequence-free current. -/
 @[tmio M, powerlib_domain] theorem power_parkABCPI (θ : ℝ) (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (parkABCPI θ *ᵥ v) ⬝ᵥ (parkABCPI θ *ᵥ i) := by
-  rw [parkABCPI, Matrix.smul_mulVec, Matrix.smul_mulVec, smul_dotProduct, dotProduct_smul,
+  rw [parkABCPI_eq_smul, Matrix.smul_mulVec, Matrix.smul_mulVec, smul_dotProduct, dotProduct_smul,
     smul_eq_mul, smul_eq_mul, ← mul_assoc, Real.mul_self_sqrt (by norm_num), power_parkABC θ v i hi]
 
 /-- Per-unit dq power with dq bases `V_dq`, `I_dq` and power base `S_B`:
@@ -112,7 +116,7 @@ zero-sequence-free current. -/
 /-- `T^A` with base `√2 V` and `T^P` with base `√3 V` give the same per-unit dq values. -/
 @[tmio M, powerlib_domain] theorem parkABC_pu_eq_parkABCPI_pu (θ V : ℝ) (v : Fin 3 → ℝ) :
     (Real.sqrt 3 * V)⁻¹ • (parkABCPI θ *ᵥ v) = (Real.sqrt 2 * V)⁻¹ • (parkABC θ *ᵥ v) := by
-  rw [parkABCPI, Matrix.smul_mulVec, smul_smul]
+  rw [parkABCPI_eq_smul, Matrix.smul_mulVec, smul_smul]
   congr 1
   rw [Real.sqrt_div' 3 (by norm_num : (0 : ℝ) ≤ 2)]
   by_cases hV : V = 0

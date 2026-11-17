@@ -27,6 +27,10 @@ Results.
 * Numbering: the field, output, supplied power and stored energy of `toPH e e'` are those of the
   data read through the numbering (`toPH_field`, `toPH_output`, `toPH_supply`,
   `toPH_storage`), and data related by a coordinate change give similar plants (`toPH_similar`).
+* Linear port-Hamiltonian plants: `lossless_lyapunov` (no dissipation conserves the stored
+  energy), `fderiv_storage_field` (power balance of the stored energy
+  `Linear.quadraticEnergy Q`), `exists_quadraticDecay` (strict dissipation gives a quadratic-decay
+  certificate, `Linear.quadraticDecay_of_lyapunov` with `Port.PortHamiltonian.energy_rate`).
 * Interconnection (`interconnect`): the composite is again a `DiagonalPH (ι₁ ⊕ ι₂) κ` with
   `J = [[J₁, −B₁ Mᵀ B₂ᵀ], [B₂ M B₁ᵀ, J₂]]`, `R = blkdiag(R₁, R₂)`, `H = H₁ + H₂`,
   `B = [B₁ g₁; B₂ g₂]`; its field restricts to the two subsystem fields under the coupling law
@@ -51,8 +55,7 @@ Family and connection conclusions.
   reads a plant as its port system and whose sentences are interpreted at the origin.
 * The connection conclusions here are memberships in its denotations, valid for every linear
   port-Hamiltonian plant: strictly positive dissipation places a plant in every attractive
-  sentence and in sampled contraction (`mem_den_of_dissipation_pos`,
-  `mem_den_globallyExponentiallyStable_of_dissipation_pos`, through the strict Lyapunov
+  sentence and in sampled contraction (`mem_den_of_dissipation_pos`, through the strict Lyapunov
   inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.re_neg_of_lyapunov`); no dissipation
   places it in conservation (`mem_den_conservative_of_lossless`); strict dissipation excludes
   conservation (`not_mem_den_conservative_of_dissipation_pos`); similar plants share every
@@ -225,8 +228,9 @@ omit [Fintype κ] in
 @[tmio M, powerlib_foundation] theorem toPH_storage (m : DiagonalPH ι κ) (e : ι ≃ Fin n)
     (e' : κ ≃ Fin p) (x : EuclideanSpace ℝ (Fin n)) :
     (m.toPH e e').kyp.storage x = m.energy (WithLp.ofLp x ∘ e) := by
-  simp only [Linear.KYP.storage, Port.PortHamiltonian.kyp, toPH]
-  rw [dotProduct_reindex_mulVec, diagonal_quadratic, energy, Finset.sum_div]
+  simp only [Linear.KYP.storage, Linear.quadraticEnergy, Port.PortHamiltonian.kyp, toPH]
+  rw [dotProduct_reindex_mulVec, diagonal_quadratic, energy, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => by ring
 
 omit [Fintype κ] in
 /-- Strictly positive damping on every state gives a strictly positive dissipation matrix. -/
@@ -284,85 +288,13 @@ section Linear
 
 variable {n p : ℕ}
 
-/-- In a linear port-Hamiltonian plant the energy matrix turns the state matrix into the
-dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)`. -/
-@[tmio T, powerlib_foundation] theorem energy_rate (h : Port.PortHamiltonian n p) (x : Fin n → ℝ) :
-    x ⬝ᵥ (h.Q *ᵥ (h.plant.A *ᵥ x)) = -((h.Q *ᵥ x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ x))) := by
-  have hsym : x ⬝ᵥ (h.Q *ᵥ (((h.J - h.R) * h.Q) *ᵥ x)) =
-      (h.Q *ᵥ x) ⬝ᵥ ((h.J - h.R) *ᵥ (h.Q *ᵥ x)) := by
-    rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_mulVec]
-    congr 1
-    conv_lhs => rw [← h.energy_symmetric]
-    rw [Matrix.vecMul_transpose]
-  have hJ : (h.Q *ᵥ x) ⬝ᵥ (h.J *ᵥ (h.Q *ᵥ x)) = 0 := by
-    set z := h.Q *ᵥ x
-    have h1 : z ⬝ᵥ (h.J *ᵥ z) = -(z ⬝ᵥ (h.J *ᵥ z)) := by
-      calc z ⬝ᵥ (h.J *ᵥ z) = (h.Jᵀ *ᵥ z) ⬝ᵥ z := by rw [dotProduct_mulVec, mulVec_transpose]
-        _ = -(z ⬝ᵥ (h.J *ᵥ z)) := by rw [h.skew, neg_mulVec, neg_dotProduct, dotProduct_comm]
-    linarith
-  change x ⬝ᵥ (h.Q *ᵥ (((h.J - h.R) * h.Q) *ᵥ x)) = _
-  rw [hsym, sub_mulVec, dotProduct_sub, hJ, zero_sub]
-
-/-- Strictly positive dissipation places a linear port-Hamiltonian plant in the globally
-exponentially stable denotation, equivalently its state matrix is Hurwitz. -/
-@[tmio TM, powerlib_foundation] theorem mem_den_globallyExponentiallyStable_of_dissipation_pos
-    (h : Port.PortHamiltonian n p) (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
-    connection% (h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
-    (P := .globallyExponentiallyStable) (Or.inl trivial)]
-  intro μ v hv heig
-  refine (Criteria.re_neg_of_lyapunov h.energy_symmetric h.energy_pos (fun x hx => ?_) hv
-    heig).trans_eq neg_zero.symm
-  rw [energy_rate]
-  have hQx : h.Q *ᵥ x ≠ 0 := by
-    intro h0
-    have := h.energy_pos x hx
-    rw [h0, dotProduct_zero] at this
-    exact lt_irrefl 0 this
-  linarith [hR _ hQx]
-
-/-- Without dissipation the stored energy is conserved: `Aᵀ Q + Q A = 0`. -/
-@[tmio T, powerlib_foundation] theorem lossless_lyapunov (h : Port.PortHamiltonian n p) (hR : h.R = 0) :
-    h.plant.Aᵀ * h.Q + h.Q * h.plant.A = 0 := by
-  simp only [Port.PortHamiltonian.plant, hR, sub_zero, Matrix.transpose_mul, h.skew,
-    h.energy_symmetric]
-  noncomm_ring
-
-/-- The stored energy `xᵀ Q x / 2` as an inner product. -/
-@[tmio T, powerlib_foundation] theorem storage_eq_inner (h : Port.PortHamiltonian n p) :
-    h.kyp.storage = fun x => inner ℝ x (Linear.op h.Q x) / 2 := by
-  funext x
-  rw [Linear.inner_op]
-  rfl
-
-@[tmio T, powerlib_foundation] theorem storage_contDiff (h : Port.PortHamiltonian n p) :
-    ContDiff ℝ 1 h.kyp.storage := by
-  rw [storage_eq_inner]
-  exact (contDiff_id.inner ℝ (Linear.op h.Q).contDiff).div_const 2
-
-/-- The derivative of the stored energy in the direction `v` is `xᵀ Q v`. -/
-@[tmio T, powerlib_foundation] theorem fderiv_storage_apply (h : Port.PortHamiltonian n p)
-    (x v : EuclideanSpace ℝ (Fin n)) :
-    fderiv ℝ h.kyp.storage x v = WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ WithLp.ofLp v) := by
-  have hd : HasFDerivAt h.kyp.storage
-      ((1 / 2 : ℝ) • (fderivInnerCLM ℝ (x, Linear.op h.Q x)).comp
-        ((ContinuousLinearMap.id ℝ _).prod (Linear.op h.Q))) x := by
-    rw [storage_eq_inner]
-    have := ((hasFDerivAt_id x).inner ℝ (Linear.op h.Q).hasFDerivAt).const_mul (1 / 2 : ℝ)
-    simpa only [div_eq_inv_mul, one_div, id, mul_one] using this
-  rw [hd.fderiv]
-  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.prod_apply, fderivInnerCLM_apply, ContinuousLinearMap.id_apply,
-    Linear.inner_op, smul_eq_mul]
-  have hsym : WithLp.ofLp v ⬝ᵥ (h.Q *ᵥ WithLp.ofLp x) =
-      WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ WithLp.ofLp v) := by
-    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
-    congr 1
-    conv_lhs => rw [← h.energy_symmetric]
-    rw [Matrix.vecMul_transpose]
-  rw [hsym]
-  ring
+/-- Without dissipation the stored energy is conserved: `Aᵀ Q + Q A = 0` (the Lyapunov identity
+`Port.PortHamiltonian.lyapunov` with `R = 0`). -/
+@[tmio T, powerlib_foundation] theorem lossless_lyapunov (h : Port.PortHamiltonian n p)
+    (hR : h.R = 0) : h.plant.Aᵀ * h.Q + h.Q * h.plant.A = 0 := by
+  change ((h.J - h.R) * h.Q)ᵀ * h.Q + h.Q * ((h.J - h.R) * h.Q) = 0
+  rw [Port.PortHamiltonian.lyapunov h.skew h.dissipation_symmetric h.energy_symmetric, hR]
+  simp
 
 /-- Power balance of a linear port-Hamiltonian plant: in the direction of the field, the stored
 energy changes at the supplied power minus the dissipated power `(Q x)ᵀ R (Q x)`. -/
@@ -371,7 +303,8 @@ energy changes at the supplied power minus the dissipated power `(Q x)ᵀ R (Q x
     fderiv ℝ h.kyp.storage x (h.plant.system.field x u) =
       h.plant.system.supply x u -
         (h.Q *ᵥ WithLp.ofLp x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ WithLp.ofLp x)) := by
-  rw [fderiv_storage_apply]
+  rw [Linear.fderiv_quadraticEnergy_apply h.kyp.symmetric]
+  change WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ WithLp.ofLp (h.plant.system.field x u)) = _
   have hf : WithLp.ofLp (h.plant.system.field x u) =
       h.plant.A *ᵥ WithLp.ofLp x + h.B *ᵥ u := by
     simp [Linear.Plant.system, Port.PortHamiltonian.plant, Linear.op,
@@ -386,72 +319,43 @@ energy changes at the supplied power minus the dissipated power `(Q x)ᵀ R (Q x
       conv_lhs => rw [← h.energy_symmetric]
       rw [vecMul_transpose]
     rw [hsym, ← mulVec_mulVec, dotProduct_mulVec, vecMul_transpose, dotProduct_comm]
-  rw [hf, mulVec_add, dotProduct_add, energy_rate, hs]
+  rw [hf, mulVec_add, dotProduct_add, Port.PortHamiltonian.energy_rate, hs]
   ring
 
 /-- Strictly positive dissipation gives a quadratic-decay certificate whose energy is the stored
-energy itself. -/
+energy itself (`Linear.quadraticDecay_of_lyapunov` with `xᵀ Q A x = −(Q x)ᵀ R (Q x)`). -/
 @[tmio T, powerlib_foundation] theorem exists_quadraticDecay (h : Port.PortHamiltonian n p)
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     Nonempty (Flow.QuadraticDecay h.plant.system.zeroInput h.kyp.storage 0) := by
-  have hpos : ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 → 0 < h.kyp.storage x := fun x hx =>
-    div_pos (h.energy_pos _ (by simpa using hx)) two_pos
-  have hhom : ∀ (a : ℝ) (x : EuclideanSpace ℝ (Fin n)),
-      h.kyp.storage (a • x) = a ^ 2 * h.kyp.storage x := fun a x => by
-    simp only [Linear.KYP.storage, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,
-      smul_dotProduct, smul_eq_mul]
-    ring
-  obtain ⟨a, ha, hblo⟩ := Flow.quadratic_lower_bound h.kyp.storage
-    (storage_contDiff h).continuous hhom hpos
-  obtain ⟨b, hb0, hbhi⟩ := Flow.quadratic_upper_bound h.kyp.storage
-    (storage_contDiff h).continuous hhom hpos
-  let W : EuclideanSpace ℝ (Fin n) → ℝ := fun x =>
-    (h.Q *ᵥ WithLp.ofLp x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ WithLp.ofLp x))
-  have hWc : Continuous W := by
-    simp only [W]
-    fun_prop
-  have hWh : ∀ (a : ℝ) (x : EuclideanSpace ℝ (Fin n)), W (a • x) = a ^ 2 * W x := fun a x => by
-    simp only [W, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct,
-      smul_eq_mul]
-    ring
-  have hWp : ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 → 0 < W x := fun x hx => by
-    apply hR
-    intro h0
-    have := h.energy_pos (WithLp.ofLp x) (by simpa using hx)
+  rw [Linear.Plant.system_zeroInput]
+  refine Linear.quadraticDecay_of_lyapunov h.energy_symmetric h.energy_pos fun x hx => ?_
+  change x ⬝ᵥ (h.Q *ᵥ (h.plant.A *ᵥ x)) < 0
+  rw [Port.PortHamiltonian.energy_rate]
+  have hQx : h.Q *ᵥ x ≠ 0 := fun h0 => by
+    have := h.energy_pos x hx
     rw [h0, dotProduct_zero] at this
     exact lt_irrefl 0 this
-  obtain ⟨α, hα, hW⟩ := Flow.quadratic_lower_bound W hWc hWh hWp
-  refine ⟨⟨a, b, α / b, ha, hb0, div_pos hα hb0, storage_contDiff h, ?_, ?_, ?_, ?_⟩⟩
-  · simp [Linear.Plant.system, Port.System.zeroInput]
-  · intro x
-    simpa using hblo x
-  · intro x
-    simpa using hbhi x
-  · intro x
-    have hz : WithLp.ofLp (h.plant.system.zeroInput x) = h.plant.A *ᵥ WithLp.ofLp x := by
-      simp [Linear.Plant.system, Port.System.zeroInput]
-    rw [fderiv_storage_apply, hz, energy_rate]
-    have h1 := hW x
-    have h2 := hbhi x
-    change -W x ≤ -(α / b) * h.kyp.storage x
-    have h3 : α / b * h.kyp.storage x ≤ α * ‖x‖ ^ 2 := by
-      rw [div_mul_eq_mul_div, div_le_iff₀ hb0]
-      nlinarith [sq_nonneg ‖x‖]
-    linarith
+  exact neg_lt_zero.mpr (hR _ hQx)
 
 /-- Strictly damped linear port-Hamiltonian plants satisfy every attractive sentence and sampled
-contraction. -/
+contraction: their state matrix is Hurwitz (the strict Lyapunov inequality
+`xᵀ Q A x = −(Q x)ᵀ R (Q x) < 0`, `Criteria.re_neg_of_lyapunov`). -/
 @[tmio TM, powerlib_foundation] theorem mem_den_of_dissipation_pos (h : Port.PortHamiltonian n p)
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz hP]
-  have hh := mem_den_globallyExponentiallyStable_of_dissipation_pos h hR
-  change h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) at hh
-  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
-    (P := .globallyExponentiallyStable) (Or.inl trivial)] at hh
-  exact hh
+  intro μ v hv heig
+  refine (Criteria.re_neg_of_lyapunov h.energy_symmetric h.energy_pos (fun x hx => ?_) hv
+    heig).trans_eq neg_zero.symm
+  rw [Port.PortHamiltonian.energy_rate]
+  have hQx : h.Q *ᵥ x ≠ 0 := by
+    intro h0
+    have := h.energy_pos x hx
+    rw [h0, dotProduct_zero] at this
+    exact lt_irrefl 0 this
+  linarith [hR _ hQx]
 
 /-- Without dissipation the zero-input plant conserves its positive definite stored energy. -/
 @[tmio TM, powerlib_foundation] theorem mem_den_conservative_of_lossless (h : Port.PortHamiltonian n p)
@@ -466,7 +370,7 @@ contraction. -/
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     connection% (h ∉ Port.PortHamiltonian.family.den (.flow .conservative)) := fun hc =>
   Port.PortHamiltonian.family_isLinear.not_isHurwitz_of_mem_den_conservative hn hc
-    (mem_den_globallyExponentiallyStable_of_dissipation_pos h hR)
+    (mem_den_of_dissipation_pos h hR (P := .globallyExponentiallyStable) (Or.inl trivial))
 
 /-- Similar plants of port-Hamiltonian models satisfy the same sentences. -/
 @[tmio TM, powerlib_foundation] theorem mem_den_iff_of_similar {h h' : Port.PortHamiltonian n p}
@@ -774,7 +678,7 @@ exponential bound on every solution segment. -/
     (hd : ∀ i, 0 < m.d i) :
     connection% (m.toPH e e' ∈
       Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
-  mem_den_globallyExponentiallyStable_of_dissipation_pos _ (m.toPH_dissipation_pos e e' hd)
+  mem_den_of_dissipation_pos _ (m.toPH_dissipation_pos e e' hd) (Or.inl trivial)
 
 end Strict
 

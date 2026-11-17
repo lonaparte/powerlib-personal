@@ -29,8 +29,9 @@ where two connections part.
 Scope.
 * Generic: arbitrary types of complete systems `X`, requirements `Q` and readings `V`, systems
   with `n` states and `p` ports of either kind (`theorem/Port/Defs.lean`); no model.
-* Families of autonomous fields (`IsAutonomous`, no ports, continuous time) and of autonomous maps
-  (`IsAutonomousMap`, no ports, discrete time with a step length) are recognized here.
+* Families of port systems (`IsPort`, continuous time), among them families of autonomous fields
+  (`IsAutonomous`, no ports), and families of autonomous maps (`IsAutonomousMap`, no ports,
+  discrete time with a step length) are recognized here.
 
 Source: the TMIO framework: satisfaction, translation tables and relational observations
 (`theorem/TMIO/Relation.lean`), the comparison of connections (`theorem/TMIO/Compare.lean`,
@@ -48,14 +49,20 @@ Results.
   `exact_of_translate_eq_empty`.
 * Observations: `certified` (with an exact translation, the certified observations are those
   whose every possible source satisfies the sentence), `certifies`, `refutes`.
+* Readings: `Sound.of_reading`, `Exact.of_reading`, `exact_iff_of_reading` (soundness and
+  exactness pass to a family whose translated requirement space and denotation are pulled back
+  along a map of complete systems; for a surjective map exactness is the same).
 * Changes of representation: `den_comap`, `realize_comap`, `den_extend`, `realize_extend_inl`,
-  `Exact.comap`, `Sound.comap`, `Exact.extend`, `Sound.extend`.
-* Autonomous families: `IsAutonomous.mem_den_flow`, `IsAutonomous.den_passive`,
-  `IsAutonomous.exact_passive` (exact for passivity when passivity translates into nothing),
-  `IsAutonomousMap.mem_den_flow`, `IsAutonomousMap.den_passive` (a system without ports is
-  passive).
-* Families read without an envelope: `den_envelope_of_continuous`, `IsAutonomous.den_envelope`,
-  `IsAutonomousMap.den_envelope` (every envelope sentence denotes the whole family).
+  `Exact.comap`, `Sound.comap`, `Exact.extend`, `Sound.extend` (instances of the readings).
+* Families of port systems: `IsPort` (its instances `Family.IsLinear`, `Family.IsNonlinearPH`
+  and `IsAutonomous` are abbreviations), `IsPort.mem_den_flow` (a flow sentence holds for a member
+  exactly when it holds for the zero-input field of its port system), `IsPort.mem_den_passive_iff`,
+  `IsPort.den_passive` and `IsPort.exact_passive` (without ports: a system without ports is
+  passive; exact when passivity translates into nothing), `IsPort.comap`, `IsPort.extend`;
+  `IsAutonomous.mem_den_flow` (read on the field itself).
+* Autonomous maps: `IsAutonomousMap.mem_den_flow`, `IsAutonomousMap.den_passive`.
+* Families read without an envelope: `IsPort.den_envelope`, `IsAutonomousMap.den_envelope` (every
+  envelope sentence denotes the whole family).
 
 Family and connection conclusions.
 * `Family.comap g : Family Y Q n p` (the family read in another representation, through a map of
@@ -302,90 +309,143 @@ def extend (g : Y → X) (extra : Y → R → Prop) : Family Y (Q ⊕ R) n p whe
 
 variable {F}
 
+/-- Soundness passes along a reading: when the space of the translation of `s` and the
+denotation of `s` of a family `G` are those of `F` pulled back along a map `g` of complete
+systems, `G` is sound for `s` when `F` is. -/
+@[tmio TM, powerlib_foundation] theorem Sound.of_reading {S : Type*} {m q : ℕ}
+    {G : Family Y S m q} {g : Y → X} {s : Sentence}
+    (hr : realize G.meets (G.translate s) = g ⁻¹' realize F.meets (F.translate s))
+    (hd : G.den s = g ⁻¹' F.den s) (h : F.Sound s) :
+    connection% (G.Sound s) := by
+  change G.Sound s
+  unfold Sound at h ⊢
+  rw [hr, hd]
+  exact Set.preimage_mono h
+
+/-- Exactness passes along a reading (`Sound.of_reading`). -/
+@[tmio TM, powerlib_foundation] theorem Exact.of_reading {S : Type*} {m q : ℕ}
+    {G : Family Y S m q} {g : Y → X} {s : Sentence}
+    (hr : realize G.meets (G.translate s) = g ⁻¹' realize F.meets (F.translate s))
+    (hd : G.den s = g ⁻¹' F.den s) (h : F.Exact s) :
+    connection% (G.Exact s) := by
+  change G.Exact s
+  unfold Exact at h ⊢
+  rw [hr, hd, h]
+
+/-- Along a reading by a surjective map, a translation of `G` is exact exactly when the
+corresponding translation of `F` is (complete systems and requirements in `Type`, so that the
+claim compares the two families in one universe). -/
+@[tmio TM, powerlib_foundation] theorem exact_iff_of_reading {X' Y' Q' S' : Type} {n' p' m q : ℕ}
+    {F' : Family X' Q' n' p'} {G : Family Y' S' m q} {g : Y' → X'} {s : Sentence}
+    (hr : realize G.meets (G.translate s) = g ⁻¹' realize F'.meets (F'.translate s))
+    (hd : G.den s = g ⁻¹' F'.den s) (hg : Function.Surjective g) :
+    connection% (G.Exact s ↔ F'.Exact s) := by
+  change G.Exact s ↔ F'.Exact s
+  unfold Exact
+  rw [hr, hd]
+  exact (Set.preimage_injective.mpr hg).eq_iff
+
 /-- Exactness survives every change of representation. -/
 @[tmio TM, powerlib_foundation] theorem Exact.comap {s : Sentence} (h : F.Exact s) (g : Y → X) :
-    connection% ((F.comap g).Exact s) := by
-  change (F.comap g).Exact s
-  unfold Exact at h ⊢
-  rw [realize_comap, den_comap]
-  exact congrArg (g ⁻¹' ·) h
+    connection% ((F.comap g).Exact s) :=
+  Exact.of_reading (realize_comap F g _) (den_comap F g s) h
 
 /-- Soundness survives every change of representation. -/
 @[tmio TM, powerlib_foundation] theorem Sound.comap {s : Sentence} (h : F.Sound s) (g : Y → X) :
-    connection% ((F.comap g).Sound s) := by
-  change (F.comap g).Sound s
-  unfold Sound at h ⊢
-  rw [realize_comap, den_comap]
-  exact Set.preimage_mono h
+    connection% ((F.comap g).Sound s) :=
+  Sound.of_reading (realize_comap F g _) (den_comap F g s) h
 
 /-- Exactness survives an extension of the requirement language. -/
 @[tmio TM, powerlib_foundation] theorem Exact.extend {s : Sentence} (h : F.Exact s) (g : Y → X)
     (extra : Y → R → Prop) :
-    connection% ((F.extend g extra).Exact s) := by
-  change (F.extend g extra).Exact s
-  unfold Exact at h ⊢
-  change realize (F.extend g extra).meets (Sum.inl '' F.translate s) = _
-  rw [realize_extend_inl, den_extend]
-  exact congrArg (g ⁻¹' ·) h
+    connection% ((F.extend g extra).Exact s) :=
+  Exact.of_reading (realize_extend_inl F g extra _) (den_extend F g extra s) h
 
 /-- Soundness survives an extension of the requirement language. -/
 @[tmio TM, powerlib_foundation] theorem Sound.extend {s : Sentence} (h : F.Sound s) (g : Y → X)
     (extra : Y → R → Prop) :
-    connection% ((F.extend g extra).Sound s) := by
-  change (F.extend g extra).Sound s
-  unfold Sound at h ⊢
-  change realize (F.extend g extra).meets (Sum.inl '' F.translate s) ⊆ _
-  rw [realize_extend_inl, den_extend]
-  exact Set.preimage_mono h
+    connection% ((F.extend g extra).Sound s) :=
+  Sound.of_reading (realize_extend_inl F g extra _) (den_extend F g extra s) h
 
-/-! ## Families of autonomous fields -/
+/-! ## Families of port systems -/
 
-/-- A family whose complete systems are all continuous-time systems read without an envelope
-satisfies every envelope sentence. -/
-@[tmio TM, powerlib_foundation] theorem den_envelope_of_continuous {X Q : Type*} {n p : ℕ}
-    {F : Family X Q n p} {sys : X → Port.System n p} (h : ∀ x, F.system x = .continuous (sys x))
+section Port
+
+/-- Every complete system of the family is the continuous-time port system `sys x`. The linear,
+port-Hamiltonian and autonomous families are its instances (`Family.IsLinear`,
+`Family.IsNonlinearPH`, `IsAutonomous`). -/
+def IsPort (F : Family X Q n p) (sys : X → Port.System n p) : Prop :=
+  ∀ x, F.system x = .continuous (sys x)
+
+variable {F : Family X Q n p} {sys : X → Port.System n p}
+
+/-- A flow sentence holds for a member exactly when it holds for the zero-input field of its port
+system at the origin. -/
+@[tmio TM, powerlib_foundation] theorem IsPort.mem_den_flow (hF : F.IsPort sys)
+    {P : Flow.Property} {x : X} :
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (sys x).zeroInput 0) := by
+  change x ∈ F.den (.flow P) ↔ P.holds (sys x).zeroInput 0
+  rw [(connection_proof% mem_den), hF x]
+  rfl
+
+/-- A member lies in the passivity denotation exactly when its port system is passive. -/
+@[tmio TM, powerlib_foundation] theorem IsPort.mem_den_passive_iff (hF : F.IsPort sys) {x : X} :
+    connection% (x ∈ F.den .passive ↔ (sys x).Passive) := by
+  change x ∈ F.den .passive ↔ (sys x).Passive
+  rw [(connection_proof% mem_den), hF x]
+  rfl
+
+/-- A family of port systems is read without an envelope: it satisfies every envelope
+sentence. -/
+@[tmio TM, powerlib_foundation] theorem IsPort.den_envelope (hF : F.IsPort sys)
     (E : Envelope.Property) :
     connection% (F.den (.envelope E) = Set.univ) := show F.den (.envelope E) = Set.univ from
   Set.eq_univ_of_forall fun x => by
-    rw [(connection_proof% mem_den), h x]
+    rw [(connection_proof% mem_den), hF x]
     exact Sentence.holds_envelope E _
+
+/-- A family read in another representation is a family of the same port systems. -/
+@[tmio M, powerlib_foundation] theorem IsPort.comap (hF : F.IsPort sys) (g : Y → X) :
+    (F.comap g).IsPort (sys ∘ g) := fun y => hF (g y)
+
+/-- A family with an extended requirement language is a family of the same port systems. -/
+@[tmio M, powerlib_foundation] theorem IsPort.extend (hF : F.IsPort sys) (g : Y → X)
+    (extra : Y → R → Prop) : (F.extend g extra).IsPort (sys ∘ g) := fun y => hF (g y)
+
+/-- A system without ports is passive: a family of port systems without ports denotes the whole
+family by passivity. -/
+@[tmio TM, powerlib_foundation] theorem IsPort.den_passive {F : Family X Q n 0}
+    {sys : X → Port.System n 0} (hF : F.IsPort sys) :
+    connection% (F.den .passive = Set.univ) := by
+  change F.den .passive = Set.univ
+  exact Set.eq_univ_of_forall fun x =>
+    (connection_proof% hF.mem_den_passive_iff).mpr (Port.System.passive_of_noPorts _)
+
+/-- A family of port systems without ports whose passivity sentence translates into no
+requirement is exact for passivity. -/
+@[tmio TM, powerlib_foundation] theorem IsPort.exact_passive {F : Family X Q n 0}
+    {sys : X → Port.System n 0} (hF : F.IsPort sys) (hs : F.translate .passive = ∅) :
+    connection% (F.Exact .passive) := show F.Exact .passive from
+  exact_of_translate_eq_empty hs hF.den_passive
+
+end Port
+
+/-! ## Families of autonomous fields -/
 
 section Autonomous
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
-/-- Every complete system of the family is the autonomous field `field x`. -/
-def IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :=
-  ∀ x, F.system x = .continuous (Port.System.autonomous (field x))
+/-- Every complete system of the family is the autonomous field `field x`: a family of port
+systems without ports. -/
+abbrev IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :=
+  F.IsPort fun x => Port.System.autonomous (field x)
 
+/-- A flow sentence holds for a member exactly when it holds for its field at the origin. -/
 @[tmio TM, powerlib_foundation] theorem IsAutonomous.mem_den_flow {F : Family X Q n 0}
     {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) {P : Flow.Property} {x : X} :
-    connection% (x ∈ F.den (.flow P) ↔ P.holds (field x) 0) := by
-  change x ∈ F.den (.flow P) ↔ P.holds (field x) 0
-  rw [(connection_proof% mem_den), hF x]
-  rfl
-
-/-- A system without ports is passive. -/
-@[tmio TM, powerlib_foundation] theorem IsAutonomous.den_passive {F : Family X Q n 0}
-    {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) :
-    connection% (F.den .passive = Set.univ) := by
-  change F.den .passive = Set.univ
-  ext x
-  simp only [mem_den, Set.mem_univ, iff_true, hF x, Sentence.holds_passive]
-  exact Port.System.passive_of_noPorts _
-
-/-- An autonomous family whose passivity sentence translates into no requirement is exact for
-passivity: a system without ports is passive. -/
-@[tmio TM, powerlib_foundation] theorem IsAutonomous.exact_passive {F : Family X Q n 0}
-    {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) (hs : F.translate .passive = ∅) :
-    connection% (F.Exact .passive) := show F.Exact .passive from
-  exact_of_translate_eq_empty hs hF.den_passive
-
-/-- A family read without an envelope satisfies every envelope sentence. -/
-@[tmio TM, powerlib_foundation] theorem IsAutonomous.den_envelope {F : Family X Q n 0}
-    {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) (E : Envelope.Property) :
-    connection% (F.den (.envelope E) = Set.univ) := show F.den (.envelope E) = Set.univ from
-  den_envelope_of_continuous hF E
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (field x) 0) :=
+  IsPort.mem_den_flow hF
 
 end Autonomous
 

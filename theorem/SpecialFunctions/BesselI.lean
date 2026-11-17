@@ -5,6 +5,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import theorem.Asymptotics.GaussianMoments
 
 /-! # Modified Bessel functions `I₀`, `I₁` (foundation)
 
@@ -37,7 +38,8 @@ Results.
   `∫₀^∞ e^{−zθ²/2} = (2π/z)^{1/2}/2` by `O(‖z‖ x^{−5/2} + e^{−xπ²/4} x^{−1/2})`),
   `norm_integral_gaussian_half`; elementary bounds `norm_cexp_sub_one_le_of_re_nonpos`,
   `norm_cexp_sub_cexp_le`, `sq_div_two_sub_one_sub_cos_le`, `sq_mul_exp_le`,
-  `pow_four_mul_exp_le`, `integral_exp_neg_mul_sq_le`.
+  `pow_four_mul_exp_le` (`∫₀^π e^{−βθ²} ≤ √(π/β)/2` is
+  `Asymptotics.integral_exp_neg_mul_sq_interval_bounds`).
 * **Laplace bounds in a sector**: `besselI_laplace_le` (for every `K > 0` there is `C ≥ 0` with
   `‖e^{−z}π I₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖` and `‖e^{−z}π(I₀(z) − I₁(z))‖ ≤ (C/x)‖G(z)‖`,
   `G(z) = ∫₀^∞ e^{−zθ²/2}`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`).
@@ -53,7 +55,7 @@ conductor surface impedance built on `I₀/I₁` is in `theorem/Passive/Line/Cab
 
 noncomputable section
 namespace powerlib.SpecialFunctions
-open Filter Topology Asymptotics
+open Filter Topology _root_.Asymptotics
 open scoped Nat
 
 /-- Even series `I₀`: `besselSeries0 w = Σ_k w^k/(k!)²`, so `I₀(z) = besselSeries0 (z²/4)`. -/
@@ -393,13 +395,6 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
         (θ ^ 4 * Real.exp (-(b / 2 * θ ^ 2))) * Real.exp (-(b / 2) * θ ^ 2) := by ring
     _ ≤ 8 / b ^ 2 * Real.exp (-(b / 2) * θ ^ 2) := mul_le_mul_of_nonneg_right key hE.le
 
-/-- `∫₀^π e^{−βθ²} ≤ √(π/β)/2` (`β > 0`). -/
-@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_le {β : ℝ} (hβ : 0 < β) :
-    ∫ θ in (0 : ℝ)..Real.pi, Real.exp (-β * θ ^ 2) ≤ Real.sqrt (Real.pi / β) / 2 := by
-  rw [intervalIntegral.integral_of_le Real.pi_pos.le, ← integral_gaussian_Ioi]
-  exact setIntegral_mono_set (integrable_exp_neg_mul_sq hβ).integrableOn
-    (Eventually.of_forall fun θ => (Real.exp_pos _).le) Ioc_subset_Ioi_self.eventuallyLE
-
 /-! ## Large argument: `I₀(z)/I₁(z) → 1` in a sector -/
 
 /-- `∫₀^π e^{−z(1−cos θ)} dθ = e^{−z} π I₀(z)`. -/
@@ -461,7 +456,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
       _ ≤ (2 / b * Real.exp (-(b / 2) * θ ^ 2)) / 2 := by gcongr
       _ = 1 / b * Real.exp (-(b / 2) * θ ^ 2) := by ring
   · rw [intervalIntegral.integral_const_mul]
-    have := integral_exp_neg_mul_sq_le (β := b / 2) (by positivity)
+    have := (Asymptotics.integral_exp_neg_mul_sq_interval_bounds (β := b / 2)
+      (by positivity) Real.pi_pos).2
     rw [hb2] at this
     calc 1 / b * ∫ θ in (0 : ℝ)..Real.pi, Real.exp (-(b / 2) * θ ^ 2) ≤
           1 / b * (Real.sqrt (Real.pi / (x / Real.pi ^ 2)) / 2) := by
@@ -528,7 +524,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
         _ ≤ ‖z‖ / 24 * (8 / b ^ 2 * Real.exp (-(b / 2) * θ ^ 2)) := by gcongr
         _ = _ := by ring
     · rw [intervalIntegral.integral_const_mul]
-      have := integral_exp_neg_mul_sq_le (β := b / 2) (by positivity)
+      have := (Asymptotics.integral_exp_neg_mul_sq_interval_bounds (β := b / 2)
+        (by positivity) Real.pi_pos).2
       rw [hb2] at this
       calc ‖z‖ / 24 * (8 / b ^ 2) * ∫ θ in (0 : ℝ)..Real.pi, Real.exp (-(b / 2) * θ ^ 2) ≤
             ‖z‖ / 24 * (8 / b ^ 2) * (Real.sqrt (Real.pi / (x / Real.pi ^ 2)) / 2) := by

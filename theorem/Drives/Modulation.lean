@@ -40,7 +40,8 @@ Results.
 noncomputable section
 namespace powerlib.Drives.Modulation
 
-open Complex
+open Complex Matrix
+open powerlib.Transform (clarkeInv ofComplex toComplex_ofComplex clarke_mul_clarkeInv)
 open powerlib.Transform.SpaceVector
 
 /-- Projection of a space vector on the unit vector `e^{jπ/6} = (√3/2, 1/2)`. -/
@@ -60,28 +61,21 @@ direction. -/
   have h3 : 0 < Real.sqrt 3 := by positivity
   have hs : Real.sqrt 3 / 3 = 1 / Real.sqrt 3 := by
     field_simp
-    rw [Real.sq_sqrt (by norm_num)]
+    rw [Transform.sqrt3_sq]
   rw [hs, div_mul_eq_mul_div, one_mul]
   apply div_le_div_of_nonneg_right _ h3.le
   linarith [ha.2, hc.1]
 
-/-- Inverse Clarke transform (zero-sequence free phase voltages of a space vector). -/
-def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
-  (u.re, -u.re / 2 + Real.sqrt 3 / 2 * u.im, -u.re / 2 - Real.sqrt 3 / 2 * u.im)
-
-@[tmio M, powerlib_domain] theorem clarke_invClarke (u : ℂ) :
-    clarke (invClarke u).1 (invClarke u).2.1 (invClarke u).2.2 = u := by
-  have h3 := Transform.sqrt3_sq
-  apply Complex.ext
-  · simp only [clarke_re, invClarke]; ring
-  · simp only [clarke_im, invClarke]
-    linear_combination (u.im / 3) * h3
-
-/-- Pairwise phase differences are bounded by `√3 |u|` (line-to-line peak). -/
-@[tmio M, powerlib_domain] theorem invClarke_diff_le (u : ℂ) :
-    |(invClarke u).1 - (invClarke u).2.1| ≤ Real.sqrt 3 * ‖u‖ ∧
-      |(invClarke u).2.1 - (invClarke u).2.2| ≤ Real.sqrt 3 * ‖u‖ ∧
-      |(invClarke u).2.2 - (invClarke u).1| ≤ Real.sqrt 3 * ‖u‖ := by
+/-- The zero-sequence-free phase voltages `x = clarkeInv · (Re u, Im u)` of a space vector `u`
+(inverse Clarke) have pairwise differences at most `√3 |u|` (line-to-line peak). -/
+@[tmio M, powerlib_domain] theorem clarkeInv_diff_le (u : ℂ) :
+    |(clarkeInv *ᵥ ofComplex u) 0 - (clarkeInv *ᵥ ofComplex u) 1| ≤ Real.sqrt 3 * ‖u‖ ∧
+      |(clarkeInv *ᵥ ofComplex u) 1 - (clarkeInv *ᵥ ofComplex u) 2| ≤ Real.sqrt 3 * ‖u‖ ∧
+      |(clarkeInv *ᵥ ofComplex u) 2 - (clarkeInv *ᵥ ofComplex u) 0| ≤ Real.sqrt 3 * ‖u‖ := by
+  have hx : clarkeInv *ᵥ ofComplex u =
+      ![u.re, -u.re / 2 + Real.sqrt 3 / 2 * u.im, -u.re / 2 - Real.sqrt 3 / 2 * u.im] := by
+    ext i; fin_cases i <;>
+      simp [clarkeInv, ofComplex, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
   have h3 := Transform.sqrt3_sq
   have h3p : 0 ≤ Real.sqrt 3 := Real.sqrt_nonneg 3
   have hn : ‖u‖ ^ 2 = u.re ^ 2 + u.im ^ 2 := by
@@ -91,7 +85,8 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
     rw [← hn] at hp
     rw [← Real.sqrt_sq_eq_abs, ← Real.sqrt_sq (norm_nonneg u), ← Real.sqrt_mul (by norm_num)]
     exact Real.sqrt_le_sqrt hp
-  simp only [invClarke]
+  simp only [hx, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.tail_cons, Matrix.head_cons]
   refine ⟨key _ ?_, key _ ?_, key _ ?_⟩
   · have e : 3 * (u.re ^ 2 + u.im ^ 2) - (u.re - (-u.re / 2 + Real.sqrt 3 / 2 * u.im)) ^ 2 =
         3 / 4 * (u.re + Real.sqrt 3 * u.im) ^ 2 := by
@@ -112,10 +107,11 @@ leg voltages in `[0, V_dc]`. -/
 @[tmio M, powerlib_domain] theorem svpwm_linearRange (V : ℝ) (u : ℂ) (hu : ‖u‖ ≤ V / Real.sqrt 3) :
     ∃ xa xb xc : ℝ, xa ∈ Set.Icc 0 V ∧ xb ∈ Set.Icc 0 V ∧ xc ∈ Set.Icc 0 V ∧
       clarke xa xb xc = u := by
-  obtain ⟨d1, d2, d3⟩ := invClarke_diff_le u
-  set a := (invClarke u).1
-  set b := (invClarke u).2.1
-  set c := (invClarke u).2.2
+  obtain ⟨d1, d2, d3⟩ := clarkeInv_diff_le u
+  set x := clarkeInv *ᵥ ofComplex u with hxdef
+  set a := x 0
+  set b := x 1
+  set c := x 2
   have h3 : 0 < Real.sqrt 3 := by positivity
   have hV : Real.sqrt 3 * ‖u‖ ≤ V := by
     rw [le_div_iff₀ h3] at hu; linarith
@@ -138,8 +134,8 @@ leg voltages in `[0, V_dc]`. -/
   · rcases hm with h | h | h <;> rw [h] <;> linarith
   · have := clarke_add_const a b c (-m)
     simp only [← sub_eq_add_neg] at this
-    rw [this]
-    exact clarke_invClarke u
+    rw [this, clarke_eq_toComplex, show ![a, b, c] = x by ext i; fin_cases i <;> rfl, hxdef,
+      mulVec_mulVec, clarke_mul_clarkeInv, one_mulVec, toComplex_ofComplex]
 
 /-- `V_dc/√3` is the largest synthesizable circle: if every vector of modulus `ρ ≥ 0` can be
 produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
@@ -188,7 +184,11 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
       M * Real.cos (θ - 2 * Real.pi / 3) + V / 2 by ring,
     show V / 2 + M * Real.cos (θ + 2 * Real.pi / 3) =
       M * Real.cos (θ + 2 * Real.pi / 3) + V / 2 by ring,
-    this, clarke_balanced]
+    this, clarke_eq_toComplex]
+  have h := Transform.clarke_mulVec_balanced M 0 θ
+  simp only [Transform.balanced, add_zero] at h
+  rw [h]
+  apply Complex.ext <;> simp
 
 /-- Six-step leg: `V_dc` on `[0, π)`, `0` on `[π, 2π)`. Its fundamental sine coefficient
 `(1/π) ∫₀^{2π} v(θ) sin θ dθ` equals `2V_dc/π`. -/
@@ -202,13 +202,8 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
 /-- Line-to-line fundamental = `√3` × leg fundamental: `sin θ − sin(θ − 2π/3) = √3 cos(θ − π/3)`. -/
 @[tmio T, powerlib_foundation] theorem sin_sub_sin_two_pi_div_three (θ : ℝ) :
     Real.sin θ - Real.sin (θ - 2 * Real.pi / 3) = Real.sqrt 3 * Real.cos (θ - Real.pi / 3) := by
-  have hc : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
-    have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-    rw [this, Real.cos_pi_sub, Real.cos_pi_div_three]; ring
-  have hs : Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
-    have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-    rw [this, Real.sin_pi_sub, Real.sin_pi_div_three]
-  rw [Real.sin_sub, Real.cos_sub, hc, hs, Real.cos_pi_div_three, Real.sin_pi_div_three]
+  rw [Real.sin_sub, Real.cos_sub, Transform.cos_two_pi_div_three, Transform.sin_two_pi_div_three,
+    Real.cos_pi_div_three, Real.sin_pi_div_three]
   have h3 := Transform.sqrt3_sq
   linear_combination (-Real.sin θ / 2) * h3
 

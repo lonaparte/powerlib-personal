@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.Matrix.Order
+import theorem.Estimation.KalmanPredict
 
 /-! # Kalman measurement update: Joseph form, optimal gain, information form
 
@@ -21,7 +22,8 @@ by construction"), §1.3 (Joseph form equals the short form at the exact gain), 
 form `Ω⁺ = Ω⁻ + Σⱼ Hⱼᵀ Rⱼ⁻¹ Hⱼ` for independent sensors).
 
 Results.
-* `joseph_posSemidef` — for **any** gain `K`, `P ⪰ 0`, `R ⪰ 0` ⇒ Joseph form `⪰ 0`.
+* `joseph_posSemidef` — for **any** gain `K`, `P ⪰ 0`, `R ⪰ 0` ⇒ Joseph form `⪰ 0` (an instance
+  of the prediction law `predict_posSemidef`, `theorem/Estimation/KalmanPredict.lean`).
 * `joseph_eq_short` — if `K S = P Hᵀ` (exact gain), the Joseph form equals `(I − K H) P`.
 * `joseph_eq_optimal_add` — for symmetric `P, R`, `J(K) = J(K*) + (K − K*) S (K − K*)ᵀ`; hence
   `joseph_optimal_le`: the Kalman gain minimizes the posterior covariance in the Loewner order.
@@ -47,16 +49,13 @@ def joseph (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
 def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
     (R : Matrix (Fin p) (Fin p) ℝ) : Matrix (Fin p) (Fin p) ℝ := H * P * Hᵀ + R
 
-@[tmio T, powerlib_foundation] private lemma psd_congr {m k : ℕ} {A : Matrix (Fin m) (Fin m) ℝ}
-    (hA : A.PosSemidef) (B : Matrix (Fin k) (Fin m) ℝ) : (B * A * Bᵀ).PosSemidef := by
-  simpa [conjTranspose_eq_transpose_of_trivial] using hA.mul_mul_conjTranspose_same B
-
-/-- **The Joseph form is PSD for every gain** (§1.1). -/
+/-- **The Joseph form is PSD for every gain** (§1.1): the prediction form `Φ P Φᵀ + Q` with
+`Φ = I − K H`, `Q = K R Kᵀ` (`predict_posSemidef`). -/
 @[tmio T, powerlib_foundation] theorem joseph_posSemidef {P : Matrix (Fin n) (Fin n) ℝ}
     {R : Matrix (Fin p) (Fin p) ℝ} (hP : P.PosSemidef) (hR : R.PosSemidef)
     (H : Matrix (Fin p) (Fin n) ℝ) (K : Matrix (Fin n) (Fin p) ℝ) :
     (joseph P H R K).PosSemidef :=
-  (psd_congr hP _).add (psd_congr hR K)
+  predict_posSemidef _ hP (LinearAlgebra.posSemidef_congr hR K)
 
 /-- Expanded Joseph form `P − K H P − P Hᵀ Kᵀ + K S Kᵀ`. -/
 @[tmio T, powerlib_foundation] theorem joseph_expand (P : Matrix (Fin n) (Fin n) ℝ)
@@ -117,7 +116,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
     (hK : Ks * innov P H R = P * Hᵀ) (K : Matrix (Fin n) (Fin p) ℝ) :
     joseph P H R Ks ≤ joseph P H R K := by
   rw [Matrix.le_iff, joseph_eq_optimal_add hPs hRs hK K, add_sub_cancel_left]
-  exact psd_congr hS _
+  exact LinearAlgebra.posSemidef_congr hS _
 
 /-! ## Information form -/
 

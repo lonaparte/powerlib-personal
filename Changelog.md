@@ -324,6 +324,118 @@ in Git; working statistics, build receipts and development plans are not kept he
   `bdf7/8/9_rho_eq_sum`.
 - Classified theorems 7521 → 7488; public connection theorems unchanged (1051).
 
+- Consolidation wave across the library (shared objects and laws stated once; removed
+  names have no aliases):
+  - Family and semantic layer: one port-family predicate `Family.IsPort` (moved from
+    `Numerics/EulerPorts`) with `IsPort.{mem_den_flow, mem_den_passive_iff, den_envelope,
+    comap, extend, den_passive, exact_passive}`; `IsLinear`, `IsNonlinearPH`,
+    `IsAutonomous` are abbreviations of it (`IsLinear.{den_envelope, comap, extend,
+    isPort}`, `IsNonlinearPH.{comap, extend, isPort}`, `IsAutonomous.{den_envelope,
+    den_passive, exact_passive}`, `Family.den_envelope_of_continuous` → the `IsPort`
+    laws). Reading laws `Family.Sound.of_reading`, `Exact.of_reading`,
+    `exact_iff_of_reading`. One translation table `Spectral.table` with
+    `chain_le_semantics_of_table`; `localTable`, `globalTable`, `linearTable` are
+    abbreviations and the linear, local, rational, port-Hamiltonian and LaSalle
+    translations are instances (values unchanged). A linear rate family
+    `Spectral.rateFamily` (`RateRequirement`, `RateMeets`, `rateTranslate`,
+    `MeetsMatrix`, `realize_univ_of_rate`, `chain_le_semantics_of_rate`,
+    `exact_of_rate`); LFC uses it (`LFC.MeetsMatrix`, `meetsMatrix_univ`,
+    `sound_of_meetsMatrix`, `exact_of_meetsMatrix` → the `Spectral` laws; requirements
+    `hurwitz`, `rhpRoot` → `stable`, `unstable`). Vacuous realization laws
+    `Implementation.realizationSoundUnder_of_forall_not_mem_den` and
+    `realizationCompleteUnder_of_forall_not_mem_den`. A passivity-only family
+    `Family.passiveOnly` (module `Family/PassiveOnly`) replaces the requirement languages
+    and four laws of `SyncMachine7`, `SMIB11`, `SMIB11Rel` (`Requirement`, `Meets`,
+    `translate`, `realize_univ`, `exact_passive`, `chain_le_semantics`,
+    `exact_locallyExponentiallyStable` → `PassiveOnly.*`, `exact_flow`).
+  - Linear and port-Hamiltonian: `Map.op` → `Linear.op`; one quadratic energy
+    `Linear.quadraticEnergy` (`PH.quadraticEnergy`, `storage_contDiff`,
+    `fderiv_storage_apply`, `quadraticEnergy_eq_storage` → it; `KYP.storage` an
+    abbreviation); `Linear.quadraticDecay_of_lyapunov`;
+    `Port.PortHamiltonian.lyapunov`, `energy_rate` (`PH.energy_rate` → it);
+    `Linear.det_characteristicMatrix_eq_zero_iff_exists_eigenpair` (any index; the
+    Criteria copy removed); `PH.NonlinearModel.not_locallyExponentiallyStable_of_col_eq_zero`
+    (module `PH/FlatDirection`, replacing the machine models' private chains); wrappers
+    removed (`PH.mem_den_globallyExponentiallyStable_of_dissipation_pos`,
+    `toPortHamiltonian_mem_den_passive/_lyapunovStable`,
+    `IsStrictLocalMin.isEquilibrium_and_lyapunovStable`, `.holds_lyapunovStable`, and
+    the eleven one-line `*PH_mem_den_passive`/`_lyapunovStable` instances of the RL/RLC
+    networks, ladder, series RLC, DC link and dq LC → `Port.PortHamiltonian.mem_den_*`).
+  - Dynamics and criteria: `Criteria.isUnit_det_of_isHurwitz` (the SingularPerturbation
+    copy removed), `naturalFrequency`, `det_characteristicMatrix_standard`,
+    `dampingRatio_conj`, `isHurwitz_iff_of_coeffs_quadratic`,
+    `isHurwitz_iff_of_coeffs_cubic`; the conservative oscillator's linearization
+    (`PhasePlane.Conservative.{jacobian, hasFDerivAt_field,
+    locallyExponentiallyStable_of_slope_pos, unstable_of_slope_neg,
+    unstable_of_damping_neg}`, used by the pendulum and Duffing, whose
+    `hasFDerivAt_field` are removed) and its port-Hamiltonian form `Conservative.toPH`
+    (energy laws now from the pH laws); generic damped-response nadir laws in
+    `LTI/Oscillator2` (`dampedResp`, `trajectory_nadir_osc2`, …);
+    `Pitchfork.superSystem_zero_eq_cubicField` (`super_zero_lyapunov` →
+    `Dynamics.cubic_neg_strictLyapunov`); `Modal.eigenvalue_sensitivity` →
+    `eigenvalue_deriv_left_of_eventually`.
+  - Numerics, stochastics, estimation: a low module `LinearAlgebra/LyapunovODE` holds the
+    Grönwall lemma, fundamental-matrix laws and `ltvCov` (`Estimation.LTV.{…, ltvCov_*}`
+    → `LinearAlgebra.*`, `expFund_hasDerivAt`, `expFund_self`; the LTI and
+    state-transition restatements and `predict_cov_ode_solution` removed; `covODE_unique`
+    from `ltvCov_unique`; `Lyapunov.covSol_eq_ltvCov`); `LinearAlgebra.posSemidef_congr`
+    (module `LinearAlgebra/Congruence`) used for every `B A Bᵀ ⪰ 0`; Mathlib's
+    `Matrix.IsUpperTriangular` instead of a local copy; EMT plants indexed by method
+    (`rlFamily`, `lclFamily`, `rlRealization`, `lclRealization`,
+    `rl/idealLCLPlant_discretization_{wellPosed, exponentiallyStable}` replace the
+    per-method families and theorems; the deviation families removed, replaced by
+    `Numerics.trajectory_sub_const_iff`, `affineField_shift_eq_linearField`);
+    `ImplicitStep` an abbreviation of `EulerStep`; the finite Bayes posterior is a Gibbs
+    vector (`finPost`, `finEvidence` abbreviations; `finEvidence_pos`, `finPost_pos`,
+    `sum_finPost`, `kl_posterior_prior` → the Gibbs laws); one OU home
+    (`Information.ouMean` → `Stochastic.OU.ouMean θ 0`, `Markov.ouVar` via `OU.ouVar`,
+    `OU.ouVar_add`); Gaussian and Bessel bounds once; Wells' barriers via
+    `Potential.Barrier` (`barrierUp_eq_barrierForward`); the 2×2 Lyapunov operator
+    (`GFL.Noise.lyapunov_unique` → `Lyapunov.solvesCovLyapunov_unique_fin_two`); scalar
+    Milstein/EM as the one-channel steps; one Brownian increment `BM.incr`;
+    `Delay.pade11_eq_stabTrap`.
+  - Transforms: `Transform.orthogonal_dotProduct` gives every power invariance
+    (`park_power_invariant`, `clarkePI_dotProduct`, `clarkePI_mul_transpose` removed);
+    one power-invariant matrix (`clarkePI := parkMatrix 0`, `parkABCPI` its d/q rows);
+    bridges `balanced_eq_cvec`, `negSeq_eq_cvec`, `SpaceVector.clarke_eq_toComplex`
+    (`balanced_sum`, `SpaceVector.clarke_balanced` removed); `ThreePhaseBase.perPhase`;
+    `Drives.Modulation.invClarke` → `Transform.clarkeInv`; scaffold
+    `Transform/ClarkePark.agda`.
+  - Passive elements and grid: the parallel element is the dual series element
+    (`ParallelRLC.toSeries`; its 13 copied laws and `dqAdmittance_of_noInd` → the series
+    laws at `toSeries`); the grid impedance network is the `Interconnection` closed loop
+    (`Grid.networkModel_eq_closedLoop`, `Zext_eq_portImpedance`; scaffold
+    `Grid/ImpedanceNetwork.agda`; `networkModel_transfer` assumes `det Y_shunt ≠ 0`); one
+    dq power identity `SeriesRLC.dq_power_identity` (`DqRL.hasDerivAt_half_sq_amplitude`,
+    `GFL.DCLink.bridgePower_of_kvl`, `GFL.LCLine.bridge_power_invariant`,
+    `CurrentControl.decoupling_power_cancel`, `bridgePower_decoupling` removed);
+    `SeriesRLC.toSeq_dqImpedance`, `det_dqImpedance`;
+    `Line.IsTelegrapherSolution.reflect`.
+  - Power systems, current control, drives: the IMC current loop of the drives is a
+    parameterization of `CurrentControl.PIParams` (`IMCLoop.toPIParams`; its family,
+    requirement language and twelve restated laws removed; scaffold re-cut);
+    `Sensorless.trackingLoopModel` is `PLL.phaseModel`, the speed loop the `R = 0` PI loop
+    (`siso2` and its laws → `LTI`); `SwingGovernor.firstOrderModel` once;
+    `SwingParams.hasDerivAt_Pe` (`classical_power_linearization` removed); the GFL
+    class-A swing is the classical machine in momentum coordinates
+    (`GFL.Noise.SwingParams` removed); `ClassicalSMIB.toPH`,
+    `PostFaultSMIB.toSwing_classical`; `PMSM.torque_eq_spaceVector`,
+    `SyncMachine.spaceVector_torque_eq`; `MismatchParams.Stable`, `momentumCoord`,
+    `swingA`, `linNetField`, `KE` defined through the canonical objects.
+  - Grid-forming converters and PLL: one PI-PLL energy `PLL.piPLLEnergy` and law
+    `piPLL_energy_rate` (with set point; `gflPH_power_balance`, `pllPH_power_balance`,
+    `pllHamiltonian_lie`, `hasGradientAt_pllHamiltonian` → them); `pllPH`,
+    `pllHamiltonian` abbreviations of the generic model; `srfPotential`, one SRF
+    detector (`srf_h` removed; the `k = 0` SRF theorems → the general-`k` ones in
+    `PIPLLFamily`); `PLL.zeta_eq_dampingRatio` (`StochasticPH.zeta` removed);
+    `biasedPD_eq_trigPD`, `formBH_eq_trigPD` (the fold wrappers removed);
+    `PLL.scaleSecond` → `Dynamics.scaleCoord`; `negSeq`, `posSeq` as Clarke images; the
+    saturation model through the swing hub; the AHO as the Hopf normal form
+    (`AHO.toHopf`; its smoothness and Jacobian lemmas → `NormalForm.Hopf`);
+    `PSC.rhs_eq_adler`; the VSM-LPF reference channels as parameter maps
+    (`gfmPref*`, `gfmAngle*` removed); `consensus_frequency` → `steadyState_frequency`.
+  - Classified theorems 7488 → 7407; public connection theorems 1051 → 1024.
+
 ## 2026-11-15
 
 - Removed duplicate and wrapper theorems (first pass of the theorem-by-theorem

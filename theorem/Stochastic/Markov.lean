@@ -5,6 +5,7 @@ import Mathlib.Probability.Kernel.IonescuTulcea.Traj
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Process.Filtration
 import Mathlib.Probability.Moments.Variance
+import theorem.Stochastic.OUMoments
 
 /-! # Markov processes: Chapman–Kolmogorov, invariance, the Gaussian (OU) semigroup
 
@@ -167,33 +168,23 @@ end MarkovProperty
   rw [e, lintegral_map hind (by fun_prop)]
   congr 1; funext z; rw [add_comm]
 
-/-- OU transition variance `v(t) = σ²(1 − e^{−2θt})/(2θ)` (as `ℝ≥0`). -/
-def ouVar (θ σ : ℝ) (t : ℝ≥0) : ℝ≥0 := (σ ^ 2 * (1 - exp (-2 * θ * t)) / (2 * θ)).toNNReal
+/-- OU transition variance `v(t) = σ²(1 − e^{−2θt})/(2θ)` as `ℝ≥0`: the scalar OU variance
+`OU.ouVar` (`theorem/Stochastic/OUMoments.lean`). -/
+def ouVar (θ σ : ℝ) (t : ℝ≥0) : ℝ≥0 := (OU.ouVar θ σ t).toNNReal
 
 /-- OU transition law from `x` over time `t`: `N(e^{−θt} x, v(t))`. -/
 def ouLaw (θ σ : ℝ) (t : ℝ≥0) (x : ℝ) : Measure ℝ := gaussianReal (exp (-θ * t) * x) (ouVar θ σ t)
 
-@[tmio M, powerlib_foundation] theorem ouVar_coe {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (t : ℝ≥0) :
-    (ouVar θ σ t : ℝ) = σ ^ 2 * (1 - exp (-2 * θ * t)) / (2 * θ) := by
-  rw [ouVar, Real.coe_toNNReal]
-  apply div_nonneg _ (by positivity)
-  apply mul_nonneg (sq_nonneg _)
-  rw [sub_nonneg, exp_le_one_iff]
-  have : (0 : ℝ) ≤ t := t.2
-  nlinarith
-
-/-- Variance composition `e^{−2θt} v(s) + v(t) = v(s + t)`. -/
+/-- Variance composition `e^{−2θt} v(s) + v(t) = v(s + t)` in `ℝ≥0` (`OU.ouVar_add`). -/
 @[tmio M, powerlib_foundation] theorem ouVar_add {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) (s t : ℝ≥0) :
     .mk (exp (-θ * t) ^ 2) (sq_nonneg _) * ouVar θ σ s + ouVar θ σ t = ouVar θ σ (s + t) := by
+  have hc : ∀ u : ℝ≥0, ((OU.ouVar θ σ u).toNNReal : ℝ) = OU.ouVar θ σ u := fun u =>
+    Real.coe_toNNReal _ (OU.ouVar_nonneg hθ σ u.2)
   apply NNReal.eq
   push_cast
-  rw [ouVar_coe hθ, ouVar_coe hθ, ouVar_coe hθ, NNReal.coe_add]
-  have e1 : exp (-θ * t) ^ 2 = exp (-2 * θ * t) := by rw [← exp_nat_mul]; congr 1; push_cast; ring
-  have e2 : exp (-2 * θ * ((s : ℝ) + t)) = exp (-2 * θ * t) * exp (-2 * θ * s) := by
-    rw [← exp_add]; congr 1; ring
-  rw [e1, e2]
-  field_simp
-  ring
+  simp only [ouVar, hc]
+  rw [NNReal.coe_add]
+  exact OU.ouVar_add θ σ s t
 
 /-- **OU Chapman–Kolmogorov**: the Gaussian transition laws form a semigroup,
 `∫ K_t(y, ·) K_s(x, dy) = K_{s+t}(x, ·)`. -/
@@ -220,11 +211,7 @@ with `a = e^{−θh}`), then `X' − X` is not independent of `X`. -/
   have hcov : cov[X, fun ω => a * X ω + Z ω - X ω; P] = (a - 1) * v₀ := by
     have e : (fun ω => a * X ω + Z ω - X ω) = fun ω => (a - 1) * X ω + Z ω := by
       funext ω; ring
-    rw [e, show (fun ω => (a - 1) * X ω + Z ω) = (fun ω => (a - 1) * X ω) + Z from rfl,
-      covariance_add_right hX2 (hX2.const_mul _) hZ, covariance_const_mul_right,
-      covariance_self hX2.aemeasurable, hXZ.covariance_eq_zero hX2 hZ, hX.variance_eq,
-      variance_id_gaussianReal]
-    ring
+    rw [e, OU.cov_exactStep (a - 1) hX hZ hXZ]
   rw [hcov] at h0
   have : (v₀ : ℝ) ≠ 0 := by exact_mod_cast hv
   have : a - 1 ≠ 0 := sub_ne_zero.mpr ha

@@ -533,8 +533,7 @@ the design's affine loop, which decides these sentences
       y ∈ {y : LimitedPI | 0 < y.design.R + y.design.Kp ∧ 0 < y.design.Ki}) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% mem_den_attractive_iff hh hP)]
-  change PIParams.Stable y.design ↔ 0 < y.design.R + y.design.Kp ∧ 0 < y.design.Ki
-  rw [PIParams.Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
+  exact y.design.stable_iff hL
 
 /-- Within a positive inductance, integral action and headroom, instability is translated exactly:
 a design that is not unstable, `(R + Kp)/L ≥ 0` and `Ki/L > 0`, is Lyapunov stable, and so is
@@ -870,11 +869,11 @@ platform satisfies it. -/
 @[tmio MI, powerlib_domain] theorem realizationCompleteUnder_globallyExponentiallyStable :
     connection% (implementation.RealizationCompleteUnder ∅
       (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationCompleteUnder
-  rintro y ⟨hy, -⟩
+  unfold powerlib.TMIO.Statement
+  refine Implementation.realizationCompleteUnder_of_forall_not_mem_den fun y => ?_
   have hn := not_mem_den_globallyExponentiallyStable y
   unfold powerlib.TMIO.Statement at hn
-  exact (hn hy).elim
+  exact hn
 
 /-- A drifting platform: the design `L = R = 1`, `Kp = Ki = 0` (no integral action) at `i* = 1`
 with `V_dc = 3` (`|R i*| = 1 < √3 = V_max`). -/

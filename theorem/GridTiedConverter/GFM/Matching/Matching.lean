@@ -29,7 +29,8 @@ Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2, §1.4, §2.2;
 Results.
 * The DC node is a shunt `Passive.ParallelRLC` (`C`, `G`) with injected current `i_dc − i_x`; its
   energy balance `H' = P_src − P_ac − G v²` (`H = C v²/2`, `P_src = v i_dc`, `P_ac = v i_x`, §1.1)
-  is the element's own law `Passive.ParallelRLC.hasDerivAt_energy`.
+  is the element's own law, `Passive.SeriesRLC.hasDerivAt_energy` of the dual series element
+  `Passive.ParallelRLC.toSeries`.
 * `droop_transfer`, `droop_dcGain`: the droop has `Δω/ΔP_export = −(3/2) K /(v* (C s + G))`;
   its DC gain `−(3/2) K /(G v*)` needs `G ≠ 0` (§1.4).
 * `matching_eq_swing`: with `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
@@ -309,7 +310,7 @@ exponential stability) iff `G > 0`. -/
     connection% (m ∈ droopFamily.den (.flow P) ↔ m ∈ {m : DroopNode | 0 < m.G}) := by
   unfold powerlib.TMIO.Statement
   rw [droopDen_flow hP]
-  exact Passive.ParallelRLC.decay_pos_iff hC
+  exact Passive.SeriesRLC.decay_pos_iff (b := m.node.toSeries) hC
 
 /-! ## The matching and swing families -/
 

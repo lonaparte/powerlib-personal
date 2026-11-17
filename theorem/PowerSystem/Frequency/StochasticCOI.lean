@@ -7,6 +7,7 @@ import theorem.Stochastic.OUMoments
 import theorem.LTI.Oscillator2
 import Mathlib.Probability.Moments.Variance
 import theorem.LinearAlgebra.Frobenius
+import theorem.PowerSystem.Synchronous.Swing
 
 /-! # Linearized stochastic COI swing: stationary covariance, moment equations, lag covariance
 
@@ -29,6 +30,9 @@ Source: work-sync `theory/T-frequency-stability-stochastic.md` §1.3 (linearizat
 `theory/T-sde-systems.md` §2.2.2 (noisy swing as an OU process).
 
 Results.
+* `swingA` is the Jacobian of the swing equation (`Synchronous.SwingParams.jacobian`,
+  `theorem/PowerSystem/Synchronous/Swing.lean`); `swingA_isHurwitz` is its Hurwitz criterion
+  (`SwingParams.isHurwitz_jacobian_iff`) for `M, D, k > 0`.
 * `swingCov_solves`, `swingCov_unique`: for `M, D, k > 0` the unique solution of (1.7) is
   `p₁₂ = 0`, `p₂₂ = s²/(2MD)`, `p₁₁ = s²/(2Dk)` with `s² = σ_ω² + σ_v²` ((1.8), (1.9); entries
   `swingCov_zero_one`, `swingCov_one_zero`, `swingCov_one_one`, `swingCov_zero_zero`);
@@ -79,8 +83,11 @@ attribute [local instance] powerlib.LinearAlgebra.frobeniusENormedAddMonoid
 
 /-! ## The linearized model -/
 
-/-- Drift matrix of (1.5), state `(δ̃, ω̃)`. -/
-def swingA (M D k : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -(k / M), -(D / M)]
+/-- Drift matrix of (1.5), state `(δ̃, ω̃)`: `[[0, 1], [−k/M, −D/M]]`, the Jacobian of the swing
+equation (`Synchronous.SwingParams.jacobian`) with inertia `M`, damping `D` and synchronizing
+coefficient `k`. -/
+abbrev swingA (M D k : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  (⟨M, D, 0, 0, k, 0⟩ : Synchronous.SwingParams).jacobian 0
 
 /-- Noise matrix of (1.5): columns = (frequency channel, voltage channel). -/
 def swingNoise (M sω sv : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 0; sω / M, sv / M]
@@ -98,12 +105,8 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- `A` is Hurwitz for `M, D, k > 0`. -/
 @[tmio TM, powerlib_domain] theorem swingA_isHurwitz {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
     (hk : 0 < k) : LinearSystems.IsHurwitz (swingA M D k) := by
-  rw [swingA, powerlib.Criteria.isHurwitz_fin_two_of_iff]
-  constructor
-  · have : 0 < D / M := div_pos hD hM
-    linarith
-  · have : 0 < k / M := div_pos hk hM
-    nlinarith
+  refine (Synchronous.SwingParams.isHurwitz_jacobian_iff ⟨M, D, 0, 0, k, 0⟩ hM 0).mpr ⟨hD, ?_⟩
+  simpa [Synchronous.SwingParams.syncCoeff] using hk
 
 /-- (1.8)–(1.9) solve the covariance Lyapunov equation (1.7). -/
 @[tmio M, powerlib_domain] theorem swingCov_solves {M D k : ℝ} (hM : M ≠ 0) (hD : D ≠ 0)
@@ -115,7 +118,8 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j
   simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply,
     Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [swingA, swingCov] <;> field_simp <;> ring
+  fin_cases i <;> fin_cases j <;> simp [swingA, swingCov, Synchronous.SwingParams.jacobian,
+    Synchronous.SwingParams.syncCoeff] <;> field_simp <;> ring
 
 /-- Uniqueness: every solution of (1.7) is the closed form (1.8)–(1.9). -/
 @[tmio M, powerlib_domain] theorem swingCov_unique {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
@@ -199,7 +203,8 @@ stationary covariance (1.8)–(1.9). -/
       -(k / M - (D / (2 * M)) ^ 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [swingA, Matrix.mul_apply, Fin.sum_univ_two, Matrix.one_apply] <;> field_simp <;> ring
+    simp [swingA, Synchronous.SwingParams.jacobian, Synchronous.SwingParams.syncCoeff,
+      Matrix.mul_apply, Fin.sum_univ_two, Matrix.one_apply] <;> field_simp <;> ring
 
 /-- **Speed lag covariance (§1.5, boxed)**, underdamped `D² < 4 M k`:
 `(e^{τA} P∞)_{ωω} = Var(ω̃) e^{−aτ} [cos(ω_d τ) − (a/ω_d) sin(ω_d τ)]`, `a = ζω_n = D/(2M)`,
@@ -220,7 +225,7 @@ stationary covariance (1.8)–(1.9). -/
       (swingA M D k + a • (1 : Matrix (Fin 2) (Fin 2) ℝ)) = -(w ^ 2) • 1 := by
     rw [hw2, ha]; exact swingA_shift_sq hM.ne'
   rw [LTI.exp_smul_of_sq_eq hw0 hB τ, Matrix.mul_apply, Fin.sum_univ_two]
-  simp [swingCov, swingA]
+  simp [swingCov, swingA, Synchronous.SwingParams.jacobian, Synchronous.SwingParams.syncCoeff]
   simp only [ha]
   field_simp
   ring

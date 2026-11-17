@@ -49,9 +49,9 @@ Results.
   constant `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`, port matrix `(−1, 0)ᵀ` (input `δω_g`),
   non-quadratic Hamiltonian `H = V(θ) + ½ K_i η²`; its input field is
   `piPLLField h K_p K_i δω_g` (`PLL.gflPH_field`) and its zero-input field is `reducedField`
-  (`pHModel_zeroInputField`). Its energy rate is `Ḣ = h δω_g − K_p h²` (`PLL.piPLL_energy_rate`,
-  `PLL.gflPH_power_balance`), in particular `Ḣ = −K_p h(θ)² ≤ 0` along `reducedField`
-  (`reduced_energy_rate_nonpos`).
+  (`pHModel_zeroInputField`). Its energy rate is `Ḣ = h δω_g − K_p h²` (`PLL.piPLL_energy_rate`),
+  in particular `Ḣ = −K_p h(θ)² ≤ 0` along `reducedField` (`reduced_energy_rate_nonpos`, the
+  zero-input dissipation `PH.NonlinearModel.zeroInput_lie_nonpos` of the pH model).
   `H` is not bounded below when `c₀ ≠ 0` (tilted washboard), so it is not a nonnegative storage
   and no passivity claim follows from it. Related port-Hamiltonian constructions of the PI-PLL:
   `theorem/GridTiedConverter/PLL/PH.lean` (SRF detector) and
@@ -94,7 +94,7 @@ namespace powerlib.GFL.LCLine
 open Real Matrix
 open powerlib.Dynamics (State)
 open powerlib.PLL
-open powerlib.Transform (parkQ iparkD iparkQ)
+open powerlib.Transform (parkD parkQ iparkD iparkQ)
 
 namespace Params
 
@@ -178,31 +178,27 @@ def pot (θ : ℝ) : ℝ := -(p.c0 * θ) - p.amp * cos (θ + p.phase)
   · funext x; simp [pot]
   · ring
 
-/-- Hamiltonian `H(θ, η) = V(θ) + ½ K_i η²`. -/
-def hamiltonian (y : State 2) : ℝ := p.pot (y 0) + p.Ki / 2 * y 1 ^ 2
+/-- Hamiltonian `H(θ, η) = V(θ) + ½ K_i η²`: the PI-PLL energy of the potential `V`. -/
+def hamiltonian : State 2 → ℝ := piPLLEnergy p.pot p.Ki 0
 
 /-- The reduced PLL as a nonlinear port-Hamiltonian system: the pH model of the PI-PLL
 (`PLL.gflPHModel`) with detector `h` and potential `V`, constant `J = [[0, 1], [−1, 0]]`,
 `R = diag(K_p, 0)`, port matrix `(−1, 0)ᵀ` (input: grid-frequency drift `δω_g`), and
 `H = V(θ) + ½ K_i η²`. -/
 def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.NonlinearModel 2 1 :=
-  gflPHModel p.h p.pot (p.hasDerivAt_pot hwC hΔ) p.Kp p.Ki hKp
+  gflPHModel p.h p.pot (p.hasDerivAt_pot hwC hΔ) p.Kp p.Ki 0 hKp
 
 /-- `(J − R)∇H` is exactly the reduced field. -/
 @[tmio M, powerlib_domain] theorem pHModel_zeroInputField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) : (p.pHModel hwC hΔ hKp).zeroInputField = p.reducedField := by
-  funext y
-  have h0 : (0 : Fin 1 → ℝ) = ![0] := by ext i; fin_cases i; rfl
-  rw [PH.NonlinearModel.zeroInputField, h0, pHModel, gflPH_field, reducedField_eq]
+  rw [pHModel, gflPH_zeroInputField, mul_zero, reducedField_eq]
 
 /-- `Ḣ ≤ 0` along the reduced field.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem reduced_energy_rate_nonpos (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKp : 0 ≤ p.Kp) (y : State 2) : fderiv ℝ p.hamiltonian y (p.reducedField y) ≤ 0 := by
-  have hH : p.hamiltonian = fun z => p.pot (z 0) + p.Ki / 2 * z 1 ^ 2 := rfl
-  rw [reducedField_eq, hH, piPLL_energy_rate _ _ _ (p.hasDerivAt_pot hwC hΔ (y 0))]
-  have := mul_nonneg hKp (sq_nonneg (p.h (y 0)))
-  linarith
+  have h := (p.pHModel hwC hΔ hKp).zeroInput_lie_nonpos y
+  rwa [pHModel_zeroInputField] at h
 
 /-- The Hamiltonian is nonincreasing along every solution segment of the reduced field.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -216,24 +212,23 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ### The code frame (`decisions.md` §D1.4) -/
 
-/-- Code-frame converter current (`models.py`: `i_d = cos θ i_d* + sin θ i_q*`, here with the
-IN-positive references), d-axis. -/
-def codeID (θ : ℝ) : ℝ := cos θ * p.idRef + sin θ * p.iqRef
-/-- Code-frame converter current (`i_q = −sin θ i_d* + cos θ i_q*`), q-axis. -/
-def codeIQ (θ : ℝ) : ℝ := -sin θ * p.idRef + cos θ * p.iqRef
-
 /-- The code's PLL input `v_cqc = sin θ v_cd + cos θ v_cq` on its own algebraic chain
-(`models.py::vcqc_exact`; line solved with the corrected system, as `_ig_at_thetae` does),
+(`models.py::vcqc_exact`; line solved with the corrected system, as `_ig_at_thetae` does), with
+the code-frame converter currents `i_d = cos θ i_d* + sin θ i_q*`, `i_q = −sin θ i_d* + cos θ i_q*`
+(`models.py`, here with the IN-positive references: `Transform.parkD θ i*`, `Transform.parkQ θ i*`),
 written with the IN-positive capacitor formula `v_c = ((i_gq − i_q), (i_d − i_gd))/(ω_g C_f)`. -/
 def hCode (θ : ℝ) : ℝ :=
-  sin θ * ((p.solQ (p.codeID θ) (p.codeIQ θ) p.Vg 0 - p.codeIQ θ) / p.wC) +
-    cos θ * ((p.codeID θ - p.solD (p.codeID θ) (p.codeIQ θ) p.Vg 0) / p.wC)
+  sin θ * ((p.solQ (parkD θ p.idRef p.iqRef) (parkQ θ p.idRef p.iqRef) p.Vg 0 -
+      parkQ θ p.idRef p.iqRef) / p.wC) +
+    cos θ * ((parkD θ p.idRef p.iqRef -
+      p.solD (parkD θ p.idRef p.iqRef) (parkQ θ p.idRef p.iqRef) p.Vg 0) / p.wC)
 
 /-- Exact form of "numerically `h_code(θ) = h_text(−θ)`". -/
 @[tmio M, powerlib_domain] theorem hCode_eq (θ : ℝ) : p.hCode θ = p.h (-θ) := by
-  have e1 : p.codeID θ = p.iD (-θ) := by simp [codeID, Network.iD, iparkD]
-  have e2 : p.codeIQ θ = p.iQ (-θ) := by simp [codeIQ, Network.iQ, iparkQ]
-  simp only [hCode, e1, e2, h, hE, parkQ, vcD, vcQ, igD, igQ, sin_neg, cos_neg]
+  have e1 : parkD θ p.idRef p.iqRef = p.iD (-θ) := by simp [parkD, Network.iD, iparkD]
+  have e2 : parkQ θ p.idRef p.iqRef = p.iQ (-θ) := by simp [parkQ, Network.iQ, iparkQ]
+  rw [hCode, e1, e2]
+  simp only [h, hE, parkQ, vcD, vcQ, igD, igQ, sin_neg, cos_neg]
   ring
 
 /-- The code-frame field (`models.py::dynamics_v1`): `θ̇ = −K_p h_c(θ) − K_i η`, `η̇ = h_c(θ)`. -/

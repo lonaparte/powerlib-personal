@@ -574,7 +574,7 @@ asymptotic stability). -/
     (fun m hm => Spectral.den_globallyExponentiallyStable_subset_les (hG hm)) hG
     (fun r m hm => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
     (Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
-    (Family.den_envelope_of_continuous fun _ => rfl)
+    (Family.IsPort.den_envelope fun _ => rfl)
   · rcases s with P | _ | _
     · cases P <;> rfl
     · rfl

@@ -37,8 +37,8 @@ Results.
   these, `ε*` is explicit: `epsStar P₀ P₂ = 1 / (2 c + 1)` with
   `c = S (2S + 1)/2 + S₃`, `S = |P₀ A₁₂|₁ + |P₂ L A₀|₁`, `S₃ = |P₂ L A₁₂|₁`, `L = A₂₂⁻¹ A₂₁`,
   and `|N|₁ = Σᵢⱼ |Nᵢⱼ|`. Along the way: `V̇ ≤ -|x|²/4 - |η|²/2`.
-* `isUnit_det_of_isHurwitz` — a Hurwitz matrix is invertible (the case `r = 0` of
-  `Criteria.det_smul_sub_ne_zero_of_isHurwitz`). The general Lyapunov-inequality
+* A Hurwitz matrix is invertible: `Criteria.isUnit_det_of_isHurwitz`
+  (`theorem/Criteria/Hurwitz.lean`). The general Lyapunov-inequality
   criterion (`Criteria.re_neg_of_lyapunov`: symmetric positive definite `P` with `wᵀ P M w < 0`
   for `w ≠ 0` forces every complex eigenvalue of `M` into the open left half-plane) is in
   `theorem/Criteria/Lyapunov.lean`.
@@ -47,15 +47,6 @@ Results.
 noncomputable section
 namespace powerlib.SingularPerturbation
 open Matrix
-
-/-! ## A Hurwitz matrix is invertible -/
-
-/-- A Hurwitz matrix is invertible: `det(0 · 1 − A) ≠ 0`
-(`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
-@[tmio T, powerlib_foundation] theorem isUnit_det_of_isHurwitz {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
-    (hA : LinearSystems.IsHurwitz A) : IsUnit A.det :=
-  isUnit_iff_ne_zero.mpr fun h0 => Criteria.det_smul_sub_ne_zero_of_isHurwitz hA le_rfl (by
-    rw [zero_smul, zero_sub, det_neg, h0, mul_zero])
 
 /-! ## Elementary quadratic bounds -/
 
@@ -387,7 +378,7 @@ Hurwitz. -/
   obtain ⟨P2, hP2, hL2, -⟩ :=
     LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov hA22 1
       Matrix.PosDef.one
-  have hU := isUnit_det_of_isHurwitz hA22
+  have hU := Criteria.isUnit_det_of_isHurwitz hA22
   refine ⟨sp.epsStar P0 P2, ?_, fun ε hε hεs => ?_⟩
   · have hc : 0 ≤ sp.couplingConst P0 P2 := by
       simp only [couplingConst]

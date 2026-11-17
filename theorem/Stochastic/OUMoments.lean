@@ -31,7 +31,9 @@ Results.
   `y' = -a y + b`, `y(0) = y₀`, and its `t → ∞` limit.
 * `ouMean_hasDerivAt`, `ouMean_unique`, `ouMean_tendsto`, `ouVar_hasDerivAt`, `ouVar_unique`,
   `ouVar_tendsto` — the OU mean `ouMean` and variance `ouVar` solve their moment ODEs, are the
-  unique such solutions with the given initial value, and `Var[X_t] → σ²/(2θ)` (`ouStatVar`).
+  unique such solutions with the given initial value, and `Var[X_t] → σ²/(2θ)` (`ouStatVar`);
+  `ouVar_add`: `(e^{-θt})² v(s) + v(t) = v(s + t)` (the variance law of the OU semigroup,
+  `Markov.ou_chapmanKolmogorov`).
 * `ou_exactStep_fixed`, `gaussian_step_stationary`, `ou_exactStep_stationary` — the exact OU
   transition over a step `h ≥ 0` preserves the stationary law `N(0, σ²/(2θ))`.
 * `cov_exactStep`, `cov_ouExactStep` — from a stationary state the lag covariance is
@@ -130,11 +132,12 @@ def ouStatVar (θ σ : ℝ) : ℝ := σ ^ 2 / (2 * θ)
   simp [ouMean]
 
 /-- The mean solves `m' = -θ (m - μ∞)`. -/
-@[tmio M, powerlib_foundation] theorem ouMean_hasDerivAt {θ : ℝ} (hθ : θ ≠ 0) (μInf x₀ t : ℝ) :
+@[tmio M, powerlib_foundation] theorem ouMean_hasDerivAt (θ μInf x₀ t : ℝ) :
     HasDerivAt (ouMean θ μInf x₀) (-θ * (ouMean θ μInf x₀ t - μInf)) t := by
-  rw [ouMean_eq_affineSol hθ]
-  convert affineSol_hasDerivAt hθ (θ * μInf) x₀ t using 1
-  ring
+  have h := (((hasDerivAt_id t).const_mul (-θ)).exp.const_mul (x₀ - μInf)).const_add μInf
+  convert h using 1
+  · funext s; simp only [ouMean, id]; ring
+  · simp only [ouMean, id]; ring
 
 /-- The mean is the unique solution of `m' = -θ (m - μ∞)`, `m 0 = x₀`. -/
 @[tmio M, powerlib_foundation] theorem ouMean_unique {θ μInf x₀ : ℝ} (hθ : θ ≠ 0) {m : ℝ → ℝ}
@@ -177,6 +180,17 @@ def ouStatVar (θ σ : ℝ) : ℝ := σ ^ 2 / (2 * θ)
   apply mul_nonneg (div_nonneg (sq_nonneg σ) (by linarith))
   have : exp (-2 * θ * t) ≤ 1 := exp_le_one_iff.mpr (by nlinarith)
   linarith
+
+/-- Variance composition `(e^{-θt})² v(s) + v(t) = v(s + t)` (no sign condition on `θ`). -/
+@[tmio M, powerlib_foundation] theorem ouVar_add (θ σ s t : ℝ) :
+    exp (-θ * t) ^ 2 * ouVar θ σ s + ouVar θ σ t = ouVar θ σ (s + t) := by
+  have e1 : exp (-θ * t) ^ 2 = exp (-2 * θ * t) := by
+    rw [← exp_nat_mul]; congr 1; push_cast; ring
+  have e2 : exp (-2 * θ * (s + t)) = exp (-2 * θ * t) * exp (-2 * θ * s) := by
+    rw [← exp_add]; congr 1; ring
+  simp only [ouVar]
+  rw [e1, e2]
+  ring
 
 @[tmio M, powerlib_foundation] theorem ouStatVar_nonneg {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) :
     0 ≤ ouStatVar θ σ := div_nonneg (sq_nonneg σ) (by linarith)

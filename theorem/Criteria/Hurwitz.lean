@@ -49,7 +49,8 @@ Results.
 * No characteristic root to the right of the spectrum: if every eigenvalue has real part below
   `Re s`, `s` is not a characteristic root (`det_characteristicMatrix_ne_zero_of_re_lt`); for a
   Hurwitz matrix every `s` with `0 ≤ Re s` (`det_characteristicMatrix_ne_zero_of_isHurwitz`), and
-  every real `r ≥ 0` in the real determinant (`det_smul_sub_ne_zero_of_isHurwitz`).
+  every real `r ≥ 0` in the real determinant (`det_smul_sub_ne_zero_of_isHurwitz`); in
+  particular a Hurwitz matrix is invertible (`isUnit_det_of_isHurwitz`).
 
 Family and connection conclusions.
 * None: static algebra of polynomials and matrices. Model families publish their conclusions as
@@ -392,6 +393,12 @@ below `Re s`, then `s` is not a root of `det (s • 1 - A)`. -/
   apply det_characteristicMatrix_ne_zero_of_isHurwitz hA (s := r) (by simpa using hr)
   rw [det_characteristicMatrix_eq_aeval, ← Complex.coe_algebraMap, aeval_algebraMap_apply,
     coe_aeval_eq_eval, eval_charpoly, scalar_apply, ← smul_one_eq_diagonal, h0, map_zero]
+
+/-- A Hurwitz matrix is invertible (`r = 0` in `det_smul_sub_ne_zero_of_isHurwitz`). -/
+@[tmio T, powerlib_foundation] theorem isUnit_det_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+    (hA : LinearSystems.IsHurwitz A) : IsUnit A.det :=
+  isUnit_iff_ne_zero.mpr fun h0 => det_smul_sub_ne_zero_of_isHurwitz hA le_rfl (by
+    rw [zero_smul, zero_sub, det_neg, h0, mul_zero])
 
 end Matrix
 

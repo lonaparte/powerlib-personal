@@ -27,6 +27,11 @@ Results.
   `Certificate.lie_energy_matrix`, `Certificate.lie_energy`, `Certificate.energy_contDiff`,
   `Certificate.exists_energy_bounds`; `Certificate.toQuadraticDecay`, and `Certificate.holds`
   (every attractive sentence at every centre).
+* The quadratic energy `quadraticEnergy P` (`xᵀ P x / 2`, the stored energy of KYP certificates
+  and pH plants): `contDiff_quadraticEnergy`, `fderiv_quadraticEnergy_apply` (for symmetric `P`
+  its derivative in the direction `v` is `xᵀ P v`), `quadraticDecay_of_lyapunov` (a symmetric
+  positive definite `P` with `xᵀ P A x < 0` off the origin is a quadratic-decay certificate of
+  the linear field).
 * Conserved quadratic energies: `dotProduct_hasDerivWithinAt`, `quadratic_conserved` (a symmetric
   `P` with `Aᵀ P + P A = 0` is constant along every solution segment), `conservative_of_quadratic`
   (with `P` positive definite the linear field is conservative).
@@ -266,6 +271,86 @@ theory applied to its energy. -/
     (c : Certificate A) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField A e) e :=
   ((c.toQuadraticDecay e).globallyExponentiallyStable (affine_contDiff A e)).holds hP
+
+/-! ## The quadratic energy -/
+
+/-- The quadratic energy `xᵀ P x / 2`: the stored energy of KYP certificates and of
+port-Hamiltonian plants, and the Hamiltonian of quadratic pH systems. -/
+def quadraticEnergy (P : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) : ℝ :=
+  (1 / 2 : ℝ) * (WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp x))
+
+private theorem quadraticEnergy_eq_inner (P : Matrix (Fin n) (Fin n) ℝ) :
+    quadraticEnergy P = fun x => (1 / 2 : ℝ) * ⟪x, op P x⟫ := by
+  funext x
+  rw [inner_op]
+  rfl
+
+@[tmio T, powerlib_foundation] theorem contDiff_quadraticEnergy (P : Matrix (Fin n) (Fin n) ℝ) :
+    ContDiff ℝ 1 (quadraticEnergy P) := by
+  rw [quadraticEnergy_eq_inner]
+  exact contDiff_const.mul (contDiff_id.inner ℝ (op P).contDiff)
+
+/-- For symmetric `P`, the derivative of `xᵀ P x / 2` in the direction `v` is `xᵀ P v`. -/
+@[tmio T, powerlib_foundation] theorem fderiv_quadraticEnergy_apply
+    {P : Matrix (Fin n) (Fin n) ℝ} (hP : Pᵀ = P) (x v : ℝⁿ) :
+    fderiv ℝ (quadraticEnergy P) x v = WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp v) := by
+  have hd : HasFDerivAt (quadraticEnergy P)
+      ((1 / 2 : ℝ) • (fderivInnerCLM ℝ (x, op P x)).comp
+        ((ContinuousLinearMap.id ℝ ℝⁿ).prod (op P))) x := by
+    rw [quadraticEnergy_eq_inner]
+    exact ((hasFDerivAt_id x).inner ℝ (op P).hasFDerivAt).const_mul (1 / 2 : ℝ)
+  rw [hd.fderiv]
+  simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.prod_apply, fderivInnerCLM_apply, ContinuousLinearMap.id_apply, inner_op,
+    smul_eq_mul]
+  have hsym : WithLp.ofLp v ⬝ᵥ (P *ᵥ WithLp.ofLp x) = WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp v) := by
+    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
+    congr 1
+    conv_lhs => rw [← hP]
+    rw [Matrix.vecMul_transpose]
+  rw [hsym]
+  ring
+
+/-- A symmetric positive definite `P` along which the linear field strictly loses energy,
+`xᵀ P A x < 0` for every `x ≠ 0`, gives a quadratic-decay certificate of the linear field with
+the energy `xᵀ P x / 2`. -/
+@[tmio T, powerlib_foundation] theorem quadraticDecay_of_lyapunov {A P : Matrix (Fin n) (Fin n) ℝ}
+    (hP : Pᵀ = P) (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (P *ᵥ x))
+    (hneg : ∀ x : Fin n → ℝ, x ≠ 0 → x ⬝ᵥ (P *ᵥ (A *ᵥ x)) < 0) :
+    Nonempty (Flow.QuadraticDecay (affineLinearVectorField A 0) (quadraticEnergy P) 0) := by
+  have hhom : ∀ (a : ℝ) (x : ℝⁿ), quadraticEnergy P (a • x) = a ^ 2 * quadraticEnergy P x :=
+    fun a x => by
+      simp only [quadraticEnergy, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,
+        smul_dotProduct, smul_eq_mul]
+      ring
+  have hE : ∀ x : ℝⁿ, x ≠ 0 → 0 < quadraticEnergy P x := fun x hx =>
+    mul_pos (by norm_num) (hpos _ (by simpa using hx))
+  have hc := (contDiff_quadraticEnergy P).continuous
+  obtain ⟨a, ha, hlo⟩ := Flow.quadratic_lower_bound _ hc hhom hE
+  obtain ⟨b, hb0, hhi⟩ := Flow.quadratic_upper_bound _ hc hhom hE
+  let W : ℝⁿ → ℝ := fun x => -(WithLp.ofLp x ⬝ᵥ (P *ᵥ (A *ᵥ WithLp.ofLp x)))
+  have hWc : Continuous W := by
+    simp only [W]
+    fun_prop
+  have hWh : ∀ (c : ℝ) (x : ℝⁿ), W (c • x) = c ^ 2 * W x := fun c x => by
+    simp only [W, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct,
+      smul_eq_mul]
+    ring
+  have hWp : ∀ x : ℝⁿ, x ≠ 0 → 0 < W x := fun x hx => neg_pos.mpr (hneg _ (by simpa using hx))
+  obtain ⟨α, hα, hW⟩ := Flow.quadratic_lower_bound W hWc hWh hWp
+  refine ⟨⟨a, b, α / b, ha, hb0, div_pos hα hb0, contDiff_quadraticEnergy P,
+    affine_isEquilibrium A 0, fun x => by simpa using hlo x, fun x => by simpa using hhi x,
+    fun x => ?_⟩⟩
+  have hz : WithLp.ofLp (affineLinearVectorField A 0 x) = A *ᵥ WithLp.ofLp x := by
+    simp [affine_apply, op, Matrix.ofLp_toEuclideanCLM]
+  rw [fderiv_quadraticEnergy_apply hP, hz, show WithLp.ofLp x ⬝ᵥ (P *ᵥ (A *ᵥ WithLp.ofLp x)) =
+    -W x from (neg_neg _).symm]
+  have h1 := hW x
+  have h2 := hhi x
+  have h3 : α / b * quadraticEnergy P x ≤ α * ‖x‖ ^ 2 := by
+    rw [div_mul_eq_mul_div, div_le_iff₀ hb0]
+    nlinarith [sq_nonneg ‖x‖]
+  linarith
 
 /-! ## Conserved quadratic energies -/
 

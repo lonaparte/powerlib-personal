@@ -19,8 +19,8 @@ Results.
 * Energy is conserved along every solution: `Conservative.energy_conserved` with `m = 1`,
   `V = ω₀²(1 − cos θ)` (`hasDerivAt_potential`), used by `libration` and `rotation`.
 * `(0, 0)` is Lyapunov stable (strict minimum of `V` on `(−π, π)`; `origin_lyapunovStable`).
-* `(π, 0)` is unstable: the Jacobian there is `!![0, 1; ω₀², 0]` with `det = −ω₀² < 0` (saddle;
-  `top_unstable`).
+* `(π, 0)` is unstable: `V''(π) = −ω₀² < 0`, a saddle of the conservative linearization
+  (`Conservative.unstable_of_slope_neg`; `top_unstable`).
 * Separatrix energy `E(π, 0) = 2ω₀²` (`separatrix_energy`).
 * Libration/rotation dichotomy on every solution segment: if `E < 2ω₀²` and `|θ(a)| < π` then
   `|θ(t)| < π` throughout (`libration`); if `E > 2ω₀²` then `ω` never vanishes, keeps its sign,
@@ -80,34 +80,14 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
       rw [this]
       exact potential_pos hω (by rw [sub_zero] at hθ; linarith [Real.pi_pos]) hne)
 
-/-- Jacobian of the pendulum field. -/
-@[tmio M, powerlib_foundation] theorem hasFDerivAt_field (ω₀ : ℝ) (y : State 2) :
-    HasFDerivAt (field ω₀)
-      (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; -(ω₀ ^ 2 * Real.cos (y 0)), 0]) y := by
-  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![Dynamics.coord 1, (-(ω₀ ^ 2 * Real.cos (y 0))) • Dynamics.coord 0] ?_ ?_
-  · intro i; fin_cases i
-    · show HasFDerivAt (fun z => field ω₀ z 0) (Dynamics.coord 1) y
-      exact Dynamics.hasFDerivAt_coord 1 y
-    · show HasFDerivAt (fun z => field ω₀ z 1) ((-(ω₀ ^ 2 * Real.cos (y 0))) • Dynamics.coord 0) y
-      have h0 := Dynamics.hasFDerivAt_coord 0 y
-      have h : HasFDerivAt (fun z : State 2 => -(ω₀ ^ 2 * Real.sin (z 0))) _ y :=
-        ((Real.hasDerivAt_sin (y 0)).comp_hasFDerivAt y h0).const_mul (ω₀ ^ 2) |>.neg
-      have hf : (fun z => field ω₀ z 1) = fun z : State 2 => -(ω₀ ^ 2 * Real.sin (z 0)) := by
-        funext z; simp [field, torque]
-      rw [hf]
-      convert h using 1
-      ext v; simp; ring
-  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp
-
-/-- The upper equilibrium `(π, 0)` is a saddle, hence unstable. -/
+/-- The upper equilibrium `(π, 0)` is a saddle (`V''(π) = −ω₀² < 0`), hence unstable
+(`Conservative.unstable_of_slope_neg`). -/
 @[tmio TM, powerlib_foundation] theorem top_unstable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
     Unstable (field ω₀) (mk Real.pi 0) := by
-  refine Criteria.unstable_of_jacobian_det _
-    (Conservative.field_contDiff (torque_contDiff ω₀)) ?_
-    (hasFDerivAt_field ω₀ (mk Real.pi 0)).fderiv ?_
-  · rw [field, Conservative.field_eq_zero_iff one_ne_zero]; simp [torque]
-  · simp [Matrix.det_fin_two]; positivity
+  refine Conservative.unstable_of_slope_neg one_pos (torque_contDiff ω₀) (by simp [torque])
+    (((Real.hasDerivAt_sin Real.pi).const_mul (ω₀ ^ 2)).congr_deriv rfl) ?_
+  simp only [Real.cos_pi, mul_neg, mul_one, neg_lt_zero]
+  positivity
 
 /-- Separatrix energy `E(π, 0) = 2ω₀²`. -/
 @[tmio M, powerlib_foundation] theorem separatrix_energy (ω₀ : ℝ) :

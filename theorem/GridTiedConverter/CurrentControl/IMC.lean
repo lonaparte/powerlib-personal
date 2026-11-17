@@ -12,8 +12,9 @@ Model boundary.
 * Controller sign: IN-positive duty-cycle plant `L di/dt = −R i − V_dc d` (from
   `ΔI = Z_oc⁻¹ (ΔV − V_dc ΔD)` with `ΔV = 0`, scalar, no dq coupling and no delay), controller
   `d = σ (Kp (i* − i) + Ki ξ)`.
-* The same IMC-tuned loop in a machine drive (RL plant, bandwidth `α`) is the family on
-  `Drives.CascadeControl.IMCLoop` (`theorem/Drives/CascadeControl.lean`).
+* The same IMC-tuned loop in a machine drive (RL plant, bandwidth `α`),
+  `Drives.CascadeControl.IMCLoop` (`theorem/Drives/CascadeControl.lean`), is read through this
+  family at `imc L R α` (`IMCLoop.toPIParams`).
 
 Source: work-sync `theory/T-gfl-control.md` §1.4.1; `theory/T-gfl-impedance.md` §1.4 (sign
 paragraph and sanity check).

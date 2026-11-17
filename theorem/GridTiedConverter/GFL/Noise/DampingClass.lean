@@ -19,8 +19,10 @@ Model boundary.
   `H = p²/(2M) + V(δ)`, `V(δ) = −P_m δ − P_max cos δ`; `J = [[0, 1], [−1, 0]]`, `R = diag(0, D)`,
   input port `(0, 1)ᵀ` (mechanical-power / torque perturbation). Constant damping `D`; classical
   `P_e = P_max sin δ`; continuous time; no exciter, governor, saturation or network dynamics.
-  The pH statements are those of the classical machine `Synchronous.classicalSM`, with its
-  physical range `M > 0`, `D ≥ 0`, `P_max = b > 0` (`Synchronous.ClassicalSMParams`).
+  Class A is the classical machine `Synchronous.classicalSM` (physical range `M > 0`, `D ≥ 0`,
+  `P_max = b > 0`, `Synchronous.ClassicalSMParams`): its zero-input field is the canonical swing
+  field in the momentum coordinates `(δ, M ω)`
+  (`Synchronous.classicalSM_zeroInputField_eq_transport`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md`
 §1–§3; `sn-critical-scaling.md` §1.
@@ -41,8 +43,10 @@ Results.
   (`PLL.piPLLJacobian_trace_det_relation`: `K_i tr + K_p det = 0`, at every slope) and is nonzero
   nilpotent at a fold (`Params.reduced_jacobian_nilpotent`,
   `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`); the class-A Jacobian
-  `[[0, 1/M], [−g, −D/M]]` has constant trace `−D/M` (`classA_trace`), so at a fold it is never
-  nilpotent (`classA_not_nilpotent`).
+  `[[0, 1/M], [−g, −D/M]]` (`classAJacobian`, the swing Jacobian `Synchronous.SwingParams.jacobian`
+  in momentum coordinates, the classical machine's `Synchronous.classicalSM_linearization`) has
+  constant trace `−D/M` (`classA_trace`), so at a fold it is never nilpotent
+  (`classA_not_nilpotent`).
 * Damping ratio (`§3`, `Criteria.dampingRatio`): `ζ_B` is the PI-PLL damping ratio `PLL.zeta` at the
   slope `g` (`classB_zeta_eq`), `ζ_B = (K_p/2)√(g/K_i)` for `g > 0` (`zetaB_eq`),
   `ζ_A = D/(2√(M g))` (`classA_zeta_eq`); `ζ_B(λ g) = √λ ζ_B(g)`, `ζ_A(λ g) = ζ_A(g)/√λ`; `ζ_B → 0`,
@@ -64,32 +68,6 @@ open Real Matrix Filter Topology
 open powerlib.Dynamics (State)
 open powerlib.PLL
 open powerlib.GFL.LCLine
-
-/-! ### Class A: the swing field
-
-Its port-Hamiltonian form is the classical machine `Synchronous.classicalSM`
-(`theorem/PowerSystem/Synchronous/PH.lean`). -/
-
-/-- Parameters of the class-A swing model. -/
-structure SwingParams where
-  /-- Inertia `M`. -/
-  M : ℝ
-  /-- Constant damping `D`. -/
-  D : ℝ
-  /-- Mechanical (reference) power `P_m`. -/
-  Pm : ℝ
-  /-- Static transfer limit `P_max`. -/
-  Pmax : ℝ
-
-namespace SwingParams
-
-variable (s : SwingParams)
-
-/-- Swing field `δ̇ = p/M`, `ṗ = P_m − P_max sin δ − D p/M` (written with `M⁻¹`). -/
-def field (x : State 2) : State 2 :=
-  WithLp.toLp 2 ![s.M⁻¹ * x 1, s.Pm - s.Pmax * sin (x 0) - s.D * (s.M⁻¹ * x 1)]
-
-end SwingParams
 
 /-! ### Noise ports and the fluctuation–dissipation structure (matrix algebra) -/
 
@@ -141,48 +119,34 @@ dissipation matrix is `R_A`. -/
 /-! ### Linearization invariants -/
 
 /-- Class-A Jacobian at a point with restoring slope `g = P_max cos δ`:
-`[[0, 1/M], [−g, −D/M]]`. -/
-def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, M⁻¹; -g, -(D * M⁻¹)]
+`[[0, 1/M], [−g, −D/M]]`, the swing Jacobian (`Synchronous.SwingParams.jacobian`) with
+synchronizing coefficient `g` in the momentum coordinates `diag(1, M)` (`Dynamics.scaleMatrix`);
+at a point `δ*` of the classical machine it is the linearization
+`Synchronous.classicalSM_linearization` (`g = b cos δ*`). -/
+def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  Dynamics.scaleMatrix M * (⟨M, D, 0, 0, g, 0⟩ : Synchronous.SwingParams).jacobian 0 *
+    Dynamics.scaleMatrix M⁻¹
+
+@[tmio M, powerlib_domain] private theorem classAJacobian_apply (M D g : ℝ) :
+    classAJacobian M D g = !![0, M⁻¹; -(g * (M * M⁻¹)), -(D * (M * M⁻¹ * M⁻¹))] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [classAJacobian, Dynamics.scaleMatrix, Synchronous.SwingParams.jacobian,
+      Synchronous.SwingParams.syncCoeff, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
 @[tmio M, powerlib_domain] theorem classA_trace (M D g : ℝ) :
     (classAJacobian M D g).trace = -(D * M⁻¹) := by
-  simp [classAJacobian, Matrix.trace_fin_two]
+  rw [classAJacobian_apply, Matrix.trace_fin_two_of]
+  rcases eq_or_ne M 0 with rfl | hM
+  · simp
+  · rw [mul_inv_cancel₀ hM]; ring
 
 @[tmio M, powerlib_domain] theorem classA_det (M D g : ℝ) :
     (classAJacobian M D g).det = g * M⁻¹ := by
-  simp [classAJacobian, Matrix.det_fin_two]; ring
-
-/-- The class-A Jacobian is the derivative of the swing field. -/
-@[tmio M, powerlib_domain] theorem SwingParams.hasFDerivAt_field (s : SwingParams) (x : State 2) :
-    HasFDerivAt s.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
-      (classAJacobian s.M s.D (s.Pmax * cos (x 0)))) x := by
-  set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
-  set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1
-  have h0 : HasFDerivAt (fun z : State 2 => z 0) π0 x := π0.hasFDerivAt
-  have h1 : HasFDerivAt (fun z : State 2 => z 1) π1 x := π1.hasFDerivAt
-  have hs := (hasDerivAt_sin (x 0)).comp_hasFDerivAt x h0
-  have hF0 := h1.const_mul s.M⁻¹
-  have hF1 := ((hasFDerivAt_const s.Pm x).sub (hs.const_mul s.Pmax)).sub
-    ((h1.const_mul s.M⁻¹).const_mul s.D)
-  have hG : HasFDerivAt (fun z : State 2 => ![s.M⁻¹ * z 1,
-      s.Pm - s.Pmax * sin (z 0) - s.D * (s.M⁻¹ * z 1)])
-      (ContinuousLinearMap.pi ![s.M⁻¹ • π1,
-        (0 - s.Pmax • (cos (x 0) • π0)) - s.D • (s.M⁻¹ • π1)]) x := by
-    refine hasFDerivAt_pi.mpr ?_
-    intro i; fin_cases i
-    · exact hF0
-    · exact hF1
-  have hE := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp x hG
-  have hfun : s.field = (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm ∘
-      (fun z : State 2 => ![s.M⁻¹ * z 1, s.Pm - s.Pmax * sin (z 0) - s.D * (s.M⁻¹ * z 1)]) := rfl
-  rw [hfun]
-  refine hE.congr_fderiv ?_
-  ext v i
-  rw [Matrix.ofLp_toEuclideanCLM]
-  fin_cases i
-  · simp [classAJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_two, π0, π1]
-  · simp [classAJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_two, π0, π1]
-    ring
+  rw [classAJacobian_apply, Matrix.det_fin_two_of]
+  rcases eq_or_ne M 0 with rfl | hM
+  · simp
+  · rw [mul_inv_cancel₀ hM]; ring
 
 /-- At a class-A fold (`g = 0`) the Jacobian is not nilpotent when `D/M ≠ 0`: one eigenvalue stays
 at `−D/M` (an ordinary saddle-node), unlike the class-B fold. -/

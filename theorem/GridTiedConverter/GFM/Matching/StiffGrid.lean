@@ -4,6 +4,7 @@ import theorem.Passive.Series
 import theorem.Passive.Parallel
 import theorem.Criteria.Lyapunov
 import theorem.Dynamics.Coordinates
+import theorem.Transform.Park
 
 /-! # Energy-shaping matching control on a stiff grid: what the "global stability condition" proves
 
@@ -175,8 +176,9 @@ def iHatQ (θ : ℝ) : ℝ :=
 /-- The synchronization potential `S(θ) = î(θ)ᵀ L_s î(θ)/2` of the source. -/
 def potential (θ : ℝ) : ℝ := m.Ls / 2 * (m.iHatD θ ^ 2 + m.iHatQ θ ^ 2)
 
-/-- The internal model of the switch current, `î_x = −μ (−sin θ, cos θ)ᵀ î(θ)`. -/
-def ixHat (θ : ℝ) : ℝ := -(m.μ * (-Real.sin θ * m.iHatD θ + Real.cos θ * m.iHatQ θ))
+/-- The internal model of the switch current, `î_x = −μ (−sin θ, cos θ)ᵀ î(θ)`: `−μ` times
+the `q` component of the Park rotation of `î(θ)` (`Transform.parkQ`). -/
+def ixHat (θ : ℝ) : ℝ := -(m.μ * Transform.parkQ θ (m.iHatD θ) (m.iHatQ θ))
 
 /-- The synchronizing-torque gain: `η ∇S(θ) = κ sin θ`. -/
 def κ : ℝ := m.μ * m.v0 * m.ω0 * m.Ls / m.N
@@ -293,8 +295,9 @@ Static evidence on the model, not a connection conclusion. -/
           ((x 2 - m.iHatD (x 0)) * (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) +
             (x 3 - m.iHatQ (x 0)) * (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0))) := by
   rw [fderiv_energy]
-  simp only [Model.field, Model.idc, Model.ixHat, Model.iHatD, Model.iHatQ, Model.κ, Model.k,
-    PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+  simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.iHatD, Model.iHatQ,
+    Model.κ, Model.k, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   field_simp
   simp only [Model.N, Model.ω0]
@@ -355,7 +358,8 @@ model, not a connection conclusion. -/
   ext i
   fin_cases i
   · simp [Model.field, Model.ω0]
-  · simp only [Model.field, Model.idc, Model.ixHat, PiLp.toLp_apply, Matrix.cons_val_zero,
+  · simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, PiLp.toLp_apply,
+      Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
       Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one, hθ]
     ring
@@ -378,7 +382,7 @@ model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_add_two_pi (m : Model) (θ u id iq : ℝ) :
     m.field (WithLp.toLp 2 ![θ + 2 * Real.pi, u, id, iq]) =
       m.field (WithLp.toLp 2 ![θ, u, id, iq]) := by
-  simp [Model.field, Model.idc, Model.ixHat, Model.iHatD, Model.iHatQ]
+  simp [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.iHatD, Model.iHatQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_point (m : Model) : m.energy m.point = 0 := by
@@ -683,7 +687,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
     fun_prop
   rw [contDiff_euclidean]
   intro i
-  fin_cases i <;> simp [Model.field, Model.idc, Model.ixHat] <;> fun_prop
+  fin_cases i <;> simp [Model.field, Model.idc, Model.ixHat, Transform.parkQ] <;> fun_prop
 
 /-- Entries of the Jacobian applied to a vector. An equivalent form of the damping requirement. -/
 @[tmio M, powerlib_domain] theorem jac_apply (m : Model) (v : State 4) :
@@ -738,7 +742,8 @@ model, not a connection conclusion. -/
       m.μ)).mul_const m.Cdc⁻¹
     convert h using 1
     · funext y
-      simp only [Model.field, Model.idc, Model.ixHat, PiLp.toLp_apply, Matrix.cons_val_zero,
+      simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, PiLp.toLp_apply,
+          Matrix.cons_val_zero,
         Matrix.cons_val_one, Pi.add_apply, Pi.sub_apply, Pi.neg_apply, Pi.mul_apply,
         Function.comp_apply, div_eq_mul_inv]
     · apply ContinuousLinearMap.ext; intro v

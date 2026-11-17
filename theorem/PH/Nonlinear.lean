@@ -390,12 +390,6 @@ and no hypothesis on `∇H(x*)` is needed; `∇H(x*) = 0` is derived. -/
   · obtain ⟨D, hV⟩ := h.exists_isLocalLyapunovFunction
     exact lyapunov_stable hn hV
 
-/-- Equilibrium and Lyapunov stability of a strict local minimum of `H` under zero input. -/
-@[tmio T, powerlib_foundation] theorem IsStrictLocalMin.isEquilibrium_and_lyapunovStable {xs : State n}
-    (h : M.IsStrictLocalMin xs) :
-    IsEquilibrium M.zeroInputField xs ∧ LyapunovStable M.zeroInputField xs :=
-  ⟨h.isEquilibrium, h.lyapunovStable⟩
-
 /-! ### Coordinates centred at an operating point
 
 The library reads flow sentences at the origin. `M.shift xs` is the same pH system in the
@@ -465,13 +459,6 @@ field at the operating point. -/
     Sentence.passive.holds (.continuous (M.shift xs).system) :=
   (M.shift xs).passive_of_bddBelow ((M.bddBelow_range_shift_H).mpr hH)
 
-/-- Lyapunov stability of a strict local minimum, as the library sentence of the centred
-system. -/
-@[tmio T, powerlib_foundation] theorem IsStrictLocalMin.holds_lyapunovStable {xs : State n}
-    (h : M.IsStrictLocalMin xs) :
-    (Sentence.flow .lyapunovStable).holds (.continuous (M.shift xs).system) :=
-  (M.holds_flow_shift_iff .lyapunovStable xs).mpr h.lyapunovStable
-
 end NonlinearModel
 
 /-! ## Deterministic disturbance channels on a nonlinear pH model -/
@@ -517,11 +504,12 @@ namespace powerlib.Family
 
 open Set PH
 
-variable {X Y Q R : Type*} {n m : ℕ}
+variable {X Q : Type*} {n m : ℕ}
 
-/-- Every complete system of the family is the port system of a nonlinear pH system. -/
-def IsNonlinearPH (F : Family X Q n m) (model : X → NonlinearModel n m) : Prop :=
-  ∀ x, F.system x = (model x).system
+/-- Every complete system of the family is the port system of a nonlinear pH system: a family of
+port systems (`Family.IsPort`), whose generic laws (`den_envelope`, `comap`, `extend`) apply. -/
+abbrev IsNonlinearPH (F : Family X Q n m) (model : X → NonlinearModel n m) : Prop :=
+  F.IsPort fun x => (model x).system
 
 variable {F : Family X Q n m} {model : X → NonlinearModel n m}
 
@@ -531,14 +519,12 @@ system at the origin. -/
     {P : Flow.Property} {x : X} :
     connection% (x ∈ F.den (.flow P) ↔ P.holds (model x).zeroInputField 0) := by
   change x ∈ F.den (.flow P) ↔ P.holds (model x).zeroInputField 0
-  rw [(connection_proof% mem_den), hF x, Sentence.holds_flow, NonlinearModel.system_zeroInput]
+  rw [(connection_proof% IsPort.mem_den_flow hF), NonlinearModel.system_zeroInput]
 
 /-- A lower bound on the Hamiltonian places a member in the passivity denotation. -/
 @[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive (hF : F.IsNonlinearPH model) {x : X}
-    (hH : BddBelow (range (model x).H)) : connection% (x ∈ F.den .passive) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% mem_den), hF x]
-  exact (model x).passive_of_bddBelow hH
+    (hH : BddBelow (range (model x).H)) : connection% (x ∈ F.den .passive) :=
+  (connection_proof% IsPort.mem_den_passive_iff hF).mpr ((model x).passive_of_bddBelow hH)
 
 /-- An explicit lower bound `c ≤ H` places a member in the passivity denotation. -/
 @[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive_of_lowerBound
@@ -572,12 +558,5 @@ pH family in Lyapunov stability. -/
     connection% (x ∈ F.den (.flow .lyapunovStable)) := show x ∈ F.den (.flow .lyapunovStable) from
   hF.mem_den_flow_shift.mpr h.lyapunovStable
 
-/-- A family read in another representation stays port-Hamiltonian. -/
-@[tmio M, powerlib_foundation] theorem IsNonlinearPH.comap (hF : F.IsNonlinearPH model) (g : Y → X) :
-    (F.comap g).IsNonlinearPH (model ∘ g) := fun y => hF (g y)
-
-/-- A family with an extended requirement language stays port-Hamiltonian. -/
-@[tmio M, powerlib_foundation] theorem IsNonlinearPH.extend (hF : F.IsNonlinearPH model) (g : Y → X)
-    (extra : Y → R → Prop) : (F.extend g extra).IsNonlinearPH (model ∘ g) := fun y => hF (g y)
 
 end powerlib.Family

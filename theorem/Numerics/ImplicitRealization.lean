@@ -1,4 +1,5 @@
 import theorem.Numerics.LinearSchemes
+import theorem.Numerics.EulerRealization
 import theorem.Map.LinearReading
 import theorem.Linear.Family
 import theorem.Stack.Implementation
@@ -16,8 +17,8 @@ Scaffold: `theorem/Numerics/ImplicitDiscretization.agda`.
 
 Scope. Arbitrary continuous linear families, arbitrary implementation carriers with a design
 map and a real step length. Zero-input dynamics, exact arithmetic, fixed step, no solver error.
-The templates also describe deviations from constant-input equilibria, whose linear matrix is
-the design matrix; the instance must justify that coordinate reading.
+Constant inputs about an equilibrium are the same linear schemes in deviation coordinates
+(`trajectory_sub_const_iff`, `affineField_shift_eq_linearField` of `Numerics/LinearSchemes`).
 
 Source: `Numerics/LinearSchemes`, `Map/LinearReading`, `Linear/Family`, `Stack/Implementation`.
 Results: generated denotation criteria, pointwise realization soundness, trapezoidal realization
@@ -60,11 +61,9 @@ inductive ImplicitRequirement (Q : Type*)
   | positiveStep
   | wellPosed
 
-/-- A fixed positive-step implementation carries its actual continuous design. -/
-structure ImplicitStep (X : Type*) where
-  design : X
-  h : ℝ
-  pos : 0 < h
+/-- A fixed positive-step implementation carries its actual continuous design: the carrier
+`EulerStep` of the explicit Euler integrations (design and positive step). -/
+abbrev ImplicitStep (X : Type*) := EulerStep X
 
 variable {X Y Q : Type*} {n p : ℕ}
 
@@ -73,7 +72,7 @@ def implicitFamily (method : ImplicitMethod) (F : Family X Q n p)
     (plant : X → Linear.Plant n p) (design : Y → X) (step : Y → ℝ) :
     Family Y (ImplicitRequirement Q) n 0 where
   system y := .discrete (Map.System.autonomous (step y)
-    (Map.op (method.matrix (step y) (plant (design y)).A)))
+    (Linear.op (method.matrix (step y) (plant (design y)).A)))
   meets y
     | .design q => F.meets (design y) q
     | .positiveStep => 0 < step y
@@ -84,7 +83,7 @@ def implicitFamily (method : ImplicitMethod) (F : Family X Q n p)
     (method : ImplicitMethod) (F : Family X Q n p) (plant : X → Linear.Plant n p)
     (design : Y → X) (step : Y → ℝ) :
     (implicitFamily method F plant design step).IsAutonomousMap step
-      (fun y => Map.op (method.matrix (step y) (plant (design y)).A)) := fun _ => rfl
+      (fun y => Linear.op (method.matrix (step y) (plant (design y)).A)) := fun _ => rfl
 
 /-- Every numerical implementation realizes the continuous model it was designed from. -/
 def implicitRealization (method : ImplicitMethod) (F : Family X Q n p)

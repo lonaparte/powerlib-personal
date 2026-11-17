@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Transform.SpaceVector
 
 /-! # PMSM steady-state algebra: torque, MTPA, voltage ellipse
 
@@ -18,6 +19,9 @@ Source: work-sync `theory/T-field-oriented-control.md` §1.6 (torque, SPMSM, IPM
 §1.7 (voltage ellipse).
 
 Results.
+* `torque_eq_spaceVector`: the torque is the space-vector torque `SpaceVector.torque`
+  (`(3/2) np Im(conj ψ · i)`) of the rotor-frame flux `ψ = (L_d i_d + ψ_f, L_q i_q)` and current
+  `i = (i_d, i_q)` (`theorem/Transform/SpaceVector.lean`).
 * SPMSM (`L_d = L_q`): torque `(3/2) np ψ_f i_q` (`torque_surface`); on the current disk
   `|i| ≤ I` the torque is maximised exactly at `(0, I)` (`spmsm_mtpa`), and a given torque is
   produced with least current exactly at `i_d = 0` (`spmsm_minCurrent`). Hence `i_d* = 0`.
@@ -42,6 +46,14 @@ namespace powerlib.Drives.PMSM
 
 /-- PMSM electromagnetic torque. -/
 def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq) * id * iq)
+
+/-- The PMSM torque is the space-vector torque `(3/2) np Im(conj ψ · i)` of the rotor-frame flux
+`ψ = (L_d i_d + ψ_f, L_q i_q)` and current `i = (i_d, i_q)`. -/
+@[tmio M, powerlib_domain] theorem torque_eq_spaceVector (np ψf Ld Lq id iq : ℝ) :
+    torque np ψf Ld Lq id iq =
+      Transform.SpaceVector.torque np ⟨Ld * id + ψf, Lq * iq⟩ ⟨id, iq⟩ := by
+  rw [Transform.SpaceVector.torque, Transform.SpaceVector.cross_eq, torque]
+  ring
 
 /-! ## Surface PMSM -/
 

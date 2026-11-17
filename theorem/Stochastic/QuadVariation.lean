@@ -180,8 +180,7 @@ omit [IsProbabilityMeasure P] in
 
 variable {B : ℝ≥0 → Ω → ℝ}
 
-/-- Increment of `B` over the `i`-th step of the partition `t`. -/
-def incr (B : ℝ≥0 → Ω → ℝ) (t : ℕ → ℝ≥0) (i : ℕ) (ω : Ω) : ℝ := B (t (i + 1)) ω - B (t i) ω
+open powerlib.Stochastic.BM (incr)
 
 /-- Quadratic-variation sum `∑_{i < n} (B_{t_{i+1}} − B_{t_i})²`. -/
 def qvSum (B : ℝ≥0 → Ω → ℝ) (t : ℕ → ℝ≥0) (n : ℕ) (ω : Ω) : ℝ :=

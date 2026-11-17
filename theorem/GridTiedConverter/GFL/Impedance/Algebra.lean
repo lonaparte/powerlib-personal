@@ -90,7 +90,7 @@ def YloadNote (load : Passive.ParallelRLC) (s : ℂ) : Matrix (Fin 2) (Fin 2) �
     (hΓ : load.Γ = 0) (h : ω * load.C ≠ 0) (s : ℂ) : YloadNote load s ≠ load.dqAdmittance ω s := by
   intro heq
   have := congrFun (congrFun heq 1) 0
-  simp [YloadNote, Passive.ParallelRLC.dqAdmittance_of_noInd hΓ] at this
+  simp [YloadNote, Passive.ParallelRLC.dqAdmittance, Transform.complexSymm, hΓ] at this
   rcases this with h1 | h1 <;> simp [h1] at h
 
 end powerlib.GFL.Impedance

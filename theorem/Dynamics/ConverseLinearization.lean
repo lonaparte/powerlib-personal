@@ -2,6 +2,7 @@ import theorem.Flow.Certificate
 import theorem.Dynamics.Linearization
 import theorem.Linear.Stability
 import theorem.Dynamics.Locality
+import theorem.Criteria.Hurwitz
 
 /-! # Converse linearization: local exponential stability forces a Hurwitz Jacobian
 
@@ -302,21 +303,10 @@ Jacobian. -/
 
 /-! ## Degenerate linearizations -/
 
-/-- A Hurwitz matrix has no nonzero real null vector. -/
+/-- A Hurwitz matrix has no nonzero real null vector (`Criteria.isUnit_det_of_isHurwitz`). -/
 @[tmio T, powerlib_foundation] theorem mulVec_ne_zero_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
-    (hA : IsHurwitz A) {v : Fin n → ℝ} (hv : v ≠ 0) : A *ᵥ v ≠ 0 := by
-  intro h0
-  have h := hA 0 (fun i => (v i : ℂ))
-    (fun h => hv (funext fun i => by simpa using congrFun h i)) ?_
-  · simp at h
-  · funext i
-    have hi := congrFun h0 i
-    simp only [Matrix.mulVec, dotProduct, Pi.zero_apply] at hi
-    simp only [Matrix.mulVec, dotProduct, Matrix.map_apply, Pi.smul_apply, zero_smul,
-      Complex.coe_algebraMap]
-    have : ((∑ j, A i j * v j : ℝ) : ℂ) = 0 := by rw [hi]; simp
-    push_cast at this
-    exact this
+    (hA : IsHurwitz A) {v : Fin n → ℝ} (hv : v ≠ 0) : A *ᵥ v ≠ 0 := fun h0 =>
+  hv (Matrix.eq_zero_of_mulVec_eq_zero (Criteria.isUnit_det_of_isHurwitz hA).ne_zero h0)
 
 /-- A Hurwitz matrix acts injectively on `ℝⁿ`. -/
 @[tmio T, powerlib_foundation] theorem toEuclideanCLM_injective_of_isHurwitz

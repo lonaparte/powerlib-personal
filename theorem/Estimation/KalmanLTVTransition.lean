@@ -18,14 +18,15 @@ Source: work-sync theory/T-kalman-filter.md §1.2, §1.4 (as in
 `theorem/Estimation/KalmanLTV.lean`).
 
 Results.
-* `stm_hasDerivAt` — `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t ∈ ℝ` (the upstream
+* `stm_hasDerivAt` — the state-transition matrix is a fundamental matrix on all of `ℝ`:
+  `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t ∈ ℝ` (the upstream
   theorem `hasDerivAt_stateTransitionMatrix` holds on open segments `(s, t₁)`; the anchor is
   shifted with `stateTransitionMatrix_comp`, `stateTransitionMatrix_comp_of_mem`,
-  `stateTransitionMatrix_inv`); `Φ(s, s) = I` is upstream `stateTransitionMatrix_self`.
-* `ltv_cov_stateTransition_self`, `hasDerivAt_ltv_cov_stateTransition`,
-  `ltv_cov_stateTransition_unique` — **LTV prediction covariance**: for continuous `A(t)`, `Q(t)`,
-  `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` is the unique solution of
-  `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`.
+  `stateTransitionMatrix_inv`) and `Φ(s, s) = I` (upstream `stateTransitionMatrix_self`). With
+  it the variation-of-constants laws of `theorem/LinearAlgebra/LyapunovODE.lean`
+  (`ltvCov_self`, `hasDerivAt_ltvCov`, `ltvCov_unique`) give the LTV prediction covariance
+  `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` as the unique solution of
+  `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`, for continuous `A(t)`, `Q(t)`.
 * `riccati_joseph_form_stateTransition` — a symmetric Riccati solution equals its closed-loop
   (Joseph) integral representation with `Φ_K` the state-transition matrix of `A − P Cᵀ R⁻¹ C`.
 * `riccati_posSemidef_of_continuous` — `Q ⪰ 0`, `R ≻ 0`, `P(t₀) ⪰ 0` ⇒ the Riccati solution is
@@ -35,7 +36,7 @@ Results.
 noncomputable section
 namespace powerlib.Estimation.LTV
 
-open Matrix Set
+open Matrix Set powerlib.LinearAlgebra
 open scoped Matrix.Norms.Operator
 
 variable {n : ℕ} {A : ℝ → Matrix (Fin n) (Fin n) ℝ}
@@ -53,8 +54,7 @@ variable {n : ℕ} {A : ℝ → Matrix (Fin n) (Fin n) ℝ}
   rw [← hinv]
   exact mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hunit)
 
-/-- **LeanForControl's state-transition matrix is a fundamental matrix on all of `ℝ`:**
-`∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t` (including `t = s`), for continuous `A`.  The
+/-- `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t` (including `t = s`), for continuous `A`.  The
 upstream theorem (`LinearSystems.hasDerivAt_stateTransitionMatrix`, Peano–Baker) gives the
 derivative on open segments `t ∈ (s, t₁)`; at `t = s` the anchor is moved with the upstream
 composition laws. -/
@@ -120,53 +120,8 @@ composition laws. -/
   rw [hfun, hcomp t, ← Matrix.mul_assoc]
   exact hda.mul_const _
 
-/-- **LTV prediction covariance with LeanForControl's state-transition matrix, initial value.**
-For every `A(t)`, `Q(t)`, the matrix
-`P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
-state-transition matrix of `ẋ = A(t) x`, satisfies `P(t₀) = P₀`. -/
-@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition_self
-    (Q : ℝ → Matrix (Fin n) (Fin n) ℝ) (P₀ : Matrix (Fin n) (Fin n) ℝ) (t₀ : ℝ) :
-    ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t₀ = P₀ :=
-  ltvCov_self _ LinearSystems.stateTransitionMatrix_self Q P₀ t₀
-
-/-- **LTV prediction covariance with LeanForControl's state-transition matrix, existence.**
-For continuous `A(t)`, `Q(t)`, the matrix
-`P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
-state-transition matrix of `ẋ = A(t) x`, solves `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_ltv_cov_stateTransition (hA : Continuous A)
-    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
-    (t₀ : ℝ) :
-    ∀ t, HasDerivAt (ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀)
-      (A t * ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t +
-        ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t * (A t)ᵀ + Q t) t :=
-  fun t => hasDerivAt_ltvCov hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
-    P₀ t₀ t
-
-/-- **LTV prediction covariance with LeanForControl's state-transition matrix, uniqueness.**
-For continuous `A(t)`, `Q(t)`, every differentiable solution of `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`,
-`P(t₀) = P₀` is `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ`
-the Peano–Baker state-transition matrix of `ẋ = A(t) x`. -/
-@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition_unique (hA : Continuous A)
-    {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
-    (t₀ : ℝ) :
-    ∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A t * P t + P t * (A t)ᵀ + Q t) t) →
-      P t₀ = P₀ → P = ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ :=
-  fun _ hP h0 => ltvCov_unique hA hQ (stm_hasDerivAt hA) LinearSystems.stateTransitionMatrix_self
-    hP h0
-
 variable {p : ℕ} {C : ℝ → Matrix (Fin p) (Fin n) ℝ} {Q : ℝ → Matrix (Fin n) (Fin n) ℝ}
   {R : ℝ → Matrix (Fin p) (Fin p) ℝ}
-
-/-- Continuity of the closed-loop matrix `A − P Cᵀ R⁻¹ C`. -/
-@[tmio T, powerlib_foundation] private lemma closedLoop_continuous (hA : Continuous A) (hC : Continuous C) (hR : Continuous R)
-    (hRu : ∀ t, IsUnit (R t).det) {P : ℝ → Matrix (Fin n) (Fin n) ℝ} (hPc : Continuous P) :
-    Continuous fun t => A t - P t * (C t)ᵀ * (R t)⁻¹ * C t := by
-  have hRi : Continuous fun t => (R t)⁻¹ := by
-    refine continuous_iff_continuousAt.2 fun t => ?_
-    have hinv : ContinuousAt Ring.inverse (R t).det := by
-      rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ (hRu t).ne_zero
-    exact ContinuousAt.comp (f := R) (continuousAt_matrix_inv _ hinv) hR.continuousAt
-  exact hA.sub (((hPc.matrix_mul hC.matrix_transpose).matrix_mul hRi).matrix_mul hC)
 
 /-- **Riccati solution, closed-loop integral form, with LeanForControl's state-transition
 matrix**: a symmetric solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` (continuous coefficients,

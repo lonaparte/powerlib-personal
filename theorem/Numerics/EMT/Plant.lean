@@ -22,9 +22,12 @@ Model boundary.
   or switching, no sampling or computation delay, no grid impedance beyond the second branch, no
   saturation, constant parameters, exact solution of each implicit step (no Newton or
   linear-solver error), fixed step size. Time is discrete (`k : ℕ`).
-* The results are trajectory-level statements about the discrete recursion for every initial
-  state; with constant inputs they hold for deviations from any equilibrium of the continuous
-  field (which is also a fixed point of both schemes).
+* The results are statements about the discrete recursion `x ↦ R(hA) x` of the plant matrix
+  `A = plant.A` for every initial state. With constant inputs `b = plant.B u` they hold for
+  deviations from any equilibrium `A x_e + b = 0` of the continuous field, which is also a fixed
+  point of both schemes: the affine schemes are the linear schemes in `x − x_e`
+  (`trajectory_sub_const_iff`, `affineField_shift_eq_linearField` of
+  `theorem/Numerics/LinearSchemes.lean`).
 * Sign convention: the plant modules' own convention (branch currents flowing from the converter
   terminal towards the grid terminal; voltages are inputs).
 
@@ -33,40 +36,30 @@ discretization in EMT); theory/T-numerical-integration.md §1.3, §2.7 (A-stabil
 `x_{n+1} = R(hA) x_n`).
 
 Results.
-* `rlPlant_trapezoidalDiscretization_wellPosed`, `rlPlant_backwardEulerDiscretization_wellPosed`
-  — for a positive resistance and every `h > 0` the implicit step is uniquely solvable;
-  `rlPlant_trapezoidalDiscretization_exponentiallyStable`,
-  `rlPlant_backwardEulerDiscretization_exponentiallyStable` — and every discrete trajectory
-  decays geometrically.
+* `rlPlant_discretization_wellPosed`, `rlPlant_discretization_exponentiallyStable` — for a
+  positive resistance, every `h > 0` and both implicit methods, the implicit step is uniquely
+  solvable and every discrete trajectory decays geometrically.
 * `rlPlant_trapezoidalDiscretization_exponentiallyStable_iff` — for a well-posed trapezoidal
   step, geometric decay of the discretized RL model holds exactly when `R > 0`.
-* `idealLCLPlant_trapezoidalDiscretization_wellPosed`,
-  `idealLCLPlant_backwardEulerDiscretization_wellPosed`,
-  `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable`,
-  `idealLCLPlant_backwardEulerDiscretization_exponentiallyStable` — same for a passive, damped
-  ideal LCL plant (`R₁, R₂ ≥ 0`, not both zero).
+* `idealLCLPlant_discretization_wellPosed`, `idealLCLPlant_discretization_exponentiallyStable` —
+  same for a passive, damped ideal LCL plant (`R₁, R₂ ≥ 0`, not both zero).
 * `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff` — for a passive plant and a
   well-posed trapezoidal step, discrete geometric decay holds exactly when the plant is damped.
-* `idealLCLPlant_trapezoidal_deviation_decay`, `rlPlant_trapezoidal_deviation_decay` —
-  constant-input versions about any equilibrium.
 
 Family and connection conclusions.
-* `rlTrapezoidalFamily`, `rlBackwardEulerFamily`, `lclTrapezoidalFamily` and
-  `lclBackwardEulerFamily` read the actual matrix step through `Behaviour.discrete`.
-  Their corresponding realization objects use the design projection. The generic realization
-  laws (foundation) of `Numerics/ImplicitRealization` give trapezoidal exactness within positive,
+* `rlFamily method` and `lclFamily method` (`method` trapezoidal or backward Euler) read the
+  actual matrix step through `Behaviour.discrete`. Their realizations `rlRealization method`,
+  `lclRealization method` use the design projection. The generic realization laws
+  (foundation) of `Numerics/ImplicitRealization` give trapezoidal exactness within positive,
   well-posed steps, and backward-Euler soundness; no passivity or general sentence transfer is
   claimed.
-* The twelve plant conclusions transfer design-side conditions along the design projection
-  to the discretized models: T–M statements (M for the four `…_wellPosed`). They are generated
-  denotation/requirement statements. The four `…_wellPosed` results assert the well-posed
-  requirement under the hypotheses of the four forward stability results. Existence, uniqueness and
-  geometric decay of the discrete trajectories are the generic `trapezoidal_existsUnique`,
+* The six plant conclusions transfer design-side conditions along the design projection
+  to the discretized models: T–M statements (M for the two `…_wellPosed`). They are generated
+  denotation/requirement statements. The two `…_wellPosed` results assert the well-posed
+  requirement under the hypotheses of the two forward stability results. Existence, uniqueness
+  and geometric decay of the discrete trajectories are the generic `trapezoidal_existsUnique`,
   `backwardEuler_existsUnique`, `trapezoidal_exponentiallyStable_of_isHurwitz` and
   `backwardEuler_exponentiallyStable_of_isHurwitz` of `theorem/Numerics/LinearSchemes.lean`.
-* `RLDeviation` and `LCLDeviation` carry an arbitrary constant input and an actual equilibrium;
-  their families read deviations about it. Their private trajectory bridges justify that
-  the implicit affine recursion has exactly the homogeneous step in these coordinates.
 Scaffold: `theorem/Numerics/ImplicitDiscretization.agda`.
 -/
 
@@ -75,63 +68,7 @@ namespace powerlib.Numerics.EMT
 open Matrix LinearSystems
 open powerlib.Passive
 
-/-! ### RL branch -/
-
-/-- Continuous RL vector field in the state coordinate `x 0 = i`, at terminal voltage `v`:
-the RL family's plant under the constant input `v`. -/
-def rlInputField (m : RL.Impedance) (v : ℝ) (x : Fin 1 → ℝ) : Fin 1 → ℝ :=
-  m.plant.A *ᵥ x + m.plant.B *ᵥ ![v]
-
-/-- Zero-input (perturbation) RL field. -/
-def rlField (m : RL.Impedance) : (Fin 1 → ℝ) → (Fin 1 → ℝ) := rlInputField m 0
-
-/-- State matrix of the RL field: the state matrix of the RL family's plant, `[−R/L]`
-(`Passive.RL.plant_A`). -/
-def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem rlField_eq_linearField (m : RL.Impedance) :
-    rlField m = linearField (rlMatrix m) := by
-  funext x
-  have h0 : (![0] : Fin 1 → ℝ) = 0 := by
-    funext i
-    fin_cases i
-    rfl
-  simp [rlField, rlInputField, rlMatrix, linearField, h0]
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem rlInputField_sub (m : RL.Impedance) (v : ℝ)
-    (x e : Fin 1 → ℝ) : rlInputField m v x - rlInputField m v e = rlField m (x - e) := by
-  rw [rlField_eq_linearField]
-  simp only [rlInputField, linearField, rlMatrix, mulVec_sub]
-  abel
-
 /-! ### Ideal three-state LCL plant -/
-
-/-- Continuous LCL vector field in the state order `(i₁, v_C, i₂)` at terminal voltages
-`u` (converter side) and `vg` (grid side): the LCL family's plant under the constant input
-`(u, vg)`. -/
-def lclInputField (m : LCL.Circuit) (u vg : ℝ) (x : Fin 3 → ℝ) : Fin 3 → ℝ :=
-  m.plant.A *ᵥ x + m.plant.B *ᵥ ![u, vg]
-
-/-- Zero-input (perturbation) LCL field. -/
-def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInputField m 0 0
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem lclField_eq_linearField (m : LCL.Circuit) :
-    lclField m = linearField m.plant.A := by
-  funext x
-  have h0 : (![0, 0] : Fin 2 → ℝ) = 0 := by
-    funext i
-    fin_cases i <;> rfl
-  simp [lclField, lclInputField, linearField, h0]
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem lclInputField_sub (m : LCL.Circuit) (u vg : ℝ)
-    (x e : Fin 3 → ℝ) : lclInputField m u vg x - lclInputField m u vg e = lclField m (x - e) := by
-  rw [lclField_eq_linearField]
-  simp only [lclInputField, linearField, mulVec_sub]
-  abel
 
 /-- A passive, damped LCL plant has a Hurwitz state matrix.
 Read through the existing family endpoint. -/
@@ -149,284 +86,88 @@ Read through the existing family endpoint. -/
 
 /-! ### Generated implementation interfaces -/
 
-/-- The fixed-step RL trapezoidal implementation family. -/
-def rlTrapezoidalFamily : Family (ImplicitStep RL.Impedance)
+/-- The fixed-step RL implementation family of an implicit method. -/
+def rlFamily (method : ImplicitMethod) : Family (ImplicitStep RL.Impedance)
     (ImplicitRequirement RL.Requirement) 1 0 :=
-  implicitFamily .trapezoidal RL.family RL.Impedance.plant ImplicitStep.design ImplicitStep.h
+  implicitFamily method RL.family RL.Impedance.plant EulerStep.design EulerStep.h
 
-/-- The fixed-step RL backward-Euler implementation family. -/
-def rlBackwardEulerFamily : Family (ImplicitStep RL.Impedance)
-    (ImplicitRequirement RL.Requirement) 1 0 :=
-  implicitFamily .backwardEuler RL.family RL.Impedance.plant ImplicitStep.design ImplicitStep.h
-
-/-- The fixed-step LCL trapezoidal implementation family. -/
-def lclTrapezoidalFamily : Family (ImplicitStep LCL.Circuit)
+/-- The fixed-step LCL implementation family of an implicit method. -/
+def lclFamily (method : ImplicitMethod) : Family (ImplicitStep LCL.Circuit)
     (ImplicitRequirement LCL.Requirement) 3 0 :=
-  implicitFamily .trapezoidal LCL.family LCL.Circuit.plant ImplicitStep.design ImplicitStep.h
+  implicitFamily method LCL.family LCL.Circuit.plant EulerStep.design EulerStep.h
 
-/-- The fixed-step LCL backward-Euler implementation family. -/
-def lclBackwardEulerFamily : Family (ImplicitStep LCL.Circuit)
-    (ImplicitRequirement LCL.Requirement) 3 0 :=
-  implicitFamily .backwardEuler LCL.family LCL.Circuit.plant ImplicitStep.design ImplicitStep.h
+/-- The RL realization of an implicit method: exact for the trapezoidal rule, sound for
+backward Euler (the generic implicit realization laws). -/
+def rlRealization (method : ImplicitMethod) : Implementation RL.Impedance RL.Requirement
+    (ImplicitStep RL.Impedance) (ImplicitRequirement RL.Requirement) 1 1 1 0 :=
+  implicitRealization method RL.family RL.Impedance.plant EulerStep.design EulerStep.h
 
-/-- The RL trapezoidal realization. Its exactness is the generic implicit realization law. -/
-def rlTrapezoidal : Implementation RL.Impedance RL.Requirement (ImplicitStep RL.Impedance)
-    (ImplicitRequirement RL.Requirement) 1 1 1 0 :=
-  implicitRealization .trapezoidal RL.family RL.Impedance.plant ImplicitStep.design ImplicitStep.h
+/-- The LCL realization of an implicit method. -/
+def lclRealization (method : ImplicitMethod) : Implementation LCL.Circuit LCL.Requirement
+    (ImplicitStep LCL.Circuit) (ImplicitRequirement LCL.Requirement) 3 2 3 0 :=
+  implicitRealization method LCL.family LCL.Circuit.plant EulerStep.design EulerStep.h
 
-/-- The RL backward-Euler realization. Only soundness is asserted by the generic law. -/
-def rlBackwardEuler : Implementation RL.Impedance RL.Requirement (ImplicitStep RL.Impedance)
-    (ImplicitRequirement RL.Requirement) 1 1 1 0 :=
-  implicitRealization .backwardEuler RL.family RL.Impedance.plant ImplicitStep.design ImplicitStep.h
-
-/-- The LCL trapezoidal realization. -/
-def lclTrapezoidal : Implementation LCL.Circuit LCL.Requirement (ImplicitStep LCL.Circuit)
-    (ImplicitRequirement LCL.Requirement) 3 2 3 0 :=
-  implicitRealization .trapezoidal LCL.family LCL.Circuit.plant ImplicitStep.design ImplicitStep.h
-
-/-- The LCL backward-Euler realization. -/
-def lclBackwardEuler : Implementation LCL.Circuit LCL.Requirement (ImplicitStep LCL.Circuit)
-    (ImplicitRequirement LCL.Requirement) 3 2 3 0 :=
-  implicitRealization .backwardEuler LCL.family LCL.Circuit.plant ImplicitStep.design ImplicitStep.h
-
-/-- Positive resistance gives a well-posed (uniquely solvable) trapezoidal RL step. -/
-@[tmio M, powerlib_domain] theorem rlPlant_trapezoidalDiscretization_wellPosed
+/-- Positive resistance gives a well-posed (uniquely solvable) implicit RL step. -/
+@[tmio M, powerlib_domain] theorem rlPlant_discretization_wellPosed (method : ImplicitMethod)
     (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-      TMIO.realize rlTrapezoidalFamily.meets {.wellPosed}) := by
+      TMIO.realize (rlFamily method).meets {.wellPosed}) := by
   unfold TMIO.Statement
-  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
-    (RL.isHurwitz_iff m).mpr hR
-  exact implicit_mem_wellPosed_of_design .trapezoidal RL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
+  exact implicit_mem_wellPosed_of_design method RL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh ((RL.isHurwitz_iff m).mpr hR)
 
-/-- Positive resistance gives a globally exponentially stable trapezoidal RL step. -/
-@[tmio TM, powerlib_domain] theorem rlPlant_trapezoidalDiscretization_exponentiallyStable
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
+/-- Positive resistance gives a globally exponentially stable implicit RL step. -/
+@[tmio TM, powerlib_domain] theorem rlPlant_discretization_exponentiallyStable
+    (method : ImplicitMethod) (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-      rlTrapezoidalFamily.den (.flow .globallyExponentiallyStable)) := by
+      (rlFamily method).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
-  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
-    (RL.isHurwitz_iff m).mpr hR
-  exact implicit_mem_den_of_design .trapezoidal RL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
-
-/-- Positive resistance gives a well-posed (uniquely solvable) backward-Euler RL step. -/
-@[tmio M, powerlib_domain] theorem rlPlant_backwardEulerDiscretization_wellPosed
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
-    connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-      TMIO.realize rlBackwardEulerFamily.meets {.wellPosed}) := by
-  unfold TMIO.Statement
-  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
-    (RL.isHurwitz_iff m).mpr hR
-  exact implicit_mem_wellPosed_of_design .backwardEuler RL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
-
-/-- Positive resistance gives a globally exponentially stable backward-Euler RL step. -/
-@[tmio TM, powerlib_domain] theorem rlPlant_backwardEulerDiscretization_exponentiallyStable
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) :
-    connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-      rlBackwardEulerFamily.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  have hd : m ∈ RL.family.den (.flow .globallyExponentiallyStable) :=
-    (RL.isHurwitz_iff m).mpr hR
-  exact implicit_mem_den_of_design .backwardEuler RL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hd
+  exact implicit_mem_den_of_design method RL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh ((RL.isHurwitz_iff m).mpr hR)
 
 /-- A well-posed trapezoidal RL step is stable exactly when the resistance is positive. -/
 @[tmio TM, powerlib_domain] theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : RL.Impedance) {h : ℝ} (hh : 0 < h)
-    (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) :
+    (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep RL.Impedance) ∈
-      rlTrapezoidalFamily.den (.flow .globallyExponentiallyStable) ↔ 0 < m.resistance) := by
+      (rlFamily .trapezoidal).den (.flow .globallyExponentiallyStable) ↔ 0 < m.resistance) := by
   unfold TMIO.Statement
-  exact (trapezoidal_mem_den_iff_design (design := ImplicitStep.design) (step := ImplicitStep.h)
+  exact (trapezoidal_mem_den_iff_design (design := EulerStep.design) (step := EulerStep.h)
     (y := (⟨m, h, hh⟩ : ImplicitStep RL.Impedance)) RL.family_isLinear
     (P := .globallyExponentiallyStable)
     (Or.inl trivial) hh hP).trans (RL.isHurwitz_iff m)
 
-/-- A passive damped LCL design gives a well-posed (uniquely solvable) trapezoidal LCL step. -/
-@[tmio M, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_wellPosed
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
+/-- A passive damped LCL design gives a well-posed (uniquely solvable) implicit LCL step. -/
+@[tmio M, powerlib_domain] theorem idealLCLPlant_discretization_wellPosed
+    (method : ImplicitMethod) (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ}
+    (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-      TMIO.realize lclTrapezoidalFamily.meets {.wellPosed}) := by
+      TMIO.realize (lclFamily method).meets {.wellPosed}) := by
   unfold TMIO.Statement
-  have hmodel := lclMatrix_isHurwitz m hp hd
-  exact implicit_mem_wellPosed_of_design .trapezoidal LCL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
+  exact implicit_mem_wellPosed_of_design method LCL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh (lclMatrix_isHurwitz m hp hd)
 
-/-- A passive damped LCL design gives a globally exponentially stable trapezoidal LCL step. -/
-@[tmio TM, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
+/-- A passive damped LCL design gives a globally exponentially stable implicit LCL step. -/
+@[tmio TM, powerlib_domain] theorem idealLCLPlant_discretization_exponentiallyStable
+    (method : ImplicitMethod) (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ}
+    (hh : 0 < h) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-      lclTrapezoidalFamily.den (.flow .globallyExponentiallyStable)) := by
+      (lclFamily method).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
-  have hmodel := lclMatrix_isHurwitz m hp hd
-  exact implicit_mem_den_of_design .trapezoidal LCL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
-
-/-- A passive damped LCL design gives a well-posed (uniquely solvable) backward-Euler LCL step. -/
-@[tmio M, powerlib_domain] theorem idealLCLPlant_backwardEulerDiscretization_wellPosed
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
-    connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-      TMIO.realize lclBackwardEulerFamily.meets {.wellPosed}) := by
-  unfold TMIO.Statement
-  have hmodel := lclMatrix_isHurwitz m hp hd
-  exact implicit_mem_wellPosed_of_design .backwardEuler LCL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
-
-/-- A passive damped LCL design gives a globally exponentially stable backward-Euler LCL step. -/
-@[tmio TM, powerlib_domain] theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) :
-    connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-      lclBackwardEulerFamily.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  have hmodel := lclMatrix_isHurwitz m hp hd
-  exact implicit_mem_den_of_design .backwardEuler LCL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh hmodel
+  exact implicit_mem_den_of_design method LCL.family_isLinear
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh (lclMatrix_isHurwitz m hp hd)
 
 /-- A passive LCL design's well-posed trapezoidal implementation is stable exactly when damped. -/
 @[tmio TM, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : LCL.Circuit) (hp : m.Passive) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
     connection% ((⟨m, h, hh⟩ : ImplicitStep LCL.Circuit) ∈
-      lclTrapezoidalFamily.den (.flow .globallyExponentiallyStable) ↔
+      (lclFamily .trapezoidal).den (.flow .globallyExponentiallyStable) ↔
       m ∈ TMIO.realize LCL.Meets {.damped}) := by
   unfold TMIO.Statement
-  exact (trapezoidal_mem_den_iff_design (design := ImplicitStep.design) (step := ImplicitStep.h)
+  exact (trapezoidal_mem_den_iff_design (design := EulerStep.design) (step := EulerStep.h)
     (y := (⟨m, h, hh⟩ : ImplicitStep LCL.Circuit)) LCL.family_isLinear
     (P := .globallyExponentiallyStable)
     (Or.inl trivial) hh hP).trans ((LCL.isHurwitz_iff_stable m).trans (LCL.passive_stable_iff m hp))
-
-/-! ### Constant-input deviation implementations -/
-
-/-- An RL implicit implementation about an actual equilibrium at an arbitrary constant terminal voltage. -/
-structure RLDeviation where
-  design : RL.Impedance
-  h : ℝ
-  pos : 0 < h
-  voltage : ℝ
-  equilibrium : Fin 1 → ℝ
-  balanced : rlInputField design voltage equilibrium = 0
-
-/-- An LCL implicit implementation about an actual equilibrium at arbitrary constant terminal voltages. -/
-structure LCLDeviation where
-  design : LCL.Circuit
-  h : ℝ
-  pos : 0 < h
-  converterVoltage : ℝ
-  gridVoltage : ℝ
-  equilibrium : Fin 3 → ℝ
-  balanced : lclInputField design converterVoltage gridVoltage equilibrium = 0
-
-/-- Trapezoidal RL deviations, read in the physical difference coordinates `i - i_eq`. -/
-def rlTrapezoidalDeviationFamily : Family RLDeviation (ImplicitRequirement RL.Requirement) 1 0 :=
-  implicitFamily .trapezoidal RL.family RL.Impedance.plant RLDeviation.design RLDeviation.h
-
-/-- Trapezoidal LCL deviations in `(i₁-i₁_eq, v_C-v_C_eq, i₂-i₂_eq)`. -/
-def lclTrapezoidalDeviationFamily : Family LCLDeviation (ImplicitRequirement LCL.Requirement) 3 0 :=
-  implicitFamily .trapezoidal LCL.family LCL.Circuit.plant LCLDeviation.design LCLDeviation.h
-
-/-- Each constant-input RL deviation implementation realizes its continuous design. -/
-def rlTrapezoidalDeviation :
-    Implementation RL.Impedance RL.Requirement RLDeviation (ImplicitRequirement RL.Requirement)
-      1 1 1 0 :=
-  implicitRealization .trapezoidal RL.family RL.Impedance.plant RLDeviation.design RLDeviation.h
-
-/-- Each constant-input LCL deviation implementation realizes its continuous design. -/
-def lclTrapezoidalDeviation :
-    Implementation LCL.Circuit LCL.Requirement LCLDeviation (ImplicitRequirement LCL.Requirement)
-      3 2 3 0 :=
-  implicitRealization .trapezoidal LCL.family LCL.Circuit.plant LCLDeviation.design LCLDeviation.h
-
-/-- The affine RL recursion is exactly the homogeneous implicit recursion in deviations. -/
-@[tmio M, powerlib_domain] private theorem rlDeviation_trajectory_iff (y : RLDeviation) (x : ℕ → Fin 1 → ℝ) :
-    IsTrapezoidalTrajectory (rlInputField y.design y.voltage) y.h x ↔
-      IsTrapezoidalTrajectory (rlField y.design) y.h (fun j => x j - y.equilibrium) := by
-  have hf : ∀ j, rlField y.design (x j - y.equilibrium) =
-      rlInputField y.design y.voltage (x j) := by
-    intro j
-    rw [← rlInputField_sub, y.balanced, sub_zero]
-  constructor
-  · intro hx j
-    simp only [hf]
-    linear_combination (norm := module) hx j
-  · intro hx j
-    have hj := hx j
-    simp only [hf] at hj
-    linear_combination (norm := module) hj
-
-/-- The affine LCL recursion is exactly the homogeneous implicit recursion in deviations. -/
-@[tmio M, powerlib_domain] private theorem lclDeviation_trajectory_iff (y : LCLDeviation) (x : ℕ → Fin 3 → ℝ) :
-    IsTrapezoidalTrajectory
-      (lclInputField y.design y.converterVoltage y.gridVoltage) y.h x ↔
-      IsTrapezoidalTrajectory (lclField y.design) y.h (fun j => x j - y.equilibrium) := by
-  have hf : ∀ j, lclField y.design (x j - y.equilibrium) =
-      lclInputField y.design y.converterVoltage y.gridVoltage (x j) := by
-    intro j
-    rw [← lclInputField_sub, y.balanced, sub_zero]
-  constructor
-  · intro hx j
-    simp only [hf]
-    linear_combination (norm := module) hx j
-  · intro hx j
-    have hj := hx j
-    simp only [hf] at hj
-    linear_combination (norm := module) hj
-
-/-- The actual affine RL recursion, written in the Euclidean coordinates used by the family. -/
-@[tmio M, powerlib_domain] private theorem rlDeviation_step_iff (y : RLDeviation)
-    (hw : IsUnit (1 - (y.h / 2) • y.design.plant.A).det) (x : ℕ → Fin 1 → ℝ) :
-    IsTrapezoidalTrajectory (rlInputField y.design y.voltage) y.h x ↔
-      ∀ k, WithLp.toLp 2 (x (k + 1) - y.equilibrium) =
-        Map.op (trapezoidalMatrix y.h y.design.plant.A)
-          (WithLp.toLp 2 (x k - y.equilibrium)) := by
-  rw [rlDeviation_trajectory_iff, rlField_eq_linearField,
-    isTrapezoidalTrajectory_iff (rlMatrix y.design) y.h hw]
-  apply forall_congr'
-  intro k
-  change x (k + 1) - y.equilibrium =
-    trapezoidalMatrix y.h y.design.plant.A *ᵥ (x k - y.equilibrium) ↔ _
-  rw [Matrix.toEuclideanCLM_toLp]
-  exact (WithLp.toLp_injective 2).eq_iff.symm
-
-/-- The actual affine LCL recursion, written in the Euclidean coordinates used by the family. -/
-@[tmio M, powerlib_domain] private theorem lclDeviation_step_iff (y : LCLDeviation)
-    (hw : IsUnit (1 - (y.h / 2) • y.design.plant.A).det) (x : ℕ → Fin 3 → ℝ) :
-    IsTrapezoidalTrajectory
-      (lclInputField y.design y.converterVoltage y.gridVoltage) y.h x ↔
-      ∀ k, WithLp.toLp 2 (x (k + 1) - y.equilibrium) =
-        Map.op (trapezoidalMatrix y.h y.design.plant.A)
-          (WithLp.toLp 2 (x k - y.equilibrium)) := by
-  rw [lclDeviation_trajectory_iff, lclField_eq_linearField,
-    isTrapezoidalTrajectory_iff y.design.plant.A y.h hw]
-  apply forall_congr'
-  intro k
-  change x (k + 1) - y.equilibrium =
-    trapezoidalMatrix y.h y.design.plant.A *ᵥ (x k - y.equilibrium) ↔ _
-  rw [Matrix.toEuclideanCLM_toLp]
-  exact (WithLp.toLp_injective 2).eq_iff.symm
-
-/-- The constant-input RL implementation is exponentially stable in deviation coordinates. -/
-@[tmio TM, powerlib_domain] theorem rlPlant_trapezoidal_deviation_decay
-    (m : RL.Impedance) (hR : 0 < m.resistance) {h : ℝ} (hh : 0 < h) (v : ℝ) :
-    connection% (∀ (xeq : Fin 1 → ℝ) (heq : rlInputField m v xeq = 0),
-      (⟨m, h, hh, v, xeq, heq⟩ : RLDeviation) ∈
-        rlTrapezoidalDeviationFamily.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  intro xeq heq
-  exact implicit_mem_den_of_design .trapezoidal RL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh
-    ((RL.isHurwitz_iff m).mpr hR)
-
-/-- The constant-input LCL implementation is exponentially stable in deviation coordinates. -/
-@[tmio TM, powerlib_domain] theorem idealLCLPlant_trapezoidal_deviation_decay
-    (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) {h : ℝ} (hh : 0 < h) (u vg : ℝ) :
-    connection% (∀ (xeq : Fin 3 → ℝ) (heq : lclInputField m u vg xeq = 0),
-      (⟨m, h, hh, u, vg, xeq, heq⟩ : LCLDeviation) ∈
-        lclTrapezoidalDeviationFamily.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  intro xeq heq
-  exact implicit_mem_den_of_design .trapezoidal LCL.family_isLinear (P := .globallyExponentiallyStable) (Or.inl trivial) hh
-    (lclMatrix_isHurwitz m hp hd)
 
 end powerlib.Numerics.EMT

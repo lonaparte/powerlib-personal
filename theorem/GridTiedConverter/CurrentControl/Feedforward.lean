@@ -293,9 +293,8 @@ the attractive denotation of the feedforward family is the PI family's, pulled b
       q ∈ {q : LPFLoop | (0 < q.pi.R + q.pi.Kp ∧ 0 < q.pi.Ki) ∧ 0 < q.τ}) := by
   unfold powerlib.TMIO.Statement
   rw [den_flow hP]
-  change (q.pi.Stable ∧ 0 < q.τ) ↔ _
-  rw [PIParams.Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
-  rfl
+  change (q.pi.Stable ∧ 0 < q.τ) ↔ (0 < q.pi.R + q.pi.Kp ∧ 0 < q.pi.Ki) ∧ 0 < q.τ
+  rw [q.pi.stable_iff hL]
 
 /-- Tracking with low-pass feedforward: `i → i*`, `ṽ → v`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/

@@ -20,7 +20,8 @@ Results.
   `P_PCC = P_bridge + R |i|² + L d(|i|²/2)/dt` exactly (the rotation terms
   `ω L (i_q i_d − i_d i_q)` cancel, T-vsc-dc-voltage-control §1.1.1 boxed): this is the filter
   branch's own law `Passive.SeriesRLC.dq_power_balance` (its SI form is the same identity times
-  `3/2`).
+  `3/2`). With `v_q = 0` the instantaneous form `Passive.SeriesRLC.dq_power_identity` gives the
+  bridge power `v^conv·i = bridgePower V_d0 R L i_d i_q i_d' i_q'` below.
 * `bridgePower_expansion`: with `v_q = 0`, `I_q0 = 0`, a constant operating current `I_d0` and
   a stiff `v_d = V_d0`, the bridge power is `P_b = V_d0 i_d − R |i|² − L (i_d i_d' + i_q i_q')`;
   its perturbation is exactly
@@ -39,14 +40,6 @@ namespace powerlib.GFL.DCLink
 /-- Bridge power as a function of current and current derivative (`v_q = 0`, stiff `v_d`). -/
 def bridgePower (Vd0 R L id iq did diq : ℝ) : ℝ :=
   Vd0 * id - R * (id ^ 2 + iq ^ 2) - L * (id * did + iq * diq)
-
-/-- `P_bridge` from the KVL with `v_q = 0`: `v^conv · i = v_d i_d − R|i|² − L i · i'`. -/
-@[tmio M, powerlib_domain] theorem bridgePower_of_kvl {L R ω Vd0 id iq did diq vcd vcq : ℝ}
-    (kvl_d : L * did = Vd0 - vcd - R * id + ω * L * iq)
-    (kvl_q : L * diq = 0 - vcq - R * iq - ω * L * id) :
-    vcd * id + vcq * iq = bridgePower Vd0 R L id iq did diq := by
-  simp only [bridgePower]
-  linear_combination id * kvl_d + iq * kvl_q
 
 /-- Exact perturbation expansion around `(I_d0, 0)` with zero operating derivatives. -/
 @[tmio M, powerlib_domain] theorem bridgePower_expansion (Vd0 R L Id0 δd δq δd' δq' : ℝ) :

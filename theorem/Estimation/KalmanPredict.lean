@@ -1,66 +1,40 @@
 import dependencies.Mathlib
-import dependencies.LeanForControl
 import theorem.Attributes
-import theorem.Stochastic.LyapunovCovariance
-import Mathlib.Analysis.Matrix.Order
-import theorem.LinearAlgebra.Frobenius
+import theorem.LinearAlgebra.Congruence
 
 /-! # Kalman prediction step: covariance propagation
 
-The discrete prediction keeps the covariance positive semidefinite, and the time-invariant
-continuous prediction ODE has an explicit solution converging to the stationary covariance.
+The discrete prediction `Φ P Φᵀ + Q` keeps the covariance positive semidefinite.
 
 Scope.
-* Linear algebra / matrix ODE, not an engineering result. These are statements about the
-  deterministic covariance recursion and ODE; that `P` is the conditional covariance of a
-  linear-Gaussian state-space model is not formalized.
-* Time-invariant `A`, `Q = Σ Σᵀ`.
-* The general variation-of-constants form `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ +
-  ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` for time-varying `A(t)` (relative to a fundamental matrix
-  `Φ`), its constant-`A` instance without an algebraic solution `P∞`, and the Riccati integral
-  representation are in `theorem/Estimation/KalmanLTV.lean`.
+* Linear algebra, not an engineering result. These are statements about the deterministic
+  covariance recursion; that `P` is the conditional covariance of a linear-Gaussian state-space
+  model is not formalized.
+* The continuous prediction `Ṗ = A P + P Aᵀ + Q`: for time-invariant `A` with an algebraic
+  solution `P∞` (`A P∞ + P∞ Aᵀ + Q = 0`) the unique solution `e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞`, and
+  for Hurwitz `A` existence, uniqueness and semidefiniteness of `P∞` and `P(t) → P∞`, are in
+  `theorem/Stochastic/LyapunovCovariance.lean`; the variation-of-constants form
+  `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` for time-varying `A(t)` (and
+  constant `A` without `P∞`) is in `theorem/LinearAlgebra/LyapunovODE.lean`; the Riccati
+  integral representation is in `theorem/Estimation/KalmanLTV.lean`.
 
-Source: work-sync theory/T-kalman-filter.md §1.2 (continuous-time prediction between
-measurements `Ṗ = A P + P Aᵀ + Σ Σᵀ`; discrete prediction `P_{k|k−1} = Φ_k P Φ_kᵀ + Q_k`),
-§1.3 (steady state / Lyapunov limit).
+Source: work-sync theory/T-kalman-filter.md §1.2 (discrete prediction
+`P_{k|k−1} = Φ_k P Φ_kᵀ + Q_k`).
 
 Results.
-* `predict_posSemidef` — `P ⪰ 0`, `Q ⪰ 0` ⇒ `Φ P Φᵀ + Q ⪰ 0` (discrete prediction keeps PSD).
-* `predict_cov_ode_solution` — if `P∞` solves the algebraic equation `A P∞ + P∞ Aᵀ + Q = 0`,
-  then `P(t) = e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞` (`Lyapunov.covSol`) solves
-  `Ṗ = A P + P Aᵀ + Q`, `P(0) = P₀`; it is the only solution (`Lyapunov.covODE_unique`,
-  `theorem/Stochastic/LyapunovCovariance.lean`).
-* Hurwitz prediction (`theorem/Stochastic/LyapunovCovariance.lean`): for `A` Hurwitz and
-  `Q ⪰ 0` such a `P∞` exists (`Lyapunov.exists_solvesCovLyapunov`), uniquely
-  (`Lyapunov.solvesCovLyapunov_unique`), and `P∞ ⪰ 0` (`Lyapunov.posSemidef_of_solvesCovLyapunov`);
-  the prediction ODE has the explicit solution above (`Lyapunov.covODE_unique`) and `P(t) → P∞`
-  (`Lyapunov.covSol_tendsto_norm`).
+* `predict_posSemidef` — `P ⪰ 0`, `Q ⪰ 0` ⇒ `Φ P Φᵀ + Q ⪰ 0` (discrete prediction keeps PSD; with
+  `Φ = I − K H`, `Q = K R Kᵀ` it is the Joseph form, `joseph_posSemidef`).
 -/
 
 noncomputable section
 namespace powerlib.Estimation
 
-open Matrix Filter powerlib.Stochastic.Lyapunov
-open scoped Matrix.Norms.Frobenius Topology
-
-variable {n : ℕ}
-
-attribute [local instance] powerlib.LinearAlgebra.frobeniusENormedAddMonoid
+open Matrix
 
 /-- Discrete prediction preserves positive semidefiniteness: `Φ P Φᵀ + Q ⪰ 0`. -/
 @[tmio T, powerlib_foundation] theorem predict_posSemidef {m : Type*} [Fintype m] {k : Type*}
     [Fintype k] (Φ : Matrix m k ℝ) {P : Matrix k k ℝ} {Q : Matrix m m ℝ} (hP : P.PosSemidef)
-    (hQ : Q.PosSemidef) : (Φ * P * Φᵀ + Q).PosSemidef := by
-  have h := hP.mul_mul_conjTranspose_same Φ
-  rw [conjTranspose_eq_transpose_of_trivial] at h
-  exact h.add hQ
-
-/-- The explicit prediction covariance `e^{tA}(P₀ − P∞)e^{tAᵀ} + P∞` solves the prediction ODE
-`Ṗ = A P + P Aᵀ + Q` with `P(0) = P₀`, whenever `P∞` solves the algebraic equation. -/
-@[tmio T, powerlib_foundation] theorem predict_cov_ode_solution {A Q Pinf : Matrix (Fin n) (Fin n) ℝ}
-    (hinf : SolvesCovLyapunov A Pinf Q) (P₀ : Matrix (Fin n) (Fin n) ℝ) :
-    covSol A Pinf P₀ 0 = P₀ ∧
-      ∀ t, HasDerivAt (covSol A Pinf P₀) (A * covSol A Pinf P₀ t + covSol A Pinf P₀ t * Aᵀ + Q) t :=
-  ⟨covSol_zero A Pinf P₀, covSol_hasDerivAt hinf P₀⟩
+    (hQ : Q.PosSemidef) : (Φ * P * Φᵀ + Q).PosSemidef :=
+  (LinearAlgebra.posSemidef_congr hP Φ).add hQ
 
 end powerlib.Estimation

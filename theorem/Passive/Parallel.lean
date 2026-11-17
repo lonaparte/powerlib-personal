@@ -1,8 +1,4 @@
-import theorem.Attributes
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Add
+import theorem.Passive.Series
 
 /-! # The parallel RLC element
 
@@ -32,13 +28,18 @@ Results.
 * `ParallelRLC` (`G`, `C`, `Γ = 1/L`), `admittance` (`G + C s + Γ/s`), `decay` (`G/C`),
   `susceptance` (`ωC − Γ/ω`), the energies `capacitorEnergy` (`C v²/2`), `inductorEnergy`
   (`Γ φ²/2`), `energy`, and the parallel connection `parallel`.
-* `decay_pos_iff`, `decay_neg_iff`: with `C > 0` the decay rate `G/C` has the sign of `G`;
-  `admittance_of_noInd`, `admittance_eq`: without an inductor `Y = G + C s = C (s + G/C)`.
-* `admittance_jω`: `Y(jω) = G + jB`; `parallel_admittance`, `parallel_susceptance`: admittances
-  and susceptances add in parallel.
-* `capacitorEnergy_nonneg`, `capacitorEnergy_pos`, `inductorEnergy_nonneg`, `energy_nonneg`;
-  `power_balance`, `hasDerivAt_energy`: along the node equation the stored energy changes at
-  `v i − G v²`, the supplied power less the dissipated one.
+* `toSeries`: the dual series element `(G, C, Γ)`; `admittance_eq_impedance`,
+  `toSeries_parallel`: the admittance is its impedance and a parallel connection is the series
+  connection of the duals. Every law of the series element holds for the parallel one through
+  `toSeries`, with `G, C, Γ, v, i, φ` for `R, L, S, i, v, q` (definitional): the sign of the decay
+  rate (`SeriesRLC.decay_pos_iff`, `SeriesRLC.decay_neg_iff`), the admittance without an inductor
+  (`SeriesRLC.impedance_of_noCap`, `SeriesRLC.impedance_eq`), `Y(jω) = G + jB`
+  (`SeriesRLC.impedance_jω`), additivity (`SeriesRLC.series_impedance`,
+  `SeriesRLC.series_reactance`), the energy bounds (`SeriesRLC.inductorEnergy_nonneg`,
+  `SeriesRLC.inductorEnergy_pos`, `SeriesRLC.capacitorEnergy_nonneg`, `SeriesRLC.energy_nonneg`)
+  and the energy balance along the node equation, `i v − G v²` (`SeriesRLC.power_balance`,
+  `SeriesRLC.hasDerivAt_energy`); in the dq frame `ParallelRLC.dqAdmittance` is the dq impedance
+  of the dual (`theorem/Passive/Dq.lean`).
 -/
 
 noncomputable section
@@ -80,105 +81,20 @@ def energy (v φ : ℝ) : ℝ := e.capacitorEnergy v + e.inductorEnergy φ
 /-- Two elements in parallel: conductances, capacitances and reciprocal inductances add. -/
 def parallel (a b : ParallelRLC) : ParallelRLC := ⟨a.G + b.G, a.C + b.C, a.Γ + b.Γ⟩
 
-/-- With a positive capacitance the decay rate is positive exactly when the conductance is. -/
-@[tmio M, powerlib_domain] theorem decay_pos_iff {e : ParallelRLC} (hC : 0 < e.C) :
-    0 < e.decay ↔ 0 < e.G :=
-  div_pos_iff_of_pos_right hC
+/-- The dual series element `(G, C, Γ)`: conductance for resistance, capacitance for inductance,
+reciprocal inductance for elastance. With voltage and current exchanged (and flux for charge) the
+node equation `C v' = i − G v − Γ φ` is its element equation `L i' = v − R i − S q`, and the
+admittance, decay rate, susceptance and energies of `e` are the impedance, decay rate, reactance
+and energies of `e.toSeries` by definition. -/
+def toSeries : SeriesRLC := ⟨e.G, e.C, e.Γ⟩
 
-/-- With a positive capacitance the decay rate is negative exactly when the conductance is. -/
-@[tmio M, powerlib_domain] theorem decay_neg_iff {e : ParallelRLC} (hC : 0 < e.C) :
-    e.decay < 0 ↔ e.G < 0 := by
-  unfold decay
-  constructor
-  · intro h
-    by_contra hG
-    exact absurd h (not_lt.mpr (div_nonneg (not_lt.mp hG) hC.le))
-  · intro hG
-    exact div_neg_of_neg_of_pos hG hC
+/-- The admittance is the impedance of the dual series element. -/
+@[tmio M, powerlib_domain] theorem admittance_eq_impedance (s : ℂ) :
+    e.admittance s = e.toSeries.impedance s := rfl
 
-/-- Without an inductor the admittance is `G + C s`. -/
-@[tmio M, powerlib_domain] theorem admittance_of_noInd {e : ParallelRLC} (hΓ : e.Γ = 0) (s : ℂ) :
-    e.admittance s = e.G + e.C * s := by
-  simp [admittance, hΓ]
-
-/-- Without an inductor the admittance factors through the decay rate. -/
-@[tmio M, powerlib_domain] theorem admittance_eq {e : ParallelRLC} (hΓ : e.Γ = 0) (hC : e.C ≠ 0)
-    (s : ℂ) : e.admittance s = e.C * (s + e.decay) := by
-  have hC' : (e.C : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hC
-  rw [admittance_of_noInd hΓ]
-  simp only [decay, Complex.ofReal_div]
-  field_simp
-  ring
-
-/-- At `s = jω` the admittance is `G + jB`. -/
-@[tmio M, powerlib_domain] theorem admittance_jω (ω : ℝ) :
-    e.admittance (ω * Complex.I) = e.G + e.susceptance ω * Complex.I := by
-  simp only [admittance, susceptance]
-  rcases eq_or_ne ω 0 with h | h
-  · subst h; simp
-  · have h' : (ω : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr h
-    push_cast
-    field_simp
-    linear_combination ((e.Γ : ℝ) : ℂ) * Complex.I_sq
-
-/-- Admittances add in parallel. -/
-@[tmio M, powerlib_domain] theorem parallel_admittance (a b : ParallelRLC) (s : ℂ) :
-    (a.parallel b).admittance s = a.admittance s + b.admittance s := by
-  simp only [parallel, admittance]
-  push_cast
-  ring
-
-/-- Susceptances add in parallel. -/
-@[tmio M, powerlib_domain] theorem parallel_susceptance (a b : ParallelRLC) (ω : ℝ) :
-    (a.parallel b).susceptance ω = a.susceptance ω + b.susceptance ω := by
-  simp only [parallel, susceptance]
-  ring
-
-/-- An element with a nonnegative capacitance stores a nonnegative electric energy. -/
-@[tmio M, powerlib_domain] theorem capacitorEnergy_nonneg {e : ParallelRLC} (hC : 0 ≤ e.C)
-    (v : ℝ) : 0 ≤ e.capacitorEnergy v := by
-  unfold capacitorEnergy
-  positivity
-
-/-- An element with a positive capacitance stores a positive electric energy at every nonzero
-voltage. -/
-@[tmio M, powerlib_domain] theorem capacitorEnergy_pos {e : ParallelRLC} (hC : 0 < e.C) {v : ℝ}
-    (hv : v ≠ 0) : 0 < e.capacitorEnergy v := by
-  unfold capacitorEnergy
-  positivity
-
-/-- An element with a nonnegative reciprocal inductance stores a nonnegative magnetic energy. -/
-@[tmio M, powerlib_domain] theorem inductorEnergy_nonneg {e : ParallelRLC} (hΓ : 0 ≤ e.Γ)
-    (φ : ℝ) : 0 ≤ e.inductorEnergy φ := by
-  unfold inductorEnergy
-  positivity
-
-/-- A physical element stores a nonnegative energy. -/
-@[tmio M, powerlib_domain] theorem energy_nonneg {e : ParallelRLC} (hC : 0 ≤ e.C) (hΓ : 0 ≤ e.Γ)
-    (v φ : ℝ) : 0 ≤ e.energy v φ :=
-  add_nonneg (capacitorEnergy_nonneg hC v) (inductorEnergy_nonneg hΓ φ)
-
-/-- Power balance: along `C v' = i − G v − Γ φ`, `φ' = v` the stored energy changes at
-`v i − G v²`. -/
-@[tmio M, powerlib_domain] theorem power_balance {e : ParallelRLC} (hC : e.C ≠ 0) (v i φ : ℝ) :
-    e.C * v * ((i - e.G * v - e.Γ * φ) / e.C) + e.Γ * φ * v = v * i - e.G * v ^ 2 := by
-  field_simp
-  ring
-
-/-- Energy balance along a trajectory: if `C v' = i − G v − Γ φ` and `φ' = v` at `t`, the stored
-energy has derivative `v i − G v²` there. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_energy {e : ParallelRLC} {v φ : ℝ → ℝ} {i t v' : ℝ}
-    (hv : HasDerivAt v v' t) (hφ : HasDerivAt φ (v t) t)
-    (hnode : e.C * v' = i - e.G * v t - e.Γ * φ t) :
-    HasDerivAt (fun τ => e.energy (v τ) (φ τ)) (v t * i - e.G * v t ^ 2) t := by
-  show HasDerivAt (fun τ => e.C * v τ ^ 2 / 2 + e.Γ * φ τ ^ 2 / 2) _ t
-  have h1 : HasDerivAt (fun τ => e.C * v τ ^ 2 / 2) (e.C * (↑2 * v t ^ (2 - 1) * v') / 2) t :=
-    ((hv.fun_pow 2).const_mul e.C).div_const 2
-  have h2 : HasDerivAt (fun τ => e.Γ * φ τ ^ 2 / 2) (e.Γ * (↑2 * φ t ^ (2 - 1) * v t) / 2) t :=
-    ((hφ.fun_pow 2).const_mul e.Γ).div_const 2
-  refine (h1.add h2).congr_deriv ?_
-  norm_num
-  linear_combination (v t) * hnode
+/-- Elements in parallel are their dual series elements in series. -/
+@[tmio M, powerlib_domain] theorem toSeries_parallel (a b : ParallelRLC) :
+    (a.parallel b).toSeries = a.toSeries.series b.toSeries := rfl
 
 end ParallelRLC
 

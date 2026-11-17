@@ -26,7 +26,7 @@ exponential mean `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ})`).
 
 Results.
 * The corrected pairing `𝓗 = ½ K_i η² + 𝒱(θ)` decreases at rate `K_p h²` (§0): the energy rate
-  of the PI-PLL, `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLLPH.lean`);
+  of the PI-PLL, `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLL.lean`);
   `Hold_hasDerivAt_along`, `Hold_deriv_pos_somewhere`: the old pairing (Corrections).
 * `fpFreq_gibbs` (with `gibbs2_hasDerivAt_θ`, `gibbs2_hasDerivAt_η`): if `ε² = 2 K_p T`
   (`B Bᵀ = 2 T R`, `T = T_eff`), then `e^{−𝓗/T}` solves the stationary Fokker–Planck equation

@@ -20,8 +20,9 @@ Results.
 * `residual_general`: the coupling left in the `L`-equation is `(ω L − ω̂ L̂) i_q` on d (and,
   negated with `i_q ↦ i_d`, `−(ω L − ω̂ L̂) i_d` on q); it is `ω ΔL i` when `ω̂ = ω` (case A,
   `ΔL = L − L̂`) and `(ω − ω̂) L i` when `L̂ = L` (case B).
-* `decoupling_power_cancel`: the decoupling terms contribute nothing to the bridge power
-  `u_d i_d + u_q i_q` (the OUT-positive convention negates both terms).
+* The decoupling command is `u^dec = −ω̂ L̂ J i`, so it contributes nothing to the bridge power
+  `u·i`: `J` is skew and does no work (`PH.dotProduct_mulVec_self_eq_zero_of_skew` with
+  `Transform.J_transpose`; the OUT-positive convention negates both terms).
 
 Family and connection conclusions.
 * `PIParams.mem_den_unstable_of_Ki_neg` (connection): if `Ki < 0` the loop is unstable — a
@@ -48,14 +49,6 @@ open scoped Topology
 /-- d-axis coupling left in the `L`-equation: geometric `+ω L i_q` minus `u_d^dec = ω̂ L̂ i_q`. -/
 @[tmio T, powerlib_foundation] theorem residual_general (ω ωhat L Lhat iq : ℝ) :
     ω * L * iq - ωhat * Lhat * iq = (ω * L - ωhat * Lhat) * iq := by ring
-
-/-- The decoupling terms do no work: `u_d^dec i_d + u_q^dec i_q = 0`. -/
-@[tmio T, powerlib_foundation] theorem decoupling_power_cancel (ωhat Lhat id iq : ℝ) :
-    (ωhat * Lhat * iq) * id + (-(ωhat * Lhat * id)) * iq = 0 := by ring
-
-/-- Bridge power splits into the non-decoupling part only. -/
-@[tmio T, powerlib_foundation] theorem bridgePower_decoupling (ud uq ωhat Lhat id iq : ℝ) :
-    (ud + ωhat * Lhat * iq) * id + (uq - ωhat * Lhat * id) * iq = ud * id + uq * iq := by ring
 
 /-! ## Zero steady-state error needs closed-loop stability -/
 

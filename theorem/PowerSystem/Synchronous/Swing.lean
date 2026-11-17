@@ -56,7 +56,8 @@ Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machin
 Results (static evidence on the model).
 * `exists_equilibrium_iff`, `field_eq_zero_iff_branches` — equilibria exist iff the power-angle
   curve reaches `P_m`; the equilibrium set is `ω = 0`, `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}`, with
-  `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches.
+  `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches; `hasDerivAt_Pe` — the
+  synchronizing coefficient `K(δ) = k₂ cos(δ − k₃)` is the slope `P_e'(δ)`.
 * `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `eigenvalues_real_iff` — the
   linearization has `M det(sI − J) = M s² + D s + K`, `K = k₂ cos(δ₀ − k₃)`; it is Hurwitz iff
   `D > 0` and `K > 0`; exact overdamping threshold.
@@ -188,6 +189,14 @@ mass `M`, damping `D` and restoring force `V'(δ) = P_e(δ) − P_m`. -/
 
 /-- Synchronizing coefficient `K(δ) = P_e'(δ) = k₂ cos(δ − k₃)`. -/
 def syncCoeff (δ : ℝ) : ℝ := p.k₂ * Real.cos (δ - p.k₃)
+
+/-- The synchronizing coefficient is the slope of the power-angle curve, `P_e'(δ) = K(δ)`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_Pe (δ : ℝ) : HasDerivAt p.Pe (p.syncCoeff δ) δ := by
+  have h := (((Real.hasDerivAt_sin (δ - p.k₃)).comp δ
+    ((hasDerivAt_id δ).sub_const p.k₃)).const_mul p.k₂).const_add p.k₁
+  convert h using 1
+  · funext y; simp [Pe]
+  · simp [syncCoeff]
 
 end SwingParams
 
@@ -466,13 +475,7 @@ synchronizing coefficient stays positive. -/
     (hr : ∀ θ, |θ - δ₀| < r → 0 < p.syncCoeff θ) (hδ : |δ - δ₀| < r) (hne : δ ≠ δ₀) :
     0 < p.potential δ₀ δ := by
   set g : ℝ → ℝ := fun θ => p.Pe θ - p.Pm with hg
-  have hgd : ∀ θ, HasDerivAt g (p.syncCoeff θ) θ := by
-    intro θ
-    have h := (((Real.hasDerivAt_sin (θ - p.k₃)).comp θ
-      ((hasDerivAt_id θ).sub_const p.k₃)).const_mul p.k₂).const_add p.k₁ |>.sub_const p.Pm
-    convert h using 1
-    · funext y; simp [hg, Pe]
-    · simp [syncCoeff]
+  have hgd : ∀ θ, HasDerivAt g (p.syncCoeff θ) θ := fun θ => (p.hasDerivAt_Pe θ).sub_const p.Pm
   have hg0 : g δ₀ = 0 := by simp [hg, hbal]
   have hgmono : StrictMonoOn g (Ioo (δ₀ - r) (δ₀ + r)) := by
     apply strictMonoOn_of_deriv_pos (convex_Ioo _ _)

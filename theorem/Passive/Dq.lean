@@ -3,6 +3,7 @@ import theorem.Transform.Park
 import theorem.Transform.ComplexImpedance
 import theorem.Passive.Series
 import theorem.Passive.Parallel
+import theorem.PH.Nonlinear
 
 /-! # The series and parallel RLC elements in a rotating dq frame
 
@@ -30,16 +31,22 @@ capacitor equations (work-sync `theory/T-park-transformation.md` §1.4,
 
 Results.
 * `SeriesRLC.dqImpedance`, `ParallelRLC.dqAdmittance`: the two matrices;
-  `SeriesRLC.dqImpedance_of_noCap`, `ParallelRLC.dqAdmittance_of_noInd`: their entries without a
-  series capacitor or a shunt inductor.
+  `ParallelRLC.dqAdmittance_eq_dqImpedance`: the admittance is the impedance of the dual series
+  element `ParallelRLC.toSeries`, so every law below is stated once, for the series element;
+  `SeriesRLC.dqImpedance_of_noCap`: the entries without a series capacitor.
 * Both are `Transform.complexSymm a b = [[a, −b], [b, a]]`
   (`theorem/Transform/ComplexImpedance.lean`, with its determinant `Transform.det_complexSymm` and
   inverse `Transform.complexSymm_inv`).
+* `SeriesRLC.toSeq_dqImpedance`, `SeriesRLC.det_dqImpedance`: the dq element is the stationary
+  element at `s ± jω` — in the complex-vector form `Transform.toSeq` the dq impedance is
+  `diag(Z(s + jω), Z(s − jω))`, and its determinant is `Z(s + jω) Z(s − jω)` (off `s² + ω² = 0`,
+  or without a series capacitor).
 * `SeriesRLC.det_dqImpedance_of_noCap`, `SeriesRLC.dqImpedance_inv_of_noCap`:
-  `det = (R + L s)² + (ω L)²` and the closed-form inverse; `ParallelRLC.det_dqAdmittance_of_noInd`:
-  `det = (G + C s)² + (ω C)²`.
-* `SeriesRLC.dq_power_balance`: along the dq KVL of the R–L part the terminal power is the far-end
-  power, the loss `R |i|²` and `d/dt (L |i|²/2)`; the rotation terms `± ω L` cancel.
+  `det = (R + L s)² + (ω L)²` and the closed-form inverse (for the dual, `(G + C s)² + (ω C)²`).
+* `SeriesRLC.dq_power_identity`: at one instant of the dq KVL of the R–L part the terminal power
+  is the far-end power, the loss `R |i|²` and `L i·i'`; the rotation term does no work (`J` is
+  skew). `SeriesRLC.dq_power_balance`: its component form along a trajectory, with
+  `L i·i' = d/dt (L |i|²/2)`, for any frame speed `ω(t)`.
 * `ParallelRLC.capacitor_dq`: Park turns the αβ node equation `C v̇ = i − G v` into the dq one
   `C v̇ = i − G v − ω C J v`, for any differentiable frame angle (`Transform.hasDerivAt_rot_mulVec`).
   The series counterpart is `Passive.DqRL.alphaBetaRL_iff_dqRL` (`theorem/Passive/DqRL.lean`).
@@ -67,11 +74,48 @@ def dqImpedance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     b.dqImpedance ω s = !![b.R + b.L * s, -(ω * b.L); ω * b.L, b.R + b.L * s] := by
   simp [dqImpedance, Transform.complexSymm, hS]
 
-/-- Without a series capacitor the determinant of the dq impedance is `(R + L s)² + (ω L)²`. -/
+/-- The dq element is the stationary element at `s ± jω`: in the complex-vector (sequence) form
+`Transform.toSeq` the dq impedance is diagonal, the positive-sequence channel seeing the
+impedance at `s + jω` and the negative one at `s − jω` (off the frame poles `s² + ω² = 0`, or
+without a series capacitor). -/
+@[tmio M, powerlib_domain] theorem toSeq_dqImpedance {b : SeriesRLC} {ω : ℝ} {s : ℂ}
+    (h : s ^ 2 + (ω : ℂ) ^ 2 ≠ 0 ∨ b.S = 0) :
+    Transform.toSeq (b.dqImpedance ω s) =
+      Matrix.diagonal ![b.impedance (s + ω * Complex.I), b.impedance (s - ω * Complex.I)] := by
+  have hprod : (s + ω * Complex.I) * (s - ω * Complex.I) = s ^ 2 + (ω : ℂ) ^ 2 := by
+    linear_combination (-(ω : ℂ) ^ 2) * Complex.I_sq
+  have e : (b.S : ℂ) / (s + ω * Complex.I) = b.S * (s - ω * Complex.I) / (s ^ 2 + ω ^ 2) ∧
+      (b.S : ℂ) / (s - ω * Complex.I) = b.S * (s + ω * Complex.I) / (s ^ 2 + ω ^ 2) := by
+    rcases h with hD | hS
+    · rw [← hprod] at hD ⊢
+      rw [mul_div_mul_right _ _ (right_ne_zero_of_mul hD), mul_comm (b.S : ℂ),
+        mul_div_mul_left _ _ (left_ne_zero_of_mul hD)]
+      exact ⟨rfl, rfl⟩
+    · simp [hS]
+  rw [Transform.toSeq_eq]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [dqImpedance, Transform.complexSymm, impedance]
+  · rw [e.1]; ring
+  · rw [e.2]; ring
+
+/-- The determinant of the dq impedance is the product of the stationary impedances at `s ± jω`
+(off the frame poles `s² + ω² = 0`, or without a series capacitor). -/
+@[tmio M, powerlib_domain] theorem det_dqImpedance {b : SeriesRLC} {ω : ℝ} {s : ℂ}
+    (h : s ^ 2 + (ω : ℂ) ^ 2 ≠ 0 ∨ b.S = 0) :
+    (b.dqImpedance ω s).det =
+      b.impedance (s + ω * Complex.I) * b.impedance (s - ω * Complex.I) := by
+  have hdet : (Transform.toSeq (b.dqImpedance ω s)).det = (b.dqImpedance ω s).det := by
+    rw [Transform.toSeq, Matrix.det_mul, Matrix.det_mul, mul_right_comm, ← Matrix.det_mul,
+      Transform.seqMatrix_mul_inv, Matrix.det_one, one_mul]
+  rw [← hdet, toSeq_dqImpedance h, Matrix.det_diagonal, Fin.prod_univ_two]
+  rfl
+
+/-- Without a series capacitor the determinant of the dq impedance is
+`(R + L(s + jω))(R + L(s − jω)) = (R + L s)² + (ω L)²`. -/
 @[tmio M, powerlib_domain] theorem det_dqImpedance_of_noCap {b : SeriesRLC} (hS : b.S = 0)
     (ω : ℝ) (s : ℂ) : (b.dqImpedance ω s).det = (b.R + b.L * s) ^ 2 + (ω * b.L) ^ 2 := by
-  rw [dqImpedance, Transform.det_complexSymm]
-  simp [hS]
+  rw [det_dqImpedance (Or.inr hS), impedance_of_noCap hS, impedance_of_noCap hS]
+  linear_combination (-((ω : ℂ) * b.L) ^ 2) * Complex.I_sq
 
 /-- Closed-form inverse of the dq impedance without a series capacitor. -/
 @[tmio M, powerlib_domain] theorem dqImpedance_inv_of_noCap {b : SeriesRLC} (hS : b.S = 0)
@@ -82,13 +126,30 @@ def dqImpedance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     simp [dqImpedance, hS]
   rw [hb, Transform.complexSymm_inv h]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [Transform.complexSymm, div_eq_inv_mul, neg_div]
+  fin_cases i <;> fin_cases j <;> simp [Transform.complexSymm, div_eq_inv_mul]
 
-/-- Power balance of the R–L part in the dq frame along a trajectory: with the dq KVL
-`L i_d' = v_d − v^c_d − R i_d + ω L i_q`, `L i_q' = v_q − v^c_q − R i_q − ω L i_d`, the power
-`v·i` entering at one end is the power `v^c·i` leaving at the other, the loss `R |i|²` and the
-rate `L i·i' = d/dt (L |i|²/2)` of the stored energy; the frame-rotation terms do no work. A series
-capacitor's voltage is part of `v − v^c`. -/
+/-- Power identity of the R–L part in the dq frame at one instant: with the dq KVL
+`L i' = v − v^c − R i − ω L J i` at the frame speed `ω`, the power `v·i` entering at one end is the
+power `v^c·i` leaving at the other, the loss `R |i|²` and `L i·i'`; the rotation term does no work
+because `J` is skew (`PH.dotProduct_mulVec_self_eq_zero_of_skew`, `Transform.J_transpose`). A
+series capacitor's voltage is part of `v − v^c`. -/
+@[tmio M, powerlib_domain] theorem dq_power_identity {b : SeriesRLC} {ω : ℝ}
+    {v vc i i' : Fin 2 → ℝ}
+    (kvl : b.L • i' = v - vc - b.R • i - (ω * b.L) • (Transform.J *ᵥ i)) :
+    v ⬝ᵥ i = vc ⬝ᵥ i + b.R * (i ⬝ᵥ i) + b.L * (i ⬝ᵥ i') := by
+  have h := congrArg (· ⬝ᵥ i) kvl
+  have hJ : (Transform.J *ᵥ i) ⬝ᵥ i = 0 := by
+    rw [dotProduct_comm]
+    exact PH.dotProduct_mulVec_self_eq_zero_of_skew Transform.J_transpose i
+  simp only [sub_dotProduct, smul_dotProduct, smul_eq_mul, hJ, mul_zero, sub_zero] at h
+  rw [dotProduct_comm i i']
+  linarith
+
+/-- Power balance of the R–L part in the dq frame along a trajectory, in components: with the dq
+KVL `L i_d' = v_d − v^c_d − R i_d + ω L i_q`, `L i_q' = v_q − v^c_q − R i_q − ω L i_d` at `t`
+(`ω` the frame speed at `t`, constant or not), `d/dt (|i|²/2) = i·i'` and the power identity
+`dq_power_identity`: `v·i = v^c·i + R |i|² + L i·i'`, where `L i·i' = d/dt (L |i|²/2)` is the rate
+of the stored energy. -/
 @[tmio M, powerlib_domain] theorem dq_power_balance {b : SeriesRLC} {ω : ℝ} {id iq : ℝ → ℝ}
     {vd vq vcd vcq id' iq' t : ℝ} (hd : HasDerivAt id id' t) (hq : HasDerivAt iq iq' t)
     (kvl_d : b.L * id' = vd - vcd - b.R * id t + ω * b.L * iq t)
@@ -102,7 +163,14 @@ capacitor's voltage is part of `v − v^c`. -/
     convert h using 1
     push_cast
     ring
-  · linear_combination (-(id t)) * kvl_d - iq t * kvl_q
+  · have h := dq_power_identity (b := b) (ω := ω) (v := ![vd, vq]) (vc := ![vcd, vcq])
+      (i := ![id t, iq t]) (i' := ![id', iq']) (by
+        ext k; fin_cases k
+        · simp; linear_combination kvl_d
+        · simp; linear_combination kvl_q)
+    simp only [dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one] at h
+    linear_combination h
 
 end SeriesRLC
 
@@ -116,17 +184,10 @@ def dqAdmittance (ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   Transform.complexSymm (e.G + e.C * s + e.Γ * s / (s ^ 2 + ω ^ 2))
     (ω * e.C - e.Γ * ω / (s ^ 2 + ω ^ 2))
 
-/-- Without a shunt inductor the dq admittance is `(G + C s) I + ω C J`. -/
-@[tmio M, powerlib_domain] theorem dqAdmittance_of_noInd {e : ParallelRLC} (hΓ : e.Γ = 0)
-    (ω : ℝ) (s : ℂ) :
-    e.dqAdmittance ω s = !![e.G + e.C * s, -(ω * e.C); ω * e.C, e.G + e.C * s] := by
-  simp [dqAdmittance, Transform.complexSymm, hΓ]
-
-/-- Without a shunt inductor the determinant of the dq admittance is `(G + C s)² + (ω C)²`. -/
-@[tmio M, powerlib_domain] theorem det_dqAdmittance_of_noInd {e : ParallelRLC} (hΓ : e.Γ = 0)
-    (ω : ℝ) (s : ℂ) : (e.dqAdmittance ω s).det = (e.G + e.C * s) ^ 2 + (ω * e.C) ^ 2 := by
-  rw [dqAdmittance, Transform.det_complexSymm]
-  simp [hΓ]
+/-- The dq admittance is the dq impedance of the dual series element (`ParallelRLC.toSeries`);
+the laws of `SeriesRLC.dqImpedance` read it with `G, C, Γ` for `R, L, S`. -/
+@[tmio M, powerlib_domain] theorem dqAdmittance_eq_dqImpedance (ω : ℝ) (s : ℂ) :
+    e.dqAdmittance ω s = e.toSeries.dqImpedance ω s := rfl
 
 /-- Park: if `C dv_αβ/dt = i_αβ − G v_αβ` with `v_αβ = rot θ · v`, `i_αβ = rot θ · i`,
 `θ' = ω`, then `C dv/dt = i − G v − ω C J v` (a shunt inductor's current is part of `i`). -/

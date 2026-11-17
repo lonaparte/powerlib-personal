@@ -21,13 +21,12 @@ Results.
 * Coordinate solutions (`x : ℝ → Fin k → ℝ` with `∀ t, HasDerivAt x (A *ᵥ x t) t`, Euclidean
   norm through `WithLp.toLp 2`): `isTrajectoryOn_toLp` links them to LeanForControl's affine
   linear field `affineLinearVectorField A 0`; `hasDerivAt_ofLp_solution`,
-  `exists_linear_trajectory` (every initial state has one); `linear_decay_of_isHurwitz` and
-  `isHurwitz_of_linear_decay` (both directions of the coordinate decay test, through the linear
-  hub `Linear.globallyExponentiallyStable_of_isHurwitz` and the non-decaying eigenmodes
-  `Linear.eigenmode`).
-* The same equivalence for curves in `ℝⁿ = EuclideanSpace ℝ (Fin n)` with
-  `∀ t, HasDerivAt e (Linear.op A (e t)) t`: `exists_global_bound_of_isHurwitz`,
-  `isHurwitz_of_global_bound` (through `Linear.holds_iff_isHurwitz`).
+  `exists_linear_trajectory` (every initial state has one).
+* Curves in `ℝⁿ = EuclideanSpace ℝ (Fin n)` with `∀ t, HasDerivAt e (Linear.op A (e t)) t`:
+  `exists_global_bound_of_isHurwitz` (the linear hub
+  `Linear.globallyExponentiallyStable_of_isHurwitz`) and `isHurwitz_of_global_bound` (through
+  `Linear.holds_iff_isHurwitz`); `linear_decay_of_isHurwitz`, `isHurwitz_of_linear_decay` are
+  the same two directions for coordinate solutions, read through `WithLp.toLp 2`.
 * `not_decay_of_eigenvector`: a real eigenvector `A v = μ v`, `v ≠ 0`, with `−a < μ` excludes
   `Flow.Decay` of the linear field at the rate `a`.
 * Spectral facts: `isHurwitz_sub_smul_one` (if every eigenvalue has real part `< c`, `A − c I` is
@@ -79,70 +78,6 @@ LeanForControl's affine linear field of `A` centred at the origin. -/
     (x₀ : Fin k → ℝ) : ∃ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) ∧ x 0 = x₀ :=
   ⟨fun s => WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) s),
     hasDerivAt_ofLp_solution A x₀, by simp⟩
-
-/-- Hurwitz `A`: every global coordinate solution of `ẋ = A x` decays exponentially in the
-Euclidean norm (from the Flow global exponential stability of the affine linear field). -/
-@[tmio T, powerlib_foundation] theorem linear_decay_of_isHurwitz {A : Matrix (Fin k) (Fin k) ℝ}
-    (hA : IsHurwitz A) :
-    ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
-      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := Linear.globallyExponentiallyStable_of_isHurwitz 0 hA
-  refine ⟨C, by linarith, a, ha, fun x hx t ht => ?_⟩
-  have h := hb 0 t _ (isTrajectoryOn_toLp hx 0 t) t ⟨ht, le_rfl⟩
-  simpa [sub_zero, neg_mul] using h
-
-/-- Conversely, exponential decay of every global coordinate solution of `ẋ = A x` forces `A` to
-be Hurwitz: an eigenmode with `Re μ ≥ 0` does not decay. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_of_linear_decay {A : Matrix (Fin k) (Fin k) ℝ}
-    {K rate : ℝ} (hr : 0 < rate)
-    (hdecay : ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
-      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
-    IsHurwitz A := by
-  intro μ v hv heig
-  by_contra hμ
-  have hre : 0 ≤ μ.re := by simpa using hμ
-  have hmode : ∀ part : ℂ →L[ℝ] ℝ, (∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) →
-      ∀ t, HasDerivAt (fun s => WithLp.ofLp (Linear.eigenmode part μ v s))
-        (A *ᵥ WithLp.ofLp (Linear.eigenmode part μ v t)) t := by
-    intro part hpart t
-    have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).hasFDerivAt.comp_hasDerivAt t
-      (Linear.eigenmode_hasDerivAt A heig part hpart t)
-    convert h using 1 <;> rfl
-  have hsq : ∀ part : ℂ →L[ℝ] ℝ, (∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) →
-      ∀ t, 0 ≤ t → ‖Linear.eigenmode part μ v t‖ ^ 2 ≤
-        (K * Real.exp (-(rate * t))) ^ 2 * ‖Linear.eigenmode part μ v 0‖ ^ 2 := by
-    intro part hpart t ht
-    have hb := hdecay _ (hmode part hpart) t ht
-    have hb2 := pow_le_pow_left₀ (norm_nonneg _) hb 2
-    calc ‖Linear.eigenmode part μ v t‖ ^ 2 ≤ (K * Real.exp (-(rate * t)) *
-          ‖Linear.eigenmode part μ v 0‖) ^ 2 := hb2
-      _ = _ := by ring
-  set N : ℝ := ∑ j, Complex.normSq (v j)
-  have hN : 0 < N := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
-    exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)
-      ⟨j, Finset.mem_univ _, Complex.normSq_pos.mpr hj⟩
-  have hsum (t : ℝ) : ‖Linear.eigenmode Complex.reCLM μ v t‖ ^ 2 +
-      ‖Linear.eigenmode Complex.imCLM μ v t‖ ^ 2 = Real.exp (μ.re * t) ^ 2 * N :=
-    Linear.eigenmode_norm_sq μ v t
-  have hlarge (t : ℝ) (ht : 0 ≤ t) : 1 ≤ (K * Real.exp (-(rate * t))) ^ 2 := by
-    have h0 := hsum 0
-    simp only [mul_zero, Real.exp_zero, one_pow, one_mul] at h0
-    have hgrow : N ≤ Real.exp (μ.re * t) ^ 2 * N :=
-      le_mul_of_one_le_left hN.le
-        (one_le_pow₀ (Real.one_le_exp_iff.mpr (mul_nonneg hre ht)))
-    have hle : Real.exp (μ.re * t) ^ 2 * N ≤ (K * Real.exp (-(rate * t))) ^ 2 * N := by
-      rw [← hsum t, ← h0, mul_add]
-      exact add_le_add (hsq Complex.reCLM (by simp) t ht) (hsq Complex.imCLM (by simp) t ht)
-    exact le_of_mul_le_mul_right (by rw [one_mul]; exact hgrow.trans hle) hN
-  have hlim : Filter.Tendsto (fun t : ℝ => (K * Real.exp (-(rate * t))) ^ 2) Filter.atTop
-      (nhds 0) := by
-    have he : Filter.Tendsto (fun t : ℝ => Real.exp (-(rate * t))) Filter.atTop (nhds 0) :=
-      Real.tendsto_exp_neg_atTop_nhds_zero.comp (Filter.tendsto_id.const_mul_atTop hr)
-    simpa using (he.const_mul K).pow 2
-  obtain ⟨t, ht, hsmall⟩ :=
-    ((Filter.eventually_ge_atTop (0 : ℝ)).and (hlim.eventually (gt_mem_nhds zero_lt_one))).exists
-  exact absurd (hlarge t ht) (not_le.mpr hsmall)
 
 end Coordinates
 
@@ -197,6 +132,37 @@ linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
       rw [neg_mul]; gcongr; exact le_max_left _ _
 
 end Euclidean
+
+/-! ## The coordinate decay test -/
+
+section CoordinateDecay
+
+variable {k : ℕ}
+
+/-- Hurwitz `A`: every global coordinate solution of `ẋ = A x` decays exponentially in the
+Euclidean norm (`exists_global_bound_of_isHurwitz` read through `WithLp.toLp 2`). -/
+@[tmio T, powerlib_foundation] theorem linear_decay_of_isHurwitz {A : Matrix (Fin k) (Fin k) ℝ}
+    (hA : IsHurwitz A) :
+    ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
+      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
+  obtain ⟨K, hK, rate, hr, hb⟩ := exists_global_bound_of_isHurwitz hA
+  exact ⟨K, hK, rate, hr, fun x hx => hb _ fun s =>
+    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).symm.hasFDerivAt.comp_hasDerivAt s
+      (hx s)⟩
+
+/-- Conversely, exponential decay of every global coordinate solution of `ẋ = A x` forces `A` to
+be Hurwitz (`isHurwitz_of_global_bound` read through `WithLp.ofLp`). -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_linear_decay {A : Matrix (Fin k) (Fin k) ℝ}
+    {K rate : ℝ} (hr : 0 < rate)
+    (hdecay : ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
+      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
+    IsHurwitz A :=
+  isHurwitz_of_global_bound hr fun e he t ht => by
+    simpa using hdecay (fun s => WithLp.ofLp (e s)) (fun s =>
+      (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).hasFDerivAt.comp_hasDerivAt s
+        (he s)) t ht
+
+end CoordinateDecay
 
 /-! ## A slow real eigenmode excludes decay -/
 

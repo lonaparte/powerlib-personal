@@ -30,7 +30,11 @@ Results.
 * `gaussMoment1`, `gaussMoment3`, `gaussMoment5` — the half-line moments `∫_0^∞ ξⁿ e^{−cξ²}`
   (`n = 1, 3, 5`) used by the endpoint Laplace table (`c = b/2`) and the guard first-passage
   asymptotics.
-* `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_ge` — finite-interval bounds,
+* `gaussMoment2_Ioi` — `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)` (endpoint Laplace two-term
+  expansion).
+* `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_interval_bounds`,
+  `integral_exp_neg_mul_sq_ge` — finite-interval bounds,
+  `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`, hence
   `∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`.
 * `integral_mul_exp_neg_mul_sq_interval` — the closed form
   `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)`.
@@ -150,38 +154,6 @@ half-line integral. -/
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx using h0 x hx
   · exact Ioc_subset_Ioi_self.eventuallyLE
 
-/-- Gaussian lower bound on a finite interval:
-`∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)` (the tail beyond `L` is at most `(1/L) ∫ ξ e^{−cξ²}`). -/
-@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c) (hL : 0 < L) :
-    √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
-  have hg : Integrable fun ξ : ℝ => Real.exp (-c * ξ ^ 2) := integrable_exp_neg_mul_sq hc
-  have hg1 : Integrable fun ξ : ℝ => ξ * Real.exp (-c * ξ ^ 2) := integrable_mul_exp_neg_mul_sq hc
-  have hsplit : ∫ ξ in Ioi (0 : ℝ), Real.exp (-c * ξ ^ 2) =
-      (∫ ξ in Ioc (0 : ℝ) L, Real.exp (-c * ξ ^ 2)) + ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) := by
-    rw [← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hg.integrableOn
-      hg.integrableOn, Ioc_union_Ioi_eq_Ioi hL.le]
-  have htail : ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) ≤ 1 / (2 * c * L) := by
-    calc ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2)
-        ≤ ∫ ξ in Ioi L, L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
-          apply setIntegral_mono_on hg.integrableOn (hg1.const_mul _).integrableOn
-            measurableSet_Ioi
-          intro ξ hξ
-          have hξ' : L < ξ := hξ
-          rw [← mul_assoc]
-          apply le_mul_of_one_le_left (Real.exp_pos _).le
-          rw [inv_mul_eq_div, one_le_div hL]; exact hξ'.le
-      _ ≤ ∫ ξ in Ioi (0 : ℝ), L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
-          apply setIntegral_mono_set (hg1.const_mul _).integrableOn
-          · filter_upwards [ae_restrict_mem measurableSet_Ioi] with ξ hξ
-            have : (0 : ℝ) < ξ := hξ
-            positivity
-          · exact (Ioi_subset_Ioi hL.le).eventuallyLE
-      _ = 1 / (2 * c * L) := by
-          rw [MeasureTheory.integral_const_mul, gaussMoment1 hc]; field_simp
-  have hmain := integral_gaussian_Ioi c
-  rw [intervalIntegral.integral_of_le hL.le]
-  linarith
-
 /-- `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)` (fundamental theorem of calculus). -/
 @[tmio T, powerlib_foundation] theorem integral_mul_exp_neg_mul_sq_interval {β : ℝ} (hβ : 0 < β)
     (L : ℝ) :
@@ -199,6 +171,77 @@ half-line integral. -/
   simp
   field_simp
   ring
+
+/-- Half-line second Gaussian moment: `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`
+(wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = q = 2`, `Γ(3/2) = √π/2`). -/
+@[tmio T, powerlib_foundation] theorem gaussMoment2_Ioi {β : ℝ} (hβ : 0 < β) :
+    ∫ u in Ioi (0 : ℝ), u ^ 2 * Real.exp (-β * u ^ 2) = √(π / β) / (4 * β) := by
+  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 2) (b := β) two_pos
+    (by norm_num) hβ
+  simp only [Real.rpow_two] at h
+  rw [h]
+  have hG : Real.Gamma ((2 + 1) / 2) = √π / 2 := by
+    rw [show ((2 : ℝ) + 1) / 2 = 1 / 2 + 1 by norm_num, Real.Gamma_add_one (by norm_num),
+      Real.Gamma_one_half_eq]
+    ring
+  have hb : β ^ (-((2 : ℝ) + 1) / 2) = (β * √β)⁻¹ := by
+    rw [show -((2 : ℝ) + 1) / 2 = -(1 + 1 / 2) by norm_num, Real.rpow_neg hβ.le,
+      Real.rpow_add hβ, Real.rpow_one, ← Real.sqrt_eq_rpow]
+  rw [hG, hb, Real.sqrt_div' π hβ.le]
+  have hs : 0 < √β := Real.sqrt_pos.mpr hβ
+  field_simp
+  ring
+
+/-- Gaussian mass on a finite interval:
+`√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`. -/
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_interval_bounds {β L : ℝ}
+    (hβ : 0 < β) (hL : 0 < L) :
+    √(π / β) / 2 - Real.exp (-β * L ^ 2) / (2 * β * L) ≤
+        ∫ u in (0 : ℝ)..L, Real.exp (-β * u ^ 2) ∧
+      ∫ u in (0 : ℝ)..L, Real.exp (-β * u ^ 2) ≤ √(π / β) / 2 := by
+  have hg : Integrable fun u : ℝ => Real.exp (-β * u ^ 2) := integrable_exp_neg_mul_sq hβ
+  have hg1 : Integrable fun u : ℝ => u * Real.exp (-β * u ^ 2) := integrable_mul_exp_neg_mul_sq hβ
+  have hsplit : ∀ f : ℝ → ℝ, Integrable f → ∫ u in Ioi (0 : ℝ), f u =
+      (∫ u in Ioc (0 : ℝ) L, f u) + ∫ u in Ioi L, f u := fun f hf => by
+    rw [← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hf.integrableOn
+      hf.integrableOn, Ioc_union_Ioi_eq_Ioi hL.le]
+  have hmain := integral_gaussian_Ioi β
+  have h0 := hsplit _ hg
+  have h1 := hsplit _ hg1
+  have hm1 : ∫ u in Ioi (0 : ℝ), u * Real.exp (-β * u ^ 2) = 1 / (2 * β) := gaussMoment1 hβ
+  have hI1 : ∫ u in Ioc (0 : ℝ) L, u * Real.exp (-β * u ^ 2) =
+      (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by
+    rw [← intervalIntegral.integral_of_le hL.le, integral_mul_exp_neg_mul_sq_interval hβ]
+  have htail1 : ∫ u in Ioi L, u * Real.exp (-β * u ^ 2) = Real.exp (-β * L ^ 2) / (2 * β) := by
+    have : (∫ u in Ioi L, u * Real.exp (-β * u ^ 2)) =
+        1 / (2 * β) - (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by linarith
+    rw [this]; field_simp; ring
+  have htail : ∫ u in Ioi L, Real.exp (-β * u ^ 2) ≤ Real.exp (-β * L ^ 2) / (2 * β * L) := by
+    calc ∫ u in Ioi L, Real.exp (-β * u ^ 2)
+        ≤ ∫ u in Ioi L, L⁻¹ * (u * Real.exp (-β * u ^ 2)) := by
+          apply setIntegral_mono_on hg.integrableOn (hg1.const_mul _).integrableOn
+            measurableSet_Ioi
+          intro u hu
+          have hu' : L < u := hu
+          rw [← mul_assoc]
+          apply le_mul_of_one_le_left (Real.exp_pos _).le
+          rw [inv_mul_eq_div, one_le_div hL]; exact hu'.le
+      _ = Real.exp (-β * L ^ 2) / (2 * β * L) := by
+          rw [MeasureTheory.integral_const_mul, htail1]; field_simp
+  have htail0 : 0 ≤ ∫ u in Ioi L, Real.exp (-β * u ^ 2) :=
+    setIntegral_nonneg measurableSet_Ioi fun u _ => (Real.exp_pos _).le
+  rw [intervalIntegral.integral_of_le hL.le]
+  constructor <;> linarith
+
+
+/-- Gaussian lower bound on a finite interval: `∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)`
+(`integral_exp_neg_mul_sq_interval_bounds` with `e^{−cL²} ≤ 1`). -/
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c)
+    (hL : 0 < L) :
+    √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
+  refine le_trans ?_ (integral_exp_neg_mul_sq_interval_bounds hc hL).1
+  gcongr
+  exact Real.exp_le_one_iff.mpr (by nlinarith [sq_nonneg L])
 
 end HalfLine
 

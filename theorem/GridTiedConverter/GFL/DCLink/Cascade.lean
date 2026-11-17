@@ -26,7 +26,8 @@ Model boundary.
   `C V_dc' = i_src + P_bridge / V_dc` with `P_bridge = v^conv_d i_d`,
   `v^conv_d = V_d0 − (Kp (i_d* − i_d) + Ki ξ)` (T-vsc-dc-voltage-control §1.1 with the bridge
   power of §1.1.1, i.e. the filter loss `R i²` and the inductor energy `L i i'` are kept:
-  `P_bridge = V_d0 i − R i² − L i i'`, `vconv_mul_eq_bridgePower`, cf. `bridgePower_of_kvl`).
+  `P_bridge = V_d0 i − R i² − L i i'`, `vconv_mul_eq_bridgePower`, cf.
+  `Passive.SeriesRLC.dq_power_identity`).
   `G_dc = 0`; no delay, PWM or limits.
   The field contains `1/V_dc` and is used on the open set `V_dc > 0`.
 * Operating point (`eqState`): `i_d = i_d* = I_d0`, `Ki ξ0 = R I_d0`, `V_dc = V0 > 0`, with the
@@ -61,7 +62,7 @@ Family and connection conclusions.
   nonlinear field with `i_d* = I_d0` translated so that `eqState` is the origin
   (`Spectral.localFamily`, `Flow.Property.holds_shift_iff`). Requirements: `stable` —
   `L, C, V0 > 0`, `R + Kp > 0`, `Ki > 0`, `I_dc0 > 0`; `unstable` — `C, V0 > 0`, `Ki ≠ 0`,
-  `I_dc0 < 0`. `chain_le_semantics`, exact passivity (`Family.IsAutonomous.exact_passive`);
+  `I_dc0 < 0`. `chain_le_semantics`, exact passivity (`Family.IsPort.exact_passive`);
   `mem_den_locallyExponentiallyStable`: rectifier mode with a stable current loop is locally
   exponentially stable; `mem_den_unstable_of_inverter`: in
   inverter mode (`I_dc0 < 0`) the plant is unstable, whatever the current-loop gains (the

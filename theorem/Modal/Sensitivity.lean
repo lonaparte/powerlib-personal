@@ -32,7 +32,8 @@ Along a given branch (a global branch `∀ α` enters through `Filter.Eventually
 * `dotProduct_deriv_eq_zero_of_eventually` — a normalisation `wᵀ v(α) ≡ c` gives `wᵀ v' = 0`.
 * `eigenvalue_deriv_left_of_eventually` — `λ' (uᵀ v(α₀)) = uᵀ A' v(α₀)` for every left
   eigenvector `uᵀ A(α₀) = λ(α₀) uᵀ` (no modal basis).
-* `eigenvalue_deriv_of_eventually` — `λ'(α₀) = ψᵢᵀ A' vᵢ`.
+* `eigenvalue_deriv_of_eventually` — `λ'(α₀) = ψᵢᵀ A' vᵢ` (the left form at `u = ψᵢ`,
+  `ψᵢᵀ vᵢ = 1`).
 * `eigenvector_deriv_coeff_of_eventually` — for `j ≠ i`, `ψⱼᵀ v' = ψⱼᵀ A' vᵢ / (λᵢ − λⱼ)`.
 * `eigenvector_deriv_of_eventually` —
   `v' = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ + (ψᵢᵀ v') vᵢ`; the component along `vᵢ` is fixed by
@@ -144,12 +145,9 @@ variable {A : ℝ → Matrix n n ℂ} {A' : Matrix n n ℂ} {α₀ : ℝ} (mb : 
     (heig : ∀ᶠ α in 𝓝 α₀, A α *ᵥ v α = lam α • v α) (hv0 : v α₀ = mb.v i)
     (hl0 : lam α₀ = mb.eig i) :
     lam' = mb.ψ i ⬝ᵥ (A' *ᵥ mb.v i) := by
-  have h := congrArg (fun w => mb.ψ i ⬝ᵥ w) (eigen_branch_deriv_of_eventually hA hv hlam heig)
-  simp only [dotProduct_add, dotProduct_smul, smul_eq_mul, hv0, hl0] at h
-  rw [dotProduct_mulVec (mb.ψ i) (A α₀) v', mb.vecMul_ψ, smul_dotProduct, smul_eq_mul,
-    mb.ψ_dot_v] at h
-  simp only [↓reduceIte] at h
-  linear_combination -h
+  have h := eigenvalue_deriv_left_of_eventually hA hv hlam heig (u := mb.ψ i)
+    (by rw [hl0]; exact mb.vecMul_ψ i)
+  simpa [hv0, mb.ψ_dot_v] using h
 
 /-- Off-diagonal modal coordinates of the eigenvector derivative, along a branch defined near
 `α₀`. -/

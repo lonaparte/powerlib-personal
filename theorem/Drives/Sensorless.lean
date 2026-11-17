@@ -2,7 +2,7 @@ import dependencies.Mathlib
 import Mathlib.Basic.Real.Sign
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import theorem.Drives.InductionMachine
-import theorem.Drives.CascadeControl
+import theorem.GridTiedConverter.PLL.Linear
 import theorem.SpecialFunctions.Elementary
 import theorem.Transform.Park
 
@@ -39,8 +39,10 @@ Results.
   `(V_h/(4ω_h))(1/L_d − 1/L_q) sin 2Δθ` (`hf_demodulation`).
 * IM: voltage model (`InductionMachine.rotorFlux_voltageModel`), stationary-frame current model
   `dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r` (`currentModel_stationary`).
-* Angle-tracking PI with a demodulation gain `k_ε`:
-  `θ̂/θ = k_ε (K_p s + K_i)/(s² + k_ε K_p s + k_ε K_i)` (`trackingLoop_transfer`), and the
+* Angle-tracking PI with a demodulation gain `k_ε`: the linearized loop `trackingLoopModel` is
+  the linearized SRF-PLL phase model `PLL.phaseModel` with `k_ε` in place of the grid amplitude
+  `V` (`theorem/GridTiedConverter/PLL/Linear.lean`), so
+  `θ̂/θ = k_ε (K_p s + K_i)/(s² + k_ε K_p s + k_ε K_i)` (`PLL.transfer_phaseModel`); the
   small-signal gain of `K sin 2Δθ` is `2K` (`demod_smallSignal_gain`).
 
 Corrections.
@@ -53,7 +55,8 @@ Corrections.
   `hf_note_d_axis_wrong`) and the demodulated amplitude `V_h/(2ω_h)(…)` is too large by a
   factor 2 (and has the opposite sign for `Δθ = θ − θ̂`).
 * §2.7: the tracking-loop transfer function omits the demodulation gain; with
-  `ε = k_ε Δθ` it is `k_ε(K_p s + K_i)/(s² + k_ε K_p s + k_ε K_i)`.
+  `ε = k_ε Δθ` it is `k_ε(K_p s + K_i)/(s² + k_ε K_p s + k_ε K_i)` (`PLL.transfer_phaseModel`
+  at `V = k_ε`).
 -/
 
 noncomputable section
@@ -271,20 +274,8 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ring
 
 /-- Linearised angle-tracking loop `θ̂' = K_p ε + K_i ξ`, `ξ' = ε`, `ε = k_ε (θ − θ̂)`;
-state `(θ̂, ξ)`, input `θ`, output `θ̂`. -/
-def trackingLoopModel (kε Kp Ki : ℝ) : Linear.Plant 2 1 :=
-  CascadeControl.siso2 (-(Kp * kε)) Ki (-kε) 0 (Kp * kε) kε 1 0
-
-@[tmio M, powerlib_domain] theorem trackingLoop_transfer (kε Kp Ki : ℝ) (s : ℂ)
-    (hden : s ^ 2 + kε * Kp * s + kε * Ki ≠ 0) :
-    Linear.transfer (trackingLoopModel kε Kp Ki) s 0 0 =
-      kε * (Kp * s + Ki) / (s ^ 2 + kε * Kp * s + kε * Ki) := by
-  have hdet : ((s - ((-(Kp * kε)) : ℝ)) * (s - ((0 : ℝ) : ℂ)) - (Ki : ℂ) * ((-kε : ℝ) : ℂ)) =
-      s ^ 2 + kε * Kp * s + kε * Ki := by
-    push_cast; ring
-  unfold trackingLoopModel
-  rw [CascadeControl.siso2_transfer _ _ _ _ _ _ _ _ s (by rw [hdet]; exact hden), hdet]
-  push_cast
-  ring
+state `(θ̂, ξ)`, input `θ`, output `θ̂`: the linearized SRF-PLL phase model with the demodulation
+gain `k_ε` in place of the grid amplitude (transfer function `PLL.transfer_phaseModel`). -/
+abbrev trackingLoopModel (kε Kp Ki : ℝ) : Linear.Plant 2 1 := PLL.phaseModel kε Kp Ki
 
 end powerlib.Drives.Sensorless

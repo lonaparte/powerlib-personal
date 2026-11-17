@@ -19,7 +19,8 @@ passivity of a linear plant.
 Results.
 * `Plant.system` (the port system of a plant), `Plant.system_zeroInput` (with the ports at zero,
   the plant is the hub's linear field).
-* `KYP` (a KYP certificate with storage matrix `P`), `KYP.storage`, `KYP.output_dot`,
+* `KYP` (a KYP certificate with storage matrix `P`), `KYP.storage` (the quadratic energy
+  `Linear.quadraticEnergy P` of `theorem/Linear/Certificate.lean`), `KYP.output_dot`,
   `KYP.passiveWith` (passivity with the quadratic storage).
 * `KYP.storage_conserved` (a lossless certificate, `Aᵀ P + P A = 0`, conserves the storage along
   every zero-input solution segment), `KYP.lyapunovStable` (with quadratic bounds on the storage),
@@ -56,9 +57,8 @@ structure KYP (M : Plant n p) where
   output : M.Bᵀ * P = M.C
   feedthrough : ∀ u : Fin p → ℝ, 0 ≤ u ⬝ᵥ (M.D *ᵥ u)
 
-/-- The quadratic storage `xᵀ P x / 2`. -/
-def KYP.storage {M : Plant n p} (c : KYP M) (x : ℝⁿ) : ℝ :=
-  WithLp.ofLp x ⬝ᵥ (c.P *ᵥ WithLp.ofLp x) / 2
+/-- The quadratic storage `xᵀ P x / 2` (`quadraticEnergy`). -/
+abbrev KYP.storage {M : Plant n p} (c : KYP M) : ℝⁿ → ℝ := quadraticEnergy c.P
 
 @[tmio T, powerlib_foundation] theorem KYP.output_dot {M : Plant n p} (c : KYP M) (X : Fin n → ℝ)
     (u : Fin p → ℝ) : X ⬝ᵥ (c.P *ᵥ (M.B *ᵥ u)) = (M.C *ᵥ X) ⬝ᵥ u := by
@@ -68,25 +68,12 @@ def KYP.storage {M : Plant n p} (c : KYP M) (x : ℝⁿ) : ℝ :=
 /-- A KYP certificate proves passivity with its quadratic storage. -/
 @[tmio T, powerlib_foundation] theorem KYP.passiveWith {M : Plant n p} (c : KYP M) :
     M.system.PassiveWith c.storage := by
-  apply Port.System.passiveWith_of_rate _ _ (fun x => div_nonneg (c.nonneg _) two_pos.le)
+  apply Port.System.passiveWith_of_rate _ _ (fun x => mul_nonneg (by norm_num) (c.nonneg _))
     (fun x u => WithLp.ofLp x ⬝ᵥ (c.P *ᵥ WithLp.ofLp (M.system.field x u)))
   · intro u x t₀ t₁ t hx ht
-    have hX : HasDerivWithinAt (fun τ => WithLp.ofLp (x τ))
-        (WithLp.ofLp (M.system.field (x t) (u t))) (Icc t₀ t₁) t :=
-      (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).hasFDerivAt.comp_hasDerivWithinAt t
-        (hx t ht)
-    have hPX : HasDerivWithinAt (fun τ => c.P *ᵥ WithLp.ofLp (x τ))
-        (c.P *ᵥ WithLp.ofLp (M.system.field (x t) (u t))) (Icc t₀ t₁) t :=
-      (c.P.mulVecLin.toContinuousLinearMap).hasFDerivAt.comp_hasDerivWithinAt t hX
-    convert (dotProduct_hasDerivWithinAt hX hPX).div_const 2 using 1
-    have hsym : WithLp.ofLp (M.system.field (x t) (u t)) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (x t)) =
-        WithLp.ofLp (x t) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (M.system.field (x t) (u t))) := by
-      rw [Matrix.dotProduct_mulVec, dotProduct_comm]
-      congr 1
-      conv_lhs => rw [← c.symmetric]
-      rw [Matrix.vecMul_transpose]
-    rw [hsym]
-    ring
+    have hd := ((contDiff_quadraticEnergy c.P).differentiable (by norm_num)
+      (x t)).hasFDerivAt.comp_hasDerivWithinAt t (hx t ht)
+    rwa [fderiv_quadraticEnergy_apply c.symmetric] at hd
   · intro x u
     have hfield : WithLp.ofLp (M.system.field x u) =
         M.A *ᵥ WithLp.ofLp x + M.B *ᵥ u := by
@@ -105,7 +92,7 @@ solution segment. -/
     (hl : M.Aᵀ * c.P + c.P * M.A = 0) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hx : IsTrajectoryOn x (affineLinearVectorField M.A 0) t₀ t₁) :
     ∀ t ∈ Icc t₀ t₁, c.storage (x t) = c.storage (x t₀) := fun t ht => by
-  simp only [KYP.storage, quadratic_conserved c.symmetric hl hx t ht]
+  simp only [KYP.storage, quadraticEnergy, quadratic_conserved c.symmetric hl hx t ht]
 
 /-- With quadratic bounds on the storage, a KYP certificate proves Lyapunov stability of the
 zero-input plant in the Flow semantics. -/
@@ -121,12 +108,13 @@ zero-input plant in the Flow semantics. -/
 @[tmio T, powerlib_foundation] theorem KYP.lyapunovStable_of_pos {M : Plant n p} (c : KYP M)
     (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (c.P *ᵥ x)) :
     LyapunovStable (affineLinearVectorField M.A 0) 0 := by
-  have hc : Continuous c.storage := by unfold KYP.storage; fun_prop
+  have hc : Continuous c.storage := (contDiff_quadraticEnergy c.P).continuous
   have hh : ∀ (r : ℝ) (x : ℝⁿ), c.storage (r • x) = r ^ 2 * c.storage x := fun r x => by
-    simp only [KYP.storage, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,
-      smul_dotProduct, smul_eq_mul]
+    simp only [KYP.storage, quadraticEnergy, WithLp.ofLp_smul, Matrix.mulVec_smul,
+      dotProduct_smul, smul_dotProduct, smul_eq_mul]
     ring
-  have hp : ∀ x ≠ 0, 0 < c.storage x := fun x hx => div_pos (hpos _ (by simpa using hx)) two_pos
+  have hp : ∀ x ≠ 0, 0 < c.storage x := fun x hx =>
+    mul_pos (by norm_num) (hpos _ (by simpa using hx))
   obtain ⟨a, ha, hlo⟩ := Flow.quadratic_lower_bound c.storage hc hh hp
   obtain ⟨b, -, hhi⟩ := Flow.quadratic_upper_bound c.storage hc hh hp
   exact c.lyapunovStable ha (le_max_left a b) fun x => ⟨hlo x, (hhi x).trans

@@ -227,10 +227,10 @@ def eulerMap (f : ℝⁿ → ℝⁿ) (h : ℝ) (z : ℝⁿ) : ℝⁿ := z + h �
 
 /-- The Euler map of a field with Jacobian `J` at `z` has Jacobian `I + h J` there. -/
 @[tmio T, powerlib_foundation] theorem hasFDerivAt_eulerMap {f : ℝⁿ → ℝⁿ}
-    {J : Matrix (Fin n) (Fin n) ℝ} {z : ℝⁿ} (hf : HasFDerivAt f (Map.op J) z) (h : ℝ) :
-    HasFDerivAt (eulerMap f h) (Map.op (forwardEulerMatrix h J)) z := by
+    {J : Matrix (Fin n) (Fin n) ℝ} {z : ℝⁿ} (hf : HasFDerivAt f (Linear.op J) z) (h : ℝ) :
+    HasFDerivAt (eulerMap f h) (Linear.op (forwardEulerMatrix h J)) z := by
   have hd := (hasFDerivAt_id z).add (hf.const_smul h)
-  rw [Map.op, forwardEulerMatrix, map_add, map_smul, map_one, ContinuousLinearMap.one_def]
+  rw [Linear.op, forwardEulerMatrix, map_add, map_smul, map_one, ContinuousLinearMap.one_def]
   exact hd
 
 /-- A field `C¹` near a point `x₀`, translated so that `x₀` is the origin, is `C¹` near the origin:
@@ -305,18 +305,19 @@ with a Hurwitz Jacobian `J` (converse linearization for fields `C¹` on a neighb
 `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`). -/
 @[tmio T, powerlib_foundation] private theorem exists_isHurwitz_jacobian {g : ℝⁿ → ℝⁿ} (hC : ContDiffAt ℝ 1 g 0)
     (hles : LocallyExponentiallyStable g 0) :
-    ∃ J : Matrix (Fin n) (Fin n) ℝ, fderiv ℝ g 0 = Map.op J ∧ g 0 = 0 ∧ IsHurwitz J := by
+    ∃ J : Matrix (Fin n) (Fin n) ℝ, fderiv ℝ g 0 = Linear.op J ∧ g 0 = 0 ∧ IsHurwitz J := by
   obtain ⟨U, hU, h0, hCU⟩ := exists_isOpen_contDiffOn hC
   set J : Matrix (Fin n) (Fin n) ℝ :=
     (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).symm (fderiv ℝ g 0)
-  have hJ : fderiv ℝ g 0 = Map.op J :=
+  have hJ : fderiv ℝ g 0 = Linear.op J :=
     ((Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).apply_symm_apply _).symm
   exact ⟨J, hJ,
     (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local hU h0 J hCU hJ).mp hles⟩
 
 /-- The Jacobian of a field `C¹` near the origin is its derivative there. -/
 @[tmio T, powerlib_foundation] private theorem hasFDerivAt_of_fderiv_eq {g : ℝⁿ → ℝⁿ} {J : Matrix (Fin n) (Fin n) ℝ}
-    (hC : ContDiffAt ℝ 1 g 0) (hJ : fderiv ℝ g 0 = Map.op J) : HasFDerivAt g (Map.op J) 0 := by
+    (hC : ContDiffAt ℝ 1 g 0) (hJ : fderiv ℝ g 0 = Linear.op J) :
+    HasFDerivAt g (Linear.op J) 0 := by
   rw [← hJ]
   exact hC.differentiableAt_one.hasFDerivAt
 
@@ -343,7 +344,7 @@ and a Hurwitz Jacobian `J` (so it is locally exponentially stable) and whose Eul
 not locally exponentially stable. -/
 @[tmio TM, powerlib_foundation] theorem not_euler_realizationSoundUnder_local (hF : F.IsAutonomous f)
     (hn : 0 < n) (y : Y) (J B : Matrix (Fin n) (Fin n) ℝ) (hC : ContDiffAt ℝ 1 (f (design y)) 0)
-    (hJ : fderiv ℝ (f (design y)) 0 = Map.op J) (h0 : f (design y) 0 = 0) (hA : IsHurwitz J)
+    (hJ : fderiv ℝ (f (design y)) 0 = Linear.op J) (h0 : f (design y) 0 = 0) (hA : IsHurwitz J)
     (hB : B * forwardEulerMatrix (step y) J = 1) (hS : LTI.SchurStable B) :
     connection% (¬ (euler F f design step).RealizationSoundUnder ∅
       (.flow .locallyExponentiallyStable)) := by
@@ -441,11 +442,11 @@ step constraint. -/
     connection% (¬ (euler F f design step).RealizationSoundUnder ∅
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hJ : fderiv ℝ (f (design y)) 0 = Map.op ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) := by
+  have hJ : fderiv ℝ (f (design y)) 0 = Linear.op ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) := by
     have hd := (hasFDerivAt_id (𝕜 := ℝ) (0 : ℝⁿ)).const_smul (-1 : ℝ)
-    have hop : Map.op ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) =
+    have hop : Linear.op ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) =
         (-1 : ℝ) • ContinuousLinearMap.id ℝ ℝⁿ := by
-      rw [Map.op, map_smul, map_one, ContinuousLinearMap.one_def]
+      rw [Linear.op, map_smul, map_one, ContinuousLinearMap.one_def]
     rw [hx, hop, ← hd.fderiv]
     congr 1
     funext z

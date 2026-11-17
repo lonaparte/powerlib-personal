@@ -1,5 +1,6 @@
 import theorem.PowerSystem.Synchronous.Swing
-import theorem.Passive.Series
+import theorem.Grid.PowerFlow
+import theorem.PowerSystem.Synchronous.PH
 import Mathlib.Analysis.Real.Pi.Bounds
 
 /-! # Instances of the canonical swing model: VSG, classical SMIB, post-fault SMIB with resistance
@@ -19,7 +20,10 @@ Model boundary.
   the frequency deviation in rad/s, `ω = ω_s ω_pu`, so `M = 2H/ω_s`, `D = D_p/ω_s`,
   `P = (E V_g / X_g) sin δ`.
 * `ClassicalSMIB`: classical synchronous machine model (`E'` behind `X_d'`, constant `P_m`,
-  generator OUT-positive stator convention, T-sync-machine §1.9).
+  generator OUT-positive stator convention, T-sync-machine §1.9); on its physical range it is the
+  port-Hamiltonian classical machine `ClassicalSMParams` with `b = E' V_∞ / X_d'`
+  (`ClassicalSMIB.toPH`), and it is the lossless slice `φ = π/2`, `θ_g = 0`, `r = X_d'` of
+  `PostFaultSMIB` (`PostFaultSMIB.toSwing_classical`).
 * `PostFaultSMIB`: SMIB through a Thevenin impedance `Z_e = R_e + j X_e` with resistance; the
   power-angle curve `P_e = G_e E'² + (E' V_g / |Z_e|) sin(δ − α)` is derived from the complex
   power `S̄ = Ē' Ī*` (generator OUT-positive, T-transient-stability §1.2).
@@ -30,9 +34,10 @@ Source: work-sync `theory/T-vsg-control.md` §1.1, §1.2, §1.10; `theory/T-sync
 
 Results (static evidence on the models; foundation).
 * `VSGInfiniteBus.exists_equilibrium_iff` — equilibria exist iff `|P_ref| ≤ E V_g / X_g`.
-* `VSGInfiniteBus.characteristic_polynomial`, `naturalFrequency_sq`, `dampingRatio_sq` — the
+* `VSGInfiniteBus.characteristic_polynomial`, `naturalFrequency_sq`, `dampingRatio_eq` — the
   corrected characteristic polynomial `2H s² + D_p s + ω_s K_E`, natural frequency and damping
-  ratio; `naturalFrequency_numeric` — the note's data give `ω_n ≈ 25.07 rad/s`.
+  ratio (`Criteria.dampingRatio` of the Jacobian); `K_E` is the swing synchronizing
+  coefficient; `naturalFrequency_numeric` — the note's data give `ω_n ≈ 25.07 rad/s`.
 * `ClassicalSMIB.eigenvalues_real_iff` — exact overdamping threshold at the stable equilibrium.
 * `electricalPower_eq` — the electrical power from the complex power `S̄ = Ē' Ī*`,
   `Ī = (Ē' − V̄_g)/Z_e`; `PostFaultSMIB.Pe_eq_complexPower` — the post-fault power-angle curve is
@@ -94,8 +99,8 @@ def Pmax : ℝ := v.E * v.Vg / v.Xg
 `P_e(δ) = (E V_g / X_g) sin δ`. -/
 def toSwing : SwingParams := ⟨2 * v.H / v.ωs, v.Dp / v.ωs, v.Pref, 0, v.Pmax, 0⟩
 
-/-- Synchronizing coefficient `K_E = (E V_g / X_g) cos δ₀`. -/
-def KE (δ₀ : ℝ) : ℝ := v.Pmax * Real.cos δ₀
+/-- Synchronizing coefficient `K_E = (E V_g / X_g) cos δ₀`, that of the swing model. -/
+abbrev KE (δ₀ : ℝ) : ℝ := v.toSwing.syncCoeff δ₀
 
 /-- Positivity of the physical parameters. -/
 structure Pos : Prop where
@@ -201,17 +206,20 @@ stable (energy function). -/
   have := h.H.ne'; have := h.ωs.ne'
   field_simp
 
-/-- Damping ratio of the corrected linearization: `(tr J)² / (4 det J) = ζ²` with
-`ζ = D_p / (2 √(2H ω_s K_E))`. -/
-@[tmio M, powerlib_domain] theorem dampingRatio_sq (h : v.Pos) (δ₀ : ℝ) (hK : 0 < v.KE δ₀) :
-    (v.toSwing.jacobian δ₀).trace ^ 2 / (4 * (v.toSwing.jacobian δ₀).det) =
-      (v.Dp / (2 * Real.sqrt (2 * v.H * v.ωs * v.KE δ₀))) ^ 2 := by
-  rw [SwingParams.trace_jacobian, v.naturalFrequency_sq h, div_pow (v.Dp), mul_pow,
-    Real.sq_sqrt (by have := h.H; have := h.ωs; positivity)]
+/-- Damping ratio of the corrected linearization: `ζ = −tr J / (2 √det J)`
+(`Criteria.dampingRatio`) is `D_p / (2 √(2H ω_s K_E))`. -/
+@[tmio M, powerlib_domain] theorem dampingRatio_eq (h : v.Pos) (δ₀ : ℝ) (hK : 0 < v.KE δ₀) :
+    Criteria.dampingRatio (v.toSwing.jacobian δ₀) =
+      v.Dp / (2 * Real.sqrt (2 * v.H * v.ωs * v.KE δ₀)) := by
+  have hH := h.H; have hω := h.ωs
+  have hs : Real.sqrt (v.ωs * v.KE δ₀ / (2 * v.H)) =
+      Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) / (2 * v.H) := by
+    rw [show v.ωs * v.KE δ₀ / (2 * v.H) = 2 * v.H * v.ωs * v.KE δ₀ / (2 * v.H) ^ 2 by
+        field_simp, Real.sqrt_div' _ (by positivity), Real.sqrt_sq (by positivity)]
+  have hpos : 0 < Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) := Real.sqrt_pos.mpr (by positivity)
+  rw [Criteria.dampingRatio, SwingParams.trace_jacobian, v.naturalFrequency_sq h, hs]
   simp only [toSwing]
-  have := h.H.ne'; have := h.ωs.ne'; have := hK.ne'
   field_simp
-  ring
 
 /-- With the note's data `H = 2 s`, `K_E = 8 pu/rad`, `ω_s = 100π rad/s`, the corrected
 natural frequency `√(ω_s K_E / (2H))` lies in `(25, 25.1) rad/s`. -/
@@ -244,6 +252,13 @@ variable (m : ClassicalSMIB)
 def Pmax : ℝ := m.E' * m.Vinf / m.Xd'
 
 def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
+
+/-- The parameter map to the port-Hamiltonian classical machine (`ClassicalSMParams`,
+`theorem/PowerSystem/Synchronous/PH.lean`) on its physical range `M > 0`, `D ≥ 0`,
+`E' V_∞ / X_d' > 0`: synchronizing coefficient `b = E' V_∞ / X_d'`; its swing parameters
+`ClassicalSMParams.toSwing` are `m.toSwing` by definition. -/
+def toPH (hM : 0 < m.M) (hD : 0 ≤ m.D) (hP : 0 < m.Pmax) : ClassicalSMParams :=
+  ⟨m.M, m.D, m.Pmax, m.Pm, hM, hD, hP⟩
 
 /-- An equilibrium with `δ₀ ∈ (−π/2, π/2)` is locally exponentially stable (`M, D > 0`,
 `E' V_∞ / X_d' > 0`). -/
@@ -298,27 +313,35 @@ end ClassicalSMIB
       (starRingEnd ℂ) (((E : ℂ) * Complex.exp (δ * Complex.I) -
         (V : ℂ) * Complex.exp (θg * Complex.I)) / Z.impedance (ω * Complex.I))).re =
       Z.R / r ^ 2 * E ^ 2 + E * V / r * Real.sin (δ - (θg + Real.pi / 2 - φ)) := by
-  rw [Passive.SeriesRLC.impedance_jω]
-  generalize Z.R = R at hR ⊢
-  generalize Z.reactance ω = X at hX ⊢
-  have hr2 : R ^ 2 + X ^ 2 = r ^ 2 := by
-    rw [hR, hX]; nlinarith [Real.sin_sq_add_cos_sq φ]
-  have hns : Complex.normSq ((R : ℂ) + (X : ℂ) * Complex.I) = r ^ 2 := by
-    rw [Complex.normSq_apply]; simp; nlinarith [hr2]
+  have hZ : Z.absSq ω = r ^ 2 := by
+    rw [Passive.SeriesRLC.absSq, hR, hX]
+    linear_combination r ^ 2 * Real.sin_sq_add_cos_sq φ
+  -- rotate the bus to `V ∠ 0`: `S̄` is invariant under a common phase `e^{jθ_g}`
+  set u := Complex.exp (θg * Complex.I)
+  set a := (E : ℂ) * Complex.exp (((δ - θg : ℝ) : ℂ) * Complex.I)
+  have hu : u * (starRingEnd ℂ) u = 1 := by
+    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.norm_exp_ofReal_mul_I]
+    norm_num
+  have hδ : (E : ℂ) * Complex.exp (δ * Complex.I) = u * a := by
+    rw [mul_left_comm, ← Complex.exp_add]
+    congr 2
+    push_cast
+    ring
+  have hS : (E : ℂ) * Complex.exp (δ * Complex.I) *
+      (starRingEnd ℂ) (((E : ℂ) * Complex.exp (δ * Complex.I) - (V : ℂ) * u) /
+        Z.impedance (ω * Complex.I)) =
+      a * (starRingEnd ℂ) ((a - V) / Z.impedance (ω * Complex.I)) := by
+    rw [hδ, show u * a - (V : ℂ) * u = u * (a - V) by ring, mul_div_assoc, map_mul]
+    linear_combination (a * (starRingEnd ℂ) ((a - V) / Z.impedance (ω * Complex.I))) * hu
+  rw [hS, Grid.linePower E V (δ - θg) ω Z (by rw [hZ]; positivity), hZ]
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
+    add_zero]
   have hsc : Real.sin (δ - (θg + Real.pi / 2 - φ)) = -Real.cos (δ - θg + φ) := by
     rw [show δ - (θg + Real.pi / 2 - φ) = (δ - θg + φ) - Real.pi / 2 by ring,
       Real.sin_sub_pi_div_two]
-  rw [hsc, Real.cos_add, Real.cos_sub, Real.sin_sub]
-  simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.div_re,
-    Complex.div_im, hns, Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im,
-    Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, Complex.add_re, Complex.add_im,
-    Complex.I_re, Complex.I_im]
-  have hφc : Real.cos φ = R / r := by rw [hR]; field_simp
-  have hφs : Real.sin φ = X / r := by rw [hX]; field_simp
-  rw [hφc, hφs]
+  rw [hsc, Real.cos_add, hR, hX]
   field_simp
-  ring_nf
-  linear_combination (E ^ 2 * R) * Real.sin_sq_add_cos_sq δ
+  ring
 
 /-- Post-fault SMIB through `Z_e = r e^{jφ}` to `V_g ∠ θ_g`, internal EMF `E'`. -/
 structure PostFaultSMIB where
@@ -343,6 +366,13 @@ def line : Passive.SeriesRLC := ⟨m.r * Real.cos m.φ, m.r * Real.sin m.φ, 0�
 def toSwing : SwingParams :=
   ⟨m.M, m.D, m.Pm, Real.cos m.φ / m.r * m.E' ^ 2, m.E' * m.Vg / m.r,
     m.θg + Real.pi / 2 - m.φ⟩
+
+/-- The classical SMIB model is the lossless slice of the post-fault model: a purely reactive
+line (`φ = π/2`, `|Z_e| = X_d'`) to the bus `V_∞ ∠ 0` gives the classical swing parameters. -/
+@[tmio M, powerlib_domain] theorem toSwing_classical (c : ClassicalSMIB) :
+    (⟨c.M, c.D, c.Pm, c.E', c.Vinf, 0, c.Xd', Real.pi / 2⟩ : PostFaultSMIB).toSwing =
+      c.toSwing := by
+  simp [toSwing, ClassicalSMIB.toSwing, ClassicalSMIB.Pmax]
 
 /-- The power-angle curve of the post-fault model is the real part of the complex power. -/
 @[tmio M, powerlib_domain] theorem Pe_eq_complexPower (hr : 0 < m.r) (δ : ℝ) :

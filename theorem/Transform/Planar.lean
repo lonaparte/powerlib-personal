@@ -8,8 +8,9 @@ of the plane with `ℂ`. No electrical frame is chosen here; the Clarke and Park
 on them are in `theorem/Transform/Park.lean`.
 
 Scope.
-* Generic: planar vectors `Fin 2 → ℝ` (components `0`, `1`) and real 2 × 2 matrices; no model,
-  no axis, sign or normalization convention of an electrical transform.
+* Generic: planar vectors `Fin 2 → ℝ` (components `0`, `1`) and real 2 × 2 matrices, and the
+  dot-product invariance of orthogonal coordinate changes in any dimension; no model, no axis,
+  sign or normalization convention of an electrical transform.
 
 Source: work-sync `theory/T-park-transformation.md` §1.2 (complex form of a planar vector, the
 rotation generator as multiplication by `j`).
@@ -22,6 +23,8 @@ Results.
   `ofComplex_toComplex`, `toComplex_eq`), the real linear equivalence `complexEquiv`
   (`toComplex_add`, `toComplex_sub`, `toComplex_smul`), and `toComplex_J_mulVec` (`J` is
   multiplication by `j`).
+* `orthogonal_dotProduct`: a coordinate change `A` with `Aᵀ A = 1` preserves the dot product,
+  `(A v)·(A w) = v·w` (power invariance of the orthogonal Park, Clarke and frame rotations).
 -/
 
 noncomputable section
@@ -95,5 +98,13 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 @[tmio T, powerlib_foundation] theorem toComplex_J_mulVec (x : Fin 2 → ℝ) :
     toComplex (J *ᵥ x) = Complex.I * toComplex x := by
   apply Complex.ext <;> simp [toComplex]
+
+/-! ## Orthogonal coordinate changes -/
+
+/-- A coordinate change with `Aᵀ A = 1` preserves the dot product: `(A v)·(A w) = v·w`. -/
+@[tmio T, powerlib_foundation] theorem orthogonal_dotProduct {m n R : Type*} [Fintype m]
+    [Fintype n] [DecidableEq n] [CommSemiring R] {A : Matrix m n R} (hA : Aᵀ * A = 1)
+    (v w : n → R) : (A *ᵥ v) ⬝ᵥ (A *ᵥ w) = v ⬝ᵥ w := by
+  rw [dotProduct_mulVec, ← vecMul_transpose, vecMul_vecMul, hA, vecMul_one]
 
 end powerlib.Transform

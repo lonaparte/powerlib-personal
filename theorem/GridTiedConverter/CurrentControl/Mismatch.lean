@@ -279,8 +279,9 @@ the model, not a connection conclusion. -/
 
 /-! ## The family -/
 
-/-- Stability condition: positive monic coefficients `(R + Kp)/L` and `Ki/L`. -/
-def Stable : Prop := 0 < (p.base.R + p.base.Kp) / p.base.L ∧ 0 < p.base.Ki / p.base.L
+/-- Stability condition: positive monic coefficients `(R + Kp)/L` and `Ki/L`, the condition
+`PIParams.Stable` of the base loop. -/
+def Stable : Prop := p.base.Stable
 
 /-- Instability condition: negative damping coefficient `(R + Kp)/L`. -/
 def Unstable : Prop := (p.base.R + p.base.Kp) / p.base.L < 0
@@ -340,9 +341,7 @@ mismatched family is the PI family's, pulled back along `base`. -/
       p ∈ {p : MismatchParams | 0 < p.base.R + p.base.Kp ∧ 0 < p.base.Ki}) := by
   unfold powerlib.TMIO.Statement
   rw [den_flow hP]
-  change p.Stable ↔ _
-  rw [Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
-  rfl
+  exact p.base.stable_iff hL
 
 /-- Reference tracking of the mismatched loop: both currents converge to their references.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/

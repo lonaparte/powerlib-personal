@@ -51,10 +51,10 @@ Family and connection conclusions.
   `finSumFinEquiv`) and read through the existing family `Port.PortHamiltonian.family` (system
   map: the plant's port system; sentences at the origin, which is the unforced operating point
   of both networks).
-* Connection conclusions: passivity and Lyapunov stability of both networks
-  (`rlNetworkPH_mem_den_passive`, `rlNetworkPH_mem_den_lyapunovStable`,
-  `rlcNetworkPH_mem_den_passive`, `rlcNetworkPH_mem_den_lyapunovStable`); global exponential
-  stability of the unforced RL network when every branch is resistive
+* Connection conclusions: passivity and Lyapunov stability of both networks are the generic
+  laws of every port-Hamiltonian plant (`Port.PortHamiltonian.mem_den_passive`,
+  `Port.PortHamiltonian.mem_den_lyapunovStable`; storage `DiagonalPH.toPH_storage`); global
+  exponential stability of the unforced RL network when every branch is resistive
   (`rlNetworkPH_mem_den_globallyExponentiallyStable`); and invariance of every sentence under
   branch rescaling (`rlNetworkPH_scale_mem_den_iff`), the sentence-level form of the
   transformer referral, a diagonal change of coordinates (scaffold `theorem/Linear/Similarity.agda`).
@@ -169,26 +169,13 @@ def rlNetworkPH (p : RLBranchParams (Fin m)) (𝓑 : Matrix (Fin k) (Fin m) ℝ)
     Port.PortHamiltonian m k :=
   (rlNetwork p 𝓑).toPH (Equiv.refl _) (Equiv.refl _)
 
-/-- Passivity of every RL network; the storage is `H = Σ φ_k² / (2 L_k)` (`toPH_storage`). -/
-@[tmio TM, powerlib_domain] theorem rlNetworkPH_mem_den_passive (p : RLBranchParams (Fin m))
-    (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
-    connection% (rlNetworkPH p 𝓑 ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- Lyapunov stability of the unforced RL network (all node potentials zero) at the origin. -/
-@[tmio TM, powerlib_domain] theorem rlNetworkPH_mem_den_lyapunovStable (p : RLBranchParams (Fin m))
-    (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
-    connection% (rlNetworkPH p 𝓑 ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
-
 /-- With a positive resistance in every branch the unforced RL network is globally
 exponentially stable. -/
 @[tmio TM, powerlib_domain] theorem rlNetworkPH_mem_den_globallyExponentiallyStable
     (p : RLBranchParams (Fin m)) (𝓑 : Matrix (Fin k) (Fin m) ℝ) (hr : ∀ j, 0 < p.r j) :
     connection% (rlNetworkPH p 𝓑 ∈
       Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
-  mem_den_globallyExponentiallyStable_of_dissipation_pos _
-    (DiagonalPH.toPH_dissipation_pos _ _ _ hr)
+  mem_den_of_dissipation_pos _ (DiagonalPH.toPH_dissipation_pos _ _ _ hr) (Or.inl trivial)
 
 /-! ## Branch rescaling (ideal-transformer referral) -/
 
@@ -442,19 +429,5 @@ port-Hamiltonian plant on the state `(φ, q)` numbered by `finSumFinEquiv`. -/
 def rlcNetworkPH (p : RLBranchParams (Fin m)) (q : NodeParams (Fin k))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) : Port.PortHamiltonian (m + k) k :=
   (rlcNetwork p q 𝓑).toPH finSumFinEquiv (Equiv.refl _)
-
-/-- Passivity of the RL network with node capacitors and shunt loads; the storage is the
-magnetic plus electric energy (`toPH_storage`). -/
-@[tmio TM, powerlib_domain] theorem rlcNetworkPH_mem_den_passive (p : RLBranchParams (Fin m))
-    (q : NodeParams (Fin k)) (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
-    connection% (rlcNetworkPH p q 𝓑 ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- Lyapunov stability of the unforced network (zero injections) at the origin. -/
-@[tmio TM, powerlib_domain] theorem rlcNetworkPH_mem_den_lyapunovStable (p : RLBranchParams (Fin m))
-    (q : NodeParams (Fin k)) (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
-    connection% (rlcNetworkPH p q 𝓑 ∈
-      Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
 
 end powerlib.Grid

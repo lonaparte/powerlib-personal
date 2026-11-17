@@ -47,9 +47,10 @@ exponential stability); work-sync `theory/T-numerical-integration.md` §1.2, §2
 Results.
 * The smoothness hypotheses of the generic laws, one per family: `PSC.contDiff_modelField`,
   `VSMLPF.contDiff_modelField`, `VSMLPF.rig_contDiff_field`, `DroopLPF.contDiff_modelField` (the
-  translated fields are `C¹`; `AHO.contDiff_realField` of `theorem/GridTiedConverter/GFM/VOC.lean`
-  for the oscillator), `DroopVSM.vsm_contDiffAt_field`, `DroopVSM.droop_contDiffAt_field` (the
-  translated fields are `C¹` near the origin when the power map is `C¹` near the selected angle).
+  translated fields are `C¹`; for the oscillator the Hopf normal form's
+  `NormalForm.Hopf.field_contDiff` at `AHO.toHopf`, `theorem/GridTiedConverter/GFM/VOC.lean`),
+  `DroopVSM.vsm_contDiffAt_field`, `DroopVSM.droop_contDiffAt_field` (the translated fields are
+  `C¹` near the origin when the power map is `C¹` near the selected angle).
 
 Family and connection conclusions.
 * For each family `F` above (`F = PSC, VSMLPF, DroopLPF, AHO`): `F.eulerFamily` (for the platform
@@ -250,7 +251,7 @@ every Euler multiplier `1 + hλ` leaves the unit disk
   have hm := mem_den_locallyExponentiallyStable ⟨1, 1, 1, 0⟩ (by norm_num [AHO.c])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
-    AHO.contDiff_realField (by norm_num) hm
+    (fun a => NormalForm.Hopf.field_contDiff a.toHopf) (by norm_num) hm
 
 end powerlib.GFM.AHO
 

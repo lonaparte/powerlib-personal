@@ -208,7 +208,8 @@ end LinePower
 /-! ## Converter-side and grid-side power over a reactance -/
 
 /-- Converter-side complex power `S̄ = V̄_conv Ī*`, `Ī = (V e^{jθ} − V_g)/Z(jω)` with a lossless
-branch `Z(jω) = jX` (export current): `P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`. -/
+branch `Z(jω) = jX` (export current): `P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`; the
+line power `linePower` at `R = 0`. -/
 @[tmio M, powerlib_domain] theorem converterSide_power (V Vg θ ω : ℝ) (Z : Passive.SeriesRLC)
     (hR : Z.R = 0) (hX : Z.reactance ω ≠ 0) :
     (V : ℂ) * Complex.exp (θ * Complex.I) *
@@ -216,17 +217,12 @@ branch `Z(jω) = jX` (export current): `P = V V_g sin θ / X`, `Q_conv = (V² �
           Z.impedance (ω * Complex.I)) =
       ((V * Vg * Real.sin θ / Z.reactance ω : ℝ) : ℂ) +
         ((V ^ 2 - V * Vg * Real.cos θ) / Z.reactance ω : ℝ) * Complex.I := by
-  rw [Passive.SeriesRLC.impedance_jω, hR, Complex.ofReal_zero, zero_add]
-  generalize Z.reactance ω = X at hX ⊢
-  rw [show V ^ 2 - V * Vg * Real.cos θ =
-      V ^ 2 * (Real.sin θ ^ 2 + Real.cos θ ^ 2) - V * Vg * Real.cos θ by
-    rw [Real.sin_sq_add_cos_sq]; ring]
-  apply Complex.ext <;>
-    simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im,
-      Complex.div_re, Complex.div_im, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, Complex.add_re,
-      Complex.add_im, Complex.I_re, Complex.I_im, Complex.normSq_apply] <;>
-    field_simp <;> ring
+  have hA : Z.absSq ω = Z.reactance ω ^ 2 := by simp [Passive.SeriesRLC.absSq, hR]
+  have e1 : (0 * (V ^ 2 - V * Vg * Real.cos θ) + Z.reactance ω * V * Vg * Real.sin θ) /
+      Z.reactance ω ^ 2 = V * Vg * Real.sin θ / Z.reactance ω := by field_simp; ring
+  have e2 : (Z.reactance ω * (V ^ 2 - V * Vg * Real.cos θ) - 0 * V * Vg * Real.sin θ) /
+      Z.reactance ω ^ 2 = (V ^ 2 - V * Vg * Real.cos θ) / Z.reactance ω := by field_simp; ring
+  rw [linePower V Vg θ ω Z (by rw [hA]; exact pow_ne_zero 2 hX), hA, hR, e1, e2]
 
 /-- Grid-side received complex power `S̄_g = V̄_g Ī*` over a lossless branch `Z(jω) = jX`:
 `P = V V_g sin θ / X`, `Q_g = (V V_g cos θ − V_g²)/X` (the note's `Q₀`). -/

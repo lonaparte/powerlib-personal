@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.Matrix.Order
+import theorem.LinearAlgebra.Congruence
 import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-! # Cramér–Rao algebra: nuisance bound, bandwidth cancellation, lifetime sensitivity
@@ -127,7 +128,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
   apply inv_sub_inv_posSemidef hS hA
   have : A - (A - B * C⁻¹ * Bᵀ) = B * C⁻¹ * Bᵀ := by abel
   rw [this]
-  simpa [conjTranspose_eq_transpose_of_trivial] using hC.posSemidef.inv.mul_mul_conjTranspose_same B
+  exact LinearAlgebra.posSemidef_congr hC.posSemidef.inv B
 
 /-! ## Bandwidth cancellation -/
 

@@ -47,10 +47,11 @@ open Matrix Finset
 
 variable {N d : ℕ}
 
-/-- Linear network field `Fᵢ(X) = A Xᵢ − σ Σⱼ Lᵢⱼ Γ Xⱼ`. -/
-def linNetField (A Γ : Matrix (Fin d) (Fin d) ℝ) (L : Matrix (Fin N) (Fin N) ℝ) (σ : ℝ)
-    (X : Fin N → Fin d → ℝ) : Fin N → Fin d → ℝ :=
-  fun i => A *ᵥ X i - σ • ∑ j, L i j • (Γ *ᵥ X j)
+/-- Linear network field `Fᵢ(X) = A Xᵢ − σ Σⱼ Lᵢⱼ Γ Xⱼ`: the network field `netField` of
+`theorem/PowerSystem/Network/Synchronization.lean` with the linear node maps `A`, `Γ`. -/
+abbrev linNetField (A Γ : Matrix (Fin d) (Fin d) ℝ) (L : Matrix (Fin N) (Fin N) ℝ) (σ : ℝ) :
+    (Fin N → Fin d → ℝ) → Fin N → Fin d → ℝ :=
+  netField (A *ᵥ ·) (Γ *ᵥ ·) L σ
 
 /-- A vector of `Fin d → ℝ` read in the Euclidean norm. -/
 abbrev euclidean (x : Fin d → ℝ) : EuclideanSpace ℝ (Fin d) := WithLp.toLp 2 x
@@ -164,7 +165,7 @@ all nodes `i, j`) ⇔ every transverse block `A − σ μ_k Γ` (`k ≠ k₀`) i
       refine hasDerivAt_pi.mpr fun i => ?_
       have hyt := (hy τ).const_smul (D.V i k)
       convert hyt using 1
-      simp only [linNetField, X, mulVec_smul, smul_smul]
+      simp only [linNetField, netField, X, mulVec_smul, smul_smul]
       have : ∑ j, (L i j * D.V j k) • Γ *ᵥ y τ = (D.μ k * D.V i k) • Γ *ᵥ y τ := by
         rw [← Finset.sum_smul, D.col_eig i k]
       rw [this, sub_mulVec, smul_mulVec, smul_sub, smul_smul, smul_smul]

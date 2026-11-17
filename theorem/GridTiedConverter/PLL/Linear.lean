@@ -216,6 +216,13 @@ def omegaN (V Ki : ℝ) : ℝ := Real.sqrt (V * Ki)
 /-- `ζ = V K_p / (2 ω_n)`. -/
 def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
 
+/-- `ζ` is the damping ratio `−tr A / (2 √det A)` of the state matrix `linA` (`tr = −V K_p`,
+`det = V K_i`), for all parameters. -/
+@[tmio M, powerlib_domain] theorem zeta_eq_dampingRatio (V Kp Ki : ℝ) :
+    zeta V Kp Ki = Criteria.dampingRatio (linA V Kp Ki) := by
+  simp [zeta, omegaN, Criteria.dampingRatio, linA, Matrix.trace_fin_two, Matrix.det_fin_two,
+    mul_comm Ki V]
+
 /-- Standard second-order form `s² + 2ζω_n s + ω_n²` of the loop polynomial (`V K_i > 0`). -/
 @[tmio M, powerlib_domain] theorem loopPoly_eq_standard {V Kp Ki : ℝ} (h : 0 < V * Ki) (s : ℂ) :
     loopPoly V Kp Ki s = s ^ 2 + 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) * s +

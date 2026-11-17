@@ -551,7 +551,7 @@ variable (sp : LinearSP n m)
             (z t - (-(sp.gain *ᵥ xbar t) + zb (t / ε))) ≤
           C * ε ^ 2 * (x 0 ⬝ᵥ x 0 + z 0 ⬝ᵥ z 0) := by
   obtain ⟨c⟩ := nonempty_boundedCertificate_of_isHurwitz hA22
-  have hU := isUnit_det_of_isHurwitz hA22
+  have hU := Criteria.isUnit_det_of_isHurwitz hA22
   have hlo := c.lower_pos
   have hhi := c.upper_pos
   -- constants, all independent of `ε`

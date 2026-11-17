@@ -64,6 +64,7 @@ import theorem.PDE.Energy
 import theorem.Potential.Barrier
 import theorem.Spectral.Family
 import theorem.Spectral.Local
+import theorem.Family.PassiveOnly
 import theorem.Family.Reading
 import theorem.Spectral.Global
 import theorem.Spectral.LinearNamed
@@ -197,6 +198,8 @@ import theorem.LinearAlgebra.LU
 import theorem.LinearAlgebra.QR
 import theorem.LinearAlgebra.Eigen
 import theorem.LinearAlgebra.Frobenius
+import theorem.LinearAlgebra.LyapunovODE
+import theorem.LinearAlgebra.Congruence
 import theorem.Drives.CascadeControl
 import theorem.Drives.DirectTorqueControl
 import theorem.Drives.InductionMachine
@@ -244,6 +247,7 @@ import theorem.Numerics.StabilityFunctions
 import theorem.Numerics.StabilityRegion
 import theorem.Numerics.VonNeumann
 import theorem.PH.Composition
+import theorem.PH.FlatDirection
 import theorem.PH.Linear
 import theorem.PH.Linearization
 import theorem.Passive.PH.Instances

@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Transform.Planar
 
 /-! # Power-invariant three-phase Park transform
 
@@ -14,13 +15,18 @@ Conventions:
 
 Source: work-sync `theory/T-sync-machine.md` §1.1–§1.5 (Park-transform algebra of the stator).
 
+Scaffold: `theorem/Transform/ClarkePark.agda` (the abc, αβ0 and dq0 representations and the
+power-preserving changes between them).
+
 Results.
 * Three-phase constants `√3² = 3`, `cos(2π/3) = −1/2`, `sin(2π/3) = √3/2`; dot products and sums
   of `cvec`, `svec`.
 * `parkMatrix_mul_transpose`: `T_P T_Pᵀ = I` (orthogonality; `T_P⁻¹ = T_Pᵀ`).
 * `parkMatrix_mul_deriv_transpose`: `T_P (dT_P/dθ)ᵀ = J₀` (`J₀` = 90° rotation in the dq plane);
   the opposite order is not `J₀` (`deriv_transpose_mul_parkMatrix_ne`).
-* `park_power_invariant`: `(T_P v)·(T_P i) = v·i`.
+* Power invariance `(T_P v)·(T_P i) = v·i` is the generic `orthogonal_dotProduct`
+  (`theorem/Transform/Planar.lean`) at `parkMatrix_transpose_mul`.
+* `parkMatrix 0` is the power-invariant Clarke matrix `clarkePI` (`theorem/Transform/Park.lean`).
 
 The synchronous-machine stator model built on this transform is
 `theorem/PowerSystem/Synchronous/ParkModel.lean`.
@@ -199,11 +205,5 @@ def J0 : Matrix (Fin 3) (Fin 3) ℝ := !![0, -1, 0; 1, 0, 0; 0, 0, 0]
   have : Real.sqrt 3 = 3 := by linarith
   rw [this] at h3
   norm_num at h3
-
-/-- Power invariance of `T_P`: `(T_P v)·(T_P i) = v·i`. -/
-@[tmio M, powerlib_domain] theorem park_power_invariant (θ : ℝ) (v i : Fin 3 → ℝ) :
-    (parkMatrix θ *ᵥ v) ⬝ᵥ (parkMatrix θ *ᵥ i) = v ⬝ᵥ i := by
-  rw [← Matrix.vecMul_transpose, ← Matrix.dotProduct_mulVec, Matrix.mulVec_mulVec,
-    parkMatrix_transpose_mul, Matrix.one_mulVec]
 
 end powerlib.Transform

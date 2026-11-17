@@ -1,4 +1,5 @@
 import theorem.Linear.Transfer
+import theorem.Numerics.StabilityFunctions
 
 /-! # Pure transport delay and its Padé(1,1) / Padé(2,2) rational approximants
 
@@ -30,6 +31,8 @@ Results.
 * `pureDelay_add`, `prod_pureDelay`, `pureDelay_three_half_periods` — delay cascade:
   `pureDelay (τ₁ + τ₂) = pureDelay τ₁ · pureDelay τ₂`, the finite-product version, and the
   "1.5 Tₛ" total of three half-period delays.
+* `pade11_eq_stabTrap` — `pade11 τ s` is the trapezoidal stability function at `z = −τ s`
+  (`Numerics.stabTrap`, `theorem/Numerics/StabilityFunctions.lean`).
 * `norm_pureDelay_jω`, `norm_pade11_jω`, `norm_pade22_jω` — frequency response on the imaginary
   axis `s = jω` (`ω : ℝ`): `|e^{-jωτ}| = 1`, `|pade11 τ (jω)| = 1`, `|pade22 τ (jω)| = 1`
   (all-pass).
@@ -66,6 +69,13 @@ def pade11Den (τ : ℝ) (s : ℂ) : ℂ := 1 + (τ : ℂ) * s / 2
 
 /-- Padé(1,1) approximant `(1 - τ s / 2)/(1 + τ s / 2)` of `e^{-τ s}`. -/
 def pade11 (τ : ℝ) (s : ℂ) : ℂ := pade11Num τ s / pade11Den τ s
+
+/-- The Padé(1,1) approximant of `e^{-τ s}` is the trapezoidal stability function
+`R(z) = (1 + z/2)/(1 − z/2)` (the Padé(1,1) approximant of `e^z`) at `z = −τ s`. -/
+@[tmio T, powerlib_foundation] theorem pade11_eq_stabTrap (τ : ℝ) (s : ℂ) :
+    pade11 τ s = Numerics.stabTrap (-((τ : ℂ) * s)) := by
+  simp only [pade11, pade11Num, pade11Den, Numerics.stabTrap]
+  congr 1 <;> ring
 
 def pade22Num (τ : ℝ) (s : ℂ) : ℂ := 1 - (τ : ℂ) * s / 2 + ((τ : ℂ) * s) ^ 2 / 12
 

@@ -66,7 +66,7 @@ The local sentences translate into `stable`, instability into `unstable`, passiv
 and the global sentences, decay rates, sampled contraction and conservation into the whole
 (inconsistent) language. Connection conclusions: `openChain_le_semantics`,
 `closedChain_le_semantics` (soundness), exact passivity of both
-(`Family.IsAutonomous.exact_passive`), and the memberships listed above. Exactness within the
+(`Family.IsPort.exact_passive`), and the memberships listed above. Exactness within the
 physical range (converse linearization for fields that are `C¹` on `V_dc > 0`,
 `Dynamics.isHurwitz_of_locallyExponentiallyStable_local`):
 `openLoop_mem_den_locallyExponentiallyStable_iff` (`C, V0 > 0`: locally exponentially stable iff

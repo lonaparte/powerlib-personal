@@ -1,6 +1,7 @@
 import theorem.PowerSystem.Synchronous.Swing
 import theorem.Port.PortHamiltonian
 import theorem.PH.Nonlinear
+import theorem.Dynamics.Transport
 
 /-! # The linearized swing equation as a port-Hamiltonian model
 
@@ -25,7 +26,8 @@ Results.
 * `linearPH` — the pH plant; `linearPH_field` — its field reproduces the linearized swing
   equation `d(Δδ)/dt = Δω`, `d(M Δω)/dt = −K Δδ − D Δω + u`.
 * `stateMatrix_eq_conj` — the pH state matrix is the swing Jacobian under the change of
-  coordinates `diag(1, M)` (`momentumCoord`): `A_pH = diag(1, M) · J_swing · diag(1, 1/M)`.
+  coordinates `diag(1, M)` (`momentumCoord`, the scaling `Dynamics.scaleMatrix M`):
+  `A_pH = diag(1, M) · J_swing · diag(1, 1/M)`.
 
 Family and connection conclusions.
 * No new family: the plant is a member of the port-Hamiltonian family
@@ -81,19 +83,19 @@ def linearPH (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D) (hK : 0 < p.syncCoeff
     · have : 0 < x 1 * x 1 := mul_self_pos.mpr h1
       nlinarith [mul_nonneg hK.le (mul_self_nonneg (x 0))]
 
-/-- Coordinate change `(Δδ, Δω) ↦ (Δδ, M Δω)`. -/
-def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
+/-- Coordinate change `(Δδ, Δω) ↦ (Δδ, M Δω)`: the scaling `Dynamics.scaleMatrix M`. -/
+abbrev momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := Dynamics.scaleMatrix p.M
 
 /-- The pH state matrix is the swing Jacobian conjugated by the momentum coordinates. -/
 @[tmio M, powerlib_domain] theorem stateMatrix_eq_conj (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) :
     (p.linearPH δ₀ hM hD hK).plant.A =
-      p.momentumCoord * p.jacobian δ₀ * !![1, 0; 0, 1 / p.M] := by
+      p.momentumCoord * p.jacobian δ₀ * Dynamics.scaleMatrix p.M⁻¹ := by
   have hM' := hM.ne'
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [Port.PortHamiltonian.plant, linearPH, momentumCoord, jacobian, Matrix.mul_apply,
-      Fin.sum_univ_two] <;> field_simp
+    simp [Port.PortHamiltonian.plant, linearPH, momentumCoord, Dynamics.scaleMatrix, jacobian,
+      Matrix.mul_apply, Fin.sum_univ_two] <;> field_simp
 
 /-- The pH field reproduces the linearized swing equation:
 `d(Δδ)/dt = Δω`, `d(M Δω)/dt = −K Δδ − D Δω + u` with `x = (Δδ, M Δω)`. -/
@@ -132,12 +134,14 @@ stable for every `D ≥ 0` (including `D = 0`). -/
       Swing.Model.mk p δ₀ ∈ Swing.Linearized.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have hM' := hM.ne'
-  have hTS : p.momentumCoord * !![1, 0; 0, 1 / p.M] = 1 := by
+  have hTS : p.momentumCoord * Dynamics.scaleMatrix p.M⁻¹ = 1 := by
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [momentumCoord, Matrix.mul_apply, Fin.sum_univ_two, hM']
-  have hST : !![1, 0; 0, 1 / p.M] * p.momentumCoord = 1 := by
+    fin_cases i <;> fin_cases j <;>
+      simp [momentumCoord, Dynamics.scaleMatrix, Matrix.mul_apply, Fin.sum_univ_two, hM']
+  have hST : Dynamics.scaleMatrix p.M⁻¹ * p.momentumCoord = 1 := by
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [momentumCoord, Matrix.mul_apply, Fin.sum_univ_two, hM']
+    fin_cases i <;> fin_cases j <;>
+      simp [momentumCoord, Dynamics.scaleMatrix, Matrix.mul_apply, Fin.sum_univ_two, hM']
   rw [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow),
     (connection_proof% Swing.Linearized.family_isLinear.mem_den_flow), p.stateMatrix_eq_conj δ₀ hM hD hK]
   exact Linear.holds_conj P hTS hST _

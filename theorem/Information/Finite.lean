@@ -23,7 +23,9 @@ same statement on a finite path space (see `theorem/Information/MaxCaliber.lean`
 
 Results.
 * `klSum_nonneg`, `klSum_eq_zero_iff` — Gibbs inequality on a finite set.
-* `klSum_eq_klSum_gibbsVec_add` — Pythagorean identity.
+* `klSum_eq_klSum_gibbsVec_add_sub` — `klSum p q = klSum p gibbs + E_p[g] − log Z` for every
+  `p` with `∑ p = 1`; `klSum_eq_klSum_gibbsVec_add` — Pythagorean identity (equal moments).
+* `klSum_gibbsVec` — `klSum gibbs q = E_gibbs[g] − log Z`.
 * `klSum_gibbsVec_le`, `klSum_eq_klSum_gibbsVec_iff` — unique MaxEnt solution.
 * `shannon_le_shannon_boltzmann`, `shannon_eq_shannon_boltzmann_iff` — Boltzmann–Gibbs
   maximises Shannon entropy at fixed mean energy.
@@ -134,31 +136,37 @@ variable {q g : ι → ℝ}
     klSum (gibbsVec q g) q = ∑ i, gibbsVec q g i * g i - log (partitionSum q g) :=
   sum_mul_log_gibbsVec_div hq (sum_gibbsVec hq)
 
-/-- **Pythagorean identity** (finite MaxEnt). If `E_p[g] = E_{gibbs}[g]` then
-`klSum p q = klSum p gibbs + klSum gibbs q`. -/
-@[tmio T, powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_add [Nonempty ι] (hq : ∀ i, 0 < q i)
-    {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hp1 : ∑ i, p i = 1)
-    (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
-    klSum p q = klSum p (gibbsVec q g) + klSum (gibbsVec q g) q := by
+/-- **Gibbs decomposition of relative entropy.**  For every `p` with `∑ p = 1`,
+`klSum p q = klSum p gibbs + (E_p[g] − log Z)`, `gibbs = gibbsVec q g`, `Z = partitionSum q g`
+(no sign or moment condition on `p`). -/
+@[tmio T, powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_add_sub [Nonempty ι]
+    (hq : ∀ i, 0 < q i) {p : ι → ℝ} (hp1 : ∑ i, p i = 1) :
+    klSum p q = klSum p (gibbsVec q g) + (∑ i, p i * g i - log (partitionSum q g)) := by
   have hsplit : ∀ i, p i * log (p i / q i) =
       p i * log (p i / gibbsVec q g i) + p i * log (gibbsVec q g i / q i) := by
     intro i
-    rcases (hp i).eq_or_lt with h | h
-    · rw [← h]; ring
-    · rw [← mul_add, ← log_mul (div_pos h (gibbsVec_pos hq i)).ne'
+    by_cases h : p i = 0
+    · rw [h]; ring
+    · rw [← mul_add, ← log_mul (div_ne_zero h (gibbsVec_pos hq i).ne')
         (div_pos (gibbsVec_pos hq i) (hq i)).ne']
       congr 2
       field_simp [(gibbsVec_pos (g := g) hq i).ne', (hq i).ne']
-  have h1 : klSum p q = klSum p (gibbsVec q g) + ∑ i, p i * log (gibbsVec q g i / q i) := by
-    simp only [klSum, hsplit, Finset.sum_add_distrib]
-  rw [h1, sum_mul_log_gibbsVec_div hq hp1, hmom, klSum_gibbsVec hq]
+  rw [← sum_mul_log_gibbsVec_div hq hp1]
+  simp only [klSum, hsplit, Finset.sum_add_distrib]
+
+/-- **Pythagorean identity** (finite MaxEnt). If `E_p[g] = E_{gibbs}[g]` then
+`klSum p q = klSum p gibbs + klSum gibbs q`. -/
+@[tmio T, powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_add [Nonempty ι] (hq : ∀ i, 0 < q i)
+    {p : ι → ℝ} (hp1 : ∑ i, p i = 1) (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
+    klSum p q = klSum p (gibbsVec q g) + klSum (gibbsVec q g) q := by
+  rw [klSum_eq_klSum_gibbsVec_add_sub hq hp1, hmom, klSum_gibbsVec hq]
 
 /-- The Gibbs vector minimises relative entropy (maximises `H[·‖q]`) in its moment class. -/
 @[tmio T, powerlib_foundation] theorem klSum_gibbsVec_le [Nonempty ι] (hq : ∀ i, 0 < q i)
     {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hp1 : ∑ i, p i = 1)
     (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
     klSum (gibbsVec q g) q ≤ klSum p q := by
-  rw [klSum_eq_klSum_gibbsVec_add hq hp hp1 hmom]
+  rw [klSum_eq_klSum_gibbsVec_add hq hp1 hmom]
   linarith [klSum_nonneg hp (gibbsVec_pos (g := g) hq) hp1 (sum_gibbsVec (g := g) hq)]
 
 /-- Uniqueness of the finite MaxEnt solution. -/
@@ -166,7 +174,7 @@ variable {q g : ι → ℝ}
     {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hp1 : ∑ i, p i = 1)
     (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
     klSum p q = klSum (gibbsVec q g) q ↔ p = gibbsVec q g := by
-  rw [klSum_eq_klSum_gibbsVec_add hq hp hp1 hmom, add_eq_right,
+  rw [klSum_eq_klSum_gibbsVec_add hq hp1 hmom, add_eq_right,
     klSum_eq_zero_iff hp (gibbsVec_pos (g := g) hq) hp1 (sum_gibbsVec (g := g) hq)]
 
 end Gibbs

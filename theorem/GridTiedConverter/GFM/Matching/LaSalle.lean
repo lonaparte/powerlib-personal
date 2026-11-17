@@ -182,7 +182,8 @@ Static evidence on the model, not a connection conclusion. -/
       Real.cos (x 0) * m.field x 0, m.field x 1, m.field x 2, m.field x 3] := by
   ext i
   fin_cases i <;>
-    simp [Model.cylField, cyl, Model.field, Model.idc, Model.ixHat, Model.iHatD, Model.iHatQ,
+    simp [Model.cylField, cyl, Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.iHatD,
+        Model.iHatQ,
       Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
@@ -956,7 +957,7 @@ at `θ = π/2` has `∇S ≠ 0`, so the constant solution there does not converg
     ext i
     fin_cases i
     · simp [hp, Model.field, hη, hω]
-    · simp only [hp, Model.field, Model.idc, Model.ixHat, hκ, PiLp.toLp_apply,
+    · simp only [hp, Model.field, Model.idc, Model.ixHat, Transform.parkQ, hκ, PiLp.toLp_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
         Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one]
       ring
@@ -1089,7 +1090,8 @@ on the model, not a connection conclusion. -/
   ext i
   fin_cases i
   · simp [Model.field, Model.ω0]
-  · simp only [Model.field, Model.idc, Model.ixHat, PiLp.toLp_apply, Matrix.cons_val_zero,
+  · simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, PiLp.toLp_apply,
+      Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
       Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one, hκ]
     ring
@@ -1683,7 +1685,8 @@ def noSyncModel : Model :=
     linarith
   have hG : m.Gdc = -m.Kp := by linarith
   have hF : ∀ x : State 4, m.field x 1 = 0 := fun x => by
-    simp only [Model.field, Model.idc, Model.ixHat, Model.κ, hμ, hG, PiLp.toLp_apply,
+    simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.κ, hμ, hG,
+        PiLp.toLp_apply,
       Matrix.cons_val_one, Matrix.cons_val_zero]
     ring
   intro t ht
@@ -1715,7 +1718,8 @@ def noSyncModel : Model :=
     · simp only [Model.field, Model.ω0, PiLp.toLp_apply, Matrix.cons_val_zero, Fin.zero_eta,
         Fin.isValue, Matrix.cons_val_one]
       ring
-    · simp only [Model.field, Model.idc, Model.ixHat, Model.κ, hμ, hG, PiLp.toLp_apply,
+    · simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.κ, hμ, hG,
+        PiLp.toLp_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, Fin.isValue, Fin.mk_one]
       ring
     · simp only [Model.field, Model.iHatD, Model.iHatQ, hμ, PiLp.toLp_apply,
@@ -2072,8 +2076,8 @@ evidence on the model, not a connection conclusion. -/
     simp only [Model.N]
     ring
   refine ⟨?_, ?_, ?_⟩
-  · simp only [Model.field, Model.redField, Model.red, Model.idc, Model.ixHat, hκ,
-      PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+  · simp only [Model.field, Model.redField, Model.red, Model.idc, Model.ixHat, Transform.parkQ,
+      hκ, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.head_cons, Matrix.tail_cons]
     ring
   · simp only [Model.field, Model.redField, Model.red, PiLp.toLp_apply, Matrix.cons_val_zero,
@@ -2394,7 +2398,8 @@ the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L
     ext i
     fin_cases i
     · simp [Model.translated, Model.field, Model.point, hη, hω]
-    · simp only [Model.translated, Model.field, Model.idc, Model.ixHat, Model.κ, Model.point,
+    · simp only [Model.translated, Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.κ,
+        Model.point,
         hμ, PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
         Fin.isValue, Fin.mk_one, ← hGK]
       ring

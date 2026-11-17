@@ -22,8 +22,8 @@ work-sync formalization).
 
 Results.
 * Any dimension: characteristic roots ↔ eigenpairs
-  (`det_characteristicMatrix_eq_zero_iff_exists_eigenpair`; the root form of `IsHurwitz` is
-  `Linear.spectrallyStable_iff_isHurwitz`, the polynomial form
+  (`Linear.det_characteristicMatrix_eq_zero_iff_exists_eigenpair`, any index; the root form of
+  `IsHurwitz` is `Linear.spectrallyStable_iff_isHurwitz`, the polynomial form
   `Criteria.isHurwitz_iff_of_charpoly`), and `¬ IsHurwitz` as an explicit eigenpair with
   nonnegative real part (`not_isHurwitz_iff`).
 * Monic real quadratic `s ^ 2 + a1 * s + a0`: all complex roots in the open left half-plane
@@ -43,8 +43,12 @@ Results.
   (`det_characteristicMatrix_fin_two`); `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det`
   (`isHurwitz_fin_two_iff`; for `SpectrallyStable` through `Linear.spectrallyStable_iff_isHurwitz`;
   for the literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
-  `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`). The damping ratio
-  `dampingRatio A = −tr A / (2 √det A)` (a definition).
+  `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`; in coefficients `a₂ s² + a₁ s + a₀`,
+  `a₂ > 0`, `tr = −a₁/a₂`, `det = a₀/a₂`: `isHurwitz_iff_of_coeffs_quadratic`). The damping ratio
+  `dampingRatio A = −tr A / (2 √det A)` and natural frequency `naturalFrequency A = √det A`
+  (definitions): for `det A > 0`, `det (s • 1 − A) = s² + 2ζω_n s + ω_n²`
+  (`det_characteristicMatrix_standard`); `ζ` is invariant under similarity
+  (`dampingRatio_conj`).
 * Instability witnesses: `A.det < 0` and `0 < A.trace` are the cases `n = 2` of the generic
   witnesses `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`
   (`(-1) ^ 2 * A.det = A.det`), `Criteria.exists_eigenpair_re_pos_of_trace_pos` and
@@ -76,18 +80,8 @@ variable {n : ℕ}
 @[tmio T, powerlib_foundation] theorem det_characteristicMatrix_eq_zero_of_eigenpair
     (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = s • v) :
-    (Linear.characteristicMatrix A s).det = 0 := by
-  apply Matrix.exists_mulVec_eq_zero_iff.mp
-  refine ⟨v, hv, ?_⟩
-  rw [Linear.characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, heig]
-  exact sub_self _
-
-@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_eq_zero_iff_exists_eigenpair
-    (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
-    (Linear.characteristicMatrix A s).det = 0 ↔
-      ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
-  ⟨Linear.exists_eigenvector_of_root,
-    fun ⟨_, hv, heig⟩ => det_characteristicMatrix_eq_zero_of_eigenpair A hv heig⟩
+    (Linear.characteristicMatrix A s).det = 0 :=
+  (Linear.det_characteristicMatrix_eq_zero_iff_exists_eigenpair A s).mpr ⟨v, hv, heig⟩
 
 /-- Failure of `IsHurwitz` is an explicit eigenpair with nonnegative real part. -/
 @[tmio T, powerlib_foundation] theorem not_isHurwitz_iff (A : Matrix (Fin n) (Fin n) ℝ) :
@@ -412,6 +406,15 @@ section FinTwo
     LinearSystems.IsHurwitz !![a, b; c, d] ↔ a + d < 0 ∧ 0 < a * d - b * c := by
   rw [isHurwitz_fin_two_iff, Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
 
+/-- Routh–Hurwitz for a 2×2 matrix with characteristic polynomial `(a₂ s² + a₁ s + a₀) / a₂`,
+`a₂ > 0`, given by its invariants `tr A = −a₁/a₂`, `det A = a₀/a₂`:
+`IsHurwitz A ↔ 0 < a₁ ∧ 0 < a₀`. -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_of_coeffs_quadratic
+    (A : Matrix (Fin 2) (Fin 2) ℝ) {a2 a1 a0 : ℝ} (h2 : 0 < a2) (htr : A.trace = -a1 / a2)
+    (hdet : A.det = a0 / a2) : LinearSystems.IsHurwitz A ↔ 0 < a1 ∧ 0 < a0 := by
+  rw [isHurwitz_fin_two_iff, htr, hdet, neg_div, neg_lt_zero, div_pos_iff_of_pos_right h2,
+    div_pos_iff_of_pos_right h2]
+
 /-- Companion form of `s ^ 2 + a1 * s + a0`: Hurwitz iff `0 < a0 ∧ 0 < a1`. -/
 @[tmio T, powerlib_foundation] theorem isHurwitz_companion_two_iff (a0 a1 : ℝ) :
     LinearSystems.IsHurwitz !![0, 1; -a0, -a1] ↔ 0 < a0 ∧ 0 < a1 := by
@@ -426,6 +429,34 @@ section FinTwo
 characteristic polynomial is `s² + 2ζω_n s + ω_n²` with `ω_n = √det A`. Signed (negative for
 `tr A > 0`); meaningful for a complex pair. -/
 def dampingRatio (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := -A.trace / (2 * Real.sqrt A.det)
+
+/-- The natural frequency `ω_n = √det A` of a real 2×2 matrix. -/
+def naturalFrequency (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := Real.sqrt A.det
+
+/-- Standard second-order form: for `det A > 0`,
+`det (s • 1 − A) = s² + 2 ζ ω_n s + ω_n²` with `ζ = dampingRatio A`, `ω_n = naturalFrequency A`. -/
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_standard
+    (A : Matrix (Fin 2) (Fin 2) ℝ) (hdet : 0 < A.det) (s : ℂ) :
+    (Linear.characteristicMatrix A s).det = s ^ 2 +
+      2 * (dampingRatio A : ℂ) * (naturalFrequency A : ℂ) * s + (naturalFrequency A : ℂ) ^ 2 := by
+  have hω : naturalFrequency A ≠ 0 := (Real.sqrt_pos.mpr hdet).ne'
+  have h2 : naturalFrequency A ^ 2 = A.det := Real.sq_sqrt hdet.le
+  have h1 : 2 * dampingRatio A * naturalFrequency A = -A.trace := by
+    rw [dampingRatio, ← naturalFrequency]
+    field_simp
+  have h1c := congrArg (fun x : ℝ => (x : ℂ)) h1
+  have h2c := congrArg (fun x : ℝ => (x : ℂ)) h2
+  push_cast at h1c h2c
+  rw [det_characteristicMatrix_fin_two]
+  linear_combination (-s) * h1c - h2c
+
+/-- The damping ratio is invariant under a change of coordinates `A ↦ T A S`, `T S = S T = 1`
+(trace and determinant are). -/
+@[tmio T, powerlib_foundation] theorem dampingRatio_conj {T S : Matrix (Fin 2) (Fin 2) ℝ}
+    (hTS : T * S = 1) (hST : S * T = 1) (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    dampingRatio (T * A * S) = dampingRatio A := by
+  rw [dampingRatio, dampingRatio, Matrix.det_conj_of_mul_eq_one hTS hST, Matrix.trace_mul_comm,
+    ← Matrix.mul_assoc, hST, Matrix.one_mul]
 
 /-! ### Instability witnesses -/
 

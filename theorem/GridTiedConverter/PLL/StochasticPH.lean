@@ -4,6 +4,8 @@ import theorem.Passive.Parallel
 import theorem.Attributes
 import theorem.Stochastic.SPH
 import theorem.Transform.Park
+import theorem.Transform.ComplexImpedance
+import theorem.GridTiedConverter.PLL.Linear
 
 /-! # Itô correction of the SRF-PLL SPHS and its GFL form-B / grid-disturbance specializations
 
@@ -20,7 +22,8 @@ escape rate or stability claim is made (Rules §3).
 Source: work-sync `theory/T-pll-sph.md` §1.1–§1.2 (noise coupling `h_noise = (K_p σ_v, σ_v)ᵀ`,
 Hessian `diag(𝒱'', K_i)`, `Δ_Itô = ½ σ_v²[K_p² 𝒱'' + K_i]` (1.6), saddle value and the
 `ζ = 1/2` threshold (1.7), frequency-channel supplement `½ σ_ω² 𝒱''`), `theory/T-pll-ph.md`
-(potential `𝒱(θ) = V_g(1 − cos θ)`), `theory/T-gfl-sph.md` §1.1–§1.3 (form-B `σ_v(θ_e)`),
+(potential `𝒱(θ) = V_g(1 − cos θ)`, `PLL.srfPotential`), `theory/T-gfl-sph.md` §1.1–§1.3
+(form-B `σ_v(θ_e)`),
 `theory/T-gfl-dynamics.md` §1.6–§1.7 (form-B quasi-steady line + LC algebraic equations),
 `theory/T-grid-disturbance-stochastic.md` §1.2.a (Park projection `σ_v^bare`).
 
@@ -48,22 +51,6 @@ open powerlib.Stochastic.SPH
 
 /-! ## Potential and Hessian -/
 
-/-- SRF-PLL phase potential `𝒱(θ) = V_g (1 − cos θ)` (T-pll-ph §1.0). -/
-def pllV (Vg θ : ℝ) : ℝ := Vg * (1 - cos θ)
-
-/-- `𝒱' = V_g sin θ = −h(θ)` with the phase detector `h(θ) = −V_g sin θ`. -/
-@[tmio M, powerlib_domain] theorem pllV_hasDerivAt (Vg θ : ℝ) :
-    HasDerivAt (pllV Vg) (Vg * sin θ) θ := by
-  have := ((hasDerivAt_cos θ).const_sub 1).const_mul Vg
-  unfold pllV
-  exact this.congr_deriv (by ring)
-
-/-- The `η`-part `½ K_i η²` has first derivative `K_i η` and second derivative `K_i`. -/
-@[tmio T, powerlib_foundation] theorem pllEta_hasDerivAt (Ki η : ℝ) :
-    HasDerivAt (fun η => (1 / 2 : ℝ) * Ki * η ^ 2) (Ki * η) η := by
-  have := ((hasDerivAt_pow 2 η).const_mul ((1 / 2 : ℝ) * Ki))
-  convert this using 1; ring
-
 /-- Hessian `∇²𝓗 = diag(𝒱''(θ), K_i)` of `𝓗 = 𝒱(θ) + ½ K_i η²` (separable, no cross term). -/
 def pllHess (V2 Ki : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![V2, 0; 0, Ki]
 
@@ -87,58 +74,53 @@ def pllNoise (Kp : ℝ) (σv : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   simp [pllHess, trace_fin_two]
   ring
 
-/-- PLL damping ratio `ζ = K_p √V_g / (2 √K_i)` (T-pll-dynamics §1.3). -/
-def zeta (Kp Vg Ki : ℝ) : ℝ := Kp * √Vg / (2 * √Ki)
-
-@[tmio M, powerlib_domain] theorem four_zeta_sq {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki) :
-    4 * zeta Kp Vg Ki ^ 2 = Kp ^ 2 * Vg / Ki := by
-  unfold zeta
-  rw [div_pow, mul_pow, mul_pow, sq_sqrt hVg, sq_sqrt hKi.le]
-  field_simp
-  ring
-
-/-- Saddle value: `Δ_Itô^PLL(π) = ½ σ_v σ_vᵀ K_i (1 − 4ζ²)`. -/
+/-- Saddle value: `Δ_Itô^PLL(π) = ½ σ_v σ_vᵀ K_i (1 − 4ζ²)`, with the PLL damping ratio
+`ζ = PLL.zeta V_g K_p K_i = K_p √V_g / (2 √K_i)` (T-pll-dynamics §1.3). -/
 @[tmio M, powerlib_domain] theorem pllIto_saddle {Kp Vg Ki : ℝ} (hVg : 0 ≤ Vg) (hKi : 0 < Ki)
     (σv : Fin 2 → ℝ) :
     itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki)
-      = (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki * (1 - 4 * zeta Kp Vg Ki ^ 2) := by
-  rw [pllIto, Real.cos_pi, mul_neg_one, four_zeta_sq hVg hKi]
+      = (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki * (1 - 4 * PLL.zeta Vg Kp Ki ^ 2) := by
+  have h4 : 4 * PLL.zeta Vg Kp Ki ^ 2 = Vg * Kp ^ 2 / Ki := by
+    rcases hVg.eq_or_lt with rfl | hVg
+    · simp [PLL.zeta]
+    · exact PLL.four_mul_zeta_sq hVg.ne' (mul_pos hVg hKi)
+  rw [pllIto, Real.cos_pi, mul_neg_one, h4]
   field_simp
   ring
 
 /-- **ζ = 1/2 threshold**: for nonzero voltage noise, `Δ_Itô^PLL(π) < 0 ⇔ ζ > 1/2`. -/
 @[tmio M, powerlib_domain] theorem pllIto_saddle_neg_iff {Kp Vg Ki : ℝ} (hKp : 0 ≤ Kp)
     (hVg : 0 ≤ Vg) (hKi : 0 < Ki) {σv : Fin 2 → ℝ} (hσ : σv ≠ 0) :
-    itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki) < 0 ↔ 1 / 2 < zeta Kp Vg Ki := by
+    itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki) < 0 ↔ 1 / 2 < PLL.zeta Vg Kp Ki := by
   have hs : 0 < σv ⬝ᵥ σv := by
     rcases (dotProduct_self_star_pos_iff (v := σv)).mpr hσ with h
     simpa using h
-  have hz : 0 ≤ zeta Kp Vg Ki := by unfold zeta; positivity
+  have hz : 0 ≤ PLL.zeta Vg Kp Ki := by unfold PLL.zeta PLL.omegaN; positivity
   rw [pllIto_saddle hVg hKi]
   constructor
   · intro h
-    have : 1 - 4 * zeta Kp Vg Ki ^ 2 < 0 := by
+    have : 1 - 4 * PLL.zeta Vg Kp Ki ^ 2 < 0 := by
       by_contra hc; push Not at hc
-      have : 0 ≤ (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki * (1 - 4 * zeta Kp Vg Ki ^ 2) := by positivity
+      have : 0 ≤ (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki * (1 - 4 * PLL.zeta Vg Kp Ki ^ 2) := by positivity
       linarith
     nlinarith
   · intro h
-    have : 1 - 4 * zeta Kp Vg Ki ^ 2 < 0 := by nlinarith
+    have : 1 - 4 * PLL.zeta Vg Kp Ki ^ 2 < 0 := by nlinarith
     have hpos : 0 < (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki := by positivity
     exact mul_neg_of_pos_of_neg hpos this
 
 /-- Conversely `Δ_Itô^PLL(π) > 0 ⇔ ζ < 1/2` (PI-channel diffusion dominates). -/
 @[tmio M, powerlib_domain] theorem pllIto_saddle_pos_iff {Kp Vg Ki : ℝ} (hKp : 0 ≤ Kp)
     (hVg : 0 ≤ Vg) (hKi : 0 < Ki) {σv : Fin 2 → ℝ} (hσ : σv ≠ 0) :
-    0 < itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki) ↔ zeta Kp Vg Ki < 1 / 2 := by
+    0 < itoCorrection (pllNoise Kp σv) (pllHess (Vg * cos π) Ki) ↔ PLL.zeta Vg Kp Ki < 1 / 2 := by
   have hs : 0 < σv ⬝ᵥ σv := by
     simpa using (dotProduct_self_star_pos_iff (v := σv)).mpr hσ
-  have hz : 0 ≤ zeta Kp Vg Ki := by unfold zeta; positivity
+  have hz : 0 ≤ PLL.zeta Vg Kp Ki := by unfold PLL.zeta PLL.omegaN; positivity
   rw [pllIto_saddle hVg hKi]
   have hpos : 0 < (1 / 2 : ℝ) * (σv ⬝ᵥ σv) * Ki := by positivity
   constructor
   · intro h
-    have : 0 < 1 - 4 * zeta Kp Vg Ki ^ 2 := (pos_iff_pos_of_mul_pos h).mp hpos
+    have : 0 < 1 - 4 * PLL.zeta Vg Kp Ki ^ 2 := (pos_iff_pos_of_mul_pos h).mp hpos
     nlinarith
   · intro h
     exact mul_pos hpos (by nlinarith)
@@ -222,8 +204,9 @@ def lineResidual (R L C ω Vg : ℝ) (idq ig ξ : Fin 2 → ℝ) : Fin 2 → ℝ
 `Passive.SeriesRLC.reactance`; the negative of `GFL.LCLine.Network.lineX`). -/
 def lineX (L C ω : ℝ) : ℝ := (⟨0, L, 1 / C⟩ : Passive.SeriesRLC).reactance ω
 
-/-- Coefficient matrix of the form-B line system (independent of `θ_e`). -/
-def lineMatrix (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-R, X; -X, -R]
+/-- Coefficient matrix `[[−R, X], [−X, −R]]` of the form-B line system (independent of `θ_e`):
+the complex-symmetric matrix of the scalar `−(R + jX)` (`Transform.complexSymm`). -/
+def lineMatrix (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := Transform.complexSymm (-R) (-X)
 
 /-- Driving term `r` (depends on `θ_e` only through `idq`). -/
 def lineDrive (C ω Vg : ℝ) (idq : Fin 2 → ℝ) : Fin 2 → ℝ :=
@@ -239,24 +222,24 @@ def lineDrive (C ω Vg : ℝ) (idq : Fin 2 → ℝ) : Fin 2 → ℝ :=
     have h1 := congrFun h 1
     simp [lineResidual] at h0 h1
     ext i; fin_cases i
-    · simp [lineMatrix, lineDrive, lineX, Passive.SeriesRLC.reactance, mulVec, dotProduct,
-        Fin.sum_univ_two]
+    · simp [lineMatrix, Transform.complexSymm, lineDrive, lineX, Passive.SeriesRLC.reactance,
+        mulVec, dotProduct, Fin.sum_univ_two]
       linear_combination h0
-    · simp [lineMatrix, lineDrive, lineX, Passive.SeriesRLC.reactance, mulVec, dotProduct,
-        Fin.sum_univ_two]
+    · simp [lineMatrix, Transform.complexSymm, lineDrive, lineX, Passive.SeriesRLC.reactance,
+        mulVec, dotProduct, Fin.sum_univ_two]
       linear_combination h1
   · intro h
     have h0 := congrFun h 0
     have h1 := congrFun h 1
-    simp [lineMatrix, lineDrive, lineX, Passive.SeriesRLC.reactance, mulVec, dotProduct,
-        Fin.sum_univ_two] at h0 h1
+    simp [lineMatrix, Transform.complexSymm, lineDrive, lineX, Passive.SeriesRLC.reactance,
+        mulVec, dotProduct, Fin.sum_univ_two] at h0 h1
     ext i; fin_cases i
     · simp [lineResidual]; linear_combination h0
     · simp [lineResidual]; linear_combination h1
 
 @[tmio M, powerlib_domain] theorem lineMatrix_det (R X : ℝ) :
     (lineMatrix R X).det = R ^ 2 + X ^ 2 := by
-  simp [lineMatrix, det_fin_two]; ring
+  rw [lineMatrix, Transform.det_complexSymm, neg_sq, neg_sq]
 
 /-- Line sensitivity `G = M⁻¹`. -/
 def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹

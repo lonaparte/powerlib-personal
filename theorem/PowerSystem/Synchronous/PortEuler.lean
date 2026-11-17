@@ -47,10 +47,10 @@ Model boundary.
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
 `not_eulerStepPorts_realizationSoundUnder_local`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`,
-`Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
+`Family.IsPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
 `theorem/PH/Linearization.lean` (`NonlinearModel.contDiff_zeroInputField`),
-`theorem/Stack/Implementation.lean` (`Implementation.certify_realizes_of_design`) and the family
-modules (members, passivity, no locally exponentially stable member); work-sync
+`theorem/Stack/Implementation.lean` (`Implementation.realizationSoundUnder_of_forall_not_mem_den`)
+and the family modules (members, passivity, no locally exponentially stable member); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7, `theory/T-ph.md` §2.5.
 
 Results.
@@ -63,7 +63,7 @@ Family and connection conclusions.
   requirements and translation of its model read through the design) and `N.euler` (every
   discretization realizing its model, `Implementation.ofDesign`).
 * M–I, classical machine. The small-step law is the generic connection law applied to the
-  family, with its port structure `ClassicalSM.family_isNonlinearPH.isPort` and the public
+  family, with its port structure `ClassicalSM.family_isNonlinearPH` and the public
   smoothness lemma `ClassicalSM.contDiffAt_zeroInput`: `Numerics.eulerPorts_sound_small_step_local`
   (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` below
   which its discretizations are locally exponentially stable).
@@ -137,7 +137,7 @@ disk. -/
     (by simp [unitModel]) (by simp [unitModel])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStepPorts_realizationSoundUnder_local
-    family_isNonlinearPH.isPort
+    family_isNonlinearPH
     (by norm_num) (contDiffAt_zeroInput _) hm
 
 /-- **No Euler discretization of a classical machine is passive, whatever its step.** The speed
@@ -166,25 +166,6 @@ not. -/
 
 end powerlib.Synchronous.ClassicalSM
 
-namespace powerlib.Synchronous
-
-/-- Vacuous soundness: when no model of a family of port systems is locally exponentially stable,
-no Euler implementation is certified for it, so the realization is sound without a step
-constraint. -/
-@[tmio T, powerlib_foundation] private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
-    {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}
-    (h : ∀ x, x ∉ F.den (.flow .locallyExponentiallyStable)) :
-    connection% ((Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅
-      (.flow .locallyExponentiallyStable)) := by
-  change (Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅
-        (.flow .locallyExponentiallyStable)
-  rintro y ⟨hy, -⟩
-  rw [Implementation.certify_realizes_of_design (I := Numerics.eulerPorts F sys design step) rfl]
-    at hy
-  exact absurd hy (h _)
-
-end powerlib.Synchronous
-
 namespace powerlib.Synchronous.SyncMachine7
 
 /-- The explicit Euler discretization of a seven-state machine with step `h > 0`. -/
@@ -192,12 +173,13 @@ abbrev Euler := Numerics.EulerStep SyncMachine7Params
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 machine's pH port system, with step length its step. -/
-def eulerFamily : Family Euler Requirement 7 4 :=
+def eulerFamily : Family Euler PassiveOnly.Requirement 7 4 :=
   Numerics.eulerPortFamily family (fun p => (syncMachine7 p).system)
     Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its machine. -/
-def euler : Implementation SyncMachine7Params Requirement Euler Requirement 7 4 7 4 :=
+def euler : Implementation SyncMachine7Params PassiveOnly.Requirement Euler
+    PassiveOnly.Requirement 7 4 7 4 :=
   Numerics.eulerPorts family (fun p => (syncMachine7 p).system)
     Numerics.EulerStep.design Numerics.EulerStep.h
 
@@ -209,7 +191,7 @@ the family has no step threshold to state. -/
 @[tmio MI, powerlib_domain] theorem euler_realizationSoundUnder :
     connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
+  refine Implementation.realizationSoundUnder_of_forall_not_mem_den rfl fun p => ?_
   have hn := not_mem_den_locallyExponentiallyStable p
   unfold powerlib.TMIO.Statement at hn
   exact hn
@@ -275,12 +257,13 @@ abbrev Euler := Numerics.EulerStep SMIB11Params
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 pH port system, with step length its step. -/
-def eulerFamily : Family Euler Requirement 11 4 :=
+def eulerFamily : Family Euler PassiveOnly.Requirement 11 4 :=
   Numerics.eulerPortFamily family (fun p => (smib11 p).system)
     Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its system. -/
-def euler : Implementation SMIB11Params Requirement Euler Requirement 11 4 11 4 :=
+def euler :
+    Implementation SMIB11Params PassiveOnly.Requirement Euler PassiveOnly.Requirement 11 4 11 4 :=
   Numerics.eulerPorts family (fun p => (smib11 p).system)
     Numerics.EulerStep.design Numerics.EulerStep.h
 
@@ -291,7 +274,7 @@ no discretization is certified for local exponential stability, whatever its ste
 @[tmio MI, powerlib_domain] theorem euler_realizationSoundUnder :
     connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
+  refine Implementation.realizationSoundUnder_of_forall_not_mem_den rfl fun p => ?_
   have hn := not_mem_den_locallyExponentiallyStable p
   unfold powerlib.TMIO.Statement at hn
   exact hn
@@ -326,11 +309,12 @@ abbrev Euler := Numerics.EulerStep SMIB11Params
 
 /-- The Euler discretization family: every discretization read as the Euler discretization of its
 corrected port system, with step length its step. -/
-def eulerFamily : Family Euler SMIB11.Requirement 11 4 :=
+def eulerFamily : Family Euler PassiveOnly.Requirement 11 4 :=
   Numerics.eulerPortFamily family smib11Rel_system Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- The Euler realization: every discretization realizes its system. -/
-def euler : Implementation SMIB11Params SMIB11.Requirement Euler SMIB11.Requirement 11 4 11 4 :=
+def euler :
+    Implementation SMIB11Params PassiveOnly.Requirement Euler PassiveOnly.Requirement 11 4 11 4 :=
   Numerics.eulerPorts family smib11Rel_system Numerics.EulerStep.design Numerics.EulerStep.h
 
 /-- **The Euler realization of the corrected 11-state system is sound without a step
@@ -341,7 +325,7 @@ stability, whatever its step. -/
 @[tmio MI, powerlib_domain] theorem euler_realizationSoundUnder :
     connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
+  refine Implementation.realizationSoundUnder_of_forall_not_mem_den rfl fun p => ?_
   have hn := not_mem_den_locallyExponentiallyStable p
   unfold powerlib.TMIO.Statement at hn
   exact hn

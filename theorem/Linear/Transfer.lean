@@ -20,8 +20,9 @@ stability hub of `theorem/Linear/Stability.lean` (`unstable_of_eigenvalue`).
 Results.
 * Poles: `complexify`, `characteristicMatrix`, `SpectrallyStable`,
   `det_characteristicMatrix_eq_eval`, `spectrallyStable_reindex`,
-  `spectrallyStable_iff_isHurwitz` (pole stability is LeanForControl's Hurwitz predicate),
-  `exists_eigenvector_of_root`, `unstable_of_root`.
+  `det_characteristicMatrix_eq_zero_iff_exists_eigenpair` (any finite index: a characteristic
+  root is an eigenvalue), `spectrallyStable_iff_isHurwitz` (pole stability is LeanForControl's
+  Hurwitz predicate), `exists_eigenvector_of_root`, `unstable_of_root`.
 * Transfer functions: `transfer`, `transferOf` (any finite state index, as produced by block
   constructions), `transfer_eq_transferOf`, `characteristicMatrix_reindex`, `transferOf_reindex`;
   complexification of matrix operations (`complexify_mul`, `complexify_neg`, `complexify_sub`,
@@ -75,32 +76,30 @@ on any finite index. -/
     simp [characteristicMatrix, Matrix.one_apply]
   simp only [SpectrallyStable, h, Matrix.det_reindex_self]
 
+/-- A root of the characteristic polynomial is exactly an eigenvalue of the complexified matrix,
+on any finite index. -/
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_eq_zero_iff_exists_eigenpair
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ) (s : ℂ) :
+    (characteristicMatrix A s).det = 0 ↔ ∃ v : ι → ℂ, v ≠ 0 ∧ complexify A *ᵥ v = s • v := by
+  rw [← Matrix.exists_mulVec_eq_zero_iff]
+  refine exists_congr fun v => and_congr_right fun _ => ?_
+  rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero,
+    eq_comm]
+
 /-- Pole stability is LeanForControl's Hurwitz predicate. -/
 @[tmio T, powerlib_foundation] theorem spectrallyStable_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℝ) :
     SpectrallyStable A ↔ IsHurwitz A := by
-  constructor
-  · intro h μ v hv heigen
-    simpa only [neg_zero] using (show μ.re < 0 by
-      apply h μ
-      apply Matrix.exists_mulVec_eq_zero_iff.mp
-      refine ⟨v, hv, ?_⟩
-      rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, heigen]
-      exact sub_self _)
-  · intro h μ hdet
-    obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-    simpa only [neg_zero] using (show μ.re < -0 by
-      apply h μ v hv
-      rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
-      exact (sub_eq_zero.mp hzero).symm)
+  refine ⟨fun h μ v hv heig => ?_, fun h μ hdet => ?_⟩
+  · simpa only [neg_zero] using
+      h μ ((det_characteristicMatrix_eq_zero_iff_exists_eigenpair A μ).mpr ⟨v, hv, heig⟩)
+  · obtain ⟨v, hv, heig⟩ := (det_characteristicMatrix_eq_zero_iff_exists_eigenpair A μ).mp hdet
+    simpa only [neg_zero] using h μ v hv heig
 
 /-- A root of the characteristic polynomial is an eigenvalue. -/
 @[tmio T, powerlib_foundation] theorem exists_eigenvector_of_root {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}
     (h : (characteristicMatrix A s).det = 0) :
-    ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v := by
-  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
-  refine ⟨v, hv, ?_⟩
-  rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
-  exact (sub_eq_zero.mp hzero).symm
+    ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
+  (det_characteristicMatrix_eq_zero_iff_exists_eigenpair A s).mp h
 
 /-- A root of the characteristic polynomial in the open right half plane gives instability. -/
 @[tmio T, powerlib_foundation] theorem unstable_of_root {A : Matrix (Fin n) (Fin n) ℝ}

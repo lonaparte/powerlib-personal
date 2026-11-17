@@ -26,8 +26,9 @@ Model boundary.
   (`Feedforward.lean`), decoupling mismatch (`Mismatch.lean`), computation/PWM delay, PWM
   switching, current or modulation limits, DC-link dynamics.
 * The IMC-tuned instance is `theorem/GridTiedConverter/CurrentControl/IMC.lean`; the same IMC loop
-  in a machine drive is the family on `Drives.CascadeControl.IMCLoop`
-  (`theorem/Drives/CascadeControl.lean`).
+  in a machine drive, `Drives.CascadeControl.IMCLoop` (`theorem/Drives/CascadeControl.lean`), is
+  read through this family by its parameter map `IMCLoop.toPIParams`, and so is the drive speed
+  loop (`Drives.CascadeControl.speedLoopParams`).
 
 Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impedance.md` §1.4
 (scalar sanity check); `theory/T-gfl-reduced-order-dynamics.md` §1.3 (`A_ci`);
@@ -40,9 +41,11 @@ Results.
   equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`).
 * `equilibrium_current`: every equilibrium for a constant reference has `i = i*`.
 * `transfer_eq`: `I/I* = (Kp s + Ki)/(L s² + (R + Kp) s + Ki)` via `Linear.transfer`.
-* `dutyField_eq`: the duty-cycle plant `L di/dt = −R i + V_dc d` with `d` the PI output is the
+* `stable_iff`: with `L > 0` the monic coefficient condition `Stable` is `R + Kp > 0 ∧ Ki > 0`.
+* `withGain`: the duty-cycle plant `L di/dt = −R i + V_dc d` with `d` the PI output is the
   parameter instance `Kp ↦ V_dc Kp`, `Ki ↦ V_dc Ki` (T-gfl-impedance §1.4 sanity check,
-  characteristic polynomial `L s² + (R + V_dc Kp) s + V_dc Ki`).
+  characteristic polynomial `L s² + (R + V_dc Kp) s + V_dc Ki`; the duty plant itself is
+  `PIParams.signedField` at `σ = −1`, `signedField_correct` in `IMC.lean`).
 * Reference feedback (T-gfl-reduced-order-dynamics §1.3 premise): the note treats `i_q*` as
   frozen, but `i_q* = −2/(3|v_g|)·[k_p^Q (Q* − Q) + k_i^Q ξ_Q]` depends on the actual current
   through `Q`. `qReference_eq` shows that, with `v_q = 0`, `|v_g| = v_d ≠ 0` and `ξ_Q` frozen,
@@ -157,6 +160,11 @@ the model, not a connection conclusion. -/
 /-- Stability condition of the PI loop: both monic characteristic coefficients positive. -/
 def Stable (p : PIParams) : Prop := 0 < (p.R + p.Kp) / p.L ∧ 0 < p.Ki / p.L
 
+/-- With `L > 0` the stability condition is `R + Kp > 0 ∧ Ki > 0`. -/
+@[tmio M, powerlib_domain] theorem stable_iff (hL : 0 < p.L) :
+    p.Stable ↔ 0 < p.R + p.Kp ∧ 0 < p.Ki := by
+  rw [Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
+
 /-- Instability condition of the PI loop: a monic characteristic coefficient negative. -/
 def Unstable (p : PIParams) : Prop := (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0
 
@@ -221,18 +229,10 @@ connection conclusion. -/
 
 /-! ## The duty-cycle plant (`V_dc` gain) as a parameter instance -/
 
-/-- Gains seen by the branch when the PI output is a duty cycle scaled by `V_dc`. -/
+/-- Gains seen by the branch when the PI output is a duty cycle scaled by `V_dc`: the duty plant
+`L di/dt = −R i + V_dc d`, `d = Kp (i* − i) + Ki ξ`, is the field of `p.withGain V_dc`
+(`signedField_correct`, `IMC.lean`). -/
 def withGain (Vdc : ℝ) : PIParams := ⟨p.branch, Vdc * p.Kp, Vdc * p.Ki, p.branch_noCap⟩
-
-/-- Duty-cycle plant `L di/dt = −R i + V_dc d`, `d = Kp (i* − i) + Ki ξ`. -/
-def dutyField (Vdc iref : ℝ) (x : ℝ²) : ℝ² :=
-  WithLp.toLp 2 ![(-p.R * x 0 + Vdc * p.control iref x) / p.L, iref - x 0]
-
-@[tmio M, powerlib_domain] theorem dutyField_eq (Vdc iref : ℝ) (x : ℝ²) :
-    p.dutyField Vdc iref x = (p.withGain Vdc).field iref x := by
-  ext j
-  fin_cases j <;> simp [dutyField, field, control, withGain]
-  ring
 
 /-! ## Proportional reference feedback (outer-loop coupling folded into the state matrix) -/
 
@@ -345,8 +345,7 @@ exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
     connection% (p ∈ family.den (.flow P) ↔ p ∈ {p : PIParams | 0 < p.R + p.Kp ∧ 0 < p.Ki}) := by
   unfold powerlib.TMIO.Statement
   rw [den_flow hP]
-  change Stable p ↔ 0 < p.R + p.Kp ∧ 0 < p.Ki
-  rw [Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
+  exact p.stable_iff hL
 
 /-- Every translation of the reference-feedback family is sound. -/
 @[tmio TM, powerlib_domain] theorem refChain_le_semantics :

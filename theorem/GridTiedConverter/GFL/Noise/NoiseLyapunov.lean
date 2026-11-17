@@ -1,6 +1,7 @@
 import theorem.GridTiedConverter.GFL.LCLine.Reduction
 import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.Dynamics.Transport
+import theorem.Stochastic.LyapunovCovariance
 
 /-! # Second-order form and closed-form Lyapunov-equation solutions of the linearized GFL-PLL
 
@@ -28,8 +29,10 @@ Results.
 * `covV_lyapunov`, `covW_lyapunov`: the closed forms
   `Var(θ)^(v) = σ²(K_i + K_p² g)/(2 K_p g²)`, `Var(η)^(v) = σ²/(2 K_p g)`,
   `Cov^(v) = −σ²/(2g)`, `Var(θ)^(ω) = 1/(2 K_p g)`, `Var(η)^(ω) = 1/(2 K_p K_i)` solve the
-  Lyapunov equation; `lyapunov_unique` : the solution is unique whenever `K_p g ≠ 0`, `g ≠ 0`,
-  `K_i ≠ 0` (in particular when `A` is Hurwitz, `isHurwitz_linA_iff`).
+  Lyapunov equation; `covV_unique`, `covW_unique` : the solution is unique whenever `K_p ≠ 0`,
+  `g ≠ 0`, `K_i ≠ 0` (in particular when `A` is Hurwitz, `isHurwitz_linA_iff`): then
+  `tr A ≠ 0`, `det A ≠ 0` and the generic `Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two`
+  applies (`theorem/Stochastic/LyapunovCovariance.lean`).
 * `varThetaQ_eq`, `varThetaQ_tendsto` : with the gauge identity `σ_q = g/V_g`
   (`Params.sigma_q_eq`), the q-channel value is `(K_i + K_p² g)/(2 K_p V_g²)`, which has the finite
   limit `K_i/(2 K_p V_g²)` as `g → 0` (saddle-node).
@@ -109,61 +112,27 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     Matrix.transpose_apply, Matrix.zero_apply]
   fin_cases i <;> fin_cases j <;> simp [linA, covW, pllB] <;> field_simp <;> ring
 
-/-- Uniqueness: the Lyapunov operator `X ↦ A X + X Aᵀ` is injective when `K_p g ≠ 0`, `g ≠ 0`,
-`K_i ≠ 0`. -/
-@[tmio M, powerlib_domain] theorem lyapunov_unique {Kp Ki g : ℝ} (hKpg : Kp * g ≠ 0) (hg : g ≠ 0)
-    (hKi : Ki ≠ 0) {Q X Y : Matrix (Fin 2) (Fin 2) ℝ}
-    (hX : linA Kp Ki g * X + X * (linA Kp Ki g)ᵀ + Q = 0)
-    (hY : linA Kp Ki g * Y + Y * (linA Kp Ki g)ᵀ + Q = 0) : X = Y := by
-  have e : ∀ i j, (linA Kp Ki g * X + X * (linA Kp Ki g)ᵀ + Q) i j -
-      (linA Kp Ki g * Y + Y * (linA Kp Ki g)ᵀ + Q) i j = 0 := by
-    intro i j; rw [hX, hY]; simp
-  have e00 := e 0 0
-  have e01 := e 0 1
-  have e10 := e 1 0
-  have e11 := e 1 1
-  simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
-    at e00 e01 e10 e11
-  simp [linA] at e00 e01 e10 e11
-  -- unknowns d_ij = X_ij − Y_ij
-  have s11 : (X 0 1 - Y 0 1) + (X 1 0 - Y 1 0) = 0 := by
-    have : g * ((X 0 1 - Y 0 1) + (X 1 0 - Y 1 0)) = 0 := by linear_combination e11
-    rcases mul_eq_zero.mp this with h | h
-    · exact absurd h hg
-    · exact h
-  have d00 : X 0 0 - Y 0 0 = 0 := by
-    have : (Kp * g) * (X 0 0 - Y 0 0) = 0 := by linear_combination -e00 / 2 - Ki * s11 / 2
-    rcases mul_eq_zero.mp this with h | h
-    · exact absurd h hKpg
-    · exact h
-  have d01 : X 0 1 - Y 0 1 = X 1 0 - Y 1 0 := by
-    have : (Kp * g) * ((X 0 1 - Y 0 1) - (X 1 0 - Y 1 0)) = 0 := by
-      linear_combination e10 - e01
-    rcases mul_eq_zero.mp this with h | h
-    · exact absurd h hKpg
-    · linarith
-  have hz01 : X 0 1 - Y 0 1 = 0 := by linarith
-  have d11 : X 1 1 - Y 1 1 = 0 := by
-    have : Ki * (X 1 1 - Y 1 1) = 0 := by
-      linear_combination -e01 + g * d00 - Kp * g * hz01
-    rcases mul_eq_zero.mp this with h | h
-    · exact absurd h hKi
-    · exact h
-  ext i j; fin_cases i <;> fin_cases j <;> simp <;> linarith
+/-- `tr A = −K_p g ≠ 0` and `det A = K_i g ≠ 0`: the Lyapunov operator of `A` is injective
+(`Stochastic.Lyapunov.eq_zero_of_lyapunovOp_fin_two`). -/
+@[tmio M, powerlib_domain] private lemma linA_trace_det {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
+    (hKi : Ki ≠ 0) : (linA Kp Ki g).trace ≠ 0 ∧ (linA Kp Ki g).det ≠ 0 := by
+  simp [linA, Matrix.trace_fin_two, Matrix.det_fin_two, hKp, hg, hKi]
 
 /-- The Lyapunov equation of the voltage channel has the unique solution `covV`. -/
 @[tmio M, powerlib_domain] theorem covV_unique {Kp Ki g σ : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) {P : Matrix (Fin 2) (Fin 2) ℝ}
     (hP : linA Kp Ki g * P + P * (linA Kp Ki g)ᵀ + portV Kp σ * (portV Kp σ)ᵀ = 0) :
     P = covV Kp Ki g σ :=
-  lyapunov_unique (mul_ne_zero hKp hg) hg hKi hP (covV_lyapunov hKp hg σ)
+  Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two (linA_trace_det hKp hg hKi).1
+    (linA_trace_det hKp hg hKi).2 hP (covV_lyapunov hKp hg σ)
 
 /-- The Lyapunov equation of the frequency channel has the unique solution `covW`. -/
 @[tmio M, powerlib_domain] theorem covW_unique {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) {P : Matrix (Fin 2) (Fin 2) ℝ}
     (hP : linA Kp Ki g * P + P * (linA Kp Ki g)ᵀ + pllB * pllBᵀ = 0) :
     P = covW Kp Ki g :=
-  lyapunov_unique (mul_ne_zero hKp hg) hg hKi hP (covW_lyapunov hKp hKi hg)
+  Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two (linA_trace_det hKp hg hKi).1
+    (linA_trace_det hKp hg hKi).2 hP (covW_lyapunov hKp hKi hg)
 
 /-- q-channel: with `σ_q = g/V_g`, `Var(θ)^(q) = (K_i + K_p² g)/(2 K_p V_g²)`. -/
 @[tmio M, powerlib_domain] theorem varThetaQ_eq {Kp Ki g Vg : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)

@@ -31,8 +31,10 @@ Results.
   `alphaBetaRL_iff_dqRL` (Park maps αβ and dq trajectories one to one, no balanced-three-phase
   premise).
 * Amplitude–phase coordinates of the dq current (`T-invariant-coordinates.md` §1.3; dq R–L filter
-  with converter voltage `V^c`, any `ω(t)`): `hasDerivAt_half_sq_amplitude` (the rotation terms
-  cancel in `d/dt(½|I|²)`), `hasDerivAt_arg_current`, `hasDerivAt_phase`
+  with converter voltage `V^c`, any `ω(t)`): the amplitude balance
+  `d/dt(½|I|²) = ((V − V^c)·I − R|I|²)/L` is the branch's power balance
+  `Passive.SeriesRLC.dq_power_balance` (the rotation terms do no work); `hasDerivAt_arg_current`,
+  `hasDerivAt_phase`
   (`φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω` for `φ = arg I`).
 
 Family and connection conclusions.
@@ -186,21 +188,6 @@ direction is the Park chain rule `Transform.hasDerivAt_park_mulVec`. -/
   exact h'
 
 /-! ## Amplitude–phase coordinates of a dq current (`T-invariant-coordinates.md` §1.3) -/
-
-/-- Squared-amplitude balance of the dq R–L filter: the frame-rotation terms cancel. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_half_sq_amplitude {b : Passive.SeriesRLC}
-    (hL : b.L ≠ 0)
-    {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
-    (hd : HasDerivAt Id ((Vd t - Vcd t - b.R * Id t + ω t * b.L * Iq t) / b.L) t)
-    (hq : HasDerivAt Iq ((Vq t - Vcq t - b.R * Iq t - ω t * b.L * Id t) / b.L) t) :
-    HasDerivAt (fun τ => (Id τ ^ 2 + Iq τ ^ 2) / 2)
-      (((Vd t * Id t + Vq t * Iq t) - (Vcd t * Id t + Vcq t * Iq t)) / b.L -
-        b.decay * (Id t ^ 2 + Iq t ^ 2)) t := by
-  have h := ((hd.pow 2).add (hq.pow 2)).div_const 2
-  convert h using 1
-  simp only [Passive.SeriesRLC.decay]
-  field_simp
-  ring
 
 /-- Phase derivative `d/dt arg(I_d + j I_q) = (I_d İ_q − I_q İ_d)/|I|²` wherever `I` lies in
 the slit plane (`|I| ≠ 0` and not on the negative real axis; any other branch of the

@@ -23,13 +23,13 @@ certificates (`theorem/Port/Linear.lean`); the family interface of `theorem/Fami
 Results.
 * Plants: `Linear.holds_input_iff` (at any constant input with an equilibrium, an attractive
   sentence holds there exactly when the plant is Hurwitz), `Linear.isHurwitz_one_iff`.
-* `Family.IsLinear`; `IsLinear.mem_den_flow` (a flow sentence holds for a member exactly when it
-  holds for the zero-input field of its plant), `IsLinear.den_hurwitz`,
+* `Family.IsLinear`, a family of port systems (`Family.IsPort`): the generic laws
+  `Family.IsPort.den_envelope` (read without an envelope), `Family.IsPort.den_passive` (without
+  ports every member is passive), `Family.IsPort.comap` and `Family.IsPort.extend` apply.
+  `IsLinear.mem_den_flow` (a flow sentence holds for a member exactly when it holds for the
+  zero-input field of its plant), `IsLinear.den_hurwitz`,
   `IsLinear.not_isHurwitz_of_mem_den_conservative`, `IsLinear.mem_den_conservative`,
-  `IsLinear.mem_den_passive`, `IsLinear.den_envelope` (a linear family is read without an
-  envelope: every envelope sentence denotes the whole family).
-* Representations: `IsLinear.comap` (a family read in another representation stays linear),
-  `IsLinear.extend` (with an extended requirement language).
+  `IsLinear.mem_den_passive`.
 -/
 
 noncomputable section
@@ -38,7 +38,7 @@ namespace powerlib
 
 open Matrix LinearSystems TMIO Linear
 
-variable {X Y Q R : Type*} {n p : ℕ}
+variable {X Q : Type*} {n p : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
@@ -69,25 +69,21 @@ end Linear
 
 namespace Family
 
-/-- Every complete system of the family is the port system of its linear plant. -/
-def IsLinear (F : Family X Q n p) (plant : X → Plant n p) : Prop :=
-  ∀ x, F.system x = (plant x).system
+/-- Every complete system of the family is the port system of its linear plant: a family of port
+systems (`Family.IsPort`), whose generic laws (`den_envelope`, `den_passive` without ports,
+`comap`, `extend`) apply. -/
+abbrev IsLinear (F : Family X Q n p) (plant : X → Plant n p) : Prop :=
+  F.IsPort fun x => (plant x).system
 
 variable {F : Family X Q n p} {plant : X → Plant n p}
 
-/-- A linear family is read without an envelope: it satisfies every envelope sentence. -/
-@[tmio TM, powerlib_foundation] theorem IsLinear.den_envelope (hF : F.IsLinear plant)
-    (E : Envelope.Property) :
-    connection% (F.den (.envelope E) = Set.univ) := show F.den (.envelope E) = Set.univ from
-  Family.den_envelope_of_continuous hF E
-
 /-- A flow sentence holds for a member of a linear family exactly when it holds for the zero-input
 field of its plant. -/
-@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_flow (hF : F.IsLinear plant) {P : Flow.Property}
-    {x : X} :
+@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_flow (hF : F.IsLinear plant)
+    {P : Flow.Property} {x : X} :
     connection% (x ∈ F.den (.flow P) ↔ P.holds (affineLinearVectorField (plant x).A 0) 0) := by
   change x ∈ F.den (.flow P) ↔ P.holds (affineLinearVectorField (plant x).A 0) 0
-  rw [(connection_proof% mem_den), hF x, Sentence.holds_flow, Plant.system_zeroInput]
+  rw [(connection_proof% IsPort.mem_den_flow hF), Plant.system_zeroInput]
 
 /-- The attractive sentences and sampled contraction denote the Hurwitz members. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.den_hurwitz (hF : F.IsLinear plant) {P : Flow.Property}
@@ -128,18 +124,8 @@ stable denotation, equivalently its plant is not Hurwitz. -/
 /-- A KYP certificate places a member in passivity. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_passive (hF : F.IsLinear plant) {x : X}
     (c : KYP (plant x)) :
-    connection% (x ∈ F.den .passive) := by
-  change x ∈ F.den .passive
-  rw [(connection_proof% mem_den), hF x]
-  exact ⟨_, c.passiveWith⟩
-
-/-- A family read in another representation stays linear. -/
-@[tmio M, powerlib_foundation] theorem IsLinear.comap (hF : F.IsLinear plant) (g : Y → X) :
-    (F.comap g).IsLinear (plant ∘ g) := fun y => hF (g y)
-
-/-- A family with an extended requirement language stays linear. -/
-@[tmio M, powerlib_foundation] theorem IsLinear.extend (hF : F.IsLinear plant) (g : Y → X)
-    (extra : Y → R → Prop) : (F.extend g extra).IsLinear (plant ∘ g) := fun y => hF (g y)
+    connection% (x ∈ F.den .passive) := show x ∈ F.den .passive from
+  (connection_proof% IsPort.mem_den_passive_iff hF).mpr ⟨_, c.passiveWith⟩
 
 end Family
 

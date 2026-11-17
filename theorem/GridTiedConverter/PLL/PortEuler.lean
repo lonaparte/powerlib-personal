@@ -29,9 +29,10 @@ Model boundary.
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
 `not_eulerStepPorts_realizationSoundUnder_local`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`,
-`Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
+`Family.IsPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
 `theorem/GridTiedConverter/PLL/Model.lean` (`contDiff_srfField`),
-`theorem/GridTiedConverter/PLL/PH.lean` (`pllPH_zeroInputField`, `pllPH_output`, members); work-sync
+`theorem/GridTiedConverter/PLL/PIPLLPH.lean` (`gflPH_zeroInputField`, `gflPH_output`),
+`theorem/GridTiedConverter/PLL/PH.lean` (members); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7, `theory/T-pll-ph.md` §1.2.
 
 Results.
@@ -43,7 +44,7 @@ Family and connection conclusions.
   centred pH port system, with the requirements and translation of its model read through the
   design) and `PLLPH.euler` (every discretization realizing its model, `Implementation.ofDesign`).
 * M–I (realization). The small-step law is the generic connection law applied to the family, with
-  its port structure `PLLPH.family_isNonlinearPH.isPort` and the public smoothness lemma
+  its port structure `PLLPH.family_isNonlinearPH` and the public smoothness lemma
   `PLLPH.contDiffAt_zeroInput`: `Numerics.eulerPorts_sound_small_step_local` (scaffold
   `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` below which its
   discretizations are locally exponentially stable). `PLLPH.not_euler_realizationSoundUnder`
@@ -79,7 +80,7 @@ for port systems (`Numerics.eulerPorts_sound_small_step_local`). -/
     ContDiffAt ℝ 1 (m.toPH.shift m.point).system.zeroInput 0 := by
   change ContDiffAt ℝ 1 (fun z => m.toPH.zeroInputField (z + m.point)) 0
   rw [show m.toPH.zeroInputField = srfField m.V m.Kp m.Ki (m.Ki * m.ηs) from
-    pllPH_zeroInputField m.damping]
+    gflPH_zeroInputField (hV := hasDerivAt_srfPotential m.V) (hKp := m.damping)]
   exact Numerics.contDiffAt_shift (contDiff_srfField _ _ _ _).contDiffAt
 
 /-- The model `V = K_p = K_i = 1`, `η* = θ* = 0`. -/
@@ -88,7 +89,7 @@ private def unitModel : Model := ⟨1, 1, 1, 0, 0, zero_le_one⟩
 /-- At the centred state `(π/2 − θ*, 0)` the phase is `π/2` and the output is `−V`. -/
 @[tmio M, powerlib_domain] private theorem output_quarter (m : Model) :
     (m.toPH.shift m.point).output (PhasePlane.mk (Real.pi / 2 - m.θ) 0) = ![-m.V] := by
-  rw [PH.NonlinearModel.shift_output, Model.toPH, pllPH_output]
+  rw [PH.NonlinearModel.shift_output, Model.toPH, gflPH_output]
   simp [srfPD, Model.point]
 
 /-- **Without a step constraint the Euler realization of the SRF-PLL pH models is not sound.** The
@@ -101,7 +102,7 @@ large step are not: every Euler multiplier `1 + hλ` leaves the unit disk. -/
     (by norm_num [unitModel]) (by simp [unitModel])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStepPorts_realizationSoundUnder_local
-    family_isNonlinearPH.isPort (by norm_num) (contDiffAt_zeroInput _) hm
+    family_isNonlinearPH (by norm_num) (contDiffAt_zeroInput _) hm
 
 /-- **An Euler discretization of an SRF-PLL pH model is passive exactly when the grid is dead,
 whatever its step.** For `V ≠ 0` the output `−V sin θ` does not depend on the offset input, so one
@@ -124,7 +125,7 @@ vanishes and the zero storage proves passivity. -/
     change (Numerics.eulerSystem (m.toPH.shift m.point).system h).Passive
     refine ⟨fun _ => 0, fun _ => le_rfl, fun x u => ?_⟩
     change (0 : ℝ) - 0 ≤ h * (u ⬝ᵥ (m.toPH.shift m.point).output x)
-    rw [PH.NonlinearModel.shift_output, Model.toPH, pllPH_output]
+    rw [PH.NonlinearModel.shift_output, Model.toPH, gflPH_output]
     simp [srfPD, hV]
 
 /-- **The passivity realization of explicit Euler is not sound for the SRF-PLL pH models.** The

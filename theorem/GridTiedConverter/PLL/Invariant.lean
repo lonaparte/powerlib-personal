@@ -23,8 +23,9 @@ Results.
   equation gives a solution of the first-order system with `ξ = (θ̇ − Δω + a sin θ)/b`.
   (The note's right-hand side `dΔω/dt` vanishes for the constant offset modelled here.)
 * Amplitude–phase coordinates of a dq current (T-invariant-coordinates §1.3): the identities
-  for the dq R–L filter (`hasDerivAt_half_sq_amplitude`, `hasDerivAt_arg_current`,
-  `hasDerivAt_phase`) are in `theorem/Passive/DqRL.lean`; the complex power
+  for the dq R–L filter (`Passive.SeriesRLC.dq_power_balance` for the amplitude,
+  `hasDerivAt_arg_current`, `hasDerivAt_phase`) are in `theorem/Passive/Dq.lean` and
+  `theorem/Passive/DqRL.lean`; the complex power
   `S̄ = V̄ Ī*` in dq components is `Transform.complexPower_expand`
   (`theorem/Transform/ComplexPower.lean`).
 * Complex normal modes of an LC pair (T-invariant-coordinates §1.4), with the correction of
@@ -36,10 +37,11 @@ No new family: the `(θ_err, ξ)` model with gains `(a, b)`
 and offset `Δω`, read about `θ*`, is the member `PLL.PIPLL.srf 1 a b (−Δω) θ*` of the PI-PLL
 family (`xi_piPLLField`; its selected point is `(θ*, −Δω / b)`). Its local stability is that
 family's at `V = 1`, `K_p = a`, `K_i = b`, `δω = −Δω`: for `a, b > 0` the equilibria
-`(2kπ, −Δω/b)` are locally exponentially stable (`srf_mem_den_locallyExponentiallyStable_inPhase`)
-and for `b > 0` the equilibria `((2k+1)π, −Δω/b)` are saddles (`srf_mem_den_unstable_antiPhase`),
-in `theorem/GridTiedConverter/PLL/Model.lean`. The pendulum form is domain evidence for the stated
-PLL fields and their signals.
+`(2kπ, −Δω/b)` are locally exponentially stable
+(`PIPLL.srf_mem_den_locallyExponentiallyStable_inPhase`) and for `b > 0` the equilibria
+`((2k+1)π, −Δω/b)` are saddles (`PIPLL.srf_mem_den_unstable_antiPhase`), in
+`theorem/GridTiedConverter/PLL/PIPLLFamily.lean`. The pendulum form is domain evidence for the
+stated PLL fields and their signals.
 -/
 
 noncomputable section

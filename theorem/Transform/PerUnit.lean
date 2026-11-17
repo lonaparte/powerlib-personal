@@ -18,8 +18,11 @@ Source: work-sync `theory/T-PU.md` §1.2–§1.6, §1.8–§1.10, §1.12, §1.13
 Results.
 * `Base`: a single-phase base pair `{S_B, V_B}` with `I_B = S_B / V_B`, `Z_B = V_B² / S_B`.
   Ohm's law and complex power keep their form in per unit (`ohm_pu_iff`, `power_pu_iff`).
-* Three-phase bases (§1.3): `V_LN = V_LL / √3`, `I_B = S_B / (√3 V_LL)`,
-  `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`, `S_B = 3 V_LN I_B`.
+* Three-phase bases (§1.3): `V_LN = V_LL / √3`, `I_B = S_B / (√3 V_LL)`, `Z_B = V_LL² / S_B`.
+  The per-phase base `perPhase = {S_B / 3, V_LN}` has the same current and impedance bases
+  (`perPhase_I`, `perPhase_Z`: `Z_B = V_LN² / (S_B / 3)`), so the `Base` identities
+  (`Z_B = V_LN / I_B`) and per-unit laws (`ohm_pu_iff`, `power_pu_iff`) apply to a three-phase
+  base; `S_B = 3 V_LN I_B` (`S_eq_three_VLN_I`).
 * Ideal transformer (§1.4): with `V_B¹ / V_B² = a` and a common `S_B`, per-unit voltages and
   currents are equal on both sides and a referred impedance has the same per-unit value
   (`transformer_pu_voltage`, `transformer_pu_current`, `transformer_pu_impedance`).
@@ -137,26 +140,30 @@ def I : ℝ := b.S / (Real.sqrt 3 * b.VLL)
 /-- Per-phase (Y-equivalent) impedance base `V_LL² / S_B`. -/
 def Z : ℝ := b.VLL ^ 2 / b.S
 
-@[tmio T, powerlib_foundation] private lemma sqrt3_pos : 0 < Real.sqrt 3 := by positivity
+/-- Per-phase (Y-equivalent) single-phase base `{S_B / 3, V_LN}`. -/
+def perPhase : Base :=
+  ⟨b.S / 3, b.VLN, by linarith [b.S_pos], div_pos b.VLL_pos (by positivity)⟩
 
-/-- `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`: line and phase pairings give the same base. -/
-@[tmio M, powerlib_domain] theorem Z_eq_phase : b.Z = b.VLN ^ 2 / (b.S / 3) := by
-  have := b.S_pos.ne'; have := sqrt3_pos.ne'
-  simp only [Z, VLN]
+/-- The per-phase current base is the line-current base: `(S_B / 3) / V_LN = S_B / (√3 V_LL)`. -/
+@[tmio M, powerlib_domain] theorem perPhase_I : b.perPhase.I = b.I := by
+  have := b.VLL_pos.ne'; have : Real.sqrt 3 ≠ 0 := by positivity
+  simp only [perPhase, Base.I, VLN, I]
   field_simp
   rw [sqrt3_sq]
 
-/-- `S_B = 3 V_LN I_B` and `S_B = √3 V_LL I_B`. -/
+/-- The per-phase impedance base is `Z_B`: `V_LN² / (S_B / 3) = V_LL² / S_B`. -/
+@[tmio M, powerlib_domain] theorem perPhase_Z : b.perPhase.Z = b.Z := by
+  have := b.S_pos.ne'; have : Real.sqrt 3 ≠ 0 := by positivity
+  simp only [perPhase, Base.Z, VLN, Z]
+  field_simp
+  rw [sqrt3_sq]
+
+/-- `S_B = 3 V_LN I_B` (`Base.S_eq_V_mul_I` of the per-phase base). -/
 @[tmio M, powerlib_domain] theorem S_eq_three_VLN_I : b.S = 3 * b.VLN * b.I := by
-  have := b.VLL_pos.ne'; have := sqrt3_pos.ne'
-  simp only [VLN, I]
-  field_simp
-  rw [sqrt3_sq]
-
-@[tmio M, powerlib_domain] theorem Z_eq_VLN_div_I : b.Z = b.VLN / b.I := by
-  have := b.VLL_pos.ne'; have := b.S_pos.ne'; have := sqrt3_pos.ne'
-  simp only [Z, VLN, I]
-  field_simp
+  have h := b.perPhase.S_eq_V_mul_I
+  rw [perPhase_I] at h
+  change b.S / 3 = b.VLN * b.I at h
+  linarith
 
 end ThreePhaseBase
 

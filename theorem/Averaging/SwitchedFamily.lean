@@ -125,12 +125,12 @@ map of its period map, with step length its switching period; the requirements o
 model, read through the design, and the commuting constraint; sentences translate into the
 averaged model's requirements. -/
 def switchedFamily : Family (Switched n) Switched.Requirement n 0 where
-  system y := .discrete (Map.System.autonomous y.T (Map.op y.step))
+  system y := .discrete (Map.System.autonomous y.T (Linear.op y.step))
   meets := Switched.Meets
   translate s := Switched.Requirement.design '' (LTI.continuousFamily (n := n)).translate s
 
 @[tmio M, powerlib_foundation] theorem switchedFamily_isAutonomousMap :
-    (switchedFamily (n := n)).IsAutonomousMap Switched.T fun y => Map.op y.step :=
+    (switchedFamily (n := n)).IsAutonomousMap Switched.T fun y => Linear.op y.step :=
   fun _ => rfl
 
 /-- The switched realization: every switched system realizes its averaged model. -/

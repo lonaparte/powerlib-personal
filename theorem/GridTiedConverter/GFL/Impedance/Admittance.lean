@@ -490,6 +490,7 @@ def gflOnNetwork (line : Passive.SeriesRLC)
     {shunt : Passive.ParallelRLC} (hS : line.S = 0) (hΓ : shunt.Γ = 0)
     (hC : shunt.C ≠ 0) (hLg : line.L ≠ 0) {s : ℂ}
     (hMn : (characteristicMatrix (networkModel line shunt p.ω).A s).det ≠ 0)
+    (hYn : (shunt.dqAdmittance p.ω s).det ≠ 0)
     (hZn : (line.dqImpedance p.ω s).det ≠ 0) (hs : s ≠ 0) (ha : p.a ≠ 0)
     (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
@@ -499,7 +500,7 @@ def gflOnNetwork (line : Passive.SeriesRLC)
     (p.gflOnNetwork line shunt).returnDifference s =
       (1 + Zext line shunt p.ω s * p.Ygfl s).det := by
   change (1 + transfer (networkModel line shunt p.ω) s * transfer p.model s).det = _
-  rw [networkModel_transfer hS hΓ hC hLg hMn hZn, p.transfer_eq_Ygfl hs ha hda hL hpll hZ hP hM]
+  rw [networkModel_transfer hS hΓ hC hLg hMn hYn hZn, p.transfer_eq_Ygfl hs ha hda hL hpll hZ hP hM]
 
 end GFLParams
 

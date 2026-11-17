@@ -7,12 +7,12 @@ module theorem.Numerics.ImplicitDiscretization where
 -- The model keeps its arbitrary requirement language, satisfaction and translation; the
 -- implementation lifts them and adds positive-step and well-posedness requirements.
 -- Trapezoidal realization is exact under both constraints; backward Euler is sound under
--- positive steps, without claiming completeness. Constant-input implementations are read
--- in deviation coordinates about an actual equilibrium, with the same design projection.
+-- positive steps, without claiming completeness. Constant inputs about an equilibrium are
+-- the same schemes in deviation coordinates (a property of the schemes, not a connection).
 -- Lean: theorem/Numerics/ImplicitRealization.lean supplies implicitFamily and
 -- implicitRealization, trapezoidal_realizationExactUnder and
 -- backwardEuler_realizationSoundUnder. theorem/Numerics/EMT/Plant.lean instantiates
--- these interfaces for RL/LCL designs and constant-input deviation implementations.
+-- these interfaces for RL/LCL designs (rlRealization, lclRealization, indexed by method).
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

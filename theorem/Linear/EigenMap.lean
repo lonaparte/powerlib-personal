@@ -264,15 +264,11 @@ variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq
 @[tmio T, powerlib_foundation] theorem spectrallyStable_iff_forall_eigen {A : Matrix ι ι ℝ} :
     SpectrallyStable A ↔
       ∀ (μ : ℂ) (v : ι → ℂ), v ≠ 0 → complexify A *ᵥ v = μ • v → μ.re < 0 := by
-  refine forall_congr' fun μ => ⟨fun h v hv heig => h ?_, fun h hdet => ?_⟩
-  · apply Matrix.exists_mulVec_eq_zero_iff.mp
-    refine ⟨v, hv, ?_⟩
-    rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, heig,
-      sub_self]
-  · obtain ⟨v, hv, hz⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-    rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec,
-      sub_eq_zero] at hz
-    exact h v hv hz.symm
+  refine forall_congr' fun μ => ⟨fun h v hv heig =>
+    h ((det_characteristicMatrix_eq_zero_iff_exists_eigenpair A μ).mpr ⟨v, hv, heig⟩),
+    fun h hdet => ?_⟩
+  obtain ⟨v, hv, hz⟩ := (det_characteristicMatrix_eq_zero_iff_exists_eigenpair A μ).mp hdet
+  exact h v hv hz
 
 /-- Matrices with the same characteristic polynomial, possibly on different index types, are
 spectrally stable together. -/

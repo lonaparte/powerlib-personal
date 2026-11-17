@@ -60,7 +60,7 @@ Family and connection conclusions.
 
 noncomputable section
 namespace powerlib.Passive.Line.CableBessel
-open Filter Topology Asymptotics
+open Filter Topology _root_.Asymptotics
 open scoped Nat
 open powerlib.SpecialFunctions (besselI0 besselI1 besselSeries0 besselSeries1 besselRatio_sub_le
   besselI0_div_besselI1_sub_one_le tendsto_besselI0_div_besselI1 one_add_I_mul_re

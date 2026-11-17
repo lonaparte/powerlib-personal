@@ -1,6 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
-import theorem.Transform.ParkABC
+import theorem.Transform.SpaceVector
 
 /-! # Synchronous machine: Park-transform algebra of the stator
 
@@ -36,10 +36,17 @@ Results.
 * `park_apply_flux_derivative`, `park_flux_hasDerivAt`, `dq0_voltage_equations`: from
   `v_abc = dψ_abc/dt − r i_abc`, `v_d = ψ̇_d − ω ψ_q − r i_d`, `v_q = ψ̇_q + ω ψ_d − r i_q`,
   `v_0 = ψ̇_0 − r i_0`.
-* `Transform.park_power_invariant`, `power_dq0`: `v_abc·i_abc = v_dq0·i_dq0
+* `Transform.orthogonal_dotProduct` at `Transform.parkMatrix_transpose_mul`, `power_dq0`:
+  `v_abc·i_abc = v_dq0·i_dq0
   = Σ ψ̇ i − r|i|² + ω(ψ_d i_q − ψ_q i_d)`; the speed-voltage power defines
   `T_e = ψ_d i_q − ψ_q i_d` (`torque`).
-* `twoAxis_power`, `twoAxis_noteSign_ne`, `classical_power`, `classical_power_linearization`.
+* `spaceVector_torque_eq`: the amplitude-invariant space-vector torque
+  `SpaceVector.torque np ψ i = (3/2) np T_e(ψ, i)` (`theorem/Transform/SpaceVector.lean`, motor
+  convention): the same cross product of flux and current, with the factor `(3/2) np`.
+* `twoAxis_power`, `twoAxis_noteSign_ne`. The classical power `P_e = E' V sin δ / X_d'` is the
+  real part of `Grid.gridSide_power` (`theorem/Grid/PowerFlow.lean`); its linearization
+  `P_e'(δ₀) = (E' V / X_d') cos δ₀` is `SwingParams.hasDerivAt_Pe` at the classical swing
+  parameters (`theorem/PowerSystem/Synchronous/Swing.lean`).
 
 Corrections.
 * §1.1/§1.4: `v_abc = −r i − dψ/dt` together with §1.3's `ψ_d = −L_d i_d + …` mixes two sign
@@ -51,7 +58,7 @@ Corrections.
 * §1.8: with the two-axis stator equations (`r_s = 0`) `v_d = E_d' + X_q' i_q`,
   `v_q = E_q' − X_d' i_d`, the reluctance term is `(X_q' − X_d') i_d i_q`, not
   `(X_d' − X_q') i_d i_q` (`twoAxis_power`, `twoAxis_noteSign_ne`).
-* §1.9: the linearisation is `sin δ ≈ sin δ₀ + cos δ₀ Δδ` (`classical_power_linearization`), not
+* §1.9: the linearisation is `sin δ ≈ sin δ₀ + cos δ₀ Δδ` (`SwingParams.hasDerivAt_Pe`), not
   `δ − δ₀ + cos δ₀ Δδ`.
 -/
 
@@ -180,6 +187,12 @@ satisfy `v_abc = dψ_abc/dt − r i_abc` with `ψ_abc = T_Pᵀ ψ_dq0`, `i_abc =
 /-- Air-gap torque (power-invariant per-unit, per pole pair, generator convention). -/
 def torque (ψd ψq id iq : ℝ) : ℝ := ψd * iq - ψq * id
 
+/-- The space-vector torque of `theorem/Transform/SpaceVector.lean` (amplitude-invariant, `np` pole
+pairs) is `(3/2) np` times the air-gap torque of the same flux and current. -/
+@[tmio M, powerlib_domain] theorem spaceVector_torque_eq (np : ℝ) (ψ i : ℂ) :
+    Transform.SpaceVector.torque np ψ i = 3 / 2 * np * torque ψ.re ψ.im i.re i.im := by
+  rw [Transform.SpaceVector.torque, Transform.SpaceVector.cross_eq, torque]
+
 /-- Output power in dq0: `v·i = Σ ψ̇ i − r |i|² + ω T_e`. -/
 @[tmio M, powerlib_domain] theorem power_dq0 (r ω ψd ψq dψd dψq dψ0 id iq i0 : ℝ) :
     (dψd - ω * ψq - r * id) * id + (dψq + ω * ψd - r * iq) * iq + (dψ0 - r * i0) * i0 =
@@ -204,31 +217,5 @@ the machine is salient and `i_d i_q ≠ 0`. -/
   rcases mul_eq_zero.mp this with h' | h'
   · exact hs (by linarith)
   · exact hi h'
-
-/-- Classical model: internal EMF `E' e^{jδ}` behind `X_d'` connected to the infinite bus
-`V∠0`. From `S = V I*` with `I = (E' e^{jδ} − V)/(jX)`, the active power delivered to the
-bus is `E' V sin δ / X`. -/
-@[tmio T, powerlib_foundation] theorem classical_power (E V X δ : ℝ) (hX : X ≠ 0) :
-    ((V : ℂ) * (starRingEnd ℂ) (((⟨E * Real.cos δ, E * Real.sin δ⟩ : ℂ) - V) /
-      (Complex.I * X))).re = E * V / X * Real.sin δ := by
-  have hX' : (X : ℂ) ≠ 0 := by exact_mod_cast hX
-  have h : ((⟨E * Real.cos δ, E * Real.sin δ⟩ : ℂ) - V) / (Complex.I * X) =
-      ⟨E * Real.sin δ / X, -(E * Real.cos δ - V) / X⟩ := by
-    rw [div_eq_iff (mul_ne_zero Complex.I_ne_zero hX')]
-    apply Complex.ext <;> simp <;> field_simp
-    ring
-  rw [h]
-  simp
-  ring
-
-/-- Correct first-order expansion of the classical electrical power around `δ₀`:
-`P_max sin(δ₀ + h) = P_max sin δ₀ + P_max cos δ₀ · h + o(h)`. -/
-@[tmio T, powerlib_foundation] theorem classical_power_linearization (Pmax δ₀ : ℝ) :
-    (fun h => Pmax * Real.sin (δ₀ + h) - Pmax * Real.sin δ₀ - h * (Pmax * Real.cos δ₀)) =o[𝓝 0]
-      fun h => h := by
-  have hd : HasDerivAt (fun δ => Pmax * Real.sin δ) (Pmax * Real.cos δ₀) δ₀ :=
-    (Real.hasDerivAt_sin δ₀).const_mul Pmax
-  have := hasDerivAt_iff_isLittleO_nhds_zero.mp hd
-  simpa [smul_eq_mul] using this
 
 end powerlib.Synchronous.SyncMachine

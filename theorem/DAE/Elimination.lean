@@ -37,7 +37,7 @@ Results.
   `ẋ = F(x, G(x))` on `s` (Mathlib's `IsIntegralCurveOn`; any DAG of explicit assignments
   composes into one such `G`).
 * The d–q decoupling cancellation of §2.2 (`u_d = +ω̂ L̂ i_q`, `u_q = −ω̂ L̂ i_d` give zero
-  decoupling power) is `CurrentControl.decoupling_power_cancel`.
+  decoupling power) is `PH.dotProduct_mulVec_self_eq_zero_of_skew` for the skew `Transform.J`.
 -/
 
 noncomputable section

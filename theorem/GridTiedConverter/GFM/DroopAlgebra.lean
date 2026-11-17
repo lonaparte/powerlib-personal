@@ -30,8 +30,9 @@ Results.
   `Δy_k / Δy_l = K_l / K_k` (T-droop-control §1.1).
 * Governor `T_g ΔṖ_m = −ΔP_m − K_R Δω` ⇒ `ΔP_m = −K_R/(1 + T_g s) Δω` (T-droop-control §1.3).
 * Multi-unit droop: `ΔP_k = −K_{R,k} Δω`, system droop `Σ K`, steady deviation
-  `Δω = −ΔP_L/(Σ K + D_eff)`, proportional sharing `⇔ K_{R,k} ∝ S_{N,k}`, the weighted
-  consensus formula (T-droop-control §1.6–§1.8; T-gfm-control §2.3).
+  `Δω = −ΔP_L/(Σ K + D_eff)` (`steadyState_frequency`; with `D_eff = 0`,
+  `ΔP_k = P_k − P*_k` it is the weighted consensus formula `ω = ω_s − (P_L − Σ P*_k)/Σ K_k`),
+  proportional sharing `⇔ K_{R,k} ∝ S_{N,k}` (T-droop-control §1.6–§1.8; T-gfm-control §2.3).
 * Virtual-inertia energy `∫ K_d ω̇ ω = ½ K_d (ω(t)² − ω(t₀)²)` (T-gfm-control §2.4).
 * Matching control `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x`: the frequency obeys a swing
   equation with `M = C/η²`, `D = G/η²`, torque `i_dc/η` (T-gfm-control §1.6 table):
@@ -103,15 +104,6 @@ are all equal iff the gains are proportional to the ratings. -/
     refine ⟨-κ * Δω, fun k => ?_⟩
     rw [hk k, hκ k]
     field_simp [hS k]
-
-/-- Weighted consensus: `P_k = K_k (ω_s − ω) + P*_k` with `Σ P_k = P_L` gives the common
-frequency `ω = ω_s − (P_L − Σ P*_k)/Σ K_k`. -/
-@[tmio T, powerlib_foundation] theorem consensus_frequency {N : ℕ} (K P Pstar : Fin N → ℝ) {ω ωs PL : ℝ}
-    (hK : ∑ k, K k ≠ 0) (hP : ∀ k, P k = K k * (ωs - ω) + Pstar k) (hsum : ∑ k, P k = PL) :
-    ω = ωs - (PL - ∑ k, Pstar k) / ∑ k, K k := by
-  rw [Finset.sum_congr rfl (fun k _ => hP k), Finset.sum_add_distrib, ← Finset.sum_mul] at hsum
-  field_simp
-  linarith
 
 /-! ## Virtual-inertia energy -/
 

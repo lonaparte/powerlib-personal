@@ -116,10 +116,6 @@ variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 def IsUpperHessenberg {k : ℕ} {R : Type*} [Zero R] (H : Matrix (Fin k) (Fin k) R) : Prop :=
   ∀ i j : Fin k, (j : ℕ) + 1 < i → H i j = 0
 
-/-- Upper triangular: `R i j = 0` whenever `i > j`. -/
-def IsUpperTriangular {k : ℕ} {R : Type*} [Zero R] (U : Matrix (Fin k) (Fin k) R) : Prop :=
-  ∀ i j : Fin k, j < i → U i j = 0
-
 variable {k : ℕ}
 
 @[tmio T, powerlib_foundation] theorem hessenberg_mul_upper {H U : Matrix (Fin k) (Fin k) ℂ}
@@ -129,7 +125,7 @@ variable {k : ℕ}
   refine Finset.sum_eq_zero fun l _ => ?_
   by_cases hl : (l : ℕ) + 1 < i
   · rw [hH i l hl, zero_mul]
-  · rw [hU l j (by rw [Fin.lt_def]; omega), mul_zero]
+  · rw [hU (show j < l by rw [Fin.lt_def]; omega), mul_zero]
 
 @[tmio T, powerlib_foundation] theorem upper_mul_hessenberg {H U : Matrix (Fin k) (Fin k) ℂ}
     (hH : IsUpperHessenberg H) (hU : IsUpperTriangular U) : IsUpperHessenberg (U * H) := by
@@ -137,7 +133,7 @@ variable {k : ℕ}
   rw [mul_apply]
   refine Finset.sum_eq_zero fun l _ => ?_
   by_cases hl : l < i
-  · rw [hU i l hl, zero_mul]
+  · rw [hU hl, zero_mul]
   · rw [hH l j (by rw [Fin.lt_def] at hl; omega), mul_zero]
 
 @[tmio T, powerlib_foundation] theorem hessenberg_add_smul_one {H : Matrix (Fin k) (Fin k) ℂ}
@@ -148,9 +144,8 @@ variable {k : ℕ}
 
 @[tmio T, powerlib_foundation] theorem upperTriangular_inv {U : Matrix (Fin k) (Fin k) ℂ}
     (hU : IsUpperTriangular U) (hdet : IsUnit U.det) : IsUpperTriangular U⁻¹ := by
-  have hb : U.BlockTriangular id := fun i j h => hU i j h
   have := invertibleOfIsUnitDet U hdet
-  exact fun i j h => blockTriangular_inv_of_blockTriangular hb h
+  exact blockTriangular_inv_of_blockTriangular hU
 
 /-- **QR step is a unitary similarity**: `H − μI = QR`, `QᴴQ = I` ⇒ `RQ + μI = Qᴴ H Q`. -/
 @[tmio T, powerlib_foundation] theorem qrStep_similar {H Q R : Matrix (Fin k) (Fin k) ℂ} {μ : ℂ}

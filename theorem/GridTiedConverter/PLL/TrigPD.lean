@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.PLL.PIPLLFamily
+import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.SpecialFunctions.TrigZeros
 
 /-! # PI-PLL with a second-order trigonometric phase detector (multi-equilibrium geometry)
@@ -28,8 +29,11 @@ Results.
 * `K_p, K_i > 0`: `h'(θ*) < 0` ⇒ locally exponentially stable, `h'(θ*) > 0` ⇒ unstable (saddle).
 * Alternation: for two consecutive simple zeros `θ₁ < θ₂` of `h` (no zero in between) exactly one
   of the two equilibria is stable and the other a saddle.
-* `h(θ*) = h'(θ*) = 0` (the saddle-node set `Σ_SN` of §1.13.5): the Jacobian is a nonzero nilpotent
-  matrix (non-hyperbolic).
+* `h(θ*) = h'(θ*) = 0` (the saddle-node set `Σ_SN` of §1.13.5): the Jacobian is
+  `piPLLJacobian K_p K_i 0` (`fderiv_piPLLField` with `SpecialFunctions.hasDerivAt_trigPoly2`), a
+  nonzero nilpotent matrix (non-hyperbolic; `piPLLJacobian_zero_sq`, `piPLLJacobian_zero_ne_zero`).
+* `formBH_eq_trigPD`: the form-B characteristic `formBH` of T-gfl-ph (1.3)
+  (`theorem/GridTiedConverter/PLL/PIPLLPH.lean`) is `trigPD c₁ c₂ c₃ c₄ c₀` scaled by `1/(ω_g C_f)`.
 
 Family and connection conclusions.
 No new family: the trigonometric-detector PLL read about a
@@ -37,8 +41,8 @@ selected phase `θ*` is the member `trigModel a b c d e K_p K_i δω θ*` of the
 `PLL.PIPLL.family` (field translated so that `(θ*, δω / K_i)` is the origin). Local exponential
 stability, instability and the stable/saddle alternation are connection statements on that
 family's semantics connection (`trigPLL_mem_den_locallyExponentiallyStable`,
-`trigPLL_mem_den_unstable`, `trigPLL_stable_saddle_alternate`). The equilibrium set, its count and
-the nilpotent Jacobian on `Σ_SN` are static evidence on the model, not connection conclusions.
+`trigPLL_mem_den_unstable`, `trigPLL_stable_saddle_alternate`). The equilibrium set and its count
+are static evidence on the model, not connection conclusions.
 -/
 
 noncomputable section
@@ -64,6 +68,14 @@ def trigPDDeriv (a b c d : ℝ) : ℝ → ℝ := trigPoly2Deriv b a d c
     trigPDDeriv a b c d θ = a * Real.cos θ - b * Real.sin θ + 2 * c * Real.cos (2 * θ) -
       2 * d * Real.sin (2 * θ) := by
   simp only [trigPDDeriv, trigPoly2Deriv]
+  ring
+
+/-- The form-B characteristic (T-gfl-ph (1.3)) is a scaled trigonometric detector:
+`formBH = (1/(ω_g C_f)) · trigPD c₁ c₂ c₃ c₄ c₀`. -/
+@[tmio M, powerlib_domain] theorem formBH_eq_trigPD (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
+    formBH ωg Cf c₀ c₁ c₂ c₃ c₄ = fun θ => 1 / (ωg * Cf) * trigPD c₁ c₂ c₃ c₄ c₀ θ := by
+  funext θ
+  rw [trigPD_apply, formBH]
   ring
 
 /-- Equilibria with `θ_e ∈ [α, α + 2π)` are the points `(θ*, δω/K_i)`, `h(θ*) = 0`.
@@ -176,18 +188,5 @@ exponentially stable and the other is unstable. -/
       nlinarith [mul_nonneg h1.le h]
     exact ⟨trigPLL_mem_den_unstable hKi hz1 h1,
       trigPLL_mem_den_locallyExponentiallyStable hKp hKi hz2 h2⟩
-
-/-- Wherever `h'(θ*) = 0`, in particular on the saddle-node set `Σ_SN` (`h(θ*) = h'(θ*) = 0`),
-the Jacobian at `(θ*, δω/K_i)` is `[[0, K_i], [0, 0]]`, the nilpotent matrix of
-`piPLLJacobian_zero_sq`, nonzero for `K_i ≠ 0` (`piPLLJacobian_zero_ne_zero`): not hyperbolic.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem trigPLL_saddleNode_nilpotent {a b c d e Kp Ki δω θ : ℝ}
-    (hd : trigPDDeriv a b c d θ = 0) :
-    fderiv ℝ (piPLLField (trigPD a b c d e) Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
-      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) := by
-  have hder : HasDerivAt (trigPD a b c d e) (trigPDDeriv a b c d θ) θ :=
-    SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ
-  rw [hd] at hder
-  exact fderiv_piPLLField hder
 
 end powerlib.PLL

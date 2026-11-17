@@ -1,4 +1,5 @@
 import theorem.PhasePlane.Planar
+import theorem.NormalForm.Hopf
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.ConverseLinearization
@@ -36,7 +37,13 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
   the real coordinates `(v_α, v_β) : Dynamics.State 2` (`AHO.realField`, identified with the
-  complex field by `realField_eq`); the equilibrium of the sentences is the origin `v = 0`.
+  complex field by `realField_eq`); the equilibrium of the sentences is the origin `v = 0`. The
+  real field is, by definition, the Hopf normal form `NormalForm.Hopf.field` of the parameters
+  `AHO.toHopf = (μ, ω₀, l₁, κ) = (c, ω_s, −κ_v, 0)` (`theorem/NormalForm/Hopf.lean`): its
+  smoothness, its equilibrium at the origin, its Jacobian there and the local exponential stability
+  (`c < 0`) and instability (`c > 0`) of the origin are the normal form's
+  (`NormalForm.Hopf.field_contDiff`, `field_zero`, `fderiv_field_zero`, `origin_stable`,
+  `origin_unstable`).
   Static requirements: growth `c = κ_v v*² − σ > 0`, decay `c < 0`, stiffness `κ_v ≥ 0`, and a
   decay-rate bound `r ≤ −c`.  Instability translates into growth (Jacobian `[[c, −ω_s], [ω_s, c]]`
   at the origin, trace `2c`); the local sentences into decay (linearization); the global
@@ -462,60 +469,33 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ## The no-load AHO family: the origin in real coordinates -/
 
-/-- The no-load AHO field in the real coordinates `(v_α, v_β)`. -/
-def realField (x : State 2) : State 2 :=
-  PhasePlane.mk ((a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 0 - a.ωs * x 1)
-    (a.ωs * x 0 + (a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 1)
+/-- The AHO as a parameterization of the Hopf normal form (`theorem/NormalForm/Hopf.lean`):
+`μ = c`, `ω₀ = ω_s`, cubic coefficient `l₁ + iκ = −κ_v`. -/
+def toHopf : NormalForm.Hopf.Params := ⟨a.c, a.ωs, -a.κv, 0⟩
+
+/-- The no-load AHO field in the real coordinates `(v_α, v_β)`: the Hopf normal form of `toHopf`,
+`(c − κ_v (v_α² + v_β²)) (v_α, v_β) + ω_s (−v_β, v_α)`. Its smoothness, equilibrium at the origin
+and linearization there are those of the normal form (`NormalForm.Hopf.field_contDiff`,
+`field_zero`, `fderiv_field_zero`: Jacobian `linPart = [[c, −ω_s], [ω_s, c]]`). -/
+def realField (x : State 2) : State 2 := NormalForm.Hopf.field a.toHopf x
+
+@[tmio M, powerlib_domain] private theorem realField_apply (x : State 2) :
+    a.realField x = PhasePlane.mk ((a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 0 - a.ωs * x 1)
+      (a.ωs * x 0 + (a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 1) := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
+    simp only [realField, NormalForm.Hopf.field_apply_zero, NormalForm.Hopf.field_apply_one,
+      PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, toHopf] <;> ring
 
 /-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
 `v = v_α + j v_β`. -/
 @[tmio M, powerlib_domain] theorem realField_eq (x : State 2) :
     a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
+  rw [realField_apply]
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp only [realField, PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
+  · simp only [PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
     ring
-  · simp only [realField, PhasePlane.mk_apply_one, aho_im, normSq_mk, c]
+  · simp only [PhasePlane.mk_apply_one, aho_im, normSq_mk, c]
     ring
-
-/-- The Jacobian of the real field at `x`. -/
-def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![a.c - a.κv * (3 * x 0 ^ 2 + x 1 ^ 2), -a.ωs - 2 * a.κv * x 0 * x 1;
-     a.ωs - 2 * a.κv * x 0 * x 1, a.c - a.κv * (x 0 ^ 2 + 3 * x 1 ^ 2)]
-
-@[tmio M, powerlib_domain] theorem contDiff_realField : ContDiff ℝ 1 a.realField := by
-  rw [contDiff_euclidean]
-  intro i
-  fin_cases i <;> simp [realField] <;> fun_prop
-
-@[tmio M, powerlib_domain] theorem hasFDerivAt_realField (x : State 2) :
-    HasFDerivAt a.realField (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (a.realJacobian x)) x := by
-  rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
-  intro i
-  rw [hasFDerivWithinAt_univ]
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have hg := (hasFDerivAt_const a.c x).sub (((h0.pow 2).add (h1.pow 2)).const_mul a.κv)
-  fin_cases i
-  · have h := (hg.mul h0).sub (h1.const_mul a.ωs)
-    convert h using 1
-    · funext y; simp [realField]
-    · apply ContinuousLinearMap.ext; intro v
-      simp [realJacobian, PhasePlane.toEuclideanCLM_apply_zero]
-      ring
-  · have h := (h0.const_mul a.ωs).add (hg.mul h1)
-    convert h using 1
-    · funext y; simp [realField]
-    · apply ContinuousLinearMap.ext; intro v
-      simp [realJacobian, PhasePlane.toEuclideanCLM_apply_one]
-      ring
-
-@[tmio M, simp, powerlib_domain] theorem realField_zero : a.realField 0 = 0 := by
-  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [realField]
-
-@[tmio M, powerlib_domain] theorem realJacobian_zero :
-    a.realJacobian 0 = !![a.c, -a.ωs; a.ωs, a.c] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [realJacobian]
 
 /-- The translation of the sentences about the origin: instability into growth; the local
 sentences into decay; the global sentences and sampled contraction into decay and stiffness; a
@@ -565,7 +545,7 @@ private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
     fderiv ℝ energy x (a.realField x) ≤ -(-2 * a.c) * energy x := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
-    smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
+    smul_eq_mul, realField_apply, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   nlinarith [mul_nonneg hκ (sq_nonneg (x 0 ^ 2 + x 1 ^ 2))]
 
 private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
@@ -577,7 +557,7 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
   upper_pos := one_pos
   rate_pos := by linarith
   smooth := by unfold energy; fun_prop
-  equilibrium := a.realField_zero
+  equilibrium := NormalForm.Hopf.field_zero a.toHopf
   lower_bound x := by rw [energy_eq, one_mul]
   upper_bound x := by rw [energy_eq, one_mul]
   dissipation := dissipation hκ
@@ -590,7 +570,8 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Flow.GloballyExponentiallyStable a.realField 0
-  exact (quadraticDecay hc hκ).globallyExponentiallyStable a.contDiff_realField
+  exact (quadraticDecay hc hκ).globallyExponentiallyStable
+    (NormalForm.Hopf.field_contDiff a.toHopf)
 
 /-- Decay at the origin (`κ_v v*² < σ`) makes the origin locally exponentially stable, for every
 sign of `κ_v`. -/
@@ -598,21 +579,14 @@ sign of `κ_v`. -/
     connection% (a ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change LocallyExponentiallyStable a.realField 0
-  exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two _ a.contDiff_realField
-    a.realField_zero (a.hasFDerivAt_realField 0).fderiv
-    (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
-    (by rw [realJacobian_zero, Matrix.det_fin_two_of]; nlinarith [sq_nonneg a.ωs, sq_pos_of_neg hc])
+  exact NormalForm.Hopf.origin_stable a.toHopf hc
 
 /-- Growth at the origin (`σ < κ_v v*²`) makes the origin unstable. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable (a : AHO) (hc : 0 < a.c) :
     connection% (a ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  change Unstable a.realField 0
-  exact Criteria.unstable_of_jacobian_trace_pos _ a.contDiff_realField a.realField_zero
-    (a.hasFDerivAt_realField 0).fderiv
-    (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
+  exact NormalForm.Hopf.origin_unstable a.toHopf hc
 
 /-- With `κ_v ≥ 0` every solution segment decays at every rate `r ≤ −c` (a growth bound when
 `c > 0`). -/
@@ -681,10 +655,12 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
   ext a
   rw [(connection_proof% TMIO.mem_realize), (connection_proof% family_isAutonomous.mem_den_flow)]
   change _ ↔ LocallyExponentiallyStable _ _
-  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_of_eq _ a.contDiff_realField
-    a.realField_zero (a.hasFDerivAt_realField 0).fderiv, realJacobian_zero,
-    Criteria.isHurwitz_fin_two_of_iff]
-  simp only [family, translate, Set.mem_singleton_iff, forall_eq, Meets]
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_of_eq _
+    (show ContDiff ℝ 1 a.realField from NormalForm.Hopf.field_contDiff a.toHopf)
+    (show a.realField 0 = 0 from NormalForm.Hopf.field_zero a.toHopf)
+    (show fderiv ℝ a.realField 0 = _ from NormalForm.Hopf.fderiv_field_zero a.toHopf),
+    NormalForm.Hopf.linPart, Criteria.isHurwitz_fin_two_of_iff]
+  simp only [family, translate, Set.mem_singleton_iff, forall_eq, Meets, toHopf]
   constructor
   · intro hc
     exact ⟨by linarith, by nlinarith [sq_nonneg a.ωs, sq_pos_of_neg hc]⟩
@@ -697,7 +673,7 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
     fderiv ℝ energy x (a.realField x) = 2 * a.c * energy x - 2 * a.κv * energy x ^ 2 := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
-    smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
+    smul_eq_mul, realField_apply, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   ring
 
 @[tmio M, powerlib_domain] private theorem energy_pos {x : State 2}
@@ -722,7 +698,7 @@ def critical : AHO := ⟨0, 1, 1, 1⟩
   hV_c1 := by unfold energy; fun_prop
   hzero := by simp [energy]
   hpos x hx := energy_pos hx
-  hequil := a.realField_zero
+  hequil := NormalForm.Hopf.field_zero a.toHopf
   hLie_neg x hx := by
     rw [energy_lie, hc]
     have h := energy_pos hx
@@ -744,7 +720,8 @@ def critical : AHO := ⟨0, 1, 1, 1⟩
     connection% (critical ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr
-    (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos critical.contDiff_realField
+    (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos
+      (NormalForm.Hopf.field_contDiff critical.toHopf)
       (strictLyapunov_of_critical critical_c (show (0 : ℝ) < critical.κv from one_pos)))
 
 @[tmio M, powerlib_domain] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
@@ -823,7 +800,8 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
       by_contra hκ
       push Not at hκ
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun x => -energy x)
-        (ρ := 1) a.contDiff_realField energy_differentiable.neg one_pos (fun x _ => ?_)
+        (ρ := 1) (show ContDiff ℝ 1 a.realField from NormalForm.Hopf.field_contDiff a.toHopf)
+        energy_differentiable.neg one_pos (fun x _ => ?_)
         (fun ε hε => ⟨PhasePlane.mk (ε / 2) 0, (seed ε hε).1, ?_⟩) h
       · rw [fderiv_fun_neg, _root_.neg_apply, energy_lie, hc]
         nlinarith [mul_nonneg (neg_nonneg.mpr hκ) (sq_nonneg (energy x))]
@@ -833,7 +811,8 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
   · rintro (hc | ⟨hc, hκ⟩)
     · exact Flow.locallyExponentiallyStable_localAsymptoticStable
         (family_isAutonomous.mem_den_flow.mp (mem_den_locallyExponentiallyStable a hc))
-    · exact (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos a.contDiff_realField
+    · exact (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos
+        (NormalForm.Hopf.field_contDiff a.toHopf)
         (strictLyapunov_of_critical hc hκ)).localAsymptoticStable
 
 /-- The origin is Lyapunov stable exactly when it decays (`c < 0`) or `c = 0` with `κ_v ≥ 0`
@@ -852,7 +831,8 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
     · refine Or.inr ⟨hc, ?_⟩
       by_contra hκ
       push Not at hκ
-      refine Dynamics.unstable_of_chetaev (W := energy) (r := 1) a.contDiff_realField
+      refine Dynamics.unstable_of_chetaev (W := energy) (r := 1)
+        (show ContDiff ℝ 1 a.realField from NormalForm.Hopf.field_contDiff a.toHopf)
         (by unfold energy; fun_prop) one_pos (fun ε hε => ⟨PhasePlane.mk (ε / 2) 0, ?_⟩)
         (fun x _ hx => ?_) h
       · exact seed ε hε

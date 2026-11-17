@@ -59,9 +59,10 @@ Family and connection conclusions.
   `dqLCPH p : Port.PortHamiltonian 4 4`, members of the existing family
   `Port.PortHamiltonian.family` (system map: the plant's port system; sentences at the origin,
   the unforced state).
-* Connection conclusions: passivity of both (`dcLinkPH_mem_den_passive`,
-  `dqLCPH_mem_den_passive`), Lyapunov stability of the unforced filter
-  (`dqLCPH_mem_den_lyapunovStable`), and conservation of the stored energy by both lossless
+* Connection conclusions: passivity of both (storages `½ C_dc V_dc²`, `dcLink_energy`, and `H`)
+  and Lyapunov stability of the unforced filter are the generic laws of every port-Hamiltonian
+  plant (`Port.PortHamiltonian.mem_den_passive`, `Port.PortHamiltonian.mem_den_lyapunovStable`);
+  conservation of the stored energy by both lossless
   models (`dcLinkPH_mem_den_conservative` for `G_dc = 0`, `dqLCPH_mem_den_conservative`).
 * The rate equations, energies, supplies and power balances are static evidence; the
   trajectory-level energy balance of the DC link (`dcLink_energy_balance`) and the energy
@@ -146,7 +147,8 @@ power as derivative. -/
     (hx : h.plant.system.IsTrajectoryOn u x t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
     HasDerivWithinAt (fun τ => h.kyp.storage (x τ)) (h.plant.system.supply (x t) (u t))
       (Icc t₀ t₁) t := by
-  have hd := ((storage_contDiff h).differentiable (by norm_num) (x t)).hasFDerivAt
+  have hd := ((Linear.contDiff_quadraticEnergy h.kyp.P).differentiable (by norm_num)
+    (x t)).hasFDerivAt
     |>.comp_hasDerivWithinAt t (hx t ht)
   rw [Function.comp_def, fderiv_storage_field, hR] at hd
   simpa using hd
@@ -174,11 +176,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (fun τ hτ => (hderiv τ hτ).continuousWithinAt)
     (fun τ hτ => ((hderiv τ (Ioo_subset_Icc_self hτ)).hasDerivAt
       (Icc_mem_nhds hτ.1 hτ.2)).hasDerivWithinAt) hint]
-
-/-- Passivity of the DC link; the storage is `½ C_dc V_dc²` (`toPH_storage`, `dcLink_energy`). -/
-@[tmio TM, powerlib_domain] theorem dcLinkPH_mem_den_passive :
-    connection% (dcLinkPH cap hC hG ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
 
 /-- Without leakage, with both currents at zero the capacitor keeps its energy. -/
 @[tmio TM, powerlib_domain] theorem dcLinkPH_mem_den_conservative (hG0 : cap.G = 0) :
@@ -291,16 +288,6 @@ Implementation evidence: trajectory-level result outside the sentence language (
     simp [DiagonalPH.dampingPower, dqLC]
   rw [DiagonalPH.power_balance, hd, sub_zero] at hb
   exact h.congr_deriv (by rw [← hb]; rfl)
-
-/-- Passivity of the dq LC filter; the storage is `H` (`toPH_storage`). -/
-@[tmio TM, powerlib_domain] theorem dqLCPH_mem_den_passive (p : DqLCParams) :
-    connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- Lyapunov stability of the unforced lossless filter at the origin. -/
-@[tmio TM, powerlib_domain] theorem dqLCPH_mem_den_lyapunovStable (p : DqLCParams) :
-    connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
 
 /-- The unforced lossless filter conserves its stored energy. -/
 @[tmio TM, powerlib_domain] theorem dqLCPH_mem_den_conservative (p : DqLCParams) :

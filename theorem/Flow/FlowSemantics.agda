@@ -42,9 +42,10 @@ Flow : Sentence → Type
 Flow passive = ⊥
 Flow _ = Unit
 
--- The local translation table (Lean `Spectral.localTable`): Lyapunov stability to `Rl`, local
--- asymptotic and local exponential stability to `Rs`, instability to `Ru`, passivity to `Rp`, the
--- global sentences to the whole language.
+-- The local translation table (Lean `Spectral.localTable`, the instance of the one table
+-- `Spectral.table` that sends the global sentences and the envelope sentences to the whole
+-- language): Lyapunov stability to `Rl`, local asymptotic and local exponential stability to `Rs`,
+-- instability to `Ru`, passivity to `Rp`, the global sentences to the whole language.
 localTable : {Q : Type} → (Q → Type) → (Q → Type) → (Q → Type) → (Q → Type) → Sentence → Q → Type
 localTable Rl Rs Ru Rp lyapunovStable = Rl
 localTable Rl Rs Ru Rp locallyAsymptoticallyStable = Rs

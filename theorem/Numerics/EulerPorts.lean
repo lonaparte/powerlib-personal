@@ -34,7 +34,7 @@ Scope.
   continuous-time port systems (`Family.IsPort F sys`: every complete system is `sys x`), read
   about the origin; linear families (`Family.IsLinear`, `theorem/Linear/Family.lean`) and
   port-Hamiltonian families (`Family.IsNonlinearPH`, `theorem/PH/Nonlinear.lean`) are families of
-  port systems (`IsLinear.isPort`, `IsNonlinearPH.isPort`). Smoothness: the zero-input field
+  port systems (`Family.IsPort`, `theorem/Family/Basic.lean`). Smoothness: the zero-input field
   `(sys x).zeroInput` of class `C¹` near the origin for the model a flow law speaks about.
 * Implementation layer (I): an arbitrary type `Y` of implementations with a design model
   `design y` and a step `step y`; the system is `eulerSystem (sys (design y)) (step y)` (discrete
@@ -76,7 +76,7 @@ Results.
   Hurwitz `A`).
 
 Family and connection conclusions.
-* `Family.IsPort`; the zero-input family `zeroInputFamily F sys : Family X Q n 0`
+* The zero-input family `zeroInputFamily F sys : Family X Q n 0`
   (`zeroInputFamily_isAutonomous`, `den_flow_zeroInputFamily`: same flow denotations); the
   template `eulerPortFamily F sys design step : Family Y Q n p` (requirements and translation of
   the design model) and the realization `eulerPorts F sys design step`
@@ -118,31 +118,6 @@ open Matrix LinearSystems TMIO
 variable {n p : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-! ## Families of port systems -/
-
-namespace Family
-
-variable {X Q : Type*}
-
-/-- Every complete system of the family is the continuous-time port system `sys x`. -/
-def IsPort (F : Family X Q n p) (sys : X → Port.System n p) : Prop :=
-  ∀ x, F.system x = .continuous (sys x)
-
-/-- A linear family is a family of port systems: the port systems of its plants. -/
-@[tmio M, powerlib_foundation] theorem IsLinear.isPort {F : Family X Q n p}
-    {plant : X → Linear.Plant n p} (hF : F.IsLinear plant) :
-    F.IsPort fun x => (plant x).system :=
-  hF
-
-/-- A port-Hamiltonian family is a family of port systems: the port systems of its pH
-systems. -/
-@[tmio M, powerlib_foundation] theorem IsNonlinearPH.isPort {F : Family X Q n p}
-    {model : X → PH.NonlinearModel n p} (hF : F.IsNonlinearPH model) :
-    F.IsPort fun x => (model x).system :=
-  hF
-
-end Family
 
 /-! ## Passivity of discrete-time systems -/
 
@@ -210,7 +185,8 @@ power. -/
     integrator.system.PassiveWith fun x => x 0 ^ 2 / 2 := by
   have h : integratorKYP.storage = fun x => x 0 ^ 2 / 2 := by
     funext x
-    simp [Linear.KYP.storage, integratorKYP, dotProduct, sq]
+    simp [Linear.KYP.storage, Linear.quadraticEnergy, integratorKYP, dotProduct, sq]
+    ring
   rw [← h]
   exact integratorKYP.passiveWith
 
@@ -426,8 +402,8 @@ refutes realization soundness of passivity (`not_passive_eulerSystem_integrator`
 /-- The Euler map of the linear field of `A` is the linear map of the forward Euler matrix
 `I + h A`. -/
 @[tmio T, powerlib_foundation] theorem eulerMap_linear (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ) :
-    eulerMap (affineLinearVectorField A 0) h = Map.op (forwardEulerMatrix h A) := by
-  rw [Map.op, forwardEulerMatrix, map_add, map_smul, map_one]
+    eulerMap (affineLinearVectorField A 0) h = Linear.op (forwardEulerMatrix h A) := by
+  rw [Linear.op, forwardEulerMatrix, map_add, map_smul, map_one]
   funext z
   simp [eulerMap, Linear.affine_apply]
 
@@ -530,7 +506,8 @@ step threshold every multiplier `1 + hλ` lies outside the closed unit disk
     change y ∈ (eulerPortFamily F (fun x => (plant x).system) design step).den (.flow P) at hy'
     rw [eulerPortFamily_den_linear hP] at hy'
     have hu := Map.unstable_of_inverse_schurStable
-      (Map.op (forwardEulerMatrix (step y) (plant (design y)).A)).hasFDerivAt (map_zero _) hB hS hn
+      (Linear.op (forwardEulerMatrix (step y) (plant (design y)).A)).hasFDerivAt (map_zero _) hB hS
+      hn
     exact hu (Map.globallyExponentiallyStable_of_schurStable
       hy').locallyExponentiallyStable.lyapunovStable
 

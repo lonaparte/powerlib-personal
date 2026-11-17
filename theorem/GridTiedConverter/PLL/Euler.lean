@@ -29,7 +29,8 @@ Model boundary.
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
 `not_eulerStep_realizationSoundUnder`),
 `theorem/GridTiedConverter/PLL/PIPLL.lean` (`contDiff_piPLLField`),
-`theorem/GridTiedConverter/PLL/PIPLLFamily.lean` (`srf_mem_den_locallyExponentiallyStable`),
+`theorem/GridTiedConverter/PLL/PIPLLFamily.lean` (`srf_mem_den_locallyExponentiallyStable_inPhase`
+at `k = 0`),
 `theorem/GridTiedConverter/PLL/Multiscale.lean` (`chain_le_semantics`),
 `theorem/Linear/Stability.lean` (`Linear.affine_contDiff`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7.
@@ -87,8 +88,10 @@ multiplier `1 + hλ` leaves the unit disk
 @[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := srf_mem_den_locallyExponentiallyStable one_pos one_pos one_pos 0
+  have hm := srf_mem_den_locallyExponentiallyStable_inPhase (V := 1) (Kp := 1) (Ki := 1)
+    (by norm_num) (by norm_num) 0 0
   unfold powerlib.TMIO.Statement at hm
+  rw [Int.cast_zero, mul_zero, zero_mul] at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     contDiff_modelField (by norm_num) hm
 

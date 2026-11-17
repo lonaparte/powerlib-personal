@@ -65,8 +65,10 @@ open powerlib.Transform (park rot)
 
 /-! ## Balanced grid voltage and the SRF phase detector -/
 
-/-- Positive-sequence component `A (cos α, sin α)` (counter-clockwise rotation). -/
-def posSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, A * Real.sin α]
+/-- Positive-sequence component `A (cos α, sin α)` (counter-clockwise rotation): the αβ (Clarke)
+image of the balanced three-phase signal `Transform.balanced A 0 α`
+(`Transform.clarke_mulVec_balanced`). -/
+def posSeq (A α : ℝ) : Fin 2 → ℝ := Transform.clarke *ᵥ Transform.balanced A 0 α
 
 /-- Grid voltage space vector `V (cos θ_g, sin θ_g)` in the stationary αβ frame: the Clarke
 image of the balanced phase voltages (`Transform.clarke_mulVec_balanced` at `φ = 0`), the
@@ -78,7 +80,8 @@ abbrev gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := posSeq V θg
 (`gridAlphaBeta`) this is `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/
 @[tmio M, powerlib_domain] theorem park_posSeq (A α θh : ℝ) :
     park θh *ᵥ posSeq A α = ![A * Real.cos (α - θh), A * Real.sin (α - θh)] := by
-  ext i; fin_cases i <;> simp [posSeq, Real.cos_sub, Real.sin_sub] <;> ring
+  ext i; fin_cases i <;>
+    simp [posSeq, Transform.clarke_mulVec_balanced, Real.cos_sub, Real.sin_sub] <;> ring
 
 /-- The SRF-PLL phase detector: the q-axis grid voltage in the PLL frame. -/
 def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg) 1
@@ -106,12 +109,14 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
 
 /-! ## Unbalanced and harmonic voltages in the PLL frame (T-pll-dynamics §1.6) -/
 
-/-- Negative-sequence component `A (cos α, −sin α)` (clockwise rotation). -/
-def negSeq (A α : ℝ) : Fin 2 → ℝ := ![A * Real.cos α, -(A * Real.sin α)]
+/-- Negative-sequence component `A (cos α, −sin α)` (clockwise rotation): the αβ (Clarke) image of
+the negative-sequence three-phase signal `Transform.negSeq A 0 α`
+(`Transform.clarke_mulVec_negSeq`). -/
+def negSeq (A α : ℝ) : Fin 2 → ℝ := Transform.clarke *ᵥ Transform.negSeq A 0 α
 
 @[tmio M, powerlib_domain] theorem park_negSeq_q (A α θh : ℝ) :
     (park θh *ᵥ negSeq A α) 1 = -(A * Real.sin (α + θh)) := by
-  simp [negSeq, Real.sin_add]; ring
+  simp [negSeq, Transform.clarke_mulVec_negSeq, Real.sin_add]; ring
 
 /-- q-axis PLL-frame voltage of `V⁺` positive sequence at `θ_g` plus `V⁻` negative sequence
 at `θ_g + φ⁻`: `V_q = −V⁺ sin θ̃ − V⁻ sin(θ_g + θ̂ + φ⁻)` (corrected §1.6). -/

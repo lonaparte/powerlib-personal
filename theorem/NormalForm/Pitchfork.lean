@@ -1,6 +1,7 @@
 import theorem.NormalForm.Fold
 import theorem.NormalForm.Logistic
 import theorem.Flow.Certificate
+import theorem.Dynamics.CriticalLinearization
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-! # Transcritical and pitchfork normal forms
@@ -31,10 +32,11 @@ Results.
   `super_slope_neg_sqrt`); `0` is locally exponentially stable for
   `μ < 0` and unstable for `μ > 0` (`super_origin_stable`, `super_origin_unstable`), where `±√μ`
   are locally exponentially stable (`super_branch_stable`).
-* At `μ = 0`: the origin of `ẋ = −x³` is globally asymptotically stable (`V = x²`,
-  `V̇ = −2x⁴`; `super_zero_globallyAsymptoticallyStable`) but **not** locally exponentially stable
-  (the solution `x₀ / √(1 + 2 x₀² t)` decays only algebraically;
-  `super_zero_not_locallyExponentiallyStable`).
+* At `μ = 0` the field is the critical cubic `ẋ = −x³` (`superSystem_zero_eq_cubicField`,
+  `Dynamics.cubicField (−1)` of `theorem/Dynamics/CriticalLinearization.lean`): the origin is
+  globally asymptotically stable (`super_zero_globallyAsymptoticallyStable`, strict Lyapunov
+  function `x²`) but **not** locally exponentially stable, its Jacobian being zero
+  (`super_zero_not_locallyExponentiallyStable`).
 * Subcritical pitchfork: equilibria `0` and `±√(−μ)` (`μ < 0`, `subField_eq_zero_iff`), the side
   branches are unstable (`f_x = −2μ > 0`, `sub_branch_unstable`); the origin is locally
   exponentially stable for `μ < 0` and unstable for `μ > 0` (`sub_origin_stable`,
@@ -179,113 +181,32 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 
 /-! ### The degenerate point `μ = 0`: asymptotic but not exponential stability -/
 
-@[tmio M, powerlib_foundation] theorem inner_superSystem (x : State 1) :
-    inner ℝ x (superSystem 0 x) = -(x 0) ^ 4 := by
-  simp [superSystem, PiLp.inner_apply, superField]
+/-- At `μ = 0` the supercritical pitchfork is the critical cubic field `ẋ = −x³`
+(`Dynamics.cubicField (−1)` on `ℝ¹`). -/
+@[tmio M, powerlib_foundation] theorem superSystem_zero_eq_cubicField :
+    superSystem 0 = Dynamics.cubicField (-1) := by
+  funext x
+  ext i
+  fin_cases i
+  simp [superSystem, superField, Dynamics.cubicField, norm_state1]
   ring
 
-/-- `V(x) = ‖x‖² = x²` is a radially unbounded strict Lyapunov function with `V̇ = −2x⁴`. -/
-@[tmio M, powerlib_foundation] theorem super_zero_lie (x : State 1) :
-    fderiv ℝ (fun y : State 1 => ‖y‖ ^ 2) x (superSystem 0 x) = -2 * (x 0) ^ 4 := by
-  rw [(hasStrictFDerivAt_norm_sq x).hasFDerivAt.fderiv]
-  simp only [smul_apply, innerSL_apply_apply, inner_superSystem]
-  simp only [nsmul_eq_mul, Nat.cast_ofNat]
-  ring
-
-@[tmio TM, powerlib_foundation] theorem super_zero_lyapunov :
-    _root_.IsAsymptoticLyapunovFunction (superSystem 0) (fun y : State 1 => ‖y‖ ^ 2) 0 where
-  hcont := (continuous_norm.pow 2)
-  hV_c1 := contDiff_norm_sq ℝ
-  hzero := by simp only [norm_zero]; norm_num
-  hpos := by
-    intro x hx
-    have : 0 < ‖x‖ := norm_pos_iff.mpr hx
-    positivity
-  hequil := by
-    have := (lift_eq_zero_iff (superField 0) 0).mpr (by norm_num [superField])
-    rwa [embed_zero] at this
-  hLie_neg := by
-    intro x hx
-    rw [super_zero_lie]
-    have h0 : x 0 ≠ 0 := by
-      intro h; apply hx; rw [← embed_coord x, h, embed_zero]
-    have : 0 < (x 0) ^ 4 := by positivity
-    linarith
-  hradial := by
-    have : Tendsto (fun r : ℝ => r ^ 2) atTop atTop := tendsto_pow_atTop two_ne_zero
-    exact this.comp tendsto_comap
-
-/-- At `μ = 0` the origin of `ẋ = −x³` is globally asymptotically stable. -/
+/-- At `μ = 0` the origin of `ẋ = −x³` is globally asymptotically stable
+(`Dynamics.cubic_neg_globallyAsymptoticallyStable`). -/
 @[tmio TM, powerlib_foundation] theorem super_zero_globallyAsymptoticallyStable :
-    Flow.GloballyAsymptoticallyStable (superSystem 0) 0 :=
-  Flow.globallyAsymptoticallyStable_of_strictLyapunov (by norm_num)
-    (lift_contDiff (superField_contDiff 0)) (asymptotic_implies_strict super_zero_lyapunov)
+    Flow.GloballyAsymptoticallyStable (superSystem 0) 0 := by
+  rw [superSystem_zero_eq_cubicField]
+  exact Dynamics.cubic_neg_globallyAsymptoticallyStable one_pos
 
-@[tmio M, powerlib_foundation] theorem super_zero_solution_hasDerivAt (x₀ t : ℝ) (ht : 0 ≤ t) :
-    HasDerivAt (fun s => x₀ / √(1 + 2 * x₀ ^ 2 * s))
-      (superField 0 (x₀ / √(1 + 2 * x₀ ^ 2 * t))) t := by
-  have hu : 0 < 1 + 2 * x₀ ^ 2 * t := by positivity
-  have hd : HasDerivAt (fun s => 1 + 2 * x₀ ^ 2 * s) (2 * x₀ ^ 2) t := by
-    simpa using ((hasDerivAt_id t).const_mul (2 * x₀ ^ 2)).const_add 1
-  have hs := hd.sqrt hu.ne'
-  have hsq : √(1 + 2 * x₀ ^ 2 * t) ≠ 0 := (Real.sqrt_pos.mpr hu).ne'
-  have h := (hasDerivAt_const t x₀).div hs hsq
-  convert h using 1
-  have hsq2 : √(1 + 2 * x₀ ^ 2 * t) ^ 2 = 1 + 2 * x₀ ^ 2 * t := Real.sq_sqrt hu.le
-  set u := 1 + 2 * x₀ ^ 2 * t with hu_def
-  set q := √u with hq_def
-  have hq3 : q ^ 3 = q * u := by rw [pow_succ, hsq2, mul_comm]
-  simp only [superField, zero_mul, zero_sub, div_pow, hq3]
-  field_simp
-  rw [hsq2]
-
-/-- At `μ = 0` the origin is not locally exponentially stable. -/
+/-- At `μ = 0` the origin is not locally exponentially stable: the Jacobian of `ẋ = −x³` at `0`
+is zero (`Dynamics.not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local`). -/
 @[tmio TM, powerlib_foundation] theorem super_zero_not_locallyExponentiallyStable :
     ¬ LocallyExponentiallyStable (superSystem 0) (embed 0) := by
-  rintro ⟨r, C, a, hr, hC, ha, h⟩
-  set x₀ := r / 2 with hx₀
-  have hx₀pos : 0 < x₀ := by positivity
-  -- `C e^{-at} (1 + 2 x₀² t)` tends to zero
-  have hlim : Tendsto (fun t => C * Real.exp (-a * t) * (1 + 2 * x₀ ^ 2 * t)) atTop (𝓝 0) := by
-    have h1 : Tendsto (fun t => Real.exp (-a * t)) atTop (𝓝 0) := by
-      have := Real.tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop ha)
-      exact this.congr (fun t => by simp [neg_mul])
-    have h2 : Tendsto (fun t => t * Real.exp (-a * t)) atTop (𝓝 0) := by
-      have := ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp
-        (tendsto_id.const_mul_atTop ha)).const_mul (1 / a)
-      refine (this.congr (fun t => ?_)).trans (by simp)
-      simp only [Function.comp, id, pow_one]
-      field_simp
-    have := (h1.const_mul C).add ((h2.const_mul (2 * x₀ ^ 2)).const_mul C)
-    simp only [mul_zero, add_zero] at this
-    exact this.congr (fun t => by ring)
-  obtain ⟨t, ht0, ht⟩ := ((eventually_ge_atTop (0 : ℝ)).and
-    (hlim.eventually (gt_mem_nhds zero_lt_one))).exists
-  have htraj : IsTrajectoryOn (fun s => embed (x₀ / √(1 + 2 * x₀ ^ 2 * s)))
-      (superSystem 0) 0 t := by
-    apply isTrajectoryOn_embed
-    intro s hs
-    exact (super_zero_solution_hasDerivAt x₀ s hs.1).hasDerivWithinAt
-  have h0 : ‖embed (x₀ / √(1 + 2 * x₀ ^ 2 * 0)) - embed 0‖ < r := by
-    rw [embed_sub, norm_embed]
-    simp only [mul_zero, add_zero, Real.sqrt_one, div_one, sub_zero]
-    rw [abs_of_pos hx₀pos]; linarith
-  have hb := h 0 t _ htraj h0 t ⟨ht0, le_rfl⟩
-  simp only [embed_sub, norm_embed, sub_zero, mul_zero, add_zero, Real.sqrt_one, div_one,
-    abs_of_pos hx₀pos] at hb
-  have hu : 0 < 1 + 2 * x₀ ^ 2 * t := by positivity
-  have hsqrt_pos : 0 < √(1 + 2 * x₀ ^ 2 * t) := Real.sqrt_pos.mpr hu
-  rw [abs_of_pos (div_pos hx₀pos hsqrt_pos), div_le_iff₀ hsqrt_pos] at hb
-  have hu1 : 1 ≤ 1 + 2 * x₀ ^ 2 * t := by nlinarith [sq_nonneg x₀]
-  have hsq_le : √(1 + 2 * x₀ ^ 2 * t) ≤ 1 + 2 * x₀ ^ 2 * t := by
-    rw [Real.sqrt_le_left (by linarith)]
-    nlinarith
-  have : x₀ ≤ C * Real.exp (-a * t) * (1 + 2 * x₀ ^ 2 * t) * x₀ := by
-    calc x₀ ≤ C * Real.exp (-a * t) * x₀ * √(1 + 2 * x₀ ^ 2 * t) := hb
-      _ ≤ C * Real.exp (-a * t) * x₀ * (1 + 2 * x₀ ^ 2 * t) := by
-        apply mul_le_mul_of_nonneg_left hsq_le; positivity
-      _ = C * Real.exp (-a * t) * (1 + 2 * x₀ ^ 2 * t) * x₀ := by ring
-  nlinarith
+  rw [superSystem_zero_eq_cubicField, embed_zero]
+  refine Dynamics.not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local isOpen_univ
+    (Set.mem_univ _) (Dynamics.cubicField_contDiff _).contDiffOn (v := embed 1) ?_ ?_
+  · rw [Ne, ← embed_zero, embed_eq_iff]; norm_num
+  · rw [Dynamics.cubicField_jacobian]; simp
 
 /-! ### Basin of the positive branch -/
 

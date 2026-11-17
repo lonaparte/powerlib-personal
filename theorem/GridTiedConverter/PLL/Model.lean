@@ -20,15 +20,15 @@ Model boundary.
   (`conventions.md` §D5 swing sign), autonomous field
   `θ̃̇ = (ω_s − ω_g) − K_p V sin θ̃ + K_i η`, `η̇ = −V sin θ̃` (`srfField V K_p K_i δω`,
   `δω = ω_g − ω_s`). It is *literally* the general PI-PLL `PLL.piPLLField h K_p K_i δω` of
-  `theorem/GridTiedConverter/PLL/PIPLL.lean` with `h = srfPD V = −V sin`; all equilibrium and
-  linearization results below are instantiations of that module (not re-proved).
+  `theorem/GridTiedConverter/PLL/PIPLL.lean` with `h = srfPD V = −V sin` (defined there); all
+  equilibrium and linearization results below are instantiations of that module (not re-proved).
 * Coordinate versions (vector-field conjugacies, domain):
   - physical `(θ̂, η)` ↔ error `(θ̃, η)` along trajectories (`physical_iff_error`):
     the non-autonomous physical loop becomes autonomous in error coordinates;
   - `(θ_err, ξ)`, `ξ = η / V` (T-invariant-coordinates §1.2, T-gfl-multiscale §1.3:
     `θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`, `a = V K_p`, `b = V K_i`, `Δω = ω_s − ω_g`):
     `xiField a b Δω = srfField 1 a b (−Δω)` and
-    `transportField (scaleSecond V⁻¹) 0 (srfField V K_p K_i δω) = srfField 1 (V K_p) (V K_i) δω`;
+    `transportField (scaleCoord V⁻¹) 0 (srfField V K_p K_i δω) = srfField 1 (V K_p) (V K_i) δω`;
   - `(e_θ, x_I)`, `x_I = ω_s + K_i η` (T-frequency-measurement §1.1: `ω̂ = K_p V_q + x_I`):
     `measField`, equilibrium `(0, ω_g)`;
   - the port-Hamiltonian coordinates of T-pll-ph are the canonical ones
@@ -48,21 +48,23 @@ Results.
   unstable (saddle) if `V K_i < 0`; unstable if `V K_p < 0` (`K_i ≠ 0`). The Jacobian there is
   Hurwitz iff `V K_p > 0 ∧ V K_i > 0`.
 * Anti-phase equilibria `((2k+1)π, δω/K_i)`: unstable (saddle) whenever `V K_i > 0`.
+  (These local results are proved in `PIPLLFamily` on the SRF members; the Jacobian at the in-phase
+  points is `linA`, `srf_fderiv_inPhase`.)
 
 Family and connection conclusions.
-No new family: the SRF-PLL read about a selected phase `θ*` is the member
-`PLL.PIPLL.srf V K_p K_i δω θ*` of the PI-PLL family `PLL.PIPLL.family`
-(`theorem/GridTiedConverter/PLL/PIPLLFamily.lean`), whose detector is `srfPD V` (`srf_h`) and whose
-system map is `srfField V K_p K_i δω` translated so that `(θ*, δω / K_i)` is the origin. The other
-coordinate versions are the same models: the `(θ_err, ξ)` field with gains `(a, b)` and offset `Δω`
-is `srfField 1 a b (−Δω)` (`xiField_eq_srfField`), i.e. the member `srf 1 a b (−Δω) θ*`, and the
-`(e_θ, x_I)` field is an affine image of `srfField` (`transport_meas_srfField`). Connection
-conclusions on the family's semantics connection: the four local-stability results
-(`srf_mem_den_locallyExponentiallyStable_inPhase`, `srf_mem_den_unstable_inPhase_of_mul_neg`,
-`srf_mem_den_unstable_inPhase_of_trace`, `srf_mem_den_unstable_antiPhase`) and amplitude
-invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V` with gains
-`(K_p, K_i)` is the unit-amplitude loop with gains `(V K_p, V K_i)`). Scaffold of the amplitude
-invariance: `theorem/GridTiedConverter/PLL/PLLAmplitude.agda`. The equilibrium sets
+No new family: the SRF-PLL read about a selected phase `θ*` is the member `PLL.PIPLL.srf V K_p K_i
+δω θ*` of the PI-PLL family `PLL.PIPLL.family` (`theorem/GridTiedConverter/PLL/PIPLLFamily.lean`),
+whose detector is `srfPD V` (by definition) and whose system map is `srfField V K_p K_i δω`
+translated so that `(θ*, δω / K_i)` is the origin. The other coordinate versions are the same
+models: the `(θ_err, ξ)` field with gains `(a, b)` and offset `Δω` is `srfField 1 a b (−Δω)`
+(`xiField_eq_srfField`), i.e. the member `srf 1 a b (−Δω) θ*`, and the `(e_θ, x_I)` field is an
+affine image of `srfField` (`transport_meas_srfField`). The four local-stability results of the SRF
+members are proved with the family (`PIPLL.srf_mem_den_locallyExponentiallyStable_inPhase`,
+`PIPLL.srf_mem_den_unstable_inPhase_of_mul_neg`, `PIPLL.srf_mem_den_unstable_inPhase_of_trace`,
+`PIPLL.srf_mem_den_unstable_antiPhase`). Connection conclusion on the family's semantics connection
+here: amplitude invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V`
+with gains `(K_p, K_i)` is the unit-amplitude loop with gains `(V K_p, V K_i)`). Scaffold of the
+amplitude invariance: `theorem/GridTiedConverter/PLL/PLLAmplitude.agda`. The equilibrium sets
 (`srfField_eq_zero_iff`: the equilibria are `{(kπ, δω / K_i) : k ∈ ℤ}`, `srf_exists_equilibrium`,
 `measField_eq_zero_iff`) are static evidence on the model, not connection conclusions; the
 coordinate conjugacies are domain model identities.
@@ -79,9 +81,6 @@ open powerlib.Dynamics (State)
 open powerlib.PLL.PIPLL (srf)
 
 /-! ## The canonical model -/
-
-/-- SRF phase-detector characteristic `h(θ̃) = −V sin θ̃`. -/
-def srfPD (V θ : ℝ) : ℝ := -(V * Real.sin θ)
 
 /-- Canonical SRF-PLL error field in state `(θ̃, η)`:
 `θ̃̇ = K_p h(θ̃) + K_i η − δω`, `η̇ = h(θ̃)`, `h = −V sin`, `δω = ω_g − ω_s`. -/
@@ -100,13 +99,6 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
     srfPD V (θh - θg) = phaseDetector V θg θh := by
   rw [phaseDetector_eq, srfPD]
 
-@[tmio M, powerlib_domain] theorem hasDerivAt_srfPD (V θ : ℝ) :
-    HasDerivAt (srfPD V) (-(V * Real.cos θ)) θ :=
-  ((Real.hasDerivAt_sin θ).const_mul V).neg
-
-@[tmio M, powerlib_domain] theorem contDiff_srfPD (V : ℝ) : ContDiff ℝ 1 (srfPD V) :=
-  (contDiff_const.mul Real.contDiff_sin).neg
-
 @[tmio M, powerlib_domain] theorem contDiff_srfField (V Kp Ki δω : ℝ) :
     ContDiff ℝ 1 (srfField V Kp Ki δω) :=
   contDiff_piPLLField (contDiff_srfPD V)
@@ -123,23 +115,15 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
     piPLLJacobian Kp Ki (-(V * 1)) = linA V Kp Ki := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [piPLLJacobian, linA, mul_comm]
 
-@[tmio T, powerlib_foundation] private lemma cos_two_int_mul_pi (k : ℤ) :
-    Real.cos (2 * k * Real.pi) = 1 := by
-  rw [show 2 * (k : ℝ) * Real.pi = (k : ℝ) * (2 * Real.pi) by ring]
-  exact Real.cos_int_mul_two_pi k
-
-@[tmio T, powerlib_foundation] private lemma cos_odd_int_mul_pi (k : ℤ) :
-    Real.cos ((2 * k + 1) * Real.pi) = -1 := by
-  rw [show (2 * (k : ℝ) + 1) * Real.pi = (k : ℝ) * (2 * Real.pi) + Real.pi by ring,
-    Real.cos_add_pi, Real.cos_int_mul_two_pi]
-
 /-- Linearization chain: the Jacobian of the nonlinear SRF-PLL at any in-phase point
 `(2kπ, η)` is `linA V K_p K_i`, the state matrix of `phaseModel`, `frequencyModel` and
 `portModel`. -/
 @[tmio M, powerlib_domain] theorem srf_fderiv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) (η : ℝ) :
     fderiv ℝ (srfField V Kp Ki δω) (PhasePlane.mk (2 * k * Real.pi) η) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linA V Kp Ki) := by
-  rw [fderiv_srfField, PhasePlane.mk_apply_zero, cos_two_int_mul_pi, piPLLJacobian_inPhase]
+  rw [fderiv_srfField, PhasePlane.mk_apply_zero,
+    show 2 * (k : ℝ) * Real.pi = k * (2 * Real.pi) by ring, Real.cos_int_mul_two_pi,
+    piPLLJacobian_inPhase]
 
 /-! ## Equilibria -/
 
@@ -166,61 +150,9 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-! ## Local stability (instantiation of `PLL.PIPLL`) -/
 
-/-- The detector of the SRF family member is the SRF characteristic `srfPD V`. -/
-@[tmio M, powerlib_domain] theorem srf_h (V Kp Ki δω θ : ℝ) : (srf V Kp Ki δω θ).h = srfPD V := by
-  funext x
-  simp [srf, srfPD]
-
 /-- The untranslated field of the SRF family member is the canonical SRF-PLL field. -/
 @[tmio M, powerlib_domain] theorem srf_piPLLField (V Kp Ki δω θ : ℝ) :
-    piPLLField (srf V Kp Ki δω θ).h Kp Ki δω = srfField V Kp Ki δω := by
-  rw [srf_h]
-  rfl
-
-@[tmio M, powerlib_domain] private theorem srf_h_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
-    (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = 0 := by
-  change -V * Real.sin (2 * k * Real.pi) = 0
-  rw [Real.sin_eq_zero_iff.mpr ⟨2 * k, by push_cast; ring⟩, mul_zero]
-
-@[tmio M, powerlib_domain] private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
-    deriv (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = -V := by
-  rw [PIPLL.srf_deriv, cos_two_int_mul_pi, mul_one]
-
-/-- In-phase equilibria `(2kπ, δω/K_i)` are locally exponentially stable when
-`V K_p > 0` and `V K_i > 0`, for every constant frequency offset `δω`. -/
-@[tmio TM, powerlib_domain] theorem srf_mem_den_locallyExponentiallyStable_inPhase {V Kp Ki : ℝ}
-    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈
-      PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
-  PIPLL.mem_den_locallyExponentiallyStable _ (srf_h_inPhase V Kp Ki δω k)
-    (by rw [srf_deriv_inPhase]; show Kp * -V < 0; linarith [mul_comm V Kp])
-    (by rw [srf_deriv_inPhase]; show Ki * -V < 0; linarith [mul_comm V Ki])
-
-/-- `V K_i < 0`: the in-phase equilibria are saddles, hence unstable. -/
-@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_mul_neg {V Kp Ki : ℝ}
-    (hVKi : V * Ki < 0) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ PIPLL.family.den (.flow .unstable)) :=
-  PIPLL.mem_den_unstable _ (srf_h_inPhase V Kp Ki δω k)
-    (by rw [srf_deriv_inPhase]; show 0 < Ki * -V; linarith [mul_comm V Ki])
-
-/-- `V K_p < 0` (`K_i ≠ 0`): positive Jacobian trace at the in-phase equilibria, unstable. -/
-@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_trace {V Kp Ki : ℝ} (hKi : Ki ≠ 0)
-    (hVKp : V * Kp < 0) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ PIPLL.family.den (.flow .unstable)) :=
-  PIPLL.mem_den_unstable_of_trace_pos _ (srf_h_inPhase V Kp Ki δω k) (Or.inl hKi)
-    (by rw [srf_deriv_inPhase]; show 0 < Kp * -V; linarith [mul_comm V Kp])
-
-/-- `V K_i > 0`: the anti-phase equilibria `((2k+1)π, δω/K_i)` are saddles, hence unstable. -/
-@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_antiPhase {V Kp Ki : ℝ} (hVKi : 0 < V * Ki)
-    (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω ((2 * k + 1) * Real.pi) ∈
-      PIPLL.family.den (.flow .unstable)) := by
-  refine PIPLL.mem_den_unstable _ ?_ ?_
-  · change -V * Real.sin ((2 * k + 1) * Real.pi) = 0
-    rw [Real.sin_eq_zero_iff.mpr ⟨2 * k + 1, by push_cast; ring⟩, mul_zero]
-  · rw [PIPLL.srf_deriv, cos_odd_int_mul_pi]
-    show 0 < Ki * (-V * -1)
-    linarith [mul_comm V Ki]
+    piPLLField (srf V Kp Ki δω θ).h Kp Ki δω = srfField V Kp Ki δω := rfl
 
 /-- A flow sentence of a PI-PLL family member is the sentence of its untranslated field at the
 selected point. -/
@@ -294,32 +226,10 @@ def xiField (a b Δω : ℝ) (x : State 2) : State 2 :=
   rw [PhasePlane.ext_iff']
   simp [xiField]
 
-/-- Diagonal rescaling `(θ, η) ↦ (θ, c η)` as a coordinate change (`c ≠ 0`). -/
-def scaleSecond (c : ℝ) (hc : c ≠ 0) : State 2 ≃L[ℝ] State 2 :=
-  ContinuousLinearEquiv.equivOfInverse
-    (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (Matrix.diagonal ![1, c]))
-    (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (Matrix.diagonal ![1, c⁻¹]))
-    (fun x => by
-      rw [PhasePlane.ext_iff']
-      simp [Matrix.mulVec_diagonal, hc])
-    (fun x => by
-      rw [PhasePlane.ext_iff']
-      simp [Matrix.mulVec_diagonal, hc])
-
-@[tmio T, simp, powerlib_foundation] theorem scaleSecond_apply (c : ℝ) (hc : c ≠ 0) (x : State 2) :
-    scaleSecond c hc x = PhasePlane.mk (x 0) (c * x 1) := by
-  rw [PhasePlane.ext_iff']
-  simp [scaleSecond, Matrix.mulVec_diagonal]
-
-@[tmio T, simp, powerlib_foundation] theorem scaleSecond_symm_apply (c : ℝ) (hc : c ≠ 0) (x : State 2) :
-    (scaleSecond c hc).symm x = PhasePlane.mk (x 0) (c⁻¹ * x 1) := by
-  rw [PhasePlane.ext_iff']
-  simp [scaleSecond, Matrix.mulVec_diagonal]
-
 /-- Vector-field conjugacy `ξ = η / V`: the SRF-PLL of amplitude `V` and gains `(K_p, K_i)` is
 the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
 @[tmio M, powerlib_domain] theorem transport_scale_srfField {V : ℝ} (hV : V ≠ 0) (Kp Ki δω : ℝ) :
-    Dynamics.transportField (scaleSecond V⁻¹ (inv_ne_zero hV)) 0 (srfField V Kp Ki δω) =
+    Dynamics.transportField (Dynamics.scaleCoord (inv_ne_zero hV)) 0 (srfField V Kp Ki δω) =
       srfField 1 (V * Kp) (V * Ki) δω := by
   funext y
   rw [PhasePlane.ext_iff']
@@ -334,14 +244,14 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
         (fun _ y => xiField (V * Kp) (V * Ki) (-δω) y) s := by
   rw [xiField_eq_srfField, neg_neg, ← transport_scale_srfField hV]
   have hrw : (fun t => PhasePlane.mk (x t 0) (x t 1 / V)) =
-      fun t => Dynamics.affineCoord (scaleSecond V⁻¹ (inv_ne_zero hV)) 0 (x t) := by
-    funext t; simp [Dynamics.affineCoord, div_eq_inv_mul]
+      fun t => Dynamics.affineCoord (Dynamics.scaleCoord (inv_ne_zero hV)) 0 (x t) := by
+    funext t; simp [Dynamics.affineCoord, div_eq_inv_mul]; rfl
   rw [hrw]
   constructor
   · exact fun h => Dynamics.isIntegralCurveOn_transport _ _ h
   · intro h
-    have h' := Dynamics.isIntegralCurveOn_transport (scaleSecond V⁻¹ (inv_ne_zero hV)).symm
-      (-((scaleSecond V⁻¹ (inv_ne_zero hV)).symm 0)) h
+    have h' := Dynamics.isIntegralCurveOn_transport (Dynamics.scaleCoord (inv_ne_zero hV)).symm
+      (-((Dynamics.scaleCoord (inv_ne_zero hV)).symm 0)) h
     rw [Dynamics.transportField_symm_transportField] at h'
     simp only [Dynamics.affineCoord_symm_affineCoord] at h'
     exact h'
@@ -361,9 +271,9 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
     P.holds (piPLLField (srf 1 (V * Kp) (V * Ki) δω θ).h (V * Kp) (V * Ki) δω)
       (PhasePlane.mk θ (δω / (V * Ki)))
   rw [srf_piPLLField, srf_piPLLField, ← transport_scale_srfField hV,
-    ← Dynamics.holds_transport_iff (scaleSecond V⁻¹ (inv_ne_zero hV)) 0 P]
-  have hpt : Dynamics.affineCoord (scaleSecond V⁻¹ (inv_ne_zero hV)) 0 (PhasePlane.mk θ (δω / Ki)) =
-      PhasePlane.mk θ (δω / (V * Ki)) := by
+    ← Dynamics.holds_transport_iff (Dynamics.scaleCoord (inv_ne_zero hV)) 0 P]
+  have hpt : Dynamics.affineCoord (Dynamics.scaleCoord (inv_ne_zero hV)) 0
+      (PhasePlane.mk θ (δω / Ki)) = PhasePlane.mk θ (δω / (V * Ki)) := by
     rw [PhasePlane.ext_iff']
     simp [Dynamics.affineCoord]
     field_simp
@@ -377,7 +287,7 @@ def measField (V Kp Ki ωg : ℝ) (y : State 2) : State 2 :=
 
 /-- `x_I = ω_s + K_i η` is an affine conjugacy between the canonical field and `measField`. -/
 @[tmio M, powerlib_domain] theorem transport_meas_srfField {Ki : ℝ} (hKi : Ki ≠ 0) (V Kp ωs ωg : ℝ) :
-    Dynamics.transportField (scaleSecond Ki hKi) (PhasePlane.mk 0 ωs)
+    Dynamics.transportField (Dynamics.scaleCoord hKi) (PhasePlane.mk 0 ωs)
         (srfField V Kp Ki (ωg - ωs)) = measField V Kp Ki ωg := by
   funext y
   rw [PhasePlane.ext_iff']

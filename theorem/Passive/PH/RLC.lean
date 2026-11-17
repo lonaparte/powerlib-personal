@@ -39,8 +39,9 @@ Family and connection conclusions.
   (`theorem/Port/PortHamiltonian.lean`) through `seriesRLCPH p : Port.PortHamiltonian 2 1`
   (states and port numbered in the order above); the system map is the plant's port system and
   the sentences are read at the origin, the unforced operating point.
-* Connection conclusions: passivity and Lyapunov stability for every `r ≥ 0`
-  (`seriesRLCPH_mem_den_passive`, `seriesRLCPH_mem_den_lyapunovStable`); every attractive
+* Connection conclusions: passivity (storage `H`) and Lyapunov stability for every `r ≥ 0` are the
+  generic laws of every port-Hamiltonian plant (`Port.PortHamiltonian.mem_den_passive`,
+  `Port.PortHamiltonian.mem_den_lyapunovStable`); every attractive
   sentence and sampled contraction hold **iff** `r > 0` (`seriesRLCPH_mem_den_iff`); global
   exponential stability and a positive decay rate when `r > 0`
   (`seriesRLCPH_isHurwitz_iff`, `seriesRLCPH_exists_decay`); and for the
@@ -198,16 +199,6 @@ for this linear family that is equivalent to its state matrix being Hurwitz. -/
     refine ⟨?_, hdet⟩
     have : 0 < p.r / p.L := div_pos hr hL
     linarith
-
-/-- Passivity of the series RLC loop; the storage is `H` (`toPH_storage`). -/
-@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_passive (p : SeriesRLCParams) :
-    connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- Lyapunov stability of the zero-input origin for every `r ≥ 0`. -/
-@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_lyapunovStable (p : SeriesRLCParams) :
-    connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
 
 /-- Every attractive sentence (local or global, asymptotic or exponential) and sampled
 contraction hold for the zero-input loop **iff** `r > 0` (the lossless loop `r = 0` is a

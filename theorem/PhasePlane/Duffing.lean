@@ -20,11 +20,14 @@ theory/T-attractors-basins.md (codes example (b): bistable Duffing, saddle eigen
 
 Results.
 * Equilibria: exactly `(0, 0)` and `(±1, 0)` (`field_eq_zero_iff`).
-* Jacobian at `(x, 0)`: `!![0, 1; 1 − 3x², −δ]` (`hasFDerivAt_field`).
+* Linearization through `Conservative.jacobian 1 δ (3x² − 1)` (`V'' = 3x² − 1`,
+  `hasDerivAt_force`).
 * Saddle at the origin: characteristic roots `(−δ ± √(δ² + 4))/2` (`saddle_eigenvalues`), and
-  the origin is unstable for every `δ` (`origin_unstable`, `det = −1 < 0`).
-* Wells `(±1, 0)`: locally exponentially stable for `δ > 0` (`tr = −δ`, `det = 2`;
-  `well_locallyExponentiallyStable`); Lyapunov stable for every `δ ≥ 0` (strict minima of `V`,
+  the origin is unstable for every `δ` (`origin_unstable`, `V''(0) = −1 < 0`,
+  `Conservative.unstable_of_slope_neg`).
+* Wells `(±1, 0)`: locally exponentially stable for `δ > 0` (`V''(±1) = 2 > 0`;
+  `well_locallyExponentiallyStable` from `Conservative.locallyExponentiallyStable_of_slope_pos`);
+  Lyapunov stable for every `δ ≥ 0` (strict minima of `V`,
   energy as Lyapunov function; `well_lyapunovStable`).
 * Forward completeness for `δ ≥ 0` (`forwardComplete`): the energy has compact sublevel sets and
   is nonincreasing (`Conservative.energy_lie_nonpos`; powerlib
@@ -92,24 +95,11 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
     · rintro (h | h | h) <;> rw [h] <;> norm_num
   rw [this]
 
-/-- Jacobian of the Duffing field at `(x, y)`. -/
-@[tmio M, powerlib_foundation] theorem hasFDerivAt_field (δ : ℝ) (y : State 2) :
-    HasFDerivAt (field δ)
-      (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; 1 - 3 * y 0 ^ 2, -δ]) y := by
-  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![Dynamics.coord 1, (1 - 3 * y 0 ^ 2) • Dynamics.coord 0 + (-δ) • Dynamics.coord 1] ?_ ?_
-  · intro i; fin_cases i
-    · exact Dynamics.hasFDerivAt_coord 1 y
-    · show HasFDerivAt (fun z => field δ z 1) _ y
-      have h0 := Dynamics.hasFDerivAt_coord 0 y
-      have h1 := Dynamics.hasFDerivAt_coord 1 y
-      have h := ((h1.const_smul (-δ)).sub ((h0.pow 3).sub h0))
-      have hf : (fun z => field δ z 1) = fun z : State 2 => (-δ) • z 1 - (z 0 ^ 3 - z 0) := by
-        funext z; simp [field, force, smul_eq_mul]
-      rw [hf]
-      convert h using 1
-      ext v; simp; ring
-  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp
+/-- `V''(x) = 3x² − 1`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_force (x : ℝ) :
+    HasDerivAt force (3 * x ^ 2 - 1) x := by
+  show HasDerivAt (fun y => y ^ 3 - y) _ x
+  convert (hasDerivAt_pow 3 x).fun_sub (hasDerivAt_id' x)
 
 /-- The characteristic roots at the saddle are `(−δ ± √(δ² + 4))/2`. -/
 @[tmio T, powerlib_foundation] theorem saddle_eigenvalues (δ : ℝ) (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
@@ -125,25 +115,20 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
     linear_combination (σ ^ 2 / 4) * hs + ((δ ^ 2 + 4) / 4) * hσ2
   exact_mod_cast this
 
-/-- The origin is a saddle (`det = −1 < 0`), hence unstable, for every damping. -/
-@[tmio TM, powerlib_foundation] theorem origin_unstable (δ : ℝ) : Unstable (field δ) (mk 0 0) := by
-  refine Criteria.unstable_of_jacobian_det _
-    (Conservative.field_contDiff force_contDiff) ?_
-    (hasFDerivAt_field δ (mk 0 0)).fderiv ?_
-  · rw [field_eq_zero_iff]; simp
-  · simp [Matrix.det_fin_two]
+/-- The origin is a saddle (`V''(0) = −1 < 0`), hence unstable, for every damping
+(`Conservative.unstable_of_slope_neg`). -/
+@[tmio TM, powerlib_foundation] theorem origin_unstable (δ : ℝ) : Unstable (field δ) (mk 0 0) :=
+  Conservative.unstable_of_slope_neg one_pos force_contDiff (by simp [force])
+    (hasDerivAt_force 0) (by norm_num)
 
-/-- With damping `δ > 0` the wells `(±1, 0)` are locally exponentially stable. -/
+/-- With damping `δ > 0` the wells `(±1, 0)` (`V''(±1) = 2 > 0`) are locally exponentially
+stable (`Conservative.locallyExponentiallyStable_of_slope_pos`). -/
 @[tmio TM, powerlib_foundation] theorem well_locallyExponentiallyStable {δ : ℝ} (hδ : 0 < δ) (σ : ℝ)
     (hσ : σ = 1 ∨ σ = -1) : LocallyExponentiallyStable (field δ) (mk σ 0) := by
   have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
-  refine Criteria.locallyExponentiallyStable_of_jacobian_fin_two _
-    (Conservative.field_contDiff force_contDiff) ?_
-    (hasFDerivAt_field δ (mk σ 0)).fderiv ?_ ?_
-  · rw [field_eq_zero_iff]; simp only [mk_apply_zero, mk_apply_one, true_and]
-    rcases hσ with rfl | rfl <;> norm_num
-  · simp [Matrix.trace_fin_two]; linarith
-  · simp [Matrix.det_fin_two, hσ2]
+  refine Conservative.locallyExponentiallyStable_of_slope_pos one_pos hδ force_contDiff ?_
+    (hasDerivAt_force σ) (by rw [hσ2]; norm_num)
+  rcases hσ with rfl | rfl <;> norm_num [force]
 
 /-- For every `δ ≥ 0` the wells `(±1, 0)` are Lyapunov stable (strict minima of `V`). -/
 @[tmio TM, powerlib_foundation] theorem well_lyapunovStable {δ : ℝ} (hδ : 0 ≤ δ) (σ : ℝ)

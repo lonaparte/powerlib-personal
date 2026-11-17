@@ -39,8 +39,11 @@ Family and connection conclusions.
   `Ladder.ladderPH p N : Port.PortHamiltonian (N + N) 2`, a member of the existing family
   `Port.PortHamiltonian.family` (system map: the plant's port system; sentences read at the
   origin, the unforced state with `v₁ = 0`, `i₂ = 0`).
-* Connection conclusions: passivity and Lyapunov stability (`ladderPH_mem_den_passive`,
-  `ladderPH_mem_den_lyapunovStable`); global exponential stability of the lossy ladder
+* Connection conclusions: passivity (storage: the magnetic plus electric energy
+  `∑ φ_k²/(2L'Δx) + ∑ q_k²/(2C'Δx)`, `DiagonalPH.toPH_storage`) and Lyapunov stability with both
+  ports shorted/opened are the generic laws of every port-Hamiltonian plant
+  (`Port.PortHamiltonian.mem_den_passive`, `Port.PortHamiltonian.mem_den_lyapunovStable`); global
+  exponential stability of the lossy ladder
   `R' > 0`, `G' > 0` (`lossyLadder_mem_den_globallyExponentiallyStable`, an instance of the
   general `PH.toPH_mem_den_globallyExponentiallyStable` for strictly damped diagonal models,
   `theorem/PH/Composition.lean`); the correction in sentence form — the lossy ladder with at least
@@ -270,17 +273,6 @@ Static evidence on the model, not a connection conclusion. -/
 def ladderPH : Port.PortHamiltonian (N + N) 2 :=
   (model p N).toPH finSumFinEquiv (Equiv.refl _)
 
-/-- The ladder is passive; the storage is the magnetic plus electric energy
-`∑ φ_k²/(2L'Δx) + ∑ q_k²/(2C'Δx)` (`toPH_storage`). -/
-@[tmio TM, powerlib_domain] theorem ladderPH_mem_den_passive :
-    connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- With both ports shorted/opened (`v₁ = 0`, `i₂ = 0`) the ladder is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem ladderPH_mem_den_lyapunovStable :
-    connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
-
 @[tmio M, powerlib_domain] theorem damping_pos (hR : 0 < p.R') (hG : 0 < p.G') (a : Idx N) :
     0 < (model p N).d a := by
   rcases a with _ | _
@@ -298,7 +290,7 @@ exponentially, for every initial flux and charge distribution. -/
     (hR : 0 < p.R') (hG : 0 < p.G') :
     connection% (ladderPH p N ∈
       Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
-  mem_den_globallyExponentiallyStable_of_dissipation_pos _ (ladderPH_dissipation_pos p N hR hG)
+  mem_den_of_dissipation_pos _ (ladderPH_dissipation_pos p N hR hG) (Or.inl trivial)
 
 /-- Correction of "the telegrapher line conserves energy": a lossy ladder with at least one cell
 conserves no positive definite energy. -/
@@ -328,7 +320,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   obtain ⟨c⟩ := exists_quadraticDecay (ladderPH p N) (ladderPH_dissipation_pos p N hR hG)
   have hb := Flow.energy_bound_of_dissipation c.smooth c.dissipation hφ ⟨ht.1.le, ht.2⟩
   have hpos : 0 < (ladderPH p N).kyp.storage (φ a) :=
-    div_pos ((ladderPH p N).energy_pos _ (by simpa using h0)) two_pos
+    mul_pos (by norm_num) ((ladderPH p N).energy_pos _ (by simpa using h0))
   have hexp : Real.exp (-(c.rate * (t - a))) < 1 := by
     rw [Real.exp_lt_one_iff, neg_lt_zero]
     exact mul_pos c.rate_pos (sub_pos.mpr ht.1)

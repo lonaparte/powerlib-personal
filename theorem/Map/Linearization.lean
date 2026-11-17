@@ -1,6 +1,7 @@
 import theorem.LTI.Discrete
 import theorem.Map.Basic
 import theorem.Port.Defs
+import theorem.Linear.Plant
 
 /-! # Linearization of maps
 
@@ -44,25 +45,22 @@ variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
-/-- The operator of a matrix on `ℝⁿ`. -/
-abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ := Matrix.toEuclideanCLM (𝕜 := ℝ) A
-
 open scoped Matrix.Norms.Operator in
 /-- Schur stability gives a geometric bound on the operator norms of the powers (the matrix bound
 `LTI.SchurStable.exists_pow_bound` read through the coordinate equivalence of `ℝⁿ`). -/
 @[tmio T, powerlib_foundation] theorem pow_bound_toEuclideanCLM {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LTI.SchurStable A) :
-    ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖op A ^ k‖ ≤ C * ρ ^ k := by
+    ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖Linear.op A ^ k‖ ≤ C * ρ ^ k := by
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := hA.exists_pow_bound
   let e₁ : ℝⁿ →L[ℝ] (Fin n → ℝ) := (EuclideanSpace.equiv (Fin n) ℝ : ℝⁿ →L[ℝ] (Fin n → ℝ))
   let e₂ : (Fin n → ℝ) →L[ℝ] ℝⁿ :=
     ((EuclideanSpace.equiv (Fin n) ℝ).symm : (Fin n → ℝ) →L[ℝ] ℝⁿ)
   refine ⟨‖e₂‖ * C * ‖e₁‖, ρ, by positivity, hρ0.le, hρ1, fun k => ?_⟩
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w => ?_
-  have hw : (op A ^ k) w = e₂ ((A ^ k) *ᵥ e₁ w) := by
-    rw [op, ← map_pow]
+  have hw : (Linear.op A ^ k) w = e₂ ((A ^ k) *ᵥ e₁ w) := by
+    rw [Linear.op, ← map_pow]
     rfl
-  calc ‖(op A ^ k) w‖ = ‖e₂ ((A ^ k) *ᵥ e₁ w)‖ := by rw [hw]
+  calc ‖(Linear.op A ^ k) w‖ = ‖e₂ ((A ^ k) *ᵥ e₁ w)‖ := by rw [hw]
     _ ≤ ‖e₂‖ * (‖A ^ k‖ * ‖e₁ w‖) :=
         (e₂.le_opNorm _).trans (by gcongr; exact Matrix.linfty_opNorm_mulVec _ _)
     _ ≤ ‖e₂‖ * (C * ρ ^ k * (‖e₁‖ * ‖w‖)) := by gcongr; exacts [hb k, e₁.le_opNorm w]
@@ -71,7 +69,7 @@ open scoped Matrix.Norms.Operator in
 /-- Schur stability gives a power of operator norm below one. -/
 @[tmio T, powerlib_foundation] theorem exists_pow_norm_toEuclideanCLM_lt_one
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LTI.SchurStable A) :
-    ∃ m : ℕ, 0 < m ∧ ‖op A ^ m‖ < 1 := by
+    ∃ m : ℕ, 0 < m ∧ ‖Linear.op A ^ m‖ < 1 := by
   obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
@@ -163,7 +161,7 @@ locally exponentially stable there. -/
 /-- **Linearization of maps.** A map with a fixed point `x`, differentiable at `x` with a Schur
 stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
 @[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_schurStable {F : ℝⁿ → ℝⁿ}
-    {A : Matrix (Fin n) (Fin n) ℝ} {x : ℝⁿ} (hF : HasFDerivAt F (op A) x) (hx : F x = x)
+    {A : Matrix (Fin n) (Fin n) ℝ} {x : ℝⁿ} (hF : HasFDerivAt F (Linear.op A) x) (hx : F x = x)
     (hA : LTI.SchurStable A) : LocallyExponentiallyStable F x := by
   obtain ⟨m, hm, hlt⟩ := exists_pow_norm_toEuclideanCLM_lt_one hA
   exact locallyExponentiallyStable_of_pow_norm_lt_one hF hx hm hlt
@@ -171,11 +169,11 @@ stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
 /-- The linear map of a Schur matrix is globally exponentially stable at the origin. -/
 @[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_of_schurStable
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LTI.SchurStable A) :
-    GloballyExponentiallyStable (op A) 0 := by
+    GloballyExponentiallyStable (Linear.op A) 0 := by
   obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
   refine ⟨map_zero _, max C 1, ρ, le_max_right _ _, hρ0, hρ1, fun y k => ?_⟩
   rw [sub_zero, sub_zero, ← FunLike.coe_pow_eq_iterate]
-  calc ‖(op A ^ k) y‖ ≤ ‖op A ^ k‖ * ‖y‖ := (op A ^ k).le_opNorm y
+  calc ‖(Linear.op A ^ k) y‖ ≤ ‖Linear.op A ^ k‖ * ‖y‖ := (Linear.op A ^ k).le_opNorm y
     _ ≤ C * ρ ^ k * ‖y‖ := by gcongr; exact hb k
     _ ≤ max C 1 * ρ ^ k * ‖y‖ := by gcongr; exact le_max_left _ _
 
@@ -249,7 +247,7 @@ stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
 matrix `A` that has a Schur stable left inverse `B` (every eigenvalue of `A` outside the closed unit
 disk), is unstable at `x` (`n > 0`). -/
 @[tmio T, powerlib_foundation] theorem unstable_of_inverse_schurStable {F : ℝⁿ → ℝⁿ}
-    {A B : Matrix (Fin n) (Fin n) ℝ} {x : ℝⁿ} (hF : HasFDerivAt F (op A) x) (hx : F x = x)
+    {A B : Matrix (Fin n) (Fin n) ℝ} {x : ℝⁿ} (hF : HasFDerivAt F (Linear.op A) x) (hx : F x = x)
     (hBA : B * A = 1) (hB : LTI.SchurStable B) (hn : 0 < n) : Unstable F x := by
   obtain ⟨m, -, hlt⟩ := exists_pow_norm_toEuclideanCLM_lt_one hB
   refine unstable_of_expanding hF hx hlt (m := m) (fun v => ?_) hn
@@ -261,12 +259,12 @@ disk), is unstable at `x` (`n > 0`). -/
       calc B ^ (k + 1) * A ^ (k + 1) = B ^ k * (B * A) * A ^ k := by
             rw [pow_succ, pow_succ']; simp only [mul_assoc]
         _ = 1 := by rw [hBA, mul_one, ih]
-  have hop : op B ^ m * op A ^ m = 1 := by
-    rw [op, op, ← map_pow, ← map_pow, ← map_mul, hpow m, map_one]
-  have hinv : (op B ^ m) ((op A ^ m) v) = v := by
-    calc (op B ^ m) ((op A ^ m) v) = (op B ^ m * op A ^ m) v := rfl
+  have hop : Linear.op B ^ m * Linear.op A ^ m = 1 := by
+    rw [Linear.op, Linear.op, ← map_pow, ← map_pow, ← map_mul, hpow m, map_one]
+  have hinv : (Linear.op B ^ m) ((Linear.op A ^ m) v) = v := by
+    calc (Linear.op B ^ m) ((Linear.op A ^ m) v) = (Linear.op B ^ m * Linear.op A ^ m) v := rfl
       _ = v := by rw [hop]; rfl
-  calc ‖v‖ = ‖(op B ^ m) ((op A ^ m) v)‖ := by rw [hinv]
-    _ ≤ ‖op B ^ m‖ * ‖(op A ^ m) v‖ := (op B ^ m).le_opNorm _
+  calc ‖v‖ = ‖(Linear.op B ^ m) ((Linear.op A ^ m) v)‖ := by rw [hinv]
+    _ ≤ ‖Linear.op B ^ m‖ * ‖(Linear.op A ^ m) v‖ := (Linear.op B ^ m).le_opNorm _
 
 end powerlib.Map

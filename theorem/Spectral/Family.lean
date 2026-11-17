@@ -48,9 +48,11 @@ Results.
   denotation cut by `D` when `S` is equivalent to the sentence on `D`
   (`local_realize_eq_den_inter_of_iff`), and is not when a member of `D` satisfies the sentence
   without meeting `S` (`local_realize_ne_den_inter_of_witness`).
-* The local laws are the two-requirement instance of the named-requirement template
-  `theorem/Spectral/Local.lean` (`localTable`, `chain_le_semantics_of_localTable_same`,
-  `realize_univ_eq_empty_of`), which families with their own requirement languages use directly.
+* Both translations are instances of the one table `Spectral.table` of
+  `theorem/Spectral/Local.lean`: `linear_chain_le_semantics` is `chain_le_semantics_of_table`, and
+  the local laws are the two-requirement instance of the named-requirement template (`localTable`,
+  `chain_le_semantics_of_localTable_same`, `realize_univ_eq_empty_of`), which families with their
+  own requirement languages use directly.
 * Inexactness passes along translations (`Spectral.not_exact_of_den_subset`): if a sound
   translation of `s` is not exact and a sentence `s'` with the same translation has a larger
   denotation, the translation of `s'` is not exact either; for local families a boundary witness
@@ -86,11 +88,11 @@ variable {X : Type*} {n p : ℕ}
 
 /-! ### Linear families -/
 
-/-- The translation of a linear spectral family. -/
-def linearTranslate : Sentence → Set Requirement
-  | .flow .unstable => {.unstable}
-  | .flow (.decay _) | .flow .conservative | .passive | .envelope _ => Set.univ
-  | .flow _ => {.stable}
+/-- The translation of a linear spectral family (`Spectral.table`): Lyapunov stability, the
+attractive sentences and sampled contraction to `stable`, instability to `unstable`, every other
+sentence to the whole language. -/
+def linearTranslate : Sentence → Set Requirement :=
+  table {.stable} {.stable} {.stable} {.unstable} Set.univ Set.univ (fun _ => Set.univ) Set.univ
 
 /-- A linear spectral family: every complete system read as the port system of its plant. -/
 def linearFamily (plant : X → Plant n p) (S U : X → Prop) : Family X Requirement n p :=
@@ -110,35 +112,21 @@ plane. -/
     connection% (∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P) := by
   change ∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P
   have hF := linearFamily_isLinear plant S U
-  have hnone : realize (Meets S U) Set.univ = ∅ :=
-    realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable fun x h1 h2 => by
+  have hu := realize_univ_subset_of_eq_empty
+    (realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable fun x h1 h2 => by
       obtain ⟨s, hs, hre⟩ := hU x h2
-      exact absurd ((spectrallyStable_iff_isHurwitz _).mpr (hS x h1) s hs) (not_lt.mpr hre.le)
-  refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
-  rw [(connection_proof% mem_realize)] at hx
-  change ∀ q ∈ linearTranslate s, Meets S U x q at hx
-  have huniv : (∀ q, Meets S U x q) → False := fun h => by
-    have hx' : x ∈ realize (Meets S U) Set.univ := (mem_realize _ _ _).mpr fun q _ => h q
-    rw [hnone] at hx'
-    exact hx'
-  have hstab : linearTranslate s = {.stable} → IsHurwitz (plant x).A := fun h =>
-    hS x (hx .stable (by rw [h]; rfl))
-  rcases s with P | _ | _
-  · rw [(connection_proof% hF.mem_den_flow)]
-    cases P
-    case unstable =>
-      obtain ⟨r, hr, hre⟩ := hU x (hx .unstable rfl)
-      exact unstable_of_root 0 hr hre
-    case lyapunovStable => exact (holds_of_isHurwitz 0 (P := .locallyExponentiallyStable)
-      trivial (hstab rfl)).lyapunovStable
-    case locallyAsymptoticallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case locallyExponentiallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case globallyAsymptoticallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case globallyExponentiallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case contractive => exact sampledContraction_of_isHurwitz 0 (hstab rfl)
-    all_goals exact (huniv fun q => hx q trivial).elim
-  · exact (huniv fun q => hx q trivial).elim
-  · exact (huniv fun q => hx q trivial).elim
+      exact absurd ((spectrallyStable_iff_isHurwitz _).mpr (hS x h1) s hs) (not_lt.mpr hre.le))
+  have hG : realize (Meets S U) {.stable} ⊆
+      (linearFamily plant S U).den (.flow .globallyExponentiallyStable) := fun x hx =>
+    hF.mem_den_flow.mpr (holds_of_isHurwitz 0 trivial (hS x (mem_realize_singleton.mp hx)))
+  exact chain_le_semantics_of_table (fun _ => rfl)
+    (fun x hx => den_locallyExponentiallyStable_subset_lyapunovStable
+      (den_globallyExponentiallyStable_subset_les (hG hx)))
+    (fun x hx => den_globallyExponentiallyStable_subset_les (hG hx)) hG (fun _ => hu _)
+    (fun x hx => by
+      obtain ⟨r, hr, hre⟩ := hU x (mem_realize_singleton.mp hx)
+      exact hF.mem_den_flow.mpr (unstable_of_root 0 hr hre))
+    (hu _) (hu _) (fun _ => hu _)
 
 /-- With a stability condition equivalent to the Hurwitz property, the attractive sentences and
 sampled contraction denote exactly the members meeting it. -/
@@ -170,14 +158,10 @@ contractive translations are exact. -/
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
-/-- The translation of a local spectral family. -/
-def localTranslate : Sentence → Set Requirement
-  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
-  | .flow .locallyExponentiallyStable => {.stable}
-  | .flow .unstable => {.unstable}
-  | .flow _ => Set.univ
-  | .passive => ∅
-  | .envelope _ => Set.univ
+/-- The translation of a local spectral family (`localTable`): the local sentences to `stable`,
+instability to `unstable`, passivity to nothing, every other sentence to the whole language. -/
+def localTranslate : Sentence → Set Requirement :=
+  localTable {.stable} {.stable} {.unstable} ∅
 
 /-- A local spectral family: every complete system read as its autonomous field about the
 selected operating point. -/
@@ -195,16 +179,12 @@ local exponential stability of the field at the origin, the instability conditio
     connection% (∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P) := by
   change ∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P
   have hF := localFamily_isAutonomous field S U
-  refine chain_le_semantics_of_localTable_same (Rs := {.stable}) (Ru := {.unstable})
-    (fun s => ?_) (realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable
+  exact chain_le_semantics_of_localTable_same (fun _ => rfl)
+    (realize_univ_eq_empty_of (meets := Meets S U) .stable .unstable
       fun x h1 h2 => hU x h2 (hS x h1).lyapunovStable)
     (fun x hx => hF.mem_den_flow.mpr (hS x ((mem_realize _ _ _).mp hx .stable rfl)))
     (fun x hx => hF.mem_den_flow.mpr (hU x ((mem_realize _ _ _).mp hx .unstable rfl)))
     hF.den_passive
-  rcases s with P | _ | _
-  · cases P <;> rfl
-  · rfl
-  · rfl
 
 /-- With a stability condition equivalent to local exponential stability of the field at the
 origin, the local exponential translation of a local spectral family is exact. -/

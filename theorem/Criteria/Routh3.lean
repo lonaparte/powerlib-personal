@@ -36,7 +36,10 @@ Results.
   the same coefficients are read off `A.charpoly` (`charpoly_fin_three`).
   `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`
   (`isHurwitz_fin_three_iff`; for `SpectrallyStable` through
-  `Linear.spectrallyStable_iff_isHurwitz`; companion form `isHurwitz_companion_three_iff`).
+  `Linear.spectrallyStable_iff_isHurwitz`; companion form `isHurwitz_companion_three_iff`). In
+  coefficients `a₃ s³ + a₂ s² + a₁ s + a₀` (`a₃ > 0`, `tr = −a₂/a₃`, `m₂ = a₁/a₃`,
+  `det = −a₀/a₃`): `IsHurwitz A ↔ 0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`
+  (`isHurwitz_iff_of_coeffs_cubic`).
 * Instability witnesses: `0 < det A` and `0 < tr A` are the cases `n = 3` of the any-dimension
   witnesses (`(-1) ^ 3 * A.det < 0`: `Criteria.exists_pos_real_eigenvector_of_det`,
   `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`;
@@ -289,6 +292,20 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     exact ⟨h2, h0, by linarith⟩
   · rintro ⟨h2, h0, hg⟩
     exact ⟨h2, h0, by linarith⟩
+
+/-- Routh–Hurwitz for a 3×3 matrix with characteristic polynomial
+`(a₃ s³ + a₂ s² + a₁ s + a₀) / a₃`, `a₃ > 0`, given by its invariants `tr A = −a₂/a₃`,
+`m₂(A) = a₁/a₃`, `det A = −a₀/a₃`: `IsHurwitz A ↔ 0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_of_coeffs_cubic
+    (A : Matrix (Fin 3) (Fin 3) ℝ) {a3 a2 a1 a0 : ℝ} (h3 : 0 < a3) (htr : A.trace = -a2 / a3)
+    (hm : principalMinorSum A = a1 / a3) (hdet : A.det = -a0 / a3) :
+    LinearSystems.IsHurwitz A ↔ 0 < a2 ∧ 0 < a0 ∧ a3 * a0 < a2 * a1 := by
+  rw [isHurwitz_fin_three_iff, htr, hm, hdet]
+  have e : -a2 / a3 * (a1 / a3) < -a0 / a3 ↔ a3 * a0 < a2 * a1 := by
+    rw [div_mul_div_comm, div_lt_div_iff₀ (by positivity) h3]
+    constructor <;> intro h <;> nlinarith
+  rw [e, neg_div, neg_div, neg_lt_zero, neg_lt_zero, div_pos_iff_of_pos_right h3,
+    div_pos_iff_of_pos_right h3]
 
 /-- Companion form of `s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
 @[tmio T, powerlib_foundation] theorem isHurwitz_companion_three_iff (a0 a1 a2 : ℝ) :

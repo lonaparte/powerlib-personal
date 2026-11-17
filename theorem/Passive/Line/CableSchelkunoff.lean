@@ -880,7 +880,7 @@ theorem exactZmut_tendsto_zero_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 <
 
 /-! ## High-frequency rates -/
 
-open Asymptotics
+open _root_.Asymptotics
 
 section Rates
 

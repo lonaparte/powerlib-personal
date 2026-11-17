@@ -73,13 +73,6 @@ open powerlib.Dynamics (State)
 
 /-! ## 1. Port-Hamiltonian energy -/
 
-@[tmio M, powerlib_domain] private lemma contDiff_pllHamiltonian (V Ki ηs : ℝ) :
-    ContDiff ℝ 1 (pllHamiltonian V Ki ηs) := by
-  unfold pllHamiltonian
-  exact (contDiff_const.mul (contDiff_const.sub
-      (Real.contDiff_cos.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0)))).add
-    (contDiff_const.mul (((Dynamics.contDiff_coord (n := 2) (k := 1) 1).sub contDiff_const).pow 2))
-
 /-- For `c < 2V` the potential-well piece `{|θ| < π, H_s ≤ c}` of the shifted
 port-Hamiltonian energy lies in the region of attraction of the locked equilibrium. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -91,6 +84,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
       ∀ φ : ℝ → State 2, φ 0 = x₀ →
         IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
         Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
+  have hHc (ηs : ℝ) : ContDiff ℝ 1 (pllHamiltonian V Ki ηs) :=
+    contDiff_piPLLEnergy (contDiff_const.mul (contDiff_const.sub Real.contDiff_cos)) Ki ηs
   set H := pllHamiltonian V Ki (δω / Ki)
   set W : Set (State 2) := {x | |x 0| < Real.pi}
   have hW : IsOpen W :=
@@ -98,8 +93,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
       continuous_const
   have hLie : ∀ x, fderiv ℝ H x (srfField V Kp Ki δω x) = -(Kp * srfPD V (x 0) ^ 2) :=
     fun x => by
-      have h := pllHamiltonian_lie (V := V) (Ki := Ki) hKp.le (δω / Ki) x
-      rwa [mul_div_cancel₀ δω hKi.ne'] at h
+      rw [srfField, piPLL_energy_rate (h := srfPD V) _ _ _ _ (hasDerivAt_srfPotential V (x 0)),
+        mul_div_cancel₀ δω hKi.ne', sub_self, mul_zero, add_zero]
   -- the sublevel piece equals a closed set
   have hset : {x ∈ W | H x ≤ c} = {x : State 2 | |x 0| ≤ Real.pi ∧ H x ≤ c} := by
     ext x
@@ -111,7 +106,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       have hcos : Real.cos (x 0) = -1 := by
         rcases abs_eq (Real.pi_pos.le) |>.mp heq with h | h <;> rw [h] <;> simp
       have : 2 * V ≤ H x := by
-        simp only [H, pllHamiltonian, hcos]
+        simp only [H, pllHamiltonian, piPLLEnergy, srfPotential, hcos]
         nlinarith [sq_nonneg (x 1 - δω / Ki)]
       linarith
   have hcompact : IsCompact {x ∈ W | H x ≤ c} := by
@@ -120,19 +115,19 @@ Implementation evidence: trajectory-level result outside the sentence language (
     · exact (isClosed_le
           (continuous_abs.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0).continuous)
           continuous_const).inter
-        (isClosed_le (contDiff_pllHamiltonian V Ki _).continuous continuous_const)
+        (isClosed_le (hHc (δω / Ki)).continuous continuous_const)
     · rintro x ⟨h1, h2⟩
       have hθ : x 0 ^ 2 ≤ Real.pi ^ 2 := by
         rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) h1 2
       have hcos : 0 ≤ V * (1 - Real.cos (x 0)) := by
         have := Real.cos_le_one (x 0); nlinarith
       have hη : (x 1 - δω / Ki) ^ 2 ≤ 2 * |c| / Ki := by
-        simp only [H, pllHamiltonian] at h2
+        simp only [H, pllHamiltonian, piPLLEnergy, srfPotential] at h2
         rw [le_div_iff₀ hKi]
         nlinarith [le_abs_self c]
       nlinarith [sq_nonneg (x 1 - 2 * (δω / Ki))]
   refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel hW (contDiff_srfField V Kp Ki δω)
-    (contDiff_pllHamiltonian V Ki _)
+    (hHc (δω / Ki))
     (fun x _ => by rw [hLie]; nlinarith [sq_nonneg (srfPD V (x 0))])
     hcompact ?_
   refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem (contDiff_srfField V Kp Ki δω)

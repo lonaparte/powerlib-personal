@@ -6,6 +6,8 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.Local
 import theorem.Family.Reading
+import theorem.Family.PassiveOnly
+import theorem.PH.FlatDirection
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -125,19 +127,20 @@ Family and connection conclusions.
   speed by the port, draws `2π |P_m|` minus the damping loss per revolution, so the energy drawn
   over many revolutions exceeds every nonnegative storage.
 * `SyncMachine7.family`: a complete system is the seven-state machine (`SyncMachine7Params`),
-  read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
-  translated into no requirement and is exact (`H ≥ 0`, `SyncMachine7.mem_den_passive`); flow
-  sentences have no translation; the chain lies below the semantics
-  (`SyncMachine7.chain_le_semantics`). No machine is locally exponentially stable at the origin,
-  whatever its parameters (`SyncMachine7.not_mem_den_locallyExponentiallyStable`): `H` does not
-  depend on the rotor angle `δ` and `∇H(0) = 0`, so the Jacobian `(J(0) − R) ∇²H` of the
-  zero-input field (`NonlinearModel.fderiv_zeroInputField_of_dH_eq_zero`) kills `e_δ`, while a
-  locally exponentially stable point of a `C¹` field has an injective Jacobian (converse
-  linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`).
+  read as its pH port system at the origin (the unforced state, an equilibrium), a passivity-only
+  family (`Family.passiveOnly`, `theorem/Family/PassiveOnly.lean`): passivity is translated into
+  no requirement, flow sentences have no translation. Every machine is passive (`H ≥ 0`,
+  `SyncMachine7.mem_den_passive`), so passivity is exact and the chain lies below the semantics
+  (`PassiveOnly.exact_passive`, `PassiveOnly.chain_le_semantics`). No machine is locally
+  exponentially stable at the origin, whatever its parameters
+  (`SyncMachine7.not_mem_den_locallyExponentiallyStable`, hence `PassiveOnly.exact_flow`): `H`
+  does not depend on the rotor angle `δ` and `∇H(0) = 0`, so the Jacobian `(J(0) − R) ∇²H` of the
+  zero-input field kills `e_δ`, while a locally exponentially stable point of a `C¹` field has an
+  injective Jacobian (`PH.NonlinearModel.not_locallyExponentiallyStable_of_col_eq_zero`,
+  `theorem/PH/FlatDirection.lean`).
 * The rate equations, energies, damping powers, supplies, power balances, equilibrium
   characterization, unboundedness of `H`, the linearization and the swing reading are static
-  evidence; the energy derivative of the seven-state machine and the smoothness and Jacobian at
-  the origin of its zero-input field are private implementation evidence.
+  evidence.
 
 Correction.
 * T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`: the classical-machine `H` contains
@@ -378,24 +381,27 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     · ext v
       simp [Matrix.ofLp_toEuclideanCLM, mulVec, dotProduct, Fin.sum_univ_two]
 
-/-- Linearization of the unforced classical machine at `(δ*, 0)`:
-`A = (J − R) ∇²H = !![0, 1/M; −b cos δ*, −D/M]`. -/
-@[tmio M, powerlib_domain] theorem classicalSM_linearization (p : ClassicalSMParams) (δs : ℝ) :
-    ((classicalSM p).J (classicalSM_equilibrium δs) -
-      (classicalSM p).R (classicalSM_equilibrium δs)) *
-        !![p.b * Real.cos δs, 0; 0, 1 / p.M] =
-      !![0, 1 / p.M; -(p.b * Real.cos δs), -(p.D / p.M)] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [classicalSM, Matrix.diagonal_vec2]
-  all_goals ring
-
 /-! ### The swing reading -/
 
 /-- The classical machine as the canonical swing model
 `M ω̇ = P_m − (k₁ + k₂ sin(δ − k₃)) − D ω` (`theorem/PowerSystem/Synchronous/Swing.lean`) with
 `k₁ = k₃ = 0`, `k₂ = b`. -/
 def ClassicalSMParams.toSwing (p : ClassicalSMParams) : SwingParams := ⟨p.M, p.D, p.Pm, 0, p.b, 0⟩
+
+/-- Linearization of the unforced classical machine at `(δ*, 0)`:
+`A = (J − R) ∇²H = !![0, 1/M; −b cos δ*, −D/M]`, the swing Jacobian of `toSwing`
+(`SwingParams.jacobian`) in the momentum coordinates `diag(1, M)` (`Dynamics.scaleMatrix`). -/
+@[tmio M, powerlib_domain] theorem classicalSM_linearization (p : ClassicalSMParams) (δs : ℝ) :
+    ((classicalSM p).J (classicalSM_equilibrium δs) -
+      (classicalSM p).R (classicalSM_equilibrium δs)) *
+        !![p.b * Real.cos δs, 0; 0, 1 / p.M] =
+      Dynamics.scaleMatrix p.M * p.toSwing.jacobian δs * Dynamics.scaleMatrix p.M⁻¹ := by
+  have hM := p.M_pos.ne'
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [classicalSM, Matrix.diagonal_vec2, Dynamics.scaleMatrix, ClassicalSMParams.toSwing,
+      SwingParams.jacobian, SwingParams.syncCoeff, Matrix.mul_apply, Fin.sum_univ_two]
+  all_goals field_simp
 
 /-- Under zero input the pH field is the swing field of `toSwing` in the momentum coordinates
 `(δ, p) = (δ, M ω)`: `f_pH = T ∘ f_swing ∘ T⁻¹` with `T = diag(1, M)` (`Dynamics.scaleCoord`).
@@ -1000,7 +1006,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
   J := syncMachine7_J
   R _ := syncMachine7_R p
   g _ := syncMachine7_g
-  H := quadraticEnergy (syncMachine7_Q p)
+  H := Linear.quadraticEnergy (syncMachine7_Q p)
   dH x := WithLp.toLp 2 (syncMachine7_Q p *ᵥ WithLp.ofLp x)
   skew x := by
     ext i j
@@ -1083,7 +1089,7 @@ electromagnetic-torque terms cancel. -/
       (1 / 2 : ℝ) * (syncMachine7_flux x ⬝ᵥ (p.Γ *ᵥ syncMachine7_flux x)) +
         x 5 ^ 2 / (2 * p.M) := by
   have hQ : syncMachine7_Q p *ᵥ WithLp.ofLp x = _ := syncMachine7_dH p x
-  simp only [syncMachine7, quadraticEnergy]
+  simp only [syncMachine7, Linear.quadraticEnergy]
   rw [hQ]
   simp [syncMachine7_current, syncMachine7_flux, syncMachine7_speed, dotProduct,
     Fin.sum_univ_succ]
@@ -1098,126 +1104,45 @@ electromagnetic-torque terms cancel. -/
   have hM := p.M_pos
   positivity
 
-/-! ### The rotor-angle direction at the origin -/
-
-/-- The entries of `J(x)` are `C¹` (constants and the flux coordinates `Ψ_d`, `Ψ_q`). -/
-@[tmio M, powerlib_domain] private theorem syncMachine7_contDiff_J (i j : Fin 7) :
-    ContDiff ℝ 1 fun x : State 7 => syncMachine7_J x i j := by
-  fin_cases i <;> fin_cases j <;> simp [syncMachine7_J] <;> fun_prop
-
-/-- `∇H` is the linear map `x ↦ Q x`. -/
-@[tmio M, powerlib_domain] private theorem syncMachine7_dH_eq (p : SyncMachine7Params) :
-    (syncMachine7 p).dH = Matrix.toEuclideanCLM (n := Fin 7) (𝕜 := ℝ) (syncMachine7_Q p) :=
-  funext fun _ => rfl
-
-/-- The zero-input field `(J(x) − R) ∇H(x)` is `C¹`. -/
-@[tmio M, powerlib_domain] private theorem syncMachine7_contDiff_zeroInputField (p : SyncMachine7Params) :
-    ContDiff ℝ 1 (syncMachine7 p).zeroInputField :=
-  (syncMachine7 p).contDiff_zeroInputField syncMachine7_contDiff_J (fun _ _ => contDiff_const)
-    (by rw [syncMachine7_dH_eq]; exact ContinuousLinearMap.contDiff _)
-
-/-- At the origin the Jacobian `(J(0) − R) Q` of the zero-input field kills the rotor-angle
-direction `e_δ`: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero (`∂H/∂δ = 0`). -/
-@[tmio M, powerlib_domain] private theorem syncMachine7_fderiv_angle (p : SyncMachine7Params) :
-    fderiv ℝ (syncMachine7 p).zeroInputField 0 (EuclideanSpace.single 6 1) = 0 := by
-  have hQ : HasFDerivAt (syncMachine7 p).dH
-      (Matrix.toEuclideanCLM (n := Fin 7) (𝕜 := ℝ) (syncMachine7_Q p)) 0 := by
-    rw [syncMachine7_dH_eq]
-    exact ContinuousLinearMap.hasFDerivAt _
-  rw [(syncMachine7 p).fderiv_zeroInputField_of_dH_eq_zero
-    (fun i j => ((syncMachine7_contDiff_J i j).differentiable one_ne_zero) 0)
-    (fun _ _ => differentiableAt_const _) hQ (by rw [syncMachine7_dH_eq, map_zero])]
-  have hcol : (syncMachine7_Q p).col 6 = 0 := by
-    ext k
-    fin_cases k <;> simp [syncMachine7_Q]
-  ext i
-  simp [hcol]
-
 /-! ### The seven-state machine family -/
 
 namespace SyncMachine7
 
-/-- Requirements of the seven-state machine family: none is available beyond passivity. -/
-inductive Requirement
-  | impossible
-
-/-- Satisfaction of a requirement. -/
-def Meets (_ : SyncMachine7Params) : Requirement → Prop
-  | .impossible => False
-
-/-- Passivity needs no requirement; the flow sentences have no translation. -/
-def translate : Sentence → Set Requirement
-  | .passive => ∅
-  | .flow _ => Set.univ
-  | .envelope _ => ∅
-
-/-- The seven-state machine family, read as its pH port system at the origin. -/
-def family : Family SyncMachine7Params Requirement 7 4 :=
-  ⟨fun p => (syncMachine7 p).system, Meets, translate⟩
+/-- The seven-state machine family, read as its pH port system at the origin; its requirement
+language offers nothing beyond passivity (`Family.passiveOnly`, `theorem/Family/PassiveOnly.lean`):
+passivity needs no requirement, the flow sentences have no translation. -/
+def family : Family SyncMachine7Params PassiveOnly.Requirement 7 4 :=
+  Family.passiveOnly fun p => (syncMachine7 p).system
 
 @[tmio M, powerlib_domain] theorem family_isNonlinearPH : family.IsNonlinearPH syncMachine7 :=
   fun _ => rfl
 
-@[tmio M, powerlib_domain] theorem realize_univ :
-    connection% (TMIO.realize Meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
-
 /-- Passivity of the seven-state machine with storage `H` (T-sync-machine §1.13): for every
 input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
-`H(x(t₁)) − H(x(t₀)) ≤ ∫ (v_d i_d + v_q i_q + v_f i_f + T_m ω_r)`. -/
+`H(x(t₁)) − H(x(t₀)) ≤ ∫ (v_d i_d + v_q i_q + v_f i_f + T_m ω_r)`. Passivity is therefore translated
+exactly and every translation is sound (`PassiveOnly.exact_passive`,
+`PassiveOnly.chain_le_semantics`). -/
 @[tmio TM, powerlib_domain] theorem mem_den_passive (p : SyncMachine7Params) :
     connection% (p ∈ family.den .passive) :=
   family_isNonlinearPH.mem_den_passive_of_lowerBound 0 (syncMachine7_H_nonneg p)
 
-/-- Passivity is translated exactly. -/
-@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  refine Family.exact_of_translate_eq_empty rfl ?_
-  ext p
-  simp only [Set.mem_univ, iff_true]
-  exact mem_den_passive p
-
-/-- Every translation of the seven-state machine family is sound. -/
-@[tmio TM, powerlib_domain] theorem chain_le_semantics :
-    connection% (∀ P, family.chain P ≤ family.semantics P) := by
-  unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
-  rw [(connection_proof% TMIO.mem_realize)] at hp
-  change ∀ q ∈ translate s, Meets p q at hp
-  rcases s with P | _ | E
-  · exact (hp .impossible trivial).elim
-  · exact mem_den_passive p
-  · exact (Family.mem_den _).mpr trivial
-
 /-- **No seven-state machine is locally exponentially stable at the origin**, whatever its
-parameters. A locally exponentially stable point of the `C¹` zero-input field has an injective
-Jacobian (converse linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`),
-but at the origin the Jacobian `(J(0) − R) ∇²H` kills the rotor-angle direction `e_δ`: `H` does
-not depend on `δ` and `∇H(0) = 0`. -/
+parameters: `H` does not depend on the rotor angle `δ` (the column of `Q = ∇²H` at `δ` is zero),
+so the Jacobian `(J(0) − R) ∇²H` of the zero-input field kills `e_δ`
+(`PH.NonlinearModel.not_locallyExponentiallyStable_of_col_eq_zero`). The translation of local
+exponential stability is therefore exact (`PassiveOnly.exact_flow`). -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SyncMachine7Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isNonlinearPH.mem_den_flow)]
-  intro h
-  change LocallyExponentiallyStable (syncMachine7 p).zeroInputField 0 at h
-  have hv : (EuclideanSpace.single 6 1 : State 7) ≠ 0 := fun h0 => by
-    simpa using congrArg (fun z : State 7 => z 6) h0
-  exact hv (Dynamics.fderiv_injective_of_locallyExponentiallyStable
-    (syncMachine7_contDiff_zeroInputField p) h (by rw [syncMachine7_fderiv_angle, map_zero]))
-
-/-- The translation of local exponential stability (the whole, inconsistent language) is exact:
-no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
-@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
-    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  have hu := realize_univ
-  unfold powerlib.TMIO.Statement at hu
-  exact Family.exact_of_translate_eq_univ (F := family) hu rfl
-    (Set.eq_empty_of_forall_notMem fun p => by
-      have h := not_mem_den_locallyExponentiallyStable p
-      unfold powerlib.TMIO.Statement at h
-      exact h)
+  have h := (syncMachine7 p).not_locallyExponentiallyStable_of_col_eq_zero (k := 6)
+    (Q := syncMachine7_Q p) (funext fun _ => rfl)
+    (fun i j => by fin_cases i <;> fin_cases j <;> simp [syncMachine7, syncMachine7_J] <;> fun_prop)
+    (fun _ _ => contDiff_const)
+    (by ext k; fin_cases k <;> simp [syncMachine7_Q]) 0
+  intro h0
+  change LocallyExponentiallyStable (syncMachine7 p).zeroInputField 0 at h0
+  exact h (by simpa only [sub_zero] using h0)
 
 end SyncMachine7
 

@@ -23,16 +23,17 @@ Source: work-sync `theory/T-ph.md` §1.10 (linear pH form (1.15), `A_ph = (J −
 Lyapunov inequality), §1.6 (RLC instance of constant-coefficient pH).
 
 Results.
-* `linearStateMatrix_lyapunov`, `linearStateMatrix_lyapunov_negSemidef` — the Lyapunov identity
-  above; `linear_lyapunovStable` — every constant-coefficient pH system with `Q ≻ 0` is Lyapunov
-  stable (generic, public foundation).
+* `linearStateMatrix_lyapunov` (the Lyapunov identity above, `Port.PortHamiltonian.lyapunov`),
+  `linearStateMatrix_lyapunov_negSemidef`; `linear_lyapunovStable` — every constant-coefficient
+  pH system with `Q ≻ 0` is Lyapunov stable (generic, public foundation).
 * The linear plant of the system is `linearLTIModel J R g Q : Linear.Plant n m`
   (`A = (J − R) Q`, `B = g`, `C = gᵀ Q`, `D = 0`), and the port system of the pH model **is**
   the port system of that plant (`linear_system_eq`).
+* The Hamiltonian is the quadratic energy `Linear.quadraticEnergy Q`
+  (`theorem/Linear/Certificate.lean`), with gradient `Q x` (`hasGradientAt_quadraticEnergy`).
 * With `Q ≻ 0` the model is the linear port-Hamiltonian plant `toPortHamiltonian J R g Q`
   (`theorem/Port/PortHamiltonian.lean`; its passivity certificate is the plant's KYP
-  certificate `Q`); `quadraticEnergy_eq_storage` — the quadratic Hamiltonian is its stored
-  energy.
+  certificate `Q`, whose storage is the same quadratic energy by definition).
 * Diagonal data (`DiagonalPH (Fin n) (Fin m)`, `theorem/PH/Composition.lean`: constant `J`,
   diagonal damping `d ≥ 0`, diagonal weights `w > 0`, `H = Σ wᵢ xᵢ²/2`) are the special case
   `R = diag d`, `Q = diag w` (`ofDiagonal`); the two vector fields, outputs, energies, damping
@@ -45,10 +46,10 @@ Family and connection conclusions.
   result.
 * The connection conclusions are memberships of `toPortHamiltonian J R g Q` in the existing
   linear port-Hamiltonian family `Port.PortHamiltonian.family`: passivity and Lyapunov stability
-  (`toPortHamiltonian_mem_den_passive`, `toPortHamiltonian_mem_den_lyapunovStable`), reached
-  through `linear_system_eq` and `toPortHamiltonian_plant`. Solutions of the diagonal data and
-  of the plant correspond through the equality of port systems `ofDiagonal_system` (every
-  solution notion of the Port semantics transfers by rewriting).
+  are `Port.PortHamiltonian.mem_den_passive` and `Port.PortHamiltonian.mem_den_lyapunovStable`
+  applied to it, reached through `linear_system_eq` and `toPortHamiltonian_plant`. Solutions of
+  the diagonal data and of the plant correspond through the equality of port systems
+  `ofDiagonal_system` (every solution notion of the Port semantics transfers by rewriting).
 -/
 
 noncomputable section
@@ -60,28 +61,15 @@ variable {n m : ℕ}
 
 /-! ### Quadratic Hamiltonian -/
 
-/-- The quadratic Hamiltonian `½ xᵀ Q x`. -/
-def quadraticEnergy (Q : Matrix (Fin n) (Fin n) ℝ) (x : State n) : ℝ :=
-  (1 / 2 : ℝ) * (WithLp.ofLp x ⬝ᵥ (Q *ᵥ WithLp.ofLp x))
-
-/-- For symmetric `Q`, the gradient of `½ xᵀ Q x` is `Q x`. -/
-@[tmio T, powerlib_foundation] theorem hasGradientAt_quadraticEnergy {Q : Matrix (Fin n) (Fin n) ℝ}
-    (hQ : Qᵀ = Q) (x : State n) :
-    HasGradientAt (quadraticEnergy Q) (WithLp.toLp 2 (Q *ᵥ WithLp.ofLp x)) x := by
-  let A := Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) Q
-  have hin := ((hasFDerivAt_id x).inner ℝ A.hasFDerivAt).const_mul (1 / 2 : ℝ)
-  have hfun : quadraticEnergy Q = fun y => (1 / 2 : ℝ) * inner ℝ (id y) (A y) := by
-    funext y
-    simp [quadraticEnergy, inner_eq_dotProduct, A]
-  rw [hfun]
-  refine hasGradientAt_of_hasFDerivAt hin fun v => ?_
-  have hsym : WithLp.ofLp x ⬝ᵥ (Q *ᵥ WithLp.ofLp v) = (Q *ᵥ WithLp.ofLp x) ⬝ᵥ WithLp.ofLp v := by
-    rw [dotProduct_mulVec, ← mulVec_transpose, hQ]
-  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.prod_apply, fderivInnerCLM_apply, id_eq, ContinuousLinearMap.id_apply,
-    inner_eq_dotProduct, smul_eq_mul, A, Matrix.ofLp_toEuclideanCLM]
-  rw [hsym, dotProduct_comm (WithLp.ofLp v)]
-  ring
+/-- For symmetric `Q`, the gradient of the quadratic energy `½ xᵀ Q x` (`Linear.quadraticEnergy`)
+is `Q x`. -/
+@[tmio T, powerlib_foundation] theorem hasGradientAt_quadraticEnergy
+    {Q : Matrix (Fin n) (Fin n) ℝ} (hQ : Qᵀ = Q) (x : State n) :
+    HasGradientAt (Linear.quadraticEnergy Q) (WithLp.toLp 2 (Q *ᵥ WithLp.ofLp x)) x := by
+  refine hasGradientAt_of_hasFDerivAt
+    ((Linear.contDiff_quadraticEnergy Q).differentiable (by norm_num) x).hasFDerivAt fun v => ?_
+  rw [Linear.fderiv_quadraticEnergy_apply hQ, WithLp.ofLp_toLp,
+    dotProduct_mulVec, ← mulVec_transpose, hQ]
 
 /-! ### Constant-coefficient port-Hamiltonian systems -/
 
@@ -93,7 +81,7 @@ def linear (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fin m) ℝ)
   J _ := J
   R _ := R
   g _ := g
-  H := quadraticEnergy Q
+  H := Linear.quadraticEnergy Q
   dH x := WithLp.toLp 2 (Q *ᵥ WithLp.ofLp x)
   skew _ := hJ
   dissipation_posSemidef _ := hR
@@ -110,7 +98,7 @@ variable {J R : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
 
 include hJ hR hQ in
 @[tmio M, simp, powerlib_foundation] theorem linear_H (x : State n) :
-    (linear J R g Q hJ hR hQ).H x = quadraticEnergy Q x := rfl
+    (linear J R g Q hJ hR hQ).H x = Linear.quadraticEnergy Q x := rfl
 
 include hJ hR hQ in
 @[tmio M, simp, powerlib_foundation] theorem ofLp_linear_dH (x : State n) :
@@ -148,9 +136,8 @@ include hJ hR hQ in
 include hJ hQ in
 /-- Lyapunov identity of the linear pH system: `Aᵀ Q + Q A = −2 Q R Q` for symmetric `R`. -/
 @[tmio T, powerlib_foundation] theorem linearStateMatrix_lyapunov (hRt : Rᵀ = R) :
-    (linearStateMatrix J R Q)ᵀ * Q + Q * linearStateMatrix J R Q = -(2 : ℝ) • (Q * R * Q) := by
-  rw [linearStateMatrix, transpose_mul, transpose_sub, hJ, hRt, hQ, neg_smul, two_smul]
-  noncomm_ring
+    (linearStateMatrix J R Q)ᵀ * Q + Q * linearStateMatrix J R Q = -(2 : ℝ) • (Q * R * Q) :=
+  Port.PortHamiltonian.lyapunov hJ hRt hQ
 
 include hJ hR hQ in
 /-- `Aᵀ Q + Q A ⪯ 0`: its negation `2 Q R Q` is positive semidefinite. -/
@@ -171,7 +158,8 @@ include hJ hR hQ in
   have hx0 : WithLp.ofLp x ≠ 0 := fun h => hx (WithLp.ofLp_injective 2 (by simpa using h))
   have hpos := hQd.dotProduct_mulVec_pos hx0
   rw [star_trivial] at hpos
-  simp only [linear_H, quadraticEnergy, WithLp.ofLp_zero, mulVec_zero, dotProduct_zero, mul_zero]
+  simp only [linear_H, Linear.quadraticEnergy, WithLp.ofLp_zero, mulVec_zero, dotProduct_zero,
+    mul_zero]
   positivity
 
 include hJ hR hQ in
@@ -258,31 +246,6 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
     (hR : R.PosSemidef) (hQ : Q.PosDef) :
     (toPortHamiltonian J R g Q hJ hR hQ).plant = linearLTIModel J R g Q := rfl
 
-/-- The quadratic Hamiltonian is the stored energy of the linear port-Hamiltonian plant. -/
-@[tmio M, powerlib_foundation] theorem quadraticEnergy_eq_storage {J R : Matrix (Fin n) (Fin n) ℝ}
-    {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
-    (hR : R.PosSemidef) (hQ : Q.PosDef) (x : State n) :
-    quadraticEnergy Q x = (toPortHamiltonian J R g Q hJ hR hQ).kyp.storage x := by
-  simp only [quadraticEnergy, Linear.KYP.storage, Port.PortHamiltonian.kyp, toPortHamiltonian]
-  ring
-
-/-- Every constant-coefficient pH system with `Q ≻ 0`, `R ⪰ 0` is passive (storage
-`½ xᵀ Q x`). -/
-@[tmio TM, powerlib_foundation] theorem toPortHamiltonian_mem_den_passive {J R : Matrix (Fin n) (Fin n) ℝ}
-    (g : Matrix (Fin n) (Fin m) ℝ) {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
-    (hR : R.PosSemidef) (hQ : Q.PosDef) :
-    connection% (toPortHamiltonian J R g Q hJ hR hQ ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- Every unforced constant-coefficient pH system with `Q ≻ 0`, `R ⪰ 0` is Lyapunov stable at
-the origin. -/
-@[tmio TM, powerlib_foundation] theorem toPortHamiltonian_mem_den_lyapunovStable
-    {J R : Matrix (Fin n) (Fin n) ℝ} (g : Matrix (Fin n) (Fin m) ℝ)
-    {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Q.PosDef) :
-    connection% (toPortHamiltonian J R g Q hJ hR hQ ∈
-      Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
-
 /-! ### Bridge to diagonal data -/
 
 /-- Diagonal port-Hamiltonian data numbered by `Fin` viewed as a `NonlinearModel`. -/
@@ -312,8 +275,8 @@ variable (pm : DiagonalPH (Fin n) (Fin m))
 
 @[tmio M, powerlib_foundation] theorem ofDiagonal_H (x : State n) :
     (ofDiagonal pm).H x = pm.energy (WithLp.ofLp x) := by
-  change quadraticEnergy (diagonal pm.w) x = _
-  simp only [quadraticEnergy, DiagonalPH.energy, dotProduct, mulVec_diagonal, Finset.mul_sum]
+  change Linear.quadraticEnergy (diagonal pm.w) x = _
+  simp only [Linear.quadraticEnergy, DiagonalPH.energy, dotProduct, mulVec_diagonal, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ => by ring
 
 @[tmio M, powerlib_foundation] theorem ofDiagonal_dampingPower (x : State n) :

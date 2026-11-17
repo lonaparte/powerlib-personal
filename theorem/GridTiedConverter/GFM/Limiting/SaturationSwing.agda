@@ -10,8 +10,10 @@ module theorem.GridTiedConverter.GFM.Limiting.SaturationSwing where
 -- family keeps the two-element language `{stable, unstable}` (`Spectral.localFamily`), which has no
 -- requirement for positive inertia, so the context is a predicate on the parameters and the
 -- results are member characterizations within it. Lean proves the field identity
--- (`satField_eq_swing`), the reading (`mem_den_flow_iff_swing`) and, through the correspondence of
--- `Stable` with the swing requirements, the characterizations
+-- (`satField_eq_swing`), the reading (`mem_den_flow_iff_swing`), the soundness of the family's
+-- local translations through the hub's members (`chain_le_semantics`,
+-- `saturated_stable_equilibrium`, `saturated_unstable_equilibrium`, the negative-inertia witness)
+-- and, through the correspondence of `Stable` with the swing requirements, the characterizations
 -- (`mem_den_locallyExponentiallyStable_iff`, `mem_den_locallyAsymptoticallyStable_iff`). Nothing
 -- here is exported.
 

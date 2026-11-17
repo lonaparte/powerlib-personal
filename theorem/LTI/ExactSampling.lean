@@ -129,12 +129,12 @@ end Sampled
 /-- The sampled implementation family: every sampled system read as the map of its step matrix,
 with step length its period; requirements and translation are those of its design model. -/
 def sampledFamily : Family (Sampled n) Spectral.Requirement n 0 where
-  system y := .discrete (Map.System.autonomous y.T (Map.op y.step))
+  system y := .discrete (Map.System.autonomous y.T (Linear.op y.step))
   meets y := continuousFamily.meets y.design
   translate := (continuousFamily (n := n)).translate
 
 @[tmio M, powerlib_foundation] theorem sampledFamily_isAutonomousMap :
-    (sampledFamily (n := n)).IsAutonomousMap Sampled.T fun y => Map.op y.step :=
+    (sampledFamily (n := n)).IsAutonomousMap Sampled.T fun y => Linear.op y.step :=
   fun _ => rfl
 
 /-- **Reading of the sampled system through its design.** Every denotation of the sampled family
@@ -170,13 +170,9 @@ and so does the sampled system (`sampled_reading`). -/
   unfold powerlib.TMIO.Statement
   have hc := continuous_chain_le_semantics (n := n)
   unfold powerlib.TMIO.Statement at hc
-  refine Family.chain_le_semantics_iff.mpr fun s => ?_
-  have hr := sampled_reading (n := n) s
-  unfold powerlib.TMIO.Statement at hr
-  unfold Family.Sound
-  rw [hr, show (sampledFamily (n := n)).translate s = continuousFamily.translate s from rfl,
-    sampled_realize]
-  exact Set.preimage_mono (Family.chain_le_semantics_iff.mp hc s)
+  exact Family.chain_le_semantics_iff.mpr fun s =>
+    Family.Sound.of_reading (sampled_realize _) (sampled_reading s)
+      (Family.chain_le_semantics_iff.mp hc s)
 
 /-- **Exactness of the sampled family is the model family's.** A translation of the sampled family
 is exact exactly when the continuous family's is: both its requirement spaces and its denotations
@@ -184,14 +180,8 @@ are the model family's pulled back along the design map, which is onto. With `co
 the attractive and contractive translations are exact. -/
 @[tmio TM, powerlib_foundation] theorem sampled_exact_iff (s : Sentence) :
     connection% ((sampledFamily (n := n)).Exact s ↔ (continuousFamily (n := n)).Exact s) := by
-  unfold powerlib.TMIO.Statement
-  have hr := sampled_reading (n := n) s
-  unfold powerlib.TMIO.Statement at hr
-  have hsurj : Function.Surjective (Sampled.design (n := n)) := fun m => ⟨⟨m, 1, one_pos⟩, rfl⟩
-  unfold Family.Exact
-  rw [hr, show (sampledFamily (n := n)).translate s = continuousFamily.translate s from rfl,
-    sampled_realize]
-  exact (Set.preimage_injective.mpr hsurj).eq_iff
+  exact Family.exact_iff_of_reading (sampled_realize _) (sampled_reading s)
+    fun m => ⟨⟨m, 1, one_pos⟩, rfl⟩
 
 /-! ## The realization -/
 

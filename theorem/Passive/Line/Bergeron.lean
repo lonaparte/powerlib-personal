@@ -1,6 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
-import theorem.PDE.Partial
+import theorem.PDE.Transport
 import theorem.Passive.Series
 import theorem.Passive.Parallel
 
@@ -42,7 +42,11 @@ Results.
   the whole plane has this form (`eq_travelling`).
 * The partial-derivative predicate `PDE.HasPartialsWithin`, the strip `PDE.strip` and
   `PDE.const_along_segment` are in `theorem/PDE/Partial.lean`; the transport equation
-  `u_t + a u_x = 0` is in `theorem/PDE/Transport.lean`.
+  `u_t + a u_x = 0` is in `theorem/PDE/Transport.lean` (each travelling wave solves it,
+  `PDE.transport_solution`).
+* `IsTelegrapherSolution.reflect`: the mirror image `x ↦ a + b − x` of a solution on `[a, b]`,
+  with the current reversed, is a solution; the backward invariant is the forward invariant of
+  the reflected solution.
 -/
 
 noncomputable section
@@ -58,6 +62,28 @@ def IsTelegrapherSolution (series : Passive.SeriesRLC) (shunt : Passive.Parallel
   series.S = 0 ∧ shunt.Γ = 0 ∧ ∃ vx vt ix it : ℝ × ℝ → ℝ, ∀ q ∈ strip a b,
     HasPartialsWithin v vx vt (strip a b) q ∧ HasPartialsWithin i ix it (strip a b) q ∧
       vx q = -series.L * it q - series.R * i q ∧ ix q = -shunt.C * vt q - shunt.G * v q
+
+/-- Reflection of the strip: if `(v, i)` solves the telegrapher equations on `[a, b] × ℝ`, so does
+the mirror image `x ↦ a + b − x` with the current reversed, `(v, −i)(a + b − x, t)`. -/
+@[tmio M, powerlib_domain] theorem IsTelegrapherSolution.reflect {series : Passive.SeriesRLC}
+    {shunt : Passive.ParallelRLC} {a b : ℝ} {v i : ℝ × ℝ → ℝ}
+    (h : IsTelegrapherSolution series shunt a b v i) :
+    IsTelegrapherSolution series shunt a b (fun q => v (a + b - q.1, q.2))
+      (fun q => -i (a + b - q.1, q.2)) := by
+  obtain ⟨hS, hΓ, vx, vt, ix, it, hsol⟩ := h
+  have hmaps : MapsTo (fun q : ℝ × ℝ => (a + b - q.1, q.2)) (strip a b) (strip a b) :=
+    fun q hq => ⟨⟨by linarith [hq.1.2], by linarith [hq.1.1]⟩, trivial⟩
+  refine ⟨hS, hΓ, fun q => -vx (a + b - q.1, q.2), fun q => vt (a + b - q.1, q.2),
+    fun q => ix (a + b - q.1, q.2), fun q => -it (a + b - q.1, q.2), fun q hq => ?_⟩
+  have hσ : HasFDerivAt (fun q : ℝ × ℝ => (a + b - q.1, q.2))
+      ((-ContinuousLinearMap.fst ℝ ℝ ℝ).prod (ContinuousLinearMap.snd ℝ ℝ ℝ)) q :=
+    ((hasFDerivAt_const (a + b) q).sub hasFDerivAt_fst).prodMk hasFDerivAt_snd |>.congr_fderiv
+      (by ext <;> simp)
+  obtain ⟨hv, hi, hkvl, hkcl⟩ := hsol _ (hmaps hq)
+  refine ⟨(hv.comp q hσ.hasFDerivWithinAt hmaps).congr_fderiv (by ext <;> simp),
+    (hi.comp q hσ.hasFDerivWithinAt hmaps).neg.congr_fderiv (by ext <;> simp), ?_, ?_⟩
+  · simp only; linear_combination -hkvl
+  · simp only; linear_combination hkcl
 
 /-- Lossless line constants: a unit length of line is the series branch `series` (`L'`) and
 the shunt `shunt` (`C'`), both lossless. -/
@@ -158,40 +184,15 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
   simp only [hpt, add_zero, zero_div, add_sub_cancel] at key
   exact key
 
-/-- Backward Riemann invariant: `v - Z_c i` is constant along `x + ct = const`. -/
+/-- Backward Riemann invariant: `v - Z_c i` is constant along `x + ct = const`; the forward
+invariant of the reflected solution (`IsTelegrapherSolution.reflect`). -/
 @[tmio TM, powerlib_domain] theorem backward_invariant
     (h : IsTelegrapherSolution p.series p.shunt a b v i) (hab : a ≤ b) (t₀ : ℝ) :
     v (b, t₀ - (b - a) / p.c) - p.Zc * i (b, t₀ - (b - a) / p.c) =
       v (a, t₀) - p.Zc * i (a, t₀) := by
-  obtain ⟨-, -, vx, vt, ix, it, hsol⟩ := h
-  have hc := p.c_pos
-  have hpt : ∀ s : ℝ, ((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), -(1 / p.c)) = (a + s, t₀ - s / p.c) := by
-    intro s; ext <;> simp; ring
-  have hmaps : ∀ s ∈ Icc (0 : ℝ) (b - a),
-      ((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), -(1 / p.c)) ∈ strip a b := by
-    intro s hs
-    rw [hpt]
-    exact ⟨⟨by linarith [hs.1], by linarith [hs.2]⟩, trivial⟩
-  have key := const_along_segment (U := fun q => v q - p.Zc * i q)
-    (Ux := fun q => vx q - p.Zc * ix q) (Ut := fun q => vt q - p.Zc * it q)
-    (S := strip a b) (p₀ := (a, t₀)) (d := ((1 : ℝ), -(1 / p.c))) (sub_nonneg.mpr hab) hmaps
-    (by
-      intro s hs
-      obtain ⟨hv, hi, -, -⟩ := hsol _ (hmaps s hs)
-      exact (hv.sub (hi.const_mul p.Zc)).congr_fderiv (by ext <;> simp))
-    (by
-      intro s hs
-      obtain ⟨-, -, hkvl, hkcl⟩ := hsol _ (hmaps s hs)
-      generalize (((a, t₀) : ℝ × ℝ) + s • ((1 : ℝ), -(1 / p.c))) = q at hkvl hkcl ⊢
-      rw [hkvl, hkcl, p.series_lossless, p.shunt_lossless]
-      have hc0 := hc.ne'
-      have e : (-p.L * it q - 0 * i q - p.Zc * (-p.C * vt q - 0 * v q)) * (1, -(1 / p.c)).1 +
-          (vt q - p.Zc * it q) * (1, -(1 / p.c)).2 =
-          (it q * (p.Zc - p.c * p.L) + vt q * (p.c * p.Zc * p.C - 1)) / p.c := by
-        simp only; field_simp; ring
-      rw [e, p.c_mul_Zc_mul_C, p.c_mul_L]; simp)
-  simp only [hpt, add_zero, zero_div, sub_zero, add_sub_cancel] at key
-  exact key
+  have := forward_invariant h.reflect hab (t₀ - (b - a) / p.c)
+  simp only [add_sub_cancel_left, add_sub_cancel_right, sub_add_cancel] at this
+  linarith
 
 /-! ## Bergeron relations -/
 
@@ -263,33 +264,23 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
     IsTelegrapherSolution p.series p.shunt a b (travellingV p f g) (travellingI p f g) := by
   have hZ := p.Zc_pos.ne'
   have hc := p.c_pos.ne'
+  -- the two waves solve the transport equations at the speeds `c` and `−c`
+  have hF := fun q => (PDE.transport_solution p.c hf q).1
+  have hG := fun q => (PDE.transport_solution (-p.c) hg q).1
+  simp only [neg_mul, sub_neg_eq_add, neg_neg] at hG
   refine ⟨p.series_noCap, p.shunt_noInd, fun q => f' (q.1 - p.c * q.2) + g' (q.1 + p.c * q.2),
     fun q => -p.c * f' (q.1 - p.c * q.2) + p.c * g' (q.1 + p.c * q.2),
     fun q => (f' (q.1 - p.c * q.2) - g' (q.1 + p.c * q.2)) / p.Zc,
     fun q => (-p.c * f' (q.1 - p.c * q.2) - p.c * g' (q.1 + p.c * q.2)) / p.Zc,
     fun q _ => ⟨?_, ?_, ?_, ?_⟩⟩
-  · have hm : HasFDerivAt (fun q : ℝ × ℝ => q.1 - p.c * q.2)
-        (ContinuousLinearMap.fst ℝ ℝ ℝ - p.c • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
-      (hasFDerivAt_fst).sub ((hasFDerivAt_snd).const_mul p.c)
-    have hp : HasFDerivAt (fun q : ℝ × ℝ => q.1 + p.c * q.2)
-        (ContinuousLinearMap.fst ℝ ℝ ℝ + p.c • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
-      (hasFDerivAt_fst).add ((hasFDerivAt_snd).const_mul p.c)
-    have := ((hf _).comp_hasFDerivAt q hm).add ((hg _).comp_hasFDerivAt q hp)
-    exact (this.congr_fderiv (by ext <;> simp; ring)).hasFDerivWithinAt
-  · have hm : HasFDerivAt (fun q : ℝ × ℝ => q.1 - p.c * q.2)
-        (ContinuousLinearMap.fst ℝ ℝ ℝ - p.c • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
-      (hasFDerivAt_fst).sub ((hasFDerivAt_snd).const_mul p.c)
-    have hp : HasFDerivAt (fun q : ℝ × ℝ => q.1 + p.c * q.2)
-        (ContinuousLinearMap.fst ℝ ℝ ℝ + p.c • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
-      (hasFDerivAt_fst).add ((hasFDerivAt_snd).const_mul p.c)
-    have := (((hf _).comp_hasFDerivAt q hm).sub ((hg _).comp_hasFDerivAt q hp)).mul_const
-      p.Zc⁻¹
-    exact (this.congr_fderiv (by ext <;> simp <;> field_simp)).hasFDerivWithinAt
-  · simp only [p.series_lossless, mul_zero, zero_mul, sub_zero]
+  · exact (((hF q).add (hG q)).congr_fderiv (by ext <;> simp)).mono (subset_univ _)
+  · exact ((((hF q).sub (hG q)).mul_const p.Zc⁻¹).congr_fderiv
+      (by ext <;> simp <;> field_simp)).mono (subset_univ _)
+  · simp only [p.series_lossless, zero_mul, sub_zero]
     have h2 := p.c_mul_L
     field_simp
     linear_combination (-(f' (q.1 - p.c * q.2)) - g' (q.1 + p.c * q.2)) * h2
-  · simp only [p.shunt_lossless, mul_zero, zero_mul, sub_zero]
+  · simp only [p.shunt_lossless, zero_mul, sub_zero]
     have h1 := p.c_mul_Zc_mul_C
     field_simp
     linear_combination (g' (q.1 + p.c * q.2) - f' (q.1 - p.c * q.2)) * h1

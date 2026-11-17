@@ -1,5 +1,5 @@
 import theorem.Grid.Interconnection
-import theorem.Passive.Dq
+import theorem.Passive.DqRL
 import theorem.Transform.Park
 
 /-! # State-space realization of the grid-side impedance `Z_ext`
@@ -22,11 +22,18 @@ Source: work-sync `theory/T-gfl-impedance.md` §1.7; `theory/T-gfl-control.md` �
 Results.
 * `networkModel_D`: the realization has no feedthrough (strictly proper).
 * `networkBlocks_field`: the block equations are the PCC KCL and the line KVL.
+* `shuntPlant`, `networkInterconnection`, `networkModel_eq_closedLoop`: the network is the closed
+  loop of `Grid.Interconnection` with the shunt as source (state `w`; the field of the dual series
+  element `Passive.ParallelRLC.toSeries`, input and output negated) and the line branch
+  `Passive.DqRL.dqRLPlant` as load (scaffold `theorem/Grid/ImpedanceNetwork.agda`);
+  `transfer_shuntPlant_mul_dqAdmittance`: the shunt's impedance inverts its dq admittance.
 * `Zext`, `Zext_eq`: the network-side impedance `Z_ext = (Z_line⁻¹ + Y_shunt)⁻¹`, the line's dq
   impedance in parallel with the shunt's dq admittance, and
-  `Z_ext = Z_line (I + Y_shunt Z_line)⁻¹`.
-* `networkModel_transfer`: off the characteristic roots and with `det Z_line ≠ 0`, its transfer
-  matrix is exactly the corrected `Z_ext`.
+  `Z_ext = Z_line (I + Y_shunt Z_line)⁻¹`; `Zext_eq_portImpedance`: it is the port impedance of
+  the interconnection.
+* `networkModel_transfer`: off the characteristic roots and with `det Y_shunt ≠ 0`,
+  `det Z_line ≠ 0`, its transfer matrix is exactly the corrected `Z_ext` (the closed loop's
+  transfer is the port impedance, `Grid.Interconnection.transfer_closedLoop`).
 * `withNetwork`: so the network is an admissible `source` of `Grid.Interconnection`, with any
   strictly proper converter admittance realization (`D = 0`, e.g. a GFL admittance) as `load`;
   the interconnection's source impedance is definitionally the network transfer, hence `Z_ext`
@@ -81,53 +88,56 @@ def networkModel (line : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (ω : 
       Matrix.vecHead, Matrix.vecTail] <;>
     field_simp <;> ring
 
-/-- The plant's characteristic determinant is the block one. -/
-@[tmio M, powerlib_domain] theorem det_characteristicMatrix_networkModel (line : Passive.SeriesRLC)
-    (shunt : Passive.ParallelRLC) (ω : ℝ)
-    (s : ℂ) : (characteristicMatrix (networkModel line shunt ω).A s).det =
-      (characteristicMatrix (networkA line shunt ω) s).det := by
-  change (characteristicMatrix ((networkA line shunt ω).reindex _ _) s).det = _
-  rw [characteristicMatrix_reindex, Matrix.det_reindex_self]
+/-- The shunt as the source of an impedance interconnection, in the coordinates `w = −v_PCC`:
+state `w`, input the port current `i_line − u`, output `−w = v_PCC`. Its field
+`C w' = u − i_line − G w − ωC J w` is the element equation of the dual series element
+`shunt.toSeries` (`Passive.DqRL.dqRLMatrix`) with the input and the output negated. -/
+def shuntPlant (shunt : Passive.ParallelRLC) (ω : ℝ) : Plant 2 2 :=
+  ⟨Passive.DqRL.dqRLMatrix shunt.toSeries ω, -(shunt.C⁻¹ • 1), -1, 0⟩
 
-@[tmio M, powerlib_domain] private lemma charMatrix_blocks (line : Passive.SeriesRLC)
-    (shunt : Passive.ParallelRLC)
-    (ω : ℝ) (s : ℂ) :
-    characteristicMatrix (networkA line shunt ω) s =
-      fromBlocks (s • 1 - complexify (-shunt.decay • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
-          ω • Transform.J))
-        (-complexify (-(1 / shunt.C) • (1 : Matrix (Fin 2) (Fin 2) ℝ)))
-        (-complexify ((1 / line.L) • (1 : Matrix (Fin 2) (Fin 2) ℝ)))
-        (s • 1 - complexify (-line.decay • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
-          ω • Transform.J)) := by
-  have hone : (s • (1 : Matrix NetIdx NetIdx ℂ)) = fromBlocks (s • 1) 0 0 (s • 1) := by
-    rw [← fromBlocks_one, fromBlocks_smul]
-    simp only [smul_zero]
-  rw [characteristicMatrix, hone]
-  change fromBlocks (s • 1) 0 0 (s • 1) - complexify (fromBlocks _ _ _ _) = _
-  rw [complexify_fromBlocks, sub_eq_add_neg, fromBlocks_neg, fromBlocks_add]
-  simp [sub_eq_add_neg]
+/-- The network as an impedance interconnection: the shunt (`shuntPlant`) as the source, the
+line branch (`Passive.DqRL.dqRLPlant`, voltage `w` in, current `i_line` out) as the strictly proper
+load. -/
+def networkInterconnection (line : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (ω : ℝ) :
+    Interconnection 2 2 2 :=
+  ⟨shuntPlant shunt ω, Passive.DqRL.dqRLPlant line ω, rfl⟩
 
-@[tmio M, powerlib_domain] private lemma block11 {shunt : Passive.ParallelRLC} {ω : ℝ}
-    (hΓ : shunt.Γ = 0) (hC : shunt.C ≠ 0)
-    (s : ℂ) :
-    (shunt.C : ℂ) • (s • 1 - complexify (-shunt.decay • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
-      ω • Transform.J)) = shunt.dqAdmittance ω s := by
-  have hC' : (shunt.C : ℂ) ≠ 0 := by exact_mod_cast hC
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Passive.ParallelRLC.dqAdmittance_of_noInd hΓ, Passive.ParallelRLC.decay,
-        Transform.J] <;> field_simp <;> ring
+/-- The network realization is the closed loop of the shunt and the line branch. -/
+@[tmio M, powerlib_domain] theorem networkModel_eq_closedLoop (line : Passive.SeriesRLC)
+    (shunt : Passive.ParallelRLC) (ω : ℝ) :
+    networkModel line shunt ω = (networkInterconnection line shunt ω).closedLoop := by
+  have hA : networkA line shunt ω = (networkInterconnection line shunt ω).closedLoopBlocks := by
+    simp only [networkA, Interconnection.closedLoopBlocks, generated.closedLoopBlocks_spec,
+      networkInterconnection, shuntPlant, Passive.DqRL.dqRLPlant, Passive.DqRL.dqRLMatrix_eq]
+    congr 1 <;> simp [one_div]
+  have hB : networkB shunt = (networkInterconnection line shunt ω).inputBlocks := by
+    simp [networkB, Interconnection.inputBlocks, networkInterconnection, shuntPlant,
+      Passive.DqRL.dqRLPlant, one_div]
+  have hC : networkC = (networkInterconnection line shunt ω).outputBlocks := by
+    simp [networkC, Interconnection.outputBlocks, networkInterconnection, shuntPlant]
+  rw [networkModel, Interconnection.closedLoop, Interconnection.closedLoopA, hA, hB, hC]
+  rfl
 
-@[tmio M, powerlib_domain] private lemma block22 {line : Passive.SeriesRLC} {ω : ℝ}
-    (hS : line.S = 0) (hL : line.L ≠ 0)
-    (s : ℂ) :
-    (line.L : ℂ) • (s • 1 - complexify (-line.decay • (1 : Matrix (Fin 2) (Fin 2) ℝ) -
-      ω • Transform.J)) = line.dqImpedance ω s := by
-  have hL' : (line.L : ℂ) ≠ 0 := by exact_mod_cast hL
-  rw [Passive.SeriesRLC.dqImpedance_of_noCap hS]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Passive.SeriesRLC.decay, Transform.J] <;> field_simp <;> ring
+/-- The impedance of the shunt inverts its dq admittance wherever `s` is not a pole; the dual of
+`Passive.DqRL.transfer_dqRLPlant_mul_dqImpedance`, to which the sign changes of `w = −v_PCC`
+reduce it. -/
+@[tmio M, powerlib_domain] theorem transfer_shuntPlant_mul_dqAdmittance
+    {shunt : Passive.ParallelRLC} (hΓ : shunt.Γ = 0) (hC : shunt.C ≠ 0) (ω : ℝ) {s : ℂ}
+    (hs : (characteristicMatrix (shuntPlant shunt ω).A s).det ≠ 0) :
+    transfer (shuntPlant shunt ω) s * shunt.dqAdmittance ω s = 1 := by
+  have h : transfer (shuntPlant shunt ω) s =
+      transfer (Passive.DqRL.dqRLPlant shunt.toSeries ω) s := by
+    simp only [transfer, shuntPlant, Passive.DqRL.dqRLPlant, complexify_neg, Matrix.neg_mul,
+      Matrix.mul_neg, neg_neg]
+    rfl
+  rw [h]
+  exact Passive.DqRL.transfer_dqRLPlant_mul_dqImpedance (b := shunt.toSeries) hΓ hC ω hs
+
+@[tmio M, powerlib_domain] private lemma det_dqRL_ne_zero {b : Passive.SeriesRLC} (hS : b.S = 0)
+    (hL : b.L ≠ 0) {ω : ℝ} {s : ℂ} (h : (b.dqImpedance ω s).det ≠ 0) :
+    (characteristicMatrix (Passive.DqRL.dqRLMatrix b ω) s).det ≠ 0 := by
+  rw [Passive.DqRL.characteristicMatrix_dqRL_eq hS hL, Matrix.det_smul]
+  exact mul_ne_zero (pow_ne_zero _ (inv_ne_zero (by exact_mod_cast hL))) h
 
 /-- The network-side impedance `Z_ext = (Z_line⁻¹ + Y_shunt)⁻¹`: the dq impedance of the line
 branch in parallel with the dq admittance of the shunt. -/
@@ -148,78 +158,41 @@ def Zext (line : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (ω : ℝ) (s 
       Matrix.mul_one]
   rw [Zext, hfac, Matrix.mul_inv_rev, Matrix.nonsing_inv_nonsing_inv _ hZ]
 
-/-- The realization's transfer matrix is the corrected `Z_ext`. -/
+/-- The port impedance of the shunt–line interconnection is `Z_ext`. -/
+@[tmio M, powerlib_domain] theorem Zext_eq_portImpedance {line : Passive.SeriesRLC}
+    {shunt : Passive.ParallelRLC} {ω : ℝ} (hS : line.S = 0) (hΓ : shunt.Γ = 0)
+    (hC : shunt.C ≠ 0) (hL : line.L ≠ 0) {s : ℂ} (hY : (shunt.dqAdmittance ω s).det ≠ 0)
+    (hZ : (line.dqImpedance ω s).det ≠ 0) :
+    (networkInterconnection line shunt ω).portImpedance s = Zext line shunt ω s := by
+  have hTs : transfer (shuntPlant shunt ω) s = (shunt.dqAdmittance ω s)⁻¹ :=
+    (Matrix.inv_eq_left_inv (transfer_shuntPlant_mul_dqAdmittance hΓ hC ω
+      (det_dqRL_ne_zero (b := shunt.toSeries) hΓ hC hY))).symm
+  have hTl : transfer (Passive.DqRL.dqRLPlant line ω) s = (line.dqImpedance ω s)⁻¹ :=
+    (Matrix.inv_eq_left_inv (Passive.DqRL.transfer_dqRLPlant_mul_dqImpedance hS hL ω
+      (det_dqRL_ne_zero hS hL hZ))).symm
+  simp only [Interconnection.portImpedance, Interconnection.sourceImpedance,
+    Interconnection.loadAdmittance, networkInterconnection, hTs, hTl]
+  rw [Zext, ← Matrix.mul_inv_rev (shunt.dqAdmittance ω s), Matrix.mul_add, Matrix.mul_one,
+    Matrix.mul_nonsing_inv_cancel_left _ _ (isUnit_iff_ne_zero.mpr hY), add_comm]
+
+/-- The realization's transfer matrix is the corrected `Z_ext`: the closed loop's transfer is the
+port impedance (`Grid.Interconnection.transfer_closedLoop`). -/
 @[tmio M, powerlib_domain] theorem networkModel_transfer {line : Passive.SeriesRLC}
     {shunt : Passive.ParallelRLC}
     {ω : ℝ} (hS : line.S = 0) (hΓ : shunt.Γ = 0) (hC : shunt.C ≠ 0)
     (hL : line.L ≠ 0) {s : ℂ}
     (hM : (characteristicMatrix (networkModel line shunt ω).A s).det ≠ 0)
-    (hZ : (line.dqImpedance ω s).det ≠ 0) :
+    (hY : (shunt.dqAdmittance ω s).det ≠ 0) (hZ : (line.dqImpedance ω s).det ≠ 0) :
     transfer (networkModel line shunt ω) s = Zext line shunt ω s := by
-  have hC' : (shunt.C : ℂ) ≠ 0 := by exact_mod_cast hC
-  have hL' : (line.L : ℂ) ≠ 0 := by exact_mod_cast hL
-  rw [det_characteristicMatrix_networkModel] at hM
-  rw [transfer_eq_transferOf]
-  change transferOf ((networkA line shunt ω).reindex finSumFinEquiv finSumFinEquiv)
-    ((networkB shunt).reindex finSumFinEquiv (Equiv.refl _))
-    (networkC.reindex (Equiv.refl _) finSumFinEquiv) 0 s = _
-  rw [transferOf_reindex]
-  set M := characteristicMatrix (networkA line shunt ω) s with hMdef
-  have hMu : IsUnit M.det := isUnit_iff_ne_zero.mpr hM
-  have hMX := Matrix.mul_nonsing_inv_cancel_left M (complexify (networkB shunt)) hMu
-  generalize hX : M⁻¹ * complexify (networkB shunt) = X at hMX
-  obtain ⟨X₁, X₂, rfl⟩ : ∃ X₁ X₂, X = fromRows X₁ X₂ :=
-    ⟨X.toRows₁, X.toRows₂, (fromRows_toRows X).symm⟩
-  rw [hMdef, charMatrix_blocks, fromBlocks_mul_fromRows] at hMX
-  have hB : complexify (networkB shunt) =
-      fromRows ((1 / shunt.C : ℂ) • (1 : Matrix (Fin 2) (Fin 2) ℂ)) 0 := by
-    simp only [networkB, complexify_fromRows, complexify_zero]
-    congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  rw [hB] at hMX
-  obtain ⟨E₁, E₂⟩ := fromRows_inj hMX
-  -- the transfer matrix is the first block row of `X`
-  have htr : transferOf (networkA line shunt ω) (networkB shunt) networkC 0 s = X₁ := by
-    rw [transferOf, Matrix.mul_assoc, ← hMdef, hX]
-    simp only [networkC, complexify_fromCols, complexify_zero, add_zero]
-    have : complexify (1 : Matrix (Fin 2) (Fin 2) ℝ) = 1 :=
-      Matrix.map_one _ (map_zero _) (map_one _)
-    rw [this, fromCols_mul_fromRows, Matrix.one_mul, Matrix.zero_mul, add_zero]
-  rw [htr]
-  -- second block row: `Z_line X₂ = X₁`
-  have hcL : complexify ((1 / line.L) • (1 : Matrix (Fin 2) (Fin 2) ℝ)) =
-      (1 / line.L : ℂ) • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  have hcC : complexify (-(1 / shunt.C) • (1 : Matrix (Fin 2) (Fin 2) ℝ)) =
-      (-(1 / shunt.C) : ℂ) • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  rw [hcL] at E₂
-  rw [hcC] at E₁
-  have hZX : line.dqImpedance ω s * X₂ = X₁ := by
-    rw [← block22 hS hL s, Matrix.smul_mul]
-    rw [Matrix.neg_mul, Matrix.smul_mul, Matrix.one_mul, neg_add_eq_zero] at E₂
-    rw [← E₂, smul_smul, mul_one_div_cancel hL', one_smul]
-  have hX2 : X₂ = (line.dqImpedance ω s)⁻¹ * X₁ := by
-    rw [← hZX, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.mpr hZ),
-      Matrix.one_mul]
-  -- first block row: `Y_load X₁ + X₂ = 1`
-  have hYX : shunt.dqAdmittance ω s * X₁ + X₂ = 1 := by
-    rw [← block11 hΓ hC s, Matrix.smul_mul]
-    have h2 : -(-(1 / (shunt.C : ℂ)) • (1 : Matrix (Fin 2) (Fin 2) ℂ)) * X₂ = (1 /
-      (shunt.C : ℂ)) • X₂ := by
-      rw [Matrix.neg_mul, Matrix.smul_mul, Matrix.one_mul, neg_smul, neg_neg]
-    rw [h2] at E₁
-    have := congrArg (fun Y => (shunt.C : ℂ) • Y) E₁
-    simp only [smul_add, smul_smul, mul_one_div_cancel hC', one_smul] at this
-    exact this
-  rw [Zext]
-  symm
-  apply Matrix.inv_eq_right_inv
-  rw [Matrix.add_mul, ← hX2, add_comm]
-  exact hYX
+  set ic := networkInterconnection line shunt ω
+  have h₁ : (characteristicMatrix ic.source.A s).det ≠ 0 :=
+    det_dqRL_ne_zero (b := shunt.toSeries) hΓ hC hY
+  have h₂ : (characteristicMatrix ic.load.A s).det ≠ 0 := det_dqRL_ne_zero hS hL hZ
+  rw [networkModel_eq_closedLoop] at hM ⊢
+  rw [Interconnection.closedLoop_A, Interconnection.det_characteristicMatrix_closedLoopA,
+    ic.det_characteristicMatrix_closedLoop s h₁ h₂] at hM
+  rw [ic.transfer_closedLoop s h₁ h₂ (right_ne_zero_of_mul hM),
+    Zext_eq_portImpedance hS hΓ hC hL hY hZ]
 
 /-- The network as the source of an impedance interconnection with a strictly proper
 converter admittance as the load. -/

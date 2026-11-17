@@ -407,11 +407,8 @@ def Meets (m : Model) : Requirement → Prop
 
 /-- Lyapunov stability translates into the unique-minimizer hypothesis, passivity into nothing;
 the other sentences have no translation. -/
-def translate : Sentence → Set Requirement
-  | .flow .lyapunovStable => {.uniqueMin}
-  | .flow _ => Set.univ
-  | .passive => ∅
-  | .envelope _ => ∅
+def translate : Sentence → Set Requirement :=
+  Spectral.table {.uniqueMin} Set.univ Set.univ Set.univ Set.univ ∅ (fun _ => Set.univ) ∅
 
 /-- The counterexample family: the gradient pH system centred at the selected point. -/
 def family : Family Model Requirement 2 0 :=
@@ -453,19 +450,16 @@ def family : Family Model Requirement 2 0 :=
   simp only [Set.mem_univ, iff_true]
   exact mem_den_passive m
 
-/-- Every translation of the counterexample family is sound. -/
+/-- Every translation of the counterexample family is sound
+(`Spectral.chain_le_semantics_of_table`). -/
 @[tmio TM, powerlib_foundation] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [(connection_proof% TMIO.mem_realize)] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  rcases s with P | _ | E
-  · cases P
-    case lyapunovStable => exact mem_den_lyapunovStable m (hm .uniqueMin rfl)
-    all_goals exact (hm .impossible trivial).elim
-  · exact mem_den_passive m
-  · exact (Family.mem_den _).mpr trivial
+  have hu := Spectral.realize_univ_subset_of_eq_empty realize_univ
+  exact Spectral.chain_le_semantics_of_table (fun _ => rfl)
+    (fun m hm => mem_den_lyapunovStable m ((TMIO.mem_realize _ _ _).mp hm .uniqueMin rfl))
+    (hu _) (hu _) (fun _ => hu _) (hu _) (hu _) (fun m _ => mem_den_passive m)
+    (fun _ m _ => (Family.mem_den _).mpr trivial)
 
 /-- Refutation of the T-ph §1.2 corollary: the counterexample satisfies "argmin H = {x*}" and
 "R ≻ 0 on ∇H ≠ 0" (`meets_uniqueMin`, `phLaSalle_counterexample_damping_pos`), yet `x*` is not

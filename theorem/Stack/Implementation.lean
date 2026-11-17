@@ -43,7 +43,10 @@ Results.
 * Realization by a design map (`ofDesign`, `certify_ofDesign`,
   `certify_realizes_of_design`); pointwise soundness obligations and witnesses against soundness
   and completeness (`realizationSoundUnder_of_design`, `not_realizationSoundUnder_of_design`,
-  `not_realizationCompleteUnder_of_design`); exactness of a realization whose implementation
+  `not_realizationCompleteUnder_of_design`); vacuous soundness and completeness when no model,
+  respectively no implementation, satisfies the sentence
+  (`realizationSoundUnder_of_forall_not_mem_den`, `realizationCompleteUnder_of_forall_not_mem_den`);
+  exactness of a realization whose implementation
   family satisfies the model family's sentences pulled back along the design map, within the
   constraints or without them (`realizationExactUnder_of_design`,
   `realizationExactUnder_of_den_eq_preimage`). -/
@@ -276,6 +279,24 @@ translation of `s` and the context meets its own translation of `s`. -/
     exact hctx y hy
   · rw [certify_realizes_of_design h] at hy
     exact hreq y hy.2 hy.1
+
+/-- Vacuous soundness for a design map: when no model satisfies `s`, no implementation is
+certified for it, and the realization is sound at `s` within every constraint. -/
+@[tmio T, powerlib_foundation] theorem realizationSoundUnder_of_forall_not_mem_den
+    {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
+    {Δ : Set R} {s : Sentence} (hs : ∀ x, x ∉ I.model.den s) :
+    connection% (I.RealizationSoundUnder Δ s) := show I.RealizationSoundUnder Δ s from by
+  rintro y ⟨hy, -⟩
+  rw [certify_realizes_of_design h] at hy
+  exact absurd hy (hs _)
+
+/-- Vacuous completeness: when no implementation satisfies `s`, the realization is complete at
+`s` within every constraint. -/
+@[tmio T, powerlib_foundation] theorem realizationCompleteUnder_of_forall_not_mem_den
+    {I : Implementation X Q Y R n p m q} {Δ : Set R} {s : Sentence}
+    (hs : ∀ y, y ∉ I.impl.den s) :
+    connection% (I.RealizationCompleteUnder Δ s) := show I.RealizationCompleteUnder Δ s from
+  fun y hy => absurd hy.1 (hs y)
 
 /-- A witness against realization soundness for a design map: an implementation within the
 constraints whose design satisfies `s` and which does not. -/

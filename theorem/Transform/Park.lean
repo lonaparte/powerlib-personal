@@ -18,7 +18,7 @@ Conventions fixed by this module:
   Hence `park θ = rot (-θ)` (`park_eq_rot_neg`) and, in complex form,
   `x^{dq} = x^{αβ} · e^{-jθ}`. `park_mul_rot`, `rot_mul_park`: the two are mutually inverse;
   `frameRotation_power_invariant`: `rot δ` preserves the port power `v·i` (machine frame vs
-  common DQ frame, `theory/T-power-system-ph.md` §1.2).
+  common DQ frame, `theory/T-power-system-ph.md` §1.2), an instance of `orthogonal_dotProduct`.
 * `J = [[0, -1], [1, 0]]` generates the rotation (`d/dθ rot θ = J · rot θ`, `rot_mul_J`); in
   complex form it is multiplication by `j` (`toComplex_J_mulVec`).
 * Scalar components: `parkD θ x_d x_q`, `parkQ θ x_d x_q` are the two rows of `park θ` applied to
@@ -28,16 +28,23 @@ Conventions fixed by this module:
   (commutation with `J`), `hasDerivWithinAt_parkD_parkQ` (their rotating-frame chain rule
   `(park θ z)' = park θ z' − θ' J park θ z`, on any set).
 * `clarke` is the amplitude-invariant Clarke matrix `(2/3)[[1, -1/2, -1/2], [0, √3/2, -√3/2]]`
-  (`conventions.md` §4). `clarkePI` is the 3 × 3 power-invariant Clarke matrix with the
-  zero-sequence row (`T-impedance-modeling.md` §1.1); it is orthogonal.
+  (`conventions.md` §4). `clarkePI = parkMatrix 0` is the 3 × 3 power-invariant Clarke matrix
+  with the zero-sequence row (`T-impedance-modeling.md` §1.1, entries `clarkePI_explicit`); it
+  is orthogonal (`parkMatrix_mul_transpose`), so it preserves the dot product
+  (`orthogonal_dotProduct`).
 
 Source: work-sync `theory/T-park-transformation.md` §1.2–§1.4 and `conventions.md` §4 / §D4
 (Park matrix SSoT), `theory/T-impedance-modeling.md` §1.1 (power-invariant Clarke).
 
+Scaffold: `theorem/Transform/ClarkePark.agda` (the abc, αβ0 and dq0 representations and the
+power-preserving changes between them).
+
 Results.
 * `parkABC θ = park θ · clarke` is the amplitude-invariant three-phase Park of `T-PU.md` §1.7;
-  `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`;
-  `negSeq V φ θ` is the negative-sequence signal (phases `b`, `c` swapped), which is
+  `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`, i.e.
+  `V cvec(θ + φ)` (`balanced_eq_cvec`, zero sum by `cvec_sum`);
+  `negSeq V φ θ = V cvec(−(θ + φ))` is the negative-sequence signal (phases `b`, `c` swapped,
+  `negSeq_eq_cvec`), which is
   `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
 * The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
   frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
@@ -107,11 +114,8 @@ def park (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- T-power-system-ph §1.2: the rotation `R(δ)` is orthogonal, so the port power
 `v_d i_d + v_q i_q` is the same in the machine frame and in the common DQ frame. -/
 @[tmio M, powerlib_domain] theorem frameRotation_power_invariant (δ : ℝ) (v i : Fin 2 → ℝ) :
-    (Transform.rot δ *ᵥ v) ⬝ᵥ (Transform.rot δ *ᵥ i) = v ⬝ᵥ i := by
-  simp only [Transform.rot_apply_mulVec, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one]
-  have h := Real.sin_sq_add_cos_sq δ
-  linear_combination (v 0 * i 0 + v 1 * i 1) * h
+    (rot δ *ᵥ v) ⬝ᵥ (rot δ *ᵥ i) = v ⬝ᵥ i :=
+  orthogonal_dotProduct (by rw [← park_eq_transpose_rot]; exact park_mul_rot δ) v i
 
 @[tmio M, powerlib_domain] theorem det_rot (θ : ℝ) : (rot θ).det = 1 := by
   rw [rot, det_fin_two_of]; nlinarith [Real.sin_sq_add_cos_sq θ]
@@ -234,7 +238,8 @@ def iparkQ (θ xd xq : ℝ) : ℝ := sin θ * xd + cos θ * xq
 /-- The rotation preserves the dot product. -/
 @[tmio M, powerlib_domain] theorem park_dot (θ x y u v : ℝ) :
     parkD θ x y * parkD θ u v + parkQ θ x y * parkQ θ u v = x * u + y * v := by
-  unfold parkD parkQ; linear_combination (x * u + y * v) * sin_sq_add_cos_sq θ
+  simpa [parkD, parkQ, dotProduct, Fin.sum_univ_two] using
+    frameRotation_power_invariant (-θ) ![x, y] ![u, v]
 
 /-- The rotation commutes with the generator `J (x, y) = (−y, x)`. -/
 @[tmio M, powerlib_domain] theorem parkD_J (θ x y : ℝ) : parkD θ (-y) x = -parkQ θ x y := by
@@ -285,31 +290,34 @@ def clarke : Matrix (Fin 2) (Fin 3) ℝ :=
 def clarkeInv : Matrix (Fin 3) (Fin 2) ℝ :=
   !![1, 0; -1 / 2, Real.sqrt 3 / 2; -1 / 2, -(Real.sqrt 3 / 2)]
 
-/-- Power-invariant Clarke `abc → αβ0` with zero-sequence row (`T-impedance-modeling.md` §1.1). -/
-def clarkePI : Matrix (Fin 3) (Fin 3) ℝ :=
-  Real.sqrt (2 / 3) • !![1, -1 / 2, -1 / 2; 0, Real.sqrt 3 / 2, -(Real.sqrt 3 / 2);
-    1 / Real.sqrt 2, 1 / Real.sqrt 2, 1 / Real.sqrt 2]
+/-- Power-invariant Clarke `abc → αβ0` with zero-sequence row (`T-impedance-modeling.md` §1.1):
+the power-invariant Park matrix at angle `0`. -/
+abbrev clarkePI : Matrix (Fin 3) (Fin 3) ℝ := parkMatrix 0
 
-@[tmio T, powerlib_foundation] private lemma sqrt_three_mul_self : Real.sqrt 3 * Real.sqrt 3 = 3 :=
-  Real.mul_self_sqrt (by norm_num)
-
-@[tmio T, powerlib_foundation] private lemma sqrt_two_mul_self : Real.sqrt 2 * Real.sqrt 2 = 2 :=
-  Real.mul_self_sqrt (by norm_num)
+/-- The entries of `clarkePI`: `√(2/3) [[1, −1/2, −1/2], [0, √3/2, −√3/2], [1/√2, 1/√2, 1/√2]]`. -/
+@[tmio M, powerlib_domain] theorem clarkePI_explicit :
+    clarkePI = Real.sqrt (2 / 3) • !![1, -1 / 2, -1 / 2; 0, Real.sqrt 3 / 2, -(Real.sqrt 3 / 2);
+      1 / Real.sqrt 2, 1 / Real.sqrt 2, 1 / Real.sqrt 2] := by
+  have h : Real.sqrt (2 / 3) * (1 / Real.sqrt 2) = 1 / Real.sqrt 3 := by
+    rw [Real.sqrt_div' 2 (by norm_num : (0 : ℝ) ≤ 3)]
+    field_simp
+  ext i j; fin_cases i <;> fin_cases j <;>
+    simp [parkMatrix, parkRow, cvec_explicit, svec_explicit, k, ← h]
 
 @[tmio M, powerlib_domain] theorem clarke_mul_clarkeInv : clarke * clarkeInv = 1 := by
-  have h3 := sqrt_three_mul_self
+  have h3 := sqrt3_sq
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [clarke, clarkeInv, Matrix.mul_apply, Fin.sum_univ_three] <;> linarith [h3]
 
 @[tmio M, powerlib_domain] theorem clarke_mul_transpose : clarke * clarkeᵀ = (2 / 3 : ℝ) • 1 := by
-  have h3 := sqrt_three_mul_self
+  have h3 := sqrt3_sq
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [clarke, Matrix.mul_apply, Fin.sum_univ_three] <;> linarith [h3]
 
 /-- On zero-sequence-free vectors (`x_a + x_b + x_c = 0`) the inverse Clarke reconstructs `abc`. -/
 @[tmio M, powerlib_domain] theorem clarkeInv_mulVec_clarke_mulVec (x : Fin 3 → ℝ)
     (hx : x 0 + x 1 + x 2 = 0) : clarkeInv *ᵥ (clarke *ᵥ x) = x := by
-  have h3 := sqrt_three_mul_self
+  have h3 := sqrt3_sq
   ext i; fin_cases i <;>
     simp [clarke, clarkeInv, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
   · linear_combination (-1/3) * hx
@@ -321,25 +329,9 @@ zero-sequence free. -/
 @[tmio M, powerlib_domain] theorem dotProduct_eq_three_halves_clarke (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (3 / 2 : ℝ) * ((clarke *ᵥ v) ⬝ᵥ (clarke *ᵥ i)) := by
-  have h3 := sqrt_three_mul_self
+  have h3 := sqrt3_sq
   simp [clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
   linear_combination (1/3) * (v 0 + v 1 + v 2) * hi - (1/6) * (v 1 - v 2) * (i 1 - i 2) * h3
-
-@[tmio M, powerlib_domain] theorem clarkePI_mul_transpose : clarkePI * clarkePIᵀ = 1 := by
-  have h3 := sqrt_three_mul_self
-  have h2 := sqrt_two_mul_self
-  have h3' : (0 : ℝ) < Real.sqrt 3 := by positivity
-  have h2' : (0 : ℝ) < Real.sqrt 2 := by positivity
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [clarkePI, Matrix.mul_apply, Fin.sum_univ_three] <;>
-    first | ring1 | (field_simp; nlinarith [h3, h2])
-
-/-- Power invariance: `(T v) · (T i) = v · i` for the power-invariant Clarke `T`. -/
-@[tmio M, powerlib_domain] theorem clarkePI_dotProduct (v i : Fin 3 → ℝ) :
-    (clarkePI *ᵥ v) ⬝ᵥ (clarkePI *ᵥ i) = v ⬝ᵥ i := by
-  have hTT : clarkePIᵀ * clarkePI = 1 := mul_eq_one_comm.mp clarkePI_mul_transpose
-  rw [Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose, Matrix.vecMul_vecMul, hTT,
-    Matrix.vecMul_one]
 
 /-! ## Three-phase Park and balanced positive-sequence signals -/
 
@@ -353,32 +345,24 @@ def balanced (V φ θ : ℝ) : Fin 3 → ℝ :=
   ![V * Real.cos (θ + φ), V * Real.cos (θ - 2 * Real.pi / 3 + φ),
     V * Real.cos (θ + 2 * Real.pi / 3 + φ)]
 
-/-- The balanced signal has no zero-sequence component. -/
-@[tmio M, powerlib_domain] theorem balanced_sum (V φ θ : ℝ) :
-    balanced V φ θ 0 + balanced V φ θ 1 + balanced V φ θ 2 = 0 := by
-  simp only [balanced, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.tail_cons, Matrix.head_cons]
-  have h1 : θ - 2 * Real.pi / 3 + φ = (θ + φ) - 2 * Real.pi / 3 := by ring
-  have h2 : θ + 2 * Real.pi / 3 + φ = (θ + φ) + 2 * Real.pi / 3 := by ring
-  rw [h1, h2]
-  generalize θ + φ = ψ
-  rw [Real.cos_sub ψ, Real.cos_add ψ, cos_two_pi_div_three, sin_two_pi_div_three]
-  ring
+/-- The balanced signal is `V` times the phase-axis cosines at `θ + φ`; so it has no
+zero-sequence component (`cvec_sum`). -/
+@[tmio M, powerlib_domain] theorem balanced_eq_cvec (V φ θ : ℝ) :
+    balanced V φ θ = V • cvec (θ + φ) := by
+  ext x; fin_cases x <;> simp [balanced, cvec, phase] <;> left <;> ring_nf
 
 /-- In the stationary αβ frame a balanced positive-sequence signal is the rotating vector
 `V (cos(θ + φ), sin(θ + φ))`, i.e. `V e^{j(θ+φ)}`; with `θ = ω t` it is not constant. -/
 @[tmio M, powerlib_domain] theorem clarke_mulVec_balanced (V φ θ : ℝ) :
     clarke *ᵥ balanced V φ θ = ![V * Real.cos (θ + φ), V * Real.sin (θ + φ)] := by
-  have h3 := sqrt_three_mul_self
-  have h1 : θ - 2 * Real.pi / 3 + φ = (θ + φ) - 2 * Real.pi / 3 := by ring
-  have h2 : θ + 2 * Real.pi / 3 + φ = (θ + φ) + 2 * Real.pi / 3 := by ring
-  simp only [balanced, h1, h2]
-  generalize θ + φ = ψ
-  rw [Real.cos_sub ψ, Real.cos_add ψ, cos_two_pi_div_three, sin_two_pi_div_three]
-  ext i; fin_cases i <;>
-    simp [clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · ring
-  · linear_combination (1 / 3) * V * Real.sin ψ * h3
+  have h3 := sqrt3_sq
+  have hc : clarke *ᵥ cvec (θ + φ) = ![Real.cos (θ + φ), Real.sin (θ + φ)] := by
+    rw [cvec_explicit]
+    ext i; fin_cases i <;> simp [clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    · ring
+    · linear_combination (1 / 3) * Real.sin (θ + φ) * h3
+  rw [balanced_eq_cvec, mulVec_smul, hc]
+  ext i; fin_cases i <;> simp
 
 /-- In the dq frame at angle `θ` the same signal is the constant `V (cos φ, sin φ)`.
 In particular `v_q = +V sin φ` for the amplitude-invariant Park. -/
@@ -406,19 +390,17 @@ def negSeq (V φ θ : ℝ) : Fin 3 → ℝ :=
   ![V * Real.cos (θ + φ), V * Real.cos (θ + 2 * Real.pi / 3 + φ),
     V * Real.cos (θ - 2 * Real.pi / 3 + φ)]
 
+/-- The negative-sequence signal is the balanced one at the reversed angle:
+`V` times the phase-axis cosines at `−(θ + φ)`. -/
+@[tmio M, powerlib_domain] theorem negSeq_eq_cvec (V φ θ : ℝ) :
+    negSeq V φ θ = V • cvec (-(θ + φ)) := by
+  ext x; fin_cases x <;> simp [negSeq, cvec, phase] <;> left <;> rw [← Real.cos_neg] <;> ring_nf
+
 /-- A negative-sequence signal is `V e^{−j(θ+φ)}` in αβ: `(V cos(θ + φ), −V sin(θ + φ))`. -/
 @[tmio M, powerlib_domain] theorem clarke_mulVec_negSeq (V φ θ : ℝ) :
     Transform.clarke *ᵥ negSeq V φ θ = ![V * Real.cos (θ + φ), -(V * Real.sin (θ + φ))] := by
-  have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
-  have h1 : θ + 2 * Real.pi / 3 + φ = (θ + φ) + 2 * Real.pi / 3 := by ring
-  have h2 : θ - 2 * Real.pi / 3 + φ = (θ + φ) - 2 * Real.pi / 3 := by ring
-  simp only [negSeq, h1, h2]
-  generalize θ + φ = ψ
-  rw [Real.cos_sub ψ, Real.cos_add ψ, cos_two_pi_div_three, sin_two_pi_div_three]
-  ext i; fin_cases i <;>
-    simp [Transform.clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · ring
-  · linear_combination (-(1 / 3)) * V * Real.sin ψ * h3
+  rw [negSeq_eq_cvec, ← add_zero (-(θ + φ)), ← balanced_eq_cvec, clarke_mulVec_balanced]
+  simp only [add_zero, Real.cos_neg, Real.sin_neg, mul_neg]
 
 /-- In complex form, `toComplex (clarke · negSeq) = V e^{−j(θ+φ)}`. -/
 @[tmio M, powerlib_domain] theorem toComplex_clarke_negSeq (V φ θ : ℝ) :

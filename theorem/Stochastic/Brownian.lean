@@ -32,6 +32,8 @@ Results.
 * The basic laws are used from Mathlib directly: `IsPreBrownianReal.hasLaw_eval` (`W_t ~ N(0, t)`),
   `integral_eval`, `covariance_eval` (`Cov(W_s, W_t) = min(s, t)`), `hasIndepIncrements`,
   `hasLaw_sub`, `indepFun_shift` (the weak Markov property) and `IsBrownianReal.smul` (scaling).
+* `incr` — the increment of `B` over the `i`-th step of a time sequence (shared by the
+  quadratic-variation and SLLN modules).
 * `condExp_increment`, `condExp_increment_zero` — increments are independent of the past:
   `E[f(W_t − W_s) | 𝓕_s] = E f(W_t − W_s)` a.s., in particular `E[W_t − W_s | 𝓕_s] = 0`.
 * `martingale_brownian`, `martingale_brownian_sq`, `martingale_brownian_exp` — `W_t`,
@@ -51,6 +53,10 @@ open scoped NNReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
 /-! ## Increments and the natural filtration -/
+
+/-- Increment `B_{t_{i+1}} − B_{t_i}` of `B` over the `i`-th step of the time sequence `t`
+(unit steps for `t = (↑)`, a partition for monotone `t`). -/
+def incr (B : ℝ≥0 → Ω → ℝ) (t : ℕ → ℝ≥0) (i : ℕ) (ω : Ω) : ℝ := B (t (i + 1)) ω - B (t i) ω
 
 /-- Second moment of a centred Gaussian. -/
 @[tmio T, powerlib_foundation] theorem integral_sq_gaussianReal_zero (v : ℝ≥0) :

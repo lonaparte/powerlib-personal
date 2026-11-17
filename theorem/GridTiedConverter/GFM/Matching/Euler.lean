@@ -276,10 +276,9 @@ no step threshold to state. -/
 @[tmio MI, powerlib_domain] theorem full_euler_realizationSoundUnder :
     connection% (fullEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rintro y ⟨hy, -⟩
-  rw [Implementation.certify_realizes_of_design (I := fullEuler) rfl] at hy
-  have hn := full_not_mem_den_locallyExponentiallyStable y.design
+  refine Implementation.realizationSoundUnder_of_forall_not_mem_den (I := fullEuler) rfl fun x => ?_
+  have hn := full_not_mem_den_locallyExponentiallyStable x
   unfold powerlib.TMIO.Statement at hn
-  exact absurd hy hn
+  exact hn
 
 end powerlib.GFM.Matching.MatchingClosedLoop

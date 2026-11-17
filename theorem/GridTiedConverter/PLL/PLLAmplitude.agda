@@ -14,8 +14,8 @@ module theorem.GridTiedConverter.PLL.PLLAmplitude where
 -- amplitude-`V` member exactly when it holds of its unit-amplitude form (`den≃`). For `V = 0` the
 -- rescaling is singular and nothing is read; passivity is not read (every member is autonomous
 -- and passive). Lean: `member` is `srf_piPLLField` with `Spectral.mem_den_flow_iff_shift`,
--- `field-eq` is `transport_scale_srfField`, `point-eq` is the image
--- of the selected point under `scaleSecond V⁻¹` (inside `srf_mem_den_iff_unitAmplitude`), the
+-- `field-eq` is `transport_scale_srfField`, `point-eq` is the image of the selected point under
+-- `Dynamics.scaleCoord` with factor `V⁻¹` (inside `srf_mem_den_iff_unitAmplitude`), the
 -- invariance is `Dynamics.holds_transport_iff`, and `den≃` is `srf_mem_den_iff_unitAmplitude`.
 -- Nothing here is exported.
 
@@ -49,7 +49,7 @@ module _ (Sc : Scalars) (1r : Scalars.ℝ Sc) where
   unitAmplitude : SRFParams → SRFParams
   unitAmplitude m = srfParams 1r (V m * Kp m) (V m * Ki m) (δω m) (θ m)
 
-  -- The rescaling `ξ = η / V` (Lean `scaleSecond V⁻¹`, no shift).
+  -- The rescaling `ξ = η / V` (Lean `Dynamics.scaleCoord` with factor `V⁻¹`, no shift).
   rescale : SRFParams → Affine (ℝ × ℝ)
   rescale m = record
     { point = λ x → fst x , snd x / V m

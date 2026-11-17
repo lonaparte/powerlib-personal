@@ -22,7 +22,8 @@ The rotating curve's initial state is a relative equilibrium — the field there
 uniform rotation `(ω·1, 0)` — iff `P_{f0} = P(θ₀)` and every unit's droop frequency equals `ω`
 (`relativeEquilibrium_iff`); then every unit obeys `ΔP_k = −K_{R,k} (ω − ω_s)`
 (`synchronous_sharing`), the common frequency is `ω = ω_s − (P_L − Σ P*)/Σ K` (consensus
-formula), and the per-rating shares are equal iff `K_{R,k} ∝ S_{N,k}`.
+formula, `steadyState_frequency` with `D_eff = 0`), and the per-rating shares are equal iff
+`K_{R,k} ∝ S_{N,k}`.
 
 Family and connection conclusions.
 None.  A synchronous steady state is a relative equilibrium
@@ -131,8 +132,11 @@ Static evidence on the model, not a connection conclusion. -/
     (hsync : m.field (θ₀, Pf₀) = ((fun _ => ω), (0 : Fin N → ℝ))) :
     ω = m.ωs - (PL - ∑ k, m.Pstar k) / ∑ k, m.KR k := by
   have hs := m.synchronous_sharing hτ hK hsync
-  exact consensus_frequency m.KR (m.P θ₀) m.Pstar hsum
-    (fun k => by have := hs k; linarith) (hload θ₀)
+  have h := steadyState_frequency m.KR (fun k => m.P θ₀ k - m.Pstar k) (Δω := ω - m.ωs)
+    (ΔPL := PL - ∑ k, m.Pstar k) (Deff := 0) (by rwa [add_zero])
+    (fun k => by have := hs k; linarith) (by rw [Finset.sum_sub_distrib, hload θ₀]; ring)
+  rw [add_zero, neg_div] at h
+  linarith
 
 /-- Proportional (per-rating) sharing in a synchronous steady state off nominal frequency holds
 iff the droop gains are proportional to the ratings.

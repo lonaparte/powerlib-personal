@@ -66,9 +66,9 @@ Family and connection conclusions.
   (`NetModel.plant`, `Family.IsLinear`); port output the area frequencies. Since the steady
   state of a constant load is an equilibrium, the flow sentences about the origin are the
   sentences about that steady state in deviation coordinates.
-* Requirements: the matrix language of `Frequency.LFC` (`hurwitz`, `rhpRoot`, `rate a`) on the
-  transported state matrix, with the same translation; soundness and exactness are the generic
-  `LFC.sound_of_meetsMatrix`, `LFC.exact_of_meetsMatrix`.
+* Requirements: the matrix language of `Frequency.LFC` (`stable`, `unstable`, `rate a`,
+  `Spectral.MeetsMatrix`) on the transported state matrix, with the same translation; soundness
+  and exactness are the generic `Spectral.chain_le_semantics_of_rate`, `Spectral.exact_of_rate`.
 * Connection theorems, for `Fin N_a` areas and `Fin N_t` lines (the claim grammar quantifies
   over data, not over index types): `net_chain_le_semantics`, `net_exact_hurwitz`,
   `net_mem_den_globallyExponentiallyStable` (spectral stability of `netA`, explicit static
@@ -157,7 +157,7 @@ variable (α β) in
 the matrix requirement language of `Frequency.LFC`. -/
 def netFamily :
     Family (NetModel α β) Requirement (Fintype.card (α ⊕ (β ⊕ α))) (Fintype.card α) :=
-  ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
+  ⟨fun m => m.plant.system, fun m => Spectral.MeetsMatrix m.plant.A, translate⟩
 
 @[tmio M, powerlib_domain] theorem netFamily_isLinear :
     (netFamily α β).IsLinear NetModel.plant := fun _ => rfl
@@ -728,7 +728,8 @@ a connection conclusion. -/
     connection% (∀ P, (netFamily (Fin Na) (Fin Nt)).chain P ≤
       (netFamily (Fin Na) (Fin Nt)).semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact sound_of_meetsMatrix netFamily_isLinear (fun _ _ => Iff.rfl) rfl
+  exact Spectral.chain_le_semantics_of_rate netFamily_isLinear rfl (fun _ h => h) (fun _ h => h)
+    fun _ _ h => h
 
 /-- The attractive sentences and sampled contraction of the `N`-area family are translated
 exactly by the Hurwitz property of the transported state matrix. -/
@@ -736,7 +737,7 @@ exactly by the Hurwitz property of the transported state matrix. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((netFamily (Fin Na) (Fin Nt)).Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_of_meetsMatrix netFamily_isLinear (fun _ _ => Iff.rfl) rfl hP
+  exact Spectral.exact_of_rate netFamily_isLinear rfl (fun _ => Iff.rfl) hP
 
 /-- A spectrally stable state matrix (explicit premise) makes the `N`-area model globally
 exponentially stable; in deviation coordinates this is the convergence of every trajectory under

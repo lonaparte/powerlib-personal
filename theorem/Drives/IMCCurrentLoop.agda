@@ -2,24 +2,24 @@
 module theorem.Drives.IMCCurrentLoop where
 -- Lean modules: theorem.Drives.CascadeControl
 
--- Scaffold of the reading of the machine-drive IMC current loop through the converter PI current
--- loop (`Drives.CascadeControl.family` of `theorem/Drives/CascadeControl.lean` read through
--- `CurrentControl.PIParams.family` of `theorem/GridTiedConverter/CurrentControl/PILoop.lean`). The
--- drive loop with plant inductance `L`, resistance `R` and bandwidth `α` is, for `L ≠ 0`, the same
--- linear plant as the converter PI loop with the IMC tuning `K_p = L α`, `K_i = R α`
--- (`CurrentControl.imc`), so the reading is an equality of systems on the models with `L ≠ 0`, a
--- context on the parameters. Both families keep the two-element language `{stable, unstable}`. The
--- scaffold derives the reading of every sentence and the transfer of members; the plants are taken
--- abstractly. Lean proves the equality of plants (`imcModel_eq`), the reading (`mem_den_iff_imc`)
--- and the member transfer (`mem_den` from `CurrentControl.imc_mem_den_iff`). The families' own
--- soundness and exactness are not transferred: a loop with `L = 0` has no reading. Nothing here is
--- exported.
+-- Scaffold of the machine-drive IMC current loop as a parameterization of the converter PI current
+-- loop (`CurrentControl.PIParams.family` of `theorem/GridTiedConverter/CurrentControl/PILoop.lean`,
+-- the hub). The drive loops of `theorem/Drives/CascadeControl.lean` (plant inductance `L`,
+-- resistance `R`, bandwidth `α`) have no family of their own: the parameter map
+-- `IMCLoop.toPIParams` sends a drive loop to the converter loop with the IMC tuning `K_p = L α`,
+-- `K_i = R α` (`CurrentControl.imc`), and the drive loops read as the hub pulled back along it
+-- (`comap`), so every hub result is a drive result at the image without restatement
+-- (`CurrentControl.imc_mem_den_iff`). The physical drive loop `L di/dt = v − R i` closed by the
+-- PI is a system only for `L ≠ 0`; there it is the hub plant of the image (`sameSystem`, Lean
+-- `CurrentControl.PIParams.model_field`), so it satisfies exactly the sentences of the image
+-- (`driveReading`). The slice `L = 0` is not a drive loop: the scaffold gives it no physical
+-- system and the pull-back says nothing about it. The plants are taken abstractly. Nothing here
+-- is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
+open import Cubical.Foundations.Univalence using (pathToEquiv)
 open import Cubical.Data.Sigma
-open import Cubical.Data.Unit
-open import Cubical.Data.Empty using (⊥)
 open import Cubical.Relation.Nullary using (¬_)
 
 open import theorem.Family.FamilyReading
@@ -38,58 +38,51 @@ module _ (Sc : Scalars) where
     field
       L R Kp Ki : ℝ
 
-  -- The IMC tuning of the converter PI loop (Lean `CurrentControl.imc`).
-  imc : IMCLoop → PIParams
-  imc m =
+  -- The parameter map: the IMC tuning of the converter PI loop (Lean `IMCLoop.toPIParams`).
+  toPI : IMCLoop → PIParams
+  toPI m =
     piParams (IMCLoop.L m) (IMCLoop.R m) (IMCLoop.L m * IMCLoop.α m) (IMCLoop.R m * IMCLoop.α m)
 
-  data LinearReq : Type where
-    stable unstable' : LinearReq
+  NonzeroInductance : IMCLoop → Type
+  NonzeroInductance m = ¬ (IMCLoop.L m ≡ 0r)
 
-  -- The table of `Spectral.linearFamily`: the attractive sentences to `stable`, instability to
-  -- `unstable`.
-  linearTranslate : Sentence → LinearReq → Type
-  linearTranslate unstable unstable' = Unit
-  linearTranslate unstable stable = ⊥
-  linearTranslate passive _ = ⊥
-  linearTranslate _ stable = Unit
-  linearTranslate _ unstable' = ⊥
-
-  -- The plants, abstractly, with their satisfaction of sentences.
+  -- The plants, abstractly, with their satisfaction of sentences; the hub with its requirement
+  -- language; the physical drive loop, a system only for a nonzero inductance.
   module Reading (Plant : Type) (holds : Plant → Sentence → Type)
-    (imcPlant : IMCLoop → Plant) (piPlant : PIParams → Plant)
-    (imcMeets : IMCLoop → LinearReq → Type) (piMeets : PIParams → LinearReq → Type)
+    (PReq : Type) (piPlant : PIParams → Plant) (piMeets : PIParams → PReq → Type)
+    (piTranslate : Sentence → PReq → Type)
+    (driveSystem : (m : IMCLoop) → NonzeroInductance m → Plant)
     where
 
-    linearSemantics : Semantics
-    linearSemantics = record { System = Plant ; Sentence = Sentence ; holds = holds }
+    plantSemantics : Semantics
+    plantSemantics = record { System = Plant ; Sentence = Sentence ; holds = holds }
 
-    open Readings linearSemantics
+    open Readings plantSemantics
 
-    driveFamily converterFamily : Family
-    driveFamily = record
-      { Model = IMCLoop ; Req = LinearReq ; system = imcPlant ; meets = imcMeets
-      ; translate = linearTranslate }
+    converterFamily : Family
     converterFamily = record
-      { Model = PIParams ; Req = LinearReq ; system = piPlant ; meets = piMeets
-      ; translate = linearTranslate }
+      { Model = PIParams ; Req = PReq ; system = piPlant ; meets = piMeets
+      ; translate = piTranslate }
 
-    NonzeroInductance : IMCLoop → Type
-    NonzeroInductance m = ¬ (IMCLoop.L m ≡ 0r)
+    -- The drive loops read as the converter loop: no semantics of their own.
+    driveFamily : Family
+    driveFamily = comap converterFamily toPI
 
-    -- What Lean proves (`imcModel_eq`, by field arithmetic).
-    module _ (samePlant : (m : IMCLoop) → NonzeroInductance m → imcPlant m ≡ piPlant (imc m)) where
+    -- What Lean proves (`CurrentControl.PIParams.model_field`, by field arithmetic).
+    record Obligations : Type where
+      field
+        sameSystem : (m : IMCLoop) (h : NonzeroInductance m) → driveSystem m h ≡ piPlant (toPI m)
 
-      reading : Hub (restrictBy driveFamily NonzeroInductance) converterFamily
-      reading = viaEquality (λ x → imc (fst x)) (λ x → samePlant (fst x) (snd x))
+    module _ (ob : Obligations) where
+      open Obligations ob
 
-      -- Every sentence of a drive loop with `L ≠ 0` is the sentence of its converter form (Lean
-      -- `mem_den_iff_imc`).
-      den≃ : (m : IMCLoop) → NonzeroInductance m → (s : Sentence) →
-        den driveFamily s m ≃ den converterFamily s (imc m)
-      den≃ m h s = Hub.read reading (m , h) s
+      -- A physical drive loop satisfies exactly the sentences of its image in the hub.
+      driveReading : (m : IMCLoop) (h : NonzeroInductance m) →
+        (s : Sentence) → holds (driveSystem m h) s ≃ holds (piPlant (toPI m)) s
+      driveReading m h s = pathToEquiv (cong (λ a → holds a s) (sameSystem m h))
 
-      -- Members pass back (Lean `mem_den` from `CurrentControl.imc_mem_den_iff`).
-      mem-den : (m : IMCLoop) → NonzeroInductance m → (s : Sentence) →
-        den converterFamily s (imc m) → den driveFamily s m
-      mem-den m h s = invEq (den≃ m h s)
+      -- Members of the hub at the image pass to the physical loop (Lean: the attractive sentences
+      -- from `CurrentControl.imc_mem_den_iff`).
+      mem-den : (m : IMCLoop) (h : NonzeroInductance m) (s : Sentence) →
+        den driveFamily s m → holds (driveSystem m h) s
+      mem-den m h s d = invEq (driveReading m h s) d

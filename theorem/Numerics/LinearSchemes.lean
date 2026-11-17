@@ -9,8 +9,9 @@ discrete LTI recursions when the field is linear, and the stability of those rec
 
 Model boundary.
 * The continuous model is an autonomous field `f : E → E` (`ẋ = f x`), with a fixed step `h`.
-  For the linear results `E = Fin n → ℝ` and `f = linearField A`, i.e. `ẋ = A x`; inputs, if
-  any, are already set to zero (perturbation coordinates).
+  For the linear results `E = Fin n → ℝ` and `f = linearField A`, i.e. `ẋ = A x`; constant
+  inputs are read in deviation coordinates (`trajectory_sub_const_iff`,
+  `affineField_shift_eq_linearField`).
 * Schemes are trajectory predicates written directly from the update rule: forward Euler
   `x_{k+1} = x_k + h f(x_k)`, backward Euler `x_{k+1} = x_k + h f(x_{k+1})`, trapezoidal rule
   `x_{k+1} = x_k + (h/2)(f(x_k) + f(x_{k+1}))`. No step-size control, no Newton iteration
@@ -37,6 +38,9 @@ Results.
   (one direction only: backward Euler also damps some unstable modes).
 * `forwardEuler_schurStable_iff` — forward Euler is Schur stable exactly when every eigenvalue
   `λ` satisfies `‖1 + hlam‖ < 1`.
+* `trajectory_sub_const_iff`, `affineField_shift_eq_linearField` — the schemes commute with a
+  constant shift of the state; for a constant input `b` about an equilibrium `A x_e + b = 0`
+  the affine schemes are the linear schemes in the deviation `x − x_e`.
 * `trapezoidal_exponentiallyStable_of_isHurwitz`,
   `backwardEuler_exponentiallyStable_of_isHurwitz` — trajectory-level geometric decay of every
   scheme trajectory.
@@ -62,6 +66,22 @@ def IsBackwardEulerTrajectory (f : E → E) (h : ℝ) (x : ℕ → E) : Prop :=
 def IsTrapezoidalTrajectory (f : E → E) (h : ℝ) (x : ℕ → E) : Prop :=
   ∀ k, x (k + 1) = x k + (h / 2) • (f (x k) + f (x (k + 1)))
 
+/-- **Deviation coordinates.** The three schemes commute with a constant shift of the state:
+`x` is a trajectory of `f` iff `x − x_e` is a trajectory of the shifted field `z ↦ f (z + x_e)`
+(forward Euler, backward Euler, trapezoidal rule). -/
+@[tmio T, powerlib_foundation] theorem trajectory_sub_const_iff (f : E → E) (h : ℝ) (xe : E)
+    (x : ℕ → E) :
+    (IsForwardEulerTrajectory f h x ↔
+        IsForwardEulerTrajectory (fun z => f (z + xe)) h fun k => x k - xe) ∧
+      (IsBackwardEulerTrajectory f h x ↔
+        IsBackwardEulerTrajectory (fun z => f (z + xe)) h fun k => x k - xe) ∧
+      (IsTrapezoidalTrajectory f h x ↔
+        IsTrapezoidalTrajectory (fun z => f (z + xe)) h fun k => x k - xe) := by
+  have key : ∀ a b d : E, a - xe = b - xe + d ↔ a = b + d := fun a b d => by
+    rw [sub_add_eq_add_sub, sub_left_inj]
+  refine ⟨?_, ?_, ?_⟩ <;>
+    exact forall_congr' fun k => by simp only [sub_add_cancel, key]
+
 end Schemes
 
 variable {n : ℕ}
@@ -77,6 +97,15 @@ def backwardEulerMatrix (h : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) : Matrix (Fin
 
 def trapezoidalMatrix (h : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ :=
   (1 - (h / 2) • A)⁻¹ * (1 + (h / 2) • A)
+
+/-- **Constant input about an equilibrium.** If `A x_e + b = 0`, the shifted affine field
+`z ↦ A (z + x_e) + b` is `linearField A`; with `trajectory_sub_const_iff`, every scheme for
+`ẋ = A x + b` is the linear scheme for `ẋ = A x` in the deviation `x − x_e`. -/
+@[tmio T, powerlib_foundation] theorem affineField_shift_eq_linearField
+    {A : Matrix (Fin n) (Fin n) ℝ} {b xe : Fin n → ℝ} (he : A *ᵥ xe + b = 0) :
+    (fun z => A *ᵥ (z + xe) + b) = linearField A := by
+  funext z
+  rw [mulVec_add, add_assoc, he, add_zero, linearField]
 
 section Reduction
 

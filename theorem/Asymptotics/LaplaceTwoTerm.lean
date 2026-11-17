@@ -14,13 +14,13 @@ Scope.
   variables `u² = φ(y) − φ(y*)`, the Jacobian being absorbed into `h` (this is how
   `Asymptotics/Guard/MFPTExpansion.lean` uses it).
 
+* The Gaussian moments used (`gaussMoment2_Ioi`, `integral_exp_neg_mul_sq_interval_bounds`) are
+  in `theorem/Asymptotics/GaussianMoments.lean`.
+
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (endpoint Laplace, relative
 correction of order `X^{−1/2}`).
 
 Results.
-* `gaussMoment2_Ioi` — `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`.
-* `integral_exp_neg_mul_sq_interval_bounds` —
-  `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`.
 * `exp_neg_le_inv` — `e^{−x} ≤ 1/x` for `x > 0`.
 * `laplace_two_term_bound` — explicit, every `β > 0`:
   `|J(β) − h₀ √(π/β)/2 − h₁/(2β)| ≤ M √(π/β)/(4β) + (|h₀|/L + |h₁|)/(2β²L²)`.
@@ -41,72 +41,11 @@ namespace powerlib.Asymptotics
 
 open Real Set Filter Topology MeasureTheory intervalIntegral
 
-/-- Half-line second Gaussian moment: `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`
-(wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = q = 2`, `Γ(3/2) = √π/2`). -/
-@[tmio T, powerlib_foundation] theorem gaussMoment2_Ioi {β : ℝ} (hβ : 0 < β) :
-    ∫ u in Ioi (0 : ℝ), u ^ 2 * Real.exp (-β * u ^ 2) = √(π / β) / (4 * β) := by
-  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 2) (b := β) two_pos
-    (by norm_num) hβ
-  simp only [Real.rpow_two] at h
-  rw [h]
-  have hG : Real.Gamma ((2 + 1) / 2) = √π / 2 := by
-    rw [show ((2 : ℝ) + 1) / 2 = 1 / 2 + 1 by norm_num, Real.Gamma_add_one (by norm_num),
-      Real.Gamma_one_half_eq]
-    ring
-  have hb : β ^ (-((2 : ℝ) + 1) / 2) = (β * √β)⁻¹ := by
-    rw [show -((2 : ℝ) + 1) / 2 = -(1 + 1 / 2) by norm_num, Real.rpow_neg hβ.le,
-      Real.rpow_add hβ, Real.rpow_one, ← Real.sqrt_eq_rpow]
-  rw [hG, hb, Real.sqrt_div' π hβ.le]
-  have hs : 0 < √β := Real.sqrt_pos.mpr hβ
-  field_simp
-  ring
-
 /-- `e^{−x} ≤ 1/x` for `x > 0`. -/
 @[tmio T, powerlib_foundation] theorem exp_neg_le_inv {x : ℝ} (hx : 0 < x) : Real.exp (-x) ≤ 1 / x := by
   have h := Real.add_one_le_exp x
   rw [Real.exp_neg, one_div]
   exact inv_anti₀ hx (by linarith)
-
-/-- Gaussian mass on a finite interval:
-`√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`. -/
-@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_interval_bounds {β L : ℝ} (hβ : 0 < β)
-    (hL : 0 < L) :
-    √(π / β) / 2 - Real.exp (-β * L ^ 2) / (2 * β * L) ≤
-        ∫ u in (0 : ℝ)..L, Real.exp (-β * u ^ 2) ∧
-      ∫ u in (0 : ℝ)..L, Real.exp (-β * u ^ 2) ≤ √(π / β) / 2 := by
-  have hg : Integrable fun u : ℝ => Real.exp (-β * u ^ 2) := integrable_exp_neg_mul_sq hβ
-  have hg1 : Integrable fun u : ℝ => u * Real.exp (-β * u ^ 2) := integrable_mul_exp_neg_mul_sq hβ
-  have hsplit : ∀ f : ℝ → ℝ, Integrable f → ∫ u in Ioi (0 : ℝ), f u =
-      (∫ u in Ioc (0 : ℝ) L, f u) + ∫ u in Ioi L, f u := fun f hf => by
-    rw [← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hf.integrableOn
-      hf.integrableOn, Ioc_union_Ioi_eq_Ioi hL.le]
-  have hmain := integral_gaussian_Ioi β
-  have h0 := hsplit _ hg
-  have h1 := hsplit _ hg1
-  have hm1 : ∫ u in Ioi (0 : ℝ), u * Real.exp (-β * u ^ 2) = 1 / (2 * β) := gaussMoment1 hβ
-  have hI1 : ∫ u in Ioc (0 : ℝ) L, u * Real.exp (-β * u ^ 2) =
-      (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by
-    rw [← intervalIntegral.integral_of_le hL.le, integral_mul_exp_neg_mul_sq_interval hβ]
-  have htail1 : ∫ u in Ioi L, u * Real.exp (-β * u ^ 2) = Real.exp (-β * L ^ 2) / (2 * β) := by
-    have : (∫ u in Ioi L, u * Real.exp (-β * u ^ 2)) =
-        1 / (2 * β) - (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by linarith
-    rw [this]; field_simp; ring
-  have htail : ∫ u in Ioi L, Real.exp (-β * u ^ 2) ≤ Real.exp (-β * L ^ 2) / (2 * β * L) := by
-    calc ∫ u in Ioi L, Real.exp (-β * u ^ 2)
-        ≤ ∫ u in Ioi L, L⁻¹ * (u * Real.exp (-β * u ^ 2)) := by
-          apply setIntegral_mono_on hg.integrableOn (hg1.const_mul _).integrableOn
-            measurableSet_Ioi
-          intro u hu
-          have hu' : L < u := hu
-          rw [← mul_assoc]
-          apply le_mul_of_one_le_left (Real.exp_pos _).le
-          rw [inv_mul_eq_div, one_le_div hL]; exact hu'.le
-      _ = Real.exp (-β * L ^ 2) / (2 * β * L) := by
-          rw [MeasureTheory.integral_const_mul, htail1]; field_simp
-  have htail0 : 0 ≤ ∫ u in Ioi L, Real.exp (-β * u ^ 2) :=
-    setIntegral_nonneg measurableSet_Ioi fun u _ => (Real.exp_pos _).le
-  rw [intervalIntegral.integral_of_le hL.le]
-  constructor <;> linarith
 
 /-- **Two-term endpoint Laplace bound** for an exact Gaussian phase: if `h` is continuous on
 `[0, L]` (`L > 0`) and `|h(u) − h₀ − h₁u| ≤ M u²` there, then for every `β > 0`

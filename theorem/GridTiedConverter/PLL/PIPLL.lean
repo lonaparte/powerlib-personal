@@ -297,4 +297,63 @@ exponentially stable) in `PIPLLFamily` are the connection forms. -/
     (fun θ => by rw [abs_neg]; exact Real.abs_sin_le_one θ) (by norm_num)
   exact ⟨PhasePlane.mk 0 2, (piPLLField_eq_zero_iff one_ne_zero _).mpr ⟨by simp, by simp⟩⟩
 
+/-! ## The SRF detector and the PI-PLL energy -/
+
+/-- SRF phase-detector characteristic `h(θ̃) = −V sin θ̃`. -/
+def srfPD (V θ : ℝ) : ℝ := -(V * Real.sin θ)
+
+@[tmio M, powerlib_domain] theorem hasDerivAt_srfPD (V θ : ℝ) :
+    HasDerivAt (srfPD V) (-(V * Real.cos θ)) θ :=
+  ((Real.hasDerivAt_sin θ).const_mul V).neg
+
+@[tmio M, powerlib_domain] theorem contDiff_srfPD (V : ℝ) : ContDiff ℝ 1 (srfPD V) :=
+  (contDiff_const.mul Real.contDiff_sin).neg
+
+/-- The potential `𝒱(θ) = V (1 − cos θ)` of the SRF detector (`𝒱′ = −srfPD V`, `𝒱(0) = 0`). -/
+def srfPotential (V θ : ℝ) : ℝ := V * (1 - Real.cos θ)
+
+@[tmio M, powerlib_domain] theorem hasDerivAt_srfPotential (V θ : ℝ) :
+    HasDerivAt (srfPotential V) (-srfPD V θ) θ :=
+  (((Real.hasDerivAt_cos θ).const_sub 1).const_mul V).congr_deriv (by simp [srfPD])
+
+/-- The PI-PLL energy `E(θ, η) = V(θ) + (K_i / 2) (η − η*)²` for a potential `V` of the detector
+(`V′ = −h`) and an integrator set point `η*`. -/
+def piPLLEnergy (V : ℝ → ℝ) (Ki ηs : ℝ) (x : ℝ²) : ℝ := V (x 0) + Ki / 2 * (x 1 - ηs) ^ 2
+
+/-- Where `V′ = −h` at `θ`, the energy has the derivative `(−h(θ), K_i (η − η*))`. -/
+@[tmio M, powerlib_domain] theorem hasFDerivAt_piPLLEnergy {h V : ℝ → ℝ} {Ki ηs : ℝ} {x : ℝ²}
+    (hV : HasDerivAt V (-h (x 0)) (x 0)) :
+    HasFDerivAt (piPLLEnergy V Ki ηs)
+      ((-h (x 0)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
+        (Ki * (x 1 - ηs)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) x := by
+  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
+  refine ((hV.comp_hasFDerivAt x h0).add
+    (((h1.sub_const ηs).pow 2).const_mul (Ki / 2))).congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+@[tmio M, powerlib_domain] theorem contDiff_piPLLEnergy {V : ℝ → ℝ} (hV : ContDiff ℝ 1 V)
+    (Ki ηs : ℝ) : ContDiff ℝ 1 (piPLLEnergy V Ki ηs) :=
+  (hV.comp ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).contDiff)).add
+    (contDiff_const.mul
+      ((((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).contDiff).sub contDiff_const).pow 2))
+
+/-- **Energy rate of the PI-PLL** (T-gfl-ph §1.2, T-pll-ph §1.2), pointwise, for every
+phase-detector characteristic `h`, every gain and every set point `η*`: where `V′ = −h` at `θ`
+(a local primitive suffices, e.g. the potential of the constant-power layer of
+`theorem/GridTiedConverter/GFL/LCLine/FullModelDC.lean`, defined where its discriminant is
+nonnegative), the energy `V(θ) + (K_i / 2)(η − η*)²` changes along the PI-PLL field with offset
+`δω` at the rate `Ė = −K_p h(θ)² + h(θ) (δω − K_i η*)`; at the set point `η* = δω/K_i` of a
+constant offset this is `−K_p h(θ)²`. Static evidence on the model, not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem piPLL_energy_rate {h V : ℝ → ℝ} (Kp Ki δω ηs : ℝ) {x : ℝ²}
+    (hV : HasDerivAt V (-h (x 0)) (x 0)) :
+    fderiv ℝ (piPLLEnergy V Ki ηs) x (piPLLField h Kp Ki δω x) =
+      -(Kp * h (x 0) ^ 2) + h (x 0) * (δω - Ki * ηs) := by
+  rw [(hasFDerivAt_piPLLEnergy hV).fderiv]
+  simp [piPLLField]
+  ring
+
 end powerlib.PLL

@@ -38,8 +38,8 @@ open scoped NNReal Topology
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
-/-- Unit-time increments `W_{k+1} − W_k`. -/
-def unitIncr (B : ℝ≥0 → Ω → ℝ) (k : ℕ) (ω : Ω) : ℝ := B ((k + 1 : ℕ) : ℝ≥0) ω - B (k : ℝ≥0) ω
+/-- Unit-time increments `W_{k+1} − W_k`: `incr` along the integer times. -/
+abbrev unitIncr (B : ℝ≥0 → Ω → ℝ) : ℕ → Ω → ℝ := incr B fun k : ℕ => (k : ℝ≥0)
 
 @[tmio T, powerlib_foundation] theorem unitIncr_hasLaw (hB : IsPreBrownianReal B P) (k : ℕ) :
     HasLaw (unitIncr B k) (gaussianReal 0 1) P := by

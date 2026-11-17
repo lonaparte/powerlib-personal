@@ -1,4 +1,5 @@
 import theorem.Information.Finite
+import theorem.Stochastic.OUMoments
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -16,7 +17,8 @@ Model boundary.
 * Transfer matrix: `T i j ≥ 0`, a strictly positive right eigenvector `T u = ρ u`, `ρ > 0`
   (Perron–Frobenius existence is *assumed*, not proved). `tiltedTransition` is
   `P i j = T i j u j / (ρ u i)`.
-* OU: deterministic scalar path `x(t) = x₀ e^{-θ t}` of `ẋ = -θ x`, Girsanov Lagrangian
+* OU: deterministic scalar mean path `x(t) = x₀ e^{-θ t}` of `ẋ = -θ x` (the OU mean
+  `ouMean θ 0 x₀`, `theorem/Stochastic/OUMoments.lean`), Girsanov Lagrangian
   `(ẋ - μ(x))² / (2σ²)` with `μ(x) = -θ x`, tube (Jacobian-corrected) Lagrangian adds
   `μ'(x)/2 = -θ/2`. Time horizon `[0, T]`, continuous time. No stochastic integral appears: the
   action is evaluated on the deterministic mean path only.
@@ -93,6 +95,8 @@ end Transfer
 
 section OU
 
+open powerlib.Stochastic.OU (ouMean ouMean_hasDerivAt)
+
 /-- Girsanov (path-measure) Onsager–Machlup Lagrangian `(v - μ(x))² / (2σ²)`. -/
 def girsanovLagrangian (μ : ℝ → ℝ) (σ : ℝ) (x v : ℝ) : ℝ := (v - μ x) ^ 2 / (2 * σ ^ 2)
 
@@ -105,36 +109,26 @@ def girsanovLagrangian (μ : ℝ → ℝ) (σ : ℝ) (x v : ℝ) : ℝ := (v - �
   unfold girsanovLagrangian
   rw [div_eq_zero_iff, or_iff_left (by positivity), pow_eq_zero_iff two_ne_zero, sub_eq_zero]
 
-/-- OU mean path `x(t) = x₀ e^{-θ t}`. -/
-def ouMean (θ x₀ : ℝ) (t : ℝ) : ℝ := x₀ * exp (-θ * t)
-
-@[tmio T, powerlib_foundation] theorem hasDerivAt_ouMean (θ x₀ t : ℝ) :
-    HasDerivAt (ouMean θ x₀) (-θ * ouMean θ x₀ t) t := by
-  have h := ((hasDerivAt_id t).const_mul (-θ)).exp.const_mul x₀
-  convert h using 1
-  · ext s; simp [ouMean]
-  · simp [ouMean]; ring
-
 /-- On the OU mean path the Girsanov action vanishes. -/
 @[tmio T, powerlib_foundation] theorem ou_girsanovAction_mean (θ σ x₀ T : ℝ) :
-    ∫ t in (0 : ℝ)..T, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
-      (deriv (ouMean θ x₀) t) = 0 := by
-  have : ∀ t, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
-      (deriv (ouMean θ x₀) t) = 0 := by
+    ∫ t in (0 : ℝ)..T, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ 0 x₀ t)
+      (deriv (ouMean θ 0 x₀) t) = 0 := by
+  have : ∀ t, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ 0 x₀ t)
+      (deriv (ouMean θ 0 x₀) t) = 0 := by
     intro t
-    rw [(hasDerivAt_ouMean θ x₀ t).deriv, girsanovLagrangian]
+    rw [(ouMean_hasDerivAt θ 0 x₀ t).deriv, girsanovLagrangian]
     simp
   simp only [this, intervalIntegral.integral_zero]
 
 /-- **OU tube action** (Jacobian term `μ'(x)/2 = -θ/2` included): `S = -θ T / 2` on the mean
 path. -/
 @[tmio T, powerlib_foundation] theorem ou_tubeAction_mean (θ σ x₀ T : ℝ) :
-    ∫ t in (0 : ℝ)..T, (girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
-      (deriv (ouMean θ x₀) t) + deriv (fun x => -θ * x) (ouMean θ x₀ t) / 2) = -θ * T / 2 := by
-  have : ∀ t, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
-      (deriv (ouMean θ x₀) t) + deriv (fun x => -θ * x) (ouMean θ x₀ t) / 2 = -θ / 2 := by
+    ∫ t in (0 : ℝ)..T, (girsanovLagrangian (fun x => -θ * x) σ (ouMean θ 0 x₀ t)
+      (deriv (ouMean θ 0 x₀) t) + deriv (fun x => -θ * x) (ouMean θ 0 x₀ t) / 2) = -θ * T / 2 := by
+  have : ∀ t, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ 0 x₀ t)
+      (deriv (ouMean θ 0 x₀) t) + deriv (fun x => -θ * x) (ouMean θ 0 x₀ t) / 2 = -θ / 2 := by
     intro t
-    rw [(hasDerivAt_ouMean θ x₀ t).deriv, girsanovLagrangian]
+    rw [(ouMean_hasDerivAt θ 0 x₀ t).deriv, girsanovLagrangian]
     simp
   simp only [this, intervalIntegral.integral_const, smul_eq_mul, sub_zero]
   ring

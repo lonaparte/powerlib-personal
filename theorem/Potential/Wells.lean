@@ -1,6 +1,7 @@
 import theorem.Attributes
 import theorem.Potential.Barrier
 import theorem.SpecialFunctions.Sinusoid
+import theorem.Stochastic.FokkerPlanck
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
@@ -47,14 +48,16 @@ Results.
   identical barrier heights (`washboard_barrier_translate`).
 * For `|α| ≤ 1`, with `θ_min = arcsin α`, `θ_max = π − arcsin α`:
   `ΔV₊ = V₀[2√(1−α²) + α(2 arcsin α − π)]`, `ΔV₋ = V₀[2√(1−α²) + α(π + 2 arcsin α)]`
-  (`barrierForward`, `barrierBackward`, `washboard_barrier_forward`, `washboard_barrier_backward`),
+  (`barrierForward`, `barrierBackward`; they are `Barrier.barrierUp`, `Barrier.barrierDown` at
+  `c = V₀α`, `A = V₀`, `φ = 0`, the barriers towards `π − arcsin α` and `−π − arcsin α`,
+  `barrierUp_eq_barrierForward`),
   `ΔV₊ = ΔV₋ = 2V₀` at `α = 0` (`barrier_at_zero`), `ΔV₊ → 0` and `ΔV₋ → 2πV₀` as `α → 1⁻`
   (`barrier_tendsto_one`).
 * Curvatures `V''(θ_min) = V₀√(1−α²)`, `V''(θ_max) = −V₀√(1−α²)` (`washboard_curvatures`), so
   `√(V''(θ_min) |V''(θ_max)|) = V₀√(1−α²)` (`washboard_prefactor`), so the Kramers prefactor is
   `2πγ / √(V''(θ_min) |V''(θ_max)|) = 2πγ / (V₀√(1−α²))`.
 * For `α ≠ 0` the weight `e^{−V/D}` is not integrable on `ℝ`
-  (`washboard_weight_not_integrable`).
+  (`washboard_weight_not_integrable`, from `Stochastic.FP.gibbs_not_integrable`).
 
 Potential shapes elsewhere: the washboard barrier with a phase shift, `V(θ) = −cθ − A cos(θ + φ)`,
 its minimum over the two saddles and its fold asymptotics are in `theorem/Potential/Barrier.lean`;
@@ -417,24 +420,23 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
       washboard V₀ α x - washboard V₀ α y := by
   rw [washboard_shift_int, washboard_shift_int]; ring
 
-/-- Forward barrier `ΔV₊ = V(π − arcsin α) − V(arcsin α)`. -/
-@[tmio T, powerlib_foundation] theorem washboard_barrier_forward {V₀ α : ℝ} :
-    washboard V₀ α (π - Real.arcsin α) - washboard V₀ α (Real.arcsin α) =
-      V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π)) := by
-  simp only [washboard_eq, Real.cos_pi_sub, Real.cos_arcsin]; ring
-
-/-- Backward barrier `ΔV₋ = V(π − arcsin α − 2π) − V(arcsin α)`. -/
-@[tmio T, powerlib_foundation] theorem washboard_barrier_backward {V₀ α : ℝ} :
-    washboard V₀ α (π - Real.arcsin α - 2 * π) - washboard V₀ α (Real.arcsin α) =
-      V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α)) := by
-  have h := washboard_shift_int V₀ α (π - Real.arcsin α - 2 * π) 1
-  rw [Int.cast_one, one_mul, one_mul, sub_add_cancel] at h
-  have hf := washboard_barrier_forward (V₀ := V₀) (α := α)
-  linarith
-
 /-- Closed-form barriers as functions of the tilt. -/
 def barrierForward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π))
 def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α))
+
+/-- The closed-form washboard barriers are the barriers of `theorem/Potential/Barrier.lean` at
+`c = V₀α`, `A = V₀`, `φ = 0`: `ΔV₊ = V(π − arcsin α) − V(arcsin α)` (`Barrier.barrierUp`) and
+`ΔV₋ = V(−π − arcsin α) − V(arcsin α)` (`Barrier.barrierDown`). -/
+@[tmio T, powerlib_foundation] theorem barrierUp_eq_barrierForward {V₀ : ℝ} (hV : 0 < V₀)
+    (α : ℝ) : Barrier.barrierUp (V₀ * α) V₀ 0 = barrierForward V₀ α ∧
+      Barrier.barrierDown (V₀ * α) V₀ 0 = barrierBackward V₀ α := by
+  have hα : V₀ * α / V₀ = α := by field_simp
+  have hs : √(V₀ ^ 2 - (V₀ * α) ^ 2) = V₀ * √(1 - α ^ 2) := by
+    rw [show V₀ ^ 2 - (V₀ * α) ^ 2 = V₀ ^ 2 * (1 - α ^ 2) by ring,
+      Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hV.le]
+  rw [Barrier.barrierUp_eq hV, Barrier.barrierDown_eq hV, neg_div, hα, hs, Real.arccos_neg,
+    Real.arccos_eq_pi_div_two_sub_arcsin]
+  constructor <;> simp only [barrierForward, barrierBackward] <;> ring
 
 @[tmio T, powerlib_foundation] theorem barrier_at_zero (V₀ : ℝ) :
     barrierForward V₀ 0 = 2 * V₀ ∧ barrierBackward V₀ 0 = 2 * V₀ := by
@@ -473,36 +475,19 @@ def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * 
   obtain ⟨h1, h2⟩ := washboard_curvatures V₀ α
   rw [h1, h2, abs_neg, abs_of_nonneg (by positivity), ← sq, Real.sqrt_sq (by positivity)]
 
-/-- For `α ≠ 0` the Boltzmann weight `e^{−V/D}` of the tilted washboard is not integrable on `ℝ`. -/
+/-- For `α ≠ 0` the Boltzmann weight `e^{−V/D}` of the tilted washboard is not integrable on `ℝ`
+(`V ≤ V₀` on the half-line along the tilt; `Stochastic.FP.gibbs_not_integrable`). -/
 @[tmio T, powerlib_foundation] theorem washboard_weight_not_integrable {V₀ α D : ℝ} (hV : 0 < V₀)
     (hα : α ≠ 0) (hD : 0 < D) :
     ¬ Integrable (fun θ => Real.exp (-washboard V₀ α θ / D)) := by
-  intro hint
-  set c := Real.exp (-V₀ / D)
-  have hc : 0 < c := Real.exp_pos _
-  -- on the half-line along the tilt the weight is at least `c`
-  have key : ∀ s : Set ℝ, MeasurableSet s → volume s = ⊤ →
-      (∀ θ ∈ s, 0 ≤ α * θ) → False := by
-    intro s hs hvol hpos
-    have hon : IntegrableOn (fun θ => Real.exp (-washboard V₀ α θ / D)) s := hint.integrableOn
-    have hconst : IntegrableOn (fun _ : ℝ => c) s := by
-      refine Integrable.mono' hon aestronglyMeasurable_const ?_
-      refine (ae_restrict_iff' hs).mpr (Eventually.of_forall fun θ hθ => ?_)
-      rw [Real.norm_eq_abs, abs_of_pos hc]
-      apply Real.exp_le_exp.mpr
-      have hcos := Real.neg_one_le_cos θ
-      have := hpos θ hθ
-      rw [div_le_div_iff_of_pos_right hD]
-      simp only [washboard_eq]
-      nlinarith
-    rw [integrableOn_const_iff] at hconst
-    rcases hconst with h | h
-    · simp [hc.ne'] at h
-    · rw [hvol] at h; exact lt_irrefl _ h
+  -- on the half-line along the tilt `V ≤ V₀` (`Stochastic.FP.gibbs_not_integrable`)
+  have key : ∀ θ, 0 ≤ α * θ → washboard V₀ α θ ≤ V₀ := fun θ h => by
+    rw [washboard_eq]
+    nlinarith [Real.neg_one_le_cos θ, mul_nonneg hV.le h]
   rcases lt_or_gt_of_ne hα with h | h
-  · exact key (Iic 0) measurableSet_Iic Real.volume_Iic
-      (fun θ hθ => mul_nonneg_of_nonpos_of_nonpos h.le hθ)
-  · exact key (Ici 0) measurableSet_Ici Real.volume_Ici
-      (fun θ hθ => mul_nonneg h.le hθ)
+  · exact Stochastic.FP.gibbs_not_integrable hD measurableSet_Iic Real.volume_Iic
+      fun θ hθ => key θ (mul_nonneg_of_nonpos_of_nonpos h.le hθ)
+  · exact Stochastic.FP.gibbs_not_integrable hD measurableSet_Ici Real.volume_Ici
+      fun θ hθ => key θ (mul_nonneg h.le hθ)
 
 end powerlib.Potential

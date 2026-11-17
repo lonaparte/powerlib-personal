@@ -376,8 +376,9 @@ the solution through it leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
 /-! ### Lyapunov stability at a negative slope: the PLL energy
 
 At a zero `θ*` of `h` with `h'(θ*) < 0`, `K_p ≥ 0` and `K_i > 0` the PLL energy
-`E(θ, η) = U(θ) + ½ K_i (η − δω/K_i)²`, `U(θ) = −∫_{θ*}^{θ} h`, is a local Lyapunov function of
-the untranslated field at the selected point: `Ė = −K_p h(θ)² ≤ 0`, and `U > 0` near `θ*` off
+`E = piPLLEnergy U K_i (δω/K_i)`, i.e. `U(θ) + ½ K_i (η − δω/K_i)²`, `U(θ) = −∫_{θ*}^{θ} h`, is a
+local Lyapunov function of the untranslated field at the selected point: `Ė = −K_p h(θ)² ≤ 0`
+(`piPLL_energy_rate`), and `U > 0` near `θ*` off
 `θ*`, because `h` decreases through zero there. The lossless loop `K_p = 0` is included, where the
 linearization (a centre) decides nothing. Implementation evidence; the public conclusion is
 `mem_den_lyapunovStable_of_slope`. -/
@@ -388,32 +389,6 @@ private def potential (m : Model) (θ : ℝ) : ℝ := -∫ s in m.θ..θ, m.h s
 @[tmio M, powerlib_domain] private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
     HasDerivAt (potential m) (-m.h θ) θ :=
   (m.smooth.continuous.integral_hasStrictDerivAt m.θ θ).hasDerivAt.neg
-
-/-- The PLL energy `E(θ, η) = U(θ) + ½ K_i (η − δω/K_i)²`. -/
-private def energy (m : Model) (x : ℝ²) : ℝ :=
-  potential m (x 0) + m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2
-
-@[tmio M, powerlib_domain] private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
-    HasFDerivAt (energy m)
-      ((-m.h (x 0)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
-        (m.Ki * (x 1 - m.δω / m.Ki)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) x := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h := ((hasDerivAt_potential m (x 0)).comp_hasFDerivAt x h0).add
-    (((h1.sub_const (m.δω / m.Ki)).pow 2).const_mul (m.Ki / 2))
-  refine h.congr_fderiv ?_
-  ext v
-  simp
-  ring
-
-/-- The energy decreases at the damping rate: `Ė = −K_p h(θ)²` (`K_i ≠ 0`). -/
-@[tmio M, powerlib_domain] private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
-    fderiv ℝ (energy m) x (piPLLField m.h m.Kp m.Ki m.δω x) = -(m.Kp * m.h (x 0) ^ 2) := by
-  rw [(hasFDerivAt_energy m x).fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
-    smul_eq_mul, piPLLField_apply_zero, piPLLField_apply_one]
-  field_simp
-  ring
 
 /-- Near a zero `θ*` of `h` where the slope stays negative the potential is positive off `θ*`:
 `h > 0` before `θ*` and `h < 0` after it. -/
@@ -456,50 +431,88 @@ energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at 
     hr (by simpa [Real.dist_eq] using hθ)
   have hp0 : m.point 0 = m.θ := by simp [Model.point]
   have hp1 : m.point 1 = m.δω / m.Ki := by simp [Model.point]
-  have hEd : Differentiable ℝ (energy m) := fun x => (hasFDerivAt_energy m x).differentiableAt
-  apply lyapunov_stable (D := {x : ℝ² | |x 0 - m.θ| < r}) (V := energy m) (by norm_num)
+  have hEd : Differentiable ℝ (piPLLEnergy (potential m) m.Ki (m.δω / m.Ki)) := fun x =>
+    (hasFDerivAt_piPLLEnergy (hasDerivAt_potential m (x 0))).differentiableAt
+  apply lyapunov_stable (D := {x : ℝ² | |x 0 - m.θ| < r})
+    (V := piPLLEnergy (potential m) m.Ki (m.δω / m.Ki)) (by norm_num)
   refine ⟨?_, ?_, hEd.continuous, hEd, ?_, fun x hx hne => ?_, fun x _ => ?_⟩
   · exact isOpen_lt (by fun_prop) continuous_const
   · show |m.point 0 - m.θ| < r
     simpa [hp0] using hr0
-  · simp [energy, potential, hp0, hp1]
+  · simp [piPLLEnergy, potential, hp0, hp1]
   · have hx' : |x 0 - m.θ| < r := hx
     have hq : 0 ≤ m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2 := by positivity
     by_cases h0 : x 0 = m.θ
     · have h1 : x 1 - m.δω / m.Ki ≠ 0 := fun h1 => hne (PhasePlane.ext_iff'.2
         ⟨by rw [h0, hp0], by rw [hp1]; linarith⟩)
       have : 0 < m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2 := by positivity
-      simpa [energy, potential, h0] using this
+      simpa [piPLLEnergy, potential, h0] using this
     · have hU := potential_pos m hzero hr' hx' h0
-      simp only [energy]
+      simp only [piPLLEnergy]
       linarith
-  · rw [energy_lie m hKi.ne']
+  · rw [piPLL_energy_rate _ _ _ _ (hasDerivAt_potential m (x 0)), mul_div_cancel₀ _ hKi.ne',
+      sub_self, mul_zero, add_zero]
     nlinarith [sq_nonneg (m.h (x 0))]
 
 /-! ### The synchronous-reference-frame detector -/
 
-/-- The SRF detector `h(θ) = −V sin θ` with grid voltage amplitude `V`. -/
-def srf (V Kp Ki δω θ : ℝ) : Model :=
-  ⟨fun x => -V * Real.sin x, Kp, Ki, δω, θ, contDiff_const.mul Real.contDiff_sin⟩
+/-- The SRF detector `h = srfPD V = −V sin` with grid voltage amplitude `V`. -/
+def srf (V Kp Ki δω θ : ℝ) : Model := ⟨srfPD V, Kp, Ki, δω, θ, contDiff_srfPD V⟩
 
 @[tmio M, powerlib_domain] theorem srf_deriv (V Kp Ki δω θ : ℝ) :
     deriv (srf V Kp Ki δω θ).h (srf V Kp Ki δω θ).θ = -V * Real.cos θ :=
-  ((Real.hasDerivAt_sin θ).const_mul (-V)).deriv
+  (hasDerivAt_srfPD V θ).deriv.trans (neg_mul V _).symm
 
-/-- SRF detector with positive amplitude and gains: the phase-locked point `θ* = 0` is locally
-exponentially stable for every frequency offset `δω`. -/
-@[tmio TM, powerlib_domain] theorem srf_mem_den_locallyExponentiallyStable {V Kp Ki : ℝ} (hV : 0 < V)
-    (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
-    connection% (srf V Kp Ki δω 0 ∈ family.den (.flow .locallyExponentiallyStable)) :=
-  mem_den_locallyExponentiallyStable_of_pos _ hKp hKi (by simp [srf])
-    (by rw [srf_deriv, Real.cos_zero]; linarith)
+@[tmio T, powerlib_foundation] private lemma cos_two_int_mul_pi (k : ℤ) :
+    Real.cos (2 * k * Real.pi) = 1 := by
+  rw [show 2 * (k : ℝ) * Real.pi = (k : ℝ) * (2 * Real.pi) by ring]
+  exact Real.cos_int_mul_two_pi k
 
-/-- SRF detector with positive amplitude and integral gain: the anti-phase point `θ* = π` is
-unstable (saddle) for every `K_p` and every frequency offset `δω`. -/
-@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable {V Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki)
-    (Kp δω : ℝ) :
-    connection% (srf V Kp Ki δω Real.pi ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable_of_pos _ hKi (by simp [srf]) (by rw [srf_deriv, Real.cos_pi]; linarith)
+@[tmio M, powerlib_domain] private theorem srf_h_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
+    (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = 0 := by
+  change -(V * Real.sin (2 * k * Real.pi)) = 0
+  rw [Real.sin_eq_zero_iff.mpr ⟨2 * k, by push_cast; ring⟩, mul_zero, neg_zero]
+
+@[tmio M, powerlib_domain] private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
+    deriv (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = -V := by
+  rw [srf_deriv, cos_two_int_mul_pi, mul_one]
+
+/-- In-phase equilibria `(2kπ, δω/K_i)` are locally exponentially stable when
+`V K_p > 0` and `V K_i > 0`, for every constant frequency offset `δω`. -/
+@[tmio TM, powerlib_domain] theorem srf_mem_den_locallyExponentiallyStable_inPhase {V Kp Ki : ℝ}
+    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (δω : ℝ) (k : ℤ) :
+    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈
+      family.den (.flow .locallyExponentiallyStable)) :=
+  mem_den_locallyExponentiallyStable _ (srf_h_inPhase V Kp Ki δω k)
+    (by rw [srf_deriv_inPhase]; show Kp * -V < 0; linarith [mul_comm V Kp])
+    (by rw [srf_deriv_inPhase]; show Ki * -V < 0; linarith [mul_comm V Ki])
+
+/-- `V K_i < 0`: the in-phase equilibria are saddles, hence unstable. -/
+@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_mul_neg {V Kp Ki : ℝ}
+    (hVKi : V * Ki < 0) (δω : ℝ) (k : ℤ) :
+    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable _ (srf_h_inPhase V Kp Ki δω k)
+    (by rw [srf_deriv_inPhase]; show 0 < Ki * -V; linarith [mul_comm V Ki])
+
+/-- `V K_p < 0` (`K_i ≠ 0`): positive Jacobian trace at the in-phase equilibria, unstable. -/
+@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_trace {V Kp Ki : ℝ}
+    (hKi : Ki ≠ 0) (hVKp : V * Kp < 0) (δω : ℝ) (k : ℤ) :
+    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable_of_trace_pos _ (srf_h_inPhase V Kp Ki δω k) (Or.inl hKi)
+    (by rw [srf_deriv_inPhase]; show 0 < Kp * -V; linarith [mul_comm V Kp])
+
+/-- `V K_i > 0`: the anti-phase equilibria `((2k+1)π, δω/K_i)` are saddles, hence unstable, for
+every `K_p`. -/
+@[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_antiPhase {V Kp Ki : ℝ}
+    (hVKi : 0 < V * Ki) (δω : ℝ) (k : ℤ) :
+    connection% (srf V Kp Ki δω ((2 * k + 1) * Real.pi) ∈ family.den (.flow .unstable)) := by
+  refine mem_den_unstable _ ?_ ?_
+  · change -(V * Real.sin ((2 * k + 1) * Real.pi)) = 0
+    rw [Real.sin_eq_zero_iff.mpr ⟨2 * k + 1, by push_cast; ring⟩, mul_zero, neg_zero]
+  · rw [srf_deriv, show (2 * (k : ℝ) + 1) * Real.pi = (k : ℝ) * (2 * Real.pi) + Real.pi by ring,
+      Real.cos_add_pi, Real.cos_int_mul_two_pi]
+    show 0 < Ki * (-V * -1)
+    linarith [mul_comm V Ki]
 
 /-! ### The frequency-drift boundary `Σ_FD` -/
 
@@ -512,9 +525,9 @@ meets the phase-locking requirement although `|δω| = 2 > K_p sup |h| = 1`. -/
   unfold powerlib.TMIO.Statement
   intro H
   refine H (srf 1 1 1 2 0) 1 one_pos one_pos (fun θ => ?_) (by norm_num [srf]) ?_
-  · simpa [srf] using Real.abs_sin_le_one θ
+  · simpa [srf, srfPD] using Real.abs_sin_le_one θ
   · rw [(connection_proof% TMIO.mem_realize)]
-    simp [Meets, srf]
+    simp [Meets, srf, srfPD]
 
 /-- On the semantics connection the drift boundary fails as well: beyond it the phase-locked
 point of the same SRF model is even locally exponentially stable. -/
@@ -524,8 +537,9 @@ point of the same SRF model is even locally exponentially stable. -/
   unfold powerlib.TMIO.Statement
   intro H
   exact H (srf 1 1 1 2 0) 1 one_pos one_pos
-    (fun θ => by simpa [srf] using Real.abs_sin_le_one θ) (by norm_num [srf])
-    (srf_mem_den_locallyExponentiallyStable one_pos one_pos one_pos 2)
+    (fun θ => by simpa [srf, srfPD] using Real.abs_sin_le_one θ) (by norm_num [srf]) (by
+      simpa using srf_mem_den_locallyExponentiallyStable_inPhase (V := 1) (Kp := 1) (Ki := 1)
+        (by norm_num) (by norm_num) 2 0)
 
 /-! ### The frequency-ramp boundary `Σ_FD`
 

@@ -32,6 +32,18 @@ Results.
   candidate + uniqueness of solution segments of the affine linear field,
   `Linear.trajectory_unique`). This is the time-domain closed form used by the frequency-nadir
   results.
+* First extremum (nadir) of a damped response, for any such plant: every coordinate of a forward
+  solution is `e_i + dampedResp σ ω_d a r t` with initial deviation `a = (x(0) − e)_i` and
+  initial slope `r = (A (x(0) − e))_i` (`trajectory_apply_eq_dampedResp`). The scalar response
+  has derivative `−ρ e^{−σt} sin(θ − ω_d t)`, `ρ e^{jθ} = dampedRespPhase σ ω_d a r`
+  (`hasDerivAt_dampedResp`), vanishing at `θ/ω_d + kπ/ω_d` (`hasDerivAt_dampedResp_crit_add`),
+  and the half-period law `g(t + π/ω_d) = −e^{−σπ/ω_d} g(t)` (`dampedResp_add_half_period`).
+  Starting downwards (`r < 0`) it decreases strictly up to `T = dampedRespCrit σ ω_d a r > 0`
+  (`dampedRespCrit_pos`, `dampedResp_strictAntiOn`), `g(T) = −(ω_d ρ/(σ² + ω_d²)) e^{−σT}`
+  (`dampedResp_crit`), and for `σ ≥ 0` `g(T)` is the minimum over `t ≥ 0`
+  (`dampedResp_isMinOn`); `trajectory_nadir_osc2` is the trajectory form. The limit and the
+  initial rate of such trajectories are the any-dimension laws `LTI.tendsto_apply_of_isHurwitz`
+  and `LTI.hasDerivWithinAt_apply_zero` (`theorem/LTI/Plant.lean`).
 * `one_add_ratio_sin_le_exp` is the elementary inequality
   `e^{−σu}(cos(ω_d u) + (σ/ω_d) sin(ω_d u)) ≤ 1` for `σ ≥ 0`, `ω_d > 0`, `u ≥ 0`, which bounds
   every later excursion of a damped response by its first extremum.
@@ -189,6 +201,268 @@ form. -/
       ≤ Real.exp (-(σ * u)) * Real.exp (σ * u) :=
         mul_le_mul_of_nonneg_left (by linarith) hpos.le
     _ = 1 := hprod
+
+/-! ## First extremum of a damped response
+
+Every coordinate of `osc2` is the damped scalar response `dampedResp`. When it starts downwards
+(`g'(0) = r < 0`) it decreases strictly up to its first critical time, attains there its minimum
+over `t ≥ 0` (`σ ≥ 0`), and the minimum has a closed form; the trajectory form is
+`trajectory_nadir_osc2`. -/
+
+section DampedResponse
+
+/-- The damped scalar response `g(t) = e^{−σt}(a cos ω_d t + ((r + σ a)/ω_d) sin ω_d t)`, with
+`g(0) = a` and `g'(0) = r`. -/
+def dampedResp (σ ωd a r t : ℝ) : ℝ :=
+  Real.exp (-(σ * t)) * (a * Real.cos (ωd * t) + (r + σ * a) / ωd * Real.sin (ωd * t))
+
+/-- The phase point `−q − j r`, `q = ((σ² + ω_d²) a + σ r)/ω_d`: with `θ` its argument and `ρ`
+its norm, `g'(t) = −ρ e^{−σt} sin(θ − ω_d t)` (`hasDerivAt_dampedResp`). -/
+def dampedRespPhase (σ ωd a r : ℝ) : ℂ := ⟨-(((σ ^ 2 + ωd ^ 2) * a + σ * r) / ωd), -r⟩
+
+/-- The first critical time `θ/ω_d` of the damped response. -/
+def dampedRespCrit (σ ωd a r : ℝ) : ℝ := Complex.arg (dampedRespPhase σ ωd a r) / ωd
+
+variable {a r : ℝ}
+
+@[tmio T, powerlib_foundation] private theorem dampedRespPhase_re (σ ωd a r : ℝ) :
+    ‖dampedRespPhase σ ωd a r‖ * Real.cos (Complex.arg (dampedRespPhase σ ωd a r)) =
+      -(((σ ^ 2 + ωd ^ 2) * a + σ * r) / ωd) := by
+  rw [Complex.norm_mul_cos_arg]; rfl
+
+@[tmio T, powerlib_foundation] private theorem dampedRespPhase_im (σ ωd a r : ℝ) :
+    ‖dampedRespPhase σ ωd a r‖ * Real.sin (Complex.arg (dampedRespPhase σ ωd a r)) = -r := by
+  rw [Complex.norm_mul_sin_arg]; rfl
+
+@[tmio T, powerlib_foundation] private theorem dampedRespPhase_arg_mem (hr : r < 0) :
+    0 < Complex.arg (dampedRespPhase σ ωd a r) ∧
+      Complex.arg (dampedRespPhase σ ωd a r) < Real.pi := by
+  have him : (dampedRespPhase σ ωd a r).im = -r := rfl
+  refine ⟨lt_of_le_of_ne (Complex.arg_nonneg_iff.2 (by rw [him]; linarith)) fun h => ?_,
+    Complex.arg_lt_pi_iff.2 (Or.inr (by rw [him]; linarith))⟩
+  have := (Complex.arg_eq_zero_iff.1 h.symm).2
+  rw [him] at this
+  linarith
+
+@[tmio T, powerlib_foundation] private theorem dampedRespPhase_norm_pos (hr : r < 0) :
+    0 < ‖dampedRespPhase σ ωd a r‖ :=
+  norm_pos_iff.2 fun h => by
+    have : (dampedRespPhase σ ωd a r).im = 0 := by rw [h]; rfl
+    change -r = 0 at this
+    linarith
+
+/-- `g'(t) = −ρ e^{−σt} sin(θ − ω_d t)`, `ρ e^{jθ} = −q − j r`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_dampedResp (hωd : ωd ≠ 0) (t : ℝ) :
+    HasDerivAt (dampedResp σ ωd a r)
+      (-‖dampedRespPhase σ ωd a r‖ * Real.exp (-(σ * t)) *
+        Real.sin (Complex.arg (dampedRespPhase σ ωd a r) - ωd * t)) t := by
+  have he : HasDerivAt (fun s => Real.exp (-(σ * s))) (Real.exp (-(σ * t)) * (-σ)) t := by
+    simpa using ((hasDerivAt_id t).const_mul σ).neg.exp
+  have hc : HasDerivAt (fun s => Real.cos (ωd * s)) (-Real.sin (ωd * t) * ωd) t := by
+    simpa using ((hasDerivAt_id t).const_mul ωd).cos
+  have hs : HasDerivAt (fun s => Real.sin (ωd * s)) (Real.cos (ωd * t) * ωd) t := by
+    simpa using ((hasDerivAt_id t).const_mul ωd).sin
+  have h := he.mul ((hc.const_mul a).add (hs.const_mul ((r + σ * a) / ωd)))
+  convert h using 1
+  · funext s; simp only [dampedResp, Pi.mul_apply, Pi.add_apply]
+  simp only [Pi.add_apply]
+  have hre := dampedRespPhase_re σ ωd a r
+  have him := dampedRespPhase_im σ ωd a r
+  have hb : (r + σ * a) / ωd * ωd = r + σ * a := div_mul_cancel₀ _ hωd
+  have hq : σ * ((r + σ * a) / ωd) + a * ωd = ((σ ^ 2 + ωd ^ 2) * a + σ * r) / ωd := by
+    field_simp; ring
+  rw [Real.sin_sub]
+  set E := Real.exp (-(σ * t))
+  set C := Real.cos (ωd * t)
+  set S := Real.sin (ωd * t)
+  linear_combination (-E * C) * him + (-E * C) * hb + (E * S) * hre + (E * S) * hq
+
+/-- The derivative vanishes at `θ/ω_d + k π/ω_d`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_dampedResp_crit_add (hωd : ωd ≠ 0) (k : ℕ) :
+    HasDerivAt (dampedResp σ ωd a r) 0 (dampedRespCrit σ ωd a r + k * (Real.pi / ωd)) := by
+  convert hasDerivAt_dampedResp (σ := σ) (a := a) (r := r) hωd _ using 1
+  have harg : ωd * (dampedRespCrit σ ωd a r + k * (Real.pi / ωd)) =
+      Complex.arg (dampedRespPhase σ ωd a r) + k * Real.pi := by
+    rw [dampedRespCrit]; field_simp
+  rw [harg, show ∀ x y : ℝ, x - (x + y) = -y from fun x y => by ring, Real.sin_neg,
+    Real.sin_nat_mul_pi]
+  ring
+
+/-- Half-period law `g(t + π/ω_d) = −e^{−σπ/ω_d} g(t)`. -/
+@[tmio T, powerlib_foundation] theorem dampedResp_add_half_period (hωd : ωd ≠ 0) (t : ℝ) :
+    dampedResp σ ωd a r (t + Real.pi / ωd) =
+      -Real.exp (-(σ * (Real.pi / ωd))) * dampedResp σ ωd a r t := by
+  have harg : ωd * (t + Real.pi / ωd) = ωd * t + Real.pi := by field_simp
+  have hexp : Real.exp (-(σ * (t + Real.pi / ωd))) =
+      Real.exp (-(σ * (Real.pi / ωd))) * Real.exp (-(σ * t)) := by
+    rw [← Real.exp_add]; ring_nf
+  unfold dampedResp
+  rw [harg, hexp, Real.cos_add_pi, Real.sin_add_pi]
+  ring
+
+/-- The first critical time is positive for a response that starts downwards. -/
+@[tmio T, powerlib_foundation] theorem dampedRespCrit_pos (hωd : 0 < ωd) (hr : r < 0) :
+    0 < dampedRespCrit σ ωd a r :=
+  div_pos (dampedRespPhase_arg_mem hr).1 hωd
+
+/-- A response that starts downwards decreases strictly up to its first critical time. -/
+@[tmio T, powerlib_foundation] theorem dampedResp_strictAntiOn (hωd : 0 < ωd) (hr : r < 0) :
+    StrictAntiOn (dampedResp σ ωd a r) (Icc 0 (dampedRespCrit σ ωd a r)) := by
+  obtain ⟨hθ0, hθπ⟩ := dampedRespPhase_arg_mem (σ := σ) (ωd := ωd) (a := a) hr
+  have hρ := dampedRespPhase_norm_pos (σ := σ) (ωd := ωd) (a := a) hr
+  apply strictAntiOn_of_deriv_neg (convex_Icc _ _)
+  · exact fun t _ => (hasDerivAt_dampedResp hωd.ne' t).continuousAt.continuousWithinAt
+  · intro t ht
+    rw [interior_Icc] at ht
+    rw [(hasDerivAt_dampedResp hωd.ne' t).deriv]
+    have h1 : ωd * t < Complex.arg (dampedRespPhase σ ωd a r) := by
+      have := mul_lt_mul_of_pos_left ht.2 hωd
+      rwa [dampedRespCrit, mul_div_cancel₀ _ hωd.ne'] at this
+    have hsin : 0 < Real.sin (Complex.arg (dampedRespPhase σ ωd a r) - ωd * t) :=
+      Real.sin_pos_of_pos_of_lt_pi (by linarith) (by nlinarith [ht.1])
+    have := mul_pos (mul_pos hρ (Real.exp_pos (-(σ * t)))) hsin
+    linarith
+
+/-- Value at the first critical time: `g(T) = −(ω_d ρ/(σ² + ω_d²)) e^{−σT}`. -/
+@[tmio T, powerlib_foundation] theorem dampedResp_crit (hωd : 0 < ωd) (hr : r < 0) :
+    dampedResp σ ωd a r (dampedRespCrit σ ωd a r) =
+      -(ωd * ‖dampedRespPhase σ ωd a r‖ / (σ ^ 2 + ωd ^ 2)) *
+        Real.exp (-(σ * dampedRespCrit σ ωd a r)) := by
+  have hρ := dampedRespPhase_norm_pos (σ := σ) (ωd := ωd) (a := a) hr
+  have hre := dampedRespPhase_re σ ωd a r
+  have him := dampedRespPhase_im σ ωd a r
+  have hsq : ‖dampedRespPhase σ ωd a r‖ ^ 2 =
+      (((σ ^ 2 + ωd ^ 2) * a + σ * r) / ωd) ^ 2 + r ^ 2 := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    show (-(((σ ^ 2 + ωd ^ 2) * a + σ * r) / ωd)) * (-(((σ ^ 2 + ωd ^ 2) * a + σ * r) / ωd)) +
+      (-r) * (-r) = _
+    ring
+  have hT : ωd * dampedRespCrit σ ωd a r = Complex.arg (dampedRespPhase σ ωd a r) := by
+    rw [dampedRespCrit, mul_div_cancel₀ _ hωd.ne']
+  have hω0 : ωd ≠ 0 := hωd.ne'
+  have hn : 0 < σ ^ 2 + ωd ^ 2 := by positivity
+  have hbr : a * Real.cos (Complex.arg (dampedRespPhase σ ωd a r)) +
+      (r + σ * a) / ωd * Real.sin (Complex.arg (dampedRespPhase σ ωd a r)) =
+        -(ωd * ‖dampedRespPhase σ ωd a r‖ / (σ ^ 2 + ωd ^ 2)) := by
+    generalize ‖dampedRespPhase σ ωd a r‖ = ρ at hρ hre him hsq ⊢
+    generalize Complex.arg (dampedRespPhase σ ωd a r) = θ at hre him ⊢
+    have hsq' : ρ ^ 2 * ωd ^ 2 = ((σ ^ 2 + ωd ^ 2) * a + σ * r) ^ 2 + r ^ 2 * ωd ^ 2 := by
+      rw [hsq]; field_simp
+    refine mul_right_cancel₀ (b := ρ * ωd * (σ ^ 2 + ωd ^ 2)) (by positivity) ?_
+    have e1 : (a * Real.cos θ + (r + σ * a) / ωd * Real.sin θ) * (ρ * ωd * (σ ^ 2 + ωd ^ 2)) =
+        (σ ^ 2 + ωd ^ 2) * (ωd * a * (ρ * Real.cos θ) + (r + σ * a) * (ρ * Real.sin θ)) := by
+      field_simp
+    have e2 : -(ωd * ρ / (σ ^ 2 + ωd ^ 2)) * (ρ * ωd * (σ ^ 2 + ωd ^ 2)) =
+        -(ρ ^ 2 * ωd ^ 2) := by
+      field_simp
+    rw [e1, e2, hre, him, hsq']
+    field_simp
+    ring
+  unfold dampedResp
+  rw [hT, hbr]
+  ring
+
+/-- After its first critical time the response stays at or above that value (`σ ≥ 0`): it is the
+minimum over `t ≥ 0`. -/
+@[tmio T, powerlib_foundation] theorem dampedResp_isMinOn (hωd : 0 < ωd) (hσ : 0 ≤ σ)
+    (hr : r < 0) : IsMinOn (dampedResp σ ωd a r) (Ici 0) (dampedRespCrit σ ωd a r) := by
+  set T := dampedRespCrit σ ωd a r
+  have hT0 : 0 < T := dampedRespCrit_pos hωd hr
+  intro t ht
+  simp only [Set.mem_ofPred_eq]
+  rcases le_total t T with h | h
+  · exact (dampedResp_strictAntiOn hωd hr).antitoneOn ⟨ht, h⟩ ⟨hT0.le, le_rfl⟩ h
+  -- critical-point shift: `g(T + u) = g(T) e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`
+  have hd := (hasDerivAt_dampedResp (σ := σ) (a := a) (r := r) hωd.ne' T)
+  have hd0 := (hasDerivAt_dampedResp_crit_add (σ := σ) (a := a) (r := r) hωd.ne' 0)
+  simp only [Nat.cast_zero, zero_mul, add_zero] at hd0
+  have hcrit := hd.unique hd0
+  have hval := dampedResp_crit (σ := σ) (a := a) hωd hr
+  have hneg : dampedResp σ ωd a r T < 0 := by
+    rw [hval]
+    have hρ := dampedRespPhase_norm_pos (σ := σ) (ωd := ωd) (a := a) hr
+    have : 0 < ωd * ‖dampedRespPhase σ ωd a r‖ / (σ ^ 2 + ωd ^ 2) := by positivity
+    have := mul_pos this (Real.exp_pos (-(σ * T)))
+    linarith
+  have hshift : dampedResp σ ωd a r t = dampedResp σ ωd a r T *
+      (Real.exp (-(σ * (t - T))) * (Real.cos (ωd * (t - T)) + σ / ωd * Real.sin (ωd * (t - T))))
+      := by
+    -- the bracket derivative vanishes at `T`
+    have hk : (r + σ * a) / ωd * Real.cos (ωd * T) - a * Real.sin (ωd * T) =
+        σ / ωd * (a * Real.cos (ωd * T) + (r + σ * a) / ωd * Real.sin (ωd * T)) := by
+      have hre := dampedRespPhase_re σ ωd a r
+      have him := dampedRespPhase_im σ ωd a r
+      have hρ := dampedRespPhase_norm_pos (σ := σ) (ωd := ωd) (a := a) hr
+      have hT : ωd * T = Complex.arg (dampedRespPhase σ ωd a r) := by
+        simp only [T, dampedRespCrit, mul_div_cancel₀ _ hωd.ne']
+      rw [hT]
+      generalize ‖dampedRespPhase σ ωd a r‖ = ρ at hρ hre him
+      generalize Complex.arg (dampedRespPhase σ ωd a r) = θ at hre him ⊢
+      rw [← mul_right_inj' hρ.ne', ← mul_right_inj' hωd.ne']
+      have e : ωd * (ρ * ((r + σ * a) / ωd * Real.cos θ - a * Real.sin θ)) =
+          (r + σ * a) * (ρ * Real.cos θ) - ωd * a * (ρ * Real.sin θ) := by field_simp
+      have e' : ωd * (ρ * (σ / ωd * (a * Real.cos θ + (r + σ * a) / ωd * Real.sin θ))) =
+          σ * (a * (ρ * Real.cos θ) + (r + σ * a) / ωd * (ρ * Real.sin θ)) := by
+        field_simp
+      rw [e, e', hre, him]
+      field_simp
+      ring
+    have ht' : t = T + (t - T) := by ring
+    conv_lhs => rw [ht']
+    unfold dampedResp
+    rw [show ωd * (T + (t - T)) = ωd * T + ωd * (t - T) by ring, Real.cos_add, Real.sin_add,
+      show -(σ * (T + (t - T))) = -(σ * T) + -(σ * (t - T)) by ring, Real.exp_add]
+    linear_combination (Real.exp (-(σ * T)) * Real.exp (-(σ * (t - T))) *
+      Real.sin (ωd * (t - T))) * hk
+  have hG := one_add_ratio_sin_le_exp hσ hωd (sub_nonneg.2 h)
+  rw [hshift]
+  nlinarith
+
+end DampedResponse
+
+/-- Every coordinate of a forward solution of a two-state plant with eigenvalues `−σ ± j ω_d`
+(constant input `u`, equilibrium `e`) is `e_i` plus the damped response with initial deviation
+`a = (x(0) − e)_i` and initial slope `r = (A (x(0) − e))_i`. -/
+@[tmio T, powerlib_foundation] theorem trajectory_apply_eq_dampedResp {p : ℕ}
+    (M : Linear.Plant 2 p) {u : Fin p → ℝ} {e : ℝ²} (he : IsEquilibrium (M.inputField u) e)
+    (htr : M.A.trace = -2 * σ) (hdet : M.A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0)
+    {x : ℝ → ℝ²} (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) (i : Fin 2)
+    {t : ℝ} (ht : 0 ≤ t) :
+    x t i = e i + dampedResp σ ωd (WithLp.ofLp (x 0 - e) i)
+      ((M.A *ᵥ WithLp.ofLp (x 0 - e)) i) t := by
+  rw [trajectory_eq_osc2 M he htr hdet hωd hx ht]
+  simp only [PiLp.add_apply, osc2, dampedResp, Pi.smul_apply, Pi.add_apply, smul_eq_mul,
+    Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]
+  ring
+
+/-- First extremum of a forward solution: if a coordinate starts downwards
+(`r = (A (x(0) − e))_i < 0`) and `σ ≥ 0`, it decreases strictly up to
+`T = dampedRespCrit σ ω_d a r > 0`, attains its minimum over `t ≥ 0` at `T`, and that minimum is
+`e_i − (ω_d ρ/(σ² + ω_d²)) e^{−σT}`, `ρ = ‖dampedRespPhase σ ω_d a r‖`. -/
+@[tmio T, powerlib_foundation] theorem trajectory_nadir_osc2 {p : ℕ} (M : Linear.Plant 2 p)
+    {u : Fin p → ℝ} {e : ℝ²} (he : IsEquilibrium (M.inputField u) e)
+    (htr : M.A.trace = -2 * σ) (hdet : M.A.det = σ ^ 2 + ωd ^ 2) (hωd : 0 < ωd) (hσ : 0 ≤ σ)
+    {x : ℝ → ℝ²} (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) (i : Fin 2)
+    {a r : ℝ} (ha : WithLp.ofLp (x 0 - e) i = a) (hra : (M.A *ᵥ WithLp.ofLp (x 0 - e)) i = r)
+    (hr : r < 0) :
+    0 < dampedRespCrit σ ωd a r ∧
+      StrictAntiOn (fun t => x t i) (Icc 0 (dampedRespCrit σ ωd a r)) ∧
+      IsMinOn (fun t => x t i) (Ici 0) (dampedRespCrit σ ωd a r) ∧
+      x (dampedRespCrit σ ωd a r) i = e i - ωd * ‖dampedRespPhase σ ωd a r‖ / (σ ^ 2 + ωd ^ 2) *
+        Real.exp (-(σ * dampedRespCrit σ ωd a r)) := by
+  have hT0 := dampedRespCrit_pos (σ := σ) (a := a) hωd hr
+  have hx' : ∀ {t : ℝ}, 0 ≤ t → x t i = e i + dampedResp σ ωd a r t := fun ht => by
+    rw [trajectory_apply_eq_dampedResp M he htr hdet hωd.ne' hx i ht, ha, hra]
+  refine ⟨hT0, fun s hs t ht hst => ?_, fun t ht => ?_, ?_⟩
+  · simp only
+    rw [hx' hs.1, hx' ht.1]
+    linarith [dampedResp_strictAntiOn (σ := σ) (a := a) hωd hr hs ht hst]
+  · have hmin := dampedResp_isMinOn (a := a) hωd hσ hr ht
+    simp only [Set.mem_ofPred_eq] at hmin ⊢
+    rw [hx' ht, hx' hT0.le]
+    linarith
+  · rw [hx' hT0.le, dampedResp_crit hωd hr]
+    ring
 
 /-! ## The matrix exponential as the solution of `Ė = A E` -/
 

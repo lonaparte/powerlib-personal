@@ -10,11 +10,14 @@ Most model families of the library translate the local sentences in one shape, w
 requirement language: Lyapunov stability to one set of requirements, local asymptotic and local
 exponential stability to a second (often the same), instability to a third, passivity to a fourth
 (usually none), and the global sentences, decay rates, sampled contraction and conservation, which
-the requirements do not decide, to the whole, inconsistent language. `Spectral.localFamily`
-(`theorem/Spectral/Family.lean`) packages this shape for the two-element language
+the requirements do not decide, to the whole, inconsistent language. Families with global
+certificates or a linear plant fill the other entries of the same table
+(`theorem/Spectral/Global.lean`, `theorem/Spectral/LinearNamed.lean`). `Spectral.localFamily`
+(`theorem/Spectral/Family.lean`) packages the local shape for the two-element language
 `{stable, unstable}`; the families that keep named requirements (balanced, physical,
 synchronizing, …), so that they can state exactness within a physical context, re-proved its laws
-one by one. This module states them once for an arbitrary requirement language.
+one by one. This module states the table and its soundness once for an arbitrary requirement
+language.
 
 Scope.
 * A generic template, not a model: an arbitrary family `F : Family X Q n p` (continuous or
@@ -31,15 +34,25 @@ work-sync `theory/T-small-signal-stability.md` §1 for the local sentences, conv
 
 Results.
 * Denotations: `den_locallyExponentiallyStable_subset_las`, `den_las_subset_lyapunovStable`,
-  `den_locallyExponentiallyStable_subset_lyapunovStable` (for every family, continuous or
+  `den_locallyExponentiallyStable_subset_lyapunovStable`,
+  `den_globallyExponentiallyStable_subset_gas`, `den_globallyExponentiallyStable_subset_les`,
+  `den_globallyExponentiallyStable_subset_contractive` (for every family, continuous or
   discrete); `mem_den_flow_iff_shift` (an autonomous family written in coordinates about selected
   points `pt x` reads its flow sentences on the original fields at those points, through
   `Flow.Property.holds_shift_iff`).
-* The table: `localTable Rl Rs Ru Rp`. `chain_le_semantics_of_localTable` proves every translation
-  sound from the inconsistency of the whole language and the three obligations (`Rl` gives
-  Lyapunov stability, `Rs` local exponential stability, `Ru` instability) plus passivity on `Rp`;
-  `chain_le_semantics_of_localTable_same` is the common case `Rl = Rs`, `Rp = ∅` with every member
-  passive. Scaffold: `theorem/Flow/FlowSemantics.agda` (the sentence kinds and `localTable`).
+* The table: `table Rl Rs Rg Ru Rc Rp Rd Re` (Lyapunov stability to `Rl`, the local attractive
+  sentences to `Rs`, the global ones and sampled contraction to `Rg`, instability to `Ru`,
+  conservation to `Rc`, passivity to `Rp`, decay at the rate `a` to `Rd a`, the envelope sentences
+  to `Re`). `chain_le_semantics_of_table` proves every translation sound from one obligation per
+  set. Requirement spaces: `mem_realize_singleton`, `realize_univ_subset_of_eq_empty` (the whole,
+  inconsistent, language realizes into every set).
+* The local table `localTable Rl Rs Ru Rp` (`table` with the global sentences, decay rates,
+  conservation and the envelope sentences sent to the whole language).
+  `chain_le_semantics_of_localTable` proves every translation sound from the inconsistency of the
+  whole language and the three obligations (`Rl` gives Lyapunov stability, `Rs` local exponential
+  stability, `Ru` instability) plus passivity on `Rp`; `chain_le_semantics_of_localTable_same` is
+  the common case `Rl = Rs`, `Rp = ∅` with every member passive. Scaffold:
+  `theorem/Flow/FlowSemantics.agda` (the sentence kinds and the local table).
 * Exactness: `exactUnder_iff_forall` (within a context, by membership), `exactUnder_les_of_jacobian`
   and `exactUnder_les_of_jacobian_local` (converse linearization within a context: soundness of the
   translated requirements plus the converse algebra, an equilibrium with a Hurwitz Jacobian meets
@@ -120,6 +133,69 @@ variable {F : Family X Q n p}
     connection% (F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable)) := show F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable) from
   fun _ hx => den_las_subset_lyapunovStable (den_locallyExponentiallyStable_subset_las hx)
 
+/-- Global exponential stability gives global asymptotic stability, for every family. -/
+@[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_gas :
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆
+      F.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro x hx
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
+  cases h : F.system x with
+  | continuous s =>
+    rw [h, Sentence.holds_flow] at hx
+    rw [Sentence.holds_flow]
+    exact Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable hx
+  | discrete s =>
+    rw [h, Sentence.holds_flow_discrete] at hx
+    rw [Sentence.holds_flow_discrete]
+    exact Map.GloballyExponentiallyStable.globallyAsymptoticallyStable hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable (hx ω)
+
+/-- Global exponential stability gives local exponential stability, for every family. -/
+@[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_les :
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆
+      F.den (.flow .locallyExponentiallyStable)) := by
+  change F.den (.flow .globallyExponentiallyStable) ⊆
+        F.den (.flow .locallyExponentiallyStable)
+  intro x hx
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
+  cases h : F.system x with
+  | continuous s =>
+    rw [h, Sentence.holds_flow] at hx
+    rw [Sentence.holds_flow]
+    exact Flow.GloballyExponentiallyStable.locallyExponentiallyStable hx
+  | discrete s =>
+    rw [h, Sentence.holds_flow_discrete] at hx
+    rw [Sentence.holds_flow_discrete]
+    exact Map.GloballyExponentiallyStable.locallyExponentiallyStable hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.GloballyExponentiallyStable.locallyExponentiallyStable (hx ω)
+
+/-- Global exponential stability gives sampled contraction, for every family. -/
+@[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_contractive :
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)) := by
+  change F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)
+  intro x hx
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
+  cases h : F.system x with
+  | continuous s =>
+    rw [h, Sentence.holds_flow] at hx
+    rw [Sentence.holds_flow]
+    exact Flow.GloballyExponentiallyStable.sampledContraction hx
+  | discrete s =>
+    rw [h, Sentence.holds_flow_discrete] at hx
+    rw [Sentence.holds_flow_discrete]
+    exact Map.GloballyExponentiallyStable.sampledContraction hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.GloballyExponentiallyStable.sampledContraction (hx ω)
+
 /-- A family read on fields translated to selected points: its flow sentences are those of the
 untranslated fields at the points (`Flow.Property.holds_shift_iff`). -/
 @[tmio TM, powerlib_foundation] theorem mem_den_flow_iff_shift {F : Family X Q n 0}
@@ -148,22 +224,81 @@ end Denotation
     connection% (realize meets univ = ∅) := show realize meets univ = ∅ from
   realize_univ_eq_empty_of_forall fun x hx => h x (hx q₁) (hx q₂)
 
-/-! ## The local table and soundness -/
+/-- The space of one requirement. -/
+@[tmio T, powerlib_foundation] theorem mem_realize_singleton {meets : X → Q → Prop} {q : Q}
+    {x : X} :
+    connection% (x ∈ realize meets {q} ↔ meets x q) := by
+  change x ∈ realize meets {q} ↔ meets x q
+  simp [mem_realize]
+
+/-- The whole language, when no system meets it, realizes into every set. -/
+@[tmio T, powerlib_foundation] theorem realize_univ_subset_of_eq_empty {meets : X → Q → Prop}
+    (h : realize meets univ = ∅) (S : Set X) :
+    connection% (realize meets univ ⊆ S) := by
+  change realize meets univ ⊆ S
+  rw [h]
+  exact empty_subset S
+
+/-! ## The translation table and soundness -/
+
+/-- The translation table of the families with named requirements: Lyapunov stability to `Rl`,
+local asymptotic and local exponential stability to `Rs`, global asymptotic and global
+exponential stability and sampled contraction to `Rg`, instability to `Ru`, conservation to `Rc`,
+passivity to `Rp`, decay at the rate `a` to `Rd a` and the envelope sentences to `Re`. -/
+def table (Rl Rs Rg Ru Rc Rp : Set Q) (Rd : ℝ → Set Q) (Re : Set Q) : Sentence → Set Q
+  | .flow .lyapunovStable => Rl
+  | .flow .locallyAsymptoticallyStable | .flow .locallyExponentiallyStable => Rs
+  | .flow .globallyAsymptoticallyStable | .flow .globallyExponentiallyStable
+  | .flow .contractive => Rg
+  | .flow (.decay a) => Rd a
+  | .flow .unstable => Ru
+  | .flow .conservative => Rc
+  | .passive => Rp
+  | .envelope _ => Re
 
 /-- The local table: Lyapunov stability to `Rl`, local asymptotic and local exponential stability
 to `Rs`, instability to `Ru`, passivity to `Rp`, every other flow sentence and every envelope
 sentence to the whole language. -/
-def localTable (Rl Rs Ru Rp : Set Q) : Sentence → Set Q
-  | .flow .lyapunovStable => Rl
-  | .flow .locallyAsymptoticallyStable | .flow .locallyExponentiallyStable => Rs
-  | .flow .unstable => Ru
-  | .flow _ => univ
-  | .passive => Rp
-  | .envelope _ => univ
+abbrev localTable (Rl Rs Ru Rp : Set Q) : Sentence → Set Q :=
+  table Rl Rs univ Ru univ Rp (fun _ => univ) univ
 
 section Table
 
-variable {F : Family X Q n p} {Rl Rs Ru Rp : Set Q}
+variable {F : Family X Q n p} {Rl Rs Rg Ru Rc Rp Re : Set Q} {Rd : ℝ → Set Q}
+
+/-- Soundness of every translation of a family with the table: the requirement sets give Lyapunov
+stability (`Rl`), local exponential stability (`Rs`), global exponential stability (`Rg`), decay
+at the rate `a` (`Rd a`), instability (`Ru`), conservation (`Rc`), passivity (`Rp`) and the
+envelope sentences (`Re`). A set that is the whole, inconsistent, language discharges its
+obligation by `realize_univ_subset_of_eq_empty`. -/
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_table
+    (ht : ∀ s, F.translate s = table Rl Rs Rg Ru Rc Rp Rd Re s)
+    (hL : realize F.meets Rl ⊆ F.den (.flow .lyapunovStable))
+    (hS : realize F.meets Rs ⊆ F.den (.flow .locallyExponentiallyStable))
+    (hG : realize F.meets Rg ⊆ F.den (.flow .globallyExponentiallyStable))
+    (hD : ∀ a, realize F.meets (Rd a) ⊆ F.den (.flow (.decay a)))
+    (hU : realize F.meets Ru ⊆ F.den (.flow .unstable))
+    (hC : realize F.meets Rc ⊆ F.den (.flow .conservative))
+    (hP : realize F.meets Rp ⊆ F.den .passive)
+    (hE : ∀ E, realize F.meets Re ⊆ F.den (.envelope E)) :
+    connection% (∀ P, F.chain P ≤ F.semantics P) := by
+  change ∀ P, F.chain P ≤ F.semantics P
+  refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
+  change x ∈ realize F.meets (F.translate s) at hx
+  rw [ht s] at hx
+  rcases s with P | _ | E
+  · cases P
+    case lyapunovStable => exact hL hx
+    case locallyAsymptoticallyStable => exact den_locallyExponentiallyStable_subset_las (hS hx)
+    case locallyExponentiallyStable => exact hS hx
+    case globallyAsymptoticallyStable => exact den_globallyExponentiallyStable_subset_gas (hG hx)
+    case globallyExponentiallyStable => exact hG hx
+    case contractive => exact den_globallyExponentiallyStable_subset_contractive (hG hx)
+    case decay a => exact hD a hx
+    case unstable => exact hU hx
+    case conservative => exact hC hx
+  · exact hP hx
+  · exact hE E hx
 
 /-- Soundness of every translation of a family with the local table: the whole language is
 inconsistent, and the requirement sets give Lyapunov stability, local exponential stability,
@@ -175,23 +310,9 @@ instability and passivity. -/
     (hS : realize F.meets Rs ⊆ F.den (.flow .locallyExponentiallyStable))
     (hU : realize F.meets Ru ⊆ F.den (.flow .unstable))
     (hP : realize F.meets Rp ⊆ F.den .passive) :
-    connection% (∀ P, F.chain P ≤ F.semantics P) := by
-  change ∀ P, F.chain P ≤ F.semantics P
-  refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
-  change x ∈ realize F.meets (F.translate s) at hx
-  rw [ht s] at hx
-  have hnone : x ∈ realize F.meets univ → x ∈ F.den s := fun h => by
-    rw [hinc] at h
-    exact h.elim
-  rcases s with P | _ | _
-  · cases P
-    case lyapunovStable => exact hL hx
-    case locallyAsymptoticallyStable => exact den_locallyExponentiallyStable_subset_las (hS hx)
-    case locallyExponentiallyStable => exact hS hx
-    case unstable => exact hU hx
-    all_goals exact hnone hx
-  · exact hP hx
-  · exact hnone hx
+    connection% (∀ P, F.chain P ≤ F.semantics P) := show ∀ P, F.chain P ≤ F.semantics P from
+  have h := realize_univ_subset_of_eq_empty hinc
+  chain_le_semantics_of_table ht hL hS (h _) (fun _ => h _) hU (h _) hP (fun _ => h _)
 
 /-- The common case: Lyapunov stability shares the requirements of the attractive local
 sentences, passivity has none, and every member is passive (a system without ports). -/

@@ -30,6 +30,8 @@ Results.
   with `cos δ₀ < 0` unstable (`K_p, P_max > 0`), via the scalar linearization wrappers of
   `theorem/NormalForm/Scalar.lean`; `absoluteAngle_iff` shows that the original law in the
   absolute angle `θ` is equivalent, pointwise in time, to the `δ`-equation.
+* `rhs_eq_adler`: the field is the Adler equation `θ̇ = B − A sin θ`
+  (`theorem/PhasePlane/Adler.lean`) with `A = K_p P_max`, `B = K_p P*`.
 * Algebra (foundation): the steady-state active power, the converter-side reactive power and
   the grid-side received reactive power from `S̄ = V̄ Ī*` (`Grid.converterSide_power`,
   `Grid.gridSide_power`, `theorem/Grid/PowerFlow.lean`); the active-resistance
@@ -105,6 +107,13 @@ def field : State 1 → State 1 := lift c.rhs
   have h := ((Real.hasDerivAt_sin δ).const_mul c.Pmax).const_sub c.Pstar |>.const_mul c.Kp
   convert h using 1
   ring
+
+/-- The PSC field is the Adler equation `θ̇ = B − A sin θ` of `theorem/PhasePlane/Adler.lean` with
+`A = K_p P_max`, `B = K_p P*` (overdamped washboard; for `|K_p P*| > |K_p P_max|` its running
+solutions slip at the mean rate `√(B² − A²)`, `PhasePlane.Adler.adler_mean_velocity`). -/
+@[tmio M, powerlib_domain] theorem rhs_eq_adler (δ : ℝ) :
+    c.rhs δ = c.Kp * c.Pstar - c.Kp * c.Pmax * Real.sin δ := by
+  unfold rhs; ring
 
 /-- Equilibria: `δ₀` is an equilibrium iff `P_max sin δ₀ = P*` (`K_p ≠ 0`).
 Static evidence on the model, not a connection conclusion. -/

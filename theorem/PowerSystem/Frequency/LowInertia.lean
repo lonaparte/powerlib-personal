@@ -14,10 +14,10 @@ Model boundary.
   voltage–frequency coupling.
 * Stochastic statements are about the stationary variance integral
   `σ² = ∫₀^∞ |H(jω)|² S(ω) dω` of the note, not about a stochastic differential equation.
-* The first-order plant `firstOrderModel` is a `Linear.Plant 1 1` (state, input and output
-  `Δω`, `ΔP_L`, `Δω`). The only trajectory-level statement, `rocof_le_iff_criticalInertia`,
-  reads the critical-inertia condition off the initial slope of a forward solution of the
-  `Frequency.SwingGovernor` plant.
+* The first-order plant `SwingGovernor.firstOrderModel` is a `Linear.Plant 1 1` (state, input
+  and output `Δω`, `ΔP_L`, `Δω`). The only trajectory-level statement,
+  `rocof_le_iff_criticalInertia`, reads the critical-inertia condition off the initial slope of a
+  forward solution of the `Frequency.SwingGovernor` plant.
 
 Source: work-sync `theory/T-low-inertia-frequency.md` §1.1 (time scales), §1.3 (dq network
 equations), §1.5 (critical inertia), §1.7 (frequency variance under stochastic load).
@@ -33,8 +33,9 @@ Results.
   two-state model's initial RoCoF `|ḟ(0⁺)| = |ΔP_L| f₀/(2H)`,
   `|ḟ(0⁺)| ≤ ḟ_max ⇔ H ≥ H_crit = |ΔP_L| f₀/(2 ḟ_max)`; `criticalInertia_example`:
   `1 Hz/s`, `0.1 pu`, `50 Hz` give `2.5 s`.
-* `firstOrderModel`, `firstOrder_transfer`, `firstOrder_normSq_transfer` (§1.7): the
-  swing + droop model `M Δω̇ = −ΔP_L − (K_R + D) Δω` has `H(s) = −1/(M s + β)`,
+* `firstOrder_normSq_transfer` (§1.7): the swing + droop model
+  (`SwingGovernor.firstOrderModel`, transfer function `SwingGovernor.firstOrder_transfer`)
+  `M Δω̇ = −ΔP_L − (K_R + D) Δω` has `H(s) = −1/(M s + β)`,
   `β = K_R + D`, and `|H(jω)|² = 1/(β² + M² ω²)`; `normSq_tendsto_zero`,
   `mul_normSq_tendsto_atTop`: low-frequency limit `1/β²` (independent of `M`), high-frequency
   asymptote `|H|² ω² → 1/M²`.
@@ -180,39 +181,14 @@ initial RoCoF `ḟ(0⁺)` (Hz/s, `f = f₀(1 + Δω)`) satisfies `|ḟ(0⁺)| �
 
 /-! ## First-order swing + droop model and its frequency response (§1.7) -/
 
-/-- `M Δω̇ = −ΔP_L − β Δω`, `β = K_R + D`; state `Δω`, input `ΔP_L`, output `Δω`. -/
-def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
-  A := !![-β / M]
-  B := !![-1 / M]
-  C := !![1]
-  D := 0
-
-/-- `H(s) = −1/(M s + β)` (both sides `0` at the pole). -/
-@[tmio M, powerlib_domain] theorem firstOrder_transfer {M β : ℝ} (hM : M ≠ 0) (s : ℂ) :
-    Linear.transfer (firstOrderModel M β) s 0 0 = -1 / ((M : ℂ) * s + β) := by
-  have hM' : (M : ℂ) ≠ 0 := by exact_mod_cast hM
-  have hdet : (Linear.characteristicMatrix (firstOrderModel M β).A s).det = s + β / M := by
-    simp [firstOrderModel, Linear.characteristicMatrix]
-    ring
-  have hadj : (Linear.complexify (firstOrderModel M β).C *
-      (Linear.characteristicMatrix (firstOrderModel M β).A s).adjugate *
-        Linear.complexify (firstOrderModel M β).B) 0 0 = -1 / M := by
-    simp [firstOrderModel, Matrix.adjugate_fin_one, Matrix.mul_apply, Linear.complexify]
-  have hD : Linear.complexify (firstOrderModel M β).D 0 0 = 0 := by simp [firstOrderModel]
-  rw [Linear.transfer_eq_adjugate]
-  simp only [Matrix.add_apply, Matrix.smul_apply, hadj, hD, smul_eq_mul, add_zero, hdet]
-  have key : (M : ℂ) * s + β = M * (s + β / M) := by field_simp
-  rw [key]
-  by_cases h : s + (β : ℂ) / M = 0
-  · rw [h]; simp
-  · field_simp
-
 /-- `|H(jω)|² = 1/(β² + M² ω²)`. -/
 @[tmio M, powerlib_domain] theorem firstOrder_normSq_transfer {M β : ℝ} (hM : M ≠ 0)
     (ω : ℝ) :
-    Complex.normSq (Linear.transfer (firstOrderModel M β) (ω * Complex.I) 0 0) =
+    Complex.normSq
+        (Linear.transfer (SwingGovernor.firstOrderModel M β) (ω * Complex.I) 0 0) =
       1 / (β ^ 2 + M ^ 2 * ω ^ 2) := by
-  rw [firstOrder_transfer hM, Complex.normSq_div, Complex.normSq_neg, Complex.normSq_one]
+  rw [SwingGovernor.firstOrder_transfer hM, Complex.normSq_div, Complex.normSq_neg,
+    Complex.normSq_one]
   congr 1
   rw [Complex.normSq_apply]
   simp

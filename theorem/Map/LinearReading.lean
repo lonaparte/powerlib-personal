@@ -17,7 +17,7 @@ Scaffold: the `discrete-reading` hypothesis of `theorem/LTI/ExactSampling.agda` 
 `theorem/Averaging/SwitchedAveraging.agda`.
 
 Scope. Maps `F : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, read by the map semantics
-`theorem/Map/Defs.lean`; the linear map of a matrix is `Map.op Φ`
+`theorem/Map/Defs.lean`; the linear map of a matrix is `Linear.op Φ`
 (`theorem/Map/Linearization.lean`); Schur stability is `LTI.SchurStable`
 (`theorem/LTI/Discrete.lean`); families of autonomous maps (`Family.IsAutonomousMap`). No model.
 
@@ -35,9 +35,9 @@ Results.
   `Map.decay_zero_of_lyapunovStable` (Lyapunov stability of a continuous linear map at the origin
   bounds every orbit by a multiple of its initial norm: `Map.Decay` at the rate zero);
   `Map.unstable_op_of_eigenvalue`: a complex eigenvalue `μ` of `Φ` with `1 < ‖μ‖` gives
-  `Map.Unstable (op Φ) 0`; `Map.schurStable_of_localAsymptoticStable`,
+  `Map.Unstable (Linear.op Φ) 0`; `Map.schurStable_of_localAsymptoticStable`,
   `Map.schurStable_of_sampledContraction`; `Map.holdsMap_op_iff_schurStable` (main):
-  `P.holdsMap T (op Φ) 0 ↔ LTI.SchurStable Φ` for every attractive sentence and sampled
+  `P.holdsMap T (Linear.op Φ) 0 ↔ LTI.SchurStable Φ` for every attractive sentence and sampled
   contraction and every step length `T`.
 * Families: `Family.IsAutonomousMap.den_schurStable`: in a family of linear maps the attractive
   sentences and sampled contraction denote the members with a Schur matrix (the discrete
@@ -117,12 +117,12 @@ the eigenvector start orbits whose squared norms add up to `‖μ‖^{2k}` times
 which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`) forbids. -/
 @[tmio T, powerlib_foundation] theorem unstable_op_of_eigenvalue {Φ : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ}
     {v : Fin n → ℂ} (hv : v ≠ 0) (heig : Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
-    (hμ : 1 < ‖μ‖) : Unstable (op Φ) 0 := by
+    (hμ : 1 < ‖μ‖) : Unstable (Linear.op Φ) 0 := by
   intro hstab
   obtain ⟨C, hC⟩ := decay_zero_of_lyapunovStable hstab
   let re : ℕ → ℝⁿ := fun k => WithLp.toLp 2 fun j => (μ ^ k * v j).re
   let im : ℕ → ℝⁿ := fun k => WithLp.toLp 2 fun j => (μ ^ k * v j).im
-  have hre : ∀ k, (⇑(op Φ))^[k] (re 0) = re k := by
+  have hre : ∀ k, (⇑(Linear.op Φ))^[k] (re 0) = re k := by
     intro k
     induction k with
     | zero => rfl
@@ -130,7 +130,7 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
       rw [Function.iterate_succ_apply', ih]
       have h := MatrixAlgebra.matrixMulVec_re_smul_eigenpair Φ μ (μ ^ k) v heig
       simp only [re, toEuclideanCLM_toLp, ← h, pow_succ]
-  have him : ∀ k, (⇑(op Φ))^[k] (im 0) = im k := by
+  have him : ∀ k, (⇑(Linear.op Φ))^[k] (im 0) = im k := by
     intro k
     induction k with
     | zero => rfl
@@ -168,10 +168,10 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
 
 /-- Convergence of every orbit of the linear map of `Φ` is Schur stability of `Φ`. -/
 @[tmio T, powerlib_foundation] private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}
-    (h : ∀ y : ℝⁿ, Tendsto (fun k : ℕ => (⇑(op Φ))^[k] y) atTop (𝓝 0)) :
+    (h : ∀ y : ℝⁿ, Tendsto (fun k : ℕ => (⇑(Linear.op Φ))^[k] y) atTop (𝓝 0)) :
     LTI.SchurStable Φ := by
   refine (LTI.asymptoticallyStable_iff_schurStable ⟨Φ⟩).mp fun x hx => ?_
-  have hxk : ∀ k, x k = WithLp.ofLp ((⇑(op Φ))^[k] (WithLp.toLp 2 (x 0))) := by
+  have hxk : ∀ k, x k = WithLp.ofLp ((⇑(Linear.op Φ))^[k] (WithLp.toLp 2 (x 0))) := by
     intro k
     induction k with
     | zero => rfl
@@ -185,21 +185,22 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
 
 /-- Local asymptotic stability of the linear map of `Φ` at the origin is Schur stability. -/
 @[tmio T, powerlib_foundation] theorem schurStable_of_localAsymptoticStable
-    {Φ : Matrix (Fin n) (Fin n) ℝ} (h : LocalAsymptoticStable (op Φ) 0) : LTI.SchurStable Φ :=
+    {Φ : Matrix (Fin n) (Fin n) ℝ} (h : LocalAsymptoticStable (Linear.op Φ) 0) :
+    LTI.SchurStable Φ :=
   schurStable_of_tendsto (tendsto_iterate_of_localAsymptoticStable h)
 
 /-- Sampled contraction of the linear map of `Φ` at the origin is Schur stability: the contracting
 block is a power of operator norm below one. -/
 @[tmio T, powerlib_foundation] theorem schurStable_of_sampledContraction {Φ : Matrix (Fin n) (Fin n) ℝ}
-    (h : SampledContraction (op Φ) 0) : LTI.SchurStable Φ := by
+    (h : SampledContraction (Linear.op Φ) 0) : LTI.SchurStable Φ := by
   obtain ⟨k, hk, c, hc, hb⟩ := h
-  have hnorm : ‖op Φ ^ k‖ ≤ max c 0 := by
+  have hnorm : ‖Linear.op Φ ^ k‖ ≤ max c 0 := by
     refine ContinuousLinearMap.opNorm_le_bound _ (le_max_right c 0) fun y => ?_
     have := hb y
     rw [sub_zero, sub_zero, ← FunLike.coe_pow_eq_iterate] at this
     exact this.trans (mul_le_mul_of_nonneg_right (le_max_left c 0) (norm_nonneg y))
-  have hles := locallyExponentiallyStable_of_pow_norm_lt_one (op Φ).hasFDerivAt (map_zero _) hk
-    (hnorm.trans_lt (max_lt hc one_pos))
+  have hles := locallyExponentiallyStable_of_pow_norm_lt_one (Linear.op Φ).hasFDerivAt
+    (map_zero _) hk (hnorm.trans_lt (max_lt hc one_pos))
   exact schurStable_of_localAsymptoticStable hles.localAsymptoticStable
 
 /-- **The linear reading of the map semantics.** For the linear map of a real square matrix `Φ`,
@@ -207,7 +208,7 @@ every attractive sentence and sampled contraction holds at the origin, with any 
 exactly when `Φ` is Schur stable. -/
 @[tmio T, powerlib_foundation] theorem holdsMap_op_iff_schurStable {Φ : Matrix (Fin n) (Fin n) ℝ}
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) (T : ℝ) :
-    P.holdsMap T (op Φ) 0 ↔ LTI.SchurStable Φ := by
+    P.holdsMap T (Linear.op Φ) 0 ↔ LTI.SchurStable Φ := by
   refine ⟨fun h => ?_, fun h => (globallyExponentiallyStable_of_schurStable h).holdsMap hP T⟩
   rcases hP with hP | rfl
   · exact schurStable_of_localAsymptoticStable
@@ -227,7 +228,7 @@ members with a Schur matrix, whatever their step lengths (the discrete counterpa
 `Family.IsLinear.den_hurwitz`). -/
 @[tmio TM, powerlib_foundation] theorem IsAutonomousMap.den_schurStable {F : Family X Q n 0}
     {period : X → ℝ} {Φ : X → Matrix (Fin n) (Fin n) ℝ}
-    (hF : F.IsAutonomousMap period fun x => Map.op (Φ x)) {P : Flow.Property}
+    (hF : F.IsAutonomousMap period fun x => Linear.op (Φ x)) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (F.den (.flow P) = {x | LTI.SchurStable (Φ x)}) := by
   unfold powerlib.TMIO.Statement

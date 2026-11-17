@@ -40,36 +40,6 @@ namespace powerlib.Numerics
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-! ### Scalar noise -/
-
-/-- Euler–Maruyama step with scalar noise. -/
-def emStep (μ σ : E → ℝ → E) (dt t ξ : ℝ) (x : E) : E :=
-  x + dt • μ x t + (Real.sqrt dt * ξ) • σ x t
-
-/-- Milstein step with scalar noise:
-`EM + ½ ((√Δt ξ)² - Δt) (D_xσ · σ)`. -/
-def milsteinStep (μ σ : E → ℝ → E) (dt t ξ : ℝ) (x : E) : E :=
-  emStep μ σ dt t ξ x +
-    ((1 / 2 : ℝ) * ((Real.sqrt dt * ξ) ^ 2 - dt)) • (fderiv ℝ (fun y => σ y t) x) (σ x t)
-
-/-- Additive scalar noise: Milstein equals Euler–Maruyama, sample by sample. -/
-@[tmio T, powerlib_foundation] theorem milsteinStep_eq_emStep {μ σ : E → ℝ → E}
-    (hσ : ∀ x y t, σ x t = σ y t) (dt t ξ : ℝ) (x : E) :
-    milsteinStep μ σ dt t ξ x = emStep μ σ dt t ξ x := by
-  have hconst : (fun y => σ y t) = fun _ => σ x t := funext fun y => hσ y x t
-  simp [milsteinStep, hconst]
-
-/-- Additive scalar noise: Milstein and Euler–Maruyama trajectories driven by the same
-samples coincide. -/
-@[tmio T, powerlib_foundation] theorem milstein_trajectory_eq_em {μ σ : E → ℝ → E}
-    (hσ : ∀ x y t, σ x t = σ y t) (dt : ℝ) (ξ : ℕ → ℝ) (x y : ℕ → E) (h0 : x 0 = y 0)
-    (hx : ∀ n, x (n + 1) = milsteinStep μ σ dt (n * dt) (ξ n) (x n))
-    (hy : ∀ n, y (n + 1) = emStep μ σ dt (n * dt) (ξ n) (y n)) : x = y := by
-  funext n
-  induction n with
-  | zero => exact h0
-  | succ n ih => rw [hx n, hy n, ih, milsteinStep_eq_emStep hσ]
-
 /-! ### Several noise channels -/
 
 /-- Euler–Maruyama step with `m` noise channels (columns `σ k`). -/
@@ -92,6 +62,36 @@ iterated integrals (Lévy areas are irrelevant). -/
   have hconst : ∀ k, (fun y => σ k y t) = fun _ => σ k x t :=
     fun k => funext fun y => hσ k y x t
   simp [milsteinMultiStep, hconst]
+
+/-! ### Scalar noise: one channel -/
+
+/-- Euler–Maruyama step with scalar noise: `emMultiStep` with one channel. -/
+abbrev emStep (μ σ : E → ℝ → E) (dt t ξ : ℝ) (x : E) : E :=
+  emMultiStep (m := 1) μ (fun _ => σ) dt t (fun _ => ξ) x
+
+/-- Milstein step with scalar noise, `EM + ½ ((√Δt ξ)² - Δt) (D_xσ · σ)`: `milsteinMultiStep`
+with one channel and iterated integral `I¹¹ = ½ ((√Δt ξ)² − Δt)`. -/
+abbrev milsteinStep (μ σ : E → ℝ → E) (dt t ξ : ℝ) (x : E) : E :=
+  milsteinMultiStep (m := 1) μ (fun _ => σ) dt t (fun _ => ξ)
+    (fun _ _ => (1 / 2 : ℝ) * ((Real.sqrt dt * ξ) ^ 2 - dt)) x
+
+/-- Additive scalar noise: Milstein equals Euler–Maruyama, sample by sample
+(`milsteinMultiStep_eq_emMultiStep` with one channel). -/
+@[tmio T, powerlib_foundation] theorem milsteinStep_eq_emStep {μ σ : E → ℝ → E}
+    (hσ : ∀ x y t, σ x t = σ y t) (dt t ξ : ℝ) (x : E) :
+    milsteinStep μ σ dt t ξ x = emStep μ σ dt t ξ x :=
+  milsteinMultiStep_eq_emMultiStep (fun _ => hσ) dt t _ _ x
+
+/-- Additive scalar noise: Milstein and Euler–Maruyama trajectories driven by the same
+samples coincide. -/
+@[tmio T, powerlib_foundation] theorem milstein_trajectory_eq_em {μ σ : E → ℝ → E}
+    (hσ : ∀ x y t, σ x t = σ y t) (dt : ℝ) (ξ : ℕ → ℝ) (x y : ℕ → E) (h0 : x 0 = y 0)
+    (hx : ∀ n, x (n + 1) = milsteinStep μ σ dt (n * dt) (ξ n) (x n))
+    (hy : ∀ n, y (n + 1) = emStep μ σ dt (n * dt) (ξ n) (y n)) : x = y := by
+  funext n
+  induction n with
+  | zero => exact h0
+  | succ n ih => rw [hx n, hy n, ih, milsteinStep_eq_emStep hσ]
 
 /-! ### Commutative noise -/
 

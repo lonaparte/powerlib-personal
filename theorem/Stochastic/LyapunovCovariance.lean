@@ -3,7 +3,7 @@ import dependencies.LeanForControl
 import theorem.Attributes
 import theorem.Linear.Transfer
 import theorem.Linear.EigenMap
-import theorem.LinearAlgebra.Frobenius
+import theorem.LinearAlgebra.LyapunovODE
 
 /-! # Covariance Lyapunov equation of a vector OU process
 
@@ -38,9 +38,14 @@ Results.
 * `exists_solvesCovLyapunov`, `solvesCovLyapunov_unique`, `posSemidef_of_solvesCovLyapunov` —
   `A` Hurwitz ⇒ a solution of `A P + P Aᵀ + Q = 0` exists for `Q ⪰ 0`, it is unique, and it is
   positive *semi*definite; for `Q = B Bᵀ`: `exists_stationaryCov`, `stationaryCov_posSemidef`.
+* `eq_zero_of_lyapunovOp_fin_two`, `solvesCovLyapunov_unique_fin_two` — for `2 × 2` `A` the
+  operator `X ↦ A X + X Aᵀ` is injective, so solutions are unique, as soon as `tr A ≠ 0` and
+  `det A ≠ 0` (no stability assumption).
 * `covSol_hasDerivAt`, `covODE_unique`, `covSol_tendsto_norm` — the differential Lyapunov
   equation `Ṗ = A P + P Aᵀ + Q` has the unique solution `e^{tA} (P₀ - P∞) e^{tAᵀ} + P∞`
-  (`covSol`), which converges to `P∞` for Hurwitz `A`.
+  (`covSol`), which converges to `P∞` for Hurwitz `A`; `covSol_eq_ltvCov`: it is the
+  variation-of-constants solution `LinearAlgebra.ltvCov` with `Φ(t, s) = e^{(t−s)A}`
+  (`theorem/LinearAlgebra/LyapunovODE.lean`, whose uniqueness law gives `covODE_unique`).
 * Controllability and the Gramian (T-sde-systems §2.5, corrected statement):
   * `integral_gramian_eq`: if `A P + P Aᵀ + Q = 0` then
     `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt = P − e^{TA} P e^{TAᵀ}` for every `T` (fundamental theorem of
@@ -125,6 +130,48 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
     (h' : SolvesCovLyapunov A P' Q) : P = P' := by
   have := eq_zero_of_solvesCovLyapunov_zero hA (by simpa using solvesCovLyapunov_sub h h')
   exact sub_eq_zero.mp this
+
+/-- **The `2 × 2` Lyapunov operator is injective when `tr A ≠ 0` and `det A ≠ 0`** (the sums
+`λᵢ + λⱼ` of eigenvalues are `2λ₁`, `2λ₂`, `tr A`, all nonzero): `A X + X Aᵀ = 0 ⇒ X = 0`. No
+stability assumption. -/
+@[tmio T, powerlib_foundation] theorem eq_zero_of_lyapunovOp_fin_two
+    {A X : Matrix (Fin 2) (Fin 2) ℝ} (htr : A.trace ≠ 0) (hdet : A.det ≠ 0)
+    (h : A * X + X * Aᵀ = 0) : X = 0 := by
+  have e := fun i j => congrFun (congrFun h i) j
+  have e00 := e 0 0; have e01 := e 0 1; have e10 := e 1 0; have e11 := e 1 1
+  simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply,
+    Matrix.zero_apply] at e00 e01 e10 e11
+  rw [Matrix.trace_fin_two] at htr
+  rw [Matrix.det_fin_two] at hdet
+  have hyz : X 0 1 = X 1 0 := by
+    have : (A 0 0 + A 1 1) * (X 0 1 - X 1 0) = 0 := by linear_combination e01 - e10
+    exact sub_eq_zero.mp ((mul_eq_zero.mp this).resolve_left htr)
+  have hD : (A 0 0 + A 1 1) * (A 0 0 * A 1 1 - A 0 1 * A 1 0) ≠ 0 := mul_ne_zero htr hdet
+  have hx : X 0 0 = 0 := by
+    refine (mul_eq_zero.mp (?_ : _ * X 0 0 = 0)).resolve_left hD
+    rw [hyz] at e00 e01 e11
+    linear_combination ((A 0 0 + A 1 1) * A 1 1 - A 0 1 * A 1 0) / 2 * e00 -
+      A 0 1 * A 1 1 * e01 + A 0 1 ^ 2 / 2 * e11
+  have hy : X 1 0 = 0 := by
+    refine (mul_eq_zero.mp (?_ : _ * X 1 0 = 0)).resolve_left hD
+    rw [hyz] at e00 e01 e11
+    linear_combination -(A 1 0 * A 1 1) / 2 * e00 + A 0 0 * A 1 1 * e01 -
+      A 0 0 * A 0 1 / 2 * e11
+  have hw : X 1 1 = 0 := by
+    refine (mul_eq_zero.mp (?_ : _ * X 1 1 = 0)).resolve_left hD
+    rw [hyz] at e00 e01 e11
+    linear_combination A 1 0 ^ 2 / 2 * e00 - A 0 0 * A 1 0 * e01 +
+      (A 0 0 * (A 0 0 + A 1 1) - A 0 1 * A 1 0) / 2 * e11
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hx, hy, hw, hyz]
+
+/-- Uniqueness of solutions for `2 × 2` `A` with `tr A ≠ 0`, `det A ≠ 0` and any forcing `Q`
+(`eq_zero_of_lyapunovOp_fin_two`; no stability assumption). -/
+@[tmio T, powerlib_foundation] theorem solvesCovLyapunov_unique_fin_two
+    {A P P' Q : Matrix (Fin 2) (Fin 2) ℝ} (htr : A.trace ≠ 0) (hdet : A.det ≠ 0)
+    (h : SolvesCovLyapunov A P Q) (h' : SolvesCovLyapunov A P' Q) : P = P' := by
+  refine sub_eq_zero.mp (eq_zero_of_lyapunovOp_fin_two htr hdet ?_)
+  simpa [SolvesCovLyapunov] using solvesCovLyapunov_sub h h'
 
 /-- Existence for Hurwitz `A`, any forcing `Q` (via `P_{Q+I} - P_I`). -/
 @[tmio T, powerlib_foundation] theorem exists_solvesCovLyapunov {A : Matrix (Fin n) (Fin n) ℝ}
@@ -312,54 +359,26 @@ def covSol (A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) : Matrix (Fin n)
   simp only [mul_add, add_mul, mul_assoc]
   abel
 
-/-- Uniqueness: any differentiable solution with `P 0 = P₀` is `covSol`. -/
+/-- **The closed form is the variation-of-constants solution.**  If `A P∞ + P∞ Aᵀ + Q = 0`, then
+`e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞ = e^{tA} P₀ e^{tA}ᵀ + ∫₀ᵗ e^{(t−τ)A} Q e^{(t−τ)A}ᵀ dτ`
+(`LinearAlgebra.ltvCov` with `Φ(t, s) = e^{(t−s)A}`). -/
+@[tmio T, powerlib_foundation] theorem covSol_eq_ltvCov {A Pinf Q : Matrix (Fin n) (Fin n) ℝ}
+    (hinf : SolvesCovLyapunov A Pinf Q) (P₀ : Matrix (Fin n) (Fin n) ℝ) :
+    covSol A Pinf P₀ =
+      LinearAlgebra.ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) (fun _ => Q) P₀ 0 :=
+  LinearAlgebra.ltvCov_unique continuous_const continuous_const
+    (LinearAlgebra.expFund_hasDerivAt A) (LinearAlgebra.expFund_self A)
+    (covSol_hasDerivAt hinf P₀) (covSol_zero A Pinf P₀)
+
+/-- Uniqueness: any differentiable solution with `P 0 = P₀` is `covSol`
+(`LinearAlgebra.ltvCov_unique` through `covSol_eq_ltvCov`). -/
 @[tmio T, powerlib_foundation] theorem covODE_unique {A Pinf Q P₀ : Matrix (Fin n) (Fin n) ℝ}
     (hinf : SolvesCovLyapunov A Pinf Q) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q) t) (h0 : P 0 = P₀) :
     P = covSol A Pinf P₀ := by
-  -- `E = P - covSol` solves `Ė = A E + E Aᵀ`, `E 0 = 0`; conjugate by `e^{-tA}`.
-  set E : ℝ → Matrix (Fin n) (Fin n) ℝ := fun t => P t - covSol A Pinf P₀ t with hE
-  have hEd : ∀ t, HasDerivAt E (A * E t + E t * Aᵀ) t := by
-    intro t
-    have := (hP t).sub (covSol_hasDerivAt hinf P₀ t)
-    convert! this using 1
-    simp only [hE, mul_sub, sub_mul]; abel
-  set F : ℝ → Matrix (Fin n) (Fin n) ℝ :=
-    fun t => NormedSpace.exp (t • (-A)) * E t * NormedSpace.exp (t • (-Aᵀ)) with hF
-  have hFd : ∀ t, HasDerivAt F 0 t := by
-    intro t
-    have h := (((hasDerivAt_exp_smul_const' (-A) t).mul (hEd t)).mul
-      (hasDerivAt_exp_smul_const (-Aᵀ) t))
-    set e := NormedSpace.exp (t • (-A))
-    set e' := NormedSpace.exp (t • (-Aᵀ))
-    have c1 : A * e = e * A := ((((Commute.refl A).neg_right).smul_right t).exp_right).eq
-    have c2 : Aᵀ * e' = e' * Aᵀ := ((((Commute.refl Aᵀ).neg_right).smul_right t).exp_right).eq
-    have hval : (-A * e * E t + e * (A * E t + E t * Aᵀ)) * e' + e * E t * (e' * -Aᵀ) = 0 := by
-      simp only [neg_mul, mul_neg, add_mul, mul_add]
-      rw [c1, ← c2]
-      simp only [mul_assoc]
-      abel
-    convert! h using 1
-    exact hval.symm
-  have hFc : ∀ t, F t = F 0 := fun t =>
-    is_const_of_deriv_eq_zero (fun s => (hFd s).differentiableAt) (fun s => (hFd s).deriv) t 0
-  have hF0 : F 0 = 0 := by
-    simp [hF, hE, h0, covSol_zero, NormedSpace.exp_zero]
-  have hinvL : ∀ t : ℝ, NormedSpace.exp (t • A) * NormedSpace.exp (t • (-A)) = 1 := by
-    intro t
-    rw [← Matrix.exp_add_of_commute _ _ ((((Commute.refl A).neg_right).smul_left t).smul_right t)]
-    simp [NormedSpace.exp_zero]
-  have hinvR : ∀ t : ℝ, NormedSpace.exp (t • (-Aᵀ)) * NormedSpace.exp (t • Aᵀ) = 1 := by
-    intro t
-    rw [← Matrix.exp_add_of_commute _ _ ((((Commute.refl Aᵀ).neg_left).smul_left t).smul_right t)]
-    simp [NormedSpace.exp_zero]
-  funext t
-  have hEt : E t = 0 := by
-    have : E t = NormedSpace.exp (t • A) * F t * NormedSpace.exp (t • Aᵀ) := by
-      simp only [hF, ← mul_assoc]
-      rw [hinvL, one_mul, mul_assoc, hinvR, mul_one]
-    rw [this, hFc t, hF0, mul_zero, zero_mul]
-  exact sub_eq_zero.mp hEt
+  rw [covSol_eq_ltvCov hinf]
+  exact LinearAlgebra.ltvCov_unique continuous_const continuous_const
+    (LinearAlgebra.expFund_hasDerivAt A) (LinearAlgebra.expFund_self A) hP h0
 
 /-- Entries are bounded by the Frobenius norm. -/
 @[tmio T, powerlib_foundation] theorem abs_entry_le_norm (M : Matrix (Fin n) (Fin n) ℝ) (i j : Fin n) :

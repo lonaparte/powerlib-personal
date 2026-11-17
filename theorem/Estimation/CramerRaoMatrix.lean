@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.Matrix.Order
+import theorem.LinearAlgebra.Congruence
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 
 /-! # Multi-parameter Cramér–Rao bound: `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`
@@ -175,8 +176,8 @@ nonnegative near `θ`: zeros are allowed (their derivative vanishes, a local min
     rfl
   -- the joint Gram matrix is positive semidefinite
   have hW : W.PosSemidef := PosSemidef.diagonal fun ω => hq ω
-  have hG : (fromRows X S * W * (fromRows X S)ᵀ).PosSemidef := by
-    simpa [conjTranspose_eq_transpose_of_trivial] using hW.mul_mul_conjTranspose_same (fromRows X S)
+  have hG : (fromRows X S * W * (fromRows X S)ᵀ).PosSemidef :=
+    LinearAlgebra.posSemidef_congr hW (fromRows X S)
   have hWt : Wᵀ = W := diagonal_transpose q
   have hblocks : fromRows X S * W * (fromRows X S)ᵀ =
       fromBlocks (covFin pmf θ T) Jm Jmᴴ (fisherFin pmf θ) := by

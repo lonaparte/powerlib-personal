@@ -1,4 +1,4 @@
-import theorem.GridTiedConverter.PLL.PIPLLFamily
+import theorem.GridTiedConverter.PLL.TrigPD
 import theorem.SpecialFunctions.Sinusoid
 
 /-! # PI-PLL with a biased sinusoidal phase detector `h(θ) = −V sin θ + μ`
@@ -22,8 +22,12 @@ Results.
   `θ₁ = arcsin(μ/V)` and `θ₂ = π − arcsin(μ/V)`, `θ₁ ≠ θ₂`; with `K_p, K_i > 0` the
   equilibrium `(θ₁, δω/K_i)` is locally exponentially stable and `(θ₂, δω/K_i)` is unstable
   (saddle): exactly one stable and one saddle per period.
-* `|μ| = V` (fold): `θ* = ±π/2` is a double zero (`h' = 0`) and the Jacobian at the
-  equilibrium is a nonzero nilpotent matrix (non-hyperbolic).
+* `|μ| = V` (fold): `θ* = ±π/2` is a double zero (`h' = 0`), so the equilibrium
+  `(±π/2, δω/K_i)` (`piPLLField_eq_zero_iff`) has the Jacobian `piPLLJacobian K_p K_i 0`
+  (`fderiv_piPLLField` at slope `0`), a nonzero nilpotent matrix (non-hyperbolic;
+  `piPLLJacobian_zero_sq`, `piPLLJacobian_zero_ne_zero`).
+* `biasedPD_eq_trigPD`: `h` is the trigonometric detector `trigPD (−V) 0 0 0 μ` of
+  `theorem/GridTiedConverter/PLL/TrigPD.lean`.
 
 Family and connection conclusions.
 No new family: the biased PLL is the member
@@ -32,9 +36,8 @@ the field translated so that the selected point `(θ*, δω / K_i)` is the origi
 saddle equilibria are connection statements on that family's semantics connection
 (`biased_mem_den_locallyExponentiallyStable`, `biased_mem_den_unstable`); loss of lock for
 `|μ| > V` is stated on its requirement connection (`biased_not_phaseLocked`). The absence of
-equilibria (`biased_no_equilibrium`), the zero set of `h` (`biasedPD_zeros`), the fold
-equilibrium (`biased_fold_eq_zero`) and the fold Jacobian (`biased_fold`) are static evidence on
-the model, not connection conclusions.
+equilibria (`biased_no_equilibrium`) and the zero set of `h` (`biasedPD_zeros`) are static
+evidence on the model, not connection conclusions.
 -/
 
 noncomputable section
@@ -43,6 +46,14 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- Biased sinusoidal phase detector `h(θ) = −V sin θ + μ`. -/
 def biasedPD (V μ θ : ℝ) : ℝ := -(V * Real.sin θ) + μ
+
+/-- The biased detector is the trigonometric detector of `theorem/GridTiedConverter/PLL/TrigPD.lean`
+with `a = −V`, `b = c = d = 0`, `e = μ`. -/
+@[tmio M, powerlib_domain] theorem biasedPD_eq_trigPD (V μ : ℝ) :
+    biasedPD V μ = trigPD (-V) 0 0 0 μ := by
+  funext θ
+  rw [trigPD_apply, biasedPD]
+  ring
 
 @[tmio M, powerlib_domain] theorem hasDerivAt_biasedPD (V μ θ : ℝ) :
     HasDerivAt (biasedPD V μ) (-(V * Real.cos θ)) θ := by
@@ -147,25 +158,5 @@ PLL meets the phase-locking requirement of the PI-PLL family. -/
   have hp : PIPLL.Meets (biasedModel V μ Kp Ki δω θ) .phaseLocked := h _ rfl
   exact biased_no_equilibrium hV hμ Kp Ki δω _
     ((piPLLField_point_eq_zero_iff (Kp := Kp)).mpr hp)
-
-/-- Fold `μ = V` (`K_i ≠ 0`): `θ* = π/2` is a zero of `h`, so `(π/2, δω/K_i)` is an
-equilibrium. The case `μ = −V` is symmetric (`θ* = −π/2`). Static evidence on the model, not a
-connection conclusion. -/
-@[tmio M, powerlib_domain] theorem biased_fold_eq_zero {V Kp Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ) :
-    piPLLField (biasedPD V V) Kp Ki δω (PhasePlane.mk (Real.pi / 2) (δω / Ki)) = 0 := by
-  have hz : biasedPD V V (Real.pi / 2) = 0 := by simp [biasedPD]
-  exact (piPLLField_eq_zero_iff hKi _).mpr ⟨hz, rfl⟩
-
-/-- Fold `μ = V`: `h'(π/2) = 0`, and the Jacobian at `(π/2, δω/K_i)` is `[[0, K_i], [0, 0]]`, the
-nilpotent, non-Hurwitz matrix of `piPLLJacobian_zero_sq`, `piPLLJacobian_zero_not_isHurwitz`
-(non-hyperbolic), nonzero for `K_i ≠ 0` (`piPLLJacobian_zero_ne_zero`). The case `μ = −V` is
-symmetric (`θ* = −π/2`). Static evidence on the model (linearization only), not a connection
-conclusion. -/
-@[tmio M, powerlib_domain] theorem biased_fold {V Kp Ki : ℝ} (δω : ℝ) :
-    fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (PhasePlane.mk (Real.pi / 2) (δω / Ki)) =
-      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) := by
-  have hd := hasDerivAt_biasedPD V V (Real.pi / 2)
-  rw [Real.cos_pi_div_two, mul_zero, neg_zero] at hd
-  exact fderiv_piPLLField hd
 
 end powerlib.PLL

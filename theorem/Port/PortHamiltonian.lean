@@ -1,5 +1,6 @@
 import theorem.TMIO.ClaimElab
 import theorem.Linear.Family
+import theorem.Spectral.Local
 
 /-! # Linear port-Hamiltonian plants
 
@@ -18,8 +19,10 @@ Source: the KYP certificates of `theorem/Port/Linear.lean` (`KYP.passiveWith`,
 
 Results.
 * Static: `PortHamiltonian` (`J`, `R`, `Q`, `B` and their structure), `PortHamiltonian.plant`,
-  `PortHamiltonian.kyp` (the energy matrix is a KYP certificate), `Requirement`, `Meets`,
-  `translate`, `family_isLinear`.
+  `PortHamiltonian.lyapunov` (the Lyapunov identity `Aᵀ Q + Q A = −2 Q R Q` of `A = (J − R) Q`,
+  for any skew `J` and symmetric `R`, `Q`), `PortHamiltonian.energy_rate` (`xᵀ Q A x =
+  −(Q x)ᵀ R (Q x)`), `PortHamiltonian.kyp` (the energy matrix is a KYP certificate),
+  `Requirement`, `Meets`, `translate`, `family_isLinear`.
 
 Family and connection conclusions.
 * `Port.PortHamiltonian.family : Family (PortHamiltonian n p) Requirement n p`: requirements
@@ -30,7 +33,8 @@ Family and connection conclusions.
 * `mem_den_passive`: stored energy places each submitted plant in the passivity denotation;
   `mem_den_lyapunovStable`: positive stored energy places it in the zero-input stability
   denotation.
-* `chain_le_semantics`: the translation chain is sound for every sentence.
+* `chain_le_semantics`: the translation chain is sound for every sentence (the translation is an
+  instance of `Spectral.table`, `Spectral.chain_le_semantics_of_table`).
 -/
 
 noncomputable section
@@ -57,6 +61,27 @@ structure PortHamiltonian (n p : ℕ) where
 def PortHamiltonian.plant (h : PortHamiltonian n p) : Linear.Plant n p :=
   ⟨(h.J - h.R) * h.Q, h.B, h.Bᵀ * h.Q, 0⟩
 
+/-- The Lyapunov identity of a port-Hamiltonian state matrix: for a skew-symmetric `J` and
+symmetric `R` and `Q`, `((J − R) Q)ᵀ Q + Q (J − R) Q = −2 Q R Q`. -/
+@[tmio T, powerlib_foundation] theorem PortHamiltonian.lyapunov {J R Q : Matrix (Fin n) (Fin n) ℝ}
+    (hJ : Jᵀ = -J) (hR : Rᵀ = R) (hQ : Qᵀ = Q) :
+    ((J - R) * Q)ᵀ * Q + Q * ((J - R) * Q) = -(2 : ℝ) • (Q * R * Q) := by
+  rw [Matrix.transpose_mul, Matrix.transpose_sub, hJ, hR, hQ, neg_smul, two_smul]
+  noncomm_ring
+
+/-- In a linear port-Hamiltonian plant the energy matrix turns the state matrix into the
+dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)` (the Lyapunov identity read on `x`). -/
+@[tmio T, powerlib_foundation] theorem PortHamiltonian.energy_rate (h : PortHamiltonian n p)
+    (x : Fin n → ℝ) :
+    x ⬝ᵥ (h.Q *ᵥ (h.plant.A *ᵥ x)) = -((h.Q *ᵥ x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ x))) := by
+  have hq := Linear.quadratic_sym (A := (h.J - h.R) * h.Q) h.energy_symmetric x
+  rw [PortHamiltonian.lyapunov h.skew h.dissipation_symmetric h.energy_symmetric,
+    Matrix.smul_mulVec, dotProduct_smul, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
+    Matrix.dotProduct_mulVec x h.Q, ← Matrix.mulVec_transpose, h.energy_symmetric,
+    smul_eq_mul] at hq
+  change x ⬝ᵥ (h.Q *ᵥ (((h.J - h.R) * h.Q) *ᵥ x)) = _
+  linarith
+
 /-- The energy matrix is a KYP certificate. -/
 def PortHamiltonian.kyp (h : PortHamiltonian n p) : Linear.KYP h.plant where
   P := h.Q
@@ -66,18 +91,8 @@ def PortHamiltonian.kyp (h : PortHamiltonian n p) : Linear.KYP h.plant where
     · simp [hx]
     · exact (h.energy_pos x hx).le
   dissipation x := by
-    have hA : h.plant.Aᵀ * h.Q + h.Q * h.plant.A = -(h.Q * h.R * h.Q) - h.Q * h.R * h.Q := by
-      simp only [PortHamiltonian.plant, Matrix.transpose_mul, Matrix.transpose_sub, h.skew,
-        h.dissipation_symmetric, h.energy_symmetric]
-      noncomm_ring
-    have hQ : x ⬝ᵥ (h.Q *ᵥ (h.R *ᵥ (h.Q *ᵥ x))) = (h.Q *ᵥ x) ⬝ᵥ (h.R *ᵥ (h.Q *ᵥ x)) := by
-      rw [Matrix.dotProduct_mulVec]
-      congr 1
-      conv_lhs => rw [← h.energy_symmetric]
-      rw [Matrix.vecMul_transpose]
-    rw [hA, Matrix.sub_mulVec, Matrix.neg_mulVec, dotProduct_sub, dotProduct_neg,
-      ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, hQ]
-    linarith [h.dissipation_nonneg (h.Q *ᵥ x)]
+    rw [Linear.quadratic_sym h.energy_symmetric, h.energy_rate]
+    nlinarith [h.dissipation_nonneg (h.Q *ᵥ x)]
   output := rfl
   feedthrough u := by simp [PortHamiltonian.plant]
 
@@ -93,11 +108,11 @@ def Meets (h : PortHamiltonian n p) : Requirement → Prop
   | .hurwitz => IsHurwitz h.plant.A
   | .impossible => False
 
-def translate : Sentence → Set Requirement
-  | .passive | .flow .lyapunovStable => ∅
-  | .flow .unstable | .flow (.decay _) | .flow .conservative => Set.univ
-  | .flow _ => {.hurwitz}
-  | .envelope _ => ∅
+/-- The table (`Spectral.table`): passivity, Lyapunov stability and the envelope sentences to
+nothing, the attractive sentences and sampled contraction to `hurwitz`, instability, decay rates
+and conservation to the whole, inconsistent, language. -/
+def translate : Sentence → Set Requirement :=
+  Spectral.table ∅ {.hurwitz} {.hurwitz} Set.univ Set.univ ∅ (fun _ => Set.univ) ∅
 
 def family : Family (PortHamiltonian n p) Requirement n p :=
   ⟨fun h => h.plant.system, Meets, translate⟩
@@ -114,25 +129,20 @@ def family : Family (PortHamiltonian n p) Requirement n p :=
     connection% (h ∈ family.den (.flow .lyapunovStable)) :=
   family_isLinear.mem_den_flow.mpr (h.kyp.lyapunovStable_of_pos h.energy_pos)
 
-/-- The translation chain is sound for every sentence of a port-Hamiltonian plant. -/
+/-- The translation chain is sound for every sentence of a port-Hamiltonian plant
+(`Spectral.chain_le_semantics_of_table`). -/
 @[tmio TM, powerlib_foundation] theorem chain_le_semantics :
     connection% (∀ P, (family (n := n) (p := p)).chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s h hh => ?_
-  rw [(connection_proof% TMIO.mem_realize)] at hh
-  change ∀ q ∈ translate s, Meets h q at hh
-  rcases s with P | _ | E
-  · cases P
-    case lyapunovStable => exact h.mem_den_lyapunovStable
-    case unstable => exact (hh .impossible (Set.mem_univ _)).elim
-    case decay a => exact (hh .impossible (Set.mem_univ _)).elim
-    case conservative => exact (hh .impossible (Set.mem_univ _)).elim
-    all_goals
-      rw [family_isLinear.den_hurwitz (by simp)]
-      exact hh .hurwitz rfl
-  · exact h.mem_den_passive
-  · rw [family_isLinear.den_envelope]
-    trivial
+  have hu := Spectral.realize_univ_subset_of_eq_empty (meets := Meets (n := n) (p := p))
+    (Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible)
+  have hH : ∀ {P : Flow.Property}, P.Attractive →
+      TMIO.realize Meets {.hurwitz} ⊆ (family (n := n) (p := p)).den (.flow P) := fun hP h hh =>
+    (connection_proof% family_isLinear.mem_den_hurwitz (Or.inl hP)).mpr
+      ((TMIO.mem_realize _ _ _).mp hh .hurwitz rfl)
+  exact Spectral.chain_le_semantics_of_table (fun _ => rfl)
+    (fun h _ => h.mem_den_lyapunovStable) (hH trivial) (hH trivial) (fun _ => hu _) (hu _) (hu _)
+    (fun h _ => h.mem_den_passive) (fun _ _ _ => (Family.mem_den _).mpr trivial)
 
 end PortHamiltonian
 

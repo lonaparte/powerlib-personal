@@ -44,7 +44,7 @@ Results.
 * `closedLoop_d`, `closedLoop_q`: in the PLL-frame model the residual of the decoupling is
   exactly `ω̂ ΔL_f i_q`, `ΔL_f = L_f − L̂_f`, with no locking assumption (Correction below).
 * d–q duality: the decoupling terms of `bridgeVoltageD`, `bridgeVoltageQ` cancel exactly in the
-  bridge power (`CurrentControl.bridgePower_decoupling`,
+  bridge power: they are `−ω̂ L̂ J i` and `J` is skew (`PH.dotProduct_mulVec_self_eq_zero_of_skew`,
   `theorem/GridTiedConverter/CurrentControl/Decoupling.lean`).
 * An explicit algebraic layer (index-1 DAE whose algebraic variables are given by a DAG of
   explicit formulas) has the same solutions as the ODE obtained by substitution: the generic

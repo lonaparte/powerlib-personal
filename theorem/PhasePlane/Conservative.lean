@@ -1,4 +1,5 @@
 import theorem.PhasePlane.Planar
+import theorem.PH.Nonlinear
 
 /-! # Second-order mechanical systems `m ẍ + γ ẋ + V'(x) = 0`
 
@@ -19,13 +20,24 @@ theory/T-dynamical-systems.md §1.2.
 Results.
 * Phase-trajectory slope (`phase_slope`): where a trajectory is locally a graph `v = Φ(x)` with
   `v ≠ 0`, `Φ'(x) = v̇ / v = f(x, v) / v`.
+* Port-Hamiltonian form (`toPH`, `γ ≥ 0`): `J = [[0, 1/m], [−1/m, 0]]`, `R = diag(0, γ/m²)`,
+  `H = energy`, `∇H = (V'(x), m v)`, no ports; its zero-input field is `field`
+  (`toPH_zeroInputField`, `m ≠ 0`). Static identity between two mathematical models (no family,
+  no connection statement).
 * Energy balance `dE/dt = −γ v²` along every solution (`energy_lie`,
   `energy_hasDerivWithinAt`); conservation for `γ = 0` (`energy_conserved`), monotone decay for
-  `γ ≥ 0` (`energy_lie_nonpos`; `energy_antitone`, on every convex time set).
+  `γ ≥ 0` (`energy_lie_nonpos`; `energy_antitone`, on every convex time set), read from the pH
+  laws of `toPH`.
 * Equilibria are `(x*, 0)` with `V'(x*) = 0` (`field_eq_zero_iff`).
+* Linearization: the Jacobian at a point with `V'' = k` is `!![0, 1; −k/m, −γ/m]`
+  (`jacobian`, `hasFDerivAt_field`; `tr = −γ/m`, `det = k/m`: `trace_jacobian`, `det_jacobian`).
+  At an equilibrium `(x*, 0)` with `m > 0`: `γ > 0` and `V''(x*) > 0` give local exponential
+  stability (`locallyExponentiallyStable_of_slope_pos`); `V''(x*) < 0` a saddle
+  (`unstable_of_slope_neg`, every `γ`); `γ < 0` instability (`unstable_of_damping_neg`, every
+  `V''`).
 * A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for `γ ≥ 0`
-  (energy as local Lyapunov function; LeanForControl `lyapunov_stable`;
-  `center_lyapunovStable`).
+  (a strict local minimum of the Hamiltonian of `toPH`,
+  `PH.NonlinearModel.IsStrictLocalMin.lyapunovStable`; `center_lyapunovStable`).
 -/
 
 noncomputable section
@@ -66,6 +78,67 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   · rintro ⟨h1, h2⟩
     exact ⟨h1, by rw [h1, h2]; simp⟩
 
+/-! ## Linearization at an equilibrium -/
+
+/-- Jacobian of `field m γ dV` at a point where `V'' = k`: `!![0, 1; −k/m, −γ/m]`. -/
+def jacobian (m γ k : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -k / m, -γ / m]
+
+@[tmio T, powerlib_foundation] theorem trace_jacobian (m γ k : ℝ) :
+    (jacobian m γ k).trace = -γ / m := by
+  simp [jacobian, Matrix.trace_fin_two]
+
+@[tmio T, powerlib_foundation] theorem det_jacobian (m γ k : ℝ) :
+    (jacobian m γ k).det = k / m := by
+  simp [jacobian, Matrix.det_fin_two]
+  ring
+
+/-- The Jacobian of the field at `y` is `jacobian m γ k` for `k = V''(y 0)`. -/
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_field {m γ k : ℝ} {dV : ℝ → ℝ} {y : State 2}
+    (hdV : HasDerivAt dV k (y 0)) :
+    HasFDerivAt (field m γ dV)
+      (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jacobian m γ k)) y := by
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+    ![Dynamics.coord 1, (-k / m) • Dynamics.coord 0 + (-γ / m) • Dynamics.coord 1] ?_ ?_
+  · intro i; fin_cases i
+    · exact Dynamics.hasFDerivAt_coord 1 y
+    · show HasFDerivAt (fun z => field m γ dV z 1) _ y
+      have h0 := Dynamics.hasFDerivAt_coord 0 y
+      have h1 := Dynamics.hasFDerivAt_coord 1 y
+      have h := ((h1.const_smul (-γ)).sub (hdV.comp_hasFDerivAt y h0)).const_smul m⁻¹
+      refine (h.congr_fderiv ?_).congr_of_eventuallyEq (Filter.Eventually.of_forall fun z => ?_)
+      · ext v; simp; ring
+      · simp [field, div_eq_inv_mul]
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [jacobian]
+
+/-- Linearization at an equilibrium `(x*, 0)`: positive mass, positive damping and a potential
+with `V''(x*) > 0` give local exponential stability (`tr = −γ/m < 0`, `det = V''/m > 0`). -/
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_slope_pos {m γ k x₀ : ℝ}
+    {dV : ℝ → ℝ} (hm : 0 < m) (hγ : 0 < γ) (hdV : ContDiff ℝ 1 dV) (h0 : dV x₀ = 0)
+    (hk : HasDerivAt dV k x₀) (hpos : 0 < k) :
+    LocallyExponentiallyStable (field m γ dV) (mk x₀ 0) :=
+  Criteria.locallyExponentiallyStable_of_jacobian_fin_two _ (field_contDiff hdV)
+    ((field_eq_zero_iff hm.ne' _).2 ⟨rfl, h0⟩) (hasFDerivAt_field hk).fderiv
+    (by rw [trace_jacobian, neg_div]; exact neg_neg_of_pos (div_pos hγ hm))
+    (by rw [det_jacobian]; exact div_pos hpos hm)
+
+/-- Linearization at an equilibrium `(x*, 0)` with `V''(x*) < 0` (a potential maximum): a saddle
+(`det = V''/m < 0`), unstable for every damping. -/
+@[tmio T, powerlib_foundation] theorem unstable_of_slope_neg {m γ k x₀ : ℝ} {dV : ℝ → ℝ}
+    (hm : 0 < m) (hdV : ContDiff ℝ 1 dV) (h0 : dV x₀ = 0) (hk : HasDerivAt dV k x₀)
+    (hneg : k < 0) : Unstable (field m γ dV) (mk x₀ 0) :=
+  Criteria.unstable_of_jacobian_det _ (field_contDiff hdV)
+    ((field_eq_zero_iff hm.ne' _).2 ⟨rfl, h0⟩) (hasFDerivAt_field hk).fderiv
+    (by rw [neg_one_sq, one_mul, det_jacobian]; exact div_neg_of_neg_of_pos hneg hm)
+
+/-- Linearization at an equilibrium `(x*, 0)` with negative damping `γ < 0`: unstable
+(`tr = −γ/m > 0`) for every potential curvature. -/
+@[tmio T, powerlib_foundation] theorem unstable_of_damping_neg {m γ k x₀ : ℝ} {dV : ℝ → ℝ}
+    (hm : 0 < m) (hγ : γ < 0) (hdV : ContDiff ℝ 1 dV) (h0 : dV x₀ = 0)
+    (hk : HasDerivAt dV k x₀) : Unstable (field m γ dV) (mk x₀ 0) :=
+  Criteria.unstable_of_jacobian_trace_pos _ (field_contDiff hdV)
+    ((field_eq_zero_iff hm.ne' _).2 ⟨rfl, h0⟩) (hasFDerivAt_field hk).fderiv
+    (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hγ hm))
+
 @[tmio T, powerlib_foundation] theorem hasFDerivAt_energy {m : ℝ} {V dV : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     HasFDerivAt (energy m V) (dV (y 0) • Dynamics.coord 0 + (m * y 1) • Dynamics.coord 1) y := by
@@ -84,6 +157,39 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 @[tmio T, powerlib_foundation] theorem energy_differentiable {m : ℝ} {V dV : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (dV x) x) : Differentiable ℝ (energy m V) :=
   fun y => (hasFDerivAt_energy hV y).differentiableAt
+
+/-! ## Port-Hamiltonian form -/
+
+/-- The mechanical system as a nonlinear port-Hamiltonian system without ports, in
+position–velocity coordinates: `J = [[0, 1/m], [−1/m, 0]]`, `R = diag(0, γ/m²)`, `H = energy`,
+`∇H = (V'(x), m v)`. Its zero-input field is `field` (`toPH_zeroInputField`). -/
+def toPH (m γ : ℝ) (V dV : ℝ → ℝ) (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) :
+    PH.NonlinearModel 2 0 where
+  J _ := !![0, 1 / m; -(1 / m), 0]
+  R _ := Matrix.diagonal ![0, γ / m ^ 2]
+  g _ := 0
+  H := energy m V
+  dH y := mk (dV (y 0)) (m * y 1)
+  skew _ := by ext i j; fin_cases i <;> fin_cases j <;> simp
+  dissipation_posSemidef _ := Matrix.PosSemidef.diagonal fun i => by
+    fin_cases i
+    · simp
+    · simpa using div_nonneg hγ (sq_nonneg m)
+  hasGradient y := PH.hasGradientAt_of_hasFDerivAt (hasFDerivAt_energy hV y) fun v => by
+    simp [mk, dotProduct, Fin.sum_univ_two]
+
+/-- The zero-input field of the port-Hamiltonian form is `field` (`m ≠ 0`). -/
+@[tmio T, powerlib_foundation] theorem toPH_zeroInputField {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
+    (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) :
+    (toPH m γ V dV hγ hV).zeroInputField = field m γ dV := by
+  funext y
+  ext i
+  fin_cases i
+  · simp [PH.NonlinearModel.zeroInputField_apply, toPH, field, mk, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_two, hm]
+  · simp [PH.NonlinearModel.zeroInputField_apply, toPH, field, mk, Matrix.diagonal_vec2]
+    field_simp
+    ring
 
 /-- Energy balance: the Lie derivative of `E` is `−γ v²`. -/
 @[tmio T, powerlib_foundation] theorem energy_lie {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
@@ -118,25 +224,23 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
     (fun τ hτ => ((hc τ (Ico_subset_Icc_self hτ)).mono (Icc_subset_Icc_left hτ.1))
       |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hτ.2)) t ht
 
-/-- Damped case `γ ≥ 0`: the energy does not increase along the field, `Ė = −γ v² ≤ 0`. -/
+/-- Damped case `γ ≥ 0`: the energy does not increase along the field, `Ė = −γ v² ≤ 0`
+(`PH.NonlinearModel.zeroInput_lie_nonpos` of `toPH`). -/
 @[tmio T, powerlib_foundation] theorem energy_lie_nonpos {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
     (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     fderiv ℝ (energy m V) y (field m γ dV y) ≤ 0 := by
-  rw [energy_lie hm hV]
-  nlinarith [sq_nonneg (y 1)]
+  have h := (toPH m γ V dV hγ hV).zeroInput_lie_nonpos y
+  rwa [toPH_zeroInputField hm] at h
 
 /-- Damped case `γ ≥ 0`: the energy is nonincreasing along every solution on a convex time set
-(a solution segment `Icc a b`, a forward ray `Ici a`, …). -/
+(a solution segment `Icc a b`, a forward ray `Ici a`, …;
+`PH.NonlinearModel.energy_antitoneOn_of_isIntegralCurveOn` of `toPH`). -/
 @[tmio T, powerlib_foundation] theorem energy_antitone {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
     (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {s : Set ℝ}
     (hs : Convex ℝ s) (hφ : IsIntegralCurveOn φ (fun _ y => field m γ dV y) s) :
-    AntitoneOn (fun t => energy m V (φ t)) s := by
-  apply antitoneOn_of_hasDerivWithinAt_nonpos hs (f' := fun t => -γ * φ t 1 ^ 2)
-  · exact fun t ht => (energy_hasDerivWithinAt hm hV hφ ht).continuousWithinAt
-  · exact fun t ht => (energy_hasDerivWithinAt hm hV hφ (interior_subset ht)).mono interior_subset
-  · intro t _
-    have := sq_nonneg (φ t 1)
-    nlinarith
+    AntitoneOn (fun t => energy m V (φ t)) s :=
+  (toPH m γ V dV hγ hV).energy_antitoneOn_of_isIntegralCurveOn hs
+    (by rwa [toPH_zeroInputField hm])
 
 /-- Slope of a phase trajectory: if `v = Φ(x)` near `t` and `v(t) ≠ 0`, then
 `Φ'(x(t)) = v̇(t) / v(t)`. -/
@@ -149,37 +253,27 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   rw [h1.unique h2 |>.symm]
   field_simp
 
-/-- A strict local minimum `x*` of `V` (with `V'(x*) = 0`) gives a Lyapunov-stable equilibrium
-`(x*, 0)` for any damping `γ ≥ 0`. -/
+/-- A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for any
+damping `γ ≥ 0`: `(x*, 0)` is a strict local minimum of the Hamiltonian of `toPH`
+(`PH.NonlinearModel.IsStrictLocalMin.lyapunovStable`). -/
 @[tmio T, powerlib_foundation] theorem center_lyapunovStable {m γ : ℝ} {V dV : ℝ → ℝ} (hm : 0 < m)
     (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) {x₀ r : ℝ} (hr : 0 < r)
     (hmin : ∀ x, |x - x₀| < r → x ≠ x₀ → V x₀ < V x) :
     LyapunovStable (field m γ dV) (mk x₀ 0) := by
-  refine _root_.lyapunov_stable (D := {y : State 2 | |y 0 - x₀| < r})
-    (V := fun y => energy m V y - V x₀) (by norm_num) ?_
-  have hE := energy_differentiable (m := m) hV
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have hc : Continuous fun y : State 2 => |y 0 - x₀| :=
-      ((Dynamics.coord 0).continuous.sub continuous_const).abs
-    exact isOpen_lt hc continuous_const
-  · simp [hr]
-  · exact hE.continuous.sub continuous_const
-  · exact hE.sub_const _
-  · simp [energy]
-  · intro y hy hne
-    simp only [energy]
-    have hv2 : 0 ≤ m * y 1 ^ 2 / 2 := by positivity
-    by_cases hx : y 0 = x₀
-    · have hv : y 1 ≠ 0 := by
-        intro h1; apply hne; rw [← mk_coords y, hx, h1]
-      have : 0 < m * y 1 ^ 2 / 2 := by positivity
-      rw [hx]; linarith
-    · have := hmin (y 0) hy hx
-      linarith
-  · intro y _
-    have h : fderiv ℝ (fun y => energy m V y - V x₀) y = fderiv ℝ (energy m V) y :=
-      fderiv_sub_const _
-    rw [h]
-    exact energy_lie_nonpos hm.ne' hγ hV y
+  rw [← toPH_zeroInputField hm.ne' hγ hV]
+  refine PH.NonlinearModel.IsStrictLocalMin.lyapunovStable _ ?_
+  have hD : IsOpen {y : State 2 | |y 0 - x₀| < r} :=
+    isOpen_lt ((Dynamics.coord 0).continuous.sub continuous_const).abs continuous_const
+  filter_upwards [nhdsWithin_le_nhds (hD.mem_nhds (by simp [hr])), self_mem_nhdsWithin]
+    with y hy hne
+  show energy m V (mk x₀ 0) < energy m V y
+  simp only [energy, mk_apply_zero, mk_apply_one]
+  have hv2 : 0 ≤ m * y 1 ^ 2 / 2 := by positivity
+  by_cases hx : y 0 = x₀
+  · have hv : y 1 ≠ 0 := fun h1 => hne (by rw [← mk_coords y, hx, h1]; exact rfl)
+    have : 0 < m * y 1 ^ 2 / 2 := by positivity
+    rw [hx]; norm_num; linarith
+  · have := hmin (y 0) hy hx
+    norm_num; linarith
 
 end powerlib.PhasePlane.Conservative

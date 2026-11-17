@@ -874,18 +874,6 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
 
 /-! ## Derivatives of `K₀`, `K₁` -/
 
-/-- `c² e^{−xc} ≤ (8/x²) e^{−(x/2)c}` (`x > 0`, `c ≥ 0`). -/
-@[tmio T, powerlib_foundation] theorem sq_mul_exp_neg_le {x c : ℝ} (hx : 0 < x) (hc : 0 ≤ c) :
-    c ^ 2 * Real.exp (-(x * c)) ≤ 8 / x ^ 2 * Real.exp (-(x / 2 * c)) := by
-  have hq := Real.quadratic_le_exp_of_nonneg (show 0 ≤ x / 2 * c by positivity)
-  have h1 : c ^ 2 ≤ 8 / x ^ 2 * Real.exp (x / 2 * c) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
-    nlinarith [sq_nonneg (x / 2 * c), Real.exp_pos (x / 2 * c)]
-  have e : Real.exp (-(x / 2 * c)) = Real.exp (x / 2 * c) * Real.exp (-(x * c)) := by
-    rw [← Real.exp_add]; ring_nf
-  rw [e, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right h1 (Real.exp_pos _).le
-
 /-- `e^{−z cosh t} cosh²t` is integrable on `(0, ∞)` (`Re z > 0`). -/
 @[tmio T, powerlib_foundation] theorem integrableOn_cexp_neg_mul_cosh_mul_cosh_sq {z : ℂ} (hz : 0 < z.re) :
     IntegrableOn (fun t : ℝ => Complex.exp (-z * Real.cosh t) * (Real.cosh t ^ 2 : ℝ)) (Ioi 0) := by
@@ -894,8 +882,11 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
     (by fun_prop) (Eventually.of_forall fun t => ?_)
   rw [norm_mul, norm_cexp_neg_mul_cosh, norm_cexp_neg_mul_cosh, Complex.norm_real,
     Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  have := sq_mul_exp_neg_le hz (Real.cosh_pos t).le
-  simp only [Complex.ofReal_re]
+  -- `c² e^{−xc} ≤ (8/x²) e^{−(x/2)c}` is `pow_four_mul_exp_le` at `θ = √c`, `c = cosh t`
+  have := pow_four_mul_exp_le hz √(Real.cosh t)
+  rw [show √(Real.cosh t) ^ 4 = (√(Real.cosh t) ^ 2) ^ 2 by ring,
+    Real.sq_sqrt (Real.cosh_pos t).le] at this
+  simp only [neg_mul, Complex.ofReal_re] at this ⊢
   linarith
 
 /-- Integration by parts on `(0, ∞)`: `z ∫₀^∞ e^{−z cosh t} sinh²t dt = K₁(z)` (`Re z > 0`). -/

@@ -8,9 +8,8 @@ import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 
 /-! # Eigenvalue perturbation: Bauer–Fike, first-order sensitivity, spectral condition number
 
-The Bauer–Fike bounds (diagonalisable, Hermitian and normal matrices), the first-order
-eigenvalue sensitivity along a differentiable branch, and its bound by the spectral condition
-number.
+The Bauer–Fike bounds (diagonalisable, Hermitian and normal matrices) and the bound of the
+first-order eigenvalue sensitivity by the spectral condition number.
 
 Scope.
 * Complex square matrices, spectral (`ℓ²` operator) norms (`Matrix.Norms.L2Operator`), vectors in
@@ -37,11 +36,10 @@ Results.
   `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix
   (membership form of `LTI.spectrum_eq_setOf_eigenpair`, `theorem/LTI/Discrete.lean`), which
   turns the hypothesis into `μ ∈ σ(A + E)`.
-* `eigenvalue_sensitivity` — along a differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` with a
-  left eigenvector `ψ` of `A(α₀)` (`ψᵀ v(α₀) ≠ 0`), `λ'(α₀) = ψᵀ A'(α₀) v(α₀) / (ψᵀ v(α₀))`
-  (`= ψᵀ A' v` under the normalisation `ψᵀ v = 1`). The existence of a differentiable branch
-  (simple eigenvalue, implicit function theorem) is assumed here; it is proved in
-  `theorem/Modal/Sensitivity.lean` (`exists_eigenvector_branch`).
+* The first-order sensitivity along a differentiable eigen-branch,
+  `λ'(α₀) (ψᵀ v(α₀)) = ψᵀ A'(α₀) v(α₀)` for a left eigenvector `ψ` of `A(α₀)`, is
+  `Modal.eigenvalue_deriv_left_of_eventually` (`theorem/Modal/Sensitivity.lean`, with the
+  existence of the branch at a simple eigenvalue, `exists_eigenvector_branch`).
 * `abs_sensitivity_le` — `|λ'(α₀)| ≤ κ(λ) ‖A'(α₀)‖` with the spectral condition number
   `κ(λ) = ‖ψ‖ ‖v‖ / |ψᵀ v|` (first-order form of `|λ̃ − λ| ≤ κ(λ)‖E‖ + O(‖E‖²)`).
 -/
@@ -231,46 +229,7 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
     rw [inv_le_iff_one_le_mul₀' hRpos]
     linarith
 
-/-! ## First-order sensitivity of a simple eigenvalue -/
-
-omit [DecidableEq n] in
-/-- **Eigenvalue sensitivity** `dλ/dα = ψᵀ A'(α₀) v / (ψᵀ v)` along a differentiable eigen-branch
-(entrywise derivatives; `ψ` a left eigenvector of `A(α₀)`). -/
-@[tmio T, powerlib_foundation] theorem eigenvalue_sensitivity {A : ℝ → Matrix n n ℂ}
-    {A' : Matrix n n ℂ} {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ} {lam' : ℂ} {α₀ : ℝ}
-    {ψ : n → ℂ} (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
-    (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)
-    (heig : ∀ α, A α *ᵥ v α = lam α • v α)
-    (hleft : vecMul ψ (A α₀) = lam α₀ • ψ) (hnorm : ψ ⬝ᵥ v α₀ ≠ 0) :
-    lam' = ψ ⬝ᵥ (A' *ᵥ v α₀) / (ψ ⬝ᵥ v α₀) := by
-  -- differentiate `Σⱼ A_ij v_j = λ v_i`
-  have hrow : ∀ i, (∑ j, (A' i j * v α₀ j + A α₀ i j * v' j)) = lam' * v α₀ i + lam α₀ * v' i := by
-    intro i
-    have hL : HasDerivAt (fun α => (A α *ᵥ v α) i)
-        (∑ j, (A' i j * v α₀ j + A α₀ i j * v' j)) α₀ := by
-      simp only [mulVec, dotProduct]
-      exact HasDerivAt.fun_sum fun j _ => (hA i j).mul (hv j)
-    have hR : HasDerivAt (fun α => (lam α • v α) i) (lam' * v α₀ i + lam α₀ * v' i) α₀ := by
-      simp only [Pi.smul_apply, smul_eq_mul]
-      exact hlam.mul (hv i)
-    have heq : (fun α => (A α *ᵥ v α) i) = fun α => (lam α • v α) i := by
-      funext α; rw [heig α]
-    rw [heq] at hL
-    exact hL.unique hR
-  -- contract with `ψ` and use `ψᵀ A = λ ψᵀ`
-  have hsum : ψ ⬝ᵥ (A' *ᵥ v α₀) + ψ ⬝ᵥ (A α₀ *ᵥ v') = lam' * (ψ ⬝ᵥ v α₀) + lam α₀ * (ψ ⬝ᵥ v') := by
-    have h2 : A' *ᵥ v α₀ + A α₀ *ᵥ v' = lam' • v α₀ + lam α₀ • v' := by
-      funext i
-      simp only [Pi.add_apply, mulVec, dotProduct, Pi.smul_apply, smul_eq_mul,
-        ← Finset.sum_add_distrib]
-      exact hrow i
-    rw [← dotProduct_add, h2, dotProduct_add, dotProduct_smul, dotProduct_smul, smul_eq_mul,
-      smul_eq_mul]
-  have hcancel : ψ ⬝ᵥ (A α₀ *ᵥ v') = lam α₀ * (ψ ⬝ᵥ v') := by
-    rw [dotProduct_mulVec, hleft, smul_dotProduct, smul_eq_mul]
-  rw [hcancel] at hsum
-  field_simp
-  linear_combination (-1 : ℂ) * hsum
+/-! ## Spectral condition number of the first-order sensitivity -/
 
 /-- **Spectral condition number bound**: `|λ'(α₀)| ≤ κ(λ) ‖A'(α₀)‖`,
 `κ(λ) = ‖ψ‖ ‖v‖ / |ψᵀ v|` (Euclidean vector norms, spectral matrix norm). -/

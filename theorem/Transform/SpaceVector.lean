@@ -1,6 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
-import theorem.Transform.ParkABC
+import theorem.Transform.Park
 
 /-! # Space vectors for three-phase machines
 
@@ -22,8 +22,15 @@ Conventions (shared by every `Drives` module unless a module states otherwise):
 Source: work-sync `theory/T-direct-torque-control.md` §1.2–§1.3 (torque expression, inverter
 voltage vectors), `theory/T-field-oriented-control.md` §1.1 / §1.9 (complex-vector form).
 
+Scaffold: `theorem/Transform/ClarkePark.agda` (the abc, αβ0 and dq0 representations and the
+power-preserving changes between them).
+
 Results.
 * `a`, `1 + a + a² = 0`, the components of `clarke`, and its common-mode invariance.
+* `clarke_eq_toComplex`: `clarke x_a x_b x_c` is the complex form of the Clarke matrix
+  `Transform.clarke` applied to `(x_a, x_b, x_c)` (`theorem/Transform/Park.lean`); there a balanced
+  set of peak `X` maps to `X e^{j(θ+φ)}` (`Transform.clarke_mulVec_balanced`) and the inverse is
+  `Transform.clarkeInv` (`Transform.clarke_mul_clarkeInv`).
 * The eight two-level inverter switching states give the six active vectors
   `(2/3) V_dc e^{j(k-1)π/3}` and two zero vectors (DTC / FCS-MPC voltage set).
 * Rotation invariance of `Im(conj ψ · i)`.
@@ -40,6 +47,7 @@ noncomputable section
 namespace powerlib.Transform.SpaceVector
 
 open Complex ComplexConjugate
+open scoped Matrix
 
 /-- `a = e^{j2π/3} = -1/2 + j√3/2`. -/
 def a : ℂ := ⟨-1 / 2, Real.sqrt 3 / 2⟩
@@ -74,24 +82,11 @@ vector unchanged. -/
   apply Complex.ext <;> simp
   ring
 
-/-- Amplitude invariance: a balanced positive-sequence set of peak `X` and angle `θ` has the
-space vector `X e^{jθ}`. -/
-@[tmio M, powerlib_domain] theorem clarke_balanced (X θ : ℝ) :
-    clarke (X * Real.cos θ) (X * Real.cos (θ - 2 * Real.pi / 3))
-      (X * Real.cos (θ + 2 * Real.pi / 3)) =
-      ⟨X * Real.cos θ, X * Real.sin θ⟩ := by
-  have hc : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
-    have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-    rw [this, Real.cos_pi_sub, Real.cos_pi_div_three]; ring
-  have hs : Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
-    have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-    rw [this, Real.sin_pi_sub, Real.sin_pi_div_three]
-  apply Complex.ext
-  · simp only [clarke_re, Real.cos_sub, Real.cos_add, hc, hs]
-    ring
-  · simp only [clarke_im, Real.cos_sub, Real.cos_add, hc, hs]
-    have h3 := sqrt3_sq
-    linear_combination (X * Real.sin θ / 3) * h3
+/-- The space vector is the complex form of the Clarke matrix applied to the phase vector. -/
+@[tmio M, powerlib_domain] theorem clarke_eq_toComplex (xa xb xc : ℝ) :
+    clarke xa xb xc = toComplex (Transform.clarke *ᵥ ![xa, xb, xc]) := by
+  apply Complex.ext <;>
+    simp [Transform.clarke] <;> ring
 
 /-! ## Two-level inverter voltage vectors -/
 
@@ -137,15 +132,10 @@ numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
 numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
 @[tmio M, powerlib_domain] theorem inverterVector_010 (Vdc : ℝ) :
     inverterVector Vdc false true false = activeVector Vdc 3 := by
-  have c2 : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
-    have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-    rw [this, Real.cos_pi_sub, Real.cos_pi_div_three]; ring
-  have s2 : Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
-    have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-    rw [this, Real.sin_pi_sub, Real.sin_pi_div_three]
   have e : ((3 : ℕ) - 1 : ℝ) * Real.pi / 3 = 2 * Real.pi / 3 := by norm_num
   apply Complex.ext <;>
-    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, c2, s2,
+    simp only [inverterVector, activeVector, clarke_re, clarke_im, e, cos_two_pi_div_three,
+      sin_two_pi_div_three,
       ↓reduceIte, Bool.false_eq_true] <;>
     ring
 

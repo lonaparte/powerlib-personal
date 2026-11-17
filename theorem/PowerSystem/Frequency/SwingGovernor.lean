@@ -31,8 +31,9 @@ Model boundary.
   `0 < K_R + D`); the family's models carry `0 < M` and `0 < T_g`.
 * Singular-perturbation limit `T_g → 0` (the governor becomes the static droop
   `ΔP_m = −K_R Δω`). Reduced model: the first-order swing `M Δω̇ = −(K_R + D) Δω − ΔP_L`
-  (`reducedPlant`, state `Δω`, input `ΔP_L`, output `Δω`; it is
-  `LowInertia.firstOrderModel M (K_R + D)`). Two-time-scale form `twoTimeScale`
+  (`reducedPlant`, state `Δω`, input `ΔP_L`, output `Δω`; it is the first-order swing + droop
+  model `firstOrderModel M (K_R + D)`, also used by
+  `theorem/PowerSystem/Frequency/LowInertia.lean`). Two-time-scale form `twoTimeScale`
   (`SingularPerturbation.LinearSP 1 1`): slow `Δω`, fast `ΔP_m`, `ε = T_g`.
 
 Source: work-sync `theory/T-frequency-stability.md` §1.4–§1.8 (model §1.7/§1.8, RoCoF §1.5,
@@ -69,7 +70,7 @@ Singular-perturbation limit:
   `ΔP_m = −K_R Δω`), `tendsto_mul_fastEig` (`T_g λ_f → −1`, with `mul_fastEig`),
   `tendsto_fastEig_atBot` (`λ_f → −∞` as `T_g → 0⁺`), `tendsto_dampingRatio_atTop`
   (`ζ_n → ∞`: overdamped in the limit).
-* Transfer function: `reduced_field_apply`, `reduced_transfer_apply` (`−1/(M s + K_R + D)`),
+* Transfer function: `reduced_field_apply`, `firstOrder_transfer` (`−1/(M s + K_R + D)`),
   `tendsto_transfer` (pointwise convergence off the first-order pole).
 * Stability (static): `reduced_isHurwitz_iff` (`0 < K_R + D`), `mem_den_iff_reduce`
   (Hurwitz iff the reduction is, whenever `0 < M + D T_g`), `eventually_isHurwitz_iff_reduced`;
@@ -580,13 +581,17 @@ quasi-steady state, read from the connection theorem `isHurwitz_iff_of_nonneg` a
 
 /-! ## Singular-perturbation limit `T_g → 0` -/
 
-/-- The reduced first-order swing model (`T_g = 0`: instantaneous droop `ΔP_m = −K_R Δω`):
-`M Δω̇ = −(K_R + D) Δω − ΔP_L`; state `Δω`, input `ΔP_L`, output `Δω`. -/
-def reducedPlant (M D K : ℝ) : Linear.Plant 1 1 where
-  A := !![-(K + D) / M]
+/-- The first-order swing + droop model `M Δω̇ = −ΔP_L − β Δω`; state `Δω`, input `ΔP_L`,
+output `Δω`. -/
+def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
+  A := !![-β / M]
   B := !![-1 / M]
   C := !![1]
   D := 0
+
+/-- The reduced first-order swing model (`T_g = 0`: instantaneous droop `ΔP_m = −K_R Δω`):
+`M Δω̇ = −(K_R + D) Δω − ΔP_L`, the first-order model with `β = K_R + D`. -/
+abbrev reducedPlant (M D K : ℝ) : Linear.Plant 1 1 := firstOrderModel M (K + D)
 
 /-- The swing + governor model as a linear two-time-scale system: slow state `Δω`, fast state
 `ΔP_m`, small parameter `ε = T_g`: `Δω̇ = −(D/M) Δω + (1/M) ΔP_m`, `T_g ΔṖ_m = −K_R Δω − ΔP_m`. -/
@@ -634,7 +639,7 @@ def fastEig (M D K Tg : ℝ) : ℝ := -(M + D * Tg + Real.sqrt (eigDisc M D K Tg
   simp only
   rw [inv_neg_one_fin_one]
   ext i j; fin_cases i; fin_cases j
-  simp [reducedPlant]
+  simp [reducedPlant, firstOrderModel]
   ring
 
 /-- The boundary-layer matrix `−1` (governor time scale) is Hurwitz. -/
@@ -861,7 +866,7 @@ second-order response becomes overdamped. -/
   congr 1
   ext i
   fin_cases i
-  simp [reducedPlant, load, dotProduct]
+  simp [reducedPlant, firstOrderModel, load, dotProduct]
 
 /-- On the quasi-steady-state line `ΔP_m = −K_R Δω` the governor row vanishes and the swing row is
 the first-order field: `M Δω̇ = −(K_R + D) Δω − ΔP_L`. -/
@@ -876,24 +881,24 @@ the first-order field: `M Δω̇ = −(K_R + D) Δω − ΔP_L`. -/
   · simp
     ring
 
-/-- Transfer function of the first-order model: `Δω(s)/ΔP_L(s) = −1/(M s + K_R + D)` (both
-sides `0` at the pole). -/
-@[tmio M, powerlib_domain] theorem reduced_transfer_apply (hM : M ≠ 0) (s : ℂ) :
-    Linear.transfer (reducedPlant M D K) s 0 0 = -1 / ((M : ℂ) * s + (K + D)) := by
+/-- Transfer function of the first-order model: `Δω(s)/ΔP_L(s) = −1/(M s + β)` (both sides `0`
+at the pole); for the reduced model `β = K_R + D`. -/
+@[tmio M, powerlib_domain] theorem firstOrder_transfer {M β : ℝ} (hM : M ≠ 0) (s : ℂ) :
+    Linear.transfer (firstOrderModel M β) s 0 0 = -1 / ((M : ℂ) * s + β) := by
   have hM' : (M : ℂ) ≠ 0 := by exact_mod_cast hM
-  have hdet : (Linear.characteristicMatrix (reducedPlant M D K).A s).det = s + (K + D) / M := by
-    simp [reducedPlant, Linear.characteristicMatrix]
+  have hdet : (Linear.characteristicMatrix (firstOrderModel M β).A s).det = s + β / M := by
+    simp [firstOrderModel, Linear.characteristicMatrix]
     ring
-  have hadj : (Linear.complexify (reducedPlant M D K).C *
-      (Linear.characteristicMatrix (reducedPlant M D K).A s).adjugate *
-        Linear.complexify (reducedPlant M D K).B) 0 0 = -1 / M := by
-    simp [reducedPlant, Matrix.adjugate_fin_one, Matrix.mul_apply, Linear.complexify]
-  have hD : Linear.complexify (reducedPlant M D K).D 0 0 = 0 := by simp [reducedPlant]
+  have hadj : (Linear.complexify (firstOrderModel M β).C *
+      (Linear.characteristicMatrix (firstOrderModel M β).A s).adjugate *
+        Linear.complexify (firstOrderModel M β).B) 0 0 = -1 / M := by
+    simp [firstOrderModel, Matrix.adjugate_fin_one, Matrix.mul_apply, Linear.complexify]
+  have hD : Linear.complexify (firstOrderModel M β).D 0 0 = 0 := by simp [firstOrderModel]
   rw [Linear.transfer_eq_adjugate]
   simp only [Matrix.add_apply, Matrix.smul_apply, hadj, hD, smul_eq_mul, add_zero, hdet]
-  have key : (M : ℂ) * s + (K + D) = M * (s + (K + D) / M) := by field_simp
+  have key : (M : ℂ) * s + β = M * (s + β / M) := by field_simp
   rw [key]
-  by_cases h : s + ((K : ℂ) + D) / M = 0
+  by_cases h : s + (β : ℂ) / M = 0
   · rw [h]; simp
   · field_simp
 
@@ -903,7 +908,7 @@ function of the swing + governor model tends to that of the first-order model as
     (hs : (M : ℂ) * s + (K + D) ≠ 0) :
     Tendsto (fun Tg => Linear.transfer (plant M D K Tg) s 0 0) (𝓝[≠] 0)
       (𝓝 (Linear.transfer (reducedPlant M D K) s 0 0)) := by
-  rw [reduced_transfer_apply hM]
+  rw [firstOrder_transfer hM, Complex.ofReal_add]
   have hc : ContinuousAt (fun Tg : ℝ => -(1 + (Tg : ℂ) * s) /
       ((M : ℂ) * Tg * s ^ 2 + (M + D * Tg) * s + (D + K))) 0 := by
     refine ContinuousAt.div (by fun_prop) (by fun_prop) ?_
@@ -1047,7 +1052,7 @@ first-order reduction does. -/
       !![(a * M - (K + D)) / M] := by
     ext i j
     fin_cases i; fin_cases j
-    simp [reducedPlant]
+    simp [reducedPlant, firstOrderModel]
     field_simp
     ring
   rw [hA, Linear.isHurwitz_one_iff, div_lt_iff₀ hM, zero_mul, sub_neg]
@@ -1125,7 +1130,7 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
       ((mem_realize _ _ _).mp hm (.rate a) rfl)
   have hu : r.K + r.D < 0 := (mem_realize _ _ _).mp hm .unstable rfl
   refine ⟨((-(r.K + r.D) / r.M : ℝ) : ℂ), ?_, ?_⟩
-  · simp [ReducedModel.plant, reducedPlant, Linear.characteristicMatrix]
+  · simp [ReducedModel.plant, reducedPlant, firstOrderModel, Linear.characteristicMatrix]
   · simp only [Complex.ofReal_re]
     exact div_pos (by linarith) r.M_pos
 
@@ -1297,7 +1302,7 @@ deviation, on `[0, T]`:
     rw [reduced_field_apply] at h
     convert h using 1
     rw [twoTimeScale_reducedMatrix]
-    simp [Xb, reducedPlant, Matrix.mulVec, dotProduct]
+    simp [Xb, reducedPlant, firstOrderModel, Matrix.mulVec, dotProduct]
     linear_combination -hred
   have hXb0 : Xb 0 = X 0 := by
     funext i
