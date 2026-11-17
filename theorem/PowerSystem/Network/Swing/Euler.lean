@@ -28,8 +28,8 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`
 `mem_den_locallyExponentiallyStable`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* `Network.Swing.contDiff_modelField`: the translated field is `C¹` (from
-  `reducedField_contDiff`), the smoothness hypothesis of the generic laws.
+* The translated field is `C¹` (`Numerics.contDiff_shift` of `reducedField_contDiff`), the
+  smoothness hypothesis of the generic laws.
 
 Family and connection conclusions.
 * `Network.Swing.eulerFamily : Family (Network.Swing.Euler n) Requirement (n + (n + 1)) 0`: every
@@ -38,7 +38,7 @@ Family and connection conclusions.
   its model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization), for every number `n + 1` of machines. The small-step laws are the generic
   connection laws applied to the family, with its autonomy `Network.Swing.family_isAutonomous` and
-  the public smoothness lemma `Network.Swing.contDiff_modelField`:
+  the smoothness of the translated field (`Numerics.contDiff_shift`, `reducedField_contDiff`):
   `Numerics.euler_sound_small_step_local` (scaffold `sound-small-step`: a locally exponentially
   stable model has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
   exponentially stable) and `Numerics.euler_sound_small_step_local` (scaffold
@@ -69,11 +69,6 @@ def euler : Implementation (Model n) Requirement (Euler n) Requirement (n + (n +
     1)) 0 :=
   Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
-/-- The translated field of a swing-network model is `C¹`: the smoothness hypothesis of the generic
-Euler laws (`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model n) : ContDiff ℝ 1 (Model.field m) :=
-  (reducedField_contDiff m.params).comp (contDiff_id.add contDiff_const)
-
 /-- **Without a step constraint the Euler realization of the swing-network models is not sound.** A
 locally exponentially stable network (unit inertia and damping, no injection, unit coupling between
 every pair of machines, `θ* = 0`) integrated with a large enough step is not locally exponentially
@@ -90,6 +85,6 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
     (fun _ _ => .single one_pos)
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
-    contDiff_modelField (by omega) hm
+    (fun m => Numerics.contDiff_shift (reducedField_contDiff m.params)) (by omega) hm
 
 end powerlib.Network.Swing

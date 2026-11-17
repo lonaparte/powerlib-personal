@@ -28,13 +28,21 @@ Results.
 * `nonempty_boundedCertificate_of_isHurwitz` — a Hurwitz matrix has a Lyapunov certificate
   (`Linear.Certificate`, from LeanForControl's Lyapunov equation) together with explicit bounds
   `lo|y|² ≤ yᵀPy ≤ hi|y|²` (`Linear.Certificate.exists_energy_bounds`).
+* `hasDerivWithinAt_quadratic_of_symm`, `hasDerivAt_quadratic_of_symm` — `(yᵀPy)' = 2 yᵀ P ẏ`
+  for symmetric `P` (also used by the finite-horizon and boundary-layer modules).
 * `dissipation_of_close` — the certificate of `A₀` is a dissipation certificate for every nearby
   matrix `M` (`yᵀ P M y ≤ −|y|²/4`); reused for the nonlinear boundary layer in
   `theorem/SingularPerturbation/BoundaryLayer.lean`.
+* `decay_of_dissipation` — a dissipation certificate `P` (`P = Pᵀ`, `lo|v|² ≤ vᵀPv ≤ hi|v|²`,
+  `vᵀ P M v ≤ −|v|²/4`) gives `|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²` along `ẏ = M y`.
 * `decay_of_close` — if `c` is a Lyapunov certificate for `A₀` (`A₀ᵀP + PA₀ = −I`,
   `lo|y|² ≤ yᵀPy ≤ hi|y|²`) and `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`, every trajectory of
   `ẏ = M y` satisfies `|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²` — the same `P` works for all
   nearby matrices.
+* `exists_uniform_dissipation` — on a compact parameter space one pair of energy bounds `lo, hi`
+  and one bound on `Σ|Pᵢⱼ|` serve all parameters: for every `p` a symmetric `P` with
+  `lo|v|² ≤ vᵀPv ≤ hi|v|²` and `vᵀ P A(p) v ≤ −|v|²/4` (finite subcover of the certificates, via
+  `dissipation_of_close`); reused by `theorem/SingularPerturbation/BoundaryLayer.lean`.
 * `uniform_frozen_exponentialStability` — if `A` is continuous on the compact space `X` and every
   `A(x)` is Hurwitz, there are `C > 0`, `α > 0` such that for **every** `x`, every trajectory of
   `ẏ = A(x) y` satisfies `|y(t)|² ≤ C e^{−αt} |y(0)|²` (uniform rate `α`, i.e. the spectral
@@ -98,13 +106,23 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
     lower_bound := fun y => by rw [← hconv, ← hq]; exact (hb _).1
     upper_bound := fun y => by rw [← hconv, ← hq]; exact (hb _).2 }⟩
 
-/-- Derivative of the quadratic form `yᵀ P y` along a differentiable path. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_quadratic (P : Matrix (Fin m) (Fin m) ℝ)
-    {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
-    HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (dy ⬝ᵥ (P *ᵥ y t) + y t ⬝ᵥ (P *ᵥ dy)) t := by
-  have hP : HasDerivAt (fun s => P *ᵥ y s) (P *ᵥ dy) t := Dynamics.hasDerivAt_mulVec P hy
-  rw [← hasDerivWithinAt_univ] at hy hP ⊢
-  exact Linear.dotProduct_hasDerivWithinAt hy hP
+/-- Derivative of `yᵀ P y` for symmetric `P` along a path, within any set: `2 yᵀ P ẏ`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_quadratic_of_symm
+    {P : Matrix (Fin m) (Fin m) ℝ} (hP : Pᵀ = P) {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ}
+    {s : Set ℝ} {t : ℝ} (hy : HasDerivWithinAt y dy s t) :
+    HasDerivWithinAt (fun τ => y τ ⬝ᵥ (P *ᵥ y τ)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) s t := by
+  have hPy : HasDerivWithinAt (fun τ => P *ᵥ y τ) (P *ᵥ dy) s t :=
+    (LinearMap.toContinuousLinearMap (Matrix.toLin' P)).hasFDerivAt.comp_hasDerivWithinAt t hy
+  convert Linear.dotProduct_hasDerivWithinAt hy hPy using 1
+  rw [Criteria.dotProduct_mulVec_comm_of_symm hP dy (y t)]
+  ring
+
+/-- Derivative of `yᵀ P y` for symmetric `P`: `2 yᵀ P ẏ`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_quadratic_of_symm
+    {P : Matrix (Fin m) (Fin m) ℝ} (hP : Pᵀ = P) {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ} {t : ℝ}
+    (hy : HasDerivAt y dy t) :
+    HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) t :=
+  hasDerivWithinAt_univ.mp (hasDerivWithinAt_quadratic_of_symm hP hy.hasDerivWithinAt)
 
 /-- A Lyapunov certificate of `A₀` is a dissipation certificate for every nearby matrix `M`:
 `yᵀ P M y ≤ −|y|²/4` whenever `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`. -/
@@ -135,45 +153,45 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   rw [hsplit, h1]
   linarith [abs_le.mp this]
 
+/-- A dissipation certificate proves exponential decay: if `P = Pᵀ`, `lo|v|² ≤ vᵀPv ≤ hi|v|²`
+and `vᵀ P M v ≤ −|v|²/4`, every trajectory of `ẏ = M y` satisfies
+`|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²`. -/
+@[tmio T, powerlib_foundation] theorem decay_of_dissipation {M P : Matrix (Fin m) (Fin m) ℝ}
+    (hP : Pᵀ = P) {lo hi : ℝ} (hlo : 0 < lo) (hhi : 0 < hi)
+    (hlower : ∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) (hupper : ∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v))
+    (hdiss : ∀ v : Fin m → ℝ, v ⬝ᵥ (P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4)
+    {y : ℝ → Fin m → ℝ} (hy : ∀ s, HasDerivAt y (M *ᵥ y s) s) (t : ℝ) (ht : 0 ≤ t) :
+    y t ⬝ᵥ y t ≤ (hi / lo) * Real.exp (-(t / (2 * hi))) * (y 0 ⬝ᵥ y 0) := by
+  -- energy derivative
+  have hderiv : ∀ s, HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s))
+      (2 * (y s ⬝ᵥ (P *ᵥ (M *ᵥ y s)))) s := fun s => hasDerivAt_quadratic_of_symm hP (hy s)
+  -- Grönwall: `V' ≤ -V/(2 hi)`
+  have hV : (y t ⬝ᵥ (P *ᵥ y t)) ≤ Real.exp (-(t / (2 * hi))) * (y 0 ⬝ᵥ (P *ᵥ y 0)) := by
+    have h := Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun s => y s ⬝ᵥ (P *ᵥ y s))
+      (ρ := 1 / (2 * hi)) (fun s _ => (hderiv s).hasDerivWithinAt) (fun s _ => by
+        have hup := hupper (y s)
+        have hd := hdiss (y s)
+        have : 1 / (2 * hi) * (y s ⬝ᵥ (P *ᵥ y s)) ≤ (y s ⬝ᵥ y s) / 2 := by
+          rw [one_div_mul_eq_div, div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith
+        linarith) t ⟨ht, le_rfl⟩
+    rwa [sub_zero, neg_mul, one_div_mul_eq_div] at h
+  have hlow := hlower (y t)
+  have hup0 := hupper (y 0)
+  rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hlo]
+  calc (y t ⬝ᵥ y t) * lo = lo * (y t ⬝ᵥ y t) := mul_comm _ _
+    _ ≤ (y t ⬝ᵥ (P *ᵥ y t)) := hlow
+    _ ≤ Real.exp (-(t / (2 * hi))) * (y 0 ⬝ᵥ (P *ᵥ y 0)) := hV
+    _ ≤ Real.exp (-(t / (2 * hi))) * (hi * (y 0 ⬝ᵥ y 0)) := by gcongr
+    _ = hi * Real.exp (-(t / (2 * hi))) * (y 0 ⬝ᵥ y 0) := by ring
+
 /-- A Lyapunov certificate of `A₀` also proves exponential decay for every nearby matrix `M`. -/
 @[tmio T, powerlib_foundation] theorem decay_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
     (c : BoundedCertificate A0) (hM : absSum (M - A0) ≤ 1 / (4 * absSum c.P + 4))
     {y : ℝ → Fin m → ℝ} (hy : ∀ s, HasDerivAt y (M *ᵥ y s) s) (t : ℝ) (ht : 0 ≤ t) :
     y t ⬝ᵥ y t ≤ (c.upper / c.lower) * Real.exp (-(t / (2 * c.upper))) *
-      (y 0 ⬝ᵥ y 0) := by
-  have hP := c.symmetric
-  have hlyap : c.P * A0 + A0ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
-  have hAbs := absSum_nonneg c.P
-  have hdiss : ∀ v : Fin m → ℝ, v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 :=
-    dissipation_of_close c hM
-  -- energy derivative
-  have hderiv : ∀ s, HasDerivAt (fun s => y s ⬝ᵥ (c.P *ᵥ y s))
-      (2 * (y s ⬝ᵥ (c.P *ᵥ (M *ᵥ y s)))) s := by
-    intro s
-    have := hasDerivAt_quadratic c.P (hy s)
-    convert this using 1
-    rw [Criteria.dotProduct_mulVec_comm_of_symm hP (M *ᵥ y s) (y s)]
-    ring
-  -- Grönwall: `V' ≤ -V/(2 hi)`
-  have hV : (y t ⬝ᵥ (c.P *ᵥ y t)) ≤ Real.exp (-(t / (2 * c.upper))) * (y 0 ⬝ᵥ (c.P *ᵥ y 0)) := by
-    have h := Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun s => y s ⬝ᵥ (c.P *ᵥ y s))
-      (ρ := 1 / (2 * c.upper)) (fun s _ => (hderiv s).hasDerivWithinAt) (fun s _ => by
-        have hup := c.upper_bound (y s)
-        have hd := hdiss (y s)
-        have hu := c.upper_pos
-        have : 1 / (2 * c.upper) * (y s ⬝ᵥ (c.P *ᵥ y s)) ≤ (y s ⬝ᵥ y s) / 2 := by
-          rw [one_div_mul_eq_div, div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith
-        linarith) t ⟨ht, le_rfl⟩
-    rwa [sub_zero, neg_mul, one_div_mul_eq_div] at h
-  have hlow := c.lower_bound (y t)
-  have hup0 := c.upper_bound (y 0)
-  have hlo := c.lower_pos
-  rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hlo]
-  calc (y t ⬝ᵥ y t) * c.lower = c.lower * (y t ⬝ᵥ y t) := mul_comm _ _
-    _ ≤ (y t ⬝ᵥ (c.P *ᵥ y t)) := hlow
-    _ ≤ Real.exp (-(t / (2 * c.upper))) * (y 0 ⬝ᵥ (c.P *ᵥ y 0)) := hV
-    _ ≤ Real.exp (-(t / (2 * c.upper))) * (c.upper * (y 0 ⬝ᵥ y 0)) := by gcongr
-    _ = c.upper * Real.exp (-(t / (2 * c.upper))) * (y 0 ⬝ᵥ y 0) := by ring
+      (y 0 ⬝ᵥ y 0) :=
+  decay_of_dissipation c.symmetric c.lower_pos c.upper_pos c.lower_bound c.upper_bound
+    (dissipation_of_close c hM) hy t ht
 
 @[tmio T, powerlib_foundation] theorem continuous_absSum_sub (A0 : Matrix (Fin m) (Fin m) ℝ) :
     Continuous fun M : Matrix (Fin m) (Fin m) ℝ => absSum (M - A0) := by
@@ -181,14 +199,15 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   refine continuous_finsetSum _ fun i _ => continuous_finsetSum _ fun j _ => ?_
   exact ((continuous_id.matrix_elem i j).sub continuous_const).abs
 
-/-- **Uniform exponential stability of the frozen fast subsystems** on a compact set. -/
-@[tmio T, powerlib_foundation] theorem uniform_frozen_exponentialStability {X : Type*}
-    [TopologicalSpace X] [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
-    (hH : ∀ x, LinearSystems.IsHurwitz (A x)) :
-    ∃ C > 0, ∃ α > 0, ∀ x (y : ℝ → Fin m → ℝ), (∀ s, HasDerivAt y (A x *ᵥ y s) s) → ∀ t, 0 ≤ t →
-      (y t ⬝ᵥ y t) ≤ C * Real.exp (-(α * t)) * (y 0 ⬝ᵥ y 0) := by
+/-- **Uniform Lyapunov dissipation** for a continuous Hurwitz family on a compact parameter
+space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. -/
+@[tmio T, powerlib_foundation] theorem exists_uniform_dissipation {X : Type*} [TopologicalSpace X]
+    [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
+    (hH : ∀ p, LinearSystems.IsHurwitz (A p)) :
+    ∃ lo > 0, ∃ hi > 0, ∃ Pb ≥ 0, ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
+      (∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) ∧ (∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v)) ∧
+      absSum P ≤ Pb ∧ ∀ v, v ⬝ᵥ (P *ᵥ (A p *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
   classical
-  -- a certificate at every point and the neighbourhood where it still works
   let cert : ∀ x, BoundedCertificate (A x) := fun x =>
     (nonempty_boundedCertificate_of_isHurwitz (hH x)).some
   let δ : X → ℝ := fun x => 1 / (4 * absSum (cert x).P + 4)
@@ -201,38 +220,45 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover O hO hcover
   by_cases hX : Nonempty X
   swap
-  · exact ⟨1, one_pos, 1, one_pos, fun x => absurd ⟨x⟩ hX⟩
+  · exact ⟨1, one_pos, 1, one_pos, 0, le_rfl, fun x => absurd ⟨x⟩ hX⟩
   have hsne : s.Nonempty := by
     obtain ⟨x⟩ := hX
     obtain ⟨x₀, hx₀, -⟩ := Set.mem_iUnion₂.mp (hs (Set.mem_univ x))
     exact ⟨x₀, hx₀⟩
-  set C := s.sup' hsne fun x₀ => (cert x₀).upper / (cert x₀).lower
-  set α := s.inf' hsne fun x₀ => 1 / (2 * (cert x₀).upper)
-  have hCpos : 0 < C := by
-    obtain ⟨x₀, hx₀⟩ := hsne
-    exact lt_of_lt_of_le (div_pos (cert x₀).upper_pos (cert x₀).lower_pos)
-      (Finset.le_sup' (fun x₀ => (cert x₀).upper / (cert x₀).lower) hx₀)
-  have hαpos : 0 < α := by
+  refine ⟨s.inf' hsne fun x₀ => (cert x₀).lower, ?_, s.sup' hsne fun x₀ => (cert x₀).upper, ?_,
+    s.sup' hsne fun x₀ => absSum (cert x₀).P, ?_, fun p => ?_⟩
+  · show 0 < _
     rw [Finset.lt_inf'_iff]
-    intro x₀ _
-    have := (cert x₀).upper_pos
-    positivity
-  refine ⟨C, hCpos, α, hαpos, fun x y hy t ht => ?_⟩
-  obtain ⟨x₀, hx₀s, hxO⟩ := Set.mem_iUnion₂.mp (hs (Set.mem_univ x))
-  have hclose : absSum (A x - A x₀) ≤ 1 / (4 * absSum (cert x₀).P + 4) := le_of_lt hxO
-  have hdec := decay_of_close (cert x₀) hclose hy t ht
-  have hC := Finset.le_sup' (fun x₀ => (cert x₀).upper / (cert x₀).lower) hx₀s
-  have hα := Finset.inf'_le (fun x₀ => 1 / (2 * (cert x₀).upper)) hx₀s
-  have hexp : Real.exp (-(t / (2 * (cert x₀).upper))) ≤ Real.exp (-(α * t)) := by
-    apply Real.exp_le_exp.mpr
-    have : t / (2 * (cert x₀).upper) = 1 / (2 * (cert x₀).upper) * t := by ring
-    rw [this]
+    exact fun x₀ _ => (cert x₀).lower_pos
+  · obtain ⟨x₀, hx₀⟩ := hsne
+    exact lt_of_lt_of_le (cert x₀).upper_pos
+      (Finset.le_sup' (fun x₀ => (cert x₀).upper) hx₀)
+  · obtain ⟨x₀, hx₀⟩ := hsne
+    exact le_trans (absSum_nonneg _) (Finset.le_sup' (fun x₀ => absSum (cert x₀).P) hx₀)
+  obtain ⟨x₀, hx₀s, hxO⟩ := Set.mem_iUnion₂.mp (hs (Set.mem_univ p))
+  refine ⟨(cert x₀).P, (cert x₀).symmetric, fun v => ?_, fun v => ?_,
+    Finset.le_sup' (fun x₀ => absSum (cert x₀).P) hx₀s,
+    dissipation_of_close (cert x₀) (le_of_lt hxO)⟩
+  · have h1 := Finset.inf'_le (fun x₀ => (cert x₀).lower) hx₀s
+    have h2 := (cert x₀).lower_bound v
+    have h3 := dotProduct_self_nonneg' v
     nlinarith
-  have hy0 : 0 ≤ (y 0 ⬝ᵥ y 0) := dotProduct_self_nonneg' _
-  calc (y t ⬝ᵥ y t) ≤ ((cert x₀).upper / (cert x₀).lower) *
-        Real.exp (-(t / (2 * (cert x₀).upper))) * (y 0 ⬝ᵥ y 0) := hdec
-    _ ≤ C * Real.exp (-(α * t)) * (y 0 ⬝ᵥ y 0) := by
-        apply mul_le_mul_of_nonneg_right _ hy0
-        exact mul_le_mul hC hexp (Real.exp_pos _).le hCpos.le
+  · have h1 := Finset.le_sup' (fun x₀ => (cert x₀).upper) hx₀s
+    have h2 := (cert x₀).upper_bound v
+    have h3 := dotProduct_self_nonneg' v
+    nlinarith
+
+/-- **Uniform exponential stability of the frozen fast subsystems** on a compact set
+(`exists_uniform_dissipation`, then `decay_of_dissipation`: `C = hi/lo`, `α = 1/(2 hi)`). -/
+@[tmio T, powerlib_foundation] theorem uniform_frozen_exponentialStability {X : Type*}
+    [TopologicalSpace X] [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
+    (hH : ∀ x, LinearSystems.IsHurwitz (A x)) :
+    ∃ C > 0, ∃ α > 0, ∀ x (y : ℝ → Fin m → ℝ), (∀ s, HasDerivAt y (A x *ᵥ y s) s) → ∀ t, 0 ≤ t →
+      (y t ⬝ᵥ y t) ≤ C * Real.exp (-(α * t)) * (y 0 ⬝ᵥ y 0) := by
+  obtain ⟨lo, hlo, hi, hhi, _, _, hcert⟩ := exists_uniform_dissipation hA hH
+  refine ⟨hi / lo, by positivity, 1 / (2 * hi), by positivity, fun x y hy t ht => ?_⟩
+  obtain ⟨P, hP, hlower, hupper, -, hdiss⟩ := hcert x
+  rw [show 1 / (2 * hi) * t = t / (2 * hi) by ring]
+  exact decay_of_dissipation hP hlo hhi hlower hupper hdiss hy t ht
 
 end powerlib.SingularPerturbation

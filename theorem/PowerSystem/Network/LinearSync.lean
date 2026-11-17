@@ -67,23 +67,13 @@ structure SpectralData (L : Matrix (Fin N) (Fin N) ℝ) where
 
 /-! ## Euclidean-norm helpers -/
 
-@[tmio T, powerlib_foundation] theorem euclidean_sub (x y : Fin d → ℝ) :
-    euclidean (x - y) = euclidean x - euclidean y := rfl
-
-@[tmio T, powerlib_foundation] theorem euclidean_smul (c : ℝ) (x : Fin d → ℝ) :
-    euclidean (c • x) = c • euclidean x := rfl
-
-@[tmio T, powerlib_foundation] theorem euclidean_sum {ι : Type*} (s : Finset ι) (f : ι → Fin d → ℝ) :
-    euclidean (∑ k ∈ s, f k) = ∑ k ∈ s, euclidean (f k) :=
-  map_sum (WithLp.linearEquiv 2 ℝ (Fin d → ℝ)).symm f s
-
 @[tmio T, powerlib_foundation] theorem norm_euclidean_sum_smul_le {ι : Type*} (s : Finset ι)
     (c : ι → ℝ) (f : ι → Fin d → ℝ) :
     ‖euclidean (∑ k ∈ s, c k • f k)‖ ≤ ∑ k ∈ s, |c k| * ‖euclidean (f k)‖ := by
-  rw [euclidean_sum]
+  rw [euclidean, WithLp.toLp_sum]
   refine (norm_sum_le _ _).trans (le_of_eq ?_)
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [euclidean_smul, norm_smul, Real.norm_eq_abs]
+  rw [WithLp.toLp_smul, norm_smul, Real.norm_eq_abs]
 
 /-! ## Spectral facts -/
 
@@ -172,7 +162,7 @@ all nodes `i, j`) ⇔ every transverse block `A − σ μ_k Γ` (`k ≠ k₀`) i
       congr 2
       ring
     have hb := hsync X hX t ht i₀ j₀
-    simp only [X, ← sub_smul, euclidean_smul, norm_smul, Real.norm_eq_abs] at hb
+    simp only [X, ← sub_smul, WithLp.toLp_smul, norm_smul, Real.norm_eq_abs] at hb
     have hsum : ∑ l, |D.V l k| * ‖euclidean (y 0)‖ = S * ‖euclidean (y 0)‖ := by
       rw [← Finset.sum_mul]
     rw [hsum] at hb

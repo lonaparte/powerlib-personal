@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.SingularPerturbation.SupNorm
+import theorem.Potential.DoubleWell
 import Mathlib.Probability.Moments.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 import Mathlib.Order.LiminfLimsup
@@ -602,8 +603,9 @@ infimum is approached, not attained: for each `δ > 0` the path that leaves `x_�
 
 /-! ## Example: the double well `U(y) = y⁴/4 − y²/2` -/
 
-/-- Double-well potential on `ℝ` (as `Fin 1 → ℝ`): minima at `±1`, saddle (local maximum) at `0`. -/
-def dwU (y : Fin 1 → ℝ) : ℝ := y 0 ^ 4 / 4 - y 0 ^ 2 / 2
+/-- Double-well potential on `ℝ` (as `Fin 1 → ℝ`): minima at `±1`, saddle (local maximum) at `0`;
+the double well `Potential.doubleWell 1 1` of the coordinate. -/
+def dwU (y : Fin 1 → ℝ) : ℝ := Potential.doubleWell 1 1 (y 0)
 
 /-- Its gradient `U'(y) = y³ − y`. -/
 def dwGrad (y : Fin 1 → ℝ) : Fin 1 → ℝ := fun _ => y 0 ^ 3 - y 0
@@ -617,10 +619,7 @@ def dwOrbit (s : ℝ) : Fin 1 → ℝ := fun _ => (√(1 + exp (2 * s)))⁻¹
       (φ := fun _ : Fin 1 => ℝ) 0) y := by
   have hp : HasFDerivAt (fun z : Fin 1 → ℝ => z 0)
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 1 => ℝ) 0) y := hasFDerivAt_apply 0 y
-  have hf : HasDerivAt (fun s : ℝ => s ^ 4 / 4 - s ^ 2 / 2) (y 0 ^ 3 - y 0) (y 0) := by
-    have := ((hasDerivAt_pow 4 (y 0)).div_const 4).sub ((hasDerivAt_pow 2 (y 0)).div_const 2)
-    convert this using 1; push_cast; ring
-  exact hf.comp_hasFDerivAt y hp
+  exact ((Potential.hasDerivAt_doubleWell 1 1 (y 0)).congr_deriv (by ring)).comp_hasFDerivAt y hp
 
 @[tmio M, powerlib_foundation] private theorem dw_differentiable : Differentiable ℝ dwU := fun y =>
   (dw_hasFDerivAt y).differentiableAt
@@ -677,7 +676,7 @@ def dwOrbit (s : ℝ) : Fin 1 → ℝ := fun _ => (√(1 + exp (2 * s)))⁻¹
   rw [quasiPotential_eq_of_heteroclinic dw_differentiable dw_grad dw_grad_continuous
     dwOrbit_hasDerivAt dwOrbit_atBot dwOrbit_atTop]
   congr 1
-  simp [dwU]
+  simp [dwU, Potential.doubleWell]
   norm_num
 
 /-! ## Cramér lower bound at exposed points -/

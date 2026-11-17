@@ -3,6 +3,7 @@ import theorem.Attributes
 import Mathlib.MeasureTheory.Integral.Prod
 import theorem.GridTiedConverter.PLL.PIPLL
 import theorem.GridTiedConverter.PLL.Linear
+import theorem.Stochastic.FokkerPlanck
 
 /-! # Escape analysis of the reduced 2D GFL–PLL model: algebraic and calculus facts
 
@@ -156,31 +157,15 @@ damping and any `C¹` characteristic `h`. -/
   ring
 
 /-- **Not normalizable**: if `𝒱 ≤ C` on a measurable set of infinite length, `e^{−𝓗/T}` is not
-integrable on the plane. -/
+integrable on the plane: for a fixed `η` it is the one-dimensional Gibbs density of the potential
+`𝒱 + K_i η²/2` (`Stochastic.FP.gibbs_not_integrable`). -/
 @[tmio M, powerlib_domain] theorem gibbs2_not_integrable {V : ℝ → ℝ} {Ki T C : ℝ} (hT : 0 < T)
     {S : Set ℝ} (hSm : MeasurableSet S) (hS : volume S = ∞) (hVS : ∀ x ∈ S, V x ≤ C) :
     ¬ Integrable (fun p : ℝ × ℝ => gibbs2 V Ki T p.1 p.2) (volume.prod volume) := by
   intro hint
   obtain ⟨y, hy⟩ := hint.prod_left_ae.exists
-  set c := exp (-(C + Ki / 2 * y ^ 2) / T) with hc
-  have hcpos : 0 < c := exp_pos _
-  have hle : ∀ x, S.indicator (fun _ => ENNReal.ofReal c) x ≤ ‖gibbs2 V Ki T x y‖ₑ := by
-    intro x
-    by_cases hx : x ∈ S
-    · have hg : 0 ≤ gibbs2 V Ki T x y := (exp_pos _).le
-      rw [indicator_of_mem hx, Real.enorm_eq_ofReal hg]
-      apply ENNReal.ofReal_le_ofReal
-      unfold gibbs2
-      apply exp_le_exp.mpr
-      apply div_le_div_of_nonneg_right _ hT.le
-      linarith [hVS x hx]
-    · rw [indicator_of_notMem hx]; positivity
-  have hlt := hy.hasFiniteIntegral
-  unfold HasFiniteIntegral at hlt
-  have hge : ∫⁻ x, S.indicator (fun _ => ENNReal.ofReal c) x ≤ ∫⁻ x, ‖gibbs2 V Ki T x y‖ₑ :=
-    lintegral_mono hle
-  rw [lintegral_indicator_const hSm, hS, ENNReal.mul_top (by simpa using hcpos)] at hge
-  exact absurd (lt_of_le_of_lt hge hlt) (lt_irrefl _)
+  exact Stochastic.FP.gibbs_not_integrable (V := fun x => V x + Ki / 2 * y ^ 2)
+    (C := C + Ki / 2 * y ^ 2) hT hSm hS (fun x hx => by linarith [hVS x hx]) hy
 
 /-! ## Langer factor at the saddle (§5b–§5c) -/
 

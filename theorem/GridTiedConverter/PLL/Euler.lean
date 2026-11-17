@@ -27,7 +27,7 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_eulerStep_realizationSoundUnder`),
+`not_eulerStep_realizationSoundUnder`, `contDiff_shift`),
 `theorem/GridTiedConverter/PLL/PIPLL.lean` (`contDiff_piPLLField`),
 `theorem/GridTiedConverter/PLL/PIPLLFamily.lean` (`srf_mem_den_locallyExponentiallyStable_inPhase`
 at `k = 0`),
@@ -36,9 +36,9 @@ at `k = 0`),
 `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* `PIPLL.contDiff_modelField` (the translated PI-PLL field is `C¹`, from `contDiff_piPLLField`)
-  and `ReducedSlow.contDiff_modelField` (the linear field is `C¹`): the smoothness hypotheses of
-  the generic laws.
+* The smoothness hypotheses of the generic laws: the translated PI-PLL field is `C¹`
+  (`Numerics.contDiff_shift` at `contDiff_piPLLField`), the reduced slow field is affine
+  (`Linear.affine_contDiff`); the module states only the connection conclusions below.
 
 Family and connection conclusions.
 * `PIPLL.eulerFamily : Family PIPLL.Euler PIPLL.Requirement 2 0` and
@@ -48,10 +48,10 @@ Family and connection conclusions.
   integration realizing its model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization), for both families. The small-step laws are the generic connection laws
   applied to each family, with its autonomy (`PIPLL.family_isAutonomous`,
-  `ReducedSlow.family_isAutonomous`) and its public smoothness lemma (`PIPLL.contDiff_modelField`,
-  `ReducedSlow.contDiff_modelField`): `Numerics.euler_sound_small_step_local` (scaffold
-  `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such that every
-  Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `ReducedSlow.family_isAutonomous`) and its smoothness above:
+  `Numerics.euler_sound_small_step_local` (scaffold `sound-small-step`: a locally exponentially
+  stable model has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is
+  locally exponentially stable) and
   `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
   certification). `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — for the PI-PLL the SRF detector with
@@ -75,11 +75,6 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
-/-- The translated field of a PI-PLL model is `C¹`: the smoothness hypothesis of the generic Euler
-laws (`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
-  (contDiff_piPLLField m.smooth).comp (contDiff_id.add contDiff_const)
-
 /-- **Without a step constraint the Euler realization of the PI-PLL models is not sound.** A locally
 exponentially stable PI-PLL (the SRF detector `h = −V sin` with `V = K_p = K_i = 1`, `δω = 0`, at
 `θ* = 0`) integrated with a large enough step is not locally exponentially stable: every Euler
@@ -93,7 +88,7 @@ multiplier `1 + hλ` leaves the unit disk
   unfold powerlib.TMIO.Statement at hm
   rw [Int.cast_zero, mul_zero, zero_mul] at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
-    contDiff_modelField (by norm_num) hm
+    (fun m => Numerics.contDiff_shift (contDiff_piPLLField m.smooth)) (by norm_num) hm
 
 end powerlib.PLL.PIPLL
 
@@ -112,11 +107,6 @@ def eulerFamily : Family Euler Requirement 1 0 :=
 def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
   Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
-/-- The field of a reduced slow PLL model is `C¹` (it is linear): the smoothness hypothesis of the
-generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
-  Linear.affine_contDiff _ _
-
 /-- **Without a step constraint the Euler realization of the reduced slow PLL models is not
 sound.** The locally exponentially stable model `a = b = 1` (`ẏ = −y`) integrated with a large
 enough step is not locally exponentially stable: its Euler multiplier `1 − h` leaves the unit disk
@@ -132,6 +122,6 @@ enough step is not locally exponentially stable: its Euler multiplier `1 − h` 
       show (0 : ℝ) < 1 / 1
       norm_num)
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
-    contDiff_modelField one_pos hm
+    (fun _ => Linear.affine_contDiff _ _) one_pos hm
 
 end powerlib.PLL.ReducedSlow

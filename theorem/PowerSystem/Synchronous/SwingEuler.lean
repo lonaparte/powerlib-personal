@@ -37,7 +37,7 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`
 `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* `Swing.contDiff_modelField`: the translated swing field is `C¹` (from
+* The translated swing field is `C¹` (`Numerics.contDiff_shift` of
   `SwingParams.contDiff_field`), the smoothness hypothesis of the generic laws;
   `GeneralSwing.contDiffAt_field`: the translated field with an arbitrary law is `C¹` near the
   origin when the law is `C¹` near the selected point.
@@ -48,8 +48,9 @@ Family and connection conclusions.
   (`meets y = Swing.Meets y.design`). `Swing.euler`: the implementation layer, every integration
   realizing its swing model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization). The small-step laws are the generic connection laws applied to the family,
-  with its autonomy `Swing.family_isAutonomous` and the public smoothness lemma
-  `Swing.contDiff_modelField`: `Numerics.euler_sound_small_step_local` (scaffold
+  with its autonomy `Swing.family_isAutonomous` and the smoothness of the translated field
+  (`Numerics.contDiff_shift`, `SwingParams.contDiff_field`):
+  `Numerics.euler_sound_small_step_local` (scaffold
   `sound-small-step`: a locally exponentially stable swing model — for instance a balanced angle
   with positive inertia, damping and synchronizing coefficient,
   `Swing.mem_den_locallyExponentiallyStable` — has a step `h₀ > 0` such that every Euler
@@ -84,11 +85,6 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Numerics.EulerStep.design Numerics.EulerStep.h
 
-/-- The translated swing field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 m.field :=
-  (m.p.contDiff_field (k := 1)).comp (contDiff_id.add contDiff_const)
-
 /-- **Without a step constraint the Euler realization of the swing family is not sound.** A
 locally exponentially stable swing model (`M = 1`, `D = 4`, `K = 4` at a balanced angle) integrated
 with a large enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves
@@ -100,7 +96,7 @@ the unit disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
     (by simp [SwingParams.Pe]) (by norm_num [SwingParams.syncCoeff])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
-    contDiff_modelField two_pos hm
+    (fun m => Numerics.contDiff_shift (m.p.contDiff_field (k := 1))) two_pos hm
 
 end powerlib.Synchronous.Swing
 

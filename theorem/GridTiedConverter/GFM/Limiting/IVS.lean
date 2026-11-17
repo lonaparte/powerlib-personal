@@ -47,18 +47,15 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
     simp only [Passive.SeriesRLC.absSq, Passive.SeriesRLC.reactance, one_mul, div_one, sub_zero,
         ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add] at h
     rw [← Real.sqrt_sq (norm_nonneg _), h, Real.sqrt_sq hX.le]
-  rw [iMag, currentMag, hZ, ← currentMag_sq_num, Real.sqrt_sq (norm_nonneg _)]
+  rw [iMag, currentMag, hZ, ← Real.sqrt_sq (norm_nonneg ((E : ℂ) * _ - _)), Complex.sq_norm,
+    sub_eq_add_neg ((E : ℂ) * _), ← Complex.ofReal_neg, SpecialFunctions.normSq_affine_exp]
+  ring_nf
 
 @[tmio T, powerlib_foundation] theorem iMag_radicand (E V δ : ℝ) :
     E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ =
       (V - E * Real.cos δ) ^ 2 + (E * Real.sin δ) ^ 2 := by
   have := Real.sin_sq_add_cos_sq δ
   linear_combination (-E ^ 2) * this
-
-@[tmio T, powerlib_foundation] theorem iMag_radicand_nonneg (E V δ : ℝ) :
-    0 ≤ E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ := by
-  rw [iMag_radicand]
-  positivity
 
 /-- Derivative `E V sin δ/(X² I_omag)`. -/
 @[tmio M, powerlib_domain] theorem iMag_hasDerivAt {E V X δ : ℝ} (hX : X ≠ 0)
@@ -84,7 +81,7 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
   intro a ha b hb hab
   have hcos : Real.cos b < Real.cos a := Real.strictAntiOn_cos ha hb hab
   apply div_lt_div_of_pos_right _ hX
-  apply Real.sqrt_lt_sqrt (iMag_radicand_nonneg E V a)
+  apply Real.sqrt_lt_sqrt (by rw [iMag_radicand]; positivity)
   nlinarith [mul_pos hE hV]
 
 /-- The worst-case threshold `E sin δ_th/X` is a lower bound over all grid voltages. -/

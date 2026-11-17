@@ -34,9 +34,9 @@ Results.
   `theorem/PowerSystem/Synchronous/Swing.lean`); `swingA_isHurwitz` is its Hurwitz criterion
   (`SwingParams.isHurwitz_jacobian_iff`) for `M, D, k > 0`.
 * `swingCov_solves`, `swingCov_unique`: for `M, D, k > 0` the unique solution of (1.7) is
-  `p₁₂ = 0`, `p₂₂ = s²/(2MD)`, `p₁₁ = s²/(2Dk)` with `s² = σ_ω² + σ_v²` ((1.8), (1.9); entries
-  `swingCov_zero_one`, `swingCov_one_zero`, `swingCov_one_one`, `swingCov_zero_zero`);
-  `swingCov_angle_eq`: `Var δ̃ = Var ω̃ / ω_n²`.
+  `p₁₂ = 0`, `p₂₂ = s²/(2MD)`, `p₁₁ = s²/(2Dk)` with `s² = σ_ω² + σ_v²` ((1.8), (1.9);
+  `swingCov` is the diagonal matrix of the two variances); `swingCov_angle_eq`:
+  `Var δ̃ = Var ω̃ / ω_n²`.
 * `swing_cov_tendsto`, `swing_mean_tendsto`: every solution of the moment ODEs converges to
   `(0, P∞)`.
 * The matrix exponential tools `LTI.exp_smul_eq_of_hasDerivAt` (uniqueness of the matrix
@@ -94,7 +94,7 @@ def swingNoise (M sω sv : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 0; sω / M
 
 /-- Candidate stationary covariance with total noise power `s2 = σ_ω² + σ_v²`. -/
 def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![s2 / (2 * D * k), 0; 0, s2 / (2 * M * D)]
+  diagonal ![s2 / (2 * D * k), s2 / (2 * M * D)]
 
 @[tmio M, powerlib_domain] theorem swingNoise_mul_transpose (M sω sv : ℝ) :
     swingNoise M sω sv * (swingNoise M sω sv)ᵀ = !![0, 0; 0, (sω ^ 2 + sv ^ 2) / M ^ 2] := by
@@ -129,31 +129,11 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   solvesCovLyapunov_unique (swingA_isHurwitz hM hD hk) hP
     (swingCov_solves hM.ne' hD.ne' hk.ne' sω sv)
 
-/-- Entry of the stationary covariance: the angle–speed covariance vanishes, `p₁₂ = 0`. -/
-@[tmio M, powerlib_domain] theorem swingCov_zero_one (M D k s2 : ℝ) :
-    swingCov M D k s2 0 1 = 0 := by
-  simp [swingCov]
-
-/-- Entry of the stationary covariance: the speed–angle covariance vanishes, `p₂₁ = 0`. -/
-@[tmio M, powerlib_domain] theorem swingCov_one_zero (M D k s2 : ℝ) :
-    swingCov M D k s2 1 0 = 0 := by
-  simp [swingCov]
-
-/-- Entry of the stationary covariance: `Var ω̃ = s²/(2MD)`. -/
-@[tmio M, powerlib_domain] theorem swingCov_one_one (M D k s2 : ℝ) :
-    swingCov M D k s2 1 1 = s2 / (2 * M * D) := by
-  simp [swingCov]
-
-/-- Entry of the stationary covariance: `Var δ̃ = s²/(2Dk)`. -/
-@[tmio M, powerlib_domain] theorem swingCov_zero_zero (M D k s2 : ℝ) :
-    swingCov M D k s2 0 0 = s2 / (2 * D * k) := by
-  simp [swingCov]
-
 /-- `Var δ̃ = Var ω̃ / ω_n²`, `ω_n² = k/M` ((1.9)). -/
 @[tmio M, powerlib_domain] theorem swingCov_angle_eq {M D k : ℝ} (hM : M ≠ 0) (hk : k ≠ 0)
     (s2 : ℝ) : swingCov M D k s2 0 0 = swingCov M D k s2 1 1 / (k / M) := by
-  simp only [swingCov, of_apply, cons_val', cons_val_zero, empty_val', cons_val_fin_one,
-    cons_val_one]
+  rw [show swingCov M D k s2 0 0 = s2 / (2 * D * k) by simp [swingCov],
+    show swingCov M D k s2 1 1 = s2 / (2 * M * D) by simp [swingCov]]
   by_cases hD : D = 0
   · simp [hD]
   field_simp
@@ -163,9 +143,7 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     (hk : 0 < k) (hs : 0 < s2) : (swingCov M D k s2).PosDef := by
   have h1 : 0 < s2 / (2 * D * k) := by positivity
   have h2 : 0 < s2 / (2 * M * D) := by positivity
-  have : swingCov M D k s2 = Matrix.diagonal ![s2 / (2 * D * k), s2 / (2 * M * D)] := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp [swingCov]
-  rw [this, Matrix.posDef_diagonal_iff]
+  rw [swingCov, Matrix.posDef_diagonal_iff]
   intro i; fin_cases i <;> simp [h1, h2]
 
 /-! ## Moment equations (1.11) and their limits -/
@@ -229,15 +207,6 @@ stationary covariance (1.8)–(1.9). -/
   simp only [ha]
   field_simp
   ring
-
-/-- The lag function `C(τ) = e^{τA} P` solves `Ċ = A C`, `C 0 = P` (deterministic part of the
-lagged moment equation). -/
-@[tmio T, powerlib_foundation] theorem lagCov_hasDerivAt (A P : Matrix (Fin n) (Fin n) ℝ) (τ : ℝ) :
-    HasDerivAt (fun s : ℝ => NormedSpace.exp (s • A) * P)
-      (A * (NormedSpace.exp (τ • A) * P)) τ := by
-  have := (hasDerivAt_exp_smul_const' A τ).mul_const P
-  convert! this using 1
-  exact (Matrix.mul_assoc A _ P).symm
 
 /-! ## Windowed ROCOF (correction to (1.12)) -/
 

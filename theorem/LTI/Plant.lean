@@ -30,9 +30,9 @@ Results.
   stability, `Linear.globallyAsymptoticallyStable_of_isHurwitz`, about the shifted
   equilibrium).
 * Constant inputs (a forward solution from `t = 0` is a Mathlib integral curve on `[0, ∞)`,
-  `IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)`): `inputField_apply`;
-  `trajectory_eq_solution_Ici` (every forward solution is the matrix-exponential solution
-  `Linear.solution`, through `Linear.trajectory_eq_solution`); `solution_hasDerivAt`,
+  `IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)`): `inputField_apply`; every
+  forward solution is the matrix-exponential solution `Linear.solution` by `inputField_eq` and
+  `Linear.trajectory_eq_solution`; `solution_hasDerivAt`,
   `solution_continuous`; `tendsto_apply_of_isHurwitz` (componentwise convergence);
   `hasDerivWithinAt_apply_zero` (the right derivative at `t = 0` of a coordinate of a forward
   solution of any field is that coordinate of the field at the initial state, so initial rates
@@ -172,15 +172,6 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-- The field of a plant under a constant input, applied: `A x + B u`. -/
 @[tmio T, powerlib_foundation] theorem inputField_apply (M : Linear.Plant n p) (u : Fin p → ℝ) (x : ℝⁿ) :
     M.inputField u x = WithLp.toLp 2 (M.A *ᵥ WithLp.ofLp x + M.B *ᵥ u) := rfl
-
-/-- Under a constant input with an equilibrium, every forward solution from `t = 0` is the
-matrix-exponential solution. -/
-@[tmio T, powerlib_foundation] theorem trajectory_eq_solution_Ici (M : Linear.Plant n p)
-    {u : Fin p → ℝ} {e : ℝⁿ} (he : IsEquilibrium (M.inputField u) e) {x : ℝ → ℝⁿ}
-    (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) {t : ℝ} (ht : 0 ≤ t) :
-    x t = Linear.solution M.A e 0 (x 0) t := by
-  rw [M.inputField_eq he] at hx
-  exact Linear.trajectory_eq_solution (hx.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
 
 /-- The matrix-exponential solution is a solution under the constant input. -/
 @[tmio T, powerlib_foundation] theorem solution_hasDerivAt (M : Linear.Plant n p) {u : Fin p → ℝ}

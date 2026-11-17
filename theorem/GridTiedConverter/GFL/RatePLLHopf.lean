@@ -61,7 +61,7 @@ Family and connection conclusions.
   stable iff balanced with `D₀ ≠ 0`, `det J > 0` and (`tr J < 0` or (`tr J = 0` and
   `k_p k_i < 0`)). The remaining cases fail: non-equilibrium (unstable); `D₀ = 0` (frozen angle);
   `det J < 0` or `tr J > 0` (linear instability); `det J = 0` (a line of equilibria for `k_i = 0`
-  or `V = 0`, `Dynamics.not_localAsymptoticStable_of_equilibria`; the fold `cos θ* = 0`, where
+  or `V = 0`, `Dynamics.not_localAsymptoticStable_of_line`; the fold `cos θ* = 0`, where
   `x + L_g i_d θ` is monotone along the flow, `ẇ = V sin θ*(1 − cos φ)`); `tr J = 0` with `k_p = 0`
   (conserved energy `α w²/2 + A(1 − cos φ) − B(φ − sin φ)`) or `k_p k_i > 0` (subcritical).
 * `not_exact_locallyAsymptoticallyStable`: the local asymptotic translation of `RatePLL.family`
@@ -216,34 +216,11 @@ the grid q-voltage alone. -/
   have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
   nlinarith
 
-/-- Membership through the sound translation. -/
-@[tmio TM, powerlib_domain] private theorem mem_den_of_meets {m : Model} {s : Sentence}
-    (h : ∀ q ∈ translate s, Meets m q) :
-    connection% (m ∈ family.den s) := by
-  change m ∈ family.den s
-  have hs := chain_le_semantics
-  unfold powerlib.TMIO.Statement at hs
-  exact (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
-
 end Boundary
 
 /-! ## Members of the local asymptotic denotation -/
 
 section Members
-
-/-- States `t e_i` (`t > 0`) accumulate at the origin. -/
-@[tmio T, powerlib_foundation] private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dynamics.State 2 → Prop}
-    (h : ∀ t : ℝ, 0 < t → P (EuclideanSpace.single i (c * t))) :
-    ∃ᶠ z in 𝓝 (0 : Dynamics.State 2), P z := by
-  rw [Filter.frequently_iff]
-  intro U hU
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hU
-  have hc' : 0 < |c| := abs_pos.mpr hc
-  refine ⟨EuclideanSpace.single i (c * (ε / (2 * |c|))), hball ?_, h _ (by positivity)⟩
-  rw [Metric.mem_ball, dist_zero_right, EuclideanSpace.single, PiLp.norm_single,
-    Real.norm_eq_abs, abs_mul, abs_of_pos (by positivity : 0 < ε / (2 * |c|))]
-  field_simp
-  linarith
 
 /-- An equilibrium of the translated field with a nondegenerate loop is balanced. -/
 @[tmio M, powerlib_domain] private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
@@ -268,11 +245,10 @@ section Members
       Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)).neg
   refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos m.field_contDiff
     (fun z => (hd z).differentiableAt) (Eventually.of_forall fun z => ?_)
-    (frequently_single 0 one_ne_zero fun t ht => ?_)
+    (Dynamics.frequently_of_forall_smul (EuclideanSpace.single 0 1) fun t ht => ?_)
   · rw [(hd z).fderiv]
     simp [model_field0, hD0]
-  · simp only [PiLp.zero_apply, neg_zero, one_mul]
-    simp [ht]
+  · simp [ht]
 
 /-- A singular Jacobian (`det J = 0`) at a balanced point with `D₀ ≠ 0`: no local asymptotic
 stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0` otherwise). -/
@@ -290,40 +266,26 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
   · -- `V = 0`: the line `x = 0` of equilibria
     have hq : ∀ φ, gridQ m.params φ = 0 := fun φ => by
       unfold gridQ; rw [hV] at heq ⊢; linarith
-    refine Dynamics.not_localAsymptoticStable_of_equilibria fun ε hε => ?_
-    refine ⟨EuclideanSpace.single 0 (ε / 2), ?_, ?_, ?_⟩
-    · intro h
-      have := congrArg (fun y : Dynamics.State 2 => y 0) h
-      simp at this
-      linarith
-    · rw [sub_zero, EuclideanSpace.single, PiLp.norm_single, Real.norm_eq_abs,
-        abs_of_pos (half_pos hε)]
-      linarith
-    · have h0 : m.field (EuclideanSpace.single 0 (ε / 2)) 0 = 0 := by
-        rw [model_field0]; simp [hq]
-      ext i
-      fin_cases i
-      · simpa using h0
-      · simp only [Fin.mk_one, PiLp.zero_apply]
-        rw [model_field1, h0]; simp [hq]
+    refine Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 0 1) (by simp)
+      fun t _ => ?_
+    have h0 : m.field (0 + t • EuclideanSpace.single 0 1) 0 = 0 := by
+      rw [model_field0]; simp [hq]
+    ext i
+    fin_cases i
+    · simpa using h0
+    · simp only [Fin.mk_one, PiLp.zero_apply]
+      rw [model_field1, h0]; simp [hq]
   by_cases hki : m.params.ki = 0
   · -- `k_i = 0`: the line `θ = θ*` of equilibria
-    refine Dynamics.not_localAsymptoticStable_of_equilibria fun ε hε => ?_
-    refine ⟨EuclideanSpace.single 1 (ε / 2), ?_, ?_, ?_⟩
-    · intro h
-      have := congrArg (fun y : Dynamics.State 2 => y 1) h
-      simp at this
-      linarith
-    · rw [sub_zero, EuclideanSpace.single, PiLp.norm_single, Real.norm_eq_abs,
-        abs_of_pos (half_pos hε)]
-      linarith
-    · have h0 : m.field (EuclideanSpace.single 1 (ε / 2)) 0 = 0 := by
-        rw [model_field0]; simp [hki, hq0]
-      ext i
-      fin_cases i
-      · simpa using h0
-      · simp only [Fin.mk_one, PiLp.zero_apply]
-        rw [model_field1, h0]; simp [hq0]
+    refine Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 1 1) (by simp)
+      fun t _ => ?_
+    have h0 : m.field (0 + t • EuclideanSpace.single 1 1) 0 = 0 := by
+      rw [model_field0]; simp [hki, hq0]
+    ext i
+    fin_cases i
+    · simpa using h0
+    · simp only [Fin.mk_one, PiLp.zero_apply]
+      rw [model_field1, h0]; simp [hq0]
   -- the fold `cos θ* = 0`: `w = x + L_g i_d θ` is monotone, `ẇ = V sin θ* (1 − cos φ)`
   have hc : Real.cos m.θ = 0 := by
     rcases mul_eq_zero.mp hkvc with h | h
@@ -349,7 +311,7 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
     exact ((h1.sub (h0.const_mul b)).const_mul (-B)).congr_fderiv (by ext v; simp)
   refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos m.field_contDiff
     (fun z => (hd z).differentiableAt) (Eventually.of_forall fun z => ?_)
-    (frequently_single 1 hBne fun t ht => ?_)
+    (Dynamics.frequently_of_forall_smul (EuclideanSpace.single 1 B) fun t ht => ?_)
   · rw [(hd z).fderiv]
     have h1 := model_hg1 heq z
     rw [hc, mul_zero, neg_zero, zero_mul, zero_add] at h1
@@ -472,8 +434,10 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
           ((jac m.params m.θ).trace = 0 ∧ m.params.kp * m.params.ki < 0))}) := by
   unfold powerlib.TMIO.Statement
   rw [Set.mem_ofPred_eq]
+  have hs := chain_le_semantics
+  unfold powerlib.TMIO.Statement at hs
   have hden : ∀ s, (∀ q ∈ translate s, Meets m q) → m ∈ family.den s := fun s h =>
-    mem_den_of_meets h
+    (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
   constructor
   · intro hLAS
     rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hLAS

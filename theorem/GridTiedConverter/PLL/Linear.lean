@@ -57,14 +57,16 @@ Family and connection conclusions.
 `K_i` and the input-output channel (phase, frequency, port, or admittance with current `I_d0`) —
 as the port system (`Linear.Plant.system`) of the corresponding plant of this module; every
 channel has the state matrix `linA`, so the flow sentences (about the origin, the locked point)
-depend only on `V K_p` and `V K_i`. Requirements are static: positive proportional loop gain
-`V K_p > 0`, positive integral loop gain `V K_i > 0`, or a negative loop gain; the translation
-is the linear table of `theorem/Spectral/LinearNamed.lean`. Connection conclusions: soundness of
-every translation (`chain_le_semantics`), exactness for the attractive sentences and sampled
-contraction (`exact_hurwitz`), the global exponential stability
-equivalence (`mem_den_globallyExponentiallyStable_iff`, for every channel), and the boundaries
+depend only on `V K_p` and `V K_i`. The family is a linear rate family (`Spectral.rateFamily`,
+`theorem/Spectral/LinearNamed.lean`): requirements are the static rate language
+`Spectral.RateRequirement`, `stable` both positive loop gains `V K_p > 0`, `V K_i > 0`,
+`unstable` a negative loop gain, `rate a` a strict spectral margin at the rate `a`; the
+translation is its linear table. Connection conclusions: soundness of every translation
+(`chain_le_semantics`, the rate law), exactness for the attractive sentences and sampled
+contraction (`exact_hurwitz`), the global exponential stability equivalence
+(`mem_den_globallyExponentiallyStable_iff`, for every channel), and the boundaries
 `not_exact_lyapunovStable`, `not_exact_unstable`, `not_exact_conservative` (zero-gain and
-Jordan-block witnesses). Decay rates, conservation and passivity have no available translation (the
+Jordan-block witnesses). Conservation and passivity have no available translation (the
 inconsistent whole language). The frequency-domain results (transfer functions, `Re G_pll`,
 `admittanceModel_re_neg`) are static evidence on the plants, not connection conclusions.
 
@@ -425,46 +427,20 @@ def Model.plant (m : Model) : Linear.Plant 2 1 :=
   rcases m with ⟨V, Kp, Ki, c⟩
   cases c <;> rfl
 
-/-- Requirements on the linearized PLL, all static. -/
-inductive Requirement
-  /-- Positive proportional loop gain `V K_p > 0` (state-matrix trace `< 0`). -/
-  | proportional
-  /-- Positive integral loop gain `V K_i > 0` (state-matrix determinant `> 0`). -/
-  | integral
-  /-- A negative loop gain: `V K_p < 0` or `V K_i < 0`. -/
-  | negativeGain
+/-- Requirements on the linearized PLL, all static: the rate language
+(`Spectral.RateRequirement`; its satisfaction is fixed by `family`). -/
+abbrev Requirement := Spectral.RateRequirement
 
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model) : Requirement → Prop
-  | .proportional => 0 < m.V * m.Kp
-  | .integral => 0 < m.V * m.Ki
-  | .negativeGain => m.V * m.Kp < 0 ∨ m.V * m.Ki < 0
+/-- The linearized SRF-PLL family (`Spectral.rateFamily`): every model read as the port system of
+its channel's plant; `stable` is both positive loop gains `0 < V K_p`, `0 < V K_i` (state-matrix
+trace `< 0`, determinant `> 0`), `unstable` a negative loop gain `V K_p < 0` or `V K_i < 0`,
+`rate a` a strict spectral margin at the rate `a`. -/
+def family : Family Model Requirement 2 1 :=
+  Spectral.rateFamily Model.plant (fun m => 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki)
+    (fun m => m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) fun m a => Linear.RateMargin m.plant.A a
 
-/-- The translation of the sentences: the attractive sentences, sampled contraction and Lyapunov
-stability into both positive loop gains, instability into a negative loop gain. Decay rates,
-conservation and passivity are translated into the whole (inconsistent) language: unavailable
-translation coverage, not a usable translation. -/
-def translate : Sentence → Set Requirement
-  | .flow .unstable => {.negativeGain}
-  | .flow (.decay _) | .flow .conservative => Set.univ
-  | .flow _ => {.proportional, .integral}
-  | .passive => Set.univ
-  | .envelope _ => ∅
-
-/-- The linearized SRF-PLL family: every model read as the port system of its channel's plant. -/
-def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
-
-@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
-
-/-- No model has both positive loop gains and a negative one: the whole requirement language is
-inconsistent. -/
-@[tmio M, powerlib_domain] theorem realize_univ :
-    connection% (TMIO.realize Meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
-  have h1 : 0 < m.V * m.Kp := h .proportional
-  have h2 : 0 < m.V * m.Ki := h .integral
-  rcases (h .negativeGain : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) with h3 | h3 <;> linarith
+@[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant :=
+  Spectral.rateFamily_isLinear _ _ _ _
 
 /-- Linear SRF-PLL (every channel; they share the state matrix): global exponential stability of
 the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
@@ -476,30 +452,6 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
   change LinearSystems.IsHurwitz m.plant.A ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki
   rw [Model.plant_A, isHurwitz_linA_iff]
 
-/-- The translation is the linear table: both positive loop gains for Lyapunov stability, the
-attractive sentences and sampled contraction, a negative loop gain for instability, the whole
-language for decay rates, conservation and passivity. -/
-@[tmio TM, powerlib_domain] private theorem translate_eq (s : Sentence) :
-    connection% (TMIO.generate (TMIO.cover (TMIO.table family.translate)) {s} =
-      Spectral.linearTable {.proportional, .integral} {.negativeGain}
-      Set.univ Set.univ (fun _ => Set.univ) s) := by
-  unfold TMIO.Statement
-  rw [TMIO.image_table_singleton]
-  rcases s with P | _ | _
-  · cases P <;> rfl
-  · rfl
-  · rfl
-
-/-- Both positive loop gains are the Hurwitz property of the state matrix. -/
-@[tmio TM, powerlib_domain] private theorem mem_realize_iff_isHurwitz (m : Model) :
-    connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
-  change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
-  simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz
-      (P := .globallyExponentiallyStable) (Or.inl trivial)),
-    (connection_proof% mem_den_globallyExponentiallyStable_iff)]
-  rfl
-
 /-- A negative loop gain gives a characteristic root in the open right half plane. -/
 @[tmio M, powerlib_domain] private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
@@ -509,32 +461,25 @@ language for decay rates, conservation and passivity. -/
   · exact Criteria.exists_root_re_pos_of_det _ (by rw [neg_one_sq, one_mul, det_linA]; exact h)
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its
-semantics connection. The translation is the linear table (`Spectral.linearTable`): both positive
-loop gains make the state matrix Hurwitz (the linear hub), a negative loop gain gives a
-right-half-plane root (LeanForControl's eigenvalue instability), and the whole language of the
-remaining sentences is inconsistent. -/
+semantics connection (the rate law `Spectral.chain_le_semantics_of_rate`): both positive loop
+gains make the state matrix Hurwitz (`isHurwitz_linA_iff`), a negative loop gain gives a
+right-half-plane root (LeanForControl's eigenvalue instability), a margin at the rate `a` gives
+decay at that rate, and the whole language of conservation and passivity is inconsistent. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  have hU := realize_univ
-  unfold powerlib.TMIO.Statement at hU
-  exact Spectral.chain_le_semantics_of_linearTable_univ family_isLinear
-    (fun s => (connection_proof% TMIO.image_table_singleton family.translate s).symm.trans
-      (connection_proof% translate_eq s))
-    (fun m hm => (mem_realize_iff_isHurwitz m).mp hm)
-    (fun m hm => root_of_negativeGain ((TMIO.mem_realize _ _ _).mp hm .negativeGain rfl))
-    (fun _ => Spectral.realize_univ_subset_of_eq_empty hU _)
+  exact Spectral.chain_le_semantics_of_rate family_isLinear rfl
+    (fun m h => by rw [Model.plant_A, isHurwitz_linA_iff]; exact h)
+    (fun _ h => root_of_negativeGain h) fun _ _ h => h
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: both
-positive loop gains are their exact translation, for every channel
-(`Spectral.exact_of_linearTable`). -/
+positive loop gains are their exact translation, for every channel (`Spectral.exact_of_rate`). -/
 @[tmio TM, powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.exact_of_linearTable family_isLinear
-    (fun s => (connection_proof% TMIO.image_table_singleton family.translate s).symm.trans
-      (connection_proof% translate_eq s)) mem_realize_iff_isHurwitz hP
+  exact Spectral.exact_of_rate family_isLinear rfl
+    (fun m => by rw [Model.plant_A, isHurwitz_linA_iff]; exact Iff.rfl) hP
 
 /-- The phase channel without loop gains (`V = 0`, `K_i = 0`): the state matrix is zero. -/
 def frozen : Model := ⟨0, 0, 0, .phase⟩
@@ -561,8 +506,10 @@ energy while no model meets the whole language. -/
   have hmem := frozen_mem_den_conservative
   unfold powerlib.TMIO.Statement at hmem
   rw [← h] at hmem
-  change frozen ∈ TMIO.realize Meets Set.univ at hmem
-  rw [realize_univ] at hmem
+  change frozen ∈ TMIO.realize family.meets Set.univ at hmem
+  rw [Spectral.realize_univ_of_rate (plant := Model.plant)
+    (fun m h => by rw [Model.plant_A, isHurwitz_linA_iff]; exact h)
+    (fun _ h => root_of_negativeGain h)] at hmem
   exact hmem
 
 /-- Both positive loop gains are a sound but not exact translation of Lyapunov stability: the
@@ -575,9 +522,8 @@ frozen loop is Lyapunov stable (conserved energy) with zero loop gains. -/
     unfold powerlib.TMIO.Statement at hc
     rw [(connection_proof% family_isLinear.mem_den_flow)] at hc ⊢
     exact Flow.Conservative.lyapunovStable hc
-  refine Spectral.not_exact_of_witness hmem (q := .proportional) (by simp [family, translate])
-    fun h' => ?_
-  have h'' : 0 < frozen.V * frozen.Kp := h'
+  refine Spectral.not_exact_of_witness hmem (q := .stable) rfl fun h' => ?_
+  have h'' : 0 < frozen.V * frozen.Kp := h'.1
   simp [frozen] at h''
 
 /-- The phase channel with `V = 0`, `K_i = 1`: the state matrix is the Jordan block
@@ -605,7 +551,7 @@ gain is negative. -/
       Fin.sum_univ_two]
   have hmem : jordan ∈ family.den (.flow .unstable) :=
     family_isLinear.mem_den_flow.mpr (Linear.unstable_of_zero_jordan_chain hv hAv hAw)
-  refine Spectral.not_exact_of_witness hmem (q := .negativeGain) rfl fun h => ?_
+  refine Spectral.not_exact_of_witness hmem (q := .unstable) rfl fun h => ?_
   rcases (h : jordan.V * jordan.Kp < 0 ∨ jordan.V * jordan.Ki < 0) with h | h <;>
     simp [jordan] at h
 

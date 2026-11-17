@@ -154,14 +154,6 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem srf_piPLLField (V Kp Ki δω θ : ℝ) :
     piPLLField (srf V Kp Ki δω θ).h Kp Ki δω = srfField V Kp Ki δω := rfl
 
-/-- A flow sentence of a PI-PLL family member is the sentence of its untranslated field at the
-selected point. -/
-@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : PIPLL.Model} {P : Flow.Property} :
-    m ∈ PIPLL.family.den (.flow P) ↔
-      P.holds (piPLLField m.h m.Kp m.Ki m.δω) (PhasePlane.mk m.θ (m.δω / m.Ki)) :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : PIPLL.Model => piPLLField m.h m.Kp m.Ki m.δω)
-    (pt := PIPLL.Model.point) PIPLL.family_isAutonomous
-
 /-! ## Physical coordinates `(θ̂, η)` versus error coordinates `(θ̃, η)` -/
 
 /-- Right-hand side of the physical SRF-PLL in state `(θ̂, η)` for grid angle `θ_g`:
@@ -266,7 +258,11 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
     connection% (srf V Kp Ki δω θ ∈ PIPLL.family.den (.flow P) ↔
       srf 1 (V * Kp) (V * Ki) δω θ ∈ PIPLL.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff, mem_den_flow_iff]
+  have hflow : ∀ m : PIPLL.Model, m ∈ PIPLL.family.den (.flow P) ↔
+      P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point := fun _ =>
+    Spectral.mem_den_flow_iff_shift (f := fun m : PIPLL.Model => piPLLField m.h m.Kp m.Ki m.δω)
+      (pt := PIPLL.Model.point) PIPLL.family_isAutonomous
+  rw [hflow, hflow]
   change P.holds (piPLLField (srf V Kp Ki δω θ).h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) ↔
     P.holds (piPLLField (srf 1 (V * Kp) (V * Ki) δω θ).h (V * Kp) (V * Ki) δω)
       (PhasePlane.mk θ (δω / (V * Ki)))

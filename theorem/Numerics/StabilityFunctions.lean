@@ -86,16 +86,17 @@ variable (lam : ℂ) (h : ℝ) (x : ℕ → ℂ)
 
 @[tmio T, powerlib_foundation] theorem backwardEuler_testEquation (hne : 1 - h * lam ≠ 0) :
     IsBackwardEulerTrajectory (testField lam) h x ↔ ∀ k, x (k + 1) = stabBE (h * lam) * x k := by
-  simp only [IsBackwardEulerTrajectory, testField, stabBE, Complex.real_smul]
+  simp only [IsBackwardEulerTrajectory, IsThetaTrajectory, testField, stabBE, Complex.real_smul]
   refine forall_congr' fun k => ?_
   rw [eq_inv_mul_iff_mul_eq₀ hne]
+  push_cast
   constructor <;> intro hk
   · linear_combination hk
   · linear_combination hk
 
 @[tmio T, powerlib_foundation] theorem trapezoidal_testEquation (hne : 1 - h * lam / 2 ≠ 0) :
     IsTrapezoidalTrajectory (testField lam) h x ↔ ∀ k, x (k + 1) = stabTrap (h * lam) * x k := by
-  simp only [IsTrapezoidalTrajectory, testField, stabTrap, Complex.real_smul]
+  simp only [IsTrapezoidalTrajectory, IsThetaTrajectory, testField, stabTrap, Complex.real_smul]
   refine forall_congr' fun k => ?_
   rw [div_mul_eq_mul_div, eq_div_iff hne]
   push_cast

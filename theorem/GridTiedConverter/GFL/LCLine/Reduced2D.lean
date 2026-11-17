@@ -4,6 +4,7 @@ import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.PH.Nonlinear
 import theorem.Dynamics.Transport
 import theorem.Dynamics.Shift
+import theorem.Family.Reading
 import theorem.TMIO.ClaimElab
 
 /-! # Reduced 2-state GFL-PLL model: equilibria, stability, port-Hamiltonian form, code frame
@@ -50,8 +51,9 @@ Results.
   non-quadratic Hamiltonian `H = V(θ) + ½ K_i η²`; its input field is
   `piPLLField h K_p K_i δω_g` (`PLL.gflPH_field`) and its zero-input field is `reducedField`
   (`pHModel_zeroInputField`). Its energy rate is `Ḣ = h δω_g − K_p h²` (`PLL.piPLL_energy_rate`),
-  in particular `Ḣ = −K_p h(θ)² ≤ 0` along `reducedField` (`reduced_energy_rate_nonpos`, the
-  zero-input dissipation `PH.NonlinearModel.zeroInput_lie_nonpos` of the pH model).
+  in particular `Ḣ = −K_p h(θ)² ≤ 0` along `reducedField` (the zero-input dissipation
+  `PH.NonlinearModel.zeroInput_lie_nonpos` of the pH model, read through
+  `pHModel_zeroInputField`).
   `H` is not bounded below when `c₀ ≠ 0` (tilted washboard), so it is not a nonnegative storage
   and no passivity claim follows from it. Related port-Hamiltonian constructions of the PI-PLL:
   `theorem/GridTiedConverter/PLL/PH.lean` (SRF detector) and
@@ -76,10 +78,9 @@ family is the preimage of the PI-PLL denotation, for every sentence (all nine fl
 affine transport law, and passivity); hence `codeFamily_chain_le_semantics`. Scaffold of this
 reading, a reflection of the angle: `theorem/GridTiedConverter/PLL/PLLCodeFrame.agda`. Static
 evidence on the model, not connection conclusions: the equilibrium set (`reducedField_eq_zero_iff`),
-the fold Jacobian (`reduced_jacobian_nilpotent`) and the energy rate (`reduced_energy_rate_nonpos`).
-The decrease of `H` along solution segments (`hamiltonian_antitoneOn`) is a trajectory-level result
-outside the sentence language and is kept as private implementation evidence. No passivity claim is
-made for the port `δω_g` (`H` is unbounded below for `c₀ ≠ 0`).
+the fold Jacobian (`reduced_jacobian_nilpotent`) and the pH form (`pHModel_zeroInputField`, whose
+energy rate and decrease along solution segments are the generic laws of the pH model). No
+passivity claim is made for the port `δω_g` (`H` is unbounded below for `c₀ ≠ 0`).
 
 Correction (`decisions.md` §D1.4): the translation table says the code frame has "the same
 `θ_e`, opposite `η`". With the code's own Park convention (`i^c = R(−θ) i`), the code angle is the
@@ -193,23 +194,6 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
     (hKp : 0 ≤ p.Kp) : (p.pHModel hwC hΔ hKp).zeroInputField = p.reducedField := by
   rw [pHModel, gflPH_zeroInputField, mul_zero, reducedField_eq]
 
-/-- `Ḣ ≤ 0` along the reduced field.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem reduced_energy_rate_nonpos (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hKp : 0 ≤ p.Kp) (y : State 2) : fderiv ℝ p.hamiltonian y (p.reducedField y) ≤ 0 := by
-  have h := (p.pHModel hwC hΔ hKp).zeroInput_lie_nonpos y
-  rwa [pHModel_zeroInputField] at h
-
-/-- The Hamiltonian is nonincreasing along every solution segment of the reduced field.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem hamiltonian_antitoneOn (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hKp : 0 ≤ p.Kp) {φ : ℝ → State 2} {a b : ℝ}
-    (hφ : IsTrajectoryOn φ p.reducedField a b) :
-    AntitoneOn (p.hamiltonian ∘ φ) (Set.Icc a b) := by
-  have h := (p.pHModel hwC hΔ hKp).energy_antitoneOn_of_isIntegralCurveOn (convex_Icc a b)
-    (by rwa [pHModel_zeroInputField])
-  exact h
-
 /-! ### The code frame (`decisions.md` §D1.4) -/
 
 /-- The code's PLL input `v_cqc = sin θ v_cd + cos θ v_cq` on its own algebraic chain
@@ -289,55 +273,43 @@ def codeFamily : Family CodeModel PLL.PIPLL.Requirement 2 0 :=
 @[tmio M, powerlib_domain] theorem codeFamily_isAutonomous : codeFamily.IsAutonomous CodeModel.field :=
   fun _ => rfl
 
-/-- The code-frame field at a point is the text-frame field at the reflected point. -/
-@[tmio TM, powerlib_domain] private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
-    connection% ((⟨p, θ⟩ : CodeModel) ∈ codeFamily.den (.flow P) ↔
-      p.pllModel (-θ) ∈ PLL.PIPLL.family.den (.flow P)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% codeFamily_isAutonomous.mem_den_flow),
-    (connection_proof% PLL.PIPLL.family_isAutonomous.mem_den_flow)]
-  change P.holds (fun z => p.codeField (z + PhasePlane.mk θ 0)) 0 ↔
-    P.holds (p.pllModel (-θ)).field 0
-  rw [show (p.pllModel (-θ)).field =
-      (fun z => p.reducedField (z + PhasePlane.mk (-θ) 0)) from funext (p.pllModel_field (-θ)),
-    Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff]
-  have hpt : PhasePlane.mk θ 0 = Dynamics.affineCoord reflect 0 (PhasePlane.mk (-θ) 0) := by
-    rw [PhasePlane.ext_iff']
-    simp [Dynamics.affineCoord]
-  rw [hpt, p.codeField_eq_transport]
-  exact Dynamics.holds_transport_iff reflect 0 P
-
 /-- `decisions.md` §D1.4, corrected, on the semantics connections: every denotation of the
 code-frame family is the preimage of the PI-PLL denotation under `θ_text* = −θ_code*`, for every
-sentence. -/
+sentence (the code field is the text field transported by the reflection,
+`Spectral.mem_den_flow_iff_of_transport`; passivity and envelopes by
+`Spectral.mem_den_iff_of_flow`). -/
 @[tmio TM, powerlib_domain] theorem codeFamily_den (s : Sentence) :
     connection% (codeFamily.den s = CodeModel.toText ⁻¹' PLL.PIPLL.family.den s) := by
   unfold powerlib.TMIO.Statement
   ext m
-  rw [Set.mem_preimage]
-  rcases s with P | _ | E
-  · exact codeField_holds_iff m.params P m.θ
-  · rw [codeFamily_isAutonomous.den_passive, PLL.PIPLL.family_isAutonomous.den_passive]
-    simp
-  · rw [codeFamily_isAutonomous.den_envelope, PLL.PIPLL.family_isAutonomous.den_envelope]
-    exact iff_of_true trivial trivial
+  refine (connection_proof% Spectral.mem_den_iff_of_flow codeFamily_isAutonomous
+    PLL.PIPLL.family_isAutonomous (fun P => ?_) s)
+  refine (connection_proof% Spectral.mem_den_flow_iff_of_transport
+    (f := fun m : CodeModel => m.params.codeField) (pt := fun m => PhasePlane.mk m.θ 0)
+    (φ := fun y : PLL.PIPLL.Model => piPLLField y.h y.Kp y.Ki y.δω)
+    (ψ := PLL.PIPLL.Model.point)
+    (fun _ _ => connection_proof% Spectral.mem_den_flow_iff_shift codeFamily_isAutonomous)
+    (fun _ _ => connection_proof% Spectral.mem_den_flow_iff_shift PLL.PIPLL.family_isAutonomous)
+    reflect 0 ?_ ?_ P)
+  · rw [m.params.codeField_eq_transport, m.params.reducedField_eq]
+    rfl
+  · rw [PhasePlane.ext_iff']
+    simp [Dynamics.affineCoord, CodeModel.toText, Params.pllModel, PLL.PIPLL.Model.point]
 
 /-- Every translation of the code-frame family is sound, by the corrected conjugacy and the
-soundness of the PI-PLL family. -/
+soundness of the PI-PLL family (`Family.Sound.of_reading`). -/
 @[tmio TM, powerlib_domain] theorem codeFamily_chain_le_semantics :
     connection% (∀ P, codeFamily.chain P ≤ codeFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   have hpll := PLL.PIPLL.chain_le_semantics
   unfold powerlib.TMIO.Statement at hpll
-  refine Family.chain_le_semantics_iff.mpr fun s => ?_
-  have hs := Family.chain_le_semantics_iff.mp hpll s
-  have hden := codeFamily_den s
-  unfold powerlib.TMIO.Statement at hden
-  unfold Family.Sound at hs ⊢
-  rw [hden]
-  intro m hm
-  exact hs ((TMIO.mem_realize _ _ _).mpr fun q hq =>
-    ((TMIO.mem_realize _ _ _).mp hm) q hq)
+  exact Family.chain_le_semantics_iff.mpr fun s => (connection_proof% Family.Sound.of_reading
+    (g := CodeModel.toText) (by
+      ext m
+      rw [Set.mem_preimage, (connection_proof% TMIO.mem_realize),
+        (connection_proof% TMIO.mem_realize)]
+      exact Iff.rfl) (connection_proof% codeFamily_den s)
+    (Family.chain_le_semantics_iff.mp hpll s))
 
 namespace Params
 

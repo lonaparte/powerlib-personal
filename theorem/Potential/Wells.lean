@@ -1,5 +1,6 @@
 import theorem.Attributes
 import theorem.Potential.Barrier
+import theorem.Potential.DoubleWell
 import theorem.SpecialFunctions.Sinusoid
 import theorem.Stochastic.FokkerPlanck
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -26,12 +27,11 @@ Results.
   (`singleWell_min`, `anharmonicWell_critical_iff`, `anharmonicWell_unique_min`); Gaussian
   normalization
   `∫ e^{−kθ²/(2D)} dθ = √(2πD/k)` (Mathlib `integral_gaussian`; `singleWell_normalization`).
-* Double well `V = −aθ²/2 + bθ⁴/4` (`a, b > 0`, `doubleWell`): critical points `0, ±√(a/b)`
-  (`doubleWell_critical_iff`); `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvature_zero`,
-  `doubleWell_curvature_sqrt`, `doubleWell_curvature_neg_sqrt`);
-  identity `V = (a²/4b) [1 − bθ²/a]² − a²/4b` (`doubleWell_identity`) and global minimum value
-  `−a²/4b`, attained exactly at `±√(a/b)` (`doubleWell_min`, `doubleWell_eq_min_iff`); barrier
-  `V(0) − V(±√(a/b)) = a²/4b` (`doubleWell_barrier`); for every `D > 0` the weight `e^{−V/D}` is
+* Double well `V = −aθ²/2 + bθ⁴/4` (`a, b > 0`, `doubleWell`; its derivative, critical points,
+  identity, minimum and barrier are in `theorem/Potential/DoubleWell.lean`):
+  `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvature_zero`,
+  `doubleWell_curvature_sqrt`, `doubleWell_curvature_neg_sqrt`); for every `D > 0` the weight
+  `e^{−V/D}` is
   strictly increasing on `(−∞, −r]`, decreasing on `[−r, 0]`, increasing on `[0, r]` and
   decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_strictMonoOn_Iic`,
   `doubleWell_weight_strictAntiOn_Icc_neg`, `doubleWell_weight_strictMonoOn_Icc_pos`,
@@ -61,15 +61,13 @@ Results.
 
 Potential shapes elsewhere: the washboard barrier with a phase shift, `V(θ) = −cθ − A cos(θ + φ)`,
 its minimum over the two saddles and its fold asymptotics are in `theorem/Potential/Barrier.lean`;
-the double well with `a = b = 1` is the Duffing potential (`theorem/PhasePlane/Duffing.lean`), the
-washboard with `V₀ = A`, `α = B/A` that of the Adler equation (`theorem/PhasePlane/Adler.lean`);
-the fold and pitchfork normal forms carry the potentials `−μx + x³/3`
-(`theorem/NormalForm/Fold.lean`) and `−μx²/2 + x⁴/4` (`theorem/NormalForm/Pitchfork.lean`, the
-double well with `a = μ`, `b = 1`).
+the users of the double well are listed in `theorem/Potential/DoubleWell.lean`; the washboard
+with `V₀ = A`, `α = B/A` is that of the Adler equation (`theorem/PhasePlane/Adler.lean`); the
+fold normal form carries the potential `−μx + x³/3` (`theorem/NormalForm/Fold.lean`).
 
 Corrections. (T-potential-wells §1.2–1.3):
 * the double-well identity has the opposite sign: `V = +(a²/4b)[1 − (θ/√(a/b))²]² + const`
-  (`doubleWell_identity`), not `−(a²/4b)[…]² + const`;
+  (`doubleWell_identity`, `theorem/Potential/DoubleWell.lean`), not `−(a²/4b)[…]² + const`;
 * "if `D ~ ΔV` the two peaks merge into one" is false: `e^{−V/D}` is bimodal for every `D > 0`
   (`doubleWell_weight_strictMonoOn_Iic`, `doubleWell_weight_strictAntiOn_Icc_neg`,
   `doubleWell_weight_strictMonoOn_Icc_pos`, `doubleWell_weight_strictAntiOn_Ici`);
@@ -136,41 +134,6 @@ def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
 
 /-! ## Double well -/
 
-/-- Symmetric double well `−aθ²/2 + bθ⁴/4`. -/
-def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
-
-@[tmio T, powerlib_foundation] theorem hasDerivAt_doubleWell (a b θ : ℝ) :
-    HasDerivAt (doubleWell a b) (-a * θ + b * θ ^ 3) θ := by
-  have h := (((hasDerivAt_pow 2 θ).const_mul (-a)).div_const 2).add
-    (((hasDerivAt_pow 4 θ).const_mul b).div_const 4)
-  unfold doubleWell
-  convert h using 1
-  push_cast; ring
-
-/-- Correction: `V = (a²/4b)[1 − bθ²/a]² − a²/4b` (positive sign in front of the square). -/
-@[tmio T, powerlib_foundation] theorem doubleWell_identity {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (θ : ℝ) :
-    doubleWell a b θ = a ^ 2 / (4 * b) * (1 - b * θ ^ 2 / a) ^ 2 - a ^ 2 / (4 * b) := by
-  simp only [doubleWell]; field_simp; ring
-
-@[tmio T, powerlib_foundation] theorem doubleWell_critical_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
-    -a * θ + b * θ ^ 3 = 0 ↔ θ = 0 ∨ θ = √(a / b) ∨ θ = -√(a / b) := by
-  have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
-  constructor
-  · intro h
-    have h' : θ * (θ ^ 2 - a / b) = 0 := by field_simp; linarith
-    rcases mul_eq_zero.mp h' with h | h
-    · exact Or.inl h
-    · right
-      have : θ ^ 2 = √(a / b) ^ 2 := by rw [hr]; linarith
-      exact sq_eq_sq_iff_eq_or_eq_neg.mp this
-  · rintro (rfl | rfl | rfl)
-    · ring
-    · have : √(a / b) ^ 3 = a / b * √(a / b) := by rw [pow_succ, hr]
-      rw [this]; field_simp; ring
-    · have : (-√(a / b)) ^ 3 = -(a / b * √(a / b)) := by
-        rw [show (-√(a / b)) ^ 3 = -(√(a / b) ^ 2 * √(a / b)) by ring, hr]
-      rw [this]; field_simp; ring
-
 /-- Curvature of the double well at the barrier top: `V''(0) = −a`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_curvature_zero {a b : ℝ} :
     -a + 3 * b * (0 : ℝ) ^ 2 = -a := by
@@ -185,49 +148,6 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
 @[tmio T, powerlib_foundation] theorem doubleWell_curvature_neg_sqrt {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b) : -a + 3 * b * (-√(a / b)) ^ 2 = 2 * a := by
   rw [neg_sq, Real.sq_sqrt (by positivity)]; field_simp; ring
-
-/-- Global minimum value of the double well: `−a²/4b ≤ V(θ)`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_min {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
-    -a ^ 2 / (4 * b) ≤ doubleWell a b θ := by
-  have hid := doubleWell_identity ha.ne' hb.ne' θ
-  have hc : 0 < a ^ 2 / (4 * b) := by positivity
-  have hn : -a ^ 2 / (4 * b) = -(a ^ 2 / (4 * b)) := neg_div _ _
-  rw [hid, hn]
-  nlinarith [mul_nonneg hc.le (sq_nonneg (1 - b * θ ^ 2 / a))]
-
-/-- The global minimum value `−a²/4b` of the double well is attained exactly at `±√(a/b)`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_eq_min_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (θ : ℝ) : doubleWell a b θ = -a ^ 2 / (4 * b) ↔ θ = √(a / b) ∨ θ = -√(a / b) := by
-  have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
-  have hid := doubleWell_identity ha.ne' hb.ne' θ
-  have hc : 0 < a ^ 2 / (4 * b) := by positivity
-  have hn : -a ^ 2 / (4 * b) = -(a ^ 2 / (4 * b)) := neg_div _ _
-  rw [hid]
-  constructor
-  · intro h
-    have hsq : (1 - b * θ ^ 2 / a) ^ 2 = 0 := by
-      have : a ^ 2 / (4 * b) * (1 - b * θ ^ 2 / a) ^ 2 = 0 := by
-        linarith
-      exact (mul_eq_zero.mp this).resolve_left hc.ne'
-    have h1 : 1 - b * θ ^ 2 / a = 0 := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hsq
-    have hθ : θ ^ 2 = √(a / b) ^ 2 := by rw [hr]; field_simp at h1 ⊢; linarith
-    exact sq_eq_sq_iff_eq_or_eq_neg.mp hθ
-  · rintro (rfl | rfl) <;>
-      simp only [neg_sq, hr] <;> field_simp <;> ring
-
-/-- Barrier of the double well: `V(0) − V(±√(a/b)) = a²/4b`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_barrier {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    doubleWell a b 0 - doubleWell a b √(a / b) = a ^ 2 / (4 * b) ∧
-      doubleWell a b 0 - doubleWell a b (-√(a / b)) = a ^ 2 / (4 * b) := by
-  have h1 := (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
-  have h2 := (doubleWell_eq_min_iff ha hb (-√(a / b))).mpr (Or.inr rfl)
-  have h0 : doubleWell a b 0 = 0 := by simp [doubleWell]
-  rw [h1, h2, h0]
-  constructor <;> ring
-
-@[tmio T, powerlib_foundation] theorem doubleWell_sub (a b x y : ℝ) :
-    doubleWell a b x - doubleWell a b y = (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) := by
-  simp only [doubleWell]; ring
 
 /-- The double well is strictly decreasing on `(−∞, −√(a/b)]`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_strictAntiOn_Iic {a b : ℝ} (ha : 0 < a)

@@ -384,8 +384,9 @@ def resp : Fin 10 → ℂ :=
 @[tmio M, powerlib_domain] theorem phiY_theta (k : Fin 2) :
     (p.Phi s * Y + p.Theta s) k c = p.rd Y s c k := by
   fin_cases k <;> fin_cases c <;>
-    simp [Phi, Theta, GiPQ, GvPQ, Gi, Gv, Gvpll, Gipll, Gdpll, Gdei, Jc, Matrix.mul_apply,
-      Fin.sum_univ_two, Matrix.one_apply, rd, rcc, rep, rip, rvp, rθ, unitVec] <;> ring
+    simp [Phi, Theta, GiPQ, GvPQ, Gi, Gv, Gvpll, Gipll, Gdpll, Gdei, Jc, Transform.complexSymm,
+      Matrix.mul_apply, Fin.sum_univ_two, Matrix.one_apply, rd, rcc, rep, rip, rvp, rθ,
+      unitVec] <;> ring
 
 end Resp
 

@@ -28,11 +28,13 @@ Results.
   (`grounded_isUnit`, `grounded_det_ne_zero`), its inverse is entrywise nonnegative (the
   M-matrix special case, `grounded_inv_nonneg`), and, for symmetric weights, it is positive
   definite exactly when every node has such a path to ground (`grounded_posDef_iff`).
-* On `Fin (n + 1)` the complex row identity `∑ₗ Lₖₗ ζₗ = ∑ₗ Wₖₗ (ζₖ − ζₗ)`
-  (`complex_laplacian_sum`) and, for symmetric weights, `∑ₖ ∑ₗ Wₖₗ (ζₖ − ζₗ) = 0`
-  (`complex_laplacian_total`) are the eigenvector manipulations of the networked swing Jacobian.
+* The Laplacian over any commutative ring: rows `(L x)ᵢ = ∑ⱼ Wᵢⱼ (xᵢ − xⱼ)`
+  (`laplacian_mulVec_apply`), `L𝟙 = 0` (`laplacian_mulVec_const`), zero column sums for symmetric
+  weights (`sum_laplacian_mulVec`), and `laplacian_map` (real weights read as complex ones: the
+  eigenvector manipulations of the networked swing Jacobian).
 * A bus admittance matrix built from branch admittances with no shunt (ground) branch
-  (`ybusNoShunt`) is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology
+  (`ybusNoShunt`, the Laplacian of the branch admittances) has `Y 𝟏 = 0`
+  (`laplacian_mulVec_const`), hence is singular for every topology
   (`ybusNoShunt_det_eq_zero`; two-bus counterexample `ybus_two_bus_singular`, the correction of
   `theory/T-dae-systems.md` §2.1).
 * The signed node–branch incidence matrix `signedIncidence tail head` of a directed multigraph
@@ -53,28 +55,35 @@ open Matrix Finset
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- Weighted Laplacian `diag(∑ⱼ Wᵢⱼ) - W`. -/
-def laplacian (W : Matrix ι ι ℝ) : Matrix ι ι ℝ := diagonal (fun i => ∑ j, W i j) - W
+/-- Weighted Laplacian `diag(∑ⱼ Wᵢⱼ) - W`, with weights in any commutative ring (real line
+weights, complex branch admittances). -/
+def laplacian {R : Type*} [CommRing R] (W : Matrix ι ι R) : Matrix ι ι R :=
+  diagonal (fun i => ∑ j, W i j) - W
 
 /-- Reachability through edges of positive weight. -/
 def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen fun a b => 0 < W a b
 
-@[tmio T, powerlib_foundation] theorem laplacian_mulVec_apply (W : Matrix ι ι ℝ) (x : ι → ℝ) (i : ι) :
+section Ring
+
+variable {R : Type*} [CommRing R]
+
+@[tmio T, powerlib_foundation] theorem laplacian_mulVec_apply (W : Matrix ι ι R) (x : ι → R)
+    (i : ι) :
     (laplacian W *ᵥ x) i = ∑ j, W i j * (x i - x j) := by
   rw [laplacian, sub_mulVec, Pi.sub_apply, mulVec_diagonal]
   simp only [mulVec, dotProduct, Finset.sum_mul, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun j _ => by ring
 
-@[tmio T, powerlib_foundation] theorem laplacian_apply (W : Matrix ι ι ℝ) (i j : ι) :
+@[tmio T, powerlib_foundation] theorem laplacian_apply (W : Matrix ι ι R) (i j : ι) :
     laplacian W i j = (if i = j then ∑ k, W i k else 0) - W i j := by
   simp [laplacian, diagonal_apply]
 
-@[tmio T, powerlib_foundation] theorem laplacian_mulVec_const (W : Matrix ι ι ℝ) (c : ℝ) :
+@[tmio T, powerlib_foundation] theorem laplacian_mulVec_const (W : Matrix ι ι R) (c : R) :
     laplacian W *ᵥ (fun _ => c) = 0 := by
   ext i
   simp [laplacian_mulVec_apply]
 
-@[tmio T, powerlib_foundation] theorem laplacian_transpose {W : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem laplacian_transpose {W : Matrix ι ι R}
     (hW : ∀ i j, W i j = W j i) : (laplacian W)ᵀ = laplacian W := by
   ext i j
   by_cases h : i = j
@@ -82,11 +91,20 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   · simp [laplacian, h, Ne.symm h, hW i j]
 
 /-- Column sums of a symmetric Laplacian vanish: `𝟙ᵀ L x = 0`. -/
-@[tmio T, powerlib_foundation] theorem sum_laplacian_mulVec {W : Matrix ι ι ℝ}
-    (hW : ∀ i j, W i j = W j i) (x : ι → ℝ) : ∑ i, (laplacian W *ᵥ x) i = 0 := by
+@[tmio T, powerlib_foundation] theorem sum_laplacian_mulVec {W : Matrix ι ι R}
+    (hW : ∀ i j, W i j = W j i) (x : ι → R) : ∑ i, (laplacian W *ᵥ x) i = 0 := by
   simp only [laplacian_mulVec_apply, mul_sub, Finset.sum_sub_distrib]
   rw [sub_eq_zero, Finset.sum_comm]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hW]
+
+/-- A ring homomorphism of the weights commutes with the Laplacian (e.g. real line weights read
+as complex weights). -/
+@[tmio T, powerlib_foundation] theorem laplacian_map {S : Type*} [CommRing S] (f : R →+* S)
+    (W : Matrix ι ι R) : (laplacian W).map f = laplacian (W.map f) := by
+  ext i j
+  simp [laplacian_apply, apply_ite f, map_sum]
+
+end Ring
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- Propagation of an edge relation along positive-weight paths. -/
@@ -180,52 +198,6 @@ omit [DecidableEq ι] in
   have h0 : dotProduct x (laplacian W *ᵥ x) = 0 := by rw [hx, dotProduct_zero]
   exact eq_of_reach (edge_eq_of_form_zero hW hpos h0) (hconn i j)
 
-omit [DecidableEq ι] in
-/-- Complex kernel of a connected symmetric Laplacian. -/
-@[tmio T, powerlib_foundation] theorem complex_eq_of_laplacian_eq_zero {W : Matrix ι ι ℝ}
-    (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hconn : ∀ i j, Reach W i j)
-    {u : ι → ℂ} (hu : ∀ i, ∑ j, (W i j : ℂ) * (u i - u j) = 0) (i j : ι) : u i = u j := by
-  have hform := star_dotProduct_laplacian_mulVec hW u
-  simp only [hu, mul_zero, Finset.sum_const_zero] at hform
-  have hsum : ∑ i, ∑ j, W i j * Complex.normSq (u i - u j) = 0 := by
-    have := congrArg Complex.re hform
-    simp only [Complex.zero_re, Complex.ofReal_re] at this
-    linarith
-  have hnn : ∀ i ∈ (Finset.univ : Finset ι), 0 ≤ ∑ j, W i j * Complex.normSq (u i - u j) :=
-    fun i _ => Finset.sum_nonneg fun j _ => mul_nonneg (hpos i j) (Complex.normSq_nonneg _)
-  have hedge : ∀ a b, 0 < W a b → u a = u b := by
-    intro a b hab
-    have ha := (Finset.sum_eq_zero_iff_of_nonneg hnn).mp hsum a (Finset.mem_univ a)
-    have hb := (Finset.sum_eq_zero_iff_of_nonneg
-      (fun j _ => mul_nonneg (hpos a j) (Complex.normSq_nonneg (u a - u j)))).mp ha b
-      (Finset.mem_univ b)
-    rcases mul_eq_zero.mp hb with h | h
-    · exact absurd h hab.ne'
-    · exact sub_eq_zero.mp (Complex.normSq_eq_zero.mp h)
-  exact eq_of_reach hedge (hconn i j)
-
-section ComplexLaplacian
-
-variable {n : ℕ}
-
-@[tmio T, powerlib_foundation] theorem complex_laplacian_sum (W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
-    (ζ : Fin (n + 1) → ℂ) (k : Fin (n + 1)) :
-    ∑ l, ((laplacian W k l : ℝ) : ℂ) * ζ l = ∑ l, (W k l : ℂ) * (ζ k - ζ l) := by
-  simp only [laplacian_apply, Complex.ofReal_sub, sub_mul, mul_sub, Finset.sum_sub_distrib]
-  congr 1
-  rw [← Finset.sum_mul, Finset.sum_eq_single k]
-  · simp
-  · intro j _ hj; simp [Ne.symm hj]
-  · simp
-
-@[tmio T, powerlib_foundation] theorem complex_laplacian_total {W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (hW : ∀ i j, W i j = W j i) (ζ : Fin (n + 1) → ℂ) :
-    ∑ k, ∑ l, (W k l : ℂ) * (ζ k - ζ l) = 0 := by
-  simp only [mul_sub, Finset.sum_sub_distrib]
-  rw [sub_eq_zero, Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hW]
-
-end ComplexLaplacian
 
 /-! ## Grounded Laplacians -/
 
@@ -412,21 +384,15 @@ section Ybus
 
 /-- Bus admittance matrix built from branch admittances `y i j` with no shunt (ground)
 elements: `Y_ii = Σ_{j ≠ i} y_ij`, `Y_ij = -y_ij`. (The diagonal of `y` cancels.) -/
-def ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ) : Matrix ι ι ℂ :=
-  Matrix.diagonal (fun i => ∑ j, y i j) - y
-
-@[tmio T, powerlib_foundation] theorem ybusNoShunt_mulVec_one {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (y : Matrix ι ι ℂ) : ybusNoShunt y *ᵥ (fun _ => 1) = 0 := by
-  ext i
-  rw [ybusNoShunt, sub_mulVec, Pi.sub_apply, mulVec_diagonal]
-  simp [mulVec, dotProduct]
+abbrev ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ) : Matrix ι ι ℂ :=
+  laplacian y
 
 /-- Laplacian-type admittance matrices are singular, whatever the topology. -/
 @[tmio T, powerlib_foundation] theorem ybusNoShunt_det_eq_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
     [Nonempty ι] (y : Matrix ι ι ℂ) : (ybusNoShunt y).det = 0 := by
   apply Matrix.exists_mulVec_eq_zero_iff.mp
   exact ⟨fun _ => 1, fun h => one_ne_zero (congrFun h (Classical.arbitrary ι)),
-    ybusNoShunt_mulVec_one y⟩
+    laplacian_mulVec_const y 1⟩
 
 /-- Counterexample to "connected ⇒ nonsingular": two buses joined by one line. -/
 @[tmio T, powerlib_foundation] theorem ybus_two_bus_singular :
@@ -434,7 +400,7 @@ def ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ
       (ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ)).det = 0 := by
   refine ⟨?_, ybusNoShunt_det_eq_zero _⟩
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [ybusNoShunt, Fin.sum_univ_two]
+  fin_cases i <;> fin_cases j <;> simp [ybusNoShunt, laplacian_apply, Fin.sum_univ_two]
 
 end Ybus
 

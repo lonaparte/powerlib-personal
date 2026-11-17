@@ -77,10 +77,9 @@ conjugated by `diag(1, −1)` (the sign of `η`). -/
 
 @[tmio TM, powerlib_domain] theorem isHurwitz_linA_iff (Kp Ki g : ℝ) :
     LinearSystems.IsHurwitz (linA Kp Ki g) ↔ 0 < Kp * g ∧ 0 < Ki * g := by
-  rw [linA, Criteria.isHurwitz_fin_two_of_iff]
-  constructor
-  · rintro ⟨h1, h2⟩; constructor <;> linarith
-  · rintro ⟨h1, h2⟩; constructor <;> linarith
+  have h := Dynamics.signMatrix_mul_self ![1, -1]
+  rw [linA_eq_conj, Linear.isHurwitz_conj h h, piPLLJacobian_isHurwitz_iff]
+  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
 
 /-- Voltage-channel input `B_v = (−K_p σ, σ)ᵀ`. -/
 def portV (Kp σ : ℝ) : Matrix (Fin 2) (Fin 1) ℝ := !![-(Kp * σ); σ]

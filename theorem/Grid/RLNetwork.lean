@@ -2,6 +2,7 @@ import theorem.PH.Composition
 import theorem.Passive.Series
 import theorem.Passive.Parallel
 import theorem.PowerSystem.Network.WeightedLaplacian
+import theorem.Transform.PerUnitLTI
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
 
@@ -256,16 +257,6 @@ omit [Fintype ν] [DecidableEq ν] in
       field_simp
     · simp [diagonal_apply_ne _ hij]
 
-/-- The branch-rescaling map as a continuous linear map. -/
-def rlNetwork_scaleCLM (c : β → ℝ) : (β → ℝ) →L[ℝ] (β → ℝ) :=
-  LinearMap.toContinuousLinearMap (Matrix.toLin' (diagonal c))
-
-omit [Fintype ν] [DecidableEq ν] in
-@[tmio T, simp, powerlib_foundation] theorem rlNetwork_scaleCLM_apply (c : β → ℝ) (φ : β → ℝ) :
-    rlNetwork_scaleCLM c φ = fun j => c j * φ j := by
-  ext j
-  simp [rlNetwork_scaleCLM, mulVec_diagonal]
-
 /-- Branch rescaling by nonzero factors preserves every sentence: the referred network and the
 original network are the same linear port-Hamiltonian plant up to a change of state
 coordinates. -/
@@ -275,18 +266,8 @@ coordinates. -/
       rlNetworkPH (p.scale c hc) (𝓑 * diagonal c) ∈ Port.PortHamiltonian.family.den s ↔
         rlNetworkPH p 𝓑 ∈ Port.PortHamiltonian.family.den s) := by
   obtain ⟨hA, hB, hC⟩ := rlNetwork_scale_similar_data p 𝓑 c hc
-  have hTS : diagonal c * diagonal c⁻¹ = 1 := by
-    rw [diagonal_mul_diagonal, ← diagonal_one]
-    congr 1
-    ext j
-    exact mul_inv_cancel₀ (hc j)
-  have hST : diagonal c⁻¹ * diagonal c = 1 := by
-    rw [diagonal_mul_diagonal, ← diagonal_one]
-    congr 1
-    ext j
-    exact inv_mul_cancel₀ (hc j)
-  exact mem_den_iff_of_similar
-    (DiagonalPH.toPH_similar _ _ _ _ hTS hST hA hB hC)
+  exact mem_den_iff_of_similar (DiagonalPH.toPH_similar _ _ _ _
+    (Transform.PerUnit.diagonal_mul_inv hc) (Transform.PerUnit.diagonal_inv_mul hc) hA hB hC)
 
 /-- The branch-rescaling map of numbered states. -/
 private def scaleCLM (c : Fin m → ℝ) :

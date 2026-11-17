@@ -47,12 +47,15 @@ Results.
 * If the state matrix is Hurwitz, every trajectory converges exponentially to that equilibrium.
   In this module Hurwitz is an explicit (static) premise; a parametric sufficient condition —
   `K_I M ≤ D + K_R` in both areas with `M, K_I, B, ω_s T > 0` — is proved in
-  `Frequency.LFCNetwork` (`plant_isHurwitz_of_gain`, connection `mem_den_of_gain`), by reading
+  `Frequency.LFCNetwork` (connection `mem_den_of_gain`), by reading
   the five-state matrix as the two-area case of the radial `N`-area matrix.
 
 Family and connection conclusions.
-* Constant-input families below preserve the symbolic input and the selected steady state;
-  their autonomous system is the translated forced field.
+* Constant-input families (`constantInputFamily`, `constantInputFamily7`: the generic
+  `Family.constantInput` at the non-interactive steady state) preserve the symbolic input and the
+  selected steady state; their autonomous system is the translated forced field, and at that
+  equilibrium every attractive sentence is the Hurwitz condition
+  (`Family.mem_den_constantInput_iff`).
 * System maps: a two-area model (`Model`: areas `a`, `b`, `ω_s`, `T`) is read as the port
   system of its five-state plant, and `Model7` as that of its seven-state plant
   (`Family.IsLinear`): port input the area loads, port output the area frequencies. The steady
@@ -70,13 +73,12 @@ Family and connection conclusions.
   seven-state family (`chain_le_semantics7`, `exact_hurwitz7`,
   `mem_den_globallyExponentiallyStable7`).
 * Soundness and exactness are the generic rate laws `Spectral.chain_le_semantics_of_rate`,
-  `Spectral.exact_of_rate` and `Spectral.realize_univ_of_rate` of
+  `Spectral.exact_of_rate` (no model meets every requirement: `Spectral.realize_univ_of_rate`) of
   `theorem/Spectral/LinearNamed.lean`, also used by the multi-area family of
   `Frequency.LFCNetwork`.
 * Static evidence: `isEquilibrium_iff`, `steadyState_isEquilibrium`, `plant7_isEquilibrium_iff`,
   `plant7_steadyState_isEquilibrium`. Private implementation evidence (trajectory level, Rules
-  §3a): `tendsto_of_isHurwitz`, `exponentiallyConvergesTo_of_isHurwitz`,
-  `plant7_exponentiallyConvergesTo_of_isHurwitz`.
+  §3a): `tendsto_of_isHurwitz`.
 
 Correction.
 * The note's §1.6 "设稳态存在" assumes convergence; the steady-state analysis alone does not
@@ -396,18 +398,6 @@ def family7 : Family Model7 Requirement 7 2 :=
 
 @[tmio M, powerlib_domain] theorem family7_isLinear : family7.IsLinear Model7.plant := fun _ => rfl
 
-/-- No five-state model meets every requirement. -/
-@[tmio M, powerlib_domain] theorem realize_univ :
-    connection% (realize family.meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.realize_univ_of_rate (plant := fun m => m.plant) (fun _ h => h) (fun _ h => h)
-
-/-- No seven-state model meets every requirement. -/
-@[tmio M, powerlib_domain] theorem realize_univ7 :
-    connection% (realize family7.meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  exact Spectral.realize_univ_of_rate (plant := fun m => m.plant) (fun _ h => h) (fun _ h => h)
-
 /-- Every translation of the five-state LFC family is sound. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
@@ -472,40 +462,13 @@ steady state in deviation coordinates). -/
   exact LTI.tendsto_equilibrium m.plant hmem (steadyState_isEquilibrium u) hx
 
 /-- The same models under the symbolic constant input, translated about its selected
-steady state. Its system map reads the forced field with the symbolic input held constant. -/
-def constantInputFamily (u : Fin 2 → ℝ) : Family Model Requirement 5 0 :=
-  ⟨fun m => Port.System.autonomous (fun z => m.plant.inputField (u) (z + (steadyState u))),
-    family.meets, family.translate⟩
+steady state (`Family.constantInput`). -/
+abbrev constantInputFamily (u : Fin 2 → ℝ) : Family Model Requirement 5 0 :=
+  family.constantInput Model.plant u fun _ => steadyState u
 
-/-- Connection for the forced field at its selected steady state.
-With a Hurwitz state matrix every solution under constant loads converges exponentially to the
-non-interactive steady state. -/
-@[tmio TM, powerlib_domain] private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
-    (u : Fin 2 → ℝ) :
-    connection% (m ∈ (constantInputFamily u).den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.plant.inputField (u)) (pt := fun m : Model => steadyState u)
-    (show (constantInputFamily u).IsAutonomous (fun m z => m.plant.inputField (u) (z + (steadyState u))) from fun _ => rfl))]
-  change Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState u)
-  exact (Linear.holds_input_iff m.plant (steadyState_isEquilibrium u)
-    (P := .globallyExponentiallyStable) (by simp)).2 hA
-
-/-- The same models under the symbolic constant input, translated about its selected
-steady state. Its system map reads the forced field with the symbolic input held constant. -/
-def constantInputFamily7 (u : Fin 2 → ℝ) : Family Model7 Requirement 7 0 :=
-  ⟨fun m => Port.System.autonomous (fun z => m.plant.inputField (u) (z + (steadyState7 u))),
-    family7.meets, family7.translate⟩
-
-/-- Connection for the forced field at its selected steady state.
-The seven-state version of `exponentiallyConvergesTo_of_isHurwitz`. -/
-@[tmio TM, powerlib_domain] private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
-    (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ) :
-    connection% (m ∈ (constantInputFamily7 u).den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% Spectral.mem_den_flow_iff_shift (f := fun m : Model7 => m.plant.inputField (u)) (pt := fun m : Model7 => steadyState7 u)
-    (show (constantInputFamily7 u).IsAutonomous (fun m z => m.plant.inputField (u) (z + (steadyState7 u))) from fun _ => rfl))]
-  change Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState7 u)
-  exact (Linear.holds_input_iff m.plant (plant7_steadyState_isEquilibrium u)
-    (P := .globallyExponentiallyStable) (by simp)).2 hA
+/-- The seven-state models under the symbolic constant input, translated about its selected
+steady state (`Family.constantInput`). -/
+abbrev constantInputFamily7 (u : Fin 2 → ℝ) : Family Model7 Requirement 7 0 :=
+  family7.constantInput Model7.plant u fun _ => steadyState7 u
 
 end powerlib.Frequency.LFC

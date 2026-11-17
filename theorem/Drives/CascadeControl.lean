@@ -54,10 +54,10 @@ Family and connection conclusions.
   (`CurrentControl.imc_mem_den_iff`); the transfer function alone does not certify the loop
   (`CurrentControl.imc_transfer_stable_insufficient`). Scaffold:
   `theorem/Drives/IMCCurrentLoop.agda`.
-* The exponential tracking estimate of every closed-loop trajectory and `i(t) → i*`
-  (`imcLoop_exponentiallyStable`, `imcLoop_current_tracking`, `imcLoop_current_tendsto`) are
-  trajectory-level results outside the sentence language, kept as private implementation
-  evidence.
+* The exponential tracking of every closed-loop trajectory, `i(t) → i*`, is that of the converter
+  loop at `m.toPIParams` (its trajectory-level implementation evidence `tracks_reference` in
+  `theorem/GridTiedConverter/CurrentControl/PILoop.lean`, from `CurrentControl.imc_mem_den_iff`);
+  it is not restated here.
 
 Corrections.
 * FOC note §1.8: the "bandwidth-separated" speed loop
@@ -100,71 +100,6 @@ abbrev IMCLoop.R (m : IMCLoop) : ℝ := m.branch.R
 /-- The parameter map into the converter PI loop: the IMC tuning `K_p = Lα`, `K_i = Rα` of the
 same branch. -/
 def IMCLoop.toPIParams (m : IMCLoop) : CurrentControl.PIParams := CurrentControl.imc m.L m.R m.α
-
-/-- **IMC current loop: exponential stability of the tracking equilibrium.** For `L, R, α > 0`
-there are uniform constants `K, rate > 0` such that every closed-loop trajectory satisfies
-`‖(i(t) − i*, ξ(t) − i*/α)‖ ≤ K e^{−rate t} ‖(i(0) − i*, ξ(0) − i*/α)‖` for `t ≥ 0`.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem imcLoop_exponentiallyStable (L R α iref : ℝ)
-    (hL : 0 < L) (hR : 0 < R) (hα : 0 < α) :
-    ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝ²,
-      (∀ t, HasDerivAt x ((CurrentControl.imc L R α).field iref (x t)) t) → ∀ t, 0 ≤ t →
-        ‖x t - (CurrentControl.imc L R α).equilibrium iref‖ ≤
-          K * Real.exp (-(rate * t)) * ‖x 0 - (CurrentControl.imc L R α).equilibrium iref‖ := by
-  set p := CurrentControl.imc L R α
-  have hA : IsHurwitz p.model.A := by
-    have h := CurrentControl.imc_mem_den_iff (R := R) hL hα
-      (P := .globallyExponentiallyStable) (Or.inl trivial)
-    unfold powerlib.TMIO.Statement at h
-    exact (CurrentControl.PIParams.family_isLinear.mem_den_hurwitz
-      (P := .globallyExponentiallyStable) (Or.inl trivial)).mp (h.mpr (div_pos hR hL))
-  set e := p.equilibrium iref
-  have he := p.isEquilibrium (mul_pos hR hα).ne' iref
-  obtain ⟨-, -, K, rate, hK, hrate, hbound⟩ := globallyExponentiallyStable_of_isHurwitz e hA
-  refine ⟨K, by linarith, rate, hrate, fun x hx t ht => ?_⟩
-  have htraj : IsTrajectoryOn x (affineLinearVectorField p.model.A e) 0 t :=
-    fun s _ => by
-      have h := hx s
-      rw [← p.model_field, p.model.inputField_eq he] at h
-      exact h.hasDerivWithinAt
-  have h := hbound 0 t x htraj t ⟨ht, le_rfl⟩
-  rw [sub_zero, neg_mul] at h
-  exact h
-
-/-- **IMC current loop: exponential tracking of a constant reference.** For `L, R, α > 0` there
-are uniform constants `K, rate > 0` such that every closed-loop trajectory satisfies
-`|i(t) − i*| ≤ K e^{−rate t} ‖(i(0) − i*, ξ(0) − i*/α)‖` for `t ≥ 0`.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem imcLoop_current_tracking (L R α iref : ℝ)
-    (hL : 0 < L) (hR : 0 < R) (hα : 0 < α) :
-    ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝ²,
-      (∀ t, HasDerivAt x ((CurrentControl.imc L R α).field iref (x t)) t) → ∀ t, 0 ≤ t →
-        |x t 0 - iref| ≤
-          K * Real.exp (-(rate * t)) * ‖x 0 - (CurrentControl.imc L R α).equilibrium iref‖ := by
-  obtain ⟨K, hK, rate, hrate, hbound⟩ := imcLoop_exponentiallyStable L R α iref hL hR hα
-  refine ⟨K, hK, rate, hrate, fun x hx t ht => le_trans ?_ (hbound x hx t ht)⟩
-  have hc : |x t 0 - iref| = ‖(x t - (CurrentControl.imc L R α).equilibrium iref) 0‖ := by
-    simp [CurrentControl.PIParams.equilibrium, Real.norm_eq_abs]
-  rw [hc]
-  exact PiLp.norm_apply_le _ 0
-
-/-- Every closed-loop current converges to the reference.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem imcLoop_current_tendsto (L R α iref : ℝ)
-    (hL : 0 < L) (hR : 0 < R) (hα : 0 < α) {x : ℝ → ℝ²}
-    (hx : ∀ t, HasDerivAt x ((CurrentControl.imc L R α).field iref (x t)) t) :
-    Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
-  obtain ⟨K, hK, rate, hrate, hbound⟩ := imcLoop_current_tracking L R α iref hL hR hα
-  set c := ‖x 0 - (CurrentControl.imc L R α).equilibrium iref‖
-  have hexp : Tendsto (fun t : ℝ => K * Real.exp (-(rate * t)) * c) atTop (𝓝 0) := by
-    have h1 : Tendsto (fun t : ℝ => Real.exp (-(rate * t))) atTop (𝓝 0) := by
-      apply Real.tendsto_exp_atBot.comp
-      exact tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop hrate)
-    simpa using (h1.const_mul K).mul_const c
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  refine squeeze_zero' (Eventually.of_forall fun t => norm_nonneg _) ?_ hexp
-  filter_upwards [eventually_ge_atTop 0] with t ht
-  simpa [Real.norm_eq_abs] using hbound x hx t ht
 
 /-! ## Ideal decoupling of the dq current loop -/
 

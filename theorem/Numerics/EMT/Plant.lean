@@ -57,9 +57,9 @@ Family and connection conclusions.
   to the discretized models: T–M statements (M for the two `…_wellPosed`). They are generated
   denotation/requirement statements. The two `…_wellPosed` results assert the well-posed
   requirement under the hypotheses of the two forward stability results. Existence, uniqueness
-  and geometric decay of the discrete trajectories are the generic `trapezoidal_existsUnique`,
-  `backwardEuler_existsUnique`, `trapezoidal_exponentiallyStable_of_isHurwitz` and
-  `backwardEuler_exponentiallyStable_of_isHurwitz` of `theorem/Numerics/LinearSchemes.lean`.
+  and geometric decay of the discrete trajectories are the generic θ-method laws
+  `theta_existsUnique` and `theta_exponentiallyStable_of_isHurwitz` (`θ = ½` trapezoidal, `θ = 1`
+  backward Euler) of `theorem/Numerics/LinearSchemes.lean`.
 Scaffold: `theorem/Numerics/ImplicitDiscretization.agda`.
 -/
 
@@ -135,7 +135,8 @@ def lclRealization (method : ImplicitMethod) : Implementation LCL.Circuit LCL.Re
   exact (trapezoidal_mem_den_iff_design (design := EulerStep.design) (step := EulerStep.h)
     (y := (⟨m, h, hh⟩ : ImplicitStep RL.Impedance)) RL.family_isLinear
     (P := .globallyExponentiallyStable)
-    (Or.inl trivial) hh hP).trans (RL.isHurwitz_iff m)
+    (Or.inl trivial) hh (show IsUnit (1 - (1 / 2 * h) • m.plant.A).det by
+      rwa [one_div_mul_eq_div])).trans (RL.isHurwitz_iff m)
 
 /-- A passive damped LCL design gives a well-posed (uniquely solvable) implicit LCL step. -/
 @[tmio M, powerlib_domain] theorem idealLCLPlant_discretization_wellPosed
@@ -168,6 +169,8 @@ def lclRealization (method : ImplicitMethod) : Implementation LCL.Circuit LCL.Re
   exact (trapezoidal_mem_den_iff_design (design := EulerStep.design) (step := EulerStep.h)
     (y := (⟨m, h, hh⟩ : ImplicitStep LCL.Circuit)) LCL.family_isLinear
     (P := .globallyExponentiallyStable)
-    (Or.inl trivial) hh hP).trans ((LCL.isHurwitz_iff_stable m).trans (LCL.passive_stable_iff m hp))
+    (Or.inl trivial) hh (show IsUnit (1 - (1 / 2 * h) • m.plant.A).det by
+      rwa [one_div_mul_eq_div])).trans
+    ((LCL.isHurwitz_iff_stable m).trans (LCL.passive_stable_iff m hp))
 
 end powerlib.Numerics.EMT

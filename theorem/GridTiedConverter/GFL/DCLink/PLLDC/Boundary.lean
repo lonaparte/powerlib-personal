@@ -318,38 +318,14 @@ PLL–DC model being `C¹` on `V_dc ≠ 0`). -/
       Criteria.principalMinorSum2Fin4 (hopfCenter.p.jacobian hopfCenter.x) = 2 ∧
       Criteria.principalMinorSum3Fin4 (hopfCenter.p.jacobian hopfCenter.x) = -1 ∧
       (hopfCenter.p.jacobian hopfCenter.x).det = 1 := by
-  have h := Criteria.invariants_of_blockDiag_fin_four (J := hopfCenter.p.jacobian hopfCenter.x)
+  have h := hopfCenter.p.jacobian_invariants_of_J20_eq_zero (x := hopfCenter.x)
     (a := -1) (b := 1)
-    (c := -1) (d := 0) (e := 1)
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.vgq,
-        PLLDC.Params.pccP])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef, PLLDC.Params.vgd]; norm_num)
-    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
-    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
-  obtain ⟨h1, h2, h3, h4⟩ := h
-  refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
+    (c := -1) (d := 0) (e := 1) ?_ ?_ ?_ ?_ ?_ ?_
+  · obtain ⟨h1, h2, h3, h4⟩ := h
+    exact ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
+  all_goals norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
+    PLLDC.Params.Xg, PLLDC.Params.jacobian, hopfCenter, PLLDC.Params.idRef, PLLDC.Params.vgd,
+    PLLDC.Params.vgq, PLLDC.Params.pccP]
 
 /-- The Jacobian of the undamped loop, `diag([[−1, 1], [−1, 0]], [[0, 1], [−1, 0]])`, has
 characteristic polynomial `(s² + s + 1)(s² + 1)`: the Hurwitz determinant vanishes, so it is not
@@ -411,37 +387,14 @@ def cdcZero : Model :=
       Criteria.principalMinorSum2Fin4 (cdcZero.p.jacobian cdcZero.x) = 1 ∧
       Criteria.principalMinorSum3Fin4 (cdcZero.p.jacobian cdcZero.x) = 0 ∧
       (cdcZero.p.jacobian cdcZero.x).det = 0 := by
-  have h := Criteria.invariants_of_blockDiag_fin_four (J := cdcZero.p.jacobian cdcZero.x)
+  have h := cdcZero.p.jacobian_invariants_of_J20_eq_zero (x := cdcZero.x)
     (a := -1) (b := 1)
-    (c := -1) (d := 0) (e := 0)
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, cdcZero])
-    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
-    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
-  obtain ⟨h1, h2, h3, h4⟩ := h
-  refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
+    (c := -1) (d := 0) (e := 0) ?_ ?_ ?_ ?_ ?_ ?_
+  · obtain ⟨h1, h2, h3, h4⟩ := h
+    exact ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
+  all_goals norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
+    PLLDC.Params.Xg, PLLDC.Params.jacobian, cdcZero, PLLDC.Params.idRef, PLLDC.Params.vgd,
+    PLLDC.Params.vgq, PLLDC.Params.pccP]
 
 @[tmio M, powerlib_domain] private theorem cdcZero_not_routh :
     connection% (cdcZero ∉ TMIO.realize Meets {.routh}) := by
@@ -464,7 +417,8 @@ component of the field vanishes (`x / 0 = 0`), so `V_dc` is a first integral and
 smooth (`PLLDC.Params.contDiff_field_of_Cdc_eq_zero`). A state that is not an equilibrium is
 unstable (`Dynamics.unstable_of_ne_zero`); at an equilibrium `x*` (`V_dc* = V_dc,ref`) the
 integrator `ξ_v` drifts off the level `V_dc = V_dc*`: Chetaev's function
-`(V_dc* − V_dc)(ξ_v − ξ_v*)` grows at the rate `(V_dc* − V_dc)²` (`Dynamics.unstable_of_chetaev`).
+`(V_dc* − V_dc)(ξ_v − ξ_v*)` grows at the rate `(V_dc* − V_dc)²`
+(`Dynamics.unstable_of_conserved_drive_local`).
 -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_Cdc_eq_zero (m : Model)
     (hC : m.p.Cdc = 0) :
@@ -476,37 +430,11 @@ integrator `ξ_v` drifts off the level `V_dc = V_dc*`: Chetaev's function
   swap
   · exact Dynamics.unstable_of_ne_zero hf h0
   have hx2 : m.x 2 = m.p.VdcRef := m.p.equilibrium_Vdc h0
-  set W : State 4 → ℝ := fun y => (m.x 2 - y 2) * (y 3 - m.x 3) with hW
-  have hWd : ∀ y : State 4,
-      HasFDerivAt W (PLLDC.Params.row4 0 0 (-(y 3 - m.x 3)) (m.x 2 - y 2)) y := by
-    intro y
-    have h := ((Dynamics.hasFDerivAt_coord 2 y).const_sub (m.x 2)).mul
-      ((Dynamics.hasFDerivAt_coord 3 y).sub_const (m.x 3))
-    refine h.congr_fderiv ?_
-    ext v
-    simp [PLLDC.Params.row4]
-    ring
-  have hWc : ContDiff ℝ 1 W := by
-    rw [hW]
-    fun_prop
-  refine Dynamics.unstable_of_chetaev hf hWc (r := 1) one_pos (fun ε hε => ?_) (fun y _ hy => ?_)
-  · refine ⟨m.x + WithLp.toLp 2 ![0, 0, -(ε / 4), ε / 4], ?_, ?_⟩
-    · rw [add_sub_cancel_left, EuclideanSpace.norm_eq, Real.sqrt_lt' hε]
-      simp [Fin.sum_univ_four]
-      nlinarith
-    · simp only [hW]
-      simp
-      positivity
-  · rw [(hWd y).fderiv]
-    have hy2 : m.x 2 - y 2 ≠ 0 := by
-      intro h
-      simp only [hW, h, zero_mul] at hy
-      exact lt_irrefl _ hy
-    have h2 : m.p.field y 2 = 0 := by simp [PLLDC.Params.field, hC]
-    have h3 : m.p.field y 3 = m.x 2 - y 2 := by simp [PLLDC.Params.field, hx2]
-    simp only [PLLDC.Params.row4_apply, h2, h3]
-    have : 0 < (m.x 2 - y 2) ^ 2 := by positivity
-    nlinarith
+  exact Dynamics.unstable_of_conserved_drive_local (i := 2) (j := 3) (g := fun s => m.x 2 - s)
+    isOpen_univ (Set.mem_univ _) hf.contDiffOn (by decide) (by fun_prop)
+    (fun ε hε => ⟨m.x 2 + ε / 2, by rw [add_sub_cancel_left, abs_of_pos (half_pos hε)]; linarith,
+      by rw [sub_add_cancel_left, neg_ne_zero]; exact (half_pos hε).ne'⟩)
+    (fun y _ => by simp [PLLDC.Params.field, hC]) fun y _ => by simp [PLLDC.Params.field, hx2]
 
 /-- The disconnected DC link `cdcZero` is unstable although its Jacobian (characteristic
 polynomial `s² (s² + s + 1)`) lies on the 4×4 Routh boundary: `V_dc` is conserved, so off
@@ -747,38 +675,14 @@ def hopfDamped : Model :=
       Criteria.principalMinorSum2Fin4 (hopfDamped.p.jacobian hopfDamped.x) = 4 ∧
       Criteria.principalMinorSum3Fin4 (hopfDamped.p.jacobian hopfDamped.x) = -3 ∧
       (hopfDamped.p.jacobian hopfDamped.x).det = 3 := by
-  have h := Criteria.invariants_of_blockDiag_fin_four (J := hopfDamped.p.jacobian hopfDamped.x)
+  have h := hopfDamped.p.jacobian_invariants_of_J20_eq_zero (x := hopfDamped.x)
     (a := -3) (b := 1)
-    (c := -3) (d := 0) (e := 1)
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped])
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.vgq,
-        PLLDC.Params.pccP]; norm_num)
-    (by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg,
-        PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef, PLLDC.Params.vgd]; norm_num)
-    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
-    (by simp [PLLDC.Params.jacobian]) (by simp [PLLDC.Params.jacobian])
-  obtain ⟨h1, h2, h3, h4⟩ := h
-  refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
+    (c := -3) (d := 0) (e := 1) ?_ ?_ ?_ ?_ ?_ ?_
+  · obtain ⟨h1, h2, h3, h4⟩ := h
+    exact ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
+  all_goals norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
+    PLLDC.Params.Xg, PLLDC.Params.jacobian, hopfDamped, PLLDC.Params.idRef, PLLDC.Params.vgd,
+    PLLDC.Params.vgq, PLLDC.Params.pccP]
 
 /-- The Jacobian of the weakly damped loop, `diag([[−3, 1], [−3, 0]], [[0, 1], [−1, 0]])`, with
 characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr² det = tr m₂ m₃ = 36`)

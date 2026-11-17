@@ -11,7 +11,7 @@ Scope.
 * Nothing here describes a specific engineering model; the frequency-response models (state
   order, signs, parameter ranges) and their families are fixed in the modules that use them.
 * The generic constant-input plant lemmas these modules use (`LTI.inputField_apply`,
-  `LTI.trajectory_eq_solution_Ici`, `LTI.solution_hasDerivAt`, `LTI.solution_continuous`,
+  `LTI.solution_hasDerivAt`, `LTI.solution_continuous`,
   `LTI.tendsto_equilibrium`, `LTI.tendsto_apply_of_isHurwitz`, `LTI.hasDerivWithinAt_apply_zero`)
   are in `theorem/LTI/Plant.lean`, imported here.
 

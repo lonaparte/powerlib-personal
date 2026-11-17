@@ -294,29 +294,10 @@ Schur complement is spectrally stable. -/
 
 /-! ## Exponential stability -/
 
-@[tmio T, powerlib_foundation] theorem sqNorm_mulVec_le {k l : ℕ} (M : Matrix (Fin k) (Fin l) ℝ)
-    (v : Fin l → ℝ) :
-    ∑ i, (M *ᵥ v) i ^ 2 ≤ (∑ i, ∑ j, M i j ^ 2) * ∑ j, v j ^ 2 := by
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun i _ => ?_
-  simpa [mulVec, dotProduct] using Finset.sum_mul_sq_le_sq_mul_sq Finset.univ (M i) v
-
-@[tmio T, powerlib_foundation] theorem norm_mulVec_le {k l : ℕ} (M : Matrix (Fin k) (Fin l) ℝ)
-    (v : Fin l → ℝ) :
-    ‖WithLp.toLp 2 (M *ᵥ v)‖ ≤ Real.sqrt (∑ i, ∑ j, M i j ^ 2) * ‖WithLp.toLp 2 v‖ := by
-  have hn : ∀ {r : ℕ} (w : Fin r → ℝ), ‖WithLp.toLp 2 w‖ ^ 2 = ∑ i, w i ^ 2 := fun w => by
-    rw [EuclideanSpace.real_norm_sq_eq]
-  have h := sqNorm_mulVec_le M v
-  rw [← hn, ← hn] at h
-  calc ‖WithLp.toLp 2 (M *ᵥ v)‖ = Real.sqrt (‖WithLp.toLp 2 (M *ᵥ v)‖ ^ 2) :=
-        (Real.sqrt_sq (norm_nonneg _)).symm
-    _ ≤ Real.sqrt ((∑ i, ∑ j, M i j ^ 2) * ‖WithLp.toLp 2 v‖ ^ 2) := Real.sqrt_le_sqrt h
-    _ = _ := by
-      have hS : 0 ≤ ∑ i, ∑ j, M i j ^ 2 := by positivity
-      rw [Real.sqrt_mul hS, Real.sqrt_sq (norm_nonneg _)]
-
+open scoped Matrix.Norms.L2Operator in
 /-- Index 1 and Hurwitz Schur complement ⇒ exponential stability of the zero-input DAE: every
-solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`. -/
+solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0` (the algebraic
+component through the `ℓ²` operator norm of `A_yy⁻¹ A_yx`, Mathlib `Matrix.l2_opNorm_mulVec`). -/
 @[tmio T, powerlib_foundation] theorem exponentiallyStable_of_isHurwitz (hA : IsUnit d.Ayy.det)
     (hH : LinearSystems.IsHurwitz d.schurA) :
     ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
@@ -325,12 +306,12 @@ solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`
       ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
       ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
   obtain ⟨K, hK, r, hr, hdecay⟩ := LTI.linear_decay_of_isHurwitz hH
-  set c := Real.sqrt (∑ i, ∑ j, (d.Ayy⁻¹ * d.Ayx) i j ^ 2)
+  set c := ‖d.Ayy⁻¹ * d.Ayx‖
   refine ⟨K * (1 + c), by positivity, r, hr, fun x y hs t ht => ?_⟩
   obtain ⟨hx, hy⟩ := (d.isSolution_iff hA (fun _ => 0) x y).mp hs
   simp only [mulVec_zero, add_zero] at hx
   have hxb := hdecay x hx t ht
-  have hc : 0 ≤ c := Real.sqrt_nonneg _
+  have hc : 0 ≤ c := norm_nonneg _
   have hE : 0 ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by positivity
   constructor
   · calc ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := hxb
@@ -341,7 +322,7 @@ solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`
       rw [hyt, WithLp.toLp_neg, norm_neg]
     rw [hneg]
     calc ‖WithLp.toLp 2 ((d.Ayy⁻¹ * d.Ayx) *ᵥ x t)‖ ≤ c * ‖WithLp.toLp 2 (x t)‖ :=
-          norm_mulVec_le _ _
+          Matrix.l2_opNorm_mulVec _ (WithLp.toLp 2 (x t))
       _ ≤ c * (K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖) :=
           mul_le_mul_of_nonneg_left hxb hc
       _ ≤ K * (1 + c) * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by nlinarith

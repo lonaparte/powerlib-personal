@@ -41,8 +41,9 @@ Results.
   potential `CycleMinimum.edgeG` of `theorem/PowerSystem/Network/Swing/CycleMinimum.lean`),
   `edgeIncrement_taylor`, `exists_potential_lt` (a direction with `A₂ < 0`, or `A₂ = 0` and
   `A₃ ≠ 0`, lowers the potential at arbitrarily small steps).
-* Hurwitz test with signed weights: `jacobian_isHurwitz_of_hessForm` (the reduced Jacobian is
-  Hurwitz when `A₂` is positive on grounded directions), `exists_hessForm_nonpos`.
+* Hurwitz test with signed weights: the converse direction `exists_hessForm_nonpos` of
+  `jacobian_isHurwitz_of_hessForm` (`theorem/PowerSystem/Network/Swing/Basic.lean`, where `A₂` is
+  `hessForm`): a non-Hurwitz Jacobian leaves a grounded direction with `A₂ ≤ 0`.
 * Three-machine arithmetic (static): `triangle_cubic_ne_zero`, `sin_mul_cos_same_sign`,
   `node_open_or_antiphase`, `balance_line_of_edges`: on at most three machines every singular
   positive semidefinite Hessian is a fold (nonzero cubic term along the null direction) or comes
@@ -470,10 +471,6 @@ def edgeIncrement (φ x : ℝ) : ℝ := Real.cos φ - Real.cos (φ + x) - x * Re
   rw [hlin, hcos, hsplit, hPu]
   ring
 
-/-- Second-order coefficient `A₂(u) = ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)²` (twice the Hessian form). -/
-def hessForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
-  ∑ k, ∑ j, p.B k j * Real.cos (θ k - θ j) * (u k - u j) ^ 2
-
 /-- Third-order coefficient `A₃(u) = ∑ₖ ∑ⱼ Bₖⱼ sin(θₖ − θⱼ)(uₖ − uⱼ)³`. -/
 def cubicForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
   ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * (u k - u j) ^ 3
@@ -623,202 +620,6 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
     exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun j _ => by ring
   rw [hval] at hsum
   linarith
-
-
-/-! ## A Hurwitz test with signed linearization weights -/
-
-@[tmio M, powerlib_domain] theorem hessForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ) (c : ℝ) :
-    hessForm p θ (fun k => u k + c) = hessForm p θ u := by
-  simp [hessForm]
-
-@[tmio M, powerlib_domain] theorem hessForm_nonneg_of_pos {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u)
-    (v : Fin (n + 1) → ℝ) : 0 ≤ hessForm p θ v := by
-  rw [← hessForm_add_const p θ v (-v 0)]
-  by_cases h : (fun k => v k + -v 0) = 0
-  · rw [h]; simp [hessForm]
-  · exact (hpos _ (by simp) h).le
-
-@[tmio M, powerlib_domain] theorem eq_zero_of_hessForm_eq_zero {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u)
-    {v : Fin (n + 1) → ℝ} (h0 : v 0 = 0) (h : hessForm p θ v = 0) : v = 0 := by
-  by_contra hne
-  exact (hpos v h0 hne).ne' h
-
-@[tmio M, powerlib_domain] theorem sum_normSq_eq_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
-    (u : Fin (n + 1) → ℂ) :
-    ∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (u i - u j) =
-      hessForm p θ (fun k => (u k).re) + hessForm p θ (fun k => (u k).im) := by
-  simp only [hessForm, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  simp only [flowWeights, of_apply, Complex.normSq_apply, Complex.sub_re, Complex.sub_im]
-  ring
-
-/-- **Hurwitz test by the Hessian form.** The reduced swing Jacobian is Hurwitz whenever the form
-`A₂(u) = ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)²` is positive on every nonzero `u` with `u₀ = 0`
-(positive inertia and damping; signed linearization weights are allowed). -/
-@[tmio M, powerlib_domain] theorem jacobian_isHurwitz_of_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
-    (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u) :
-    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
-  change LinearSystems.IsHurwitz (jacobian p θ)
-  intro μ v hv heig
-  simp only [neg_zero]
-  have hWs := flowWeights_symm p θ
-  let η : Fin n → ℂ := fun i => v (dIdx i)
-  let w : Fin (n + 1) → ℂ := fun k => v (wIdx k)
-  let ζ : Fin (n + 1) → ℂ := Fin.cons 0 η
-  have hrow : ∀ r, ∑ c, ((jacobian p θ r c : ℝ) : ℂ) * v c = μ * v r := by
-    intro r
-    have := congrFun heig r
-    simpa [mulVec, dotProduct] using this
-  have h1 : ∀ i, w i.succ - w 0 = μ * η i := by
-    intro i
-    have := hrow (dIdx i)
-    rw [Fin.sum_univ_add] at this
-    simp only [jacobian_dd, jacobian_dw, Complex.ofReal_sub, Complex.ofReal_zero, zero_mul,
-      Finset.sum_const_zero, zero_add, apply_ite (fun x : ℝ => (x : ℂ)), Complex.ofReal_one,
-      sub_mul, ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ,
-      ite_true] at this
-    exact this
-  have hζ0 : ζ 0 = 0 := rfl
-  have hζs : ∀ i, ζ i.succ = η i := fun i => rfl
-  have h2 : ∀ k, μ * p.M k * w k + p.D k * w k +
-      ∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l) = 0 := by
-    intro k
-    have := hrow (wIdx k)
-    rw [Fin.sum_univ_add] at this
-    simp only [jacobian_wd, jacobian_ww] at this
-    have e1 : ∑ l, ((laplacian (flowWeights p.B θ) k l : ℝ) : ℂ) * ζ l =
-        ∑ i : Fin n, ((laplacian (flowWeights p.B θ) k i.succ : ℝ) : ℂ) * η i := by
-      rw [Fin.sum_univ_succ, hζ0, mul_zero, zero_add]
-      rfl
-    have hL : ∑ i : Fin n, ((-(laplacian (flowWeights p.B θ) k i.succ) / p.M k : ℝ) : ℂ) *
-        v (dIdx i) = -(∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l)) / p.M k := by
-      rw [← complex_laplacian_sum, e1, neg_div, Finset.sum_div, ← Finset.sum_neg_distrib]
-      exact Finset.sum_congr rfl fun i _ => by push_cast; ring
-    rw [hL] at this
-    have hD : ∑ k' : Fin (n + 1), (((if k = k' then -(p.D k / p.M k) else 0 : ℝ)) : ℂ) *
-        v (wIdx k') = -(p.D k / p.M k) * w k := by
-      rw [Finset.sum_eq_single k]
-      · simp [w]
-      · intro j _ hj; simp [Ne.symm hj]
-      · simp
-    rw [hD] at this
-    have hM : (p.M k : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (p.M_pos k).ne'
-    have h' : -(∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l)) / p.M k +
-        -((p.D k : ℂ) / p.M k) * w k = μ * w k := by
-      exact this
-    field_simp at h'
-    linear_combination (-1 : ℂ) * h'
-  have hv0 : ∀ (hη : η = 0) (hw : w = 0), False := by
-    intro hη hw
-    apply hv
-    funext r
-    refine Fin.addCases (fun i => ?_) (fun k => ?_) r
-    · exact congrFun hη i
-    · exact congrFun hw k
-  by_cases hμ : μ = 0
-  · exfalso
-    subst hμ
-    have hwconst : ∀ k, w k = w 0 := by
-      intro k
-      refine Fin.cases rfl (fun i => ?_) k
-      have := h1 i
-      rw [zero_mul, sub_eq_zero] at this
-      exact this
-    have e : ∀ k, ((p.D k : ℝ) : ℂ) * w 0 = -(∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l)) := by
-      intro k
-      have := h2 k
-      rw [hwconst k] at this
-      linear_combination this
-    have hsum : ((∑ k, p.D k : ℝ) : ℂ) * w 0 = 0 := by
-      push_cast
-      rw [Finset.sum_mul, Finset.sum_congr rfl (fun k _ => e k), Finset.sum_neg_distrib,
-        complex_laplacian_total hWs, neg_zero]
-    have hDpos : (0 : ℝ) < ∑ k, p.D k := Finset.sum_pos (fun k _ => p.D_pos k) Finset.univ_nonempty
-    have hw0 : w 0 = 0 := by
-      rcases mul_eq_zero.mp hsum with h | h
-      · exact absurd (Complex.ofReal_eq_zero.mp h) hDpos.ne'
-      · exact h
-    have hlap : ∀ k, ∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l) = 0 := by
-      intro k
-      have := e k
-      rw [hw0, mul_zero] at this
-      linear_combination this
-    have hζ : ζ = 0 := by
-      have hz := star_dotProduct_laplacian_mulVec hWs ζ
-      rw [Finset.sum_eq_zero fun k _ => by rw [hlap k, mul_zero]] at hz
-      have hz' : ∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (ζ i - ζ j) = 0 := by
-        have := congrArg Complex.re hz
-        simp only [Complex.zero_re, Complex.ofReal_re] at this
-        linarith
-      rw [sum_normSq_eq_hessForm] at hz'
-      have h1 := hessForm_nonneg_of_pos hpos (fun k => (ζ k).re)
-      have h2 := hessForm_nonneg_of_pos hpos (fun k => (ζ k).im)
-      have hre := eq_zero_of_hessForm_eq_zero (v := fun k => (ζ k).re) hpos
-        (by show (ζ 0).re = 0; rw [hζ0]; rfl) (by linarith)
-      have him := eq_zero_of_hessForm_eq_zero (v := fun k => (ζ k).im) hpos
-        (by show (ζ 0).im = 0; rw [hζ0]; rfl) (by linarith)
-      funext k
-      exact Complex.ext (congrFun hre k) (congrFun him k)
-    exact hv0 (funext fun i => by rw [← hζs i, hζ]; rfl)
-      (funext fun k => by rw [hwconst k, hw0]; rfl)
-  · let u : Fin (n + 1) → ℂ := fun k => w k / μ
-    have hwk : ∀ k, w k = μ * u k := fun k => by simp only [u]; field_simp
-    have hu : ∀ l, ζ l = u l - u 0 := by
-      intro l
-      refine Fin.cases (by simp [hζ0]) (fun i => ?_) l
-      rw [hζs]
-      have := h1 i
-      rw [hwk, hwk] at this
-      apply mul_left_cancel₀ hμ
-      linear_combination -this
-    have h3 : ∀ k, μ ^ 2 * p.M k * u k + μ * p.D k * u k +
-        ∑ l, (flowWeights p.B θ k l : ℂ) * (u k - u l) = 0 := by
-      intro k
-      have := h2 k
-      simp only [hu, hwk k, sub_sub_sub_cancel_right] at this
-      linear_combination this
-    have hsum : ∑ k, star (u k) * (μ ^ 2 * p.M k * u k + μ * p.D k * u k +
-        ∑ l, (flowWeights p.B θ k l : ℂ) * (u k - u l)) = 0 :=
-      Finset.sum_eq_zero fun k _ => by rw [h3 k, mul_zero]
-    have hns : ∀ k, star (u k) * u k = (Complex.normSq (u k) : ℂ) := fun k => by
-      rw [Complex.normSq_eq_conj_mul_self]; rfl
-    have hexp : ∑ k, star (u k) * (μ ^ 2 * p.M k * u k + μ * p.D k * u k +
-        ∑ l, (flowWeights p.B θ k l : ℂ) * (u k - u l)) =
-        ((∑ k, p.M k * Complex.normSq (u k) : ℝ) : ℂ) * μ ^ 2 +
-          ((∑ k, p.D k * Complex.normSq (u k) : ℝ) : ℂ) * μ +
-          ∑ k, star (u k) * ∑ l, (flowWeights p.B θ k l : ℂ) * (u k - u l) := by
-      push_cast
-      simp only [mul_add, Finset.sum_add_distrib, Finset.sum_mul]
-      congr 1
-      congr 1
-      · exact Finset.sum_congr rfl fun k _ => by rw [← hns]; ring
-      · exact Finset.sum_congr rfl fun k _ => by rw [← hns]; ring
-    rw [hexp, star_dotProduct_laplacian_mulVec hWs] at hsum
-    have hune : ∃ k, u k ≠ 0 := by
-      by_contra hall
-      push Not at hall
-      apply hv0
-      · funext i
-        have := h1 i
-        rw [hwk, hwk, hall, hall] at this
-        simp only [mul_zero, sub_zero] at this
-        exact (mul_eq_zero.mp this.symm).resolve_left hμ
-      · funext k; rw [hwk, hall]; simp
-    obtain ⟨k₀, hk₀⟩ := hune
-    have hm : 0 < ∑ k, p.M k * Complex.normSq (u k) :=
-      Finset.sum_pos' (fun k _ => mul_nonneg (p.M_pos k).le (Complex.normSq_nonneg _))
-        ⟨k₀, Finset.mem_univ _, mul_pos (p.M_pos k₀) (Complex.normSq_pos.mpr hk₀)⟩
-    have hd : 0 < ∑ k, p.D k * Complex.normSq (u k) :=
-      Finset.sum_pos' (fun k _ => mul_nonneg (p.D_pos k).le (Complex.normSq_nonneg _))
-        ⟨k₀, Finset.mem_univ _, mul_pos (p.D_pos k₀) (Complex.normSq_pos.mpr hk₀)⟩
-    have hl : 0 ≤ (∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (u i - u j)) / 2 := by
-      rw [sum_normSq_eq_hessForm]
-      exact div_nonneg (add_nonneg (hessForm_nonneg_of_pos hpos _)
-        (hessForm_nonneg_of_pos hpos _)) zero_le_two
-    exact re_neg_of_quadratic hm hd hl hsum hμ
 
 /-! ## Necessary conditions from the Hessian and cubic forms -/
 

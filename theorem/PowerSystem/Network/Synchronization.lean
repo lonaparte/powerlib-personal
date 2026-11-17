@@ -29,10 +29,6 @@ Results.
   `SimpleGraph.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix`); for a connected graph
   the kernel is spanned by `𝟙` (`lapMatrix_mulVec_eq_zero_iff_const`); bridge
   `G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ)` (`lapMatrix_eq_laplacian`).
-* `netField_diag`: on the diagonal the network field is `f` in every node (tangency);
-  `sync_lift`: a node solution `s` gives the network solution `(s, …, s)`;
-  `sync_invariant`: if the network field is globally Lipschitz, every network solution that
-  starts on `M_sync` stays on it (it equals `(s, …, s)`; Mathlib `ODE_solution_unique_univ`).
 * `variational_decouple`: for `δẊᵢ = A(t) δXᵢ − σ Σⱼ Lᵢⱼ Γ(t) δXⱼ` and any matrix `W` of left
   eigenvectors (`W L = diag(μ) W`; for symmetric `L`, `W = Vᵀ` with `L = VΛVᵀ`), the modal
   coordinates `ξ_k = Σᵢ W_{ki} δXᵢ` obey `ξ̇_k = (A(t) − σ μ_k Γ(t)) ξ_k`.
@@ -43,8 +39,12 @@ Results.
   blocks is `Network.Sync.expSync_iff` (`theorem/PowerSystem/Network/LinearSync.lean`).
 * Cluster synchronization (`EquitablePartition`, `cluster_field`, `cluster_lift`,
   `cluster_invariant`): if every node of cluster `c` receives the same total coupling `Q c c'`
-  from cluster `c'`, the cluster manifold `{X = Y ∘ π}` is invariant and carries the quotient
-  dynamics `Ẏ_c = f(Y_c) − σ Σ_{c'} Q_{cc'} H(Y_{c'})`.
+  from cluster `c'`, the cluster manifold `{X = Y ∘ π}` is invariant (globally Lipschitz
+  network field; Mathlib `ODE_solution_unique_univ`) and carries the quotient dynamics
+  `Ẏ_c = f(Y_c) − σ Σ_{c'} Q_{cc'} H(Y_{c'})`, the network field `netField f H Q σ` of the
+  clusters.  Complete synchronization `M_sync` (tangency, lift of a node solution to
+  `(s, …, s)`, invariance) is the one-cluster case: zero row sums make the trivial partition
+  equitable with `Q = 0` (`equitable_trivial`).
 
 Family and connection conclusions.
 * None: generic implications (no family, no connection statement).
@@ -93,34 +93,6 @@ def netField (f H : E → E) (L : Matrix ι ι ℝ) (σ : ℝ) (X : ι → E) : 
 
 /-- Zero row sums (`L𝟙 = 0`). -/
 def RowSumZero (L : Matrix ι ι ℝ) : Prop := ∀ i, ∑ j, L i j = 0
-
-/-- **Tangency**: on the diagonal every node evolves by `f`. -/
-@[tmio T, powerlib_foundation] theorem netField_diag {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
-    (σ : ℝ) (x : E) : netField f H L σ (fun _ => x) = fun _ => f x := by
-  funext i
-  simp only [netField]
-  rw [← Finset.sum_smul, hL i, zero_smul, smul_zero, sub_zero]
-
-/-- A solution of the isolated node lifts to the synchronized network solution. -/
-@[tmio T, powerlib_foundation] theorem sync_lift {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
-    (σ : ℝ) {s : ℝ → E} (hs : ∀ t, HasDerivAt s (f (s t)) t) (t : ℝ) :
-    HasDerivAt (fun τ => fun _ : ι => s τ) (netField f H L σ (fun _ => s t)) t := by
-  rw [netField_diag hL]
-  exact hasDerivAt_pi.mpr fun _ => hs t
-
-/-- **Invariance of `M_sync`** (globally Lipschitz network field): a network solution starting
-at `(s(0), …, s(0))` equals `(s(t), …, s(t))` for all `t`. -/
-@[tmio T, powerlib_foundation] theorem sync_invariant {f H : E → E} {L : Matrix ι ι ℝ} (hL : RowSumZero L)
-    {σ : ℝ} {K : NNReal} (hF : LipschitzWith K (netField f H L σ)) {s : ℝ → E}
-    (hs : ∀ t, HasDerivAt s (f (s t)) t) {X : ℝ → ι → E}
-    (hX : ∀ t, HasDerivAt X (netField f H L σ (X t)) t) (h0 : X 0 = fun _ => s 0) :
-    ∀ t i, X t i = s t := by
-  have heq : X = fun τ => fun _ : ι => s τ :=
-    ODE_solution_unique_univ (v := fun _ => netField f H L σ) (s := fun _ => Set.univ) (t₀ := 0)
-      (fun _ => hF.lipschitzOnWith) (fun t => ⟨hX t, trivial⟩)
-      (fun t => ⟨sync_lift hL σ hs t, trivial⟩) h0
-  intro t i
-  rw [heq]
 
 /-! ## Variational equation: decoupling by the Laplacian spectrum -/
 
@@ -183,16 +155,13 @@ receives total coupling `Q c c'` from cluster `c'`. -/
 def EquitablePartition (L : Matrix ι ι ℝ) (π : ι → κ) (Q : Matrix κ κ ℝ) : Prop :=
   ∀ i c, ∑ j ∈ Finset.univ.filter (fun j => π j = c), L i j = Q (π i) c
 
-/-- Quotient (cluster) field `Ẏ_c = f(Y_c) − σ Σ_{c'} Q_{cc'} H(Y_{c'})`. -/
-def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) : κ → E :=
-  fun c => f (Y c) - σ • ∑ c', Q c c' • H (Y c')
-
-/-- On the cluster manifold the network field is the lifted quotient field. -/
+/-- On the cluster manifold the network field is the lifted quotient field
+`Ẏ_c = f(Y_c) − σ Σ_{c'} Q_{cc'} H(Y_{c'})` (the network field of the clusters). -/
 @[tmio T, powerlib_foundation] theorem cluster_field {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
     {Q : Matrix κ κ ℝ} (hπ : EquitablePartition L π Q) (σ : ℝ) (Y : κ → E) :
-    netField f H L σ (Y ∘ π) = quotField f H Q σ Y ∘ π := by
+    netField f H L σ (Y ∘ π) = netField f H Q σ Y ∘ π := by
   funext i
-  simp only [netField, quotField, Function.comp_apply]
+  simp only [netField, Function.comp_apply]
   congr 2
   rw [← Finset.sum_fiberwise Finset.univ π (fun j => L i j • H (Y (π j)))]
   refine Finset.sum_congr rfl fun c _ => ?_
@@ -203,7 +172,7 @@ def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) :
 /-- A quotient solution lifts to a cluster-synchronized network solution. -/
 @[tmio T, powerlib_foundation] theorem cluster_lift {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
     {Q : Matrix κ κ ℝ} (hπ : EquitablePartition L π Q) (σ : ℝ) {Y : ℝ → κ → E}
-    (hY : ∀ t, HasDerivAt Y (quotField f H Q σ (Y t)) t) (t : ℝ) :
+    (hY : ∀ t, HasDerivAt Y (netField f H Q σ (Y t)) t) (t : ℝ) :
     HasDerivAt (fun τ => Y τ ∘ π) (netField f H L σ (Y t ∘ π)) t := by
   rw [cluster_field hπ]
   exact hasDerivAt_pi.mpr fun i => (hasDerivAt_pi.mp (hY t)) (π i)
@@ -212,7 +181,7 @@ def quotField (f H : E → E) (Q : Matrix κ κ ℝ) (σ : ℝ) (Y : κ → E) :
 @[tmio T, powerlib_foundation] theorem cluster_invariant {f H : E → E} {L : Matrix ι ι ℝ} {π : ι → κ}
     {Q : Matrix κ κ ℝ} (hπ : EquitablePartition L π Q) {σ : ℝ} {K : NNReal}
     (hF : LipschitzWith K (netField f H L σ)) {Y : ℝ → κ → E}
-    (hY : ∀ t, HasDerivAt Y (quotField f H Q σ (Y t)) t) {X : ℝ → ι → E}
+    (hY : ∀ t, HasDerivAt Y (netField f H Q σ (Y t)) t) {X : ℝ → ι → E}
     (hX : ∀ t, HasDerivAt X (netField f H L σ (X t)) t) (h0 : X 0 = Y 0 ∘ π) :
     ∀ t, X t = Y t ∘ π := by
   have heq : X = fun τ => Y τ ∘ π :=

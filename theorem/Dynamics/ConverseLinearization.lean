@@ -324,36 +324,6 @@ Jacobian. -/
   rw [← map_sub, Matrix.ofLp_toEuclideanCLM] at h
   simpa using h
 
-/-- A `C¹` field with a nonzero linear first integral — a linear functional `ℓ` with
-`ℓ (f x) = 0` everywhere — has no locally exponentially stable point: its Jacobian is singular. -/
-@[tmio T, powerlib_foundation] theorem not_locallyExponentiallyStable_of_firstIntegral
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (hf : ContDiff ℝ 1 f) (ℓ : ℝⁿ →L[ℝ] ℝ) (hℓ : ℓ ≠ 0)
-    (hcons : ∀ x, ℓ (f x) = 0) : ¬ LocallyExponentiallyStable f x_eq := by
-  intro h
-  set D := fderiv ℝ f x_eq with hD
-  set A := (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).symm D with hA_def
-  have hJac : D = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A := by
-    rw [hA_def, StarAlgEquiv.apply_symm_apply]
-  have hA := isHurwitz_of_locallyExponentiallyStable A hf hJac h
-  have hd : HasFDerivAt (fun x => ℓ (f x)) (ℓ.comp D) x_eq :=
-    ℓ.hasFDerivAt.comp x_eq (hf.differentiable one_ne_zero x_eq).hasFDerivAt
-  have hzero : ℓ.comp D = 0 := by
-    have h2 : HasFDerivAt (fun x => ℓ (f x)) (0 : ℝⁿ →L[ℝ] ℝ) x_eq := by
-      simp only [hcons]
-      exact hasFDerivAt_const 0 x_eq
-    exact hd.unique h2
-  have hinj : Function.Injective (D : ℝⁿ →ₗ[ℝ] ℝⁿ) := by
-    rw [hJac]
-    exact toEuclideanCLM_injective_of_isHurwitz hA
-  have hsurj := LinearMap.injective_iff_surjective.mp hinj
-  apply hℓ
-  ext y
-  obtain ⟨x, hx⟩ := hsurj y
-  have := congrArg (fun L : ℝⁿ →L[ℝ] ℝ => L x) hzero
-  simp only [ContinuousLinearMap.comp_apply, _root_.zero_apply] at this
-  rw [← hx]
-  simpa using this
-
 /-- A singular Jacobian excludes local exponential stability: at a locally exponentially stable
 point of a `C¹` field the Jacobian is injective. -/
 @[tmio T, powerlib_foundation] theorem fderiv_injective_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
@@ -364,6 +334,32 @@ point of a `C¹` field the Jacobian is injective. -/
     rw [hA_def, StarAlgEquiv.apply_symm_apply]
   rw [hJac]
   exact toEuclideanCLM_injective_of_isHurwitz (isHurwitz_of_locallyExponentiallyStable A hf hJac h)
+
+/-- A `C¹` field with a nonzero linear first integral — a linear functional `ℓ` with
+`ℓ (f x) = 0` everywhere — has no locally exponentially stable point: its Jacobian is singular
+(`fderiv_injective_of_locallyExponentiallyStable`). -/
+@[tmio T, powerlib_foundation] theorem not_locallyExponentiallyStable_of_firstIntegral
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (hf : ContDiff ℝ 1 f) (ℓ : ℝⁿ →L[ℝ] ℝ) (hℓ : ℓ ≠ 0)
+    (hcons : ∀ x, ℓ (f x) = 0) : ¬ LocallyExponentiallyStable f x_eq := by
+  intro h
+  set D := fderiv ℝ f x_eq with hD
+  have hd : HasFDerivAt (fun x => ℓ (f x)) (ℓ.comp D) x_eq :=
+    ℓ.hasFDerivAt.comp x_eq (hf.differentiable one_ne_zero x_eq).hasFDerivAt
+  have hzero : ℓ.comp D = 0 := by
+    have h2 : HasFDerivAt (fun x => ℓ (f x)) (0 : ℝⁿ →L[ℝ] ℝ) x_eq := by
+      simp only [hcons]
+      exact hasFDerivAt_const 0 x_eq
+    exact hd.unique h2
+  have hinj : Function.Injective (D : ℝⁿ →ₗ[ℝ] ℝⁿ) :=
+    fderiv_injective_of_locallyExponentiallyStable hf h
+  have hsurj := LinearMap.injective_iff_surjective.mp hinj
+  apply hℓ
+  ext y
+  obtain ⟨x, hx⟩ := hsurj y
+  have := congrArg (fun L : ℝⁿ →L[ℝ] ℝ => L x) hzero
+  simp only [ContinuousLinearMap.comp_apply, _root_.zero_apply] at this
+  rw [← hx]
+  simpa using this
 
 /-! ## Fields that are `C¹` only near the point
 

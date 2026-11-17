@@ -77,6 +77,59 @@ in Git; working statistics, build receipts and development plans are not kept he
     without its unused hypothesis.
   - Classified theorems 7407 → 7375; public connection theorems 1024 → 1022.
 
+- Third consolidation wave (second-pass audit; removed names have no aliases):
+  - Generic laws: `Numerics.contDiff_shift` gives the smoothness obligation of every Euler
+    realization (`contDiff_modelField` of PSC, VSM-LPF, droop LPF, matching stiff grid,
+    limiting, PI-PLL, the swing models and the reduced slow PLL,
+    `VSMLPF.rig_contDiff_field`, `MatchingClosedLoop.full_contDiff_field` removed);
+    instability and non-attractivity laws `Dynamics.not_localAsymptoticStable_of_line`,
+    `unstable_of_conserved_drive_local`, `unstable_of_repelling_coord_local` and the
+    compact-exit lemma `false_of_lie_pos_on_compact` (used by the Lyapunov and Chetaev
+    proofs and by the GFL DC-link, PLL-DC, four-state, quasi-static and rate-PLL
+    boundary cases); `Criteria.invariants_of_blockTriangular_fin_four` (replaces
+    `invariants_of_blockDiag_fin_four`; `PLLDC.Params.jacobian_invariants_of_J20_eq_zero`);
+    `Family.constantInput`, `mem_den_constantInput_iff` (the LFC, swing-governor and SFR
+    load-step families); the conjugation laws in `Dynamics/Transport`
+    (`Linear.isTrajectoryOn_conj`, `lyapunovStable_conj`, `decay_conj`,
+    `conservative_conj` → `Dynamics.*_conjEquiv`); one θ-method
+    (`Numerics.IsThetaTrajectory`, `thetaMatrix`, `theta_*`; backward Euler and the
+    trapezoidal rule at θ = 1, ½, their `_iff`, `existsUnique`,
+    `schurStable_of_isHurwitz`, `exponentiallyStable_of_isHurwitz` removed);
+    `SingularPerturbation.decay_of_dissipation`; one quartic double well
+    (`Potential/DoubleWell`; `Pitchfork.potential`, `Duffing.potential`,
+    `guardPotential`, the large-deviation well defined through it; `Pitchfork.barrier`,
+    `Pitchfork.hasDerivAt_potential`, `Guard.guardDrift_guardRadius` removed).
+  - Models: `LinearPLL.family` is a `Spectral.rateFamily` (requirements `stable`,
+    `unstable`, `rate a`); `biasedPD`, `biasedModel` are the trigonometric detector at
+    `(−V, 0, 0, 0, μ)`; the IFOC rotor flux is the dq RL branch `(r_r, L_r)`
+    (`InductionMachine.Params.rotorBranch`, `fluxField_eq_inputField`,
+    `mem_den_flow_iff_dqRL`; scaffold `Drives/IFOCRotorBranch.agda`); the IMC copied form
+    is the PI loop at `withGain (−V_dc)` (`PIParams.det_model_A`); the network swing
+    Jacobian test is the Hessian-form test (`Swing.jacobian_isHurwitz` from
+    `jacobian_isHurwitz_of_hessForm`); `Network.laplacian` over any commutative ring
+    (`laplacian_map`; the bus admittance an abbreviation); GFL reduced-model readings
+    through the reading laws; GFL class-A and noise linearizations through the swing and
+    PI-PLL laws (`classA_trace`, `classA_det` assume `M ≠ 0`).
+  - Removed restatements and unused results: synchronization trivial-partition
+    restatements and `quotField`; LinearSync `euclidean_*`; `LFC.realize_univ(7)`;
+    `LFCNetwork.plant_isHurwitz_of_gain`; `SwingPH.linearPH_passive`,
+    `linearPH_lyapunovStable`; the `swingCov` entry lemmas, `lagCov_hasDerivAt`;
+    `LowInertia.rotatingFrame_hasDerivAt`; `complex_laplacian_*`,
+    `complex_eq_of_laplacian_eq_zero`, `ybusNoShunt_mulVec_one`; the IMC
+    `copied_det_neg`, `copied_exists_pos_root`; InductionMachine `vec`, `inner_state2`,
+    `fluxMatrix_isHurwitz`; the three unused `changeCoordinates` interconnection laws;
+    `rlNetwork_scaleCLM`; `LCLine.reduced_energy_rate_nonpos`, `cp_energy_rate_nonpos`;
+    `PLL.biasedPD_eq_trigPD`, `hasDerivAt_biasedPD`, `contDiff_biasedPD`,
+    `biasedModel_deriv`, `StochasticPH.pllNoiseFreq_mul_transpose`;
+    `Limiting.currentMag_sq_num`, `iMag_radicand_nonneg`, `Limiting.sgn` (`Real.sign`);
+    `Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian`,
+    `LTI.trajectory_eq_solution_Ici`; `Modal.mem_spectrum_iff_exists_eigvec`,
+    `LTI.spectrum_eq_setOf_eigenpair` (→ `LTI.mem_spectrum_iff_exists_eigvec`);
+    `DAE.LinearDAE.sqNorm_mulVec_le`, `norm_mulVec_le` (Mathlib's l2 operator norm);
+    `Delay.pade11Num_jω_eq_conj`, `pade22Num_jω_eq_conj`;
+    `SingularPerturbation.hasDerivAt_quadratic`.
+  - Classified theorems 7375 → 7298; public connection theorems 1022 → 1016.
+
 ## 2026-11-16
 
 - Structural reuse (last pass of the redundancy audit). Removed names are listed

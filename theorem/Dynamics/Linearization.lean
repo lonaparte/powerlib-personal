@@ -17,9 +17,8 @@ equilibrium) and `theory/T-small-signal-stability.md` §1.3, §1.6 (local stabil
 eigenvalues); Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.7, as formalized in LeanForControl.
 
 Results.
-* `locallyExponentiallyStable_of_spectrallyStable_jacobian`: a spectrally stable `A` gives local
-  exponential stability (a Hurwitz `A`: LeanForControl's
-  `hurwitz_linearization_locally_exponentially_stable`).
+* Local exponential stability from a spectrally stable Jacobian is LeanForControl's
+  `hurwitz_linearization_locally_exponentially_stable` with `Linear.spectrallyStable_iff_isHurwitz`.
 * `unstable_of_characteristic_root_re_pos`: a root of the characteristic polynomial
   `det (s I - A)` in the open right half plane gives instability (an eigenvalue: LeanForControl's
   `unstable_of_exists_complex_eigenvalue_re_pos`).
@@ -34,15 +33,6 @@ open Matrix LinearSystems
 variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-- A spectrally stable Jacobian at an equilibrium gives local exponential stability. -/
-@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_spectrallyStable_jacobian
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ)
-    (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    (hA : Linear.SpectrallyStable A) : LocallyExponentiallyStable f x_eq :=
-  hurwitz_linearization_locally_exponentially_stable A hf heq hJac
-    ((Linear.spectrallyStable_iff_isHurwitz A).mp hA)
 
 /-- A root of the Jacobian's characteristic polynomial in the open right half plane gives
 instability. -/

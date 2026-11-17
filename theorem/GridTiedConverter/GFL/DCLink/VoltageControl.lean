@@ -98,7 +98,8 @@ The closed loop within the physical range (`V_d, V_dc*, C > 0`) is decided exact
 * `closedLoop_mem_den_lyapunovStable_iff`: Lyapunov stable iff `Ki > 0 ∧ Kp ≥ −I_dc0/V_d` (centre
   included) or `Ki = 0 ∧ i_ff = I_d0 ∧ Kp > −I_dc0/V_d` (`ζ + γ (V_dc* v + v²/2)` conserved, `v²`
   decaying); `Ki = 0` with `Kp ≤ −I_dc0/V_d` is unstable (Chetaev's theorem,
-  `Dynamics.unstable_of_chetaev_local`). Hence `closedNot_exact_lyapunovStable_physical`: the
+  `Dynamics.unstable_of_repelling_coord_local`, `Dynamics.unstable_of_conserved_drive_local`).
+  Hence `closedNot_exact_lyapunovStable_physical`: the
   Lyapunov translation is not exact within the physical range, witness `centerLoop`
   (`C = V_d = V_dc* = Ki = 1`, `Kp = i_ff = I_d0 = 0`; `centerLoop_mem_den_lyapunovStable`,
   `centerLoop_not_mem_den_locallyAsymptoticallyStable`).
@@ -660,7 +661,7 @@ equilibrium. -/
 /-- Positive capacitance and operating voltage: the open-loop DC node is locally asymptotically
 stable exactly in rectifier operation, `P/V0 > 0` — the local exponential condition. Inverter
 operation is unstable, and with no AC power (`P = 0`) every voltage is an equilibrium
-(`Dynamics.not_localAsymptoticStable_of_equilibria`). -/
+(`Dynamics.not_localAsymptoticStable_of_line`). -/
 @[tmio TM, powerlib_domain] theorem openLoop_mem_den_locallyAsymptoticallyStable_iff (m : OpenLoop)
     (hC : 0 < m.C) (hV : 0 < m.V0) :
     connection% (m ∈ openFamily.den (.flow .locallyAsymptoticallyStable) ↔
@@ -673,16 +674,9 @@ operation is unstable, and with no AC power (`P = 0`) every voltage is an equili
     rcases lt_trichotomy (m.P / m.V0) 0 with hP | hP | hP
     · exact absurd h.1 ((open_mem_den_flow.mp (openLoop_mem_den_unstable m hC hV hP)))
     · exfalso
-      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-        ⟨dcState (m.V0 + ε / 2), fun h' => ?_, ?_, openField_P_zero hP hV _⟩) h
-      · have := congrArg (fun y : State 1 => y 0) h'
-        simp [dcState] at this
-        linarith
-      · rw [EuclideanSpace.norm_eq]
-        simp only [dcState, PiLp.sub_apply, Fin.sum_univ_one,
-          Matrix.cons_val_zero, Real.norm_eq_abs, sq_abs, add_sub_cancel_left]
-        rw [Real.sqrt_sq (by linarith)]
-        linarith
+      exact Dynamics.not_localAsymptoticStable_of_line (v := dcState 1)
+        (fun h' => by simpa [dcState] using congrArg (fun y : State 1 => y 0) h')
+        (fun t _ => openField_P_zero hP hV _) h
     · exact hP
   · intro hP
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
@@ -910,17 +904,8 @@ point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
   rw [closed_mem_den_flow]
   intro h
   by_cases h0 : p.closedField p.eqState = 0
-  · refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨p.eqState + (ε / 2) • EuclideanSpace.single 1 1, ?_, ?_, ?_⟩) h
-    · intro h'
-      have := congrArg (fun y : State 2 => y 1) h'
-      simp at this
-      linarith
-    · rw [add_sub_cancel_left, norm_smul, PiLp.norm_single, norm_one, mul_one,
-        Real.norm_eq_abs, abs_of_pos (by positivity)]
-      linarith
-    · rw [p.closedField_ki_zero_shift hKi]
-      exact h0
+  · exact Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 1 1) (by simp)
+      (fun t _ => by rw [p.closedField_ki_zero_shift hKi]; exact h0) h
   · exact h0 (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 2) (p.eqState_mem hV)
       p.closedField_contDiffOn h.1)
 
@@ -1028,35 +1013,21 @@ unstable (Chetaev's function `v²`). -/
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
-  refine Dynamics.unstable_of_chetaev_local (W := fun x : State 2 => (x 0 - p.Vref) ^ 2)
-    (r := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by fun_prop) one_pos
-    (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0], ?_, ?_⟩) (fun x hx _ hW => ?_)
-  · rw [add_sub_cancel_left]
-    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans_lt ?_
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, abs_zero, add_zero]
-    rw [abs_of_pos (by positivity)]
-    linarith
-  · simp [eqState]
+  refine Dynamics.unstable_of_repelling_coord_local (i := 0) (isOpen_posDC 2) (p.eqState_mem hV)
+    p.closedField_contDiffOn fun x hx hne => ?_
+  have hx' : 0 < x 0 := hx
+  have h0 : p.eqState 0 = p.Vref := by simp [eqState]
+  rw [h0] at hne ⊢
+  rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx')]
+  have he := sub_ne_zero.mpr hne
+  have hk : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) / (p.Vref * p.C * x 0) := by
+    have : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) := by nlinarith
     positivity
-  · have hx' : 0 < x 0 := hx
-    have hd : HasFDerivAt (fun x : State 2 => (x 0 - p.Vref) ^ 2)
-        ((2 * (x 0 - p.Vref)) • Dynamics.coord 0) x := by
-      have h := ((Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref).pow 2
-      convert h using 1
-      ext v; simp
-    rw [hd.fderiv]
-    simp only [_root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
-    rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx')]
-    have hW' : 0 < (x 0 - p.Vref) ^ 2 := hW
-    have : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0) := by
-      have : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) := by nlinarith
-      positivity
-    have heq : 2 * (x 0 - p.Vref) * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
-        (p.Vref * p.C * x 0)) =
-        2 * (-(p.Vd * (p.Id0 + p.Vref * p.Kp)) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0)) := by
-      ring
-    rw [heq]
-    linarith
+  have heq : (x 0 - p.Vref) * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
+      (p.Vref * p.C * x 0)) =
+      -(p.Vd * (p.Id0 + p.Vref * p.Kp)) / (p.Vref * p.C * x 0) * (x 0 - p.Vref) ^ 2 := by ring
+  rw [heq]
+  positivity
 
 /-- Without integral gain, with `i_ff = I_d0` and `Kp = −I_dc0/V_d`, the voltage error stays
 constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
@@ -1065,32 +1036,16 @@ constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
-  refine Dynamics.unstable_of_chetaev_local (W := fun x : State 2 => (x 0 - p.Vref) * x 1)
-    (r := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by fun_prop) one_pos
-    (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 4, ε / 4], ?_, ?_⟩) (fun x hx _ hW => ?_)
-  · rw [add_sub_cancel_left]
-    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans_lt ?_
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-    rw [abs_of_pos (by positivity)]
+  have h0 : p.eqState 0 = p.Vref := by simp [eqState]
+  refine Dynamics.unstable_of_conserved_drive_local (i := 0) (j := 1) (g := fun s => s - p.Vref)
+    (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by decide) (by fun_prop)
+    (fun ε hε => ⟨p.Vref + ε / 2, ?_, ?_⟩) (fun x hx => ?_) fun x _ => p.closedField_one x
+  · rw [h0, add_sub_cancel_left, abs_of_pos (half_pos hε)]
     linarith
-  · simp [eqState, hKi]
-    positivity
-  · have hx' : 0 < x 0 := hx
-    have hd : HasFDerivAt (fun x : State 2 => (x 0 - p.Vref) * x 1)
-        (x 1 • Dynamics.coord 0 + (x 0 - p.Vref) • Dynamics.coord 1) x := by
-      have h := ((Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref).mul
-        (Dynamics.hasFDerivAt_coord 1 x)
-      convert h using 1
-      ext v; simp; ring
-    rw [hd.fderiv]
-    simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
-    rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx'), p.closedField_one, hβ]
-    have hv : x 0 - p.Vref ≠ 0 := by
-      intro h
-      have : (x 0 - p.Vref) * x 1 = 0 := by rw [h, zero_mul]
-      linarith
-    have : 0 < (x 0 - p.Vref) * (x 0 - p.Vref) := mul_self_pos.mpr hv
-    simpa using this
+  · rw [add_sub_cancel_left]
+    exact (half_pos hε).ne'
+  · rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt (show 0 < x 0 from hx)), hβ]
+    simp
 
 /-- Without integral gain the operating point is an equilibrium exactly when the feedforward
 matches the operating current, `i_ff = I_d0`. -/

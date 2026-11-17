@@ -29,11 +29,10 @@ Results.
   `complexify_zero`, `complexify_fromRows`, `complexify_fromCols`, `complexify_fromBlocks`,
   `complexify_mul_eq_one`, `inv_conj`).
 * Coordinate changes: `Plant.changeCoordinates` (`x' = T x`, `x = S x'`),
-  `characteristicMatrix_conj`, `isHurwitz_conj`, `transfer_changeCoordinates`; behaviour under
-  linear conjugation (`isTrajectoryOn_conj`, `lyapunovStable_conj`, `decay_conj`,
-  `conservative_conj`). With the other sentences they make the transport law of
-  `theorem/Dynamics/Transport.lean`, which reads every behavioural sentence at the origin of a
-  linear field in matrix coordinates (`holds_conj`) and of similar plants (`Similar.holds_iff`).
+  `characteristicMatrix_conj`, `isHurwitz_conj`, `transfer_changeCoordinates`. Behaviour under
+  linear conjugation is the transport law of `theorem/Dynamics/Transport.lean`, which reads every
+  behavioural sentence at the origin of a linear field in matrix coordinates (`holds_conj`) and of
+  similar plants (`Similar.holds_iff`).
 * Similarity: `Similar`, `Plant.changeCoordinates_changeCoordinates`,
   `Plant.changeCoordinates_one`, `Similar.refl`, `Similar.symm`, `Similar.trans`,
   `Similar.transfer_eq`, `Similar.isHurwitz_iff`, and the equivalence of plants
@@ -227,69 +226,6 @@ def Plant.changeCoordinates {n' : ℕ} (T : Matrix (Fin n') (Fin n) ℝ)
       = complexify M.C * (complexify S * complexify T) * (characteristicMatrix M.A s)⁻¹ *
           (complexify S * complexify T) * complexify M.B := by simp only [Matrix.mul_assoc]
     _ = _ := by rw [complexify_mul_eq_one hST, Matrix.mul_one, Matrix.mul_one]
-
-local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-- A solution of the conjugated field read back through `K` is a solution of the field. -/
-@[tmio T, powerlib_foundation] theorem isTrajectoryOn_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
-    (hKL : ∀ x, K (L x) = x) {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
-    (hφ : IsTrajectoryOn φ (fun x => L (f (K x))) t₀ t₁) :
-    IsTrajectoryOn (fun t => K (φ t)) f t₀ t₁ := fun s hs => by
-  have := K.hasFDerivAt.comp_hasDerivWithinAt s (hφ s hs)
-  simpa [Function.comp_def, hKL] using this
-
-/-- Lyapunov stability of the origin survives a linear change of coordinates. -/
-@[tmio T, powerlib_foundation] theorem lyapunovStable_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
-    (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) (hf : LyapunovStable f 0) :
-    LyapunovStable (fun x => L (f (K x))) 0 := by
-  intro ε hε
-  obtain ⟨δ, hδ, h⟩ := hf (ε / (‖L‖ + 1)) (by positivity)
-  refine ⟨δ / (‖K‖ + 1), by positivity, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
-  have hψ := isTrajectoryOn_conj L K hKL hφ
-  have hK0 : ‖K (φ t₀) - 0‖ < δ := by
-    rw [sub_zero] at h0 ⊢
-    calc ‖K (φ t₀)‖ ≤ ‖K‖ * ‖φ t₀‖ := K.le_opNorm _
-      _ ≤ (‖K‖ + 1) * ‖φ t₀‖ := by gcongr; linarith
-      _ < (‖K‖ + 1) * (δ / (‖K‖ + 1)) := by gcongr
-      _ = δ := by field_simp
-  have hb := h t₀ t₁ _ hψ hK0 t ht
-  rw [sub_zero] at hb ⊢
-  calc ‖φ t‖ = ‖L (K (φ t))‖ := by rw [hLK]
-    _ ≤ ‖L‖ * ‖K (φ t)‖ := L.le_opNorm _
-    _ ≤ (‖L‖ + 1) * ‖K (φ t)‖ := by gcongr; linarith
-    _ < (‖L‖ + 1) * (ε / (‖L‖ + 1)) := by gcongr
-    _ = ε := by field_simp
-
-/-- A decay rate survives a linear change of coordinates, with a new overshoot constant. -/
-@[tmio T, powerlib_foundation] theorem decay_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
-    (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) {a : ℝ} (hf : Flow.Decay f 0 a) :
-    Flow.Decay (fun x => L (f (K x))) 0 a := by
-  obtain ⟨C, hC⟩ := hf
-  refine ⟨‖L‖ * max C 0 * ‖K‖, fun t₀ t₁ φ hφ t ht => ?_⟩
-  have hb := hC t₀ t₁ _ (isTrajectoryOn_conj L K hKL hφ) t ht
-  rw [sub_zero, sub_zero] at hb ⊢
-  have he : 0 ≤ Real.exp (-a * (t - t₀)) := (Real.exp_pos _).le
-  calc ‖φ t‖ = ‖L (K (φ t))‖ := by rw [hLK]
-    _ ≤ ‖L‖ * ‖K (φ t)‖ := L.le_opNorm _
-    _ ≤ ‖L‖ * (max C 0 * Real.exp (-a * (t - t₀)) * ‖K (φ t₀)‖) := by
-        gcongr
-        refine hb.trans ?_
-        gcongr
-        exact le_max_left _ _
-    _ ≤ ‖L‖ * (max C 0 * Real.exp (-a * (t - t₀)) * (‖K‖ * ‖φ t₀‖)) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (K.le_opNorm _)
-          (mul_nonneg (le_max_right _ _) he)) (norm_nonneg _)
-    _ = ‖L‖ * max C 0 * ‖K‖ * Real.exp (-a * (t - t₀)) * ‖φ t₀‖ := by ring
-
-/-- Conservation survives a linear change of coordinates: the energy is read through `K`. -/
-@[tmio T, powerlib_foundation] theorem conservative_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
-    (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) (hf : Flow.Conservative f 0) :
-    Flow.Conservative (fun x => L (f (K x))) 0 := by
-  obtain ⟨V, hV, hmin, hcons⟩ := hf
-  refine ⟨V ∘ K, hV.comp K.continuous, fun x hx => ?_, fun t₀ t₁ φ hφ t ht =>
-    hcons t₀ t₁ _ (isTrajectoryOn_conj L K hKL hφ) t ht⟩
-  have hKx : K x ≠ 0 := fun h => hx (by rw [← hLK x, h, map_zero])
-  simpa [Function.comp_apply, map_zero] using hmin (K x) hKx
 
 /-! ## Similar plants -/
 

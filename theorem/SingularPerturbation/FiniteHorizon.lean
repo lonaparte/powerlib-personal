@@ -135,14 +135,6 @@ for `f + β/k`). -/
     rw [e] at h
     linarith [le_abs_self ((N *ᵥ v) ⬝ᵥ (N *ᵥ v))]
 
-/-- Derivative of `yᵀ P y` for symmetric `P`: `2 yᵀ P ẏ`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_quadratic_of_symm {k : ℕ} {P : Matrix (Fin k) (Fin k) ℝ}
-    (hP : Pᵀ = P) {y : ℝ → Fin k → ℝ} {dy : Fin k → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
-    HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) t := by
-  convert hasDerivAt_quadratic P hy using 1
-  rw [Criteria.dotProduct_mulVec_comm_of_symm hP dy (y t)]
-  ring
-
 /-- Derivative of `|y|²`: `2 yᵀ ẏ`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_dotProduct_self {k : ℕ} {y : ℝ → Fin k → ℝ}
     {dy : Fin k → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :

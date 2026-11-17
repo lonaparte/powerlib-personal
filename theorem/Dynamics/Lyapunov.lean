@@ -29,7 +29,10 @@ Results.
   plus an averaging correction plus a quadratic form on the slaved coordinates) that is only valid
   near the point, and for a physical field with a `1 / V` term regularized away from `V = 0`. The
   Lyapunov stability part is LeanForControl's `lyapunov_stable`; attractivity is the uniform-decay
-  argument on a compact annulus (`antitoneOn_V_add_linear`).
+  argument on a compact annulus (`false_of_lie_pos_on_compact`).
+* `false_of_lie_pos_on_compact`: a solution on `[t₀, ∞)` cannot stay in a compact set on which
+  the derivative of a function along the field is continuous and positive (the common exit step
+  of the Lyapunov and Chetaev arguments, `antitoneOn_V_add_linear`).
 * `localAsymptoticStable_of_eventually_lyapunov`: the same with the hypotheses on a punctured
   neighbourhood (`∀ᶠ x in 𝓝[≠] x_eq`), the form in which normal-form computations at a Hopf point
   deliver them (`exists_radius_of_eventually` turns such a hypothesis into a ball).
@@ -69,6 +72,39 @@ local notation "ℝⁿ" => State n
   rw [eventually_nhdsWithin_iff, Metric.eventually_nhds_iff] at h
   obtain ⟨r, hr, h⟩ := h
   exact ⟨r, hr, fun x hx hne => h (by rwa [dist_eq_norm]) hne⟩
+
+/-- **Compact exit.** A solution on `[t₀, ∞)` cannot stay in a compact set on which the derivative
+of a differentiable function along the field is continuous and positive: the function would grow
+at a uniform positive rate while staying bounded on the set. The common step of the Lyapunov and
+Chetaev arguments. -/
+@[tmio T, powerlib_foundation] theorem false_of_lie_pos_on_compact {f : ℝⁿ → ℝⁿ} {W : ℝⁿ → ℝ}
+    {K : Set ℝⁿ} {φ : ℝ → ℝⁿ} {t₀ : ℝ} (hK : IsCompact K) (hW : Differentiable ℝ W)
+    (hLc : ContinuousOn (fun x => fderiv ℝ W x (f x)) K)
+    (hpos : ∀ x ∈ K, 0 < fderiv ℝ W x (f x))
+    (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici t₀)) (hφK : ∀ t, t₀ ≤ t → φ t ∈ K) :
+    False := by
+  have h0K : φ t₀ ∈ K := hφK t₀ le_rfl
+  obtain ⟨xm, hxmK, hmin⟩ := hK.exists_isMinOn ⟨_, h0K⟩ hLc
+  obtain ⟨xM, -, hmax⟩ := hK.exists_isMaxOn ⟨_, h0K⟩ hW.continuous.continuousOn
+  set γ := fderiv ℝ W xm (f xm)
+  have hγ : 0 < γ := hpos xm hxmK
+  have hle : W (φ t₀) ≤ W xM := hmax h0K
+  set T := t₀ + (W xM - W (φ t₀)) / γ + 1 with hT
+  have hT0 : t₀ ≤ T := by
+    have : 0 ≤ (W xM - W (φ t₀)) / γ := div_nonneg (by linarith) hγ.le
+    linarith
+  have hanti := antitoneOn_V_add_linear (V := fun x => -W x) (c := γ) hW.neg
+    hW.continuous.neg (convex_Ici t₀) hφ fun t ht => by
+      have hmt : γ ≤ fderiv ℝ W (φ t) (f (φ t)) := hmin (hφK t (interior_subset ht))
+      show fderiv ℝ (fun x => -W x) (φ t) (f (φ t)) ≤ -γ
+      rw [fderiv_fun_neg]
+      simpa using hmt
+  have h1 := hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr hT0) hT0
+  have h2 : W (φ T) ≤ W xM := hmax (hφK T hT0)
+  have h3 : γ * T = γ * t₀ + (W xM - W (φ t₀)) + γ := by
+    rw [hT, mul_add, mul_add, mul_div_cancel₀ _ hγ.ne', mul_one]
+  simp only at h1
+  linarith
 
 /-- **Local strict Lyapunov function.** A `C¹` function that vanishes at the point, is positive on
 a punctured ball around it and strictly decreases along a field continuous on that ball makes the
@@ -120,34 +156,13 @@ global sublevel set needs to be compact. -/
     have hKR : K ⊆ Metric.ball x R := fun y hy => by
       rw [Metric.mem_ball, dist_eq_norm]; linarith [hy.2]
     have hφK : ∀ t, t₀ ≤ t → φ t ∈ K := fun t ht => ⟨hno t ht, (hin t ht).le⟩
-    obtain ⟨ym, hymK, hmax⟩ := hKc.exists_isMaxOn ⟨φ t₀, hφK t₀ le_rfl⟩ (hLc.mono hKR)
-    have hym0 : ym ≠ x := fun h => by
-      have := hymK.1; rw [h, sub_self, norm_zero] at this; linarith
-    have hγ : fderiv ℝ V ym (f ym) < 0 := hLie ym (by linarith [hymK.2]) hym0
-    set γ := -fderiv ℝ V ym (f ym) with hγdef
-    have hγ0 : 0 < γ := by linarith
-    have hanti := antitoneOn_V_add_linear (c := γ) hVd hV.continuous (convex_Ici t₀) hφ
-      (fun t ht => by
-        have := hmax (hφK t (interior_subset ht))
-        simp only [Set.mem_ofPred_eq] at this
-        linarith)
-    set T := t₀ + V (φ t₀) / γ + 1 with hT
-    have hVφ0 : 0 ≤ V (φ t₀) := by
-      rcases eq_or_ne (φ t₀) x with h | h
-      · rw [h, hV0]
-      · exact (hpos _ (by linarith [hin t₀ le_rfl]) h).le
-    have hT0 : t₀ ≤ T := by
-      have : 0 ≤ V (φ t₀) / γ := div_nonneg hVφ0 hγ0.le
-      linarith
-    have h1 := hanti (Set.mem_Ici.mpr le_rfl) (Set.mem_Ici.mpr hT0) hT0
-    simp only at h1
-    have hVT : 0 ≤ V (φ T) := by
-      rcases eq_or_ne (φ T) x with h | h
-      · rw [h, hV0]
-      · exact (hpos _ (by linarith [hin T hT0]) h).le
-    have : γ * T = γ * t₀ + V (φ t₀) + γ := by
-      rw [hT, mul_add, mul_add, mul_div_cancel₀ _ hγ0.ne', mul_one]
-    linarith
+    refine false_of_lie_pos_on_compact (W := fun y => -V y) hKc hVd.neg ?_ (fun y hy => ?_) hφ hφK
+    · simp only [fderiv_fun_neg, neg_apply]
+      exact (hLc.mono hKR).neg
+    · have hy0 : y ≠ x := fun h => by
+        have := hy.1; rw [h, sub_self, norm_zero] at this; linarith
+      rw [fderiv_fun_neg]
+      simpa using hLie y (by linarith [hy.2]) hy0
   obtain ⟨T, hT, hTδ⟩ := henter
   refine ⟨T, fun t ht => ?_⟩
   rw [dist_eq_norm]

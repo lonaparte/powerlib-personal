@@ -41,9 +41,15 @@ Results.
   (`mem_den_locallyExponentiallyStable`; private implementation
   `reducedSwing_locallyExponentiallyStable`). The proof derives the Jacobian by `fderiv`
   (`hasFDerivAt_reducedField`), shows it is Hurwitz from the eigenvector identity
-  `μ²uᴴMu + μuᴴDu + uᴴLu = 0` with `L` the Laplacian of `Bᵢⱼ cos(θ*ᵢ - θ*ⱼ)`
-  (`jacobian_isHurwitz`, `jacobian_isHurwitz_of_angle`), and applies
-  `hurwitz_linearization_locally_exponentially_stable`.
+  `μ²uᴴMu + μuᴴDu + uᴴLu = 0` with `L` the Laplacian of `Bᵢⱼ cos(θ*ᵢ - θ*ⱼ)`, and applies
+  `hurwitz_linearization_locally_exponentially_stable`. One Hurwitz test serves every case
+  (`jacobian_isHurwitz_of_hessForm`, signed weights allowed): the reduced Jacobian is Hurwitz
+  when the form `A₂(u) = ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)²` (`hessForm`, `2 uᵀLu`) is positive on
+  every nonzero grounded direction `u₀ = 0` (`hessForm_add_const`, `hessForm_nonneg_of_pos`,
+  `eq_zero_of_hessForm_eq_zero`, `sum_normSq_eq_hessForm`); nonnegative weights connecting all
+  machines give it (`jacobian_isHurwitz`, through `dotProduct_laplacian_mulVec`,
+  `edge_eq_of_form_zero`, `eq_of_reach`), and so does the angle condition
+  (`jacobian_isHurwitz_of_angle`).
 * Static evidence: `fullField_equilibrium_shift`, `reducedField_reduce`,
   `reducedField_equilibrium` and its converse `powerFlow_of_equilibrium` (the equilibria of the
   reduced field at the selected points are the power-balance points; a reduced state is fixed by
@@ -432,12 +438,48 @@ selected point. -/
   simp only [flowWeights, of_apply, p.B_symm i j]
   rw [← Real.cos_neg, neg_sub]
 
-/-- The reduced swing Jacobian is Hurwitz when the linearization weights are
-nonnegative and their positive edges connect all machines. -/
-@[tmio M, powerlib_domain] theorem jacobian_isHurwitz (p : Params n) (θ : Fin (n + 1) → ℝ)
-    (hWnn : ∀ i j, 0 ≤ flowWeights p.B θ i j) (hconn : ∀ i j, Reach (flowWeights p.B θ) i j) :
+/-! ## A Hurwitz test with signed linearization weights -/
+
+/-- Second-order coefficient `A₂(u) = ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)²` (twice the Hessian form). -/
+def hessForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
+  ∑ k, ∑ j, p.B k j * Real.cos (θ k - θ j) * (u k - u j) ^ 2
+
+@[tmio M, powerlib_domain] theorem hessForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
+    (c : ℝ) : hessForm p θ (fun k => u k + c) = hessForm p θ u := by
+  simp [hessForm]
+
+@[tmio M, powerlib_domain] theorem hessForm_nonneg_of_pos {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u)
+    (v : Fin (n + 1) → ℝ) : 0 ≤ hessForm p θ v := by
+  rw [← hessForm_add_const p θ v (-v 0)]
+  by_cases h : (fun k => v k + -v 0) = 0
+  · rw [h]; simp [hessForm]
+  · exact (hpos _ (by simp) h).le
+
+@[tmio M, powerlib_domain] theorem eq_zero_of_hessForm_eq_zero {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u)
+    {v : Fin (n + 1) → ℝ} (h0 : v 0 = 0) (h : hessForm p θ v = 0) : v = 0 := by
+  by_contra hne
+  exact (hpos v h0 hne).ne' h
+
+@[tmio M, powerlib_domain] theorem sum_normSq_eq_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
+    (u : Fin (n + 1) → ℂ) :
+    ∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (u i - u j) =
+      hessForm p θ (fun k => (u k).re) + hessForm p θ (fun k => (u k).im) := by
+  simp only [hessForm, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  simp only [flowWeights, of_apply, Complex.normSq_apply, Complex.sub_re, Complex.sub_im]
+  ring
+
+/-- **Hurwitz test by the Hessian form.** The reduced swing Jacobian is Hurwitz whenever the form
+`A₂(u) = ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)²` is positive on every nonzero `u` with `u₀ = 0`
+(positive inertia and damping; signed linearization weights are allowed). -/
+@[tmio M, powerlib_domain] theorem jacobian_isHurwitz_of_hessForm (p : Params n)
+    (θ : Fin (n + 1) → ℝ)
+    (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq,
+    powerlib.Network.Swing.Meets]
   change LinearSystems.IsHurwitz (jacobian p θ)
   intro μ v hv heig
   simp only [neg_zero]
@@ -472,7 +514,12 @@ nonnegative and their positive edges connect all machines. -/
       rfl
     have hL : ∑ i : Fin n, ((-(laplacian (flowWeights p.B θ) k i.succ) / p.M k : ℝ) : ℂ) *
         v (dIdx i) = -(∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l)) / p.M k := by
-      rw [← complex_laplacian_sum, e1, neg_div, Finset.sum_div, ← Finset.sum_neg_distrib]
+      have hrow : ∑ l, ((laplacian (flowWeights p.B θ) k l : ℝ) : ℂ) * ζ l =
+          ∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l) := by
+        have h := laplacian_mulVec_apply ((flowWeights p.B θ).map Complex.ofRealHom) ζ k
+        rw [← laplacian_map] at h
+        exact h
+      rw [← hrow, e1, neg_div, Finset.sum_div, ← Finset.sum_neg_distrib]
       exact Finset.sum_congr rfl fun i _ => by push_cast; ring
     rw [hL] at this
     have hD : ∑ k' : Fin (n + 1), (((if k = k' then -(p.D k / p.M k) else 0 : ℝ)) : ℂ) *
@@ -511,8 +558,11 @@ nonnegative and their positive edges connect all machines. -/
       linear_combination this
     have hsum : ((∑ k, p.D k : ℝ) : ℂ) * w 0 = 0 := by
       push_cast
-      rw [Finset.sum_mul, Finset.sum_congr rfl (fun k _ => e k), Finset.sum_neg_distrib,
-        complex_laplacian_total hWs, neg_zero]
+      have htot := sum_laplacian_mulVec (W := (flowWeights p.B θ).map Complex.ofRealHom)
+        (fun i j => by simp [hWs i j]) ζ
+      simp only [laplacian_mulVec_apply, map_apply, Complex.ofRealHom_eq_coe] at htot
+      rw [Finset.sum_mul, Finset.sum_congr rfl (fun k _ => e k), Finset.sum_neg_distrib, htot,
+        neg_zero]
     have hDpos : (0 : ℝ) < ∑ k, p.D k := Finset.sum_pos (fun k _ => p.D_pos k) Finset.univ_nonempty
     have hw0 : w 0 = 0 := by
       rcases mul_eq_zero.mp hsum with h | h
@@ -523,8 +573,23 @@ nonnegative and their positive edges connect all machines. -/
       have := e k
       rw [hw0, mul_zero] at this
       linear_combination this
-    have hζ := complex_eq_of_laplacian_eq_zero hWs hWnn hconn hlap
-    exact hv0 (funext fun i => by rw [← hζs i, hζ i.succ 0, hζ0]; rfl)
+    have hζ : ζ = 0 := by
+      have hz := star_dotProduct_laplacian_mulVec hWs ζ
+      rw [Finset.sum_eq_zero fun k _ => by rw [hlap k, mul_zero]] at hz
+      have hz' : ∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (ζ i - ζ j) = 0 := by
+        have := congrArg Complex.re hz
+        simp only [Complex.zero_re, Complex.ofReal_re] at this
+        linarith
+      rw [sum_normSq_eq_hessForm] at hz'
+      have h1 := hessForm_nonneg_of_pos hpos (fun k => (ζ k).re)
+      have h2 := hessForm_nonneg_of_pos hpos (fun k => (ζ k).im)
+      have hre := eq_zero_of_hessForm_eq_zero (v := fun k => (ζ k).re) hpos
+        (by show (ζ 0).re = 0; rw [hζ0]; rfl) (by linarith)
+      have him := eq_zero_of_hessForm_eq_zero (v := fun k => (ζ k).im) hpos
+        (by show (ζ 0).im = 0; rw [hζ0]; rfl) (by linarith)
+      funext k
+      exact Complex.ext (congrFun hre k) (congrFun him k)
+    exact hv0 (funext fun i => by rw [← hζs i, hζ]; rfl)
       (funext fun k => by rw [hwconst k, hw0]; rfl)
   · let u : Fin (n + 1) → ℂ := fun k => w k / μ
     have hwk : ∀ k, w k = μ * u k := fun k => by simp only [u]; field_simp
@@ -576,12 +641,29 @@ nonnegative and their positive edges connect all machines. -/
     have hd : 0 < ∑ k, p.D k * Complex.normSq (u k) :=
       Finset.sum_pos' (fun k _ => mul_nonneg (p.D_pos k).le (Complex.normSq_nonneg _))
         ⟨k₀, Finset.mem_univ _, mul_pos (p.D_pos k₀) (Complex.normSq_pos.mpr hk₀)⟩
-    have hl : 0 ≤ (∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (u i - u j)) / 2 :=
-      div_nonneg (Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun j _ =>
-        mul_nonneg (hWnn i j) (Complex.normSq_nonneg _)) zero_le_two
+    have hl : 0 ≤ (∑ i, ∑ j, flowWeights p.B θ i j * Complex.normSq (u i - u j)) / 2 := by
+      rw [sum_normSq_eq_hessForm]
+      exact div_nonneg (add_nonneg (hessForm_nonneg_of_pos hpos _)
+        (hessForm_nonneg_of_pos hpos _)) zero_le_two
     exact re_neg_of_quadratic hm hd hl hsum hμ
 
-/-! ## Local exponential stability -/
+/-- The reduced swing Jacobian is Hurwitz when the linearization weights are
+nonnegative and their positive edges connect all machines: then `A₂` is twice the Laplacian form
+of the weights, positive on every nonzero grounded direction (`jacobian_isHurwitz_of_hessForm`). -/
+@[tmio M, powerlib_domain] theorem jacobian_isHurwitz (p : Params n) (θ : Fin (n + 1) → ℝ)
+    (hWnn : ∀ i j, 0 ≤ flowWeights p.B θ i j) (hconn : ∀ i j, Reach (flowWeights p.B θ) i j) :
+    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
+  refine jacobian_isHurwitz_of_hessForm p θ fun u h0 hu => ?_
+  have hWs := flowWeights_symm p θ
+  have hH : hessForm p θ u = 2 * dotProduct u (laplacian (flowWeights p.B θ) *ᵥ u) := by
+    rw [dotProduct_laplacian_mulVec hWs]
+    simp only [hessForm, flowWeights, of_apply]
+    ring
+  rw [hH]
+  refine mul_pos two_pos ((laplacian_posSemidef_form hWs hWnn u).lt_of_ne fun h => hu ?_)
+  funext k
+  rw [eq_of_reach (edge_eq_of_form_zero hWs hWnn h.symm) (hconn k 0), h0]
+  rfl
 
 @[tmio M, powerlib_domain] theorem reducedField_contDiff (p : Params n) :
     ContDiff ℝ 1 (reducedField p) := by

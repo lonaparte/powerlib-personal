@@ -3,6 +3,7 @@ import theorem.Passive.Series
 import theorem.Passive.Parallel
 import theorem.Attributes
 import theorem.Stochastic.SPH
+import theorem.PowerSystem.Synchronous.StochasticPH
 import theorem.Transform.Park
 import theorem.GridTiedConverter.PLL.Linear
 
@@ -18,7 +19,9 @@ These are algebraic identities of the selected PLL models and supporting signal 
 `½ tr(h hᵀ ∇²𝓗)` at a state (see `SPH.itoCorrection`); no SDE solution, Itô formula,
 escape rate or stability claim is made (Rules §3).
 
-Source: work-sync `theory/T-pll-sph.md` §1.1–§1.2 (noise coupling `h_noise = (K_p σ_v, σ_v)ᵀ`,
+Source: `theorem/Stochastic/SPH.lean` (`itoCorrection`, `itoCorrection_merged`),
+`theorem/PowerSystem/Synchronous/StochasticPH.lean` (`sparseNoise`, `itoCorrection_sparseNoise`);
+work-sync `theory/T-pll-sph.md` §1.1–§1.2 (noise coupling `h_noise = (K_p σ_v, σ_v)ᵀ`,
 Hessian `diag(𝒱'', K_i)`, `Δ_Itô = ½ σ_v²[K_p² 𝒱'' + K_i]` (1.6), saddle value and the
 `ζ = 1/2` threshold (1.7), frequency-channel supplement `½ σ_ω² 𝒱''`), `theory/T-pll-ph.md`
 (potential `𝒱(θ) = V_g(1 − cos θ)`, `PLL.srfPotential`), `theory/T-gfl-sph.md` §1.1–§1.3
@@ -146,25 +149,22 @@ def sigmaBare (θ : ℝ) : Fin 2 → ℝ := ![-sin θ, cos θ]
       = (1 / 2 : ℝ) * (Kp ^ 2 * V2 + Ki) := by
   rw [pllIto, sigmaBare_dot_self]; ring
 
-/-- Forced-Wiener frequency channel: extra column `(σ_ω, 0)ᵀ` (only the `θ_e` equation). -/
-def pllNoiseFreq (Kp : ℝ) (σv : Fin 2 → ℝ) (σω : ℝ) : Matrix (Fin 2) (Fin 3) ℝ :=
-  !![Kp * σv 0, Kp * σv 1, σω; σv 0, σv 1, 0]
+/-- Forced-Wiener frequency channel: extra column `(σ_ω, 0)ᵀ` (only the `θ_e` equation), the
+sparse noise `Synchronous.SM.sparseNoise ![0] ![σ_ω]` appended to the PI-channel coupling. -/
+def pllNoiseFreq (Kp : ℝ) (σv : Fin 2 → ℝ) (σω : ℝ) : Matrix (Fin 2) (Fin 2 ⊕ Fin 1) ℝ :=
+  fromCols (pllNoise Kp σv) (Synchronous.SM.sparseNoise ![0] ![σω])
 
-@[tmio M, powerlib_domain] theorem pllNoiseFreq_mul_transpose (Kp σω : ℝ) (σv : Fin 2 → ℝ) :
-    pllNoiseFreq Kp σv σω * (pllNoiseFreq Kp σv σω)ᵀ
-      = pllNoise Kp σv * (pllNoise Kp σv)ᵀ + !![σω ^ 2, 0; 0, 0] := by
-  rw [pllNoise_mul_transpose]
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [pllNoiseFreq, mul_apply, Fin.sum_univ_three, dotProduct, Fin.sum_univ_two] <;> ring
-
-/-- The frequency channel adds `½ σ_ω² 𝒱''` (no `K_p²` factor, no PI-channel term). -/
+/-- The frequency channel adds `½ σ_ω² 𝒱''` (no `K_p²` factor, no PI-channel term): the merged
+correction of the two independent channels (`SPH.itoCorrection_merged`) with the sparse one
+(`Synchronous.SM.itoCorrection_sparseNoise`). -/
 @[tmio M, powerlib_domain] theorem pllIto_freq (Kp Ki V2 σω : ℝ) (σv : Fin 2 → ℝ) :
     itoCorrection (pllNoiseFreq Kp σv σω) (pllHess V2 Ki)
       = itoCorrection (pllNoise Kp σv) (pllHess V2 Ki) + (1 / 2 : ℝ) * σω ^ 2 * V2 := by
-  unfold itoCorrection
-  rw [pllNoiseFreq_mul_transpose, add_mul, trace_add, mul_add]
-  congr 1
-  simp [pllHess, trace_fin_two]
+  have h := itoCorrection_merged (pllNoise Kp σv) (Synchronous.SM.sparseNoise ![0] ![σω]) 1
+    (pllHess V2 Ki)
+  rw [Matrix.mul_one] at h
+  rw [pllNoiseFreq, h, Synchronous.SM.itoCorrection_sparseNoise]
+  simp [pllHess]
   ring
 
 /-! ## Grid-voltage disturbance: Park projection (T-grid-disturbance-stochastic §1.2.a) -/

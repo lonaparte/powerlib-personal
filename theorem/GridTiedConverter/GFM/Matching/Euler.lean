@@ -41,9 +41,9 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
-`not_eulerStep_realizationSoundUnder` and their `_local`
-forms, `contDiffAt_shift`), `theorem/GridTiedConverter/GFM/Matching/StiffGrid.lean`
-(`field_contDiff`, `mem_den_locallyExponentiallyStable`),
+`not_eulerStep_realizationSoundUnder` and their `_local` forms, `contDiffAt_shift`,
+`contDiff_shift`), `theorem/GridTiedConverter/GFM/Matching/StiffGrid.lean` (`field_contDiff`,
+`mem_den_locallyExponentiallyStable`),
 `theorem/GridTiedConverter/GFM/Matching/Matching.lean` (`matching_den_eq`),
 `theorem/PowerSystem/Synchronous/GeneralSwing.lean`
 (`mem_den_locallyExponentiallyStable_iff_of_sinusoid`),
@@ -52,10 +52,10 @@ forms, `contDiffAt_shift`), `theorem/GridTiedConverter/GFM/Matching/StiffGrid.le
 §2.7.
 
 Results.
-* The smoothness hypotheses of the generic laws: `MatchingStiffGrid.contDiff_modelField`,
-  `MatchingClosedLoop.full_contDiff_field` (the translated fields are `C¹`),
-  `Matching.matching_contDiffAt_field` (the translated field is `C¹` near the origin when the load
-  law is `C¹` near the selected point).
+* The smoothness hypotheses of the generic laws: the translated stiff-grid and stationary-frame
+  fields are `C¹` (`Numerics.contDiff_shift` at `MatchingStiffGrid.field_contDiff`,
+  `MatchingClosedLoop.abField_smooth`); `Matching.matching_contDiffAt_field` (the translated
+  field is `C¹` near the origin when the load law is `C¹` near the selected point).
 
 Family and connection conclusions.
 * `MatchingStiffGrid.eulerFamily : Family MatchingStiffGrid.Euler Requirement 4 0`: every
@@ -63,8 +63,8 @@ Family and connection conclusions.
   through the design. `MatchingStiffGrid.euler`: the implementation layer, every integration
   realizing its model (`Implementation.ofDesign Numerics.EulerStep.design`).
 * M–I (realization) on the stiff grid. The small-step laws are the generic connection laws
-  applied to the family, with its autonomy `MatchingStiffGrid.family_isAutonomous` and the public
-  smoothness lemma `MatchingStiffGrid.contDiff_modelField`: `Numerics.euler_sound_small_step_local`
+  applied to the family, with its autonomy `MatchingStiffGrid.family_isAutonomous` and the
+  smoothness above: `Numerics.euler_sound_small_step_local`
   (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such
   that every Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
   `Numerics.euler_sound_small_step_local` (scaffold `certified-small-step`, read through
@@ -80,8 +80,8 @@ Family and connection conclusions.
   family with an arbitrary law that matching control reads through has its own Euler laws
   (`Synchronous.GeneralSwing.eulerFamily`, `theorem/PowerSystem/Synchronous/SwingEuler.lean`).
 * `MatchingClosedLoop.fullFamily`: `MatchingClosedLoop.fullEulerFamily`,
-  `MatchingClosedLoop.fullEuler`; the generic small-step laws, applied with
-  `full_contDiff_field`, hold vacuously (no model is locally exponentially stable), and
+  `MatchingClosedLoop.fullEuler`; the generic small-step laws, applied with the smoothness
+  above, hold vacuously (no model is locally exponentially stable), and
   `full_euler_realizationSoundUnder`: the realization is sound without a step constraint
   (`RealizationSoundUnder ∅`), vacuously, so the family has no step threshold to state.
 -/
@@ -103,12 +103,6 @@ def eulerFamily : Family Euler Requirement 4 0 :=
 def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
   Numerics.euler family Model.translated Numerics.EulerStep.design Numerics.EulerStep.h
 
-/-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
-(`Numerics.euler_sound_small_step_local`). -/
-@[tmio M, powerlib_domain] theorem contDiff_modelField (m : Model) :
-    ContDiff ℝ 1 (Model.translated m) :=
-  (field_contDiff m).comp (contDiff_id.add contDiff_const)
-
 /-- **Without a step constraint the Euler realization of the stiff-grid matching models is not
 sound.** A locally exponentially stable model (`C_dc = G_dc = η = μ = u*_dc = v₀ = R_s = L_s = 1`,
 `K_p = 0`: `margin = 7/8 > 0`) integrated with a large enough step is not locally exponentially
@@ -122,7 +116,7 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
     (by norm_num) one_ne_zero (by norm_num [Model.margin, Model.ω0, Model.N])
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
-    contDiff_modelField (by norm_num) hm
+    (fun m => Numerics.contDiff_shift (field_contDiff m)) (by norm_num) hm
 
 end powerlib.GFM.Matching.MatchingStiffGrid
 
@@ -208,11 +202,6 @@ def fullEulerFamily : Family FullEuler Spectral.Requirement 8 0 :=
 def fullEuler :
     Implementation FullModel Spectral.Requirement FullEuler Spectral.Requirement 8 0 8 0 :=
   Numerics.euler fullFamily FullModel.field Numerics.EulerStep.design Numerics.EulerStep.h
-
-/-- The translated stationary-frame field is `C¹`: the smoothness hypothesis of the generic Euler
-laws (`Numerics.euler_sound_small_step_local`), which hold vacuously for this family. -/
-@[tmio M, powerlib_domain] theorem full_contDiff_field (M : FullModel) : ContDiff ℝ 1 M.field :=
-  (abField_smooth M.p).comp (contDiff_id.add contDiff_const)
 
 /-- **The Euler realization of the stationary-frame models is sound without a step constraint,
 vacuously.** No stationary-frame model is locally exponentially stable

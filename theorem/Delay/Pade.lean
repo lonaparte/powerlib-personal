@@ -35,7 +35,8 @@ Results.
   (`Numerics.stabTrap`, `theorem/Numerics/StabilityFunctions.lean`).
 * `norm_pureDelay_jω`, `norm_pade11_jω`, `norm_pade22_jω` — frequency response on the imaginary
   axis `s = jω` (`ω : ℝ`): `|e^{-jωτ}| = 1`, `|pade11 τ (jω)| = 1`, `|pade22 τ (jω)| = 1`
-  (all-pass).
+  (all-pass: the numerators are the denominators at `−s`, and the denominators have real
+  coefficients, so `N(jω) = conj D(jω)`).
 * `pade11Num_eq_zero_iff`, `pade22Num_factor`, `pade11_rhp_zero`, `pade22_rhp_zeros` —
   non-minimum phase: the Padé(1,1) numerator vanishes exactly at `s = 2/τ`; the Padé(2,2)
   numerator factors as `(τs - (3 + √3 j))(τs - (3 - √3 j))/12`; every such zero lies in the
@@ -125,9 +126,13 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
 @[tmio T, powerlib_foundation] theorem norm_pureDelay_jω (τ ω : ℝ) : ‖pureDelay τ (ω * I)‖ = 1 := by
   rw [pureDelay_jω, Complex.norm_exp_ofReal_mul_I]
 
-@[tmio T, powerlib_foundation] private lemma norm_conj_div_self {z : ℂ} (hz : z ≠ 0) :
-    ‖(starRingEnd ℂ) z / z‖ = 1 := by
-  rw [norm_div, Complex.norm_conj, div_self (norm_ne_zero_iff.mpr hz)]
+/-- All-pass law: if `N(s) = D(−s)` and `D` has real coefficients (`D(s̄) = conj D(s)`), then
+`|N(jω)/D(jω)| = 1` wherever `D(jω) ≠ 0`, since `−jω = conj (jω)`. -/
+@[tmio T, powerlib_foundation] private lemma norm_allPass {N D : ℂ → ℂ} (hND : ∀ s, N s = D (-s))
+    (hD : ∀ s, D ((starRingEnd ℂ) s) = (starRingEnd ℂ) (D s)) {ω : ℝ} (h0 : D (ω * I) ≠ 0) :
+    ‖N (ω * I) / D (ω * I)‖ = 1 := by
+  rw [hND, show -((ω : ℂ) * I) = (starRingEnd ℂ) (ω * I) by simp, hD, norm_div, Complex.norm_conj,
+    div_self (norm_ne_zero_iff.mpr h0)]
 
 @[tmio T, powerlib_foundation] theorem pade11Num_jω (τ ω : ℝ) :
     pade11Num τ (ω * I) = 1 - ((τ * ω / 2 : ℝ) : ℂ) * I := by
@@ -143,15 +148,9 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
   rw [pade11Den_jω] at this
   simp at this
 
-@[tmio T, powerlib_foundation] theorem pade11Num_jω_eq_conj (τ ω : ℝ) :
-    pade11Num τ (ω * I) = (starRingEnd ℂ) (pade11Den τ (ω * I)) := by
-  rw [pade11Num_jω, pade11Den_jω, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
-    map_one]
-  ring
-
-@[tmio T, powerlib_foundation] theorem norm_pade11_jω (τ ω : ℝ) : ‖pade11 τ (ω * I)‖ = 1 := by
-  rw [pade11, pade11Num_jω_eq_conj]
-  exact norm_conj_div_self (pade11Den_jω_ne_zero τ ω)
+@[tmio T, powerlib_foundation] theorem norm_pade11_jω (τ ω : ℝ) : ‖pade11 τ (ω * I)‖ = 1 :=
+  norm_allPass (fun s => by simp only [pade11Num, pade11Den]; ring)
+    (fun s => by simp [pade11Den, map_ofNat]) (pade11Den_jω_ne_zero τ ω)
 
 @[tmio T, powerlib_foundation] theorem pade22Num_jω (τ ω : ℝ) :
     pade22Num τ (ω * I) =
@@ -174,15 +173,9 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
   rw [hx] at hre
   norm_num at hre
 
-@[tmio T, powerlib_foundation] theorem pade22Num_jω_eq_conj (τ ω : ℝ) :
-    pade22Num τ (ω * I) = (starRingEnd ℂ) (pade22Den τ (ω * I)) := by
-  rw [pade22Num_jω, pade22Den_jω, map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal,
-    Complex.conj_I]
-  ring
-
-@[tmio T, powerlib_foundation] theorem norm_pade22_jω (τ ω : ℝ) : ‖pade22 τ (ω * I)‖ = 1 := by
-  rw [pade22, pade22Num_jω_eq_conj]
-  exact norm_conj_div_self (pade22Den_jω_ne_zero τ ω)
+@[tmio T, powerlib_foundation] theorem norm_pade22_jω (τ ω : ℝ) : ‖pade22 τ (ω * I)‖ = 1 :=
+  norm_allPass (fun s => by simp only [pade22Num, pade22Den]; ring)
+    (fun s => by simp [pade22Den, map_ofNat]) (pade22Den_jω_ne_zero τ ω)
 
 /-! ## Zeros and poles: non-minimum phase -/
 

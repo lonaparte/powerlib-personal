@@ -119,7 +119,7 @@ variable {α l₁ : ℝ}
 /-- `U(z) = ΔU − (l₁/4)(z² − r_c²)²`. -/
 @[tmio M, powerlib_foundation] theorem guardPotential_eq_barrier_sub (hl : 0 < l₁) (z : ℝ) :
     guardPotential α l₁ z = barrierHeight α l₁ - l₁ / 4 * (z ^ 2 - α / l₁) ^ 2 := by
-  simp only [guardPotential, barrierHeight]; field_simp; ring
+  simp only [guardPotential, Potential.doubleWell, barrierHeight]; field_simp; ring
 
 /-- `U` is a decreasing function of `(z² − r_c²)²`. -/
 @[tmio M, powerlib_foundation] theorem guardPotential_le_of_sq_le (hl : 0 < l₁) {z w : ℝ}
@@ -131,7 +131,8 @@ variable {α l₁ : ℝ}
 
 @[tmio M, powerlib_foundation] theorem guardPotential_le_quad (hl : 0 ≤ l₁) (z : ℝ) :
     guardPotential α l₁ z ≤ α * z ^ 2 / 2 := by
-  simp only [guardPotential]; nlinarith [pow_nonneg (sq_nonneg z) 2, sq_nonneg (z ^ 2)]
+  simp only [guardPotential, Potential.doubleWell]
+  nlinarith [pow_nonneg (sq_nonneg z) 2, sq_nonneg (z ^ 2)]
 
 @[tmio M, powerlib_foundation] theorem guardPotential_le_barrier (hl : 0 < l₁) (z : ℝ) :
     guardPotential α l₁ z ≤ barrierHeight α l₁ := by
@@ -142,7 +143,7 @@ variable {α l₁ : ℝ}
 @[tmio M, powerlib_foundation] theorem guardPotential_pos (hl : 0 < l₁) {z : ℝ}
     (hz : 0 < z) (hz2 : z ^ 2 < 2 * (α / l₁)) : 0 < guardPotential α l₁ z := by
   have : guardPotential α l₁ z = z ^ 2 / 4 * (l₁ * (2 * (α / l₁) - z ^ 2)) := by
-    simp only [guardPotential]; field_simp; ring
+    simp only [guardPotential, Potential.doubleWell]; field_simp; ring
   rw [this]
   have : 0 < 2 * (α / l₁) - z ^ 2 := by linarith
   positivity
@@ -192,7 +193,7 @@ variable {D : ℝ}
 
 @[tmio M, powerlib_foundation] theorem continuous_guardInner_integrand (α l₁ D : ℝ) :
     Continuous fun z => z * Real.exp (-(guardPotential α l₁ z / D)) := by
-  unfold guardPotential; fun_prop
+  unfold guardPotential Potential.doubleWell; fun_prop
 
 @[tmio M, powerlib_foundation] theorem hasDerivAt_guardInner (α l₁ D y : ℝ) :
     HasDerivAt (guardInner α l₁ D) (y * Real.exp (-(guardPotential α l₁ y / D))) y :=
@@ -237,7 +238,7 @@ variable {D : ℝ}
     · -- `(z² − ρ)² ≤ ρ² = (0² − ρ)²`, so `U(z) ≥ U(0) = 0`
       have h0 : (z ^ 2 - α / l₁) ^ 2 ≤ ((0 : ℝ) ^ 2 - α / l₁) ^ 2 := by nlinarith
       have := guardPotential_le_of_sq_le (α := α) hl h0
-      have hU0 : guardPotential α l₁ 0 = 0 := by simp [guardPotential]
+      have hU0 : guardPotential α l₁ 0 = 0 := by simp [guardPotential, Potential.doubleWell]
       rw [hU0] at this
       have : Real.exp (-(guardPotential α l₁ z / D)) ≤ 1 :=
         Real.exp_le_one_iff.mpr (by have := div_nonneg this hD.le; linarith)
@@ -322,7 +323,7 @@ variable {D : ℝ}
 
 @[tmio M, powerlib_foundation] theorem continuous_exp_guardPotential (α l₁ D : ℝ) :
     Continuous fun y => Real.exp (guardPotential α l₁ y / D) := by
-  unfold guardPotential; fun_prop
+  unfold guardPotential Potential.doubleWell; fun_prop
 
 @[tmio M, powerlib_foundation] theorem continuousOn_guardIntegrand (α l₁ D : ℝ) :
     ContinuousOn (guardIntegrand α l₁ D) (Ioi 0) := by
@@ -429,7 +430,7 @@ barrier top, `∫_{r_c}^{ψ(a)} h`, equals `∫_a^{r_c} h(ψ(y)) y/ψ(y) dy`. -/
   calc ∫ y in a..rc, (rc - y) * Real.exp (guardPotential α l₁ y / D)
       ≤ ∫ y in a..rc, Real.exp (barrierHeight α l₁ / D) * ((rc - y) * g y) := by
         apply integral_mono_on har
-        · exact (by unfold guardPotential; fun_prop : Continuous fun y =>
+        · exact (by unfold guardPotential Potential.doubleWell; fun_prop : Continuous fun y =>
             (rc - y) * Real.exp (guardPotential α l₁ y / D)).intervalIntegrable _ _
         · exact (hcont.const_mul _).intervalIntegrable _ _
         intro y hy
@@ -803,7 +804,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
     intervalIntegrable_guardIntegrand_of_pos ha hrc
   have hJ : IntervalIntegrable (fun y => (√(α / l₁) - y) *
       Real.exp (guardPotential α l₁ y / D)) volume a √(α / l₁) :=
-    (by unfold guardPotential; fun_prop : Continuous fun y =>
+    (by unfold guardPotential Potential.doubleWell; fun_prop : Continuous fun y =>
       (√(α / l₁) - y) * Real.exp (guardPotential α l₁ y / D)).intervalIntegrable _ _
   rw [integral_guardIntegrand_reflect ha har hρ, ← intervalIntegral.integral_const_mul,
     ← intervalIntegral.integral_sub hh (hJ.const_mul _)]
@@ -1643,9 +1644,9 @@ on `[0, r_c]` and the fifth half-line moment). -/
     set s := guardPotential α l₁ z / D with hs
     set t := α / (2 * D) * z ^ 2 with ht
     have hts : t - s = l₁ / (4 * D) * z ^ 4 := by
-      simp only [hs, ht, guardPotential]; field_simp; ring
+      simp only [hs, ht, guardPotential, Potential.doubleWell]; field_simp; ring
     have hs4 : α / (4 * D) * z ^ 2 ≤ s := by
-      simp only [hs, guardPotential]
+      simp only [hs, guardPotential, Potential.doubleWell]
       rw [le_div_iff₀ hD]
       have e : α / (4 * D) * z ^ 2 * D = α * z ^ 2 / 4 := by field_simp
       rw [e]

@@ -446,12 +446,6 @@ ones. -/
   unfold powerlib.TMIO.Statement at hs
   exact (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
 
-@[tmio T, powerlib_foundation] private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
-    (h : ∃ᶠ z in 𝓝 (0 : Dynamics.State 3), P z) (ε : ℝ) (hε : 0 < ε) :
-    ∃ x, ‖x - 0‖ < ε ∧ P x := by
-  obtain ⟨x, hP, hx⟩ := (h.and_eventually (Metric.ball_mem_nhds 0 hε)).exists
-  exact ⟨x, by rw [← dist_eq_norm]; exact hx, hP⟩
-
 /-- A dead grid (`V = 0`) with `k_i > 0`: the integrator or the current drifts linearly. -/
 @[tmio TM, powerlib_domain] private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hki : 0 < m.params.ki) (hV : m.params.V = 0) :
@@ -467,53 +461,23 @@ ones. -/
     rw [model_field1]; unfold vq; rw [hV]; linear_combination -h1
   have hf2 : ∀ z, m.field z 2 = 0 := fun z => by
     rw [model_field2, heq.2]; unfold power; rw [hV]; ring
+  have hf := (contDiff_model_field m).contDiffOn (s := Set.univ)
   by_cases hXg : m.params.Xg = 0
-  · -- `θ̇ = k_i x`, `ẋ = 0`: Chetaev with `θ x`
-    have hd : ∀ z : Dynamics.State 3, HasFDerivAt (fun z : Dynamics.State 3 => z 0 * z 1)
-        (z 0 • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 : Dynamics.State 3 →L[ℝ] ℝ) +
-          z 1 • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ)) z := fun z => by
-      have a := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
-        Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-      have b := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (1 : Fin 3) :
-        Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-      exact (a.mul b).congr_fderiv (by ext v; simp)
-    refine Dynamics.unstable_of_chetaev (W := fun z : Dynamics.State 3 => z 0 * z 1)
-      (contDiff_model_field m) (by fun_prop) one_pos
-      (seed_of_frequently (Dynamics.frequently_of_forall_smul (WithLp.toLp 2 ![1, 1, 0])
-        fun t ht => by simp; positivity)) fun z _ hW => ?_
-    rw [(hd z).fderiv]
-    simp only [add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul]
-    rw [hf0, hf1, hXg]
-    have hz1 : z 1 ≠ 0 := fun h => by rw [h, mul_zero] at hW; exact lt_irrefl 0 hW
-    simp only [neg_zero, zero_mul, mul_zero, zero_add]
-    have : 0 < z 1 * z 1 := mul_self_pos.mpr hz1
-    nlinarith
-  · -- `ẋ = −X_g ι`, `ι̇ = 0`: Chetaev with `−X_g x ι`
-    have hd : ∀ z : Dynamics.State 3, HasFDerivAt
-        (fun z : Dynamics.State 3 => -m.params.Xg * (z 1 * z 2))
-        ((-m.params.Xg * z 1) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2 : Dynamics.State 3 →L[ℝ] ℝ) +
-          (-m.params.Xg * z 2) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 :
-            Dynamics.State 3 →L[ℝ] ℝ)) z := fun z => by
-      have a := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (1 : Fin 3) :
-        Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-      have b := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (2 : Fin 3) :
-        Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-      exact ((a.mul b).const_mul (-m.params.Xg)).congr_fderiv (by ext v; simp; ring)
-    refine Dynamics.unstable_of_chetaev
-      (W := fun z : Dynamics.State 3 => -m.params.Xg * (z 1 * z 2))
-      (contDiff_model_field m) (by fun_prop) one_pos
-      (seed_of_frequently (Dynamics.frequently_of_forall_smul
-        (WithLp.toLp 2 ![0, -m.params.Xg, 1]) fun t ht => by
-          simp
-          have : 0 < m.params.Xg ^ 2 := by positivity
-          nlinarith [mul_pos (mul_pos ht ht) this])) fun z _ hW => ?_
-    rw [(hd z).fderiv]
-    simp only [add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul]
-    rw [hf1, hf2]
-    have hz2 : z 2 ≠ 0 := fun h => by rw [h, mul_zero, mul_zero] at hW; exact lt_irrefl 0 hW
-    have : 0 < (m.params.Xg * z 2) * (m.params.Xg * z 2) :=
-      mul_self_pos.mpr (mul_ne_zero hXg hz2)
-    nlinarith
+  · -- `θ̇ = k_i x`, `ẋ = 0`: the conserved `x` drives `θ`
+    refine Dynamics.unstable_of_conserved_drive_local (i := 1) (j := 0)
+      (g := fun s => m.params.ki * s) isOpen_univ (Set.mem_univ _) hf (by decide) (by fun_prop)
+      (fun ε hε => ⟨ε / 2, ?_, (mul_pos hki (half_pos hε)).ne'⟩)
+      (fun z _ => by simp only [hf1, hXg, neg_zero, zero_mul])
+      fun z _ => by simp only [hf0, hXg, neg_zero, zero_mul, mul_zero, zero_add]
+    rw [PiLp.zero_apply, sub_zero, abs_of_pos (half_pos hε)]
+    linarith
+  · -- `ẋ = −X_g ι`, `ι̇ = 0`: the conserved `ι` drives `x`
+    refine Dynamics.unstable_of_conserved_drive_local (i := 2) (j := 1)
+      (g := fun s => -m.params.Xg * s) isOpen_univ (Set.mem_univ _) hf (by decide) (by fun_prop)
+      (fun ε hε => ⟨ε / 2, ?_, mul_ne_zero (neg_ne_zero.mpr hXg) (half_pos hε).ne'⟩)
+      (fun z _ => hf2 z) fun z _ => hf1 z
+    rw [PiLp.zero_apply, sub_zero, abs_of_pos (half_pos hε)]
+    linarith
 
 /-- With positive gains a Lyapunov stable equilibrium has a strict Routh–Hurwitz Jacobian: every
 other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 0` or

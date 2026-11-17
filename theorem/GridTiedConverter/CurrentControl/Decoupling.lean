@@ -87,11 +87,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 @[tmio TM, powerlib_domain] private theorem not_tracks_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) (iref : ℝ) :
     ∃ x : ℝ → ℝ², (∀ t, HasDerivAt x (p.field iref (x t)) t) ∧
       ¬ Tendsto (fun t => x t 0) atTop (𝓝 iref) := by
-  have hdet : p.model.A.det < 0 := by
-    change (!![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] : Matrix (Fin 2) (Fin 2) ℝ).det < 0
-    rw [Matrix.det_fin_two_of]
-    have : p.Ki / p.L < 0 := div_neg_of_neg_of_pos hKi hL
-    linarith
+  have hdet : p.model.A.det < 0 := p.det_model_A.trans_lt (div_neg_of_neg_of_pos hKi hL)
   obtain ⟨r, hr, v, hv, hAv⟩ := Criteria.exists_pos_real_eigenvector_of_det p.model.A
     (by simpa using hdet)
   obtain ⟨x, hx, hn⟩ := LTI.exists_not_tendsto_of_eigenvector p.model (p.isEquilibrium hKi.ne iref)

@@ -1,5 +1,6 @@
 import theorem.PhasePlane.Planar
 import theorem.NormalForm.Logistic
+import theorem.Transform.Planar
 
 /-! # Truncated Hopf normal form
 
@@ -81,8 +82,8 @@ def field (p : Params) (x : State 2) : State 2 :=
   mk (p.μ * x 0 - p.ω₀ * x 1 + (p.l₁ * x 0 - p.κ * x 1) * (x 0 ^ 2 + x 1 ^ 2))
     (p.ω₀ * x 0 + p.μ * x 1 + (p.κ * x 0 + p.l₁ * x 1) * (x 0 ^ 2 + x 1 ^ 2))
 
-/-- The planar state as a complex number. -/
-def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
+/-- The planar state as a complex number: `Transform.toComplex` of its coordinates. -/
+abbrev toComplex (x : State 2) : ℂ := Transform.toComplex (WithLp.ofLp x)
 
 @[tmio T, powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
@@ -102,14 +103,14 @@ def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
         (p.l₁ + p.κ * Complex.I) * toComplex x * (Complex.normSq (toComplex x) : ℂ) := by
   apply Complex.ext
   · change field p x 0 = _
-    simp only [field_apply_zero, toComplex, Complex.add_re, Complex.mul_re, Complex.add_im,
-      Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im,
-      Complex.normSq_apply]
+    simp only [field_apply_zero, toComplex, Transform.toComplex, Complex.add_re, Complex.mul_re,
+      Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+      Complex.I_im, Complex.normSq_apply]
     ring
   · change field p x 1 = _
-    simp only [field_apply_one, toComplex, Complex.add_re, Complex.mul_re, Complex.add_im,
-      Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im,
-      Complex.normSq_apply]
+    simp only [field_apply_one, toComplex, Transform.toComplex, Complex.add_re, Complex.mul_re,
+      Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+      Complex.I_im, Complex.normSq_apply]
     ring
 
 @[tmio M, powerlib_foundation] theorem field_zero (p : Params) : field p 0 = 0 := by

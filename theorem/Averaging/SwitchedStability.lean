@@ -742,35 +742,16 @@ makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for eve
 
 /-- **Stability transfer, contraction form.** A Hurwitz averaged matrix `Ā = d A₁ + (1 − d) A₂`
 gives, for every switching period `T ∈ (0, T₀]`, a power of the switched period map
-`e^{(1−d)TA₂} e^{dTA₁}` with `L∞` operator norm below one. -/
+`e^{(1−d)TA₂} e^{dTA₁}` with `L∞` operator norm below one (`periodMap_schurStable_of_isHurwitz`
+through `LTI.schurStable_iff_spectralRadius_lt_one` and `LTI.exists_pow_norm_lt_one`). -/
 @[tmio T, powerlib_foundation] theorem periodMap_pow_norm_lt_one_of_isHurwitz {d : ℝ}
     (hd0 : 0 ≤ d) (hd1 : d ≤ 1) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ)
     (hA : LinearSystems.IsHurwitz (avgMatrix d A₁ A₂)) :
     ∃ T₀ : ℝ, 0 < T₀ ∧ ∀ T ∈ Ioc (0 : ℝ) T₀,
       ∃ N : ℕ, 0 < N ∧ ‖periodMap d T A₁ A₂ ^ N‖ < 1 := by
-  rcases isEmpty_or_nonempty (Fin n) with hn | hn
-  · refine ⟨1, one_pos, fun T _ => ⟨1, one_pos, ?_⟩⟩
-    rw [Subsingleton.elim (periodMap d T A₁ A₂ ^ 1) 0, norm_zero]
-    norm_num
-  · obtain ⟨H, hH, hexp⟩ := exists_norm_exp_lt_one_of_isHurwitz hA
-    obtain ⟨T₀, hT₀, -, C, α, hC, hα, hdec⟩ := exists_periodMap_pow_decay hd0 hd1 A₁ A₂ hH hexp
-    refine ⟨T₀, hT₀, fun T hT => ?_⟩
-    set M := periodMap d T A₁ A₂ with hMdef
-    set ρ := Real.exp (-(α * T)) with hρdef
-    have hρ0 : 0 < ρ := Real.exp_pos _
-    have hρ1 : ρ < 1 := by
-      calc ρ < Real.exp 0 := Real.exp_lt_exp.mpr (by nlinarith [hT.1])
-        _ = 1 := Real.exp_zero
-    have hpow : ∀ k : ℕ, ‖M ^ k‖ ≤ C * ρ ^ k := fun k => by
-      have h := hdec T hT k
-      rwa [show -(α * ((k : ℝ) * T)) = (k : ℝ) * (-(α * T)) by ring, Real.exp_nat_mul] at h
-    obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr hC) hρ1
-    refine ⟨j + 1, Nat.succ_pos j, ?_⟩
-    calc ‖M ^ (j + 1)‖ ≤ C * ρ ^ (j + 1) := hpow _
-      _ ≤ C * ρ ^ j :=
-          mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hρ0.le hρ1.le (Nat.le_succ j)) hC.le
-      _ < C * C⁻¹ := by gcongr
-      _ = 1 := mul_inv_cancel₀ hC.ne'
+  obtain ⟨T₀, hT₀, h⟩ := periodMap_schurStable_of_isHurwitz hd0 hd1 A₁ A₂ hA
+  exact ⟨T₀, hT₀, fun T hT => LTI.exists_pow_norm_lt_one _
+    ((LTI.schurStable_iff_spectralRadius_lt_one _).mp (h T hT))⟩
 
 /-- **Stability transfer to the switched system** (Hurwitz averaged matrix). If
 `Ā = d A₁ + (1 − d) A₂` is Hurwitz, there are `T₀ > 0`, `C > 0`, `α > 0` such that for every

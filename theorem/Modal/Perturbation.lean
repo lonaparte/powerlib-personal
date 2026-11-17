@@ -33,9 +33,8 @@ Results.
   its spectral radius (Mathlib `IsStarNormal.spectralRadius_eq_nnnorm`; complex matrices with
   the `ℓ²` operator norm form a C⋆-algebra), which is attained at some `1/(μ − ν)`, `ν ∈ σ(A)`
   (`spectrum.exists_nnnorm_eq_spectralRadius`); `x = R E x` gives `1 ≤ ‖R‖ ‖E‖`.
-  `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix
-  (membership form of `LTI.spectrum_eq_setOf_eigenpair`, `theorem/LTI/Discrete.lean`), which
-  turns the hypothesis into `μ ∈ σ(A + E)`.
+  `LTI.mem_spectrum_iff_exists_eigvec` (`theorem/LTI/Discrete.lean`): `σ(M)` is the set of
+  eigenvalues of a complex matrix, which turns the hypothesis into `μ ∈ σ(A + E)`.
 * The first-order sensitivity along a differentiable eigen-branch,
   `λ'(α₀) (ψᵀ v(α₀)) = ψᵀ A'(α₀) v(α₀)` for a left eigenvector `ψ` of `A(α₀)`, is
   `Modal.eigenvalue_deriv_left_of_eventually` (`theorem/Modal/Sensitivity.lean`, with the
@@ -154,12 +153,6 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
 
 /-! ## Bauer–Fike for normal matrices -/
 
-/-- The spectrum of a complex matrix is its set of eigenvalues (membership form of
-`LTI.spectrum_eq_setOf_eigenpair`). -/
-@[tmio T, powerlib_foundation] theorem mem_spectrum_iff_exists_eigvec {M : Matrix n n ℂ} {ν : ℂ} :
-    ν ∈ spectrum ℂ M ↔ ∃ w : n → ℂ, w ≠ 0 ∧ M *ᵥ w = ν • w :=
-  Set.ext_iff.mp (LTI.spectrum_eq_setOf_eigenpair M) ν
-
 /-- **Bauer–Fike for normal matrices**: if `A` is normal (`Aᴴ A = A Aᴴ`), every eigenvalue `μ` of
 `A + E` lies within `‖E‖` (spectral norm) of some eigenvalue `ν ∈ σ(A)`. -/
 @[tmio T, powerlib_foundation] theorem bauerFike_normal {A E : Matrix n n ℂ} (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ}
@@ -211,7 +204,7 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
   obtain ⟨z, hz, hzr⟩ := spectrum.exists_nnnorm_eq_spectralRadius R
   rw [IsStarNormal.spectralRadius_eq_nnnorm R, ENNReal.coe_inj] at hzr
   have hzn : ‖z‖ = ‖R‖ := congrArg NNReal.toReal hzr
-  obtain ⟨w, hw, hRw⟩ := mem_spectrum_iff_exists_eigvec.mp hz
+  obtain ⟨w, hw, hRw⟩ := LTI.mem_spectrum_iff_exists_eigvec.mp hz
   have hz0 : z ≠ 0 := by
     intro h0; rw [h0, norm_zero] at hzn; linarith
   -- `b w = z⁻¹ w`, so `A w = (μ − z⁻¹) w`
@@ -221,7 +214,7 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
     rw [hRw, Matrix.mulVec_smul] at this
     calc b *ᵥ w = z⁻¹ • (z • b *ᵥ w) := by rw [smul_smul, inv_mul_cancel₀ hz0, one_smul]
       _ = z⁻¹ • w := by rw [this]
-  refine ⟨μ - z⁻¹, mem_spectrum_iff_exists_eigvec.mpr ⟨w, hw, ?_⟩, ?_⟩
+  refine ⟨μ - z⁻¹, LTI.mem_spectrum_iff_exists_eigvec.mpr ⟨w, hw, ?_⟩, ?_⟩
   · rw [hb, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hbw
     rw [sub_smul, ← hbw]
     abel

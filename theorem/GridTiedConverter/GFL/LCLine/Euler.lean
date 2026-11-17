@@ -83,7 +83,7 @@ generic Euler laws (`Numerics.euler_sound_small_step_local`). -/
   have h : ContDiff ℝ 1 m.params.codeField := by
     rw [Params.codeField_eq_transport, Params.reducedField_eq]
     exact Dynamics.contDiff_transportField _ _ (PLL.contDiff_piPLLField m.params.contDiff_h)
-  exact h.comp (contDiff_id.add contDiff_const)
+  exact Numerics.contDiff_shift h
 
 /-- The parameters of the witness below: unit filter capacitance, grid frequency and grid EMF, a
 line without impedance, zero current references and unit PLL gains (`a = b = 0`, `Δ = 1`, so the

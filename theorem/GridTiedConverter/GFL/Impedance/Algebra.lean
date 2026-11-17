@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Passive.Dq
+import theorem.Transform.Planar
 
 /-! # dq impedance algebra of the GFL port
 
@@ -45,8 +46,8 @@ noncomputable section
 namespace powerlib.GFL.Impedance
 open Matrix
 
-/-- `J` over `ℂ`. -/
-def Jc : Matrix (Fin 2) (Fin 2) ℂ := !![0, -1; 1, 0]
+/-- `J = [[0, −1], [1, 0]]` over `ℂ`: the complex-symmetric matrix `Transform.complexSymm 0 1`. -/
+abbrev Jc : Matrix (Fin 2) (Fin 2) ℂ := Transform.complexSymm 0 1
 
 /-- `G_id = −V_dc Z_oc⁻¹`, `Z_oc` the dq impedance of the filter branch. -/
 def Gid (b : Passive.SeriesRLC) (ω Vdc : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
@@ -65,13 +66,15 @@ def Gid (b : Passive.SeriesRLC) (ω Vdc : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2
 @[tmio T, powerlib_foundation] theorem pllVoltage_proj (V0 dV : Fin 2 → ℂ) (G : ℂ) :
     dV - (G * dV 1) • (Jc *ᵥ V0) = !![1, V0 1 * G; 0, 1 - V0 0 * G] *ᵥ dV := by
   ext k
-  fin_cases k <;> simp [Jc, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+  fin_cases k <;>
+    simp [Jc, Transform.complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- Current (and duty) projection: `ΔI^sys − ΔI^pll = (G ΔV_q) J I₀ = G_i^pll ΔV`. -/
 @[tmio T, powerlib_foundation] theorem pllCurrent_proj (I0 dV : Fin 2 → ℂ) (G : ℂ) :
     (G * dV 1) • (Jc *ᵥ I0) = !![0, -(I0 1 * G); 0, I0 0 * G] *ᵥ dV := by
   ext k
-  fin_cases k <;> simp [Jc, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+  fin_cases k <;>
+    simp [Jc, Transform.complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- PLL-aligned operating point (`V_q0 = 0`): `G_v^pll = diag(1, 1 − V_d0 G)`. -/
 @[tmio T, powerlib_foundation] theorem pllVoltage_aligned (Vd0 G : ℂ) :

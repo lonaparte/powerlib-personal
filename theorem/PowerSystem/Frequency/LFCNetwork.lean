@@ -52,10 +52,10 @@ Results.
   `E(z, A z) = −Σ ((ξ − g Δω)² + g B Δω²)/(g + B)` for every state `z` (`netEnergy_mulVec`, the
   tie-line terms cancel by `𝓑`/`𝓑ᵀ` duality); a real eigen-pair with nonnegative real part
   (`LTI.spectrallyStable_of_real_pairs`) must then have `ξ = 0`, `Δω = 0` (AGC rows), zero net
-  exports (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`,
-  `plant_isHurwitz_of_gain`: the five-state two-area matrix of `Frequency.LFC` is this matrix
-  for two areas and one line (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it
-  Hurwitz. Only sufficiency is claimed (the exact two-area condition would be the fifth-order
+  exports (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`:
+  the five-state two-area matrix of `Frequency.LFC` is this matrix for two areas and one line
+  (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it Hurwitz (`mem_den_of_gain`).
+  Only sufficiency is claimed (the exact two-area condition would be the fifth-order
   Hurwitz-determinant list, not formalized); the condition involves neither the tie-line
   coefficients nor the size of the frequency bias.
 
@@ -691,33 +691,6 @@ a connection conclusion. -/
   fin_cases i <;> fin_cases j <;>
     simp [plant, netA, twoAreaEquiv, Matrix.reindex_apply, Matrix.submatrix_apply] 
 
-/-- **Gain condition, two areas.** With `M, K_I, B > 0` in both areas, `ω_s T > 0` and
-`K_I M ≤ D + K_R` in both areas, the five-state LFC matrix is Hurwitz. -/
-@[tmio TM, powerlib_domain] theorem plant_isHurwitz_of_gain {a b : Area} {ωs T : ℝ}
-    (hMa : 0 < a.M) (hMb : 0 < b.M) (hKa : 0 < a.KI) (hKb : 0 < b.KI) (hBa : 0 < a.B)
-    (hBb : 0 < b.B) (hga : a.KI * a.M ≤ a.D + a.K) (hgb : b.KI * b.M ≤ b.D + b.K)
-    (hw : 0 < ωs * T) :
-    connection% ((⟨a, b, ωs, T⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
-  change IsHurwitz (plant a b ωs T).A
-  rw [← Linear.spectrallyStable_iff_isHurwitz, plant_A_eq_reindex,
-    Linear.spectrallyStable_reindex]
-  refine ((connection_proof% netFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨![a, b], ωs, (fun _ : Fin 1 => T), !![1; -1]⟩ : NetModel (Fin 2) (Fin 1)))).trans (netModel_isHurwitz_iff (⟨![a, b], ωs, (fun _ : Fin 1 => T), !![1; -1]⟩ : NetModel (Fin 2) (Fin 1)))).mp
-    (netA_spectrallyStable_of_gain (fun i => ?_) (fun i => ?_) (fun i => ?_) (fun i => ?_)
-      (fun _ => hw) ?_)
-  · fin_cases i <;> simpa
-  · fin_cases i <;> simpa
-  · fin_cases i <;> simpa
-  · fin_cases i <;> simpa
-  · intro p hp
-    have h := congrFun hp 0
-    simp [mulVec, dotProduct] at h
-    funext ℓ
-    fin_cases ℓ
-    simpa using h
-
-
 /-! ## The `N`-area family -/
 
 /-! The connection statements quantify over the numbers of areas and lines (`Fin N_a` areas,
@@ -789,7 +762,9 @@ whatever the tie-line strengths and the radial topology. -/
 /-- **Gain condition (connection), two areas** (`Frequency.LFC.family`, five states): with
 `M, K_I, B > 0`, `K_I M ≤ D + K_R` in both areas and `ω_s T > 0`, the two-area model satisfies
 every attractive sentence and sampled contraction; this replaces the explicit Hurwitz premise of
-`LFC.mem_den_globallyExponentiallyStable` by a parametric one. -/
+`LFC.mem_den_globallyExponentiallyStable` by a parametric one. The five-state matrix is the
+two-area network matrix relabelled (`plant_A_eq_reindex`), so the network gain condition
+`netA_spectrallyStable_of_gain` makes it Hurwitz. -/
 @[tmio TM, powerlib_domain] theorem mem_den_of_gain (m : Model) (hMa : 0 < m.a.M) (hMb : 0 < m.b.M)
     (hKa : 0 < m.a.KI) (hKb : 0 < m.b.KI) (hBa : 0 < m.a.B) (hBb : 0 < m.b.B)
     (hga : m.a.KI * m.a.M ≤ m.a.D + m.a.K) (hgb : m.b.KI * m.b.M ≤ m.b.D + m.b.K)
@@ -797,8 +772,27 @@ every attractive sentence and sampled contraction; this replaces the explicit Hu
     connection% (m ∈ family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz hP]
-  exact (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := m)).mp
-    (plant_isHurwitz_of_gain hMa hMb hKa hKb hBa hBb hga hgb hw)
+  obtain ⟨a, b, ωs, T⟩ := m
+  change IsHurwitz (plant a b ωs T).A
+  rw [← Linear.spectrallyStable_iff_isHurwitz, plant_A_eq_reindex,
+    Linear.spectrallyStable_reindex]
+  refine ((connection_proof% netFamily_isLinear.mem_den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial)
+    (x := (⟨![a, b], ωs, (fun _ : Fin 1 => T), !![1; -1]⟩ : NetModel (Fin 2) (Fin 1)))).trans
+    (netModel_isHurwitz_iff
+      (⟨![a, b], ωs, (fun _ : Fin 1 => T), !![1; -1]⟩ : NetModel (Fin 2) (Fin 1)))).mp
+    (netA_spectrallyStable_of_gain (fun i => ?_) (fun i => ?_) (fun i => ?_) (fun i => ?_)
+      (fun _ => hw) ?_)
+  · fin_cases i <;> simpa
+  · fin_cases i <;> simpa
+  · fin_cases i <;> simpa
+  · fin_cases i <;> simpa
+  · intro p hp
+    have h := congrFun hp 0
+    simp [mulVec, dotProduct] at h
+    funext ℓ
+    fin_cases ℓ
+    simpa using h
 
 /-! ## Implementation evidence (private, trajectory level) -/
 

@@ -770,17 +770,8 @@ def loopEnergy (x : State 3) : ℝ :=
   rw [mem_den_flow]
   intro h
   by_cases h0 : p.field p.Id0 p.eqState = 0
-  · refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨p.eqState + (ε / 2) • EuclideanSpace.single 1 1, ?_, ?_, ?_⟩) h
-    · intro h'
-      have := congrArg (fun y : State 3 => y 1) h'
-      simp at this
-      linarith
-    · rw [add_sub_cancel_left, norm_smul, PiLp.norm_single, norm_one, mul_one,
-        Real.norm_eq_abs, abs_of_pos (by positivity)]
-      linarith
-    · rw [p.field_ki_zero_shift hKi]
-      exact h0
+  · exact Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 1 1) (by simp)
+      (fun t _ => by rw [p.field_ki_zero_shift hKi]; exact h0) h
   · exact h0 (Dynamics.isEquilibrium_of_lyapunovStable_local isOpen_posV (p.eqState_mem hV)
       (p.field_contDiffOn _) h.1)
 
@@ -808,14 +799,8 @@ def loopEnergy (x : State 3) : ℝ :=
     connection% (¬ (p ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
   rw [mem_den_flow]
-  exact Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-    ⟨p.eqState + (ε / 2) • EuclideanSpace.single 2 1, fun h' => by
-      have := congrArg (fun y : State 3 => y 2) h'
-      simp at this
-      linarith, by
-      rw [add_sub_cancel_left, norm_smul, PiLp.norm_single, norm_one, mul_one,
-        Real.norm_eq_abs, abs_of_pos (by positivity)]
-      linarith, p.field_idc_zero hKi hV hI _⟩)
+  exact Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 2 1) (by simp)
+    fun t _ => p.field_idc_zero hKi hV hI t
 
 /-- On `R + Kp = 0` (undamped current loop) the cascade is not locally asymptotically stable:
 the current-loop energy is conserved. -/
@@ -1180,70 +1165,35 @@ unstable: the current-loop energy is conserved and `Kp · centerStorage` grows a
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
   rw [mem_den_flow]
-  refine Dynamics.unstable_of_chetaev_local (W := fun x : State 3 => (x 0 - p.Id0) ^ 2) (r := 1)
-    isOpen_posV (p.eqState_mem hV) (p.field_contDiffOn _) (by fun_prop) one_pos
-    (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0, 0], ?_, ?_⟩) (fun x _ _ hW => ?_)
-  · rw [add_sub_cancel_left]
-    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_three _)).trans_lt ?_
-    norm_num
-    rw [abs_of_pos (half_pos hε)]
-    linarith
-  · simp [eqState]
-    positivity
-  · have hd : HasFDerivAt (fun x : State 3 => (x 0 - p.Id0) ^ 2)
-        ((2 * (x 0 - p.Id0)) • Dynamics.coord 0) x := by
-      have h' := ((Dynamics.hasFDerivAt_coord 0 x).sub_const p.Id0).pow 2
-      convert h' using 1
-      ext v; simp
-    rw [hd.fderiv]
-    simp only [_root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
-    rw [p.field_zero_ki hKi h hL.ne']
-    have hW' : 0 < (x 0 - p.Id0) ^ 2 := hW
-    have : 0 < -(p.pi.R + p.pi.Kp) * (x 0 - p.Id0) ^ 2 / p.pi.L := by
-      have : 0 < -(p.pi.R + p.pi.Kp) := by linarith
-      positivity
-    have heq : 2 * (x 0 - p.Id0) * (-(p.pi.R + p.pi.Kp) * (x 0 - p.Id0) / p.pi.L) =
-        2 * (-(p.pi.R + p.pi.Kp) * (x 0 - p.Id0) ^ 2 / p.pi.L) := by ring
-    rw [heq]
-    linarith
+  refine Dynamics.unstable_of_repelling_coord_local (i := 0) isOpen_posV (p.eqState_mem hV)
+    (p.field_contDiffOn _) fun x _ hx => ?_
+  have h0 : p.eqState 0 = p.Id0 := by simp [eqState]
+  rw [h0] at hx ⊢
+  rw [p.field_zero_ki hKi h hL.ne']
+  have he := sub_ne_zero.mpr hx
+  have hk : 0 < -(p.pi.R + p.pi.Kp) / p.pi.L := div_pos (by linarith) hL
+  have heq : (x 0 - p.Id0) * (-(p.pi.R + p.pi.Kp) * (x 0 - p.Id0) / p.pi.L) =
+      -(p.pi.R + p.pi.Kp) / p.pi.L * (x 0 - p.Id0) ^ 2 := by ring
+  rw [heq]
+  positivity
 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp = 0`: the current error is frozen and the integrator drifts
-(Chetaev's function `−e ξ`). -/
+(`Dynamics.unstable_of_conserved_drive_local`). -/
 @[tmio TM, powerlib_domain] private theorem unstable_ki_zero_eq (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.pi.Ki = 0)
     (h : p.pi.R * p.Id0 = 0) (hR : p.pi.R + p.pi.Kp = 0) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
   rw [mem_den_flow]
-  refine Dynamics.unstable_of_chetaev_local (W := fun x : State 3 => -((x 0 - p.Id0) * x 1))
-    (r := 1) isOpen_posV (p.eqState_mem hV) (p.field_contDiffOn _) (by fun_prop) one_pos
-    (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 4, -(ε / 4), 0], ?_, ?_⟩)
-    (fun x _ _ hW => ?_)
-  · rw [add_sub_cancel_left]
-    refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_three _)).trans_lt ?_
-    norm_num
-    rw [abs_of_pos (by positivity : 0 < ε / 4)]
+  have h0 : p.eqState 0 = p.Id0 := by simp [eqState]
+  refine Dynamics.unstable_of_conserved_drive_local (i := 0) (j := 1) (g := fun s => -(s - p.Id0))
+    isOpen_posV (p.eqState_mem hV) (p.field_contDiffOn _) (by decide) (by fun_prop)
+    (fun ε hε => ⟨p.Id0 + ε / 2, ?_, ?_⟩) (fun x _ => ?_) fun x _ => p.field_one x
+  · rw [h0, add_sub_cancel_left, abs_of_pos (half_pos hε)]
     linarith
-  · simp [eqState, hKi]
-    positivity
-  · have hd : HasFDerivAt (fun x : State 3 => -((x 0 - p.Id0) * x 1))
-        (-(x 1 • Dynamics.coord 0 + (x 0 - p.Id0) • Dynamics.coord 1)) x := by
-      have h' := (((Dynamics.hasFDerivAt_coord 0 x).sub_const p.Id0).mul
-        (Dynamics.hasFDerivAt_coord 1 x)).neg
-      convert h' using 1
-      ext v; simp; ring
-    rw [hd.fderiv]
-    simp only [_root_.neg_apply, _root_.add_apply, _root_.smul_apply, Dynamics.coord_apply,
-      smul_eq_mul]
-    rw [p.field_zero_ki hKi h hL.ne', p.field_one, hR]
-    have he : x 0 - p.Id0 ≠ 0 := by
-      intro he
-      have : -((x 0 - p.Id0) * x 1) = 0 := by rw [he]; ring
-      linarith
-    have : 0 < (x 0 - p.Id0) * (x 0 - p.Id0) := mul_self_pos.mpr he
-    have heq : -(x 1 * (-0 * (x 0 - p.Id0) / p.pi.L) + (x 0 - p.Id0) * -(x 0 - p.Id0)) =
-        (x 0 - p.Id0) * (x 0 - p.Id0) := by ring
-    rw [heq]
-    exact this
+  · simp only [add_sub_cancel_left, neg_ne_zero]
+    exact (half_pos hε).ne'
+  · rw [p.field_zero_ki hKi h hL.ne', hR]
+    simp
 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp > 0`, `I_dc0 < 0`: the DC node is unstable (Jacobian
 eigenvalue `−I_dc0/(C V0) > 0`). -/

@@ -49,7 +49,9 @@ Results.
   (`classA_not_nilpotent`).
 * Damping ratio (`§3`, `Criteria.dampingRatio`): `ζ_B` is the PI-PLL damping ratio `PLL.zeta` at the
   slope `g` (`classB_zeta_eq`), `ζ_B = (K_p/2)√(g/K_i)` for `g > 0` (`zetaB_eq`),
-  `ζ_A = D/(2√(M g))` (`classA_zeta_eq`); `ζ_B(λ g) = √λ ζ_B(g)`, `ζ_A(λ g) = ζ_A(g)/√λ`; `ζ_B → 0`,
+  `ζ_A = D/(2√(M g))` (`classA_zeta_eq`: the swing damping ratio
+  `Synchronous.SwingParams.dampingRatio_jacobian`, invariant under `Criteria.dampingRatio_conj`);
+  `ζ_B(λ g) = √λ ζ_B(g)`, `ζ_A(λ g) = ζ_A(g)/√λ`; `ζ_B → 0`,
   `ζ_A → ∞` as `g → 0⁺`; near the fold the class-A eigenvalues are real
   (`classA_eigenvalues_real_of_le`) and the class-B eigenvalues are non-real
   (`classB_eigenvalue_nonreal_of_lt`).
@@ -127,32 +129,31 @@ def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   Dynamics.scaleMatrix M * (⟨M, D, 0, 0, g, 0⟩ : Synchronous.SwingParams).jacobian 0 *
     Dynamics.scaleMatrix M⁻¹
 
-@[tmio M, powerlib_domain] private theorem classAJacobian_apply (M D g : ℝ) :
-    classAJacobian M D g = !![0, M⁻¹; -(g * (M * M⁻¹)), -(D * (M * M⁻¹ * M⁻¹))] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [classAJacobian, Dynamics.scaleMatrix, Synchronous.SwingParams.jacobian,
-      Synchronous.SwingParams.syncCoeff, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+/-- `diag(1, M)` and `diag(1, M⁻¹)` are inverse (`M ≠ 0`): the class-A Jacobian is the swing
+Jacobian conjugated by them. -/
+@[tmio T, powerlib_foundation] private theorem scaleMatrix_mul_inv {M : ℝ} (hM : M ≠ 0) :
+    Dynamics.scaleMatrix M * Dynamics.scaleMatrix M⁻¹ = 1 ∧
+      Dynamics.scaleMatrix M⁻¹ * Dynamics.scaleMatrix M = 1 := by
+  simp only [Dynamics.scaleMatrix, Matrix.mul_fin_two, Matrix.one_fin_two]
+  simp [hM]
 
-@[tmio M, powerlib_domain] theorem classA_trace (M D g : ℝ) :
+@[tmio M, powerlib_domain] theorem classA_trace {M : ℝ} (D g : ℝ) (hM : M ≠ 0) :
     (classAJacobian M D g).trace = -(D * M⁻¹) := by
-  rw [classAJacobian_apply, Matrix.trace_fin_two_of]
-  rcases eq_or_ne M 0 with rfl | hM
-  · simp
-  · rw [mul_inv_cancel₀ hM]; ring
+  rw [classAJacobian, Matrix.trace_mul_comm, ← Matrix.mul_assoc, (scaleMatrix_mul_inv hM).2,
+    Matrix.one_mul, Synchronous.SwingParams.trace_jacobian, neg_div, div_eq_mul_inv]
 
-@[tmio M, powerlib_domain] theorem classA_det (M D g : ℝ) :
+@[tmio M, powerlib_domain] theorem classA_det {M : ℝ} (D g : ℝ) (hM : M ≠ 0) :
     (classAJacobian M D g).det = g * M⁻¹ := by
-  rw [classAJacobian_apply, Matrix.det_fin_two_of]
-  rcases eq_or_ne M 0 with rfl | hM
-  · simp
-  · rw [mul_inv_cancel₀ hM]; ring
+  rw [classAJacobian, Matrix.det_conj_of_mul_eq_one (scaleMatrix_mul_inv hM).1
+    (scaleMatrix_mul_inv hM).2, Synchronous.SwingParams.det_jacobian, div_eq_mul_inv]
+  simp [Synchronous.SwingParams.syncCoeff]
 
 /-- At a class-A fold (`g = 0`) the Jacobian is not nilpotent when `D/M ≠ 0`: one eigenvalue stays
 at `−D/M` (an ordinary saddle-node), unlike the class-B fold. -/
 @[tmio M, powerlib_domain] theorem classA_not_nilpotent {M D : ℝ} (h : D * M⁻¹ ≠ 0) :
     ¬ IsNilpotent (classAJacobian M D 0) := by
-  rw [Criteria.isNilpotent_iff_trace_det_eq_zero_fin_two, classA_trace]
+  have hM : M ≠ 0 := fun h0 => h (by simp [h0])
+  rw [Criteria.isNilpotent_iff_trace_det_eq_zero_fin_two, classA_trace D 0 hM]
   rintro ⟨h1, -⟩
   exact h (neg_eq_zero.mp h1)
 
@@ -187,13 +188,11 @@ is `ζ_B`. -/
 (`Criteria.dampingRatio`) is `ζ_A`. -/
 @[tmio M, powerlib_domain] theorem classA_zeta_eq {M D g : ℝ} (hM : 0 < M) (hg : 0 < g) :
     Criteria.dampingRatio (classAJacobian M D g) = zetaA M D g := by
-  rw [Criteria.dampingRatio, zetaA, classA_trace, classA_det, neg_neg]
-  have h1 : √(M * g) = M * √(g * M⁻¹) := by
-    rw [show M * g = M ^ 2 * (g * M⁻¹) by field_simp, Real.sqrt_mul (sq_nonneg _),
-      Real.sqrt_sq hM.le]
-  rw [h1]
-  have h2 : 0 < √(g * M⁻¹) := Real.sqrt_pos.mpr (mul_pos hg (inv_pos.mpr hM))
-  field_simp
+  obtain ⟨h1, h2⟩ := scaleMatrix_mul_inv hM.ne'
+  rw [classAJacobian, Criteria.dampingRatio_conj h1 h2,
+    Synchronous.SwingParams.dampingRatio_jacobian ⟨M, D, 0, 0, g, 0⟩ hM
+      (by simpa [Synchronous.SwingParams.syncCoeff])]
+  simp [zetaA, Synchronous.SwingParams.syncCoeff]
 
 /-- Scaling law of class B: `ζ_B(λ g) = √λ ζ_B(g)`. -/
 @[tmio M, powerlib_domain] theorem zetaB_scale (Kp Ki g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
@@ -240,7 +239,7 @@ is `ζ_B`. -/
     (hg : g ≤ D ^ 2 / (4 * M)) (μ : ℂ) (v : Fin 2 → ℂ) (hv : v ≠ 0)
     (heig : (classAJacobian M D g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) : μ.im = 0 := by
   refine (Criteria.eigenvalues_real_iff_discriminant_nonneg _).mpr ?_ μ v hv heig
-  rw [classA_trace, classA_det]
+  rw [classA_trace D g hM.ne', classA_det D g hM.ne']
   rw [le_div_iff₀ (by positivity)] at hg
   have : 0 ≤ D ^ 2 - 4 * M * g := by linarith
   have e : (-(D * M⁻¹)) ^ 2 - 4 * (g * M⁻¹) = (D ^ 2 - 4 * M * g) / M ^ 2 := by

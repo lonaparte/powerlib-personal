@@ -52,16 +52,15 @@ Results.
   `≥ 0` and `h(θ, r₊(θ)) = 0` or `h(θ, r₋(θ)) = 0` (union of the two branches).
 * `field13_eq_transport_literatureField13` (§D8): the field is the OUT-positive source field
   transported by the reversal of the current coordinates, with `i_q*` reversed.
-* `cp_energy_rate_nonpos` : on the 2D constant-power layer, wherever a local potential `V` with
-  `V′ = −h_cp` exists, `Ḣ_cp = −K_p h_cp² ≤ 0` (the energy rate of the PI-PLL,
-  `PLL.piPLL_energy_rate`; no claim where `h_cp` is undefined).
+* On the 2D constant-power layer the PI-PLL field with detector `h_cp(θ) = h(θ, r_±(θ))` has,
+  wherever a local potential `V` with `V′ = −h_cp` exists, `Ḣ_cp = −K_p h_cp² ≤ 0`: the generic
+  energy rate `PLL.piPLL_energy_rate` (no claim where `h_cp` is undefined).
 
 Family and connection conclusions.
 The module states no behaviour of the 13-state field: it has
 no Family, and every result is static. The equilibrium characterizations `field13_eq_zero_iff`
 and `field13_exists_equilibrium_iff` are static evidence on the model,
-not connection conclusions. `cp_energy_rate_nonpos` is a pointwise derivative inequality for an
-arbitrary phase-detector signal.
+not connection conclusions.
 -/
 
 noncomputable section
@@ -407,20 +406,5 @@ transported by the reversal of the current coordinates, with the frozen q-axis r
       Params.withId, Params.idStar, Params.Pbr, proj10, Params.ucD, Params.ucQ, Params.uD,
       Params.uQ, icD, icQ, vccD, vccQ, Transform.parkD, Transform.parkQ, iparkD, iparkQ,
       -mul_eq_mul_left_iff] <;> ring
-
-/-! ### Energy identity of the 2D constant-power layer -/
-
-/-- For the PI-PLL field with any phase-detector signal `h_cp` (for the constant-power layer,
-`h_cp(θ) = h(θ, r_±(θ))`, defined where the discriminant is `≥ 0`): at every point where a local
-potential `V` has `V′ = −h_cp`, the energy `H = ½ K_i η² + V(θ)` satisfies `Ḣ = −K_p h_cp² ≤ 0`
-(`PLL.piPLL_energy_rate`). -/
-@[tmio M, powerlib_domain] theorem cp_energy_rate_nonpos {hcp V : ℝ → ℝ} {Kp : ℝ} (Ki : ℝ)
-    (hKp : 0 ≤ Kp) {y : State 2} (hV : HasDerivAt V (-hcp (y 0)) (y 0)) :
-    fderiv ℝ (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) y (piPLLField hcp Kp Ki 0 y) ≤ 0 := by
-  have hH : (fun z : State 2 => Ki / 2 * z 1 ^ 2 + V (z 0)) = piPLLEnergy V Ki 0 :=
-    funext fun _ => by rw [piPLLEnergy, sub_zero, add_comm]
-  rw [hH, piPLL_energy_rate Kp Ki 0 0 hV, mul_zero, sub_self, mul_zero, add_zero]
-  have := mul_nonneg hKp (sq_nonneg (hcp (y 0)))
-  linarith
 
 end powerlib.GFL.LCLine

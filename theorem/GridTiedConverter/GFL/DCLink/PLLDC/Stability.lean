@@ -49,7 +49,9 @@ The field contains `1/V_dc` and is therefore not globally `C¹`, only `C¹` on t
   ` [3(−V_g s i_d − V_g c i_q0)/(2 V_dc C_dc), 0,`
   `  3(k_pv(R_g i_d − v_d + X_g i_q0) V_dc − P)/(2 V_dc² C_dc),`
   `  3 k_iv (v_d − R_g i_d − X_g i_q0)/(2 V_dc C_dc)],`
-  ` [0, 0, −1, 0]]`.
+  ` [0, 0, −1, 0]]`. Where `J₂₀ = 0` it is block triangular and its invariants are those of the
+  PLL and DC-loop blocks (`jacobian_invariants_of_J20_eq_zero`,
+  `Criteria.invariants_of_blockTriangular_fin_four`).
 
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B), §1.7 (equilibria);
 local-stability statement requested as the "4×4 Routh–Hurwitz of model B" item (the note itself
@@ -201,6 +203,26 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
       3 * (p.kpv * (p.Rg * id - vd + p.Xg * p.iq0) * V - p.pccP x) / (2 * V ^ 2 * p.Cdc),
       3 * p.kiv * (vd - p.Rg * id - p.Xg * p.iq0) / (2 * V * p.Cdc);
     0, 0, -1, 0]
+
+/-- **Block-triangular Jacobian.** Where the angle entry of the DC-link row vanishes
+(`J₂₀ = 0`), the Jacobian is block triangular with PLL block `[[a, b], [c, 0]]` and DC-loop block
+`[[d, e], [−1, 0]]`: `tr = a + d`, `m₂ = −bc + e + ad`, `m₃ = ae − bcd`, `det = −bc e`
+(`Criteria.invariants_of_blockTriangular_fin_four`). -/
+@[tmio M, powerlib_domain] theorem jacobian_invariants_of_J20_eq_zero {x : State 4}
+    {a b c d e : ℝ} (h20 : p.jacobian x 2 0 = 0) (h00 : p.jacobian x 0 0 = a)
+    (h01 : p.jacobian x 0 1 = b) (h10 : p.jacobian x 1 0 = c) (h22 : p.jacobian x 2 2 = d)
+    (h23 : p.jacobian x 2 3 = e) :
+    (p.jacobian x).trace = a + d ∧
+      Criteria.principalMinorSum2Fin4 (p.jacobian x) = -(b * c) + e + a * d ∧
+      Criteria.principalMinorSum3Fin4 (p.jacobian x) = a * e - b * c * d ∧
+      (p.jacobian x).det = -(b * c) * e := by
+  obtain ⟨h1, h2, h3, h4⟩ := Criteria.invariants_of_blockTriangular_fin_four h20
+    (by simp [jacobian]) (by simp [jacobian]) (by simp [jacobian])
+  have h11 : p.jacobian x 1 1 = 0 := by simp [jacobian]
+  have h32 : p.jacobian x 3 2 = -1 := by simp [jacobian]
+  have h33 : p.jacobian x 3 3 = 0 := by simp [jacobian]
+  simp only [h00, h01, h10, h11, h22, h23, h32, h33] at h1 h2 h3 h4
+  exact ⟨by rw [h1]; ring, by rw [h2]; ring, by rw [h3]; ring, by rw [h4]; ring⟩
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_idRef (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.idRef (y 2) (y 3)) (row4 0 0 (-p.kpv) p.kiv) x := by
@@ -667,45 +689,23 @@ passivity holds without requirement. -/
   have hc0 : 0 < c := by positivity
   have hd0 : 0 < d := by positivity
   set J := p.jacobian (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) with hJ
-  have e00 : J 0 0 = -a := by simp [J, PLLDC.Params.jacobian, a]
-  have e01 : J 0 1 = p.ki := by simp [J, PLLDC.Params.jacobian]
-  have e10 : J 1 0 = -p.Vg := by simp [J, PLLDC.Params.jacobian]
-  have e11 : J 1 1 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have e20 : J 2 0 = 0 := by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, hq, hd]
-  have e21 : J 2 1 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have e22 : J 2 2 = -c := by
-    simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.pccP,
-      PLLDC.Params.vgq, hR, hq, hd, c]
-    field_simp
-  have e23 : J 2 3 = d := by
-    simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, hR, hq, hd, d]
-  have e30 : J 3 0 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have e31 : J 3 1 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have e32 : J 3 2 = -1 := by simp [J, PLLDC.Params.jacobian]
-  have e33 : J 3 3 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have htr : J.trace = -(a + c) := by
-    simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, e00, e11, e22, e33]
-    ring
-  have hm2 : Criteria.principalMinorSum2Fin4 J = b + d + a * c := by
-    simp only [Criteria.principalMinorSum2Fin4, e00, e01, e10, e11, e20, e21, e22, e23, e30, e31,
-      e32, e33]
-    rw [hb]
-    ring
-  have hm3 : Criteria.principalMinorSum3Fin4 J = -(a * d + b * c) := by
-    simp only [Criteria.principalMinorSum3Fin4, e00, e01, e10, e11, e20, e21, e22, e23, e30, e31,
-      e32, e33]
-    rw [hb]
-    ring
-  have hdet : J.det = b * d := by
-    rw [Criteria.det_fin_four]
-    simp only [e00, e01, e10, e11, e20, e21, e22, e23, e30, e31, e32, e33]
-    rw [hb]
-    ring
+  obtain ⟨htr, hm2, hm3, hdet⟩ := p.jacobian_invariants_of_J20_eq_zero
+    (x := WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) (a := -a) (b := p.ki)
+    (c := -p.Vg) (d := -c) (e := d)
+    (by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, hq, hd])
+    (by simp [J, PLLDC.Params.jacobian, a]) (by simp [J, PLLDC.Params.jacobian])
+    (by simp [J, PLLDC.Params.jacobian])
+    (by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.pccP,
+        PLLDC.Params.vgq, hR, hq, hd, c]; field_simp)
+    (by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, hR, hq, hd, d])
+  rw [← hJ] at htr hm2 hm3 hdet
+  have hki : p.ki * -p.Vg = -b := by rw [hb]; ring
+  rw [hki] at hm2 hm3 hdet
   have hD : 0 < a * c * ((b - d) ^ 2 + (a + c) * (a * d + b * c)) := by positivity
   refine PLLDC.mem_den_flow_iff.mp (mem_den_locallyExponentiallyStable ⟨p, _⟩ hV hx ?_ ?_ ?_ ?_)
   · rw [← hJ, htr]; linarith
   · rw [← hJ, hm3]; nlinarith [mul_pos ha0 hd0, mul_pos hb0 hc0]
-  · rw [← hJ, hdet]; positivity
+  · rw [← hJ, hdet]; nlinarith [mul_pos hb0 hd0]
   · rw [← hJ, htr, hm2, hm3, hdet]
     nlinarith [hD]
 
@@ -784,45 +784,19 @@ diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC lo
   unfold powerlib.TMIO.Statement at h ⊢
   refine h.mpr ⟨(by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using negativeReference_equilibrium), ?_⟩
   set J := negativeReference.p.jacobian negativeReference.x with hJ
-  have e00 : J 0 0 = -1 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e01 : J 0 1 = 1 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e02 : J 0 2 = 0 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e03 : J 0 3 = 0 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e10 : J 1 0 = -1 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e11 : J 1 1 = 0 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e12 : J 1 2 = 0 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e13 : J 1 3 = 0 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e20 : J 2 0 = 0 := by
-    simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, J,
-        PLLDC.Params.jacobian, negativeReference, PLLDC.Params.idRef]
-  have e21 : J 2 1 = 0 := by simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
-      PLLDC.Params.Xg, J, PLLDC.Params.jacobian, negativeReference]
-  have e22 : J 2 2 = -3 / 2 := by
-    simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, J,
-        PLLDC.Params.jacobian, negativeReference, PLLDC.Params.idRef, PLLDC.Params.vgd,
-        PLLDC.Params.vgq, PLLDC.Params.pccP]
-  have e23 : J 2 3 = 3 / 2 := by
-    simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, J,
-        PLLDC.Params.jacobian, negativeReference, PLLDC.Params.idRef, PLLDC.Params.vgd]
-  have e30 : J 3 0 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have e31 : J 3 1 = 0 := by simp [J, PLLDC.Params.jacobian]
-  have e32 : J 3 2 = -1 := by simp [J, PLLDC.Params.jacobian]
-  have e33 : J 3 3 = 0 := by simp [J, PLLDC.Params.jacobian]
-  obtain ⟨htr, hm2, hm3, hdet⟩ := Criteria.invariants_of_blockDiag_fin_four e00 e01 e02 e03 e10
-    e11 e12 e13 e20 e21 e22 e23 e30 e31 e32 e33
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [htr]; norm_num
-  · rw [hm3]; norm_num
-  · rw [hdet]; norm_num
-  · rw [htr, hm2, hm3, hdet]; norm_num
+  have h := negativeReference.p.jacobian_invariants_of_J20_eq_zero
+    (x := negativeReference.x) (a := -1) (b := 1) (c := -1) (d := -3 / 2) (e := 3 / 2)
+    ?_ ?_ ?_ ?_ ?_ ?_
+  · obtain ⟨htr, hm2, hm3, hdet⟩ := h
+    rw [← hJ] at htr hm2 hm3 hdet
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [htr]; norm_num
+    · rw [hm3]; norm_num
+    · rw [hdet]; norm_num
+    · rw [htr, hm2, hm3, hdet]; norm_num
+  all_goals norm_num [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg,
+    PLLDC.Params.Xg, PLLDC.Params.jacobian, negativeReference, PLLDC.Params.idRef,
+    PLLDC.Params.vgd, PLLDC.Params.vgq, PLLDC.Params.pccP]
 
 /-- The local exponential translation is not exact without context: the negative-reference
 converter is locally exponentially stable at an equilibrium whose Jacobian meets the Routh
@@ -892,22 +866,21 @@ equilibria of the plane form a curve through the point (along `Δθ` with
     fin_cases i <;> simp [hx]
   by_cases hX : m.p.Xg * m.p.kiv = 0
   · -- equilibria along `ξ_v`
-    refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨WithLp.toLp 2 ![m.x 0, m.x 1, 0, m.x 3 + ε / 2], fun h => ?_, ?_, ?_⟩) hlas
-    · have := congrArg (fun y : State 4 => y 3) h
-      simp at this
-      linarith
-    · refine (hnorm _ _).trans_lt ?_
-      rw [sub_self, abs_zero, zero_add, add_sub_cancel_left, abs_of_pos (by linarith)]
-      linarith
-    · refine hpt _ _ ?_
-      have : m.p.vgq (m.x 0) (m.p.id0 + m.p.kiv * m.x 3) = 0 := h1
-      simp only [PLLDC.Params.vgq] at this ⊢
-      have hX' : m.p.Xg * (m.p.id0 + m.p.kiv * (m.x 3 + ε / 2)) =
-          m.p.Xg * (m.p.id0 + m.p.kiv * m.x 3) := by
-        linear_combination (ε / 2) * hX
-      rw [hX']
-      exact this
+    refine Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 3 1) (by simp)
+      (fun t _ => ?_) hlas
+    have hxt : m.x + t • EuclideanSpace.single 3 1 =
+        (WithLp.toLp 2 ![m.x 0, m.x 1, 0, m.x 3 + t] : State 4) := by
+      ext i
+      fin_cases i <;> simp [hx]
+    rw [hxt]
+    refine hpt _ _ ?_
+    have : m.p.vgq (m.x 0) (m.p.id0 + m.p.kiv * m.x 3) = 0 := h1
+    simp only [PLLDC.Params.vgq] at this ⊢
+    have hX' : m.p.Xg * (m.p.id0 + m.p.kiv * (m.x 3 + t)) =
+        m.p.Xg * (m.p.id0 + m.p.kiv * m.x 3) := by
+      linear_combination t * hX
+    rw [hX']
+    exact this
   · -- equilibria along `Δθ`
     set k := m.p.Xg * m.p.kiv with hk
     set ξ : ℝ → ℝ := fun a =>

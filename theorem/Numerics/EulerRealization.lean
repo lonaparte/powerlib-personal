@@ -33,9 +33,9 @@ Scope.
 * A generic template, not a model. Model layer (M): an arbitrary family `F : Family X Q n 0` of
   autonomous fields (`F.IsAutonomous f`) on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, read about the
   origin (a family read about selected points translates its fields so that the points are the
-  origin, `contDiffAt_shift`; the Euler method commutes with the translation). Smoothness: `f x`
-  of class `C¹` near the origin for the model a law speaks about (the `_local` laws), or every
-  `f x` of class `C¹` (the global laws).
+  origin, `contDiffAt_shift`, `contDiff_shift`; the Euler method commutes with the
+  translation). Smoothness: `f x` of class `C¹` near the origin for the model a law speaks about
+  (the `_local` laws), or every `f x` of class `C¹` (the global laws).
 * Implementation layer (I): an arbitrary type `Y` of implementations, each with a design model
   `design y` and a step `step y`; the system is the explicit Euler map `z ↦ z + h f x z`,
   `x = design y`, `h = step y`, with step length `h` (`Map.System.autonomous`), discrete time,
@@ -71,7 +71,7 @@ Results.
   `Linear.schurStable_mobius_iff`).
 * `hasFDerivAt_eulerMap`: the Euler map of a field with Jacobian `J` has Jacobian `I + h J`.
 * `contDiffAt_shift`: a field `C¹` near a point `x₀`, translated so that `x₀` is the origin, is `C¹`
-  near the origin.
+  near the origin; `contDiff_shift`, its global form: a `C¹` field translated is `C¹`.
 
 Family and connection conclusions.
 * The template `Numerics.eulerFamily F f design step : Family Y Q n 0`: every implementation read
@@ -239,6 +239,13 @@ the smoothness hypothesis of the local laws below, for a family read about selec
     (hg : ContDiffAt ℝ 1 g x₀) : ContDiffAt ℝ 1 (fun z => g (z + x₀)) 0 :=
   ContDiffAt.comp (g := g) (f := fun z : ℝⁿ => z + x₀) 0 (by rwa [zero_add])
     (contDiffAt_id.add contDiffAt_const)
+
+/-- A `C¹` field translated so that a point `x₀` is the origin is `C¹`: the smoothness hypothesis
+of the global laws below, for a family read about selected points (global form of
+`contDiffAt_shift`). -/
+@[tmio T, powerlib_foundation] theorem contDiff_shift {g : ℝⁿ → ℝⁿ} {x₀ : ℝⁿ}
+    (hg : ContDiff ℝ 1 g) : ContDiff ℝ 1 (fun z => g (z + x₀)) :=
+  hg.comp (contDiff_id.add contDiff_const)
 
 /-! ## The implementation family -/
 

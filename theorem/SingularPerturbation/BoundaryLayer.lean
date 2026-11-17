@@ -23,10 +23,8 @@ linearized form `Re λ(∂g/∂z) < 0`), theory/T-singular-perturbation.md §1.4
 theory/T-slow-manifold.md §1.5 (attractivity uniform in `x`).
 
 Results.
-* `exists_uniform_dissipation` — one pair of energy bounds `lo, hi` and one bound on `Σ|Pᵢⱼ|`
-  serve all parameters: for every `p` there is a symmetric `P` with `lo|v|² ≤ vᵀPv ≤ hi|v|²` and
-  `vᵀ P A(p) v ≤ −|v|²/4` (finite subcover of the certificates of `FrozenFast`, via
-  `dissipation_of_close`).
+* Uniform dissipation certificates on a compact parameter space are
+  `exists_uniform_dissipation` of `theorem/SingularPerturbation/FrozenFast.lean`.
 * `boundaryLayer_uniform_exponentialStability_of_certificates` — the same conclusion for an
   arbitrary (not necessarily compact or topological) parameter set, given uniform Lyapunov
   certificates of the linearizations as a hypothesis (Khalil's uniform form: one `lo`, `hi`, one
@@ -64,66 +62,6 @@ namespace powerlib.SingularPerturbation
 open Matrix Set
 
 variable {m : ℕ}
-
-/-- Right derivative of `yᵀ P y` for symmetric `P`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_quadratic_of_symm {P : Matrix (Fin m) (Fin m) ℝ}
-    (hP : Pᵀ = P) {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ} {s : Set ℝ} {t : ℝ}
-    (hy : HasDerivWithinAt y dy s t) :
-    HasDerivWithinAt (fun τ => y τ ⬝ᵥ (P *ᵥ y τ)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) s t := by
-  have hPy : HasDerivWithinAt (fun τ => P *ᵥ y τ) (P *ᵥ dy) s t :=
-    (LinearMap.toContinuousLinearMap (Matrix.toLin' P)).hasFDerivAt.comp_hasDerivWithinAt t hy
-  convert Linear.dotProduct_hasDerivWithinAt hy hPy using 1
-  rw [Criteria.dotProduct_mulVec_comm_of_symm hP dy (y t)]
-  ring
-
-/-- **Uniform Lyapunov dissipation** for a continuous Hurwitz family on a compact parameter
-space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. -/
-@[tmio T, powerlib_foundation] theorem exists_uniform_dissipation {X : Type*} [TopologicalSpace X]
-    [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
-    (hH : ∀ p, LinearSystems.IsHurwitz (A p)) :
-    ∃ lo > 0, ∃ hi > 0, ∃ Pb ≥ 0, ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
-      (∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) ∧ (∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v)) ∧
-      absSum P ≤ Pb ∧ ∀ v, v ⬝ᵥ (P *ᵥ (A p *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
-  classical
-  let cert : ∀ x, BoundedCertificate (A x) := fun x =>
-    (nonempty_boundedCertificate_of_isHurwitz (hH x)).some
-  let δ : X → ℝ := fun x => 1 / (4 * absSum (cert x).P + 4)
-  have hδ : ∀ x, 0 < δ x := fun x => by have := absSum_nonneg (cert x).P; positivity
-  let O : X → Set X := fun x₀ => {x | absSum (A x - A x₀) < δ x₀}
-  have hO : ∀ x₀, IsOpen (O x₀) := fun x₀ =>
-    isOpen_lt ((continuous_absSum_sub (A x₀)).comp hA) continuous_const
-  have hcover : (Set.univ : Set X) ⊆ ⋃ x₀, O x₀ := fun x _ =>
-    Set.mem_iUnion.mpr ⟨x, by simp [O, absSum, hδ x]⟩
-  obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover O hO hcover
-  by_cases hX : Nonempty X
-  swap
-  · exact ⟨1, one_pos, 1, one_pos, 0, le_rfl, fun x => absurd ⟨x⟩ hX⟩
-  have hsne : s.Nonempty := by
-    obtain ⟨x⟩ := hX
-    obtain ⟨x₀, hx₀, -⟩ := Set.mem_iUnion₂.mp (hs (Set.mem_univ x))
-    exact ⟨x₀, hx₀⟩
-  refine ⟨s.inf' hsne fun x₀ => (cert x₀).lower, ?_, s.sup' hsne fun x₀ => (cert x₀).upper, ?_,
-    s.sup' hsne fun x₀ => absSum (cert x₀).P, ?_, fun p => ?_⟩
-  · show 0 < _
-    rw [Finset.lt_inf'_iff]
-    exact fun x₀ _ => (cert x₀).lower_pos
-  · obtain ⟨x₀, hx₀⟩ := hsne
-    exact lt_of_lt_of_le (cert x₀).upper_pos
-      (Finset.le_sup' (fun x₀ => (cert x₀).upper) hx₀)
-  · obtain ⟨x₀, hx₀⟩ := hsne
-    exact le_trans (absSum_nonneg _) (Finset.le_sup' (fun x₀ => absSum (cert x₀).P) hx₀)
-  obtain ⟨x₀, hx₀s, hxO⟩ := Set.mem_iUnion₂.mp (hs (Set.mem_univ p))
-  refine ⟨(cert x₀).P, (cert x₀).symmetric, fun v => ?_, fun v => ?_,
-    Finset.le_sup' (fun x₀ => absSum (cert x₀).P) hx₀s,
-    dissipation_of_close (cert x₀) (le_of_lt hxO)⟩
-  · have h1 := Finset.inf'_le (fun x₀ => (cert x₀).lower) hx₀s
-    have h2 := (cert x₀).lower_bound v
-    have h3 := dotProduct_self_nonneg' v
-    nlinarith
-  · have h1 := Finset.le_sup' (fun x₀ => (cert x₀).upper) hx₀s
-    have h2 := (cert x₀).upper_bound v
-    have h3 := dotProduct_self_nonneg' v
-    nlinarith
 
 /-- **Nonlinear boundary layer, uniform Lyapunov certificates** (no compactness): if one pair of
 energy bounds `lo, hi` and one bound `Pb` on `Σ|Pᵢⱼ|` serve a dissipation certificate of every

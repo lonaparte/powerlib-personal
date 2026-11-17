@@ -643,46 +643,24 @@ boundary of the Routh region. -/
 def frozenPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 0, 1, 1, ⟨0, 3 / 2, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩
 
 /-- The frozen PLL is unstable: `W = −x sin θ` has `Ẇ = sin² θ` (Chetaev, for the note's field,
-`C¹` off `V = 0`). -/
+`C¹` off `V = 0`; `Dynamics.unstable_of_conserved_drive_local`). -/
 @[tmio TM, powerlib_domain] theorem frozenPLL_mem_den_unstable :
     connection% (frozenPLL.toPLLDC ∈ PLLDC.family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff'.mpr ?_
-  have c0 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 0) := contDiff_piLp_apply 2
-  have c1 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 1) := contDiff_piLp_apply 2
-  have hW : ContDiff ℝ 1 (fun y : Dynamics.State 4 => -(y 1 * Real.sin (y 0))) := by fun_prop
-  refine Dynamics.unstable_of_chetaev_local PLLDC.Params.isOpen_nonzeroVdc
-    (by simp [PLLDC.Params.nonzeroVdc, opPoint]) (field_contDiffOn _) hW one_pos
-    (fun ε hε => ?_) ?_
-  · set a := min (ε / 4) 1 with ha
-    have ha0 : 0 < a := lt_min (by positivity) one_pos
-    have ha1 : a ≤ ε / 4 := min_le_left _ _
-    have ha2 : a ≤ 1 := min_le_right _ _
-    refine ⟨opPoint frozenPLL.θ + WithLp.toLp 2 ![a, -a, 0, 0], ?_, ?_⟩
-    · rw [add_sub_cancel_left]
-      have h2 := norm_sq_coords (WithLp.toLp 2 ![a, -a, 0, 0])
-      simp only [Matrix.cons_val] at h2
-      have h0 := norm_nonneg (WithLp.toLp 2 ![a, -a, 0, 0] : Dynamics.State 4)
-      nlinarith
-    · have hs : 0 < Real.sin a :=
-        Real.sin_pos_of_pos_of_lt_pi ha0 (by linarith [Real.two_le_pi])
-      simp [opPoint, frozenPLL]
-      positivity
-  · intro y _ _ hWy
-    have h0 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) :
-      Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := y)
-    have h1 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (1 : Fin 4) :
-      Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := y)
-    have hs := (Real.hasDerivAt_sin (y 0)).comp_hasFDerivAt y h0
-    have hd : HasFDerivAt (fun y : Dynamics.State 4 => -(y 1 * Real.sin (y 0))) _ y :=
-      (h1.mul hs).neg
-    rw [hd.fderiv]
-    have hs : Real.sin (y 0) ≠ 0 := fun h => by
-      have : -(y 1 * Real.sin (y 0)) = 0 := by rw [h, mul_zero, neg_zero]
-      linarith
-    simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C, FourState.field,
-        Dynamics.lift, coordField, frozenPLL, vq, idc]
-    positivity
+  refine Dynamics.unstable_of_conserved_drive_local (i := 0) (j := 1) (g := fun s => -Real.sin s)
+    PLLDC.Params.isOpen_nonzeroVdc (by simp [PLLDC.Params.nonzeroVdc, opPoint])
+    (field_contDiffOn _) (by decide) (by fun_prop) (fun ε hε => ⟨min (ε / 2) 1, ?_, ?_⟩)
+    (fun y _ => ?_) fun y _ => ?_
+  · have ha0 : 0 < min (ε / 2) 1 := lt_min (by positivity) one_pos
+    have h0 : opPoint frozenPLL.θ 0 = 0 := by simp [opPoint, frozenPLL]
+    rw [h0, sub_zero, abs_of_pos ha0]
+    exact (min_le_left _ _).trans_lt (by linarith)
+  · have ha0 : 0 < min (ε / 2) 1 := lt_min (by positivity) one_pos
+    exact neg_ne_zero.mpr (Real.sin_pos_of_pos_of_lt_pi ha0
+      ((min_le_right _ _).trans_lt (by linarith [Real.two_le_pi]))).ne'
+  all_goals simp [Passive.SeriesRLC.reactance, FourState.Params.Xg, FourState.Params.C,
+    FourState.field, Dynamics.lift, coordField, frozenPLL, vq, idc]
 
 /-- The undamped PLL with a damped dc loop is not locally asymptotically stable: the PLL is
 decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. -/

@@ -1,6 +1,7 @@
 import theorem.Family.Basic
 import theorem.Linear.Transfer
 import theorem.Port.Linear
+import theorem.Dynamics.Shift
 
 /-! # Linear families
 
@@ -30,6 +31,16 @@ Results.
   zero-input field of its plant), `IsLinear.den_hurwitz`,
   `IsLinear.not_isHurwitz_of_mem_den_conservative`, `IsLinear.mem_den_conservative`,
   `IsLinear.mem_den_passive`.
+* Constant inputs: `Family.constantInput F plant u e` reads every member under the constant
+  input `u` of its plant, translated about the selected point `e x` (the forced field
+  `z ↦ A (z + e x) + B u`, no ports), with the family's requirements and translation.
+  `Family.mem_den_constantInput_iff`: when `e x` is an equilibrium of the forced field, an
+  attractive sentence holds for `x` exactly when its plant is Hurwitz.
+
+Family and connection conclusions.
+* `Family.constantInput` is a generic construction over an arbitrary family and plant map, not a
+  model family; its only connection law is `Family.mem_den_constantInput_iff` (a generic
+  implication, through `Flow.Property.holds_shift_iff` and `Linear.holds_input_iff`).
 -/
 
 noncomputable section
@@ -126,6 +137,26 @@ stable denotation, equivalently its plant is not Hurwitz. -/
     (c : KYP (plant x)) :
     connection% (x ∈ F.den .passive) := show x ∈ F.den .passive from
   (connection_proof% IsPort.mem_den_passive_iff hF).mpr ⟨_, c.passiveWith⟩
+
+/-- The members under the constant input `u` of their plants, translated about the selected
+points `e x`: the system map reads the forced field `z ↦ A (z + e x) + B u` with the input held
+constant; requirements and translation are the family's. -/
+def constantInput (F : Family X Q n p) (plant : X → Plant n p) (u : Fin p → ℝ) (e : X → ℝⁿ) :
+    Family X Q n 0 :=
+  ⟨fun x => Port.System.autonomous fun z => (plant x).inputField u (z + e x), F.meets,
+    F.translate⟩
+
+/-- At an equilibrium `e x` of the forced field, an attractive sentence holds for a member of the
+constant-input family exactly when its plant is Hurwitz. -/
+@[tmio TM, powerlib_foundation] theorem mem_den_constantInput_iff (F : Family X Q n p)
+    (plant : X → Plant n p) {u : Fin p → ℝ} {e : X → ℝⁿ} {x : X}
+    (he : IsEquilibrium ((plant x).inputField u) (e x)) {P : Flow.Property} (hP : P.Attractive) :
+    connection% (x ∈ (F.constantInput plant u e).den (.flow P) ↔ IsHurwitz (plant x).A) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% IsAutonomous.mem_den_flow
+    (show (F.constantInput plant u e).IsAutonomous
+      (fun x z => (plant x).inputField u (z + e x)) from fun _ => rfl))]
+  exact (Flow.Property.holds_shift_iff P).trans (Linear.holds_input_iff (plant x) he hP)
 
 end Family
 

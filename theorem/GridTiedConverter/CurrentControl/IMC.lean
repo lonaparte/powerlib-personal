@@ -39,10 +39,10 @@ Sign of the current controller (T-gfl-impedance §1.4):
 * `signedField_copied`: `σ = +1` (the OUT-literature form `+G_ci ε` copied unchanged) is the PI
   loop with gains `−V_dc Kp, −V_dc Ki`: characteristic polynomial
   `L s² + (R − V_dc Kp) s − V_dc Ki`.
-* Negation theorems: with `V_dc > 0`, `Ki > 0` the copied form has a positive real
-  characteristic root (`copied_exists_pos_root`, static), is unstable
-  (`copied_mem_den_unstable`, connection) and satisfies no attractive sentence
-  (`copied_not_mem_den`, connection).
+* Negation theorems: with `V_dc > 0`, `Ki > 0` the copied form is the PI loop with the negative
+  integral gain `−V_dc Ki` (a real saddle mode), so it is unstable (`copied_mem_den_unstable`,
+  connection, the `Ki < 0` instance `PIParams.mem_den_unstable_of_Ki_neg`) and satisfies no
+  attractive sentence (`copied_not_mem_den`, connection).
 
 Family and connection conclusions.
 No new family: both models are read through `PIParams.family` of `PILoop.lean`; the connection
@@ -167,34 +167,12 @@ def signedField (Vdc σ iref : ℝ) (x : ℝ²) : ℝ² :=
   fin_cases j <;> simp [signedField, field, control, withGain]
   ring
 
-/-- The copied form has a negative state-matrix determinant. Static evidence on the model, not a
-connection conclusion. -/
-@[tmio M, powerlib_domain] theorem copied_det_neg (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
-    (hKi : 0 < p.Ki) : (p.withGain (-Vdc)).model.A.det < 0 := by
-  change (!![-(p.R + -Vdc * p.Kp) / p.L, -Vdc * p.Ki / p.L; -1, 0] :
-    Matrix (Fin 2) (Fin 2) ℝ).det < 0
-  rw [Matrix.det_fin_two_of]
-  have : 0 < Vdc * p.Ki / p.L := div_pos (mul_pos hV hKi) hL
-  have h : -Vdc * p.Ki / p.L = -(Vdc * p.Ki / p.L) := by ring
-  rw [h]
-  linarith
-
-/-- The copied OUT form has a positive real closed-loop characteristic root. Static evidence on
-the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem copied_exists_pos_root (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
-    (hKi : 0 < p.Ki) :
-    ∃ r : ℝ, 0 < r ∧ (characteristicMatrix (p.withGain (-Vdc)).model.A r).det = 0 := by
-  obtain ⟨r, hr, v, hv, heig⟩ :=
-    Criteria.exists_pos_real_eigenvalue_of_det (p.withGain (-Vdc)).model.A
-      (by simpa using p.copied_det_neg hL hV hKi)
-  exact ⟨r, hr, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig⟩
-
-/-- The copied OUT form is unstable. -/
+/-- The copied OUT form is unstable: it is the PI loop with the negative integral gain
+`−V_dc Ki` (`mem_den_unstable_of_Ki_neg`; a real saddle mode, determinant `−V_dc Ki/L < 0`). -/
 @[tmio TM, powerlib_domain] theorem copied_mem_den_unstable (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
-    (hKi : 0 < p.Ki) : connection% (p.withGain (-Vdc) ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  obtain ⟨r, hr, hroot⟩ := p.copied_exists_pos_root hL hV hKi
-  exact family_isLinear.mem_den_flow.mpr (Linear.unstable_of_root 0 hroot (by simpa using hr))
+    (hKi : 0 < p.Ki) : connection% (p.withGain (-Vdc) ∈ family.den (.flow .unstable)) :=
+  (p.withGain (-Vdc)).mem_den_unstable_of_Ki_neg hL
+    (show -Vdc * p.Ki < 0 by nlinarith)
 
 /-- The copied OUT form satisfies no attractive sentence (in particular it is not exponentially
 stable). -/

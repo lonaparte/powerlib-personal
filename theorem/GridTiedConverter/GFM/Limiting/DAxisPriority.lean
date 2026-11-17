@@ -1,4 +1,5 @@
 import theorem.SpecialFunctions.Clamp
+import Mathlib.Basic.Real.Sign
 
 /-! # d-axis-priority current limiting
 
@@ -40,12 +41,9 @@ open powerlib.SpecialFunctions
 def dPriority (I id iq : ℝ) : ℝ × ℝ :=
   (clampSym I id, clampSym (Real.sqrt (I ^ 2 - clampSym I id ^ 2)) iq)
 
-/-- Sign function `sgn` (`sgn 0 = 0`). -/
-def sgn (x : ℝ) : ℝ := if 0 < x then 1 else if x < 0 then -1 else 0
-
-/-- The note's d-axis-priority rule, literally. -/
+/-- The note's d-axis-priority rule, literally (`sgn` is `Real.sign`, `sgn 0 = 0`). -/
 def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
-  (min id I, sgn iq * Real.sqrt (I ^ 2 - (min id I) ^ 2))
+  (min id I, Real.sign iq * Real.sqrt (I ^ 2 - (min id I) ^ 2))
 
 /-- The corrected limiter never exceeds the limit. -/
 @[tmio M, powerlib_domain] theorem dPriority_norm_le (I id iq : ℝ) :
@@ -79,7 +77,7 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
   refine ⟨by norm_num, ?_⟩
   intro h
   have h2 := congrArg Prod.snd h
-  simp [dPriorityNote, sgn] at h2
+  simp [dPriorityNote, Real.sign_of_pos (two_pos : (0 : ℝ) < 2)] at h2
 
 /-- Correction (b): the note's rule does not limit a negative `i_d` (exported power). -/
 @[tmio M, powerlib_domain] theorem dPriorityNote_exceeds :

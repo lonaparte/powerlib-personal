@@ -48,10 +48,11 @@ Results.
 * Coordinate changes: `reindex_mul`, `blockCoordinates`, `blockCoordinates_mul`,
   `blockCoordinates_one`, `changeCoordinates`, `closedLoopBlocks_changeCoordinates`,
   `inputBlocks_changeCoordinates`, `outputBlocks_changeCoordinates`,
-  `closedLoop_changeCoordinates`, `similar_closedLoop_changeCoordinates`,
-  `portImpedance_changeCoordinates`, `impedanceStable_changeCoordinates_iff`,
-  `isHurwitz_closedLoop_changeCoordinates` (the component immittances are unchanged:
-  `Linear.transfer_changeCoordinates`).
+  `closedLoop_changeCoordinates`, `similar_closedLoop_changeCoordinates` (the component
+  immittances are unchanged: `Linear.transfer_changeCoordinates`). A coordinate change is the
+  rebasing at unit port bases (`Transform.Rebase.changeCoordinates_eq`), so the invariance of the
+  port impedance, of the impedance criterion and of pole stability are the rebase laws there
+  (`Transform.Rebase.impedanceStable_rebase_iff`, `Transform.Rebase.den_rebase`).
 * Minimal realizations of the port impedance: `eventually_regular`, `similar_closedLoop_iff`,
   `exists_minimal_realization_portImpedance`.
 * Port data: `portData`, `impedanceStable_of_portData`, `MinimalComponents`, `Observable`,
@@ -440,29 +441,6 @@ variable {T₁ S₁ T₂ S₂}
     by rw [blockCoordinates_mul, hTS₁, hTS₂, blockCoordinates_one],
     by rw [blockCoordinates_mul, hST₁, hST₂, blockCoordinates_one],
     ic.closedLoop_changeCoordinates T₁ S₁ T₂ S₂⟩
-
-@[tmio M, powerlib_foundation] theorem portImpedance_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
-    (hST₁ : S₁ * T₁ = 1) (hTS₂ : T₂ * S₂ = 1) (hST₂ : S₂ * T₂ = 1) (s : ℂ) :
-    (ic.changeCoordinates T₁ S₁ T₂ S₂).portImpedance s = ic.portImpedance s := by
-  simp only [portImpedance, sourceImpedance, loadAdmittance, Interconnection.changeCoordinates,
-    transfer_changeCoordinates hTS₁ hST₁, transfer_changeCoordinates hTS₂ hST₂]
-
-@[tmio M, powerlib_foundation] theorem impedanceStable_changeCoordinates_iff (hTS₁ : T₁ * S₁ = 1)
-    (hST₁ : S₁ * T₁ = 1) (hTS₂ : T₂ * S₂ = 1) (hST₂ : S₂ * T₂ = 1) :
-    connection% ((ic.changeCoordinates T₁ S₁ T₂ S₂) ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change (ic.changeCoordinates T₁ S₁ T₂ S₂).ImpedanceStable ↔ ic.ImpedanceStable
-  simp only [ImpedanceStable, returnDifference, sourceImpedance, loadAdmittance,
-    Interconnection.changeCoordinates, transfer_changeCoordinates hTS₁ hST₁,
-    transfer_changeCoordinates hTS₂ hST₂]
-
-/-- Coordinate changes of the components preserve closed-loop pole stability. -/
-@[tmio TM, powerlib_foundation] theorem isHurwitz_closedLoop_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
-    (hST₁ : S₁ * T₁ = 1) (hTS₂ : T₂ * S₂ = 1) (hST₂ : S₂ * T₂ = 1) :
-    connection% ((ic.changeCoordinates T₁ S₁ T₂ S₂) ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change IsHurwitz (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoopA ↔ IsHurwitz ic.closedLoopA
-  exact (ic.similar_closedLoop_changeCoordinates hTS₁ hST₁ hTS₂ hST₂).isHurwitz_iff
 
 end Interconnection
 

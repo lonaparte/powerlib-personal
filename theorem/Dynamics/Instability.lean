@@ -1,4 +1,5 @@
 import theorem.Dynamics.Calculus
+import theorem.Dynamics.Coordinates
 import theorem.Dynamics.Locality
 import theorem.Dynamics.Lyapunov
 
@@ -27,14 +28,19 @@ Results.
   systems); `not_localAsymptoticStable_of_lie_nonpos` (a function that does not increase along the
   field near the point and takes values below its value at the point arbitrarily close to it rules
   out local asymptotic stability: conserved energies, fold points with a monotone coordinate);
-  `not_localAsymptoticStable_of_equilibria` (accumulating equilibria rule it out).
+  `not_localAsymptoticStable_of_equilibria` (accumulating equilibria rule it out) and
+  `not_localAsymptoticStable_of_line` (a half-line of equilibria through the point). The compact
+  exit step is `false_of_lie_pos_on_compact` (`theorem/Dynamics/Lyapunov.lean`).
 * LeanForControl's exponential Chetaev criterion is used directly
   (`NonlinearInstability.unstable_of_exponential_chetaev`: `2 α V ≤ V̇` near the base point, with
   `|V| ≤ C ‖x − x_eq‖²` and positive values of `V` accumulating at the base point).
 * Fields that are `C¹` only on an open set `U` containing the point (typically power-balance fields
   with a `1/V_dc` factor, smooth on `V_dc > 0` only):
   `not_localAsymptoticStable_of_lie_nonpos_local`, `unstable_of_chetaev_local`,
-  `unstable_of_lie_nonpos_of_lie_pos_local`. The field is replaced near the point by a globally
+  `unstable_of_lie_nonpos_of_lie_pos_local`, and two Chetaev templates on coordinates:
+  `unstable_of_conserved_drive_local` (a conserved coordinate `x_i` drives `ẋ_j = g(x_i)`,
+  `W = (x_j − x*_j) g(x_i)`) and `unstable_of_repelling_coord_local` (`(x_i − x*_i) ẋ_i > 0`,
+  `W = (x_i − x*_i)²`). The field is replaced near the point by a globally
   `C¹` field (`exists_contDiff_ball`, a smooth bump) and the conclusions are transported back with
   the locality lemmas of `theorem/Dynamics/Locality.lean`.
 * Hypotheses on a punctured neighbourhood (`∀ᶠ x in 𝓝[≠] x_eq`), as delivered by normal-form
@@ -104,6 +110,22 @@ solution at a nearby equilibrium does not converge to the point. -/
     exact hasDerivWithinAt_const _ _ _
   exact hne (tendsto_nhds_unique tendsto_const_nhds (hconv 0 _ hcurve hx))
 
+/-- A half-line of equilibria `x* + t v` (`t > 0`, `v ≠ 0`) rules out local asymptotic stability
+of `x*` (`not_localAsymptoticStable_of_equilibria`): a line of equilibria through the point, as
+for a field that does not depend on one coordinate. -/
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_line {f : ℝⁿ → ℝⁿ}
+    {x_eq v : ℝⁿ} (hv : v ≠ 0) (hline : ∀ t : ℝ, 0 < t → f (x_eq + t • v) = 0) :
+    ¬ LocalAsymptoticStable f x_eq := by
+  refine not_localAsymptoticStable_of_equilibria fun ε hε => ?_
+  have hv' : 0 < ‖v‖ := norm_pos_iff.mpr hv
+  have ht : 0 < ε / (2 * ‖v‖) := by positivity
+  refine ⟨x_eq + (ε / (2 * ‖v‖)) • v, fun h => ?_, ?_, hline _ ht⟩
+  · have h0 : (ε / (2 * ‖v‖)) • v = 0 := by simpa using h
+    exact hv ((smul_eq_zero.mp h0).resolve_left ht.ne')
+  · rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos ht]
+    have : ε / (2 * ‖v‖) * ‖v‖ = ε / 2 := by field_simp
+    linarith
+
 /-- **Chetaev's instability theorem** (classical form). A `C¹` function `W` that is positive at
 states arbitrarily close to the point and strictly increases along the field wherever it is
 positive within distance `r` makes the point of a `C¹` field unstable. -/
@@ -146,36 +168,15 @@ positive within distance `r` makes the point of a `C¹` field unstable. -/
     have := hanti ⟨le_rfl, hsy.le⟩ (Ioo_subset_Icc_self ht) ht.1.le
     simp only [Function.comp_apply, neg_le_neg_iff] at this
     exact (show W x₀ ≤ W (φ s) from hsΩ).trans this
-  -- a uniform rate on the compact set `{‖x − x_eq‖ ≤ r, W x ≥ W x₀}`
-  set K := {x | ‖x - x_eq‖ ≤ r ∧ W x₀ ≤ W x} with hK
-  have hKc : IsCompact K := by
+  -- `W` grows at a uniform rate on the compact set `{‖x − x_eq‖ ≤ r, W x ≥ W x₀}`
+  have hKc : IsCompact {x | ‖x - x_eq‖ ≤ r ∧ W x₀ ≤ W x} := by
     refine (isCompact_closedBall x_eq r).of_isClosed_subset ?_ fun x hx => ?_
     · exact (isClosed_le (continuous_norm.comp (continuous_sub_right x_eq)) continuous_const).inter
         (isClosed_le continuous_const hW.continuous)
     · rw [Metric.mem_closedBall, dist_eq_norm]; exact hx.1
-  have hx₀K : x₀ ∈ K := ⟨by simpa [hφ0] using (hin 0 le_rfl).le, le_rfl⟩
-  have hφK : ∀ t, 0 ≤ t → φ t ∈ K := fun t ht =>
-    ⟨(hin t ht).le, hkeep t ht t ⟨ht, le_rfl⟩⟩
-  obtain ⟨xm, hxmK, hmin⟩ := hKc.exists_isMinOn ⟨x₀, hx₀K⟩ hLc.continuousOn
-  obtain ⟨xM, -, hmax⟩ := hKc.exists_isMaxOn ⟨x₀, hx₀K⟩ hW.continuous.continuousOn
-  have hγ : 0 < fderiv ℝ W xm (f xm) := hLie xm hxmK.1 (hW₀.trans_le hxmK.2)
-  set γ := fderiv ℝ W xm (f xm)
-  set T := (W xM - W x₀) / γ + 1 with hT
-  have hT0 : 0 ≤ T := by
-    have hle : W x₀ ≤ W xM := hmax hx₀K
-    have : 0 ≤ (W xM - W x₀) / γ := div_nonneg (by linarith) hγ.le
-    linarith
-  have hanti := antitoneOn_V_add_linear (V := fun x => -W x) (c := γ) hWd.neg
-    hWd.continuous.neg (convex_Icc 0 T) (hφ.mono Icc_subset_Ici_self) fun t ht => by
-      have hmt : γ ≤ fderiv ℝ W (φ t) (f (φ t)) := hmin (hφK t (interior_subset ht).1)
-      show fderiv ℝ (fun x => -W x) (φ t) (f (φ t)) ≤ -γ
-      rw [fderiv_fun_neg]
-      simpa using hmt
-  have h1 := hanti ⟨le_rfl, hT0⟩ ⟨hT0, le_rfl⟩ hT0
-  simp only [hφ0, mul_zero, add_zero] at h1
-  have h2 : W (φ T) ≤ W xM := hmax (hφK T hT0)
-  have h3 : γ * T = W xM - W x₀ + γ := by rw [hT]; field_simp
-  linarith
+  exact false_of_lie_pos_on_compact hKc hWd hLc.continuousOn
+    (fun x hx => hLie x hx.1 (hW₀.trans_le hx.2)) hφ fun t ht =>
+      ⟨(hin t ht).le, hkeep t ht t ⟨ht, le_rfl⟩⟩
 
 /-- **Chetaev's theorem on a dissipated level set.** A `C¹` energy `E` that does not increase
 along the field near the point and takes values below `E x*` arbitrarily close to it, together with
@@ -206,34 +207,13 @@ and `W` grows at a uniform rate on the compact part of that sublevel near `x*`. 
       (hφ.mono Icc_subset_Ici_self) fun s hs => hELie _ (hin s (interior_subset hs).1).le
     have := hanti ⟨le_rfl, ht⟩ ⟨ht, le_rfl⟩ ht
     simpa [hφ0] using this
-  set K := {x | ‖x - x_eq‖ ≤ r ∧ E x ≤ E x₀} with hK
-  have hKc : IsCompact K := by
+  have hKc : IsCompact {x | ‖x - x_eq‖ ≤ r ∧ E x ≤ E x₀} := by
     refine (isCompact_closedBall x_eq r).of_isClosed_subset ?_ fun x hx => ?_
     · exact (isClosed_le (continuous_norm.comp (continuous_sub_right x_eq)) continuous_const).inter
         (isClosed_le hE.continuous continuous_const)
     · rw [Metric.mem_closedBall, dist_eq_norm]; exact hx.1
-  have hφK : ∀ t, 0 ≤ t → φ t ∈ K := fun t ht => ⟨(hin t ht).le, hlev t ht⟩
-  have hx₀K : x₀ ∈ K := by simpa [hφ0] using hφK 0 le_rfl
-  obtain ⟨xm, hxmK, hmin⟩ := hKc.exists_isMinOn ⟨x₀, hx₀K⟩ hLc.continuousOn
-  obtain ⟨xM, -, hmax⟩ := hKc.exists_isMaxOn ⟨x₀, hx₀K⟩ hW.continuous.continuousOn
-  have hγ : 0 < fderiv ℝ W xm (f xm) := hWLie xm hxmK.1 (hxmK.2.trans_lt hE₀)
-  set γ := fderiv ℝ W xm (f xm)
-  set T := (W xM - W x₀) / γ + 1 with hT
-  have hT0 : 0 ≤ T := by
-    have hle : W x₀ ≤ W xM := hmax hx₀K
-    have : 0 ≤ (W xM - W x₀) / γ := div_nonneg (by linarith) hγ.le
-    linarith
-  have hanti := antitoneOn_V_add_linear (V := fun x => -W x) (c := γ) hWd.neg
-    hWd.continuous.neg (convex_Icc 0 T) (hφ.mono Icc_subset_Ici_self) fun t ht => by
-      have hmt : γ ≤ fderiv ℝ W (φ t) (f (φ t)) := hmin (hφK t (interior_subset ht).1)
-      show fderiv ℝ (fun x => -W x) (φ t) (f (φ t)) ≤ -γ
-      rw [fderiv_fun_neg]
-      simpa using hmt
-  have h1 := hanti ⟨le_rfl, hT0⟩ ⟨hT0, le_rfl⟩ hT0
-  simp only [hφ0, mul_zero, add_zero] at h1
-  have h2 : W (φ T) ≤ W xM := hmax (hφK T hT0)
-  have h3 : γ * T = W xM - W x₀ + γ := by rw [hT]; field_simp
-  linarith
+  exact false_of_lie_pos_on_compact hKc hWd hLc.continuousOn
+    (fun x hx => hWLie x hx.1 (hx.2.trans_lt hE₀)) hφ fun t ht => ⟨(hin t ht).le, hlev t ht⟩
 
 end Classical
 
@@ -303,6 +283,64 @@ increases wherever `E < E x*` near the point. -/
   · obtain ⟨hgy, hyU⟩ := hmem y hy
     rw [hgy]
     exact hWLie y hyU (hy.trans (min_le_left _ _)) hEy
+
+/-- **A conserved coordinate driving another** (Chetaev). If, on an open neighbourhood `U` of the
+point where the field is `C¹`, the coordinate `x_i` is conserved (`ẋ_i = 0`) and drives another
+coordinate through a `C¹` function, `ẋ_j = g(x_i)`, and `g` does not vanish at values arbitrarily
+close to `x*_i`, the point is unstable: `W = (x_j − x*_j) g(x_i)` has `Ẇ = g(x_i)²` (a frozen
+error with a drifting integrator). -/
+@[tmio T, powerlib_foundation] theorem unstable_of_conserved_drive_local {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+    {U : Set ℝⁿ} {i j : Fin n} {g : ℝ → ℝ} (hU : IsOpen U) (hx : x_eq ∈ U)
+    (hf : ContDiffOn ℝ 1 f U) (hij : i ≠ j) (hg : ContDiff ℝ 1 g)
+    (hgne : ∀ ε > 0, ∃ s, |s - x_eq i| < ε ∧ g s ≠ 0)
+    (hfi : ∀ x ∈ U, f x i = 0) (hfj : ∀ x ∈ U, f x j = g (x i)) :
+    Unstable f x_eq := by
+  refine unstable_of_chetaev_local (W := fun y : ℝⁿ => (y j - x_eq j) * g (y i)) (r := 1) hU hx hf
+    (by fun_prop) one_pos (fun ε hε => ?_) fun x hxU _ hWx => ?_
+  · obtain ⟨s, hs, hgs⟩ := hgne (ε / 2) (half_pos hε)
+    have hδ : 0 < ε / (4 * (|g s| + 1)) := by positivity
+    have hδg : ε / (4 * (|g s| + 1)) * |g s| < ε / 4 := by
+      have h1 : ε / (4 * (|g s| + 1)) * (|g s| + 1) = ε / 4 := by field_simp
+      nlinarith
+    refine ⟨x_eq + EuclideanSpace.single i (s - x_eq i) +
+      EuclideanSpace.single j (ε / (4 * (|g s| + 1)) * g s), ?_, ?_⟩
+    · rw [add_assoc, add_sub_cancel_left]
+      refine (norm_add_le _ _).trans_lt ?_
+      rw [EuclideanSpace.single, EuclideanSpace.single, PiLp.norm_single, PiLp.norm_single,
+        Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_of_pos hδ]
+      linarith
+    · simp [hij, hij.symm]
+      linarith [mul_pos hδ (mul_self_pos.mpr hgs)]
+  · have hd : HasFDerivAt (fun y : ℝⁿ => (y j - x_eq j) * g (y i)) _ x :=
+      ((hasFDerivAt_coord j x).sub_const (x_eq j)).mul
+        (((hg.differentiable one_ne_zero) (x i)).hasDerivAt.comp_hasFDerivAt x
+          (hasFDerivAt_coord i x))
+    have hgx : g (x i) ≠ 0 := fun h => by simp [h] at hWx
+    rw [hd.fderiv]
+    simpa [hfi x hxU, hfj x hxU] using hgx
+
+/-- **A repelling coordinate** (Chetaev with `W = (x_i − x*_i)²`). If, on an open neighbourhood
+`U` of the point where the field is `C¹`, the coordinate `x_i` moves away from `x*_i` wherever it
+differs from it, `(x_i − x*_i) ẋ_i > 0`, the point is unstable. -/
+@[tmio T, powerlib_foundation] theorem unstable_of_repelling_coord_local {f : ℝⁿ → ℝⁿ}
+    {x_eq : ℝⁿ} {U : Set ℝⁿ} {i : Fin n} (hU : IsOpen U) (hx : x_eq ∈ U)
+    (hf : ContDiffOn ℝ 1 f U) (hrep : ∀ x ∈ U, x i ≠ x_eq i → 0 < (x i - x_eq i) * f x i) :
+    Unstable f x_eq := by
+  refine unstable_of_chetaev_local (W := fun y : ℝⁿ => (y i - x_eq i) ^ 2) (r := 1) hU hx hf
+    (by fun_prop) one_pos (fun ε hε => ⟨x_eq + EuclideanSpace.single i (ε / 2), ?_, ?_⟩)
+    fun x hxU _ hWx => ?_
+  · rw [add_sub_cancel_left, EuclideanSpace.single, PiLp.norm_single, Real.norm_eq_abs,
+      abs_of_pos (half_pos hε)]
+    linarith
+  · simp
+    positivity
+  · have hd : HasFDerivAt (fun y : ℝⁿ => (y i - x_eq i) ^ 2) _ x :=
+      ((hasFDerivAt_coord i x).sub_const (x_eq i)).pow 2
+    have hne : x i ≠ x_eq i := fun h => by simp [h] at hWx
+    have := hrep x hxU hne
+    rw [hd.fderiv]
+    simp
+    nlinarith
 
 end Local
 

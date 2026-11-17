@@ -21,9 +21,8 @@ module theorem.PowerSystem.Synchronous.SwingPortHamiltonian where
 -- are `Family.IsLinear.mem_den_flow` (`Synchronous.Swing.Linearized.family_isLinear`,
 -- `Port.PortHamiltonian.family_isLinear`), `similar` is `Linear.holds_conj`, `den↔` is
 -- `Synchronous.SwingParams.linearPH_mem_den_flow_iff`; `ph-passive`, `ph-ls` are
--- `Port.PortHamiltonian.mem_den_passive`, `Port.PortHamiltonian.mem_den_lyapunovStable`, read at
--- the image as `Synchronous.SwingParams.linearPH_passive`,
--- `Synchronous.SwingParams.linearPH_lyapunovStable`. Nothing here is exported.
+-- `Port.PortHamiltonian.mem_den_passive`, `Port.PortHamiltonian.mem_den_lyapunovStable`, applied
+-- at the image `Synchronous.SwingParams.linearPH`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

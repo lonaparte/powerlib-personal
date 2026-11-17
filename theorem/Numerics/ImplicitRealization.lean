@@ -43,17 +43,24 @@ inductive ImplicitMethod
   | trapezoidal
   | backwardEuler
 
-/-- The matrix of the actual numerical step. -/
-def ImplicitMethod.matrix {n : ℕ} :
-    ImplicitMethod → ℝ → Matrix (Fin n) (Fin n) ℝ → Matrix (Fin n) (Fin n) ℝ
-  | .trapezoidal, h, A => trapezoidalMatrix h A
-  | .backwardEuler, h, A => backwardEulerMatrix h A
+/-- The θ of the method as a θ-method: `½` for the trapezoidal rule, `1` for backward Euler. -/
+def ImplicitMethod.theta : ImplicitMethod → ℝ
+  | .trapezoidal => 1 / 2
+  | .backwardEuler => 1
+
+@[tmio T, powerlib_foundation] theorem ImplicitMethod.half_le_theta (m : ImplicitMethod) :
+    1 / 2 ≤ m.theta := by
+  cases m <;> norm_num [ImplicitMethod.theta]
+
+/-- The matrix of the actual numerical step (`thetaMatrix`). -/
+def ImplicitMethod.matrix {n : ℕ} (m : ImplicitMethod) (h : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) :
+    Matrix (Fin n) (Fin n) ℝ :=
+  thetaMatrix m.theta h A
 
 /-- Invertibility required to solve the implicit step uniquely. -/
-def ImplicitMethod.WellPosed {n : ℕ} :
-    ImplicitMethod → ℝ → Matrix (Fin n) (Fin n) ℝ → Prop
-  | .trapezoidal, h, A => IsUnit (1 - (h / 2) • A).det
-  | .backwardEuler, h, A => IsUnit (1 - h • A).det
+def ImplicitMethod.WellPosed {n : ℕ} (m : ImplicitMethod) (h : ℝ)
+    (A : Matrix (Fin n) (Fin n) ℝ) : Prop :=
+  IsUnit (1 - (m.theta * h) • A).det
 
 /-- Design requirements and the actual constraints of an implicit implementation. -/
 inductive ImplicitRequirement (Q : Type*)
@@ -113,10 +120,7 @@ variable {F : Family X Q n p} {plant : X → Linear.Plant n p}
     connection% (y ∈ (implicitFamily method F plant design step).den (.flow P)) := by
   unfold TMIO.Statement
   rw [implicit_den_schurStable method F plant design step hP]
-  have hA := (hF.mem_den_hurwitz hP).mp hy
-  cases method with
-  | trapezoidal => exact trapezoidal_schurStable_of_isHurwitz hA hh
-  | backwardEuler => exact backwardEuler_schurStable_of_isHurwitz hA hh
+  exact theta_schurStable_of_isHurwitz ((hF.mem_den_hurwitz hP).mp hy) method.half_le_theta hh
 
 /-- Stability of the continuous design ensures that the implicit equation has a unique step. -/
 @[tmio TM, powerlib_foundation] theorem implicit_mem_wellPosed_of_design
@@ -127,10 +131,8 @@ variable {F : Family X Q n p} {plant : X → Linear.Plant n p}
       {.wellPosed}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
-  have hA := (hF.mem_den_hurwitz hP).mp hy
-  cases method with
-  | trapezoidal => exact isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh)
-  | backwardEuler => exact isUnit_det_one_sub_smul_of_isHurwitz hA hh
+  exact isUnit_det_one_sub_smul_of_isHurwitz ((hF.mem_den_hurwitz hP).mp hy)
+    (mul_pos (one_half_pos.trans_le method.half_le_theta) hh)
 
 /-- The well-posed trapezoidal implementation and its design satisfy the same attractive
 sentence. This is a comparison of two relative roles, not just the platform's own criterion. -/

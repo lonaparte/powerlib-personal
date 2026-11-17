@@ -14,6 +14,9 @@ import theorem.Dynamics.Instability
 import theorem.Linear.Stability
 import theorem.Dynamics.ConverseLinearization
 import theorem.Spectral.Global
+import theorem.Passive.DqRL
+import theorem.LTI.Plant
+import theorem.PH.Nonlinear
 
 /-! # Induction machine: rotor-flux algebra and indirect field orientation (IFOC)
 
@@ -56,6 +59,10 @@ Results.
   (`oriented_slip_and_flux`, `oriented_steadyState`), the voltage-model flux estimate
   (`rotorFlux_voltageModel`), the stator current from stator/rotor flux (`statorCurrent_of_fluxes`,
   used by DTC), and the corrected current model (`currentModel`).
+* The rotor as an R–L branch (`Params.rotorBranch`: `r_r`, `L_r`, no capacitor): the rotor-flux
+  field is the field of its dq plant at the slip speed under the voltage `r_r L_m i_s`
+  (`fluxField_eq_inputField`, `Passive.DqRL.dqRLPlant`); the state matrix `fluxMatrix` is its dq
+  matrix `[[−r_r/L_r, ω_sl], [−ω_sl, −r_r/L_r]]`.
 * IFOC rotor-flux orientation (connection statements of `family`):
   `ifocFlux_globallyExponentiallyStable` (any slip command, in particular the tuned and the
   detuned IFOC slip commands) and `ifocFlux_decay`; the orientation of the detuned equilibrium is
@@ -80,11 +87,16 @@ Family and connection conclusions.
   attractive sentence, sampled contraction and Lyapunov stability (`negativeRotor_mem_den`)
   without a positive rotor: those translations are sound but not exact. The physical requirement
   `r_r, L_r > 0` is kept as the translation.
+* Reading through the dq RL branch (`mem_den_flow_iff_dqRL`, a connection with
+  `Passive.DqRL.family`; scaffold `theorem/Drives/IFOCRotorBranch.agda`): once the selected point
+  is an equilibrium, a drive satisfies a flow sentence exactly when its rotor branch
+  `Drive.rotorBranch`, read in the dq frame at the slip speed, does (the translated field is the
+  branch's zero-input field, `LTI.inputField_shift`).
 * The attractive sentences are characterized exactly by a member equivalence
   (`mem_den_attractive_iff`): a drive satisfies local / global, asymptotic / exponential
-  stability exactly when `r_r / L_r > 0` (the field is affine; an attractive equilibrium makes it
-  linear with Jacobian `fluxMatrix`, Hurwitz only for a negative trace `−2 r_r/L_r`; conversely
-  the drive with `|r_r|, |L_r|` has the same field). The Lyapunov sentence is characterized by
+  stability exactly when `r_r / L_r > 0` (an attractive equilibrium, or `r_r, L_r ≠ 0`, gives the
+  reading through the rotor branch, attractive exactly when `R/L > 0`,
+  `Passive.DqRL.mem_den_iff`). The Lyapunov sentence is characterized by
   `mem_den_lyapunovStable_iff`: `r_r / L_r > 0`, or `r_r / L_r = 0` with `ω_sl L_m i_s = 0` (a
   rotation about, or rest at, the selected point; with `r_r / L_r < 0` the flux deviation grows,
   Chetaev's theorem `Dynamics.unstable_of_chetaev`).
@@ -290,18 +302,11 @@ gives `T_r ψ̇_r + ψ_r = L_m i_sd` (FOC note §1.2). -/
 
 abbrev State2 := Dynamics.State 2
 
-/-- Build a vector of `Dynamics.State 2` from its `d, q` coordinates. -/
-def vec (x y : ℝ) : State2 := (WithLp.equiv 2 (Fin 2 → ℝ)).symm ![x, y]
-
-@[tmio T, simp, powerlib_foundation] theorem vec_apply_zero (x y : ℝ) : vec x y 0 = x := by simp [vec]
-
-@[tmio T, simp, powerlib_foundation] theorem vec_apply_one (x y : ℝ) : vec x y 1 = y := by simp [vec]
-
 /-- Rotor-flux vector field of the current-fed machine in the IFOC frame (stator current
 held at `(isd, isq)`, slip `ω_sl`): the unique `ψ̇_r` solving the rotor voltage equation
 with `i_r = (ψ_r − L_m i_s)/L_r`. -/
 def fluxField (p : Params) (isd isq ωsl : ℝ) (ψ : State2) : State2 :=
-  vec (-(p.rr / p.Lr) * (ψ 0 - p.Lm * isd) + ωsl * ψ 1)
+  PhasePlane.mk (-(p.rr / p.Lr) * (ψ 0 - p.Lm * isd) + ωsl * ψ 1)
     (-(p.rr / p.Lr) * (ψ 1 - p.Lm * isq) - ωsl * ψ 0)
 
 /-- The field is the rotor voltage equation solved for `ψ̇_r`, in the IFOC frame
@@ -333,31 +338,50 @@ def slipRatio (p : Params) (ωsl : ℝ) : ℝ := ωsl * p.Tr
 
 /-- Equilibrium rotor flux `ψ_eq = L_m i_s / (1 + j ω_sl T_r)`, in coordinates. -/
 def fluxEquilibrium (p : Params) (isd isq ωsl : ℝ) : State2 :=
-  vec (p.Lm * (isd + slipRatio p ωsl * isq) / (1 + slipRatio p ωsl ^ 2))
+  PhasePlane.mk (p.Lm * (isd + slipRatio p ωsl * isq) / (1 + slipRatio p ωsl ^ 2))
     (p.Lm * (isq - slipRatio p ωsl * isd) / (1 + slipRatio p ωsl ^ 2))
 
-/-- State matrix `[[−1/T_r, ω_sl], [−ω_sl, −1/T_r]]` of the rotor-flux dynamics. -/
-def fluxMatrix (p : Params) (ωsl : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![-(1 / p.Tr), ωsl; -ωsl, -(1 / p.Tr)]
+/-- The rotor as a series R–L branch: resistance `r_r`, inductance `L_r`, no capacitor. -/
+def Params.rotorBranch (p : Params) : Passive.SeriesRLC := ⟨p.rr, p.Lr, 0⟩
+
+/-- State matrix `[[−r_r/L_r, ω_sl], [−ω_sl, −r_r/L_r]]` (`r_r/L_r = 1/T_r`) of the rotor-flux
+dynamics: the dq matrix of the rotor branch at the slip speed. -/
+abbrev fluxMatrix (p : Params) (ωsl : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  Passive.DqRL.dqRLMatrix p.rotorBranch ωsl
+
+/-- The rotor-flux field is the field of the rotor branch's dq plant at the slip speed under the
+constant voltage `r_r L_m i_s`: `ψ̇_r = −(r_r/L_r) ψ_r − ω_sl J ψ_r + (r_r/L_r) L_m i_s`. -/
+@[tmio M, powerlib_domain] theorem fluxField_eq_inputField (p : Params) (isd isq ωsl : ℝ) :
+    fluxField p isd isq ωsl = (Passive.DqRL.dqRLPlant p.rotorBranch ωsl).inputField
+      ![p.rr * p.Lm * isd, p.rr * p.Lm * isq] := by
+  funext ψ
+  apply WithLp.ofLp_injective 2
+  rw [Passive.DqRL.dqRLPlant_field]
+  ext k
+  fin_cases k <;>
+    simp [fluxField, PhasePlane.mk, Params.rotorBranch, Transform.J, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_two, Matrix.vecHead, Matrix.vecTail] <;> ring
 
 /-- The field is affine with linear part `fluxMatrix` and vanishes at `fluxEquilibrium`:
 `ψ̇_r = A (ψ_r − ψ_eq)`. -/
 @[tmio M, powerlib_domain] theorem fluxField_eq_error (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
     (isd isq ωsl : ℝ) (ψ : State2) :
     fluxField p isd isq ωsl ψ =
-      vec (-(1 / p.Tr) * (ψ 0 - fluxEquilibrium p isd isq ωsl 0) +
+      PhasePlane.mk (-(1 / p.Tr) * (ψ 0 - fluxEquilibrium p isd isq ωsl 0) +
             ωsl * (ψ 1 - fluxEquilibrium p isd isq ωsl 1))
         (-ωsl * (ψ 0 - fluxEquilibrium p isd isq ωsl 0) -
             (1 / p.Tr) * (ψ 1 - fluxEquilibrium p isd isq ωsl 1)) := by
   have hden : 1 + slipRatio p ωsl ^ 2 ≠ 0 := by positivity
   ext j
   fin_cases j
-  · simp only [fluxField, fluxEquilibrium, vec_apply_zero, vec_apply_one, Fin.zero_eta,
+  · simp only [fluxField, fluxEquilibrium, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
+      Fin.zero_eta,
       Fin.isValue]
     unfold slipRatio Params.Tr at *
     field_simp
     ring
-  · simp only [fluxField, fluxEquilibrium, vec_apply_zero, vec_apply_one, Fin.mk_one,
+  · simp only [fluxField, fluxEquilibrium, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
+      Fin.mk_one,
       Fin.isValue]
     unfold slipRatio Params.Tr at *
     field_simp
@@ -368,19 +392,7 @@ def fluxMatrix (p : Params) (ωsl : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     fluxField p isd isq ωsl (fluxEquilibrium p isd isq ωsl) = 0 := by
   rw [fluxField_eq_error p hrr hLr]
   ext j
-  fin_cases j <;> simp [vec]
-
-/-- `fluxMatrix` is Hurwitz for every slip (`tr = −2/T_r < 0`, `det = 1/T_r² + ω_sl² > 0`);
-intermediate evidence only. -/
-@[tmio TM, powerlib_domain] theorem fluxMatrix_isHurwitz (p : Params) (hrr : 0 < p.rr)
-    (hLr : 0 < p.Lr)
-    (ωsl : ℝ) : LinearSystems.IsHurwitz (fluxMatrix p ωsl) := by
-  have hTr : 0 < p.Tr := div_pos hLr hrr
-  rw [fluxMatrix, Criteria.isHurwitz_fin_two_of_iff]
-  have h1 : 0 < 1 / p.Tr := by positivity
-  constructor
-  · linarith
-  · nlinarith [sq_nonneg ωsl]
+  fin_cases j <;> simp
 
 @[tmio M, powerlib_domain] theorem fluxField_smooth (p : Params) (isd isq ωsl : ℝ) :
     ContDiff ℝ 1 (fluxField p isd isq ωsl) := by
@@ -400,11 +412,6 @@ intermediate evidence only. -/
       fun_prop
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
 
-@[tmio T, powerlib_foundation] theorem inner_state2 (x y : State2) :
-    inner ℝ x y = x 0 * y 0 + x 1 * y 1 := by
-  rw [PiLp.inner_apply]
-  simp [Fin.sum_univ_succ, mul_comm]
-
 /-- Squared distance to the equilibrium. -/
 def fluxError (p : Params) (isd isq ωsl : ℝ) (ψ : State2) : ℝ :=
   ‖ψ - fluxEquilibrium p isd isq ωsl‖ ^ 2
@@ -423,8 +430,9 @@ skew and does no work). -/
   rw [h.fderiv]
   simp only [smul_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.id_apply, innerSL_apply_apply]
-  rw [inner_state2, PhasePlane.norm_sq_eq, fluxField_eq_error p hrr hLr]
-  simp only [vec_apply_zero, vec_apply_one, PiLp.sub_apply, nsmul_eq_mul, Nat.cast_ofNat]
+  rw [PH.inner_eq_dotProduct, PhasePlane.norm_sq_eq, fluxField_eq_error p hrr hLr]
+  simp only [dotProduct, Fin.sum_univ_two, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
+    PiLp.sub_apply, nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
 /-- Global quadratic decay certificate with energy `‖ψ_r − ψ_eq‖²` and rate `2/T_r`. -/
@@ -467,7 +475,7 @@ its sentence form is `ifocFlux_decay`. -/
 d-axis: `ψ_eq = (L_m i_sd*, 0)`. -/
 @[tmio M, powerlib_domain] theorem fluxEquilibrium_tuned (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
     (isd isq : ℝ) (hd : isd ≠ 0) :
-    fluxEquilibrium p isd isq (isq / (p.Tr * isd)) = vec (p.Lm * isd) 0 := by
+    fluxEquilibrium p isd isq (isq / (p.Tr * isd)) = PhasePlane.mk (p.Lm * isd) 0 := by
   have hTr : p.Tr ≠ 0 := div_ne_zero hLr hrr
   have hk : slipRatio p (isq / (p.Tr * isd)) = isq / isd := by
     unfold slipRatio
@@ -475,9 +483,9 @@ d-axis: `ψ_eq = (L_m i_sd*, 0)`. -/
   have hden : 1 + (isq / isd) ^ 2 ≠ 0 := by positivity
   ext j
   fin_cases j
-  · simp only [fluxEquilibrium, hk, vec_apply_zero, Fin.zero_eta, Fin.isValue]
+  · simp only [fluxEquilibrium, hk, PhasePlane.mk_apply_zero, Fin.zero_eta, Fin.isValue]
     field_simp
-  · simp only [fluxEquilibrium, hk, vec_apply_one, Fin.mk_one, Fin.isValue]
+  · simp only [fluxEquilibrium, hk, PhasePlane.mk_apply_one, Fin.mk_one, Fin.isValue]
     field_simp
     ring
 
@@ -489,7 +497,7 @@ on a wrong `T̂_r` therefore leaves a permanent orientation error (FOC note §1.
     fluxEquilibrium p isd isq ωsl 1 = 0 ↔ ωsl = isq / (p.Tr * isd) := by
   have hTr : p.Tr ≠ 0 := div_ne_zero hLr hrr
   have hden : 1 + slipRatio p ωsl ^ 2 ≠ 0 := by positivity
-  simp only [fluxEquilibrium, vec_apply_one, div_eq_zero_iff, hden, or_false,
+  simp only [fluxEquilibrium, PhasePlane.mk_apply_one, div_eq_zero_iff, hden, or_false,
     mul_eq_zero, hLm, false_or]
   unfold slipRatio
   constructor
@@ -688,74 +696,54 @@ conclusion. -/
 @[tmio M, powerlib_domain] theorem field_contDiff (d : Drive) : ContDiff ℝ 1 d.field :=
   (fluxField_smooth d.p d.isd d.isq d.ωsl).comp (contDiff_id.add contDiff_const)
 
-/-- The translated rotor-flux field has the constant Jacobian `fluxMatrix`
-(`1/T_r = r_r/L_r`, without sign conditions). -/
-@[tmio M, powerlib_domain] private theorem field_hasFDerivAt (d : Drive) (z : State2) :
-    HasFDerivAt d.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)) z := by
-  set e := fluxEquilibrium d.p d.isd d.isq d.ωsl
-  set k := d.p.rr / d.p.Lr with hk
-  have h0 := Dynamics.hasFDerivAt_coord (0 : Fin 2) z
-  have h1 := Dynamics.hasFDerivAt_coord (1 : Fin 2) z
-  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![(-k) • Dynamics.coord 0 + d.ωsl • Dynamics.coord 1,
-      (-k) • Dynamics.coord 1 - d.ωsl • Dynamics.coord 0] ?_ ?_
-  · intro i
-    fin_cases i
-    · have h := (((h0.add_const (e 0)).sub_const (d.p.Lm * d.isd)).const_mul (-k)).add
-        ((h1.add_const (e 1)).const_mul d.ωsl)
-      refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
-      simp [Drive.field, fluxField, e, k]
-    · have h := (((h1.add_const (e 1)).sub_const (d.p.Lm * d.isq)).const_mul (-k)).sub
-        ((h0.add_const (e 0)).const_mul d.ωsl)
-      refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
-      simp [Drive.field, fluxField, e, k]
-  · intro i v
-    fin_cases i
-    · simp [fluxMatrix, Fin.sum_univ_two, Params.Tr, k]
-    · simp [fluxMatrix, Fin.sum_univ_two, Params.Tr, k]
-      ring
-
-/-- Once the origin is an equilibrium, the translated field is the linear field of
-`fluxMatrix`. -/
+/-- Once the origin is an equilibrium, the translated field is the zero-input field of the rotor
+branch at the slip speed (`fluxField_eq_inputField`, `LTI.inputField_shift`). -/
 @[tmio M, powerlib_domain] private theorem field_eq_linear (d : Drive) (h0 : d.field 0 = 0) :
     d.field = LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 := by
-  set T := Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)
-  have h : d.field = fun z => T z :=
-    eq_of_fderiv_eq (fun z => (field_hasFDerivAt d z).differentiableAt) T.differentiable
-      (fun z => by rw [(field_hasFDerivAt d z).fderiv, T.fderiv]) 0 (by rw [h0, map_zero])
-  rw [h]
-  funext z
-  simp [LinearSystems.affineLinearVectorField, T]
+  have he : IsEquilibrium ((Passive.DqRL.dqRLPlant d.p.rotorBranch d.ωsl).inputField
+      ![d.p.rr * d.p.Lm * d.isd, d.p.rr * d.p.Lm * d.isq])
+      (fluxEquilibrium d.p d.isd d.isq d.ωsl) := by
+    rw [IsEquilibrium, ← fluxField_eq_inputField]
+    simpa [Drive.field] using h0
+  have h := LTI.inputField_shift _ he
+  rw [← fluxField_eq_inputField] at h
+  exact h
 
-/-- Two drives whose rotors have the same ratio `r_r / L_r` (hence the same `T_r`), the same
-`L_m`, and the same commands have the same translated field. -/
-@[tmio M, powerlib_domain] private theorem field_congr {d d' : Drive} (hk : d'.p.rr / d'.p.Lr = d.p.rr / d.p.Lr)
-    (hT : d'.p.Tr = d.p.Tr) (hm : d'.p.Lm = d.p.Lm) (hd : d'.isd = d.isd) (hq : d'.isq = d.isq)
-    (hω : d'.ωsl = d.ωsl) : d'.field = d.field := by
-  funext z
-  simp only [Drive.field, fluxField, fluxEquilibrium, slipRatio, hk, hT, hm, hd, hq, hω]
+/-- The rotor branch of a drive read in the dq frame rotating at the slip speed. -/
+def Drive.rotorBranch (d : Drive) : Passive.DqRL.DqBranch := ⟨d.p.rotorBranch, d.ωsl, rfl⟩
+
+/-- **Reading through the dq RL branch.** Once its selected point is an equilibrium, a drive
+satisfies a flow sentence exactly when its rotor branch, read in the dq frame at the slip speed
+(`Passive.DqRL.family`), does: the translated rotor-flux field is the zero-input field of the
+branch. Scaffold: `theorem/Drives/IFOCRotorBranch.agda`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_flow_iff_dqRL {d : Drive} (h0 : d.field 0 = 0)
+    {P : Flow.Property} :
+    connection% (d ∈ family.den (.flow P) ↔
+      d.rotorBranch ∈ Passive.DqRL.family.den (.flow P)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow),
+    (connection_proof% (show Passive.DqRL.family.IsLinear Passive.DqRL.DqBranch.plant from
+      Spectral.linearFamily_isLinear _ _ _).mem_den_flow), field_eq_linear d h0]
+  exact Iff.rfl
 
 /-- **The attractive sentences are decided by `r_r / L_r`.** A current-fed IFOC drive satisfies
 an attractive sentence (local / global, asymptotic / exponential stability of its rotor-flux
-equilibrium) exactly when `r_r / L_r > 0`. With `r_r / L_r > 0` the drive with `|r_r|, |L_r|` has
-the same field and a positive rotor, hence is globally exponentially stable; conversely, an
-attractive equilibrium of the affine field makes it linear, and `fluxMatrix` is Hurwitz only when
-its trace `−2 r_r/L_r` is negative. The translation `positiveRotor` is therefore sound and
-strictly stronger (`not_exact`). -/
+equilibrium) exactly when `r_r / L_r > 0`: at an equilibrium (attractive, or `r_r, L_r ≠ 0`) the
+drive is read as its rotor branch in the dq frame (`mem_den_flow_iff_dqRL`), whose attractive
+sentences are `R/L > 0` (`Passive.DqRL.mem_den_iff`). The translation `positiveRotor` is
+therefore sound and strictly stronger (`not_exact`). -/
 @[tmio TM, powerlib_domain] theorem mem_den_attractive_iff (d : Drive) {P : Flow.Property}
     (hP : P.Attractive) :
     connection% (d ∈ family.den (.flow P) ↔ d ∈ {d : Drive | 0 < d.p.rr / d.p.Lr}) := by
   unfold powerlib.TMIO.Statement
-  rw [(connection_proof% family_isAutonomous.mem_den_flow), Set.mem_ofPred_eq]
+  rw [Set.mem_ofPred_eq]
   constructor
   · intro h
-    have hlas := Flow.Property.localAsymptoticStable hP h
+    have hlas := Flow.Property.localAsymptoticStable hP
+      ((connection_proof% family_isAutonomous.mem_den_flow).mp h)
     have h0 : d.field 0 = 0 := Dynamics.isEquilibrium_of_lyapunovStable (field_contDiff d) hlas.1
-    rw [field_eq_linear d h0] at hlas
-    have hA := (Linear.holds_iff_isHurwitz (A := fluxMatrix d.p d.ωsl) 0
-      (P := .locallyAsymptoticallyStable) trivial).mp hlas
-    rw [fluxMatrix, Criteria.isHurwitz_fin_two_of_iff, Params.Tr, one_div_div] at hA
-    linarith [hA.1]
+    exact (connection_proof% Passive.DqRL.mem_den_iff d.rotorBranch (Or.inl hP)).mp
+      ((connection_proof% mem_den_flow_iff_dqRL h0).mp h)
   · intro hk
     have hrr : d.p.rr ≠ 0 := by
       rintro h
@@ -765,19 +753,10 @@ strictly stronger (`not_exact`). -/
       rintro h
       rw [h, div_zero] at hk
       exact lt_irrefl 0 hk
-    let d' : Drive := ⟨⟨d.p.rs, |d.p.rr|, d.p.Ls, |d.p.Lr|, d.p.Lm⟩, d.isd, d.isq, d.ωsl⟩
-    have hfield : d'.field = d.field := by
-      refine field_congr ?_ ?_ rfl rfl rfl rfl
-      · show |d.p.rr| / |d.p.Lr| = _
-        rw [← abs_div, abs_of_pos hk]
-      · show |d.p.Lr| / |d.p.rr| = d.p.Lr / d.p.rr
-        rw [← abs_div, abs_of_pos]
-        rw [← one_div_div]
-        exact one_div_pos.mpr hk
-    have h := ifocFlux_globallyExponentiallyStable d' (abs_pos.mpr hrr) (abs_pos.mpr hLr)
-    unfold powerlib.TMIO.Statement at h
-    rw [(connection_proof% family_isAutonomous.mem_den_flow), hfield] at h
-    exact Flow.GloballyExponentiallyStable.holds h hP
+    have h0 : d.field 0 = 0 := by
+      simpa [Drive.field] using fluxField_equilibrium d.p hrr hLr d.isd d.isq d.ωsl
+    exact (connection_proof% mem_den_flow_iff_dqRL h0).mpr
+      ((connection_proof% Passive.DqRL.mem_den_iff d.rotorBranch (Or.inl hP)).mpr hk)
 
 /-! ## The Lyapunov sentence -/
 
@@ -788,7 +767,7 @@ the rotor-flux field — which is then the rotation `(ω_sl ψ_q, −ω_sl ψ_d)
     d.field 0 = 0 ↔ d.ωsl * d.p.Lm * d.isd = 0 ∧ d.ωsl * d.p.Lm * d.isq = 0 := by
   have hT : d.p.Tr = 0 := by
     rcases div_eq_zero_iff.mp hk with h | h <;> simp [Params.Tr, h]
-  have hf : d.field 0 = vec (d.ωsl * d.p.Lm * d.isq) (-(d.ωsl * d.p.Lm * d.isd)) := by
+  have hf : d.field 0 = PhasePlane.mk (d.ωsl * d.p.Lm * d.isq) (-(d.ωsl * d.p.Lm * d.isd)) := by
     apply WithLp.ofLp_injective 2
     ext i
     fin_cases i <;>
@@ -798,7 +777,8 @@ the rotor-flux field — which is then the rotation `(ω_sl ψ_q, −ω_sl ψ_d)
   · intro h
     have h0 := congrArg (fun y : State2 => y 0) h
     have h1 := congrArg (fun y : State2 => y 1) h
-    simp only [vec_apply_zero, vec_apply_one, PiLp.zero_apply, neg_eq_zero] at h0 h1
+    simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, PiLp.zero_apply,
+      neg_eq_zero] at h0 h1
     exact ⟨h1, h0⟩
   · rintro ⟨h1, h0⟩
     apply WithLp.ofLp_injective 2
@@ -810,8 +790,9 @@ skew). -/
 @[tmio M, powerlib_domain] private theorem inner_fluxMatrix (d : Drive) (z : State2) :
     inner ℝ z (LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 z) =
       -(d.p.rr / d.p.Lr) * (z 0 ^ 2 + z 1 ^ 2) := by
-  simp [LinearSystems.affineLinearVectorField, fluxMatrix, Matrix.ofLp_toEuclideanCLM,
-    Matrix.mulVec, dotProduct, Fin.sum_univ_two, PiLp.inner_apply, Params.Tr]
+  simp [LinearSystems.affineLinearVectorField, Passive.DqRL.dqRLMatrix, Params.rotorBranch,
+    Passive.SeriesRLC.decay, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct,
+    Fin.sum_univ_two, PiLp.inner_apply]
   ring
 
 /-- **The Lyapunov sentence is decided by `r_r / L_r` and the commands.** A current-fed IFOC drive
@@ -835,12 +816,12 @@ So the translation `positiveRotor` is not exact for Lyapunov stability even with
       rw [field_eq_linear d h0] at h
       refine Dynamics.unstable_of_chetaev (W := fun z : State2 => ‖z‖ ^ 2) (r := 1)
         (Linear.affine_contDiff _ _) (contDiff_norm_sq ℝ) one_pos
-        (fun ε hε => ⟨vec (ε / 2) 0, ?_, ?_⟩) (fun z _ hz => ?_) h
+        (fun ε hε => ⟨PhasePlane.mk (ε / 2) 0, ?_, ?_⟩) (fun z _ hz => ?_) h
       · rw [sub_zero, ← sq_lt_sq₀ (norm_nonneg _) hε.le, PhasePlane.norm_sq_eq]
-        simp only [vec_apply_zero, vec_apply_one]
+        simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
         nlinarith
       · rw [PhasePlane.norm_sq_eq]
-        simp only [vec_apply_zero, vec_apply_one]
+        simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
         positivity
       · rw [fderiv_norm_sq_apply]
         show 0 < (2 : ℕ) • inner ℝ z

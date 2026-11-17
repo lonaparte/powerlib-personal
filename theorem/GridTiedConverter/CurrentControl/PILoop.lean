@@ -41,6 +41,8 @@ Results.
   equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`, the quadratic
   Routh law in the monic coefficients `Criteria.isHurwitz_iff_of_coeffs_quadratic`).
 * `equilibrium_current`: every equilibrium for a constant reference has `i = i*`.
+* `det_model_A`: the state-matrix determinant is `Ki/L` (a real saddle mode when it is
+  negative; `exists_root_of_unstable`).
 * `transfer_eq`: `I/I* = (Kp s + Ki)/(L s² + (R + Kp) s + Ki)` via `Linear.transfer`.
 * `stable_iff`: with `L > 0` the monic coefficient condition `Stable` is `R + Kp > 0 ∧ Ki > 0`.
 * `withGain`: the duty-cycle plant `L di/dt = −R i + V_dc d` with `d` the PI output is the
@@ -188,6 +190,12 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
   exact Criteria.isHurwitz_iff_of_coeffs_quadratic _ one_pos
     (by rw [Matrix.trace_fin_two_of]; ring) (by rw [Matrix.det_fin_two_of]; ring)
 
+/-- The state-matrix determinant is the monic constant coefficient `Ki/L`. -/
+@[tmio M, powerlib_domain] theorem det_model_A : p.model.A.det = p.Ki / p.L := by
+  change (!![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] : Matrix (Fin 2) (Fin 2) ℝ).det = _
+  rw [Matrix.det_fin_two_of]
+  ring
+
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
 @[tmio M, powerlib_domain] theorem exists_root_of_unstable
     (h : (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0) :
@@ -199,8 +207,8 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
     rw [Matrix.trace_fin_two_of, neg_div]
     linarith
   · refine Criteria.exists_root_re_pos_of_det _ ?_
-    rw [neg_one_sq, one_mul, Matrix.det_fin_two_of]
-    linarith
+    rw [neg_one_sq, one_mul]
+    exact (p.det_model_A).trans_lt h
 
 /-- Closed-loop reference-to-current transfer function. Static evidence on the model, not a
 connection conclusion. -/

@@ -21,9 +21,8 @@ Scope.
   than defined (single-semantics rule).
 * `SchurStable Φ` is stated through complex eigenpairs of the complexification, exactly like
   `LinearSystems.IsHurwitz`.  `schurStable_iff_spectralRadius_lt_one` connects it with the
-  Banach-algebra spectral radius, through `spectrum_eq_setOf_eigenpair` (the spectrum of a
-  complex matrix over any finite index type is its set of eigenvalues; its membership form is
-  `Modal.mem_spectrum_iff_exists_eigvec`).
+  Banach-algebra spectral radius, through `mem_spectrum_iff_exists_eigvec` (the spectrum of a
+  complex matrix over any finite index type is its set of eigenvalues).
 * These are general mathematics: foundation results.
 
 Source: work-sync theory/T-numerical-integration.md §2.7 (discrete recursion
@@ -100,11 +99,10 @@ section Spectral
 open scoped Matrix.Norms.Frobenius
 
 /-- The spectrum of a complex square matrix (any finite index type) is its set of eigenvalues. -/
-@[tmio T, powerlib_foundation] theorem spectrum_eq_setOf_eigenpair {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (M : Matrix ι ι ℂ) :
-    spectrum ℂ M = {z | ∃ v : ι → ℂ, v ≠ 0 ∧ M *ᵥ v = z • v} := by
-  ext z
-  rw [Set.mem_ofPred_eq, ← Matrix.spectrum_toLin', ← Module.End.hasEigenvalue_iff_mem_spectrum]
+@[tmio T, powerlib_foundation] theorem mem_spectrum_iff_exists_eigvec {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {M : Matrix ι ι ℂ} {z : ℂ} :
+    z ∈ spectrum ℂ M ↔ ∃ v : ι → ℂ, v ≠ 0 ∧ M *ᵥ v = z • v := by
+  rw [← Matrix.spectrum_toLin', ← Module.End.hasEigenvalue_iff_mem_spectrum]
   constructor
   · intro h
     obtain ⟨v, hv⟩ := h.exists_hasEigenvector
@@ -128,13 +126,13 @@ complexification in the Banach algebra of complex matrices). -/
       rw [← h1]
       apply spectrum.spectralRadius_lt_of_forall_lt
       intro z hz
-      rw [spectrum_eq_setOf_eigenpair] at hz
+      rw [mem_spectrum_iff_exists_eigvec] at hz
       obtain ⟨v, hv, hMv⟩ := hz
       have := h z v hv hMv
       exact_mod_cast this
   · intro h μ v hv hMv
     have hz : μ ∈ spectrum ℂ (Φ.map (algebraMap ℝ ℂ)) := by
-      rw [spectrum_eq_setOf_eigenpair]
+      rw [mem_spectrum_iff_exists_eigvec]
       exact ⟨v, hv, hMv⟩
     have hle : (‖μ‖₊ : ENNReal) ≤ spectralRadius ℂ (Φ.map (algebraMap ℝ ℂ)) := by
       rw [spectralRadius_eq_of_unital]

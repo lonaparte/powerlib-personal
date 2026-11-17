@@ -1,5 +1,6 @@
 import theorem.Attributes
 import theorem.Passive.Series
+import theorem.SpecialFunctions.Elementary
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -16,7 +17,9 @@ angle), the grid-code power references, the adaptive virtual resistance and the 
 factor, each as a function of its arguments; no converter dynamics, mode switching or control
 loop.
 
-Source: work-sync `theory/T-current-limiting.md` §1.4–§1.7; `theory/T-gfm-control.md` §1.10.
+Source: `theorem/SpecialFunctions/Elementary.lean` (`normSq_affine_exp`, the law of cosines
+`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`); work-sync `theory/T-current-limiting.md` §1.4–§1.7;
+`theory/T-gfm-control.md` §1.10.
 
 Results.
 * Exit angle of the current-limiting mode (T-current-limiting §1.6, Lyu et al. 2024). A voltage
@@ -53,21 +56,13 @@ namespace powerlib.Limiting
 def currentMag (E V : ℝ) (Z : Passive.SeriesRLC) (ω δ : ℝ) : ℝ :=
   ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ / ‖Z.impedance (ω * Complex.I)‖
 
-@[tmio T, powerlib_foundation] theorem currentMag_sq_num (E V δ : ℝ) :
-    ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ ^ 2 = E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ := by
-  rw [Complex.sq_norm, Complex.normSq_apply]
-  have hre : ((E : ℂ) * Complex.exp (δ * Complex.I) - V).re = E * Real.cos δ - V := by
-    simp [Complex.exp_ofReal_mul_I_re]
-  have him : ((E : ℂ) * Complex.exp (δ * Complex.I) - V).im = E * Real.sin δ := by
-    simp [Complex.exp_ofReal_mul_I_im]
-  rw [hre, him]
-  have := Real.sin_sq_add_cos_sq δ
-  linear_combination E ^ 2 * this
-
-/-- Law of cosines for the current magnitude (`|Z(jω)|² = Z.absSq ω`). -/
+/-- Law of cosines for the current magnitude (`SpecialFunctions.normSq_affine_exp E (−V) δ`,
+`|Z(jω)|² = Z.absSq ω`). -/
 @[tmio M, powerlib_domain] theorem currentMag_sq (Z : Passive.SeriesRLC) (E V ω δ : ℝ) :
     currentMag E V Z ω δ ^ 2 = (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / Z.absSq ω := by
-  rw [currentMag, div_pow, currentMag_sq_num, Passive.SeriesRLC.norm_sq_impedance_jω]
+  rw [currentMag, div_pow, Passive.SeriesRLC.norm_sq_impedance_jω, Complex.sq_norm,
+    sub_eq_add_neg, ← Complex.ofReal_neg, SpecialFunctions.normSq_affine_exp]
+  ring
 
 /-- `δ_exit = arccos((E² + V² − I_max²(R² + X²))/(2 E V))`. -/
 def deltaExit (E V : ℝ) (Z : Passive.SeriesRLC) (ω Imax : ℝ) : ℝ :=

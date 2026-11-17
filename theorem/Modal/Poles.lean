@@ -21,7 +21,7 @@ Scope.
 * A **pole** of `G` at `μ ∈ ℂ` means: some entry `G_ij` is unbounded on every punctured
   neighbourhood of `μ` (`¬ IsBoundedUnder (≤) (𝓝[≠] μ) ‖G_ij‖`); for the rational entries of `G`
   this is the usual notion of a (non-removable) pole. Eigenvalues are the complex spectrum
-  `σ(A) = spectrum ℂ (complexify A)`; `Modal.mem_spectrum_iff_exists_eigvec` identifies it with
+  `σ(A) = spectrum ℂ (complexify A)`; `LTI.mem_spectrum_iff_exists_eigvec` identifies it with
   the set of eigenvalues.
 * `theorem/Modal/Spectral.lean` (`transfer_pole_iff`) proves the statement only for
   diagonalisable `A` with simple eigenvalues and modal PBH data; here the general case is proved.
@@ -185,7 +185,7 @@ needed): `G` is continuous at `μ`. -/
   have hdet : (characteristicMatrix m.A μ).det ≠ 0 := by
     intro h0
     obtain ⟨v, hv, heig⟩ := exists_eigenvector_of_root h0
-    exact hμ (mem_spectrum_iff_exists_eigvec.mpr ⟨v, hv, heig⟩)
+    exact hμ (LTI.mem_spectrum_iff_exists_eigvec.mpr ⟨v, hv, heig⟩)
   have hc := transfer_continuousAt m.A m.B m.C m.D hdet
   have hij : ContinuousAt (fun s => transfer m s i j) μ :=
     (continuous_apply j).continuousAt.comp ((continuous_apply i).continuousAt.comp hc)
@@ -249,7 +249,7 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded on every punctured neighbourhoo
       exact hPmul _ ih
   -- `μ` is a root of the minimal polynomial `π = (X − μ) φ`
   have hroot : (minpoly ℂ Ac).IsRoot μ := by
-    obtain ⟨w, hw, hAw⟩ := mem_spectrum_iff_exists_eigvec.mp hμ
+    obtain ⟨w, hw, hAw⟩ := LTI.mem_spectrum_iff_exists_eigvec.mp hμ
     have h0 := mulVec_aeval_of_eigen hAw (minpoly ℂ Ac)
     rw [minpoly.aeval, Matrix.zero_mulVec] at h0
     by_contra hne
@@ -387,7 +387,7 @@ but its transfer function is identically zero, hence bounded near `1`. -/
 @[tmio M, powerlib_foundation] theorem hiddenMode_eigenvalue_not_pole :
     (1 : ℂ) ∈ spectrum ℂ (complexify hiddenMode.A) ∧
       ∀ i j, IsBoundedUnder (· ≤ ·) (𝓝[≠] (1 : ℂ)) (fun s => ‖transfer hiddenMode s i j‖) := by
-  refine ⟨mem_spectrum_iff_exists_eigvec.mpr ⟨fun _ => 1, ?_, ?_⟩, fun i j => ?_⟩
+  refine ⟨LTI.mem_spectrum_iff_exists_eigvec.mpr ⟨fun _ => 1, ?_, ?_⟩, fun i j => ?_⟩
   · intro h
     have := congrFun h 0
     simp at this

@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import theorem.Attributes
+import theorem.Potential.DoubleWell
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.Complex.ExponentialBounds
 
@@ -29,9 +30,12 @@ proved once here); projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-bas
 sensitivity).
 
 Results.
-* `hasDerivAt_guardPotential`, `guardDrift_guardRadius`, `guardPotential_barrier`,
+* `U = −Potential.doubleWell α l₁` by definition (`theorem/Potential/DoubleWell.lean`), so
+  `U'(r_c) = 0` is `Potential.doubleWell_critical_iff` (`guardDrift` is the derivative of the
+  double well).
+* `hasDerivAt_guardPotential`, `guardPotential_barrier` (from `Potential.doubleWell_barrier`),
   `deriv2_guardPotential_guardRadius`, `deriv3_guardPotential_guardRadius_ne_zero`,
-  `guardPotential_scaled` — `ṙ = -U'(r)`, `U'(r_c) = 0`,
+  `guardPotential_scaled` — `ṙ = -U'(r)`,
   `ΔU = U(r_c) - U(0) = α²/(4 l₁)`, `U''(r_c) = -2α`, `U'''(r) = -6 l₁ r` (so `U'''(r_c) ≠ 0`,
   the endpoint hypothesis of the endpoint Laplace expansion), and
   `U(u r_c) - U(r_c) = -ΔU (u² - 1)²`, which equals `-9 ΔU` at `u = 2`.
@@ -54,8 +58,9 @@ open Real
 /-- Truncated radial normal form `ṙ = -α r + l₁ r³`. -/
 def guardDrift (α l₁ r : ℝ) : ℝ := -α * r + l₁ * r ^ 3
 
-/-- Potential with `ṙ = -U'(r)`: `U(r) = α r²/2 - l₁ r⁴/4`. -/
-def guardPotential (α l₁ r : ℝ) : ℝ := α * r ^ 2 / 2 - l₁ * r ^ 4 / 4
+/-- Potential with `ṙ = -U'(r)`: `U(r) = α r²/2 - l₁ r⁴/4`, the negative of the double well
+`Potential.doubleWell α l₁`. -/
+def guardPotential (α l₁ r : ℝ) : ℝ := -Potential.doubleWell α l₁ r
 
 /-- Barrier-top (unstable-cycle) radius `r_c = √(α/l₁)`. -/
 def guardRadius (α l₁ : ℝ) : ℝ := Real.sqrt (α / l₁)
@@ -73,11 +78,8 @@ variable {α l₁ : ℝ}
   rw [guardRadius, Real.sq_sqrt (div_nonneg hα hl.le)]
 
 @[tmio M, powerlib_foundation] theorem hasDerivAt_guardPotential (α l₁ r : ℝ) :
-    HasDerivAt (guardPotential α l₁) (-guardDrift α l₁ r) r := by
-  have h := ((hasDerivAt_pow 2 r).const_mul (α / 2)).sub ((hasDerivAt_pow 4 r).const_mul (l₁ / 4))
-  convert h using 1
-  · funext x; simp [guardPotential]; ring
-  · simp [guardDrift]; ring
+    HasDerivAt (guardPotential α l₁) (-guardDrift α l₁ r) r :=
+  (Potential.hasDerivAt_doubleWell α l₁ r).neg
 
 /-- The potential gradient is the negative drift: `ṙ = -U'(r)`. -/
 @[tmio M, powerlib_foundation] theorem deriv_guardPotential (α l₁ : ℝ) :
@@ -105,23 +107,12 @@ variable {α l₁ : ℝ}
     simp; ring
   exact h.deriv
 
-/-- The barrier top is a critical point of `U` (equilibrium of the drift). -/
-@[tmio M, powerlib_foundation] theorem guardDrift_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
-    guardDrift α l₁ (guardRadius α l₁) = 0 := by
-  have h2 := guardRadius_sq hα hl
-  have : guardRadius α l₁ ^ 3 = guardRadius α l₁ * (α / l₁) := by rw [← h2]; ring
-  rw [guardDrift, this]
-  field_simp
-  ring
-
 /-- `ΔU = U(r_c) - U(0) = α²/(4 l₁)`. -/
 @[tmio M, powerlib_foundation] theorem guardPotential_barrier (hα : 0 ≤ α) (hl : 0 < l₁) :
     guardPotential α l₁ (guardRadius α l₁) - guardPotential α l₁ 0 = barrierHeight α l₁ := by
-  have h2 := guardRadius_sq hα hl
-  have h4 : guardRadius α l₁ ^ 4 = (α / l₁) ^ 2 := by rw [← h2]; ring
-  rw [guardPotential, guardPotential, h4, h2, barrierHeight]
-  field_simp
-  ring
+  have h := (Potential.doubleWell_barrier hα hl).1
+  rw [guardPotential, guardPotential, guardRadius, barrierHeight]
+  linarith
 
 /-- Barrier curvature `U''(r_c) = -2α`. -/
 @[tmio M, powerlib_foundation] theorem deriv2_guardPotential_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
@@ -168,7 +159,8 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   have h4 : guardRadius α l₁ ^ 4 = (α / l₁) ^ 2 := by rw [← h2]; ring
   have hu2 : (u * guardRadius α l₁) ^ 2 = u ^ 2 * (α / l₁) := by rw [mul_pow, h2]
   have hu4 : (u * guardRadius α l₁) ^ 4 = u ^ 4 * (α / l₁) ^ 2 := by rw [mul_pow, h4]
-  rw [guardPotential, guardPotential, hu2, hu4, h2, h4, barrierHeight]
+  simp only [guardPotential, Potential.doubleWell]
+  rw [hu2, hu4, h2, h4, barrierHeight]
   field_simp
   ring
 

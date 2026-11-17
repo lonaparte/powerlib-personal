@@ -39,8 +39,8 @@ Results.
   `Criteria.isHurwitz_iff_of_det_characteristicMatrix`), and a strict sign violation gives an
   eigenpair with positive real part (shape of `unstable_of_exists_complex_eigenvalue_re_pos`).
   `det_characteristicMatrix_fin_four` computes the coefficients of a general 4×4 matrix
-  (`invariants_of_blockDiag_fin_four`: those of the block-diagonal matrix
-  `[[a, b, 0, 0], [c, 0, 0, 0], [0, 0, d, e], [0, 0, −1, 0]]`);
+  (`invariants_of_blockTriangular_fin_four`: those of a block-triangular matrix from its two
+  diagonal 2×2 blocks);
   `isHurwitz_fin_four_iff` is the 4×4 iff in trace / principal-minor / determinant form and
   `isHurwitz_companion_four_iff` the companion form. `RouthFin4 J` is that condition list and
   `RouthViolationFin4 J` its strict violation (each disjunct places a characteristic root in the
@@ -373,28 +373,28 @@ def principalMinorSum3Fin4 (A : Matrix (Fin 4) (Fin 4) ℝ) : ℝ :=
   simp [Fin.succAbove, Fin.lt_def]
   ring
 
-/-- Invariants of a block-diagonal 4×4 matrix `[[a, b, 0, 0], [c, 0, 0, 0], [0, 0, d, e],
-[0, 0, −1, 0]]`, given entrywise: `tr = a + d`, `m₂ = −bc + e + ad`, `m₃ = ae − bcd`,
-`det = −bc e`. -/
-@[tmio T, powerlib_foundation] theorem invariants_of_blockDiag_fin_four
-    {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : ℝ}
-    (e00 : J 0 0 = a) (e01 : J 0 1 = b) (e02 : J 0 2 = 0) (e03 : J 0 3 = 0)
-    (e10 : J 1 0 = c) (e11 : J 1 1 = 0) (e12 : J 1 2 = 0) (e13 : J 1 3 = 0)
-    (e20 : J 2 0 = 0) (e21 : J 2 1 = 0) (e22 : J 2 2 = d) (e23 : J 2 3 = e)
-    (e30 : J 3 0 = 0) (e31 : J 3 1 = 0) (e32 : J 3 2 = -1) (e33 : J 3 3 = 0) :
-    J.trace = a + d ∧ principalMinorSum2Fin4 J = -(b * c) + e + a * d ∧
-      principalMinorSum3Fin4 J = a * e - b * c * d ∧ J.det = -(b * c) * e := by
+/-- Invariants of a block-triangular 4×4 matrix (lower-left 2×2 block zero), in terms of the
+traces and determinants of its diagonal blocks `P` (rows/columns `0, 1`) and `Q` (`2, 3`):
+`tr = tr P + tr Q`, `m₂ = det P + det Q + tr P tr Q`, `m₃ = tr P det Q + tr Q det P`,
+`det = det P det Q`. -/
+@[tmio T, powerlib_foundation] theorem invariants_of_blockTriangular_fin_four
+    {J : Matrix (Fin 4) (Fin 4) ℝ} (e20 : J 2 0 = 0) (e21 : J 2 1 = 0) (e30 : J 3 0 = 0)
+    (e31 : J 3 1 = 0) :
+    J.trace = (J 0 0 + J 1 1) + (J 2 2 + J 3 3) ∧
+      principalMinorSum2Fin4 J = (J 0 0 * J 1 1 - J 0 1 * J 1 0) +
+        (J 2 2 * J 3 3 - J 2 3 * J 3 2) + (J 0 0 + J 1 1) * (J 2 2 + J 3 3) ∧
+      principalMinorSum3Fin4 J = (J 0 0 + J 1 1) * (J 2 2 * J 3 3 - J 2 3 * J 3 2) +
+        (J 2 2 + J 3 3) * (J 0 0 * J 1 1 - J 0 1 * J 1 0) ∧
+      J.det = (J 0 0 * J 1 1 - J 0 1 * J 1 0) * (J 2 2 * J 3 3 - J 2 3 * J 3 2) := by
   refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, e00, e11, e22, e33]
+  · simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four]
     ring
-  · simp only [principalMinorSum2Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
-      e22, e23, e30, e31, e32, e33]
+  · simp only [principalMinorSum2Fin4, e20, e21, e30, e31]
     ring
-  · simp only [principalMinorSum3Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
-      e22, e23, e30, e31, e32, e33]
+  · simp only [principalMinorSum3Fin4, e20, e21, e30, e31]
     ring
   · rw [det_fin_four]
-    simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
+    simp only [e20, e21, e30, e31]
     ring
 
 /-- Characteristic determinant of a 4×4 matrix:

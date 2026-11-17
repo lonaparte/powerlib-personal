@@ -60,17 +60,19 @@ Second-order reduction:
 * `reduced_field_swing`, `reduced_field_turbine`, `reduced_transfer_apply`,
   `reduced_natFreq_sq`, `reduced_two_mul_dampingRatio_mul_natFreq`: the §1.5 equations,
   transfer function, `ω_n² = (K_R + D)/(M T_R)` and `2 ζ ω_n = (M + (D + K_R F) T_R)/(M T_R)`.
-* `reduced_nadir` (private implementation evidence): for `ζ < 1` and a load increase, `Δω` has
-  its global minimum over `t ≥ 0` at `t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d`
-  (`atan2(y, x) = arg (x + j y)`), is strictly decreasing before it, and the exact minimum is
-  `−ΔP_L/(K_R + D) · [1 + √(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}]` (the generic first
-  extremum `LTI.trajectory_nadir_osc2` with the identities
-  `SwingGovernor.nadirTime_eq_dampedRespCrit`, `SwingGovernor.nadirValue_eq` of
-  `Frequency.SwingNadir`).
+* `reducedModel_plant`: the reduced model is the swing + governor model `reducedModel`
+  (`D + F K_R`, `(1 − F) K_R`, `T_R`), so its trajectory-level evidence is that of
+  `SwingGovernor` / `SwingNadir` there (RoCoF `−ΔP_L/M`, `Δω → −ΔP_L/(K_R + D)`, and for `ζ < 1`
+  and a load increase the exact first minimum of `Δω` over `t ≥ 0`). In the §1.6 form:
+  `reduced_nadirTime_eq` (`t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d`,
+  `atan2(y, x) = arg (x + j y)`) and `reduced_nadirValue_eq`
+  (`−ΔP_L/(K_R + D) · [1 + √(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}]`).
 
 Family and connection conclusions.
-* Constant-input families below preserve the symbolic input and the selected steady state;
-  their autonomous system is the translated forced field.
+* Constant-input families (`loadStepFamily`: the generic `Family.constantInput` at the
+  steady state) preserve the symbolic input and the selected steady state; their autonomous
+  system is the translated forced field, and at that equilibrium every attractive sentence is
+  the Routh–Hurwitz condition (`Family.mem_den_constantInput_iff`).
 * System map: a third-order model (`Model`: `M, D, K_R, F, T_g, T_R` with `M, T_g, T_R > 0`) is
   read as the port system of its plant (`Family.IsLinear`): port input the load deviation,
   port output `Δω`. Flow sentences concern the zero-load operating point; by linearity the
@@ -89,8 +91,8 @@ Family and connection conclusions.
   `mem_den_unstable`, `not_mem_den_passive` and, for the reduced model as a member of
   `SwingGovernor.family`, `reduced_mem_den_globallyExponentiallyStable`.
 * Static evidence: `isEquilibrium_iff`. Private implementation evidence (trajectory level,
-  Rules §3a): `rocof`, `exponentiallyConvergesTo_steadyState`, `tendsto_freq`, `reduced_nadir`,
-  `reduced_rocof`, `reduced_tendsto_freq`.
+  Rules §3a): `rocof`, `tendsto_freq`; for the reduced
+  model those of `SwingGovernor` and `SwingNadir` at `reducedModel` (`reducedModel_plant`).
 
 Corrections.
 * §1.8 state matrix: the note's second row `[−F K_R/(T_R T_g), −1/T_R, (1 − F)/T_R]` does not
@@ -104,7 +106,8 @@ Corrections.
   (`noteNadirTime_eq_neg`). (Typical parameters `2H = 8 s`, `T_R = 7 s`, `F = 0.3`,
   `K_R = 20`, `D = 1` give `ζ ω_n T_R ≈ 3.6`; RK4 gives `t_n ≈ +2.20 s`, the note `−2.20 s`.)
 * §1.6 states that the closed form needs the approximation `ζ ω_n ≪ 1/T_RH`; it does not:
-  `reduced_nadir` is exact for the reduced model. The note's amplitude
+  the nadir of the reduced model (`reducedModel_plant`, `reduced_nadirValue_eq`) is exact.
+  The note's amplitude
   `α e^{−ζω_n t_n} sin(ω_d t_n + φ)` with `φ = ω_d t_n` is replaced by the exact
   `√(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}`.
 -/
@@ -649,91 +652,9 @@ every forward solution under the load step. -/
       (mem_den_globallyExponentiallyStable ⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ hD hK hKD hF)) hx 0
   simpa using h
 
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-§1.6 corrected and exact: for the reduced SFR model with `ζ < 1` and a load increase, from rest,
-`Δω` decreases strictly up to `t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d > 0`, attains its minimum
-over `t ≥ 0` there, and the minimum is
-`−ΔP_L/(K_R + D)·[1 + √(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}]`. -/
-@[tmio TM, powerlib_domain] private theorem reduced_nadir (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
-    (hKD : 0 < K + D) (hP : 0 < ΔPL)
-    (hζ : SwingGovernor.dampingRatio M (D + F * K) ((1 - F) * K) TR < 1)
-    {x : ℝ → EuclideanSpace ℝ (Fin 2)}
-    (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
-      (Ici 0)) (h0 : x 0 = 0) :
-    0 < SwingGovernor.nadirTime M (D + F * K) ((1 - F) * K) TR ∧
-      StrictAntiOn (fun t => x t 0)
-        (Icc 0 (SwingGovernor.nadirTime M (D + F * K) ((1 - F) * K) TR)) ∧
-      IsMinOn (fun t => x t 0) (Ici 0)
-        (SwingGovernor.nadirTime M (D + F * K) ((1 - F) * K) TR) ∧
-      x (SwingGovernor.nadirTime M (D + F * K) ((1 - F) * K) TR) 0 =
-        -ΔPL / (K + D) * (1 + Real.sqrt (1 -
-          2 * SwingGovernor.decayRate M (D + F * K) ((1 - F) * K) TR * TR +
-            SwingGovernor.natFreq M (D + F * K) ((1 - F) * K) TR ^ 2 * TR ^ 2) *
-          Real.exp (-(SwingGovernor.decayRate M (D + F * K) ((1 - F) * K) TR *
-            SwingGovernor.nadirTime M (D + F * K) ((1 - F) * K) TR))) := by
-  set D' := D + F * K
-  set K' := (1 - F) * K
-  have hKD' : 0 < K' + D' := by simp only [K', D']; linarith
-  have hr : -ΔPL / M < 0 := by rw [neg_div]; exact neg_neg_of_pos (div_pos hP hM)
-  have h := LTI.trajectory_nadir_osc2 (SwingGovernor.plant M D' K' TR)
-    ((SwingGovernor.isEquilibrium_iff hM.ne' hTR.ne' hKD'.ne' _).2 rfl)
-    (SwingGovernor.trace_A hM hTR hKD') (SwingGovernor.det_A hM hTR hD hKD' hζ)
-    (SwingGovernor.dampedFreq_pos hM hTR hD hKD' hζ)
-    (SwingGovernor.decayRate_nonneg hM hTR hD hKD') hx 0 (a := ΔPL / (K' + D'))
-    (r := -ΔPL / M) (by rw [h0]; exact SwingGovernor.rest_deviation)
-    (by rw [h0]; exact SwingGovernor.rest_slope hKD'.ne') hr
-  rw [SwingGovernor.steadyState_zero,
-    ← SwingGovernor.nadirTime_eq_dampedRespCrit hM hTR hD hKD' hP hζ,
-    ← SwingGovernor.nadirValue_eq hM hTR hD hKD' hP hζ] at h
-  exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.trans reduced_nadirValue_eq⟩
-
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Reduced model: from rest, `Δω̇(0⁺) = −ΔP_L/M` (§1.7). -/
-@[tmio TM, powerlib_domain] private theorem reduced_rocof {x : ℝ → EuclideanSpace ℝ (Fin 2)}
-    (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
-      (Ici 0)) (h0 : x 0 = 0) :
-    HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
-  have h := LTI.hasDerivWithinAt_apply_zero hx 0
-  rwa [h0, reducedPlant, SwingGovernor.field_zero] at h
-
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Reduced model: `Δω → −ΔP_L/(K_R + D)` along every forward solution (`0 ≤ D + F K_R`). -/
-@[tmio TM, powerlib_domain] private theorem reduced_tendsto_freq (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
-    (hKD : 0 < K + D) {x : ℝ → EuclideanSpace ℝ (Fin 2)}
-    (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
-      (Ici 0)) :
-    Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (K + D))) := by
-  have hKD' : 0 < (1 - F) * K + (D + F * K) := by linarith
-  have h := LTI.tendsto_apply_of_isHurwitz (reducedPlant M D K F TR)
-    ((SwingGovernor.isEquilibrium_iff hM.ne' hTR.ne' hKD'.ne' _).2 rfl)
-    ((((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (SwingGovernor.isHurwitz_iff_of_nonneg hM hTR hD))).2 hKD') hx 0
-  rw [SwingGovernor.steadyState_zero, show (1 - F) * K + (D + F * K) = K + D by ring] at h
-  exact h
-
 /-- The same models under the symbolic constant input, translated about its selected
-steady state. Its system map reads the forced field with the symbolic input held constant. -/
-def loadStepFamily (ΔPL : ℝ) : Family Model Requirement 3 0 :=
-  ⟨fun m => Port.System.autonomous (fun z => m.plant.inputField (load ΔPL) (z + (steadyState m.D m.K ΔPL))),
-    family.meets, family.translate⟩
-
-/-- Connection for the forced field at its selected steady state.
-Under the Routh–Hurwitz conditions every solution under the load step converges exponentially to
-the steady state (the connection theorem `mem_den_attractive_iff` and linearity,
-`Linear.holds_input_iff`). -/
-@[tmio TM, powerlib_domain] private theorem exponentiallyConvergesTo_steadyState (m : Model)
-    (h2 : 0 < coeff2 m.M m.D m.Tg m.TR) (hKD : 0 < m.K + m.D)
-    (hR : 0 < routhQuantity m.M m.D m.K m.F m.Tg m.TR) (ΔPL : ℝ) :
-    connection% (m ∈ (loadStepFamily ΔPL).den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.plant.inputField (load ΔPL)) (pt := fun m : Model => steadyState m.D m.K ΔPL)
-    (show (loadStepFamily ΔPL).IsAutonomous (fun m z => m.plant.inputField (load ΔPL) (z + (steadyState m.D m.K ΔPL))) from fun _ => rfl))]
-  change Flow.GloballyExponentiallyStable (m.plant.inputField (load ΔPL))
-      (steadyState m.D m.K ΔPL)
-  have hmem := (mem_den_attractive_iff m (P := .globallyExponentiallyStable) (by simp)).2
-    ⟨h2, by unfold coeff0; linarith, hR⟩
-  rw [family_isLinear.den_hurwitz (Or.inl (by simp))] at hmem
-  exact (Linear.holds_input_iff m.plant
-    ((isEquilibrium_iff m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne' _).2 rfl)
-    (P := .globallyExponentiallyStable) (by simp)).2 hmem
+steady state (`Family.constantInput`). -/
+abbrev loadStepFamily (ΔPL : ℝ) : Family Model Requirement 3 0 :=
+  family.constantInput Model.plant (load ΔPL) fun m => steadyState m.D m.K ΔPL
 
 end powerlib.Frequency.SFR

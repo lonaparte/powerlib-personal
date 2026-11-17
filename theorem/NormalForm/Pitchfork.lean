@@ -2,6 +2,7 @@ import theorem.NormalForm.Fold
 import theorem.NormalForm.Logistic
 import theorem.Flow.Certificate
 import theorem.Dynamics.CriticalLinearization
+import theorem.Potential.DoubleWell
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-! # Transcritical and pitchfork normal forms
@@ -48,16 +49,16 @@ Results.
   `x(t₀) > 0` converges to `√μ`: the square `x²` solves the logistic equation
   (`super_sq_isIntegralCurveOn`), whose explicit solution and limit in
   `theorem/NormalForm/Logistic.lean` give `super_bernoulli` (`w = 1/x²`) and `super_tendsto_sqrt`.
-* Potential barrier of the supercritical pitchfork, `V(x) = −μx²/2 + x⁴/4`:
-  `V(0) − V(±√μ) = μ²/4` (`barrier`).
+* Potential of the supercritical pitchfork, `V(x) = −μx²/2 + x⁴/4` (`potential`): the double
+  well `Potential.doubleWell μ 1` of `theorem/Potential/DoubleWell.lean`, so
+  `V(0) − V(±√μ) = μ²/4` is `Potential.doubleWell_barrier` at `a = μ ≥ 0`, `b = 1`.
 
-Potential shapes: `−μx²/2 + x⁴/4` is the double well of `theorem/Potential/Wells.lean` with
-`a = μ`, `b = 1` (barrier `a²/4b = μ²/4`); the fold potential `−μx + x³/3` and its barrier
-`(4/3) μ^{3/2}` are in `theorem/NormalForm/Fold.lean`.
+Potential shapes: the fold potential `−μx + x³/3` and its barrier `(4/3) μ^{3/2}` are in
+`theorem/NormalForm/Fold.lean`.
 
 Corrections. (T-fold-critical-scaling §2.3 contrasts the fold barrier exponent `3/2` with
 "`1` (pitchfork)"): for the pitchfork normal form the barrier is `μ²/4`, so the exponent is `2`,
-not `1` (`barrier`).
+not `1` (`Potential.doubleWell_barrier` with `b = 1`).
 -/
 
 noncomputable section
@@ -318,29 +319,10 @@ def subSystem (μ : ℝ) : State 1 → State 1 := lift (subField μ)
 @[tmio M, powerlib_foundation] theorem subField_odd (μ x : ℝ) : subField μ (-x) = -subField μ x := by
   simp [subField]; ring
 
-/-! ## Potential barrier -/
+/-! ## Potential -/
 
-/-- The supercritical pitchfork potential `V(x) = −μx²/2 + x⁴/4`, `V' = −(μx − x³)`. -/
-def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x ^ 2 / 2 + x ^ 4 / 4
-
-@[tmio M, powerlib_foundation] theorem hasDerivAt_potential (μ x : ℝ) :
-    HasDerivAt (potential μ) (-superField μ x) x := by
-  have h := (((hasDerivAt_pow 2 x).const_mul (-μ)).div_const 2).add
-    ((hasDerivAt_pow 4 x).div_const 4)
-  convert h using 1
-  · funext y; simp [potential]
-  · simp [superField]; ring
-
-/-- Correction: the pitchfork barrier is `μ²/4` (exponent `2`). -/
-@[tmio M, powerlib_foundation] theorem barrier {μ : ℝ} (hμ : 0 ≤ μ) :
-    potential μ 0 - potential μ √μ = μ ^ 2 / 4 ∧
-      potential μ 0 - potential μ (-√μ) = μ ^ 2 / 4 := by
-  have h2 : √μ ^ 2 = μ := Real.sq_sqrt hμ
-  have h4 : √μ ^ 4 = μ ^ 2 := by rw [show (4 : ℕ) = 2 * 2 by rfl, pow_mul, h2]
-  have h2' : (-√μ) ^ 2 = μ := by rw [neg_sq, h2]
-  have h4' : (-√μ) ^ 4 = μ ^ 2 := by rw [show (-√μ) ^ 4 = √μ ^ 4 by ring, h4]
-  unfold potential
-  rw [h2, h4, h2', h4']
-  constructor <;> ring
+/-- The supercritical pitchfork potential `V(x) = −μx²/2 + x⁴/4` (`V' = −(μx − x³)`): the
+double well `Potential.doubleWell μ 1`; its barrier `μ²/4` is `Potential.doubleWell_barrier`. -/
+abbrev potential (μ : ℝ) : ℝ → ℝ := Potential.doubleWell μ 1
 
 end powerlib.NormalForm.Pitchfork

@@ -457,9 +457,6 @@ not a connection conclusion. -/
   simp only [Model.dissipation, PiLp.smul_apply, smul_eq_mul]
   ring
 
-@[tmio M, powerlib_domain] private theorem zeroInput_smooth (m : Model) : ContDiff ℝ 1 m.system.zeroInput :=
-  (field_smooth m 0).comp (contDiff_id.add contDiff_const)
-
 @[tmio TM, powerlib_domain] private theorem passive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
     (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     m.system.PassiveWith m.energy := by
@@ -545,7 +542,7 @@ asymptotic stability). -/
                 mul_le_mul_of_nonneg_left (hVhi x) (div_nonneg haW.le hbVpos.le)
             _ = aW * ‖x‖ ^ 2 := by field_simp
         linarith }
-  exact c.globallyExponentiallyStable (zeroInput_smooth m)
+  exact c.globallyExponentiallyStable ((field_smooth m 0).comp (contDiff_id.add contDiff_const))
 
 /-- The whole requirement language is inconsistent (`r ≤ 0` fails at `r = 1`). -/
 @[tmio M, powerlib_domain] theorem realize_univ :

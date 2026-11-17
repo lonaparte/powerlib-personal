@@ -63,6 +63,7 @@ import theorem.PDE.Transport
 import theorem.PDE.Heat
 import theorem.PDE.Energy
 import theorem.Potential.Barrier
+import theorem.Potential.DoubleWell
 import theorem.Spectral.Family
 import theorem.Spectral.Local
 import theorem.Family.PassiveOnly

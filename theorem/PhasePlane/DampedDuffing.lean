@@ -44,7 +44,7 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
   rw [h]
   have h0 : ContDiff ℝ 1 (fun y : State 2 => y 0) := Dynamics.contDiff_coord 0
   have h1 : ContDiff ℝ 1 (fun y : State 2 => y 1) := Dynamics.contDiff_coord 1
-  unfold potential
+  unfold potential Potential.doubleWell
   fun_prop
 
 /-- Energy sublevel sets are positively invariant for `δ ≥ 0`. -/

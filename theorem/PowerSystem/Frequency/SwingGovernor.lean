@@ -84,8 +84,10 @@ Singular-perturbation limit:
   (a real eigenvalue `μ > −a` excludes decay at the rate `a`).
 
 Family and connection conclusions.
-* Constant-input families below preserve the symbolic input and the selected steady state;
-  their autonomous system is the translated forced field.
+* Constant-input families (`loadStepFamily`: the generic `Family.constantInput` at the
+  quasi-steady state) preserve the symbolic input and the selected steady state; their
+  autonomous system is the translated forced field, and at that equilibrium every attractive
+  sentence is the Hurwitz condition (`Family.mem_den_constantInput_iff`).
 * System map: a model (`Model`: `M, D, K_R, T_g` with `0 < M`, `0 < T_g`) is read as the port
   system of its plant (`Family.IsLinear`): port input the load deviation `ΔP_L`, port output
   `Δω`. The flow sentences therefore speak about the zero-load operating point; since the plant
@@ -107,9 +109,8 @@ Family and connection conclusions.
   `(ΔP_L, Δω)` port at the quasi-steady state, so the model is not passive).
 * Static model evidence (domain): `isEquilibrium_iff`.
   Implementation evidence (private, trajectory level, outside the sentence language): the
-  initial RoCoF `Δω̇(0⁺) = −ΔP_L / M_eff` (`rocof`, `rocof_hz`, §1.5), the global exponential
-  stability of the quasi-steady state of the load step (`exponentiallyConvergesTo_steadyState`)
-  and the convergence `Δω(t) → −ΔP_L/(K_R + D)` of every forward solution under the load step
+  initial RoCoF `Δω̇(0⁺) = −ΔP_L / M_eff` (`rocof`, `rocof_hz`, §1.5) and the convergence
+  `Δω(t) → −ΔP_L/(K_R + D)` of every forward solution under the load step
   (`tendsto_freq`, §1.6).
 * First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; the rate language
   with `stable` `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`;
@@ -494,29 +495,9 @@ step, read from the connection theorem `isHurwitz_iff_of_nonneg` and linearity. 
   simpa using h
 
 /-- The same models under the symbolic constant input, translated about its selected
-steady state. Its system map reads the forced field with the symbolic input held constant. -/
-def loadStepFamily (ΔPL : ℝ) : Family Model Requirement 2 0 :=
-  ⟨fun m => Port.System.autonomous (fun z => m.plant.inputField (load ΔPL) (z + (steadyState m.D m.K ΔPL))),
-    family.meets, family.translate⟩
-
-/-- Connection for the forced field at its selected steady state.
-§1.6 at the trajectory level: every solution under the load step converges exponentially to the
-quasi-steady state, read from the connection theorem `isHurwitz_iff_of_nonneg` and linearity
-(`Linear.holds_input_iff`). -/
-@[tmio TM, powerlib_domain] private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D)
-    (hKD : 0 < m.K + m.D) (ΔPL : ℝ) :
-    connection% (m ∈ (loadStepFamily ΔPL).den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.plant.inputField (load ΔPL)) (pt := fun m : Model => steadyState m.D m.K ΔPL)
-    (show (loadStepFamily ΔPL).IsAutonomous (fun m z => m.plant.inputField (load ΔPL) (z + (steadyState m.D m.K ΔPL))) from fun _ => rfl))]
-  change Flow.GloballyExponentiallyStable (m.plant.inputField (load ΔPL))
-      (steadyState m.D m.K ΔPL)
-  have hmem : m ∈ family.den (.flow .globallyExponentiallyStable) :=
-    (isHurwitz_iff_of_nonneg m.M_pos m.Tg_pos hD).2 hKD
-  rw [family_isLinear.den_hurwitz (Or.inl (by simp))] at hmem
-  exact (Linear.holds_input_iff m.plant
-    ((isEquilibrium_iff m.M_pos.ne' m.Tg_pos.ne' hKD.ne' _).2 rfl)
-    (P := .globallyExponentiallyStable) (by simp)).2 hmem
+steady state (`Family.constantInput`). -/
+abbrev loadStepFamily (ΔPL : ℝ) : Family Model Requirement 2 0 :=
+  family.constantInput Model.plant (load ΔPL) fun m => steadyState m.D m.K ΔPL
 
 /-! ## Singular-perturbation limit `T_g → 0` -/
 

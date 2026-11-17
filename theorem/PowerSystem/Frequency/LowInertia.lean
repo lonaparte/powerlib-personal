@@ -2,6 +2,7 @@ import theorem.PowerSystem.Frequency.SwingGovernor
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.Real.Pi.Bounds
+import theorem.Transform.Park
 
 /-! # Low-inertia frequency dynamics: time scales, critical inertia, frequency variance
 
@@ -23,12 +24,13 @@ Source: work-sync `theory/T-low-inertia-frequency.md` §1.1 (time scales), §1.3
 equations), §1.5 (critical inertia), §1.7 (frequency variance under stochastic load).
 
 Results.
-* `rotatingFrame_hasDerivAt`, `dq_firstOrder`, `dq_firstOrder_re`, `dq_firstOrder_im` (§1.3):
+* `dq_firstOrder`, `dq_firstOrder_re`, `dq_firstOrder_im` (§1.3):
   for a stationary-frame element `X ẋ_αβ = s_αβ − Y x_αβ` (series `R–L` line: `X = L`, `Y = R`,
   `s = v_i − v_j`; node capacitor: `X = C`, `Y = 0`, `s` = net injected current), the
   rotating-frame quantity `x_dq = e^{−j ω_s t} x_αβ` obeys
   `X ẋ_dq = s_dq − Y x_dq − j ω_s X x_dq`, i.e. `X ẋ_d = s_d − Y x_d + ω_s X x_q`,
-  `X ẋ_q = s_q − Y x_q − ω_s X x_d` (product rule, `ω_s` constant).
+  `X ẋ_q = s_q − Y x_q − ω_s X x_d` (the product rule `Transform.hasDerivAt_mul_cexp` at the
+  angle `θ = −ω_s t`).
 * `criticalInertia`, `rocof_bound_iff`, `rocof_le_iff_criticalInertia` (§1.5): with the
   two-state model's initial RoCoF `|ḟ(0⁺)| = |ΔP_L| f₀/(2H)`,
   `|ḟ(0⁺)| ≤ ḟ_max ⇔ H ≥ H_crit = |ΔP_L| f₀/(2 ḟ_max)`; `criticalInertia_example`:
@@ -84,29 +86,21 @@ open scoped Topology
 /-- Park rotation `e^{−j ω t}`. -/
 def rot (ω t : ℝ) : ℂ := Complex.exp (-((ω : ℂ) * Complex.I) * (t : ℂ))
 
-/-- Product rule for the Park rotation `x_dq(t) = e^{−j ω t} x_αβ(t)`. -/
-@[tmio T, powerlib_foundation] theorem rotatingFrame_hasDerivAt {xs : ℝ → ℂ} {xs' : ℂ} {ω t : ℝ}
-    (h : HasDerivAt xs xs' t) :
-    HasDerivAt (fun t : ℝ => rot ω t * xs t)
-      (rot ω t * xs' - (ω : ℂ) * Complex.I * (rot ω t * xs t)) t := by
-  have hlin : HasDerivAt (fun s : ℝ => -((ω : ℂ) * Complex.I) * (s : ℂ))
-      (-((ω : ℂ) * Complex.I)) t := by
-    simpa using ((hasDerivAt_id t).ofReal_comp).const_mul (-((ω : ℂ) * Complex.I))
-  have hexp := hlin.cexp
-  have := hexp.mul h
-  unfold rot
-  convert this using 1
-  ring
-
 /-- dq form of a first-order stationary-frame element `X ẋ_αβ = s_αβ − Y x_αβ`:
 `ẋ_dq = (s_dq − Y x_dq)/X − j ω x_dq`. -/
 @[tmio T, powerlib_foundation] theorem dq_firstOrder {X Y ω t : ℝ} {xs ss : ℝ → ℂ}
     (h : HasDerivAt xs ((ss t - Y * xs t) / X) t) :
     HasDerivAt (fun t : ℝ => rot ω t * xs t)
       ((rot ω t * ss t - Y * (rot ω t * xs t)) / X - (ω : ℂ) * Complex.I * (rot ω t * xs t)) t := by
-  have := rotatingFrame_hasDerivAt (ω := ω) h
-  convert this using 2
-  ring
+  have hθ : HasDerivAt (fun s : ℝ => -(ω * s)) (-ω) t := by
+    simpa using ((hasDerivAt_id t).const_mul ω).fun_neg
+  have hrot : ∀ s : ℝ, rot ω s = Complex.exp (((-(ω * s) : ℝ) : ℂ) * Complex.I) := by
+    intro s; rw [rot]; congr 1; push_cast; ring
+  have := Transform.hasDerivAt_mul_cexp hθ h
+  simp only [← hrot] at this
+  convert this using 1
+  · funext s; ring
+  · push_cast; ring
 
 /-- Real (d-axis) part: `X ẋ_d = s_d − Y x_d + ω X x_q`. -/
 @[tmio T, powerlib_foundation] theorem dq_firstOrder_re {X Y ω t : ℝ} {xs ss : ℝ → ℂ} (hX : X ≠ 0)

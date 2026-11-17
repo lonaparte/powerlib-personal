@@ -557,30 +557,16 @@ equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a s
       have h1 := congrArg (fun y : State 2 => y 1) heq
       simpa [hp0] using h1
     rcases eq_or_lt_of_le hV with hV0 | hVpos
-    · exfalso
-      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-        ⟨PhasePlane.mk (m.θ + ε / 2) (m.ηs + 0), fun h => ?_, ?_, ?_⟩) hlas
-      · have := congrArg (fun y : State 2 => y 0) h
-        simp [Model.point, PhasePlane.mk] at this
-        linarith
-      · refine (norm_point_sub _ _ _ _).trans_lt ?_
-        rw [abs_zero, add_zero, abs_of_pos (by linarith)]
-        linarith
-      · ext i
-        fin_cases i <;> simp [PhasePlane.mk, ← hV0]
+    · refine absurd hlas (Dynamics.not_localAsymptoticStable_of_line (v := PhasePlane.mk 1 0)
+        (fun h => by simpa using congrArg (fun y : State 2 => y 0) h) fun t _ => ?_)
+      ext i
+      fin_cases i <;> simp [Model.point, PhasePlane.mk, ← hV0]
     have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp hVs).resolve_left hVpos.ne'
     rcases eq_or_lt_of_le hKi with hKi0 | hKipos
-    · exfalso
-      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-        ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), fun h => ?_, ?_, ?_⟩) hlas
-      · have := congrArg (fun y : State 2 => y 1) h
-        simp [Model.point, PhasePlane.mk] at this
-        linarith
-      · refine (norm_point_sub _ _ _ _).trans_lt ?_
-        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
-        linarith
-      · ext i
-        fin_cases i <;> simp [PhasePlane.mk, ← hKi0, hs]
+    · refine absurd hlas (Dynamics.not_localAsymptoticStable_of_line (v := PhasePlane.mk 0 1)
+        (fun h => by simpa using congrArg (fun y : State 2 => y 1) h) fun t _ => ?_)
+      ext i
+      fin_cases i <;> simp [Model.point, PhasePlane.mk, ← hKi0, hs]
     rcases eq_or_lt_of_le m.damping with hKp0 | hKppos
     · exfalso
       have hHd : Differentiable ℝ (pllHamiltonian m.V m.Ki m.ηs) := m.toPH.differentiable_H

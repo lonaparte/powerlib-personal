@@ -1,6 +1,7 @@
 import theorem.PhasePlane.Conservative
 import theorem.Criteria.Hurwitz2
 import theorem.Flow.Certificate
+import theorem.Potential.DoubleWell
 
 /-! # The bistable Duffing oscillator `ẍ + δẋ − x + x³ = 0`
 
@@ -27,7 +28,7 @@ Results.
   `Conservative.unstable_of_slope_neg`).
 * Wells `(±1, 0)`: locally exponentially stable for `δ > 0` (`V''(±1) = 2 > 0`;
   `well_locallyExponentiallyStable` from `Conservative.locallyExponentiallyStable_of_slope_pos`);
-  Lyapunov stable for every `δ ≥ 0` (strict minima of `V`,
+  Lyapunov stable for every `δ ≥ 0` (strict minima of `V`, `Potential.doubleWell_eq_min_iff`;
   energy as Lyapunov function; `well_lyapunovStable`).
 * Forward completeness for `δ ≥ 0` (`forwardComplete`): the energy has compact sublevel sets and
   is nonincreasing (`Conservative.energy_lie_nonpos`; powerlib
@@ -41,9 +42,9 @@ Results.
   locally asymptotically stable (`not_localAsymptoticStable_conservative`): there is no
   attractor.
 
-Potential shapes: `V(x) = x⁴/4 − x²/2` is the double well of `theorem/Potential/Wells.lean` with
-`a = b = 1` (wells `±1`, barrier `a²/4b = 1/4`); the same quartic shape is the supercritical
-pitchfork potential of `theorem/NormalForm/Pitchfork.lean` at `μ = 1`.
+Potential shapes: `V(x) = x⁴/4 − x²/2` is the double well `Potential.doubleWell 1 1` of
+`theorem/Potential/DoubleWell.lean` (wells `±1`, minimum `−1/4`, barrier `a²/4b = 1/4`); the same
+quartic is the supercritical pitchfork potential of `theorem/NormalForm/Pitchfork.lean` at `μ = 1`.
 
 Corrections. (T-nonlinear-phase-plane.md §1.4): the note says the figure-eight separatrix of the
 (undamped) double well "划分吸引域" (separates basins of attraction). For the conservative system
@@ -60,8 +61,8 @@ open powerlib.PhasePlane
 /-- Restoring force `V'(x) = x³ − x`. -/
 def force (x : ℝ) : ℝ := x ^ 3 - x
 
-/-- Double-well potential `V(x) = x⁴/4 − x²/2`. -/
-def potential (x : ℝ) : ℝ := x ^ 4 / 4 - x ^ 2 / 2
+/-- Double-well potential `V(x) = x⁴/4 − x²/2`: the double well `Potential.doubleWell 1 1`. -/
+abbrev potential : ℝ → ℝ := Potential.doubleWell 1 1
 
 /-- The Duffing field `ẋ = y`, `ẏ = x − x³ − δy`. -/
 def field (δ : ℝ) : State 2 → State 2 := Conservative.field 1 δ force
@@ -70,11 +71,8 @@ def field (δ : ℝ) : State 2 → State 2 := Conservative.field 1 δ force
 def energy : State 2 → ℝ := Conservative.energy 1 potential
 
 @[tmio T, powerlib_foundation] theorem hasDerivAt_potential (x : ℝ) :
-    HasDerivAt potential (force x) x := by
-  have h := ((hasDerivAt_pow 4 x).div_const 4).sub ((hasDerivAt_pow 2 x).div_const 2)
-  unfold potential force
-  convert h using 1
-  push_cast; ring
+    HasDerivAt potential (force x) x :=
+  (Potential.hasDerivAt_doubleWell 1 1 x).congr_deriv (by unfold force; ring)
 
 @[tmio T, powerlib_foundation] theorem force_contDiff {k : WithTop ℕ∞} : ContDiff ℝ k force := by
   unfold force; fun_prop
@@ -136,30 +134,20 @@ stable (`Conservative.locallyExponentiallyStable_of_slope_pos`). -/
   have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
   refine Conservative.center_lyapunovStable one_pos hδ hasDerivAt_potential one_pos ?_
   intro x hx hne
-  have hdiff : potential x - potential σ = (x - σ) ^ 2 * (x + σ) ^ 2 / 4 := by
-    unfold potential
-    have h4 : σ ^ 4 = 1 := by rw [show σ ^ 4 = (σ ^ 2) ^ 2 by ring, hσ2]; norm_num
-    rw [h4, hσ2]
-    have : (x - σ) ^ 2 * (x + σ) ^ 2 = (x ^ 2 - σ ^ 2) ^ 2 := by ring
-    rw [this, hσ2]; ring
-  have h1 : 0 < (x - σ) ^ 2 := by
-    have : x - σ ≠ 0 := sub_ne_zero.mpr hne
-    positivity
-  have h2 : 0 < (x + σ) ^ 2 := by
-    have : x + σ ≠ 0 := by
-      intro h
-      have : |x - σ| = 2 * |σ| := by
-        rw [show x - σ = -(2 * σ) by linarith, abs_neg, abs_mul, abs_two]
-      have hσabs : |σ| = 1 := by rcases hσ with rfl | rfl <;> norm_num
-      rw [hσabs] at this
-      linarith
-    positivity
-  have : 0 < potential x - potential σ := by rw [hdiff]; positivity
-  linarith
+  have h1 : √((1 : ℝ) / 1) = 1 := by simp
+  have hσm := (Potential.doubleWell_eq_min_iff one_pos one_pos σ).mpr (by rw [h1]; exact hσ)
+  show Potential.doubleWell 1 1 σ < Potential.doubleWell 1 1 x
+  rw [hσm]
+  refine lt_of_le_of_ne (Potential.doubleWell_min one_pos one_pos x) fun h => ?_
+  have hx' := (Potential.doubleWell_eq_min_iff one_pos one_pos x).mp h.symm
+  rw [h1] at hx'
+  rcases hσ with rfl | rfl <;> rcases hx' with rfl | rfl <;>
+    first | exact absurd rfl hne | norm_num at hx
 
 @[tmio M, powerlib_foundation] theorem energy_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
     energy (mk σ 0) = -(1 / 4) := by
-  rcases hσ with rfl | rfl <;> simp [energy, Conservative.energy, potential] <;> norm_num
+  rcases hσ with rfl | rfl <;> simp [energy, Conservative.energy, Potential.doubleWell] <;>
+    norm_num
 
 @[tmio T, powerlib_foundation] theorem energy_continuous : Continuous energy :=
   (Conservative.energy_differentiable (m := 1) hasDerivAt_potential).continuous
@@ -189,7 +177,8 @@ converges to the well. -/
   rw [energy_well σ hσ]
   have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
   have hσ4 : σ ^ 4 = 1 := by rw [show σ ^ 4 = (σ ^ 2) ^ 2 by ring, hσ2]; norm_num
-  simp only [energy, Conservative.energy, potential, mk_apply_zero, mk_apply_one, hσ2, hσ4]
+  simp only [energy, Conservative.energy, Potential.doubleWell, mk_apply_zero, mk_apply_one, hσ2,
+    hσ4]
   have : 0 < s ^ 2 := by positivity
   intro h; linarith
 
@@ -204,7 +193,7 @@ converges to the well. -/
   apply Metric.isCompact_of_isClosed_isBounded (isClosed_le energy_continuous continuous_const)
   rw [Metric.isBounded_iff_subset_closedBall (0 : State 2)]
   refine ⟨√(max (2 * c + 9 / 2) 0), fun y hy => ?_⟩
-  simp only [Set.mem_ofPred_eq, energy, Conservative.energy, potential] at hy
+  simp only [Set.mem_ofPred_eq, energy, Conservative.energy, Potential.doubleWell] at hy
   rw [Metric.mem_closedBall, dist_zero_right]
   have hsq : ‖y‖ ^ 2 ≤ max (2 * c + 9 / 2) 0 := by
     rw [norm_sq_eq]

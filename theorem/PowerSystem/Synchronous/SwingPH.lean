@@ -31,9 +31,9 @@ Results.
 
 Family and connection conclusions.
 * No new family: the plant is a member of the port-Hamiltonian family
-  `Port.PortHamiltonian.family`. Passivity and Lyapunov stability are not re-proved: they are the
-  family's `mem_den_passive` and `mem_den_lyapunovStable` applied to this plant
-  (`linearPH_passive`, `linearPH_lyapunovStable`, connection statements; reuse).
+  `Port.PortHamiltonian.family`. Passivity and Lyapunov stability (for every `D ≥ 0`,
+  including `D = 0`) are not re-stated: they are the family's `mem_den_passive` and
+  `mem_den_lyapunovStable` at `linearPH`.
 * Through `stateMatrix_eq_conj` every flow sentence of the pH plant is the same sentence of the
   linearized swing family `Synchronous.Swing.Linearized.family` at `(p, δ₀)`
   (`linearPH_mem_den_flow_iff`, a comparison of the two families' denotations). Scaffold:
@@ -110,21 +110,6 @@ abbrev momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := Dynamics.scaleMatrix p.M
   · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH,
       PhasePlane.toEuclideanCLM_apply_one, dotProduct]
     ring
-
-/-- Reuse of the port-Hamiltonian family: the linearized swing equation is passive from the power
-perturbation `u` to `Δω`, with storage `H`. -/
-@[tmio TM, powerlib_domain] theorem linearPH_passive (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
-    (hK : 0 < p.syncCoeff δ₀) :
-    connection% (p.linearPH δ₀ hM hD hK ∈ Port.PortHamiltonian.family.den .passive) :=
-  Port.PortHamiltonian.mem_den_passive _
-
-/-- Reuse of the port-Hamiltonian family: the unforced linearized swing equation is Lyapunov
-stable for every `D ≥ 0` (including `D = 0`). -/
-@[tmio TM, powerlib_domain] theorem linearPH_lyapunovStable (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
-    (hK : 0 < p.syncCoeff δ₀) :
-    connection% (p.linearPH δ₀ hM hD hK ∈
-      Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
-  Port.PortHamiltonian.mem_den_lyapunovStable _
 
 /-- Every flow sentence of the pH plant is the same sentence of the linearized swing family at
 `(p, δ₀)`: the two families' denotations agree through the momentum coordinates. -/
