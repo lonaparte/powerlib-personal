@@ -22,16 +22,14 @@ module theorem.GridTiedConverter.GFL.DCLink.FourStatePLLDC where
 -- (`FourState.meets_offBoundary_iff`). With the PLL–DC model's characterization of local
 -- exponential stability off the singular plane (`p-les`, Lean
 -- `PLLDC.mem_den_locallyExponentiallyStable_iff`) this gives the four-state characterization
--- (`les↔`, Lean `FourState.mem_den_locallyExponentiallyStable_iff`). Two four-state models whose
--- images meet the same PLL–DC requirements but differ on a sentence show that no requirement set
--- of the PLL–DC model denotes that sentence (`inexpressible`, Lean
--- `FourStateBoundary.realize_ne_den_lyapunovStable`, `FourStateBoundary.realize_ne_den_unstable`,
--- `FourStateBoundary.realize_ne_den_locallyAsymptoticallyStable`). Nothing here is exported.
+-- (`les↔`, Lean `FourState.mem_den_locallyExponentiallyStable_iff`). The inexpressibility of the
+-- Lyapunov, local asymptotic and instability sentences in the PLL–DC model's language is proved on
+-- the PLL–DC model's own witnesses (Lean `PLLDC.realize_ne_den_lyapunovStable` and companions),
+-- not through this reading. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
 open import Cubical.Data.Sigma
-open import Cubical.Data.Empty using (⊥)
 
 open import theorem.Family.FamilyReading
 open import theorem.Flow.FlowSemantics
@@ -86,11 +84,3 @@ module _ (X : Type) (holds : System X → Sentence → Type)
         den fourFamily locallyExponentiallyStable f ↔ (Equilibrium f × Routh f)
       les↔ f = ↔-trans (p-les f) (les-closed f)
 
-      -- Indistinguishable images on either side of a sentence: no requirement set of the PLL–DC
-      -- model denotes it.
-      inexpressible : (s : Sentence) (u v : FourModel) →
-        ((q : PReq) → pMeets (toP u) q ↔ pMeets (toP v) q) →
-        den pFamily s (toP u) → (den pFamily s (toP v) → ⊥) →
-        (T : PReq → Type) → ((b : PModel) → realize pFamily T b ↔ den pFamily s b) → ⊥
-      inexpressible s u v same du nv T eq =
-        nv (fst (eq (toP v)) (λ q t → fst (same q) (snd (eq (toP u)) du q t)))

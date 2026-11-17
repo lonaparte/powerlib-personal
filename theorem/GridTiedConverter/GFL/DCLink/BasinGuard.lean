@@ -100,20 +100,16 @@ characterized by the linearization there
   sentences of the image of its four-state reading `Model.toFourState`
   (`BasinGuard.mem_den_iff_fourState`, every sentence; inside the PLL–DC model,
   `PLLDC.mem_den_iff_fourState`), so the stability results of `GFL.DCLink.FourState` and the
-  boundary witnesses of `GFL.DCLink.FourStateBoundary` hold for the carrier.
+  closed Routh conditions of `GFL.DCLink.FourStateBoundary` hold for the carrier.
 * Local exponential stability: for `I_q* = 0` and `V_dc* ≠ 0` a model is locally exponentially
   stable exactly when `V_dc* = 1`, `K_i^pll x_p* = 0` and its four-state reading is an equilibrium
   with `C ≠ 0` whose quartic meets the Routh conditions
   (`BasinGuard.mem_den_locallyExponentiallyStable_iff`: a locally exponentially stable image is an
   equilibrium of the PLL–DC model, and `FourState.mem_den_locallyExponentiallyStable_iff`, converse
-  linearization). With `I_q* = 0` and `V_dc* ≠ 0` the PLL–DC model's Lyapunov, local asymptotic and
-  instability translations are not exact on the carriers either: the carriers at `(0, 0, 1, 0)`
-  whose four-state readings are `FourState.undampedPLL` (Lyapunov stable, on the Routh boundary),
-  `FourStateBoundary.weakFocus` (locally asymptotically stable, on the Routh boundary) and
-  `FourState.offEquilibrium` (unstable, not an equilibrium) are those four-state models
-  (`FourStateBoundary.realize_ne_den_lyapunovStable`,
-  `FourStateBoundary.realize_ne_den_locallyAsymptoticallyStable`,
-  `PLLDC.not_exactUnder_positiveReference_unstable`).
+  linearization). With `I_q* = 0` and `V_dc* ≠ 0` the PLL–DC model's instability translation is
+  not exact on the carriers either: the carrier at `(0, 0, 1, 0)` whose four-state reading is
+  `FourState.offEquilibrium` (unstable, not an equilibrium) witnesses it
+  (`PLLDC.not_exactUnder_positiveReference_unstable`).
 The mirror equilibria (`carrier_equilibrium_iff`), the Jacobian similarity, `P_ac`, the DC-node
 entry and the field identity with the PLL–DC model are static evidence.
 

@@ -55,7 +55,7 @@ stated on the transition matrix: `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for all 
   have hE0 : 0 ≤ E := by positivity
   have hwin : ∀ s t, s ≤ t → t - s ≤ T → ‖transition A t s‖ ≤ E := by
     intro s t hst hts
-    refine (norm_transition_le hA hM hst).trans ?_
+    refine (norm_transition_le hM hst).trans ?_
     rw [hE]
     gcongr
   set β : ℝ := γ / T with hβ
@@ -101,7 +101,9 @@ stated on the transition matrix: `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for all 
     have hbt : b ≤ t := by simp only [hb]; linarith
     have hsplit : transition A t s =
         transition A t b * (transition A b a * transition A a s) := by
-      rw [transition_trans hA hM hsa hab, transition_trans hA hM (hsa.trans hab) hbt]
+      rw [LinearSystems.stateTransitionMatrix_comp hA (fun r _ => hM r) (mem_uIcc_of_le hsa hab),
+        LinearSystems.stateTransitionMatrix_comp hA (fun r _ => hM r)
+          (mem_uIcc_of_le (hsa.trans hab) hbt)]
     have hmono : transition A b a = monodromy A T 0 ^ n := by
       rw [hb, transition_add_nat_mul_period hA hM hT.le hP a n, ha,
         show (k₀ : ℝ) * T = 0 + k₀ * T by ring, monodromy_add_int_mul hA hM hT.le hP 0 k₀]

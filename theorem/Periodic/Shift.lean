@@ -38,19 +38,12 @@ variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M
     (c : ℝ) {s t : ℝ} (hst : s ≤ t) :
     transition (fun r => A (r + c)) t s = transition A (t + c) (s + c) := by
   have hAc : Continuous fun r => A (r + c) := hA.comp (continuous_id.add continuous_const)
-  have hMc : ∀ r, ‖(fun r => A (r + c)) r‖ ≤ M := fun r => hM (r + c)
-  have h1 := transition_self hA hM (s + c)
-  have hΦ := isIntegralCurveOn_transition hA hM (s + c)
   have hY : IsIntegralCurveOn (fun r => transition A (r + c) (s + c))
-      (matField fun r => A (r + c)) (Ici s) := by
-    intro r hr
-    have hmaps : MapsTo (fun r : ℝ => r + c) (Ici s) (Ici (s + c)) :=
-      fun x hx => by simpa using add_le_add_right (show s ≤ x from hx) c
-    have h := HasDerivWithinAt.scomp r (hΦ (r + c) (hmaps hr))
-      ((hasDerivAt_id' r).hasDerivWithinAt.add_const c) hmaps
-    simpa only [matField, Function.comp_def, one_smul] using h
-  have := transition_unique hAc hMc hY t hst
-  simpa [h1] using this.symm
+      (matField fun r => A (r + c)) (Ici s) := fun r _ => by
+    simpa only [matField] using
+      ((Dynamics.stm_hasDerivAt hA (r + c) (s + c)).comp_add_const r c).hasDerivWithinAt
+  have := transition_unique hAc (fun r => hM (r + c)) hY t hst
+  simpa [LinearSystems.stateTransitionMatrix_self] using this.symm
 
 /-- `M_{A_c}(s) = M_A(s + c)`. -/
 @[tmio T, powerlib_foundation] theorem monodromy_shift (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)

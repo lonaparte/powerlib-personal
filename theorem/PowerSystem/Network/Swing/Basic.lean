@@ -74,7 +74,8 @@ Family and connection conclusions.
   With the Hurwitz test the local exponential translation is exact
   (`exact_locallyExponentiallyStable`, by the converse linearization theorem
   `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`).
-* Connection theorems: `chain_le_semantics`, `family_isAutonomous.exact_passive`,
+* Connection theorems: `chain_le_semantics` (from the linearization,
+  `Spectral.chain_le_semantics_of_jacobian`), `family_isAutonomous.exact_passive`,
   `exact_locallyExponentiallyStable`, `mem_den_locallyExponentiallyStable` and
   `mem_den_unstable`. Boundary witness: the instability translation is not exact
   (`not_exact_unstable`): instability is the failure of Lyapunov stability, so an unbalanced
@@ -725,23 +726,6 @@ the untranslated field. -/
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_of_angle p θ hangle hconn)))
 
-@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
-    (hH : Meets m .jacobianStable) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  mem_den_flow_iff.mpr (hurwitz_linearization_locally_exponentially_stable
-    (jacobian m.params m.θ) (reducedField_contDiff m.params)
-    (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
-
-@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
-    (hu : Meets m .jacobianUnstable) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
-  change m ∈ family.den (.flow .unstable)
-  obtain ⟨s, hs, hre⟩ := hu
-  exact mem_den_flow_iff.mpr (Dynamics.unstable_of_characteristic_root_re_pos
-    (jacobian m.params m.θ) (reducedField_contDiff m.params)
-    (reducedField_equilibrium m.params m.θ hp)
-    (hasFDerivAt_reducedField m.params m.θ).fderiv hs hre)
-
 /-- No model has both a Hurwitz reduced Jacobian (angle condition on a connected graph) and an
 unstable one: the whole requirement language is inconsistent. -/
 @[tmio M, powerlib_domain] theorem realize_univ :
@@ -760,17 +744,17 @@ holds without requirement. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, (family (n := n)).chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.powerFlow, .jacobianStable})
-    (Ru := {.powerFlow, .jacobianUnstable}) (fun s => ?_) realize_univ (fun m hm => ?_)
-    (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _ | _
-    · cases P <;> rfl
-    · rfl
-    · rfl
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .powerFlow (by simp)) (hm .jacobianStable (by simp))
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact unstable_of_meets (hm .powerFlow (by simp)) (hm .jacobianUnstable (by simp))
+  refine Spectral.chain_le_semantics_of_jacobian (fun m P => mem_den_flow_iff)
+    family_isAutonomous.den_passive (Rs := {.powerFlow, .jacobianStable})
+    (Ru := {.powerFlow, .jacobianUnstable})
+    (fun s => by rcases s with P | _ | _ <;> (try cases P) <;> rfl)
+    (fun m => jacobian m.params m.θ) (fun m hm => ?_)
+    (fun m hm => (TMIO.mem_realize _ _ _).mp hm .jacobianStable (by simp))
+    fun m hm => (TMIO.mem_realize _ _ _).mp hm .jacobianUnstable (by simp)
+  have hp : Meets m .powerFlow := by
+    rcases hm with hm | hm <;> exact (TMIO.mem_realize _ _ _).mp hm .powerFlow (by simp)
+  exact ⟨reducedField_contDiff m.params, reducedField_equilibrium m.params m.θ hp,
+    (hasFDerivAt_reducedField m.params m.θ).fderiv⟩
 
 /-- An equilibrium of the reduced field at the selected point is a power-balance point (the
 converse of `reducedField_equilibrium`). Read through the existing family endpoint.
@@ -796,12 +780,10 @@ reduced field forces an equilibrium with a Hurwitz Jacobian. -/
     connection% ((family (n := n)).Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian
-    (fun m P => mem_den_flow_iff) ∅ (fun m => jacobian m.params m.θ) (fun m _ hm => ?_)
+    (fun m P => mem_den_flow_iff) ∅ (fun m => jacobian m.params m.θ)
+    (fun m _ hm => Family.chain_le_semantics_iff.mp chain_le_semantics _ hm)
     (fun m _ => reducedField_contDiff m.params)
     (fun m _ => (hasFDerivAt_reducedField m.params m.θ).fderiv) fun m _ heq hH => ?_)
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .powerFlow (by simp [family, translate]))
-      (hm .jacobianStable (by simp [family, translate]))
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (powerFlow_of_equilibrium heq))
@@ -826,7 +808,10 @@ half plane places the model in instability. -/
     (hs : (Linear.characteristicMatrix (jacobian m.params m.θ) s).det = 0) (hre : 0 < s.re) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact unstable_of_meets heq ⟨s, hs, hre⟩
+  refine Family.chain_le_semantics_iff.mp chain_le_semantics _
+    ((TMIO.mem_realize _ _ _).mpr fun q hq => ?_)
+  rcases hq with rfl | rfl
+  exacts [heq, ⟨s, hs, hre⟩]
 
 /-! ### Instability away from equilibrium -/
 

@@ -130,6 +130,47 @@ in Git; working statistics, build receipts and development plans are not kept he
     `SingularPerturbation.hasDerivAt_quadratic`.
   - Classified theorems 7375 → 7298; public connection theorems 1022 → 1016.
 
+- Fourth consolidation wave (deferred items, owner-approved deletions; removed names have
+  no aliases):
+  - One space-time transport law: module `Dynamics/SpaceTime` (the map
+    `(t, x) ↦ (t / c, T x + b)`, field `c • transportField T b f`; every Flow sentence
+    transported once, `holds_spaceTime_iff`, `isIntegralCurveOn_spaceTime`,
+    `isEquilibrium_spaceTime_iff`, `sampledContraction_spaceTime_iff`, `*_of_spaceTime`,
+    `smul_transportField_symm`); `Flow.Property.holds_shift_iff`, `holds_transport_iff`
+    and `holds_timeScale_iff` are its instances. The per-predicate shift, conjugation
+    and time-scale laws are removed (`*_shift_iff` except
+    `globallyExponentiallyStable_shift_iff`, `*_conjEquiv`, `holds_conjEquiv(_iff)`,
+    `forwardComplete_transport_iff`, `globalAsymptoticStable_transport_iff`,
+    `isTrajectoryOn_timeScale`, `isIntegralCurveOn_Ici_timeScale`, the `.timeScale`
+    readings and `*_smul_iff`, `contraction_smul_iff`, `sampledContraction_smul_iff`);
+    `affineCoord`, `transportField`, `Flow.Property.timeScale` move to it.
+  - One LTV transition matrix: `Periodic.transition` is LeanForControl's
+    `stateTransitionMatrix` (the separate construction, `matField_lipschitz`,
+    `transition_self`, `transition_trans`, `isIntegralCurveOn_transition` removed;
+    `Estimation.LTV.stm_hasDerivAt` → `Dynamics.stm_hasDerivAt`, any finite index).
+  - BDF order once: `Numerics.bdfLMM_hasExactOrder` (the k-step BDF has exact order k);
+    `bdf1` … `bdf9` are `bdfLMM k` (`bdf1_exactOrder` … `bdf9_exactOrder`,
+    `bdf7/8/9_rho_eq_bdfLMM` removed).
+  - One soundness law for Jacobian local tables, `Spectral.chain_le_semantics_of_jacobian`,
+    used by the rate PLL, the quasi-static power loop and the network swing.
+  - Guard first passage: the single-term asymptotics are corollaries of the two-term
+    expansions (moved to `MFPTExpansion`; `isBigO_sqrt_of_isBigO`); the explicit
+    non-asymptotic bounds and the reflection proof are removed (`guard_ratio_le`,
+    `guard_ratio_ge`, `guard_ratio_rate_bounds`, `guard_ratio_den_pos`,
+    `guardMFPT_ratio_sub_two_le`, `guardMFPT_guard_ge`, `guardMFPT_guard_le`,
+    `guard_weight_ge_gauss`, `guard_weight_le_gauss`, `guard_firstMoment_le(_weight)`,
+    `guard_weight_ge_window`, `tendsto_guardKappa`, `tendsto_guardEps`,
+    `guardPotential_reflect`, `integral_guardIntegrand_reflect`,
+    `guardPotential_le_barrier_sub_sq`, `barrier_sub_sq_le_guardPotential`,
+    `isBigO_comp_div_atTop`, `guardDelta`); `guard_exists_cut` without the ratio part.
+  - GFL boundary witnesses: the inexpressibility results are proved on the PLL–DC hub's
+    witnesses (`FourStateBoundary.realize_ne_den_*` → `PLLDC.realize_ne_den_*`); the
+    four-state witnesses are removed (`weakFocus`, `frozenPLL`, `FourState.undampedPLL`
+    and their results, `FourState.Model.field`); the weak-focus mechanism (negative
+    first Lyapunov coefficient from the coupling with `X_g ≠ 0`) is no longer
+    certified.
+  - Classified theorems 7298 → 7189; public connection theorems 1016 → 1013.
+
 ## 2026-11-16
 
 - Structural reuse (last pass of the redundancy audit). Removed names are listed

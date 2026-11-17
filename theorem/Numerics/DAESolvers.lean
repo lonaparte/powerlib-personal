@@ -44,9 +44,9 @@ Results.
   injective.
 * `bdf_index2_exact` — on the index-2 DAE `ẋ = y`, `0 = x − p(t)`, BDF`k` of order `k`
   reproduces the algebraic variable exactly, `y_k = p'(t_k)`, for every polynomial `p` of
-  degree `≤ k` (no order reduction); it applies to BDF1–BDF6 through the exact-order facts of
-  `theorem/Numerics/BDF.lean` (`bdf2_exactOrder.1`, …), e.g.
-  `bdf_index2_exact _ _ bdf2_exactOrder.1` for BDF2.
+  degree `≤ k` (no order reduction); it applies to every `k`-step BDF through the exact-order
+  fact `bdfLMM_hasExactOrder` of `theorem/Numerics/BDF.lean`, e.g.
+  `bdf_index2_exact _ _ (bdfLMM_hasExactOrder (k := 2) (by norm_num)).1` for BDF2.
 
 Corrections.
 * §1.3: "BDF`k` has order `p = k` **if and only if** index `≤ 1`" is wrong in the "only if"

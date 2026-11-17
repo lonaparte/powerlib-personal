@@ -8,7 +8,6 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
-import theorem.Dynamics.Pendulum
 import theorem.SpecialFunctions.Sinusoid
 import theorem.GridTiedConverter.PLL.Linear
 import theorem.GridTiedConverter.GFL.DCLink.VoltageControl
@@ -107,14 +106,11 @@ for the local sentences, equilibrium and `a₀ < 0` for instability).
   `PLLDC.mem_den_unstable_of_field_ne_zero`), so the PLL–DC model's instability translation is not
   exact even within positive reference (`PLLDC.not_exactUnder_positiveReference_unstable`,
   `theorem/GridTiedConverter/GFL/DCLink/PLLDC/FourStateSlice.lean`).
-* The undamped PLL (`k_p = 0`, `X_g = 0`) driving a damped dc loop, `undampedPLL`, is Lyapunov
-  stable (`undampedPLL_mem_den_lyapunovStable`) through the sum of the conserved pendulum energy
-  `1 − cos θ + x²/2` and the dc quadratic `u² + u η + (3/2) η²`, which does not increase while the
-  loop gain `cos θ / V` stays in `[3/4, 5/4]`; its quartic `(λ² + 1)(λ² + λ + 1)` fails the strict
-  Routh inequality. The Routh boundary of the four-state models (necessary closed Routh
-  conditions, a weak focus, a frozen PLL, and inexpressibility of Lyapunov stability, local
-  asymptotic stability and instability in the PLL–DC model's language) is
-  `GFL.DCLink.FourStateBoundary`.
+* The necessary closed Routh conditions of the four-state models are
+  `GFL.DCLink.FourStateBoundary`; the inexpressibility of Lyapunov stability, local asymptotic
+  stability and instability in the PLL–DC model's language is proved on the PLL–DC model's own
+  boundary witnesses (`PLLDC.realize_ne_den_lyapunovStable` and companions,
+  `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Boundary.lean`).
 
 Correction: theory-draft §1.2 gives the equilibrium `θ₀ = arcsin(−X_g i_{d0}/V₀)` without
 any stability restriction; the formal statements show that local exponential stability
@@ -566,11 +562,6 @@ structure Model where
   /-- The selected angle `θ₀`. -/
   θ : ℝ
 
-/-- The note's field translated so that the selected operating point is the origin (the
-coordinates of the boundary analyses, `GFL.DCLink.FourStateBoundary`). -/
-def Model.field (m : Model) (z : Dynamics.State 4) : Dynamics.State 4 :=
-  FourState.field m.params (z + opPoint m.θ)
-
 /-- The PLL–DC reading of a four-state model: the PLL–DC system of `toPLLDC` about the
 operating point `(θ₀, 0, 1, 0)` (fixed by the integrator flip). The behaviour of a four-state
 model is that of its image. -/
@@ -779,114 +770,5 @@ def offEquilibrium : Model := ⟨⟨0, ⟨0, 0, 0⟩, 0, 0, 0, 0, 0, ⟨0, 1, 0�
     connection% (offEquilibrium.toPLLDC ∈ PLLDC.family.den (.flow .unstable)) :=
   PLLDC.mem_den_unstable_of_field_ne_zero _ (by simp [Model.toPLLDC, opPoint])
     offEquilibrium_field_ne_zero
-
-/-! ### The Lyapunov stable undamped PLL -/
-
-/-- Undamped PLL with a damped dc loop: `V₀ = k_i = 1`, `X_g = i_{d0} = k_p = I_dc0 = 0`,
-`k_pv = k_iv = 1`, `C = 3/2` (so `γ = 1`), at `θ₀ = 0`. The field is the pendulum `θ̇ = x`,
-`ẋ = −sin θ` driving the dc loop `V̇ = cos θ (−(V − 1) − η) / V`, `η̇ = V − 1`. -/
-def undampedPLL : Model := ⟨⟨1, ⟨0, 0, 0⟩, 0, 0, 1, 1, 1, ⟨0, 3 / 2, 0⟩, 0, rfl, rfl, rfl⟩, 0⟩
-
-@[tmio M, powerlib_domain] private theorem undampedPLL_field (y : Dynamics.State 4) :
-    FourState.field undampedPLL.params y = WithLp.toLp 2 ![y 1, -Real.sin (y 0),
-      Real.cos (y 0) * (-(y 2 - 1) - y 3) / y 2, y 2 - 1] := by
-  ext i
-  fin_cases i <;> simp [Passive.SeriesRLC.reactance, Params.Xg, Params.C, FourState.field,
-      Dynamics.lift, coordField, undampedPLL, vq, idc, Params.γ]
-  ring
-
-/-- The Lyapunov function `1 − cos θ + x²/2 + u² + u η + (3/2) η²`, `u = V − 1`. -/
-private def lsEnergy (y : Dynamics.State 4) : ℝ :=
-  1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + ((y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2)
-
-@[tmio M, powerlib_domain] private theorem lsEnergy_hasFDerivAt (z : Dynamics.State 4) :
-    HasFDerivAt lsEnergy
-      (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 : Dynamics.State 4 →L[ℝ] ℝ) +
-        z 1 • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 1 : Dynamics.State 4 →L[ℝ] ℝ) +
-        (2 * (z 2 - 1) + z 3) • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 2 : Dynamics.State 4 →L[ℝ] ℝ) +
-        ((z 2 - 1) + 3 * z 3) • (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 3 :
-          Dynamics.State 4 →L[ℝ] ℝ)) z := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) :
-    Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (1 : Fin 4) :
-    Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h2 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4) :
-    Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h3 := (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (3 : Fin 4) :
-    Dynamics.State 4 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have hc := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z h0
-  have hu := h2.sub_const 1
-  have h := (((hc.const_sub 1).add ((h1.pow 2).const_mul (1 / 2 : ℝ))).add
-    (((hu.pow 2).add (hu.mul h3)).add ((h3.pow 2).const_mul (3 / 2 : ℝ))))
-  refine h.congr_fderiv ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  simp
-  ring
-
-/-- The undamped PLL with a damped dc loop is Lyapunov stable at `(0, 0, 1, 0)`: the pendulum
-energy `1 − cos θ + x²/2` of the PLL is conserved, and the dc quadratic `u² + u η + (3/2) η²`
-(`u = V − 1`) does not increase while the loop gain `cos θ / V` stays in `[3/4, 5/4]`
-(`|θ| < 1/2`, `|V − 1| < 1/10`). The cascade coupling `cos θ` therefore needs no separate
-input-to-state argument: the sum is a local Lyapunov function, positive away from the point
-(`Dynamics.pendulumEnergy_pos`). -/
-@[tmio TM, powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
-    connection% (undampedPLL.toPLLDC ∈ PLLDC.family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr ?_
-  change LyapunovStable _ _
-  have hc0 : Continuous fun y : Dynamics.State 4 => y 0 :=
-    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) : Dynamics.State 4 →L[ℝ] ℝ).continuous
-  have hc2 : Continuous fun y : Dynamics.State 4 => y 2 :=
-    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4) : Dynamics.State 4 →L[ℝ] ℝ).continuous
-  refine lyapunov_stable (V := lsEnergy)
-    (D := {y | |y 0| < 1 / 2 ∧ |y 2 - 1| < 1 / 10}) (by norm_num)
-    ⟨(isOpen_lt (continuous_abs.comp hc0) continuous_const).inter
-        (isOpen_lt (continuous_abs.comp (hc2.sub continuous_const)) continuous_const),
-      by simp [opPoint, undampedPLL],
-      continuous_iff_continuousAt.mpr fun y => (lsEnergy_hasFDerivAt y).continuousAt,
-      fun y => (lsEnergy_hasFDerivAt y).differentiableAt,
-      by simp [lsEnergy, opPoint,
-          undampedPLL], fun y hy hne => ?_, fun y hy => ?_⟩
-  · have hy0 : |y 0| < 1 / 2 := hy.1
-    have hw : 1 / 2 * (‖y - opPoint undampedPLL.θ‖ ^ 2 - y 0 ^ 2) ≤
-        1 / 2 * y 1 ^ 2 + ((y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2) := by
-      simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, opPoint,
-          undampedPLL]
-      nlinarith [sq_nonneg (y 2 - 1 + y 3), sq_nonneg (y 3)]
-    unfold lsEnergy
-    linarith [Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp [opPoint,
-        undampedPLL]) hw
-      (by linarith [Real.two_le_pi]) hne]
-  · obtain ⟨hy0, hy2⟩ := hy
-    rw [(lsEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
-    simp
-    have hθ := abs_lt.mp hy0
-    have hV := abs_lt.mp hy2
-    have hVpos : 0 < y 2 := by linarith
-    have hcl : 7 / 8 ≤ Real.cos (y 0) := by
-      have := Real.one_sub_sq_div_two_le_cos (x := y 0)
-      nlinarith
-    have hcu : Real.cos (y 0) ≤ 1 := Real.cos_le_one _
-    set c := Real.cos (y 0)
-    set u := y 2 - 1 with hu
-    set e := y 3
-    have hkey : 0 ≤ c * (2 * u ^ 2 + 3 * u * e + e ^ 2) - y 2 * (u ^ 2 + 3 * u * e) := by
-      have hV' : y 2 = u + 1 := by rw [hu]; ring
-      rw [hV']
-      nlinarith [sq_nonneg (u - e), sq_nonneg (u + e), mul_nonneg (sub_nonneg.2 hcl)
-        (sq_nonneg u), mul_nonneg (sub_nonneg.2 hcl) (sq_nonneg e),
-        mul_nonneg (sub_nonneg.2 hcu) (sq_nonneg u), mul_nonneg (sub_nonneg.2 hcu) (sq_nonneg e),
-        mul_nonneg (sub_nonneg.2 hcl) (sq_nonneg (u + e)), mul_nonneg (sub_nonneg.2 hcu)
-        (sq_nonneg (u + e)), mul_nonneg (sub_nonneg.2 hcl) (sq_nonneg (u - e)),
-        mul_nonneg (sub_nonneg.2 hcu) (sq_nonneg (u - e))]
-    have hgoal : Real.sin (y 0) * y 1 + -(y 1 * Real.sin (y 0)) +
-        (2 * u + e) * (c * (1 - y 2 - e) / y 2) + (u + 3 * e) * u =
-        -(c * (2 * u ^ 2 + 3 * u * e + e ^ 2) - y 2 * (u ^ 2 + 3 * u * e)) / y 2 := by
-      rw [hu]
-      field_simp
-      ring
-    rw [hgoal]
-    exact div_nonpos_of_nonpos_of_nonneg (by linarith) hVpos.le
 
 end powerlib.GFL.DCLink.FourState

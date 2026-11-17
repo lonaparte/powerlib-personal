@@ -650,11 +650,8 @@ passivity holds without requirement. -/
   refine Spectral.chain_le_semantics_of_localTable_same
     (Rs := {.equilibrium, .positiveReference, .routh})
     (Ru := {.equilibrium, .positiveReference, .detNeg})
-    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _ | _
-    · cases P <;> rfl
-    · rfl
-    · rfl
+    (fun s => by rcases s with P | _ | _ <;> (try cases P) <;> rfl) realize_univ (fun m hm => ?_)
+    (fun m hm => ?_) family_isAutonomous.den_passive
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     have hr : Meets m .routh := hm .routh (by simp)
     exact mem_den_locallyExponentiallyStable m (hm .positiveReference (by simp))

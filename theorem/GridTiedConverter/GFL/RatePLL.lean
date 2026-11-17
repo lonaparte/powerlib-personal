@@ -84,8 +84,9 @@ the closed-form Jacobian `jac p θ*` (proved to be the `fderiv`) has `tr < 0`, `
 `tr > 0` or `det < 0`. The local sentences translate into the first two, instability into the
 first and the third, passivity into nothing, and the global sentences, decay rates, sampled
 contraction and conservation into the whole (inconsistent) language: unavailable translation
-coverage. `chain_le_semantics` proves every translation sound; `family_isAutonomous.exact_passive`
-proves the passivity translation exact. The stability results are connection memberships:
+coverage. `chain_le_semantics` proves every translation sound from the linearization
+(`Spectral.chain_le_semantics_of_jacobian`); `family_isAutonomous.exact_passive` proves the
+passivity translation exact. The stability results are connection memberships:
 `mem_den_locallyExponentiallyStable_of_tan_lt` and `mem_den_unstable_of_tan_gt`, together with
 `not_mem_den_lyapunovStable_of_tan_gt`. The local exponential translation is exact
 (`exact_locallyExponentiallyStable`): by the converse linearization theorem
@@ -539,28 +540,6 @@ def family : Family Model Requirement 2 0 :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => RatePLL.field m.params)
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
-/-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability. -/
-@[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hs : Meets m .jacobianStable) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two
-    (jac m.params m.θ) (contDiff_field m.params) (field_equilibrium m.params he.1)
-    (fderiv_field m.params he.2 m.θ 0) hs.1 hs.2)
-
-/-- Linearization at `(θ*, 0)`: an unstable Jacobian gives instability. -/
-@[tmio TM, powerlib_domain] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hs : Meets m .jacobianUnstable) :
-    connection% (m ∈ family.den (.flow .unstable)) := by
-  change m ∈ family.den (.flow .unstable)
-  refine mem_den_flow_iff.mpr ?_
-  rcases hs with htr | hdet
-  · exact Criteria.unstable_of_jacobian_trace_pos (jac m.params m.θ)
-      (contDiff_field m.params) (field_equilibrium m.params he.1)
-      (fderiv_field m.params he.2 m.θ 0) htr
-  · exact Criteria.unstable_of_jacobian_det (jac m.params m.θ)
-      (contDiff_field m.params) (field_equilibrium m.params he.1)
-      (fderiv_field m.params he.2 m.θ 0) (by rw [neg_one_sq, one_mul]; exact hdet)
-
 /-! ### Soundness of the translation -/
 
 /-- No model has both a stable and an unstable Jacobian: the whole requirement language is
@@ -579,17 +558,22 @@ the origin), and passivity holds without requirement. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.chain_le_semantics_of_localTable_same
-    (Rs := {.equilibrium, .jacobianStable}) (Ru := {.equilibrium, .jacobianUnstable})
-    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _ | _
-    · cases P <;> rfl
-    · rfl
-    · rfl
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .equilibrium (by simp)) (hm .jacobianStable (by simp))
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact unstable_of_meets (hm .equilibrium (by simp)) (hm .jacobianUnstable (by simp))
+  refine Spectral.chain_le_semantics_of_jacobian (fun m P => mem_den_flow_iff)
+    family_isAutonomous.den_passive (Rs := {.equilibrium, .jacobianStable})
+    (Ru := {.equilibrium, .jacobianUnstable})
+    (fun s => by rcases s with P | _ | _ <;> (try cases P) <;> rfl) (fun m => jac m.params m.θ)
+    (fun m hm => ?_) (fun m hm => ?_) fun m hm => ?_
+  · have he : Meets m .equilibrium := by
+      rcases hm with hm | hm <;> exact (TMIO.mem_realize _ _ _).mp hm .equilibrium (by simp)
+    exact ⟨contDiff_field m.params, field_equilibrium m.params he.1,
+      fderiv_field m.params he.2 m.θ 0⟩
+  · exact (Criteria.isHurwitz_fin_two_iff _).2 ((TMIO.mem_realize _ _ _).mp hm .jacobianStable
+      (by simp))
+  · have hu : Meets m .jacobianUnstable :=
+      (TMIO.mem_realize _ _ _).mp hm .jacobianUnstable (by simp)
+    rcases hu with h | h
+    · exact Criteria.exists_root_re_pos_of_trace_pos _ h
+    · exact Criteria.exists_root_re_pos_of_det _ (by rw [neg_one_sq, one_mul]; exact h)
 
 /-! ### Exactness of the local exponential translation -/
 
@@ -629,11 +613,9 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
   unfold powerlib.TMIO.Statement
   refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian_on
     (fun m P => mem_den_flow_iff) ∅ (fun m => m.params.D0 ≠ 0) (fun m => jac m.params m.θ)
-    (fun m _ hm => ?_) (fun m _ hD0 h => ?_) (fun m _ _ => contDiff_field m.params)
+    (fun m _ hm => Family.chain_le_semantics_iff.mp chain_le_semantics _ hm)
+    (fun m _ hD0 h => ?_) (fun m _ _ => contDiff_field m.params)
     (fun m _ hD0 => fderiv_field m.params hD0 m.θ 0) fun m _ hD0 he hH => ?_)
-  · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact les_of_meets (hm .equilibrium (by simp [family, translate]))
-      (hm .jacobianStable (by simp [family, translate]))
   · exact not_les_of_D0_eq_zero (not_not.mp hD0) _ (mem_den_flow_iff.mp h)
   · rw [Criteria.isHurwitz_fin_two_iff] at hH
     rw [(connection_proof% TMIO.mem_realize)]
@@ -653,8 +635,11 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
     (htan : Real.tan θ < p.ωs * p.kp / p.ki) :
     connection% (Model.mk p θ ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact les_of_meets ⟨heq, hD0.ne'⟩
-    ⟨(trace_jac_neg_iff p hD0 hV hki hωs hcos heq).2 htan, det_jac_pos p hD0 hV hki hcos⟩
+  refine Family.chain_le_semantics_iff.mp chain_le_semantics _
+    ((TMIO.mem_realize _ _ _).mpr fun q hq => ?_)
+  rcases hq with rfl | rfl
+  exacts [⟨heq, hD0.ne'⟩,
+    ⟨(trace_jac_neg_iff p hD0 hV hki hωs hcos heq).2 htan, det_jac_pos p hD0 hV hki hcos⟩]
 
 /-- Rate-coupled GFL PLL: above the angle `tan θ_H = ω_s k_p / k_i` the operating point
 `(θ, 0)` is unstable. -/
@@ -663,8 +648,10 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
     connection% (Model.mk p θ ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact unstable_of_meets ⟨heq, hD0.ne'⟩
-    (Or.inl ((trace_jac_pos_iff p hD0 hV hki hωs hcos heq).2 htan))
+  refine Family.chain_le_semantics_iff.mp chain_le_semantics _
+    ((TMIO.mem_realize _ _ _).mpr fun q hq => ?_)
+  rcases hq with rfl | rfl
+  exacts [⟨heq, hD0.ne'⟩, Or.inl ((trace_jac_pos_iff p hD0 hV hki hωs hcos heq).2 htan)]
 
 /-- Above the boundary angle the operating point is not Lyapunov stable. -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_lyapunovStable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)

@@ -96,6 +96,7 @@ import theorem.Dynamics.LaSalle.Ball
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.Dynamics.LaSalle.Passivity
 import theorem.Dynamics.State
+import theorem.Dynamics.SpaceTime
 import theorem.Dynamics.Transport
 import theorem.Dynamics.PiecewiseAffine
 import theorem.Dynamics.Pendulum

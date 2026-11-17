@@ -20,7 +20,7 @@ Scope.
   LeanForControl's Peano–Baker theorem for `LinearSystems.stateTransitionMatrix` (Theorem 5.1,
   P5.1). For constant `A` they are discharged by `Φ(t, s) = e^{(t−s)A}` (`expFund_hasDerivAt`,
   `expFund_self`), for continuous time-varying `A` by LeanForControl's state-transition matrix
-  (`theorem/Estimation/KalmanLTVTransition.lean`, `LTV.stm_hasDerivAt` with
+  (`theorem/Dynamics/VariationOfConstants.lean`, `Dynamics.stm_hasDerivAt` with
   `stateTransitionMatrix_self`).
 
 Source: work-sync theory/T-kalman-filter.md §1.2 (continuous-time prediction between

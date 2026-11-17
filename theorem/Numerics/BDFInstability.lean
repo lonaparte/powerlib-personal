@@ -17,7 +17,8 @@ Model boundary.
   homogeneous recurrence (and Dahlquist's equivalence theorem) is not formalized here.
 * The `k`-step BDF has `σ(ζ) = β_k ζ^k` and `ρ_k(ζ) = β_k Σ_{j=1}^{k} (1/j) ζ^{k-j} (ζ - 1)^j`
   with `β_k = 1 / H_k`, `H_k = Σ_{j=1}^{k} 1/j` (`bdfRhoSum k`, summed as `j + 1` over
-  `range k`; `bdfLMM k` is this method for every `k`, with `α_i = [ζⁱ] bdfRhoSum k / H_k`).
+  `range k`; the method is `bdfLMM k` of `theorem/Numerics/BDF.lean`, with
+  `α_i = [ζⁱ] bdfRhoSum k / H_k`).
 
 Source: work-sync theory/T-numerical-integration.md §1.5 (0-stability: all roots of `ρ` in
 `|ζ| ≤ 1`, those on `|ζ| = 1` simple), §1.6 (BDF table row "k ≥ 7: 0-不稳定") and §2.4
@@ -47,11 +48,10 @@ Results.
     **the `k`-step BDF is not zero-stable for every `k ≥ 7`**.
   - `LMM.not_rootCondition_of_rho_eq`: a method with the same `ρ` as one having a root outside
     the closed unit disk violates the root condition.
-  - `bdf7`, `bdf8`, `bdf9`: the coefficient tables, each of exact order `k`
-    (`bdf7_exactOrder`) and with the same `ρ` as `bdfLMM 7` (`bdf7_rho_eq_bdfLMM`, i.e.
-    `ρ = β_7 · bdfRhoSum 7`), and likewise `bdf8_…`, `bdf9_…`; their failure of the root
-    condition is `LMM.not_rootCondition_of_rho_eq` with `bdfLMM_exists_root_norm_gt_one`
-    (numerically the unstable roots have `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475` for `k = 7, 8, 9`).
+  - `bdf7`, `bdf8`, `bdf9`: role names for `bdfLMM 7`, `bdfLMM 8`, `bdfLMM 9` (coefficients in
+    the docstrings); exact order `k` is `bdfLMM_hasExactOrder`, failure of the root condition
+    `bdfLMM_not_rootCondition` (numerically the unstable roots have
+    `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475` for `k = 7, 8, 9`).
 
 Proof method (exact, kernel-checked; no floating point, Rules §12). Two arguments.
 
@@ -78,8 +78,7 @@ top three coefficients of `ρ_k`.
 
 Not formalized.
 * Zero-stability of BDF1–BDF6 (all roots of `ρ_k` in the closed unit disk, the root `ζ = 1`
-  simple), and exact order `k` of `bdfLMM k` for general `k` (checked for the tables
-  `bdf7`–`bdf9` here and BDF1–BDF6 in `theorem/Numerics/BDF.lean`).
+  simple).
 -/
 
 noncomputable section
@@ -328,16 +327,8 @@ the closed unit disk, then `‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖` for `0 
   simp only [not_exists, not_and, not_lt] at hne
   exact absurd (norm_bdfRhoSum_le_norm_bdfRevSum hk hne hw0 hw) (not_le.mpr hlt)
 
-/-- Harmonic number `H_k = Σ_{j=1}^{k} 1/j`. -/
-def bdfHarmonic (k : ℕ) : ℚ := ∑ j ∈ Finset.range k, 1 / ((j + 1 : ℕ) : ℚ)
-
-/-- `bdfRhoSum k` with rational coefficients. -/
-def bdfPolyQ (k : ℕ) : ℚ[X] :=
-  ∑ j ∈ Finset.range k, Polynomial.C (1 / ((j + 1 : ℕ) : ℚ)) * X ^ (k - 1 - j) * (X - 1) ^ (j + 1)
-
-/-- The `k`-step BDF for every `k`: `ρ = bdfRhoSum k / H_k`, `σ = ζ^k / H_k`. -/
-def bdfLMM (k : ℕ) : LMM k :=
-  bdf k (fun i => (bdfPolyQ k).coeff i / bdfHarmonic k) (1 / bdfHarmonic k)
+/-! `bdfHarmonic`, `bdfPolyQ` (`bdfRhoSum k` with rational coefficients) and `bdfLMM` are
+defined in `theorem/Numerics/BDF.lean`. -/
 
 @[tmio T, powerlib_foundation] theorem bdfPolyQ_map (k : ℕ) :
     (bdfPolyQ k).map (algebraMap ℚ ℂ) = bdfPoly k := by
@@ -1049,78 +1040,21 @@ modulus `> 1`. -/
   obtain ⟨ζ, hζ, h1⟩ := bdfLMM_exists_root_norm_gt_one hk
   exact (bdfLMM k).not_rootCondition_of_root hζ h1
 
-/-! ## The coefficient tables BDF7–BDF9
+/-! ## Role names BDF7–BDF9
 
-Each table has exact order `k` and the same `ρ` as `bdfLMM k`, so it is not zero-stable by
-`LMM.not_rootCondition_of_rho_eq` and `bdfLMM_exists_root_norm_gt_one`; it is consistent by
-`LMM.consistent_of_hasOrder`. -/
+Each is `bdfLMM k`: exact order `k` by `bdfLMM_hasExactOrder`, consistent by
+`LMM.consistent_of_hasOrder`, not zero-stable by `bdfLMM_not_rootCondition`. -/
 
-/-! ### BDF7 -/
+/-- BDF7: `α = (-20/363, 490/1089, -196/121, 1225/363, -4900/1089, 490/121, -980/363, 1)`,
+`β_7 = 140/363`. -/
+abbrev bdf7 : LMM 7 := bdfLMM 7
 
-/-- BDF7 (`β_j = 0` for `j < 7`, `β_7 = 140/363`). -/
-def bdf7 : LMM 7 :=
-  bdf 7 ![-20/363, 490/1089, -196/121, 1225/363, -4900/1089, 490/121, -980/363, 1] (140/363)
+/-- BDF8: `α = (35/761, -320/761, 3920/2283, -3136/761, 4900/761, -15680/2283, 3920/761,
+-2240/761, 1)`, `β_8 = 280/761`. -/
+abbrev bdf8 : LMM 8 := bdfLMM 8
 
-@[tmio T, powerlib_foundation] theorem bdf7_exactOrder : bdf7.HasExactOrder 7 := by
-  refine ⟨fun q hq => ?_, ?_⟩
-  · interval_cases q <;> simp [LMM.C, bdf7, bdf, Fin.sum_univ_succ] <;> norm_num
-  · simp [LMM.C, bdf7, bdf, Fin.sum_univ_succ]; norm_num
-
-/-- The table `bdf7` has the same first characteristic polynomial as `bdfLMM 7`
-(`= β_7 · bdfRhoSum 7`). -/
-@[tmio T, powerlib_foundation] theorem bdf7_rho_eq_bdfLMM (ζ : ℂ) :
-    bdf7.rho ζ = (bdfLMM 7).rho ζ := by
-  have h : bdf7.rho ζ = (140 / 363 : ℂ) * bdfRhoSum 7 ζ := by
-    simp [LMM.rho, bdf7, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
-    ring
-  rw [h, bdfLMM_rho_eq]
-  congr 1
-  norm_num [bdfHarmonic, Finset.sum_range_succ]
-
-/-! ### BDF8 -/
-
-/-- BDF8 (`β_j = 0` for `j < 8`, `β_8 = 280/761`). -/
-def bdf8 : LMM 8 :=
-  bdf 8 ![35/761, -320/761, 3920/2283, -3136/761, 4900/761, -15680/2283, 3920/761, -2240/761,
-      1] (280/761)
-
-@[tmio T, powerlib_foundation] theorem bdf8_exactOrder : bdf8.HasExactOrder 8 := by
-  refine ⟨fun q hq => ?_, ?_⟩
-  · interval_cases q <;> simp [LMM.C, bdf8, bdf, Fin.sum_univ_succ] <;> norm_num
-  · simp [LMM.C, bdf8, bdf, Fin.sum_univ_succ]; norm_num
-
-/-- The table `bdf8` has the same first characteristic polynomial as `bdfLMM 8`
-(`= β_8 · bdfRhoSum 8`). -/
-@[tmio T, powerlib_foundation] theorem bdf8_rho_eq_bdfLMM (ζ : ℂ) :
-    bdf8.rho ζ = (bdfLMM 8).rho ζ := by
-  have h : bdf8.rho ζ = (280 / 761 : ℂ) * bdfRhoSum 8 ζ := by
-    simp [LMM.rho, bdf8, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
-    ring
-  rw [h, bdfLMM_rho_eq]
-  congr 1
-  norm_num [bdfHarmonic, Finset.sum_range_succ]
-
-/-! ### BDF9 -/
-
-/-- BDF9 (`β_j = 0` for `j < 9`, `β_9 = 2520/7129`). -/
-def bdf9 : LMM 9 :=
-  bdf 9 ![-280/7129, 2835/7129, -12960/7129, 35280/7129, -63504/7129, 79380/7129, -70560/7129,
-      45360/7129, -22680/7129, 1] (2520/7129)
-
-@[tmio T, powerlib_foundation] theorem bdf9_exactOrder : bdf9.HasExactOrder 9 := by
-  refine ⟨fun q hq => ?_, ?_⟩
-  · interval_cases q <;> simp [LMM.C, bdf9, bdf, Fin.sum_univ_succ] <;> norm_num
-  · simp [LMM.C, bdf9, bdf, Fin.sum_univ_succ]; norm_num
-
-/-- The table `bdf9` has the same first characteristic polynomial as `bdfLMM 9`
-(`= β_9 · bdfRhoSum 9`). -/
-@[tmio T, powerlib_foundation] theorem bdf9_rho_eq_bdfLMM (ζ : ℂ) :
-    bdf9.rho ζ = (bdfLMM 9).rho ζ := by
-  have h : bdf9.rho ζ = (2520 / 7129 : ℂ) * bdfRhoSum 9 ζ := by
-    simp [LMM.rho, bdf9, bdf, Fin.sum_univ_succ, bdfRhoSum, Finset.sum_range_succ]
-    ring
-  rw [h, bdfLMM_rho_eq]
-  congr 1
-  norm_num [bdfHarmonic, Finset.sum_range_succ]
+/-- BDF9: `α = (-280/7129, 2835/7129, -12960/7129, 35280/7129, -63504/7129, 79380/7129,
+-70560/7129, 45360/7129, -22680/7129, 1)`, `β_9 = 2520/7129`. -/
+abbrev bdf9 : LMM 9 := bdfLMM 9
 
 end powerlib.Numerics

@@ -2,10 +2,11 @@ import theorem.Asymptotics.Guard.MFPT
 import theorem.Asymptotics.LaplaceTwoTerm
 import theorem.Asymptotics.EndpointLaplace
 
-/-! # Guard MFPT: the half-order term is present, with coefficient `1/√(πX)`
+/-! # Guard MFPT: two-term expansions, `T_committed / T_guard → 2` and `T_guard ~ P e^X`
 
 One-variable real analysis of the explicit MFPT double integral: two-term expansions of
-`T_guard` and of the committed-to-guard ratio, which show that the `O(X^{−1/2})` rates are sharp.
+`T_guard` and of the committed-to-guard ratio, which show that the `O(X^{−1/2})` rates are sharp
+and give the single-term asymptotics as corollaries.
 Nothing here is a stochastic statement (the integral is taken as the definition of the MFPT, as in
 the source note).
 
@@ -23,6 +24,15 @@ Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("趋近 2 的�
 §1.5 (`× 2` for committed escape).
 
 Results.
+* Single-term asymptotics (source §1.2, §1.3, §1.5), each a corollary of the two-term expansion
+  below (dropping the half-order term, `isBigO_sqrt_of_isBigO`):
+  `tendsto_guardMFPT_ratio` — `T(r_b)/T(r_c) → 2` as `D̃ → 0⁺` for every `r_b > r_c` (the source's
+  placement `U(r_b) ≪ U(r_c)` is not needed); `tendsto_guardMFPT_ratio_inv` — `T_guard/T_committed
+  → 1/2`; `guardMFPT_ratio_sub_two_isBigO` — `T(r_b)/T(r_c) − 2 = O(√D̃)`, i.e.
+  `T_committed/T_guard = 2(1 + O(X^{−1/2}))`; `guardMFPT_guard_isBigO` —
+  `T_guard/(P e^X) − 1 = O(√D̃)`, i.e. `T_guard = P e^X (1 + O(X^{−1/2}))`;
+  `tendsto_guardMFPT_guard` — `T_guard/(P e^X) → 1`; `guardMFPT_committed_isBigO` —
+  `T_committed = 2 P e^X (1 + O(√D̃))`.
 * `guardMFPT_guard_two_term` — `T_guard/(P e^X) = 1 + c√D̃ + O(D̃)`;
   `tendsto_guardMFPT_guard_sub_one_div_sqrt`: `(T_guard/(P e^X) − 1)/√D̃ → c`;
   with `tendsto_sqrt_mul_comp_div_atTop` and `sqrt_barrierHeight_mul_halfOrder` this is
@@ -37,13 +47,13 @@ Results.
   `guardMFPT_guard_isBigO` and `guardMFPT_ratio_sub_two_isBigO` are sharp:
   `guardMFPT_guard_sub_one_isTheta`, `guardMFPT_ratio_sub_two_isTheta` (`=Θ(√D̃)`, hence
   `≠ o(√D̃)`).
-  This settles for the integral itself what `Asymptotics/Guard/MFPT.lean` only had from the
-  truncated table `endpointCorrection_ne_zero_iff`.
+  This settles for the integral itself what the truncated table only gave
+  (`endpointCorrection_ne_zero_iff`).
 * `guardMFPT_committed_two_term` — `T_committed = 2 P e^X (1 + O(D̃))`, i.e. `1 + O(1/X)` in
   `X = ΔU/D̃` (`isBigO_comp_div_atTop_inv`): the half-order terms of the two halves of the barrier
   peak cancel (committed escape integrates the full Gaussian, an interior Laplace integral), so
-  the whole half-order term of the ratio comes from `T_guard`. This sharpens the `O(X^{−1/2})`
-  upper bound `guardMFPT_committed_isBigO`; it is consistent with the source (§1.2:
+  the whole half-order term of the ratio comes from `T_guard`. Its weakening is
+  `guardMFPT_committed_isBigO` (`O(X^{−1/2})`); it is consistent with the source (§1.2:
   "极值成为内点 ⇒ 完整高斯").
 
 Route. Morse substitution `u = y² − r_c²` makes the barrier phase exactly Gaussian, because
@@ -489,7 +499,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
       field_simp
     rw [e]; linarith
 
-/-! ## Two-term expansions of `T_guard`, of the part beyond the top and of `T_committed` -/
+/-! ## Two-term expansions and their single-term corollaries -/
 
 /-- Real-inequality core of `guardMFPT_guard_two_term`. -/
 @[tmio T, powerlib_foundation] private theorem guard_two_term_core {G w e ε c s C c₂ D : ℝ} (hD0 : 0 < D)
@@ -616,6 +626,39 @@ tails contribute only `O(D̃)` (`guardMFPT_guard_weight_bounds`). -/
   exact guard_two_term_core hD0 hD1.le hs1 hc0 hc₂0 he1le hε0 hεle hw0
     (by simpa only [sub_sub] using hCD) hlo hhi
 
+/-- An expansion `f(D̃) = c √D̃ + O(D̃)` gives `f(D̃) = O(√D̃)` as `D̃ → 0⁺`. -/
+@[tmio T, powerlib_foundation] theorem isBigO_sqrt_of_isBigO {f : ℝ → ℝ} {c : ℝ}
+    (h : (fun D => f D - c * √D) =O[𝓝[>] 0] fun D => D) : f =O[𝓝[>] 0] fun D => √D := by
+  have hs : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) :=
+    (Real.continuous_sqrt.tendsto' 0 0 Real.sqrt_zero).mono_left nhdsWithin_le_nhds
+  have hD : (fun D : ℝ => D) =O[𝓝[>] 0] fun D => √D := by
+    refine ((hs.isBigO_one ℝ).mul (Asymptotics.isBigO_refl (fun D : ℝ => √D) _)).congr' ?_
+      (Eventually.of_forall fun D => one_mul _)
+    filter_upwards [self_mem_nhdsWithin] with D hD
+    exact Real.mul_self_sqrt (le_of_lt hD)
+  exact ((h.trans hD).add ((Asymptotics.isBigO_refl (fun D : ℝ => √D) (𝓝[>] 0)).const_mul_left
+    c)).congr_left fun D => by ring
+
+/-- **`T_guard = P e^X (1 + O(√D̃))`** as `D̃ → 0⁺` (source §1.3,
+`T_guard ∼ (√π/2) √(D̃ l₁)/α² e^X (1 + O(X^{−1/2}))`), `P = guardPrefactor`, `X = ΔU/D̃`: the
+two-term expansion `guardMFPT_guard_two_term` without its half-order term. -/
+@[tmio M, powerlib_foundation] theorem guardMFPT_guard_isBigO (hα : 0 < α) (hl : 0 < l₁) :
+    (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
+        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1) =O[𝓝[>] 0]
+      fun D => √D :=
+  isBigO_sqrt_of_isBigO (c := 2 * √l₁ / (√π * α))
+    ((guardMFPT_guard_two_term hα hl).congr_left fun D => by ring)
+
+/-- `T_guard / (P e^X) → 1` as `D̃ → 0⁺`. -/
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_guard (hα : 0 < α) (hl : 0 < l₁) :
+    Tendsto (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
+        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) (𝓝[>] 0) (𝓝 1) := by
+  have hs : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) :=
+    (Real.continuous_sqrt.tendsto' 0 0 Real.sqrt_zero).mono_left nhdsWithin_le_nhds
+  have h := ((guardMFPT_guard_isBigO hα hl).trans_tendsto hs).add_const 1
+  rw [zero_add] at h
+  exact h.congr fun D => by ring
+
 /-- **Two-term expansion of the part beyond the top** (`D̃ → 0⁺`), for every committed-escape
 boundary `r_b > r_c`: `(T(r_b) − T_guard)/(P e^X) = 1 − c √D̃ + O(D̃)`, `c = 2√l₁/(√π α)`. The
 half-order term has the sign opposite to that of `T_guard` (`guardMFPT_guard_two_term`): beyond the
@@ -627,7 +670,7 @@ top the Morse amplitude is `(r_c² + u)⁻¹`, with slope `−r_c⁻⁴` (`guard
         2 * √l₁ / (√π * α) * √D) =O[𝓝[>] 0] fun D => D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
-  obtain ⟨a, ha, har, hψ, -⟩ := guard_exists_cut hα hl hrb (t := 0) one_pos
+  obtain ⟨a, ha, har, hψ⟩ := guard_exists_cut hα hl hrb
   have ha2 : a ^ 2 < α / l₁ := by
     have := pow_lt_pow_left₀ har ha.le two_ne_zero; rwa [hrc2] at this
   have hca : 0 < α * a ^ 2 / 2 := by positivity
@@ -701,6 +744,17 @@ the full Gaussian, an interior Laplace integral. This sharpens `guardMFPT_commit
   field_simp
   ring
 
+/-- **`T_committed = 2 P e^X (1 + O(√D̃))`** as `D̃ → 0⁺`, for every committed-escape boundary
+`r_b > r_c` (source §1.5, "`× 2` 承诺逃逸"): a weakening of `guardMFPT_committed_two_term`, whose
+relative error is `O(D̃)`. -/
+@[tmio M, powerlib_foundation] theorem guardMFPT_committed_isBigO (hα : 0 < α) (hl : 0 < l₁)
+    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
+    (fun D => guardMFPT α l₁ D rb /
+        (2 * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) - 1) =O[𝓝[>] 0]
+      fun D => √D :=
+  isBigO_sqrt_of_isBigO (c := 0)
+    ((guardMFPT_committed_two_term hα hl hrb).congr_left fun D => by ring)
+
 /-- **Two-term expansion of the ratio** (source §1.2): for every `r_b > r_c`,
 `T(r_b)/T(r_c) = 2 − 2c √D̃ + O(D̃)` as `D̃ → 0⁺`, `c = 2√l₁/(√π α)`; equivalently
 `T_committed/T_guard = 2 (1 − 1/√(πX) + O(1/X))`. -/
@@ -738,6 +792,43 @@ the full Gaussian, an interior Laplace integral. This sharpens `guardMFPT_commit
     field_simp
     ring
   · exact Filter.Eventually.of_forall fun D => mul_one D
+
+/-- **`T_committed / T_guard = 2 + O(√D̃)`** as `D̃ → 0⁺` (source §1.2: the approach to `2` is
+itself an endpoint effect of relative order `X^{−1/2}`, `X = ΔU/D̃`), for every committed-escape
+boundary `r_b > r_c`: the two-term expansion `guardMFPT_ratio_two_term` without its half-order
+term. -/
+@[tmio M, powerlib_foundation] theorem guardMFPT_ratio_sub_two_isBigO (hα : 0 < α) (hl : 0 < l₁)
+    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
+    (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2) =O[𝓝[>] 0]
+      fun D => √D :=
+  isBigO_sqrt_of_isBigO (c := -(2 * (2 * √l₁ / (√π * α))))
+    ((guardMFPT_ratio_two_term hα hl hrb).congr_left fun D => by ring)
+
+/-- **`T_committed / T_guard → 2`** (source §1.2): for the truncated subcritical-Hopf potential
+`U(r) = αr²/2 − l₁r⁴/4` (`α, l₁ > 0`) and any committed-escape boundary `r_b > r_c = √(α/l₁)`,
+the ratio of the mean first-passage times `T(r_b)/T(r_c)` (`guardMFPT`) tends to `2` as the noise
+intensity `D̃ → 0⁺` (equivalently `X = ΔU/D̃ → ∞`): stopping at the barrier top integrates only
+half of the Gaussian barrier peak. The source's placement `U(r_b) ≪ U(r_c)` is not needed. -/
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+    (hrb : guardRadius α l₁ < rb) :
+    Tendsto (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁))
+      (𝓝[>] 0) (𝓝 2) := by
+  have hs : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) :=
+    (Real.continuous_sqrt.tendsto' 0 0 Real.sqrt_zero).mono_left nhdsWithin_le_nhds
+  have h := ((guardMFPT_ratio_sub_two_isBigO hα hl hrb).trans_tendsto hs).add_const 2
+  rw [zero_add] at h
+  exact h.congr fun D => by ring
+
+/-- The limit of `T_guard / T_committed` is `1/2`: the guard (first-arrival) time underestimates the
+committed escape time by a factor of two. -/
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio_inv (hα : 0 < α) (hl : 0 < l₁)
+    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
+    Tendsto (fun D => guardMFPT α l₁ D (guardRadius α l₁) / guardMFPT α l₁ D rb)
+      (𝓝[>] 0) (𝓝 (1 / 2)) := by
+  have h := (tendsto_guardMFPT_ratio hα hl hrb).inv₀ (by norm_num)
+  rw [one_div]
+  refine h.congr fun D => ?_
+  simp only [inv_div]
 
 /-! ## The half-order coefficient: limits and sharpness -/
 

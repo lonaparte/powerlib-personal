@@ -51,7 +51,10 @@ Results.
   `chain_le_semantics_of_localTable` proves every translation sound from the inconsistency of the
   whole language and the three obligations (`Rl` gives Lyapunov stability, `Rs` local exponential
   stability, `Ru` instability) plus passivity on `Rp`; `chain_le_semantics_of_localTable_same` is
-  the common case `Rl = Rs`, `Rp = ∅` with every member passive. Scaffold:
+  the common case `Rl = Rs`, `Rp = ∅` with every member passive; `chain_le_semantics_of_jacobian`
+  discharges it from the linearization (`C¹` fields with an equilibrium at the point, a Hurwitz
+  Jacobian on `Rs`, a characteristic root in the open right half plane on `Ru`; the inconsistency
+  of the whole language follows). Scaffold:
   `theorem/Flow/FlowSemantics.agda` (the sentence kinds and the local table).
 * Exactness: `exactUnder_iff_forall` (within a context, by membership), `exactUnder_les_of_jacobian`
   and `exactUnder_les_of_jacobian_local` (converse linearization within a context: soundness of the
@@ -326,6 +329,38 @@ sentences, passivity has none, and every member is passive (a system without por
   chain_le_semantics_of_localTable ht hinc
     (fun _ hx => den_locallyExponentiallyStable_subset_lyapunovStable (hS hx)) hS hU
     (fun x _ => by rw [hpas]; trivial)
+
+/-- Soundness of the local table from the linearization. The flow sentences are read on `f x` at
+`pt x` and every member is passive; a member meeting `Rs` or `Ru` has a `C¹` field with an
+equilibrium at the point and Jacobian `jac x` there, Hurwitz on `Rs` and with a characteristic
+root in the open right half plane on `Ru`. No Jacobian is both, so the whole language is
+inconsistent, and every translation is sound (LeanForControl's linearization theorems). -/
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_jacobian {F : Family X Q n 0}
+    {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
+    {pt : X → EuclideanSpace ℝ (Fin n)}
+    (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
+    (hpas : F.den .passive = univ) (ht : ∀ s, F.translate s = localTable Rs Rs Ru ∅ s)
+    (jac : X → Matrix (Fin n) (Fin n) ℝ)
+    (hlin : ∀ x ∈ realize F.meets Rs ∪ realize F.meets Ru, ContDiff ℝ 1 (f x) ∧
+      f x (pt x) = 0 ∧
+      fderiv ℝ (f x) (pt x) = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (jac x))
+    (hS : ∀ x ∈ realize F.meets Rs, LinearSystems.IsHurwitz (jac x))
+    (hU : ∀ x ∈ realize F.meets Ru,
+      ∃ s : ℂ, (Linear.characteristicMatrix (jac x) s).det = 0 ∧ 0 < s.re) :
+    connection% (∀ P, F.chain P ≤ F.semantics P) := by
+  change ∀ P, F.chain P ≤ F.semantics P
+  have hsub : ∀ R, realize F.meets univ ⊆ realize F.meets R :=
+    fun R => TMIO.realize_antitone _ (subset_univ R)
+  refine chain_le_semantics_of_localTable_same ht (eq_empty_iff_forall_notMem.mpr fun x hx => ?_)
+    (fun x hx => ?_) (fun x hx => ?_) hpas
+  · obtain ⟨s, hs, hre⟩ := hU x (hsub _ hx)
+    exact lt_asymm hre ((Linear.spectrallyStable_iff_isHurwitz _).2 (hS x (hsub _ hx)) s hs)
+  · obtain ⟨hC, he, hJ⟩ := hlin x (Or.inl hx)
+    exact (hden x _).mpr
+      ((Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ hC hJ).mpr ⟨he, hS x hx⟩)
+  · obtain ⟨hC, he, hJ⟩ := hlin x (Or.inr hx)
+    obtain ⟨s, hs, hre⟩ := hU x hx
+    exact (hden x _).mpr (Dynamics.unstable_of_characteristic_root_re_pos _ hC he hJ hs hre)
 
 end Table
 

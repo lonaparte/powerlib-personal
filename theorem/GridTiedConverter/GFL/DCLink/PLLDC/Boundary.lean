@@ -58,11 +58,21 @@ Results.
   `not_exactUnder_lyapunovStable` (witness `hopfCenter`) and
   `not_exactUnder_locallyAsymptoticallyStable` (witness `hopfDamped`), context
   `{equilibrium, positiveReference}`.
+* Inexpressibility in the requirement language: for every requirement set `T`,
+  `TMIO.realize Meets T` differs from the Lyapunov (`realize_ne_den_lyapunovStable`, witnesses
+  `hopfCenter` and `cdcZero`), instability (`realize_ne_den_unstable`, the same pair) and local
+  asymptotic (`realize_ne_den_locallyAsymptoticallyStable`, `hopfDamped` and `hopfCenter`)
+  denotations of `family`. The three witnesses meet exactly `equilibrium` and
+  `positiveReference` (Jacobian determinants `1`, `0`, `3`, so not `detNeg`; on the boundary, so
+  neither `routh` nor `offBoundary`) but differ on these sentences
+  (`Spectral.realize_ne_den_of_indistinguishable`), so no translation is exact for them.
 
 Family and connection conclusions.
 Connection conclusions on `PLLDC.family`: `exactUnder_offBoundary`,
 `not_exactUnder_lyapunovStable`, `not_exactUnder_locallyAsymptoticallyStable`,
-`mem_den_unstable_of_violation` and the witness memberships above; the `*_mem_realize` and
+`realize_ne_den_lyapunovStable`, `realize_ne_den_unstable`,
+`realize_ne_den_locallyAsymptoticallyStable`, `mem_den_unstable_of_violation` and the witness
+memberships above; the `*_mem_realize` and
 `*_not_mem_realize_offBoundary` facts of the three witnesses are static facts about the
 requirement spaces. The field formulas, energies, their derivatives and the elementary
 inequalities are domain model identities; the trajectory-level statements behind the memberships
@@ -916,6 +926,74 @@ meets the Routh conditions nor violates them strictly. -/
       simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff,
         forall_eq, Meets] using cdcZero_not_routh) h
   · exact cdcZero_not_violation h
+
+/-! ## Inexpressibility in the requirement language -/
+
+/-- Two equilibria with positive reference whose Jacobians lie on the 4×4 Routh boundary with
+nonnegative determinant meet the same requirements: exactly `equilibrium` and
+`positiveReference`. -/
+@[tmio M, powerlib_domain] private theorem meets_iff_of_boundary {m m' : Model}
+    (hm : m ∈ TMIO.realize Meets {.equilibrium, .positiveReference})
+    (hm' : m' ∈ TMIO.realize Meets {.equilibrium, .positiveReference})
+    (hb : m ∉ TMIO.realize Meets {.offBoundary}) (hb' : m' ∉ TMIO.realize Meets {.offBoundary})
+    (hd : 0 ≤ (m.p.jacobian m.x).det) (hd' : 0 ≤ (m'.p.jacobian m'.x).det) (q : Requirement) :
+    Meets m q ↔ Meets m' q := by
+  have key : ∀ n : Model, n ∈ TMIO.realize Meets {.equilibrium, .positiveReference} →
+      n ∉ TMIO.realize Meets {.offBoundary} → 0 ≤ (n.p.jacobian n.x).det →
+        (Meets n q ↔ q = .equilibrium ∨ q = .positiveReference) := by
+    intro n hn hnb hnd
+    rw [(connection_proof% TMIO.mem_realize)] at hn hnb
+    simp only [Set.mem_singleton_iff, forall_eq] at hnb
+    cases q
+    · simpa using hn .equilibrium (by simp)
+    · simpa using hn .positiveReference (by simp)
+    · simpa [Meets] using fun h => hnb (Or.inl h)
+    · simpa [Meets] using hnd
+    · simpa using hnb
+  rw [key m hm hb hd, key m' hm' hb' hd']
+
+/-- **Inexpressibility of Lyapunov stability in the requirement language.** No requirement set of
+the PLL–DC model denotes Lyapunov stability: `hopfCenter` (Lyapunov stable) and `cdcZero`
+(unstable) meet the same requirements (equilibrium and positive reference, Jacobians on the Routh
+boundary with determinants `1` and `0`; `Spectral.realize_ne_den_of_indistinguishable`). So no
+translation into the requirement language is exact for this sentence. -/
+@[tmio TM, powerlib_domain] theorem realize_ne_den_lyapunovStable :
+    connection% (∀ T : Set Requirement,
+      TMIO.realize Meets T ≠ family.den (.flow .lyapunovStable)) :=
+  Spectral.realize_ne_den_of_indistinguishable (F := family)
+    (fun q => meets_iff_of_boundary hopfCenter_mem_realize cdcZero_mem_realize
+      hopfCenter_not_mem_realize_offBoundary cdcZero_not_mem_realize_offBoundary
+      (by rw [hopfCenter_invariants.2.2.2]; norm_num) cdcZero_invariants.2.2.2.ge q)
+    hopfCenter_mem_den_lyapunovStable
+    (Spectral.not_mem_den_lyapunovStable_of_unstable cdcZero_mem_den_unstable)
+
+/-- **Inexpressibility of instability in the requirement language.** No requirement set of the
+PLL–DC model denotes instability: `cdcZero` (unstable) and `hopfCenter` (Lyapunov stable, hence
+not unstable) meet the same requirements. -/
+@[tmio TM, powerlib_domain] theorem realize_ne_den_unstable :
+    connection% (∀ T : Set Requirement,
+      TMIO.realize Meets T ≠ family.den (.flow .unstable)) :=
+  Spectral.realize_ne_den_of_indistinguishable (F := family)
+    (fun q => meets_iff_of_boundary cdcZero_mem_realize hopfCenter_mem_realize
+      cdcZero_not_mem_realize_offBoundary hopfCenter_not_mem_realize_offBoundary
+      cdcZero_invariants.2.2.2.ge (by rw [hopfCenter_invariants.2.2.2]; norm_num) q)
+    cdcZero_mem_den_unstable
+    fun h => Spectral.not_mem_den_lyapunovStable_of_unstable h hopfCenter_mem_den_lyapunovStable
+
+/-- **Inexpressibility of local asymptotic stability in the requirement language.** No
+requirement set of the PLL–DC model denotes local asymptotic stability: `hopfDamped` (locally
+asymptotically stable) and `hopfCenter` (not) meet the same requirements (determinants `3` and
+`1`). -/
+@[tmio TM, powerlib_domain] theorem realize_ne_den_locallyAsymptoticallyStable :
+    connection% (∀ T : Set Requirement,
+      TMIO.realize Meets T ≠ family.den (.flow .locallyAsymptoticallyStable)) :=
+  Spectral.realize_ne_den_of_indistinguishable (F := family)
+    (fun q => meets_iff_of_boundary hopfDamped_mem_realize hopfCenter_mem_realize
+      hopfDamped_not_mem_realize_offBoundary hopfCenter_not_mem_realize_offBoundary
+      (by rw [hopfDamped_invariants.2.2.2]; norm_num)
+      (by rw [hopfCenter_invariants.2.2.2]; norm_num) q)
+    hopfDamped_mem_den_locallyAsymptoticallyStable
+    hopfCenter_not_mem_den_locallyAsymptoticallyStable
 
 end PLLDC
 end powerlib.GFL.DCLink
