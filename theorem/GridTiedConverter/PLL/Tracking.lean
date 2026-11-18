@@ -235,7 +235,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   ring
 
 /-- The table value `+ρ/(V K_i)` of T-pll-dynamics §1.4 is not the steady-state phase error:
-the particular trajectory has the constant phase error `−ρ/(V K_i) ≠ ρ/(V K_i)` (`ρ ≠ 0`). 
+the particular trajectory has the constant phase error `−ρ/(V K_i) ≠ ρ/(V K_i)` (`ρ ≠ 0`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem frequencyRamp_limit_ne_note {V Kp Ki ρ : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (hρ : ρ ≠ 0) :
@@ -284,7 +284,7 @@ for `w = α t²`. -/
         field_simp; ring)
 
 /-- Second-order frequency ramp `w = α t²` (`α ≠ 0`): the phase error is unbounded,
-`|θ̃(t)| → ∞`, for every forward trajectory (the type-2 loop cannot track it). 
+`|θ̃(t)| → ∞`, for every forward trajectory (the type-2 loop cannot track it).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem frequencyQuadratic_unbounded {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) {α : ℝ} (hα : α ≠ 0) {x : ℝ → Fin 2 → ℝ}

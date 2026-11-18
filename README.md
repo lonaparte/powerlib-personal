@@ -1,58 +1,25 @@
 # powerlib
 
-powerlib is a theorem library for power systems and power electronics. Its theorems are proved in Lean 4; Agda is the scaffolding between its different contents.
+powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
 
-Development takes place first in the private repository with the maintainer and coding agents, and is periodically synchronized to the public repository. The whole library is developed in one role: no part of it is reserved to one agent.
+Development takes place first in the private repository with the maintainer and coding agents, and is periodically synchronized to the public repository.
 
 ## Directions
 
-- **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
-- **ATD (Automated Theorem Discovery):** discover new conjectures from models and existing knowledge, prove them, and add the results to the library.
+- **ATP (Automated Theorem Proving):** prove given propositions, with certificate synthesis as the default target.
+- **ATD (Automated Theorem Discovery):** generate conjectures, prove or refute them, and admit the verified results.
 
-Agda is the scaffolding between the different contents of the library: models,
-representations and layers. Every connection between them is first constructed
-in Agda, which fixes its statement, its generality and the structure it must
-preserve; Lean 4 then proves the connection independently. We draw inspiration from
-[mathlib](https://github.com/leanprover-community/mathlib4) and
-[LeanForControl](https://github.com/AnandGokhale/LeanForControl).
-
-We recognize that power systems and power electronics have fewer general
-theorems than mathematics and control theory. Much of the knowledge concerns
-specific operating conditions, hardware, control methods, and their combinations.
-We see this as a good experimental setting for making ATP work at the synthesis
-level and exploring the potential of ATD.
+PowerLib follows the direct-reuse principles of [Mathlib](https://github.com/leanprover-community/mathlib4) and [LeanForControl](https://github.com/AnandGokhale/LeanForControl).
 
 ## Structure
 
-Lean 4 is the theorem layer; Agda scaffolds describe connections and are checked
-independently. Engineering sources in `theorem/` are organized by equipment class
-(grid-tied converters, drives, power systems, passive components, grid structure, numerics),
-mathematical sources by topic, with scaffolds beside their Lean implementations. Formal
-verification lives in `tests/lean/`, examples in `example/`, and upstream interfaces in
-`dependencies/`.
+Agda provides foundational scaffolds for structures and connections. Lean 4 is the public theorem layer, and every admitted result ends in a kernel-checked Lean theorem. Formal sources live in `theorem/`, public consumers in `example/`, and dependency interfaces, integration profiles, and necessary verification consumers in `dependencies/`. The formalization, classification, provenance, and admission requirements are defined in [Rules.md](Rules.md).
 
-- [Architecture.md](Architecture.md): TMIO nodes and relations, shared semantics,
-  source organization, connection interfaces and classification queries.
-- [Rules.md](Rules.md): formalization, classification, provenance and admission rules.
-- [Changelog.md](Changelog.md): completed changes.
-
-The project pins Lean 4.34.1, Mathlib v4.34.1 and Agda 2.8.0 with Cubical 0.9.
-`lake build` runs the source classification preflight and whole-package admission,
-including modules absent from the public umbrella. Internal library compilation
-alone does not run the complete gate.
-
-To inspect source classifications without starting Lean:
-
-```sh
-python3 tools/tmio_classification.py check
-python3 tools/tmio_classification.py list TM
-python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
-```
+The project pins Lean 4.34.1, Mathlib v4.34.1, Agda 2.8.0, and Cubical 0.9.
 
 ## Dependencies
 
-Lake resolves pinned Mathlib and LeanForControl checkouts as siblings of the
-repository:
+Lake resolves pinned Mathlib and LeanForControl checkouts as repository siblings:
 
 ```text
 <parent>/
@@ -61,21 +28,13 @@ repository:
   LeanForControl/
 ```
 
-The private repository uses the same layout. Its import interfaces are
-`dependencies/Mathlib.lean` and `dependencies/LeanForControl.lean`; first-party
-proofs belong in `theorem/`. Upstream sources and caches remain outside the
-repository.
-
-After installing Elan, run from the repository root:
+The import interfaces are in `dependencies/`; first-party proofs remain in `theorem/`. Upstream sources and caches remain outside this repository. From the repository root, prepare the pinned clean LeanForControl checkout, download Mathlib's precompiled cache, and build serially:
 
 ```sh
-compatibility_patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
-git -C ../LeanForControl apply --check "$compatibility_patch"
-git -C ../LeanForControl apply "$compatibility_patch"
+patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
+git -C ../LeanForControl apply --check "$patch"
+git -C ../LeanForControl apply "$patch"
 lake exe cache get
 lake build
-(cd dependencies/integrations/leanforcontrol && lake exe cache get && lake build)
+(cd dependencies/integrations/leanforcontrol && lake build)
 ```
-
-Apply the compatibility diff only to the pinned clean LeanForControl checkout;
-the checks verify its source identity and exact diff.

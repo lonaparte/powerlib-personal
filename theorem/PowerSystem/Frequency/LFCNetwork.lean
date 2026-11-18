@@ -689,7 +689,7 @@ a connection conclusion. -/
       (netA ![a, b] ωs (fun _ : Fin 1 => T) !![1; -1]).reindex twoAreaEquiv twoAreaEquiv := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [plant, netA, twoAreaEquiv, Matrix.reindex_apply, Matrix.submatrix_apply] 
+    simp [plant, netA, twoAreaEquiv, Matrix.reindex_apply, Matrix.submatrix_apply]
 
 /-! ## The `N`-area family -/
 

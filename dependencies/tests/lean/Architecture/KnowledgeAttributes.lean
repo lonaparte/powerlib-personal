@@ -9,12 +9,12 @@ Scope.
   same or another kind, standalone I/O values and non-theorem declarations are rejected.
 * A single attribute block combines `tmio` and `powerlib_foundation` in either order.
 
-Source: `theorem/TMIO/KnowledgeKind.lean`, `theorem/Attributes.lean` and the five-category
-contract in `Architecture.md`.
+Source: `theorem/TMIO/KnowledgeKind.lean`, `theorem/Attributes.lean`, and the five-category
+contract in `Rules.md`.
 
 Results.
 * All five source attributes and an attributed private helper are observable through `kindOf?`
-  in the current module; ordinary unclassified theorems do not acquire a kind.
+  in the current module; ordinary theorems need not acquire a `tmio` kind.
 * Expected diagnostics check the attribute's type, value and uniqueness boundaries.
 * Combined attribute blocks update both registries in either order. Compatibility permits
   foundation T/M/TM and domain M/TM/MI/IO, without requiring both tags to be present.
@@ -26,12 +26,12 @@ namespace KnowledgeAttributeCases
 
 open Lean Elab Command powerlib.Knowledge
 
-@[tmio T] theorem theory : True := True.intro
-@[tmio M] theorem model : True := True.intro
-@[tmio TM] theorem theoryModel : True := True.intro
-@[tmio MI] theorem modelImplementation : True := True.intro
-@[tmio IO] theorem implementationObservation : True := True.intro
-@[tmio T] private theorem privateTheory : True := True.intro
+@[tmio T, powerlib_foundation] theorem theory : True := True.intro
+@[tmio M, powerlib_foundation] theorem model : True := True.intro
+@[tmio TM, powerlib_foundation] theorem theoryModel : True := True.intro
+@[tmio MI, powerlib_domain] theorem modelImplementation : True := True.intro
+@[tmio IO, powerlib_domain] theorem implementationObservation : True := True.intro
+@[tmio T, powerlib_foundation] private theorem privateTheory : True := True.intro
 @[tmio T, powerlib_foundation] theorem combinedTheory : True := True.intro
 @[powerlib_foundation, tmio M] theorem combinedModel : True := True.intro
 @[tmio TM, powerlib_foundation] theorem foundationTheoryModel : True := True.intro
@@ -130,15 +130,13 @@ attribute [tmio TM] theoryModel
 #guard_msgs in
 attribute [tmio IO] theoryModel
 
-theorem unclassified : True := True.intro
-
 /-- error: Unknown tmio kind I; expected T, M, TM, MI or IO -/
 #guard_msgs in
-attribute [tmio I] unclassified
+attribute [tmio I] untaggedFoundation
 
 /-- error: Unknown tmio kind O; expected T, M, TM, MI or IO -/
 #guard_msgs in
-attribute [tmio O] unclassified
+attribute [tmio O] untaggedFoundation
 
 def ordinaryDefinition : Nat := 0
 
@@ -152,7 +150,7 @@ run_cmd do
     throwError "Delayed tmio assignment was lost"
   unless kindOf? env `KnowledgeAttributeCases.theoryModel == some .TM do
     throwError "Rejected reassignment changed the original tmio kind"
-  unless (kindOf? env `KnowledgeAttributeCases.unclassified).isNone do
+  unless (kindOf? env `KnowledgeAttributeCases.untaggedFoundation).isNone do
     throwError "An invalid tmio value was stored"
   unless (kindOf? env `KnowledgeAttributeCases.ordinaryDefinition).isNone do
     throwError "A non-theorem received a tmio attribute"

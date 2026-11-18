@@ -5,7 +5,7 @@ import theorem.TMIO.KnowledgeKind
 
 The two PowerLib theorem classifications, `foundation` and `domain`, and the audit that a
 source-authored theorem of a first-party module carries exactly one of them. Classification is
-optional search metadata, never an admission exemption.
+mandatory discovery metadata for first-party named theorems, never an admission exemption.
 
 Scope.
 * Lean meta-programming, no mathematics: the attributes `powerlib_foundation` and
@@ -16,7 +16,7 @@ Scope.
 * Explicit pairs must be compatible: foundation permits T/M/TM; domain permits M/TM/MI/IO.
   A module-boundary linter checks both attribute orders and delayed assignments, including
   private theorems. The environment audit also checks imported declarations.
-* Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `tests`, `example`
+* Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `example`
   and `powerlib`, plus sources of an isolated integration profile under
   `dependencies/integrations`; imported upstream declarations and downstream modules are not
   relabeled.
@@ -94,7 +94,7 @@ def TheoremKind.allowsTMIO : TheoremKind → Knowledge.Kind → Bool
   | .foundation, .MI | .foundation, .IO | .domain, .T => false
   | _, _ => true
 
-/-- Missing metadata remains optional; only an explicitly incompatible pair is rejected. -/
+/-- Report an explicitly incompatible pair; missing metadata is audited separately. -/
 def compatibilityError? (env : Environment) (name : Name) : Option String := do
   let classification ← kindOf? env name
   let knowledge ← Knowledge.kindOf? env name
@@ -126,7 +126,7 @@ open Lean Elab Command
 -- Source ownership follows the canonical first-party module directories.
 -- Imported upstream declarations and downstream modules are not relabeled.
 def isFirstPartyModule (moduleName : Name) : Bool :=
-  #[`theorem, `dependencies, `tests, `example, `powerlib].contains moduleName.getRoot
+  #[`theorem, `dependencies, `example, `powerlib].contains moduleName.getRoot
 
 -- An isolated integration profile may compile its entry point under a short
 -- module name. Its actual source directory still establishes first-party scope.
@@ -201,5 +201,6 @@ def compatibilityLinter : ModuleLinter where
       auditCompatibility (← authoredTheorems commands)
 
 initialize addModuleLinter compatibilityLinter
+initialize addModuleLinter classificationLinter
 
 end powerlib.Registry

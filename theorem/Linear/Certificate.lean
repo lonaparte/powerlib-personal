@@ -210,7 +210,7 @@ port-Hamiltonian plants, and the Hamiltonian of quadratic pH systems. -/
 def quadraticEnergy (P : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) : ℝ :=
   (1 / 2 : ℝ) * (WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp x))
 
-private theorem quadraticEnergy_eq_inner (P : Matrix (Fin n) (Fin n) ℝ) :
+@[powerlib_foundation] private theorem quadraticEnergy_eq_inner (P : Matrix (Fin n) (Fin n) ℝ) :
     quadraticEnergy P = fun x => (1 / 2 : ℝ) * ⟪x, op P x⟫ := by
   funext x
   rw [inner_op]

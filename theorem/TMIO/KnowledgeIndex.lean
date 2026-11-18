@@ -8,13 +8,13 @@ Scope.
   from declaration names, namespaces, proposition keywords, or endpoint type roles.
 * Queries cover only the theorem modules imported in the current environment. `#tmio_edges`
   requires every authored public typed connection theorem to be classified. `#tmio_theorems`
-  lists all explicitly classified authored theorems, including ordinary and private proofs;
-  unclassified ordinary theorems are outside that query.
+  lists all authored theorems carrying an explicit `tmio` kind, including ordinary and private
+  proofs; ordinary theorems without a `tmio` kind are outside that query.
 * `#tmio_check` delegates classification and connection-coverage checks to `auditEnvironment`;
   it does not substitute for importing and checking the whole library.
 
 Source: the five-class `tmio` attribute and environment audit in
-`theorem/TMIO/KnowledgeKind.lean`; the per-declaration knowledge classes in `Architecture.md`.
+`theorem/TMIO/KnowledgeKind.lean`; the per-declaration knowledge classes in `Rules.md`.
 
 Results.
 * `indexSummary`, `indexListing`: counts and module-grouped listings of public connections.

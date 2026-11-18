@@ -185,10 +185,10 @@ def behaviouralNotions : MetaM NameSet := do
 /-- Fixtures for the detector: a closed field and a generic one. -/
 private def fixtureField (x : EuclideanSpace ℝ (Fin 1)) : EuclideanSpace ℝ (Fin 1) := -x
 
-private theorem fixtureBare :
+@[powerlib_foundation] private theorem fixtureBare :
     powerlib.Flow.Property.lyapunovStable.holds fixtureField 0 → True := fun _ => trivial
 
-private theorem fixtureGeneric (f : EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin 1)) :
+@[powerlib_foundation] private theorem fixtureGeneric (f : EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin 1)) :
     powerlib.Flow.Property.lyapunovStable.holds f 0 → True := fun _ => trivial
 
 /-! ## Module headers -/
@@ -697,10 +697,10 @@ derived from the theorem it restated. -/
 def restatementExemptions : Array (String × String × String) := #[]
 
 /-- Control: the general fixture. -/
-theorem fixtureRestatedGeneral (n : ℕ) : n ≤ n + 1 := by omega
+@[powerlib_foundation] theorem fixtureRestatedGeneral (n : ℕ) : n ≤ n + 1 := by omega
 
 /-- Control: its instance at `n = 2`, proved again without it. -/
-theorem fixtureRestatedInstance : (2 : ℕ) ≤ 2 + 1 := by decide
+@[powerlib_foundation] theorem fixtureRestatedInstance : (2 : ℕ) ≤ 2 + 1 := by decide
 
 end LibraryStructure
 
@@ -778,4 +778,3 @@ run_cmd liftTermElabM do
       {"\n".intercalate violations.toList}"
   logInfo m!"POWERLIB_LIBRARY_RESTATEMENTS_OK: {decls.size} theorems; none restates (an instance \
     of) another theorem it could use without using it; {exempted.size} documented exemptions"
-

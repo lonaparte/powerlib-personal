@@ -9,7 +9,7 @@ import theorem.SpecialFunctions.Clamp
 /-! # PI current loop under the inverter's modulation voltage limit: an implementation layer
 
 Model boundary.
-* Implementation layer (I, `theorem/Stack/Implementation.lean`, `Architecture.md`). A platform
+* Implementation layer (I, `theorem/Stack/Implementation.lean`, `Rules.md`). A platform
   `LimitedPI` realizes its design, a single-axis PI current loop `PIParams` of the model layer
   `PIParams.family` (`theorem/GridTiedConverter/CurrentControl/PILoop.lean`: perfect decoupling,
   ideal feedforward), under one realistic constraint the design did not intend: a two-level inverter

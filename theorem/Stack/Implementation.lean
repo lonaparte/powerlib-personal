@@ -7,7 +7,7 @@ implementation family (I, models under realistic constraints: platforms and test
 and computation delay, sensor and actuator dynamics, limits the design did not intend, parameter
 tolerances, numerical integration) by a realization relation: `(x, y) ∈ realizes` when the
 implementation `y` realizes the model `x`. The layers and the criterion that places a result in
-one of them are those of `theorem/Stack/Basic.lean` and `Architecture.md`; records (O) are added by a
+one of them are those of `theorem/Stack/Basic.lean` and `Rules.md`; records (O) are added by a
 `Stack`, which extends an `Implementation`.
 
 Both families are read by the single semantics. The composite connection from implementations

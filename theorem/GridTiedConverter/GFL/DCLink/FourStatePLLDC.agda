@@ -83,4 +83,3 @@ module _ (X : Type) (holds : System X → Sentence → Type)
       les↔ : (f : FourModel) →
         den fourFamily locallyExponentiallyStable f ↔ (Equilibrium f × Routh f)
       les↔ f = ↔-trans (p-les f) (les-closed f)
-

@@ -18,8 +18,8 @@ them or filters what they admit, and says which.
 | M5 | **Generic once.** A law about arbitrary families or fields is proved once, in a generic module that imports no engineering module; instances supply only their obligations and do not restate it. Upstream results are reused, not reproved. | `DEPENDENCIES`, `DUPLICATES`, `RESTATEMENTS` |
 | M6 | **One trust root.** The Lean kernel with the axioms `propext`, `Classical.choice` and `Quot.sound`. Agda, synthesizers, solvers, scripts and the elaborator are untrusted. | axiom audit; admission |
 
-The checks are the library structure test (`tests/lean/Library/Structure.lean`) and
-the admission tests (`tests/lean/Architecture/`). The meta-rules fix the form of the
+The checks are the library structure test (`dependencies/tests/lean/Library/Structure.lean`) and
+the admission tests (`dependencies/tests/lean/Architecture/`). The meta-rules fix the form of the
 library, not its content: which models and conclusions it contains is chosen from the sources each
 module header cites.
 
@@ -83,11 +83,11 @@ numerical experiments, and Agda-only proofs are not admitted theorems.
 
 *Filter (M6): what counts as library source.*
 
-The active source directories are `theorem/`, `example/`, `tests/`,
-`dependencies/`, and `tools/`. `theorem/` contains formalization source and checked generated
+The active source directories are `theorem/`, `example/`, and
+`dependencies/`. `theorem/` contains formalization source and checked generated
 formalization source, with no Markdown files. `example/` contains formal public
 consumers. Necessary kernel, discovery, and automatic-reuse consumers belong in
-`tests/lean/`; source inspection tools and their tests belong in `tools/`. Pinned
+`dependencies/tests/lean/`. Pinned
 integration profiles belong in `dependencies/integrations/`. Procedural or redundant tests and research notes
 stay in the local workspace outside the repositories. A result not yet expressed
 as a Lean theorem is a research note, regardless of its mathematical plausibility.
@@ -98,12 +98,10 @@ declarations' metadata. Keep general constructions with their mathematical subje
 and concrete electrical instances with their engineering subject. Moving a file
 changes its import path; preserve public declaration names unless an API change is intended.
 
-Root documents use title-case filenames (`Architecture.md`, `Rules.md`,
-`Changelog.md`); `README.md` retains the conventional uppercase name.
-`Architecture.md` describes the current architecture and interfaces. `Rules.md`
-is the normative source. `Changelog.md` records completed changes with dates and,
-where available, commit references. Keep transient statistics, build logs,
-development plans and intermediate investigation notes outside the repository.
+`Rules.md` is the normative project standard; `README.md` is the concise public
+entry point. Keep theorem catalogs, architecture narratives, transient statistics,
+build logs, development plans, and intermediate investigation notes outside the
+repository. Formal declarations and registered metadata are the discovery interface.
 
 ## 2a. Knowledge units and external observations
 
@@ -144,14 +142,13 @@ uses one of the five kinds, and is not assigned twice. The assigned kind records
 review of the complete statement and its hypotheses; the attribute checker does
 not prove that semantic judgment or replace mathematical admission.
 
-Coverage and category counts are computed from source attributes by
-`python3 tools/tmio_classification.py check` and from imported declarations by
+Coverage and category counts are computed from imported declarations by
 `#tmio_check`; they are not maintained as a separate inventory. Module-level role
-suggestions do not assign a kind to every declaration in a module. Unreviewed
-ordinary theorems may remain unclassified; definitions are outside this inventory.
-The required missing-label check is limited to public typed connection theorems;
-every explicit attribute, including one on an ordinary or private theorem, is checked.
-`Architecture.md` gives the Lean environment queries and the source-only queries.
+suggestions do not assign a kind to every declaration in a module. Every first-party,
+source-authored named theorem carries exactly one `powerlib_foundation` or
+`powerlib_domain` attribute; definitions and directly imported upstream theorems are
+outside that inventory. Every explicit `tmio` attribute is checked, and every public
+typed connection theorem additionally requires exactly one of the five `tmio` kinds.
 
 ## 3. Foundation results and domain results
 
@@ -190,21 +187,20 @@ laws about arbitrary realization or observation relations are T/foundation; nami
 an `Implementation` or discretizing an arbitrary mathematical system does not by
 itself establish an engineering I endpoint.
 
-`@[powerlib_foundation]` and `@[powerlib_domain]` are optional discovery and
-presentation metadata. They do not grant admission or exempt a declaration from
-checking. Only an explicit annotation assigns one of these classifications: a typed
-`TMIO.Statement` neither implies domain nor overrides foundation. Unannotated
-connection statements remain unclassified in this registry; connection discovery
-and admission still inspect their types independently. Simp, ext and Aesop
-registration remain independent decisions. Conversely, a domain label does not
-require a connection wrapper. Public model behaviour is still subject to the
-structural admission rules in §3a regardless of either metadata label.
+`@[powerlib_foundation]` and `@[powerlib_domain]` are mandatory discovery metadata
+for every first-party, source-authored named theorem. They do not grant admission
+or exempt a declaration from checking. Only an explicit annotation assigns one of
+these classifications: a typed `TMIO.Statement` neither implies domain nor overrides
+foundation. Simp, ext and Aesop registration remain independent decisions.
+Conversely, a domain label does not require a connection wrapper. Public model
+behaviour is still subject to the structural admission rules in §3a regardless of
+either metadata label.
 
-`theorem/Attributes.lean` rejects incompatible explicit pairs at module boundaries,
-after delayed attributes, including private declarations. The mandatory build and
-`#tmio_check` also audit pairs in the imported environment. The source preflight
-rejects incompatible inline pairs before compilation. These checks enforce the
-matrix; they do not infer missing tags or prove a semantic classification correct.
+`theorem/Attributes.lean` rejects missing classifications and incompatible explicit
+pairs at module boundaries, after delayed attributes, including private declarations.
+The mandatory whole-package build independently audits the elaborated declaration
+provenance and imported registry. These checks enforce the matrix; they do not infer
+tags or prove that a semantic classification judgment is correct.
 
 Generic static lemmas, semantic implications and certificate arithmetic are
 foundation results. Generic connection laws — laws about arbitrary families stated
@@ -289,9 +285,8 @@ ordinary non-connection theorems are outside the current required `tmio` coverag
 Negative behavioural fixtures are private evidence explicitly submitted to
 rejection tests.
 
-The public entry points `lake build` and `lake build powerlib` first check source
-classification with `python3 tools/tmio_classification.py check`, then build every
-module selected by the package's actual Lake library globs and audit that complete
+The public entry points `lake build` and `lake build powerlib` build every module
+selected by the package's actual Lake library globs and audit that complete
 inventory. The environment check requires a `tmio` attribute on each imported
 public typed connection theorem in a `theorem.*` module. A file cannot opt out by
 omitting an Architecture import or by being absent from `powerlib.lean`.
@@ -344,9 +339,9 @@ the completion criterion.
 The completed result must conclude a meaningful system property, for example:
 
 ```lean
-@[tmio TM] theorem stable :
+@[tmio TM, powerlib_domain] theorem stable :
     connection% (submittedModel ∈ family.den (.flow .lyapunovStable))
-@[tmio TM] theorem exponentially_stable :
+@[tmio TM, powerlib_domain] theorem exponentially_stable :
     connection% (submittedModel ∈ family.den (.flow .globallyExponentiallyStable))
 ```
 
@@ -556,7 +551,7 @@ diff identity, and checked effective source identity in provenance. Do not vendo
 full upstream proofs. Kernel, semantic, automatic-reuse, rejection, and transitive
 axiom checks still apply to every reused result.
 
-Necessary formal verification consumers belong in `tests/lean/`.
+Necessary formal verification consumers belong in `dependencies/tests/lean/`.
 They check the public interface, kernel and transitive axiom audit, registered
 theorem discovery, automatic reuse, or required semantic acceptance boundaries.
 Pinned formal integration profiles and their build configurations belong in

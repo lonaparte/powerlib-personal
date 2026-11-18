@@ -74,7 +74,7 @@ open powerlib.Dynamics (State)
 /-! ## 1. Port-Hamiltonian energy -/
 
 /-- For `c < 2V` the potential-well piece `{|θ| < π, H_s ≤ c}` of the shifted
-port-Hamiltonian energy lies in the region of attraction of the locked equilibrium. 
+port-Hamiltonian energy lies in the region of attraction of the locked equilibrium.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) {c : ℝ} (hc : c < 2 * V) :
@@ -167,7 +167,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     linarith
 
 /-- T-pll-ph basin: every state with `|θ| < π` and `H_s < 2V` (below the saddle level) is in
-the region of attraction of the locked equilibrium. 
+the region of attraction of the locked equilibrium.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem srf_regionOfAttraction_hamiltonian_lt {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
@@ -242,7 +242,7 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   rw [xiField_eq_srfField]; exact contDiff_srfField _ _ _ _
 
 /-- For `a, b > 0` and `c < b` the well piece `{|θ| < π/2, E ≤ c}` of the pendulum energy lies
-in the region of attraction of `(0, −Δω/b)`. 
+in the region of attraction of `(0, −Δω/b)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb : 0 < b)
     {c : ℝ} (hc : c < b) :
@@ -350,7 +350,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   field_simp
   linarith
 
-/-- The pendulum-energy estimate below the level `b = V K_i`. 
+/-- The pendulum-energy estimate below the level `b = V K_i`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem xi_regionOfAttraction_pendulum_lt {a b Δω : ℝ} (ha : 0 < a)
     (hb : 0 < b) :

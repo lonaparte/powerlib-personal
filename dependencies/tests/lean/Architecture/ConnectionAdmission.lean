@@ -1,25 +1,25 @@
 import theorem.Passive.RL
 import theorem.Architecture
 import theorem.Spectral.Family
-import tests.lean.Architecture.ConnectionFamilyFixture
-import tests.lean.Architecture.GenericModelValueFixture
+import dependencies.tests.lean.Architecture.ConnectionFamilyFixture
+import dependencies.tests.lean.Architecture.GenericModelValueFixture
 
 open powerlib powerlib.TMIO
 open scoped ENNReal
 
 namespace ConnectionAdmission
 
--- A real public connection is admitted without assigning a presentation classification.
-theorem passive (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+-- A real public connection carries both discovery classifications.
+@[tmio TM, powerlib_domain] theorem passive (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     connection% (m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
   exact Passive.RL.family_isLinear.mem_den_passive (Passive.RL.kyp m h)
 
 -- Explicit metadata is preserved; admission still checks the actual statement.
-@[powerlib_foundation] theorem foundation_connection (m : Passive.RL.Impedance)
+@[tmio TM, powerlib_domain] theorem classified_connection (m : Passive.RL.Impedance)
     (h : 0 ≤ m.resistance) : connection% (m ∈ Passive.RL.family.den .passive) := passive m h
 
-@[powerlib_domain] theorem domain_connection (m : Passive.RL.Impedance)
+@[tmio TM, powerlib_domain] theorem domain_connection (m : Passive.RL.Impedance)
     (h : 0 ≤ m.resistance) : connection% (m ∈ Passive.RL.family.den .passive) := passive m h
 
 -- Domain is a semantic classification: a static engineering model identity needs no
@@ -29,50 +29,50 @@ theorem passive (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
   Passive.RL.toStateSpace_inputGain m
 
 -- Private fixtures are implementation evidence, never public results.
-@[powerlib_foundation] private theorem raw (m : Passive.RL.Impedance)
+@[powerlib_domain] private theorem raw (m : Passive.RL.Impedance)
     (h : 0 ≤ m.resistance) : m.plant.system.Passive :=
   ⟨_, (Passive.RL.kyp m h).passiveWith⟩
 
 def fakeEndpoint (m : Passive.RL.Impedance) : Prop := m.plant.system.Passive
 
-private theorem aliased (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+@[powerlib_domain] private theorem aliased (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
 abbrev ModelAlias := Passive.RL.Impedance
 
-private theorem aliasedModel (m : ModelAlias) (h : 0 ≤ m.resistance) :
+@[powerlib_domain] private theorem aliasedModel (m : ModelAlias) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
 private def proofDefinition (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
-private theorem hiddenRelation (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+@[powerlib_domain] private theorem hiddenRelation (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     connection% (m ∈ Passive.RL.family.den .passive ↔ fakeEndpoint m) := by
   unfold Statement
   exact ⟨fun _ => raw m h, fun _ => passive m h⟩
 
-private theorem rawHypothesis (m : Passive.RL.Impedance) (h : m.plant.system.Passive) :
+@[powerlib_domain] private theorem rawHypothesis (m : Passive.RL.Impedance) (h : m.plant.system.Passive) :
     connection% (m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
   exact Passive.RL.family.mem_den.mpr h
 
 -- A real connection does not make a raw behavioural input an admitted interface.
-private theorem hiddenInput (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+@[powerlib_domain] private theorem hiddenInput (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     connection% (m ∈ (sInfHom.id (Set Passive.RL.Impedance))
       {m : Passive.RL.Impedance | fakeEndpoint m}) := by
   unfold Statement
   exact raw m h
 
-private theorem freshRaw (m : ConnectionFamilyFixture.Model) :
+@[powerlib_foundation] private theorem freshRaw (m : ConnectionFamilyFixture.Model) :
     (Port.System.autonomous m.field).Passive := Port.System.passive_of_noPorts _
 
 def AllPassive : Prop := ∀ m : Passive.RL.Impedance, 0 ≤ m.resistance → m.plant.system.Passive
 
-private theorem packed : AllPassive := fun m h => raw m h
+@[powerlib_domain] private theorem packed : AllPassive := fun m h => raw m h
 
 -- The grammar extension. A claim about arbitrary families of `Type`: type parameters of the
 -- theorem, or binders over `Type` inside the claim (`allType`).
-@[powerlib_foundation] theorem genericPassive {X Q : Type} (F : Family X Q 1 0) (x : X)
+@[tmio TM, powerlib_foundation] theorem genericPassive {X Q : Type} (F : Family X Q 1 0) (x : X)
     (h : x ∈ F.den .passive) :
     connection% (x ∈ F.den .passive) := by
   unfold Statement
@@ -80,7 +80,7 @@ private theorem packed : AllPassive := fun m h => raw m h
 
 -- A generic semantic bridge may name the library's behavioural interface. Its classification
 -- does not grant that permission: the model type is arbitrary and the conclusion uses F.
-@[powerlib_foundation] theorem genericFlowInterface {X Q : Type} (F : Family X Q 1 0)
+@[tmio TM, powerlib_foundation] theorem genericFlowInterface {X Q : Type} (F : Family X Q 1 0)
     (f : X → Dynamics.State 1 → Dynamics.State 1) (pt : X → Dynamics.State 1)
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     (x : X) (P : Flow.Property) :
@@ -88,7 +88,7 @@ private theorem packed : AllPassive := fun m h => raw m h
   unfold Statement
   exact hden x P
 
-@[powerlib_foundation] theorem genericReachInterface {X Q : Type} (F : Family X Q 1 0)
+@[tmio TM, powerlib_foundation] theorem genericReachInterface {X Q : Type} (F : Family X Q 1 0)
     (sys : X → Port.System 1 0) (S A : X → Set (Dynamics.State 1)) (T ε : ℝ≥0∞)
     (hden : ∀ x, x ∈ F.den (.envelope (.safe T ε)) ↔ (sys x).reach (S x) T ⊆ A x)
     (x : X) :
@@ -97,40 +97,40 @@ private theorem packed : AllPassive := fun m h => raw m h
   exact hden x
 
 -- An arbitrary Family cannot launder a concrete model or an unconnected signal input.
-@[powerlib_foundation] private theorem genericModelInput {X Q : Type} (F : Family X Q 1 0)
+@[powerlib_domain] private theorem genericModelInput {X Q : Type} (F : Family X Q 1 0)
     (x : X) (m : Passive.RL.Impedance) (_h : m.plant.system.Passive)
     (hx : x ∈ F.den .passive) : connection% (x ∈ F.den .passive) := hx
 
-private theorem phantomFamilyInput {X Q : Type} (_F : Family X Q 1 0)
+@[powerlib_domain] private theorem phantomFamilyInput {X Q : Type} (_F : Family X Q 1 0)
     (m : Passive.RL.Impedance) (h : m.plant.system.Passive) :
     connection% (m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
   exact Passive.RL.family.mem_den.mpr h
 
-private theorem genericSignalInput {X Q : Type} (F : Family X Q 1 0) (x : X)
+@[powerlib_foundation] private theorem genericSignalInput {X Q : Type} (F : Family X Q 1 0) (x : X)
     (_signal : ℝ → Dynamics.State 1) (hx : x ∈ F.den .passive) :
     connection% (x ∈ F.den .passive) := hx
 
-private theorem hiddenGenericModelInterface {X Q : Type} (F : Family X Q 1 0) (x : X)
+@[powerlib_foundation] private theorem hiddenGenericModelInterface {X Q : Type} (F : Family X Q 1 0) (x : X)
     (r : ℝ)
     (h : x ∈ F.den .passive ↔ (GenericModelValueFixture.systemAlias r).Passive) :
     connection% (x ∈ F.den .passive ↔ (GenericModelValueFixture.systemAlias r).Passive) := h
 
 -- Constructed generic families get the same semantic-interface boundary as formal Family
 -- parameters. Concrete models, signals and direct ambient behaviour remain rejected.
-private theorem genericConstructedModelInput {X : Type}
+@[powerlib_domain] private theorem genericConstructedModelInput {X : Type}
     (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop) (x : X)
     (m : Passive.RL.Impedance) (_h : m.plant.system.Passive)
     (hx : x ∈ (Spectral.localFamily field S U).den .passive) :
     connection% (x ∈ (Spectral.localFamily field S U).den .passive) := hx
 
-private theorem genericConstructedSignalInput {X : Type}
+@[powerlib_foundation] private theorem genericConstructedSignalInput {X : Type}
     (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop) (x : X)
     (_signal : ℝ → Dynamics.State 1)
     (hx : x ∈ (Spectral.localFamily field S U).den .passive) :
     connection% (x ∈ (Spectral.localFamily field S U).den .passive) := hx
 
-private theorem genericConstructedAmbientInput {X : Type}
+@[powerlib_foundation] private theorem genericConstructedAmbientInput {X : Type}
     (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop)
     (hS : ∀ x, S x → LocallyExponentiallyStable (field x) 0)
     (hU : ∀ x, U x → Unstable (field x) 0) :
@@ -145,23 +145,23 @@ structure CurrentModel where
 noncomputable def currentFamily : Family CurrentModel Unit 1 0 :=
   ⟨fun m => Port.System.autonomous m.field, fun _ _ => True, fun _ => Set.univ⟩
 
-private theorem genericCurrentModelInput {X Q : Type} (F : Family X Q 1 0) (x : X)
+@[powerlib_foundation] private theorem genericCurrentModelInput {X Q : Type} (F : Family X Q 1 0) (x : X)
     (m : CurrentModel) (_h : (Port.System.autonomous m.field).Passive)
     (hx : x ∈ F.den .passive) : connection% (x ∈ F.den .passive) := hx
 
-theorem allTypeClaim : connection% (∀ (X Q : Type) (F : Family X Q 1 0) (x : X),
+@[tmio TM, powerlib_foundation] theorem allTypeClaim : connection% (∀ (X Q : Type) (F : Family X Q 1 0) (x : X),
     x ∈ F.den .passive → x ∈ F.den .passive) := by
   unfold Statement
   exact fun _ _ _ _ h => h
 
 -- A claim characterized by a numeric side condition (`iffCondition`), and an existential whose
 -- witness is guarded by one (`existsGuard`).
-theorem conditionIff :
+@[tmio TM, powerlib_domain] theorem conditionIff :
     connection% (Passive.RL.family.chain = Passive.RL.family.semantics ↔ (0 : ℕ) ≤ 1) := by
   unfold Statement
   exact iff_of_true Passive.RL.chain_eq_semantics (by norm_num)
 
-theorem guardedExists (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
+@[tmio TM, powerlib_domain] theorem guardedExists (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     connection% (∃ r : ℝ, 0 < r ∧ m ∈ Passive.RL.family.den .passive) := by
   unfold Statement
   exact ⟨1, one_pos, passive m h⟩
@@ -179,7 +179,7 @@ run_cmd do
         ``genericConstructedAmbientInput] do
       if (← Architecture.publicTypeRejection ctx models (← getConstInfo name).type).isNone then
         throwError "Public admission accepted its rejection fixture: {name}"
-    for name in #[``passive, ``foundation_connection, ``domain_connection, ``domain_model_identity, ``genericPassive,
+    for name in #[``passive, ``classified_connection, ``domain_connection, ``domain_model_identity, ``genericPassive,
         ``genericFlowInterface, ``genericReachInterface, ``allTypeClaim, ``conditionIff,
         ``guardedExists, ``Spectral.local_chain_le_semantics,
         ``Spectral.local_exact_locallyExponentiallyStable,
@@ -189,20 +189,17 @@ run_cmd do
   let classified := Registry.theoremNames env
   let foundations := Registry.theoremNames env (some .foundation)
   let domains := Registry.theoremNames env (some .domain)
-  for name in #[``passive, ``allTypeClaim, ``conditionIff, ``guardedExists] do
-    unless (Registry.kindOf? env name).isNone && !classified.contains name &&
-        !foundations.contains name && !domains.contains name do
-      throwError "An unannotated connection acquired a presentation classification: {name}"
-  for name in #[``foundation_connection, ``genericPassive, ``genericFlowInterface,
+  for name in #[``allTypeClaim, ``genericPassive, ``genericFlowInterface,
       ``genericReachInterface] do
     unless Registry.kindOf? env name == some .foundation && classified.contains name &&
         foundations.contains name && !domains.contains name do
       throwError "A connection overrode its explicit foundation classification: {name}"
-  unless Registry.kindOf? env ``domain_connection == some .domain &&
-      classified.contains ``domain_connection && domains.contains ``domain_connection &&
-      !foundations.contains ``domain_connection do
-    throwError "An explicitly classified domain connection was lost"
-  logInfo m!"POWERLIB_TYPED_ADMISSION_OK: unclassified, foundation and domain connections; \
+  for name in #[``passive, ``classified_connection, ``domain_connection,
+      ``domain_model_identity, ``conditionIff, ``guardedExists] do
+    unless Registry.kindOf? env name == some .domain && classified.contains name &&
+        domains.contains name && !foundations.contains name do
+      throwError "An explicitly classified domain theorem was lost: {name}"
+  logInfo m!"POWERLIB_TYPED_ADMISSION_OK: classified foundation and domain connections; \
     17 rejection controls"
 
 -- The grammar extension admits side conditions only as the characterizing side of an iff and as

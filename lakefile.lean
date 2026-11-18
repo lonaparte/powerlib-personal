@@ -14,8 +14,8 @@ lean_lib PowerLibSources where
   globs := #[.one `powerlib, .submodules `theorem, .one `dependencies.Mathlib, .one `dependencies.LeanForControl]
 
 lean_lib PowerLibTests where
-  roots := #[`tests.lean]
-  globs := #[.submodules `tests.lean]
+  roots := #[`dependencies.tests.lean]
+  globs := #[.submodules `dependencies.tests.lean]
 
 lean_lib PowerLibExamples where
   roots := #[`example.Use]
@@ -26,15 +26,6 @@ library globs has passed admission, even if it omits the Architecture import. -/
 @[default_target]
 target powerlib pkg : Unit := do
   let ws ← getWorkspace
-  -- Read the source attributes before scheduling any compilation. This check
-  -- needs only Python's standard library, not dependency artifacts.
-  let ownership ← IO.Process.output {
-    cmd := "python3"
-    args := #[(pkg.dir / "tools" / "tmio_classification.py").toString, "check"]
-  }
-  unless ownership.exitCode == 0 do
-    error s!"TMIO source classification failed:\n{ownership.stdout}\n{ownership.stderr}"
-  logInfo ownership.stdout.trimAscii.toString
   let mut modules : Array Lake.Module := #[]
   for lib in pkg.leanLibs do
     for mod in ← lib.getModuleArray do

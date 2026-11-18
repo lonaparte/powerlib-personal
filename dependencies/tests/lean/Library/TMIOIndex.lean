@@ -12,8 +12,7 @@ For a smaller query, import the relevant model modules and
 `theorem.TMIO.KnowledgeIndex`, then use `#tmio_edges` or `#tmio_edges TM`
 (the other arguments are `T`, `M`, `MI`, `IO`). `#tmio_theorems` also includes
 ordinary and private theorems carrying a source attribute. `#tmio_check` checks coverage
-in that imported environment. The source preflight can run without compilation:
-`python3 tools/tmio_classification.py check`.
+in that imported environment, and whole-package admission checks every selected module.
 -/
 
 #tmio_theorems

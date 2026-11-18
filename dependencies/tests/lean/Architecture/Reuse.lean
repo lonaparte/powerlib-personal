@@ -1,6 +1,6 @@
 import theorem.TMIO.ClaimElab
 import powerlib
-import tests.lean.Architecture.RegistryFixture
+import dependencies.tests.lean.Architecture.RegistryFixture
 
 -- Registered theorem discovery.
 namespace RegistryCurrent
@@ -66,7 +66,7 @@ run_cmd do
     throwError "Imported attribute metadata was omitted"
   let some imported := powerlib.Search.describe env `RegistryFixture.envelope |
     throwError "An imported tagged theorem lost its metadata"
-  unless imported.moduleName == `tests.lean.Architecture.RegistryFixture &&
+  unless imported.moduleName == `dependencies.tests.lean.Architecture.RegistryFixture &&
       imported.kind == some .foundation && imported.levelParams.length == 1 do
     throwError "Imported theorem origin, classification, or universe metadata changed"
   for (consumer, sources) in #[
@@ -121,7 +121,7 @@ open powerlib LinearSystems
     Flow.ForwardComplete f := by
   powerlib_search
 
-theorem polynomial_global {model : Nonlinear.Polynomial2.Model}
+@[tmio TM, powerlib_domain] theorem polynomial_global {model : Nonlinear.Polynomial2.Model}
     (c : Nonlinear.Polynomial2.Certificate model) :
     connection% (model ∈ Nonlinear.Polynomial2.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

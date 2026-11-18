@@ -45,7 +45,7 @@ monic coefficients `(R + Kp)/L`, `Ki/L` positive (`stable`) or `(R + Kp)/L` nega
   the PI family's pulled back along `base` — the mismatch never changes the stability region.
 * `mem_den_iff`: with `L > 0`, stable iff
   `R + Kp > 0 ∧ Ki > 0`.
-* Implementation layer (`theorem/Stack/Implementation.lean`, `Architecture.md`): the decoupling estimate
+* Implementation layer (`theorem/Stack/Implementation.lean`, `Rules.md`): the decoupling estimate
   `L̂` is a parameter tolerance of the controller, so the mismatched dq loop is an implementation
   of the single-axis PI design `PIParams.family` (perfect decoupling), realizing its base loop
   (`MismatchParams.implementation`). `realizationExactUnder`: the attractive sentences and sampled

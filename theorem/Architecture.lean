@@ -15,7 +15,8 @@ Scope.
   rejects it outside.
 * Model types are inferred from the actual `Family` definitions of first-party modules (with
   transparent aliases), not from a handwritten list. Private helpers and generic semantic support
-  are implementation evidence; static mathematics needs no classification.
+  are implementation evidence for the semantic audit; every source-authored named theorem still
+  carries exactly one foundation or domain classification.
 * Every public, model-specific behavioural conclusion must be a typed connection `Statement`,
   whatever its label; at a certified endpoint the inputs and structural maps are inspected while
   the semantic map stays abstract.
@@ -26,8 +27,8 @@ Scope.
   semantic-layer audit. A phantom Family
   parameter, a presentation label, or an actual model cannot obtain that generic treatment.
 
-Source: the library rules (`Rules.md` §3a, generated connections and public conclusions) and the
-design of public admission (`Architecture.md`); the connection grammar of
+Source: the library rules (`Rules.md` §3a, generated connections and public conclusions); the
+connection grammar of
 `theorem/TMIO/Claim.lean` and `theorem/TMIO/ClaimElab.lean`; the classification registry
 (`theorem/Attributes.lean`) and the axiom audit (`theorem/LibrarySearch.lean`).
 
@@ -667,7 +668,8 @@ private def genericRejection (ctx : Ctx) (type : Expr) : MetaM (Option String) :
 
 /-- Private proof helpers and generic semantic support are implementation evidence.
 Every public, model-specific behavioural conclusion must use Statement; its label is irrelevant.
-Static mathematics is checked normally and does not need a classification annotation. -/
+Static mathematics is checked normally by this semantic audit; theorem classification is audited
+independently. -/
 def publicTypeRejection (ctx : Ctx) (models : Array (Nat × Expr)) (type : Expr) :
     MetaM (Option String) := do
   if (← statement? type).isSome then
@@ -730,6 +732,11 @@ def auditModules (modules : Array Name) : CommandElabM Unit := do
       let info ← getConstInfo name
       unless ← isProp info.type do continue
       checked := checked + 1
+      match info with
+      | .thmInfo _ =>
+        unless (Registry.kindOf? env name).isSome do
+          rejected := rejected.push s!"{name} in {mod}: source-authored theorem requires exactly one PowerLib classification"
+      | _ => pure ()
       if (← withCurrHeartbeats (statement? info.type)).isSome then claims := claims + 1
       if let some reason ← withCurrHeartbeats (declarationRejection ctx models name) then
         rejected := rejected.push s!"{name} in {mod}: {reason}"
