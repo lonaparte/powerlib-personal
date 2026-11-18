@@ -57,6 +57,9 @@ structure KYP (M : Plant n p) where
   output : M.Bᵀ * P = M.C
   feedthrough : ∀ u : Fin p → ℝ, 0 ≤ u ⬝ᵥ (M.D *ᵥ u)
 
+attribute [powerlib_foundation]
+  KYP.symmetric KYP.nonneg KYP.dissipation KYP.output KYP.feedthrough
+
 /-- The quadratic storage `xᵀ P x / 2` (`quadraticEnergy`). -/
 abbrev KYP.storage {M : Plant n p} (c : KYP M) : ℝⁿ → ℝ := quadraticEnergy c.P
 

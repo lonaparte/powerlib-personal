@@ -219,6 +219,11 @@ structure QuadraticDecay (f : ℝⁿ → ℝⁿ) (V : ℝⁿ → ℝ) (e : ℝ�
   upper_bound : ∀ x, V x ≤ upper * ‖x - e‖ ^ 2
   dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x
 
+attribute [powerlib_foundation]
+  QuadraticDecay.lower_pos QuadraticDecay.upper_pos QuadraticDecay.rate_pos
+  QuadraticDecay.smooth QuadraticDecay.equilibrium QuadraticDecay.lower_bound
+  QuadraticDecay.upper_bound QuadraticDecay.dissipation
+
 /-- Integrating an energy inequality needs no positivity assumption on its rate.
 Negative rates give growth bounds, and zero gives a bounded energy. -/
 @[tmio T, powerlib_foundation] theorem energy_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}

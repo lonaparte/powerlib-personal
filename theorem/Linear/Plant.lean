@@ -39,6 +39,8 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   C : Matrix (Fin p) (Fin n) ℝ
   D : Matrix (Fin p) (Fin p) ℝ
 
+attribute [powerlib_foundation] Plant.ext_iff Plant.ext
+
 /-- A square matrix acting on Euclidean state space. -/
 abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ :=
   Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A
