@@ -74,11 +74,11 @@ run_cmd do
 -- The independent upstream profile also admits engineering conclusions through connections.
 @[powerlib_domain] theorem complete_rational_certification {n : ℕ}
     (A : Matrix (Fin n) (Fin n) ℚ)
-    (h : LinearSystems.IsHurwitz (powerlib.Linear.Synthesis.real A)) :
+    (h : LinearSystems.IsHurwitz (powerlib.Linear.Positive.real A)) :
     connection% (A ∈ powerlib.TMIO.realize powerlib.Linear.Rational.Meets
       {powerlib.Linear.Rational.Requirement.accepted}) := by
   unfold powerlib.TMIO.Statement
-  rw [powerlib.TMIO.mem_realize]
+  rw [(connection_proof% powerlib.TMIO.mem_realize)]
   intro q hq
   rw [Set.mem_singleton_iff] at hq
   subst q
