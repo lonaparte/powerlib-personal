@@ -56,12 +56,6 @@ run_cmd do
     ((← `(@[tmio T, powerlib_domain] theorem bad : True := True.intro)).raw,
       "powerlib_domain with tmio T"),
     ((← `(@[powerlib_domain, tmio T] private theorem bad : True := True.intro)).raw,
-      "powerlib_domain with tmio T"),
-    ((← `(attribute [powerlib_foundation] modelImplementation)).raw,
-      "powerlib_foundation with tmio M-I"),
-    ((← `(attribute [powerlib_foundation] implementationObservation)).raw,
-      "powerlib_foundation with tmio I-O"),
-    ((← `(attribute [powerlib_domain] theory)).raw,
       "powerlib_domain with tmio T")]
   for (command, expected) in cases do
     withoutModifyingEnv do
@@ -74,6 +68,18 @@ run_cmd do
         rejected := true
       unless rejected do throwError "An incompatible pair was accepted: {expected}"
   powerlib.Registry.auditCompatibilityInEnvironment
+
+/-- error: PowerLib theorem KnowledgeAttributeCases.modelImplementation is already classified as domain -/
+#guard_msgs in
+attribute [powerlib_foundation] modelImplementation
+
+/-- error: PowerLib theorem KnowledgeAttributeCases.implementationObservation is already classified as domain -/
+#guard_msgs in
+attribute [powerlib_foundation] implementationObservation
+
+/-- error: PowerLib theorem KnowledgeAttributeCases.theory is already classified as foundation -/
+#guard_msgs in
+attribute [powerlib_domain] theory
 
 run_cmd do
   let env ← getEnv
