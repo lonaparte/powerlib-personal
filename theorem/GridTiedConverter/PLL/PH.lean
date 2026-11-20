@@ -517,7 +517,7 @@ def reversedAmplitude : Model := ⟨-1, 1, 1, 0, Real.pi, zero_le_one⟩
   unfold powerlib.TMIO.Statement
   refine (mem_den_flow_iff_toSRF _ _).mpr (PIPLL.mem_den_locallyExponentiallyStable _ ?_ ?_ ?_)
   · simp [toSRF, srf, srfPD, reversedAmplitude]
-  all_goals rw [toSRF, PIPLL.srf_deriv]; simp [srf, srfPD, reversedAmplitude]
+  all_goals rw [toSRF, PIPLL.srf_deriv]; simp [srf, reversedAmplitude]
 
 /-- Without the context of nonnegative energy the local exponential translation is sound but not
 exact: the reversed-amplitude model is locally exponentially stable at an anti-phase point. -/

@@ -233,7 +233,6 @@ def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
   unfold TMIO.Statement
   rw [(connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets]
-  change IsHurwitz q.plant.A ↔ q.Stable
   -- block triangular closed loop: the spectrum is the PI loop's together with `−1/τ`
   have h : IsHurwitz q.plant.A ↔ IsHurwitz q.pi.model.A ∧ 0 < q.τ := by
     change IsHurwitz (q.pi.lpfModel q.τ).A ↔ _

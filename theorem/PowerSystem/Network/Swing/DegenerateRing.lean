@@ -349,7 +349,6 @@ def params : Params 4 where
 @[tmio M, powerlib_domain] theorem balance :
     connection% ((⟨params, θr⟩ : Model 4) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
-  change ∀ k, params.P k = powerInjection params.B θr k
   intro k
   show fr k - fr (k - 1) = ∑ j, Br k j * Real.sin (θr k - θr j)
   rw [sum_Br (fun j => Real.sin (θr k - θr j)) k, line_sin k, line_sin' k]
@@ -721,7 +720,6 @@ by `0`). -/
     (hker : ∀ k, ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) = 0) :
     connection% ((⟨p, θ⟩ : Model n) ∉ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
-  change ¬ LinearSystems.IsHurwitz (jacobian p θ)
   intro hH
   apply Dynamics.mulVec_ne_zero_of_isHurwitz hH
     (v := fun r => Dynamics.Mechanical.point (k := n + 1) v r)

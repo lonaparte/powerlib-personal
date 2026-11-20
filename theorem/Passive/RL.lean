@@ -398,7 +398,7 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
           (family_isLinear.mem_den_flow.mpr h)
         change m ∉ family.den (.flow .globallyExponentiallyStable) at hnh
         rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial),
-          Set.mem_setOf_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+          Set.mem_ofPred_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
       (connection_proof% isHurwitz_iff)] at hnh
         exact le_antisymm (not_lt.mp hnh) hnn
     case locallyAsymptoticallyStable =>

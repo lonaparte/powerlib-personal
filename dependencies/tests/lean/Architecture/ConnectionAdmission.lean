@@ -43,6 +43,7 @@ abbrev ModelAlias := Passive.RL.Impedance
 @[powerlib_domain] private theorem aliasedModel (m : ModelAlias) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 
+set_option linter.defProp false in
 private def proofDefinition (m : Passive.RL.Impedance) (h : 0 ≤ m.resistance) :
     fakeEndpoint m := raw m h
 

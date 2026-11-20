@@ -210,6 +210,7 @@ def Circuit.Stable (m : Circuit) : Prop := ∀ s : ℂ, m.frequency s = 0 → s.
   ring
 
 /-- Both resistances nonnegative. -/
+set_option linter.dupNamespace false in
 def Circuit.Passive (m : Circuit) : Prop := 0 ≤ m.first.resistance ∧ 0 ≤ m.second.resistance
 
 /-- Some resistance nonzero. -/

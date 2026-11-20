@@ -234,7 +234,7 @@ def quadraticEnergy (P : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) : ℝ :=
     rw [quadraticEnergy_eq_inner]
     exact ((hasFDerivAt_id x).inner ℝ (op P).hasFDerivAt).const_mul (1 / 2 : ℝ)
   rw [hd.fderiv]
-  simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply,
+  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.prod_apply, fderivInnerCLM_apply, ContinuousLinearMap.id_apply, inner_op,
     smul_eq_mul]
   have hsym : WithLp.ofLp v ⬝ᵥ (P *ᵥ WithLp.ofLp x) = WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp v) := by

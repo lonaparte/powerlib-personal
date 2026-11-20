@@ -689,12 +689,12 @@ passivity holds without requirement. -/
   obtain ⟨htr, hm2, hm3, hdet⟩ := p.jacobian_invariants_of_J20_eq_zero
     (x := WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) (a := -a) (b := p.ki)
     (c := -p.Vg) (d := -c) (e := d)
-    (by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, hq, hd])
-    (by simp [J, PLLDC.Params.jacobian, a]) (by simp [J, PLLDC.Params.jacobian])
-    (by simp [J, PLLDC.Params.jacobian])
-    (by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.pccP,
+    (by simp [PLLDC.Params.jacobian, PLLDC.Params.idRef, hq, hd])
+    (by simp [PLLDC.Params.jacobian, a]) (by simp [PLLDC.Params.jacobian])
+    (by simp [PLLDC.Params.jacobian])
+    (by simp [PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, PLLDC.Params.pccP,
         PLLDC.Params.vgq, hR, hq, hd, c]; field_simp)
-    (by simp [J, PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, hR, hq, hd, d])
+    (by simp [PLLDC.Params.jacobian, PLLDC.Params.idRef, PLLDC.Params.vgd, hR, hq, hd, d])
   rw [← hJ] at htr hm2 hm3 hdet
   have hki : p.ki * -p.Vg = -b := by rw [hb]; ring
   rw [hki] at hm2 hm3 hdet

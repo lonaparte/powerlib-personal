@@ -551,7 +551,6 @@ instability. -/
     connection% (y ∈ TMIO.realize RigMeets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
-  change 0 < y.H
   obtain ⟨hM, hD, hω⟩ := hp
   have hl' : y.τ * y.b * (y.design.K * y.design.g.M +
       y.τ * (y.design.g.D * y.design.g.M * y.design.g.ωc ^ 2 + y.design.K * y.design.g.D)) <

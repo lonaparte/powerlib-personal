@@ -274,7 +274,6 @@ namespace DqBranch
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.R / m.L) := by
   unfold TMIO.Statement
   rw [(connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
-  change IsHurwitz m.plant.A ↔ 0 < m.R / m.L
   change IsHurwitz (dqRLMatrix m.branch m.ω) ↔ _
   rw [← spectrallyStable_iff_isHurwitz]
   exact spectrallyStable_dqRLMatrix_iff m.branch m.ω

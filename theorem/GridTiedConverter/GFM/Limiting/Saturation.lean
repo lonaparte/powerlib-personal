@@ -346,7 +346,6 @@ def negativeInertia : SatModel := ⟨-1, -1, 0, -1, Real.pi / 2, 0⟩
     connection% (negativeInertia ∉ TMIO.realize family.meets {.stable}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Spectral.localFamily, Spectral.Meets]
-  change ¬ SatModel.Stable negativeInertia
   intro h
   have := h.2.1
   norm_num [negativeInertia] at this

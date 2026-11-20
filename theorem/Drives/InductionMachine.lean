@@ -359,7 +359,7 @@ constant voltage `r_r L_m i_s`: `ψ̇_r = −(r_r/L_r) ψ_r − ω_sl J ψ_r + (
   rw [Passive.DqRL.dqRLPlant_field]
   ext k
   fin_cases k <;>
-    simp [fluxField, PhasePlane.mk, Params.rotorBranch, Transform.J, Matrix.mulVec, dotProduct,
+    simp [fluxField, PhasePlane.mk, Params.rotorBranch, Transform.J, dotProduct,
       Fin.sum_univ_two, Matrix.vecHead, Matrix.vecTail] <;> ring
 
 /-- The field is affine with linear part `fluxMatrix` and vanishes at `fluxEquilibrium`:

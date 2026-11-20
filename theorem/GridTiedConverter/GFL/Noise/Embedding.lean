@@ -131,12 +131,12 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
   rw [voltageBlock_mul_transpose]
   have h1 : frobInner ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1]) (pllR Kp) =
       (σd ^ 2 + g ^ 2) * Kp ^ 3 := by
-    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
+    simp [frobInner, pllR, Matrix.trace_fin_two]; ring
   have h2 : frobInner ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1])
       ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1]) = ((σd ^ 2 + g ^ 2) * (1 + Kp ^ 2)) ^ 2 := by
     simp [frobInner, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
   have h3 : frobInner (pllR Kp) (pllR Kp) = Kp ^ 2 := by
-    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
+    simp [frobInner, pllR]; ring
   rw [h1, h2, h3, Real.sqrt_sq (by positivity), Real.sqrt_sq hKp.le]
   field_simp
 
@@ -154,11 +154,11 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
     ext i j; fin_cases i <;> fin_cases j <;> simp [freqNoise, Matrix.mul_apply]; ring
   rw [e]
   have h1 : frobInner !![ε ^ 2, 0; 0, 0] (pllR Kp) = ε ^ 2 * Kp := by
-    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
+    simp [frobInner, pllR, Matrix.trace_fin_two]
   have h2 : frobInner !![ε ^ 2, 0; 0, 0] !![ε ^ 2, 0; 0, 0] = (ε ^ 2) ^ 2 := by
     simp [frobInner, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
   have h3 : frobInner (pllR Kp) (pllR Kp) = Kp ^ 2 := by
-    simp [frobInner, pllR, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]; ring
+    simp [frobInner, pllR]; ring
   have hε2 : 0 < ε ^ 2 := by positivity
   rw [h1, h2, h3, Real.sqrt_sq hε2.le, Real.sqrt_sq hKp.le]
   field_simp

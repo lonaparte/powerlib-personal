@@ -229,7 +229,7 @@ def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
     connection% (certify (ofDesign design) P = design ⁻¹' P) := by
   change certify (ofDesign design) P = design ⁻¹' P
   ext y
-  simp only [mem_certify, ofDesign, Set.mem_setOf_eq, Set.mem_preimage]
+  simp only [mem_certify, ofDesign, Set.mem_ofPred_eq, Set.mem_preimage]
   exact ⟨fun h => h _ rfl, fun h x hx => hx ▸ h⟩
 
 /-- Certification against the realization of an implementation built from a design map

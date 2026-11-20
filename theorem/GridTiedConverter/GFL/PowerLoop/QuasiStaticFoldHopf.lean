@@ -354,7 +354,6 @@ def supercriticalQS : Model :=
     connection% (supercriticalQS ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
   refine ⟨?_, ?_⟩
   · rw [hs]; simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalQS]
@@ -552,7 +551,7 @@ def hopfQS_q2 (z : Dynamics.State 3) : ℝ :=
   have hc4 : (fun z : Dynamics.State 3 => Real.cos (z 0) - (1 - z 0 ^ 2 / 2)) =O[𝓝 0]
       fun z => hopfQS_size z ^ 4 := by
     have := Dynamics.isBigO_comp_pow Dynamics.one_sub_cos_sub_isBigO ht hopfQS_z0_isBigO
-    exact (this.neg_left).congr_left fun z => by simp only [Function.comp]; ring
+    exact (this.neg_left).congr_left fun z => by simp only; ring
   have hKS := isBigO_poly3_weight hopfQS_size_tendsto hopfQS_c1_isBigO hopfQS_c2_isBigO
     hopfQS_c3_isBigO hopfQS_KS (k := 1) (by simp [hopfQS_KS])
   have hKC := isBigO_poly3_weight hopfQS_size_tendsto hopfQS_c1_isBigO hopfQS_c2_isBigO

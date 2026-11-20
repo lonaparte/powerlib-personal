@@ -88,8 +88,8 @@ def family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0 :=
 @[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (realize (Meets (n := n)) Set.univ = ∅) :=
   Spectral.realize_univ_of_linearTable (F := family) (plant := plant) (Rs := {.hurwitz})
-    (Ru := {.rightHalfPlaneRoot}) (fun A hA => (mem_realize _ _ _).mp hA .hurwitz rfl)
-    (fun A hA => (mem_realize _ _ _).mp hA .rightHalfPlaneRoot rfl)
+    (Ru := {.rightHalfPlaneRoot}) (fun _A hA => (mem_realize _ _ _).mp hA .hurwitz rfl)
+    (fun _A hA => (mem_realize _ _ _).mp hA .rightHalfPlaneRoot rfl)
 
 /-- The Hurwitz property is the exact translation of the attractive sentences and sampled
 contraction. -/

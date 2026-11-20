@@ -407,7 +407,7 @@ linear map at the origin) vanishes. -/
 @[tmio T, powerlib_foundation] theorem tendsto_sum_abs_coord {α ι : Type*} [Fintype ι]
     {l : Filter α} {T : α → ι → ℝ} (hT : Tendsto T l (𝓝 0)) :
     Tendsto (fun z => ∑ i, |T z i|) l (𝓝 0) := by
-  have h := tendsto_finset_sum (Finset.univ : Finset ι) fun i _ =>
+  have h := tendsto_finsetSum (Finset.univ : Finset ι) fun i _ =>
     ((continuous_apply i).tendsto (0 : ι → ℝ)).comp hT |>.abs
   simpa using h
 

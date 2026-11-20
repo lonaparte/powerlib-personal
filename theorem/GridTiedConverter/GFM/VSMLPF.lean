@@ -323,8 +323,7 @@ def family : Family Model Requirement 3 0 :=
 Satisfaction of the power-balance requirement. -/
 @[tmio M, powerlib_domain] theorem sin_δ0 (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
     connection% ((⟨g, g.δ0⟩ : Model) ∈ TMIO.realize Meets {.balanced}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K]
-  change g.K0 * Real.sin g.δ0 = g.P0
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K]
   exact SpecialFunctions.mul_sin_arcsin_div h hK0
 
 /-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
@@ -338,7 +337,7 @@ Static evidence on the model, not a connection conclusion. -/
 (`cos δ₀ = √(1 − (P₀/K₀)²) > 0`, `SpecialFunctions.cos_arcsin_div_pos`). -/
 @[tmio M, powerlib_domain] theorem K_pos (hK0 : 0 < g.K0) (h : |g.P0| < g.K0) :
     connection% ((⟨g, g.δ0⟩ : Model) ∈ TMIO.realize Meets {.synchronizing}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K]
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K]
   change 0 < g.K
   exact mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)
 

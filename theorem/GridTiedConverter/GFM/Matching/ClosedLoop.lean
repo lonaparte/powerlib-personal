@@ -623,8 +623,6 @@ connection conclusion. -/
     connection% (m ∈ TMIO.realize Meets {.damping} ↔ m.C ^ 2 * (m.vdStar ^ 2 + m.vqStar ^ 2) / (4 * (m.G + m.Gl)) +
       m.L ^ 2 * (m.idStar ^ 2 + m.iqStar ^ 2) / (4 * m.R) < (m.Gdc + m.Kp) / m.η ^ 2) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change 0 < m.margin ↔ m.C ^ 2 * (m.vdStar ^ 2 + m.vqStar ^ 2) / (4 * (m.G + m.Gl)) +
-      m.L ^ 2 * (m.idStar ^ 2 + m.iqStar ^ 2) / (4 * m.R) < (m.Gdc + m.Kp) / m.η ^ 2
   have hη2 : 0 < m.η ^ 2 := by positivity
   rw [lt_div_iff₀ hη2, Model.margin, sub_pos]
   constructor <;> intro h <;> linarith
@@ -660,7 +658,6 @@ def example1 : Model :=
 @[tmio M, powerlib_domain] theorem example1_equilibrium :
     connection% (example1 ∈ TMIO.realize Meets {.equilibrium}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change example1.field example1.point 0 = 0
   ext i
   fin_cases i <;> simp [Model.field, Model.point, example1] <;> norm_num
 

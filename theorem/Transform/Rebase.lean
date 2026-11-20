@@ -554,8 +554,7 @@ bases need inverses. -/
 @[tmio M, powerlib_foundation] theorem impedanceStable_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
     connection% ((interconnection ic β) ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
-  change (interconnection ic β).ImpedanceStable ↔ ic.ImpedanceStable
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   have hw' : (β.w : ℂ) ≠ 0 := by exact_mod_cast hw.ne'
   simp only [Interconnection.ImpedanceStable, returnDifference_rebase h₁ h₂ hv hi hw.ne']
   constructor
@@ -576,7 +575,7 @@ base: the step of `den_rebase` at the globally exponentially stable sentence. -/
     (h₁ : β.S₁ * β.T₁ = 1) (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1)
     (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
     connection% ((interconnection ic β) ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
+  simp only [TMIO.Statement, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A]
   change IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A
   rw [closedLoop_rebase hv hi, ← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
   exact spectrallyStable_rebaseMatrix_iff (blockCoordinates_inv h₁ h₂) hw _

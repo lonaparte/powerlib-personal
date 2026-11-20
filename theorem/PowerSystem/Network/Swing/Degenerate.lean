@@ -399,7 +399,6 @@ power-balance point. -/
     (h : LyapunovStable (reducedField p) (equilibrium θ)) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
-  change ∀ k, p.P k = powerInjection p.B θ k
   exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (powerFlow_of_equilibrium (Dynamics.isEquilibrium_of_lyapunovStable (reducedField_contDiff p) h)))
 
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt` on the
@@ -887,7 +886,6 @@ together. -/
     (h : ∀ k j, p.B k j = 0 ∨ ground v k = ground v j) :
     connection% (∀ t : ℝ, (⟨p, θ + ground (t • v)⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
-  change ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k
   intro t k
   rw [hbal k]
   unfold powerInjection
@@ -1266,7 +1264,6 @@ vanishes). -/
     (h : IsLocalMin (fun v => potential p (θ + ground v)) v) :
     connection% ((⟨p, θ + ground v⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
-  change ∀ k, p.P k = powerInjection p.B (θ + ground v) k
   have h0 := h.hasFDerivAt_eq_zero (hasFDerivAt_potential_ground p θ v)
   have hi : ∀ i : Fin n, powerInjection p.B (θ + ground v) i.succ - p.P i.succ = 0 := by
     intro i

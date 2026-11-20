@@ -485,7 +485,6 @@ point. -/
     connection% ((⟨p, θ, Id⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change IsEq p θ Id
   have h1 := congrArg (fun y : Dynamics.State 3 => y 1) h
   have h2 := congrArg (fun y : Dynamics.State 3 => y 2) h
   simp [field, point, Dynamics.lift, coordField] at h1 h2

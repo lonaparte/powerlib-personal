@@ -481,7 +481,6 @@ def hessForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq,
     powerlib.Network.Swing.Meets]
-  change LinearSystems.IsHurwitz (jacobian p θ)
   intro μ v hv heig
   simp only [neg_zero]
   have hWs := flowWeights_symm p θ
@@ -695,8 +694,7 @@ of the weights, positive on every nonzero grounded direction (`jacobian_isHurwit
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach p.B i j) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
-  change LinearSystems.IsHurwitz (jacobian p θ)
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
   have hpos : ∀ i j, 0 < p.B i j → 0 < flowWeights p.B θ i j := by
     intro i j hij
     have hc : 0 < Real.cos (θ i - θ j) := by
@@ -762,8 +760,7 @@ converse of `reducedField_equilibrium`). Read through the existing family endpoi
 @[tmio M, powerlib_domain] theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : reducedField p (equilibrium θ) = 0) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
-  change ∀ k, p.P k = powerInjection p.B θ k
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
   intro k
   have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h
   simp only [reducedField_wIdx, equilibrium, reduce_wIdx, angleMap_reduce,
@@ -923,8 +920,7 @@ energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increas
 Read through the existing family endpoint. -/
 @[tmio M, powerlib_domain] theorem uncoupledN_not_isHurwitz :
     connection% (uncoupledN n ∉ TMIO.realize Meets {.jacobianStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
-  change ¬ LinearSystems.IsHurwitz (jacobian (uncoupledN n).params (uncoupledN n).θ)
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
   intro hH
   apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := Pi.single (dIdx 0) 1)
   · intro h
@@ -956,8 +952,7 @@ point whose reduced Jacobian is not Hurwitz. -/
  -/
 @[tmio M, powerlib_domain] theorem jacobian_isHurwitz_zero (p : Params 0) (θ : Fin 1 → ℝ) :
     connection% ((⟨p, θ⟩ : Model 0) ∈ TMIO.realize Meets {.jacobianStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
-  change LinearSystems.IsHurwitz (jacobian p θ)
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
   have hij : ∀ i j : Fin (0 + 1), i = j := fun i j => Fin.ext (by omega)
   refine (TMIO.mem_realize _ _ _).mp (jacobian_isHurwitz p θ (fun i j => ?_) (fun i j => ?_)) .jacobianStable (by simp)
   · rw [hij i j]

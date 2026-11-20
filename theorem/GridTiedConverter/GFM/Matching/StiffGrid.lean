@@ -808,8 +808,6 @@ def Meets (m : Model) : Requirement → Prop
     connection% (m ∈ TMIO.realize Meets {.damped} ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
       (m.Gdc + m.Kp) / m.η ^ 2) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change 0 < m.margin ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
-      (m.Gdc + m.Kp) / m.η ^ 2
   have hη2 : 0 < m.η ^ 2 := by positivity
   rw [lt_div_iff₀ hη2, Model.margin, Model.ω0, sub_pos]
   constructor <;> intro h <;> convert h using 1 <;> ring

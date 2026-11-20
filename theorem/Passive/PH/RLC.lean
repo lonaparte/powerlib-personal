@@ -184,7 +184,7 @@ for this linear family that is equivalent to its state matrix being Hurwitz. -/
       Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.r) := by
   unfold TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
-    (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_setOf_eq]
+    (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_ofPred_eq]
   rw [seriesRLCPH_stateMatrix, Criteria.isHurwitz_fin_two_of_iff]
   have hL := p.L_pos
   have hC := p.C_pos
@@ -212,7 +212,7 @@ centre). -/
   change (seriesRLCPH p ∈
     Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.r) at hh
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
-    (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_setOf_eq] at hh
+    (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_ofPred_eq] at hh
   exact hh
 
 /-- `r > 0`: every zero-input solution segment decays at one positive exponential rate, with one

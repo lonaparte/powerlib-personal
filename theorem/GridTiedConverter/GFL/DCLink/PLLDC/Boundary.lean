@@ -318,7 +318,6 @@ PLL–DC model being `C¹` on `V_dc ≠ 0`). -/
     connection% (hopfCenter ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change hopfCenter.p.field hopfCenter.x = 0
   rw [PLLDC.Params.field_eq_zero_iff]
   simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, hopfCenter,
       PLLDC.Params.idRef, PLLDC.Params.vgq, PLLDC.Params.vgd]
@@ -344,7 +343,6 @@ Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
     connection% (hopfCenter ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x)
   obtain ⟨h1, h2, h3, h4⟩ := hopfCenter_invariants
   rintro ⟨-, -, -, h⟩
   rw [h1, h2, h3, h4] at h
@@ -387,7 +385,6 @@ def cdcZero : Model :=
     connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change cdcZero.p.field cdcZero.x = 0
   rw [PLLDC.Params.field_eq_zero_iff]
   simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, cdcZero,
       PLLDC.Params.idRef, PLLDC.Params.vgq, PLLDC.Params.vgd]
@@ -410,7 +407,6 @@ def cdcZero : Model :=
     connection% (cdcZero ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change ¬ RouthFin4 (cdcZero.p.jacobian cdcZero.x)
   obtain ⟨-, -, -, h4⟩ := cdcZero_invariants
   rintro ⟨-, -, h, -⟩
   rw [h4] at h
@@ -674,7 +670,6 @@ def hopfDamped : Model :=
     connection% (hopfDamped ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change hopfDamped.p.field hopfDamped.x = 0
   rw [PLLDC.Params.field_eq_zero_iff]
   simp [Passive.SeriesRLC.reactance, PLLDC.Params.Cdc, PLLDC.Params.Rg, PLLDC.Params.Xg, hopfDamped,
       PLLDC.Params.idRef, PLLDC.Params.vgq, PLLDC.Params.vgd]
@@ -701,7 +696,6 @@ characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr�
     connection% (hopfDamped ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  change ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x)
   obtain ⟨h1, h2, h3, h4⟩ := hopfDamped_invariants
   rintro ⟨-, -, -, h⟩
   rw [h1, h2, h3, h4] at h

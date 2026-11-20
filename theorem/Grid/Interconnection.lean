@@ -326,8 +326,7 @@ impedance criterion holds. -/
 @[tmio TM, powerlib_foundation] theorem isHurwitz_closedLoop_iff (h₁ : IsHurwitz ic.source.A)
     (h₂ : IsHurwitz ic.load.A) :
     connection% (ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change IsHurwitz ic.closedLoopA ↔ ic.ImpedanceStable
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   rw [← spectrallyStable_iff_isHurwitz] at h₁ h₂ ⊢
   rw [closedLoopA, spectrallyStable_reindex]
   constructor
@@ -349,8 +348,7 @@ impedance criterion holds. -/
 @[tmio TM, simp high, powerlib_foundation, aesop unsafe 70% apply] theorem isHurwitz_closedLoop_of_impedanceStable
     (h₁ : IsHurwitz ic.source.A) (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
     connection% (ic ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change IsHurwitz ic.closedLoopA
+  simp only [TMIO.Statement, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A]
   exact ((show IsHurwitz ic.closedLoopA ↔ ic.ImpedanceStable from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq] using (ic.isHurwitz_closedLoop_iff h₁ h₂))).mpr h
 
 end Interconnection
@@ -600,8 +598,7 @@ def portData (ic : Interconnection n₁ n₂ p) :
 @[tmio M, powerlib_foundation] theorem impedanceStable_of_portData {ic ic' : Interconnection n₁ n₂ p}
     (h : ic.portData = ic'.portData) :
     connection% (ic ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable} ↔ ic' ∈ TMIO.realize powerlib.Grid.Interconnection.Meets {.impedanceStable}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change ic.ImpedanceStable ↔ ic'.ImpedanceStable
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets]
   have hZ : ic.sourceImpedance = ic'.sourceImpedance := congrArg Prod.fst h
   have hY : ic.loadAdmittance = ic'.loadAdmittance := congrArg Prod.snd h
   simp only [ImpedanceStable, returnDifference, hZ, hY]
@@ -624,8 +621,7 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
 /-- The quiet interconnection is stable, by the impedance criterion. -/
 @[tmio TM, powerlib_foundation] theorem quietLoop_stable :
     connection% (quietLoop ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change IsHurwitz quietLoop.closedLoopA
+  simp only [TMIO.Statement, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A]
   refine ((show IsHurwitz quietLoop.closedLoopA ↔ quietLoop.ImpedanceStable from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq] using (quietLoop.isHurwitz_closedLoop_iff transfer_not_determines_stability.2.1
     testLoad_isHurwitz))).mpr fun s _ => ?_
   have hZ : quietLoop.sourceImpedance s = 0 := by
@@ -635,8 +631,7 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
 /-- The hidden-mode interconnection is unstable, although its port data are the quiet one's. -/
 @[tmio TM, powerlib_foundation] theorem hiddenLoop_unstable :
     connection% (¬ (hiddenLoop ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable))) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change ¬ IsHurwitz hiddenLoop.closedLoopA
+  simp only [TMIO.Statement, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A]
   rw [← spectrallyStable_iff_isHurwitz, closedLoopA, spectrallyStable_reindex]
   intro h
   have hdet : (characteristicMatrix hiddenLoop.closedLoopBlocks 1).det = 0 := by
@@ -737,8 +732,7 @@ def staticLoop (d c : ℝ) : Interconnection 0 1 1 := ⟨staticSource d, firstOr
 /-- The closed loop is stable exactly when `1 + d c > 0`. -/
 @[tmio TM, powerlib_foundation] theorem staticLoop_isHurwitz_iff (d c : ℝ) :
     connection% ((staticLoop d c) ∈ powerlib.Grid.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ 0 < 1 + d * c) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A, powerlib.Grid.Interconnection.Meets, Set.mem_ofPred_eq]
-  change IsHurwitz (staticLoop d c).closedLoopA ↔ 0 < 1 + d * c
+  simp only [TMIO.Statement, (connection_proof% powerlib.Grid.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Grid.Interconnection.closedLoop_A]
   have h : ((staticLoop d c).closedLoopA : Matrix (Fin 1) (Fin 1) ℝ) = !![-1 - d * c] := by
     ext i j
     fin_cases i

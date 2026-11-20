@@ -733,7 +733,7 @@ def imcTuned (L R ωb Ts : ℝ) : DigitalPI := ⟨imc L R ωb, Ts⟩
   have h := mem_den_iff (imcTuned L R ωb Ts) hL hT hP
   unfold powerlib.TMIO.Statement at h ⊢
   rw [h]
-  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, Set.mem_setOf_eq] using (imcTuned_routh_iff hL hR hT))
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, Set.mem_ofPred_eq] using (imcTuned_routh_iff hL hR hT))
 
 /-- A slowly sampled IMC loop: `L = R = ω_b = 1`, `Tₛ = 2` (`ω_b Tₛ = 2 > 4/3`). -/
 def slowIMC : DigitalPI := imcTuned 1 1 1 2
