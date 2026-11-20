@@ -178,27 +178,29 @@ def authoredTheorems (commands : Array Syntax) : CommandElabM (Array Name) := do
         names := names.push name
   return names.qsort Name.quickLt
 
-/-- Reconstruct an imported module's source-authored theorem inventory from its parsed source,
-exact selection ranges, declaration kinds and actual module ownership. Generated projections and
-extensionality declarations can carry source ranges, but do not match a source declaration name
-and selection range. -/
-def authoredTheoremsInModule (env : Environment) (commands : Array Syntax) (fileMap : FileMap)
+/-- Parse only the source prefix through a persisted declaration's selection range. Replacing the
+type and value avoids depending on notation scopes established earlier in the original file. -/
+private def authoredDeclarationName? (env : Environment) (fileMap : FileMap)
+    (ranges : DeclarationRanges) : Option Name := do
+  let start := fileMap.ofPosition ranges.range.pos
+  let stop := fileMap.ofPosition ranges.selectionRange.endPos
+  let sourceHead := String.Pos.Raw.extract fileMap.source start stop
+  let command ← (Parser.runParserCategory env `command
+    (sourceHead ++ " : True := by trivial")).toOption
+  let ref ← (authoredDeclarationRefs command).find? (·.isIdent)
+  return ref.getId.eraseMacroScopes.replacePrefix rootNamespace .anonymous
+
+/-- Reconstruct an imported module's source-authored theorem inventory from persisted source
+ranges, declaration kinds and actual module ownership. Generated projections and extensionality
+declarations can carry source ranges, but their range prefix is not an authored theorem command
+with their generated name. -/
+def authoredTheoremsInModule (env : Environment) (fileMap : FileMap)
     (moduleIdx : ModuleIdx) : Array Name := Id.run do
-  let mut refs : Array (Name × DeclarationRange) := #[]
-  for command in commands do
-    for ref in authoredDeclarationRefs command do
-      if ref.isIdent then
-        if let some sourceRange := ref.getRange? then
-          let range := DeclarationRange.ofStringPositions fileMap
-            sourceRange.start sourceRange.stop
-          refs := refs.push
-            (ref.getId.eraseMacroScopes.replacePrefix rootNamespace .anonymous, range)
   let mut names := #[]
   for (name, declarationRanges) in declRangeExt.getModuleEntries env moduleIdx do
     unless (env.find? name).any (fun info => info.isTheorem) do continue
-    if refs.any (fun (sourceName, range) =>
-        sourceName.isSuffixOf (privateToUserName name).eraseMacroScopes &&
-          decide (range = declarationRanges.selectionRange)) then
+    if (authoredDeclarationName? env fileMap declarationRanges).any fun sourceName =>
+        sourceName.isSuffixOf (privateToUserName name).eraseMacroScopes then
       names := names.push name
   return names.qsort Name.quickLt
 

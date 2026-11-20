@@ -42,7 +42,7 @@ Results.
   carry the certificate in their type, independently of attributes), `context`, `rejection`,
   `audit`, `modelTypes`, `publicTypeRejection`, `declarationRejection`.
 * `auditModules`: whole-package admission of the actual Lake module inventory, run by the build
-  (`lakefile.lean`); it reconstructs parser-derived provenance from every actual module source,
+  (`lakefile.lean`); it reconstructs range-derived provenance from every actual module source,
   does not infer source ownership from the classification registry, and rejects axioms outside
   the allowlist.
 * `moduleLinter`, registered with `addModuleLinter`: earlier feedback for published connection
@@ -708,9 +708,8 @@ def audit (names : Array Name) : CommandElabM Unit := do
         throwError "Connection theorem {name} violates connection admission: {reason}"
 
 /-- Whole-package admission uses the actual Lake module inventory and source paths supplied by the
-build. It reconstructs authored theorem provenance from parsed source declarations, exact
-selection ranges and imported module ownership; classification attributes do not define source
-ownership. -/
+build. It reconstructs authored theorem provenance from exact source selection ranges and imported
+module ownership; classification attributes do not define source ownership. -/
 def auditModules (moduleSources : Array (Name × String)) : CommandElabM Unit := do
   liftTermElabM do
     let modules := moduleSources.map (fun entry => entry.1)
@@ -725,9 +724,7 @@ def auditModules (moduleSources : Array (Name × String)) : CommandElabM Unit :=
       let some index := env.header.moduleNames.idxOf? mod |
         throwError "Built module missing from admission environment: {mod}"
       let source ← IO.FS.readFile sourcePath
-      let parsed ← Parser.testParseModule env sourcePath source
-      let authored := Registry.authoredTheoremsInModule env parsed[1].getArgs
-        (FileMap.ofString source) index
+      let authored := Registry.authoredTheoremsInModule env (FileMap.ofString source) index
       for name in authored do
         unless (Registry.kindOf? env name).isSome do
           rejected := rejected.push s!"{name} in {mod}: source-authored theorem requires exactly one PowerLib classification"

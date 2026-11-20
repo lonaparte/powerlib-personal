@@ -53,12 +53,11 @@ run_cmd do
     throwError "The imported registry fixture has no module index"
   let fixturePath := "dependencies/tests/lean/Architecture/RegistryFixture.lean"
   let fixtureSource ← IO.FS.readFile fixturePath
-  let fixtureParsed ← Parser.testParseModule env fixturePath fixtureSource
-  let authored := powerlib.Registry.authoredTheoremsInModule env fixtureParsed[1].getArgs
+  let authored := powerlib.Registry.authoredTheoremsInModule env
     (FileMap.ofString fixtureSource) fixtureIdx
   unless authored.contains `RegistryFixture.envelope &&
       authored.contains `RegistryFixture.envelope_iff do
-    throwError "Parser-derived provenance omitted an authored fixture theorem: {authored}"
+    throwError "Source-range provenance omitted an authored fixture theorem: {authored}"
   if authored.contains `RegistryFixture.Envelope.proof then
     throwError "A generated structure projection was treated as an authored theorem"
   let some current := powerlib.Search.describe env `RegistryCurrent.stable |
