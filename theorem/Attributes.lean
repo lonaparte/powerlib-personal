@@ -178,6 +178,30 @@ def authoredTheorems (commands : Array Syntax) : CommandElabM (Array Name) := do
         names := names.push name
   return names.qsort Name.quickLt
 
+/-- Reconstruct an imported module's source-authored theorem inventory from its parsed source,
+exact selection ranges, declaration kinds and actual module ownership. Generated projections and
+extensionality declarations can carry source ranges, but do not match a source declaration name
+and selection range. -/
+def authoredTheoremsInModule (env : Environment) (commands : Array Syntax) (fileMap : FileMap)
+    (moduleIdx : ModuleIdx) : Array Name := Id.run do
+  let mut refs : Array (Name × DeclarationRange) := #[]
+  for command in commands do
+    for ref in authoredDeclarationRefs command do
+      if ref.isIdent then
+        if let some sourceRange := ref.getRange? then
+          let range := DeclarationRange.ofStringPositions fileMap
+            sourceRange.start sourceRange.stop
+          refs := refs.push
+            (ref.getId.eraseMacroScopes.replacePrefix rootNamespace .anonymous, range)
+  let mut names := #[]
+  for (name, declarationRanges) in declRangeExt.getModuleEntries env moduleIdx do
+    unless (env.find? name).any (fun info => info.isTheorem) do continue
+    if refs.any (fun (sourceName, range) =>
+        sourceName.isSuffixOf (privateToUserName name).eraseMacroScopes &&
+          decide (range = declarationRanges.selectionRange)) then
+      names := names.push name
+  return names.qsort Name.quickLt
+
 -- This check runs at a module boundary, after later `attribute [...]` commands.
 -- The enum registry enforces exactly one classification; simp/ext/Aesop remain
 -- independent attributes and are neither required nor altered by this check.

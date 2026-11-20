@@ -79,9 +79,9 @@ target admission pkg : Unit := do
     let receipt := pkg.buildDir / "admission.ok"
     let mut text := "import theorem.Architecture\n"
     for mod in modules do text := text ++ s!"import {mod.name}\n"
-    let names := modules.map (fun m => "`" ++ m.name.toString)
+    let sources := modules.map fun m => s!"(`{m.name}, {repr m.leanFile.toString})"
     text := text ++ "set_option maxHeartbeats 0\nopen Lean Elab Command in\nrun_cmd powerlib.Architecture.auditModules #[" ++
-      String.intercalate ", " names.toList ++ "]\n"
+      String.intercalate ", " sources.toList ++ "]\n"
     -- The collected jobs trace every built module, including the checker.
     -- Also trace the inventory itself, so adding or removing a module reruns
     -- admission. Failed checks never produce a successful receipt.

@@ -42,8 +42,9 @@ Results.
   carry the certificate in their type, independently of attributes), `context`, `rejection`,
   `audit`, `modelTypes`, `publicTypeRejection`, `declarationRejection`.
 * `auditModules`: whole-package admission of the actual Lake module inventory, run by the build
-  (`lakefile.lean`); it neither trusts source imports of the linter nor the classification
-  registry, and rejects axioms outside the allowlist.
+  (`lakefile.lean`); it reconstructs parser-derived provenance from every actual module source,
+  does not infer source ownership from the classification registry, and rejects axioms outside
+  the allowlist.
 * `moduleLinter`, registered with `addModuleLinter`: earlier feedback for published connection
   statements at each module boundary.
 -/
@@ -706,10 +707,13 @@ def audit (names : Array Name) : CommandElabM Unit := do
       if let some reason ← declarationRejection ctx models name then
         throwError "Connection theorem {name} violates connection admission: {reason}"
 
-/-- Whole-package admission uses the actual Lake module inventory, supplied by the build.
-It neither trusts source imports of the linter nor the classification registry. -/
-def auditModules (modules : Array Name) : CommandElabM Unit := do
+/-- Whole-package admission uses the actual Lake module inventory and source paths supplied by the
+build. It reconstructs authored theorem provenance from parsed source declarations, exact
+selection ranges and imported module ownership; classification attributes do not define source
+ownership. -/
+def auditModules (moduleSources : Array (Name × String)) : CommandElabM Unit := do
   liftTermElabM do
+    let modules := moduleSources.map (fun entry => entry.1)
     let ctx ← context modules
     let models ← modelTypes modules
     let env ← getEnv
@@ -717,13 +721,21 @@ def auditModules (modules : Array Name) : CommandElabM Unit := do
     let mut claims : Nat := 0
     let mut rejected : Array String := #[]
     let mut roots : Array (Name × Name) := #[]
-    for mod in modules do
+    for (mod, sourcePath) in moduleSources do
       let some index := env.header.moduleNames.idxOf? mod |
         throwError "Built module missing from admission environment: {mod}"
+      let source ← IO.FS.readFile sourcePath
+      let parsed ← Parser.testParseModule env sourcePath source
+      let authored := Registry.authoredTheoremsInModule env parsed[1].getArgs
+        (FileMap.ofString source) index
+      for name in authored do
+        unless (Registry.kindOf? env name).isSome do
+          rejected := rejected.push s!"{name} in {mod}: source-authored theorem requires exactly one PowerLib classification"
       for name in env.header.moduleData[index]!.constNames do
         let some _ := env.find? name | continue
-        -- Source declarations, including proof-valued definitions, are discovered from
-        -- provenance. Compiler auxiliaries have no authored declaration range.
+        -- Source ranges retain proof-valued definitions for the axiom and semantic audits.
+        -- The parsed inventory above distinguishes authored theorems from generated projections
+        -- and extensionality declarations, which can also carry source ranges.
         unless (declRangeExt.find? env name).isSome do continue
         roots := roots.push (name, mod)
     if let some (name, ax) := Search.axiomViolation? env (roots.map (·.1)) then
@@ -732,11 +744,6 @@ def auditModules (modules : Array Name) : CommandElabM Unit := do
       let info ← getConstInfo name
       unless ← isProp info.type do continue
       checked := checked + 1
-      match info with
-      | .thmInfo _ =>
-        unless (Registry.kindOf? env name).isSome do
-          rejected := rejected.push s!"{name} in {mod}: source-authored theorem requires exactly one PowerLib classification"
-      | _ => pure ()
       if (← withCurrHeartbeats (statement? info.type)).isSome then claims := claims + 1
       if let some reason ← withCurrHeartbeats (declarationRejection ctx models name) then
         rejected := rejected.push s!"{name} in {mod}: {reason}"

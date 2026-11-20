@@ -48,6 +48,19 @@ end RegistryCurrent
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
+  let some fixtureIdx := env.header.moduleNames.idxOf?
+      `dependencies.tests.lean.Architecture.RegistryFixture |
+    throwError "The imported registry fixture has no module index"
+  let fixturePath := "dependencies/tests/lean/Architecture/RegistryFixture.lean"
+  let fixtureSource ← IO.FS.readFile fixturePath
+  let fixtureParsed ← Parser.testParseModule env fixturePath fixtureSource
+  let authored := powerlib.Registry.authoredTheoremsInModule env fixtureParsed[1].getArgs
+    (FileMap.ofString fixtureSource) fixtureIdx
+  unless authored.contains `RegistryFixture.envelope &&
+      authored.contains `RegistryFixture.envelope_iff do
+    throwError "Parser-derived provenance omitted an authored fixture theorem: {authored}"
+  if authored.contains `RegistryFixture.Envelope.proof then
+    throwError "A generated structure projection was treated as an authored theorem"
   let some current := powerlib.Search.describe env `RegistryCurrent.stable |
     throwError "A current-file tagged theorem lost its metadata"
   unless current.kind == some .domain do
