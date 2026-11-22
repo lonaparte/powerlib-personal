@@ -360,15 +360,6 @@ section Poles
 
 variable {p : ℕ}
 
-/-- The transfer matrix through the adjugate: `G(s) = det(sI − A)⁻¹ C adj(sI − A) B + D`, on an
-arbitrary finite state index. -/
-@[tmio T, powerlib_foundation] theorem transferOf_eq_adjugate (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
-    (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ) (s : ℂ) :
-    Linear.transferOf A B C D s = ((Linear.characteristicMatrix A s).det)⁻¹ •
-      (Linear.complexify C * (Linear.characteristicMatrix A s).adjugate * Linear.complexify B) +
-      Linear.complexify D := by
-  rw [Linear.transferOf, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
-
 /-- Away from the spectrum the transfer matrix is continuous (no pole). -/
 @[tmio T, powerlib_foundation] theorem transfer_continuousAt (A : Matrix n n ℝ) (B : Matrix n (Fin p) ℝ)
     (C : Matrix (Fin p) n ℝ) (D : Matrix (Fin p) (Fin p) ℝ) {μ : ℂ}
@@ -379,7 +370,7 @@ arbitrary finite state index. -/
     exact (continuous_id.smul continuous_const).sub continuous_const
   have hfun : Linear.transferOf A B C D = fun s => ((Linear.characteristicMatrix A s).det)⁻¹ •
       (Linear.complexify C * (Linear.characteristicMatrix A s).adjugate * Linear.complexify B) +
-        Linear.complexify D := funext fun s => transferOf_eq_adjugate A B C D s
+        Linear.complexify D := funext fun s => Linear.transferOf_eq_adjugate A B C D s
   rw [hfun]
   refine ContinuousAt.add ?_ continuousAt_const
   exact ((hchar.matrix_det.continuousAt).inv₀ hμ).smul

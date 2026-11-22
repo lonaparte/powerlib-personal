@@ -50,13 +50,15 @@ Results.
   (`hillCoeff3`: `J₀ = A₀ + δ̂₁²Q₀`, `J₁ = (δ̂₁/2)P + δ̂₁³P₃`, `J₂ = δ̂₁²Q₂`, `J₃ = δ̂₁³P₃₃`,
   `J_{−h} = conj J_h`) `δ̂₁ ↦ −δ̂₁` flips the first- and third-order bands and keeps the
   second-order band (`hillBand3_neg`, `hillCoeff3_neg`), so the Hill matrices at `±δ̂₁` are
-  gauge-similar and their characteristic polynomials and spectra coincide (`hill3_neg_similar`,
-  `hill3_neg_charpoly_eq`, `hill3_neg_spectrum_eq`). For the exact Hill matrix built
+  gauge-similar (`hill3_neg_similar`), so their characteristic polynomials and spectra coincide
+  (`hillMatrix_charpoly_eq`, `hillMatrix_spectrum_eq` with `hillCoeff3_neg`). For the exact Hill
+  matrix built
   from Fourier coefficients on `ℝ/Tℤ`, a half-period shift multiplies the `h`-th coefficient by
   `(−1)^h` (`fourierCoeff_add_half`, `fourierCoeffMatrix_half_shift`), so `J'(t) = J(t + T/2)`
   (what the half-period symmetry `u(t + T/2) = −u(t)` turns `δ̂₁ ↦ −δ̂₁` into) gives
-  gauge-similar exact Hill matrices (`exactHill_half_shift`, `exactHill_half_shift_charpoly_eq`,
-  `exactHill_half_shift_spectrum_eq`).
+  gauge-similar exact Hill matrices (`exactHill_half_shift`; same characteristic polynomial and
+  spectrum by `hillMatrix_charpoly_eq`, `hillMatrix_spectrum_eq` with
+  `fourierCoeffMatrix_half_shift`).
 -/
 
 noncomputable section
@@ -384,22 +386,6 @@ similar to the one at `δ̂₁` through the gauge `φ_m ↦ (−1)^m φ_m`. -/
       hillGauge K * hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K * hillGauge K :=
   hillMatrix_gauge_similar (hillCoeff3_neg A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K
 
-/-- **Half-period symmetry at the Hill level, characteristic polynomial.** The characteristic
-polynomial of the third-order truncated Hill matrix is even in `δ̂₁`. -/
-@[tmio T, powerlib_foundation] theorem hill3_neg_charpoly_eq (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ)
-    (δ ν ω : ℝ) (K : ℕ) :
-    (hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ (-δ)) ν ω K).charpoly =
-      (hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K).charpoly :=
-  hillMatrix_charpoly_eq (hillCoeff3_neg A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K
-
-/-- **Half-period symmetry at the Hill level, spectrum.** The spectrum of the third-order
-truncated Hill matrix (the truncated Floquet exponents) is even in `δ̂₁`. -/
-@[tmio T, powerlib_foundation] theorem hill3_neg_spectrum_eq (A₀ Q₀ P P₃ Q₂ P₃₃ : Matrix X X ℂ)
-    (δ ν ω : ℝ) (K : ℕ) :
-    spectrum ℂ (hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ (-δ)) ν ω K) =
-      spectrum ℂ (hillMatrix (hillCoeff3 A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K) :=
-  hillMatrix_spectrum_eq (hillCoeff3_neg A₀ Q₀ P P₃ Q₂ P₃₃ δ) ν ω K
-
 /-! ### Exact Hill: the half-period shift of the Fourier coefficients -/
 
 open MeasureTheory AddCircle in
@@ -453,24 +439,6 @@ into this shift), then `J'_h = (−1)^h J_h`. -/
     hillMatrix (fourierCoeffMatrix J') ν ω K =
       hillGauge K * hillMatrix (fourierCoeffMatrix J) ν ω K * hillGauge K :=
   hillMatrix_gauge_similar (fourierCoeffMatrix_half_shift hshift) ν ω K
-
-/-- **Exact Hill matrices under the half-period shift, characteristic polynomial.** If
-`J'(t) = J(t + T/2)`, the exact Hill matrices have the same characteristic polynomial. -/
-@[tmio T, powerlib_foundation] theorem exactHill_half_shift_charpoly_eq {T : ℝ} [Fact (0 < T)]
-    {J J' : AddCircle T → Matrix X X ℂ} (hshift : ∀ t, J' t = J (t + ((T / 2 : ℝ) : AddCircle T)))
-    (ν ω : ℝ) (K : ℕ) :
-    (hillMatrix (fourierCoeffMatrix J') ν ω K).charpoly =
-      (hillMatrix (fourierCoeffMatrix J) ν ω K).charpoly :=
-  hillMatrix_charpoly_eq (fourierCoeffMatrix_half_shift hshift) ν ω K
-
-/-- **Exact Hill matrices under the half-period shift, spectrum.** If `J'(t) = J(t + T/2)`, the
-exact Hill matrices have the same spectrum. -/
-@[tmio T, powerlib_foundation] theorem exactHill_half_shift_spectrum_eq {T : ℝ} [Fact (0 < T)]
-    {J J' : AddCircle T → Matrix X X ℂ} (hshift : ∀ t, J' t = J (t + ((T / 2 : ℝ) : AddCircle T)))
-    (ν ω : ℝ) (K : ℕ) :
-    spectrum ℂ (hillMatrix (fourierCoeffMatrix J') ν ω K) =
-      spectrum ℂ (hillMatrix (fourierCoeffMatrix J) ν ω K) :=
-  hillMatrix_spectrum_eq (fourierCoeffMatrix_half_shift hshift) ν ω K
 
 end Gauge
 

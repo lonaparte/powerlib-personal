@@ -36,8 +36,8 @@ Results.
 * `forced_error_bound` — if `A₀` is Hurwitz, every solution converges exponentially to `x₁`
   (`‖x(t) − x₁(t)‖ ≤ K e^{−rate t} ‖x(0) − x₁(0)‖`); `forced_periodic_unique`: `x₁` is the only
   solution of period `T = 2π/ω` (unique attracting periodic solution).
-* `affine_of_const_jacobian` — a constant state Jacobian forces `f(z, u) = A₀ z + f(0, u)`;
-  the variational matrix along any orbit is `J(t) ≡ A₀` (`jacobian_along_orbit`), and
+* `affine_of_const_jacobian` — a constant state Jacobian forces `f(z, u) = A₀ z + f(0, u)`
+  (so the variational matrix along any orbit is `J(t) ≡ A₀`), and
   `orbitExponentiallyStable_iff`: every orbit is exponentially stable (all solutions converge to
   it at a uniform exponential rate) iff `A₀` is Hurwitz — no parametric instability can arise.
 * Mathlib's `fderiv_add_const` (with `c = ε g(t)`) — for `f_ε(x, t) = f(x) + ε g(t)` the state
@@ -142,30 +142,73 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
     push_cast; linear_combination I * hT'
   rw [this, Complex.exp_add, Complex.exp_two_pi_mul_I, mul_one]
 
-/-- The deviation of a global solution `x` of the forced equation from the forced orbit obeys
-the homogeneous LTI equation `ė = A₀ e`. -/
-@[tmio T, powerlib_foundation] theorem isTrajectory_sub_forcedOrbit {A : Matrix (Fin n) (Fin n) ℝ}
-    {ω : ℝ} {b : Fin n → ℂ} (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0)
-    {x : ℝ → ℝⁿ} (hx : ∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) :
-    ∀ t, HasDerivAt (fun t => x t - forcedOrbit A b ω t)
-      (Linear.op A (x t - forcedOrbit A b ω t)) t := by
-  intro t
-  have h1 := (hx t).sub (forcedOrbit_solves b h t)
-  convert h1 using 1
-  rw [map_sub]; abel
+/-! ## Constant state Jacobian: no parametric channel -/
+
+variable {U : Type*}
+
+/-- A constant state Jacobian `A₀` (`D²f = 0`, `A₁ = 0`) forces `f(z, u) = A₀ z + f(0, u)`. -/
+@[tmio T, powerlib_foundation] theorem affine_of_const_jacobian {f : ℝⁿ → U → ℝⁿ}
+    {A : Matrix (Fin n) (Fin n) ℝ}
+    (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
+    (z : ℝⁿ) (u : U) : f z u = Linear.op A z + f 0 u := by
+  have hd : ∀ w, HasFDerivAt (fun w => f w u - Linear.op A w) (0 : ℝⁿ →L[ℝ] ℝⁿ) w := by
+    intro w
+    have h := (hf w u).sub (Linear.op A).hasFDerivAt
+    rw [sub_self] at h
+    exact h
+  have hc := is_const_of_fderiv_eq_zero (𝕜 := ℝ) (f := fun w => f w u - Linear.op A w)
+    (fun w => (hd w).differentiableAt) (fun w => (hd w).fderiv)
+  have := hc z 0
+  simp only [map_zero, sub_zero] at this
+  rw [← this]; abel
+
+/-- With a constant state Jacobian, any reference solution `z_orb` of `ż = f(z, u(t))` is
+exponentially stable iff `A₀` is Hurwitz: the forcing can produce a large response but never a
+parametric instability. Exponential stability of `z_orb` means that every global solution
+converges to it at a uniform exponential rate,
+`‖z(t) − z_orb(t)‖ ≤ K e^{−rate t} ‖z(0) − z_orb(0)‖` for `t ≥ 0`. -/
+@[tmio T, powerlib_foundation] theorem orbitExponentiallyStable_iff {f : ℝⁿ → U → ℝⁿ}
+    {A : Matrix (Fin n) (Fin n) ℝ}
+    (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
+    {u : ℝ → U} {z_orb : ℝ → ℝⁿ} (horb : ∀ t, HasDerivAt z_orb (f (z_orb t) (u t)) t) :
+    (∃ K > 0, ∃ rate > 0, ∀ z : ℝ → ℝⁿ, (∀ t, HasDerivAt z (f (z t) (u t)) t) → ∀ t, 0 ≤ t →
+      ‖z t - z_orb t‖ ≤ K * Real.exp (-(rate * t)) * ‖z 0 - z_orb 0‖) ↔ IsHurwitz A := by
+  have haff := affine_of_const_jacobian hf
+  constructor
+  · rintro ⟨K, hK, rate, hrate, hb⟩
+    refine LTI.isHurwitz_of_global_bound (K := K) hrate fun e he t ht => ?_
+    have hz : ∀ s, HasDerivAt (fun s => z_orb s + e s) (f (z_orb s + e s) (u s)) s := by
+      intro s
+      have h1 := (horb s).add (he s)
+      convert h1 using 1
+      rw [haff (z_orb s + e s), haff (z_orb s), map_add]; abel
+    have := hb _ hz t ht
+    simpa using this
+  · intro hA
+    obtain ⟨K, hK, rate, hrate, hb⟩ := LTI.exists_global_bound_of_isHurwitz hA
+    refine ⟨K, hK, rate, hrate, fun z hz t ht => ?_⟩
+    have he : ∀ s, HasDerivAt (fun s => z s - z_orb s) (Linear.op A (z s - z_orb s)) s := by
+      intro s
+      have h1 := (hz s).sub (horb s)
+      convert h1 using 1
+      rw [haff (z s), haff (z_orb s), map_sub]; abel
+    exact hb _ he t ht
+
+/-! ## The forced orbit of a Hurwitz state matrix -/
 
 /-- Hurwitz `A₀`: every global solution of the forced equation converges exponentially to the
-forced orbit. -/
+forced orbit (the case `u = id`, `f(z, t) = A₀ z + forcing(t)` of
+`orbitExponentiallyStable_iff`). -/
 @[tmio T, powerlib_foundation] theorem forced_error_bound {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) (b : Fin n → ℂ) (ω : ℝ) :
     ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝⁿ,
       (∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) → ∀ t, 0 ≤ t →
       ‖x t - forcedOrbit A b ω t‖ ≤
-        K * Real.exp (-(rate * t)) * ‖x 0 - forcedOrbit A b ω 0‖ := by
-  obtain ⟨K, hK, rate, hrate, hbound⟩ := LTI.exists_global_bound_of_isHurwitz hA
-  exact ⟨K, hK, rate, hrate, fun x hx t ht =>
-    hbound _ (isTrajectory_sub_forcedOrbit
-      (Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz hA (by simp)) hx) t ht⟩
+        K * Real.exp (-(rate * t)) * ‖x 0 - forcedOrbit A b ω 0‖ :=
+  (orbitExponentiallyStable_iff (U := ℝ) (f := fun z t => Linear.op A z + forcing b ω t)
+    (fun _ _ => (Linear.op A).hasFDerivAt.add_const _) (u := id)
+    (forcedOrbit_solves b
+      (Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz hA (by simp)))).mpr hA
 
 /-- Hurwitz `A₀`: the forced orbit is the only global solution of the forced equation with the
 forcing period `T = 2π/ω` (`ω T = 2π`, `T > 0`). -/
@@ -210,65 +253,5 @@ forcing period `T = 2π/ω` (`ω T = 2π`, `T > 0`). -/
   change ‖e (t + k * T)‖ ≤ K * Real.exp (-(rate * (t + k * T))) * ‖e 0‖ at this
   rw [hep] at this
   linarith [hk.2]
-
-/-! ## Constant state Jacobian: no parametric channel -/
-
-variable {U : Type*}
-
-/-- A constant state Jacobian `A₀` (`D²f = 0`, `A₁ = 0`) forces `f(z, u) = A₀ z + f(0, u)`. -/
-@[tmio T, powerlib_foundation] theorem affine_of_const_jacobian {f : ℝⁿ → U → ℝⁿ}
-    {A : Matrix (Fin n) (Fin n) ℝ}
-    (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
-    (z : ℝⁿ) (u : U) : f z u = Linear.op A z + f 0 u := by
-  have hd : ∀ w, HasFDerivAt (fun w => f w u - Linear.op A w) (0 : ℝⁿ →L[ℝ] ℝⁿ) w := by
-    intro w
-    have h := (hf w u).sub (Linear.op A).hasFDerivAt
-    rw [sub_self] at h
-    exact h
-  have hc := is_const_of_fderiv_eq_zero (𝕜 := ℝ) (f := fun w => f w u - Linear.op A w)
-    (fun w => (hd w).differentiableAt) (fun w => (hd w).fderiv)
-  have := hc z 0
-  simp only [map_zero, sub_zero] at this
-  rw [← this]; abel
-
-/-- Along any orbit the variational matrix is the constant `A₀`. -/
-@[tmio T, powerlib_foundation] theorem jacobian_along_orbit {f : ℝⁿ → U → ℝⁿ}
-    {A : Matrix (Fin n) (Fin n) ℝ}
-    (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
-    (u : ℝ → U) (z_orb : ℝ → ℝⁿ) (t : ℝ) :
-    fderiv ℝ (fun z => f z (u t)) (z_orb t) = Linear.op A :=
-  (hf (z_orb t) (u t)).fderiv
-
-/-- With a constant state Jacobian, any reference solution `z_orb` of `ż = f(z, u(t))` is
-exponentially stable iff `A₀` is Hurwitz: the forcing can produce a large response but never a
-parametric instability. Exponential stability of `z_orb` means that every global solution
-converges to it at a uniform exponential rate,
-`‖z(t) − z_orb(t)‖ ≤ K e^{−rate t} ‖z(0) − z_orb(0)‖` for `t ≥ 0`. -/
-@[tmio T, powerlib_foundation] theorem orbitExponentiallyStable_iff {f : ℝⁿ → U → ℝⁿ}
-    {A : Matrix (Fin n) (Fin n) ℝ}
-    (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
-    {u : ℝ → U} {z_orb : ℝ → ℝⁿ} (horb : ∀ t, HasDerivAt z_orb (f (z_orb t) (u t)) t) :
-    (∃ K > 0, ∃ rate > 0, ∀ z : ℝ → ℝⁿ, (∀ t, HasDerivAt z (f (z t) (u t)) t) → ∀ t, 0 ≤ t →
-      ‖z t - z_orb t‖ ≤ K * Real.exp (-(rate * t)) * ‖z 0 - z_orb 0‖) ↔ IsHurwitz A := by
-  have haff := affine_of_const_jacobian hf
-  constructor
-  · rintro ⟨K, hK, rate, hrate, hb⟩
-    refine LTI.isHurwitz_of_global_bound (K := K) hrate fun e he t ht => ?_
-    have hz : ∀ s, HasDerivAt (fun s => z_orb s + e s) (f (z_orb s + e s) (u s)) s := by
-      intro s
-      have h1 := (horb s).add (he s)
-      convert h1 using 1
-      rw [haff (z_orb s + e s), haff (z_orb s), map_add]; abel
-    have := hb _ hz t ht
-    simpa using this
-  · intro hA
-    obtain ⟨K, hK, rate, hrate, hb⟩ := LTI.exists_global_bound_of_isHurwitz hA
-    refine ⟨K, hK, rate, hrate, fun z hz t ht => ?_⟩
-    have he : ∀ s, HasDerivAt (fun s => z s - z_orb s) (Linear.op A (z s - z_orb s)) s := by
-      intro s
-      have h1 := (hz s).sub (horb s)
-      convert h1 using 1
-      rw [haff (z s), haff (z_orb s), map_sub]; abel
-    exact hb _ he t ht
 
 end powerlib.ParametricResonance

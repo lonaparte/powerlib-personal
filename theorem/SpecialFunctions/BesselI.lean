@@ -45,7 +45,7 @@ Results.
   `G(z) = ∫₀^∞ e^{−zθ²/2}`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`).
 * **Large argument**: `besselI0_div_besselI1_sub_one_le` (for every `K > 0` there are `C`, `x₀`
   with `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever `Re z ≥ x₀`, `‖z‖ ≤ K Re z`),
-  `besselI0_ne_zero_of_sector`, `besselI1_ne_zero_of_sector` (`I₀(z), I₁(z) ≠ 0` there),
+  `besselI_ne_zero_of_sector` (`I₀(z), I₁(z) ≠ 0` there),
   `tendsto_besselI0_div_besselI1` (`I₀/I₁ → 1` as `z → ∞` in a sector).
 * The physical ray `m = (1 + i)s` (`s = 1/δ`) of the conductor models: `one_add_I_mul_re`,
   `norm_one_add_I_mul_le`, `ray_re_tendsto`, `ray_mul_re_tendsto` (`Re((1 + i)s t) → ∞`),
@@ -713,33 +713,25 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     _ = 4 * C / x * (1 / 2) := by ring
     _ ≤ 4 * C / x * ‖1 - q‖ := by gcongr
 
-/-- **`I₀` does not vanish far out in a sector**: for every `K > 0` there is `x₀ > 0` with
-`I₀(z) ≠ 0` whenever `Re z ≥ x₀` and `‖z‖ ≤ K Re z` (from the rate
-`besselI0_div_besselI1_sub_one_le`: `I₀(z) = 0` would give `‖I₀(z)/I₁(z) − 1‖ = 1`). -/
-@[tmio T, powerlib_foundation] theorem besselI0_ne_zero_of_sector {K : ℝ} (hK : 0 < K) :
-    ∃ x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re → besselI0 z ≠ 0 := by
+/-- **`I₀` and `I₁` do not vanish far out in a sector**: for every `K > 0` there is `x₀ > 0`
+with `I₀(z) ≠ 0` and `I₁(z) ≠ 0` whenever `Re z ≥ x₀` and `‖z‖ ≤ K Re z` (from the rate
+`besselI0_div_besselI1_sub_one_le`: either zero would give `‖I₀(z)/I₁(z) − 1‖ = 1`). -/
+@[tmio T, powerlib_foundation] theorem besselI_ne_zero_of_sector {K : ℝ} (hK : 0 < K) :
+    ∃ x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re →
+      besselI0 z ≠ 0 ∧ besselI1 z ≠ 0 := by
   obtain ⟨C, x₀, hx₀, hC⟩ := besselI0_div_besselI1_sub_one_le hK
-  refine ⟨max x₀ (|C| + 1), lt_max_of_lt_left hx₀, fun z hx hzK h0 => ?_⟩
+  refine ⟨max x₀ (|C| + 1), lt_max_of_lt_left hx₀, fun z hx hzK => ?_⟩
   have hxC : |C| + 1 ≤ z.re := le_trans (le_max_right _ _) hx
   have hpos : 0 < z.re := by linarith [abs_nonneg C]
   have hb := hC z (le_trans (le_max_left _ _) hx) hzK
-  rw [h0, zero_div, zero_sub, norm_neg, norm_one] at hb
-  have : C / z.re < 1 := by rw [div_lt_one hpos]; linarith [le_abs_self C]
-  linarith
-
-/-- **`I₁` does not vanish far out in a sector**: for every `K > 0` there is `x₀ > 0` with
-`I₁(z) ≠ 0` whenever `Re z ≥ x₀` and `‖z‖ ≤ K Re z` (from the rate
-`besselI0_div_besselI1_sub_one_le`: `I₁(z) = 0` would give `‖I₀(z)/I₁(z) − 1‖ = 1`). -/
-@[tmio T, powerlib_foundation] theorem besselI1_ne_zero_of_sector {K : ℝ} (hK : 0 < K) :
-    ∃ x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re → besselI1 z ≠ 0 := by
-  obtain ⟨C, x₀, hx₀, hC⟩ := besselI0_div_besselI1_sub_one_le hK
-  refine ⟨max x₀ (|C| + 1), lt_max_of_lt_left hx₀, fun z hx hzK h0 => ?_⟩
-  have hxC : |C| + 1 ≤ z.re := le_trans (le_max_right _ _) hx
-  have hpos : 0 < z.re := by linarith [abs_nonneg C]
-  have hb := hC z (le_trans (le_max_left _ _) hx) hzK
-  rw [h0, div_zero, zero_sub, norm_neg, norm_one] at hb
-  have : C / z.re < 1 := by rw [div_lt_one hpos]; linarith [le_abs_self C]
-  linarith
+  have hlt : C / z.re < 1 := by rw [div_lt_one hpos]; linarith [le_abs_self C]
+  constructor
+  · intro h0
+    rw [h0, zero_div, zero_sub, norm_neg, norm_one] at hb
+    linarith
+  · intro h0
+    rw [h0, div_zero, zero_sub, norm_neg, norm_one] at hb
+    linarith
 
 /-- **`I₀(z)/I₁(z) → 1` as `z → ∞` in a sector**: along any `f` with `Re f → +∞` and eventually
 `‖f‖ ≤ K Re f`. -/

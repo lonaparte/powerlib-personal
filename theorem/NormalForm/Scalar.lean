@@ -139,16 +139,6 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
   ⟨a, fun _ => 1, by intro h0; simpa using congrFun h0 0,
     by ext i; fin_cases i; simp [Matrix.mulVec, dotProduct], by simpa using ha⟩
 
-/-- Scalar linearization: an equilibrium with negative slope is locally exponentially stable. -/
-@[tmio T, powerlib_foundation] theorem lift_locallyExponentiallyStable {g : ℝ → ℝ} {r : ℝ}
-    (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : deriv g r < 0) :
-    LocallyExponentiallyStable (lift g) (embed r) := by
-  have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
-  refine hurwitz_linearization_locally_exponentially_stable !![deriv g r] (lift_contDiff hg)
-    ((lift_eq_zero_iff g r).mpr h0) ?_ ((Linear.isHurwitz_one_iff _).mpr hslope)
-  have := fderiv_lift (g := g) (x := embed r) (by simpa using hd)
-  simpa using this
-
 /-- A point of the lift of a `C¹` scalar field `ẋ = g x` is locally exponentially stable exactly
 when it is a zero with negative slope. -/
 @[tmio T, powerlib_foundation] theorem lift_locallyExponentiallyStable_iff {g : ℝ → ℝ} {r : ℝ}
@@ -161,6 +151,12 @@ when it is a zero with negative slope. -/
   rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
       (NormalForm.lift_contDiff hg) hJac,
     NormalForm.lift_eq_zero_iff, Linear.isHurwitz_one_iff]
+
+/-- Scalar linearization: an equilibrium with negative slope is locally exponentially stable. -/
+@[tmio T, powerlib_foundation] theorem lift_locallyExponentiallyStable {g : ℝ → ℝ} {r : ℝ}
+    (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : deriv g r < 0) :
+    LocallyExponentiallyStable (lift g) (embed r) :=
+  (lift_locallyExponentiallyStable_iff hg).mpr ⟨h0, hslope⟩
 
 /-- Scalar linearization: an equilibrium with positive slope is unstable. -/
 @[tmio T, powerlib_foundation] theorem lift_unstable {g : ℝ → ℝ} {r : ℝ}

@@ -20,9 +20,9 @@ Results.
   `S̄^ext = −S̄^abs` negates both parts, `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1);
   `activePower_eq_re`, `reactivePower_eq_im`: `P = (3/2) Re S̄`, `Q = (3/2) Im S̄` (SI,
   amplitude-invariant Park; the per-unit forms drop `3/2`).
-* `currentRef_spec`, `currentRef_unique`: in the PLL-aligned frame (`v_q = 0`, `v_d ≠ 0`) the
-  references `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)` give exactly `P = P*`, `Q = Q*`, and
-  they are the only currents that do (T-gfl-control §1.5 boxed); at `(−P*_exp, −Q*_exp)` this
+* `currentRef_iff`: in the PLL-aligned frame (`v_q = 0`, `v_d ≠ 0`) the references
+  `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)` give exactly `P = P*`, `Q = Q*`, and they are
+  the only currents that do (T-gfl-control §1.5 boxed); at `(−P*_exp, −Q*_exp)` this
   is the export-positive dispatch form `i_d* = −2 P*_exp/(3 v_d)`, `i_q* = 2 Q*_exp/(3 v_d)`.
   `currentRef_sign`: for `v_d > 0`, absorbing reactive power (`Q* > 0`) means `i_q* < 0`.
 * `pq_mulVec_current`, `pq_mulVec_voltage`, `pq_expansion`: per-unit `(P, Q)` is bilinear in
@@ -60,22 +60,22 @@ def reactivePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * (vq * id - vd * iq)
   rw [complexPower_expand]
   rfl
 
-/-- PLL-aligned current references achieve the absorbed set points exactly. -/
-@[tmio T, powerlib_foundation] theorem currentRef_spec {vd : ℝ} (hvd : vd ≠ 0) (Pref Qref : ℝ) :
-    activePower vd 0 (2 * Pref / (3 * vd)) (-(2 * Qref / (3 * vd))) = Pref ∧
-      reactivePower vd 0 (2 * Pref / (3 * vd)) (-(2 * Qref / (3 * vd))) = Qref := by
-  constructor <;> simp only [activePower, reactivePower] <;> field_simp <;> ring
-
-/-- ... and they are the only currents that do. -/
-@[tmio T, powerlib_foundation] theorem currentRef_unique {vd id iq Pref Qref : ℝ} (hvd : vd ≠ 0)
-    (hP : activePower vd 0 id iq = Pref) (hQ : reactivePower vd 0 id iq = Qref) :
-    id = 2 * Pref / (3 * vd) ∧ iq = -(2 * Qref / (3 * vd)) := by
-  simp only [activePower, reactivePower] at hP hQ
+/-- PLL-aligned current references: the currents achieve the absorbed set points exactly iff
+they are `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)`. -/
+@[tmio T, powerlib_foundation] theorem currentRef_iff {vd : ℝ} (hvd : vd ≠ 0)
+    (id iq Pref Qref : ℝ) :
+    activePower vd 0 id iq = Pref ∧ reactivePower vd 0 id iq = Qref ↔
+      id = 2 * Pref / (3 * vd) ∧ iq = -(2 * Qref / (3 * vd)) := by
   constructor
-  · field_simp
-    linear_combination 2 * hP
-  · field_simp
-    linear_combination -2 * hQ
+  · rintro ⟨hP, hQ⟩
+    simp only [activePower, reactivePower] at hP hQ
+    constructor
+    · field_simp
+      linear_combination 2 * hP
+    · field_simp
+      linear_combination -2 * hQ
+  · rintro ⟨rfl, rfl⟩
+    constructor <;> simp only [activePower, reactivePower] <;> field_simp <;> ring
 
 /-- Sign check: with `v_d > 0`, absorbing reactive power (`Q* > 0`) means `i_q* < 0`, and
 absorbing active power (`P* > 0`) means `i_d* > 0`. -/

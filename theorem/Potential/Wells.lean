@@ -140,12 +140,12 @@ def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
   ring
 
 /-- Curvature of the double well at the right well: `V''(√(a/b)) = 2a`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_curvature_sqrt {a b : ℝ} (ha : 0 < a)
+@[tmio T, powerlib_foundation] theorem doubleWell_curvature_sqrt {a b : ℝ} (ha : 0 ≤ a)
     (hb : 0 < b) : -a + 3 * b * √(a / b) ^ 2 = 2 * a := by
   rw [Real.sq_sqrt (by positivity)]; field_simp; ring
 
 /-- Curvature of the double well at the left well: `V''(−√(a/b)) = 2a`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_curvature_neg_sqrt {a b : ℝ} (ha : 0 < a)
+@[tmio T, powerlib_foundation] theorem doubleWell_curvature_neg_sqrt {a b : ℝ} (ha : 0 ≤ a)
     (hb : 0 < b) : -a + 3 * b * (-√(a / b)) ^ 2 = 2 * a := by
   rw [neg_sq, Real.sq_sqrt (by positivity)]; field_simp; ring
 
@@ -262,7 +262,7 @@ exactly `±√(a/b)`. -/
   have hanti := strictAnti_exp_neg_div hD
   have hrval : doubleWell a b √(a / b) = -a ^ 2 / (4 * b) :=
     (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
-  refine ⟨hanti.antitone (by rw [hrval]; exact doubleWell_min ha hb θ), ?_⟩
+  refine ⟨hanti.antitone (by rw [hrval]; exact doubleWell_min hb θ), ?_⟩
   rw [hanti.injective.eq_iff, hrval]
   exact doubleWell_eq_min_iff ha hb θ
 

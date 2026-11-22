@@ -75,17 +75,13 @@ open scoped Matrix
     (fun x hx => by rw [Real.norm_eq_abs]; exact hC x (Ico_subset_Icc_self hx)) b ⟨hab, le_rfl⟩
   simpa [Real.norm_eq_abs] using this
 
-/-- One-sided mean-value bound on a segment of `(0, ∞)`. -/
+/-- One-sided mean-value bound on a segment of `(0, ∞)` (`Dynamics.sub_le_of_deriv_le`). -/
 @[tmio T, powerlib_foundation] private lemma sub_le_of_hasDerivAt {g g' : ℝ → ℝ} {a b C : ℝ}
     (ha : 0 < a) (hab : a ≤ b) (hg : ∀ t, 0 < t → HasDerivAt g (g' t) t)
-    (hC : ∀ t ∈ Icc a b, g' t ≤ C) : g b - g a ≤ C * (b - a) := by
-  have hpos : ∀ x ∈ Icc a b, 0 < x := fun x hx => by linarith [hx.1]
-  refine (convex_Icc a b).image_sub_le_mul_sub_of_deriv_le
-    (fun x hx => (hg x (hpos x hx)).continuousAt.continuousWithinAt)
-    (fun x hx => (hg x (hpos x (interior_subset hx))).differentiableAt.differentiableWithinAt)
-    (fun x hx => ?_) a ⟨le_rfl, hab⟩ b ⟨hab, le_rfl⟩ hab
-  rw [(hg x (hpos x (interior_subset hx))).deriv]
-  exact hC x (interior_subset hx)
+    (hC : ∀ t ∈ Icc a b, g' t ≤ C) : g b - g a ≤ C * (b - a) :=
+  Dynamics.sub_le_of_deriv_le hab le_rfl le_rfl
+    (fun t ht => (hg t (by linarith [ht.1])).hasDerivWithinAt)
+    fun t ht => hC t (Ioo_subset_Icc_self ht)
 
 variable {h V : ℝ → ℝ} {Kp Ki : ℝ}
 

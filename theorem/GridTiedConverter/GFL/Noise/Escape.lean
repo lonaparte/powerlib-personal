@@ -34,7 +34,7 @@ Results.
   pointwise; `gibbs2_not_integrable`: it is not normalizable in general (Corrections).
 * The saddle Jacobian is the PI-PLL Jacobian `PLL.piPLLJacobian K_p K_i c` at the slope
   `c = h'(θ_s)` (the derivative of the drift, `PLL.hasFDerivAt_piPLLField`; characteristic
-  polynomial `λ² − K_p c λ − K_i c` by `Criteria.det_real_characteristic_fin_two` with
+  polynomial `λ² − K_p c λ − K_i c` by `Criteria.det_characteristicMatrix_fin_two` with
   `PLL.piPLLJacobian_trace`, `PLL.piPLLJacobian_det`); its barrier frequency and damping ratio are
   the PI-PLL's `ω_b = PLL.omegaN c K_i = √(c K_i)` and `ζ_b = PLL.zeta c K_p K_i`
   (`= (K_p/2)√(c/K_i)`, `PLL.zeta_eq`). `lambdaB_eigen`, `saddle_stable_eigen_neg`,

@@ -39,9 +39,7 @@ Results.
   (`blockDiag_posSemidef`), adding skew pairs keeps `J` skew (`skew_add`,
   `skew_add_sum_skewPair`), adding a nonnegative diagonal (constant-impedance loads) keeps
   `R ⪰ 0` (`posSemidef_add_diagonal`).
-* Strictly damped diagonal models: the energy `H = Σ wᵢ xᵢ² / 2` is `C¹` with derivative
-  `∇H · v` (`energy_hasFDerivAt`, `fderiv_energy_apply`, `energy_contDiff`), the unforced
-  field is `C¹` (`zeroInput_contDiff`), and a model whose every state is damped is globally
+* Strictly damped diagonal models: a model whose every state is damped is globally
   exponentially stable in every numbering (`toPH_mem_den_globallyExponentiallyStable`).
 * Related results elsewhere: frame rotation (T-power-system-ph §1.2, `v·i` is frame invariant)
   is `Transform.frameRotation_power_invariant` in `theorem/Transform/Park.lean`; Kron reduction
@@ -622,53 +620,6 @@ end Blocks
 /-! ## Strictly damped diagonal port-Hamiltonian models -/
 
 section Strict
-
-variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-
-@[tmio T, powerlib_foundation] theorem exists_pos_lower {ι : Type*} [Finite ι] (f : ι → ℝ)
-    (hf : ∀ i, 0 < f i) : ∃ c > 0, ∀ i, c ≤ f i := by
-  rcases isEmpty_or_nonempty ι with h | h
-  · exact ⟨1, one_pos, fun i => isEmptyElim i⟩
-  · obtain ⟨i₀, hi₀⟩ := Finite.exists_min f
-    exact ⟨f i₀, hf i₀, hi₀⟩
-
-omit [DecidableEq ι] [Fintype κ] in
-@[tmio T, powerlib_foundation] theorem energy_hasFDerivAt (m : DiagonalPH ι κ) (x : ι → ℝ) :
-    HasFDerivAt m.energy
-      (∑ i, (m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
-  have h : ∀ i ∈ (Finset.univ : Finset ι), HasFDerivAt (fun y : ι → ℝ => m.w i * y i ^ 2 / 2)
-      ((m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
-    intro i _
-    have hp := ((hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) i x).pow 2).const_mul
-      (m.w i / 2)
-    convert hp using 1
-    · funext y; ring
-    · ext v
-      simp
-      ring
-  exact HasFDerivAt.fun_sum h
-
-omit [DecidableEq ι] [Fintype κ] in
-@[tmio T, powerlib_foundation] theorem fderiv_energy_apply (m : DiagonalPH ι κ) (x v : ι → ℝ) :
-    fderiv ℝ m.energy x v = m.gradient x ⬝ᵥ v := by
-  rw [(energy_hasFDerivAt m x).fderiv]
-  simp [dotProduct, DiagonalPH.gradient]
-
-omit [DecidableEq ι] [Fintype κ] in
-@[tmio T, powerlib_foundation] theorem energy_contDiff (m : DiagonalPH ι κ) :
-    ContDiff ℝ 1 m.energy := by
-  unfold DiagonalPH.energy
-  apply ContDiff.sum
-  intro i _
-  exact ((contDiff_const.mul ((contDiff_apply ℝ ℝ i).pow 2)).div_const 2)
-
-@[tmio T, powerlib_foundation] theorem zeroInput_contDiff (m : DiagonalPH ι κ) :
-    ContDiff ℝ 1 (fun x => m.field x 0) := by
-  have h : (fun x => m.field x 0) = fun x => m.stateMatrix *ᵥ x := by
-    funext x
-    rw [DiagonalPH.field_eq_stateMatrix, mulVec_zero, add_zero]
-  rw [h]
-  exact (Matrix.mulVecLin m.stateMatrix).toContinuousLinearMap.contDiff
 
 /-- A diagonal port-Hamiltonian model whose every state is damped is globally exponentially
 stable with zero input, in every numbering: equilibrium, global existence, and a uniform

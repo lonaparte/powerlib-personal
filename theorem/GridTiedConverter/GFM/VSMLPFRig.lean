@@ -485,16 +485,6 @@ def Record.SlowCheck (v : Record) : Prop :=
 
 /-! ### Implementation evidence (private) -/
 
-@[tmio IO, powerlib_domain] private theorem mem_produces {y : Rig} {v : Record} :
-    connection% (v ∈ TMIO.predict stack.produces {y} ↔ v ∈ {v | Produces y v}) := by
-  simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
-  rfl
-
-@[tmio MI, powerlib_domain] private theorem mem_realizes {x : Model} {y : Rig} :
-    connection% (y ∈ TMIO.predict stack.realizes {x} ↔ y ∈ {y | y.design = x}) := by
-  simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
-  rfl
-
 /-- The worst-corner fast-filter check places every producer's design in the translation of
 local exponential stability. -/
 @[tmio IO, powerlib_domain] private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
@@ -576,17 +566,17 @@ instability. -/
       (1 + y.τ * y.design.g.ωc) := by positivity
   exact mul_pos hω (by linarith)
 
-/-- A slow design filter puts the platform in the lagged requirement at every positive delay.
-The physical slow-filter hypotheses force `K > 0`, so this requirement is exactly `H < 0`. -/
+/-- A design filter that is not fast, `D ω_c + D²/M ≤ K` (design margin `e = D b − K M ≤ 0`),
+gives `H < 0` at every positive delay: every term of
+`H / ω_c = M e + τ b (e − K M) + τ² b (D² ω_c − K M ω_c − K D)` is nonpositive and the second is
+negative. -/
 @[tmio MI, powerlib_domain] private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
-    (hs : y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M < y.design.K) :
-    connection% (y ∈ TMIO.realize RigMeets {.lagged}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
-  apply Or.inl
+    (hs : y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M ≤ y.design.K) :
+    y.H < 0 := by
   obtain ⟨hM, hD, hω⟩ := hp
   have hb : 0 < y.b := by unfold Rig.b; positivity
-  have hs' : y.design.g.D * y.b < y.design.K * y.design.g.M := by
-    have := mul_lt_mul_of_pos_right hs hM
+  have hs' : y.design.g.D * y.b ≤ y.design.K * y.design.g.M := by
+    have := mul_le_mul_of_nonneg_right hs hM.le
     have e : (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M =
         y.design.g.D * y.b := by unfold Rig.b; field_simp
     linarith
@@ -602,11 +592,11 @@ The physical slow-filter hypotheses force `K > 0`, so this requirement is exactl
     unfold Rig.H Rig.b Rig.c
     ring
   have hD2 : y.design.g.D ^ 2 < y.design.K * y.design.g.M := by
-    have : y.design.g.D ^ 2 ≤ y.design.g.D * y.b := by
+    have : y.design.g.D ^ 2 < y.design.g.D * y.b := by
       unfold Rig.b; nlinarith [mul_pos hD (mul_pos hM hω)]
     linarith
-  have t1 : y.design.g.M * (y.design.g.D * y.b - y.design.K * y.design.g.M) < 0 :=
-    mul_neg_of_pos_of_neg hM (by linarith)
+  have t1 : y.design.g.M * (y.design.g.D * y.b - y.design.K * y.design.g.M) ≤ 0 :=
+    mul_nonpos_of_nonneg_of_nonpos hM.le (by linarith)
   have t2 : y.τ * y.b * ((y.design.g.D * y.b - y.design.K * y.design.g.M) -
       y.design.K * y.design.g.M) < 0 :=
     mul_neg_of_pos_of_neg (by positivity) (by nlinarith)
@@ -757,9 +747,9 @@ unstable. -/
       norm_num [slowRig, Meets]
     · show 0 < slowRig.τ
       norm_num [slowRig]
-  rw [stack_impl, rig_mem_den_flow_iff] at hmem
-  rw [rig_mem_den_flow_iff] at hu
-  exact hu (LocallyExponentiallyStable.lyapunovStable hmem)
+  rw [stack_impl] at hmem
+  exact Spectral.not_mem_den_lyapunovStable_of_unstable hu
+    (Spectral.den_locallyExponentiallyStable_subset_lyapunovStable hmem)
 
 /-- Implementation soundness of instability: a platform whose design is physical, unstable and of
 destabilizing sign is unstable for every positive delay. An unbalanced design leaves the
@@ -776,9 +766,8 @@ operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det
   refine rig_mem_den_flow_iff.mpr ?_
   by_cases hb : Meets y.design .balanced
   · rcases hs with hs | hK
-    · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (by
-        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
-          using H_neg_of_slow hp hτ hs)))
+    · exact rig_mem_den_flow_iff.mp
+        (rig_unstable_of hp hτ hb (Or.inl (H_neg_of_slow hp hτ hs.le)))
     · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (Or.inr hK)))
   · exact Dynamics.unstable_of_ne_zero (contDiff_rigField y)
       fun h => hb ((rigField_point_eq_zero_iff y hp.2.2.ne').mp h)
@@ -799,9 +788,9 @@ M-layer translation is sound (`chain_le_semantics`). -/
   intro w hw y hy x hx
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  rw [(show (x, y) ∈ stack.realizes ↔ y.design = x from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_realizes (x := x) (y := y))] at hx
+  rw [(show (x, y) ∈ stack.realizes ↔ y.design = x from Iff.rfl)] at hx
   subst hx
-  exact design_fast_of_modelCheck h ((show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy)
+  exact design_fast_of_modelCheck h (hy : Produces y w)
 
 /-- Theory-driven certification: a record passing the worst-corner fast-filter check is certified
 for local exponential stability (the whole-chain Galois connection). -/
@@ -826,7 +815,7 @@ every platform that may produce the record (`Stack.infer_subset_truth` with
   refine stack.infer_subset_truth (fun w hw => (TMIO.mem_certify _ _ _).mpr fun y hy => ?_) hS hi
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  have hp := (show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy
+  have hp := (show (y, w) ∈ stack.produces ↔ Produces y w from Iff.rfl).mp hy
   rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
@@ -850,9 +839,9 @@ If an unstable platform may produce that record, this inference is not true of e
   unfold powerlib.TMIO.Statement at hi
   refine ⟨hi, fun ht => ?_⟩
   have hmem : y ∈ rigFamily.den (.flow .locallyExponentiallyStable) :=
-    (stack.mem_truth).mp ht v rfl y ((show (y, v) ∈ stack.produces ↔ Produces y v from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := v)).mpr hp)
-  rw [rig_mem_den_flow_iff] at hmem hu
-  exact hu (LocallyExponentiallyStable.lyapunovStable hmem)
+    (stack.mem_truth).mp ht v rfl y (hp : (y, v) ∈ stack.produces)
+  exact Spectral.not_mem_den_lyapunovStable_of_unstable hu
+    (Spectral.den_locallyExponentiallyStable_subset_lyapunovStable hmem)
 
 /-- A record passing the worst-corner slow-filter check supports instability of every realized
 model. -/
@@ -866,9 +855,9 @@ model. -/
   intro w hw y hy x hx
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  rw [(show (x, y) ∈ stack.realizes ↔ y.design = x from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_realizes (x := x) (y := y))] at hx
+  rw [(show (x, y) ∈ stack.realizes ↔ y.design = x from Iff.rfl)] at hx
   subst hx
-  exact design_slow_of_slowCheck h ((show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy)
+  exact design_slow_of_slowCheck h (hy : Produces y w)
 
 /-- The inferred instability is true of every platform that may produce a slow-filter record,
 whatever its delay (`realizationSoundUnder_unstable`). -/
@@ -881,7 +870,7 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
   refine stack.infer_subset_truth (fun w hw => (TMIO.mem_certify _ _ _).mpr fun y hy => ?_) hS hi
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  have hp := (show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy
+  have hp := (show (y, w) ∈ stack.produces ↔ Produces y w from Iff.rfl).mp hy
   have hd := design_slow_of_slowCheck h hp
   unfold TMIO.Statement at hd
   rw [(connection_proof% TMIO.mem_realize)] at hd ⊢
@@ -894,48 +883,13 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
 
 /-! ### Realization exactness and refutation -/
 
-/-- The platform Routh condition forces the design margin `e = D b − K M > 0`: with `e ≤ 0` every
-term of `H / ω_c = M e + τ b (e − K M) + τ² b (D² ω_c − K M ω_c − K D)` is nonpositive and the
-second is negative. Within positive inertia this is exactly the design fast-filter requirement. -/
+/-- The platform Routh condition forces the design fast-filter requirement: otherwise `H < 0`
+(`H_neg_of_slow`). -/
 @[tmio MI, powerlib_domain] private theorem margin_pos_of_H_pos {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hH : 0 < y.H) : connection% (y.design ∈ TMIO.realize Meets {.fastFilter}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  suffices he : 0 < y.design.g.D * y.b - y.design.K * y.design.g.M by
-    have hM := hp.1
-    have e : (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M =
-        y.design.g.D * y.b := by unfold Rig.b; field_simp
-    have : y.design.K * y.design.g.M <
-        (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M := by
-      rw [e]; linarith
-    exact lt_of_mul_lt_mul_right this hM.le
-  obtain ⟨hM, hD, hω⟩ := hp
   by_contra hn
-  push Not at hn
-  have hb : 0 < y.b := by unfold Rig.b; positivity
-  have hDb : y.design.g.D ^ 2 < y.design.g.D * y.b := by
-    unfold Rig.b; nlinarith [mul_pos hD (mul_pos hM hω)]
-  have hKM : y.design.g.D ^ 2 < y.design.K * y.design.g.M := by linarith
-  have hK : 0 < y.design.K := pos_of_mul_pos_left (by nlinarith [sq_nonneg y.design.g.D]) hM.le
-  have key : y.H = y.design.g.ωc *
-      (y.design.g.M * (y.design.g.D * y.b - y.design.K * y.design.g.M) +
-        y.τ * y.b * ((y.design.g.D * y.b - y.design.K * y.design.g.M) -
-          y.design.K * y.design.g.M) +
-        y.τ ^ 2 * y.b * (y.design.g.D ^ 2 * y.design.g.ωc -
-          y.design.K * y.design.g.M * y.design.g.ωc - y.design.K * y.design.g.D)) := by
-    unfold Rig.H Rig.b Rig.c
-    ring
-  have t1 : y.design.g.M * (y.design.g.D * y.b - y.design.K * y.design.g.M) ≤ 0 :=
-    mul_nonpos_of_nonneg_of_nonpos hM.le hn
-  have t2 : y.τ * y.b * ((y.design.g.D * y.b - y.design.K * y.design.g.M) -
-      y.design.K * y.design.g.M) < 0 :=
-    mul_neg_of_pos_of_neg (by positivity) (by nlinarith)
-  have t3 : y.τ ^ 2 * y.b * (y.design.g.D ^ 2 * y.design.g.ωc -
-      y.design.K * y.design.g.M * y.design.g.ωc - y.design.K * y.design.g.D) < 0 :=
-    mul_neg_of_pos_of_neg (by positivity) (by nlinarith)
-  have : y.H < 0 := by
-    rw [key]
-    exact mul_neg_of_pos_of_neg hω (by linarith)
-  linarith
+  exact lt_asymm hH (H_neg_of_slow hp hτ (not_lt.mp hn))
 
 /-- Realization completeness of local exponential stability, for every positive delay: a locally
 exponentially stable platform with a physical design has a locally exponentially stable design.
@@ -952,12 +906,8 @@ and `H > 0` forces the fast-filter margin of the design. A delay never stabilize
   have hp : Meets y.design .physical := hΔ' (.design .physical) (by simp)
   have hτ : 0 < y.τ := hΔ' .lag (by simp)
   have hex := rig_exactUnder_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder at hex
-  have hm : y ∈ TMIO.realize rigFamily.meets
-      (rigFamily.translate (.flow .locallyExponentiallyStable) ∪ {.design .physical, .lag}) := by
-    rw [hex]
-    exact ⟨hd, hΔ⟩
-  rw [(connection_proof% TMIO.mem_realize)] at hm
+  unfold powerlib.TMIO.Statement at hex
+  have hm := (TMIO.mem_realize _ _ _).mp ((Spectral.exactUnder_iff_forall.mp hex y hΔ).mpr hd)
   have hb : Meets y.design .balanced := hm (.design .balanced) (by simp [rigFamily, rigTranslate])
   have hK : 0 < y.design.K := hm (.design .synchronizing) (by simp [rigFamily, rigTranslate])
   have hH : 0 < y.H := hm .routh (by simp [rigFamily, rigTranslate])
@@ -1001,8 +951,8 @@ produce it, whatever its delay. -/
   have ht := unstable_mem_truth v h
   unfold powerlib.TMIO.Statement at ht
   have hu : y ∈ rigFamily.den (.flow .unstable) := (stack.mem_truth).mp ht v rfl y hp
-  rw [rig_mem_den_flow_iff] at hy hu
-  exact hu (LocallyExponentiallyStable.lyapunovStable hy)
+  exact Spectral.not_mem_den_lyapunovStable_of_unstable hu
+    (Spectral.den_locallyExponentiallyStable_subset_lyapunovStable hy)
 
 end VSMLPF
 end powerlib.GFM

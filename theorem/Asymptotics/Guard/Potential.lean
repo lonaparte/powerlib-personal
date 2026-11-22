@@ -141,14 +141,9 @@ endpoint in the sense of the endpoint Laplace expansion. -/
 `d(ṙ)/dr |_{r_c} = -α + 3 l₁ r_c² = +2α`; the cubic coefficient `l₁` cancels exactly. -/
 @[tmio M, powerlib_foundation] theorem deriv_guardDrift_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
     deriv (guardDrift α l₁) (guardRadius α l₁) = 2 * α := by
-  have h : ∀ r, HasDerivAt (guardDrift α l₁) (-α + 3 * l₁ * r ^ 2) r := by
-    intro r
-    have h := ((hasDerivAt_id' r).const_mul (-α)).add ((hasDerivAt_pow 3 r).const_mul l₁)
-    convert h using 1
-    · funext x; simp [guardDrift]
-    · simp; ring
-  rw [(h _).deriv, guardRadius_sq hα hl]
-  field_simp
+  have h : guardDrift α l₁ = -deriv (guardPotential α l₁) := by
+    funext r; rw [Pi.neg_apply, (hasDerivAt_guardPotential α l₁ r).deriv, neg_neg]
+  rw [h, deriv.neg, deriv2_guardPotential_guardRadius hα hl]
   ring
 
 /-- In the scaled coordinate `u = r/r_c`: `U(u r_c) - U(r_c) = -ΔU (u² - 1)²`. -/

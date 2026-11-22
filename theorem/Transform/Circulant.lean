@@ -39,23 +39,21 @@ def symCirc {R : Type*} [Ring R] (a b : R) : Matrix (Fin 3) (Fin 3) R := circula
     symCirc a b = !![a, b, b; b, a, b; b, b, a] := by
   ext i j; fin_cases i <;> fin_cases j <;> rfl
 
-/-- A symmetric 3 × 3 circulant has the form `symCirc a b`. -/
+/-- A 3 × 3 circulant is symmetric iff it has the form `symCirc a b`. -/
 @[tmio T, powerlib_foundation] theorem circulant_symm_iff {R : Type*} [Ring R] (v : Fin 3 → R) :
-    (circulant v)ᵀ = circulant v ↔ v 2 = v 1 := by
+    (circulant v)ᵀ = circulant v ↔ circulant v = symCirc (v 0) (v 1) := by
   constructor
   · intro h
-    have := congrFun (congrFun h 0) 1
-    simp [circulant_apply, show (-1 : Fin 3) = 2 from rfl] at this
-    exact this.symm
-  · intro h
+    have h21 : v 2 = v 1 := by
+      have := congrFun (congrFun h 0) 1
+      simp [circulant_apply, show (-1 : Fin 3) = 2 from rfl] at this
+      exact this.symm
     ext i j; fin_cases i <;> fin_cases j <;>
-      simp [circulant_apply, h, show (-1 : Fin 3) = 2 from rfl, show (-2 : Fin 3) = 1 from rfl]
-
-@[tmio T, powerlib_foundation] theorem circulant_eq_symCirc {R : Type*} [Ring R] (v : Fin 3 → R)
-    (h : v 2 = v 1) : circulant v = symCirc (v 0) (v 1) := by
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [symCirc, circulant_apply, h, show (-1 : Fin 3) = 2 from rfl,
-      show (-2 : Fin 3) = 1 from rfl]
+      simp [symCirc, circulant_apply, h21, show (-1 : Fin 3) = 2 from rfl,
+        show (-2 : Fin 3) = 1 from rfl]
+  · intro h
+    rw [h, symCirc_apply]
+    ext i j; fin_cases i <;> fin_cases j <;> rfl
 
 /-- The complexified power-invariant Clarke matrix. -/
 def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)

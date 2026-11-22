@@ -27,7 +27,10 @@ Results.
   (`nonneg_of_grounded_mulVec_nonneg`). Consequences: `L + diag g` is invertible
   (`grounded_isUnit`, `grounded_det_ne_zero`), its inverse is entrywise nonnegative (the
   M-matrix special case, `grounded_inv_nonneg`), and, for symmetric weights, it is positive
-  definite exactly when every node has such a path to ground (`grounded_posDef_iff`).
+  definite exactly when every node has such a path to ground (`grounded_posDef_iff`). Without
+  such a path the indicator of the node's component lies in the kernel
+  (`grounded_mulVec_component_eq_zero`), so for symmetric weights `L + diag g` is nonsingular
+  exactly when every node reaches ground (`grounded_det_ne_zero_iff`).
 * The Laplacian over any commutative ring: rows `(L x)ᵢ = ∑ⱼ Wᵢⱼ (xᵢ − xⱼ)`
   (`laplacian_mulVec_apply`), `L𝟙 = 0` (`laplacian_mulVec_const`), zero column sums for symmetric
   weights (`sum_laplacian_mulVec`), and `laplacian_map` (real weights read as complex ones: the
@@ -295,6 +298,53 @@ def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃
     (fun k => by by_cases hk : k = j <;> simp [hk]) i
   simpa [mulVec_single] using h
 
+open scoped Classical in
+/-- If node `i` has no positive-weight path to a grounded node, the indicator of its
+component lies in the kernel of the grounded Laplacian. -/
+@[tmio T, powerlib_foundation] theorem grounded_mulVec_component_eq_zero {W : Matrix ι ι ℝ}
+    {g : ι → ℝ}
+    (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) {i : ι}
+    (hnot : ∀ k, Reach W i k → g k ≤ 0) :
+    grounded W g *ᵥ (fun a => if Reach W i a then (1 : ℝ) else 0) = 0 := by
+  classical
+  funext a
+  rw [grounded_mulVec_apply, Pi.zero_apply]
+  have hgx : g a * (if Reach W i a then (1 : ℝ) else 0) = 0 := by
+    by_cases ha : Reach W i a
+    · simp [ha, le_antisymm (hnot a ha) (hg a)]
+    · simp [ha]
+  rw [hgx, zero_add]
+  apply Finset.sum_eq_zero
+  intro b _
+  rcases (hpos a b).lt_or_eq with hab | hab
+  · by_cases ha : Reach W i a
+    · have hb : Reach W i b := ha.tail hab
+      simp [ha, hb]
+    · have hb : ¬ Reach W i b := fun hb => ha (hb.tail (by rw [hW]; exact hab))
+      simp [ha, hb]
+  · rw [← hab, zero_mul]
+
+open scoped Classical in
+/-- For symmetric nonnegative weights and nonnegative grounding, the grounded Laplacian
+is nonsingular exactly when every node reaches a grounded node. -/
+@[tmio T, powerlib_foundation] theorem grounded_det_ne_zero_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
+    (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) :
+    (grounded W g).det ≠ 0 ↔ GroundReachable W g := by
+  constructor
+  · intro hdet i
+    by_contra hnot
+    push Not at hnot
+    apply hdet
+    apply Matrix.exists_mulVec_eq_zero_iff.mp
+    refine ⟨fun a => if Reach W i a then 1 else 0, ?_,
+      grounded_mulVec_component_eq_zero hW hpos hg hnot⟩
+    intro h
+    have := congrFun h i
+    simp only [Pi.zero_apply] at this
+    rw [ite_eq_left (show Reach W i i from Relation.ReflTransGen.refl)] at this
+    exact one_ne_zero this
+  · exact grounded_det_ne_zero hpos hg
+
 /-- For symmetric weights, `L + diag g` is positive definite iff every node has a
 positive-weight path to a grounded node. -/
 @[tmio T, powerlib_foundation] theorem grounded_posDef_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
@@ -314,44 +364,8 @@ positive-weight path to a grounded node. -/
     simp only [dotProduct, mulVec_diagonal]
     exact Finset.sum_congr rfl fun i _ => by ring
   constructor
-  · intro hPD i
-    by_contra hnot
-    push Not at hnot
-    classical
-    -- indicator of the component of `i`
-    let x : ι → ℝ := fun a => if Reach W i a then 1 else 0
-    have hx0 : x ≠ 0 := by
-      intro h
-      have := congrFun h i
-      simp only [x, Pi.zero_apply] at this
-      rw [ite_eq_left (show Reach W i i from Relation.ReflTransGen.refl)] at this
-      exact one_ne_zero this
-    have hgx : ∀ a, g a * x a ^ 2 = 0 := by
-      intro a
-      by_cases ha : Reach W i a
-      · have : g a ≤ 0 := hnot a ha
-        have : g a = 0 := le_antisymm this (hg a)
-        simp [this]
-      · simp [x, ha]
-    have hedge : ∀ a b, 0 < W a b → x a = x b := by
-      intro a b hab
-      by_cases ha : Reach W i a
-      · have hb : Reach W i b := ha.tail hab
-        simp [x, ha, hb]
-      · have hb : ¬ Reach W i b := fun hb => ha (hb.tail (by rw [hW]; exact hab))
-        simp [x, ha, hb]
-    have hL : dotProduct x (laplacian W *ᵥ x) = 0 := by
-      rw [dotProduct_laplacian_mulVec hW]
-      have : ∀ a b, W a b * (x a - x b) ^ 2 = 0 := by
-        intro a b
-        rcases (hpos a b).lt_or_eq with h | h
-        · rw [hedge a b h]; ring
-        · rw [← h]; ring
-      simp [this]
-    have hpd := (posDef_iff_dotProduct_mulVec.mp hPD).2 hx0
-    simp only [star_trivial] at hpd
-    rw [hform, hL, Finset.sum_eq_zero fun a _ => hgx a] at hpd
-    simp at hpd
+  · intro hPD
+    exact (grounded_det_ne_zero_iff hW hpos hg).mp hPD.det_pos.ne'
   · intro hreach
     refine posDef_iff_dotProduct_mulVec.mpr ⟨hherm, fun x hx => ?_⟩
     simp only [star_trivial]

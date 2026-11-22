@@ -19,7 +19,7 @@ Results.
 * `Plant` (`A`, `B`, `C`, `D`), the matrix action `op` on Euclidean state space (`affine_apply`,
   `op_mul_apply`, `op_cancel`).
 * `Plant.inputField` (the field under a constant input); `Plant.inputField_eq` (with an
-  equilibrium `e` it is the affine linear field of `A` centred at `e`), `Plant.inputField_zero`.
+  equilibrium `e` it is the affine linear field of `A` centred at `e`).
 -/
 
 noncomputable section
@@ -73,11 +73,5 @@ field of `A` centred at `e`. -/
   have hb : WithLp.toLp 2 (M.B *ᵥ u) = -op M.A e := eq_neg_of_add_eq_zero_right he
   funext x
   rw [Plant.inputField, hb, affine_apply, map_sub, sub_eq_add_neg]
-
-/-- With zero input the origin is an equilibrium and the field is linear. -/
-@[tmio T, powerlib_foundation] theorem Plant.inputField_zero (M : Plant n p) :
-    M.inputField 0 = affineLinearVectorField M.A 0 := by
-  funext x
-  simp [Plant.inputField, affine_apply]
 
 end powerlib.Linear

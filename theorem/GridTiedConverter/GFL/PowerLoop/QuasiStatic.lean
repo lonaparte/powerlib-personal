@@ -355,12 +355,19 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
   rw [h2]
   ring
 
-@[tmio M, powerlib_domain] theorem a2_mul_a1_sub_a0_pos (hV : 0 < p.V) (hkp : 0 < p.kp)
-    (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (hcos2 : 0 ≤ Real.cos (2 * θ)) : a0 p θ < a2 p θ * a1 p θ := by
+/-- The Hurwitz gap `a₀ < a₂ a₁` for positive gains, `V cos θ > 0` and `cos 2θ ≥ 0`. -/
+@[tmio M, powerlib_domain] theorem a2_mul_a1_sub_a0_pos (hkp : 0 < p.kp) (hki : 0 < p.ki)
+    (hkP : 0 < p.kP) {θ : ℝ} (hA : 0 < p.V * Real.cos θ) (hcos2 : 0 ≤ Real.cos (2 * θ)) :
+    a0 p θ < a2 p θ * a1 p θ := by
   have h := a2_mul_a1_sub_a0 p θ
+  have hV : p.V ≠ 0 := fun h0 => by rw [h0, zero_mul] at hA; exact lt_irrefl 0 hA
+  have hcos : Real.cos θ ≠ 0 := fun h0 => by rw [h0, mul_zero] at hA; exact lt_irrefl 0 hA
   have t1 : 0 ≤ (9 * p.V * p.kP ^ 2 * p.kp + 6 * p.V * p.kP * p.kp ^ 2) * Real.cos θ *
-      Real.cos (2 * θ) := by positivity
+      Real.cos (2 * θ) := by
+    have e : (9 * p.V * p.kP ^ 2 * p.kp + 6 * p.V * p.kP * p.kp ^ 2) * Real.cos θ *
+        Real.cos (2 * θ) = (9 * p.kP ^ 2 * p.kp + 6 * p.kP * p.kp ^ 2) * (p.V * Real.cos θ) *
+        Real.cos (2 * θ) := by ring
+    rw [e]; positivity
   have t2 : 0 < 4 * p.ki * p.kp * Real.cos θ ^ 2 := by positivity
   have t3 : 0 ≤ 6 * p.kP * p.ki * Real.sin θ ^ 2 := by positivity
   have : 0 < p.V ^ 2 / 4 * ((9 * p.V * p.kP ^ 2 * p.kp + 6 * p.V * p.kP * p.kp ^ 2) *
@@ -537,7 +544,7 @@ equilibrium is locally exponentially stable for every positive gain triple. -/
     linarith
   · show (jac p θ Id).trace * Criteria.principalMinorSum (jac p θ Id) < (jac p θ Id).det
     rw [trace_jac, principalMinorSum_jac p heq.1, det_jac p heq.1]
-    have := a2_mul_a1_sub_a0_pos p hV hkp hki hkP hcos hcos2.le
+    have := a2_mul_a1_sub_a0_pos p hkp hki hkP (mul_pos hV hcos) hcos2.le
     linarith
 
 /-- Same, stated with the angle: `|θ| < π/4`. -/
@@ -611,7 +618,7 @@ a nonzero purely imaginary eigenvalue. -/
   have ha2 : 0 < a2 p θ := by unfold a2; have : 0 < p.V * Real.cos θ := mul_pos hV hcos
                               nlinarith
   rcases le_or_gt 0 (Real.cos (2 * θ)) with hc2 | hc2
-  · have := a2_mul_a1_sub_a0_pos p hV hkp hki hkP hcos hc2
+  · have := a2_mul_a1_sub_a0_pos p hkp hki hkP (mul_pos hV hcos) hc2
     rw [ha1, ha0] at this
     linarith
   · have : a0 p θ < 0 := by

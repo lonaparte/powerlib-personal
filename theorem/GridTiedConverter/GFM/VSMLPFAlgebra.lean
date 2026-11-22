@@ -100,13 +100,10 @@ variable {g}
 (so `α_red` is the decay rate of the reduced swing pair). -/
 @[tmio T, powerlib_foundation] theorem reduced_root_re {α ω0sq : ℝ} {s : ℂ}
     (hs : s ^ 2 + 2 * (α : ℂ) * s + (ω0sq : ℂ) = 0) (him : s.im ≠ 0) : s.re = -α := by
-  have h := congrArg Complex.im hs
-  simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_im, Complex.ofReal_re, pow_two,
-    Complex.zero_im, Complex.re_ofNat, Complex.im_ofNat, Complex.mul_re] at h
-  have : (2 * s.re + 2 * α) * s.im = 0 := by linarith
-  rcases mul_eq_zero.mp this with h1 | h1
-  · linarith
+  have h := Criteria.quadratic_root_im (a1 := 2 * α) (a0 := ω0sq) (by push_cast; exact hs)
+  rcases mul_eq_zero.mp h with h1 | h1
   · exact absurd h1 him
+  · linarith
 
 variable (g)
 
@@ -127,6 +124,16 @@ def fxuu : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; -(g.jacobian g.δ0
     ring
   fin_cases i <;> fin_cases j <;> simp [jacobian, jacobianU'] <;>
     first | exact hasDerivAt_const _ _ | exact key
+
+/-- `∂J/∂u |_{u=0} = A₁` at the loading equilibrium: `hasDerivAt_jacobian_entry` at `u = 0`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_jacobian_u (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0)
+    (i j : Fin 3) :
+    HasDerivAt (fun u => g.jacobian (g.δ0 - u) i j) (g.A1 i j) 0 := by
+  have hsin : g.K0 * Real.sin g.δ0 = g.P0 := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets,
+      VSMLPF.Model.K, VSMLPF.K] using g.sin_δ0 hK0 h
+  convert g.hasDerivAt_jacobian_entry 0 i j using 1
+  fin_cases i <;> fin_cases j <;> simp [A1, jacobianU', hsin]
 
 /-- **Mixed tensor `f_xuu`**: `∂²/∂u² J(δ₀ − u) |_{u=0} = −(A₀)_{P_f δ} e_{P_f} e_δᵀ`
 (entrywise). -/

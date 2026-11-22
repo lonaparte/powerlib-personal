@@ -68,7 +68,7 @@ to `1 ± c√D̃ + O(D̃)` (`guard_weight_inside_two_term`, `guard_weight_beyond
 integral and the tails enter only at relative order `O(D̃)`: deterministic sandwiches
 `guardMFPT_guard_weight_bounds`, `guardMFPT_beyond_weight_bounds` (from the bounds of
 `Asymptotics/Guard/MFPT.lean`: `guardInner_ge_gauss`, `guardInner_le_gauss`,
-`guard_inside_ge`, `guard_inside_le`, `guard_tails_le`, `guardInner_reflect_le`). Cross-check
+`guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`). Cross-check
 with the truncated table (`guard_endpointCorrection_eq`): in `ξ = r_c − y`, `g₀ = 1/r_c`,
 `g₁ = 1/r_c²`, `φ₂ = 2α`, `φ₃ = −6l₁r_c` give `endpointCorrection = 2√l₁/(√π α) = c` (with
 `X` there `= 1/D̃`). Generic helpers: `tendsto_guardBeta`, `guardBeta_inv_isBigO`,
@@ -334,8 +334,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
   have htails := guard_tails_le (D := D) hα hl ha har le_rfl hD hDa
   rw [intervalIntegral.integral_same, add_zero] at htails
   have heps0 := guardEps_nonneg (D := D) hα hl ha har le_rfl hD
-  have hAm_lo := guard_inside_ge (α := α) (l₁ := l₁) (D := D) ha har.le
-  have hAm_hi := guard_inside_le (α := α) (l₁ := l₁) (D := D) ha har.le
+  obtain ⟨hAm_lo, hAm_hi⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
   have hKa := guardInner_ge_gauss (l₁ := l₁) hα hl.le hD ha.le
   have hKr := guardInner_le_gauss hα hl hD
   have hKar : guardInner α l₁ D a ≤ guardInner α l₁ D √(α / l₁) := guardInner_mono ha.le har.le
@@ -427,8 +426,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
   have heps0 := guardEps_nonneg (D := D) hα hl ha har hψ hD
   have hkap0 := guardKappa_nonneg (D := D) hα hl ha har hD
   have hkap := guardInner_reflect_le (D := D) hα hl ha har hD hDa
-  have hBm_lo := guard_inside_ge (α := α) (l₁ := l₁) (D := D) hrc hrcψ
-  have hBm_hi := guard_inside_le (α := α) (l₁ := l₁) (D := D) hrc hrcψ
+  obtain ⟨hBm_lo, hBm_hi⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) hrc hrcψ
   have hKa := guardInner_ge_gauss (l₁ := l₁) hα hl.le hD ha.le
   have hKr := guardInner_le_gauss hα hl hD
   have hKar : guardInner α l₁ D a ≤ guardInner α l₁ D √(α / l₁) := guardInner_mono ha.le har.le

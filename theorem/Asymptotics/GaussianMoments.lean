@@ -32,10 +32,8 @@ Results.
   asymptotics.
 * `gaussMoment2_Ioi` — `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)` (endpoint Laplace two-term
   expansion).
-* `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_interval_bounds`,
-  `integral_exp_neg_mul_sq_ge` — finite-interval bounds,
-  `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`, hence
-  `∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`.
+* `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_interval_bounds` — finite-interval
+  bounds, `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`.
 * `integral_mul_exp_neg_mul_sq_interval` — the closed form
   `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)`.
 -/
@@ -233,15 +231,6 @@ half-line integral. -/
   rw [intervalIntegral.integral_of_le hL.le]
   constructor <;> linarith
 
-
-/-- Gaussian lower bound on a finite interval: `∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)`
-(`integral_exp_neg_mul_sq_interval_bounds` with `e^{−cL²} ≤ 1`). -/
-@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c)
-    (hL : 0 < L) :
-    √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
-  refine le_trans ?_ (integral_exp_neg_mul_sq_interval_bounds hc hL).1
-  gcongr
-  exact Real.exp_le_one_iff.mpr (by nlinarith [sq_nonneg L])
 
 end HalfLine
 

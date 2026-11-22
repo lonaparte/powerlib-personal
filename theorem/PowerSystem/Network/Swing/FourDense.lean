@@ -476,15 +476,10 @@ the end machines. -/
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₁ + W₁₂ + W₁₃) :
     0 ≤ (W₀₁ + W₁₂ + W₁₃) * (W₀₃ + W₂₃) + W₁₃ * (W₀₁ + W₁₂) := by
-  have h := hQ 0 (W₁₃ / (W₀₁ + W₁₂ + W₁₃)) 0 1
-  have e : (W₀₁ + W₁₂ + W₁₃) * (W₀₁ * (0 - W₁₃ / (W₀₁ + W₁₂ + W₁₃)) ^ 2 + W₀₂ * (0 - 0) ^ 2 +
-      W₀₃ * (0 - 1) ^ 2 + W₁₂ * (W₁₃ / (W₀₁ + W₁₂ + W₁₃) - 0) ^ 2 +
-      W₁₃ * (W₁₃ / (W₀₁ + W₁₂ + W₁₃) - 1) ^ 2 + W₂₃ * (0 - 1) ^ 2) =
-      (W₀₁ + W₁₂ + W₁₃) * (W₀₃ + W₂₃) + W₁₃ * (W₀₁ + W₁₂) := by
-    field_simp
-    ring
-  rw [← e]
-  exact mul_nonneg s.le h
+  -- relabel machines `0 ↔ 3`
+  refine (psd_reduce_one_zero (W₀₁ := W₁₃) (W₀₂ := W₂₃) (W₀₃ := W₀₃) (W₁₂ := W₁₂) (W₁₃ := W₀₁)
+    (W₂₃ := W₀₂) (fun a b c d => by convert hQ d b c a using 1; ring) (by linarith)).trans_eq ?_
+  ring
 
 /-- Reduction at machine 2: the reduced cut of machine 0. -/
 @[tmio T, powerlib_foundation] theorem psd_reduce_two_zero {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
@@ -492,15 +487,10 @@ the end machines. -/
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₂ + W₁₂ + W₂₃) :
     0 ≤ (W₀₂ + W₁₂ + W₂₃) * (W₀₁ + W₀₃) + W₀₂ * (W₁₂ + W₂₃) := by
-  have h := hQ 1 0 (W₀₂ / (W₀₂ + W₁₂ + W₂₃)) 0
-  have e : (W₀₂ + W₁₂ + W₂₃) * (W₀₁ * (1 - 0) ^ 2 + W₀₂ * (1 - W₀₂ / (W₀₂ + W₁₂ + W₂₃)) ^ 2 +
-      W₀₃ * (1 - 0) ^ 2 + W₁₂ * (0 - W₀₂ / (W₀₂ + W₁₂ + W₂₃)) ^ 2 +
-      W₁₃ * (0 - 0) ^ 2 + W₂₃ * (W₀₂ / (W₀₂ + W₁₂ + W₂₃) - 0) ^ 2) =
-      (W₀₂ + W₁₂ + W₂₃) * (W₀₁ + W₀₃) + W₀₂ * (W₁₂ + W₂₃) := by
-    field_simp
-    ring
-  rw [← e]
-  exact mul_nonneg s.le h
+  -- relabel machines `1 ↔ 2`
+  refine (psd_reduce_one_zero (W₀₁ := W₀₂) (W₀₂ := W₀₁) (W₀₃ := W₀₃) (W₁₂ := W₁₂) (W₁₃ := W₂₃)
+    (W₂₃ := W₁₃) (fun a b c d => by convert hQ a c b d using 1; ring) (by linarith)).trans_eq ?_
+  ring
 
 /-- Reduction at machine 2: the reduced cut of machine 3. -/
 @[tmio T, powerlib_foundation] theorem psd_reduce_two_three {W₀₁ W₀₂ W₀₃ W₁₂ W₁₃ W₂₃ : ℝ}
@@ -508,15 +498,10 @@ the end machines. -/
       W₁₂ * (b - c) ^ 2 + W₁₃ * (b - d) ^ 2 + W₂₃ * (c - d) ^ 2)
     (s : 0 < W₀₂ + W₁₂ + W₂₃) :
     0 ≤ (W₀₂ + W₁₂ + W₂₃) * (W₀₃ + W₁₃) + W₂₃ * (W₀₂ + W₁₂) := by
-  have h := hQ 0 0 (W₂₃ / (W₀₂ + W₁₂ + W₂₃)) 1
-  have e : (W₀₂ + W₁₂ + W₂₃) * (W₀₁ * (0 - 0) ^ 2 + W₀₂ * (0 - W₂₃ / (W₀₂ + W₁₂ + W₂₃)) ^ 2 +
-      W₀₃ * (0 - 1) ^ 2 + W₁₂ * (0 - W₂₃ / (W₀₂ + W₁₂ + W₂₃)) ^ 2 +
-      W₁₃ * (0 - 1) ^ 2 + W₂₃ * (W₂₃ / (W₀₂ + W₁₂ + W₂₃) - 1) ^ 2) =
-      (W₀₂ + W₁₂ + W₂₃) * (W₀₃ + W₁₃) + W₂₃ * (W₀₂ + W₁₂) := by
-    field_simp
-    ring
-  rw [← e]
-  exact mul_nonneg s.le h
+  -- relabel machines `0 ↔ 3`, `1 ↔ 2`
+  refine (psd_reduce_one_zero (W₀₁ := W₂₃) (W₀₂ := W₁₃) (W₀₃ := W₀₃) (W₁₂ := W₁₂) (W₁₃ := W₀₂)
+    (W₂₃ := W₀₁) (fun a b c d => by convert hQ d c b a using 1; ring) (by linarith)).trans_eq ?_
+  ring
 
 /-- One negative line at machine 0 besides `03`: the null direction puts machine 2 (and then
 machine 1) above machine 0. -/

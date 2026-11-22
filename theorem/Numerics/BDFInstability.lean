@@ -31,9 +31,9 @@ Results.
   `Criteria.exists_root_norm_gt_one_of_coeff` — are in `theorem/Criteria/SchurCohn.lean`.
   - `LMM.norm_rho_le_norm_rhoRev`: all roots of `ρ` in the closed unit disk (in particular a
     zero-stable method) ⇒ `‖ρ(w)‖ ≤ ‖ρ*(w)‖` for `0 < ‖w‖ ≤ 1`, where `ρ*(w) = Σᵢ αᵢ w^{k-i}`
-    (`LMM.rhoRev`); contrapositive `LMM.exists_root_norm_gt_one_of_norm_rhoRev_lt` and
-    `LMM.not_rootCondition_of_norm_rhoRev_lt`: one point `0 < ‖w‖ ≤ 1` with
-    `‖ρ*(w)‖ < ‖ρ(w)‖` exhibits a root of `ρ` outside the closed unit disk.
+    (`LMM.rhoRev`); contrapositive `LMM.exists_root_norm_gt_one_of_norm_rhoRev_lt`: one point
+    `0 < ‖w‖ ≤ 1` with `‖ρ*(w)‖ < ‖ρ(w)‖` exhibits a root of `ρ` outside the closed unit disk
+    (which violates the root condition, `LMM.not_rootCondition_of_root`).
   - The Schur–Cohn bound for the BDF polynomial for every `k ≥ 1`:
     `bdfRhoSum_exists_root_norm_gt_one_of_lt`, with reversed polynomial
     `bdfRevSum k w = Σ_{j=1}^{k} (1 - w)^j / j` (`bdfRevSum_eq`); `bdfPoly_natDegree`,
@@ -46,8 +46,6 @@ Results.
   - `bdfRhoSum_exists_root_norm_gt_one`: for every `k ≥ 7`, `bdfRhoSum k` has a root `ζ` with
     `1 < ‖ζ‖`; hence `bdfLMM_exists_root_norm_gt_one` and `bdfLMM_not_rootCondition`:
     **the `k`-step BDF is not zero-stable for every `k ≥ 7`**.
-  - `LMM.not_rootCondition_of_rho_eq`: a method with the same `ρ` as one having a root outside
-    the closed unit disk violates the root condition.
   - `bdf7`, `bdf8`, `bdf9`: role names for `bdfLMM 7`, `bdfLMM 8`, `bdfLMM 9` (coefficients in
     the docstrings); exact order `k` is `bdfLMM_hasExactOrder`, failure of the root condition
     `bdfLMM_not_rootCondition` (numerically the unstable roots have
@@ -107,14 +105,6 @@ def RootCondition (m : LMM k) : Prop :=
 /-- A root of `ρ` outside the closed unit disk violates the root condition. -/
 @[tmio T, powerlib_foundation] theorem not_rootCondition_of_root (m : LMM k) {ζ : ℂ} (h : m.rho ζ = 0)
     (h1 : 1 < ‖ζ‖) : ¬ m.RootCondition := fun hm => absurd (hm ζ h).1 (not_le.mpr h1)
-
-/-- A method whose `ρ` agrees with that of `m'` violates the root condition as soon as `ρ'` has a
-root outside the closed unit disk. -/
-@[tmio T, powerlib_foundation] theorem not_rootCondition_of_rho_eq {k' : ℕ} {m : LMM k}
-    {m' : LMM k'} (h : ∀ ζ, m.rho ζ = m'.rho ζ) (h' : ∃ ζ, m'.rho ζ = 0 ∧ 1 < ‖ζ‖) :
-    ¬ m.RootCondition := by
-  obtain ⟨ζ, hζ, h1⟩ := h'
-  exact m.not_rootCondition_of_root ((h ζ).trans hζ) h1
 
 end LMM
 
@@ -188,13 +178,6 @@ single point `0 < ‖w‖ ≤ 1`, then `ρ` has a root `ζ` with `1 < ‖ζ‖`.
   by_contra hne
   simp only [not_exists, not_and, not_lt] at hne
   exact absurd (m.norm_rho_le_norm_rhoRev h hne hw0 hw) (not_le.mpr hlt)
-
-/-- The same witness violates the root condition. -/
-@[tmio T, powerlib_foundation] theorem not_rootCondition_of_norm_rhoRev_lt (m : LMM k)
-    (h : m.α (Fin.last k) ≠ 0) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1)
-    (hlt : ‖m.rhoRev w‖ < ‖m.rho w‖) : ¬ m.RootCondition := by
-  obtain ⟨ζ, hζ, h1⟩ := m.exists_root_norm_gt_one_of_norm_rhoRev_lt h hw0 hw hlt
-  exact m.not_rootCondition_of_root hζ h1
 
 end LMM
 

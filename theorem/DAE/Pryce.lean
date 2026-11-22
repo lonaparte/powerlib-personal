@@ -222,7 +222,7 @@ private def potential (p : (ι → ℕ) × (ι → ℕ)) : ℕ := ∑ i, p.1 i +
 offsets that are tight on `σ`, provided some such offsets exist. -/
 @[tmio T, powerlib_foundation] theorem pryce_iteration_terminates {σ : Equiv.Perm ι}
     (hσ : S.IsTransversal σ) {c d : ι → ℕ} (hf : S.IsDualFeasible c d) (ht : S.IsTight σ c d) :
-    ∃ N ≤ potential (c, d), S.pryceStep σ (S.pryceIter σ N) = S.pryceIter σ N ∧
+    ∃ N ≤ ∑ i, c i + ∑ j, d j, S.pryceStep σ (S.pryceIter σ N) = S.pryceIter σ N ∧
       S.IsDualFeasible (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧
       S.IsTight σ (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧
       ∀ c' d', S.IsDualFeasible c' d' → S.IsTight σ c' d' → S.pryceIter σ N ≤ (c', d') := by

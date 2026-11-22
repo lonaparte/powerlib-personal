@@ -225,17 +225,15 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
   simp [zeta, omegaN, Criteria.dampingRatio, linA, Matrix.trace_fin_two, Matrix.det_fin_two,
     mul_comm Ki V]
 
-/-- Standard second-order form `s² + 2ζω_n s + ω_n²` of the loop polynomial (`V K_i > 0`). -/
+/-- Standard second-order form `s² + 2ζω_n s + ω_n²` of the loop polynomial (`V K_i > 0`):
+`Criteria.det_characteristicMatrix_standard` at `linA`. -/
 @[tmio M, powerlib_domain] theorem loopPoly_eq_standard {V Kp Ki : ℝ} (h : 0 < V * Ki) (s : ℂ) :
     loopPoly V Kp Ki s = s ^ 2 + 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) * s +
       (omegaN V Ki : ℂ) ^ 2 := by
-  have hω : 0 < omegaN V Ki := Real.sqrt_pos.mpr h
-  have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt h.le
-  have h2 : 2 * zeta V Kp Ki * omegaN V Ki = V * Kp := by
-    rw [zeta]; field_simp
-  have h2' : 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) = (V : ℂ) * Kp := by exact_mod_cast h2
-  have hsq' : (omegaN V Ki : ℂ) ^ 2 = (V : ℂ) * Ki := by exact_mod_cast hsq
-  rw [loopPoly, h2', hsq']
+  have hω : omegaN V Ki = Criteria.naturalFrequency (linA V Kp Ki) := by
+    rw [Criteria.naturalFrequency, det_linA, omegaN]
+  rw [← det_characteristicMatrix_linA, zeta_eq_dampingRatio, hω]
+  exact Criteria.det_characteristicMatrix_standard _ (by rwa [det_linA]) s
 
 /-- `ζ = (K_p/2) √(V/K_i)` for `V, K_i > 0` (T-pll-dynamics §1.3 boxed). -/
 @[tmio M, powerlib_domain] theorem zeta_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :

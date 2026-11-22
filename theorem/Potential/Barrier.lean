@@ -95,15 +95,6 @@ def barrierDown (c A φ : ℝ) : ℝ :=
     c - A * sin (thetaS c A φ + φ) = 0 := by
   rw [thetaS, sub_add_cancel, SpecialFunctions.mul_sin_arcsin_div hc hA, sub_self]
 
-@[tmio T, powerlib_foundation] theorem thetaUp_zero (hA : 0 < A) (hc : |c| ≤ A) :
-    c - A * sin (thetaUp c A φ + φ) = 0 := by
-  rw [thetaUp, sub_add_cancel, SpecialFunctions.mul_sin_pi_sub_arcsin_div hc hA, sub_self]
-
-@[tmio T, powerlib_foundation] theorem thetaDown_zero (hA : 0 < A) (hc : |c| ≤ A) :
-    c - A * sin (thetaDown c A φ + φ) = 0 := by
-  rw [thetaDown, sub_add_cancel, show -π - arcsin (c / A) = π - arcsin (c / A) - 2 * π by ring,
-    sin_sub_two_pi, SpecialFunctions.mul_sin_pi_sub_arcsin_div hc hA, sub_self]
-
 @[tmio T, powerlib_foundation] private lemma A_sqrt (hA : 0 < A) :
     A * √(1 - (c / A) ^ 2) = √(A ^ 2 - c ^ 2) := by
   rw [← Real.sqrt_sq hA.le, ← Real.sqrt_mul (sq_nonneg A), Real.sqrt_sq hA.le]

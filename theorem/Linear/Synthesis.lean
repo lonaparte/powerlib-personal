@@ -247,12 +247,6 @@ Hurwitz matrix, because a checked solution is uniquely the positive upstream sol
     accepts A = true ↔ LinearSystems.IsHurwitz (real A) :=
   ⟨fun h => (certificateOf A h).isHurwitz, accepts_of_isHurwitz⟩
 
-/-- A rational matrix accepted by the synthesizer satisfies every attractive sentence. -/
-@[tmio T, powerlib_foundation] private theorem holds_of_accepts {A : Matrix (Fin n) (Fin n) ℚ}
-    (h : accepts A = true) (e : EuclideanSpace ℝ (Fin n)) {P : Flow.Property}
-    (hP : P.Attractive) : P.holds (LinearSystems.affineLinearVectorField (real A) e) e :=
-  (certificateOf A h).holds e hP
-
 end
 
 /-! ## Synthesis during elaboration -/

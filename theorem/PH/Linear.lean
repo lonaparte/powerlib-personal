@@ -203,18 +203,6 @@ include hJ hR hQ in
   · rw [NonlinearModel.system_output, linear_output]
     simp [Linear.Plant.system, linearLTIModel]
 
-include hJ hR hQ in
-@[tmio M, powerlib_foundation] theorem linearLTIModel_field (x : State n) (u : Fin m → ℝ) :
-    (linearLTIModel J R g Q).system.field x u = (linear J R g Q hJ hR hQ).field x u := by
-  rw [← linear_system_eq hJ hR hQ]
-  rfl
-
-include hJ hR hQ in
-@[tmio M, powerlib_foundation] theorem linearLTIModel_output (x : State n) (u : Fin m → ℝ) :
-    (linearLTIModel J R g Q).system.output x u = (linear J R g Q hJ hR hQ).output x := by
-  rw [← linear_system_eq hJ hR hQ]
-  rfl
-
 end LinearLTI
 
 /-! ### The linear port-Hamiltonian plant -/

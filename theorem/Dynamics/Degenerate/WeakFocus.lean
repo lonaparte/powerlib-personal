@@ -878,27 +878,12 @@ derivative of `hopfW` is `−κ (φ² + (α/A) w²)²` up to eight monomials of 
 /-- The Taylor remainder of `N` is of fourth order. -/
 @[tmio T, powerlib_foundation] theorem hopfN_sub_hopfN3_isBigO (A B : ℝ) :
     (fun φ => hopfN A B φ - hopfN3 A B φ) =O[𝓝 0] fun φ => φ ^ 4 := by
-  refine IsBigO.of_bound (|A| + |B|) ?_
-  filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with φ hφ
-  rw [Metric.mem_ball, Real.dist_eq, sub_zero] at hφ
-  have hs := Real.sin_bound hφ.le
-  have hc := Real.cos_bound hφ.le
-  have he : hopfN A B φ - hopfN3 A B φ =
-      -A * (Real.sin φ - (φ - φ ^ 3 / 6)) - B * (Real.cos φ - (1 - φ ^ 2 / 2)) := by
-    unfold hopfN hopfN3; ring
-  rw [he, Real.norm_eq_abs, Real.norm_eq_abs, abs_pow]
-  have h5 : |φ| ^ 5 ≤ |φ| ^ 4 := pow_le_pow_of_le_one (abs_nonneg _) hφ.le (by norm_num)
-  have h4 : 0 ≤ |φ| ^ 4 := by positivity
-  calc |-A * (Real.sin φ - (φ - φ ^ 3 / 6)) - B * (Real.cos φ - (1 - φ ^ 2 / 2))|
-      ≤ |A| * |Real.sin φ - (φ - φ ^ 3 / 6)| + |B| * |Real.cos φ - (1 - φ ^ 2 / 2)| := by
-        refine (abs_sub _ _).trans ?_
-        rw [abs_mul, abs_mul, abs_neg]
-    _ ≤ |A| * (|φ| ^ 5 / 100) + |B| * (|φ| ^ 4 * (5 / 96)) := by
-        gcongr
-    _ ≤ (|A| + |B|) * |φ| ^ 4 := by
-        have hA := abs_nonneg A
-        have hB := abs_nonneg B
-        nlinarith
+  have he : (fun φ => hopfN A B φ - hopfN3 A B φ) = fun φ =>
+      -A * (Real.sin φ - (φ - φ ^ 3 / 6)) + B * (1 - Real.cos φ - φ ^ 2 / 2) := by
+    funext φ; unfold hopfN hopfN3; ring
+  rw [he]
+  exact (sin_sub_taylor_isBigO.const_mul_left (-A)).add
+    (one_sub_cos_sub_isBigO.const_mul_left B)
 
 /-- Derivative of `lyapPoly` in the coordinates `φ = z₀`, `w = z₁ − b z₀`. -/
 @[tmio T, powerlib_foundation] theorem hasFDerivAt_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ)

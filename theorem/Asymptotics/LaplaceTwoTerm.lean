@@ -96,12 +96,9 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
           have := mul_le_mul_of_nonneg_right (hrem u hu) (Real.exp_pos (-β * u ^ 2)).le
           simp only [he]
           linarith
-      _ ≤ ∫ u in Ioi (0 : ℝ), M * (u ^ 2 * e u) := by
-          rw [intervalIntegral.integral_of_le hL.le]
-          apply setIntegral_mono_set i2.integrableOn
-          · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u _
+      _ ≤ ∫ u in Ioi (0 : ℝ), M * (u ^ 2 * e u) :=
+          intervalIntegral_le_integral_Ioi hL.le i2.integrableOn fun u _ => by
             simp only [he]; positivity
-          · exact Ioc_subset_Ioi_self.eventuallyLE
       _ = M * (√(π / β) / (4 * β)) := by
           rw [MeasureTheory.integral_const_mul]
           simp only [he]

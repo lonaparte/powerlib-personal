@@ -76,13 +76,6 @@ def Gid (b : Passive.SeriesRLC) (ω Vdc : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2
   fin_cases k <;>
     simp [Jc, Transform.complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
-/-- PLL-aligned operating point (`V_q0 = 0`): `G_v^pll = diag(1, 1 − V_d0 G)`. -/
-@[tmio T, powerlib_foundation] theorem pllVoltage_aligned (Vd0 G : ℂ) :
-    (!![1, (0 : ℂ) * G; 0, 1 - Vd0 * G] : Matrix (Fin 2) (Fin 2) ℂ) =
-      Matrix.diagonal ![1, 1 - Vd0 * G] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
 /-! ## Shunt capacitor in the dq frame (Correction) -/
 
 /-- The note's load admittance `(G_l + sC) I` (cross term missing). -/

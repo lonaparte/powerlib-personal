@@ -42,7 +42,7 @@ Results (all trajectory-level, for every initial state).
   (`theorem/Averaging/SwitchedStability.lean`) and the linearization of maps
   (`theorem/Map/Linearization.lean`).
 * Matrix powers on any finite index type (`L∞` operator norm): `norm_map_algebraMap`
-  (complexification preserves the norm), `norm_pow_le_norm_one_mul`, `exists_pow_norm_lt_one`
+  (complexification preserves the norm), `exists_pow_norm_lt_one`
   (spectral radius `< 1` of the complexification gives a contractive power, through the
   LeanForControl Gelfand-formula lemma) and `exists_pow_norm_le_exp` (a contractive power gives
   `‖P ^ n‖ ≤ C e^{-γ n}`); used by the Floquet criterion `theorem/Periodic/Floquet.lean`.
@@ -203,17 +203,6 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
     ‖P.map (algebraMap ℝ ℂ)‖ = ‖P‖ := by
   rw [Matrix.linfty_opNorm_def, Matrix.linfty_opNorm_def]
   simp [Complex.nnnorm_real]
-
-@[tmio T, powerlib_foundation] theorem norm_pow_le_norm_one_mul {Q : Matrix X X ℝ} (k : ℕ) :
-    ‖Q ^ k‖ ≤ ‖(1 : Matrix X X ℝ)‖ * ‖Q‖ ^ k := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, pow_succ]
-    calc ‖Q ^ k * Q‖ ≤ ‖Q ^ k‖ * ‖Q‖ := norm_mul_le _ _
-      _ ≤ ‖(1 : Matrix X X ℝ)‖ * ‖Q‖ ^ k * ‖Q‖ :=
-        mul_le_mul_of_nonneg_right ih (norm_nonneg _)
-      _ = _ := by ring
 
 /-- Spectral radius `< 1` gives a contractive power (wraps LeanForControl
 `exists_pow_norm_lt_one_of_spectralRadius_lt_one` on the complexification). -/

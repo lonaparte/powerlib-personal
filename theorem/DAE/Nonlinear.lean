@@ -162,31 +162,11 @@ variable {f g u}
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) :
     ∃ R > 0, ∃ G : State n → State n, ContDiff ℝ 1 G ∧
       ∀ x, ‖x - u.1‖ < R → G x = reducedField f g u hg hinv x := by
-  set F := reducedField f g u hg hinv
-  have hev : ∀ᶠ y in 𝓝 u.1, ContDiffAt ℝ 1 F y :=
-    (contDiffAt_reducedField hf hg hinv).eventually (by norm_num)
-  obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff.mp hev
-  let b : ContDiffBump u.1 := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
-  refine ⟨ρ / 4, by positivity, fun x => b x • F x, ?_, ?_⟩
-  · rw [contDiff_iff_contDiffAt]
-    intro x
-    by_cases hx : dist x u.1 < ρ
-    · exact (b.contDiff.contDiffAt).smul (hball hx)
-    · have hnot : x ∉ tsupport b := by
-        rw [b.tsupport_eq, mem_closedBall]
-        intro h
-        apply hx
-        have : b.rOut = ρ / 2 := rfl
-        linarith
-      have hz : (fun x => b x • F x) =ᶠ[𝓝 x] fun _ => 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hnot] with y hy
-        simp [hy]
-      exact contDiffAt_const.congr_of_eventuallyEq hz
-  · intro x hx
-    have : b x = 1 := b.one_of_mem_closedBall (by
-      rw [mem_closedBall, dist_eq_norm]
-      exact hx.le)
-    simp [this]
+  obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff.mp
+    ((contDiffAt_reducedField hf hg hinv).eventually (by norm_num))
+  obtain ⟨G, hG, -, σ, hσ, hGF⟩ := Dynamics.exists_contDiff_ball Metric.isOpen_ball
+    (Metric.mem_ball_self hρ) fun y hy => (hball hy).contDiffWithinAt
+  exact ⟨σ, hσ, G, hG, fun x hx => (hGF x hx).1⟩
 
 /-- **Reduced ODE stability.** For an index-1 equilibrium with Hurwitz Schur complement, the
 eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
@@ -194,19 +174,12 @@ eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) (hfu : f u = 0)
     (hH : LinearSystems.IsHurwitz (schurMatrix f g u)) :
     LocallyExponentiallyStable (reducedField f g u hg hinv) u.1 := by
-  obtain ⟨R, hR, G, hGc, hGF⟩ := exists_contDiff_extension hf hg hinv
-  have hGF' : G =ᶠ[𝓝 u.1] reducedField f g u hg hinv := by
-    filter_upwards [Metric.ball_mem_nhds u.1 hR] with x hx
-    exact hGF x (by rwa [mem_ball, dist_eq_norm] at hx)
-  have hGeq : G u.1 = 0 := by
-    rw [hGF u.1 (by simpa using hR), reducedField_self hg hinv hfu]
-  have hJac : fderiv ℝ G u.1 =
-      Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (schurMatrix f g u) := by
-    rw [hGF'.fderiv_eq, (hasFDerivAt_reducedField hf hg hinv).fderiv, schurMatrix,
-      StarAlgEquiv.apply_symm_apply]
-  have hG := hurwitz_linearization_locally_exponentially_stable _ hGc hGeq hJac hH
-  exact Dynamics.locallyExponentiallyStable_congr_nhds
-    (Dynamics.eventuallyEq_of_eqOn_ball hR fun x hx => (hGF x hx).symm) hG
+  obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff.mp
+    ((contDiffAt_reducedField hf hg hinv).eventually (by norm_num))
+  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local Metric.isOpen_ball
+    (Metric.mem_ball_self hρ) (schurMatrix f g u) (fun y hy => (hball hy).contDiffWithinAt)
+    (reducedField_self hg hinv hfu) ?_ hH
+  rw [(hasFDerivAt_reducedField hf hg hinv).fderiv, schurMatrix, StarAlgEquiv.apply_symm_apply]
 
 /-- **DAE stability.** Under the hypotheses of `reducedODE_locallyExponentiallyStable`, every
 DAE solution segment (a pair `(x, y)` solving `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) on the

@@ -108,10 +108,6 @@ variable {α₀ cα cω g2}
     tongue α₀ cα cω g2 y = damping α₀ cα y ^ 2 - splitSq cω g2 y := by
   simp only [tongue, damping, splitSq, pumpQ]; ring
 
-@[tmio M, powerlib_foundation] theorem sigma_mul (y h : ℝ) (hh : h ^ 2 = splitSq cω g2 y) :
-    (-damping α₀ cα y + h) * (-damping α₀ cα y - h) = tongue α₀ cα cω g2 y := by
-  rw [tongue_eq_damping_sq_sub_splitSq, ← hh]; ring
-
 @[tmio M, powerlib_foundation] theorem det_secondOrderMatrix (Δ y : ℝ) (g : ℂ)
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
     (secondOrderMatrix α₀ cα cω Δ y g).det =
@@ -368,15 +364,14 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
       yMinus α₀ cα cω g2 < α₀ / cα ∧ α₀ / cα < yPlus α₀ cα cω g2 := by
   rw [← tongue_at_ns_neg_iff hα hcα hcω, tongue_neg_iff (by positivity)]
 
-/-- Ordering under the side condition (`c_α, c_ω > 0`, `disc ≥ 0`):
-`√y₋ ≤ √y₊ ≤ |𝒢|/(2c_ω) < √(α₀/c_α) = δ̂₁^{NS}`. -/
+/-- Ordering (`c_α, c_ω > 0`, `disc ≥ 0`): `√y₋ ≤ √y₊ ≤ |𝒢|/(2c_ω)`; under the side condition
+`|𝒢|/(2c_ω) < √(α₀/c_α) = δ̂₁^{NS}` both lie below the NS angle. -/
 @[tmio M, powerlib_foundation] theorem ordering (hα : 0 < α₀) (hg : 0 < g2) (hcα : 0 < cα)
-    (hcω : 0 < cω) (hd : 0 ≤ tongueDisc α₀ cα cω g2) (hside : √g2 / (2 * cω) < √(α₀ / cα)) :
-    √(yMinus α₀ cα cω g2) ≤ √(yPlus α₀ cα cω g2) ∧ √(yPlus α₀ cα cω g2) ≤ √g2 / (2 * cω) ∧
-      √g2 / (2 * cω) < √(α₀ / cα) := by
+    (hcω : 0 < cω) (hd : 0 ≤ tongueDisc α₀ cα cω g2) :
+    √(yMinus α₀ cα cω g2) ≤ √(yPlus α₀ cα cω g2) ∧ √(yPlus α₀ cα cω g2) ≤ √g2 / (2 * cω) := by
   have hS : 0 < cα ^ 2 + cω ^ 2 := by positivity
   have hp := tongue_yPlus hS hd
-  refine ⟨Real.sqrt_le_sqrt (yMinus_le_yPlus hS), ?_, hside⟩
+  refine ⟨Real.sqrt_le_sqrt (yMinus_le_yPlus hS), ?_⟩
   exact sqrt_root_le hcω (tongue_root_pos hα hg hp) hp
 
 /-- `a(y₋) > 0` whenever the discriminant is nonnegative: `√y₋` is always an up-crossing of
@@ -591,17 +586,6 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     linear_combination (16 * cω ^ 2) * hy2 + hg2
   rw [key]
   nlinarith [sq_nonneg (4 * cω * √y - √g2)]
-
-/-- The upper boundary `Δ₊(y) = −c_ω y + |𝒢|√y/2` attains the value `g2/(16c_ω)` at
-`y* = g2/(16c_ω²)`. -/
-@[tmio T, powerlib_foundation] theorem upper_branch_max (hcω : 0 < cω) (hg : 0 ≤ g2) :
-    -cω * (g2 / (16 * cω ^ 2)) + √g2 * √(g2 / (16 * cω ^ 2)) / 2 = g2 / (16 * cω) := by
-  rw [Real.sqrt_div' _ (by positivity), show (16 : ℝ) * cω ^ 2 = (4 * cω) ^ 2 by ring,
-    Real.sqrt_sq (by positivity)]
-  have hm : √g2 * √g2 = g2 := Real.mul_self_sqrt hg
-  rw [show -cω * (g2 / (4 * cω) ^ 2) + √g2 * (√g2 / (4 * cω)) / 2 =
-    -cω * (g2 / (4 * cω) ^ 2) + (√g2 * √g2) / (8 * cω) by field_simp; ring, hm]
-  field_simp; ring
 
 /-- Case `c_α > 0`, high gain `|𝒢| > 4c_ω √(α₀/c_α)` (i.e. `y* > α₀/c_α`): the supremum of the
 `Δ`-projection is `g2/(16c_ω)` and is attained (independent of `α₀, c_α`). -/

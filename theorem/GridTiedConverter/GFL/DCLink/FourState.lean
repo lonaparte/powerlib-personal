@@ -90,7 +90,7 @@ Every image has positive reference, and the Routh conditions or `det < 0` force 
 PLL–DC model's translation read through `toPLLDC` is the note's (equilibrium and Routh conditions
 for the local sentences, equilibrium and `a₀ < 0` for instability).
 * Domain: the quartic Routh–Hurwitz conditions ⇒ local exponential stability
-  (`mem_den_locallyExponentiallyStable_of_routh`, from `PLLDC.mem_den_locallyExponentiallyStable`);
+  (`mem_den_locallyExponentiallyStable_of_routh`, from `mem_den_locallyExponentiallyStable_iff`);
   `a₀ < 0` ⇒ instability (`mem_den_unstable_of_a0_neg`, from `PLLDC.mem_den_unstable_of_det_neg`);
   `cos 2θ₀ < 0` ⇒ `a₀ < 0` ⇒ unstable (`mem_den_unstable_of_cos_two_mul_neg`), hence not
   Lyapunov stable (`not_mem_den_lyapunovStable_of_cos_two_mul_neg`) and the necessary condition
@@ -567,19 +567,6 @@ operating point `(θ₀, 0, 1, 0)` (fixed by the integrator flip). The behaviour
 model is that of its image. -/
 def Model.toPLLDC (m : Model) : PLLDC.Model := ⟨m.params.toPLLDC, opPoint m.θ⟩
 
-/-- A flow sentence of the image is the sentence of the note's field at the operating point
-(`field_eq_transport`, `Dynamics.holds_transport_iff`). -/
-@[tmio TM, powerlib_domain] private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
-    m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔
-      P.holds (FourState.field m.params) (opPoint m.θ) := by
-  have h : m.toPLLDC ∈ PLLDC.family.den (.flow P) ↔
-      P.holds m.params.toPLLDC.field (opPoint m.θ) :=
-    Spectral.mem_den_flow_iff_shift (f := fun m : PLLDC.Model => m.p.field)
-      (pt := PLLDC.Model.x) PLLDC.family_isAutonomous
-  rw [h, field_eq_transport]
-  conv_rhs => rw [← affineCoord_opPoint m.θ]
-  exact (Dynamics.holds_transport_iff integratorFlip 0 P).symm
-
 /-! ### The PLL–DC model's requirements at the image -/
 
 /-- With `C ≠ 0` the image meets the PLL–DC model's equilibrium requirement exactly when `IsEq`
@@ -638,21 +625,6 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-! ### Local exponential stability of the operating point -/
 
-/-- Four-state GFL (PLL + dc-voltage loop): the quartic Routh–Hurwitz conditions on the
-coefficients of `det(λI − A₀)` at an equilibrium place the PLL–DC image in local exponential
-stability (`PLLDC.mem_den_locallyExponentiallyStable_iff`, `meets_routh_iff`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_routh (p : Params)
-    (hC : p.C ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0) (h3 : 0 < a3 p θ0) (h1 : 0 < a1 p θ0)
-    (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
-    connection% ((Model.mk p θ0).toPLLDC ∈
-      PLLDC.family.den (.flow .locallyExponentiallyStable)) := by
-  have h := PLLDC.mem_den_locallyExponentiallyStable_iff (Model.mk p θ0).toPLLDC
-    (by simp [Model.toPLLDC, opPoint])
-  unfold powerlib.TMIO.Statement at h ⊢
-  rw [h]
-  exact ⟨(meets_equilibrium_iff ⟨p, θ0⟩ hC).mpr heq,
-    (meets_routh_iff ⟨p, θ0⟩ heq.1).mpr ⟨h3, h1, h0, hg⟩⟩
-
 /-- **Local exponential stability of a four-state model.** The PLL–DC image is locally
 exponentially stable exactly when the operating point is an equilibrium (`IsEq`, `C ≠ 0`) whose
 quartic `det(λI − A₀)` meets the Routh conditions: the PLL–DC model's converse linearization off the
@@ -683,6 +655,19 @@ Routh conditions exclude. -/
     exact ⟨(meets_equilibrium_iff m hC).mpr heq, (meets_routh_iff m heq.1).mpr hr⟩
 
 /-! ### Instability of the operating point -/
+
+/-- Four-state GFL (PLL + dc-voltage loop): the quartic Routh–Hurwitz conditions on the
+coefficients of `det(λI − A₀)` at an equilibrium place the PLL–DC image in local exponential
+stability (`mem_den_locallyExponentiallyStable_iff`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_routh (p : Params)
+    (hC : p.C ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0) (h3 : 0 < a3 p θ0) (h1 : 0 < a1 p θ0)
+    (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
+    connection% ((Model.mk p θ0).toPLLDC ∈
+      PLLDC.family.den (.flow .locallyExponentiallyStable)) := by
+  have h := mem_den_locallyExponentiallyStable_iff (Model.mk p θ0)
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h, Set.mem_ofPred_eq]
+  exact ⟨heq, hC, h3, h1, h0, hg⟩
 
 /-- `a₀ < 0` at an equilibrium gives a positive real eigenvalue and instability of the PLL–DC
 image (`PLLDC.mem_den_unstable_of_det_neg`, `meets_detNeg_iff`). -/
@@ -743,12 +728,6 @@ def fieldAngle (_u ud : ℝ) (z : Dynamics.State 4) : Dynamics.State 4 :=
     fderiv ℝ (fieldAngle p u ud) z = fderiv ℝ (field p) z := by
   unfold fieldAngle
   exact fderiv_sub_const _
-
-/-- The derivative of the state Jacobian with respect to the grid angle is zero. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_jacobian_angle (ud : ℝ) (z : Dynamics.State 4)
-    (u : ℝ) : HasDerivAt (fun u => fderiv ℝ (fieldAngle p u ud) z) 0 u := by
-  show HasDerivAt (fun _ : ℝ => fderiv ℝ (fieldAngle p 0 ud) z) 0 u
-  exact hasDerivAt_const u _
 
 /-! ### Instability away from equilibrium -/
 

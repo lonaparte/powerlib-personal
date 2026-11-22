@@ -24,8 +24,7 @@ Results.
   identity (`Criteria.sq_eq_trace_smul_sub_det_smul_fin_two`) in the form
   `(A + σ I)² = −ω_d² I` (`shift_sq_mulVec`). Uniqueness of global solutions (Mathlib
   `ODE_solution_unique_univ`) then gives the flow law `osc2 p (s + t) = osc2 (osc2 p s) t`
-  (`osc2_add`), and the half-period law `osc2 p (t + π/ω_d) = −e^{−σπ/ω_d} osc2 p t`
-  (`osc2_add_half_period`) is a direct trigonometric identity.
+  (`osc2_add`).
 * `trajectory_eq_osc2` connects this to any two-state linear plant (`Linear.Plant 2 p`) whose
   state matrix has that trace and determinant: every forward solution from `t = 0` under a
   constant input `u` with equilibrium `e` is `e + osc2 A σ ω_d (x 0 − e) t` for `t ≥ 0` (explicit
@@ -139,18 +138,6 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
   have heq := ODE_solution_unique_univ (v := fun _ y => A *ᵥ y) (s := fun _ => univ)
     (t₀ := 0) (fun _ => (lipschitz_mulVec A).lipschitzOnWith) hf hg (by simp)
   exact congrFun heq t
-
-/-- Half-period law: `osc2 p (t + π/ω_d) = −e^{−σπ/ω_d} osc2 p t`. -/
-@[tmio T, powerlib_foundation] theorem osc2_add_half_period (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
-    osc2 A σ ωd p (t + Real.pi / ωd) = -Real.exp (-(σ * (Real.pi / ωd))) • osc2 A σ ωd p t := by
-  have harg : ωd * (t + Real.pi / ωd) = ωd * t + Real.pi := by field_simp
-  have hexp : Real.exp (-(σ * (t + Real.pi / ωd))) =
-      Real.exp (-(σ * (Real.pi / ωd))) * Real.exp (-(σ * t)) := by
-    rw [← Real.exp_add]; ring_nf
-  simp only [osc2, harg, Real.cos_add_pi, Real.sin_add_pi, hexp]
-  ext i
-  simp only [Pi.smul_apply, Pi.add_apply, smul_eq_mul, neg_mul]
-  ring
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 

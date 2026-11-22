@@ -57,10 +57,9 @@ The local asymptotic translation is exact (`PSC.exact_locallyAsymptoticallyStabl
 `Spectral.exact_of_equilibrium`), although the linearization does not decide the degenerate slope
 `K_p P_max cos δ* = 0`: there the model's structure does. A vanishing gain or curve (`K_p = 0`,
 or `P_max = P* = 0`) makes every state an equilibrium
-(`Dynamics.not_localAsymptoticStable_of_equilibria`), and at a balanced fold angle
-(`cos δ* = 0`) the field is `k (1 − cos(δ − δ*))`, `k = K_p P_max sin δ*` (`PSC.rhs_eq_fold`), of
-one sign on both sides, so the coordinate `k δ` never decreases
-(`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The Lyapunov translation is not exact
+(`Dynamics.not_localAsymptoticStable_of_equilibria`), and a balanced fold angle
+(`cos δ* = 0`), where the field is `k (1 − cos(δ − δ*))`, `k = K_p P_max sin δ*`
+(`PSC.rhs_eq_fold`), is unstable (below). The Lyapunov translation is not exact
 (`PSC.not_exact_lyapunovStable`: the frozen loop `PSC.frozen`, `K_p = 0`, is Lyapunov stable,
 `PSC.frozen_mem_den_lyapunovStable`); its denotation is `PSC.mem_den_lyapunovStable_iff`: a balanced
 angle with a negative slope, or a vanishing scalar field (the fold angle is unstable by Chetaev's
@@ -332,15 +331,6 @@ Static evidence on the model, not a connection conclusion. -/
   rw [rhs, ← hb, hs]
   ring
 
-@[tmio T, powerlib_foundation] private theorem hasFDerivAt_coord (k : ℝ) (z : State 1) :
-    HasFDerivAt (fun y : State 1 => k * y 0) (k • NormalForm.coordCLM) z :=
-  (NormalForm.coordCLM.hasFDerivAt (x := z)).const_mul k
-
-@[tmio T, powerlib_foundation] private theorem fderiv_coord_apply (k : ℝ) (z v : State 1) :
-    fderiv ℝ (fun y : State 1 => k * y 0) z v = k * v 0 := by
-  rw [(hasFDerivAt_coord k z).fderiv]
-  rfl
-
 @[tmio T, powerlib_foundation] private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embed δ₀‖ = |s| := by
   rw [NormalForm.embed_sub, NormalForm.norm_embed, add_sub_cancel_left]
 
@@ -357,34 +347,6 @@ asymptotically stable. -/
   · rw [norm_embed_add_sub, abs_of_pos (by linarith)]
     linarith
   · rw [field, NormalForm.lift_embed, h, NormalForm.embed_zero]
-
-/-- A balanced fold angle with `K_p P_max ≠ 0` is not locally asymptotically stable: the
-coordinate `−k δ` never increases along the field and is below its value at `δ₀` on one side. -/
-@[tmio TM, powerlib_domain] private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
-    (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
-    connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold TMIO.Statement
-  rw [mem_den_flow_iff]
-  set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
-  have hk0 : k ≠ 0 := mul_ne_zero hk (SpecialFunctions.sin_ne_zero_of_cos hcos)
-  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun z : State 1 => -k * z 0)
-    (ρ := 1) (NormalForm.lift_contDiff c.rhs_contDiff)
-    (fun z => (hasFDerivAt_coord (-k) z).differentiableAt) one_pos (fun z _ => ?_)
-    (fun ε hε => ?_)
-  · rw [fderiv_coord_apply, field, NormalForm.lift_apply, c.rhs_eq_fold hb hcos]
-    have := Real.cos_le_one (z 0 - δ₀)
-    nlinarith [sq_nonneg k]
-  · rcases lt_or_gt_of_ne hk0 with hneg | hpos
-    · refine ⟨embed (δ₀ + -(ε / 2)), ?_, ?_⟩
-      · rw [norm_embed_add_sub, abs_neg, abs_of_pos (by linarith)]
-        linarith
-      · simp only [NormalForm.embed_apply]
-        nlinarith
-    · refine ⟨embed (δ₀ + ε / 2), ?_, ?_⟩
-      · rw [norm_embed_add_sub, abs_of_pos (by linarith)]
-        linarith
-      · simp only [NormalForm.embed_apply]
-        nlinarith
 
 /-- A balanced fold angle with `K_p P_max ≠ 0` is unstable (Chetaev's theorem with the
 coordinate `k (δ − δ₀)`, which grows at the rate `k² (1 − cos(δ − δ₀)) > 0` where it is
@@ -411,8 +373,8 @@ positive). -/
         linarith
       · simp only [NormalForm.embed_apply]
         nlinarith
-  · have hd : HasFDerivAt (fun z : State 1 => k * z 0 - k * δ₀) (k • NormalForm.coordCLM) z :=
-      (hasFDerivAt_coord k z).sub_const _
+  · have hd : HasFDerivAt (fun z : State 1 => k * z 0 - k * δ₀) (k • Dynamics.coord 0) z :=
+      ((Dynamics.hasFDerivAt_coord 0 z).const_mul k).sub_const _
     rw [hd.fderiv]
     change 0 < k * (c.field z) 0
     rw [field, NormalForm.lift_apply, c.rhs_eq_fold hb hcos]
@@ -435,45 +397,6 @@ positive). -/
     have : 0 < 1 - Real.cos (z 0 - δ₀) := by linarith
     have hk2 : 0 < k * k := mul_self_pos.mpr hk0
     nlinarith
-
-/-- The local asymptotic translation is exact: a PSC model is locally asymptotically stable at
-`δ*` exactly when the angle is balanced with a negative slope (`K_p P_max cos δ* > 0`). Local
-asymptotic stability forces an equilibrium (`Dynamics.isEquilibrium_of_lyapunovStable`); a vanishing
-gain `K_p = 0` or a vanishing curve `P_max = P* = 0` makes every state an equilibrium; a positive
-slope is unstable; and at a balanced fold angle (`cos δ* = 0`, `K_p P_max ≠ 0`) the field
-`k (1 − cos(δ − δ*))` keeps the coordinate `k δ` nondecreasing, so the solutions from one side
-never return (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The linearization alone does
-not decide the fold, the model's structure does (`Spectral.exact_of_equilibrium` with the guard
-`K_p P_max cos δ* > 0`). -/
-@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable :
-    connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics
-  unfold powerlib.TMIO.Statement at hsound
-  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff) (Or.inr (Or.inl rfl))
-    (fun m => 0 < m.c.Kp * m.c.Pmax * Real.cos m.δ) (Family.chain_le_semantics_iff.mp hsound _)
-    (fun m => NormalForm.lift_contDiff m.c.rhs_contDiff) (fun m heq hs hm => ?_)
-    fun m heq hs => ?_
-  · have hlas : LocalAsymptoticStable m.c.field (embed m.δ) := mem_den_flow_iff.mp hm
-    have hK : m.c.Kp ≠ 0 := fun hK =>
-      (fun h => (not_las_of_rhs_zero (fun z => by simp [rhs, hK]) m.δ) (mem_den_flow_iff.mpr h)) hlas
-    have hb := (m.c.field_eq_zero_iff hK m.δ).mp heq
-    have hzero : m.c.Pmax ≠ 0 := fun hP => by
-      have hP' : m.c.Pstar = 0 := by rw [← hb, hP, zero_mul]
-      exact (fun h => (not_las_of_rhs_zero (fun z => by simp [rhs, hP, hP']) m.δ) (mem_den_flow_iff.mpr h)) hlas
-    rcases lt_trichotomy (m.c.Kp * m.c.Pmax * Real.cos m.δ) 0 with h | h | h
-    · exact absurd hlas.1 ((mem_den_flow_iff.mp (unstable_of (m := m) hb h)))
-    · rcases mul_eq_zero.mp h with h' | h'
-      · exact hzero ((mul_eq_zero.mp h').resolve_left hK)
-      · exact (fun h => (not_las_fold hb h' (mul_ne_zero hK hzero)) (mem_den_flow_iff.mpr h)) hlas
-    · exact hs h
-  · have hK : m.c.Kp ≠ 0 := fun hK => by
-      rw [hK, zero_mul, zero_mul] at hs
-      exact lt_irrefl 0 hs
-    rw [(connection_proof% TMIO.mem_realize)]
-    rintro q (rfl | rfl)
-    · exact (m.c.field_eq_zero_iff hK m.δ).mp heq
-    · exact hs
 
 /-- Lyapunov stability holds exactly at a balanced angle with a negative slope, or for a
 vanishing scalar field (`K_p = 0`, or `P_max = P* = 0`, where every state is an equilibrium). A
@@ -513,6 +436,36 @@ Chetaev's theorem (`Dynamics.unstable_of_chetaev`). -/
       refine Dynamics.lyapunovStable_of_inner_nonpos one_pos
         (ContinuousLinearMap.id ℝ (State 1)) Function.injective_id fun z => ?_
       simp [Model.field, field, rhs, NormalForm.lift, *]
+
+/-- The local asymptotic translation is exact: a PSC model is locally asymptotically stable at
+`δ*` exactly when the angle is balanced with a negative slope (`K_p P_max cos δ* > 0`). Local
+asymptotic stability implies Lyapunov stability (`mem_den_lyapunovStable_iff`: a balanced angle
+with a negative slope, or a vanishing scalar field); a vanishing gain `K_p = 0` or a vanishing
+curve `P_max = P* = 0` makes every state an equilibrium, so it is not asymptotically stable. The
+linearization alone does not decide the fold, the model's structure does
+(`Spectral.exact_of_equilibrium` with the guard `K_p P_max cos δ* > 0`). -/
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable :
+    connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hls := mem_den_lyapunovStable_iff
+  unfold powerlib.TMIO.Statement at hsound hls
+  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff) (Or.inr (Or.inl rfl))
+    (fun m => 0 < m.c.Kp * m.c.Pmax * Real.cos m.δ) (Family.chain_le_semantics_iff.mp hsound _)
+    (fun m => NormalForm.lift_contDiff m.c.rhs_contDiff) (fun m heq hs hm => ?_)
+    fun m heq hs => ?_
+  · have hlas : LocalAsymptoticStable m.c.field (embed m.δ) := mem_den_flow_iff.mp hm
+    rcases (hls m).mp (mem_den_flow_iff.mpr hlas.1) with ⟨-, h⟩ | hK | ⟨hP, hP'⟩
+    · exact hs h
+    · exact not_las_of_rhs_zero (fun z => by simp [rhs, hK]) m.δ (mem_den_flow_iff.mpr hlas)
+    · exact not_las_of_rhs_zero (fun z => by simp [rhs, hP, hP']) m.δ (mem_den_flow_iff.mpr hlas)
+  · have hK : m.c.Kp ≠ 0 := fun hK => by
+      rw [hK, zero_mul, zero_mul] at hs
+      exact lt_irrefl 0 hs
+    rw [(connection_proof% TMIO.mem_realize)]
+    rintro q (rfl | rfl)
+    · exact (m.c.field_eq_zero_iff hK m.δ).mp heq
+    · exact hs
 
 /-- A frozen synchronization loop: `K_p = 0` (and `P* = P_max = 0`, `δ* = 0`); the scalar field
 vanishes and every state is an equilibrium. -/

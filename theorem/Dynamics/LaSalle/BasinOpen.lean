@@ -79,13 +79,6 @@ invariant. -/
   simp only [Function.comp_def]
   rw [← Flow.map_add, tsub_add_cancel_of_le ht]
 
-/-- Coercion `ℝ≥0 → ℝ` tends to `+∞`. -/
-@[tmio T, powerlib_foundation] theorem tendsto_nnreal_coe_atTop :
-    Tendsto (fun t : ℝ≥0 => (t : ℝ)) atTop atTop := by
-  rw [tendsto_atTop_atTop]
-  intro b
-  exact ⟨⟨max b 0, le_max_right _ _⟩, fun a ha => le_trans (le_max_left _ _) ha⟩
-
 /-- On `State n`, local asymptotic stability gives local attraction, hence an open basin of
 attraction `{x | φ_t x → x*}`. -/
 @[tmio T, powerlib_foundation] theorem basin_isOpen_of_localAsymptoticStable {n : ℕ}
@@ -96,6 +89,6 @@ attraction `{x | φ_t x → x*}`. -/
   apply basin_isOpen hg ⟨c, hc, fun y hy => ?_⟩
   have h := hconv 0 (forwardSolution hg y) (lipschitzFlow_solution hg y)
     (by rw [forwardSolution_zero hg y, ← dist_eq_norm]; exact hy)
-  exact h.comp tendsto_nnreal_coe_atTop
+  exact h.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
 
 end powerlib.Dynamics.LaSalle

@@ -183,12 +183,6 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   rw [invPos, add_sub_cancel]
   exact arcsin_mem_Ioo (abs_div_amp_lt hW.ne' hq)
 
-/-- `invNeg` stays on the arc. -/
-@[tmio M, powerlib_domain] theorem base_sub_invNeg {W f μ : ℝ} (hW : W < 0) (hq : 0 < edgeQ W f μ) :
-    base W f - invNeg W f μ ∈ Ioo (-(π / 2)) (π / 2) := by
-  rw [invNeg, sub_sub_cancel]
-  exact arcsin_mem_Ioo (abs_div_amp_lt hW.ne hq)
-
 @[tmio M, powerlib_domain] theorem invPos_zero (W f : ℝ) : invPos W f 0 = 0 := by
   simp [invPos, base]
 

@@ -840,24 +840,6 @@ def family : Family Model Requirement 4 0 :=
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
-@[tmio TM, powerlib_domain] private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hk : 0 < m.k) (hδ : 0 ≤ m.margin) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% mem_den_flow)]
-  change LyapunovStable m.field m.point
-  apply lyapunov_stable (D := {x : State 4 | |x 0| < 2 * Real.pi}) (by norm_num)
-  exact
-    { hD_open := isOpen_lt (continuous_abs.comp ((PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 :
-          State 4 →L[ℝ] ℝ).continuous)) continuous_const
-      hD_mem := by simp [Model.point, Real.pi_pos]
-      hcont := (energy_differentiable m).continuous
-      hV_diff := energy_differentiable m
-      hzero := energy_point m
-      hpos := fun x hx hne => energy_pos m hC hL hk hx hne
-      hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
-        (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
-
 /-- **Local exponential stability of the operating point** under the source's (and the note's)
 strict condition `margin > 0`, with `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` and `η ≠ 0`: the
 linearization is Hurwitz (`jac_isHurwitz`). -/
@@ -899,6 +881,28 @@ Static evidence on the model, not a connection conclusion. -/
   rw [this]
   positivity
 
+/-- **Lyapunov stability of the operating point** under the note's condition in its non-strict
+form (`margin ≥ 0`), `C_dc, L_s, R_s > 0` and `μ u* v₀ > 0`: the energy `H − S(0)` is a local
+Lyapunov function on `|θ_dq| < 2π`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hδ : 0 ≤ m.margin) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow)]
+  change LyapunovStable m.field m.point
+  have hk := k_pos m hL hR hs
+  apply lyapunov_stable (D := {x : State 4 | |x 0| < 2 * Real.pi}) (by norm_num)
+  exact
+    { hD_open := isOpen_lt (continuous_abs.comp ((PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 :
+          State 4 →L[ℝ] ℝ).continuous)) continuous_const
+      hD_mem := by simp [Model.point, Real.pi_pos]
+      hcont := (energy_differentiable m).continuous
+      hV_diff := energy_differentiable m
+      hzero := energy_point m
+      hpos := fun x hx hne => energy_pos m hC hL hk hx hne
+      hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
+        (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
+
 /-- Every translation of the stiff-grid matching family is sound. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
@@ -912,8 +916,8 @@ Static evidence on the model, not a connection conclusion. -/
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
-    exact mem_den_flow.mpr ((mem_den_flow.mp (lyapunovStable m hC hL hR (k_pos m hL hR (hm .synchronizing (by simp)))
-      (hm .dissipative (by simp)))))
+    exact mem_den_lyapunovStable m hC hL hR (hm .synchronizing (by simp))
+      (hm .dissipative (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
     exact mem_den_locallyExponentiallyStable m hC hL hR (hm .synchronizing (by simp))
@@ -958,15 +962,5 @@ Static evidence on the model, not a connection conclusion. -/
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_univ (F := family) realize_univ rfl
     (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyExponentiallyStable)
-
-/-- **Lyapunov stability of the operating point** under the note's condition in its non-strict
-form (`margin ≥ 0`), `C_dc, L_s, R_s > 0` and `μ u* v₀ > 0`: the energy `H − S(0)` is a local
-Lyapunov function on `|θ_dq| < 2π`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hδ : 0 ≤ m.margin) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [(connection_proof% mem_den_flow)]
-  exact (mem_den_flow.mp (lyapunovStable m hC hL hR (k_pos m hL hR hs) hδ))
 
 end powerlib.GFM.Matching.MatchingStiffGrid

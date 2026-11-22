@@ -533,25 +533,7 @@ other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 
         have : 0 < m.params.V * Real.cos m.θ / 2 := by positivity
         positivity
       have ha0 : 0 < a0 m.params m.θ := by unfold a0; positivity
-      have hcos : Real.cos m.θ ≠ 0 := fun hc => by rw [hc, mul_zero] at hA; exact lt_irrefl 0 hA
-      have hgap : a0 m.params m.θ < a2 m.params m.θ * a1 m.params m.θ := by
-        have hid := a2_mul_a1_sub_a0 m.params m.θ
-        have t1 : 0 ≤ (9 * m.params.V * m.params.kP ^ 2 * m.params.kp +
-            6 * m.params.V * m.params.kP * m.params.kp ^ 2) * Real.cos m.θ *
-            Real.cos (2 * m.θ) := by
-          have : (9 * m.params.V * m.params.kP ^ 2 * m.params.kp +
-              6 * m.params.V * m.params.kP * m.params.kp ^ 2) * Real.cos m.θ *
-              Real.cos (2 * m.θ) = (9 * m.params.kP ^ 2 * m.params.kp +
-              6 * m.params.kP * m.params.kp ^ 2) * (m.params.V * Real.cos m.θ) *
-              Real.cos (2 * m.θ) := by ring
-          rw [this]; positivity
-        have t2 : 0 < 4 * m.params.ki * m.params.kp * Real.cos m.θ ^ 2 := by positivity
-        have t3 : 0 ≤ 6 * m.params.kP * m.params.ki * Real.sin m.θ ^ 2 := by positivity
-        have : 0 < m.params.V ^ 2 / 4 * ((9 * m.params.V * m.params.kP ^ 2 * m.params.kp +
-            6 * m.params.V * m.params.kP * m.params.kp ^ 2) * Real.cos m.θ *
-            Real.cos (2 * m.θ) + 4 * m.params.ki * m.params.kp * Real.cos m.θ ^ 2 +
-            6 * m.params.kP * m.params.ki * Real.sin m.θ ^ 2) := by positivity
-        linarith
+      have hgap := a2_mul_a1_sub_a0_pos m.params hkp hki hkP hA hc2.le
       refine ⟨by linarith, by linarith, by nlinarith⟩
 
 /-- **Within positive gains the Lyapunov and the local asymptotic translations are exact.** For

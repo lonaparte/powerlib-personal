@@ -58,8 +58,8 @@ variable {n n' p : ℕ}
 @[tmio T, powerlib_foundation] theorem transfer_eq_adjugate (m : Plant n p) (s : ℂ) :
     transfer m s = ((characteristicMatrix m.A s).det)⁻¹ •
       (complexify m.C * (characteristicMatrix m.A s).adjugate * complexify m.B) +
-      complexify m.D := by
-  rw [transfer, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
+      complexify m.D :=
+  transferOf_eq_adjugate m.A m.B m.C m.D s
 
 /-- The Markov parameters `C Aᵏ B`. -/
 def markov (m : Plant n p) (k : ℕ) : Matrix (Fin p) (Fin p) ℝ := m.C * m.A ^ k * m.B

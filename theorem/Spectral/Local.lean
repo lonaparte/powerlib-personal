@@ -64,9 +64,9 @@ Results.
 * Inconsistency: `realize_univ_eq_empty_of_forall`, `realize_univ_eq_empty_of` (two mutually
   exclusive requirements).
 * Witnesses against exactness: `not_exact_of_witness`, `not_exactUnder_of_witness` (a member of
-  the denotation that misses a translated requirement), `mem_den_unstable_of_ne_zero`,
-  `mem_den_unstable_of_ne_zero_local` and `not_exact_unstable_of_ne_zero` (off-equilibrium
-  points), `not_mem_den_lyapunovStable_of_unstable`, `not_exact_of_les_witness` and
+  the denotation that misses a translated requirement), `mem_den_unstable_of_ne_zero` and
+  `mem_den_unstable_of_ne_zero_local` (off-equilibrium points),
+  `not_mem_den_lyapunovStable_of_unstable`, `not_exact_of_les_witness` and
   `not_exactUnder_of_les_witness` (a locally exponentially stable member refutes the Lyapunov and
   local asymptotic translations); `realize_ne_den_of_indistinguishable` (two members meeting the
   same requirements, one satisfying a sentence and the other not: no set of requirements
@@ -395,11 +395,8 @@ variable {F : Family X Q n p}
 /-- Exactness within the empty context is exactness. -/
 @[tmio TM, powerlib_foundation] theorem exact_of_exactUnder_empty {s : Sentence}
     (h : F.ExactUnder ∅ s) :
-    connection% (F.Exact s) := by
-  change F.Exact s
-  unfold Family.ExactUnder TMIO.ExactUnder at h
-  unfold Family.Exact
-  simpa [realize_empty] using h
+    connection% (F.Exact s) := show F.Exact s from
+  Family.exactUnder_empty_iff.mp h
 
 variable {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
   {pt : X → EuclideanSpace ℝ (Fin n)}
@@ -536,15 +533,6 @@ unstable. -/
     (Dynamics.unstable_of_ne_zero hg ?_))
   rw [hgf.eq_of_nhds]
   exact h0
-
-/-- An off-equilibrium member that misses a translated requirement of instability refutes the
-exactness of the instability translation. -/
-@[tmio TM, powerlib_foundation] theorem not_exact_unstable_of_ne_zero
-    (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
-    (hC : ContDiff ℝ 1 (f x)) (h0 : f x (pt x) ≠ 0) (hq : q ∈ F.translate (.flow .unstable))
-    (hn : ¬ F.meets x q) :
-    connection% (¬ F.Exact (.flow .unstable)) := show ¬ F.Exact (.flow .unstable) from
-  not_exact_of_witness (mem_den_unstable_of_ne_zero hden hC h0) hq hn
 
 /-- A locally exponentially stable member that misses a translated requirement of Lyapunov or
 local asymptotic stability refutes the exactness of that translation. -/

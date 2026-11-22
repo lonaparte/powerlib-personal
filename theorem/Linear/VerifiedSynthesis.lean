@@ -22,7 +22,7 @@ Results.
   operators produce a candidate that the check rejects), `solutionCheck`, `check`; matrices are
   read in `ℝ` through `Positive.real` (`theorem/Linear/Positive.lean`).
 * Soundness: `inverse_eq`, `real_lyapunov`, `certificate` (the checked data constructs the real
-  certificate used throughout the library), `isHurwitz_of_check`.
+  certificate used throughout the library; `IsHurwitz` is its `Certificate.isHurwitz`).
 * Completeness: `operator_injective` (a Hurwitz real image makes the full rational operator
   injective), `candidate_solves`, `check_of_solution` (every rational solution for a Hurwitz
   matrix passes the positivity check), `candidate_checked` (the backend is complete for every
@@ -155,9 +155,6 @@ def certificate (A P : Matrix (Fin n) (Fin n) ℚ) (h : check A P = true) : Cert
   exact ⟨real P,
     by simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using hp.isHermitian.eq,
     fun x hx => by simpa using hp.dotProduct_mulVec_pos hx, real_lyapunov hs⟩
-
-@[tmio T, powerlib_foundation] theorem isHurwitz_of_check {A P : Matrix (Fin n) (Fin n) ℚ}
-    (h : check A P = true) : IsHurwitz (real A) := (certificate A P h).isHurwitz
 
 end
 end powerlib.Linear.VerifiedSynthesis

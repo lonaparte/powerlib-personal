@@ -145,15 +145,11 @@ def lin (x : Fin 10 → K) (u : Fin 2 → K) : Fin 10 → K :=
 
 end Lin
 
-/-- Coordinate vector `e_j`. -/
-def unitVec {n : ℕ} {K : Type*} [Zero K] [One K] (j : Fin n) : Fin n → K :=
-  fun k => if j = k then 1 else 0
-
 /-- State matrix: column `j` is `lin e_j 0`. -/
-def A : Matrix (Fin 10) (Fin 10) ℝ := Matrix.of fun i j => p.lin (unitVec j) 0 i
+def A : Matrix (Fin 10) (Fin 10) ℝ := Matrix.of fun i j => p.lin (Pi.single j 1) 0 i
 
 /-- Input matrix: column `j` is `lin 0 e_j`. -/
-def B : Matrix (Fin 10) (Fin 2) ℝ := Matrix.of fun i j => p.lin 0 (unitVec j) i
+def B : Matrix (Fin 10) (Fin 2) ℝ := Matrix.of fun i j => p.lin 0 (Pi.single j 1) i
 
 section LinAlg
 variable {K : Type*} [Field K] [Algebra ℝ K]
@@ -208,7 +204,7 @@ def linU : (Fin 2 → K) →ₗ[K] (Fin 10 → K) where
     rw [mul_comm]
     congr 2
     · funext k
-      simp [unitVec]
+      simp [Pi.single_apply, eq_comm]
     · funext k
       simp
   · refine Finset.sum_congr rfl fun j _ => ?_
@@ -217,7 +213,7 @@ def linU : (Fin 2 → K) →ₗ[K] (Fin 10 → K) where
     · funext k
       simp
     · funext k
-      simp [unitVec]
+      simp [Pi.single_apply, eq_comm]
 
 end LinAlg
 
@@ -317,13 +313,15 @@ section Resp
 variable (Y : Matrix (Fin 2) (Fin 2) ℂ) (s : ℂ) (c : Fin 2)
 
 /-- PLL angle response `Δθ = G_pll ΔV_q`. -/
-def rθ : ℂ := p.Gpll s * unitVec c 1
+def rθ : ℂ := p.Gpll s * (Pi.single c 1 : Fin 2 → ℂ) 1
 
 /-- `ΔI^pll` response. -/
 def rip : Fin 2 → ℂ := ![Y 0 c + p.rθ s c * p.I0 1, Y 1 c - p.rθ s c * p.I0 0]
 
 /-- `ΔV^pll` response. -/
-def rvp : Fin 2 → ℂ := ![unitVec c 0 + p.rθ s c * p.V0 1, unitVec c 1 - p.rθ s c * p.V0 0]
+def rvp : Fin 2 → ℂ :=
+  ![(Pi.single c 1 : Fin 2 → ℂ) 0 + p.rθ s c * p.V0 1,
+    (Pi.single c 1 : Fin 2 → ℂ) 1 - p.rθ s c * p.V0 0]
 
 /-- Power error response `G_i^pq ΔI^pll + G_v^pq ΔV^pll`. -/
 def rep : Fin 2 → ℂ :=
@@ -344,7 +342,7 @@ def rd : Fin 2 → ℂ :=
 /-- Response of the ten states to a unit port-voltage perturbation along `e_c`. -/
 def resp : Fin 10 → ℂ :=
   ![Y 0 c, Y 1 c, p.rd Y s c 0 / (1 + p.a * s), p.rd Y s c 1 / (1 + p.a * s), p.rθ s c,
-    (s + p.V0 0 * p.Kpl) * p.rθ s c - p.Kpl * unitVec c 1, p.rcc Y s c 0 / s,
+    (s + p.V0 0 * p.Kpl) * p.rθ s c - p.Kpl * (Pi.single c 1 : Fin 2 → ℂ) 1, p.rcc Y s c 0 / s,
     p.rcc Y s c 1 / s, p.rep Y s c 0 / s, p.rep Y s c 1 / s]
 
 @[tmio M, powerlib_domain] theorem ipll_resp :
@@ -353,22 +351,22 @@ def resp : Fin 10 → ℂ :=
   fin_cases k <;> simp [ipll, resp, rip]
 
 @[tmio M, powerlib_domain] theorem vpll_resp :
-    p.vpll (p.resp Y s c) (unitVec c) = p.rvp s c := by
+    p.vpll (p.resp Y s c) (Pi.single c 1) = p.rvp s c := by
   ext k
   fin_cases k <;> simp [vpll, resp, rvp]
 
 @[tmio M, powerlib_domain] theorem epq_resp :
-    p.epq (p.resp Y s c) (unitVec c) = p.rep Y s c := by
+    p.epq (p.resp Y s c) (Pi.single c 1) = p.rep Y s c := by
   ext k
   fin_cases k <;> simp [epq, ipll_resp, vpll_resp, rep]
 
 @[tmio M, powerlib_domain] theorem iref_sub_resp (k : Fin 2) :
-    p.iref (p.resp Y s c) (unitVec c) k - p.ipll (p.resp Y s c) k = p.rcc Y s c k := by
+    p.iref (p.resp Y s c) (Pi.single c 1) k - p.ipll (p.resp Y s c) k = p.rcc Y s c k := by
   simp only [iref, epq_resp, ipll_resp]
   fin_cases k <;> simp [rcc, Gcpq, resp] <;> ring
 
 @[tmio M, powerlib_domain] theorem duty_resp :
-    p.duty (p.resp Y s c) (unitVec c) = p.rd Y s c := by
+    p.duty (p.resp Y s c) (Pi.single c 1) = p.rd Y s c := by
   ext k
   fin_cases k
   · simp only [duty, Fin.zero_eta, Fin.isValue, Matrix.cons_val_zero]
@@ -385,14 +383,9 @@ def resp : Fin 10 → ℂ :=
     (p.Phi s * Y + p.Theta s) k c = p.rd Y s c k := by
   fin_cases k <;> fin_cases c <;>
     simp [Phi, Theta, GiPQ, GvPQ, Gi, Gv, Gvpll, Gipll, Gdpll, Gdei, Jc, Transform.complexSymm,
-      Matrix.mul_apply, Fin.sum_univ_two, Matrix.one_apply, rd, rcc, rep, rip, rvp, rθ,
-      unitVec] <;> ring
+      Matrix.mul_apply, Fin.sum_univ_two, Matrix.one_apply, rd, rcc, rep, rip, rvp, rθ] <;> ring
 
 end Resp
-
-@[tmio T, powerlib_foundation] theorem one_apply_eq_unitVec (k c : Fin 2) :
-    (1 : Matrix (Fin 2) (Fin 2) ℂ) k c = unitVec c k := by
-  simp [unitVec, Matrix.one_apply, eq_comm]
 
 /-- If `Y` solves the port equation, `resp` solves `s x = lin x e_c`. -/
 @[tmio M, powerlib_domain] theorem resp_lin {Y : Matrix (Fin 2) (Fin 2) ℂ} {s : ℂ} (hs : s ≠ 0)
@@ -400,7 +393,7 @@ end Resp
     (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
     (hY : p.filter.dqImpedance p.ω s * Y + ((p.Vdc : ℂ) * p.Gdel s) • (p.Phi s * Y + p.Theta s) = 1)
     (c : Fin 2) :
-    s • p.resp Y s c = p.lin (p.resp Y s c) (unitVec c) := by
+    s • p.resp Y s c = p.lin (p.resp Y s c) (Pi.single c 1) := by
   have hL' : (p.L : ℂ) ≠ 0 := by exact_mod_cast hL
   have ha' : (p.a : ℂ) ≠ 0 := by exact_mod_cast ha
   have hda2 : 1 + s * (p.a : ℂ) ≠ 0 := by rwa [mul_comm] at hda
@@ -409,11 +402,11 @@ end Resp
     apply hpll
     linear_combination h
   have hk : ∀ k : Fin 2, (p.filter.dqImpedance p.ω s * Y) k c +
-      (p.Vdc * p.Gdel s) * p.rd Y s c k = unitVec c k := by
+      (p.Vdc * p.Gdel s) * p.rd Y s c k = (Pi.single c 1 : Fin 2 → ℂ) k := by
     intro k
     have := congrFun (congrFun hY k) c
     rw [Matrix.add_apply, Matrix.smul_apply, phiY_theta, smul_eq_mul,
-      one_apply_eq_unitVec] at this
+      Matrix.one_eq_pi_single, Pi.single_comm] at this
     exact this
   have h0 := hk 0
   have h1 := hk 1
@@ -443,7 +436,7 @@ end Resp
   · have hG : p.Gpll s * (s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil) = p.Kpl * s + p.Kil :=
       div_mul_cancel₀ _ hpll
     simp [resp, rvp, rθ]
-    linear_combination (unitVec c 1) * hG
+    linear_combination (Pi.single c 1 : Fin 2 → ℂ) 1 * hG
   · simp [resp]
     field_simp
   · simp [resp]
@@ -467,8 +460,8 @@ end Resp
     ext i c
     have h := congrFun (p.resp_lin hs ha hda hL hpll hY c) i
     rw [p.lin_eq_mulVec] at h
-    have hB : (p.B.map (algebraMap ℝ ℂ) *ᵥ unitVec c) i = p.B.map (algebraMap ℝ ℂ) i c := by
-      simp [Matrix.mulVec, dotProduct, unitVec]
+    have hB : (p.B.map (algebraMap ℝ ℂ) *ᵥ Pi.single c 1) i = p.B.map (algebraMap ℝ ℂ) i c := by
+      simp [Matrix.mulVec, dotProduct, Pi.single_apply]
     have hAX : (p.A.map (algebraMap ℝ ℂ) * X) i c =
         (p.A.map (algebraMap ℝ ℂ) *ᵥ p.resp (p.Ygfl s) s c) i := by
       simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, hX]

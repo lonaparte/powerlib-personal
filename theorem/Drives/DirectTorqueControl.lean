@@ -156,23 +156,18 @@ open powerlib.Transform.SpaceVector
 @[tmio T, powerlib_foundation] theorem sector_signs_sub_one (φ : ℝ)
     (hφ : φ ∈ Set.Icc (-(Real.pi / 6)) (Real.pi / 6)) :
     0 ≤ Real.cos (-(Real.pi / 3) - φ) ∧ Real.sin (-(Real.pi / 3) - φ) < 0 := by
-  obtain ⟨h1, h2⟩ := hφ
-  have hpi := Real.pi_pos
-  constructor
-  · apply Real.cos_nonneg_of_mem_Icc; constructor <;> linarith
-  · apply Real.sin_neg_of_neg_of_neg_pi_lt <;> linarith
+  obtain ⟨h1, h2⟩ := sector_signs_add_one (-φ) ⟨by linarith [hφ.2], by linarith [hφ.1]⟩
+  rw [show -(Real.pi / 3) - φ = -(Real.pi / 3 - -φ) by ring, Real.cos_neg, Real.sin_neg]
+  exact ⟨h1, neg_neg_of_pos h2⟩
 
 /-- `v_{k−2}` (relative angle `−2π/3`) for a flux inside the sector, `φ ∈ [−π/6, π/6]`: radial
 (`cos`) component `≤ 0`, tangential (`sin`) component `< 0`. -/
 @[tmio T, powerlib_foundation] theorem sector_signs_sub_two (φ : ℝ)
     (hφ : φ ∈ Set.Icc (-(Real.pi / 6)) (Real.pi / 6)) :
     Real.cos (-(2 * Real.pi / 3) - φ) ≤ 0 ∧ Real.sin (-(2 * Real.pi / 3) - φ) < 0 := by
-  obtain ⟨h1, h2⟩ := hφ
-  have hpi := Real.pi_pos
-  constructor
-  · rw [show -(2 * Real.pi / 3) - φ = -(2 * Real.pi / 3 + φ) by ring, Real.cos_neg]
-    apply Real.cos_nonpos_of_pi_div_two_le_of_le <;> linarith
-  · apply Real.sin_neg_of_neg_of_neg_pi_lt <;> linarith
+  obtain ⟨h1, h2⟩ := sector_signs_add_two (-φ) ⟨by linarith [hφ.2], by linarith [hφ.1]⟩
+  rw [show -(2 * Real.pi / 3) - φ = -(2 * Real.pi / 3 - -φ) by ring, Real.cos_neg, Real.sin_neg]
+  exact ⟨h1, neg_neg_of_pos h2⟩
 
 /-- The radial component of `v_{k+1}` vanishes exactly at the lower sector boundary and that
 of `v_{k+2}` exactly at the upper boundary (the reason the sectors are centred on the

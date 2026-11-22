@@ -691,15 +691,12 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : ℕ → 
     Integrable (fun ω => exp (t * X i ω)) μ ↔ Integrable (fun ω => exp (t * X 0 ω)) μ :=
   ((hid i).comp (measurable_const_mul t).exp).integrable_iff
 
-@[tmio T, powerlib_foundation] private theorem mgf_eq_of_identDistrib (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (i : ℕ)
-    (t : ℝ) : mgf (X i) μ t = mgf (X 0) μ t :=
-  ((hid i).comp (measurable_const_mul t).exp).integral_eq
-
 @[tmio T, powerlib_foundation] private theorem mgf_sum_eq [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
     (hmeas : ∀ i, Measurable (X i))
     (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) (n : ℕ) (t : ℝ) :
     mgf (∑ i ∈ Finset.range n, X i) μ t = mgf (X 0) μ t ^ n := by
-  rw [hindep.mgf_sum hmeas, Finset.prod_congr rfl fun i _ => mgf_eq_of_identDistrib hid i t,
+  rw [hindep.mgf_sum hmeas,
+    Finset.prod_congr rfl fun i _ => mgf_congr_of_identDistrib _ _ (hid i) t,
     Finset.prod_const, Finset.card_range]
 
 @[tmio T, powerlib_foundation] private theorem cgf_sum_eq [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
@@ -1496,15 +1493,7 @@ where `I = ∞`) use `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and `I(x)
 @[tmio T, powerlib_foundation] private theorem ereal_le_of_forall_coe_ge {a ℓ : EReal} (h : ∀ r : ℝ, ℓ ≤ r → a ≤ r) :
     a ≤ ℓ := by
   induction ℓ using EReal.rec with
-  | bot =>
-    have : a = ⊥ := by
-      induction a using EReal.rec with
-      | bot => rfl
-      | coe s =>
-        have := EReal.coe_le_coe_iff.mp (h (s - 1) bot_le)
-        linarith
-      | top => exact absurd (h 0 bot_le) (by simp)
-    rw [this]
+  | bot => rw [ereal_eq_bot_of_le fun r => h r bot_le]
   | coe s => exact h s le_rfl
   | top => exact le_top
 

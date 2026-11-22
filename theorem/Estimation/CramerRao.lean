@@ -80,9 +80,6 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
   field_simp
   ring
 
-@[tmio T, powerlib_foundation] theorem measurable_lr (θ h : ℝ) (v : ℝ≥0) : Measurable (lr θ h v) := by
-  unfold lr; fun_prop
-
 @[tmio T, powerlib_foundation] theorem integral_lr (hv : v ≠ 0) (θ h : ℝ) :
     ∫ y, lr θ h v y ∂(gaussianReal θ v) = 1 := by
   rw [integral_gaussianReal_eq_integral_smul hv]

@@ -109,9 +109,6 @@ def k : ℝ := Real.sqrt (2 / 3)
 
 @[tmio M, powerlib_domain] theorem k_sq : k ^ 2 = 2 / 3 := Real.sq_sqrt (by norm_num)
 
-@[tmio T, powerlib_foundation] theorem inv_sqrt3_sq : (1 / Real.sqrt 3) ^ 2 = 1 / 3 := by
-  rw [div_pow, sqrt3_sq]; norm_num
-
 /-- Rows of the power-invariant Park matrix. -/
 def parkRow (θ : ℝ) : Fin 3 → Fin 3 → ℝ := ![k • cvec θ, -k • svec θ, fun _ => 1 / Real.sqrt 3]
 

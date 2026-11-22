@@ -24,8 +24,8 @@ Results.
 * `bauerFike` — if `A = V Λ V⁻¹` (`Λ = diag λ`), every eigenvalue `μ` of `A + E` satisfies
   `minᵢ |μ − λᵢ| ≤ ‖V‖ ‖V⁻¹‖ ‖E‖` (for a `ModalBasis`: `bauerFike mb.V_mul_Wt mb.decomp`,
   `V⁻¹ = Wᵀ`).
-* `bauerFike_hermitian` — normal-matrix corollary, Hermitian case via Mathlib's spectral theorem
-  `Matrix.IsHermitian.spectral_theorem`, unitary `V`, `‖V‖ = ‖V⁻¹‖ = 1`:
+* `bauerFike_hermitian` — Hermitian case of `bauerFike_normal` (the spectrum is the range of the
+  real eigenvalues, Mathlib `Matrix.IsHermitian.spectrum_eq_image_range`):
   `minᵢ |μ − λᵢ| ≤ ‖E‖`.
 * `bauerFike_normal` — **Bauer–Fike for a general normal matrix** (`Aᴴ A = A Aᴴ`): every
   eigenvalue `μ` of `A + E` has some `ν ∈ σ(A)` with `|μ − ν| ≤ ‖E‖`. No diagonalisation is
@@ -127,30 +127,6 @@ omit [DecidableEq n] in
     _ ≤ ‖lam i - μ‖ * (‖V‖ * ‖lam i - μ‖⁻¹ * ‖Vinv‖ * ‖E‖) := by gcongr
     _ = ‖V‖ * ‖Vinv‖ * ‖E‖ := by field_simp
 
-/-- **Bauer–Fike for Hermitian (normal) matrices**: the eigenvector matrix is unitary, so every
-eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
-@[tmio T, powerlib_foundation] theorem bauerFike_hermitian {A : Matrix n n ℂ} (hA : A.IsHermitian)
-    (E : Matrix n n ℂ) {μ : ℂ} {x : EuclideanSpace ℂ n} (hx : x ≠ 0)
-    (heig : act (A + E) x = μ • x) :
-    ∃ i, ‖μ - (hA.eigenvalues i : ℂ)‖ ≤ ‖E‖ := by
-  have hne : Nonempty n := by
-    by_contra h
-    rw [not_nonempty_iff] at h
-    exact hx (Subsingleton.elim _ _)
-  set U : Matrix n n ℂ := (hA.eigenvectorUnitary : Matrix n n ℂ)
-  have hU : U ∈ unitary (Matrix n n ℂ) := hA.eigenvectorUnitary.2
-  have hUs : star U ∈ unitary (Matrix n n ℂ) := Unitary.star_mem hU
-  have hUU : U * star U = 1 := Unitary.mul_star_self_of_mem hU
-  have hdec : A = U * diagonal (RCLike.ofReal ∘ hA.eigenvalues) * star U := by
-    conv_lhs => rw [hA.spectral_theorem]
-    rfl
-  obtain ⟨i, hi⟩ := powerlib.Modal.bauerFike hUU hdec hx heig
-  refine ⟨i, ?_⟩
-  have h1 : ‖U‖ = 1 := CStarRing.norm_of_mem_unitary hU
-  have h2 : ‖star U‖ = 1 := CStarRing.norm_of_mem_unitary hUs
-  rw [h1, h2, one_mul, one_mul] at hi
-  simpa using hi
-
 /-! ## Bauer–Fike for normal matrices -/
 
 /-- **Bauer–Fike for normal matrices**: if `A` is normal (`Aᴴ A = A Aᴴ`), every eigenvalue `μ` of
@@ -221,6 +197,18 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
   · rw [sub_sub_cancel, norm_inv, hzn]
     rw [inv_le_iff_one_le_mul₀' hRpos]
     linarith
+
+/-- **Bauer–Fike for Hermitian matrices** (the Hermitian case of `bauerFike_normal`, the spectrum
+being the range of the real eigenvalues, Mathlib `Matrix.IsHermitian.spectrum_eq_image_range`):
+every eigenvalue of `A + E` lies within `‖E‖` of an eigenvalue of `A`. -/
+@[tmio T, powerlib_foundation] theorem bauerFike_hermitian {A : Matrix n n ℂ} (hA : A.IsHermitian)
+    (E : Matrix n n ℂ) {μ : ℂ} {x : EuclideanSpace ℂ n} (hx : x ≠ 0)
+    (heig : act (A + E) x = μ • x) :
+    ∃ i, ‖μ - (hA.eigenvalues i : ℂ)‖ ≤ ‖E‖ := by
+  obtain ⟨ν, hν, hle⟩ := bauerFike_normal (by rw [hA.eq]) hx heig
+  rw [hA.spectrum_eq_image_range] at hν
+  obtain ⟨_, ⟨i, rfl⟩, rfl⟩ := hν
+  exact ⟨i, hle⟩
 
 /-! ## Spectral condition number of the first-order sensitivity -/
 

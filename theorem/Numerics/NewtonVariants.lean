@@ -346,17 +346,13 @@ open scoped RealInnerProductSpace
 def IsLMStep (J : E →L[ℝ] E') (r : E') (μ : ℝ) (δ : E) : Prop :=
   (ContinuousLinearMap.adjoint J) (J δ) + μ • δ = -(ContinuousLinearMap.adjoint J) r
 
-@[tmio T, powerlib_foundation] theorem inner_adjoint_self (J : E →L[ℝ] E') (v : E) :
-    ⟪(ContinuousLinearMap.adjoint J) (J v), v⟫ = ‖J v‖ ^ 2 := by
-  rw [ContinuousLinearMap.adjoint_inner_left, real_inner_self_eq_norm_sq]
-
 /-- A priori bound `μ ‖δ‖ ≤ ‖Jᵀ r‖`. -/
 @[tmio T, powerlib_foundation] theorem lmStep_norm_le {J : E →L[ℝ] E'} {r : E'} {μ : ℝ} (hμ : 0 < μ)
     {δ : E} (h : IsLMStep J r μ δ) : ‖δ‖ ≤ ‖(ContinuousLinearMap.adjoint J) r‖ / μ := by
   set g := (ContinuousLinearMap.adjoint J) r
   have hin := congrArg (fun w => ⟪w, δ⟫) h
-  simp only [inner_add_left, real_inner_smul_left, inner_neg_left, inner_adjoint_self,
-    real_inner_self_eq_norm_sq] at hin
+  simp only [inner_add_left, real_inner_smul_left, inner_neg_left,
+    ContinuousLinearMap.adjoint_inner_left J δ (J δ), real_inner_self_eq_norm_sq] at hin
   have hcs : -⟪g, δ⟫ ≤ ‖g‖ * ‖δ‖ := by
     have := real_inner_le_norm (-g) δ
     rwa [inner_neg_left, norm_neg] at this

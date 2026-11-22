@@ -138,7 +138,7 @@ stable (`Conservative.locallyExponentiallyStable_of_slope_pos`). -/
   have hσm := (Potential.doubleWell_eq_min_iff one_pos one_pos σ).mpr (by rw [h1]; exact hσ)
   show Potential.doubleWell 1 1 σ < Potential.doubleWell 1 1 x
   rw [hσm]
-  refine lt_of_le_of_ne (Potential.doubleWell_min one_pos one_pos x) fun h => ?_
+  refine lt_of_le_of_ne (Potential.doubleWell_min one_pos x) fun h => ?_
   have hx' := (Potential.doubleWell_eq_min_iff one_pos one_pos x).mp h.symm
   rw [h1] at hx'
   rcases hσ with rfl | rfl <;> rcases hx' with rfl | rfl <;>

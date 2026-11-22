@@ -24,7 +24,8 @@ Results.
   root is an eigenvalue), `spectrallyStable_iff_isHurwitz` (pole stability is LeanForControl's
   Hurwitz predicate), `exists_eigenvector_of_root`, `unstable_of_root`.
 * Transfer functions: `transfer`, `transferOf` (any finite state index, as produced by block
-  constructions), `transfer_eq_transferOf`, `characteristicMatrix_reindex`, `transferOf_reindex`;
+  constructions), `transfer_eq_transferOf`, `transferOf_eq_adjugate` (`G(s)` through the
+  adjugate), `characteristicMatrix_reindex`, `transferOf_reindex`;
   complexification of matrix operations (`complexify_mul`, `complexify_neg`, `complexify_sub`,
   `complexify_zero`, `complexify_fromRows`, `complexify_fromCols`, `complexify_fromBlocks`,
   `complexify_mul_eq_one`, `inv_conj`).
@@ -66,16 +67,6 @@ on any finite index. -/
     [DecidableEq ι] (A : Matrix ι ι ℝ) (s : ℂ) :
     (characteristicMatrix A s).det = (complexify A).charpoly.eval s := by
   rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
-
-/-- Pole stability does not depend on the labelling of the states. -/
-@[tmio T, powerlib_foundation] theorem spectrallyStable_reindex {ι ι' : Type*} [Fintype ι]
-    [DecidableEq ι] [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) :
-    SpectrallyStable (A.reindex e e) ↔ SpectrallyStable A := by
-  have h (s : ℂ) :
-      characteristicMatrix (A.reindex e e) s = (characteristicMatrix A s).reindex e e := by
-    ext i j
-    simp [characteristicMatrix, Matrix.one_apply]
-  simp only [SpectrallyStable, h, Matrix.det_reindex_self]
 
 /-- A root of the characteristic polynomial is exactly an eigenvalue of the complexified matrix,
 on any finite index. -/
@@ -123,11 +114,26 @@ def transferOf {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ)
 @[tmio T, powerlib_foundation] theorem transfer_eq_transferOf (M : Plant n p) (s : ℂ) :
     transfer M s = transferOf M.A M.B M.C M.D s := rfl
 
+/-- The transfer matrix through the adjugate: `G(s) = det(sI − A)⁻¹ C adj(sI − A) B + D`, on an
+arbitrary finite state index. -/
+@[tmio T, powerlib_foundation] theorem transferOf_eq_adjugate {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (A : Matrix ι ι ℝ) (B : Matrix ι (Fin p) ℝ) (C : Matrix (Fin p) ι ℝ)
+    (D : Matrix (Fin p) (Fin p) ℝ) (s : ℂ) :
+    transferOf A B C D s = ((characteristicMatrix A s).det)⁻¹ •
+      (complexify C * (characteristicMatrix A s).adjugate * complexify B) + complexify D := by
+  rw [transferOf, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
+
 @[tmio T, powerlib_foundation] theorem characteristicMatrix_reindex {ι ι' : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) (s : ℂ) :
     characteristicMatrix (A.reindex e e) s = (characteristicMatrix A s).reindex e e := by
   ext i j
   simp [characteristicMatrix, Matrix.one_apply]
+
+/-- Pole stability does not depend on the labelling of the states. -/
+@[tmio T, powerlib_foundation] theorem spectrallyStable_reindex {ι ι' : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) :
+    SpectrallyStable (A.reindex e e) ↔ SpectrallyStable A := by
+  simp only [SpectrallyStable, characteristicMatrix_reindex, Matrix.det_reindex_self]
 
 /-- Relabelling the states does not change the transfer function. -/
 @[tmio T, powerlib_foundation] theorem transferOf_reindex {ι ι' : Type*} [Fintype ι] [DecidableEq ι]

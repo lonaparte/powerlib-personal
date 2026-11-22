@@ -64,7 +64,7 @@ Singular-perturbation limit:
   vanishes and the swing row is the first-order field).
 * Eigenvalues: `eigDisc`, `slowEig`, `fastEig` (the real roots of
   `M T_g s² + (M + D T_g) s + (D + K_R)`, slow root rationalized), `slowEig_root`,
-  `fastEig_root`, `slowEig_eq`, Vieta (`slowEig_add_fastEig`, `slowEig_mul_fastEig`),
+  `fastEig_root`, `slowEig_eq`, Vieta (`slowEig_vieta`),
   `slowEig_sub_fastEig`, `det_characteristicMatrix_eq_mul` /
   `det_characteristicMatrix_eq_zero_iff` (for a nonnegative discriminant the spectrum is
   `{λ_s, λ_f}`), `plant_mulVec_slowEigvec` (slow eigenvector `(1, M λ_s + D)`). Limits:
@@ -618,18 +618,16 @@ slow root. -/
   ring
 
 /-- Vieta: `λ_s + λ_f = −(D/M + 1/T_g)`, `λ_s λ_f = (D + K_R)/(M T_g)`. -/
-@[tmio M, powerlib_domain] theorem slowEig_add_fastEig (hM : M ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_domain] theorem slowEig_vieta (hM : M ≠ 0) (hTg : Tg ≠ 0)
     (hΔ : 0 ≤ eigDisc M D K Tg) (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
-    slowEig M D K Tg + fastEig M D K Tg = -(D / M + 1 / Tg) := by
-  rw [slowEig_eq hM hTg hΔ hS, fastEig]
-  field_simp
-  ring
-
-@[tmio M, powerlib_domain] theorem slowEig_mul_fastEig (hM : M ≠ 0) (hTg : Tg ≠ 0)
-    (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
-    slowEig M D K Tg * fastEig M D K Tg = (D + K) / (M * Tg) := by
-  unfold slowEig fastEig
-  field_simp
+    slowEig M D K Tg + fastEig M D K Tg = -(D / M + 1 / Tg) ∧
+      slowEig M D K Tg * fastEig M D K Tg = (D + K) / (M * Tg) := by
+  constructor
+  · rw [slowEig_eq hM hTg hΔ hS, fastEig]
+    field_simp
+    ring
+  · unfold slowEig fastEig
+    field_simp
 
 /-- For a nonnegative discriminant the characteristic polynomial factors over the two real
 roots: `det(sI − A) = (s − λ_s)(s − λ_f)`. -/
@@ -638,10 +636,11 @@ roots: `det(sI − A) = (s − λ_s)(s − λ_f)`. -/
     (Linear.characteristicMatrix (plant M D K Tg).A s).det =
       (s - slowEig M D K Tg) * (s - fastEig M D K Tg) := by
   rw [det_characteristicMatrix]
+  obtain ⟨hsum, hprod⟩ := slowEig_vieta hM hTg hΔ hS
   have e1 : ((D / M + 1 / Tg : ℝ) : ℂ) = -((slowEig M D K Tg : ℂ) + fastEig M D K Tg) := by
-    rw [← Complex.ofReal_add, slowEig_add_fastEig hM hTg hΔ hS, Complex.ofReal_neg, neg_neg]
+    rw [← Complex.ofReal_add, hsum, Complex.ofReal_neg, neg_neg]
   have e2 : (((D + K) / (M * Tg) : ℝ) : ℂ) = (slowEig M D K Tg : ℂ) * fastEig M D K Tg := by
-    rw [← Complex.ofReal_mul, slowEig_mul_fastEig hM hTg hS]
+    rw [← Complex.ofReal_mul, hprod]
   rw [e1, e2]
   ring
 

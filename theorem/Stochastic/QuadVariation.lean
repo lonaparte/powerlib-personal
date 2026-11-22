@@ -65,11 +65,7 @@ open scoped NNReal ENNReal Topology
 exponential-integrability set. -/
 @[tmio T, powerlib_foundation] theorem zero_mem_interior_integrableExpSet_gaussianReal (m : ℝ)
     (v : ℝ≥0) : (0 : ℝ) ∈ interior (integrableExpSet id (gaussianReal m v)) := by
-  have : integrableExpSet id (gaussianReal m v) = Set.univ := by
-    ext s
-    simp only [integrableExpSet, id, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-    exact integrable_exp_mul_gaussianReal s
-  simp [this]
+  simp [integrableExpSet_id_gaussianReal]
 
 /-- All polynomial moments of a Gaussian are finite. -/
 @[tmio T, powerlib_foundation] theorem integrable_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :

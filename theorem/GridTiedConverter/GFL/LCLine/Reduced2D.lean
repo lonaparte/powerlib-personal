@@ -114,10 +114,6 @@ Static evidence on the model, not a connection conclusion. -/
     p.reducedField y = 0 ↔ p.h (y 0) = 0 ∧ y 1 = 0 := by
   rw [reducedField_eq, piPLLField_eq_zero_iff hKi, zero_div]
 
-@[tmio M, powerlib_domain] theorem contDiff_reducedField : ContDiff ℝ 1 p.reducedField := by
-  rw [reducedField_eq]
-  exact contDiff_piPLLField p.contDiff_h
-
 /-- The Jacobian of the reduced field, computed with `fderiv`:
 `[[K_p h′(θ), K_i], [h′(θ), 0]]`, `h′(θ) = −A cos(θ + φ)`. -/
 @[tmio M, powerlib_domain] theorem fderiv_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ η : ℝ) :

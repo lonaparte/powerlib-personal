@@ -30,9 +30,8 @@ Results.
   determinant are nonnegative (`quartic_coeffs_nonneg_of_roots_re_nonpos`); hence a negative
   coefficient or a negative third Hurwitz determinant gives a root with positive real part
   (`exists_quartic_root_re_pos_of_violation`; for `a3 < 0` this is the Vieta statement that the
-  roots sum to `-a3`). `a0 < 0` gives a positive real root
-  (`exists_quartic_root_pos_of_const_neg`, an instance of
-  `Criteria.exists_pos_root_of_coeff_zero_neg`).
+  roots sum to `-a3`); `a0 < 0` gives a positive real root by the generic
+  `Criteria.exists_pos_root_of_coeff_zero_neg`.
 * Matrix interface for any state dimension: if `det (s • 1 - A)` is identified with the
   quartic for every `s`, `IsHurwitz A` iff the Routh conditions hold
   (`isHurwitz_iff_of_det_characteristicMatrix_quartic`, through the generic interface
@@ -51,15 +50,12 @@ Results.
   (`routhFin4_iff_of_det_characteristicMatrix_quartic`,
   `routhViolationFin4_iff_of_det_characteristicMatrix_quartic`).
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
-  field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial:
-  `locallyExponentiallyStable_of_jacobian_quartic`, `unstable_of_jacobian_quartic_violation`)
-  or `EuclideanSpace ℝ (Fin 4)` (`locallyExponentiallyStable_of_jacobian_fin_four`,
-  `unstable_of_jacobian_violation_fin_four`, whose disjunct `A.det < 0` is the saddle case), and the
-  attractive sentences of a linear field `x' = A (x - e)`, for every attractive sentence, in
-  both directions
-  (`holds_affine_iff_of_det_characteristicMatrix_quartic`, `holds_affine_fin_four_iff`). They only
-  repackage `hurwitz_linearization_locally_exponentially_stable`,
-  `unstable_of_exists_complex_eigenvalue_re_pos` and `Linear.holds_iff_isHurwitz`.
+  field on `EuclideanSpace ℝ (Fin 4)` (`locallyExponentiallyStable_of_jacobian_fin_four`,
+  `unstable_of_jacobian_violation_fin_four`, whose disjunct `A.det < 0` is the saddle case). They
+  only repackage `hurwitz_linearization_locally_exponentially_stable` and
+  `unstable_of_exists_complex_eigenvalue_re_pos`; the attractive sentences of a linear field
+  `x' = A (x - e)` are the linear hub `Linear.holds_iff_isHurwitz` with
+  `isHurwitz_iff_of_det_characteristicMatrix_quartic` or `isHurwitz_fin_four_iff`.
 
 Proof of the sufficient direction: for a root `x + i y` with `x ≥ 0`, the imaginary part forces
 `y = 0` (impossible: all terms positive) or `y² (4x + a3) = 4x³ + 3a3x² + 2a2x + a1`;
@@ -153,22 +149,6 @@ section Quartic
         ((4 * x ^ 3 + 3 * a3 * x ^ 2 + 2 * a2 * x + a1) + (4 * x + a3) * y ^ 2 -
           (6 * x ^ 2 + 3 * a3 * x + a2) * (4 * x + a3)) * hq
     linarith
-
-/-- Value of the monic real quartic. -/
-def quarticEval (a3 a2 a1 a0 x : ℝ) : ℝ := x ^ 4 + a3 * x ^ 3 + a2 * x ^ 2 + a1 * x + a0
-
-/-- `a0 < 0`: a positive real root (`Criteria.exists_pos_root_of_coeff_zero_neg`). -/
-@[tmio T, powerlib_foundation] theorem exists_quartic_root_pos_of_const_neg {a3 a2 a1 a0 : ℝ}
-    (h0 : a0 < 0) : ∃ r : ℝ, 0 < r ∧ r ^ 4 + a3 * r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0 := by
-  obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg
-    (p := X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0) (by monicity!) (by simpa using h0)
-  exact ⟨r, hr, by simpa using hroot⟩
-
-@[tmio T, powerlib_foundation] theorem quartic_real_root_complex {a3 a2 a1 a0 r : ℝ}
-    (h : r ^ 4 + a3 * r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0) :
-    (r : ℂ) ^ 4 + (a3 : ℂ) * (r : ℂ) ^ 3 + (a2 : ℂ) * (r : ℂ) ^ 2 + (a1 : ℂ) * (r : ℂ) +
-      (a0 : ℂ) = 0 := by
-  exact_mod_cast h
 
 /-! ### Necessary direction and instability -/
 
@@ -286,15 +266,6 @@ Hurwitz determinant) gives a root with positive real part. -/
   push Not at hn
   obtain ⟨h3, h2, h1, h0, hg⟩ := quartic_coeffs_nonneg_of_roots_re_nonpos hn
   rcases h with h | h | h | h | h <;> linarith
-
-/-- If the strict Routh conditions fail, some root has nonnegative real part. -/
-@[tmio T, powerlib_foundation] theorem exists_quartic_root_re_nonneg {a3 a2 a1 a0 : ℝ}
-    (h : ¬ (0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1)) :
-    ∃ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧
-      0 ≤ s.re := by
-  rw [← quartic_hurwitz_iff] at h
-  push Not at h
-  exact h
 
 end Quartic
 
@@ -531,24 +502,7 @@ publishes its conclusions as connection statements (see
 
 section Semantic
 
-variable {n : ℕ}
-
-local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 local notation "ℝ⁴" => EuclideanSpace ℝ (Fin 4)
-
-/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ` whose Jacobian has a quartic
-characteristic polynomial satisfying the Routh conditions: local exponential stability. -/
-@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_jacobian_quartic
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
-    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    {a3 a2 a1 a0 : ℝ}
-    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
-      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ))
-    (h3 : 0 < a3) (h1 : 0 < a1) (h0 : 0 < a0) (hg : a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1) :
-    LocallyExponentiallyStable f x_eq :=
-  hurwitz_linearization_locally_exponentially_stable A hf heq hJac
-    ((isHurwitz_iff_of_det_characteristicMatrix_quartic A hchar).2 ⟨h3, h1, h0, hg⟩)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ⁴`: a Jacobian satisfying the 4×4
 Routh conditions gives local exponential stability. -/
@@ -563,34 +517,6 @@ Routh conditions gives local exponential stability. -/
   hurwitz_linearization_locally_exponentially_stable A hf heq hJac
     ((isHurwitz_fin_four_iff A).2 ⟨htr, hm3, hdet, hg⟩)
 
-/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ` whose Jacobian has a quartic
-characteristic polynomial with a strict Routh sign violation (a negative coefficient or a
-negative third Hurwitz determinant): instability. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_quartic_violation
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
-    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
-    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
-    {a3 a2 a1 a0 : ℝ}
-    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
-      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ))
-    (h : a3 < 0 ∨ a2 < 0 ∨ a1 < 0 ∨ a0 < 0 ∨ a3 * a2 * a1 < a1 ^ 2 + a3 ^ 2 * a0) :
-    Unstable f x_eq :=
-  unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
-    (exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation A hchar h)
-
-/-- Continuous-time linear field `x' = A (x - e)` whose state matrix has a quartic
-characteristic polynomial: every attractive sentence of the Flow semantics (in particular global
-exponential stability) holds at `e` iff the Routh conditions hold. -/
-@[tmio T, powerlib_foundation] theorem holds_affine_iff_of_det_characteristicMatrix_quartic
-    (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive)
-    {a3 a2 a1 a0 : ℝ}
-    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
-      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ)) :
-    P.holds (LinearSystems.affineLinearVectorField A e) e ↔
-      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 :=
-  (Linear.holds_iff_isHurwitz e hP).trans
-    (isHurwitz_iff_of_det_characteristicMatrix_quartic A hchar)
-
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ⁴`: a Jacobian with a strict 4×4
 Routh sign violation gives instability. -/
 @[tmio T, powerlib_foundation] theorem unstable_of_jacobian_violation_fin_four
@@ -603,17 +529,6 @@ Routh sign violation gives instability. -/
     Unstable f x_eq :=
   unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_violation_fin_four A h)
-
-/-- Four-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
-Flow semantics (in particular global exponential stability) holds at `e` iff the 4×4 Routh
-conditions hold. -/
-@[tmio T, powerlib_foundation] theorem holds_affine_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ)
-    (e : ℝ⁴) {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (LinearSystems.affineLinearVectorField A e) e ↔
-      A.trace < 0 ∧ principalMinorSum3Fin4 A < 0 ∧ 0 < A.det ∧
-        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det <
-          A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A :=
-  (Linear.holds_iff_isHurwitz e hP).trans (isHurwitz_fin_four_iff A)
 
 end Semantic
 

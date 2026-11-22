@@ -70,7 +70,7 @@ open Set
   simp only [f, neg_zero, Real.exp_zero] at this
   linarith
 
-/-- `1 − u ≤ e^{−u} ≤ 1 − u + u²/2` for `u ≥ 0`. -/
+/-- `e^{−u} ≤ 1 − u + u²/2` for `u ≥ 0`. -/
 @[tmio T, powerlib_foundation] theorem exp_neg_le_quadratic {u : ℝ} (hu : 0 ≤ u) :
     Real.exp (-u) ≤ 1 - u + u ^ 2 / 2 := by
   rcases hu.lt_or_eq with h | h

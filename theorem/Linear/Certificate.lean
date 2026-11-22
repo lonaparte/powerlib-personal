@@ -65,14 +65,8 @@ attribute [powerlib_foundation]
 @[tmio T, powerlib_foundation] theorem quadratic_sym {A P : Matrix (Fin n) (Fin n) ℝ} (hP : Pᵀ = P)
     (z : Fin n → ℝ) : z ⬝ᵥ ((Aᵀ * P + P * A) *ᵥ z) = 2 * (z ⬝ᵥ (P *ᵥ (A *ᵥ z))) := by
   simp only [Matrix.add_mulVec, ← Matrix.mulVec_mulVec, dotProduct_add]
-  have h1 : z ⬝ᵥ (Aᵀ *ᵥ (P *ᵥ z)) = (A *ᵥ z) ⬝ᵥ (P *ᵥ z) := by
-    rw [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
-  have h2 : z ⬝ᵥ (P *ᵥ (A *ᵥ z)) = (P *ᵥ z) ⬝ᵥ (A *ᵥ z) := by
-    rw [Matrix.dotProduct_mulVec]
-    congr 1
-    conv_lhs => rw [← hP]
-    rw [Matrix.vecMul_transpose]
-  rw [h1, h2, dotProduct_comm (A *ᵥ z)]
+  rw [Matrix.dotProduct_mulVec z Aᵀ, Matrix.vecMul_transpose,
+    Criteria.dotProduct_mulVec_comm_of_symm hP z (A *ᵥ z)]
   ring
 
 @[tmio T, powerlib_foundation] theorem quadratic_lyapunov {A P : Matrix (Fin n) (Fin n) ℝ}

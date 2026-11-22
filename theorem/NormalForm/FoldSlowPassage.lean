@@ -37,7 +37,7 @@ Results.
 * The solvability functional `λ* = 1 - π^{-1/2} ∫ e^{-τ²} φ(τ) dτ` (`solvabilityShift`): equals
   `1` for every odd `φ`, equals `1/2` for `φ = τ²`.
 * Constant-rate ramp: time translation `τ ↦ τ + λ` maps solutions of `X' = τ + X²` onto
-  solutions of `X' = λ + τ + X²` and back (`riccatiRamp_shift`, `riccatiRamp_unshift`), so `λ`
+  solutions of `X' = λ + τ + X²` and back (`riccatiRamp_translate`), so `λ`
   cannot act as a threshold parameter.
 * Riccati–Schrödinger link: if `u ≠ 0` solves `-u'' + τ² u = λ u`, then `X = -u'/u` solves the
   grazing problem (`riccatiGraze_of_schrodinger`); the ground state `u = e^{-τ²/2}` has `λ = 1`
@@ -135,27 +135,24 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
   rw [solvabilityShift, integral_mul_const, Asymptotics.integral_exp_neg_sq]
   field_simp
 
-/-- Constant-rate ramp: if `X` solves `X' = τ + X²`, then `Y(τ) = X(τ + λ)` solves
-`Y' = λ + τ + Y²`. The margin parameter is absorbed by a time translation. -/
-@[tmio M, powerlib_foundation] theorem riccatiRamp_shift {X : ℝ → ℝ}
-    (hX : ∀ τ, HasDerivAt X (riccatiRamp 0 τ (X τ)) τ) (lam : ℝ) :
-    ∀ τ, HasDerivAt (fun s => X (s + lam)) (riccatiRamp lam τ (X (τ + lam))) τ := by
-  intro τ
-  have h := (hX (τ + lam)).comp τ ((hasDerivAt_id' τ).add_const lam)
-  rw [show riccatiRamp lam τ (X (τ + lam)) = riccatiRamp 0 (τ + lam) (X (τ + lam)) * 1 by
-    simp only [riccatiRamp]; ring]
-  exact h
-
-/-- Converse of `riccatiRamp_shift`: every solution of the ramp problem with parameter `λ` is
-a time translate of a solution with `λ = 0`. -/
-@[tmio M, powerlib_foundation] theorem riccatiRamp_unshift {Y : ℝ → ℝ} (lam : ℝ)
-    (hY : ∀ τ, HasDerivAt Y (riccatiRamp lam τ (Y τ)) τ) :
-    ∀ τ, HasDerivAt (fun s => Y (s - lam)) (riccatiRamp 0 τ (Y (τ - lam))) τ := by
-  intro τ
-  have h := (hY (τ - lam)).comp τ ((hasDerivAt_id' τ).sub_const lam)
-  rw [show riccatiRamp 0 τ (Y (τ - lam)) = riccatiRamp lam (τ - lam) (Y (τ - lam)) * 1 by
-    simp only [riccatiRamp]; ring]
-  exact h
+/-- Constant-rate ramp: time translation maps the solutions of `X' = τ + X²` onto the solutions
+of `Y' = λ + τ + Y²` (`Y(τ) = X(τ + λ)`) and back. The margin parameter is absorbed by a time
+translation. -/
+@[tmio M, powerlib_foundation] theorem riccatiRamp_translate {X : ℝ → ℝ} (lam : ℝ) :
+    (∀ τ, HasDerivAt X (riccatiRamp 0 τ (X τ)) τ) ↔
+      ∀ τ, HasDerivAt (fun s => X (s + lam)) (riccatiRamp lam τ (X (τ + lam))) τ := by
+  constructor
+  · intro hX τ
+    have h := (hX (τ + lam)).comp τ ((hasDerivAt_id' τ).add_const lam)
+    rw [show riccatiRamp lam τ (X (τ + lam)) = riccatiRamp 0 (τ + lam) (X (τ + lam)) * 1 by
+      simp only [riccatiRamp]; ring]
+    exact h
+  · intro hY τ
+    have h := (hY (τ - lam)).comp τ ((hasDerivAt_id' τ).sub_const lam)
+    simp only [Function.comp_def, sub_add_cancel] at h
+    rw [show riccatiRamp 0 τ (X τ) = riccatiRamp lam (τ - lam) (X τ) * 1 by
+      simp only [riccatiRamp]; ring]
+    exact h
 
 /-- Riccati–Schrödinger link: a nonvanishing solution of `-u'' + τ² u = λ u` gives the
 solution `X = -u'/u` of the grazing inner problem. -/
@@ -455,8 +452,8 @@ attracting branch and exists for all `τ ∈ ℝ` is the separatrix `X = τ`. -/
   push Not at h2
   linarith
 
-/-- Consequently a global solution leaving the attracting branch exists only for `λ ≤ 1`, and at
-`λ = 1` it is the separatrix itself. -/
+/-- Consequently a global solution leaving the attracting branch exists only for `λ ≤ 1` (that
+at `λ = 1` it is the separatrix itself is `riccatiGraze_critical_eq`). -/
 @[tmio TM, powerlib_foundation] theorem le_one_of_global_branch
     (hX : ∀ τ, HasDerivAt X (riccatiGraze lam τ (X τ)) τ)
     (hbranch : Tendsto (fun τ => X τ - τ) atBot (𝓝 0)) : lam ≤ 1 := by

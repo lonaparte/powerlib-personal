@@ -330,11 +330,16 @@ gains. -/
   · field_simp; linear_combination -hkp'
   · field_simp; linear_combination -hki'
 
-/-- PLL in convention (B): `U_B = V_B`, `Y_B = ω_B`, `W = ω_B` gives
+/-- PLL in convention (B): `U_B = V_B`, `Y_B = ω_B`, `W = ω_B` in `pi_pu_iff` gives
 `k̂_p = V_B k_p / ω_B`, `k̂_i = V_B k_i / ω_B²` (the §1.13.2 table). -/
-@[tmio T, powerlib_foundation] theorem pll_conventionB_gains (VB ωB kp ki : ℝ) :
-    VB / ωB * kp = VB * kp / ωB ∧ VB * ki / (ωB * ωB) = VB * ki / ωB ^ 2 := by
-  constructor <;> ring
+@[tmio T, powerlib_foundation] theorem pll_conventionB_gains {VB ωB kp ki : ℝ} (hV : VB ≠ 0)
+    (hω : ωB ≠ 0) {s : ℂ} (hs : s ≠ 0) (u y : ℂ) :
+    y = (kp + ki / s) * u ↔
+      y / ωB = (((VB * kp / ωB : ℝ) : ℂ) + ((VB * ki / ωB ^ 2 : ℝ) : ℂ) / (s / ωB)) *
+        (u / VB) := by
+  have h := pi_pu_iff (kp := kp) (ki := ki) hV hω hω hs u y
+  rwa [show VB / ωB * kp = VB * kp / ωB by ring,
+    show VB * ki / (ωB * ωB) = VB * ki / ωB ^ 2 by ring] at h
 
 /-- The two convention-(A) statements for the power loop (`U_B = S_B`): the boxed formula
 (`Y_B = 1`) and the table row (`Y_B = I_B`) give the same proportional gain only if

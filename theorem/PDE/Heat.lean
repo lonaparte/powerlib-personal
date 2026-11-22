@@ -16,8 +16,8 @@ Source: work-sync `theory/T-pde-systems.md` §1.8.2 ("反向时间 … `u_t = �
 反向 ill-posed").
 
 Results.
-* `backward_heat_solution`, `boundary_zero`: `uₙ(x, t) = e^{νn²t} sin(nx)/n` (`hadamard`) solves
-  the backward heat equation `∂ₜu = −ν ∂ₓₓu` with `uₙ(0, t) = uₙ(π, t) = 0`.
+* `backward_heat_solution`, `boundary_zero`: `uₙ(x, t) = e^{νn²t} sin(nx)/n` (`hadamard`,
+  `n ≠ 0`) solves the backward heat equation `∂ₜu = −ν ∂ₓₓu` with `uₙ(0, t) = uₙ(π, t) = 0`.
 * `initial_small`: its initial data satisfy `|uₙ(x, 0)| ≤ 1/n → 0`.
 * `blowup`: for every `t > 0`, `uₙ(π/(2n), t) = e^{νn²t}/n → ∞`.
 * `not_continuous_dependence`: arbitrarily small initial data produce arbitrarily large solutions
@@ -32,7 +32,7 @@ open Real Filter Topology
 def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t) * Real.sin (n * x) / n
 
 /-- `∂ₜ uₙ = νn² uₙ`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_t (ν : ℝ) (n : ℕ) (x t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_t (ν : ℝ) (n : ℕ) (x t : ℝ) :
     HasDerivAt (fun τ => hadamard ν n x τ) (ν * n ^ 2 * hadamard ν n x t) t := by
   unfold hadamard
   have h := ((hasDerivAt_id' t).const_mul (ν * n ^ 2)).exp
@@ -41,7 +41,7 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   ring
 
 /-- `∂ₓ uₙ = e^{νn²t} cos(nx)`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_x (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_x (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
     HasDerivAt (fun y => hadamard ν n y t) (Real.exp (ν * n ^ 2 * t) * Real.cos (n * x)) x := by
   unfold hadamard
   have h := ((hasDerivAt_id' x).const_mul (n : ℝ)).sin
@@ -51,7 +51,8 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   field_simp
 
 /-- `∂ₓₓ uₙ = −n² uₙ`. -/
-@[tmio T, powerlib_foundation] theorem hasDerivAt_xx (ν : ℝ) {n : ℕ} (hn : n ≠ 0) (x t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_xx (ν : ℝ) {n : ℕ} (hn : n ≠ 0)
+    (x t : ℝ) :
     HasDerivAt (fun y => Real.exp (ν * n ^ 2 * t) * Real.cos (n * y))
       (-(n : ℝ) ^ 2 * hadamard ν n x t) x := by
   unfold hadamard
@@ -61,9 +62,14 @@ def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t)
   have : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
   field_simp
 
-/-- `uₙ` solves the backward heat equation `∂ₜu = −ν ∂ₓₓu`. -/
-@[tmio T, powerlib_foundation] theorem backward_heat_solution (ν : ℝ) (n : ℕ) (x t : ℝ) :
-    ν * n ^ 2 * hadamard ν n x t = -ν * (-(n : ℝ) ^ 2 * hadamard ν n x t) := by
+/-- `uₙ` (`n ≠ 0`) solves the backward heat equation `∂ₜu = −ν ∂ₓₓu`. -/
+@[tmio T, powerlib_foundation] theorem backward_heat_solution (ν : ℝ) {n : ℕ} (hn : n ≠ 0)
+    (x t : ℝ) :
+    deriv (fun τ => hadamard ν n x τ) t = -ν * deriv (deriv fun z => hadamard ν n z t) x := by
+  have hx : deriv (fun z => hadamard ν n z t) =
+      fun y => Real.exp (ν * n ^ 2 * t) * Real.cos (n * y) :=
+    funext fun y => (hasDerivAt_x ν hn y t).deriv
+  rw [hx, (hasDerivAt_xx ν hn x t).deriv, (hasDerivAt_t ν n x t).deriv]
   ring
 
 /-- Homogeneous Dirichlet data on `[0, π]`. -/

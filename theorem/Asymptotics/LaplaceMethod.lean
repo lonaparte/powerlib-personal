@@ -163,6 +163,16 @@ def scaledIntegrand (φ g : ℝ → ℝ) (X u : ℝ) : ℝ := g (u / √X) * Rea
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with X hX
   exact integral_scaled hX
 
+/-- Change of variables `y = u/√X` on the half line. -/
+@[tmio T, powerlib_foundation] theorem integral_scaled_Ioi {X : ℝ} (hX : 0 < X) :
+    ∫ u in Ioi 0, scaledIntegrand φ g X u = √X * ∫ y in Ioi 0, g y * Real.exp (-(X * φ y)) := by
+  have hs : 0 < √X := Real.sqrt_pos.mpr hX
+  have h := integral_comp_mul_left_Ioi (fun y => g y * Real.exp (-(X * φ y))) 0 (inv_pos.mpr hs)
+  simp only [mul_zero] at h
+  rw [show (fun u => scaledIntegrand φ g X u) = fun u => g ((√X)⁻¹ * u) *
+      Real.exp (-(X * φ ((√X)⁻¹ * u))) by
+    funext u; simp [scaledIntegrand, div_eq_inv_mul], h, inv_inv, smul_eq_mul]
+
 /-- **Laplace's method, endpoint minimum with zero slope (leading order):** the prefactor is one
 half of the interior one. -/
 @[tmio T, powerlib_foundation] theorem laplace_endpoint (hg : Continuous g) (hgb : ∀ y, |g y| ≤ G)
@@ -182,12 +192,7 @@ half of the interior one. -/
   rw [integral_const_mul, integral_gaussian_Ioi] at hlim
   apply hlim.congr'
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with X hX
-  have hs : 0 < √X := Real.sqrt_pos.mpr hX
-  have h := integral_comp_mul_left_Ioi (fun y => g y * Real.exp (-(X * φ y))) 0 (inv_pos.mpr hs)
-  simp only [mul_zero] at h
-  rw [show (fun u => scaledIntegrand φ g X u) = fun u => g ((√X)⁻¹ * u) *
-      Real.exp (-(X * φ ((√X)⁻¹ * u))) by
-    funext u; simp [scaledIntegrand, div_eq_inv_mul], h, inv_inv, smul_eq_mul]
+  exact integral_scaled_Ioi hX
 
 end Laplace
 
@@ -666,16 +671,6 @@ continuous, bounded, `C²`-like at `0` (`|g(y) − g(0) − g₁y| ≤ G₂y²`)
       _ ≤ (G + |g 0|) / δ * ((1 + u ^ 8) * eb) / s := by gcongr; exact hpow 1 (by norm_num)
       _ = KB / s * ((1 + u ^ 8) * eb) := by simp only [hKB]; ring
       _ ≤ (KA + KB) / s * ((1 + u ^ 8) * eb) := by gcongr; linarith
-
-/-- Change of variables `y = u/√X` on the half line. -/
-@[tmio T, powerlib_foundation] theorem integral_scaled_Ioi {X : ℝ} (hX : 0 < X) :
-    ∫ u in Ioi 0, scaledIntegrand φ g X u = √X * ∫ y in Ioi 0, g y * Real.exp (-(X * φ y)) := by
-  have hs : 0 < √X := Real.sqrt_pos.mpr hX
-  have h := integral_comp_mul_left_Ioi (fun y => g y * Real.exp (-(X * φ y))) 0 (inv_pos.mpr hs)
-  simp only [mul_zero] at h
-  rw [show (fun u => scaledIntegrand φ g X u) = fun u => g ((√X)⁻¹ * u) *
-      Real.exp (-(X * φ ((√X)⁻¹ * u))) by
-    funext u; simp [scaledIntegrand, div_eq_inv_mul], h, inv_inv, smul_eq_mul]
 
 /-- **Laplace's method, endpoint minimum, with the correction order `O(X^{−1/2})`.** With the
 hypotheses only on the integration side `y ≥ 0` (`g` bounded and Lipschitz at `0`,

@@ -100,10 +100,7 @@ def expFamLik (h : 𝓧 → ℝ) (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k
     rw [← ENNReal.ofReal_mul (exp_pos _).le, ← Real.exp_add, dotProduct_add]
     congr 2
     ring
-  rw [conjPrior, show bayesPosterior ν (conjDensity η A χ n) =
-      (evidence ν (conjDensity η A χ n))⁻¹ • ν.withDensity (conjDensity η A χ n) from rfl,
-    bayesPosterior_smul _ _ (ENNReal.inv_ne_zero.mpr hZt) (ENNReal.inv_ne_top.mpr hZ0),
-    bayesPosterior_withDensity ν hf hL]
+  rw [conjPrior, bayesPosterior_bayesPosterior ν hf hL hZ0 hZt]
   simp_rw [hpt]
   rw [bayesPosterior_const_mul ν _ hc0 ENNReal.ofReal_ne_top, conjPrior]
 

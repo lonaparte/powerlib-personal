@@ -12,7 +12,7 @@ Scope.
   ranging over a compact space `X` (for a compact subset `K` of the slow state space take `X = K`
   with the subspace topology); the frozen *linearized* fast systems `ẏ = A(x) y` in the fast time
   scale; continuous time.
-* `|y|² = y ⬝ᵥ y` (`sqNorm_eq_dotProduct`); trajectories are global coordinate solutions
+* `|y|²` denotes `y ⬝ᵥ y`; trajectories are global coordinate solutions
   `∀ t, HasDerivAt y (M *ᵥ y t) t`. `BoundedCertificate` is a `Linear.Certificate` with explicit
   coordinate bounds.
 * The nonlinear boundary-layer system is treated in
@@ -77,9 +77,6 @@ variable {m : ℕ}
         unfold absSum
         rw [Finset.sum_mul]
         exact Finset.sum_congr rfl fun i _ => (Finset.sum_mul _ _ _).symm
-
-@[tmio T, powerlib_foundation] theorem sqNorm_eq_dotProduct (y : Fin m → ℝ) : ∑ i, y i ^ 2 = y ⬝ᵥ y := by
-  simp [dotProduct, sq]
 
 /-- A quadratic Lyapunov certificate of `A` with explicit coordinate bounds
 `lower |y|² ≤ yᵀ P y ≤ upper |y|²`. -/

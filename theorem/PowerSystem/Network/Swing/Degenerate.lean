@@ -380,12 +380,6 @@ along the reachable directions are the power-balance points. -/
       _root_.zero_apply]
     simp [← h]
 
-@[tmio M, powerlib_domain] theorem critical_iff_balance_zero {p : Params n} (hP : ∑ k, p.P k = 0)
-    (θ : Fin (n + 1) → ℝ) :
-    (fderiv ℝ (fun q => potential p (ground q)) (relAngles θ)).comp relRate = 0 ↔
-      ∀ k, p.P k = powerInjection p.B θ k := by
-  simpa [ground_zero_vec] using critical_iff_balance hP θ 0
-
 /-! ## Necessary conditions for local asymptotic stability -/
 
 @[tmio TM, powerlib_domain] private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :

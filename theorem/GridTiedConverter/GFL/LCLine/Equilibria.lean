@@ -24,7 +24,7 @@ Per period window `[a, a + 2π)` of the angle `θ_e`:
 * `two_equilibria_per_period` (`|c₀| < A`): exactly two equilibria `(θ_s, 0)`, `(θ_u, 0)`;
   `stableRoot_mem_den_locallyExponentiallyStable`: `(θ_s, 0)` is locally exponentially stable;
   `saddleRoot_mem_den_unstable`: `(θ_u, 0)` is unstable.
-* `fold_equilibrium_per_period`, `fold_hZeros_eq`, `fold_reducedField_eq_zero` (`|c₀| = A`):
+* `fold_equilibrium_per_period`, `fold_reducedField_eq_zero` (`|c₀| = A`):
   exactly one equilibrium `(θ_s, 0)`; its Jacobian is the nonzero nilpotent `[[0, K_i], [0, 0]]`
   (`fold_jacobian_nilpotent`; saddle-node / fold).
 * `no_equilibrium` (`|c₀| > A`): the reduced field has no equilibrium.
@@ -40,7 +40,7 @@ memberships of the reduced model's members `p.pllModel θ` of the PI-PLL family
 `stableRoot_mem_den_locallyExponentiallyStable` (the stable root is locally exponentially stable)
 and `saddleRoot_mem_den_unstable` (the saddle root is unstable). The count and the explicit pair
 (`two_equilibria_per_period`), the fold equilibrium and Jacobian (`fold_equilibrium_per_period`,
-`fold_hZeros_eq`, `fold_reducedField_eq_zero`, `fold_jacobian_nilpotent`), the absence of
+`fold_reducedField_eq_zero`, `fold_jacobian_nilpotent`), the absence of
 equilibria (`no_equilibrium`) and the existence criteria of the 10-state field
 (`field10_exists_equilibrium_iff`, `field10_exists_equilibrium_iff_explicit`) are static evidence
 on the model, not connection conclusions.
@@ -123,23 +123,17 @@ unstable. -/
   · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.saddleRoot_zero hc.le hA
   · rw [SpecialFunctions.cos_saddleRoot]; nlinarith
 
-/-- A4, `|c₀| = A` (saddle-node): exactly one equilibrium per period.
+/-- A4, `|c₀| = A` (saddle-node): in every period window exactly one equilibrium, the double root
+`θ_s = θ_u` (the count and the angle).
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem fold_equilibrium_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hc : |p.c0| = p.amp) (a : ℝ) :
-    (p.hZeros a).ncard = 1 := by
-  rw [p.hZeros_eq hwC hΔ]
-  exact SpecialFunctions.ncard_sinusoidZeros_of_eq hc (p.amp_pos hVg hΔ)
-
-/-- A4, `|c₀| = A` (saddle-node): the equilibrium angle of every period window is the double
-root `θ_s = θ_u`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem fold_hZeros_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hVg : 0 < p.Vg) (hc : |p.c0| = p.amp) (a : ℝ) :
-    p.hZeros a = {stableRoot p.c0 p.amp p.phase a} := by
+    (p.hZeros a).ncard = 1 ∧ p.hZeros a = {stableRoot p.c0 p.amp p.phase a} := by
   have hA := p.amp_pos hVg hΔ
-  rw [p.hZeros_eq hwC hΔ, SpecialFunctions.sinusoidZeros_eq hc.le hA,
-    SpecialFunctions.stableRoot_eq_saddleRoot hc hA, Set.pair_eq_singleton]
+  have h : p.hZeros a = {stableRoot p.c0 p.amp p.phase a} := by
+    rw [p.hZeros_eq hwC hΔ, SpecialFunctions.sinusoidZeros_eq hc.le hA,
+      SpecialFunctions.stableRoot_eq_saddleRoot hc hA, Set.pair_eq_singleton]
+  exact ⟨by rw [h, Set.ncard_singleton], h⟩
 
 /-- A4, `|c₀| = A` (saddle-node): `(θ_s, 0)` is an equilibrium of the reduced field.
 Static evidence on the model, not a connection conclusion. -/

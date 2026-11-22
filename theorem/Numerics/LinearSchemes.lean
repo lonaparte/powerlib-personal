@@ -164,14 +164,6 @@ open LinearSystems
 
 variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
 
-/-- Real part of the Cayley-type quotient `(w - 1)/(w + 1)`. -/
-@[tmio T, powerlib_foundation] theorem re_sub_one_div_add_one (w : ℂ) :
-    ((w - 1) / (w + 1)).re = (Complex.normSq w - 1) / Complex.normSq (w + 1) := by
-  rw [Complex.div_re]
-  simp only [Complex.sub_re, Complex.add_re, Complex.one_re, Complex.sub_im, Complex.add_im,
-    Complex.one_im, sub_zero, add_zero, Complex.normSq_apply]
-  ring
-
 /-- `‖1 + w‖² - ‖1 - w‖² = 4 Re w`. -/
 @[tmio T, powerlib_foundation] theorem normSq_one_add_sub_normSq_one_sub (w : ℂ) :
     Complex.normSq (1 + w) - Complex.normSq (1 - w) = 4 * w.re := by

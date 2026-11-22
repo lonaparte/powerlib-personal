@@ -243,16 +243,6 @@ the unique maximiser. -/
     nlinarith
   linarith
 
-/-- The maximum is attained: the MTPA torque bounds every feasible torque. -/
-@[tmio M, powerlib_domain] theorem ipmsm_mtpa_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
-    (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2) :
-    torque np ψf Ld Lq id iq ≤
-      torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
-  by_cases h : (id, iq) = (mtpaId ψf (Lq - Ld) I, mtpaIq ψf (Lq - Ld) I)
-  · simp only [Prod.mk.injEq] at h
-    rw [h.1, h.2]
-  · exact (ipmsm_mtpa_unique_max np ψf Ld Lq I hnp hΔ hψ hI id iq hdisk h).le
-
 /-- The MTPA `i_d` in terms of `i_q`: `i_d = ψ_f/(2ΔL) − √(ψ_f²/(4ΔL²) + i_q²)`. -/
 @[tmio M, powerlib_domain] theorem ipmsm_mtpa_id_of_iq (ψf ΔL I : ℝ) (hΔ : 0 < ΔL) (hψ : 0 < ψf)
     (hI : 0 < I) :

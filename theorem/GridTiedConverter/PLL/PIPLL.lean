@@ -167,19 +167,6 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
     LinearSystems.IsHurwitz (piPLLJacobian Kp Ki g) ↔ Kp * g < 0 ∧ Ki * g < 0 := by
   rw [Criteria.isHurwitz_fin_two_iff, piPLLJacobian_trace, piPLLJacobian_det, neg_pos]
 
-/-- With positive gains the Jacobian is Hurwitz exactly when `g = h'(θ*) < 0`. -/
-@[tmio TM, powerlib_domain] theorem piPLLJacobian_isHurwitz_iff_of_pos {Kp Ki : ℝ} (hKp : 0 < Kp)
-    (hKi : 0 < Ki) (g : ℝ) :
-    LinearSystems.IsHurwitz (piPLLJacobian Kp Ki g) ↔ g < 0 := by
-  rw [piPLLJacobian_isHurwitz_iff]
-  constructor
-  · rintro ⟨h1, _⟩
-    by_contra hg
-    push Not at hg
-    nlinarith
-  · intro hg
-    exact ⟨mul_neg_of_pos_of_neg hKp hg, mul_neg_of_pos_of_neg hKi hg⟩
-
 /-- At `g = 0` the Jacobian is `[[0, K_i], [0, 0]]`, which squares to zero. -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_zero_sq (Kp Ki : ℝ) :
     (piPLLJacobian Kp Ki 0) ^ 2 = 0 := by

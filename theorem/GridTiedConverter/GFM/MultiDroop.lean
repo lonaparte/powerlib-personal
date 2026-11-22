@@ -86,27 +86,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hshift : ∀ θ c, m.P (fun k => θ k + c) = m.P θ) (θ₀ Pf₀ : Fin N → ℝ) (ω : ℝ) :
     (∀ t, HasDerivAt (syncCurve θ₀ Pf₀ ω) (m.field (syncCurve θ₀ Pf₀ ω t)) t) ↔
       (∀ k, Pf₀ k = m.P θ₀ k) ∧ ∀ k, m.ωs - (Pf₀ k - m.Pstar k) / m.KR k = ω := by
-  have hval : ∀ t, m.field (syncCurve θ₀ Pf₀ ω t) =
-      (fun k => m.ωs - (Pf₀ k - m.Pstar k) / m.KR k, fun k => (m.P θ₀ k - Pf₀ k) / m.τ k) := by
+  have hval : ∀ t, m.field (syncCurve θ₀ Pf₀ ω t) = m.field (θ₀, Pf₀) := by
     intro t
     simp only [field, syncCurve]
     rw [hshift θ₀ (ω * t)]
+  rw [← m.relativeEquilibrium_iff hτ θ₀ Pf₀ ω]
   constructor
   · intro h
-    have heq := (h 0).unique (hasDerivAt_syncCurve θ₀ Pf₀ ω 0)
-    rw [hval] at heq
-    simp only [Prod.mk.injEq] at heq
-    obtain ⟨h1, h2⟩ := heq
-    refine ⟨fun k => ?_, fun k => congrFun h1 k⟩
-    have := congrFun h2 k
-    simp only [Pi.zero_apply, div_eq_zero_iff, hτ k, or_false, sub_eq_zero] at this
-    exact this.symm
-  · rintro ⟨h1, h2⟩ t
-    rw [hval]
-    convert hasDerivAt_syncCurve θ₀ Pf₀ ω t using 1
-    ext k
-    · exact h2 k
-    · simp [h1 k]
+    rw [← hval 0]
+    exact (h 0).unique (hasDerivAt_syncCurve θ₀ Pf₀ ω 0)
+  · intro h t
+    rw [hval t, h]
+    exact hasDerivAt_syncCurve θ₀ Pf₀ ω t
 
 /-- In a synchronous steady state (a relative equilibrium) every unit shares
 `ΔP_k = P_k − P*_k = −K_{R,k} (ω − ω_s)`.

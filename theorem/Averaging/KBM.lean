@@ -14,8 +14,7 @@ Scope.
 * These hypotheses on the fast-periodic field are written out in every statement as the single
   hypothesis `hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
   (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M` (behaviour is defined only in
-  the semantic layer); `PeriodicField.continuous_snd` and `PeriodicField.M_nonneg` read off
-  continuity in `t` and `0 ≤ M` from it.
+  the semantic layer); `PeriodicField.continuous_snd` reads off continuity in `t` from it.
 * The averaged field is `f̄(x) = (1/T) ∫₀ᵀ f(x, s) ds` (`fieldAverage`) and the averaged system
   is `x̄̇ = ε f̄(x̄)`. Solutions are global solutions (they exist under the global Lipschitz
   bound); only the window `[0, L/ε]` is used.
@@ -62,13 +61,6 @@ omit [NormedSpace ℝ E] [CompleteSpace E] in
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x : E) :
     Continuous (f x) :=
   hf.2.2.1.comp (continuous_const.prodMk continuous_id)
-
-omit [NormedSpace ℝ E] [CompleteSpace E] in
-@[tmio T, powerlib_foundation] theorem PeriodicField.M_nonneg
-    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
-      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) [Nonempty E] :
-    0 ≤ M :=
-  (norm_nonneg _).trans (hf.2.2.2.2.2 (Classical.arbitrary E) 0)
 
 omit [CompleteSpace E] in
 /-- Periodicity: the integral over any period equals `T f̄(y)`. -/

@@ -93,13 +93,6 @@ def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg)
   simp only [Matrix.cons_val_one, Matrix.cons_val_zero]
   rw [show θg - θh = -(θh - θg) by ring, Real.sin_neg]; ring
 
-/-- Projecting a grid-frame vector into the PLL frame: `park θ̂ · rot θ_g = park(θ̂ − θ_g)`. -/
-@[tmio M, powerlib_domain] theorem park_rot_mulVec (θh θg : ℝ) (vg : Fin 2 → ℝ) :
-    park θh *ᵥ (rot θg *ᵥ vg) = park (θh - θg) *ᵥ vg := by
-  rw [Matrix.mulVec_mulVec, Transform.park_eq_rot_neg, Transform.park_eq_rot_neg,
-    ← Transform.rot_add]
-  congr 2; ring
-
 /-- Perturbation projection (T-pll-dynamics §1.2, boxed): grid-frame voltage
 `(V + δv_d, δv_q)` seen on the q axis of a PLL frame advanced by `θ_e`. -/
 @[tmio M, powerlib_domain] theorem perturbed_q (V θe δd δq : ℝ) :

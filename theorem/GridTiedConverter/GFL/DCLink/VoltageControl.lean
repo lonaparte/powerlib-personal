@@ -922,9 +922,6 @@ point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
 @[tmio M, powerlib_domain] private theorem closedField_one (x : State 2) : p.closedField x 1 = x 0 - p.Vref := by
   simp [closedField]
 
-@[tmio M, powerlib_domain] private theorem eqState_one_ki_zero (hKi : p.Ki = 0) : p.eqState 1 = 0 := by
-  simp [eqState, hKi]
-
 /-- The Lyapunov function of the loop without integral gain: `ζ + γ (V_dc* v + v²/2)` is
 conserved, `v²` decays. -/
 private def driftEnergy (γ : ℝ) (x : State 2) : ℝ :=
@@ -1081,12 +1078,6 @@ matches the operating current, `i_ff = I_d0`. -/
 @[tmio M, powerlib_domain] private theorem kp_sub_boundary_pos_iff (hVd : 0 < p.Vd) :
     -(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0 := by
   rw [← neg_div, div_lt_iff₀ hVd]
-  constructor <;> intro h <;> linarith
-
-/-- `Kp` on the boundary `−I_dc0/V_d` iff `V_d Kp + I_dc0 = 0`. -/
-@[tmio M, powerlib_domain] private theorem kp_sub_boundary_eq_iff (hVd : 0 < p.Vd) :
-    -(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0 := by
-  rw [← neg_div, div_eq_iff hVd.ne']
   constructor <;> intro h <;> linarith
 
 end DCParams

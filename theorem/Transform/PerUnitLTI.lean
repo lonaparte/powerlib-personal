@@ -36,8 +36,8 @@ Results.
 * `source_perUnit`, `load_perUnit`: the per-unit source and load are the per-unit transforms of
   the SI ones; `closedLoopBlocks_perUnit`: the per-unit closed loop is the per-unit transform of
   the SI one, with the stacked state bases.
-* The diagonal helpers `diagonal_inv_mul`, `diagonal_mul_inv`, `mulVec_cancel`, `mulVec_cancel'`
-  supply the invertibility of the bases.
+* The diagonal helpers `diagonal_inv_mul`, `diagonal_mul_inv` supply the invertibility of the
+  bases.
 
 Family and connection conclusions. Scaffold: `theorem/Transform/Rebase.agda` (per-unit bases are
 one of its changes of bases). On the interconnection family `Grid.Interconnection.family`, the
@@ -69,14 +69,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
     diagonal b * diagonal b⁻¹ = 1 := by
   rw [diagonal_mul_diagonal, ← diagonal_one]
   congr 1; funext i; simp [hb i]
-
-@[tmio T, powerlib_foundation] theorem mulVec_cancel {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) (v : ι → ℝ) :
-    diagonal b *ᵥ (diagonal b⁻¹ *ᵥ v) = v := by
-  rw [Matrix.mulVec_mulVec, diagonal_mul_inv hb, Matrix.one_mulVec]
-
-@[tmio T, powerlib_foundation] theorem mulVec_cancel' {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) (v : ι → ℝ) :
-    diagonal b⁻¹ *ᵥ (diagonal b *ᵥ v) = v := by
-  rw [Matrix.mulVec_mulVec, diagonal_inv_mul hb, Matrix.one_mulVec]
 
 /-! ## Autonomous models -/
 

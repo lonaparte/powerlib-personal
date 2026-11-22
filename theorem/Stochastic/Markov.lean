@@ -29,8 +29,9 @@ Results.
   `Kernel.Invariant.comp`, `Kernel.map_traj_succ_self` (the trajectory law built by the
   Ionescu–Tulcea theorem has the prescribed one-step kernel) and `Kernel.traj_map_frestrictLe`
   (its finite-dimensional marginals are the finite compositions).
-* `kpow`, `kpow_add` — discrete-time Chapman–Kolmogorov `K^{m+n} = K^m ∘ K^n` for the iterates
-  of a kernel; `kpow_invariant`: an invariant measure is invariant for every iterate.
+* Discrete-time Chapman–Kolmogorov `K^{m+n} = K^m ∘ K^n` for the iterates of a kernel is
+  Mathlib's `Kernel.pow_add` (monoid `Kernel α α`); `kpow_invariant`: an invariant measure is
+  invariant for every iterate `K ^ n`.
 * `chapmanKolmogorov_ae` — the Markov property in conditional-expectation form with transition
   kernels `K s t` (any time set; written out as the hypothesis: for `s ≤ t` and bounded
   measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) implies
@@ -64,25 +65,18 @@ section Kernels
 
 variable {α : Type*} {mα : MeasurableSpace α}
 
-/-- `n`-step kernel `K^n` (iterated composition, `K^0 = id`). -/
-def kpow (κ : Kernel α α) : ℕ → Kernel α α
-  | 0 => Kernel.id
-  | n + 1 => κ ∘ₖ kpow κ n
-
-/-- **Discrete Chapman–Kolmogorov**: `K^{m+n} = K^m ∘ K^n`. -/
-@[tmio T, powerlib_foundation] theorem kpow_add (κ : Kernel α α) (m n : ℕ) :
-    kpow κ (m + n) = kpow κ m ∘ₖ kpow κ n := by
-  induction m with
-  | zero => simp [kpow, Kernel.id_comp]
-  | succ m ih =>
-    rw [show m + 1 + n = (m + n) + 1 by ring, kpow, ih, kpow, Kernel.comp_assoc]
-
-/-- An invariant measure is invariant for every iterate. -/
+/-- An invariant measure is invariant for every iterate `κ ^ n` (Mathlib's monoid of kernels,
+`κ ^ (m + n) = κ ^ m ∘ₖ κ ^ n` is `Kernel.pow_add`). -/
 @[tmio T, powerlib_foundation] theorem kpow_invariant {κ : Kernel α α} {μ : Measure α}
-    (h : κ.Invariant μ) (n : ℕ) : (kpow κ n).Invariant μ := by
+    (h : κ.Invariant μ) (n : ℕ) : (κ ^ n).Invariant μ := by
   induction n with
-  | zero => simp [kpow, Kernel.Invariant]
-  | succ n ih => exact h.comp ih
+  | zero =>
+    rw [pow_zero]
+    show (Kernel.id : Kernel α α).Invariant μ
+    simp [Kernel.Invariant]
+  | succ n ih =>
+    rw [pow_succ']
+    exact h.comp ih
 
 end Kernels
 

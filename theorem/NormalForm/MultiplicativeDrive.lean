@@ -353,7 +353,7 @@ end Extended
 @[tmio T, powerlib_foundation] theorem erosion_threshold {α cx a : ℝ} (hα : 0 ≤ α) (hc : 0 < cx)
     (ha : 0 ≤ a) :
     (α - cx * a ^ 2 / 4 = 0 ↔ a = 2 * √(α / cx)) ∧
-      (a < 2 * √(α / cx) → 0 < α - cx * a ^ 2 / 4 ∨ α = 0 ∧ a = 0) := by
+      (a < 2 * √(α / cx) → 0 < α - cx * a ^ 2 / 4) := by
   have hs : √(α / cx) ^ 2 = α / cx := Real.sq_sqrt (div_nonneg hα hc.le)
   have hs0 := Real.sqrt_nonneg (α / cx)
   have key : α - cx * a ^ 2 / 4 = cx / 4 * ((2 * √(α / cx)) ^ 2 - a ^ 2) := by
@@ -372,7 +372,6 @@ end Extended
       · nlinarith
     · intro h; rw [h]; ring
   · intro hlt
-    left
     rw [key]
     apply mul_pos (by positivity)
     nlinarith

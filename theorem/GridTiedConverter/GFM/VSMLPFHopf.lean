@@ -48,7 +48,7 @@ No new family: connection conclusions on `VSMLPF.family`.
   (`VSMLPF.hopfBoundary_not_mem_den_locallyExponentiallyStable`).
 * `VSMLPF.locallyAsymptoticallyStable_iff`: at the loading angle (`|P₀| < K₀`, positive
   parameters) local asymptotic stability holds iff `K ≤ D ω_c + D²/M`, the boundary included
-  (compare `VSMLPF.locallyExponentiallyStable_iff`, which must exclude it).
+  (compare `VSMLPF.locallyExponentiallyStable_iff`: strict `K < D ω_c + D²/M`).
 
 Scope note: a SymPy computation (untrusted, not a library result) gives the first Lyapunov
 coefficient on the boundary as a negative multiple of
@@ -338,7 +338,6 @@ def hopfBoundary : Model := ⟨⟨1, 1, 1, 0, 2⟩, 0⟩
     connection% (hopfBoundary ∉ family.den (.flow .locallyExponentiallyStable)) := by
   have hex := exactUnder_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hex ⊢
-  unfold Family.ExactUnder TMIO.ExactUnder at hex
   intro h
   have hI : hopfBoundary ∈ TMIO.realize family.meets {.physical} := by
     rw [(connection_proof% TMIO.mem_realize)]
@@ -347,12 +346,9 @@ def hopfBoundary : Model := ⟨⟨1, 1, 1, 0, 2⟩, 0⟩
     subst hq
     show 0 < (1 : ℝ) ∧ 0 < (1 : ℝ) ∧ 0 < (1 : ℝ)
     norm_num
-  have h' : hopfBoundary ∈ TMIO.realize family.meets
-      (family.translate (.flow .locallyExponentiallyStable) ∪ {.physical}) := by
-    rw [hex]
-    exact ⟨h, hI⟩
-  rw [(connection_proof% TMIO.mem_realize)] at h'
-  have hf : Meets hopfBoundary .fastFilter := h' .fastFilter (by simp [family, translate])
+  have hf : Meets hopfBoundary .fastFilter :=
+    (TMIO.mem_realize _ _ _).mp ((Spectral.exactUnder_iff_forall.mp hex _ hI).mpr h)
+      .fastFilter (by simp [family, translate])
   norm_num [Meets, hopfBoundary, Model.K] at hf
 
 /-- **The local asymptotic translation is not exact within positive `M, D, ω_c`.** The translation
@@ -362,22 +358,14 @@ locally asymptotically stable. -/
     connection% (¬ family.ExactUnder {.physical} (.flow .locallyAsymptoticallyStable)) := by
   have hmem := hopfBoundary_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem ⊢
-  unfold Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hI : hopfBoundary ∈ TMIO.realize family.meets {.physical} := by
-    rw [(connection_proof% TMIO.mem_realize)]
-    intro q hq
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    show 0 < (1 : ℝ) ∧ 0 < (1 : ℝ) ∧ 0 < (1 : ℝ)
-    norm_num
-  have h' : hopfBoundary ∈ TMIO.realize family.meets
-      (family.translate (.flow .locallyAsymptoticallyStable) ∪ {.physical}) := by
-    rw [h]
-    exact ⟨hmem, hI⟩
-  rw [(connection_proof% TMIO.mem_realize)] at h'
-  have hf : Meets hopfBoundary .fastFilter := h' .fastFilter (by simp [family, translate])
-  norm_num [Meets, hopfBoundary, Model.K] at hf
+  refine Spectral.not_exactUnder_of_witness ?_ hmem (q := .fastFilter)
+    (by simp [family, translate]) (by norm_num [family, Meets, hopfBoundary, Model.K])
+  rw [(connection_proof% TMIO.mem_realize)]
+  intro q hq
+  rw [Set.mem_singleton_iff] at hq
+  subst hq
+  show 0 < (1 : ℝ) ∧ 0 < (1 : ℝ) ∧ 0 < (1 : ℝ)
+  norm_num
 
 /-- At the loading angle (`|P₀| < K₀`, positive parameters) the equilibrium is locally
 asymptotically stable iff `K ≤ D ω_c + D²/M`: the Hopf boundary is included. -/

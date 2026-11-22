@@ -242,18 +242,6 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
   simp only [Zsc, Zoc, Complex.tanh_eq_sinh_div_cosh]
   field_simp
 
-/-- With `ρ = Z_sc/Z_c = tanh γℓ` and `cosh γℓ ≠ 0`: `1 - ρ ≠ 0`. -/
-@[tmio M, powerlib_domain] theorem one_sub_Zsc_div_Zc_ne_zero (ℓ : ℂ)
-    (hc : cosh (p.γ * ℓ) ≠ 0) : 1 - Zsc p ℓ / p.Zc ≠ 0 := by
-  have hZc := p.Zc_ne
-  have hρ : Zsc p ℓ / p.Zc = sinh (p.γ * ℓ) / cosh (p.γ * ℓ) := by
-    simp only [Zsc, Complex.tanh_eq_sinh_div_cosh]; field_simp
-  have hcm : cosh (p.γ * ℓ) - sinh (p.γ * ℓ) = exp (-(p.γ * ℓ)) := by
-    rw [← Complex.cosh_neg, ← Complex.cosh_add_sinh, Complex.cosh_neg, Complex.sinh_neg]; ring
-  have hden : 1 - Zsc p ℓ / p.Zc = exp (-(p.γ * ℓ)) / cosh (p.γ * ℓ) := by
-    rw [hρ, ← hcm]; field_simp
-  rw [hden]; exact div_ne_zero (Complex.exp_ne_zero _) hc
-
 /-- With `ρ = Z_sc/Z_c = tanh γℓ`: `exp(2γℓ) = (1+ρ)/(1-ρ)`. -/
 @[tmio M, powerlib_domain] theorem exp_two_mul_gammaL (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
     exp (2 * (p.γ * ℓ)) = (1 + Zsc p ℓ / p.Zc) / (1 - Zsc p ℓ / p.Zc) := by
@@ -269,6 +257,12 @@ def Zoc (ℓ : ℂ) : ℂ := p.Zc * cosh (p.γ * ℓ) / sinh (p.γ * ℓ)
     rw [hρ, ← hcp]; field_simp
   rw [hnum, hden, div_div_div_cancel_right₀ hc, ← Complex.exp_sub]
   ring_nf
+
+/-- With `ρ = Z_sc/Z_c = tanh γℓ` and `cosh γℓ ≠ 0`: `1 - ρ ≠ 0` (otherwise the right side of
+`exp_two_mul_gammaL` would vanish). -/
+@[tmio M, powerlib_domain] theorem one_sub_Zsc_div_Zc_ne_zero (ℓ : ℂ)
+    (hc : cosh (p.γ * ℓ) ≠ 0) : 1 - Zsc p ℓ / p.Zc ≠ 0 := fun h =>
+  Complex.exp_ne_zero _ (by rw [exp_two_mul_gammaL p ℓ hc, h, div_zero])
 
 /-- Correction to `γℓ = ½ ln((1+ρ)/(1-ρ))`: the identity holds modulo `iπℤ`. -/
 @[tmio M, powerlib_domain] theorem two_mul_gammaL_eq_log_add (ℓ : ℂ) (hc : cosh (p.γ * ℓ) ≠ 0) :
@@ -477,7 +471,7 @@ length is the series branch `series` (`z = R' + L' s`, `Passive.SeriesRLC.impeda
 def ZcOf (series : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (s : ℂ) : ℂ :=
   (series.impedance s / shunt.admittance s) ^ ((2 : ℂ)⁻¹)
 
-/-- Propagation constant on the same branch, `γ(s) = Z_c(s) y(s)` (so `γ² = z(s) y(s)`). -/
+/-- Propagation constant on the same branch, `γ(s) = Z_c(s) y(s)`. -/
 def gammaOf (series : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (s : ℂ) : ℂ :=
   ZcOf series shunt s * shunt.admittance s
 

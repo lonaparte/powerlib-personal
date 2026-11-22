@@ -365,9 +365,6 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
   rw [h, p.hE_eq hwC hΔ]
   ring
 
-@[tmio M, powerlib_domain] theorem sqrt_Δ_mul_self : √p.Δ * √p.Δ = p.Δ :=
-  Real.mul_self_sqrt p.Δ_nonneg
-
 @[tmio M, powerlib_domain] theorem sqrt_Δ_pos (hΔ : p.Δ ≠ 0) : 0 < √p.Δ :=
   Real.sqrt_pos.mpr (p.Δ_pos hΔ)
 

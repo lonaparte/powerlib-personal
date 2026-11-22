@@ -32,8 +32,8 @@ Results.
 * `A : Matrix (Fin 3) (Fin 3) ℝ`:
   `det (s • 1 - A) = s ^ 3 - tr A * s ^ 2 + principalMinorSum A * s - det A`
   (`det_characteristicMatrix_fin_three`), i.e.
-  `a2 = -tr A`, `a1 = principalMinorSum A` (sum of principal 2×2 minors), `a0 = -det A`;
-  the same coefficients are read off `A.charpoly` (`charpoly_fin_three`).
+  `a2 = -tr A`, `a1 = principalMinorSum A` (sum of principal 2×2 minors), `a0 = -det A`
+  (monic-cubic form `det_characteristicMatrix_fin_three'`).
   `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`
   (`isHurwitz_fin_three_iff`; for `SpectrallyStable` through
   `Linear.spectrallyStable_iff_isHurwitz`; companion form `isHurwitz_companion_three_iff`). In
@@ -47,12 +47,11 @@ Results.
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin 3)` (`locallyExponentiallyStable_of_jacobian_fin_three`;
   instability from `0 < det` or `0 < tr` is the any-dimension `Criteria.unstable_of_jacobian_det`,
-  `Criteria.unstable_of_jacobian_trace_pos`), and the
-  attractive sentences of a three-state linear field `x' = A (x - e)`, for every attractive
-  sentence (`holds_affine_fin_three_iff`). They only repackage
-  `hurwitz_linearization_locally_exponentially_stable` (LeanForControl's indirect method) and the
-  linear hub `Linear.holds_iff_isHurwitz`; the model boundary is whatever field or matrix the
-  caller supplies.
+  `Criteria.unstable_of_jacobian_trace_pos`). It only repackages
+  `hurwitz_linearization_locally_exponentially_stable` (LeanForControl's indirect method); the
+  attractive sentences of a three-state linear field `x' = A (x - e)` are the linear hub
+  `Linear.holds_iff_isHurwitz` with `isHurwitz_fin_three_iff`. The model boundary is whatever
+  field or matrix the caller supplies.
 -/
 
 noncomputable section
@@ -62,9 +61,6 @@ open Matrix Polynomial
 /-! ## Monic real cubics -/
 
 section Cubic
-
-/-- Value of the monic real cubic `x ^ 3 + a2 x ^ 2 + a1 x + a0`. -/
-def cubicEval (a2 a1 a0 x : ℝ) : ℝ := x ^ 3 + a2 * x ^ 2 + a1 * x + a0
 
 /-- The monic real cubic as a polynomial, to apply the generic criteria of
 `theorem/Criteria/Hurwitz.lean`. -/
@@ -188,14 +184,6 @@ in the open left half plane. -/
   · rintro ⟨h2, h0, hg⟩ s hs
     exact cubic_roots_re_neg_of h2 h0 hg s hs
 
-/-- If the strict Routh–Hurwitz conditions fail, some root has nonnegative real part. -/
-@[tmio T, powerlib_foundation] theorem exists_cubic_root_re_nonneg {a2 a1 a0 : ℝ}
-    (h : ¬ (0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1)) :
-    ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 ≤ s.re := by
-  rw [← cubic_roots_re_neg_iff] at h
-  push Not at h
-  exact h
-
 /-- If `a₂ a₁ < a₀`, the monic cubic `s³ + a₂ s² + a₁ s + a₀` has a root with positive real
 part (strict violation of the Routh gap condition). -/
 @[tmio T, powerlib_foundation] theorem exists_cubic_root_re_pos_of_gap {a2 a1 a0 : ℝ}
@@ -260,25 +248,6 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   push_cast
   ring
 
-@[tmio T, powerlib_foundation] theorem charpoly_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    A.charpoly = X ^ 3 - C A.trace * X ^ 2 + C (principalMinorSum A) * X - C A.det := by
-  rw [Matrix.charpoly, Matrix.det_fin_three, Matrix.trace_fin_three, principalMinorSum,
-    Matrix.det_fin_three]
-  simp only [Matrix.charmatrix_apply_eq,
-    Matrix.charmatrix_apply_ne _ _ _ (show (0 : Fin 3) ≠ 1 by decide),
-    Matrix.charmatrix_apply_ne _ _ _ (show (0 : Fin 3) ≠ 2 by decide),
-    Matrix.charmatrix_apply_ne _ _ _ (show (1 : Fin 3) ≠ 0 by decide),
-    Matrix.charmatrix_apply_ne _ _ _ (show (1 : Fin 3) ≠ 2 by decide),
-    Matrix.charmatrix_apply_ne _ _ _ (show (2 : Fin 3) ≠ 0 by decide),
-    Matrix.charmatrix_apply_ne _ _ _ (show (2 : Fin 3) ≠ 1 by decide),
-    map_add, map_sub, map_mul]
-  ring
-
-@[tmio T, powerlib_foundation] theorem charpoly_coeff_one_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    A.charpoly.coeff 1 = principalMinorSum A := by
-  rw [charpoly_fin_three]
-  simp [coeff_C, coeff_X_pow]
-
 /-- Routh–Hurwitz for real 3×3 matrices. -/
 @[tmio T, powerlib_foundation] theorem isHurwitz_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ) :
     LinearSystems.IsHurwitz A ↔
@@ -321,22 +290,6 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   · rintro ⟨h2, h0, hg⟩
     exact ⟨by linarith, by linarith, by linarith⟩
 
-/-! ### Instability witnesses -/
-
-@[tmio T, powerlib_foundation] theorem det_real_characteristic_fin_three
-    (A : Matrix (Fin 3) (Fin 3) ℝ) (r : ℝ) :
-    (r • (1 : Matrix (Fin 3) (Fin 3) ℝ) - A).det =
-      r ^ 3 - A.trace * r ^ 2 + principalMinorSum A * r - A.det := by
-  simp only [Matrix.det_fin_three, Matrix.trace_fin_three, principalMinorSum,
-    Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_eq,
-    Matrix.one_apply_ne (show (0 : Fin 3) ≠ 1 by decide),
-    Matrix.one_apply_ne (show (0 : Fin 3) ≠ 2 by decide),
-    Matrix.one_apply_ne (show (1 : Fin 3) ≠ 0 by decide),
-    Matrix.one_apply_ne (show (1 : Fin 3) ≠ 2 by decide),
-    Matrix.one_apply_ne (show (2 : Fin 3) ≠ 0 by decide),
-    Matrix.one_apply_ne (show (2 : Fin 3) ≠ 1 by decide), smul_eq_mul]
-  ring
-
 end FinThree
 
 /-! ## Semantic corollaries (linearization and linear fields)
@@ -360,15 +313,6 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
     LocallyExponentiallyStable f x_eq :=
   hurwitz_linearization_locally_exponentially_stable A hf heq hJac
     ((isHurwitz_fin_three_iff A).2 ⟨htr, hdet, hg⟩)
-
-/-- Three-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
-Flow semantics (in particular global exponential stability) holds at `e` iff the strict 3×3
-Routh–Hurwitz conditions hold (the linear hub `Linear.holds_iff_isHurwitz`). -/
-@[tmio T, powerlib_foundation] theorem holds_affine_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ)
-    (e : ℝ³) {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (LinearSystems.affineLinearVectorField A e) e ↔
-      A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det :=
-  (Linear.holds_iff_isHurwitz e hP).trans (isHurwitz_fin_three_iff A)
 
 end Semantic
 

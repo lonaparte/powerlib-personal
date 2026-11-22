@@ -138,13 +138,6 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
     exact forwardSolution_add hf x t₂.2 t₁.2
   map_zero' x := forwardSolution_zero hf x
 
-@[tmio T, powerlib_foundation] theorem lipschitzFlow_apply (hf : LipschitzWith K f) (t : ℝ≥0) (x : E) :
-    lipschitzFlow hf t x = forwardSolution hf x t := rfl
-
-@[tmio T, powerlib_foundation] theorem lipschitzFlow_zero (hf : LipschitzWith K f) (x : E) :
-    lipschitzFlow hf 0 x = x :=
-  (lipschitzFlow hf).map_zero_apply x
-
 /-- Every forward solution from `x` coincides with the flow. -/
 @[tmio T, powerlib_foundation] theorem lipschitzFlow_unique (hf : LipschitzWith K f) {x : E} {β : ℝ → E}
     (h0 : β 0 = x) (hβ : IsIntegralCurveOn β (fun _ y => f y) (Ici 0)) (t : ℝ≥0) :

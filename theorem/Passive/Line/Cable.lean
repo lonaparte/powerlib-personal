@@ -210,13 +210,13 @@ def lnGMR (a b : ℝ) : ℝ :=
   field_simp
   ring
 
-/-- Expanded form `ln D_s = A ln r_sh + B ln r_in + C'` with `A + B = 1`. -/
+/-- Expanded form `ln D_s = A ln r_sh + B ln r_in + C'` with `A = 1 − k`, `B = k` (so
+`A + B = 1`). -/
 @[tmio M, powerlib_domain] theorem lnGMR_expansion {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     let k := a ^ 4 / (b ^ 2 - a ^ 2) ^ 2
     lnGMR a b = (1 - k) * Real.log b + k * Real.log a +
-      (a ^ 2 / (2 * (b ^ 2 - a ^ 2)) - 1 / 4) ∧ (1 - k) + k = 1 := by
+      (a ^ 2 / (2 * (b ^ 2 - a ^ 2)) - 1 / 4) := by
   intro k
-  refine ⟨?_, by ring⟩
   simp only [lnGMR, k]
   rw [Real.log_div hb.ne' ha.ne']
   ring

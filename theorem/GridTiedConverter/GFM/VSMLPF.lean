@@ -40,7 +40,7 @@ Results.
   `field_equilibrium`): an equilibrium exists iff `|P₀| ≤ K₀`; the loading equilibrium is
   `(δ₀, 0, P₀)`, `δ₀ = arcsin(P₀/K₀)`.
 * With `K = K₀ cos δ₀`: `ω_c > K/D − D/M` ⇒ locally exponentially stable, `ω_c < K/D − D/M` ⇒
-  unstable, hence (boundary excluded) stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is
+  unstable, and stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is
   the dangerous side.  On the boundary itself the equilibrium is asymptotically, not
   exponentially, stable (a supercritical Hopf point;
   `theorem/GridTiedConverter/GFM/VSMLPFHopf.lean`).
@@ -80,7 +80,7 @@ Family and connection conclusions.
   `0 < K ≤ D ω_c + D²/M`.
 * Connection conclusions at the loading angle (`VSMLPF.atLoading`): `locallyExponentiallyStable`,
   `unstable`, and the exact boundary `locallyExponentiallyStable_iff` (a member-equivalence:
-  local exponential stability iff `K < D ω_c + D²/M`, boundary excluded),
+  local exponential stability iff `K < D ω_c + D²/M`; the boundary is not exponentially stable),
   `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle) and, in
   `theorem/GridTiedConverter/GFM/VSMLPFHopf.lean`, `locallyAsymptoticallyStable_iff` (local
   asymptotic stability iff `K ≤ D ω_c + D²/M`, boundary included).
@@ -480,19 +480,6 @@ def fieldU (u : ℝ) (x : State 3) : State 3 := g.field (x - mk3 u 0 0)
 /-- `A₁ = ∂J/∂u |_{u=0} = ω_c P₀ e_{P_f} e_δᵀ` (entrywise), at the loading equilibrium. -/
 def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
 
-@[tmio M, powerlib_domain] theorem hasDerivAt_jacobian_u (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0)
-    (i j : Fin 3) :
-    HasDerivAt (fun u => g.jacobian (g.δ0 - u) i j) (g.A1 i j) 0 := by
-  have hsin : g.K0 * Real.sin g.δ0 = g.P0 := (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K] using (g.sin_δ0 hK0 h))
-  have h1 : HasDerivAt (fun u : ℝ => g.δ0 - u) (-1) 0 := by
-    simpa using (hasDerivAt_id (0 : ℝ)).const_sub g.δ0
-  have key : HasDerivAt (fun u => g.ωc * (g.K0 * Real.cos (g.δ0 - u))) (g.ωc * g.P0) 0 := by
-    have h2 := ((h1.cos).const_mul g.K0).const_mul g.ωc
-    convert h2 using 1
-    rw [← hsin]; simp
-  fin_cases i <;> fin_cases j <;> simp [jacobian, A1] <;>
-    first | exact hasDerivAt_const _ _ | exact key
-
 /-- Correction: `A₁ ≠ 0` iff `P₀ ≠ 0` (for `ω_c ≠ 0`). -/
 @[tmio M, powerlib_domain] theorem A1_ne_zero_iff (hω : g.ωc ≠ 0) : g.A1 ≠ 0 ↔ g.P0 ≠ 0 := by
   constructor
@@ -784,25 +771,22 @@ into the open right half-plane). -/
   · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
       using (slow_iff hp).mpr hω
 
-/-- Exact stability boundary (boundary `K = D ω_c + D²/M` excluded): the loading equilibrium
-is locally exponentially stable iff `K < D ω_c + D²/M`.  Since `K = K₀ cos δ₀` decreases with
-load, light load is the dangerous side. -/
-@[tmio TM, powerlib_domain] theorem locallyExponentiallyStable_iff (hp : g.Pos) (h : |g.P0| < g.K0)
-    (hne : g.K ≠ g.D * g.ωc + g.D ^ 2 / g.M) :
+/-- Exact stability boundary: the loading equilibrium is locally exponentially stable iff
+`K < D ω_c + D²/M`; on the boundary `K = D ω_c + D²/M` itself it is not (the Jacobian has a purely
+imaginary pair).  Since `K = K₀ cos δ₀` decreases with load, light load is the dangerous side.
+The forward direction is the exactness `exactUnder_locallyExponentiallyStable`. -/
+@[tmio TM, powerlib_domain] theorem locallyExponentiallyStable_iff (hp : g.Pos)
+    (h : |g.P0| < g.K0) :
     connection% (atLoading g ∈ family.den (.flow .locallyExponentiallyStable) ↔
       atLoading g ∈ {m : Model | m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M}) := by
-  unfold powerlib.TMIO.Statement
+  have hex := exactUnder_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hex ⊢
   constructor
   · intro hs
-    by_contra hn
-    have hlt : g.D * g.ωc + g.D ^ 2 / g.M < g.K :=
-      lt_of_le_of_ne (not_lt.mp hn) (Ne.symm hne)
-    have hu := unstable hp h ((slow_iff hp).mp (by
-      simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, atLoading, Model.K]
-      exact Or.inl hlt))
-    unfold powerlib.TMIO.Statement at hu
-    rw [mem_den_flow_iff] at hs hu
-    exact hu (LocallyExponentiallyStable.lyapunovStable hs)
+    have hm := (Spectral.exactUnder_iff_forall.mp hex (atLoading g)
+      ((TMIO.mem_realize _ _ _).mpr fun q hq => by
+        rw [Set.mem_singleton_iff.mp hq]; exact ⟨hp.M, hp.D, hp.ωc⟩)).mpr hs
+    exact (TMIO.mem_realize _ _ _).mp hm .fastFilter (by simp [family, translate])
   · intro hK
     exact locallyExponentiallyStable hp h (((show g.K / g.D - g.D / g.M < g.ωc ↔ g.K < g.D * g.ωc + g.D ^ 2 / g.M from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.atLoading, VSMLPF.K] using (fast_iff hp).symm)).mpr hK)
 
@@ -1037,8 +1021,6 @@ def field (x : State 2) : State 2 :=
 
 def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, -1 / q.D; q.ωc * (q.K0 * Real.cos δ), -q.ωc]
-
-def equilibrium : State 2 := PhasePlane.mk (Real.arcsin (q.P0 / q.K0)) q.P0
 
 @[tmio M, powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k q.field := by
   rw [contDiff_euclidean]
@@ -1369,8 +1351,6 @@ def atLoading : Model := ⟨q, Real.arcsin (q.P0 / q.K0)⟩
 
 /-- The model read about the second equilibrium angle `π − arcsin(P₀/K₀)`. -/
 def atAntiLoading : Model := ⟨q, Real.pi - Real.arcsin (q.P0 / q.K0)⟩
-
-@[tmio M, powerlib_domain] theorem atLoading_point : q.atLoading.point = q.equilibrium := rfl
 
 /-- For every `D, ω_c, K₀ > 0` and `|P₀| < K₀` the loading equilibrium of droop + LPF is
 locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): no Hopf boundary. -/

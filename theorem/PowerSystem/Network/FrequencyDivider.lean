@@ -50,60 +50,6 @@ open Matrix Finset
 
 variable {β γ : Type*} [Fintype β] [DecidableEq β] [Fintype γ] [DecidableEq γ]
 
-/-! ## Singularity of grounded Laplacians -/
-
-section Singular
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-open scoped Classical in
-/-- If node `i` has no positive-weight path to a grounded node, the indicator of its
-component lies in the kernel of the grounded Laplacian. -/
-@[tmio T, powerlib_foundation] theorem grounded_mulVec_component_eq_zero {W : Matrix ι ι ℝ} {g : ι → ℝ}
-    (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) {i : ι}
-    (hnot : ∀ k, Reach W i k → g k ≤ 0) :
-    grounded W g *ᵥ (fun a => if Reach W i a then (1 : ℝ) else 0) = 0 := by
-  classical
-  funext a
-  rw [grounded_mulVec_apply, Pi.zero_apply]
-  have hgx : g a * (if Reach W i a then (1 : ℝ) else 0) = 0 := by
-    by_cases ha : Reach W i a
-    · simp [ha, le_antisymm (hnot a ha) (hg a)]
-    · simp [ha]
-  rw [hgx, zero_add]
-  apply Finset.sum_eq_zero
-  intro b _
-  rcases (hpos a b).lt_or_eq with hab | hab
-  · by_cases ha : Reach W i a
-    · have hb : Reach W i b := ha.tail hab
-      simp [ha, hb]
-    · have hb : ¬ Reach W i b := fun hb => ha (hb.tail (by rw [hW]; exact hab))
-      simp [ha, hb]
-  · rw [← hab, zero_mul]
-
-open scoped Classical in
-/-- For symmetric nonnegative weights and nonnegative grounding, the grounded Laplacian
-is nonsingular exactly when every node reaches a grounded node. -/
-@[tmio T, powerlib_foundation] theorem grounded_det_ne_zero_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
-    (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) :
-    (grounded W g).det ≠ 0 ↔ GroundReachable W g := by
-  constructor
-  · intro hdet i
-    by_contra hnot
-    push Not at hnot
-    apply hdet
-    apply Matrix.exists_mulVec_eq_zero_iff.mp
-    refine ⟨fun a => if Reach W i a then 1 else 0, ?_,
-      grounded_mulVec_component_eq_zero hW hpos hg hnot⟩
-    intro h
-    have := congrFun h i
-    simp only [Pi.zero_apply] at this
-    rw [ite_eq_left (show Reach W i i from Relation.ReflTransGen.refl)] at this
-    exact one_ne_zero this
-  · exact grounded_det_ne_zero hpos hg
-
-end Singular
-
 /-! ## Network blocks -/
 
 /-- Weights among non-machine buses. -/

@@ -628,15 +628,6 @@ omit [DecidableEq ι] in
   | refl => exact S.initial_valid
   | tail _ hs ih => exact hs.valid S ih
 
-omit [DecidableEq ι] in
-/-- Conversely, a run that reaches a terminal state exhibits a transversal. -/
-@[tmio T, powerlib_foundation] theorem exists_transversal_of_reaches_final {st : PantelidesState ι}
-    (hr : Relation.ReflTransGen S.Step S.initial st) (hfin : st.IsFinal) :
-    ∃ σ : Equiv.Perm ι, S.IsTransversal σ := by
-  have hv : S.Valid st := S.valid_of_reaches hr
-  obtain ⟨σ, -, hσ, -⟩ := S.exists_perm_of_isFinal hv hfin
-  exact ⟨σ, hσ⟩
-
 /-- Structurally singular DAE: the algorithm never stops — there is an infinite run from the
 initial state (no state is terminal, and every valid non-terminal state has a step). -/
 @[tmio T, powerlib_foundation] theorem exists_infinite_run (h : ¬ ∃ σ : Equiv.Perm ι, S.IsTransversal σ) :

@@ -24,14 +24,13 @@ Results.
 * Any dimension: characteristic roots ↔ eigenpairs
   (`Linear.det_characteristicMatrix_eq_zero_iff_exists_eigenpair`, any index; the root form of
   `IsHurwitz` is `Linear.spectrallyStable_iff_isHurwitz`, the polynomial form
-  `Criteria.isHurwitz_iff_of_charpoly`), and `¬ IsHurwitz` as an explicit eigenpair with
-  nonnegative real part (`not_isHurwitz_iff`).
+  `Criteria.isHurwitz_iff_of_charpoly`).
 * Monic real quadratic `s ^ 2 + a1 * s + a0`: all complex roots in the open left half-plane
   iff `0 < a1 ∧ 0 < a0` (both directions, `quadratic_roots_re_neg_iff`; the necessary direction
   is Stodola's condition `Criteria.coeff_pos_of_roots_re_neg`); explicit root witnesses
-  with `0 ≤ re` / `0 < re` (`exists_quadratic_root_re_nonneg`,
-  `exists_quadratic_root_pos_of_const_neg`, `exists_quadratic_root_re_pos_of_linear_neg`, the
-  last two instances of the generic witnesses of `theorem/Criteria/Hurwitz.lean`);
+  with `0 < re` (`exists_quadratic_root_pos_of_const_neg`,
+  `exists_quadratic_root_re_pos_of_linear_neg`, instances of the generic witnesses of
+  `theorem/Criteria/Hurwitz.lean`);
   all roots real iff `0 ≤ a1 ^ 2 - 4 * a0` (`quadratic_roots_real_iff`). For a real quadratic
   `a x² + b x + c` with `a > 0`: negative exactly strictly between the two roots (`quad_neg_iff`),
   and `(−b ± √D)/(2a)` are its roots when `D ≥ 0` (`quad_root`). For `λ² + aλ + b` with `a > 0`,
@@ -82,22 +81,6 @@ variable {n : ℕ}
     (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = s • v) :
     (Linear.characteristicMatrix A s).det = 0 :=
   (Linear.det_characteristicMatrix_eq_zero_iff_exists_eigenpair A s).mpr ⟨v, hv, heig⟩
-
-/-- Failure of `IsHurwitz` is an explicit eigenpair with nonnegative real part. -/
-@[tmio T, powerlib_foundation] theorem not_isHurwitz_iff (A : Matrix (Fin n) (Fin n) ℝ) :
-    ¬ LinearSystems.IsHurwitz A ↔
-      ∃ (μ : ℂ) (v : Fin n → ℂ),
-        v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 ≤ μ.re := by
-  constructor
-  · intro h
-    simp only [LinearSystems.IsHurwitz, LinearSystems.IsHurwitzWithRate, neg_zero,
-      not_forall, not_lt] at h
-    obtain ⟨μ, v, hv, heig, hre⟩ := h
-    exact ⟨μ, v, hv, heig, hre⟩
-  · rintro ⟨μ, v, hv, heig, hre⟩ h
-    have := h μ v hv heig
-    rw [neg_zero] at this
-    exact absurd this (not_lt.mpr hre)
 
 /-- A characteristic root with positive real part, in the eigenpair shape used by
 LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`. -/
@@ -198,13 +181,6 @@ Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
     · rw [hy] at hr
       nlinarith [sq_nonneg s.re, mul_nonneg h1.le hx]
     · linarith
-
-/-- If `¬ (0 < a1 ∧ 0 < a0)`, some root has nonnegative real part. -/
-@[tmio T, powerlib_foundation] theorem exists_quadratic_root_re_nonneg {a1 a0 : ℝ}
-    (h : ¬ (0 < a1 ∧ 0 < a0)) : ∃ s : ℂ, s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 ≤ s.re := by
-  rw [← quadratic_roots_re_neg_iff] at h
-  push Not at h
-  exact h
 
 /-- All complex roots of a monic real quadratic are real iff its discriminant is nonnegative. -/
 @[tmio T, powerlib_foundation] theorem quadratic_roots_real_iff (a1 a0 : ℝ) :
@@ -457,16 +433,6 @@ def naturalFrequency (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := Real.sqrt A.det
     dampingRatio (T * A * S) = dampingRatio A := by
   rw [dampingRatio, dampingRatio, Matrix.det_conj_of_mul_eq_one hTS hST, Matrix.trace_mul_comm,
     ← Matrix.mul_assoc, hST, Matrix.one_mul]
-
-/-! ### Instability witnesses -/
-
-@[tmio T, powerlib_foundation] theorem det_real_characteristic_fin_two
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (r : ℝ) :
-    (r • (1 : Matrix (Fin 2) (Fin 2) ℝ) - A).det = r ^ 2 - A.trace * r + A.det := by
-  simp only [Matrix.det_fin_two, Matrix.trace_fin_two, Matrix.sub_apply, Matrix.smul_apply,
-    Matrix.one_apply_eq, Matrix.one_apply_ne (show (0 : Fin 2) ≠ 1 by decide),
-    Matrix.one_apply_ne (show (1 : Fin 2) ≠ 0 by decide), smul_eq_mul]
-  ring
 
 /-! ### Discriminant and nilpotency -/
 

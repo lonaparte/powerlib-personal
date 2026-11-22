@@ -235,17 +235,17 @@ initial state of a global solution converging to `a` backwards and of one conver
 forwards. -/
 @[tmio T, powerlib_foundation] theorem heteroclinic_iff {f : E → E} {K : NNReal} (hf : LipschitzWith K f)
     {a b : E} {γ : ℝ → E} (hγ : ∀ t, HasDerivAt γ (f (γ t)) t) :
-    ((∀ t, HasDerivAt γ (f (γ t)) t) ∧ Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b)) ↔
+    (Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b)) ↔
       γ 0 ∈ {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
           Tendsto ψ atBot (𝓝 a)} ∩
         {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
           Tendsto ψ atTop (𝓝 b)} := by
   constructor
-  · intro h; exact heteroclinic_mem h 0
+  · intro h; exact heteroclinic_mem ⟨hγ, h⟩ 0
   · rintro ⟨⟨ψ₁, hψ₁, h₁, ha⟩, ⟨ψ₂, hψ₂, h₂, hb⟩⟩
     have e₁ := globalSolution_unique hf hγ hψ₁ h₁.symm
     have e₂ := globalSolution_unique hf hγ hψ₂ h₂.symm
-    exact ⟨hγ, e₁ ▸ ha, e₂ ▸ hb⟩
+    exact ⟨e₁ ▸ ha, e₂ ▸ hb⟩
 
 end Heteroclinic
 

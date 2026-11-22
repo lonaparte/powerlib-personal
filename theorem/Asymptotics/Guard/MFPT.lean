@@ -36,7 +36,7 @@ Results.
   `tendsto_guardMFPT_guard`, `guardMFPT_committed_isBigO`.
 * Bounds at a cut `0 < a < r_c` with reflected cut `ψ(a) = √(2r_c² − a²) ≤ r_b`
   (`guard_exists_cut`), `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}` the barrier weight:
-  `K(a) I ≤ ∫_a^{r_c} h ≤ K(r_c) I` (`guard_inside_ge`, `guard_inside_le`);
+  `K(a) I ≤ ∫_a^{r_c} h ≤ K(r_c) I` (`guard_inside_bounds`);
   `K(ψ(a)) ≤ (1 + κ) K(a)` (`guardInner_reflect_le`); the tails satisfy
   `∫₀^a h + ∫_{ψ(a)}^{r_b} h ≤ ε K(a) I` (`guard_tails_le`), with explicit `κ = guardKappa`,
   `ε = guardEps`, `κ, ε ≥ 0` (`guardKappa_nonneg`, `guardEps_nonneg`) and `κ, ε = o(D̃)`
@@ -96,8 +96,9 @@ variable {α l₁ : ℝ}
 
 @[tmio M, powerlib_foundation] theorem guardPotential_le_barrier (hl : 0 < l₁) (z : ℝ) :
     guardPotential α l₁ z ≤ barrierHeight α l₁ := by
-  rw [guardPotential_eq_barrier_sub hl]
-  have : 0 ≤ l₁ / 4 * (z ^ 2 - α / l₁) ^ 2 := by positivity
+  have h := Potential.doubleWell_min (a := α) hl z
+  rw [neg_div] at h
+  rw [guardPotential, barrierHeight]
   linarith
 
 @[tmio M, powerlib_foundation] theorem guardPotential_pos (hl : 0 < l₁) {z : ℝ}
@@ -306,41 +307,34 @@ variable {D : ℝ}
   apply ContinuousOn.mul _ (continuous_exp_guardPotential α l₁ D).continuousOn
   exact continuousOn_inv₀.mono fun y hy => (ne_of_gt (ha.trans_le hy.1) : y ≠ 0)
 
-/-- Lower bound for the part of the outer integral just inside the barrier top:
-`K(a) I ≤ ∫_a^b h`, `I = ∫_a^b y⁻¹ e^{U/D̃}` (used with `b = r_c`). -/
-@[tmio M, powerlib_foundation] theorem guard_inside_ge {a b : ℝ} (ha : 0 < a)
+/-- Bounds for the part of the outer integral just inside the barrier top:
+`K(a) I ≤ ∫_a^b h ≤ K(b) I`, `I = ∫_a^b y⁻¹ e^{U/D̃}` (used with `b = r_c`). -/
+@[tmio M, powerlib_foundation] theorem guard_inside_bounds {a b : ℝ} (ha : 0 < a)
     (hab : a ≤ b) :
     guardInner α l₁ D a * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) ≤
-      ∫ y in a..b, guardIntegrand α l₁ D y := by
+        ∫ y in a..b, guardIntegrand α l₁ D y ∧
+      ∫ y in a..b, guardIntegrand α l₁ D y ≤
+        guardInner α l₁ D b * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
   have hw := intervalIntegrable_guardWeight (α := α) (l₁ := l₁) (D := D) ha hab
   have hh : IntervalIntegrable (guardIntegrand α l₁ D) volume a b :=
     intervalIntegrable_guardIntegrand_of_pos ha (ha.trans_le hab)
-  rw [← intervalIntegral.integral_const_mul]
-  apply integral_mono_on hab (hw.const_mul _) hh
-  intro y hy
-  have hy0 : 0 < y := ha.trans_le hy.1
-  simp only [guardIntegrand]
-  rw [mul_comm (guardInner α l₁ D a)]
-  exact mul_le_mul_of_nonneg_left (guardInner_mono ha.le hy.1)
-    (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
-
-/-- Upper bound for the part of the outer integral just inside the barrier top:
-`∫_a^b h ≤ K(b) I`, `I = ∫_a^b y⁻¹ e^{U/D̃}` (used with `b = r_c`). -/
-@[tmio M, powerlib_foundation] theorem guard_inside_le {a b : ℝ} (ha : 0 < a)
-    (hab : a ≤ b) :
-    ∫ y in a..b, guardIntegrand α l₁ D y ≤
-      guardInner α l₁ D b * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
-  have hw := intervalIntegrable_guardWeight (α := α) (l₁ := l₁) (D := D) ha hab
-  have hh : IntervalIntegrable (guardIntegrand α l₁ D) volume a b :=
-    intervalIntegrable_guardIntegrand_of_pos ha (ha.trans_le hab)
-  rw [← intervalIntegral.integral_const_mul]
-  apply integral_mono_on hab hh (hw.const_mul _)
-  intro y hy
-  have hy0 : 0 < y := ha.trans_le hy.1
-  simp only [guardIntegrand]
-  rw [mul_comm (guardInner α l₁ D b)]
-  exact mul_le_mul_of_nonneg_left (guardInner_mono hy0.le hy.2)
-    (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
+  constructor
+  · rw [← intervalIntegral.integral_const_mul]
+    apply integral_mono_on hab (hw.const_mul _) hh
+    intro y hy
+    have hy0 : 0 < y := ha.trans_le hy.1
+    simp only [guardIntegrand]
+    rw [mul_comm (guardInner α l₁ D a)]
+    exact mul_le_mul_of_nonneg_left (guardInner_mono ha.le hy.1)
+      (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
+  · rw [← intervalIntegral.integral_const_mul]
+    apply integral_mono_on hab hh (hw.const_mul _)
+    intro y hy
+    have hy0 : 0 < y := ha.trans_le hy.1
+    simp only [guardIntegrand]
+    rw [mul_comm (guardInner α l₁ D b)]
+    exact mul_le_mul_of_nonneg_left (guardInner_mono hy0.le hy.2)
+      (mul_nonneg (inv_nonneg.2 hy0.le) (Real.exp_pos _).le)
 
 /-- Lower bound for the main weight integral: `I ≥ ((r_c − m)/r_c) e^{U(m)/D̃}` for `a ≤ m ≤ r_c`
 with `U ≥ U(m)` on `[m, r_c]`. -/
@@ -534,18 +528,11 @@ small relative amount. -/
 /-- `e^{−c/D̃}/D̃² → 0` as `D̃ → 0⁺` (`c > 0`). -/
 @[tmio T, powerlib_foundation] theorem tendsto_exp_neg_div_div_div {c : ℝ} (hc : 0 < c) :
     Tendsto (fun D : ℝ => Real.exp (-(c / D)) / D / D) (𝓝[>] 0) (𝓝 0) := by
-  have h1 : Tendsto (fun t : ℝ => t ^ 2 * Real.exp (-(c * t))) atTop (𝓝 0) := by
-    have h := ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 2).comp
-      (tendsto_id.const_mul_atTop hc)).const_mul (c⁻¹ ^ 2)
-    rw [mul_zero] at h
-    refine h.congr fun t => ?_
-    simp only [Function.comp_apply, id]
-    field_simp
-  refine (h1.comp tendsto_inv_nhdsGT_zero).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with D hD
-  simp only [Function.comp_apply]
-  rw [div_eq_mul_inv c]
-  field_simp
+  have h := (tendsto_exp_neg_div_div (half_pos hc)).mul (tendsto_exp_neg_div_div (half_pos hc))
+  rw [mul_zero] at h
+  refine h.congr fun D => ?_
+  rw [div_mul_div_comm, ← Real.exp_add, show -(c / 2 / D) + -(c / 2 / D) = -(c / D) by ring,
+    div_div]
 
 /-- `κ = o(D̃)`: the inner-integral growth across the barrier is exponentially small. -/
 @[tmio M, powerlib_foundation] theorem tendsto_guardKappa_div (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)

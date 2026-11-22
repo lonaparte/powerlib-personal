@@ -269,12 +269,6 @@ def qss13 (θ i : ℝ) : State 13 :=
   rw [idStar, p.qss13_11, p.qss13_12]
   field_simp; ring
 
-@[tmio T, powerlib_foundation] private lemma state13_ext_iff {x y : State 13} :
-    x = y ↔ ∀ i, x i = y i := by
-  constructor
-  · rintro rfl i; rfl
-  · intro h; ext i; exact h i
-
 /-- Coordinates `0 … 9` of a 13-state vector are those of its projection. -/
 @[tmio M, powerlib_domain] private lemma apply_eq_proj10 (x : State 13) (j : Fin 13)
     (hj : (j : ℕ) < 10) : x j = proj10 x ⟨j, hj⟩ := by
@@ -311,7 +305,7 @@ Static evidence on the model, not a connection conclusion. -/
     have hid : idStar d x = -(d.Kidc * x 11) := by simp [idStar, hvf]
     refine ⟨θ, idStar d x, hθ, ?_, ?_⟩
     · rw [← hP, Pbr, ← q.bridgePower_qss hKicc θ 0, ← hy]
-    · rw [state13_ext_iff]; intro j
+    · rw [PiLp.ext_iff]; intro j
       by_cases hj : (j : ℕ) < 10
       · rw [apply_eq_proj10 x j hj, hy]
         simp [qss13, hj, q]
@@ -326,7 +320,7 @@ Static evidence on the model, not a connection conclusion. -/
     have hid := p.idStar_qss13 d hKidc θ i
     have h10 : (p.withId i).field10 ((p.withId i).qssState θ 0) = 0 :=
       ((p.withId i).field10_eq_zero_iff hLf hCf hLg hwC hΔ hKicc hKi _).mpr ⟨θ, hθ, rfl⟩
-    rw [state13_ext_iff]; intro j
+    rw [PiLp.ext_iff]; intro j
     by_cases hj : (j : ℕ) < 10
     · have := p.field13_apply_lt d (p.qss13 d θ i) ⟨j, hj⟩
       rw [show Fin.castLE (by norm_num) (⟨j, hj⟩ : Fin 10) = j from Fin.ext rfl, hid, hq, h10]

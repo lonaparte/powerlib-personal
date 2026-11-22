@@ -22,8 +22,8 @@ Results.
 * `doubleWell_critical_iff` (`0 ≤ a`, `0 < b`): critical points `0, ±√(a/b)`.
 * `doubleWell_identity` (`a, b ≠ 0`): `V = (a²/4b)[1 − bθ²/a]² − a²/4b` (positive sign in front
   of the square; correction to T-potential-wells §1.2).
-* `doubleWell_min`, `doubleWell_eq_min_iff` (`a, b > 0`): global minimum value `−a²/4b`, attained
-  exactly at `±√(a/b)`.
+* `doubleWell_min` (`b > 0`, any `a`): `−a²/4b ≤ V`; `doubleWell_eq_min_iff` (`a, b > 0`): the
+  global minimum value `−a²/4b` is attained exactly at `±√(a/b)`.
 * `doubleWell_barrier` (`0 ≤ a`, `0 < b`): `V(0) − V(±√(a/b)) = a²/4b`.
 * `doubleWell_sub`: `V(x) − V(y) = (x² − y²)(−a/2 + b(x² + y²)/4)`.
 
@@ -77,13 +77,13 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
       rw [this]; field_simp; ring
 
 /-- Global minimum value of the double well: `−a²/4b ≤ V(θ)`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_min {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (θ : ℝ) : -a ^ 2 / (4 * b) ≤ doubleWell a b θ := by
-  have hid := doubleWell_identity ha.ne' hb.ne' θ
-  have hc : 0 < a ^ 2 / (4 * b) := by positivity
-  have hn : -a ^ 2 / (4 * b) = -(a ^ 2 / (4 * b)) := neg_div _ _
-  rw [hid, hn]
-  nlinarith [mul_nonneg hc.le (sq_nonneg (1 - b * θ ^ 2 / a))]
+@[tmio T, powerlib_foundation] theorem doubleWell_min {a b : ℝ} (hb : 0 < b) (θ : ℝ) :
+    -a ^ 2 / (4 * b) ≤ doubleWell a b θ := by
+  have h : doubleWell a b θ + a ^ 2 / (4 * b) = (b * θ ^ 2 - a) ^ 2 / (4 * b) := by
+    simp only [doubleWell]; field_simp; ring
+  have : 0 ≤ (b * θ ^ 2 - a) ^ 2 / (4 * b) := by positivity
+  rw [neg_div]
+  linarith
 
 /-- The global minimum value `−a²/4b` of the double well is attained exactly at `±√(a/b)`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_eq_min_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b)

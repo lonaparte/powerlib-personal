@@ -351,32 +351,6 @@ theorem norm_integral_gauss_mul_sub_le {w : ℝ → ℝ} (hw : Continuous w) {c 
   refine (norm_integral_le_of_norm_le hB.integrableOn (Eventually.of_forall hpt)).trans_eq ?_
   rw [integral_const_mul, integral_gaussian_Ioi]
 
-/-- Integrability of a weighted Gaussian with `|w(u) − 1| ≤ c u²`. -/
-@[tmio T, powerlib_foundation]
-theorem integrableOn_gauss_mul {w : ℝ → ℝ} (hw : Continuous w) {c : ℝ} (hc : 0 ≤ c)
-    (hwc : ∀ u, |w u - 1| ≤ c * u ^ 2) {z : ℂ} (hz : 0 < z.re) :
-    IntegrableOn (fun u : ℝ => Complex.exp (-(z / 2) * (u : ℂ) ^ 2) * (w u : ℂ)) (Ioi 0) := by
-  set x := z.re with hxdef
-  have hz2 : 0 < (z / 2).re := by simp; linarith
-  have hB : Integrable (fun u : ℝ => Real.exp (-(x / 2) * u ^ 2) +
-      c * (4 / x) * Real.exp (-(x / 4) * u ^ 2)) :=
-    (integrable_exp_neg_mul_sq (by positivity)).add
-      ((integrable_exp_neg_mul_sq (by positivity)).const_mul _)
-  refine Integrable.mono' hB.integrableOn (by fun_prop) (Eventually.of_forall fun u => ?_)
-  rw [norm_mul, norm_cexp_gauss, Complex.norm_real, Real.norm_eq_abs]
-  have h1 := sq_mul_exp_le (b := x / 2) (by positivity) u
-  rw [show x / 2 / 2 = x / 4 by ring, show 2 / (x / 2) = 4 / x by field_simp; ring] at h1
-  have hw1 : |w u| ≤ 1 + c * u ^ 2 := by
-    have := abs_sub_abs_le_abs_sub (w u) 1
-    rw [abs_one] at this
-    linarith [hwc u]
-  have hE := (Real.exp_pos (-(x / 2) * u ^ 2)).le
-  calc Real.exp (-(x / 2) * u ^ 2) * |w u| ≤ Real.exp (-(x / 2) * u ^ 2) * (1 + c * u ^ 2) :=
-        mul_le_mul_of_nonneg_left hw1 hE
-    _ = Real.exp (-(x / 2) * u ^ 2) + c * (u ^ 2 * Real.exp (-(x / 2) * u ^ 2)) := by ring
-    _ ≤ Real.exp (-(x / 2) * u ^ 2) + c * (4 / x * Real.exp (-(x / 4) * u ^ 2)) := by gcongr
-    _ = _ := by ring
-
 /-- `√(1 + u²/4) > 0`. -/
 @[tmio T, powerlib_foundation]
 theorem sqrt_one_add_sq_div_four_pos (u : ℝ) : 0 < Real.sqrt (1 + u ^ 2 / 4) :=

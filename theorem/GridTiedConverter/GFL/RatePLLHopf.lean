@@ -222,7 +222,7 @@ end Boundary
 
 section Members
 
-/-- An equilibrium of the translated field with a nondegenerate loop is balanced. -/
+/-- An equilibrium of the translated field is balanced, for every loop gain `D₀`. -/
 @[tmio M, powerlib_domain] private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
     m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) := by
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
@@ -389,36 +389,6 @@ exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is 
   have hdet := det_jac_pos p hD0 hV hki hcos
   exact mem_den_unstable_of_hopf (Model.mk p θ) heq hD0.ne' htr hdet (mul_pos hkp hki)
 
-/-- With physical gains the operating point is locally asymptotically stable exactly below the
-boundary angle: `tan θ < ω_s k_p / k_i` (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`,
-`V sin θ = −X_g i_d`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_tan_lt (p : Params)
-    (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
-    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
-    connection% (Model.mk p θ ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
-      Model.mk p θ ∈ {m : Model | Real.tan m.θ < m.params.ωs * m.params.kp / m.params.ki}) := by
-  unfold powerlib.TMIO.Statement
-  rw [Set.mem_ofPred_eq]
-  constructor
-  · intro h
-    by_contra hc
-    push Not at hc
-    have hu : Model.mk p θ ∈ family.den (.flow .unstable) := by
-      rcases hc.lt_or_eq with hc | hc
-      · have := mem_den_unstable_of_tan_gt p hD0 hV hki hωs hcos heq hc
-        unfold powerlib.TMIO.Statement at this
-        exact this
-      · have := mem_den_unstable_of_tan_eq p hD0 hV hkp hki hωs hcos heq hc.symm
-        unfold powerlib.TMIO.Statement at this
-        exact this
-    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h hu
-    exact hu h.1
-  · intro h
-    have := mem_den_locallyExponentiallyStable_of_tan_lt p hD0 hV hki hωs hcos heq h
-    unfold powerlib.TMIO.Statement at this
-    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at this ⊢
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable this
-
 /-- **Complete membership of the local asymptotic sentence.** A rate-coupled PLL model is locally
 asymptotically stable at `(θ*, 0)` exactly when the point is balanced with a nondegenerate loop
 (`V sin θ* = −X_g i_d`, `D₀ ≠ 0`), `det J > 0`, and either `tr J < 0` (Hurwitz) or `tr J = 0` with
@@ -487,6 +457,24 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
       exact (family_isAutonomous.mem_den_flow.mp
         (mem_den_locallyAsymptoticallyStable_of_hopf m he.1 he.2 htr hdet hk))
 
+/-- With physical gains the operating point is locally asymptotically stable exactly below the
+boundary angle: `tan θ < ω_s k_p / k_i` (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`,
+`V sin θ = −X_g i_d`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_tan_lt (p : Params)
+    (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
+    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
+    connection% (Model.mk p θ ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      Model.mk p θ ∈ {m : Model | Real.tan m.θ < m.params.ωs * m.params.kp / m.params.ki}) := by
+  have h := mem_den_locallyAsymptoticallyStable_iff (Model.mk p θ)
+  have htr := trace_jac_neg_iff p hD0 hV hki hωs hcos heq
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨-, -, hneg | ⟨-, hk⟩⟩
+    · exact htr.mp hneg
+    · exact absurd hk (not_lt.mpr (mul_pos hkp hki).le)
+  · exact fun h' => ⟨⟨heq, hD0.ne'⟩, det_jac_pos p hD0 hV hki hcos, Or.inl (htr.mpr h')⟩
+
 /-! ### The local asymptotic translation is not exact -/
 
 /-- A supercritical boundary PLL: `V = √2`, `X_g = ω_s = 1`, `k_p = −1/2`, `k_i = 1/2`,
@@ -503,20 +491,16 @@ def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, ⟨0, 1, 0⟩, 1, -1 / 2, 1 /
     Real.sin_pi_div_four]
   linear_combination (-1 / 2 : ℝ) * h2
 
-/-- The supercritical boundary PLL has `D₀ ≠ 0` (`D₀ = 1/2`). -/
-@[tmio M, powerlib_domain] private theorem supercriticalPLL_D0_ne_zero :
-    supercriticalPLL.params.D0 ≠ 0 := by
-  have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
-    simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
-  rw [hD0]; norm_num
+/-- The supercritical boundary PLL has `D₀ = 1/2`. -/
+@[tmio M, powerlib_domain] private theorem supercriticalPLL_D0 :
+    supercriticalPLL.params.D0 = 1 / 2 := by
+  simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
 
 /-- The supercritical boundary PLL lies on the boundary: `tr J = 0`. -/
 @[tmio M, powerlib_domain] private theorem supercriticalPLL_trace_jac :
     (jac supercriticalPLL.params supercriticalPLL.θ).trace = 0 := by
   have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
-  have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
-    simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
-  rw [trace_jac, hD0]
+  rw [trace_jac, supercriticalPLL_D0]
   simp only [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Real.cos_neg,
       Real.cos_pi_div_four, Params.Lg]
   linear_combination (1 / 2 : ℝ) * h2
@@ -525,9 +509,7 @@ def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, ⟨0, 1, 0⟩, 1, -1 / 2, 1 /
 @[tmio M, powerlib_domain] private theorem supercriticalPLL_det_jac_pos :
     0 < (jac supercriticalPLL.params supercriticalPLL.θ).det := by
   have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
-  have hD0 : supercriticalPLL.params.D0 = 1 / 2 := by
-    simp [Passive.SeriesRLC.reactance, Params.Xg, supercriticalPLL, Params.D0, Params.Lg]; norm_num
-  rw [det_jac _ (by rw [hD0]; norm_num), hD0]
+  rw [det_jac _ (by rw [supercriticalPLL_D0]; norm_num), supercriticalPLL_D0]
   simp only [supercriticalPLL, Real.cos_neg, Real.cos_pi_div_four]
   nlinarith [h2]
 
@@ -540,7 +522,7 @@ def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, ⟨0, 1, 0⟩, 1, -1 / 2, 1 /
 @[tmio TM, powerlib_domain] theorem supercriticalPLL_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalPLL ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   exact mem_den_locallyAsymptoticallyStable_of_hopf supercriticalPLL supercriticalPLL_balance
-    supercriticalPLL_D0_ne_zero supercriticalPLL_trace_jac supercriticalPLL_det_jac_pos
+    (by rw [supercriticalPLL_D0]; norm_num) supercriticalPLL_trace_jac supercriticalPLL_det_jac_pos
     supercriticalPLL_kp_mul_ki_neg
 
 /-- **The local asymptotic translation is not exact.** The supercritical boundary PLL is locally

@@ -114,103 +114,6 @@ def model : Plant 4 2 :=
     simp [Plant.inputField, op, model, stateMatrix, field, plantDeriv, converterVoltage, ΔL,
       Matrix.mulVec, dotProduct, Fin.sum_univ_four, Fin.sum_univ_two] <;> field_simp <;> ring
 
-@[tmio M, powerlib_domain] private lemma eig_equations {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
-    (h : (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
-    -(a : ℂ) * v 0 + b * v 1 + c * v 2 = μ * v 0 ∧
-      -(b : ℂ) * v 0 - a * v 1 + c * v 3 = μ * v 1 ∧ -v 0 = μ * v 2 ∧ -v 1 = μ * v 3 := by
-  have h0 := congrFun h 0
-  have h1 := congrFun h 1
-  have h2 := congrFun h 2
-  have h3 := congrFun h 3
-  simp [stateMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four] at h0 h1 h2 h3
-  exact ⟨by linear_combination h0, by linear_combination h1, by linear_combination h2,
-    by linear_combination h3⟩
-
-/-- Every eigenvalue is a root of `s² + (a ± j b) s + c`. -/
-@[tmio M, powerlib_domain] theorem eigenvalue_root {a b c : ℝ} {μ : ℂ} {v : Fin 4 → ℂ}
-    (hv : v ≠ 0) (h : (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
-    μ ^ 2 + (⟨a, b⟩ : ℂ) * μ + (c : ℂ) = 0 ∨ μ ^ 2 + (⟨a, -b⟩ : ℂ) * μ + (c : ℂ) = 0 := by
-  obtain ⟨e0, e1, e2, e3⟩ := eig_equations h
-  have hab : (⟨a, b⟩ : ℂ) = a + b * Complex.I := by apply Complex.ext <;> simp
-  have hab' : (⟨a, -b⟩ : ℂ) = a - b * Complex.I := by apply Complex.ext <;> simp
-  rw [hab, hab']
-  set Wp := v 2 + Complex.I * v 3
-  set Wm := v 2 - Complex.I * v 3
-  have hp : (μ ^ 2 + (a + b * Complex.I) * μ + c) * Wp = 0 := by
-    simp only [Wp]
-    linear_combination e0 + Complex.I * e1 - (a + b * Complex.I + μ) * (e2 + Complex.I * e3) +
-      (-b * v 1) * Complex.I_sq
-  have hm : (μ ^ 2 + (a - b * Complex.I) * μ + c) * Wm = 0 := by
-    simp only [Wm]
-    linear_combination e0 - Complex.I * e1 - (a - b * Complex.I + μ) * (e2 - Complex.I * e3) +
-      (-b * v 1) * Complex.I_sq
-  by_cases hWp : Wp = 0
-  · by_cases hWm : Wm = 0
-    · exfalso
-      apply hv
-      have hv2 : v 2 = 0 := by linear_combination (hWp + hWm) / 2
-      have hv3 : v 3 = 0 := by
-        have : Complex.I * v 3 = 0 := by linear_combination (hWp - hWm) / 2
-        simpa [Complex.I_ne_zero] using this
-      have hv0 : v 0 = 0 := by linear_combination -e2 - μ * hv2
-      have hv1 : v 1 = 0 := by linear_combination -e3 - μ * hv3
-      ext k
-      fin_cases k <;> simp [hv0, hv1, hv2, hv3]
-    · exact Or.inr ((mul_eq_zero.mp hm).resolve_right hWm)
-  · exact Or.inl ((mul_eq_zero.mp hp).resolve_right hWp)
-
-/-- A root of `s² + (a + j b) s + c` is an eigenvalue, with eigenvector `(s, −j s, −1, j)`. -/
-@[tmio M, powerlib_domain] theorem eigenpair_of_root {a b c : ℝ} {s : ℂ}
-    (hs : s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0) :
-    (stateMatrix a b c).map (algebraMap ℝ ℂ) *ᵥ ![s, -Complex.I * s, -1, Complex.I] =
-      s • ![s, -Complex.I * s, -1, Complex.I] := by
-  have hab : (⟨a, b⟩ : ℂ) = a + b * Complex.I := by apply Complex.ext <;> simp
-  rw [hab] at hs
-  ext k
-  fin_cases k <;> simp [stateMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
-  · linear_combination -hs
-  · linear_combination Complex.I * hs + (-b * s) * Complex.I_sq
-  · ring
-
-@[tmio T, powerlib_foundation] private lemma eigenvector_ne_zero (s : ℂ) :
-    (![s, -Complex.I * s, -1, Complex.I] : Fin 4 → ℂ) ≠ 0 := by
-  intro h0
-  have := congrFun h0 2
-  simp at this
-
-/-- Exact Hurwitz region of the mismatched loop matrix. -/
-@[tmio TM, powerlib_domain] theorem stateMatrix_isHurwitz_iff (a b c : ℝ) :
-    IsHurwitz (stateMatrix a b c) ↔ 0 < a ∧ 0 < c := by
-  constructor
-  · intro h
-    rw [← Criteria.complexQuadratic_realConst_roots_re_neg_iff a b c]
-    intro s hs
-    simpa using h s _ (eigenvector_ne_zero s) (eigenpair_of_root hs)
-  · rintro ⟨ha, hc⟩ μ v hv heig
-    have hp := (Criteria.complexQuadratic_realConst_roots_re_neg_iff a b c).2 ⟨ha, hc⟩
-    have hm := (Criteria.complexQuadratic_realConst_roots_re_neg_iff a (-b) c).2 ⟨ha, hc⟩
-    have : μ.re < 0 := by
-      rcases eigenvalue_root hv heig with h | h
-      · exact hp μ h
-      · exact hm μ h
-    simpa using this
-
-/-- A negative damping coefficient `a < 0` gives a characteristic root in the open right half
-plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
-@[tmio TM, powerlib_domain] theorem stateMatrix_exists_root_of_neg {a b c : ℝ} (ha : a < 0) :
-    ∃ s : ℂ, (characteristicMatrix (stateMatrix a b c) s).det = 0 ∧ 0 < s.re := by
-  obtain ⟨d, hd⟩ := IsAlgClosed.exists_eq_mul_self (discrim (1 : ℂ) (⟨a, b⟩ : ℂ) (c : ℂ))
-  obtain ⟨s, hs⟩ := exists_quadratic_eq_zero (one_ne_zero) ⟨d, hd⟩
-  have hs' : s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0 := by linear_combination hs
-  have hs₂ := Criteria.quadratic_partner hs'
-  have hsum : s.re + (-(⟨a, b⟩ : ℂ) - s).re = -a := by simp
-  by_cases hpos : 0 < s.re
-  · exact ⟨s, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ (eigenvector_ne_zero s)
-      (eigenpair_of_root hs'), hpos⟩
-  · refine ⟨-(⟨a, b⟩ : ℂ) - s, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _
-      (eigenvector_ne_zero _) (eigenpair_of_root hs₂), ?_⟩
-    linarith
-
 @[tmio M, powerlib_domain] private lemma characteristicMatrix_stateMatrix (a b c : ℝ) (s : ℂ) :
     characteristicMatrix (stateMatrix a b c) s =
       !![s + a, -b, -c, 0; b, s + a, 0, -c; 1, 0, s, 0; 0, 1, 0, s] := by
@@ -236,6 +139,45 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
     (characteristicMatrix (stateMatrix a b c) s).det =
       (s ^ 2 + (a + b * Complex.I) * s + c) * (s ^ 2 + (a - b * Complex.I) * s + c) := by
   rw [characteristicMatrix_stateMatrix, det_four]
+
+/-- Exact Hurwitz region of the mismatched loop matrix: the roots of both quadratic factors
+`s² + (a ± j b) s + c` (`det_characteristicMatrix_stateMatrix`) lie in the open left half plane
+iff `a, c > 0` (`Criteria.complexQuadratic_realConst_roots_re_neg_iff`). -/
+@[tmio TM, powerlib_domain] theorem stateMatrix_isHurwitz_iff (a b c : ℝ) :
+    IsHurwitz (stateMatrix a b c) ↔ 0 < a ∧ 0 < c := by
+  rw [Criteria.isHurwitz_iff_of_det_characteristicMatrix (q := fun s =>
+      (s ^ 2 + (a + b * Complex.I) * s + c) * (s ^ 2 + (a - b * Complex.I) * s + c)) _
+    fun s => by rw [det_characteristicMatrix_stateMatrix]]
+  have hp : (⟨a, b⟩ : ℂ) = a + b * Complex.I := by apply Complex.ext <;> simp
+  have hm : (⟨a, -b⟩ : ℂ) = a - b * Complex.I := by apply Complex.ext <;> simp
+  have h1 := Criteria.complexQuadratic_realConst_roots_re_neg_iff a b c
+  have h2 := Criteria.complexQuadratic_realConst_roots_re_neg_iff a (-b) c
+  rw [hp] at h1
+  rw [hm] at h2
+  constructor
+  · exact fun h => h1.mp fun s hs => h s (by simp only [hs, zero_mul])
+  · intro hac s hs
+    rcases mul_eq_zero.mp hs with h | h
+    · exact h1.mpr hac s h
+    · exact h2.mpr hac s h
+
+/-- A negative damping coefficient `a < 0` gives a characteristic root in the open right half
+plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
+@[tmio TM, powerlib_domain] theorem stateMatrix_exists_root_of_neg {a b c : ℝ} (ha : a < 0) :
+    ∃ s : ℂ, (characteristicMatrix (stateMatrix a b c) s).det = 0 ∧ 0 < s.re := by
+  obtain ⟨d, hd⟩ := IsAlgClosed.exists_eq_mul_self (discrim (1 : ℂ) (⟨a, b⟩ : ℂ) (c : ℂ))
+  obtain ⟨s, hs⟩ := exists_quadratic_eq_zero (one_ne_zero) ⟨d, hd⟩
+  have hs' : s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0 := by linear_combination hs
+  have hs₂ := Criteria.quadratic_partner hs'
+  have hsum : s.re + (-(⟨a, b⟩ : ℂ) - s).re = -a := by simp
+  have hp : (⟨a, b⟩ : ℂ) = a + b * Complex.I := by apply Complex.ext <;> simp
+  have hdet : ∀ t : ℂ, t ^ 2 + (⟨a, b⟩ : ℂ) * t + (c : ℂ) = 0 →
+      (characteristicMatrix (stateMatrix a b c) t).det = 0 := fun t ht => by
+    rw [det_characteristicMatrix_stateMatrix, ← hp, ht, zero_mul]
+  by_cases hpos : 0 < s.re
+  · exact ⟨s, hdet s hs', hpos⟩
+  · refine ⟨-(⟨a, b⟩ : ℂ) - s, hdet _ hs₂, ?_⟩
+    linarith
 
 /-- Characteristic polynomial: `det(sI − A) = p(s) p̄(s) / L²` with
 `p(s) = L s² + (R + Kp + j ω ΔL) s + Ki`. -/

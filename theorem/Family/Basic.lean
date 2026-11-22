@@ -45,8 +45,7 @@ Results.
 * `Exact`, `Sound`, `ExactUnder`, `SoundUnder`; `exact_iff_generate`, `sound_iff_generate`,
   `chain_eq_semantics_iff`, `chain_le_semantics_iff`, `Exact.sound`, `Sound.soundUnder`,
   `ExactUnder.soundUnder`, `exactUnder_empty_iff`.
-* Sentences without a translation: `sound_of_translate_eq_univ`, `exact_of_translate_eq_univ`,
-  `exact_of_translate_eq_empty`.
+* Sentences without a translation: `exact_of_translate_eq_univ`, `exact_of_translate_eq_empty`.
 * Observations: `certified` (with an exact translation, the certified observations are those
   whose every possible source satisfies the sentence), `certifies`, `refutes`.
 * Readings: `Sound.of_reading`, `Exact.of_reading`, `exact_iff_of_reading` (soundness and
@@ -209,17 +208,8 @@ smaller family of complete systems. -/
 
 /-! ## Sentences without a translation -/
 
-/-- A sentence translated into the whole requirement language is sound when no complete system
-meets every requirement. -/
-@[tmio TM, powerlib_foundation] theorem sound_of_translate_eq_univ (h : realize F.meets Set.univ = ∅)
-    {s : Sentence} (hs : F.translate s = Set.univ) :
-    connection% (F.Sound s) := by
-  change F.Sound s
-  unfold Sound
-  rw [hs, h]
-  exact Set.empty_subset _
-
-/-- Such a translation is exact exactly when no complete system satisfies the sentence. -/
+/-- When no complete system meets every requirement, a sentence translated into the whole
+requirement language is exact as soon as no complete system satisfies it. -/
 @[tmio TM, powerlib_foundation] theorem exact_of_translate_eq_univ (h : realize F.meets Set.univ = ∅)
     {s : Sentence} (hs : F.translate s = Set.univ) (hd : F.den s = ∅) :
     connection% (F.Exact s) := by

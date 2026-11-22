@@ -295,60 +295,44 @@ Schur complement is spectrally stable. -/
 /-! ## Exponential stability -/
 
 open scoped Matrix.Norms.L2Operator in
-/-- Index 1 and Hurwitz Schur complement ⇒ exponential stability of the zero-input DAE: every
-solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0` (the algebraic
-component through the `ℓ²` operator norm of `A_yy⁻¹ A_yx`, Mathlib `Matrix.l2_opNorm_mulVec`). -/
-@[tmio T, powerlib_foundation] theorem exponentiallyStable_of_isHurwitz (hA : IsUnit d.Ayy.det)
-    (hH : LinearSystems.IsHurwitz d.schurA) :
-    ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
-      (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
-        d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
-      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
-      ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
-  obtain ⟨K, hK, r, hr, hdecay⟩ := LTI.linear_decay_of_isHurwitz hH
-  set c := ‖d.Ayy⁻¹ * d.Ayx‖
-  refine ⟨K * (1 + c), by positivity, r, hr, fun x y hs t ht => ?_⟩
-  obtain ⟨hx, hy⟩ := (d.isSolution_iff hA (fun _ => 0) x y).mp hs
-  simp only [mulVec_zero, add_zero] at hx
-  have hxb := hdecay x hx t ht
-  have hc : 0 ≤ c := norm_nonneg _
-  have hE : 0 ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by positivity
-  constructor
-  · calc ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := hxb
-      _ ≤ K * (1 + c) * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by nlinarith
-  · have hyt : y t = -((d.Ayy⁻¹ * d.Ayx) *ᵥ x t) := by
-      rw [hy t]; simp [algebraic, mulVec_mulVec]
-    have hneg : ‖WithLp.toLp 2 (y t)‖ = ‖WithLp.toLp 2 ((d.Ayy⁻¹ * d.Ayx) *ᵥ x t)‖ := by
-      rw [hyt, WithLp.toLp_neg, norm_neg]
-    rw [hneg]
-    calc ‖WithLp.toLp 2 ((d.Ayy⁻¹ * d.Ayx) *ᵥ x t)‖ ≤ c * ‖WithLp.toLp 2 (x t)‖ :=
-          Matrix.l2_opNorm_mulVec _ (WithLp.toLp 2 (x t))
-      _ ≤ c * (K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖) :=
-          mul_le_mul_of_nonneg_left hxb hc
-      _ ≤ K * (1 + c) * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by nlinarith
-
-/-- Conversely, exponential stability of the index-1 zero-input DAE (both components of every
-solution bounded by `K e^{-rate t} ‖x(0)‖`) forces the Schur complement to be Hurwitz. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_of_exponentiallyStable (hA : IsUnit d.Ayy.det)
-    (h : ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
-        (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
-          d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
-        ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
-        ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
-    LinearSystems.IsHurwitz d.schurA := by
-  obtain ⟨K, -, r, hr, hb⟩ := h
-  exact LTI.isHurwitz_of_linear_decay hr fun x hx t ht => (hb x _ (d.isSolution_lift hA hx) t ht).1
-
 /-- Index 1: exponential stability of the zero-input DAE (both components of every solution
-bounded by `K e^{-rate t} ‖x(0)‖`, `K, rate > 0`) holds iff the Schur complement is Hurwitz. -/
+bounded by `K e^{-rate t} ‖x(0)‖`, `K, rate > 0`) holds iff the Schur complement is Hurwitz. The
+bound on the differential component alone forces `IsHurwitz` (`LTI.isHurwitz_of_linear_decay`);
+conversely the algebraic component is bounded through the `ℓ²` operator norm of `A_yy⁻¹ A_yx`
+(Mathlib `Matrix.l2_opNorm_mulVec`). -/
 @[tmio T, powerlib_foundation] theorem exponentiallyStable_iff_isHurwitz (hA : IsUnit d.Ayy.det) :
     (∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
         (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
           d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
         ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
         ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) ↔
-      LinearSystems.IsHurwitz d.schurA :=
-  ⟨d.isHurwitz_of_exponentiallyStable hA, d.exponentiallyStable_of_isHurwitz hA⟩
+      LinearSystems.IsHurwitz d.schurA := by
+  constructor
+  · rintro ⟨K, -, r, hr, hb⟩
+    exact LTI.isHurwitz_of_linear_decay hr fun x hx t ht =>
+      (hb x _ (d.isSolution_lift hA hx) t ht).1
+  · intro hH
+    obtain ⟨K, hK, r, hr, hdecay⟩ := LTI.linear_decay_of_isHurwitz hH
+    set c := ‖d.Ayy⁻¹ * d.Ayx‖
+    refine ⟨K * (1 + c), by positivity, r, hr, fun x y hs t ht => ?_⟩
+    obtain ⟨hx, hy⟩ := (d.isSolution_iff hA (fun _ => 0) x y).mp hs
+    simp only [mulVec_zero, add_zero] at hx
+    have hxb := hdecay x hx t ht
+    have hc : 0 ≤ c := norm_nonneg _
+    have hE : 0 ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by positivity
+    constructor
+    · calc ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := hxb
+        _ ≤ K * (1 + c) * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by nlinarith
+    · have hyt : y t = -((d.Ayy⁻¹ * d.Ayx) *ᵥ x t) := by
+        rw [hy t]; simp [algebraic, mulVec_mulVec]
+      have hneg : ‖WithLp.toLp 2 (y t)‖ = ‖WithLp.toLp 2 ((d.Ayy⁻¹ * d.Ayx) *ᵥ x t)‖ := by
+        rw [hyt, WithLp.toLp_neg, norm_neg]
+      rw [hneg]
+      calc ‖WithLp.toLp 2 ((d.Ayy⁻¹ * d.Ayx) *ᵥ x t)‖ ≤ c * ‖WithLp.toLp 2 (x t)‖ :=
+            Matrix.l2_opNorm_mulVec _ (WithLp.toLp 2 (x t))
+        _ ≤ c * (K * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖) :=
+            mul_le_mul_of_nonneg_left hxb hc
+        _ ≤ K * (1 + c) * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by nlinarith
 
 end LinearDAE
 

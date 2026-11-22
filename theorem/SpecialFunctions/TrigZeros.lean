@@ -77,11 +77,6 @@ def trigPoly2ZeroSet (c₀ c₁ s₁ c₂ s₂ a : ℝ) : Set ℝ :=
   simp only [trigPoly2Deriv]
   ring
 
-@[tmio T, powerlib_foundation] theorem deriv_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) :
-    deriv (trigPoly2 c₀ c₁ s₁ c₂ s₂) = trigPoly2Deriv c₁ s₁ c₂ s₂ := by
-  funext θ
-  exact (hasDerivAt_trigPoly2 c₀ c₁ s₁ c₂ s₂ θ).deriv
-
 @[tmio T, powerlib_foundation] theorem continuous_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) :
     Continuous (trigPoly2 c₀ c₁ s₁ c₂ s₂) := by
   unfold trigPoly2

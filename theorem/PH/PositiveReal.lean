@@ -79,28 +79,6 @@ variable {n m : ℕ}
   rw [star_trivial] at h1 h2
   linarith
 
-@[tmio T, powerlib_foundation] theorem phCx_form_re_pos {P : Matrix (Fin n) (Fin n) ℝ}
-    (hP : P.PosDef) {v : Fin n → ℂ} (hv : v ≠ 0) :
-    0 < (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re := by
-  rw [phCx_form_re]
-  have h1 := hP.posSemidef.dotProduct_mulVec_nonneg (fun i => (v i).re)
-  have h2 := hP.posSemidef.dotProduct_mulVec_nonneg (fun i => (v i).im)
-  rw [star_trivial] at h1 h2
-  by_cases ha : (fun i => (v i).re) = 0
-  · have hb : (fun i => (v i).im) ≠ 0 := by
-      intro hb
-      apply hv
-      funext i
-      apply Complex.ext
-      · simpa using congrFun ha i
-      · simpa using congrFun hb i
-    have := hP.dotProduct_mulVec_pos hb
-    rw [star_trivial] at this
-    linarith
-  · have := hP.dotProduct_mulVec_pos ha
-    rw [star_trivial] at this
-    linarith
-
 /-- `uᴴ Gᴴ u = conj (uᴴ G u)` for complex `G`. -/
 @[tmio T, powerlib_foundation] theorem phCx_conjTranspose_form {κ : Type*} [Fintype κ]
     (G : Matrix κ κ ℂ) (u : κ → ℂ) :

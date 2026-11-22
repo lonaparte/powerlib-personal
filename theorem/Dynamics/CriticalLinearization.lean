@@ -96,8 +96,7 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
 /-- `ẋ = ‖x‖² x` (for `n = 1`, `ẋ = x³`): the origin is unstable. -/
 @[tmio T, powerlib_foundation] theorem cubic_pos_unstable (hn : 0 < n) :
     Unstable (cubicField (n := n) 1) 0 := by
-  intro hstab
-  obtain ⟨δ, hδ, hball⟩ := hstab 1 one_pos
+  refine _root_.unstable_of_fixed_escape one_pos fun δ hδ => ?_
   let e : State n := EuclideanSpace.single ⟨0, hn⟩ 1
   have he : ‖e‖ = 1 := by simp [e]
   set r : ℝ := min (δ / 2) (1 / 2) with hr
@@ -135,14 +134,13 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
   have h0 : ‖φ 0 - 0‖ < δ := by
     simp only [φ, g, u, sub_zero, mul_zero, Real.sqrt_one, inv_one, one_smul]
     rw [hx₀]; exact hrδ
-  have hend := hball 0 t₁ φ hφ h0 t₁ ⟨ht₁, le_rfl⟩
   have hut₁ : u t₁ = r ^ 2 := by
     simp only [u, t₁]; field_simp; ring
   have : ‖φ t₁ - 0‖ = 1 := by
     simp only [φ, g, sub_zero, hut₁]
     rw [Real.sqrt_sq hr0.le, norm_smul, hx₀, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hr0),
       inv_mul_cancel₀ hr0.ne']
-  linarith
+  exact ⟨t₁, φ, t₁, hφ, h0, ⟨ht₁, le_rfl⟩, this.ge⟩
 
 /-- Two `C¹` systems with the same equilibrium and the same Jacobian (the zero matrix, all
 eigenvalues with zero real part), one globally asymptotically stable and one unstable. -/
