@@ -37,8 +37,9 @@ gfm-periodic-source.md` ("三态局部候选"); `notes/theory-draft.md` §1.3, �
 
 Results.
 * Equilibrium set and existence (`field_eq_zero_iff`, `exists_equilibrium_iff`,
-  `field_equilibrium`): an equilibrium exists iff `|P₀| ≤ K₀`; the loading equilibrium is
-  `(δ₀, 0, P₀)`, `δ₀ = arcsin(P₀/K₀)`.
+  `field_equilibrium`, `Model.field_point_eq_zero_iff`): an equilibrium exists iff `|P₀| ≤ K₀`;
+  the selected point `(δ*, 0, P₀)` is one iff `K₀ sin δ* = P₀`; the loading equilibrium is
+  `(atLoading g).point = (δ₀, 0, P₀)`, `δ₀ = arcsin(P₀/K₀)`.
 * With `K = K₀ cos δ₀`: `ω_c > K/D − D/M` ⇒ locally exponentially stable, `ω_c < K/D − D/M` ⇒
   unstable, and stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is
   the dangerous side.  On the boundary itself the equilibrium is asymptotically, not
@@ -109,7 +110,8 @@ Family and connection conclusions.
   family (`DroopLPF.mem_den_iff_swing`), and the laws above are the swing family's, carried over
   within `D, ω_c > 0` by the hub transfer of `theorem/Family/Reading.lean`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
-  `exists_equilibrium_iff`, `field_equilibrium`.  The transfer functions, the boundary frequency,
+  `exists_equilibrium_iff`, `field_equilibrium`, `Model.field_point_eq_zero_iff` (with
+  `Model.contDiff_field`).  The transfer functions, the boundary frequency,
   the first-order modulation `A₁`, the periodic time averages and the second-order reduction
   algebra are foundation.
 
@@ -145,9 +147,6 @@ def δ0 : ℝ := Real.arcsin (g.P0 / g.K0)
 
 /-- Synchronizing coefficient `K = K₀ cos δ₀`. -/
 def K : ℝ := g.K0 * Real.cos g.δ0
-
-/-- Loading equilibrium `(δ₀, 0, P₀)`. -/
-def equilibrium : State 3 := mk3 g.δ0 0 g.P0
 
 /-- Jacobian at angle `δ`. -/
 def jacobian (δ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
@@ -279,6 +278,18 @@ def Model.field (m : Model) (z : State 3) : State 3 := m.g.field (z + m.point)
 /-- The synchronizing coefficient `K = K₀ cos δ*` at the selected angle. -/
 def Model.K (m : Model) : ℝ := m.g.K0 * Real.cos m.δ
 
+/-- The selected point `(δ*, 0, P₀)` is an equilibrium iff the angle is balanced,
+`K₀ sin δ* = P₀` (`field_eq_zero_iff`). Static evidence on the model, not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.field_point_eq_zero_iff (m : Model) (hM : m.g.M ≠ 0)
+    (hω : m.g.ωc ≠ 0) : m.g.field m.point = 0 ↔ m.g.K0 * Real.sin m.δ = m.g.P0 := by
+  rw [m.g.field_eq_zero_iff hM hω]
+  simp [Model.point]
+
+/-- The translated field is smooth. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.contDiff_field (m : Model) : ContDiff ℝ 1 m.field :=
+  m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
+
 /-- Static requirements on VSM + power-filter models. -/
 inductive Requirement
   /-- Power balance at the selected angle: `K₀ sin δ* = P₀`. -/
@@ -325,13 +336,6 @@ Satisfaction of the power-balance requirement. -/
     connection% ((⟨g, g.δ0⟩ : Model) ∈ TMIO.realize Meets {.balanced}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K]
   exact SpecialFunctions.mul_sin_arcsin_div h hK0
-
-/-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem field_equilibrium (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hK0 : 0 < g.K0)
-    (h : |g.P0| ≤ g.K0) : g.field g.equilibrium = 0 :=
-  (g.field_eq_zero_iff hM hω _).mpr ⟨by simp [equilibrium], by simp [equilibrium], by
-    rw [equilibrium, mk3_zero]; exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K] using (g.sin_δ0 hK0 h))⟩
 
 /-- Strictly inside the loadability limit the synchronizing coefficient is positive
 (`cos δ₀ = √(1 − (P₀/K₀)²) > 0`, `SpecialFunctions.cos_arcsin_div_pos`). -/
@@ -479,10 +483,9 @@ def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
 
 /-! ## Time averages along periodic solutions of the forced model -/
 
-/-- Along a `T`-periodic solution of the forced three-state model with a continuous grid-angle
-signal `u`, the averaged filtered power and the averaged electrical power both equal `P₀`:
-`∫₀ᵀ P_f = P₀ T` and `∫₀ᵀ K₀ sin(δ − u) = P₀ T`. -/
-@[tmio TM, powerlib_domain] theorem periodic_time_averages (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
+/-- The componentwise integration argument of `periodic_time_averages`. -/
+@[tmio TM, powerlib_domain] private theorem periodic_time_averages_coord (hM : g.M ≠ 0)
+    (hω : g.ωc ≠ 0)
     {u δ ω Pf : ℝ → ℝ} (hu : Continuous u) {T : ℝ}
     (hδ : ∀ t, HasDerivAt δ (ω t) t)
     (hωd : ∀ t, HasDerivAt ω ((g.P0 - Pf t - g.D * ω t) / g.M) t)
@@ -527,6 +530,20 @@ signal `u`, the averaged filtered power and the averaged electrical power both e
   · linarith
   · linarith
 
+/-- Along a `T`-periodic solution of the forced three-state model `fieldU` with a continuous
+grid-angle signal `u`, the averaged filtered power and the averaged electrical power both equal
+`P₀`: `∫₀ᵀ P_f = P₀ T` and `∫₀ᵀ K₀ sin(δ − u) = P₀ T`. -/
+@[tmio TM, powerlib_domain] theorem periodic_time_averages (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
+    {u : ℝ → ℝ} (hu : Continuous u) {x : ℝ → State 3} {T : ℝ}
+    (hx : ∀ t, HasDerivAt x (g.fieldU (u t) (x t)) t) (hp : x T = x 0) :
+    ∫ t in (0 : ℝ)..T, x t 2 = g.P0 * T ∧
+      ∫ t in (0 : ℝ)..T, g.K0 * Real.sin (x t 0 - u t) = g.P0 * T := by
+  have hc : ∀ (i : Fin 3) (t : ℝ), HasDerivAt (fun τ => x τ i) (g.fieldU (u t) (x t) i) t :=
+    fun i t => (EuclideanSpace.proj i : State 3 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t (hx t)
+  refine g.periodic_time_averages_coord hM hω hu (fun t => by simpa [fieldU] using hc 0 t)
+    (fun t => by simpa [fieldU] using hc 1 t) (fun t => by simpa [fieldU_apply_two] using hc 2 t)
+    (by rw [hp]) (by rw [hp]) (by rw [hp])
+
 end VSMLPF
 
 /-! ## The VSM + power-filter family -/
@@ -539,12 +556,6 @@ namespace VSMLPF
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
     family_isAutonomous
-
-@[tmio M, powerlib_domain] private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
-    m.g.field m.point = 0 :=
-  (m.g.field_eq_zero_iff hp.1.ne' hp.2.2.ne' _).mpr
-    ⟨by simp [Model.point], by simp [Model.point],
-      by have hb' : m.g.K0 * Real.sin m.δ = m.g.P0 := hb; simpa [Model.point] using hb'⟩
 
 @[tmio M, powerlib_domain] private theorem fderiv_point (m : Model) :
     fderiv ℝ m.g.field m.point =
@@ -563,7 +574,7 @@ Routh–Hurwitz conditions of the Jacobian at the selected point). -/
   rw [(connection_proof% mem_den_flow_iff)]
   change LocallyExponentiallyStable m.g.field m.point
   refine Criteria.locallyExponentiallyStable_of_jacobian_fin_three (m.g.jacobian m.δ)
-    m.g.contDiff_field (point_eq_zero ⟨hM, hD, hω⟩ hb) (fderiv_point m) ?_ ?_ ?_
+    m.g.contDiff_field ((m.field_point_eq_zero_iff hM.ne' hω.ne').mpr hb) (fderiv_point m) ?_ ?_ ?_
   · rw [trace_jacobian, neg_div]
     have : 0 < m.g.D / m.g.M := div_pos hD hM
     linarith
@@ -585,7 +596,7 @@ Routh–Hurwitz conditions of the Jacobian at the selected point). -/
   rw [(connection_proof% mem_den_flow_iff)]
   change Unstable m.g.field m.point
   obtain ⟨hM, hD, hwc⟩ := hp
-  have heq := point_eq_zero ⟨hM, hD, hwc⟩ hb
+  have heq := (m.field_point_eq_zero_iff hM.ne' hwc.ne').mpr hb
   rcases hs with hs | hK
   · have hgap : (-(m.g.jacobian m.δ).trace) * Criteria.principalMinorSum (m.g.jacobian m.δ) <
         -(m.g.jacobian m.δ).det := by
@@ -659,7 +670,7 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
       (hm .fastFilter (by simp [family, translate]))
   have hp : Meets m .physical := (TMIO.mem_realize _ _ _).mp hI .physical rfl
   obtain ⟨hM, hD, hω⟩ := hp
-  rw [m.g.field_eq_zero_iff hM.ne' hω.ne'] at heq
+  rw [m.field_point_eq_zero_iff hM.ne' hω.ne'] at heq
   -- the cubic Routh criterion on `M s³ + (D + M ω_c) s² + D ω_c s + ω_c K`
   rw [Criteria.isHurwitz_iff_of_coeffs_cubic _ hM (a2 := m.g.D + m.g.M * m.g.ωc)
     (a1 := m.g.D * m.g.ωc) (a0 := m.g.ωc * m.K) (by rw [trace_jacobian]; field_simp; ring)
@@ -673,8 +684,7 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
     linarith
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl | rfl)
-  · show m.g.K0 * Real.sin m.δ = m.g.P0
-    simpa [Model.point] using heq.2.2
+  · exact heq
   · exact ⟨hM, hD, hω⟩
   · exact hK
   · exact hf
@@ -707,6 +717,14 @@ def atLoading (g : VSMLPF) : Model := ⟨g, g.δ0⟩
 def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 
 @[tmio M, simp, powerlib_domain] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
+
+/-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_equilibrium (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hK0 : 0 < g.K0)
+    (h : |g.P0| ≤ g.K0) : g.field (atLoading g).point = 0 :=
+  ((atLoading g).field_point_eq_zero_iff hM hω).mpr
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets,
+      Model.K, K, atLoading] using g.sin_δ0 hK0 h)
 
 @[tmio M, powerlib_domain] private theorem fast_iff (hp : g.Pos) :
     connection% (atLoading g ∈ TMIO.realize Meets {.fastFilter} ↔ g.K / g.D - g.D / g.M < g.ωc) := by
@@ -792,9 +810,9 @@ def offEquilibrium : Model := ⟨⟨1, 0, 1, 1, 0⟩, 0⟩
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
     offEquilibrium.g.contDiff_field fun h => ?_
-  rw [offEquilibrium.g.field_eq_zero_iff (by norm_num [offEquilibrium])
+  rw [offEquilibrium.field_point_eq_zero_iff (by norm_num [offEquilibrium])
     (by norm_num [offEquilibrium])] at h
-  simp [offEquilibrium, Model.point] at h
+  simp [offEquilibrium] at h
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for a balanced angle. -/
@@ -816,9 +834,9 @@ def negativeInertia : Model := ⟨⟨-1, -1, 1, 0, -1⟩, 0⟩
     connection% (negativeInertia ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_three _
-    negativeInertia.g.contDiff_field ((negativeInertia.g.field_eq_zero_iff
-      (by norm_num [negativeInertia]) (by norm_num [negativeInertia]) _).mpr
-      (by simp [negativeInertia, Model.point])) (fderiv_point negativeInertia) ?_ ?_ ?_)
+    negativeInertia.g.contDiff_field ((negativeInertia.field_point_eq_zero_iff
+      (by norm_num [negativeInertia]) (by norm_num [negativeInertia])).mpr
+      (by simp [negativeInertia])) (fderiv_point negativeInertia) ?_ ?_ ?_)
   · rw [trace_jacobian]
     norm_num [negativeInertia]
   · rw [det_jacobian]
@@ -1445,8 +1463,9 @@ Static evidence on the model, not a connection conclusion. -/
       Dynamics.affineCoord (q.droopVSM.coord hD) q.droopVSM.offset := by
   funext x
   rw [Function.comp_apply, DroopVSM.affineCoord_apply q.droopVSM hD]
-  simp only [energy, PhasePlane.Conservative.energy, PhasePlane.mk_apply_zero,
-    PhasePlane.mk_apply_one, Synchronous.SwingParams.potential, swingParams, droopVSM, sub_zero]
+  simp only [energy, PhasePlane.Conservative.energy, PhasePlane.Conservative.separableEnergy,
+    PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, Synchronous.SwingParams.potential,
+    swingParams, droopVSM, sub_zero]
   rcases eq_or_ne q.ωc 0 with hω | hω
   · simp only [hω, mul_zero, div_zero, zero_mul, zero_div, zero_add]
     ring

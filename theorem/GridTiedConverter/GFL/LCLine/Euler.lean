@@ -18,7 +18,7 @@ Model boundary.
   project-code frame, state `(θ_c, η)`, read about its selected point `(θ_c*, 0)`, with the model
   boundary of `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`. Its field is `C¹` for every
   parameter set (the reflection of the reduced field, whose phase-detector characteristic is a
-  trigonometric polynomial, `Params.contDiff_h`).
+  trigonometric polynomial, `Network.contDiff_h`).
 * Implementation layer (I). `LCLine.CodeEuler`: a model and a step `h > 0`; the system is the
   explicit Euler map `z ↦ z + h f(z)` of the translated code-frame field, with step length `h`,
   discrete time, exact arithmetic (no round-off), fixed step. Excluded: step-size control, implicit
@@ -29,8 +29,8 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`
 `not_eulerStep_realizationSoundUnder`),
 `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean` (`codeFamily_isAutonomous`,
 `Params.codeField_eq_transport`, `Params.reducedField_eq`, `codeFamily_den`),
-`theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`Params.contDiff_h`, `Params.h_eq`,
-`Params.deriv_h_eq`), `theorem/GridTiedConverter/PLL/PIPLLFamily.lean`
+`theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`Network.contDiff_h`, `Network.h_eq`,
+`Network.deriv_h_eq`), `theorem/GridTiedConverter/PLL/PIPLLFamily.lean`
 (`mem_den_locallyExponentiallyStable_of_pos`); work-sync `theory/T-numerical-integration.md` §1.2,
 §2.7.
 
@@ -113,14 +113,14 @@ disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
 @[tmio MI, powerlib_domain] theorem code_not_euler_realizationSoundUnder :
     connection% (¬ codeEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hwC : unitLine.wC ≠ 0 := by norm_num [Network.Cf, unitLine, Params.wC]
-  have hΔ : unitLine.Δ ≠ 0 := by norm_num [Network.Cf, unitLine, Params.Δ, Params.a, Params.b]
+  have hwC : unitLine.wC ≠ 0 := by norm_num [Network.Cf, unitLine, Network.wC]
+  have hΔ : unitLine.Δ ≠ 0 := by norm_num [Network.Cf, unitLine, Network.Δ, Network.a, Network.b]
   have h0 : unitLine.h (-0) = 0 := by
     rw [unitLine.h_eq hwC hΔ]
-    norm_num [Network.Cf, unitLine, Params.c0, Params.a, Params.b, Params.Δ, Params.wC]
+    norm_num [Network.Cf, unitLine, Network.c0, Network.a, Network.b, Network.Δ, Network.wC]
   have hg : deriv unitLine.h (-0) < 0 := by
     rw [unitLine.deriv_h_eq hwC hΔ]
-    norm_num [Network.Cf, unitLine, Params.a, Params.b, Params.Δ]
+    norm_num [Network.Cf, unitLine, Network.a, Network.b, Network.Δ]
   have hr := PLL.PIPLL.mem_den_locallyExponentiallyStable_of_pos (unitLine.pllModel (-0))
     one_pos one_pos h0 hg
   have hc := codeFamily_den (.flow .locallyExponentiallyStable)

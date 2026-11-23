@@ -18,9 +18,10 @@ Model boundary.
 Source: work-sync `theory/T-transient-stability.md` §1.3–§1.6, §1.8.
 
 Results (all domain, Rules §3: static model identities and trajectory calculus).
-* Closed-form integrals of the power-angle curve (`integral_Pe`, `potential_eq_integral`);
-  accelerating and decelerating areas `A_acc`, `A_dec` in closed form (`Aacc_eq`, `Adec_eq`), and
-  their expression through the potential (`Aacc_eq_neg_potential`, `Adec_eq_potential_sub`).
+* Closed-form integrals of the power-angle curve (`integral_Pe`, `potential_eq_integral`); the
+  accelerating and decelerating areas are readings of the potential, `A_acc(δ₀, x) = −U_{δ₀}(x)`
+  and `A_dec(x, δ_max) = U_x(δ_max)` (`Aacc`, `Adec`), with the change of reference angle
+  `Adec_eq_potential_sub`.
 * `g(δ_cc) = A_acc − A_dec` (`eacG`): derivative `g′ = P_e^post − P_e^f` (`hasDerivAt_eacG`) and
   uniqueness/existence of the critical clearing angle (`eacG_root_unique`, `exists_eacG_root`).
 * The sign of `P_e − P_m` between the equilibria (`Pm_lt_Pe_of_mem`, `Pe_lt_Pm_of_mem`,
@@ -85,25 +86,18 @@ variable (p : SwingParams)
   simp only [smul_eq_mul]
   ring
 
-/-- Accelerating area `A_acc(x) = ∫_{δ₀}^{x} (P_m − P_e)` of a (during-fault) stage. -/
-def Aacc (δ₀ x : ℝ) : ℝ := ∫ s in δ₀..x, (p.Pm - p.Pe s)
+/-- Accelerating area `A_acc(x) = ∫_{δ₀}^{x} (P_m − P_e)` of a (during-fault) stage: minus the
+potential, `A_acc = −U_{δ₀}(x)` (`potential_eq_integral`). -/
+abbrev Aacc (δ₀ x : ℝ) : ℝ := -p.potential δ₀ x
 
-/-- Decelerating area `A_dec(x) = ∫_{x}^{δ_max} (P_e − P_m)` of a (post-fault) stage. -/
-def Adec (x δmax : ℝ) : ℝ := ∫ s in x..δmax, (p.Pe s - p.Pm)
+/-- Decelerating area `A_dec(x) = ∫_{x}^{δ_max} (P_e − P_m)` of a (post-fault) stage: the
+potential `U_x(δ_max)` relative to `x` (`potential_eq_integral`). -/
+abbrev Adec (x δmax : ℝ) : ℝ := p.potential x δmax
 
-@[tmio M, powerlib_domain] theorem Aacc_eq (δ₀ x : ℝ) :
-    p.Aacc δ₀ x = (p.Pm - p.k₁) * (x - δ₀) +
-      p.k₂ * (Real.cos (x - p.k₃) - Real.cos (δ₀ - p.k₃)) := by
-  have h1 : IntervalIntegrable p.Pe MeasureTheory.volume δ₀ x :=
-    (by unfold Pe; fun_prop : Continuous p.Pe).intervalIntegrable _ _
-  rw [Aacc, integral_sub intervalIntegrable_const h1, integral_Pe, integral_const]
-  simp only [smul_eq_mul]
-  ring
-
-@[tmio M, powerlib_domain] theorem Adec_eq (x δmax : ℝ) :
-    p.Adec x δmax = p.k₂ * (Real.cos (x - p.k₃) - Real.cos (δmax - p.k₃)) -
-      (p.Pm - p.k₁) * (δmax - x) := by
-  rw [Adec, ← potential_eq_integral, potential]
+/-- `A_dec(x, δ_max) = U_{δ₀}(δ_max) − U_{δ₀}(x)` for any reference angle `δ₀`. -/
+@[tmio M, powerlib_domain] theorem Adec_eq_potential_sub (δ₀ x δmax : ℝ) :
+    p.Adec x δmax = p.potential δ₀ δmax - p.potential δ₀ x := by
+  simp only [Adec, potential]
   ring
 
 end SwingParams
@@ -111,24 +105,18 @@ end SwingParams
 /-- `g(x) = A_acc^f(x) − A_dec^post(x)` for a during-fault stage `f` and a post-fault stage `q`. -/
 def eacG (f q : SwingParams) (δ₀ δmax x : ℝ) : ℝ := f.Aacc δ₀ x - q.Adec x δmax
 
-/-- `g′(x) = P_e^post(x) − P_e^f(x)` when both stages share `P_m`. -/
+/-- `g′(x) = P_e^post(x) − P_e^f(x)` when both stages share `P_m`: with the reference `δ₀`,
+`g = U^post_{δ₀} − U^f_{δ₀} − U^post_{δ₀}(δ_max)` (`Adec_eq_potential_sub`,
+`hasDerivAt_potential`). -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_eacG (f q : SwingParams) (hPm : f.Pm = q.Pm)
     (δ₀ δmax x : ℝ) : HasDerivAt (eacG f q δ₀ δmax) (q.Pe x - f.Pe x) x := by
-  have hfun : eacG f q δ₀ δmax = fun y =>
-      ((f.Pm - f.k₁) * (y - δ₀) + f.k₂ * (Real.cos (y - f.k₃) - Real.cos (δ₀ - f.k₃))) -
-        (q.k₂ * (Real.cos (y - q.k₃) - Real.cos (δmax - q.k₃)) - (q.Pm - q.k₁) * (δmax - y)) := by
-    funext y; simp only [eacG, SwingParams.Aacc_eq, SwingParams.Adec_eq]
+  have hfun : eacG f q δ₀ δmax =
+      fun y => q.potential δ₀ y - f.potential δ₀ y - q.potential δ₀ δmax := by
+    funext y; rw [eacG, q.Adec_eq_potential_sub δ₀, SwingParams.Aacc]; ring
   rw [hfun]
-  have hc (k : ℝ) : HasDerivAt (fun y => Real.cos (y - k)) (-Real.sin (x - k)) x := by
-    have := ((hasDerivAt_id x).sub_const k).cos
-    simpa using this
-  have h := ((((hasDerivAt_id x).sub_const δ₀).const_mul (f.Pm - f.k₁)).add
-    (((hc f.k₃).sub_const (Real.cos (δ₀ - f.k₃))).const_mul f.k₂)).sub
-    ((((hc q.k₃).sub_const (Real.cos (δmax - q.k₃))).const_mul q.k₂).sub
-      (((hasDerivAt_const x δmax).sub (hasDerivAt_id x)).const_mul (q.Pm - q.k₁)))
-  convert h using 1
-  · funext y; simp
-  · simp only [SwingParams.Pe]; rw [hPm]; ring
+  convert ((q.hasDerivAt_potential δ₀ x).sub (f.hasDerivAt_potential δ₀ x)).sub_const
+    (q.potential δ₀ δmax) using 1
+  rw [hPm]; ring
 
 /-- Uniqueness of the critical clearing angle: where the post-fault curve lies strictly above
 the during-fault curve, `g` is strictly increasing, so it has at most one zero. -/
@@ -258,18 +246,6 @@ values at the endpoints. -/
       simp only at this
       linarith
     exact (hanti ⟨le_rfl, (hδ.1.trans hs.le)⟩ ⟨hδ.1, hs.le⟩ hδ.1).trans (le_max_left _ _)
-
-/-- The accelerating area is minus the potential: `A_acc(δ₀, x) = −U_{δ₀}(x)`. -/
-@[tmio M, powerlib_domain] theorem Aacc_eq_neg_potential (δ₀ x : ℝ) :
-    p.Aacc δ₀ x = -p.potential δ₀ x := by
-  rw [Aacc_eq, potential]
-  ring
-
-/-- `A_dec(x, δ_max) = U_{δ₀}(δ_max) − U_{δ₀}(x)` for any reference angle `δ₀`. -/
-@[tmio M, powerlib_domain] theorem Adec_eq_potential_sub (δ₀ x δmax : ℝ) :
-    p.Adec x δmax = p.potential δ₀ δmax - p.potential δ₀ x := by
-  rw [Adec_eq, potential, potential]
-  ring
 
 end SwingParams
 end powerlib.Synchronous

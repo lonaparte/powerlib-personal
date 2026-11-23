@@ -90,7 +90,8 @@ def blocksSP (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ) : LinearSP n m
     (hΦ : ContDiff ℝ 1 Φ) (ε : ℝ) : ContDiff ℝ 1 (scaledField ε Φ) :=
   (Matrix.toEuclideanCLM (n := Fin (n + m)) (𝕜 := ℝ) (scaleMatrix n m ε)).contDiff.comp hΦ
 
-/-- **Nonlinear two-time-scale stability**: `A₂₂` and the Schur complement Hurwitz ⇒ there is
+/-- **Nonlinear two-time-scale stability**: `A₂₂` and the Schur complement
+`A₁₁ − A₁₂A₂₂⁻¹A₂₁` (`LinearSP.reducedMatrix` of the blocks of `J`) Hurwitz ⇒ there is
 `ε* > 0` such that `ẋ = f(x,z)`, `εż = g(x,z)` is locally exponentially stable at the
 equilibrium for every `ε ∈ (0, ε*)`. -/
 @[tmio T, powerlib_foundation] theorem exists_epsStar_locallyExponentiallyStable
@@ -99,7 +100,7 @@ equilibrium for every `ε ∈ (0, ε*)`. -/
     (hJ : fderiv ℝ Φ w₀ = Matrix.toEuclideanCLM (n := Fin (n + m)) (𝕜 := ℝ)
       (J.reindex finSumFinEquiv finSumFinEquiv))
     (hA22 : LinearSystems.IsHurwitz J.toBlocks₂₂)
-    (hA0 : LinearSystems.IsHurwitz (J.toBlocks₁₁ - J.toBlocks₁₂ * J.toBlocks₂₂⁻¹ * J.toBlocks₂₁)) :
+    (hA0 : LinearSystems.IsHurwitz (blocksSP J).reducedMatrix) :
     ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
       LocallyExponentiallyStable (scaledField ε Φ) w₀ := by
   obtain ⟨εs, hεs, h⟩ := (blocksSP J).exists_epsStar_isHurwitz hA22 hA0

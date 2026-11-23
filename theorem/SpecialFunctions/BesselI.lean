@@ -34,15 +34,15 @@ Results.
 * Laplace estimate (`x = Re z > 0`): `integral_cexp_neg_mul_one_sub_cos(_mul)` write
   `e^{−z}π I₀` and `e^{−z}π(I₀ − I₁)` as `∫₀^π e^{−z(1−cos θ)}(1, 1 − cos θ) dθ`;
   `norm_integral_cexp_one_sub_cos_mul_le` (the second is `O(x^{−3/2})`),
-  `norm_integral_cexp_one_sub_cos_sub_gaussian_le` (the first differs from the complex Gaussian
-  `∫₀^∞ e^{−zθ²/2} = (2π/z)^{1/2}/2` by `O(‖z‖ x^{−5/2} + e^{−xπ²/4} x^{−1/2})`),
-  `norm_integral_gaussian_half`; elementary bounds `norm_cexp_sub_one_le_of_re_nonpos`,
+  `norm_integral_cexp_one_sub_cos_sub_gaussian_le` (the first differs from the half-line Gaussian
+  `gaussHalf z = ∫₀^∞ e^{−zθ²/2} = (2π/z)^{1/2}/2` by `O(‖z‖ x^{−5/2} + e^{−xπ²/4} x^{−1/2})`),
+  `norm_gaussHalf`; elementary bounds `norm_cexp_sub_one_le_of_re_nonpos`,
   `norm_cexp_sub_cexp_le`, `sq_div_two_sub_one_sub_cos_le`, `sq_mul_exp_le`,
   `pow_four_mul_exp_le` (`∫₀^π e^{−βθ²} ≤ √(π/β)/2` is
   `Asymptotics.integral_exp_neg_mul_sq_interval_bounds`).
 * **Laplace bounds in a sector**: `besselI_laplace_le` (for every `K > 0` there is `C ≥ 0` with
   `‖e^{−z}π I₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖` and `‖e^{−z}π(I₀(z) − I₁(z))‖ ≤ (C/x)‖G(z)‖`,
-  `G(z) = ∫₀^∞ e^{−zθ²/2}`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`).
+  `G = gaussHalf`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`).
 * **Large argument**: `besselI0_div_besselI1_sub_one_le` (for every `K > 0` there are `C`, `x₀`
   with `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever `Re z ≥ x₀`, `‖z‖ ≤ K Re z`),
   `besselI_ne_zero_of_sector` (`I₀(z), I₁(z) ≠ 0` there),
@@ -469,15 +469,20 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
           rw [hb2]; gcongr
       _ = _ := by rw [hbdef]; field_simp
 
+/-- The half-line Gaussian `G(z) = ∫₀^∞ e^{−z u²/2} du` (`= √(π/(2z))`, principal branch, for
+`Re z > 0`): the common large-argument scale of `π e^{−z} I_ν(z)` and `e^z K_ν(z)`
+(`theorem/SpecialFunctions/BesselK.lean`). Its modulus is `norm_gaussHalf`. -/
+def gaussHalf (z : ℂ) : ℂ := ∫ u in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (u : ℂ) ^ 2)
+
 /-- Comparison with the Gaussian: `x = Re z > 0`,
 `‖∫₀^π e^{−z(1−cos θ)} − ∫₀^∞ e^{−zθ²/2}‖ ≤ ‖z‖π⁴/(12x²) · √(π/(x/π²))/2 + e^{−xπ²/4} √(π/(x/4))/2`.
 -/
 @[tmio T, powerlib_foundation] theorem norm_integral_cexp_one_sub_cos_sub_gaussian_le {z : ℂ}
     (hx : 0 < z.re) :
-    ‖(∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ))) -
-        ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ≤
+    ‖(∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ))) - gaussHalf z‖ ≤
       ‖z‖ * Real.pi ^ 4 / (12 * z.re ^ 2) * (Real.sqrt (Real.pi / (z.re / Real.pi ^ 2)) / 2) +
         Real.exp (-(z.re * Real.pi ^ 2 / 4)) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) := by
+  rw [gaussHalf]
   set x := z.re with hxdef
   have hz2 : 0 < (z / 2).re := by simp [x] at hx ⊢; linarith
   have hint := integrable_cexp_neg_mul_sq hz2
@@ -558,12 +563,12 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
         (Eventually.of_forall fun θ => (Real.exp_pos _).le)
         (Ioi_subset_Ioi Real.pi_pos.le).eventuallyLE
 
-/-- Modulus of the half-line Gaussian: `‖∫₀^∞ e^{−zθ²/2}‖ = √(π/(‖z‖/2))/2` (`Re z > 0`). -/
-@[tmio T, powerlib_foundation] theorem norm_integral_gaussian_half {z : ℂ} (hx : 0 < z.re) :
-    ‖∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ =
-      Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 := by
+/-- Modulus of the half-line Gaussian: `‖G(z)‖ = ‖∫₀^∞ e^{−zθ²/2}‖ = √(π/(‖z‖/2))/2`
+(`Re z > 0`). -/
+@[tmio T, powerlib_foundation] theorem norm_gaussHalf {z : ℂ} (hx : 0 < z.re) :
+    ‖gaussHalf z‖ = Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 := by
   have hz2 : 0 < (z / 2).re := by simp at hx ⊢; linarith
-  rw [integral_gaussian_complex_Ioi hz2, norm_div, Complex.norm_two,
+  rw [gaussHalf, integral_gaussian_complex_Ioi hz2, norm_div, Complex.norm_two,
     show (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) by push_cast; ring, Complex.norm_cpow_real, norm_div,
     Complex.norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos, norm_div, Complex.norm_two,
     Real.sqrt_eq_rpow]
@@ -574,11 +579,9 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 `x = Re z > 0` and `‖z‖ ≤ K x`. Hence `π e^{−z} I_ν(z)/G(z) = 1 + O(1/x)`, `ν = 0, 1`. -/
 @[tmio T, powerlib_foundation] theorem besselI_laplace_le {K : ℝ} (hK : 0 < K) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re →
-      ‖Complex.exp (-z) * (Real.pi * besselI0 z) -
-          ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ≤
-        C / z.re * ‖∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ∧
+      ‖Complex.exp (-z) * (Real.pi * besselI0 z) - gaussHalf z‖ ≤ C / z.re * ‖gaussHalf z‖ ∧
       ‖Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z)‖ ≤
-        C / z.re * ‖∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ := by
+        C / z.re * ‖gaussHalf z‖ := by
   set k₁ := Real.sqrt (K * Real.pi ^ 2 / 2) with hk₁
   set k₂ := Real.sqrt (2 * K) with hk₂
   set C₁ := Real.pi ^ 2 / 2 * k₁ with hC₁
@@ -591,9 +594,9 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   set x := z.re with hxdef
   have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hx0 (Complex.re_le_norm z)
   have hπ := Real.pi_pos
-  set G := ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2) with hGdef
+  set G := gaussHalf z with hGdef
   set γ₀ := Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 with hγ₀def
-  have hG : ‖G‖ = γ₀ := norm_integral_gaussian_half hx0
+  have hG : ‖G‖ = γ₀ := norm_gaussHalf hx0
   rw [hG]
   have hγ₀ : 0 < γ₀ := by positivity
   -- the two auxiliary Gaussian widths relative to `γ₀`
@@ -660,12 +663,12 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   have hx0 : 0 < x := by linarith
   have hxC : 4 * C ≤ x := le_trans (le_max_right _ _) hx
   obtain ⟨hAG, hB⟩ := hC z hx0 hzK
-  set G := ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2) with hGdef
+  set G := gaussHalf z with hGdef
   set A := Complex.exp (-z) * (Real.pi * besselI0 z) with hAdef
   set B := Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z) with hBdef
   set γ₀ := ‖G‖ with hγ₀def
   have hγ₀ : 0 < γ₀ := by
-    rw [hγ₀def, hGdef, norm_integral_gaussian_half hx0]
+    rw [hγ₀def, hGdef, norm_gaussHalf hx0]
     have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hx0 (Complex.re_le_norm z)
     positivity
   -- `‖A‖ ≥ γ₀/2`

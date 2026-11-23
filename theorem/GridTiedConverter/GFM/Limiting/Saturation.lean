@@ -57,7 +57,8 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
   reading is `Synchronous.Swing.negativeInertia`, is locally exponentially stable
   (`negativeInertia_mem_den_locallyExponentiallyStable`).
 * The saturated model is the canonical swing model with `k₁ = 0`, `k₂ = P_sat`, `k₃ = φ − π/2`
-  (`SatModel.toSwing`, `satField_eq_swing`); on flow sentences the two families agree
+  (`satParams`, `satParams_Pe`; `satField` is its swing field and `SatModel.toSwing` its swing
+  reading, by definition); on flow sentences the two families agree
   (`mem_den_flow_iff_swing`, a comparison of the two semantics connections). Through it, within
   positive inertia, `mem_den_locallyAsymptoticallyStable_iff`: local asymptotic stability holds
   exactly under the local exponential condition (the swing family's exactness,
@@ -123,24 +124,31 @@ pre-fault operating point `(arcsin(P₀/P_max), P₀)` when `φ = φ_opt`. -/
 
 /-! ## Saturated swing model -/
 
-/-- Saturated GFM swing field, state `(δ, ω)`. -/
-def satField (M D Pref Psat φ : ℝ) (x : State 2) : State 2 :=
-  WithLp.toLp 2 ![x 1, (Pref - Psat * Real.cos (x 0 - φ) - D * x 1) / M]
+/-- The saturated GFM as canonical swing parameters: `k₁ = 0`, `k₂ = P_sat`, `k₃ = φ − π/2`, so
+that `P_e = P_sat sin(δ − φ + π/2) = P_sat cos(δ − φ)`. -/
+def satParams (M D Pref Psat φ : ℝ) : Synchronous.SwingParams :=
+  ⟨M, D, Pref, 0, Psat, φ - Real.pi / 2⟩
+
+@[tmio M, simp, powerlib_domain] theorem satParams_Pe (M D Pref Psat φ δ : ℝ) :
+    (satParams M D Pref Psat φ).Pe δ = Psat * Real.cos (δ - φ) := by
+  simp only [satParams, Synchronous.SwingParams.Pe, zero_add]
+  rw [show δ - (φ - Real.pi / 2) = (δ - φ) + Real.pi / 2 by ring, Real.sin_add_pi_div_two]
+
+@[tmio M, simp, powerlib_domain] theorem satParams_syncCoeff (M D Pref Psat φ δ : ℝ) :
+    (satParams M D Pref Psat φ).syncCoeff δ = -(Psat * Real.sin (δ - φ)) := by
+  simp only [satParams, Synchronous.SwingParams.syncCoeff]
+  rw [show δ - (φ - Real.pi / 2) = (δ - φ) + Real.pi / 2 by ring, Real.cos_add_pi_div_two]
+  ring
+
+/-- Saturated GFM swing field, state `(δ, ω)`: the swing field of `satParams`,
+`δ' = ω`, `ω' = (P_ref − P_sat cos(δ − φ) − D ω)/M`. -/
+abbrev satField (M D Pref Psat φ : ℝ) : State 2 → State 2 := (satParams M D Pref Psat φ).field
 
 @[tmio M, powerlib_domain] theorem satField_eq_zero_iff {M D Pref Psat φ : ℝ} (hM : M ≠ 0)
     (x : State 2) :
     satField M D Pref Psat φ x = 0 ↔ x 1 = 0 ∧ Psat * Real.cos (x 0 - φ) = Pref := by
-  constructor
-  · intro h
-    have h0 := congrArg (fun y : State 2 => y 0) h
-    have h1 := congrArg (fun y : State 2 => y 1) h
-    simp [satField, hM] at h0 h1
-    refine ⟨h0, ?_⟩
-    rw [h0] at h1
-    linarith
-  · rintro ⟨h0, h1⟩
-    ext i
-    fin_cases i <;> simp [satField, h0, h1]
+  rw [Synchronous.SwingParams.field_eq_zero_iff _ hM, satParams_Pe]
+  rfl
 
 /-- In saturation an equilibrium exists iff `|P_ref| ≤ P_sat`. Static evidence on the model,
 not a connection conclusion. -/
@@ -162,12 +170,6 @@ not a connection conclusion. -/
       rw [← hzero] at h ⊢
       simp only [zero_mul]
       exact (abs_nonpos_iff.mp h).symm
-
-@[tmio M, powerlib_domain] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
-    ContDiff ℝ 1 (satField M D Pref Psat φ) := by
-  apply contDiff_euclidean.2
-  intro i
-  fin_cases i <;> simp [satField] <;> fun_prop
 
 /-! ## The saturated-GFM family -/
 
@@ -209,24 +211,10 @@ def family : Family SatModel Spectral.Requirement 2 0 :=
 
 /-! ## The saturated model is a swing model -/
 
-/-- The saturated model read as the canonical swing model: `k₁ = 0`, `k₂ = P_sat`,
-`k₃ = φ − π/2`, so that `P_e = P_sat sin(δ − φ + π/2) = P_sat cos(δ − φ)`. -/
+/-- The saturated model read as the canonical swing model `satParams` (`k₁ = 0`, `k₂ = P_sat`,
+`k₃ = φ − π/2`) about the selected angle; its field is `satField` by definition. -/
 def SatModel.toSwing (m : SatModel) : Synchronous.Swing.Model :=
-  ⟨⟨m.M, m.D, m.Pref, 0, m.Psat, m.φ - Real.pi / 2⟩, m.δ⟩
-
-/-- The saturated field is the swing field of `toSwing`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem satField_eq_swing (m : SatModel) :
-    satField m.M m.D m.Pref m.Psat m.φ = m.toSwing.p.field := by
-  funext x
-  ext i
-  fin_cases i
-  · simp [satField, Synchronous.SwingParams.field, SatModel.toSwing]
-  · simp only [satField, Synchronous.SwingParams.field, SatModel.toSwing,
-      Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe]
-    simp only [PiLp.toLp_apply, PhasePlane.mk]
-    rw [show x 0 - (m.φ - Real.pi / 2) = (x 0 - m.φ) + Real.pi / 2 by ring,
-      Real.sin_add_pi_div_two, zero_add]
+  ⟨satParams m.M m.D m.Pref m.Psat m.φ, m.δ⟩
 
 /-- On flow sentences the saturated family agrees with the swing family: a saturated model
 satisfies a flow sentence exactly when its swing reading does. A comparison of the two semantics
@@ -238,20 +226,16 @@ connections at the two members. -/
   have hpt : PhasePlane.mk m.δ 0 = m.toSwing.point := rfl
   rw [(connection_proof% mem_den_flow), (connection_proof% Spectral.mem_den_flow_iff_shift
     (f := fun y : Synchronous.Swing.Model => y.p.field) (pt := Synchronous.Swing.Model.point)
-    Synchronous.Swing.family_isAutonomous), satField_eq_swing, hpt]
+    Synchronous.Swing.family_isAutonomous), hpt]
+  rfl
 
 @[tmio M, powerlib_domain] private theorem toSwing_Pe (m : SatModel) :
-    m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) := by
-  simp only [SatModel.toSwing, Synchronous.SwingParams.Pe, zero_add]
-  rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
-    Real.sin_add_pi_div_two]
+    m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) :=
+  satParams_Pe _ _ _ _ _ _
 
 @[tmio M, powerlib_domain] private theorem toSwing_syncCoeff (m : SatModel) :
-    m.toSwing.p.syncCoeff m.toSwing.δ = -(m.Psat * Real.sin (m.δ - m.φ)) := by
-  simp only [SatModel.toSwing, Synchronous.SwingParams.syncCoeff]
-  rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
-    Real.cos_add_pi_div_two]
-  ring
+    m.toSwing.p.syncCoeff m.toSwing.δ = -(m.Psat * Real.sin (m.δ - m.φ)) :=
+  satParams_syncCoeff _ _ _ _ _ _
 
 /-- The stability condition places a model in local exponential stability through its swing
 reading (`Synchronous.Swing.mem_den_locallyExponentiallyStable`: balanced, `M, D > 0`, positive
@@ -337,7 +321,7 @@ def negativeInertia : SatModel := ⟨-1, -1, 0, -1, Real.pi / 2, 0⟩
   have hsw := mem_den_flow_iff_swing negativeInertia .locallyExponentiallyStable
   have hs := Synchronous.Swing.negativeInertia_mem_den_locallyExponentiallyStable
   have hm : negativeInertia.toSwing = Synchronous.Swing.negativeInertia := by
-    simp [SatModel.toSwing, negativeInertia, Synchronous.Swing.negativeInertia]
+    simp [SatModel.toSwing, satParams, negativeInertia, Synchronous.Swing.negativeInertia]
   unfold powerlib.TMIO.Statement at hsw hs ⊢
   rw [hsw, hm]
   exact hs
@@ -381,7 +365,7 @@ condition: the synchronizing coefficient is `−P_sat sin(δ* − φ)`. -/
   simp only [TMIO.mem_realize, Synchronous.Swing.family, Synchronous.Swing.translate,
     Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
     Synchronous.Swing.Meets, toSwing_Pe, toSwing_syncCoeff]
-  simp only [SatModel.toSwing, hM, neg_pos, true_and]
+  simp only [SatModel.toSwing, satParams, hM, neg_pos, true_and]
 
 /-- Positive inertia: local exponential stability of a saturated model at `(δ*, 0)` holds exactly
 when `(δ*, 0)` is an equilibrium, `D > 0` and `P_sat sin(δ* − φ) < 0`. Converse linearization on
@@ -426,7 +410,7 @@ the curve is unstable for every `D ≥ 0`). -/
   have hiff := Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing hM
   unfold powerlib.TMIO.Statement at hsw hiff ⊢
   rw [hsw, hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq, toSwing_Pe, toSwing_syncCoeff]
-  simp only [SatModel.toSwing, neg_pos]
+  simp only [SatModel.toSwing, satParams, neg_pos]
 
 /-- Without positive inertia the local asymptotic translation is sound but not exact (the
 negative-inertia model, `Spectral.not_exact_of_les_witness`). -/
@@ -456,8 +440,8 @@ reading is unbalanced, `P_sat cos(0) = 0 ≠ 1 = P_ref`
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   have hsw := mem_den_flow_iff_swing offEquilibrium .unstable
   have hs := Synchronous.Swing.mem_den_unstable_of_not_balanced offEquilibrium.toSwing
-    (by norm_num [offEquilibrium, SatModel.toSwing])
-    (by rw [toSwing_Pe]; norm_num [offEquilibrium, SatModel.toSwing])
+    (by norm_num [offEquilibrium, SatModel.toSwing, satParams])
+    (by rw [toSwing_Pe]; norm_num [offEquilibrium, SatModel.toSwing, satParams])
   unfold powerlib.TMIO.Statement at hsw hs ⊢
   exact hsw.mpr hs
 

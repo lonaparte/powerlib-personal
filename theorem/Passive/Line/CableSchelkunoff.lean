@@ -37,7 +37,8 @@ needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m 
   `tendsto_exactZout_dc`; ray `s → 0⁺`: `exactZmut_tendsto_dc`, `exactZin_tendsto_dc`,
   `exactZout_tendsto_dc`.
 * High frequency: normalized forms `tubeDet_eq_norm`, `numIn_eq_norm`, `numOut_eq_norm`,
-  `exactZin_eq_norm`, `exactZout_eq_norm`, `exactZmut_eq_norm` (from
+  `exactZin_eq_norm`, `exactZout_eq_norm`, `exactZmut_eq_norm`, all over the normalized
+  determinant `tubeDetNorm` (`D' → 1` in a sector, `tendsto_tubeDetNorm`) (from
   `I_ν(z) = e^z G(z) Î_ν(z)/π`, `K_ν(z) = e^{−z} G(z) K̂_ν(z)`, `Î, K̂ → 1`,
   `G(ma)G(mb) = π/(2m√(ab))`, `gaussHalf_mul_gaussHalf`); `tendsto_exactZin_surface`,
   `tendsto_exactZout_surface` (`Z_in/(ρm/(2πa)) → 1`, `Z_out/(ρm/(2πb)) → 1`: surface
@@ -258,18 +259,23 @@ theorem cexp_neg_two_mul (w : ℂ) : Complex.exp (-(2 * w)) = (Complex.exp w ^ 2
     Complex.exp (m * b) = Complex.exp (m * a) * Complex.exp (m * ((b - a : ℝ) : ℂ)) := by
   rw [← Complex.exp_add]; push_cast; ring_nf
 
+/-- The normalized tube determinant `D'(m) = Î₁(mb)K̂₁(ma) − Î₁(ma)K̂₁(mb) e^{−2m(b−a)}`
+(`tubeDet_eq_norm`; `D' → 1` at high frequency, `tendsto_tubeDetNorm`). -/
+def tubeDetNorm (a b : ℝ) (m : ℂ) : ℂ :=
+  besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
+    Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))
+
 /-- Normalized determinant (`Re m > 0`, `a, b > 0`):
-`D(m) = (G(ma)G(mb)/π) e^{m(b−a)} (Î₁(mb)K̂₁(ma) − Î₁(ma)K̂₁(mb) e^{−2m(b−a)})`. -/
+`D(m) = (G(ma)G(mb)/π) e^{m(b−a)} D'(m)`. -/
 @[tmio M, powerlib_domain]
 theorem tubeDet_eq_norm {a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
     tubeDet a b m = gaussHalf (m * a) * gaussHalf (m * b) / Real.pi *
       Complex.exp (m * ((b - a : ℝ) : ℂ)) *
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) := by
+      tubeDetNorm a b m := by
   have hGa : gaussHalf (m * a) ≠ 0 := gaussHalf_ne_zero (re_mul_ofReal_pos' ha hm)
   have hGb : gaussHalf (m * b) ≠ 0 := gaussHalf_ne_zero (re_mul_ofReal_pos' hb hm)
   have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
-  unfold tubeDet
+  unfold tubeDet tubeDetNorm
   rw [besselI1_eq_norm hGb, besselK1_eq_norm hGa, besselI1_eq_norm hGa, besselK1_eq_norm hGb,
     cexp_mul_eq a b m, cexp_neg_two_mul]
   have hu := Complex.exp_ne_zero (m * a)
@@ -330,8 +336,7 @@ theorem exactZin_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm 
     exactZin ρ a b m = (ρ : ℂ) * m / (2 * Real.pi * a) *
       ((besselI0Norm (m * a) * besselK1Norm (m * b) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))) +
         besselK0Norm (m * a) * besselI1Norm (m * b)) /
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
+      tubeDetNorm a b m) := by
   unfold exactZin
   rw [numIn_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
     mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
@@ -343,8 +348,7 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
       ((besselI0Norm (m * b) * besselK1Norm (m * a) +
         besselK0Norm (m * b) * besselI1Norm (m * a) *
           Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
+      tubeDetNorm a b m) := by
   unfold exactZout
   rw [numOut_eq_norm ha hb hm, tubeDet_eq_norm ha hb hm,
     mul_div_mul_left _ _ (commonFactor_ne_zero ha hb hm)]
@@ -389,6 +393,19 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const (sub_pos.mpr hab)
   exact tendsto_cexp_neg_two_mul hrer
 
+/-- The normalized tube determinant tends to `1` along every sector filter with `Re m → ∞`
+(`0 < a < b`). -/
+@[tmio T, powerlib_foundation] theorem tendsto_tubeDetNorm {a b K : ℝ} (ha : 0 < a) (hab : a < b)
+    (hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
+    (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => tubeDetNorm a b (f i)) l (𝓝 1) := by
+  have h := ((tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec).mul
+    (tendsto_besselK1Norm_mul ha hre hsec)).sub (((tendsto_besselI1Norm_mul ha hK hre hsec).mul
+      (tendsto_besselK1Norm_mul (ha.trans hab) hre hsec)).mul
+        (tendsto_cexp_neg_two_mul_sub hab hre))
+  rw [show (1 : ℂ) * 1 - 1 * 1 * 0 = 1 by norm_num] at h
+  exact h
+
 /-- **High-frequency limit of the exact inner-surface impedance**: along any `m → ∞` in a sector
 (`Re m → ∞`, `‖m‖ ≤ K Re m`), `Z_in(m)/(ρ m/(2π a)) → 1` (the inner surface impedance). -/
 @[tmio M, powerlib_domain]
@@ -397,15 +414,13 @@ theorem tendsto_exactZin_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) 
     Tendsto (fun i => exactZin ρ a b (f i) / ((ρ : ℂ) * f i / (2 * Real.pi * a))) l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
   have hI0a := tendsto_besselI0Norm_mul ha hK hre hsec
-  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
   have hK0a := tendsto_besselK0Norm_mul ha hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
   have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
   have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have h := (((hI0a.mul hK1b).mul hE).add (hK0a.mul hI1b)).div
-    ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
-  rw [show ((1 : ℂ) * 1 * 0 + 1 * 1) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
+    (tendsto_tubeDetNorm ha hab hK hre hsec) one_ne_zero
+  rw [show ((1 : ℂ) * 1 * 0 + 1 * 1) / 1 = 1 by norm_num] at h
   refine h.congr' ?_
   filter_upwards [hre.eventually_gt_atTop 0] with i hi
   have hm0 : f i ≠ 0 := by intro h; rw [h] at hi; simp at hi
@@ -423,13 +438,11 @@ theorem tendsto_exactZout_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
   have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI0b := tendsto_besselI0Norm_mul (ha.trans hab) hK hre hsec
-  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
   have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
   have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have h := (((hI0b.mul hK1a)).add ((hK0b.mul hI1a).mul hE)).div
-    ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
-  rw [show ((1 : ℂ) * 1 + 1 * 1 * 0) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
+    (tendsto_tubeDetNorm ha hab hK hre hsec) one_ne_zero
+  rw [show ((1 : ℂ) * 1 + 1 * 1 * 0) / 1 = 1 by norm_num] at h
   refine h.congr' ?_
   filter_upwards [hre.eventually_gt_atTop 0] with i hi
   have hm0 : f i ≠ 0 := by intro h; rw [h] at hi; simp at hi
@@ -452,8 +465,7 @@ theorem gaussHalf_mul_gaussHalf {a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} 
 theorem exactZmut_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
     exactZmut ρ a b m = ((ρ / (Real.pi * (Real.sqrt a * Real.sqrt b)) : ℝ) : ℂ) *
       (m * Complex.exp (-(m * ((b - a : ℝ) : ℂ)))) /
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) := by
+      tubeDetNorm a b m := by
   have hm0 : m ≠ 0 := by intro h; rw [h] at hm; simp at hm
   have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   have hsa : (Real.sqrt a : ℂ) ≠ 0 := by exact_mod_cast (Real.sqrt_pos.mpr ha).ne'
@@ -462,8 +474,7 @@ theorem exactZmut_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
   have hb2 : (b : ℂ) = (Real.sqrt b : ℂ) ^ 2 := by rw [← Complex.ofReal_pow, Real.sq_sqrt hb.le]
   unfold exactZmut
   rw [tubeDet_eq_norm ha hb hm, gaussHalf_mul_gaussHalf ha hb hm]
-  generalize besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) *
-    besselK1Norm (m * b) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))) = D
+  generalize tubeDetNorm a b m = D
   rw [Complex.exp_neg]
   have hE := Complex.exp_ne_zero (m * ((b - a : ℝ) : ℂ))
   generalize Complex.exp (m * ((b - a : ℝ) : ℂ)) = E at hE ⊢
@@ -480,14 +491,9 @@ theorem tendsto_exactZmut_zero {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZmut ρ a b (f i)) l (𝓝 0) := by
   have hb : 0 < b := ha.trans hab
-  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
-  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have hm := tendsto_mul_cexp_neg (t := b - a) (by linarith) hre hsec
   have h := (hm.const_mul ((ρ / (Real.pi * (Real.sqrt a * Real.sqrt b)) : ℝ) : ℂ)).div
-    ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
+    (tendsto_tubeDetNorm ha hab hK hre hsec) one_ne_zero
   rw [mul_zero, zero_div] at h
   refine h.congr' ?_
   filter_upwards [hre.eventually_gt_atTop 0] with i hi
@@ -510,8 +516,7 @@ theorem exactZmut_div_tubeZmut_eq {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (
     exactZmut ρ a b m / tubeZmut ρ a b m =
       (((a + b) / (Real.sqrt a * Real.sqrt b) : ℝ) : ℂ) *
         ((1 - Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) / 2) /
-      (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
-        Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) := by
+      tubeDetNorm a b m := by
   have hb : 0 < b := ha.trans hab
   have hm0 : m ≠ 0 := by intro h; rw [h] at hm; simp at hm
   have hρ' : (ρ : ℂ) ≠ 0 := by exact_mod_cast hρ
@@ -526,9 +531,8 @@ theorem exactZmut_div_tubeZmut_eq {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (
   have hs : Complex.sinh (m * (b - a)) =
       (Complex.exp (m * ((b - a : ℝ) : ℂ)) - (Complex.exp (m * ((b - a : ℝ) : ℂ)))⁻¹) / 2 := by
     rw [← Complex.exp_neg, ← Complex.two_sinh]; push_cast; ring
+  generalize tubeDetNorm a b m = D
   rw [hs, cexp_neg_two_mul, Complex.exp_neg]
-  generalize besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) *
-    besselK1Norm (m * b) * (Complex.exp (m * ((b - a : ℝ) : ℂ)) ^ 2)⁻¹ = D
   have hE := Complex.exp_ne_zero (m * ((b - a : ℝ) : ℂ))
   generalize Complex.exp (m * ((b - a : ℝ) : ℂ)) = E at hE hE2 ⊢
   have hE' : E - E⁻¹ ≠ 0 := by
@@ -551,15 +555,11 @@ theorem tendsto_exactZmut_div_tubeZmut {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZmut ρ a b (f i) / tubeZmut ρ a b (f i)) l
       (𝓝 (((a + b) / (2 * Real.sqrt (a * b)) : ℝ) : ℂ)) := by
-  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
-  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
   have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have h := ((((tendsto_const_nhds (x := (1 : ℂ))).sub hE).div_const 2).const_mul
     (((a + b) / (Real.sqrt a * Real.sqrt b) : ℝ) : ℂ)).div
-    ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
-  have e : (((a + b) / (Real.sqrt a * Real.sqrt b) : ℝ) : ℂ) * ((1 - 0) / 2) / (1 * 1 - 1 * 1 * 0) =
+    (tendsto_tubeDetNorm ha hab hK hre hsec) one_ne_zero
+  have e : (((a + b) / (Real.sqrt a * Real.sqrt b) : ℝ) : ℂ) * ((1 - 0) / 2) / 1 =
       (((a + b) / (2 * Real.sqrt (a * b)) : ℝ) : ℂ) := by
     rw [Real.sqrt_mul ha.le]; push_cast; ring
   rw [e] at h
@@ -606,7 +606,8 @@ theorem tendsto_exactZin_div_tubeZin_dc {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZin ρ a b (f i) / tubeZin ρ a b (f i)) l (𝓝 1) := by
   have h := (tendsto_exactZin_dc (ρ := ρ) ha hab hf hre hsec).div
-    ((tubeZin_tendsto_dc ha hab).comp (tendsto_nhdsNE_of_re_pos hf hre)) (dc_ne_zero hρ ha hab)
+    ((tubeZin_tendsto_dc ha.ne' hab.ne (by linarith)).comp (tendsto_nhdsNE_of_re_pos hf hre))
+      (dc_ne_zero hρ ha hab)
   rwa [div_self (dc_ne_zero hρ ha hab)] at h
 
 /-- `Z_out/Z_out^{WW} → 1` at low frequency. -/
@@ -874,30 +875,22 @@ theorem innerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     (fun i => (besselI0Norm (f i * a) * besselK1Norm (f i * b) *
         Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ)))) +
         besselK0Norm (f i * a) * besselI1Norm (f i * b)) /
-      (besselI1Norm (f i * b) * besselK1Norm (f i * a) - besselI1Norm (f i * a) *
-        besselK1Norm (f i * b) * Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) - 1)
+tubeDetNorm a b (f i) - 1)
       =O[l] (fun i => 1 / (f i).re) := by
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
   have hI0a := tendsto_besselI0Norm_mul ha hK hre hsec
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
   have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
   have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have rK0a := besselK0Norm_sub_one_isBigO (hrer ha) (sector_mul_ofReal ha hsec)
   have rK1a := besselK1Norm_sub_one_isBigO (hrer ha) (sector_mul_ofReal ha hsec)
   have rK0a' := rK0a.trans (inv_re_mul_isBigO ha)
   have rK1a' := rK1a.trans (inv_re_mul_isBigO ha)
   have rE := cexp_neg_two_mul_isBigO (t := b - a) (by linarith) hre
   set E := fun i => Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))
-  set D := fun i => besselI1Norm (f i * b) * besselK1Norm (f i * a) - besselI1Norm (f i * a) *
-    besselK1Norm (f i * b) * E i with hDdef
-  have hD : Tendsto D l (𝓝 1) := by
-    have := (hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)
-    rw [show (1 : ℂ) * 1 - 1 * 1 * 0 = 1 by norm_num] at this
-    exact this
+  have hD := tendsto_tubeDetNorm ha hab hK hre hsec
   -- `N' − D' = (K̂₀(ma) − K̂₁(ma)) Î₁(mb) + e^{−2w}(Î₀(ma)K̂₁(mb) + Î₁(ma)K̂₁(mb))`
   have hdiff : (fun i => (besselK0Norm (f i * a) - 1 - (besselK1Norm (f i * a) - 1)) *
       besselI1Norm (f i * b) + E i * (besselI0Norm (f i * a) * besselK1Norm (f i * b) +
@@ -907,7 +900,7 @@ theorem innerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     have h2 := (rE.mul (((hI0a.mul hK1b).add (hI1a.mul hK1b)).isBigO_one (F := ℝ))).congr_right
       (fun i => mul_one _)
     exact h1.add h2
-  have hinv : (fun i => (D i)⁻¹) =O[l] (fun _ => (1 : ℝ)) :=
+  have hinv : (fun i => (tubeDetNorm a b (f i))⁻¹) =O[l] (fun _ => (1 : ℝ)) :=
     (hD.inv₀ one_ne_zero).isBigO_one (F := ℝ)
   refine ((hdiff.mul hinv).congr_right (fun i => mul_one _)).congr' ?_ (EventuallyEq.refl _ _)
   filter_upwards [hD.eventually_ne one_ne_zero] with i hi
@@ -929,29 +922,21 @@ theorem outerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
     (fun i => (besselI0Norm (f i * b) * besselK1Norm (f i * a) +
         besselK0Norm (f i * b) * besselI1Norm (f i * a) *
           Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) /
-      (besselI1Norm (f i * b) * besselK1Norm (f i * a) - besselI1Norm (f i * a) *
-        besselK1Norm (f i * b) * Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) - 1)
+tubeDetNorm a b (f i) - 1)
       =O[l] (fun i => 1 / (f i).re) := by
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
   have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
   have hK1a := tendsto_besselK1Norm_mul ha hre hsec
-  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
   have hK0b := tendsto_besselK0Norm_mul (ha.trans hab) hre hsec
   have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub hab hre
   have rI0b := besselI0Norm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
   have rI1b := besselI1Norm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
   have rI0b' := rI0b.trans (inv_re_mul_isBigO hb)
   have rI1b' := rI1b.trans (inv_re_mul_isBigO hb)
   have rE := cexp_neg_two_mul_isBigO (t := b - a) (by linarith) hre
-  have hD : Tendsto (fun i => besselI1Norm (f i * b) * besselK1Norm (f i * a) -
-      besselI1Norm (f i * a) * besselK1Norm (f i * b) *
-        Complex.exp (-(2 * (f i * ((b - a : ℝ) : ℂ))))) l (𝓝 1) := by
-    have := (hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)
-    rw [show (1 : ℂ) * 1 - 1 * 1 * 0 = 1 by norm_num] at this
-    exact this
+  have hD := tendsto_tubeDetNorm ha hab hK hre hsec
   have h1 := ((rI0b'.sub rI1b').mul (hK1a.isBigO_one (F := ℝ))).congr_right (fun i => mul_one _)
   have h2 := (rE.mul (((hK0b.mul hI1a).add (hI1a.mul hK1b)).isBigO_one (F := ℝ))).congr_right
     (fun i => mul_one _)
@@ -1016,13 +1001,8 @@ theorem tendsto_exactZmut_div_asymptotic {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha :
       ((ρ / (Real.pi * Real.sqrt (a * b)) : ℝ) * (f i * Complex.exp (-(f i * ((b - a : ℝ) : ℂ))))))
       l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
-  have hI1a := tendsto_besselI1Norm_mul ha hK hre hsec
-  have hK1a := tendsto_besselK1Norm_mul ha hre hsec
-  have hI1b := tendsto_besselI1Norm_mul (ha.trans hab) hK hre hsec
-  have hK1b := tendsto_besselK1Norm_mul (ha.trans hab) hre hsec
-  have hE := tendsto_cexp_neg_two_mul_sub hab hre
-  have hD := ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)).inv₀ (by norm_num)
-  rw [show ((1 : ℂ) * 1 - 1 * 1 * 0)⁻¹ = 1 by norm_num] at hD
+  have hD := (tendsto_tubeDetNorm ha hab hK hre hsec).inv₀ one_ne_zero
+  rw [inv_one] at hD
   refine hD.congr' ?_
   filter_upwards [hre.eventually_gt_atTop 0] with i hi
   have hf0 : f i ≠ 0 := by intro h; rw [h] at hi; simp at hi

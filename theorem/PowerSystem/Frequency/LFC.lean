@@ -56,13 +56,13 @@ Family and connection conclusions.
   selected steady state; their autonomous system is the translated forced field, and at that
   equilibrium every attractive sentence is the Hurwitz condition
   (`Family.mem_den_constantInput_iff`).
-* System maps: a two-area model (`Model`: areas `a`, `b`, `ω_s`, `T`) is read as the port
-  system of its five-state plant, and `Model7` as that of its seven-state plant
-  (`Family.IsLinear`): port input the area loads, port output the area frequencies. The steady
-  state `(0, 0, 0, ΔP_L)` is an equilibrium of every constant load `u`, and the plant field in
-  deviation coordinates about it is the zero-input field; so the flow sentences about the origin
-  are exactly the sentences about the non-interactive steady state of every constant load
-  (`Linear.holds_input_iff`, `Flow.Property.holds_shift_iff`).
+* System maps: a two-area model (`Model`: areas `a`, `b`, `ω_s`, `T`) is read as the port system of
+  its five-state plant (`family`), and, with governor dynamics, as that of its seven-state plant
+  `Model.plant7` (`family7`; `Family.IsLinear`): port input the area loads, port output the area
+  frequencies. The steady state `(0, 0, 0, ΔP_L)` is an equilibrium of every constant load `u`, and
+  the plant field in deviation coordinates about it is the zero-input field; so the flow sentences
+  about the origin are exactly the sentences about the non-interactive steady state of every
+  constant load (`Linear.holds_input_iff`, `Flow.Property.holds_shift_iff`).
 * Requirements (static): the rate language `Spectral.RateRequirement` read on the state matrix
   (`Spectral.MeetsMatrix`): `stable` (the state matrix is Hurwitz), `unstable` (a characteristic
   root in the open right half plane), `rate a` (`Linear.RateMargin`). Lyapunov stability and the
@@ -363,15 +363,8 @@ structure Model where
 /-- The five-state plant of a model. -/
 def Model.plant (m : Model) : Linear.Plant 5 2 := LFC.plant m.a m.b m.ωs m.T
 
-/-- A two-area LFC model with governor dynamics. -/
-structure Model7 where
-  a : Area
-  b : Area
-  ωs : ℝ
-  T : ℝ
-
-/-- The seven-state plant of a model. -/
-def Model7.plant (m : Model7) : Linear.Plant 7 2 := LFC.plant7 m.a m.b m.ωs m.T
+/-- The seven-state plant of a model (with governor dynamics). -/
+def Model.plant7 (m : Model) : Linear.Plant 7 2 := LFC.plant7 m.a m.b m.ωs m.T
 
 /-- Requirements on the state matrix of an LFC plant, all static: the rate language of
 `theorem/Spectral/LinearNamed.lean` read on the state matrix (`Spectral.MeetsMatrix`): `stable`
@@ -390,13 +383,14 @@ area frequencies out). -/
 def family : Family Model Requirement 5 2 :=
   ⟨fun m => m.plant.system, fun m => Spectral.MeetsMatrix m.plant.A, translate⟩
 
-/-- The seven-state LFC family. -/
-def family7 : Family Model7 Requirement 7 2 :=
-  ⟨fun m => m.plant.system, fun m => Spectral.MeetsMatrix m.plant.A, translate⟩
+/-- The seven-state LFC family: the same models read through their seven-state plant (governor
+dynamics). -/
+def family7 : Family Model Requirement 7 2 :=
+  ⟨fun m => m.plant7.system, fun m => Spectral.MeetsMatrix m.plant7.A, translate⟩
 
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
-@[tmio M, powerlib_domain] theorem family7_isLinear : family7.IsLinear Model7.plant := fun _ => rfl
+@[tmio M, powerlib_domain] theorem family7_isLinear : family7.IsLinear Model.plant7 := fun _ => rfl
 
 /-- Every translation of the five-state LFC family is sound. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
@@ -440,8 +434,8 @@ exactly by the Hurwitz property of the state matrix. -/
 
 /-- Seven-state model: Hurwitz premise ⇒ global exponential stability (convergence to the
 steady state in deviation coordinates). -/
-@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable7 (m : Model7)
-    (hA : IsHurwitz m.plant.A) :
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable7 (m : Model)
+    (hA : IsHurwitz m.plant7.A) :
     connection% (m ∈ family7.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family7_isLinear.den_hurwitz (Or.inl (by simp))]
@@ -468,7 +462,7 @@ abbrev constantInputFamily (u : Fin 2 → ℝ) : Family Model Requirement 5 0 :=
 
 /-- The seven-state models under the symbolic constant input, translated about its selected
 steady state (`Family.constantInput`). -/
-abbrev constantInputFamily7 (u : Fin 2 → ℝ) : Family Model7 Requirement 7 0 :=
-  family7.constantInput Model7.plant u fun _ => steadyState7 u
+abbrev constantInputFamily7 (u : Fin 2 → ℝ) : Family Model Requirement 7 0 :=
+  family7.constantInput Model.plant7 u fun _ => steadyState7 u
 
 end powerlib.Frequency.LFC

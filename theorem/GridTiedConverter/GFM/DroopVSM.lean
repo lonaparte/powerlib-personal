@@ -112,23 +112,10 @@ def droopField (x : State 2) : State 2 :=
 def vsmField (M D : ℝ) (x : State 2) : State 2 :=
   PhasePlane.mk (x 1) ((d.Pref - d.P (x 0) - D * (x 1 - d.ωs)) / M)
 
-/-- Linear part of the coordinate change. -/
-def coordMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1 / d.KR]
-
-@[tmio M, powerlib_domain] theorem coordMatrix_inv (hK : d.KR ≠ 0) :
-    d.coordMatrix⁻¹ = !![1, 0; 0, -d.KR] := by
-  apply Matrix.inv_eq_left_inv
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [coordMatrix, Matrix.mul_apply, Fin.sum_univ_two]
-  field_simp
-
-@[tmio M, powerlib_domain] theorem coordMatrix_isUnit (hK : d.KR ≠ 0) : IsUnit d.coordMatrix := by
-  rw [Matrix.isUnit_iff_isUnit_det]
-  simp [coordMatrix, Matrix.det_fin_two, hK]
-
-/-- The coordinate change `(θ, P_f) ↦ (θ, −P_f/K_R) + (0, ω_s + P_ref/K_R)`. -/
-def coord (hK : d.KR ≠ 0) : State 2 ≃L[ℝ] State 2 :=
-  Dynamics.matrixCoord d.coordMatrix (d.coordMatrix_isUnit hK)
+/-- The coordinate change `(θ, P_f) ↦ (θ, −P_f/K_R) + (0, ω_s + P_ref/K_R)`: its linear part is
+the scaling `Dynamics.scaleCoord` of the second coordinate by `−1/K_R`. -/
+abbrev coord (hK : d.KR ≠ 0) : State 2 ≃L[ℝ] State 2 :=
+  Dynamics.scaleCoord (div_ne_zero (neg_ne_zero.mpr one_ne_zero) hK : -1 / d.KR ≠ 0)
 
 /-- Translation part of the coordinate change. -/
 def offset : State 2 := PhasePlane.mk 0 (d.ωs + d.Pref / d.KR)
@@ -138,8 +125,8 @@ def offset : State 2 := PhasePlane.mk 0 (d.ωs + d.Pref / d.KR)
     Dynamics.affineCoord (d.coord hK) d.offset x =
       PhasePlane.mk (x 0) (d.ωs - (x 1 - d.Pref) / d.KR) := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp [Dynamics.affineCoord, coord, offset, coordMatrix, PhasePlane.toEuclideanCLM_apply_zero]
-  · simp [Dynamics.affineCoord, coord, offset, coordMatrix, PhasePlane.toEuclideanCLM_apply_one]
+  · simp [Dynamics.affineCoord, offset]
+  · simp [Dynamics.affineCoord, offset]
     ring
 
 /-- **Large-signal equivalence.** In the coordinates `(θ, ω)` the droop + LPF field is
@@ -148,21 +135,8 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem vsmField_eq_transport (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) :
     d.vsmField (d.τp * d.KR) d.KR = Dynamics.transportField (d.coord hK) d.offset d.droopField := by
   funext y
-  have hinv : ∀ z : State 2, (d.coord hK).symm z = PhasePlane.mk (z 0) (-d.KR * z 1) := by
-    intro z
-    simp only [coord, Dynamics.matrixCoord_symm_apply, d.coordMatrix_inv hK]
-    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-    · simp [PhasePlane.toEuclideanCLM_apply_zero]
-    · simp [PhasePlane.toEuclideanCLM_apply_one]
-  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp only [Dynamics.transportField, hinv]
-    simp [coord, coordMatrix, offset, droopField, vsmField, PhasePlane.toEuclideanCLM_apply_zero]
-    field_simp
-    ring
-  · simp only [Dynamics.transportField, hinv]
-    simp [coord, coordMatrix, offset, droopField, vsmField, PhasePlane.toEuclideanCLM_apply_one]
-    field_simp
-    ring
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
+    simp [Dynamics.transportField, offset, droopField, vsmField] <;> field_simp <;> ring
 
 /-- Trajectories of droop + LPF map to trajectories of the VSM (`M = τ_p K_R`, `D = K_R`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/

@@ -7,7 +7,8 @@ import theorem.Criteria.Lyapunov
 A certificate is the evidence a synthesizer returns for a state matrix `A`: a symmetric matrix
 `P`, positive on every nonzero state, solving `Aᵀ P + P A = -1`. It is proof-relevant data,
 indexed by the exact matrix it was produced for. It introduces no meaning of its own: its energy
-`⟪x - e, P (x - e)⟫` is a quadratic-decay certificate of the affine linear field
+`(x − e)ᵀ P (x − e)`, twice the quadratic energy `quadraticEnergy P` of the offset, is a
+quadratic-decay certificate of the affine linear field
 (`Certificate.toQuadraticDecay`), so what it proves is what the generic certificate theory of
 `Flow` proves. A certificate exists exactly when `A` is Hurwitz. Families supply synthesizers that
 construct certificates; they do not restate what a certificate proves.
@@ -21,19 +22,21 @@ continuous Lyapunov equation (`IsHurwitz.exists_posDef_unique_solution_continuou
 the converse.
 
 Results.
-* `Certificate` (`P`, `symmetric`, `positive`, `lyapunov`); `quadratic_sym`, `quadratic_lyapunov`.
+* `Certificate` (`P`, `symmetric`, `positive`, `lyapunov`); `quadratic_sym`, and the Lyapunov
+  identity `quadratic_lyapunov` (`zᵀ P A z = −|z|²/2` for symmetric `P`, `Aᵀ P + P A = −1`).
 * `Certificate.isHurwitz` (the Lyapunov-inequality criterion `Criteria.re_neg_of_lyapunov` of
   `theorem/Criteria/Lyapunov.lean`, the dissipation being `-wᵀw/2`) and
   `nonempty_certificate_iff` (a certificate exists exactly when `A` is Hurwitz).
-* The energy: `inner_op`, `Certificate.energy`, `Certificate.hasFDerivAt_energy`,
-  `Certificate.lie_energy_matrix`, `Certificate.lie_energy`, `Certificate.energy_contDiff`,
-  `Certificate.exists_energy_bounds`; `Certificate.toQuadraticDecay`, and `Certificate.holds`
-  (every attractive sentence at every centre).
 * The quadratic energy `quadraticEnergy P` (`xᵀ P x / 2`, the stored energy of KYP certificates
-  and pH plants): `contDiff_quadraticEnergy`, `fderiv_quadraticEnergy_apply` (for symmetric `P`
-  its derivative in the direction `v` is `xᵀ P v`), `quadraticDecay_of_lyapunov` (a symmetric
-  positive definite `P` with `xᵀ P A x < 0` off the origin is a quadratic-decay certificate of
-  the linear field).
+  and pH plants): `inner_op`, `contDiff_quadraticEnergy`, `fderiv_quadraticEnergy_apply` (for
+  symmetric `P` its derivative in the direction `v` is `xᵀ P v`), `quadraticDecay_of_lyapunov` (a
+  symmetric positive definite `P` with `xᵀ P A x < 0` off the origin is a quadratic-decay
+  certificate of the linear field).
+* The certificate energy `Certificate.energy` (`2 · quadraticEnergy P (x − e)`;
+  `Certificate.energy_apply`), `Certificate.lie_energy_matrix`, `Certificate.lie_energy`,
+  `Certificate.energy_contDiff`, `Certificate.exists_energy_bounds`;
+  `Certificate.toQuadraticDecay`, and `Certificate.holds` (every attractive sentence at every
+  centre).
 * Conserved quadratic energies: `dotProduct_hasDerivWithinAt`, `quadratic_conserved` (a symmetric
   `P` with `Aᵀ P + P A = 0` is constant along every solution segment), `conservative_of_quadratic`
   (with `P` positive definite the linear field is conservative).
@@ -69,10 +72,13 @@ attribute [powerlib_foundation]
     Criteria.dotProduct_mulVec_comm_of_symm hP z (A *ᵥ z)]
   ring
 
+/-- The Lyapunov identity: for symmetric `P` with `Aᵀ P + P A = −1`, `zᵀ P A z = −|z|²/2`. -/
 @[tmio T, powerlib_foundation] theorem quadratic_lyapunov {A P : Matrix (Fin n) (Fin n) ℝ}
     (hP : Pᵀ = P) (hL : Aᵀ * P + P * A = -1) (z : Fin n → ℝ) :
-    2 * (z ⬝ᵥ (P *ᵥ (A *ᵥ z))) = -(z ⬝ᵥ z) := by
-  rw [← quadratic_sym hP, hL, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
+    z ⬝ᵥ (P *ᵥ (A *ᵥ z)) = -(z ⬝ᵥ z) / 2 := by
+  have h := quadratic_sym (A := A) hP z
+  rw [hL, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg] at h
+  linarith
 
 /-- A certificate proves the matrix Hurwitz. -/
 @[tmio T, powerlib_foundation, aesop safe forward]
@@ -99,105 +105,11 @@ equation for the converse). -/
     rw [add_comm]
     exact h
 
-/-! ## A certificate is a quadratic-decay certificate -/
+/-! ## The quadratic energy -/
 
 @[tmio T, powerlib_foundation] theorem inner_op (P : Matrix (Fin n) (Fin n) ℝ) (x y : ℝⁿ) :
     ⟪x, op P y⟫ = WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp y) :=
   Matrix.inner_toEuclideanCLM P x y
-
-/-- The energy `⟪x - e, P (x - e)⟫` of a certificate about the centre `e`. -/
-def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x : ℝⁿ) : ℝ :=
-  ⟪x - e, op c.P (x - e)⟫
-
-@[tmio T, powerlib_foundation] theorem Certificate.hasFDerivAt_energy {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) (e x : ℝⁿ) :
-    HasFDerivAt (c.energy e) ((fderivInnerCLM ℝ (x - e, op c.P (x - e))).comp
-      ((ContinuousLinearMap.id ℝ ℝⁿ).prod (op c.P))) x := by
-  have h1 : HasFDerivAt (fun y : ℝⁿ => y - e) (ContinuousLinearMap.id ℝ ℝⁿ) x :=
-    (hasFDerivAt_id x).sub_const e
-  have h2 : HasFDerivAt (fun y : ℝⁿ => op c.P (y - e)) (op c.P) x := by
-    have h := (op c.P).hasFDerivAt.comp x h1
-    rwa [ContinuousLinearMap.comp_id] at h
-  exact h1.inner ℝ h2
-
-/-- The derivative of a quadratic certificate energy along any linear field. -/
-@[tmio T, powerlib_foundation] theorem Certificate.lie_energy_matrix
-    {A B : Matrix (Fin n) (Fin n) ℝ} (c : Certificate B) (e x : ℝⁿ) :
-    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) =
-      WithLp.ofLp (x - e) ⬝ᵥ ((Aᵀ * c.P + c.P * A) *ᵥ WithLp.ofLp (x - e)) := by
-  rw [(c.hasFDerivAt_energy e x).fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, fderivInnerCLM_apply,
-    ContinuousLinearMap.id_apply, affine_apply]
-  rw [← op_mul_apply, inner_op, inner_op]
-  simp only [op, Matrix.ofLp_toEuclideanCLM, ← Matrix.mulVec_mulVec]
-  set y := WithLp.ofLp (x - e)
-  have hsym : (A *ᵥ y) ⬝ᵥ (c.P *ᵥ y) = y ⬝ᵥ (c.P *ᵥ (A *ᵥ y)) := by
-    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
-    congr 1
-    conv_lhs => rw [← c.symmetric]
-    rw [Matrix.vecMul_transpose]
-  rw [hsym, quadratic_sym c.symmetric]
-  ring
-
-/-- Along its own field, the energy decreases at the rate `‖x - e‖²`. -/
-@[tmio T, powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) (e x : ℝⁿ) :
-    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) = -‖x - e‖ ^ 2 := by
-  rw [c.lie_energy_matrix, c.lyapunov, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
-  congr 1
-  rw [EuclideanSpace.norm_sq_eq]
-  simp [dotProduct, sq]
-
-@[tmio T, powerlib_foundation] theorem Certificate.energy_contDiff {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) (e : ℝⁿ) : ContDiff ℝ 1 (c.energy e) :=
-  (contDiff_id.sub contDiff_const).inner ℝ ((op c.P).contDiff.comp (contDiff_id.sub contDiff_const))
-
-@[tmio T, powerlib_foundation] theorem Certificate.exists_energy_bounds {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) :
-    ∃ α > 0, ∃ β ≥ α, ∀ z : ℝⁿ, α * ‖z‖ ^ 2 ≤ ⟪z, op c.P z⟫ ∧ ⟪z, op c.P z⟫ ≤ β * ‖z‖ ^ 2 := by
-  have hc : Continuous fun z : ℝⁿ => ⟪z, op c.P z⟫ := continuous_id.inner (op c.P).continuous
-  have hh : ∀ (a : ℝ) (z : ℝⁿ), ⟪a • z, op c.P (a • z)⟫ = a ^ 2 * ⟪z, op c.P z⟫ := fun a z => by
-    simp only [map_smul, real_inner_smul_left, real_inner_smul_right]; ring
-  have hp : ∀ z : ℝⁿ, z ≠ 0 → 0 < ⟪z, op c.P z⟫ := fun z hz => by
-    rw [inner_op]
-    exact c.positive _ (by simpa using hz)
-  exact Flow.quadratic_bounds _ hc hh hp
-
-/-- A Lyapunov certificate is a quadratic-decay certificate of the affine linear field: its energy
-lies between two multiples of `‖x - e‖²` and decays at the rate `1 / β` of the upper one. -/
-def Certificate.toQuadraticDecay {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e : ℝⁿ) :
-    Flow.QuadraticDecay (affineLinearVectorField A e) (c.energy e) e where
-  lower := c.exists_energy_bounds.choose
-  upper := c.exists_energy_bounds.choose_spec.2.choose
-  rate := 1 / c.exists_energy_bounds.choose_spec.2.choose
-  lower_pos := c.exists_energy_bounds.choose_spec.1
-  upper_pos := c.exists_energy_bounds.choose_spec.1.trans_le
-    c.exists_energy_bounds.choose_spec.2.choose_spec.1
-  rate_pos := one_div_pos.mpr (c.exists_energy_bounds.choose_spec.1.trans_le
-    c.exists_energy_bounds.choose_spec.2.choose_spec.1)
-  smooth := c.energy_contDiff e
-  equilibrium := affine_isEquilibrium A e
-  lower_bound x := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).1
-  upper_bound x := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).2
-  dissipation x := by
-    have hβ := c.exists_energy_bounds.choose_spec.1.trans_le
-      c.exists_energy_bounds.choose_spec.2.choose_spec.1
-    have hb := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).2
-    rw [c.lie_energy]
-    change -‖x - e‖ ^ 2 ≤ -(1 / c.exists_energy_bounds.choose_spec.2.choose) * c.energy e x
-    have : 1 / c.exists_energy_bounds.choose_spec.2.choose * c.energy e x ≤ ‖x - e‖ ^ 2 := by
-      rw [one_div, inv_mul_le_iff₀ hβ]
-      exact hb
-    linarith
-
-/-- A certificate proves every attractive sentence at every centre: the generic quadratic-decay
-theory applied to its energy. -/
-@[tmio T, powerlib_foundation] theorem Certificate.holds {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (affineLinearVectorField A e) e :=
-  ((c.toQuadraticDecay e).globallyExponentiallyStable (affine_contDiff A e)).holds hP
-
-/-! ## The quadratic energy -/
 
 /-- The quadratic energy `xᵀ P x / 2`: the stored energy of KYP certificates and of
 port-Hamiltonian plants, and the Hamiltonian of quadratic pH systems. -/
@@ -235,6 +147,98 @@ def quadraticEnergy (P : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) : ℝ :=
     rw [Matrix.vecMul_transpose]
   rw [hsym]
   ring
+
+/-! ## A certificate is a quadratic-decay certificate -/
+
+/-- The energy `(x − e)ᵀ P (x − e)` of a certificate about the centre `e`: twice the quadratic
+energy `quadraticEnergy P` of the offset `x − e`. -/
+def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x : ℝⁿ) : ℝ :=
+  2 * quadraticEnergy c.P (x - e)
+
+@[tmio T, powerlib_foundation] theorem Certificate.energy_apply {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e x : ℝⁿ) :
+    c.energy e x = WithLp.ofLp (x - e) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (x - e)) := by
+  rw [Certificate.energy, quadraticEnergy]
+  ring
+
+/-- The derivative of a quadratic certificate energy along any linear field
+(`fderiv_quadraticEnergy_apply` and `quadratic_sym`). -/
+@[tmio T, powerlib_foundation] theorem Certificate.lie_energy_matrix
+    {A B : Matrix (Fin n) (Fin n) ℝ} (c : Certificate B) (e x : ℝⁿ) :
+    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) =
+      WithLp.ofLp (x - e) ⬝ᵥ ((Aᵀ * c.P + c.P * A) *ᵥ WithLp.ofLp (x - e)) := by
+  have hq : DifferentiableAt ℝ (fun y : ℝⁿ => quadraticEnergy c.P (y - e)) x :=
+    (differentiableAt_comp_sub e).2
+      ((contDiff_quadraticEnergy c.P).differentiable one_ne_zero (x - e))
+  have hz : WithLp.ofLp (affineLinearVectorField A e x) = A *ᵥ WithLp.ofLp (x - e) := by
+    simp [affine_apply, op, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec_sub]
+  rw [show c.energy e = fun y => 2 * quadraticEnergy c.P (y - e) from rfl,
+    fderiv_const_mul hq, fderiv_comp_sub, _root_.smul_apply,
+    fderiv_quadraticEnergy_apply c.symmetric, hz, quadratic_sym c.symmetric, smul_eq_mul]
+
+/-- Along its own field, the energy decreases at the rate `‖x - e‖²`. -/
+@[tmio T, powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e x : ℝⁿ) :
+    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) = -‖x - e‖ ^ 2 := by
+  rw [c.lie_energy_matrix, c.lyapunov, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
+  congr 1
+  rw [EuclideanSpace.norm_sq_eq]
+  simp [dotProduct, sq]
+
+@[tmio T, powerlib_foundation] theorem Certificate.energy_contDiff {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e : ℝⁿ) : ContDiff ℝ 1 (c.energy e) :=
+  contDiff_const.mul ((contDiff_quadraticEnergy c.P).comp (contDiff_id.sub contDiff_const))
+
+/-- The form of a certificate lies between two positive multiples of `‖z‖²`. -/
+@[tmio T, powerlib_foundation] theorem Certificate.exists_energy_bounds {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) :
+    ∃ α > 0, ∃ β ≥ α, ∀ z : ℝⁿ, α * ‖z‖ ^ 2 ≤ WithLp.ofLp z ⬝ᵥ (c.P *ᵥ WithLp.ofLp z) ∧
+      WithLp.ofLp z ⬝ᵥ (c.P *ᵥ WithLp.ofLp z) ≤ β * ‖z‖ ^ 2 := by
+  have hc : Continuous fun z : ℝⁿ => WithLp.ofLp z ⬝ᵥ (c.P *ᵥ WithLp.ofLp z) := by fun_prop
+  have hh : ∀ (a : ℝ) (z : ℝⁿ), WithLp.ofLp (a • z) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (a • z)) =
+      a ^ 2 * (WithLp.ofLp z ⬝ᵥ (c.P *ᵥ WithLp.ofLp z)) := fun a z => by
+    simp only [WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct,
+      smul_eq_mul]
+    ring
+  exact Flow.quadratic_bounds _ hc hh fun z hz => c.positive _ (by simpa using hz)
+
+/-- A Lyapunov certificate is a quadratic-decay certificate of the affine linear field: its energy
+lies between two multiples of `‖x - e‖²` and decays at the rate `1 / β` of the upper one. -/
+def Certificate.toQuadraticDecay {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e : ℝⁿ) :
+    Flow.QuadraticDecay (affineLinearVectorField A e) (c.energy e) e where
+  lower := c.exists_energy_bounds.choose
+  upper := c.exists_energy_bounds.choose_spec.2.choose
+  rate := 1 / c.exists_energy_bounds.choose_spec.2.choose
+  lower_pos := c.exists_energy_bounds.choose_spec.1
+  upper_pos := c.exists_energy_bounds.choose_spec.1.trans_le
+    c.exists_energy_bounds.choose_spec.2.choose_spec.1
+  rate_pos := one_div_pos.mpr (c.exists_energy_bounds.choose_spec.1.trans_le
+    c.exists_energy_bounds.choose_spec.2.choose_spec.1)
+  smooth := c.energy_contDiff e
+  equilibrium := affine_isEquilibrium A e
+  lower_bound x := by
+    rw [c.energy_apply]; exact (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).1
+  upper_bound x := by
+    rw [c.energy_apply]; exact (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).2
+  dissipation x := by
+    have hβ := c.exists_energy_bounds.choose_spec.1.trans_le
+      c.exists_energy_bounds.choose_spec.2.choose_spec.1
+    have hb := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).2
+    rw [c.lie_energy]
+    change -‖x - e‖ ^ 2 ≤ -(1 / c.exists_energy_bounds.choose_spec.2.choose) * c.energy e x
+    have : 1 / c.exists_energy_bounds.choose_spec.2.choose * c.energy e x ≤ ‖x - e‖ ^ 2 := by
+      rw [one_div, inv_mul_le_iff₀ hβ, c.energy_apply]
+      exact hb
+    linarith
+
+/-- A certificate proves every attractive sentence at every centre: the generic quadratic-decay
+theory applied to its energy. -/
+@[tmio T, powerlib_foundation] theorem Certificate.holds {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
+    P.holds (affineLinearVectorField A e) e :=
+  ((c.toQuadraticDecay e).globallyExponentiallyStable (affine_contDiff A e)).holds hP
+
+/-! ## Quadratic-decay certificates from a Lyapunov inequality -/
 
 /-- A symmetric positive definite `P` along which the linear field strictly loses energy,
 `xᵀ P A x < 0` for every `x ≠ 0`, gives a quadratic-decay certificate of the linear field with

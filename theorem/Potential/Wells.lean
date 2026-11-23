@@ -11,7 +11,8 @@ import Mathlib.MeasureTheory.Integral.IntegrableOn
 /-! # One-dimensional potential shapes: single well, double well, washboard
 
 Critical points, minima, barriers, curvatures and Boltzmann weights of three scalar potentials
-`V : ℝ → ℝ`.
+`V : ℝ → ℝ`: the quartic of `theorem/Potential/DoubleWell.lean` in its single-well and
+double-well regimes, and the tilted washboard of `theorem/Potential/Barrier.lean`.
 
 Scope.
 * Algebraic and calculus facts about the potentials; no dynamics, noise model or engineering
@@ -22,15 +23,14 @@ Source: work-sync theory/T-potential-wells.md §1.1–1.5, §1.7 (assumptions on
 washboard), theory/T-kramers-escape.md §1.4, §1.7–1.8, theory/T-nonlinear-phase-plane.md §1.4–1.5.
 
 Results.
-* Single well `V = kθ²/2` (`k > 0`, `singleWell`) and the anharmonic well `kθ²/2 + λθ⁴/4`
-  (`λ ≥ 0`, `anharmonicWell`): unique critical point and strict global minimum at `0`
-  (`singleWell_min`, `anharmonicWell_critical_iff`, `anharmonicWell_unique_min`); Gaussian
-  normalization
+* Single well: the quartic `doubleWell a b` (`theorem/Potential/DoubleWell.lean`) with `a < 0 ≤ b`,
+  i.e. `V = kθ²/2 + λθ⁴/4` with `k = −a > 0`, `λ = b ≥ 0`: unique critical point and strict global
+  minimum at `0` (`doubleWell_single`); Gaussian normalization of the harmonic well
   `∫ e^{−kθ²/(2D)} dθ = √(2πD/k)` (Mathlib `integral_gaussian`; `singleWell_normalization`).
 * Double well `V = −aθ²/2 + bθ⁴/4` (`a, b > 0`, `doubleWell`; its derivative, critical points,
   identity, minimum and barrier are in `theorem/Potential/DoubleWell.lean`):
-  `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvature_zero`,
-  `doubleWell_curvature_sqrt`, `doubleWell_curvature_neg_sqrt`); for every `D > 0` the weight
+  `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvatures`, `V'' = −a + 3bθ²` by
+  `hasDerivAt_doubleWell_deriv`); for every `D > 0` the weight
   `e^{−V/D}` is
   strictly increasing on `(−∞, −r]`, decreasing on `[−r, 0]`, increasing on `[0, r]` and
   decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_strictMonoOn_Iic`,
@@ -48,13 +48,13 @@ Results.
   identical barrier heights (`washboard_barrier_translate`).
 * For `|α| ≤ 1`, with `θ_min = arcsin α`, `θ_max = π − arcsin α`:
   `ΔV₊ = V₀[2√(1−α²) + α(2 arcsin α − π)]`, `ΔV₋ = V₀[2√(1−α²) + α(π + 2 arcsin α)]`
-  (`barrierForward`, `barrierBackward`; they are `Barrier.barrierUp`, `Barrier.barrierDown` at
-  `c = V₀α`, `A = V₀`, `φ = 0`, the barriers towards `π − arcsin α` and `−π − arcsin α`,
-  `barrierUp_eq_barrierForward`),
-  `ΔV₊ = ΔV₋ = 2V₀` at `α = 0` (`barrier_at_zero`), `ΔV₊ → 0` and `ΔV₋ → 2πV₀` as `α → 1⁻`
-  (`barrier_tendsto_one`).
-* Curvatures `V''(θ_min) = V₀√(1−α²)`, `V''(θ_max) = −V₀√(1−α²)` (`washboard_curvatures`), so
-  `√(V''(θ_min) |V''(θ_max)|) = V₀√(1−α²)` (`washboard_prefactor`), so the Kramers prefactor is
+  (`washboard_barriers_eq`: the barriers `Barrier.barrierUp`, `Barrier.barrierDown` at
+  `c = V₀α`, `A = V₀`, `φ = 0`, towards `π − arcsin α` and `−π − arcsin α`);
+  `ΔV₊ = ΔV₋ = 2V₀` at `α = 0` and `ΔV₊ → 0`, `ΔV₋ → 2πV₀` at the fold
+  (`Barrier.barrier_at_zero`, `Barrier.barrier_tendsto_fold`, `c → A⁻`).
+* Curvatures `V''(θ_min) = V₀√(1−α²)`, `V''(θ_max) = −V₀√(1−α²)` and
+  `√(V''(θ_min) |V''(θ_max)|) = V₀√(1−α²)` are `Barrier.washboard_curvatures` and
+  `Barrier.washboard_prefactor` (`√(A² − c²) = V₀√(1−α²)`), so the Kramers prefactor is
   `2πγ / √(V''(θ_min) |V''(θ_max)|) = 2πγ / (V₀√(1−α²))`.
 * For `α ≠ 0` the weight `e^{−V/D}` is not integrable on `ℝ`
   (`washboard_weight_not_integrable`, from `Stochastic.FP.gibbs_not_integrable`).
@@ -81,73 +81,42 @@ open Set Filter Topology Real MeasureTheory
 
 /-! ## Single well -/
 
-/-- Harmonic single well `kθ²/2`. -/
-def singleWell (k θ : ℝ) : ℝ := k * θ ^ 2 / 2
+/-- Single-well regime of the quartic (`a < 0 ≤ b`): `V = kθ²/2 + λθ⁴/4` with `k = −a > 0`,
+`λ = b ≥ 0` (the harmonic well at `b = 0`, the anharmonic one at `b > 0`) has the unique critical
+point `0` (`V' = −aθ + bθ³`, `hasDerivAt_doubleWell`), its strict global minimum. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_single {a b : ℝ} (ha : a < 0) (hb : 0 ≤ b)
+    (θ : ℝ) : (-a * θ + b * θ ^ 3 = 0 ↔ θ = 0) ∧
+      (θ ≠ 0 → doubleWell a b 0 < doubleWell a b θ) := by
+  refine ⟨⟨fun h => ?_, fun h => by simp [h]⟩, fun hθ => ?_⟩
+  · have : θ * (-a + b * θ ^ 2) = 0 := by linarith
+    rcases mul_eq_zero.mp this with h | h
+    · exact h
+    · nlinarith [sq_nonneg θ]
+  · simp only [doubleWell]
+    have : 0 < θ ^ 2 := by positivity
+    nlinarith [sq_nonneg (θ ^ 2)]
 
-/-- Anharmonic single well `kθ²/2 + λθ⁴/4`. -/
-def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
-
-@[tmio T, powerlib_foundation] theorem singleWell_min {k : ℝ} (hk : 0 < k) (θ : ℝ) :
-    singleWell k 0 ≤ singleWell k θ ∧ (singleWell k θ = singleWell k 0 ↔ θ = 0) := by
-  simp only [singleWell]
-  refine ⟨by nlinarith [sq_nonneg θ], ?_⟩
-  constructor
-  · intro h
-    have : θ ^ 2 = 0 := by nlinarith
-    exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
-  · rintro rfl; simp
-
-@[tmio T, powerlib_foundation] theorem hasDerivAt_anharmonicWell (k lam θ : ℝ) :
-    HasDerivAt (anharmonicWell k lam) (k * θ + lam * θ ^ 3) θ := by
-  have h := (((hasDerivAt_pow 2 θ).const_mul k).div_const 2).add
-    (((hasDerivAt_pow 4 θ).const_mul lam).div_const 4)
-  unfold anharmonicWell
-  convert h using 1
-  push_cast; ring
-
-/-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has the unique critical point `0`. -/
-@[tmio T, powerlib_foundation] theorem anharmonicWell_critical_iff {k lam : ℝ} (hk : 0 < k)
-    (hl : 0 ≤ lam) (θ : ℝ) : k * θ + lam * θ ^ 3 = 0 ↔ θ = 0 := by
-  refine ⟨fun h => ?_, fun h => by simp [h]⟩
-  have : θ * (k + lam * θ ^ 2) = 0 := by linarith
-  rcases mul_eq_zero.mp this with h | h
-  · exact h
-  · nlinarith [sq_nonneg θ]
-
-/-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has its strict global minimum at `0`. -/
-@[tmio T, powerlib_foundation] theorem anharmonicWell_unique_min {k lam : ℝ} (hk : 0 < k)
-    (hl : 0 ≤ lam) (θ : ℝ) (hθ : θ ≠ 0) : anharmonicWell k lam 0 < anharmonicWell k lam θ := by
-  simp only [anharmonicWell]
-  have : 0 < θ ^ 2 := by positivity
-  nlinarith [sq_nonneg (θ ^ 2)]
-
-/-- Normalization of the Boltzmann weight of the harmonic well: `Z = √(2πD/k)`. -/
+/-- Normalization of the Boltzmann weight of the harmonic well `kθ²/2 = doubleWell (−k) 0`:
+`Z = √(2πD/k)`. -/
 @[tmio T, powerlib_foundation] theorem singleWell_normalization {k D : ℝ} (hk : 0 < k) (hD : 0 < D) :
-    ∫ θ, Real.exp (-singleWell k θ / D) = √(2 * π * D / k) := by
+    ∫ θ, Real.exp (-doubleWell (-k) 0 θ / D) = √(2 * π * D / k) := by
   have h := integral_gaussian (k / (2 * D))
-  have hfun : (fun θ => Real.exp (-singleWell k θ / D)) =
+  have hfun : (fun θ => Real.exp (-doubleWell (-k) 0 θ / D)) =
       fun θ => Real.exp (-(k / (2 * D)) * θ ^ 2) := by
-    funext θ; congr 1; simp only [singleWell]; field_simp
+    funext θ; congr 1; simp only [doubleWell]; field_simp; ring
   rw [hfun, h]
   congr 1
   field_simp
 
 /-! ## Double well -/
 
-/-- Curvature of the double well at the barrier top: `V''(0) = −a`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_curvature_zero {a b : ℝ} :
-    -a + 3 * b * (0 : ℝ) ^ 2 = -a := by
-  ring
-
-/-- Curvature of the double well at the right well: `V''(√(a/b)) = 2a`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_curvature_sqrt {a b : ℝ} (ha : 0 ≤ a)
-    (hb : 0 < b) : -a + 3 * b * √(a / b) ^ 2 = 2 * a := by
-  rw [Real.sq_sqrt (by positivity)]; field_simp; ring
-
-/-- Curvature of the double well at the left well: `V''(−√(a/b)) = 2a`. -/
-@[tmio T, powerlib_foundation] theorem doubleWell_curvature_neg_sqrt {a b : ℝ} (ha : 0 ≤ a)
-    (hb : 0 < b) : -a + 3 * b * (-√(a / b)) ^ 2 = 2 * a := by
-  rw [neg_sq, Real.sq_sqrt (by positivity)]; field_simp; ring
+/-- Curvatures of the double well (`V'' = −a + 3bθ²`, `hasDerivAt_doubleWell_deriv`):
+`V''(0) = −a` at the barrier top and `V''(±√(a/b)) = 2a` at the two wells. -/
+@[tmio T, powerlib_foundation] theorem doubleWell_curvatures {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b) :
+    -a + 3 * b * (0 : ℝ) ^ 2 = -a ∧ -a + 3 * b * √(a / b) ^ 2 = 2 * a ∧
+      -a + 3 * b * (-√(a / b)) ^ 2 = 2 * a := by
+  rw [neg_sq, Real.sq_sqrt (by positivity)]
+  refine ⟨by ring, ?_, ?_⟩ <;> field_simp <;> ring
 
 /-- The double well is strictly decreasing on `(−∞, −√(a/b)]`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_strictAntiOn_Iic {a b : ℝ} (ha : 0 < a)
@@ -292,10 +261,6 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
     washboard V₀ α θ = V₀ * (-Real.cos θ - α * θ) := by
   simp only [washboard, Barrier.washboard, add_zero]; ring
 
-@[tmio T, powerlib_foundation] theorem hasDerivAt_washboard_deriv (V₀ α θ : ℝ) :
-    HasDerivAt (fun θ => V₀ * (Real.sin θ - α)) (V₀ * Real.cos θ) θ := by
-  simpa using ((Real.hasDerivAt_sin θ).sub_const α).const_mul V₀
-
 /-- A critical point of the washboard exists iff `|α| ≤ 1`: the zeros of the sinusoid
 `α − sin θ` (`SpecialFunctions.exists_sinusoid_zero_iff`). -/
 @[tmio T, powerlib_foundation] theorem washboard_critical_exists_iff {V₀ : ℝ} (hV : 0 < V₀) (α : ℝ) :
@@ -340,60 +305,21 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
       washboard V₀ α x - washboard V₀ α y := by
   rw [washboard_shift_int, washboard_shift_int]; ring
 
-/-- Closed-form barriers as functions of the tilt. -/
-def barrierForward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π))
-def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α))
-
-/-- The closed-form washboard barriers are the barriers of `theorem/Potential/Barrier.lean` at
-`c = V₀α`, `A = V₀`, `φ = 0`: `ΔV₊ = V(π − arcsin α) − V(arcsin α)` (`Barrier.barrierUp`) and
-`ΔV₋ = V(−π − arcsin α) − V(arcsin α)` (`Barrier.barrierDown`). -/
-@[tmio T, powerlib_foundation] theorem barrierUp_eq_barrierForward {V₀ : ℝ} (hV : 0 < V₀)
-    (α : ℝ) : Barrier.barrierUp (V₀ * α) V₀ 0 = barrierForward V₀ α ∧
-      Barrier.barrierDown (V₀ * α) V₀ 0 = barrierBackward V₀ α := by
+/-- The barriers as functions of the tilt: at `c = V₀α`, `A = V₀`, `φ = 0` the barriers of
+`theorem/Potential/Barrier.lean` towards `π − arcsin α` and `−π − arcsin α` are
+`ΔV₊ = V₀[2√(1−α²) + α(2 arcsin α − π)]` (`Barrier.barrierUp`) and
+`ΔV₋ = V₀[2√(1−α²) + α(π + 2 arcsin α)]` (`Barrier.barrierDown`). -/
+@[tmio T, powerlib_foundation] theorem washboard_barriers_eq {V₀ : ℝ} (hV : 0 < V₀) (α : ℝ) :
+    Barrier.barrierUp (V₀ * α) V₀ 0 = V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π)) ∧
+      Barrier.barrierDown (V₀ * α) V₀ 0 =
+        V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α)) := by
   have hα : V₀ * α / V₀ = α := by field_simp
   have hs : √(V₀ ^ 2 - (V₀ * α) ^ 2) = V₀ * √(1 - α ^ 2) := by
     rw [show V₀ ^ 2 - (V₀ * α) ^ 2 = V₀ ^ 2 * (1 - α ^ 2) by ring,
       Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hV.le]
   rw [Barrier.barrierUp_eq hV, Barrier.barrierDown_eq hV, neg_div, hα, hs, Real.arccos_neg,
     Real.arccos_eq_pi_div_two_sub_arcsin]
-  constructor <;> simp only [barrierForward, barrierBackward] <;> ring
-
-@[tmio T, powerlib_foundation] theorem barrier_at_zero (V₀ : ℝ) :
-    barrierForward V₀ 0 = 2 * V₀ ∧ barrierBackward V₀ 0 = 2 * V₀ := by
-  refine ⟨?_, ?_⟩ <;>
-    simp only [barrierForward, barrierBackward, Real.arcsin_zero, zero_mul, add_zero,
-      ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero, Real.sqrt_one] <;> ring
-
-/-- As `α → 1⁻` the forward barrier vanishes and the backward barrier tends to `2πV₀`. -/
-@[tmio T, powerlib_foundation] theorem barrier_tendsto_one (V₀ : ℝ) :
-    Tendsto (barrierForward V₀) (𝓝[<] 1) (𝓝 0) ∧
-      Tendsto (barrierBackward V₀) (𝓝[<] 1) (𝓝 (2 * π * V₀)) := by
-  have hc : Continuous fun α : ℝ => √(1 - α ^ 2) := by fun_prop
-  have hcF : Continuous (barrierForward V₀) := by
-    unfold barrierForward; have := Real.continuous_arcsin; fun_prop
-  have hcB : Continuous (barrierBackward V₀) := by
-    unfold barrierBackward; have := Real.continuous_arcsin; fun_prop
-  have hF1 : barrierForward V₀ 1 = 0 := by
-    simp only [barrierForward, Real.arcsin_one, one_pow, sub_self, Real.sqrt_zero]; ring
-  have hB1 : barrierBackward V₀ 1 = 2 * π * V₀ := by
-    simp only [barrierBackward, Real.arcsin_one, one_pow, sub_self, Real.sqrt_zero]; ring
-  refine ⟨?_, ?_⟩
-  · rw [← hF1]; exact hcF.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  · rw [← hB1]; exact hcB.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-
-/-- Curvatures at the well and the barrier: `V''(arcsin α) = V₀√(1−α²)`,
-`V''(π − arcsin α) = −V₀√(1−α²)`. -/
-@[tmio T, powerlib_foundation] theorem washboard_curvatures (V₀ α : ℝ) :
-    V₀ * Real.cos (Real.arcsin α) = V₀ * √(1 - α ^ 2) ∧
-      V₀ * Real.cos (π - Real.arcsin α) = -(V₀ * √(1 - α ^ 2)) := by
-  rw [Real.cos_pi_sub, Real.cos_arcsin]; constructor <;> ring
-
-/-- Kramers prefactor algebra: `√(V''(θ_min) |V''(θ_max)|) = V₀√(1−α²)`. -/
-@[tmio T, powerlib_foundation] theorem washboard_prefactor {V₀ : ℝ} (hV : 0 ≤ V₀) (α : ℝ) :
-    √(V₀ * Real.cos (Real.arcsin α) * |V₀ * Real.cos (π - Real.arcsin α)|) =
-      V₀ * √(1 - α ^ 2) := by
-  obtain ⟨h1, h2⟩ := washboard_curvatures V₀ α
-  rw [h1, h2, abs_neg, abs_of_nonneg (by positivity), ← sq, Real.sqrt_sq (by positivity)]
+  constructor <;> ring
 
 /-- For `α ≠ 0` the Boltzmann weight `e^{−V/D}` of the tilted washboard is not integrable on `ℝ`
 (`V ≤ V₀` on the half-line along the tilt; `Stochastic.FP.gibbs_not_integrable`). -/

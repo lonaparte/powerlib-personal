@@ -146,11 +146,13 @@ stable (`Conservative.locallyExponentiallyStable_of_slope_pos`). -/
 
 @[tmio M, powerlib_foundation] theorem energy_well (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
     energy (mk σ 0) = -(1 / 4) := by
-  rcases hσ with rfl | rfl <;> simp [energy, Conservative.energy, Potential.doubleWell] <;>
+  rcases hσ with rfl | rfl <;>
+    simp [energy, Conservative.energy, Conservative.separableEnergy, Potential.doubleWell] <;>
     norm_num
 
 @[tmio T, powerlib_foundation] theorem energy_continuous : Continuous energy :=
-  (Conservative.energy_differentiable (m := 1) hasDerivAt_potential).continuous
+  (Conservative.differentiable_separableEnergy (fun x => (hasDerivAt_potential x).differentiableAt)
+    1 0).continuous
 
 /-- Conservative case: a forward solution whose energy differs from that of the well never
 converges to the well. -/
@@ -177,8 +179,8 @@ converges to the well. -/
   rw [energy_well σ hσ]
   have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
   have hσ4 : σ ^ 4 = 1 := by rw [show σ ^ 4 = (σ ^ 2) ^ 2 by ring, hσ2]; norm_num
-  simp only [energy, Conservative.energy, Potential.doubleWell, mk_apply_zero, mk_apply_one, hσ2,
-    hσ4]
+  simp only [energy, Conservative.energy, Conservative.separableEnergy, Potential.doubleWell,
+    mk_apply_zero, mk_apply_one, sub_zero, hσ2, hσ4]
   have : 0 < s ^ 2 := by positivity
   intro h; linarith
 
@@ -193,7 +195,8 @@ converges to the well. -/
   apply Metric.isCompact_of_isClosed_isBounded (isClosed_le energy_continuous continuous_const)
   rw [Metric.isBounded_iff_subset_closedBall (0 : State 2)]
   refine ⟨√(max (2 * c + 9 / 2) 0), fun y hy => ?_⟩
-  simp only [Set.mem_ofPred_eq, energy, Conservative.energy, Potential.doubleWell] at hy
+  simp only [Set.mem_ofPred_eq, energy, Conservative.energy, Conservative.separableEnergy,
+    Potential.doubleWell, sub_zero] at hy
   rw [Metric.mem_closedBall, dist_zero_right]
   have hsq : ‖y‖ ^ 2 ≤ max (2 * c + 9 / 2) 0 := by
     rw [norm_sq_eq]
@@ -206,7 +209,8 @@ converges to the well. -/
 @[tmio TM, powerlib_foundation] theorem forwardComplete {δ : ℝ} (hδ : 0 ≤ δ) :
     Flow.ForwardComplete (field δ) :=
   Flow.forwardComplete_of_compact_sublevel (Conservative.field_contDiff force_contDiff)
-    (Conservative.energy_differentiable hasDerivAt_potential)
+    (Conservative.differentiable_separableEnergy
+      (fun x => (hasDerivAt_potential x).differentiableAt) 1 0)
     (Conservative.energy_lie_nonpos one_ne_zero hδ hasDerivAt_potential) energy_sublevel_compact
 
 /-- Correction: without damping the wells are not asymptotically stable — there is no attractor

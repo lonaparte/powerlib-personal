@@ -25,13 +25,13 @@ Model boundary.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
 `not_eulerStep_realizationSoundUnder`, `contDiff_shift`),
-`theorem/GridTiedConverter/GFM/Limiting/Saturation.lean` (`satField_contDiff`,
+`theorem/GridTiedConverter/GFM/Limiting/Saturation.lean` (`satParams`,
 `saturated_stable_equilibrium`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
 * The smoothness hypothesis of the generic laws: the translated field is `C¹`
-  (`Numerics.contDiff_shift` at `satField_contDiff`); the module states only the connection
-  conclusions below.
+  (`Numerics.contDiff_shift` at `Synchronous.SwingParams.contDiff_field` of `satParams`); the module
+  states only the connection conclusions below.
 
 Family and connection conclusions.
 * `Limiting.eulerFamily : Family Limiting.Euler Spectral.Requirement 2 0`: every integration read
@@ -79,6 +79,6 @@ disk (`Numerics.not_eulerStep_realizationSoundUnder`). -/
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_eulerStep_realizationSoundUnder
     (Spectral.localFamily_isAutonomous _ _ _)
-    (fun _ => Numerics.contDiff_shift (satField_contDiff _ _ _ _ _)) (by norm_num) hm
+    (fun _ => Numerics.contDiff_shift (Synchronous.SwingParams.contDiff_field _)) (by norm_num) hm
 
 end powerlib.Limiting

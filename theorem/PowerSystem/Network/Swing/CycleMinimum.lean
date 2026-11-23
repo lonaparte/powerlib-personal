@@ -26,11 +26,12 @@ cycle equilibria follows the lossless power-flow literature (e.g. the winding-ce
 meshed networks).
 
 Results.
-* Per line: `hasDerivAt_edgeG`, `hasDerivAt_edgeD`, the inverse flow increments `invPos`
-  (positive weight) and `invNeg` (negative weight) with `edgeD_invPos`, `edgeD_invNeg`,
-  `invPos_edgeD`, `invNeg_edgeD`, their derivatives `±1/√(W² − 2fμ − μ²)` (`hasDerivAt_invPos`,
-  `hasDerivAt_invNeg`), and the supporting line of a positive-weight line potential
-  (`edgeG_tangent`, mean value theorem).
+* Per line: `hasDerivAt_edgeG`, `hasDerivAt_edgeD`, the inverse flow increment `invPos`
+  (positive weight) and its reflection `invNeg = −invPos` (negative weight; `edgeD_neg`:
+  `G'_W(−x) = G'_{−W}(x)`, `invPos_neg`), with `edgeD_invPos`, `edgeD_invNeg`, `invPos_edgeD`,
+  `invNeg_edgeD`, the derivative `1/√(W² − 2fμ − μ²)` of `invPos` (`hasDerivAt_invPos`; `invNeg`
+  has its negative), and the supporting line of a positive-weight line potential (`edgeG_tangent`,
+  mean value theorem).
 * `cycle_strictMin`: if line `0` has negative weight, the others positive weight, and
   `∑ᵢ 1/√qᵢ(μ) < 1/√q₀(μ)` for `0 < |μ| ≤ ρ` (`qₑ(μ) = Wₑ² − 2fₑμ − μ²`), then `0` is a strict
   local minimum and an isolated critical point of the cycle potential. The Hessian at `0` may be
@@ -68,8 +69,9 @@ def base (W f : ℝ) : ℝ := Real.arcsin (f / amp W f)
 /-- Inverse of the flow increment on a line with positive weight. -/
 def invPos (W f μ : ℝ) : ℝ := Real.arcsin ((f + μ) / amp W f) - base W f
 
-/-- Inverse of the flow increment on a line with negative weight. -/
-def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
+/-- Inverse of the flow increment on a line with negative weight: the reflection `−invPos` of the
+positive-weight inverse (`edgeD_neg`, `invPos_neg`). -/
+abbrev invNeg (W f μ : ℝ) : ℝ := -invPos W f μ
 
 @[tmio M, powerlib_domain] theorem hasDerivAt_edgeG (W f x : ℝ) :
     HasDerivAt (edgeG W f) (edgeD W f x) x := by
@@ -87,6 +89,14 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
     (((Real.hasDerivAt_cos x).sub (hasDerivAt_const x (1 : ℝ))).const_mul f)
   refine h.congr_deriv ?_
   ring
+
+/-- Reflection of a line: `G'(−x)` with weight `W` is `G'(x)` with weight `−W`. -/
+@[tmio M, powerlib_domain] theorem edgeD_neg (W f x : ℝ) : edgeD W f (-x) = edgeD (-W) f x := by
+  simp only [edgeD, Real.sin_neg, Real.cos_neg]; ring
+
+/-- The positive-weight inverse sees the weight only through `W²`. -/
+@[tmio M, powerlib_domain] theorem invPos_neg (W f μ : ℝ) : invPos (-W) f μ = invPos W f μ := by
+  simp [invPos, base, amp]
 
 @[tmio M, powerlib_domain] theorem amp_pos {W f : ℝ} (hW : W ≠ 0) : 0 < amp W f := by
   unfold amp; positivity
@@ -118,15 +128,6 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   rw [Real.sin_add, mul_add, ← mul_assoc, ← mul_assoc, hs, hc]
   unfold edgeD; ring
 
-/-- `f + G'(x) = B sin(a − x)` on a line with negative weight. -/
-@[tmio M, powerlib_domain] theorem add_edgeD_neg {W f : ℝ} (hW : W < 0) (x : ℝ) :
-    f + edgeD W f x = amp W f * Real.sin (base W f - x) := by
-  have hc : amp W f * Real.cos (base W f) = |W| := SpecialFunctions.sqrt_mul_cos_arcsin W f
-  have hs := sin_base (f := f) hW.ne
-  rw [abs_of_neg hW] at hc
-  rw [Real.sin_sub, mul_sub, ← mul_assoc, ← mul_assoc, hs, hc]
-  unfold edgeD; ring
-
 @[tmio T, powerlib_foundation] theorem arcsin_mem_Ioo {y : ℝ} (hy : |y| < 1) :
     Real.arcsin y ∈ Ioo (-(π / 2)) (π / 2) :=
   ⟨Real.neg_pi_div_two_lt_arcsin.mpr (abs_lt.mp hy).1, Real.arcsin_lt_pi_div_two.mpr
@@ -151,15 +152,12 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
     mul_div_cancel₀ _ hB.ne'] at e
   rw [invPos]; linarith
 
-/-- The flow increment is inverted by `invNeg` on a line with negative weight. -/
+/-- The flow increment is inverted by `invNeg` on a line with negative weight (reflection of
+`edgeD_invPos`). -/
 @[tmio M, powerlib_domain] theorem edgeD_invNeg {W f μ : ℝ} (hW : W < 0) (hq : 0 < edgeQ W f μ) :
     edgeD W f (invNeg W f μ) = μ := by
-  have h := abs_div_amp_lt (f := f) hW.ne hq
-  have hB := amp_pos (f := f) hW.ne
-  have e := add_edgeD_neg (f := f) hW (invNeg W f μ)
-  rw [invNeg, sub_sub_cancel, Real.sin_arcsin (abs_le.mp h.le).1 (abs_le.mp h.le).2,
-    mul_div_cancel₀ _ hB.ne'] at e
-  rw [invNeg]; linarith
+  rw [invNeg, edgeD_neg, ← invPos_neg W]
+  exact edgeD_invPos (neg_pos.mpr hW) (by simpa [edgeQ] using hq)
 
 /-- `invPos` is a left inverse of the flow increment on the arc `|a + x| < π/2`. -/
 @[tmio M, powerlib_domain] theorem invPos_edgeD {W f x : ℝ} (hW : 0 < W)
@@ -169,13 +167,14 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
     Real.arcsin_sin hx.1.le hx.2.le]
   ring
 
-/-- `invNeg` is a left inverse of the flow increment on the arc `|a − x| < π/2`. -/
+/-- `invNeg` is a left inverse of the flow increment on the arc `|a − x| < π/2` (reflection of
+`invPos_edgeD`). -/
 @[tmio M, powerlib_domain] theorem invNeg_edgeD {W f x : ℝ} (hW : W < 0)
     (hx : base W f - x ∈ Ioo (-(π / 2)) (π / 2)) : invNeg W f (edgeD W f x) = x := by
-  have hB := amp_pos (f := f) hW.ne
-  rw [invNeg, add_edgeD_neg hW, mul_div_cancel_left₀ _ hB.ne',
-    Real.arcsin_sin hx.1.le hx.2.le]
-  ring
+  have h := invPos_edgeD (neg_pos.mpr hW) (x := -x)
+    (by simpa [base, amp, ← sub_eq_add_neg] using hx)
+  rw [edgeD_neg, neg_neg, invPos_neg] at h
+  rw [invNeg, h, neg_neg]
 
 /-- `invPos` stays on the arc. -/
 @[tmio M, powerlib_domain] theorem base_add_invPos {W f μ : ℝ} (hW : 0 < W) (hq : 0 < edgeQ W f μ) :
@@ -185,9 +184,6 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
 
 @[tmio M, powerlib_domain] theorem invPos_zero (W f : ℝ) : invPos W f 0 = 0 := by
   simp [invPos, base]
-
-@[tmio M, powerlib_domain] theorem invNeg_zero (W f : ℝ) : invNeg W f 0 = 0 := by
-  simp [invNeg, base]
 
 /-- `√q = B √(1 − ((f + μ)/B)²)`. -/
 @[tmio M, powerlib_domain] theorem sqrt_edgeQ {W f μ : ℝ} (hW : W ≠ 0) :
@@ -207,19 +203,6 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   have hlin : HasDerivAt (fun μ => (f + μ) / amp W f) (1 / amp W f) μ :=
     ((hasDerivAt_id μ).const_add f).div_const (amp W f)
   have hd := ((Real.hasDerivAt_arcsin h1 h2).comp μ hlin).sub_const (base W f)
-  refine hd.congr_deriv ?_
-  rw [sqrt_edgeQ hW]
-  field_simp
-
-@[tmio M, powerlib_domain] theorem hasDerivAt_invNeg {W f μ : ℝ} (hW : W ≠ 0)
-    (hq : 0 < edgeQ W f μ) : HasDerivAt (invNeg W f) (-(1 / √(edgeQ W f μ))) μ := by
-  have h := abs_div_amp_lt (f := f) hW hq
-  have hB := amp_pos (f := f) hW
-  have h1 : (f + μ) / amp W f ≠ -1 := fun e => by rw [e] at h; norm_num at h
-  have h2 : (f + μ) / amp W f ≠ 1 := fun e => by rw [e] at h; norm_num at h
-  have hlin : HasDerivAt (fun μ => (f + μ) / amp W f) (1 / amp W f) μ :=
-    ((hasDerivAt_id μ).const_add f).div_const (amp W f)
-  have hd := ((Real.hasDerivAt_arcsin h1 h2).comp μ hlin).const_sub (base W f)
   refine hd.congr_deriv ?_
   rw [sqrt_edgeQ hW]
   field_simp
@@ -301,10 +284,10 @@ def curvePot (μ : ℝ) : ℝ :=
 variable {W f}
 
 @[tmio M, powerlib_domain] theorem closure_zero : closure W f 0 = 0 := by
-  simp [closure, invNeg_zero, invPos_zero]
+  simp [closure, invPos_zero]
 
 @[tmio M, powerlib_domain] theorem curvePot_zero : curvePot W f 0 = 0 := by
-  simp [curvePot, invNeg_zero, invPos_zero, edgeG_zero]
+  simp [curvePot, invNeg, invPos_zero, edgeG_zero]
 
 variable (hW0 : W 0 < 0) (hW : ∀ i : Fin m, 0 < W i.succ) {ρ : ℝ}
   (hq : ∀ e μ, |μ| ≤ ρ → 0 < edgeQ (W e) (f e) μ)
@@ -314,7 +297,7 @@ include hW0 hW hq in
     HasDerivAt (closure W f) (-(1 / √(edgeQ (W 0) (f 0) μ)) +
       ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) μ)) μ := by
   unfold closure
-  exact (hasDerivAt_invNeg hW0.ne (hq 0 μ hμ)).add
+  exact (hasDerivAt_invPos hW0.ne (hq 0 μ hμ)).neg.add
     (HasDerivAt.fun_sum fun i _ => hasDerivAt_invPos (hW i).ne' (hq i.succ μ hμ))
 
 include hW0 hW hq in
@@ -328,11 +311,11 @@ include hW0 hW hq in
     simp only [id, one_mul] at *
     rw [hspec]; ring
   unfold curvePot closure
-  have h0 := hterm (hasDerivAt_invNeg hW0.ne (hq 0 μ hμ)) (edgeD_invNeg hW0 (hq 0 μ hμ))
+  have h0 := hterm (hasDerivAt_invPos hW0.ne (hq 0 μ hμ)).neg (edgeD_invNeg hW0 (hq 0 μ hμ))
   have hs := HasDerivAt.fun_sum (u := Finset.univ) fun (i : Fin m) _ =>
     hterm (hasDerivAt_invPos (hW i).ne' (hq i.succ μ hμ)) (edgeD_invPos (hW i) (hq i.succ μ hμ))
   refine (h0.add hs).congr_deriv ?_
-  rw [Finset.sum_neg_distrib]; ring
+  simp only [Finset.sum_neg_distrib, Pi.neg_apply]; ring
 
 variable (hΓ : ∀ μ, μ ≠ 0 → |μ| ≤ ρ →
   ∑ i : Fin m, 1 / √(edgeQ (W i.succ) (f i.succ) μ) < 1 / √(edgeQ (W 0) (f 0) μ))
@@ -483,7 +466,7 @@ condition is put on the Hessian at `0`, which may be singular. -/
   refine ⟨?_, fun hcrit => ?_⟩
   · by_cases hμ0 : μ = 0
     · -- `x₀ = 0`, so some positive line moves off its contact point `0`
-      have hx00 : x 0 = 0 := by rw [hx0eq, hμ0, invNeg_zero]
+      have hx00 : x 0 = 0 := by rw [hx0eq, hμ0, invNeg, invPos_zero, neg_zero]
       obtain ⟨i, hi⟩ : ∃ i : Fin m, x i.succ ≠ 0 := by
         by_contra hall
         push Not at hall
@@ -515,7 +498,7 @@ condition is put on the Hessian at `0`, which may be singular. -/
     apply hx0
     funext e
     refine Fin.cases ?_ (fun i => ?_) e
-    · rw [hx0eq, hμ0, invNeg_zero]; rfl
+    · rw [hx0eq, hμ0, invNeg, invPos_zero, neg_zero]; rfl
     · rw [hxi i, hμ0, invPos_zero]; rfl
 
 end Cycle

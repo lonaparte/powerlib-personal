@@ -66,7 +66,7 @@ solution to one of the Liénard field. -/
       HasDerivAt (fun τ => Δω - a * Real.sin (φ τ 0) + b * φ τ 1)
         (-(a * Real.cos (φ t 0) * (Δω - a * Real.sin (φ t 0) + b * φ t 1)) -
           b * Real.sin (φ t 0)) t := by
-  rw [xiField_eq_srfField] at hφ
+  rw [xiField] at hφ
   obtain ⟨h0, h1⟩ := PhasePlane.hasDerivWithinAt_iff_components.mp
     (isIntegralCurveOn_piPLLVelocityCoord (Kp := a) (Ki := b) (δω := -Δω) (hasDerivAt_srfPD 1)
       (s := Set.univ) (fun τ _ => (hφ τ).hasDerivWithinAt) t (Set.mem_univ t))
@@ -97,7 +97,7 @@ inverse velocity coordinates, `isIntegralCurveOn_piPLLVelocityCoordInv` at `h = 
     congr 1; field_simp; ring
   have h := isIntegralCurveOn_piPLLVelocityCoordInv (δω := -Δω) hb (hasDerivAt_srfPD 1) hψ t
     (Set.mem_univ t)
-  rw [hasDerivWithinAt_univ, ← srfField, ← xiField_eq_srfField] at h
+  rw [hasDerivWithinAt_univ, ← srfField, ← xiField] at h
   simpa only [e] using h
 
 /-! ## The `(θ_err, ξ)` field as a PI-PLL family member -/
@@ -106,6 +106,6 @@ inverse velocity coordinates, `isIntegralCurveOn_piPLLVelocityCoordInv` at `h = 
 gains `(a, b)` and offset `−Δω`. -/
 @[tmio M, powerlib_domain] theorem xi_piPLLField (a b Δω θ : ℝ) :
     piPLLField (srf 1 a b (-Δω) θ).h a b (-Δω) = xiField a b Δω := by
-  rw [srf_piPLLField, xiField_eq_srfField]
+  rw [srf_piPLLField]
 
 end powerlib.PLL

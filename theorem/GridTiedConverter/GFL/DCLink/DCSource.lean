@@ -10,7 +10,8 @@ The dc bus `C V̇ = (source) + P_abs(V)/V` is linearized at `V = 1` for two idea
 * constant power: `C V̇ = (P₀ + P_abs(V))/V`.
 Here `P_abs` is the absorbed ac power (IN-positive), so the exported power at the operating
 point is `P = −P_abs(1)` (`= I₀ = P₀` at the equilibrium).  The dc-voltage loop enters through
-`P_abs(V) = (3/2) v_{d0} (i_{d0} − k_pv (V − 1) − k_iv η)`.
+the absorbed power of the four-state model, `FourState.Pabs`:
+`P_abs(V) = (3/2) v_{d0} (i_{d0} − k_pv (V − 1) − k_iv η)` (`hasDerivAt_Pabs`).
 
 The source writes the same formulas in its OUT-positive convention; both `A₃₃` values are
 convention invariant (`P` is the exported power in both).
@@ -58,43 +59,40 @@ namespace powerlib.GFL.DCLink.DCSource
 @[tmio T, powerlib_foundation] theorem a33_sub (P1 P' C : ℝ) :
     (P' - P1) / C - P' / C = -P1 / C := by ring
 
-/-- Absorbed power of the dc-voltage loop as a function of `V` (fixed `η`). -/
-def loopPower (vd0 id0 kpv kiv η : ℝ) (V : ℝ) : ℝ :=
-  3 / 2 * vd0 * (id0 - kpv * (V - 1) - kiv * η)
-
-@[tmio M, powerlib_domain] theorem hasDerivAt_loopPower (vd0 id0 kpv kiv η : ℝ) :
-    HasDerivAt (loopPower vd0 id0 kpv kiv η) (-(3 / 2) * vd0 * kpv) 1 := by
-  have := (((hasDerivAt_id (1 : ℝ)).sub_const 1).const_mul kpv).const_sub id0
-    |>.sub_const (kiv * η) |>.const_mul (3 / 2 * vd0)
+/-- The absorbed power `FourState.Pabs` of the dc-voltage loop,
+`P_abs(V) = (3/2) v_{d0} (i_{d0} − k_pv (V − 1) − k_iv η)`, has the slope `−(3/2) v_{d0} k_pv`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_Pabs (p : FourState.Params) (θ η : ℝ) :
+    HasDerivAt (fun V => FourState.Pabs p θ V η) (-(3 / 2) * FourState.vd0 p θ * p.kpv) 1 := by
+  have := (((hasDerivAt_id (1 : ℝ)).sub_const 1).const_mul p.kpv).const_sub p.id0
+    |>.sub_const (p.kiv * η) |>.const_mul (3 / 2 * (p.V0 * Real.cos θ))
   convert this using 1
-  · ext V; simp [loopPower]
-  · simp
+  · ext V; simp [FourState.Pabs, FourState.idc]
+  · simp [FourState.vd0]
 
 /-- W9, constant-current source: `A₃₃ = (−1.5 v_{d0} k_pv + P)/C`, `P = −P_abs(1)`. -/
-@[tmio M, powerlib_domain] theorem a33_constCurrent (vd0 id0 kpv kiv η I0 C : ℝ) :
-    HasDerivAt (fun V => (I0 + loopPower vd0 id0 kpv kiv η V / V) / C)
-      ((-1.5 * vd0 * kpv + -loopPower vd0 id0 kpv kiv η 1) / C) 1 := by
-  have := hasDerivAt_constCurrent I0 C (hasDerivAt_loopPower vd0 id0 kpv kiv η)
+@[tmio M, powerlib_domain] theorem a33_constCurrent (p : FourState.Params) (θ η I0 : ℝ) :
+    HasDerivAt (fun V => (I0 + FourState.Pabs p θ V η / V) / p.C)
+      ((-1.5 * FourState.vd0 p θ * p.kpv + -FourState.Pabs p θ 1 η) / p.C) 1 := by
+  have := hasDerivAt_constCurrent I0 p.C (hasDerivAt_Pabs p θ η)
   convert this using 1
   ring
 
 /-- W9, constant-power source: `A₃₃ = −1.5 v_{d0} k_pv / C` (at the equilibrium
 `P₀ = P = −P_abs(1)`). -/
-@[tmio M, powerlib_domain] theorem a33_constPower (vd0 id0 kpv kiv η C : ℝ) (hC : C ≠ 0) :
-    HasDerivAt (fun V => (-loopPower vd0 id0 kpv kiv η 1 + loopPower vd0 id0 kpv kiv η V) /
-        (C * V)) (-1.5 * vd0 * kpv / C) 1 := by
-  have := hasDerivAt_constPower (-loopPower vd0 id0 kpv kiv η 1) C hC
-    (hasDerivAt_loopPower vd0 id0 kpv kiv η) (by ring)
+@[tmio M, powerlib_domain] theorem a33_constPower (p : FourState.Params) (θ η : ℝ) (hC : p.C ≠ 0) :
+    HasDerivAt (fun V => (-FourState.Pabs p θ 1 η + FourState.Pabs p θ V η) / (p.C * V))
+      (-1.5 * FourState.vd0 p θ * p.kpv / p.C) 1 := by
+  have := hasDerivAt_constPower (-FourState.Pabs p θ 1 η) p.C hC (hasDerivAt_Pabs p θ η)
+    (by ring)
   convert this using 1
   ring
 
 /-- The constant-current `A₃₃` is the `(V, V)` entry of the four-state `A₀`
 (`η = 0`, `P = −(3/2) v_{d0} i_{d0}`). -/
 @[tmio M, powerlib_domain] theorem a33_constCurrent_eq_A0 (p : FourState.Params) (θ0 : ℝ) :
-    (-1.5 * FourState.vd0 p θ0 * p.kpv +
-        -loopPower (FourState.vd0 p θ0) p.id0 p.kpv p.kiv 0 1) / p.C =
+    (-1.5 * FourState.vd0 p θ0 * p.kpv + -FourState.Pabs p θ0 1 0) / p.C =
       FourState.A0 p θ0 2 2 := by
-  simp [FourState.A0, loopPower, FourState.Params.γ]
+  simp [FourState.A0, FourState.Pabs, FourState.idc, FourState.vd0, FourState.Params.γ]
   ring
 
 end powerlib.GFL.DCLink.DCSource

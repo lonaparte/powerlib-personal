@@ -188,7 +188,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
 
 @[tmio M, powerlib_domain] theorem c0_eq_snNumerator (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.c0 = p.snNumerator / (p.Δ * p.wC) := by
-  rw [c0, snNumerator]; field_simp
+  rw [Network.c0, snNumerator]; field_simp
 
 @[tmio M, powerlib_domain] private lemma sq_c0_mul (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.c0 ^ 2 * (p.Δ ^ 2 * p.wC ^ 2) = p.snNumerator ^ 2 := by
@@ -197,7 +197,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
 @[tmio M, powerlib_domain] private lemma sq_amp_mul (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.amp ^ 2 * (p.Δ ^ 2 * p.wC ^ 2) = (p.wC * p.Vg) ^ 2 * p.Δ := by
   have hs := p.sqrt_Δ_pos hΔ
-  rw [amp, div_pow, Real.sq_sqrt p.Δ_nonneg]; field_simp
+  rw [Network.amp, div_pow, Real.sq_sqrt p.Δ_nonneg]; field_simp
 
 @[tmio M, powerlib_domain] private lemma abs_c0_lt_iff (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     |p.c0| < p.amp ↔ p.c0 ^ 2 < p.amp ^ 2 := by

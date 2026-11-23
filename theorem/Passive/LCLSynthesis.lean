@@ -27,9 +27,10 @@ certificates of `theorem/Linear/Certificate.lean`; the rational synthesizer
 `theorem/Family/Basic.lean`).
 
 Results.
-* Symmetric matrices: `SymmetricMatrix`, `SymmetricMatrix.minor2`, `SymmetricMatrix.det`,
-  `SymmetricMatrix.toMatrix`, `SymmetricMatrix.form_pos` (positive leading minors make the form
-  positive; Sylvester's criterion `Linear.Positive.posDef_of_minors_fin_three`).
+* Symmetric matrices: `SymmetricMatrix`, `SymmetricMatrix.toMatrix`, `SymmetricMatrix.minor2`,
+  `SymmetricMatrix.det_toMatrix` (first-row expansion), `SymmetricMatrix.form_pos` (positive
+  leading minors `p₁₁`, `minor2`, `det toMatrix` make the form positive; Sylvester's criterion
+  `Linear.Positive.posDef_of_minors_fin_three`).
 * The symbolic witness (`PassiveWitness`): `coupling`, `gap`, `denominator`, the numerators
   `n11` … `n33`, `minorNumerator`, `detNumerator`, `matrix`; positivity (`coupling_pos`,
   `gap_pos`, `n11_pos`, `minorNumerator_pos`, `detNumerator_pos`), the minor and determinant
@@ -65,28 +66,29 @@ open Matrix TMIO
   p23 : ℝ
   p33 : ℝ
 
+/-- The leading `2 × 2` minor `p₁₁ p₂₂ − p₁₂²`. -/
 def SymmetricMatrix.minor2 (p : SymmetricMatrix) : ℝ := p.p11 * p.p22 - p.p12 ^ 2
-
-def SymmetricMatrix.det (p : SymmetricMatrix) : ℝ :=
-  p.p11 * (p.p22 * p.p33 - p.p23 ^ 2) - p.p12 * (p.p12 * p.p33 - p.p23 * p.p13) +
-    p.p13 * (p.p12 * p.p23 - p.p22 * p.p13)
 
 /-- The matrix of a symmetric upper triangle. -/
 def SymmetricMatrix.toMatrix (p : SymmetricMatrix) : Matrix (Fin 3) (Fin 3) ℝ :=
   !![p.p11, p.p12, p.p13; p.p12, p.p22, p.p23; p.p13, p.p23, p.p33]
 
+/-- The determinant of a symmetric upper triangle, expanded along the first row. -/
+@[tmio T, powerlib_foundation] theorem SymmetricMatrix.det_toMatrix (p : SymmetricMatrix) :
+    p.toMatrix.det = p.p11 * (p.p22 * p.p33 - p.p23 ^ 2) - p.p12 * (p.p12 * p.p33 - p.p23 * p.p13) +
+      p.p13 * (p.p12 * p.p23 - p.p22 * p.p13) := by
+  rw [det_fin_three]
+  simp [SymmetricMatrix.toMatrix]
+  ring
+
 /-- Positive leading minors make the quadratic form positive (Sylvester's criterion,
 `Linear.Positive.posDef_of_minors_fin_three`). -/
 @[tmio T, powerlib_foundation] theorem SymmetricMatrix.form_pos (p : SymmetricMatrix)
-    (h1 : 0 < p.p11) (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
-    0 < x ⬝ᵥ (p.toMatrix *ᵥ x) := by
-  have hdet : p.toMatrix.det = p.det := by
-    rw [det_fin_three]
-    simp [SymmetricMatrix.toMatrix, SymmetricMatrix.det]
-    ring
+    (h1 : 0 < p.p11) (h2 : 0 < p.minor2) (h3 : 0 < p.toMatrix.det) (x : Fin 3 → ℝ)
+    (hx : x ≠ 0) : 0 < x ⬝ᵥ (p.toMatrix *ᵥ x) := by
   have hP := Linear.Positive.posDef_of_minors_fin_three (P := p.toMatrix)
     (by ext i j; fin_cases i <;> fin_cases j <;> rfl) h1
-    (by simpa [SymmetricMatrix.toMatrix, SymmetricMatrix.minor2, sq] using h2) (hdet ▸ h3)
+    (by simpa [SymmetricMatrix.toMatrix, SymmetricMatrix.minor2, sq] using h2) h3
   simpa using hP.dotProduct_mulVec_pos hx
 
 namespace PassiveWitness
@@ -209,10 +211,11 @@ set_option maxHeartbeats 4000000 in
 set_option maxHeartbeats 4000000 in
 @[tmio M, powerlib_domain] theorem det_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
-    (matrix a d b e k).det =
+    (matrix a d b e k).toMatrix.det =
       k^2 * (coupling a d b e)^2 * gap a d b e k * detNumerator a d b e k /
         (denominator a d b e k)^3 := by
-  dsimp [matrix, SymmetricMatrix.det]
+  rw [SymmetricMatrix.det_toMatrix]
+  dsimp [matrix]
   field_simp [hq]
   dsimp [n11, n12, n13, n22, n23, n33, coupling, gap, detNumerator]
   ring
@@ -293,7 +296,7 @@ def synthesizeState (s : StateSpace) (ha : 0 ≤ s.first.decay) (hd : 0 ≤ s.se
     rw [PassiveWitness.minor_identity a d b e k hn]
     exact div_pos (mul_pos (mul_pos hk hJ)
       (PassiveWitness.minorNumerator_pos ha hd hb he hk had)) (pow_pos hq 2)
-  have h3 : 0 < p.det := by
+  have h3 : 0 < p.toMatrix.det := by
     rw [PassiveWitness.det_identity a d b e k hn]
     exact div_pos (mul_pos (mul_pos (mul_pos (pow_pos hk 2) (pow_pos hJ 2)) hG)
       (PassiveWitness.detNumerator_pos ha hd hb he hk)) (pow_pos hq 3)

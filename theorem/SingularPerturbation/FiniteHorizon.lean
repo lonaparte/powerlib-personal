@@ -164,7 +164,6 @@ variable {n m : ℕ}
   set K := 2 * (absSum A0 + absSum A12 + absSum (c.P * L * A0) + absSum (c.P * L * A12))
     with hK
   have hP := c.symmetric
-  have hlyap : c.P * A22 + A22ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
   have a0 := absSum_nonneg A0
   have a12 := absSum_nonneg A12
   have n1 := absSum_nonneg (c.P * L * A0)
@@ -180,7 +179,7 @@ variable {n m : ℕ}
     simp only [Matrix.mul_assoc, ← mulVec_mulVec, mulVec_add, mulVec_smul, dotProduct_add,
       dotProduct_smul, smul_eq_mul]
     ring
-  have hl := dotProduct_mulVec_lyapunov hP hlyap η
+  have hl := Linear.quadratic_lyapunov hP c.lyapunov η
   have b1 := le_of_abs_le (abs_dotProduct_mulVec_le A0 x x one_pos)
   have b2 := le_of_abs_le (abs_dotProduct_mulVec_le A12 x η one_pos)
   have b3 := le_of_abs_le (abs_dotProduct_mulVec_le (c.P * L * A0) η x one_pos)
@@ -226,7 +225,6 @@ variable {n m : ℕ}
   have hn2 : 0 ≤ n2 := absSum_nonneg _
   have hS0 : 0 ≤ S := add_nonneg hn1 hn2
   have hP := c.symmetric
-  have hlyap : c.P * A22 + A22ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
   have hlo := c.lower_pos
   have hhi := c.upper_pos
   set δ := ε⁻¹ / (2 * (S + 1)) with hδ
@@ -254,7 +252,7 @@ variable {n m : ℕ}
       simp only [Matrix.mul_assoc, ← mulVec_mulVec, mulVec_add, mulVec_smul, dotProduct_add,
         dotProduct_smul, smul_eq_mul]
       ring
-    rw [e2, dotProduct_mulVec_lyapunov hP hlyap]
+    rw [e2, Linear.quadratic_lyapunov hP c.lyapunov]
     have b1 := le_of_abs_le (abs_dotProduct_mulVec_le (c.P * L * A0) (e s) (x s) hδpos)
     have b2 := le_of_abs_le (abs_dotProduct_mulVec_le (c.P * L * A12) (e s) (η s) hδpos)
     rw [← hn1d] at b1
@@ -445,7 +443,6 @@ variable {n m : ℕ}
     (hε : 0 < ε) {ηb : ℝ → Fin m → ℝ} (hηb : ∀ t, HasDerivAt ηb (ε⁻¹ • (A22 *ᵥ ηb t)) t) :
     ∀ t ∈ Icc 0 T, ηb t ⬝ᵥ ηb t ≤ c.upper / c.lower * (ηb 0 ⬝ᵥ ηb 0) := by
   have hP := c.symmetric
-  have hlyap : c.P * A22 + A22ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
   have hlo := c.lower_pos
   have hhi := c.upper_pos
   have hV : ∀ s, HasDerivAt (fun s => ηb s ⬝ᵥ (c.P *ᵥ ηb s))
@@ -453,7 +450,7 @@ variable {n m : ℕ}
     fun s => hasDerivAt_quadratic_of_symm hP (hηb s)
   have hα : 0 < ε⁻¹ / c.upper := by positivity
   have hdec := le_of_deriv_le_neg (T := T) hα le_rfl hV (fun s _ => by
-    rw [mulVec_smul, dotProduct_smul, smul_eq_mul, dotProduct_mulVec_lyapunov hP hlyap]
+    rw [mulVec_smul, dotProduct_smul, smul_eq_mul, Linear.quadratic_lyapunov hP c.lyapunov]
     have hup := c.upper_bound (ηb s)
     have h1 : ε⁻¹ / c.upper * (ηb s ⬝ᵥ (c.P *ᵥ ηb s)) ≤ ε⁻¹ * (ηb s ⬝ᵥ ηb s) := by
       calc ε⁻¹ / c.upper * (ηb s ⬝ᵥ (c.P *ᵥ ηb s)) ≤ ε⁻¹ / c.upper * (c.upper * (ηb s ⬝ᵥ ηb s)) :=

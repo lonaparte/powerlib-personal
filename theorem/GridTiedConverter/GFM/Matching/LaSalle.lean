@@ -32,9 +32,9 @@ nonincreasing and, "by LaSalle", every trajectory converges to `{ũ_dc = 0, ∇S
 Results.
 * Static (public domain model identities, about the model's maps, not connection conclusions):
   `cylField_cyl`, `hasDerivAt_cyl_line`, `fderiv_cyl_field`, `cyl_contDiff`, `cylField_contDiff`,
-  `cylEnergy_contDiff`, `energy_eq_cylEnergy`, `cylLie_cyl`, `cyl_apply`, `cD_cos_sin`,
-  `cQ_cos_sin`, `fderiv_circle_cylField`, `exists_cyl_eq`, `cylLie_le`, `cylLie_eq_zero`,
-  `cylField_two_of_mem`, `cD_sq_add_cQ_sq`, `isCompact_cylSublevel`,
+  `cylEnergy_contDiff`, `energy_eq_cylEnergy`, `cylLie_cyl`, `cyl_apply`,
+  `fderiv_circle_cylField`, `exists_cyl_eq`, `cylLie_le`, `cylLie_eq_zero`,
+  `cylField_two_of_mem`, `isCompact_cylSublevel`,
   `cylLie_eq_zero_of_margin_eq_zero`, `cylEnergy_of_rel`, `cylField_two_of_rel`,
   `hasDerivAt_potential` (`∇S(θ) = k sin θ`), `boundaryModel_margin`.
 * Trajectory level (private implementation evidence, Rules §3a: set attraction and regions of
@@ -143,14 +143,6 @@ open Set Filter Topology
 namespace Model
 variable (m : Model)
 
-/-- The internal model `î_d` as a function of `(cos θ, sin θ) = (c, s)`. -/
-def cD (c s : ℝ) : ℝ :=
-  (m.Rs * (m.μ * m.ustar * s) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * c)) / m.N
-
-/-- The internal model `î_q` as a function of `(cos θ, sin θ) = (c, s)`. -/
-def cQ (c s : ℝ) : ℝ :=
-  (-(m.ω0 * m.Ls) * (m.μ * m.ustar * s) + m.Rs * (m.v0 - m.μ * m.ustar * c)) / m.N
-
 /-- The closed loop on the cylinder, state `(c, s, u_dc, i_d, i_q)` with `(c, s)` standing for
 `(cos θ_dq, sin θ_dq)`: `c' = −s θ'`, `s' = c θ'`, `θ' = η u_dc − ω₀`, and the DC and current rows
 of `field` with `sin θ_dq, cos θ_dq` replaced by `s, c`. -/
@@ -182,8 +174,8 @@ Static evidence on the model, not a connection conclusion. -/
       Real.cos (x 0) * m.field x 0, m.field x 1, m.field x 2, m.field x 3] := by
   ext i
   fin_cases i <;>
-    simp [Model.cylField, cyl, Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.iHatD,
-        Model.iHatQ,
+    simp [Model.cylField, cyl, Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.cD,
+        Model.cQ,
       Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
@@ -237,7 +229,7 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_eq_cylEnergy (m : Model) :
     m.energy = fun x => m.cylEnergy (cyl x) := by
   funext x
-  simp [Model.energy, Model.cylEnergy, cyl, Model.iHatD, Model.iHatQ, Model.cD, Model.cQ]
+  simp [Model.energy, Model.cylEnergy, cyl, Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem cylEnergy_contDiff (m : Model) : ContDiff ℝ 1 m.cylEnergy := by
@@ -276,14 +268,6 @@ Static evidence on the model, not a connection conclusion. -/
     cyl x 0 = Real.cos (x 0) ∧ cyl x 1 = Real.sin (x 0) ∧ cyl x 2 = x 1 ∧ cyl x 3 = x 2 ∧
       cyl x 4 = x 3 := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [cyl]
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem cD_cos_sin (m : Model) (θ : ℝ) :
-    m.cD (Real.cos θ) (Real.sin θ) = m.iHatD θ := rfl
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem cQ_cos_sin (m : Model) (θ : ℝ) :
-    m.cQ (Real.cos θ) (Real.sin θ) = m.iHatQ θ := rfl
 
 @[tmio T, powerlib_foundation] private theorem circle_contDiff : ContDiff ℝ 1 (fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) := by
   have h0 := Dynamics.contDiff_coord (k := 1) (n := 5) 0
@@ -347,7 +331,7 @@ Static evidence on the model, not a connection conclusion. -/
     nlinarith [sq_nonneg (x 2 - m.iHatD (x 0)), sq_nonneg (x 3 - m.iHatQ (x 0))]
   have e1' := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp e1
   have e2' := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp e2
-  simp only [cyl_apply, cD_cos_sin, cQ_cos_sin]
+  simp only [cyl_apply]
   exact ⟨hu, by linarith, by linarith⟩
 
 /-- On the set `ũ_dc = 0`, `ĩ_dq = 0` the DC row of the cylinder field is `−κ s / C_dc`.
@@ -359,19 +343,6 @@ Static evidence on the model, not a connection conclusion. -/
     Matrix.tail_cons]
   rw [h2, h3, h4]
   ring
-
-/-- `î_d² + î_q² = ‖μ u* (−s, c) − v₀ e₂‖² / N` on the cylinder coordinates.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem cD_sq_add_cQ_sq (m : Model) (hN : m.N ≠ 0) (c s : ℝ) :
-    m.cD c s ^ 2 + m.cQ c s ^ 2 =
-      ((m.μ * m.ustar * s) ^ 2 + (m.v0 - m.μ * m.ustar * c) ^ 2) / m.N := by
-  have hZ : (m.Rs * (m.μ * m.ustar * s) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * c)) ^ 2 +
-      (-(m.ω0 * m.Ls) * (m.μ * m.ustar * s) + m.Rs * (m.v0 - m.μ * m.ustar * c)) ^ 2 =
-      m.N * ((m.μ * m.ustar * s) ^ 2 + (m.v0 - m.μ * m.ustar * c) ^ 2) := by
-    simp only [Model.N]
-    ring
-  rw [Model.cD, Model.cQ, div_pow, div_pow, ← add_div, hZ]
-  field_simp
 
 /-- The sublevel sets of the energy on the cylinder are compact.
 Static evidence on the model, not a connection conclusion. -/
@@ -450,7 +421,7 @@ Static evidence on the model, not a connection conclusion. -/
   rw [cylLie_cyl, energy_lie_eq_sos m hR.ne' hL.ne' hC.ne' x, hm, neg_zero, zero_mul, zero_sub,
     neg_eq_zero, div_eq_zero_iff] at h0
   have key := h0.resolve_right (by positivity : (4 * m.Rs * m.N ^ 2 : ℝ) ≠ 0)
-  simp only [cyl_apply, cD_cos_sin, cQ_cos_sin]
+  simp only [cyl_apply]
   set u := x 1 - m.ustar
   set e1 := x 2 - m.iHatD (x 0)
   set e2 := x 3 - m.iHatQ (x 0)
@@ -728,10 +699,10 @@ sets. -/
     simpa using this
   · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcD
       (fun y hy => sub_eq_zero.mpr (hM y hy).2.1)
-    simpa [cD_cos_sin] using this
+    simpa using this
   · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcQ
       (fun y hy => sub_eq_zero.mpr (hM y hy).2.2)
-    simpa [cQ_cos_sin] using this
+    simpa using this
 
 /-- The image of every forward solution on the cylinder converges to the set
 `{s = 0, u = u*, i = î(c, s)}`. -/
@@ -1077,7 +1048,7 @@ conclusion. -/
       (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) / m.N * |θ| := by
   have e : m.iHatD θ - m.iHatD 0 = (m.Rs * (m.μ * m.ustar) * Real.sin θ +
       m.ω0 * m.Ls * (m.μ * m.ustar) * (1 - Real.cos θ)) / m.N := by
-    simp only [Model.iHatD, Real.sin_zero, Real.cos_zero]
+    simp only [Model.cD, Real.sin_zero, Real.cos_zero]
     field_simp
     ring
   have hs : |Real.sin θ| ≤ |θ| := by simpa using Real.abs_sin_sub_sin_le θ 0
@@ -1098,7 +1069,7 @@ conclusion. -/
       (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) / m.N * |θ| := by
   have e : m.iHatQ θ - m.iHatQ 0 = (-(m.ω0 * m.Ls * (m.μ * m.ustar)) * Real.sin θ +
       m.Rs * (m.μ * m.ustar) * (1 - Real.cos θ)) / m.N := by
-    simp only [Model.iHatQ, Real.sin_zero, Real.cos_zero]
+    simp only [Model.cQ, Real.sin_zero, Real.cos_zero]
     field_simp
     ring
   have hs : |Real.sin θ| ≤ |θ| := by simpa using Real.abs_sin_sub_sin_le θ 0
@@ -1684,13 +1655,13 @@ def noSyncModel : Model :=
         PiLp.toLp_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, Fin.isValue, Fin.mk_one]
       ring
-    · simp only [Model.field, Model.iHatD, Model.iHatQ, hμ, PiLp.toLp_apply,
+    · simp only [Model.field, Model.cD, Model.cQ, hμ, PiLp.toLp_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
         Matrix.head_cons, Matrix.tail_cons, Fin.isValue, Fin.reduceFinMk]
       field_simp
       simp only [Model.N]
       ring
-    · simp only [Model.field, Model.iHatD, Model.iHatQ, hμ, PiLp.toLp_apply,
+    · simp only [Model.field, Model.cD, Model.cQ, hμ, PiLp.toLp_apply,
         Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
         Matrix.head_cons, Matrix.tail_cons, Fin.isValue, Fin.reduceFinMk]
       field_simp
@@ -1934,42 +1905,44 @@ def redField (z : State 3) : State 3 :=
     (-(m.ω0 * m.Ls * z 1 + m.Rs * z 2)) / m.Ls - m.μ * m.Rs ^ 2 / (m.N * m.Ls) * z 0 -
       m.η * z 0 * z 1]
 
-/-- The reduction `x ↦ (ũ_dc, R_θᵀ (i_dq − î_dq(θ)))`. -/
+/-- The reduction `x ↦ (ũ_dc, R_θᵀ (i_dq − î_dq(θ)))`: the current error in the rotating frame,
+`R_θᵀ = T(θ)` the Park rows `Transform.parkD`, `Transform.parkQ`. -/
 def red (x : State 4) : State 3 :=
   WithLp.toLp 2 ![x 1 - m.ustar,
-    Real.cos (x 0) * (x 2 - m.iHatD (x 0)) + Real.sin (x 0) * (x 3 - m.iHatQ (x 0)),
-    -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) + Real.cos (x 0) * (x 3 - m.iHatQ (x 0))]
+    Transform.parkD (x 0) (x 2 - m.iHatD (x 0)) (x 3 - m.iHatQ (x 0)),
+    Transform.parkQ (x 0) (x 2 - m.iHatD (x 0)) (x 3 - m.iHatQ (x 0))]
 
 end Model
 
 /-- Rotated internal model `R_θᵀ î(θ)`, both components. Static evidence on the model, not a
 connection conclusion. -/
 @[tmio M, powerlib_domain] theorem rot_iHat_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
-    Real.cos θ * m.iHatD θ + Real.sin θ * m.iHatQ θ =
+    Transform.parkD θ (m.iHatD θ) (m.iHatQ θ) =
         (m.ω0 * m.Ls * m.v0 * Real.cos θ + m.Rs * m.v0 * Real.sin θ -
           m.ω0 * m.Ls * (m.μ * m.ustar)) / m.N ∧
-      -Real.sin θ * m.iHatD θ + Real.cos θ * m.iHatQ θ =
+      Transform.parkQ θ (m.iHatD θ) (m.iHatQ θ) =
         (-(m.ω0 * m.Ls * m.v0 * Real.sin θ) + m.Rs * m.v0 * Real.cos θ - m.Rs * (m.μ * m.ustar)) /
           m.N := by
   have hsc := Real.sin_sq_add_cos_sq θ
   constructor
-  · simp only [Model.iHatD, Model.iHatQ]
+  · simp only [Transform.parkD, Model.cD, Model.cQ]
     field_simp
     linear_combination (-(m.ω0 * m.Ls * (m.μ * m.ustar))) * hsc
-  · simp only [Model.iHatD, Model.iHatQ]
+  · simp only [Transform.parkQ, Model.cD, Model.cQ]
     field_simp
     linear_combination (-(m.Rs * (m.μ * m.ustar))) * hsc
 
 /-- Rotated slope `R_θᵀ î'(θ)` of the internal model, both components. Static evidence on the
 model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem rot_iHat_deriv_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
-    Real.cos θ * (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N) +
-        Real.sin θ * (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
+    Transform.parkD θ (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N)
+        (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
         m.μ * m.ustar * m.Rs / m.N ∧
-      -Real.sin θ * (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N) +
-        Real.cos θ * (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
+      Transform.parkQ θ (m.μ * m.ustar * (m.Rs * Real.cos θ + m.ω0 * m.Ls * Real.sin θ) / m.N)
+        (m.μ * m.ustar * (m.Rs * Real.sin θ - m.ω0 * m.Ls * Real.cos θ) / m.N) =
         -(m.μ * m.ustar * m.ω0 * m.Ls) / m.N := by
   have hsc := Real.sin_sq_add_cos_sq θ
+  simp only [Transform.parkD, Transform.parkQ]
   constructor
   · field_simp
     linear_combination (m.μ * m.ustar * m.Rs) * hsc
@@ -1981,22 +1954,23 @@ evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem red_field_identity (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
     (hκ : m.κ = 0) (x : State 4) :
     m.field x 1 = m.redField (m.red x) 0 ∧
-    -Real.sin (x 0) * m.field x 0 * (x 2 - m.iHatD (x 0)) +
-        Real.cos (x 0) * (m.field x 2 - m.μ * m.ustar *
-          (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) / m.N * m.field x 0) +
-        (Real.cos (x 0) * m.field x 0 * (x 3 - m.iHatQ (x 0)) +
-          Real.sin (x 0) * (m.field x 3 - m.μ * m.ustar *
-            (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) / m.N * m.field x 0)) =
+    Transform.parkD (x 0)
+        (m.field x 2 - m.μ * m.ustar *
+          (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) / m.N * m.field x 0)
+        (m.field x 3 - m.μ * m.ustar *
+          (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) / m.N * m.field x 0) +
+      m.field x 0 * Transform.parkQ (x 0) (x 2 - m.iHatD (x 0)) (x 3 - m.iHatQ (x 0)) =
       m.redField (m.red x) 1 ∧
-    -Real.cos (x 0) * m.field x 0 * (x 2 - m.iHatD (x 0)) +
-        -Real.sin (x 0) * (m.field x 2 - m.μ * m.ustar *
-          (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) / m.N * m.field x 0) +
-        (-Real.sin (x 0) * m.field x 0 * (x 3 - m.iHatQ (x 0)) +
-          Real.cos (x 0) * (m.field x 3 - m.μ * m.ustar *
-            (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) / m.N * m.field x 0)) =
+    Transform.parkQ (x 0)
+        (m.field x 2 - m.μ * m.ustar *
+          (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) / m.N * m.field x 0)
+        (m.field x 3 - m.μ * m.ustar *
+          (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) / m.N * m.field x 0) -
+      m.field x 0 * Transform.parkD (x 0) (x 2 - m.iHatD (x 0)) (x 3 - m.iHatQ (x 0)) =
       m.redField (m.red x) 2 := by
   obtain ⟨hY, hZ⟩ := rot_iHat_eq m hN (x 0)
   obtain ⟨hX, hW⟩ := rot_iHat_deriv_eq m hN (x 0)
+  simp only [Transform.parkD, Transform.parkQ] at hY hZ hX hW ⊢
   have hsc := Real.sin_sq_add_cos_sq (x 0)
   have hN1 : (m.Rs ^ 2 + m.ω0 ^ 2 * m.Ls ^ 2) / m.N = 1 := by
     rw [div_eq_one_iff_eq hN]
@@ -2007,17 +1981,17 @@ evidence on the model, not a connection conclusion. -/
     ring
   refine ⟨?_, ?_, ?_⟩
   · simp only [Model.field, Model.redField, Model.red, Model.idc, Model.ixHat, Transform.parkQ,
-      hκ, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-      Matrix.head_cons, Matrix.tail_cons]
+      Transform.parkD, hκ, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
     ring
-  · simp only [Model.field, Model.redField, Model.red, PiLp.toLp_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-      Matrix.tail_cons, Model.ω0] at hY hZ hX hW hN1 ⊢
+  · simp only [Model.field, Model.redField, Model.red, Transform.parkD, Transform.parkQ,
+      PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+      Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, Model.ω0] at hY hZ hX hW hN1 ⊢
     linear_combination (-(m.η * x 1 - m.η * m.ustar)) * hX + (-m.Rs / m.Ls) * hY +
       (m.η * m.ustar * m.Ls / m.Ls) * hZ + (-(Real.sin (x 0) * m.v0) / m.Ls) * hN1
-  · simp only [Model.field, Model.redField, Model.red, PiLp.toLp_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-      Matrix.tail_cons, Model.ω0] at hY hZ hX hW hc2 hN1 ⊢
+  · simp only [Model.field, Model.redField, Model.red, Transform.parkD, Transform.parkQ,
+      PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+      Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, Model.ω0] at hY hZ hX hW hc2 hN1 ⊢
     linear_combination (-(m.η * x 1 - m.η * m.ustar)) * hW + (-(m.η * m.ustar * m.Ls) / m.Ls) * hY +
       (-m.Rs / m.Ls) * hZ + (-(m.μ * x 1) / m.Ls) * hsc +
       ((m.μ * m.ustar - m.v0 * Real.cos (x 0)) / m.Ls) * hN1 + (-(x 1 - m.ustar)) * hc2
@@ -2032,10 +2006,9 @@ evidence. -/
     Dynamics.HasDerivWithinAt.euclidean_coord (hφ t ht) i
   obtain ⟨e0, e1, e2⟩ := red_field_identity m hN hL hκ (φ t)
   have hθ := hc 0
-  have hcos := hθ.cos
-  have hsin := hθ.sin
   have hD := (hasDerivAt_iHatD m (φ t 0)).comp_hasDerivWithinAt t hθ
   have hQ := (hasDerivAt_iHatQ m (φ t 0)).comp_hasDerivWithinAt t hθ
+  have hp := Transform.hasDerivWithinAt_parkD_parkQ hθ ((hc 2).sub hD) ((hc 3).sub hQ)
   apply Dynamics.hasDerivWithinAt_euclidean_of_coord
   intro i
   fin_cases i
@@ -2045,21 +2018,14 @@ evidence. -/
       simp [Model.red]
     · show m.redField (m.red (φ t)) 0 = _
       rw [← e0]
-  · have h := (hcos.mul ((hc 2).sub hD)).add (hsin.mul ((hc 3).sub hQ))
-    convert h using 1
+  · convert hp.1 using 1
     · funext τ
-      simp [Model.red]
-    · show m.redField (m.red (φ t)) 1 = _
-      rw [← e1]
-      simp only [Function.comp_apply, Pi.sub_apply]
-  · have h := ((hsin.neg).mul ((hc 2).sub hD)).add (hcos.mul ((hc 3).sub hQ))
-    convert h using 1
+      rfl
+    · exact e1.symm
+  · convert hp.2 using 1
     · funext τ
-      simp [Model.red]
-    · show m.redField (m.red (φ t)) 2 = _
-      rw [← e2]
-      simp only [Function.comp_apply, Pi.sub_apply, Pi.neg_apply]
-      ring
+      rfl
+    · exact e2.symm
 
 /-- The Jacobian of the reduced field at the origin. -/
 def Model.redJac (m : Model) : Matrix (Fin 3) (Fin 3) ℝ :=
@@ -2257,11 +2223,11 @@ Implementation evidence (Rules §3a). -/
     · simpa [Model.red] using hu
     · simp only [PiLp.zero_apply]
       refine squeeze_zero_norm' (Eventually.of_forall fun t => ?_) hb
-      simpa [Model.red] using abs_mul_add_mul_le_add (p := φ t 2 - m.iHatD (φ t 0))
+      simpa [Model.red, Transform.parkD] using abs_mul_add_mul_le_add (p := φ t 2 - m.iHatD (φ t 0))
         (q := φ t 3 - m.iHatQ (φ t 0)) (Real.abs_cos_le_one (φ t 0)) (Real.abs_sin_le_one _)
     · simp only [PiLp.zero_apply]
       refine squeeze_zero_norm' (Eventually.of_forall fun t => ?_) hb
-      simpa [Model.red] using abs_mul_add_mul_le_add (a := -Real.sin (φ t 0))
+      simpa [Model.red, Transform.parkQ] using abs_mul_add_mul_le_add (a := -Real.sin (φ t 0))
         (p := φ t 2 - m.iHatD (φ t 0)) (q := φ t 3 - m.iHatQ (φ t 0))
         (by rw [abs_neg]; exact Real.abs_sin_le_one _) (Real.abs_cos_le_one (φ t 0))
   obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
@@ -2331,11 +2297,11 @@ the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L
         hμ, PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
         Fin.isValue, Fin.mk_one, ← hGK]
       ring
-    · simp only [Model.translated, Model.field, Model.point, Model.iHatD, hμ, hω,
+    · simp only [Model.translated, Model.field, Model.point, Model.cD, hμ, hω,
         PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
         Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, Fin.isValue, Fin.reduceFinMk]
       ring
-    · simp only [Model.translated, Model.field, Model.point, Model.iHatQ, hμ, hω, hNR,
+    · simp only [Model.translated, Model.field, Model.point, Model.cQ, hμ, hω, hNR,
         PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
         Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
         Fin.isValue, Fin.reduceFinMk]
@@ -2366,52 +2332,26 @@ Implementation evidence (it names the model's reduction only; kept private with 
 Implementation evidence (it names the model's reduction only; kept private with its users). -/
 @[tmio M, powerlib_domain] private theorem abs_d_err_le_norm_red (m : Model) (x : State 4) :
     |x 2 - m.iHatD (x 0)| ≤ 2 * ‖m.red x‖ := by
-  have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
-      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
-  have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
-      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
   have n1 := PiLp.norm_apply_le (m.red x) 1
   have n2 := PiLp.norm_apply_le (m.red x) 2
-  rw [r1, Real.norm_eq_abs] at n1
-  rw [r2, Real.norm_eq_abs] at n2
-  set c := Real.cos (x 0)
-  set s := Real.sin (x 0)
-  set e1 := x 2 - m.iHatD (x 0)
-  set e2 := x 3 - m.iHatQ (x 0)
-  have hsc : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq _
-  have hc := Real.abs_cos_le_one (x 0)
-  have hs := Real.abs_sin_le_one (x 0)
-  have i1 : e1 = c * (c * e1 + s * e2) - s * (-s * e1 + c * e2) := by
-    linear_combination (-e1) * hsc
-  rw [i1, sub_eq_add_neg, ← neg_mul]
-  have := abs_mul_add_mul_le_add (b := -s) (p := c * e1 + s * e2) (q := -s * e1 + c * e2) hc
-    (by rwa [abs_neg])
-  linarith
+  rw [Real.norm_eq_abs] at n1 n2
+  have := abs_mul_add_mul_le_add (b := -Real.sin (x 0)) (p := m.red x 1) (q := m.red x 2)
+    (Real.abs_cos_le_one (x 0)) (by rw [abs_neg]; exact Real.abs_sin_le_one _)
+  rw [← Transform.iparkD_park (x 0) (x 2 - m.iHatD (x 0)) (x 3 - m.iHatQ (x 0)), Transform.iparkD,
+    sub_eq_add_neg, ← neg_mul]
+  exact this.trans (by linarith)
 
 /-- The reduced error controls the `q`-current error: `|ĩ_q| ≤ 2 ‖red x‖`.
 Implementation evidence (it names the model's reduction only; kept private with its users). -/
 @[tmio M, powerlib_domain] private theorem abs_q_err_le_norm_red (m : Model) (x : State 4) :
     |x 3 - m.iHatQ (x 0)| ≤ 2 * ‖m.red x‖ := by
-  have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
-      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
-  have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
-      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
   have n1 := PiLp.norm_apply_le (m.red x) 1
   have n2 := PiLp.norm_apply_le (m.red x) 2
-  rw [r1, Real.norm_eq_abs] at n1
-  rw [r2, Real.norm_eq_abs] at n2
-  set c := Real.cos (x 0)
-  set s := Real.sin (x 0)
-  set e1 := x 2 - m.iHatD (x 0)
-  set e2 := x 3 - m.iHatQ (x 0)
-  have hsc : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq _
-  have hc := Real.abs_cos_le_one (x 0)
-  have hs := Real.abs_sin_le_one (x 0)
-  have i2 : e2 = s * (c * e1 + s * e2) + c * (-s * e1 + c * e2) := by
-    linear_combination (-e2) * hsc
-  rw [i2]
-  have := abs_mul_add_mul_le_add (p := c * e1 + s * e2) (q := -s * e1 + c * e2) hs hc
-  linarith
+  rw [Real.norm_eq_abs] at n1 n2
+  have := abs_mul_add_mul_le_add (p := m.red x 1) (q := m.red x 2)
+    (Real.abs_sin_le_one (x 0)) (Real.abs_cos_le_one (x 0))
+  rw [← Transform.iparkQ_park (x 0) (x 2 - m.iHatD (x 0)) (x 3 - m.iHatQ (x 0)), Transform.iparkQ]
+  exact this.trans (by linarith)
 
 /-- The errors control the reduced error: `‖red x‖ ≤ |ũ| + 2 (|ĩ_d| + |ĩ_q|)`.
 Implementation evidence (it names the model's reduction only; kept private with its users). -/
@@ -2419,9 +2359,9 @@ Implementation evidence (it names the model's reduction only; kept private with 
     ‖m.red x‖ ≤ |x 1 - m.ustar| + 2 * (|x 2 - m.iHatD (x 0)| + |x 3 - m.iHatQ (x 0)|) := by
   have r0 : m.red x 0 = x 1 - m.ustar := by simp [Model.red]
   have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
-      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red, Transform.parkD]
   have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
-      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red, Transform.parkQ]
   have hn := Dynamics.norm_le_sum_abs (m.red x)
   rw [Fin.sum_univ_three, r0, r1, r2] at hn
   have hc := Real.abs_cos_le_one (x 0)

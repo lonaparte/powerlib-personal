@@ -17,7 +17,7 @@ Model boundary.
 * One lumped parallel G–C–L element; `G`, `C`, `Γ` real (a physical element has `G ≥ 0`, `C > 0`,
   `Γ ≥ 0`); each law states what it needs.
 * At a fixed angular frequency `ω` the element is the phasor admittance `G + jB`,
-  `B = ωC − Γ/ω` (`susceptance`, `admittance_jω`).
+  `B = ωC − Γ/ω` (`susceptance`; `SeriesRLC.impedance_jω` of `toSeries`).
 * No rotating frame, controller or interconnection: the dq forms are `theorem/Passive/Dq.lean`,
   networks are `theorem/Grid/`.
 
@@ -34,7 +34,9 @@ Results.
   `toSeries`, with `G, C, Γ, v, i, φ` for `R, L, S, i, v, q` (definitional): the sign of the decay
   rate (`SeriesRLC.decay_pos_iff`, `SeriesRLC.decay_neg_iff`), the admittance without an inductor
   (`SeriesRLC.impedance_of_noCap`, `SeriesRLC.impedance_eq`), `Y(jω) = G + jB`
-  (`SeriesRLC.impedance_jω`), additivity (`SeriesRLC.series_impedance`,
+  (`SeriesRLC.impedance_jω`), resonance `Y(jω) = 0 ↔ G = 0 ∧ B = 0`
+  (`SeriesRLC.impedance_jω_eq_zero_iff`), the complex power `V conj(Y(jω) V) = (G − jB)|V|²`
+  (`SeriesRLC.mul_conj_impedance_jω_mul`), additivity (`SeriesRLC.series_impedance`,
   `SeriesRLC.series_reactance`), the energy bounds (`SeriesRLC.inductorEnergy_nonneg`,
   `SeriesRLC.inductorEnergy_pos`, `SeriesRLC.capacitorEnergy_nonneg`, `SeriesRLC.energy_nonneg`)
   and the energy balance along the node equation, `i v − G v²` (`SeriesRLC.power_balance`,

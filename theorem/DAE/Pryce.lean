@@ -33,6 +33,9 @@ Results.
   (transversal) exists; and (Hall, wrapper of
   `Finset.all_card_le_biUnion_card_iff_exists_injective`) a transversal exists iff every set of
   `k` equations involves at least `k` variables.
+* `highestOrder c j = max_{i ∋ j} (order i j + c_i)`, the least `d` dual feasible with `c`
+  (`order_add_le_highestOrder`, `highestOrder_le`, `highestOrder_mono`; Pantelides' initial
+  counts are `highestOrder 0`).
 * `pryce_iteration_terminates` — Pryce fixed-point iteration (`pryceStep`:
   `d_j ← max_{i ∋ j} (c_i + order i j)`, `c_i ← d_{σ i} - order i (σ i)` truncated at `0`,
   started at `0`): if some dual-feasible offsets tight on `σ` exist, the iteration reaches a
@@ -154,32 +157,41 @@ def StructurallyNonsingular [DecidableEq ι] : Prop :=
 
 /-! ## Pryce's fixed-point iteration -/
 
-/-- One sweep: `d_j ← max_{i : j ∈ i} (c_i + order i j)`, then `c_i ← d_{σ i} - order i (σ i)`
-(truncated subtraction, i.e. `max 0`). -/
+/-- `d_j = max_{i ∋ j} (order i j + c_i)`: the highest derivative order of `x_j` once each
+equation `i` is differentiated `c_i` times (`0` where `x_j` occurs nowhere), the least `d` making
+`(c, d)` dual feasible. -/
+def highestOrder (c : ι → ℕ) (j : ι) : ℕ :=
+  (univ.filter fun i => S.occurs i j = true).sup fun i => S.order i j + c i
+
+@[tmio T, powerlib_foundation] theorem order_add_le_highestOrder (c : ι → ℕ) {i j : ι}
+    (h : S.occurs i j = true) : S.order i j + c i ≤ S.highestOrder c j :=
+  Finset.le_sup (f := fun i => S.order i j + c i) (by simpa using h)
+
+@[tmio T, powerlib_foundation] theorem highestOrder_le {c d : ι → ℕ} (hf : S.IsDualFeasible c d)
+    (j : ι) : S.highestOrder c j ≤ d j :=
+  Finset.sup_le fun i hi => hf i j (by simpa using hi)
+
+@[tmio T, powerlib_foundation] theorem highestOrder_mono {c c' : ι → ℕ} (h : c ≤ c') (j : ι) :
+    S.highestOrder c j ≤ S.highestOrder c' j :=
+  Finset.sup_mono_fun fun i _ => Nat.add_le_add_left (h i) _
+
+/-- One sweep: `d_j ← max_{i : j ∈ i} (c_i + order i j)` (`highestOrder`), then
+`c_i ← d_{σ i} - order i (σ i)` (truncated subtraction, i.e. `max 0`). -/
 def pryceStep (σ : Equiv.Perm ι) (p : (ι → ℕ) × (ι → ℕ)) : (ι → ℕ) × (ι → ℕ) :=
-  let d : ι → ℕ := fun j =>
-    (univ.filter fun i => S.occurs i j = true).sup fun i => p.1 i + S.order i j
-  (fun i => d (σ i) - S.order i (σ i), d)
+  (fun i => S.highestOrder p.1 (σ i) - S.order i (σ i), S.highestOrder p.1)
 
 def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (S.pryceStep σ)^[k] (0, 0)
 
 @[tmio T, powerlib_foundation] theorem pryceStep_mono (σ : Equiv.Perm ι) {p q : (ι → ℕ) × (ι → ℕ)}
-    (h : p ≤ q) : S.pryceStep σ p ≤ S.pryceStep σ q := by
-  have hd : ∀ j, (univ.filter fun i => S.occurs i j = true).sup (fun i => p.1 i + S.order i j) ≤
-      (univ.filter fun i => S.occurs i j = true).sup (fun i => q.1 i + S.order i j) := fun j =>
-    Finset.sup_mono_fun fun i _ => Nat.add_le_add_right (h.1 i) _
-  exact ⟨fun i => Nat.sub_le_sub_right (hd (σ i)) _, hd⟩
+    (h : p ≤ q) : S.pryceStep σ p ≤ S.pryceStep σ q :=
+  ⟨fun i => Nat.sub_le_sub_right (S.highestOrder_mono h.1 (σ i)) _, S.highestOrder_mono h.1⟩
 
 /-- Every dual-feasible tight solution is an upper bound preserved by the step. -/
 @[tmio T, powerlib_foundation] theorem pryceStep_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
     (hf : S.IsDualFeasible c d) (ht : S.IsTight σ c d) {p : (ι → ℕ) × (ι → ℕ)}
     (hp : p ≤ (c, d)) : S.pryceStep σ p ≤ (c, d) := by
-  have hd : ∀ j, (univ.filter fun i => S.occurs i j = true).sup (fun i => p.1 i + S.order i j) ≤
-      d j := fun j => Finset.sup_le fun i hi => by
-    have := hf i j (by simpa using hi)
-    have := hp.1 i
-    simp only at *
-    omega
+  have hd : ∀ j, S.highestOrder p.1 j ≤ d j := fun j =>
+    (S.highestOrder_mono hp.1 j).trans (S.highestOrder_le hf j)
   refine ⟨fun i => ?_, hd⟩
   have h1 := hd (σ i)
   have h2 := ht i
@@ -254,10 +266,8 @@ offsets that are tight on `σ`, provided some such offsets exist. -/
       S.pryceIter σ N ≤ (c', d') := fun c' d' hf' ht' => S.pryceIter_le hf' ht' N
   refine ⟨N, hN, ?_⟩
   generalize S.pryceIter σ N = p at hfix' hmin ⊢
-  have hd : ∀ j, p.2 j =
-      (univ.filter fun i => S.occurs i j = true).sup fun i => p.1 i + S.order i j := by
-    intro j
-    exact (congrArg (fun q => q.2 j) hfix').symm
+  have hd : ∀ j, p.2 j = S.highestOrder p.1 j := fun j =>
+    (congrArg (fun q => q.2 j) hfix').symm
   have hc : ∀ i, p.1 i = p.2 (σ i) - S.order i (σ i) := by
     intro i
     have := congrArg (fun q => q.1 i) hfix'
@@ -266,8 +276,7 @@ offsets that are tight on `σ`, provided some such offsets exist. -/
   have hfeas : S.IsDualFeasible p.1 p.2 := by
     intro i j hij
     rw [hd j]
-    exact Finset.le_sup (f := fun i => p.1 i + S.order i j) (by simpa using hij) |>.trans' (by
-      simp [add_comm])
+    exact S.order_add_le_highestOrder p.1 hij
   refine ⟨hfix', hfeas, fun i => ?_, hmin⟩
   have h1 := hfeas i (σ i) (hσ i)
   have h2 := hc i

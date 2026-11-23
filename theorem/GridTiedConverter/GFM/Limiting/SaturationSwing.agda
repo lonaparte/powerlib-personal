@@ -9,8 +9,9 @@ module theorem.GridTiedConverter.GFM.Limiting.SaturationSwing where
 -- field (`sin(x + π/2) = cos x`), so the reading is an equality of systems, for every model. The
 -- family keeps the two-element language `{stable, unstable}` (`Spectral.localFamily`), which has no
 -- requirement for positive inertia, so the context is a predicate on the parameters and the
--- results are member characterizations within it. Lean proves the field identity
--- (`satField_eq_swing`), the reading (`mem_den_flow_iff_swing`), the soundness of the family's
+-- results are member characterizations within it. In Lean the saturated field is the swing field
+-- of `satParams` by definition (`satField`, `satParams_Pe`); Lean proves the reading
+-- (`mem_den_flow_iff_swing`), the soundness of the family's
 -- local translations through the hub's members (`chain_le_semantics`,
 -- `saturated_stable_equilibrium`, `saturated_unstable_equilibrium`, the negative-inertia witness)
 -- and, through the correspondence of `Stable` with the swing requirements, the characterizations

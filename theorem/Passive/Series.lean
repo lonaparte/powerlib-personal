@@ -35,9 +35,11 @@ Results.
 * `decay_pos_iff`, `decay_neg_iff`: with `L > 0` the decay rate `R/L` has the sign of `R`;
   `impedance_of_noCap`, `impedance_eq`: without a capacitor `Z = R + L s = L (s + R/L)`.
 * `impedance_jω`, `norm_sq_impedance_jω`: `Z(jω) = R + jX`, `‖Z(jω)‖² = R² + X²`
-  (`Complex.sq_norm` for `Complex.normSq`); `series_impedance`, `series_reactance`: impedances
-  and reactances add in series; `parallel_inductors`: two inductors in parallel are the inductor
-  `L₁L₂/(L₁ + L₂)`.
+  (`Complex.sq_norm` for `Complex.normSq`); `impedance_jω_eq_zero_iff`: resonance `Z(jω) = 0` iff
+  `R = 0` and `X(ω) = 0`; `mul_conj_impedance_jω_mul`: the complex power
+  `x · conj(Z(jω) x) = (R − jX)|x|²` of a phasor through the element; `series_impedance`,
+  `series_reactance`: impedances and reactances add in series; `parallel_inductors`: two inductors
+  in parallel are the inductor `L₁L₂/(L₁ + L₂)`.
 * `inductorEnergy_nonneg`, `inductorEnergy_pos`, `capacitorEnergy_nonneg`, `energy_nonneg`;
   `power_balance`, `hasDerivAt_energy`: along the element equation the stored energy changes at
   `v i − R i²`, the supplied power less the dissipated one.
@@ -125,6 +127,23 @@ def series (a b : SeriesRLC) : SeriesRLC := ⟨a.R + b.R, a.L + b.L, a.S + b.S�
     push_cast
     field_simp
     linear_combination ((b.S : ℝ) : ℂ) * Complex.I_sq
+
+/-- Resonance: `Z(jω) = 0` iff `R = 0` and `X(ω) = 0`. -/
+@[tmio M, powerlib_domain] theorem impedance_jω_eq_zero_iff (ω : ℝ) :
+    b.impedance (ω * Complex.I) = 0 ↔ b.R = 0 ∧ b.reactance ω = 0 := by
+  rw [impedance_jω, Complex.ext_iff]
+  simp
+
+/-- Complex power of a phasor `x` through the element, `x · conj(Z(jω) x) = (R − jX)|x|²`. -/
+@[tmio M, powerlib_domain] theorem mul_conj_impedance_jω_mul (ω : ℝ) (x : ℂ) :
+    x * (starRingEnd ℂ) (b.impedance (ω * Complex.I) * x) =
+      ((b.R * Complex.normSq x : ℝ) : ℂ) - ((b.reactance ω * Complex.normSq x : ℝ) : ℂ) *
+        Complex.I := by
+  rw [impedance_jω, map_mul, map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal,
+    Complex.conj_I]
+  have h := Complex.mul_conj x
+  push_cast
+  linear_combination (↑b.R - ↑(b.reactance ω) * Complex.I) * h
 
 /-- `‖Z(jω)‖² = R² + X²`. -/
 @[tmio M, powerlib_domain] theorem norm_sq_impedance_jω (ω : ℝ) :

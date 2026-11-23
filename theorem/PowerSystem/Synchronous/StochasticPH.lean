@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.SPH
+import theorem.PowerSystem.Synchronous.PH
 
 /-! # Itô correction of the synchronous-machine SPHS
 
@@ -31,7 +32,9 @@ Results.
   `1/M > 0`.
 * `qBlock_inv_00` — Schur complement `(L_qblock⁻¹)_{qq} = 1/(L_q − L_aq²/L_kqkq)`;
   `qBlock_effective_lt` — with a coupled damper `L_q^eff < L_q`; `fromBlocks_inv_q` — the
-  `(Ψ_q, Ψ_q)` entry of `L⁻¹` is the `(0,0)` entry of the q-block inverse.
+  `(Ψ_q, Ψ_q)` entry of `L⁻¹` is the `(0,0)` entry of the q-block inverse;
+  `syncMachine7_inductance_inv_qq` — the structured inductance `syncMachine7_inductance` of the
+  seven-state machine (`theorem/PowerSystem/Synchronous/PH.lean`) is of this axis-separated form.
 
 Correction (T-sync-machine-stochastic §1.3).
 * The note first writes "`(∇²H)_{Ψq Ψq} = (L⁻¹)_{qq} = 1/L_q` because `Ψ_q` is decoupled", and
@@ -137,5 +140,26 @@ of `L⁻¹` is the `(0,0)` entry of the q-block inverse (the d-axis coupling doe
     rw [fromBlocks_multiply]
     simp [nonsing_inv_mul _ hd, nonsing_inv_mul _ hq, fromBlocks_one]
   rw [hinv]; rfl
+
+/-- The structured inductance of the seven-state machine (`syncMachine7_inductance`, order
+`(Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq)`) is axis-separated: reordered as `(d, f, kd | q, kq)` it is
+`fromBlocks L_d-block 0 0 (qBlock L_q L_aq L_kqkq)`, so its `(Ψ_q, Ψ_q)` inverse entry is that of
+the q-block (`fromBlocks_inv_q`), `1/(L_q − L_aq²/L_kqkq)` by `qBlock_inv_00`. -/
+@[tmio M, powerlib_domain] theorem syncMachine7_inductance_inv_qq
+    (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ)
+    (hd : IsUnit
+      (!![Ld, Lad, Lad; Lad, Lff, Lfkd; Lad, Lfkd, Lkdkd] : Matrix (Fin 3) (Fin 3) ℝ).det)
+    (hq : IsUnit (qBlock Lq Laq Lkqkq).det) :
+    (syncMachine7_inductance Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq)⁻¹ 1 1 =
+      (qBlock Lq Laq Lkqkq)⁻¹ 0 0 := by
+  let e : Fin 5 ≃ Fin 3 ⊕ Fin 2 :=
+    ⟨![Sum.inl 0, Sum.inr 0, Sum.inl 1, Sum.inl 2, Sum.inr 1], Sum.elim ![0, 2, 3] ![1, 4],
+      by intro i; fin_cases i <;> rfl, by rintro (i | i) <;> fin_cases i <;> rfl⟩
+  have hL : syncMachine7_inductance Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq =
+      (fromBlocks !![Ld, Lad, Lad; Lad, Lff, Lfkd; Lad, Lfkd, Lkdkd] 0 0
+        (qBlock Lq Laq Lkqkq)).submatrix e e := by
+    ext i j; fin_cases i <;> fin_cases j <;> rfl
+  rw [hL, inv_submatrix_equiv, submatrix_apply]
+  exact fromBlocks_inv_q _ _ hd hq
 
 end powerlib.Synchronous.SM

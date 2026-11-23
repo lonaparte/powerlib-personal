@@ -67,9 +67,9 @@ Results.
   of `PLLDC.Params.jacobian`) is `−(3/(2C))(V cos θ_e (K_p^dvc + I_d0) − V sin θ_e I_q*)`,
   `I_d0 = i_d*|_{V_dc = 1}`; for `I_q* = 0` it vanishes iff `K_p^dvc = −I_d0`, independently of
   `X_g`, `C` and `s` (and of `V cos θ_e ≠ 0`).
-* `fourStateParams s ξ*` : the four-state GFL parameters of the carrier, those of its PLL–DC
-  reading (`PLLDC.Params.fourStateParams`: `V₀ = V`, `X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*`). For
-  `I_q* = 0` and `K_i^pll x_p* = 0` the carrier is the four-state field of `fourStateParams s ξ*`
+* The four-state GFL parameters of the carrier are those of its PLL–DC reading,
+  `(toPLLDC s).fourStateParams ξ*` (`PLLDC.Params.fourStateParams`: `V₀ = V`, `X_g ↦ s X_g`,
+  `i_d0 = K_i^dvc ξ*`). For `I_q* = 0` and `K_i^pll x_p* = 0` the carrier is their four-state field
   in the coordinates `(θ_e, x_p, V_dc, ξ) = (θ, x + x_p*, V, ξ* − η)`
   (`carrierField_eq_PLLDC_field` with `PLLDC.Params.field_eq_transport`; `integratorFlip`: the
   carrier integrates `1 − V_dc`, the four-state model `V − 1`).
@@ -319,20 +319,6 @@ current `I_d0`: there `V_dc = 1` (`PLLDC.Params.equilibrium_Vdc` through
 
 end CarrierParams
 
-/-! ## The four-state parameters -/
-
-namespace CarrierParams
-
-variable (q : CarrierParams)
-
-/-- The four-state GFL parameters of the carrier with drop sign `s` and operating integrator
-state `ξ*`, those of its PLL–DC reading (`PLLDC.Params.fourStateParams`): `V₀ = V`,
-`X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*` (the operating current), the same gains, DC link and DC source
-current. -/
-def fourStateParams (s ξ : ℝ) : FourState.Params := (q.toPLLDC s).fourStateParams ξ
-
-end CarrierParams
-
 /-! ## The carrier models read as the PLL–DC model -/
 
 namespace BasinGuard
@@ -355,11 +341,11 @@ selected point. The behaviour of a carrier model is that of its image; the carri
 image's field (`CarrierParams.carrierField_eq_PLLDC_field`). -/
 def Model.toPLLDC (m : Model) : PLLDC.Model := ⟨m.params.toPLLDC m.s, m.point⟩
 
-/-- The four-state GFL reading of a carrier model: the parameters `fourStateParams s ξ*` at the
-selected angle `θ_e*` (the four-state reading `PLLDC.Model.toFourState` of its PLL–DC reading).
--/
-def Model.toFourState (m : Model) : FourState.Model :=
-  ⟨m.params.fourStateParams m.s (m.point 3), m.point 0⟩
+/-- The four-state GFL reading of a carrier model: the four-state reading `PLLDC.Model.toFourState`
+of its PLL–DC reading, i.e. the parameters `(toPLLDC s).fourStateParams ξ*`
+(`PLLDC.Params.fourStateParams`: `V₀ = V`, `X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*`) at the selected
+angle `θ_e*`. -/
+abbrev Model.toFourState (m : Model) : FourState.Model := m.toPLLDC.toFourState
 
 /-- `I_q* = 0`: the two writings of the reactance drop agree on every sentence at mirror points —
 the PLL–DC image of the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of that of

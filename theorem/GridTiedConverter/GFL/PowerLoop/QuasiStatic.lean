@@ -217,18 +217,13 @@ def literatureField : Dynamics.State 3 → Dynamics.State 3 :=
   Dynamics.lift fun y => ![p.kp * (-p.V * Real.sin (y 0) + p.Xg * y 2) + p.ki * y 1,
     -p.V * Real.sin (y 0) + p.Xg * y 2, p.kP * (p.Pref - 3 / 2 * (p.V * Real.cos (y 0)) * y 2)]
 
-/-- The reversal `diag(1, 1, −1)` of the current coordinate. -/
-abbrev currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Dynamics.signMatrix ![1, 1, -1]
-
 /-- §D8 boundary translation: the IN-positive field is the OUT-positive source field transported
-by the reversal of the current coordinate (`i_d = −I_d`), with the power reference reversed
-(`P_ref = −P_ref,exp`); the dispatch law keeps its form since both sides of `İ_d = k_P(P_ref − P)`
-change sign. -/
+by the reversal `diag(1, 1, −1)` of the current coordinate (`i_d = −I_d`), with the power reference
+reversed (`P_ref = −P_ref,exp`); the dispatch law keeps its form since both sides of
+`İ_d = k_P(P_ref − P)` change sign. -/
 @[tmio M, powerlib_domain] theorem field_eq_transport_literatureField :
-    field p = Dynamics.transportField
-      (Dynamics.matrixCoord currentReversal (Dynamics.signMatrix_isUnit _))
-      0 (literatureField { p with Pref := -p.Pref }) := by
-  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
+    field p = Dynamics.transportField (Dynamics.signCoord ![1, 1, -1]) 0
+      (literatureField { p with Pref := -p.Pref }) := by
   funext y
   apply WithLp.ofLp_injective
   ext i

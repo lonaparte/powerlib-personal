@@ -1,5 +1,6 @@
 import theorem.Dynamics.Linearization
 import theorem.Dynamics.State
+import theorem.Dynamics.Coordinates
 import theorem.Dynamics.ConverseLinearization
 import theorem.Linear.Family
 
@@ -99,29 +100,24 @@ def embedCLM : ℝ →L[ℝ] State 1 := (ContinuousLinearMap.id ℝ ℝ).smulRig
   ext i
   simp [embedCLM]
 
-/-- The coordinate of the one-dimensional state as a continuous linear functional. -/
-def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
-
-@[tmio T, simp, powerlib_foundation] theorem coordCLM_apply (x : State 1) : coordCLM x = x 0 := rfl
-
 @[tmio T, powerlib_foundation] theorem lift_eq_comp (g : ℝ → ℝ) :
-    lift g = embedCLM ∘ g ∘ coordCLM := by
+    lift g = embedCLM ∘ g ∘ Dynamics.coord 0 := by
   funext x
   simp [lift]
 
 @[tmio T, powerlib_foundation] theorem lift_contDiff {g : ℝ → ℝ} {k : WithTop ℕ∞} (hg : ContDiff ℝ k g) :
     ContDiff ℝ k (lift g) := by
   rw [lift_eq_comp]
-  exact embedCLM.contDiff.comp (hg.comp coordCLM.contDiff)
+  exact embedCLM.contDiff.comp (hg.comp (Dynamics.coord 0).contDiff)
 
 /-- The Jacobian of the lifted scalar field is the `1 × 1` matrix of the scalar derivative. -/
 @[tmio T, powerlib_foundation] theorem hasFDerivAt_lift {g : ℝ → ℝ} {a : ℝ} {x : State 1}
     (hg : HasDerivAt g a (x 0)) :
     HasFDerivAt (lift g) (Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![a]) x := by
-  have h1 : HasFDerivAt (fun y : State 1 => g (coordCLM y)) (a • coordCLM) x :=
-    hg.comp_hasFDerivAt x coordCLM.hasFDerivAt
+  have h1 : HasFDerivAt (fun y : State 1 => g (Dynamics.coord 0 y)) (a • Dynamics.coord 0) x :=
+    hg.comp_hasFDerivAt x (Dynamics.coord 0).hasFDerivAt
   have h2 := embedCLM.hasFDerivAt.comp x h1
-  have hfun : (embedCLM ∘ fun y : State 1 => g (coordCLM y)) = lift g := by
+  have hfun : (embedCLM ∘ fun y : State 1 => g (Dynamics.coord 0 y)) = lift g := by
     rw [lift_eq_comp]; rfl
   rw [hfun] at h2
   convert h2 using 1
@@ -178,7 +174,7 @@ when it is a zero with negative slope. -/
       IsIntegralCurveOn (fun t => φ t 0) (fun _ r => g r) s := by
   constructor
   · intro h t ht
-    have := coordCLM.hasFDerivAt.comp_hasDerivWithinAt t (h t ht)
+    have := (Dynamics.coord 0).hasFDerivAt.comp_hasDerivWithinAt t (h t ht)
     simpa [Function.comp_def] using this
   · intro h t ht
     have := hasDerivWithinAt_embed (g := g) (h t ht)

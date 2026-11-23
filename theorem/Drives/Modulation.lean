@@ -75,7 +75,8 @@ direction. -/
   have hx : clarkeInv *ᵥ ofComplex u =
       ![u.re, -u.re / 2 + Real.sqrt 3 / 2 * u.im, -u.re / 2 - Real.sqrt 3 / 2 * u.im] := by
     ext i; fin_cases i <;>
-      simp [clarkeInv, ofComplex, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+      simp [clarkeInv, Transform.clarke, ofComplex, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;>
+      ring
   have h3 := Transform.sqrt3_sq
   have h3p : 0 ≤ Real.sqrt 3 := Real.sqrt_nonneg 3
   have hn : ‖u‖ ^ 2 = u.re ^ 2 + u.im ^ 2 := by

@@ -237,10 +237,6 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
     (contDiff_const.mul (contDiff_const.sub
       (Real.contDiff_cos.comp (Dynamics.contDiff_coord (n := 2) (k := 1) 0))))
 
-@[tmio M, powerlib_domain] private lemma contDiff_xiField (a b Δω : ℝ) :
-    ContDiff ℝ 1 (xiField a b Δω) := by
-  rw [xiField_eq_srfField]; exact contDiff_srfField _ _ _ _
-
 /-- For `a, b > 0` and `c < b` the well piece `{|θ| < π/2, E ≤ c}` of the pendulum energy lies
 in the region of attraction of `(0, −Δω/b)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -309,7 +305,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       have : x 1 ^ 2 ≤ ((Real.sqrt (2 * |c|) + |Δω| + a) / b) ^ 2 := by
         rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) hξ 2
       linarith
-  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel hW (contDiff_xiField a b Δω)
+  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel hW (contDiff_srfField 1 a b (-Δω))
     (contDiff_pendulumEnergy a b Δω) (fun x hx => ?_) hcompact ?_
   · rw [pendulumEnergy_lie]
     have := mul_nonneg (mul_pos ha (hcosW x hx)).le (sq_nonneg (xiRate a b Δω x))
@@ -326,7 +322,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     rcases this with h | h
     · exact absurd h hpos.ne'
     · exact pow_eq_zero_iff two_ne_zero |>.mp h
-  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem (contDiff_xiField a b Δω)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem (contDiff_srfField 1 a b (-Δω))
     (contDiff_xiRate a b Δω) hzero (fun x hx hd => ?_)
   have hw := hzero x hx
   rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx

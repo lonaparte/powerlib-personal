@@ -18,8 +18,9 @@ Results.
 * `complexPower_expand`: `V̄ Ī* = (v_d i_d + v_q i_q) + j (v_q i_d − v_d i_q)` (in `x + y j`
   notation through `Complex.mk_eq_add_mul_I`); the export-positive translation
   `S̄^ext = −S̄^abs` negates both parts, `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1);
-  `activePower_eq_re`, `reactivePower_eq_im`: `P = (3/2) Re S̄`, `Q = (3/2) Im S̄` (SI,
-  amplitude-invariant Park; the per-unit forms drop `3/2`).
+  `pq_eq_complexPower`: the per-unit `pq v i` is `(Re, Im)(V̄ Ī*)`; the SI powers are
+  `activePower = (3/2) pq₀`, `reactivePower = (3/2) pq₁` (amplitude-invariant Park), so
+  `activePower_eq_re`, `reactivePower_eq_im`: `P = (3/2) Re S̄`, `Q = (3/2) Im S̄`.
 * `currentRef_iff`: in the PLL-aligned frame (`v_q = 0`, `v_d ≠ 0`) the references
   `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)` give exactly `P = P*`, `Q = Q*`, and they are
   the only currents that do (T-gfl-control §1.5 boxed); at `(−P*_exp, −Q*_exp)` this
@@ -44,20 +45,33 @@ open Matrix ComplexConjugate
   · simp [Complex.mul_im]
     ring
 
-/-- Active power `P = (3/2)(v_d i_d + v_q i_q)` (IN-positive, absorbed). -/
-def activePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * (vd * id + vq * iq)
+/-- Per-unit `(P, Q) = (v_d i_d + v_q i_q, v_q i_d − v_d i_q)` of voltage `v = (v_d, v_q)` and
+current `i = (i_d, i_q)`: the real and imaginary parts of `V̄ Ī*` (`pq_eq_complexPower`). -/
+def pq (v i : Fin 2 → ℝ) : Fin 2 → ℝ := ![v 0 * i 0 + v 1 * i 1, v 1 * i 0 - v 0 * i 1]
 
-/-- Reactive power `Q = (3/2)(v_q i_d − v_d i_q)` (IN-positive, absorbed). -/
-def reactivePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * (vq * id - vd * iq)
+/-- `(P, Q) = (Re, Im)(V̄ Ī*)`. -/
+@[tmio T, powerlib_foundation] theorem pq_eq_complexPower (v i : Fin 2 → ℝ) :
+    pq v i = ![((⟨v 0, v 1⟩ : ℂ) * conj (⟨i 0, i 1⟩ : ℂ)).re,
+      ((⟨v 0, v 1⟩ : ℂ) * conj (⟨i 0, i 1⟩ : ℂ)).im] := by
+  rw [complexPower_expand]
+  rfl
+
+/-- Active power `P = (3/2)(v_d i_d + v_q i_q)` (SI, IN-positive, absorbed): `3/2` times the
+per-unit `pq`. -/
+def activePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * pq ![vd, vq] ![id, iq] 0
+
+/-- Reactive power `Q = (3/2)(v_q i_d − v_d i_q)` (SI, IN-positive, absorbed): `3/2` times the
+per-unit `pq`. -/
+def reactivePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * pq ![vd, vq] ![id, iq] 1
 
 @[tmio T, powerlib_foundation] theorem activePower_eq_re (vd vq id iq : ℝ) :
     activePower vd vq id iq = 3 / 2 * ((⟨vd, vq⟩ : ℂ) * conj (⟨id, iq⟩ : ℂ)).re := by
-  rw [complexPower_expand]
+  rw [activePower, pq_eq_complexPower]
   rfl
 
 @[tmio T, powerlib_foundation] theorem reactivePower_eq_im (vd vq id iq : ℝ) :
     reactivePower vd vq id iq = 3 / 2 * ((⟨vd, vq⟩ : ℂ) * conj (⟨id, iq⟩ : ℂ)).im := by
-  rw [complexPower_expand]
+  rw [reactivePower, pq_eq_complexPower]
   rfl
 
 /-- PLL-aligned current references: the currents achieve the absorbed set points exactly iff
@@ -68,14 +82,14 @@ they are `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)`. -/
       id = 2 * Pref / (3 * vd) ∧ iq = -(2 * Qref / (3 * vd)) := by
   constructor
   · rintro ⟨hP, hQ⟩
-    simp only [activePower, reactivePower] at hP hQ
+    simp [activePower, reactivePower, pq] at hP hQ
     constructor
     · field_simp
       linear_combination 2 * hP
     · field_simp
       linear_combination -2 * hQ
   · rintro ⟨rfl, rfl⟩
-    constructor <;> simp only [activePower, reactivePower] <;> field_simp <;> ring
+    constructor <;> simp [activePower, reactivePower, pq] <;> field_simp
 
 /-- Sign check: with `v_d > 0`, absorbing reactive power (`Q* > 0`) means `i_q* < 0`, and
 absorbing active power (`P* > 0`) means `i_d* > 0`. -/
@@ -89,9 +103,6 @@ absorbing active power (`P* > 0`) means `i_d* > 0`. -/
     constructor <;> intro h <;> linarith
 
 /-! ## Per-unit P/Q Jacobians -/
-
-/-- Per-unit `(P, Q)` of voltage `v = (v_d, v_q)` and current `i = (i_d, i_q)`. -/
-def pq (v i : Fin 2 → ℝ) : Fin 2 → ℝ := ![v 0 * i 0 + v 1 * i 1, v 1 * i 0 - v 0 * i 1]
 
 /-- `∂(P,Q)/∂(i_d, i_q)`. -/
 def Gi (v : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![v 0, v 1; v 1, -v 0]

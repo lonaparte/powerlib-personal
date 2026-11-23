@@ -10,7 +10,8 @@ Model boundary.
 * State `y = (x, v) = (y 0, y 1) ∈ State 2` with `v = ẋ`; constant mass `m > 0`, constant linear
   damping `γ` (`γ = 0` conservative), potential `V : ℝ → ℝ` with everywhere derivative
   `dV = V'`. The vector field is exactly `ẋ = v`, `v̇ = (−γ v − V'(x)) / m` (`field`; continuous
-  time, no input, noise or saturation). Energy `E = m v²/2 + V(x)` (`energy`).
+  time, no input, noise or saturation). Energy `E = V(x) + m v²/2` (`energy`), the case
+  `k = m`, `b = 0` of the separable energy `U(x) + (k/2)(v − b)²` (`separableEnergy`).
 * A canonical textbook system with a caller-supplied potential: no model family; foundation
   results.
 
@@ -18,6 +19,11 @@ Source: work-sync theory/T-nonlinear-phase-plane.md §1.1, §1.2, §1.7,
 theory/T-dynamical-systems.md §1.2.
 
 Results.
+* Separable energy `E = U(x) + (k/2)(v − b)²` (`separableEnergy`; the mechanical energy, the PI-PLL
+  energy and the classical-machine Hamiltonian read it): derivative and gradient
+  `(U'(x), k (v − b))` (`hasFDerivAt_separableEnergy`, `hasGradientAt_separableEnergy`),
+  smoothness (`contDiff_separableEnergy`, `differentiable_separableEnergy`), and a strict local
+  minimum at `(x*, b)` when `x*` is one of `U` and `k > 0` (`eventually_separableEnergy_lt`).
 * Phase-trajectory slope (`phase_slope`): where a trajectory is locally a graph `v = Φ(x)` with
   `v ≠ 0`, `Φ'(x) = v̇ / v = f(x, v) / v`.
 * Port-Hamiltonian form (`toPH`, `γ ≥ 0`): `J = [[0, 1/m], [−1/m, 0]]`, `R = diag(0, γ/m²)`,
@@ -40,7 +46,7 @@ Results.
   (`unstable_of_slope_neg`, every `γ`); `γ < 0` instability (`unstable_of_damping_neg`, every
   `V''`).
 * A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for `γ ≥ 0`
-  (a strict local minimum of the Hamiltonian of `toPH`,
+  (a strict local minimum of the Hamiltonian of `toPH`, `eventually_separableEnergy_lt`,
   `PH.NonlinearModel.IsStrictLocalMin.lyapunovStable`; `center_lyapunovStable`).
 -/
 
@@ -53,8 +59,14 @@ open powerlib.Dynamics (State)
 def field (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) : State 2 :=
   mk (y 1) ((-γ * y 1 - dV (y 0)) / m)
 
-/-- Mechanical energy `m v²/2 + V(x)`. -/
-def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + V (y 0)
+/-- Separable energy `U(y₀) + (k/2)(y₁ − b)²`: a potential of the first coordinate plus a
+quadratic in the second centred at `b`. The mechanical energy (`energy`: `k = m`, `b = 0`), the
+PI-PLL energy (integrator set point `b`) and the classical-machine Hamiltonian (`k = 1/M`) are
+readings of it. -/
+def separableEnergy (U : ℝ → ℝ) (k b : ℝ) (y : State 2) : ℝ := U (y 0) + k / 2 * (y 1 - b) ^ 2
+
+/-- Mechanical energy `V(x) + m v²/2`: the separable energy with `k = m`, `b = 0`. -/
+abbrev energy (m : ℝ) (V : ℝ → ℝ) : State 2 → ℝ := separableEnergy V m 0
 
 @[tmio T, simp, powerlib_foundation] theorem field_apply_zero (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :
     field m γ dV y 0 = y 1 := rfl
@@ -190,24 +202,55 @@ with `V''(x*) > 0` give local exponential stability (`tr = −γ/m < 0`, `det = 
     ((field_eq_zero_iff hm.ne' _).2 ⟨rfl, h0⟩) (hasFDerivAt_field hk).fderiv
     (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hγ hm))
 
-@[tmio T, powerlib_foundation] theorem hasFDerivAt_energy {m : ℝ} {V dV : ℝ → ℝ}
-    (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
-    HasFDerivAt (energy m V) (dV (y 0) • Dynamics.coord 0 + (m * y 1) • Dynamics.coord 1) y := by
+/-! ## The separable energy -/
+
+/-- Where `U' = u` at `y₀`, the separable energy has the derivative `u dy₀ + k (y₁ − b) dy₁`. -/
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_separableEnergy {U : ℝ → ℝ} {u k b : ℝ}
+    {y : State 2} (hU : HasDerivAt U u (y 0)) :
+    HasFDerivAt (separableEnergy U k b)
+      (u • Dynamics.coord 0 + (k * (y 1 - b)) • Dynamics.coord 1) y := by
   have h0 := Dynamics.hasFDerivAt_coord 0 y
   have h1 := Dynamics.hasFDerivAt_coord 1 y
-  have h : HasFDerivAt (fun z : State 2 => m / 2 * z 1 ^ 2 + V (z 0)) _ y :=
-    ((h1.pow 2).const_mul (m / 2)).add ((hV (y 0)).comp_hasFDerivAt y h0)
-  have hf : energy m V = fun z : State 2 => m / 2 * z 1 ^ 2 + V (z 0) := by
-    funext z; simp only [energy]; ring
-  rw [hf]
-  convert h using 1
+  refine ((hU.comp_hasFDerivAt y h0).add
+    (((h1.sub_const b).pow 2).const_mul (k / 2))).congr_fderiv ?_
   ext v
   simp
   ring
 
-@[tmio T, powerlib_foundation] theorem energy_differentiable {m : ℝ} {V dV : ℝ → ℝ}
-    (hV : ∀ x, HasDerivAt V (dV x) x) : Differentiable ℝ (energy m V) :=
-  fun y => (hasFDerivAt_energy hV y).differentiableAt
+/-- The gradient of the separable energy: `∇E = (U'(y₀), k (y₁ − b))`. -/
+@[tmio T, powerlib_foundation] theorem hasGradientAt_separableEnergy {U : ℝ → ℝ} {u k b : ℝ}
+    {y : State 2} (hU : HasDerivAt U u (y 0)) :
+    HasGradientAt (separableEnergy U k b) (mk u (k * (y 1 - b))) y :=
+  PH.hasGradientAt_of_hasFDerivAt (hasFDerivAt_separableEnergy hU) fun v => by
+    simp [mk, dotProduct, Fin.sum_univ_two]
+
+@[tmio T, powerlib_foundation] theorem contDiff_separableEnergy {U : ℝ → ℝ} {n : WithTop ℕ∞}
+    (hU : ContDiff ℝ n U) (k b : ℝ) : ContDiff ℝ n (separableEnergy U k b) :=
+  (hU.comp (Dynamics.contDiff_coord 0)).add
+    (contDiff_const.mul (((Dynamics.contDiff_coord 1).sub contDiff_const).pow 2))
+
+@[tmio T, powerlib_foundation] theorem differentiable_separableEnergy {U : ℝ → ℝ}
+    (hU : Differentiable ℝ U) (k b : ℝ) : Differentiable ℝ (separableEnergy U k b) :=
+  fun y => (hasFDerivAt_separableEnergy (hU (y 0)).hasDerivAt).differentiableAt
+
+/-- A strict local minimum `x₀` of `U` and `k > 0` make `(x₀, b)` a strict local minimum of the
+separable energy: off `(x₀, b)` either `U` or the quadratic term increases. -/
+@[tmio T, powerlib_foundation] theorem eventually_separableEnergy_lt {U : ℝ → ℝ} {k x₀ b : ℝ}
+    (hk : 0 < k) (hU : ∀ᶠ x in 𝓝[≠] x₀, U x₀ < U x) :
+    ∀ᶠ y in 𝓝[≠] mk x₀ b, separableEnergy U k b (mk x₀ b) < separableEnergy U k b y := by
+  have h0 : Tendsto (fun y : State 2 => y 0) (𝓝 (mk x₀ b)) (𝓝 x₀) :=
+    (Dynamics.contDiff_coord (k := 0) 0).continuous.tendsto' _ _ rfl
+  rw [eventually_nhdsWithin_iff] at hU ⊢
+  filter_upwards [h0.eventually hU] with y hy hne
+  simp only [separableEnergy, mk_apply_zero, mk_apply_one, sub_self]
+  have hq : 0 ≤ k / 2 * (y 1 - b) ^ 2 := by positivity
+  by_cases hx : y 0 = x₀
+  · have h1 : y 1 - b ≠ 0 := fun h1 =>
+      hne (ext_iff'.2 ⟨by rw [hx, mk_apply_zero], by rw [mk_apply_one]; linarith⟩)
+    have : 0 < k / 2 * (y 1 - b) ^ 2 := by positivity
+    rw [hx]; linarith
+  · have := hy hx
+    linarith
 
 /-! ## Port-Hamiltonian form -/
 
@@ -226,8 +269,7 @@ def toPH (m γ : ℝ) (V dV : ℝ → ℝ) (hγ : 0 ≤ γ) (hV : ∀ x, HasDeri
     fin_cases i
     · simp
     · simpa using div_nonneg hγ (sq_nonneg m)
-  hasGradient y := PH.hasGradientAt_of_hasFDerivAt (hasFDerivAt_energy hV y) fun v => by
-    simp [mk, dotProduct, Fin.sum_univ_two]
+  hasGradient y := by simpa using hasGradientAt_separableEnergy (k := m) (b := 0) (hV (y 0))
 
 /-- The zero-input field of the port-Hamiltonian form is `field` (`m ≠ 0`). -/
 @[tmio T, powerlib_foundation] theorem toPH_zeroInputField {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
@@ -246,8 +288,8 @@ def toPH (m γ : ℝ) (V dV : ℝ → ℝ) (hγ : 0 ≤ γ) (hV : ∀ x, HasDeri
 @[tmio T, powerlib_foundation] theorem energy_lie {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     fderiv ℝ (energy m V) y (field m γ dV y) = -γ * y 1 ^ 2 := by
-  rw [(hasFDerivAt_energy hV y).fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply,
+  rw [(hasFDerivAt_separableEnergy (k := m) (b := 0) (hV (y 0))).fderiv]
+  simp only [sub_zero, _root_.add_apply, _root_.smul_apply, Dynamics.coord_apply,
     field_apply_zero, field_apply_one, smul_eq_mul]
   field_simp
   ring
@@ -257,9 +299,9 @@ def toPH (m γ : ℝ) (V dV : ℝ → ℝ) (hγ : 0 ≤ γ) (hV : ∀ x, HasDeri
     (hV : ∀ x, HasDerivAt V (dV x) x) {φ : ℝ → State 2} {s : Set ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ y => field m γ dV y) s) {t : ℝ} (ht : t ∈ s) :
     HasDerivWithinAt (fun τ => energy m V (φ τ)) (-γ * φ t 1 ^ 2) s t := by
-  have h := (hasFDerivAt_energy (m := m) hV (φ t)).comp_hasDerivWithinAt t (hφ t ht)
-  rw [← energy_lie (γ := γ) hm hV, (hasFDerivAt_energy hV (φ t)).fderiv]
-  exact h
+  have hE := hasFDerivAt_separableEnergy (k := m) (b := 0) (hV (φ t 0))
+  rw [← energy_lie (γ := γ) hm hV, hE.fderiv]
+  exact hE.comp_hasDerivWithinAt t (hφ t ht)
 
 /-- Conservative case: the energy is constant along every solution segment. -/
 @[tmio T, powerlib_foundation] theorem energy_conserved {m : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0)
@@ -306,25 +348,15 @@ def toPH (m γ : ℝ) (V dV : ℝ → ℝ) (hγ : 0 ≤ γ) (hV : ∀ x, HasDeri
 
 /-- A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for any
 damping `γ ≥ 0`: `(x*, 0)` is a strict local minimum of the Hamiltonian of `toPH`
-(`PH.NonlinearModel.IsStrictLocalMin.lyapunovStable`). -/
+(`eventually_separableEnergy_lt`, `PH.NonlinearModel.IsStrictLocalMin.lyapunovStable`). -/
 @[tmio T, powerlib_foundation] theorem center_lyapunovStable {m γ : ℝ} {V dV : ℝ → ℝ} (hm : 0 < m)
     (hγ : 0 ≤ γ) (hV : ∀ x, HasDerivAt V (dV x) x) {x₀ r : ℝ} (hr : 0 < r)
     (hmin : ∀ x, |x - x₀| < r → x ≠ x₀ → V x₀ < V x) :
     LyapunovStable (field m γ dV) (mk x₀ 0) := by
   rw [← toPH_zeroInputField hm.ne' hγ hV]
-  refine PH.NonlinearModel.IsStrictLocalMin.lyapunovStable _ ?_
-  have hD : IsOpen {y : State 2 | |y 0 - x₀| < r} :=
-    isOpen_lt ((Dynamics.coord 0).continuous.sub continuous_const).abs continuous_const
-  filter_upwards [nhdsWithin_le_nhds (hD.mem_nhds (by simp [hr])), self_mem_nhdsWithin]
-    with y hy hne
-  show energy m V (mk x₀ 0) < energy m V y
-  simp only [energy, mk_apply_zero, mk_apply_one]
-  have hv2 : 0 ≤ m * y 1 ^ 2 / 2 := by positivity
-  by_cases hx : y 0 = x₀
-  · have hv : y 1 ≠ 0 := fun h1 => hne (by rw [← mk_coords y, hx, h1]; exact rfl)
-    have : 0 < m * y 1 ^ 2 / 2 := by positivity
-    rw [hx]; norm_num; linarith
-  · have := hmin (y 0) hy hx
-    norm_num; linarith
+  refine PH.NonlinearModel.IsStrictLocalMin.lyapunovStable _ (eventually_separableEnergy_lt hm ?_)
+  rw [eventually_nhdsWithin_iff]
+  filter_upwards [Metric.ball_mem_nhds x₀ hr] with x hx hne
+  exact hmin x (by rwa [Metric.mem_ball, Real.dist_eq] at hx) hne
 
 end powerlib.PhasePlane.Conservative

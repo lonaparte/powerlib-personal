@@ -25,9 +25,10 @@ What is formalized is the algebra of the form-B reduction of `T-gfl-dynamics` §
 * step 4: the PLL input `v_cq^c = −sin θ v_cd + cos θ v_cq`, the `q` component of the capacitor
   voltage in the controller frame (`Transform.parkQ`).
 The singular-perturbation (Tikhonov) justification of the reduction and its error are **not**
-formalized; the reduced 2D model is `piPLLField p.formBChar K_p K_i δω` of
-`theorem/GridTiedConverter/PLL/PIPLL.lean`, valid as a model only under the note's assumptions
-(strong grid, time-scale separation, frozen outer loops). Continuous time; no saturation, PWM or
+formalized; the reduced 2D model is `piPLLField p.h K_p K_i δω` of
+`theorem/GridTiedConverter/PLL/PIPLL.lean` (`Network.h`, the PLL error signal of the reduction),
+valid as a model only under the note's assumptions (strong grid, time-scale separation, frozen
+outer loops). Continuous time; no saturation, PWM or
 delay. The same reduction with the parametrization `a, b, Δ` of the `vsc-stochastic-stability`
 project is `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean` (`h_eq`, `h_eq_polar`).
 
@@ -43,16 +44,15 @@ Results.
   `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0`, the quasi-steady equations have exactly one solution,
   given in closed form.
 * `lineCurrent_rotational`: that solution has `γ_q = −β_d`, `γ_d = β_q`, hence `c₃ = c₄ = 0`.
-* `pllInput_of_quasiSteady`: along the quasi-steady manifold the PLL input is exactly
-  `formBChar θ = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ]` (first-order trigonometric).
+* `pllInput_of_quasiSteady`: along the quasi-steady manifold the PLL input is exactly the PLL
+  error signal `h θ` of `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean`, and `h_eq_formB`:
+  `h θ = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ]` (first-order trigonometric) for every network
+  (`lineDet = Δ/(ω_g C_f)²`, `α_q/(ω_g C_f) = (1 − b) V_g/Δ`, `α_d/(ω_g C_f) = a V_g/Δ`, the
+  constant terms are both `c₀`): the form-B reduction is the reduction of `Reduction.lean` read
+  with the parameters `R_g, X, lineDet` instead of `a, b, Δ`. `h_eq_formBH`: it is `PLL.formBH`
+  (`T-gfl-ph` (1.3)) with `c₃ = c₄ = 0`.
 * `formB_equilibria_ncard_le_two`: the reduced form-B GFL-PLL has at most two equilibria
   per `2π` window of `θ` (for `V_g ≠ 0`, `K_i ≠ 0`).
-* `Params.formBChar_eq_h`: the form-B characteristic of the network of a parameter set is the PLL
-  error signal `h` of the reduction, for every parameter set (`lineDet = Δ/(ω_g C_f)²`,
-  `α_q/(ω_g C_f) = (1 − b) V_g/Δ`, `α_d/(ω_g C_f) = a V_g/Δ`, the constant terms are both `c₀`);
-  so the form-B reduction is the reduction of `Reduction.lean` read with the parameters
-  `R_g, X, lineDet` instead of `a, b, Δ`. `Network.formBChar_eq_formBH`: it is `PLL.formBH`
-  (`T-gfl-ph` (1.3)) with `c₃ = c₄ = 0`.
 * The two rotation matrices are mutually inverse: `Transform.park_mul_rot`,
   `Transform.rot_mul_park` (`T(θ) = park θ`, `T(−θ) = rot θ`), not repeated here.
 
@@ -61,21 +61,21 @@ This module states no behaviour and defines no family: every
 result is algebra of the reduction or a count of zeros of the reduced field. The equilibrium count
 `formB_equilibria_ncard_le_two` is static evidence on the model, not a
 connection conclusion. Behavioural conclusions about the reduced 2D model go through the PI-PLL
-family of `theorem/GridTiedConverter/PLL/PIPLLFamily.lean` with `h = formBChar`
-(`contDiff_formBChar`).
+family of `theorem/GridTiedConverter/PLL/PIPLLFamily.lean` with the detector `p.h`
+(`Network.contDiff_h`).
 
 Correction (§1.4–§1.6, current direction): the note declares its currents IN-positive (§D1) but
 writes `C_f v̇_c = i − i_g − ω_g C_f J v_c` and
 `L_g i̇_g = v_c − (V_g, 0) − R_g i_g − ω_g L_g J i_g`, in which `i` flows from the bridge into the
 filter and `i_g` from the filter to the grid: these are the OUT-positive equations (those of the
 `vsc-stochastic-stability` source frame). The equations above are the IN-positive ones
-(`i^IN = −i^note`, `i_g^IN = −i_g^note`, `i*^IN = −i*^note`); `formBChar`, a voltage, is the same
-function in both writings.
+(`i^IN = −i^note`, `i_g^IN = −i_g^note`, `i*^IN = −i*^note`); the PLL error signal `h`, a voltage,
+is the same function in both writings.
 Correction (§1.6, added premise): the line/LC algebraic system is uniquely solvable only when
 `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0` (and `ω_g C_f ≠ 0`); the note does not state it.
 Correction (§1.7–§1.8, §1.9 table, §1.11, §1.14 region E): the exact quasi-steady line solution
 has the rotational structure `γ_q = −β_d`, `γ_d = β_q`, so `c₃ = (γ_q + β_d)/2 = 0` and
-`c₄ = (γ_d − β_q)/2 = 0` identically: the form-B characteristic has **no** `sin 2θ`, `cos 2θ`
+`c₄ = (γ_d − β_q)/2 = 0` identically: the form-B characteristic `h` has **no** `sin 2θ`, `cos 2θ`
 terms. Consequently the claims "4 equilibria per period (two stable, two saddles; region E)" and
 "the `2θ` terms make the potential/basins asymmetric" are false for the form-B model of this note:
 there are at most 2 equilibria per period. (The general double-angle bookkeeping of §1.7 is right;
@@ -245,20 +245,57 @@ namespace Network
 
 variable (p : Network)
 
-/-- The form-B phase-detector characteristic
-`h(θ) = (1/(ω_g C_f)) [(i_d* − β_q) − α_q sin θ − α_d cos θ]`. -/
-def formBChar (θ : ℝ) : ℝ :=
-  1 / (p.ωg * p.Cf) * ((p.idRef - p.βq) - p.αq * Real.sin θ - p.αd * Real.cos θ)
+/-- **The form-B closed form of the PLL error signal** of the reduction (`Reduction.lean`):
+`h(θ) = (1/(ω_g C_f)) [(i_d* − β_q) − α_q sin θ − α_d cos θ]`, for every network. With
+`ω_g C_f ≠ 0` the parametrizations correspond by `R_g = a/(ω_g C_f)`, `X = (1 − b)/(ω_g C_f)`,
+`lineDet = Δ/(ω_g C_f)²` (so `lineDet ≠ 0 ↔ Δ ≠ 0`), `α_q/(ω_g C_f) = (1 − b) V_g/Δ`,
+`α_d/(ω_g C_f) = a V_g/Δ` and `(i_d* − β_q)/(ω_g C_f) = c₀` (`h_eq`); in the degenerate cases
+`ω_g C_f = 0` (both sides vanish) and `Δ = 0` (both are `i_d*/(ω_g C_f)`,
+`Network.sin_iQ_add_cos_iD`) the identity holds as well. -/
+@[tmio M, powerlib_domain] theorem h_eq_formB (θ : ℝ) :
+    p.h θ = 1 / (p.ωg * p.Cf) * ((p.idRef - p.βq) - p.αq * Real.sin θ - p.αd * Real.cos θ) := by
+  symm
+  by_cases hwC : p.wC = 0
+  · have h0 : p.ωg * p.Cf = 0 := hwC
+    simp [h0, h, hE, vcD, vcQ, hwC, Transform.parkQ]
+  have hω : p.ωg ≠ 0 := left_ne_zero_of_mul hwC
+  have hC : p.Cf ≠ 0 := right_ne_zero_of_mul hwC
+  have hX : p.lineX = (1 - p.b) / p.wC := by
+    simp only [lineX, seriesBranch, Passive.SeriesRLC.reactance, b, wC]
+    field_simp
+    ring
+  have hR : p.Rg = p.a / p.wC := by
+    simp only [a, wC]
+    field_simp
+  have hdet : p.lineDet = p.Δ / p.wC ^ 2 := by
+    rw [lineDet_eq, hX, hR, Δ]
+    field_simp
+    ring
+  by_cases hΔ : p.Δ = 0
+  · have hd0 : p.lineDet = 0 := by rw [hdet, hΔ, zero_div]
+    have hs := p.sin_iQ_add_cos_iD θ
+    simp only [αq, αd, βq, hd0, h, hE, vcD, vcQ,
+      igD, igQ, solD, solQ, hΔ, Transform.parkQ, div_zero, mul_zero, sub_zero]
+    rw [← hs]
+    simp only [wC]
+    field_simp
+    ring
+  · rw [p.h_eq hwC hΔ]
+    simp only [αq, αd, βq, hdet, hX, hR, c0]
+    simp only [wC] at hwC ⊢
+    field_simp
+    ring
 
-/-- Along the quasi-steady manifold the PLL input is exactly `formBChar θ` (no `2θ` terms). -/
+/-- Along the quasi-steady manifold the PLL input is exactly the PLL error signal `h θ` of the
+reduction (no `2θ` terms). -/
 @[tmio M, powerlib_domain] theorem pllInput_of_quasiSteady (hωC : p.ωg * p.Cf ≠ 0)
     (hΔ : p.lineDet ≠ 0) {θ vcd vcq igd igq : ℝ} (h : p.QuasiSteady θ vcd vcq igd igq) :
-    Transform.parkQ θ vcd vcq = p.formBChar θ := by
+    Transform.parkQ θ vcd vcq = p.h θ := by
   obtain ⟨hgd, hgq, hvd, hvq⟩ := (p.quasiSteady_iff hωC hΔ θ vcd vcq igd igq).mp h
   have hexp := pllInput_expansion p p.αd p.βd p.γd p.αq p.βq p.γq θ
   obtain ⟨h1, h2⟩ := p.lineCurrent_rotational
   rw [← p.lineCurrentD_eq hΔ, ← p.lineCurrentQ_eq hΔ, h1, h2] at hexp
-  rw [Transform.parkQ, hvd, hvq, capVoltageD, capVoltageQ, formBChar]
+  rw [p.h_eq_formB θ, Transform.parkQ, hvd, hvq, capVoltageD, capVoltageQ]
   have e : -Real.sin θ * ((p.lineCurrentQ θ - p.iQ θ) / (p.ωg * p.Cf)) +
       Real.cos θ * ((p.iD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)) =
       1 / (p.ωg * p.Cf) * (-Real.sin θ * (p.lineCurrentQ θ - p.iQ θ) +
@@ -267,30 +304,29 @@ def formBChar (θ : ℝ) : ℝ :=
   rw [e, hexp]
   ring
 
-/-- `formBChar` as a trigonometric polynomial (coefficients in `trigPoly2` order:
-constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
-@[tmio M, powerlib_domain] theorem formBChar_eq_trigPoly2 :
-    p.formBChar = SpecialFunctions.trigPoly2 ((p.idRef - p.βq) / (p.ωg * p.Cf))
+/-- The PLL error signal as a trigonometric polynomial with the form-B coefficients (in
+`trigPoly2` order: constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
+@[tmio M, powerlib_domain] theorem h_eq_trigPoly2 :
+    p.h = SpecialFunctions.trigPoly2 ((p.idRef - p.βq) / (p.ωg * p.Cf))
       (-p.αd / (p.ωg * p.Cf)) (-p.αq / (p.ωg * p.Cf)) 0 0 := by
   funext θ
-  simp only [formBChar, SpecialFunctions.trigPoly2]
+  rw [p.h_eq_formB θ]
+  simp only [SpecialFunctions.trigPoly2]
   ring
 
-/-- `formBChar` is the characteristic `PLL.formBH` of `T-gfl-ph` (1.3) with
+/-- The PLL error signal is the characteristic `PLL.formBH` of `T-gfl-ph` (1.3) with
 `c₀ = i_d* − β_q`, `c₁ = −α_q`, `c₂ = −α_d` and no double-angle terms, `c₃ = c₄ = 0`; its
 potential is `PLL.formBPotential` with these coefficients (`PLL.hasDerivAt_formBPotential`). -/
-@[tmio M, powerlib_domain] theorem formBChar_eq_formBH :
-    p.formBChar = PLL.formBH p.ωg p.Cf (p.idRef - p.βq) (-p.αq) (-p.αd) 0 0 := by
+@[tmio M, powerlib_domain] theorem h_eq_formBH :
+    p.h = PLL.formBH p.ωg p.Cf (p.idRef - p.βq) (-p.αq) (-p.αd) 0 0 := by
   funext θ
-  simp only [formBChar, PLL.formBH]
+  rw [p.h_eq_formB θ]
+  simp only [PLL.formBH]
   ring
 
-@[tmio M, powerlib_domain] theorem contDiff_formBChar : ContDiff ℝ 1 p.formBChar := by
-  rw [formBChar_eq_trigPoly2]
-  exact SpecialFunctions.contDiff_trigPoly2 _ _ _ _ _
-
-/-- With `V_g ≠ 0` (and `Δ ≠ 0`, `ω_g C_f ≠ 0`) the characteristic is not identically zero. -/
-@[tmio M, powerlib_domain] theorem formBChar_coeffs_ne_zero (hωC : p.ωg * p.Cf ≠ 0)
+/-- With `V_g ≠ 0` (and `Δ ≠ 0`, `ω_g C_f ≠ 0`) the form-B coefficients of `h` do not all
+vanish. -/
+@[tmio M, powerlib_domain] theorem formB_coeffs_ne_zero (hωC : p.ωg * p.Cf ≠ 0)
     (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) :
     ¬ ((p.idRef - p.βq) / (p.ωg * p.Cf) = 0 ∧ -p.αd / (p.ωg * p.Cf) = 0 ∧
       -p.αq / (p.ωg * p.Cf) = 0) := by
@@ -318,9 +354,9 @@ quasi-steady characteristic) has at most two equilibria with `θ` in any window 
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem formB_equilibria_ncard_le_two (p : Network) {Kp Ki δω : ℝ}
     (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) (hKi : Ki ≠ 0) (a : ℝ) :
-    {x : ℝ² | piPLLField p.formBChar Kp Ki δω x = 0 ∧
+    {x : ℝ² | piPLLField p.h Kp Ki δω x = 0 ∧
       x 0 ∈ Ico a (a + 2 * Real.pi)}.ncard ≤ 2 := by
-  have hne := p.formBChar_coeffs_ne_zero hωC hΔ hVg
+  have hne := p.formB_coeffs_ne_zero hωC hΔ hVg
   have hle := SpecialFunctions.trigPoly1_ncard_zeroSet_le_two hne a
   have hfin := SpecialFunctions.trigPoly2_zeroSet_finite (c₂ := 0) (s₂ := 0)
     (fun h => hne ⟨h.1, h.2.1, h.2.2.1⟩) a
@@ -328,57 +364,10 @@ Static evidence on the model, not a connection conclusion. -/
   · rintro x ⟨hx, hxa⟩
     refine ⟨hxa, ?_⟩
     have := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).1
-    rwa [Network.formBChar_eq_trigPoly2] at this
+    rwa [p.h_eq_trigPoly2] at this
   · rintro x ⟨hx, -⟩ y ⟨hy, -⟩ hxy
     have h1 := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).2
     have h2 := ((PLL.piPLLField_eq_zero_iff hKi y).mp hy).2
     exact PhasePlane.ext_iff'.mpr ⟨hxy, by rw [h1, h2]⟩
-
-/-! ## Form B as a reading of the reduction -/
-
-namespace Params
-
-variable (p : Params)
-
-/-- **The form-B characteristic is the PLL error signal of the reduction**: `formBChar = h` for
-every parameter set. With `ω_g C_f ≠ 0` the parametrizations correspond by `R_g = a/(ω_g C_f)`,
-`X = (1 − b)/(ω_g C_f)`, `lineDet = Δ/(ω_g C_f)²` (so `lineDet ≠ 0 ↔ Δ ≠ 0`),
-`α_q/(ω_g C_f) = (1 − b) V_g/Δ`, `α_d/(ω_g C_f) = a V_g/Δ` and `(i_d* − β_q)/(ω_g C_f) = c₀`
-(`h_eq`); in the degenerate cases `ω_g C_f = 0` (both vanish) and `Δ = 0` (both are
-`i_d*/(ω_g C_f)`, `Network.sin_iQ_add_cos_iD`) the identity holds as well. -/
-@[tmio M, powerlib_domain] theorem formBChar_eq_h : p.formBChar = p.h := by
-  funext θ
-  by_cases hwC : p.wC = 0
-  · have h0 : p.ωg * p.Cf = 0 := hwC
-    simp [Network.formBChar, h0, h, hE, vcD, vcQ, hwC, Transform.parkQ]
-  have hω : p.ωg ≠ 0 := left_ne_zero_of_mul hwC
-  have hC : p.Cf ≠ 0 := right_ne_zero_of_mul hwC
-  have hX : p.lineX = (1 - p.b) / p.wC := by
-    simp only [Network.lineX, Network.seriesBranch, Passive.SeriesRLC.reactance, b, wC]
-    field_simp
-    ring
-  have hR : p.Rg = p.a / p.wC := by
-    simp only [a, wC]
-    field_simp
-  have hdet : p.lineDet = p.Δ / p.wC ^ 2 := by
-    rw [Network.lineDet_eq, hX, hR, Δ]
-    field_simp
-    ring
-  by_cases hΔ : p.Δ = 0
-  · have hd0 : p.lineDet = 0 := by rw [hdet, hΔ, zero_div]
-    have hs := p.sin_iQ_add_cos_iD θ
-    simp only [Network.formBChar, Network.αq, Network.αd, Network.βq, hd0, h, hE, vcD, vcQ,
-      igD, igQ, solD, solQ, hΔ, Transform.parkQ, div_zero, mul_zero, sub_zero]
-    rw [← hs]
-    simp only [wC]
-    field_simp
-    ring
-  · rw [p.h_eq hwC hΔ]
-    simp only [Network.formBChar, Network.αq, Network.αd, Network.βq, hdet, hX, hR, c0]
-    simp only [wC] at hwC ⊢
-    field_simp
-    ring
-
-end Params
 
 end powerlib.GFL.LCLine

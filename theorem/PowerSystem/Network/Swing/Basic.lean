@@ -3,6 +3,7 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.Shift
 import theorem.Dynamics.State
 import theorem.Dynamics.Coordinates
+import theorem.Dynamics.Mechanical
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
@@ -54,6 +55,11 @@ Results.
   `reducedField_equilibrium` and its converse `powerFlow_of_equilibrium` (the equilibria of the
   reduced field at the selected points are the power-balance points; a reduced state is fixed by
   its `dIdx`/`wIdx` blocks, `Dynamics.state_ext_blocks`), `jacobian_isHurwitz_of_angle`.
+* Relative coordinates: `dIdx`/`wIdx` are the position and velocity coordinates
+  `Dynamics.Mechanical.qIdx`/`vIdx`; `relRate u = (uᵢ₊₁ − u₀)ᵢ` (relative angles of an angle
+  profile, their rates for frequencies), `ground v = (0, v)`, `ground_relRate`
+  (`ground (relRate u) = u − u₀`), and `angleMap = ground ∘ Dynamics.Mechanical.pos`
+  (`angleMap_eq_ground`, `angleMap_reduce`).
   Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.
 
 Family and connection conclusions.
@@ -147,17 +153,70 @@ evidence on the model, not a connection conclusion. -/
 
 /-! ## Reduced coordinates -/
 
-/-- Position of the relative angle `δᵢ` in the reduced state. -/
-abbrev dIdx (i : Fin n) : Fin (n + (n + 1)) := Fin.castAdd (n + 1) i
+/-- Position of the relative angle `δᵢ` in the reduced state: the position coordinate
+`Dynamics.Mechanical.qIdx` of the mechanical reading (`reducedField_eq_mechanical`). -/
+abbrev dIdx (i : Fin n) : Fin (n + (n + 1)) := Dynamics.Mechanical.qIdx i
 
-/-- Position of the frequency deviation `ωₖ` in the reduced state. -/
-abbrev wIdx (k : Fin (n + 1)) : Fin (n + (n + 1)) := Fin.natAdd n k
+/-- Position of the frequency deviation `ωₖ` in the reduced state: the velocity coordinate
+`Dynamics.Mechanical.vIdx`. -/
+abbrev wIdx (k : Fin (n + 1)) : Fin (n + (n + 1)) := Dynamics.Mechanical.vIdx k
 
-/-- Absolute angles reconstructed from relative angles, with `θ₀ = 0`. -/
+/-! ### Relative coordinates -/
+
+/-- Absolute angle displacement of relative angles `v` (reference angle `0`). -/
+def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
+
+@[tmio M, simp, powerlib_domain] theorem ground_zero (v : Fin n → ℝ) : ground v 0 = 0 := rfl
+
+@[tmio M, simp, powerlib_domain] theorem ground_succ (v : Fin n → ℝ) (i : Fin n) :
+    ground v i.succ = v i := rfl
+
+@[tmio M, powerlib_domain] theorem ground_smul (c : ℝ) (v : Fin n → ℝ) :
+    ground (c • v) = c • ground v := by
+  funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
+
+@[tmio M, powerlib_domain] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
+  funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
+
+/-- `ground` as a continuous linear map. -/
+def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := ground
+      map_add' := fun v w => by
+        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
+      map_smul' := fun c v => by
+        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp }
+
+@[tmio M, simp, powerlib_domain] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
+  rfl
+
+/-- The relative angles `uᵢ₊₁ − u₀` of an angle or frequency profile `u` (for angles the relative
+angles, for frequency deviations their rates). -/
+def relRate : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) :=
+  ContinuousLinearMap.pi fun i =>
+    ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) i.succ -
+      ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) 0
+
+@[tmio M, simp, powerlib_domain] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
+    relRate w i = w i.succ - w 0 := by
+  simp [relRate]
+
+/-- Grounding the relative angles of a profile shifts it by `−u₀`: `ground (relRate u) = u − u₀`. -/
+@[tmio M, powerlib_domain] theorem ground_relRate (u : Fin (n + 1) → ℝ) :
+    ground (relRate u) = fun k => u k + -u 0 := by
+  funext k
+  refine Fin.cases ?_ (fun i => ?_) k
+  · simp
+  · simp only [ground_succ, relRate_apply]; ring
+
+/-- Absolute angles reconstructed from relative angles, with `θ₀ = 0`: the grounded positions
+`ground ∘ Dynamics.Mechanical.pos`. -/
 def angleMap : State (n + (n + 1)) →L[ℝ] (Fin (n + 1) → ℝ) :=
-  ContinuousLinearMap.pi fun k =>
-    Fin.cases (0 : State (n + (n + 1)) →L[ℝ] ℝ)
-      (fun i => PiLp.proj 2 (fun _ => ℝ) (dIdx i)) k
+  groundCLM.comp Dynamics.Mechanical.pos
+
+@[tmio M, powerlib_domain] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
+    angleMap w = ground (Dynamics.Mechanical.pos w) :=
+  rfl
 
 @[tmio M, simp, powerlib_domain] theorem angleMap_zero (z : State (n + (n + 1))) :
     angleMap z 0 = 0 := by
@@ -197,10 +256,8 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
 
 @[tmio M, powerlib_domain] theorem angleMap_reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) :
     angleMap (reduce x) = fun k => x.1 k + -x.1 0 := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k
-  · simp
-  · simp [sub_eq_add_neg]
+  rw [angleMap_eq_ground, show Dynamics.Mechanical.pos (reduce x) = relRate x.1 by funext i; simp,
+    ground_relRate]
 
 /-- The reduction intertwines the full and the reduced field. Static evidence on the model, not a
 connection conclusion. -/

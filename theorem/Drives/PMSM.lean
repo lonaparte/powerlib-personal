@@ -12,7 +12,8 @@ Model boundary.
   convention, constant `r_s, L_d, L_q, ψ_f`, `np` pole pairs, amplitude-invariant transform:
   `v_d = r_s i_d + L_d di_d/dt − ω L_q i_q`, `v_q = r_s i_q + L_q di_q/dt + ω L_d i_d + ω ψ_f`,
   `T_e = (3/2) np (ψ_f i_q + (L_d − L_q) i_d i_q)`.
-* These are steady-state / algebraic statements (no dynamics, no controller); saturation,
+* These are steady-state / algebraic statements (no dynamics, no controller; the voltage
+  equations relate the currents and their derivative at one instant); saturation,
   cross-saturation and temperature effects are excluded.
 
 Source: work-sync `theory/T-field-oriented-control.md` §1.6 (torque, SPMSM, IPMSM MTPA),
@@ -20,8 +21,11 @@ Source: work-sync `theory/T-field-oriented-control.md` §1.6 (torque, SPMSM, IPM
 
 Results.
 * `torque_eq_spaceVector`: the torque is the space-vector torque `SpaceVector.torque`
-  (`(3/2) np Im(conj ψ · i)`) of the rotor-frame flux `ψ = (L_d i_d + ψ_f, L_q i_q)` and current
-  `i = (i_d, i_q)` (`theorem/Transform/SpaceVector.lean`).
+  (`(3/2) np Im(conj ψ · i)`) of the rotor-frame flux `statorFlux = (L_d i_d + ψ_f) + j L_q i_q`
+  and current `i = (i_d, i_q)` (`theorem/Transform/SpaceVector.lean`).
+* Electrical model: `Params` (`r_s, L_d, L_q, ψ_f`), the dq voltage equations `VoltageEquation`
+  and their solution for the current derivative `currentDeriv` (`voltageEquation_iff`), read by
+  the predictive controller (`theorem/Drives/PredictiveControl.lean`).
 * SPMSM (`L_d = L_q`): torque `(3/2) np ψ_f i_q` (`torque_surface`); on the current disk
   `|i| ≤ I` the torque is maximised exactly at `(0, I)` (`spmsm_mtpa`), and a given torque is
   produced with least current exactly at `i_d = 0` (`spmsm_minCurrent`). Hence `i_d* = 0`.
@@ -47,13 +51,55 @@ namespace powerlib.Drives.PMSM
 /-- PMSM electromagnetic torque. -/
 def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq) * id * iq)
 
+/-- Rotor-frame stator flux `ψ = (L_d i_d + ψ_f) + j L_q i_q`. -/
+def statorFlux (ψf Ld Lq id iq : ℝ) : ℂ := ⟨Ld * id + ψf, Lq * iq⟩
+
 /-- The PMSM torque is the space-vector torque `(3/2) np Im(conj ψ · i)` of the rotor-frame flux
-`ψ = (L_d i_d + ψ_f, L_q i_q)` and current `i = (i_d, i_q)`. -/
+`ψ = statorFlux` and current `i = (i_d, i_q)`. -/
 @[tmio M, powerlib_domain] theorem torque_eq_spaceVector (np ψf Ld Lq id iq : ℝ) :
     torque np ψf Ld Lq id iq =
-      Transform.SpaceVector.torque np ⟨Ld * id + ψf, Lq * iq⟩ ⟨id, iq⟩ := by
-  rw [Transform.SpaceVector.torque, Transform.SpaceVector.cross_eq, torque]
+      Transform.SpaceVector.torque np (statorFlux ψf Ld Lq id iq) ⟨id, iq⟩ := by
+  rw [Transform.SpaceVector.torque, Transform.SpaceVector.cross_eq, torque, statorFlux]
   ring
+
+/-! ## Electrical model -/
+
+/-- PMSM electrical parameters `r_s, L_d, L_q, ψ_f`. -/
+structure Params where
+  rs : ℝ
+  Ld : ℝ
+  Lq : ℝ
+  ψf : ℝ
+
+/-- PMSM dq voltage equations (motor convention) at one instant. -/
+def VoltageEquation (p : Params) (ω : ℝ) (x dx u : Fin 2 → ℝ) : Prop :=
+  u 0 = p.rs * x 0 + p.Ld * dx 0 - ω * p.Lq * x 1 ∧
+    u 1 = p.rs * x 1 + p.Lq * dx 1 + ω * p.Ld * x 0 + ω * p.ψf
+
+/-- The voltage equations solved for the current derivative. -/
+def currentDeriv (p : Params) (ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :=
+  ![(u 0 - p.rs * x 0 + ω * p.Lq * x 1) / p.Ld,
+    (u 1 - p.rs * x 1 - ω * p.Ld * x 0 - ω * p.ψf) / p.Lq]
+
+@[tmio M, powerlib_domain] theorem voltageEquation_iff (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
+    (ω : ℝ) (x dx u : Fin 2 → ℝ) :
+    VoltageEquation p ω x dx u ↔ dx = currentDeriv p ω x u := by
+  unfold VoltageEquation
+  constructor
+  · rintro ⟨h0, h1⟩
+    ext j
+    fin_cases j
+    · simp [currentDeriv]
+      field_simp
+      linear_combination -h0
+    · simp [currentDeriv]
+      field_simp
+      linear_combination -h1
+  · intro h
+    subst h
+    simp [currentDeriv]
+    constructor <;> field_simp <;> ring
+
 
 /-! ## Surface PMSM -/
 

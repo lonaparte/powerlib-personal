@@ -381,55 +381,9 @@ traces and determinants of its diagonal blocks `P` (rows/columns `0, 1`) and `Q`
   simp [Fin.succAbove, Fin.lt_def, Fin.ext_iff]
   ring
 
-/-- **Routh–Hurwitz for real 4×4 matrices, both directions** in trace / principal-minor /
-determinant form. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ) :
-    LinearSystems.IsHurwitz A ↔
-      A.trace < 0 ∧ principalMinorSum3Fin4 A < 0 ∧ 0 < A.det ∧
-        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det <
-          A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by
-  rw [isHurwitz_iff_of_det_characteristicMatrix_quartic (a3 := -A.trace)
-    (a2 := principalMinorSum2Fin4 A) (a1 := -principalMinorSum3Fin4 A) (a0 := A.det) A
-    (fun s => by rw [det_characteristicMatrix_fin_four]; push_cast; ring), neg_pos, neg_pos]
-  have e1 : (-principalMinorSum3Fin4 A) ^ 2 + (-A.trace) ^ 2 * A.det =
-      principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det := by ring
-  have e2 : -A.trace * principalMinorSum2Fin4 A * -principalMinorSum3Fin4 A =
-      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by ring
-  rw [e1, e2]
-
-/-- A strict violation of a 4×4 Routh sign condition (`0 < tr A`, `m₂ < 0`, `0 < m₃`,
-`det A < 0`, or a negative third Hurwitz determinant) gives an eigenvalue with positive real
-part. -/
-@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_violation_fin_four
-    (A : Matrix (Fin 4) (Fin 4) ℝ)
-    (h : 0 < A.trace ∨ principalMinorSum2Fin4 A < 0 ∨ 0 < principalMinorSum3Fin4 A ∨ A.det < 0 ∨
-      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A <
-        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det) :
-    ∃ (μ : ℂ) (v : Fin 4 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  refine exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation
-    (a3 := -A.trace) (a2 := principalMinorSum2Fin4 A) (a1 := -principalMinorSum3Fin4 A)
-    (a0 := A.det) A (fun s => by rw [det_characteristicMatrix_fin_four]; push_cast; ring) ?_
-  have e1 : (-principalMinorSum3Fin4 A) ^ 2 + (-A.trace) ^ 2 * A.det =
-      principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det := by ring
-  have e2 : -A.trace * principalMinorSum2Fin4 A * -principalMinorSum3Fin4 A =
-      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by ring
-  rw [e1, e2, neg_lt_zero, neg_lt_zero]
-  exact h
-
-/-- Companion form of `s ^ 4 + a3 s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_companion_four_iff (a0 a1 a2 a3 : ℝ) :
-    LinearSystems.IsHurwitz
-        !![0, 1, 0, 0; 0, 0, 1, 0; 0, 0, 0, 1; -a0, -a1, -a2, -a3] ↔
-      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
-  refine isHurwitz_iff_of_det_characteristicMatrix_quartic _ fun s => ?_
-  rw [det_characteristicMatrix_fin_four]
-  simp [Matrix.trace, Fin.sum_univ_four, principalMinorSum2Fin4, principalMinorSum3Fin4,
-    det_fin_four]
-
 /-- The 4×4 Routh conditions on a matrix `J`: `tr J < 0`, `m₃(J) < 0`, `det J > 0` and
 `m₃² + tr² det < tr m₂ m₃`. -/
-def RouthFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
+abbrev RouthFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
   J.trace < 0 ∧ Criteria.principalMinorSum3Fin4 J < 0 ∧ 0 < J.det ∧
     Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det <
       J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J
@@ -437,7 +391,7 @@ def RouthFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
 /-- A strict violation of the 4×4 Routh conditions on a matrix `J`: `tr J > 0`, `m₂(J) < 0`,
 `m₃(J) > 0`, `det J < 0` or `tr m₂ m₃ < m₃² + tr² det`; each places a characteristic root in the
 open right half plane (`Criteria.exists_eigenvalue_re_pos_of_violation_fin_four`). -/
-def RouthViolationFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
+abbrev RouthViolationFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
   0 < J.trace ∨ Criteria.principalMinorSum2Fin4 J < 0 ∨ 0 < Criteria.principalMinorSum3Fin4 J ∨
     J.det < 0 ∨ J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J <
       Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det
@@ -491,6 +445,46 @@ third Hurwitz determinant (`coeffs_of_det_characteristicMatrix_quartic`). -/
   have e2 : -a3 * a2 * -a1 = a3 * a2 * a1 := by ring
   simp only [RouthViolationFin4, ht, h2, h3, hd, neg_pos, e1, e2]
 
+/-- The characteristic determinant of a 4×4 matrix as the monic quartic with coefficients
+`−tr A`, `m₂`, `−m₃`, `det A` (`det_characteristicMatrix_fin_four`). -/
+@[tmio T, powerlib_foundation] private theorem det_characteristicMatrix_fin_four_quartic
+    (A : Matrix (Fin 4) (Fin 4) ℝ) (s : ℂ) :
+    (Linear.characteristicMatrix A s).det =
+      s ^ 4 + ((-A.trace : ℝ) : ℂ) * s ^ 3 + ((principalMinorSum2Fin4 A : ℝ) : ℂ) * s ^ 2 +
+        ((-principalMinorSum3Fin4 A : ℝ) : ℂ) * s + ((A.det : ℝ) : ℂ) := by
+  rw [det_characteristicMatrix_fin_four]; push_cast; ring
+
+/-- **Routh–Hurwitz for real 4×4 matrices, both directions** in trace / principal-minor /
+determinant form (`RouthFin4`). -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ) :
+    LinearSystems.IsHurwitz A ↔ RouthFin4 A :=
+  (isHurwitz_iff_of_det_characteristicMatrix_quartic A
+    (det_characteristicMatrix_fin_four_quartic A)).trans
+    (routhFin4_iff_of_det_characteristicMatrix_quartic A
+      (det_characteristicMatrix_fin_four_quartic A)).symm
+
+/-- A strict violation of a 4×4 Routh sign condition (`RouthViolationFin4`: `0 < tr A`, `m₂ < 0`,
+`0 < m₃`, `det A < 0`, or a negative third Hurwitz determinant) gives an eigenvalue with positive
+real part. -/
+@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_violation_fin_four
+    (A : Matrix (Fin 4) (Fin 4) ℝ) (h : RouthViolationFin4 A) :
+    ∃ (μ : ℂ) (v : Fin 4 → ℂ),
+      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
+  exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation A
+    (det_characteristicMatrix_fin_four_quartic A)
+    ((routhViolationFin4_iff_of_det_characteristicMatrix_quartic A
+      (det_characteristicMatrix_fin_four_quartic A)).1 h)
+
+/-- Companion form of `s ^ 4 + a3 s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_companion_four_iff (a0 a1 a2 a3 : ℝ) :
+    LinearSystems.IsHurwitz
+        !![0, 1, 0, 0; 0, 0, 1, 0; 0, 0, 0, 1; -a0, -a1, -a2, -a3] ↔
+      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  refine isHurwitz_iff_of_det_characteristicMatrix_quartic _ fun s => ?_
+  rw [det_characteristicMatrix_fin_four]
+  simp [Matrix.trace, Fin.sum_univ_four, principalMinorSum2Fin4, principalMinorSum3Fin4,
+    det_fin_four]
+
 end FinFour
 
 /-! ## Semantic corollaries (linearization and linear fields)
@@ -523,10 +517,7 @@ Routh sign violation gives instability. -/
     {f : ℝ⁴ → ℝ⁴} {x_eq : ℝ⁴}
     (A : Matrix (Fin 4) (Fin 4) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A)
-    (h : 0 < A.trace ∨ principalMinorSum2Fin4 A < 0 ∨ 0 < principalMinorSum3Fin4 A ∨ A.det < 0 ∨
-      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A <
-        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det) :
-    Unstable f x_eq :=
+    (h : RouthViolationFin4 A) : Unstable f x_eq :=
   unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_violation_fin_four A h)
 

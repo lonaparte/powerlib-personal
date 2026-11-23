@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Drives.PMSM
 
 /-! # Predictive current control of a PMSM: forward-Euler model, deadbeat, FCS-MPC
 
@@ -10,8 +11,9 @@ Model boundary.
 Deadbeat tracking (`deadbeat_tracks_next_sample`, `deadbeat_delayCompensated_tracks`):
 * Plant: PMSM stator currents in the rotor dq frame, state order `(i_d, i_q)`, motor
   convention, `L_d di_d/dt = v_d − r_s i_d + ω_e L_q i_q`,
-  `L_q di_q/dt = v_q − r_s i_q − ω_e L_d i_d − ω_e ψ_f` (FOC note §1.6). Parameters `r_s`,
-  `L_d ≠ 0`, `L_q ≠ 0`, `ψ_f`, exact and constant.
+  `L_q di_q/dt = v_q − r_s i_q − ω_e L_d i_d − ω_e ψ_f` (FOC note §1.6): the electrical model
+  `PMSM.Params`, `PMSM.VoltageEquation`, `PMSM.currentDeriv` of
+  `theorem/Drives/PMSM.lean`. Parameters `r_s`, `L_d ≠ 0`, `L_q ≠ 0`, `ψ_f`, exact and constant.
 * **Discrete time**: the plant is the **forward-Euler** discretization with sampling period
   `T_s ≠ 0`, `x[k+1] = x[k] + T_s f(x[k], u[k], ω_e[k])` (`eulerStep`); the electrical speed
   sequence `ω_e[k]` is known to the controller. This is a statement about the Euler model,
@@ -57,42 +59,7 @@ noncomputable section
 namespace powerlib.Drives.Predictive
 
 open Matrix Finset
-
-/-- PMSM electrical parameters. -/
-structure Params where
-  rs : ℝ
-  Ld : ℝ
-  Lq : ℝ
-  ψf : ℝ
-
-/-- PMSM dq voltage equations (motor convention) at one instant. -/
-def VoltageEquation (p : Params) (ω : ℝ) (x dx u : Fin 2 → ℝ) : Prop :=
-  u 0 = p.rs * x 0 + p.Ld * dx 0 - ω * p.Lq * x 1 ∧
-    u 1 = p.rs * x 1 + p.Lq * dx 1 + ω * p.Ld * x 0 + ω * p.ψf
-
-/-- The voltage equations solved for the current derivative. -/
-def currentDeriv (p : Params) (ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :=
-  ![(u 0 - p.rs * x 0 + ω * p.Lq * x 1) / p.Ld,
-    (u 1 - p.rs * x 1 - ω * p.Ld * x 0 - ω * p.ψf) / p.Lq]
-
-@[tmio M, powerlib_domain] theorem voltageEquation_iff (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
-    (ω : ℝ) (x dx u : Fin 2 → ℝ) :
-    VoltageEquation p ω x dx u ↔ dx = currentDeriv p ω x u := by
-  unfold VoltageEquation
-  constructor
-  · rintro ⟨h0, h1⟩
-    ext j
-    fin_cases j
-    · simp [currentDeriv]
-      field_simp
-      linear_combination -h0
-    · simp [currentDeriv]
-      field_simp
-      linear_combination -h1
-  · intro h
-    subst h
-    simp [currentDeriv]
-    constructor <;> field_simp <;> ring
+open PMSM (Params VoltageEquation currentDeriv)
 
 /-- Forward-Euler step of the PMSM current model with period `T_s`. -/
 def eulerStep (p : Params) (Ts ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :=

@@ -756,7 +756,6 @@ converse linearization theorem for fields that are `C¹` on an open neighbourhoo
   rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local
     PLLDC.Params.isOpen_nonzeroVdc hx (m.p.jacobian m.x) m.p.field_contDiffOn
     (m.p.fderiv_field hx), Criteria.isHurwitz_fin_four_iff]
-  rfl
 
 /-- A converter with a negative DC-voltage reference: `V_dc* = −1` with negative DC-loop gains
 `k_pv = k_iv = −1` (so that the loop still regulates), `V_g = C_dc = k_p = k_i = 1`, no load,

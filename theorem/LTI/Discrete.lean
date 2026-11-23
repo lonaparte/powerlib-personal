@@ -33,8 +33,11 @@ Results (all trajectory-level, for every initial state).
 * `exponentiallyStable_of_schurStable`: Schur stability gives `‖x k‖ ≤ C ρ^k ‖x 0‖` with
   `ρ < 1`, via the LeanForControl Gelfand-formula lemma
   `exists_pow_norm_lt_one_of_spectralRadius_lt_one`.
-* `exists_trajectory_not_tendsto_zero`: one eigenvalue with `‖μ‖ ≥ 1` yields a real
-  trajectory that does not converge to zero.
+* The discrete eigenmode: for a complex eigenpair `(μ, v)` of `Φ` the real and imaginary parts
+  `eigenmodeSeq part μ v k = part (μ^k v)` satisfy `Φ x_k = x_{k+1}` (`mulVec_eigenmodeSeq`) and
+  `(Re)² + (Im)² = |μ|^{2k} |v_j|²` componentwise (`eigenmodeSeq_sq_add_sq`);
+  `exists_trajectory_not_tendsto_zero`: one eigenvalue with `‖μ‖ ≥ 1` yields a real trajectory
+  that does not converge to zero.
 * `exponentiallyStable_iff_schurStable`, `asymptoticallyStable_iff_schurStable`.
 * Powers in blocks, in any seminormed ring: `norm_pow_le_of_block` (`‖x^m‖ ≤ e^{−γ}` and
   `‖x^r‖ ≤ B` for `r < m` give `‖x^k‖ ≤ B e^{γ} (e^{−γ/m})^k`), from the scalar
@@ -323,22 +326,44 @@ end Decay
 
 section Converse
 
+/-- One real component (`part = Complex.reCLM` or `Complex.imCLM`) of the discrete eigenmode
+`k ↦ μ^k v`. -/
+def eigenmodeSeq (part : ℂ →L[ℝ] ℝ) (μ : ℂ) (v : Fin n → ℂ) (k : ℕ) : State n :=
+  fun j => part (μ ^ k * v j)
+
+/-- For a complex eigenpair `(μ, v)` of `Φ`, the real and imaginary parts of `μ^k v` are carried
+one step forward by `Φ`. -/
+@[tmio T, powerlib_foundation] theorem mulVec_eigenmodeSeq {Φ : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ}
+    {v : Fin n → ℂ} (heig : Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) {part : ℂ →L[ℝ] ℝ}
+    (hpart : part = Complex.reCLM ∨ part = Complex.imCLM) (k : ℕ) :
+    Φ *ᵥ eigenmodeSeq part μ v k = eigenmodeSeq part μ v (k + 1) := by
+  rcases hpart with rfl | rfl
+  · have h := (MatrixAlgebra.matrixMulVec_re_smul_eigenpair Φ μ (μ ^ k) v heig).symm
+    rw [← pow_succ] at h
+    exact h
+  · have h := (MatrixAlgebra.matrixMulVec_im_smul_eigenpair Φ μ (μ ^ k) v heig).symm
+    rw [← pow_succ] at h
+    exact h
+
+/-- `|Re(μ^k v_j)|² + |Im(μ^k v_j)|² = |μ|^{2k} |v_j|²`. -/
+@[tmio T, powerlib_foundation] theorem eigenmodeSeq_sq_add_sq (μ : ℂ) (v : Fin n → ℂ) (k : ℕ)
+    (j : Fin n) :
+    eigenmodeSeq Complex.reCLM μ v k j ^ 2 + eigenmodeSeq Complex.imCLM μ v k j ^ 2 =
+      Complex.normSq μ ^ k * Complex.normSq (v j) := by
+  rw [← map_pow, ← Complex.normSq_mul, Complex.normSq_apply]
+  simp only [eigenmodeSeq, Complex.reCLM_apply, Complex.imCLM_apply]
+  ring
+
 /-- An eigenvalue on or outside the unit circle produces a real trajectory (the real or the
 imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero. -/
 @[tmio T, powerlib_foundation] theorem exists_trajectory_not_tendsto_zero {m : Model n} {μ : ℂ}
     {v : Fin n → ℂ} (hv : v ≠ 0) (heig : m.Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
     (hμ : 1 ≤ ‖μ‖) :
     ∃ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) ∧ ¬ Tendsto x atTop (𝓝 0) := by
-  let x : ℕ → State n := fun k j => (μ ^ k * v j).re
-  let y : ℕ → State n := fun k j => (μ ^ k * v j).im
-  have hx : ∀ k, x (k + 1) = m.step (x k) := by
-    intro k
-    have h := MatrixAlgebra.matrixMulVec_re_smul_eigenpair m.Φ μ (μ ^ k) v heig
-    simpa [x, Model.step, pow_succ] using h
-  have hy : ∀ k, y (k + 1) = m.step (y k) := by
-    intro k
-    have h := MatrixAlgebra.matrixMulVec_im_smul_eigenpair m.Φ μ (μ ^ k) v heig
-    simpa [y, Model.step, pow_succ] using h
+  set x := eigenmodeSeq Complex.reCLM μ v
+  set y := eigenmodeSeq Complex.imCLM μ v
+  have hx : ∀ k, x (k + 1) = m.step (x k) := fun k => (mulVec_eigenmodeSeq heig (.inl rfl) k).symm
+  have hy : ∀ k, y (k + 1) = m.step (y k) := fun k => (mulVec_eigenmodeSeq heig (.inr rfl) k).symm
   by_contra hcon
   simp only [not_exists, not_and, not_not] at hcon
   have hxt := hcon x hx
@@ -353,10 +378,7 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
   have hpos : 0 < Complex.normSq (v j) := Complex.normSq_pos.mpr (by simpa using hj)
   have hlow : ∀ k, Complex.normSq (v j) ≤ x k j ^ 2 + y k j ^ 2 := by
     intro k
-    have he : x k j ^ 2 + y k j ^ 2 = Complex.normSq (μ ^ k * v j) := by
-      simp only [x, y, Complex.normSq_apply]
-      ring
-    rw [he, Complex.normSq_mul, map_pow]
+    rw [eigenmodeSeq_sq_add_sq]
     have h1 : 1 ≤ Complex.normSq μ := by
       rw [Complex.normSq_eq_norm_sq]
       nlinarith [norm_nonneg μ]

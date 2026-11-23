@@ -95,9 +95,9 @@ variable (v : VSGInfiniteBus)
 /-- Maximum transferable power `E V_g / X_g`. -/
 def Pmax : ℝ := v.E * v.Vg / v.Xg
 
-/-- The VSG closed loop as a swing model: `M = 2H/ω_s`, `D = D_p/ω_s`,
-`P_e(δ) = (E V_g / X_g) sin δ`. -/
-def toSwing : SwingParams := ⟨2 * v.H / v.ωs, v.Dp / v.ωs, v.Pref, 0, v.Pmax, 0⟩
+/-- The VSG closed loop as a sine-curve swing model (`SwingParams.sinusoid`): `M = 2H/ω_s`,
+`D = D_p/ω_s`, `P_e(δ) = (E V_g / X_g) sin δ`. -/
+def toSwing : SwingParams := .sinusoid (2 * v.H / v.ωs) (v.Dp / v.ωs) v.Pref v.Pmax
 
 /-- Synchronizing coefficient `K_E = (E V_g / X_g) cos δ₀`, that of the swing model. -/
 abbrev KE (δ₀ : ℝ) : ℝ := v.toSwing.syncCoeff δ₀
@@ -133,14 +133,6 @@ def atLoading : Swing.Model := ⟨v.toSwing, Real.arcsin (v.Pref / v.Pmax)⟩
 /-- The VSG read about the second equilibrium angle `π − δ₀`. -/
 def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref / v.Pmax)⟩
 
-@[tmio M, powerlib_domain] theorem deltaS_toSwing :
-    v.toSwing.deltaS = Real.arcsin (v.Pref / v.Pmax) := by
-  simp [SwingParams.deltaS, SwingParams.loadRatio, toSwing]
-
-@[tmio M, powerlib_domain] theorem deltaU_toSwing :
-    v.toSwing.deltaU = Real.pi - Real.arcsin (v.Pref / v.Pmax) := by
-  simp [SwingParams.deltaU, SwingParams.loadRatio, toSwing]
-
 /-- The loading angle `δ₀ = arcsin(P_ref X_g / (E V_g))` is locally exponentially stable
 (`D_p > 0`, `|P_ref| < E V_g / X_g`). -/
 @[tmio TM, powerlib_domain] theorem locallyExponentiallyStable (h : v.Pos) (hD : 0 < v.Dp)
@@ -150,7 +142,7 @@ def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref /
   have hP' : |v.toSwing.Pm - v.toSwing.k₁| < v.toSwing.k₂ := by simpa [toSwing] using hP
   have := Swing.deltaS_mem_den_locallyExponentiallyStable v.toSwing h.M hD' h.Pmax hP'
   unfold powerlib.TMIO.Statement at this ⊢
-  rw [v.deltaS_toSwing] at this
+  rw [toSwing, SwingParams.sinusoid_deltaS] at this
   exact this
 
 /-- The second equilibrium `π − δ₀` is unstable for every damping. -/
@@ -158,7 +150,7 @@ def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref /
     connection% (v.atAntiLoading ∈ Swing.family.den (.flow .unstable)) := by
   have := Swing.deltaU_mem_den_unstable v.toSwing h.M h.Pmax (by simpa [toSwing] using hP)
   unfold powerlib.TMIO.Statement at this ⊢
-  rw [v.deltaU_toSwing] at this
+  rw [toSwing, SwingParams.sinusoid_deltaU] at this
   exact this
 
 /-- Without damping (`D_p = 0`) — and for any `D_p ≥ 0` — the loading angle is Lyapunov
@@ -170,7 +162,7 @@ stable (energy function). -/
   have hP' : |v.toSwing.Pm - v.toSwing.k₁| < v.toSwing.k₂ := by simpa [toSwing] using hP
   have := Swing.deltaS_mem_den_lyapunovStable v.toSwing h.M hD' h.Pmax hP'
   unfold powerlib.TMIO.Statement at this ⊢
-  rw [v.deltaS_toSwing] at this
+  rw [toSwing, SwingParams.sinusoid_deltaS] at this
   exact this
 
 /-- Corrected per-unit characteristic polynomial (T-vsg-control §1.10):
@@ -181,7 +173,8 @@ stable (energy function). -/
       2 * (v.H : ℂ) * s ^ 2 + (v.Dp : ℂ) * s + (v.ωs : ℂ) * (v.KE δ₀ : ℂ) := by
   rw [v.toSwing.characteristic_polynomial h.M.ne']
   have hω : (v.ωs : ℂ) ≠ 0 := by exact_mod_cast h.ωs.ne'
-  simp only [toSwing, SwingParams.syncCoeff, KE, sub_zero]
+  simp only [toSwing, KE, SwingParams.sinusoid_M, SwingParams.sinusoid_D,
+    SwingParams.sinusoid_syncCoeff]
   push_cast
   field_simp
 
@@ -194,15 +187,15 @@ stable (energy function). -/
   have := Swing.Linearized.mem_den_iff (Swing.Model.mk v.toSwing δ₀) h.M
   unfold powerlib.TMIO.Statement at this ⊢
   rw [this]
-  simp only [Set.mem_ofPred_eq, toSwing, SwingParams.syncCoeff, KE, sub_zero,
-    div_pos_iff_of_pos_right h.ωs]
+  simp only [Set.mem_ofPred_eq, toSwing, KE, SwingParams.sinusoid_D,
+    SwingParams.sinusoid_syncCoeff, div_pos_iff_of_pos_right h.ωs]
 
 /-- Natural frequency of the corrected linearization: `ω_n² = ω_s K_E / (2H)` equals
 `det J`. -/
 @[tmio M, powerlib_domain] theorem naturalFrequency_sq (h : v.Pos) (δ₀ : ℝ) :
     (v.toSwing.jacobian δ₀).det = v.ωs * v.KE δ₀ / (2 * v.H) := by
   rw [SwingParams.det_jacobian]
-  simp only [toSwing, SwingParams.syncCoeff, KE, sub_zero]
+  simp only [toSwing, KE, SwingParams.sinusoid_M, SwingParams.sinusoid_syncCoeff]
   have := h.H.ne'; have := h.ωs.ne'
   field_simp
 
@@ -216,11 +209,12 @@ stable (energy function). -/
   have hs : Real.sqrt (v.toSwing.M * v.KE δ₀) =
       Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) / v.ωs := by
     rw [show v.toSwing.M * v.KE δ₀ = 2 * v.H * v.ωs * v.KE δ₀ / v.ωs ^ 2 by
-        simp only [toSwing]; field_simp, Real.sqrt_div' _ (by positivity), Real.sqrt_sq hω.le]
+        simp only [toSwing, SwingParams.sinusoid_M]; field_simp, Real.sqrt_div' _ (by positivity),
+      Real.sqrt_sq hω.le]
   have hpos : 0 < Real.sqrt (2 * v.H * v.ωs * v.KE δ₀) :=
     Real.sqrt_pos.mpr (by have := h.H; positivity)
   rw [v.toSwing.dampingRatio_jacobian h.M hK, hs]
-  simp only [toSwing]
+  simp only [toSwing, SwingParams.sinusoid_D]
   field_simp
 
 /-- With the note's data `H = 2 s`, `K_E = 8 pu/rad`, `ω_s = 100π rad/s`, the corrected
@@ -253,7 +247,9 @@ variable (m : ClassicalSMIB)
 
 def Pmax : ℝ := m.E' * m.Vinf / m.Xd'
 
-def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
+/-- The classical SMIB as a sine-curve swing model (`SwingParams.sinusoid`),
+`P_e(δ) = (E' V_∞ / X_d') sin δ`. -/
+def toSwing : SwingParams := .sinusoid m.M m.D m.Pm m.Pmax
 
 /-- The parameter map to the port-Hamiltonian classical machine (`ClassicalSMParams`,
 `theorem/PowerSystem/Synchronous/PH.lean`) on its physical range `M > 0`, `D ≥ 0`,
@@ -290,17 +286,11 @@ Static evidence on the model, not a connection conclusion. -/
         (m.toSwing.jacobian m.toSwing.deltaS).map (algebraMap ℝ ℂ) *ᵥ w = μ • w → μ.im = 0) ↔
       4 * m.M * m.Pmax * Real.sqrt ((1 - m.Pm / m.Pmax) * (2 - (1 - m.Pm / m.Pmax))) ≤
         m.D ^ 2 := by
-  rw [m.toSwing.eigenvalues_real_iff hM]
-  have hK : m.toSwing.syncCoeff m.toSwing.deltaS =
-      m.Pmax * Real.sqrt ((1 - m.Pm / m.Pmax) * (2 - (1 - m.Pm / m.Pmax))) := by
-    simp only [SwingParams.syncCoeff, SwingParams.deltaS, SwingParams.loadRatio, toSwing,
-      sub_zero, add_zero]
-    rw [Real.cos_arcsin]
-    congr 2
-    ring
-  rw [hK]
-  simp only [toSwing]
-  constructor <;> intro h <;> linarith
+  rw [m.toSwing.eigenvalues_real_iff hM, SwingParams.syncCoeff_deltaS]
+  simp only [toSwing, SwingParams.sinusoid_M, SwingParams.sinusoid_D, SwingParams.sinusoid_k₂,
+    SwingParams.sinusoid_loadRatio]
+  rw [show (1 - m.Pm / m.Pmax) * (2 - (1 - m.Pm / m.Pmax)) = 1 - (m.Pm / m.Pmax) ^ 2 by ring]
+  simp only [mul_assoc]
 
 end ClassicalSMIB
 
@@ -374,7 +364,7 @@ line (`φ = π/2`, `|Z_e| = X_d'`) to the bus `V_∞ ∠ 0` gives the classical 
 @[tmio M, powerlib_domain] theorem toSwing_classical (c : ClassicalSMIB) :
     (⟨c.M, c.D, c.Pm, c.E', c.Vinf, 0, c.Xd', Real.pi / 2⟩ : PostFaultSMIB).toSwing =
       c.toSwing := by
-  simp [toSwing, ClassicalSMIB.toSwing, ClassicalSMIB.Pmax]
+  simp [toSwing, ClassicalSMIB.toSwing, ClassicalSMIB.Pmax, SwingParams.sinusoid]
 
 /-- The power-angle curve of the post-fault model is the real part of the complex power. -/
 @[tmio M, powerlib_domain] theorem Pe_eq_complexPower (hr : 0 < m.r) (δ : ℝ) :

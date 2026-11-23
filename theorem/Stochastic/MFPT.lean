@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Stochastic.FokkerPlanck
 
 /-! # Mean first-passage time of an overdamped 1D diffusion: the Kramers double integral
 
@@ -50,8 +51,8 @@ namespace powerlib.Stochastic.MFPT
 
 open MeasureTheory Real intervalIntegral Set
 
-/-- Inner integral `I(y) = ∫_{θ_r}^{y} e^{−V/D}` (Boltzmann weight of the well). -/
-def innerI (V : ℝ → ℝ) (D θr y : ℝ) : ℝ := ∫ z in θr..y, exp (-V z / D)
+/-- Inner integral `I(y) = ∫_{θ_r}^{y} e^{−V/D}` of the Gibbs (Boltzmann) weight `FP.gibbs`. -/
+def innerI (V : ℝ → ℝ) (D θr y : ℝ) : ℝ := ∫ z in θr..y, FP.gibbs V D z
 
 /-- Integrand of the outer integral, `g(y) = e^{V(y)/D} I(y)`. -/
 def outerG (V : ℝ → ℝ) (D θr y : ℝ) : ℝ := exp (V y / D) * innerI V D θr y
@@ -63,8 +64,8 @@ def kramersT (V : ℝ → ℝ) (D γ θr θc θ : ℝ) : ℝ := γ / D * ∫ y i
 variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
 
 @[tmio T, powerlib_foundation] theorem innerI_hasDerivAt (hV : Continuous V) (y : ℝ) :
-    HasDerivAt (innerI V D θr) (exp (-V y / D)) y :=
-  (Continuous.integral_hasStrictDerivAt (by fun_prop) θr y).hasDerivAt
+    HasDerivAt (innerI V D θr) (FP.gibbs V D y) y :=
+  ((FP.continuous_gibbs hV D).integral_hasStrictDerivAt θr y).hasDerivAt
 
 @[tmio T, powerlib_foundation] theorem innerI_continuous (hV : Continuous V) :
     Continuous (innerI V D θr) :=
@@ -84,8 +85,8 @@ variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
   have := h1.mul h2
   unfold outerG
   convert! this using 1
-  rw [show exp (V y / D) * exp (-V y / D) = 1 by
-    rw [← exp_add, show V y / D + -V y / D = 0 by ring, exp_zero]]
+  rw [show exp (V y / D) * FP.gibbs V D y = 1 by
+    rw [FP.gibbs, ← exp_add, show V y / D + -V y / D = 0 by ring, exp_zero]]
   ring
 
 /-- `T' = −(γ/D) g`. -/
@@ -131,11 +132,9 @@ derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T''
   set T1 : ℝ → ℝ := fun u => -(γ / D) * outerG V D θr u
   set W1 : ℝ → ℝ := fun θ => U1 θ - T1 θ
   -- `e^{−V/D} W1` is constant
-  have hq : ∀ θ, HasDerivAt (fun θ => exp (-V θ / D) * W1 θ) 0 θ := by
+  have hq : ∀ θ, HasDerivAt (fun θ => FP.gibbs V D θ * W1 θ) 0 θ := by
     intro θ
-    have he : HasDerivAt (fun θ => exp (-V θ / D)) (exp (-V θ / D) * (-V' θ / D)) θ := by
-      have := ((hV θ).neg.div_const D).exp
-      convert! this using 1
+    have he := FP.hasDerivAt_gibbs (D := D) (hV θ)
     have hw : HasDerivAt W1 (U2 θ - (-(γ / D) * (V' θ / D * outerG V D θr θ + 1))) θ :=
       (hU1 θ).sub (hT2 θ)
     convert! he.mul hw using 1
@@ -145,7 +144,7 @@ derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T''
     rw [hU2]
     field_simp
     ring
-  have hqc : ∀ θ, exp (-V θ / D) * W1 θ = exp (-V θr / D) * W1 θr := fun θ =>
+  have hqc : ∀ θ, FP.gibbs V D θ * W1 θ = FP.gibbs V D θr * W1 θr := fun θ =>
     is_const_of_deriv_eq_zero (fun s => (hq s).differentiableAt) (fun s => (hq s).deriv) θ θr
   have hW1r : W1 θr = 0 := by
     simp only [W1, T1, hr]; rw [kramersT_reflecting]; ring
@@ -153,7 +152,7 @@ derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T''
     intro θ
     have := hqc θ
     rw [hW1r, mul_zero] at this
-    have := (mul_eq_zero.mp this).resolve_left (exp_pos _).ne'
+    have := (mul_eq_zero.mp this).resolve_left (FP.gibbs_pos V D θ).ne'
     simp only [W1] at this; linarith
   -- `U − T` is constant and vanishes at `θ_c`
   have hd : ∀ θ, HasDerivAt (fun θ => U θ - kramersT V D γ θr θc θ) 0 θ := by
@@ -174,8 +173,7 @@ derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T''
     intro y hy
     unfold innerI
     exact intervalIntegral.intervalIntegral_pos_of_pos_on
-      ((by fun_prop : Continuous fun z => exp (-V z / D)).intervalIntegrable _ _)
-      (fun z _ => exp_pos _) hy
+      ((FP.continuous_gibbs hV D).intervalIntegrable _ _) (fun z _ => FP.gibbs_pos V D z) hy
   have hpos : ∀ y ∈ Ioo θ θc, 0 < outerG V D θr y := fun y hy =>
     mul_pos (exp_pos _) (hI y (lt_of_le_of_lt h1 hy.1))
   exact intervalIntegral.intervalIntegral_pos_of_pos_on

@@ -24,6 +24,9 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-a
 `ΔH ∝ δ^{3/2}`; the note obtains them from a numerical log–log fit and a normal-form argument).
 
 Results.
+* `hasDerivAt_washboard`, `hasDerivAt_washboard_deriv` : `V' = −(c − A sin(θ + φ))`,
+  `V'' = A cos(θ + φ)`; `not_bddBelow_of_le_tilt`, `washboard_not_bddBelow` : a potential below a
+  tilted line, in particular a tilted washboard (`c ≠ 0`), is unbounded below.
 * `potential_sub_eq_neg_integral` : `V(θ₂) − V(θ₁) = −∫_{θ₁}^{θ₂} (c − A sin(t + φ)) dt`.
 * `zero_mem_Ioo_iff` : `θ_s` is the only zero strictly between the two saddles.
 * `barrierUp_eq` : `V(θ_u⁺) − V(θ_s) = 2√(A² − c²) − 2c·arccos(c/A)`;
@@ -32,7 +35,11 @@ Results.
 * `min_barrier_eq` : the lower of the two barriers is
   `ΔV = 2√(A² − c²) − 2|c|·arccos(|c|/A)` (this closed form is the *minimum* over the two
   neighbouring saddles).
-* `barrierUp_pos`, `barrierDown_pos` : both barriers are positive.
+* `barrierUp_pos`, `barrierDown_pos` : both barriers are positive; `barrier_at_zero` : both are
+  `2A` without tilt; `barrier_tendsto_fold` : as `c → A⁻` the barrier above vanishes and the one
+  below tends to `2πA`.
+* `washboard_curvatures`, `washboard_prefactor` : `V''(θ_s) = √(A² − c²)`,
+  `V''(θ_u⁺) = −√(A² − c²)`, `√(V''(θ_s) |V''(θ_u⁺)|) = √(A² − c²)` (the Kramers prefactor).
 * Fold asymptotics, with `u = arccos(|c|/A)`: `ΔV = A (2 sin u − 2u cos u)`,
   `(2/3)u³ − u⁵/15 ≤ 2 sin u − 2u cos u ≤ (2/3)u³` (`washboard_bounds`); the restoring slope at the
   stable point is `g = √(A² − c²)` with `g² = δ (2A − δ)`, `δ = A − |c|` (`slope_sq_eq`); and
@@ -65,6 +72,32 @@ variable {c A φ : ℝ}
   convert h2 using 1
   · funext x; simp [washboard]
   · ring
+
+/-- The curvature `V''(θ) = A cos(θ + φ)`, the derivative of `V' = −(c − A sin(θ + φ))`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_washboard_deriv (θ : ℝ) :
+    HasDerivAt (fun θ => -(c - A * sin (θ + φ))) (A * cos (θ + φ)) θ := by
+  have h := (((hasDerivAt_id θ).add_const φ).sin.const_mul A).sub_const c
+  convert h using 1
+  · funext x; simp [neg_sub]
+  · simp
+
+/-- A potential below a tilted line, `f θ ≤ −cθ + M` with `c ≠ 0`, is unbounded below. -/
+@[tmio T, powerlib_foundation] theorem not_bddBelow_of_le_tilt {f : ℝ → ℝ} {M : ℝ} (hc : c ≠ 0)
+    (hf : ∀ θ, f θ ≤ -(c * θ) + M) : ¬ BddBelow (Set.range f) := by
+  rintro ⟨m, hm⟩
+  have h := (hm ⟨(M - m + 1) / c, rfl⟩).trans (hf _)
+  have hcθ : c * ((M - m + 1) / c) = M - m + 1 := by field_simp
+  linarith
+
+/-- A tilted washboard (`c ≠ 0`) is unbounded below: `V(θ) ≤ −cθ + |A|`
+(`not_bddBelow_of_le_tilt`). -/
+@[tmio T, powerlib_foundation] theorem washboard_not_bddBelow (hc : c ≠ 0) :
+    ¬ BddBelow (Set.range (washboard c A φ)) :=
+  not_bddBelow_of_le_tilt (M := |A|) hc fun θ => by
+    have := (neg_le_abs (A * cos (θ + φ))).trans_eq (abs_mul A _)
+    have := mul_le_of_le_one_right (abs_nonneg A) (abs_cos_le_one (θ + φ))
+    simp only [washboard]
+    linarith
 
 /-- `V(θ₂) − V(θ₁) = −∫_{θ₁}^{θ₂} (c − A sin(t + φ)) dt`. -/
 @[tmio T, powerlib_foundation] theorem potential_sub_eq_neg_integral (θ₁ θ₂ : ℝ) :
@@ -117,6 +150,30 @@ def barrierDown (c A φ : ℝ) : ℝ :=
     show -π - arcsin (c / A) = -(π + arcsin (c / A)) by ring, cos_neg, cos_add, cos_pi, sin_pi,
     cos_arcsin, neg_div, arccos_neg, arccos_eq_pi_div_two_sub_arcsin]
   linear_combination 2 * h
+
+/-- Without tilt both barriers are `2A` (`A > 0`). -/
+@[tmio T, powerlib_foundation] theorem barrier_at_zero (hA : 0 < A) :
+    barrierUp 0 A φ = 2 * A ∧ barrierDown 0 A φ = 2 * A := by
+  rw [barrierUp_eq hA, barrierDown_eq hA]
+  simp [Real.sqrt_sq hA.le]
+
+/-- At the fold `c → A⁻` the barrier towards the saddle above vanishes and the one below tends
+to the tilt per period `2πA` (`A > 0`). -/
+@[tmio T, powerlib_foundation] theorem barrier_tendsto_fold (hA : 0 < A) :
+    Filter.Tendsto (fun c => barrierUp c A φ) (nhdsWithin A (Iio A)) (nhds 0) ∧
+      Filter.Tendsto (fun c => barrierDown c A φ) (nhdsWithin A (Iio A)) (nhds (2 * π * A)) := by
+  have hac := continuous_arccos
+  have hAA : A / A = 1 := div_self hA.ne'
+  simp_rw [barrierUp_eq hA, barrierDown_eq hA]
+  constructor
+  · have h := ((by fun_prop : Continuous fun c : ℝ => 2 * √(A ^ 2 - c ^ 2) -
+      2 * c * arccos (c / A)).tendsto A).mono_left (nhdsWithin_le_nhds (s := Iio A))
+    rwa [hAA, arccos_one, sub_self, Real.sqrt_zero, mul_zero, mul_zero, sub_zero] at h
+  · have h := ((by fun_prop : Continuous fun c : ℝ => 2 * √(A ^ 2 - c ^ 2) +
+      2 * c * arccos (-c / A)).tendsto A).mono_left (nhdsWithin_le_nhds (s := Iio A))
+    rw [neg_div, hAA, arccos_neg_one, sub_self, Real.sqrt_zero, mul_zero, zero_add] at h
+    convert h using 2
+    ring
 
 /-- The two barriers differ by the tilt over one period: `ΔV⁻ − ΔV⁺ = 2πc`. -/
 @[tmio T, powerlib_foundation] theorem barrierDown_sub_barrierUp (hA : 0 < A) :
@@ -260,8 +317,24 @@ def barrierDown (c A φ : ℝ) : ℝ :=
     norm_num at this
     linarith
 
+/-- Curvatures at the stable zero and at the saddle above (`A > 0`):
+`V''(θ_s) = A cos(θ_s + φ) = √(A² − c²)` (the restoring slope `g`),
+`V''(θ_u⁺) = −√(A² − c²)` (`hasDerivAt_washboard_deriv`). -/
+@[tmio T, powerlib_foundation] theorem washboard_curvatures (hA : 0 < A) :
+    A * cos (thetaS c A φ + φ) = √(A ^ 2 - c ^ 2) ∧
+      A * cos (thetaUp c A φ + φ) = -√(A ^ 2 - c ^ 2) := by
+  rw [thetaS, thetaUp, sub_add_cancel, sub_add_cancel, cos_pi_sub, cos_arcsin, mul_neg, A_sqrt hA]
+  exact ⟨rfl, rfl⟩
+
+/-- Kramers prefactor algebra: `√(V''(θ_s) |V''(θ_u⁺)|) = √(A² − c²)` (`A > 0`). -/
+@[tmio T, powerlib_foundation] theorem washboard_prefactor (hA : 0 < A) :
+    √(A * cos (thetaS c A φ + φ) * |A * cos (thetaUp c A φ + φ)|) = √(A ^ 2 - c ^ 2) := by
+  obtain ⟨h1, h2⟩ := washboard_curvatures (c := c) (φ := φ) hA
+  rw [h1, h2, abs_neg, abs_of_nonneg (Real.sqrt_nonneg _), ← sq, Real.sqrt_sq (Real.sqrt_nonneg _)]
+
 /-- Restoring slope at the stable point versus the fold distance `δ = A − |c|`:
-`g = √(A² − c²)` satisfies `g² = δ (2A − δ)`. -/
+`g = √(A² − c²)` (the curvature `V''(θ_s)`, `washboard_curvatures`) satisfies
+`g² = δ (2A − δ)`. -/
 @[tmio T, powerlib_foundation] theorem slope_sq_eq (hc : |c| ≤ A) :
     √(A ^ 2 - c ^ 2) ^ 2 = (A - |c|) * (2 * A - (A - |c|)) := by
   have h : 0 ≤ A ^ 2 - c ^ 2 := by

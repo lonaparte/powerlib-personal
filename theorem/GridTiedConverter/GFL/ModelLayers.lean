@@ -252,18 +252,14 @@ def literatureCCField (y : Fin 6 → ℝ) : Fin 6 → ℝ :=
 
 end CCParams
 
-/-- The reversal `diag(1, 1, −1, −1, −1, −1)` of the current-loop coordinates
-`(i_d, i_q, ξ_d, ξ_q)` of the six-state carrier. -/
-abbrev ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Dynamics.signMatrix ![1, 1, -1, -1, -1, -1]
-
 /-- §D8 boundary translation of the six-state carrier: its field is the OUT-positive source field
-transported by the reversal of `(i_d, i_q, ξ_d, ξ_q)`, with the current references reversed. -/
+transported by the reversal `diag(1, 1, −1, −1, −1, −1)` of the current-loop coordinates
+`(i_d, i_q, ξ_d, ξ_q)`, with the current references reversed. -/
 @[tmio M, powerlib_domain] theorem lift_ccField_eq_transport (q : CCParams) :
     Dynamics.lift q.ccField =
-      Dynamics.transportField (Dynamics.matrixCoord ccReversal (Dynamics.signMatrix_isUnit _)) 0
+      Dynamics.transportField (Dynamics.signCoord ![1, 1, -1, -1, -1, -1]) 0
         (Dynamics.lift
           ({ q with idRef := -q.idRef, iqRef := -q.iqRef } : CCParams).literatureCCField) := by
-  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext y
   apply WithLp.ofLp_injective
   ext i

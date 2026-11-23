@@ -8,6 +8,7 @@ import theorem.Spectral.Local
 import theorem.Family.Reading
 import theorem.Family.PassiveOnly
 import theorem.PH.FlatDirection
+import theorem.Potential.Barrier
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -31,9 +32,9 @@ Classical machine (`classicalSM`, T-ph §1.7 (1.12)), continuous time:
 * Not modelled: flux dynamics, AVR, governor, network beyond the single infinite bus,
   saturation, delay. Equilibrium-level and trajectory-level results under zero input `u = 0`.
 * Swing reading: the swing parameters `ClassicalSMParams.toSwing` are `M, D, P_m`, `k₁ = k₃ = 0`,
-  `k₂ = b`; under zero input the pH field is that swing field in the coordinates
-  `(δ, p) = (δ, M ω)` (`classicalSM_zeroInputField_eq_transport`, `T = diag(1, M)`). The swing
-  family has free parameters and no port; the image of `ClassicalSM.Model.toSwing` is the part
+  `k₂ = b` (`SwingParams.sinusoid`); under zero input the pH field is that swing field in the
+  coordinates `(δ, p) = (δ, M ω)` (`classicalSM_zeroInputField_eq_transport`, `T = diag(1, M)`). The
+  swing family has free parameters and no port; the image of `ClassicalSM.Model.toSwing` is the part
   with `M > 0`, `D ≥ 0`, `k₁ = k₃ = 0`, `k₂ > 0`.
 Seven-state dq machine (`syncMachine7`, T-sync-machine §1.13), continuous time:
 * State order `x = (Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ) ∈ ℝ⁷` (`Ψ_0` omitted, three-wire);
@@ -91,7 +92,7 @@ Family and connection conclusions.
   conservation have no translation (the whole, inconsistent, language).
 * Equivalence with the swing family. The canonical family is `Swing.family`; on every flow
   sentence `ClassicalSM.family` is its pullback through `ClassicalSM.Model.toSwing`
-  (`⟨⟨M, D, P_m, 0, b, 0⟩, δ*⟩`), for both connections: the denotations
+  (`⟨SwingParams.sinusoid M D P_m b, δ*⟩`), for both connections: the denotations
   (`ClassicalSM.mem_den_flow_iff_swing`, member by member; every
   flow sentence is invariant under `diag(1, M)`, `Spectral.mem_den_flow_iff_of_transport`) and the
   translations (`ClassicalSM.realize_translate_flow_eq_preimage`: on the image positive inertia
@@ -231,19 +232,15 @@ def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
     dotProduct, Fin.sum_univ_two]
 
 /-- Correction: the classical-machine Hamiltonian is unbounded below whenever `P_m ≠ 0`,
-so T-ph §1.1 structural assumption 3 fails for (1.12). -/
+so T-ph §1.1 structural assumption 3 fails for (1.12): at `p = 0` it is the tilted washboard
+`−P_m δ − b cos δ` (`Potential.Barrier.washboard_not_bddBelow`). -/
 @[tmio M, powerlib_domain] theorem classicalSM_hamiltonian_not_bddBelow (p : ClassicalSMParams)
     (hPm : p.Pm ≠ 0) : ¬ BddBelow (Set.range (classicalSM p).H) := by
   rintro ⟨c, hc⟩
-  set δ : ℝ := (p.b - c + 1) / p.Pm
-  have hx := hc ⟨WithLp.toLp 2 ![δ, 0], rfl⟩
-  have hcos := Real.neg_one_le_cos δ
-  have hPmδ : p.Pm * δ = p.b - c + 1 := by
-    simp only [δ]
-    field_simp
-  simp only [classicalSM, classicalSM_H] at hx
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hx
-  nlinarith [p.b_pos]
+  refine Potential.Barrier.washboard_not_bddBelow (A := p.b) (φ := 0) hPm ⟨c, ?_⟩
+  rintro _ ⟨δ, rfl⟩
+  simpa [classicalSM, classicalSM_H, Potential.Barrier.washboard] using
+    hc ⟨WithLp.toLp 2 ![δ, 0], rfl⟩
 
 /-- Equilibria of the unforced classical machine: `b sin δ = P_m` and `p = 0`. -/
 @[tmio M, powerlib_domain] theorem classicalSM_isEquilibrium_iff (p : ClassicalSMParams) (x : State 2) :
@@ -385,8 +382,8 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
 
 /-- The classical machine as the canonical swing model
 `M ω̇ = P_m − (k₁ + k₂ sin(δ − k₃)) − D ω` (`theorem/PowerSystem/Synchronous/Swing.lean`) with
-`k₁ = k₃ = 0`, `k₂ = b`. -/
-def ClassicalSMParams.toSwing (p : ClassicalSMParams) : SwingParams := ⟨p.M, p.D, p.Pm, 0, p.b, 0⟩
+`k₁ = k₃ = 0`, `k₂ = b`: the sine-curve model `SwingParams.sinusoid M D P_m b`. -/
+def ClassicalSMParams.toSwing (p : ClassicalSMParams) : SwingParams := .sinusoid p.M p.D p.Pm p.b
 
 /-- Linearization of the unforced classical machine at `(δ*, 0)`:
 `A = (J − R) ∇²H = !![0, 1/M; −b cos δ*, −D/M]`, the swing Jacobian of `toSwing`

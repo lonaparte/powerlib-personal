@@ -23,9 +23,9 @@ Results.
 * `osc2 A σ ω_d p t = e^{−σ t} (cos(ω_d t) p + (sin(ω_d t)/ω_d) (A + σ I) p)` solves `ẏ = A y`,
   `y(0) = p` (`hasDerivAt_osc2`, `osc2_zero`). The proof uses only the 2×2 Cayley–Hamilton
   identity (`Criteria.sq_eq_trace_smul_sub_det_smul_fin_two`) in the form
-  `(A + σ I)² = −ω_d² I` (`shift_sq_mulVec`). Uniqueness of global solutions (Mathlib
-  `ODE_solution_unique_univ`) then gives the flow law `osc2 p (s + t) = osc2 (osc2 p s) t`
-  (`osc2_add`).
+  `(A + σ I)² = −ω_d² I` (`shift_sq`). `osc2` is the matrix exponential applied to the initial
+  state, `osc2 p t = e^{tA} p` (`osc2_eq_exp`, by `exp_smul_of_sq_eq`), so the flow law
+  `osc2 p (s + t) = osc2 (osc2 p s) t` (`osc2_add`) is `e^{(s+t)A} = e^{tA} e^{sA}`.
 * `trajectory_eq_osc2` connects this to any two-state linear plant (`Linear.Plant 2 p`) whose
   state matrix has that trace and determinant: every forward solution from `t = 0` under a
   constant input `u` with equilibrium `e` is `e + osc2 A σ ω_d (x 0 − e) t` for `t ≥ 0` (explicit
@@ -60,6 +60,70 @@ namespace powerlib.LTI
 open Set Filter Matrix
 open scoped Topology
 
+/-! ## The matrix exponential as the solution of `Ė = A E` -/
+
+section MatrixExp
+
+open scoped Matrix.Norms.Frobenius
+
+variable {n : ℕ}
+
+/-- Uniqueness of the matrix exponential: a differentiable `E` with `Ė = A E`, `E 0 = 1` is
+`t ↦ e^{tA}` (`Dynamics.eq_exp_smul_mul_of_hasDerivAt`). -/
+@[tmio T, powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
+    {E : ℝ → Matrix (Fin n) (Fin n) ℝ} (h0 : E 0 = 1) (hE : ∀ t, HasDerivAt E (A * E t) t)
+    (t : ℝ) : E t = NormedSpace.exp (t • A) := by
+  rw [Dynamics.eq_exp_smul_mul_of_hasDerivAt hE t, h0, mul_one]
+  rfl
+
+/-- Closed form of `e^{tA}` when `B = A + a I` satisfies `B² = −w² I` (`w ≠ 0`):
+`e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`. -/
+@[tmio T, powerlib_foundation] theorem exp_smul_of_sq_eq {A : Matrix (Fin n) (Fin n) ℝ} {a w : ℝ}
+    (hw : w ≠ 0) (hB : (A + a • 1) * (A + a • 1) = -(w ^ 2) • (1 : Matrix (Fin n) (Fin n) ℝ))
+    (t : ℝ) :
+    NormedSpace.exp (t • A) = (Real.exp (-a * t) * Real.cos (w * t)) • (1 : Matrix _ _ ℝ) +
+      (Real.exp (-a * t) * Real.sin (w * t) / w) • (A + a • 1) := by
+  set B := A + a • (1 : Matrix (Fin n) (Fin n) ℝ) with hBdef
+  set f1 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.cos (w * s) with hf1
+  set f2 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.sin (w * s) / w with hf2
+  have hd1 : ∀ s, HasDerivAt f1 (-a * f1 s - w ^ 2 * f2 s) s := by
+    intro s
+    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
+      have := ((hasDerivAt_id s).const_mul (-a)).exp
+      simpa using this
+    have hc : HasDerivAt (fun s => Real.cos (w * s)) (-Real.sin (w * s) * w) s := by
+      have := ((hasDerivAt_id s).const_mul w).cos
+      simpa [mul_comm] using this
+    convert! he.mul hc using 1
+    simp only [hf1, hf2]
+    field_simp
+    ring
+  have hd2 : ∀ s, HasDerivAt f2 (f1 s - a * f2 s) s := by
+    intro s
+    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
+      have := ((hasDerivAt_id s).const_mul (-a)).exp
+      simpa using this
+    have hs : HasDerivAt (fun s => Real.sin (w * s)) (Real.cos (w * s) * w) s := by
+      have := ((hasDerivAt_id s).const_mul w).sin
+      simpa [mul_comm] using this
+    convert! (he.mul hs).div_const w using 1
+    simp only [hf1, hf2]
+    field_simp
+    ring
+  have hA : A = B - a • (1 : Matrix (Fin n) (Fin n) ℝ) := by rw [hBdef]; abel
+  have key := exp_smul_eq_of_hasDerivAt (A := A)
+    (E := fun s => f1 s • (1 : Matrix (Fin n) (Fin n) ℝ) + f2 s • B)
+    (by simp [hf1, hf2]) (fun s => by
+      have h := ((hd1 s).smul_const (1 : Matrix (Fin n) (Fin n) ℝ)).add ((hd2 s).smul_const B)
+      convert! h using 1
+      simp only [hA, sub_mul, mul_add, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hB]
+      module) t
+  rw [← key]
+
+end MatrixExp
+
+/-! ## The closed-form flow `osc2` -/
+
 /-- Closed-form solution of `ẏ = A y`, `y(0) = p`, when `A` has eigenvalues `−σ ± j ω_d`. -/
 def osc2 (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ) (p : Fin 2 → ℝ) (t : ℝ) : Fin 2 → ℝ :=
   Real.exp (-(σ * t)) •
@@ -68,19 +132,16 @@ def osc2 (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ) (p : Fin 2 → ℝ) (t 
 variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
 
 /-- `(A + σ I)² = −ω_d² I` when `tr A = −2σ`, `det A = σ² + ω_d²`. -/
-@[tmio T, powerlib_foundation] theorem shift_sq_mulVec (htr : A.trace = -2 * σ)
-    (hdet : A.det = σ ^ 2 + ωd ^ 2) (p : Fin 2 → ℝ) :
-    (A + σ • 1) *ᵥ ((A + σ • 1) *ᵥ p) = -(ωd ^ 2) • p := by
-  rw [Matrix.mulVec_mulVec]
-  have h : (A + σ • 1) * (A + σ • 1) = -(ωd ^ 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
-    have hA := Criteria.sq_eq_trace_smul_sub_det_smul_fin_two A
-    rw [sq, htr, hdet] at hA
-    calc (A + σ • 1) * (A + σ • 1) = A * A + (2 * σ) • A + σ ^ 2 • (1 : Matrix _ _ ℝ) := by
-          simp only [add_mul, mul_add, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
-            Matrix.mul_one, smul_smul]
-          module
-      _ = _ := by rw [hA]; module
-  rw [h, Matrix.smul_mulVec, Matrix.one_mulVec]
+@[tmio T, powerlib_foundation] theorem shift_sq (htr : A.trace = -2 * σ)
+    (hdet : A.det = σ ^ 2 + ωd ^ 2) :
+    (A + σ • 1) * (A + σ • 1) = -(ωd ^ 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
+  have hA := Criteria.sq_eq_trace_smul_sub_det_smul_fin_two A
+  rw [sq, htr, hdet] at hA
+  calc (A + σ • 1) * (A + σ • 1) = A * A + (2 * σ) • A + σ ^ 2 • (1 : Matrix _ _ ℝ) := by
+        simp only [add_mul, mul_add, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
+          Matrix.mul_one, smul_smul]
+        module
+    _ = _ := by rw [hA]; module
 
 @[tmio T, simp, powerlib_foundation] theorem osc2_zero (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ)
     (p : Fin 2 → ℝ) : osc2 A σ ωd p 0 = p := by
@@ -94,8 +155,9 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
   have hAp : A *ᵥ p = q - σ • p := by
     rw [hq, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]; abel
   have hAq : A *ᵥ q = -(ωd ^ 2) • p - σ • q := by
-    have h := shift_sq_mulVec htr hdet p
-    rw [← hq, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at h
+    have h : (A + σ • 1) *ᵥ q = -(ωd ^ 2) • p := by
+      rw [hq, Matrix.mulVec_mulVec, shift_sq htr hdet, Matrix.smul_mulVec, Matrix.one_mulVec]
+    rw [Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at h
     rw [eq_sub_iff_add_eq, h]
   have he : HasDerivAt (fun s => Real.exp (-(σ * s))) (Real.exp (-(σ * t)) * (-σ)) t := by
     have := ((hasDerivAt_id t).const_mul σ).neg.exp
@@ -115,31 +177,32 @@ variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
   field_simp
   ring
 
-@[tmio T, powerlib_foundation] private theorem lipschitz_mulVec (A : Matrix (Fin 2) (Fin 2) ℝ) :
-    LipschitzWith ‖LinearMap.toContinuousLinearMap (Matrix.toLin' A)‖₊
-      (fun y : Fin 2 → ℝ => A *ᵥ y) := by
-  have h := (LinearMap.toContinuousLinearMap (Matrix.toLin' A)).lipschitzWith
-  have hf : (fun y : Fin 2 → ℝ => A *ᵥ y) =
-      ⇑(LinearMap.toContinuousLinearMap (Matrix.toLin' A)) := by
-    funext y; simp
-  rw [hf]; exact h
+section Exp
 
-/-- Flow law: `osc2 p (s + t) = osc2 (osc2 p s) t`. -/
+open scoped Matrix.Norms.Frobenius
+
+/-- `osc2` is the matrix exponential applied to the initial state: `osc2 p t = e^{tA} p`
+(`exp_smul_of_sq_eq` with `(A + σ I)² = −ω_d² I`). -/
+@[tmio T, powerlib_foundation] theorem osc2_eq_exp (htr : A.trace = -2 * σ)
+    (hdet : A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
+    osc2 A σ ωd p t = NormedSpace.exp (t • A) *ᵥ p := by
+  rw [exp_smul_of_sq_eq hωd (shift_sq htr hdet) t, osc2]
+  simp only [Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, neg_mul]
+  module
+
+/-- Flow law: `osc2 p (s + t) = osc2 (osc2 p s) t` (`e^{(s+t)A} = e^{tA} e^{sA}`). -/
 @[tmio T, powerlib_foundation] theorem osc2_add (htr : A.trace = -2 * σ)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (s t : ℝ) :
     osc2 A σ ωd p (s + t) = osc2 A σ ωd (osc2 A σ ωd p s) t := by
-  have hf : ∀ u, HasDerivAt (fun u => osc2 A σ ωd p (s + u))
-      (A *ᵥ osc2 A σ ωd p (s + u)) u ∧ osc2 A σ ωd p (s + u) ∈ (univ : Set (Fin 2 → ℝ)) := by
-    intro u
-    refine ⟨?_, trivial⟩
-    exact HasDerivAt.comp_const_add s u (hasDerivAt_osc2 htr hdet hωd p (s + u))
-  have hg : ∀ u, HasDerivAt (fun u => osc2 A σ ωd (osc2 A σ ωd p s) u)
-      (A *ᵥ osc2 A σ ωd (osc2 A σ ωd p s) u) u ∧
-        osc2 A σ ωd (osc2 A σ ωd p s) u ∈ (univ : Set (Fin 2 → ℝ)) :=
-    fun u => ⟨hasDerivAt_osc2 htr hdet hωd _ u, trivial⟩
-  have heq := ODE_solution_unique_univ (v := fun _ y => A *ᵥ y) (s := fun _ => univ)
-    (t₀ := 0) (fun _ => (lipschitz_mulVec A).lipschitzOnWith) hf hg (by simp)
-  exact congrFun heq t
+  have h : NormedSpace.exp ((s + t) • A) = NormedSpace.exp (t • A) * NormedSpace.exp (s • A) := by
+    rw [add_comm, add_smul]
+    refine NormedSpace.exp_add_of_commute_of_mem_ball (𝕂 := ℝ)
+      (((Commute.refl A).smul_left t).smul_right s) ?_ ?_ <;>
+    · rw [NormedSpace.expSeries_radius_eq_top]; simp
+  simp only [osc2_eq_exp htr hdet hωd]
+  rw [h, Matrix.mulVec_mulVec]
+
+end Exp
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
@@ -449,67 +512,5 @@ end DampedResponse
     linarith
   · rw [hx' hT0.le, dampedResp_crit hωd hr]
     ring
-
-/-! ## The matrix exponential as the solution of `Ė = A E` -/
-
-section MatrixExp
-
-open scoped Matrix.Norms.Frobenius
-
-variable {n : ℕ}
-
-/-- Uniqueness of the matrix exponential: a differentiable `E` with `Ė = A E`, `E 0 = 1` is
-`t ↦ e^{tA}` (`Dynamics.eq_exp_smul_mul_of_hasDerivAt`). -/
-@[tmio T, powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
-    {E : ℝ → Matrix (Fin n) (Fin n) ℝ} (h0 : E 0 = 1) (hE : ∀ t, HasDerivAt E (A * E t) t)
-    (t : ℝ) : E t = NormedSpace.exp (t • A) := by
-  rw [Dynamics.eq_exp_smul_mul_of_hasDerivAt hE t, h0, mul_one]
-  rfl
-
-/-- Closed form of `e^{tA}` when `B = A + a I` satisfies `B² = −w² I` (`w ≠ 0`):
-`e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`. -/
-@[tmio T, powerlib_foundation] theorem exp_smul_of_sq_eq {A : Matrix (Fin n) (Fin n) ℝ} {a w : ℝ}
-    (hw : w ≠ 0) (hB : (A + a • 1) * (A + a • 1) = -(w ^ 2) • (1 : Matrix (Fin n) (Fin n) ℝ))
-    (t : ℝ) :
-    NormedSpace.exp (t • A) = (Real.exp (-a * t) * Real.cos (w * t)) • (1 : Matrix _ _ ℝ) +
-      (Real.exp (-a * t) * Real.sin (w * t) / w) • (A + a • 1) := by
-  set B := A + a • (1 : Matrix (Fin n) (Fin n) ℝ) with hBdef
-  set f1 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.cos (w * s) with hf1
-  set f2 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.sin (w * s) / w with hf2
-  have hd1 : ∀ s, HasDerivAt f1 (-a * f1 s - w ^ 2 * f2 s) s := by
-    intro s
-    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
-      have := ((hasDerivAt_id s).const_mul (-a)).exp
-      simpa using this
-    have hc : HasDerivAt (fun s => Real.cos (w * s)) (-Real.sin (w * s) * w) s := by
-      have := ((hasDerivAt_id s).const_mul w).cos
-      simpa [mul_comm] using this
-    convert! he.mul hc using 1
-    simp only [hf1, hf2]
-    field_simp
-    ring
-  have hd2 : ∀ s, HasDerivAt f2 (f1 s - a * f2 s) s := by
-    intro s
-    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
-      have := ((hasDerivAt_id s).const_mul (-a)).exp
-      simpa using this
-    have hs : HasDerivAt (fun s => Real.sin (w * s)) (Real.cos (w * s) * w) s := by
-      have := ((hasDerivAt_id s).const_mul w).sin
-      simpa [mul_comm] using this
-    convert! (he.mul hs).div_const w using 1
-    simp only [hf1, hf2]
-    field_simp
-    ring
-  have hA : A = B - a • (1 : Matrix (Fin n) (Fin n) ℝ) := by rw [hBdef]; abel
-  have key := exp_smul_eq_of_hasDerivAt (A := A)
-    (E := fun s => f1 s • (1 : Matrix (Fin n) (Fin n) ℝ) + f2 s • B)
-    (by simp [hf1, hf2]) (fun s => by
-      have h := ((hd1 s).smul_const (1 : Matrix (Fin n) (Fin n) ℝ)).add ((hd2 s).smul_const B)
-      convert! h using 1
-      simp only [hA, sub_mul, mul_add, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hB]
-      module) t
-  rw [← key]
-
-end MatrixExp
 
 end powerlib.LTI

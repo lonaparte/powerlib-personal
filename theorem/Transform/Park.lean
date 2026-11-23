@@ -44,8 +44,8 @@ Results.
 * `parkABC θ = park θ · clarke` is the amplitude-invariant three-phase Park of `T-PU.md` §1.7;
   `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`, i.e.
   `V cvec(θ + φ)` (`balanced_eq_cvec`, zero sum by `cvec_sum`);
-  `negSeq V φ θ = V cvec(−(θ + φ))` is the negative-sequence signal (phases `b`, `c` swapped,
-  `negSeq_eq_cvec`), which is
+  `negSeq V φ θ = balanced V (−φ) (−θ) = V cvec(−(θ + φ))` is the negative-sequence signal
+  (phases `b`, `c` swapped, `negSeq_eq_cvec`), which is
   `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
 * The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
   frame angle `θ(t)`, constant or time-varying; for a first-order element `X ẋ = s − Y x` it
@@ -309,9 +309,9 @@ end Components
 def clarke : Matrix (Fin 2) (Fin 3) ℝ :=
   (2 / 3 : ℝ) • !![1, -1 / 2, -1 / 2; 0, Real.sqrt 3 / 2, -(Real.sqrt 3 / 2)]
 
-/-- Inverse amplitude-invariant Clarke `αβ → abc` (zero-sequence free). -/
-def clarkeInv : Matrix (Fin 3) (Fin 2) ℝ :=
-  !![1, 0; -1 / 2, Real.sqrt 3 / 2; -1 / 2, -(Real.sqrt 3 / 2)]
+/-- Inverse amplitude-invariant Clarke `αβ → abc` (zero-sequence free): `(3/2) clarkeᵀ`, i.e.
+`[[1, 0], [−1/2, √3/2], [−1/2, −√3/2]]`. -/
+def clarkeInv : Matrix (Fin 3) (Fin 2) ℝ := (3 / 2 : ℝ) • clarkeᵀ
 
 /-- Power-invariant Clarke `abc → αβ0` with zero-sequence row (`T-impedance-modeling.md` §1.1):
 the power-invariant Park matrix at angle `0`. -/
@@ -327,22 +327,22 @@ abbrev clarkePI : Matrix (Fin 3) (Fin 3) ℝ := parkMatrix 0
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [parkMatrix, parkRow, cvec_explicit, svec_explicit, k, ← h]
 
-@[tmio M, powerlib_domain] theorem clarke_mul_clarkeInv : clarke * clarkeInv = 1 := by
-  have h3 := sqrt3_sq
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [clarke, clarkeInv, Matrix.mul_apply, Fin.sum_univ_three] <;> linarith [h3]
-
 @[tmio M, powerlib_domain] theorem clarke_mul_transpose : clarke * clarkeᵀ = (2 / 3 : ℝ) • 1 := by
   have h3 := sqrt3_sq
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [clarke, Matrix.mul_apply, Fin.sum_univ_three] <;> linarith [h3]
+
+@[tmio M, powerlib_domain] theorem clarke_mul_clarkeInv : clarke * clarkeInv = 1 := by
+  rw [clarkeInv, Matrix.mul_smul, clarke_mul_transpose, smul_smul]
+  norm_num
 
 /-- On zero-sequence-free vectors (`x_a + x_b + x_c = 0`) the inverse Clarke reconstructs `abc`. -/
 @[tmio M, powerlib_domain] theorem clarkeInv_mulVec_clarke_mulVec (x : Fin 3 → ℝ)
     (hx : x 0 + x 1 + x 2 = 0) : clarkeInv *ᵥ (clarke *ᵥ x) = x := by
   have h3 := sqrt3_sq
   ext i; fin_cases i <;>
-    simp [clarke, clarkeInv, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
+    simp [clarke, clarkeInv, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Fin.sum_univ_two] <;>
+    ring_nf
   · linear_combination (-1/3) * hx
   · linear_combination (-1/3) * hx + (1/6) * (x 1 - x 2) * h3
   · linear_combination (-1/3) * hx - (1/6) * (x 1 - x 2) * h3
@@ -352,9 +352,9 @@ zero-sequence free. -/
 @[tmio M, powerlib_domain] theorem dotProduct_eq_three_halves_clarke (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (3 / 2 : ℝ) * ((clarke *ᵥ v) ⬝ᵥ (clarke *ᵥ i)) := by
-  have h3 := sqrt3_sq
-  simp [clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
-  linear_combination (1/3) * (v 0 + v 1 + v 2) * hi - (1/6) * (v 1 - v 2) * (i 1 - i 2) * h3
+  conv_lhs => rw [← clarkeInv_mulVec_clarke_mulVec i hi]
+  rw [clarkeInv, Matrix.smul_mulVec, dotProduct_smul, Matrix.dotProduct_mulVec,
+    Matrix.vecMul_transpose, smul_eq_mul]
 
 /-! ## Three-phase Park and balanced positive-sequence signals -/
 
@@ -407,22 +407,20 @@ section NegativeSequence
 open Complex
 
 /-- Negative-sequence three-phase signal `V cos(θ + φ)`, `V cos(θ + 2π/3 + φ)`,
-`V cos(θ − 2π/3 + φ)` (phases `b`, `c` swapped with respect to `Transform.balanced`). -/
-def negSeq (V φ θ : ℝ) : Fin 3 → ℝ :=
-  ![V * Real.cos (θ + φ), V * Real.cos (θ + 2 * Real.pi / 3 + φ),
-    V * Real.cos (θ - 2 * Real.pi / 3 + φ)]
+`V cos(θ − 2π/3 + φ)` (phases `b`, `c` swapped with respect to `Transform.balanced`): the
+balanced signal at the reversed angle and phase, `balanced V (−φ) (−θ)` (`cos` is even), i.e.
+`V cvec(−(θ + φ))` (`balanced_eq_cvec`). -/
+def negSeq (V φ θ : ℝ) : Fin 3 → ℝ := balanced V (-φ) (-θ)
 
-/-- The negative-sequence signal is the balanced one at the reversed angle:
-`V` times the phase-axis cosines at `−(θ + φ)`. -/
+/-- The negative-sequence signal is `V` times the phase-axis cosines at `−(θ + φ)`. -/
 @[tmio M, powerlib_domain] theorem negSeq_eq_cvec (V φ θ : ℝ) :
     negSeq V φ θ = V • cvec (-(θ + φ)) := by
-  ext x; fin_cases x <;> simp [negSeq, cvec, phase] <;> left <;> rw [← Real.cos_neg] <;> ring_nf
+  rw [negSeq, balanced_eq_cvec, neg_add]
 
 /-- A negative-sequence signal is `V e^{−j(θ+φ)}` in αβ: `(V cos(θ + φ), −V sin(θ + φ))`. -/
 @[tmio M, powerlib_domain] theorem clarke_mulVec_negSeq (V φ θ : ℝ) :
     Transform.clarke *ᵥ negSeq V φ θ = ![V * Real.cos (θ + φ), -(V * Real.sin (θ + φ))] := by
-  rw [negSeq_eq_cvec, ← add_zero (-(θ + φ)), ← balanced_eq_cvec, clarke_mulVec_balanced]
-  simp only [add_zero, Real.cos_neg, Real.sin_neg, mul_neg]
+  rw [negSeq, clarke_mulVec_balanced, ← neg_add, Real.cos_neg, Real.sin_neg, mul_neg]
 
 /-- In complex form, `toComplex (clarke · negSeq) = V e^{−j(θ+φ)}`. -/
 @[tmio M, powerlib_domain] theorem toComplex_clarke_negSeq (V φ θ : ℝ) :

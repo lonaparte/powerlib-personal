@@ -26,9 +26,10 @@ continuity of `Δ_sup` at `c_α = 0`), §9 (two-circle criterion). The note's §
 recorded as hand-checked; every identity is re-proved here.
 
 Results.
-* §6–§7: `det` of the second-order slow flow is `a² + (Δ + c_ω y)² − g2 y/4`; at the tongue
-  centre `Δ = 0` it equals `q(y) = S y² − Q y + α₀² = a(y)² − h(y)²` with
-  `h² = g2 y/4 − c_ω² y²` (`σ₊σ₋ = q`); exponential stability of the second-order slow flow is
+* §6–§7: `det` of the second-order slow flow is `a² − D` with `D = g2 y/4 − (Δ + c_ω y)²`
+  (`detunedD`, `det_secondOrderMatrix`); at the tongue centre `Δ = 0` it equals
+  `q(y) = S y² − Q y + α₀² = a(y)² − h(y)²` with `h² = D(y, 0) = g2 y/4 − c_ω² y²` (`splitSq`;
+  `σ₊σ₋ = q`); exponential stability of the second-order slow flow is
   exactly the corrected criterion (`secondOrder_exponentiallyStable_iff`); the larger exponent
   `σ₊ = −a + h` is positive iff `a < 0 ∨ q(y) < 0` (`sigmaPlus_pos_iff`).
 * §8: `Λ* < 1 ↔ disc > 0` (`lamStar_lt_one_iff`, needs `α₀ > 0`, `g2 > 0`, `S > 0`);
@@ -71,8 +72,12 @@ variable (α₀ cα cω g2 : ℝ)
 /-- Amplitude-dependent damping `a(y) = α₀ − c_α y`. -/
 def damping (y : ℝ) : ℝ := α₀ - cα * y
 
-/-- Square of the splitting `h(y)² = g2 y/4 − c_ω² y²` (tongue centre). -/
-def splitSq (y : ℝ) : ℝ := g2 * y / 4 - cω ^ 2 * y ^ 2
+/-- `D(y, Δ) = g2 y/4 − (Δ + c_ω y)²`: the squared splitting of the detuned second-order slow
+flow (`det = a(y)² − D`, `det_secondOrderMatrix`). -/
+def detunedD (cω g2 Δ y : ℝ) : ℝ := g2 * y / 4 - (Δ + cω * y) ^ 2
+
+/-- Square of the splitting at the tongue centre, `h(y)² = D(y, 0) = g2 y/4 − c_ω² y²`. -/
+abbrev splitSq (y : ℝ) : ℝ := detunedD cω g2 0 y
 
 /-- `Q = g2/4 + 2α₀c_α`. -/
 def pumpQ : ℝ := g2 / 4 + 2 * α₀ * cα
@@ -106,20 +111,19 @@ variable {α₀ cα cω g2}
 /-- `q(y) = a(y)² − h(y)²` (`σ₊σ₋ = q` for `σ_± = −a ± h`). -/
 @[tmio T, powerlib_foundation] theorem tongue_eq_damping_sq_sub_splitSq (y : ℝ) :
     tongue α₀ cα cω g2 y = damping α₀ cα y ^ 2 - splitSq cω g2 y := by
-  simp only [tongue, damping, splitSq, pumpQ]; ring
+  simp only [tongue, damping, splitSq, detunedD, pumpQ]; ring
 
 @[tmio M, powerlib_foundation] theorem det_secondOrderMatrix (Δ y : ℝ) (g : ℂ)
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
-    (secondOrderMatrix α₀ cα cω Δ y g).det =
-      damping α₀ cα y ^ 2 + (Δ + cω * y) ^ 2 - g2 * y / 4 := by
-  simp only [secondOrderMatrix, det_slowFlowMatrix, hg]
+    (secondOrderMatrix α₀ cα cω Δ y g).det = damping α₀ cα y ^ 2 - detunedD cω g2 Δ y := by
+  simp only [secondOrderMatrix, det_slowFlowMatrix, hg, detunedD]
+  ring
 
 /-- At the tongue centre the determinant of the second-order slow flow is `q(y)`. -/
 @[tmio M, powerlib_foundation] theorem det_secondOrderMatrix_centre (y : ℝ) (g : ℂ)
     (hg : ‖g‖ ^ 2 = g2 * y / 4) :
     (secondOrderMatrix α₀ cα cω 0 y g).det = tongue α₀ cα cω g2 y := by
   rw [det_secondOrderMatrix 0 y g hg, tongue_eq_damping_sq_sub_splitSq]
-  simp only [splitSq]; ring
 
 /-- The corrected criterion (§6) is exactly exponential stability of the second-order slow
 flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
@@ -402,9 +406,6 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
   linarith
 
 /-! ## The detuned flip boundary (§8) -/
-
-/-- `D(y, Δ) = g2 y/4 − (Δ + c_ω y)²`. -/
-def detunedD (cω g2 Δ y : ℝ) : ℝ := g2 * y / 4 - (Δ + cω * y) ^ 2
 
 /-- The flip-form instability set `ℱ = {(y, Δ) : D ≥ 0 ∧ √D > a}`. -/
 def flipSet (α₀ cα cω g2 : ℝ) : Set (ℝ × ℝ) :=

@@ -1,6 +1,7 @@
 import theorem.PowerSystem.Network.Swing.Basic
 import theorem.Dynamics.Mechanical
 import theorem.Spectral.Equilibrium
+import theorem.PowerSystem.Network.Swing.CycleMinimum
 
 /-! # Networked swing equations: energy, degenerate linearizations, local asymptotic stability
 
@@ -23,7 +24,8 @@ Results.
 * Energy (static, domain): `potential` `U(θ) = −∑ Pₖθₖ − ½∑ₖ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)` with
   gradient `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`). The energy is the mechanical energy
   `Dynamics.Mechanical.energy M (U ∘ ground)` (kinetic energy plus the potential of the absolute
-  angles `angleMap z = ground (pos z)`, `angleMap_eq_ground`); its balance along the reduced field
+  angles `angleMap z = ground (pos z)`, `angleMap_eq_ground`, both in
+  `theorem/PowerSystem/Network/Swing/Basic.lean`); its balance along the reduced field
   is `lie_energy` (`Ė = −∑ Dₖωₖ² + ω₀ ∑ Pₖ`, every total power). At a power-balance point the
   reduced field is mechanical (below) and the energy laws are those of
   `theorem/Dynamics/Mechanical.lean` (`Dynamics.Mechanical.lie_energy_nonpos`, `energy_point`,
@@ -32,16 +34,17 @@ Results.
   field is the damped mechanical field `Dynamics.Mechanical.field relRate M D (U ∘ ground)` of
   `theorem/Dynamics/Mechanical.lean` (positions the relative angles, velocities the frequency
   deviations, `relRate ω = (ωᵢ₊₁ − ω₀)ᵢ`); `equilibrium_eq_point` (the selected point is the rest
-  point `Dynamics.Mechanical.point (relAngles θ)`),
-  `potential_ground_relAngles_add` (the potential in relative angles about `relAngles θ` is
+  point `Dynamics.Mechanical.point (relRate θ)`), `ground_relRate_add`,
+  `potential_ground_relRate_add` (the potential in relative angles about `relRate θ` is
   `U(θ + ground v)`), `critical_iff_balance` (its critical points along the reachable directions
   are the power-balance points), `fderiv_potential_comp_ground_relRate`.
 * Edge form and Taylor expansion: `potential_add_sub`
-  (`U(θ + u) − U(θ) = ½∑ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`, `g = edgeIncrement`; `B g` is the line
-  potential `CycleMinimum.edgeG` of `theorem/PowerSystem/Network/Swing/CycleMinimum.lean`),
+  (`U(θ + u) − U(θ) = ½∑ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`, `g = edgeIncrement`, the line potential
+  `CycleMinimum.edgeG (cos φ) (sin φ)` of `theorem/PowerSystem/Network/Swing/CycleMinimum.lean`),
   `edgeIncrement_taylor`, `exists_potential_lt` (a direction with `A₂ < 0`, or `A₂ = 0` and
-  `A₃ ≠ 0`, lowers the potential at arbitrarily small steps); `ground_sub_zero`,
-  `cubicForm_add_const` (the forms see a direction only up to a common shift).
+  `A₃ ≠ 0`, lowers the potential at arbitrarily small steps); `hessForm_add_const`,
+  `cubicForm_add_const` (the forms see a direction only up to a common shift, with
+  `Basic.ground_relRate`: `ground (relRate u) = u − u₀`).
 * Hurwitz test with signed weights: the converse direction `exists_hessForm_nonpos` of
   `jacobian_isHurwitz_of_hessForm` (`theorem/PowerSystem/Network/Swing/Basic.lean`, where `A₂` is
   `hessForm`): a non-Hurwitz Jacobian leaves a grounded direction with `A₂ ≤ 0`.
@@ -186,28 +189,6 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
 
 /-! ## Relative-angle displacements and the potential difference -/
 
-/-- Absolute angle displacement of relative angles `v` (reference angle `0`). -/
-def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
-
-@[tmio M, simp, powerlib_domain] theorem ground_zero (v : Fin n → ℝ) : ground v 0 = 0 := rfl
-
-@[tmio M, simp, powerlib_domain] theorem ground_succ (v : Fin n → ℝ) (i : Fin n) :
-    ground v i.succ = v i := rfl
-
-@[tmio M, powerlib_domain] theorem ground_smul (c : ℝ) (v : Fin n → ℝ) :
-    ground (c • v) = c • ground v := by
-  funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
-
-@[tmio M, powerlib_domain] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
-  funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
-
-@[tmio M, powerlib_domain] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
-    ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k
-  · simp [ground]
-  · simp only [ground_succ]; ring
-
 @[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     potential p (fun k => θ k + c) = potential p θ - c * ∑ k, p.P k := by
   simp only [potential, add_sub_add_right_eq_sub]
@@ -223,68 +204,36 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
 /-! ## The reduced field as a damped mechanical system -/
 
-/-- The absolute angles of a reduced state are the grounded relative angles, its positions
-`Dynamics.Mechanical.pos`. -/
-@[tmio M, powerlib_domain] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
-    angleMap w = ground (Dynamics.Mechanical.pos w) := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k <;> simp
-
-/-- `ground` as a continuous linear map. -/
-def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := ground
-      map_add' := fun v w => by
-        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
-      map_smul' := fun c v => by
-        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp }
-
-@[tmio M, simp, powerlib_domain] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
-  rfl
-
-/-- The relative angle rates `ωᵢ₊₁ − ω₀` of the frequency deviations. -/
-def relRate : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) :=
-  ContinuousLinearMap.pi fun i =>
-    ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) i.succ -
-      ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) 0
-
-@[tmio M, simp, powerlib_domain] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
-    relRate w i = w i.succ - w 0 := by
-  simp [relRate]
-
-/-- The relative angles `θᵢ₊₁ − θ₀` of an angle profile. -/
-def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ - θ 0
-
-@[tmio M, powerlib_domain] theorem ground_relAngles_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
-    ground (relAngles θ + v) = fun k => (θ + ground v) k + -θ 0 := by
+@[tmio M, powerlib_domain] theorem ground_relRate_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
+    ground (relRate θ + v) = fun k => (θ + ground v) k + -θ 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
   · simp
-  · simp only [ground_succ, Pi.add_apply, relAngles]
+  · simp only [ground_succ, Pi.add_apply, relRate_apply]
     ring
 
 /-- The selected point is the rest point at the relative angles of the profile. -/
 @[tmio M, powerlib_domain] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
-    equilibrium θ = Dynamics.Mechanical.point (relAngles θ) := by
+    equilibrium θ = Dynamics.Mechanical.point (relRate θ) := by
   apply Dynamics.state_ext_blocks
   · intro i
     rw [Dynamics.Mechanical.point_qIdx]
-    simp [equilibrium, relAngles]
+    simp [equilibrium]
   · intro k
     rw [Dynamics.Mechanical.point_vIdx]
     simp [equilibrium]
 
 /-- At a power-balance point the potential in relative angles, about the relative angles of
 `θ`, is the network potential of the displaced profile. -/
-@[tmio M, powerlib_domain] theorem potential_ground_relAngles_add {p : Params n}
+@[tmio M, powerlib_domain] theorem potential_ground_relRate_add {p : Params n}
     (hP : ∑ k, p.P k = 0) (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
-    potential p (ground (relAngles θ + v)) = potential p (θ + ground v) := by
-  rw [ground_relAngles_add, potential_add_const, hP, mul_zero, sub_zero]
+    potential p (ground (relRate θ + v)) = potential p (θ + ground v) := by
+  rw [ground_relRate_add, potential_add_const, hP, mul_zero, sub_zero]
 
-@[tmio M, powerlib_domain] theorem potential_ground_relAngles {p : Params n}
+@[tmio M, powerlib_domain] theorem potential_ground_relRate {p : Params n}
     (hP : ∑ k, p.P k = 0) (θ : Fin (n + 1) → ℝ) :
-    potential p (ground (relAngles θ)) = potential p θ := by
-  simpa [ground_zero_vec] using potential_ground_relAngles_add hP θ 0
+    potential p (ground (relRate θ)) = potential p θ := by
+  rw [ground_relRate, potential_add_const, hP, mul_zero, sub_zero]
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_potential_comp_ground (p : Params n)
     (q : Fin n → ℝ) :
@@ -304,13 +253,11 @@ power, `dU(q)(relRate w) = ∑ₖ (Pₖ(θ) − Pₖ) wₖ` with `θ = ground q`
       ∑ k, (powerInjection p.B (ground q) k - p.P k) * w k := by
   rw [(hasFDerivAt_potential_comp_ground p q).fderiv, ContinuousLinearMap.comp_apply,
     groundCLM_apply, potentialGrad_apply]
-  have hg : ground (relRate w) = fun k => w k - w 0 := by
-    funext k
-    refine Fin.cases ?_ (fun i => ?_) k <;> simp
   have hs : ∑ k, (powerInjection p.B (ground q) k - p.P k) = 0 := by
     rw [Finset.sum_sub_distrib, sum_powerInjection, hP, sub_zero]
-  rw [hg]
-  simp only [mul_sub, Finset.sum_sub_distrib, ← Finset.sum_mul, hs, zero_mul, sub_zero]
+  rw [ground_relRate]
+  simp only [mul_add, mul_neg, Finset.sum_add_distrib, Finset.sum_neg_distrib, ← Finset.sum_mul,
+    hs, zero_mul, neg_zero, add_zero]
 
 /-- **The reduced swing field of a network with zero total power is a damped mechanical system**
 (`Dynamics.Mechanical.field`): positions the relative angles, velocities the frequency deviations,
@@ -369,12 +316,12 @@ total power. At a power-balance point `∑ₖ Pₖ = 0`, the reduced field is me
 along the reachable directions are the power-balance points. -/
 @[tmio M, powerlib_domain] theorem critical_iff_balance {p : Params n} (hP : ∑ k, p.P k = 0)
     (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
-    (fderiv ℝ (fun q => potential p (ground q)) (relAngles θ + v)).comp relRate = 0 ↔
+    (fderiv ℝ (fun q => potential p (ground q)) (relRate θ + v)).comp relRate = 0 ↔
       ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
-  have hinj : ∀ k, powerInjection p.B (ground (relAngles θ + v)) k =
+  have hinj : ∀ k, powerInjection p.B (ground (relRate θ + v)) k =
       powerInjection p.B (θ + ground v) k := by
     intro k
-    rw [ground_relAngles_add, powerInjection_add_const]
+    rw [ground_relRate_add, powerInjection_add_const]
   constructor
   · intro h k
     have := congrArg (fun T : (Fin (n + 1) → ℝ) →L[ℝ] ℝ => T (Pi.single k 1)) h
@@ -421,7 +368,7 @@ stability. -/
     fun ε hε => ?_
   obtain ⟨v, hv, hlt⟩ := hseed ε hε
   refine ⟨v, hv, ?_⟩
-  rwa [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
+  rwa [potential_ground_relRate_add hP, potential_ground_relRate hP]
 
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line` on the
 reduced field. If the network stays power balanced along the relative-angle displacements `t • v`
@@ -439,10 +386,10 @@ reduced field. If the network stays power balanced along the relative-angle disp
 
 /-! ## Taylor expansion of the potential at a power-balance point -/
 
-/-- Edge increment of the potential, `g(φ, x) = cos φ − cos(φ + x) − x sin φ`. Multiplied by the
-line coupling `B` it is the line potential `CycleMinimum.edgeG (B cos φ) (B sin φ) x` of
-`theorem/PowerSystem/Network/Swing/CycleMinimum.lean`. -/
-def edgeIncrement (φ x : ℝ) : ℝ := Real.cos φ - Real.cos (φ + x) - x * Real.sin φ
+/-- Edge increment of the potential, `g(φ, x) = cos φ − cos(φ + x) − x sin φ`: the line potential
+`CycleMinimum.edgeG (cos φ) (sin φ) x = cos φ (1 − cos x) + sin φ (sin x − x)` of a unit line
+(`theorem/PowerSystem/Network/Swing/CycleMinimum.lean`). -/
+abbrev edgeIncrement (φ x : ℝ) : ℝ := CycleMinimum.edgeG (Real.cos φ) (Real.sin φ) x
 
 /-- **Edge form of the potential.** At a power-balance point
 `U(θ + u) − U(θ) = ½ ∑ₖ ∑ⱼ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`. -/
@@ -467,7 +414,7 @@ def edgeIncrement (φ x : ℝ) : ℝ := Real.cos φ - Real.cos (φ + x) - x * Re
         ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * (u k - u j) := by
     simp only [← Finset.sum_sub_distrib]
     exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun j _ => by
-      simp only [edgeIncrement]; ring
+      simp only [edgeIncrement, CycleMinimum.edgeG, Real.cos_add]; ring
   simp only [potential]
   rw [hlin, hcos, hsplit, hPu]
   ring
@@ -487,7 +434,7 @@ def cubicForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
   have he : edgeIncrement φ x - (Real.cos φ * x ^ 2 / 2 - Real.sin φ * x ^ 3 / 6) =
       -Real.cos φ * (Real.cos x - (1 - x ^ 2 / 2)) +
         Real.sin φ * (Real.sin x - (x - x ^ 3 / 6)) := by
-    simp only [edgeIncrement, Real.cos_add]; ring
+    simp only [edgeIncrement, CycleMinimum.edgeG]; ring
   rw [he]
   have h4 : |x| ^ 4 = x ^ 4 := by rw [pow_abs]; exact abs_of_nonneg (by positivity)
   have h5 : |x| ^ 5 ≤ x ^ 4 := by
@@ -659,8 +606,8 @@ form. -/
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
     (h : hessForm m.params m.θ u < 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) :=
-  not_localAsymptoticStable_of_forms m hbal (fun i => u i.succ - u 0)
-    (Or.inl (by rwa [ground_sub_zero, hessForm_add_const]))
+  not_localAsymptoticStable_of_forms m hbal (relRate u)
+    (Or.inl (by rwa [ground_relRate, hessForm_add_const]))
 
 /-- **A nonzero cubic form along a null direction of the Hessian form rules out local asymptotic
 stability** (a fold): at a power-balance point a locally asymptotically stable model has a cubic
@@ -669,9 +616,9 @@ form vanishing on every null direction of its Hessian form. -/
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
     (h0 : hessForm m.params m.θ u = 0) (h : cubicForm m.params m.θ u ≠ 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) :=
-  not_localAsymptoticStable_of_forms m hbal (fun i => u i.succ - u 0)
-    (Or.inr ⟨by rwa [ground_sub_zero, hessForm_add_const],
-      by rwa [ground_sub_zero, cubicForm_add_const]⟩)
+  not_localAsymptoticStable_of_forms m hbal (relRate u)
+    (Or.inr ⟨by rwa [ground_relRate, hessForm_add_const],
+      by rwa [ground_relRate, cubicForm_add_const]⟩)
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
@@ -1247,7 +1194,7 @@ field is locally asymptotically stable, whatever its linearization. -/
   refine Dynamics.Mechanical.localAsymptoticStable_of_strictMin (by omega)
     (potential_comp_ground_contDiff p) p.M_pos p.D_pos hr (fun v hv0 hv => ?_)
     (fun v hv0 hv hc => hcrit v hv0 hv ((critical_iff_balance hP θ v).mp hc))
-  rw [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
+  rw [potential_ground_relRate_add hP, potential_ground_relRate hP]
   exact hmin v hv0 hv
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_potential_ground (p : Params n)
@@ -1294,7 +1241,7 @@ minimum of the potential. -/
     (potential_comp_ground_contDiff p) (fun j => (p.M_pos j).ne') (fun j => (p.D_pos j).le) hLAS
   refine ⟨r, hr, fun v hv0 hv => ?_⟩
   obtain ⟨h1, h2⟩ := h v hv0 hv
-  rw [potential_ground_relAngles_add hP, potential_ground_relAngles hP] at h1
+  rw [potential_ground_relRate_add hP, potential_ground_relRate hP] at h1
   exact ⟨h1, fun hc => h2 ((critical_iff_balance hP θ v).mpr hc)⟩
 
 /-- **Membership in local asymptotic stability, for every number of machines.** A swing network is

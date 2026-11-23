@@ -51,9 +51,12 @@ LaSalle that all trajectories converge to the set `{ũ_dc = 0, ∇S(θ_dq) = 0, 
 these equations is written in the work-sync notes, which contain only the condition.
 
 Results.
-* Static (source link): `potential_eq` (the potential is (16)), `potential_sub_potential_zero`
+* Static (source link): `cD_sq_add_cQ_sq` (the internal model `î = (cD, cQ)` at
+  `(c, s) = (cos θ, sin θ)` has `|î|² = ‖μ u* (−s, c) − v₀ e₂‖²/N`), `potential_eq` (the potential
+  is (16)), `potential_sub_potential_zero`
   (`S(θ) − S(0) = k (1 − cos θ)`, `k = L_s μ u* v₀/N`), `eta_mul_k` (`η ∇S` is the
-  synchronizing term `κ sin θ` of (18), (20)), `N_pos` (`‖Z_s‖² > 0` for `R_s ≠ 0`), `field_point`,
+  synchronizing term `κ sin θ` of (18), (20)), `N_eq_absSq` (`N = ‖Z_s(jω₀)‖²`,
+  `Passive.SeriesRLC.absSq`), `N_pos` (`‖Z_s‖² > 0` for `R_s ≠ 0`), `field_point`,
   `field_add_two_pi`, `field_eq_zero_of_kappa_mul_sin_eq_zero` (every `θ_dq` with
   `κ sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`), `field_eq_zero_of_sin_eq_zero`
   (its case `θ_dq ∈ πℤ`).
@@ -166,14 +169,20 @@ def ω0 : ℝ := m.η * m.ustar
 /-- `‖Z_s‖² = R_s² + ω₀² L_s²`. -/
 def N : ℝ := m.Rs ^ 2 + m.ω0 ^ 2 * m.Ls ^ 2
 
+/-- The internal model `î_d` as a function of `(cos θ, sin θ) = (c, s)` (the cylinder coordinates
+of `theorem/GridTiedConverter/GFM/Matching/LaSalle.lean`). -/
+def cD (c s : ℝ) : ℝ :=
+  (m.Rs * (m.μ * m.ustar * s) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * c)) / m.N
+
+/-- The internal model `î_q` as a function of `(cos θ, sin θ) = (c, s)`. -/
+def cQ (c s : ℝ) : ℝ :=
+  (-(m.ω0 * m.Ls) * (m.μ * m.ustar * s) + m.Rs * (m.v0 - m.μ * m.ustar * c)) / m.N
+
 /-- The internal model `î_dq(θ) = Z_s⁻¹ (v₀ e₂ − μ u* (−sin θ, cos θ))`, `d` component. -/
-def iHatD (θ : ℝ) : ℝ :=
-  (m.Rs * (m.μ * m.ustar * Real.sin θ) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * Real.cos θ)) / m.N
+abbrev iHatD (θ : ℝ) : ℝ := m.cD (Real.cos θ) (Real.sin θ)
 
 /-- The internal model, `q` component. -/
-def iHatQ (θ : ℝ) : ℝ :=
-  (-(m.ω0 * m.Ls) * (m.μ * m.ustar * Real.sin θ) + m.Rs * (m.v0 - m.μ * m.ustar * Real.cos θ)) /
-    m.N
+abbrev iHatQ (θ : ℝ) : ℝ := m.cQ (Real.cos θ) (Real.sin θ)
 
 /-- The synchronization potential `S(θ) = î(θ)ᵀ L_s î(θ)/2` of the source. -/
 def potential (θ : ℝ) : ℝ := m.Ls / 2 * (m.iHatD θ ^ 2 + m.iHatQ θ ^ 2)
@@ -213,6 +222,13 @@ def margin : ℝ := m.Gdc + m.Kp - m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 / (4 * m.Rs *
 
 end Model
 
+/-- `N` is the squared impedance magnitude `R_s² + X²` of the L filter at `ω₀`
+(`Passive.SeriesRLC.absSq`; the filter has no series capacitor). Static evidence on the model,
+not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem N_eq_absSq (m : Model) : m.N = m.filter.absSq m.ω0 := by
+  simp [Model.N, Passive.SeriesRLC.absSq, Passive.SeriesRLC.reactance, m.filter_noCap]
+  ring
+
 /-- `‖Z_s‖² = R_s² + ω₀² L_s² > 0` for `R_s ≠ 0`. Static evidence on the model, not a connection
 conclusion. -/
 @[tmio M, powerlib_domain] theorem N_pos (m : Model) (hR : m.Rs ≠ 0) : 0 < m.N := by
@@ -229,7 +245,7 @@ conclusion. -/
       (m.ω0 * m.Ls))
   convert h.div_const m.N using 1
   · funext θ
-    simp [Model.iHatD]
+    simp [Model.cD]
   · ring
 
 /-- Static evidence on the model, not a connection conclusion. -/
@@ -240,7 +256,7 @@ conclusion. -/
     ((((Real.hasDerivAt_cos θ).const_mul (m.μ * m.ustar)).const_sub m.v0).const_mul m.Rs)
   convert h.div_const m.N using 1
   · funext θ
-    simp [Model.iHatQ]
+    simp [Model.cQ]
   · ring
 
 /-- Static evidence on the model, not a connection conclusion. -/
@@ -250,9 +266,8 @@ conclusion. -/
   have h1 : Differentiable ℝ (fun x : State 4 => x 1) := h 1
   have h2 : Differentiable ℝ (fun x : State 4 => x 2) := h 2
   have h3 : Differentiable ℝ (fun x : State 4 => x 3) := h 3
-  have hd : Differentiable ℝ m.iHatD := fun θ => (hasDerivAt_iHatD m θ).differentiableAt
-  have hq : Differentiable ℝ m.iHatQ := fun θ => (hasDerivAt_iHatQ m θ).differentiableAt
   unfold Model.energy
+  simp only [Model.iHatD, Model.iHatQ, Model.cD, Model.cQ]
   fun_prop
 
 /-- The derivative of the energy. Static evidence on the model, not a connection conclusion. -/
@@ -304,7 +319,7 @@ Static evidence on the model, not a connection conclusion. -/
           ((x 2 - m.iHatD (x 0)) * (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) +
             (x 3 - m.iHatQ (x 0)) * (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0))) := by
   rw [fderiv_energy]
-  simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.iHatD, Model.iHatQ,
+  simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.cD, Model.cQ,
     Model.κ, Model.k, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
@@ -380,13 +395,13 @@ Static evidence on the model, not a connection conclusion. -/
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
       Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one]
     linear_combination (-1 / m.Cdc) * h
-  · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply, Matrix.cons_val_zero,
+  · simp only [Model.field, Model.cD, Model.cQ, PiLp.toLp_apply, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
       Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
     field_simp
     simp only [Model.N]
     ring
-  · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply, Matrix.cons_val_zero,
+  · simp only [Model.field, Model.cD, Model.cQ, PiLp.toLp_apply, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
       Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
     field_simp
@@ -409,7 +424,7 @@ model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_add_two_pi (m : Model) (θ u id iq : ℝ) :
     m.field (WithLp.toLp 2 ![θ + 2 * Real.pi, u, id, iq]) =
       m.field (WithLp.toLp 2 ![θ, u, id, iq]) := by
-  simp [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.iHatD, Model.iHatQ]
+  simp [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.cD, Model.cQ]
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_point (m : Model) : m.energy m.point = 0 := by
@@ -447,6 +462,19 @@ model, not a connection conclusion. -/
   ext i
   fin_cases i <;> simp [Model.point, t0, u1, i2, i3]
 
+/-- `î_d² + î_q² = ‖μ u* (−s, c) − v₀ e₂‖² / N` on the cylinder coordinates.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem cD_sq_add_cQ_sq (m : Model) (hN : m.N ≠ 0) (c s : ℝ) :
+    m.cD c s ^ 2 + m.cQ c s ^ 2 =
+      ((m.μ * m.ustar * s) ^ 2 + (m.v0 - m.μ * m.ustar * c) ^ 2) / m.N := by
+  have hZ : (m.Rs * (m.μ * m.ustar * s) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * c)) ^ 2 +
+      (-(m.ω0 * m.Ls) * (m.μ * m.ustar * s) + m.Rs * (m.v0 - m.μ * m.ustar * c)) ^ 2 =
+      m.N * ((m.μ * m.ustar * s) ^ 2 + (m.v0 - m.μ * m.ustar * c) ^ 2) := by
+    simp only [Model.N]
+    ring
+  rw [Model.cD, Model.cQ, div_pow, div_pow, ← add_div, hZ]
+  field_simp
+
 /-- The source's potential (16): `S(θ) = L_s (μ²u*² − 2μu*v₀ cos θ + v₀²)/(2N)`. Static evidence
 on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem potential_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
@@ -455,15 +483,7 @@ on the model, not a connection conclusion. -/
   have hw : (m.μ * m.ustar * Real.sin θ) ^ 2 + (m.v0 - m.μ * m.ustar * Real.cos θ) ^ 2 =
       m.μ ^ 2 * m.ustar ^ 2 - 2 * m.μ * m.ustar * m.v0 * Real.cos θ + m.v0 ^ 2 := by
     linear_combination (m.μ ^ 2 * m.ustar ^ 2) * Real.sin_sq_add_cos_sq θ
-  have hZ :
-      (m.Rs * (m.μ * m.ustar * Real.sin θ) +
-          m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * Real.cos θ)) ^ 2
-      + (-(m.ω0 * m.Ls) * (m.μ * m.ustar * Real.sin θ) +
-          m.Rs * (m.v0 - m.μ * m.ustar * Real.cos θ)) ^ 2
-      = m.N * ((m.μ * m.ustar * Real.sin θ) ^ 2 + (m.v0 - m.μ * m.ustar * Real.cos θ) ^ 2) := by
-    simp only [Model.N]
-    ring
-  rw [Model.potential, Model.iHatD, Model.iHatQ, div_pow, div_pow, ← add_div, hZ, hw]
+  rw [Model.potential, cD_sq_add_cQ_sq m hN, hw]
   field_simp
 
 /-- Static evidence on the model, not a connection conclusion. -/
@@ -703,15 +723,10 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_contDiff (m : Model) : ContDiff ℝ 1 m.field := by
-  have hd : ContDiff ℝ 1 m.iHatD := by
-    unfold Model.iHatD
-    fun_prop
-  have hq : ContDiff ℝ 1 m.iHatQ := by
-    unfold Model.iHatQ
-    fun_prop
   rw [contDiff_euclidean]
   intro i
-  fin_cases i <;> simp [Model.field, Model.idc, Model.ixHat, Transform.parkQ] <;> fun_prop
+  fin_cases i <;>
+    simp [Model.field, Model.idc, Model.ixHat, Transform.parkQ, Model.cD, Model.cQ] <;> fun_prop
 
 /-- Entries of the Jacobian applied to a vector. An equivalent form of the damping requirement. -/
 @[tmio M, powerlib_domain] theorem jac_apply (m : Model) (v : State 4) :

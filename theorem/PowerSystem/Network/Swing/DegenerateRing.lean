@@ -105,10 +105,10 @@ variable {n : ℕ}
   rw [e, him, hn]; field_simp
 
 /-- A lossless line with weight `W = B cos φ` and flow `f = B sin φ`: its potential increment is
-the cycle edge potential. -/
+the cycle edge potential (`edgeIncrement φ = edgeG (cos φ) (sin φ)` scaled by `B`). -/
 @[tmio M, powerlib_domain] theorem mul_edgeIncrement {B φ W f : ℝ} (hW : B * Real.cos φ = W)
     (hf : B * Real.sin φ = f) (x : ℝ) : B * edgeIncrement φ x = edgeG W f x := by
-  simp only [edgeIncrement, edgeG, Real.cos_add, ← hW, ← hf]; ring
+  simp only [edgeIncrement, edgeG, ← hW, ← hf]; ring
 
 /-- … and its flow at the displaced angle is `f + G'(x)`. -/
 @[tmio M, powerlib_domain] theorem mul_sin_add {B φ W f : ℝ} (hW : B * Real.cos φ = W)

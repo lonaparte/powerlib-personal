@@ -58,7 +58,8 @@ Results.
   `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`; the frozen reference is the case `κ = 0`.
 * Current-loop order (`firstOrderLag_error`, `piLoop_error`): with `G₁(s) = ω/(s + ω)`
   (`lagLoop`) and the PI closed loop `G_PI(s) = (2ζωs + ω²)/(s² + 2ζωs + ω²)` (`piLoop`;
-  `k_pc = 2ζωL`, `k_ic = ω²L`), `1 − G₁ = s/(s + ω)` and `1 − G_PI = s²/(s² + 2ζωs + ω²)`
+  `k_pc = 2ζωL`, `k_ic = ω²L`: the PI loop's transfer, `PIParams.transfer_eq_piLoop`; `G₁` is the
+  IMC loop's, `imc_transfer_eq`), `1 − G₁ = s/(s + ω)` and `1 − G_PI = s²/(s² + 2ζωs + ω²)`
   (`one_sub_lagLoop`, `one_sub_piLoop`); at any fixed `s`, `ω (1 − G₁(s)) → s` and
   `ω² (1 − G_PI(s)) → s²` as `ω → ∞`: the low-frequency error is of exact order `ω⁻¹` for the lag
   and `ω⁻²` for the PI loop.
@@ -410,6 +411,22 @@ def piLoop (ζ ω : ℝ) (s : ℂ) : ℂ := (2 * ζ * ω * s + ω ^ 2) / (s ^ 2 
     (h : s ^ 2 + 2 * ζ * ω * s + ω ^ 2 ≠ 0) :
     1 - piLoop ζ ω s = s ^ 2 / (s ^ 2 + 2 * ζ * ω * s + ω ^ 2) := by
   rw [piLoop, eq_div_iff h, sub_mul, one_mul, div_mul_cancel₀ _ h]
+  ring
+
+/-- `G_PI` is the reference-to-current transfer of the PI loop (`PIParams.transfer_eq`) on a
+lossless branch `L di/dt = u` with the gains `k_pc = 2ζωL`, `k_ic = ω²L`. Static evidence on the
+model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem PIParams.transfer_eq_piLoop {L ζ ω : ℝ} (hL : L ≠ 0) {s : ℂ}
+    (hs : s ^ 2 + 2 * ζ * ω * s + ω ^ 2 ≠ 0) :
+    transfer (⟨⟨0, L, 0⟩, 2 * ζ * ω * L, ω ^ 2 * L, rfl⟩ : PIParams).model s 0 0 =
+      piLoop ζ ω s := by
+  have hd : (L : ℂ) * s ^ 2 + (((0 : ℝ) : ℂ) + ((2 * ζ * ω * L : ℝ) : ℂ)) * s +
+      ((ω ^ 2 * L : ℝ) : ℂ) ≠ 0 := by
+    rw [show (L : ℂ) * s ^ 2 + (((0 : ℝ) : ℂ) + ((2 * ζ * ω * L : ℝ) : ℂ)) * s +
+        ((ω ^ 2 * L : ℝ) : ℂ) = L * (s ^ 2 + 2 * ζ * ω * s + ω ^ 2) by push_cast; ring]
+    exact mul_ne_zero (by exact_mod_cast hL) hs
+  rw [PIParams.transfer_eq _ hL hd, piLoop, div_eq_div_iff hd hs]
+  push_cast
   ring
 
 /-- The lag error is of exact order `ω⁻¹`: `ω (1 − G₁(s)) → s`. -/

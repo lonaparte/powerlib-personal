@@ -27,6 +27,11 @@ Results.
 * `toEuclideanCLM_apply_zero`, `toEuclideanCLM_apply_one` read off the two components of a
   `2 × 2` matrix acting on a planar state (instances of `Dynamics.toEuclideanCLM_apply`);
   `hasDerivWithinAt_iff_components` differentiates a planar curve componentwise.
+* The complex form: `complexIso : ℂ ≃ₗᵢ[ℝ] State 2`, `z ↦ (Re z, Im z)`, a real linear isometry
+  (`complexIso_apply_zero`, `complexIso_apply_one`, `complexIso_apply`, `complexIso_symm_apply`);
+  `isIntegralCurveOn_complexIso_iff` (transport): when `F (complexIso z) = complexIso (G z)`, the
+  curves `complexIso ∘ φ` solving `ẋ = F x` are exactly the images of the solutions `φ` of
+  `ż = G z`, on every time set.
 -/
 
 noncomputable section
@@ -115,5 +120,41 @@ def mk (a b : ℝ) : State 2 := WithLp.toLp 2 ![a, b]
       · simpa using h1
     exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.toContinuousLinearMap
       |>.hasFDerivAt.comp_hasDerivWithinAt t hpi
+
+/-! ## The complex form of the plane -/
+
+/-- The plane as `ℂ`: `z ↦ (Re z, Im z)`, a real linear isometry (the coordinates in Mathlib's
+orthonormal basis `{1, i}` of `ℂ`). -/
+def complexIso : ℂ ≃ₗᵢ[ℝ] State 2 := Complex.orthonormalBasisOneI.repr
+
+@[tmio T, simp, powerlib_foundation] theorem complexIso_apply_zero (z : ℂ) :
+    complexIso z 0 = z.re := rfl
+
+@[tmio T, simp, powerlib_foundation] theorem complexIso_apply_one (z : ℂ) :
+    complexIso z 1 = z.im := rfl
+
+@[tmio T, powerlib_foundation] theorem complexIso_apply (z : ℂ) :
+    complexIso z = mk z.re z.im :=
+  ext_iff'.2 ⟨rfl, rfl⟩
+
+@[tmio T, simp, powerlib_foundation] theorem complexIso_symm_apply (x : State 2) :
+    complexIso.symm x = ⟨x 0, x 1⟩ :=
+  complexIso.symm_apply_eq.2 (ext_iff'.2 ⟨rfl, rfl⟩)
+
+/-- Transport through the complex form: if the planar field `F` is the complex field `G` read
+through `complexIso` (`F (complexIso z) = complexIso (G z)`), the curves `complexIso ∘ φ` that
+solve `ẋ = F x` on a time set are exactly the images of the solutions `φ` of `ż = G z` there. -/
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_complexIso_iff {F : State 2 → State 2}
+    {G : ℂ → ℂ} (hFG : ∀ z, F (complexIso z) = complexIso (G z)) (φ : ℝ → ℂ) (s : Set ℝ) :
+    IsIntegralCurveOn (fun t => complexIso (φ t)) (fun _ x => F x) s ↔
+      IsIntegralCurveOn φ (fun _ z => G z) s := by
+  refine forall₂_congr fun t _ => ?_
+  simp only [hFG]
+  constructor
+  · intro h
+    simpa [Function.comp_def] using
+      complexIso.symm.toContinuousLinearEquiv.hasFDerivAt.comp_hasDerivWithinAt t h
+  · intro h
+    exact complexIso.toContinuousLinearEquiv.hasFDerivAt.comp_hasDerivWithinAt t h
 
 end powerlib.PhasePlane

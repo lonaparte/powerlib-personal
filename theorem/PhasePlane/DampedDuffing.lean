@@ -39,13 +39,8 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
     mk_apply_one]
   tauto
 
-@[tmio T, powerlib_foundation] theorem energy_contDiff : ContDiff ℝ 1 energy := by
-  have h : energy = fun y : State 2 => 1 * y 1 ^ 2 / 2 + potential (y 0) := rfl
-  rw [h]
-  have h0 : ContDiff ℝ 1 (fun y : State 2 => y 0) := Dynamics.contDiff_coord 0
-  have h1 : ContDiff ℝ 1 (fun y : State 2 => y 1) := Dynamics.contDiff_coord 1
-  unfold potential Potential.doubleWell
-  fun_prop
+@[tmio T, powerlib_foundation] theorem energy_contDiff : ContDiff ℝ 1 energy :=
+  Conservative.contDiff_separableEnergy (by unfold potential Potential.doubleWell; fun_prop) 1 0
 
 /-- Energy sublevel sets are positively invariant for `δ ≥ 0`. -/
 @[tmio TM, powerlib_foundation] theorem sublevel_positivelyInvariant {δ : ℝ} (hδ : 0 ≤ δ) (c : ℝ) :

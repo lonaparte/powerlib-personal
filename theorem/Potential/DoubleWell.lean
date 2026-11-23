@@ -18,7 +18,8 @@ Source: work-sync theory/T-potential-wells.md §1.2–1.3; theory/T-nonlinear-ph
 theory/T-endpoint-laplace-asymptotics.md §1.2.
 
 Results.
-* `doubleWell a b θ = −aθ²/2 + bθ⁴/4`; `hasDerivAt_doubleWell`: `V' = −aθ + bθ³`.
+* `doubleWell a b θ = −aθ²/2 + bθ⁴/4`; `hasDerivAt_doubleWell`: `V' = −aθ + bθ³`;
+  `hasDerivAt_doubleWell_deriv`: `V'' = −a + 3bθ²`.
 * `doubleWell_critical_iff` (`0 ≤ a`, `0 < b`): critical points `0, ±√(a/b)`.
 * `doubleWell_identity` (`a, b ≠ 0`): `V = (a²/4b)[1 − bθ²/a]² − a²/4b` (positive sign in front
   of the square; correction to T-potential-wells §1.2).
@@ -27,11 +28,11 @@ Results.
 * `doubleWell_barrier` (`0 ≤ a`, `0 < b`): `V(0) − V(±√(a/b)) = a²/4b`.
 * `doubleWell_sub`: `V(x) − V(y) = (x² − y²)(−a/2 + b(x² + y²)/4)`.
 
-Instances: the Boltzmann weights, curvatures and monotonicity of `V` are in
-`theorem/Potential/Wells.lean`; the supercritical pitchfork potential is `doubleWell μ 1`
-(`NormalForm.Pitchfork.potential`), the Duffing potential `doubleWell 1 1`
-(`PhasePlane.Duffing.potential`, also the large-deviation example `Stochastic.LDP.dwU`), and the
-subcritical-Hopf guard potential its negative `−doubleWell α l₁`
+Instances: the single-well regime `a < 0 ≤ b` (harmonic and anharmonic wells), the Boltzmann
+weights, curvatures and monotonicity of `V` are in `theorem/Potential/Wells.lean`; the supercritical
+pitchfork potential is `doubleWell μ 1` (`NormalForm.Pitchfork.potential`), the Duffing potential
+`doubleWell 1 1` (`PhasePlane.Duffing.potential`, also the large-deviation example
+`Stochastic.LDP.dwU`), and the subcritical-Hopf guard potential its negative `−doubleWell α l₁`
 (`Asymptotics.Guard.guardPotential`).
 
 Family and connection conclusions.
@@ -48,6 +49,12 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
     HasDerivAt (doubleWell a b) (-a * θ + b * θ ^ 3) θ := by
   have h := (((hasDerivAt_pow 2 θ).const_mul (-a)).div_const 2).add
     (((hasDerivAt_pow 4 θ).const_mul b).div_const 4)
+  exact h.congr_deriv (by push_cast; ring)
+
+/-- The curvature `V'' = −a + 3bθ²`, the derivative of `V' = −aθ + bθ³`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_doubleWell_deriv (a b θ : ℝ) :
+    HasDerivAt (fun θ => -a * θ + b * θ ^ 3) (-a + 3 * b * θ ^ 2) θ := by
+  have h := ((hasDerivAt_id θ).const_mul (-a)).add ((hasDerivAt_pow 3 θ).const_mul b)
   exact h.congr_deriv (by push_cast; ring)
 
 /-- Correction: `V = (a²/4b)[1 − bθ²/a]² − a²/4b` (positive sign in front of the square). -/

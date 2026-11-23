@@ -163,22 +163,17 @@ def literatureField10 (x : State 10) : State 10 :=
 
 end Params
 
-/-- The reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1)` of the converter current, the line
-current and the current-loop integrators. -/
-abbrev currentReversal10 : Matrix (Fin 10) (Fin 10) ℝ :=
-  Dynamics.signMatrix ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1]
-
 namespace Params
 
 variable (p : Params)
 
 /-- §D8 boundary translation: the IN-positive 10-state field is the OUT-positive source field
-transported by the reversal of the six current coordinates, with the references reversed. -/
+transported by the reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1)` of the six current
+coordinates (converter current, line current, current-loop integrators), with the references
+reversed. -/
 @[tmio M, powerlib_domain] theorem field10_eq_transport_literatureField10 :
-    p.field10 = Dynamics.transportField
-      (Dynamics.matrixCoord currentReversal10 (Dynamics.signMatrix_isUnit _)) 0
+    p.field10 = Dynamics.transportField (Dynamics.signCoord ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1]) 0
       ({ p with idRef := -p.idRef, iqRef := -p.iqRef } : Params).literatureField10 := by
-  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext x
   apply WithLp.ofLp_injective
   ext i
@@ -261,13 +256,13 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
     · exact hi0
     · exact hi1
     · show x 2 = p.vcD θ p.Vg 0
-      rw [hv2, vcD, igQ, ← hi0, ← hi1, ← hg5]
+      rw [hv2, Network.vcD, Network.igQ, ← hi0, ← hi1, ← hg5]
     · show x 3 = p.vcQ θ p.Vg 0
-      rw [hv3, vcQ, igD, ← hi0, ← hi1, ← hg4]
+      rw [hv3, Network.vcQ, Network.igD, ← hi0, ← hi1, ← hg4]
     · show x 4 = p.igD θ p.Vg 0
-      rw [igD, ← hi0, ← hi1]; exact hg4
+      rw [Network.igD, ← hi0, ← hi1]; exact hg4
     · show x 5 = p.igQ θ p.Vg 0
-      rw [igQ, ← hi0, ← hi1]; exact hg5
+      rw [Network.igQ, ← hi0, ← hi1]; exact hg5
     · show x 6 = p.Rf * p.idRef / p.Kicc
       field_simp; linarith
     · show x 7 = p.Rf * p.iqRef / p.Kicc

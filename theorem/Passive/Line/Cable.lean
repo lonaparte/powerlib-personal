@@ -1,5 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Passive.Parallel
+import theorem.Passive.Line.ABCD
 import theorem.SpecialFunctions.BesselI
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -54,7 +56,8 @@ Results.
 * `ln(r_j/r_sh) + ln(D_e/r_j) = ln(D_e/r_sh)`: `r_j` cancels in `Z₂₂`.
 * Naive ladder ⇒ `η ≡ 1` and no ladder represents a loop matrix with `η ≠ 1`.
 * `Z₁₁^ext Y₁ = -ω²μ₀ε₀ε_r` independently of the geometry (lossless dielectric, real `ε_r`).
-* Closed form `I_c(0) D̂ = I_c(ℓ) N̂`; `R_b = 0` cancellation; `N̂` on `D̂ = 0` and the
+* Closed form `I_c(0) D̂ = I_c(ℓ) N̂` (`port_relation`; on the loops' phasor line models
+  `Phasor.Params`, `port_relation_phasor`); `R_b = 0` cancellation; `N̂` on `D̂ = 0` and the
   load at which the pole is cancelled.
 * `Y₂ = 0` ⇒ `det(ZY) = 0` (`det_ZY`) and a size-2 Jordan chain for the zero mode.
 * Cable charging power `Q = -ωC₁ℓ|V|²` (absorb-positive) from `S = V I*`; lumped `LC`
@@ -62,7 +65,8 @@ Results.
 * Tube impedances, low frequency (`m → 0`): `tubeZin_tendsto_dc`, `tubeZout_tendsto_dc`,
   `tubeZmut_tendsto_dc` — all three tend to the tube DC resistance `ρ/(π(b² − a²))`
   (`tube_dc_eq`; the transfer impedance gives no screening at DC); from
-  `tendsto_sinh_div_self`, `tendsto_div_sinh_mul` (`m/sinh(mt) → 1/t`).
+  `tendsto_sinh_div_self`, `tendsto_div_sinh_mul` (`m/sinh(mt) → 1/t`); the outer limit is the
+  inner one at swapped radii (`tubeZout_eq_neg_tubeZin`: `Z_out(a, b) = −Z_in(b, a)`).
 * Tube impedances, high frequency (`m = (1 + j)s`, `s → ∞`): `tubeZmut_tendsto_zero`
   (`Z_mut → 0`, complete screening), `tubeZin_tendsto_surface`, `tubeZout_tendsto_surface`
   (`Z_in/(ρm/(2πa)) → 1`, `Z_out/(ρm/(2πb)) → 1`, surface impedances); from
@@ -298,6 +302,29 @@ then `I_c(0) D̂ = I_c(ℓ) N̂`. -/
     (-I₀ * Rb * Y₂ * s₂ - I₀ * c₂) * h₁ + (-I₀ * Rb * Y₁ * s₁) * h₂ +
     (I₀ * Rb * Y₂ * s₁ ^ 2 * s₂ + I₀ * c₂ * s₁ ^ 2) * hY₁ + (I₀ * Rb * Y₁ * s₁ * s₂ ^ 2) * hY₂
 
+/-- The port relation on the two loops' phasor line models (`Phasor.Params` `q₁`, `q₂`,
+profiles `Phasor.voltage`, `Phasor.current` from the sending-end data `(a₁, I₀)`, `(a₂, I₀)`): the
+bonding and load conditions at `x = ℓ` give `I_c(0) D̂ = I_c(ℓ) N̂` with `cₖ = cosh γₖℓ`,
+`sₖ = sinh γₖℓ`, `Yₖ = 1/Z_{ck}` (`port_relation`). -/
+@[tmio M, powerlib_domain] theorem port_relation_phasor (q₁ q₂ : Phasor.Params) {a₁ a₂ I₀ Rb ZL : ℂ}
+    {ℓ : ℝ}
+    (hbond : Phasor.voltage q₂ a₂ I₀ ℓ =
+      Rb * (Phasor.current q₂ a₂ I₀ ℓ - Phasor.current q₁ a₁ I₀ ℓ))
+    (hload : Phasor.voltage q₁ a₁ I₀ ℓ + Phasor.voltage q₂ a₂ I₀ ℓ =
+      ZL * Phasor.current q₁ a₁ I₀ ℓ) :
+    I₀ * Dhat (Complex.cosh (q₁.γ * ℓ)) (Complex.sinh (q₁.γ * ℓ)) q₁.Zc⁻¹
+        (Complex.cosh (q₂.γ * ℓ)) (Complex.sinh (q₂.γ * ℓ)) q₂.Zc⁻¹ Rb =
+      Phasor.current q₁ a₁ I₀ ℓ * Nhat (Complex.cosh (q₁.γ * ℓ)) (Complex.sinh (q₁.γ * ℓ)) q₁.Zc⁻¹
+        (Complex.cosh (q₂.γ * ℓ)) (Complex.sinh (q₂.γ * ℓ)) q₂.Zc⁻¹ Rb ZL := by
+  have e : Phasor.current q₁ a₁ I₀ ℓ =
+      I₀ * Complex.cosh (q₁.γ * ℓ) - a₁ * Complex.sinh (q₁.γ * ℓ) * q₁.Zc⁻¹ := by
+    simp only [Phasor.current]; ring
+  simp only [Phasor.voltage, Phasor.current] at hbond hload
+  rw [e]
+  exact port_relation (a₂ := a₂) (Z₁ := q₁.Zc) (Z₂ := q₂.Zc) (Complex.cosh_sq_sub_sinh_sq _)
+    (Complex.cosh_sq_sub_sinh_sq _) (mul_inv_cancel₀ q₁.Zc_ne) (mul_inv_cancel₀ q₂.Zc_ne)
+    (by linear_combination hbond) (by linear_combination hload)
+
 /-- `R_b = 0`: `cosh γ₂ℓ` cancels exactly inside the closed form. -/
 @[tmio M, powerlib_domain] theorem Rb_zero_cancel {c₁ s₁ Y₁ c₂ s₂ Y₂ ZL : ℂ} (hc₂ : c₂ ≠ 0) :
     Nhat c₁ s₁ Y₁ c₂ s₂ Y₂ 0 ZL / Dhat c₁ s₁ Y₁ c₂ s₂ Y₂ 0 = c₁ + ZL * s₁ * Y₁ := by
@@ -389,36 +416,30 @@ and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
 
 /-! ## Charging power and lumped resonance -/
 
-/-- Cable charging power from `S = V I*` with `I = jωC₁ℓ V`: `P = 0`, `Q = -ωC₁ℓ|V|²`
-(absorb-positive, so the cable generates reactive power). -/
+/-- Cable charging power from `S = V I*` with `I = Y(jω) V` the current of the shunt
+capacitance `C₁ℓ` (the parallel element `⟨0, C₁ℓ, 0⟩`, `Y(jω) = jωC₁ℓ`): `P = 0`, `Q = −ωC₁ℓ|V|²`
+(absorb-positive, so the cable generates reactive power; `SeriesRLC.mul_conj_impedance_jω_mul`
+of the dual element). -/
 @[tmio T, powerlib_foundation] theorem charging_power (ω C ℓ : ℝ) (V : ℂ) :
-    V * (starRingEnd ℂ) (Complex.I * (ω * C * ℓ : ℝ) * V) =
+    V * (starRingEnd ℂ) ((⟨0, C * ℓ, 0⟩ : ParallelRLC).admittance (ω * Complex.I) * V) =
       ((-(ω * C * ℓ) * Complex.normSq V : ℝ) : ℂ) * Complex.I := by
-  rw [map_mul, map_mul, Complex.conj_I, Complex.conj_ofReal]
-  have h := Complex.mul_conj V
+  rw [ParallelRLC.admittance_eq_impedance, SeriesRLC.mul_conj_impedance_jω_mul]
+  simp only [ParallelRLC.toSeries, SeriesRLC.reactance]
   push_cast
-  rw [show V * (-Complex.I * (ω * C * ℓ) * (starRingEnd ℂ) V) =
-    -Complex.I * (ω * C * ℓ) * (V * (starRingEnd ℂ) V) by ring, h]
   ring
 
-/-- Lumped parallel `LC` resonance: the admittance `jωC + 1/(jωL)` vanishes iff `ω² L C = 1`. -/
+/-- Lumped parallel `LC` resonance: the admittance `jωC + 1/(jωL)` of the parallel element
+`⟨0, C, 1/L⟩` vanishes iff `ω² L C = 1` (`SeriesRLC.impedance_jω_eq_zero_iff` of the dual
+element). -/
 @[tmio T, powerlib_foundation] theorem lc_resonance {ω L C : ℝ} (hω : ω ≠ 0) (hL : L ≠ 0) :
-    Complex.I * ω * C + 1 / (Complex.I * ω * L) = 0 ↔ ω ^ 2 * L * C = 1 := by
-  have hωc : (ω : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hω
-  have hLc : (L : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hL
-  have hden : Complex.I * ω * L ≠ 0 := mul_ne_zero (mul_ne_zero Complex.I_ne_zero hωc) hLc
-  rw [← sub_eq_zero (b := (1 : ℝ)), ← Complex.ofReal_eq_zero]
-  constructor
-  · intro h
-    have : (Complex.I * ω * C + 1 / (Complex.I * ω * L)) * (Complex.I * ω * L) = 0 := by
-      rw [h, zero_mul]
-    field_simp at this
-    push_cast
-    linear_combination (-1 : ℂ) * this + ((ω : ℂ) ^ 2 * C * L) * Complex.I_sq
-  · intro h
-    push_cast at h
-    field_simp
-    linear_combination (-1 : ℂ) * h + ((ω : ℂ) ^ 2 * C * L) * Complex.I_sq
+    (⟨0, C, L⁻¹⟩ : ParallelRLC).admittance (ω * Complex.I) = 0 ↔ ω ^ 2 * L * C = 1 := by
+  rw [ParallelRLC.admittance_eq_impedance, SeriesRLC.impedance_jω_eq_zero_iff]
+  simp only [ParallelRLC.toSeries, SeriesRLC.reactance, true_and, sub_eq_zero]
+  constructor <;> intro h
+  · field_simp at h
+    linear_combination h
+  · field_simp
+    linear_combination h
 
 /-! ## Wedepohl–Wilcox tubular-conductor impedances (§1.2.2): frequency limits -/
 
@@ -487,23 +508,33 @@ DC resistance of the tube (no screening at DC). -/
   push_cast
   ring
 
-/-- **Low-frequency limit of the inner-surface impedance**: `Z_in(m) → ρ/(π(b² − a²))`. -/
-@[tmio M, powerlib_domain] theorem tubeZin_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+/-- Swapping the radii exchanges the two surfaces: `Z_out(a, b) = −Z_in(b, a)`. -/
+@[tmio M, powerlib_domain] theorem tubeZout_eq_neg_tubeZin (ρ a b : ℝ) :
+    tubeZout ρ a b = -tubeZin ρ b a := by
+  funext m
+  simp only [tubeZout, tubeZin, Pi.neg_apply]
+  rw [show m * ((a : ℂ) - b) = -(m * ((b : ℂ) - a)) by ring, Complex.cosh_neg, Complex.sinh_neg,
+    add_comm b a]
+  ring
+
+/-- **Low-frequency limit of the inner-surface impedance**: `Z_in(m) → ρ/(π(b² − a²))` (any radii
+`a ≠ 0`, `a ≠ b`, `a + b ≠ 0`; physically `0 < a < b`). -/
+@[tmio M, powerlib_domain] theorem tubeZin_tendsto_dc {ρ a b : ℝ} (ha : a ≠ 0) (hab : a ≠ b)
+    (hs : a + b ≠ 0) :
     Tendsto (tubeZin ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   have hc : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝[≠] 0) (𝓝 1) := by
     have : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝 0) (𝓝 1) := by
       have hc : Continuous fun m : ℂ => Complex.cosh (m * (b - a)) := by fun_prop
       simpa using hc.tendsto 0
     exact this.mono_left nhdsWithin_le_nhds
-  have h := (((tendsto_div_sinh_mul (t := b - a) (by linarith)).mul hc).const_mul
+  have h1 : b - a ≠ 0 := sub_ne_zero.mpr (Ne.symm hab)
+  have h := (((tendsto_div_sinh_mul (t := b - a) h1).mul hc).const_mul
     ((ρ / (2 * Real.pi * a) : ℝ) : ℂ)).sub_const ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ)
   have e : ((ρ / (2 * Real.pi * a) : ℝ) : ℂ) * (((1 / (b - a) : ℝ) : ℂ) * 1) -
       ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ) =
         ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
-    have h1 : b - a ≠ 0 := by linarith
-    have h2 : a + b ≠ 0 := by linarith
-    have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
-    have h4 : a ≠ 0 := ha.ne'
+    have h3 : b ^ 2 - a ^ 2 ≠ 0 := by
+      rw [show b ^ 2 - a ^ 2 = (b - a) * (a + b) by ring]; exact mul_ne_zero h1 hs
     have hR : ρ / (2 * Real.pi * a) * (1 / (b - a) * 1) - ρ / (2 * Real.pi * a * (a + b)) =
         ρ / (Real.pi * (b ^ 2 - a ^ 2)) := by
       field_simp
@@ -517,35 +548,13 @@ DC resistance of the tube (no screening at DC). -/
   push_cast
   ring
 
-/-- **Low-frequency limit of the outer-surface impedance**: `Z_out(m) → ρ/(π(b² − a²))`. -/
+/-- **Low-frequency limit of the outer-surface impedance**: `Z_out(m) → ρ/(π(b² − a²))`, the
+inner limit at the swapped radii (`tubeZout_eq_neg_tubeZin`). -/
 @[tmio M, powerlib_domain] theorem tubeZout_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
     Tendsto (tubeZout ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
-  have hc : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝[≠] 0) (𝓝 1) := by
-    have : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝 0) (𝓝 1) := by
-      have hc : Continuous fun m : ℂ => Complex.cosh (m * (b - a)) := by fun_prop
-      simpa using hc.tendsto 0
-    exact this.mono_left nhdsWithin_le_nhds
-  have h := (((tendsto_div_sinh_mul (t := b - a) (by linarith)).mul hc).const_mul
-    ((ρ / (2 * Real.pi * b) : ℝ) : ℂ)).add_const ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ)
-  have e : ((ρ / (2 * Real.pi * b) : ℝ) : ℂ) * (((1 / (b - a) : ℝ) : ℂ) * 1) +
-      ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ) =
-        ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
-    have h1 : b - a ≠ 0 := by linarith
-    have h2 : a + b ≠ 0 := by linarith
-    have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
-    have h4 : b ≠ 0 := by linarith
-    have hR : ρ / (2 * Real.pi * b) * (1 / (b - a) * 1) + ρ / (2 * Real.pi * b * (a + b)) =
-        ρ / (Real.pi * (b ^ 2 - a ^ 2)) := by
-      field_simp
-      ring
-    rw [← hR]
-    push_cast
-    ring
-  rw [e] at h
-  refine h.congr fun m => ?_
-  simp only [tubeZout]
-  push_cast
-  ring
+  rw [tubeZout_eq_neg_tubeZin]
+  convert (tubeZin_tendsto_dc (ρ := ρ) (ha.trans hab).ne' hab.ne' (by linarith)).neg using 2
+  rw [show a ^ 2 - b ^ 2 = -(b ^ 2 - a ^ 2) by ring, mul_neg, div_neg, Complex.ofReal_neg, neg_neg]
 
 /-- `e^{−2w} → 0` when `Re w → +∞`. -/
 @[tmio T, powerlib_foundation] theorem tendsto_cexp_neg_two_mul {α : Type*} {l : Filter α} {f : α → ℂ}

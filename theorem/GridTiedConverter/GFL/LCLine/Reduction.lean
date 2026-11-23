@@ -33,7 +33,8 @@ Model boundary.
 * Parameters: `L_f, R_f, C_f, L_g, R_g, ω_g, V_g` (filter, line, nominal grid frequency and
   EMF), frozen current references `i_d*, i_q*`, current-loop PI `K_p^cc, K_i^cc`, PLL PI `K_p, K_i`.
   The network part `C_f, L_g, R_g, ω_g, V_g, i_d*, i_q*`, all the quasi-steady algebra below
-  depends on, is the record `Network`, which `Params` extends.
+  depends on, is the record `Network`, which `Params` extends; the whole algebra below (`a`, `b`,
+  `Δ`, the line solution, `hE`, `h`, `c₀`, `A`, `φ`) is defined on `Network`.
   `a = ω_g C_f R_g`, `b = ω_g² C_f L_g`, `Δ = (1 − b)² + a²`. Nondegeneracy hypotheses
   (`ω_g C_f ≠ 0`, `Δ ≠ 0`) are explicit in each statement.
 * Quasi-steady algebra (`reduction-pipeline.md` §2–§4), capacitor
@@ -46,11 +47,12 @@ Model boundary.
   `(E_d, E_q) = (V_g, 0)`; `hE` keeps a general EMF for the noise-sensitivity identities.
 * The same reduction written with the parameters `R_g, X, lineDet` of `T-gfl-dynamics` form B, on
   the same record `Network`, is `theorem/GridTiedConverter/GFL/LCLine/FormB.lean`
-  (`Network.formBChar`, `Network.pllInput_of_quasiSteady`); its characteristic is `h`
-  (`Params.formBChar_eq_h`): both find no `2θ` term in the PLL error signal.
+  (`Network.pllInput_of_quasiSteady`); its closed form of `h` is `Network.h_eq_formB`: both find
+  no `2θ` term in the PLL error signal.
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md`
-§1–§4; `reduced-2d-equation.md` §1–§2; `sn-critical-scaling.md` §3.
+§1–§4; `reduced-2d-equation.md` §1–§2; `sn-critical-scaling.md` §3; `theory/T-gfl-sph.md`
+§1.1–§1.3 (form-B noise row `σ_v(θ_e)`).
 
 Results.
 * `h_eq` : `h θ = c₀ − (V_g/Δ)((1 − b) sin θ + a cos θ)`,
@@ -63,6 +65,11 @@ Results.
 * `hasDerivAt_hE_q` (gauge identity, `sn-critical-scaling.md` §3): `∂h/∂E_q = −h′(θ)/V_g` exactly
   (with `g := −h′ > 0` at a stable point this is `σ_q = g/V_g`); `hasDerivAt_hE_d` with
   `σ_d = −c₀/V_g` at every equilibrium.
+* `hE_noise_split`, `sigmaV_dot_self` (T-gfl-sph §1.1–§1.3): a grid-voltage disturbance `ξ`
+  (EMF `(V_g + ξ_d, ξ_q)`) enters the PLL error signal exactly as `h(θ) + σ_v(θ) ⬝ ξ`, with the
+  noise row `σ_v = (σ_d, σ_q)` of squared norm `1/Δ` at every angle; the Itô correction of the PLL
+  with this row is `PLL.StochasticPH.pllIto`, `½ (K_p² 𝒱'' + K_i)/Δ`
+  (`GFL.Noise.Embed.gflIto`).
 
 Correction (`reduction-pipeline.md` §4): the boxed line system is printed with (2,1) entry `−a`.
 The correct entry is `+a` (`lineMatrix`); with `−a` the line and capacitor equations force
@@ -166,7 +173,13 @@ abbrev Lf (p : Params) : ℝ := p.filter.L
 /-- Converter-side filter resistance `R_f`. -/
 abbrev Rf (p : Params) : ℝ := p.filter.R
 
-variable (p : Params)
+end Params
+
+/-! ### The quasi-steady algebra (on the network record) -/
+
+namespace Network
+
+variable (p : Network)
 
 /-- `a = ω_g C_f R_g`. -/
 def a : ℝ := p.ωg * p.Cf * p.Rg
@@ -428,11 +441,9 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
   rw [p.deriv_h hwC hΔ, p.cosinusoid_eq hΔ, ← p.amp_eq hΔ]
   ring
 
-/-- `h` is smooth for every parameter set: a trigonometric polynomial with constant
-coefficients. -/
+/-- `h` is smooth for every network: a trigonometric polynomial with constant coefficients. -/
 @[tmio M, powerlib_domain] theorem contDiff_h {k : WithTop ℕ∞} : ContDiff ℝ k p.h := by
-  unfold Params.h Params.hE parkQ Params.vcD Params.vcQ Params.igD Params.igQ Params.solD
-    Params.solQ Network.iD Network.iQ iparkD iparkQ
+  unfold h hE parkQ vcD vcQ igD igQ solD solQ iD iQ iparkD iparkQ
   fun_prop
 
 /-! ### EMF rotation covariance and noise sensitivities -/
@@ -484,6 +495,32 @@ in particular it stays finite at the saddle-node. -/
   field_simp at hθ
   linarith
 
-end Params
+/-- The EMF noise row `σ_v(θ) = (σ_d, σ_q) = (∂h_E/∂E_d, ∂h_E/∂E_q)` of the PLL error signal
+(`hasDerivAt_hE_d`, `hasDerivAt_hE_q`; T-gfl-sph §1.1): a grid-voltage disturbance `ξ` enters
+the reduced PLL through `σ_v(θ) ⬝ ξ`. -/
+def sigmaV (θ : ℝ) : Fin 2 → ℝ :=
+  ![-((1 - p.b) * sin θ + p.a * cos θ) / p.Δ, ((1 - p.b) * cos θ - p.a * sin θ) / p.Δ]
+
+/-- **Noise split** (T-gfl-sph (1.1)): with the grid EMF `(V_g + ξ_d, ξ_q)` the PLL error signal is
+exactly `h(θ) + σ_v(θ) ⬝ ξ` (the quasi-steady algebra is affine in the EMF). -/
+@[tmio M, powerlib_domain] theorem hE_noise_split (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ)
+    (ξ : Fin 2 → ℝ) : p.hE θ (p.Vg + ξ 0) (ξ 1) = p.h θ + p.sigmaV θ ⬝ᵥ ξ := by
+  rw [p.hE_eq hwC hΔ, p.h_eq hwC hΔ]
+  simp only [sigmaV, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  field_simp
+  ring
+
+/-- The noise row has the angle-independent squared norm `σ_v ⬝ σ_v = 1/Δ`. -/
+@[tmio M, powerlib_domain] theorem sigmaV_dot_self (hΔ : p.Δ ≠ 0) (θ : ℝ) :
+    p.sigmaV θ ⬝ᵥ p.sigmaV θ = 1 / p.Δ := by
+  have hs := sin_sq_add_cos_sq θ
+  simp only [sigmaV, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  rw [Δ] at hΔ ⊢
+  field_simp
+  linear_combination ((1 - p.b) ^ 2 + p.a ^ 2) * hs
+
+end Network
 
 end powerlib.GFL.LCLine

@@ -1,6 +1,7 @@
 import theorem.Attributes
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import theorem.PowerSystem.Frequency.LowInertia
 
 /-! # Algebraic identities of droop, VSM and matching control
 
@@ -24,6 +25,7 @@ Results.
   translation `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1):
   `Transform.complexPower_expand` (`theorem/Transform/ComplexPower.lean`).
 * Inertia conversions `K_d = J ω_s / S_b`, `H = ½ J ω_s² / S_b`, `M_vsm = 2H/ω_s = K_d`
+  (`M_vsm` is `Frequency.LowInertia.electromechanicalTime`)
   (T-vsg-control §1.0, §1.2; T-gfm-control §1.4).
 * Line powers (export from the source `E ∠ δ` through `R + jX` into `V ∠ 0`) from `S̄ = Ē Ī*`,
   their partial derivatives at `δ = 0, E = V`, and the rotation `R(β)`, `β = π/2 − θ_l`,
@@ -56,9 +58,12 @@ open Complex
 
 /-! ## Inertia conversions -/
 
-/-- `M_vsm = 2H/ω_s` equals `K_d = J ω_s / S_b` when `H = ½ J ω_s² / S_b`. -/
+/-- `M_vsm = 2H/ω_s`, the electromechanical time constant
+`Frequency.LowInertia.electromechanicalTime`, equals `K_d = J ω_s / S_b` when
+`H = ½ J ω_s² / S_b`. -/
 @[tmio M, powerlib_domain] theorem Mvsm_eq_Kd {J ωs Sb : ℝ} (hω : ωs ≠ 0) (hS : Sb ≠ 0) :
-    2 * (J * ωs ^ 2 / (2 * Sb)) / ωs = J * ωs / Sb := by
+    Frequency.LowInertia.electromechanicalTime (J * ωs ^ 2 / (2 * Sb)) ωs = J * ωs / Sb := by
+  unfold Frequency.LowInertia.electromechanicalTime
   field_simp
 
 /-! ## Static droop and sharing -/

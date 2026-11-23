@@ -359,7 +359,7 @@ positive). -/
   set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
   have hk0 : k ≠ 0 := mul_ne_zero hk (SpecialFunctions.sin_ne_zero_of_cos hcos)
   have hW : ContDiff ℝ 1 fun z : State 1 => k * z 0 - k * δ₀ :=
-    (contDiff_const.mul (NormalForm.coordCLM.contDiff)).sub contDiff_const
+    (contDiff_const.mul (Dynamics.contDiff_coord 0)).sub contDiff_const
   refine Dynamics.unstable_of_chetaev (W := fun z : State 1 => k * z 0 - k * δ₀) (r := 1)
     (NormalForm.lift_contDiff c.rhs_contDiff) hW one_pos (fun ε hε => ?_) (fun z hz hWz => ?_)
   · rcases lt_or_gt_of_ne hk0 with hneg | hpos

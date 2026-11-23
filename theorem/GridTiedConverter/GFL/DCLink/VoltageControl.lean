@@ -496,13 +496,13 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
     connection% (p ∈ closedFamily.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
-  obtain ⟨r, hr, v, hv, heig⟩ := Criteria.exists_pos_real_eigenvalue_of_det p.jacobian (by
-    rw [neg_one_sq, one_mul, DCParams.jacobian_det]
-    exact mul_neg_of_pos_of_neg (div_pos hVd (mul_pos hV hC)) hki)
+  obtain ⟨μ, hμ, hre⟩ := Criteria.exists_root_re_pos_of_violation_fin_two p.jacobian (Or.inr (by
+    rw [DCParams.jacobian_det]
+    exact mul_neg_of_pos_of_neg (div_pos hVd (mul_pos hV hC)) hki))
+  obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hμ
   exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
     (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
-    (p.closedField_eqState hki.ne) (p.closedJacobian hki.ne hV.ne' hC.ne')
-    ⟨r, v, hv, heig, by rwa [Complex.ofReal_re]⟩
+    (p.closedField_eqState hki.ne) (p.closedJacobian hki.ne hV.ne' hC.ne') ⟨μ, v, hv, heig, hre⟩
 
 namespace DCParams
 

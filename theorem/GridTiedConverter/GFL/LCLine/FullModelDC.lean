@@ -181,11 +181,11 @@ def PbrAlg (θ : ℝ) : ℝ :=
         p.iqRef * ((1 - p.b) * sin θ + p.a * cos θ))) := by
   have s1 : p.vcD θ p.Vg 0 * p.iD θ + p.vcQ θ p.Vg 0 * p.iQ θ =
       (p.igQ θ p.Vg 0 * p.iD θ - p.igD θ p.Vg 0 * p.iQ θ) / p.wC := by
-    simp only [vcD, vcQ]; field_simp; ring
+    simp only [Network.vcD, Network.vcQ]; field_simp; ring
   have s2 : p.igQ θ p.Vg 0 * p.iD θ - p.igD θ p.Vg 0 * p.iQ θ =
       (-p.a * (p.iD θ ^ 2 + p.iQ θ ^ 2) + p.wC * p.Vg * ((1 - p.b) * p.iD θ - p.a * p.iQ θ)) /
         p.Δ := by
-    simp only [igD, igQ, solD, solQ]; field_simp; ring
+    simp only [Network.igD, Network.igQ, Network.solD, Network.solQ]; field_simp; ring
   have s3 : p.iD θ ^ 2 + p.iQ θ ^ 2 = p.idRef ^ 2 + p.iqRef ^ 2 := by
     simp only [Network.iD, Network.iQ, iparkD, iparkQ]
     linear_combination (p.idRef ^ 2 + p.iqRef ^ 2) * sin_sq_add_cos_sq θ
@@ -378,20 +378,15 @@ def literatureField13 (x : State 13) : State 13 :=
 
 end Params
 
-/-- The reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1, 1, 1, 1)` of the current coordinates
-of the 13-state model. -/
-abbrev currentReversal13 : Matrix (Fin 13) (Fin 13) ℝ :=
-  Dynamics.signMatrix ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1]
-
 /-- §D8 boundary translation: the IN-positive 13-state field is the OUT-positive source field
-transported by the reversal of the current coordinates, with the frozen q-axis reference reversed
+transported by the reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1, 1, 1, 1)` of the current
+coordinates, with the frozen q-axis reference reversed
 (the d-axis reference is endogenous and reverses with the state). -/
 @[tmio M, powerlib_domain] theorem Params.field13_eq_transport_literatureField13 (p : Params)
     (d : DCParams) :
     p.field13 d = Dynamics.transportField
-      (Dynamics.matrixCoord currentReversal13 (Dynamics.signMatrix_isUnit _)) 0
+      (Dynamics.signCoord ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1]) 0
       (({ p with iqRef := -p.iqRef } : Params).literatureField13 d) := by
-  change _ = Dynamics.transportField (Dynamics.signCoord _) 0 _
   funext x
   apply WithLp.ofLp_injective
   ext j

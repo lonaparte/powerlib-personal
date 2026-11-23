@@ -40,9 +40,10 @@ Results.
   `ẏ = M y` satisfies `|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²` — the same `P` works for all
   nearby matrices.
 * `exists_uniform_dissipation` — on a compact parameter space one pair of energy bounds `lo, hi`
-  and one bound on `Σ|Pᵢⱼ|` serve all parameters: for every `p` a symmetric `P` with
-  `lo|v|² ≤ vᵀPv ≤ hi|v|²` and `vᵀ P A(p) v ≤ −|v|²/4` (finite subcover of the certificates, via
-  `dissipation_of_close`); reused by `theorem/SingularPerturbation/BoundaryLayer.lean`.
+  and one bound on `Σ|Pᵢⱼ|` serve all parameters (`UniformDissipation`: for every `p` a symmetric
+  `P` with `lo|v|² ≤ vᵀPv ≤ hi|v|²` and `vᵀ P A(p) v ≤ −|v|²/4`; finite subcover of the
+  certificates, via `dissipation_of_close`); reused by
+  `theorem/SingularPerturbation/BoundaryLayer.lean`.
 * `uniform_frozen_exponentialStability` — if `A` is continuous on the compact space `X` and every
   `A(x)` is Hurwitz, there are `C > 0`, `α > 0` such that for **every** `x`, every trajectory of
   `ẏ = A(x) y` satisfies `|y(t)|² ≤ C e^{−αt} |y(0)|²` (uniform rate `α`, i.e. the spectral
@@ -96,12 +97,10 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   obtain ⟨α, hα, β, hβα, hb⟩ := c.exists_energy_bounds
   have hconv (y : Fin m → ℝ) : ‖WithLp.toLp 2 y‖ ^ 2 = y ⬝ᵥ y := by
     rw [EuclideanSpace.real_norm_sq_eq]; simp [dotProduct, sq]
-  have hq (y : Fin m → ℝ) : inner ℝ (WithLp.toLp 2 y) (Linear.op c.P (WithLp.toLp 2 y)) =
-      y ⬝ᵥ (c.P *ᵥ y) := Linear.inner_op c.P _ _
   exact ⟨{ c with
     lower := α, upper := β, lower_pos := hα, upper_pos := hα.trans_le hβα
-    lower_bound := fun y => by rw [← hconv, ← hq]; exact (hb _).1
-    upper_bound := fun y => by rw [← hconv, ← hq]; exact (hb _).2 }⟩
+    lower_bound := fun y => by rw [← hconv]; exact (hb _).1
+    upper_bound := fun y => by rw [← hconv]; exact (hb _).2 }⟩
 
 /-- Derivative of `yᵀ P y` for symmetric `P` along a path, within any set: `2 yᵀ P ẏ`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivWithinAt_quadratic_of_symm
@@ -127,12 +126,11 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
     (c : BoundedCertificate A0) (hM : absSum (M - A0) ≤ 1 / (4 * absSum c.P + 4))
     (v : Fin m → ℝ) : v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
   have hP := c.symmetric
-  have hlyap : c.P * A0 + A0ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
   have hAbs := absSum_nonneg c.P
   have hsplit : v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) =
       v ⬝ᵥ (c.P *ᵥ (A0 *ᵥ v)) + v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v) := by
     rw [← mulVec_mulVec, ← dotProduct_add, ← mulVec_add, ← add_mulVec, add_sub_cancel]
-  have h1 := dotProduct_mulVec_lyapunov hP hlyap v
+  have h1 := Linear.quadratic_lyapunov hP c.lyapunov v
   have h2 := abs_dotProduct_mulVec_le (c.P * (M - A0)) v v one_pos
   have h3 : absSum (c.P * (M - A0)) ≤ 1 / 4 := by
     calc absSum (c.P * (M - A0)) ≤ absSum c.P * absSum (M - A0) := absSum_mul_le _ _
@@ -196,14 +194,20 @@ and `vᵀ P M v ≤ −|v|²/4`, every trajectory of `ẏ = M y` satisfies
   refine continuous_finsetSum _ fun i _ => continuous_finsetSum _ fun j _ => ?_
   exact ((continuous_id.matrix_elem i j).sub continuous_const).abs
 
+/-- Uniform dissipation certificates of a matrix family: one pair of energy bounds `lo, hi` and
+one bound `Pb` on `Σ|Pᵢⱼ|` such that every `A p` has a symmetric `P` with
+`lo|v|² ≤ vᵀPv ≤ hi|v|²`, `Σ|Pᵢⱼ| ≤ Pb` and `vᵀ P A(p) v ≤ −|v|²/4`. -/
+def UniformDissipation {X : Type*} (A : X → Matrix (Fin m) (Fin m) ℝ) (lo hi Pb : ℝ) : Prop :=
+  ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
+    (∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) ∧ (∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v)) ∧
+    absSum P ≤ Pb ∧ ∀ v, v ⬝ᵥ (P *ᵥ (A p *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4
+
 /-- **Uniform Lyapunov dissipation** for a continuous Hurwitz family on a compact parameter
 space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. -/
 @[tmio T, powerlib_foundation] theorem exists_uniform_dissipation {X : Type*} [TopologicalSpace X]
     [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
     (hH : ∀ p, LinearSystems.IsHurwitz (A p)) :
-    ∃ lo > 0, ∃ hi > 0, ∃ Pb ≥ 0, ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
-      (∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) ∧ (∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v)) ∧
-      absSum P ≤ Pb ∧ ∀ v, v ⬝ᵥ (P *ᵥ (A p *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
+    ∃ lo > 0, ∃ hi > 0, ∃ Pb ≥ 0, UniformDissipation A lo hi Pb := by
   classical
   let cert : ∀ x, BoundedCertificate (A x) := fun x =>
     (nonempty_boundedCertificate_of_isHurwitz (hH x)).some

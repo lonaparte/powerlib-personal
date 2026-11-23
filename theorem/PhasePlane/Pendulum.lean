@@ -92,7 +92,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 /-- Separatrix energy `E(π, 0) = 2ω₀²`. -/
 @[tmio M, powerlib_foundation] theorem separatrix_energy (ω₀ : ℝ) :
     energy ω₀ (mk Real.pi 0) = 2 * ω₀ ^ 2 := by
-  simp [energy, Conservative.energy, potential]; ring
+  simp [energy, Conservative.energy, Conservative.separableEnergy, potential]; ring
 
 /-- Libration: below the separatrix energy a solution started in `(−π, π)` never reaches `±π`. -/
 @[tmio TM, powerlib_foundation] theorem libration (ω₀ : ℝ) {φ : ℝ → State 2} {a b : ℝ}
@@ -112,7 +112,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   have hcos : Real.cos (φ s 0) = -1 := by
     rcases abs_eq Real.pi_pos.le |>.mp hseq with h | h <;> rw [h] <;> simp
   have : 2 * ω₀ ^ 2 ≤ energy ω₀ (φ s) := by
-    simp only [energy, Conservative.energy, potential, hcos]
+    simp only [energy, Conservative.energy, Conservative.separableEnergy, potential, sub_zero, hcos]
     nlinarith [sq_nonneg (φ s 1)]
   linarith
 
@@ -129,7 +129,7 @@ advances at least linearly. -/
     have hcons := Conservative.energy_conserved one_ne_zero (hasDerivAt_potential ω₀) hφ t ht
     have hV := potential_le ω₀ (φ t 0)
     rw [Real.sq_sqrt (by linarith)]
-    simp only [energy, Conservative.energy] at hcons ⊢
+    simp only [energy, Conservative.energy, Conservative.separableEnergy, sub_zero] at hcons ⊢
     linarith
   have hne : ∀ t ∈ Icc a b, φ t 1 ≠ 0 := by
     intro t ht h0

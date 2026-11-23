@@ -16,8 +16,13 @@ Source: work-sync `theory/T-telegrapher-bergeron.md` §1.7, §1.7.1 ("三相对�
 Karrenbauer / Clarke 变换是频率无关常数阵——直接 αβ0 三模独立").
 
 Results.
+* `modeMatrix N x w = x I + w 𝟙𝟙ᵀ` (equal self and mutual terms, any `N`): the common mode `𝟙`
+  has eigenvalue `x + N w` (`modeMatrix_mulVec_one`), every zero-sum vector eigenvalue `x`
+  (`modeMatrix_mulVec_of_sum_eq_zero`), and `det(sI − M) = (s − x)^{N−1}(s − x − N w)`
+  (`det_smul_one_sub_modeMatrix`).
 * `circulant_symm_iff`: a 3 × 3 circulant matrix is symmetric iff it is `symCirc a b =
-  circulant ![a, b, b]` (self term `a`, mutual term `b`).
+  circulant ![a, b, b]` (self term `a`, mutual term `b`); `symCirc_eq_modeMatrix`:
+  `symCirc a b = modeMatrix 3 (a − b) b`.
 * `clarkePI_diagonalizes`: `T · symCirc a b · Tᵀ = diag(a − b, a − b, a + 2b)` (aerial modes
   `α, β` and ground mode `0`), over any field containing `ℝ` (here `ℂ`, so that
   `Z = R' + sL'` and `Y = G' + sC'` at a fixed complex frequency are covered).
@@ -32,12 +37,83 @@ noncomputable section
 namespace powerlib.Transform
 open Matrix
 
+/-! ## Equal self and mutual terms: `x I + w 𝟙𝟙ᵀ` -/
+
+/-- The `N × N` matrix `x I + w 𝟙𝟙ᵀ` with equal self terms `x + w` and equal mutual terms `w`
+(e.g. `N` equal branch reactances `x` behind a common reactance `w`). -/
+def modeMatrix {R : Type*} [CommRing R] (N : ℕ) (x w : R) : Matrix (Fin N) (Fin N) R :=
+  x • (1 : Matrix (Fin N) (Fin N) R) + w • Matrix.of (fun _ _ => (1 : R))
+
+/-- Common mode: `𝟙` is an eigenvector with eigenvalue `x + N w`. -/
+@[tmio T, powerlib_foundation] theorem modeMatrix_mulVec_one {R : Type*} [CommRing R] (N : ℕ)
+    (x w : R) : modeMatrix N x w *ᵥ (fun _ => 1) = (x + N * w) • (fun _ => (1 : R)) := by
+  rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
+  funext i
+  simp [mulVec, dotProduct]
+  ring
+
+/-- Differential modes: every zero-sum vector is an eigenvector with eigenvalue `x`. -/
+@[tmio T, powerlib_foundation] theorem modeMatrix_mulVec_of_sum_eq_zero {R : Type*} [CommRing R]
+    (N : ℕ) (x w : R) (v : Fin N → R) (hv : ∑ k, v k = 0) : modeMatrix N x w *ᵥ v = x • v := by
+  rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
+  funext i
+  simp [mulVec, dotProduct, hv]
+
+@[tmio T, powerlib_foundation] private lemma det_scalar_sub_ones {K : Type*} [Field K] (N : ℕ)
+    (c w : K) :
+    (c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) K) - w • Matrix.of (fun _ _ => (1 : K))).det =
+      c ^ N * (c - (N + 1) * w) := by
+  by_cases hc : c = 0
+  · subst hc
+    rcases N with _ | N
+    · simp [Matrix.det_unique]
+    · simp only [zero_smul, zero_sub, zero_pow (Nat.succ_ne_zero N), zero_mul]
+      apply Matrix.det_zero_of_row_eq (i := 0) (j := 1) (by simp)
+      funext k; simp
+  · have hrank : Matrix.of (fun _ _ => (1 : K)) =
+        replicateCol (Fin 1) (fun _ : Fin (N + 1) => (1 : K)) *
+          replicateRow (Fin 1) (fun _ : Fin (N + 1) => (1 : K)) := by
+      ext i j; simp [replicateCol, replicateRow, Matrix.mul_apply]
+    have hfac : c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) K) -
+          w • Matrix.of (fun _ _ => (1 : K)) =
+        c • (1 + replicateCol (Fin 1) (fun _ : Fin (N + 1) => (-(w / c))) *
+          replicateRow (Fin 1) (fun _ : Fin (N + 1) => (1 : K))) := by
+      rw [hrank]
+      ext i j
+      simp [replicateCol, replicateRow, Matrix.mul_apply, Matrix.one_apply]
+      split_ifs <;> field_simp <;> ring
+    rw [hfac, Matrix.det_smul, Matrix.det_one_add_mul_comm, Matrix.det_unique]
+    simp [Matrix.mul_apply, replicateCol, replicateRow]
+    field_simp
+    ring
+
+/-- `det(sI − (xI + w 𝟙𝟙ᵀ)) = (s − x)^{N−1}(s − x − N w)` (`N ≥ 1`): the differential eigenvalue `x`
+has algebraic multiplicity `N − 1`. -/
+@[tmio T, powerlib_foundation] theorem det_smul_one_sub_modeMatrix {K : Type*} [Field K] (N : ℕ)
+    (x w s : K) :
+    (s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) K) - modeMatrix (N + 1) x w).det =
+      (s - x) ^ N * (s - x - (N + 1) * w) := by
+  have : s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) K) - modeMatrix (N + 1) x w =
+      (s - x) • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) K) -
+        w • Matrix.of (fun _ _ => (1 : K)) := by
+    simp only [modeMatrix, sub_smul]; abel
+  rw [this, det_scalar_sub_ones]
+
+/-! ## Symmetric three-phase circulants -/
+
 /-- Symmetric circulant `[[a, b, b], [b, a, b], [b, b, a]]`. -/
 def symCirc {R : Type*} [Ring R] (a b : R) : Matrix (Fin 3) (Fin 3) R := circulant ![a, b, b]
 
 @[tmio T, powerlib_foundation] theorem symCirc_apply {R : Type*} [Ring R] (a b : R) :
     symCirc a b = !![a, b, b; b, a, b; b, b, a] := by
   ext i j; fin_cases i <;> fin_cases j <;> rfl
+
+/-- A symmetric three-phase circulant has equal self and mutual terms:
+`symCirc a b = (a − b) I + b 𝟙𝟙ᵀ`. -/
+@[tmio T, powerlib_foundation] theorem symCirc_eq_modeMatrix {R : Type*} [CommRing R] (a b : R) :
+    symCirc a b = modeMatrix 3 (a - b) b := by
+  rw [symCirc_apply]
+  ext i j; fin_cases i <;> fin_cases j <;> simp [modeMatrix]
 
 /-- A 3 × 3 circulant is symmetric iff it has the form `symCirc a b`. -/
 @[tmio T, powerlib_foundation] theorem circulant_symm_iff {R : Type*} [Ring R] (v : Fin 3 → R) :
@@ -91,12 +167,8 @@ def clarkeC : Matrix (Fin 3) (Fin 3) ℂ := clarkePI.map (algebraMap ℝ ℂ)
       Matrix.of (fun _ _ => (1 : ℂ)) by ext; simp] at this
     rw [show clarkeC = clarkePI.map (algebraMap ℝ ℂ) from rfl, this]
     ext i j; fin_cases i <;> fin_cases j <;> simp [diagonal]
-  have hdecomp : symCirc a b = (a - b) • (1 : Matrix (Fin 3) (Fin 3) ℂ) +
-      b • Matrix.of (fun _ _ => (1 : ℂ)) := by
-    rw [symCirc_apply]
-    ext i j; fin_cases i <;> fin_cases j <;> simp
-  rw [hdecomp, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one,
-    clarkeC_mul_transpose, Matrix.mul_smul, Matrix.smul_mul, hJ]
+  rw [symCirc_eq_modeMatrix, modeMatrix, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul,
+    Matrix.smul_mul, Matrix.mul_one, clarkeC_mul_transpose, Matrix.mul_smul, Matrix.smul_mul, hJ]
   ext i j; fin_cases i <;> fin_cases j <;> (simp [diagonal]; try ring)
 
 /-- Modal form of `ZY` for symmetric circulant `Z = symCirc z_s z_m`, `Y = symCirc y_s y_m`:

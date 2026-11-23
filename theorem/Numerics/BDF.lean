@@ -1,5 +1,6 @@
 import theorem.Attributes
 import dependencies.Mathlib
+import Mathlib.NumberTheory.Harmonic.Defs
 
 /-! # Linear multistep methods: Dahlquist order conditions and the BDF methods
 
@@ -15,8 +16,8 @@ Model boundary.
   (`consistent_iff_hasOrder_one`); every method of order `p ≥ 1` is consistent
   (`consistent_of_hasOrder`).
 * The `k`-step BDF (`bdfLMM k`) has `σ(ζ) = ζ^k / H_k` and
-  `ρ(ζ) = Σ_{j=1}^{k} (1/j) ζ^{k-j} (ζ - 1)^j / H_k`, `H_k = Σ_{j=1}^{k} 1/j` (`bdfHarmonic k`;
-  the unnormalized `ρ` is `bdfPolyQ k`, summed as `j + 1` over `range k`).
+  `ρ(ζ) = Σ_{j=1}^{k} (1/j) ζ^{k-j} (ζ - 1)^j / H_k`, `H_k = Σ_{j=1}^{k} 1/j` (Mathlib's
+  `harmonic k`; the unnormalized `ρ` is `bdfPolyQ k`, summed as `j + 1` over `range k`).
 
 Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).
 
@@ -104,17 +105,15 @@ def bdf (k : ℕ) (α : Fin (k + 1) → ℚ) (βk : ℚ) : LMM k :=
 
 open Polynomial
 
-/-- Harmonic number `H_k = Σ_{j=1}^{k} 1/j`. -/
-def bdfHarmonic (k : ℕ) : ℚ := ∑ j ∈ Finset.range k, 1 / ((j + 1 : ℕ) : ℚ)
-
 /-- The unnormalized BDF`k` first characteristic polynomial
 `Σ_{j=1}^{k} (1/j) ζ^{k-j} (ζ - 1)^j` with rational coefficients. -/
 def bdfPolyQ (k : ℕ) : ℚ[X] :=
   ∑ j ∈ Finset.range k, C (1 / ((j + 1 : ℕ) : ℚ)) * X ^ (k - 1 - j) * (X - 1) ^ (j + 1)
 
-/-- The `k`-step BDF for every `k`: `ρ = bdfPolyQ k / H_k`, `σ = ζ^k / H_k`. -/
+/-- The `k`-step BDF for every `k`: `ρ = bdfPolyQ k / H_k`, `σ = ζ^k / H_k` (`H_k = harmonic k`,
+Mathlib's harmonic number `Σ_{j=1}^{k} 1/j`). -/
 def bdfLMM (k : ℕ) : LMM k :=
-  bdf k (fun i => (bdfPolyQ k).coeff i / bdfHarmonic k) (1 / bdfHarmonic k)
+  bdf k (fun i => (bdfPolyQ k).coeff i / harmonic k) (1 / harmonic k)
 
 /-! ### Exact order of `bdfLMM k` -/
 
@@ -229,7 +228,7 @@ at `a`. -/
 @[tmio T, powerlib_foundation] private theorem bdfLMM_residual_poch (k m : ℕ) :
     lmmResidual (bdfLMM k) ((ascPochhammer ℚ m).comp (X - C (k : ℚ))) =
       (∑ j ∈ range k, 1 / ((j + 1 : ℕ) : ℚ) * (if j + 1 = m then (m.factorial : ℚ) else 0) -
-        (derivative (ascPochhammer ℚ m)).eval 0) / bdfHarmonic k := by
+        (derivative (ascPochhammer ℚ m)).eval 0) / harmonic k := by
   set g := (ascPochhammer ℚ m).comp (X - C (k : ℚ)) with hg
   have hφ : bdfPair (fun x => g.eval x) (bdfPolyQ k) =
       ∑ i : Fin (k + 1), g.eval ((i : ℕ) : ℚ) * (bdfPolyQ k).coeff i := by
@@ -255,9 +254,9 @@ at `a`. -/
     · simp [show m - (j + 1) ≠ 0 by omega, h.ne]
     · subst h; rw [Nat.descFactorial_self]; simp
     · rw [(Nat.descFactorial_eq_zero_iff_lt).mpr h]; simp [show j + 1 ≠ m by omega]
-  have hβ : ∑ i : Fin (k + 1), (if (i : ℕ) = k then 1 / bdfHarmonic k else 0) *
+  have hβ : ∑ i : Fin (k + 1), (if (i : ℕ) = k then 1 / harmonic k else 0) *
       (derivative g).eval ((i : ℕ) : ℚ) =
-      (derivative (ascPochhammer ℚ m)).eval 0 / bdfHarmonic k := by
+      (derivative (ascPochhammer ℚ m)).eval 0 / harmonic k := by
     rw [Finset.sum_eq_single (Fin.last k)
       (fun b _ hb => by simp [show (b : ℕ) ≠ k from fun h => hb (Fin.ext (by simpa using h))])
       (by simp)]
@@ -278,7 +277,7 @@ at `a`. -/
     ⟨(monic_ascPochhammer ℚ n).comp (monic_X_sub_C _)
         (by rw [natDegree_X_sub_C]; exact one_ne_zero),
       by rw [hgdef, natDegree_comp, ascPochhammer_natDegree, natDegree_X_sub_C, mul_one]⟩
-  have hH : 0 < bdfHarmonic k :=
+  have hH : 0 < harmonic k :=
     Finset.sum_pos (fun j _ => by positivity) (Finset.nonempty_range_iff.mpr (by omega))
   have hzero : ∀ n < k + 1, lmmResidual (bdfLMM k) (g n) = 0 := by
     intro n hn

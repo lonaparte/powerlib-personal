@@ -1,5 +1,6 @@
 import theorem.Criteria.Hurwitz2
 import theorem.Periodic.LTI
+import theorem.PhasePlane.Planar
 
 /-! # The first-order 2:1 slow flow as a real two-state LTI system
 
@@ -12,8 +13,8 @@ Model boundary.
   frequency, continuous time, constant real damping `α₀`, constant detuning `Δ = ω_p/2 − ω_cr`,
   and constant complex pump coefficient `g` (in the source `g = ε 𝒢 / 2`, `ε` the modulation
   depth, `𝒢` the projected pump gain): `Ȧ = −(α₀ + jΔ) A + g A*`   (`slowFlowField`).
-* In the real coordinates `(Re A, Im A)` (`toReal`, Mathlib's orthonormal basis `{1, I}` of `ℂ`
-  onto `ℝ² = EuclideanSpace ℝ (Fin 2)`) this is the two-state linear field
+* In the real coordinates `(Re A, Im A)` (the complex form `PhasePlane.complexIso` of the plane
+  `ℝ² = EuclideanSpace ℝ (Fin 2)`) this is the two-state linear field
   `slowFlowSystem α₀ Δ g = LinearSystems.affineLinearVectorField (slowFlowMatrix α₀ Δ g) 0` with
   state matrix `!![−α₀ + Re g, Δ + Im g; −Δ + Im g, −α₀ − Re g]` (`slowFlowMatrix`).
 * Averaged mathematical model, no model family. The passage from a converter model to this slow
@@ -25,9 +26,9 @@ gfl-gfm-parametric-contrast.md §5 (slow flow and leading criterion), §7 (`σ_�
 multiplier `μ = −e^{−α₀T}` at `δ̂₁ = 0` with perfect tuning `ω_cr T = π`).
 
 Results.
-* `toReal_slowFlowField`, `isIntegralCurveOn_slowFlow_iff`, `hasDerivAt_slowFlow_iff` — the real
-  field is exactly the complex slow flow (solutions on any time set, and global solutions,
-  correspond one-to-one).
+* `complexIso_slowFlowField`, `isIntegralCurveOn_slowFlow_iff` — the real field is exactly the
+  complex slow flow (solutions on any time set, global ones included, correspond one-to-one;
+  `PhasePlane.isIntegralCurveOn_complexIso_iff`).
 * `trace_slowFlowMatrix`, `det_slowFlowMatrix`, `slowFlow_root_iff` — trace `−2α₀`, determinant
   `α₀² + Δ² − |g|²`; characteristic polynomial `s² + 2α₀ s + α₀² + Δ² − |g|²`, whose roots are
   `−α₀ ± √(|g|² − Δ²)` (real when `Δ² ≤ |g|²`).
@@ -61,16 +62,10 @@ def slowFlowMatrix (α₀ Δ : ℝ) (g : ℂ) : Matrix (Fin 2) (Fin 2) ℝ :=
 def slowFlowSystem (α₀ Δ : ℝ) (g : ℂ) : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) :=
   affineLinearVectorField (slowFlowMatrix α₀ Δ g) 0
 
-/-- Real coordinates `(Re A, Im A)` as a continuous real-linear equivalence onto `ℝ²`. -/
-def toReal : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
-  Complex.orthonormalBasisOneI.repr.toContinuousLinearEquiv
-
-@[tmio T, simp, powerlib_foundation] theorem toReal_apply_zero (A : ℂ) : toReal A 0 = A.re := rfl
-
-@[tmio T, simp, powerlib_foundation] theorem toReal_apply_one (A : ℂ) : toReal A 1 = A.im := rfl
-
-@[tmio M, powerlib_foundation] theorem toReal_slowFlowField (α₀ Δ : ℝ) (g A : ℂ) :
-    slowFlowSystem α₀ Δ g (toReal A) = toReal (slowFlowField α₀ Δ g A) := by
+/-- In the complex form of the plane the real field is the complex slow flow. -/
+@[tmio M, powerlib_foundation] theorem complexIso_slowFlowField (α₀ Δ : ℝ) (g A : ℂ) :
+    slowFlowSystem α₀ Δ g (PhasePlane.complexIso A) =
+      PhasePlane.complexIso (slowFlowField α₀ Δ g A) := by
   ext i
   fin_cases i <;>
     simp [slowFlowSystem, Linear.affine_apply, slowFlowMatrix, slowFlowField, Matrix.mulVec,
@@ -80,30 +75,10 @@ def toReal : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
 the complex slow flow. -/
 @[tmio M, powerlib_foundation] theorem isIntegralCurveOn_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ)
     (A : ℝ → ℂ) (s : Set ℝ) :
-    IsIntegralCurveOn (fun t => toReal (A t)) (fun _ x => slowFlowSystem α₀ Δ g x) s ↔
-      IsIntegralCurveOn A (fun _ z => slowFlowField α₀ Δ g z) s := by
-  refine forall₂_congr fun t _ => ?_
-  simp only [toReal_slowFlowField]
-  constructor
-  · intro h
-    have h' := toReal.symm.hasFDerivAt.comp_hasDerivWithinAt t h
-    simpa [Function.comp_def] using h'
-  · intro h
-    exact toReal.hasFDerivAt.comp_hasDerivWithinAt t h
-
-/-- Global solutions of the real field are exactly the real coordinates of global solutions of
-the complex slow flow. -/
-@[tmio M, powerlib_foundation] theorem hasDerivAt_slowFlow_iff (α₀ Δ : ℝ) (g : ℂ) (A : ℝ → ℂ) :
-    (∀ t, HasDerivAt (fun t => toReal (A t)) (slowFlowSystem α₀ Δ g (toReal (A t))) t) ↔
-      ∀ t, HasDerivAt A (slowFlowField α₀ Δ g (A t)) t := by
-  refine forall_congr' fun t => ?_
-  rw [toReal_slowFlowField]
-  constructor
-  · intro h
-    have h' := toReal.symm.hasFDerivAt.comp_hasDerivAt t h
-    simpa [Function.comp_def] using h'
-  · intro h
-    exact toReal.hasFDerivAt.comp_hasDerivAt t h
+    IsIntegralCurveOn (fun t => PhasePlane.complexIso (A t))
+        (fun _ x => slowFlowSystem α₀ Δ g x) s ↔
+      IsIntegralCurveOn A (fun _ z => slowFlowField α₀ Δ g z) s :=
+  PhasePlane.isIntegralCurveOn_complexIso_iff (complexIso_slowFlowField α₀ Δ g) A s
 
 /-! ## Spectrum -/
 

@@ -1,19 +1,19 @@
 import theorem.Dynamics.Linearization
 import theorem.Dynamics.Coordinates
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
-/-! # Overdamped (Smoluchowski) limit: energy balance, Boltzmann density, rescaling
+/-! # Overdamped (Smoluchowski) limit: energy balance, gradient flow, rescaling
 
-The energy identity of the damped Newton equation, the zero-flux Boltzmann density of the
-Smoluchowski equation, local stability of the overdamped gradient flow, and the corrected
-multiscale rescaling.
+The energy identity of the damped Newton equation, local stability of the overdamped gradient
+flow, and the corrected multiscale rescaling.
 
 Model boundary.
 * Scalar Newton form `m θ̈ + γ θ̇ + V'(θ) = F(t)` with constant `m, γ`; potential `V`
   differentiable (`C²` where stated); deterministic trajectories for the energy identity.
-* For the density statement, the Smoluchowski Fokker–Planck flux `J = −(V'/γ) p − (D/γ) p'` with
-  constant `D > 0` (no stochastic calculus is used: the claim is that the Boltzmann density
-  makes `J ≡ 0`).
+* The density statement of §1.2/§1.7 is not restated here: the Smoluchowski Fokker–Planck flux
+  `J = −(V'/γ) p − (D/γ) p'` is `Stochastic.FP.flux1 (−V'/γ) (2D/γ) p`, and the Boltzmann density
+  `p = e^{−V/D}/Z` (`Stochastic.FP.gibbs`) makes it vanish identically
+  (`Stochastic.FP.gibbs_flux`, mobility `1/γ`); under the integrability premise `∫ e^{−V/D} < ∞`
+  (which the note leaves implicit) it is a probability density (`Stochastic.FP.gibbs_normalized`).
 
 Source: work-sync theory/T-overdamped-limit.md §1.2 (Smoluchowski equation, Boltzmann
 stationary density `p ∝ exp(−V/D)`), §1.3 (multiscale rescaling), §1.5 (energy dissipation),
@@ -21,10 +21,6 @@ stationary density `p ∝ exp(−V/D)`), §1.3 (multiscale rescaling), §1.5 (en
 
 Results.
 * `energy_balance` — along every trajectory, `d/dt [½ m θ̇² + V(θ)] = −γ θ̇² + F θ̇`.
-* `boltzmann_hasDerivAt`, `boltzmann_flux_zero` — `p = e^{−V/D}/Z` has `p' = −(V'/D) p`, so the
-  probability flux vanishes identically (stationary, detailed balance);
-  `boltzmann_integral_eq_one`, `boltzmann_pos`: under the integrability premise
-  `∫ e^{−V/D} < ∞` (which the note leaves implicit) `p` is a probability density.
 * `gradientFlow_locallyExponentiallyStable` — an application of
   `hurwitz_linearization_locally_exponentially_stable`: the overdamped flow
   `θ̇ = −V'(θ)/γ` (`V ∈ C²`, `γ > 0`) is locally exponentially stable at every critical point
@@ -41,7 +37,7 @@ Corrections.
 
 noncomputable section
 namespace powerlib.SingularPerturbation.Overdamped
-open Real MeasureTheory
+open Real
 
 /-- **Energy balance** `dE/dt = −γ θ̇² + F θ̇` for `E = ½ m θ̇² + V(θ)`. -/
 @[tmio T, powerlib_foundation] theorem energy_balance {m γ : ℝ} {V V' F θ ω a : ℝ → ℝ} {t : ℝ}
@@ -53,39 +49,6 @@ open Real MeasureTheory
   refine (h1.add h2).congr_deriv ?_
   simp only [Nat.cast_ofNat]
   linear_combination (ω t) * heq
-
-/-- Unnormalised Boltzmann weight `e^{−V/D}`. -/
-def weight (V : ℝ → ℝ) (D θ : ℝ) : ℝ := Real.exp (-V θ / D)
-
-/-- `(e^{−V/D})' = −(V'/D) e^{−V/D}`. -/
-@[tmio T, powerlib_foundation] theorem boltzmann_hasDerivAt {V V' : ℝ → ℝ} (D : ℝ) (Z : ℝ) {θ : ℝ}
-    (hV : HasDerivAt V (V' θ) θ) :
-    HasDerivAt (fun x => weight V D x / Z) (-(V' θ / D) * (weight V D θ / Z)) θ := by
-  unfold weight
-  have := ((hV.neg.div_const D).exp).div_const Z
-  simp only [Pi.neg_apply] at this
-  convert this using 1
-  ring
-
-/-- **Zero flux**: `J = −(V'/γ) p − (D/γ) p' = 0` for the Boltzmann density. -/
-@[tmio T, powerlib_foundation] theorem boltzmann_flux_zero {V V' : ℝ → ℝ} {D γ Z : ℝ} (hD : D ≠ 0)
-    {θ : ℝ} (hV : HasDerivAt V (V' θ) θ) :
-    -(V' θ / γ) * (weight V D θ / Z) - D / γ * (deriv (fun x => weight V D x / Z) θ) = 0 := by
-  rw [(boltzmann_hasDerivAt D Z hV).deriv]
-  field_simp
-  ring
-
-@[tmio T, powerlib_foundation] theorem boltzmann_pos (V : ℝ → ℝ) (D θ : ℝ) : 0 < weight V D θ :=
-  Real.exp_pos _
-
-/-- With the integrability premise `∫ e^{−V/D} < ∞`, `p = e^{−V/D}/Z`, `Z = ∫ e^{−V/D}`, is a
-probability density. -/
-@[tmio T, powerlib_foundation] theorem boltzmann_integral_eq_one {V : ℝ → ℝ} {D : ℝ}
-    (hint : Integrable (fun θ => weight V D θ)) :
-    ∫ θ, weight V D θ / (∫ x, weight V D x) = 1 := by
-  have hZ : 0 < ∫ x, weight V D x :=
-    integral_exp_pos (f := fun x => -V x / D) hint
-  rw [integral_div, div_self hZ.ne']
 
 /-! ## Overdamped gradient flow (C wrapper of the linearization theorem) -/
 

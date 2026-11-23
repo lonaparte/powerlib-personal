@@ -4,6 +4,7 @@ import theorem.Stochastic.SPH
 import theorem.GridTiedConverter.PLL.StochasticPH
 import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.PH.Nonlinear
+import theorem.GridTiedConverter.GFL.LCLine.Reduction
 
 /-! # SPHS embedding of the reduced 2D GFL–PLL equation: port geometry and the generator
 
@@ -29,17 +30,22 @@ Results.
   with its skew `J = PLL.pllJ = [[0, 1], [−1, 0]]` (skew by `PH.transpose_symplectic_two`) and
   `R = PLL.pllR K_p ⪰ 0` (`PLL.pllR_posSemidef`, `K_p ≥ 0`); the frequency column is
   `ε` times the PLL input port `PLL.pllB` (`theorem/GridTiedConverter/PLL/PIPLLPH.lean`).
-* `voltageBlock_eq_vecMulVec`, `voltageBlock_det`, `voltageBlock_rank_le`: the voltage block is
-  the rank-one matrix `(K_p, 1)ᵀ(σ_d, g)`.
+* `voltageBlock_eq_vecMulVec`, `voltageBlock_det`, `voltageBlock_rank_le`: the voltage block, the
+  PLL voltage coupling `PLL.StochasticPH.pllNoise K_p (σ_d, g)`, is the rank-one matrix
+  `(K_p, 1)ᵀ(σ_d, g)`; the frequency column `freqNoise` is the sparse column
+  `Synchronous.SM.sparseNoise` and the full port `embNoise` is `PLL.StochasticPH.pllNoiseFreq`.
 * `freqNoise_fdt`: the frequency channel satisfies `B Bᵀ = 2 T_eff R`, `T_eff = ε²/(2K_p)`
   (exact FDT); `voltage_alignment`, `voltage_alignment_lt_one`, `freq_alignment`: the voltage
   channel is structurally non-FDT (normalized alignment `K_p²/(1 + K_p²) < 1` with `R`), the
   frequency column has alignment one.
-* `ito_emb`, `genL_emb`: the Itô correction
+* `ito_emb`, `genL_emb`: the Itô correction (read from `PLL.StochasticPH.pllIto_freq`)
   `Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''` (frequency channel only, `σ_d = g = 0`:
   `½ ε² 𝒱''`) and the generator `𝓛𝓗 = −K_p h² + Δ_Itô` (the generic stochastic-pH balance
   `Stochastic.SPH.genL_pH` with no control port).
 * `ito_emb_neg_iff`, `ito_emb_sign_indefinite`: the sign of `Δ_Itô` (Correction below).
+* `gflIto`: the form-B voltage channel, the noise row `σ_v(θ_e)` of the quasi-steady reduction
+  (`GFL.LCLine.Network.sigmaV`, `theorem/GridTiedConverter/GFL/LCLine/Reduction.lean`), gives
+  `Δ_Itô = ½ (K_p² 𝒱'' + K_i)/Δ` (T-gfl-sph §1.1–§1.3).
 
 Correction (sphs-embedding §3, already noted there on 2026-08-13).  `Δ_Itô` is **not** a
 nonnegative function: it is affine in `𝒱''(θ_e)` with positive slope, hence negative wherever
@@ -78,18 +84,19 @@ def embDrift (Kp Ki hθ η : ℝ) : Fin 2 → ℝ := ![Kp * hθ + Ki * η, hθ]
 
 /-! ## Noise ports (§2b) -/
 
-/-- Voltage block in invariant coordinates: columns `σ_d (K_p, 1)ᵀ`, `g (K_p, 1)ᵀ`. -/
-def voltageBlock (Kp σd g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * σd, Kp * g; σd, g]
+/-- Voltage block in invariant coordinates: columns `σ_d (K_p, 1)ᵀ`, `g (K_p, 1)ᵀ`, the PLL
+voltage-noise coupling `PLL.StochasticPH.pllNoise K_p σ_v` with the row `σ_v = (σ_d, g)`. -/
+abbrev voltageBlock (Kp σd g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := pllNoise Kp ![σd, g]
 
 /-- The voltage block is the outer product `(K_p, 1)ᵀ (σ_d, g)`. -/
 @[tmio M, powerlib_domain] theorem voltageBlock_eq_vecMulVec (Kp σd g : ℝ) :
     voltageBlock Kp σd g = vecMulVec ![Kp, 1] ![σd, g] := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [voltageBlock, vecMulVec]
+  ext i j; fin_cases i <;> fin_cases j <;> simp [pllNoise, vecMulVec]
 
 /-- **Rank one**: the two voltage columns are parallel, the block is singular ... -/
 @[tmio M, powerlib_domain] theorem voltageBlock_det (Kp σd g : ℝ) :
     (voltageBlock Kp σd g).det = 0 := by
-  rw [voltageBlock, det_fin_two_of]; ring
+  rw [voltageBlock, pllNoise, det_fin_two_of]; ring
 
 /-- ... and has rank at most one. -/
 @[tmio M, powerlib_domain] theorem voltageBlock_rank_le (Kp σd g : ℝ) :
@@ -97,24 +104,20 @@ def voltageBlock (Kp σd g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * σd, K
   rw [voltageBlock_eq_vecMulVec]; exact rank_vecMulVec_le _ _
 
 /-- Full noise matrix `[σ_d(K_p,1)ᵀ | g(K_p,1)ᵀ | (−ε, 0)ᵀ]` (columns: amplitude, phase,
-frequency). -/
-def embNoise (Kp σd g ε : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := !![Kp * σd, Kp * g, -ε; σd, g, 0]
+frequency): the PLL port with the frequency channel, `PLL.StochasticPH.pllNoiseFreq K_p (σ_d, g)
+(−ε)`, its column index `Fin 2 ⊕ Fin 1` read as `Fin 3`. -/
+def embNoise (Kp σd g ε : ℝ) : Matrix (Fin 2) (Fin 3) ℝ :=
+  (pllNoiseFreq Kp ![σd, g] (-ε)).submatrix id (finSumFinEquiv (m := 2) (n := 1)).symm
 
-/-- Frequency column alone. -/
-def freqNoise (ε : ℝ) : Matrix (Fin 2) (Fin 1) ℝ := !![-ε; 0]
+/-- Frequency column alone, the sparse column `Synchronous.SM.sparseNoise` on `θ_e`. -/
+abbrev freqNoise (ε : ℝ) : Matrix (Fin 2) (Fin 1) ℝ := Synchronous.SM.sparseNoise ![0] ![-ε]
 
 /-- **Frequency channel FDT (exact)**: `B Bᵀ = 2 T_eff R` with `T_eff = ε²/(2K_p)`. -/
 @[tmio M, powerlib_domain] theorem freqNoise_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
     freqNoise ε * (freqNoise ε)ᵀ = (2 * (ε ^ 2 / (2 * Kp))) • pllR Kp := by
   ext i j; fin_cases i <;> fin_cases j <;>
-    simp [freqNoise, pllR, Matrix.mul_apply]
+    simp [Synchronous.SM.sparseNoise, pllR, Matrix.mul_apply]
   field_simp
-
-/-- Voltage covariance `v vᵀ = (σ_d² + g²) [[K_p², K_p], [K_p, 1]]`. -/
-@[tmio M, powerlib_domain] theorem voltageBlock_mul_transpose (Kp σd g : ℝ) :
-    voltageBlock Kp σd g * (voltageBlock Kp σd g)ᵀ = (σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1] := by
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [voltageBlock, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
 /-- Frobenius inner product `⟨A, B⟩ = tr(Aᵀ B)`. -/
 def frobInner (A B : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := (Aᵀ * B).trace
@@ -128,7 +131,7 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
             (voltageBlock Kp σd g * (voltageBlock Kp σd g)ᵀ)) *
           Real.sqrt (frobInner (pllR Kp) (pllR Kp))) = Kp ^ 2 / (1 + Kp ^ 2) := by
   have hs' : 0 < σd ^ 2 + g ^ 2 := lt_of_le_of_ne (by positivity) (Ne.symm hs)
-  rw [voltageBlock_mul_transpose]
+  rw [pllNoise_mul_transpose, show ![σd, g] ⬝ᵥ ![σd, g] = σd ^ 2 + g ^ 2 by simp [dotProduct, sq]]
   have h1 : frobInner ((σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1]) (pllR Kp) =
       (σd ^ 2 + g ^ 2) * Kp ^ 3 := by
     simp [frobInner, pllR, Matrix.trace_fin_two]; ring
@@ -151,7 +154,8 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
         (Real.sqrt (frobInner (freqNoise ε * (freqNoise ε)ᵀ) (freqNoise ε * (freqNoise ε)ᵀ)) *
           Real.sqrt (frobInner (pllR Kp) (pllR Kp))) = 1 := by
   have e : freqNoise ε * (freqNoise ε)ᵀ = !![ε ^ 2, 0; 0, 0] := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp [freqNoise, Matrix.mul_apply]; ring
+    ext i j; fin_cases i <;> fin_cases j <;> simp [Synchronous.SM.sparseNoise, Matrix.mul_apply]
+    ring
   rw [e]
   have h1 : frobInner !![ε ^ 2, 0; 0, 0] (pllR Kp) = ε ^ 2 * Kp := by
     simp [frobInner, pllR, Matrix.trace_fin_two]
@@ -165,21 +169,17 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
 
 /-! ## Generator of `𝓗` (§3) -/
 
-/-- `h_noise h_noiseᵀ` of the full port: voltage part plus `diag(ε², 0)`. -/
-@[tmio M, powerlib_domain] theorem embNoise_mul_transpose (Kp σd g ε : ℝ) :
-    embNoise Kp σd g ε * (embNoise Kp σd g ε)ᵀ =
-      (σd ^ 2 + g ^ 2) • !![Kp ^ 2, Kp; Kp, 1] + !![ε ^ 2, 0; 0, 0] := by
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [embNoise, Matrix.mul_apply, Fin.sum_univ_three] <;> ring
-
 /-- **Itô correction of the embedding**:
-`Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''`. -/
+`Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''`, the PLL correction with the frequency
+channel (`PLL.StochasticPH.pllIto_freq`, `pllIto`; the column order does not matter). -/
 @[tmio M, powerlib_domain] theorem ito_emb (Kp Ki σd g ε V2 : ℝ) :
     itoCorrection (embNoise Kp σd g ε) (pllHess V2 Ki) =
       (1 / 2 : ℝ) * (σd ^ 2 + g ^ 2) * (Kp ^ 2 * V2 + Ki) + (1 / 2 : ℝ) * ε ^ 2 * V2 := by
-  unfold itoCorrection
-  rw [embNoise_mul_transpose]
-  simp [pllHess, Matrix.trace_fin_two]
+  have h : itoCorrection (embNoise Kp σd g ε) (pllHess V2 Ki) =
+      itoCorrection (pllNoiseFreq Kp ![σd, g] (-ε)) (pllHess V2 Ki) := by
+    unfold itoCorrection
+    rw [embNoise, transpose_submatrix, submatrix_mul_equiv, submatrix_id_id]
+  rw [h, pllIto_freq, pllIto, show ![σd, g] ⬝ᵥ ![σd, g] = σd ^ 2 + g ^ 2 by simp [dotProduct, sq]]
   ring
 
 /-- **Generator identity (§3)**: `𝓛𝓗 = f ⬝ ∇𝓗 + ½ tr(h hᵀ ∇²𝓗) = −K_p h² + Δ_Itô`. -/
@@ -187,6 +187,15 @@ is the constant `K_p²/(1 + K_p²)` (independent of `σ_d`, `g`), never `1` (`K_
     genL (embDrift Kp Ki hθ η) (embNoise Kp σd g ε) (embGrad Ki hθ η) (pllHess V2 Ki) =
       -(Kp * hθ ^ 2) + itoCorrection (embNoise Kp σd g ε) (pllHess V2 Ki) := by
   unfold genL; rw [embDrift_dot_grad]
+
+/-- **Form-B Itô correction** (T-gfl-sph §1.1–§1.3): with the EMF noise row `σ_v(θ_e)` of the
+quasi-steady reduction (`GFL.LCLine.Network.sigmaV`, `hE_noise_split`), whose squared norm is
+`1/Δ` at every angle (`sigmaV_dot_self`), `Δ_Itô = ½ (K_p² 𝒱'' + K_i)/Δ`. -/
+@[tmio M, powerlib_domain] theorem gflIto (p : LCLine.Network) (hΔ : p.Δ ≠ 0) (Kp Ki V2 θ : ℝ) :
+    itoCorrection (pllNoise Kp (p.sigmaV θ)) (pllHess V2 Ki) =
+      (1 / 2 : ℝ) * (Kp ^ 2 * V2 + Ki) / p.Δ := by
+  rw [pllIto, p.sigmaV_dot_self hΔ]
+  ring
 
 /-- **Correction (sign)**: `Δ_Itô < 0 ⇔ 𝒱'' < −(σ_d² + g²) K_i / ((σ_d² + g²) K_p² + ε²)`
 whenever some noise acts (`(σ_d² + g²) K_p² + ε² > 0`). -/

@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import theorem.Attributes
+import theorem.Delay.Pade
 
 /-! # Phase margin of the IMC current loop with a transport delay
 
@@ -11,7 +12,8 @@ Model boundary.
 One axis of the IMC-tuned current loop of `Drives.CascadeControl` (RL plant `1/(Ls + R)`,
 PI `K_p = Lα`, `K_i = Rα`, so the delay-free open loop is exactly `α/s`), in series with a pure
 transport delay `τ ≥ 0` lumping computation and PWM delay (`τ_d ≈ 1.5 T_s`).  Open-loop
-frequency response `L(jω) = (α/(jω)) e^{−jωτ}`, `α > 0`, continuous time, linear, no
+frequency response `L(jω) = (α/(jω)) e^{−jωτ}` (the delay `Delay.pureDelay τ` at `s = jω`),
+`α > 0`, continuous time, linear, no
 saturation.  The phase margin is `PM = π + arg L(jω_c)` at the unique gain crossover `ω_c`.
 
 Source: work-sync `theory/T-field-oriented-control.md` §2.4 ("严格 60° PM 上限
@@ -37,13 +39,15 @@ namespace powerlib.CurrentControl.LoopDelay
 
 open Complex
 
-/-- Open-loop frequency response `L(jω) = (α/(jω)) e^{−jωτ}`. -/
-def imcDelayLoop (α τ ω : ℝ) : ℂ := (α : ℂ) / (I * ω) * exp (-(I * ω * τ))
+/-- Open-loop frequency response `L(jω) = (α/(jω)) e^{−jωτ}`: the delay-free IMC loop `α/s` in
+series with the pure delay `Delay.pureDelay τ`, at `s = jω`. -/
+def imcDelayLoop (α τ ω : ℝ) : ℂ := (α : ℂ) / (I * ω) * Delay.pureDelay τ (I * ω)
 
 /-- `|L(jω)| = α/ω` for `α, ω > 0`. -/
 @[tmio M, powerlib_domain] theorem imcDelayLoop_norm {α τ ω : ℝ} (hα : 0 < α) (hω : 0 < ω) :
     ‖imcDelayLoop α τ ω‖ = α / ω := by
-  rw [imcDelayLoop, norm_mul, show -(I * ω * τ) = ((-(ω * τ) : ℝ) : ℂ) * I by push_cast; ring,
+  rw [imcDelayLoop, Delay.pureDelay, norm_mul,
+    show -((τ : ℂ) * (I * ω)) = ((-(ω * τ) : ℝ) : ℂ) * I by push_cast; ring,
     norm_exp_ofReal_mul_I, mul_one, norm_div, norm_mul, norm_I, one_mul, norm_real, norm_real,
     Real.norm_of_nonneg hα.le, Real.norm_of_nonneg hω.le]
 
@@ -62,7 +66,7 @@ def imcDelayLoop (α τ ω : ℝ) : ℂ := (α : ℂ) / (I * ω) * exp (-(I * ω
       exp_neg, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_pi_div_two, Real.sin_pi_div_two]
     field_simp
     simp
-  rw [imcDelayLoop, h1, ← exp_add]
+  rw [imcDelayLoop, Delay.pureDelay, h1, ← exp_add]
   congr 1
   push_cast
   ring

@@ -25,8 +25,11 @@ Results.
 * `fp1_eq_neg_deriv_flux` — `L* p = −J'`.
 * `zeroFlux_hasDerivAt`, `zeroFlux_flux`, `zeroFlux_stationary` — for `dX = μ dt + √(2D) dW`,
   `p = (C/D) e^{Φ}` with `Φ' = μ/D` has zero flux and solves `L* p = 0`.
+* `gibbs` — the Gibbs (Boltzmann) weight `e^{−V/D}`; `gibbs_pos`, `continuous_gibbs`,
+  `hasDerivAt_gibbs` (`(e^{−V/D})' = −(V'/D) e^{−V/D}`).
 * `gibbs_stationary`, `gibbs_flux` — the Gibbs form: for `μ = −V'`, constant `D > 0`,
-  `p = e^{−V/D}` has zero flux and solves `L* p = 0`.
+  `p = e^{−V/D}` solves `L* p = 0`; with mobility `1/γ` (`μ = −V'/γ`, `a = 2D/γ`, the
+  Smoluchowski flux) every multiple `e^{−V/D}/Z` has zero flux, pointwise.
 * `gibbs_normalized`, `gibbs_not_integrable` — normalization (see Corrections).
 
 Corrections.
@@ -167,47 +170,63 @@ def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (
     rw [deriv_zero_of_not_differentiableAt hdiff, deriv_zero_of_not_differentiableAt h2]
     ring
 
-/-- **Gibbs form (§1.4)**: gradient drift `μ = −V'`, constant `D > 0`: `p = e^{−V/D}` has zero
-flux and solves `L* p = 0` (special case `Φ = −V/D`, `C = D`). -/
+/-! ## The Gibbs weight -/
+
+/-- Gibbs (Boltzmann) weight `e^{−V/D}` of a potential `V` at noise intensity `D`. -/
+def gibbs (V : ℝ → ℝ) (D x : ℝ) : ℝ := exp (-V x / D)
+
+@[tmio T, powerlib_foundation] theorem gibbs_pos (V : ℝ → ℝ) (D x : ℝ) : 0 < gibbs V D x :=
+  exp_pos _
+
+@[tmio T, fun_prop, powerlib_foundation] theorem continuous_gibbs {V : ℝ → ℝ} (hV : Continuous V)
+    (D : ℝ) : Continuous (gibbs V D) := by
+  unfold gibbs; fun_prop
+
+/-- `(e^{−V/D})' = −(V'/D) e^{−V/D}` wherever `V' ` is the derivative of `V`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_gibbs {V : ℝ → ℝ} {v D x : ℝ}
+    (hV : HasDerivAt V v x) : HasDerivAt (gibbs V D) (-(v / D) * gibbs V D x) x := by
+  have h := (hV.neg.div_const D).exp
+  rw [mul_comm, ← neg_div]
+  exact h
+
+/-- **Gibbs form (§1.4)**: gradient drift `μ = −V'`, constant `D > 0`: `p = e^{−V/D}` solves
+`L* p = 0` (special case `Φ = −V/D`, `C = D` of `zeroFlux_stationary`). -/
 @[tmio T, powerlib_foundation] theorem gibbs_stationary {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0)
     (hV : ∀ x, HasDerivAt V (V' x) x) (x : ℝ) :
-    fp1 (fun y => -V' y) (fun _ => 2 * D) (fun y => exp (-V y / D)) x = 0 := by
+    fp1 (fun y => -V' y) (fun _ => 2 * D) (gibbs V D) x = 0 := by
   have hΦ : ∀ x, HasDerivAt (fun y => -V y / D) ((fun y => -V' y) x / (fun _ => D) x) x := by
     intro x
     simpa [neg_div] using ((hV x).neg.div_const D)
   have := zeroFlux_stationary (μ := fun y => -V' y) (D := fun _ => D) D (fun _ => hD) hΦ x
   convert! this using 3
-  rw [div_self hD, one_mul]
+  rw [div_self hD, one_mul, gibbs]
 
-@[tmio T, powerlib_foundation] theorem gibbs_flux {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0)
-    (hV : ∀ x, HasDerivAt V (V' x) x) (x : ℝ) :
-    flux1 (fun y => -V' y) (fun _ => 2 * D) (fun y => exp (-V y / D)) x = 0 := by
-  have hΦ : ∀ x, HasDerivAt (fun y => -V y / D) ((fun y => -V' y) x / (fun _ => D) x) x := by
-    intro x
-    simpa [neg_div] using ((hV x).neg.div_const D)
-  have := zeroFlux_flux (μ := fun y => -V' y) (D := fun _ => D) D (fun _ => hD) hΦ x
-  convert! this using 3
-  rw [div_self hD, one_mul]
+/-- **Gibbs form (§1.4), zero flux**: drift `μ = −V'/γ` and diffusion `a = 2D/γ` (mobility
+`1/γ`; `γ = 1` is the gradient drift `−V'` with `a = 2D`; `γ` the friction of the Smoluchowski
+equation), `D ≠ 0`: the Gibbs density `e^{−V/D}/Z` (any normalization `Z`) has zero flux at every
+point where `V'` is the derivative of `V`. -/
+@[tmio T, powerlib_foundation] theorem gibbs_flux {V V' : ℝ → ℝ} {D : ℝ} (hD : D ≠ 0) (γ Z : ℝ)
+    {x : ℝ} (hV : HasDerivAt V (V' x) x) :
+    flux1 (fun y => -V' y / γ) (fun _ => 2 * D / γ) (fun y => gibbs V D y / Z) x = 0 := by
+  unfold flux1
+  rw [(((hasDerivAt_gibbs (D := D) hV).div_const Z).const_mul (2 * D / γ)).deriv]
+  field_simp
+  ring
 
 /-- **Normalization hypothesis made explicit**: if `Z = ∫ e^{−V/D} < ∞` (integrability), then
 `e^{−V/D}/Z` is a probability density (nonnegative, total mass one). -/
 @[tmio T, powerlib_foundation] theorem gibbs_normalized {V : ℝ → ℝ} {D : ℝ}
-    (hint : Integrable (fun x => exp (-V x / D))) :
-    (∀ x, 0 ≤ exp (-V x / D) / ∫ y, exp (-V y / D)) ∧
-      ∫ x, exp (-V x / D) / ∫ y, exp (-V y / D) = 1 := by
-  have hZ : 0 < ∫ y, exp (-V y / D) := by
-    rw [integral_pos_iff_support_of_nonneg (fun y => (exp_pos _).le) hint]
-    have : Function.support (fun y => exp (-V y / D)) = Set.univ := by
-      ext y; simp [(exp_pos _).ne']
-    rw [this]; simp
-  refine ⟨fun x => div_nonneg (exp_pos _).le hZ.le, ?_⟩
+    (hint : Integrable (gibbs V D)) :
+    (∀ x, 0 ≤ gibbs V D x / ∫ y, gibbs V D y) ∧ ∫ x, gibbs V D x / ∫ y, gibbs V D y = 1 := by
+  have hZ : 0 < ∫ y, gibbs V D y := integral_exp_pos (f := fun x => -V x / D) hint
+  refine ⟨fun x => div_nonneg (gibbs_pos V D x).le hZ.le, ?_⟩
   rw [integral_div, div_self hZ.ne']
 
 /-- Without normalizability: `e^{−V/D}` is not integrable when `V ≤ C` on a measurable set of
 infinite length (e.g. periodic `V`). -/
 @[tmio T, powerlib_foundation] theorem gibbs_not_integrable {V : ℝ → ℝ} {D C : ℝ} (hD : 0 < D)
     {S : Set ℝ} (hSm : MeasurableSet S) (hS : volume S = ⊤) (hVS : ∀ x ∈ S, V x ≤ C) :
-    ¬ Integrable (fun x => exp (-V x / D)) := by
+    ¬ Integrable (gibbs V D) := by
   intro hint
   have hle : ∀ x, S.indicator (fun _ => ENNReal.ofReal (exp (-C / D))) x ≤
       ‖exp (-V x / D)‖ₑ := by

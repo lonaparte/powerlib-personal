@@ -177,7 +177,7 @@ inductive Step : PantelidesState ι → PantelidesState ι → Prop
 the original system, nothing assigned. -/
 def initial : PantelidesState ι where
   c _ := 0
-  d j := (univ.filter fun i => S.occurs i j = true).sup fun i => S.order i j
+  d := S.highestOrder fun _ => 0
   assign _ := none
 
 /-- Termination measure relative to a transversal `σ`. -/
@@ -188,10 +188,8 @@ def potential (σ : Equiv.Perm ι) (st : PantelidesState ι) : ℕ :=
 
 omit [DecidableEq ι] in
 @[tmio T, powerlib_foundation] theorem initial_valid : S.Valid S.initial := by
-  refine ⟨fun i j hij => ?_, fun _ _ h => by simp [initial] at h, fun _ _ _ h => by
-    simp [initial] at h⟩
-  simp only [initial, add_zero]
-  exact Finset.le_sup (f := fun i => S.order i j) (by simpa using hij)
+  exact ⟨fun i j hij => S.order_add_le_highestOrder _ hij, fun _ _ h => by simp [initial] at h,
+    fun _ _ _ h => by simp [initial] at h⟩
 
 omit [Fintype ι] [DecidableEq ι] in
 @[tmio T, powerlib_foundation] theorem reachWithin_mono {st : PantelidesState ι} {i : ι} {k k' : ℕ}
@@ -789,11 +787,9 @@ augmentation does not change the counts; a differentiation is `differentiate_le`
 omit [DecidableEq ι] in
 /-- The initial counts are below every dual-feasible pair of offsets. -/
 @[tmio T, powerlib_foundation] theorem initial_le {c d : ι → ℕ} (hf : S.IsDualFeasible c d) :
-    (S.initial.c, S.initial.d) ≤ (c, d) := by
-  refine ⟨fun l => Nat.zero_le _, fun j => Finset.sup_le fun l hl => ?_⟩
-  have := hf l j (by simpa using hl)
-  change S.order l j ≤ d j
-  omega
+    (S.initial.c, S.initial.d) ≤ (c, d) :=
+  ⟨fun _ => Nat.zero_le _, fun j =>
+    (S.highestOrder_mono (fun _ => Nat.zero_le _) j).trans (S.highestOrder_le hf j)⟩
 
 /-- **Pantelides' counts are below every optimal dual solution**: at every state reachable from
 the initial state (along any run), `(c, d)` is componentwise at most every pair of offsets that

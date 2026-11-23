@@ -1,4 +1,5 @@
 import theorem.Linear.Stability
+import theorem.Linear.Certificate
 import theorem.Criteria.Lyapunov
 import theorem.Criteria.Hurwitz
 
@@ -101,18 +102,6 @@ def absSum {k l : Type*} [Fintype k] [Fintype l] (N : Matrix k l ℝ) : ℝ := �
     _ = absSum N * (δ * (u ⬝ᵥ u) + (w ⬝ᵥ w) / δ) / 2 := by
         rw [mul_div_assoc]
         simp only [absSum, Finset.sum_mul]
-
-/-- For `P = Pᵀ` with `P A + Aᵀ P = -I`: `xᵀ P A x = -|x|²/2`. -/
-@[tmio T, powerlib_foundation] theorem dotProduct_mulVec_lyapunov {k : ℕ} {A P : Matrix (Fin k) (Fin k) ℝ}
-    (hP : Pᵀ = P) (hL : P * A + Aᵀ * P = -1) (x : Fin k → ℝ) :
-    x ⬝ᵥ (P *ᵥ (A *ᵥ x)) = -(x ⬝ᵥ x) / 2 := by
-  have h := congrArg (fun Q => x ⬝ᵥ (Q *ᵥ x)) hL
-  simp only [add_mulVec, dotProduct_add, ← mulVec_mulVec, neg_mulVec, one_mulVec,
-    dotProduct_neg] at h
-  have h2 : x ⬝ᵥ (Aᵀ *ᵥ (P *ᵥ x)) = x ⬝ᵥ (P *ᵥ (A *ᵥ x)) := by
-    rw [dotProduct_mulVec, vecMul_transpose, Criteria.dotProduct_mulVec_comm_of_symm hP x (A *ᵥ x)]
-  rw [h2] at h
-  linarith
 
 /-! ## The linear singularly perturbed system -/
 
@@ -235,10 +224,11 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
   -- expand
   have e1 : x ⬝ᵥ (P0 *ᵥ (A0 *ᵥ x + sp.A12 *ᵥ η)) =
       -(x ⬝ᵥ x) / 2 + x ⬝ᵥ ((P0 * sp.A12) *ᵥ η) := by
-    rw [mulVec_add, dotProduct_add, dotProduct_mulVec_lyapunov h0 hL0, mulVec_mulVec]
+    rw [mulVec_add, dotProduct_add, Linear.quadratic_lyapunov h0 ((add_comm _ _).trans hL0),
+      mulVec_mulVec]
   have e2 : η ⬝ᵥ (P2 *ᵥ (L *ᵥ (A0 *ᵥ x + sp.A12 *ᵥ η) + ε⁻¹ • (sp.A22 *ᵥ η))) =
       η ⬝ᵥ ((P2 * L * A0) *ᵥ x) + η ⬝ᵥ ((P2 * L * sp.A12) *ᵥ η) - ε⁻¹ * ((η ⬝ᵥ η) / 2) := by
-    have hl := dotProduct_mulVec_lyapunov h2 hL2 η
+    have hl := Linear.quadratic_lyapunov h2 ((add_comm _ _).trans hL2) η
     simp only [mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul, smul_eq_mul,
       ← mulVec_mulVec] at hl ⊢
     rw [hl]

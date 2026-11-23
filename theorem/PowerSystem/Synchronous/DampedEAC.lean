@@ -299,7 +299,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   set c := p.energy p.deltaS (PhasePlane.mk δc ωc)
   have hA : ∫ s in δc..p.deltaU, (p.Pe s - p.Pm) =
       p.potential p.deltaS p.deltaU - p.potential p.deltaS δc := by
-    rw [← p.Adec_eq_potential_sub p.deltaS δc p.deltaU, Adec]
+    rw [← p.potential_eq_integral]; exact p.Adec_eq_potential_sub p.deltaS δc p.deltaU
   have hc1 : c < p.potential p.deltaS p.deltaU := by
     simp only [c, energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]; linarith
   have hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi) := by
@@ -423,7 +423,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [← fault.energy_eq_conservative] at h
   simp only [h0, SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
     SwingParams.potential_self, add_zero] at h
-  rw [SwingParams.Aacc_eq_neg_potential]
+  rw [SwingParams.Aacc]
   norm_num at h
   linarith
 
@@ -444,7 +444,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
   exact post.firstSwing_le_deltaU_of_damping hM hDp hk h hφ.2.2.2
-    (PhasePlane.mk_coords (φ tc)).symm hδc (by rw [← SwingParams.Adec]; linarith)
+    (PhasePlane.mk_coords (φ tc)).symm hδc (by rw [← post.potential_eq_integral]; linarith)
 
 /-- **Strict area margin ⇒ asymptotic recovery** for the switched model: with `D ≥ 0` in the
 fault stage, `D > 0` post-fault, `P_m ≥ k₁`, a clearing angle inside the well window and
@@ -465,7 +465,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
   exact post.tendsto_of_firstSwing_margin hM hDp hk h hPk hφ.2.2.2
-    (PhasePlane.mk_coords (φ tc)).symm hwell hδc (by rw [← SwingParams.Adec]; linarith)
+    (PhasePlane.mk_coords (φ tc)).symm hwell hδc (by rw [← post.potential_eq_integral]; linarith)
 
 /-- Clearing-angle margin of a damped bolted fault.  With `D > 0` during a bolted fault
 (`P_e^f ≡ 0`) and `δ_cc ∈ (δ₀, δ_u]` the zero of the undamped equal-area function

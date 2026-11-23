@@ -130,9 +130,7 @@ rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is no
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change ¬ LocalAsymptoticStable m.field 0
-  have hC : ContDiff ℝ 1 m.field := by
-    show ContDiff ℝ 1 fun z => m.g.field (z + m.point)
-    exact m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
+  have hC : ContDiff ℝ 1 m.field := m.contDiff_field
   set S : State 3 →L[ℝ] ℝ := (m.g.D * m.g.ωc) • EuclideanSpace.proj (0 : Fin 3) +
     (m.g.M * m.g.ωc) • EuclideanSpace.proj (1 : Fin 3) - EuclideanSpace.proj (2 : Fin 3) with hS
   have hSz : ∀ z : State 3, S z = m.g.D * m.g.ωc * z 0 + m.g.M * m.g.ωc * z 1 - z 2 := by
@@ -176,9 +174,7 @@ every load. -/
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change LocalAsymptoticStable m.field 0
   have hMne : m.g.M ≠ 0 := hM.ne'
-  have hC : ContDiff ℝ 1 m.field := by
-    show ContDiff ℝ 1 fun z => m.g.field (z + m.point)
-    exact m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
+  have hC : ContDiff ℝ 1 m.field := m.contDiff_field
   have hT : Function.Injective (hopfCoord m) := by
     refine (injective_iff_map_eq_zero (hopfCoord m)).mpr fun z hz => ?_
     have h0 := congrArg (fun w : State 3 => w 0) hz
@@ -277,9 +273,7 @@ is locally asymptotically stable exactly when the angle is balanced and
     have hls : LyapunovStable m.g.field m.point :=
       mem_den_flow_iff'.mp (family_isAutonomous.mem_den_flow (P := .lyapunovStable) |>.mpr hlas.1)
     have heq := Dynamics.isEquilibrium_of_lyapunovStable m.g.contDiff_field hls
-    have hb : m.g.K0 * Real.sin m.δ = m.g.P0 := by
-      have := ((m.g.field_eq_zero_iff hM.ne' hω.ne' _).mp heq).2.2
-      simpa [Model.point] using this
+    have hb : m.g.K0 * Real.sin m.δ = m.g.P0 := (m.field_point_eq_zero_iff hM.ne' hω.ne').mp heq
     refine ⟨hb, ?_, ?_⟩
     · rcases lt_trichotomy m.K 0 with hK | hK | hK
       · have hu := mem_den_unstable_of_K_neg m hM hD hω hb hK

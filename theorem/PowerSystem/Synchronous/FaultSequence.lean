@@ -472,7 +472,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [← fault.energy_eq_conservative, h0] at h
   simp only [SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
     SwingParams.potential_self, add_zero] at h
-  rw [SwingParams.Aacc_eq_neg_potential]
+  rw [SwingParams.Aacc]
   norm_num at h
   linarith
 
@@ -494,7 +494,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
       fault.Aacc δ₀ (φ tc 0) ≤ post.Adec (φ tc 0) post.deltaU := by
   have hE := clearing_energy (hMeq ▸ hM.ne') hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
-  rw [← hE, SwingParams.Adec]
+  rw [← hE, SwingParams.Adec, SwingParams.potential_eq_integral]
   exact post.firstSwing_iff hM hDp hk h hφ.2.2.2 (PhasePlane.mk_coords (φ tc)).symm hwell hδc hω
 
 /-- **Critical clearing time of a bolted fault** (`P_e^f ≡ 0`, `D = 0`, `P_m > 0`, same `M` and

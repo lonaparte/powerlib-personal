@@ -120,33 +120,24 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
     (hμ : 1 < ‖μ‖) : Unstable (Linear.op Φ) 0 := by
   intro hstab
   obtain ⟨C, hC⟩ := decay_zero_of_lyapunovStable hstab
-  let re : ℕ → ℝⁿ := fun k => WithLp.toLp 2 fun j => (μ ^ k * v j).re
-  let im : ℕ → ℝⁿ := fun k => WithLp.toLp 2 fun j => (μ ^ k * v j).im
-  have hre : ∀ k, (⇑(Linear.op Φ))^[k] (re 0) = re k := by
-    intro k
+  let re : ℕ → ℝⁿ := fun k => WithLp.toLp 2 (LTI.eigenmodeSeq Complex.reCLM μ v k)
+  let im : ℕ → ℝⁿ := fun k => WithLp.toLp 2 (LTI.eigenmodeSeq Complex.imCLM μ v k)
+  have hiter : ∀ part : ℂ →L[ℝ] ℝ, (part = Complex.reCLM ∨ part = Complex.imCLM) → ∀ k,
+      (⇑(Linear.op Φ))^[k] (WithLp.toLp 2 (LTI.eigenmodeSeq part μ v 0)) =
+        WithLp.toLp 2 (LTI.eigenmodeSeq part μ v k) := fun part hpart k => by
     induction k with
     | zero => rfl
     | succ k ih =>
-      rw [Function.iterate_succ_apply', ih]
-      have h := MatrixAlgebra.matrixMulVec_re_smul_eigenpair Φ μ (μ ^ k) v heig
-      simp only [re, toEuclideanCLM_toLp, ← h, pow_succ]
-  have him : ∀ k, (⇑(Linear.op Φ))^[k] (im 0) = im k := by
-    intro k
-    induction k with
-    | zero => rfl
-    | succ k ih =>
-      rw [Function.iterate_succ_apply', ih]
-      have h := MatrixAlgebra.matrixMulVec_im_smul_eigenpair Φ μ (μ ^ k) v heig
-      simp only [im, toEuclideanCLM_toLp, ← h, pow_succ]
+      rw [Function.iterate_succ_apply', ih, toEuclideanCLM_toLp,
+        LTI.mulVec_eigenmodeSeq heig hpart]
+  have hre : ∀ k, (⇑(Linear.op Φ))^[k] (re 0) = re k := hiter _ (.inl rfl)
+  have him : ∀ k, (⇑(Linear.op Φ))^[k] (im 0) = im k := hiter _ (.inr rfl)
   set N : ℝ := ∑ j, Complex.normSq (v j) with hN
   have hsq : ∀ k, ‖re k‖ ^ 2 + ‖im k‖ ^ 2 = (‖μ‖ ^ 2) ^ k * N := by
     intro k
     rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_add_distrib,
-      hN, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    simp only [re, im]
-    rw [← Complex.normSq_eq_norm_sq, ← map_pow, ← Complex.normSq_mul, Complex.normSq_apply]
-    ring
+      hN, Finset.mul_sum, ← Complex.normSq_eq_norm_sq]
+    exact Finset.sum_congr rfl fun j _ => LTI.eigenmodeSeq_sq_add_sq μ v k j
   have hN0 : 0 < N := by
     obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
     exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)

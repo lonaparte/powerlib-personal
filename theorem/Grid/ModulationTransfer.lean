@@ -44,10 +44,13 @@ Results.
 * Equal weights `a_V = b_V = 1/2`: `V(δ) = |cos(δ/2)|` and `κ_δ = |tan(δ₀/2)|/2`; at `δ₀ = 0`
   the swing `δ = δ̂ cos φ` gives `V = 1 − δ̂²/16 − (δ̂²/16) cos 2φ + r` with
   `|r| ≤ 5 δ̂⁴/1536` for `|δ̂| ≤ 2` (an explicit `O(δ̂⁴)` remainder).
-* `commonMode` / `diffMode` / `det_modes`: with equal branch reactances `x`, the matrix
-  `x I + X_eq 𝟙𝟙ᵀ` has the common-mode eigenvalue `x + N X_eq` (eigenvector `𝟙`) and the
-  differential eigenvalue `x` on `{Σ vᵢ = 0}`; `det(sI − M) = (s − x)^{N−1}(s − x − N X_eq)`, so `x`
-  has algebraic multiplicity `N − 1`.
+* With equal branch reactances `x` the branch matrix is
+  `Transform.modeMatrix N x X_eq = x I + X_eq 𝟙𝟙ᵀ` (`theorem/Transform/Circulant.lean`):
+  common-mode eigenvalue `x + N X_eq`
+  (eigenvector `𝟙`), differential eigenvalue `x` on `{Σ vᵢ = 0}` and
+  `det(sI − M) = (s − x)^{N−1}(s − x − N X_eq)`, so `x` has algebraic multiplicity `N − 1`
+  (`Transform.modeMatrix_mulVec_one`, `modeMatrix_mulVec_of_sum_eq_zero`,
+  `det_smul_one_sub_modeMatrix`).
 
 * Fourier-coefficient level (note "小摆幅与有限摆幅"). For the swing `δ(φ) = δ₀ + δ̂ cos φ`
   (`φ = ω_p t`) the mean `V̄`, the Fourier coefficients `V_n` and the ratios `ε_n = 2|V_n|/V̄`
@@ -336,62 +339,5 @@ positive. -/
   harmonicRatio_le_two (continuous_norm_vth X2 X3 E Vinf) (fun _ => norm_nonneg _) hm n
 
 end Fourier
-
-/-! ## Equal branches: common and differential modes -/
-
-/-- `x I + X_eq 𝟙𝟙ᵀ` (equal GFL branch reactances `x`). -/
-def modeMatrix (N : ℕ) (x Xe : ℝ) : Matrix (Fin N) (Fin N) ℝ :=
-  x • (1 : Matrix (Fin N) (Fin N) ℝ) + Xe • Matrix.of (fun _ _ => (1 : ℝ))
-
-@[tmio M, powerlib_domain] theorem commonMode (N : ℕ) (x Xe : ℝ) :
-    modeMatrix N x Xe *ᵥ (fun _ => 1) = (x + N * Xe) • (fun _ => (1 : ℝ)) := by
-  rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
-  funext i
-  simp [mulVec, dotProduct]
-  ring
-
-@[tmio M, powerlib_domain] theorem diffMode (N : ℕ) (x Xe : ℝ) (v : Fin N → ℝ) (hv : ∑ k, v k = 0) :
-    modeMatrix N x Xe *ᵥ v = x • v := by
-  rw [modeMatrix, add_mulVec, smul_mulVec, smul_mulVec, one_mulVec]
-  funext i
-  simp [mulVec, dotProduct, hv]
-
-@[tmio T, powerlib_foundation] private lemma det_scalar_sub_ones (N : ℕ) (c w : ℝ) :
-    (c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - w • Matrix.of (fun _ _ => (1 : ℝ))).det =
-      c ^ N * (c - (N + 1) * w) := by
-  by_cases hc : c = 0
-  · subst hc
-    rcases N with _ | N
-    · simp [Matrix.det_unique]
-    · simp only [zero_smul, zero_sub, zero_pow (Nat.succ_ne_zero N), zero_mul]
-      apply Matrix.det_zero_of_row_eq (i := 0) (j := 1) (by simp)
-      funext k; simp
-  · have hrank : Matrix.of (fun _ _ => (1 : ℝ)) =
-        replicateCol (Fin 1) (fun _ : Fin (N + 1) => (1 : ℝ)) *
-          replicateRow (Fin 1) (fun _ : Fin (N + 1) => (1 : ℝ)) := by
-      ext i j; simp [replicateCol, replicateRow, Matrix.mul_apply]
-    have hfac : c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) -
-          w • Matrix.of (fun _ _ => (1 : ℝ)) =
-        c • (1 + replicateCol (Fin 1) (fun _ : Fin (N + 1) => (-(w / c))) *
-          replicateRow (Fin 1) (fun _ : Fin (N + 1) => (1 : ℝ))) := by
-      rw [hrank]
-      ext i j
-      simp [replicateCol, replicateRow, Matrix.mul_apply, Matrix.one_apply]
-      split_ifs <;> field_simp <;> ring
-    rw [hfac, Matrix.det_smul, Matrix.det_one_add_mul_comm, Matrix.det_unique]
-    simp [Matrix.mul_apply, replicateCol, replicateRow]
-    field_simp
-    ring
-
-/-- `det(sI − (xI + X_eq 𝟙𝟙ᵀ)) = (s − x)^{N−1}(s − x − N X_eq)` (`N ≥ 1` branches): the
-differential eigenvalue `x` has algebraic multiplicity `N − 1`. -/
-@[tmio M, powerlib_domain] theorem det_modes (N : ℕ) (x Xe s : ℝ) :
-    (s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe).det =
-      (s - x) ^ N * (s - x - (N + 1) * Xe) := by
-  have : s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe =
-      (s - x) • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) -
-        Xe • Matrix.of (fun _ _ => (1 : ℝ)) := by
-    simp only [modeMatrix, sub_smul]; abel
-  rw [this, det_scalar_sub_ones]
 
 end powerlib.Grid.ModulationTransfer

@@ -17,7 +17,8 @@ Model boundary.
   `v̇ = (j ω_s − σ + κ_v (v*² − |v|²)) v`, i.e.
   `v̇_α = −σ v_α − ω_s v_β + κ_v (v*² − |v|²) v_α`,
   `v̇_β = ω_s v_α − σ v_β + κ_v (v*² − |v|²) v_β` (`aho_re`, `aho_im`).
-* Parameters `κ_v > 0`, `σ < κ_v v*²`; write `c = κ_v v*² − σ > 0` and `r* = √(v*² − σ/κ_v)`.
+* Parameters `κ_v > 0`, `σ < κ_v v*²`; write `c = κ_v v*² − σ > 0` and `r* = √(v*² − σ/κ_v)`
+  (`rstar_eq`; `rstar` is the radius `NormalForm.Hopf.radius` of `AHO.toHopf`).
 * Excluded: output current coupling `−κ_i i` (zero load), filters, inner loops, PWM, delays,
   multi-converter networks (no dVOC network result is claimed).
 
@@ -105,8 +106,18 @@ variable (a : AHO)
 /-- Radial growth coefficient `c = κ_v v*² − σ`. -/
 def c : ℝ := a.κv * a.vstar ^ 2 - a.σ
 
-/-- Limit-cycle radius `r* = √(v*² − σ/κ_v)`. -/
-def rstar : ℝ := Real.sqrt (a.vstar ^ 2 - a.σ / a.κv)
+/-- The AHO as a parameterization of the Hopf normal form (`theorem/NormalForm/Hopf.lean`):
+`μ = c`, `ω₀ = ω_s`, cubic coefficient `l₁ + iκ = −κ_v`. -/
+def toHopf : NormalForm.Hopf.Params := ⟨a.c, a.ωs, -a.κv, 0⟩
+
+/-- Limit-cycle radius `r* = √(c/κ_v)`, the radius `NormalForm.Hopf.radius` of `toHopf`; for
+`κ_v ≠ 0` it is `√(v*² − σ/κ_v)` (`rstar_eq`). -/
+abbrev rstar : ℝ := NormalForm.Hopf.radius a.toHopf
+
+@[tmio M, powerlib_domain] theorem rstar_eq (hk : a.κv ≠ 0) :
+    a.rstar = Real.sqrt (a.vstar ^ 2 - a.σ / a.κv) := by
+  simp only [rstar, NormalForm.Hopf.radius, toHopf, c, neg_div_neg_eq]
+  rw [sub_div, mul_div_cancel_left₀ _ hk]
 
 /-- Real gain `κ_v (v*² − |v|²) − σ = c − κ_v |v|²`. -/
 def gain (v : ℂ) : ℝ := a.c - a.κv * normSq v
@@ -158,14 +169,13 @@ variable {a}
 
 @[tmio M, powerlib_domain] theorem Admissible.rstar_sq (h : a.Admissible) :
     a.rstar ^ 2 = a.c / a.κv := by
-  have hk := h.κv
-  rw [rstar, Real.sq_sqrt]
-  · simp only [c]; field_simp
-  · rw [sub_nonneg, div_le_iff₀ hk]; linarith [h.gap]
+  have hc : 0 < a.c / a.κv := div_pos (by simp only [c]; linarith [h.gap]) h.κv
+  rw [rstar, NormalForm.Hopf.radius_sq _ (by simpa [toHopf, neg_div_neg_eq] using hc.le)]
+  exact neg_div_neg_eq _ _
 
-@[tmio M, powerlib_domain] theorem Admissible.rstar_pos (h : a.Admissible) : 0 < a.rstar := by
-  apply Real.sqrt_pos.mpr
-  rw [sub_pos, div_lt_iff₀ h.κv]; linarith [h.gap]
+@[tmio M, powerlib_domain] theorem Admissible.rstar_pos (h : a.Admissible) : 0 < a.rstar :=
+  Real.sqrt_pos.mpr (by
+    simpa [toHopf, neg_div_neg_eq] using div_pos (by simp only [c]; linarith [h.gap]) h.κv)
 
 /-- `r*` is the unique positive zero of the radial field.
 Static evidence on the model, not a connection conclusion. -/
@@ -186,10 +196,6 @@ Static evidence on the model, not a connection conclusion. -/
 variable (a)
 
 /-! ## Real coordinates: the Hopf normal form -/
-
-/-- The AHO as a parameterization of the Hopf normal form (`theorem/NormalForm/Hopf.lean`):
-`μ = c`, `ω₀ = ω_s`, cubic coefficient `l₁ + iκ = −κ_v`. -/
-def toHopf : NormalForm.Hopf.Params := ⟨a.c, a.ωs, -a.κv, 0⟩
 
 /-- The no-load AHO field in the real coordinates `(v_α, v_β)`: the Hopf normal form of `toHopf`,
 `(c − κ_v (v_α² + v_β²)) (v_α, v_β) + ω_s (−v_β, v_α)`. Its smoothness, equilibrium at the origin
@@ -283,12 +289,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
 @[tmio TM, powerlib_domain] private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 a.rstar) := by
-  have hR : NormalForm.Hopf.radius a.toHopf = a.rstar := by
-    simp only [NormalForm.Hopf.radius, rstar, toHopf, c, neg_div_neg_eq]
-    rw [sub_div, mul_div_cancel_left₀ _ h.κv.ne']
   have h0' : PhasePlane.mk (φ 0).re (φ 0).im ≠ 0 := by
     rw [← norm_ne_zero_iff, norm_mk_re_im]; exact norm_ne_zero_iff.mpr h0
-  simpa only [norm_mk_re_im, hR] using NormalForm.Hopf.supercritical_norm_tendsto a.toHopf
+  simpa only [norm_mk_re_im] using NormalForm.Hopf.supercritical_norm_tendsto a.toHopf
     (sub_pos.mpr h.gap) (neg_neg_of_pos h.κv) (a.isIntegralCurveOn_hopf hφ) h0'
 
 /-- `d‖v‖/dt = gain · ‖v‖` along the field (away from the origin). -/

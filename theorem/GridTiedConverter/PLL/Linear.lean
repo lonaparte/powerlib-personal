@@ -4,6 +4,7 @@ import theorem.Linear.Family
 import theorem.Linear.Jordan
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.LinearNamed
+import theorem.GridTiedConverter.PLL.PIPLL
 
 /-! # Linearized SRF-PLL: state-space models, transfer functions and tuning
 
@@ -16,9 +17,11 @@ Model boundary.
   stated in each theorem.
 * State order `(θ, η)`: `θ` = PLL angle deviation (phase model, port model) or phase error
   `θ̃` (frequency model); `η = ∫ V_q dt` = raw PI integrator state (V·s).
-  All three models share the state matrix `linA = [[−V K_p, K_i], [−V, 0]]`, which is the
-  Jacobian of the nonlinear SRF-PLL error field at its in-phase equilibrium
-  (`theorem/GridTiedConverter/PLL/Model.lean`, `srf_fderiv_inPhase`).
+  All three models share the state matrix `linA = [[−V K_p, K_i], [−V, 0]]`, the PI-PLL Jacobian
+  `piPLLJacobian K_p K_i (−V)` at the slope `−V` (`theorem/GridTiedConverter/PLL/PIPLL.lean`, whose
+  trace, determinant and Hurwitz laws it reads), which is the Jacobian of the nonlinear SRF-PLL
+  error field at its in-phase equilibrium (`theorem/GridTiedConverter/PLL/Model.lean`,
+  `srf_fderiv_inPhase`).
 * `phaseModel`: input grid angle deviation `Δθ_g`, output `Δθ̂`
   (`θ̂̇ = K_p V (θ_g − θ̂) + K_i η`, `η̇ = V (θ_g − θ̂)`); transfer
   `H_pll(s) = V (K_p s + K_i) / (s² + V K_p s + V K_i)` (T-pll-dynamics §1.3).
@@ -83,8 +86,9 @@ open Matrix
 
 /-! ## State matrix and models -/
 
-/-- Linearized SRF-PLL state matrix in state order `(θ, η)`: `[[−V K_p, K_i], [−V, 0]]`. -/
-def linA (V Kp Ki : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(V * Kp), Ki; -V, 0]
+/-- Linearized SRF-PLL state matrix in state order `(θ, η)`: `[[−V K_p, K_i], [−V, 0]]`, the PI-PLL
+Jacobian `piPLLJacobian K_p K_i g` at the phase-detector slope `g = −V`. -/
+abbrev linA (V Kp Ki : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := piPLLJacobian Kp Ki (-V)
 
 /-- Closed-loop phase tracking model: input `Δθ_g`, output `Δθ̂`. -/
 def phaseModel (V Kp Ki : ℝ) : Linear.Plant 2 1 :=
@@ -115,7 +119,7 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
 @[tmio M, powerlib_domain] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
     Linear.characteristicMatrix (linA V Kp Ki) s = !![s + V * Kp, -(Ki : ℂ); V, s] := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, linA]
+  fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, piPLLJacobian, mul_comm]
 
 /-- Characteristic polynomial of the linearized PLL: `det(sI − A) = s² + V K_p s + V K_i`. -/
 @[tmio M, powerlib_domain] theorem det_characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
@@ -128,17 +132,12 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
   apply Complex.ext <;> simp [loopPoly, pow_two]
   ring
 
-@[tmio M, simp, powerlib_domain] theorem trace_linA (V Kp Ki : ℝ) :
-    (linA V Kp Ki).trace = -(V * Kp) := by
-  simp [linA, Matrix.trace_fin_two]
-
-@[tmio M, simp, powerlib_domain] theorem det_linA (V Kp Ki : ℝ) : (linA V Kp Ki).det = V * Ki := by
-  simp [linA, Matrix.det_fin_two]; ring
-
-/-- Hurwitz test: `linA` is Hurwitz iff `V K_p > 0 ∧ V K_i > 0`. -/
+/-- Hurwitz test: `linA` is Hurwitz iff `V K_p > 0 ∧ V K_i > 0` (`piPLLJacobian_isHurwitz_iff` at
+`g = −V`). -/
 @[tmio TM, powerlib_domain] theorem isHurwitz_linA_iff (V Kp Ki : ℝ) :
     LinearSystems.IsHurwitz (linA V Kp Ki) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
-  rw [Criteria.isHurwitz_fin_two_iff, trace_linA, det_linA, neg_lt_zero]
+  rw [piPLLJacobian_isHurwitz_iff, mul_neg, mul_neg, neg_lt_zero, neg_lt_zero, mul_comm Kp,
+    mul_comm Ki]
 
 /-! ## Transfer functions -/
 
@@ -229,8 +228,7 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
 `det = V K_i`), for all parameters. -/
 @[tmio M, powerlib_domain] theorem zeta_eq_dampingRatio (V Kp Ki : ℝ) :
     zeta V Kp Ki = Criteria.dampingRatio (linA V Kp Ki) := by
-  simp [zeta, omegaN, Criteria.dampingRatio, linA, Matrix.trace_fin_two, Matrix.det_fin_two,
-    mul_comm Ki V]
+  simp [zeta, omegaN, Criteria.dampingRatio, mul_comm Ki V, mul_comm Kp V]
 
 /-- Standard second-order form `s² + 2ζω_n s + ω_n²` of the loop polynomial (`V K_i > 0`):
 `Criteria.det_characteristicMatrix_standard` at `linA`. -/
@@ -238,9 +236,10 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
     loopPoly V Kp Ki s = s ^ 2 + 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) * s +
       (omegaN V Ki : ℂ) ^ 2 := by
   have hω : omegaN V Ki = Criteria.naturalFrequency (linA V Kp Ki) := by
-    rw [Criteria.naturalFrequency, det_linA, omegaN]
+    rw [Criteria.naturalFrequency, piPLLJacobian_det, omegaN, mul_neg, neg_neg, mul_comm Ki]
   rw [← det_characteristicMatrix_linA, zeta_eq_dampingRatio, hω]
-  exact Criteria.det_characteristicMatrix_standard _ (by rwa [det_linA]) s
+  exact Criteria.det_characteristicMatrix_standard _
+    (by rwa [piPLLJacobian_det, mul_neg, neg_neg, mul_comm Ki]) s
 
 /-- `ζ = (K_p/2) √(V/K_i)` for `V, K_i > 0` (T-pll-dynamics §1.3 boxed). -/
 @[tmio M, powerlib_domain] theorem zeta_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
@@ -458,7 +457,8 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
   exact Criteria.exists_root_re_pos_of_violation_fin_two _
-    (h.imp (fun h => by rw [trace_linA]; linarith) fun h => by rwa [det_linA])
+    (h.imp (fun h => by rw [piPLLJacobian_trace]; linarith)
+      fun h => by rw [piPLLJacobian_det]; linarith)
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its
 semantics connection (the rate law `Spectral.chain_le_semantics_of_rate`): both positive loop
@@ -487,7 +487,7 @@ def frozen : Model := ⟨0, 0, 0, .phase⟩
 @[tmio M, powerlib_domain] theorem frozen_plant_A : frozen.plant.A = 0 := by
   rw [Model.plant_A]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [frozen, linA]
+  fin_cases i <;> fin_cases j <;> simp [frozen, piPLLJacobian]
 
 /-- The frozen loop conserves the energy `|x|²`. -/
 @[tmio TM, powerlib_domain] theorem frozen_mem_den_conservative :
@@ -542,12 +542,12 @@ gain is negative. -/
   have hAv : Linear.op jordan.plant.A v = 0 := by
     rw [Model.plant_A]
     ext i
-    fin_cases i <;> norm_num [v, Linear.op, jordan, linA, Matrix.mulVec, dotProduct,
+    fin_cases i <;> norm_num [v, Linear.op, jordan, piPLLJacobian, Matrix.mulVec, dotProduct,
       Fin.sum_univ_two]
   have hAw : Linear.op jordan.plant.A w = v := by
     rw [Model.plant_A]
     ext i
-    fin_cases i <;> norm_num [v, w, Linear.op, jordan, linA, Matrix.mulVec, dotProduct,
+    fin_cases i <;> norm_num [v, w, Linear.op, jordan, piPLLJacobian, Matrix.mulVec, dotProduct,
       Fin.sum_univ_two]
   have hmem : jordan ∈ family.den (.flow .unstable) :=
     family_isLinear.mem_den_flow.mpr (Linear.unstable_of_zero_jordan_chain hv hAv hAw)

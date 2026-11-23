@@ -39,7 +39,7 @@ Results.
     `bdfRevSum k w = Σ_{j=1}^{k} (1 - w)^j / j` (`bdfRevSum_eq`); `bdfPoly_natDegree`,
     `bdfLMM_rho_eq` (`ρ(bdfLMM k) = bdfRhoSum k / H_k` for every `k`).
   - Top coefficients of `bdfRhoSum k`: `bdfPoly_coeff` (`c_k = H_k`), `bdfPoly_coeff_pred`
-    (`c_{k-1} = -k`), `bdfPoly_coeff_pred_pred` (`c_{k-2} = k(k-1)/4`); `bdfHarmonic_succ`.
+    (`c_{k-1} = -k`), `bdfPoly_coeff_pred_pred` (`c_{k-2} = k(k-1)/4`).
 * Instability:
   - `bdfRhoSum_exists_root_norm_gt_one_of_nineteen_le`: for every `k ≥ 19`, `bdfRhoSum k` has
     a root `ζ` with `1 < ‖ζ‖` (one argument, uniform in `k`).
@@ -292,22 +292,22 @@ the closed unit disk, then `‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖` for `0 
   simp only [not_exists, not_and, not_lt] at hne
   exact absurd (norm_bdfRhoSum_le_norm_bdfRevSum hk hne hw0 hw) (not_le.mpr hlt)
 
-/-! `bdfHarmonic`, `bdfPolyQ` (`bdfRhoSum k` with rational coefficients) and `bdfLMM` are
-defined in `theorem/Numerics/BDF.lean`. -/
+/-! `bdfPolyQ` (`bdfRhoSum k` with rational coefficients) and `bdfLMM` are defined in
+`theorem/Numerics/BDF.lean`; `H_k` is Mathlib's `harmonic k`. -/
 
 @[tmio T, powerlib_foundation] theorem bdfPolyQ_map (k : ℕ) :
     (bdfPolyQ k).map (algebraMap ℚ ℂ) = bdfPoly k := by
   simp [bdfPolyQ, bdfPoly, Polynomial.map_sum]
 
 @[tmio T, powerlib_foundation] theorem bdfLMM_rho_eq (k : ℕ) (ζ : ℂ) :
-    (bdfLMM k).rho ζ = (1 / (bdfHarmonic k : ℂ)) * bdfRhoSum k ζ := by
+    (bdfLMM k).rho ζ = (1 / (harmonic k : ℂ)) * bdfRhoSum k ζ := by
   have hdeg : ((bdfPolyQ k).map (algebraMap ℚ ℂ)).natDegree < k + 1 := by
     rw [bdfPolyQ_map]
     exact Nat.lt_succ_of_le (bdfPoly_natDegree_le k)
   rw [← bdfPoly_eval, ← bdfPolyQ_map, eval_eq_sum_range' hdeg, Finset.mul_sum]
   simp only [LMM.rho, bdfLMM, bdf]
   rw [Fin.sum_univ_eq_sum_range
-    (fun i => (((bdfPolyQ k).coeff i / bdfHarmonic k : ℚ) : ℂ) * ζ ^ i) (k + 1)]
+    (fun i => (((bdfPolyQ k).coeff i / harmonic k : ℚ) : ℂ) * ζ ^ i) (k + 1)]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [coeff_map, eq_ratCast]
   push_cast
@@ -376,18 +376,14 @@ defined in `theorem/Numerics/BDF.lean`. -/
   push_cast
   ring
 
-@[tmio T, powerlib_foundation] theorem bdfHarmonic_succ (k : ℕ) :
-    bdfHarmonic (k + 1) = bdfHarmonic k + 1 / ((k + 1 : ℕ) : ℚ) := by
-  simp only [bdfHarmonic, Finset.sum_range_succ]
-
 /-- `7/2 ≤ H_k < (3k - 7)/14` for every `k ≥ 19`. -/
-@[tmio T, powerlib_foundation] private theorem bdfHarmonic_bounds (n : ℕ) :
-    7 / 2 ≤ bdfHarmonic (n + 19) ∧
-      bdfHarmonic (n + 19) < (3 * ((n + 19 : ℕ) : ℚ) - 7) / 14 := by
+@[tmio T, powerlib_foundation] private theorem harmonic_bounds (n : ℕ) :
+    7 / 2 ≤ harmonic (n + 19) ∧
+      harmonic (n + 19) < (3 * ((n + 19 : ℕ) : ℚ) - 7) / 14 := by
   induction n with
-  | zero => norm_num [bdfHarmonic, Finset.sum_range_succ]
+  | zero => norm_num [harmonic, Finset.sum_range_succ]
   | succ n ih =>
-    rw [show n + 1 + 19 = (n + 19) + 1 by ring, bdfHarmonic_succ]
+    rw [show n + 1 + 19 = (n + 19) + 1 by ring, harmonic_succ, ← one_div]
     have hpos : (0 : ℚ) < 1 / ((n + 19 + 1 : ℕ) : ℚ) := by positivity
     have hle : 1 / ((n + 19 + 1 : ℕ) : ℚ) ≤ 3 / 14 := by
       rw [div_le_div_iff₀ (by positivity) (by norm_num)]
@@ -407,22 +403,21 @@ outside the closed unit disk. The second power sum of its roots is
   rw [leadingCoeff, hdeg, bdfPoly_coeff_pred (by omega), bdfPoly_coeff_pred_pred (by omega),
     bdfPoly_coeff]
   obtain ⟨n, rfl⟩ : ∃ n, k = n + 19 := ⟨k - 19, by omega⟩
-  obtain ⟨hH1, hH2⟩ := bdfHarmonic_bounds n
-  have hH1' : (7 / 2 : ℝ) ≤ (bdfHarmonic (n + 19) : ℝ) := by
+  obtain ⟨hH1, hH2⟩ := harmonic_bounds n
+  have hH1' : (7 / 2 : ℝ) ≤ (harmonic (n + 19) : ℝ) := by
     have := (Rat.cast_le (K := ℝ)).mpr hH1
     push_cast at this
     linarith
-  have hH2' : (bdfHarmonic (n + 19) : ℝ) < (3 * ((n + 19 : ℕ) : ℝ) - 7) / 14 := by
+  have hH2' : (harmonic (n + 19) : ℝ) < (3 * ((n + 19 : ℕ) : ℝ) - 7) / 14 := by
     have := (Rat.cast_lt (K := ℝ)).mpr hH2
     push_cast at this ⊢
     linarith
-  set h : ℝ := (bdfHarmonic (n + 19) : ℝ) with hh
+  set h : ℝ := (harmonic (n + 19) : ℝ) with hh
   set K : ℝ := ((n + 19 : ℕ) : ℝ) with hK
   have hK19 : (19 : ℝ) ≤ K := by rw [hK]; push_cast; linarith
   have eH : (∑ j ∈ Finset.range (n + 19), 1 / ((j + 1 : ℕ) : ℂ)) = ((h : ℝ) : ℂ) := by
-    rw [hh, bdfHarmonic]
-    push_cast
-    rfl
+    rw [hh]
+    simp [harmonic, one_div]
   have e2 : (-((n + 19 : ℕ) : ℂ)) ^ 2 - 2 * (((n + 19 : ℕ) : ℂ) * (((n + 19 : ℕ) : ℂ) - 1) / 4) *
       ((h : ℝ) : ℂ) = ((K ^ 2 - K * (K - 1) * h / 2 : ℝ) : ℂ) := by
     rw [hK]; push_cast; ring

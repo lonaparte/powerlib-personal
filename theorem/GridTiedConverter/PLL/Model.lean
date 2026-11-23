@@ -28,7 +28,7 @@ Model boundary.
     the non-autonomous physical loop becomes autonomous in error coordinates;
   - `(θ_err, ξ)`, `ξ = η / V` (T-invariant-coordinates §1.2, T-gfl-multiscale §1.3:
     `θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`, `a = V K_p`, `b = V K_i`, `Δω = ω_s − ω_g`):
-    `xiField a b Δω = srfField 1 a b (−Δω)` and
+    `xiField a b Δω` is (by definition) `srfField 1 a b (−Δω)`, and
     `transportField (scaleCoord V⁻¹) 0 (srfField V K_p K_i δω) = srfField 1 (V K_p) (V K_i) δω`;
   - `(e_θ, x_I)`, `x_I = ω_s + K_i η` (T-frequency-measurement §1.1: `ω̂ = K_p V_q + x_I`):
     `measField`, equilibrium `(0, ω_g)`;
@@ -58,7 +58,7 @@ No new family: the SRF-PLL read about a selected phase `θ*` is the member `PLL.
 whose detector is `srfPD V` (by definition) and whose system map is `srfField V K_p K_i δω`
 translated so that `(θ*, δω / K_i)` is the origin. The other coordinate versions are the same
 models: the `(θ_err, ξ)` field with gains `(a, b)` and offset `Δω` is `srfField 1 a b (−Δω)`
-(`xiField_eq_srfField`), i.e. the member `srf 1 a b (−Δω) θ*`, and the `(e_θ, x_I)` field is an
+(`xiField`, by definition), i.e. the member `srf 1 a b (−Δω) θ*`, and the `(e_θ, x_I)` field is an
 affine image of `srfField` (`transport_meas_srfField`). The four local-stability results of the SRF
 members are proved with the family (`PIPLL.srf_mem_den_locallyExponentiallyStable_inPhase`,
 `PIPLL.srf_mem_den_unstable_inPhase_of_mul_neg`, `PIPLL.srf_mem_den_unstable_inPhase_of_trace`,
@@ -111,11 +111,6 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
         (piPLLJacobian Kp Ki (-(V * Real.cos (x 0)))) :=
   fderiv_piPLLField (hasDerivAt_srfPD V (x 0))
 
-/-- At an in-phase point (`cos θ̃ = 1`) the Jacobian is the linear-model matrix `linA`. -/
-@[tmio M, powerlib_domain] theorem piPLLJacobian_inPhase (V Kp Ki : ℝ) :
-    piPLLJacobian Kp Ki (-(V * 1)) = linA V Kp Ki := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [piPLLJacobian, linA, mul_comm]
-
 /-- Linearization chain: the Jacobian of the nonlinear SRF-PLL at any in-phase point
 `(2kπ, η)` is `linA V K_p K_i`, the state matrix of `phaseModel`, `frequencyModel` and
 `portModel`. -/
@@ -123,8 +118,7 @@ def srfField (V Kp Ki δω : ℝ) : State 2 → State 2 := piPLLField (srfPD V) 
     fderiv ℝ (srfField V Kp Ki δω) (PhasePlane.mk (2 * k * Real.pi) η) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linA V Kp Ki) := by
   rw [fderiv_srfField, PhasePlane.mk_apply_zero,
-    show 2 * (k : ℝ) * Real.pi = k * (2 * Real.pi) by ring, Real.cos_int_mul_two_pi,
-    piPLLJacobian_inPhase]
+    show 2 * (k : ℝ) * Real.pi = k * (2 * Real.pi) by ring, Real.cos_int_mul_two_pi, mul_one]
 
 /-! ## Equilibria -/
 
@@ -208,16 +202,9 @@ error field describe the same solutions: `x` solves the physical loop on `s` iff
 /-! ## The `(θ_err, ξ)` coordinates and the gains `a = V K_p`, `b = V K_i` -/
 
 /-- T-invariant-coordinates §1.2 / T-gfl-multiscale §1.3 field in `(θ_err, ξ)`:
-`θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`, `Δω = ω_s − ω_g`. -/
-def xiField (a b Δω : ℝ) (x : State 2) : State 2 :=
-  WithLp.toLp 2 ![Δω - a * Real.sin (x 0) + b * x 1, -Real.sin (x 0)]
-
-/-- The `(θ_err, ξ)` field is the canonical field at unit amplitude with gains `a, b`. -/
-@[tmio M, powerlib_domain] theorem xiField_eq_srfField (a b Δω : ℝ) :
-    xiField a b Δω = srfField 1 a b (-Δω) := by
-  funext x
-  rw [PhasePlane.ext_iff']
-  simp [xiField]
+`θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`, `Δω = ω_s − ω_g`: the canonical field at unit amplitude
+with gains `a, b` and offset `−Δω`. -/
+abbrev xiField (a b Δω : ℝ) : State 2 → State 2 := srfField 1 a b (-Δω)
 
 /-- Vector-field conjugacy `ξ = η / V`: the SRF-PLL of amplitude `V` and gains `(K_p, K_i)` is
 the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
@@ -235,7 +222,7 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
     IsIntegralCurveOn x (fun _ y => srfField V Kp Ki δω y) s ↔
       IsIntegralCurveOn (fun t => PhasePlane.mk (x t 0) (x t 1 / V))
         (fun _ y => xiField (V * Kp) (V * Ki) (-δω) y) s := by
-  rw [xiField_eq_srfField, neg_neg, ← transport_scale_srfField hV]
+  rw [xiField, neg_neg, ← transport_scale_srfField hV]
   have hrw : (fun t => PhasePlane.mk (x t 0) (x t 1 / V)) =
       fun t => Dynamics.affineCoord (Dynamics.scaleCoord (inv_ne_zero hV)) 0 (x t) := by
     funext t; simp [Dynamics.affineCoord, div_eq_inv_mul]; rfl

@@ -16,9 +16,11 @@ The reduced PLL field above and its linearization at a stable point. Conventions
 linearization is written in the project-code convention of
 `sn-critical-scaling.md` §2: `A = [[−K_p g, −K_i], [g, 0]]` with `g > 0` at a stable point.
 It is the text-convention Jacobian `piPLLJacobian K_p K_i h′` with `h′ = −g`, conjugated by
-`diag(1, −1)` (`linA_eq_conj`). Voltage-channel input `B_v = (−K_p σ, σ)ᵀ` (unit intensity,
-sensitivity `σ`), frequency-channel input `B_ω = (−1, 0)ᵀ`, the PLL input port `PLL.pllB`
-(`theorem/GridTiedConverter/PLL/PIPLLPH.lean`; its `θ` row is unchanged by the sign of `η`).
+`diag(1, −1)` (`linA`, by definition; so it is Hurwitz iff `0 < K_p g ∧ 0 < K_i g`,
+`PLL.piPLLJacobian_isHurwitz_iff` through `Linear.isHurwitz_conj`). Voltage-channel input
+`B_v = (−K_p σ, σ)ᵀ` (unit intensity, sensitivity `σ`), frequency-channel input
+`B_ω = (−1, 0)ᵀ`, the PLL input port `PLL.pllB` (`theorem/GridTiedConverter/PLL/PIPLLPH.lean`;
+its `θ` row is unchanged by the sign of `η`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/sn-critical-scaling.md`
 §1–§3.
@@ -30,11 +32,11 @@ Results.
   `Var(θ)^(v) = σ²(K_i + K_p² g)/(2 K_p g²)`, `Var(η)^(v) = σ²/(2 K_p g)`,
   `Cov^(v) = −σ²/(2g)`, `Var(θ)^(ω) = 1/(2 K_p g)`, `Var(η)^(ω) = 1/(2 K_p K_i)` solve the
   Lyapunov equation; `covV_unique`, `covW_unique` : the solution is unique whenever `K_p ≠ 0`,
-  `g ≠ 0`, `K_i ≠ 0` (in particular when `A` is Hurwitz, `isHurwitz_linA_iff`): then
+  `g ≠ 0`, `K_i ≠ 0` (in particular when `A` is Hurwitz): then
   `tr A ≠ 0`, `det A ≠ 0` and the generic `Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two`
   applies (`theorem/Stochastic/LyapunovCovariance.lean`).
 * `varThetaQ_eq`, `varThetaQ_tendsto` : with the gauge identity `σ_q = g/V_g`
-  (`Params.sigma_q_eq`), the q-channel value is `(K_i + K_p² g)/(2 K_p V_g²)`, which has the finite
+  (`Network.sigma_q_eq`), the q-channel value is `(K_i + K_p² g)/(2 K_p V_g²)`, which has the finite
   limit `K_i/(2 K_p V_g²)` as `g → 0` (saddle-node).
 
 Correction: the note checks the closed forms against a numerical Lyapunov solver and the
@@ -62,24 +64,14 @@ everywhere, then `θ̈ = K_p h′(θ) θ̇ + K_i h(θ)`. -/
   · show Kp * h' (θ t) * (Kp * h (θ t) + Ki * η t) + Ki * h (θ t) = _
     ring
 
-/-- Linearization in the code convention, `A = [[−K_p g, −K_i], [g, 0]]`. -/
-def linA (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(Kp * g), -Ki; g, 0]
-
 /-- `diag(1, −1)`. -/
 abbrev flipEta : Matrix (Fin 2) (Fin 2) ℝ := Dynamics.signMatrix ![1, -1]
 
-/-- The code-convention linearization is the text-convention Jacobian with `h′ = −g`,
-conjugated by `diag(1, −1)` (the sign of `η`). -/
-@[tmio M, powerlib_domain] theorem linA_eq_conj (Kp Ki g : ℝ) :
-    linA Kp Ki g = flipEta * piPLLJacobian Kp Ki (-g) * flipEta := by
-  ext i j; fin_cases i <;> fin_cases j <;>
-    simp [linA, Dynamics.signMatrix, piPLLJacobian, Matrix.mul_apply, Fin.sum_univ_two]
-
-@[tmio TM, powerlib_domain] theorem isHurwitz_linA_iff (Kp Ki g : ℝ) :
-    LinearSystems.IsHurwitz (linA Kp Ki g) ↔ 0 < Kp * g ∧ 0 < Ki * g := by
-  have h := Dynamics.signMatrix_mul_self ![1, -1]
-  rw [linA_eq_conj, Linear.isHurwitz_conj h h, piPLLJacobian_isHurwitz_iff]
-  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
+/-- Linearization in the code convention, `A = [[−K_p g, −K_i], [g, 0]]`: the text-convention
+PI-PLL Jacobian `piPLLJacobian K_p K_i h′` with `h′ = −g`, conjugated by `diag(1, −1)` (the sign
+of `η`). -/
+abbrev linA (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  flipEta * piPLLJacobian Kp Ki (-g) * flipEta
 
 /-- Voltage-channel input `B_v = (−K_p σ, σ)ᵀ`. -/
 def portV (Kp σ : ℝ) : Matrix (Fin 2) (Fin 1) ℝ := !![-(Kp * σ); σ]
@@ -100,7 +92,8 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j
   simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
     Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [linA, covV, portV] <;> field_simp <;> ring
+  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, piPLLJacobian, covV, portV] <;>
+    field_simp <;> ring
 
 /-- `covW` solves `A P + P Aᵀ + B_ω B_ωᵀ = 0`. -/
 @[tmio M, powerlib_domain] theorem covW_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hKi : Ki ≠ 0)
@@ -109,13 +102,17 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j
   simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
     Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [linA, covW, pllB] <;> field_simp <;> ring
+  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, piPLLJacobian, covW, pllB] <;>
+    field_simp <;> ring
 
 /-- `tr A = −K_p g ≠ 0` and `det A = K_i g ≠ 0`: the Lyapunov operator of `A` is injective
 (`Stochastic.Lyapunov.eq_zero_of_lyapunovOp_fin_two`). -/
 @[tmio M, powerlib_domain] private lemma linA_trace_det {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)
     (hKi : Ki ≠ 0) : (linA Kp Ki g).trace ≠ 0 ∧ (linA Kp Ki g).det ≠ 0 := by
-  simp [linA, Matrix.trace_fin_two, Matrix.det_fin_two, hKp, hg, hKi]
+  have h := Dynamics.signMatrix_mul_self ![1, -1]
+  rw [linA, Matrix.trace_mul_cycle, h, one_mul, Matrix.det_mul, Matrix.det_mul, mul_right_comm,
+    ← Matrix.det_mul, h, Matrix.det_one, one_mul, piPLLJacobian_trace, piPLLJacobian_det]
+  simp [hKp, hg, hKi]
 
 /-- The Lyapunov equation of the voltage channel has the unique solution `covV`. -/
 @[tmio M, powerlib_domain] theorem covV_unique {Kp Ki g σ : ℝ} (hKp : Kp ≠ 0) (hg : g ≠ 0)

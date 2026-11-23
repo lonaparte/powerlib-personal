@@ -28,10 +28,11 @@ Results.
   `C (sI − A)⁻¹ B = Σ_i R^{(i)} / (s − λ_i)`; for a real LTI model with complexified `A, B, C`
   this is the strictly proper part `G(s) − D` of `G = Linear.transferOf A B C D`
   (§1.5, small-signal §1.9).
-* `scale_pf`, `weightedPF_eq`, `sum_groupPF` — diagonal state scaling `x̃ = T x` gives a modal
-  basis of `T A T⁻¹` with the same participation factors (§1.6). The "weighted PF" of §1.4 with
-  diagonal weights is identically the original PF (as the note itself observes); grouped PFs sum
-  to `1` over a partition of the states.
+* `scale_pf`, `sum_groupPF` — diagonal state scaling `x̃ = T x` gives a modal basis of `T A T⁻¹`
+  (`scale`) with the same participation factors (§1.6). The "weighted PF"
+  `w_k v_{ki} (W⁻¹ ψ_i)_k` of §1.4 with nonzero diagonal weights `W = diag w` is the PF of the
+  scaled basis `scale w`, hence identically the original PF (as the note itself observes); grouped
+  PFs sum to `1` over a partition of the states.
 * `norm_pf_eq`, `geomPF_nonneg`, `geomPF_le_one` — geometric PF (§1.10):
   `|p_{ki}| = ‖v_i‖ ‖ψ_i‖ g_{ki}` with `0 ≤ g_{ki} ≤ 1`.
 * `residue_eq_zero_iff` — for a simple eigenvalue, the SISO residue `(c v_i)(ψ_iᵀ b)` vanishes
@@ -201,20 +202,12 @@ def scale (t : n → ℂ) (ht : ∀ i, t i ≠ 0) : ModalBasis (diagonal t * A *
     rw [transpose_mul, diagonal_transpose, Matrix.mul_assoc, ← Matrix.mul_assoc (diagonal t⁻¹),
       hinv, Matrix.one_mul, mb.biorth]
 
-/-- Participation factors are invariant under diagonal state scaling (§1.6). -/
+/-- Participation factors are invariant under diagonal state scaling (§1.6); the PF of the scaled
+basis is the "weighted PF" `w_k v_{ki} (W⁻¹ ψ_i)_k` of §1.4 (`W = diag w`). -/
 @[tmio T, powerlib_foundation] theorem scale_pf (t : n → ℂ) (ht : ∀ i, t i ≠ 0) (k i : n) :
     (mb.scale t ht).pf k i = mb.pf k i := by
   simp only [pf, scale, diagonal_mul, Pi.inv_apply]
   field_simp [ht k]
-
-/-- Weighted PF `w_k v_{ki} (W⁻¹ ψ_i)_k` with a diagonal weight. -/
-def weightedPF (w : n → ℂ) (k i : n) : ℂ := w k * mb.V k i * (diagonal w⁻¹ *ᵥ mb.ψ i) k
-
-/-- With diagonal nonzero weights the weighted PF equals the original PF (§1.4). -/
-@[tmio T, powerlib_foundation] theorem weightedPF_eq (w : n → ℂ) (hw : ∀ k, w k ≠ 0) (k i : n) :
-    mb.weightedPF w k i = mb.pf k i := by
-  simp only [weightedPF, mulVec_diagonal, Pi.inv_apply, pf, ψ]
-  field_simp [hw k]
 
 /-- Group participation over a partition `g : n → G` of the states sums to `1`. -/
 @[tmio T, powerlib_foundation] theorem sum_groupPF {G : Type*} [Fintype G] [DecidableEq G] (g : n → G)

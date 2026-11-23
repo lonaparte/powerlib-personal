@@ -40,8 +40,9 @@ Static evidence on the members (the behavioural results are the connection concl
 * `realize_univ`: the whole requirement language is inconsistent.
 * `srf_deriv`, `linearModel_field`, `cubicDetector_field`, `cubicDetector_slope`: the SRF, linear
   (`h = −θ`) and cubic (`h = −θ³`) detector members.
-* `cubicEnergy_hasFDerivAt`, `cubicEnergy_lie`, `cubicEnergy_contDiff`, `cubicEnergy_pos`,
-  `norm_sq_le_cubicEnergy`: the PLL energy `θ⁴/4 + η²/2` of the cubic detector.
+* `cubicEnergy_lie`, `cubicEnergy_contDiff`, `cubicEnergy_pos`, `norm_sq_le_cubicEnergy`: the PLL
+  energy `θ⁴/4 + η²/2` of the cubic detector, the PI-PLL energy `piPLLEnergy` of the potential
+  `θ⁴/4` (its derivative and smoothness are those of `piPLLEnergy`).
 * `Model.ramp`, `Model.ramp_deriv`, `ramp_hasDerivAt_iff`: the ramp model (detector `h − ρ/K_i`,
   with the slope of `h`, no offset) and the bridge from the loop under a frequency ramp to it.
 
@@ -673,25 +674,40 @@ def cubicDetector : Model := ⟨fun x => -x ^ 3, 1, 1, 0, 0, (contDiff_id.pow 3)
   have h := (hasDerivAt_pow 3 (0 : ℝ)).neg
   exact h.deriv.trans (by norm_num)
 
-/-- The PLL energy `θ⁴ / 4 + η² / 2` (`−∫ h` plus the integrator energy). -/
-def cubicEnergy (z : ℝ²) : ℝ := 1 / 4 * (z 0) ^ 4 + 1 / 2 * (z 1) ^ 2
+/-- The PLL energy `θ⁴ / 4 + η² / 2`: the PI-PLL energy `piPLLEnergy` of the potential `θ⁴ / 4`
+of the detector (`−∫ h`) with `K_i = 1` and the set point `η* = 0`. -/
+abbrev cubicEnergy : ℝ² → ℝ := piPLLEnergy (fun θ => θ ^ 4 / 4) 1 0
 
-@[tmio M, powerlib_domain] theorem cubicEnergy_hasFDerivAt (z : ℝ²) :
-    HasFDerivAt cubicEnergy ((z 0) ^ 3 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
-      z 1 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) z := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h := ((h0.pow 4).const_mul (1 / 4 : ℝ)).add ((h1.pow 2).const_mul (1 / 2 : ℝ))
-  refine h.congr_fderiv ?_
-  ext v
-  simp
-  ring
+/-- `θ⁴ / 4` is a potential of the cubic detector: its derivative is `−h(θ) = θ³`. -/
+@[tmio M, powerlib_domain] private lemma hasDerivAt_cubicPotential (θ : ℝ) :
+    HasDerivAt (fun θ : ℝ => θ ^ 4 / 4) (-cubicDetector.h θ) θ :=
+  ((hasDerivAt_pow 4 θ).div_const 4).congr_deriv (by simp [cubicDetector])
 
 @[tmio M, powerlib_domain] theorem cubicEnergy_lie (z : ℝ²) :
     fderiv ℝ cubicEnergy z (cubicDetector.field z) = -(z 0) ^ 6 := by
-  rw [(cubicEnergy_hasFDerivAt z).fderiv, cubicDetector_field]
-  simp
+  rw [(hasFDerivAt_piPLLEnergy (Ki := 1) (ηs := 0) (hasDerivAt_cubicPotential (z 0))).fderiv,
+    cubicDetector_field]
+  simp [cubicDetector]
   ring
+
+@[tmio M, powerlib_domain] theorem cubicEnergy_contDiff : ContDiff ℝ 1 cubicEnergy :=
+  contDiff_piPLLEnergy ((contDiff_id.pow 4).div_const 4) 1 0
+
+@[tmio M, powerlib_domain] theorem cubicEnergy_pos {z : ℝ²} (hz : z ≠ 0) : 0 < cubicEnergy z := by
+  have hne : z 0 ≠ 0 ∨ z 1 ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hz
+    ext i
+    fin_cases i
+    · exact h.1
+    · exact h.2
+  simp only [piPLLEnergy, sub_zero]
+  rcases hne with h | h
+  · have : 0 < (z 0) ^ 4 := by positivity
+    nlinarith [sq_nonneg (z 1)]
+  · have : 0 < (z 1) ^ 2 := by positivity
+    nlinarith [pow_two_nonneg ((z 0) ^ 2)]
 
 /-- The PLL energy is a Lyapunov function of the cubic detector, hence it is Lyapunov stable
 although its linearization is not Hurwitz. -/
@@ -700,27 +716,11 @@ although its linearization is not Hurwitz. -/
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine lyapunov_stable (V := cubicEnergy) (D := Set.univ) two_pos
-    ⟨isOpen_univ, Set.mem_univ _, ?_, fun z => (cubicEnergy_hasFDerivAt z).differentiableAt,
-      by simp [cubicEnergy], fun z _ hz => ?_, fun z _ => ?_⟩
-  · exact (continuous_const.mul
-      ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).continuous.pow 4)).add
-      (continuous_const.mul ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).continuous.pow 2))
-  · have hne : z 0 ≠ 0 ∨ z 1 ≠ 0 := by
-      by_contra h
-      push Not at h
-      apply hz
-      ext i
-      fin_cases i
-      · exact h.1
-      · exact h.2
-    dsimp [cubicEnergy]
-    rcases hne with h | h
-    · have : 0 < (z 0) ^ 4 := by positivity
-      nlinarith [sq_nonneg (z 1)]
-    · have : 0 < (z 1) ^ 2 := by positivity
-      nlinarith [pow_two_nonneg ((z 0) ^ 2)]
-  · rw [cubicEnergy_lie]
-    nlinarith [pow_two_nonneg ((z 0) ^ 3)]
+    ⟨isOpen_univ, Set.mem_univ _, cubicEnergy_contDiff.continuous,
+      fun z => cubicEnergy_contDiff.differentiable one_ne_zero z, by simp [piPLLEnergy],
+      fun z _ hz => cubicEnergy_pos hz, fun z _ => ?_⟩
+  rw [cubicEnergy_lie]
+  nlinarith [pow_two_nonneg ((z 0) ^ 3)]
 
 /-- The local translations are sound but not exact: the cubic detector is Lyapunov stable at a
 phase-locked point with zero slope, which meets no slope-gain requirement. -/
@@ -732,28 +732,6 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
 
 /-! ### The degenerate slope is locally asymptotically stable -/
 
-@[tmio M, powerlib_domain] theorem cubicEnergy_contDiff : ContDiff ℝ 1 cubicEnergy := by
-  unfold cubicEnergy
-  exact (contDiff_const.mul
-      ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).contDiff.pow 4)).add
-    (contDiff_const.mul ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).contDiff.pow 2))
-
-@[tmio M, powerlib_domain] theorem cubicEnergy_pos {z : ℝ²} (hz : z ≠ 0) : 0 < cubicEnergy z := by
-  have hne : z 0 ≠ 0 ∨ z 1 ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hz
-    ext i
-    fin_cases i
-    · exact h.1
-    · exact h.2
-  dsimp [cubicEnergy]
-  rcases hne with h | h
-  · have : 0 < (z 0) ^ 4 := by positivity
-    nlinarith [sq_nonneg (z 1)]
-  · have : 0 < (z 1) ^ 2 := by positivity
-    nlinarith [pow_two_nonneg ((z 0) ^ 2)]
-
 /-- The PLL energy bounds the squared norm: `‖z‖² ≤ 4 V(z) + 1/4`. -/
 @[tmio M, powerlib_domain] theorem norm_sq_le_cubicEnergy (z : ℝ²) :
     ‖z‖ ^ 2 ≤ 4 * cubicEnergy z + 1 / 4 := by
@@ -761,7 +739,7 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
     rw [PiLp.norm_sq_eq_of_L2]
     simp [Fin.sum_univ_succ, sq_abs]
   rw [hsq]
-  dsimp [cubicEnergy]
+  simp only [piPLLEnergy, sub_zero]
   nlinarith [sq_nonneg ((z 0) ^ 2 - 1 / 2), sq_nonneg (z 1)]
 
 /-- The cubic detector is locally asymptotically stable (LaSalle's principle,
@@ -806,7 +784,7 @@ linearization decides nothing. -/
     · exact (h0 t ht).symm
     · exact (h1 t ht).symm
   refine Dynamics.LaSalle.localAsymptoticStable_of_lasalle_detectable two_pos hf
-    cubicEnergy_contDiff (by simp [cubicEnergy]) (fun x hx => cubicEnergy_pos hx)
+    cubicEnergy_contDiff (by simp [piPLLEnergy]) (fun x hx => cubicEnergy_pos hx)
     ⟨1, one_pos, ?_⟩ hdec hdet
   refine Metric.isCompact_of_isClosed_isBounded
     (isClosed_le cubicEnergy_contDiff.continuous continuous_const) ?_

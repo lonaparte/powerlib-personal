@@ -27,8 +27,8 @@ Results.
   `exists_uniform_dissipation` of `theorem/SingularPerturbation/FrozenFast.lean`.
 * `boundaryLayer_uniform_exponentialStability_of_certificates` — the same conclusion for an
   arbitrary (not necessarily compact or topological) parameter set, given uniform Lyapunov
-  certificates of the linearizations as a hypothesis (Khalil's uniform form: one `lo`, `hi`, one
-  bound on `Σ|Pᵢⱼ|`, `vᵀ P A(p) v ≤ −|v|²/4`).
+  certificates of the linearizations as a hypothesis (`UniformDissipation`, Khalil's uniform
+  form: one `lo`, `hi`, one bound on `Σ|Pᵢⱼ|`, `vᵀ P A(p) v ≤ −|v|²/4`).
 * `boundaryLayer_uniform_exponentialStability` — under the uniform linearization hypothesis
   `∀ κ > 0, ∃ ρ > 0, ∀ p w, |w|² ≤ ρ → |g p (h p + w) − A p w|² ≤ κ |w|²`, there are
   `r, C, α > 0`, independent of `p`, such that every forward solution with `|y(0) − h p|² < r`
@@ -69,10 +69,7 @@ linearization `A p` (Khalil's uniform form of the hypothesis), the boundary laye
 exponentially stable uniformly in `p`, with `r = lo ρ/hi`, `C = hi/lo`, `α = 1/(8 hi)`. -/
 @[tmio T, powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_of_certificates
     {X : Type*} {A : X → Matrix (Fin m) (Fin m) ℝ} {lo hi Pb : ℝ} (hlo : 0 < lo) (hhi : 0 < hi)
-    (hPb : 0 ≤ Pb)
-    (hcert : ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
-      (∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) ∧ (∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v)) ∧
-      absSum P ≤ Pb ∧ ∀ v, v ⬝ᵥ (P *ᵥ (A p *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4)
+    (hPb : 0 ≤ Pb) (hcert : UniformDissipation A lo hi Pb)
     {g : X → (Fin m → ℝ) → Fin m → ℝ} {h : X → Fin m → ℝ}
     (hlin : ∀ κ > 0, ∃ ρ > 0, ∀ p w, w ⬝ᵥ w ≤ ρ →
       (g p (h p + w) - A p *ᵥ w) ⬝ᵥ (g p (h p + w) - A p *ᵥ w) ≤ κ * (w ⬝ᵥ w)) :

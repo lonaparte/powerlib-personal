@@ -208,7 +208,8 @@ def hCode (θ : ℝ) : ℝ :=
   have e1 : parkD θ p.idRef p.iqRef = p.iD (-θ) := by simp [parkD, Network.iD, iparkD]
   have e2 : parkQ θ p.idRef p.iqRef = p.iQ (-θ) := by simp [parkQ, Network.iQ, iparkQ]
   rw [hCode, e1, e2]
-  simp only [h, hE, parkQ, vcD, vcQ, igD, igQ, sin_neg, cos_neg]
+  simp only [Network.h, Network.hE, parkQ, Network.vcD, Network.vcQ, Network.igD, Network.igQ,
+    sin_neg, cos_neg]
   ring
 
 /-- The code-frame field (`models.py::dynamics_v1`): `θ̇ = −K_p h_c(θ) − K_i η`, `η̇ = h_c(θ)`. -/

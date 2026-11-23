@@ -17,7 +17,8 @@ Model boundary.
   `T_guard = T(r_c)`, `T_committed = T(r_b)` with any `r_b > r_c`,
   `P = guardPrefactor α l₁ D̃ = (√π/2)√(D̃l₁)/α²`, `X = ΔU/D̃`; asymptotic regime `D̃ → 0⁺` at
   fixed `α, l₁, r_b` (equivalently `X → ∞`).
-* Notation: `c = 2√l₁/(√π α)`, so that `c √D̃ = 1/√(πX)`.
+* Notation: `c = guardHalfOrder α l₁ = 2√l₁/(√π α)`, so that `c √D̃ = 1/√(πX)`; the leading
+  weight `W(D̃) = guardLead α l₁ D̃ = r_c⁻¹ e^{ΔU/D̃} √(π/(α/D̃))/2`.
 
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("趋近 2 的方式本身是
 `1 + O(X^{−1/2})`"), §1.3 (`T_guard ∼ (√π/2)√(D̃l₁)/α² e^X (1 + O(X^{−1/2}))`, "修正确为半阶"),
@@ -83,6 +84,32 @@ namespace powerlib.Asymptotics.Guard
 open Real Set Filter Topology MeasureTheory intervalIntegral
 
 variable {α l₁ : ℝ}
+
+/-! ## The leading weight and the half-order coefficient -/
+
+/-- The leading weight `W(D̃) = r_c⁻¹ e^{ΔU/D̃} √(π/(α/D̃))/2` of the barrier integral
+(`r_c = guardRadius α l₁ = √(α/l₁)`, `ΔU = barrierHeight α l₁`). -/
+def guardLead (α l₁ D : ℝ) : ℝ :=
+  (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)
+
+/-- The half-order coefficient `c = 2√l₁/(√π α)`, so that `c √D̃ = 1/√(πX)`. -/
+def guardHalfOrder (α l₁ : ℝ) : ℝ := 2 * √l₁ / (√π * α)
+
+@[tmio T, powerlib_foundation] theorem guardLead_pos (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
+    (hD : 0 < D) : 0 < guardLead α l₁ D := by
+  have : 0 < √(π / (α / D)) := Real.sqrt_pos.mpr (by positivity)
+  have : 0 < √(α / l₁) := Real.sqrt_pos.mpr (div_pos hα hl)
+  unfold guardLead
+  positivity
+
+/-- The half-order coefficient is positive: the `X^{−1/2}` term of `T_guard` (and of the ratio)
+is present for every `α, l₁ > 0`. -/
+@[tmio T, powerlib_foundation] theorem guardHalfOrder_pos (hα : 0 < α) (hl : 0 < l₁) :
+    0 < guardHalfOrder α l₁ := by
+  have := Real.sqrt_pos.mpr hl
+  have := Real.sqrt_pos.mpr Real.pi_pos
+  unfold guardHalfOrder
+  positivity
 
 /-! ## Morse substitution for the barrier weight -/
 
@@ -209,8 +236,9 @@ since `U(y) = ΔU − (l₁/4)(y² − r_c²)²` exactly. -/
 `r_c⁻¹ e^{ΔU/D̃} √(π/(α/D̃))/2 = (e^{ΔU/D̃}/2) · r_c⁻² √(π/β)/2`, `β = l₁/(4D̃)`. -/
 @[tmio M, powerlib_foundation] theorem guard_weight_lead_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
     (hD : 0 < D) :
-    (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) =
+    guardLead α l₁ D =
       Real.exp (barrierHeight α l₁ / D) / 2 * ((α / l₁)⁻¹ * (√(π / (l₁ / (4 * D))) / 2)) := by
+  rw [guardLead]
   rw [Real.sqrt_div' _ hl.le, Real.sqrt_div' _ (div_pos hα hD).le, Real.sqrt_div' _ hD.le,
     Real.sqrt_div' _ (by positivity : (0 : ℝ) ≤ l₁ / (4 * D)), Real.sqrt_div' _ (by positivity),
     Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4), show √(4 : ℝ) = 2 by
@@ -229,7 +257,8 @@ since `U(y) = ΔU − (l₁/4)(y² − r_c²)²` exactly. -/
 `β = l₁/(4D̃)`. -/
 @[tmio T, powerlib_foundation] theorem guard_weight_coeff_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
     (hD : 0 < D) :
-    ((α / l₁) ^ 2)⁻¹ / (α / l₁)⁻¹ / √(π * (l₁ / (4 * D))) = 2 * √l₁ / (√π * α) * √D := by
+    ((α / l₁) ^ 2)⁻¹ / (α / l₁)⁻¹ / √(π * (l₁ / (4 * D))) = guardHalfOrder α l₁ * √D := by
+  rw [guardHalfOrder]
   rw [Real.sqrt_mul Real.pi_pos.le, Real.sqrt_div' _ (by positivity : (0 : ℝ) ≤ 4 * D),
     Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4), show √(4 : ℝ) = 2 by
       rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
@@ -247,8 +276,8 @@ since `U(y) = ΔU − (l₁/4)(y² − r_c²)²` exactly. -/
 @[tmio M, powerlib_foundation] theorem guard_weight_inside_two_term (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) :
     (fun D => (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-        ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) - 1 -
-        2 * √l₁ / (√π * α) * √D) =O[𝓝[>] 0] fun D => D := by
+        guardLead α l₁ D - 1 -
+        guardHalfOrder α l₁ * √D) =O[𝓝[>] 0] fun D => D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have ha2 : a ^ 2 < α / l₁ := by
     have := pow_lt_pow_left₀ har ha.le two_ne_zero; rwa [Real.sq_sqrt hρ.le] at this
@@ -275,8 +304,8 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     (ha : 0 < a) (har : a < √(α / l₁)) :
     (fun D => (∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2),
           y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-        ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) - 1 +
-        2 * √l₁ / (√π * α) * √D) =O[𝓝[>] 0] fun D => D := by
+        guardLead α l₁ D - 1 +
+        guardHalfOrder α l₁ * √D) =O[𝓝[>] 0] fun D => D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have ha2 : a ^ 2 < α / l₁ := by
     have := pow_lt_pow_left₀ har ha.le two_ne_zero; rwa [Real.sq_sqrt hρ.le] at this
@@ -304,8 +333,8 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
 @[tmio M, powerlib_foundation] theorem mul_guardPrefactor_exp_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
     (hD : 0 < D) :
     D * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) =
-      D / α * ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) := by
-  rw [← mul_assoc, mul_guardPrefactor_eq hα hl hD]; ring
+      D / α * guardLead α l₁ D := by
+  rw [← mul_assoc, mul_guardPrefactor_eq hα hl hD, guardLead]; ring
 
 /-- **Sandwich of `T_guard`** by the normalized inside weight
 `w = ∫_a^{r_c} y⁻¹ e^{U/D̃} / W(D̃)`: for `0 < a < r_c` and `0 < D̃ ≤ a²`,
@@ -315,19 +344,17 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) (hDa : D ≤ a ^ 2) :
     (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) *
         ((∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-          ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) ≤
+          guardLead α l₁ D) ≤
         guardMFPT α l₁ D (guardRadius α l₁) /
           (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) ∧
       guardMFPT α l₁ D (guardRadius α l₁) /
           (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) ≤
         (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (1 + 16 * l₁ * D / α ^ 2) *
           ((∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-            ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) := by
+            guardLead α l₁ D) := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
-  have hW : 0 < (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) := by
-    have : 0 < √(π / (α / D)) := Real.sqrt_pos.mpr (by positivity)
-    positivity
+  have hW : 0 < guardLead α l₁ D := guardLead_pos hα hl hD
   have hQ : 0 < guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) := by
     unfold guardPrefactor; positivity
   have hDQ := mul_guardPrefactor_exp_eq hα hl hD
@@ -351,11 +378,11 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
       (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) =
       ((∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) +
         ∫ y in a..√(α / l₁), guardIntegrand α l₁ D y) /
-        (D / α * ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) := by
+        (D / α * guardLead α l₁ D) := by
     rw [← hDQ, guardMFPT, guardRadius, hsplit]
     field_simp
   rw [hT]
-  generalize (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) = W
+  generalize guardLead α l₁ D = W
     at hW ⊢
   generalize (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
     at htails hAm_lo hAm_hi hI0 ⊢
@@ -399,7 +426,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) *
         ((∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2),
             y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-          ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) ≤
+          guardLead α l₁ D) ≤
         (guardMFPT α l₁ D rb - guardMFPT α l₁ D (guardRadius α l₁)) /
           (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) ∧
       (guardMFPT α l₁ D rb - guardMFPT α l₁ D (guardRadius α l₁)) /
@@ -407,10 +434,10 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
         (1 + guardKappa α l₁ a D) * (1 + 16 * l₁ * D / α ^ 2) *
           ((∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2),
               y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-            ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) +
+            guardLead α l₁ D) +
         guardEps α l₁ a rb D * (1 + 16 * l₁ * D / α ^ 2) *
           ((∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-            ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) := by
+            guardLead α l₁ D) := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
@@ -418,9 +445,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     have := pow_lt_pow_left₀ har ha.le two_ne_zero; rwa [hrc2] at this
   have hrcψ : √(α / l₁) ≤ √(2 * (α / l₁) - a ^ 2) := Real.sqrt_le_sqrt (by linarith)
   have hψ0 : 0 < √(2 * (α / l₁) - a ^ 2) := hrc.trans_le hrcψ
-  have hW : 0 < (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) := by
-    have : 0 < √(π / (α / D)) := Real.sqrt_pos.mpr (by positivity)
-    positivity
+  have hW : 0 < guardLead α l₁ D := guardLead_pos hα hl hD
   have hDQ := mul_guardPrefactor_exp_eq hα hl hD
   have htails := guard_tails_le (D := D) hα hl ha har hψ hD hDa
   have heps0 := guardEps_nonneg (D := D) hα hl ha har hψ hD
@@ -445,7 +470,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
       (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) =
       ((∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y) +
         ∫ y in √(2 * (α / l₁) - a ^ 2)..rb, guardIntegrand α l₁ D y) /
-        (D / α * ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2))) := by
+        (D / α * guardLead α l₁ D) := by
     rw [← hDQ, guardMFPT, guardMFPT, guardRadius,
       ← integral_add_adjacent_intervals (intervalIntegrable_guardIntegrand hl hD hrc.le)
         (intervalIntegrable_guardIntegrand_of_pos hrc (hrc.trans_le (hrcψ.trans hψ))),
@@ -454,7 +479,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     field_simp
     ring
   rw [hT]
-  generalize (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) = W
+  generalize guardLead α l₁ D = W
     at hW ⊢
   generalize (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
     at htails hI0 ⊢
@@ -566,7 +591,7 @@ tails contribute only `O(D̃)` (`guardMFPT_guard_weight_bounds`). -/
 @[tmio M, powerlib_foundation] theorem guardMFPT_guard_two_term (hα : 0 < α) (hl : 0 < l₁) :
     (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1 -
-        2 * √l₁ / (√π * α) * √D) =O[𝓝[>] 0] fun D => D := by
+        guardHalfOrder α l₁ * √D) =O[𝓝[>] 0] fun D => D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
   set a := √(α / l₁) / 2 with hadef
@@ -576,10 +601,10 @@ tails contribute only `O(D̃)` (`guardMFPT_guard_weight_bounds`). -/
   have he1 := tendsto_exp_neg_div_div hca
   have hε := tendsto_guardEps_div (rb := √(2 * (α / l₁) - a ^ 2)) hl ha har hρ
   obtain ⟨C, hC⟩ := (guard_weight_inside_two_term hα hl ha har).bound
-  have hc0 : 0 ≤ 2 * √l₁ / (√π * α) := by positivity
+  have hc0 : 0 ≤ guardHalfOrder α l₁ := (guardHalfOrder_pos hα hl).le
   have hc₂0 : 0 ≤ 16 * l₁ / α ^ 2 := by positivity
   apply Asymptotics.IsBigO.of_bound (|C| + (1 + 2 * (16 * l₁ / α ^ 2)) *
-    (1 + 2 * √l₁ / (√π * α) + |C|))
+    (1 + guardHalfOrder α l₁ + |C|))
   filter_upwards [hC, self_mem_nhdsWithin,
     nhdsWithin_le_nhds (eventually_lt_nhds (by positivity : (0 : ℝ) < a ^ 2)),
     nhdsWithin_le_nhds (eventually_lt_nhds (one_pos : (0 : ℝ) < 1)),
@@ -598,11 +623,9 @@ tails contribute only `O(D̃)` (`guardMFPT_guard_weight_bounds`). -/
   have hs0 : 0 ≤ √D := Real.sqrt_nonneg D
   have hs1 : √D ≤ 1 := by
     rw [show (1 : ℝ) = √1 by simp]; exact Real.sqrt_le_sqrt hD1.le
-  have hW : 0 < (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) := by
-    have : 0 < √(π / (α / D)) := Real.sqrt_pos.mpr (by positivity)
-    positivity
+  have hW : 0 < guardLead α l₁ D := guardLead_pos hα hl hD
   have hw0 : 0 ≤ (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-      ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) :=
+      guardLead α l₁ D :=
     div_nonneg (integral_nonneg har.le fun y hy =>
       mul_nonneg (inv_nonneg.2 (ha.le.trans hy.1)) (Real.exp_pos _).le) hW.le
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos hD0] at hCD ⊢
@@ -631,7 +654,7 @@ two-term expansion `guardMFPT_guard_two_term` without its half-order term. -/
     (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1) =O[𝓝[>] 0]
       fun D => √D :=
-  isBigO_sqrt_of_isBigO (c := 2 * √l₁ / (√π * α))
+  isBigO_sqrt_of_isBigO (c := guardHalfOrder α l₁)
     ((guardMFPT_guard_two_term hα hl).congr_left fun D => by ring)
 
 /-- `T_guard / (P e^X) → 1` as `D̃ → 0⁺`. -/
@@ -652,7 +675,7 @@ top the Morse amplitude is `(r_c² + u)⁻¹`, with slope `−r_c⁻⁴` (`guard
     (hrb : guardRadius α l₁ < rb) :
     (fun D => (guardMFPT α l₁ D rb - guardMFPT α l₁ D (guardRadius α l₁)) /
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1 +
-        2 * √l₁ / (√π * α) * √D) =O[𝓝[>] 0] fun D => D := by
+        guardHalfOrder α l₁ * √D) =O[𝓝[>] 0] fun D => D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
   obtain ⟨a, ha, har, hψ⟩ := guard_exists_cut hα hl hrb
@@ -664,10 +687,10 @@ top the Morse amplitude is `(r_c² + u)⁻¹`, with slope `−r_c⁻⁴` (`guard
   have hκ := tendsto_guardKappa_div (α := α) hl ha (by linarith)
   obtain ⟨C, hC⟩ := (guard_weight_inside_two_term hα hl ha har).bound
   obtain ⟨C', hC'⟩ := (guard_weight_beyond_two_term hα hl ha har).bound
-  have hc0 : 0 ≤ 2 * √l₁ / (√π * α) := by positivity
+  have hc0 : 0 ≤ guardHalfOrder α l₁ := (guardHalfOrder_pos hα hl).le
   have hc₂0 : 0 ≤ 16 * l₁ / α ^ 2 := by positivity
   apply Asymptotics.IsBigO.of_bound (|C'| + (1 + 2 * (16 * l₁ / α ^ 2)) *
-    (1 + 2 * √l₁ / (√π * α) + |C'|) + (1 + 16 * l₁ / α ^ 2) * (1 + 2 * √l₁ / (√π * α) + |C|))
+    (1 + guardHalfOrder α l₁ + |C'|) + (1 + 16 * l₁ / α ^ 2) * (1 + guardHalfOrder α l₁ + |C|))
   filter_upwards [hC, hC', self_mem_nhdsWithin,
     nhdsWithin_le_nhds (eventually_lt_nhds (by positivity : (0 : ℝ) < a ^ 2)),
     nhdsWithin_le_nhds (eventually_lt_nhds (one_pos : (0 : ℝ) < 1)),
@@ -692,16 +715,14 @@ top the Morse amplitude is `(r_c² + u)⁻¹`, with slope `−r_c⁻⁴` (`guard
   have hρ' : 0 < α / l₁ := hρ
   have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ'
   have hrcψ : √(α / l₁) ≤ √(2 * (α / l₁) - a ^ 2) := Real.sqrt_le_sqrt (by linarith)
-  have hW : 0 < (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) := by
-    have : 0 < √(π / (α / D)) := Real.sqrt_pos.mpr (by positivity)
-    positivity
+  have hW : 0 < guardLead α l₁ D := guardLead_pos hα hl hD
   have hw0 : 0 ≤ (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-      ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) :=
+      guardLead α l₁ D :=
     div_nonneg (integral_nonneg har.le fun y hy =>
       mul_nonneg (inv_nonneg.2 (ha.le.trans hy.1)) (Real.exp_pos _).le) hW.le
   have hw'0 : 0 ≤ (∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2),
       y⁻¹ * Real.exp (guardPotential α l₁ y / D)) /
-      ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) :=
+      guardLead α l₁ D :=
     div_nonneg (integral_nonneg hrcψ fun y hy =>
       mul_nonneg (inv_nonneg.2 (hrc.le.trans hy.1)) (Real.exp_pos _).le) hW.le
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos hD0] at hCD hCD' ⊢
@@ -746,7 +767,7 @@ relative error is `O(D̃)`. -/
 @[tmio M, powerlib_foundation] theorem guardMFPT_ratio_two_term (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2 +
-        2 * (2 * √l₁ / (√π * α)) * √D) =O[𝓝[>] 0] fun D => D := by
+        2 * (guardHalfOrder α l₁) * √D) =O[𝓝[>] 0] fun D => D := by
   have hG := guardMFPT_guard_two_term hα hl
   have hB := guardMFPT_beyond_two_term hα hl hrb
   have hG1 := guardMFPT_guard_isBigO hα hl
@@ -756,7 +777,7 @@ relative error is `O(D̃)`. -/
     refine ((Asymptotics.isBigO_refl (fun D : ℝ => √D) _).mul hG1).congr' EventuallyEq.rfl ?_
     filter_upwards [self_mem_nhdsWithin] with D hD
     exact Real.mul_self_sqrt (le_of_lt hD)
-  have hN := (hB.sub hG).add (hsG.const_mul_left (2 * (2 * √l₁ / (√π * α))))
+  have hN := (hB.sub hG).add (hsG.const_mul_left (2 * (guardHalfOrder α l₁)))
   have hGinv : (fun D => (guardMFPT α l₁ D (guardRadius α l₁) /
       (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)))⁻¹) =O[𝓝[>] 0]
       fun _ => (1 : ℝ) := by
@@ -786,7 +807,7 @@ term. -/
     {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2) =O[𝓝[>] 0]
       fun D => √D :=
-  isBigO_sqrt_of_isBigO (c := -(2 * (2 * √l₁ / (√π * α))))
+  isBigO_sqrt_of_isBigO (c := -(2 * (guardHalfOrder α l₁)))
     ((guardMFPT_ratio_two_term hα hl hrb).congr_left fun D => by ring)
 
 /-- **`T_committed / T_guard → 2`** (source §1.2): for the truncated subcritical-Hopf potential
@@ -835,24 +856,16 @@ committed escape time by a factor of two. -/
     (hl : 0 < l₁) :
     Tendsto (fun D => (guardMFPT α l₁ D (guardRadius α l₁) /
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1) / √D) (𝓝[>] 0)
-      (𝓝 (2 * √l₁ / (√π * α))) :=
+      (𝓝 (guardHalfOrder α l₁)) :=
   tendsto_div_sqrt_of_isBigO ((guardMFPT_guard_two_term hα hl).congr_left fun D => by ring)
 
-/-- **The half-order coefficient of the ratio**: `(T(r_b)/T(r_c) − 2)/√D̃ → −4√l₁/(√π α)` as
-`D̃ → 0⁺`, for every `r_b > r_c`. -/
+/-- **The half-order coefficient of the ratio**: `(T(r_b)/T(r_c) − 2)/√D̃ → −2c = −4√l₁/(√π α)`
+as `D̃ → 0⁺`, for every `r_b > r_c`. -/
 @[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio_sub_two_div_sqrt (hα : 0 < α) (hl : 0 < l₁)
     {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
     Tendsto (fun D => (guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2) / √D)
-      (𝓝[>] 0) (𝓝 (-(4 * √l₁ / (√π * α)))) :=
+      (𝓝[>] 0) (𝓝 (-(2 * guardHalfOrder α l₁))) :=
   tendsto_div_sqrt_of_isBigO ((guardMFPT_ratio_two_term hα hl hrb).congr_left fun D => by ring)
-
-/-- The half-order coefficient `2√l₁/(√π α)` is positive: the `X^{−1/2}` term of `T_guard` (and
-of the ratio) is present for every `α, l₁ > 0`. -/
-@[tmio T, powerlib_foundation] theorem guardHalfOrder_pos (hα : 0 < α) (hl : 0 < l₁) :
-    0 < 2 * √l₁ / (√π * α) := by
-  have := Real.sqrt_pos.mpr hl
-  have := Real.sqrt_pos.mpr Real.pi_pos
-  positivity
 
 /-- **The rate of `T_guard ~ P e^X` is sharp**: `T_guard/(P e^X) − 1 =Θ(√D̃)` as `D̃ → 0⁺` (an upper
 bound is `guardMFPT_guard_isBigO`; the matching lower bound comes from the nonzero coefficient). -/
@@ -869,10 +882,7 @@ for every `r_b > r_c` (upper bound `guardMFPT_ratio_sub_two_isBigO`). -/
     {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2) =Θ[𝓝[>] 0]
       fun D => √D := by
-  have h4 : 0 < 4 * √l₁ / (√π * α) := by
-    have := guardHalfOrder_pos hα hl
-    have e : 4 * √l₁ / (√π * α) = 2 * (2 * √l₁ / (√π * α)) := by ring
-    rw [e]; positivity
+  have h4 : 0 < 2 * guardHalfOrder α l₁ := mul_pos two_pos (guardHalfOrder_pos hα hl)
   exact (Asymptotics.isTheta_of_div_tendsto_nhds_ne_zero
     (tendsto_guardMFPT_ratio_sub_two_div_sqrt hα hl hrb) (neg_ne_zero.mpr h4.ne')).symm
 
@@ -882,7 +892,8 @@ for every `r_b > r_c` (upper bound `guardMFPT_ratio_sub_two_isBigO`). -/
 `2√l₁/(√π α)` of `guardMFPT_guard_two_term` (large parameter `1/D̃`). -/
 @[tmio T, powerlib_foundation] theorem guard_endpointCorrection_eq (hα : 0 < α) (hl : 0 < l₁) :
     endpointCorrection (√(α / l₁))⁻¹ ((√(α / l₁)) ^ 2)⁻¹ (2 * α) (-(6 * l₁ * √(α / l₁))) =
-      2 * √l₁ / (√π * α) := by
+      guardHalfOrder α l₁ := by
+  rw [guardHalfOrder]
   unfold endpointCorrection
   rw [Real.sqrt_div' _ hl.le, Real.sqrt_div' _ Real.pi_pos.le,
     Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)]
@@ -934,7 +945,8 @@ for every `r_b > r_c` (upper bound `guardMFPT_ratio_sub_two_isBigO`). -/
 
 /-- `√ΔU · 2√l₁/(√π α) = 1/√π`, `ΔU = α²/(4l₁)`. -/
 @[tmio M, powerlib_foundation] theorem sqrt_barrierHeight_mul_halfOrder (hα : 0 < α) (hl : 0 < l₁) :
-    √(barrierHeight α l₁) * (2 * √l₁ / (√π * α)) = 1 / √π := by
+    √(barrierHeight α l₁) * (guardHalfOrder α l₁) = 1 / √π := by
+  rw [guardHalfOrder]
   rw [barrierHeight, Real.sqrt_div' _ (by positivity : (0 : ℝ) ≤ 4 * l₁), Real.sqrt_sq hα.le,
     Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4), show √(4 : ℝ) = 2 by
       rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]

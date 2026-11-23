@@ -58,8 +58,12 @@ Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machin
 Results (static evidence on the model).
 * `exists_equilibrium_iff`, `field_eq_zero_iff_branches` — equilibria exist iff the power-angle
   curve reaches `P_m`; the equilibrium set is `ω = 0`, `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}`, with
-  `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches; `hasDerivAt_Pe` — the
-  synchronizing coefficient `K(δ) = k₂ cos(δ − k₃)` is the slope `P_e'(δ)`.
+  `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches (`syncCoeff_deltaS`:
+  `K(δ_s) = k₂ √(1 − a²)`); `hasDerivAt_Pe` — the synchronizing coefficient
+  `K(δ) = k₂ cos(δ − k₃)` is the slope `P_e'(δ)`.
+* `sinusoid M D P_m K` — the pure sine curve `P_e = K sin δ` (`k₁ = k₃ = 0`) that every lossless
+  instance reads, with its simp lemmas (`sinusoid_Pe`, `sinusoid_syncCoeff`, `sinusoid_deltaS`:
+  `δ_s = arcsin(P_m / K)`, `sinusoid_deltaU`).
 * `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `dampingRatio_jacobian`,
   `eigenvalues_real_iff` — the mechanical-Jacobian laws of `PhasePlane.Conservative` at the
   stiffness `K = k₂ cos(δ₀ − k₃)`: the linearization has `M det(sI − J) = M s² + D s + K`; it is
@@ -139,7 +143,7 @@ Family and connection conclusions.
 * The classical machine on an infinite bus written as a nonlinear port-Hamiltonian system in
   `(δ, p = M ω)` with `P_e = b sin δ` and a mechanical-power port (`ClassicalSM.family`,
   `theorem/PowerSystem/Synchronous/PH.lean`) is read through this family, the canonical one: its
-  swing reading `ClassicalSM.Model.toSwing` is `⟨⟨M, D, P_m, 0, b, 0⟩, δ*⟩` (`M > 0`, `D ≥ 0`,
+  swing reading `ClassicalSM.Model.toSwing` is `⟨sinusoid M D P_m b, δ*⟩` (`M > 0`, `D ≥ 0`,
   `b > 0`), and on every flow sentence its denotation and its translation are the pullbacks of this
   family's (`ClassicalSM.den_flow_eq_preimage`, `ClassicalSM.mem_den_flow_iff_swing`,
   `ClassicalSM.realize_translate_flow_eq_preimage`, `ClassicalSM.exact_flow_iff`; the zero-input
@@ -362,6 +366,58 @@ def deltaU : ℝ := Real.pi - Real.arcsin p.loadRatio + p.k₃
   simp only [syncCoeff, deltaU, add_sub_cancel_right]
   exact mul_neg_of_pos_of_neg hk (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hk)
 
+/-- At the stable angle the synchronizing coefficient is `K(δ_s) = k₂ √(1 − a²)`,
+`a = (P_m − k₁) / k₂`. -/
+@[tmio M, powerlib_domain] theorem syncCoeff_deltaS :
+    p.syncCoeff p.deltaS = p.k₂ * Real.sqrt (1 - p.loadRatio ^ 2) := by
+  simp only [syncCoeff, deltaS, add_sub_cancel_right, Real.cos_arcsin]
+
+/-! ### The pure sine power curve -/
+
+/-- The swing model with the pure sine power-angle curve `P_e(δ) = K sin δ` (`k₁ = k₃ = 0`),
+`M δ̈ + D δ̇ = P_m − K sin δ`: the reading of every instance on an ideal (lossless) line. -/
+def sinusoid (M D Pm K : ℝ) : SwingParams := ⟨M, D, Pm, 0, K, 0⟩
+
+section sinusoid
+
+variable (M D Pm K : ℝ)
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_M : (sinusoid M D Pm K).M = M := rfl
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_D : (sinusoid M D Pm K).D = D := rfl
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_Pm : (sinusoid M D Pm K).Pm = Pm := rfl
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_k₁ : (sinusoid M D Pm K).k₁ = 0 := rfl
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_k₂ : (sinusoid M D Pm K).k₂ = K := rfl
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_k₃ : (sinusoid M D Pm K).k₃ = 0 := rfl
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_Pe (δ : ℝ) :
+    (sinusoid M D Pm K).Pe δ = K * Real.sin δ := by
+  simp [Pe]
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_syncCoeff (δ : ℝ) :
+    (sinusoid M D Pm K).syncCoeff δ = K * Real.cos δ := by
+  simp [syncCoeff]
+
+@[tmio M, simp, powerlib_domain] theorem sinusoid_loadRatio :
+    (sinusoid M D Pm K).loadRatio = Pm / K := by
+  simp [loadRatio]
+
+/-- The stable angle of the sine curve, `δ_s = arcsin(P_m / K)`. -/
+@[tmio M, simp, powerlib_domain] theorem sinusoid_deltaS :
+    (sinusoid M D Pm K).deltaS = Real.arcsin (Pm / K) := by
+  simp [deltaS]
+
+/-- The unstable angle of the sine curve, `δ_u = π − arcsin(P_m / K)`. -/
+@[tmio M, simp, powerlib_domain] theorem sinusoid_deltaU :
+    (sinusoid M D Pm K).deltaU = Real.pi - Real.arcsin (Pm / K) := by
+  simp [deltaU]
+
+end sinusoid
+
 /-- The equilibrium set: `ω = 0` and `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}` (two equilibria per
 period of the power-angle curve). Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_eq_zero_iff_branches (hM : p.M ≠ 0) (hk : 0 < p.k₂)
@@ -441,7 +497,7 @@ and the potential `U = potential δ₀`; with `field_eq_conservative` and `hasDe
 @[tmio M, powerlib_domain] theorem energy_eq_conservative (δ₀ : ℝ) :
     p.energy δ₀ = PhasePlane.Conservative.energy p.M (p.potential δ₀) := by
   funext x
-  simp only [energy, PhasePlane.Conservative.energy]
+  simp only [energy, PhasePlane.Conservative.energy, PhasePlane.Conservative.separableEnergy]
   ring
 
 @[tmio M, powerlib_domain] theorem hasDerivAt_potential (δ₀ δ : ℝ) :

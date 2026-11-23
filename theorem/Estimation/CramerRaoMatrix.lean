@@ -34,7 +34,8 @@ Results.
   `Cov_θ(T) − J 𝓘(θ)⁻¹ Jᵀ ⪰ 0`.
 * `crb_fin_unbiased` — unbiased near `θ` ⇒ `Cov_θ(T) − 𝓘(θ)⁻¹ ⪰ 0`.
 * `gramMatrix_posSemidef` — general probability space: the second-moment matrix of
-  square-integrable variables is `⪰ 0`.
+  square-integrable variables is `⪰ 0`; the covariance `covMatrix` (centred statistic) and the
+  Fisher matrix `fisherMatrix` (score) are Gram matrices.
 * `crb_of_regular` — the covariance-inequality form. With the regularity conditions taken as
   explicit premises in integrated form, `E[S_i] = 0` and `E[T_j S_i] = J_ji`, a positive
   definite `𝓘 = E[S Sᵀ]` gives `Cov(T) ⪰ J 𝓘⁻¹ Jᵀ`.
@@ -256,13 +257,14 @@ def gramMatrix {ι : Type*} (P : Measure Ω) (V : ι → Ω → ℝ) : Matrix ι
     rw [e]
     exact integral_nonneg fun ω => sq_nonneg _
 
-/-- Covariance matrix `Cov(T)_ij = E[(T_i − E T_i)(T_j − E T_j)]`. -/
+/-- Covariance matrix `Cov(T)_ij = E[(T_i − E T_i)(T_j − E T_j)]`: the Gram matrix of the centred
+statistic. -/
 def covMatrix (P : Measure Ω) (T : Ω → Fin k → ℝ) : Matrix (Fin k) (Fin k) ℝ :=
-  Matrix.of fun i j => ∫ ω, (T ω i - ∫ ω', T ω' i ∂P) * (T ω j - ∫ ω', T ω' j ∂P) ∂P
+  gramMatrix P fun i ω => T ω i - ∫ ω', T ω' i ∂P
 
-/-- Fisher matrix of a score vector `S`: `𝓘_ij = E[S_i S_j]`. -/
+/-- Fisher matrix of a score vector `S`: `𝓘_ij = E[S_i S_j]`, the Gram matrix of the score. -/
 def fisherMatrix (P : Measure Ω) (S : Ω → Fin p → ℝ) : Matrix (Fin p) (Fin p) ℝ :=
-  Matrix.of fun i j => ∫ ω, S ω i * S ω j ∂P
+  gramMatrix P fun i ω => S ω i
 
 /-- **Cramér–Rao bound (covariance-inequality form).**  On a probability space, let `T` be a
 square-integrable statistic in `ℝ^k` and `S` a square-integrable score in `ℝ^p`.  The regularity

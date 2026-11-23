@@ -95,11 +95,11 @@ evidence on the model, not a connection conclusion. -/
   field_simp
   ring
 
-/-- Exact IMC closed-loop transfer: `ω_b/(s + ω_b)` off the roots `−R/L`, `−ω_b`. Static
-evidence on the model, not a connection conclusion. -/
+/-- Exact IMC closed-loop transfer: the first-order lag `lagLoop ω_b s = ω_b/(s + ω_b)` off the
+roots `−R/L`, `−ω_b`. Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem imc_transfer_eq (hL : L ≠ 0) {s : ℂ} (h1 : (L : ℂ) * s + R ≠ 0)
     (h2 : s + ωb ≠ 0) :
-    transfer (imc L R ωb).model s 0 0 = ωb / (s + ωb) := by
+    transfer (imc L R ωb).model s 0 0 = lagLoop ωb s := by
   have hs : ((imc L R ωb).L : ℂ) * s ^ 2 + ((imc L R ωb).R + (imc L R ωb).Kp) * s +
       (imc L R ωb).Ki ≠ 0 := by
     simp only [imc]
@@ -109,7 +109,7 @@ evidence on the model, not a connection conclusion. -/
   rw [PIParams.transfer_eq _ hL hs]
   simp only [imc]
   push_cast
-  rw [imc_charPoly]
+  rw [imc_charPoly, lagLoop]
   field_simp
 
 /-- Internal stability after the cancellation: the IMC loop satisfies an attractive sentence

@@ -25,7 +25,7 @@ Results.
   group `X` of machines rigidly by `t` changes the potential by `W (1 − cos t) + K (sin t − t)`,
   `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ)` the total linearization weight and `K` the total flow of the lines
   leaving `X`), `hessForm_groupIndicator` (`A₂` of the turn is `2W`); the grounded direction of
-  a rigid turn is `ground_sub_zero` at `u = groupIndicator X` (`Degenerate.lean`).
+  a rigid turn is `ground_relRate` at `u = groupIndicator X` (`Basic.lean`).
 * The four-cycle (superadditivity of `tan`): `tan_add_tan_lt`, `sq_sum_le_mul`
   (Cauchy–Schwarz), `tan_sum_mul_sq_lt` (three angles in `(−π/2, π/2)` summing past `π/2`:
   `tan(∑β)(∑a)² < ∑ a² tan β`), `exists_rep_of_cos_pos`, `quad_tan_ne_zero`,
@@ -130,13 +130,13 @@ the lines leaving `X`. -/
     by_cases hk : k ∈ X <;> by_cases hj : j ∈ X <;> simp only [hk, hj, ↓reduceIte,
       not_true, not_false_eq_true, and_true, and_false, true_and, false_and, mul_one, mul_zero,
       sub_self, add_zero, zero_add]
-    · simp [edgeIncrement]
-    · simp only [edgeIncrement, Real.cos_add, sub_zero]
+    · simp [CycleMinimum.edgeG]
+    · simp only [edgeIncrement, CycleMinimum.edgeG, sub_zero]
       ring
-    · simp only [edgeIncrement, Real.cos_add, zero_sub, Real.cos_neg, Real.sin_neg]
+    · simp only [edgeIncrement, CycleMinimum.edgeG, zero_sub, Real.cos_neg, Real.sin_neg]
       rw [show θ j - θ k = -(θ k - θ j) by ring, Real.sin_neg, Real.cos_neg, p.B_symm j k]
       ring
-    · simp [edgeIncrement]
+    · simp [CycleMinimum.edgeG]
   simp only [hterm]
   rw [sum_sum_cross X F]
   simp only [hF, Finset.sum_add_distrib, Finset.sum_mul]

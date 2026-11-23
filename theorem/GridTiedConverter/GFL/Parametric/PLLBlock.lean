@@ -50,14 +50,12 @@ linearized PLL (`PLL.phaseModel`, output `θ̂`) with the feedthrough `−θ_g`.
 def pllBlock (v kp ki : ℝ) : Linear.Plant 2 1 :=
   { PLL.phaseModel v kp ki with D := !![-1] }
 
-/-- `L_PLL(s) = s² + k_p v s + k_i v`: the PLL loop polynomial `PLL.loopPoly`. -/
-abbrev LPLL (v kp ki : ℝ) (s : ℂ) : ℂ := PLL.loopPoly v kp ki s
-
 /-- The block matrix is the `(θ, x)` block of the four-state `A₀`. -/
 @[tmio M, powerlib_domain] theorem pllBlock_A_eq_A0 (p : FourState.Params) (θ0 : ℝ) (i j : Fin 2) :
     (pllBlock (FourState.vd0 p θ0) p.kp p.ki).A i j =
       FourState.A0 p θ0 (Fin.castLE (by norm_num) i) (Fin.castLE (by norm_num) j) := by
-  fin_cases i <;> fin_cases j <;> simp [pllBlock, PLL.phaseModel, PLL.linA, FourState.A0, mul_comm]
+  fin_cases i <;> fin_cases j <;>
+    simp [pllBlock, PLL.phaseModel, PLL.piPLLJacobian, FourState.A0, mul_comm]
 
 /-- Realization: with `ξ = θ + θ_g`, the block's state equation `A (ξ, x) + B θ_g` is the
 linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
@@ -66,18 +64,17 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
         ![-kp * v * θ + ki * x, -v * θ] ∧
       (pllBlock v kp ki).C *ᵥ ![θ + θg, x] + (pllBlock v kp ki).D *ᵥ ![θg] = ![θ] := by
   constructor <;> ext i <;> fin_cases i <;>
-    simp [pllBlock, PLL.phaseModel, PLL.linA] <;> ring
+    simp [pllBlock, PLL.phaseModel, PLL.piPLLJacobian] <;> ring
 
 /-- `T_PLL(s) = −s² / L_PLL(s)`: the closed-loop transfer `H_pll` of the phase model
 (`PLL.transfer_phaseModel`) minus the feedthrough `1`. -/
 @[tmio M, powerlib_domain] theorem transfer_pllBlock (v kp ki : ℝ) {s : ℂ}
-    (hs : LPLL v kp ki s ≠ 0) :
-    Linear.transfer (pllBlock v kp ki) s 0 0 = -s ^ 2 / LPLL v kp ki s := by
+    (hs : PLL.loopPoly v kp ki s ≠ 0) :
+    Linear.transfer (pllBlock v kp ki) s 0 0 = -s ^ 2 / PLL.loopPoly v kp ki s := by
   have h : Linear.transfer (pllBlock v kp ki) s =
       Linear.transfer (PLL.phaseModel v kp ki) s + Linear.complexify !![-1] := by
     simp [Linear.transfer, pllBlock, PLL.phaseModel, Linear.complexify]
   rw [h, Matrix.add_apply, PLL.transfer_phaseModel, PLL.closedLoopTF]
-  simp only [LPLL] at hs ⊢
   simp [Linear.complexify]
   field_simp
   simp [PLL.loopPoly]
@@ -85,7 +82,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
 
 /-- `|T_PLL(jΩ)| = r²/√((1 − r²)² + 4ζ²r²)` with `r = Ω/ω_pll`. -/
 @[tmio M, powerlib_domain] theorem norm_T_jΩ {v kp ki : ℝ} (hkv : 0 < ki * v) (Ω : ℝ) :
-    ‖-(Complex.I * Ω) ^ 2 / LPLL v kp ki (Complex.I * Ω)‖ =
+    ‖-(Complex.I * Ω) ^ 2 / PLL.loopPoly v kp ki (Complex.I * Ω)‖ =
       (Ω / Real.sqrt (ki * v)) ^ 2 /
         Real.sqrt ((1 - (Ω / Real.sqrt (ki * v)) ^ 2) ^ 2 +
           4 * (kp * v / (2 * Real.sqrt (ki * v))) ^ 2 * (Ω / Real.sqrt (ki * v)) ^ 2) := by
@@ -95,9 +92,9 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
   have hnum : ‖-(Complex.I * (Ω : ℂ)) ^ 2‖ = Ω ^ 2 := by
     rw [norm_neg, mul_pow, Complex.I_sq, norm_mul, norm_neg, norm_one, one_mul, norm_pow,
       Complex.norm_real, Real.norm_eq_abs, sq_abs]
-  have hden : ‖LPLL v kp ki (Complex.I * Ω)‖ =
+  have hden : ‖PLL.loopPoly v kp ki (Complex.I * Ω)‖ =
       Real.sqrt ((ki * v - Ω ^ 2) ^ 2 + (kp * v * Ω) ^ 2) := by
-    rw [LPLL, mul_comm Complex.I, PLL.loopPoly_mul_I, Complex.norm_def, Complex.normSq_mk]
+    rw [mul_comm Complex.I, PLL.loopPoly_mul_I, Complex.norm_def, Complex.normSq_mk]
     congr 1
     ring
   rw [norm_div, hnum, hden]
@@ -111,15 +108,15 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
 
 /-- `|L_PLL(2jω)|² = (k_i v − 4ω²)² + (2ω k_p v)²`. -/
 @[tmio M, powerlib_domain] theorem normSq_LPLL (v kp ki ω : ℝ) :
-    Complex.normSq (LPLL v kp ki (2 * Complex.I * ω)) =
+    Complex.normSq (PLL.loopPoly v kp ki (2 * Complex.I * ω)) =
       (ki * v - 4 * ω ^ 2) ^ 2 + (2 * ω * kp * v) ^ 2 := by
-  rw [LPLL, show 2 * Complex.I * (ω : ℂ) = ((2 * ω : ℝ) : ℂ) * Complex.I by push_cast; ring,
+  rw [show 2 * Complex.I * (ω : ℂ) = ((2 * ω : ℝ) : ℂ) * Complex.I by push_cast; ring,
     PLL.loopPoly_mul_I, Complex.normSq_mk]
   ring
 
 /-- `∂_{k_p} |L_PLL(2jω)|² = 8ω² k_p v²`. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_normSq_LPLL (v ki ω kp : ℝ) :
-    HasDerivAt (fun kp => Complex.normSq (LPLL v kp ki (2 * Complex.I * ω)))
+    HasDerivAt (fun kp => Complex.normSq (PLL.loopPoly v kp ki (2 * Complex.I * ω)))
       (8 * ω ^ 2 * kp * v ^ 2) kp := by
   simp only [normSq_LPLL]
   have := ((hasDerivAt_id kp).const_mul (2 * ω)).mul_const v |>.pow 2 |>.const_add
@@ -131,26 +128,28 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
 /-- `|T(2jω)| = 4ω²/|L_PLL(2jω)|` is strictly decreasing in `k_p > 0` (for `ω, v ≠ 0`). -/
 @[tmio M, powerlib_domain] theorem norm_T_strictAnti {v ki ω : ℝ} (hω : ω ≠ 0) (hv : v ≠ 0)
     {kp kp' : ℝ} (hkp : 0 < kp) (hlt : kp < kp') :
-    ‖-(2 * Complex.I * ω) ^ 2 / LPLL v kp' ki (2 * Complex.I * ω)‖ <
-      ‖-(2 * Complex.I * ω) ^ 2 / LPLL v kp ki (2 * Complex.I * ω)‖ := by
-  have hsq : ∀ k, ‖LPLL v k ki (2 * Complex.I * ω)‖ ^ 2 =
+    ‖-(2 * Complex.I * ω) ^ 2 / PLL.loopPoly v kp' ki (2 * Complex.I * ω)‖ <
+      ‖-(2 * Complex.I * ω) ^ 2 / PLL.loopPoly v kp ki (2 * Complex.I * ω)‖ := by
+  have hsq : ∀ k, ‖PLL.loopPoly v k ki (2 * Complex.I * ω)‖ ^ 2 =
       (ki * v - 4 * ω ^ 2) ^ 2 + (2 * ω * k * v) ^ 2 := by
     intro k; rw [← Complex.normSq_eq_norm_sq, normSq_LPLL]
-  have hsqpos : 0 < ‖LPLL v kp ki (2 * Complex.I * ω)‖ ^ 2 := by
+  have hsqpos : 0 < ‖PLL.loopPoly v kp ki (2 * Complex.I * ω)‖ ^ 2 := by
     rw [hsq]; have : 0 < (2 * ω * kp * v) ^ 2 := by positivity
     positivity
-  have hpos : 0 < ‖LPLL v kp ki (2 * Complex.I * ω)‖ := by
+  have hpos : 0 < ‖PLL.loopPoly v kp ki (2 * Complex.I * ω)‖ := by
     refine lt_of_le_of_ne (norm_nonneg _) fun h => ?_
     rw [← h] at hsqpos
     simp at hsqpos
-  have hlt2 : ‖LPLL v kp ki (2 * Complex.I * ω)‖ ^ 2 < ‖LPLL v kp' ki (2 * Complex.I * ω)‖ ^ 2 := by
+  have hlt2 : ‖PLL.loopPoly v kp ki (2 * Complex.I * ω)‖ ^ 2 <
+      ‖PLL.loopPoly v kp' ki (2 * Complex.I * ω)‖ ^ 2 := by
     rw [hsq, hsq]
     have h1 : 0 < (2 * ω * v) ^ 2 := by positivity
     have h2 : kp ^ 2 < kp' ^ 2 := by nlinarith
     have e : ∀ k : ℝ, (2 * ω * k * v) ^ 2 = (2 * ω * v) ^ 2 * k ^ 2 := fun k => by ring
     rw [e, e]
     nlinarith [mul_lt_mul_of_pos_left h2 h1]
-  have hlt : ‖LPLL v kp ki (2 * Complex.I * ω)‖ < ‖LPLL v kp' ki (2 * Complex.I * ω)‖ :=
+  have hlt : ‖PLL.loopPoly v kp ki (2 * Complex.I * ω)‖ <
+      ‖PLL.loopPoly v kp' ki (2 * Complex.I * ω)‖ :=
     lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) hlt2
   have hnum : 0 < ‖-(2 * Complex.I * (ω : ℂ)) ^ 2‖ := by
     rw [norm_neg, norm_pow, norm_mul, norm_mul, Complex.norm_I, Complex.norm_real]

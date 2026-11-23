@@ -30,6 +30,11 @@ Results.
   equals `I_max`; `current_lt_iff`: on `[0, π]` the current is below `I_max` iff `δ < δ_exit`;
   `deltaExit_domain_iff`, `current_lt_of_large_limit`: the domain of the exit angle (Correction
   below).
+* The current magnitude as a function of the angle: `currentMag_eq`
+  (`√(E² + V² − 2 E V cos δ)/√(R² + X²)`), `currentMag_hasDerivAt`
+  (`d|I|/dδ = E V sin δ/(|Z|² |I|)`), `currentMag_strictMonoOn` (strictly increasing on `[0, π]`
+  for `E, V > 0`), `currentMag_worstCase`, `currentMag_at_worstCase`, `currentMag_isLeast`
+  (`E sin δ/|Z|` is the minimum over the grid voltage, attained at `V = E cos δ`).
 * Grid-code power-reference rewrite (§1.5): `qStar` (`Q* = S_new` for `V_pu ≤ 0.5`,
   `2 S_new (1 − V_pu)` for `0.5 < V_pu ≤ 0.9`) satisfies `0 ≤ Q* ≤ S_new`, so
   `P* = √(S_new² − Q*²)` is real and `P*² + Q*² = S_new²` (`snew_circle`); the two segments
@@ -131,6 +136,81 @@ def deltaExit (E V : ℝ) (Z : Passive.SeriesRLC) (ω Imax : ℝ) : ℝ :=
   have hc := Real.neg_one_le_cos δ
   have : E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ ≤ (E + V) ^ 2 := by nlinarith [mul_nonneg hE hV]
   linarith
+
+/-! ## The current magnitude as a function of the angle -/
+
+/-- `E² + V² − 2 E V cos δ = (V − E cos δ)² + (E sin δ)²`. -/
+@[tmio T, powerlib_foundation] theorem currentMag_radicand (E V δ : ℝ) :
+    E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ =
+      (V - E * Real.cos δ) ^ 2 + (E * Real.sin δ) ^ 2 := by
+  have := Real.sin_sq_add_cos_sq δ
+  linear_combination (-E ^ 2) * this
+
+/-- `|E e^{jδ} − V| / |Z(jω)| = √(E² + V² − 2 E V cos δ) / √(R² + X²)`. -/
+@[tmio M, powerlib_domain] theorem currentMag_eq (E V : ℝ) (Z : Passive.SeriesRLC) (ω δ : ℝ) :
+    currentMag E V Z ω δ =
+      Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / Real.sqrt (Z.absSq ω) := by
+  rw [currentMag, ← Passive.SeriesRLC.norm_sq_impedance_jω, Real.sqrt_sq (norm_nonneg _),
+    sub_eq_add_neg, ← Complex.ofReal_neg, SpecialFunctions.norm_affine_exp]
+  ring_nf
+
+/-- Derivative in the angle: `d|I|/dδ = E V sin δ / (|Z|² |I|)` wherever the current does not
+vanish (`|Z(jω)| ≠ 0`). -/
+@[tmio M, powerlib_domain] theorem currentMag_hasDerivAt {E V δ ω : ℝ} {Z : Passive.SeriesRLC}
+    (hZ : 0 < Z.absSq ω) (hu : 0 < E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) :
+    HasDerivAt (currentMag E V Z ω)
+      (E * V * Real.sin δ / (Z.absSq ω * currentMag E V Z ω δ)) δ := by
+  have he (d : ℝ) : currentMag E V Z ω d =
+      ‖(E : ℂ) * Complex.exp (d * Complex.I) + ((-V : ℝ) : ℂ)‖ / ‖Z.impedance (ω * Complex.I)‖ := by
+    rw [currentMag, Complex.ofReal_neg, ← sub_eq_add_neg]
+  have hn : 0 < ‖(E : ℂ) * Complex.exp (δ * Complex.I) + ((-V : ℝ) : ℂ)‖ := by
+    rw [SpecialFunctions.norm_affine_exp]; exact Real.sqrt_pos.mpr (by linarith)
+  have hz : 0 < ‖Z.impedance (ω * Complex.I)‖ := by
+    rw [← Real.sqrt_sq (norm_nonneg _), Passive.SeriesRLC.norm_sq_impedance_jω]
+    exact Real.sqrt_pos.mpr hZ
+  rw [funext he, ← Passive.SeriesRLC.norm_sq_impedance_jω]
+  convert (SpecialFunctions.hasDerivAt_norm_affine_exp hn.ne').div_const
+    ‖Z.impedance (ω * Complex.I)‖ using 1
+  field_simp
+
+/-- For `E, V > 0` the current magnitude is strictly increasing in `δ` on `[0, π]`. -/
+@[tmio M, powerlib_domain] theorem currentMag_strictMonoOn {E V ω : ℝ} {Z : Passive.SeriesRLC}
+    (hE : 0 < E) (hV : 0 < V) (hZ : 0 < Z.absSq ω) :
+    StrictMonoOn (currentMag E V Z ω) (Set.Icc 0 Real.pi) := by
+  intro a ha b hb hab
+  have hcos : Real.cos b < Real.cos a := Real.strictAntiOn_cos ha hb hab
+  rw [currentMag_eq, currentMag_eq]
+  apply div_lt_div_of_pos_right _ (Real.sqrt_pos.mpr hZ)
+  apply Real.sqrt_lt_sqrt (by rw [currentMag_radicand]; positivity)
+  nlinarith [mul_pos hE hV]
+
+/-- The worst case over the grid voltage: for `δ ∈ [0, π]` and `E ≥ 0`, `E sin δ / |Z| ≤ |I|`
+for every `V` ... -/
+@[tmio M, powerlib_domain] theorem currentMag_worstCase {E δ ω : ℝ} {Z : Passive.SeriesRLC}
+    (hE : 0 ≤ E) (hδ0 : 0 ≤ δ) (hδπ : δ ≤ Real.pi) (V : ℝ) :
+    E * Real.sin δ / Real.sqrt (Z.absSq ω) ≤ currentMag E V Z ω δ := by
+  rw [currentMag_eq]
+  apply div_le_div_of_nonneg_right _ (Real.sqrt_nonneg _)
+  have hs : 0 ≤ E * Real.sin δ := mul_nonneg hE (Real.sin_nonneg_of_nonneg_of_le_pi hδ0 hδπ)
+  rw [currentMag_radicand]
+  calc E * Real.sin δ = Real.sqrt ((E * Real.sin δ) ^ 2) := (Real.sqrt_sq hs).symm
+    _ ≤ Real.sqrt ((V - E * Real.cos δ) ^ 2 + (E * Real.sin δ) ^ 2) :=
+      Real.sqrt_le_sqrt (by nlinarith [sq_nonneg (V - E * Real.cos δ)])
+
+/-- ... with equality at `V = E cos δ`. -/
+@[tmio M, powerlib_domain] theorem currentMag_at_worstCase {E δ ω : ℝ} {Z : Passive.SeriesRLC}
+    (hE : 0 ≤ E) (hδ0 : 0 ≤ δ) (hδπ : δ ≤ Real.pi) :
+    currentMag E (E * Real.cos δ) Z ω δ = E * Real.sin δ / Real.sqrt (Z.absSq ω) := by
+  have hs : 0 ≤ E * Real.sin δ := mul_nonneg hE (Real.sin_nonneg_of_nonneg_of_le_pi hδ0 hδπ)
+  rw [currentMag_eq, currentMag_radicand, sub_self, zero_pow two_ne_zero, zero_add,
+    Real.sqrt_sq hs]
+
+/-- `E sin δ / |Z|` is the minimum of the current magnitude over the grid voltage. -/
+@[tmio M, powerlib_domain] theorem currentMag_isLeast {E δ ω : ℝ} {Z : Passive.SeriesRLC}
+    (hE : 0 ≤ E) (hδ0 : 0 ≤ δ) (hδπ : δ ≤ Real.pi) :
+    IsLeast (Set.range fun V => currentMag E V Z ω δ) (E * Real.sin δ / Real.sqrt (Z.absSq ω)) :=
+  ⟨⟨E * Real.cos δ, currentMag_at_worstCase hE hδ0 hδπ⟩,
+    by rintro _ ⟨V, rfl⟩; exact currentMag_worstCase hE hδ0 hδπ V⟩
 
 /-! ## Grid-code `S_new` power-reference rewrite -/
 
