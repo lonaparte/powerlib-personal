@@ -30,12 +30,11 @@ the Wedepohl–Wilcox `coth`/`csch` forms and their limits: "低频 → 管的�
 
 Results (cable impedance and static special-function analysis).
 Limits are proved along any filter (`m → 0` with `Re m > 0`, in a sector `‖m‖ ≤ K Re m` where
-needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m = (1 + j)s` and to
-`ω`.
+needed; or `Re m → ∞` in a sector), and at high frequency also specialized to the physical ray
+`m = (1 + j)s`, `s = √(ωμ/(2ρ)) → ∞` (so `ω → ∞`).
 * Low frequency, DC resistance `ρ/(π(b² − a²))`: `tendsto_tubeDet_zero`
   (`D → (b² − a²)/(2ab)`), `tendsto_exactZmut_dc`, `tendsto_exactZin_dc`,
-  `tendsto_exactZout_dc`; ray `s → 0⁺`: `exactZmut_tendsto_dc`, `exactZin_tendsto_dc`,
-  `exactZout_tendsto_dc`.
+  `tendsto_exactZout_dc` (e.g. along the ray `m = (1 + j)s`, `s → 0⁺`).
 * High frequency: normalized forms `tubeDet_eq_norm`, `numIn_eq_norm`, `numOut_eq_norm`,
   `exactZin_eq_norm`, `exactZout_eq_norm`, `exactZmut_eq_norm`, all over the normalized
   determinant `tubeDetNorm` (`D' → 1` in a sector, `tendsto_tubeDetNorm`) (from
@@ -44,7 +43,7 @@ needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m 
   `tendsto_exactZout_surface` (`Z_in/(ρm/(2πa)) → 1`, `Z_out/(ρm/(2πb)) → 1`: surface
   impedances), `tendsto_exactZmut_zero` (`Z_mut → 0`: complete screening, `Z_mut ∼
   (ρ m/(π√(ab))) e^{−m t}`); ray `s → ∞`: `exactZin_tendsto_surface`,
-  `exactZout_tendsto_surface`, `exactZmut_tendsto_zero`.
+  `exactZout_tendsto_surface`.
 * High-frequency rates: `besselI0Norm_sub_one_isBigO`, `besselI1Norm_sub_one_isBigO`,
   `besselK0Norm_sub_one_isBigO`, `besselK1Norm_sub_one_isBigO` (`Î_ν − 1`, `K̂_ν − 1` are
   `O(1/Re m)`),
@@ -53,10 +52,6 @@ needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m 
   `exactZout_sub_surface_isBigO` (`Z_in = ρm/(2πa) + O(1)`, `Z_out = ρm/(2πb) + O(1)`);
   `tendsto_exactZmut_div_asymptotic`, `exactZmut_div_asymptotic_tendsto`
   (`Z_mut ∼ (ρ m/(π√(ab))) e^{−m(b−a)}`).
-* Angular frequency `m(ω) = (1 + j)√(ωμ/(2ρ))`: `exactZin_tendsto_dc_omega`,
-  `exactZout_tendsto_dc_omega`, `exactZmut_tendsto_dc_omega` (`ω → 0⁺`),
-  `exactZin_tendsto_surface_omega`, `exactZout_tendsto_surface_omega`,
-  `exactZmut_tendsto_zero_omega` (`ω → ∞`).
 * Relation with the Wedepohl–Wilcox formulas: low frequency, all three ratios `→ 1`
   (`tendsto_exactZin_div_tubeZin_dc`, `tendsto_exactZout_div_tubeZout_dc`,
   `tendsto_exactZmut_div_tubeZmut_dc`); high frequency along the ray,
@@ -631,11 +626,10 @@ theorem tendsto_exactZmut_div_tubeZmut_dc {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 
 
 end LowFrequencyWW
 
-/-! ## The physical ray `m = (1 + j)s` (`s = 1/δ`) and angular frequency
+/-! ## The physical ray `m = (1 + j)s` (`s = 1/δ = √(ωμ/(2ρ))`), high frequency
 
-The ray lemmas (`ray_re_tendsto`, `ray_sector`, `ray_tendsto_zero`, `ray_re_pos`) and the
-angular-frequency parametrization (`sqrt_omega_tendsto_atTop`, `sqrt_omega_tendsto_zero`) are in
-`theorem/SpecialFunctions/BesselI.lean`. -/
+The ray lemmas (`ray_re_tendsto`, `ray_sector`) are in `theorem/SpecialFunctions/BesselI.lean`;
+`s → ∞` is `ω → ∞`. -/
 
 /-- **Exact inner impedance, skin-effect limit** along `m = (1 + j)s`, `s → ∞`:
 `Z_in/(ρ m/(2π a)) → 1`. -/
@@ -651,11 +645,6 @@ theorem exactZout_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (
     Tendsto (fun s : ℝ => exactZout ρ a b ((1 + Complex.I) * s) /
       ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * b))) atTop (𝓝 1) :=
   tendsto_exactZout_surface hρ ha hab two_pos ray_re_tendsto (ray_sector (eventually_ge_atTop 0))
-
-/-- **Exact transfer impedance, complete screening**: `Z_mut → 0` along `m = (1 + j)s`, `s → ∞`. -/
-@[tmio M, powerlib_domain] theorem exactZmut_tendsto_zero {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
-    Tendsto (fun s : ℝ => exactZmut ρ a b ((1 + Complex.I) * s)) atTop (𝓝 0) :=
-  tendsto_exactZmut_zero ha hab two_pos ray_re_tendsto (ray_sector (eventually_ge_atTop 0))
 
 /-- **Exact vs Wedepohl–Wilcox inner impedance at high frequency**: `Z_in/Z_in^{WW} → 1`. -/
 @[tmio M, powerlib_domain]
@@ -701,89 +690,6 @@ theorem exactZmut_div_tubeZmut_tendsto_hf {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 
       (𝓝 (((a + b) / (2 * Real.sqrt (a * b)) : ℝ) : ℂ)) :=
   tendsto_exactZmut_div_tubeZmut hρ ha hab two_pos ray_re_tendsto
     (ray_sector (eventually_ge_atTop 0))
-
-/-- **Exact inner impedance, DC limit** along `m = (1 + j)s`, `s → 0⁺`. -/
-@[tmio M, powerlib_domain] theorem exactZin_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
-    Tendsto (fun s : ℝ => exactZin ρ a b ((1 + Complex.I) * s)) (𝓝[>] 0)
-      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) :=
-  tendsto_exactZin_dc ha hab ray_tendsto_zero ray_re_pos
-    (ray_sector (eventually_mem_nhdsWithin.mono fun _ hs => le_of_lt hs))
-
-/-- **Exact outer impedance, DC limit** along `m = (1 + j)s`, `s → 0⁺`. -/
-@[tmio M, powerlib_domain] theorem exactZout_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
-    Tendsto (fun s : ℝ => exactZout ρ a b ((1 + Complex.I) * s)) (𝓝[>] 0)
-      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) :=
-  tendsto_exactZout_dc ha hab ray_tendsto_zero ray_re_pos
-    (ray_sector (eventually_mem_nhdsWithin.mono fun _ hs => le_of_lt hs))
-
-/-- **Exact transfer impedance, DC limit** along `m = (1 + j)s`, `s → 0⁺` (no screening at DC). -/
-@[tmio M, powerlib_domain] theorem exactZmut_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
-    Tendsto (fun s : ℝ => exactZmut ρ a b ((1 + Complex.I) * s)) (𝓝[>] 0)
-      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) :=
-  tendsto_exactZmut_dc ha hab ray_tendsto_zero ray_re_pos
-
-/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
-`ω → 0⁺`: the inner impedance tends to the DC resistance `ρ/(π(b² − a²))`. -/
-@[tmio M, powerlib_domain]
-theorem exactZin_tendsto_dc_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
-    (hab : a < b) :
-    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
-    Tendsto (fun ω => exactZin ρ a b (m ω)) (𝓝[>] 0)
-      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
-  intro m
-  exact (exactZin_tendsto_dc ha hab).comp (sqrt_omega_tendsto_zero hμ hρ)
-
-/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
-`ω → 0⁺`: the outer impedance tends to the DC resistance `ρ/(π(b² − a²))`. -/
-@[tmio M, powerlib_domain]
-theorem exactZout_tendsto_dc_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
-    (hab : a < b) :
-    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
-    Tendsto (fun ω => exactZout ρ a b (m ω)) (𝓝[>] 0)
-      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
-  intro m
-  exact (exactZout_tendsto_dc ha hab).comp (sqrt_omega_tendsto_zero hμ hρ)
-
-/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
-`ω → 0⁺`: the transfer impedance tends to the DC resistance `ρ/(π(b² − a²))`. -/
-@[tmio M, powerlib_domain]
-theorem exactZmut_tendsto_dc_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
-    (hab : a < b) :
-    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
-    Tendsto (fun ω => exactZmut ρ a b (m ω)) (𝓝[>] 0)
-      (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
-  intro m
-  exact (exactZmut_tendsto_dc ha hab).comp (sqrt_omega_tendsto_zero hμ hρ)
-
-/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
-`ω → ∞`: the inner impedance tends to the inner surface impedance, `Z_in/(ρ m/(2π a)) → 1`. -/
-@[tmio M, powerlib_domain]
-theorem exactZin_tendsto_surface_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
-    (hab : a < b) :
-    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
-    Tendsto (fun ω => exactZin ρ a b (m ω) / ((ρ : ℂ) * m ω / (2 * Real.pi * a))) atTop (𝓝 1) := by
-  intro m
-  exact (exactZin_tendsto_surface hρ.ne' ha hab).comp (sqrt_omega_tendsto_atTop hμ hρ)
-
-/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
-`ω → ∞`: the outer impedance tends to the outer surface impedance, `Z_out/(ρ m/(2π b)) → 1`. -/
-@[tmio M, powerlib_domain]
-theorem exactZout_tendsto_surface_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
-    (hab : a < b) :
-    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
-    Tendsto (fun ω => exactZout ρ a b (m ω) / ((ρ : ℂ) * m ω / (2 * Real.pi * b))) atTop (𝓝 1) := by
-  intro m
-  exact (exactZout_tendsto_surface hρ.ne' ha hab).comp (sqrt_omega_tendsto_atTop hμ hρ)
-
-/-- **Exact tube impedance in angular frequency**, `m(ω) = (1 + j)√(ωμ/(2ρ)) = √(jωμ/ρ)`,
-`ω → ∞`: the transfer impedance tends to `0` (complete screening). -/
-@[tmio M, powerlib_domain]
-theorem exactZmut_tendsto_zero_omega {ρ a b μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) (ha : 0 < a)
-    (hab : a < b) :
-    let m : ℝ → ℂ := fun ω => (1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)
-    Tendsto (fun ω => exactZmut ρ a b (m ω)) atTop (𝓝 0) := by
-  intro m
-  exact (exactZmut_tendsto_zero ha hab).comp (sqrt_omega_tendsto_atTop hμ hρ)
 
 /-! ## High-frequency rates -/
 

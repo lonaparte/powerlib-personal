@@ -161,14 +161,13 @@ which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`)
 @[tmio T, powerlib_foundation] private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : ∀ y : ℝⁿ, Tendsto (fun k : ℕ => (⇑(Linear.op Φ))^[k] y) atTop (𝓝 0)) :
     LTI.SchurStable Φ := by
-  refine (LTI.asymptoticallyStable_iff_schurStable ⟨Φ⟩).mp fun x hx => ?_
+  refine (LTI.asymptoticallyStable_iff_schurStable Φ).mp fun x hx => ?_
   have hxk : ∀ k, x k = WithLp.ofLp ((⇑(Linear.op Φ))^[k] (WithLp.toLp 2 (x 0))) := by
     intro k
     induction k with
     | zero => rfl
     | succ k ih =>
       rw [hx k, Function.iterate_succ_apply', ofLp_toEuclideanCLM, ← ih]
-      rfl
   have ht := ((PiLp.continuous_ofLp 2 _).tendsto 0).comp (h (WithLp.toLp 2 (x 0)))
   refine ht.congr' (Eventually.of_forall fun k => ?_) |>.trans_eq ?_
   · exact (hxk k).symm

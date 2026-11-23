@@ -26,8 +26,7 @@ Results.
   kernel = vectors constant on connected components, `dim ker L = #components`
   (`SimpleGraph.lapMatrix_mulVec_one_eq_zero`, `SimpleGraph.posSemidef_lapMatrix`,
   `SimpleGraph.lapMatrix_mulVec_eq_zero_iff_forall_reachable`,
-  `SimpleGraph.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix`); for a connected graph
-  the kernel is spanned by `𝟙` (`lapMatrix_mulVec_eq_zero_iff_const`); bridge
+  `SimpleGraph.card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix`); bridge
   `G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ)` (`lapMatrix_eq_laplacian`).
 * `variational_decouple`: for `δẊᵢ = A(t) δXᵢ − σ Σⱼ Lᵢⱼ Γ(t) δXⱼ` and any matrix `W` of left
   eigenvectors (`W L = diag(μ) W`; for symmetric `L`, `W = Vᵀ` with `L = VΛVᵀ`), the modal
@@ -63,12 +62,6 @@ open Matrix Finset
 section Graph
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
-
-/-- For a connected graph the kernel of `L` is spanned by `𝟙`. -/
-@[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_eq_zero_iff_const (hG : G.Connected) (x : V → ℝ) :
-    G.lapMatrix ℝ *ᵥ x = 0 ↔ ∀ i j, x i = x j := by
-  rw [G.lapMatrix_mulVec_eq_zero_iff_forall_reachable]
-  exact ⟨fun h i j => h i j (hG.preconnected i j), fun h i j _ => h i j⟩
 
 /-- The unweighted Laplacian is the weighted Laplacian of the 0/1 adjacency weights. -/
 @[tmio T, powerlib_foundation] theorem lapMatrix_eq_laplacian :

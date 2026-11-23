@@ -29,8 +29,8 @@ Results.
 * Transcritical: equilibria `0, μ` (`transField_eq_zero_iff`); exchange of stability
   (`f_x(0) = μ`, `f_x(μ) = −μ`; `trans_stability_neg`, `trans_stability_pos`).
 * Supercritical pitchfork: equilibria `0` and `±√μ` (`μ > 0`, `superField_eq_zero_iff`);
-  `f_x(0) = μ`, `f_x(±√μ) = −2μ` (`super_slope_zero`, `super_slope_sqrt`,
-  `super_slope_neg_sqrt`); `0` is locally exponentially stable for
+  `f_x = μ − 3x²` (`deriv_superField`), so `f_x(0) = μ` and `f_x(±√μ) = −2μ`
+  (`super_slope_sqrt`, `super_slope_neg_sqrt`); `0` is locally exponentially stable for
   `μ < 0` and unstable for `μ > 0` (`super_origin_stable`, `super_origin_unstable`), where `±√μ`
   are locally exponentially stable (`super_branch_stable`).
 * At `μ = 0` the field is the critical cubic `ẋ = −x³` (`superSystem_zero_eq_cubicField`,
@@ -141,12 +141,6 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
     superField μ x = 0 ↔ x = 0 ∨ (0 ≤ μ ∧ (x = √μ ∨ x = -√μ)) := by
   have hfac : superField μ x = x * Fold.field μ x := by simp [superField, Fold.field]; ring
   rw [hfac, mul_eq_zero, Fold.field_eq_zero_iff]
-
-/-- Linearization slope at the origin: `f_x(0) = μ`. -/
-@[tmio M, powerlib_foundation] theorem super_slope_zero (μ : ℝ) :
-    deriv (superField μ) 0 = μ := by
-  rw [deriv_superField]
-  ring
 
 /-- Linearization slope at the branch `√μ`: `f_x(√μ) = −2μ` (`μ ≥ 0`). -/
 @[tmio M, powerlib_foundation] theorem super_slope_sqrt {μ : ℝ} (hμ : 0 ≤ μ) :

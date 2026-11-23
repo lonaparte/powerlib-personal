@@ -259,14 +259,19 @@ section Extended
 
 variable {𝕜 : Type*} [Field 𝕜] {V : Type*} [AddCommGroup V] [Module 𝕜 V]
 
+/-- One argument at a time: a linear map on `V × 𝕜` vanishing on pure drive vectors only sees the
+state part. -/
+@[tmio T, powerlib_foundation] private theorem linear_state_only {W : Type*} [AddCommGroup W]
+    [Module 𝕜 W] (L : V × 𝕜 →ₗ[𝕜] W) (hL : ∀ s, L (0, s) = 0) (a : V × 𝕜) :
+    L a = L (a.1, 0) := by
+  conv_lhs => rw [show a = (a.1, 0) + (0, a.2) by ext <;> simp]
+  rw [map_add, hL, add_zero]
+
 /-- A bilinear tensor on `V × 𝕜` vanishing on pure drive arguments only sees state parts. -/
 @[tmio T, powerlib_foundation] theorem bilin_state_only (B : V × 𝕜 →ₗ[𝕜] V × 𝕜 →ₗ[𝕜] V)
     (hB₁ : ∀ s w, B (0, s) w = 0) (hB₂ : ∀ w s, B w (0, s) = 0) (a c : V × 𝕜) :
     B a c = B (a.1, 0) (c.1, 0) := by
-  have ha : a = (a.1, 0) + (0, a.2) := by ext <;> simp
-  have hc : c = (c.1, 0) + (0, c.2) := by ext <;> simp
-  rw [ha, map_add, LinearMap.add_apply, hB₁, add_zero, hc, map_add, hB₂, add_zero]
-  simp
+  rw [linear_state_only B (fun s => LinearMap.ext (hB₁ s)) a, linear_state_only _ (hB₂ _) c]
 
 /-- The same for a trilinear tensor. -/
 @[tmio T, powerlib_foundation] theorem trilin_state_only
@@ -274,12 +279,8 @@ variable {𝕜 : Type*} [Field 𝕜] {V : Type*} [AddCommGroup V] [Module 𝕜 V
     (hB₁ : ∀ s w z, B (0, s) w z = 0) (hB₂ : ∀ w s z, B w (0, s) z = 0)
     (hB₃ : ∀ w z s, B w z (0, s) = 0) (a c e : V × 𝕜) :
     B a c e = B (a.1, 0) (c.1, 0) (e.1, 0) := by
-  have ha : a = (a.1, 0) + (0, a.2) := by ext <;> simp
-  have hc : c = (c.1, 0) + (0, c.2) := by ext <;> simp
-  have he : e = (e.1, 0) + (0, e.2) := by ext <;> simp
-  rw [ha, map_add, LinearMap.add_apply, LinearMap.add_apply, hB₁, add_zero, hc, map_add,
-    LinearMap.add_apply, hB₂, add_zero, he, map_add, hB₃, add_zero]
-  simp
+  rw [linear_state_only B (fun s => LinearMap.ext fun w => LinearMap.ext (hB₁ s w)) a,
+    linear_state_only _ (fun s => LinearMap.ext (hB₂ _ s)) c, linear_state_only _ (hB₃ _ _) e]
 
 /-- The four-term cross-saturation formula with tensors on the extended space `V × 𝕜`
 (resolvents act on the state space `V`; their results re-enter with zero drive component). -/

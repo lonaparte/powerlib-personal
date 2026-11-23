@@ -1,23 +1,28 @@
 import theorem.Asymptotics.Guard.Potential
 import theorem.Asymptotics.LaplaceMethod
+import theorem.Stochastic.MFPT
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-! # Guard mean first-passage time: the double integral and its bounds at a cut
 
 One-variable real analysis of an explicit double integral, the mean first-passage time (MFPT) of the
-truncated subcritical-Hopf amplitude. Nothing here is a stochastic statement; the integral is
-*taken* as the definition of the MFPT, exactly as the source note does, and no Fokker–Planck /
-backward-Kolmogorov derivation of it is formalized. This module defines the integral and proves
-the deterministic bounds at a cut `a < r_c` from which `Asymptotics/Guard/MFPTExpansion.lean`
-obtains the two-term expansions and, as their corollaries, the single-term asymptotics
-`T_committed / T_guard → 2` and `T_guard ~ P e^X`.
+truncated subcritical-Hopf amplitude. The integral is the Kramers double integral
+`Stochastic.MFPT.kramersT` (the solution of the backward equation, `theorem/Stochastic/MFPT.lean`)
+of the effective radial potential `V = U − D̃ log r`, started at the reflecting point `r = 0`
+where `V` diverges; as there, that it equals the expected first-passage time of the diffusion
+(Dynkin / Itô) is not formalized. This module defines the integral and proves the deterministic
+bounds at a cut `a < r_c` from which `Asymptotics/Guard/MFPTExpansion.lean` obtains the two-term
+expansions and, as their corollaries, the single-term asymptotics `T_committed / T_guard → 2` and
+`T_guard ~ P e^X`.
 
 Model boundary.
 * Potential: the truncated subcritical-Hopf potential `U(r) = α r²/2 − l₁ r⁴/4` of
   `Asymptotics/Guard/Potential.lean` (`guardPotential`), `α, l₁ > 0`, well at `r = 0`, barrier
   top at `r_c = √(α/l₁)` (`guardRadius`), barrier height `ΔU = α²/(4 l₁)`.
 * MFPT (source §1.2, two-dimensional amplitude measure, natural reflection at `r = 0`):
-  `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT α l₁ D̃ r_b`).
+  `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT α l₁ D̃ r_b`),
+  the Kramers MFPT (`γ = 1`, reflecting point `0`, absorbing point `r_b`) of
+  `V(r) = U(r) − D̃ log r` (`guardEffPotential`).
   `T_guard = T(r_c)` is the first arrival at the barrier top; `T_committed = T(r_b)` with any
   downstream boundary `r_b > r_c` is committed escape.
 * Asymptotic regime (of the consumers in `MFPTExpansion`): noise intensity `D̃ → 0⁺` at fixed
@@ -29,8 +34,13 @@ Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("逃逸时间�
 committed escape).
 
 Results.
-* `guardMFPT` — the MFPT `T(r_b)`, with inner integral `K = guardInner` and outer integrand
-  `guardIntegrand`. The asymptotic statements are corollaries of the two-term expansions in
+* `guardMFPT` — the MFPT `T(r_b)`, defined as `Stochastic.MFPT.kramersT` of the effective
+  potential; `guardMFPT_eq` writes it with inner integral `K = guardInner` and outer integrand
+  `guardIntegrand`, the Kramers outer integrand of `V` (`outerG_guardEffPotential`, with
+  `e^{−V/D̃} = |r| e^{−U/D̃}`, `gibbs_guardEffPotential`). The generic Kramers laws apply with
+  `θ_r = 0` (`locallyIntegrable_gibbs_guardEffPotential`; `V` is smooth at `r ≠ 0`);
+  `guardMFPT_pos` (`T(r_b) > 0`) is `kramersT_pos` at the divergent point `θ = 0`. The asymptotic
+  statements are corollaries of the two-term expansions in
   `Asymptotics/Guard/MFPTExpansion.lean`: `tendsto_guardMFPT_ratio` (`T(r_b)/T(r_c) → 2`),
   `tendsto_guardMFPT_ratio_inv`, `guardMFPT_ratio_sub_two_isBigO`, `guardMFPT_guard_isBigO`,
   `tendsto_guardMFPT_guard`, `guardMFPT_committed_isBigO`.
@@ -67,14 +77,83 @@ def guardInner (α l₁ D y : ℝ) : ℝ :=
 def guardIntegrand (α l₁ D y : ℝ) : ℝ :=
   y⁻¹ * Real.exp (guardPotential α l₁ y / D) * guardInner α l₁ D y
 
-/-- Mean first-passage time to the outer boundary `r_b`:
-`T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (two-dimensional amplitude
-measure, natural reflection at `r = 0`). `r_b = r_c` is the first arrival at the barrier top
-(`T_guard`); `r_b > r_c` is committed escape (`T_committed`). -/
+/-- Effective radial potential `V(r) = U(r) − D̃ log r` of the two-dimensional amplitude measure:
+`e^{−V/D̃} = r e^{−U/D̃}` for `r > 0`; `V → +∞` at the reflecting point `r = 0`. -/
+def guardEffPotential (α l₁ D r : ℝ) : ℝ := guardPotential α l₁ r - D * Real.log r
+
+/-- Mean first-passage time to the outer boundary `r_b`: the Kramers MFPT
+(`Stochastic.MFPT.kramersT`, `γ = 1`) of the effective potential, reflecting point `0`,
+absorbing point `r_b`, started at `0`; explicitly
+`T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT_eq`).
+`r_b = r_c` is the first arrival at the barrier top (`T_guard`); `r_b > r_c` is committed escape
+(`T_committed`). -/
 def guardMFPT (α l₁ D rb : ℝ) : ℝ :=
-  D⁻¹ * ∫ y in (0 : ℝ)..rb, guardIntegrand α l₁ D y
+  Stochastic.MFPT.kramersT (guardEffPotential α l₁ D) D 1 0 rb 0
 
 variable {α l₁ : ℝ}
+
+/-! ## The guard MFPT as a Kramers MFPT -/
+
+section Kramers
+
+variable {D : ℝ}
+
+/-- `e^{−V/D̃} = |r| e^{−U/D̃}` for `r ≠ 0`. -/
+@[tmio M, powerlib_foundation] theorem gibbs_guardEffPotential (hD : D ≠ 0) {z : ℝ} (hz : z ≠ 0) :
+    Stochastic.FP.gibbs (guardEffPotential α l₁ D) D z =
+      |z| * Real.exp (-(guardPotential α l₁ z / D)) := by
+  rw [Stochastic.FP.gibbs, guardEffPotential, ← Real.exp_log_eq_abs hz, ← Real.exp_add]
+  congr 1
+  field_simp
+  ring
+
+/-- The Gibbs weight of the effective potential is locally integrable, so the generic Kramers laws
+of `theorem/Stochastic/MFPT.lean` apply with `θ_r = 0` (`V` is continuous and differentiable at
+every `r ≠ 0`). -/
+@[tmio M, powerlib_foundation] theorem locallyIntegrable_gibbs_guardEffPotential (hD : D ≠ 0) :
+    LocallyIntegrable (Stochastic.FP.gibbs (guardEffPotential α l₁ D) D) := by
+  refine (Continuous.locallyIntegrable
+    (f := fun z => |z| * Real.exp (-(guardPotential α l₁ z / D)))
+    (by unfold guardPotential Potential.doubleWell; fun_prop)).congr ?_
+  filter_upwards [(countable_singleton (0 : ℝ)).ae_notMem volume] with z hz
+  exact (gibbs_guardEffPotential hD hz).symm
+
+/-- The Kramers outer integrand of the effective potential is `guardIntegrand`. -/
+@[tmio M, powerlib_foundation] theorem outerG_guardEffPotential (hD : D ≠ 0) (y : ℝ) :
+    Stochastic.MFPT.outerG (guardEffPotential α l₁ D) D 0 y = guardIntegrand α l₁ D y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [Stochastic.MFPT.outerG, Stochastic.MFPT.innerI, guardIntegrand]
+  have hI : y * Stochastic.MFPT.innerI (guardEffPotential α l₁ D) D 0 y =
+      |y| * guardInner α l₁ D y := by
+    simp only [Stochastic.MFPT.innerI, guardInner, ← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr_ae ?_
+    filter_upwards [(countable_singleton (0 : ℝ)).ae_notMem volume] with z hz0 hz
+    rw [gibbs_guardEffPotential hD hz0]
+    rcases hy.lt_or_gt with hy | hy
+    · rw [uIoc_of_ge hy.le] at hz
+      rw [abs_of_neg hy, abs_of_neg (lt_of_le_of_ne hz.2 hz0)]; ring
+    · rw [uIoc_of_le hy.le] at hz
+      rw [abs_of_pos hy, abs_of_pos hz.1]
+  have hE : Real.exp (guardEffPotential α l₁ D y / D) =
+      Real.exp (guardPotential α l₁ y / D) * |y|⁻¹ := by
+    rw [← Real.exp_log_eq_abs hy, ← Real.exp_neg, ← Real.exp_add, guardEffPotential]
+    congr 1
+    field_simp
+    ring
+  have hy' : |y| ≠ 0 := abs_ne_zero.mpr hy
+  rw [Stochastic.MFPT.outerG, hE, guardIntegrand,
+    show Stochastic.MFPT.innerI (guardEffPotential α l₁ D) D 0 y = |y| * guardInner α l₁ D y / y
+      by rw [eq_div_iff hy, mul_comm, hI]]
+  field_simp
+
+/-- The guard MFPT as the explicit double integral of the source note. -/
+@[tmio M, powerlib_foundation] theorem guardMFPT_eq (α l₁ D rb : ℝ) :
+    guardMFPT α l₁ D rb = D⁻¹ * ∫ y in (0 : ℝ)..rb, guardIntegrand α l₁ D y := by
+  rcases eq_or_ne D 0 with rfl | hD
+  · simp [guardMFPT, Stochastic.MFPT.kramersT]
+  · simp only [guardMFPT, Stochastic.MFPT.kramersT, outerG_guardEffPotential hD, one_div]
+
+end Kramers
 
 /-- `U(z) = ΔU − (l₁/4)(z² − r_c²)²`. -/
 @[tmio M, powerlib_foundation] theorem guardPotential_eq_barrier_sub (hl : 0 < l₁) (z : ℝ) :
@@ -276,6 +355,15 @@ variable {D : ℝ}
     rcases le_total a b with h | h
     · rw [uIcc_of_le h] at hy; linarith [hy.1]
     · rw [uIcc_of_ge h] at hy; linarith [hy.1]).intervalIntegrable
+
+/-- `T(r_b) > 0` for `r_b > 0`: `Stochastic.MFPT.kramersT_pos` at the reflecting point `θ = 0`,
+where the effective potential diverges. -/
+@[tmio M, powerlib_foundation] theorem guardMFPT_pos (hl : 0 < l₁) (hD : 0 < D) {rb : ℝ}
+    (hrb : 0 < rb) : 0 < guardMFPT α l₁ D rb := by
+  refine Stochastic.MFPT.kramersT_pos (locallyIntegrable_gibbs_guardEffPotential hD.ne') ?_ hD
+    one_pos le_rfl hrb
+  rw [funext (outerG_guardEffPotential (α := α) (l₁ := l₁) hD.ne')]
+  exact intervalIntegrable_guardIntegrand hl hD hrb.le
 
 end Outer
 

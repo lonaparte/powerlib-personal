@@ -16,7 +16,8 @@ Conventions (shared by every `Drives` module unless a module states otherwise):
   peak `X` maps to a vector of modulus `X`; three-phase power is `(3/2) Re(v · conj i)`.
 * A frame rotating by the electrical angle `θ` sees `x_dq = e^{-jθ} x_αβ`; `x = x_d + j x_q`.
 * Motor (IN-positive) convention: `v = r i + dψ/dt + jωψ` in a frame rotating at `ω`
-  (work-sync `conventions §D` default). The synchronous-machine module is the only exception.
+  (`VoltageEquation`; work-sync `conventions §D` default). The synchronous-machine module is the
+  only exception.
 * `np` is the number of **pole pairs** (mechanical speed `Ω_m = ω / np`).
 
 Source: work-sync `theory/T-direct-torque-control.md` §1.2–§1.3 (torque expression, inverter
@@ -34,9 +35,12 @@ Results.
 * The eight two-level inverter switching states give the six active vectors
   `(2/3) V_dc e^{j(k-1)π/3}` and two zero vectors (DTC / FCS-MPC voltage set).
 * Rotation invariance of `Im(conj ψ · i)`.
-* Power balance `Re(v conj i) = r|i|² + Re(ψ̇ conj i) + ω Im(conj ψ i)` and the torque
-  coefficient: `T_e = (3/2) np Im(conj ψ · i)` is the unique coefficient for which
-  `T_e · Ω_m` equals the speed-voltage power.
+* The winding voltage equation `VoltageEquation` (`v = r i + ψ̇ + jωψ`) and its components
+  (`voltageEquation_iff`), read by the machine models (`InductionMachine.RotorVoltageEquation`,
+  `PMSM.VoltageEquation`, `CascadeControl.complexVector_iff` in `theorem/Drives/`).
+* Power balance along `VoltageEquation`, `Re(v conj i) = r|i|² + Re(ψ̇ conj i) + ω Im(conj ψ i)`
+  (`power_balance`), and the torque coefficient: `T_e = (3/2) np Im(conj ψ · i)` is the unique
+  coefficient for which `T_e · Ω_m` equals the speed-voltage power.
 
 Correction (T-direct-torque-control.md §1.2): the note defines `p` as the number of pole
 pairs but writes `T_e = (3/2)(p/2) Im{i ψ*}`. With pole pairs the coefficient is `(3/2) p`;
@@ -199,13 +203,28 @@ numbering of the hexagon `v_k = (2/3) V_dc e^{j(k-1)π/3}`). -/
   simp [Complex.mul_im]
   ring
 
+/-- Voltage equation of a winding in a frame rotating at `ω`, motor (IN-positive) convention:
+`v = r i + ψ̇ + jωψ` at one instant (`dψ` is the value of `ψ̇` there). -/
+def VoltageEquation (r ω : ℝ) (v i ψ dψ : ℂ) : Prop :=
+  v = r * i + dψ + I * ω * ψ
+
+/-- The voltage equation in components: `v_d = r i_d + ψ̇_d − ω ψ_q`,
+`v_q = r i_q + ψ̇_q + ω ψ_d`. -/
+@[tmio T, powerlib_foundation] theorem voltageEquation_iff (r ω : ℝ) (v i ψ dψ : ℂ) :
+    VoltageEquation r ω v i ψ dψ ↔
+      v.re = r * i.re + dψ.re - ω * ψ.im ∧ v.im = r * i.im + dψ.im + ω * ψ.re := by
+  rw [VoltageEquation, Complex.ext_iff]
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+    Complex.ofReal_im, Complex.I_re, Complex.I_im]
+  constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
+
 /-- Instantaneous power balance of a stator winding in a frame rotating at `ω`
-(motor convention `v = r i + ψ̇ + jωψ`): input power = copper loss + magnetic-field term +
-speed-voltage term `ω Im(conj ψ · i)`. Multiply by `3/2` for the amplitude-invariant
-three-phase power. -/
+(`VoltageEquation`): input power = copper loss + magnetic-field term + speed-voltage term
+`ω Im(conj ψ · i)`. Multiply by `3/2` for the amplitude-invariant three-phase power. -/
 @[tmio T, powerlib_foundation] theorem power_balance (r ω : ℝ) (v i ψ dψ : ℂ)
-    (h : v = r * i + dψ + I * ω * ψ) :
+    (h : VoltageEquation r ω v i ψ dψ) :
     (v * conj i).re = r * Complex.normSq i + (dψ * conj i).re + ω * (conj ψ * i).im := by
+  rw [VoltageEquation] at h
   subst h
   simp [Complex.mul_re, Complex.mul_im, Complex.normSq_apply]
   ring
@@ -230,14 +249,5 @@ read as pole pairs) is wrong. -/
     c = 3 / 2 * np := by
   field_simp at h
   linarith
-
-/-- The half-coefficient `(3/2)(np/2)` does not satisfy the power balance. -/
-@[tmio T, powerlib_foundation] theorem torque_halfCoefficient_ne (np ω : ℝ) (hnp : np ≠ 0)
-    (ψ i : ℂ) (hω : ω ≠ 0) (hx : (conj ψ * i).im ≠ 0) :
-    3 / 2 * (np / 2) * (conj ψ * i).im * (ω / np) ≠ 3 / 2 * ω * (conj ψ * i).im := by
-  intro h
-  have := torque_coefficient_unique np ω _ hnp ψ i hω hx h
-  have : np = 0 := by linarith
-  exact hnp this
 
 end powerlib.Transform.SpaceVector

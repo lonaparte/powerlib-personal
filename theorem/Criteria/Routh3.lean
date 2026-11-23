@@ -41,7 +41,7 @@ Results.
   (monic-cubic form `det_characteristicMatrix_fin_three'`).
   `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`
   (`isHurwitz_fin_three_iff`; for `SpectrallyStable` through
-  `Linear.spectrallyStable_iff_isHurwitz`; companion form `isHurwitz_companion_three_iff`). In
+  `Linear.spectrallyStable_iff_isHurwitz`). In
   coefficients `a₃ s³ + a₂ s² + a₁ s + a₀` (`a₃ > 0`, `tr = −a₂/a₃`, `m₂ = a₁/a₃`,
   `det = −a₀/a₃`): `IsHurwitz A ↔ 0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`
   (`isHurwitz_iff_of_coeffs_cubic`).
@@ -344,20 +344,6 @@ gives a characteristic root in the open right half plane (`exists_root_re_pos_of
     constructor <;> intro h <;> nlinarith
   rw [e, neg_div, neg_div, neg_lt_zero, neg_lt_zero, div_pos_iff_of_pos_right h3,
     div_pos_iff_of_pos_right h3]
-
-/-- Companion form of `s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_companion_three_iff (a0 a1 a2 : ℝ) :
-    LinearSystems.IsHurwitz !![0, 1, 0; 0, 0, 1; -a0, -a1, -a2] ↔
-      0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1 := by
-  rw [isHurwitz_fin_three_iff, Matrix.trace_fin_three_of, Matrix.det_fin_three]
-  simp only [principalMinorSum, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.empty_val', Matrix.cons_val_fin_one,
-    Matrix.head_cons, Matrix.tail_cons, Matrix.head_fin_const]
-  constructor
-  · rintro ⟨h2, h0, hg⟩
-    exact ⟨by linarith, by linarith, by linarith⟩
-  · rintro ⟨h2, h0, hg⟩
-    exact ⟨by linarith, by linarith, by linarith⟩
 
 end FinThree
 

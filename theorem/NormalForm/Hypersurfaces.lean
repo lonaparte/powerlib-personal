@@ -32,12 +32,13 @@ Results.
   and `d tr/dμ > 0` at `μ₀` (Hopf type), the equilibrium is locally exponentially stable just
   below `μ₀` and unstable just above; similarly for `det A` crossing zero downwards with
   `tr A < 0` (saddle-node type).
-* `Σ_DOC` is not a stability boundary (`exponentiallyStable_node` with `node_discriminant_pos`,
-  `exponentiallyStable_focus` with `focus_discriminant_neg`): for planar linear fields
-  `x' = A (x − e)` (the linear field `LinearSystems.affineLinearVectorField A e`, through the
-  linear stability hub `Criteria.holds_affine_fin_two_iff`) global exponential stability
-  (indeed every attractive sentence of the Flow semantics) is `tr < 0 ∧ det > 0` irrespective of
-  the discriminant sign; a stable node and a stable focus are both exponentially stable.
+* `Σ_DOC` is not a stability boundary: for planar linear fields `x' = A (x − e)` (the linear
+  field `LinearSystems.affineLinearVectorField A e`) the linear stability hub
+  `Criteria.holds_affine_fin_two_iff` decides global exponential stability (indeed every
+  attractive sentence of the Flow semantics) by `tr < 0 ∧ det > 0` alone, irrespective of the
+  discriminant sign. A pair on the two sides of `Σ_DOC`: a stable node and a stable focus, both
+  globally exponentially stable (`exponentiallyStable_node` with `node_discriminant_pos`,
+  `exponentiallyStable_focus` with `focus_discriminant_neg`).
 * Equilibrium continuation (wrapper of Mathlib's implicit function theorem,
   `ContDiffAt.implicitFunction`): if `f(μ₀, x₀) = 0` and the state Jacobian
   `∂ₓf(μ₀, x₀)` is invertible (e.g. a matrix with `det A(μ₀) ≠ 0`), there is a `Cⁿ` branch
@@ -46,7 +47,8 @@ Results.
 
 Corrections. (T-bifurcation-hypersurfaces.md §1.1–1.2): "多个 `Σ_•` 的并把 `𝒫` 切成拓扑等价的连通
 区域" is false as stated when `Σ_DOC` is included: crossing `Σ_DOC` (node ↔ focus) keeps the
-equilibrium exponentially stable (`exponentiallyStable_node`, `exponentiallyStable_focus`), so
+equilibrium exponentially stable (`Criteria.holds_affine_fin_two_iff` reads only `tr`, `det`;
+example pair `exponentiallyStable_node`, `exponentiallyStable_focus`), so
 `Σ_DOC` separates convergence styles, not stability types; it is not a codimension-one
 bifurcation boundary in the sense of §1.1.
 -/
@@ -403,8 +405,9 @@ field `x' = A (x − e)` at `e`). -/
   norm_num [Matrix.trace_fin_two, Matrix.det_fin_two]
 
 /-- The stable focus `A = [[−1, −1], [1, −1]]` is globally exponentially stable (as the linear
-field `x' = A (x − e)` at `e`): with `exponentiallyStable_node`, crossing `Σ_DOC` does not change
-stability. -/
+field `x' = A (x − e)` at `e`): with `exponentiallyStable_node`, a stable pair on the two sides of
+`Σ_DOC` (the general statement is `Criteria.holds_affine_fin_two_iff`, which reads only `tr` and
+`det`). -/
 @[tmio T, powerlib_foundation] theorem exponentiallyStable_focus (e : Dynamics.State 2) :
     Flow.GloballyExponentiallyStable
       (LinearSystems.affineLinearVectorField !![-1, -1; 1, -1] e) e :=
@@ -417,17 +420,6 @@ stability. -/
     (!![-1, -1; 1, -1] : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 -
       4 * (!![-1, -1; 1, -1] : Matrix (Fin 2) (Fin 2) ℝ).det < 0 := by
   norm_num [Matrix.trace_fin_two, Matrix.det_fin_two]
-
-/-- For a planar linear field `x' = A (x − e)`, every attractive sentence (in particular global
-exponential stability) is decided by `tr A < 0 ∧ det A > 0` alone: the discriminant (the `Σ_DOC`
-coordinate) plays no role. -/
-@[tmio T, powerlib_foundation] theorem exponentiallyStable_indep_discriminant
-    (A₁ A₂ : Matrix (Fin 2) (Fin 2) ℝ) (e₁ e₂ : Dynamics.State 2) (htr : A₁.trace = A₂.trace)
-    (hdet : A₁.det = A₂.det) {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (LinearSystems.affineLinearVectorField A₁ e₁) e₁ ↔
-      P.holds (LinearSystems.affineLinearVectorField A₂ e₂) e₂ := by
-  rw [Criteria.holds_affine_fin_two_iff A₁ e₁ hP, Criteria.holds_affine_fin_two_iff A₂ e₂ hP, htr,
-    hdet]
 
 /-! ## 4. Equilibrium continuation (implicit function theorem wrapper) -/
 

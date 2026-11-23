@@ -58,7 +58,7 @@ namespace powerlib.GFL.LCLine
 open Real Set
 open powerlib.Dynamics (State)
 open powerlib.PLL (piPLLJacobian)
-open powerlib.SpecialFunctions (sinusoidZeros stableRoot saddleRoot)
+open powerlib.SpecialFunctions (zerosIco sinusoidZeros stableRoot saddleRoot)
 
 namespace Params
 
@@ -67,17 +67,15 @@ variable (p : Params)
 @[tmio M, powerlib_domain] theorem amp_pos (hVg : 0 < p.Vg) (hΔ : p.Δ ≠ 0) : 0 < p.amp :=
   div_pos hVg (p.sqrt_Δ_pos hΔ)
 
-/-- Zeros of `h` (equivalently, the angles of equilibria) in the window `[a, a + 2π)`. -/
-def hZeros (a : ℝ) : Set ℝ := {θ | θ ∈ Ico a (a + 2 * π) ∧ p.h θ = 0}
-
+/-- The zeros of `h` (equivalently, the angles of equilibria) in the window `[a, a + 2π)` are
+those of the sinusoid `c₀ − A sin(θ + φ)`. -/
 @[tmio M, powerlib_domain] theorem hZeros_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (a : ℝ) :
-    p.hZeros a = sinusoidZeros p.c0 p.amp p.phase a := by
-  ext θ
-  simp only [hZeros, sinusoidZeros, Set.mem_ofPred_eq, p.h_eq_polar hwC hΔ]
+    zerosIco p.h a (2 * π) = sinusoidZeros p.c0 p.amp p.phase a := by
+  rw [sinusoidZeros, funext (p.h_eq_polar hwC hΔ)]
 
 /-- At most two equilibrium angles per period, whatever the operating point. -/
 @[tmio M, powerlib_domain] theorem ncard_equilibria_le_two (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
-    (hVg : 0 < p.Vg) (a : ℝ) : (p.hZeros a).ncard ≤ 2 := by
+    (hVg : 0 < p.Vg) (a : ℝ) : (zerosIco p.h a (2 * π)).ncard ≤ 2 := by
   rw [p.hZeros_eq hwC hΔ]
   rcases lt_trichotomy |p.c0| p.amp with h | h | h
   · rw [SpecialFunctions.ncard_sinusoidZeros_of_lt h (p.amp_pos hVg hΔ)]
@@ -89,8 +87,9 @@ def hZeros (a : ℝ) : Set ℝ := {θ | θ ∈ Ico a (a + 2 * π) ∧ p.h θ = 0
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem two_equilibria_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hc : |p.c0| < p.amp) (a : ℝ) :
-    (p.hZeros a).ncard = 2 ∧
-      p.hZeros a = {stableRoot p.c0 p.amp p.phase a, saddleRoot p.c0 p.amp p.phase a} := by
+    (zerosIco p.h a (2 * π)).ncard = 2 ∧
+      zerosIco p.h a (2 * π) =
+        {stableRoot p.c0 p.amp p.phase a, saddleRoot p.c0 p.amp p.phase a} := by
   have hA := p.amp_pos hVg hΔ
   refine ⟨?_, ?_⟩
   · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.ncard_sinusoidZeros_of_lt hc hA
@@ -128,9 +127,10 @@ unstable. -/
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem fold_equilibrium_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hc : |p.c0| = p.amp) (a : ℝ) :
-    (p.hZeros a).ncard = 1 ∧ p.hZeros a = {stableRoot p.c0 p.amp p.phase a} := by
+    (zerosIco p.h a (2 * π)).ncard = 1 ∧
+      zerosIco p.h a (2 * π) = {stableRoot p.c0 p.amp p.phase a} := by
   have hA := p.amp_pos hVg hΔ
-  have h : p.hZeros a = {stableRoot p.c0 p.amp p.phase a} := by
+  have h : zerosIco p.h a (2 * π) = {stableRoot p.c0 p.amp p.phase a} := by
     rw [p.hZeros_eq hwC hΔ, SpecialFunctions.sinusoidZeros_eq hc.le hA,
       SpecialFunctions.stableRoot_eq_saddleRoot hc hA, Set.pair_eq_singleton]
   exact ⟨by rw [h, Set.ncard_singleton], h⟩

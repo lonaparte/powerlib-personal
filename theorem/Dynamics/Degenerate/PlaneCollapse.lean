@@ -28,14 +28,19 @@ Results.
   equilibrium: solution segments near `x` cannot cross the plane and last only `O(y_k(t₀)²)`.
   This is the semantics of `LocallyExponentiallyStable` (LeanForControl), which constrains
   existing segments and does not assert existence.
-* `unstable_of_repel`: if instead the flow is repelled from the plane (`2 y_k f_k(y) ≥ a` off it)
-  and agrees on every half ball `{y_k ≥ s}` with a `C¹` field, `x` is unstable: the solution from
-  `x + s e_k` exists while it stays near `x` (globally Lipschitz cutoff of the `C¹` field, first
-  exit `Dynamics.forall_lt_of_first_exit`), and there `y_k²` grows linearly.
-* `unstable_of_cone`: instability from a cone `{σ y_k > 0, W ≥ 0}` at the plane that the field
-  enters through its boundary and in which `σ y_k` grows at a positive rate (the degenerate case of
-  the plane where the power term vanishes at `x`); helpers `Dynamics.deriv_nonpos_of_isMinOn_right`,
-  `Dynamics.eventually_pos_of_hasDerivAt` (`theorem/Dynamics/Calculus.lean`).
+* `unstable_of_barriers`: instability from seeds arbitrarily close to `x`, each with a trapping
+  region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}` (three `C¹` barriers crossed inwards) in which
+  `σ y_k` does not decrease and a bounded `C¹` function grows at a positive rate. The field need
+  only agree on every half ball `{σ y_k ≥ s}` with a `C¹` field: the solution from the seed exists
+  while it stays near `x` (globally Lipschitz cutoff of that field, first exit
+  `Dynamics.forall_lt_of_first_exit`), and no barrier is crossed
+  (`Dynamics.deriv_nonpos_of_isMinOn_right`, `theorem/Dynamics/Calculus.lean`). Instances:
+  * `unstable_of_repel`: the flow is repelled from the plane (`2 y_k f_k(y) ≥ a` off it): seeds
+    `x + s e_k`, no barrier, `y_k` grows at rate `≥ a/(2ρ)`;
+  * `unstable_of_cone`: a cone `{σ y_k > 0, W ≥ 0}` at the plane that the field enters through its
+    boundary and in which `σ y_k` grows at a positive rate (the degenerate case of the plane where
+    the power term vanishes at `x`): seeds on a ray into the cone
+    (`Dynamics.eventually_pos_of_hasDerivAt`), barrier `W`, growing function `σ y_k`.
 * `locallyExponentiallyStable_of_spiral`: spiral collapse. If off the plane `y_k f_k = q` with a
   `C¹` function `q`, `q(x) = 0`, `dq/dt = g + h q / y_k`, and `h(x)² + 4 g(x) < 0`, while on the
   plane `f_k ≠ 0`, then `x` satisfies the local exponential estimate: in the time `dτ = dt / y_k`
@@ -43,15 +48,13 @@ Results.
   `exp(σ K angle)`) decreases at a uniform rate (`hasDerivWithinAt_spiralLyap`, algebra
   `spiral_ineq`), a segment can touch the plane only where `q = 0` (`q_eq_zero_of_touch`) and
   hence only at its end, and segments last `O(‖y(t₀) − x‖)`.
-* `unstable_of_barriers`: instability from seeds arbitrarily close to `x`, each with a trapping
-  region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}` (three `C¹` barriers crossed inwards) in which
-  `σ y_k` does not decrease and a bounded `C¹` function grows at a positive rate; generalizes
-  `unstable_of_cone` (helpers `Dynamics.eventually_pos_of_hasDerivAt`, `exists_lipschitz_bound`).
-* `unstable_of_degenerate_node`: in the setting of `locallyExponentiallyStable_of_spiral`, a double
-  root `h(x)/2 ≠ 0` of `λ² − h(x)λ − g(x)` (`h(x)² + 4g(x) = 0`) with `C¹` coefficients `g, h`
-  makes `x` unstable: on the side `σ = sign h(x)` the shrinking cone
-  `q ≥ (|h(x)|/2 − √w) w` (`w = σ y_k`), cut down to a horn `‖y − x‖ ≤ (K + 1) w`, is entered by the
-  field because its margin `√w` dominates the `O(w)` variation of `g, h`.
+* `unstable_of_degenerate_node` (an instance of `unstable_of_barriers`; Lipschitz bounds of the
+  `C¹` coefficients from `exists_lipschitz_bound`): in the setting of
+  `locallyExponentiallyStable_of_spiral`, a double root `h(x)/2 ≠ 0` of `λ² − h(x)λ − g(x)`
+  (`h(x)² + 4g(x) = 0`) with `C¹` coefficients `g, h` makes `x` unstable: on the side
+  `σ = sign h(x)` the shrinking cone `q ≥ (|h(x)|/2 − √w) w` (`w = σ y_k`), cut down to a horn
+  `‖y − x‖ ≤ (K + 1) w`, is entered by the field because its margin `√w` dominates the `O(w)`
+  variation of `g, h`.
 * `not_locallyExponentiallyStable_of_nilpotent`: if `g(x) = h(x) = 0` (`C¹`), `∂_k q = h`, and the
   field off the `k`-th coordinate does not vanish at `x`, the local exponential estimate fails:
   under it the solution from `x + s³ e_k` stays `O(s³)`-close, so `q = O(s⁵)` and the solution
@@ -219,128 +222,196 @@ holds with `C = 4` and rate `1`. The field need not be continuous on the plane. 
     _ ≤ 4 * Real.exp (-1 * (t - t₀)) * δ := by
         have := mul_le_mul_of_nonneg_right hexp hδ0; nlinarith
 
+/-! ## Instability from a trapping region -/
+
+/-- Common start of the instability arguments: if `f` agrees on every half ball `{c ≥ s}`
+(`s > 0`) near `x` with a `C¹` field, then from any seed there is a curve, continuous on
+`[0, ∞)`, that solves `f` on every stretch `[0, T]` spent in `{‖y − x‖ < ρ, c ≥ s}` (globally
+Lipschitz cutoff of the `C¹` field, `exists_contDiff_lipschitz_extension`). -/
+@[tmio T, powerlib_foundation] private theorem exists_halfBall_curve {f : State n → State n}
+    {x : State n} {ρ : ℝ} {c : State n → ℝ}
+    (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
+      ∀ y : State n, ‖y - x‖ < ρ → s ≤ c y → g y = f y) {s : ℝ} (hs : 0 < s) (y₀ : State n) :
+    ∃ ψ : ℝ → State n, ψ 0 = y₀ ∧ ContinuousOn ψ (Ici 0) ∧
+      ∀ T, (∀ u ∈ Icc 0 T, ‖ψ u - x‖ < ρ ∧ s ≤ c (ψ u)) → IsTrajectoryOn ψ f 0 T := by
+  obtain ⟨g, hg, hgf⟩ := hext s hs
+  obtain ⟨G, -, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hg (‖x‖ + ρ)
+  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
+  refine ⟨ψ, hψ0, hψ.continuousOn, fun T hin => isIntegralCurveOn_of_eq_on_curve
+    (hψ.mono Icc_subset_Ici_self) fun u hu => ?_⟩
+  rw [hGg _ (by have := norm_le_norm_add_norm_sub' (ψ u) x; linarith [(hin u hu).1])]
+  exact hgf _ (hin u hu).1 (hin u hu).2
+
+/-- **Instability from a trapping region with three barriers.** Let the field agree near `x` on
+every half ball `{σ y_k ≥ s}` (`s > 0`) with a `C¹` field. Suppose that arbitrarily close to `x`
+there are seeds `y₀` with `σ y₀_k > 0` and a region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}`
+(three `C¹` barriers, positive at `y₀`) near `x`
+in which `σ y_k` does not decrease, a `C¹` function `V`, bounded near `x`, grows at a rate
+`μ > 0`, and the field crosses each barrier `W_i = 0` inwards. Then `x` is unstable: the solution
+from the seed stays in the region (first exit, `Dynamics.forall_lt_of_first_exit`), where `V`
+grows linearly. -/
+@[tmio T, powerlib_foundation] theorem unstable_of_barriers {f : State n → State n} {x : State n}
+    (k : Fin n) {σ : ℝ} {ρ : ℝ} (hρ : 0 < ρ)
+    (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
+      ∀ y : State n, ‖y - x‖ < ρ → s ≤ σ * y k → g y = f y)
+    (hseed : ∀ δ > 0, ∃ y₀ : State n, ‖y₀ - x‖ < δ ∧ 0 < σ * y₀ k ∧
+      ∃ (W₁ W₂ W₃ V : State n → ℝ) (μ b : ℝ), 0 < μ ∧ ContDiff ℝ 1 W₁ ∧ ContDiff ℝ 1 W₂ ∧
+        ContDiff ℝ 1 W₃ ∧ ContDiff ℝ 1 V ∧ 0 < W₁ y₀ ∧ 0 < W₂ y₀ ∧ 0 < W₃ y₀ ∧
+        (∀ y : State n, ‖y - x‖ < ρ → V y ≤ b) ∧
+        ∀ y : State n, ‖y - x‖ < ρ → σ * y₀ k / 2 ≤ σ * y k → 0 ≤ W₁ y → 0 ≤ W₂ y →
+          0 ≤ W₃ y → 0 ≤ σ * f y k ∧ μ ≤ fderiv ℝ V y (f y) ∧
+          (W₁ y = 0 → 0 < fderiv ℝ W₁ y (f y)) ∧ (W₂ y = 0 → 0 < fderiv ℝ W₂ y (f y)) ∧
+          (W₃ y = 0 → 0 < fderiv ℝ W₃ y (f y))) :
+    Unstable f x := by
+  intro hLS
+  obtain ⟨δ, hδ, hb⟩ := hLS (ρ / 2) (by positivity)
+  obtain ⟨y₀, hy₀x, hs₀0, W₁, W₂, W₃, V, μ, b, hμ, hW₁, hW₂, hW₃, hV, h1₀, h2₀, h3₀, hVb,
+    hreg⟩ := hseed (min δ (ρ / 2)) (lt_min hδ (by positivity))
+  obtain ⟨s₀, hs₀⟩ : ∃ s, s = σ * y₀ k := ⟨_, rfl⟩
+  rw [← hs₀] at hs₀0 hreg
+  obtain ⟨ψ, hψ0, hψc, hψf⟩ := exists_halfBall_curve (c := fun y => σ * y k) hext
+    (half_pos hs₀0) y₀
+  obtain ⟨Φ, hΦ⟩ : ∃ Φ : State n → ℝ, Φ = fun y => max (max (max (‖y - x‖ - ρ / 2)
+      (s₀ / 2 - σ * y k)) (-W₁ y)) (max (-W₂ y) (-W₃ y)) := ⟨_, rfl⟩
+  have hΦc : Continuous Φ := by
+    rw [hΦ]
+    exact ((((continuous_norm.comp (continuous_sub_right x)).sub continuous_const).max
+      (continuous_const.sub (continuous_const.mul
+        ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous)))).max hW₁.continuous.neg).max
+      (hW₂.continuous.neg.max hW₃.continuous.neg)
+  have hregion : ∀ y : State n, Φ y ≤ 0 → ‖y - x‖ < ρ ∧ s₀ / 2 ≤ σ * y k ∧ 0 ≤ W₁ y ∧
+      0 ≤ W₂ y ∧ 0 ≤ W₃ y := by
+    intro y hy
+    simp only [hΦ, max_le_iff, sub_nonpos, neg_nonpos] at hy
+    exact ⟨by linarith [hy.1.1.1], hy.1.1.2, hy.1.2, hy.2.1, hy.2.2⟩
+  -- along a stretch in the region: a solution of `f`, `σ y_k ≥ s₀`, `V` grows at rate `μ`
+  have hgrow : ∀ T, 0 ≤ T → (∀ u ∈ Icc 0 T, Φ (ψ u) ≤ 0) →
+      IsTrajectoryOn ψ f 0 T ∧ (∀ u ∈ Icc 0 T, s₀ ≤ σ * ψ u k) ∧
+        ∀ u ∈ Icc 0 T, V y₀ + μ * u ≤ V (ψ u) := by
+    intro T hT hin
+    have hseg : IsTrajectoryOn ψ f 0 T :=
+      hψf T fun u hu => ⟨(hregion _ (hin u hu)).1, (hregion _ (hin u hu)).2.1⟩
+    have hR : ∀ u ∈ Icc 0 T, _ := fun u hu => by
+      obtain ⟨r1, r2, r3, r4, r5⟩ := hregion _ (hin u hu)
+      exact hreg _ r1 r2 r3 r4 r5
+    refine ⟨hseg, ?_, ?_⟩
+    · intro u hu
+      have hdk : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => σ * ψ t k) (σ * f (ψ t) k)
+          (Icc 0 T) t :=
+        fun t ht => ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
+          t (hseg t ht)).const_mul σ
+      have := sub_ge_of_deriv_ge (m := 0) hu.1 le_rfl hu.2 hdk
+        (fun s hs => (hR s ⟨hs.1.le, hs.2.le.trans hu.2⟩).1)
+      simp only [zero_mul, hψ0] at this
+      linarith
+    · intro u hu
+      have hdV : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => V (ψ t)) (fderiv ℝ V (ψ t) (f (ψ t)))
+          (Icc 0 T) t :=
+        fun t ht => ((hV.differentiable one_ne_zero) (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t
+          (hseg t ht)
+      have := sub_ge_of_deriv_ge (m := μ) hu.1 le_rfl hu.2 hdV
+        (fun s hs => (hR s ⟨hs.1.le, hs.2.le.trans hu.2⟩).2.1)
+      simp only [sub_zero, hψ0] at this
+      linarith
+  -- a barrier positive at the seed stays positive while the solution is in the region
+  have hbar : ∀ W : State n → ℝ, ContDiff ℝ 1 W → 0 < W y₀ →
+      (∀ y : State n, ‖y - x‖ < ρ → s₀ / 2 ≤ σ * y k → 0 ≤ W₁ y → 0 ≤ W₂ y → 0 ≤ W₃ y →
+        W y = 0 → 0 < fderiv ℝ W y (f y)) →
+      ∀ t, 0 ≤ t → (∀ u ∈ Icc 0 t, Φ (ψ u) ≤ 0) → (∀ u ∈ Icc 0 t, 0 ≤ W (ψ u)) →
+        0 < W (ψ t) := by
+    intro W hW hW0 hWb t ht hin hWin
+    by_contra hW3
+    push Not at hW3
+    have hWt : W (ψ t) = 0 := le_antisymm hW3 (hWin t ⟨ht, le_rfl⟩)
+    have htpos : 0 < t := by
+      rcases eq_or_lt_of_le ht with h | h
+      · rw [← h, hψ0] at hWt; linarith
+      · exact h
+    obtain ⟨hseg, -, -⟩ := hgrow t ht hin
+    have hd : HasDerivWithinAt (fun u => W (ψ u)) (fderiv ℝ W (ψ t) (f (ψ t))) (Icc 0 t) t :=
+      ((hW.differentiable one_ne_zero) (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t
+        (hseg t ⟨ht, le_rfl⟩)
+    have hle := deriv_nonpos_of_isMinOn_right htpos hd (fun u hu => by
+      rw [hWt]; exact hWin u hu)
+    obtain ⟨r1, r2, r3, r4, r5⟩ := hregion _ (hin t ⟨ht, le_rfl⟩)
+    linarith [hWb _ r1 r2 r3 r4 r5 hWt]
+  have hstay : ∀ T, 0 ≤ T → ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
+    intro T hT
+    refine forall_lt_of_first_exit hΦc (hψc.mono Icc_subset_Ici_self) ?_ ?_
+    · simp only [hΦ, hψ0, max_lt_iff]
+      refine ⟨⟨⟨by linarith [hy₀x.trans_le (min_le_right _ _)], by linarith⟩, by linarith⟩,
+        by linarith, by linarith⟩
+    · intro t ht hin
+      obtain ⟨hseg, hsk, -⟩ := hgrow t ht.1 hin
+      have h1 : ‖ψ t - x‖ < ρ / 2 :=
+        hb 0 t ψ hseg (by rw [hψ0]; exact hy₀x.trans_le (min_le_left _ _)) t ⟨ht.1, le_rfl⟩
+      have h2 : s₀ ≤ σ * ψ t k := hsk t ⟨ht.1, le_rfl⟩
+      have hWin : ∀ u ∈ Icc 0 t, 0 ≤ W₁ (ψ u) ∧ 0 ≤ W₂ (ψ u) ∧ 0 ≤ W₃ (ψ u) :=
+        fun u hu => (hregion _ (hin u hu)).2.2
+      have h3 := hbar W₁ hW₁ h1₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.1) t ht.1
+        hin (fun u hu => (hWin u hu).1)
+      have h4 := hbar W₂ hW₂ h2₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.2.1) t
+        ht.1 hin (fun u hu => (hWin u hu).2.1)
+      have h5 := hbar W₃ hW₃ h3₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.2.2) t
+        ht.1 hin (fun u hu => (hWin u hu).2.2)
+      simp only [hΦ, max_lt_iff]
+      exact ⟨⟨⟨by linarith, by linarith⟩, by linarith⟩, by linarith, by linarith⟩
+  -- but `V` is bounded near `x`
+  have hVy₀ : V y₀ ≤ b := hVb y₀ (by linarith [hy₀x.trans_le (min_le_right _ _)])
+  obtain ⟨T, hT⟩ : ∃ T, T = (b - V y₀) / μ + 1 := ⟨_, rfl⟩
+  have hT0 : 0 ≤ T := by rw [hT]; have := div_nonneg (sub_nonneg.mpr hVy₀) hμ.le; linarith
+  obtain ⟨-, -, hVg⟩ := hgrow T hT0 (fun u hu => (hstay T hT0 u hu).le)
+  have hfin := hregion _ (hstay T hT0 T ⟨hT0, le_rfl⟩).le
+  have h1 := hVg T ⟨hT0, le_rfl⟩
+  have h2 := hVb _ hfin.1
+  have h3 : μ * T = b - V y₀ + μ := by rw [hT]; field_simp
+  linarith
+
 /-- **Repulsion from a coordinate plane.** Let `x` lie on the plane `y_k = 0`. If near `x` the
 field drives `y_k²` up at a uniform rate off the plane (`2 y_k f_k(y) ≥ a`), and on each half
 ball `{y_k ≥ s}` (`s > 0`) it agrees with a `C¹` field, then `x` is unstable: the solution from
-`x + s e_k` exists as long as it stays near `x`, and there `y_k²` grows without bound. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_repel {f : State n → State n} {x : State n} (k : Fin n)
-    (hxk : x k = 0)
+`x + s e_k` stays in `{y_k ≥ s/2}` near `x`, where `y_k` grows at rate `≥ a/(2ρ)`
+(`unstable_of_barriers` with `σ = 1`, `V = y_k` and no barrier). -/
+@[tmio T, powerlib_foundation] theorem unstable_of_repel {f : State n → State n} {x : State n}
+    (k : Fin n) (hxk : x k = 0)
     {ρ a : ℝ} (hρ : 0 < ρ) (ha : 0 < a)
     (hrep : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 → a ≤ 2 * y k * f y k)
     (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
       ∀ y : State n, ‖y - x‖ < ρ → s ≤ y k → g y = f y) :
     Unstable f x := by
-  intro hLS
-  obtain ⟨δ, hδ, hb⟩ := hLS (ρ / 2) (by positivity)
-  set s := min (δ / 2) (ρ / 4) with hs
+  set P : State n →L[ℝ] ℝ := EuclideanSpace.proj k with hP
+  refine unstable_of_barriers k (σ := 1) hρ (by simpa only [one_mul] using hext) fun δ hδ => ?_
+  set s := min (δ / 2) (ρ / 2) with hs
   have hs0 : 0 < s := lt_min (by positivity) (by positivity)
-  have hsδ : s < δ := lt_of_le_of_lt (min_le_left _ _) (by linarith)
-  have hsρ : s ≤ ρ / 4 := min_le_right _ _
-  obtain ⟨g, hg, hgf⟩ := hext (s / 2) (by positivity)
-  obtain ⟨G, hG, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hg (‖x‖ + ρ)
-  set y₀ : State n := x + s • EuclideanSpace.single k (1 : ℝ) with hy₀
-  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
-  have hy₀x : ‖y₀ - x‖ = s := by
-    rw [hy₀, add_sub_cancel_left, norm_smul, PiLp.norm_single, norm_one, mul_one,
-      Real.norm_eq_abs, abs_of_pos hs0]
-  have hy₀k : y₀ k = s := by simp [hy₀, hxk]
-  -- the region where `G = f`
-  have hGf : ∀ y : State n, ‖y - x‖ < ρ → s / 2 ≤ y k → G y = f y := by
-    intro y hy hyk
-    rw [hGg y (by
-      have := norm_le_norm_add_norm_sub' y x
-      linarith)]
-    exact hgf y hy hyk
-  set Φ : State n → ℝ := fun y => max (‖y - x‖ - ρ / 2) (s / 2 - y k) with hΦ
-  have hΦc : Continuous Φ :=
-    ((continuous_norm.comp (continuous_sub_right x)).sub continuous_const).max
-      (continuous_const.sub ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous))
-  -- along any stretch in the region, `y_k² − a t` does not decrease
-  have hgrow : ∀ T, 0 ≤ T → (∀ u ∈ Icc 0 T, Φ (ψ u) ≤ 0) →
-      IsTrajectoryOn ψ f 0 T ∧ ∀ u ∈ Icc 0 T, ψ 0 k ^ 2 + a * u ≤ ψ u k ^ 2 := by
-    intro T hT hin
-    have hin' : ∀ u ∈ Icc 0 T, ‖ψ u - x‖ < ρ ∧ s / 2 ≤ ψ u k := fun u hu => by
-      have h := hin u hu
-      simp only [hΦ, max_le_iff, sub_nonpos] at h
-      exact ⟨by linarith [h.1], by linarith [h.2]⟩
-    have hseg : IsTrajectoryOn ψ f 0 T :=
-      isIntegralCurveOn_of_eq_on_curve (hψ.mono Icc_subset_Ici_self)
-        (fun u hu => hGf _ (hin' u hu).1 (hin' u hu).2)
-    refine ⟨hseg, ?_⟩
-    have hdk : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => (ψ t k : ℝ)) (f (ψ t) k : ℝ)
-        (Icc 0 T) t :=
-      fun t ht => (EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t
-        (hseg t ht)
-    have hmono : MonotoneOn (fun t => ψ t k ^ 2 - a * t) (Icc 0 T) := by
-      refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := fun t => 2 * ψ t k * f (ψ t) k - a)
-        (convex_Icc _ _) ?_ (fun t ht => ?_) (fun t ht => ?_)
-      · exact (fun t ht => ((hdk t ht).fun_pow 2).continuousWithinAt.sub
-          (continuous_const.mul continuous_id).continuousWithinAt)
-      · rw [interior_Icc] at ht
-        have h1 := ((hdk t (Ioo_subset_Icc_self ht)).fun_pow 2).fun_sub
-          ((hasDerivWithinAt_id t _).const_mul a)
-        have h2 :=
-          (h1.hasDerivAt (Icc_mem_nhds ht.1 ht.2)).hasDerivWithinAt (s := interior (Icc 0 T))
-        convert h2 using 1
-        simp only [id]
-        push_cast
-        ring
-      · rw [interior_Icc] at ht
-        have hk : ψ t k ≠ 0 := by
-          have := (hin' t (Ioo_subset_Icc_self ht)).2
-          intro h; rw [h] at this; linarith
-        linarith [hrep _ (hin' t (Ioo_subset_Icc_self ht)).1 hk]
-    intro u hu
-    have := hmono ⟨le_rfl, hT⟩ hu hu.1
-    simp only [mul_zero, sub_zero] at this
-    linarith
-  -- the solution stays in the region
-  have hstay : ∀ T, 0 ≤ T → ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
-    intro T hT
-    refine forall_lt_of_first_exit hΦc (hψ.continuousOn.mono Icc_subset_Ici_self) ?_ ?_
-    · simp only [hΦ, hψ0, hy₀x, hy₀k, max_lt_iff]
-      constructor <;> linarith
-    · intro t ht hin
-      obtain ⟨hseg, hsq⟩ := hgrow t ht.1 hin
-      have h1 : ‖ψ t - x‖ < ρ / 2 :=
-        hb 0 t ψ hseg (by rw [hψ0, hy₀x]; exact hsδ) t ⟨ht.1, le_rfl⟩
-      have h2 : s ^ 2 ≤ ψ t k ^ 2 := by
-        have := hsq t ⟨ht.1, le_rfl⟩
-        rw [hψ0, hy₀k] at this
-        nlinarith [ht.1]
-      have h3 : s / 2 ≤ ψ t k := by
-        have := hin t ⟨ht.1, le_rfl⟩
-        simp only [hΦ, max_le_iff] at this
-        linarith [this.2]
-      have h4 : s ≤ ψ t k := by nlinarith
-      simp only [hΦ, max_lt_iff]
-      constructor <;> linarith
-  -- but `y_k²` grows linearly while `|y_k| < ρ / 2`
-  set T := ρ ^ 2 / a + 1 with hT
-  have hT0 : 0 ≤ T := by positivity
-  obtain ⟨-, hsq⟩ := hgrow T hT0 (fun u hu => (hstay T hT0 u hu).le)
-  have hfin := hstay T hT0 T ⟨hT0, le_rfl⟩
-  simp only [hΦ, max_lt_iff] at hfin
-  have hk : |ψ T k| ≤ ‖ψ T - x‖ := by
-    have := PiLp.norm_apply_le (ψ T - x) k
-    simpa [hxk] using this
-  have h1 := hsq T ⟨hT0, le_rfl⟩
-  have h2 : ψ T k ^ 2 < ρ ^ 2 / 4 := by
-    have h3 : |ψ T k| < ρ / 2 := by linarith [hfin.1]
-    have := sq_lt_sq' (by linarith [abs_nonneg (ψ T k), neg_abs_le (ψ T k)])
-      (lt_of_le_of_lt (le_abs_self _) h3)
-    nlinarith [sq_abs (ψ T k), abs_nonneg (ψ T k)]
-  have h5 : a * T = ρ ^ 2 + a := by rw [hT]; field_simp
-  nlinarith [sq_nonneg (ψ 0 k)]
+  have hkx : ∀ y : State n, |y k| ≤ ‖y - x‖ := fun y => by
+    simpa [hxk] using PiLp.norm_apply_le (y - x) k
+  refine ⟨x + s • EuclideanSpace.single k (1 : ℝ), ?_, by simp [hxk, hs0], fun _ => 1,
+    fun _ => 1, fun _ => 1, P, a / (2 * ρ), ρ, by positivity, contDiff_const, contDiff_const,
+    contDiff_const, P.contDiff, one_pos, one_pos, one_pos,
+    fun y hy => (le_abs_self _).trans ((hkx y).trans hy.le), fun y hy hyk _ _ _ => ?_⟩
+  · rw [add_sub_cancel_left, norm_smul, PiLp.norm_single, norm_one, mul_one, Real.norm_eq_abs,
+      abs_of_pos hs0]
+    exact lt_of_le_of_lt (min_le_left _ _) (by linarith)
+  have hyk : 0 < y k := by simp [hxk] at hyk; linarith
+  have h1 := hrep y hy hyk.ne'
+  have h2 : y k < ρ := lt_of_le_of_lt ((le_abs_self _).trans (hkx y)) hy
+  have hfk : 0 < f y k := by nlinarith
+  refine ⟨by rw [one_mul]; exact hfk.le, ?_, fun h => absurd h one_ne_zero,
+    fun h => absurd h one_ne_zero, fun h => absurd h one_ne_zero⟩
+  rw [P.fderiv, hP]
+  show a / (2 * ρ) ≤ f y k
+  rw [div_le_iff₀ (by positivity)]
+  nlinarith
 
 /-- **Instability from an invariant cone at a coordinate plane.** Let `x` lie on the plane
 `y_k = 0`. Suppose that on one side `σ y_k > 0` (`σ = ±1`), near `x`, the sublevel `W ≥ 0` of a
 `C¹` function `W` with `W x = 0` is a cone in which `σ y_k` grows at a rate `μ > 0`, the field
 crosses its boundary `W = 0` inwards, some direction `v` points into the cone at `x`, and the field
 agrees on every half ball `{σ y_k ≥ s}` with a `C¹` field. Then `x` is unstable: the solution from
-a point of the cone close to `x` stays in it and leaves every small ball. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_cone {f : State n → State n} {x : State n} (k : Fin n)
-    {σ : ℝ}
+a point of the cone close to `x` stays in it and leaves every small ball (`unstable_of_barriers`
+with the seeds `x + t v`, `W₁ = W`, `V = σ y_k`). -/
+@[tmio T, powerlib_foundation] theorem unstable_of_cone {f : State n → State n} {x : State n}
+    (k : Fin n) {σ : ℝ}
     (hσ : σ = 1 ∨ σ = -1) {ρ μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) {W : State n → ℝ}
     (hW : ContDiff ℝ 1 W) (hxk : x k = 0) (hW0 : W x = 0)
     (hcone : ∀ y : State n, ‖y - x‖ < ρ → 0 < σ * y k → 0 ≤ W y → μ ≤ σ * f y k)
@@ -350,127 +421,39 @@ a point of the cone close to `x` stays in it and leaves every small ball. -/
     (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
       ∀ y : State n, ‖y - x‖ < ρ → s ≤ σ * y k → g y = f y) :
     Unstable f x := by
-  have hσ2 : σ * σ = 1 := by rcases hσ with rfl | rfl <;> norm_num
   have hσa : |σ| = 1 := by rcases hσ with rfl | rfl <;> norm_num
-  have hWd : Differentiable ℝ W := hW.differentiable one_ne_zero
-  intro hLS
-  obtain ⟨δ, hδ, hb⟩ := hLS (ρ / 2) (by positivity)
-  -- a seed in the cone
-  set ε := min δ (ρ / 2) / (‖v‖ + 1) with hε
-  have hε0 : 0 < ε := by positivity
+  set P : State n →L[ℝ] ℝ := σ • EuclideanSpace.proj k with hP
   have hline : HasDerivAt (fun t : ℝ => W (x + t • v)) (fderiv ℝ W x v) 0 := by
     have hl : HasDerivAt (fun t : ℝ => x + t • v) v 0 := by
       simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v).const_add x
-    have h := (hWd (x + (0 : ℝ) • v)).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl
+    have h := ((hW.differentiable one_ne_zero) (x + (0 : ℝ) • v)).hasFDerivAt.comp_hasDerivAt
+      (0 : ℝ) hl
     rw [zero_smul, add_zero] at h
     exact h
+  refine unstable_of_barriers k hρ hext fun δ hδ => ?_
+  have hε0 : 0 < δ / (‖v‖ + 1) := by positivity
   obtain ⟨t₀, hWt₀, ht₀⟩ := ((eventually_pos_of_hasDerivAt hline (by simpa using hW0) hWv).and
     (Ioo_mem_nhdsGT hε0)).exists
-  set y₀ : State n := x + t₀ • v with hy₀
-  have hy₀x : ‖y₀ - x‖ < min δ (ρ / 2) := by
-    rw [hy₀, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos ht₀.1]
-    have h1 : t₀ * ‖v‖ ≤ t₀ * (‖v‖ + 1) := by nlinarith [ht₀.1]
-    have h2 : t₀ * (‖v‖ + 1) < ε * (‖v‖ + 1) := by
-      have := ht₀.2; nlinarith [norm_nonneg v]
-    have h3 : ε * (‖v‖ + 1) = min δ (ρ / 2) := by
-      rw [hε]; field_simp
-    linarith
-  set s₀ := σ * y₀ k with hs₀
-  have hs₀0 : 0 < s₀ := by
-    simp only [hs₀, hy₀, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul, hxk, zero_add]
+  have hs₀ : 0 < σ * (x + t₀ • v) k := by
+    simp only [PiLp.add_apply, PiLp.smul_apply, smul_eq_mul, hxk, zero_add]
     nlinarith [ht₀.1]
-  obtain ⟨g, hg, hgf⟩ := hext (s₀ / 2) (by positivity)
-  obtain ⟨G, hG, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hg (‖x‖ + ρ)
-  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
-  have hGf : ∀ y : State n, ‖y - x‖ < ρ → s₀ / 2 ≤ σ * y k → G y = f y := by
-    intro y hy hyk
-    rw [hGg y (by
-      have := norm_le_norm_add_norm_sub' y x
-      linarith)]
-    exact hgf y hy hyk
-  set Φ : State n → ℝ := fun y => max (max (‖y - x‖ - ρ / 2) (s₀ / 2 - σ * y k)) (-W y)
-    with hΦ
-  have hΦc : Continuous Φ :=
-    (((continuous_norm.comp (continuous_sub_right x)).sub continuous_const).max
-      (continuous_const.sub (continuous_const.mul
-        ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous)))).max hW.continuous.neg
-  have hregion : ∀ y : State n, Φ y ≤ 0 → ‖y - x‖ < ρ ∧ s₀ / 2 ≤ σ * y k ∧ 0 ≤ W y := by
-    intro y hy
-    simp only [hΦ, max_le_iff, sub_nonpos, neg_nonpos] at hy
-    exact ⟨by linarith [hy.1.1], hy.1.2, hy.2⟩
-  -- along a stretch in the region, `σ y_k − μ t` does not decrease
-  have hgrow : ∀ T, 0 ≤ T → (∀ u ∈ Icc 0 T, Φ (ψ u) ≤ 0) →
-      IsTrajectoryOn ψ f 0 T ∧ ∀ u ∈ Icc 0 T, s₀ + μ * u ≤ σ * ψ u k := by
-    intro T hT hin
-    have hseg : IsTrajectoryOn ψ f 0 T :=
-      isIntegralCurveOn_of_eq_on_curve (hψ.mono Icc_subset_Ici_self)
-        (fun u hu => hGf _ (hregion _ (hin u hu)).1 (hregion _ (hin u hu)).2.1)
-    refine ⟨hseg, ?_⟩
-    have hdk : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => (ψ t k : ℝ)) (f (ψ t) k : ℝ)
-        (Icc 0 T) t :=
-      fun t ht => (EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t
-        (hseg t ht)
-    have hmono : MonotoneOn (fun t => σ * ψ t k - μ * t) (Icc 0 T) := by
-      refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := fun t => σ * f (ψ t) k - μ)
-        (convex_Icc _ _) ?_ (fun t ht => ?_) (fun t ht => ?_)
-      · exact (fun t ht => ((hdk t ht).const_mul σ).continuousWithinAt.sub
-          (continuous_const.mul continuous_id).continuousWithinAt)
-      · rw [interior_Icc] at ht
-        have h1 := ((hdk t (Ioo_subset_Icc_self ht)).const_mul σ).fun_sub
-          ((hasDerivWithinAt_id t _).const_mul μ)
-        have h2 := (h1.hasDerivAt (Icc_mem_nhds ht.1 ht.2)).hasDerivWithinAt
-          (s := interior (Icc 0 T))
-        convert h2 using 1
-        all_goals first | rfl | ring
-      · rw [interior_Icc] at ht
-        obtain ⟨h1, h2, h3⟩ := hregion _ (hin t (Ioo_subset_Icc_self ht))
-        linarith [hcone _ h1 (by linarith) h3]
-    intro u hu
-    have := hmono ⟨le_rfl, hT⟩ hu hu.1
-    simp only [mul_zero, sub_zero, hψ0] at this
-    linarith
-  have hstay : ∀ T, 0 ≤ T → ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
-    intro T hT
-    refine forall_lt_of_first_exit hΦc (hψ.continuousOn.mono Icc_subset_Ici_self) ?_ ?_
-    · simp only [hΦ, hψ0, max_lt_iff]
-      refine ⟨⟨by linarith [hy₀x.trans_le (min_le_right _ _)], by linarith⟩, by linarith⟩
-    · intro t ht hin
-      obtain ⟨hseg, hsq⟩ := hgrow t ht.1 hin
-      have h1 : ‖ψ t - x‖ < ρ / 2 :=
-        hb 0 t ψ hseg (by rw [hψ0]; exact hy₀x.trans_le (min_le_left _ _)) t ⟨ht.1, le_rfl⟩
-      have h2 : s₀ ≤ σ * ψ t k := by nlinarith [hsq t ⟨ht.1, le_rfl⟩, ht.1]
-      have h3 : 0 < W (ψ t) := by
-        by_contra hW3
-        push Not at hW3
-        have hWt : W (ψ t) = 0 := le_antisymm hW3 (hregion _ (hin t ⟨ht.1, le_rfl⟩)).2.2
-        have htpos : 0 < t := by
-          rcases eq_or_lt_of_le ht.1 with h | h
-          · rw [← h, hψ0] at hWt; linarith
-          · exact h
-        have hd : HasDerivWithinAt (fun u => W (ψ u)) (fderiv ℝ W (ψ t) (f (ψ t)))
-            (Icc 0 t) t :=
-          (hWd (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t (hseg t ⟨ht.1, le_rfl⟩)
-        have hle := deriv_nonpos_of_isMinOn_right htpos hd (fun u hu => by
-          rw [hWt]; exact (hregion _ (hin u hu)).2.2)
-        obtain ⟨r1, r2, -⟩ := hregion _ (hin t ⟨ht.1, le_rfl⟩)
-        linarith [hbar _ r1 (by linarith) hWt]
-      simp only [hΦ, max_lt_iff]
-      exact ⟨⟨by linarith, by linarith⟩, by linarith⟩
-  -- but `σ y_k` grows linearly while `|y_k| < ρ / 2`
-  set T := ρ / μ with hT
-  have hT0 : 0 ≤ T := by positivity
-  obtain ⟨-, hsq⟩ := hgrow T hT0 (fun u hu => (hstay T hT0 u hu).le)
-  have hfin := hstay T hT0 T ⟨hT0, le_rfl⟩
-  simp only [hΦ, max_lt_iff] at hfin
-  have hk : |ψ T k| ≤ ‖ψ T - x‖ := by
-    have := PiLp.norm_apply_le (ψ T - x) k
-    simpa [hxk] using this
-  have h1 := hsq T ⟨hT0, le_rfl⟩
-  have h2 : σ * ψ T k ≤ |ψ T k| := by
-    calc σ * ψ T k ≤ |σ * ψ T k| := le_abs_self _
-      _ = |ψ T k| := by rw [abs_mul, hσa, one_mul]
-  have h5 : μ * T = ρ := by rw [hT]; field_simp
-  linarith [hfin.1.1]
+  refine ⟨x + t₀ • v, ?_, hs₀, W, fun _ => 1, fun _ => 1, P, μ, ρ, hμ, hW, contDiff_const,
+    contDiff_const, P.contDiff, hWt₀, one_pos, one_pos, fun y hy => ?_,
+    fun y hy hyk hW1 _ _ => ?_⟩
+  · rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos ht₀.1]
+    have h2 : t₀ * (‖v‖ + 1) < δ := (lt_div_iff₀ (by positivity)).mp ht₀.2
+    nlinarith [norm_nonneg v, ht₀.1]
+  · have hkx : |y k| ≤ ‖y - x‖ := by simpa [hxk] using PiLp.norm_apply_le (y - x) k
+    calc P y = σ * y k := by simp [hP]
+      _ ≤ |σ * y k| := le_abs_self _
+      _ = |y k| := by rw [abs_mul, hσa, one_mul]
+      _ ≤ ρ := hkx.trans hy.le
+  have hpos : 0 < σ * y k := lt_of_lt_of_le (half_pos hs₀) hyk
+  have hmu := hcone y hy hpos hW1
+  refine ⟨hμ.le.trans hmu, by rw [P.fderiv]; simpa [hP] using hmu, hbar y hy hpos,
+    fun h => absurd h one_ne_zero, fun h => absurd h one_ne_zero⟩
+
+/-! ## Spiral collapse -/
 
 /-- The algebraic core of the spiral estimate. With `Q = ω p + (h*/2) z`,
 `ω² = −g* − h*²/4 > 0`, `2Kω = |h*| + 2` and coefficients `g, h` within
@@ -1249,139 +1232,7 @@ most at its end, after a time `O(‖y(t₀) − x‖)`, and stays within `O(‖y
             2 * C1 * Real.exp (-1 * (t - t₀)) * δ := by ring
         linarith
 
-/-! ## Degenerate points of the plane: barriers, degenerate node, nilpotent drift -/
-
-/-- **Instability from a trapping region with three barriers.** Let the field agree near `x` on
-every half ball `{σ y_k ≥ s}` (`s > 0`) with a `C¹` field. Suppose that arbitrarily close to `x`
-there are seeds `y₀` with `σ y₀_k > 0` and a region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}`
-(three `C¹` barriers, positive at `y₀`) near `x`
-in which `σ y_k` does not decrease, a `C¹` function `V`, bounded near `x`, grows at a rate
-`μ > 0`, and the field crosses each barrier `W_i = 0` inwards. Then `x` is unstable. -/
-@[tmio T, powerlib_foundation] theorem unstable_of_barriers {f : State n → State n} {x : State n}
-    (k : Fin n) {σ : ℝ} {ρ : ℝ} (hρ : 0 < ρ)
-    (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
-      ∀ y : State n, ‖y - x‖ < ρ → s ≤ σ * y k → g y = f y)
-    (hseed : ∀ δ > 0, ∃ y₀ : State n, ‖y₀ - x‖ < δ ∧ 0 < σ * y₀ k ∧
-      ∃ (W₁ W₂ W₃ V : State n → ℝ) (μ b : ℝ), 0 < μ ∧ ContDiff ℝ 1 W₁ ∧ ContDiff ℝ 1 W₂ ∧
-        ContDiff ℝ 1 W₃ ∧ ContDiff ℝ 1 V ∧ 0 < W₁ y₀ ∧ 0 < W₂ y₀ ∧ 0 < W₃ y₀ ∧
-        (∀ y : State n, ‖y - x‖ < ρ → V y ≤ b) ∧
-        ∀ y : State n, ‖y - x‖ < ρ → σ * y₀ k / 2 ≤ σ * y k → 0 ≤ W₁ y → 0 ≤ W₂ y →
-          0 ≤ W₃ y → 0 ≤ σ * f y k ∧ μ ≤ fderiv ℝ V y (f y) ∧
-          (W₁ y = 0 → 0 < fderiv ℝ W₁ y (f y)) ∧ (W₂ y = 0 → 0 < fderiv ℝ W₂ y (f y)) ∧
-          (W₃ y = 0 → 0 < fderiv ℝ W₃ y (f y))) :
-    Unstable f x := by
-  intro hLS
-  obtain ⟨δ, hδ, hb⟩ := hLS (ρ / 2) (by positivity)
-  obtain ⟨y₀, hy₀x, hs₀0, W₁, W₂, W₃, V, μ, b, hμ, hW₁, hW₂, hW₃, hV, h1₀, h2₀, h3₀, hVb,
-    hreg⟩ := hseed (min δ (ρ / 2)) (lt_min hδ (by positivity))
-  obtain ⟨s₀, hs₀⟩ : ∃ s, s = σ * y₀ k := ⟨_, rfl⟩
-  rw [← hs₀] at hs₀0 hreg
-  obtain ⟨g, hg, hgf⟩ := hext (s₀ / 2) (by positivity)
-  obtain ⟨G, hG, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hg (‖x‖ + ρ)
-  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
-  have hGf : ∀ y : State n, ‖y - x‖ < ρ → s₀ / 2 ≤ σ * y k → G y = f y := by
-    intro y hy hyk
-    rw [hGg y (by
-      have := norm_le_norm_add_norm_sub' y x
-      linarith)]
-    exact hgf y hy hyk
-  obtain ⟨Φ, hΦ⟩ : ∃ Φ : State n → ℝ, Φ = fun y => max (max (max (‖y - x‖ - ρ / 2)
-      (s₀ / 2 - σ * y k)) (-W₁ y)) (max (-W₂ y) (-W₃ y)) := ⟨_, rfl⟩
-  have hΦc : Continuous Φ := by
-    rw [hΦ]
-    exact ((((continuous_norm.comp (continuous_sub_right x)).sub continuous_const).max
-      (continuous_const.sub (continuous_const.mul
-        ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous)))).max hW₁.continuous.neg).max
-      (hW₂.continuous.neg.max hW₃.continuous.neg)
-  have hregion : ∀ y : State n, Φ y ≤ 0 → ‖y - x‖ < ρ ∧ s₀ / 2 ≤ σ * y k ∧ 0 ≤ W₁ y ∧
-      0 ≤ W₂ y ∧ 0 ≤ W₃ y := by
-    intro y hy
-    simp only [hΦ, max_le_iff, sub_nonpos, neg_nonpos] at hy
-    exact ⟨by linarith [hy.1.1.1], hy.1.1.2, hy.1.2, hy.2.1, hy.2.2⟩
-  -- along a stretch in the region: a solution of `f`, `σ y_k ≥ s₀`, `V` grows at rate `μ`
-  have hgrow : ∀ T, 0 ≤ T → (∀ u ∈ Icc 0 T, Φ (ψ u) ≤ 0) →
-      IsTrajectoryOn ψ f 0 T ∧ (∀ u ∈ Icc 0 T, s₀ ≤ σ * ψ u k) ∧
-        ∀ u ∈ Icc 0 T, V y₀ + μ * u ≤ V (ψ u) := by
-    intro T hT hin
-    have hseg : IsTrajectoryOn ψ f 0 T :=
-      isIntegralCurveOn_of_eq_on_curve (hψ.mono Icc_subset_Ici_self)
-        (fun u hu => hGf _ (hregion _ (hin u hu)).1 (hregion _ (hin u hu)).2.1)
-    have hR : ∀ u ∈ Icc 0 T, _ := fun u hu => by
-      obtain ⟨r1, r2, r3, r4, r5⟩ := hregion _ (hin u hu)
-      exact hreg _ r1 r2 r3 r4 r5
-    refine ⟨hseg, ?_, ?_⟩
-    · intro u hu
-      have hdk : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => σ * ψ t k) (σ * f (ψ t) k)
-          (Icc 0 T) t :=
-        fun t ht => ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
-          t (hseg t ht)).const_mul σ
-      have := sub_ge_of_deriv_ge (m := 0) hu.1 le_rfl hu.2 hdk
-        (fun s hs => (hR s ⟨hs.1.le, hs.2.le.trans hu.2⟩).1)
-      simp only [zero_mul, hψ0] at this
-      linarith
-    · intro u hu
-      have hdV : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => V (ψ t)) (fderiv ℝ V (ψ t) (f (ψ t)))
-          (Icc 0 T) t :=
-        fun t ht => ((hV.differentiable one_ne_zero) (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t
-          (hseg t ht)
-      have := sub_ge_of_deriv_ge (m := μ) hu.1 le_rfl hu.2 hdV
-        (fun s hs => (hR s ⟨hs.1.le, hs.2.le.trans hu.2⟩).2.1)
-      simp only [sub_zero, hψ0] at this
-      linarith
-  -- a barrier positive at the seed stays positive while the solution is in the region
-  have hbar : ∀ W : State n → ℝ, ContDiff ℝ 1 W → 0 < W y₀ →
-      (∀ y : State n, ‖y - x‖ < ρ → s₀ / 2 ≤ σ * y k → 0 ≤ W₁ y → 0 ≤ W₂ y → 0 ≤ W₃ y →
-        W y = 0 → 0 < fderiv ℝ W y (f y)) →
-      ∀ t, 0 ≤ t → (∀ u ∈ Icc 0 t, Φ (ψ u) ≤ 0) → (∀ u ∈ Icc 0 t, 0 ≤ W (ψ u)) →
-        0 < W (ψ t) := by
-    intro W hW hW0 hWb t ht hin hWin
-    by_contra hW3
-    push Not at hW3
-    have hWt : W (ψ t) = 0 := le_antisymm hW3 (hWin t ⟨ht, le_rfl⟩)
-    have htpos : 0 < t := by
-      rcases eq_or_lt_of_le ht with h | h
-      · rw [← h, hψ0] at hWt; linarith
-      · exact h
-    obtain ⟨hseg, -, -⟩ := hgrow t ht hin
-    have hd : HasDerivWithinAt (fun u => W (ψ u)) (fderiv ℝ W (ψ t) (f (ψ t))) (Icc 0 t) t :=
-      ((hW.differentiable one_ne_zero) (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t
-        (hseg t ⟨ht, le_rfl⟩)
-    have hle := deriv_nonpos_of_isMinOn_right htpos hd (fun u hu => by
-      rw [hWt]; exact hWin u hu)
-    obtain ⟨r1, r2, r3, r4, r5⟩ := hregion _ (hin t ⟨ht, le_rfl⟩)
-    linarith [hWb _ r1 r2 r3 r4 r5 hWt]
-  have hstay : ∀ T, 0 ≤ T → ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
-    intro T hT
-    refine forall_lt_of_first_exit hΦc (hψ.continuousOn.mono Icc_subset_Ici_self) ?_ ?_
-    · simp only [hΦ, hψ0, max_lt_iff]
-      refine ⟨⟨⟨by linarith [hy₀x.trans_le (min_le_right _ _)], by linarith⟩, by linarith⟩,
-        by linarith, by linarith⟩
-    · intro t ht hin
-      obtain ⟨hseg, hsk, -⟩ := hgrow t ht.1 hin
-      have h1 : ‖ψ t - x‖ < ρ / 2 :=
-        hb 0 t ψ hseg (by rw [hψ0]; exact hy₀x.trans_le (min_le_left _ _)) t ⟨ht.1, le_rfl⟩
-      have h2 : s₀ ≤ σ * ψ t k := hsk t ⟨ht.1, le_rfl⟩
-      have hWin : ∀ u ∈ Icc 0 t, 0 ≤ W₁ (ψ u) ∧ 0 ≤ W₂ (ψ u) ∧ 0 ≤ W₃ (ψ u) :=
-        fun u hu => (hregion _ (hin u hu)).2.2
-      have h3 := hbar W₁ hW₁ h1₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.1) t ht.1
-        hin (fun u hu => (hWin u hu).1)
-      have h4 := hbar W₂ hW₂ h2₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.2.1) t
-        ht.1 hin (fun u hu => (hWin u hu).2.1)
-      have h5 := hbar W₃ hW₃ h3₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.2.2) t
-        ht.1 hin (fun u hu => (hWin u hu).2.2)
-      simp only [hΦ, max_lt_iff]
-      exact ⟨⟨⟨by linarith, by linarith⟩, by linarith⟩, by linarith, by linarith⟩
-  -- but `V` is bounded near `x`
-  have hVy₀ : V y₀ ≤ b := hVb y₀ (by linarith [hy₀x.trans_le (min_le_right _ _)])
-  obtain ⟨T, hT⟩ : ∃ T, T = (b - V y₀) / μ + 1 := ⟨_, rfl⟩
-  have hT0 : 0 ≤ T := by rw [hT]; have := div_nonneg (sub_nonneg.mpr hVy₀) hμ.le; linarith
-  obtain ⟨-, -, hVg⟩ := hgrow T hT0 (fun u hu => (hstay T hT0 u hu).le)
-  have hfin := hregion _ (hstay T hT0 T ⟨hT0, le_rfl⟩).le
-  have h1 := hVg T ⟨hT0, le_rfl⟩
-  have h2 := hVb _ hfin.1
-  have h3 : μ * T = b - V y₀ + μ := by rw [hT]; field_simp
-  linarith
-
+/-! ## Degenerate points of the plane: degenerate node, nilpotent drift -/
 
 /-- A `C¹` real function is Lipschitz at a point on a ball. -/
 @[tmio T, powerlib_foundation] theorem exists_lipschitz_bound {g : State n → ℝ} (hg : ContDiff ℝ 1 g)
@@ -1823,15 +1674,8 @@ the drift `F ≈ F(x)` carries the solution to distance `2 C s³`. -/
     · linarith only [h2]
     · linarith only [h1]
   -- the solution from the seed, through a globally Lipschitz `C¹` field
-  obtain ⟨G, hG, hGf⟩ := hext (s ^ 3 / 2) (by positivity)
-  obtain ⟨Gt, hGt, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hG (‖x‖ + ρ)
-  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
-  have hGtf : ∀ y : State n, ‖y - x‖ < ρ → s ^ 3 / 2 ≤ y k → Gt y = f y := by
-    intro y hy hyk
-    rw [hGg y (by
-      have := norm_le_norm_add_norm_sub' y x
-      linarith)]
-    exact hGf y hy hyk
+  obtain ⟨ψ, hψ0, hψc, hψf⟩ := exists_halfBall_curve (c := fun y => y k) hext
+    (by positivity : (0 : ℝ) < s ^ 3 / 2) y₀
   obtain ⟨Φ, hΦ⟩ : ∃ Φ : State n → ℝ, Φ = fun y =>
       max (max (‖y - x‖ - ρ' / 2) (s ^ 3 / 2 - y k)) (|q y| - s ^ 5) := ⟨_, rfl⟩
   have hΦc : Continuous Φ := by
@@ -1846,8 +1690,7 @@ the drift `F ≈ F(x)` carries the solution to distance `2 C s³`. -/
     exact ⟨hy.1.1, hy.1.2, hy.2⟩
   have hseg : ∀ t, 0 ≤ t → (∀ u ∈ Icc 0 t, Φ (ψ u) ≤ 0) → IsTrajectoryOn ψ f 0 t := by
     intro t _ hin
-    exact isIntegralCurveOn_of_eq_on_curve (hψ.mono Icc_subset_Ici_self)
-      (fun u hu => hGtf _ (by linarith [(hregion _ (hin u hu)).1]) (hregion _ (hin u hu)).2.1)
+    exact hψf t fun u hu => ⟨by linarith [(hregion _ (hin u hu)).1], (hregion _ (hin u hu)).2.1⟩
   have hnear : ∀ t, IsTrajectoryOn ψ f 0 t → ∀ u ∈ Icc 0 t, ‖ψ u - x‖ ≤ C * s ^ 3 := by
     intro t hst u hu
     have h1 := hles 0 t ψ hst (by rw [hψ0, hy₀x]; exact hs3r) u hu
@@ -1874,7 +1717,7 @@ the drift `F ≈ F(x)` carries the solution to distance `2 C s³`. -/
   obtain ⟨T, hT⟩ : ∃ T, T = 4 * C * s ^ 3 / F0 := ⟨_, rfl⟩
   have hT0 : 0 ≤ T := by rw [hT]; positivity
   have hstay : ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
-    refine forall_lt_of_first_exit hΦc (hψ.continuousOn.mono Icc_subset_Ici_self) ?_ ?_
+    refine forall_lt_of_first_exit hΦc (hψc.mono Icc_subset_Ici_self) ?_ ?_
     · rw [hψ0]
       simp only [hΦ, max_lt_iff]
       refine ⟨⟨by rw [hy₀x]; linarith only [hs3C, hCs3], by rw [hy₀k]; linarith only [hs3p]⟩, ?_⟩

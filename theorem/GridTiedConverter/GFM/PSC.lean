@@ -22,8 +22,10 @@ Model boundary.
   T-power-synchronization-control §1.4), DC-link loop, current limiting / PLL backup, delay, PWM.
 * Power is export-positive (GFM family exception).
 
-Source: work-sync `theory/T-power-synchronization-control.md` §1.1–§1.3, §1.10;
-`theory/T-vsg-control.md` §1.7; `theory/T-gfm-control.md` §1.4.
+Source: work-sync `theory/T-power-synchronization-control.md` §1.1–§1.3;
+`theory/T-vsg-control.md` §1.7; `theory/T-gfm-control.md` §1.4. The droop reading of §1.10
+(`Δω = K_p (P* − P)` as droop with `D = 1/K_p`) is the static droop law `GFM.droop_deviation`
+(`theorem/GridTiedConverter/GFM/DroopAlgebra.lean`) with gain `K_p`; this module adds nothing to it.
 
 Results.
 * Equilibria `⇔ |P*| ≤ P_max`; equilibria with `cos δ₀ > 0` are locally exponentially stable and
@@ -35,7 +37,7 @@ Results.
 * Algebra (foundation): the steady-state active power, the converter-side reactive power and
   the grid-side received reactive power from `S̄ = V̄ Ī*` (`Grid.converterSide_power`,
   `Grid.gridSide_power`, `theorem/Grid/PowerFlow.lean`); the active-resistance
-  high-pass `R_a (H(s) − 1) = −R_a s/(s + ω_b)`; PSC as pure droop with `D = 1/K_p`.
+  high-pass `R_a (H(s) − 1) = −R_a s/(s + ω_b)`.
 
 Family and connection conclusions.
 `PSC.family`: a complete system (`PSC.Model`) is a parameter
@@ -520,13 +522,5 @@ end PSC
     (Ra : ℂ) * ((ωb : ℂ) / (s + (ωb : ℂ)) - 1) = -(Ra : ℂ) * s / (s + (ωb : ℂ)) := by
   field_simp
   ring
-
-/-- PSC frequency law `Δω = K_p (P* − P)` is the pure droop / zero-inertia swing law
-`0 = (P* − P) − D Δω` with `D = 1/K_p`. -/
-@[tmio T, powerlib_foundation] theorem psc_eq_droop {Kp Δω Pstar P : ℝ} (hK : Kp ≠ 0) :
-    Δω = Kp * (Pstar - P) ↔ 0 = (Pstar - P) - (1 / Kp) * Δω := by
-  constructor
-  · intro h; rw [h]; field_simp; ring
-  · intro h; field_simp at h; linarith
 
 end powerlib.GFM

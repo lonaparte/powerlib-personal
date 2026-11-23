@@ -718,7 +718,7 @@ makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for eve
     have hpow : ∀ k : ℕ, ‖M ^ k‖ ≤ C * ρ ^ k := fun k => by
       have h := hdec T hT k
       rwa [show -(α * ((k : ℝ) * T)) = (k : ℝ) * (-(α * T)) by ring, Real.exp_nat_mul] at h
-    apply (LTI.exponentiallyStable_iff_schurStable ⟨M⟩).mp
+    apply (LTI.exponentiallyStable_iff_schurStable M).mp
     refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
     rw [LTI.eq_response hx k, LTI.response]
     exact (Matrix.linfty_opNorm_mulVec _ _).trans
@@ -831,14 +831,13 @@ and the existence of switched trajectories). -/
     linarith
   -- the exponential over `t₁` is Schur stable
   have hS : LTI.SchurStable E := by
-    apply (LTI.exponentiallyStable_iff_schurStable ⟨E⟩).mp
+    apply (LTI.exponentiallyStable_iff_schurStable E).mp
     refine ⟨1, one_pos, max q 0, le_max_right _ _, max_lt hq1 one_pos, fun x hx k => ?_⟩
     induction k with
     | zero => simp
     | succ k ih =>
       rw [hx k]
-      calc ‖LTI.Model.step ⟨E⟩ (x k)‖ = ‖E *ᵥ x k‖ := rfl
-        _ ≤ q * ‖x k‖ := hE (x k)
+      calc ‖E *ᵥ x k‖ ≤ q * ‖x k‖ := hE (x k)
         _ ≤ max q 0 * ‖x k‖ := mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
         _ ≤ max q 0 * (1 * max q 0 ^ k * ‖x 0‖) :=
             mul_le_mul_of_nonneg_left ih (le_max_right _ _)

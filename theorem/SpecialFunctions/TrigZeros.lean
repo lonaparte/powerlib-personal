@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Dynamics.Calculus
+import theorem.SpecialFunctions.Sinusoid
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -31,15 +32,18 @@ Results.
 * `finite_ncard_le_natDegree_of_isRoot_cexp`: angles in one window `[a, a + 2π)` at which a nonzero
   complex polynomial `P` vanishes at `e^{jθ}` are finitely many, at most `deg P`.
 * `trigPoly2_zeroSet_finite`, `trigPoly2_ncard_zeroSet_le_four`: if the five coefficients are not
-  all zero, then in every period window `[a, a + 2π)` the zero set is finite and has at most four
+  all zero, then in every period window `[a, a + 2π)` the zero set (`zerosIco`,
+  `theorem/SpecialFunctions/Sinusoid.lean`) is finite and has at most four
   elements (distinct `θ` in a window give distinct `z` on the unit circle, all roots of `P ≠ 0`).
 * `trigPoly1_ncard_zeroSet_le_two`: a first-order trigonometric polynomial
   `c₀ + c₁ cos θ + s₁ sin θ`, not identically zero, has at most two zeros in every window
   `[a, a + 2π)` (`trigPoly1Poly`, a degree-≤-2 polynomial with `Q(e^{jθ}) = e^{jθ} h(θ)`,
   `trigPoly1_eval_cexp`).
-* `even_ncard_zeroSet_of_simple`: a general parity lemma — a continuous `T`-periodic function
-  whose zeros in each window are finitely many and all simple (nonzero derivative) has an even
-  number of zeros in every window `[a, a + T)` (sign changes around the circle).
+* `ncard_zeros_Ico_eq_of_periodic`: for a `T`-periodic function the number of zeros in a window
+  `[a, a + T)` does not depend on `a`. `even_ncard_zeroSet_of_simple`: a general parity lemma — a
+  continuous `T`-periodic function whose zeros in each window are finitely many and all simple
+  (nonzero derivative) has an even number of zeros in every window `[a, a + T)` (sign changes
+  around the circle).
 * `trigPoly2_even_ncard_zeroSet`, `trigPoly2_ncard_zeroSet_mem`: if every zero of `h` is simple,
   the number of zeros in a period is even, hence `0`, `2` or `4`.
 * `deriv_mul_neg_of_consecutive_simple_zeros`: at two consecutive simple zeros of a continuous
@@ -63,10 +67,6 @@ def trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) (θ : ℝ) : ℝ :=
 /-- `h'(θ) = −c₁ sin θ + s₁ cos θ − 2 c₂ sin 2θ + 2 s₂ cos 2θ`. -/
 def trigPoly2Deriv (c₁ s₁ c₂ s₂ : ℝ) (θ : ℝ) : ℝ :=
   -c₁ * Real.sin θ + s₁ * Real.cos θ - 2 * c₂ * Real.sin (2 * θ) + 2 * s₂ * Real.cos (2 * θ)
-
-/-- The zeros of `trigPoly2` in the period window `[a, a + 2π)`. -/
-def trigPoly2ZeroSet (c₀ c₁ s₁ c₂ s₂ a : ℝ) : Set ℝ :=
-  {θ | θ ∈ Ico a (a + 2 * Real.pi) ∧ trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0}
 
 @[tmio T, powerlib_foundation] theorem hasDerivAt_trigPoly2 (c₀ c₁ s₁ c₂ s₂ θ : ℝ) :
     HasDerivAt (trigPoly2 c₀ c₁ s₁ c₂ s₂) (trigPoly2Deriv c₁ s₁ c₂ s₂ θ) θ := by
@@ -196,21 +196,21 @@ complex polynomial vanishes at `e^{jθ}` form a finite set with at most `deg P` 
   exact h1.trans ((Multiset.toFinset_card_le _).trans (Polynomial.card_roots' P))
 
 @[tmio T, powerlib_foundation] theorem trigPoly2_zeroSet_mapsTo {c₀ c₁ s₁ c₂ s₂ a : ℝ} :
-    MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a)
+    MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi))
       {z | (trigPoly2Poly c₀ c₁ s₁ c₂ s₂).IsRoot z} := by
   intro θ hθ
   simp only [mem_ofPred_eq, IsRoot.def, trigPoly2_eval_cexp, hθ.2, ofReal_zero, mul_zero]
 
 @[tmio T, powerlib_foundation] theorem trigPoly2_zeroSet_finite {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).Finite :=
+    (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi)).Finite :=
   (finite_ncard_le_natDegree_of_isRoot_cexp (trigPoly2Poly_ne_zero hne) (fun _ h => h.1)
     fun _ hθ => trigPoly2_zeroSet_mapsTo hθ).1
 
 /-- At most four zeros in every period window, unless all coefficients vanish. -/
 @[tmio T, powerlib_foundation] theorem trigPoly2_ncard_zeroSet_le_four {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard ≤ 4 :=
+    (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi)).ncard ≤ 4 :=
   (finite_ncard_le_natDegree_of_isRoot_cexp (trigPoly2Poly_ne_zero hne) (fun _ h => h.1)
     fun _ hθ => trigPoly2_zeroSet_mapsTo hθ).2.trans (trigPoly2Poly_natDegree_le c₀ c₁ s₁ c₂ s₂)
 
@@ -256,7 +256,7 @@ def trigPoly1Poly (c₀ c₁ s₁ : ℝ) : ℂ[X] :=
 most two zeros in every window `[a, a + 2π)`. -/
 @[tmio T, powerlib_foundation] theorem trigPoly1_ncard_zeroSet_le_two {c₀ c₁ s₁ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a).ncard ≤ 2 := by
+    (zerosIco (trigPoly2 c₀ c₁ s₁ 0 0) a (2 * Real.pi)).ncard ≤ 2 := by
   refine (finite_ncard_le_natDegree_of_isRoot_cexp (trigPoly1Poly_ne_zero hne) (fun _ h => h.1)
     fun θ hθ => ?_).2.trans (trigPoly1Poly_natDegree_le c₀ c₁ s₁)
   simp only [IsRoot.def, trigPoly1_eval_cexp, hθ.2, ofReal_zero, mul_zero]
@@ -406,7 +406,7 @@ end Parity
 `a`. -/
 @[tmio T, powerlib_foundation] theorem ncard_zeros_Ico_eq_of_periodic {f : ℝ → ℝ} {T : ℝ} (hT : 0 < T)
     (hper : Function.Periodic f T) (a b : ℝ) :
-    {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}.ncard = {θ | θ ∈ Ico b (b + T) ∧ f θ = 0}.ncard := by
+    (zerosIco f a T).ncard = (zerosIco f b T).ncard := by
   have hval (x c : ℝ) : f (toIcoMod hT c x) = f x := by
     rw [toIcoMod]
     exact hper.sub_zsmul_eq _
@@ -430,19 +430,19 @@ end Parity
 has an even number of zeros in every window `[a, a + T)`. -/
 @[tmio T, powerlib_foundation] theorem even_ncard_zeroSet_of_simple {f : ℝ → ℝ} {T : ℝ} (hT : 0 < T)
     (hf : Continuous f) (hper : Function.Periodic f T)
-    (hfin : ∀ a, {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}.Finite)
+    (hfin : ∀ a, (zerosIco f a T).Finite)
     (hsimple : ∀ θ, f θ = 0 → ∃ g, g ≠ 0 ∧ HasDerivAt f g θ) (a : ℝ) :
-    Even {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}.ncard := by
+    Even (zerosIco f a T).ncard := by
   -- a base point that is not a zero
   obtain ⟨a₀, ha₀⟩ : ∃ a₀, f a₀ ≠ 0 := by
-    have hinf : (Ico a (a + T) \ {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}).Nonempty :=
+    have hinf : (Ico a (a + T) \ zerosIco f a T).Nonempty :=
       ((Ico_infinite (by linarith : a < a + T)).sdiff (hfin a)).nonempty
     obtain ⟨x, hx1, hx2⟩ := hinf
     exact ⟨x, fun h => hx2 ⟨hx1, h⟩⟩
   rw [ncard_zeros_Ico_eq_of_periodic hT hper a a₀]
-  have hset : {θ | θ ∈ Ico a₀ (a₀ + T) ∧ f θ = 0} = {θ | θ ∈ Ioo a₀ (a₀ + T) ∧ f θ = 0} := by
+  have hset : zerosIco f a₀ T = {θ | θ ∈ Ioo a₀ (a₀ + T) ∧ f θ = 0} := by
     ext θ
-    simp only [mem_ofPred_eq, mem_Ico, mem_Ioo]
+    simp only [zerosIco, mem_ofPred_eq, mem_Ico, mem_Ioo]
     constructor
     · rintro ⟨⟨h1, h2⟩, h3⟩
       refine ⟨⟨lt_of_le_of_ne h1 ?_, h2⟩, h3⟩
@@ -476,7 +476,7 @@ non-simple zero `0`). -/
 is even. -/
 @[tmio T, powerlib_foundation] theorem trigPoly2_even_ncard_zeroSet {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hsimple : ∀ θ, trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0 → trigPoly2Deriv c₁ s₁ c₂ s₂ θ ≠ 0)
-    (a : ℝ) : Even (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard :=
+    (a : ℝ) : Even (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi)).ncard :=
   even_ncard_zeroSet_of_simple (by positivity) (continuous_trigPoly2 _ _ _ _ _)
     (trigPoly2_periodic _ _ _ _ _) (trigPoly2_zeroSet_finite (coeffs_ne_zero_of_simple hsimple))
     (fun θ hθ => ⟨_, hsimple θ hθ, hasDerivAt_trigPoly2 _ _ _ _ _ θ⟩) a
@@ -485,8 +485,9 @@ is even. -/
 @[tmio T, powerlib_foundation] theorem trigPoly2_ncard_zeroSet_mem {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hsimple : ∀ θ, trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0 → trigPoly2Deriv c₁ s₁ c₂ s₂ θ ≠ 0)
     (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 0 ∨ (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 2 ∨
-      (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 4 := by
+    (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi)).ncard = 0 ∨
+      (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi)).ncard = 2 ∨
+      (zerosIco (trigPoly2 c₀ c₁ s₁ c₂ s₂) a (2 * Real.pi)).ncard = 4 := by
   have hle := trigPoly2_ncard_zeroSet_le_four (coeffs_ne_zero_of_simple hsimple) a
   obtain ⟨k, hk⟩ := trigPoly2_even_ncard_zeroSet hsimple a
   omega

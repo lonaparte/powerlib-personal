@@ -68,19 +68,6 @@ namespace powerlib.Numerics.EMT
 open Matrix LinearSystems
 open powerlib.Passive
 
-/-! ### Ideal three-state LCL plant -/
-
-/-- A passive, damped LCL plant has a Hurwitz state matrix.
-Read through the existing family endpoint. -/
-@[tmio TM, powerlib_domain] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
-    (hd : m.Damped) :
-    connection% (m ∈ LCL.family.den (.flow .globallyExponentiallyStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
-  exact (LCL.isHurwitz_plant_iff m).mpr ((show m.Stable ↔ m.Damped from by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
-        LCL.passive_stable_iff m hp).mpr hd)
-
 /-! ### Generated implementation interfaces -/
 
 /-- The fixed-step RL implementation family of an implicit method. -/
@@ -143,7 +130,7 @@ def lclRealization (method : ImplicitMethod) : Implementation LCL.Circuit LCL.Re
       TMIO.realize (lclFamily method).meets {.wellPosed}) := by
   unfold TMIO.Statement
   exact implicit_mem_wellPosed_of_design method LCL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh (lclMatrix_isHurwitz m hp hd)
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh (LCL.isHurwitz_of_passive m hp hd)
 
 /-- A passive damped LCL design gives a globally exponentially stable implicit LCL step. -/
 @[tmio TM, powerlib_domain] theorem idealLCLPlant_discretization_exponentiallyStable
@@ -153,7 +140,7 @@ def lclRealization (method : ImplicitMethod) : Implementation LCL.Circuit LCL.Re
       (lclFamily method).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   exact implicit_mem_den_of_design method LCL.family_isLinear
-    (P := .globallyExponentiallyStable) (Or.inl trivial) hh (lclMatrix_isHurwitz m hp hd)
+    (P := .globallyExponentiallyStable) (Or.inl trivial) hh (LCL.isHurwitz_of_passive m hp hd)
 
 /-- A passive LCL design's well-posed trapezoidal implementation is stable exactly when damped. -/
 @[tmio TM, powerlib_domain] theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff

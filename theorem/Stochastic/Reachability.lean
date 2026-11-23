@@ -25,6 +25,9 @@ Source: work-sync theory/T-reachability-stochastic.md (reach / safety probabilit
 Markov kernels: `V_N = 1`, `V_k(x) = ∫ 1_A(y) V_{k+1}(y) Q(x, dy)`).
 
 Results.
+* `condExp_add_mul_markov_step` — one backward Markov step: `E[Z | 𝓕_{k+1}] = G(X_{k+1})`
+  implies `E[a + b Z | 𝓕_k] = a + b ∫ G dQ(X_k)` for `𝓕_k`-measurable `a`, `b`; both recursions
+  below are inductions over it.
 * `safety_dp` — `P(X_{k+1}, …, X_{k+N} ∈ A | 𝓕_k) = V_N(X_k)` a.s. (dynamic programming).
 * `safety_prob_eq` — `P(X_1, …, X_N ∈ A) = E[V_N(X_0)]`; the hitting probability of `Aᶜ`
   within `N` steps is `1 − E[V_N(X_0)]`.
@@ -115,6 +118,32 @@ omit [MeasurableSpace E] in
   refine prod_le_one₀ (fun i _ => abs_nonneg _) fun i _ => ?_
   by_cases h : X (k + 1 + i) ω ∈ A <;> simp [h]
 
+/-- **One backward Markov step** (the common step of `safety_dp` and `reachAvoid_dp`): if
+`E[Z | 𝓕_{k+1}] = G(X_{k+1})` for a bounded measurable `G`, then for `𝓕_k`-measurable `a`, `b`
+(`a`, `b Z` integrable), `E[a + b Z | 𝓕_k] = a + b ∫ G dQ(X_k)` almost surely. -/
+@[tmio T, powerlib_foundation] theorem condExp_add_mul_markov_step {P : Measure Ω}
+    [IsProbabilityMeasure P] {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E}
+    {Q : Kernel E E}
+    (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
+      P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] fun ω => ∫ y, g y ∂(K s t (X s ω)))
+    (hQ : ∀ k, K k (k + 1) = Q) {k : ℕ} {G : E → ℝ} (hG : Measurable G)
+    (hGb : ∃ C, ∀ y, |G y| ≤ C) {Z a b : Ω → ℝ} (hZ : Integrable Z P)
+    (hZG : P[Z | 𝓕 (k + 1)] =ᵐ[P] fun ω => G (X (k + 1) ω))
+    (ha : StronglyMeasurable[𝓕 k] a) (hai : Integrable a P) (hb : StronglyMeasurable[𝓕 k] b)
+    (hbZ : Integrable (b * Z) P) :
+    P[a + b * Z | 𝓕 k] =ᵐ[P] fun ω => a ω + b ω * ∫ y, G y ∂(Q (X k ω)) := by
+  have hadd := condExp_add hai hbZ (𝓕 k) (μ := P)
+  rw [condExp_of_stronglyMeasurable (𝓕.le k) ha hai] at hadd
+  have hpull := condExp_mul_of_stronglyMeasurable_left hb hbZ hZ
+  -- tower property, then the Markov step `k → k + 1`
+  have hZk : P[Z | 𝓕 k] =ᵐ[P] fun ω => ∫ y, G y ∂(Q (X k ω)) := by
+    refine (condExp_condExp_of_le (𝓕.mono (Nat.le_succ k)) (𝓕.le (k + 1)) (μ := P)
+      (f := Z)).symm.trans ((condExp_congr_ae hZG).trans
+        ((h k (k + 1) (Nat.le_succ k) G hG hGb).trans ?_))
+    exact Filter.Eventually.of_forall fun ω => by simp only [hQ]
+  filter_upwards [hadd, hpull, hZk] with ω h1 h2 h3
+  rw [h1, Pi.add_apply, h2, Pi.mul_apply, h3]
+
 /-- **Dynamic programming for safety probabilities**:
 `P(X_{k+1}, …, X_{k+N} ∈ A | 𝓕_k) = V_N(X_k)` almost surely. -/
 @[tmio T, powerlib_foundation] theorem safety_dp {P : Measure Ω} [IsProbabilityMeasure P]
@@ -147,9 +176,6 @@ omit [MeasurableSpace E] in
           by_cases hω : X (k + 1) ω ∈ A <;> simp [hind, hω])
     have hprod : stayIn X A k (N + 1) = ind * stayIn X A (k + 1) N := by
       rw [stayIn_succ]; rfl
-    -- tower property
-    have htower := condExp_condExp_of_le (𝓕.mono (Nat.le_succ k)) (𝓕.le (k + 1))
-      (μ := P) (f := stayIn X A k (N + 1))
     -- inner conditional expectation
     have hinner : P[stayIn X A k (N + 1) | 𝓕 (k + 1)] =ᵐ[P]
         fun ω => A.indicator (safeValue Q A N) (X (k + 1) ω) := by
@@ -167,10 +193,12 @@ omit [MeasurableSpace E] in
       by_cases hy : y ∈ A
       · rw [Set.indicator_of_mem hy, abs_of_nonneg hb.1]; exact hb.2
       · rw [Set.indicator_of_notMem hy]; norm_num⟩
-    have hmk := h k (k + 1) (Nat.le_succ k) _ hg hgb
-    refine htower.symm.trans ((condExp_congr_ae hinner).trans (hmk.trans ?_))
-    refine Filter.Eventually.of_forall fun ω => ?_
-    simp only [hQ, safeValue]
+    -- one backward step with `a = 0`, `b = 1`
+    have hstep := condExp_add_mul_markov_step h hQ hg hgb (hint k (N + 1)) hinner
+      (a := 0) (b := 1) stronglyMeasurable_const (integrable_zero _ _ _) stronglyMeasurable_const
+      (by simpa using hint k (N + 1))
+    simp only [zero_add, one_mul, Pi.zero_apply, Pi.one_apply] at hstep
+    exact hstep
 
 /-- **Safety probability from the initial law**: `P(X_1, …, X_N ∈ A) = E[V_N(X_0)]`. -/
 @[tmio T, powerlib_foundation] theorem safety_prob_eq {P : Measure Ω} [IsProbabilityMeasure P]
@@ -344,25 +372,14 @@ omit [MeasurableSpace E] in
           have h1 := reachAvoid_abs_le X T D N (k + 1) ω
           simp only [Pi.mul_apply, Real.norm_eq_abs, abs_mul, hb, hR]
           by_cases hω : X k ω ∈ D \ T <;> simp [hω, h1])
-    have hadd := condExp_add (hbdd T k hT) hbR (𝓕 k) (μ := P)
-    rw [condExp_of_stronglyMeasurable (𝓕.le k) (hindT k) (hbdd T k hT)] at hadd
-    have hpull := condExp_mul_of_stronglyMeasurable_left (hindD k) hbR (hint N (k + 1))
-    -- `E[R | 𝓕_k] = E[W_N(X_{k+1}) | 𝓕_k] = ∫ W_N dQ(X_k)`
-    have htower := condExp_condExp_of_le (𝓕.mono (Nat.le_succ k)) (𝓕.le (k + 1))
-      (μ := P) (f := R)
-    have hg : Measurable (reachValue Q T D N) :=
-      (reachValue_stronglyMeasurable Q hT hD N).measurable
     have hgb : ∃ C, ∀ y, |reachValue Q T D N y| ≤ C := ⟨1, fun y => by
       have := reachValue_mem_Icc Q T D N y
       rw [abs_of_nonneg this.1]; exact this.2⟩
-    have hmk := h k (k + 1) (Nat.le_succ k) _ hg hgb
-    have hRk : P[R | 𝓕 k] =ᵐ[P] fun ω => ∫ y, reachValue Q T D N y ∂(Q (X k ω)) := by
-      refine htower.symm.trans ((condExp_congr_ae (ih (k + 1))).trans (hmk.trans ?_))
-      refine Filter.Eventually.of_forall fun ω => ?_
-      simp only [hQ]
     rw [hsplit]
-    filter_upwards [hadd, hpull, hRk] with ω h1 h2 h3
-    rw [h1, Pi.add_apply, h2, Pi.mul_apply, h3]
+    filter_upwards [condExp_add_mul_markov_step h hQ
+      (reachValue_stronglyMeasurable Q hT hD N).measurable hgb (hint N (k + 1)) (ih (k + 1))
+      (hindT k) (hbdd T k hT) (hindD k) hbR] with ω hω
+    rw [hω]
     simp only [reachValue]
 
 /-! ## Continuous-time HJB: verification theorem (deterministic optimal control)

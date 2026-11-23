@@ -3,6 +3,7 @@ import theorem.PhasePlane.Planar
 import theorem.PhasePlane.Conservative
 import theorem.NormalForm.BogdanovTakens
 import theorem.Linear.EigenMap
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # PI phase-locked loop with a general phase-detector characteristic: the static model
 
@@ -34,7 +35,9 @@ Source: work-sync `theory/T-gfl-dynamics.md` §1.7 (boxed 2D ODE), §1.9 (equili
 equilibria-and-bifurcation.md` §1, §3 (written with `δω = 0`).
 
 Results.
-* Equilibria (`K_i ≠ 0`): exactly `{(θ*, δω / K_i) : h(θ*) = 0}`, for **every** constant `δω`.
+* Equilibria (`K_i ≠ 0`): exactly `{(θ*, δω / K_i) : h(θ*) = 0}`, for **every** constant `δω`;
+  with `θ*` in a window `[α, α + T)` they are counted by the zeros of `h` there
+  (`piPLL_equilibria_window`, `piPLL_ncard_equilibria_window`, `SpecialFunctions.zerosIco`).
   Hence existence of an equilibrium does not depend on `δω`. With `K_i = 0` an equilibrium needs
   `δω = 0` (`piPLLField_point_eq_zero_iff` covers both cases at the selected point).
 * Jacobian at any point: `[[K_p g, K_i], [g, 0]]` with `g = h'(θ)`, the proportional structure
@@ -50,13 +53,11 @@ Results.
 Correction (`T-gfl-dynamics` §1.12, `Σ_FD`, and §1.14 region D): the note claims that when
 `|δω| > K_p max |h|` "the system loses all equilibria". This is false for the reduced model of
 §1.7: the PI integrator absorbs any constant frequency offset, the equilibria are
-`(θ*, δω / K_i)` with the same `θ*` for every `δω`. `piPLL_exists_equilibrium_iff` and
-`piPLL_frequencyDriftBoundary_refuted` state this statically; the connection conclusions
-`PIPLL.frequencyDriftBoundary_refuted` and `PIPLL.frequencyDriftBoundary_stable` of
-`PIPLLFamily` refute the claim through the family's requirement and semantics connections. The
-note now states the boundary for a frequency ramp `ρ`; `PIPLLFamily` reads the ramped loop as the
-model `m.ramp ρ` with detector `h − ρ/K_i` (`PIPLL.ramp_hasDerivAt_iff`) and proves the boundary
-(`PIPLL.frequencyRampBoundary`: every ramp model is unstable when `ρ/K_i` leaves the range of `h`).
+`(θ*, δω / K_i)` with the same `θ*` for every `δω` (`piPLL_equilibria_eq`,
+`piPLL_exists_equilibrium_iff`). The note now states the boundary for a frequency ramp `ρ`;
+`PIPLLFamily` reads the ramped loop as the model `m.ramp ρ` with detector `h − ρ/K_i`
+(`PIPLL.ramp_hasDerivAt_iff`) and proves the boundary (`PIPLL.frequencyRampBoundary`: every ramp
+model is unstable when `ρ/K_i` leaves the range of `h`).
 
 Sign conventions of the sources. `T-gfl-dynamics` §1.7, `T-gfl-ph` (1.1) and this module use
 `θ̇ = K_p h + K_i η − δω`. The vsc note and `T-bogdanov-takens` §1.6 drop `δω` (take `δω = 0`).
@@ -247,6 +248,32 @@ Static evidence, not a connection conclusion. -/
   · rintro ⟨θ, hθ, rfl⟩
     exact ⟨hθ, rfl⟩
 
+/-- The equilibria with `θ` in a window `[α, α + T)` (`K_i ≠ 0`) are the points `(θ*, δω / K_i)`,
+`θ*` a zero of `h` in the window. Static evidence, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem piPLL_equilibria_window {h : ℝ → ℝ} {Kp Ki δω : ℝ}
+    (hKi : Ki ≠ 0) (α T : ℝ) :
+    {x : ℝ² | piPLLField h Kp Ki δω x = 0 ∧ x 0 ∈ Set.Ico α (α + T)} =
+      (fun θ => PhasePlane.mk θ (δω / Ki)) '' SpecialFunctions.zerosIco h α T := by
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_image, SpecialFunctions.zerosIco,
+    piPLLField_eq_zero_iff hKi]
+  constructor
+  · rintro ⟨⟨hz, h1⟩, hw⟩
+    exact ⟨x 0, ⟨hw, hz⟩, by rw [← h1, PhasePlane.mk_coords]⟩
+  · rintro ⟨θ, ⟨hw, hz⟩, rfl⟩
+    simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+    exact ⟨⟨hz, trivial⟩, hw⟩
+
+/-- Counting law: there are as many equilibria with `θ` in a window `[α, α + T)` as zeros of `h`
+there (`K_i ≠ 0`). Static evidence, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem piPLL_ncard_equilibria_window {h : ℝ → ℝ} {Kp Ki δω : ℝ}
+    (hKi : Ki ≠ 0) (α T : ℝ) :
+    {x : ℝ² | piPLLField h Kp Ki δω x = 0 ∧ x 0 ∈ Set.Ico α (α + T)}.ncard =
+      (SpecialFunctions.zerosIco h α T).ncard := by
+  rw [piPLL_equilibria_window hKi α T]
+  refine Set.ncard_image_of_injective _ fun θ θ' e => ?_
+  simpa using congrArg (fun x : ℝ² => x 0) e
+
 /-- Existence of an equilibrium does not depend on the constant frequency offset `δω`.
 Static evidence, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem piPLL_exists_equilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ}
@@ -268,22 +295,6 @@ Static evidence, not a connection conclusion. -/
     simp
   · rw [piPLLField_eq_zero_iff hKi]
     simp [hKi]
-
-/-! ## Refutation of the frequency-drift boundary `Σ_FD` -/
-
-/-- `T-gfl-dynamics` §1.12 claims: if `|δω| > K_p max |h|`, the reduced PLL loses all
-equilibria. Counterexample: `h = −sin`, `K_p = K_i = 1`, `|h| ≤ 1`, `δω = 2`; the point
-`(0, 2)` is an equilibrium. Static evidence about the equilibrium set, not a connection
-conclusion; `PIPLL.frequencyDriftBoundary_refuted` (requirement connection) and
-`PIPLL.frequencyDriftBoundary_stable` (semantics connection: the point is even locally
-exponentially stable) in `PIPLLFamily` are the connection forms. -/
-@[tmio M, powerlib_domain] theorem piPLL_frequencyDriftBoundary_refuted :
-    ¬ (∀ (h : ℝ → ℝ) (Kp Ki δω M : ℝ), 0 < Kp → 0 < Ki → (∀ θ, |h θ| ≤ M) →
-        Kp * M < |δω| → ¬ ∃ x, piPLLField h Kp Ki δω x = 0) := by
-  intro H
-  apply H (fun θ => -Real.sin θ) 1 1 2 1 one_pos one_pos
-    (fun θ => by rw [abs_neg]; exact Real.abs_sin_le_one θ) (by norm_num)
-  exact ⟨PhasePlane.mk 0 2, (piPLLField_eq_zero_iff one_ne_zero _).mpr ⟨by simp, by simp⟩⟩
 
 /-! ## The SRF detector and the PI-PLL energy -/
 

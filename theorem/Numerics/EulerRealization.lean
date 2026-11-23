@@ -99,8 +99,6 @@ Family and connection conclusions.
   `not_euler_realizationSoundUnder_of_large_step` (for one implementation pass
   `(hC _).contDiffAt` to `not_euler_realizationSoundUnder_local`; the positive law needs only
   `(hC x).contDiffAt`).
-* `not_euler_realizationSoundUnder_of_neg` (`n > 0`, any family): an implementation of a design
-  with the field `ż = −z` and step `h = 3` is a witness (the Euler map is `z ↦ −2 z`).
 * The instances' implementation type `EulerStep X` (a design model and a positive step), whose
   integrations include arbitrarily large steps (`EulerStep.exists_le_h`), closes the large-step
   hypothesis once: `not_eulerStep_realizationSoundUnder_local` (a locally exponentially stable
@@ -426,51 +424,5 @@ exponentially stable model refutes realization soundness
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact not_eulerStep_realizationSoundUnder_local hF hn (hC x).contDiffAt hx
-
-/-- A complex eigenvalue of a real scalar matrix `c I` is `c`. -/
-@[tmio T, powerlib_foundation] private theorem eigen_smul_one {c : ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
-    (heig : (c • (1 : Matrix (Fin n) (Fin n) ℝ)).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
-    μ = c := by
-  have hmap : (c • (1 : Matrix (Fin n) (Fin n) ℝ)).map (algebraMap ℝ ℂ) =
-      (c : ℂ) • (1 : Matrix (Fin n) (Fin n) ℂ) := by
-    ext i j
-    by_cases hij : i = j <;> simp [hij]
-  rw [hmap, Matrix.smul_mulVec, Matrix.one_mulVec] at heig
-  have h0 : ((c : ℂ) - μ) • v = 0 := by rw [sub_smul, heig, sub_self]
-  rcases smul_eq_zero.mp h0 with h | h
-  · exact (sub_eq_zero.mp h).symm
-  · exact absurd h hv
-
-/-- The field `ż = −z` with step `h = 3` is a witness (`n > 0`): its Euler map is `z ↦ −2 z`. An
-implementation of a design with this field and this step refutes realization soundness without a
-step constraint. -/
-@[tmio TM, powerlib_foundation] theorem not_euler_realizationSoundUnder_of_neg (hF : F.IsAutonomous f)
-    (hn : 0 < n) (y : Y) (hx : f (design y) = fun z => -z) (hy : step y = 3) :
-    connection% (¬ (euler F f design step).RealizationSoundUnder ∅
-      (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  have hJ : fderiv ℝ (f (design y)) 0 = Linear.op ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) := by
-    have hd := (hasFDerivAt_id (𝕜 := ℝ) (0 : ℝⁿ)).const_smul (-1 : ℝ)
-    have hop : Linear.op ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) =
-        (-1 : ℝ) • ContinuousLinearMap.id ℝ ℝⁿ := by
-      rw [Linear.op, map_smul, map_one, ContinuousLinearMap.one_def]
-    rw [hx, hop, ← hd.fderiv]
-    congr 1
-    funext z
-    simp
-  have hA : IsHurwitz ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) := by
-    rw [Linear.isHurwitz_iff_forall_eigen]
-    intro μ v hv heig
-    rw [eigen_smul_one hv heig]
-    norm_num
-  obtain ⟨B, hB, hS⟩ := exists_inverse_schurStable_of_forall_eigen (h := step y)
-    (A := (-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) (by rw [hy]; norm_num) fun μ v hv heig => by
-      rw [eigen_smul_one hv heig, hy]
-      norm_num
-  have hC : ContDiffAt ℝ 1 (f (design y)) 0 := by
-    rw [hx]
-    exact contDiffAt_id.neg
-  exact not_euler_realizationSoundUnder_local hF hn y _ B hC hJ (by rw [hx]; exact neg_zero)
-    hA hB hS
 
 end powerlib.Numerics

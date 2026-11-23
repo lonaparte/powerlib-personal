@@ -33,7 +33,8 @@ Results.
   the zero-input system is globally exponentially stable (`Flow.GloballyExponentiallyStable` of
   the affine linear field, through `Linear.globallyExponentiallyStable_of_isHurwitz`).
 * `isHurwitz_of_lt_epsStar` — the proof is Kokotović's composite Lyapunov argument, not spectral
-  continuity: in the coordinates `η = z + A₂₂⁻¹ A₂₁ x`, `V = xᵀ P₀ x + ηᵀ P₂ η` with
+  continuity: in the coordinates `η = z + A₂₂⁻¹ A₂₁ x` (slow and fast equations `slowField_eq`,
+  `A22_mulVec_gain`, `coordChange_blockMatrix`), `V = xᵀ P₀ x + ηᵀ P₂ η` with
   `P₀ A₀ + A₀ᵀ P₀ = -I`, `P₂ A₂₂ + A₂₂ᵀ P₂ = -I` (LeanForControl's Lyapunov solutions). Given
   these, `ε*` is explicit: `epsStar P₀ P₂ = 1 / (2 c + 1)` with
   `c = S (2S + 1)/2 + S₃`, `S = |P₀ A₁₂|₁ + |P₂ L A₀|₁`, `S₃ = |P₂ L A₁₂|₁`, `L = A₂₂⁻¹ A₂₁`,
@@ -173,6 +174,17 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
   rw [fromBlocks_mulVec]
   simp [sumElim_dotProduct_sumElim]
 
+/-- The slow equation in `(x, η)` coordinates, `η = z + L x`: `A₁₁x + A₁₂z = A₀x + A₁₂η`. -/
+@[tmio T, powerlib_foundation] theorem slowField_eq (x : Fin n → ℝ) (z : Fin m → ℝ) :
+    sp.A11 *ᵥ x + sp.A12 *ᵥ z = sp.reducedMatrix *ᵥ x + sp.A12 *ᵥ (z + sp.gain *ᵥ x) := by
+  simp only [reducedMatrix, gain, mulVec_add, sub_mulVec, ← mulVec_mulVec, Matrix.mul_assoc]
+  abel
+
+/-- The fast equation in `(x, η)` coordinates: `A₂₂ L x = A₂₁ x` (`A₂₂` invertible). -/
+@[tmio T, powerlib_foundation] theorem A22_mulVec_gain (hA22 : IsUnit sp.A22.det) (x : Fin n → ℝ) :
+    sp.A22 *ᵥ (sp.gain *ᵥ x) = sp.A21 *ᵥ x := by
+  rw [mulVec_mulVec, gain, ← Matrix.mul_assoc, mul_nonsing_inv _ hA22, Matrix.one_mul]
+
 /-- In `(x, η)` coordinates the full dynamics read `ẋ = A₀ x + A₁₂ η`,
 `η̇ = L (A₀ x + A₁₂ η) + A₂₂ η / ε`. -/
 @[tmio T, powerlib_foundation] theorem coordChange_blockMatrix (hA22 : IsUnit sp.A22.det) (ε : ℝ)
@@ -180,14 +192,10 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
     sp.coordChange *ᵥ (sp.blockMatrix ε *ᵥ Sum.elim x (η - sp.gain *ᵥ x)) =
       Sum.elim (sp.reducedMatrix *ᵥ x + sp.A12 *ᵥ η)
         (sp.gain *ᵥ (sp.reducedMatrix *ᵥ x + sp.A12 *ᵥ η) + ε⁻¹ • (sp.A22 *ᵥ η)) := by
-  have hslow : sp.A11 *ᵥ x + sp.A12 *ᵥ (η - sp.gain *ᵥ x) =
-      sp.reducedMatrix *ᵥ x + sp.A12 *ᵥ η := by
-    simp only [reducedMatrix, gain, sub_mulVec, mulVec_sub, ← mulVec_mulVec, Matrix.mul_assoc]
-    abel
+  have hslow := sp.slowField_eq x (η - sp.gain *ᵥ x)
+  rw [sub_add_cancel] at hslow
   have hfast : sp.A21 *ᵥ x + sp.A22 *ᵥ (η - sp.gain *ᵥ x) = sp.A22 *ᵥ η := by
-    simp only [gain, mulVec_sub, mulVec_mulVec, ← Matrix.mul_assoc, mul_nonsing_inv _ hA22,
-      Matrix.one_mul]
-    abel
+    rw [mulVec_sub, sp.A22_mulVec_gain hA22]; abel
   rw [blockMatrix, fromBlocks_mulVec]
   simp only [Sum.elim_comp_inl, Sum.elim_comp_inr, smul_mulVec, ← smul_add]
   rw [hslow, hfast, coordChange, fromBlocks_mulVec]

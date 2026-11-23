@@ -30,8 +30,9 @@ Results.
 * `exists_factor_of_posSemidef` — every `Σ ⪰ 0` is `σ̃ σ̃ᵀ` (continuous functional calculus
   square root, i.e. the spectral construction); `mergedCov_eq`: the explicit block factor
   `[h_N | B_S σ_S]` of `Σ_tot`; `mergedCov_posSemidef`.
-* `rlc_fdt` — linear pH `A = (J − R) Q`, `h hᵀ = 2 T R`, `Q ≻ 0` ⇒ `P = T Q⁻¹` solves
-  `A P + P Aᵀ + h hᵀ = 0`, and `½ tr(Q P) = (n/2) T` (`= T` for the two-state RLC).
+* `rlc_fdt` — linear pH `A = (J − R) Q`, `h hᵀ = 2 T R`, `Q` symmetric and invertible (e.g.
+  `Q ≻ 0`) ⇒ `P = T Q⁻¹` solves `A P + P Aᵀ + h hᵀ = 0`; `rlc_equipartition`: for `Q ≻ 0`,
+  `½ tr(Q P) = (n/2) T` (`= T` for the two-state RLC).
 
 Corrections.
 * T-sph §1.5: the note says "the diffusion `h` is the same in (1.1) and (1.11) ⇔ `∂ₓh · h = 0`".
@@ -140,13 +141,12 @@ def mergedCov {qN qS : ℕ} (hN : Matrix (Fin n) (Fin qN) ℝ) (BS : Matrix (Fin
 
 /-! ## Linear RLC: fluctuation–dissipation (T-sph §2.7(a)) -/
 
-/-- Linear pH `ẋ = (J − R) Q x` with noise `h hᵀ = 2 T R`: the Gibbs covariance `P = T Q⁻¹`
-solves the stationary covariance equation. -/
+/-- Linear pH `ẋ = (J − R) Q x` with noise `h hᵀ = 2 T R` and a symmetric invertible Hessian `Q`
+(for instance `Q ≻ 0`): the Gibbs covariance `P = T Q⁻¹` solves the stationary covariance
+equation. -/
 @[tmio T, powerlib_foundation] theorem rlc_fdt {J R Q : Matrix (Fin n) (Fin n) ℝ} {T : ℝ}
-    (hJ : Jᵀ = -J) (hR : Rᵀ = R) (hQ : Q.PosDef) :
+    (hJ : Jᵀ = -J) (hR : Rᵀ = R) (hQt : Qᵀ = Q) (hdet : IsUnit Q.det) :
     Lyapunov.SolvesCovLyapunov ((J - R) * Q) (T • Q⁻¹) ((2 * T) • R) := by
-  have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
-  have hdet : IsUnit Q.det := (isUnit_iff_ne_zero).mpr hQ.det_pos.ne'
   have hQQ : Q * Q⁻¹ = 1 := mul_nonsing_inv Q hdet
   have hQQ' : Q⁻¹ * Q = 1 := nonsing_inv_mul Q hdet
   unfold Lyapunov.SolvesCovLyapunov

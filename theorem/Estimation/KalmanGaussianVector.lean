@@ -35,7 +35,7 @@ Results.
 * `gaussian_condCov_eq` — `E[(X_i − x̂_i)(X_i' − x̂_i') | Y] = Σ_XX,ii' − Σ_j K_ij Σ_XY,i'j` a.s.
 * `kalman_update_condExp_condCov` — one-step measurement update: prior `X` Gaussian with mean
   `m`, covariance `P⁻`; noise `V` Gaussian, mean `0`, covariance `R`, independent of `X`;
-  `Y = H X + V`. For `K (H P⁻ Hᵀ + R) = P⁻ Hᵀ` (`kalmanGain_mul_innov` for the Kalman gain),
+  `Y = H X + V`. For `K (H P⁻ Hᵀ + R) = P⁻ Hᵀ` (the Kalman gain, Mathlib `nonsing_inv_mul`),
   `E[X | Y] = m + K (Y − H m)` and the conditional covariance is `(I − K H) P⁻` a.s.
 
 Proof (orthogonal decomposition). The error `e = X − K Y` and `Y` are jointly Gaussian (a
@@ -253,7 +253,7 @@ variable {X : Fin n → Ω → ℝ} {V : Fin p → Ω → ℝ}
 model).**  Let the prior state `X ∈ ℝⁿ` be Gaussian with mean `m` and covariance `P⁻`, the noise
 `V ∈ ℝᵖ` Gaussian with mean `0` and covariance `R`, `X` and `V` independent, and `Y = H X + V`.
 For any gain `K` with `K (H P⁻ Hᵀ + R) = P⁻ Hᵀ` (the Kalman gain `P⁻ Hᵀ S⁻¹` when the innovation
-covariance `S` is invertible, `kalmanGain_mul_innov`):
+covariance `S` is invertible, Mathlib `nonsing_inv_mul`):
 * `E[X_i | Y] = m_i + Σ_j K_ij (Y_j − (H m)_j)` a.s. — the Kalman update `x̂⁺ = m + K(y − H m)`;
 * `E[(X_i − x̂⁺_i)(X_i' − x̂⁺_i') | Y] = ((I − K H) P⁻)_ii'` a.s. — the Kalman posterior
   covariance is the (deterministic) conditional covariance. -/

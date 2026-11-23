@@ -78,7 +78,7 @@ unavailable translation coverage. `chain_le_semantics` proves every translation 
 linearization (`Spectral.chain_le_semantics_of_jacobian`); `family_isAutonomous.exact_passive`
 proves the passivity translation exact. The stability results
 are connection memberships (`mem_den_locallyExponentiallyStable_of_cos_two_mul_pos`, `…_of_abs_lt`,
-`mem_den_unstable_of_cos_two_mul_neg`, `…_of_pi_div_four_lt`, with
+`mem_den_unstable_of_cos_two_mul_neg`, with
 `not_mem_den_lyapunovStable_of_cos_two_mul_neg`); `equilibrium_exists_iff` is static evidence on the
 model. The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the
 converse linearization theorem (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local
@@ -588,14 +588,6 @@ equilibrium is unstable (fold side of the branch). -/
   show 0 < (jac p θ Id).det
   rw [det_jac p heq.1, neg_pos]
   exact (a0_neg_iff p hV hki hkP).mpr hcos2
-
-/-- Same, stated with the angle: `π/4 < θ < π/2`. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_pi_div_four_lt (p : Params) (hV : p.V ≠ 0)
-    (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id) (h1 : Real.pi / 4 < θ)
-    (h2 : θ < Real.pi / 2) :
-    connection% (Model.mk p θ Id ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable_of_cos_two_mul_neg p hV hki hkP heq
-    (Real.cos_neg_of_pi_div_two_lt_of_lt (by linarith) (by linarith [Real.pi_pos]))
 
 /-- On the fold side of the branch (`cos 2θ < 0`) the equilibrium is not Lyapunov stable. -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_lyapunovStable_of_cos_two_mul_neg (p : Params)

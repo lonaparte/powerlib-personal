@@ -40,8 +40,8 @@ Results.
   `det_characteristicMatrix_fin_four` computes the coefficients of a general 4×4 matrix
   (`invariants_of_blockTriangular_fin_four`: those of a block-triangular matrix from its two
   diagonal 2×2 blocks);
-  `isHurwitz_fin_four_iff` is the 4×4 iff in trace / principal-minor / determinant form and
-  `isHurwitz_companion_four_iff` the companion form. `RouthFin4 J` is that condition list and
+  `isHurwitz_fin_four_iff` is the 4×4 iff in trace / principal-minor / determinant form.
+  `RouthFin4 J` is that condition list and
   `RouthViolationFin4 J` its strict violation (each disjunct places a characteristic root in the
   open right half plane, `exists_eigenvalue_re_pos_of_violation_fin_four`). For a matrix whose
   characteristic determinant is a given monic quartic, its trace, principal-minor sums and
@@ -474,16 +474,6 @@ real part. -/
     (det_characteristicMatrix_fin_four_quartic A)
     ((routhViolationFin4_iff_of_det_characteristicMatrix_quartic A
       (det_characteristicMatrix_fin_four_quartic A)).1 h)
-
-/-- Companion form of `s ^ 4 + a3 s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_companion_four_iff (a0 a1 a2 a3 : ℝ) :
-    LinearSystems.IsHurwitz
-        !![0, 1, 0, 0; 0, 0, 1, 0; 0, 0, 0, 1; -a0, -a1, -a2, -a3] ↔
-      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
-  refine isHurwitz_iff_of_det_characteristicMatrix_quartic _ fun s => ?_
-  rw [det_characteristicMatrix_fin_four]
-  simp [Matrix.trace, Fin.sum_univ_four, principalMinorSum2Fin4, principalMinorSum3Fin4,
-    det_fin_four]
 
 end FinFour
 

@@ -8,6 +8,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Dynamics.Shift
 import theorem.Criteria.Hurwitz2
+import theorem.GridTiedConverter.GFL.DCLink.PowerBalance
 
 /-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop
 
@@ -16,7 +17,7 @@ Model boundary.
   Per-unit (system base, no `3/2` factor), continuous time, nonlinear (bilinear power balance).
 * Direction (work-sync `conventions.md` §D1/§D3/§D9): AC current `i_d` IN-positive, AC power
   absorb-positive `P_ac = V_d i_d` (`V_q = 0`, PLL aligned); `i_src` is the DC source current
-  injected into the capacitor node. DC node: `C dV_dc/dt = i_src + P_ac / V_dc`
+  injected into the capacitor node. DC node: `C dV_dc/dt = i_src + P_ac / V_dc` (`nodeRate`)
   (T-vsc-dc-voltage-control §1.1 boxed, lossless bridge `P_bridge = P_ac`).
 * Idealizations: ideal current tracking `i_d = i_d*` (inner loop, PWM, delay eliminated);
   stiff PCC voltage `V_d > 0` constant; no PLL dynamics; DC leakage `G_dc = 0`; filter losses
@@ -114,19 +115,11 @@ open Matrix Filter
 open scoped Topology
 open powerlib.Dynamics LinearSystems
 
-/-! ## Positive DC voltage -/
-
-/-- The open set `V_dc > 0` of DC states. -/
-def posDC (n : ℕ) [NeZero n] : Set (State n) := {x | 0 < x 0}
-
-@[tmio M, powerlib_domain] theorem isOpen_posDC (n : ℕ) [NeZero n] : IsOpen (posDC n) :=
-  isOpen_lt continuous_const ((EuclideanSpace.proj (0 : Fin n)).continuous)
-
 /-! ## Open loop -/
 
-/-- Open-loop DC node: `C dV/dt = i_src + P / V` with constant `P = V_d I_d0`. -/
+/-- Open-loop DC node: `C dV/dt = i_src + P / V` (`nodeRate`) with constant `P = V_d I_d0`. -/
 def openField (C isrc P : ℝ) (x : State 1) : State 1 :=
-  WithLp.toLp 2 ![(isrc + P / x 0) / C]
+  WithLp.toLp 2 ![nodeRate C isrc P (x 0)]
 
 /-- Equilibrium state `V_dc = V0`. -/
 def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
@@ -135,34 +128,28 @@ def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
     openField C (-(P / V0)) P (dcState V0) = 0 := by
   ext i
   fin_cases i
-  simp [openField, dcState]
+  simp [openField, dcState, nodeRate]
 
 @[tmio M, powerlib_domain] theorem openField_contDiffOn (C isrc P : ℝ) :
-    ContDiffOn ℝ 1 (openField C isrc P) (posDC 1) := by
+    ContDiffOn ℝ 1 (openField C isrc P) (posDC 0) := by
   rw [contDiffOn_euclidean]
   intro i
   fin_cases i
-  simp only [openField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero]
-  apply ContDiffOn.div_const
-  apply contDiffOn_const.add
-  apply ContDiffOn.div contDiffOn_const (Dynamics.contDiff_coord 0).contDiffOn
-  intro x hx
-  exact (ne_of_gt hx)
+  exact contDiffOn_nodeRate C contDiffOn_const contDiffOn_const
+    (Dynamics.contDiff_coord 0).contDiffOn fun x hx => ne_of_gt hx
 
 /-- Open-loop Jacobian `−P/(C V0²) = −I_dc0/(C V0)`. -/
 @[tmio M, powerlib_domain] theorem openJacobian {C isrc P V0 : ℝ} (hV : V0 ≠ 0) :
     fderiv ℝ (openField C isrc P) (dcState V0) =
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![-(P / V0) / (C * V0)] := by
   have hx : (dcState V0) 0 ≠ 0 := by simpa [dcState] using hV
-  have h := (((hasFDerivAt_inv_coord 0 hx).const_mul P).const_add isrc).mul_const C⁻¹
+  have h := hasFDerivAt_nodeRate C (hasFDerivAt_const isrc _) (hasFDerivAt_const P _)
+    (Dynamics.hasFDerivAt_coord 0 (dcState V0)) hx
   refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    (fun _ => C⁻¹ • (P • (ContinuousLinearMap.toSpanSingleton ℝ (-((dcState V0) 0 ^ 2)⁻¹)).comp
-      (Dynamics.coord 0))) ?_ ?_).fderiv
-  · intro i
-    fin_cases i
-    convert h using 1
-    funext y
-    simp [openField, div_eq_mul_inv]
+    (fun _ => C⁻¹ • (0 + (dcState V0 0)⁻¹ • 0 - (P / dcState V0 0 ^ 2) • Dynamics.coord 0))
+    (fun i => ?_) ?_).fderiv
+  · fin_cases i
+    exact h
   · intro i v
     fin_cases i
     simp [dcState]
@@ -218,7 +205,7 @@ stable exactly in rectifier operation, `P/V0 > 0`. -/
   unfold powerlib.TMIO.Statement
   rw [open_mem_den_flow, Set.mem_ofPred_eq]
   change LocallyExponentiallyStable _ _ ↔ _
-  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local (isOpen_posDC 1)
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local (isOpen_posDC 0)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _) (openJacobian hV.ne'),
     Linear.isHurwitz_one_iff, neg_div, neg_lt_zero]
   have hCV : 0 < m.C * m.V0 := mul_pos hC hV
@@ -235,7 +222,7 @@ voltage is unstable. -/
     connection% (m ∈ openFamily.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [open_mem_den_flow]
-  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 1)
+  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 0)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _)
     openField_eq_zero (openJacobian hV.ne') (Linear.exists_eigenpair_one_of_pos ?_)
   rw [neg_div]
@@ -280,7 +267,7 @@ def idRef (x : State 2) : ℝ := -p.Kp * (x 0 - p.Vref) - p.Ki * x 1 + p.iff
 
 /-- Closed loop `(dV_dc/dt, dζ/dt)`. -/
 def closedField (x : State 2) : State 2 :=
-  WithLp.toLp 2 ![(p.isrc + p.Vd * p.idRef x / x 0) / p.C, x 0 - p.Vref]
+  WithLp.toLp 2 ![nodeRate p.C p.isrc (p.Vd * p.idRef x) (x 0), x 0 - p.Vref]
 
 /-- Equilibrium `(V_dc*, ζ0)` with `i_ff − Ki ζ0 = I_d0`. -/
 def eqState : State 2 := WithLp.toLp 2 ![p.Vref, (p.iff - p.Id0) / p.Ki]
@@ -298,7 +285,7 @@ def eqState : State 2 := WithLp.toLp 2 ![p.Vref, (p.iff - p.Id0) / p.Ki]
     simp only [closedField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero,
       PiLp.zero_apply]
     rw [h]
-    simp [isrc, Idc0, eqState]
+    simp [isrc, Idc0, eqState, nodeRate]
   · simp [closedField, eqState]
 
 /-- `a = V_d/(V_dc* C)`. -/
@@ -311,19 +298,13 @@ def b : ℝ := p.Idc0 / (p.Vref * p.C)
 def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.Ki); 1, 0]
 
 @[tmio M, powerlib_domain] theorem closedField_contDiffOn :
-    ContDiffOn ℝ 1 p.closedField (posDC 2) := by
+    ContDiffOn ℝ 1 p.closedField (posDC 0) := by
   rw [contDiffOn_euclidean]
   intro i
   fin_cases i
-  · simp only [closedField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero]
-    apply ContDiffOn.div_const
-    apply contDiffOn_const.add
-    apply ContDiffOn.div _ (Dynamics.contDiff_coord 0).contDiffOn
-    · intro x hx
-      exact ne_of_gt hx
-    · apply ContDiff.contDiffOn
-      unfold idRef
-      fun_prop
+  · exact contDiffOn_nodeRate p.C contDiffOn_const
+      (by unfold idRef; fun_prop : ContDiff ℝ 1 fun x : State 2 => p.Vd * p.idRef x).contDiffOn
+      (Dynamics.contDiff_coord 0).contDiffOn fun x hx => ne_of_gt hx
   · simp only [closedField, PiLp.toLp_apply, Fin.mk_one, Matrix.cons_val_one,
       Matrix.cons_val_zero]
     exact ((Dynamics.contDiff_coord 0).sub contDiff_const).contDiffOn
@@ -341,20 +322,16 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
     convert h using 1
     funext v
     simp only [idRef, Pi.sub_apply]
-  have h0 := (((hid.const_mul p.Vd).mul (hasFDerivAt_inv_coord 0 hx)).const_add p.isrc).mul_const
-    p.C⁻¹
+  have h0 := hasFDerivAt_nodeRate p.C (hasFDerivAt_const p.isrc _) (hid.const_mul p.Vd)
+    (Dynamics.hasFDerivAt_coord 0 p.eqState) hx
   have h1' := (Dynamics.hasFDerivAt_coord 0 p.eqState).sub_const p.Vref
   refine (Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![p.C⁻¹ • ((p.Vd * p.idRef p.eqState) •
-        (ContinuousLinearMap.toSpanSingleton ℝ (-(p.eqState 0 ^ 2)⁻¹)).comp (Dynamics.coord 0) +
-      (p.eqState 0)⁻¹ • p.Vd • (-p.Kp • Dynamics.coord 0 - p.Ki • Dynamics.coord 1)),
+    ![p.C⁻¹ • (0 + (p.eqState 0)⁻¹ • p.Vd • (-p.Kp • Dynamics.coord 0 - p.Ki • Dynamics.coord 1) -
+        (p.Vd * p.idRef p.eqState / p.eqState 0 ^ 2) • Dynamics.coord 0),
       Dynamics.coord 0] ?_ ?_).fderiv
   · intro i
     fin_cases i
-    · convert h0 using 1
-      · funext y
-        simp [closedField, div_eq_mul_inv, mul_assoc]
-      · rfl
+    · exact h0
     · convert h1' using 1
       · funext y
         simp [closedField]
@@ -362,7 +339,7 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
   · intro i v
     have hid0 := p.idRef_eqState hKi
     fin_cases i
-    · simp only [Fin.zero_eta, Matrix.cons_val_zero, _root_.smul_apply, _root_.add_apply, hid0]
+    · simp only [Fin.zero_eta, Matrix.cons_val_zero, _root_.smul_apply, hid0]
       simp [jacobian, a, b, Idc0, Fin.sum_univ_two, eqState]
       field_simp
       ring
@@ -436,9 +413,9 @@ def closedFamily : Family DCParams Spectral.Requirement 2 0 :=
 @[tmio M, powerlib_domain] private theorem closed_fderiv_ki_zero {p : DCParams} (hKi : p.Ki = 0)
     (hV : 0 < p.Vref) :
     fderiv ℝ p.closedField p.eqState (EuclideanSpace.single 1 1) = 0 := by
-  have hx : p.eqState ∈ posDC 2 := by simpa [posDC, DCParams.eqState] using hV
+  have hx : p.eqState ∈ posDC 0 := by simpa [posDC, DCParams.eqState] using hV
   have hdiff : DifferentiableAt ℝ p.closedField p.eqState :=
-    (p.closedField_contDiffOn.contDiffAt ((isOpen_posDC 2).mem_nhds hx)).differentiableAt
+    (p.closedField_contDiffOn.contDiffAt ((isOpen_posDC 0).mem_nhds hx)).differentiableAt
       one_ne_zero
   refine Dynamics.fderiv_apply_eq_of_hasDerivAt_line hdiff ?_
   simp only [p.closedField_ki_zero_shift hKi]
@@ -452,19 +429,19 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
       p ∈ {p : DCParams | -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki}) := by
   unfold powerlib.TMIO.Statement
   rw [closed_mem_den_flow, Set.mem_ofPred_eq]
-  have hx : p.eqState ∈ posDC 2 := by simpa [posDC, DCParams.eqState] using hV
+  have hx : p.eqState ∈ posDC 0 := by simpa [posDC, DCParams.eqState] using hV
   constructor
   · intro h
     by_cases hKi : p.Ki = 0
     · exact absurd h (Dynamics.not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local
-        (isOpen_posDC 2) hx p.closedField_contDiffOn
+        (isOpen_posDC 0) hx p.closedField_contDiffOn
         (by intro h0; simpa using congrArg (fun v : State 2 => v 1) h0)
         (closed_fderiv_ki_zero hKi hV))
     · exact (p.closed_isHurwitz_iff hVd hV hC).mp
-        (Dynamics.isHurwitz_of_locallyExponentiallyStable_local (isOpen_posDC 2) hx _
+        (Dynamics.isHurwitz_of_locallyExponentiallyStable_local (isOpen_posDC 0) hx _
           p.closedField_contDiffOn (p.closedJacobian hKi hV.ne' hC.ne') h)
   · rintro ⟨hkp, hki⟩
-    exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 2)
+    exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 0)
       (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
       (p.closedField_eqState hki.ne') (p.closedJacobian hki.ne' hV.ne' hC.ne')
       ((p.closed_isHurwitz_iff hVd hV hC).2 ⟨hkp, hki⟩)
@@ -476,7 +453,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
     connection% (p ∈ closedFamily.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
-  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
+  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 0)
     (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
     (p.closedField_eqState hKi) (p.closedJacobian hKi hV.ne' hC.ne')
     (Criteria.exists_eigenpair_re_pos_of_trace_pos _ ?_)
@@ -500,7 +477,7 @@ at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, bo
     rw [DCParams.jacobian_det]
     exact mul_neg_of_pos_of_neg (div_pos hVd (mul_pos hV hC)) hki))
   obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hμ
-  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
+  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 0)
     (by simpa [posDC, DCParams.eqState] using hV) _ p.closedField_contDiffOn
     (p.closedField_eqState hki.ne) (p.closedJacobian hki.ne hV.ne' hC.ne') ⟨μ, v, hv, heig, hre⟩
 
@@ -582,7 +559,7 @@ def negativeCapacitance : OpenLoop := ⟨⟨0, -1, 0⟩, -1, 1, rfl, rfl⟩
     connection% (negativeCapacitance ∈ openFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine open_mem_den_flow.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
-    (isOpen_posDC 1) (by simp [posDC, dcState, negativeCapacitance]) _
+    (isOpen_posDC 0) (by simp [posDC, dcState, negativeCapacitance]) _
     (openField_contDiffOn _ _ _) openField_eq_zero
     (openJacobian (by norm_num [negativeCapacitance])) ?_)
   rw [Linear.isHurwitz_one_iff]
@@ -611,7 +588,7 @@ def negativeCapacitanceLoop : DCParams := ⟨⟨0, -1, 0⟩, 1, 1, -1, -1, 0, 0,
   have hV : negativeCapacitanceLoop.Vref ≠ 0 := by norm_num [negativeCapacitanceLoop]
   have hC : negativeCapacitanceLoop.C ≠ 0 := by norm_num [negativeCapacitanceLoop]
   refine closed_mem_den_flow.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
-    (isOpen_posDC 2) (by simp [posDC, DCParams.eqState, negativeCapacitanceLoop]) _
+    (isOpen_posDC 0) (by simp [posDC, DCParams.eqState, negativeCapacitanceLoop]) _
     negativeCapacitanceLoop.closedField_contDiffOn
     (negativeCapacitanceLoop.closedField_eqState hKi)
     (negativeCapacitanceLoop.closedJacobian hKi hV hC) ?_)
@@ -641,7 +618,7 @@ equilibrium. -/
   subst hP0
   ext i
   fin_cases i
-  simp [openField]
+  simp [openField, nodeRate]
 
 /-- Positive capacitance and operating voltage: the open-loop DC node is locally asymptotically
 stable exactly in rectifier operation, `P/V0 > 0` — the local exponential condition. Inverter
@@ -787,7 +764,7 @@ def centerEnergy (x : State 2) : ℝ :=
     fderiv ℝ p.centerEnergy x (p.closedField x) = 0 := by
   rw [(p.hasFDerivAt_centerEnergy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul, closedField,
-    Matrix.cons_val_zero, Matrix.cons_val_one, idRef, isrc, Idc0]
+    Matrix.cons_val_zero, Matrix.cons_val_one, idRef, isrc, Idc0, nodeRate]
   rw [hkp]
   simp only [Idc0]
   field_simp
@@ -826,7 +803,7 @@ def centerEnergy (x : State 2) : ℝ :=
     have : 0 ≤ p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2 := by positivity
     linarith
 
-@[tmio M, powerlib_domain] private theorem eqState_mem (hV : 0 < p.Vref) : p.eqState ∈ posDC 2 := by
+@[tmio M, powerlib_domain] private theorem eqState_mem (hV : 0 < p.Vref) : p.eqState ∈ posDC 0 := by
   simpa [posDC, eqState] using hV
 
 /-- On the boundary the loop is Lyapunov stable: the energy is conserved and has a strict
@@ -836,8 +813,8 @@ minimum. -/
     connection% ((p ∈ closedFamily.den (.flow .lyapunovStable))) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
-  exact lyapunov_stable (V := p.centerEnergy) (D := posDC 2) two_pos
-    ⟨isOpen_posDC 2, p.eqState_mem hV,
+  exact lyapunov_stable (V := p.centerEnergy) (D := posDC 0) two_pos
+    ⟨isOpen_posDC 0, p.eqState_mem hV,
       continuous_iff_continuousAt.mpr fun x => (p.hasFDerivAt_centerEnergy x).continuousAt,
       fun x => (p.hasFDerivAt_centerEnergy x).differentiableAt,
       by simp [centerEnergy, eqState],
@@ -852,7 +829,7 @@ every nearby solution on its level. -/
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
   refine Dynamics.not_localAsymptoticStable_of_lie_nonpos_local (V := fun x => -p.centerEnergy x)
-    (ρ := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn
+    (ρ := 1) (isOpen_posDC 0) (p.eqState_mem hV) p.closedField_contDiffOn
     (fun x => (p.hasFDerivAt_centerEnergy x).differentiableAt.neg) one_pos
     (fun x hx _ => ?_) (fun ε hε => ?_)
   · rw [fderiv_fun_neg, _root_.neg_apply,
@@ -885,7 +862,7 @@ point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
   by_cases h0 : p.closedField p.eqState = 0
   · exact Dynamics.not_localAsymptoticStable_of_line (v := EuclideanSpace.single 1 1) (by simp)
       (fun t _ => by rw [p.closedField_ki_zero_shift hKi]; exact h0) h
-  · exact h0 (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 2) (p.eqState_mem hV)
+  · exact h0 (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 0) (p.eqState_mem hV)
       p.closedField_contDiffOn h.1)
 
 /-- With no integral gain and `i_ff = I_d0` the DC equation is
@@ -894,7 +871,8 @@ point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
     (hC : p.C ≠ 0) {x : State 2} (hx : x 0 ≠ 0) :
     p.closedField x 0 =
       -(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) / (p.Vref * p.C * x 0) := by
-  simp only [closedField, PiLp.toLp_apply, Matrix.cons_val_zero, idRef, isrc, Idc0, hKi, hff]
+  simp only [closedField, PiLp.toLp_apply, Matrix.cons_val_zero, idRef, isrc, Idc0, hKi, hff,
+    nodeRate]
   field_simp
   ring
 
@@ -930,8 +908,8 @@ stable. -/
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
   set γ := p.C * p.Vref / (p.Vd * (p.Id0 + p.Vref * p.Kp)) with hγ
-  refine lyapunov_stable (V := p.driftEnergy γ) (D := posDC 2) two_pos
-    ⟨isOpen_posDC 2, p.eqState_mem hV,
+  refine lyapunov_stable (V := p.driftEnergy γ) (D := posDC 0) two_pos
+    ⟨isOpen_posDC 0, p.eqState_mem hV,
       continuous_iff_continuousAt.mpr fun x => (p.hasFDerivAt_driftEnergy γ x).continuousAt,
       fun x => (p.hasFDerivAt_driftEnergy γ x).differentiableAt,
       by simp [driftEnergy, eqState, hKi], fun x hx hne => ?_, fun x hx => ?_⟩
@@ -989,7 +967,7 @@ unstable (Chetaev's function `v²`). -/
     connection% ((p ∈ closedFamily.den (.flow .unstable))) := by
   unfold TMIO.Statement
   rw [closed_mem_den_flow]
-  refine Dynamics.unstable_of_repelling_coord_local (i := 0) (isOpen_posDC 2) (p.eqState_mem hV)
+  refine Dynamics.unstable_of_repelling_coord_local (i := 0) (isOpen_posDC 0) (p.eqState_mem hV)
     p.closedField_contDiffOn fun x hx hne => ?_
   have hx' : 0 < x 0 := hx
   have h0 : p.eqState 0 = p.Vref := by simp [eqState]
@@ -1014,7 +992,7 @@ constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
   rw [closed_mem_den_flow]
   have h0 : p.eqState 0 = p.Vref := by simp [eqState]
   refine Dynamics.unstable_of_conserved_drive_local (i := 0) (j := 1) (g := fun s => s - p.Vref)
-    (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by decide) (by fun_prop)
+    (isOpen_posDC 0) (p.eqState_mem hV) p.closedField_contDiffOn (by decide) (by fun_prop)
     (fun ε hε => ⟨p.Vref + ε / 2, ?_, ?_⟩) (fun x hx => ?_) fun x _ => p.closedField_one x
   · rw [h0, add_sub_cancel_left, abs_of_pos (half_pos hε)]
     linarith
@@ -1031,7 +1009,7 @@ matches the operating current, `i_ff = I_d0`. -/
   · intro h
     have h0 := congrArg (fun y : State 2 => y 0) h
     simp only [closedField, eqState, idRef, isrc, Idc0, hKi, PiLp.toLp_apply, Matrix.cons_val_zero,
-      PiLp.zero_apply] at h0
+      PiLp.zero_apply, nodeRate] at h0
     field_simp at h0
     have : p.Vd * (p.iff - p.Id0) = 0 := by linear_combination h0
     rcases mul_eq_zero.mp this with h1 | h1
@@ -1041,7 +1019,7 @@ matches the operating current, `i_ff = I_d0`. -/
     ext i
     fin_cases i
     · simp only [closedField, eqState, idRef, isrc, Idc0, hKi, hff, PiLp.toLp_apply,
-        Fin.zero_eta, Matrix.cons_val_zero, PiLp.zero_apply]
+        Fin.zero_eta, Matrix.cons_val_zero, PiLp.zero_apply, nodeRate]
       field_simp
       ring
     · simp [closedField, eqState]
@@ -1111,7 +1089,7 @@ voltage error is frozen and the integrator drifts; with `Kp < −I_dc0/V_d` the 
     rcases lt_trichotomy p.Ki 0 with hki | hki | hki
     · exact absurd h ((closed_mem_den_flow.mp (closedLoop_mem_den_unstable_of_ki p hVd hV hC hki)))
     · have hff : p.iff = p.Id0 := (p.closedField_eqState_ki_zero hki hVd.ne' hV.ne' hC.ne').mp
-        (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 2) (p.eqState_mem hV)
+        (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 0) (p.eqState_mem hV)
           p.closedField_contDiffOn h)
       refine Or.inr ⟨hki, hff, ?_⟩
       rw [hlt, hsplit]

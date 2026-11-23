@@ -26,7 +26,8 @@ not formalized; only the general bound `N ≤ 4` and the parity (`N` even for si
 
 Results.
 * Equilibria (`K_i ≠ 0`) with `θ_e` in a window `[α, α + 2π)` are exactly `(θ*, δω/K_i)` with
-  `h(θ*) = 0`; there are at most 4 of them when the coefficients are not all zero, and their number
+  `h(θ*) = 0` (`piPLL_equilibria_window`, `piPLL_ncard_equilibria_window` of `PIPLL.lean`); there
+  are at most 4 of them when the coefficients are not all zero, and their number
   is `0`, `2` or `4` when every zero of `h` is simple (`h' ≠ 0`).
 * `K_p, K_i > 0`: `h'(θ*) < 0` ⇒ locally exponentially stable, `h'(θ*) > 0` ⇒ unstable (saddle).
 * Alternation: for two consecutive simple zeros `θ₁ < θ₂` of `h` (no zero in between) exactly one
@@ -52,34 +53,7 @@ noncomputable section
 namespace powerlib.PLL
 open Set
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-open powerlib.SpecialFunctions (trigPoly2 trigPoly2Deriv trigPoly2ZeroSet)
-
-/-- Equilibria with `θ_e ∈ [α, α + 2π)` are the points `(θ*, δω/K_i)`, `h(θ*) = 0`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem trigPLL_equilibria_window {c₀ c₁ s₁ c₂ s₂ Kp Ki δω : ℝ}
-    (hKi : Ki ≠ 0) (α : ℝ) :
-    {x : ℝ² | piPLLField (trigPoly2 c₀ c₁ s₁ c₂ s₂) Kp Ki δω x = 0 ∧
-        x 0 ∈ Ico α (α + 2 * Real.pi)} =
-      (fun θ => PhasePlane.mk θ (δω / Ki)) '' trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ α := by
-  ext x
-  simp only [mem_ofPred_eq, mem_image, piPLLField_eq_zero_iff hKi]
-  constructor
-  · rintro ⟨⟨hz, h1⟩, hw⟩
-    refine ⟨x 0, ⟨hw, hz⟩, ?_⟩
-    rw [PhasePlane.ext_iff']
-    simp [h1]
-  · rintro ⟨θ, ⟨hw, hz⟩, rfl⟩
-    simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-    exact ⟨⟨hz, trivial⟩, hw⟩
-
-@[tmio M, powerlib_domain] private lemma ncard_equilibria_window {c₀ c₁ s₁ c₂ s₂ Kp Ki δω : ℝ}
-    (hKi : Ki ≠ 0) (α : ℝ) :
-    {x : ℝ² | piPLLField (trigPoly2 c₀ c₁ s₁ c₂ s₂) Kp Ki δω x = 0 ∧
-        x 0 ∈ Ico α (α + 2 * Real.pi)}.ncard = (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ α).ncard := by
-  rw [trigPLL_equilibria_window hKi α]
-  refine ncard_image_of_injective _ ?_
-  intro θ θ' h
-  simpa using congrArg (fun x : ℝ² => x 0) h
+open powerlib.SpecialFunctions (trigPoly2 trigPoly2Deriv)
 
 /-- At most four equilibria per period window (coefficients not all zero, `K_i ≠ 0`).
 Static evidence on the model, not a connection conclusion. -/
@@ -87,7 +61,7 @@ Static evidence on the model, not a connection conclusion. -/
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (hKi : Ki ≠ 0) (α : ℝ) :
     {x : ℝ² | piPLLField (trigPoly2 c₀ c₁ s₁ c₂ s₂) Kp Ki δω x = 0 ∧
         x 0 ∈ Ico α (α + 2 * Real.pi)}.ncard ≤ 4 := by
-  rw [ncard_equilibria_window hKi α]
+  rw [piPLL_ncard_equilibria_window hKi α]
   exact SpecialFunctions.trigPoly2_ncard_zeroSet_le_four hne α
 
 /-- If every zero of `h` is simple, the number of equilibria per period window is `0`, `2` or
@@ -101,7 +75,7 @@ Static evidence on the model, not a connection conclusion. -/
     N = 0 ∨ N = 2 ∨ N = 4 := by
   intro N
   simp only [N]
-  rw [ncard_equilibria_window hKi α]
+  rw [piPLL_ncard_equilibria_window hKi α]
   exact SpecialFunctions.trigPoly2_ncard_zeroSet_mem hsimple α
 
 /-- The PI-PLL model with the trigonometric detector, read about the selected phase `θ*`

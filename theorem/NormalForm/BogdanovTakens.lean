@@ -24,9 +24,8 @@ Results.
   single Jordan block `!![0, 1; 0, 0]` (`jordanBlock`; `J P = P N` with `det P ≠ 0`); together
   with `Criteria.isNilpotent_iff_trace_det_eq_zero_fin_two` this is also equivalent to `J` being
   nonzero nilpotent.
-* Structural form `!![g₁, g₂; g₃, 0]`: `tr = g₁`, `det = −g₂ g₃` (`structural_trace_det`). The
-  proportional structure `proportionalMatrix k κ g = !![k g, κ; g, 0]` (the PI-PLL Jacobian is
-  an instance) has `tr = k g`, `det = −κ g` (`trace_proportionalMatrix`,
+* The proportional structure `proportionalMatrix k κ g = !![k g, κ; g, 0]` (the PI-PLL Jacobian
+  is an instance) has `tr = k g`, `det = −κ g` (`trace_proportionalMatrix`,
   `det_proportionalMatrix`); with `κ ≠ 0` both vanish exactly at `g = 0`, where the matrix is a
   single Jordan block (`proportional_trace_det_zero_iff`, `proportional_jordan_at_zero`).
 * Equilibria (`field_eq_zero_iff`): `y₂ = 0` and `a y₁² + β₂ y₁ + β₁ = 0`; one exists iff
@@ -126,24 +125,19 @@ Jordan block. -/
             rw [← Matrix.mul_assoc, Matrix.nonsing_inv_mul P hu, Matrix.one_mul]
         _ = 0 := by rw [this, Matrix.mul_zero]
 
-/-! ## Structural trace / determinant formulas -/
-
-@[tmio T, powerlib_foundation] theorem structural_trace_det (g₁ g₂ g₃ : ℝ) :
-    (!![g₁, g₂; g₃, 0] : Matrix (Fin 2) (Fin 2) ℝ).trace = g₁ ∧
-      (!![g₁, g₂; g₃, 0] : Matrix (Fin 2) (Fin 2) ℝ).det = -(g₂ * g₃) := by
-  simp [Matrix.trace_fin_two, Matrix.det_fin_two]
+/-! ## The proportional structure -/
 
 /-- The proportional structure `!![k g, κ; g, 0]`: trace `k g` and determinant `−κ g` are both
 proportional to the gain `g` (the PI-PLL Jacobian is an instance). -/
 def proportionalMatrix (k κ g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![k * g, κ; g, 0]
 
 @[tmio T, simp, powerlib_foundation] theorem trace_proportionalMatrix (k κ g : ℝ) :
-    (proportionalMatrix k κ g).trace = k * g :=
-  (structural_trace_det _ _ _).1
+    (proportionalMatrix k κ g).trace = k * g := by
+  simp [proportionalMatrix, Matrix.trace_fin_two]
 
 @[tmio T, simp, powerlib_foundation] theorem det_proportionalMatrix (k κ g : ℝ) :
-    (proportionalMatrix k κ g).det = -(κ * g) :=
-  (structural_trace_det _ _ _).2
+    (proportionalMatrix k κ g).det = -(κ * g) := by
+  simp [proportionalMatrix, Matrix.det_fin_two]
 
 /-- For `κ ≠ 0` the trace and determinant of the proportional structure vanish together exactly
 at `g = 0`. -/

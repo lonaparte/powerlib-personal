@@ -68,7 +68,9 @@ Family and connection conclusions.
   resistances (`exact_passive`: a negative resistance is exposed by a closed cycle along which the
   ports deliver net energy). Within passive circuits, conservation is exactly losslessness
   (`exactUnder_conservative`); the requirement equivalences of Routh and Hurwitz are evaluations
-  of the satisfaction connection (`stable_of_routhHurwitz`, `passive_stable_iff`).
+  of the satisfaction connection (`stable_of_routhHurwitz`, `passive_stable_iff`); hence a
+  passive, damped circuit is globally exponentially stable (`isHurwitz_of_passive`, read by the
+  discretized models of `theorem/Numerics/EMT/Plant.lean` and `theorem/Passive/PortEuler.lean`).
 * Two circuits mark where the connections part: a Hurwitz circuit with a negative resistance is
   Lyapunov stable but not passive, and a circuit with opposite resistances conserves an energy
   without being lossless (`not_exact_lyapunovStable`, `not_exact_conservative`). The
@@ -334,6 +336,15 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
     simp at h
   · intro hd
     exact (show m.Stable from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using stable_of_routhHurwitz m ((show m.RouthHurwitz from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using routhHurwitz_of_passive m hp hd)))
+
+/-- A passive, damped circuit is globally exponentially stable (its state matrix is Hurwitz):
+pole stability is damping (`passive_stable_iff`) and the poles are the plant's
+(`isHurwitz_iff_stable`). -/
+@[tmio TM, powerlib_domain] theorem isHurwitz_of_passive (m : Circuit) (hp : m.Passive)
+    (hd : m.Damped) : connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  exact (isHurwitz_iff_stable m).mpr ((passive_stable_iff m hp).mpr (by
+    simpa only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hd))
 
 /-! ## Behaviour -/
 

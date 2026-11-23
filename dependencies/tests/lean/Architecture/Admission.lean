@@ -106,7 +106,7 @@ def accepted : Linear.Certificate (Linear.Positive.real submittedMatrix) :=
 
 -- An arbitrary proposal is rejected: the identity witness fails the check.
 @[powerlib_foundation] theorem wrong_witness_rejected :
-    ¬ (⟨1, 1, fun _ => 1⟩ : Linear.Synthesis.Witness 2).Valid submittedMatrix := by
+    Linear.VerifiedSynthesis.check submittedMatrix 1 = false := by
   decide +kernel
 
 def differentMatrix : Matrix (Fin 2) (Fin 2) ℚ := !![-2, 10; 0, -1]
@@ -147,8 +147,8 @@ def accepted : Linear.Certificate (Linear.Positive.real submittedMatrix) :=
 
 -- The proposal for that matrix does exist; only the check refuses it.
 @[powerlib_foundation] theorem indefinite_proposed :
-    (Linear.Synthesis.synth (!![(1 : ℚ), 0; 0, -2])).map (·.check !![(1 : ℚ), 0; 0, -2]) =
-      some false := by
+    (Linear.Synthesis.synth (!![(1 : ℚ), 0; 0, -2])).map
+      (fun w => Linear.VerifiedSynthesis.check !![(1 : ℚ), 0; 0, -2] w.P) = some false := by
   decide +kernel
 
 end LargeLTIAdmission

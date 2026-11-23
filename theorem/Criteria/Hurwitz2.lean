@@ -41,9 +41,9 @@ Results.
 * `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`
   (`det_characteristicMatrix_fin_two`); `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det`
   (`isHurwitz_fin_two_iff`; for `SpectrallyStable` through `Linear.spectrallyStable_iff_isHurwitz`;
-  for the literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
-  `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`; in coefficients `a₂ s² + a₁ s + a₀`,
-  `a₂ > 0`, `tr = −a₁/a₂`, `det = a₀/a₂`: `isHurwitz_iff_of_coeffs_quadratic`). The damping ratio
+  for the literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`; in coefficients
+  `a₂ s² + a₁ s + a₀`, `a₂ > 0`, `tr = −a₁/a₂`, `det = a₀/a₂`:
+  `isHurwitz_iff_of_coeffs_quadratic`). The damping ratio
   `dampingRatio A = −tr A / (2 √det A)` and natural frequency `naturalFrequency A = √det A`
   (definitions): `ω_n² = det A` (`naturalFrequency_sq`), `2 ζ ω_n = −tr A`
   (`two_mul_dampingRatio_mul_naturalFrequency`), hence for `det A > 0`,
@@ -402,16 +402,6 @@ characteristic root in the open right half plane (the generic witnesses
     (hdet : A.det = a0 / a2) : LinearSystems.IsHurwitz A ↔ 0 < a1 ∧ 0 < a0 := by
   rw [isHurwitz_fin_two_iff, htr, hdet, neg_div, neg_lt_zero, div_pos_iff_of_pos_right h2,
     div_pos_iff_of_pos_right h2]
-
-/-- Companion form of `s ^ 2 + a1 * s + a0`: Hurwitz iff `0 < a0 ∧ 0 < a1`. -/
-@[tmio T, powerlib_foundation] theorem isHurwitz_companion_two_iff (a0 a1 : ℝ) :
-    LinearSystems.IsHurwitz !![0, 1; -a0, -a1] ↔ 0 < a0 ∧ 0 < a1 := by
-  rw [isHurwitz_fin_two_of_iff]
-  constructor
-  · rintro ⟨h1, h0⟩
-    exact ⟨by linarith, by linarith⟩
-  · rintro ⟨h0, h1⟩
-    exact ⟨by linarith, by linarith⟩
 
 /-- The damping ratio `ζ = −tr A / (2 √det A)` of a real 2×2 matrix: for `det A > 0` its
 characteristic polynomial is `s² + 2ζω_n s + ω_n²` with `ω_n = √det A`. Signed (negative for

@@ -12,6 +12,13 @@ Model boundary.
   potentials belong to `theorem/Potential/Wells.lean`, not here); generator
   `L = (1/γ)(−V' d/dθ + D d²/dθ²)`. Reflecting boundary at `θ_r` (`T'(θ_r) = 0`), absorbing
   boundary at `θ_c` (`T(θ_c) = 0`). We work on the whole line with these two point conditions.
+* Regularity of `V`: the derivative and positivity laws assume only that the Gibbs weight
+  `e^{−V/D}` is locally integrable and that `V` is continuous (differentiable) at the points used,
+  so `V` may diverge at the reflecting point (an entrance boundary, e.g. the radial potential
+  `U − D log r` of `theorem/Asymptotics/Guard/MFPT.lean`, whose `guardMFPT` is `kramersT` at
+  `θ = θ_r = 0`). Uniqueness is stated for `V` differentiable on the whole line; at an entrance
+  boundary the condition `T'(θ_r) = 0` is replaced by boundedness of `T'` near `θ_r` (not
+  formalized).
 * The MFPT is treated as the solution of the backward boundary-value problem
   `D T'' − V' T' = −γ`, `T(θ_c) = 0`, `T'(θ_r) = 0` (an ODE statement). That this solution equals
   `E[τ_c]` for the diffusion requires Dynkin's formula / Itô calculus and is **not** formalized.
@@ -29,9 +36,10 @@ Results.
   `kramersT_reflecting` — the Kramers double integral `kramersT`,
   `T(θ) = (γ/D) ∫_θ^{θ_c} e^{V(y)/D} ∫_{θ_r}^{y} e^{−V(z)/D} dz dy`, has `T' = −(γ/D) g`,
   `T'' = −(γ/D) g'` with `g' = (V'/D) g + 1`, and solves `D T'' − V' T' = −γ` with `T(θ_c) = 0`,
-  `T'(θ_r) = 0`.
+  `T'(θ_r) = 0`; pointwise, under local integrability of `e^{−V/D}` (with `innerI_hasDerivAt`,
+  `innerI_continuous`, `outerG_continuousAt`).
 * `kramersT_unique` — any twice-differentiable solution of that boundary-value problem is the
-  Kramers double integral; `kramersT_pos`: `T(θ) > 0` for `θ_r < θ < θ_c` (`γ, D > 0`).
+  Kramers double integral; `kramersT_pos`: `T(θ) > 0` for `θ_r ≤ θ < θ_c` (`γ, D > 0`).
 * `kramers_prefactor` — `(γ/D) √(2πD/κ_b) √(2πD/κ_a) = 2πγ/√(κ_a κ_b)`; `D` cancels.
 * `mfpt_free_diffusion` — pure diffusion between two absorbing points: `m(θ) = (θ − a)(b − θ)/(2D)`
   solves `D m'' = −1`, `m(a) = m(b) = 0`.
@@ -63,25 +71,28 @@ def kramersT (V : ℝ → ℝ) (D γ θr θc θ : ℝ) : ℝ := γ / D * ∫ y i
 
 variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
 
-@[tmio T, powerlib_foundation] theorem innerI_hasDerivAt (hV : Continuous V) (y : ℝ) :
-    HasDerivAt (innerI V D θr) (FP.gibbs V D y) y :=
-  ((FP.continuous_gibbs hV D).integral_hasStrictDerivAt θr y).hasDerivAt
+/-- `I' = e^{−V/D}` at every point where `V` is continuous. Only local integrability of the Gibbs
+weight is assumed, so `V` may diverge elsewhere (e.g. at the reflecting point). -/
+@[tmio T, powerlib_foundation] theorem innerI_hasDerivAt (hi : LocallyIntegrable (FP.gibbs V D))
+    {y : ℝ} (hV : ContinuousAt V y) : HasDerivAt (innerI V D θr) (FP.gibbs V D y) y :=
+  integral_hasDerivAt_right (hi.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
+    hi.aestronglyMeasurable.stronglyMeasurableAtFilter
+    (continuous_exp.continuousAt.comp (hV.neg.div_const D))
 
-@[tmio T, powerlib_foundation] theorem innerI_continuous (hV : Continuous V) :
+@[tmio T, powerlib_foundation] theorem innerI_continuous (hi : LocallyIntegrable (FP.gibbs V D)) :
     Continuous (innerI V D θr) :=
-  continuous_iff_continuousAt.2 fun y => (innerI_hasDerivAt hV y).continuousAt
+  continuous_primitive (fun _ _ => (hi.integrableOn_isCompact isCompact_uIcc).intervalIntegrable) θr
 
-@[tmio T, powerlib_foundation] theorem outerG_continuous (hV : Continuous V) :
-    Continuous (outerG V D θr) := by
-  unfold outerG
-  exact (by fun_prop : Continuous fun y => exp (V y / D)).mul (innerI_continuous hV)
+@[tmio T, powerlib_foundation] theorem outerG_continuousAt (hi : LocallyIntegrable (FP.gibbs V D))
+    {y : ℝ} (hV : ContinuousAt V y) : ContinuousAt (outerG V D θr) y :=
+  (continuous_exp.continuousAt.comp (hV.div_const D)).mul (innerI_continuous hi).continuousAt
 
-/-- `g' = (V'/D) g + 1`. -/
-@[tmio T, powerlib_foundation] theorem outerG_hasDerivAt (hV : ∀ x, HasDerivAt V (V' x) x) (y : ℝ) :
+/-- `g' = (V'/D) g + 1` at every point where `V` is differentiable. -/
+@[tmio T, powerlib_foundation] theorem outerG_hasDerivAt (hi : LocallyIntegrable (FP.gibbs V D))
+    {y : ℝ} (hV : HasDerivAt V (V' y) y) :
     HasDerivAt (outerG V D θr) (V' y / D * outerG V D θr y + 1) y := by
-  have hVc : Continuous V := continuous_iff_continuousAt.2 fun x => (hV x).continuousAt
-  have h1 := ((hV y).div_const D).exp
-  have h2 := innerI_hasDerivAt (D := D) (θr := θr) hVc y
+  have h1 := (hV.div_const D).exp
+  have h2 := innerI_hasDerivAt (θr := θr) hi hV.continuousAt
   have := h1.mul h2
   unfold outerG
   convert! this using 1
@@ -89,12 +100,21 @@ variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
     rw [FP.gibbs, ← exp_add, show V y / D + -V y / D = 0 by ring, exp_zero]]
   ring
 
-/-- `T' = −(γ/D) g`. -/
-@[tmio T, powerlib_foundation] theorem kramersT_hasDerivAt (hV : Continuous V) (θ : ℝ) :
+/-- `T' = −(γ/D) g` at `θ`, for `V` continuous on `[θ, θ_c]` (no condition near `θ_r`). -/
+@[tmio T, powerlib_foundation] theorem kramersT_hasDerivAt (hi : LocallyIntegrable (FP.gibbs V D))
+    {θ : ℝ} (hV : ∀ y ∈ uIcc θ θc, ContinuousAt V y) :
     HasDerivAt (kramersT V D γ θr θc) (-(γ / D) * outerG V D θr θ) θ := by
-  have hg := outerG_continuous (D := D) (θr := θr) hV
+  have hm : AEStronglyMeasurable (outerG V D θr) := by
+    have e : outerG V D θr = fun y => (FP.gibbs V D y)⁻¹ * innerI V D θr y := by
+      funext y; rw [outerG, FP.gibbs, ← exp_neg, neg_div, neg_neg]
+    rw [e]
+    exact (hi.aestronglyMeasurable.aemeasurable.inv.mul
+      (innerI_continuous hi).aemeasurable).aestronglyMeasurable
+  have hg : ContinuousOn (outerG V D θr) (uIcc θc θ) := fun y hy =>
+    (outerG_continuousAt hi (hV y (uIcc_comm θc θ ▸ hy))).continuousWithinAt
   have h : HasDerivAt (fun u => ∫ y in θc..u, outerG V D θr y) (outerG V D θr θ) θ :=
-    (hg.integral_hasStrictDerivAt θc θ).hasDerivAt
+    integral_hasDerivAt_right hg.intervalIntegrable hm.stronglyMeasurableAtFilter
+      (outerG_continuousAt hi (hV θ left_mem_uIcc))
   have e : kramersT V D γ θr θc = fun u => -(γ / D) * ∫ y in θc..u, outerG V D θr y := by
     funext u; unfold kramersT; rw [integral_symm]; ring
   rw [e]
@@ -124,11 +144,12 @@ derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T''
     (hode : ∀ θ, D * U2 θ - V' θ * U1 θ = -γ) (hc : U θc = 0) (hr : U1 θr = 0) :
     U = kramersT V D γ θr θc := by
   have hVc : Continuous V := continuous_iff_continuousAt.2 fun x => (hV x).continuousAt
+  have hi : LocallyIntegrable (FP.gibbs V D) := (FP.continuous_gibbs hVc D).locallyIntegrable
   have hT1 : ∀ θ, HasDerivAt (kramersT V D γ θr θc) (-(γ / D) * outerG V D θr θ) θ :=
-    kramersT_hasDerivAt hVc
+    fun θ => kramersT_hasDerivAt hi fun y _ => (hV y).continuousAt
   have hT2 : ∀ θ, HasDerivAt (fun u => -(γ / D) * outerG V D θr u)
       (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) θ :=
-    fun θ => (outerG_hasDerivAt hV θ).const_mul _
+    fun θ => (outerG_hasDerivAt hi (hV θ)).const_mul _
   set T1 : ℝ → ℝ := fun u => -(γ / D) * outerG V D θr u
   set W1 : ℝ → ℝ := fun θ => U1 θ - T1 θ
   -- `e^{−V/D} W1` is constant
@@ -164,20 +185,20 @@ derivative `T' = −(γ/D) g` (`kramersT_hasDerivAt`) and second derivative `T''
   rw [hc, kramersT_absorbing, sub_zero] at this
   linarith
 
-/-- Positivity inside the domain: `T(θ) > 0` for `θ_r < θ < θ_c` (`γ, D > 0`). -/
-@[tmio T, powerlib_foundation] theorem kramersT_pos (hV : Continuous V) (hD : 0 < D) (hγ : 0 < γ)
-    {θ : ℝ} (h1 : θr ≤ θ) (h2 : θ < θc) : 0 < kramersT V D γ θr θc θ := by
+/-- Positivity inside the domain: `T(θ) > 0` for `θ_r ≤ θ < θ_c` (`γ, D > 0`), for any locally
+integrable Gibbs weight and outer integrand integrable on `[θ, θ_c]` (`θ = θ_r` allowed). -/
+@[tmio T, powerlib_foundation] theorem kramersT_pos (hi : LocallyIntegrable (FP.gibbs V D))
+    {θ : ℝ} (hg : IntervalIntegrable (outerG V D θr) volume θ θc) (hD : 0 < D) (hγ : 0 < γ)
+    (h1 : θr ≤ θ) (h2 : θ < θc) : 0 < kramersT V D γ θr θc θ := by
   unfold kramersT
   apply mul_pos (div_pos hγ hD)
-  have hI : ∀ y, θr < y → 0 < innerI V D θr y := by
-    intro y hy
-    unfold innerI
-    exact intervalIntegral.intervalIntegral_pos_of_pos_on
-      ((FP.continuous_gibbs hV D).intervalIntegrable _ _) (fun z _ => FP.gibbs_pos V D z) hy
+  have hI : ∀ y, θr < y → 0 < innerI V D θr y := fun y hy =>
+    intervalIntegral.intervalIntegral_pos_of_pos_on
+      (hi.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
+      (fun z _ => FP.gibbs_pos V D z) hy
   have hpos : ∀ y ∈ Ioo θ θc, 0 < outerG V D θr y := fun y hy =>
     mul_pos (exp_pos _) (hI y (lt_of_le_of_lt h1 hy.1))
-  exact intervalIntegral.intervalIntegral_pos_of_pos_on
-    ((outerG_continuous hV).intervalIntegrable _ _) hpos h2
+  exact intervalIntegral.intervalIntegral_pos_of_pos_on hg hpos h2
 
 /-! ## Correction: backward vs adjoint form (§1.2) -/
 
@@ -201,12 +222,15 @@ backward equation, and its adjoint-form value is `−1 − V'' T/γ ≠ −1` wh
       -(1 / γ) * (V2 θ * kramersT V D γ θr θc θ + V' θ * (-(γ / D) * outerG V D θr θ)) +
         D / γ * (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) ≠ -1 := by
   have hVc : Continuous V := continuous_iff_continuousAt.2 fun x => (hV x).continuousAt
-  have hT := kramersT_pos (γ := γ) (θc := θc) hVc hD hγ h1 h2
+  have hi : LocallyIntegrable (FP.gibbs V D) := (FP.continuous_gibbs hVc D).locallyIntegrable
+  have hT := kramersT_pos (γ := γ) hi
+    ((continuous_iff_continuousAt.2 fun y => outerG_continuousAt (θr := θr) hi
+      hVc.continuousAt).intervalIntegrable θ θc) hD hγ h1 h2
   have key : -(1 / γ) * (V2 θ * kramersT V D γ θr θc θ + V' θ * (-(γ / D) * outerG V D θr θ)) +
       D / γ * (-(γ / D) * (V' θ / D * outerG V D θr θ + 1)) =
       -1 - V2 θ * kramersT V D γ θr θc θ / γ := by
     field_simp; ring
-  refine ⟨(hV' θ).mul (kramersT_hasDerivAt hVc θ), ?_⟩
+  refine ⟨(hV' θ).mul (kramersT_hasDerivAt hi fun y _ => hVc.continuousAt), ?_⟩
   rw [key]
   have : 0 < V2 θ * kramersT V D γ θr θc θ / γ := div_pos (mul_pos hconv hT) hγ
   linarith

@@ -32,10 +32,10 @@ Results.
   leading minors `p₁₁`, `minor2`, `det toMatrix` make the form positive; Sylvester's criterion
   `Linear.Positive.posDef_of_minors_fin_three`).
 * The symbolic witness (`PassiveWitness`): `coupling`, `gap`, `denominator`, the numerators
-  `n11` … `n33`, `minorNumerator`, `detNumerator`, `matrix`; positivity (`coupling_pos`,
-  `gap_pos`, `n11_pos`, `minorNumerator_pos`, `detNumerator_pos`), the minor and determinant
-  identities (`minor_identity`, `det_identity`) and the Lyapunov equations entry by entry (`eq11`,
-  `eq12`, `eq13`, `eq22`, `eq23`, `eq33`).
+  `n11` … `n33`, `minorNumerator`, `detNumerator`, `matrix`; `PassiveWitness.form_pos` (positive
+  definite for nonnegative decays, not both zero, and positive gains: its leading minors are
+  positive, by closed-form minor and determinant identities) and `PassiveWitness.lyapunov` (it
+  solves `Aᵀ P + P A = −1` for the LCL state matrix whenever its denominator is nonzero).
 * Closed-form synthesis: `synthesizeState` (nonnegative decays, not both zero), `synthesize` (a
   passive, damped circuit).
 * Rational synthesis: `RationalCircuit`, `RationalCircuit.circuit`, `RationalCircuit.matrix`,
@@ -172,34 +172,34 @@ def matrix (a d b e k : ℝ) : SymmetricMatrix :=
   ⟨n11 a d b e k / q, n12 a d b e k / q, n13 a d b e k / q,
     n22 a d b e k / q, n23 a d b e k / q, n33 a d b e k / q⟩
 
-@[tmio M, powerlib_domain] theorem coupling_pos {a d b e : ℝ}
+@[tmio M, powerlib_domain] private theorem coupling_pos {a d b e : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (had : 0 < a ∨ 0 < d) :
     0 < coupling a d b e := by
   rcases had with ha' | hd' <;> dsimp [coupling] <;> positivity
 
-@[tmio M, powerlib_domain] theorem gap_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] private theorem gap_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < gap a d b e k := by
   rcases had with ha' | hd' <;> dsimp [gap] <;> positivity
 
-@[tmio M, powerlib_domain] theorem n11_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] private theorem n11_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < n11 a d b e k := by
   rcases had with ha' | hd' <;> dsimp [n11] <;> positivity
 
-@[tmio M, powerlib_domain] theorem minorNumerator_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] private theorem minorNumerator_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < minorNumerator a d b e k := by
   rcases had with ha' | hd' <;> dsimp [minorNumerator] <;> positivity
 
-@[tmio M, powerlib_domain] theorem detNumerator_pos {a d b e k : ℝ}
+@[tmio M, powerlib_domain] private theorem detNumerator_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k) :
     0 < detNumerator a d b e k := by
   dsimp [detNumerator]
   positivity
 
 set_option maxHeartbeats 4000000 in
-@[tmio M, powerlib_domain] theorem minor_identity (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem minor_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     (matrix a d b e k).minor2 =
       k * coupling a d b e * minorNumerator a d b e k / (denominator a d b e k)^2 := by
@@ -209,7 +209,7 @@ set_option maxHeartbeats 4000000 in
   ring
 
 set_option maxHeartbeats 4000000 in
-@[tmio M, powerlib_domain] theorem det_identity (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem det_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     (matrix a d b e k).toMatrix.det =
       k^2 * (coupling a d b e)^2 * gap a d b e k * detNumerator a d b e k /
@@ -220,7 +220,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, coupling, gap, detNumerator]
   ring
 
-@[tmio M, powerlib_domain] theorem eq11 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem eq11 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * a * (matrix a d b e k).p11 + 2 * k * (matrix a d b e k).p12 = -1 := by
   dsimp [matrix]
@@ -228,7 +228,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio M, powerlib_domain] theorem eq12 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem eq12 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -b * (matrix a d b e k).p11 - a * (matrix a d b e k).p12 + k * (matrix a d b e k).p22 +
       e * (matrix a d b e k).p13 = 0 := by
@@ -237,7 +237,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio M, powerlib_domain] theorem eq13 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem eq13 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -(a + d) * (matrix a d b e k).p13 - k * (matrix a d b e k).p12 +
       k * (matrix a d b e k).p23 = 0 := by
@@ -246,7 +246,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio M, powerlib_domain] theorem eq22 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem eq22 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * b * (matrix a d b e k).p12 + 2 * e * (matrix a d b e k).p23 = -1 := by
   dsimp [matrix]
@@ -254,7 +254,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio M, powerlib_domain] theorem eq23 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem eq23 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -b * (matrix a d b e k).p13 - k * (matrix a d b e k).p22 - d * (matrix a d b e k).p23 +
       e * (matrix a d b e k).p33 = 0 := by
@@ -263,7 +263,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[tmio M, powerlib_domain] theorem eq33 (a d b e k : ℝ)
+@[tmio M, powerlib_domain] private theorem eq33 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * k * (matrix a d b e k).p23 - 2 * d * (matrix a d b e k).p33 = -1 := by
   dsimp [matrix]
@@ -271,52 +271,63 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
+@[tmio M, powerlib_domain] private theorem denominator_pos {a d b e k : ℝ}
+    (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
+    (had : 0 < a ∨ 0 < d) : 0 < denominator a d b e k := by
+  have hJ := coupling_pos ha hd hb he had
+  have hG := gap_pos ha hd hb he hk had
+  dsimp [denominator]
+  positivity
+
+/-- For nonnegative decays `a, d`, not both zero, and positive gains `b, e, k`, the witness is
+positive definite: its leading minors are positive (`SymmetricMatrix.form_pos`). -/
+@[tmio M, powerlib_domain] theorem form_pos {a d b e k : ℝ}
+    (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
+    (had : 0 < a ∨ 0 < d) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
+    0 < x ⬝ᵥ ((matrix a d b e k).toMatrix *ᵥ x) := by
+  have hJ := coupling_pos ha hd hb he had
+  have hG := gap_pos ha hd hb he hk had
+  have hq := denominator_pos ha hd hb he hk had
+  refine (matrix a d b e k).form_pos (div_pos (n11_pos ha hd hb he hk had) hq) ?_ ?_ x hx
+  · rw [minor_identity a d b e k hq.ne']
+    exact div_pos (mul_pos (mul_pos hk hJ) (minorNumerator_pos ha hd hb he hk had))
+      (pow_pos hq 2)
+  · rw [det_identity a d b e k hq.ne']
+    exact div_pos (mul_pos (mul_pos (mul_pos (pow_pos hk 2) (pow_pos hJ 2)) hG)
+      (detNumerator_pos ha hd hb he hk)) (pow_pos hq 3)
+
+/-- The witness solves the Lyapunov equation `Aᵀ P + P A = −1` of the LCL state matrix
+`A = [[−a, −b, 0], [k, 0, −k], [0, e, −d]]` (`StateSpace.plant`: decays `a, d`, input gains
+`b, e`, capacitor gain `k`) whenever its denominator is nonzero. -/
+@[tmio M, powerlib_domain] theorem lyapunov {a d b e k : ℝ} (hq : denominator a d b e k ≠ 0) :
+    (!![-a, -b, 0; k, 0, -k; 0, e, -d] : Matrix (Fin 3) (Fin 3) ℝ)ᵀ *
+        (matrix a d b e k).toMatrix +
+      (matrix a d b e k).toMatrix * !![-a, -b, 0; k, 0, -k; 0, e, -d] = -1 := by
+  have e11 := eq11 a d b e k hq
+  have e12 := eq12 a d b e k hq
+  have e13 := eq13 a d b e k hq
+  have e22 := eq22 a d b e k hq
+  have e23 := eq23 a d b e k hq
+  have e33 := eq33 a d b e k hq
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [SymmetricMatrix.toMatrix, Matrix.mul_apply, Fin.sum_univ_three] <;>
+    linarith
+
 end PassiveWitness
 
 /-- Synthesis on the state-space parameters: nonnegative decays, not both zero. -/
 def synthesizeState (s : StateSpace) (ha : 0 ≤ s.first.decay) (hd : 0 ≤ s.second.decay)
-    (had : 0 < s.first.decay ∨ 0 < s.second.decay) : Linear.Certificate s.plant.A := by
-  let a := s.first.decay
-  let d := s.second.decay
-  let b := s.first.inputGain.val
-  let e := s.second.inputGain.val
-  let k := s.capacitorGain.val
-  have hb : 0 < b := s.first.inputGain.property
-  have he : 0 < e := s.second.inputGain.property
-  have hk : 0 < k := s.capacitorGain.property
-  have hJ := PassiveWitness.coupling_pos ha hd hb he had
-  have hG := PassiveWitness.gap_pos ha hd hb he hk had
-  have hq : 0 < PassiveWitness.denominator a d b e k := by
-    dsimp [PassiveWitness.denominator]
-    positivity
-  have hn := ne_of_gt hq
-  let p := PassiveWitness.matrix a d b e k
-  have h1 : 0 < p.p11 := div_pos (PassiveWitness.n11_pos ha hd hb he hk had) hq
-  have h2 : 0 < p.minor2 := by
-    rw [PassiveWitness.minor_identity a d b e k hn]
-    exact div_pos (mul_pos (mul_pos hk hJ)
-      (PassiveWitness.minorNumerator_pos ha hd hb he hk had)) (pow_pos hq 2)
-  have h3 : 0 < p.toMatrix.det := by
-    rw [PassiveWitness.det_identity a d b e k hn]
-    exact div_pos (mul_pos (mul_pos (mul_pos (pow_pos hk 2) (pow_pos hJ 2)) hG)
-      (PassiveWitness.detNumerator_pos ha hd hb he hk)) (pow_pos hq 3)
-  have e11 := PassiveWitness.eq11 a d b e k hn
-  have e12 := PassiveWitness.eq12 a d b e k hn
-  have e13 := PassiveWitness.eq13 a d b e k hn
-  have e22 := PassiveWitness.eq22 a d b e k hn
-  have e23 := PassiveWitness.eq23 a d b e k hn
-  have e33 := PassiveWitness.eq33 a d b e k hn
-  exact {
-    P := p.toMatrix
-    symmetric := by
-      ext i j
-      fin_cases i <;> fin_cases j <;> rfl
-    positive := p.form_pos h1 h2 h3
-    lyapunov := by
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        simp [StateSpace.plant, SymmetricMatrix.toMatrix, Matrix.mul_apply, Fin.sum_univ_three] <;>
-        linarith }
+    (had : 0 < s.first.decay ∨ 0 < s.second.decay) : Linear.Certificate s.plant.A where
+  P := (PassiveWitness.matrix s.first.decay s.second.decay s.first.inputGain.val
+    s.second.inputGain.val s.capacitorGain.val).toMatrix
+  symmetric := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> rfl
+  positive := PassiveWitness.form_pos ha hd s.first.inputGain.property
+    s.second.inputGain.property s.capacitorGain.property had
+  lyapunov := PassiveWitness.lyapunov (PassiveWitness.denominator_pos ha hd
+    s.first.inputGain.property s.second.inputGain.property s.capacitorGain.property had).ne'
 
 /-- Synthesis for a passive, damped circuit, without a supplied witness. -/
 def synthesize (m : Circuit) (hp : m.Passive) (hd : m.Damped) : Linear.Certificate m.plant.A :=

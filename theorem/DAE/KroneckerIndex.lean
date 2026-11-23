@@ -42,6 +42,8 @@ index, and for linear DAEs it coincides with the differentiation index." Formali
 regularity premise of `theorem/DAE/Weierstrass.lean` and the derivative-array definition above.
 
 Results.
+* `oneFull_zero_iff` — the undifferentiated system is 1-full iff `E` is invertible; hence
+  `isDiffIndex_zero_iff` (index `0` = explicit ODE).
 * `oneFull_equiv_iff` — 1-fullness is invariant under `(E, A) ↦ (P E Q, P A Q)` with invertible
   `P`, `Q` (rectangular index sets allowed).
 * `oneFull_blocks_iff` — on the Weierstrass form `(diag(I, N), diag(J, I))`, 1-fullness of
@@ -54,9 +56,11 @@ Results.
 * `WeierstrassForm.velocity_determined_iff` — on solutions: state and input jet of order `μ`
   determine the velocity iff `μ ≥ nilpotencyClass N`; the Kronecker index is the least number
   of differentiations of the DAE that determines `x'`.
-* `LinearDAE.isDiffIndex_one` — alignment with `theorem/DAE/Linear.lean`: a semi-explicit linear
-  DAE with invertible `Ayy` and `m > 0` algebraic variables has differentiation index exactly
-  `1`, matching the corrected count of that module.
+* `LinearDAE.weierstrassForm`, `LinearDAE.isDiffIndex_one` — alignment with
+  `theorem/DAE/Linear.lean`: with invertible `Ayy` the Schur reduction is a Weierstrass form with
+  slow block `schurA` and nilpotent block `N = 0` (`oneFull_one`); with `m > 0` algebraic
+  variables `E` is singular (`not_oneFull_zero`), so the differentiation index is exactly `1`,
+  matching the corrected count of that module.
 * `pryceExample_isDiffIndex`, `pryceExample_index_vs_formulas` — alignment with
   `theorem/DAE/Pryce.lean`: the correction example `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` (as the
   linear DAE `pryceExampleE`, `pryceExampleA`, whose signature is `exampleSig`) has
@@ -115,22 +119,21 @@ omit [DecidableEq ι] in
   · intro h
     exact ⟨Nat.find h, Nat.find_spec h, fun μ hlt hμ => Nat.find_min h hlt hμ⟩
 
+/-- The undifferentiated system (order `0`) determines `x'` iff `E` is invertible. -/
+@[tmio T, powerlib_foundation] theorem oneFull_zero_iff {E A : Matrix ι ι K} :
+    OneFull E A 0 ↔ IsUnit E.det := by
+  rw [isUnit_iff_ne_zero, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
+  constructor
+  · rintro h ⟨v, hv, hEv⟩
+    exact hv (h (fun _ => v) hEv fun r hr => absurd hr (Nat.not_lt_zero r))
+  · intro h w hw _
+    exact by_contra fun hne => h ⟨w 0, hne, hw⟩
+
 /-- Index `0` means an explicit ODE: `IsDiffIndex E A 0` iff `E` is invertible. -/
 @[tmio T, powerlib_foundation] theorem isDiffIndex_zero_iff {E A : Matrix ι ι K} :
     IsDiffIndex E A 0 ↔ IsUnit E.det := by
-  have h0 : OneFull E A 0 ↔ ∀ v, E *ᵥ v = 0 → v = 0 := by
-    constructor
-    · intro h v hv
-      exact h (fun _ => v) hv fun r hr => absurd hr (Nat.not_lt_zero r)
-    · intro h w hw _
-      exact h _ hw
-  rw [IsDiffIndex, h0, isUnit_iff_ne_zero, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
-  constructor
-  · rintro ⟨h, -⟩ ⟨v, hv, hEv⟩
-    exact hv (h v hEv)
-  · intro h
-    exact ⟨fun v hv => by_contra fun hne => h ⟨v, hne, hv⟩,
-      fun μ hμ => absurd hμ (Nat.not_lt_zero μ)⟩
+  rw [IsDiffIndex, oneFull_zero_iff]
+  exact and_iff_left fun μ hμ => absurd hμ (Nat.not_lt_zero μ)
 
 /-! ## Invariance under equivalence transformations -/
 
@@ -460,42 +463,41 @@ namespace LinearDAE
 
 variable {n m p : ℕ} (d : LinearDAE n m p)
 
+/-- The index-1 Schur reduction as a Weierstrass form (`Ayy` invertible): with
+`P = [[I, −Axy Ayy⁻¹], [0, Ayy⁻¹]]` and `Q = [[I, 0], [−Ayy⁻¹ Ayx, I]]`,
+`P E Q = diag(I, 0)` and `P A Q = diag(schurA, I)`: the slow block is the reduced matrix
+`schurA` and the nilpotent block is `N = 0`. -/
+def weierstrassForm (hA : IsUnit d.Ayy.det) : WeierstrassForm (massMatrix n m) d.jacobian where
+  k := n
+  l := m
+  P := fromBlocks 1 (-(d.Axy * d.Ayy⁻¹)) 0 d.Ayy⁻¹
+  P' := fromBlocks 1 d.Axy 0 d.Ayy
+  Q := fromBlocks 1 0 (-(d.Ayy⁻¹ * d.Ayx)) 1
+  Q' := fromBlocks 1 0 (d.Ayy⁻¹ * d.Ayx) 1
+  J := d.schurA
+  N := 0
+  P_mul_P' := by simp [fromBlocks_multiply, Matrix.mul_assoc, nonsing_inv_mul _ hA]
+  P'_mul_P := by simp [fromBlocks_multiply, mul_nonsing_inv _ hA]
+  Q_mul_Q' := by simp [fromBlocks_multiply]
+  Q'_mul_Q := by simp [fromBlocks_multiply]
+  nilpotent := IsNilpotent.zero
+  E_eq := by simp [massMatrix, fromBlocks_multiply]
+  A_eq := by
+    simp [jacobian, schurA, fromBlocks_multiply, Matrix.mul_assoc, nonsing_inv_mul _ hA,
+      sub_eq_add_neg]
+
 /-- Index-1 semi-explicit DAE (`Ayy` invertible): one differentiation determines the
-velocity. -/
+velocity (the nilpotent block of `weierstrassForm` is `0`). -/
 @[tmio T, powerlib_foundation] theorem oneFull_one (hA : IsUnit d.Ayy.det) :
-    OneFull (massMatrix n m) d.jacobian 1 := by
-  intro w h0 hr
-  have h1 := hr 0 Nat.zero_lt_one
-  have hx : ∀ i, w 0 (Sum.inl i) = 0 := by
-    intro i
-    have := congrFun h0 (Sum.inl i)
-    simpa [massMatrix, fromBlocks_mulVec, Function.comp_def] using this
-  have hy : d.Ayy *ᵥ (fun i => w 0 (Sum.inr i)) = 0 := by
-    funext i
-    have := congrFun h1 (Sum.inr i)
-    have hx' : (fun j => w 0 (Sum.inl j)) = 0 := funext hx
-    simp only [massMatrix, jacobian, fromBlocks_mulVec, Function.comp_def, Sum.elim_inr,
-      zero_mulVec, add_zero, Pi.zero_apply, hx', mulVec_zero, zero_add] at this
-    simpa using this.symm
-  have hy0 : (fun i => w 0 (Sum.inr i)) = 0 := by
-    calc (fun i => w 0 (Sum.inr i)) = (d.Ayy⁻¹ * d.Ayy) *ᵥ (fun i => w 0 (Sum.inr i)) := by
-          rw [nonsing_inv_mul _ hA, one_mulVec]
-      _ = 0 := by rw [← mulVec_mulVec, hy, mulVec_zero]
-  funext x
-  rcases x with i | i
-  · exact hx i
-  · exact congrFun hy0 i
+    OneFull (massMatrix n m) d.jacobian 1 :=
+  ((d.weierstrassForm hA).oneFull_iff 1).mpr (pow_one _)
 
 /-- With `m > 0` algebraic variables, the undifferentiated system does not determine the
-velocity of the algebraic variables. -/
+velocity of the algebraic variables: `E = diag(I, 0)` is singular (`oneFull_zero_iff`). -/
 @[tmio T, powerlib_foundation] theorem not_oneFull_zero (hm : 0 < m) :
     ¬ OneFull (massMatrix n m) d.jacobian 0 := by
-  intro h
-  have := h (fun _ => Sum.elim 0 fun _ => 1) ?_ fun r hr => absurd hr (Nat.not_lt_zero r)
-  · have h' := congrFun this (Sum.inr ⟨0, hm⟩)
-    simp at h'
-  · funext x
-    rcases x with i | i <;> simp [massMatrix, fromBlocks_mulVec, Function.comp_def]
+  have : Nonempty (Fin m) := ⟨⟨0, hm⟩⟩
+  simp [oneFull_zero_iff, massMatrix, det_fromBlocks_zero₂₁]
 
 /-- A semi-explicit linear DAE with invertible `Ayy` and `m > 0` has differentiation index
 exactly `1` (one differentiation of the constraint, as corrected in `theorem.DAE.Linear`). -/
@@ -537,12 +539,7 @@ linear DAE. -/
     funext i
     fin_cases i <;> simp <;> linarith
   · obtain rfl : μ = 0 := by omega
-    have := hμ' (fun _ => ![0, 0, 1]) (by
-      funext i
-      fin_cases i <;> simp [pryceExampleE, mulVec, dotProduct, Fin.sum_univ_three])
-      fun r hr => absurd hr (Nat.not_lt_zero r)
-    have h2 := congrFun this 2
-    simp at h2
+    simp [oneFull_zero_iff, pryceExampleE, det_fin_three] at hμ'
 
 /-- The differentiation index `1` of the counterexample equals Pryce's corrected formula and
 differs from the note's formula (`0`). -/

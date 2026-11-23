@@ -502,11 +502,7 @@ variable (sp : LinearSP n m)
 @[tmio T, powerlib_foundation] theorem coords_hasDerivAt_slow {x : ℝ → Fin n → ℝ}
     {z : ℝ → Fin m → ℝ} (hx : ∀ t, HasDerivAt x (sp.A11 *ᵥ x t + sp.A12 *ᵥ z t) t) (t : ℝ) :
     HasDerivAt x (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t)) t := by
-  have hslow : sp.A11 *ᵥ x t + sp.A12 *ᵥ z t =
-      sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t) := by
-    simp only [reducedMatrix, gain, mulVec_add, sub_mulVec, ← mulVec_mulVec, Matrix.mul_assoc]
-    abel
-  rw [← hslow]; exact hx t
+  rw [← sp.slowField_eq]; exact hx t
 
 /-- Slow/fast coordinates `η = z + L x`, fast part: the fast equation reads
 `η̇ = A₂₂η/ε + L(A₀x + A₁₂η)`. -/
@@ -517,11 +513,8 @@ variable (sp : LinearSP n m)
     HasDerivAt (fun s => z s + sp.gain *ᵥ x s)
       (ε⁻¹ • (sp.A22 *ᵥ (z t + sp.gain *ᵥ x t)) +
         sp.gain *ᵥ (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t))) t := by
-  have hAL : sp.A22 *ᵥ (sp.gain *ᵥ x t) = sp.A21 *ᵥ x t := by
-    rw [mulVec_mulVec, gain, ← Matrix.mul_assoc, mul_nonsing_inv _ hU, Matrix.one_mul]
-  have hx' := sp.coords_hasDerivAt_slow hx t
-  have h := (hz t).add (Dynamics.hasDerivAt_mulVec sp.gain hx')
-  rw [mulVec_add, hAL, add_comm (sp.A22 *ᵥ z t)]
+  have h := (hz t).add (Dynamics.hasDerivAt_mulVec sp.gain (sp.coords_hasDerivAt_slow hx t))
+  rw [mulVec_add, sp.A22_mulVec_gain hU, add_comm (sp.A22 *ᵥ z t)]
   exact h
 
 /-- **Finite-horizon `O(ε)` approximation** (Tikhonov's theorem, linear case). -/

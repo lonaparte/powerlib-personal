@@ -356,18 +356,7 @@ Static evidence on the model, not a connection conclusion. -/
     (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) (hKi : Ki ≠ 0) (a : ℝ) :
     {x : ℝ² | piPLLField p.h Kp Ki δω x = 0 ∧
       x 0 ∈ Ico a (a + 2 * Real.pi)}.ncard ≤ 2 := by
-  have hne := p.formB_coeffs_ne_zero hωC hΔ hVg
-  have hle := SpecialFunctions.trigPoly1_ncard_zeroSet_le_two hne a
-  have hfin := SpecialFunctions.trigPoly2_zeroSet_finite (c₂ := 0) (s₂ := 0)
-    (fun h => hne ⟨h.1, h.2.1, h.2.2.1⟩) a
-  refine le_trans (ncard_le_ncard_of_injOn (fun x : ℝ² => x 0) ?_ ?_ hfin) hle
-  · rintro x ⟨hx, hxa⟩
-    refine ⟨hxa, ?_⟩
-    have := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).1
-    rwa [p.h_eq_trigPoly2] at this
-  · rintro x ⟨hx, -⟩ y ⟨hy, -⟩ hxy
-    have h1 := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).2
-    have h2 := ((PLL.piPLLField_eq_zero_iff hKi y).mp hy).2
-    exact PhasePlane.ext_iff'.mpr ⟨hxy, by rw [h1, h2]⟩
+  rw [PLL.piPLL_ncard_equilibria_window hKi, p.h_eq_trigPoly2]
+  exact SpecialFunctions.trigPoly1_ncard_zeroSet_le_two (p.formB_coeffs_ne_zero hωC hΔ hVg) a
 
 end powerlib.GFL.LCLine

@@ -157,17 +157,13 @@ with a large step are not stable. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  have hA : IsHurwitz unitCircuit.plant.A := by
-    have hp : unitCircuit.Passive := by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-        using unitCircuit_passive
-    have hs := (passive_stable_iff _ hp).mpr (by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-        using (show unitCircuit.Damped from Or.inl one_ne_zero))
-    simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] at hs
-    exact (isHurwitz_plant_iff _).mpr hs
+  have hp : unitCircuit.Passive := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using unitCircuit_passive
   exact Numerics.not_eulerStepPorts_realizationSoundUnder_linear family_isLinear
-    (by norm_num) hP (x := unitCircuit) hA
+    (by norm_num) hP (x := unitCircuit)
+    ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
+      (isHurwitz_of_passive unitCircuit hp (Or.inl one_ne_zero)))
 
 /-- The port currents at the unit converter current are `(1, 0)`, whatever the port voltages. -/
 @[tmio M, powerlib_domain] private theorem output_unit (m : Circuit) (u : Fin 2 → ℝ) :

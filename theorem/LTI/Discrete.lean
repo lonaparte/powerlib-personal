@@ -15,7 +15,7 @@ Scope.
   finite-dimensional space are equivalent, so exponential decay does not depend on this choice
   (only the constant `C` does).
 * Exponential stability (uniform geometric decay of every trajectory) is
-  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) →
+  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) →
   ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖`;
   it quantifies real constants, so it is written out in each statement that uses it rather
   than defined (single-semantics rule).
@@ -66,36 +66,30 @@ open scoped Topology
 
 abbrev State (n : ℕ) := Fin n → ℝ
 
-/-- A discrete-time autonomous LTI model `x (k+1) = Φ *ᵥ x k`. -/
-@[ext] structure Model (n : ℕ) where
-  Φ : Matrix (Fin n) (Fin n) ℝ
-
 variable {n : ℕ}
 
-def Model.step (m : Model n) (x : State n) : State n := m.Φ *ᵥ x
+/-- The explicit forward solution of `x (k+1) = Φ *ᵥ x k`. -/
+def response (Φ : Matrix (Fin n) (Fin n) ℝ) (initial : State n) (k : ℕ) : State n :=
+  (Φ ^ k) *ᵥ initial
 
-/-- The explicit forward solution. -/
-def response (m : Model n) (initial : State n) (k : ℕ) : State n :=
-  (m.Φ ^ k) *ᵥ initial
-
-@[tmio T, simp, powerlib_foundation] theorem response_zero (m : Model n) (initial : State n) :
-    response m initial 0 = initial := by
+@[tmio T, simp, powerlib_foundation] theorem response_zero (Φ : Matrix (Fin n) (Fin n) ℝ)
+    (initial : State n) : response Φ initial 0 = initial := by
   simp [response]
 
 /-- The explicit response solves the recursion. -/
-@[tmio T, powerlib_foundation] theorem response_isTrajectory (m : Model n) (initial : State n) :
-    ∀ k, response m initial (k + 1) = m.step (response m initial k) := by
+@[tmio T, powerlib_foundation] theorem response_isTrajectory (Φ : Matrix (Fin n) (Fin n) ℝ)
+    (initial : State n) : ∀ k, response Φ initial (k + 1) = Φ *ᵥ response Φ initial k := by
   intro k
-  simp [response, Model.step, pow_succ', Matrix.mulVec_mulVec]
+  simp [response, pow_succ', Matrix.mulVec_mulVec]
 
 /-- Every trajectory is the explicit response of its initial state. -/
-@[tmio T, powerlib_foundation] theorem eq_response {m : Model n} {x : ℕ → State n}
-    (hx : ∀ k, x (k + 1) = m.step (x k)) (k : ℕ) : x k = response m (x 0) k := by
+@[tmio T, powerlib_foundation] theorem eq_response {Φ : Matrix (Fin n) (Fin n) ℝ}
+    {x : ℕ → State n} (hx : ∀ k, x (k + 1) = Φ *ᵥ x k) (k : ℕ) : x k = response Φ (x 0) k := by
   induction k with
   | zero => simp
   | succ k ih =>
     rw [hx k, ih]
-    exact (response_isTrajectory m (x 0) k).symm
+    exact (response_isTrajectory Φ (x 0) k).symm
 
 /-- Schur stability: every complex eigenvalue lies in the open unit disk. -/
 def SchurStable (Φ : Matrix (Fin n) (Fin n) ℝ) : Prop :=
@@ -312,10 +306,10 @@ open scoped Matrix.Norms.Operator
 
 /-- Schur stability implies uniform exponential decay of every trajectory:
 `‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`. -/
-@[tmio T, powerlib_foundation] theorem exponentiallyStable_of_schurStable {m : Model n}
-    (h : SchurStable m.Φ) :
+@[tmio T, powerlib_foundation] theorem exponentiallyStable_of_schurStable
+    {Φ : Matrix (Fin n) (Fin n) ℝ} (h : SchurStable Φ) :
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := h.exists_pow_bound
   refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
   rw [eq_response hx k, response]
@@ -356,14 +350,14 @@ one step forward by `Φ`. -/
 
 /-- An eigenvalue on or outside the unit circle produces a real trajectory (the real or the
 imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero. -/
-@[tmio T, powerlib_foundation] theorem exists_trajectory_not_tendsto_zero {m : Model n} {μ : ℂ}
-    {v : Fin n → ℂ} (hv : v ≠ 0) (heig : m.Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
-    (hμ : 1 ≤ ‖μ‖) :
-    ∃ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) ∧ ¬ Tendsto x atTop (𝓝 0) := by
+@[tmio T, powerlib_foundation] theorem exists_trajectory_not_tendsto_zero
+    {Φ : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
+    (heig : Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) (hμ : 1 ≤ ‖μ‖) :
+    ∃ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) ∧ ¬ Tendsto x atTop (𝓝 0) := by
   set x := eigenmodeSeq Complex.reCLM μ v
   set y := eigenmodeSeq Complex.imCLM μ v
-  have hx : ∀ k, x (k + 1) = m.step (x k) := fun k => (mulVec_eigenmodeSeq heig (.inl rfl) k).symm
-  have hy : ∀ k, y (k + 1) = m.step (y k) := fun k => (mulVec_eigenmodeSeq heig (.inr rfl) k).symm
+  have hx : ∀ k, x (k + 1) = Φ *ᵥ x k := fun k => (mulVec_eigenmodeSeq heig (.inl rfl) k).symm
+  have hy : ∀ k, y (k + 1) = Φ *ᵥ y k := fun k => (mulVec_eigenmodeSeq heig (.inr rfl) k).symm
   by_contra hcon
   simp only [not_exists, not_and, not_not] at hcon
   have hxt := hcon x hx
@@ -389,19 +383,21 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
   exact absurd (hlow k) (not_le.mpr hk)
 
 /-- Convergence of every trajectory forces a Schur matrix. -/
-@[tmio T, powerlib_foundation] theorem schurStable_of_asymptoticallyStable {m : Model n}
-    (h : (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0))) :
-    SchurStable m.Φ := by
+@[tmio T, powerlib_foundation] theorem schurStable_of_asymptoticallyStable
+    {Φ : Matrix (Fin n) (Fin n) ℝ}
+    (h : (∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) → Tendsto x atTop (𝓝 0))) :
+    SchurStable Φ := by
   intro μ v hv heig
   by_contra hμ
   obtain ⟨x, hx, hnot⟩ := exists_trajectory_not_tendsto_zero hv heig (not_lt.mp hμ)
   exact hnot (h x hx)
 
 /-- Uniform exponential decay of every trajectory implies convergence of every trajectory. -/
-@[tmio T, powerlib_foundation] theorem asymptoticallyStable_of_exponentiallyStable {m : Model n}
+@[tmio T, powerlib_foundation] theorem asymptoticallyStable_of_exponentiallyStable
+    {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) :
-    (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0)) := by
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) :
+    (∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) → Tendsto x atTop (𝓝 0)) := by
   obtain ⟨C, -, ρ, hρ0, hρ1, hb⟩ := h
   intro x hx
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k * ‖x 0‖) atTop (𝓝 0) := by
@@ -410,16 +406,18 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
 
 /-- Uniform exponential decay of every trajectory (`‖x k‖ ≤ C ρ^k ‖x 0‖`, `C > 0`,
 `0 ≤ ρ < 1`) holds exactly for a Schur matrix. -/
-@[tmio T, powerlib_foundation] theorem exponentiallyStable_iff_schurStable (m : Model n) :
+@[tmio T, powerlib_foundation] theorem exponentiallyStable_iff_schurStable
+    (Φ : Matrix (Fin n) (Fin n) ℝ) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
-      SchurStable m.Φ :=
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
+      SchurStable Φ :=
   ⟨fun h => schurStable_of_asymptoticallyStable (asymptoticallyStable_of_exponentiallyStable h),
     exponentiallyStable_of_schurStable⟩
 
-@[tmio T, powerlib_foundation] theorem asymptoticallyStable_iff_schurStable (m : Model n) :
-    (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0)) ↔
-      SchurStable m.Φ :=
+@[tmio T, powerlib_foundation] theorem asymptoticallyStable_iff_schurStable
+    (Φ : Matrix (Fin n) (Fin n) ℝ) :
+    (∀ x : ℕ → State n, (∀ k, x (k + 1) = Φ *ᵥ x k) → Tendsto x atTop (𝓝 0)) ↔
+      SchurStable Φ :=
   ⟨schurStable_of_asymptoticallyStable,
     fun h => asymptoticallyStable_of_exponentiallyStable (exponentiallyStable_of_schurStable h)⟩
 

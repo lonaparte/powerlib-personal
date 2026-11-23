@@ -196,12 +196,8 @@ noise. -/
   have hV2 : MemLp V 2 P := hV.memLp (memLp_id_gaussianReal 2)
   set Z : Ω → ℝ := fun ω => X ω - m - k * (h * X ω + V ω - h * m) with hZ
   have hZlin : Z = fun ω => (1 - k * h) * (X ω - m) + (-k) * V ω := kalman_error_eq
-  have hZ2 : MemLp Z 2 P := by rw [hZlin]; exact (hX2.const_mul _).add (hV2.const_mul _)
-  have hmean0 : ∫ ω, Z ω ∂P = 0 := by
-    rw [hZlin, integral_add ((hX2.integrable one_le_two).const_mul _)
-      ((hV2.integrable one_le_two).const_mul _), integral_const_mul, integral_const_mul,
-      hX'.integral_eq, hV.integral_eq, integral_id_gaussianReal, integral_id_gaussianReal]
-    simp
+  have hZ2 : MemLp Z 2 P := kalman_error_memLp hX hV
+  have hmean0 : ∫ ω, Z ω ∂P = 0 := kalman_error_integral_eq_zero hX hV
   have hvar := variance_eq_sub hZ2
   rw [hmean0] at hvar
   have e2 : ∫ ω, Z ω ^ 2 ∂P = Var[Z; P] := by rw [hvar]; simp

@@ -41,10 +41,9 @@ Results (cable impedance and supporting special-function analysis).
   exactly.
 * **High-frequency (skin-effect) limit**: `coreImpedance_div_surface`
   (`Z(m)/(ρ m/(2π r)) = I₀(mr)/I₁(mr)`), `coreImpedance_tendsto_surface` (along
-  `m = (1 + i)s`, `s → ∞`: `Z/(ρ m/(2π r)) → 1`), `coreImpedance_sub_surface_isBigO`
-  (`Z(m) = ρ m/(2π r) + O(1)` along the same ray), `coreImpedance_tendsto_surface_omega` (the
-  same limit as `ω → ∞` for `m(ω) = (1 + i)√(ωμ/(2ρ))`, with `m² = jωμ/ρ` by
-  `SpecialFunctions.one_add_I_mul_sqrt_sq`).
+  `m = (1 + i)s`, `s → ∞`: `Z/(ρ m/(2π r)) → 1`; with `s = √(ωμ/(2ρ))`, `m² = jωμ/ρ` by
+  `SpecialFunctions.one_add_I_mul_sqrt_sq`, so this is `ω → ∞`),
+  `coreImpedance_sub_surface_isBigO` (`Z(m) = ρ m/(2π r) + O(1)` along the same ray).
 * Tubular conductors (§1.2.2): the exact (Schelkunoff) tubular-conductor impedances need the
   second-kind functions `K₀`, `K₁` in addition to `I₀`, `I₁`; they are defined (integral
   representation), with their small/large-argument behaviour, derivatives and the Wronskian
@@ -64,7 +63,7 @@ open Filter Topology _root_.Asymptotics
 open scoped Nat
 open powerlib.SpecialFunctions (besselI0 besselI1 besselSeries0 besselSeries1 besselRatio_sub_le
   besselI0_div_besselI1_sub_one_le tendsto_besselI0_div_besselI1 one_add_I_mul_re
-  norm_one_add_I_mul_le sqrt_omega_tendsto_atTop)
+  norm_one_add_I_mul_le)
 
 /-- Schelkunoff surface impedance of a solid round conductor of radius `r` and resistivity `ρ`,
 per unit length: `Z = (ρ m/(2π r)) I₀(m r)/I₁(m r)` with `m = √(jωμ/ρ)` (T-cable §1.2.1). -/
@@ -227,15 +226,5 @@ open MeasureTheory Set intervalIntegral
         |ρ| * 2 * s / (2 * Real.pi * r) * (C / (s * r)) :=
         mul_le_mul hZs hb (norm_nonneg _) (by positivity)
     _ = |ρ| * 2 / (2 * Real.pi * r) * (C / r) := by field_simp
-
-/-- **Skin-effect limit in angular frequency**: with `m(ω) = (1 + i)√(ωμ/(2ρ)) = √(jωμ/ρ)`
-(`ρ, μ, r > 0`), `Z(m(ω)) / (ρ m(ω)/(2π r)) → 1` as `ω → ∞`. -/
-@[tmio M, powerlib_domain] theorem coreImpedance_tendsto_surface_omega {ρ r μ : ℝ} (hρ : 0 < ρ)
-    (hr : 0 < r) (hμ : 0 < μ) :
-    Tendsto (fun ω : ℝ =>
-      coreImpedance ρ r ((1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)) /
-        ((ρ : ℂ) * ((1 + Complex.I) * (Real.sqrt (ω * μ / (2 * ρ)) : ℂ)) / (2 * Real.pi * r)))
-      atTop (𝓝 1) :=
-  (coreImpedance_tendsto_surface hρ.ne' hr).comp (sqrt_omega_tendsto_atTop hμ hρ)
 
 end powerlib.Passive.Line.CableBessel

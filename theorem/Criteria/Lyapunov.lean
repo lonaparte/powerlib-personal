@@ -19,6 +19,10 @@ Results.
   `M a = Re μ • a - Im μ • b` and `M b = Im μ • a + Re μ • b`.
 * `lyapunov_form_eigenpair` (the Lyapunov form at an eigenvector): for symmetric `P`,
   `aᵀ P M a + bᵀ P M b = Re μ · (aᵀ P a + bᵀ P b)`.
+* `re_neg_of_lyapunov_observable` (semidefinite dissipation and observability): if
+  `P = Pᵀ ⪰ 0`, `wᵀ P (M w) ≤ 0` for every `w`, and the only real eigen-pair `(a, b)` of `M`
+  (`M a = x a − y b`, `M b = y a + x b`, `x ≥ 0`) without dissipation is zero, every complex
+  eigenvalue of `M` has negative real part.
 * `re_neg_of_lyapunov`: if `P = Pᵀ` is positive definite and `wᵀ P (M w) < 0` for every
   `w ≠ 0`, every complex eigenvalue of `M` has negative real part (on `Fin N` this is
   `LinearSystems.IsHurwitz M`); `re_nonpos_of_lyapunov`: with `wᵀ P (M w) ≤ 0`, nonpositive
@@ -28,8 +32,9 @@ Results.
 Used by the Lyapunov certificates of `theorem/Linear/Certificate.lean`, the spectrum of linear
 port-Hamiltonian systems (`theorem/PH/PositiveReal.lean`, `theorem/PH/Observability.lean`,
 `theorem/PH/Composition.lean`), the two-time-scale linear theorem
-(`theorem/SingularPerturbation/Linear.lean`) and the boundary-layer / frozen-fast /
-finite-horizon singular-perturbation modules.
+(`theorem/SingularPerturbation/Linear.lean`), the boundary-layer / frozen-fast /
+finite-horizon singular-perturbation modules and the gain condition of the multi-area
+load-frequency control (`theorem/PowerSystem/Frequency/LFCNetwork.lean`).
 
 Family and connection conclusions.
 * None: static linear algebra.
@@ -102,8 +107,32 @@ variable {ι : Type*} [Fintype ι] {M P : Matrix ι ι ℝ}
   · linarith [hPpos _ h, hge fun i => (v i).im]
   · linarith [hPpos _ h, hge fun i => (v i).re]
 
+/-- **Semidefinite dissipation and observability.** Let `P = Pᵀ` be positive semidefinite with
+`wᵀ P (M w) ≤ 0` for every `w`. If the only real pair `(a, b)` with `M a = x a − y b`,
+`M b = y a + x b`, `x ≥ 0` and no dissipation (`aᵀ P M a = bᵀ P M b = 0`) is `a = b = 0`, every
+complex eigenvalue of `M` has negative real part: at `Re μ ≥ 0` the Lyapunov form at the
+eigenvector (`lyapunov_form_eigenpair`) forces both dissipations to vanish. -/
+@[tmio T, powerlib_foundation] theorem re_neg_of_lyapunov_observable (hPsymm : Pᵀ = P)
+    (hPnn : ∀ w : ι → ℝ, 0 ≤ w ⬝ᵥ (P *ᵥ w)) (hdiss : ∀ w : ι → ℝ, w ⬝ᵥ (P *ᵥ (M *ᵥ w)) ≤ 0)
+    (hobs : ∀ (x y : ℝ) (a b : ι → ℝ), M *ᵥ a = x • a - y • b → M *ᵥ b = y • a + x • b →
+      0 ≤ x → a ⬝ᵥ (P *ᵥ (M *ᵥ a)) = 0 → b ⬝ᵥ (P *ᵥ (M *ᵥ b)) = 0 → a = 0 ∧ b = 0)
+    {μ : ℂ} {v : ι → ℂ} (hv : v ≠ 0) (heig : M.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
+    μ.re < 0 := by
+  by_contra hμ
+  push Not at hμ
+  obtain ⟨hMa, hMb⟩ := mulVec_re_im_of_eigenpair heig
+  have hform := lyapunov_form_eigenpair hPsymm heig
+  have ha := hdiss fun i => (v i).re
+  have hb := hdiss fun i => (v i).im
+  have hS := mul_nonneg hμ (add_nonneg (hPnn fun i => (v i).re) (hPnn fun i => (v i).im))
+  obtain ⟨h1, h2⟩ := hobs _ _ _ _ hMa hMb hμ (by linarith) (by linarith)
+  rcases re_ne_zero_or_im_ne_zero hv with h | h
+  · exact h h1
+  · exact h h2
+
 /-- If `P = Pᵀ` is positive definite and `wᵀ P (M w) < 0` for all `w ≠ 0`, every complex
-eigenvalue of `M` has negative real part. -/
+eigenvalue of `M` has negative real part (`re_neg_of_lyapunov_observable`: a pair without
+dissipation is zero). -/
 @[tmio T, powerlib_foundation] theorem re_neg_of_lyapunov
     (hPsymm : Pᵀ = P) (hPpos : ∀ w : ι → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
     (hdiss : ∀ w : ι → ℝ, w ≠ 0 → w ⬝ᵥ (P *ᵥ (M *ᵥ w)) < 0)
@@ -113,17 +142,12 @@ eigenvalue of `M` has negative real part. -/
     by_cases hw : w = 0
     · simp [hw]
     · exact (hdiss w hw).le
-  have hform := lyapunov_form_eigenpair hPsymm heig
-  have hS := form_re_im_pos hPpos hv
-  have hneg : μ.re * ((fun i => (v i).re) ⬝ᵥ (P *ᵥ fun i => (v i).re) +
-      (fun i => (v i).im) ⬝ᵥ (P *ᵥ fun i => (v i).im)) < 0 := by
-    rw [← hform]
-    rcases re_ne_zero_or_im_ne_zero hv with h | h
-    · linarith [hdiss _ h, hle fun i => (v i).im]
-    · linarith [hdiss _ h, hle fun i => (v i).re]
-  by_contra hμ
-  push Not at hμ
-  linarith [mul_nonneg hμ hS.le]
+  have hge : ∀ w, 0 ≤ w ⬝ᵥ (P *ᵥ w) := fun w => by
+    by_cases hw : w = 0
+    · simp [hw]
+    · exact (hPpos w hw).le
+  exact re_neg_of_lyapunov_observable hPsymm hge hle (fun _ _ a b _ _ _ ha hb =>
+    ⟨by_contra fun h => (hdiss a h).ne ha, by_contra fun h => (hdiss b h).ne hb⟩) hv heig
 
 /-- Closed half plane: if `P = Pᵀ` is positive definite and `wᵀ P (M w) ≤ 0` for all `w`, every
 complex eigenvalue of `M` has nonpositive real part. -/

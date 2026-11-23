@@ -46,23 +46,19 @@ Scaffolds: the carrier as a parameterization of the PLL–DC model
 
 Results.
 * `Pac_eq` : `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)` for both signs `s`
-  (the `X_g` cross terms cancel in `Re S̄`); `Pac_flip_invariant`.
+  (the `X_g` cross terms cancel in `Re S̄`), so `P_ac` does not depend on the drop sign.
 * `carrierField_eq_PLLDC_field` : for every `I_q*` and drop sign `s` the carrier field is the
   PLL–DC field `PLLDC.Params.field` of `toPLLDC s` (`ω_s = ω_g = 1`, `V_dc* = 1`,
   `(k_p, k_i) = (K_p^pll, K_i^pll)`, `I₀ = I_dc`, `i_q0 = I_q*`, the lossless line of reactance
   `s X_g`, no reference offset) in the same coordinates. The PLL–DC model's static results hold for
   the carrier through this identity: it is `C¹` on `V_dc ≠ 0` (`PLLDC.Params.field_contDiffOn`), its
   Jacobian there is `PLLDC.Params.jacobian`, and every equilibrium has `V_dc = 1` and
-  `K_i^pll x_p = 0` (`PLLDC.Params.equilibrium_Vdc`, `PLLDC.Params.equilibrium_ki_xpll`), so
-  `i_d* = K_i^dvc ξ` there (`equilibrium_idr`).
+  `K_i^pll x_p = 0` (`PLLDC.Params.equilibrium_Vdc`, `PLLDC.Params.equilibrium_ki_xpll`).
 * `carrierField_reflect_sign` : for `I_q* = 0`, the involution
   `S(θ_e, x_p, V_dc, ξ) = (−θ_e, −x_p, V_dc, ξ)` conjugates the two writings,
   `F_{−s} ∘ S = S ∘ F_s` (in particular `F_{s=−1} ∘ S = S ∘ F_{s=1}`);
-  `carrierField_neg_sign_eq_transport` expresses this as a coordinate
-  transport, so equilibria correspond (`carrier_equilibrium_iff`), every sentence holds at
-  mirror points alike (`BasinGuard.flip_mem_den_iff`, below) and the Jacobians are similar
-  (`carrier_jacobian_conj`), so they have equal characteristic polynomials
-  (`Linear.charpoly_conj`).
+  `carrierField_neg_sign_eq_transport` expresses this as a coordinate transport, so every
+  sentence holds at mirror points alike (`BasinGuard.flip_mem_den_iff`, below).
 * `dcNode_partial_Vdc_eq_zero_iff` : the DC-node diagonal Jacobian entry at `V_dc = 1` (the entry
   of `PLLDC.Params.jacobian`) is `−(3/(2C))(V cos θ_e (K_p^dvc + I_d0) − V sin θ_e I_q*)`,
   `I_d0 = i_d*|_{V_dc = 1}`; for `I_q* = 0` it vanishes iff `K_p^dvc = −I_d0`, independently of
@@ -110,8 +106,8 @@ characterized by the linearization there
   not exact on the carriers either: the carrier at `(0, 0, 1, 0)` whose four-state reading is
   `FourState.offEquilibrium` (unstable, not an equilibrium) witnesses it
   (`PLLDC.not_exactUnder_positiveReference_unstable`).
-The mirror equilibria (`carrier_equilibrium_iff`), the Jacobian similarity, `P_ac`, the DC-node
-entry and the field identity with the PLL–DC model are static evidence.
+The mirror identity of the two drop signs, `P_ac`, the DC-node entry and the field identity with
+the PLL–DC model are static evidence.
 
 Correction (`derivation-log.md` §3): `K_p^{dvc,*} = I_d0` is the statement in the OUT-positive
 frame of the sister project (`GFLDC`); in this IN-positive carrier it reads `K_p^{dvc,*} = −I_d0`
@@ -190,14 +186,11 @@ def Pac (s : ℝ) (x : State 4) : ℝ := 3 / 2 * (q.vg s x * (starRingEnd ℂ) (
   simp [cur]
   ring
 
-/-- `P_ac` is invariant under the IN/OUT flip of the reactance drop. -/
-@[tmio M, powerlib_domain] theorem Pac_flip_invariant (x : State 4) : q.Pac 1 x = q.Pac (-1) x := by
-  rw [Pac_eq, Pac_eq]
-
-/-- The carrier field with drop sign `s` (`s = 1`: the IN-positive `basin-guard` carrier). -/
+/-- The carrier field with drop sign `s` (`s = 1`: the IN-positive `basin-guard` carrier); its DC
+row is the DC-node law `nodeRate`. -/
 def carrierField (s : ℝ) (x : State 4) : State 4 :=
   WithLp.toLp 2 ![q.Kpp * (q.vg s x).im + q.Kip * x 1, (q.vg s x).im,
-    (q.Idc + q.Pac s x / x 2) / q.C, 1 - x 2]
+    nodeRate q.C q.Idc (q.Pac s x) (x 2), 1 - x 2]
 
 /-- The PLL–DC parameters of the carrier with drop sign `s`: `ω_s = ω_g = 1` (per-unit grid
 frequency), `V_dc* = 1`, `(k_p, k_i) = (K_p^pll, K_i^pll)`, `I₀ = I_dc`, `i_q0 = I_q*`, the same
@@ -231,13 +224,10 @@ Static evidence on the model, not a connection conclusion. -/
   ext i
   fin_cases i <;>
     simp [carrierField, PLLDC.Params.field, toPLLDC, vg_im, Pac_eq, idr, PLLDC.Params.vgq,
-      PLLDC.Params.vgd, PLLDC.Params.idRef, Passive.SeriesRLC.reactance]
+      PLLDC.Params.vgd, PLLDC.Params.idRef, Passive.SeriesRLC.reactance, nodeRate]
   ring
 
 end CarrierParams
-
-/-- The involution `S = diag(−1, −1, 1, 1)`. -/
-abbrev carrierReflectMatrix : Matrix (Fin 4) (Fin 4) ℝ := Dynamics.signMatrix ![-1, -1, 1, 1]
 
 /-- `S(θ_e, x_p, V_dc, ξ) = (−θ_e, −x_p, V_dc, ξ)` as a coordinate change. -/
 abbrev carrierReflect : State 4 ≃L[ℝ] State 4 := Dynamics.signCoord ![-1, -1, 1, 1]
@@ -255,37 +245,13 @@ variable (q : CarrierParams)
   apply WithLp.ofLp_injective
   ext i
   fin_cases i <;>
-    simp [carrierField, vg_im, Pac_eq, hidr, hIq, sin_neg, cos_neg] <;> ring
+    simp [carrierField, vg_im, Pac_eq, hidr, hIq, sin_neg, cos_neg, nodeRate] <;> ring
 
 /-- `I_q* = 0`: for every drop sign `s`, the writing with `−s` is the one with `s` transported
 by `S`. -/
 @[tmio M, powerlib_domain] theorem carrierField_neg_sign_eq_transport (hIq : q.Iq = 0) (s : ℝ) :
     q.carrierField (-s) = Dynamics.transportField carrierReflect 0 (q.carrierField s) :=
   Dynamics.transportField_zero_eq_iff_comp.mpr (q.carrierField_reflect_sign hIq s)
-
-/-- `I_q* = 0`: equilibria correspond under `S`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem carrier_equilibrium_iff (hIq : q.Iq = 0) (x : State 4) :
-    q.carrierField (-1) (carrierReflect x) = 0 ↔ q.carrierField 1 x = 0 := by
-  rw [q.carrierField_reflect_sign hIq 1]
-  exact carrierReflect.map_eq_zero_iff
-
-/-- `I_q* = 0`: if the IN-positive carrier has Jacobian `A` at `x`, the flipped writing has
-Jacobian `S A S⁻¹` at `S x`; it has the same characteristic polynomial (same spectrum) by
-`Linear.charpoly_conj`. -/
-@[tmio M, powerlib_domain] theorem carrier_jacobian_conj (hIq : q.Iq = 0) {x : State 4}
-    (A : Matrix (Fin 4) (Fin 4) ℝ) (hf : DifferentiableAt ℝ (q.carrierField 1) x)
-    (hJac : fderiv ℝ (q.carrierField 1) x = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A) :
-    fderiv ℝ (q.carrierField (-1)) (carrierReflect x) =
-      Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
-        (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) := by
-  have h : fderiv ℝ (Dynamics.transportField carrierReflect 0 (q.carrierField 1))
-      (Dynamics.affineCoord carrierReflect 0 x) = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ)
-        (carrierReflectMatrix * A * carrierReflectMatrix⁻¹) :=
-    Dynamics.fderiv_transportField_matrix carrierReflectMatrix (Dynamics.signMatrix_isUnit _)
-      0 A hf hJac
-  rw [← q.carrierField_neg_sign_eq_transport hIq 1] at h
-  simpa [Dynamics.affineCoord, carrierReflect] using h
 
 /-! ### The DC-node diagonal entry and `K_p^{dvc,*}` -/
 
@@ -307,15 +273,6 @@ vanishes iff `K_p^dvc = −I_d0`, whatever `X_g`, `C` and the drop sign `s`. -/
     ring
   rw [h, div_eq_zero_iff, or_iff_left (mul_ne_zero two_ne_zero hC), neg_eq_zero, mul_eq_zero,
     or_iff_right (mul_ne_zero three_ne_zero hcos), add_eq_zero_iff_eq_neg]
-
-/-- At every equilibrium of the carrier the value `i_d*|_{V_dc=1} = K_i^dvc ξ` is the operating
-current `I_d0`: there `V_dc = 1` (`PLLDC.Params.equilibrium_Vdc` through
-`carrierField_eq_PLLDC_field`). -/
-@[tmio M, powerlib_domain] theorem equilibrium_idr (s : ℝ) {x : State 4}
-    (hx : q.carrierField s x = 0) : q.idr x = q.Kiv * x 3 := by
-  have h : x 2 = 1 :=
-    (q.toPLLDC s).equilibrium_Vdc (by rw [← q.carrierField_eq_PLLDC_field]; exact hx)
-  simp [idr, h]
 
 end CarrierParams
 

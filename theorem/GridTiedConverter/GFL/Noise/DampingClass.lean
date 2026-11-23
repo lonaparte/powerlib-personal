@@ -31,7 +31,8 @@ Results.
 * The class-A pH model is the classical machine `Synchronous.classicalSM`
   (`theorem/PowerSystem/Synchronous/PH.lean`, `b = P_max`): its field is the swing field
   (`Synchronous.classicalSM_field`), its energy balance `Ḣ = u ω − D ω²`
-  (`Synchronous.classicalSM_power_balance`, `Ḣ = −D (p/M)²` at `u = 0`) and its dissipation matrix
+  (`PH.NonlinearModel.power_balance` with `Synchronous.classicalSM_dampingPower`, `Ḣ = −D (p/M)²`
+  at `u = 0`) and its dissipation matrix
   `R_A` (`swingPH_R`).
 * Port inversion (`damping-class-dichotomy.md` §2): grid-frequency noise enters the class-B
   dissipation port exactly, `B Bᵀ = 2 (ε²/2K_p) R_B` (`Embed.freqNoise_fdt`,

@@ -2,6 +2,7 @@ import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStatic
 import theorem.Dynamics.Calculus
 import theorem.Dynamics.Instability
 import theorem.Spectral.Equilibrium
+import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # Quasi-static three-state GFL: the fold of the Routh–Hurwitz region
 
@@ -38,13 +39,15 @@ singular Lyapunov equation, `fold_quad_identity`:
 `2(Sz)·(Jz) − κAφ(Aφ + ι') = −(κA²φ² + 2k_i(k_p + κ)x² + κι'²)`) has
 `U̇ = −(κA²φ² + 2k_i(k_p + κ)x² + κι'²) + O(s³)`, negative on a punctured neighbourhood for
 `k_p, k_i, k_P > 0`, while `U = −t B² − t² B² < 0` along `(φ, x, ι') = t(B, 0, AB)`.
-`hasFDerivAt_foldU`, `contDiff_foldU` give its derivative.
+`foldU` is the three-variable polynomial `Dynamics.Degenerate.poly3` of the term list `foldTerms`;
+its derivative and smoothness (`hasFDerivAt_foldU`, `contDiff_foldU`) are those of `poly3`
+(`Dynamics.Degenerate.hasFDerivAt_poly3`, `contDiff_poly3`).
 
 Family and connection conclusions.
 * `mem_den_unstable_of_fold`: positive gains, balanced point, `V cos θ* > 0`, `cos 2θ* = 0` ⇒
-  unstable (`Dynamics.unstable_of_eventually_lie_neg`); `mem_den_unstable_of_pi_div_four` at
-  `θ* = π/4`, `V > 0`. Together with `mem_den_unstable_of_cos_two_mul_neg` the whole closed fold
-  side `cos 2θ* ≤ 0` of the branch is unstable.
+  unstable (`Dynamics.unstable_of_eventually_lie_neg`), e.g. the transmission limit `θ* = π/4`
+  with `V > 0`. Together with `mem_den_unstable_of_cos_two_mul_neg` the whole closed fold side
+  `cos 2θ* ≤ 0` of the branch is unstable.
 * `exactUnder_positiveGains`: within the requirement context `positiveGains`
   (`k_p, k_i, k_P > 0`) the local asymptotic and Lyapunov translations
   (`{equilibrium, jacobianStable}`) are exact: with positive gains every selected point that is not
@@ -68,16 +71,19 @@ open Filter Topology Asymptotics
 
 /-! ## The fold function (static) -/
 
+/-- The terms `(coefficient, power of φ, power of x, power of ι)` of the fold function. -/
+def foldTerms (A B Xg kp ki κ : ℝ) : List (ℝ × ℕ × ℕ × ℕ) :=
+  [(-(B / A) * (κ * A), 0, 1, 0), (-(B / A) * Xg, 0, 0, 1), (1, 2, 0, 0),
+    (2 * (-(kp + κ)), 1, 1, 0), (2 * (-1 / A) * Xg, 1, 0, 1),
+    (-A * κ ^ 2 / 2 + kp ^ 2 + 2 * kp * κ + ki / A, 0, 2, 0), (2 * (-κ / 2 + kp / A) * Xg, 0, 1, 1)]
+
 /-- The fold function in coordinates `(φ, x, ι)` with a parameter `Xg` (the model reads it with
 `(φ, x, ι) = (θ − θ*, x, i_d − i_d*)` and `Xg = −X_g`, `model_fold_form`):
 `U = −(B/A)(κA x + Xg ι) + S(φ, x, Xg ι)` with the quadratic form
 `S(φ, x, ι') = φ² − 2(k_p + κ) φx − (2/A) φι' + (k_i/A + k_p² + 2k_pκ − Aκ²/2) x²
-  + (2k_p/A − κ) xι'`. -/
+  + (2k_p/A − κ) xι'`, the polynomial `Dynamics.Degenerate.poly3` of `foldTerms`. -/
 def foldU (A B Xg kp ki κ φ x ι : ℝ) : ℝ :=
-  -(B / A) * (κ * A * x + Xg * ι) +
-    (φ ^ 2 + 2 * (-(kp + κ)) * (φ * x) + 2 * (-1 / A) * (φ * (Xg * ι)) +
-      (-A * κ ^ 2 / 2 + kp ^ 2 + 2 * kp * κ + ki / A) * x ^ 2 +
-      2 * (-κ / 2 + kp / A) * (x * (Xg * ι)))
+  Dynamics.Degenerate.poly3 (foldTerms A B Xg kp ki κ) φ x ι
 
 /-- `(S z)₀` -/
 def foldS0 (A Xg kp κ φ x ι : ℝ) : ℝ := φ + -(kp + κ) * x + -1 / A * (Xg * ι)
@@ -110,28 +116,18 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
           (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 : Dynamics.State 3 →L[ℝ] ℝ) +
         (-(B / A) * Xg + 2 * Xg * foldS2 A kp κ (z 0) (z 1)) •
           (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2 : Dynamics.State 3 →L[ℝ] ℝ)) z := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
-    Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (1 : Fin 3) :
-    Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have h2 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (2 : Fin 3) :
-    Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-  have hι := h2.const_mul Xg
-  have h := ((((h1.const_mul (κ * A)).add hι).const_mul (-(B / A))).add
-    ((((((h0.pow 2).add ((h0.mul h1).const_mul (2 * (-(kp + κ))))).add
-      ((h0.mul hι).const_mul (2 * (-1 / A)))).add
-      ((h1.pow 2).const_mul (-A * κ ^ 2 / 2 + kp ^ 2 + 2 * kp * κ + ki / A))).add
-      ((h1.mul hι).const_mul (2 * (-κ / 2 + kp / A))))))
-  unfold foldU
-  refine h.congr_fderiv ?_
+  obtain ⟨L, hL, hLv⟩ := Dynamics.Degenerate.hasFDerivAt_poly3 (foldTerms A B Xg kp ki κ)
+    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0) (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1)
+    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2) z
+  refine hL.congr_fderiv ?_
   ext v
-  simp [foldS0, foldS1, foldS2]
+  simp [hLv, foldTerms, foldS0, foldS1, foldS2]
   ring
 
 @[tmio M, powerlib_domain] theorem contDiff_foldU (A B Xg kp ki κ : ℝ) :
-    ContDiff ℝ 1 (fun z : Dynamics.State 3 => foldU A B Xg kp ki κ (z 0) (z 1) (z 2)) := by
-  unfold foldU
-  fun_prop
+    ContDiff ℝ 1 (fun z : Dynamics.State 3 => foldU A B Xg kp ki κ (z 0) (z 1) (z 2)) :=
+  Dynamics.Degenerate.contDiff_poly3 _ (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0)
+    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1) (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2)
 
 /-! ## Local analysis at the fold (implementation evidence) -/
 
@@ -342,11 +338,11 @@ strictly on a punctured neighbourhood and is negative along the ray `t (B, 0, AB
   · -- the fold function is negative along `t (B, 0, AB/X_g)`
     refine Dynamics.frequently_of_forall_smul (WithLp.toLp 2 ![B, 0, A * B / Xg]) fun t ht => ?_
     have hU0 : foldU A B Xg kp ki κ ((0 : Dynamics.State 3) 0) ((0 : Dynamics.State 3) 1)
-        ((0 : Dynamics.State 3) 2) = 0 := by simp [foldU]
+        ((0 : Dynamics.State 3) 2) = 0 := by simp [foldU, foldTerms]
     show foldU A B Xg kp ki κ _ _ _ < foldU A B Xg kp ki κ _ _ _
     rw [hU0]
     simp only [PiLp.smul_apply, smul_eq_mul]
-    simp [foldU]
+    simp [foldU, foldTerms]
     field_simp
     have hB2 : 0 < B ^ 2 := by positivity
     nlinarith [mul_pos ht hB2, mul_pos (mul_pos ht ht) hB2]
@@ -562,16 +558,5 @@ point with positive gains is unstable, in particular the fold `cos 2θ* = 0` (no
     · exact hG
 
 end Members
-
-/-! ### Connection conclusions at the fold and within positive gains -/
-
-/-- Same, at the fold angle `θ* = π/4` (`V > 0`): the transmission limit is unstable. -/
-@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_pi_div_four (p : Params) (hV : 0 < p.V)
-    (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkP : 0 < p.kP) {Id : ℝ}
-    (heq : IsEq p (Real.pi / 4) Id) :
-    connection% (Model.mk p (Real.pi / 4) Id ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable_of_fold p hkp hki hkP heq
-    (mul_pos hV (by rw [Real.cos_pi_div_four]; positivity))
-    (by rw [show 2 * (Real.pi / 4) = Real.pi / 2 by ring, Real.cos_pi_div_two])
 
 end powerlib.GFL.PowerLoop.QuasiStatic

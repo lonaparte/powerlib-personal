@@ -66,9 +66,9 @@ linearization is a centre (`mem_den_lyapunovStable_of_slope`). At a hyperbolic s
 (`K_p h'(θ*) ≠ 0`, `K_i h'(θ*) ≠ 0`) local asymptotic stability is decided by the linearization: it
 holds exactly at a phase-locked point with both products negative
 (`mem_den_las_iff_of_nondegenerate`). The frequency-drift boundary `Σ_FD` as `T-gfl-dynamics` §1.12
-first stated it — a constant offset `|δω| > K_p sup |h|` removes phase lock — is refuted on both
-the requirement connection and the semantics connection (`frequencyDriftBoundary_refuted`,
-`frequencyDriftBoundary_stable`): the integrator absorbs a constant offset. The note now states the
+first stated it — a constant offset `|δω| > K_p sup |h|` removes phase lock — does not hold: the
+integrator absorbs a constant offset, and the in-phase SRF members are locally exponentially stable
+for every `δω` (`srf_mem_den_locallyExponentiallyStable_inPhase`). The note now states the
 boundary for a frequency ramp `δω(t) = δω + ρ t`, which in the coordinates
 `(θ, η − δω(t)/K_i + K_p ρ/K_i²)` is the member `m.ramp ρ` of this family, with the detector
 `h − ρ/K_i` and no offset (`ramp_hasDerivAt_iff`). Its phase-locked phases are the solutions of
@@ -491,33 +491,6 @@ saddles, hence unstable, for every `K_p`. -/
     connection% (srf V Kp Ki δω θ ∈ family.den (.flow .unstable)) :=
   mem_den_unstable _ (srfPD_eq_zero_of_cos_eq (.inr hθ))
     (by rw [srf_deriv, hθ]; show 0 < Ki * (-V * -1); linarith [mul_comm V Ki])
-
-/-! ### The frequency-drift boundary `Σ_FD` -/
-
-/-- `Σ_FD` (`T-gfl-dynamics` §1.12) on the requirement connection — "if `|δω| > K_p sup |h|`, no
-phase is locked" — is refuted: the SRF detector with `V = K_p = K_i = 1`, `δω = 2`, `θ* = 0`
-meets the phase-locking requirement although `|δω| = 2 > K_p sup |h| = 1`. -/
-@[tmio M, powerlib_domain] theorem frequencyDriftBoundary_refuted :
-    connection% (¬ ∀ (m : Model) (M : ℝ), 0 < m.Kp → 0 < m.Ki → (∀ θ, |m.h θ| ≤ M) →
-      m.Kp * M < |m.δω| → m ∉ TMIO.realize Meets {.phaseLocked}) := by
-  unfold powerlib.TMIO.Statement
-  intro H
-  refine H (srf 1 1 1 2 0) 1 one_pos one_pos (fun θ => ?_) (by norm_num [srf]) ?_
-  · simpa [srf, srfPD] using Real.abs_sin_le_one θ
-  · rw [(connection_proof% TMIO.mem_realize)]
-    simp [Meets, srf, srfPD]
-
-/-- On the semantics connection the drift boundary fails as well: beyond it the phase-locked
-point of the same SRF model is even locally exponentially stable. -/
-@[tmio TM, powerlib_domain] theorem frequencyDriftBoundary_stable :
-    connection% (¬ ∀ (m : Model) (M : ℝ), 0 < m.Kp → 0 < m.Ki → (∀ θ, |m.h θ| ≤ M) →
-      m.Kp * M < |m.δω| → m ∉ family.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro H
-  exact H (srf 1 1 1 2 0) 1 one_pos one_pos
-    (fun θ => by simpa [srf, srfPD] using Real.abs_sin_le_one θ) (by norm_num [srf])
-    (srf_mem_den_locallyExponentiallyStable_inPhase (V := 1) (Kp := 1) (Ki := 1)
-      (by norm_num) (by norm_num) 2 Real.cos_zero)
 
 /-! ### The frequency-ramp boundary `Σ_FD`
 

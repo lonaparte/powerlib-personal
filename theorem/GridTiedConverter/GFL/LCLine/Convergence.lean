@@ -398,8 +398,7 @@ variable (p : Params)
     self_mem_nhdsWithin] with θ' hZ hI hne hzero
   apply hZ
   refine ⟨⟨⟨hI.1.le, by linarith [hI.2]⟩, ?_⟩, hne⟩
-  rw [← p.h_eq_polar hwC hΔ]
-  exact hzero
+  simpa only [p.h_eq_polar hwC hΔ] using hzero
 
 /-- A2: for `K_p, K_i > 0`, `V_g > 0`, every solution of the reduced 2-state PLL model that
 stays bounded for `t ≥ 0` converges to a single equilibrium `(θ*, 0)` with `h(θ*) = 0`.

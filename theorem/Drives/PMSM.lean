@@ -24,8 +24,9 @@ Results.
   (`(3/2) np Im(conj ψ · i)`) of the rotor-frame flux `statorFlux = (L_d i_d + ψ_f) + j L_q i_q`
   and current `i = (i_d, i_q)` (`theorem/Transform/SpaceVector.lean`).
 * Electrical model: `Params` (`r_s, L_d, L_q, ψ_f`), the dq voltage equations `VoltageEquation`
-  and their solution for the current derivative `currentDeriv` (`voltageEquation_iff`), read by
-  the predictive controller (`theorem/Drives/PredictiveControl.lean`).
+  (the winding equation `SpaceVector.VoltageEquation` of the flux `statorFlux`) and their
+  solution for the current derivative `currentDeriv` (`voltageEquation_iff`), read by the
+  predictive controller (`theorem/Drives/PredictiveControl.lean`).
 * SPMSM (`L_d = L_q`): torque `(3/2) np ψ_f i_q` (`torque_surface`); on the current disk
   `|i| ≤ I` the torque is maximised exactly at `(0, I)` (`spmsm_mtpa`), and a given torque is
   produced with least current exactly at `i_d = 0` (`spmsm_minCurrent`). Hence `i_d* = 0`.
@@ -71,10 +72,14 @@ structure Params where
   Lq : ℝ
   ψf : ℝ
 
-/-- PMSM dq voltage equations (motor convention) at one instant. -/
+/-- PMSM dq voltage equations at one instant (current `x = (i_d, i_q)`, its derivative `dx`,
+voltage `u = (v_d, v_q)`, electrical speed `ω`): the winding equation
+`SpaceVector.VoltageEquation` in the rotor frame with the flux `statorFlux` and, `ψ_f` being
+constant, the flux derivative `L_d di_d + j L_q di_q`; in components
+`v_d = r_s i_d + L_d di_d − ω L_q i_q`, `v_q = r_s i_q + L_q di_q + ω (L_d i_d + ψ_f)`. -/
 def VoltageEquation (p : Params) (ω : ℝ) (x dx u : Fin 2 → ℝ) : Prop :=
-  u 0 = p.rs * x 0 + p.Ld * dx 0 - ω * p.Lq * x 1 ∧
-    u 1 = p.rs * x 1 + p.Lq * dx 1 + ω * p.Ld * x 0 + ω * p.ψf
+  Transform.SpaceVector.VoltageEquation p.rs ω ⟨u 0, u 1⟩ ⟨x 0, x 1⟩
+    (statorFlux p.ψf p.Ld p.Lq (x 0) (x 1)) ⟨p.Ld * dx 0, p.Lq * dx 1⟩
 
 /-- The voltage equations solved for the current derivative. -/
 def currentDeriv (p : Params) (ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :=
@@ -84,7 +89,8 @@ def currentDeriv (p : Params) (ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :
 @[tmio M, powerlib_domain] theorem voltageEquation_iff (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
     (ω : ℝ) (x dx u : Fin 2 → ℝ) :
     VoltageEquation p ω x dx u ↔ dx = currentDeriv p ω x u := by
-  unfold VoltageEquation
+  rw [VoltageEquation, Transform.SpaceVector.voltageEquation_iff]
+  simp only [statorFlux]
   constructor
   · rintro ⟨h0, h1⟩
     ext j

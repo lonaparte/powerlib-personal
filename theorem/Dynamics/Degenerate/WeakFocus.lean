@@ -946,45 +946,33 @@ The local analysis of a planar field in the sine–Liénard normal form `φ̇ = 
     (Dynamics.isBigO_pow_of_tendsto (size_tendsto b) h)).const_mul_left c
   exact this.congr_left fun z => (hf z).symm
 
+/-- `isBigO_poly3_weight` in the plane coordinates `(φ, w)` (third variable `0`). -/
+@[tmio T, powerlib_foundation] private theorem poly3_isBigO (b : ℝ) (L : List (ℝ × ℕ × ℕ × ℕ))
+    {k : ℕ} (hL : ∀ t ∈ L, k ≤ t.2.1 + t.2.2.1 + 2 * t.2.2.2) :
+    (fun z : Dynamics.State 2 => poly3 L (z 0) (z 1 - b * z 0) 0) =O[𝓝 0]
+      fun z => (|z 0| + |z 1 - b * z 0|) ^ k :=
+  isBigO_poly3_weight (c := fun _ => 0) (size_tendsto b) (coord0_isBigO b) (coord1_isBigO b)
+    (isBigO_zero _ _) L hL
+
 @[tmio T, powerlib_foundation] private theorem lyapPolyφ_isBigO (b c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPolyφ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
-  unfold lyapPolyφ
-  exact (((((mono_isBigO b 1 1 0 1 le_rfl fun z => by ring).add
-    (mono_isBigO b (2 * c₂) 1 1 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (3 * c₃) 2 0 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b c₄ 0 3 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (3 * c₅) 2 1 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (4 * c₆) 3 0 1 (by norm_num) fun z => by ring)
+      fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 :=
+  (poly3_isBigO b [(1, 1, 0, 0), (2 * c₂, 1, 1, 0), (3 * c₃, 2, 0, 0), (c₄, 0, 3, 0),
+    (3 * c₅, 2, 1, 0), (4 * c₆, 3, 0, 0)] (by simp)).congr_left fun z => by simp [lyapPolyφ]; ring
 
 @[tmio T, powerlib_foundation] private theorem lyapPolyw_isBigO (b q c₀ c₂ c₄ c₅ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPolyw q c₀ c₂ c₄ c₅ (z 0) (z 1 - b * z 0)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 := by
-  unfold lyapPolyw
-  exact ((((mono_isBigO b q 0 1 1 le_rfl fun z => by ring).add
-    (mono_isBigO b (3 * c₀) 0 2 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b c₂ 2 0 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b (3 * c₄) 1 2 1 (by norm_num) fun z => by ring)).add
-    (mono_isBigO b c₅ 3 0 1 (by norm_num) fun z => by ring)
+      fun z => (|z 0| + |z 1 - b * z 0|) ^ 1 :=
+  (poly3_isBigO b [(q, 0, 1, 0), (3 * c₀, 0, 2, 0), (c₂, 2, 0, 0), (3 * c₄, 1, 2, 0),
+    (c₅, 3, 0, 0)] (by simp)).congr_left fun z => by simp [lyapPolyw]; ring
 
 /-- The cubic and quartic part of `lyapPoly` is `O(s³)`. -/
 @[tmio T, powerlib_foundation] private theorem lyapPoly_sub_isBigO (b q c₀ c₂ c₃ c₄ c₅ c₆ : ℝ) :
     (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0) -
         1 / 2 * (z 0 ^ 2 + q * (z 1 - b * z 0) ^ 2)) =O[𝓝 0]
-      fun z => (|z 0| + |z 1 - b * z 0|) ^ 3 := by
-  have := (((((mono_isBigO (f := fun z => c₀ * (z 1 - b * z 0) ^ 3) b c₀ 0 3 3 le_rfl
-      fun z => by ring).add
-    (mono_isBigO (f := fun z => c₂ * (z 0 ^ 2 * (z 1 - b * z 0))) b c₂ 2 1 3 le_rfl
-      fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₃ * z 0 ^ 3) b c₃ 3 0 3 le_rfl fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₄ * (z 0 * (z 1 - b * z 0) ^ 3)) b c₄ 1 3 3 (by norm_num)
-      fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₅ * (z 0 ^ 3 * (z 1 - b * z 0))) b c₅ 3 1 3 (by norm_num)
-      fun z => by ring)).add
-    (mono_isBigO (f := fun z => c₆ * z 0 ^ 4) b c₆ 4 0 3 (by norm_num) fun z => by ring)
-  refine this.congr_left fun z => ?_
-  unfold lyapPoly
-  ring
+      fun z => (|z 0| + |z 1 - b * z 0|) ^ 3 :=
+  (poly3_isBigO b [(c₀, 0, 3, 0), (c₂, 2, 1, 0), (c₃, 3, 0, 0), (c₄, 1, 3, 0), (c₅, 3, 1, 0),
+    (c₆, 4, 0, 0)] (by simp)).congr_left fun z => by simp [lyapPoly]; ring
 
 /-- `s² ≤ 2(1 + 1/ρ)(φ² + ρw²)` for `ρ > 0`. -/
 @[tmio T, powerlib_foundation] private theorem size_sq_le {ρ : ℝ} (hρ : 0 < ρ) (φ w : ℝ) :

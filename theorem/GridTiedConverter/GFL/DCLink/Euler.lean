@@ -134,7 +134,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
     ContDiffAt ℝ 1 p.shiftedField 0 :=
   Numerics.contDiffAt_shift (g := p.field p.Id0) (x₀ := p.eqState)
     ((p.field_contDiffOn _).contDiffAt
-      (isOpen_posV.mem_nhds (by simpa [posV, eqState] using hV)))
+      ((isOpen_posDC 2).mem_nhds (by simpa [posDC, eqState] using hV)))
 
 /-- **Without a step constraint the Euler realization of the cascades is not sound.** The
 negative-inductance cascade (`negativeInductance`, `V0 = 1`) is locally exponentially stable;
@@ -172,7 +172,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
     ContDiffAt ℝ 1 m.field 0 :=
   Numerics.contDiffAt_shift (g := openField m.C (-(m.P / m.V0)) m.P) (x₀ := dcState m.V0)
     ((openField_contDiffOn _ _ _).contDiffAt
-      ((isOpen_posDC 1).mem_nhds (by simpa [posDC, dcState] using hV)))
+      ((isOpen_posDC 0).mem_nhds (by simpa [posDC, dcState] using hV)))
 
 /-- **Without a step constraint the Euler realization of the open-loop DC node is not sound.** A
 rectifying node (`C = P = V0 = 1`) is locally exponentially stable; integrated with a large enough
@@ -210,7 +210,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
     ContDiffAt ℝ 1 p.shiftedField 0 :=
   Numerics.contDiffAt_shift (g := p.closedField) (x₀ := p.eqState)
     (p.closedField_contDiffOn.contDiffAt
-      ((isOpen_posDC 2).mem_nhds (by simpa [posDC, eqState] using hV)))
+      ((isOpen_posDC 0).mem_nhds (by simpa [posDC, eqState] using hV)))
 
 /-- **Without a step constraint the Euler realization of the DC-voltage outer loop is not
 sound.** The loop `C = V_d = V_dc* = Kp = Ki = 1`, `i_ff = I_d0 = 0` is locally exponentially

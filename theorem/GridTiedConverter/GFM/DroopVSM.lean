@@ -74,8 +74,7 @@ Family and connection conclusions.
   `infiniteBus_locallyExponentiallyStable`, in `theorem/GridTiedConverter/GFM/DroopVSM.agda`).
 * `vsmField_eq_transport`, `VSMModel.vector_eq_conservative`, `VSMModel.field_eq_toSwing`,
   `VSMModel.vector_eq_zero_iff` and `equilibrium_iff` are static evidence on the model (field
-  identities and equilibrium correspondences).  The trajectory maps `isTrajectoryOn_vsm_of_droop`,
-  `isTrajectoryOn_droop_of_vsm` are private implementation evidence (trajectory level).
+  identities and equilibrium correspondences).
 
 Corrections.
 * T-gfm-control §1.8: "droop+LPF 单独是一阶；与 swing 端 θ̇ = ω 串联后无二阶动态" is wrong —
@@ -137,28 +136,6 @@ Static evidence on the model, not a connection conclusion. -/
   funext y
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
     simp [Dynamics.transportField, offset, droopField, vsmField] <;> field_simp <;> ring
-
-/-- Trajectories of droop + LPF map to trajectories of the VSM (`M = τ_p K_R`, `D = K_R`).
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem isTrajectoryOn_vsm_of_droop (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0)
-    {φ : ℝ → State 2} {a b : ℝ} (hφ : IsTrajectoryOn φ d.droopField a b) :
-    IsTrajectoryOn (fun t => Dynamics.affineCoord (d.coord hK) d.offset (φ t))
-      (d.vsmField (d.τp * d.KR) d.KR) a b := by
-  rw [d.vsmField_eq_transport hK hτ]
-  exact Dynamics.isIntegralCurveOn_transport _ _ hφ
-
-/-- Trajectories of the VSM map back to trajectories of droop + LPF.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem isTrajectoryOn_droop_of_vsm (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0)
-    {χ : ℝ → State 2} {a b : ℝ}
-    (hχ : IsTrajectoryOn χ (d.vsmField (d.τp * d.KR) d.KR) a b) :
-    IsTrajectoryOn
-      (fun t => Dynamics.affineCoord (d.coord hK).symm (-((d.coord hK).symm d.offset)) (χ t))
-      d.droopField a b := by
-  rw [d.vsmField_eq_transport hK hτ] at hχ
-  have h := Dynamics.isIntegralCurveOn_transport (d.coord hK).symm
-    (-((d.coord hK).symm d.offset)) hχ
-  rwa [Dynamics.transportField_symm_transportField] at h
 
 /-- Equilibria correspond. Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem equilibrium_iff (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) (x : State 2) :

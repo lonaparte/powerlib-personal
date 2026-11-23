@@ -47,8 +47,13 @@ Results.
   `Ioo_subset_flipProjection_calpha_pos`) and lies below `Δ*₊`
   (`flipProjection_calpha_pos_lowGain_subset_Iio`),
   so `Δ_sup = Δ*₊` (`flipProjection_calpha_pos_lowGain_isLUB`), not attained
-  (`deltaStarPlus_not_mem_flipProjection_calpha_pos_lowGain`). The proof uses the detuned quadratic
-  `P(Δ) = c_α²Δ² + Qc_ωΔ − (Q² − 4Sα₀²)/4 = min_y S(a² − D)` (`detunedP_eq`, `detunedP_neg_iff`).
+  (`deltaStarPlus_not_mem_flipProjection_calpha_pos_lowGain`). The cases `c_α < 0`, `c_α = 0` and
+  low gain read the detuned quadratic
+  `P(Δ) = c_α²Δ² + Qc_ωΔ − (Q² − 4Sα₀²)/4 = min_y S(a² − D)` (`detunedP_eq`): a flip point with
+  `a² < D` has `P(Δ) < 0` (`detunedP_neg_of_sq_lt`), whose solution set is `(Δ*₋, Δ*₊)`
+  (`detunedP_neg_iff`; nonempty iff `Q² − 4c_α²α₀² > 0`, `deltaStarMinus_lt_deltaStarPlus_iff`),
+  and conversely `P(Δ) < 0` below `Q/(2c_ω)` gives a flip point at the minimizing amplitude
+  (`mem_flipProjection_of_detunedP_neg`).
   Limit `c_α → 0`: `Δ*₊ = (Q² − 4Sα₀²)/(2(√S√(Q² − 4c_α²α₀²) + c_ωQ))` (`deltaStarPlus_eq_rat`)
   tends to the `c_α = 0` value `g2/(16c_ω) − 4c_ωα₀²/g2` (`tendsto_deltaStarPlus`), and
   `c_α ↦ Δ_sup = sSup (Δ-projection)` is continuous at `0` (`continuousAt_sSup_flipProjection`;
@@ -203,37 +208,33 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 /-- The flip sector `{q < 0}` is nonempty iff the discriminant is positive. -/
 @[tmio M, powerlib_foundation] theorem exists_tongue_neg_iff (hS : 0 < cα ^ 2 + cω ^ 2) :
     (∃ y, tongue α₀ cα cω g2 y < 0) ↔ 0 < tongueDisc α₀ cα cω g2 := by
-  constructor
-  · rintro ⟨y, hy⟩
-    by_contra h
-    push Not at h
-    have hk : 4 * (cα ^ 2 + cω ^ 2) * tongue α₀ cα cω g2 y =
-        (2 * (cα ^ 2 + cω ^ 2) * y - pumpQ α₀ cα g2) ^ 2 - tongueDisc α₀ cα cω g2 := by
-      simp only [tongue, tongueDisc]; ring
-    nlinarith [sq_nonneg (2 * (cα ^ 2 + cω ^ 2) * y - pumpQ α₀ cα g2)]
-  · intro h
-    refine ⟨pumpQ α₀ cα g2 / (2 * (cα ^ 2 + cω ^ 2)), ?_⟩
-    have hk : 4 * (cα ^ 2 + cω ^ 2) *
-        tongue α₀ cα cω g2 (pumpQ α₀ cα g2 / (2 * (cα ^ 2 + cω ^ 2))) =
-        -tongueDisc α₀ cα cω g2 := by
-      simp only [tongue, tongueDisc]; field_simp; ring
-    nlinarith
+  simp only [tongue_neg_iff hS]
+  rw [show (∃ y, yMinus α₀ cα cω g2 < y ∧ y < yPlus α₀ cα cω g2) ↔
+    yMinus α₀ cα cω g2 < yPlus α₀ cα cω g2 from ⟨fun ⟨_, h1, h2⟩ => h1.trans h2, exists_between⟩]
+  simp only [yMinus, yPlus]
+  rw [div_lt_div_iff_of_pos_right (by positivity), ← Real.sqrt_pos]
+  constructor <;> intro h <;> linarith
+
+/-- `Q > −2α₀√S` and `disc = (Q − 2α₀√S)(Q + 2α₀√S)` (`α₀, g2 > 0`, `S = c_α² + c_ω² > 0`). -/
+@[tmio M, powerlib_foundation] private theorem tongueDisc_factor (hα : 0 < α₀) (hg : 0 < g2)
+    (hS : 0 < cα ^ 2 + cω ^ 2) :
+    -(2 * α₀ * √(cα ^ 2 + cω ^ 2)) < pumpQ α₀ cα g2 ∧
+      tongueDisc α₀ cα cω g2 = (pumpQ α₀ cα g2 - 2 * α₀ * √(cα ^ 2 + cω ^ 2)) *
+        (pumpQ α₀ cα g2 + 2 * α₀ * √(cα ^ 2 + cω ^ 2)) := by
+  set r := √(cα ^ 2 + cω ^ 2) with hr
+  have hr2 : r ^ 2 = cα ^ 2 + cω ^ 2 := Real.sq_sqrt hS.le
+  have hrα : |cα| ≤ r := Real.abs_le_sqrt (by nlinarith [sq_nonneg cω])
+  refine ⟨?_, by simp only [tongueDisc]; rw [← hr2]; ring⟩
+  simp only [pumpQ]
+  have := neg_abs_le cα
+  nlinarith
 
 /-- `Λ* < 1 ↔ disc > 0` (`α₀ > 0`, `|𝒢| > 0`, `c_α² + c_ω² > 0`). -/
 @[tmio M, powerlib_foundation] theorem lamStar_lt_one_iff (hα : 0 < α₀) (hg : 0 < g2)
     (hS : 0 < cα ^ 2 + cω ^ 2) :
     lamStar α₀ cα cω g2 < 1 ↔ 0 < tongueDisc α₀ cα cω g2 := by
+  obtain ⟨hQlow, hdisc⟩ := tongueDisc_factor (cω := cω) hα hg hS
   set r := √(cα ^ 2 + cω ^ 2) with hr
-  have hr2 : r ^ 2 = cα ^ 2 + cω ^ 2 := Real.sq_sqrt hS.le
-  have hr0 : 0 < r := Real.sqrt_pos.mpr hS
-  have hrα : |cα| ≤ r := Real.abs_le_sqrt (by nlinarith [sq_nonneg cω])
-  have hQlow : -(2 * α₀ * r) < pumpQ α₀ cα g2 := by
-    simp only [pumpQ]
-    have := neg_abs_le cα
-    nlinarith
-  have hdisc : tongueDisc α₀ cα cω g2 =
-      (pumpQ α₀ cα g2 - 2 * α₀ * r) * (pumpQ α₀ cα g2 + 2 * α₀ * r) := by
-    simp only [tongueDisc]; rw [← hr2]; ring
   rw [lamStar, div_lt_one hg, hdisc]
   constructor
   · intro h
@@ -289,17 +290,9 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 @[tmio M, powerlib_foundation] theorem pumpQ_bounds (hα : 0 < α₀) (hg : 0 < g2)
     (hS : 0 < cα ^ 2 + cω ^ 2) (hd : 0 ≤ tongueDisc α₀ cα cω g2) :
     2 * √(cα ^ 2 + cω ^ 2) * α₀ ≤ pumpQ α₀ cα g2 ∧ 0 < pumpQ α₀ cα g2 := by
+  obtain ⟨hQlow, hdisc⟩ := tongueDisc_factor hα hg hS
   set r := √(cα ^ 2 + cω ^ 2) with hr
-  have hr2 : r ^ 2 = cα ^ 2 + cω ^ 2 := Real.sq_sqrt hS.le
   have hr0 : 0 < r := Real.sqrt_pos.mpr hS
-  have hrα : |cα| ≤ r := Real.abs_le_sqrt (by nlinarith [sq_nonneg cω])
-  have hQlow : -(2 * α₀ * r) < pumpQ α₀ cα g2 := by
-    simp only [pumpQ]
-    have := neg_abs_le cα
-    nlinarith
-  have hdisc : tongueDisc α₀ cα cω g2 =
-      (pumpQ α₀ cα g2 - 2 * α₀ * r) * (pumpQ α₀ cα g2 + 2 * α₀ * r) := by
-    simp only [tongueDisc]; rw [← hr2]; ring
   have hpos : 0 < pumpQ α₀ cα g2 + 2 * α₀ * r := by linarith
   have h1 : 0 ≤ pumpQ α₀ cα g2 - 2 * α₀ * r := by
     rw [hdisc] at hd
@@ -452,129 +445,199 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
   · rintro ⟨y, hy, hmem⟩
     exact ⟨(y, Δ), ⟨hmem, hy⟩, rfl⟩
 
-/-- Case `c_α < 0`: the `Δ`-projection of `ℱ` is exactly `(Δ*₋, Δ*₊)` (both ends finite). -/
-@[tmio M, powerlib_foundation] theorem flipProjection_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
-    (hcα : cα < 0) (hcω : 0 < cω) :
-    flipProjection α₀ cα cω g2 = Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) := by
+/-! ### The detuned quadratic `P(Δ)` -/
+
+/-- The detuned quadratic in `Δ`, `P(Δ) = c_α² Δ² + Q c_ω Δ − (Q² − 4(c_α² + c_ω²)α₀²)/4`, whose
+roots are `Δ*_±` (`detunedP_neg_iff`). -/
+def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
+  cα ^ 2 * Δ ^ 2 + pumpQ α₀ cα g2 * cω * Δ -
+    (pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4
+
+/-- `P(Δ) = S (a(y)² − D(y, Δ)) − (S y − (Q − 2c_ωΔ)/2)²` for every amplitude `y`
+(`S = c_α² + c_ω²`): `P(Δ)/S` is the minimum over `y` of `a² − D`. -/
+@[tmio M, powerlib_foundation] theorem detunedP_eq (y Δ : ℝ) :
+    detunedP α₀ cα cω g2 Δ =
+      (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) -
+        ((cα ^ 2 + cω ^ 2) * y - (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2) ^ 2 := by
+  simp only [detunedP, damping, detunedD, pumpQ]; ring
+
+/-- `P(Δ) ≤ S (a(y)² − D(y, Δ))` for every amplitude `y`. -/
+@[tmio M, powerlib_foundation] theorem detunedP_le (y Δ : ℝ) :
+    detunedP α₀ cα cω g2 Δ ≤
+      (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) := by
+  rw [detunedP_eq y Δ]
+  nlinarith [sq_nonneg ((cα ^ 2 + cω ^ 2) * y - (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2)]
+
+/-- `a(y)² < D(y, Δ)` puts `(y, Δ)` in the flip set, whatever the sign of `a(y)`. -/
+@[tmio M, powerlib_foundation] theorem mem_flipSet_of_sq_lt {y Δ : ℝ}
+    (h : damping α₀ cα y ^ 2 < detunedD cω g2 Δ y) : (y, Δ) ∈ flipSet α₀ cα cω g2 := by
+  have hD : 0 ≤ detunedD cω g2 Δ y := (sq_nonneg _).trans h.le
+  refine ⟨hD, ?_⟩
+  calc damping α₀ cα y ≤ |damping α₀ cα y| := le_abs_self _
+    _ = √(damping α₀ cα y ^ 2) := (Real.sqrt_sq_eq_abs _).symm
+    _ < √(detunedD cω g2 Δ y) := Real.sqrt_lt_sqrt (sq_nonneg _) h
+
+/-- `a(y)² < D(y, Δ)` at some amplitude forces `P(Δ) < 0` (`P ≤ S (a² − D)`, `S > 0`). -/
+@[tmio M, powerlib_foundation] theorem detunedP_neg_of_sq_lt (hS : 0 < cα ^ 2 + cω ^ 2) {y Δ : ℝ}
+    (h : damping α₀ cα y ^ 2 < detunedD cω g2 Δ y) : detunedP α₀ cα cω g2 Δ < 0 :=
+  (detunedP_le y Δ).trans_lt (mul_neg_of_pos_of_neg hS (by linarith))
+
+/-- The roots of `P` are `Δ*_±`: for `c_α ≠ 0`, `P(Δ) < 0 ↔ Δ*₋ < Δ < Δ*₊`. -/
+@[tmio M, powerlib_foundation] theorem detunedP_neg_iff (hcα : cα ≠ 0) {Δ : ℝ} :
+    detunedP α₀ cα cω g2 Δ < 0 ↔
+      deltaStarMinus α₀ cα cω g2 < Δ ∧ Δ < deltaStarPlus α₀ cα cω g2 := by
+  have hca2 : 0 < cα ^ 2 := by positivity
+  have hS : 0 ≤ cα ^ 2 + cω ^ 2 := by positivity
+  have h := Criteria.quad_neg_iff (a := cα ^ 2) (b := pumpQ α₀ cα g2 * cω)
+    (c := -(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4) (x := Δ) hca2
+  have hD : (pumpQ α₀ cα g2 * cω) ^ 2 -
+      4 * cα ^ 2 * (-(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4) =
+      (cα ^ 2 + cω ^ 2) * (pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) := by ring
+  rw [hD, Real.sqrt_mul hS] at h
+  rw [show detunedP α₀ cα cω g2 Δ = cα ^ 2 * Δ ^ 2 + pumpQ α₀ cα g2 * cω * Δ +
+      -(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4 by simp only [detunedP]; ring, h]
+  simp only [deltaStarMinus, deltaStarPlus]
+  constructor <;> rintro ⟨h1, h2⟩ <;> constructor
+  · convert h1 using 1; ring
+  · convert h2 using 1; ring
+  · convert h1 using 1; ring
+  · convert h2 using 1; ring
+
+/-- The two roots are distinct, `Δ*₋ < Δ*₊`, exactly when `Q² − 4c_α²α₀² > 0` (`c_α ≠ 0`). -/
+@[tmio M, powerlib_foundation] theorem deltaStarMinus_lt_deltaStarPlus_iff (hcα : cα ≠ 0) :
+    deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 ↔
+      0 < pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 := by
+  have hS : 0 < √(cα ^ 2 + cω ^ 2) := Real.sqrt_pos.mpr (by positivity)
+  simp only [deltaStarMinus, deltaStarPlus]
+  rw [div_lt_div_iff_of_pos_right (by positivity), ← Real.sqrt_pos]
+  constructor <;> intro h <;> nlinarith
+
+/-- Beyond the larger root `P` is positive: `Δ*₊ < Δ → 0 < P(Δ)` (`c_α ≠ 0`). -/
+@[tmio M, powerlib_foundation] theorem detunedP_pos_of_gt (hcα : cα ≠ 0) {Δ : ℝ}
+    (hΔ : deltaStarPlus α₀ cα cω g2 < Δ) : 0 < detunedP α₀ cα cω g2 Δ := by
   set S := cα ^ 2 + cω ^ 2 with hSdef
   set Q := pumpQ α₀ cα g2 with hQdef
+  set K := Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 with hKdef
+  have hca2 : 0 < cα ^ 2 := by positivity
+  have hS : 0 ≤ S := by positivity
+  have hr : 0 ≤ √S * √K := mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
+  -- `2 c_α² Δ + Q c_ω > √S √K ≥ 0`
+  have hlin : √S * √K < 2 * cα ^ 2 * Δ + Q * cω := by
+    simp only [deltaStarPlus, ← hSdef, ← hQdef, ← hKdef] at hΔ
+    rw [div_lt_iff₀ (by positivity)] at hΔ
+    linarith
+  have hk : 4 * cα ^ 2 * detunedP α₀ cα cω g2 Δ = (2 * cα ^ 2 * Δ + Q * cω) ^ 2 - S * K := by
+    simp only [detunedP, ← hQdef, hSdef, hKdef]; ring
+  have : S * K < (2 * cα ^ 2 * Δ + Q * cω) ^ 2 := by
+    rcases le_total 0 K with hK | hK
+    · have h1 : (√S * √K) ^ 2 = S * K := by
+        rw [mul_pow, Real.sq_sqrt hS, Real.sq_sqrt hK]
+      nlinarith
+    · rw [Real.sqrt_eq_zero'.mpr hK, mul_zero] at hlin
+      have h2 : 0 < (2 * cα ^ 2 * Δ + Q * cω) ^ 2 := by positivity
+      nlinarith [mul_nonneg hS (neg_nonneg.mpr hK)]
+  nlinarith
+
+/-- `Δ*₊ < Q/(2c_ω)` when `c_α ≠ 0`, `c_ω > 0`, `Q > 0` and `c_α α₀ ≠ 0`; equivalently the
+minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
+@[tmio M, powerlib_foundation] theorem deltaStarPlus_lt_div (hα : 0 < α₀) (hcα : cα ≠ 0) (hcω : 0 < cω)
+    (hQ : 0 < pumpQ α₀ cα g2) :
+    deltaStarPlus α₀ cα cω g2 < pumpQ α₀ cα g2 / (2 * cω) := by
+  set S := cα ^ 2 + cω ^ 2 with hSdef
+  set Q := pumpQ α₀ cα g2 with hQdef
+  have hca2 : 0 < cα ^ 2 := by positivity
   have hS : 0 < S := by positivity
-  have hca2 : 0 < cα ^ 2 := by nlinarith
-  have hrS : √S ^ 2 = S := Real.sq_sqrt hS.le
   have hcωS : cω < √S := by
     rw [show cω = √(cω ^ 2) from (Real.sqrt_sq hcω.le).symm]
     exact Real.sqrt_lt_sqrt (by positivity) (by simp only [hSdef]; linarith)
-  have hdamp : ∀ y, 0 < y → 0 < damping α₀ cα y := fun y hy => by
-    simp only [damping]; nlinarith
-  -- the discriminant in `Δ` of the detuned quadratic
-  have hQpos_of : ∀ K, 0 < K → K = Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 → 0 < Q := by
-    intro K hK hKdef
-    have hQlow : -(2 * α₀ * (-cα)) < Q := by simp only [hQdef, pumpQ]; nlinarith
-    nlinarith
+  have hsK : √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) < Q := by
+    rw [Real.sqrt_lt' hQ]
+    have : 0 < cα ^ 2 * α₀ ^ 2 := by positivity
+    linarith
+  have hsS0 := Real.sqrt_nonneg S
+  simp only [deltaStarPlus, ← hQdef, ← hSdef]
+  rw [div_lt_div_iff₀ (by positivity) (by positivity)]
+  have : cω * √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) < √S * Q := by
+    calc cω * √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) ≤ cω * Q :=
+          mul_le_mul_of_nonneg_left hsK.le hcω.le
+      _ < √S * Q := mul_lt_mul_of_pos_right hcωS hQ
+  have hS' : √S ^ 2 = S := Real.sq_sqrt hS.le
+  nlinarith [Real.sqrt_nonneg (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2)]
+
+/-- Every `Δ` with `P(Δ) < 0` below `Q/(2c_ω)` lies in the projection: at the amplitude
+`y = (Q − 2c_ωΔ)/(2S)` one has `a² − D = P(Δ)/S < 0`. -/
+@[tmio M, powerlib_foundation] theorem mem_flipProjection_of_detunedP_neg (hcω : 0 < cω) {Δ : ℝ}
+    (hP : detunedP α₀ cα cω g2 Δ < 0) (hΔ : Δ < pumpQ α₀ cα g2 / (2 * cω)) :
+    Δ ∈ flipProjection α₀ cα cω g2 := by
+  set S := cα ^ 2 + cω ^ 2 with hSdef
+  have hS : 0 < S := by positivity
+  have hB : 0 < pumpQ α₀ cα g2 - 2 * cω * Δ := by
+    rw [lt_div_iff₀ (by positivity)] at hΔ; linarith
+  refine mem_flipProjection.2 ⟨(pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S), by positivity, ?_⟩
+  apply mem_flipSet_of_sq_lt
+  have h := detunedP_eq (α₀ := α₀) (cα := cα) (cω := cω) (g2 := g2)
+    ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S)) Δ
+  rw [← hSdef, show S * ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S)) -
+    (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2 = 0 by field_simp; ring] at h
+  have : S * (damping α₀ cα ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S)) ^ 2 -
+      detunedD cω g2 Δ ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S))) < 0 := by
+    rw [h] at hP; simpa using hP
+  have := (neg_of_mul_neg_right this hS.le)
+  linarith
+
+/-! ### The `Δ`-projection by the sign of `c_α` -/
+
+/-- Case `c_α < 0`: the `Δ`-projection of `ℱ` is exactly `(Δ*₋, Δ*₊)` (both ends finite). Here
+`a > 0` at every `y > 0`, so a flip point has `a² < D` and the projection is `{P < 0}`. -/
+@[tmio M, powerlib_foundation] theorem flipProjection_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
+    (hcα : cα < 0) (hcω : 0 < cω) :
+    flipProjection α₀ cα cω g2 = Ioo (deltaStarMinus α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) := by
   ext Δ
-  simp only [mem_flipProjection, mem_Ioo]
+  rw [mem_Ioo, ← detunedP_neg_iff hcα.ne]
   constructor
-  · rintro ⟨y, hy, hmem⟩
-    rw [mem_flipSet_of_damping_pos (hdamp y hy)] at hmem
-    -- the `y`-discriminant is positive and `Q − 2c_ωΔ > 0`
-    have hb : 0 < Q - 2 * cω * Δ := by nlinarith [sq_nonneg Δ, sq_nonneg α₀]
-    have hdisc : 4 * S * (α₀ ^ 2 + Δ ^ 2) < (Q - 2 * cω * Δ) ^ 2 := by
-      nlinarith [sq_nonneg (2 * S * y - (Q - 2 * cω * Δ))]
-    -- as a quadratic in `Δ`: `cα² Δ² + Q c_ω Δ − (Q² − 4 S α₀²)/4 < 0`
-    have hq : cα ^ 2 * Δ ^ 2 + (Q * cω) * Δ + (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) < 0 := by
-      simp only [hSdef] at hdisc ⊢; nlinarith
-    have h := (Criteria.quad_neg_iff hca2).mp hq
-    have hD : (Q * cω) ^ 2 - 4 * cα ^ 2 * (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) =
-        S * (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) := by simp only [hSdef]; ring
-    rw [hD, Real.sqrt_mul hS.le] at h
-    simp only [deltaStarMinus, deltaStarPlus, ← hQdef, ← hSdef]
-    constructor
-    · convert h.1 using 1; ring
-    · convert h.2 using 1; ring
-  · rintro ⟨h1, h2⟩
-    have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := h1.trans h2
-    have hK : 0 < Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 := by
-      by_contra hneg
-      push Not at hneg
-      have : √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) = 0 := Real.sqrt_eq_zero'.mpr hneg
-      simp only [deltaStarMinus, deltaStarPlus, ← hQdef, ← hSdef, this, mul_zero] at hlt
-      linarith
-    have hQ : 0 < Q := hQpos_of _ hK rfl
-    have hD : (Q * cω) ^ 2 - 4 * cα ^ 2 * (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) =
-        S * (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) := by simp only [hSdef]; ring
-    have hq : cα ^ 2 * Δ ^ 2 + (Q * cω) * Δ + (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) < 0 := by
-      rw [Criteria.quad_neg_iff hca2, hD, Real.sqrt_mul hS.le]
-      simp only [deltaStarMinus, deltaStarPlus, ← hQdef, ← hSdef] at h1 h2
-      constructor
-      · convert h1 using 1; ring
-      · convert h2 using 1; ring
-    have hdisc : 4 * S * (α₀ ^ 2 + Δ ^ 2) < (Q - 2 * cω * Δ) ^ 2 := by
-      simp only [hSdef] at hq ⊢; nlinarith
-    -- `Q − 2c_ωΔ > 0` because `Δ < Δ*₊ < Q/(2c_ω)`
-    have hsK : √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) < Q := by
-      rw [Real.sqrt_lt' hQ]
-      have : 0 < cα ^ 2 * α₀ ^ 2 := by positivity
-      linarith
-    have hsK0 := Real.sqrt_nonneg (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2)
-    have hsS0 := Real.sqrt_nonneg S
-    have hDP : deltaStarPlus α₀ cα cω g2 < Q / (2 * cω) := by
-      simp only [deltaStarPlus, ← hQdef, ← hSdef]
-      rw [div_lt_div_iff₀ (by positivity) (by positivity)]
-      have : cω * √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) < √S * Q := by
-        calc cω * √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) ≤ cω * Q := by
-              exact mul_le_mul_of_nonneg_left hsK.le hcω.le
-          _ < √S * Q := mul_lt_mul_of_pos_right hcωS hQ
+  · intro hΔ
+    obtain ⟨y, hy, -, hlt⟩ := mem_flipProjection.1 hΔ
+    have ha : 0 < damping α₀ cα y := by simp only [damping]; nlinarith
+    exact detunedP_neg_of_sq_lt (by positivity) ((Real.lt_sqrt ha.le).mp hlt)
+  · intro hP
+    have hΔ := (detunedP_neg_iff hcα.ne).1 hP
+    have hK := (deltaStarMinus_lt_deltaStarPlus_iff hcα.ne).1 (hΔ.1.trans hΔ.2)
+    -- `Q² − 4c_α²α₀² = (g2/4)(Q + 2c_αα₀)`, so `Q > −2c_αα₀ > 0`
+    have hK' : pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 =
+        g2 / 4 * (pumpQ α₀ cα g2 + 2 * cα * α₀) := by simp only [pumpQ]; ring
+    rw [hK'] at hK
+    have hQ : 0 < pumpQ α₀ cα g2 := by
+      have := (pos_iff_pos_of_mul_pos hK).mp (by positivity)
       nlinarith
-    have hb : 0 < Q - 2 * cω * Δ := by
-      have := h2.trans hDP
-      rw [lt_div_iff₀ (by positivity)] at this
-      linarith
-    refine ⟨(Q - 2 * cω * Δ) / (2 * S), by positivity, ?_⟩
-    rw [mem_flipSet_of_damping_pos (hdamp _ (by positivity))]
-    have hk : 4 * S * (S * ((Q - 2 * cω * Δ) / (2 * S)) ^ 2 -
-        (Q - 2 * cω * Δ) * ((Q - 2 * cω * Δ) / (2 * S)) + (α₀ ^ 2 + Δ ^ 2)) =
-        4 * S * (α₀ ^ 2 + Δ ^ 2) - (Q - 2 * cω * Δ) ^ 2 := by
-      field_simp; ring
-    nlinarith
+    exact mem_flipProjection_of_detunedP_neg hcω hP
+      (hΔ.2.trans (deltaStarPlus_lt_div hα hcα.ne hcω hQ))
 
 /-- Case `c_α = 0`: the `Δ`-projection of `ℱ` is `(−∞, g2/(16c_ω) − 4c_ωα₀²/g2)`:
-`Δ_sup = |𝒢|²/(16c_ω) − 4c_ωα₀²/|𝒢|²`, `Δ_inf = −∞`. -/
+`Δ_sup = |𝒢|²/(16c_ω) − 4c_ωα₀²/|𝒢|²`, `Δ_inf = −∞`. Here `a = α₀ > 0` and `P` is linear. -/
 @[tmio M, powerlib_foundation] theorem flipProjection_calpha_zero (hα : 0 < α₀) (hg : 0 < g2)
     (hcω : 0 < cω) :
     flipProjection α₀ 0 cω g2 = Iio (g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2) := by
-  have hdamp : ∀ y, damping α₀ 0 y = α₀ := fun y => by simp [damping]
-  have hQ : pumpQ α₀ 0 g2 = g2 / 4 := by simp [pumpQ]
+  have hP : ∀ Δ, detunedP α₀ 0 cω g2 Δ < 0 ↔ Δ < g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2 := by
+    intro Δ
+    rw [show detunedP α₀ 0 cω g2 Δ = g2 * cω / 4 * (Δ - (g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2))
+      by simp only [detunedP, pumpQ]; field_simp; ring]
+    constructor <;> intro h
+    · by_contra hc; push Not at hc; nlinarith [mul_pos hg hcω]
+    · exact mul_neg_of_pos_of_neg (by positivity) (by linarith)
   ext Δ
-  simp only [mem_flipProjection, mem_Iio]
-  have hmem : ∀ y, (y, Δ) ∈ flipSet α₀ 0 cω g2 ↔
-      cω ^ 2 * y ^ 2 - (g2 / 4 - 2 * cω * Δ) * y + (α₀ ^ 2 + Δ ^ 2) < 0 := by
-    intro y
-    rw [mem_flipSet_of_damping_pos (by rw [hdamp]; exact hα), hQ]
-    simp
-  simp only [hmem]
-  have hbound : g2 / (16 * cω) - 4 * cω * α₀ ^ 2 / g2 =
-      ((g2 / 4) ^ 2 - 4 * cω ^ 2 * α₀ ^ 2) / (4 * (g2 / 4) * cω) := by
-    field_simp; ring
-  rw [hbound]
+  rw [mem_Iio, ← hP]
   constructor
-  · rintro ⟨y, hy, h⟩
-    have hb : 0 < g2 / 4 - 2 * cω * Δ := by nlinarith [sq_nonneg Δ, sq_nonneg α₀]
-    have hdisc : 4 * cω ^ 2 * (α₀ ^ 2 + Δ ^ 2) < (g2 / 4 - 2 * cω * Δ) ^ 2 := by
-      have hm := mul_neg_of_pos_of_neg (show (0 : ℝ) < 4 * cω ^ 2 by positivity) h
-      nlinarith [sq_nonneg (2 * cω ^ 2 * y - (g2 / 4 - 2 * cω * Δ))]
-    rw [lt_div_iff₀ (by positivity)]
-    nlinarith
+  · intro hΔ
+    obtain ⟨y, -, -, hlt⟩ := mem_flipProjection.1 hΔ
+    have ha : 0 < damping α₀ 0 y := by simp only [damping]; linarith
+    exact detunedP_neg_of_sq_lt (by positivity) ((Real.lt_sqrt ha.le).mp hlt)
   · intro h
-    rw [lt_div_iff₀ (by positivity)] at h
-    have hdisc : 4 * cω ^ 2 * (α₀ ^ 2 + Δ ^ 2) < (g2 / 4 - 2 * cω * Δ) ^ 2 := by nlinarith
-    have hb : 0 < g2 / 4 - 2 * cω * Δ := by nlinarith [sq_nonneg α₀, sq_nonneg cω]
-    refine ⟨(g2 / 4 - 2 * cω * Δ) / (2 * cω ^ 2), by positivity, ?_⟩
-    have hk : 4 * cω ^ 2 * (cω ^ 2 * ((g2 / 4 - 2 * cω * Δ) / (2 * cω ^ 2)) ^ 2 -
-        (g2 / 4 - 2 * cω * Δ) * ((g2 / 4 - 2 * cω * Δ) / (2 * cω ^ 2)) + (α₀ ^ 2 + Δ ^ 2)) =
-        4 * cω ^ 2 * (α₀ ^ 2 + Δ ^ 2) - (g2 / 4 - 2 * cω * Δ) ^ 2 := by
-      field_simp; ring
-    have : 0 < 4 * cω ^ 2 := by positivity
-    nlinarith
+    refine mem_flipProjection_of_detunedP_neg hcω h (((hP Δ).1 h).trans ?_)
+    rw [show pumpQ α₀ 0 g2 = g2 / 4 by simp [pumpQ]]
+    have : 0 < 4 * cω * α₀ ^ 2 / g2 := by positivity
+    have : g2 / (16 * cω) < g2 / 4 / (2 * cω) := by
+      rw [div_lt_div_iff₀ (by positivity) (by positivity)]; nlinarith [mul_pos hg hcω]
+    linarith
 
 /-- On the `a < 0` segment the upper boundary `Δ₊(y) = −c_ω y + |𝒢|√y/2` is at most
 `g2/(16c_ω)`. -/
@@ -673,130 +736,6 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
 
 /-! ## The low-gain branch `c_α > 0` and the limit `c_α → 0` (§8) -/
 
-/-- The detuned quadratic in `Δ`, `P(Δ) = c_α² Δ² + Q c_ω Δ − (Q² − 4(c_α² + c_ω²)α₀²)/4`, whose
-roots are `Δ*_±` (`detunedP_neg_iff`). -/
-def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
-  cα ^ 2 * Δ ^ 2 + pumpQ α₀ cα g2 * cω * Δ -
-    (pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4
-
-/-- `P(Δ) = S (a(y)² − D(y, Δ)) − (S y − (Q − 2c_ωΔ)/2)²` for every amplitude `y`
-(`S = c_α² + c_ω²`): `P(Δ)/S` is the minimum over `y` of `a² − D`. -/
-@[tmio M, powerlib_foundation] theorem detunedP_eq (y Δ : ℝ) :
-    detunedP α₀ cα cω g2 Δ =
-      (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) -
-        ((cα ^ 2 + cω ^ 2) * y - (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2) ^ 2 := by
-  simp only [detunedP, damping, detunedD, pumpQ]; ring
-
-/-- `P(Δ) ≤ S (a(y)² − D(y, Δ))` for every amplitude `y`. -/
-@[tmio M, powerlib_foundation] theorem detunedP_le (y Δ : ℝ) :
-    detunedP α₀ cα cω g2 Δ ≤
-      (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) := by
-  rw [detunedP_eq y Δ]
-  nlinarith [sq_nonneg ((cα ^ 2 + cω ^ 2) * y - (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2)]
-
-/-- `a(y)² < D(y, Δ)` puts `(y, Δ)` in the flip set, whatever the sign of `a(y)`. -/
-@[tmio M, powerlib_foundation] theorem mem_flipSet_of_sq_lt {y Δ : ℝ}
-    (h : damping α₀ cα y ^ 2 < detunedD cω g2 Δ y) : (y, Δ) ∈ flipSet α₀ cα cω g2 := by
-  have hD : 0 ≤ detunedD cω g2 Δ y := (sq_nonneg _).trans h.le
-  refine ⟨hD, ?_⟩
-  calc damping α₀ cα y ≤ |damping α₀ cα y| := le_abs_self _
-    _ = √(damping α₀ cα y ^ 2) := (Real.sqrt_sq_eq_abs _).symm
-    _ < √(detunedD cω g2 Δ y) := Real.sqrt_lt_sqrt (sq_nonneg _) h
-
-/-- The roots of `P` are `Δ*_±`: for `c_α ≠ 0`, `P(Δ) < 0 ↔ Δ*₋ < Δ < Δ*₊`. -/
-@[tmio M, powerlib_foundation] theorem detunedP_neg_iff (hcα : cα ≠ 0) {Δ : ℝ} :
-    detunedP α₀ cα cω g2 Δ < 0 ↔
-      deltaStarMinus α₀ cα cω g2 < Δ ∧ Δ < deltaStarPlus α₀ cα cω g2 := by
-  have hca2 : 0 < cα ^ 2 := by positivity
-  have hS : 0 ≤ cα ^ 2 + cω ^ 2 := by positivity
-  have h := Criteria.quad_neg_iff (a := cα ^ 2) (b := pumpQ α₀ cα g2 * cω)
-    (c := -(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4) (x := Δ) hca2
-  have hD : (pumpQ α₀ cα g2 * cω) ^ 2 -
-      4 * cα ^ 2 * (-(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4) =
-      (cα ^ 2 + cω ^ 2) * (pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) := by ring
-  rw [hD, Real.sqrt_mul hS] at h
-  rw [show detunedP α₀ cα cω g2 Δ = cα ^ 2 * Δ ^ 2 + pumpQ α₀ cα g2 * cω * Δ +
-      -(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4 by simp only [detunedP]; ring, h]
-  simp only [deltaStarMinus, deltaStarPlus]
-  constructor <;> rintro ⟨h1, h2⟩ <;> constructor
-  · convert h1 using 1; ring
-  · convert h2 using 1; ring
-  · convert h1 using 1; ring
-  · convert h2 using 1; ring
-
-/-- Beyond the larger root `P` is positive: `Δ*₊ < Δ → 0 < P(Δ)` (`c_α ≠ 0`). -/
-@[tmio M, powerlib_foundation] theorem detunedP_pos_of_gt (hcα : cα ≠ 0) {Δ : ℝ}
-    (hΔ : deltaStarPlus α₀ cα cω g2 < Δ) : 0 < detunedP α₀ cα cω g2 Δ := by
-  set S := cα ^ 2 + cω ^ 2 with hSdef
-  set Q := pumpQ α₀ cα g2 with hQdef
-  set K := Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 with hKdef
-  have hca2 : 0 < cα ^ 2 := by positivity
-  have hS : 0 ≤ S := by positivity
-  have hr : 0 ≤ √S * √K := mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
-  -- `2 c_α² Δ + Q c_ω > √S √K ≥ 0`
-  have hlin : √S * √K < 2 * cα ^ 2 * Δ + Q * cω := by
-    simp only [deltaStarPlus, ← hSdef, ← hQdef, ← hKdef] at hΔ
-    rw [div_lt_iff₀ (by positivity)] at hΔ
-    linarith
-  have hk : 4 * cα ^ 2 * detunedP α₀ cα cω g2 Δ = (2 * cα ^ 2 * Δ + Q * cω) ^ 2 - S * K := by
-    simp only [detunedP, ← hQdef, hSdef, hKdef]; ring
-  have : S * K < (2 * cα ^ 2 * Δ + Q * cω) ^ 2 := by
-    rcases le_total 0 K with hK | hK
-    · have h1 : (√S * √K) ^ 2 = S * K := by
-        rw [mul_pow, Real.sq_sqrt hS, Real.sq_sqrt hK]
-      nlinarith
-    · rw [Real.sqrt_eq_zero'.mpr hK, mul_zero] at hlin
-      have h2 : 0 < (2 * cα ^ 2 * Δ + Q * cω) ^ 2 := by positivity
-      nlinarith [mul_nonneg hS (neg_nonneg.mpr hK)]
-  nlinarith
-
-/-- `Δ*₊ < Q/(2c_ω)` when `c_α ≠ 0`, `c_ω > 0`, `Q > 0` and `c_α α₀ ≠ 0`; equivalently the
-minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
-@[tmio M, powerlib_foundation] theorem deltaStarPlus_lt_div (hα : 0 < α₀) (hcα : cα ≠ 0) (hcω : 0 < cω)
-    (hQ : 0 < pumpQ α₀ cα g2) :
-    deltaStarPlus α₀ cα cω g2 < pumpQ α₀ cα g2 / (2 * cω) := by
-  set S := cα ^ 2 + cω ^ 2 with hSdef
-  set Q := pumpQ α₀ cα g2 with hQdef
-  have hca2 : 0 < cα ^ 2 := by positivity
-  have hS : 0 < S := by positivity
-  have hcωS : cω < √S := by
-    rw [show cω = √(cω ^ 2) from (Real.sqrt_sq hcω.le).symm]
-    exact Real.sqrt_lt_sqrt (by positivity) (by simp only [hSdef]; linarith)
-  have hsK : √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) < Q := by
-    rw [Real.sqrt_lt' hQ]
-    have : 0 < cα ^ 2 * α₀ ^ 2 := by positivity
-    linarith
-  have hsS0 := Real.sqrt_nonneg S
-  simp only [deltaStarPlus, ← hQdef, ← hSdef]
-  rw [div_lt_div_iff₀ (by positivity) (by positivity)]
-  have : cω * √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) < √S * Q := by
-    calc cω * √(Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) ≤ cω * Q :=
-          mul_le_mul_of_nonneg_left hsK.le hcω.le
-      _ < √S * Q := mul_lt_mul_of_pos_right hcωS hQ
-  have hS' : √S ^ 2 = S := Real.sq_sqrt hS.le
-  nlinarith [Real.sqrt_nonneg (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2)]
-
-/-- Every `Δ` with `P(Δ) < 0` below `Q/(2c_ω)` lies in the projection: at the amplitude
-`y = (Q − 2c_ωΔ)/(2S)` one has `a² − D = P(Δ)/S < 0`. -/
-@[tmio M, powerlib_foundation] theorem mem_flipProjection_of_detunedP_neg (hcω : 0 < cω) {Δ : ℝ}
-    (hP : detunedP α₀ cα cω g2 Δ < 0) (hΔ : Δ < pumpQ α₀ cα g2 / (2 * cω)) :
-    Δ ∈ flipProjection α₀ cα cω g2 := by
-  set S := cα ^ 2 + cω ^ 2 with hSdef
-  have hS : 0 < S := by positivity
-  have hB : 0 < pumpQ α₀ cα g2 - 2 * cω * Δ := by
-    rw [lt_div_iff₀ (by positivity)] at hΔ; linarith
-  refine mem_flipProjection.2 ⟨(pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S), by positivity, ?_⟩
-  apply mem_flipSet_of_sq_lt
-  have h := detunedP_eq (α₀ := α₀) (cα := cα) (cω := cω) (g2 := g2)
-    ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S)) Δ
-  rw [← hSdef, show S * ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S)) -
-    (pumpQ α₀ cα g2 - 2 * cω * Δ) / 2 = 0 by field_simp; ring] at h
-  have : S * (damping α₀ cα ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S)) ^ 2 -
-      detunedD cω g2 Δ ((pumpQ α₀ cα g2 - 2 * cω * Δ) / (2 * S))) < 0 := by
-    rw [h] at hP; simpa using hP
-  have := (neg_of_mul_neg_right this hS.le)
-  linarith
-
 /-- Case `c_α > 0`, every gain `𝒢`: the `Δ`-projection contains `(Δ*₋, Δ*₊)`. -/
 @[tmio M, powerlib_foundation] theorem Ioo_subset_flipProjection_calpha_pos (hα : 0 < α₀)
     (hg : 0 < g2) (hcα : 0 < cα) (hcω : 0 < cω) :
@@ -820,14 +759,7 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
   show Δ < deltaStarPlus α₀ cα cω g2
   by_cases hsq : damping α₀ cα y ^ 2 < detunedD cω g2 Δ y
   · -- `a² < D`: then `P(Δ) < 0`
-    have h1 := detunedP_le (α₀ := α₀) (cα := cα) (cω := cω) (g2 := g2) y Δ
-    have hP : detunedP α₀ cα cω g2 Δ < 0 := by
-      have h2 : 0 < S * (detunedD cω g2 Δ y - damping α₀ cα y ^ 2) := by
-        apply mul_pos hS; linarith
-      have h3 : (cα ^ 2 + cω ^ 2) * (damping α₀ cα y ^ 2 - detunedD cω g2 Δ y) =
-          -(S * (detunedD cω g2 Δ y - damping α₀ cα y ^ 2)) := by rw [hSdef]; ring
-      linarith
-    exact ((detunedP_neg_iff hcα.ne').1 hP).2
+    exact ((detunedP_neg_iff hcα.ne').1 (detunedP_neg_of_sq_lt hS hsq)).2
   · -- `D ≤ a²` and `a < √D`: then `a < 0`, i.e. `y > y_a = α₀/c_α`
     push Not at hsq
     have ha : damping α₀ cα y < 0 := by
@@ -895,17 +827,11 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
     IsLUB (flipProjection α₀ cα cω g2) (deltaStarPlus α₀ cα cω g2) := by
   have hsub := Ioo_subset_flipProjection_calpha_pos hα hg hcα hcω
   have hsup := flipProjection_calpha_pos_lowGain_subset_Iio hα hg hcα hcω hlow
-  have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
-  have hK : 0 < pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2 := by
+  have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := by
+    have hQ : 0 < pumpQ α₀ cα g2 := by simp only [pumpQ]; positivity
     have h1 : 2 * cα * α₀ < pumpQ α₀ cα g2 := by simp only [pumpQ]; nlinarith
     have h2 : 0 < pumpQ α₀ cα g2 + 2 * cα * α₀ := by positivity
-    nlinarith [mul_pos (sub_pos.2 h1) h2]
-  have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := by
-    simp only [deltaStarMinus, deltaStarPlus]
-    apply div_lt_div_of_pos_right _ (by positivity)
-    have : 0 < √(cα ^ 2 + cω ^ 2) * √(pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) :=
-      mul_pos (Real.sqrt_pos.mpr (by positivity)) (Real.sqrt_pos.mpr hK)
-    linarith
+    exact (deltaStarMinus_lt_deltaStarPlus_iff hcα.ne').2 (by nlinarith [mul_pos (sub_pos.2 h1) h2])
   exact ⟨fun Δ hΔ => (hsup hΔ).le, fun b hb => (isLUB_Ioo hlt).2 fun Δ hΔ => hb (hsub hΔ)⟩
 
 /-- Case `c_α > 0`, low gain: unlike the high-gain branch, `Δ_sup = Δ*₊` is **not** attained. -/
@@ -996,27 +922,15 @@ minimizing amplitude `(Q − 2c_ωΔ)/(2S)` is positive below `Δ*₊`. -/
     eventually_lt_nhds (show (0 : ℝ) < 16 * cω ^ 2 * α₀ / g2 by positivity)
   filter_upwards [nhdsWithin_le_nhds hKev, nhdsWithin_le_nhds hlowev, self_mem_nhdsWithin]
     with cα hK hsmall hne
+  have hlt := (deltaStarMinus_lt_deltaStarPlus_iff (cω := cω) hne).2 hK
   rcases lt_or_gt_of_ne (show cα ≠ 0 from hne) with hneg | hpos
-  · have hca2 : 0 < cα ^ 2 := by nlinarith
-    have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := by
-      simp only [deltaStarMinus, deltaStarPlus]
-      apply div_lt_div_of_pos_right _ (by positivity)
-      have : 0 < √(cα ^ 2 + cω ^ 2) * √(pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) :=
-        mul_pos (Real.sqrt_pos.mpr (by positivity)) (Real.sqrt_pos.mpr hK)
-      linarith
-    rw [flipProjection_calpha_neg hα hg hneg hcω, csSup_Ioo hlt]
+  · rw [flipProjection_calpha_neg hα hg hneg hcω, csSup_Ioo hlt]
   · have hlow : g2 / (16 * cω ^ 2) ≤ α₀ / cα := by
       rw [div_le_div_iff₀ (by positivity) hpos]
       rw [lt_div_iff₀ hg] at hsmall
       nlinarith
     have hlub := flipProjection_calpha_pos_lowGain_isLUB hα hg hpos hcω hlow
     have hsub := Ioo_subset_flipProjection_calpha_pos hα hg hpos hcω
-    have hlt : deltaStarMinus α₀ cα cω g2 < deltaStarPlus α₀ cα cω g2 := by
-      simp only [deltaStarMinus, deltaStarPlus]
-      apply div_lt_div_of_pos_right _ (by positivity)
-      have : 0 < √(cα ^ 2 + cω ^ 2) * √(pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) :=
-        mul_pos (Real.sqrt_pos.mpr (by positivity)) (Real.sqrt_pos.mpr hK)
-      linarith
     exact (hlub.csSup_eq ((nonempty_Ioo.2 hlt).mono hsub)).symm
 
 /-! ## The two-circle criterion (§9) -/
@@ -1043,10 +957,17 @@ def rSq (α₀ cα cω g2 : ℝ) : ℝ := lamAlpha α₀ cα g2 ^ 2 + lamOmega �
   · funext z; simp [tongue]
   · simp; ring
 
-/-- `q(y₀)/α₀² = R² − 2Λ_α`. -/
+/-- `q(t y₀) = α₀² (R² t² − (1 + 2Λ_α) t + 1)`. -/
+@[tmio M, powerlib_foundation] private theorem tongue_mul_y0 (hg : g2 ≠ 0) (t : ℝ) :
+    tongue α₀ cα cω g2 (t * y0 α₀ g2) =
+      α₀ ^ 2 * (rSq α₀ cα cω g2 * t ^ 2 - (1 + 2 * lamAlpha α₀ cα g2) * t + 1) := by
+  simp only [tongue, pumpQ, y0, rSq, lamAlpha, lamOmega]
+  field_simp
+
+/-- `q(y₀)/α₀² = R² − 2Λ_α` (`t = 1` of `q(t y₀)`). -/
 @[tmio M, powerlib_foundation] theorem tongue_y0 (hα : α₀ ≠ 0) (hg : g2 ≠ 0) :
     tongue α₀ cα cω g2 (y0 α₀ g2) / α₀ ^ 2 = rSq α₀ cα cω g2 - 2 * lamAlpha α₀ cα g2 := by
-  simp only [tongue, pumpQ, y0, rSq, lamAlpha, lamOmega]
+  rw [← one_mul (y0 α₀ g2), tongue_mul_y0 hg]
   field_simp
   ring
 
@@ -1178,11 +1099,7 @@ corrected threshold exceeds the leading one, `e(0) < 0`, without exception. -/
 @[tmio M, powerlib_foundation] theorem ratio_equation (hα : α₀ ≠ 0) (hg : g2 ≠ 0) (t : ℝ) :
     tongue α₀ cα cω g2 (t * y0 α₀ g2) = 0 ↔
       rSq α₀ cα cω g2 * t ^ 2 - (1 + 2 * lamAlpha α₀ cα g2) * t + 1 = 0 := by
-  have hk : tongue α₀ cα cω g2 (t * y0 α₀ g2) =
-      α₀ ^ 2 * (rSq α₀ cα cω g2 * t ^ 2 - (1 + 2 * lamAlpha α₀ cα g2) * t + 1) := by
-    simp only [tongue, pumpQ, y0, rSq, lamAlpha, lamOmega]
-    field_simp
-  rw [hk]
+  rw [tongue_mul_y0 hg]
   constructor
   · intro h; exact (mul_eq_zero.mp h).resolve_left (pow_ne_zero 2 hα)
   · intro h; rw [h, mul_zero]

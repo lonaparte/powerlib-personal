@@ -141,17 +141,16 @@ variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
 /-- Forward Euler on a linear field is the recursion with `1 + hA`. -/
 @[tmio T, powerlib_foundation] theorem isForwardEulerTrajectory_iff (x : ℕ → Fin n → ℝ) :
     IsForwardEulerTrajectory (linearField A) h x ↔
-      ∀ k, x (k + 1) = LTI.Model.step ⟨forwardEulerMatrix h A⟩ (x k) := by
-  simp only [IsForwardEulerTrajectory, LTI.Model.step,
-    forwardEulerMatrix, linearField, one_add_smul_mulVec]
+      ∀ k, x (k + 1) = forwardEulerMatrix h A *ᵥ x k := by
+  simp only [IsForwardEulerTrajectory, forwardEulerMatrix, linearField, one_add_smul_mulVec]
 
 /-- The θ-method on a linear field is the recursion with `(1 − θhA)⁻¹ (1 + (1 − θ)hA)`, whenever
 the implicit matrix `1 − θhA` is invertible. -/
 @[tmio T, powerlib_foundation] theorem isThetaTrajectory_iff {θ : ℝ}
     (hP : IsUnit (1 - (θ * h) • A).det) (x : ℕ → Fin n → ℝ) :
     IsThetaTrajectory θ (linearField A) h x ↔
-      ∀ k, x (k + 1) = LTI.Model.step ⟨thetaMatrix θ h A⟩ (x k) := by
-  simp only [IsThetaTrajectory, LTI.Model.step, thetaMatrix, linearField]
+      ∀ k, x (k + 1) = thetaMatrix θ h A *ᵥ x k := by
+  simp only [IsThetaTrajectory, thetaMatrix, linearField]
   refine forall_congr' fun k => ?_
   rw [← Matrix.mulVec_mulVec, eq_inv_mulVec_iff hP, one_sub_smul_mulVec, one_add_smul_mulVec,
     sub_eq_iff_eq_add, smul_add, smul_smul, smul_smul, mul_comm h, mul_comm h θ, add_assoc]
@@ -272,14 +271,14 @@ every step `h > 0`. -/
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
   have hP := isUnit_det_one_sub_smul_of_isHurwitz hA (c := θ * h) (mul_pos (by linarith) hh)
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := LTI.exponentiallyStable_of_schurStable
-    (m := ⟨thetaMatrix θ h A⟩) (theta_schurStable_of_isHurwitz hA hθ hh)
+    (Φ := thetaMatrix θ h A) (theta_schurStable_of_isHurwitz hA hθ hh)
   exact ⟨C, hC, ρ, hρ0, hρ1, fun x hx => hb x ((isThetaTrajectory_iff A h hP x).mp hx)⟩
 
 /-- A well-posed θ-method step has exactly one trajectory from each initial state. -/
 @[tmio T, powerlib_foundation] theorem theta_existsUnique {θ : ℝ}
     (hP : IsUnit (1 - (θ * h) • A).det) (initial : Fin n → ℝ) :
     ∃! x, IsThetaTrajectory θ (linearField A) h x ∧ x 0 = initial := by
-  refine ⟨LTI.response ⟨thetaMatrix θ h A⟩ initial,
+  refine ⟨LTI.response (thetaMatrix θ h A) initial,
     ⟨(isThetaTrajectory_iff A h hP _).mpr (LTI.response_isTrajectory _ _),
       LTI.response_zero _ _⟩, ?_⟩
   rintro y ⟨hy, hy0⟩

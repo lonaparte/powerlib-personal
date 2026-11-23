@@ -118,13 +118,4 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
   rw [interiorTable, h1, h3, hmain]
   ring
 
-/-- The endpoint main term is exactly half the interior main term. -/
-@[tmio T, powerlib_foundation] theorem endpoint_main_term_half {b : ℝ} (hb : 0 < b) :
-    (∫ ξ in Ioi (0 : ℝ), Real.exp (-(b / 2) * ξ ^ 2)) =
-      (1 / 2) * ∫ ξ : ℝ, Real.exp (-(b / 2) * ξ ^ 2) := by
-  rw [halfMoment0 hb, integral_gaussian]
-  have : π / (b / 2) = 2 * π / b := by field_simp
-  rw [this]
-  ring
-
 end powerlib.Asymptotics

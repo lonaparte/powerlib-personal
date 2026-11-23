@@ -7,8 +7,8 @@ import Mathlib.Algebra.Field.Basic
 A DC test record is a finite list of samples `(voltage, current)` with entries in a field `K`:
 exact rationals for computation, reals when the record is attached to the RL instance. The
 analysis is the least-squares resistance of `v = R * i` through the origin. It enters TMIO as an
-ordinary edge built from one deterministic map (`preimage`); its forward map, the direct image,
-is generated.
+ordinary edge built from one deterministic map (`preimage`); its generated forward map is the
+direct image (`TMIO.generate_preimage`).
 
 The fit factors through the sufficient statistics `(Σ vₖ iₖ, Σ iₖ²)`. Two areas may therefore
 exchange statistics instead of records: the statistics of merged records are the sums of the
@@ -27,8 +27,8 @@ generated direct image (`theorem/TMIO/Relation.lean`).
 
 Results.
 * Records and the analysis: `Sample`, `Record`, `stats`, `fit`, `estimate`.
-* Edges: `estimateEdge`, `statsEdge`, `fitEdge`; `generate_estimateEdge` (the direct image),
-  `generate_estimateEdge_comp` (the analysis is the composite of the statistics and fit edges).
+* Edges: `estimateEdge`, `statsEdge`, `fitEdge` (the analysis edge is definitionally the
+  composite `statsEdge.comp fitEdge`).
 * Distribution: `stats_append` (merging records adds their statistics), `distributedEdge`,
   `centralEdge`, `distributedEdge_eq_centralEdge` (the same semantic map),
   `generate_distributedEdge` (the distributed pipeline computes the central estimates).
@@ -67,19 +67,6 @@ def statsEdge : sInfHom (Set (K × K)) (Set (Record K)) := preimage stats
 
 /-- The fit edge. -/
 def fitEdge : sInfHom (Set K) (Set (K × K)) := preimage fit
-
-/-- The generated forward map of the analysis is its direct image. -/
-@[tmio T, powerlib_foundation] theorem generate_estimateEdge :
-    connection% (⇑(generate (estimateEdge (K := K))) = Set.image estimate) := show ⇑(generate (estimateEdge (K := K))) = Set.image estimate from
-  generate_preimage estimate
-
-/-- The analysis is the composite of the statistics and the fit edges, and its generated forward
-map is the composite of their generated forward maps. -/
-@[tmio T, powerlib_foundation] theorem generate_estimateEdge_comp :
-    connection% (⇑(generate (estimateEdge (K := K))) = Set.image fit ∘ Set.image stats) := by
-  change ⇑(generate (estimateEdge (K := K))) = Set.image fit ∘ Set.image stats
-  have h : estimateEdge (K := K) = statsEdge.comp fitEdge := rfl
-  rw [h, generate_comp, statsEdge, fitEdge, generate_preimage, generate_preimage]
 
 /-- Merging two records adds their statistics. -/
 @[tmio T, simp, powerlib_foundation] theorem stats_append (d₁ d₂ : Record K) :

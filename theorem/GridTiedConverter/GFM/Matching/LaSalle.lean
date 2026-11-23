@@ -97,14 +97,23 @@ Family and connection conclusions.
 No synchronizing torque, `μ u* v₀ = 0` (outside the source's hypotheses; then `k = κ = 0`, `S` is
 constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq_zero`, and
 `H − S(0) = C_dc ũ²/2 + L_s ‖ĩ‖²/2`, `energy_eq_of_no_sync`). All with `C_dc, L_s, R_s > 0`.
-* (a) `margin > 0`: the dissipation is uniformly definite, `dH/dt ≤ −ε(ũ² + ‖ĩ‖²)`
-  (`energy_lie_le_sq`, any `μ u* v₀`), so `H` decays exponentially at `noSyncRate`
-  (`energy_lie_le_noSyncRate`); `θ' = η ũ` is integrable and the angle settles.
-  Private: `tendsto_equilibrium_of_no_sync` (every forward solution converges to one equilibrium
-  `(θ∞, u*, î(θ∞))` — no drift). Connection:
-  `mem_den_lyapunovStable_of_no_sync` (Lyapunov stable), `noSyncModel_mem_den_lyapunovStable`,
-  and the boundary `not_exact_lyapunovStable` (**REFUTED exactness**: the Lyapunov translation
-  `{physical, synchronizing, dissipative}` is sound but not exact, `noSyncModel` has `v₀ = 0`).
+* (a) `margin > 0` or `μ ≠ 0` (with `margin ≥ 0`): `tendsto_error_of_no_sync` (private, LaSalle on
+  the cylinder: with `margin > 0` the LaSalle set is `ũ = 0, ĩ = 0`, `cylLie_eq_zero`; at
+  `margin = 0` the segment argument `no_sync_margin_zero_segment`) gives `ũ_dc, ĩ_dq → 0`, and
+  `tendsto_equilibrium_of_no_sync` (private: every forward solution converges to one equilibrium
+  `(θ∞, u*, î(θ∞))`, for every `η` — no drift). Method: the rotation-reduced error
+  `red x = (ũ, R_θᵀ ĩ)` solves the autonomous field `redField` (`red_field_identity`), whose
+  Jacobian `redJac` is Hurwitz (`redJac_isHurwitz`, Routh–Hurwitz of `theorem.Criteria.Routh3`);
+  local exponential stability then bounds `ũ` exponentially after the solution enters the ball, and
+  `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge. Lyapunov stability
+  (connection `mem_den_lyapunovStable_of_no_sync`): starting near `x*` the reduced error starts in
+  the ball of local exponential stability (`abs_u_err_le_norm_red`, `abs_d_err_le_norm_red`,
+  `abs_q_err_le_norm_red`, `norm_red_le`), stays exponentially small, and the angle moves by at
+  most `|η| C K₁ ‖x₀ − x*‖ / a` (`Dynamics.abs_sub_le_of_abs_deriv_le_exp`). Connection:
+  `noSyncModel_mem_den_lyapunovStable` and the boundary `not_exact_lyapunovStable` (**REFUTED
+  exactness**: the Lyapunov translation `{physical, synchronizing, dissipative}` is sound but not
+  exact, `noSyncModel` has `v₀ = 0`). With `margin > 0` the dissipation is moreover uniformly
+  definite, `dH/dt ≤ −ε(ũ² + ‖ĩ‖²)` (`energy_lie_le_sq`, any `μ u* v₀`).
 * Any margin: `not_mem_den_locallyAsymptoticallyStable_of_no_sync`,
   `not_mem_den_locallyExponentiallyStable_of_no_sync` (with `R_s > 0` the equilibria accumulate at
   `x*`).
@@ -116,19 +125,6 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   any `margin ≥ 0`) the deviation dynamics is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L_s)`,
   so `⟨z, z'⟩ ≤ 0`: Lyapunov stable (connection `mem_den_lyapunovStable_of_frozen`), not
   asymptotically.
-* (c) `margin = 0`, `μ ≠ 0` (so `u* v₀ = 0`): `tendsto_error_of_no_sync_margin_zero` (private,
-  LaSalle on the cylinder with the LaSalle-set argument `no_sync_margin_zero_segment`:
-  `ũ_dc, ĩ_dq → 0`) and `tendsto_equilibrium_of_no_sync_margin_zero` (private: every forward
-  solution converges to one equilibrium, for every `η`). Method: the rotation-reduced error
-  `red x = (ũ, R_θᵀ ĩ)` solves the autonomous field `redField` (`red_field_identity`), whose
-  Jacobian `redJac` is Hurwitz (`redJac_isHurwitz`, Routh–Hurwitz of `theorem.Criteria.Routh3`);
-  local exponential stability then bounds `ũ` exponentially after the solution enters the ball, and
-  `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge. Lyapunov stability
-  (connection `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting
-  near `x*` the reduced error starts in the ball of local exponential stability
-  (`abs_u_err_le_norm_red`, `abs_d_err_le_norm_red`, `abs_q_err_le_norm_red`, `norm_red_le`),
-  stays exponentially small, and the angle moves by at most `|η| C K₁ ‖x₀ − x*‖ / a`
-  (`Dynamics.abs_sub_le_of_abs_deriv_le_exp`).
 * Decision (connection `mem_den_lyapunovStable_iff_of_no_sync`): with `C_dc, L_s, R_s > 0`,
   `μ u* v₀ = 0` and `margin ≥ 0`, the operating point is Lyapunov stable iff
   `margin > 0 ∨ μ ≠ 0 ∨ η = 0`; it is never locally asymptotically stable (continuum of
@@ -1141,24 +1137,6 @@ evidence on the model, not a connection conclusion. -/
     field_simp
   nlinarith [q, e2']
 
-/-- The exponential decay rate `2 ε/(C_dc + L_s)` of the energy without synchronizing torque,
-`ε = R_s margin/(G_dc + K_p + R_s)`. -/
-def Model.noSyncRate (m : Model) : ℝ :=
-  2 * (m.Rs * m.margin / (m.Gdc + m.Kp + m.Rs)) / (m.Cdc + m.Ls)
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem noSyncRate_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hR : 0 < m.Rs) (hδ : 0 < m.margin) : 0 < m.noSyncRate := by
-  have hP : m.margin ≤ m.Gdc + m.Kp := by
-    have : 0 ≤ m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 / (4 * m.Rs * m.N) := by
-      have := N_pos m hR.ne'
-      positivity
-    simp only [Model.margin]
-    linarith
-  have hPR : 0 < m.Gdc + m.Kp + m.Rs := by linarith
-  unfold Model.noSyncRate
-  positivity
-
 /-- Without synchronizing torque the energy is the quadratic `C_dc ũ²/2 + L_s ‖ĩ‖²/2`. Static
 evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_eq_of_no_sync (m : Model) (hs : m.μ * m.ustar * m.v0 = 0)
@@ -1167,148 +1145,6 @@ evidence on the model, not a connection conclusion. -/
       m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2) := by
   simp [Model.energy, k_eq_zero_of_no_sync m hs]
 
-/-- Without synchronizing torque and with `margin > 0`, `dH/dt ≤ −noSyncRate · H`. Static evidence
-on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem energy_lie_le_noSyncRate (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
-    (x : State 4) :
-    fderiv ℝ m.energy x (m.field x) ≤ -m.noSyncRate * m.energy x := by
-  have h := energy_lie_le_sq m hR hL.ne' hC.ne' hδ x
-  rw [energy_eq_of_no_sync m hs]
-  have hε : 0 ≤ m.Rs * m.margin / (m.Gdc + m.Kp + m.Rs) := by
-    have := (noSyncRate_pos m hC hL hR hδ).le
-    unfold Model.noSyncRate at this
-    have hCL : 0 < m.Cdc + m.Ls := by linarith
-    have h2 := mul_nonneg this hCL.le
-    rw [div_mul_cancel₀ _ hCL.ne'] at h2
-    linarith
-  set ε := m.Rs * m.margin / (m.Gdc + m.Kp + m.Rs)
-  have hCL : 0 < m.Cdc + m.Ls := by linarith
-  have e : -m.noSyncRate * (m.Cdc / 2 * (x 1 - m.ustar) ^ 2 +
-      m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
-      -ε * (m.Cdc / (m.Cdc + m.Ls) * (x 1 - m.ustar) ^ 2 +
-        m.Ls / (m.Cdc + m.Ls) * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) := by
-    simp only [Model.noSyncRate, ε]
-    field_simp
-  rw [e]
-  have h1 : m.Cdc / (m.Cdc + m.Ls) ≤ 1 := by rw [div_le_one hCL]; linarith
-  have h2 : m.Ls / (m.Cdc + m.Ls) ≤ 1 := by rw [div_le_one hCL]; linarith
-  have a1 := mul_le_mul_of_nonneg_right h1 (sq_nonneg (x 1 - m.ustar))
-  have a2 := mul_le_mul_of_nonneg_right h2
-    (add_nonneg (sq_nonneg (x 2 - m.iHatD (x 0))) (sq_nonneg (x 3 - m.iHatQ (x 0))))
-  nlinarith [mul_le_mul_of_nonneg_left (add_le_add a1 a2) hε]
-
-/-- Without synchronizing torque the DC-voltage error is bounded by the energy:
-`ũ² ≤ (2/C_dc) H`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem sq_u_err_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
-    (x 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy x := by
-  rw [energy_eq_of_no_sync m hs]
-  have b := sq_nonneg (x 2 - m.iHatD (x 0))
-  have c := sq_nonneg (x 3 - m.iHatQ (x 0))
-  rw [mul_add, ← mul_assoc, show 2 / m.Cdc * (m.Cdc / 2) = 1 by field_simp, one_mul]
-  nlinarith [mul_nonneg (div_pos two_pos hC).le
-    (mul_nonneg (div_pos hL two_pos).le (add_nonneg b c))]
-
-/-- Without synchronizing torque the `d`-current error is bounded by the energy:
-`ĩ_d² ≤ (2/L_s) H`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem sq_d_err_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
-    (x 2 - m.iHatD (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x := by
-  rw [energy_eq_of_no_sync m hs]
-  have a := sq_nonneg (x 1 - m.ustar)
-  have c := sq_nonneg (x 3 - m.iHatQ (x 0))
-  rw [mul_add,
-    show 2 / m.Ls * (m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
-      (x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2 by field_simp]
-  nlinarith [mul_nonneg (div_pos two_pos hL).le (mul_nonneg (div_pos hC two_pos).le a)]
-
-/-- Without synchronizing torque the `q`-current error is bounded by the energy:
-`ĩ_q² ≤ (2/L_s) H`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem sq_q_err_le_energy_of_no_sync (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hs : m.μ * m.ustar * m.v0 = 0) (x : State 4) :
-    (x 3 - m.iHatQ (x 0)) ^ 2 ≤ 2 / m.Ls * m.energy x := by
-  rw [energy_eq_of_no_sync m hs]
-  have a := sq_nonneg (x 1 - m.ustar)
-  have b := sq_nonneg (x 2 - m.iHatD (x 0))
-  rw [mul_add,
-    show 2 / m.Ls * (m.Ls / 2 * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) =
-      (x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2 by field_simp]
-  nlinarith [mul_nonneg (div_pos two_pos hL).le (mul_nonneg (div_pos hC two_pos).le a)]
-
-/-- Exponential decay of the energy along every solution segment (no synchronizing torque,
-`margin > 0`). Implementation evidence. -/
-@[tmio TM, powerlib_domain] private theorem energy_decay (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) {t₀ t₁ : ℝ} {φ : ℝ → State 4}
-    (hφ : IsTrajectoryOn φ m.field t₀ t₁) :
-    ∀ t ∈ Icc t₀ t₁, m.energy (φ t) ≤ Real.exp (-m.noSyncRate * (t - t₀)) * m.energy (φ t₀) :=
-  Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun t => m.energy (φ t))
-    (fun t ht => ((energy_differentiable m) (φ t)).hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht))
-    (fun t _ => energy_lie_le_noSyncRate m hC hL hR hs hδ (φ t))
-
-/-- The DC-voltage error `ũ` decays like `e^{−(rate/2)(t − t₀)}` along every segment. -/
-@[tmio TM, powerlib_domain] private theorem coord_decay_u (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
-    {t₀ t₁ : ℝ} {φ : ℝ → State 4} (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l)
-    (hE : m.energy (φ t₀) ≤ E) :
-    ∀ t ∈ Icc t₀ t₁,
-      |φ t 1 - m.ustar| ≤ (2 / m.Cdc * E / l + l) / 2 *
-        Real.exp (-(m.noSyncRate / 2) * (t - t₀)) := by
-  intro t ht
-  have hd := energy_decay m hC hL hR hs hδ hφ t ht
-  have hd' : m.energy (φ t) ≤ E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀)) := by
-    rw [show 2 * (m.noSyncRate / 2) = m.noSyncRate by ring]
-    nlinarith [Real.exp_pos (-m.noSyncRate * (t - t₀))]
-  have hCp : 0 ≤ 2 / m.Cdc := by positivity
-  refine Dynamics.abs_le_of_sq_le_exp hl ?_
-  calc (φ t 1 - m.ustar) ^ 2 ≤ 2 / m.Cdc * m.energy (φ t) :=
-        sq_u_err_le_energy_of_no_sync m hC hL hs (φ t)
-    _ ≤ 2 / m.Cdc * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
-        mul_le_mul_of_nonneg_left hd' hCp
-    _ = _ := by ring
-
-/-- The `d`-current error `ĩ_d` decays like `e^{−(rate/2)(t − t₀)}` along every segment. -/
-@[tmio TM, powerlib_domain] private theorem coord_decay_d (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
-    {t₀ t₁ : ℝ} {φ : ℝ → State 4} (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l)
-    (hE : m.energy (φ t₀) ≤ E) :
-    ∀ t ∈ Icc t₀ t₁,
-      |φ t 2 - m.iHatD (φ t 0)| ≤ (2 / m.Ls * E / l + l) / 2 *
-        Real.exp (-(m.noSyncRate / 2) * (t - t₀)) := by
-  intro t ht
-  have hd := energy_decay m hC hL hR hs hδ hφ t ht
-  have hd' : m.energy (φ t) ≤ E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀)) := by
-    rw [show 2 * (m.noSyncRate / 2) = m.noSyncRate by ring]
-    nlinarith [Real.exp_pos (-m.noSyncRate * (t - t₀))]
-  have hLp : 0 ≤ 2 / m.Ls := by positivity
-  refine Dynamics.abs_le_of_sq_le_exp hl ?_
-  calc (φ t 2 - m.iHatD (φ t 0)) ^ 2 ≤ 2 / m.Ls * m.energy (φ t) :=
-        sq_d_err_le_energy_of_no_sync m hC hL hs (φ t)
-    _ ≤ 2 / m.Ls * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
-        mul_le_mul_of_nonneg_left hd' hLp
-    _ = _ := by ring
-
-/-- The `q`-current error `ĩ_q` decays like `e^{−(rate/2)(t − t₀)}` along every segment. -/
-@[tmio TM, powerlib_domain] private theorem coord_decay_q (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin)
-    {t₀ t₁ : ℝ} {φ : ℝ → State 4} (hφ : IsTrajectoryOn φ m.field t₀ t₁) {l E : ℝ} (hl : 0 < l)
-    (hE : m.energy (φ t₀) ≤ E) :
-    ∀ t ∈ Icc t₀ t₁,
-      |φ t 3 - m.iHatQ (φ t 0)| ≤ (2 / m.Ls * E / l + l) / 2 *
-        Real.exp (-(m.noSyncRate / 2) * (t - t₀)) := by
-  intro t ht
-  have hd := energy_decay m hC hL hR hs hδ hφ t ht
-  have hd' : m.energy (φ t) ≤ E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀)) := by
-    rw [show 2 * (m.noSyncRate / 2) = m.noSyncRate by ring]
-    nlinarith [Real.exp_pos (-m.noSyncRate * (t - t₀))]
-  have hLp : 0 ≤ 2 / m.Ls := by positivity
-  refine Dynamics.abs_le_of_sq_le_exp hl ?_
-  calc (φ t 3 - m.iHatQ (φ t 0)) ^ 2 ≤ 2 / m.Ls * m.energy (φ t) :=
-        sq_q_err_le_energy_of_no_sync m hC hL hs (φ t)
-    _ ≤ 2 / m.Ls * (E * Real.exp (-(2 * (m.noSyncRate / 2)) * (t - t₀))) :=
-        mul_le_mul_of_nonneg_left hd' hLp
-    _ = _ := by ring
-
 @[tmio M, powerlib_domain] private theorem hasDerivWithinAt_angle (m : Model) {φ : ℝ → State 4} {s : Set ℝ} {t : ℝ}
     (h : HasDerivWithinAt φ (m.field (φ t)) s t) :
     HasDerivWithinAt (fun τ => φ τ 0) (m.η * (φ t 1 - m.ustar)) s t := by
@@ -1316,210 +1152,6 @@ on the model, not a connection conclusion. -/
   convert h0 using 1
   simp only [Model.field, Model.ω0, PiLp.toLp_apply, Matrix.cons_val_zero]
   ring
-
-/-- **No synchronizing torque, `margin > 0`: every forward solution converges to an equilibrium**
-`(θ∞, u*, î(θ∞))` of the continuum `{(θ, u*, î(θ))}`: `ũ_dc, ĩ_dq → 0` exponentially and the angle
-settles (`θ' = η ũ` is integrable), it does not drift. -/
-@[tmio TM, powerlib_domain] private theorem tendsto_equilibrium_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) {φ : ℝ → State 4}
-    (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
-    ∃ θ : ℝ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ])) := by
-  have hρ := noSyncRate_pos m hC hL hR hδ
-  set E₀ := m.energy (φ 0)
-  have hbu : ∀ t, 0 ≤ t →
-      |φ t 1 - m.ustar| ≤ (2 / m.Cdc * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) :=
-    fun t ht => by
-      have := coord_decay_u m hC hL hR hs hδ
-        (hφ.mono Icc_subset_Ici_self : IsTrajectoryOn φ m.field 0 t)
-        one_pos le_rfl t ⟨ht, le_rfl⟩
-      simpa using this
-  have hbd : ∀ t, 0 ≤ t →
-      |φ t 2 - m.iHatD (φ t 0)| ≤
-        (2 / m.Ls * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) :=
-    fun t ht => by
-      have := coord_decay_d m hC hL hR hs hδ
-        (hφ.mono Icc_subset_Ici_self : IsTrajectoryOn φ m.field 0 t)
-        one_pos le_rfl t ⟨ht, le_rfl⟩
-      simpa using this
-  have hbq : ∀ t, 0 ≤ t →
-      |φ t 3 - m.iHatQ (φ t 0)| ≤
-        (2 / m.Ls * E₀ / 1 + 1) / 2 * Real.exp (-(m.noSyncRate / 2) * t) :=
-    fun t ht => by
-      have := coord_decay_q m hC hL hR hs hδ
-        (hφ.mono Icc_subset_Ici_self : IsTrajectoryOn φ m.field 0 t)
-        one_pos le_rfl t ⟨ht, le_rfl⟩
-      simpa using this
-  have hexp : Tendsto (fun t => Real.exp (-(m.noSyncRate / 2) * t)) atTop (𝓝 0) :=
-    Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atTop_of_neg (by linarith))
-  have sq0 : ∀ (g : ℝ → ℝ) (A : ℝ), (∀ t, 0 ≤ t → |g t| ≤ A * Real.exp (-(m.noSyncRate / 2) * t)) →
-      Tendsto g atTop (𝓝 0) := fun g A h => by
-    have hA : Tendsto (fun t => A * Real.exp (-(m.noSyncRate / 2) * t)) atTop (𝓝 0) := by
-      have := hexp.const_mul A
-      rwa [mul_zero] at this
-    refine squeeze_zero_norm' ?_ hA
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    rw [Real.norm_eq_abs]
-    exact h t ht
-  obtain ⟨θ, hθ⟩ := Dynamics.exists_tendsto_of_abs_deriv_le_exp (θ := fun t => φ t 0)
-    (θ' := fun t => m.η * (φ t 1 - m.ustar)) (A := |m.η| * ((2 / m.Cdc * E₀ / 1 + 1) / 2))
-    (t₀ := 0) (half_pos hρ) (fun t ht => hasDerivWithinAt_angle m (hφ t ht))
-    (fun t ht => by
-      rw [abs_mul, sub_zero, mul_assoc]
-      exact mul_le_mul_of_nonneg_left (hbu t ht) (abs_nonneg _))
-  refine ⟨θ, Dynamics.tendsto_euclidean_of_coord fun i => ?_⟩
-  have hu := sq0 _ _ fun t ht => hbu t ht
-  have hd := sq0 _ _ fun t ht => hbd t ht
-  have hq := sq0 _ _ fun t ht => hbq t ht
-  fin_cases i
-  · simpa using hθ
-  · simpa using hu.add_const m.ustar
-  · simpa using hd.add (((iHatD_continuous m).tendsto _).comp hθ)
-  · simpa using hq.add (((iHatQ_continuous m).tendsto _).comp hθ)
-
-/-- **Lyapunov stability without synchronizing torque**: with `C_dc, L_s, R_s > 0`,
-`μ u* v₀ = 0` and `margin > 0` the operating point is Lyapunov stable; the angle moves by at most a
-multiple of the initial deviation. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold TMIO.Statement
-  rw [(connection_proof% mem_den_flow')]
-  change LyapunovStable m.field m.point
-  have hN := N_pos m hR.ne'
-  have hρ := noSyncRate_pos m hC hL hR hδ
-  obtain ⟨Λ, hΛdef⟩ : ∃ Λ, Λ = (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) /
-      m.N := ⟨_, rfl⟩
-  have hΛ : 0 ≤ Λ := by rw [hΛdef]; positivity
-  obtain ⟨κ₀, hκ₀⟩ : ∃ κ₀, κ₀ = m.Cdc / 2 + m.Ls * (1 + Λ) ^ 2 := ⟨_, rfl⟩
-  have hκ0 : 0 ≤ κ₀ := by rw [hκ₀]; positivity
-  obtain ⟨cu, hcu⟩ : ∃ cu, cu = 2 / m.Cdc * κ₀ := ⟨_, rfl⟩
-  obtain ⟨ce, hce⟩ : ∃ ce, ce = 2 / m.Ls * κ₀ := ⟨_, rfl⟩
-  have hcu0 : 0 ≤ cu := by rw [hcu]; positivity
-  have hce0 : 0 ≤ ce := by rw [hce]; positivity
-  obtain ⟨Kθ, hKθ⟩ : ∃ Kθ, Kθ = 1 + |m.η| * (cu + 1) / m.noSyncRate := ⟨_, rfl⟩
-  have hKθ0 : 0 ≤ Kθ := by rw [hKθ]; positivity
-  obtain ⟨K, hK⟩ : ∃ K, K = (1 + 2 * Λ) * Kθ + (cu + 1) / 2 + (ce + 1) := ⟨_, rfl⟩
-  have hK0 : 0 ≤ K := by rw [hK]; positivity
-  intro ε hε
-  refine ⟨ε / (K + 1), by positivity, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
-  obtain ⟨δ, hδdef⟩ : ∃ δ, δ = ε / (K + 1) := ⟨_, rfl⟩
-  rw [← hδdef] at h0
-  have hδ0 : 0 < δ := by rw [hδdef]; positivity
-  have hKδ : K * δ < ε := by
-    rw [hδdef, mul_div_assoc', div_lt_iff₀ (by linarith)]
-    linarith
-  have hr : ‖φ t₀ - m.point‖ < δ := h0
-  have hc : ∀ i, |(φ t₀ - m.point) i| ≤ ‖φ t₀ - m.point‖ := fun i => by
-    simpa using PiLp.norm_apply_le (φ t₀ - m.point) i
-  have p0 : m.point 0 = 0 := by simp [Model.point]
-  have p1 : m.point 1 = m.ustar := by simp [Model.point]
-  have p2 : m.point 2 = m.iHatD 0 := by simp [Model.point]
-  have p3 : m.point 3 = m.iHatQ 0 := by simp [Model.point]
-  have hθ0 : |φ t₀ 0| ≤ δ := by
-    have := hc 0
-    rw [PiLp.sub_apply, p0, sub_zero] at this
-    linarith
-  have hu0 : |φ t₀ 1 - m.ustar| ≤ δ := by
-    have := hc 1
-    rw [PiLp.sub_apply, p1] at this
-    linarith
-  have hd0 : |φ t₀ 2 - m.iHatD 0| ≤ δ := by
-    have := hc 2
-    rw [PiLp.sub_apply, p2] at this
-    linarith
-  have hq0 : |φ t₀ 3 - m.iHatQ 0| ≤ δ := by
-    have := hc 3
-    rw [PiLp.sub_apply, p3] at this
-    linarith
-  have hD := abs_iHatD_sub_le m hN (φ t₀ 0)
-  have hQ := abs_iHatQ_sub_le m hN (φ t₀ 0)
-  rw [← hΛdef] at hD hQ
-  have hΛθ0 := mul_le_mul_of_nonneg_left hθ0 hΛ
-  have he1 : |φ t₀ 2 - m.iHatD (φ t₀ 0)| ≤ (1 + Λ) * δ := by
-    have := abs_sub_le (φ t₀ 2) (m.iHatD 0) (m.iHatD (φ t₀ 0))
-    rw [abs_sub_comm (m.iHatD 0)] at this
-    linarith
-  have he2 : |φ t₀ 3 - m.iHatQ (φ t₀ 0)| ≤ (1 + Λ) * δ := by
-    have := abs_sub_le (φ t₀ 3) (m.iHatQ 0) (m.iHatQ (φ t₀ 0))
-    rw [abs_sub_comm (m.iHatQ 0)] at this
-    linarith
-  have hE0 : m.energy (φ t₀) ≤ κ₀ * δ ^ 2 := by
-    rw [energy_eq_of_no_sync m hs, hκ₀]
-    have a : (φ t₀ 1 - m.ustar) ^ 2 ≤ δ ^ 2 := by
-      rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) hu0 2
-    have b : (φ t₀ 2 - m.iHatD (φ t₀ 0)) ^ 2 ≤ ((1 + Λ) * δ) ^ 2 := by
-      rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) he1 2
-    have c : (φ t₀ 3 - m.iHatQ (φ t₀ 0)) ^ 2 ≤ ((1 + Λ) * δ) ^ 2 := by
-      rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) he2 2
-    have hC2 : 0 ≤ m.Cdc / 2 := by positivity
-    have hL2 : 0 ≤ m.Ls / 2 := by positivity
-    have i1 := mul_le_mul_of_nonneg_left a hC2
-    have i2 := mul_le_mul_of_nonneg_left (add_le_add b c) hL2
-    have e : m.Ls / 2 * (((1 + Λ) * δ) ^ 2 + ((1 + Λ) * δ) ^ 2) = m.Ls * (1 + Λ) ^ 2 * δ ^ 2 := by
-      ring
-    linarith
-  have hdecu := coord_decay_u m hC hL hR hs hδ hφ hδ0 hE0
-  have hdecd := coord_decay_d m hC hL hR hs hδ hφ hδ0 hE0
-  have hdecq := coord_decay_q m hC hL hR hs hδ hφ hδ0 hE0
-  have hsimp_u : (2 / m.Cdc * (κ₀ * δ ^ 2) / δ + δ) / 2 = (cu + 1) * δ / 2 := by
-    rw [hcu]; field_simp
-  have hsimp_e : (2 / m.Ls * (κ₀ * δ ^ 2) / δ + δ) / 2 = (ce + 1) * δ / 2 := by
-    rw [hce]; field_simp
-  -- the angle moves little
-  have hθ : |φ t 0 - φ t₀ 0| ≤ |m.η| * ((cu + 1) * δ / 2) / (m.noSyncRate / 2) :=
-    Dynamics.abs_sub_le_of_abs_deriv_le_exp (θ := fun τ => φ τ 0)
-      (θ' := fun τ => m.η * (φ τ 1 - m.ustar)) (half_pos hρ)
-      (fun τ hτ => hasDerivWithinAt_angle m (hφ τ hτ))
-      (fun τ hτ => by
-        rw [abs_mul, mul_assoc, ← hsimp_u]
-        exact mul_le_mul_of_nonneg_left (hdecu τ hτ) (abs_nonneg _)) t ht
-  have hθt : |φ t 0| ≤ δ * Kθ := by
-    have h1 := abs_sub_abs_le_abs_sub (φ t 0) (φ t₀ 0)
-    have h2 : |m.η| * ((cu + 1) * δ / 2) / (m.noSyncRate / 2) = δ * (Kθ - 1) := by
-      rw [hKθ]
-      field_simp
-      ring
-    rw [h2] at hθ
-    linarith
-  have hut := hdecu t ht
-  have hdt := hdecd t ht
-  have hqt := hdecq t ht
-  rw [hsimp_u] at hut
-  rw [hsimp_e] at hdt hqt
-  have hx : Real.exp (-(m.noSyncRate / 2) * (t - t₀)) ≤ 1 := by
-    rw [Real.exp_le_one_iff]
-    have := mul_nonneg (half_pos hρ).le (sub_nonneg.mpr ht.1)
-    linarith
-  have hp1 : (0 : ℝ) ≤ (cu + 1) * δ / 2 := by positivity
-  have hp2 : (0 : ℝ) ≤ (ce + 1) * δ / 2 := by positivity
-  have hut' : |φ t 1 - m.ustar| ≤ (cu + 1) * δ / 2 := by
-    have := mul_le_mul_of_nonneg_left hx hp1
-    linarith
-  have hdt' : |φ t 2 - m.iHatD (φ t 0)| ≤ (ce + 1) * δ / 2 := by
-    have := mul_le_mul_of_nonneg_left hx hp2
-    linarith
-  have hqt' : |φ t 3 - m.iHatQ (φ t 0)| ≤ (ce + 1) * δ / 2 := by
-    have := mul_le_mul_of_nonneg_left hx hp2
-    linarith
-  have hDt := abs_iHatD_sub_le m hN (φ t 0)
-  have hQt := abs_iHatQ_sub_le m hN (φ t 0)
-  rw [← hΛdef] at hDt hQt
-  have h2 : |φ t 2 - m.iHatD 0| ≤ (ce + 1) * δ / 2 + Λ * |φ t 0| := by
-    have := abs_sub_le (φ t 2) (m.iHatD (φ t 0)) (m.iHatD 0)
-    linarith
-  have h3 : |φ t 3 - m.iHatQ 0| ≤ (ce + 1) * δ / 2 + Λ * |φ t 0| := by
-    have := abs_sub_le (φ t 3) (m.iHatQ (φ t 0)) (m.iHatQ 0)
-    linarith
-  have hn := Dynamics.norm_le_sum_abs (φ t - m.point)
-  rw [Fin.sum_univ_four, PiLp.sub_apply, PiLp.sub_apply, PiLp.sub_apply, PiLp.sub_apply, p0, p1,
-    p2, p3, sub_zero] at hn
-  have hΛθ := mul_le_mul_of_nonneg_left hθt hΛ
-  have hfin : |φ t 0| + |φ t 1 - m.ustar| + |φ t 2 - m.iHatD 0| + |φ t 3 - m.iHatQ 0| ≤ K * δ := by
-    have e : K * δ = δ * Kθ + 2 * (Λ * (δ * Kθ)) + (cu + 1) * δ / 2 + 2 * ((ce + 1) * δ / 2) := by
-      rw [hK]; ring
-    rw [e]
-    linarith
-  linarith
 
 /-! ### Family conclusions without synchronizing torque -/
 
@@ -1572,39 +1204,6 @@ point. -/
   unfold powerlib.TMIO.Statement at h2
   rw [mem_den_flow'] at h h2
   exact h2 (Flow.locallyExponentiallyStable_localAsymptoticStable h)
-
-/-- A stiff-grid model without grid voltage (`v₀ = 0`, so no synchronizing torque) and with
-`margin = 7/8 > 0`: `C_dc = L_s = R_s = η = μ = u*_dc = 1`, `G_dc = 1`, `K_p = 0`. -/
-def noSyncModel : Model :=
-  { dcLink := ⟨1, 1, 0⟩, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 0, filter := ⟨1, 1, 0⟩,
-    dcLink_noInd := rfl, filter_noCap := rfl }
-
-/-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem noSyncModel_margin : noSyncModel.margin = 7 / 8 := by
-  simp [Model.margin, Model.N, Model.ω0, noSyncModel]
-  norm_num
-
-/-- The model without synchronizing torque is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem noSyncModel_mem_den_lyapunovStable :
-    connection% (noSyncModel ∈ family.den (.flow .lyapunovStable)) :=
-  mem_den_lyapunovStable_of_no_sync noSyncModel (by norm_num [noSyncModel])
-    (by norm_num [noSyncModel]) (by norm_num [noSyncModel]) (by norm_num [noSyncModel])
-    (by rw [noSyncModel_margin]; norm_num)
-
-/-- **Boundary**: the Lyapunov translation `{physical, synchronizing, dissipative}` of
-`MatchingStiffGrid.family` is sound but **not exact** — `noSyncModel` violates `synchronizing`
-(`μ u* v₀ = 0`) and is Lyapunov stable. -/
-@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
-    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.not_exact_of_witness noSyncModel_mem_den_lyapunovStable
-    (q := .synchronizing) (by
-      show Requirement.synchronizing ∈ translate (.flow .lyapunovStable)
-      simp [translate]) fun hd => ?_
-  have : (0 : ℝ) < 0 := by
-    have hd' : 0 < noSyncModel.μ * noSyncModel.ustar * noSyncModel.v0 := hd
-    simp [noSyncModel] at hd'
-  exact lt_irrefl _ this
 
 /-! ### No modulation and no damping: `μ = 0`, `margin = 0` -/
 
@@ -1744,7 +1343,7 @@ angle drift away linearly. -/
     field_simp
   linarith
 
-/-! ### Modulation without synchronizing torque at `margin = 0`: `μ ≠ 0`, `u* v₀ = 0` -/
+/-! ### Convergence without synchronizing torque: `margin > 0` or `μ ≠ 0` -/
 
 /-- **LaSalle set at `margin = 0` without synchronizing torque** (`μ ≠ 0`, `μ u* v₀ = 0`): a
 solution segment of positive length staying on the cylinder where `dH/dt = 0` starts at
@@ -1873,23 +1472,28 @@ forces `μ ũ (s/L_s − u*η c/R_s) = 0 = μ ũ (c/L_s + u*η s/R_s)`, hence `�
   rw [hu0, sub_self, mul_zero, zero_mul] at r3 r4
   exact ⟨hu0, by linarith, by linarith⟩
 
-/-- **Modulation without synchronizing torque at `margin = 0`** (`μ ≠ 0`, `u* v₀ = 0`): every
+/-- **No synchronizing torque, `margin > 0` or `μ ≠ 0`** (`u* v₀ = 0` when `μ ≠ 0`): every
 forward solution has `ũ_dc → 0` and `ĩ_dq → 0` (uniformly in the angle), by LaSalle on the
-cylinder. -/
-@[tmio TM, powerlib_domain] private theorem tendsto_error_of_no_sync_margin_zero (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
-    (hm : m.margin = 0) {φ : ℝ → State 4}
+cylinder: with `margin > 0` the LaSalle set is `ũ = 0, ĩ = 0` (`cylLie_eq_zero`), at
+`margin = 0` the segment argument `no_sync_margin_zero_segment` applies. -/
+@[tmio TM, powerlib_domain] private theorem tendsto_error_of_no_sync (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin)
+    (hμ : 0 < m.margin ∨ m.μ ≠ 0) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     Tendsto (fun t => φ t 1 - m.ustar) atTop (𝓝 0) ∧
       Tendsto (fun t => φ t 2 - m.iHatD (φ t 0)) atTop (𝓝 0) ∧
       Tendsto (fun t => φ t 3 - m.iHatQ (φ t 0)) atTop (𝓝 0) := by
   refine tendsto_errors_of_tendsto_cyl m (M := {y : State 5 | y 2 = m.ustar ∧
       y 3 = m.cD (y 0) (y 1) ∧ y 4 = m.cQ (y 0) (y 1)}) ?_ fun y hy => hy
-  refine tendsto_cyl_of_lasalle m hC hL hR hm.symm.le (fun _ => ?_) hφ
+  refine tendsto_cyl_of_lasalle m hC hL hR hδ (fun _ => ?_) hφ
+  rcases hδ.lt_or_eq with hδ' | hm
+  · intro N hN _ y hy
+    obtain ⟨⟨hy1, -⟩, h0⟩ := hN hy
+    exact cylLie_eq_zero m hR hL hC hδ' hy1 h0
   refine Dynamics.LaSalle.lasalle_condition_of_trajectories_mem (cylField_contDiff m) ?_
   intro T ψ hT hψ hstay
-  exact no_sync_margin_zero_segment m hC hL hR hμ hs hm hT hψ fun t ht =>
-    ⟨(hstay t ht).1.1, (hstay t ht).2⟩
+  exact no_sync_margin_zero_segment m hC hL hR (hμ.resolve_left (by rw [← hm]; exact lt_irrefl 0))
+    hs hm.symm hT hψ fun t ht => ⟨(hstay t ht).1.1, (hstay t ht).2⟩
 
 namespace Model
 variable (m : Model)
@@ -2096,7 +1700,8 @@ conclusion. -/
       field_simp
       ring
 
-@[tmio T, powerlib_foundation] private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0) (he : e < 0) (hbc2 : b * c2 < 0)
+@[tmio T, powerlib_foundation] private theorem isHurwitz_aux {a b c1 c2 e f : ℝ} (ha : a ≤ 0)
+    (he : e < 0) (hbc2 : b * c2 ≤ 0)
     (hbc1 : b * c1 * f ≤ 0) (hdet : a * (e ^ 2 + f ^ 2) - b * c1 * f - b * e * c2 < 0) :
     LinearSystems.IsHurwitz !![a, 0, b; c1, e, f; c2, -f, e] := by
   rw [Criteria.isHurwitz_fin_three_iff]
@@ -2105,9 +1710,9 @@ conclusion. -/
     Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, Matrix.empty_val',
     Matrix.cons_val_fin_one, Matrix.head_fin_const]
   have h1 : a ^ 2 * e ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (sq_nonneg a) he.le
-  have h2 : 0 ≤ a * (b * c2) := mul_nonneg_of_nonpos_of_nonpos ha hbc2.le
+  have h2 : 0 ≤ a * (b * c2) := mul_nonneg_of_nonpos_of_nonpos ha hbc2
   have h3 : a * e ^ 2 ≤ 0 := mul_nonpos_of_nonpos_of_nonneg ha (sq_nonneg e)
-  have h4 : 0 < b * c2 * e := mul_pos_of_neg_of_neg hbc2 he
+  have h4 : 0 ≤ b * c2 * e := mul_nonneg_of_nonpos_of_nonpos hbc2 he.le
   have h5 : e ^ 3 < 0 := by
     have : e ^ 3 = e * e ^ 2 := by ring
     rw [this]
@@ -2115,20 +1720,22 @@ conclusion. -/
   have h6 : e * f ^ 2 ≤ 0 := mul_nonpos_of_nonpos_of_nonneg he.le (sq_nonneg f)
   refine ⟨by linarith, by linarith, by nlinarith⟩
 
-/-- With `C_dc, L_s, R_s > 0`, `μ ≠ 0` and `margin ≥ 0` the reduced Jacobian is Hurwitz
-(Routh–Hurwitz: `tr < 0`, `det < 0`, `tr · Σ minors < det`; at `margin = 0` the determinant is
-`−μ²(X² − 3R_s²X + 4R_s⁴)/(4R_s C_dc L_s² N) < 0`, `X = ω₀²L_s²`). Static evidence on the model,
-not a connection conclusion. -/
+/-- With `C_dc, L_s, R_s > 0`, `margin ≥ 0` and `margin > 0` or `μ ≠ 0` the reduced Jacobian is
+Hurwitz (Routh–Hurwitz: `tr < 0`, `det < 0`, `tr · Σ minors < det`; the determinant times
+`4R_s C_dc L_s² N` is at most `−μ²(X² − 3R_s²X + 4R_s⁴)`, `X = ω₀²L_s²`, with equality at
+`margin = 0`, and `−4R_s C_dc L_s² N² margin` at `μ = 0`). Static evidence on the model, not a
+connection conclusion. -/
 @[tmio TM, powerlib_domain] theorem redJac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
-    (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hδ : 0 ≤ m.margin) : LinearSystems.IsHurwitz m.redJac := by
+    (hR : 0 < m.Rs) (hδ : 0 ≤ m.margin) (hμ : 0 < m.margin ∨ m.μ ≠ 0) :
+    LinearSystems.IsHurwitz m.redJac := by
   have hN := N_pos m hR.ne'
+  have h4 : 0 < 4 * m.Rs * m.N := by positivity
+  have hmargin : m.margin * (4 * m.Rs * m.N) =
+      4 * m.Rs * m.N * (m.Gdc + m.Kp) - m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 := by
+    simp only [Model.margin]
+    field_simp
   have hP : m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 ≤ 4 * m.Rs * m.N * (m.Gdc + m.Kp) := by
-    have h := hδ
-    simp only [Model.margin] at h
-    have h4 : 0 < 4 * m.Rs * m.N := by positivity
-    have := (div_le_iff₀ h4).mp (by linarith : m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 / (4 * m.Rs * m.N) ≤
-      m.Gdc + m.Kp)
-    linarith
+    nlinarith [mul_nonneg hδ h4.le]
   have hP0 : 0 ≤ m.Gdc + m.Kp := by
     have : 0 ≤ m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 := by positivity
     have h4 : 0 < 4 * m.Rs * m.N := by positivity
@@ -2137,7 +1744,6 @@ not a connection conclusion. -/
       -(m.μ * m.ω0 * m.Rs / m.N), -m.Rs / m.Ls, m.ω0;
       -(m.μ * m.Rs ^ 2 / (m.N * m.Ls)), -m.ω0, -m.Rs / m.Ls] := rfl
   rw [e]
-  have hμ2 : 0 < m.μ ^ 2 := lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hμ))
   apply isHurwitz_aux
   · exact div_nonpos_of_nonpos_of_nonneg (by linarith) hC.le
   · exact div_neg_of_neg_of_pos (by linarith) hL
@@ -2145,7 +1751,7 @@ not a connection conclusion. -/
         -(m.μ ^ 2 * m.Rs ^ 2 / (m.Cdc * m.N * m.Ls)) := by
       field_simp
     rw [this]
-    have : 0 < m.μ ^ 2 * m.Rs ^ 2 / (m.Cdc * m.N * m.Ls) := by positivity
+    have : 0 ≤ m.μ ^ 2 * m.Rs ^ 2 / (m.Cdc * m.N * m.Ls) := by positivity
     linarith
   · have : m.μ / m.Cdc * -(m.μ * m.ω0 * m.Rs / m.N) * m.ω0 =
         -(m.μ ^ 2 * m.ω0 ^ 2 * m.Rs / (m.Cdc * m.N)) := by
@@ -2169,16 +1775,24 @@ not a connection conclusion. -/
       nlinarith [sq_nonneg (m.ω0 ^ 2 * m.Ls ^ 2 - 3 / 2 * m.Rs ^ 2), pow_pos hR 4]
     have hneg :
         -(m.Gdc + m.Kp) * m.N ^ 2 + m.μ ^ 2 * m.Rs * (m.ω0 ^ 2 * m.Ls ^ 2 - m.Rs ^ 2) < 0 := by
-      -- `4 R_s × (…) ≤ −μ² (X² − 3R_s²X + 4R_s⁴) < 0`
-      have h1 : 4 * m.Rs * ((m.Gdc + m.Kp) * m.N ^ 2) ≥ m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 * m.N := by
-        nlinarith [mul_le_mul_of_nonneg_right hP hN.le]
-      have h2 : m.μ ^ 2 * ((m.ω0 ^ 2 * m.Ls ^ 2) ^ 2 - 3 * m.Rs ^ 2 * (m.ω0 ^ 2 * m.Ls ^ 2) +
-          4 * m.Rs ^ 4) > 0 := mul_pos hμ2 hq
+      -- `4 R_s × (…) = −4 R_s N² margin − μ² (X² − 3R_s²X + 4R_s⁴)`: both terms `≤ 0`, one `< 0`
+      have h2 : 0 ≤ m.μ ^ 2 * ((m.ω0 ^ 2 * m.Ls ^ 2) ^ 2 -
+          3 * m.Rs ^ 2 * (m.ω0 ^ 2 * m.Ls ^ 2) + 4 * m.Rs ^ 4) := mul_nonneg (sq_nonneg _) hq.le
+      have h3 : 0 < m.margin * (4 * m.Rs * m.N) * m.N ∨ 0 < m.μ ^ 2 *
+          ((m.ω0 ^ 2 * m.Ls ^ 2) ^ 2 - 3 * m.Rs ^ 2 * (m.ω0 ^ 2 * m.Ls ^ 2) + 4 * m.Rs ^ 4) :=
+        hμ.imp (fun h => by positivity) fun h => mul_pos (by positivity) hq
       have h4R : 0 < 4 * m.Rs := by positivity
+      have e : 4 * m.Rs * (-(m.Gdc + m.Kp) * m.N ^ 2 + m.μ ^ 2 * m.Rs *
+          (m.ω0 ^ 2 * m.Ls ^ 2 - m.Rs ^ 2)) = -(m.margin * (4 * m.Rs * m.N) * m.N) -
+            m.μ ^ 2 * ((m.ω0 ^ 2 * m.Ls ^ 2) ^ 2 - 3 * m.Rs ^ 2 * (m.ω0 ^ 2 * m.Ls ^ 2) +
+              4 * m.Rs ^ 4) := by
+        rw [hmargin, hNdef]
+        ring
       have key : 4 * m.Rs * (-(m.Gdc + m.Kp) * m.N ^ 2 + m.μ ^ 2 * m.Rs *
           (m.ω0 ^ 2 * m.Ls ^ 2 - m.Rs ^ 2)) < 0 := by
-        rw [hNdef] at h1 ⊢
-        nlinarith
+        have h5 : 0 ≤ m.margin * (4 * m.Rs * m.N) * m.N := by positivity
+        rw [e]
+        rcases h3 with h3 | h3 <;> linarith
       by_contra hc
       push Not at hc
       have := mul_nonneg h4R.le hc
@@ -2198,19 +1812,19 @@ not a connection conclusion. -/
     _ ≤ 1 * |p| + 1 * |q| := by gcongr
     _ = |p| + |q| := by ring
 
-/-- **No synchronizing torque at `margin = 0` with modulation (`μ ≠ 0`): every forward solution
-converges to one equilibrium** `(θ∞, u*, î(θ∞))`. LaSalle on the cylinder gives `ũ_dc, ĩ_dq → 0`;
-the rotation-reduced error `(ũ, R_θᵀ ĩ)` solves an autonomous system whose linearization is Hurwitz
-(`redJac_isHurwitz`), so once it is small it decays exponentially and `θ' = η ũ` is integrable.
-Implementation evidence (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem tendsto_equilibrium_of_no_sync_margin_zero (m : Model) (hC : 0 < m.Cdc)
-    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
-    (hm : m.margin = 0) {φ : ℝ → State 4}
+/-- **No synchronizing torque with `margin > 0` or modulation (`μ ≠ 0`): every forward solution
+converges to one equilibrium** `(θ∞, u*, î(θ∞))` — no drift. LaSalle on the cylinder gives
+`ũ_dc, ĩ_dq → 0` (`tendsto_error_of_no_sync`); the rotation-reduced error `(ũ, R_θᵀ ĩ)` solves an
+autonomous system whose linearization is Hurwitz (`redJac_isHurwitz`), so once it is small it
+decays exponentially and `θ' = η ũ` is integrable. Implementation evidence (Rules §3a). -/
+@[tmio TM, powerlib_domain] private theorem tendsto_equilibrium_of_no_sync (m : Model)
+    (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0)
+    (hδ : 0 ≤ m.margin) (hμ : 0 < m.margin ∨ m.μ ≠ 0) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     ∃ θ : ℝ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ])) := by
   have hN := N_pos m hR.ne'
   have hκ := kappa_eq_zero_of_no_sync m hs
-  obtain ⟨hu, hd, hq⟩ := tendsto_error_of_no_sync_margin_zero m hC hL hR hμ hs hm hφ
+  obtain ⟨hu, hd, hq⟩ := tendsto_error_of_no_sync m hC hL hR hs hδ hμ hφ
   have hρ : IsIntegralCurveOn (fun t => m.red (φ t)) (fun _ z => m.redField z) (Ici 0) :=
     red_isIntegralCurveOn m hN.ne' hL.ne' hκ hφ
   have hb : Tendsto (fun t => |φ t 2 - m.iHatD (φ t 0)| + |φ t 3 - m.iHatQ (φ t 0)|) atTop
@@ -2232,7 +1846,7 @@ Implementation evidence (Rules §3a). -/
         (by rw [abs_neg]; exact Real.abs_sin_le_one _) (Real.abs_cos_le_one (φ t 0))
   obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
     m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv
-    (redJac_isHurwitz m hC hL hR hμ hm.ge)
+    (redJac_isHurwitz m hC hL hR hδ hμ)
   obtain ⟨T₀, hT₀⟩ := eventually_atTop.mp
     ((hρ0.eventually (Metric.ball_mem_nhds 0 hr)).and (eventually_ge_atTop 0))
   have hin : ‖m.red (φ T₀) - 0‖ < r := by
@@ -2270,7 +1884,7 @@ Implementation evidence (Rules §3a). -/
   · simpa using hq.add (((iHatQ_continuous m).tendsto _).comp hθ)
 
 
-/-! ### Lyapunov stability without synchronizing torque at the boundary -/
+/-! ### Lyapunov stability without synchronizing torque -/
 
 /-- **Lyapunov stability with a frozen angle and no modulation**: with `C_dc, L_s, R_s > 0`,
 `μ = 0`, `η = 0` and `margin ≥ 0` the operating point is Lyapunov stable. In deviation coordinates
@@ -2371,13 +1985,13 @@ Implementation evidence (it names the model's reduction only; kept private with 
     (a := -Real.sin (x 0)) (by rwa [abs_neg]) hc
   linarith
 
-/-- **Lyapunov stability without synchronizing torque, with modulation**: with
-`C_dc, L_s, R_s > 0`, `μ ≠ 0`, `μ u* v₀ = 0` and `margin ≥ 0` (in particular at `margin = 0`) the
-operating point is Lyapunov stable: the rotation-reduced error is locally exponentially stable and
-the angle moves by at most a multiple of the initial error. -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model)
-    (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0)
-    (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
+/-- **Lyapunov stability without synchronizing torque**: with `C_dc, L_s, R_s > 0`,
+`μ u* v₀ = 0`, `margin ≥ 0` and `margin > 0` or `μ ≠ 0` (in particular at `margin = 0` with
+modulation) the operating point is Lyapunov stable: the rotation-reduced error is locally
+exponentially stable and the angle moves by at most a multiple of the initial error. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync (m : Model)
+    (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0)
+    (hδ : 0 ≤ m.margin) (hμ : 0 < m.margin ∨ m.μ ≠ 0) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow')]
@@ -2386,7 +2000,7 @@ the angle moves by at most a multiple of the initial error. -/
   have hκ := kappa_eq_zero_of_no_sync m hs
   obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
     m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv
-    (redJac_isHurwitz m hC hL hR hμ hδ)
+    (redJac_isHurwitz m hC hL hR hδ hμ)
   obtain ⟨Λ, hΛdef⟩ : ∃ Λ, Λ = (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) /
       m.N := ⟨_, rfl⟩
   have hΛ : 0 ≤ Λ := by rw [hΛdef]; positivity
@@ -2497,6 +2111,39 @@ the angle moves by at most a multiple of the initial error. -/
     linarith
   linarith
 
+/-- A stiff-grid model without grid voltage (`v₀ = 0`, so no synchronizing torque) and with
+`margin = 7/8 > 0`: `C_dc = L_s = R_s = η = μ = u*_dc = 1`, `G_dc = 1`, `K_p = 0`. -/
+def noSyncModel : Model :=
+  { dcLink := ⟨1, 1, 0⟩, Kp := 0, η := 1, μ := 1, ustar := 1, v0 := 0, filter := ⟨1, 1, 0⟩,
+    dcLink_noInd := rfl, filter_noCap := rfl }
+
+/-- Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem noSyncModel_margin : noSyncModel.margin = 7 / 8 := by
+  simp [Model.margin, Model.N, Model.ω0, noSyncModel]
+  norm_num
+
+/-- The model without synchronizing torque is Lyapunov stable. -/
+@[tmio TM, powerlib_domain] theorem noSyncModel_mem_den_lyapunovStable :
+    connection% (noSyncModel ∈ family.den (.flow .lyapunovStable)) :=
+  mem_den_lyapunovStable_of_no_sync noSyncModel (by norm_num [noSyncModel])
+    (by norm_num [noSyncModel]) (by norm_num [noSyncModel]) (by norm_num [noSyncModel])
+    (by rw [noSyncModel_margin]; norm_num) (.inl (by rw [noSyncModel_margin]; norm_num))
+
+/-- **Boundary**: the Lyapunov translation `{physical, synchronizing, dissipative}` of
+`MatchingStiffGrid.family` is sound but **not exact** — `noSyncModel` violates `synchronizing`
+(`μ u* v₀ = 0`) and is Lyapunov stable. -/
+@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.not_exact_of_witness noSyncModel_mem_den_lyapunovStable
+    (q := .synchronizing) (by
+      show Requirement.synchronizing ∈ translate (.flow .lyapunovStable)
+      simp [translate]) fun hd => ?_
+  have : (0 : ℝ) < 0 := by
+    have hd' : 0 < noSyncModel.μ * noSyncModel.ustar * noSyncModel.v0 := hd
+    simp [noSyncModel] at hd'
+  exact lt_irrefl _ this
+
 /-- **Lyapunov stability without synchronizing torque, decided** (`C_dc, L_s, R_s > 0`,
 `μ u* v₀ = 0`, `margin ≥ 0`): the operating point is Lyapunov stable exactly when
 `margin > 0`, or `μ ≠ 0`, or `η = 0`; the remaining case `margin = 0`, `μ = 0`, `η ≠ 0` is
@@ -2517,19 +2164,15 @@ unstable (`mem_den_unstable_of_mu_eq_zero`). -/
     unfold powerlib.TMIO.Statement at hu
     rw [mem_den_flow'] at h hu
     exact hu h
-  · rintro (h | h | h)
-    · have := mem_den_lyapunovStable_of_no_sync m hC hL hR hs h
+  · intro h
+    by_cases hμ : m.margin = 0 ∧ m.μ = 0
+    · have := mem_den_lyapunovStable_of_frozen m hC hL hR hμ.2
+        ((h.resolve_left (by rw [hμ.1]; exact lt_irrefl 0)).resolve_left (not_not.mpr hμ.2)) hδ
       unfold powerlib.TMIO.Statement at this
       exact this
-    · have := mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero m hC hL hR h hs hδ
+    · have := mem_den_lyapunovStable_of_no_sync m hC hL hR hs hδ
+        (by rw [not_and_or] at hμ; exact hμ.imp (fun h => lt_of_le_of_ne hδ (Ne.symm h)) id)
       unfold powerlib.TMIO.Statement at this
       exact this
-    · by_cases hμ : m.μ = 0
-      · have := mem_den_lyapunovStable_of_frozen m hC hL hR hμ h hδ
-        unfold powerlib.TMIO.Statement at this
-        exact this
-      · have := mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero m hC hL hR hμ hs hδ
-        unfold powerlib.TMIO.Statement at this
-        exact this
 
 end powerlib.GFM.Matching.MatchingStiffGrid

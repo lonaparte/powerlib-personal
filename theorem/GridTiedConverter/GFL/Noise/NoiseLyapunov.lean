@@ -2,6 +2,7 @@ import theorem.GridTiedConverter.GFL.LCLine.Reduction
 import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.Dynamics.Transport
 import theorem.Stochastic.LyapunovCovariance
+import theorem.GridTiedConverter.PLL.StochasticPH
 
 /-! # Second-order form and closed-form Lyapunov-equation solutions of the linearized GFL-PLL
 
@@ -31,10 +32,13 @@ Results.
 * `covV_lyapunov`, `covW_lyapunov`: the closed forms
   `Var(θ)^(v) = σ²(K_i + K_p² g)/(2 K_p g²)`, `Var(η)^(v) = σ²/(2 K_p g)`,
   `Cov^(v) = −σ²/(2g)`, `Var(θ)^(ω) = 1/(2 K_p g)`, `Var(η)^(ω) = 1/(2 K_p K_i)` solve the
-  Lyapunov equation; `covV_unique`, `covW_unique` : the solution is unique whenever `K_p ≠ 0`,
-  `g ≠ 0`, `K_i ≠ 0` (in particular when `A` is Hurwitz): then
-  `tr A ≠ 0`, `det A ≠ 0` and the generic `Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two`
-  applies (`theorem/Stochastic/LyapunovCovariance.lean`).
+  Lyapunov equation (`covW` is the Gibbs covariance `T Q⁻¹`, `T = 1/(2K_p)`,
+  `Q = StochasticPH.pllHess g K_i`, of the PLL pH model: `covW_lyapunov` is the
+  fluctuation–dissipation identity `Stochastic.SPH.rlc_fdt`); `covV_unique`, `covW_unique` : the
+  solution is unique whenever `K_p ≠ 0`, `g ≠ 0`, `K_i ≠ 0` (in particular when `A` is
+  Hurwitz): then `tr A ≠ 0`, `det A ≠ 0` and the generic
+  `Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two` applies
+  (`theorem/Stochastic/LyapunovCovariance.lean`).
 * `varThetaQ_eq`, `varThetaQ_tendsto` : with the gauge identity `σ_q = g/V_g`
   (`Network.sigma_q_eq`), the q-channel value is `(K_i + K_p² g)/(2 K_p V_g²)`, which has the finite
   limit `K_i/(2 K_p V_g²)` as `g → 0` (saddle-node).
@@ -83,7 +87,9 @@ def covV (Kp Ki g σ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![σ ^ 2 * (Ki + Kp ^ 2 * g) / (2 * Kp * g ^ 2), -(σ ^ 2 / (2 * g));
      -(σ ^ 2 / (2 * g)), σ ^ 2 / (2 * Kp * g)]
 
-/-- Closed-form solution for the frequency channel. -/
+/-- Closed-form solution for the frequency channel: for `g, K_i ≠ 0` the Gibbs covariance
+`T Q⁻¹` of the PLL pH model at temperature `T = 1/(2 K_p)`, with the Hessian
+`Q = StochasticPH.pllHess g K_i` (see `covW_lyapunov`). -/
 def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![1 / (2 * Kp * g), 0; 0, 1 / (2 * Kp * Ki)]
 
@@ -97,15 +103,35 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, proportionalMatrix, covV, portV] <;>
     field_simp <;> ring
 
-/-- `covW` solves `A P + P Aᵀ + B_ω B_ωᵀ = 0`. -/
+/-- `covW` solves `A P + P Aᵀ + B_ω B_ωᵀ = 0`: the fluctuation–dissipation identity
+`Stochastic.SPH.rlc_fdt` of the linear pH model `A = (J − R) Q` (`J = diag(1, −1) pllJ diag(1, −1)`,
+`R = pllR K_p`, `Q = pllHess g K_i`) with `B_ω B_ωᵀ = 2 T R`, `T = 1/(2 K_p)`, whose Gibbs
+covariance `T Q⁻¹` is `covW`. -/
 @[tmio M, powerlib_domain] theorem covW_lyapunov {Kp Ki g : ℝ} (hKp : Kp ≠ 0) (hKi : Ki ≠ 0)
     (hg : g ≠ 0) :
     linA Kp Ki g * covW Kp Ki g + covW Kp Ki g * (linA Kp Ki g)ᵀ + pllB * pllBᵀ = 0 := by
-  ext i j
-  simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
-    Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, proportionalMatrix, covW, pllB] <;>
-    field_simp <;> ring
+  set Q := StochasticPH.pllHess g Ki
+  have hinv : Q⁻¹ = !![g⁻¹, 0; 0, Ki⁻¹] := Matrix.inv_eq_right_inv (by
+    ext i j; fin_cases i <;> fin_cases j <;> simp [Q, StochasticPH.pllHess, hg, hKi])
+  have h := Stochastic.SPH.rlc_fdt (J := flipEta * pllJ * flipEta) (R := pllR Kp) (Q := Q)
+    (T := 1 / (2 * Kp))
+    (by ext i j; fin_cases i <;> fin_cases j <;> simp [pllJ, Dynamics.signMatrix])
+    (by simp [pllR]) (by ext i j; fin_cases i <;> fin_cases j <;> simp [Q, StochasticPH.pllHess])
+    (by simp [Q, StochasticPH.pllHess, Matrix.det_fin_two, hg, hKi])
+  have hA : (flipEta * pllJ * flipEta - pllR Kp) * Q = linA Kp Ki g := by
+    ext i j
+    simp only [Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two]
+    fin_cases i <;> fin_cases j <;>
+      simp [Q, StochasticPH.pllHess, pllJ, pllR, Dynamics.signMatrix, proportionalMatrix]
+  have hW : (1 / (2 * Kp)) • Q⁻¹ = covW Kp Ki g := by
+    rw [hinv]; ext i j; fin_cases i <;> fin_cases j <;> simp [covW] <;> field_simp
+  have hB : (2 * (1 / (2 * Kp))) • pllR Kp = pllB * pllBᵀ := by
+    ext i j
+    simp only [Matrix.smul_apply, Matrix.mul_apply, Fin.sum_univ_one, Matrix.transpose_apply]
+    fin_cases i <;> fin_cases j <;> simp [pllR, pllB]
+    field_simp
+  rw [hA, hW, hB] at h
+  exact h
 
 /-- `tr A = −K_p g ≠ 0` and `det A = K_i g ≠ 0`: the Lyapunov operator of `A` is injective
 (`Stochastic.Lyapunov.eq_zero_of_lyapunovOp_fin_two`). -/

@@ -30,7 +30,8 @@ Model boundary.
   no saturation, iron loss or skin effect. Motor convention (IN-positive stator current,
   work-sync conventions §D). Amplitude-invariant transform, `np` pole pairs.
 * Flux–current relations: `ψ_s = L_s i_s + L_m i_r`, `ψ_r = L_m i_s + L_r i_r`.
-* Rotor voltage equation (short-circuited rotor): `0 = r_r i_r + dψ_r/dt + j ω_sl ψ_r`,
+* Rotor voltage equation (short-circuited rotor; `RotorVoltageEquation`, the winding equation
+  `SpaceVector.VoltageEquation` at the slip speed): `0 = r_r i_r + dψ_r/dt + j ω_sl ψ_r`,
   i.e. componentwise `0 = r_r i_rd + ψ̇_rd − ω_sl ψ_rq`, `0 = r_r i_rq + ψ̇_rq + ω_sl ψ_rd`.
 IFOC rotor-flux dynamics (the family):
 * State: rotor flux `ψ_r = (ψ_rd, ψ_rq)` (order `d, q`) in `Dynamics.State 2`, expressed in
@@ -210,21 +211,18 @@ the rotor flux. -/
 
 /-! ## Rotor voltage equation and the current model -/
 
-/-- Rotor voltage equation in a frame rotating at `ω_e`, rotor speed `ω_r`
-(short-circuited rotor, complex form): `0 = r_r i_r + dψ_r + j(ω_e − ω_r) ψ_r`. -/
+/-- Rotor voltage equation in a frame rotating at `ω_e`, rotor speed `ω_r` (short-circuited
+rotor, complex form): the winding voltage equation `SpaceVector.VoltageEquation` of the rotor at
+the slip speed `ω_e − ω_r` with `v_r = 0`, `0 = r_r i_r + dψ_r + j(ω_e − ω_r) ψ_r`. -/
 def RotorVoltageEquation (p : Params) (ωe ωr : ℝ) (ir ψr dψr : ℂ) : Prop :=
-  0 = (p.rr : ℂ) * ir + dψr + I * ((ωe - ωr : ℝ) : ℂ) * ψr
+  VoltageEquation p.rr (ωe - ωr) 0 ir ψr dψr
 
 /-- The complex rotor equation is exactly the pair of real equations of FOC note §1.1. -/
 @[tmio M, powerlib_domain] theorem rotorVoltageEquation_iff (p : Params) (ωe ωr : ℝ) (ir ψr dψr : ℂ) :
     RotorVoltageEquation p ωe ωr ir ψr dψr ↔
       0 = p.rr * ir.re + dψr.re - (ωe - ωr) * ψr.im ∧
       0 = p.rr * ir.im + dψr.im + (ωe - ωr) * ψr.re := by
-  unfold RotorVoltageEquation
-  rw [Complex.ext_iff]
-  simp only [Complex.zero_re, Complex.zero_im, Complex.add_re, Complex.add_im, Complex.mul_re,
-    Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
-  constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
+  rw [RotorVoltageEquation, voltageEquation_iff, Complex.zero_re, Complex.zero_im]
 
 /-- Corrected current model: `T_r ψ̇_r + ψ_r = L_m i_s − j(ω_e − ω_r) T_r ψ_r`. -/
 @[tmio M, powerlib_domain] theorem currentModel (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
@@ -234,7 +232,7 @@ def RotorVoltageEquation (p : Params) (ωe ωr : ℝ) (ir ψr dψr : ℂ) : Prop
       p.Lm * is - I * ((ωe - ωr : ℝ) : ℂ) * p.Tr * rotorFlux p is ir := by
   have h1 : (p.rr : ℂ) ≠ 0 := by exact_mod_cast hrr
   have h3 : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
-  unfold RotorVoltageEquation at h
+  unfold RotorVoltageEquation VoltageEquation at h
   have hTr : (p.Tr : ℂ) = p.Lr / p.rr := by unfold Params.Tr; push_cast; ring
   have hdψ : dψr = -(p.rr : ℂ) * ir - I * ((ωe - ωr : ℝ) : ℂ) * rotorFlux p is ir := by
     linear_combination -h

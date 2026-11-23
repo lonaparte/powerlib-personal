@@ -74,13 +74,6 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   simp only [Matrix.sub_mul, Matrix.one_mul, Matrix.mul_assoc]
   abel
 
-/-- The exact gain `K* = P Hᵀ S⁻¹` satisfies `K* S = P Hᵀ` when `S` is invertible. -/
-@[tmio T, powerlib_foundation] theorem kalmanGain_mul_innov {P : Matrix (Fin n) (Fin n) ℝ}
-    {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ}
-    (hS : IsUnit (innov P H R).det) :
-    P * Hᵀ * (innov P H R)⁻¹ * innov P H R = P * Hᵀ := by
-  rw [Matrix.mul_assoc, nonsing_inv_mul _ hS, Matrix.mul_one]
-
 /-- **Completion of squares**: for symmetric `P`, `R` and the exact gain `K*`,
 `J(K) = J(K*) + (K − K*) S (K − K*)ᵀ`. -/
 @[tmio T, powerlib_foundation] theorem joseph_eq_optimal_add {P : Matrix (Fin n) (Fin n) ℝ}

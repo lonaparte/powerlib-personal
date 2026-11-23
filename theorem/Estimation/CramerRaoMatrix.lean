@@ -19,8 +19,9 @@ Scope.
   automatic): `pmf θ ω` are probability vectors, differentiable in `θ` at the true parameter,
   nonnegative and normalized for `θ'` near `θ` (zero probabilities are allowed: there the
   derivative vanishes because `θ` is a local minimum). Definitions: `scoreFin`
-  (`s_i = ∂_i p_θ / p_θ`, equal to `∂_i log p_θ` where `p_θ > 0`, `scoreFin_eq_fderiv_log`),
-  `fisherFin` (`𝓘_ij = E_θ[s_i s_j]`), `meanFin`, `covFin`.
+  (`s_i = ∂_i p_θ / p_θ`, the density score `densityScore` with `D = ∂_θ p_θ`, equal to
+  `∂_i log p_θ` where `p_θ > 0`, `scoreFin_eq_fderiv_log`), `fisherFin` (`𝓘_ij = E_θ[s_i s_j]`),
+  `meanFin`, `covFin`; they are the density-family objects for the counting measure.
 * The scalar Gaussian-location bound and the discrete Gaussian Fisher matrix are in
   `theorem/Estimation/CramerRao.lean`; the block (nuisance) inequality is in
   `theorem/Estimation/FisherAlgebra.lean`.
@@ -31,7 +32,8 @@ with nuisance components); projects/basin-guard/notes/concepts/detection-toleran
 
 Results.
 * `crb_fin` — finite sample space: if `E_θ'[T] = ψ(θ')` near `θ` and `𝓘(θ) ≻ 0`, then
-  `Cov_θ(T) − J 𝓘(θ)⁻¹ Jᵀ ⪰ 0`.
+  `Cov_θ(T) − J 𝓘(θ)⁻¹ Jᵀ ⪰ 0` (`crb_density` for the counting measure, where every
+  regularity premise holds: sums commute with derivatives).
 * `crb_fin_unbiased` — unbiased near `θ` ⇒ `Cov_θ(T) − 𝓘(θ)⁻¹ ⪰ 0`.
 * `gramMatrix_posSemidef` — general probability space: the second-moment matrix of
   square-integrable variables is `⪰ 0`; the covariance `covMatrix` (centred statistic) and the
@@ -44,12 +46,13 @@ Results.
   explicitly as `HasFDerivAt` hypotheses with derivatives `∫ ∂_θ p_θ dμ` and `∫ T_j ∂_θ p_θ dμ`
   (together with integrability of those derivatives and square integrability of `T` and the
   score under `P_θ = p_θ μ`); the conclusion is `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`.
+  `integral_densityLaw`: integrals under `P_θ` are `μ`-integrals weighted by `p_θ`.
 
-Proof (all versions). The joint Gram matrix of `(T − E T, S)` is the positive semidefinite block
-matrix `[[Cov, J], [Jᵀ, 𝓘]]`; Mathlib's Schur-complement criterion
-`Matrix.PosDef.fromBlocks₂₂` gives `Cov − J 𝓘⁻¹ Jᵀ ⪰ 0`. The cross block is `J` because
-`Σ_ω ∂p_θ(ω) = 0` and `Σ_ω T(ω) ∂p_θ(ω) = ∂ψ` (derivatives of the normalization and of the
-mean; uniqueness of Fréchet derivatives).
+Proof (one argument, `crb_of_regular`). The joint Gram matrix of `(T − E T, S)` is the positive
+semidefinite block matrix `[[Cov, J], [Jᵀ, 𝓘]]`; Mathlib's Schur-complement criterion
+`Matrix.PosDef.fromBlocks₂₂` gives `Cov − J 𝓘⁻¹ Jᵀ ⪰ 0`. For a density family (`crb_density`,
+hence `crb_fin`) the cross block is `J` because `∫ ∂p_θ dμ = 0` and `∫ T ∂p_θ dμ = ∂ψ`
+(derivatives of the normalization and of the mean; uniqueness of Fréchet derivatives).
 
 Not formalized.
 * Sufficient conditions (domination) that discharge the interchange premise of `crb_density`
@@ -61,161 +64,6 @@ namespace powerlib.Estimation
 
 open Matrix Filter
 open scoped Topology
-
-/-! ## Finite sample space -/
-
-section Finite
-
-variable {Ω : Type*} [Fintype Ω] {p k : ℕ}
-
-/-- Score `s_i(θ, ω) = ∂_i p_θ(ω) / p_θ(ω)`, i.e. `∂_i log p_θ(ω)` where `p_θ(ω) > 0` (and `0` on
-the null set `p_θ(ω) = 0`, which carries no probability). -/
-def scoreFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (ω : Ω) (i : Fin p) : ℝ :=
-  fderiv ℝ (fun θ' => pmf θ' ω) θ (Pi.single i 1) / pmf θ ω
-
-/-- Fisher information matrix `𝓘(θ)_ij = E_θ[s_i s_j]` of a family of probability vectors. -/
-def fisherFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) : Matrix (Fin p) (Fin p) ℝ :=
-  Matrix.of fun i j => ∑ ω, pmf θ ω * (scoreFin pmf θ ω i * scoreFin pmf θ ω j)
-
-/-- Mean `E_θ[T]` of a vector statistic. -/
-def meanFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (T : Ω → Fin k → ℝ) : Fin k → ℝ :=
-  fun j => ∑ ω, pmf θ ω * T ω j
-
-/-- Covariance matrix `Cov_θ(T)`. -/
-def covFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (T : Ω → Fin k → ℝ) :
-    Matrix (Fin k) (Fin k) ℝ :=
-  Matrix.of fun i j => ∑ ω, pmf θ ω *
-    ((T ω i - meanFin pmf θ T i) * (T ω j - meanFin pmf θ T j))
-
-/-- Gram form `X diag(q) Yᵀ`. -/
-@[tmio T, powerlib_foundation] private lemma mul_diagonal_mul_transpose_apply {a b : Type*} (X : Matrix a Ω ℝ)
-    (Y : Matrix b Ω ℝ) (q : Ω → ℝ) (i : a) (j : b) [DecidableEq Ω] :
-    (X * diagonal q * Yᵀ) i j = ∑ ω, q ω * (X i ω * Y j ω) := by
-  rw [Matrix.mul_apply]
-  simp only [mul_diagonal, transpose_apply]
-  exact Finset.sum_congr rfl fun ω _ => by ring
-
-/-- **Cramér–Rao bound, finite sample space, biased form.**  Let `p_θ` be probability vectors on a
-finite set, differentiable in `θ ∈ ℝ^p` at `θ`, and let the statistic `T` have mean `ψ(θ')` for
-all `θ'` near `θ`, with `ψ` differentiable at `θ` (Jacobian `J`).  If the Fisher matrix `𝓘(θ)` is
-positive definite, then `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`.  The probability vectors only need to be
-nonnegative near `θ`: zeros are allowed (their derivative vanishes, a local minimum). -/
-@[tmio T, powerlib_foundation] theorem crb_fin {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
-    {T : Ω → Fin k → ℝ} {ψ : (Fin p → ℝ) → Fin k → ℝ} {J : (Fin p → ℝ) →L[ℝ] (Fin k → ℝ)}
-    (hdiff : ∀ ω, DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
-    (hnn : ∀ᶠ θ' in 𝓝 θ, ∀ ω, 0 ≤ pmf θ' ω)
-    (hsum : ∀ᶠ θ' in 𝓝 θ, ∑ ω, pmf θ' ω = 1)
-    (hmean : ∀ᶠ θ' in 𝓝 θ, meanFin pmf θ' T = ψ θ')
-    (hψ : HasFDerivAt ψ J θ) (hI : (fisherFin pmf θ).PosDef) :
-    (covFin pmf θ T - LinearMap.toMatrix' (J : (Fin p → ℝ) →ₗ[ℝ] (Fin k → ℝ)) *
-      (fisherFin pmf θ)⁻¹ *
-      (LinearMap.toMatrix' (J : (Fin p → ℝ) →ₗ[ℝ] (Fin k → ℝ)))ᵀ).PosSemidef := by
-  classical
-  set D : Ω → (Fin p → ℝ) →L[ℝ] ℝ := fun ω => fderiv ℝ (fun θ' => pmf θ' ω) θ
-  have hD : ∀ ω, HasFDerivAt (fun θ' => pmf θ' ω) (D ω) θ := fun ω => (hdiff ω).hasFDerivAt
-  set q : Ω → ℝ := fun ω => pmf θ ω
-  have hq : ∀ ω, 0 ≤ q ω := hnn.self_of_nhds
-  -- (a) the derivative vanishes on the null set (local minimum)
-  have hD0 : ∀ ω, q ω = 0 → D ω = 0 := by
-    intro ω h0
-    refine IsLocalMin.hasFDerivAt_eq_zero ?_ (hD ω)
-    filter_upwards [hnn] with θ' h'
-    simp only [q] at h0
-    rw [h0]; exact h' ω
-  -- (b) differentiating `Σ p = 1`
-  have hsumD : ∑ ω, D ω = 0 := by
-    have h1 : HasFDerivAt (fun θ' => ∑ ω, pmf θ' ω) (∑ ω, D ω) θ :=
-      HasFDerivAt.fun_sum fun ω _ => hD ω
-    have h2 : HasFDerivAt (fun θ' => ∑ ω, pmf θ' ω) (0 : (Fin p → ℝ) →L[ℝ] ℝ) θ :=
-      (hasFDerivAt_const (1 : ℝ) θ).congr_of_eventuallyEq hsum
-    exact h1.unique h2
-  -- (c) differentiating `E_θ[T_j] = ψ_j`
-  have hmeanD : ∀ j, ∑ ω, T ω j • D ω = (ContinuousLinearMap.proj j).comp J := by
-    intro j
-    have h1 : HasFDerivAt (fun θ' => ∑ ω, pmf θ' ω * T ω j) (∑ ω, T ω j • D ω) θ :=
-      HasFDerivAt.fun_sum fun ω _ => (hD ω).mul_const (T ω j)
-    have h2 : HasFDerivAt (fun θ' => ∑ ω, pmf θ' ω * T ω j)
-        ((ContinuousLinearMap.proj j).comp J) θ := by
-      refine ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin k => ℝ) j).hasFDerivAt.comp θ
-        hψ).congr_of_eventuallyEq ?_
-      filter_upwards [hmean] with θ' h'
-      show _ = ψ θ' j
-      rw [← h']; rfl
-    exact h1.unique h2
-  -- matrices
-  set m := meanFin pmf θ T
-  have hm : m = ψ θ := hmean.self_of_nhds
-  set X : Matrix (Fin k) Ω ℝ := Matrix.of fun j ω => T ω j - m j
-  set S : Matrix (Fin p) Ω ℝ := Matrix.of fun i ω => scoreFin pmf θ ω i
-  set W : Matrix Ω Ω ℝ := diagonal q
-  set Jm := LinearMap.toMatrix' (J : (Fin p → ℝ) →ₗ[ℝ] (Fin k → ℝ))
-  have hcov : X * W * Xᵀ = covFin pmf θ T := by
-    ext i j; rw [mul_diagonal_mul_transpose_apply]; rfl
-  have hfis : S * W * Sᵀ = fisherFin pmf θ := by
-    ext i j; rw [mul_diagonal_mul_transpose_apply]; rfl
-  have hcross : X * W * Sᵀ = Jm := by
-    ext j i
-    rw [mul_diagonal_mul_transpose_apply]
-    have e : ∀ ω, q ω * (X j ω * S i ω) =
-        T ω j * D ω (Pi.single i 1) - m j * D ω (Pi.single i 1) := by
-      intro ω
-      simp only [X, S, scoreFin, of_apply]
-      by_cases h0 : q ω = 0
-      · rw [hD0 ω h0]
-        simp [h0]
-      · simp only [q] at h0
-        field_simp
-        ring
-    rw [Finset.sum_congr rfl fun ω _ => e ω, Finset.sum_sub_distrib, ← Finset.mul_sum]
-    have h1 := congrArg (fun L : (Fin p → ℝ) →L[ℝ] ℝ => L (Pi.single i 1)) (hmeanD j)
-    have h2 := congrArg (fun L : (Fin p → ℝ) →L[ℝ] ℝ => L (Pi.single i 1)) hsumD
-    simp only [_root_.sum_apply, _root_.smul_apply, smul_eq_mul, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.proj_apply, _root_.zero_apply] at h1 h2
-    rw [h1, h2, mul_zero, sub_zero]
-    show _ = LinearMap.toMatrix' _ j i
-    rw [LinearMap.toMatrix'_apply]
-    rfl
-  -- the joint Gram matrix is positive semidefinite
-  have hW : W.PosSemidef := PosSemidef.diagonal fun ω => hq ω
-  have hG : (fromRows X S * W * (fromRows X S)ᵀ).PosSemidef :=
-    LinearAlgebra.posSemidef_congr hW (fromRows X S)
-  have hWt : Wᵀ = W := diagonal_transpose q
-  have hblocks : fromRows X S * W * (fromRows X S)ᵀ =
-      fromBlocks (covFin pmf θ T) Jm Jmᴴ (fisherFin pmf θ) := by
-    rw [fromRows_mul, transpose_fromRows, fromRows_mul_fromCols, hcov, hfis, hcross,
-      conjTranspose_eq_transpose_of_trivial, ← hcross]
-    congr 1
-    rw [transpose_mul, transpose_mul, transpose_transpose, hWt, Matrix.mul_assoc]
-  rw [hblocks] at hG
-  have hdet : IsUnit (fisherFin pmf θ).det := hI.isUnit.map Matrix.detMonoidHom
-  let := invertibleOfIsUnitDet _ hdet
-  have := (PosDef.fromBlocks₂₂ (covFin pmf θ T) Jm hI).mp hG
-  simpa [conjTranspose_eq_transpose_of_trivial] using this
-
-/-- **Cramér–Rao bound, finite sample space, unbiased form**: `Cov_θ(T) ⪰ 𝓘(θ)⁻¹` for every
-statistic that is unbiased for all parameters near `θ`. -/
-@[tmio T, powerlib_foundation] theorem crb_fin_unbiased {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
-    {T : Ω → Fin p → ℝ}
-    (hdiff : ∀ ω, DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
-    (hnn : ∀ᶠ θ' in 𝓝 θ, ∀ ω, 0 ≤ pmf θ' ω)
-    (hsum : ∀ᶠ θ' in 𝓝 θ, ∑ ω, pmf θ' ω = 1)
-    (hunb : ∀ᶠ θ' in 𝓝 θ, meanFin pmf θ' T = θ') (hI : (fisherFin pmf θ).PosDef) :
-    (covFin pmf θ T - (fisherFin pmf θ)⁻¹).PosSemidef := by
-  have := crb_fin hdiff hnn hsum hunb (hasFDerivAt_id θ) hI
-  simpa [LinearMap.toMatrix'_id] using this
-
-omit [Fintype Ω] in
-/-- Where `p_θ(ω) > 0`, the score is the derivative of the log-likelihood:
-`s_i(θ, ω) = ∂_i log p_θ(ω)`. -/
-@[tmio T, powerlib_foundation] theorem scoreFin_eq_fderiv_log {pmf : (Fin p → ℝ) → Ω → ℝ}
-    {θ : Fin p → ℝ} {ω : Ω} (hd : DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
-    (hpos : 0 < pmf θ ω) (i : Fin p) :
-    scoreFin pmf θ ω i = fderiv ℝ (fun θ' => Real.log (pmf θ' ω)) θ (Pi.single i 1) := by
-  rw [(hd.hasFDerivAt.log hpos.ne').fderiv, scoreFin]
-  simp [div_eq_inv_mul]
-
-
-end Finite
 
 /-! ## General probability space, regularity as explicit premises -/
 
@@ -316,6 +164,14 @@ conditions — differentiation under the integral sign, `∂_i ∫ p_θ = ∫ �
 def densityLaw (μ : Measure Ω) (f : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) : Measure Ω :=
   μ.withDensity fun ω => ENNReal.ofReal (f θ ω)
 
+/-- Integrals under `P_θ = p_θ μ` are `μ`-integrals weighted by `p_θ`. -/
+@[tmio T, powerlib_foundation] theorem integral_densityLaw {μ : Measure Ω}
+    {f : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ} (hfm : Measurable (f θ)) (hf0 : ∀ ω, 0 ≤ f θ ω)
+    (g : Ω → ℝ) : ∫ ω, g ω ∂(densityLaw μ f θ) = ∫ ω, f θ ω * g ω ∂μ := by
+  rw [densityLaw, integral_withDensity_eq_integral_toReal_smul hfm.ennreal_ofReal
+    (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
+  exact integral_congr_ae (ae_of_all _ fun ω => by simp [ENNReal.toReal_ofReal (hf0 ω)])
+
 /-- Score of a density family with parameter derivative `D ω = ∂_θ p_θ(ω)`:
 `s_i = ∂_i p_θ / p_θ` (`0` where `p_θ = 0`). -/
 def densityScore (f : (Fin p → ℝ) → Ω → ℝ) (D : Ω → (Fin p → ℝ) →L[ℝ] ℝ) (θ : Fin p → ℝ)
@@ -368,12 +224,7 @@ integrable under `P_θ` and the Fisher matrix is positive definite, then
     rw [densityLaw, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0), hnorm.self_of_nhds,
       ENNReal.ofReal_one]
-  have hE : ∀ g : Ω → ℝ, ∫ ω, g ω ∂(densityLaw μ f θ) = ∫ ω, f θ ω * g ω ∂μ := by
-    intro g
-    rw [densityLaw, integral_withDensity_eq_integral_toReal_smul hfm.ennreal_ofReal
-      (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
-    exact integral_congr_ae (ae_of_all _ fun ω => by
-      simp [ENNReal.toReal_ofReal (hf0 ω)])
+  have hE := integral_densityLaw (μ := μ) hfm hf0
   have hcancel : ∀ ω (c : ℝ) i, f θ ω * (c * densityScore f D θ ω i) = c * D ω (Pi.single i 1) := by
     intro ω c i
     by_cases h0 : f θ ω = 0
@@ -396,5 +247,94 @@ integrable under `P_θ` and the Fisher matrix is positive definite, then
 
 
 end Measure
+
+/-! ## Finite sample space -/
+
+section Finite
+
+open MeasureTheory
+
+variable {Ω : Type*} [Fintype Ω] {p k : ℕ}
+
+/-- Score `s_i(θ, ω) = ∂_i p_θ(ω) / p_θ(ω)`, i.e. `∂_i log p_θ(ω)` where `p_θ(ω) > 0` (and `0` on
+the null set `p_θ(ω) = 0`, which carries no probability): the density score `densityScore` with
+`D ω = ∂_θ p_θ(ω)`. -/
+abbrev scoreFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (ω : Ω) (i : Fin p) : ℝ :=
+  densityScore pmf (fun ω => fderiv ℝ (fun θ' => pmf θ' ω) θ) θ ω i
+
+/-- Fisher information matrix `𝓘(θ)_ij = E_θ[s_i s_j]` of a family of probability vectors. -/
+def fisherFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) : Matrix (Fin p) (Fin p) ℝ :=
+  Matrix.of fun i j => ∑ ω, pmf θ ω * (scoreFin pmf θ ω i * scoreFin pmf θ ω j)
+
+/-- Mean `E_θ[T]` of a vector statistic. -/
+def meanFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (T : Ω → Fin k → ℝ) : Fin k → ℝ :=
+  fun j => ∑ ω, pmf θ ω * T ω j
+
+/-- Covariance matrix `Cov_θ(T)`. -/
+def covFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (T : Ω → Fin k → ℝ) :
+    Matrix (Fin k) (Fin k) ℝ :=
+  Matrix.of fun i j => ∑ ω, pmf θ ω *
+    ((T ω i - meanFin pmf θ T i) * (T ω j - meanFin pmf θ T j))
+
+/-- **Cramér–Rao bound, finite sample space, biased form.**  Let `p_θ` be probability vectors on a
+finite set, differentiable in `θ ∈ ℝ^p` at `θ`, and let the statistic `T` have mean `ψ(θ')` for
+all `θ'` near `θ`, with `ψ` differentiable at `θ` (Jacobian `J`).  If the Fisher matrix `𝓘(θ)` is
+positive definite, then `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`.  The probability vectors only need to be
+nonnegative near `θ`: zeros are allowed (their derivative vanishes, a local minimum). -/
+@[tmio T, powerlib_foundation] theorem crb_fin {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
+    {T : Ω → Fin k → ℝ} {ψ : (Fin p → ℝ) → Fin k → ℝ} {J : (Fin p → ℝ) →L[ℝ] (Fin k → ℝ)}
+    (hdiff : ∀ ω, DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
+    (hnn : ∀ᶠ θ' in 𝓝 θ, ∀ ω, 0 ≤ pmf θ' ω)
+    (hsum : ∀ᶠ θ' in 𝓝 θ, ∑ ω, pmf θ' ω = 1)
+    (hmean : ∀ᶠ θ' in 𝓝 θ, meanFin pmf θ' T = ψ θ')
+    (hψ : HasFDerivAt ψ J θ) (hI : (fisherFin pmf θ).PosDef) :
+    (covFin pmf θ T - LinearMap.toMatrix' (J : (Fin p → ℝ) →ₗ[ℝ] (Fin k → ℝ)) *
+      (fisherFin pmf θ)⁻¹ *
+      (LinearMap.toMatrix' (J : (Fin p → ℝ) →ₗ[ℝ] (Fin k → ℝ)))ᵀ).PosSemidef := by
+  let : MeasurableSpace Ω := ⊤
+  have : DiscreteMeasurableSpace Ω := ⟨fun _ => MeasurableSpace.measurableSet_top⟩
+  set D : Ω → (Fin p → ℝ) →L[ℝ] ℝ := fun ω => fderiv ℝ (fun θ' => pmf θ' ω) θ
+  have hD : ∀ ω, HasFDerivAt (fun θ' => pmf θ' ω) (D ω) θ := fun ω => (hdiff ω).hasFDerivAt
+  have hE : ∀ g : Ω → ℝ, ∫ ω, g ω ∂(densityLaw .count pmf θ) = ∑ ω, pmf θ ω * g ω := fun g => by
+    rw [integral_densityLaw .of_discrete (fun ω => hnn.self_of_nhds ω), integral_count]
+  have : IsFiniteMeasure (densityLaw .count pmf θ) :=
+    isFiniteMeasure_withDensity_ofReal (f := pmf θ) .of_finite
+  have hcov : covFin pmf θ T = covMatrix (densityLaw .count pmf θ) T := by
+    ext i j; simp only [covFin, meanFin, covMatrix, gramMatrix, of_apply, hE]
+  have hfis : fisherFin pmf θ = fisherMatrix (densityLaw .count pmf θ) (densityScore pmf D θ) := by
+    ext i j; simp only [fisherFin, fisherMatrix, gramMatrix, of_apply, hE]; rfl
+  rw [hfis] at hI ⊢
+  rw [hcov]
+  refine crb_density hD (fun ω => hnn.mono fun _ h => h ω) .of_discrete
+    (hsum.mono fun _ h => by rw [integral_count, h])
+    (fun j => hmean.mono fun θ' h => by rw [integral_count, ← h]; rfl) hψ .of_finite
+    (fun _ => .of_finite) ?_ (fun j => ?_) (fun _ => .of_discrete) (fun _ => .of_discrete) hI
+  · simpa only [integral_count] using HasFDerivAt.fun_sum fun ω _ => hD ω
+  · simpa only [integral_count] using HasFDerivAt.fun_sum fun ω _ => (hD ω).mul_const (T ω j)
+
+/-- **Cramér–Rao bound, finite sample space, unbiased form**: `Cov_θ(T) ⪰ 𝓘(θ)⁻¹` for every
+statistic that is unbiased for all parameters near `θ`. -/
+@[tmio T, powerlib_foundation] theorem crb_fin_unbiased {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
+    {T : Ω → Fin p → ℝ}
+    (hdiff : ∀ ω, DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
+    (hnn : ∀ᶠ θ' in 𝓝 θ, ∀ ω, 0 ≤ pmf θ' ω)
+    (hsum : ∀ᶠ θ' in 𝓝 θ, ∑ ω, pmf θ' ω = 1)
+    (hunb : ∀ᶠ θ' in 𝓝 θ, meanFin pmf θ' T = θ') (hI : (fisherFin pmf θ).PosDef) :
+    (covFin pmf θ T - (fisherFin pmf θ)⁻¹).PosSemidef := by
+  have := crb_fin hdiff hnn hsum hunb (hasFDerivAt_id θ) hI
+  simpa [LinearMap.toMatrix'_id] using this
+
+omit [Fintype Ω] in
+/-- Where `p_θ(ω) > 0`, the score is the derivative of the log-likelihood:
+`s_i(θ, ω) = ∂_i log p_θ(ω)`. -/
+@[tmio T, powerlib_foundation] theorem scoreFin_eq_fderiv_log {pmf : (Fin p → ℝ) → Ω → ℝ}
+    {θ : Fin p → ℝ} {ω : Ω} (hd : DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
+    (hpos : 0 < pmf θ ω) (i : Fin p) :
+    scoreFin pmf θ ω i = fderiv ℝ (fun θ' => Real.log (pmf θ' ω)) θ (Pi.single i 1) := by
+  rw [(hd.hasFDerivAt.log hpos.ne').fderiv, scoreFin, densityScore]
+  simp [div_eq_inv_mul]
+
+
+end Finite
 
 end powerlib.Estimation

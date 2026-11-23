@@ -1,4 +1,5 @@
 import theorem.Modal.Spectral
+import theorem.NormalForm.Hypersurfaces
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 
@@ -42,8 +43,8 @@ Along a given branch (a global branch `∀ α` enters through `Filter.Eventually
 Existence of branches:
 * `contDiffAt_charpoly_eval` — `(p, z) ↦ det(zI − A(p))` is `C¹` when the entries of `A` are.
 * `exists_eigenvalue_branch` — a `C¹` **eigenvalue** branch through a simple eigenvalue (IFT on
-  `det(zI − A(p))`, whose `z`-derivative is `χ'(λ₀) ≠ 0`), locally the only eigenvalue near
-  `λ₀`.
+  `det(zI − A(p))`, whose `z`-derivative is `χ'(λ₀) ≠ 0`, through the equilibrium-continuation
+  wrapper `NormalForm.equilibrium_branch`), locally the only eigenvalue near `λ₀`.
 * `eq_smul_of_mulVec_sub_eq_smul` — at an eigenvalue of algebraic multiplicity one there is no
   Jordan chain of length two: `(A₀ − λ₀) x ∈ span v₀ ⇒ x ∈ span v₀` (via Mathlib's
   `LinearMap.finrank_genEigenspace_le`: `dim ker (A₀ − λ₀)² ≤ rootMultiplicity = 1`).
@@ -54,10 +55,11 @@ Existence of branches:
   (root multiplicity one in `charpoly`), `A(p₀) v₀ = λ₀ v₀` and any `w` with `wᵀ v₀ ≠ 0`, there
   are `v(p)`, `λ(p)`, `C¹` at `p₀`, with `v(p₀) = v₀`, `λ(p₀) = λ₀`, and near `p₀`
   `A(p) v(p) = λ(p) v(p)`, `wᵀ v(p) = wᵀ v₀`, `v(p) ≠ 0`; near `(p₀, v₀, λ₀)` these are the only
-  normalised eigenpairs. Proof: Mathlib's implicit function theorem
-  (`ContDiffAt.implicitFunction`) on `F(p, v, λ) = ((A(p) − λ I) v, wᵀ v − wᵀ v₀)`, whose
-  `(v, λ)`-derivative is the bordered matrix (invertible by `bordered_injective`; this replaces
-  the adjugate route, which needs `adj(λ₀ I − A₀) ≠ 0`). The normalisation is the bilinear
+  normalised eigenpairs. Proof: the implicit function theorem (`NormalForm.equilibrium_branch`,
+  wrapping Mathlib's `ContDiffAt.implicitFunction`) on
+  `F(p, v, λ) = ((A(p) − λ I) v, wᵀ v − wᵀ v₀)`, whose `(v, λ)`-derivative is the bordered matrix
+  (invertible by `bordered_injective`; this replaces the adjugate route, which needs
+  `adj(λ₀ I − A₀) ≠ 0`). The normalisation is the bilinear
   `wᵀ v` (not `wᴴ v`), so the map is complex-polynomial. `exists_eigenvector_branch_of_ne_zero`
   chooses `w = e_k` with `v₀ k ≠ 0`.
 * `exists_eigenpair_branch_deriv` — one real parameter, no diagonalisability: the branch has
@@ -251,21 +253,16 @@ eigenvalue of `A(p)` and, near `(p₀, λ₀)`, it is the only one. -/
     · ext z
       simp
       field_simp
-  set lam := hf.implicitFunction hpn hinv
-  have hf0 : f (p₀, lam₀) = 0 := hroot
-  refine ⟨lam, hf.implicitFunction_apply_self hpn hinv, hf.contDiffAt_implicitFunction hpn hinv,
-    ?_, ?_⟩
-  · filter_upwards [hf.eventually_apply_implicitFunction hpn hinv] with p hp
-    have hz : (A p).charpoly.eval (lam p) = 0 := by rw [← hf0]; exact hp
+  obtain ⟨lam, h0, hC, hev, huniq⟩ := NormalForm.equilibrium_branch hf hpn hroot hinv
+  refine ⟨lam, h0, hC, ?_, huniq⟩
+  · filter_upwards [hev] with p hz
+    replace hz : (A p).charpoly.eval (lam p) = 0 := hz
     rw [Matrix.eval_charpoly] at hz
     obtain ⟨v, hv, hAv⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hz
     refine ⟨v, hv, ?_⟩
     rw [Matrix.sub_mulVec, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal,
       Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero] at hAv
     exact hAv.symm
-  · filter_upwards [hf.eventually_apply_eq_iff_implicitFunction hpn hinv] with q hq
-    rw [← hq, hf0]
-    rfl
 
 /-! ## Differentiable eigenvector branch (implicit function theorem on the bordered system) -/
 
@@ -401,20 +398,16 @@ eigenpair `(A(p) v = λ v, wᵀ v = wᵀ v₀)` is `(v(p), λ(p))`. -/
     rw [hD]
     exact ⟨(LinearEquiv.ofInjectiveEndo Llin hLinj).toContinuousLinearEquiv,
       ContinuousLinearMap.ext fun y => rfl⟩
-  set φ := hF.implicitFunction hpn hinv with hφ
-  have hφ0 : φ p₀ = (v₀, lam₀) := hF.implicitFunction_apply_self hpn hinv
-  have hφC : ContDiffAt ℝ 1 φ p₀ := hF.contDiffAt_implicitFunction hpn hinv
+  obtain ⟨φ, hφ0, hφC, hev, huniq⟩ := NormalForm.equilibrium_branch hF hpn hFu hinv
   refine ⟨fun p => (φ p).1, fun p => (φ p).2, congrArg Prod.fst hφ0, congrArg Prod.snd hφ0,
     hφC.fst, hφC.snd, ?_, ?_⟩
-  · filter_upwards [hF.eventually_apply_implicitFunction hpn hinv] with p hp
-    rw [hFu] at hp
+  · filter_upwards [hev] with p hp
     have h1 := congrArg Prod.fst hp
     have h2 := congrArg Prod.snd hp
     simp only [F, Prod.fst_zero, Prod.snd_zero] at h1 h2
     refine ⟨sub_eq_zero.mp h1, sub_eq_zero.mp h2, fun h => hw ?_⟩
     rw [← sub_eq_zero.mp h2, h, dotProduct_zero]
-  · filter_upwards [hF.eventually_apply_eq_iff_implicitFunction hpn hinv] with q hq
-    rw [hFu] at hq
+  · filter_upwards [huniq] with q hq
     have e : F q = 0 ↔ (A q.1 *ᵥ q.2.1 = q.2.2 • q.2.1 ∧ w ⬝ᵥ q.2.1 = w ⬝ᵥ v₀) := by
       simp only [F, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, sub_eq_zero]
     rw [← e, hq, Prod.ext_iff]

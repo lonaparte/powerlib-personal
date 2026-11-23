@@ -41,8 +41,9 @@ state equations, energy balance), §1.4 (block-sum Hamiltonian), §1.8 (state di
 linearization).
 
 Results.
-* `smib11`: the note's ODE verbatim (`δ̇ = ω_r`); its energy balance (`smib11_power_balance`)
-  and passivity hold.
+* `smib11`: the note's ODE verbatim (`δ̇ = ω_r`); its energy balance of §1.5.1 (the generic
+  `PH.NonlinearModel.power_balance` with port power `smib11_supply`, damping power
+  `smib11_dampingPower`) and passivity hold.
 * The machine block is the seven-state machine: the parameters extend `SyncMachine7Params`, the
   flux, current and speed of the block are the machine's (`smib11_machine`), the first seven state
   equations are `syncMachine7`'s driven by the node voltage in the rotor frame `R(δ)ᵀ V`, `v_f`
@@ -272,6 +273,8 @@ model, not a connection conclusion. -/
   ext i
   fin_cases i <;> simp [smib11_machineInput, smib11_current, smib11_speed, smib11_machine]
 
+/-- Damping power of §1.5.1:
+`r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r² + r_l(I_D² + I_Q²)`. -/
 @[tmio M, powerlib_domain] theorem smib11_dampingPower (p : SMIB11Params) (x : State 11) :
     (smib11 p).dampingPower x =
       p.rs * (smib11_current p x 0 ^ 2 + smib11_current p x 1 ^ 2) +
@@ -282,6 +285,9 @@ model, not a connection conclusion. -/
   simp [smib11, smib11_R, mulVec, dotProduct, Fin.sum_univ_succ, Matrix.diagonal_apply]
   ring
 
+/-- Port power `v_f i_f + T_m ω_r − V_D^∞ I_D − V_Q^∞ I_Q`; with `smib11_dampingPower` and
+`NonlinearModel.power_balance` this is the energy balance `Ḣ = supply − dampingPower` of
+§1.5.1. -/
 @[tmio M, powerlib_domain] theorem smib11_supply (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) :
     (smib11 p).supply x u =
       u 0 * smib11_current p x 2 + u 1 * smib11_speed p x -
@@ -289,19 +295,6 @@ model, not a connection conclusion. -/
   rw [NonlinearModel.supply, NonlinearModel.output, smib11_dH]
   simp [smib11, smib11_g, mulVec, dotProduct, Fin.sum_univ_succ]
   ring
-
-/-- Energy balance of §1.5.1: `Ḣ = (v_f i_f + T_m ω_r − V_D^∞ I_D − V_Q^∞ I_Q) −
-(r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r² + r_l(I_D² + I_Q²))`. -/
-@[tmio M, powerlib_domain] theorem smib11_power_balance (p : SMIB11Params) (x : State 11)
-    (u : Fin 4 → ℝ) :
-    fderiv ℝ (smib11 p).H x ((smib11 p).field x u) =
-      (u 0 * smib11_current p x 2 + u 1 * smib11_speed p x -
-        u 2 * (x 9 / p.Ll) - u 3 * (x 10 / p.Ll)) -
-      (p.rs * (smib11_current p x 0 ^ 2 + smib11_current p x 1 ^ 2) +
-        p.rf * smib11_current p x 2 ^ 2 + p.rkd * smib11_current p x 3 ^ 2 +
-        p.rkq * smib11_current p x 4 ^ 2 + p.D * smib11_speed p x ^ 2 +
-        p.rl * ((x 9 / p.Ll) ^ 2 + (x 10 / p.Ll) ^ 2)) := by
-  rw [NonlinearModel.power_balance, smib11_supply, smib11_dampingPower]
 
 /-- `H^tot` is the block sum of the machine energy (`syncMachine7` at the machine block), the
 node-capacitor and the link energies (§1.4). -/
@@ -386,7 +379,8 @@ def smib11Rel_field (p : SMIB11Params) (x : State 11) (u : Fin 4 → ℝ) : Stat
   rw [NonlinearModel.fderiv_H_apply, smib11_dH]
   simp [smib11_angleAxis, dotProduct]
 
-/-- Energy balance of the corrected model: identical to `smib11_power_balance`. -/
+/-- Energy balance of the corrected model: the note's model's `Ḣ = supply − dampingPower`
+(`NonlinearModel.power_balance`). -/
 @[tmio M, powerlib_domain] theorem smib11Rel_power_balance (p : SMIB11Params) (x : State 11)
     (u : Fin 4 → ℝ) :
     fderiv ℝ (smib11 p).H x (smib11Rel_field p x u) =

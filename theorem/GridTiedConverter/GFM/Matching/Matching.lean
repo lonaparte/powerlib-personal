@@ -38,7 +38,6 @@ Results.
 * `matching_eq_swing`: with `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
   `P_e(θ, ω) = i_x(θ, ω/η)/η`, the swing field `Synchronous.GeneralSwing.field` is exactly the
   matching field in the coordinates `(θ, ω) = (θ, η v)`.
-* `matching_equilibrium_iff` (static): equilibria correspond.
 * `matching_swing`: along a solution, the converter frequency `ω = η u_dc` obeys
   `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η` (T-gfm-control §1.6 table).
 
@@ -61,9 +60,7 @@ Family and connection conclusions.
   sentence-by-sentence equivalence. The matched law `i_x(θ, ω/η)/η` depends on the speed whenever
   the load current depends on the DC voltage, so the matching family reads through the swing
   family with an arbitrary law, and through the canonical swing hub only on a speed-independent
-  sinusoidal law (`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`). The solution
-  correspondence `matching_trajectory_iff` (a trajectory-level statement outside the sentence
-  language) is private implementation evidence. Scaffold:
+  sinusoidal law (`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`). Scaffold:
   `theorem/GridTiedConverter/GFM/Matching/MatchingSwing.agda`.
 * Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
   `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian
@@ -85,12 +82,13 @@ Family and connection conclusions.
   stability of the set of equilibria modulo `2π` (a set-stability notion outside the sentence
   language).
 
-Correction (T-dc-voltage-gfm §2.2 ROCOF). Exactly, `ω' = η v' = η (i_dc − i_x − G v)/C`; a
-step `ΔP` of exported power from equilibrium gives the initial ROCOF `−η ΔP/(C v*)`
-`= −ω_s ΔP/(C v*²)` (`matching_rocof`). With the note's data (`C = 20 mF`, `v* = 1500 V`,
-`ω_s = 100π`, `ΔP = 100 kW`) this is `2000π/9 ≈ 698 rad/s²` (`rocof_note_data`), not
-`∼10⁴ rad/s²`. The note's own formula `ΔP ω_s²/(C v*³)` evaluates to `400π²/27 ≈ 146`
-(`note_formula_value`) but is dimensionally inconsistent (one factor `η = ω_s/v*` too many).
+Correction (T-dc-voltage-gfm §2.2 ROCOF). Exactly, `ω' = η v' = η (i_dc − i_x − G v)/C` (the
+DC-node row of `matchingField`); a step `ΔP` of exported power from equilibrium gives the initial
+ROCOF `−η ΔP/(C v*)` `= −ω_s ΔP/(C v*²)` (`matching_rocof`). With the note's data
+(`C = 20 mF`, `v* = 1500 V`, `ω_s = 100π`, `ΔP = 100 kW`) this is `2000π/9 ≈ 698 rad/s²`
+(`rocof_note_data`), not `∼10⁴ rad/s²`. The note's own formula `ΔP ω_s²/(C v*³)` evaluates to
+`400π²/27 ≈ 146` (`note_formula_value`) but is dimensionally inconsistent (one factor
+`η = ω_s/v*` too many).
 The ViSynC equivalence of §1.3 is not derived in the note and is not formalized.
 -/
 
@@ -124,35 +122,6 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
   · simp [transportField, matchingField, matchedSwing, Synchronous.GeneralSwing.field]
     field_simp
 
-/-- Solutions correspond one to one: `φ = (θ, v)` solves the matching model on `[a, b]` iff
-`(θ, η v)` solves the matched swing model.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio M, powerlib_domain] private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
-    (ix : ℝ → ℝ → ℝ) (φ : ℝ → State 2) (a b : ℝ) :
-    IsTrajectoryOn φ (matchingField C G η idc ix) a b ↔
-      IsTrajectoryOn (fun t => scaleCoord hη (φ t)) (matchedSwing C G η idc ix) a b := by
-  constructor
-  · intro h
-    have h' := isIntegralCurveOn_transport (scaleCoord hη) 0 h
-    rw [matching_eq_swing hC hη] at h'
-    simpa [affineCoord_zero_apply] using h'
-  · intro h
-    have h1 : IsTrajectoryOn (fun t => affineCoord (scaleCoord hη) 0 (φ t))
-        (transportField (scaleCoord hη) 0 (matchingField C G η idc ix)) a b := by
-      rw [matching_eq_swing hC hη]
-      simp only [affineCoord_zero_apply]
-      exact h
-    have h2 := isIntegralCurveOn_transport (scaleCoord hη).symm (-((scaleCoord hη).symm 0)) h1
-    rw [transportField_symm_transportField] at h2
-    simpa only [affineCoord_symm_affineCoord] using h2
-
-/-- Equilibria correspond. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem matching_equilibrium_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
-    (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    matchedSwing C G η idc ix (scaleCoord hη x) = 0 ↔ matchingField C G η idc ix x = 0 := by
-  rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
-  exact transportField_affineCoord_eq_zero_iff _ _ _ _
-
 /-- Matching control: `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x` makes the converter
 frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η`. -/
 @[tmio T, powerlib_foundation] theorem matching_swing {η C G idc : ℝ} {u : ℝ → ℝ} {ix : ℝ → ℝ} {t : ℝ}
@@ -163,13 +132,6 @@ frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/�
   field_simp
 
 /-! ## ROCOF of the matching law (Correction) -/
-
-/-- Exact frequency derivative of the matching law: `ω' = η v' = η (i_dc − i_x − G v)/C`.
-Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem matching_frequency_derivative {C G η idc : ℝ} (ix : ℝ → ℝ → ℝ)
-    (x : State 2) :
-    η * (matchingField C G η idc ix x) 1 = η * ((idc - ix (x 0) (x 1) - G * x 1) / C) := by
-  simp [matchingField]
 
 /-- Initial ROCOF after a step `ΔP` in exported power from equilibrium (`i_x = i_x0 + ΔP/v`):
 `−η ΔP/(C v)`. -/

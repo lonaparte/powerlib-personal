@@ -216,26 +216,6 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
   simp [Dynamics.transportField, hV]
   field_simp
 
-/-- Trajectory form of the same conjugacy (T-invariant-coordinates `ξ := ∫V_q / V_g`). -/
-@[tmio M, powerlib_domain] theorem srf_iff_xi {V : ℝ} (hV : V ≠ 0) (Kp Ki δω : ℝ)
-    (x : ℝ → State 2) (s : Set ℝ) :
-    IsIntegralCurveOn x (fun _ y => srfField V Kp Ki δω y) s ↔
-      IsIntegralCurveOn (fun t => PhasePlane.mk (x t 0) (x t 1 / V))
-        (fun _ y => xiField (V * Kp) (V * Ki) (-δω) y) s := by
-  rw [xiField, neg_neg, ← transport_scale_srfField hV]
-  have hrw : (fun t => PhasePlane.mk (x t 0) (x t 1 / V)) =
-      fun t => Dynamics.affineCoord (Dynamics.scaleCoord (inv_ne_zero hV)) 0 (x t) := by
-    funext t; simp [Dynamics.affineCoord, div_eq_inv_mul]; rfl
-  rw [hrw]
-  constructor
-  · exact fun h => Dynamics.isIntegralCurveOn_transport _ _ h
-  · intro h
-    have h' := Dynamics.isIntegralCurveOn_transport (Dynamics.scaleCoord (inv_ne_zero hV)).symm
-      (-((Dynamics.scaleCoord (inv_ne_zero hV)).symm 0)) h
-    rw [Dynamics.transportField_symm_transportField] at h'
-    simp only [Dynamics.affineCoord_symm_affineCoord] at h'
-    exact h'
-
 /-- Amplitude invariance on the semantics connection (T-invariant-coordinates §1.2): for
 `V ≠ 0`, every flow sentence holds for the SRF-PLL of amplitude `V` and gains `(K_p, K_i)` about
 `θ*` exactly when it holds for the unit-amplitude SRF-PLL with loop gains `(V K_p, V K_i)` about

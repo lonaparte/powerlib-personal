@@ -49,10 +49,9 @@ Results.
   `tendsto_besselI0_div_besselI1` (`I₀/I₁ → 1` as `z → ∞` in a sector).
 * The physical ray `m = (1 + i)s` (`s = 1/δ`) of the conductor models: `one_add_I_mul_re`,
   `norm_one_add_I_mul_le`, `ray_re_tendsto`, `ray_mul_re_tendsto` (`Re((1 + i)s t) → ∞`),
-  `ray_sector` (`‖m‖ ≤ 2 Re m`), `ray_tendsto_zero`, `ray_re_pos`; the decay
-  `tendsto_mul_cexp_neg` (`m e^{−mt} → 0` as `Re m → ∞` in a sector); the angular-frequency
-  parametrization `m(ω) = (1 + i)√(ωμ/(2ρ))` (`one_add_I_mul_sqrt_sq`: `m² = jωμ/ρ`;
-  `sqrt_omega_tendsto_atTop`, `sqrt_omega_tendsto_zero`).
+  `ray_sector` (`‖m‖ ≤ 2 Re m`); the decay `tendsto_mul_cexp_neg` (`m e^{−mt} → 0` as
+  `Re m → ∞` in a sector); the angular-frequency parametrization `m(ω) = (1 + i)√(ωμ/(2ρ))`
+  (`one_add_I_mul_sqrt_sq`: `m² = jωμ/ρ`).
 
 The second-kind functions `K₀`, `K₁` are in `theorem/SpecialFunctions/BesselK.lean`; the solid
 conductor surface impedance built on `I₀/I₁` is in `theorem/Passive/Line/CableBessel.lean`.
@@ -777,20 +776,6 @@ theorem ray_re_tendsto : Tendsto (fun s : ℝ => ((1 + Complex.I) * (s : ℂ)).r
     ∀ᶠ s : ℝ in l, ‖(1 + Complex.I) * (s : ℂ)‖ ≤ 2 * ((1 + Complex.I) * (s : ℂ)).re :=
   hl.mono fun _ hs => norm_one_add_I_mul_le hs
 
-/-- `(1 + i)s → 0` as `s → 0⁺`. -/
-@[tmio T, powerlib_foundation]
-theorem ray_tendsto_zero : Tendsto (fun s : ℝ => (1 + Complex.I) * (s : ℂ)) (𝓝[>] 0) (𝓝 0) := by
-  have h : Tendsto (fun s : ℝ => (1 + Complex.I) * (s : ℂ)) (𝓝 0) (𝓝 0) := by
-    have hc : Continuous fun s : ℝ => (1 + Complex.I) * (s : ℂ) := by fun_prop
-    simpa using hc.tendsto 0
-  exact h.mono_left nhdsWithin_le_nhds
-
-/-- `Re((1 + i)s) > 0` for `s > 0`. -/
-@[tmio T, powerlib_foundation]
-theorem ray_re_pos : ∀ᶠ s : ℝ in 𝓝[>] 0, 0 < ((1 + Complex.I) * (s : ℂ)).re := by
-  filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s)
-  rw [one_add_I_mul_re]; exact hs
-
 /-- `m e^{−m t} → 0` as `m → ∞` in a sector (`t > 0`). -/
 @[tmio T, powerlib_foundation]
 theorem tendsto_mul_cexp_neg {ι : Type*} {l : Filter ι} {f : ι → ℂ} {t K : ℝ} (ht : 0 < t)
@@ -822,21 +807,5 @@ theorem tendsto_mul_cexp_neg {ι : Type*} {l : Filter ι} {f : ι → ℂ} {t K 
   push_cast
   field_simp
   ring
-
-/-- The physical propagation constant `m(ω) = (1 + i)√(ωμ/(2ρ))` moves along the ray:
-`√(ωμ/(2ρ)) → ∞` as `ω → ∞` (`μ, ρ > 0`). -/
-@[tmio T, powerlib_foundation] theorem sqrt_omega_tendsto_atTop {μ ρ : ℝ} (hμ : 0 < μ)
-    (hρ : 0 < ρ) : Tendsto (fun ω : ℝ => Real.sqrt (ω * μ / (2 * ρ))) atTop atTop :=
-  Real.tendsto_sqrt_atTop.comp ((tendsto_id.atTop_mul_const hμ).atTop_div_const (by positivity))
-
-/-- `√(ωμ/(2ρ)) → 0⁺` as `ω → 0⁺`. -/
-@[tmio T, powerlib_foundation] theorem sqrt_omega_tendsto_zero {μ ρ : ℝ} (hμ : 0 < μ)
-    (hρ : 0 < ρ) : Tendsto (fun ω : ℝ => Real.sqrt (ω * μ / (2 * ρ))) (𝓝[>] 0) (𝓝[>] 0) := by
-  refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-  · have hc : Continuous fun ω : ℝ => Real.sqrt (ω * μ / (2 * ρ)) := by fun_prop
-    have := (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi (0 : ℝ)))
-    simpa using this
-  · filter_upwards [self_mem_nhdsWithin] with ω (hω : 0 < ω)
-    exact Real.sqrt_pos.mpr (by positivity)
 
 end powerlib.SpecialFunctions

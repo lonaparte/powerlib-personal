@@ -18,6 +18,9 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-a
 §2 (number of equilibria per period).
 
 Results.
+* `zerosIco f a T`: the zeros of a function `f` in a window `[a, a + T)`, the zero set counted in
+  this module (`sinusoidZeros`), in `theorem/SpecialFunctions/TrigZeros.lean` and for the PI-PLL
+  equilibria (`PLL.piPLL_ncard_equilibria_window`).
 * `|c| < A`: exactly two zeros (`ncard_sinusoidZeros_of_lt`), `stableRoot` (where the derivative
   `−A cos(θ + φ)` is negative) and `saddleRoot` (where it is positive), and they differ
   (`stableRoot_ne_saddleRoot`).
@@ -37,9 +40,11 @@ noncomputable section
 namespace powerlib.SpecialFunctions
 open Real Set
 
+/-- The zeros of `f` in the window `[a, a + T)`. -/
+def zerosIco (f : ℝ → ℝ) (a T : ℝ) : Set ℝ := {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}
+
 /-- Zeros of `θ ↦ c − A sin(θ + φ)` in the window `[a, a + 2π)`. -/
-def sinusoidZeros (c A φ a : ℝ) : Set ℝ :=
-  {θ | θ ∈ Ico a (a + 2 * π) ∧ c - A * sin (θ + φ) = 0}
+abbrev sinusoidZeros (c A φ a : ℝ) : Set ℝ := zerosIco (fun θ => c - A * sin (θ + φ)) a (2 * π)
 
 /-- The zero with `cos(θ + φ) ≥ 0`, reduced into the window. -/
 def stableRoot (c A φ a : ℝ) : ℝ := toIcoMod two_pi_pos a (arcsin (c / A) - φ)

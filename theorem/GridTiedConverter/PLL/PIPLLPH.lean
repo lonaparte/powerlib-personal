@@ -35,17 +35,16 @@ matrices.
   `gflPH_zeroInputField`: under zero input, the PI-PLL with offset `K_i η*`.
 * `gflPH_output`, `gflPH_supply`, `gflPH_dampingPower`: `y = h(θ)`, `u y = h(θ) u`,
   `∇Hᵀ R ∇H = K_p h(θ)²`. The energy rate `Ḣ = −K_p h(θ)² + h(θ)(δω − K_i η*)` is the PI-PLL's
-  `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLL.lean`), for any local primitive.
-* `gflPH_trajectory_energy` (private): the energy rate along every input/state solution.
+  `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLL.lean`), for any local primitive;
+  along input/state solutions it is the generic `PH.NonlinearModel.trajectory_energy_derivative`.
 * Form-B characteristic `h = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ]`
   (`formBH`, the scaled trigonometric polynomial `SpecialFunctions.trigPoly2 c₀ c₂ c₁ c₄ c₃`), its
   potential (1.4) (`formBPotential`, proved to be a primitive of `−h` and equal to `−∫₀^θ h`), and
   the fact that for `c₀ ≠ 0` the Hamiltonian is **unbounded below**
   (`formBHamiltonian_not_bddBelow`: it lies below a tilted line,
   `Potential.Barrier.not_bddBelow_of_le_tilt`); hence for no constant `c` is `H − c` a nonnegative
-  storage, and passivity cannot be obtained with storage `H − c`
-  (`formB_not_passiveWithStorage`, private). This violates assumption 3 (`H ≥ H_min`) of the parent
-  note `T-ph`, which `T-gfl-ph` §1.2 claims to inherit.
+  storage, which passivity with the storage `H − c` would need. This violates assumption 3
+  (`H ≥ H_min`) of the parent note `T-ph`, which `T-gfl-ph` §1.2 claims to inherit.
 
 Family and connection conclusions.
 No family is defined here (and none may take
@@ -53,10 +52,7 @@ No family is defined here (and none may take
 constant `δω` is the PI-PLL family `PLL.PIPLL.family` (`gflPH_field` identifies the fields). The
 field identities (`gflPH_field`, `gflPH_zeroInputField`), the port quantities and the
 unboundedness of the form-B Hamiltonian
-(`formBHamiltonian_not_bddBelow`) are static evidence on the model, not connection conclusions;
-the energy identity along solutions (`gflPH_trajectory_energy`) and the failure of passivity with
-the particular storages `H − c` (`formB_not_passiveWithStorage`, a statement about one storage,
-not the passivity sentence) are private implementation evidence.
+(`formBHamiltonian_not_bddBelow`) are static evidence on the model, not connection conclusions.
 
 Correction (§1.2): "能量平衡与无源…无需重新证明" — the power balance holds, but passivity with a
 nonnegative storage fails whenever `c₀ ≠ 0`: `H` contains `−c₀ θ / (ω_g C_f)`.
@@ -140,24 +136,6 @@ conclusion. -/
     (gflPHModel h V hV Kp Ki ηs hKp).dampingPower x = Kp * h (x 0) ^ 2 := by
   simp [PH.NonlinearModel.dampingPower, gflPHModel, pllR, PhasePlane.mk, Matrix.mulVec,
     dotProduct, Fin.sum_univ_two, Matrix.diagonal]
-  ring
-
-/-- Along every input/state solution on a time set `s` (input `u(t) = (δω(t))`):
-`d/dt H(x(t)) = −K_p h(θ(t))² + h(θ(t)) δω(t)`.
-Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem gflPH_trajectory_energy {u : ℝ → (Fin 1 → ℝ)}
-    {x : ℝ → State 2} {s : Set ℝ}
-    (hx : IsIntegralCurveOn x (fun t y => (gflPHModel h V hV Kp Ki ηs hKp).field y (u t)) s)
-    {t : ℝ} (ht : t ∈ s) :
-    HasDerivWithinAt (fun τ => (gflPHModel h V hV Kp Ki ηs hKp).H (x τ))
-      (-(Kp * h ((x t) 0) ^ 2) + h ((x t) 0) * u t 0) s t := by
-  have hd := (gflPHModel h V hV Kp Ki ηs hKp).trajectory_energy_derivative hx ht
-  have hu : u t = ![u t 0] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [hu, gflPH_supply, gflPH_dampingPower] at hd
-  convert hd using 1
   ring
 
 /-! ## Form-B characteristic and its potential (T-gfl-ph (1.3)–(1.4)) -/
@@ -267,16 +245,5 @@ Static evidence on the model, not a connection conclusion. -/
   refine Potential.Barrier.not_bddBelow_of_le_tilt (mul_ne_zero hk0 hc₀) hbound ⟨c, ?_⟩
   rintro _ ⟨θ, rfl⟩
   simpa [formBPHModel, PhasePlane.Conservative.separableEnergy] using hc (PhasePlane.mk θ 0)
-
-/-- Consequently no shifted Hamiltonian `H − c` is a nonnegative storage, so the passivity
-statement of `T-ph` (1.4) is not available for the form-B GFL PLL with `c₀ ≠ 0`.
-Implementation evidence: a statement about the particular storages `H − c`, outside the sentence
-language (Rules §3a). -/
-@[tmio TM, powerlib_domain] private theorem formB_not_passiveWithStorage {ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki : ℝ}
-    {hKp : 0 ≤ Kp} (hωC : ωg * Cf ≠ 0) (hc₀ : c₀ ≠ 0) (c : ℝ) :
-    ¬ (formBPHModel ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki hKp).system.PassiveWith
-      (fun x => (formBPHModel ωg Cf c₀ c₁ c₂ c₃ c₄ Kp Ki hKp).H x - c) := by
-  rintro ⟨hnn, -⟩
-  exact formBHamiltonian_not_bddBelow (hKp := hKp) hωC hc₀ ⟨c, fun x => by linarith [hnn x]⟩
 
 end powerlib.PLL

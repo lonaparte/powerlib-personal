@@ -63,7 +63,8 @@ Results.
   (`classicalSM_hamiltonian_not_bddBelow`), while the dissipation inequality
   `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω` holds on every solution segment (the generic
   `PH.NonlinearModel.integral_dissipation` at `classicalSM p`); energy balance `Ḣ = u ω − D ω²`
-  (`classicalSM_power_balance`); equilibria `b sin δ = P_m`, `p = 0`
+  (the generic `PH.NonlinearModel.power_balance`: supply `u y` with `y = ω`, damping power
+  `D ω²` by `classicalSM_dampingPower`); equilibria `b sin δ = P_m`, `p = 0`
   (`classicalSM_isEquilibrium_iff`).
 * Classical machine, local structure of `H`: `H − H(x*)` has a strict local minimum at a stable
   equilibrium `δ* ∈ (−π/2, π/2)`, `b sin δ* = P_m`, `p* = 0` (`classicalSM_isStrictLocalMin`,
@@ -74,10 +75,12 @@ Results.
   fold `cos δ* = 0` the Hamiltonian and the accelerating power (`ClassicalSM.classicalSM_H_fold`;
   `Swing.Pe_fold` at `ClassicalSM.Model.toSwing`).
 * Seven-state machine: the pH field reproduces every rate equation of §1.13
-  (`syncMachine7_field`); the energy balance (`syncMachine7_power_balance`)
+  (`syncMachine7_field`); the energy balance
   `Ḣ = (v_d i_d + v_q i_q + v_f i_f + T_m ω_r) − (r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² +
-  r_kq i_kq² + D ω_r²)`; `H ≥ 0` (`syncMachine7_H_nonneg`); passivity with storage `H`
-  (`SyncMachine7.mem_den_passive`).
+  r_kq i_kq² + D ω_r²)` is the generic `PH.NonlinearModel.power_balance` with port power
+  `syncMachine7_supply` and damping power `syncMachine7_dampingPower` (the speed-voltage and
+  electromagnetic-torque terms cancel in the skew `J`); `H ≥ 0` (`syncMachine7_H_nonneg`);
+  passivity with storage `H` (`SyncMachine7.mem_den_passive`).
 
 Family and connection conclusions.
 * `ClassicalSM.family`: a complete system is the classical machine together with a selected
@@ -224,15 +227,6 @@ def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
   simp [NonlinearModel.dampingPower, classicalSM, classicalSM_dH, Matrix.diagonal_vec2,
     Matrix.vecHead, Matrix.vecTail]
   ring
-
-/-- Energy balance of the classical machine: `Ḣ = u ω − D ω²`. -/
-@[tmio M, powerlib_domain] theorem classicalSM_power_balance (p : ClassicalSMParams) (x : State 2)
-    (u : Fin 1 → ℝ) :
-    fderiv ℝ (classicalSM p).H x ((classicalSM p).field x u) =
-      u 0 * (x 1 / p.M) - p.D * (x 1 / p.M) ^ 2 := by
-  rw [NonlinearModel.power_balance, classicalSM_dampingPower]
-  simp [NonlinearModel.supply, NonlinearModel.output, classicalSM, classicalSM_dH, mulVec,
-    dotProduct, Fin.sum_univ_two]
 
 /-- Correction: the classical-machine Hamiltonian is unbounded below whenever `P_m ≠ 0`,
 so T-ph §1.1 structural assumption 3 fails for (1.12): at `p = 0` it is the tilted washboard
@@ -927,11 +921,6 @@ def syncMachine7_inductance (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
-/-- With `Γ = L⁻¹`, the currents `i = Γ Ψ` satisfy the flux law `Ψ = L i`. -/
-@[tmio T, powerlib_foundation] theorem syncMachine7_flux_eq {L : Matrix (Fin 5) (Fin 5) ℝ} (hL : L.PosDef)
-    (Ψ : Fin 5 → ℝ) : L *ᵥ (L⁻¹ *ᵥ Ψ) = Ψ := by
-  rw [mulVec_mulVec, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hL.det_pos.ne'), one_mulVec]
-
 /-- The storage matrix `blkdiag(Γ, 1/M, 0)` with `H = ½ xᵀ Q x`. -/
 def syncMachine7_Q (p : SyncMachine7Params) : Matrix (Fin 7) (Fin 7) ℝ :=
   Matrix.of fun i j =>
@@ -1047,19 +1036,6 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
   rw [NonlinearModel.supply, NonlinearModel.output, syncMachine7_dH]
   simp [syncMachine7, syncMachine7_g, mulVec, dotProduct, Fin.sum_univ_succ]
   ring
-
-/-- Energy balance of §1.13: `Ḣ = (v_d i_d + v_q i_q + v_f i_f + T_m ω_r) −
-(r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r²)`; the speed-voltage and
-electromagnetic-torque terms cancel. -/
-@[tmio M, powerlib_domain] theorem syncMachine7_power_balance (p : SyncMachine7Params) (x : State 7)
-    (u : Fin 4 → ℝ) :
-    fderiv ℝ (syncMachine7 p).H x ((syncMachine7 p).field x u) =
-      (u 0 * syncMachine7_current p x 0 + u 1 * syncMachine7_current p x 1 +
-        u 2 * syncMachine7_current p x 2 + u 3 * syncMachine7_speed p x) -
-      (p.rs * (syncMachine7_current p x 0 ^ 2 + syncMachine7_current p x 1 ^ 2) +
-        p.rf * syncMachine7_current p x 2 ^ 2 + p.rkd * syncMachine7_current p x 3 ^ 2 +
-        p.rkq * syncMachine7_current p x 4 ^ 2 + p.D * syncMachine7_speed p x ^ 2) := by
-  rw [NonlinearModel.power_balance, syncMachine7_supply, syncMachine7_dampingPower]
 
 /-- `H = ½ Ψᵀ Γ Ψ + p² / (2M)`: magnetic plus kinetic energy, independent of `δ`. -/
 @[tmio M, powerlib_domain] theorem syncMachine7_H (p : SyncMachine7Params) (x : State 7) :

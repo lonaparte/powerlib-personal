@@ -27,8 +27,9 @@ Results.
   the right, `critical_tendsto_zero_of_pos`) and every solution starting at `x₀ < 0` cannot exist
   for a time `1 / |x₀|` (finite-time escape on the left, `critical_escape_of_neg`): the
   equilibrium is semistable.
-* Recovery rate `|f_x(√μ)| = 2√μ` (`recovery_rate`); with the potential `V(x) = −μx + x³/3`
-  (`V' = −f`), the barrier is `V(−√μ) − V(√μ) = (4/3) μ^{3/2}` (`barrier`).
+* Slopes `f_x(±√μ) = ∓2√μ` (`slopes`; the recovery rate on the stable branch is `2√μ`); with
+  the potential `V(x) = −μx + x³/3` (`V' = −f`), the barrier is
+  `V(−√μ) − V(√μ) = (4/3) μ^{3/2}` (`barrier`).
 * One-dimensional `Σ_SN` (`f = f_x = 0`) holds exactly at `μ = 0` (`saddleNodeCondition_iff`).
 
 Potential shapes: the barrier `(4/3) μ^{3/2}` is the local fold form of the tilted-washboard
@@ -91,17 +92,6 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
 @[tmio M, powerlib_foundation] theorem field_neg_sqrt {μ : ℝ} (hμ : 0 ≤ μ) : field μ (-√μ) = 0 :=
   (field_eq_zero_iff μ _).mpr ⟨hμ, Or.inr rfl⟩
 
-/-- Equilibria of the lifted system. -/
-@[tmio M, powerlib_foundation] theorem system_eq_zero_iff (μ : ℝ) (x : State 1) :
-    system μ x = 0 ↔ 0 ≤ μ ∧ (x = embed √μ ∨ x = embed (-√μ)) := by
-  rw [← embed_coord x, system, lift_eq_zero_iff, field_eq_zero_iff, embed_eq_iff, embed_eq_iff]
-
-/-- For `μ < 0` the fold system has no equilibrium. -/
-@[tmio M, powerlib_foundation] theorem no_equilibrium {μ : ℝ} (hμ : μ < 0) (x : State 1) :
-    system μ x ≠ 0 := by
-  rw [Ne, system_eq_zero_iff]
-  exact fun h => absurd h.1 (not_le.mpr hμ)
-
 /-- The equilibrium set of the normal form. -/
 @[tmio M, powerlib_foundation] theorem equilibria_eq (μ : ℝ) :
     {x : ℝ | field μ x = 0} = if μ < 0 then ∅ else {√μ, -√μ} := by
@@ -132,12 +122,6 @@ def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
     Unstable (system μ) (embed (-√μ)) :=
   lift_unstable (field_contDiff μ) (field_neg_sqrt hμ.le)
     (by rw [deriv_field]; have := Real.sqrt_pos.mpr hμ; linarith)
-
-/-- Local recovery rate on the stable branch: `|f_x(√μ)| = 2√μ`. -/
-@[tmio M, powerlib_foundation] theorem recovery_rate (μ : ℝ) :
-    |deriv (field μ) √μ| = 2 * √μ := by
-  rw [deriv_field, abs_of_nonpos (by have := Real.sqrt_nonneg μ; linarith)]
-  ring
 
 /-- Slopes at the two branches: `f_x(±√μ) = ∓2√μ`. -/
 @[tmio M, powerlib_foundation] theorem slopes (μ : ℝ) :

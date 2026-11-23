@@ -54,7 +54,8 @@ Results.
   `D_s` is homogeneous of degree one, i.e. the expanded coefficients satisfy `A + B = 1`
   (the hidden reference distance of a bare logarithm).
 * `ln(r_j/r_sh) + ln(D_e/r_j) = ln(D_e/r_sh)`: `r_j` cancels in `Z₂₂`.
-* Naive ladder ⇒ `η ≡ 1` and no ladder represents a loop matrix with `η ≠ 1`.
+* Naive ladder ⇒ `η ≡ 1` (`ladder_eta_eq_one`; hence no ladder represents a loop matrix with
+  `η ≠ 1`, e.g. a real cable, `η ≈ 10⁻³`).
 * `Z₁₁^ext Y₁ = -ω²μ₀ε₀ε_r` independently of the geometry (lossless dielectric, real `ε_r`).
 * Closed form `I_c(0) D̂ = I_c(ℓ) N̂` (`port_relation`; on the loops' phasor line models
   `Phasor.Params`, `port_relation_phasor`); `R_b = 0` cancellation; `N̂` on `D̂ = 0` and the
@@ -241,14 +242,6 @@ def ladderZ (Zcore Zsh : ℂ) : Matrix (Fin 2) (Fin 2) ℂ := !![Zcore + Zsh, -Z
 @[tmio M, powerlib_domain] theorem ladder_eta_eq_one (Zcore Zsh : ℂ) (h : Zsh ≠ 0) :
     ‖ladderZ Zcore Zsh 0 1 / ladderZ Zcore Zsh 1 1‖ = 1 := by
   simp [ladderZ, neg_div, div_self h]
-
-/-- No naive ladder reproduces a loop matrix with `η ≠ 1` (e.g. a real cable, `η ≈ 10⁻³`). -/
-@[tmio M, powerlib_domain] theorem not_ladder_of_eta_ne_one {Z : Matrix (Fin 2) (Fin 2) ℂ}
-    (hZ : Z 1 1 ≠ 0) (hη : ‖Z 0 1 / Z 1 1‖ ≠ 1) : ¬ ∃ Zcore Zsh, ladderZ Zcore Zsh = Z := by
-  rintro ⟨Zcore, Zsh, rfl⟩
-  apply hη
-  apply ladder_eta_eq_one
-  simpa [ladderZ] using hZ
 
 /-- The ladder's loop-1 entry double-counts the screen branch: `Z₁₁ = Z_core + Z_sh`. -/
 @[tmio M, powerlib_domain] theorem ladder_Z11 (Zcore Zsh : ℂ) :

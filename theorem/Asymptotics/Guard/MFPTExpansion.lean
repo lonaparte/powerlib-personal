@@ -7,13 +7,13 @@ import theorem.Asymptotics.EndpointLaplace
 One-variable real analysis of the explicit MFPT double integral: two-term expansions of
 `T_guard` and of the committed-to-guard ratio, which show that the `O(X^{−1/2})` rates are sharp
 and give the single-term asymptotics as corollaries.
-Nothing here is a stochastic statement (the integral is taken as the definition of the MFPT, as in
-the source note).
+The integral is the Kramers MFPT of the effective radial potential (`guardMFPT_eq`,
+`Asymptotics/Guard/MFPT.lean`); everything here is real analysis of that integral.
 
 Model boundary.
 * Exactly that of `Asymptotics/Guard/MFPT.lean`: truncated subcritical-Hopf potential
   `U(r) = αr²/2 − l₁r⁴/4` (`α, l₁ > 0`), barrier top `r_c = √(α/l₁)`, `ΔU = α²/(4l₁)`,
-  `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT`),
+  `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT`, `guardMFPT_eq`),
   `T_guard = T(r_c)`, `T_committed = T(r_b)` with any `r_b > r_c`,
   `P = guardPrefactor α l₁ D̃ = (√π/2)√(D̃l₁)/α²`, `X = ΔU/D̃`; asymptotic regime `D̃ → 0⁺` at
   fixed `α, l₁, r_b` (equivalently `X → ∞`).
@@ -379,7 +379,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
       ((∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) +
         ∫ y in a..√(α / l₁), guardIntegrand α l₁ D y) /
         (D / α * guardLead α l₁ D) := by
-    rw [← hDQ, guardMFPT, guardRadius, hsplit]
+    rw [← hDQ, guardMFPT_eq, guardRadius, hsplit]
     field_simp
   rw [hT]
   generalize guardLead α l₁ D = W
@@ -471,7 +471,7 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
       ((∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y) +
         ∫ y in √(2 * (α / l₁) - a ^ 2)..rb, guardIntegrand α l₁ D y) /
         (D / α * guardLead α l₁ D) := by
-    rw [← hDQ, guardMFPT, guardMFPT, guardRadius,
+    rw [← hDQ, guardMFPT_eq, guardMFPT_eq, guardRadius,
       ← integral_add_adjacent_intervals (intervalIntegrable_guardIntegrand hl hD hrc.le)
         (intervalIntegrable_guardIntegrand_of_pos hrc (hrc.trans_le (hrcψ.trans hψ))),
       ← integral_add_adjacent_intervals (intervalIntegrable_guardIntegrand_of_pos hrc hψ0)
@@ -785,14 +785,12 @@ relative error is `O(D̃)`. -/
     rw [inv_one] at this
     exact this.isBigO_one ℝ
   refine ((hN.mul hGinv).congr' ?_ ?_)
-  · filter_upwards [self_mem_nhdsWithin,
-      (tendsto_guardMFPT_guard hα hl).eventually (lt_mem_nhds (one_pos : (0 : ℝ) < 1))]
-      with D hD hTD
+  · filter_upwards [self_mem_nhdsWithin] with D hD
     have hD0 : (0 : ℝ) < D := hD
     have hQ : 0 < guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) := by
       unfold guardPrefactor; positivity
-    have hT : guardMFPT α l₁ D (guardRadius α l₁) ≠ 0 := by
-      intro h; rw [h, zero_div] at hTD; exact lt_irrefl _ hTD
+    have hT : guardMFPT α l₁ D (guardRadius α l₁) ≠ 0 :=
+      (guardMFPT_pos hl hD0 (Real.sqrt_pos.mpr (div_pos hα hl))).ne'
     generalize guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) = Q at hQ ⊢
     generalize guardMFPT α l₁ D (guardRadius α l₁) = T at hT ⊢
     field_simp

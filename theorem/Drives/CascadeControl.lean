@@ -44,7 +44,9 @@ Results (drive-model identities).
   converges for every initial error iff `0 < α T_s < 2`
   (`Numerics.eulerFirstOrder_tendsto_zero_iff`, `theorem/Numerics/StabilityFunctions.lean`).
 * `complexVector_iff`: the complex-vector current equation
-  `σL_s di/dt = v − r' i − jω_e σL_s i + e` is the pair of real dq equations of FOC note §1.5.
+  `σL_s di/dt = v − r' i − jω_e σL_s i + e` (the winding equation
+  `Transform.SpaceVector.VoltageEquation` of the flux `σL_s i` driven by `v + e`) is the pair of
+  real dq equations of FOC note §1.5.
 
 Family and connection conclusions.
 * No family of its own: an IMC loop `m : IMCLoop` is read through the converter PI-loop family
@@ -147,16 +149,18 @@ denominator is `J (s² + 2ζω_n s + ω_n²)`. -/
 
 /-! ## Complex-vector form of the stator current equation -/
 
-/-- `σL_s di/dt = v − r' i − jω_e σL_s i + e` (complex) is equivalent to the real pair
+/-- The complex-vector current equation `σL_s di/dt = v − r' i − jω_e σL_s i + e`, i.e. the
+winding equation `SpaceVector.VoltageEquation` (frame speed `ω_e`) of the transient flux
+`σL_s i` driven by `v + e`, is equivalent to the real pair
 `σL_s di_d/dt = v_d − r' i_d + ω_e σL_s i_q + e_d`,
 `σL_s di_q/dt = v_q − r' i_q − ω_e σL_s i_d + e_q` (FOC note §1.5). -/
 @[tmio T, powerlib_foundation] theorem complexVector_iff (σL r' ωe : ℝ) (i di v e : ℂ) :
-    (σL : ℂ) * di = v - r' * i - Complex.I * ωe * σL * i + e ↔
+    Transform.SpaceVector.VoltageEquation r' ωe (v + e) i (σL * i) (σL * di) ↔
       σL * di.re = v.re - r' * i.re + ωe * σL * i.im + e.re ∧
       σL * di.im = v.im - r' * i.im - ωe * σL * i.re + e.im := by
-  rw [Complex.ext_iff]
-  simp only [Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.sub_re,
-    Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
+  rw [Transform.SpaceVector.voltageEquation_iff]
+  simp only [Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
+    Complex.ofReal_im]
   constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
 
 end powerlib.Drives.CascadeControl

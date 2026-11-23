@@ -48,11 +48,13 @@ Results.
   state matrix is spectrally stable. Proof: in the coordinates `ξ_a = ΔP_C,a − K_I,a M_a Δω_a`
   the tie-line flows drop out of the AGC rows (`netXi_mulVec`: `ξ̇ = K_I (g − B) Δω − K_I ξ`,
   `g = D + K_R − K_I M ≥ 0`); the storage
-  `E = Σ M Δω² + Σ ΔP_tie²/(ω_s T) + Σ ξ²/(K_I (g + B))` (`netEnergy`) has
+  `E = Σ M Δω² + Σ ΔP_tie²/(ω_s T) + Σ ξ²/(K_I (g + B))` (`netEnergy`) is the quadratic form of
+  the symmetric matrix `netP` (`netEnergy_eq_dotProduct`, `netP_transpose`) and has
   `E(z, A z) = −Σ ((ξ − g Δω)² + g B Δω²)/(g + B)` for every state `z` (`netEnergy_mulVec`, the
-  tie-line terms cancel by `𝓑`/`𝓑ᵀ` duality); a real eigen-pair with nonnegative real part
-  (`LTI.spectrallyStable_of_real_pairs`) must then have `ξ = 0`, `Δω = 0` (AGC rows), zero net
-  exports (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`:
+  tie-line terms cancel by `𝓑`/`𝓑ᵀ` duality); by the semidefinite-dissipation law
+  `Criteria.re_neg_of_lyapunov_observable` a real eigen-pair with nonnegative real part
+  dissipates nothing, so it has `ξ = 0`, `Δω = 0` (AGC rows), zero net exports (frequency rows)
+  and zero line flows (trivial kernel). `plant_A_eq_reindex`:
   the five-state two-area matrix of `Frequency.LFC` is this matrix for two areas and one line
   (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it Hurwitz (`mem_den_of_gain`).
   Only sufficiency is claimed (the exact two-area condition would be the fifth-order
@@ -402,7 +404,8 @@ def netGap (area : α → Area) (a : α) : ℝ := (area a).D + (area a).K - (are
 def netXi (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) (a : α) : ℝ :=
   z (.inr (.inr a)) - (area a).KI * (area a).M * z (.inl a)
 
-/-- Bilinear storage `Σ M ω ω' + Σ P P'/(ω_s T) + Σ ξ ξ'/(K_I (g + B))`. -/
+/-- Bilinear storage `Σ M ω ω' + Σ P P'/(ω_s T) + Σ ξ ξ'/(K_I (g + B))`, the form of the symmetric
+matrix `netP` (`netEnergy_eq_dotProduct`). -/
 def netEnergy (area : α → Area) (ωs : ℝ) (T : β → ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
   (∑ a, (area a).M * z₁ (.inl a) * z₂ (.inl a)) +
     (∑ ℓ, z₁ (.inr (.inl ℓ)) * z₂ (.inr (.inl ℓ)) / (ωs * T ℓ)) +
@@ -412,6 +415,41 @@ def netEnergy (area : α → Area) (ωs : ℝ) (T : β → ℝ) (z₁ z₂ : α 
 def netDiss (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
   ∑ a, ((netXi area z a - netGap area a * z (.inl a)) ^ 2 +
     netGap area a * (area a).B * z (.inl a) ^ 2) / (netGap area a + (area a).B)
+
+/-- Row of the AGC deviation: `z ⬝ᵥ netXiRow area a = netXi area z a`. -/
+def netXiRow (area : α → Area) (a : α) : α ⊕ (β ⊕ α) → ℝ :=
+  Sum.elim (Pi.single a (-((area a).KI * (area a).M))) (Sum.elim 0 (Pi.single a 1))
+
+/-- The storage as a symmetric matrix (`netEnergy_eq_dotProduct`): the weights `M_a` and
+`1/(ω_s T_ℓ)` on the diagonal plus the rank-one terms `ξ_a ξ_a/(K_I,a (g_a + B_a))`. -/
+def netP [DecidableEq β] (area : α → Area) (ωs : ℝ) (T : β → ℝ) :
+    Matrix (α ⊕ (β ⊕ α)) (α ⊕ (β ⊕ α)) ℝ :=
+  diagonal (Sum.elim (fun a => (area a).M) (Sum.elim (fun ℓ => 1 / (ωs * T ℓ)) 0)) +
+    ∑ a, (1 / ((area a).KI * (netGap area a + (area a).B))) •
+      vecMulVec (netXiRow area a) (netXiRow area a)
+
+@[tmio M, powerlib_domain] theorem dotProduct_netXiRow (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+    z ⬝ᵥ netXiRow area a = netXi area z a := by
+  simp [netXiRow, netXi, dotProduct, Fintype.sum_sum_type, Pi.single_apply]
+  ring
+
+omit [Fintype β] in
+@[tmio M, powerlib_domain] theorem netP_transpose [DecidableEq β] :
+    (netP area ωs T)ᵀ = netP area ωs T := by
+  simp [netP, transpose_sum, transpose_vecMulVec]
+
+/-- The storage is the quadratic form of `netP`; in particular it is bilinear and symmetric. -/
+@[tmio M, powerlib_domain] theorem netEnergy_eq_dotProduct [DecidableEq β]
+    (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+    netEnergy area ωs T z₁ z₂ = z₁ ⬝ᵥ (netP area ωs T *ᵥ z₂) := by
+  rw [netP, add_mulVec, sum_mulVec, dotProduct_add, dotProduct_sum]
+  simp only [smul_mulVec, vecMulVec_mulVec, dotProduct_smul, dotProduct_netXiRow,
+    dotProduct_comm (netXiRow area _) z₂, op_smul_eq_mul, smul_eq_mul]
+  simp only [netEnergy, dotProduct, mulVec_diagonal, Fintype.sum_sum_type, Sum.elim_inl,
+    Sum.elim_inr, Pi.zero_apply, zero_mul, mul_zero, Finset.sum_const_zero, add_zero]
+  congr 1
+  · congr 1 <;> exact Finset.sum_congr rfl fun _ _ => by ring
+  · exact Finset.sum_congr rfl fun _ _ => by ring
 
 @[tmio M, powerlib_domain] theorem netA_mulVec_freq (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
     (netA area ωs T 𝓑 *ᵥ z) (.inl a) =
@@ -466,50 +504,6 @@ def netDiss (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
   generalize netGap area a = g at hgB' ⊢
   field_simp
   ring
-
-omit [Fintype α] [DecidableEq α] [Fintype β] in
-@[tmio M, powerlib_domain] theorem netXi_combo (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
-    netXi area (c • z₁ + d • z₂) a = c * netXi area z₁ a + d * netXi area z₂ a := by
-  simp only [netXi, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-  ring
-
-omit [DecidableEq α] in
-/-- The storage is linear in its second argument. -/
-@[tmio M, powerlib_domain] theorem netEnergy_combo (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
-    netEnergy area ωs T z (c • z₁ + d • z₂) =
-      c * netEnergy area ωs T z z₁ + d * netEnergy area ωs T z z₂ := by
-  unfold netEnergy
-  simp only [netXi_combo, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-  have h1 : (∑ a, (area a).M * z (.inl a) * (c * z₁ (.inl a) + d * z₂ (.inl a))) =
-      c * (∑ a, (area a).M * z (.inl a) * z₁ (.inl a)) +
-        d * ∑ a, (area a).M * z (.inl a) * z₂ (.inl a) := by
-    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun _ _ => by ring
-  have h2 : (∑ ℓ, z (.inr (.inl ℓ)) * (c * z₁ (.inr (.inl ℓ)) + d * z₂ (.inr (.inl ℓ))) /
-      (ωs * T ℓ)) = c * (∑ ℓ, z (.inr (.inl ℓ)) * z₁ (.inr (.inl ℓ)) / (ωs * T ℓ)) +
-        d * ∑ ℓ, z (.inr (.inl ℓ)) * z₂ (.inr (.inl ℓ)) / (ωs * T ℓ) := by
-    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun _ _ => by ring
-  have h3 : (∑ a, netXi area z a * (c * netXi area z₁ a + d * netXi area z₂ a) /
-      ((area a).KI * (netGap area a + (area a).B))) =
-      c * (∑ a, netXi area z a * netXi area z₁ a / ((area a).KI * (netGap area a + (area a).B))) +
-        d * ∑ a, netXi area z a * netXi area z₂ a /
-          ((area a).KI * (netGap area a + (area a).B)) := by
-    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun _ _ => by ring
-  rw [h1, h2, h3]
-  ring
-
-omit [DecidableEq α] in
-/-- The storage is symmetric. -/
-@[tmio M, powerlib_domain] theorem netEnergy_comm (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
-    netEnergy area ωs T z₁ z₂ = netEnergy area ωs T z₂ z₁ := by
-  simp only [netEnergy]
-  congr 1
-  · congr 1
-    · exact Finset.sum_congr rfl fun a _ => by ring
-    · exact Finset.sum_congr rfl fun ℓ _ => by ring
-  · exact Finset.sum_congr rfl fun a _ => by ring
 
 omit [DecidableEq α] in
 /-- The storage is nonnegative under positive inertia, AGC gain, `g + B` and line coefficients. -/
@@ -587,24 +581,22 @@ strength and every radial topology. -/
   have hg : ∀ a, 0 ≤ netGap area a := fun a => by unfold netGap; linarith [hgain a]
   have hgB : ∀ a, 0 < netGap area a + (area a).B := fun a => add_pos_of_nonneg_of_pos (hg a) (hB a)
   have hM0 : ∀ a, (area a).M ≠ 0 := fun a => (hM a).ne'
-  refine LTI.spectrallyStable_of_real_pairs _ fun x y u v hu hv hx => ?_
-  have hEu := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
-    (fun ℓ => (hw ℓ).ne') u
-  have hEv := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
-    (fun ℓ => (hw ℓ).ne') v
-  rw [hu, sub_eq_add_neg (x • u), ← neg_smul, netEnergy_combo] at hEu
-  rw [hv, netEnergy_combo] at hEv
-  have hcomm := netEnergy_comm (area := area) (ωs := ωs) (T := T) u v
-  have hNu := netEnergy_nonneg (fun a => (hM a).le) hK hgB hw u
-  have hNv := netEnergy_nonneg (fun a => (hM a).le) hK hgB hw v
-  have hDu : 0 ≤ netDiss area u := Finset.sum_nonneg fun a _ => netDiss_term_nonneg hg hB u a
-  have hDv : 0 ≤ netDiss area v := Finset.sum_nonneg fun a _ => netDiss_term_nonneg hg hB v a
-  have hsum : x * (netEnergy area ωs T u u + netEnergy area ωs T v v) =
-      -(netDiss area u + netDiss area v) := by linear_combination hEu + hEv + y * hcomm
-  have hxE : 0 ≤ x * (netEnergy area ωs T u u + netEnergy area ωs T v v) :=
-    mul_nonneg hx (add_nonneg hNu hNv)
-  have hDu0 : netDiss area u = 0 := by linarith
-  have hDv0 : netDiss area v = 0 := by linarith
+  -- the storage `netP` dissipates `netDiss ≥ 0` along the state matrix (energy identity)
+  have hE : ∀ z, z ⬝ᵥ (netP area ωs T *ᵥ (netA area ωs T 𝓑 *ᵥ z)) = -netDiss area z := fun z => by
+    rw [← netEnergy_eq_dotProduct, netEnergy_mulVec hM0 (fun a => (hK a).ne')
+      (fun a => (hgB a).ne') (fun ℓ => (hw ℓ).ne')]
+  have hD : ∀ z : α ⊕ (β ⊕ α) → ℝ, 0 ≤ netDiss area z := fun z =>
+    Finset.sum_nonneg fun a _ => netDiss_term_nonneg hg hB z a
+  -- an eigen-pair with `Re ≥ 0` dissipates nothing (`Criteria.re_neg_of_lyapunov_observable`)
+  refine Linear.spectrallyStable_iff_forall_eigen.mpr fun s w hw0 heig =>
+    Criteria.re_neg_of_lyapunov_observable (netP_transpose (area := area) (ωs := ωs) (T := T))
+      (fun z => ?_) (fun z => ?_)
+      (fun x y u v hu hv _ hEu hEv => ?_) hw0 heig
+  · rw [← netEnergy_eq_dotProduct]
+    exact netEnergy_nonneg (fun a => (hM a).le) hK hgB hw z
+  · linarith [hE z, hD z]
+  have hDu0 : netDiss area u = 0 := by linarith [hE u]
+  have hDv0 : netDiss area v = 0 := by linarith [hE v]
   -- every area: `ω = 0` and `ξ = 0`
   have hω : ∀ a, u (.inl a) = 0 ∧ v (.inl a) = 0 := by
     intro a
@@ -614,8 +606,10 @@ strength and every radial topology. -/
     have gv := netGap_mul_eq_zero_of_netDiss_eq_zero hg hB hDv0 a
     have ru := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 u a
     have rv := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 v a
-    rw [hu, sub_eq_add_neg (x • u), ← neg_smul, netXi_combo, xu, xv] at ru
-    rw [hv, netXi_combo, xu, xv] at rv
+    rw [hu, ← dotProduct_netXiRow, sub_dotProduct, smul_dotProduct, smul_dotProduct,
+      dotProduct_netXiRow, dotProduct_netXiRow, xu, xv] at ru
+    rw [hv, ← dotProduct_netXiRow, add_dotProduct, smul_dotProduct, smul_dotProduct,
+      dotProduct_netXiRow, dotProduct_netXiRow, xu, xv] at rv
     have hKB : (area a).KI * (area a).B ≠ 0 := (mul_pos (hK a) (hB a)).ne'
     constructor
     · have : (area a).KI * (area a).B * u (.inl a) = 0 := by

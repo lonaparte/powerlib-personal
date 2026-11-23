@@ -28,12 +28,11 @@ Results (and the premises the note leaves implicit).
   `coi_damping_counterexample` shows the damping step fails without such a premise.
 * `droop_aggregate` (§1.3): with one common `T_g`, the aggregate `ΔP_m = Σ ΔP_m,k` obeys
   `T_g ΔṖ_m = −ΔP_m − (Σ K_R,k) Δω`.
-* `virtualInertia_merge`, `virtualInertia_rate` (§1.4, `T-synthetic-inertia-ffr.md` §1.3):
-  linear inertia/damping injections `−K_d Δω̇ − K_R^inv Δω` merge into `M_eff`, `D_eff`; solving
-  for `Δω̇` needs `M_eff ≠ 0`.
+* `virtualInertia_merge` (§1.4, `T-synthetic-inertia-ffr.md` §1.3): linear inertia/damping
+  injections `−K_d Δω̇ − K_R^inv Δω` merge into `M_eff`, `D_eff`.
 * `kineticEnergy_expansion` (`T-synthetic-inertia-ffr.md` §1.2): exact
   `½ J (ω_s + Δω)² = ½ J ω_s² + J ω_s Δω + ½ J Δω²`; the note's "≈" drops the remainder
-  `½ J Δω²` (`kineticEnergy_remainder_nonneg`).
+  `½ J Δω²`.
 * `activePower_abs_le` (`T-synthetic-inertia-ffr.md` §1.3): from `S̄ = 3 V̄ Ī*`
   (`|V_LL| = √3 |V̄|`), a current limit `|Ī| ≤ i_max` bounds the **total** active power,
   `|P| ≤ |S̄| ≤ √3 V_LL i_max`.
@@ -127,11 +126,6 @@ merge into `M_eff = M_sys + Σ K_d,j`, `D_eff = D_sys + Σ K_R,j`. -/
   simp only [Finset.sum_neg_distrib, neg_mul] at hswing
   linarith
 
-/-- §1.4 solved for the frequency rate; this needs `M_eff ≠ 0`. -/
-@[tmio M, powerlib_domain] theorem virtualInertia_rate {Meff Deff Pm PL w w' : ℝ} (hM : Meff ≠ 0)
-    (h : Meff * w' = Pm - PL - Deff * w) : w' = (Pm - PL - Deff * w) / Meff := by
-  rw [eq_div_iff hM, mul_comm, h]
-
 /-! ## Kinetic energy (`T-synthetic-inertia-ffr.md` §1.2) -/
 
 /-- Exact expansion of `½ J ω²` around `ω_s`; the remainder `½ J Δω²` is what the note's
@@ -139,12 +133,6 @@ linear approximation drops. -/
 @[tmio M, powerlib_domain] theorem kineticEnergy_expansion (J ωs Δω : ℝ) :
     J * (ωs + Δω) ^ 2 / 2 = J * ωs ^ 2 / 2 + J * ωs * Δω + J * Δω ^ 2 / 2 := by
   ring
-
-/-- The released energy `½J(ω_s + Δω)² − ½Jω_s² − Jω_sΔω` equals `½JΔω² ≥ 0` (`J ≥ 0`). -/
-@[tmio M, powerlib_domain] theorem kineticEnergy_remainder_nonneg {J : ℝ} (hJ : 0 ≤ J) (ωs Δω : ℝ) :
-    0 ≤ J * (ωs + Δω) ^ 2 / 2 - (J * ωs ^ 2 / 2 + J * ωs * Δω) := by
-  have : J * (ωs + Δω) ^ 2 / 2 - (J * ωs ^ 2 / 2 + J * ωs * Δω) = J * Δω ^ 2 / 2 := by ring
-  rw [this]; positivity
 
 /-! ## Current-limited active power (`T-synthetic-inertia-ffr.md` §1.3) -/
 
