@@ -282,23 +282,18 @@ theorem forwardComplete {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ
   exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr c.rate_pos.le)
     ((mul_nonneg c.lower_pos.le (sq_nonneg _)).trans (c.lower_bound x))
 
-/-- The certificate proves global exponential stability. -/
-@[tmio T, powerlib_foundation, aesop unsafe 80% apply]
-theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
-    (c : QuadraticDecay f V e)
-    (hf : ContDiff ℝ 1 f) : GloballyExponentiallyStable f e :=
-  ⟨c.equilibrium, c.forwardComplete hf, max 1 (Real.sqrt (c.upper / c.lower)), c.rate / 2,
-    le_max_left _ _, half_pos c.rate_pos, fun _ _ _ hφ _ ht =>
-      (norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos c.lower_bound c.upper_bound
-        c.dissipation hφ ht).trans
-      (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_right _ _)
-        (Real.exp_nonneg _)) (norm_nonneg _))⟩
-
 /-- The certificate proves decay at half its energy rate. -/
 @[tmio T, powerlib_foundation] theorem decay {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) : Decay f e (c.rate / 2) :=
   ⟨_, fun _ _ _ hφ _ ht => norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos
     c.lower_bound c.upper_bound c.dissipation hφ ht⟩
+
+/-- The certificate proves global exponential stability. -/
+@[tmio T, powerlib_foundation, aesop unsafe 80% apply]
+theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+    (c : QuadraticDecay f V e)
+    (hf : ContDiff ℝ 1 f) : GloballyExponentiallyStable f e :=
+  ⟨c.equilibrium, c.forwardComplete hf, c.rate / 2, half_pos c.rate_pos, c.decay⟩
 
 end QuadraticDecay
 

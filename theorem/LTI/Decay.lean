@@ -95,7 +95,8 @@ linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
     (hA : IsHurwitz A) :
     ∃ K > 0, ∃ rate > 0, ∀ e : ℝ → ℝⁿ, (∀ t, HasDerivAt e (Linear.op A (e t)) t) →
       ∀ t, 0 ≤ t → ‖e t‖ ≤ K * Real.exp (-(rate * t)) * ‖e 0‖ := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := Linear.globallyExponentiallyStable_of_isHurwitz (0 : ℝⁿ) hA
+  obtain ⟨C, a, hC, ha, hb⟩ :=
+    (Linear.globallyExponentiallyStable_of_isHurwitz (0 : ℝⁿ) hA).exists_constant
   refine ⟨C, by linarith, a, ha, fun e he t ht => ?_⟩
   have htraj : IsTrajectoryOn e (affineLinearVectorField A 0) 0 t := fun s _ => by
     simpa [Linear.affine_apply] using (he s).hasDerivWithinAt
@@ -111,8 +112,7 @@ linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
   refine (Linear.holds_iff_isHurwitz (0 : ℝⁿ)
     Flow.Property.attractive_globallyExponentiallyStable).mp ?_
   show Flow.GloballyExponentiallyStable _ _
-  refine ⟨Linear.affine_isEquilibrium A 0, Linear.forwardComplete A 0, max K 1, rate,
-    le_max_right _ _, hrate, ?_⟩
+  refine ⟨Linear.affine_isEquilibrium A 0, Linear.forwardComplete A 0, rate, hrate, K, ?_⟩
   intro t₀ t₁ φ hφ t ht
   have heq := Linear.trajectory_eq_solution hφ t ht
   set ψ : ℝ → ℝⁿ := fun s => Linear.solution A 0 t₀ (φ t₀) (s + t₀) with hψdef
@@ -125,9 +125,7 @@ linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
   have hbound := hb ψ hψ (t - t₀) (by linarith [ht.1])
   rw [hψt, hψ0] at hbound
   simp only [sub_zero]
-  calc ‖φ t‖ ≤ K * Real.exp (-(rate * (t - t₀))) * ‖φ t₀‖ := hbound
-    _ ≤ max K 1 * Real.exp (-rate * (t - t₀)) * ‖φ t₀‖ := by
-      rw [neg_mul]; gcongr; exact le_max_left _ _
+  rwa [neg_mul]
 
 end Euclidean
 

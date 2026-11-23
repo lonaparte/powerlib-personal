@@ -573,7 +573,9 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change ¬ Flow.GloballyExponentiallyStable y.field 0
-  rintro ⟨-, hfc, C, a, hC, ha, hest⟩
+  intro hges
+  obtain ⟨C, a, hC, ha, hest⟩ := hges.exists_constant
+  have hfc := hges.2.1
   have hT : 0 ≤ Real.log (2 * C) / a := div_nonneg (Real.log_nonneg (by linarith)) ha.le
   set T := Real.log (2 * C) / a with hTdef
   have hCT : C * Real.exp (-a * T) = 1 / 2 := by

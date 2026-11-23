@@ -21,12 +21,13 @@ Lyapunov stability, local asymptotic and local exponential stability, instabilit
 LeanForControl's definitions, reused unchanged; Mathlib's `IsIntegralCurveOn`.
 
 Results.
+* A decay rate on every solution segment (`Decay`).
 * The two global notions are defined here because they also assert that every solution exists
-  for all forward time: `ForwardComplete`, `GloballyExponentiallyStable`,
-  `GloballyAsymptoticallyStable`.
-* Three further notions complete the sentence language: a decay rate on every solution segment
-  (`Decay`), contraction of solutions sampled at an integer horizon (`SampledContraction`), and
-  conservation of an energy with a strict minimum at the equilibrium (`Conservative`).
+  for all forward time: `ForwardComplete`, `GloballyExponentiallyStable` (decay at some positive
+  rate), `GloballyAsymptoticallyStable`.
+* Two further notions complete the sentence language: contraction of solutions sampled at an
+  integer horizon (`SampledContraction`), and conservation of an energy with a strict minimum at
+  the equilibrium (`Conservative`).
 * The region of attraction of an equilibrium, a set of initial states outside the sentence
   language (`regionOfAttraction`).
 * The sentences `Property` and their interpretation `Property.holds`, fixed once; the sentences
@@ -49,23 +50,21 @@ def ForwardComplete (f : ℝⁿ → ℝⁿ) : Prop :=
   ∀ (t₀ : ℝ) (x₀ : ℝⁿ), ∃ φ : ℝ → ℝⁿ,
     φ t₀ = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici t₀)
 
-/-- Global exponential stability: an equilibrium, a solution through every state, and one
-exponential estimate on every solution segment. -/
-def GloballyExponentiallyStable (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) : Prop :=
-  IsEquilibrium f x_eq ∧ ForwardComplete f ∧
-    ∃ C a : ℝ, 1 ≤ C ∧ 0 < a ∧ ∀ (t₀ t₁ : ℝ) (φ : ℝ → ℝⁿ), IsTrajectoryOn φ f t₀ t₁ →
-      ∀ t ∈ Icc t₀ t₁, ‖φ t - x_eq‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x_eq‖
-
-/-- Global asymptotic stability, including a solution through every state. -/
-def GloballyAsymptoticallyStable (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) : Prop :=
-  IsEquilibrium f x_eq ∧ ForwardComplete f ∧ GlobalAsymptoticStable f x_eq
-
 /-- Decay at the rate `a`: one constant `C` bounds every solution segment by
 `C e^{-a (t - t₀)}` times its initial distance to the equilibrium. A negative rate bounds the
 growth. -/
 def Decay (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) (a : ℝ) : Prop :=
   ∃ C : ℝ, ∀ (t₀ t₁ : ℝ) (φ : ℝ → ℝⁿ), IsTrajectoryOn φ f t₀ t₁ →
     ∀ t ∈ Icc t₀ t₁, ‖φ t - x_eq‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x_eq‖
+
+/-- Global exponential stability: an equilibrium, a solution through every state, and decay at
+some positive rate. -/
+def GloballyExponentiallyStable (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) : Prop :=
+  IsEquilibrium f x_eq ∧ ForwardComplete f ∧ ∃ a > 0, Decay f x_eq a
+
+/-- Global asymptotic stability, including a solution through every state. -/
+def GloballyAsymptoticallyStable (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) : Prop :=
+  IsEquilibrium f x_eq ∧ ForwardComplete f ∧ GlobalAsymptoticStable f x_eq
 
 /-- The region of attraction of `x_eq`: the initial states from which a solution exists on the
 whole forward ray and every such solution converges to `x_eq`. It is a set of states, not a

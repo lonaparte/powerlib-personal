@@ -14,6 +14,8 @@ Results.
 * `Map.LyapunovStable.fixed`: a Lyapunov stable point is fixed.
 * `Map.LocallyExponentiallyStable.lyapunovStable`, `.localAsymptoticStable`: geometric decay
   gives Lyapunov and local asymptotic stability.
+* `Map.GloballyExponentiallyStable.exists_constant`: a positive decay rate `a` gives the geometric
+  estimate `C ρ^k` with `C ≥ 1` and `ρ = e^{-a} < 1`.
 * `Map.GloballyExponentiallyStable.locallyExponentiallyStable`, `.globallyAsymptoticallyStable`,
   `.sampledContraction`: a global geometric estimate gives the local one, global asymptotic
   stability and sampled contraction (the discrete counterparts of `theorem/Flow/Basic.lean`).
@@ -78,11 +80,23 @@ open Filter Topology
     simpa using this.mul_const ‖y - x‖
   exact squeeze_zero (fun _ => norm_nonneg _) (fun k => hb y hy k) hlim
 
+/-- Global exponential stability gives one geometric estimate `C ρ^k`, `0 ≤ ρ < 1`, on every orbit
+with an overshoot constant `C ≥ 1` (`ρ = e^{-a}` for the decay rate `a`). -/
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.exists_constant {F : ℝⁿ → ℝⁿ}
+    {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
+    ∃ C ρ : ℝ, 1 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ y (k : ℕ), ‖F^[k] y - x‖ ≤ C * ρ ^ k * ‖y - x‖ := by
+  obtain ⟨-, a, ha, C, hb⟩ := h
+  refine ⟨max C 1, Real.exp (-a), le_max_right _ _, (Real.exp_pos _).le,
+    Real.exp_lt_one_iff.mpr (by linarith), fun y k => (hb y k).trans ?_⟩
+  rw [← Real.exp_nat_mul, mul_comm (k : ℝ)]
+  gcongr
+  exact le_max_left _ _
+
 /-- A global geometric estimate is in particular a local one. -/
 @[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
     {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
     LocallyExponentiallyStable F x := by
-  obtain ⟨-, C, ρ, hC, hρ0, hρ1, hb⟩ := h
+  obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := h.exists_constant
   exact ⟨1, C, ρ, one_pos, hC, hρ0, hρ1, fun y _ k => hb y k⟩
 
 /-- A global geometric estimate gives global asymptotic stability. -/
@@ -90,7 +104,7 @@ open Filter Topology
     {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
     GloballyAsymptoticallyStable F x := by
   refine ⟨h.1, h.locallyExponentiallyStable.lyapunovStable, fun y => ?_⟩
-  obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
+  obtain ⟨C, ρ, -, hρ0, hρ1, hb⟩ := h.exists_constant
   rw [tendsto_iff_norm_sub_tendsto_zero]
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k * ‖y - x‖) atTop (𝓝 0) := by
     have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
@@ -101,7 +115,7 @@ open Filter Topology
 by `ρ^k`. -/
 @[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {F : ℝⁿ → ℝⁿ}
     {x : ℝⁿ} (h : GloballyExponentiallyStable F x) : SampledContraction F x := by
-  obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
+  obtain ⟨C, ρ, -, hρ0, hρ1, hb⟩ := h.exists_constant
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
   obtain ⟨k, hk⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (gt_mem_nhds one_pos))).exists

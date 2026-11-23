@@ -221,9 +221,8 @@ exponentials `e^{-b t}`. -/
     {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     (h : LocallyExponentiallyStable (affineLinearVectorField A e) e) :
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e := by
-  obtain ⟨r, C, a, hr, hC, ha, hb⟩ := h
-  refine ⟨affine_isEquilibrium A e, forwardComplete A e, C, a, hC, ha,
-    fun t₀ t₁ φ hφ t ht => ?_⟩
+  obtain ⟨r, C, a, hr, -, ha, hb⟩ := h
+  refine ⟨affine_isEquilibrium A e, forwardComplete A e, a, ha, C, fun t₀ t₁ φ hφ t ht => ?_⟩
   have hd : 0 ≤ ‖φ t₀ - e‖ := norm_nonneg _
   have hc : 0 < r / (2 * (‖φ t₀ - e‖ + 1)) := by positivity
   have hstart : ‖(e + (r / (2 * (‖φ t₀ - e‖ + 1))) • (φ t₀ - e)) - e‖ < r := by

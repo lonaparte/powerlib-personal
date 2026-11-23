@@ -26,9 +26,10 @@ counterparts; Mathlib's iterates `F^[k]`.
 
 Results.
 * The notions are the discrete counterparts of the flow notions: Lyapunov stability, local
-  asymptotic and local exponential (geometric) stability, their global versions, instability,
-  decay at a rate per step, contraction over some number of steps, and conservation of an energy
-  with a strict minimum (`Map.LyapunovStable`, `Map.LocalAsymptoticStable`,
+  asymptotic and local exponential (geometric) stability, their global versions (global
+  exponential stability is decay at some positive rate), instability, decay at a rate per step,
+  contraction over some number of steps, and conservation of an energy with a strict minimum
+  (`Map.LyapunovStable`, `Map.LocalAsymptoticStable`,
   `Map.LocallyExponentiallyStable`, `Map.GloballyAsymptoticallyStable`,
   `Map.GloballyExponentiallyStable`, `Map.Unstable`, `Map.Decay`, `Map.SampledContraction`,
   `Map.Conservative`).
@@ -71,18 +72,17 @@ def LocallyExponentiallyStable (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) : Prop :=
 def GloballyAsymptoticallyStable (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) : Prop :=
   F x = x ∧ LyapunovStable F x ∧ ∀ y, Tendsto (fun k : ℕ => F^[k] y) atTop (𝓝 x)
 
-/-- Global exponential stability: a fixed point and one geometric estimate on every orbit. -/
-def GloballyExponentiallyStable (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) : Prop :=
-  F x = x ∧ ∃ C ρ : ℝ, 1 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧
-    ∀ y (k : ℕ), ‖F^[k] y - x‖ ≤ C * ρ ^ k * ‖y - x‖
-
-/-- Instability is the failure of Lyapunov stability. -/
-def Unstable (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) : Prop := ¬ LyapunovStable F x
-
 /-- Decay at the rate `a` per step: one constant `C` bounds every orbit by `C e^{-a k}` times its
 initial distance to `x`. A negative rate bounds the growth. -/
 def Decay (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) (a : ℝ) : Prop :=
   ∃ C : ℝ, ∀ y (k : ℕ), ‖F^[k] y - x‖ ≤ C * Real.exp (-a * k) * ‖y - x‖
+
+/-- Global exponential stability: a fixed point and decay at some positive rate per step. -/
+def GloballyExponentiallyStable (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) : Prop :=
+  F x = x ∧ ∃ a > 0, Decay F x a
+
+/-- Instability is the failure of Lyapunov stability. -/
+def Unstable (F : ℝⁿ → ℝⁿ) (x : ℝⁿ) : Prop := ¬ LyapunovStable F x
 
 /-- Sampled contraction: over some positive number of steps every state ends closer to `x` by a
 fixed factor below one. -/

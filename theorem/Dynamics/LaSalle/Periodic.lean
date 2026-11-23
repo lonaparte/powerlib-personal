@@ -315,7 +315,7 @@ every solution segment of `F` starting in `L` approaches `O` exponentially, with
     ∃ C a : ℝ, 0 ≤ C ∧ 0 < a ∧ ∀ (t₀ t₁ : ℝ) (X : ℝ → State N), IsTrajectoryOn X F t₀ t₁ →
       X t₀ ∈ L → ∀ t ∈ Icc t₀ t₁,
         infDist (X t) O ≤ C * Real.exp (-a * (t - t₀)) * ‖red (X t₀) - x‖ := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := hf
+  obtain ⟨C, a, hC, ha, hb⟩ := hf.exists_constant
   refine ⟨A * C, a, mul_nonneg hA (by linarith), ha, fun t₀ t₁ X hX hX0 t ht => ?_⟩
   obtain ⟨hr, hL⟩ := hred t₀ t₁ X hX hX0
   have h1 := hO (X t) (hL t ht)

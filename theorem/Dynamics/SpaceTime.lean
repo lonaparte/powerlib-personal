@@ -290,12 +290,9 @@ include hc
 @[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_of_spaceTime
     (h : Flow.GloballyExponentiallyStable (c • transportField T b f) (affineCoord T b x)) :
     Flow.GloballyExponentiallyStable f x := by
-  obtain ⟨heq, hfc, C, a, hC, ha, hdecay⟩ := h
+  obtain ⟨heq, hfc, a, ha, hd⟩ := h
   exact ⟨(isEquilibrium_spaceTime_iff hc T b).mp heq, forwardComplete_of_spaceTime hc T b hfc,
-    max 1 (‖(T : State n →L[ℝ] State n)‖ * ‖(T.symm : State n →L[ℝ] State n)‖) * C, a / c,
-    one_le_mul_of_one_le_of_one_le (le_max_left _ _) hC, div_pos ha hc,
-    fun t₀ t₁ φ hφ => bound_of_spaceTime hc T b (by linarith)
-      (hdecay _ _ _ (isTrajectoryOn_spaceTime hc T b hφ))⟩
+    a / c, div_pos ha hc, decay_of_spaceTime hc T b (by rwa [mul_div_cancel₀ a hc.ne'])⟩
 
 /-- Conservation, with the energy read through the coordinate change. -/
 @[tmio T, powerlib_foundation] theorem conservative_of_spaceTime

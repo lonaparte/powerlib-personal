@@ -314,7 +314,8 @@ def boundaryFamily : Family BoundaryModel Unit 1 0 :=
     connection% (BoundaryModel.cubic ∉ boundaryFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% boundaryFamily_isAutonomous.mem_den_flow)]
-  rintro ⟨-, -, C, a, hC, ha, hb⟩
+  intro hges
+  obtain ⟨C, a, hC, ha, hb⟩ := Flow.GloballyExponentiallyStable.exists_constant hges
   have hC1 : 0 < C + 1 := by linarith
   set T := Real.log (C + 1) / a with hT
   have hT0 : 0 ≤ T := div_nonneg (Real.log_nonneg (by linarith)) ha.le
@@ -369,8 +370,15 @@ def mapFamily : Family ScalarMap Unit 1 0 :=
     connection% (g ∈ mapFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% mapFamily_isAutonomousMap.mem_den_flow)]
-  refine ⟨by simp, 1, |g.a|, le_rfl, abs_nonneg _, h, fun y k => ?_⟩
-  simp [smul_iterate, norm_smul]
+  -- decay at the positive rate `-log ρ`, `ρ = (1 + |a|)/2`, which lies in `[|a|, 1)`
+  have hρ0 : 0 < (1 + |g.a|) / 2 := by positivity
+  have hρ1 : (1 + |g.a|) / 2 < 1 := by linarith
+  refine ⟨by simp, -Real.log ((1 + |g.a|) / 2), neg_pos.mpr (Real.log_neg hρ0 hρ1), 1,
+    fun y k => ?_⟩
+  rw [neg_neg, mul_comm (Real.log _), Real.exp_nat_mul, Real.exp_log hρ0]
+  simp only [smul_iterate, norm_smul, sub_zero, one_mul, norm_pow, Real.norm_eq_abs]
+  gcongr
+  linarith
 
 -- The observation boundary: equal transfer functions with opposite stability, and the hidden
 -- mode is exactly what minimality excludes.

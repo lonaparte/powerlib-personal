@@ -50,12 +50,12 @@ open scoped Matrix.Norms.Operator in
 `LTI.SchurStable.exists_pow_bound` read through the coordinate equivalence of `ℝⁿ`). -/
 @[tmio T, powerlib_foundation] theorem pow_bound_toEuclideanCLM {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LTI.SchurStable A) :
-    ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖Linear.op A ^ k‖ ≤ C * ρ ^ k := by
+    ∃ C ρ : ℝ, 0 ≤ C ∧ 0 < ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖Linear.op A ^ k‖ ≤ C * ρ ^ k := by
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := hA.exists_pow_bound
   let e₁ : ℝⁿ →L[ℝ] (Fin n → ℝ) := (EuclideanSpace.equiv (Fin n) ℝ : ℝⁿ →L[ℝ] (Fin n → ℝ))
   let e₂ : (Fin n → ℝ) →L[ℝ] ℝⁿ :=
     ((EuclideanSpace.equiv (Fin n) ℝ).symm : (Fin n → ℝ) →L[ℝ] ℝⁿ)
-  refine ⟨‖e₂‖ * C * ‖e₁‖, ρ, by positivity, hρ0.le, hρ1, fun k => ?_⟩
+  refine ⟨‖e₂‖ * C * ‖e₁‖, ρ, by positivity, hρ0, hρ1, fun k => ?_⟩
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w => ?_
   have hw : (Linear.op A ^ k) w = e₂ ((A ^ k) *ᵥ e₁ w) := by
     rw [Linear.op, ← map_pow]
@@ -72,7 +72,7 @@ open scoped Matrix.Norms.Operator in
     ∃ m : ℕ, 0 < m ∧ ‖Linear.op A ^ m‖ < 1 := by
   obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0.le hρ1).const_mul C
   obtain ⟨m, hm1, hm0⟩ :=
     ((hlim.eventually (gt_mem_nhds one_pos)).and (eventually_gt_atTop 0)).exists
   exact ⟨m, hm0, (hb m).trans_lt hm1⟩
@@ -170,12 +170,12 @@ stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
 @[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_of_schurStable
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LTI.SchurStable A) :
     GloballyExponentiallyStable (Linear.op A) 0 := by
-  obtain ⟨C, ρ, hC, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
-  refine ⟨map_zero _, max C 1, ρ, le_max_right _ _, hρ0, hρ1, fun y k => ?_⟩
-  rw [sub_zero, sub_zero, ← FunLike.coe_pow_eq_iterate]
+  obtain ⟨C, ρ, -, hρ0, hρ1, hb⟩ := pow_bound_toEuclideanCLM hA
+  refine ⟨map_zero _, -Real.log ρ, neg_pos.mpr (Real.log_neg hρ0 hρ1), C, fun y k => ?_⟩
+  rw [sub_zero, sub_zero, ← FunLike.coe_pow_eq_iterate, neg_neg, mul_comm (Real.log ρ),
+    Real.exp_nat_mul, Real.exp_log hρ0]
   calc ‖(Linear.op A ^ k) y‖ ≤ ‖Linear.op A ^ k‖ * ‖y‖ := (Linear.op A ^ k).le_opNorm y
     _ ≤ C * ρ ^ k * ‖y‖ := by gcongr; exact hb k
-    _ ≤ max C 1 * ρ ^ k * ‖y‖ := by gcongr; exact le_max_left _ _
 
 /-! ## Repelling fixed points -/
 

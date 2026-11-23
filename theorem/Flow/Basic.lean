@@ -18,9 +18,10 @@ Source: the definitions of `theorem/Flow/Defs.lean` and LeanForControl's local n
 Results.
 * `tendsto_of_segment_bound`: an exponential estimate on every segment of a forward-complete
   solution forces convergence.
-* Global exponential stability: `GloballyExponentiallyStable.locallyExponentiallyStable`,
-  `.lyapunovStable`, `.globallyAsymptoticallyStable`, `.holds` (every attractive sentence),
-  `.exists_decay` (a positive rate), `.sampledContraction`.
+* Global exponential stability: `GloballyExponentiallyStable.exists_decay` (a positive rate),
+  `.exists_constant` (the estimate with an overshoot constant at least one),
+  `.locallyExponentiallyStable`, `.lyapunovStable`, `.globallyAsymptoticallyStable`, `.holds`
+  (every attractive sentence), `.sampledContraction`.
 * Local asymptotic stability: `locallyExponentiallyStable_localAsymptoticStable`,
   `GloballyAsymptoticallyStable.localAsymptoticStable`, `Property.localAsymptoticStable` (every
   attractive sentence implies it).
@@ -57,11 +58,28 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   filter_upwards [eventually_ge_atTop t₀] with t ht
   exact hb t (hφ.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
 
+/-- Global exponential stability decays at a positive rate. -/
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.exists_decay {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+    (h : GloballyExponentiallyStable f x) : ∃ a, 0 < a ∧ Decay f x a :=
+  h.2.2
+
+/-- Global exponential stability gives one estimate `C e^{-a (t - t₀)}`, `a > 0`, on every
+solution segment with an overshoot constant `C ≥ 1` (the constant of a decay rate can always be
+raised). -/
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.exists_constant {f : ℝⁿ → ℝⁿ}
+    {x : ℝⁿ} (h : GloballyExponentiallyStable f x) :
+    ∃ C a : ℝ, 1 ≤ C ∧ 0 < a ∧ ∀ (t₀ t₁ : ℝ) (φ : ℝ → ℝⁿ), IsTrajectoryOn φ f t₀ t₁ →
+      ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖ := by
+  obtain ⟨-, -, a, ha, C, hb⟩ := h
+  refine ⟨max C 1, a, le_max_right _ _, ha, fun t₀ t₁ φ hφ t ht => (hb t₀ t₁ φ hφ t ht).trans ?_⟩
+  gcongr
+  exact le_max_left _ _
+
 /-- A global exponential estimate is in particular a local one. -/
 @[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) : LocallyExponentiallyStable f x := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := h
+  obtain ⟨C, a, hC, ha, hb⟩ := h.exists_constant
   exact ⟨1, C, a, one_pos, hC, ha, fun t₀ t₁ φ hφ _ t ht => hb t₀ t₁ φ hφ t ht⟩
 
 @[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
@@ -72,9 +90,8 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 @[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.globallyAsymptoticallyStable
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) : GloballyAsymptoticallyStable f x := by
-  obtain ⟨heq, hfc, C, a, hC, ha, hb⟩ := h
-  refine ⟨heq, hfc, (show GloballyExponentiallyStable f x from
-    ⟨heq, hfc, C, a, hC, ha, hb⟩).lyapunovStable, fun t₀ φ hφ => ?_⟩
+  refine ⟨h.1, h.2.1, h.lyapunovStable, fun t₀ φ hφ => ?_⟩
+  obtain ⟨-, -, a, ha, C, hb⟩ := h
   exact tendsto_of_segment_bound ha hφ fun t₁ hseg => hb t₀ t₁ φ hseg
 
 /-- A local exponential estimate gives local asymptotic stability. -/
@@ -131,12 +148,6 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
         exact le_max_left _ _
     _ ≤ max C 0 * Real.exp (-b * (t - t₀)) * ‖φ t₀ - x‖ := by
         gcongr
-
-/-- Global exponential stability decays at a positive rate. -/
-@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.exists_decay {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
-    (h : GloballyExponentiallyStable f x) : ∃ a, 0 < a ∧ Decay f x a := by
-  obtain ⟨-, -, C, a, -, ha, hb⟩ := h
-  exact ⟨a, ha, C, hb⟩
 
 /-- A decay rate `a ≥ 0` gives Lyapunov stability: the overshoot constant bounds every solution
 segment by a fixed multiple of its initial distance. -/

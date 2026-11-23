@@ -280,7 +280,7 @@ with one-sided derivatives at `0`. -/
       simp [φ, Linear.op]
     rw [heq]
     exact h2
-  obtain ⟨-, -, C, a, -, ha, hb⟩ :=
+  obtain ⟨-, -, a, ha, C, hb⟩ :=
     Linear.globallyExponentiallyStable_of_isHurwitz (0 : EuclideanSpace ℝ (Fin n)) hA
   have hbound : ∀ t, 0 ≤ t → ‖x t i - y t i‖ ≤ C * Real.exp (-a * t) * ‖φ 0‖ := by
     intro t ht

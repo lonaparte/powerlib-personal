@@ -913,7 +913,8 @@ exponential bound cannot cover every initial state. -/
     connection% (cascadeModel ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  rintro ⟨_, _, C, a, hC, ha, hb⟩
+  intro hges
+  obtain ⟨C, a, hC, ha, hb⟩ := Flow.GloballyExponentiallyStable.exists_constant hges
   let N := C * Real.exp (-a) * Real.exp 2 + 1
   have hN : 0 < N := by dsimp [N]; positivity
   let φ : ℝ → ℝ² := fun t => WithLp.toLp 2
@@ -1055,8 +1056,8 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
       rw [quarticEnergy_lie]
       exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (by dsimp [quarticEnergy]; positivity))
     quarticEnergy_compact
-  refine ⟨by rw [IsEquilibrium, quarticModel_field]; ext i; fin_cases i <;> simp, hfc, 2, 1,
-    by norm_num, one_pos, fun t₀ t₁ φ hφ t ht => ?_⟩
+  refine ⟨by rw [IsEquilibrium, quarticModel_field]; ext i; fin_cases i <;> simp, hfc, 1, one_pos,
+    2, fun t₀ t₁ φ hφ t ht => ?_⟩
   have he := Flow.energy_bound_of_dissipation quarticEnergy_smooth hd hφ ht
   have hfour : ‖φ t‖ ^ 4 ≤ 2 * Real.exp (-(4 * (t - t₀))) * ‖φ t₀‖ ^ 4 :=
     ((norm_pow_le_two_mul_quarticEnergy (φ t)).trans
