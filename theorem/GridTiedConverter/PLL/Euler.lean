@@ -84,9 +84,8 @@ multiplier `1 + hλ` leaves the unit disk
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := srf_mem_den_locallyExponentiallyStable_inPhase (V := 1) (Kp := 1) (Ki := 1)
-    (by norm_num) (by norm_num) 0 0
+    (by norm_num) (by norm_num) 0 Real.cos_zero
   unfold powerlib.TMIO.Statement at hm
-  rw [Int.cast_zero, mul_zero, zero_mul] at hm
   exact Numerics.not_eulerStep_realizationSoundUnder family_isAutonomous
     (fun m => Numerics.contDiff_shift (contDiff_piPLLField m.smooth)) (by norm_num) hm
 

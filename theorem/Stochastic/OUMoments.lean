@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Dynamics.Calculus
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.Covariance
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
@@ -71,26 +72,11 @@ is the closed form. -/
 @[tmio T, powerlib_foundation] theorem affineSol_unique {a b y₀ : ℝ} (ha : a ≠ 0) {y : ℝ → ℝ}
     (hy : ∀ t, HasDerivAt y (-a * y t + b) t) (h0 : y 0 = y₀) :
     y = affineSol a b y₀ := by
-  let g : ℝ → ℝ := fun t => exp (a * t) * (y t - b / a)
-  have hg : ∀ t, HasDerivAt g 0 t := by
-    intro t
-    have he : HasDerivAt (fun t => exp (a * t)) (exp (a * t) * a) t := by
-      simpa [mul_comm] using ((hasDerivAt_id t).const_mul a).exp
-    have := he.mul ((hy t).sub_const (b / a))
-    convert this using 1
-    field_simp
-    ring
-  have hconst : ∀ t, g t = g 0 := fun t =>
-    is_const_of_deriv_eq_zero (fun s => (hg s).differentiableAt) (fun s => (hg s).deriv) t 0
   funext t
-  have h1 := hconst t
-  simp only [g, mul_zero, exp_zero, one_mul, h0] at h1
-  have hinv : exp (-a * t) * exp (a * t) = 1 := by rw [← exp_add]; simp
-  have : y t - b / a = exp (-a * t) * (y₀ - b / a) := by
-    calc y t - b / a = exp (-a * t) * (exp (a * t) * (y t - b / a)) := by
-          rw [← mul_assoc, hinv, one_mul]
-      _ = exp (-a * t) * (y₀ - b / a) := by rw [h1]
-  show y t = b / a + (y₀ - b / a) * exp (-a * t)
+  have h := Dynamics.eq_exp_smul_mul_of_hasDerivAt (c := -a) (w := fun s => y s - b / a)
+    (fun s => ((hy s).sub_const (b / a)).congr_deriv (by field_simp; ring)) t
+  rw [← Real.exp_eq_exp_ℝ, smul_eq_mul, h0, mul_comm t] at h
+  rw [affineSol]
   linarith
 
 @[tmio T, powerlib_foundation] theorem affineSol_tendsto {a : ℝ} (ha : 0 < a) (b y₀ : ℝ) :

@@ -26,7 +26,7 @@ Results.
 noncomputable section
 namespace powerlib.Numerics
 open Matrix
-open powerlib.PH (dotProduct_mulVec_self_eq_zero_of_skew)
+open powerlib.PH (dotProduct_phField)
 
 variable {n m : ℕ}
 
@@ -42,10 +42,7 @@ exactly `h (uᵀ gᵀ ∇̄H − ∇̄Hᵀ R ∇̄H)`. -/
     (hJ : Jᵀ = -J) (h : ℝ) (u : Fin m → ℝ) {x y : Fin n → ℝ}
     (hstep : y - x = h • ((J - R) *ᵥ G.dg x y + g *ᵥ u)) :
     H y - H x = h * (u ⬝ᵥ (gᵀ *ᵥ G.dg x y) - G.dg x y ⬝ᵥ (R *ᵥ G.dg x y)) := by
-  rw [G.mean_value, hstep, dotProduct_smul, sub_mulVec, dotProduct_add, dotProduct_sub,
-    dotProduct_mulVec_self_eq_zero_of_skew hJ, dotProduct_mulVec (G.dg x y) g,
-    ← mulVec_transpose, dotProduct_comm (gᵀ *ᵥ G.dg x y), smul_eq_mul]
-  ring
+  rw [G.mean_value, hstep, dotProduct_smul, dotProduct_phField hJ, smul_eq_mul]
 
 /-- Exact energy conservation of the discrete gradient method for lossless unforced pH
 systems (`R = 0`, `u = 0`). -/

@@ -26,7 +26,8 @@ Results.
   table.
 * `integral_exp_neg_sq`, `integral_sq_mul_exp_neg_sq`, `integral_exp_neg_sq_mul_odd`,
   `integral_odd_moments_vanish` — the full-line weight `e^{-τ²}` of the fold slow-passage
-  solvability condition: `∫ e^{-τ²} = √π`, `∫ τ² e^{-τ²} = √π/2`, odd integrands vanish.
+  solvability condition: `∫ e^{-τ²} = √π`, `∫ τ² e^{-τ²} = √π/2`, odd integrands vanish
+  (instances of `integral_eq_zero_of_odd`: the integral of an odd function is `0`).
 * `gaussMoment1`, `gaussMoment3`, `gaussMoment5` — the half-line moments `∫_0^∞ ξⁿ e^{−cξ²}`
   (`n = 1, 3, 5`) used by the endpoint Laplace table (`c = b/2`) and the guard first-passage
   asymptotics.
@@ -75,27 +76,28 @@ open Real MeasureTheory Set
   rw [hG]
   ring
 
-/-- Odd perturbations are annihilated by the even weight `e^{-τ²}` (wraps `integral_neg_eq_self`).
-No integrability hypothesis is needed: a non-integrable integrand has integral `0` too. -/
+/-- The integral of an odd function over the line vanishes (`integral_neg_eq_self`). No
+integrability hypothesis is needed: a non-integrable integrand has integral `0` too. -/
+@[tmio T, powerlib_foundation] theorem integral_eq_zero_of_odd {f : ℝ → ℝ}
+    (hf : ∀ x, f (-x) = -f x) : ∫ x, f x = 0 := by
+  have h := integral_neg_eq_self f volume
+  simp only [hf, integral_neg] at h
+  linarith
+
+/-- Odd perturbations are annihilated by the even weight `e^{-τ²}`. -/
 @[tmio T, powerlib_foundation] theorem integral_exp_neg_sq_mul_odd {φ : ℝ → ℝ}
     (hφ : ∀ τ, φ (-τ) = -φ τ) :
-    ∫ τ : ℝ, Real.exp (-τ ^ 2) * φ τ = 0 := by
-  have h := integral_neg_eq_self (fun τ : ℝ => Real.exp (-τ ^ 2) * φ τ) volume
-  simp only [neg_sq, hφ, mul_neg, integral_neg] at h
-  linarith
+    ∫ τ : ℝ, Real.exp (-τ ^ 2) * φ τ = 0 :=
+  integral_eq_zero_of_odd fun τ => by rw [neg_sq, hφ, mul_neg]
 
 /-- Odd moments vanish on the full line: the interior Laplace expansion has no `X^{-1/2}`
 term. -/
 @[tmio T, powerlib_foundation] theorem integral_odd_moments_vanish (b : ℝ) :
     (∫ ξ : ℝ, ξ * Real.exp (-(b / 2) * ξ ^ 2)) = 0 ∧
-      (∫ ξ : ℝ, ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2)) = 0 := by
-  constructor
-  · have h := integral_neg_eq_self (fun ξ : ℝ => ξ * Real.exp (-(b / 2) * ξ ^ 2)) volume
-    simp only [neg_sq, neg_mul, integral_neg] at h ⊢
-    linarith
-  · have h := integral_neg_eq_self (fun ξ : ℝ => ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2)) volume
-    simp only [neg_sq, Odd.neg_pow (by decide : Odd 3), neg_mul, integral_neg] at h ⊢
-    linarith
+      (∫ ξ : ℝ, ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2)) = 0 :=
+  ⟨integral_eq_zero_of_odd fun ξ => by simp only [neg_sq, neg_mul],
+    integral_eq_zero_of_odd fun ξ => by
+      simp only [neg_sq, Odd.neg_pow (by decide : Odd 3), neg_mul]⟩
 
 /-! ## Half-line Gaussian moments `∫_0^∞ ξⁿ e^{−cξ²}` and finite-interval Gaussian bounds -/
 

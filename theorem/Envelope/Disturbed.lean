@@ -2,6 +2,7 @@ import theorem.Envelope.Basic
 import theorem.Stack.Implementation
 import theorem.TMIO.ClaimElab
 import Mathlib.Analysis.ODE.Gronwall
+import theorem.Dynamics.Calculus
 import Mathlib.Probability.ProductMeasure
 import Mathlib.Probability.Distributions.Gaussian.Real
 
@@ -96,23 +97,12 @@ system stays within `gronwallBound 0 K (|σ| W) t` of the nominal solution from 
     {x xn : ℝ → ℝⁿ} (hx : (s.perturb (σ • g)).IsTrajectoryOn 0 x 0 t)
     (hxn : s.IsTrajectoryOn 0 xn 0 t) (h0 : x 0 = xn 0) (ht : 0 ≤ t) :
     dist (x t) (xn t) ≤ gronwallBound 0 K (|σ| * W) t := by
-  have h := dist_le_of_approx_trajectories_ODE (v := fun _ => s.zeroInput) (K := K)
-    (fun _ => hK) (f' := fun τ => (s.perturb (σ • g)).field (x τ) 0)
-    (g' := fun τ => s.field (xn τ) 0) (εf := |σ| * W) (εg := 0) (δ := 0)
-    (fun τ hτ => (hx τ hτ).continuousWithinAt)
-    (fun τ hτ => (hx τ (Ico_subset_Icc_self hτ)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE_of_mem hτ))
-    (fun τ _ => by
-      rw [dist_eq_norm]
+  have h := Dynamics.norm_sub_le_gronwallBound_of_fields (g := (s.perturb (σ • g)).zeroInput) hK
+    (fun z => by
       simp only [Port.System.perturb, Port.System.zeroInput, add_sub_cancel_left, Pi.smul_apply,
         norm_smul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_left (hg _) (abs_nonneg σ))
-    (fun τ hτ => (hxn τ hτ).continuousWithinAt)
-    (fun τ hτ => (hxn τ (Ico_subset_Icc_self hτ)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE_of_mem hτ))
-    (fun τ _ => by simp [Port.System.zeroInput])
-    (by rw [h0, dist_self]) t ⟨ht, le_rfl⟩
-  rwa [add_zero, sub_zero] at h
+      exact mul_le_mul_of_nonneg_left (hg _) (abs_nonneg σ)) hx hxn h0 t ⟨ht, le_rfl⟩
+  rwa [sub_zero, ← dist_eq_norm] at h
 
 /-- **Finite-horizon safety from a margin.** A system whose zero-input field is `K`-Lipschitz,
 whose initial states start solutions on `[0, T₀]`, and whose states reached before `T₀` lie at

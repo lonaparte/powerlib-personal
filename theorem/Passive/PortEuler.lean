@@ -91,8 +91,7 @@ step do not (the multiplier `1 − h` leaves the unit disk). -/
   unfold powerlib.TMIO.Statement
   exact Numerics.not_eulerStepPorts_realizationSoundUnder_linear family_isLinear
     one_pos hP (x := unitBranch)
-    ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
-      ((isHurwitz_iff _).mpr one_pos))
+    ((isHurwitz_plant_iff _).mpr one_pos)
 
 /-- The port current at the unit state is `1`, whatever the port voltage. -/
 @[tmio M, powerlib_domain] private theorem output_unit (m : Impedance) (u : Fin 1 → ℝ) :
@@ -159,11 +158,14 @@ with a large step are not stable. -/
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have hA : IsHurwitz unitCircuit.plant.A := by
-    apply (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
-    apply (isHurwitz_iff_stable _).mpr
-    apply (passive_stable_iff _ (show unitCircuit.Passive from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using unitCircuit_passive)).mpr
-    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
-      (show unitCircuit.Damped from Or.inl one_ne_zero)
+    have hp : unitCircuit.Passive := by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using unitCircuit_passive
+    have hs := (passive_stable_iff _ hp).mpr (by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using (show unitCircuit.Damped from Or.inl one_ne_zero))
+    simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] at hs
+    exact (isHurwitz_plant_iff _).mpr hs
   exact Numerics.not_eulerStepPorts_realizationSoundUnder_linear family_isLinear
     (by norm_num) hP (x := unitCircuit) hA
 

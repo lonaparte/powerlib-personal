@@ -47,13 +47,16 @@ Results.
   source field at `I_d = −i_d`.
 * `field_eq_srfField`: with `i_d = 0` the field is the SRF-PLL field `PLL.srfField V k_p k_i 0`
   (`D₀ = 1`).
+* `field_equilibrium_eq_zero_iff`: `(θ, 0)` is an equilibrium iff `V sin θ = −X_g i_d`, for every
+  `D₀`.
 * `jacobian_eq`: the Jacobian at an equilibrium is
   `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]` (derived with `fderiv`; at an
   equilibrium `−L_g i_d = V sin θ / ω_s`).
 * `mem_den_locallyExponentiallyStable_of_tan_lt` / `mem_den_unstable_of_tan_gt` (connection
   memberships, below): for `V, k_p, k_i, ω_s > 0`,
   `D₀ > 0`, `cos θ > 0`: `tan θ < ω_s k_p / k_i` ⇒ locally exponentially stable,
-  `tan θ > ω_s k_p / k_i` ⇒ unstable.  `det J = k_i V cos θ / D₀ > 0` always holds, so
+  `tan θ > ω_s k_p / k_i` ⇒ unstable.  `det J = k_i V cos θ / D₀ > 0` always holds and `tr J` is
+  a positive multiple of `tan θ − ω_s k_p / k_i` (`trace_jac_eq_mul_tan_sub`), so
   `tan θ_H = ω_s k_p / k_i` is the stability boundary; on it `tr J = 0`
   (`trace_jac_eq_zero_of_tan_eq`) and the Jacobian has the purely imaginary pair `± j √det J`
   (`imaginary_pair_at_boundary`; a Hopf *candidate* — no transversality or Lyapunov-coefficient
@@ -175,13 +178,21 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![-p.kp * p.V * Real.cos θ / p.D0, p.ki / p.D0;
      -p.V * Real.cos θ / p.D0, -(p.ki * p.Lg * p.Id) / p.D0]
 
-@[tmio M, powerlib_domain] theorem field_equilibrium {θ : ℝ}
-    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
-    field p (equilibrium θ) = 0 := by
-  have hq : gridQ p θ = 0 := by unfold gridQ; linarith
-  apply Dynamics.lift_toLp_eq_zero
-  ext i
-  fin_cases i <;> simp [coordField, vq, pllOut, hq]
+/-- The points `(θ, 0)` that are equilibria are exactly the balanced ones, `V sin θ = −X_g i_d`,
+for every loop gain `D₀`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_equilibrium_eq_zero_iff {θ : ℝ} :
+    field p (equilibrium θ) = 0 ↔ p.V * Real.sin θ = -(p.Xg * p.Id) := by
+  refine ⟨fun h => ?_, fun heq => ?_⟩
+  · have h1 : field p (equilibrium θ) 1 =
+        gridQ p θ - p.Lg * field p (equilibrium θ) 0 * p.Id := by
+      simp [field, Dynamics.lift, coordField, equilibrium, pllOut, vq]
+    simp only [h, PiLp.zero_apply, mul_zero, zero_mul, sub_zero] at h1
+    unfold gridQ at h1
+    linarith
+  · have hq : gridQ p θ = 0 := by unfold gridQ; linarith
+    apply Dynamics.lift_toLp_eq_zero
+    ext i
+    fin_cases i <;> simp [coordField, vq, pllOut, hq]
 
 /-- With a zero frozen current the rate-coupled field is the SRF-PLL field: `D₀ = 1` and
 `v_q = −V sin θ` (`PLL.srfField V k_p k_i 0`, `theorem/GridTiedConverter/PLL/Model.lean`). -/
@@ -266,40 +277,34 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   field_simp
   ring
 
+/-- At an equilibrium with `cos θ ≠ 0`, `tr J = (V k_i cos θ / (ω_s D₀)) (tan θ − ω_s k_p / k_i)`:
+for a positive prefactor the sign of `tr J` is the side of the boundary angle. -/
+@[tmio M, powerlib_domain] theorem trace_jac_eq_mul_tan_sub (hki : p.ki ≠ 0) (hωs : p.ωs ≠ 0)
+    {θ : ℝ} (hcos : Real.cos θ ≠ 0) (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
+    (jac p θ).trace =
+      p.V * p.ki * Real.cos θ / (p.ωs * p.D0) * (Real.tan θ - p.ωs * p.kp / p.ki) := by
+  rw [trace_jac_eq p hωs heq, Real.tan_eq_sin_div_cos]
+  by_cases hD0 : p.D0 = 0
+  · simp [hD0]
+  · field_simp
+
 /-- At an equilibrium, `tr J < 0 ↔ tan θ < ω_s k_p / k_i`. -/
 @[tmio M, powerlib_domain] theorem trace_jac_neg_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     (jac p θ).trace < 0 ↔ Real.tan θ < p.ωs * p.kp / p.ki := by
-  have hVw : 0 < p.V / p.ωs := div_pos hV hωs
-  rw [trace_jac_eq p hωs.ne' heq, Real.tan_eq_sin_div_cos, div_lt_div_iff₀ hcos hki]
-  constructor
-  · intro h
-    by_contra hc
-    push Not at hc
-    have : 0 ≤ p.V / p.ωs * (p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ) / p.D0 :=
-      div_nonneg (mul_nonneg hVw.le (by linarith)) hD0.le
-    linarith
-  · intro h
-    exact div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg hVw (by linarith)) hD0
+  have hc : 0 < p.V * p.ki * Real.cos θ / (p.ωs * p.D0) := by positivity
+  rw [trace_jac_eq_mul_tan_sub p hki.ne' hωs.ne' hcos.ne' heq]
+  exact ⟨fun h => sub_neg.mp (neg_of_mul_neg_right h hc.le),
+    fun h => mul_neg_of_pos_of_neg hc (sub_neg.mpr h)⟩
 
 /-- At an equilibrium, `tr J > 0 ↔ tan θ > ω_s k_p / k_i`. -/
 @[tmio M, powerlib_domain] theorem trace_jac_pos_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     0 < (jac p θ).trace ↔ p.ωs * p.kp / p.ki < Real.tan θ := by
-  have hVw : 0 < p.V / p.ωs := div_pos hV hωs
-  rw [trace_jac_eq p hωs.ne' heq, Real.tan_eq_sin_div_cos, div_lt_div_iff₀ hki hcos]
-  constructor
-  · intro h
-    by_contra hc
-    push Not at hc
-    have : p.V / p.ωs * (p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ) / p.D0 ≤ 0 :=
-      div_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonneg_of_nonpos hVw.le (by linarith))
-        hD0.le
-    linarith
-  · intro h
-    exact div_pos (mul_pos hVw (by linarith)) hD0
+  have hc : 0 < p.V * p.ki * Real.cos θ / (p.ωs * p.D0) := by positivity
+  rw [trace_jac_eq_mul_tan_sub p hki.ne' hωs.ne' hcos.ne' heq, mul_pos_iff_of_pos_left hc, sub_pos]
 
 /-- The Jacobian is Hurwitz exactly below the boundary angle. -/
 @[tmio TM, powerlib_domain] theorem isHurwitz_jac_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
@@ -314,10 +319,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     (jac p θ).trace = 0 := by
-  rw [Real.tan_eq_sin_div_cos, div_eq_div_iff hcos.ne' hki.ne'] at htan
-  rw [trace_jac_eq p hωs.ne' heq]
-  have : p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ = 0 := by linarith
-  rw [this, mul_zero, zero_div]
+  rw [trace_jac_eq_mul_tan_sub p hki.ne' hωs.ne' hcos.ne' heq, htan, sub_self, mul_zero]
 
 /-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has the imaginary pair `± j√det`
 (`det J > 0` is `det_jac_pos`). -/
@@ -565,7 +567,7 @@ the origin), and passivity holds without requirement. -/
     (fun m hm => ?_) (fun m hm => ?_) fun m hm => ?_
   · have he : Meets m .equilibrium := by
       rcases hm with hm | hm <;> exact (TMIO.mem_realize _ _ _).mp hm .equilibrium (by simp)
-    exact ⟨contDiff_field m.params, field_equilibrium m.params he.1,
+    exact ⟨contDiff_field m.params, (field_equilibrium_eq_zero_iff m.params).mpr he.1,
       fderiv_field m.params he.2 m.θ 0⟩
   · exact (Criteria.isHurwitz_fin_two_iff _).2 ((TMIO.mem_realize _ _ _).mp hm .jacobianStable
       (by simp))
@@ -588,21 +590,6 @@ integral of the field, so no point is locally exponentially stable. -/
     simp at this
   · simp [RatePLL.field, Dynamics.lift, coordField, pllOut, hD0]
 
-/-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = −X_g i_d`. -/
-@[tmio M, powerlib_domain] private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
-    (h : RatePLL.field p (equilibrium θ) = 0) :
-    connection% ((⟨p, θ⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
-  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  refine ⟨?_, hD0⟩
-  have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
-  have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
-  simp [RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq, hD0] at h0 h1
-  have hk : p.kp * gridQ p θ = 0 := by
-    rcases h0 with h0 | h0 <;> simp [h0]
-  rw [hk, zero_div, mul_zero, zero_mul, sub_zero] at h1
-  unfold gridQ at h1
-  linarith
-
 /-- The local exponential translation is exact: a model is locally exponentially stable at
 `(θ*, 0)` exactly when the point is an equilibrium with a nondegenerate loop
 (`V sin θ* = −X_g i_d`, `D₀ ≠ 0`) and the closed-form Jacobian has `tr < 0`, `det > 0`. Converse
@@ -620,8 +607,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
   · rw [Criteria.isHurwitz_fin_two_iff] at hH
     rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
-    · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets]
-        using balance_of_field_eq_zero hD0 he
+    · exact And.intro ((field_equilibrium_eq_zero_iff m.params).mp he) hD0
     · exact hH
 
 /-! ### Members of the local denotations: the boundary angle `tan θ_H = ω_s k_p / k_i` -/

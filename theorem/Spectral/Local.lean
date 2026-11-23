@@ -33,13 +33,14 @@ work-sync `theory/T-small-signal-stability.md` §1 for the local sentences, conv
 `theorem/Dynamics/ConverseLinearization.lean`).
 
 Results.
-* Denotations: `den_locallyExponentiallyStable_subset_las`, `den_las_subset_lyapunovStable`,
+* Denotations: `den_flow_subset_of_imp` (a flow implication valid for every vector field and map
+  is an inclusion of denotations, for every family), and its instances
+  `den_locallyExponentiallyStable_subset_las`, `den_las_subset_lyapunovStable`,
   `den_locallyExponentiallyStable_subset_lyapunovStable`,
   `den_globallyExponentiallyStable_subset_gas`, `den_globallyExponentiallyStable_subset_les`,
-  `den_globallyExponentiallyStable_subset_contractive` (for every family, continuous or
-  discrete); `mem_den_flow_iff_shift` (an autonomous family written in coordinates about selected
-  points `pt x` reads its flow sentences on the original fields at those points, through
-  `Flow.Property.holds_shift_iff`).
+  `den_globallyExponentiallyStable_subset_contractive`; `mem_den_flow_iff_shift` (an autonomous
+  family written in coordinates about selected points `pt x` reads its flow sentences on the
+  original fields at those points, through `Flow.Property.holds_shift_iff`).
 * The table: `table Rl Rs Rg Ru Rc Rp Rd Re` (Lyapunov stability to `Rl`, the local attractive
   sentences to `Rs`, the global ones and sampled contraction to `Rg`, instability to `Ru`,
   conservation to `Rc`, passivity to `Rp`, decay at the rate `a` to `Rd a`, the envelope sentences
@@ -91,46 +92,39 @@ section Denotation
 
 variable {F : Family X Q n p}
 
+/-- **Flow implications are inclusions of denotations.** An implication `P ⇒ Q` at the origin of
+every vector field and of every map holds between the denotations of every family (continuous,
+discrete or disturbed members). -/
+@[tmio TM, powerlib_foundation] theorem den_flow_subset_of_imp {P Q : Flow.Property}
+    (hc : ∀ f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n), P.holds f 0 → Q.holds f 0)
+    (hd : ∀ (T : ℝ) (f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)),
+      P.holdsMap T f 0 → Q.holdsMap T f 0) :
+    connection% (F.den (.flow P) ⊆ F.den (.flow Q)) := by
+  change F.den (.flow P) ⊆ F.den (.flow Q)
+  intro x hx
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
+  cases h : F.system x with
+  | continuous s =>
+    rw [h, Sentence.holds_flow] at hx
+    exact hc _ hx
+  | discrete s =>
+    rw [h, Sentence.holds_flow_discrete] at hx
+    exact hd _ _ hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    exact fun ω => hc _ (hx ω)
+
 /-- Local exponential stability gives local asymptotic stability, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_locallyExponentiallyStable_subset_las :
     connection% (F.den (.flow .locallyExponentiallyStable) ⊆
-      F.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro x hx
-  rw [(connection_proof% Family.mem_den)] at hx ⊢
-  cases h : F.system x with
-  | continuous s =>
-    rw [h, Sentence.holds_flow] at hx
-    rw [Sentence.holds_flow]
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable hx
-  | discrete s =>
-    rw [h, Sentence.holds_flow_discrete] at hx
-    rw [Sentence.holds_flow_discrete]
-    exact Map.LocallyExponentiallyStable.localAsymptoticStable hx
-  | disturbed s _ _ _ =>
-    rw [h, Sentence.holds_flow_disturbed] at hx
-    rw [Sentence.holds_flow_disturbed]
-    exact fun ω => Flow.locallyExponentiallyStable_localAsymptoticStable (hx ω)
+      F.den (.flow .locallyAsymptoticallyStable)) :=
+  den_flow_subset_of_imp (fun _ => Flow.locallyExponentiallyStable_localAsymptoticStable)
+    fun _ _ => Map.LocallyExponentiallyStable.localAsymptoticStable
 
 /-- Local asymptotic stability gives Lyapunov stability, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_las_subset_lyapunovStable :
-    connection% (F.den (.flow .locallyAsymptoticallyStable) ⊆ F.den (.flow .lyapunovStable)) := by
-  change F.den (.flow .locallyAsymptoticallyStable) ⊆ F.den (.flow .lyapunovStable)
-  intro x hx
-  rw [(connection_proof% Family.mem_den)] at hx ⊢
-  cases h : F.system x with
-  | continuous s =>
-    rw [h, Sentence.holds_flow] at hx
-    rw [Sentence.holds_flow]
-    exact hx.1
-  | discrete s =>
-    rw [h, Sentence.holds_flow_discrete] at hx
-    rw [Sentence.holds_flow_discrete]
-    exact hx.1
-  | disturbed s _ _ _ =>
-    rw [h, Sentence.holds_flow_disturbed] at hx
-    rw [Sentence.holds_flow_disturbed]
-    exact fun ω => (hx ω).1
+    connection% (F.den (.flow .locallyAsymptoticallyStable) ⊆ F.den (.flow .lyapunovStable)) :=
+  den_flow_subset_of_imp (fun _ h => h.1) fun _ _ h => h.1
 
 @[tmio TM, powerlib_foundation] theorem den_locallyExponentiallyStable_subset_lyapunovStable :
     connection% (F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable)) := show F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable) from
@@ -139,65 +133,22 @@ variable {F : Family X Q n p}
 /-- Global exponential stability gives global asymptotic stability, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_gas :
     connection% (F.den (.flow .globallyExponentiallyStable) ⊆
-      F.den (.flow .globallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro x hx
-  rw [(connection_proof% Family.mem_den)] at hx ⊢
-  cases h : F.system x with
-  | continuous s =>
-    rw [h, Sentence.holds_flow] at hx
-    rw [Sentence.holds_flow]
-    exact Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable hx
-  | discrete s =>
-    rw [h, Sentence.holds_flow_discrete] at hx
-    rw [Sentence.holds_flow_discrete]
-    exact Map.GloballyExponentiallyStable.globallyAsymptoticallyStable hx
-  | disturbed s _ _ _ =>
-    rw [h, Sentence.holds_flow_disturbed] at hx
-    rw [Sentence.holds_flow_disturbed]
-    exact fun ω => Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable (hx ω)
+      F.den (.flow .globallyAsymptoticallyStable)) :=
+  den_flow_subset_of_imp (fun _ => Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable)
+    fun _ _ => Map.GloballyExponentiallyStable.globallyAsymptoticallyStable
 
 /-- Global exponential stability gives local exponential stability, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_les :
     connection% (F.den (.flow .globallyExponentiallyStable) ⊆
-      F.den (.flow .locallyExponentiallyStable)) := by
-  change F.den (.flow .globallyExponentiallyStable) ⊆
-        F.den (.flow .locallyExponentiallyStable)
-  intro x hx
-  rw [(connection_proof% Family.mem_den)] at hx ⊢
-  cases h : F.system x with
-  | continuous s =>
-    rw [h, Sentence.holds_flow] at hx
-    rw [Sentence.holds_flow]
-    exact Flow.GloballyExponentiallyStable.locallyExponentiallyStable hx
-  | discrete s =>
-    rw [h, Sentence.holds_flow_discrete] at hx
-    rw [Sentence.holds_flow_discrete]
-    exact Map.GloballyExponentiallyStable.locallyExponentiallyStable hx
-  | disturbed s _ _ _ =>
-    rw [h, Sentence.holds_flow_disturbed] at hx
-    rw [Sentence.holds_flow_disturbed]
-    exact fun ω => Flow.GloballyExponentiallyStable.locallyExponentiallyStable (hx ω)
+      F.den (.flow .locallyExponentiallyStable)) :=
+  den_flow_subset_of_imp (fun _ => Flow.GloballyExponentiallyStable.locallyExponentiallyStable)
+    fun _ _ => Map.GloballyExponentiallyStable.locallyExponentiallyStable
 
 /-- Global exponential stability gives sampled contraction, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_contractive :
-    connection% (F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)) := by
-  change F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)
-  intro x hx
-  rw [(connection_proof% Family.mem_den)] at hx ⊢
-  cases h : F.system x with
-  | continuous s =>
-    rw [h, Sentence.holds_flow] at hx
-    rw [Sentence.holds_flow]
-    exact Flow.GloballyExponentiallyStable.sampledContraction hx
-  | discrete s =>
-    rw [h, Sentence.holds_flow_discrete] at hx
-    rw [Sentence.holds_flow_discrete]
-    exact Map.GloballyExponentiallyStable.sampledContraction hx
-  | disturbed s _ _ _ =>
-    rw [h, Sentence.holds_flow_disturbed] at hx
-    rw [Sentence.holds_flow_disturbed]
-    exact fun ω => Flow.GloballyExponentiallyStable.sampledContraction (hx ω)
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)) :=
+  den_flow_subset_of_imp (fun _ => Flow.GloballyExponentiallyStable.sampledContraction)
+    fun _ _ => Map.GloballyExponentiallyStable.sampledContraction
 
 /-- A family read on fields translated to selected points: its flow sentences are those of the
 untranslated fields at the points (`Flow.Property.holds_shift_iff`). -/

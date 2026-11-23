@@ -406,6 +406,13 @@ model, not a connection conclusion. -/
     have : 0 < p.a * p.Kp + p.b := by rw [hsum]; exact div_pos hkp hVC
     linarith
 
+/-- With no integral gain the field does not depend on `ζ`. -/
+@[tmio M, powerlib_domain] private theorem closedField_ki_zero_shift (hKi : p.Ki = 0)
+    (x : State 2) (t : ℝ) :
+    p.closedField (x + t • EuclideanSpace.single 1 1) = p.closedField x := by
+  ext i
+  fin_cases i <;> simp [closedField, idRef, hKi]
+
 end DCParams
 
 namespace DCParams
@@ -441,23 +448,9 @@ def closedFamily : Family DCParams Spectral.Requirement 2 0 :=
   have hdiff : DifferentiableAt ℝ p.closedField p.eqState :=
     (p.closedField_contDiffOn.contDiffAt ((isOpen_posDC 2).mem_nhds hx)).differentiableAt
       one_ne_zero
-  have hconst : ∀ t : ℝ, p.closedField (p.eqState + t • EuclideanSpace.single 1 1) =
-      p.closedField p.eqState := by
-    intro t
-    ext i
-    fin_cases i <;> simp [DCParams.closedField, DCParams.idRef, hKi]
-  have h1 : HasDerivAt (fun t : ℝ => p.closedField (p.eqState + t • EuclideanSpace.single 1 1))
-      (fderiv ℝ p.closedField p.eqState (EuclideanSpace.single 1 1)) 0 := by
-    have h := hdiff.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
-      (((hasDerivAt_id (0 : ℝ)).smul_const (EuclideanSpace.single 1 1 : State 2)).const_add
-        p.eqState) (by simp)
-    rw [one_smul] at h
-    exact h
-  have h2 : HasDerivAt (fun t : ℝ => p.closedField (p.eqState + t • EuclideanSpace.single 1 1))
-      0 0 := by
-    simp only [hconst]
-    exact hasDerivAt_const _ _
-  exact h1.unique h2
+  refine Dynamics.fderiv_apply_eq_of_hasDerivAt_line hdiff ?_
+  simp only [p.closedField_ki_zero_shift hKi]
+  exact hasDerivAt_const _ _
 
 /-- Positive `V_d`, `V_dc*`, `C`: the nonlinear DC-voltage loop is locally exponentially stable
 at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, both directions). -/
@@ -889,12 +882,6 @@ every nearby solution on its level. -/
       exact hpos
 
 /-! ### No integral gain -/
-
-/-- With no integral gain the field does not depend on `ζ`. -/
-@[tmio M, powerlib_domain] private theorem closedField_ki_zero_shift (hKi : p.Ki = 0) (x : State 2) (t : ℝ) :
-    p.closedField (x + t • EuclideanSpace.single 1 1) = p.closedField x := by
-  ext i
-  fin_cases i <;> simp [closedField, idRef, hKi]
 
 /-- With no integral gain the loop is not locally asymptotically stable: either the operating
 point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/

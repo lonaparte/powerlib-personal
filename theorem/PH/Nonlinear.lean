@@ -39,6 +39,8 @@ Source: work-sync `theory/T-ph.md` §1.1 (form (1.1), structure assumptions 1–
 `theory/T-grid-disturbance.md` (1.1), §1.5 (1.2) (disturbance channels).
 
 Results (generic foundation for every nonlinear pH system).
+* The power balance of the pH form as a matrix identity, `vᵀ ((J − R) v + g u) = uᵀ gᵀ v − vᵀ R v`
+  for skew `J` (`dotProduct_phField`), read by every pH power balance of the library.
 * Power balance (1.2) and its integral (1.3) (`power_balance`, `integral_power_balance`,
   `trajectory_energy_derivative`), the dissipation inequality (`dissipation_inequality`,
   `integral_dissipation`) and the zero-input corollary (`zeroInput_power_balance`,
@@ -77,10 +79,9 @@ Family and connection conclusions.
      `(toPH m).system`;
   3. `Family.IsNonlinearPH family (fun m => (toPH m).shift m.point)` holds by `fun _ => rfl`;
   4. connection conclusions from the generic theorems:
-     * passivity — `connection% (m ∈ family.den .passive)` by
-       `hF.mem_den_passive (bddBelow_range_shift_H.mpr hH)` or
-       `hF.mem_den_passive_of_lowerBound c hc` (a lower bound on the Hamiltonian; the `.passive`
-       sentence is translation-invariant, so the bound may be stated on `toPH m` itself);
+     * passivity — `connection% (m ∈ family.den .passive)` by `hF.mem_den_passive_shift hH`
+       (`hH : BddBelow (range (toPH m).H)`; the `.passive` sentence is translation-invariant, so
+       the bound is stated on `toPH m` itself) or `hF.mem_den_passive_of_lowerBound c hc`;
      * Lyapunov stability — `connection% (m ∈ family.den (.flow .lyapunovStable))` by
        `hF.mem_den_lyapunovStable_shift h` with `h : (toPH m).IsStrictLocalMin m.point`;
      * any other flow sentence — `hF.mem_den_flow_shift` reduces `m ∈ family.den (.flow P)` to
@@ -118,6 +119,15 @@ variable {n m : ℕ}
     calc v ⬝ᵥ (J *ᵥ v) = (Jᵀ *ᵥ v) ⬝ᵥ v := by rw [dotProduct_mulVec, mulVec_transpose]
       _ = -(v ⬝ᵥ (J *ᵥ v)) := by rw [hJ, neg_mulVec, neg_dotProduct, dotProduct_comm]
   linarith
+
+/-- Power balance of the port-Hamiltonian form (T-ph (1.2)) as a matrix identity: for a skew `J`,
+`vᵀ ((J − R) v + g u) = uᵀ (gᵀ v) − vᵀ R v`. -/
+@[tmio T, powerlib_foundation] theorem dotProduct_phField {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {J : Matrix ι ι ℝ} (hJ : Jᵀ = -J) (R : Matrix ι ι ℝ) (g : Matrix ι κ ℝ) (v : ι → ℝ)
+    (u : κ → ℝ) : v ⬝ᵥ ((J - R) *ᵥ v + g *ᵥ u) = u ⬝ᵥ (gᵀ *ᵥ v) - v ⬝ᵥ (R *ᵥ v) := by
+  rw [sub_mulVec, dotProduct_add, dotProduct_sub, dotProduct_mulVec_self_eq_zero_of_skew hJ,
+    dotProduct_mulVec v g, ← mulVec_transpose, dotProduct_comm (gᵀ *ᵥ v)]
+  ring
 
 /-- The planar symplectic matrix `[[0, 1], [−1, 0]]` is skew-symmetric. -/
 @[tmio T, powerlib_foundation] theorem transpose_symplectic_two :
@@ -203,16 +213,11 @@ def zeroInputField (x : State n) : State n :=
   simpa [dampingPower, star_trivial] using
     (M.dissipation_posSemidef x).dotProduct_mulVec_nonneg (WithLp.ofLp (M.dH x))
 
-@[tmio T, powerlib_foundation] theorem gradient_dotProduct_input (x : State n) (u : Fin m → ℝ) :
-    WithLp.ofLp (M.dH x) ⬝ᵥ (M.g x *ᵥ u) = M.supply x u := by
-  rw [supply, output, dotProduct_mulVec, ← mulVec_transpose, dotProduct_comm]
-
 /-- Power balance (T-ph (1.2)): `Ḣ = uᵀ y − ∇Hᵀ R ∇H` at every state and input. -/
 @[tmio T, powerlib_foundation] theorem power_balance (x : State n) (u : Fin m → ℝ) :
     fderiv ℝ M.H x (M.field x u) = M.supply x u - M.dampingPower x := by
-  rw [M.fderiv_H_apply, ofLp_field, sub_mulVec, dotProduct_add, dotProduct_sub,
-    dotProduct_mulVec_self_eq_zero_of_skew (M.skew x), gradient_dotProduct_input, dampingPower]
-  ring
+  rw [M.fderiv_H_apply, ofLp_field, dotProduct_phField (M.skew x)]
+  rfl
 
 /-- Dissipation inequality: `Ḣ ≤ uᵀ y`. -/
 @[tmio T, powerlib_foundation] theorem dissipation_inequality (x : State n) (u : Fin m → ℝ) :
@@ -548,6 +553,16 @@ it holds for the zero-input field of the uncentred system at the operating point
   change x ∈ F.den (.flow P) ↔ P.holds (base x).zeroInputField (point x)
   rw [(connection_proof% mem_den), hF x]
   exact (base x).holds_flow_shift_iff P (point x)
+
+/-- A lower bound on the Hamiltonian of the uncentred system places a member of a centred pH family
+in the passivity denotation (`NonlinearModel.holds_passive_shift`). -/
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive_shift
+    {base : X → NonlinearModel n m} {point : X → EuclideanSpace ℝ (Fin n)}
+    (hF : F.IsNonlinearPH fun x => (base x).shift (point x)) {x : X}
+    (hH : BddBelow (range (base x).H)) : connection% (x ∈ F.den .passive) := by
+  change x ∈ F.den .passive
+  rw [(connection_proof% mem_den), hF x]
+  exact (base x).holds_passive_shift (point x) hH
 
 /-- A strict local minimum of the Hamiltonian at the operating point places a member of a centred
 pH family in Lyapunov stability. -/

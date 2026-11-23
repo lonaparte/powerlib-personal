@@ -1,4 +1,5 @@
 import theorem.Modal.Participation
+import theorem.Dynamics.Calculus
 
 /-! # Modal response, residues, poles and repeated-eigenvalue participation
 
@@ -256,20 +257,12 @@ end ModalBasis
 
 /-! ## Modal free response (`T-small-signal-stability.md` §1.5) -/
 
+/-- A scalar complex mode `ẇ = c w` is `w t = e^{ct} w 0`
+(`Dynamics.eq_exp_smul_mul_of_hasDerivAt` in `ℂ`). -/
 @[tmio T, powerlib_foundation] theorem scalar_linear_ode {w : ℝ → ℂ} {c : ℂ}
     (h : ∀ t, HasDerivAt w (c * w t) t) (t : ℝ) : w t = Complex.exp (c * t) * w 0 := by
-  let g : ℝ → ℂ := fun t => Complex.exp (-(c * t)) * w t
-  have hg : ∀ t, HasDerivAt g 0 t := by
-    intro t
-    have he : HasDerivAt (fun t : ℝ => Complex.exp (-(c * t)))
-        (Complex.exp (-(c * t)) * -(c * 1)) t :=
-      ((hasDerivAt_id t).ofReal_comp.const_mul c).neg.cexp
-    convert he.mul (h t) using 1
-    ring
-  have hconst := is_const_of_deriv_eq_zero (fun t => (hg t).differentiableAt)
-    (fun t => (hg t).deriv) t 0
-  simp only [g, Complex.ofReal_zero, mul_zero, neg_zero, Complex.exp_zero, one_mul] at hconst
-  rw [← hconst, ← mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul]
+  rw [Dynamics.eq_exp_smul_mul_of_hasDerivAt h t, ← Complex.exp_eq_exp_ℂ, Complex.real_smul,
+    mul_comm (t : ℂ)]
 
 /-- Modal decomposition of every global free response of a real linear system `ẋ = A x` with
 diagonalisable state matrix: `x(t) = Σ_i e^{λ_i t} (ψ_iᵀ x(0)) v_i` (complexified). -/

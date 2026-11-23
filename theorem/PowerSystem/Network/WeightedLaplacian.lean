@@ -31,6 +31,8 @@ Results.
   such a path the indicator of the node's component lies in the kernel
   (`grounded_mulVec_component_eq_zero`), so for symmetric weights `L + diag g` is nonsingular
   exactly when every node reaches ground (`grounded_det_ne_zero_iff`).
+* Null directions of a nonnegative Laplacian form with weights of any sign satisfy every node
+  balance `(L g)ᵢ = 0` (`node_balance_eq_zero_of_form_eq_zero`).
 * The Laplacian over any commutative ring: rows `(L x)ᵢ = ∑ⱼ Wᵢⱼ (xᵢ − xⱼ)`
   (`laplacian_mulVec_apply`), `L𝟙 = 0` (`laplacian_mulVec_const`), zero column sums for symmetric
   weights (`sum_laplacian_mulVec`), and `laplacian_map` (real weights read as complex ones: the
@@ -117,24 +119,6 @@ omit [Fintype ι] [DecidableEq ι] in
   | refl => rfl
   | tail _ hbc ih => exact ih.trans (hx _ _ hbc)
 
-/-- Quadratic form of a symmetric weighted Laplacian. -/
-@[tmio T, powerlib_foundation] theorem dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
-    (hW : ∀ i j, W i j = W j i) (x : ι → ℝ) :
-    dotProduct x (laplacian W *ᵥ x) = (∑ i, ∑ j, W i j * (x i - x j) ^ 2) / 2 := by
-  have h1 : dotProduct x (laplacian W *ᵥ x) = ∑ i, ∑ j, W i j * (x i * (x i - x j)) := by
-    simp only [dotProduct, laplacian_mulVec_apply, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  have h2 : ∑ i, ∑ j, W i j * (x i * (x i - x j)) = ∑ i, ∑ j, W i j * (x j * (x j - x i)) := by
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hW]
-  have h3 : ∑ i, ∑ j, W i j * (x i - x j) ^ 2 =
-      ∑ i, ∑ j, W i j * (x i * (x i - x j)) + ∑ i, ∑ j, W i j * (x j * (x j - x i)) := by
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ => by
-      rw [← Finset.sum_add_distrib]; exact Finset.sum_congr rfl fun j _ => by ring
-  rw [h3, ← h2, h1]
-  ring
-
 omit [DecidableEq ι] in
 /-- Complex Hermitian form of a symmetric real Laplacian: `uᴴ L u = ½ ∑ Wᵢⱼ |uᵢ - uⱼ|²`. -/
 @[tmio T, powerlib_foundation] theorem star_dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
@@ -167,6 +151,16 @@ omit [DecidableEq ι] in
   rw [h3, ← h2]
   ring
 
+/-- Quadratic form of a symmetric weighted Laplacian (the real reading of
+`star_dotProduct_laplacian_mulVec`). -/
+@[tmio T, powerlib_foundation] theorem dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
+    (hW : ∀ i j, W i j = W j i) (x : ι → ℝ) :
+    dotProduct x (laplacian W *ᵥ x) = (∑ i, ∑ j, W i j * (x i - x j) ^ 2) / 2 := by
+  have h := star_dotProduct_laplacian_mulVec hW fun i => (x i : ℂ)
+  simp only [← Complex.ofReal_sub, ← Complex.ofReal_mul, Complex.star_def, Complex.conj_ofReal,
+    ← Complex.ofReal_sum, Complex.ofReal_inj, Complex.normSq_ofReal] at h
+  simp only [dotProduct, laplacian_mulVec_apply, h, sq]
+
 @[tmio T, powerlib_foundation] theorem laplacian_posSemidef_form {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (x : ι → ℝ) :
     0 ≤ dotProduct x (laplacian W *ᵥ x) := by
@@ -193,6 +187,22 @@ omit [DecidableEq ι] in
     · exact h
   have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
   linarith
+
+/-- Null directions of a nonnegative Laplacian form, weights of any sign: if
+`x ↦ ∑ᵢⱼ Wᵢⱼ (xᵢ − xⱼ)²` (`W` symmetric) is nonnegative and vanishes at `g`, every node balance
+`(L g)ᵢ = ∑ⱼ Wᵢⱼ (gᵢ − gⱼ)` vanishes (Mathlib `PosSemidef.dotProduct_mulVec_zero_iff`). -/
+@[tmio T, powerlib_foundation] theorem node_balance_eq_zero_of_form_eq_zero {W : Matrix ι ι ℝ}
+    (hW : ∀ i j, W i j = W j i) (hQ : ∀ x : ι → ℝ, 0 ≤ ∑ i, ∑ j, W i j * (x i - x j) ^ 2)
+    {g : ι → ℝ} (hg : ∑ i, ∑ j, W i j * (g i - g j) ^ 2 = 0) (i : ι) :
+    ∑ j, W i j * (g i - g j) = 0 := by
+  have hL : (laplacian W).PosSemidef := by
+    refine posSemidef_iff_dotProduct_mulVec.2 ⟨?_, fun x => ?_⟩
+    · rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, laplacian_transpose hW]
+    · rw [star_trivial, dotProduct_laplacian_mulVec hW]
+      exact div_nonneg (hQ x) zero_le_two
+  have h := hL.dotProduct_mulVec_zero_iff.1
+    (by rw [star_trivial, dotProduct_laplacian_mulVec hW, hg, zero_div])
+  rw [← laplacian_mulVec_apply, h, Pi.zero_apply]
 
 /-- Kernel of a connected symmetric Laplacian: `L x = 0` forces `x` constant. -/
 @[tmio T, powerlib_foundation] theorem eq_of_laplacian_mulVec_eq_zero {W : Matrix ι ι ℝ}

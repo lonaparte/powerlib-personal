@@ -36,7 +36,8 @@ Results.
   `state_roundtrip`, `modelEquiv`, `StateSpace.plant`, `Circuit.plant`, `plant_toCircuit`.
 * Poles: the coefficients `Circuit.a3`, `Circuit.a2`, `Circuit.a1`, `Circuit.a0`, the pole
   polynomial `Circuit.frequency`, `Circuit.Stable`, `a3_pos`, `det_characteristicMatrix`,
-  `isHurwitz_iff_stable`.
+  `isHurwitz_plant_iff` (static: the state matrix is Hurwitz iff the circuit is pole-stable) and
+  its family reading `isHurwitz_iff_stable`.
 * Routh–Hurwitz and passivity: `Circuit.Passive`, `Circuit.Damped`, `hurwitz_gap`,
   `Circuit.RouthHurwitz`, `stable_of_routhHurwitz` (from the cubic criterion
   `Criteria.cubic_hurwitz`, `theorem/Criteria/Routh3.lean`), `routhHurwitz_of_passive`,
@@ -257,16 +258,22 @@ def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets
 
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Circuit.plant := fun _ => rfl
 
+/-- The state matrix is Hurwitz exactly when all poles lie in the open left half plane (static:
+`det(sI − A) = frequency s / a₃`). -/
+@[tmio TM, powerlib_domain] theorem isHurwitz_plant_iff (m : Circuit) :
+    IsHurwitz m.plant.A ↔ m.Stable := by
+  rw [← Linear.spectrallyStable_iff_isHurwitz]
+  have ha3 : (m.a3 : ℂ) ≠ 0 := by exact_mod_cast (a3_pos m).ne'
+  simp only [Linear.SpectrallyStable, Circuit.Stable, det_characteristicMatrix, div_eq_zero_iff,
+    ha3, or_false]
+
 /-- The plant is Hurwitz exactly when all poles lie in the open left half plane. -/
 @[tmio TM, simp high, powerlib_domain] theorem isHurwitz_iff_stable (m : Circuit) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ m ∈ TMIO.realize Meets {.poleStable}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
-  rw [← Linear.spectrallyStable_iff_isHurwitz]
-  have ha3 : (m.a3 : ℂ) ≠ 0 := by exact_mod_cast (a3_pos m).ne'
-  simp only [Linear.SpectrallyStable, Circuit.Stable, det_characteristicMatrix, div_eq_zero_iff,
-    ha3, or_false]
+  exact isHurwitz_plant_iff m
 
 /-! ## Routh–Hurwitz and passivity -/
 
@@ -441,12 +448,7 @@ plane: the whole requirement language is inconsistent. -/
   have hs : m.Stable := (mem_realize Meets {.poleStable} m).mp hm .poleStable rfl
   apply family_isLinear.not_isHurwitz_of_mem_den_conservative (by norm_num) h
   rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
-  exact (by
-    have h : IsHurwitz m.plant.A ↔ m.Stable := by
-      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
-        (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
-          (isHurwitz_iff_stable m)
-    exact h.mpr hs)
+  exact (isHurwitz_plant_iff m).mpr hs
 
 /-! ## Faithfulness -/
 
@@ -478,10 +480,7 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
       ext i j
       fin_cases i <;> fin_cases j <;> simp [Circuit.toPH, h1, h2]
     all_goals
-      rw [family_isLinear.den_hurwitz (by simp), Set.mem_ofPred_eq, (show ∀ m : Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
-        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
-          (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
-            (isHurwitz_iff_stable m))]
+      rw [family_isLinear.den_hurwitz (by simp), Set.mem_ofPred_eq, isHurwitz_plant_iff]
       exact hm .poleStable rfl
   · exact (mem_den_iff_toPH m (hm .passive rfl) _).mpr (Port.PortHamiltonian.mem_den_passive _)
   · rw [family_isLinear.den_envelope]
@@ -501,10 +500,8 @@ stability is their exact translation, for every circuit, passive or not. -/
   change realize Meets (translate (.flow P)) = _
   rw [ht, family_isLinear.den_hurwitz hP]
   ext m
-  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Set.mem_ofPred_eq, Meets, (show ∀ m : Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
-        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
-          (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
-            (isHurwitz_iff_stable m))]
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Set.mem_ofPred_eq, Meets,
+    isHurwitz_plant_iff]
 
 /-- Within passive circuits, conservation is exactly losslessness: a damped passive circuit is
 pole-stable, so its solutions converge. -/
@@ -694,8 +691,7 @@ circuit is pole-stable, hence Lyapunov stable, without being passive. -/
   have hs : negativeCircuit.Stable := (show negativeCircuit.Stable from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using stable_of_routhHurwitz _ (show negativeCircuit.RouthHurwitz from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using negativeCircuit_routhHurwitz))
   have hmem : negativeCircuit ∈ family.den (.flow .lyapunovStable) :=
     family_isLinear.mem_den_flow.mpr
-      (Linear.lyapunovStable_of_isHurwitz 0 ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
-        ((isHurwitz_iff_stable _).mpr (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hs))))
+      (Linear.lyapunovStable_of_isHurwitz 0 ((isHurwitz_plant_iff _).mpr hs))
   rw [← h, (connection_proof% mem_realize)] at hmem
   have hp : negativeCircuit.Passive := hmem .passive rfl
   have := hp.1

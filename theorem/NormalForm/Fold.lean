@@ -213,20 +213,12 @@ reach `|x| = 1` in finite time. -/
     (hψ : IsIntegralCurveOn ψ (fun _ r => field 0 r) (Icc a b)) (ha : 0 < ψ a) :
     ∀ t ∈ Icc a b, ψ t = ψ a / (1 + ψ a * (t - a)) := by
   have hpos := pos_of_pos (field_contDiff 0) (by simp [field]) hψ ha
-  have hconst := eq_of_hasDerivWithinAt_zero (F := fun t => (ψ t)⁻¹ - t) (a := a) (b := b)
-    (by
-      intro t ht
-      have hd : HasDerivWithinAt ψ (-(ψ t) ^ 2) (Icc a b) t := by
-        simpa [field] using hψ t ht
-      have h : HasDerivWithinAt (fun t => (ψ t)⁻¹ - t) (-(-(ψ t) ^ 2) / ψ t ^ 2 - 1)
-          (Icc a b) t := (hd.inv (hpos t ht).ne').sub (hasDerivWithinAt_id t (Icc a b))
-      convert h using 1
-      rw [neg_neg, div_self (pow_ne_zero 2 (hpos t ht).ne')]; ring)
+  have hinv := inv_eq_of_isIntegralCurveOn_sq (c := -1) (fun t ht => by simpa [field] using hψ t ht)
+    fun t ht => (hpos t ht).ne'
   intro t ht
-  have h := hconst t ht
   have hψt := (hpos t ht).ne'
   have hψa := ha.ne'
-  have hrec : (ψ t)⁻¹ = (ψ a)⁻¹ + (t - a) := by linarith
+  have hrec : (ψ t)⁻¹ = (ψ a)⁻¹ + (t - a) := by linarith [hinv t ht]
   have hden : 1 + ψ a * (t - a) ≠ 0 := by
     have := mul_nonneg ha.le (sub_nonneg.mpr ht.1); linarith
   rw [eq_div_iff hden]
@@ -253,24 +245,14 @@ reach `|x| = 1` in finite time. -/
   by_contra hb
   push Not at hb
   have hneg := neg_of_neg (field_contDiff 0) (by simp [field]) hψ ha
-  have hconst := eq_of_hasDerivWithinAt_zero (F := fun t => (ψ t)⁻¹ - t) (a := a) (b := b)
-    (by
-      intro t ht
-      have hd : HasDerivWithinAt ψ (-(ψ t) ^ 2) (Icc a b) t := by
-        simpa [field] using hψ t ht
-      have h : HasDerivWithinAt (fun t => (ψ t)⁻¹ - t) (-(-(ψ t) ^ 2) / ψ t ^ 2 - 1)
-          (Icc a b) t := (hd.inv (hneg t ht).ne).sub (hasDerivWithinAt_id t (Icc a b))
-      convert h using 1
-      rw [neg_neg, div_self (pow_ne_zero 2 (hneg t ht).ne)]; ring)
+  have hinv := inv_eq_of_isIntegralCurveOn_sq (c := -1) (fun t ht => by simpa [field] using hψ t ht)
+    fun t ht => (hneg t ht).ne
   set t := a - 1 / ψ a
   have ht : t ∈ Icc a b := ⟨by
     have : 0 < -(1 / ψ a) := by have := one_div_neg.mpr ha; linarith
     simp only [t]; linarith, hb⟩
-  have h := hconst t ht
-  simp only [t] at h
   have : (ψ (a - 1 / ψ a))⁻¹ = 0 := by
-    have h' : (ψ (a - 1 / ψ a))⁻¹ = (ψ a)⁻¹ + (a - 1 / ψ a - a) := by linarith
-    rw [h']; field_simp; ring
+    rw [hinv t ht]; field_simp; ring
   exact (inv_ne_zero (hneg _ ht).ne) this
 
 end powerlib.NormalForm.Fold

@@ -170,13 +170,10 @@ symmetric, every solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` stay
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) ((A t - P t * (C t)ᵀ * (R t)⁻¹ * C t) * Φ t s) t)
     (hΦ0 : ∀ s, Φ s s = 1)
     {t₀ : ℝ} (hP₀ : (P t₀).PosSemidef) {t : ℝ} (ht : t₀ ≤ t) : (P t).PosSemidef := by
-  have hRs : ∀ t, (R t)ᵀ = R t := fun t => by
-    have := (hRp t).isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
+  have hRs : ∀ t, (R t)ᵀ = R t := fun t => (hRp t).isHermitian.isSymm
   have hRu : ∀ t, IsUnit (R t).det := fun t => (hRp t).isUnit.map Matrix.detMonoidHom
-  have hQs : ∀ t, (Q t)ᵀ = Q t := fun t => by
-    have := (hQp t).isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
-  have hP0s : (P t₀)ᵀ = P t₀ := by
-    have := hP₀.isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
+  have hQs : ∀ t, (Q t)ᵀ = Q t := fun t => (hQp t).isHermitian.isSymm
+  have hP0s : (P t₀)ᵀ = P t₀ := hP₀.isHermitian.isSymm
   have hPs := riccati_symm hA hC hR hRs hRu hQs hP hP0s
   have hrep := riccati_joseph_form hA hC hQ hR hRs hRu hP hPs hΦ hΦ0 t₀
   have hPc : Continuous P := continuous_iff_continuousAt.2 fun t => (hP t).continuousAt

@@ -85,46 +85,41 @@ stated on the transition matrix: `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for all 
       _ ≤ (E * E * C * Real.exp (2 * γ) + E * Real.exp (β * T)) * Real.exp (-(β * (t - s))) := by
         have : 0 ≤ E * E * C * Real.exp (2 * γ) * Real.exp (-(β * (t - s))) := by positivity
         nlinarith
-  · set n : ℕ := ⌊(t - a) / T⌋₊ with hn
-    set b : ℝ := a + n * T with hb
-    have hnT : (n : ℝ) * T ≤ t - a := by
-      have := Nat.floor_le (div_nonneg (sub_nonneg.mpr hat) hT.le)
-      calc (n : ℝ) * T ≤ (t - a) / T * T := mul_le_mul_of_nonneg_right this hT.le
-        _ = t - a := by field_simp
-    have hnT' : t - a < (n + 1) * T := by
-      have := Nat.lt_floor_add_one ((t - a) / T)
-      calc t - a = (t - a) / T * T := by field_simp
-        _ < (n + 1) * T := mul_lt_mul_of_pos_right this hT
-    have hab : a ≤ b := by
-      have : (0 : ℝ) ≤ n * T := mul_nonneg (Nat.cast_nonneg n) hT.le
-      simp only [hb]; linarith
-    have hbt : b ≤ t := by simp only [hb]; linarith
-    have hsplit : transition A t s =
-        transition A t b * (transition A b a * transition A a s) := by
-      rw [LinearSystems.stateTransitionMatrix_comp hA (fun r _ => hM r) (mem_uIcc_of_le hsa hab),
-        LinearSystems.stateTransitionMatrix_comp hA (fun r _ => hM r)
-          (mem_uIcc_of_le (hsa.trans hab) hbt)]
-    have hmono : transition A b a = monodromy A T 0 ^ n := by
-      rw [hb, transition_add_nat_mul_period hA hM hT.le hP a n, ha,
-        show (k₀ : ℝ) * T = 0 + k₀ * T by ring, monodromy_add_int_mul hA hM hT.le hP 0 k₀]
-    have h1 : ‖transition A t b‖ ≤ E := hwin b t hbt (by simp only [hb]; nlinarith)
-    have h3 : ‖transition A a s‖ ≤ E := hwin s a hsa (by linarith)
-    have h2 : ‖transition A b a‖ ≤ C * Real.exp (-(γ * n)) := by rw [hmono]; exact hpow n
-    have hdecay : Real.exp (-(γ * n)) ≤ Real.exp (2 * γ) * Real.exp (-(β * (t - s))) := by
-      rw [← Real.exp_add]
-      apply Real.exp_le_exp.mpr
-      have hts : t - s < (n + 2) * T := by nlinarith
-      have : β * (t - s) ≤ γ * (n + 2) := by
-        rw [hβ, div_mul_eq_mul_div, div_le_iff₀ hT]
-        nlinarith
+  · -- from the first period point `a` on, the period samples decay (`LTI.le_exp_of_sampled_decay`)
+    have hwin : ∀ (n : ℕ) (r : ℝ), a + n * T ≤ r → r < a + (n + 1) * T →
+        ‖transition A r s‖ ≤ E * (‖transition A (a + n * T) a‖ * E) := by
+      intro n r h1 h2
+      have hab : a ≤ a + n * T := le_add_of_nonneg_right (by positivity)
+      have hsplit : transition A r s =
+          transition A r (a + n * T) * (transition A (a + n * T) a * transition A a s) := by
+        rw [LinearSystems.stateTransitionMatrix_comp hA (fun r _ => hM r) (mem_uIcc_of_le hsa hab),
+          LinearSystems.stateTransitionMatrix_comp hA (fun r _ => hM r)
+            (mem_uIcc_of_le (hsa.trans hab) h1)]
+      rw [hsplit]
+      refine (norm_mul_le _ _).trans ((mul_le_mul_of_nonneg_left (norm_mul_le _ _)
+        (norm_nonneg _)).trans ?_)
+      gcongr
+      · exact hwin _ r h1 (by linarith)
+      · exact hwin s a hsa (by linarith)
+    have hβT : β * T = γ := by rw [hβ]; exact div_mul_cancel₀ γ hT.ne'
+    have hg : ∀ n : ℕ, ‖transition A (a + n * T) a‖ * E ≤
+        C * E * Real.exp (-(β * (n * T))) := by
+      intro n
+      rw [transition_add_nat_mul_period hA hM hT.le hP a n, ha,
+        show (k₀ : ℝ) * T = 0 + k₀ * T by ring, monodromy_add_int_mul hA hM hT.le hP 0 k₀,
+        show β * (n * T) = γ * n by rw [← hβT]; ring]
+      calc ‖monodromy A T 0 ^ n‖ * E ≤ C * Real.exp (-(γ * n)) * E := by gcongr; exact hpow n
+        _ = C * E * Real.exp (-(γ * n)) := by ring
+    have h := LTI.le_exp_of_sampled_decay hT hE0 (mul_nonneg hC hE0) hwin hg hat
+    rw [abs_of_pos hβpos, hβT] at h
+    have hsh : Real.exp (-(β * (t - a))) ≤ Real.exp γ * Real.exp (-(β * (t - s))) := by
+      rw [← Real.exp_add, Real.exp_le_exp]
+      have : β * (a - s) ≤ β * T := mul_le_mul_of_nonneg_left (by linarith) hβpos.le
       nlinarith
-    calc ‖transition A t s‖ = ‖transition A t b * (transition A b a * transition A a s)‖ := by
-          rw [hsplit]
-      _ ≤ ‖transition A t b‖ * (‖transition A b a‖ * ‖transition A a s‖) :=
-          (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left (norm_mul_le _ _) (norm_nonneg _))
-      _ ≤ E * ((C * Real.exp (-(γ * n))) * E) := by gcongr
-      _ ≤ E * ((C * (Real.exp (2 * γ) * Real.exp (-(β * (t - s))))) * E) := by gcongr
-      _ = E * E * C * Real.exp (2 * γ) * Real.exp (-(β * (t - s))) := by ring
+    calc ‖transition A t s‖ ≤ E * (C * E) * Real.exp γ * Real.exp (-(β * (t - a))) := h
+      _ ≤ E * (C * E) * Real.exp γ * (Real.exp γ * Real.exp (-(β * (t - s)))) := by gcongr
+      _ = E * E * C * Real.exp (2 * γ) * Real.exp (-(β * (t - s))) := by
+          rw [two_mul, Real.exp_add]; ring
       _ ≤ (E * E * C * Real.exp (2 * γ) + E * Real.exp (β * T)) *
             Real.exp (-(β * (t - s))) := by
           have : 0 ≤ E * Real.exp (β * T) * Real.exp (-(β * (t - s))) := by positivity

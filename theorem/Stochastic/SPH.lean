@@ -69,13 +69,7 @@ expression: with `f = (J − R) ∇H + G u`, `J` skew and `y = Gᵀ ∇H`,
     (h : Matrix (Fin n) (Fin q) ℝ) (g : Fin n → ℝ) (K : Matrix (Fin n) (Fin n) ℝ) :
     genL ((J - R) *ᵥ g + G *ᵥ u) h g K
       = u ⬝ᵥ (Gᵀ *ᵥ g) - g ⬝ᵥ (R *ᵥ g) + itoCorrection h K := by
-  unfold genL
-  have hGu : (G *ᵥ u) ⬝ᵥ g = u ⬝ᵥ (Gᵀ *ᵥ g) := by
-    rw [mulVec_transpose, dotProduct_comm (G *ᵥ u) g, dotProduct_mulVec, dotProduct_comm]
-  have hRg : (R *ᵥ g) ⬝ᵥ g = g ⬝ᵥ (R *ᵥ g) := dotProduct_comm _ _
-  rw [sub_mulVec, add_dotProduct, sub_dotProduct, dotProduct_comm (J *ᵥ g) g,
-    PH.dotProduct_mulVec_self_eq_zero_of_skew hJ, hGu, hRg]
-  ring
+  rw [genL, dotProduct_comm, PH.dotProduct_phField hJ]
 
 /-- `∇²H ⪰ 0 ⇒ Δ_Itô ≥ 0` (T-sph (1.6)). -/
 @[tmio T, powerlib_foundation] theorem itoCorrection_nonneg {ι : Type*} [Fintype ι] (h : Matrix (Fin n) ι ℝ)
@@ -151,8 +145,7 @@ solves the stationary covariance equation. -/
 @[tmio T, powerlib_foundation] theorem rlc_fdt {J R Q : Matrix (Fin n) (Fin n) ℝ} {T : ℝ}
     (hJ : Jᵀ = -J) (hR : Rᵀ = R) (hQ : Q.PosDef) :
     Lyapunov.SolvesCovLyapunov ((J - R) * Q) (T • Q⁻¹) ((2 * T) • R) := by
-  have hQt : Qᵀ = Q := by
-    have := hQ.isHermitian; rwa [IsHermitian, conjTranspose_eq_transpose_of_trivial] at this
+  have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
   have hdet : IsUnit Q.det := (isUnit_iff_ne_zero).mpr hQ.det_pos.ne'
   have hQQ : Q * Q⁻¹ = 1 := mul_nonsing_inv Q hdet
   have hQQ' : Q⁻¹ * Q = 1 := nonsing_inv_mul Q hdet

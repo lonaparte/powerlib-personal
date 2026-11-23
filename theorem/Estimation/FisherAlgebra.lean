@@ -45,8 +45,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
 @[tmio T, powerlib_foundation] theorem two_dot_sub_quad_le {S : Matrix m m ℝ} (hS : S.PosDef)
     (x y : m → ℝ) : 2 * (x ⬝ᵥ y) - y ⬝ᵥ (S *ᵥ y) ≤ x ⬝ᵥ (S⁻¹ *ᵥ x) := by
   have hdet : IsUnit S.det := hS.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
-  have hSs : Sᵀ = S := by
-    have := hS.isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
+  have hSs : Sᵀ = S := hS.isHermitian.isSymm
   set z := S⁻¹ *ᵥ x
   have hz : S *ᵥ z = x := by simp [z, mulVec_mulVec, mul_nonsing_inv _ hdet]
   have hpsd := hS.posSemidef.dotProduct_mulVec_nonneg (y - z)
@@ -65,8 +64,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
     (hA : A.PosDef) (hle : (A - S).PosSemidef) : (S⁻¹ - A⁻¹).PosSemidef := by
   have hdetA : IsUnit A.det :=
     hA.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
-  have hAs : Aᵀ = A := by
-    have := hA.isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
+  have hAs : Aᵀ = A := hA.isHermitian.isSymm
   refine PosSemidef.of_dotProduct_mulVec_nonneg (hS.isHermitian.inv.sub hA.isHermitian.inv)
     fun x => ?_
   simp only [star_trivial]

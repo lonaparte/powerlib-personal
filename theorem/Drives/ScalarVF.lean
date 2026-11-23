@@ -25,6 +25,7 @@ Results.
   `ḟ ≤ np T_avail/(2πJ)`.
 * `torque_le_max`, `torque_at_pullout`: `T_e(s) ≤ T_max = 3V²/(2ω_s (r_s + √(r_s² + X²)))` for
   every `s > 0`, with equality at the pull-out slip `s_p = r_r/√(r_s² + X²)`.
+* `maxTorque_rs_zero`: without stator resistance `T_max = 3V²/(2ω_s X)`.
 * Constant-V/f region (`V = k f`, `X = x f`): `T_max` is independent of `f` when `r_s = 0`
   (`maxTorque_vf_rs_zero`) and strictly increasing in `f` when `r_s > 0`
   (`maxTorque_vf_strictMono`) — the low-frequency loss of pull-out torque that boost
@@ -114,6 +115,11 @@ def pulloutSlip (rs rr X : ℝ) : ℝ := rr / Real.sqrt (rs ^ 2 + X ^ 2)
   rw [hden]
   field_simp
 
+/-- Without stator resistance the pull-out torque is `3V²/(2ω_s X)` (`X ≥ 0`). -/
+@[tmio M, powerlib_domain] theorem maxTorque_rs_zero (V ω : ℝ) {X : ℝ} (hX : 0 ≤ X) :
+    maxTorque V ω 0 X = 3 * V ^ 2 / (2 * ω * X) := by
+  rw [maxTorque, zero_pow two_ne_zero, zero_add, zero_add, Real.sqrt_sq hX]
+
 /-! ## Constant V/f region and field weakening -/
 
 /-- Pull-out torque on the V/f line `V = k f`, `ω_s = 2πf`, `X = x f`. -/
@@ -122,10 +128,7 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
 /-- With `r_s = 0` the pull-out torque on the V/f line is `3k²/(4πx)` for every `f > 0`. -/
 @[tmio M, powerlib_domain] theorem maxTorque_vf_rs_zero (k x f : ℝ) (hx : 0 < x) (hf : 0 < f) :
     maxTorqueVF k x 0 f = 3 * k ^ 2 / (4 * Real.pi * x) := by
-  unfold maxTorqueVF maxTorque
-  have hs : Real.sqrt ((0 : ℝ) ^ 2 + (x * f) ^ 2) = x * f := by
-    rw [zero_pow two_ne_zero, zero_add, Real.sqrt_sq (by positivity)]
-  rw [hs]
+  rw [maxTorqueVF, maxTorque_rs_zero _ _ (by positivity)]
   have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
   field_simp
   ring
@@ -164,12 +167,7 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
     (hf : 0 < f) :
     maxTorque Vn (2 * Real.pi * f) 0 (x * f) =
       maxTorque Vn (2 * Real.pi * fn) 0 (x * fn) * (fn / f) ^ 2 := by
-  unfold maxTorque
-  have hs : ∀ y : ℝ, 0 < y → Real.sqrt ((0 : ℝ) ^ 2 + (x * y) ^ 2) = x * y := by
-    intro y hy
-    rw [zero_pow two_ne_zero, zero_add, Real.sqrt_sq (by positivity)]
-  rw [hs f hf, hs fn hfn]
-  simp only [zero_add]
+  rw [maxTorque_rs_zero _ _ (by positivity), maxTorque_rs_zero _ _ (by positivity)]
   have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
   field_simp
 
@@ -181,18 +179,13 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
       (Set.Ioi 0) := by
   intro f1 hf1 f2 hf2 h12
   simp only [Set.mem_Ioi] at hf1 hf2
-  have hs : ∀ y : ℝ, 0 < y → Real.sqrt ((0 : ℝ) ^ 2 + (x * y) ^ 2) = x * y := by
-    intro y hy
-    rw [zero_pow two_ne_zero, zero_add, Real.sqrt_sq (by positivity)]
   have e : ∀ y : ℝ, 0 < y →
       maxTorque Vn (2 * Real.pi * y) 0 (x * y) * (2 * Real.pi * y / np) =
         3 * Vn ^ 2 / (2 * x * np) / y := by
     intro y hy
-    unfold maxTorque
-    rw [hs y hy]
+    rw [maxTorque_rs_zero _ _ (by positivity)]
     have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
     field_simp
-    ring
   simp only
   rw [e f1 hf1, e f2 hf2]
   apply div_lt_div_of_pos_left (by positivity) hf1 h12

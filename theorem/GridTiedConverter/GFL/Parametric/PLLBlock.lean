@@ -97,9 +97,8 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
       Complex.norm_real, Real.norm_eq_abs, sq_abs]
   have hden : ‖LPLL v kp ki (Complex.I * Ω)‖ =
       Real.sqrt ((ki * v - Ω ^ 2) ^ 2 + (kp * v * Ω) ^ 2) := by
-    rw [Complex.norm_def, Complex.normSq_apply]
+    rw [LPLL, mul_comm Complex.I, PLL.loopPoly_mul_I, Complex.norm_def, Complex.normSq_mk]
     congr 1
-    simp [PLL.loopPoly, pow_two, Complex.mul_re, Complex.mul_im]
     ring
   rw [norm_div, hnum, hden]
   have hrhs : (1 - (Ω / w) ^ 2) ^ 2 + 4 * (kp * v / (2 * w)) ^ 2 * (Ω / w) ^ 2 =
@@ -114,7 +113,8 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
 @[tmio M, powerlib_domain] theorem normSq_LPLL (v kp ki ω : ℝ) :
     Complex.normSq (LPLL v kp ki (2 * Complex.I * ω)) =
       (ki * v - 4 * ω ^ 2) ^ 2 + (2 * ω * kp * v) ^ 2 := by
-  simp [PLL.loopPoly, Complex.normSq_apply, pow_two, Complex.mul_re, Complex.mul_im]
+  rw [LPLL, show 2 * Complex.I * (ω : ℂ) = ((2 * ω : ℝ) : ℂ) * Complex.I by push_cast; ring,
+    PLL.loopPoly_mul_I, Complex.normSq_mk]
   ring
 
 /-- `∂_{k_p} |L_PLL(2jω)|² = 8ω² k_p v²`. -/

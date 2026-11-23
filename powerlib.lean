@@ -311,6 +311,7 @@ import theorem.Stochastic.Convergence
 import theorem.Stochastic.ConvergenceCDF
 import theorem.Stochastic.FokkerPlanck
 import theorem.Stochastic.GBMSeparation
+import theorem.Stochastic.GaussianLaw
 import theorem.Stochastic.LargeDeviations
 import theorem.Stochastic.LyapunovCovariance
 import theorem.Stochastic.MFPT

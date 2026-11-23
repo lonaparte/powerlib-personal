@@ -154,21 +154,10 @@ def rhoPoly (m : LMM k) : ℂ[X] := ∑ i, Polynomial.C (m.α i : ℂ) * X ^ (i 
 @[tmio T, powerlib_foundation] theorem norm_rho_le_norm_rhoRev (m : LMM k) (h : m.α (Fin.last k) ≠ 0)
     (hroots : ∀ ζ, m.rho ζ = 0 → ‖ζ‖ ≤ 1) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) :
     ‖m.rho w‖ ≤ ‖m.rhoRev w‖ := by
-  have hP : m.rhoPoly ≠ 0 := by
-    intro h0
-    have := m.rhoPoly_natDegree h
-    rw [h0, natDegree_zero] at this
-    subst this
-    apply h
-    have := congrArg (fun p => p.coeff 0) h0
-    simpa [rhoPoly, finsetSum_coeff, coeff_C_mul_X_pow] using this
-  have hr : ∀ ζ ∈ m.rhoPoly.roots, ‖ζ‖ ≤ 1 := fun ζ hζ => by
-    rw [mem_roots hP, IsRoot, rhoPoly_eval] at hζ
-    exact hroots ζ hζ
-  have := Criteria.norm_eval_le_of_roots_norm_le_one m.rhoPoly hr hw0 hw
-  rw [rhoPoly_eval, rhoPoly_eval, rhoPoly_natDegree m h, ← map_inv₀, rho_conj,
-    Complex.norm_conj] at this
-  rwa [m.rhoRev_eq hw0, norm_mul, norm_pow]
+  have := Criteria.norm_eval_le_norm_reverse_of_isRoot m.rhoPoly
+    (fun z => by simp only [rhoPoly_eval, rho_conj])
+    (fun ζ hζ => hroots ζ (by rwa [IsRoot, rhoPoly_eval] at hζ)) hw0 hw
+  rwa [rhoPoly_eval, rhoPoly_natDegree m h, rhoPoly_eval, ← m.rhoRev_eq hw0] at this
 
 /-- **A root outside the unit disk from one exact inequality.** If `‖ρ*(w)‖ < ‖ρ(w)‖` at a
 single point `0 < ‖w‖ ≤ 1`, then `ρ` has a root `ζ` with `1 < ‖ζ‖`. -/
@@ -289,17 +278,10 @@ the closed unit disk, then `‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖` for `0 
 @[tmio T, powerlib_foundation] theorem norm_bdfRhoSum_le_norm_bdfRevSum {k : ℕ} (hk : 0 < k)
     (hroots : ∀ ζ, bdfRhoSum k ζ = 0 → ‖ζ‖ ≤ 1) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) :
     ‖bdfRhoSum k w‖ ≤ ‖bdfRevSum k w‖ := by
-  have hP : bdfPoly k ≠ 0 := fun h0 => by
-    have := bdfPoly_natDegree hk
-    rw [h0, natDegree_zero] at this
-    omega
-  have hr : ∀ ζ ∈ (bdfPoly k).roots, ‖ζ‖ ≤ 1 := fun ζ hζ => by
-    rw [mem_roots hP, IsRoot, bdfPoly_eval] at hζ
-    exact hroots ζ hζ
-  have := Criteria.norm_eval_le_of_roots_norm_le_one (bdfPoly k) hr hw0 hw
-  rw [bdfPoly_eval, bdfPoly_eval, bdfPoly_natDegree hk, ← map_inv₀, bdfRhoSum_conj,
-    Complex.norm_conj] at this
-  rwa [bdfRevSum_eq k hw0, norm_mul, norm_pow]
+  have := Criteria.norm_eval_le_norm_reverse_of_isRoot (bdfPoly k)
+    (fun z => by simp only [bdfPoly_eval, bdfRhoSum_conj])
+    (fun ζ hζ => hroots ζ (by rwa [IsRoot, bdfPoly_eval] at hζ)) hw0 hw
+  rwa [bdfPoly_eval, bdfPoly_natDegree hk, bdfPoly_eval, ← bdfRevSum_eq k hw0] at this
 
 /-- One point `0 < ‖w‖ ≤ 1` with `‖bdfRevSum k w‖ < ‖bdfRhoSum k w‖` exhibits a root of
 `bdfRhoSum k` outside the closed unit disk. -/

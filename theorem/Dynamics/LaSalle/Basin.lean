@@ -31,6 +31,8 @@ interface for later work-sync formalizations (PLL potential-well basins, equal-a
 LaSalle from LeanForControl (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4).
 
 Results.
+* `isIntegralCurveOn_shift_Ici`: a forward solution on `[t₀, ∞)` shifted by `t₀` is one on
+  `[0, ∞)` (time invariance of autonomous fields on a forward ray).
 * Region-of-attraction estimate. "**`S` is contained in the region of attraction** of `x_eq`"
   is written out in every statement as
   `∀ x₀ ∈ S, (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
@@ -68,6 +70,19 @@ local notation "ℝⁿ" => State n
 
 /-! ## Region-of-attraction estimates: time invariance -/
 
+/-- **Time invariance on a forward ray.** A forward solution on `[t₀, ∞)` of an autonomous field,
+shifted by `t₀`, is a forward solution on `[0, ∞)` (LeanForControl's `comp_add_autonomous`). -/
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_shift_Ici {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : E → E} {φ : ℝ → E} {t₀ : ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ x => g x) (Ici t₀)) :
+    IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => g x) (Ici 0) := by
+  have h := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
+  have hset : -t₀ +ᵥ Ici t₀ = Ici (0 : ℝ) := by
+    ext x
+    simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, mem_Ici]
+    constructor <;> intro h <;> linarith
+  rwa [hset] at h
+
 /-- Time invariance: if `S` lies in the region of attraction, a forward solution on `[t₀, ∞)`
 that starts in `S` converges. -/
 @[tmio T, powerlib_foundation] theorem RegionOfAttraction.tendsto {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
@@ -79,14 +94,7 @@ that starts in `S` converges. -/
     {t₀ : ℝ} {φ : ℝ → ℝⁿ}
     (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici t₀)) (hφ0 : φ t₀ ∈ S) :
     Tendsto φ atTop (𝓝 x_eq) := by
-  have hψ : IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => f x) (Ici 0) := by
-    have hset : -t₀ +ᵥ Ici t₀ = Ici (0 : ℝ) := by
-      ext x
-      simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, mem_Ici]
-      constructor <;> intro h <;> linarith
-    have h' := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
-    rwa [hset] at h'
-  have hconv := (h _ hφ0).2 (fun s => φ (s + t₀)) (by simp) hψ
+  have hconv := (h _ hφ0).2 (fun s => φ (s + t₀)) (by simp) (isIntegralCurveOn_shift_Ici hφ)
   exact Tendsto.congr (fun x => by simp)
     (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
 

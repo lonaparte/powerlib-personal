@@ -320,11 +320,6 @@ conclusion. -/
   rw [cylLie_cyl]
   simpa using energy_lie_le m hR hL hC x
 
-@[tmio M, powerlib_domain] private theorem N_pos (m : Model) (hR : 0 < m.Rs) : 0 < m.N := by
-  unfold Model.N
-  have := sq_nonneg m.ω0
-  positivity
-
 /-- On the cylinder, with `margin > 0`, `dH/dt = 0` only where `ũ_dc = 0` and `ĩ_dq = 0`.
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem cylLie_eq_zero (m : Model) (hR : 0 < m.Rs) (hL : 0 < m.Ls)
@@ -341,7 +336,7 @@ Static evidence on the model, not a connection conclusion. -/
         nlinarith [sq_nonneg (x 1 - m.ustar)]) (sq_nonneg _)
     have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h2
     linarith
-  have hl := energy_lie m (N_pos m hR).ne' hL.ne' hC.ne' x
+  have hl := energy_lie m (N_pos m hR.ne').ne' hL.ne' hC.ne' x
   rw [h0, hu, sub_self] at hl
   have hsum : m.Rs * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2) = 0 := by
     linarith
@@ -387,7 +382,7 @@ Static evidence on the model, not a connection conclusion. -/
   · exact (isClosed_eq circle_contDiff.continuous continuous_const).inter
       (isClosed_le (cylEnergy_contDiff m).continuous continuous_const)
   · rw [isBounded_iff_forall_norm_le]
-    have hN := N_pos m hR
+    have hN := N_pos m hR.ne'
     set K := |m.k|
     set Q := m.μ ^ 2 * m.ustar ^ 2 + m.v0 ^ 2 with hQ
     refine ⟨Real.sqrt (1 + 4 * (c + 2 * K) / m.Cdc + 2 * m.ustar ^ 2 + 4 * (c + 2 * K) / m.Ls +
@@ -450,9 +445,11 @@ Static evidence on the model, not a connection conclusion. -/
         (m.Rs * y 0 + m.ω0 * m.Ls * y 1) ∧
       y 4 - m.cQ (y 0) (y 1) = -(m.μ * m.ω0 * m.Ls / (2 * m.Rs * m.N)) * (y 2 - m.ustar) *
         (m.Rs * y 1 - m.ω0 * m.Ls * y 0) := by
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   obtain ⟨x, rfl⟩ := exists_cyl_eq hy
-  rw [cylLie_cyl, energy_lie m hN.ne' hL.ne' hC.ne' x] at h0
+  rw [cylLie_cyl, energy_lie_eq_sos m hR.ne' hL.ne' hC.ne' x, hm, neg_zero, zero_mul, zero_sub,
+    neg_eq_zero, div_eq_zero_iff] at h0
+  have key := h0.resolve_right (by positivity : (4 * m.Rs * m.N ^ 2 : ℝ) ≠ 0)
   simp only [cyl_apply, cD_cos_sin, cQ_cos_sin]
   set u := x 1 - m.ustar
   set e1 := x 2 - m.iHatD (x 0)
@@ -460,23 +457,6 @@ Static evidence on the model, not a connection conclusion. -/
   set z1 := m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)
   set z2 := m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)
   set B := m.μ * m.ω0 * m.Ls
-  have hz : z1 ^ 2 + z2 ^ 2 = m.N := by
-    simp only [z1, z2, Model.N]
-    linear_combination (m.Rs ^ 2 + m.ω0 ^ 2 * m.Ls ^ 2) * Real.sin_sq_add_cos_sq (x 0)
-  set β := B / m.N with hβdef
-  have hβ : β * m.N = B := div_mul_cancel₀ _ hN.ne'
-  set γ := B ^ 2 / (4 * m.Rs * m.N) with hγdef
-  have hγ : γ * (4 * m.Rs * m.N) = B ^ 2 := div_mul_cancel₀ _ (by positivity)
-  have hGK : m.Gdc + m.Kp = γ := by
-    have : m.margin = m.Gdc + m.Kp - γ := by
-      simp only [Model.margin, γ, B]
-      ring
-    linarith
-  clear_value u e1 e2 z1 z2 β γ
-  have key :
-      (2 * m.Rs * m.N * e1 + B * u * z1) ^ 2 + (2 * m.Rs * m.N * e2 + B * u * z2) ^ 2 = 0 := by
-    linear_combination (-4 * m.Rs * m.N ^ 2) * h0 - 4 * m.Rs * m.N ^ 2 * u ^ 2 * hGK
-      - m.N * u ^ 2 * hγ - 4 * m.Rs * m.N * u * (e1 * z1 + e2 * z2) * hβ + B ^ 2 * u ^ 2 * hz
   have k1 : 2 * m.Rs * m.N * e1 + B * u * z1 = 0 := by
     nlinarith [sq_nonneg (2 * m.Rs * m.N * e1 + B * u * z1),
       sq_nonneg (2 * m.Rs * m.N * e2 + B * u * z2)]
@@ -553,7 +533,7 @@ connection conclusion. -/
   unfold Model.k
   have : m.Ls * m.μ * m.ustar * m.v0 = m.Ls * (m.μ * m.ustar * m.v0) := by ring
   rw [this]
-  exact div_ne_zero (mul_ne_zero hL.ne' hs) (N_pos m hR).ne'
+  exact div_ne_zero (mul_ne_zero hL.ne' hs) (N_pos m hR.ne').ne'
 
 @[tmio M, powerlib_domain] private theorem iHatD_continuous (m : Model) : Continuous m.iHatD :=
   continuous_iff_continuousAt.2 fun θ => (hasDerivAt_iHatD m θ).continuousAt
@@ -573,7 +553,7 @@ motion is a negatively damped pendulum `C_dc ũ' = g ũ − κ s`, `θ' = η ũ`
       fderiv ℝ m.cylEnergy (ψ t) (m.cylField (ψ t)) = 0) :
     ψ 0 1 = 0 ∧ ψ 0 2 = m.ustar ∧ ψ 0 3 = m.cD (ψ 0 0) (ψ 0 1) ∧
       ψ 0 4 = m.cQ (ψ 0 0) (ψ 0 1) := by
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hμ : m.μ ≠ 0 := fun h => hs (by rw [h]; ring)
   have hu : m.ustar ≠ 0 := fun h => hs (by rw [h]; ring)
   have hω : m.ω0 ≠ 0 := mul_ne_zero hη hu
@@ -702,6 +682,57 @@ equilibria, region-of-attraction estimates), outside the sentence language of th
 they are private implementation evidence about the concrete model (Rules §3a). The generic tools
 they instantiate are the public foundation results of `theorem.Dynamics.LaSalle.Periodic`. -/
 
+/-- LaSalle on the cylinder (`margin ≥ 0`): the image of every forward solution converges to each
+set containing the positively invariant subsets of the zero set of `dH/dt` in the energy sublevel
+sets. -/
+@[tmio TM, powerlib_domain] private theorem tendsto_cyl_of_lasalle (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hδ : 0 ≤ m.margin) {M : Set (State 5)}
+    (hM : ∀ c, ∀ N ⊆ Dynamics.LaSalle.LieDerivZeroSet m.cylField m.cylEnergy
+      {y | y 0 ^ 2 + y 1 ^ 2 = 1 ∧ m.cylEnergy y ≤ c}, IsPositivelyInvariant N m.cylField → N ⊆ M)
+    {φ : ℝ → State 4} (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
+    Tendsto (fun t => cyl (φ t)) atTop (𝓝ˢ M) :=
+  Dynamics.LaSalle.lasalle_levelSet (h := fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) (c₀ := 1)
+    (cylField_contDiff m) (circle_contDiff.differentiable (by norm_num)) (cylEnergy_contDiff m)
+    (fderiv_circle_cylField m)
+    (fun y hy => (cylLie_le m hR hL.ne' hC.ne' hy).trans
+      (by nlinarith [sq_nonneg (y 2 - m.ustar)]))
+    (isCompact_cylSublevel m hC hL hR _) (hM _)
+    (Dynamics.LaSalle.isIntegralCurveOn_comp_of_fderiv
+      (cyl_contDiff.differentiable (by norm_num)) (fderiv_cyl_field m) hφ) (by simp) le_rfl
+
+/-- Reading a cylinder limit set: if the image of a solution converges to a set on which
+`u = u*` and `i = î(c, s)`, the DC and current errors tend to zero. -/
+@[tmio TM, powerlib_domain] private theorem tendsto_errors_of_tendsto_cyl (m : Model)
+    {φ : ℝ → State 4} {M : Set (State 5)} (hT : Tendsto (fun t => cyl (φ t)) atTop (𝓝ˢ M))
+    (hM : ∀ y ∈ M, y 2 = m.ustar ∧ y 3 = m.cD (y 0) (y 1) ∧ y 4 = m.cQ (y 0) (y 1)) :
+    Tendsto (fun t => φ t 1 - m.ustar) atTop (𝓝 0) ∧
+      Tendsto (fun t => φ t 2 - m.iHatD (φ t 0)) atTop (𝓝 0) ∧
+      Tendsto (fun t => φ t 3 - m.iHatQ (φ t 0)) atTop (𝓝 0) := by
+  have c5 : ∀ j : Fin 5, Continuous (fun y : State 5 => y j) := fun j =>
+    (Dynamics.contDiff_coord (k := 1) j).continuous
+  have hcD : Continuous (fun y : State 5 => y 3 - m.cD (y 0) (y 1)) := by
+    have h0 := c5 0
+    have h1 := c5 1
+    have h3 := c5 3
+    unfold Model.cD
+    fun_prop
+  have hcQ : Continuous (fun y : State 5 => y 4 - m.cQ (y 0) (y 1)) := by
+    have h0 := c5 0
+    have h1 := c5 1
+    have h4 := c5 4
+    unfold Model.cQ
+    fun_prop
+  refine ⟨?_, ?_, ?_⟩
+  · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT ((c5 2).sub continuous_const)
+      (fun y hy => sub_eq_zero.mpr (hM y hy).1)
+    simpa using this
+  · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcD
+      (fun y hy => sub_eq_zero.mpr (hM y hy).2.1)
+    simpa [cD_cos_sin] using this
+  · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcQ
+      (fun y hy => sub_eq_zero.mpr (hM y hy).2.2)
+    simpa [cQ_cos_sin] using this
+
 /-- The image of every forward solution on the cylinder converges to the set
 `{s = 0, u = u*, i = î(c, s)}`. -/
 @[tmio TM, powerlib_domain] private theorem tendsto_cyl (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
@@ -709,20 +740,12 @@ they instantiate are the public foundation results of `theorem.Dynamics.LaSalle.
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     Tendsto (fun t => cyl (φ t)) atTop (𝓝ˢ {y : State 5 | y 1 = 0 ∧ y 2 = m.ustar ∧
       y 3 = m.cD (y 0) (y 1) ∧ y 4 = m.cQ (y 0) (y 1)}) := by
-  have hψ := Dynamics.LaSalle.isIntegralCurveOn_comp_of_fderiv
-    (cyl_contDiff.differentiable (by norm_num)) (fderiv_cyl_field m) hφ
   have hκ : m.κ ≠ 0 := by
     rw [← eta_mul_k]
     exact mul_ne_zero hη (k_ne_zero m hL hR hs)
   have h2 : ContDiff ℝ 1 (fun y : State 5 => y 2 - m.ustar) :=
     (Dynamics.contDiff_coord (k := 1) 2).sub contDiff_const
-  refine Dynamics.LaSalle.lasalle_levelSet (h := fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) (c₀ := 1)
-    (c := m.cylEnergy (cyl (φ 0))) (cylField_contDiff m)
-    (circle_contDiff.differentiable (by norm_num)) (cylEnergy_contDiff m)
-    (fderiv_circle_cylField m)
-    (fun y hy => (cylLie_le m hR hL.ne' hC.ne' hy).trans
-      (by nlinarith [sq_nonneg (y 2 - m.ustar)]))
-    (isCompact_cylSublevel m hC hL hR _) ?_ hψ (by simp) le_rfl
+  refine tendsto_cyl_of_lasalle m hC hL hR hδ (fun _ => ?_) hφ
   rcases hδ.lt_or_eq with hδ | hδ
   · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem (cylField_contDiff m) h2 ?_ ?_
     · rintro y ⟨⟨hy, -⟩, h0⟩
@@ -752,35 +775,11 @@ every forward solution of the stiff-grid closed loop converges to **one** equili
     ∃ j : ℤ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![j * Real.pi, m.ustar,
       m.iHatD (j * Real.pi), m.iHatQ (j * Real.pi)])) := by
   have hT := tendsto_cyl m hC hL hR hη hs hδ hφ
-  have c5 : ∀ j : Fin 5, Continuous (fun y : State 5 => y j) := fun j =>
-    (Dynamics.contDiff_coord (k := 1) j).continuous
   have hsin : Tendsto (fun t => Real.sin (φ t 0)) atTop (𝓝 0) := by
-    have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT (c5 1) (fun y hy => hy.1)
+    have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT
+      (Dynamics.contDiff_coord (k := 1) (n := 5) 1).continuous (fun y hy => hy.1)
     simpa using this
-  have hu : Tendsto (fun t => φ t 1 - m.ustar) atTop (𝓝 0) := by
-    have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT ((c5 2).sub continuous_const)
-      (fun y hy => sub_eq_zero.mpr hy.2.1)
-    simpa using this
-  have hcD : Continuous (fun y : State 5 => y 3 - m.cD (y 0) (y 1)) := by
-    have h0 := c5 0
-    have h1 := c5 1
-    have h3 := c5 3
-    unfold Model.cD
-    fun_prop
-  have hcQ : Continuous (fun y : State 5 => y 4 - m.cQ (y 0) (y 1)) := by
-    have h0 := c5 0
-    have h1 := c5 1
-    have h4 := c5 4
-    unfold Model.cQ
-    fun_prop
-  have hd : Tendsto (fun t => φ t 2 - m.iHatD (φ t 0)) atTop (𝓝 0) := by
-    have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcD
-      (fun y hy => sub_eq_zero.mpr hy.2.2.1)
-    simpa [cD_cos_sin] using this
-  have hq : Tendsto (fun t => φ t 3 - m.iHatQ (φ t 0)) atTop (𝓝 0) := by
-    have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcQ
-      (fun y hy => sub_eq_zero.mpr hy.2.2.2)
-    simpa [cQ_cos_sin] using this
+  obtain ⟨hu, hd, hq⟩ := tendsto_errors_of_tendsto_cyl m hT fun y hy => hy.2
   have hθc : ContinuousOn (fun t => φ t 0) (Ici 0) :=
     ((Dynamics.contDiff_coord (k := 1) (n := 4) 0).continuous.comp_continuousOn hφ.continuousOn)
   obtain ⟨j, hj⟩ := Dynamics.LaSalle.exists_int_tendsto_of_tendsto_sin hθc hsin
@@ -800,7 +799,7 @@ every forward solution of the stiff-grid closed loop converges to **one** equili
       x 2 = m.iHatD (x 0) ∧ x 3 = m.iHatQ (x 0)}) := by
   obtain ⟨j, hj⟩ := tendsto_equilibrium m hC hL hR hη hs hδ hφ
   refine hj.mono_right (nhds_le_nhdsSet ?_)
-  have hN := (N_pos m hR).ne'
+  have hN := (N_pos m hR.ne').ne'
   simp [(hasDerivAt_potential m hN _).deriv, Real.sin_int_mul_pi]
 
 /-- A forward solution on `[0, ∞)` from every state (with `margin ≥ 0`): the cylinder solution
@@ -948,31 +947,13 @@ at `θ = π/2` has `∇S ≠ 0`, so the constant solution there does not converg
     ∃ φ : ℝ → State 4, IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0) ∧
       ¬ Tendsto φ atTop (𝓝ˢ {x : State 4 | x 1 = m.ustar ∧ deriv m.potential (x 0) = 0 ∧
         x 2 = m.iHatD (x 0) ∧ x 3 = m.iHatQ (x 0)}) := by
-  have hN := (N_pos m hR).ne'
+  have hN := (N_pos m hR.ne').ne'
   set p : State 4 := WithLp.toLp 2 ![Real.pi / 2, m.ustar, m.iHatD (Real.pi / 2),
     m.iHatQ (Real.pi / 2)] with hp
   have hω : m.ω0 = 0 := by simp [Model.ω0, hη]
   have hκ : m.κ = 0 := by simp [Model.κ, hω]
-  have hfp : m.field p = 0 := by
-    ext i
-    fin_cases i
-    · simp [hp, Model.field, hη, hω]
-    · simp only [hp, Model.field, Model.idc, Model.ixHat, Transform.parkQ, hκ, PiLp.toLp_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-        Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one]
-      ring
-    · simp only [hp, Model.field, Model.iHatD, Model.iHatQ, hω, PiLp.toLp_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-        Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
-      field_simp
-      simp only [Model.N, hω]
-      ring
-    · simp only [hp, Model.field, Model.iHatD, Model.iHatQ, hω, PiLp.toLp_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-        Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
-      field_simp
-      simp only [Model.N, hω]
-      ring
+  have hfp : m.field p = 0 :=
+    field_eq_zero_of_kappa_mul_sin_eq_zero m hN (by rw [hκ, zero_mul])
   refine ⟨fun _ => p, fun t _ => ?_, fun h => ?_⟩
   · show HasDerivWithinAt (fun _ => p) (m.field p) (Ici 0) t
     rw [hfp]
@@ -1086,27 +1067,8 @@ model, not a connection conclusion. -/
 on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem field_eq_zero_of_kappa_eq_zero (m : Model) (hN : m.N ≠ 0)
     (hκ : m.κ = 0) (θ : ℝ) :
-    m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 := by
-  ext i
-  fin_cases i
-  · simp [Model.field, Model.ω0]
-  · simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, PiLp.toLp_apply,
-      Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one, hκ]
-    ring
-  · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-      Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
-    field_simp
-    simp only [Model.N]
-    ring
-  · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-      Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
-    field_simp
-    simp only [Model.N]
-    ring
+    m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 :=
+  field_eq_zero_of_kappa_mul_sin_eq_zero m hN (by rw [hκ, zero_mul])
 
 /-- The internal model is Lipschitz in the angle. Static evidence on the model, not a connection
 conclusion. -/
@@ -1168,7 +1130,7 @@ evidence on the model, not a connection conclusion. -/
     (hC : m.Cdc ≠ 0) (hδ : 0 < m.margin) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) ≤ -(m.Rs * m.margin / (m.Gdc + m.Kp + m.Rs)) *
       ((x 1 - m.ustar) ^ 2 + ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2)) := by
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   rw [energy_lie m hN.ne' hL hC]
   have hz : (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) ^ 2 +
       (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) ^ 2 = m.N := by
@@ -1218,7 +1180,7 @@ def Model.noSyncRate (m : Model) : ℝ :=
     (hR : 0 < m.Rs) (hδ : 0 < m.margin) : 0 < m.noSyncRate := by
   have hP : m.margin ≤ m.Gdc + m.Kp := by
     have : 0 ≤ m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 / (4 * m.Rs * m.N) := by
-      have := N_pos m hR
+      have := N_pos m hR.ne'
       positivity
     simp only [Model.margin]
     linarith
@@ -1452,7 +1414,7 @@ multiple of the initial deviation. -/
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow')]
   change LyapunovStable m.field m.point
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hρ := noSyncRate_pos m hC hL hR hδ
   obtain ⟨Λ, hΛdef⟩ : ∃ Λ, Λ = (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) /
       m.N := ⟨_, rfl⟩
@@ -1602,7 +1564,7 @@ point. -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow']
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hκ := kappa_eq_zero_of_no_sync m hs
   set Λ := (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) / m.N
   have hΛ : 0 ≤ Λ := by positivity
@@ -1706,7 +1668,7 @@ def noSyncModel : Model :=
     (hm : m.margin = 0) (a θ₀ : ℝ) :
     IsIntegralCurveOn (fun t => WithLp.toLp 2 ![θ₀ + m.η * a * t, m.ustar + a, m.iHatD θ₀,
       m.iHatQ θ₀]) (fun _ x => m.field x) univ := by
-  have hN := (N_pos m hR).ne'
+  have hN := (N_pos m hR.ne').ne'
   have hG : m.Gdc = -m.Kp := by
     have : m.margin = m.Gdc + m.Kp := by simp [Model.margin, hμ]
     linarith
@@ -1824,7 +1786,7 @@ forces `μ ũ (s/L_s − u*η c/R_s) = 0 = μ ũ (c/L_s + u*η s/R_s)`, hence `�
     (hE : ∀ t ∈ Icc 0 T, ψ t 0 ^ 2 + ψ t 1 ^ 2 = 1 ∧
       fderiv ℝ m.cylEnergy (ψ t) (m.cylField (ψ t)) = 0) :
     ψ 0 2 = m.ustar ∧ ψ 0 3 = m.cD (ψ 0 0) (ψ 0 1) ∧ ψ 0 4 = m.cQ (ψ 0 0) (ψ 0 1) := by
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hκ := kappa_eq_zero_of_no_sync m hs
   have hk := k_eq_zero_of_no_sync m hs
   have hrel := fun t (ht : t ∈ Icc 0 T) =>
@@ -1950,45 +1912,13 @@ cylinder. -/
     Tendsto (fun t => φ t 1 - m.ustar) atTop (𝓝 0) ∧
       Tendsto (fun t => φ t 2 - m.iHatD (φ t 0)) atTop (𝓝 0) ∧
       Tendsto (fun t => φ t 3 - m.iHatQ (φ t 0)) atTop (𝓝 0) := by
-  have hψ := Dynamics.LaSalle.isIntegralCurveOn_comp_of_fderiv
-    (cyl_contDiff.differentiable (by norm_num)) (fderiv_cyl_field m) hφ
-  have hT : Tendsto (fun t => cyl (φ t)) atTop (𝓝ˢ {y : State 5 | y 2 = m.ustar ∧
-      y 3 = m.cD (y 0) (y 1) ∧ y 4 = m.cQ (y 0) (y 1)}) := by
-    refine Dynamics.LaSalle.lasalle_levelSet (h := fun y : State 5 => y 0 ^ 2 + y 1 ^ 2) (c₀ := 1)
-      (c := m.cylEnergy (cyl (φ 0))) (cylField_contDiff m)
-      (circle_contDiff.differentiable (by norm_num)) (cylEnergy_contDiff m)
-      (fderiv_circle_cylField m)
-      (fun y hy => (cylLie_le m hR hL.ne' hC.ne' hy).trans
-        (by rw [hm]; simp))
-      (isCompact_cylSublevel m hC hL hR _) ?_ hψ (by simp) le_rfl
-    refine Dynamics.LaSalle.lasalle_condition_of_trajectories_mem (cylField_contDiff m) ?_
-    intro T ψ hT hψ hstay
-    exact no_sync_margin_zero_segment m hC hL hR hμ hs hm hT hψ fun t ht =>
-      ⟨(hstay t ht).1.1, (hstay t ht).2⟩
-  have c5 : ∀ j : Fin 5, Continuous (fun y : State 5 => y j) := fun j =>
-    (Dynamics.contDiff_coord (k := 1) j).continuous
-  have hcD : Continuous (fun y : State 5 => y 3 - m.cD (y 0) (y 1)) := by
-    have h0 := c5 0
-    have h1 := c5 1
-    have h3 := c5 3
-    unfold Model.cD
-    fun_prop
-  have hcQ : Continuous (fun y : State 5 => y 4 - m.cQ (y 0) (y 1)) := by
-    have h0 := c5 0
-    have h1 := c5 1
-    have h4 := c5 4
-    unfold Model.cQ
-    fun_prop
-  refine ⟨?_, ?_, ?_⟩
-  · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT ((c5 2).sub continuous_const)
-      (fun y hy => sub_eq_zero.mpr hy.1)
-    simpa using this
-  · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcD
-      (fun y hy => sub_eq_zero.mpr hy.2.1)
-    simpa [cD_cos_sin] using this
-  · have := Dynamics.LaSalle.tendsto_zero_of_tendsto_nhdsSet hT hcQ
-      (fun y hy => sub_eq_zero.mpr hy.2.2)
-    simpa [cQ_cos_sin] using this
+  refine tendsto_errors_of_tendsto_cyl m (M := {y : State 5 | y 2 = m.ustar ∧
+      y 3 = m.cD (y 0) (y 1) ∧ y 4 = m.cQ (y 0) (y 1)}) ?_ fun y hy => hy
+  refine tendsto_cyl_of_lasalle m hC hL hR hm.symm.le (fun _ => ?_) hφ
+  refine Dynamics.LaSalle.lasalle_condition_of_trajectories_mem (cylField_contDiff m) ?_
+  intro T ψ hT hψ hstay
+  exact no_sync_margin_zero_segment m hC hL hR hμ hs hm hT hψ fun t ht =>
+    ⟨(hstay t ht).1.1, (hstay t ht).2⟩
 
 namespace Model
 variable (m : Model)
@@ -2225,7 +2155,7 @@ conclusion. -/
 not a connection conclusion. -/
 @[tmio TM, powerlib_domain] theorem redJac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hδ : 0 ≤ m.margin) : LinearSystems.IsHurwitz m.redJac := by
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hP : m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 ≤ 4 * m.Rs * m.N * (m.Gdc + m.Kp) := by
     have h := hδ
     simp only [Model.margin] at h
@@ -2294,6 +2224,14 @@ not a connection conclusion. -/
     rw [hdet] at this
     linarith
 
+/-- `|a p + b q| ≤ |p| + |q|` for `|a|, |b| ≤ 1`. -/
+@[tmio T, powerlib_foundation] private theorem abs_mul_add_mul_le_add {a b p q : ℝ}
+    (ha : |a| ≤ 1) (hb : |b| ≤ 1) : |a * p + b * q| ≤ |p| + |q| :=
+  calc |a * p + b * q| ≤ |a| * |p| + |b| * |q| := by
+        rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
+    _ ≤ 1 * |p| + 1 * |q| := by gcongr
+    _ = |p| + |q| := by ring
+
 /-- **No synchronizing torque at `margin = 0` with modulation (`μ ≠ 0`): every forward solution
 converges to one equilibrium** `(θ∞, u*, î(θ∞))`. LaSalle on the cylinder gives `ũ_dc, ĩ_dq → 0`;
 the rotation-reduced error `(ũ, R_θᵀ ĩ)` solves an autonomous system whose linearization is Hurwitz
@@ -2304,7 +2242,7 @@ Implementation evidence (Rules §3a). -/
     (hm : m.margin = 0) {φ : ℝ → State 4}
     (hφ : IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) :
     ∃ θ : ℝ, Tendsto φ atTop (𝓝 (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ])) := by
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hκ := kappa_eq_zero_of_no_sync m hs
   obtain ⟨hu, hd, hq⟩ := tendsto_error_of_no_sync_margin_zero m hC hL hR hμ hs hm hφ
   have hρ : IsIntegralCurveOn (fun t => m.red (φ t)) (fun _ z => m.redField z) (Ici 0) :=
@@ -2312,19 +2250,6 @@ Implementation evidence (Rules §3a). -/
   have hb : Tendsto (fun t => |φ t 2 - m.iHatD (φ t 0)| + |φ t 3 - m.iHatQ (φ t 0)|) atTop
       (𝓝 0) := by
     simpa using hd.abs.add hq.abs
-  have hrot : ∀ θ a b : ℝ, |Real.cos θ * a + Real.sin θ * b| ≤ |a| + |b| ∧
-      |-Real.sin θ * a + Real.cos θ * b| ≤ |a| + |b| := fun θ a b => by
-    have hc := Real.abs_cos_le_one θ
-    have hs := Real.abs_sin_le_one θ
-    constructor
-    · calc |Real.cos θ * a + Real.sin θ * b| ≤ |Real.cos θ| * |a| + |Real.sin θ| * |b| := by
-            rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
-        _ ≤ 1 * |a| + 1 * |b| := by gcongr
-        _ = |a| + |b| := by ring
-    · calc |-Real.sin θ * a + Real.cos θ * b| ≤ |Real.sin θ| * |a| + |Real.cos θ| * |b| := by
-            rw [← abs_neg (Real.sin θ), ← abs_mul, ← abs_mul]; exact abs_add_le _ _
-        _ ≤ 1 * |a| + 1 * |b| := by gcongr
-        _ = |a| + |b| := by ring
   have hρ0 : Tendsto (fun t => m.red (φ t)) atTop (𝓝 0) := by
     apply Dynamics.tendsto_euclidean_of_coord
     intro i
@@ -2332,10 +2257,13 @@ Implementation evidence (Rules §3a). -/
     · simpa [Model.red] using hu
     · simp only [PiLp.zero_apply]
       refine squeeze_zero_norm' (Eventually.of_forall fun t => ?_) hb
-      simpa [Model.red] using (hrot (φ t 0) _ _).1
+      simpa [Model.red] using abs_mul_add_mul_le_add (p := φ t 2 - m.iHatD (φ t 0))
+        (q := φ t 3 - m.iHatQ (φ t 0)) (Real.abs_cos_le_one (φ t 0)) (Real.abs_sin_le_one _)
     · simp only [PiLp.zero_apply]
       refine squeeze_zero_norm' (Eventually.of_forall fun t => ?_) hb
-      simpa [Model.red] using (hrot (φ t 0) _ _).2
+      simpa [Model.red] using abs_mul_add_mul_le_add (a := -Real.sin (φ t 0))
+        (p := φ t 2 - m.iHatD (φ t 0)) (q := φ t 3 - m.iHatQ (φ t 0))
+        (by rw [abs_neg]; exact Real.abs_sin_le_one _) (Real.abs_cos_le_one (φ t 0))
   obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
     m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv
     (redJac_isHurwitz m hC hL hR hμ hm.ge)
@@ -2426,14 +2354,6 @@ the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L
         m.Rs * z 3 ^ 2 / m.Ls := by ring
   nlinarith [e]
 
-/-- `|a p + b q| ≤ |p| + |q|` for `|a|, |b| ≤ 1`. -/
-@[tmio T, powerlib_foundation] private theorem abs_mul_add_mul_le_add {a b p q : ℝ}
-    (ha : |a| ≤ 1) (hb : |b| ≤ 1) : |a * p + b * q| ≤ |p| + |q| :=
-  calc |a * p + b * q| ≤ |a| * |p| + |b| * |q| := by
-        rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
-    _ ≤ 1 * |p| + 1 * |q| := by gcongr
-    _ = |p| + |q| := by ring
-
 /-- The reduced error `red x = (ũ, R_θᵀ ĩ)` controls the DC-voltage error: `|ũ| ≤ ‖red x‖`.
 Implementation evidence (it names the model's reduction only; kept private with its users). -/
 @[tmio M, powerlib_domain] private theorem abs_u_err_le_norm_red (m : Model) (x : State 4) :
@@ -2522,7 +2442,7 @@ the angle moves by at most a multiple of the initial error. -/
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow')]
   change LyapunovStable m.field m.point
-  have hN := N_pos m hR
+  have hN := N_pos m hR.ne'
   have hκ := kappa_eq_zero_of_no_sync m hs
   obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := hurwitz_linearization_locally_exponentially_stable
     m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv

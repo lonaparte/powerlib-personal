@@ -139,7 +139,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     · simpa using Real.hasDerivAt_sin t
   have h' : HasDerivAt (fun t => WithLp.toLp 2 ![Real.cos t, Real.sin t])
       (WithLp.toLp 2 ![-Real.sin t, Real.cos t]) t :=
-    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp_hasDerivAt t h
+    Dynamics.hasDerivAt_toLp h
   convert h' using 1
   apply WithLp.ofLp_injective
   ext i; fin_cases i <;>
@@ -208,15 +208,14 @@ closed loop. -/
     LinearSystems.IsHurwitz (linearStateMatrix J (R + k • (g * gᵀ)) Q) := by
   intro μ v hv heig
   rw [neg_zero]
-  have hQt : Qᵀ = Q := symmetric_of_posDef hQ
+  have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
   set C := gᵀ * Q with hCdef
   have hggt : (g * gᵀ).PosSemidef := by
     simpa [conjTranspose_eq_transpose_of_trivial] using posSemidef_self_mul_conjTranspose g
   have hR' : (R + k • (g * gᵀ)).PosSemidef := hR.add (hggt.smul hk.le)
   refine (phSpectral_re_nonpos hJ hR' hQ hv heig).lt_of_ne fun heq0 => ?_
   set A' := linearStateMatrix J (R + k • (g * gᵀ)) Q with hA'def
-  have hR't : (R + k • (g * gᵀ))ᵀ = R + k • (g * gᵀ) := by
-    simpa only [conjTranspose_eq_transpose_of_trivial] using hR'.isHermitian.eq
+  have hR't : (R + k • (g * gᵀ))ᵀ = R + k • (g * gᵀ) := hR'.isHermitian.isSymm
   -- The closed-loop Lyapunov form: `wᵀ Q A' w = -(Q w)ᵀ R (Q w) - k |C w|²`.
   have hform : ∀ w : Fin n → ℝ, w ⬝ᵥ (Q *ᵥ (A' *ᵥ w)) =
       -((Q *ᵥ w) ⬝ᵥ (R *ᵥ (Q *ᵥ w))) - k * ((C *ᵥ w) ⬝ᵥ (C *ᵥ w)) := by

@@ -3,6 +3,7 @@ import theorem.Attributes
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.Probability.Moments.Variance
+import theorem.Stochastic.GaussianLaw
 
 /-! # Cramér–Rao bound for Gaussian models: Fisher information by definition and a proved bound
 
@@ -246,10 +247,7 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
 @[tmio T, powerlib_foundation] theorem gaussian_location_fisher (hv : v ≠ 0) (θ : ℝ) :
     ∫ y, ((y - θ) / v) ^ 2 ∂(gaussianReal θ v) = 1 / v := by
   have hv' : (v : ℝ) ≠ 0 := by exact_mod_cast hv
-  have hvar : ∫ y, (y - θ) ^ 2 ∂(gaussianReal θ v) = v := by
-    have := variance_fun_id_gaussianReal (μ := θ) (v := v)
-    rw [variance_eq_integral measurable_id'.aemeasurable] at this
-    simpa [integral_id_gaussianReal] using this
+  have hvar := Stochastic.integral_sub_sq_gaussianReal θ v
   have e : (fun y => ((y - θ) / v) ^ 2) = fun y => (1 / (v : ℝ) ^ 2) * (y - θ) ^ 2 := by
     funext y; field_simp
   rw [e, integral_const_mul, hvar]
@@ -310,9 +308,7 @@ def score (g : ℝ) (v : ℝ≥0) (D : Matrix (Fin p) (Fin N) ℝ) (i : Fin p) (
         (f := fun x : ℝ => x * x) (by fun_prop)
       simpa using this
     rw [e]
-    have hvar := variance_fun_id_gaussianReal (μ := (0 : ℝ)) (v := v)
-    rw [variance_eq_integral measurable_id'.aemeasurable] at hvar
-    simpa [integral_id_gaussianReal, sq] using hvar
+    simpa [sq] using Stochastic.integral_sub_sq_gaussianReal 0 v
   · simp only [hkl, ↓reduceIte]
     let f : Fin N → ℝ → ℝ := fun i x => if i = k ∨ i = l then x else 1
     have hprod : ∀ n : Fin N → ℝ, ∏ i, f i (n i) = n k * n l := by

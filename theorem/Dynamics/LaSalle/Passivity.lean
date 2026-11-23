@@ -25,6 +25,10 @@ Results.
   solution from a compact positively invariant set converges to `0` (a positively invariant subset
   of `{V̇ = 0}` carries a forward solution along which `V` is constant and which converges to `0`,
   so `V = 0` on it).
+* `globallyAsymptoticallyStable_of_lasalle_detectable` (`V` radially unbounded) and
+  `localAsymptoticStable_of_lasalle_detectable` (one compact sublevel `{V ≤ c₀}`): with
+  `V̇ ≤ 0` and detectability on `{V̇ = 0}`, global resp. local asymptotic stability of `0`; the
+  passivity results below and model detectors (cubic PLL detector) are their instances.
 * `output_eq_zero_of_passive` (`H(0) = 0`), `lieDeriv_feedback_le` (`V̇ ≤ −⟪ψ(y), y⟫ ≤ 0`),
   `output_eq_zero_of_lieDeriv_feedback_eq_zero` (`V̇ = 0` only on `{y = 0}`, where the closed
   loop is the unforced system).
@@ -76,20 +80,9 @@ every forward solution starting in a compact positively invariant set converges 
       (hN (hstay t ht)).2
     have hlim := hdet χ hχf hzero
     -- `V ∘ χ` is constant on `[0, ∞)`
-    have hanti : AntitoneOn (V ∘ χ) (Ici 0) :=
-      antitoneOn_V_comp_traj hVd hVd.continuous (convex_Ici 0) hχf
-        (fun t ht => (hzero t (interior_subset ht)).le)
-    have hmono : AntitoneOn ((fun x => -V x) ∘ χ) (Ici 0) := by
-      refine antitoneOn_V_comp_traj hVd.neg hVd.continuous.neg (convex_Ici 0) hχf
-        (fun t ht => ?_)
-      rw [fderiv_neg]
-      simp [hzero t (interior_subset ht)]
-    have hconst : ∀ t ∈ Ici (0 : ℝ), V (χ t) = V p := by
-      intro t ht
-      have h1 := hanti (mem_Ici.mpr le_rfl) ht ht
-      have h2 := hmono (mem_Ici.mpr le_rfl) ht ht
-      simp only [Function.comp_apply, hχ0] at h1 h2
-      linarith
+    have hconst : ∀ t ∈ Ici (0 : ℝ), V (χ t) = V p := fun t ht => by
+      rw [Dynamics.eq_of_lie_eq_zero_along hVd (convex_Ici 0) hχf hzero (mem_Ici.mpr le_rfl) ht ht,
+        hχ0]
     have hVlim : Tendsto (fun t => V (χ t)) atTop (𝓝 (V 0)) :=
       (hVd.continuous.tendsto 0).comp hlim
     have hVlim' : Tendsto (fun t => V (χ t)) atTop (𝓝 (V p)) :=
@@ -102,6 +95,70 @@ every forward solution starting in a compact positively invariant set converges 
   have h := Dynamics.LaSalle.lasalle_invariance_principle_of_contDiff hΩc hΩi hf hV
     (fun x _ => hdec x) hφ hφ0 hM
   rwa [nhdsSet_singleton] at h
+
+/-- **LaSalle with detectability: global asymptotic stability.** A `C¹` field with an
+equilibrium at `0`, a `C¹` positive definite radially unbounded `V` with `V̇ ≤ 0`, and
+detectability on `{V̇ = 0}`: `0` is globally asymptotically stable (sublevels are compact and
+positively invariant, `tendsto_zero_of_lasalle_detectable`). -/
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_of_lasalle_detectable
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
+    {V : EuclideanSpace ℝ (Fin n) → ℝ} (hn : 0 < n) (hf : ContDiff ℝ 1 f) (hf0 : f 0 = 0)
+    (hV : ContDiff ℝ 1 V) (hV0 : V 0 = 0) (hVpos : ∀ x, x ≠ 0 → 0 < V x)
+    (hradial : Tendsto V (comap norm atTop) atTop) (hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0)
+    (hdet : ∀ φ : ℝ → EuclideanSpace ℝ (Fin n), IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
+      (∀ t ∈ Ici (0 : ℝ), fderiv ℝ V (φ t) (f (φ t)) = 0) → Tendsto φ atTop (𝓝 0)) :
+    Flow.GloballyAsymptoticallyStable f 0 := by
+  have hVd : Differentiable ℝ V := hV.differentiable (by norm_num)
+  have hsub : ∀ c : ℝ, IsCompact {x : EuclideanSpace ℝ (Fin n) | V x ≤ c} :=
+    isCompact_sublevel_set V hV.continuous hradial
+  refine ⟨hf0, Flow.forwardComplete_of_compact_sublevel hf hVd hdec hsub, ?_, ?_⟩
+  · exact lyapunov_stable hn ⟨isOpen_univ, mem_univ _, hVd.continuous, hVd, hV0,
+      fun x _ hx => hVpos x hx, fun x _ => hdec x⟩
+  · intro t₀ φ hφ
+    have hinv : IsPositivelyInvariant {x | V x ≤ V (φ t₀)} f := by
+      have h := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen (f := f) (c := V (φ t₀))
+        isOpen_univ hVd (fun x _ => hdec x) (by
+          simpa using (isClosed_le hVd.continuous continuous_const))
+      simpa using h
+    have hconv := tendsto_zero_of_lasalle_detectable hf hV hV0 hVpos hdec hdet (hsub _) hinv
+      (isIntegralCurveOn_shift_Ici hφ) (by simp)
+    exact Tendsto.congr (fun x => by simp)
+      (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
+
+/-- **LaSalle with detectability: local asymptotic stability.** As
+`globallyAsymptoticallyStable_of_lasalle_detectable`, with radial unboundedness replaced by one
+compact sublevel set `{V ≤ c₀}`, `c₀ > 0`. -/
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_lasalle_detectable
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
+    {V : EuclideanSpace ℝ (Fin n) → ℝ} (hn : 0 < n) (hf : ContDiff ℝ 1 f)
+    (hV : ContDiff ℝ 1 V) (hV0 : V 0 = 0) (hVpos : ∀ x, x ≠ 0 → 0 < V x)
+    (hcompact : ∃ c > 0, IsCompact {x : EuclideanSpace ℝ (Fin n) | V x ≤ c})
+    (hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0)
+    (hdet : ∀ φ : ℝ → EuclideanSpace ℝ (Fin n), IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
+      (∀ t ∈ Ici (0 : ℝ), fderiv ℝ V (φ t) (f (φ t)) = 0) → Tendsto φ atTop (𝓝 0)) :
+    LocalAsymptoticStable f 0 := by
+  have hVd : Differentiable ℝ V := hV.differentiable (by norm_num)
+  obtain ⟨c₀, hc₀, hK⟩ := hcompact
+  refine ⟨lyapunov_stable hn ⟨isOpen_univ, mem_univ _, hVd.continuous, hVd, hV0,
+      fun x _ hx => hVpos x hx, fun x _ => hdec x⟩, ?_⟩
+  obtain ⟨δ, hδ, hδV⟩ := Metric.continuousAt_iff.mp (hVd.continuous.continuousAt (x := 0)) c₀ hc₀
+  refine ⟨δ, hδ, fun t₀ φ hφ hφ0 => ?_⟩
+  have hlt : V (φ t₀) < c₀ := by
+    have h := hδV (x := φ t₀) (by rwa [dist_eq_norm])
+    rw [Real.dist_eq, hV0, sub_zero] at h
+    exact (abs_lt.mp h).2
+  have hclosed : IsClosed {x : EuclideanSpace ℝ (Fin n) | V x ≤ V (φ t₀)} :=
+    isClosed_le hVd.continuous continuous_const
+  have hinv : IsPositivelyInvariant {x | V x ≤ V (φ t₀)} f := by
+    have h := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen (f := f) (c := V (φ t₀))
+      isOpen_univ hVd (fun x _ => hdec x) (by simpa using hclosed)
+    simpa using h
+  have hΩ : IsCompact {x : EuclideanSpace ℝ (Fin n) | V x ≤ V (φ t₀)} :=
+    hK.of_isClosed_subset hclosed fun x (hx : V x ≤ V (φ t₀)) => show V x ≤ c₀ by linarith
+  have hconv := tendsto_zero_of_lasalle_detectable hf hV hV0 hVpos hdec hdet hΩ hinv
+    (isIntegralCurveOn_shift_Ici hφ) (by simp)
+  exact Tendsto.congr (fun x => by simp)
+    (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
 
 /-- Passivity with a storage minimized at `0` forces the output to vanish at `0`. -/
 @[tmio T, powerlib_foundation] theorem output_eq_zero_of_passive
@@ -194,36 +251,11 @@ provided the closed-loop field is `C¹`. -/
     (hψ0 : ψ 0 = 0) (hψ : ∀ y, y ≠ 0 → 0 < inner ℝ (ψ y) y) (hF0 : F 0 0 = 0)
     (hzsd : ∀ φ : ℝ → EuclideanSpace ℝ (Fin n), IsIntegralCurveOn φ (fun _ x => F x 0) (Ici 0) →
       (∀ t ∈ Ici (0 : ℝ), H (φ t) = 0) → Tendsto φ atTop (𝓝 0)) :
-    Flow.GloballyAsymptoticallyStable (fun x => F x (-ψ (H x))) 0 := by
-  set f := fun x => F x (-ψ (H x)) with hfdef
-  have hVd : Differentiable ℝ V := hV.differentiable (by norm_num)
-  have hH0 := output_eq_zero_of_passive hV0 hVpos hpass
-  have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := lieDeriv_feedback_le hpass hψ0 hψ
-  have hdet := closedLoop_detectable hpass hψ0 hψ hzsd
-  have hsub : ∀ c : ℝ, IsCompact {x : EuclideanSpace ℝ (Fin n) | V x ≤ c} :=
-    isCompact_sublevel_set V hV.continuous hradial
-  refine ⟨?_, Flow.forwardComplete_of_compact_sublevel hf hVd hdec hsub, ?_, ?_⟩
-  · show F 0 (-ψ (H 0)) = 0
-    rw [hH0, hψ0, neg_zero, hF0]
-  · exact lyapunov_stable hn ⟨isOpen_univ, mem_univ _, hVd.continuous, hVd, hV0,
-      fun x _ hx => hVpos x hx, fun x _ => hdec x⟩
-  · intro t₀ φ hφ
-    have hψs : IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => f x) (Ici 0) := by
-      have hset : -t₀ +ᵥ Ici t₀ = Ici (0 : ℝ) := by
-        ext x
-        simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, mem_Ici]
-        constructor <;> intro h <;> linarith
-      have h' := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
-      rwa [hset] at h'
-    have hinv : IsPositivelyInvariant {x | V x ≤ V (φ t₀)} f := by
-      have h := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen (f := f) (c := V (φ t₀))
-        isOpen_univ hVd (fun x _ => hdec x) (by
-          simpa using (isClosed_le hVd.continuous continuous_const))
-      simpa using h
-    have hconv := tendsto_zero_of_lasalle_detectable hf hV hV0 hVpos hdec hdet (hsub _) hinv hψs
-      (by simp)
-    exact Tendsto.congr (fun x => by simp)
-      (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
+    Flow.GloballyAsymptoticallyStable (fun x => F x (-ψ (H x))) 0 :=
+  globallyAsymptoticallyStable_of_lasalle_detectable hn hf
+    (by show F 0 (-ψ (H 0)) = 0; rw [output_eq_zero_of_passive hV0 hVpos hpass, hψ0, neg_zero, hF0])
+    hV hV0 hVpos hradial (lieDeriv_feedback_le hpass hψ0 hψ)
+    (closedLoop_detectable hpass hψ0 hψ hzsd)
 
 /-- **Passivity + zero-state detectability ⇒ local asymptotic stability** (Khalil, Lemma 6.7,
 local part). As `globallyAsymptoticallyStable_of_passive_detectable`, with radial unboundedness
@@ -240,39 +272,9 @@ replaced by one compact sublevel set `{V ≤ c₀}`, `c₀ > 0`. -/
     (hψ0 : ψ 0 = 0) (hψ : ∀ y, y ≠ 0 → 0 < inner ℝ (ψ y) y)
     (hzsd : ∀ φ : ℝ → EuclideanSpace ℝ (Fin n), IsIntegralCurveOn φ (fun _ x => F x 0) (Ici 0) →
       (∀ t ∈ Ici (0 : ℝ), H (φ t) = 0) → Tendsto φ atTop (𝓝 0)) :
-    LocalAsymptoticStable (fun x => F x (-ψ (H x))) 0 := by
-  set f := fun x => F x (-ψ (H x)) with hfdef
-  have hVd : Differentiable ℝ V := hV.differentiable (by norm_num)
-  have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := lieDeriv_feedback_le hpass hψ0 hψ
-  have hdet := closedLoop_detectable hpass hψ0 hψ hzsd
-  obtain ⟨c₀, hc₀, hK⟩ := hcompact
-  refine ⟨lyapunov_stable hn ⟨isOpen_univ, mem_univ _, hVd.continuous, hVd, hV0,
-      fun x _ hx => hVpos x hx, fun x _ => hdec x⟩, ?_⟩
-  obtain ⟨δ, hδ, hδV⟩ := Metric.continuousAt_iff.mp (hVd.continuous.continuousAt (x := 0)) c₀ hc₀
-  refine ⟨δ, hδ, fun t₀ φ hφ hφ0 => ?_⟩
-  have hlt : V (φ t₀) < c₀ := by
-    have h := hδV (x := φ t₀) (by rwa [dist_eq_norm])
-    rw [Real.dist_eq, hV0, sub_zero] at h
-    exact (abs_lt.mp h).2
-  have hψs : IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => f x) (Ici 0) := by
-    have hset : -t₀ +ᵥ Ici t₀ = Ici (0 : ℝ) := by
-      ext x
-      simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, mem_Ici]
-      constructor <;> intro h <;> linarith
-    have h' := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
-    rwa [hset] at h'
-  have hclosed : IsClosed {x : EuclideanSpace ℝ (Fin n) | V x ≤ V (φ t₀)} :=
-    isClosed_le hVd.continuous continuous_const
-  have hinv : IsPositivelyInvariant {x | V x ≤ V (φ t₀)} f := by
-    have h := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen (f := f) (c := V (φ t₀))
-      isOpen_univ hVd (fun x _ => hdec x) (by simpa using hclosed)
-    simpa using h
-  have hΩ : IsCompact {x : EuclideanSpace ℝ (Fin n) | V x ≤ V (φ t₀)} :=
-    hK.of_isClosed_subset hclosed fun x (hx : V x ≤ V (φ t₀)) => show V x ≤ c₀ by linarith
-  have hconv := tendsto_zero_of_lasalle_detectable hf hV hV0 hVpos hdec hdet hΩ hinv hψs
-    (by simp)
-  exact Tendsto.congr (fun x => by simp)
-    (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
+    LocalAsymptoticStable (fun x => F x (-ψ (H x))) 0 :=
+  localAsymptoticStable_of_lasalle_detectable hn hf hV hV0 hVpos hcompact
+    (lieDeriv_feedback_le hpass hψ0 hψ) (closedLoop_detectable hpass hψ0 hψ hzsd)
 
 /-- Zero-state observability (the only unforced forward solution with `y ≡ 0` is `x ≡ 0`)
 implies zero-state detectability. -/

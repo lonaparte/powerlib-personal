@@ -289,11 +289,8 @@ matrix `Φ` of `ẋ = A(t) x`, the matrix
       ∫ τ in t₀..t, Φ t τ * Q τ * (Φ t τ)ᵀ := by
     have := transposeCLM.intervalIntegral_comp_comm hint
     refine this.symm.trans (intervalIntegral.integral_congr fun τ _ => ?_)
-    show (Φ t τ * Q τ * (Φ t τ)ᵀ)ᵀ = _
-    have := (hpsd τ).isHermitian.eq
-    rwa [conjTranspose_eq_transpose_of_trivial] at this
-  refine PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun x => ?_
-  · rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, hsymm]
+    exact (hpsd τ).isHermitian.isSymm
+  refine PosSemidef.of_dotProduct_mulVec_nonneg (isHermitian_iff_isSymm.mpr hsymm) fun x => ?_
   · let Lx : Matrix (Fin n) (Fin n) ℝ →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
       { toFun := fun M => x ⬝ᵥ (M *ᵥ x)
         map_add' := fun M N => by simp [add_mulVec, dotProduct_add]

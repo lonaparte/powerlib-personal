@@ -33,6 +33,9 @@ Results.
   `lift_locallyExponentiallyStable_iff`: with the converse linearization
   (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), local exponential stability of
   `r` holds exactly when `g r = 0` and `g'(r) < 0`.
+* Scalar ODE helpers: sign preservation (`pos_of_pos`, `neg_of_neg`), constancy
+  (`eq_of_hasDerivWithinAt_zero`) and the quadratic ODE `ρ̇ = c ρ²` (`1/ρ` is affine,
+  `inv_eq_of_isIntegralCurveOn_sq`, read by the critical fold).
 * One-dimensional saddle-node hypersurface: `SaddleNodeCondition g ↔ ∃ x, g x = 0 ∧ deriv g x = 0`
   (`saddleNodeCondition_iff`).
 -/
@@ -132,13 +135,6 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![deriv g (x 0)] :=
   (hasFDerivAt_lift hg.hasDerivAt).fderiv
 
-/-- The `1 × 1` matrix `(a)` with `a > 0` has the eigenpair `(a, 1)`. -/
-@[tmio T, powerlib_foundation] theorem exists_eigenpair_one_of_pos {a : ℝ} (ha : 0 < a) :
-    ∃ (μ : ℂ) (v : Fin 1 → ℂ), v ≠ 0 ∧
-      (!![a] : Matrix (Fin 1) (Fin 1) ℝ).map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
-  ⟨a, fun _ => 1, by intro h0; simpa using congrFun h0 0,
-    by ext i; fin_cases i; simp [Matrix.mulVec, dotProduct], by simpa using ha⟩
-
 /-- A point of the lift of a `C¹` scalar field `ẋ = g x` is locally exponentially stable exactly
 when it is a zero with negative slope. -/
 @[tmio T, powerlib_foundation] theorem lift_locallyExponentiallyStable_iff {g : ℝ → ℝ} {r : ℝ}
@@ -164,7 +160,7 @@ when it is a zero with negative slope. -/
     Unstable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
   refine unstable_of_exists_complex_eigenvalue_re_pos !![deriv g r] (lift_contDiff hg)
-    ((lift_eq_zero_iff g r).mpr h0) ?_ (exists_eigenpair_one_of_pos hslope)
+    ((lift_eq_zero_iff g r).mpr h0) ?_ (Linear.exists_eigenpair_one_of_pos hslope)
   have := fderiv_lift (g := g) (x := embed r) (by simpa using hd)
   simpa using this
 
@@ -285,5 +281,20 @@ def SaddleNodeCondition (g : ℝ → ℝ) : Prop :=
     have h1 : HasDerivWithinAt F 0 (Icc t b) t :=
       (h t (Ico_subset_Icc_self ht)).mono (Icc_subset_Icc_left ht.1)
     exact h1.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE ht.2)
+
+/-- **The quadratic scalar ODE `ρ̇ = c ρ²`** (the fold at `μ = 0`, the logistic equation at
+`μ = 0`): along a solution segment on which `ρ` does not vanish, `1/ρ` is affine,
+`1/ρ(t) = 1/ρ(a) − c (t − a)`. -/
+@[tmio T, powerlib_foundation] theorem inv_eq_of_isIntegralCurveOn_sq {c : ℝ} {ρ : ℝ → ℝ}
+    {a b : ℝ} (hρ : IsIntegralCurveOn ρ (fun _ r => c * r ^ 2) (Icc a b))
+    (hne : ∀ t ∈ Icc a b, ρ t ≠ 0) : ∀ t ∈ Icc a b, (ρ t)⁻¹ = (ρ a)⁻¹ - c * (t - a) := by
+  have hconst := eq_of_hasDerivWithinAt_zero (F := fun t => (ρ t)⁻¹ + c * t) (a := a) (b := b)
+    fun t ht => by
+      have h := ((hρ t ht).inv (hne t ht)).add ((hasDerivWithinAt_id t (Icc a b)).const_mul c)
+      refine h.congr_deriv ?_
+      field_simp [hne t ht]
+      ring
+  intro t ht
+  linarith [hconst t ht]
 
 end powerlib.NormalForm

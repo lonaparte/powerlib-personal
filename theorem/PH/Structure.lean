@@ -439,9 +439,8 @@ def family : Family Model Requirement 2 0 :=
 /-- The counterexample is passive at every point: `H ≥ −8/3`. -/
 @[tmio TM, powerlib_foundation] theorem mem_den_passive (m : Model) :
     connection% (m ∈ family.den .passive) :=
-  family_isNonlinearPH.mem_den_passive
-    (phLaSalle_counterexample.bddBelow_range_shift_H.mpr
-      ⟨-(8 / 3), by rintro _ ⟨x, rfl⟩; exact phLaSalle_H_lowerBound x⟩)
+  family_isNonlinearPH.mem_den_passive_shift
+    ⟨-(8 / 3), by rintro _ ⟨x, rfl⟩; exact phLaSalle_H_lowerBound x⟩
 
 @[tmio TM, powerlib_foundation] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement

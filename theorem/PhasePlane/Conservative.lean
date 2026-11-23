@@ -30,7 +30,11 @@ Results.
   laws of `toPH`.
 * Equilibria are `(x*, 0)` with `V'(x*) = 0` (`field_eq_zero_iff`).
 * Linearization: the Jacobian at a point with `V'' = k` is `!![0, 1; −k/m, −γ/m]`
-  (`jacobian`, `hasFDerivAt_field`; `tr = −γ/m`, `det = k/m`: `trace_jacobian`, `det_jacobian`).
+  (`jacobian`, `hasFDerivAt_field`; `tr = −γ/m`, `det = k/m`: `trace_jacobian`, `det_jacobian`);
+  `m det(sI − J) = m s² + γ s + k` (`characteristic_polynomial_jacobian`), Hurwitz iff `γ, k > 0`
+  (`isHurwitz_jacobian_iff`), damping ratio `γ / (2 √(m k))` (`dampingRatio_jacobian`), real
+  eigenvalues iff `4 m k ≤ γ²` (`eigenvalues_real_iff_jacobian`); the swing-equation and damping
+  class Jacobians are instances.
   At an equilibrium `(x*, 0)` with `m > 0`: `γ > 0` and `V''(x*) > 0` give local exponential
   stability (`locallyExponentiallyStable_of_slope_pos`); `V''(x*) < 0` a saddle
   (`unstable_of_slope_neg`, every `γ`); `γ < 0` instability (`unstable_of_damping_neg`, every
@@ -91,6 +95,53 @@ def jacobian (m γ k : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -k / m, -γ
     (jacobian m γ k).det = k / m := by
   simp [jacobian, Matrix.det_fin_two]
   ring
+
+/-- Characteristic polynomial of the mechanical Jacobian: `m det(sI − J) = m s² + γ s + k`. -/
+@[tmio T, powerlib_foundation] theorem characteristic_polynomial_jacobian {m : ℝ} (hm : m ≠ 0)
+    (γ k : ℝ) (s : ℂ) :
+    (m : ℂ) * (Linear.characteristicMatrix (jacobian m γ k) s).det =
+      (m : ℂ) * s ^ 2 + (γ : ℂ) * s + (k : ℂ) := by
+  rw [Criteria.det_characteristicMatrix_fin_two, trace_jacobian, det_jacobian]
+  have hm' : (m : ℂ) ≠ 0 := by exact_mod_cast hm
+  push_cast
+  field_simp
+  ring
+
+/-- The mechanical Jacobian is Hurwitz iff the damping and the stiffness are positive (`m > 0`;
+`Criteria.isHurwitz_iff_of_coeffs_quadratic` for `m s² + γ s + k`). -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_jacobian_iff {m : ℝ} (hm : 0 < m) (γ k : ℝ) :
+    LinearSystems.IsHurwitz (jacobian m γ k) ↔ 0 < γ ∧ 0 < k :=
+  Criteria.isHurwitz_iff_of_coeffs_quadratic _ hm (trace_jacobian m γ k) (det_jacobian m γ k)
+
+/-- Damping ratio of the mechanical Jacobian (`Criteria.dampingRatio`):
+`ζ = γ / (2 √(m k))` (`m, k > 0`). -/
+@[tmio T, powerlib_foundation] theorem dampingRatio_jacobian {m k : ℝ} (hm : 0 < m) (hk : 0 < k)
+    (γ : ℝ) : Criteria.dampingRatio (jacobian m γ k) = γ / (2 * Real.sqrt (m * k)) := by
+  have hs : Real.sqrt (k / m) = Real.sqrt (m * k) / m := by
+    rw [show k / m = m * k / m ^ 2 by field_simp, Real.sqrt_div' _ (by positivity),
+      Real.sqrt_sq hm.le]
+  have hpos : 0 < Real.sqrt (m * k) := Real.sqrt_pos.mpr (mul_pos hm hk)
+  rw [Criteria.dampingRatio, trace_jacobian, det_jacobian, hs]
+  field_simp
+
+open Matrix in
+/-- All eigenvalues of the mechanical Jacobian are real iff `4 m k ≤ γ²` (`m > 0`; the
+discriminant of `m s² + γ s + k`). -/
+@[tmio T, powerlib_foundation] theorem eigenvalues_real_iff_jacobian {m : ℝ} (hm : 0 < m)
+    (γ k : ℝ) :
+    (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →
+        (jacobian m γ k).map (algebraMap ℝ ℂ) *ᵥ v = μ • v → μ.im = 0) ↔
+      4 * m * k ≤ γ ^ 2 := by
+  rw [Criteria.eigenvalues_real_iff_discriminant_nonneg, trace_jacobian, det_jacobian]
+  have hm2 : 0 < m ^ 2 := by positivity
+  have he : (-γ / m) ^ 2 - 4 * (k / m) = (γ ^ 2 - 4 * m * k) / m ^ 2 := by
+    field_simp
+  rw [he, div_nonneg_iff]
+  constructor
+  · rintro (⟨h, -⟩ | ⟨-, h⟩)
+    · linarith
+    · linarith
+  · intro h; left; exact ⟨by linarith, hm2.le⟩
 
 /-- The Jacobian of the field at `y` is `jacobian m γ k` for `k = V''(y 0)`. -/
 @[tmio T, powerlib_foundation] theorem hasFDerivAt_field {m γ k : ℝ} {dV : ℝ → ℝ} {y : State 2}

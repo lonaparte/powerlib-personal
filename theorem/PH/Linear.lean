@@ -143,8 +143,7 @@ include hJ hR hQ in
 /-- `Aᵀ Q + Q A ⪯ 0`: its negation `2 Q R Q` is positive semidefinite. -/
 @[tmio T, powerlib_foundation] theorem linearStateMatrix_lyapunov_negSemidef :
     (-((linearStateMatrix J R Q)ᵀ * Q + Q * linearStateMatrix J R Q)).PosSemidef := by
-  have hRt : Rᵀ = R := by
-    simpa only [conjTranspose_eq_transpose_of_trivial] using hR.isHermitian.eq
+  have hRt : Rᵀ = R := hR.isHermitian.isSymm
   rw [linearStateMatrix_lyapunov hJ hQ hRt, neg_smul, neg_neg]
   have h := hR.conjTranspose_mul_mul_same Q
   rw [conjTranspose_eq_transpose_of_trivial, hQ] at h
@@ -207,14 +206,6 @@ end LinearLTI
 
 /-! ### The linear port-Hamiltonian plant -/
 
-@[tmio T, powerlib_foundation] theorem symmetric_of_posSemidef {R : Matrix (Fin n) (Fin n) ℝ}
-    (hR : R.PosSemidef) : Rᵀ = R := by
-  simpa only [conjTranspose_eq_transpose_of_trivial] using hR.isHermitian.eq
-
-@[tmio T, powerlib_foundation] theorem symmetric_of_posDef {Q : Matrix (Fin n) (Fin n) ℝ}
-    (hQ : Q.PosDef) : Qᵀ = Q :=
-  symmetric_of_posSemidef hQ.posSemidef
-
 /-- With `Q ≻ 0` the constant-coefficient pH system is a linear port-Hamiltonian plant. -/
 def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fin m) ℝ)
     (Q : Matrix (Fin n) (Fin n) ℝ) (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Q.PosDef) :
@@ -224,9 +215,9 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
   Q := Q
   B := g
   skew := hJ
-  dissipation_symmetric := symmetric_of_posSemidef hR
+  dissipation_symmetric := hR.isHermitian.isSymm
   dissipation_nonneg x := by simpa [star_trivial] using hR.dotProduct_mulVec_nonneg x
-  energy_symmetric := symmetric_of_posDef hQ
+  energy_symmetric := hQ.isHermitian.isSymm
   energy_pos x hx := by simpa [star_trivial] using hQ.dotProduct_mulVec_pos hx
 
 @[tmio M, powerlib_foundation] theorem toPortHamiltonian_plant {J R : Matrix (Fin n) (Fin n) ℝ}

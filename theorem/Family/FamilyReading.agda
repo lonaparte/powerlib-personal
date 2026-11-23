@@ -23,7 +23,8 @@ module theorem.Family.FamilyReading where
 -- The Lean connection is `theorem/Family/Reading.lean`: the transfer laws are connection statements
 -- over arbitrary families (`exactUnder_of_hub`, `exact_of_hub`, `realize_subset_den_of_hub`,
 -- `realize_subset_den_of_hub`, `mem_den_iff_of_flow`); readings by conjugacy go through the
--- foundation lemma `mem_den_flow_iff_of_transport`. Nothing here is exported.
+-- foundation lemmas `mem_den_flow_iff_of_transport` (spoke = transport of the hub) and
+-- `mem_den_flow_iff_of_hub_transport` (hub = transport of the spoke). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

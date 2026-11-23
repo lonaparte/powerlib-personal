@@ -513,26 +513,20 @@ other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 
     show 0 < (jac m.params m.θ m.Id).trace
     rw [htr]; unfold a2; nlinarith
   · have hc : Real.cos m.θ = 0 := (mul_eq_zero.mp hA).resolve_left hV
-    have hc2 : Real.cos (2 * m.θ) = -1 := by rw [Real.cos_two_mul, hc]; norm_num
+    have hc2 : Real.cos (2 * m.θ) < 0 := by rw [Real.cos_two_mul, hc]; norm_num
     refine (hunst (Or.inl ?_)).elim
     show 0 < (jac m.params m.θ m.Id).det
-    rw [hdet]; unfold a0; rw [hc2]
-    have : 0 < m.params.V ^ 2 * m.params.kP * m.params.ki := by positivity
-    nlinarith
+    rw [hdet, neg_pos]
+    exact (a0_neg_iff m.params hV hki hkP).mpr hc2
   · rcases lt_trichotomy (Real.cos (2 * m.θ)) 0 with hc2 | hc2 | hc2
     · refine (hunst (Or.inl ?_)).elim
       show 0 < (jac m.params m.θ m.Id).det
-      rw [hdet]; unfold a0
-      have : 0 < m.params.V ^ 2 * m.params.kP * m.params.ki := by positivity
-      nlinarith
+      rw [hdet, neg_pos]
+      exact (a0_neg_iff m.params hV hki hkP).mpr hc2
     · exact ((family_isAutonomous.mem_den_flow.mp
         (mem_den_unstable_of_fold m.params hkp hki hkP heq hA hc2)) h).elim
-    · have ha2 : 0 < a2 m.params m.θ := by
-        unfold a2
-        have : 0 < 3 * m.params.kP + 2 * m.params.kp := by positivity
-        have : 0 < m.params.V * Real.cos m.θ / 2 := by positivity
-        positivity
-      have ha0 : 0 < a0 m.params m.θ := by unfold a0; positivity
+    · have ha2 := a2_pos m.params hkp hkP hA
+      have ha0 := (a0_pos_iff m.params hV hki hkP).mpr hc2
       have hgap := a2_mul_a1_sub_a0_pos m.params hkp hki hkP hA hc2.le
       refine ⟨by linarith, by linarith, by nlinarith⟩
 

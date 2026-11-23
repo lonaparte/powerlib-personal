@@ -110,7 +110,7 @@ nonpositive real part. -/
 @[tmio T, powerlib_foundation] theorem phSpectral_re_nonpos (hJ : Jᵀ = -J) (hR : R.PosSemidef)
     (hQ : Q.PosDef) {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : Linear.complexify (linearStateMatrix J R Q) *ᵥ v = μ • v) : μ.re ≤ 0 := by
-  have hQt : Qᵀ = Q := symmetric_of_posDef hQ
+  have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
   refine Criteria.re_nonpos_of_lyapunov hQt (fun w hw => by
     simpa only [star_trivial] using hQ.dotProduct_mulVec_pos hw) (fun w => ?_) hv heig
   have h := (linearStateMatrix_lyapunov_negSemidef hJ hR hQt).dotProduct_mulVec_nonneg w
@@ -228,9 +228,8 @@ with `R ⪰ 0`, `Q ≻ 0` is positive real (no right-half-plane pole and
   intro s hs
   have hdet := phSpectral_det_ne_zero hJ hR hQ hs
   refine ⟨hdet, (positiveRealAt_iff_re _).mpr fun u => ?_⟩
-  have hQt : Qᵀ = Q := symmetric_of_posDef hQ
-  have hRt : Rᵀ = R := by
-    simpa only [conjTranspose_eq_transpose_of_trivial] using hR.isHermitian.eq
+  have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
+  have hRt : Rᵀ = R := hR.isHermitian.isSymm
   rw [linearLTIModel_transfer_re hJ hRt hQt s hdet u]
   have hQRQ : (Q * R * Q).PosSemidef := by
     have h := hR.conjTranspose_mul_mul_same Q

@@ -17,7 +17,7 @@ Results.
 * `cubicField c x = (c ‖x‖²) x` on `ℝⁿ` (`n ≥ 1`); for `n = 1` this is `ẋ = c x³`. Both fields
   are `C¹`, vanish at `0`, and have Jacobian `0` at `0` (every eigenvalue has real part `0`).
 * `c = −1`: the origin is globally asymptotically stable (`cubic_neg_globallyAsymptoticallyStable`,
-  strict Lyapunov function `‖x‖²`).
+  strict Lyapunov function `‖x‖²`, `Flow.isStrictLyapunovFunction_norm_sq`).
 * `c = +1`: the origin is unstable (`cubic_pos_unstable`): from `x₀ = r e`, the explicit
   solution `x(t) = (1 − 2r²t)^{−1/2} x₀` reaches norm `1` at `t = (1 − r²)/(2r²)`.
 * `linearization_inconclusive` packages both: no criterion that depends only on the Jacobian
@@ -56,36 +56,13 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
     simp
   exact h0.fderiv
 
-@[tmio T, powerlib_foundation] private lemma lie_norm_sq (x v : State n) :
-    fderiv ℝ (fun y : State n => ‖y‖ ^ 2) x v = 2 * inner ℝ x v := by
-  have h := (hasStrictFDerivAt_norm_sq x).hasFDerivAt
-  rw [h.fderiv]
-  simp
-
 /-- `‖x‖²` is a strict global Lyapunov function for `ẋ = −‖x‖² x`. -/
 @[tmio T, powerlib_foundation] theorem cubic_neg_strictLyapunov :
-    _root_.IsStrictLyapunovFunction (cubicField (n := n) (-1)) (fun x => ‖x‖ ^ 2) 0 where
-  hcont := continuous_norm.pow 2
-  hV_c1 := contDiff_norm_sq ℝ
-  hzero := by simp
-  hpos := fun x hx => by positivity
-  hequil := cubicField_zero _
-  hLie_neg := by
-    intro x hx
-    rw [lie_norm_sq, cubicField, inner_smul_right, real_inner_self_eq_norm_sq]
+    _root_.IsStrictLyapunovFunction (cubicField (n := n) (-1)) (fun x => ‖x‖ ^ 2) 0 :=
+  Flow.isStrictLyapunovFunction_norm_sq (cubicField_zero _) fun x hx => by
+    rw [cubicField, inner_smul_right, real_inner_self_eq_norm_sq]
     have : 0 < ‖x‖ := norm_pos_iff.mpr hx
     nlinarith [pow_pos this 4]
-  hbounded_sublevel := by
-    intro c
-    apply Metric.isCompact_of_isClosed_isBounded
-    · exact isClosed_le (continuous_norm.pow 2) continuous_const
-    · rw [isBounded_iff_forall_norm_le]
-      refine ⟨max 1 c, fun x hx => ?_⟩
-      simp only [Set.mem_ofPred_eq] at hx
-      by_cases h1 : ‖x‖ ≤ 1
-      · exact h1.trans (le_max_left _ _)
-      · push Not at h1
-        exact (le_of_lt (by nlinarith)).trans ((hx.trans' le_rfl).trans (le_max_right _ _))
 
 /-- `ẋ = −‖x‖² x` (for `n = 1`, `ẋ = −x³`): the origin is globally asymptotically stable. -/
 @[tmio T, powerlib_foundation] theorem cubic_neg_globallyAsymptoticallyStable (hn : 0 < n) :

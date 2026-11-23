@@ -34,7 +34,9 @@ spoke that keeps the hub's language.
 
 Results.
 * `mem_den_flow_iff_of_transport` (an affine conjugacy of fields is a reading of the flow
-  sentences; a generic foundation connection with hypotheses reading sentences on fields).
+  sentences; a generic foundation connection with hypotheses reading sentences on fields), with
+  the spoke written as the transport of the hub; `mem_den_flow_iff_of_hub_transport` is the same
+  reading with the hub written as the transport of the spoke.
 
 Family and connection conclusions.
 * Transfer laws, connection statements about arbitrary families of `Type` (stated once; model
@@ -120,6 +122,21 @@ hub's, `x` and `g x` satisfy the same flow sentences. -/
     {g : X → Y} {x : X} (T : Dynamics.State n ≃L[ℝ] Dynamics.State n) (c : Dynamics.State n)
     (hf : f x = Dynamics.transportField T c (φ (g x)))
     (hpt : pt x = Dynamics.affineCoord T c (ψ (g x))) (P : Flow.Property) :
+    connection% (x ∈ F.den (.flow P) ↔ g x ∈ G.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  rw [hdenF, hdenG, hf, hpt, Dynamics.holds_transport_iff]
+
+/-- **The dual reading by conjugacy**: when the hub's field at `g x` is the spoke's field at `x`
+in the coordinates `y = T z + c`, and the hub's point is the image of the spoke's, `x` and `g x`
+satisfy the same flow sentences (the direction in which model identities are usually proved). -/
+@[tmio TM, powerlib_foundation] theorem mem_den_flow_iff_of_hub_transport {G : Family Y R n r}
+    {f : X → Dynamics.State n → Dynamics.State n} {pt : X → Dynamics.State n}
+    {φ : Y → Dynamics.State n → Dynamics.State n} {ψ : Y → Dynamics.State n}
+    (hdenF : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
+    (hdenG : ∀ y (P : Flow.Property), y ∈ G.den (.flow P) ↔ P.holds (φ y) (ψ y))
+    {g : X → Y} {x : X} (T : Dynamics.State n ≃L[ℝ] Dynamics.State n) (c : Dynamics.State n)
+    (hf : φ (g x) = Dynamics.transportField T c (f x))
+    (hpt : ψ (g x) = Dynamics.affineCoord T c (pt x)) (P : Flow.Property) :
     connection% (x ∈ F.den (.flow P) ↔ g x ∈ G.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [hdenF, hdenG, hf, hpt, Dynamics.holds_transport_iff]

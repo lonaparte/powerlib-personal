@@ -28,7 +28,9 @@ Results.
   `J(β)/(h₀ √(π/β)/2) − 1 − (h₁/h₀)/√(πβ) = O(1/β)`, i.e.
   `J(β) = h₀ (√(π/β)/2) (1 + (h₁/h₀)(πβ)^{−1/2} + O(β^{−1}))`.
 * `laplace_two_term_tendsto` — `√β (J(β)/(h₀ √(π/β)/2) − 1) → (h₁/h₀)/√π`; the half-order term
-  is present exactly when `h₁ ≠ 0` (`laplace_two_term_coeff_ne_zero_iff`).
+  is present exactly when `h₁ ≠ 0` (`laplace_two_term_coeff_ne_zero_iff`). The coefficient is
+  read off by the model-free `tendsto_div_of_isBigO_sq` (`F − c s = O(s²)`, `s → 0` give
+  `F/s → c`).
 
 Relation to the truncated table `Asymptotics/EndpointLaplace.lean`: there the half-order
 coefficient `√(2/π)(g₁/g₀ − φ₃/(3φ₂))/√φ₂` is read off the first three Taylor terms without a
@@ -189,32 +191,36 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
   have := mul_le_mul_of_nonneg_left this hK
   linarith
 
+/-- Reading off a first-order coefficient (model-free): if `s → 0`, `s ≠ 0` eventually and
+`F − c s = O(s²)`, then `F/s → c`. -/
+@[tmio T, powerlib_foundation] theorem tendsto_div_of_isBigO_sq {α : Type*} {l : Filter α}
+    {F s : α → ℝ} {c : ℝ} (hs : Tendsto s l (𝓝 0)) (hs0 : ∀ᶠ x in l, s x ≠ 0)
+    (h : (fun x => F x - c * s x) =O[l] fun x => s x ^ 2) :
+    Tendsto (fun x => F x / s x) l (𝓝 c) := by
+  have h1 := (h.mul (Asymptotics.isBigO_refl (fun x => (s x)⁻¹) l)).trans_tendsto
+    (hs.congr' (by filter_upwards [hs0] with x hx; field_simp))
+  refine (h1.add_const c).congr' ?_ |>.mono_right (by rw [zero_add])
+  filter_upwards [hs0] with x hx
+  field_simp
+  ring
+
 /-- The half-order coefficient of the two-term expansion:
-`√β (J(β)/(h₀ √(π/β)/2) − 1) → (h₁/h₀)/√π` as `β → ∞` (`h₀ ≠ 0`). -/
+`√β (J(β)/(h₀ √(π/β)/2) − 1) → (h₁/h₀)/√π` as `β → ∞` (`h₀ ≠ 0`; `tendsto_div_of_isBigO_sq` at
+`s = 1/√β`). -/
 @[tmio T, powerlib_foundation] theorem laplace_two_term_tendsto {h : ℝ → ℝ} {L h₀ h₁ M : ℝ} (hL : 0 < L)
     (hh₀ : h₀ ≠ 0) (hcont : ContinuousOn h (Icc 0 L))
     (hrem : ∀ u ∈ Icc (0 : ℝ) L, |h u - h₀ - h₁ * u| ≤ M * u ^ 2) :
     Tendsto (fun β => √β * ((∫ u in (0 : ℝ)..L, h u * Real.exp (-β * u ^ 2)) /
       (h₀ * (√(π / β) / 2)) - 1)) atTop (𝓝 (h₁ / h₀ / √π)) := by
-  have hO := laplace_two_term_isBigO hL hh₀ hcont hrem
-  have h1 := (Asymptotics.isBigO_refl (fun β : ℝ => √β) atTop).mul hO
-  have h2 : Tendsto (fun β : ℝ => √β * β⁻¹) atTop (𝓝 0) := by
-    refine (tendsto_inv_atTop_zero.comp Real.tendsto_sqrt_atTop).congr' ?_
-    filter_upwards [eventually_gt_atTop 0] with β hβ
-    have hs : 0 < √β := Real.sqrt_pos.mpr hβ
-    simp only [Function.comp_apply]
-    rw [show β = √β ^ 2 from (Real.sq_sqrt hβ.le).symm]
-    rw [Real.sqrt_sq hs.le]
-    field_simp
-  have h3 := (h1.trans_tendsto h2).add_const (h₁ / h₀ / √π)
-  rw [zero_add] at h3
-  refine h3.congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with β hβ
-  have hs : 0 < √β := Real.sqrt_pos.mpr hβ
-  have hsπ : 0 < √π := Real.sqrt_pos.mpr Real.pi_pos
-  rw [Real.sqrt_mul Real.pi_pos.le]
-  field_simp
-  ring
+  have hpos : ∀ᶠ β : ℝ in atTop, 0 < β := eventually_gt_atTop 0
+  have hT := tendsto_div_of_isBigO_sq (s := fun β : ℝ => (√β)⁻¹) (c := h₁ / h₀ / √π)
+    (F := fun β => (∫ u in (0 : ℝ)..L, h u * Real.exp (-β * u ^ 2)) / (h₀ * (√(π / β) / 2)) - 1)
+    (tendsto_inv_atTop_zero.comp Real.tendsto_sqrt_atTop)
+    (hpos.mono fun β hβ => inv_ne_zero (Real.sqrt_pos.mpr hβ).ne')
+    ((laplace_two_term_isBigO hL hh₀ hcont hrem).congr'
+      (hpos.mono fun β hβ => by simp only; rw [Real.sqrt_mul Real.pi_pos.le]; field_simp)
+      (hpos.mono fun β hβ => by simp only; rw [inv_pow, Real.sq_sqrt hβ.le]))
+  exact hT.congr fun β => by rw [div_inv_eq_mul, mul_comm]
 
 /-- The half-order term of the two-term expansion is present exactly when `h₁ ≠ 0`. -/
 @[tmio T, powerlib_foundation] theorem laplace_two_term_coeff_ne_zero_iff {h₀ h₁ : ℝ} (hh₀ : h₀ ≠ 0) :

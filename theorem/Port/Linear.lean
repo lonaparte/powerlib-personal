@@ -118,9 +118,7 @@ zero-input plant in the Flow semantics. -/
     ring
   have hp : ∀ x ≠ 0, 0 < c.storage x := fun x hx =>
     mul_pos (by norm_num) (hpos _ (by simpa using hx))
-  obtain ⟨a, ha, hlo⟩ := Flow.quadratic_lower_bound c.storage hc hh hp
-  obtain ⟨b, -, hhi⟩ := Flow.quadratic_upper_bound c.storage hc hh hp
-  exact c.lyapunovStable ha (le_max_left a b) fun x => ⟨hlo x, (hhi x).trans
-    (mul_le_mul_of_nonneg_right (le_max_right a b) (sq_nonneg ‖x‖))⟩
+  obtain ⟨a, ha, b, hab, hb⟩ := Flow.quadratic_bounds c.storage hc hh hp
+  exact c.lyapunovStable ha hab hb
 
 end powerlib.Linear

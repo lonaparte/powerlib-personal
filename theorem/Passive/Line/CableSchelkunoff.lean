@@ -194,24 +194,13 @@ theorem tendsto_exactZin_dc {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hf : Te
     Tendsto (fun i => exactZin ρ a b (f i)) l (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   have hb : 0 < b := ha.trans hab
   have hD := tendsto_tubeDet_zero ha hb hf hre
-  -- `m I₀(ma) K₁(mb) → 1/b`
-  have hN1 := ((tendsto_besselI0_zero (tendsto_mul_ofReal (r := a) hf)).mul
-    (tendsto_mul_besselK1_zero (tendsto_mul_ofReal (r := b) hf)
-      (re_mul_ofReal_pos hb hre))).const_mul
-    ((1 / b : ℝ) : ℂ)
-  -- `m K₀(ma) I₁(mb) → 0`
-  have hN2 := ((tendsto_mul_besselK0_zero (tendsto_mul_ofReal (r := a) hf)
-    (re_mul_ofReal_pos ha hre)
-    (sector_mul_ofReal ha hsec)).mul ((tendsto_mul_ofReal (r := b) hf).mul
-    (tendsto_besselSeries1_sq_zero (tendsto_mul_ofReal (r := b) hf)))).const_mul
-    ((1 / (2 * a) : ℝ) : ℂ)
-  have hN := hN1.add hN2
+  have hN := tendsto_mul_besselI0_mul_besselK1_add_besselK0_mul_besselI1 ha hb hf hre hsec
   have hden : (((b ^ 2 - a ^ 2) / (2 * a * b) : ℝ) : ℂ) ≠ 0 := by
     have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
     exact_mod_cast div_ne_zero h3 (by positivity)
   have h := ((hN.div hD hden).const_mul ((ρ / (2 * Real.pi * a) : ℝ) : ℂ))
-  have e : ((ρ / (2 * Real.pi * a) : ℝ) : ℂ) * ((((1 / b : ℝ) : ℂ) * (1 * 1) +
-      ((1 / (2 * a) : ℝ) : ℂ) * (0 * (0 * 1))) / (((b ^ 2 - a ^ 2) / (2 * a * b) : ℝ) : ℂ)) =
+  have e : ((ρ / (2 * Real.pi * a) : ℝ) : ℂ) *
+      (((1 / b : ℝ) : ℂ) / (((b ^ 2 - a ^ 2) / (2 * a * b) : ℝ) : ℂ)) =
       ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
     have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
     have hR : ρ / (2 * Real.pi * a) * (1 / b / ((b ^ 2 - a ^ 2) / (2 * a * b))) =
@@ -220,17 +209,9 @@ theorem tendsto_exactZin_dc {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hf : Te
     rw [← hR]; push_cast; ring
   rw [e] at h
   refine h.congr fun i => ?_
-  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
-  have hb' : (b : ℂ) ≠ 0 := by exact_mod_cast hb.ne'
-  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
-  simp only [Pi.div_apply, exactZin, besselI1]
-  generalize besselI0 (f i * a) = A0
-  generalize besselK1 (f i * b) = B1
-  generalize besselK0 (f i * a) = A1
-  generalize besselSeries1 ((f i * b) ^ 2 / 4) = S
-  generalize tubeDet a b (f i) = D
+  simp only [Pi.div_apply, exactZin]
   push_cast
-  field_simp
+  ring
 
 /-- **Low-frequency limit of the exact outer-surface impedance**: `Z_out(m) → ρ/(π(b² − a²))` as
 `m → 0` in a sector `‖m‖ ≤ K Re m`. -/
@@ -240,24 +221,13 @@ theorem tendsto_exactZout_dc {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hf : T
     Tendsto (fun i => exactZout ρ a b (f i)) l (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
   have hb : 0 < b := ha.trans hab
   have hD := tendsto_tubeDet_zero ha hb hf hre
-  -- `m I₀(mb) K₁(ma) → 1/a`
-  have hN1 := ((tendsto_besselI0_zero (tendsto_mul_ofReal (r := b) hf)).mul
-    (tendsto_mul_besselK1_zero (tendsto_mul_ofReal (r := a) hf)
-      (re_mul_ofReal_pos ha hre))).const_mul
-    ((1 / a : ℝ) : ℂ)
-  -- `m K₀(mb) I₁(ma) → 0`
-  have hN2 := ((tendsto_mul_besselK0_zero (tendsto_mul_ofReal (r := b) hf)
-    (re_mul_ofReal_pos hb hre)
-    (sector_mul_ofReal hb hsec)).mul ((tendsto_mul_ofReal (r := a) hf).mul
-    (tendsto_besselSeries1_sq_zero (tendsto_mul_ofReal (r := a) hf)))).const_mul
-    ((1 / (2 * b) : ℝ) : ℂ)
-  have hN := hN1.add hN2
+  have hN := tendsto_mul_besselI0_mul_besselK1_add_besselK0_mul_besselI1 hb ha hf hre hsec
   have hden : (((b ^ 2 - a ^ 2) / (2 * a * b) : ℝ) : ℂ) ≠ 0 := by
     have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
     exact_mod_cast div_ne_zero h3 (by positivity)
   have h := ((hN.div hD hden).const_mul ((ρ / (2 * Real.pi * b) : ℝ) : ℂ))
-  have e : ((ρ / (2 * Real.pi * b) : ℝ) : ℂ) * ((((1 / a : ℝ) : ℂ) * (1 * 1) +
-      ((1 / (2 * b) : ℝ) : ℂ) * (0 * (0 * 1))) / (((b ^ 2 - a ^ 2) / (2 * a * b) : ℝ) : ℂ)) =
+  have e : ((ρ / (2 * Real.pi * b) : ℝ) : ℂ) *
+      (((1 / a : ℝ) : ℂ) / (((b ^ 2 - a ^ 2) / (2 * a * b) : ℝ) : ℂ)) =
       ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
     have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
     have hR : ρ / (2 * Real.pi * b) * (1 / a / ((b ^ 2 - a ^ 2) / (2 * a * b))) =
@@ -266,17 +236,9 @@ theorem tendsto_exactZout_dc {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hf : T
     rw [← hR]; push_cast; ring
   rw [e] at h
   refine h.congr fun i => ?_
-  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
-  have hb' : (b : ℂ) ≠ 0 := by exact_mod_cast hb.ne'
-  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
-  simp only [Pi.div_apply, exactZout, besselI1]
-  generalize besselI0 (f i * b) = A0
-  generalize besselK1 (f i * a) = B1
-  generalize besselK0 (f i * b) = A1
-  generalize besselSeries1 ((f i * a) ^ 2 / 4) = S
-  generalize tubeDet a b (f i) = D
+  simp only [Pi.div_apply, exactZout]
   push_cast
-  field_simp
+  ring
 
 end LowFrequency
 
@@ -831,20 +793,16 @@ section Rates
 variable {ι : Type*} {l : Filter ι} {f : ι → ℂ}
 
 /-- A relative bound `‖X(z) − G(z)‖ ≤ (C/Re z)‖G(z)‖` in a sector gives
-`X(f)/G(f) − 1 = O(1/Re f)`. -/
+`X(f)/G(f) − 1 = O(1/Re f)` (`SpecialFunctions.div_sub_one_isBigO_of_rel_bound`). -/
 @[tmio T, powerlib_foundation] private theorem div_gaussHalf_sub_one_isBigO {K C : ℝ} {X : ℂ → ℂ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re)
     (hb : ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re → ‖X z - gaussHalf z‖ ≤ C / z.re * ‖gaussHalf z‖) :
     (fun i => X (f i) / gaussHalf (f i) - 1) =O[l] (fun i => 1 / (f i).re) := by
   have hpos := hre.eventually_gt_atTop 0
-  refine IsBigO.of_bound C ?_
+  refine div_sub_one_isBigO_of_rel_bound (C := C) hre
+    (hpos.mono fun i hi => gaussHalf_ne_zero hi) ?_
   filter_upwards [hpos, hsec] with i hi hs
-  have hG := gaussHalf_ne_zero hi
-  have hGn : 0 < ‖gaussHalf (f i)‖ := norm_pos_iff.mpr hG
-  rw [show X (f i) / gaussHalf (f i) - 1 = (X (f i) - gaussHalf (f i)) / gaussHalf (f i) by
-    field_simp, norm_div, div_le_iff₀ hGn, Real.norm_eq_abs, abs_of_pos (by positivity)]
-  refine (hb _ hi hs).trans_eq ?_
-  ring
+  exact hb _ hi hs
 
 /-- Rate of the normalized `I₀`: in a sector, `Î₀(f) − 1 = O(1/Re f)`. -/
 @[tmio T, powerlib_foundation]

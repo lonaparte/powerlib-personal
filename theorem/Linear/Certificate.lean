@@ -93,7 +93,7 @@ equation for the converse). -/
   refine ⟨fun ⟨c⟩ => c.isHurwitz, fun hA => ?_⟩
   obtain ⟨P, hP, hL, -⟩ := hA.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
   refine ⟨⟨P, ?_, fun x hx => ?_, ?_⟩⟩
-  · simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using hP.isHermitian.eq
+  · exact hP.isHermitian.isSymm
   · simpa using hP.dotProduct_mulVec_pos hx
   · have h : P * A + Aᵀ * P = -1 := hL
     rw [add_comm]
@@ -161,10 +161,7 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
   have hp : ∀ z : ℝⁿ, z ≠ 0 → 0 < ⟪z, op c.P z⟫ := fun z hz => by
     rw [inner_op]
     exact c.positive _ (by simpa using hz)
-  obtain ⟨α, hα, hlo⟩ := Flow.quadratic_lower_bound _ hc hh hp
-  obtain ⟨β, -, hhi⟩ := Flow.quadratic_upper_bound _ hc hh hp
-  exact ⟨α, hα, max α β, le_max_left α β, fun z => ⟨hlo z, (hhi z).trans
-    (mul_le_mul_of_nonneg_right (le_max_right α β) (sq_nonneg ‖z‖))⟩⟩
+  exact Flow.quadratic_bounds _ hc hh hp
 
 /-- A Lyapunov certificate is a quadratic-decay certificate of the affine linear field: its energy
 lies between two multiples of `‖x - e‖²` and decays at the rate `1 / β` of the upper one. -/
@@ -253,9 +250,6 @@ the energy `xᵀ P x / 2`. -/
       ring
   have hE : ∀ x : ℝⁿ, x ≠ 0 → 0 < quadraticEnergy P x := fun x hx =>
     mul_pos (by norm_num) (hpos _ (by simpa using hx))
-  have hc := (contDiff_quadraticEnergy P).continuous
-  obtain ⟨a, ha, hlo⟩ := Flow.quadratic_lower_bound _ hc hhom hE
-  obtain ⟨b, hb0, hhi⟩ := Flow.quadratic_upper_bound _ hc hhom hE
   let W : ℝⁿ → ℝ := fun x => -(WithLp.ofLp x ⬝ᵥ (P *ᵥ (A *ᵥ WithLp.ofLp x)))
   have hWc : Continuous W := by
     simp only [W]
@@ -265,20 +259,11 @@ the energy `xᵀ P x / 2`. -/
       smul_eq_mul]
     ring
   have hWp : ∀ x : ℝⁿ, x ≠ 0 → 0 < W x := fun x hx => neg_pos.mpr (hneg _ (by simpa using hx))
-  obtain ⟨α, hα, hW⟩ := Flow.quadratic_lower_bound W hWc hWh hWp
-  refine ⟨⟨a, b, α / b, ha, hb0, div_pos hα hb0, contDiff_quadraticEnergy P,
-    affine_isEquilibrium A 0, fun x => by simpa using hlo x, fun x => by simpa using hhi x,
-    fun x => ?_⟩⟩
+  refine Flow.nonempty_quadraticDecay_of_homogeneous (contDiff_quadraticEnergy P) hhom hE hWc hWh
+    hWp (affine_isEquilibrium A 0) fun x => le_of_eq ?_
   have hz : WithLp.ofLp (affineLinearVectorField A 0 x) = A *ᵥ WithLp.ofLp x := by
     simp [affine_apply, op, Matrix.ofLp_toEuclideanCLM]
-  rw [fderiv_quadraticEnergy_apply hP, hz, show WithLp.ofLp x ⬝ᵥ (P *ᵥ (A *ᵥ WithLp.ofLp x)) =
-    -W x from (neg_neg _).symm]
-  have h1 := hW x
-  have h2 := hhi x
-  have h3 : α / b * quadraticEnergy P x ≤ α * ‖x‖ ^ 2 := by
-    rw [div_mul_eq_mul_div, div_le_iff₀ hb0]
-    nlinarith [sq_nonneg ‖x‖]
-  linarith
+  rw [fderiv_quadraticEnergy_apply hP, hz, neg_neg]
 
 /-! ## Conserved quadratic energies -/
 

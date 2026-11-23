@@ -160,13 +160,12 @@ the grid q-voltage alone. -/
   rw [this]
   positivity
 
-/-- The sign of the normal-form coefficient for gains of opposite signs:
-`k_p k_i < 0 → κ > 0`. -/
-@[tmio M, powerlib_domain] private theorem model_kappa_pos {m : Model} (hD0 : m.params.D0 ≠ 0)
-    (hdet : 0 < (jac m.params m.θ).det) :
-    m.params.kp * m.params.ki < 0 →
-      0 < hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
-        (m.params.kp / m.params.D0) := by
+/-- The normal-form coefficient has the sign opposite to the gain product:
+`κ · (k_p k_i) < 0` for `k_p k_i ≠ 0` (supercritical for gains of opposite signs). -/
+@[tmio M, powerlib_domain] private theorem model_kappa_mul_neg {m : Model} (hD0 : m.params.D0 ≠ 0)
+    (hdet : 0 < (jac m.params m.θ).det) (hk : m.params.kp * m.params.ki ≠ 0) :
+    hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
+        (m.params.kp / m.params.D0) * (m.params.kp * m.params.ki) < 0 := by
   have hA := model_Vcos_ne_zero hD0 hdet
   have hq := model_ratio_pos hD0 hdet
   set A := m.params.V * Real.cos m.θ
@@ -178,60 +177,19 @@ the grid q-voltage alone. -/
   have hprod : m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) =
       m.params.kp * m.params.ki / (m.params.D0 * A) ^ 2 := by
     field_simp
-  have hDA : 0 < (m.params.D0 * A) ^ 2 := by positivity
-  rw [hκ]
-  intro hk
-  have h1 : m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) < 0 := by
-    rw [hprod]; exact div_neg_of_neg_of_pos hk hDA
-  have h2 : m.params.kp / m.params.D0 / A < 0 := by
-    by_contra hc; push Not at hc; nlinarith
-  have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
-  nlinarith
-
-/-- The sign of the normal-form coefficient for gains of equal signs:
-`k_p k_i > 0 → κ < 0`. -/
-@[tmio M, powerlib_domain] private theorem model_kappa_neg {m : Model} (hD0 : m.params.D0 ≠ 0)
-    (hdet : 0 < (jac m.params m.θ).det) :
-    0 < m.params.kp * m.params.ki →
-      hopfκ (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ)
-        (m.params.kp / m.params.D0) < 0 := by
-  have hA := model_Vcos_ne_zero hD0 hdet
-  have hq := model_ratio_pos hD0 hdet
-  set A := m.params.V * Real.cos m.θ
-  set B := m.params.V * Real.sin m.θ
-  have hAB : 0 < A ^ 2 + B ^ 2 := by positivity
-  have hκ : hopfκ A B (m.params.kp / m.params.D0) =
-      -(A ^ 2 + B ^ 2) / 16 * (m.params.kp / m.params.D0 / A) := by
-    unfold hopfκ; field_simp
-  have hprod : m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) =
-      m.params.kp * m.params.ki / (m.params.D0 * A) ^ 2 := by
-    field_simp
-  have hDA : 0 < (m.params.D0 * A) ^ 2 := by positivity
-  rw [hκ]
-  intro hk
-  have h1 : 0 < m.params.kp / m.params.D0 / A * (m.params.ki / m.params.D0 / A) := by
-    rw [hprod]; exact div_pos hk hDA
-  have h2 : 0 < m.params.kp / m.params.D0 / A := by
-    by_contra hc; push Not at hc; nlinarith
-  have h3 : -(A ^ 2 + B ^ 2) / 16 < 0 := by linarith
-  nlinarith
+  have h1 : 0 < m.params.kp / m.params.D0 / A * (m.params.kp * m.params.ki) *
+      (m.params.ki / m.params.D0 / A) := by
+    rw [mul_right_comm, hprod, div_mul_eq_mul_div, ← sq]
+    exact div_pos (lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 hk).symm) (by positivity)
+  have h2 := pos_of_mul_pos_left h1 hq.le
+  rw [hκ, mul_assoc]
+  exact mul_neg_of_neg_of_pos (by linarith) h2
 
 end Boundary
 
 /-! ## Members of the local asymptotic denotation -/
 
 section Members
-
-/-- An equilibrium of the translated field is balanced, for every loop gain `D₀`. -/
-@[tmio M, powerlib_domain] private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
-    m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) := by
-  have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
-  have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
-  simp only [PiLp.zero_apply] at h0 h1
-  rw [model_field1, h0] at h1
-  simp only [PiLp.zero_apply, zero_add, mul_zero, zero_mul, sub_zero] at h1
-  unfold gridQ at h1
-  linarith
 
 /-- With a degenerate loop `D₀ = 0` the angle is frozen. -/
 @[tmio TM, powerlib_domain] private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
@@ -357,7 +315,8 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
   have hA := model_Vcos_ne_zero hD0 hdet
   have hα := model_kiD0_ne_zero hD0 hdet
   have hq := model_ratio_pos hD0 hdet
-  exact localAsymptoticStable_of_sineLienard hA hα hq (model_kappa_pos hD0 hdet hk)
+  have hκ := model_kappa_mul_neg hD0 hdet hk.ne
+  exact localAsymptoticStable_of_sineLienard hA hα hq (by nlinarith)
     m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
@@ -374,7 +333,8 @@ subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ <
   have hA := model_Vcos_ne_zero hD0 hdet
   have hα := model_kiD0_ne_zero hD0 hdet
   have hq := model_ratio_pos hD0 hdet
-  exact unstable_of_sineLienard hA hα hq (model_kappa_neg hD0 hdet hk) m.field_contDiff
+  have hκ := model_kappa_mul_neg hD0 hdet hk.ne'
+  exact unstable_of_sineLienard hA hα hq (by nlinarith) m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- Rate-coupled GFL PLL with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`)
@@ -426,7 +386,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
       by_contra h
       exact Dynamics.unstable_of_ne_zero m.field_contDiff h hLAS.1
     have hD0 : m.params.D0 ≠ 0 := fun h => (fun hFlowConnection => (not_las_of_D0_eq_zero h) (family_isAutonomous.mem_den_flow.mpr hFlowConnection)) hLAS
-    have heq := balance_of_model_field_zero hf0
+    have heq := (field_equilibrium_eq_zero_iff m.params).mp (by simpa [Model.field] using hf0)
     have he : Meets m .equilibrium := ⟨heq, hD0⟩
     have hdet : 0 < (jac m.params m.θ).det := by
       rcases lt_trichotomy (jac m.params m.θ).det 0 with h | h | h

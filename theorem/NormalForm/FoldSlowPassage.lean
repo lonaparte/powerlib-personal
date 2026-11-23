@@ -1,4 +1,5 @@
 import theorem.Asymptotics.GaussianMoments
+import theorem.Dynamics.Calculus
 
 /-! # Fold slow passage: the inner Riccati problem and its solvability condition
 
@@ -363,24 +364,18 @@ stays strictly below the separatrix `X = τ` for as long as it exists. -/
   rcases lt_or_eq_of_le hle' with hlt | heq
   · linarith
   exfalso
-  have hd := (hη τ hτ).tendsto_slope_zero_left
   have hslope : riccatiGraze lam τ (X τ) - 1 < 0 := by
     have hXτ : X τ = τ := by linarith
     simp only [riccatiGraze, hXτ]; linarith
-  have hev : ∀ᶠ t in 𝓝[<] (0 : ℝ), t⁻¹ • ((X (τ + t) - (τ + t)) - (X τ - τ)) < 0 :=
-    hd.eventually (gt_mem_nhds hslope)
-  have hev2 : ∀ᶠ t in 𝓝[<] (0 : ℝ), τ₁ - τ < t :=
-    nhdsWithin_le_nhds (eventually_gt_nhds (by linarith))
-  obtain ⟨t, ht, ht2, htneg⟩ := (hev.and (hev2.and self_mem_nhdsWithin)).exists
-  have htn : t < 0 := htneg
-  rw [heq, sub_zero, smul_eq_mul] at ht
-  have hpos : 0 < X (τ + t) - (τ + t) := by
-    by_contra hc
-    push Not at hc
-    have : 0 ≤ t⁻¹ * (X (τ + t) - (τ + t)) :=
-      mul_nonneg_of_nonpos_of_nonpos (inv_lt_zero.mpr htn).le hc
-    linarith
-  have := hle (τ + t) ⟨by linarith, by linarith⟩
+  -- `η` has negative slope at its zero `τ`, so it is positive just before `τ`
+  have hη' : HasDerivAt (fun s => -(X s - s)) (-(riccatiGraze lam τ (X τ) - 1)) τ :=
+    (hη τ hτ).neg
+  have hev := (Dynamics.eventually_sign_of_hasDerivAt hη' (by rw [heq, neg_zero])
+    (by linarith)).1
+  have hev2 : ∀ᶠ μ in 𝓝[<] τ, τ₁ < μ := nhdsWithin_le_nhds (eventually_gt_nhds h)
+  obtain ⟨μ, hμ, hμ1, hμτ⟩ := (hev.and (hev2.and self_mem_nhdsWithin)).exists
+  have hμτ' : μ < τ := hμτ
+  have := hle μ ⟨hμ1.le, hμτ'.le.trans hτ⟩
   linarith
 
 /-- **The critical value `λ = 1`.** The only solution of `X' = 1 − τ² + X²` that leaves the

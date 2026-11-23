@@ -215,10 +215,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
     (p : ℝ[X]) (hp0 : p.eval 0 = 1) (hpm : p.natDegree ≤ m) {M : ℝ}
     (hM : ∀ i, |p.eval (hA.1.eigenvalues i)| ≤ M) :
     anorm2 A (xm - xs) ≤ M ^ 2 * anorm2 A (x₀ - xs) := by
-  have hsym : Aᵀ = A := by
-    have := hA.1
-    rw [IsHermitian, conjTranspose_eq_transpose_of_trivial] at this
-    exact this
+  have hsym : Aᵀ = A := hA.isHermitian.isSymm
   have hpsd : ∀ u, 0 ≤ anorm2 A u := fun u => by
     have := hA.dotProduct_mulVec_nonneg u
     simpa [anorm2] using this

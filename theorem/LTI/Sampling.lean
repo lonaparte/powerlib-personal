@@ -342,29 +342,23 @@ loop, between samples included.** If the lifted matrix `M` has spectral radius `
           Matrix.linfty_opNorm_mulVec _ _
       _ ≤ C₀ * Real.exp (-(γ * k)) * N :=
           mul_le_mul (hpow k) (norm_sumElim_le _ _) (norm_nonneg _) (by positivity)
-  intro t ht
-  set k := ⌊t / T⌋₊ with hkdef
-  have hk1 : (k : ℝ) * T ≤ t := by
-    have := Nat.floor_le (div_nonneg ht hT.le)
-    rwa [le_div_iff₀ hT] at this
-  have hk2 : t < ((k : ℝ) + 1) * T := by
-    have := Nat.lt_floor_add_one (t / T)
-    rwa [div_lt_iff₀ hT] at this
-  have hsol := zoh_solution (hx k) (t := t) ⟨hk1, hk2.le⟩
-  have hs : t - k * T ∈ Icc (0 : ℝ) T := ⟨by linarith, by linarith⟩
-  obtain ⟨hE, hG⟩ := hK _ hs
-  have hzk := hz k
-  have hxk : ‖x (k * T)‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_left _ _
-  have hξk : ‖ξ k‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_right _ _
-  have huk : ‖u k‖ ≤ (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
-    rw [hu k]
-    calc ‖Cc *ᵥ ξ k + Dc *ᵥ x (k * T)‖ ≤ ‖Cc‖ * ‖ξ k‖ + ‖Dc‖ * ‖x (k * T)‖ :=
-          (norm_add_le _ _).trans
-            (add_le_add (Matrix.linfty_opNorm_mulVec _ _) (Matrix.linfty_opNorm_mulVec _ _))
-      _ ≤ ‖Cc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ + ‖Dc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
-          gcongr
-      _ = (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by ring
-  have hxt : ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+  have hwin : ∀ (k : ℕ) (t : ℝ), 0 + k * T ≤ t → t < 0 + (k + 1) * T →
+      ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+    intro k t hk1 hk2
+    rw [zero_add] at hk1 hk2
+    have hsol := zoh_solution (hx k) (t := t) ⟨hk1, hk2.le⟩
+    have hs : t - k * T ∈ Icc (0 : ℝ) T := ⟨by linarith, by linarith⟩
+    obtain ⟨hE, hG⟩ := hK _ hs
+    have hxk : ‖x (k * T)‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_left _ _
+    have hξk : ‖ξ k‖ ≤ ‖Sum.elim (x (k * T)) (ξ k)‖ := norm_le_norm_sumElim_right _ _
+    have huk : ‖u k‖ ≤ (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+      rw [hu k]
+      calc ‖Cc *ᵥ ξ k + Dc *ᵥ x (k * T)‖ ≤ ‖Cc‖ * ‖ξ k‖ + ‖Dc‖ * ‖x (k * T)‖ :=
+            (norm_add_le _ _).trans
+              (add_le_add (Matrix.linfty_opNorm_mulVec _ _) (Matrix.linfty_opNorm_mulVec _ _))
+        _ ≤ ‖Cc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ + ‖Dc‖ * ‖Sum.elim (x (k * T)) (ξ k)‖ := by
+            gcongr
+        _ = (‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖ := by ring
     rw [hsol]
     calc ‖NormedSpace.exp ((t - k * T) • A) *ᵥ x (k * T) + zohGamma (t - k * T) A B *ᵥ u k‖
         ≤ ‖NormedSpace.exp ((t - k * T) • A)‖ * ‖x (k * T)‖ +
@@ -375,20 +369,13 @@ loop, between samples included.** If the lifted matrix `M` has spectral radius `
             K * ((‖Cc‖ + ‖Dc‖) * ‖Sum.elim (x (k * T)) (ξ k)‖) := by
           gcongr
       _ = K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := by rw [hK']; ring
-  have hexp : Real.exp (-(γ * k)) ≤ Real.exp γ * Real.exp (-(γ / T * t)) := by
-    rw [← Real.exp_add]
-    apply Real.exp_le_exp.mpr
-    have h1 : t / T < k + 1 := by rw [div_lt_iff₀ hT]; linarith
-    have h2 : γ / T * t = γ * (t / T) := by ring
-    rw [h2]
-    nlinarith
+  intro t ht
+  have h := le_exp_of_sampled_decay (a := γ / T) (C := C₀ * N) hT hK'0 (by positivity) hwin
+    (fun k => by rw [show γ / T * (k * T) = γ * k by field_simp]; linarith [hz k]) ht
+  rw [abs_of_pos (div_pos hγ hT), div_mul_cancel₀ γ hT.ne', sub_zero] at h
   have hP : 0 ≤ C₀ * Real.exp γ * Real.exp (-(γ / T * t)) * N := by positivity
   have hQ : 0 ≤ Real.exp (-(γ / T * t)) * N := by positivity
-  calc ‖x t‖ ≤ K' * ‖Sum.elim (x (k * T)) (ξ k)‖ := hxt
-    _ ≤ K' * (C₀ * Real.exp (-(γ * k)) * N) := mul_le_mul_of_nonneg_left hzk hK'0
-    _ ≤ K' * (C₀ * (Real.exp γ * Real.exp (-(γ / T * t))) * N) := by gcongr
-    _ ≤ ((K' + 1) * C₀ * Real.exp γ + 1) * Real.exp (-(γ / T * t)) * N := by
-        nlinarith
+  nlinarith
 
 /-- **Lifted-matrix stability gives exponential decay of the controller state of the
 sampled-data loop.** If the lifted matrix `M` has spectral radius `< 1`, there are `C, a > 0` such
@@ -460,23 +447,16 @@ trajectory of the sampled-data loop. -/
     intro k
     rw [hy]
     simp [zohGamma]
-  have hfl : ∀ (k : ℕ) (t : ℝ), (k : ℝ) * T ≤ t → t < ((k : ℝ) + 1) * T → ⌊t / T⌋₊ = k := by
-    intro k t h1 h2
-    have h0 : 0 ≤ t / T := div_nonneg ((by positivity : (0 : ℝ) ≤ k * T).trans h1) hT.le
-    rw [Nat.floor_eq_iff h0, le_div_iff₀ hT, div_lt_iff₀ hT]
-    exact ⟨h1, h2⟩
-  obtain ⟨x, hx⟩ : ∃ x : ℝ → X → ℝ, ∀ t, x t = y ⌊t / T⌋₊ t := ⟨_, fun _ => rfl⟩
-  have hxk : ∀ k : ℕ, x (k * T) = z k ∘ Sum.inl := by
+  have hglue : ∀ k : ℕ, y k (((k : ℝ) + 1) * T) = y (k + 1) (((k : ℝ) + 1) * T) := by
     intro k
-    rw [hx, hfl k (k * T) le_rfl (by nlinarith), hy0]
-  have heq : ∀ k : ℕ, ∀ t ∈ Icc ((k : ℝ) * T) (((k : ℝ) + 1) * T), x t = y k t := by
-    intro k t ht
-    rcases lt_or_eq_of_le ht.2 with h | h
-    · rw [hx, hfl k t ht.1 h]
-    · rw [h, ← hxs k]
-      have := hxk (k + 1)
-      push_cast at this
-      exact this
+    have h := hy0 (k + 1)
+    push_cast at h
+    rw [← hxs k, h]
+  obtain ⟨x, hx⟩ : ∃ x : ℝ → X → ℝ, ∀ t, x t = y ⌊t / T⌋₊ t := ⟨_, fun _ => rfl⟩
+  have heq : ∀ k : ℕ, ∀ t ∈ Icc ((k : ℝ) * T) (((k : ℝ) + 1) * T), x t = y k t :=
+    fun k t ht => (hx t).trans (floor_glue_eq hT hglue ht)
+  have hxk : ∀ k : ℕ, x (k * T) = z k ∘ Sum.inl := fun k => by
+    rw [heq k _ ⟨le_rfl, by nlinarith⟩, hy0]
   have hcurve : ∀ k : ℕ, IsIntegralCurveOn x (fun _ v => A *ᵥ v + B *ᵥ u k)
       (Icc (k * T) ((k + 1) * T)) := by
     intro k t ht

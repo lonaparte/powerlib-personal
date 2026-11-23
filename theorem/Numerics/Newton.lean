@@ -22,6 +22,8 @@ Results.
 * `newton_local_quadratic` — there is `r > 0` such that on `ball x* r` the Jacobian is
   invertible, `N` maps the ball into itself and `‖N(x) - x*‖ ≤ L ‖J(x*)⁻¹‖ ‖x - x*‖²`
   (no `½` in the `‖J(x*)⁻¹‖` version).
+* `iterates_tendsto_of_contract` — iterates that stay in a set on which each step contracts the
+  error by `q < 1` converge geometrically (read by the Newton and chord iterations).
 * `newton_iterates_converge` — from any start in that ball the iterates stay in the ball,
   converge to `x*`, and satisfy the quadratic error recursion.
 * `newton_boxed_bound_false` — for `F(x) = x + x²/2` (`J` 1-Lipschitz, `J(0) = 1`) and every
@@ -177,6 +179,30 @@ def newtonStep (F : E → E) (J : E → E →L[ℝ] E) (x : E) : E := x - Ring.i
   calc _ ≤ ‖x - xs‖ / 2 := hhalf
     _ < r := by linarith [norm_nonneg (x - xs)]
 
+omit [NormedSpace ℝ E] in
+/-- **Iterates of a contraction toward a point.** If each step keeps the iterates in `S` and
+shrinks the error, `‖x_{k+1} − x*‖ ≤ q ‖x_k − x*‖` with `0 ≤ q < 1`, then iterates from `S` stay
+in `S`, `‖x_k − x*‖ ≤ qᵏ ‖x_0 − x*‖`, and `x_k → x*` (read by the Newton and chord methods). -/
+@[tmio T, powerlib_foundation] theorem iterates_tendsto_of_contract {S : Set E} {xs : E}
+    {q : ℝ} (hq0 : 0 ≤ q) (hq : q < 1) {x : ℕ → E} (hx0 : x 0 ∈ S)
+    (hstep : ∀ k, x k ∈ S → x (k + 1) ∈ S ∧ ‖x (k + 1) - xs‖ ≤ q * ‖x k - xs‖) :
+    (∀ k, x k ∈ S ∧ ‖x k - xs‖ ≤ q ^ k * ‖x 0 - xs‖) ∧ Tendsto x atTop (𝓝 xs) := by
+  have hall : ∀ k, x k ∈ S ∧ ‖x k - xs‖ ≤ q ^ k * ‖x 0 - xs‖ := by
+    intro k
+    induction k with
+    | zero => exact ⟨hx0, by simp⟩
+    | succ k ih =>
+      obtain ⟨hmem, hle⟩ := hstep k ih.1
+      refine ⟨hmem, ?_⟩
+      calc _ ≤ q * ‖x k - xs‖ := hle
+        _ ≤ q * (q ^ k * ‖x 0 - xs‖) := by gcongr; exact ih.2
+        _ = q ^ (k + 1) * ‖x 0 - xs‖ := by ring
+  refine ⟨hall, ?_⟩
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hlim : Tendsto (fun k : ℕ => q ^ k * ‖x 0 - xs‖) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hq0 hq).mul_const ‖x 0 - xs‖
+  exact squeeze_zero (fun k => norm_nonneg _) (fun k => (hall k).2) hlim
+
 /-- Newton iterates from the convergence ball stay there, satisfy the quadratic error
 recursion, halve the error at least, and converge to the root. -/
 @[tmio T, powerlib_foundation] theorem newton_iterates_converge [CompleteSpace E] {F : E → E}
@@ -190,26 +216,11 @@ recursion, halve the error at least, and converge to the root. -/
         ‖x k - xs‖ ≤ (1 / 2) ^ k * ‖x 0 - xs‖) ∧ Tendsto x atTop (𝓝 xs) := by
   obtain ⟨r, hr, -, hball⟩ := newton_local_quadratic hr₀ hL hF hJ hroot hinv
   refine ⟨r, hr, fun x hx0 hx => ?_⟩
-  have hmem : ∀ k, x k ∈ ball xs r := by
-    intro k
-    induction k with
-    | zero => exact hx0
-    | succ k ih => rw [hx k]; exact (hball _ ih).2.1
-  have hgeom : ∀ k, ‖x k - xs‖ ≤ (1 / 2) ^ k * ‖x 0 - xs‖ := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
+  obtain ⟨hall, hlim⟩ := iterates_tendsto_of_contract (S := ball xs r) (xs := xs) (q := 1 / 2)
+    (by norm_num) (by norm_num) hx0 fun k hk => by
       rw [hx k]
-      calc _ ≤ ‖x k - xs‖ / 2 := (hball _ (hmem k)).2.2.2
-        _ ≤ (1 / 2) ^ k * ‖x 0 - xs‖ / 2 := by gcongr
-        _ = (1 / 2) ^ (k + 1) * ‖x 0 - xs‖ := by ring
-  refine ⟨fun k => ⟨hmem k, by rw [hx k]; exact (hball _ (hmem k)).2.2.1, hgeom k⟩, ?_⟩
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hlim : Tendsto (fun k : ℕ => (1 / 2 : ℝ) ^ k * ‖x 0 - xs‖) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 1 / 2)
-      (by norm_num)).mul_const ‖x 0 - xs‖
-  exact squeeze_zero (fun k => norm_nonneg _) hgeom hlim
+      exact ⟨(hball _ hk).2.1, by linarith [(hball _ hk).2.2.2]⟩
+  exact ⟨fun k => ⟨(hall k).1, by rw [hx k]; exact (hball _ (hall k).1).2.2.1, (hall k).2⟩, hlim⟩
 
 /-! ### The boxed bound of the source note is false -/
 

@@ -499,12 +499,14 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
 
 /-! ## Two-term expansions and their single-term corollaries -/
 
-/-- Real-inequality core of `guardMFPT_guard_two_term`. -/
-@[tmio T, powerlib_foundation] private theorem guard_two_term_core {G w e ε c s C c₂ D : ℝ} (hD0 : 0 < D)
-    (hD1 : D ≤ 1) (hs1 : s ≤ 1) (hc0 : 0 ≤ c) (hc₂0 : 0 ≤ c₂) (he : e ≤ D) (hε0 : 0 ≤ ε)
-    (hε : ε ≤ D) (hw0 : 0 ≤ w) (hw : |w - 1 - c * s| ≤ C * D)
-    (hlo : (1 - e) * w ≤ G) (hhi : G ≤ (1 + ε) * (1 + c₂ * D) * w) :
-    |G - 1 - c * s| ≤ (|C| + (1 + 2 * c₂) * (1 + c + |C|)) * D := by
+/-- Real-inequality core of `guardMFPT_guard_two_term` (`X = K = 0`) and
+`guardMFPT_beyond_two_term`: `(1 − e) w ≤ G ≤ (1 + ε)(1 + c₂ D) w + X` with
+`w = 1 + c s + O(D)` and `X ≤ K D` give `G = 1 + c s + O(D)`. -/
+@[tmio T, powerlib_foundation] private theorem two_term_core {G w e ε c s C c₂ D X K : ℝ}
+    (hD0 : 0 < D) (hD1 : D ≤ 1) (hs1 : s ≤ 1) (hc0 : 0 ≤ c) (hc₂0 : 0 ≤ c₂) (he : e ≤ D)
+    (hε0 : 0 ≤ ε) (hε : ε ≤ D) (hw0 : 0 ≤ w) (hw : |w - 1 - c * s| ≤ C * D) (hK0 : 0 ≤ K)
+    (hX : X ≤ K * D) (hlo : (1 - e) * w ≤ G) (hhi : G ≤ (1 + ε) * (1 + c₂ * D) * w + X) :
+    |G - 1 - c * s| ≤ (|C| + (1 + 2 * c₂) * (1 + c + |C|) + K) * D := by
   have hCD : C * D ≤ |C| * D := mul_le_mul_of_nonneg_right (le_abs_self C) hD0.le
   have hCD1 : |C| * D ≤ |C| := by
     have := mul_le_mul_of_nonneg_left hD1 (abs_nonneg C); linarith
@@ -521,12 +523,14 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     mul_le_mul hk hwb hw0 (by positivity)
   have eh : (1 + ε) * (1 + c₂ * D) * w = w + (ε + c₂ * D + ε * (c₂ * D)) * w := by ring
   have hB : 0 ≤ (1 + 2 * c₂) * D * (1 + c + |C|) := by positivity
+  have hKD : 0 ≤ K * D := mul_nonneg hK0 hD0.le
   rw [abs_le]
   constructor
   · nlinarith
   · nlinarith
 
-/-- Real-inequality core of `guardMFPT_beyond_two_term`. -/
+/-- Real-inequality core of `guardMFPT_beyond_two_term`: `two_term_core` at `s ↦ −s` with the
+cross term `X = ε (1 + c₂ D) w`. -/
 @[tmio T, powerlib_foundation] private theorem beyond_two_term_core {B w w' e κ ε c s C C' c₂ D : ℝ}
     (hD0 : 0 < D) (hD1 : D ≤ 1) (hs0 : 0 ≤ s) (hs1 : s ≤ 1) (hc0 : 0 ≤ c) (hc₂0 : 0 ≤ c₂)
     (he : e ≤ D) (hκ0 : 0 ≤ κ) (hκ : κ ≤ D) (hε : ε ≤ D)
@@ -535,39 +539,21 @@ half-order term has the opposite sign of the inside one (`guard_weight_inside_tw
     (hhi : B ≤ (1 + κ) * (1 + c₂ * D) * w' + ε * (1 + c₂ * D) * w) :
     |B - 1 + c * s| ≤
       (|C'| + (1 + 2 * c₂) * (1 + c + |C'|) + (1 + c₂) * (1 + c + |C|)) * D := by
-  have hCD' : C' * D ≤ |C'| * D := mul_le_mul_of_nonneg_right (le_abs_self C') hD0.le
+  have hCD : C * D ≤ |C| * D := mul_le_mul_of_nonneg_right (le_abs_self C) hD0.le
   have hCD1 : |C| * D ≤ |C| := by
     have := mul_le_mul_of_nonneg_left hD1 (abs_nonneg C); linarith
-  have hCD1' : |C'| * D ≤ |C'| := by
-    have := mul_le_mul_of_nonneg_left hD1 (abs_nonneg C'); linarith
-  have hCD : C * D ≤ |C| * D := mul_le_mul_of_nonneg_right (le_abs_self C) hD0.le
   have hcs : c * s ≤ c := by have := mul_le_mul_of_nonneg_left hs1 hc0; linarith
-  have hcs0 : 0 ≤ c * s := mul_nonneg hc0 hs0
-  rw [abs_le] at hw hw'
-  have hwb : w ≤ 1 + c + |C| := by linarith [hw.2]
-  have hwb' : w' ≤ 1 + c + |C'| := by linarith [hw'.2]
-  have h1 : e * w' ≤ D * (1 + c + |C'|) := mul_le_mul he hwb' hw'0 hD0.le
-  have hk : κ + c₂ * D + κ * (c₂ * D) ≤ (1 + 2 * c₂) * D := by
-    have : κ * (c₂ * D) ≤ 1 * (c₂ * D) :=
-      mul_le_mul_of_nonneg_right (hκ.trans hD1) (by positivity)
-    nlinarith
-  have hk0 : 0 ≤ κ + c₂ * D + κ * (c₂ * D) := by positivity
-  have h2 : (κ + c₂ * D + κ * (c₂ * D)) * w' ≤ (1 + 2 * c₂) * D * (1 + c + |C'|) :=
-    mul_le_mul hk hwb' hw'0 (by positivity)
+  have hwb : w ≤ 1 + c + |C| := by linarith [(abs_le.1 hw).2]
   have hk2 : ε * (1 + c₂ * D) ≤ D * (1 + c₂) := by
     have : c₂ * D ≤ c₂ := by have := mul_le_mul_of_nonneg_left hD1 hc₂0; linarith
     have : 0 ≤ 1 + c₂ * D := by positivity
     calc ε * (1 + c₂ * D) ≤ D * (1 + c₂ * D) := mul_le_mul_of_nonneg_right hε this
       _ ≤ D * (1 + c₂) := mul_le_mul_of_nonneg_left (by linarith) hD0.le
-  have h3 : ε * (1 + c₂ * D) * w ≤ D * (1 + c₂) * (1 + c + |C|) :=
-    mul_le_mul hk2 hwb hw0 (by positivity)
-  have eh : (1 + κ) * (1 + c₂ * D) * w' = w' + (κ + c₂ * D + κ * (c₂ * D)) * w' := by ring
-  have hB1 : 0 ≤ (1 + 2 * c₂) * D * (1 + c + |C'|) := by positivity
-  have hB2 : 0 ≤ D * (1 + c₂) * (1 + c + |C|) := by positivity
-  rw [abs_le]
-  constructor
-  · nlinarith
-  · nlinarith
+  have hX : ε * (1 + c₂ * D) * w ≤ (1 + c₂) * (1 + c + |C|) * D := by
+    have := mul_le_mul hk2 hwb hw0 (by positivity); linarith
+  have h := two_term_core (s := -s) hD0 hD1 (by linarith) hc0 hc₂0 he hκ0 hκ hw'0
+    (by rwa [mul_neg, sub_neg_eq_add]) (by positivity) hX hlo hhi
+  rwa [mul_neg, sub_neg_eq_add] at h
 
 /-- **Two-term expansion of `T_guard`** (source §1.3): as `D̃ → 0⁺`,
 `T_guard/(P e^X) = 1 + c √D̃ + O(D̃)` with `c = 2√l₁/(√π α)`, `P = guardPrefactor`, `X = ΔU/D̃`;
@@ -621,8 +607,9 @@ tails contribute only `O(D̃)` (`guardMFPT_guard_weight_bounds`). -/
       mul_nonneg (inv_nonneg.2 (ha.le.trans hy.1)) (Real.exp_pos _).le) hW.le
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos hD0] at hCD ⊢
   rw [show 16 * l₁ * D / α ^ 2 = 16 * l₁ / α ^ 2 * D by ring] at hhi
-  exact guard_two_term_core hD0 hD1.le hs1 hc0 hc₂0 he1le hε0 hεle hw0
-    (by simpa only [sub_sub] using hCD) hlo hhi
+  simpa only [add_zero] using two_term_core (X := 0) (K := 0) hD0 hD1.le hs1 hc0 hc₂0 he1le hε0
+    hεle hw0 (by simpa only [sub_sub] using hCD) le_rfl (by rw [zero_mul]) hlo
+    (by rwa [add_zero])
 
 /-- An expansion `f(D̃) = c √D̃ + O(D̃)` gives `f(D̃) = O(√D̃)` as `D̃ → 0⁺`. -/
 @[tmio T, powerlib_foundation] theorem isBigO_sqrt_of_isBigO {f : ℝ → ℝ} {c : ℝ}
@@ -830,28 +817,17 @@ committed escape time by a factor of two. -/
 
 /-! ## The half-order coefficient: limits and sharpness -/
 
-/-- An expansion `f(D̃) = c √D̃ + O(D̃)` gives `f(D̃)/√D̃ → c` as `D̃ → 0⁺`. -/
+/-- An expansion `f(D̃) = c √D̃ + O(D̃)` gives `f(D̃)/√D̃ → c` as `D̃ → 0⁺`
+(`tendsto_div_of_isBigO_sq` at `s = √D̃`). -/
 @[tmio T, powerlib_foundation] theorem tendsto_div_sqrt_of_isBigO {f : ℝ → ℝ} {c : ℝ}
     (h : (fun D => f D - c * √D) =O[𝓝[>] 0] fun D => D) :
     Tendsto (fun D => f D / √D) (𝓝[>] 0) (𝓝 c) := by
-  have hm := h.mul (Asymptotics.isBigO_refl (fun D : ℝ => (√D)⁻¹) (𝓝[>] 0))
-  have hs : Tendsto (fun D : ℝ => D * (√D)⁻¹) (𝓝[>] 0) (𝓝 0) := by
-    have h0 : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) := by
-      have := Real.continuous_sqrt.tendsto (0 : ℝ)
-      rw [Real.sqrt_zero] at this
-      exact this.mono_left nhdsWithin_le_nhds
-    refine h0.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with D hD
-    have hs : 0 < √D := Real.sqrt_pos.mpr hD
-    rw [show D = √D * √D from (Real.mul_self_sqrt (le_of_lt hD)).symm, Real.sqrt_mul_self hs.le]
-    field_simp
-  have ht := (hm.trans_tendsto hs).add_const c
-  rw [zero_add] at ht
-  refine ht.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with D hD
-  have hs : 0 < √D := Real.sqrt_pos.mpr hD
-  field_simp
-  ring
+  have hpos : ∀ᶠ D in 𝓝[>] (0 : ℝ), 0 < D := self_mem_nhdsWithin
+  refine tendsto_div_of_isBigO_sq ?_ (hpos.mono fun D hD => (Real.sqrt_pos.mpr hD).ne')
+    (h.congr' EventuallyEq.rfl (hpos.mono fun D hD => (Real.sq_sqrt hD.le).symm))
+  have := Real.continuous_sqrt.tendsto (0 : ℝ)
+  rw [Real.sqrt_zero] at this
+  exact this.mono_left nhdsWithin_le_nhds
 
 /-- **The half-order coefficient of `T_guard`**: `(T_guard/(P e^X) − 1)/√D̃ → 2√l₁/(√π α)` as
 `D̃ → 0⁺`. -/

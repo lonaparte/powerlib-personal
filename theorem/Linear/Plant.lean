@@ -19,7 +19,8 @@ Results.
 * `Plant` (`A`, `B`, `C`, `D`), the matrix action `op` on Euclidean state space (`affine_apply`,
   `op_mul_apply`, `op_cancel`).
 * `Plant.inputField` (the field under a constant input); `Plant.inputField_eq` (with an
-  equilibrium `e` it is the affine linear field of `A` centred at `e`).
+  equilibrium `e` it is the affine linear field of `A` centred at `e`);
+  `Plant.inputField_lipschitzWith` (it is globally Lipschitz with constant `‖A‖`).
 -/
 
 noncomputable section
@@ -64,6 +65,13 @@ abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ :=
 /-- The vector field of the plant under the constant input `u`. -/
 def Plant.inputField (M : Plant n p) (u : Fin p → ℝ) : ℝⁿ → ℝⁿ :=
   fun x => op M.A x + WithLp.toLp 2 (M.B *ᵥ u)
+
+/-- Under a constant input the field of a plant is globally Lipschitz, with constant `‖A‖`. -/
+@[tmio T, powerlib_foundation] theorem Plant.inputField_lipschitzWith (M : Plant n p)
+    (u : Fin p → ℝ) : LipschitzWith ‖op M.A‖₊ (M.inputField u) :=
+  LipschitzWith.of_dist_le_mul fun x y => by
+    simp only [Plant.inputField, dist_eq_norm, add_sub_add_right_eq_sub, ← map_sub, coe_nnnorm]
+    exact (op M.A).le_opNorm _
 
 /-- Under a constant input with an equilibrium `e`, the plant's field is the affine linear
 field of `A` centred at `e`. -/

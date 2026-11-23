@@ -286,10 +286,8 @@ Hurwitz. -/
     (hL2 : P2 * sp.A22 + sp.A22ᵀ * P2 = -1)
     {ε : ℝ} (hε : 0 < ε) (hεs : ε < sp.epsStar P0 P2) :
     LinearSystems.IsHurwitz (sp.stateMatrix ε) := by
-  have h0 : P0ᵀ = P0 := by
-    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using hP0.isHermitian.eq
-  have h2 : P2ᵀ = P2 := by
-    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using hP2.isHermitian.eq
+  have h0 : P0ᵀ = P0 := hP0.isHermitian.isSymm
+  have h2 : P2ᵀ = P2 := hP2.isHermitian.isSymm
   -- every state is `Sum.elim x (η - L x)`
   have hsplit : ∀ w : Fin n ⊕ Fin m → ℝ,
       w = Sum.elim (w ∘ Sum.inl) ((w ∘ Sum.inr + sp.gain *ᵥ (w ∘ Sum.inl)) -

@@ -38,7 +38,8 @@ Results.
   `dV/dδ = −a_V b_V sin δ / V` (premise `V(δ) ≠ 0`); `hasDerivAt_arg_vth`:
   `dθ_s/dδ = (a_V² + a_V b_V cos δ)/(a_V² + b_V² + 2a_V b_V cos δ)` for the principal argument
   (premise: `V_th(δ)` in the slit plane, i.e. not on `(-∞, 0]`); the complex identities behind
-  them are `SpecialFunctions.normSq_affine_exp`, `SpecialFunctions.im_logDeriv_affine_exp`.
+  them are `SpecialFunctions.norm_affine_exp`, `hasDerivAt_norm_affine_exp`,
+  `contDiffAt_norm_affine_exp`, `im_logDeriv_affine_exp`, `hasDerivAt_arg`.
 * `kappa_eq`: `κ_δ = |dV/dδ|/V₀ = a_V b_V |sin δ₀| / V₀²` (`a_V, b_V ≥ 0`).
 * Equal weights `a_V = b_V = 1/2`: `V(δ) = |cos(δ/2)|` and `κ_δ = |tan(δ₀/2)|/2`; at `δ₀ = 0`
   the swing `δ = δ̂ cos φ` gives `V = 1 − δ̂²/16 − (δ̂²/16) cos 2φ + r` with
@@ -66,7 +67,8 @@ Results.
 noncomputable section
 namespace powerlib.Grid.ModulationTransfer
 open Complex Matrix
-open powerlib.SpecialFunctions (normSq_affine_exp im_logDeriv_affine_exp)
+open powerlib.SpecialFunctions (norm_affine_exp hasDerivAt_norm_affine_exp
+  contDiffAt_norm_affine_exp im_logDeriv_affine_exp hasDerivAt_arg)
 
 /-! ## Open-circuit Thévenin map -/
 
@@ -175,38 +177,20 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 
 /-! ## Magnitude and phase channels -/
 
-/-- `V(δ) = |V_th(δ)| = √(a_V² + b_V² + 2a_V b_V cos δ)`. -/
+/-- `V(δ) = |V_th(δ)| = √(a_V² + b_V² + 2a_V b_V cos δ)` (`SpecialFunctions.norm_affine_exp`). -/
 @[tmio M, powerlib_domain] theorem norm_vth (X2 X3 E Vinf δ : ℝ) :
     ‖vth X2 X3 E Vinf δ‖ =
       Real.sqrt (aV X2 X3 E ^ 2 + bV X2 X3 Vinf ^ 2 +
-        2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) := by
-  rw [← normSq_affine_exp, Complex.norm_def]
-  rfl
+        2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) :=
+  norm_affine_exp _ _ δ
 
-/-- Amplitude channel: `dV/dδ = −a_V b_V sin δ / V` wherever `V(δ) ≠ 0`. -/
+/-- Amplitude channel: `dV/dδ = −a_V b_V sin δ / V` wherever `V(δ) ≠ 0`
+(`SpecialFunctions.hasDerivAt_norm_affine_exp`). -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_norm_vth (X2 X3 E Vinf δ : ℝ)
     (hV : ‖vth X2 X3 E Vinf δ‖ ≠ 0) :
     HasDerivAt (fun d => ‖vth X2 X3 E Vinf d‖)
-      (-(aV X2 X3 E * bV X2 X3 Vinf * Real.sin δ) / ‖vth X2 X3 E Vinf δ‖) δ := by
-  set a := aV X2 X3 E
-  set b := bV X2 X3 Vinf
-  have hfun : (fun d => ‖vth X2 X3 E Vinf d‖) =
-      fun d => Real.sqrt (a ^ 2 + b ^ 2 + 2 * a * b * Real.cos d) := by
-    funext d; exact norm_vth X2 X3 E Vinf d
-  rw [hfun]
-  have hQ : HasDerivAt (fun d => a ^ 2 + b ^ 2 + 2 * a * b * Real.cos d)
-      (2 * a * b * (-Real.sin δ)) δ := by
-    have := ((Real.hasDerivAt_cos δ).const_mul (2 * a * b)).const_add (a ^ 2 + b ^ 2)
-    simpa using this
-  have hne : a ^ 2 + b ^ 2 + 2 * a * b * Real.cos δ ≠ 0 := by
-    intro h0
-    apply hV
-    rw [norm_vth, h0, Real.sqrt_zero]
-  have := hQ.sqrt hne
-  convert this using 1
-  rw [norm_vth]
-  field_simp
-  ring
+      (-(aV X2 X3 E * bV X2 X3 Vinf * Real.sin δ) / ‖vth X2 X3 E Vinf δ‖) δ :=
+  hasDerivAt_norm_affine_exp hV
 
 /-- Phase channel: for the principal argument `θ_s = arg V_th`,
 `dθ_s/dδ = (a_V² + a_V b_V cos δ)/(a_V² + b_V² + 2a_V b_V cos δ)` (premise: `V_th(δ)` lies in the
@@ -221,14 +205,7 @@ slit plane; elsewhere the same formula holds for any continuous phase lift). -/
   have h3 : HasDerivAt (fun d : ℝ => vth X2 X3 E Vinf d)
       ((aV X2 X3 E : ℂ) * (exp (δ * I) * I)) δ :=
     ((h1.cexp).const_mul (aV X2 X3 E : ℂ)).add_const (bV X2 X3 Vinf : ℂ)
-  have hlog := h3.clog_real hslit
-  have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt δ hlog
-  have harg : (fun d => arg (vth X2 X3 E Vinf d)) =
-      Complex.imCLM ∘ fun d => log (vth X2 X3 E Vinf d) := by
-    funext d; simp [log_im]
-  rw [harg]
-  convert him using 1
-  rw [Complex.imCLM_apply]
+  convert hasDerivAt_arg h3 hslit using 1
   exact (im_logDeriv_affine_exp _ _ δ).symm
 
 /-- Modulation index of the amplitude channel: `κ_δ = |dV/dδ|/V₀ = a_V b_V |sin δ₀| / V₀²`. -/
@@ -242,7 +219,7 @@ slit plane; elsewhere the same formula holds for any continuous phase lift). -/
 /-- `a_V = b_V = 1/2`: `V(δ) = |cos(δ/2)|`. -/
 @[tmio T, powerlib_foundation] theorem norm_half_half (δ : ℝ) :
     ‖((1 / 2 : ℝ) : ℂ) * exp (δ * I) + ((1 / 2 : ℝ) : ℂ)‖ = |Real.cos (δ / 2)| := by
-  rw [Complex.norm_def, normSq_affine_exp]
+  rw [norm_affine_exp]
   have hc : Real.cos δ = 2 * Real.cos (δ / 2) ^ 2 - 1 := by
     have := Real.cos_sq (δ / 2)
     rw [show 2 * (δ / 2) = δ by ring] at this
@@ -312,13 +289,8 @@ open powerlib.ParametricResonance (swingMean harmonicRatio harmonicRatio_one_isB
 
 @[tmio M, powerlib_domain] theorem contDiffAt_norm_vth {X2 X3 E Vinf δ0 : ℝ}
     (hV : ‖vth X2 X3 E Vinf δ0‖ ≠ 0) :
-    ContDiffAt ℝ 2 (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 := by
-  have hfun : (fun δ => ‖vth X2 X3 E Vinf δ‖) = fun δ => Real.sqrt (aV X2 X3 E ^ 2 +
-      bV X2 X3 Vinf ^ 2 + 2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) :=
-    funext fun δ => norm_vth X2 X3 E Vinf δ
-  rw [hfun]
-  refine ContDiffAt.sqrt (by fun_prop) fun h => hV ?_
-  rw [norm_vth, h, Real.sqrt_zero]
+    ContDiffAt ℝ 2 (fun δ => ‖vth X2 X3 E Vinf δ‖) δ0 :=
+  contDiffAt_norm_affine_exp hV
 
 /-- **`ε_V = κ_δ δ̂ + O(δ̂²)`** for the open-circuit Thévenin map (note, "小摆幅与有限摆幅"):
 with `V₀ = |V_th(δ₀)| > 0` and `a_V, b_V ≥ 0`, the fundamental modulation ratio

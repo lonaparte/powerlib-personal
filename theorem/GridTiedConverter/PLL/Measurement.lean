@@ -58,12 +58,9 @@ open powerlib.LTI (derivModel)
 @[tmio M, powerlib_domain] theorem normSq_closedLoopTF (V Kp Ki ω : ℝ) :
     normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) =
       ((V * Ki) ^ 2 + (V * Kp * ω) ^ 2) / ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) := by
-  have hden : loopPoly V Kp Ki ((ω : ℂ) * I) = ⟨V * Ki - ω ^ 2, V * Kp * ω⟩ := by
-    apply Complex.ext <;> simp [loopPoly, pow_two]
-    ring
   have hnum : (V : ℂ) * Kp * ((ω : ℂ) * I) + (V : ℂ) * Ki = ⟨V * Ki, V * Kp * ω⟩ := by
     apply Complex.ext <;> simp
-  rw [closedLoopTF, hden, hnum, Complex.normSq_div, Complex.normSq_mk, Complex.normSq_mk]
+  rw [closedLoopTF, loopPoly_mul_I, hnum, Complex.normSq_div, Complex.normSq_mk, Complex.normSq_mk]
   ring
 
 /-- The exact −3 dB bandwidth `ω_n √(1 + 2ζ² + √((1 + 2ζ²)² + 1))`. -/
@@ -247,12 +244,9 @@ transfer function of `frequencyModel`, `transfer_frequencyModel`). -/
     closedLoopTF V Kp Ki ((ω : ℂ) * I) =
       (((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2)⁻¹ : ℝ) *
         ⟨V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2, -(V * Kp * ω ^ 3)⟩ := by
-  have hden : loopPoly V Kp Ki ((ω : ℂ) * I) = ⟨V * Ki - ω ^ 2, V * Kp * ω⟩ := by
-    apply Complex.ext <;> simp [loopPoly, pow_two]
-    ring
   have hnum : (V : ℂ) * Kp * ((ω : ℂ) * I) + (V : ℂ) * Ki = ⟨V * Ki, V * Kp * ω⟩ := by
     apply Complex.ext <;> simp
-  rw [closedLoopTF, hden, hnum]
+  rw [closedLoopTF, loopPoly_mul_I, hnum]
   apply Complex.ext
   · rw [Complex.div_re, Complex.normSq_mk]
     simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero]

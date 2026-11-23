@@ -42,7 +42,8 @@ Results.
 * `det(sI − linA) = s² + V K_p s + V K_i`; `linA` Hurwitz iff `V K_p > 0 ∧ V K_i > 0`; the
   same condition is necessary and sufficient for global exponential stability of the linear PLL
   (`LinearPLL.mem_den_globallyExponentiallyStable_iff`).
-* Transfer functions above; `H_pll(0) = 1`; `G_pll = H_pll / V`.
+* Transfer functions above; `H_pll(0) = 1`; `G_pll = H_pll / V`; on the imaginary axis the loop
+  polynomial is `(V K_i − ω²) + j V K_p ω` (`loopPoly_mul_I`).
 * `ω_n = √(V K_i)`, `ζ = V K_p / (2 ω_n)`; standard form `s² + 2ζω_n s + ω_n²`;
   `ζ = (K_p/2)√(V/K_i)`, `4ζ² = V K_p²/K_i`; raw-voltage tuning `K_p = 2ζ₀ω_b/V`,
   `K_i = ω_b²/V` gives `ω_n = ω_b`, `ζ = ζ₀` (`ζ₀ = 1/√2`: `K_p = √2 ω_b / V`);
@@ -120,6 +121,12 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
 @[tmio M, powerlib_domain] theorem det_characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
     (Linear.characteristicMatrix (linA V Kp Ki) s).det = loopPoly V Kp Ki s := by
   rw [characteristicMatrix_linA, det_fin_two_of, loopPoly]; ring
+
+/-- The loop polynomial on the imaginary axis: `L(jω) = (V K_i − ω²) + j V K_p ω`. -/
+@[tmio M, powerlib_domain] theorem loopPoly_mul_I (V Kp Ki ω : ℝ) :
+    loopPoly V Kp Ki ((ω : ℂ) * Complex.I) = ⟨V * Ki - ω ^ 2, V * Kp * ω⟩ := by
+  apply Complex.ext <;> simp [loopPoly, pow_two]
+  ring
 
 @[tmio M, simp, powerlib_domain] theorem trace_linA (V Kp Ki : ℝ) :
     (linA V Kp Ki).trace = -(V * Kp) := by
@@ -305,13 +312,9 @@ the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -
 @[tmio M, powerlib_domain] theorem re_portTF (V Kp Ki ω : ℝ) :
     (portTF V Kp Ki ((ω : ℂ) * Complex.I)).re =
       (V * Ki ^ 2 + ω ^ 2 * (V * Kp ^ 2 - Ki)) / ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) := by
-  have hden : loopPoly V Kp Ki ((ω : ℂ) * Complex.I) =
-      ⟨V * Ki - ω ^ 2, V * Kp * ω⟩ := by
-    apply Complex.ext <;> simp [loopPoly, pow_two]
-    ring
   have hnum : (Kp : ℂ) * ((ω : ℂ) * Complex.I) + Ki = ⟨Ki, Kp * ω⟩ := by
     apply Complex.ext <;> simp
-  rw [portTF, hden, hnum, Complex.div_re, Complex.normSq_mk, ← add_div]
+  rw [portTF, loopPoly_mul_I, hnum, Complex.div_re, Complex.normSq_mk, ← add_div]
   congr 1 <;> ring
 
 @[tmio T, powerlib_foundation] private lemma portTF_den_pos {V Kp Ki : ℝ} (hVKp : V * Kp ≠ 0)

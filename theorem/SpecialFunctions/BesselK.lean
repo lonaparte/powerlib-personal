@@ -35,7 +35,10 @@ Results.
   (`z K₁(z) → 1`); `norm_mul_besselK0_le` (`‖z K₀(z)‖ ≤ √(Kπ‖z‖/2)` in the sector
   `‖z‖ ≤ K Re z`), `tendsto_mul_besselK0_zero` (`z K₀(z) → 0` in a sector: the logarithmic
   singularity is integrable); `tendsto_besselI0_zero`, `tendsto_besselSeries1_sq_zero`
-  (`I₀ → 1`, `I₁(z)/(z/2) → 1`).
+  (`I₀ → 1`, `I₁(z)/(z/2) → 1`); together
+  `tendsto_mul_besselI0_mul_besselK1_add_besselK0_mul_besselI1`
+  (`m (I₀(ma) K₁(mb) + K₀(ma) I₁(mb)) → 1/b`, the low-frequency tube numerator and, at
+  `a = b = 1`, the limit of the Wronskian).
 * Gaussian form (substitution `u = 2 sinh(t/2)`, `integral_Ioi_comp_two_sinh_half`):
   `exp_mul_besselK0_eq` (`e^z K₀(z) = ∫₀^∞ e^{−zu²/2}(1 + u²/4)^{−1/2} du`),
   `exp_mul_besselK1_eq` (`e^z K₁(z) = ∫₀^∞ e^{−zu²/2}(1 + u²/2)(1 + u²/4)^{−1/2} du`).
@@ -43,7 +46,9 @@ Results.
   (`‖e^z K_ν(z) − G(z)‖ = O(x^{−3/2})`, `x = Re z`, explicit constants, every `x > 0`),
   `besselK0_laplace_le`, `besselK1_laplace_le` (relative form `≤ (2√(2K)/x)‖G(z)‖` in the sector
   `‖z‖ ≤ K x`), `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from
-  `besselI_laplace_le`), `tendsto_besselI0_div_gaussHalf`, `tendsto_besselI1_div_gaussHalf`,
+  `besselI_laplace_le`); a relative bound gives the rate `X/G − 1 = O(1/Re z)`
+  (`div_sub_one_isBigO_of_rel_bound`) and the limit (`tendsto_div_of_rel_bound`);
+  `tendsto_besselI0_div_gaussHalf`, `tendsto_besselI1_div_gaussHalf`,
   `tendsto_besselK0_div_gaussHalf`, `tendsto_besselK1_div_gaussHalf` (each normalized function
   `→ 1` as `Re z → ∞` in a sector, the quotients `besselI0Norm`, … below), i.e.
   `K_ν(z) ∼ √(π/(2z)) e^{−z}` and `I_ν(z) ∼ e^z/√(2πz)`.
@@ -509,21 +514,29 @@ theorem besselK1_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ �
     calc _ ≤ C / z.re * ‖gaussHalf z‖ + C / z.re * ‖gaussHalf z‖ := add_le_add hA hB
       _ = 2 * C / z.re * ‖gaussHalf z‖ := by ring
 
-/-- A relative bound `‖X − G‖ ≤ (C/Re f)‖G‖`, `G ≠ 0`, along `Re f → ∞` gives `X/G → 1`. -/
+/-- A relative bound `‖X − G‖ ≤ (C/Re f)‖G‖`, `G ≠ 0`, along `Re f → ∞` gives the rate
+`X/G − 1 = O(1/Re f)`. -/
+@[tmio T, powerlib_foundation]
+theorem div_sub_one_isBigO_of_rel_bound {α : Type*} {l : Filter α} {f X G : α → ℂ} {C : ℝ}
+    (hre : Tendsto (fun i => (f i).re) l atTop) (hG : ∀ᶠ i in l, G i ≠ 0)
+    (hb : ∀ᶠ i in l, ‖X i - G i‖ ≤ C / (f i).re * ‖G i‖) :
+    (fun i => X i / G i - 1) =O[l] (fun i => 1 / (f i).re) := by
+  refine Asymptotics.IsBigO.of_bound C ?_
+  filter_upwards [hG, hb, hre.eventually_gt_atTop 0] with i hGi hbi hxi
+  have hGn : 0 < ‖G i‖ := norm_pos_iff.mpr hGi
+  rw [show X i / G i - 1 = (X i - G i) / G i by field_simp, norm_div, div_le_iff₀ hGn,
+    Real.norm_eq_abs, abs_of_pos (by positivity)]
+  exact hbi.trans_eq (by ring)
+
+/-- The same relative bound gives `X/G → 1` (the rate `div_sub_one_isBigO_of_rel_bound` with
+`1/Re f → 0`). -/
 @[tmio T, powerlib_foundation]
 theorem tendsto_div_of_rel_bound {α : Type*} {l : Filter α} {f X G : α → ℂ} {C : ℝ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hG : ∀ᶠ i in l, G i ≠ 0)
     (hb : ∀ᶠ i in l, ‖X i - G i‖ ≤ C / (f i).re * ‖G i‖) :
     Tendsto (fun i => X i / G i) l (𝓝 1) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hlim : Tendsto (fun i => |C| / (f i).re) l (𝓝 0) := tendsto_const_nhds.div_atTop hre
-  refine squeeze_zero' (Eventually.of_forall fun i => norm_nonneg _) ?_ hlim
-  filter_upwards [hG, hb, hre.eventually_gt_atTop 0] with i hGi hbi hxi
-  have hGn : 0 < ‖G i‖ := norm_pos_iff.mpr hGi
-  rw [show X i / G i - 1 = (X i - G i) / G i by field_simp, norm_div, div_le_iff₀ hGn]
-  refine hbi.trans ?_
-  gcongr
-  exact le_abs_self C
+  simpa using ((div_sub_one_isBigO_of_rel_bound hre hG hb).trans_tendsto
+    (tendsto_const_nhds.div_atTop hre)).add_const 1
 
 /-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`,
 `π e^{−f} I₀(f)/G(f) → 1` (by definition `besselI0Norm f`), i.e. `I₀(z) ∼ e^z/√(2πz)`. -/
@@ -1011,6 +1024,38 @@ theorem hasDerivAt_besselK0 {z : ℂ} (hz : 0 < z.re) : HasDerivAt besselK0 (-be
     show -(besselK0 z + besselK1 z / z) = -besselK0 z - besselK1 z / z by ring] at h
   exact h.2
 
+/-! ## Low-frequency tube numerator -/
+
+/-- For `a, b > 0`, as `m → 0` in a sector `‖m‖ ≤ K Re m`:
+`m (I₀(ma) K₁(mb) + K₀(ma) I₁(mb)) → 1/b` (the `I₀ K₁` term carries the limit, `m K₀ → 0`). -/
+@[tmio T, powerlib_foundation]
+theorem tendsto_mul_besselI0_mul_besselK1_add_besselK0_mul_besselI1 {α : Type*}
+    {l : Filter α} {f : α → ℂ} {a b K : ℝ} (ha : 0 < a) (hb : 0 < b) (hf : Tendsto f l (𝓝 0))
+    (hre : ∀ᶠ i in l, 0 < (f i).re) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
+    Tendsto (fun i => f i * (besselI0 (f i * a) * besselK1 (f i * b) +
+      besselK0 (f i * a) * besselI1 (f i * b))) l (𝓝 ((1 / b : ℝ) : ℂ)) := by
+  have hfr : ∀ r : ℝ, Tendsto (fun i => f i * r) l (𝓝 0) := fun r => by
+    simpa using hf.mul_const (r : ℂ)
+  have hrer : ∀ {r : ℝ}, 0 < r → ∀ᶠ i in l, 0 < (f i * r).re := fun hr =>
+    hre.mono fun i hi => by rw [Complex.re_mul_ofReal]; positivity
+  have hseca : ∀ᶠ i in l, ‖f i * a‖ ≤ K * (f i * a).re := by
+    filter_upwards [hsec] with i hi
+    rw [Complex.re_mul_ofReal, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos ha]
+    nlinarith
+  have h1 := ((tendsto_besselI0_zero (hfr a)).mul
+    (tendsto_mul_besselK1_zero (hfr b) (hrer hb))).const_mul ((1 / b : ℝ) : ℂ)
+  have h2 := ((tendsto_mul_besselK0_zero (hfr a) (hrer ha) hseca).mul
+    ((hfr b).mul (tendsto_besselSeries1_sq_zero (hfr b)))).const_mul ((1 / (2 * a) : ℝ) : ℂ)
+  have h := h1.add h2
+  rw [show ((1 / b : ℝ) : ℂ) * (1 * 1) + ((1 / (2 * a) : ℝ) : ℂ) * (0 * (0 * 1)) =
+    ((1 / b : ℝ) : ℂ) by ring] at h
+  refine h.congr fun i => ?_
+  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
+  have hb' : (b : ℂ) ≠ 0 := by exact_mod_cast hb.ne'
+  simp only [besselI1]
+  push_cast
+  field_simp
+
 /-! ## Wronskian -/
 
 /-- `W(z) = z (I₀(z)K₁(z) + I₁(z)K₀(z))` has zero derivative on `Re z > 0`. -/
@@ -1048,15 +1093,10 @@ theorem besselI0_mul_besselK1_add_besselI1_mul_besselK0 {z : ℂ} (hz : 0 < z.re
     filter_upwards [self_mem_nhdsWithin] with x (hx : 0 < x)
     rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos hx]; simp
   have hlim : Tendsto (fun x : ℝ => W x) (𝓝[>] 0) (𝓝 1) := by
-    have h1 := (tendsto_besselI0_zero hf).mul (tendsto_mul_besselK1_zero hf hre)
-    have hI1 : Tendsto (fun x : ℝ => besselI1 (x : ℂ)) (𝓝[>] 0) (𝓝 0) := by
-      have := (hf.div_const 2).mul (tendsto_besselSeries1_sq_zero hf)
-      rw [zero_div, zero_mul] at this
-      exact this
-    have h2 := hI1.mul (tendsto_mul_besselK0_zero hf hre hsec)
-    have := h1.add h2
-    rw [mul_one, mul_zero, add_zero] at this
-    refine this.congr fun x => ?_
+    have h := tendsto_mul_besselI0_mul_besselK1_add_besselK0_mul_besselI1 one_pos one_pos hf hre
+      hsec
+    simp only [Complex.ofReal_one, mul_one, div_one] at h
+    refine h.congr fun x => ?_
     simp only [hWdef]; ring
   have hconst : ∀ w ∈ U, W w = W 1 := fun w hw =>
     hU.is_const_of_deriv_eq_zero hUc hdiff hderiv hw (by simp [hUdef])

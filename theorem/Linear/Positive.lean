@@ -105,11 +105,8 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
 @[tmio T, powerlib_foundation] theorem posDef_schur_iff {n : ℕ}
     {P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hs : Pᵀ = P) (hp : 0 < P 0 0) :
     P.PosDef ↔ (schurReal P).PosDef := by
-  have hh : P.IsHermitian := by
-    simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] using hs
-  have hschur : (schurReal P).IsHermitian := by
-    simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] using
-      schur_symmetric hs
+  have hh : P.IsHermitian := Matrix.isHermitian_iff_isSymm.mpr hs
+  have hschur : (schurReal P).IsHermitian := Matrix.isHermitian_iff_isSymm.mpr (schur_symmetric hs)
   constructor
   · intro hP
     refine posDef_iff_dotProduct_mulVec.mpr ⟨hschur, fun y hy => ?_⟩
@@ -163,8 +160,7 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
         exact_mod_cast hp
       exact (posDef_schur_iff hsR hpR).mpr hS
     · intro hP
-      have hsR : (real P)ᵀ = real P := by
-        simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using hP.isHermitian.eq
+      have hsR : (real P)ᵀ = real P := hP.isHermitian.isSymm
       have hs : Pᵀ = P := by
         ext i j
         have h := congrFun (congrFun hsR i) j

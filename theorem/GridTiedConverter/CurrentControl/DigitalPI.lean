@@ -351,36 +351,13 @@ constant and linear coefficients give `Ki/L > 0` and `(R + Kp)/L > (τ/2) Ki/L`.
   have : 0 < (y.design.R + y.design.Kp) / y.design.L * (2 / y.τ) := by rw [← e2]; linarith
   exact pos_of_mul_pos_left this h2τ.le
 
-/-- A monic real cubic with a negative coefficient or a strict violation of the gap condition has
-a root with positive real part. -/
-@[tmio T, powerlib_foundation] private theorem exists_cubic_root_re_pos {c2 c1 c0 : ℝ}
-    (h : c2 < 0 ∨ c1 < 0 ∨ c0 < 0 ∨ c2 * c1 < c0) :
-    ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧ 0 < s.re := by
-  have hconst : c0 < 0 → ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧
-      0 < s.re := fun h0 => by
-    obtain ⟨r, hr, hroot⟩ := Criteria.exists_cubic_root_pos_of_const_neg (a2 := c2) (a1 := c1) h0
-    exact ⟨r, Criteria.cubic_real_root_complex hroot, by rw [Complex.ofReal_re]; exact hr⟩
-  rcases h with h2 | h1 | h0 | hg
-  · exact Criteria.exists_cubic_root_re_pos_of_quadratic_coeff_neg h2
-  · rcases lt_trichotomy c0 0 with h0 | h0 | h0
-    · exact hconst h0
-    · subst h0
-      obtain ⟨r, hr, hroot⟩ := Criteria.exists_quadratic_root_pos_of_const_neg (a1 := c2) h1
-      have hcub : r ^ 3 + c2 * r ^ 2 + c1 * r + 0 = 0 := by linear_combination r * hroot
-      exact ⟨r, Criteria.cubic_real_root_complex hcub, by rw [Complex.ofReal_re]; exact hr⟩
-    · rcases lt_or_ge c2 0 with h2 | h2
-      · exact Criteria.exists_cubic_root_re_pos_of_quadratic_coeff_neg h2
-      · exact Criteria.exists_cubic_root_re_pos_of_gap (by nlinarith)
-  · exact hconst h0
-  · exact Criteria.exists_cubic_root_re_pos_of_gap hg
-
 /-- A strict violation of the platform Routh conditions gives a characteristic root in the open
 right half plane. Static evidence on the implementation, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem exists_root_of_lagged {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (h : y.a2 < 0 ∨ y.a1 < 0 ∨ y.a0 < 0 ∨ y.a2 * y.a1 < y.a3 * y.a0) :
     ∃ s : ℂ, (characteristicMatrix y.model.A s).det = 0 ∧ 0 < s.re := by
   have ha3 := a3_pos hL hT
-  obtain ⟨s, hs, hre⟩ := exists_cubic_root_re_pos (c2 := -y.model.A.trace)
+  obtain ⟨s, hs, hre⟩ := Criteria.exists_cubic_root_re_pos_of_violation (c2 := -y.model.A.trace)
     (c1 := Criteria.principalMinorSum y.model.A) (c0 := -y.model.A.det) (by
       rw [neg_trace_A y hL.ne' hT.ne', principalMinorSum_A_eq y hL.ne' hT.ne',
         neg_det_A y hL.ne' hT.ne']

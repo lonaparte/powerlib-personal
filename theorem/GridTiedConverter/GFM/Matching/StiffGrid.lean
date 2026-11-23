@@ -53,12 +53,14 @@ these equations is written in the work-sync notes, which contain only the condit
 Results.
 * Static (source link): `potential_eq` (the potential is (16)), `potential_sub_potential_zero`
   (`S(θ) − S(0) = k (1 − cos θ)`, `k = L_s μ u* v₀/N`), `eta_mul_k` (`η ∇S` is the
-  synchronizing term `κ sin θ` of (18), (20)), `field_point`, `field_add_two_pi`,
-  `field_eq_zero_of_sin_eq_zero` (every `θ_dq ∈ πℤ` gives an equilibrium `(θ_dq, u*, î(θ_dq))`).
+  synchronizing term `κ sin θ` of (18), (20)), `N_pos` (`‖Z_s‖² > 0` for `R_s ≠ 0`), `field_point`,
+  `field_add_two_pi`, `field_eq_zero_of_kappa_mul_sin_eq_zero` (every `θ_dq` with
+  `κ sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`), `field_eq_zero_of_sin_eq_zero`
+  (its case `θ_dq ∈ πℤ`).
 * Static (energy balance): `energy_lie` (the appendix formula for `dH/dt`, as a Lie derivative of
-  `H − S(0)` along the closed-loop field), `energy_lie_le` (`dH/dt ≤ −margin ũ_dc²`, by completing
-  the square with `‖T‖² = μ²ω₀²L_s²/N`), `margin_pos_iff` (for `η ≠ 0`, `margin > 0` is exactly the
-  source's (and the note's) condition).
+  `H − S(0)` along the closed-loop field), `energy_lie_eq_sos` (the same balance with the square
+  completed, using `‖T‖² = μ²ω₀²L_s²/N`), `energy_lie_le` (`dH/dt ≤ −margin ũ_dc²`),
+  `margin_pos_iff` (for `η ≠ 0`, `margin > 0` is exactly the source's (and the note's) condition).
 
 Family and connection conclusions.
 * Family `family : Family Model Requirement 4 0`: the closed loop about `x*`, the family of the
@@ -211,6 +213,13 @@ def margin : ℝ := m.Gdc + m.Kp - m.μ ^ 2 * m.ω0 ^ 2 * m.Ls ^ 2 / (4 * m.Rs *
 
 end Model
 
+/-- `‖Z_s‖² = R_s² + ω₀² L_s² > 0` for `R_s ≠ 0`. Static evidence on the model, not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem N_pos (m : Model) (hR : m.Rs ≠ 0) : 0 < m.N := by
+  have : 0 < m.Rs ^ 2 := lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 hR).symm
+  unfold Model.N
+  positivity
+
 /-- Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_iHatD (m : Model) (θ : ℝ) :
     HasDerivAt m.iHatD
@@ -303,6 +312,28 @@ Static evidence on the model, not a connection conclusion. -/
   simp only [Model.N, Model.ω0]
   ring
 
+/-- The energy balance as a completed square:
+`dH/dt = −margin ũ² − ‖2R_sN ĩ + μω₀L_s ũ z(θ)‖²/(4R_sN²)`, `z(θ) = Z_sᵀ (cos θ, sin θ)`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem energy_lie_eq_sos (m : Model) (hR : m.Rs ≠ 0) (hL : m.Ls ≠ 0)
+    (hC : m.Cdc ≠ 0) (x : State 4) :
+    fderiv ℝ m.energy x (m.field x) = -m.margin * (x 1 - m.ustar) ^ 2 -
+      ((2 * m.Rs * m.N * (x 2 - m.iHatD (x 0)) + m.μ * m.ω0 * m.Ls * (x 1 - m.ustar) *
+          (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0))) ^ 2 +
+        (2 * m.Rs * m.N * (x 3 - m.iHatQ (x 0)) + m.μ * m.ω0 * m.Ls * (x 1 - m.ustar) *
+          (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0))) ^ 2) / (4 * m.Rs * m.N ^ 2) := by
+  have hN : m.N ≠ 0 := (N_pos m hR).ne'
+  have hz : (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) ^ 2 +
+      (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) ^ 2 = m.N := by
+    unfold Model.N
+    linear_combination (m.Rs ^ 2 + m.ω0 ^ 2 * m.Ls ^ 2) * Real.sin_sq_add_cos_sq (x 0)
+  rw [energy_lie m hN hL hC]
+  unfold Model.margin
+  linear_combination (norm := skip)
+    ((m.μ * m.ω0 * m.Ls) ^ 2 * (x 1 - m.ustar) ^ 2 / (4 * m.Rs * m.N ^ 2)) * hz
+  field_simp
+  ring
+
 @[tmio T, powerlib_foundation] private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
     (hz : z1 ^ 2 + z2 ^ 2 = N) :
     -G * u ^ 2 - R * (e1 ^ 2 + e2 ^ 2) - B / N * u * (e1 * z1 + e2 * z2) ≤
@@ -332,28 +363,14 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_lie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) ≤ -m.margin * (x 1 - m.ustar) ^ 2 := by
-  have hN : 0 < m.N := by
-    unfold Model.N
-    have := sq_nonneg (m.ω0)
-    positivity
-  rw [energy_lie m hN.ne' hL hC]
-  have hz : (m.Rs * Real.cos (x 0) + m.ω0 * m.Ls * Real.sin (x 0)) ^ 2 +
-      (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) ^ 2 = m.N := by
-    unfold Model.N
-    linear_combination (m.Rs ^ 2 + m.ω0 ^ 2 * m.Ls ^ 2) * Real.sin_sq_add_cos_sq (x 0)
-  have h := sos_aux (G := m.Gdc + m.Kp) (B := m.μ * m.ω0 * m.Ls) (u := x 1 - m.ustar)
-    (e1 := x 2 - m.iHatD (x 0)) (e2 := x 3 - m.iHatQ (x 0)) hR hN hz
-  have hm : m.margin = m.Gdc + m.Kp - (m.μ * m.ω0 * m.Ls) ^ 2 / (4 * m.Rs * m.N) := by
-    unfold Model.margin
-    ring
-  rw [hm]
-  linarith
+  rw [energy_lie_eq_sos m hR.ne' hL hC]
+  exact sub_le_self _ (by positivity)
 
-/-- Every `θ_dq` with `sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`; for
-`θ_dq = π` it is the saddle of `S` contained in the source's LaSalle set. Static evidence on the
-model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem field_eq_zero_of_sin_eq_zero (m : Model) (hN : m.N ≠ 0) {θ : ℝ}
-    (hθ : Real.sin θ = 0) :
+/-- Every `θ_dq` with `κ sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`: the internal
+model cancels the current rows, and the DC row reduces to the synchronizing term `−κ sin θ_dq`.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_eq_zero_of_kappa_mul_sin_eq_zero (m : Model)
+    (hN : m.N ≠ 0) {θ : ℝ} (h : m.κ * Real.sin θ = 0) :
     m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 := by
   ext i
   fin_cases i
@@ -361,18 +378,28 @@ model, not a connection conclusion. -/
   · simp only [Model.field, Model.idc, Model.ixHat, Transform.parkQ, PiLp.toLp_apply,
       Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one, hθ]
-    ring
+      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.mk_one]
+    linear_combination (-1 / m.Cdc) * h
   · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk, hθ]
-    ring
-  · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk, hθ]
+      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
     field_simp
     simp only [Model.N]
     ring
+  · simp only [Model.field, Model.iHatD, Model.iHatQ, PiLp.toLp_apply, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
+      Matrix.tail_cons, PiLp.zero_apply, Fin.isValue, Fin.reduceFinMk]
+    field_simp
+    simp only [Model.N]
+    ring
+
+/-- Every `θ_dq` with `sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`; for
+`θ_dq = π` it is the saddle of `S` contained in the source's LaSalle set. Static evidence on the
+model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_eq_zero_of_sin_eq_zero (m : Model) (hN : m.N ≠ 0) {θ : ℝ}
+    (hθ : Real.sin θ = 0) :
+    m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 :=
+  field_eq_zero_of_kappa_mul_sin_eq_zero m hN (by rw [hθ, mul_zero])
 
 /-- The operating point is an equilibrium. An equivalent form of the damping requirement. -/
 @[tmio M, powerlib_domain] theorem field_point (m : Model) (hN : m.N ≠ 0) : m.field m.point = 0 := by
@@ -539,10 +566,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
     (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
     LinearSystems.IsHurwitz m.jac := by
   intro lam v hv hev
-  have hN : 0 < m.N := by
-    unfold Model.N
-    have := sq_nonneg m.ω0
-    positivity
+  have hN : 0 < m.N := N_pos m hR.ne'
   have hk : 0 < m.k := by
     unfold Model.k
     have : m.Ls * m.μ * m.ustar * m.v0 = m.Ls * (m.μ * m.ustar * m.v0) := by ring
@@ -850,10 +874,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
   change LocallyExponentiallyStable m.field m.point
-  have hN : 0 < m.N := by
-    unfold Model.N
-    have := sq_nonneg m.ω0
-    positivity
+  have hN : 0 < m.N := N_pos m hR.ne'
   exact hurwitz_linearization_locally_exponentially_stable m.jac (field_contDiff m)
     (field_point m hN.ne') (hasFDerivAt_field_point m hL.ne').fderiv
     (jac_isHurwitz m hC hL hR hs hη hδ)
@@ -872,10 +893,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
 Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : 0 < m.μ * m.ustar * m.v0) : 0 < m.k := by
-  have hN : 0 < m.N := by
-    unfold Model.N
-    have := sq_nonneg m.ω0
-    positivity
+  have hN : 0 < m.N := N_pos m hR.ne'
   unfold Model.k
   have : m.Ls * m.μ * m.ustar * m.v0 = m.Ls * (m.μ * m.ustar * m.v0) := by ring
   rw [this]

@@ -296,6 +296,12 @@ def srfPD (V θ : ℝ) : ℝ := -(V * Real.sin θ)
 @[tmio M, powerlib_domain] theorem contDiff_srfPD (V : ℝ) : ContDiff ℝ 1 (srfPD V) :=
   (contDiff_const.mul Real.contDiff_sin).neg
 
+/-- The SRF detector vanishes at the in-phase and anti-phase points `cos θ = ±1`, where its slope
+`−V cos θ` (`hasDerivAt_srfPD`) is `∓V`. -/
+@[tmio M, powerlib_domain] theorem srfPD_eq_zero_of_cos_eq {V θ : ℝ}
+    (h : Real.cos θ = 1 ∨ Real.cos θ = -1) : srfPD V θ = 0 := by
+  rw [srfPD, Real.sin_eq_zero_iff_cos_eq.mpr h, mul_zero, neg_zero]
+
 /-- The potential `𝒱(θ) = V (1 − cos θ)` of the SRF detector (`𝒱′ = −srfPD V`, `𝒱(0) = 0`). -/
 def srfPotential (V θ : ℝ) : ℝ := V * (1 - Real.cos θ)
 

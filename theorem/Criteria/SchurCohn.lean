@@ -20,6 +20,8 @@ Results.
   `norm_prod_sub_le` is its multiset product form.
 * `norm_eval_le_of_roots_norm_le_one` (Schur–Cohn necessary condition): if all roots of
   `p : ℂ[X]` lie in the closed unit disk, then `‖p(w)‖ ≤ ‖w‖ⁿ ‖p(1/w̄)‖` for `0 < ‖w‖ ≤ 1`.
+  For real coefficients, root form: `norm_eval_le_norm_reverse_of_isRoot` (`‖p(w)‖ ≤ ‖wⁿ p(1/w)‖`
+  when every `ζ` with `p(ζ) = 0` has `‖ζ‖ ≤ 1`), read by the LMM and BDF root conditions.
 * `norm_coeff_sq_sub_le_of_roots_norm_le_one` (second power-sum bound): if all roots of
   `p = Σ cᵢ Xⁱ : ℂ[X]` of degree `n ≥ 2` lie in the closed unit disk, then
   `‖c_{n-1}² - 2 c_{n-2} c_n‖ ≤ n ‖c_n‖²` (the left side is `‖c_n‖² ‖Σ ζᵢ²‖` by Vieta);
@@ -88,6 +90,19 @@ closed unit disk, then `‖p(w)‖ ≤ ‖w‖ⁿ ‖p(1 / w̄)‖` for every `0
     simp [eval_multiset_prod, Multiset.map_map]
   rw [e, e, norm_mul, norm_mul, mul_left_comm]
   exact mul_le_mul_of_nonneg_left key (norm_nonneg _)
+
+/-- **Schur–Cohn necessary condition, root form, real coefficients.** If every root of
+`p : ℂ[X]` with real coefficients (`p(z̄) = conj p(z)`) lies in the closed unit disk, then
+`‖p(w)‖ ≤ ‖wⁿ p(1/w)‖` for every `0 < ‖w‖ ≤ 1` (`n = deg p`; `p ≠ 0` follows). -/
+@[tmio T, powerlib_foundation] theorem norm_eval_le_norm_reverse_of_isRoot (p : ℂ[X])
+    (hconj : ∀ z, p.eval (conj z) = conj (p.eval z)) (hroots : ∀ ζ, p.IsRoot ζ → ‖ζ‖ ≤ 1)
+    {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) : ‖p.eval w‖ ≤ ‖w ^ p.natDegree * p.eval w⁻¹‖ := by
+  have hp : p ≠ 0 := by
+    rintro rfl
+    have := hroots 2 (by simp)
+    norm_num at this
+  have h := norm_eval_le_of_roots_norm_le_one p (fun ζ hζ => hroots ζ ((mem_roots hp).mp hζ)) hw0 hw
+  rwa [← map_inv₀, hconj, Complex.norm_conj, ← norm_pow, ← norm_mul] at h
 
 /-! ## Second power sum of the roots -/
 

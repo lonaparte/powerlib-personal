@@ -3,6 +3,8 @@ import dependencies.Mathlib
 import Mathlib.Basic.Real.Sign
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-! # Elementary real inequalities and identities (foundation)
 
@@ -31,8 +33,11 @@ Results.
   (`|w^i ξ^j| ≤ m^(i+j)` when `|w|, |ξ| ≤ m`), `sq_max_abs_le` (`max(|w|, |ξ|)² ≤ w² + ξ²`).
 * Complex exponential: `normSq_affine_exp` (`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`),
   `im_logDeriv_affine_exp`
-  (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`).
-* Complex argument: `arg_eq_arctan` (`arg z = arctan (Im z / Re z)` for `Re z > 0`).
+  (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`);
+  `norm_affine_exp`, `hasDerivAt_norm_affine_exp` (`d|a e^{jδ} + b|/dδ = −ab sin δ/|a e^{jδ} + b|`),
+  `contDiffAt_norm_affine_exp` (smooth where nonzero).
+* Complex argument: `arg_eq_arctan` (`arg z = arctan (Im z / Re z)` for `Re z > 0`),
+  `hasDerivAt_arg` (`d arg z/dt = Im(ż/z)` in the slit plane).
 -/
 
 noncomputable section
@@ -178,6 +183,30 @@ open Complex
   ring_nf
   nlinarith [hs]
 
+/-- `|a e^{jδ} + b| = √(a² + b² + 2ab cos δ)` (law of cosines). -/
+@[tmio T, powerlib_foundation] theorem norm_affine_exp (a b δ : ℝ) :
+    ‖(a : ℂ) * exp (δ * I) + b‖ = Real.sqrt (a ^ 2 + b ^ 2 + 2 * a * b * Real.cos δ) := by
+  rw [Complex.norm_def, normSq_affine_exp]
+
+/-- Where `|a e^{jδ} + b| ≠ 0`: `d/dδ |a e^{jδ} + b| = −a b sin δ / |a e^{jδ} + b|`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_norm_affine_exp {a b δ : ℝ}
+    (h : ‖(a : ℂ) * exp (δ * I) + b‖ ≠ 0) :
+    HasDerivAt (fun d : ℝ => ‖(a : ℂ) * exp (d * I) + b‖)
+      (-(a * b * Real.sin δ) / ‖(a : ℂ) * exp (δ * I) + b‖) δ := by
+  simp only [norm_affine_exp] at h ⊢
+  have hQ : HasDerivAt (fun d => a ^ 2 + b ^ 2 + 2 * a * b * Real.cos d)
+      (2 * a * b * (-Real.sin δ)) δ := by
+    simpa using ((Real.hasDerivAt_cos δ).const_mul (2 * a * b)).const_add (a ^ 2 + b ^ 2)
+  convert hQ.sqrt fun h0 => h (by rw [h0, Real.sqrt_zero]) using 1
+  field_simp
+
+/-- `δ ↦ |a e^{jδ} + b|` is `C^n` wherever it does not vanish. -/
+@[tmio T, powerlib_foundation] theorem contDiffAt_norm_affine_exp {a b δ : ℝ} {n : WithTop ℕ∞}
+    (h : ‖(a : ℂ) * exp (δ * I) + b‖ ≠ 0) :
+    ContDiffAt ℝ n (fun d : ℝ => ‖(a : ℂ) * exp (d * I) + b‖) δ := by
+  simp only [norm_affine_exp] at h ⊢
+  exact ContDiffAt.sqrt (by fun_prop) fun h0 => h (by rw [h0, Real.sqrt_zero])
+
 end ComplexExp
 
 /-! ## Complex argument -/
@@ -187,5 +216,13 @@ end ComplexExp
     Complex.arg z = Real.arctan (z.im / z.re) := by
   have habs : |Complex.arg z| < Real.pi / 2 := Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hz)
   rw [← Complex.tan_arg, Real.arctan_tan (abs_lt.1 habs).1 (abs_lt.1 habs).2]
+
+/-- Phase derivative: where the curve `z(t)` lies in the slit plane (the principal branch is
+smooth), `d/dt arg z(t) = Im(ż(t)/z(t))`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_arg {z : ℝ → ℂ} {z' : ℂ} {t : ℝ}
+    (hz : HasDerivAt z z' t) (hslit : z t ∈ Complex.slitPlane) :
+    HasDerivAt (fun τ => Complex.arg (z τ)) (z' / z t).im t := by
+  have h := (Complex.imCLM : ℂ →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t (hz.clog_real hslit)
+  simpa only [Function.comp_def, Complex.imCLM_apply, Complex.log_im] using h
 
 end powerlib.SpecialFunctions

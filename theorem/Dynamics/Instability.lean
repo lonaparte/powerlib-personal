@@ -48,6 +48,9 @@ Results.
   `not_localAsymptoticStable_of_eventually_lie_nonpos`, `unstable_of_eventually_lie_neg` (`Ė < 0`
   on a punctured neighbourhood of an equilibrium and `E < E(x*)` arbitrarily close to it: the
   saddle-node criterion).
+* `not_localAsymptoticStable_of_linear_lie_nonpos`: a nonzero linear functional `ℓ` with
+  `ℓ (f x) ≤ 0` near the point (a monotone linear coordinate: folds, lost restoring terms, lines
+  of slow drift) rules out local asymptotic stability; no seed is needed.
 * `not_globallyAsymptoticallyStable_of_equilibrium_ne`: a field with an equilibrium `y ≠ x` has
   no globally asymptotically stable point `x` (the constant solution at `y` does not converge to
   `x`); with `2π`-periodic fields this rules out global attraction of any selected point.
@@ -401,6 +404,26 @@ unstable. -/
     (fun x hx => hLieρ (by rwa [dist_eq_norm])) fun ε hε => ?_
   obtain ⟨x, hx, hVx⟩ := (hseed.and_eventually (Metric.ball_mem_nhds x_eq hε)).exists
   exact ⟨x, by rw [← dist_eq_norm]; exact hVx, hx⟩
+
+/-- **A linear functional that does not increase along the field rules out attraction.** If
+`ℓ ≠ 0` and `ℓ (f x) ≤ 0` near `x_eq`, a `C¹` field is not locally asymptotically stable at
+`x_eq`: states with a smaller value of `ℓ` lie arbitrarily close and `ℓ` never increases back
+(`not_localAsymptoticStable_of_eventually_lie_nonpos` with `V = ℓ`). -/
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_linear_lie_nonpos
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (hf : ContDiff ℝ 1 f) {ℓ : ℝⁿ →L[ℝ] ℝ} (hℓ : ℓ ≠ 0)
+    (hlie : ∀ᶠ x in 𝓝 x_eq, ℓ (f x) ≤ 0) : ¬ LocalAsymptoticStable f x_eq := by
+  obtain ⟨d, hd⟩ : ∃ d, ℓ d ≠ 0 := by
+    by_contra h
+    push Not at h
+    exact hℓ (ContinuousLinearMap.ext h)
+  refine not_localAsymptoticStable_of_eventually_lie_nonpos hf ℓ.differentiable
+    (hlie.mono fun x hx => by rwa [ℓ.fderiv]) ?_
+  have hz := frequently_of_forall_smul (-(ℓ d) • d)
+    (P := fun z => ℓ (x_eq + z) < ℓ x_eq) fun t ht => by
+      simp only [map_add, map_smul, smul_eq_mul, add_lt_iff_neg_left]
+      nlinarith [sq_pos_of_ne_zero hd]
+  rw [← map_add_left_nhds_zero x_eq]
+  exact Filter.frequently_map.mpr hz
 
 /-- **Instability from a strictly decreasing function with lower values nearby.** If a `C¹`
 function decreases strictly along a `C¹` field on a punctured neighbourhood of an equilibrium and

@@ -48,7 +48,9 @@ Results.
   `negSeq_eq_cvec`), which is
   `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
 * The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
-  frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
+  frame angle `θ(t)`, constant or time-varying; for a first-order element `X ẋ = s − Y x` it
+  gives the dq law `ẋ = X⁻¹(s − Y x) − ω J x`
+  (`hasDerivAt_rot_mulVec_firstOrder_iff`). Its first-order form at `θ = 0`
   (`hasDerivAt_park_mulVec` at `θ = id`, `x` constant, `t = 0`: `d/dθ (park θ · x)|₀ = −J x`)
   gives the PLL frame projections of `T-gfl-impedance.md` §1.3.
 * The element laws read through Park are with the elements: the αβ / dq KVL of one series R–L
@@ -60,7 +62,8 @@ Results.
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence
 vector is "DC in the αβ frame". It is the reverse: `clarke_mulVec_balanced` shows it is the
 rotating vector `V (cos(θ+φ), sin(θ+φ))` in αβ, and `parkABC_mulVec_balanced` shows it is the
-constant `V (cos φ, sin φ)` in dq.
+constant `V (cos φ, sin φ)` in dq (in a frame at any other angle `θ'` it is
+`V (cos(θ+φ−θ'), sin(θ+φ−θ'))`, `parkABC_mulVec_balanced_frame`).
 
 Correction (`T-PU.md` §1.7): for the amplitude-invariant Park, `v_a = V cos(ωt + φ)` maps to
 `v_d = V cos φ`, `v_q = +V sin φ` (the note writes `v_q = −V sin φ`).
@@ -193,6 +196,23 @@ the first-order frame rotation `d/dθ (park θ · x)|₀ = −J x`. -/
   convert h using 1
   rw [Matrix.mulVec_add, Matrix.mulVec_smul, ← park_eq_rot_neg, Matrix.mulVec_mulVec,
     Matrix.mulVec_mulVec, park_eq_rot_neg, rot_mul_J, neg_smul, sub_eq_add_neg]
+
+/-- A first-order element `X ẋ = s − Y x` read in a rotating frame (`θ̇ = ω`): for
+`x^{αβ} = rot θ · x`, `s^{αβ} = rot θ · s`, the αβ law `ẋ^{αβ} = X⁻¹(s^{αβ} − Y x^{αβ})` holds iff
+the dq law `ẋ = X⁻¹(s − Y x) − ω J x` does (the cross term `ω X J x`). -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_rot_mulVec_firstOrder_iff {θ : ℝ → ℝ}
+    {ω X Y : ℝ} {x : ℝ → Fin 2 → ℝ} {x' s : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t)
+    (hx : HasDerivAt x x' t) :
+    HasDerivAt (fun τ => rot (θ τ) *ᵥ x τ)
+        (X⁻¹ • (rot (θ t) *ᵥ s - Y • (rot (θ t) *ᵥ x t))) t ↔
+      x' = X⁻¹ • (s - Y • x t) - ω • (J *ᵥ x t) := by
+  rw [← Matrix.mulVec_smul, ← Matrix.mulVec_sub, ← Matrix.mulVec_smul]
+  have h := hasDerivAt_rot_mulVec hθ hx
+  refine ⟨fun h' => ?_, fun hx' => ?_⟩
+  · have := congrArg (park (θ t) *ᵥ ·) (h.unique h')
+    simp only [Matrix.mulVec_mulVec, park_mul_rot, Matrix.one_mulVec] at this
+    rw [← this, add_sub_cancel_right]
+  · rwa [hx', sub_add_cancel] at h
 
 /-- Complex form of the §1.3 boxed chain rule:
 `d/dt (x^{dq} e^{jθ}) = (ẋ^{dq} + jω x^{dq}) e^{jθ}`. -/
@@ -367,19 +387,18 @@ zero-sequence component (`cvec_sum`). -/
   rw [balanced_eq_cvec, mulVec_smul, hc]
   ext i; fin_cases i <;> simp
 
+/-- In a dq frame at any angle `θ'` the same signal is `V (cos(θ + φ − θ'), sin(θ + φ − θ'))`. -/
+@[tmio M, powerlib_domain] theorem parkABC_mulVec_balanced_frame (V φ θ θ' : ℝ) :
+    parkABC θ' *ᵥ balanced V φ θ =
+      ![V * Real.cos (θ + φ - θ'), V * Real.sin (θ + φ - θ')] := by
+  rw [parkABC, ← Matrix.mulVec_mulVec, clarke_mulVec_balanced]
+  ext i; fin_cases i <;> simp [Real.cos_sub, Real.sin_sub] <;> ring
+
 /-- In the dq frame at angle `θ` the same signal is the constant `V (cos φ, sin φ)`.
 In particular `v_q = +V sin φ` for the amplitude-invariant Park. -/
 @[tmio M, powerlib_domain] theorem parkABC_mulVec_balanced (V φ θ : ℝ) :
     parkABC θ *ᵥ balanced V φ θ = ![V * Real.cos φ, V * Real.sin φ] := by
-  rw [parkABC, ← Matrix.mulVec_mulVec, clarke_mulVec_balanced]
-  have hφ : φ = (θ + φ) - θ := by ring
-  ext i; fin_cases i
-  · simp only [park_apply_mulVec]
-    conv_rhs => rw [hφ, Real.cos_sub]
-    simp; ring
-  · simp only [park_apply_mulVec]
-    conv_rhs => rw [hφ, Real.sin_sub]
-    simp; ring
+  rw [parkABC_mulVec_balanced_frame, add_sub_cancel_left]
 
 /-! ## Negative-sequence signals in the αβ frame -/
 

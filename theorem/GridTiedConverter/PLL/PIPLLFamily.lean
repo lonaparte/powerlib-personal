@@ -463,56 +463,37 @@ def srf (V Kp Ki δω θ : ℝ) : Model := ⟨srfPD V, Kp, Ki, δω, θ, contDif
     deriv (srf V Kp Ki δω θ).h (srf V Kp Ki δω θ).θ = -V * Real.cos θ :=
   (hasDerivAt_srfPD V θ).deriv.trans (neg_mul V _).symm
 
-@[tmio T, powerlib_foundation] private lemma cos_two_int_mul_pi (k : ℤ) :
-    Real.cos (2 * k * Real.pi) = 1 := by
-  rw [show 2 * (k : ℝ) * Real.pi = (k : ℝ) * (2 * Real.pi) by ring]
-  exact Real.cos_int_mul_two_pi k
-
-@[tmio M, powerlib_domain] private theorem srf_h_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
-    (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = 0 := by
-  change -(V * Real.sin (2 * k * Real.pi)) = 0
-  rw [Real.sin_eq_zero_iff.mpr ⟨2 * k, by push_cast; ring⟩, mul_zero, neg_zero]
-
-@[tmio M, powerlib_domain] private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
-    deriv (srf V Kp Ki δω (2 * k * Real.pi)).h (srf V Kp Ki δω (2 * k * Real.pi)).θ = -V := by
-  rw [srf_deriv, cos_two_int_mul_pi, mul_one]
-
-/-- In-phase equilibria `(2kπ, δω/K_i)` are locally exponentially stable when
-`V K_p > 0` and `V K_i > 0`, for every constant frequency offset `δω`. -/
+/-- In-phase equilibria `(θ*, δω/K_i)`, `cos θ* = 1` (`θ* = 2kπ`), are locally exponentially
+stable when `V K_p > 0` and `V K_i > 0`, for every constant frequency offset `δω`. -/
 @[tmio TM, powerlib_domain] theorem srf_mem_den_locallyExponentiallyStable_inPhase {V Kp Ki : ℝ}
-    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈
-      family.den (.flow .locallyExponentiallyStable)) :=
-  mem_den_locallyExponentiallyStable _ (srf_h_inPhase V Kp Ki δω k)
-    (by rw [srf_deriv_inPhase]; show Kp * -V < 0; linarith [mul_comm V Kp])
-    (by rw [srf_deriv_inPhase]; show Ki * -V < 0; linarith [mul_comm V Ki])
+    (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (δω : ℝ) {θ : ℝ} (hθ : Real.cos θ = 1) :
+    connection% (srf V Kp Ki δω θ ∈ family.den (.flow .locallyExponentiallyStable)) :=
+  mem_den_locallyExponentiallyStable _ (srfPD_eq_zero_of_cos_eq (.inl hθ))
+    (by rw [srf_deriv, hθ, mul_one]; show Kp * -V < 0; linarith [mul_comm V Kp])
+    (by rw [srf_deriv, hθ, mul_one]; show Ki * -V < 0; linarith [mul_comm V Ki])
 
-/-- `V K_i < 0`: the in-phase equilibria are saddles, hence unstable. -/
+/-- `V K_i < 0`: the in-phase equilibria (`cos θ* = 1`) are saddles, hence unstable. -/
 @[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_mul_neg {V Kp Ki : ℝ}
-    (hVKi : V * Ki < 0) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable _ (srf_h_inPhase V Kp Ki δω k)
-    (by rw [srf_deriv_inPhase]; show 0 < Ki * -V; linarith [mul_comm V Ki])
+    (hVKi : V * Ki < 0) (δω : ℝ) {θ : ℝ} (hθ : Real.cos θ = 1) :
+    connection% (srf V Kp Ki δω θ ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable _ (srfPD_eq_zero_of_cos_eq (.inl hθ))
+    (by rw [srf_deriv, hθ, mul_one]; show 0 < Ki * -V; linarith [mul_comm V Ki])
 
-/-- `V K_p < 0` (`K_i ≠ 0`): positive Jacobian trace at the in-phase equilibria, unstable. -/
+/-- `V K_p < 0` (`K_i ≠ 0`): positive Jacobian trace at the in-phase equilibria (`cos θ* = 1`),
+unstable. -/
 @[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_trace {V Kp Ki : ℝ}
-    (hKi : Ki ≠ 0) (hVKp : V * Kp < 0) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable_of_trace_pos _ (srf_h_inPhase V Kp Ki δω k) (Or.inl hKi)
-    (by rw [srf_deriv_inPhase]; show 0 < Kp * -V; linarith [mul_comm V Kp])
+    (hKi : Ki ≠ 0) (hVKp : V * Kp < 0) (δω : ℝ) {θ : ℝ} (hθ : Real.cos θ = 1) :
+    connection% (srf V Kp Ki δω θ ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable_of_trace_pos _ (srfPD_eq_zero_of_cos_eq (.inl hθ)) (Or.inl hKi)
+    (by rw [srf_deriv, hθ, mul_one]; show 0 < Kp * -V; linarith [mul_comm V Kp])
 
-/-- `V K_i > 0`: the anti-phase equilibria `((2k+1)π, δω/K_i)` are saddles, hence unstable, for
-every `K_p`. -/
+/-- `V K_i > 0`: the anti-phase equilibria `(θ*, δω/K_i)`, `cos θ* = −1` (`θ* = (2k+1)π`), are
+saddles, hence unstable, for every `K_p`. -/
 @[tmio TM, powerlib_domain] theorem srf_mem_den_unstable_antiPhase {V Kp Ki : ℝ}
-    (hVKi : 0 < V * Ki) (δω : ℝ) (k : ℤ) :
-    connection% (srf V Kp Ki δω ((2 * k + 1) * Real.pi) ∈ family.den (.flow .unstable)) := by
-  refine mem_den_unstable _ ?_ ?_
-  · change -(V * Real.sin ((2 * k + 1) * Real.pi)) = 0
-    rw [Real.sin_eq_zero_iff.mpr ⟨2 * k + 1, by push_cast; ring⟩, mul_zero, neg_zero]
-  · rw [srf_deriv, show (2 * (k : ℝ) + 1) * Real.pi = (k : ℝ) * (2 * Real.pi) + Real.pi by ring,
-      Real.cos_add_pi, Real.cos_int_mul_two_pi]
-    show 0 < Ki * (-V * -1)
-    linarith [mul_comm V Ki]
+    (hVKi : 0 < V * Ki) (δω : ℝ) {θ : ℝ} (hθ : Real.cos θ = -1) :
+    connection% (srf V Kp Ki δω θ ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable _ (srfPD_eq_zero_of_cos_eq (.inr hθ))
+    (by rw [srf_deriv, hθ]; show 0 < Ki * (-V * -1); linarith [mul_comm V Ki])
 
 /-! ### The frequency-drift boundary `Σ_FD` -/
 
@@ -537,9 +518,9 @@ point of the same SRF model is even locally exponentially stable. -/
   unfold powerlib.TMIO.Statement
   intro H
   exact H (srf 1 1 1 2 0) 1 one_pos one_pos
-    (fun θ => by simpa [srf, srfPD] using Real.abs_sin_le_one θ) (by norm_num [srf]) (by
-      simpa using srf_mem_den_locallyExponentiallyStable_inPhase (V := 1) (Kp := 1) (Ki := 1)
-        (by norm_num) (by norm_num) 2 0)
+    (fun θ => by simpa [srf, srfPD] using Real.abs_sin_le_one θ) (by norm_num [srf])
+    (srf_mem_den_locallyExponentiallyStable_inPhase (V := 1) (Kp := 1) (Ki := 1)
+      (by norm_num) (by norm_num) 2 Real.cos_zero)
 
 /-! ### The frequency-ramp boundary `Σ_FD`
 

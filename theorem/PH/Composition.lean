@@ -1,6 +1,7 @@
 import theorem.Port.PortHamiltonian
 import theorem.Linear.Coordinates
 import theorem.Criteria.Lyapunov
+import theorem.PH.Nonlinear
 
 /-! # Composition of port-Hamiltonian systems
 
@@ -29,8 +30,9 @@ Results.
   `toPH_storage`), and data related by a coordinate change give similar plants (`toPH_similar`).
 * Linear port-Hamiltonian plants: `lossless_lyapunov` (no dissipation conserves the stored
   energy), `fderiv_storage_field` (power balance of the stored energy
-  `Linear.quadraticEnergy Q`), `exists_quadraticDecay` (strict dissipation gives a quadratic-decay
-  certificate, `Linear.quadraticDecay_of_lyapunov` with `Port.PortHamiltonian.energy_rate`).
+  `Linear.quadraticEnergy Q`),
+  `exists_quadraticDecay` (strict dissipation gives a quadratic-decay certificate,
+  `Linear.quadraticDecay_of_lyapunov` with `Port.PortHamiltonian.energy_rate`).
 * Interconnection (`interconnect`): the composite is again a `DiagonalPH (ι₁ ⊕ ι₂) κ` with
   `J = [[J₁, −B₁ Mᵀ B₂ᵀ], [B₂ M B₁ᵀ, J₂]]`, `R = blkdiag(R₁, R₂)`, `H = H₁ + H₂`,
   `B = [B₁ g₁; B₂ g₂]`; its field restricts to the two subsystem fields under the coupling law
@@ -126,21 +128,10 @@ omit [Fintype κ] [DecidableEq ι] in
 /-- Power balance: `∇Hᵀ ẋ = uᵀ y − Σ dᵢ (∇H)ᵢ²`. -/
 @[tmio T, powerlib_foundation] theorem power_balance (m : DiagonalPH ι κ) (x : ι → ℝ) (u : κ → ℝ) :
     m.gradient x ⬝ᵥ m.field x u = m.supply x u - m.dampingPower x := by
-  have hskew : m.gradient x ⬝ᵥ (m.J *ᵥ m.gradient x) = 0 := by
-    have h : m.gradient x ⬝ᵥ (m.J *ᵥ m.gradient x) =
-        -(m.gradient x ⬝ᵥ (m.J *ᵥ m.gradient x)) := by
-      calc
-        _ = (m.Jᵀ *ᵥ m.gradient x) ⬝ᵥ m.gradient x := by
-          rw [dotProduct_mulVec, mulVec_transpose]
-        _ = _ := by rw [m.skew, neg_mulVec, neg_dotProduct, dotProduct_comm]
-    linarith
-  have hport : m.gradient x ⬝ᵥ (m.B *ᵥ u) = m.supply x u := by
-    rw [supply, output, dotProduct_mulVec, mulVec_transpose, dotProduct_comm]
-  have hdamping : m.gradient x ⬝ᵥ (diagonal m.d *ᵥ m.gradient x) = m.dampingPower x := by
-    simp only [dotProduct, mulVec_diagonal, dampingPower]
-    exact Finset.sum_congr rfl fun i _ => by ring
-  simp only [field, sub_mulVec, dotProduct_add, dotProduct_sub, hskew, hport, hdamping]
-  ring
+  rw [field, dotProduct_phField m.skew, supply, output, dampingPower]
+  congr 1
+  simp only [dotProduct, mulVec_diagonal]
+  exact Finset.sum_congr rfl fun i _ => by ring
 
 /-! ### Numbering the indices: the `Port.PortHamiltonian` plant -/
 
@@ -304,21 +295,13 @@ energy changes at the supplied power minus the dissipated power `(Q x)ᵀ R (Q x
   rw [Linear.fderiv_quadraticEnergy_apply h.kyp.symmetric]
   change WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ WithLp.ofLp (h.plant.system.field x u)) = _
   have hf : WithLp.ofLp (h.plant.system.field x u) =
-      h.plant.A *ᵥ WithLp.ofLp x + h.B *ᵥ u := by
+      (h.J - h.R) *ᵥ (h.Q *ᵥ WithLp.ofLp x) + h.B *ᵥ u := by
     simp [Linear.Plant.system, Port.PortHamiltonian.plant, Linear.op,
-      Matrix.ofLp_toEuclideanCLM, Matrix.sub_mul, Matrix.sub_mulVec]
-  have hs : h.plant.system.supply x u = WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ (h.B *ᵥ u)) := by
-    simp only [Port.System.supply, Linear.Plant.system, Port.PortHamiltonian.plant,
-      zero_mulVec, add_zero]
-    have hsym : WithLp.ofLp x ⬝ᵥ (h.Q *ᵥ (h.B *ᵥ u)) =
-        (h.Q *ᵥ WithLp.ofLp x) ⬝ᵥ (h.B *ᵥ u) := by
-      rw [dotProduct_mulVec]
-      congr 1
-      conv_lhs => rw [← h.energy_symmetric]
-      rw [vecMul_transpose]
-    rw [hsym, ← mulVec_mulVec, dotProduct_mulVec, vecMul_transpose, dotProduct_comm]
-  rw [hf, mulVec_add, dotProduct_add, Port.PortHamiltonian.energy_rate, hs]
-  ring
+      Matrix.ofLp_toEuclideanCLM, Matrix.mulVec_mulVec, Matrix.sub_mul, Matrix.sub_mulVec]
+  have hs : h.plant.system.supply x u = u ⬝ᵥ (h.Bᵀ *ᵥ (h.Q *ᵥ WithLp.ofLp x)) := by
+    simp [Port.System.supply, Linear.Plant.system, Port.PortHamiltonian.plant, mulVec_mulVec]
+  rw [hf, dotProduct_mulVec, ← mulVec_transpose, h.energy_symmetric, dotProduct_phField h.skew,
+    hs]
 
 /-- Strictly positive dissipation gives a quadratic-decay certificate whose energy is the stored
 energy itself (`Linear.quadraticDecay_of_lyapunov` with `xᵀ Q A x = −(Q x)ᵀ R (Q x)`). -/

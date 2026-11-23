@@ -127,32 +127,14 @@ there and `‖x_k − x*‖ ≤ qᵏ ‖x₀ − x*‖` with `q = ‖A⁻¹‖ c
     (x : ℕ → E) (hx0 : x 0 ∈ closedBall xs r) (hx : ∀ k, x (k + 1) = chordStep F A (x k)) :
     (∀ k, x k ∈ closedBall xs r ∧ ‖x k - xs‖ ≤ (‖Ring.inverse A‖ * c) ^ k * ‖x 0 - xs‖) ∧
       Tendsto x atTop (𝓝 xs) := by
-  set q := ‖Ring.inverse A‖ * c with hqdef
-  have hstep : ∀ k, x k ∈ closedBall xs r → x (k + 1) ∈ closedBall xs r ∧
-      ‖x (k + 1) - xs‖ ≤ q * ‖x k - xs‖ := by
-    intro k hk
-    have h := chordStep_sub_root_le hF hA hJA hroot hr hk
-    rw [← hx k] at h
-    refine ⟨?_, h⟩
-    rw [mem_closedBall, dist_eq_norm]
-    calc _ ≤ q * ‖x k - xs‖ := h
-      _ ≤ 1 * ‖x k - xs‖ := by gcongr
-      _ ≤ r := by rw [one_mul, ← dist_eq_norm]; exact hk
-  have hall : ∀ k, x k ∈ closedBall xs r ∧ ‖x k - xs‖ ≤ q ^ k * ‖x 0 - xs‖ := by
-    intro k
-    induction k with
-    | zero => exact ⟨hx0, by simp⟩
-    | succ k ih =>
-      obtain ⟨hmem, hle⟩ := hstep k ih.1
-      refine ⟨hmem, ?_⟩
-      calc _ ≤ q * ‖x k - xs‖ := hle
-        _ ≤ q * (q ^ k * ‖x 0 - xs‖) := by gcongr; exact ih.2
-        _ = q ^ (k + 1) * ‖x 0 - xs‖ := by ring
-  refine ⟨hall, ?_⟩
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hlim : Tendsto (fun k : ℕ => q ^ k * ‖x 0 - xs‖) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hq0 hq).mul_const ‖x 0 - xs‖
-  exact squeeze_zero (fun k => norm_nonneg _) (fun k => (hall k).2) hlim
+  refine iterates_tendsto_of_contract hq0 hq hx0 fun k hk => ?_
+  have h := chordStep_sub_root_le hF hA hJA hroot hr hk
+  rw [← hx k] at h
+  refine ⟨?_, h⟩
+  rw [mem_closedBall, dist_eq_norm]
+  calc _ ≤ ‖Ring.inverse A‖ * c * ‖x k - xs‖ := h
+    _ ≤ 1 * ‖x k - xs‖ := by gcongr
+    _ ≤ r := by rw [one_mul, ← dist_eq_norm]; exact hk
 
 /-- With the frozen Jacobian `A = J(x₀)`, `x₀ ∈ closedBall x* r` and `J` `L`-Lipschitz on the
 ball, the hypothesis of the chord results holds with `c = 2Lr`, so the contraction factor is

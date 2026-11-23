@@ -47,6 +47,10 @@ Results (all trajectory-level, for every initial state).
   LeanForControl Gelfand-formula lemma) and `exists_pow_norm_le_exp` (a contractive power gives
   `‖P ^ n‖ ≤ C e^{-γ n}`); used by the Floquet criterion `theorem/Periodic/Floquet.lean`.
   `SchurStable.exists_pow_bound` is their composite for a Schur matrix.
+* Sampling windows `[t₀ + kT, t₀ + (k + 1) T)` (scalar time grid): `le_exp_of_sampled_decay`
+  (samples decaying like `e^{−a kT}`, bounded between samples, give decay at every instant) and
+  `floor_glue_eq` (window curves agreeing at the window ends glue to one curve); read by the
+  Floquet criterion, the sampled-data loop, exact sampling and the switched converter.
 * `prediction_closedForm`: the affine recursion `x⁺ = A x + B u + d` (any finite index types)
   has `x[k+j] = A^j x[k] + Σ_{i<j} A^{j−1−i}(B u[k+i] + d)` (multi-step prediction of
   theory/T-predictive-machine-control.md).
@@ -192,6 +196,49 @@ block of `m > 0` steps and a bound `B` on the shorter powers give
     _ = B * Real.exp γ * Real.exp (-(γ / m)) ^ k := by ring
 
 end Blocks
+
+section SamplingWindows
+
+open Set
+
+/-- **Sampled decay gives decay at every instant.** If on every sampling window
+`t₀ + kT ≤ t < t₀ + (k + 1) T` a quantity is at most `K` times a sample bound `g k`, and the
+samples decay, `g k ≤ C e^{−a kT}`, then `f t ≤ K C e^{|a| T} e^{−a (t − t₀)}` for `t ≥ t₀`. -/
+@[tmio T, powerlib_foundation] theorem le_exp_of_sampled_decay {f : ℝ → ℝ} {g : ℕ → ℝ}
+    {T a K C t₀ : ℝ} (hT : 0 < T) (hK : 0 ≤ K) (hC : 0 ≤ C)
+    (hwin : ∀ (k : ℕ) (t : ℝ), t₀ + k * T ≤ t → t < t₀ + (k + 1) * T → f t ≤ K * g k)
+    (hg : ∀ k : ℕ, g k ≤ C * Real.exp (-(a * (k * T)))) {t : ℝ} (ht : t₀ ≤ t) :
+    f t ≤ K * C * Real.exp (|a| * T) * Real.exp (-(a * (t - t₀))) := by
+  set k := ⌊(t - t₀) / T⌋₊
+  have hτ : 0 ≤ (t - t₀) / T := div_nonneg (sub_nonneg.mpr ht) hT.le
+  have hk1 : (k : ℝ) * T ≤ t - t₀ := (le_div_iff₀ hT).mp (Nat.floor_le hτ)
+  have hk2 : t - t₀ < (k + 1) * T := (div_lt_iff₀ hT).mp (Nat.lt_floor_add_one _)
+  have hs : a * (t - t₀ - k * T) ≤ |a| * T :=
+    (mul_le_mul_of_nonneg_right (le_abs_self a) (by linarith)).trans
+      (mul_le_mul_of_nonneg_left (by linarith) (abs_nonneg a))
+  have he : Real.exp (-(a * (k * T))) ≤ Real.exp (|a| * T) * Real.exp (-(a * (t - t₀))) := by
+    rw [← Real.exp_add, Real.exp_le_exp]
+    linarith
+  calc f t ≤ K * g k := hwin k t (by linarith) (by linarith)
+    _ ≤ K * (C * (Real.exp (|a| * T) * Real.exp (-(a * (t - t₀))))) := by
+        gcongr
+        exact (hg k).trans (by gcongr)
+    _ = K * C * Real.exp (|a| * T) * Real.exp (-(a * (t - t₀))) := by ring
+
+/-- **Gluing window curves.** If the curves `y k` of the windows `[kT, (k + 1) T]` agree at the
+window ends, the glued curve `t ↦ y ⌊t / T⌋₊ t` is `y k` on the whole closed window. -/
+@[tmio T, powerlib_foundation] theorem floor_glue_eq {α : Type*} {T : ℝ} (hT : 0 < T)
+    {y : ℕ → ℝ → α} (hy : ∀ k : ℕ, y k ((k + 1) * T) = y (k + 1) ((k + 1) * T)) {k : ℕ}
+    {t : ℝ} (ht : t ∈ Icc ((k : ℝ) * T) ((k + 1) * T)) : y ⌊t / T⌋₊ t = y k t := by
+  rcases lt_or_eq_of_le ht.2 with hlt | rfl
+  · rw [(Nat.floor_eq_iff (div_nonneg ((by positivity : (0 : ℝ) ≤ k * T).trans ht.1) hT.le)).2
+      ⟨(le_div_iff₀ hT).2 ht.1, (div_lt_iff₀ hT).2 hlt⟩]
+  · have h : ⌊((k : ℝ) + 1) * T / T⌋₊ = k + 1 := by
+      rw [mul_div_assoc, div_self hT.ne', mul_one]
+      exact_mod_cast Nat.floor_natCast (k + 1)
+    rw [h, ← hy k]
+
+end SamplingWindows
 
 section MatrixPowers
 

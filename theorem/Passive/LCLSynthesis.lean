@@ -408,9 +408,6 @@ plant Hurwitz. -/
   simp only [mem_realize, Set.mem_singleton_iff, forall_eq] at hr ⊢
   change Linear.Synthesis.accepts r.matrix = true at hr
   change r.circuit.Stable
-  have h := (isHurwitz_iff_stable _).mp
-    ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mpr
-      (r.certificate hr).isHurwitz)
-  simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using h
+  exact (isHurwitz_plant_iff _).mp (r.certificate hr).isHurwitz
 
 end powerlib.Passive.LCL

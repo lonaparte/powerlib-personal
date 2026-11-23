@@ -40,7 +40,8 @@ Results.
   (`U(θ + u) − U(θ) = ½∑ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`, `g = edgeIncrement`; `B g` is the line
   potential `CycleMinimum.edgeG` of `theorem/PowerSystem/Network/Swing/CycleMinimum.lean`),
   `edgeIncrement_taylor`, `exists_potential_lt` (a direction with `A₂ < 0`, or `A₂ = 0` and
-  `A₃ ≠ 0`, lowers the potential at arbitrarily small steps).
+  `A₃ ≠ 0`, lowers the potential at arbitrarily small steps); `ground_sub_zero`,
+  `cubicForm_add_const` (the forms see a direction only up to a common shift).
 * Hurwitz test with signed weights: the converse direction `exists_hessForm_nonpos` of
   `jacobian_isHurwitz_of_hessForm` (`theorem/PowerSystem/Network/Swing/Basic.lean`, where `A₂` is
   `hessForm`): a non-Hurwitz Jacobian leaves a grounded direction with `A₂ ≤ 0`.
@@ -60,9 +61,9 @@ Results.
 Family and connection conclusions.
 * The family is `Swing.family`; the public behavioural conclusions are `connection%` statements on
   its generated denotations, with static premises.
-* `not_localAsymptoticStable_of_forms` — at a power-balance point a relative-angle direction with
-  `A₂ < 0`, or `A₂ = 0` and `A₃ ≠ 0` (a saddle or a fold), puts the model outside the local
-  asymptotic denotation.
+* `not_localAsymptoticStable_of_hessForm_neg`, `not_localAsymptoticStable_of_cubicForm_ne_zero` —
+  at a power-balance point a direction with `A₂ < 0` (a saddle), or with `A₂ = 0` and `A₃ ≠ 0`
+  (a fold), puts the model outside the local asymptotic denotation.
 * `mem_den_locallyAsymptoticallyStable_iff_of_guard` — a model at which every power-balance
   point with a non-Hurwitz reduced Jacobian fails local asymptotic stability is locally
   asymptotically stable exactly when its profile is a power-balance point with a Hurwitz reduced
@@ -199,6 +200,13 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
 
 @[tmio M, powerlib_domain] theorem ground_zero_vec : ground (0 : Fin n → ℝ) = 0 := by
   funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
+
+@[tmio M, powerlib_domain] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
+    ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
+  funext k
+  refine Fin.cases ?_ (fun i => ?_) k
+  · simp [ground]
+  · simp only [ground_succ]; ring
 
 @[tmio M, powerlib_domain] theorem potential_add_const (p : Params n) (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     potential p (fun k => θ k + c) = potential p θ - c * ∑ k, p.P k := by
@@ -468,6 +476,10 @@ def edgeIncrement (φ x : ℝ) : ℝ := Real.cos φ - Real.cos (φ + x) - x * Re
 def cubicForm (p : Params n) (θ u : Fin (n + 1) → ℝ) : ℝ :=
   ∑ k, ∑ j, p.B k j * Real.sin (θ k - θ j) * (u k - u j) ^ 3
 
+@[tmio M, powerlib_domain] theorem cubicForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
+    (c : ℝ) : cubicForm p θ (fun k => u k + c) = cubicForm p θ u := by
+  simp [cubicForm]
+
 @[tmio M, powerlib_domain] theorem edgeIncrement_taylor (φ x : ℝ) (hx : |x| ≤ 1) :
     |edgeIncrement φ x - (Real.cos φ * x ^ 2 / 2 - Real.sin φ * x ^ 3 / 6)| ≤ x ^ 4 / 8 := by
   have hc := Real.cos_bound hx
@@ -616,10 +628,10 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 
 /-! ## Necessary conditions from the Hessian and cubic forms -/
 
-/-- **Second- and third-order test.** At a power-balance point, a relative-angle direction `v`
-with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local asymptotic stability:
-the model is not in the denotation of the local asymptotic sentence. -/
-@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_forms (m : Model n)
+/-- Implementation evidence (the core of the two form tests below): at a power-balance point, a
+relative-angle direction `v` with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out
+local asymptotic stability. -/
+@[tmio TM, powerlib_domain] private theorem not_localAsymptoticStable_of_forms (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (v : Fin n → ℝ)
     (h : hessForm m.params m.θ (ground v) < 0 ∨
       (hessForm m.params m.θ (ground v) = 0 ∧ cubicForm m.params m.θ (ground v) ≠ 0)) :
@@ -639,6 +651,27 @@ the model is not in the denotation of the local asymptotic sentence. -/
     _ < ε / (‖v‖ + 1) * (‖v‖ + 1) :=
         mul_lt_mul_of_pos_right ht hN
     _ = ε := by field_simp
+
+/-- **A negative value of the Hessian form rules out local asymptotic stability**: at a
+power-balance point a locally asymptotically stable model has a positive semidefinite Hessian
+form. -/
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_hessForm_neg (m : Model n)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
+    (h : hessForm m.params m.θ u < 0) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) :=
+  not_localAsymptoticStable_of_forms m hbal (fun i => u i.succ - u 0)
+    (Or.inl (by rwa [ground_sub_zero, hessForm_add_const]))
+
+/-- **A nonzero cubic form along a null direction of the Hessian form rules out local asymptotic
+stability** (a fold): at a power-balance point a locally asymptotically stable model has a cubic
+form vanishing on every null direction of its Hessian form. -/
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_cubicForm_ne_zero (m : Model n)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
+    (h0 : hessForm m.params m.θ u = 0) (h : cubicForm m.params m.θ u ≠ 0) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) :=
+  not_localAsymptoticStable_of_forms m hbal (fun i => u i.succ - u 0)
+    (Or.inr ⟨by rwa [ground_sub_zero, hessForm_add_const],
+      by rwa [ground_sub_zero, cubicForm_add_const]⟩)
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
@@ -788,22 +821,6 @@ machines are uncoupled (a continuum of equilibria). -/
     not_localAsymptoticStable_two m hp hH
 
 /-! ## Three machines -/
-
-/-- A linear-quadratic function that is nonnegative everywhere has no linear term. -/
-@[tmio T, powerlib_foundation] theorem eq_zero_of_forall_linear_quadratic_nonneg {L Q : ℝ}
-    (h : ∀ x : ℝ, 0 ≤ x * L + x ^ 2 * Q) : L = 0 := by
-  by_contra hL
-  have hpos : 0 < L ^ 2 := by positivity
-  set x := -L / (2 * (|Q| + 1)) with hx
-  have hd : 0 < 2 * (|Q| + 1) := by positivity
-  have h1 := h x
-  have e : x * L + x ^ 2 * Q = L ^ 2 * (-(2 * (|Q| + 1)) + Q) / (2 * (|Q| + 1)) ^ 2 := by
-    rw [hx]; field_simp
-  rw [e] at h1
-  have : -(2 * (|Q| + 1)) + Q < 0 := by linarith [le_abs_self Q, abs_nonneg Q]
-  have : L ^ 2 * (-(2 * (|Q| + 1)) + Q) / (2 * (|Q| + 1)) ^ 2 < 0 :=
-    div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg hpos this) (by positivity)
-  linarith
 
 /-- Three angles summing to zero, exactly one with a negative cosine: `sin · cos` has one strict
 sign on all three. -/
@@ -1075,25 +1092,14 @@ which contradicts the positive Hessian along it. -/
   generalize hs₀ : u 1 = s₀ at hst hle
   generalize ht₀ : u 2 = t₀ at hst hle
   have hF0 : a * s₀ ^ 2 + c * t₀ ^ 2 + b * (s₀ - t₀) ^ 2 = 0 := le_antisymm (by linarith) (hF _ _)
-  have hL1 : a * s₀ + b * (s₀ - t₀) = 0 := by
-    have := eq_zero_of_forall_linear_quadratic_nonneg (L := 2 * (a * s₀ + b * (s₀ - t₀)))
-      (Q := a + b) fun x => by
-        have h := hF (s₀ + x) t₀
-        have e : a * (s₀ + x) ^ 2 + c * t₀ ^ 2 + b * (s₀ + x - t₀) ^ 2 =
-            (a * s₀ ^ 2 + c * t₀ ^ 2 + b * (s₀ - t₀) ^ 2) +
-              (x * (2 * (a * s₀ + b * (s₀ - t₀))) + x ^ 2 * (a + b)) := by ring
-        rw [e, hF0, zero_add] at h
-        exact h
-    linarith
+  have hN := node_balance_eq_zero_of_form_eq_zero (W := !![0, a, c; a, 0, b; c, b, 0])
+    (g := ![0, s₀, t₀]) (fun i j => by fin_cases i <;> fin_cases j <;> rfl)
+    (fun x => by simp [Fin.sum_univ_three]; nlinarith [hF (x 1 - x 0) (x 2 - x 0)])
+    (by simp [Fin.sum_univ_three]; linear_combination 2 * hF0)
+  have hL1 : a * s₀ + b * (s₀ - t₀) = 0 := by simpa [Fin.sum_univ_three] using hN 1
   have hL2 : c * t₀ - b * (s₀ - t₀) = 0 := by
-    have := eq_zero_of_forall_linear_quadratic_nonneg (L := 2 * (c * t₀ - b * (s₀ - t₀)))
-      (Q := c + b) fun x => by
-        have h := hF s₀ (t₀ + x)
-        have e : a * s₀ ^ 2 + c * (t₀ + x) ^ 2 + b * (s₀ - (t₀ + x)) ^ 2 =
-            (a * s₀ ^ 2 + c * t₀ ^ 2 + b * (s₀ - t₀) ^ 2) +
-              (x * (2 * (c * t₀ - b * (s₀ - t₀))) + x ^ 2 * (c + b)) := by ring
-        rw [e, hF0, zero_add] at h
-        exact h
+    have := hN 2
+    simp [Fin.sum_univ_three] at this
     linarith
   have hab : 0 ≤ a + b := by have := hF 1 0; norm_num at this; linarith
   have hcb : 0 ≤ c + b := by have := hF 0 1; norm_num at this; linarith

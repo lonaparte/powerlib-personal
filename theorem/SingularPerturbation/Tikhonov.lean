@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Dynamics.Calculus
 
 /-! # Tikhonov's theorem: corrections of the uniform `O(ε)` claim and of the boundary layer
 
@@ -51,19 +52,9 @@ open Set Filter Topology
 @[tmio T, powerlib_foundation] theorem linear_relaxation_eq {u : ℝ → ℝ} {r c : ℝ}
     (hu : ∀ t, HasDerivAt u (-r * (u t - c)) t) (t : ℝ) :
     u t = c + (u 0 - c) * Real.exp (-(r * t)) := by
-  let w : ℝ → ℝ := fun s => (u s - c) * Real.exp (r * s)
-  have hw : ∀ s, HasDerivAt w 0 s := by
-    intro s
-    have h1 := (hu s).sub_const c
-    have h2 := ((hasDerivAt_id' s).const_mul r).exp
-    exact (h1.mul h2).congr_deriv (by ring)
-  have hconst : w t = w 0 := is_const_of_deriv_eq_zero (fun s => (hw s).differentiableAt)
-    (fun s => (hw s).deriv) t 0
-  simp only [w, mul_zero, Real.exp_zero, mul_one] at hconst
-  have he : Real.exp (r * t) * Real.exp (-(r * t)) = 1 := by
-    rw [← Real.exp_add]; simp
-  calc u t = c + (u t - c) * (Real.exp (r * t) * Real.exp (-(r * t))) := by rw [he]; ring
-    _ = c + (u 0 - c) * Real.exp (-(r * t)) := by rw [← hconst]; ring
+  have h := Dynamics.eq_exp_smul_mul_of_hasDerivAt (fun s => (hu s).sub_const c) t
+  rw [← Real.exp_eq_exp_ℝ, smul_eq_mul, mul_neg, mul_comm t] at h
+  linarith
 
 /-! ## Correction 1: no uniform `O(ε)` bound up to `t = 0` -/
 

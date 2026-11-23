@@ -1,7 +1,7 @@
 import theorem.Transform.Park
 import theorem.Passive.Dq
 import theorem.Spectral.Family
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import theorem.SpecialFunctions.Elementary
 
 /-! # Single series R–L branch in the αβ and dq frames
 
@@ -166,10 +166,8 @@ the statements below:
     (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
     (h : ∀ t, HasDerivAt i (b.L⁻¹ • (v t - b.R • i t) - ω t • (J *ᵥ i t)) t) :
     ∀ t, HasDerivAt (fun t => rot (θ t) *ᵥ i t)
-      (b.L⁻¹ • (rot (θ t) *ᵥ v t - b.R • (rot (θ t) *ᵥ i t))) t := by
-  intro t
-  convert Transform.hasDerivAt_rot_mulVec (hθ t) (h t) using 1
-  rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
+      (b.L⁻¹ • (rot (θ t) *ᵥ v t - b.R • (rot (θ t) *ᵥ i t))) t := fun t =>
+  (Transform.hasDerivAt_rot_mulVec_firstOrder_iff (hθ t) (h t)).mpr rfl
 
 /-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`, for
 any differentiable frame angle `θ` with `θ̇ = ω` (no balanced-three-phase premise): the forward
@@ -204,19 +202,9 @@ phase differs locally by a constant). -/
     convert this using 1
     · funext τ; apply Complex.ext <;> simp
     · apply Complex.ext <;> simp
-  have hlog := hz.clog_real hslit
-  have him := (Complex.imCLM : ℂ →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t hlog
-  have hne : (⟨Id t, Iq t⟩ : ℂ) ≠ 0 := Complex.slitPlane_ne_zero hslit
-  have hn2 : Id t ^ 2 + Iq t ^ 2 ≠ 0 := by
-    intro h0
-    apply hne
-    have h1 : Id t = 0 := by nlinarith [sq_nonneg (Id t), sq_nonneg (Iq t)]
-    have h2 : Iq t = 0 := by nlinarith [sq_nonneg (Id t), sq_nonneg (Iq t)]
-    apply Complex.ext <;> simp [h1, h2]
-  convert him using 1
-  · funext τ; simp [Complex.log_im]
-  · simp only [Complex.imCLM_apply, Complex.div_im, Complex.normSq_mk]
-    field_simp
+  convert SpecialFunctions.hasDerivAt_arg hz hslit using 1
+  simp only [Complex.div_im, Complex.normSq_mk]
+  ring
 
 /-- Phase dynamics of the dq R–L filter:
 `φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω`. -/

@@ -129,23 +129,16 @@ def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   Dynamics.scaleMatrix M * (⟨M, D, 0, 0, g, 0⟩ : Synchronous.SwingParams).jacobian 0 *
     Dynamics.scaleMatrix M⁻¹
 
-/-- `diag(1, M)` and `diag(1, M⁻¹)` are inverse (`M ≠ 0`): the class-A Jacobian is the swing
-Jacobian conjugated by them. -/
-@[tmio T, powerlib_foundation] private theorem scaleMatrix_mul_inv {M : ℝ} (hM : M ≠ 0) :
-    Dynamics.scaleMatrix M * Dynamics.scaleMatrix M⁻¹ = 1 ∧
-      Dynamics.scaleMatrix M⁻¹ * Dynamics.scaleMatrix M = 1 := by
-  simp only [Dynamics.scaleMatrix, Matrix.mul_fin_two, Matrix.one_fin_two]
-  simp [hM]
-
 @[tmio M, powerlib_domain] theorem classA_trace {M : ℝ} (D g : ℝ) (hM : M ≠ 0) :
     (classAJacobian M D g).trace = -(D * M⁻¹) := by
-  rw [classAJacobian, Matrix.trace_mul_comm, ← Matrix.mul_assoc, (scaleMatrix_mul_inv hM).2,
-    Matrix.one_mul, Synchronous.SwingParams.trace_jacobian, neg_div, div_eq_mul_inv]
+  rw [classAJacobian, Matrix.trace_mul_comm, ← Matrix.mul_assoc,
+    (Dynamics.scaleMatrix_mul_inv hM).2, Matrix.one_mul, Synchronous.SwingParams.trace_jacobian,
+    neg_div, div_eq_mul_inv]
 
 @[tmio M, powerlib_domain] theorem classA_det {M : ℝ} (D g : ℝ) (hM : M ≠ 0) :
     (classAJacobian M D g).det = g * M⁻¹ := by
-  rw [classAJacobian, Matrix.det_conj_of_mul_eq_one (scaleMatrix_mul_inv hM).1
-    (scaleMatrix_mul_inv hM).2, Synchronous.SwingParams.det_jacobian, div_eq_mul_inv]
+  rw [classAJacobian, Matrix.det_conj_of_mul_eq_one (Dynamics.scaleMatrix_mul_inv hM).1
+    (Dynamics.scaleMatrix_mul_inv hM).2, Synchronous.SwingParams.det_jacobian, div_eq_mul_inv]
   simp [Synchronous.SwingParams.syncCoeff]
 
 /-- At a class-A fold (`g = 0`) the Jacobian is not nilpotent when `D/M ≠ 0`: one eigenvalue stays
@@ -188,7 +181,7 @@ is `ζ_B`. -/
 (`Criteria.dampingRatio`) is `ζ_A`. -/
 @[tmio M, powerlib_domain] theorem classA_zeta_eq {M D g : ℝ} (hM : 0 < M) (hg : 0 < g) :
     Criteria.dampingRatio (classAJacobian M D g) = zetaA M D g := by
-  obtain ⟨h1, h2⟩ := scaleMatrix_mul_inv hM.ne'
+  obtain ⟨h1, h2⟩ := Dynamics.scaleMatrix_mul_inv hM.ne'
   rw [classAJacobian, Criteria.dampingRatio_conj h1 h2,
     Synchronous.SwingParams.dampingRatio_jacobian ⟨M, D, 0, 0, g, 0⟩ hM
       (by simpa [Synchronous.SwingParams.syncCoeff])]

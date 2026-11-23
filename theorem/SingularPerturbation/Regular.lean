@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.ODE.Basic
+import theorem.Dynamics.Calculus
 
 /-! # Regular perturbation: `O(ε)` trajectory error on a finite horizon
 
@@ -35,26 +36,14 @@ open Set NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-@[tmio T, powerlib_foundation] private lemma hasDerivWithinAt_Ici_of_trajectoryOn {φ : ℝ → E}
-    {f : E → E} {a b : ℝ} (h : IsIntegralCurveOn φ (fun _ x => f x) (Icc a b)) {t : ℝ}
-    (ht : t ∈ Ico a b) :
-    HasDerivWithinAt φ (f (φ t)) (Ici t) t :=
-  (h t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
-
-/-- Regular perturbation estimate (Grönwall form). -/
+/-- Regular perturbation estimate (Grönwall form; `Dynamics.norm_sub_le_gronwallBound_of_fields`
+with `g = F ε`, `f = F 0`). -/
 @[tmio T, powerlib_foundation] theorem norm_sub_le_gronwallBound {F : ℝ → E → E} {K : ℝ≥0} {C ε a b : ℝ}
     (hK : LipschitzWith K (F 0)) (hC : ∀ z, ‖F ε z - F 0 z‖ ≤ C * ε)
     {zε z₀ : ℝ → E} (hε : IsIntegralCurveOn zε (fun _ x => F ε x) (Icc a b))
     (h₀ : IsIntegralCurveOn z₀ (fun _ x => F 0 x) (Icc a b)) (hinit : zε a = z₀ a) :
-    ∀ t ∈ Icc a b, ‖zε t - z₀ t‖ ≤ gronwallBound 0 K (C * ε) (t - a) := by
-  intro t ht
-  have h := dist_le_of_approx_trajectories_ODE (v := fun _ => F 0) (K := K) (εf := C * ε)
-    (εg := 0) (δ := 0) (fun _ => hK) hε.continuousOn
-    (fun s hs => hasDerivWithinAt_Ici_of_trajectoryOn hε hs)
-    (fun s _ => by rw [dist_eq_norm]; exact hC _)
-    h₀.continuousOn (fun s hs => hasDerivWithinAt_Ici_of_trajectoryOn h₀ hs)
-    (fun s _ => by simp) (by simp [hinit]) t ht
-  simpa [dist_eq_norm] using h
+    ∀ t ∈ Icc a b, ‖zε t - z₀ t‖ ≤ gronwallBound 0 K (C * ε) (t - a) :=
+  Dynamics.norm_sub_le_gronwallBound_of_fields hK hC hε h₀ hinit
 
 /-- Explicit `O(ε)` form for `K ≠ 0`: `‖z_ε(t) - z₀(t)‖ ≤ (C ε / K)(e^{K (t - a)} - 1)`. -/
 @[tmio T, powerlib_foundation] theorem norm_sub_le_exp {F : ℝ → E → E} {K : ℝ≥0} {C ε a b : ℝ}

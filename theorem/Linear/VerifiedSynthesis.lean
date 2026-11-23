@@ -152,9 +152,8 @@ def certificate (A P : Matrix (Fin n) (Fin n) ℚ) (h : check A P = true) : Cert
     simpa only [check, Bool.and_eq_true] using h
   have hs : Aᵀ * P + P * A = -1 := by simpa [solutionCheck] using h'.1
   have hp := (Positive.check_iff n P).mp h'.2
-  exact ⟨real P,
-    by simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using hp.isHermitian.eq,
-    fun x hx => by simpa using hp.dotProduct_mulVec_pos hx, real_lyapunov hs⟩
+  exact ⟨real P, hp.isHermitian.isSymm, fun x hx => by simpa using hp.dotProduct_mulVec_pos hx,
+    real_lyapunov hs⟩
 
 end
 end powerlib.Linear.VerifiedSynthesis

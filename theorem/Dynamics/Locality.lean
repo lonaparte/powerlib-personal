@@ -2,6 +2,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import theorem.Dynamics.Linearization
 import theorem.Dynamics.State
+import theorem.Dynamics.Calculus
 
 /-! # Locality of stability and linearization (foundation)
 
@@ -291,36 +292,12 @@ below `c` at every `s` up to which it has stayed at most `c`, it stays below `c`
     (hstep : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, Φ (φ u) ≤ c) → Φ (φ s) < c) :
     ∀ u ∈ Icc t₀ t₁, Φ (φ u) < c := by
   have hψ : ContinuousOn (fun t => Φ (φ t)) (Icc t₀ t₁) := hΦ.comp_continuousOn hφ
-  by_contra hcon
-  push Not at hcon
-  obtain ⟨u, hu, hu'⟩ := hcon
-  set A : Set ℝ := Icc t₀ t₁ ∩ (fun t => Φ (φ t)) ⁻¹' {y | c ≤ y} with hAdef
-  have hAne : A.Nonempty := ⟨u, hu, hu'⟩
-  have hAclosed : IsClosed A :=
-    hψ.preimage_isClosed_of_isClosed isClosed_Icc (isClosed_le continuous_const continuous_id)
-  have hAbdd : BddBelow A := ⟨t₀, fun t ht => ht.1.1⟩
-  have hτA : sInf A ∈ A := hAclosed.csInf_mem hAne hAbdd
-  have hbelow : ∀ t ∈ Ico t₀ (sInf A), Φ (φ t) < c := by
-    intro t ht
-    by_contra h
-    push Not at h
-    have : sInf A ≤ t := csInf_le hAbdd ⟨⟨ht.1, ht.2.le.trans hτA.1.2⟩, h⟩
-    linarith [ht.2]
-  have hle : ∀ t ∈ Icc t₀ (sInf A), Φ (φ t) ≤ c := by
-    intro t ht
-    rcases eq_or_lt_of_le ht.2 with h | h
-    · rcases eq_or_lt_of_le hτA.1.1 with h' | h'
-      · rw [h, ← h']; exact h0.le
-      · have hcl : IsClosed (Icc t₀ (sInf A) ∩ (fun t => Φ (φ t)) ⁻¹' {y | y ≤ c}) :=
-          (hψ.mono (Icc_subset_Icc le_rfl hτA.1.2)).preimage_isClosed_of_isClosed isClosed_Icc
-            (isClosed_le continuous_id continuous_const)
-        have hsub : Ico t₀ (sInf A) ⊆ Icc t₀ (sInf A) ∩ (fun t => Φ (φ t)) ⁻¹' {y | y ≤ c} :=
-          fun t' ht' => ⟨Ico_subset_Icc_self ht', (hbelow t' ht').le⟩
-        have hcl' := hcl.closure_subset_iff.mpr hsub
-        rw [closure_Ico h'.ne] at hcl'
-        exact (hcl' ht).2
-    · exact (hbelow t ⟨ht.1, h⟩).le
-  exact absurd hτA.2 (not_le.mpr (hstep _ hτA.1 hle))
+  have h := pos_on_Icc_of_propagate (g := fun t => c - Φ (φ t)) (continuousOn_const.sub hψ)
+    (by linarith) fun t ht hpos => ?_
+  · exact fun u hu => by linarith [h u hu]
+  have hle := forall_Icc_of_forall_Ico ht.1 (hψ.mono (Icc_subset_Icc le_rfl ht.2))
+    fun u hu => by linarith [hpos u hu]
+  linarith [hstep t ⟨ht.1.le, ht.2⟩ hle]
 
 /-- First-exit (bootstrap) argument: a continuous curve that starts inside the open ball of
 radius `R`, and that stays in the half-radius ball as long as it has stayed in the full ball,
@@ -332,37 +309,13 @@ never leaves the full ball. -/
     ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ < R := by
   have hR : 0 < R := lt_of_le_of_lt (norm_nonneg _) h0
   have hcn : ContinuousOn (fun s => ‖φ s - x‖) (Icc t₀ t₁) := (hc.sub continuousOn_const).norm
-  by_contra hcon
-  push Not at hcon
-  obtain ⟨t, ht, hRt⟩ := hcon
-  set S : Set ℝ := Icc t₀ t₁ ∩ (fun s => ‖φ s - x‖) ⁻¹' Ici R with hSdef
-  have hS_closed : IsClosed S := hcn.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Ici
-  have hS_ne : S.Nonempty := ⟨t, ht, hRt⟩
-  have hS_bdd : BddBelow S := ⟨t₀, fun s hs => hs.1.1⟩
-  have hτ : sInf S ∈ S := hS_closed.csInf_mem hS_ne hS_bdd
-  set τ := sInf S with hτdef
-  have hτR : R ≤ ‖φ τ - x‖ := hτ.2
-  have hτ0 : t₀ < τ := by
-    refine lt_of_le_of_ne hτ.1.1 fun h => ?_
-    rw [← h] at hτR
-    linarith
-  have hbefore : ∀ s ∈ Ico t₀ τ, ‖φ s - x‖ ≤ R / 2 := by
-    intro s hs
-    apply hboot s ⟨hs.1, hs.2.le.trans hτ.1.2⟩
-    intro u hu
-    by_contra hu'
-    push Not at hu'
-    have hmem : u ∈ S := ⟨⟨hu.1, hu.2.trans (hs.2.le.trans hτ.1.2)⟩, hu'⟩
-    have : τ ≤ u := csInf_le hS_bdd hmem
-    linarith [hu.2, hs.2]
-  have hT : IsClosed (Icc t₀ t₁ ∩ (fun s => ‖φ s - x‖) ⁻¹' Iic (R / 2)) :=
-    hcn.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-  have hsub : Ico t₀ τ ⊆ Icc t₀ t₁ ∩ (fun s => ‖φ s - x‖) ⁻¹' Iic (R / 2) :=
-    fun s hs => ⟨⟨hs.1, hs.2.le.trans hτ.1.2⟩, hbefore s hs⟩
-  have hcl := hT.closure_subset_iff.mpr hsub
-  rw [closure_Ico hτ0.ne] at hcl
-  have hle : ‖φ τ - x‖ ≤ R / 2 := (hcl ⟨hτ0.le, le_rfl⟩).2
-  linarith
+  have h := pos_on_Icc_of_propagate (g := fun s => R - ‖φ s - x‖) (continuousOn_const.sub hcn)
+    (by linarith) fun t ht hpos => ?_
+  · exact fun t ht => by linarith [h t ht]
+  have hle := forall_Icc_of_forall_Ico ht.1 (hcn.mono (Icc_subset_Icc le_rfl ht.2))
+    fun s hs => hboot s ⟨hs.1, hs.2.le.trans ht.2⟩ fun u hu => by
+      linarith [hpos u ⟨hu.1, hu.2.trans_lt hs.2⟩]
+  linarith [hle t ⟨ht.1.le, le_rfl⟩]
 
 /-- Bootstrap: an exponential estimate for `G` transfers to every curve that solves
 `ẋ = G x` while it stays in the ball of radius `R`. -/
@@ -390,48 +343,21 @@ never leaves the full ball. -/
   have hcontN : ContinuousOn (fun s => ‖φ s - x₀‖) (Icc t₀ t₁) :=
     (hcont.sub continuousOn_const).norm
   have hstay : ∀ t ∈ Icc t₀ t₁, ‖φ t - x₀‖ < R := by
-    by_contra hcon
-    push Not at hcon
-    obtain ⟨t, ht, htR⟩ := hcon
-    let S := Icc t₀ t₁ ∩ (fun s => ‖φ s - x₀‖) ⁻¹' Ici R
-    have hSc : IsClosed S := hcontN.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Ici
-    have hSne : S.Nonempty := ⟨t, ht, htR⟩
-    have hSbdd : BddBelow S := ⟨t₀, fun y hy => hy.1.1⟩
-    have hsS : sInf S ∈ S := hSc.csInf_mem hSne hSbdd
-    have hsR : R ≤ ‖φ (sInf S) - x₀‖ := hsS.2
-    have hs0 : t₀ < sInf S := by
-      rcases eq_or_lt_of_le hsS.1.1 with h | h
-      · exfalso
-        rw [← h] at hsR
-        nlinarith
-      · exact h
-    have hbelow : ∀ τ ∈ Ico t₀ (sInf S), ‖φ τ - x₀‖ < R := by
+    have h := pos_on_Icc_of_propagate (g := fun s => R - ‖φ s - x₀‖)
+      (continuousOn_const.sub hcontN) (by nlinarith) fun t ht hpos => ?_
+    · exact fun t ht => by linarith [h t ht]
+    have hbound : ∀ τ ∈ Ico t₀ t, ‖φ τ - x₀‖ ≤ C * ‖φ t₀ - x₀‖ := by
       intro τ hτ
-      by_contra hτR
-      push Not at hτR
-      have hmem : τ ∈ S := ⟨⟨hτ.1, hτ.2.le.trans hsS.1.2⟩, hτR⟩
-      have := csInf_le hSbdd hmem
-      linarith [hτ.2]
-    have hbound : ∀ τ ∈ Ico t₀ (sInf S), ‖φ τ - x₀‖ ≤ C * ‖φ t₀ - x₀‖ := by
-      intro τ hτ
-      have htraj := hsub τ (hτ.2.le.trans hsS.1.2)
-        (fun σ hσ => hbelow σ ⟨hσ.1, lt_of_le_of_lt hσ.2 hτ.2⟩)
+      have htraj := hsub τ (hτ.2.le.trans ht.2)
+        (fun σ hσ => by linarith [hpos σ ⟨hσ.1, lt_of_le_of_lt hσ.2 hτ.2⟩])
       have hb := hG t₀ τ φ htraj h0r τ ⟨hτ.1, le_rfl⟩
       have hexp : Real.exp (-a * (τ - t₀)) ≤ 1 :=
         Real.exp_le_one_iff.mpr (by nlinarith [hτ.1])
       calc ‖φ τ - x₀‖ ≤ C * Real.exp (-a * (τ - t₀)) * ‖φ t₀ - x₀‖ := hb
         _ ≤ C * 1 * ‖φ t₀ - x₀‖ := by gcongr
         _ = C * ‖φ t₀ - x₀‖ := by ring
-    let T := Icc t₀ t₁ ∩ (fun s => ‖φ s - x₀‖) ⁻¹' Iic (C * ‖φ t₀ - x₀‖)
-    have hTc : IsClosed T := hcontN.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-    have hsub2 : Ico t₀ (sInf S) ⊆ T := fun τ hτ =>
-      ⟨⟨hτ.1, hτ.2.le.trans hsS.1.2⟩, hbound τ hτ⟩
-    have hsT : sInf S ∈ T := by
-      have := closure_minimal hsub2 hTc
-      rw [closure_Ico hs0.ne] at this
-      exact this ⟨hs0.le, le_rfl⟩
-    have h2 : ‖φ (sInf S) - x₀‖ ≤ C * ‖φ t₀ - x₀‖ := hsT.2
-    linarith
+    have hle := forall_Icc_of_forall_Ico ht.1 (hcontN.mono (Icc_subset_Icc le_rfl ht.2)) hbound
+    linarith [hle t ⟨ht.1.le, le_rfl⟩]
   exact hG t₀ t₁ φ (hsub t₁ le_rfl hstay) h0r
 
 end Ball

@@ -22,7 +22,9 @@ Results.
   `det_characteristicMatrix_eq_eval`, `spectrallyStable_reindex`,
   `det_characteristicMatrix_eq_zero_iff_exists_eigenpair` (any finite index: a characteristic
   root is an eigenvalue), `spectrallyStable_iff_isHurwitz` (pole stability is LeanForControl's
-  Hurwitz predicate), `exists_eigenvector_of_root`, `unstable_of_root`.
+  Hurwitz predicate), `isHurwitz_neg_one` (`−I` is Hurwitz), `exists_eigenvector_of_root`,
+  `unstable_of_root`; an extra real pole, `det (sI − B) = det (sI − A) (s + a)`:
+  `spectrallyStable_iff_of_extra_pole`, `exists_root_re_pos_of_extra_pole`.
 * Transfer functions: `transfer`, `transferOf` (any finite state index, as produced by block
   constructions), `transfer_eq_transferOf`, `transferOf_eq_adjugate` (`G(s)` through the
   adjugate), `characteristicMatrix_reindex`, `transferOf_reindex`;
@@ -86,6 +88,49 @@ on any finite index. -/
       h μ ((det_characteristicMatrix_eq_zero_iff_exists_eigenpair A μ).mpr ⟨v, hv, heig⟩)
   · obtain ⟨v, hv, heig⟩ := (det_characteristicMatrix_eq_zero_iff_exists_eigenpair A μ).mp hdet
     simpa only [neg_zero] using h μ v hv heig
+
+/-- `−I` is Hurwitz: its only eigenvalue is `−1`. -/
+@[tmio T, powerlib_foundation] theorem isHurwitz_neg_one :
+    IsHurwitz (-1 : Matrix (Fin n) (Fin n) ℝ) := by
+  intro μ v hv h
+  rw [Matrix.map_neg _ (map_neg _), Matrix.map_one _ (map_zero _) (map_one _),
+    Matrix.neg_mulVec, Matrix.one_mulVec] at h
+  have h0 : (μ + 1) • v = 0 := by rw [add_smul, one_smul, ← h, neg_add_cancel]
+  rcases smul_eq_zero.mp h0 with h1 | h1
+  · rw [eq_neg_of_add_eq_zero_left h1]
+    norm_num
+  · exact absurd h1 hv
+
+/-- **An extra real pole.** If `det (sI − B) = det (sI − A) (s + a)` for every `s` (a block
+triangular loop with one extra first-order state), the spectrum of `B` is that of `A` together
+with `−a`: `B` is pole-stable exactly when `A` is and `0 < a`. -/
+@[tmio T, powerlib_foundation] theorem spectrallyStable_iff_of_extra_pole {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] {A : Matrix ι ι ℝ}
+    {B : Matrix κ κ ℝ} {a : ℝ}
+    (h : ∀ s : ℂ, (characteristicMatrix B s).det = (characteristicMatrix A s).det * (s + a)) :
+    SpectrallyStable B ↔ SpectrallyStable A ∧ 0 < a := by
+  have hroot : ∀ s : ℂ, (characteristicMatrix B s).det = 0 ↔
+      (characteristicMatrix A s).det = 0 ∨ s = -a := fun s => by
+    rw [h, mul_eq_zero, add_eq_zero_iff_eq_neg]
+  simp only [SpectrallyStable, hroot]
+  constructor
+  · intro hB
+    exact ⟨fun s hs => hB s (Or.inl hs), by simpa using hB _ (Or.inr rfl)⟩
+  · rintro ⟨hA, ha⟩ s (hs | rfl)
+    · exact hA s hs
+    · simpa using ha
+
+/-- With an extra real pole (`det (sI − B) = det (sI − A) (s + a)`), a right-half-plane root of
+`A`, or `a < 0`, is a right-half-plane root of `B`. -/
+@[tmio T, powerlib_foundation] theorem exists_root_re_pos_of_extra_pole {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] {A : Matrix ι ι ℝ}
+    {B : Matrix κ κ ℝ} {a : ℝ}
+    (h : ∀ s : ℂ, (characteristicMatrix B s).det = (characteristicMatrix A s).det * (s + a))
+    (hu : (∃ s : ℂ, (characteristicMatrix A s).det = 0 ∧ 0 < s.re) ∨ a < 0) :
+    ∃ s : ℂ, (characteristicMatrix B s).det = 0 ∧ 0 < s.re := by
+  rcases hu with ⟨s, hs, hre⟩ | ha
+  · exact ⟨s, by rw [h, hs, zero_mul], hre⟩
+  · exact ⟨-a, by rw [h]; simp, by simpa using ha⟩
 
 /-- A root of the characteristic polynomial is an eigenvalue. -/
 @[tmio T, powerlib_foundation] theorem exists_eigenvector_of_root {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}

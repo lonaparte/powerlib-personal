@@ -3,6 +3,7 @@ import theorem.Attributes
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
+import theorem.Stochastic.GaussianLaw
 
 /-! # Exact mean-square recursions of Euler–Maruyama steps
 
@@ -59,9 +60,7 @@ open scoped NNReal Topology
 @[tmio T, powerlib_foundation] theorem integral_affine_sq_gaussian (c β : ℝ) (h : ℝ≥0) :
     ∫ z, (c + β * z) ^ 2 ∂(gaussianReal 0 h) = c ^ 2 + β ^ 2 * h := by
   have hv : ∫ z, z ^ 2 ∂(gaussianReal 0 h) = h := by
-    have := variance_fun_id_gaussianReal (μ := (0:ℝ)) (v := h)
-    rw [variance_eq_integral measurable_id'.aemeasurable] at this
-    simpa [integral_id_gaussianReal] using this
+    simpa using Stochastic.integral_sub_sq_gaussianReal 0 h
   have i1 : Integrable (fun z : ℝ => z) (gaussianReal 0 h) :=
     (memLp_id_gaussianReal 1).integrable le_rfl
   have i2 : Integrable (fun z : ℝ => z ^ 2) (gaussianReal 0 h) :=

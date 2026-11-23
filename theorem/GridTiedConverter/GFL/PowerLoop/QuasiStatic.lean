@@ -40,6 +40,8 @@ gfl_gfm_contrast_sim/models.py` (with `I_q = 0`). The source writes the model OU
 reversal by `field_eq_transport_literatureField` (conventions §D8).
 
 Results.
+* `IsEq.of_field_eq_zero`: every zero of the field meets the equilibrium conditions `IsEq`
+  (`k_P ≠ 0`); `field_point_eq_zero` is the converse at `(θ, 0, i_d)`.
 * `equilibrium_exists_iff`: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)`; the absorbed power
   curve is `P(θ) = −(3V²/(4X_g)) sin 2θ` (`power_of_isEq`), so the exported power `−P` is
   maximal exactly at the fold angle `θ = π/4` on the branch `|θ| < π/2` (`power_eq_PSN_iff`).
@@ -50,7 +52,9 @@ Results.
   `s³ + a₂ s² + a₁ s + a₀`, `a₂ = (V cos θ/2)(3k_P + 2k_p)`,
   `a₁ = (V/2)(3V k_P k_p cos 2θ + 2k_i cos θ)`, `a₀ = (3/2)V² k_P k_i cos 2θ`, and
   `a₂a₁ − a₀ =`
-  `(V²/4)[(9V k_P² k_p + 6V k_P k_p²) cos θ cos 2θ + 4k_i k_p cos² θ + 6k_P k_i sin² θ]`.
+  `(V²/4)[(9V k_P² k_p + 6V k_P k_p²) cos θ cos 2θ + 4k_i k_p cos² θ + 6k_P k_i sin² θ]`;
+  signs: `a₂ > 0` for `V cos θ > 0` (`a2_pos`), `a₀` has the sign of `cos 2θ` (`a0_pos_iff`,
+  `a0_neg_iff`), and `a₀ < a₂a₁` for `cos 2θ ≥ 0` (`a2_mul_a1_sub_a0_pos`).
 * "No-Hopf theorem" (exact form): for all positive gains, `cos θ > 0`:
   `cos 2θ > 0` (i.e. `|θ| < 45°`) ⇒ locally exponentially stable;
   `cos 2θ < 0` (`45° < |θ| < 90°`) ⇒ a positive real eigenvalue, unstable;
@@ -244,6 +248,21 @@ change sign. -/
   rw [power, PSN]
   linear_combination 3 / 2 * hP
 
+/-- Every zero of the field (for a nonzero dispatch gain) satisfies the equilibrium conditions
+`IsEq` at its angle and current. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem IsEq.of_field_eq_zero (hkP : p.kP ≠ 0) {z : Dynamics.State 3}
+    (h : field p z = 0) : IsEq p (z 0) (z 2) := by
+  have hc : ∀ i, coordField p (WithLp.ofLp z) i = 0 := by
+    intro i
+    have := congrArg (fun w : Dynamics.State 3 => w i) h
+    simpa [field, Dynamics.lift] using this
+  have hq : vq p (z 0) (z 2) = 0 := by simpa [coordField] using hc 1
+  have hP := hc 2
+  simp [coordField] at hP
+  rcases hP with hP | hP
+  · exact absurd hP hkP
+  · exact ⟨by unfold vq at hq; linarith, by linarith⟩
+
 /-- Quasi-static GFL: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)` (for either sign of the
 absorbed reference; the power-angle law `P_SN sin 2θ = −P_ref`,
 `SpecialFunctions.exists_mul_sin_two_mul_eq_iff`).
@@ -254,18 +273,7 @@ Static evidence on the model, not a connection conclusion. -/
   have hPSN : 0 ≤ PSN p := by unfold PSN; positivity
   constructor
   · rintro ⟨z, hz⟩
-    have hc : ∀ i, coordField p (WithLp.ofLp z) i = 0 := by
-      intro i
-      have := congrArg (fun w : Dynamics.State 3 => w i) hz
-      simpa [field, Dynamics.lift] using this
-    have hq : vq p (z 0) (z 2) = 0 := by simpa [coordField] using hc 1
-    have hP : p.Pref = power p (z 0) (z 2) := by
-      have := hc 2
-      simp [coordField] at this
-      rcases this with h | h
-      · exact absurd h hkP
-      · linarith
-    have hXI : -(p.Xg * z 2) = p.V * Real.sin (z 0) := by unfold vq at hq; linarith
+    obtain ⟨hXI, hP⟩ := IsEq.of_field_eq_zero p hkP hz
     rw [hP, power_of_isEq p hX.ne' hXI, abs_neg, abs_mul, abs_of_nonneg hPSN]
     exact mul_le_of_le_one_right hPSN (Real.abs_sin_le_one _)
   · intro h
@@ -354,6 +362,28 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
   simp only [a2, a1, a0]
   rw [h2]
   ring
+
+/-- `a₂ > 0` for `V cos θ > 0` and positive gains `k_p, k_P`. -/
+@[tmio M, powerlib_domain] theorem a2_pos (hkp : 0 < p.kp) (hkP : 0 < p.kP) {θ : ℝ}
+    (hA : 0 < p.V * Real.cos θ) : 0 < a2 p θ := by
+  unfold a2
+  have : 0 < 3 * p.kP + 2 * p.kp := by positivity
+  positivity
+
+/-- `a₀ = (3/2) V² k_P k_i cos 2θ` is positive exactly when `cos 2θ` is (`V ≠ 0`,
+`k_P, k_i > 0`). -/
+@[tmio M, powerlib_domain] theorem a0_pos_iff (hV : p.V ≠ 0) (hki : 0 < p.ki) (hkP : 0 < p.kP)
+    {θ : ℝ} : 0 < a0 p θ ↔ 0 < Real.cos (2 * θ) := by
+  have h : 0 < 3 / 2 * p.V ^ 2 * p.kP * p.ki := by positivity
+  unfold a0
+  exact mul_pos_iff_of_pos_left h
+
+/-- `a₀` is negative exactly when `cos 2θ` is (`V ≠ 0`, `k_P, k_i > 0`). -/
+@[tmio M, powerlib_domain] theorem a0_neg_iff (hV : p.V ≠ 0) (hki : 0 < p.ki) (hkP : 0 < p.kP)
+    {θ : ℝ} : a0 p θ < 0 ↔ Real.cos (2 * θ) < 0 := by
+  have h : 0 < 3 / 2 * p.V ^ 2 * p.kP * p.ki := by positivity
+  unfold a0
+  exact ⟨fun h' => neg_of_mul_neg_right h' h.le, mul_neg_of_pos_of_neg h⟩
 
 /-- The Hurwitz gap `a₀ < a₂ a₁` for positive gains, `V cos θ > 0` and `cos 2θ ≥ 0`. -/
 @[tmio M, powerlib_domain] theorem a2_mul_a1_sub_a0_pos (hkp : 0 < p.kp) (hki : 0 < p.ki)
@@ -492,12 +522,7 @@ point. -/
     connection% ((⟨p, θ, Id⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
-  have h1 := congrArg (fun y : Dynamics.State 3 => y 1) h
-  have h2 := congrArg (fun y : Dynamics.State 3 => y 2) h
-  simp [field, point, Dynamics.lift, coordField] at h1 h2
-  rcases h2 with h2 | h2
-  · exact absurd h2 hkP
-  · refine ⟨by unfold vq at h1; linarith, by linarith⟩
+  simpa [point] using IsEq.of_field_eq_zero p hkP h
 
 /-- The local exponential translation is exact: a model is locally exponentially stable at its
 selected point exactly when the point is an equilibrium (`IsEq`) and the closed-form Jacobian
@@ -536,12 +561,11 @@ equilibrium is locally exponentially stable for every positive gain triple. -/
   · exact heq
   refine ⟨?_, ?_, ?_⟩
   · show (jac p θ Id).trace < 0
-    rw [trace_jac]; unfold a2; have : 0 < p.V * Real.cos θ := mul_pos hV hcos
-    nlinarith
+    rw [trace_jac, neg_lt_zero]
+    exact a2_pos p hkp hkP (mul_pos hV hcos)
   · show (jac p θ Id).det < 0
-    rw [det_jac p heq.1]; unfold a0; have : 0 < p.V ^ 2 := by positivity
-    have : 0 < p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ) := by positivity
-    linarith
+    rw [det_jac p heq.1, neg_lt_zero]
+    exact (a0_pos_iff p hV.ne' hki hkP).mpr hcos2
   · show (jac p θ Id).trace * Criteria.principalMinorSum (jac p θ Id) < (jac p θ Id).det
     rw [trace_jac, principalMinorSum_jac p heq.1, det_jac p heq.1]
     have := a2_mul_a1_sub_a0_pos p hkp hki hkP (mul_pos hV hcos) hcos2.le
@@ -571,11 +595,8 @@ equilibrium is unstable (fold side of the branch). -/
   · exact heq
   refine Or.inl ?_
   show 0 < (jac p θ Id).det
-  rw [det_jac p heq.1]
-  unfold a0
-  have : 0 < p.V ^ 2 := by positivity
-  have : 0 < p.V ^ 2 * p.kP * p.ki := by positivity
-  nlinarith
+  rw [det_jac p heq.1, neg_pos]
+  exact (a0_neg_iff p hV hki hkP).mpr hcos2
 
 /-- Same, stated with the angle: `π/4 < θ < π/2`. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_pi_div_four_lt (p : Params) (hV : p.V ≠ 0)
@@ -615,16 +636,12 @@ a nonzero purely imaginary eigenvalue. -/
     · exact absurd h0 hω
     · linarith
   have ha0 : a0 p θ = a2 p θ * ω ^ 2 := by linear_combination hre
-  have ha2 : 0 < a2 p θ := by unfold a2; have : 0 < p.V * Real.cos θ := mul_pos hV hcos
-                              nlinarith
+  have ha2 := a2_pos p hkp hkP (mul_pos hV hcos)
   rcases le_or_gt 0 (Real.cos (2 * θ)) with hc2 | hc2
   · have := a2_mul_a1_sub_a0_pos p hkp hki hkP (mul_pos hV hcos) hc2
     rw [ha1, ha0] at this
     linarith
-  · have : a0 p θ < 0 := by
-      unfold a0
-      have : 0 < p.V ^ 2 * p.kP * p.ki := by positivity
-      nlinarith
+  · have := (a0_neg_iff p hV.ne' hki hkP).mpr hc2
     nlinarith
 
 /-! ### Instability away from equilibrium -/

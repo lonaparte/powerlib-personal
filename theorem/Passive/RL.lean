@@ -31,7 +31,8 @@ Results.
   `state_roundtrip`, `impedance_roundtrip`, `modelEquiv`, `toStateSpace_decay`,
   `toStateSpace_inputGain`.
 * The plant: `StateSpace.plant`, `Impedance.plant`, `plant_toImpedance`, `plant_A`,
-  `isHurwitz_iff` (Hurwitz exactly when the resistance is positive).
+  `isHurwitz_plant_iff` (static: `−R/L` is Hurwitz exactly when the resistance is positive) and
+  its family reading `isHurwitz_iff`.
 * Certificates: `synthesize` (the closed-form Lyapunov certificate `P = L / (2 R)` for a positive
   resistance), `kyp` (the physical energy `L i² / 2` for a nonnegative resistance),
   `Impedance.energy_pos`.
@@ -201,14 +202,19 @@ def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Mee
 
 @[tmio M, powerlib_domain] theorem family_isLinear : family.IsLinear Impedance.plant := fun _ => rfl
 
+/-- The RL state matrix `−R/L` is Hurwitz exactly when the resistance is positive (static). -/
+@[tmio TM, powerlib_domain] theorem isHurwitz_plant_iff (m : Impedance) :
+    IsHurwitz m.plant.A ↔ 0 < m.resistance := by
+  simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
+  rw [Linear.isHurwitz_one_iff, neg_lt_zero]
+  exact Passive.SeriesRLC.decay_pos_iff m.inductance_pos
+
 /-- The RL plant is Hurwitz exactly when the resistance is positive. -/
 @[tmio TM, simp high, powerlib_domain] theorem isHurwitz_iff (m : Impedance) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.resistance) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
-  simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
-  rw [Linear.isHurwitz_one_iff, neg_lt_zero]
-  exact Passive.SeriesRLC.decay_pos_iff m.inductance_pos
+  exact isHurwitz_plant_iff m
 
 /-! ## Certificates -/
 
@@ -358,8 +364,7 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
       P.holds (affineLinearVectorField m.plant.A 0) 0 ↔ 0 < m.resistance := by
     intro P hP m
     rw [← (connection_proof% family_isLinear.mem_den_flow), family_isLinear.den_hurwitz hP, Set.mem_ofPred_eq,
-      ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
-      (connection_proof% isHurwitz_iff)]
+      isHurwitz_plant_iff]
   refine Family.chain_eq_semantics_iff.mpr fun s => ?_
   ext m
   rw [(connection_proof% Family.mem_den), (connection_proof% mem_realize)]
@@ -398,8 +403,7 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
           (family_isLinear.mem_den_flow.mpr h)
         change m ∉ family.den (.flow .globallyExponentiallyStable) at hnh
         rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial),
-          Set.mem_ofPred_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
-      (connection_proof% isHurwitz_iff)] at hnh
+          Set.mem_ofPred_eq, isHurwitz_plant_iff] at hnh
         exact le_antisymm (not_lt.mp hnh) hnn
     case locallyAsymptoticallyStable =>
       simpa [translate, Meets] using

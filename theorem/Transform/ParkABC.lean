@@ -20,7 +20,8 @@ power-preserving changes between them).
 
 Results.
 * Three-phase constants `√3² = 3`, `cos(2π/3) = −1/2`, `sin(2π/3) = √3/2`; dot products and sums
-  of `cvec`, `svec`.
+  of `cvec`, `svec`; their Park images `parkMatrix_mulVec_cvec` (d axis), `parkMatrix_mulVec_svec`
+  (q axis).
 * `parkMatrix_mul_transpose`: `T_P T_Pᵀ = I` (orthogonality; `T_P⁻¹ = T_Pᵀ`).
 * `parkMatrix_mul_deriv_transpose`: `T_P (dT_P/dθ)ᵀ = J₀` (`J₀` = 90° rotation in the dq plane);
   the opposite order is not `J₀` (`deriv_transpose_mul_parkMatrix_ne`).
@@ -151,6 +152,21 @@ def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow
   ext i
   fin_cases i <;>
     simp [parkMatrix, parkRow, mulVec, dotProduct, Finset.mul_sum, mul_assoc]
+
+/-- The phase-axis cosines at the rotor angle map to the d axis:
+`T_P(θ) (cos(θ − φ_x))_x = (k · 3/2, 0, 0)`. -/
+@[tmio M, powerlib_domain] theorem parkMatrix_mulVec_cvec (θ : ℝ) :
+    parkMatrix θ *ᵥ cvec θ = ![k * (3 / 2), 0, 0] := by
+  rw [parkMatrix_mulVec, cvec_dot_cvec, dotProduct_comm (svec θ) (cvec θ), cvec_dot_svec,
+    cvec_sum]
+  simp
+
+/-- The phase-axis sines at the rotor angle map to the q axis:
+`T_P(θ) (sin(θ − φ_x))_x = (0, −k · 3/2, 0)`. -/
+@[tmio M, powerlib_domain] theorem parkMatrix_mulVec_svec (θ : ℝ) :
+    parkMatrix θ *ᵥ svec θ = ![0, -k * (3 / 2), 0] := by
+  rw [parkMatrix_mulVec, svec_dot_svec, cvec_dot_svec, svec_sum]
+  simp
 
 /-- Orthogonality `T_P T_Pᵀ = I`. -/
 @[tmio M, powerlib_domain] theorem parkMatrix_mul_transpose (θ : ℝ) :

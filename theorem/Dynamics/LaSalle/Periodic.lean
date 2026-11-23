@@ -98,18 +98,8 @@ open Set Filter Topology Metric
     {h : State m → ℝ} (c : ℝ) (hh : Differentiable ℝ h) (hlie : ∀ y, fderiv ℝ h y (g y) = 0) :
     IsPositivelyInvariant {y | h y = c} g := by
   intro t₀ t₁ ψ hψ hψ0 t ht
-  have ht₀ : t₀ ∈ Icc t₀ t₁ := ⟨le_rfl, ht.1.trans ht.2⟩
-  have h1 : AntitoneOn (h ∘ ψ) (Icc t₀ t₁) :=
-    antitoneOn_V_comp_traj hh hh.continuous (convex_Icc t₀ t₁) hψ (fun s _ => (hlie _).le)
-  have hn : Differentiable ℝ (fun y => -h y) := hh.neg
-  have h2 : AntitoneOn ((fun y => -h y) ∘ ψ) (Icc t₀ t₁) :=
-    antitoneOn_V_comp_traj hn hn.continuous (convex_Icc t₀ t₁) hψ (fun s _ => by
-      rw [fderiv_fun_neg]
-      simp [hlie])
-  have a := h1 ht₀ ht ht.1
-  have b := h2 ht₀ ht ht.1
-  simp only [Function.comp, Set.mem_ofPred_eq] at a b hψ0 ⊢
-  linarith
+  simp only [Set.mem_ofPred_eq] at hψ0 ⊢
+  rw [Dynamics.firstIntegral_const hh hlie hψ t ht, hψ0]
 
 /-- A sublevel set of `V` inside a positively invariant set on which `V̇ ≤ 0` is positively
 invariant. -/

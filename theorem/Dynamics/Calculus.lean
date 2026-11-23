@@ -16,12 +16,17 @@ theorem, Taylor bounds).
 Results.
 * Interval induction: `forall_mem_Icc_of_local_step` (continuous induction on `[t₀, t₁]` for a
   closed target set), `exists_Icc_mem_of_isOpen` (a continuous curve stays a little while in an
-  open set), `pos_on_Icc_of_propagate` (positivity that propagates along `[a, b]`),
+  open set), `exists_first_le` (the first time a continuous function reaches a level: the
+  first-exit primitive), `pos_on_Icc_of_propagate` (positivity that propagates along `[a, b]`),
   `forall_Icc_of_forall_Ico` (a closed upper bound on `[a, b)` extends to `b`).
 * Monotonicity and mean-value bounds: `monotoneOn_Icc_of_hasDerivAt`, `sub_ge_of_deriv_ge`,
-  `sub_le_of_deriv_le`, `deriv_nonpos_of_isMinOn_right`, `eventually_pos_of_hasDerivAt`,
+  `sub_le_of_deriv_le`, `deriv_nonpos_of_isMinOn_right`, `eventually_sign_of_hasDerivAt` (the
+  sign of a function on each side of a simple zero) and its right-hand case at `0`
+  `eventually_pos_of_hasDerivAt`,
   `HasDerivWithinAt.eq_zero_of_eqOn_Icc`.
-* Grönwall-type scalar inequalities: `le_exp_mul_of_hasDerivWithinAt` (linear Grönwall),
+* Grönwall-type inequalities: `norm_sub_le_gronwallBound_of_fields` (two solutions of fields at
+  uniform distance `ε`, the first `K`-Lipschitz, from one state), `le_exp_mul_of_hasDerivWithinAt`
+  (linear Grönwall),
   `abs_le_of_sq_le_exp` (square-root-free decay bound), `abs_sub_le_of_abs_deriv_le_exp`
   (an exponentially decaying rate gives a bounded drift), `exists_tendsto_of_abs_deriv_le_exp`
   (and a convergent limit).
@@ -40,6 +45,13 @@ Results.
   `Real.sin_bound`, `Real.cos_bound`, `Real.one_sub_sq_div_two_le_cos`.
 * `hasDerivAt_mulVec`: a matrix (rectangular, any finite index types) maps a differentiable
   curve to a differentiable curve, `(M x)' = M x'`.
+* `hasDerivAt_toLp`: a coordinate curve read in Euclidean space, `(toLp x)' = toLp x'`.
+* `hasDerivAt_matrix_mulVec`: the product rule `(M x)' = M x' + M' x` for a matrix curve
+  (entrywise derivative) acting on a vector curve.
+* `eq_exp_smul_mul_of_hasDerivAt`: a curve with `ẇ = c w` in a complete normed `ℝ`-algebra is
+  `e^{tc} w 0` (integrating-factor uniqueness, read by the matrix, complex and real scalar forms).
+* `eq_of_lie_eq_zero_along`: a differentiable `I` with `∇I · f = 0` along one solution on a convex
+  time set is constant there.
 * `firstIntegral_const`: a differentiable `I` with `∇I · f ≡ 0` is constant along every solution
   segment of `f` (LeanForControl's `antitoneOn_V_comp_traj` applied to `±I`).
 -/
@@ -96,31 +108,32 @@ section Propagate
 
 open Set Filter Topology
 
+/-- **First crossing.** A function continuous on `[a, b]` that is at most `c` somewhere there has
+a first such time `T`: `g T ≤ c` and `c < g` on `[a, T)` (the infimum of the closed crossing
+set). -/
+@[tmio T, powerlib_foundation] theorem exists_first_le {g : ℝ → ℝ} {a b c : ℝ}
+    (hg : ContinuousOn g (Icc a b)) (h : ∃ τ ∈ Icc a b, g τ ≤ c) :
+    ∃ T ∈ Icc a b, g T ≤ c ∧ ∀ s ∈ Ico a T, c < g s := by
+  set S := Icc a b ∩ g ⁻¹' Iic c
+  have hS : IsClosed S := hg.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
+  have hbdd : BddBelow S := ⟨a, fun x hx => hx.1.1⟩
+  obtain ⟨hT, hTc⟩ := hS.csInf_mem h hbdd
+  refine ⟨sInf S, hT, hTc, fun s hs => ?_⟩
+  by_contra hc
+  push Not at hc
+  exact absurd (csInf_le hbdd ⟨⟨hs.1, hs.2.le.trans hT.2⟩, hc⟩) (not_le.2 hs.2)
+
 /-- If `g` is continuous on `[a, b]`, `g a > 0`, and positivity on `[a, t)` always propagates to
-`t`, then `g > 0` on `[a, b]`. -/
+`t`, then `g > 0` on `[a, b]` (`exists_first_le` at the level `0`). -/
 @[tmio T, powerlib_foundation] theorem pos_on_Icc_of_propagate {g : ℝ → ℝ} {a b : ℝ}
     (hg : ContinuousOn g (Icc a b)) (ha : 0 < g a)
     (h : ∀ t ∈ Ioc a b, (∀ s ∈ Ico a t, 0 < g s) → 0 < g t) :
     ∀ t ∈ Icc a b, 0 < g t := by
   by_contra hne
   push Not at hne
-  obtain ⟨t₁, ht₁, hgt₁⟩ := hne
-  set S := Icc a b ∩ g ⁻¹' Iic 0 with hSdef
-  have hS : IsClosed S := hg.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-  have hSne : S.Nonempty := ⟨t₁, ht₁, hgt₁⟩
-  have hbdd : BddBelow S := ⟨a, fun x hx => hx.1.1⟩
-  have hmem : sInf S ∈ S := hS.csInf_mem hSne hbdd
-  have hle : g (sInf S) ≤ 0 := hmem.2
-  have hat : a ≤ sInf S := hmem.1.1
-  have hne_a : sInf S ≠ a := by
-    intro he; rw [he] at hle; linarith
-  have hpos : 0 < g (sInf S) := by
-    refine h _ ⟨lt_of_le_of_ne hat (Ne.symm hne_a), hmem.1.2⟩ fun s hs => ?_
-    by_contra hs'
-    push Not at hs'
-    have : sInf S ≤ s := csInf_le hbdd ⟨⟨hs.1, hs.2.le.trans hmem.1.2⟩, hs'⟩
-    linarith [hs.2]
-  linarith
+  obtain ⟨T, hT, hTle, hfirst⟩ := exists_first_le hg hne
+  have hTa : a < T := lt_of_le_of_ne hT.1 fun he => by rw [← he] at hTle; linarith
+  linarith [h T ⟨hTa, hT.2⟩ hfirst]
 
 /-- A closed upper bound on `[a, b)` extends to `b`. -/
 @[tmio T, powerlib_foundation] theorem forall_Icc_of_forall_Ico {F : ℝ → ℝ} {a b B : ℝ} (hab : a < b)
@@ -181,15 +194,30 @@ open Set Filter Topology
   exact div_nonpos_of_nonneg_of_nonpos (by linarith [hmin u ⟨hu.1.le, hu.2.le⟩])
     (by linarith [hu.2])
 
-/-- A function vanishing at `0` with positive derivative there is positive just to the right. -/
-@[tmio T, powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ}
-    (hd : HasDerivAt ψ d 0) (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t := by
+/-- **Sign on each side of a simple zero.** If `g μ₀ = 0` and `g' (μ₀) > 0`, then `g < 0` just
+to the left of `μ₀` and `0 < g` just to the right (the slope `g μ / (μ − μ₀)` tends to `g'`). -/
+@[tmio T, powerlib_foundation] theorem eventually_sign_of_hasDerivAt {g : ℝ → ℝ} {d μ₀ : ℝ}
+    (hd : HasDerivAt g d μ₀) (h0 : g μ₀ = 0) (hpos : 0 < d) :
+    (∀ᶠ μ in 𝓝[<] μ₀, g μ < 0) ∧ ∀ᶠ μ in 𝓝[>] μ₀, 0 < g μ := by
   rw [hasDerivAt_iff_tendsto_slope] at hd
-  have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
-    hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)
-  filter_upwards [h1.eventually (lt_mem_nhds hpos), self_mem_nhdsWithin] with t ht ht0
-  rw [slope_def_field, h0, sub_zero, sub_zero] at ht
-  exact (div_pos_iff_of_pos_right ht0).mp ht
+  have hev := hd.eventually (lt_mem_nhds hpos)
+  constructor
+  · filter_upwards [hev.filter_mono (nhdsWithin_mono _ fun μ (hμ : μ < μ₀) => ne_of_lt hμ),
+      self_mem_nhdsWithin] with μ h hμ
+    rw [slope_def_field, h0, sub_zero] at h
+    rcases div_pos_iff.mp h with h' | h'
+    · exact absurd h'.2 (by simp only [mem_Iio] at hμ; linarith)
+    · exact h'.1
+  · filter_upwards [hev.filter_mono (nhdsWithin_mono _ fun μ (hμ : μ₀ < μ) => ne_of_gt hμ),
+      self_mem_nhdsWithin] with μ h hμ
+    rw [slope_def_field, h0, sub_zero] at h
+    exact (div_pos_iff_of_pos_right (sub_pos.2 hμ)).mp h
+
+/-- A function vanishing at `0` with positive derivative there is positive just to the right
+(`eventually_sign_of_hasDerivAt` at `0`). -/
+@[tmio T, powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ}
+    (hd : HasDerivAt ψ d 0) (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t :=
+  (eventually_sign_of_hasDerivAt hd h0 hpos).2
 
 end Propagate
 
@@ -338,6 +366,24 @@ mean with the weight `λ e^{−β s}`; no square roots). -/
   refine ⟨N, fun n hn => ?_⟩
   rw [Real.dist_eq]
   exact (hbound N (hN N le_rfl).2 n hn).trans_lt (hN N le_rfl).1
+
+/-- **Grönwall deviation of two fields.** If `f` is `K`-Lipschitz and `‖g z − f z‖ ≤ ε` everywhere,
+solutions of `g` and of `f` on `[a, b]` from the same state stay within
+`gronwallBound 0 K ε (t − a)` (Mathlib's `dist_le_of_approx_trajectories_ODE`). -/
+@[tmio T, powerlib_foundation] theorem norm_sub_le_gronwallBound_of_fields {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E → E} {K : NNReal} {ε a b : ℝ}
+    (hK : LipschitzWith K f) (hfg : ∀ z, ‖g z - f z‖ ≤ ε) {x y : ℝ → E}
+    (hx : IsIntegralCurveOn x (fun _ z => g z) (Icc a b))
+    (hy : IsIntegralCurveOn y (fun _ z => f z) (Icc a b)) (h0 : x a = y a) :
+    ∀ t ∈ Icc a b, ‖x t - y t‖ ≤ gronwallBound 0 K ε (t - a) := by
+  intro t ht
+  have h := dist_le_of_approx_trajectories_ODE (v := fun _ => f) (K := K) (εf := ε)
+    (εg := 0) (δ := 0) (fun _ => hK) hx.continuousOn
+    (fun s hs => (hx s (Ico_subset_Icc_self hs)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem hs))
+    (fun s _ => by rw [dist_eq_norm]; exact hfg _) hy.continuousOn
+    (fun s hs => (hy s (Ico_subset_Icc_self hs)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem hs))
+    (fun s _ => by simp) (by simp [h0]) t ht
+  simpa [dist_eq_norm] using h
 
 end Gronwall
 
@@ -511,22 +557,67 @@ open Matrix in
   have h := (LinearMap.toContinuousLinearMap (Matrix.mulVecLin M)).hasFDerivAt.comp_hasDerivAt t hx
   simpa [Function.comp_def] using h
 
+open Matrix in
+/-- **Product rule for a matrix curve acting on a vector curve** (entrywise matrix derivative):
+`(M x)' = M x' + M' x`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_matrix_mulVec {ι κ : Type*} [Fintype ι]
+    [Fintype κ] {M : ℝ → Matrix ι κ ℝ} {M' : Matrix ι κ ℝ} {x : ℝ → κ → ℝ} {x' : κ → ℝ} {t : ℝ}
+    (hM : ∀ i j, HasDerivAt (fun s => M s i j) (M' i j) t) (hx : HasDerivAt x x' t) :
+    HasDerivAt (fun s => M s *ᵥ x s) (M t *ᵥ x' + M' *ᵥ x t) t := by
+  refine hasDerivAt_pi.2 fun i => ?_
+  have h := HasDerivAt.fun_sum (u := Finset.univ) fun j _ => (hM i j).mul (hasDerivAt_pi.1 hx j)
+  simp only [mulVec, dotProduct, Pi.add_apply, ← Finset.sum_add_distrib]
+  convert h using 1
+  exact Finset.sum_congr rfl fun j _ => by ring
+
+/-- A coordinate curve read in Euclidean space: `(toLp x)' = toLp x'` (any finite index type). -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_toLp {ι : Type*} [Fintype ι] {x : ℝ → ι → ℝ}
+    {x' : ι → ℝ} {t : ℝ} (h : HasDerivAt x x' t) :
+    HasDerivAt (fun s => WithLp.toLp 2 (x s)) (WithLp.toLp 2 x') t :=
+  (PiLp.continuousLinearEquiv 2 ℝ (fun _ : ι => ℝ)).symm.hasFDerivAt.comp_hasDerivAt t h
+
+/-! ## Linear growth in a Banach algebra -/
+
+/-- **Integrating-factor uniqueness**: a curve with `ẇ = c w` in a complete normed `ℝ`-algebra is
+`w t = e^{t c} w 0` (matrices, `ℂ`, `ℝ`). -/
+@[tmio T, powerlib_foundation] theorem eq_exp_smul_mul_of_hasDerivAt {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] {c : 𝔸} {w : ℝ → 𝔸}
+    (hw : ∀ t, HasDerivAt w (c * w t) t) (t : ℝ) : w t = NormedSpace.exp (t • c) * w 0 := by
+  set G : ℝ → 𝔸 := fun s => NormedSpace.exp ((t - s) • c) * w s with hG
+  have hd : ∀ s, HasDerivAt G 0 s := by
+    intro s
+    have he := hasDerivAt_exp_smul_const (𝕂 := ℝ) c (t - s)
+    refine ((he.scomp s ((hasDerivAt_id s).const_sub t)).mul (hw s)).congr_deriv ?_
+    rw [Function.comp_apply, neg_one_smul, neg_mul, mul_assoc, neg_add_cancel]
+  have h := is_const_of_deriv_eq_zero (fun s => (hd s).differentiableAt) (fun s => (hd s).deriv) t 0
+  simpa [hG, NormedSpace.exp_zero] using h
+
 /-! ## First integrals -/
 
+/-- **A first integral along one solution.** A differentiable `I` whose derivative along a
+solution of `f` vanishes on a convex time set `s` is constant on `s` (LeanForControl's
+`antitoneOn_V_comp_traj` applied to `±I`). -/
+@[tmio T, powerlib_foundation] theorem eq_of_lie_eq_zero_along {n : ℕ} {f : State n → State n}
+    {I : State n → ℝ} (hI : Differentiable ℝ I) {φ : ℝ → State n} {s : Set ℝ} (hs : Convex ℝ s)
+    (hφ : IsIntegralCurveOn φ (fun _ x => f x) s)
+    (h0 : ∀ t ∈ s, fderiv ℝ I (φ t) (f (φ t)) = 0) {a t : ℝ} (ha : a ∈ s) (ht : t ∈ s)
+    (hat : a ≤ t) : I (φ t) = I (φ a) := by
+  have h1 := antitoneOn_V_comp_traj hI hI.continuous hs hφ
+    (fun u hu => (h0 u (interior_subset hu)).le) ha ht hat
+  have hneg : Differentiable ℝ (fun x => -I x) := hI.neg
+  have h2 := antitoneOn_V_comp_traj hneg hneg.continuous hs hφ
+    (fun u hu => by rw [fderiv_fun_neg, _root_.neg_apply, h0 u (interior_subset hu), neg_zero])
+    ha ht hat
+  simp only [Function.comp_apply] at h1 h2
+  linarith
+
 /-- A differentiable `I` with `∇I · f ≡ 0` is constant along every solution segment of `f`
-(generic: any field, any differentiable `I`). -/
+(generic: any field, any differentiable `I`; `eq_of_lie_eq_zero_along` on `[a, b]`). -/
 @[tmio T, powerlib_foundation] theorem firstIntegral_const {n : ℕ} {f : State n → State n}
     {I : State n → ℝ} (hI : Differentiable ℝ I) (h0 : ∀ x, fderiv ℝ I x (f x) = 0)
     {φ : ℝ → State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b) :
-    ∀ t ∈ Set.Icc a b, I (φ t) = I (φ a) := by
-  intro t ht
-  have ha : a ∈ Set.Icc a b := ⟨le_rfl, ht.1.trans ht.2⟩
-  have h1 := antitoneOn_V_comp_traj hI hI.continuous (convex_Icc a b) hφ
-    (fun s _ => (h0 (φ s)).le) ha ht ht.1
-  have hneg : Differentiable ℝ (fun x => -I x) := hI.neg
-  have h2 := antitoneOn_V_comp_traj hneg hneg.continuous (convex_Icc a b) hφ
-    (fun s _ => by rw [fderiv_fun_neg, _root_.neg_apply, h0, neg_zero]) ha ht ht.1
-  simp only [Function.comp_apply] at h1 h2
-  linarith
+    ∀ t ∈ Set.Icc a b, I (φ t) = I (φ a) := fun _ ht =>
+  eq_of_lie_eq_zero_along hI (convex_Icc a b) hφ (fun u _ => h0 (φ u))
+    ⟨le_rfl, ht.1.trans ht.2⟩ ht ht.1
 
 end powerlib.Dynamics

@@ -24,11 +24,16 @@ Results.
   any positive leading coefficient (`cubic_hurwitz`, also the LCL filter's pole criterion). The
   necessary direction factors out a real root and applies the quadratic criterion
   `Criteria.quadratic_roots_re_neg_iff` to the quotient.
+* Imaginary axis (the Hopf boundary of the criterion): the value at `jω` is
+  `(a₀ − a₂ ω²) + j ω (a₁ − a₃ ω²)` (`cubic_eval_mul_I`), so for `ω ≠ 0`, `jω` is a root of
+  `a₃ s³ + a₂ s² + a₁ s + a₀` iff `a₀ = a₂ ω²` and `a₁ = a₃ ω²` (`cubic_eval_mul_I_eq_zero_iff`).
 * Real roots, as instances of the generic criteria of `theorem/Criteria/Hurwitz.lean`: every real
   cubic has a real root (`exists_cubic_real_root`, odd degree); `a0 < 0` gives a positive real
   root (`exists_cubic_root_pos_of_const_neg`); `a2 < 0` gives a root with positive real part
   (`exists_cubic_root_re_pos_of_quadratic_coeff_neg`, Stodola); a strict violation `a2 a1 < a0`
-  of the gap condition gives a root with positive real part (`exists_cubic_root_re_pos_of_gap`).
+  of the gap condition gives a root with positive real part (`exists_cubic_root_re_pos_of_gap`);
+  any strict violation (a negative coefficient or the gap) does
+  (`exists_cubic_root_re_pos_of_violation`).
 * `A : Matrix (Fin 3) (Fin 3) ℝ`:
   `det (s • 1 - A) = s ^ 3 - tr A * s ^ 2 + principalMinorSum A * s - det A`
   (`det_characteristicMatrix_fin_three`), i.e.
@@ -43,7 +48,8 @@ Results.
 * Instability witnesses: `0 < det A` and `0 < tr A` are the cases `n = 3` of the any-dimension
   witnesses (`(-1) ^ 3 * A.det < 0`: `Criteria.exists_pos_real_eigenvector_of_det`,
   `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`;
-  `Criteria.exists_eigenpair_re_pos_of_trace_pos`, `Criteria.exists_root_re_pos_of_trace_pos`).
+  `Criteria.exists_eigenpair_re_pos_of_trace_pos`, `Criteria.exists_root_re_pos_of_trace_pos`);
+  their disjunction is `exists_root_re_pos_of_violation_fin_three`.
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin 3)` (`locallyExponentiallyStable_of_jacobian_fin_three`;
   instability from `0 < det` or `0 < tr` is the any-dimension `Criteria.unstable_of_jacobian_det`,
@@ -211,6 +217,58 @@ part (strict violation of the Routh gap condition). -/
     refine ⟨q, ?_, by rw [Complex.ofReal_re]; exact hq⟩
     rw [Criteria.cubic_factor_of_root hr, Criteria.quadratic_real_root_complex hqroot, mul_zero]
 
+/-- **A strict violation of a cubic Routh condition** (a negative coefficient or `c₂ c₁ < c₀`)
+gives a root of `s³ + c₂ s² + c₁ s + c₀` with positive real part. -/
+@[tmio T, powerlib_foundation] theorem exists_cubic_root_re_pos_of_violation {c2 c1 c0 : ℝ}
+    (h : c2 < 0 ∨ c1 < 0 ∨ c0 < 0 ∨ c2 * c1 < c0) :
+    ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧ 0 < s.re := by
+  have hconst : c0 < 0 → ∃ s : ℂ, s ^ 3 + (c2 : ℂ) * s ^ 2 + (c1 : ℂ) * s + (c0 : ℂ) = 0 ∧
+      0 < s.re := fun h0 => by
+    obtain ⟨r, hr, hroot⟩ := exists_cubic_root_pos_of_const_neg (a2 := c2) (a1 := c1) h0
+    exact ⟨r, cubic_real_root_complex hroot, by rw [Complex.ofReal_re]; exact hr⟩
+  rcases h with h2 | h1 | h0 | hg
+  · exact exists_cubic_root_re_pos_of_quadratic_coeff_neg h2
+  · rcases lt_trichotomy c0 0 with h0 | h0 | h0
+    · exact hconst h0
+    · subst h0
+      obtain ⟨r, hr, hroot⟩ := exists_quadratic_root_pos_of_const_neg (a1 := c2) h1
+      have hcub : r ^ 3 + c2 * r ^ 2 + c1 * r + 0 = 0 := by linear_combination r * hroot
+      exact ⟨r, cubic_real_root_complex hcub, by rw [Complex.ofReal_re]; exact hr⟩
+    · rcases lt_or_ge c2 0 with h2 | h2
+      · exact exists_cubic_root_re_pos_of_quadratic_coeff_neg h2
+      · exact exists_cubic_root_re_pos_of_gap (by nlinarith)
+  · exact hconst h0
+  · exact exists_cubic_root_re_pos_of_gap hg
+
+/-- **A real cubic on the imaginary axis.** At `s = jω` the real cubic
+`a₃ s³ + a₂ s² + a₁ s + a₀` has real part `a₀ − a₂ ω²` and imaginary part `ω (a₁ − a₃ ω²)`. -/
+@[tmio T, powerlib_foundation] theorem cubic_eval_mul_I (a3 a2 a1 a0 ω : ℝ) :
+    (a3 : ℂ) * ((ω : ℂ) * Complex.I) ^ 3 + (a2 : ℂ) * ((ω : ℂ) * Complex.I) ^ 2 +
+        (a1 : ℂ) * ((ω : ℂ) * Complex.I) + (a0 : ℂ) =
+      ((a0 - a2 * ω ^ 2 : ℝ) : ℂ) + ((ω * (a1 - a3 * ω ^ 2) : ℝ) : ℂ) * Complex.I := by
+  push_cast
+  ring_nf
+  rw [Complex.I_sq, show Complex.I ^ 3 = -Complex.I by rw [pow_succ, Complex.I_sq]; ring]
+  ring
+
+/-- **Imaginary-axis roots of a real cubic (Hopf boundary).** For `ω ≠ 0`, `s = jω` is a root of
+`a₃ s³ + a₂ s² + a₁ s + a₀` iff `a₀ = a₂ ω²` and `a₁ = a₃ ω²` (`cubic_eval_mul_I`). -/
+@[tmio T, powerlib_foundation] theorem cubic_eval_mul_I_eq_zero_iff (a3 a2 a1 a0 : ℝ) {ω : ℝ}
+    (hω : ω ≠ 0) :
+    (a3 : ℂ) * ((ω : ℂ) * Complex.I) ^ 3 + (a2 : ℂ) * ((ω : ℂ) * Complex.I) ^ 2 +
+        (a1 : ℂ) * ((ω : ℂ) * Complex.I) + (a0 : ℂ) = 0 ↔
+      a0 = a2 * ω ^ 2 ∧ a1 = a3 * ω ^ 2 := by
+  rw [cubic_eval_mul_I, Complex.ext_iff]
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.ofReal_im,
+    Complex.I_im, Complex.add_im, Complex.mul_im, Complex.zero_re, Complex.zero_im]
+  constructor
+  · rintro ⟨hre, him⟩
+    refine ⟨by linarith, ?_⟩
+    have h : ω * (a1 - a3 * ω ^ 2) = 0 := by linarith
+    linarith [(mul_eq_zero.mp h).resolve_left hω]
+  · rintro ⟨h0, h1⟩
+    constructor <;> simp [h0, h1]
+
 end Cubic
 
 /-! ## Real 3×3 matrices -/
@@ -261,6 +319,17 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     exact ⟨h2, h0, by linarith⟩
   · rintro ⟨h2, h0, hg⟩
     exact ⟨h2, h0, by linarith⟩
+
+/-- **A strict violation of the first two 3×3 Hurwitz conditions**, `0 < tr A` or `0 < det A`,
+gives a characteristic root in the open right half plane (`exists_root_re_pos_of_trace_pos`,
+`exists_root_re_pos_of_det` with `(−1)³ = −1`). -/
+@[tmio T, powerlib_foundation] theorem exists_root_re_pos_of_violation_fin_three
+    (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.trace ∨ 0 < A.det) :
+    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
+  rcases h with h | h
+  · exact exists_root_re_pos_of_trace_pos A h
+  · exact exists_root_re_pos_of_det A
+      (by rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero]; exact h)
 
 /-- Routh–Hurwitz for a 3×3 matrix with characteristic polynomial
 `(a₃ s³ + a₂ s² + a₁ s + a₀) / a₃`, `a₃ > 0`, given by its invariants `tr A = −a₂/a₃`,

@@ -1,5 +1,6 @@
 import theorem.LTI.Plant
 import theorem.Criteria.Hurwitz2
+import theorem.Dynamics.Calculus
 
 /-! # Closed-form flow of a real 2×2 system with complex eigenvalues (foundation)
 
@@ -146,8 +147,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     (hdet : A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0) (p : Fin 2 → ℝ) (t : ℝ) :
     HasDerivAt (fun s => WithLp.toLp 2 (osc2 A σ ωd p s))
       (Linear.op A (WithLp.toLp 2 (osc2 A σ ωd p t))) t :=
-  (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp_hasDerivAt t
-    (hasDerivAt_osc2 htr hdet hωd p t)
+  Dynamics.hasDerivAt_toLp (hasDerivAt_osc2 htr hdet hωd p t)
 
 /-- Every forward solution from `t = 0` of a two-state linear plant whose state matrix has
 eigenvalues `−σ ± j ω_d`, under a constant input `u` with equilibrium `e`, is the explicit closed
@@ -460,30 +460,12 @@ open scoped Matrix.Norms.Frobenius
 variable {n : ℕ}
 
 /-- Uniqueness of the matrix exponential: a differentiable `E` with `Ė = A E`, `E 0 = 1` is
-`t ↦ e^{tA}`. -/
+`t ↦ e^{tA}` (`Dynamics.eq_exp_smul_mul_of_hasDerivAt`). -/
 @[tmio T, powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
     {E : ℝ → Matrix (Fin n) (Fin n) ℝ} (h0 : E 0 = 1) (hE : ∀ t, HasDerivAt E (A * E t) t)
     (t : ℝ) : E t = NormedSpace.exp (t • A) := by
-  set F : ℝ → Matrix (Fin n) (Fin n) ℝ := fun s => NormedSpace.exp (s • (-A)) * E s with hF
-  have hFd : ∀ s, HasDerivAt F 0 s := by
-    intro s
-    have h := (hasDerivAt_exp_smul_const' (-A) s).mul (hE s)
-    have c1 : A * NormedSpace.exp (s • (-A)) = NormedSpace.exp (s • (-A)) * A :=
-      ((((Commute.refl A).neg_right).smul_right s).exp_right).eq
-    have hval : -A * NormedSpace.exp (s • (-A)) * E s +
-        NormedSpace.exp (s • (-A)) * (A * E s) = 0 := by
-      rw [← mul_assoc, ← c1, neg_mul, neg_mul, neg_add_cancel]
-    convert! h using 1
-    exact hval.symm
-  have hFc : F t = F 0 :=
-    is_const_of_deriv_eq_zero (fun s => (hFd s).differentiableAt) (fun s => (hFd s).deriv) t 0
-  have hF0 : F 0 = 1 := by simp [hF, h0, NormedSpace.exp_zero]
-  have hinv : NormedSpace.exp (t • A) * NormedSpace.exp (t • (-A)) = 1 := by
-    rw [← Matrix.exp_add_of_commute _ _ ((((Commute.refl A).neg_right).smul_left t).smul_right t)]
-    simp [NormedSpace.exp_zero]
-  calc E t = NormedSpace.exp (t • A) * F t := by
-        simp only [hF, ← mul_assoc, hinv, one_mul]
-    _ = NormedSpace.exp (t • A) := by rw [hFc, hF0, mul_one]
+  rw [Dynamics.eq_exp_smul_mul_of_hasDerivAt hE t, h0, mul_one]
+  rfl
 
 /-- Closed form of `e^{tA}` when `B = A + a I` satisfies `B² = −w² I` (`w ≠ 0`):
 `e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`. -/

@@ -45,10 +45,12 @@ Results.
   `det = (R + L s)² + (ω L)²` and the closed-form inverse (for the dual, `(G + C s)² + (ω C)²`).
 * `SeriesRLC.dq_power_identity`: at one instant of the dq KVL of the R–L part the terminal power
   is the far-end power, the loss `R |i|²` and `L i·i'`; the rotation term does no work (`J` is
-  skew). `SeriesRLC.dq_power_balance`: its component form along a trajectory, with
-  `L i·i' = d/dt (L |i|²/2)`, for any frame speed `ω(t)`.
+  skew). `SeriesRLC.dq_power_balance`: along a trajectory the stored energy `L |i|²/2` changes at
+  `v·i − v^c·i − R |i|²`, for any frame speed `ω(t)` (the dq counterpart of
+  `SeriesRLC.hasDerivAt_energy`).
 * `ParallelRLC.capacitor_dq`: Park turns the αβ node equation `C v̇ = i − G v` into the dq one
-  `C v̇ = i − G v − ω C J v`, for any differentiable frame angle (`Transform.hasDerivAt_rot_mulVec`).
+  `C v̇ = i − G v − ω C J v`, for any differentiable frame angle
+  (`Transform.hasDerivAt_rot_mulVec_firstOrder_iff`).
   The series counterpart is `Passive.DqRL.alphaBetaRL_iff_dqRL` (`theorem/Passive/DqRL.lean`).
 -/
 
@@ -145,32 +147,28 @@ series capacitor's voltage is part of `v − v^c`. -/
   rw [dotProduct_comm i i']
   linarith
 
-/-- Power balance of the R–L part in the dq frame along a trajectory, in components: with the dq
-KVL `L i_d' = v_d − v^c_d − R i_d + ω L i_q`, `L i_q' = v_q − v^c_q − R i_q − ω L i_d` at `t`
-(`ω` the frame speed at `t`, constant or not), `d/dt (|i|²/2) = i·i'` and the power identity
-`dq_power_identity`: `v·i = v^c·i + R |i|² + L i·i'`, where `L i·i' = d/dt (L |i|²/2)` is the rate
-of the stored energy. -/
+/-- Energy balance of the R–L part in the dq frame along a trajectory, in components: with the
+dq KVL `L i_d' = v_d − v^c_d − R i_d + ω L i_q`, `L i_q' = v_q − v^c_q − R i_q − ω L i_d` at `t`
+(`ω` the frame speed at `t`, constant or not), the stored energy `L |i|²/2` changes at
+`v·i − v^c·i − R |i|²` (`dq_power_identity`: the rotation terms do no work); the dq counterpart
+of `hasDerivAt_energy`. -/
 @[tmio M, powerlib_domain] theorem dq_power_balance {b : SeriesRLC} {ω : ℝ} {id iq : ℝ → ℝ}
     {vd vq vcd vcq id' iq' t : ℝ} (hd : HasDerivAt id id' t) (hq : HasDerivAt iq iq' t)
     (kvl_d : b.L * id' = vd - vcd - b.R * id t + ω * b.L * iq t)
     (kvl_q : b.L * iq' = vq - vcq - b.R * iq t - ω * b.L * id t) :
-    HasDerivAt (fun s => (id s ^ 2 + iq s ^ 2) / 2) (id t * id' + iq t * iq') t ∧
-      vd * id t + vq * iq t =
-        (vcd * id t + vcq * iq t) + b.R * (id t ^ 2 + iq t ^ 2) +
-          b.L * (id t * id' + iq t * iq') := by
-  refine ⟨?_, ?_⟩
-  · have h := ((hd.pow 2).add (hq.pow 2)).div_const 2
-    convert h using 1
-    push_cast
-    ring
-  · have h := dq_power_identity (b := b) (ω := ω) (v := ![vd, vq]) (vc := ![vcd, vcq])
-      (i := ![id t, iq t]) (i' := ![id', iq']) (by
-        ext k; fin_cases k
-        · simp; linear_combination kvl_d
-        · simp; linear_combination kvl_q)
-    simp only [dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one] at h
-    linear_combination h
+    HasDerivAt (fun s => b.L * (id s ^ 2 + iq s ^ 2) / 2)
+      (vd * id t + vq * iq t - (vcd * id t + vcq * iq t) - b.R * (id t ^ 2 + iq t ^ 2)) t := by
+  have h := (((hd.pow 2).add (hq.pow 2)).const_mul b.L).div_const 2
+  have hP := dq_power_identity (b := b) (ω := ω) (v := ![vd, vq]) (vc := ![vcd, vcq])
+    (i := ![id t, iq t]) (i' := ![id', iq']) (by
+      ext k; fin_cases k
+      · simp; linear_combination kvl_d
+      · simp; linear_combination kvl_q)
+  simp only [dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one] at hP
+  convert h using 1
+  push_cast
+  linear_combination hP
 
 end SeriesRLC
 
@@ -198,16 +196,8 @@ the laws of `SeriesRLC.dqImpedance` read it with `G, C, Γ` for `R, L, S`. -/
       (e.C⁻¹ • (Transform.rot (θ t) *ᵥ i t - e.G • (Transform.rot (θ t) *ᵥ v t))) t)
     (hC : e.C ≠ 0) :
     e.C • v' = i t - e.G • v t - (ω * e.C) • (Transform.J *ᵥ v t) := by
-  have h := Transform.hasDerivAt_rot_mulVec hθ hv
-  have heq := h.unique hαβ
-  have h2 : v' + ω • (Transform.J *ᵥ v t) = e.C⁻¹ • (i t - e.G • v t) := by
-    have := congrArg (fun y => Transform.park (θ t) *ᵥ y) heq
-    simpa only [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_mulVec,
-      Transform.park_mul_rot, Matrix.one_mulVec] using this
-  have h3 := congrArg (fun y => e.C • y) h2
-  simp only [smul_add, smul_smul, mul_inv_cancel₀ hC, one_smul] at h3
-  rw [← h3, mul_comm ω e.C, ← smul_smul]
-  abel
+  rw [(Transform.hasDerivAt_rot_mulVec_firstOrder_iff hθ hv).mp hαβ, smul_sub, smul_smul,
+    mul_inv_cancel₀ hC, one_smul, smul_smul, mul_comm]
 
 end ParallelRLC
 

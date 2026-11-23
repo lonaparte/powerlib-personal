@@ -5,6 +5,7 @@ import Mathlib.Probability.Martingale.Basic
 import Mathlib.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.Probability.ConditionalExpectation
+import theorem.Stochastic.GaussianLaw
 
 /-! # Brownian motion: Mathlib interface, martingales of the natural filtration, GBM moments
 
@@ -61,9 +62,7 @@ def incr (B : ℝ≥0 → Ω → ℝ) (t : ℕ → ℝ≥0) (i : ℕ) (ω : Ω) 
 /-- Second moment of a centred Gaussian. -/
 @[tmio T, powerlib_foundation] theorem integral_sq_gaussianReal_zero (v : ℝ≥0) :
     ∫ x, x ^ 2 ∂(gaussianReal 0 v) = v := by
-  have h := variance_fun_id_gaussianReal (μ := (0 : ℝ)) (v := v)
-  rw [variance_eq_integral measurable_id'.aemeasurable] at h
-  simpa [integral_id_gaussianReal] using h
+  simpa using integral_sub_sq_gaussianReal 0 v
 
 variable [IsProbabilityMeasure P]
 

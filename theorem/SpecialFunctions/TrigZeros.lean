@@ -27,6 +27,8 @@ Source: work-sync `theory/T-gfl-dynamics.md` §1.8–§1.9 and §1.14 (counts 2 
 Results.
 * `trigPoly2_eval_cexp`: with `z = e^{jθ}`, `z² · h(θ) = P(z)` for the degree-≤-4 complex
   polynomial `P = trigPoly2Poly …` (the substitution `z = e^{jθ}`).
+* `finite_ncard_le_natDegree_of_isRoot_cexp`: angles in one window `[a, a + 2π)` at which a nonzero
+  complex polynomial `P` vanishes at `e^{jθ}` are finitely many, at most `deg P`.
 * `trigPoly2_zeroSet_finite`, `trigPoly2_ncard_zeroSet_le_four`: if the five coefficients are not
   all zero, then in every period window `[a, a + 2π)` the zero set is finite and has at most four
   elements (distinct `θ` in a window give distinct `z` on the unit circle, all roots of `P ≠ 0`).
@@ -177,6 +179,21 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
 
 /-! ## At most four zeros per period -/
 
+/-- Root counting through `z = e^{jθ}`: angles in one window `[a, a + 2π)` at which a nonzero
+complex polynomial vanishes at `e^{jθ}` form a finite set with at most `deg P` elements. -/
+@[tmio T, powerlib_foundation] theorem finite_ncard_le_natDegree_of_isRoot_cexp {P : ℂ[X]}
+    (hP : P ≠ 0) {S : Set ℝ} {a : ℝ} (hS : S ⊆ Ico a (a + 2 * Real.pi))
+    (hroot : ∀ θ ∈ S, P.IsRoot (exp (θ * I))) : S.Finite ∧ S.ncard ≤ P.natDegree := by
+  have hinj := (injOn_cexp_mul_I_Ico a).mono hS
+  have hroots : {z | P.IsRoot z}.Finite := Polynomial.finite_setOfPred_isRoot hP
+  refine ⟨Finite.of_finite_image (hroots.subset (image_subset_iff.mpr hroot)) hinj, ?_⟩
+  have h1 := ncard_le_ncard_of_injOn (fun θ : ℝ => exp ((θ : ℂ) * I)) hroot hinj hroots
+  have hset : {z | P.IsRoot z} = (P.roots.toFinset : Set ℂ) := by
+    ext z
+    simp [Polynomial.mem_roots hP]
+  rw [hset, ncard_coe_finset] at h1
+  exact h1.trans ((Multiset.toFinset_card_le _).trans (Polynomial.card_roots' P))
+
 @[tmio T, powerlib_foundation] theorem trigPoly2_zeroSet_mapsTo {c₀ c₁ s₁ c₂ s₂ a : ℝ} :
     MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a)
       {z | (trigPoly2Poly c₀ c₁ s₁ c₂ s₂).IsRoot z} := by
@@ -185,30 +202,16 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
 
 @[tmio T, powerlib_foundation] theorem trigPoly2_zeroSet_finite {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).Finite := by
-  have hP := trigPoly2Poly_ne_zero hne
-  have hroots : {z | (trigPoly2Poly c₀ c₁ s₁ c₂ s₂).IsRoot z}.Finite :=
-    Polynomial.finite_setOfPred_isRoot hP
-  exact Finite.of_finite_image (hroots.subset (image_subset_iff.mpr trigPoly2_zeroSet_mapsTo))
-    ((injOn_cexp_mul_I_Ico a).mono fun _ h => h.1)
+    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).Finite :=
+  (finite_ncard_le_natDegree_of_isRoot_cexp (trigPoly2Poly_ne_zero hne) (fun _ h => h.1)
+    fun _ hθ => trigPoly2_zeroSet_mapsTo hθ).1
 
 /-- At most four zeros in every period window, unless all coefficients vanish. -/
 @[tmio T, powerlib_foundation] theorem trigPoly2_ncard_zeroSet_le_four {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard ≤ 4 := by
-  have hP := trigPoly2Poly_ne_zero hne
-  set P := trigPoly2Poly c₀ c₁ s₁ c₂ s₂
-  have hroots : {z | P.IsRoot z} = (P.roots.toFinset : Set ℂ) := by
-    ext z
-    simp [Polynomial.mem_roots hP]
-  have h1 := ncard_le_ncard_of_injOn (fun θ : ℝ => exp ((θ : ℂ) * I))
-    (fun θ hθ => trigPoly2_zeroSet_mapsTo hθ) ((injOn_cexp_mul_I_Ico a).mono fun _ h => h.1)
-    (Polynomial.finite_setOfPred_isRoot hP)
-  rw [hroots, ncard_coe_finset] at h1
-  calc _ ≤ P.roots.toFinset.card := h1
-    _ ≤ Multiset.card P.roots := Multiset.toFinset_card_le _
-    _ ≤ P.natDegree := Polynomial.card_roots' P
-    _ ≤ 4 := trigPoly2Poly_natDegree_le c₀ c₁ s₁ c₂ s₂
+    (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard ≤ 4 :=
+  (finite_ncard_le_natDegree_of_isRoot_cexp (trigPoly2Poly_ne_zero hne) (fun _ h => h.1)
+    fun _ hθ => trigPoly2_zeroSet_mapsTo hθ).2.trans (trigPoly2Poly_natDegree_le c₀ c₁ s₁ c₂ s₂)
 
 /-! ## First-order trigonometric polynomials: at most two zeros per period -/
 
@@ -253,22 +256,9 @@ most two zeros in every window `[a, a + 2π)`. -/
 @[tmio T, powerlib_foundation] theorem trigPoly1_ncard_zeroSet_le_two {c₀ c₁ s₁ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) (a : ℝ) :
     (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a).ncard ≤ 2 := by
-  have hP := trigPoly1Poly_ne_zero hne
-  set P := trigPoly1Poly c₀ c₁ s₁
-  have hmaps : MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a)
-      {z | P.IsRoot z} := by
-    intro θ hθ
-    simp only [mem_ofPred_eq, IsRoot.def, P, trigPoly1_eval_cexp, hθ.2, ofReal_zero, mul_zero]
-  have hroots : {z | P.IsRoot z} = (P.roots.toFinset : Set ℂ) := by
-    ext z
-    simp [Polynomial.mem_roots hP]
-  have h1 := ncard_le_ncard_of_injOn (fun θ : ℝ => exp ((θ : ℂ) * I)) hmaps
-    ((injOn_cexp_mul_I_Ico a).mono fun _ h => h.1) (Polynomial.finite_setOfPred_isRoot hP)
-  rw [hroots, ncard_coe_finset] at h1
-  calc _ ≤ P.roots.toFinset.card := h1
-    _ ≤ Multiset.card P.roots := Multiset.toFinset_card_le _
-    _ ≤ P.natDegree := Polynomial.card_roots' P
-    _ ≤ 2 := trigPoly1Poly_natDegree_le c₀ c₁ s₁
+  refine (finite_ncard_le_natDegree_of_isRoot_cexp (trigPoly1Poly_ne_zero hne) (fun _ h => h.1)
+    fun θ hθ => ?_).2.trans (trigPoly1Poly_natDegree_le c₀ c₁ s₁)
+  simp only [IsRoot.def, trigPoly1_eval_cexp, hθ.2, ofReal_zero, mul_zero]
 
 /-! ## Parity of the number of simple zeros of a periodic function -/
 
@@ -504,16 +494,21 @@ has an even number of zeros in every window `[a, a + T)`. -/
 
 /-! ## Simple zeros of `trigPoly2`: an even number, hence 0, 2 or 4 -/
 
+/-- If every zero is simple, the coefficients are not all zero (the zero polynomial has the
+non-simple zero `0`). -/
+@[tmio T, powerlib_foundation] private theorem coeffs_ne_zero_of_simple {c₀ c₁ s₁ c₂ s₂ : ℝ}
+    (hsimple : ∀ θ, trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0 → trigPoly2Deriv c₁ s₁ c₂ s₂ θ ≠ 0) :
+    ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0) := by
+  rintro ⟨rfl, rfl, rfl, rfl, rfl⟩
+  exact hsimple 0 (by simp [trigPoly2]) (by simp [trigPoly2Deriv])
+
 /-- If every zero of `h` is simple (`h' ≠ 0` there), the number of zeros in every period window
 is even. -/
 @[tmio T, powerlib_foundation] theorem trigPoly2_even_ncard_zeroSet {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hsimple : ∀ θ, trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0 → trigPoly2Deriv c₁ s₁ c₂ s₂ θ ≠ 0)
-    (a : ℝ) : Even (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard := by
-  have hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0) := by
-    rintro ⟨rfl, rfl, rfl, rfl, rfl⟩
-    exact hsimple 0 (by simp [trigPoly2]) (by simp [trigPoly2Deriv])
-  exact even_ncard_zeroSet_of_simple (by positivity) (continuous_trigPoly2 _ _ _ _ _)
-    (trigPoly2_periodic _ _ _ _ _) (trigPoly2_zeroSet_finite hne)
+    (a : ℝ) : Even (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard :=
+  even_ncard_zeroSet_of_simple (by positivity) (continuous_trigPoly2 _ _ _ _ _)
+    (trigPoly2_periodic _ _ _ _ _) (trigPoly2_zeroSet_finite (coeffs_ne_zero_of_simple hsimple))
     (fun θ hθ => ⟨_, hsimple θ hθ, hasDerivAt_trigPoly2 _ _ _ _ _ θ⟩) a
 
 /-- If every zero is simple, a period window contains `0`, `2` or `4` zeros. -/
@@ -522,10 +517,7 @@ is even. -/
     (a : ℝ) :
     (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 0 ∨ (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 2 ∨
       (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 4 := by
-  have hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0) := by
-    rintro ⟨rfl, rfl, rfl, rfl, rfl⟩
-    exact hsimple 0 (by simp [trigPoly2]) (by simp [trigPoly2Deriv])
-  have hle := trigPoly2_ncard_zeroSet_le_four hne a
+  have hle := trigPoly2_ncard_zeroSet_le_four (coeffs_ne_zero_of_simple hsimple) a
   obtain ⟨k, hk⟩ := trigPoly2_even_ncard_zeroSet hsimple a
   omega
 

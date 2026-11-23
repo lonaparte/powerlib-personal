@@ -41,6 +41,9 @@ Results.
 * `eq_zero_of_lyapunovOp_fin_two`, `solvesCovLyapunov_unique_fin_two` — for `2 × 2` `A` the
   operator `X ↦ A X + X Aᵀ` is injective, so solutions are unique, as soon as `tr A ≠ 0` and
   `det A ≠ 0` (no stability assumption).
+* `tendsto_norm_exp_conj_zero` — for Hurwitz `A`, `e^{tA} X e^{tAᵀ} → 0`; with
+  `hasDerivAt_exp_conj` (`d/dt e^{tA} P e^{tAᵀ} = −e^{tA} Q e^{tAᵀ}`) it carries the convergence,
+  controllability and Gramian statements below.
 * `covSol_hasDerivAt`, `covODE_unique`, `covSol_tendsto_norm` — the differential Lyapunov
   equation `Ṗ = A P + P Aᵀ + Q` has the unique solution `e^{tA} (P₀ - P∞) e^{tAᵀ} + P∞`
   (`covSol`), which converges to `P∞` for Hurwitz `A`; `covSol_eq_ltvCov`: it is the
@@ -195,8 +198,7 @@ unique, `solvesCovLyapunov_unique`) is positive semidefinite. -/
   obtain ⟨P₁, hP₁pd, hP₁, -⟩ := hAt.exists_posDef_unique_solution_continuous_lyapunov 1 PosDef.one
   have hP₁' : SolvesCovLyapunov A P₁ 1 := (solvesCovLyapunov_iff _ _ _).mpr hP₁
   -- symmetry: `Pᵀ` solves the same equation
-  have hQt : Qᵀ = Q := by
-    have := hQ.1; rwa [IsHermitian, conjTranspose_eq_transpose_of_trivial] at this
+  have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
   have hPt : SolvesCovLyapunov A Pᵀ Q := by
     unfold SolvesCovLyapunov at hP ⊢
     have := congrArg transpose hP
@@ -205,7 +207,7 @@ unique, `solvesCovLyapunov_unique`) is positive semidefinite. -/
     rw [← this]; abel
   have hsymm : Pᵀ = P := solvesCovLyapunov_unique hA hPt hP
   rw [posSemidef_iff_dotProduct_mulVec]
-  refine ⟨by rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, hsymm], fun x => ?_⟩
+  refine ⟨isHermitian_iff_isSymm.mpr hsymm, fun x => ?_⟩
   -- `P + ε P₁` is the positive-definite solution for `Q + ε I`
   have key : ∀ ε : ℝ, 0 < ε → 0 ≤ star x ⬝ᵥ ((P + ε • P₁) *ᵥ x) := by
     intro ε hε
@@ -262,25 +264,12 @@ unique, `solvesCovLyapunov_unique`) is positive semidefinite. -/
   ⟨0, 1, 0, PosDef.one, by simp [SolvesCovLyapunov], not_isHurwitz_zero,
     fun S => by simp [SolvesCovLyapunov]⟩
 
-@[tmio T, powerlib_foundation] theorem isHurwitz_neg_one :
-    LinearSystems.IsHurwitz (-1 : Matrix (Fin 1) (Fin 1) ℝ) := by
-  intro μ v hv heig
-  have hv0 : v 0 ≠ 0 := by
-    intro h0; apply hv; funext i; fin_cases i; exact h0
-  have := congrFun heig 0
-  simp [Matrix.mulVec, dotProduct] at this
-  have hμ : μ = -1 := by
-    have : (μ + 1) * v 0 = 0 := by linear_combination -this
-    have := (mul_eq_zero.mp this).resolve_right hv0
-    linear_combination this
-  rw [hμ]; norm_num
-
 /-- `A = -1` is Hurwitz, `B = 0`, yet no solution is positive definite (it is `0`). -/
 @[tmio T, powerlib_foundation] theorem hurwitz_not_imp_posDef_solution :
     ∃ (A B : Matrix (Fin 1) (Fin 1) ℝ), LinearSystems.IsHurwitz A ∧
       ∀ P, SolvesCovLyapunov A P (B * Bᵀ) → ¬ P.PosDef := by
-  refine ⟨-1, 0, isHurwitz_neg_one, fun P hP hPd => ?_⟩
-  have h0 : P = 0 := solvesCovLyapunov_unique isHurwitz_neg_one hP
+  refine ⟨-1, 0, Linear.isHurwitz_neg_one, fun P hP hPd => ?_⟩
+  have h0 : P = 0 := solvesCovLyapunov_unique Linear.isHurwitz_neg_one hP
     (by simp [SolvesCovLyapunov])
   subst h0
   have := hPd.diag_pos (i := 0)
@@ -332,6 +321,20 @@ unique, `solvesCovLyapunov_unique`) is positive semidefinite. -/
     simpa using this
   refine squeeze_zero' (Eventually.of_forall fun t => norm_nonneg _) ?_ hpow
   filter_upwards [eventually_ge_atTop 0] with t ht using hbound t ht
+
+/-- For Hurwitz `A` the two-sided conjugate `e^{tA} X e^{tAᵀ}` of any matrix tends to `0`
+(Frobenius norm): the squeeze `‖e^{tA}‖ ‖X‖ ‖e^{tAᵀ}‖ → 0`. -/
+@[tmio T, powerlib_foundation] theorem tendsto_norm_exp_conj_zero {A : Matrix (Fin n) (Fin n) ℝ}
+    (hA : LinearSystems.IsHurwitz A) (X : Matrix (Fin n) (Fin n) ℝ) :
+    Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A) * X * NormedSpace.exp (t • Aᵀ)‖) atTop
+      (𝓝 0) := by
+  have h1 := tendsto_norm_exp_smul_zero hA
+  have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
+  have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖X‖ *
+      ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
+    simpa using (h1.mul_const ‖X‖).mul h2
+  refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_) hprod
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
 
 /-! ## Differential Lyapunov equation `Ṗ = A P + P Aᵀ + Q` -/
 
@@ -398,14 +401,7 @@ from every initial matrix (Frobenius norm). -/
 @[tmio T, powerlib_foundation] theorem covSol_tendsto_norm {A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) :
     Tendsto (fun t => ‖covSol A Pinf P₀ t - Pinf‖) atTop (𝓝 0) := by
-  have h1 := tendsto_norm_exp_smul_zero hA
-  have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
-  have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖P₀ - Pinf‖ *
-      ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
-    simpa using (h1.mul_const ‖P₀ - Pinf‖).mul h2
-  refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_) hprod
-  simp only [covSol, add_sub_cancel_right]
-  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
+  simpa only [covSol, add_sub_cancel_right] using tendsto_norm_exp_conj_zero hA (P₀ - Pinf)
 
 /-- Entrywise convergence `P(t)ᵢⱼ → (P∞)ᵢⱼ`. -/
 @[tmio T, powerlib_foundation] theorem covSol_tendsto_entry {A Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
@@ -473,8 +469,7 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
     (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hc : LinearSystems.IsControllable A B) :
     P.PosDef := by
   have hpsd := stationaryCov_posSemidef hA B hP
-  have hs : Pᵀ = P := by
-    have := hpsd.isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
+  have hs : Pᵀ = P := hpsd.isHermitian.isSymm
   refine PosDef.of_dotProduct_mulVec_pos hpsd.isHermitian fun x hx => ?_
   rcases (hpsd.dotProduct_mulVec_nonneg x).lt_or_eq with h | h
   · exact h
@@ -544,84 +539,6 @@ of `A P + P Aᵀ + B Bᵀ = 0` is positive definite when `(A, B)` is controllabl
   simp only [Function.comp_def, h0] at hs
   exact hs.unique hasSum_zero
 
-/-- **Positive definite stationary covariance ⇒ controllability.**  If `A` is Hurwitz and a positive
-definite `P` solves `A P + P Aᵀ + B Bᵀ = 0`, then `(A, B)` is controllable.  (A vector `x ≠ 0`
-orthogonal to the reachable subspace has `Bᵀ e^{tAᵀ} x = 0`, so `xᵀ e^{tA} P e^{tAᵀ} x` is
-constant `= xᵀ P x > 0`, while it tends to `0`.) -/
-@[tmio T, powerlib_foundation] theorem isControllable_of_posDef {A P : Matrix (Fin n) (Fin n) ℝ}
-    {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
-    (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hpd : P.PosDef) :
-    LinearSystems.IsControllable A B := by
-  by_contra hc
-  obtain ⟨x, hx0, hx⟩ := exists_orthogonal_of_not_isControllable hc
-  set G : ℝ → Matrix (Fin n) (Fin n) ℝ :=
-    fun t => NormedSpace.exp (t • A) * P * NormedSpace.exp (t • Aᵀ) with hG
-  have hQ : A * P + P * Aᵀ = -(B * Bᵀ) := by
-    rw [eq_neg_iff_add_eq_zero]; exact hP
-  have hGd : ∀ t, HasDerivAt G
-      (-(NormedSpace.exp (t • A) * (B * Bᵀ) * NormedSpace.exp (t • Aᵀ))) t := by
-    intro t
-    have h := ((hasDerivAt_exp_smul_const' A t).mul_const P).mul
-      (hasDerivAt_exp_smul_const Aᵀ t)
-    have c1 : A * NormedSpace.exp (t • A) = NormedSpace.exp (t • A) * A :=
-      (((Commute.refl A).smul_right t).exp_right).eq
-    have c2 : NormedSpace.exp (t • Aᵀ) * Aᵀ = Aᵀ * NormedSpace.exp (t • Aᵀ) :=
-      (((Commute.refl Aᵀ).smul_right t).exp_right).eq.symm
-    have hBB : B * Bᵀ = -(A * P + P * Aᵀ) := by rw [hQ, neg_neg]
-    have hval : -(NormedSpace.exp (t • A) * (B * Bᵀ) * NormedSpace.exp (t • Aᵀ)) =
-        A * NormedSpace.exp (t • A) * P * NormedSpace.exp (t • Aᵀ) +
-          NormedSpace.exp (t • A) * P * (NormedSpace.exp (t • Aᵀ) * Aᵀ) := by
-      rw [c1, c2, hBB]
-      simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc, Matrix.mul_neg,
-        Matrix.neg_mul, neg_neg]
-    convert! h using 1
-  let Lx : Matrix (Fin n) (Fin n) ℝ →ₗ[ℝ] ℝ :=
-    { toFun := fun M => x ⬝ᵥ (M *ᵥ x)
-      map_add' := fun M N => by simp [add_mulVec, dotProduct_add]
-      map_smul' := fun c M => by simp [smul_mulVec, dotProduct_smul] }
-  let Lc : Matrix (Fin n) (Fin n) ℝ →L[ℝ] ℝ := LinearMap.toContinuousLinearMap Lx
-  have hfd : ∀ t, HasDerivAt (⇑Lc ∘ G) 0 t := by
-    intro t
-    refine (Lc.hasFDerivAt.comp_hasDerivAt t (hGd t)).congr_deriv ?_
-    show x ⬝ᵥ ((-(NormedSpace.exp (t • A) * (B * Bᵀ) * NormedSpace.exp (t • Aᵀ))) *ᵥ x)
-      = 0
-    rw [neg_mulVec, dotProduct_neg, ← Matrix.mul_assoc, Matrix.mul_assoc _ Bᵀ,
-      ← mulVec_mulVec, dot_exp_mul_eq_zero hx, neg_zero]
-  have hconst : ∀ t, (⇑Lc ∘ G) t = (⇑Lc ∘ G) 0 := fun t =>
-    is_const_of_deriv_eq_zero (fun s => (hfd s).differentiableAt) (fun s => (hfd s).deriv) t 0
-  have hG0 : (⇑Lc ∘ G) 0 = x ⬝ᵥ (P *ᵥ x) := by
-    simp [Lc, Lx, hG, NormedSpace.exp_zero]
-  have hpos : 0 < x ⬝ᵥ (P *ᵥ x) := by
-    simpa using hpd.dotProduct_mulVec_pos hx0
-  have hGt : Tendsto G atTop (𝓝 0) := by
-    refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
-    have h1 := tendsto_norm_exp_smul_zero hA
-    have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
-    have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖P‖ *
-        ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
-      simpa using (h1.mul_const ‖P‖).mul h2
-    refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_) hprod
-    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
-  have hlim : Tendsto (⇑Lc ∘ G) atTop (𝓝 0) := by
-    simpa using (Lc.continuous.tendsto 0).comp hGt
-  have : (⇑Lc ∘ G) 0 = 0 := by
-    have hc' : Tendsto (⇑Lc ∘ G) atTop (𝓝 ((⇑Lc ∘ G) 0)) := by
-      rw [show (⇑Lc ∘ G) = fun _ => (⇑Lc ∘ G) 0 from funext hconst]
-      exact tendsto_const_nhds
-    exact tendsto_nhds_unique hc' hlim
-  linarith [hG0 ▸ this]
-
-/-- **Stationary covariance and controllability** (T-sde-systems §2.5, corrected form).  For
-Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positive definite if and only if
-`(A, B)` is controllable. -/
-@[tmio T, powerlib_foundation] theorem posDef_iff_isControllable {A P : Matrix (Fin n) (Fin n) ℝ}
-    {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
-    (hP : SolvesCovLyapunov A P (B * Bᵀ)) :
-    P.PosDef ↔ LinearSystems.IsControllable A B :=
-  ⟨isControllable_of_posDef hA hP, posDef_of_isControllable hA hP⟩
-
-/-! ## Gramian (integral) representation of the stationary covariance -/
-
 /-- Derivative of `t ↦ e^{tA} P e^{tAᵀ}` along a solution of the covariance equation:
 `d/dt (e^{tA} P e^{tAᵀ}) = −e^{tA} Q e^{tAᵀ}` when `A P + P Aᵀ + Q = 0`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_exp_conj {A P Q : Matrix (Fin n) (Fin n) ℝ}
@@ -643,6 +560,61 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
     simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc, Matrix.mul_neg,
       Matrix.neg_mul, neg_neg]
   convert! h using 1
+
+/-- **Positive definite stationary covariance ⇒ controllability.**  If `A` is Hurwitz and a positive
+definite `P` solves `A P + P Aᵀ + B Bᵀ = 0`, then `(A, B)` is controllable.  (A vector `x ≠ 0`
+orthogonal to the reachable subspace has `Bᵀ e^{tAᵀ} x = 0`, so `xᵀ e^{tA} P e^{tAᵀ} x` is
+constant `= xᵀ P x > 0`, while it tends to `0`.) -/
+@[tmio T, powerlib_foundation] theorem isControllable_of_posDef {A P : Matrix (Fin n) (Fin n) ℝ}
+    {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
+    (hP : SolvesCovLyapunov A P (B * Bᵀ)) (hpd : P.PosDef) :
+    LinearSystems.IsControllable A B := by
+  by_contra hc
+  obtain ⟨x, hx0, hx⟩ := exists_orthogonal_of_not_isControllable hc
+  set G : ℝ → Matrix (Fin n) (Fin n) ℝ :=
+    fun t => NormedSpace.exp (t • A) * P * NormedSpace.exp (t • Aᵀ) with hG
+  have hGd : ∀ t, HasDerivAt G
+      (-(NormedSpace.exp (t • A) * (B * Bᵀ) * NormedSpace.exp (t • Aᵀ))) t :=
+    hasDerivAt_exp_conj hP
+  let Lx : Matrix (Fin n) (Fin n) ℝ →ₗ[ℝ] ℝ :=
+    { toFun := fun M => x ⬝ᵥ (M *ᵥ x)
+      map_add' := fun M N => by simp [add_mulVec, dotProduct_add]
+      map_smul' := fun c M => by simp [smul_mulVec, dotProduct_smul] }
+  let Lc : Matrix (Fin n) (Fin n) ℝ →L[ℝ] ℝ := LinearMap.toContinuousLinearMap Lx
+  have hfd : ∀ t, HasDerivAt (⇑Lc ∘ G) 0 t := by
+    intro t
+    refine (Lc.hasFDerivAt.comp_hasDerivAt t (hGd t)).congr_deriv ?_
+    show x ⬝ᵥ ((-(NormedSpace.exp (t • A) * (B * Bᵀ) * NormedSpace.exp (t • Aᵀ))) *ᵥ x)
+      = 0
+    rw [neg_mulVec, dotProduct_neg, ← Matrix.mul_assoc, Matrix.mul_assoc _ Bᵀ,
+      ← mulVec_mulVec, dot_exp_mul_eq_zero hx, neg_zero]
+  have hconst : ∀ t, (⇑Lc ∘ G) t = (⇑Lc ∘ G) 0 := fun t =>
+    is_const_of_deriv_eq_zero (fun s => (hfd s).differentiableAt) (fun s => (hfd s).deriv) t 0
+  have hG0 : (⇑Lc ∘ G) 0 = x ⬝ᵥ (P *ᵥ x) := by
+    simp [Lc, Lx, hG, NormedSpace.exp_zero]
+  have hpos : 0 < x ⬝ᵥ (P *ᵥ x) := by
+    simpa using hpd.dotProduct_mulVec_pos hx0
+  have hGt : Tendsto G atTop (𝓝 0) :=
+    tendsto_zero_iff_norm_tendsto_zero.mpr (tendsto_norm_exp_conj_zero hA P)
+  have hlim : Tendsto (⇑Lc ∘ G) atTop (𝓝 0) := by
+    simpa using (Lc.continuous.tendsto 0).comp hGt
+  have : (⇑Lc ∘ G) 0 = 0 := by
+    have hc' : Tendsto (⇑Lc ∘ G) atTop (𝓝 ((⇑Lc ∘ G) 0)) := by
+      rw [show (⇑Lc ∘ G) = fun _ => (⇑Lc ∘ G) 0 from funext hconst]
+      exact tendsto_const_nhds
+    exact tendsto_nhds_unique hc' hlim
+  linarith [hG0 ▸ this]
+
+/-- **Stationary covariance and controllability** (T-sde-systems §2.5, corrected form).  For
+Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positive definite if and only if
+`(A, B)` is controllable. -/
+@[tmio T, powerlib_foundation] theorem posDef_iff_isControllable {A P : Matrix (Fin n) (Fin n) ℝ}
+    {B : Matrix (Fin n) (Fin m) ℝ} (hA : LinearSystems.IsHurwitz A)
+    (hP : SolvesCovLyapunov A P (B * Bᵀ)) :
+    P.PosDef ↔ LinearSystems.IsControllable A B :=
+  ⟨isControllable_of_posDef hA hP, posDef_of_isControllable hA hP⟩
+
+/-! ## Gramian (integral) representation of the stationary covariance -/
 
 /-- **Finite-horizon Gramian identity.**  If `A P + P Aᵀ + Q = 0`, then for every `T`,
 `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt = P − e^{TA} P e^{TAᵀ}` (no stability assumption). -/
@@ -673,13 +645,7 @@ Hurwitz `A`, the solution `P∞` of `A P∞ + P∞ Aᵀ + B Bᵀ = 0` is positiv
       NormedSpace.exp (t • A) * Q * NormedSpace.exp (t • Aᵀ)) atTop (𝓝 P) := by
   refine tendsto_iff_norm_sub_tendsto_zero.mpr ?_
   simp only [integral_gramian_eq hP, sub_sub_cancel_left, norm_neg]
-  have h1 := tendsto_norm_exp_smul_zero hA
-  have h2 := tendsto_norm_exp_smul_zero (Linear.isHurwitz_transpose_iff.mpr hA)
-  have hprod : Tendsto (fun t : ℝ => ‖NormedSpace.exp (t • A)‖ * ‖P‖ *
-      ‖NormedSpace.exp (t • Aᵀ)‖) atTop (𝓝 0) := by
-    simpa using (h1.mul_const ‖P‖).mul h2
-  refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_) hprod
-  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
+  exact tendsto_norm_exp_conj_zero hA P
 
 end Controllability
 

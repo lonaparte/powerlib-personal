@@ -23,7 +23,9 @@ certificates (`theorem/Port/Linear.lean`); the family interface of `theorem/Fami
 
 Results.
 * Plants: `Linear.holds_input_iff` (at any constant input with an equilibrium, an attractive
-  sentence holds there exactly when the plant is Hurwitz), `Linear.isHurwitz_one_iff`.
+  sentence holds there exactly when the plant is Hurwitz), `Linear.isHurwitz_one_iff`,
+  `Linear.exists_eigenpair_one_of_pos` (a positive `1 × 1` matrix has a right-half-plane
+  eigenpair).
 * `Family.IsLinear`, a family of port systems (`Family.IsPort`): the generic laws
   `Family.IsPort.den_envelope` (read without an envelope), `Family.IsPort.den_passive` (without
   ports every member is passive), `Family.IsPort.comap` and `Family.IsPort.extend` apply.
@@ -75,6 +77,14 @@ the plant is Hurwitz: the behaviour about every operating point is the zero-inpu
     have : s = a := by linear_combination hs
     rw [this]
     simpa using ha
+
+/-- The `1 × 1` matrix `(a)` with `a > 0` has the eigenpair `(a, 1)` (a right-half-plane
+eigenvalue, in the shape of LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`). -/
+@[tmio T, powerlib_foundation] theorem exists_eigenpair_one_of_pos {a : ℝ} (ha : 0 < a) :
+    ∃ (μ : ℂ) (v : Fin 1 → ℂ), v ≠ 0 ∧
+      (!![a] : Matrix (Fin 1) (Fin 1) ℝ).map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
+  ⟨a, fun _ => 1, by intro h0; simpa using congrFun h0 0,
+    by ext i; fin_cases i; simp [Matrix.mulVec, dotProduct], by simpa using ha⟩
 
 end Linear
 

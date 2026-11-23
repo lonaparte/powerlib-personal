@@ -355,40 +355,8 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
     (htr : HasDerivAt (fun μ => (A μ).trace) τ μ₀) (hτ : 0 < τ) :
     (∀ᶠ μ in 𝓝[<] μ₀, LocallyExponentiallyStable (F μ) (xe μ)) ∧
       ∀ᶠ μ in 𝓝[>] μ₀, Unstable (F μ) (xe μ) := by
-  have hslope := htr.hasDerivWithinAt (s := Iio μ₀)
   -- sign of the trace on each side, from the derivative
-  have hlt : ∀ᶠ μ in 𝓝[<] μ₀, (A μ).trace < 0 := by
-    have h := htr.tendsto_slope_zero_left
-    have : ∀ᶠ t in 𝓝[<] (0 : ℝ), 0 < t⁻¹ • ((A (μ₀ + t)).trace - (A μ₀).trace) :=
-      h.eventually (lt_mem_nhds hτ)
-    have h2 : ∀ᶠ t in 𝓝[<] (0 : ℝ), (A (μ₀ + t)).trace < 0 := by
-      filter_upwards [this, self_mem_nhdsWithin] with t ht htneg
-      rw [htr0, sub_zero, smul_eq_mul] at ht
-      have htn : t < 0 := htneg
-      nlinarith [inv_lt_zero.mpr htn, mul_pos_iff.mp ht]
-    have hmap : Tendsto (fun μ => μ - μ₀) (𝓝[<] μ₀) (𝓝[<] 0) := by
-      refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-      · exact (continuous_sub_right μ₀).tendsto' μ₀ 0 (by simp) |>.mono_left nhdsWithin_le_nhds
-      · filter_upwards [self_mem_nhdsWithin] with μ hμ
-        simpa using hμ
-    filter_upwards [hmap.eventually h2] with μ hμ
-    simpa using hμ
-  have hgt : ∀ᶠ μ in 𝓝[>] μ₀, 0 < (A μ).trace := by
-    have h := htr.tendsto_slope_zero_right
-    have : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < t⁻¹ • ((A (μ₀ + t)).trace - (A μ₀).trace) :=
-      h.eventually (lt_mem_nhds hτ)
-    have h2 : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < (A (μ₀ + t)).trace := by
-      filter_upwards [this, self_mem_nhdsWithin] with t ht htpos
-      rw [htr0, sub_zero, smul_eq_mul] at ht
-      have htp : 0 < t := htpos
-      exact (pos_iff_pos_of_mul_pos ht).mp (inv_pos.mpr htp)
-    have hmap : Tendsto (fun μ => μ - μ₀) (𝓝[>] μ₀) (𝓝[>] 0) := by
-      refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-      · exact (continuous_sub_right μ₀).tendsto' μ₀ 0 (by simp) |>.mono_left nhdsWithin_le_nhds
-      · filter_upwards [self_mem_nhdsWithin] with μ hμ
-        simpa using hμ
-    filter_upwards [hmap.eventually h2] with μ hμ
-    simpa using hμ
+  obtain ⟨hlt, hgt⟩ := Dynamics.eventually_sign_of_hasDerivAt htr htr0 hτ
   constructor
   · filter_upwards [hlt, nhdsWithin_le_nhds hdet] with μ h1 h2
     exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two (A μ) (hF μ) (heq μ) (hJ μ) h1 h2
@@ -406,40 +374,10 @@ equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` f
     (∀ᶠ μ in 𝓝[<] μ₀, LocallyExponentiallyStable (F μ) (xe μ)) ∧
       ∀ᶠ μ in 𝓝[>] μ₀, Unstable (F μ) (xe μ) := by
   have hneg : HasDerivAt (fun μ => -(A μ).det) (-κ) μ₀ := hdet.neg
-  have hlt : ∀ᶠ μ in 𝓝[<] μ₀, 0 < (A μ).det := by
-    have h := hneg.tendsto_slope_zero_left
-    have : ∀ᶠ t in 𝓝[<] (0 : ℝ), 0 < t⁻¹ • (-(A (μ₀ + t)).det - -(A μ₀).det) :=
-      h.eventually (lt_mem_nhds (by linarith))
-    have h2 : ∀ᶠ t in 𝓝[<] (0 : ℝ), 0 < (A (μ₀ + t)).det := by
-      filter_upwards [this, self_mem_nhdsWithin] with t ht htneg
-      rw [hdet0, neg_zero, sub_zero, smul_eq_mul] at ht
-      have htn : t < 0 := htneg
-      have := (neg_iff_neg_of_mul_pos ht).mp (inv_lt_zero.mpr htn)
-      linarith
-    have hmap : Tendsto (fun μ => μ - μ₀) (𝓝[<] μ₀) (𝓝[<] 0) := by
-      refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-      · exact (continuous_sub_right μ₀).tendsto' μ₀ 0 (by simp) |>.mono_left nhdsWithin_le_nhds
-      · filter_upwards [self_mem_nhdsWithin] with μ hμ
-        simpa using hμ
-    filter_upwards [hmap.eventually h2] with μ hμ
-    simpa using hμ
-  have hgt : ∀ᶠ μ in 𝓝[>] μ₀, (A μ).det < 0 := by
-    have h := hneg.tendsto_slope_zero_right
-    have : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < t⁻¹ • (-(A (μ₀ + t)).det - -(A μ₀).det) :=
-      h.eventually (lt_mem_nhds (by linarith))
-    have h2 : ∀ᶠ t in 𝓝[>] (0 : ℝ), (A (μ₀ + t)).det < 0 := by
-      filter_upwards [this, self_mem_nhdsWithin] with t ht htpos
-      rw [hdet0, neg_zero, sub_zero, smul_eq_mul] at ht
-      have htp : 0 < t := htpos
-      have := (pos_iff_pos_of_mul_pos ht).mp (inv_pos.mpr htp)
-      linarith
-    have hmap : Tendsto (fun μ => μ - μ₀) (𝓝[>] μ₀) (𝓝[>] 0) := by
-      refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-      · exact (continuous_sub_right μ₀).tendsto' μ₀ 0 (by simp) |>.mono_left nhdsWithin_le_nhds
-      · filter_upwards [self_mem_nhdsWithin] with μ hμ
-        simpa using hμ
-    filter_upwards [hmap.eventually h2] with μ hμ
-    simpa using hμ
+  obtain ⟨hl, hr⟩ := Dynamics.eventually_sign_of_hasDerivAt hneg (by rw [hdet0, neg_zero])
+    (neg_pos.2 hκ)
+  have hlt : ∀ᶠ μ in 𝓝[<] μ₀, 0 < (A μ).det := hl.mono fun μ h => by linarith
+  have hgt : ∀ᶠ μ in 𝓝[>] μ₀, (A μ).det < 0 := hr.mono fun μ h => by linarith
   constructor
   · filter_upwards [hlt, nhdsWithin_le_nhds htr] with μ h1 h2
     exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two (A μ) (hF μ) (heq μ) (hJ μ) h2 h1

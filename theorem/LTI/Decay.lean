@@ -52,13 +52,11 @@ LeanForControl's affine linear field of `A` centred at the origin. -/
     {x : ℝ → Fin k → ℝ} (hx : ∀ t, HasDerivAt x (A *ᵥ x t) t) (t₀ t₁ : ℝ) :
     IsTrajectoryOn (fun t => WithLp.toLp 2 (x t)) (affineLinearVectorField A 0) t₀ t₁ := by
   intro t _
-  have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).symm.hasFDerivAt.comp_hasDerivAt
-    t (hx t)
+  have h := Dynamics.hasDerivAt_toLp (hx t)
   convert h.hasDerivWithinAt using 1
-  · rfl
-  · show Linear.op A (WithLp.toLp 2 (x t) - 0) = _
-    rw [sub_zero]
-    rfl
+  show Linear.op A (WithLp.toLp 2 (x t) - 0) = _
+  rw [sub_zero]
+  rfl
 
 /-- The coordinates of the matrix-exponential solution solve `ẋ = A x` globally. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_ofLp_solution (A : Matrix (Fin k) (Fin k) ℝ)
@@ -146,9 +144,7 @@ Euclidean norm (`exists_global_bound_of_isHurwitz` read through `WithLp.toLp 2`)
     ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
       ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
   obtain ⟨K, hK, rate, hr, hb⟩ := exists_global_bound_of_isHurwitz hA
-  exact ⟨K, hK, rate, hr, fun x hx => hb _ fun s =>
-    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).symm.hasFDerivAt.comp_hasDerivAt s
-      (hx s)⟩
+  exact ⟨K, hK, rate, hr, fun x hx => hb _ fun s => Dynamics.hasDerivAt_toLp (hx s)⟩
 
 /-- Conversely, exponential decay of every global coordinate solution of `ẋ = A x` forces `A` to
 be Hurwitz (`isHurwitz_of_global_bound` read through `WithLp.ofLp`). -/

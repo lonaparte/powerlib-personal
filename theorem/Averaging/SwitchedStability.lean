@@ -477,33 +477,26 @@ exponentially at every instant: `‖x(t)‖ ≤ C e^{−α t} ‖x(0)‖` for `t
   refine ⟨T₀, hT₀, (1 + c) * C * Real.exp α, α, by positivity, hα, fun T hT x hx t ht => ?_⟩
   have hT0 : 0 < T := hT.1
   have hT1 : T ≤ 1 := hT.2.trans hT₀1
-  set k := ⌊t / T⌋₊ with hkdef
-  have hk1 : (k : ℝ) * T ≤ t := by
-    have := Nat.floor_le (div_nonneg ht hT0.le)
-    rwa [le_div_iff₀ hT0] at this
-  have hk2 : t < ((k : ℝ) + 1) * T := by
-    have := Nat.lt_floor_add_one (t / T)
-    rwa [div_lt_iff₀ hT0] at this
-  have hxk : ‖x (k * T)‖ ≤ C * Real.exp (-(α * (k * T))) * ‖x 0‖ := by
-    rw [switched_sample hd0 hd1 hT0.le hx k]
-    exact (Matrix.linfty_opNorm_mulVec _ _).trans
-      (mul_le_mul_of_nonneg_right (hdec T hT k) (norm_nonneg _))
-  have hrip' := hrip T ⟨hT0, hT1⟩ x hx k t ⟨hk1, hk2.le⟩
-  have hxt : ‖x t‖ ≤ (1 + c) * ‖x (k * T)‖ := by
+  have hwin : ∀ (k : ℕ) (t : ℝ), 0 + k * T ≤ t → t < 0 + (k + 1) * T →
+      ‖x t‖ ≤ (1 + c) * ‖x (k * T)‖ := by
+    intro k t hk1 hk2
+    rw [zero_add] at hk1 hk2
+    have hrip' := hrip T ⟨hT0, hT1⟩ x hx k t ⟨hk1, hk2.le⟩
     calc ‖x t‖ = ‖(x t - x (k * T)) + x (k * T)‖ := by rw [sub_add_cancel]
       _ ≤ ‖x t - x (k * T)‖ + ‖x (k * T)‖ := norm_add_le _ _
       _ ≤ c * T * ‖x (k * T)‖ + ‖x (k * T)‖ := by gcongr
       _ ≤ (1 + c) * ‖x (k * T)‖ := by
           have : c * T ≤ c := by nlinarith
           nlinarith [norm_nonneg (x (k * T))]
-  have hexpk : Real.exp (-(α * (k * T))) ≤ Real.exp α * Real.exp (-(α * t)) := by
-    rw [← Real.exp_add]
-    apply Real.exp_le_exp.mpr
-    have : t ≤ (k : ℝ) * T + 1 := by nlinarith
-    nlinarith
-  calc ‖x t‖ ≤ (1 + c) * ‖x (k * T)‖ := hxt
-    _ ≤ (1 + c) * (C * Real.exp (-(α * (k * T))) * ‖x 0‖) := by gcongr
-    _ ≤ (1 + c) * (C * (Real.exp α * Real.exp (-(α * t))) * ‖x 0‖) := by gcongr
+  have hg : ∀ k : ℕ, ‖x (k * T)‖ ≤ C * ‖x 0‖ * Real.exp (-(α * (k * T))) := fun k => by
+    rw [switched_sample hd0 hd1 hT0.le hx k]
+    refine ((Matrix.linfty_opNorm_mulVec _ _).trans
+      (mul_le_mul_of_nonneg_right (hdec T hT k) (norm_nonneg _))).trans_eq (by ring)
+  have h := LTI.le_exp_of_sampled_decay hT0 (by positivity) (by positivity) hwin hg ht
+  rw [abs_of_pos hα, sub_zero] at h
+  have hαT : Real.exp (α * T) ≤ Real.exp α := Real.exp_le_exp.mpr (by nlinarith)
+  calc ‖x t‖ ≤ (1 + c) * (C * ‖x 0‖) * Real.exp (α * T) * Real.exp (-(α * t)) := h
+    _ ≤ (1 + c) * (C * ‖x 0‖) * Real.exp α * Real.exp (-(α * t)) := by gcongr
     _ = (1 + c) * C * Real.exp α * Real.exp (-(α * t)) * ‖x 0‖ := by ring
 
 /-- **Switched trajectories exist.** For every duty ratio `d ∈ [0, 1]`, switching period `T > 0`
@@ -539,20 +532,11 @@ statements about every switched trajectory are not vacuous. -/
   -- on each closed period the trajectory is the period profile applied to the sample
   have hx_eq : ∀ k : ℕ, ∀ t ∈ Icc ((k : ℝ) * T) ((k + 1) * T),
       x t = Φ (t - k * T) *ᵥ (M ^ k *ᵥ x₀) := by
-    intro k t ht
-    rcases lt_or_eq_of_le ht.2 with hlt | heq
-    · have hfl : ⌊t / T⌋₊ = k := by
-        rw [Nat.floor_eq_iff (div_nonneg ((by positivity : (0 : ℝ) ≤ k * T).trans ht.1) hT.le),
-          le_div_iff₀ hT, div_lt_iff₀ hT]
-        exact ⟨ht.1, hlt⟩
-      simp only [hxdef, hfl]
-    · have hfl : ⌊t / T⌋₊ = k + 1 := by
-        rw [heq, mul_div_assoc, div_self hT.ne', mul_one]
-        exact_mod_cast Nat.floor_natCast (k + 1)
-      simp only [hxdef, hfl]
-      rw [heq, show ((k : ℝ) + 1) * T - (((k + 1 : ℕ) : ℝ) * T) = 0 by push_cast; ring,
-        show ((k : ℝ) + 1) * T - k * T = T by ring, hΦ0, hΦT, Matrix.one_mulVec,
-        Matrix.mulVec_mulVec, pow_succ']
+    refine fun k t ht => LTI.floor_glue_eq (y := fun k t => Φ (t - k * T) *ᵥ (M ^ k *ᵥ x₀)) hT
+      (fun k => ?_) ht
+    rw [show ((k : ℝ) + 1) * T - (((k + 1 : ℕ) : ℝ) * T) = 0 by push_cast; ring,
+      show ((k : ℝ) + 1) * T - k * T = T by ring, hΦ0, hΦT, Matrix.one_mulVec,
+      Matrix.mulVec_mulVec, pow_succ']
   refine ⟨x, ?_, fun k => ⟨?_, ?_⟩⟩
   · have h := hx_eq 0 0 ⟨by simp, by simp [hT.le]⟩
     simpa [hΦ0] using h
@@ -1072,15 +1056,7 @@ eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
   have h₂ := slowSwitching_isHurwitz₂
   have havg := slowSwitching_isHurwitz_avg
   have hnot := slowSwitching_not_schurStable
-  have hD : LinearSystems.IsHurwitz (-1 : Matrix (Fin k) (Fin k) ℝ) := by
-    intro μ v hv h
-    rw [Matrix.map_neg _ (map_neg _), Matrix.map_one _ (map_zero _) (map_one _),
-      Matrix.neg_mulVec, Matrix.one_mulVec] at h
-    have h0 : (μ + 1) • v = 0 := by rw [add_smul, one_smul, ← h, neg_add_cancel]
-    rcases smul_eq_zero.mp h0 with h1 | h1
-    · rw [eq_neg_of_add_eq_zero_left h1]
-      norm_num
-    · exact absurd h1 hv
+  have hD : LinearSystems.IsHurwitz (-1 : Matrix (Fin k) (Fin k) ℝ) := Linear.isHurwitz_neg_one
   set e : Fin 2 ⊕ Fin k ≃ Fin (2 + k) := finSumFinEquiv
   refine ⟨(fromBlocks _ 0 0 (-1)).reindex e e, (fromBlocks _ 0 0 (-1)).reindex e e,
     isHurwitz_reindex_fromBlocks e h₁ hD, isHurwitz_reindex_fromBlocks e h₂ hD, ?_, ?_⟩

@@ -1,5 +1,6 @@
 import theorem.Flow.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import theorem.Dynamics.Calculus
 
 /-! # Lyapunov certificates for nonlinear fields
 
@@ -27,11 +28,15 @@ Results.
 * Forward completeness: `exists_lipschitz_cutoff`, `forwardComplete_of_lipschitzWith`,
   `forwardComplete_of_compact_sublevel` (a C¹ field with a nonincreasing differentiable energy of
   compact sublevels).
-* Energy estimates: `quadratic_lower_bound` and `quadratic_upper_bound` (a continuous,
-  quadratically homogeneous function positive away from the origin lies above, resp. below, a
-  positive multiple of the squared norm),
-  `energy_lower_bound`, `energy_bound_of_dissipation` and `norm_bound_of_dissipation` (at any
-  rate, negative rates giving growth bounds).
+* Energy estimates: `quadratic_bounds` (a continuous, quadratically homogeneous function
+  positive away from the origin lies between two positive multiples of the squared norm; halves
+  `quadratic_lower_bound`, `quadratic_upper_bound`),
+  `energy_lower_bound`, `energy_bound_of_dissipation` (the linear Grönwall inequality
+  `Dynamics.le_exp_mul_of_hasDerivWithinAt` along the solution) and `norm_bound_of_dissipation`
+  (at any rate, negative rates giving growth bounds).
+* `nonempty_quadraticDecay_of_homogeneous`: a C¹ quadratically homogeneous energy whose
+  dissipation is bounded by a continuous homogeneous positive function is a quadratic-decay
+  certificate.
 * The quadratic-decay certificate proves decay at half the energy rate
   (`QuadraticDecay.decay`); with a C¹ field it proves global exponential stability, hence every
   attractive sentence, Lyapunov stability and sampled contraction
@@ -42,6 +47,8 @@ Results.
 * A strict Lyapunov function with compact sublevels proves global asymptotic stability of a C¹
   field, including a solution through every state
   (`globallyAsymptoticallyStable_of_strictLyapunov`).
+  With `V = ‖x‖²`: `isStrictLyapunovFunction_norm_sq` and
+  `globallyAsymptoticallyStable_of_inner_neg` (`f 0 = 0`, `⟪x, f x⟫ < 0` for `x ≠ 0`).
 -/
 
 noncomputable section
@@ -106,15 +113,16 @@ compact sublevels is forward complete. -/
 
 /-! ## Quadratic bounds -/
 
-/-- A continuous, quadratically homogeneous function that is positive away from the origin of a
-finite-dimensional space is bounded below by a positive multiple of the squared norm. -/
-@[tmio T, powerlib_foundation] theorem quadratic_lower_bound {E : Type*} [NormedAddCommGroup E]
+/-- **Two-sided quadratic bounds.** A continuous, quadratically homogeneous function that is
+positive away from the origin of a finite-dimensional space lies between two positive multiples
+of the squared norm (its minimum and maximum on the unit sphere). -/
+@[tmio T, powerlib_foundation] theorem quadratic_bounds {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] (V : E → ℝ) (hc : Continuous V)
     (hh : ∀ (a : ℝ) (x : E), V (a • x) = a ^ 2 * V x) (hp : ∀ x ≠ 0, 0 < V x) :
-    ∃ α > 0, ∀ x, α * ‖x‖ ^ 2 ≤ V x := by
+    ∃ α > 0, ∃ β ≥ α, ∀ x, α * ‖x‖ ^ 2 ≤ V x ∧ V x ≤ β * ‖x‖ ^ 2 := by
   have hzero : V 0 = 0 := by simpa using hh 0 0
   rcases subsingleton_or_nontrivial E with hE | hE
-  · refine ⟨1, one_pos, fun x => ?_⟩
+  · refine ⟨1, one_pos, 1, le_rfl, fun x => ?_⟩
     rw [Subsingleton.elim x 0, hzero, norm_zero]
     norm_num
   have hne : (Metric.sphere (0 : E) 1).Nonempty := by
@@ -123,9 +131,10 @@ finite-dimensional space is bounded below by a positive multiple of the squared 
     refine ⟨‖v‖⁻¹ • v, ?_⟩
     simp [norm_smul, inv_mul_cancel₀ hn]
   obtain ⟨v, hv, hmin⟩ := (isCompact_sphere (0 : E) 1).exists_isMinOn hne hc.continuousOn
+  obtain ⟨w, -, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn hne hc.continuousOn
   have hvnorm : ‖v‖ = 1 := by simpa [Metric.mem_sphere, dist_eq_norm] using hv
   have hα : 0 < V v := hp v (by intro h; simp [h] at hvnorm)
-  refine ⟨V v, hα, fun x => ?_⟩
+  refine ⟨V v, hα, V w, hmax hv, fun x => ?_⟩
   by_cases hx : x = 0
   · simp [hx, hzero]
   · have hn : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
@@ -135,38 +144,24 @@ finite-dimensional space is bounded below by a positive multiple of the squared 
     have hs : ‖x‖ • z = x := by simp [z, smul_smul, hn]
     have he : V x = ‖x‖ ^ 2 * V z := by rw [← hh ‖x‖ z, hs]
     rw [he]
-    simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmin hz) (sq_nonneg ‖x‖)
+    exact ⟨by simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmin hz) (sq_nonneg ‖x‖),
+      by simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmax hz) (sq_nonneg ‖x‖)⟩
 
-/-- A continuous, quadratically homogeneous function that is positive away from the origin of a
-finite-dimensional space is bounded above by a positive multiple of the squared norm. -/
+/-- The lower half of `quadratic_bounds`. -/
+@[tmio T, powerlib_foundation] theorem quadratic_lower_bound {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (V : E → ℝ) (hc : Continuous V)
+    (hh : ∀ (a : ℝ) (x : E), V (a • x) = a ^ 2 * V x) (hp : ∀ x ≠ 0, 0 < V x) :
+    ∃ α > 0, ∀ x, α * ‖x‖ ^ 2 ≤ V x :=
+  let ⟨α, hα, _, _, h⟩ := quadratic_bounds V hc hh hp
+  ⟨α, hα, fun x => (h x).1⟩
+
+/-- The upper half of `quadratic_bounds`. -/
 @[tmio T, powerlib_foundation] theorem quadratic_upper_bound {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] (V : E → ℝ) (hc : Continuous V)
     (hh : ∀ (a : ℝ) (x : E), V (a • x) = a ^ 2 * V x) (hp : ∀ x ≠ 0, 0 < V x) :
-    ∃ β > 0, ∀ x, V x ≤ β * ‖x‖ ^ 2 := by
-  have hzero : V 0 = 0 := by simpa using hh 0 0
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · refine ⟨1, one_pos, fun x => ?_⟩
-    rw [Subsingleton.elim x 0, hzero, norm_zero]
-    norm_num
-  have hne : (Metric.sphere (0 : E) 1).Nonempty := by
-    obtain ⟨v, hv⟩ := exists_ne (0 : E)
-    have hn : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
-    refine ⟨‖v‖⁻¹ • v, ?_⟩
-    simp [norm_smul, inv_mul_cancel₀ hn]
-  obtain ⟨w, hw, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn hne hc.continuousOn
-  have hwnorm : ‖w‖ = 1 := by simpa [Metric.mem_sphere, dist_eq_norm] using hw
-  have hβ : 0 < V w := hp w (by intro h; simp [h] at hwnorm)
-  refine ⟨V w, hβ, fun x => ?_⟩
-  by_cases hx : x = 0
-  · simp [hx, hzero]
-  · have hn : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
-    let z := ‖x‖⁻¹ • x
-    have hz : z ∈ Metric.sphere (0 : E) 1 := by
-      simp [z, norm_smul, inv_mul_cancel₀ hn]
-    have hs : ‖x‖ • z = x := by simp [z, smul_smul, hn]
-    have he : V x = ‖x‖ ^ 2 * V z := by rw [← hh ‖x‖ z, hs]
-    rw [he]
-    simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmax hz) (sq_nonneg ‖x‖)
+    ∃ β > 0, ∀ x, V x ≤ β * ‖x‖ ^ 2 :=
+  let ⟨_, hα, β, hβ, h⟩ := quadratic_bounds V hc hh hp
+  ⟨β, hα.trans_le hβ, fun x => (h x).2⟩
 
 /-! ## Energy comparison -/
 
@@ -176,32 +171,12 @@ energy's decay on that segment from below. -/
     (hV : ContDiff ℝ 1 V) {ρ : ℝ} {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b)
     (hlie : ∀ s ∈ Icc a b, -ρ * V (φ s) ≤ fderiv ℝ V (φ s) (f (φ s))) (ht : t ∈ Icc a b) :
     Real.exp (-(ρ * (t - a))) * V (φ a) ≤ V (φ t) := by
-  let W : ℝ → ℝ := fun s => Real.exp (ρ * (s - a)) * V (φ s)
-  let W' : ℝ → ℝ := fun s =>
-    Real.exp (ρ * (s - a)) * (ρ * V (φ s) + fderiv ℝ V (φ s) (f (φ s)))
-  have hW : ∀ s ∈ Icc a b, HasDerivWithinAt W (W' s) (Icc a b) s := by
-    intro s hs
-    have hexp : HasDerivAt (fun u => Real.exp (ρ * (u - a))) (Real.exp (ρ * (s - a)) * ρ) s := by
-      simpa only [id_eq, mul_one, mul_comm] using
-        (((hasDerivAt_id s).sub_const a).const_mul ρ).exp
-    have hVd : HasDerivWithinAt (fun s => V (φ s)) (fderiv ℝ V (φ s) (f (φ s))) (Icc a b) s :=
-      ((hV.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s (hφ s hs)
-    convert! hexp.hasDerivWithinAt.mul hVd using 1
-    dsimp [W']
-    ring
-  have hmono : MonotoneOn W (Icc a b) := by
-    apply monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a b)
-      (fun s hs => (hW s hs).continuousWithinAt)
-    · exact fun s hs => (hW s (interior_subset hs)).mono interior_subset
-    · intro s hs
-      apply mul_nonneg (Real.exp_nonneg _)
-      linarith [hlie s (interior_subset hs)]
-  have hbound := hmono (left_mem_Icc.mpr (ht.1.trans ht.2)) ht ht.1
-  have hmul := mul_le_mul_of_nonneg_left hbound (Real.exp_nonneg (-(ρ * (t - a))))
-  have hcancel : Real.exp (-(ρ * (t - a))) * Real.exp (ρ * (t - a)) = 1 := by
-    rw [← Real.exp_add]
-    simp
-  simpa [W, mul_assoc, ← mul_assoc, hcancel] using hmul
+  have h := Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun s => -V (φ s))
+    (g' := fun s => -fderiv ℝ V (φ s) (f (φ s))) (ρ := ρ)
+    (fun s hs => (((hV.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s
+      (hφ s hs)).neg) (fun s hs => by linarith [hlie s hs]) t ht
+  rw [neg_mul] at h
+  linarith
 
 /-! ## Quadratic-decay certificates -/
 
@@ -224,6 +199,26 @@ attribute [powerlib_foundation]
   QuadraticDecay.smooth QuadraticDecay.equilibrium QuadraticDecay.lower_bound
   QuadraticDecay.upper_bound QuadraticDecay.dissipation
 
+/-- **Quadratic decay from homogeneous energy and dissipation.** A C¹ energy `V` and a continuous
+dissipation `W ≤ −V'(x)(f x)`, both quadratically homogeneous and positive away from the
+equilibrium `0`, give a quadratic-decay certificate (rate `α / β` from the bounds of
+`quadratic_bounds`). -/
+@[tmio T, powerlib_foundation] theorem nonempty_quadraticDecay_of_homogeneous {f : ℝⁿ → ℝⁿ}
+    {V W : ℝⁿ → ℝ} (hV : ContDiff ℝ 1 V) (hVh : ∀ (a : ℝ) (x : ℝⁿ), V (a • x) = a ^ 2 * V x)
+    (hVp : ∀ x ≠ 0, 0 < V x) (hWc : Continuous W)
+    (hWh : ∀ (a : ℝ) (x : ℝⁿ), W (a • x) = a ^ 2 * W x) (hWp : ∀ x ≠ 0, 0 < W x)
+    (he : f 0 = 0) (hdiss : ∀ x, fderiv ℝ V x (f x) ≤ -W x) :
+    Nonempty (QuadraticDecay f V 0) := by
+  obtain ⟨a, ha, b, hab, hVb⟩ := quadratic_bounds V hV.continuous hVh hVp
+  obtain ⟨α, hα, hW⟩ := quadratic_lower_bound W hWc hWh hWp
+  have hb : 0 < b := ha.trans_le hab
+  refine ⟨⟨a, b, α / b, ha, hb, div_pos hα hb, hV, he, fun x => by simpa using (hVb x).1,
+    fun x => by simpa using (hVb x).2, fun x => (hdiss x).trans ?_⟩⟩
+  have h : α / b * V x ≤ α * ‖x‖ ^ 2 := by
+    rw [div_mul_eq_mul_div, div_le_iff₀ hb]
+    nlinarith [(hVb x).2, sq_nonneg ‖x‖]
+  linarith [hW x]
+
 /-- Integrating an energy inequality needs no positivity assumption on its rate.
 Negative rates give growth bounds, and zero gives a bounded energy. -/
 @[tmio T, powerlib_foundation] theorem energy_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
@@ -231,34 +226,11 @@ Negative rates give growth bounds, and zero gives a bounded energy. -/
     (dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x)
     {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
     V (φ t) ≤ Real.exp (-(rate * (t - a))) * V (φ a) := by
-  let W : ℝ → ℝ := fun s => Real.exp (rate * (s - a)) * V (φ s)
-  let W' : ℝ → ℝ := fun s =>
-    Real.exp (rate * (s - a)) * (rate * V (φ s) + fderiv ℝ V (φ s) (f (φ s)))
-  have hW : ∀ s ∈ Icc a b, HasDerivWithinAt W (W' s) (Icc a b) s := by
-    intro s hs
-    have hexp : HasDerivAt (fun u => Real.exp (rate * (u - a)))
-        (Real.exp (rate * (s - a)) * rate) s := by
-      simpa only [id_eq, mul_one, mul_comm] using
-        (((hasDerivAt_id s).sub_const a).const_mul rate).exp
-    have hV : HasDerivWithinAt (fun s => V (φ s)) (fderiv ℝ V (φ s) (f (φ s))) (Icc a b) s :=
-      ((smooth.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s
-        (hφ s hs)
-    convert! hexp.hasDerivWithinAt.mul hV using 1
-    dsimp [W']
-    ring
-  have hmono : AntitoneOn W (Icc a b) := by
-    apply antitoneOn_of_hasDerivWithinAt_nonpos (convex_Icc a b)
-      (fun s hs => (hW s hs).continuousWithinAt)
-    · exact fun s hs => (hW s (interior_subset hs)).mono interior_subset
-    · intro s _
-      apply mul_nonpos_of_nonneg_of_nonpos (Real.exp_nonneg _)
-      linarith [dissipation (φ s)]
-  have hbound := hmono (left_mem_Icc.mpr (ht.1.trans ht.2)) ht ht.1
-  have hmul := mul_le_mul_of_nonneg_left hbound (Real.exp_nonneg (-(rate * (t - a))))
-  have hcancel : Real.exp (-(rate * (t - a))) * Real.exp (rate * (t - a)) = 1 := by
-    rw [← Real.exp_add]
-    simp
-  simpa [W, mul_assoc, ← mul_assoc, hcancel] using hmul
+  have h := Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun s => V (φ s))
+    (g' := fun s => fderiv ℝ V (φ s) (f (φ s))) (ρ := rate)
+    (fun s hs => ((smooth.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s
+      (hφ s hs)) (fun s _ => dissipation (φ s)) t ht
+  rwa [neg_mul] at h
 
 /-- Quadratic bounds convert the arbitrary-rate energy estimate to a state estimate. -/
 @[tmio T, powerlib_foundation] theorem norm_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
@@ -346,5 +318,32 @@ C¹ field, including a solution through every state. -/
   exact ⟨hV.hequil, forwardComplete_of_compact_sublevel hf
     (hV.hV_c1.differentiable (by norm_num)) hdec hV.hbounded_sublevel,
     lyapunov_asymptotic_stable hn hV hf.continuous⟩
+
+/-- **The squared norm as a strict Lyapunov function.** If `f 0 = 0` and `⟪x, f x⟫ < 0` for every
+`x ≠ 0`, then `‖x‖²` is a strict Lyapunov function of `f` at `0` (its sublevels are balls). -/
+@[tmio T, powerlib_foundation] theorem isStrictLyapunovFunction_norm_sq {f : ℝⁿ → ℝⁿ}
+    (hf0 : f 0 = 0) (hneg : ∀ x, x ≠ 0 → inner ℝ x (f x) < 0) :
+    IsStrictLyapunovFunction f (fun x => ‖x‖ ^ 2) 0 where
+  hcont := continuous_norm.pow 2
+  hV_c1 := contDiff_norm_sq ℝ
+  hzero := by simp
+  hpos := fun x hx => by positivity
+  hequil := hf0
+  hLie_neg := fun x hx => by
+    rw [(hasStrictFDerivAt_norm_sq x).hasFDerivAt.fderiv]
+    simpa using mul_neg_of_pos_of_neg two_pos (hneg x hx)
+  hbounded_sublevel := fun c => by
+    refine (isCompact_closedBall (0 : ℝⁿ) (Real.sqrt (max c 0))).of_isClosed_subset
+      (isClosed_le (continuous_norm.pow 2) continuous_const) fun x hx => ?_
+    rw [mem_closedBall, dist_zero_right]
+    exact Real.le_sqrt_of_sq_le ((Set.mem_ofPred_eq ▸ hx).trans (le_max_left _ _))
+
+/-- **Global asymptotic stability from an inward field.** A `C¹` field with `f 0 = 0` and
+`⟪x, f x⟫ < 0` for every `x ≠ 0` is globally asymptotically stable at `0`
+(`isStrictLyapunovFunction_norm_sq`). -/
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_of_inner_neg {f : ℝⁿ → ℝⁿ}
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f) (hf0 : f 0 = 0)
+    (hneg : ∀ x, x ≠ 0 → inner ℝ x (f x) < 0) : GloballyAsymptoticallyStable f 0 :=
+  globallyAsymptoticallyStable_of_strictLyapunov hn hf (isStrictLyapunovFunction_norm_sq hf0 hneg)
 
 end powerlib.Flow

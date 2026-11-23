@@ -1,4 +1,5 @@
 import theorem.Linear.Plant
+import theorem.Dynamics.Calculus
 
 /-! # The linear stability hub
 
@@ -274,9 +275,7 @@ def eigenmode (part : ℂ →L[ℝ] ℝ) (μ : ℂ) (v : Fin n → ℂ) (t : ℝ
     refine hasDerivAt_pi.2 fun j => ?_
     have h := part.hasFDerivAt.comp_hasDerivAt t (eigen_component_hasDerivAt A heig t j)
     convert h using 1 <;> first | rfl | simp [Matrix.mulVec, dotProduct, map_sum, hpart]
-  have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivAt
-    t hcomp
-  convert h using 1 <;> rfl
+  exact Dynamics.hasDerivAt_toLp hcomp
 
 @[tmio T, powerlib_foundation] theorem eigenmode_norm_sq (μ : ℂ) (v : Fin n → ℂ) (t : ℝ) :
     ‖eigenmode Complex.reCLM μ v t‖ ^ 2 + ‖eigenmode Complex.imCLM μ v t‖ ^ 2 =

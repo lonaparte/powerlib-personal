@@ -45,13 +45,15 @@ Results.
   `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`; in coefficients `a₂ s² + a₁ s + a₀`,
   `a₂ > 0`, `tr = −a₁/a₂`, `det = a₀/a₂`: `isHurwitz_iff_of_coeffs_quadratic`). The damping ratio
   `dampingRatio A = −tr A / (2 √det A)` and natural frequency `naturalFrequency A = √det A`
-  (definitions): for `det A > 0`, `det (s • 1 − A) = s² + 2ζω_n s + ω_n²`
-  (`det_characteristicMatrix_standard`); `ζ` is invariant under similarity
-  (`dampingRatio_conj`).
+  (definitions): `ω_n² = det A` (`naturalFrequency_sq`), `2 ζ ω_n = −tr A`
+  (`two_mul_dampingRatio_mul_naturalFrequency`), hence for `det A > 0`,
+  `det (s • 1 − A) = s² + 2ζω_n s + ω_n²` (`det_characteristicMatrix_standard`); `ζ` is
+  invariant under similarity (`dampingRatio_conj`).
 * Instability witnesses: `A.det < 0` and `0 < A.trace` are the cases `n = 2` of the generic
   witnesses `Criteria.exists_pos_real_eigenvalue_of_det`, `Criteria.exists_root_re_pos_of_det`
   (`(-1) ^ 2 * A.det = A.det`), `Criteria.exists_eigenpair_re_pos_of_trace_pos` and
-  `Criteria.exists_root_re_pos_of_trace_pos`, which apply directly.
+  `Criteria.exists_root_re_pos_of_trace_pos`; their disjunction, a strict violation of
+  `isHurwitz_fin_two_iff`, is `exists_root_re_pos_of_violation_fin_two`.
 * Discriminant: all eigenvalues real iff `0 ≤ tr² − 4 det`
   (`eigenvalues_real_iff_discriminant_nonneg`); nilpotency: `A ^ 2 = 0 ↔ tr A = 0 ∧ det A = 0`
   (`sq_eq_zero_iff_trace_det_eq_zero_fin_two`) and `IsNilpotent A ↔ tr A = 0 ∧ det A = 0`
@@ -378,6 +380,16 @@ section FinTwo
   simp only [det_characteristicMatrix_fin_two, sub_eq_add_neg, ← neg_mul, ← Complex.ofReal_neg]
   rw [quadratic_roots_re_neg_iff, neg_pos]
 
+/-- **A strict violation of the 2×2 Hurwitz conditions**, `0 < tr A` or `det A < 0`, gives a
+characteristic root in the open right half plane (the generic witnesses
+`exists_root_re_pos_of_trace_pos`, `exists_root_re_pos_of_det` with `(−1)² = 1`). -/
+@[tmio T, powerlib_foundation] theorem exists_root_re_pos_of_violation_fin_two
+    (A : Matrix (Fin 2) (Fin 2) ℝ) (h : 0 < A.trace ∨ A.det < 0) :
+    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
+  rcases h with h | h
+  · exact exists_root_re_pos_of_trace_pos A h
+  · exact exists_root_re_pos_of_det A (by rw [neg_one_sq, one_mul]; exact h)
+
 @[tmio T, powerlib_foundation] theorem isHurwitz_fin_two_of_iff (a b c d : ℝ) :
     LinearSystems.IsHurwitz !![a, b; c, d] ↔ a + d < 0 ∧ 0 < a * d - b * c := by
   rw [isHurwitz_fin_two_iff, Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
@@ -409,17 +421,27 @@ def dampingRatio (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := -A.trace / (2 * Real.
 /-- The natural frequency `ω_n = √det A` of a real 2×2 matrix. -/
 def naturalFrequency (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := Real.sqrt A.det
 
+/-- `ω_n² = det A` (for `det A ≥ 0`). -/
+@[tmio T, powerlib_foundation] theorem naturalFrequency_sq (A : Matrix (Fin 2) (Fin 2) ℝ)
+    (hdet : 0 ≤ A.det) : naturalFrequency A ^ 2 = A.det :=
+  Real.sq_sqrt hdet
+
+/-- `2 ζ ω_n = −tr A` (for `det A > 0`). -/
+@[tmio T, powerlib_foundation] theorem two_mul_dampingRatio_mul_naturalFrequency
+    (A : Matrix (Fin 2) (Fin 2) ℝ) (hdet : 0 < A.det) :
+    2 * dampingRatio A * naturalFrequency A = -A.trace := by
+  have hω : naturalFrequency A ≠ 0 := (Real.sqrt_pos.mpr hdet).ne'
+  rw [dampingRatio, ← naturalFrequency]
+  field_simp
+
 /-- Standard second-order form: for `det A > 0`,
 `det (s • 1 − A) = s² + 2 ζ ω_n s + ω_n²` with `ζ = dampingRatio A`, `ω_n = naturalFrequency A`. -/
 @[tmio T, powerlib_foundation] theorem det_characteristicMatrix_standard
     (A : Matrix (Fin 2) (Fin 2) ℝ) (hdet : 0 < A.det) (s : ℂ) :
     (Linear.characteristicMatrix A s).det = s ^ 2 +
       2 * (dampingRatio A : ℂ) * (naturalFrequency A : ℂ) * s + (naturalFrequency A : ℂ) ^ 2 := by
-  have hω : naturalFrequency A ≠ 0 := (Real.sqrt_pos.mpr hdet).ne'
-  have h2 : naturalFrequency A ^ 2 = A.det := Real.sq_sqrt hdet.le
-  have h1 : 2 * dampingRatio A * naturalFrequency A = -A.trace := by
-    rw [dampingRatio, ← naturalFrequency]
-    field_simp
+  have h2 := naturalFrequency_sq A hdet.le
+  have h1 := two_mul_dampingRatio_mul_naturalFrequency A hdet
   have h1c := congrArg (fun x : ℝ => (x : ℂ)) h1
   have h2c := congrArg (fun x : ℝ => (x : ℂ)) h2
   push_cast at h1c h2c

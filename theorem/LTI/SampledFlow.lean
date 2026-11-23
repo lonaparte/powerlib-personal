@@ -117,35 +117,26 @@ instant plus less than one period, over which the flow is bounded. -/
     have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 ⟨le_rfl, hT.le⟩)
     refine ⟨M * max C 0 * Real.exp (|a| * T), fun t₀ t₁ φ hφ t ht => ?_⟩
     rw [Linear.trajectory_eq_solution hφ t ht, solution_zero, sub_zero, sub_zero]
-    have hτ : 0 ≤ (t - t₀) / T := div_nonneg (sub_nonneg.mpr ht.1) hT.le
-    set k := ⌊(t - t₀) / T⌋₊
-    set s := t - t₀ - k * T with hs
-    have hk1 : (k : ℝ) * T ≤ t - t₀ := (le_div_iff₀ hT).mp (Nat.floor_le hτ)
-    have hk2 : t - t₀ < (k + 1) * T := (div_lt_iff₀ hT).mp (Nat.lt_floor_add_one _)
-    have hsT : s ∈ Icc 0 T := ⟨by linarith, by linarith⟩
-    have hsplit : Linear.op (exp ((t - t₀) • A)) (φ t₀) =
-        Linear.op (exp (s • A)) ((⇑(Linear.op (exp (T • A))))^[k] (φ t₀)) := by
-      rw [iterate_op_exp, ← op_exp_add_smul, hs, sub_add_cancel]
-    have h1 := hC (φ t₀) k
-    rw [sub_zero, sub_zero] at h1
-    have h2 : ‖(⇑(Linear.op (exp (T • A))))^[k] (φ t₀)‖ ≤
-        max C 0 * Real.exp (-(a * T) * k) * ‖φ t₀‖ :=
-      h1.trans (by gcongr; exact le_max_left _ _)
-    have has : a * s ≤ |a| * T :=
-      (mul_le_mul_of_nonneg_right (le_abs_self a) hsT.1).trans
-        (mul_le_mul_of_nonneg_left hsT.2 (abs_nonneg a))
-    have he : Real.exp (-(a * T) * k) ≤ Real.exp (|a| * T) * Real.exp (-a * (t - t₀)) := by
-      rw [← Real.exp_add, Real.exp_le_exp]
-      have : a * s = a * (t - t₀) - a * T * k := by rw [hs]; ring
-      linarith
-    rw [hsplit]
-    calc ‖Linear.op (exp (s • A)) ((⇑(Linear.op (exp (T • A))))^[k] (φ t₀))‖
-        ≤ ‖Linear.op (exp (s • A))‖ * ‖(⇑(Linear.op (exp (T • A))))^[k] (φ t₀)‖ :=
-          ContinuousLinearMap.le_opNorm _ _
-      _ ≤ M * (max C 0 * Real.exp (-(a * T) * k) * ‖φ t₀‖) :=
-          mul_le_mul (hM s hsT) h2 (norm_nonneg _) hM0
-      _ ≤ M * (max C 0 * (Real.exp (|a| * T) * Real.exp (-a * (t - t₀))) * ‖φ t₀‖) := by
-          gcongr
+    have hwin : ∀ (k : ℕ) (r : ℝ), t₀ + k * T ≤ r → r < t₀ + (k + 1) * T →
+        ‖Linear.op (exp ((r - t₀) • A)) (φ t₀)‖ ≤
+          M * ‖(⇑(Linear.op (exp (T • A))))^[k] (φ t₀)‖ := by
+      intro k r h1 h2
+      have hsT : r - t₀ - k * T ∈ Icc 0 T := ⟨by linarith, by linarith⟩
+      have hsplit : Linear.op (exp ((r - t₀) • A)) (φ t₀) =
+          Linear.op (exp ((r - t₀ - k * T) • A)) ((⇑(Linear.op (exp (T • A))))^[k] (φ t₀)) := by
+        rw [iterate_op_exp, ← op_exp_add_smul, sub_add_cancel]
+      rw [hsplit]
+      exact (ContinuousLinearMap.le_opNorm _ _).trans
+        (mul_le_mul_of_nonneg_right (hM _ hsT) (norm_nonneg _))
+    have hg : ∀ k : ℕ, ‖(⇑(Linear.op (exp (T • A))))^[k] (φ t₀)‖ ≤
+        max C 0 * ‖φ t₀‖ * Real.exp (-(a * (k * T))) := fun k => by
+      have h1 := hC (φ t₀) k
+      rw [sub_zero, sub_zero, show -(a * T) * k = -(a * (k * T)) by ring] at h1
+      calc _ ≤ C * Real.exp (-(a * (k * T))) * ‖φ t₀‖ := h1
+        _ ≤ max C 0 * Real.exp (-(a * (k * T))) * ‖φ t₀‖ := by gcongr; exact le_max_left _ _
+        _ = _ := by ring
+    have h := le_exp_of_sampled_decay hT hM0 (by positivity) hwin hg ht.1
+    calc _ ≤ _ := h
       _ = M * max C 0 * Real.exp (|a| * T) * Real.exp (-a * (t - t₀)) * ‖φ t₀‖ := by ring
 
 /-- **Lyapunov stability under exact sampling.** For `T > 0`, the linear flow is Lyapunov stable

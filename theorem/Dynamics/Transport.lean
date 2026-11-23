@@ -41,13 +41,13 @@ Results.
   under affine changes of coordinates: `transportSystem`, `invariant`).
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
   `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
-  planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleCoord`, `scaleCoord_apply`,
-  `scaleCoord_symm_apply`). Sign changes `x ↦ (σᵢ xᵢ)ᵢ`, `σ : Fin n → ℤˣ` (`signMatrix`, an
-  involution: `signMatrix_mul_self`, `signMatrix_isUnit`, `signMatrix_inv`; `signCoord`,
-  `signCoord_apply`, `signCoord_symm`). A field is the transport of `g` by `T` about the origin
-  exactly when `T` conjugates them (`transportField_zero_eq_iff_comp`). Linear fields: the field
-  of `T A S` (`S = T⁻¹`) is that of `A` in the coordinates `x' = T x`, so every sentence at the
-  origin is invariant (`Linear.holds_conj`), and similar plants satisfy the same sentences
+  planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleMatrix_mul_inv`, `scaleCoord`,
+  `scaleCoord_apply`, `scaleCoord_symm_apply`). Sign changes `x ↦ (σᵢ xᵢ)ᵢ`, `σ : Fin n → ℤˣ`
+  (`signMatrix`, an involution: `signMatrix_mul_self`, `signMatrix_isUnit`, `signMatrix_inv`;
+  `signCoord`, `signCoord_apply`, `signCoord_symm`). A field is the transport of `g` by `T` about
+  the origin exactly when `T` conjugates them (`transportField_zero_eq_iff_comp`). Linear fields:
+  the field of `T A S` (`S = T⁻¹`) is that of `A` in the coordinates `x' = T x`, so every sentence
+  at the origin is invariant (`Linear.holds_conj`), and similar plants satisfy the same sentences
   (`Linear.Similar.holds_iff`).
 * Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): `holds_timeScale_iff` (`P` of `f`
   is `P.timeScale c` of `c • f`, every `P` but sampled contraction; `Flow.Property.timeScale c` is
@@ -295,11 +295,14 @@ def scaleMatrix (η : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, η]
   rw [Matrix.isUnit_iff_isUnit_det]
   simpa [scaleMatrix, Matrix.det_fin_two] using hη
 
+/-- `diag(1, η)` and `diag(1, η⁻¹)` are inverse to each other (`η ≠ 0`). -/
+@[tmio T, powerlib_foundation] theorem scaleMatrix_mul_inv {η : ℝ} (hη : η ≠ 0) :
+    scaleMatrix η * scaleMatrix η⁻¹ = 1 ∧ scaleMatrix η⁻¹ * scaleMatrix η = 1 := by
+  constructor <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp [scaleMatrix, hη]
+
 @[tmio T, powerlib_foundation] private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
-    (scaleMatrix η)⁻¹ = !![1, 0; 0, η⁻¹] := by
-  apply Matrix.inv_eq_left_inv
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [scaleMatrix, hη]
+    (scaleMatrix η)⁻¹ = !![1, 0; 0, η⁻¹] :=
+  Matrix.inv_eq_left_inv (scaleMatrix_mul_inv hη).2
 
 /-- The coordinate change `(θ, v) ↦ (θ, η v)`. -/
 def scaleCoord {η : ℝ} (hη : η ≠ 0) : State 2 ≃L[ℝ] State 2 :=

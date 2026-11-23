@@ -22,7 +22,8 @@ Source: library infrastructure (no work-sync note).
 
 Results.
 * `mk a b` is the state with `x 0 = a`, `x 1 = b` (`mk_apply_zero`, `mk_apply_one`, `mk_coords`,
-  `ext_iff'`, `mk_eq_iff`, `mk_sub`); norms `norm_sq_eq`, `norm_mk_sq`, `norm_mk`.
+  `ext_iff'`, `mk_eq_iff`, `mk_sub`); norms `norm_sq_eq`, `norm_mk_sq`, `norm_mk`,
+  `norm_mk_sub_mk_le` (`‖mk a b − mk c d‖ ≤ |a − c| + |b − d|`).
 * `toEuclideanCLM_apply_zero`, `toEuclideanCLM_apply_one` read off the two components of a
   `2 × 2` matrix acting on a planar state (instances of `Dynamics.toEuclideanCLM_apply`);
   `hasDerivWithinAt_iff_components` differentiates a planar curve componentwise.
@@ -73,6 +74,12 @@ def mk (a b : ℝ) : State 2 := WithLp.toLp 2 ![a, b]
 
 @[tmio T, powerlib_foundation] theorem norm_mk (a b : ℝ) : ‖mk a b‖ = √(a ^ 2 + b ^ 2) := by
   rw [← norm_mk_sq, Real.sqrt_sq (norm_nonneg _)]
+
+/-- The distance between two planar states is at most the sum of the coordinate gaps. -/
+@[tmio T, powerlib_foundation] theorem norm_mk_sub_mk_le (a b c d : ℝ) :
+    ‖mk a b - mk c d‖ ≤ |a - c| + |b - d| := by
+  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans (le_of_eq ?_)
+  simp [mk]
 
 @[tmio T, powerlib_foundation] theorem toEuclideanCLM_apply_zero (A : Matrix (Fin 2) (Fin 2) ℝ)
     (v : State 2) :

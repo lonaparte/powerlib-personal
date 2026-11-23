@@ -514,6 +514,13 @@ def LinUnstable : Prop := p.pi.Unstable ∨ p.Idc0 / (p.C * p.V0) < 0
     linarith
 
 
+/-- With no integral gain the field does not depend on `ξ`. -/
+@[tmio M, powerlib_domain] private theorem field_ki_zero_shift (hKi : p.pi.Ki = 0) (x : State 3)
+    (t : ℝ) :
+    p.field p.Id0 (x + t • EuclideanSpace.single 1 1) = p.field p.Id0 x := by
+  ext i
+  fin_cases i <;> simp [field, vconv, hKi]
+
 end CascadeParams
 
 /-- The linearized cascade: every parameter set read as the port system of its small-signal
@@ -596,23 +603,9 @@ sentence iff the current loop is stable and the converter rectifies (`I_dc0 > 0`
   have hdiff : DifferentiableAt ℝ (p.field p.Id0) p.eqState :=
     ((p.field_contDiffOn _).contDiffAt (CascadeParams.isOpen_posV.mem_nhds hx)).differentiableAt
       one_ne_zero
-  have hconst : ∀ t : ℝ, p.field p.Id0 (p.eqState + t • EuclideanSpace.single 1 1) =
-      p.field p.Id0 p.eqState := by
-    intro t
-    ext i
-    fin_cases i <;> simp [CascadeParams.field, CascadeParams.vconv, hKi]
-  have h1 : HasDerivAt (fun t : ℝ => p.field p.Id0 (p.eqState + t • EuclideanSpace.single 1 1))
-      (fderiv ℝ (p.field p.Id0) p.eqState (EuclideanSpace.single 1 1)) 0 := by
-    have h := hdiff.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
-      (((hasDerivAt_id (0 : ℝ)).smul_const (EuclideanSpace.single 1 1 : State 3)).const_add
-        p.eqState) (by simp)
-    rw [one_smul] at h
-    exact h
-  have h2 : HasDerivAt (fun t : ℝ => p.field p.Id0 (p.eqState + t • EuclideanSpace.single 1 1))
-      0 0 := by
-    simp only [hconst]
-    exact hasDerivAt_const _ _
-  exact h1.unique h2
+  refine Dynamics.fderiv_apply_eq_of_hasDerivAt_line hdiff ?_
+  simp only [p.field_ki_zero_shift hKi]
+  exact hasDerivAt_const _ _
 
 /-- With `L, C, V0 > 0` the nonlinear cascade is locally exponentially stable at its operating
 point exactly when the current loop is stable (`R + Kp > 0`, `Ki > 0`) and the converter
@@ -756,12 +749,6 @@ def loopEnergy (x : State 3) : ℝ :=
     (Or.inl hs))
   exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local isOpen_posV (p.eqState_mem hV) _
     (p.field_contDiffOn _) (p.field_eqState hKi) (p.jacobian_eq hKi hV.ne') ⟨s, v, hv, heig, hre⟩
-
-/-- With no integral gain the field does not depend on `ξ`. -/
-@[tmio M, powerlib_domain] private theorem field_ki_zero_shift (hKi : p.pi.Ki = 0) (x : State 3) (t : ℝ) :
-    p.field p.Id0 (x + t • EuclideanSpace.single 1 1) = p.field p.Id0 x := by
-  ext i
-  fin_cases i <;> simp [field, vconv, hKi]
 
 /-- With no integral gain the cascade is not locally asymptotically stable. -/
 @[tmio TM, powerlib_domain] private theorem not_las_ki_zero (hV : 0 < p.V0) (hKi : p.pi.Ki = 0) :

@@ -67,9 +67,9 @@ namespace powerlib.Synchronous.SyncMachine
 
 open Matrix Filter Asymptotics
 open scoped Topology
-open powerlib.Transform (phase cvec svec cvec_dot_cvec svec_dot_svec cvec_dot_svec
-  cvec_sum svec_sum k k_sq parkMatrix parkDeriv parkMatrix_hasDerivAt parkMatrix_mulVec
-  parkMatrix_mul_transpose J0 parkMatrix_mul_deriv_transpose)
+open powerlib.Transform (phase cvec svec k k_sq parkMatrix parkDeriv parkMatrix_hasDerivAt
+  parkMatrix_mulVec_cvec parkMatrix_mulVec_svec parkMatrix_mul_transpose J0
+  parkMatrix_mul_deriv_transpose)
 
 /-! ## Inductances -/
 
@@ -101,17 +101,10 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 @[tmio M, powerlib_domain] theorem park_statorInductance (Ll LA LB θ : ℝ) :
     parkMatrix θ * statorInductance Ll LA LB θ * (parkMatrix θ)ᵀ =
       diagonal ![Ll + 3 / 2 * (LA + LB), Ll + 3 / 2 * (LA - LB), Ll] := by
-  have hc : parkMatrix θ *ᵥ cvec θ = ![k * (3 / 2), 0, 0] := by
-    rw [parkMatrix_mulVec, cvec_dot_cvec, dotProduct_comm (svec θ) (cvec θ), cvec_dot_svec,
-      cvec_sum]
-    simp
-  have hs : parkMatrix θ *ᵥ svec θ = ![0, -k * (3 / 2), 0] := by
-    rw [parkMatrix_mulVec, svec_dot_svec, cvec_dot_svec, svec_sum]
-    simp
   have hk := k_sq
   simp only [statorInductance, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul,
     Matrix.smul_mul, Matrix.mul_one, parkMatrix_mul_transpose, mul_vecMulVec, vecMulVec_mul,
-    Matrix.vecMul_transpose, hc, hs]
+    Matrix.vecMul_transpose, parkMatrix_mulVec_cvec, parkMatrix_mulVec_svec]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp <;>
@@ -124,8 +117,7 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 d-axis value `√(3/2) L_afd` (written `k · 3/2 · L_afd`). -/
 @[tmio M, powerlib_domain] theorem park_mutual_d (Lafd θ : ℝ) :
     parkMatrix θ *ᵥ (Lafd • cvec θ) = ![k * (3 / 2) * Lafd, 0, 0] := by
-  rw [Matrix.mulVec_smul, parkMatrix_mulVec, cvec_dot_cvec, dotProduct_comm (svec θ) (cvec θ),
-    cvec_dot_svec, cvec_sum]
+  rw [Matrix.mulVec_smul, parkMatrix_mulVec_cvec]
   ext i
   fin_cases i <;> simp
   ring
@@ -134,7 +126,7 @@ d-axis value `√(3/2) L_afd` (written `k · 3/2 · L_afd`). -/
 q-axis value `√(3/2) L_akq`. -/
 @[tmio M, powerlib_domain] theorem park_mutual_q (Lakq θ : ℝ) :
     parkMatrix θ *ᵥ (-Lakq • svec θ) = ![0, k * (3 / 2) * Lakq, 0] := by
-  rw [Matrix.mulVec_smul, parkMatrix_mulVec, svec_dot_svec, cvec_dot_svec, svec_sum]
+  rw [Matrix.mulVec_smul, parkMatrix_mulVec_svec]
   ext i
   fin_cases i <;> simp
   ring

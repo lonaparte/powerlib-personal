@@ -525,12 +525,7 @@ continuous, bounded, `C²`-like at `0` (`|g(y) − g(0) − g₁y| ≤ G₂y²`)
     have h3 := (integrable_pow_mul_exp_neg_mul_sq ha 3).const_mul (g 0 * c)
     refine (h1.sub h3).congr (Eventually.of_forall fun u => ?_)
     simp only [hOdef, Pi.sub_apply, pow_one]; ring
-  have hOzero : ∫ u, O u = 0 := by
-    have h := integral_neg_eq_self O volume
-    have hneg : (fun u => O (-u)) = fun u => -O u := by
-      funext u; simp only [hOdef, neg_sq]; ring
-    rw [hneg, integral_neg] at h
-    linarith
+  have hOzero : ∫ u, O u = 0 := integral_eq_zero_of_odd fun u => by simp only [hOdef, neg_sq]; ring
   set T : ℝ → ℝ := fun u => (g 0 + (g₁ * u - g 0 * c * u ^ 3) / √X) * Real.exp (-a * u ^ 2)
     with hTdef
   have hTsplit : T = fun u => g 0 * Real.exp (-a * u ^ 2) + (√X)⁻¹ * O u := by

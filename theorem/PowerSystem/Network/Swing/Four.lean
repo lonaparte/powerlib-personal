@@ -24,8 +24,8 @@ Results.
 * Static cut identities, every number of machines: `potential_add_groupIndicator` (turning a
   group `X` of machines rigidly by `t` changes the potential by `W (1 − cos t) + K (sin t − t)`,
   `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ)` the total linearization weight and `K` the total flow of the lines
-  leaving `X`), `hessForm_groupIndicator` (`A₂` of the turn is `2W`), `cubicForm_add_const`,
-  `ground_sub_zero` (at `u = groupIndicator X`, the grounded direction of a rigid turn).
+  leaving `X`), `hessForm_groupIndicator` (`A₂` of the turn is `2W`); the grounded direction of
+  a rigid turn is `ground_sub_zero` at `u = groupIndicator X` (`Degenerate.lean`).
 * The four-cycle (superadditivity of `tan`): `tan_add_tan_lt`, `sq_sum_le_mul`
   (Cauchy–Schwarz), `tan_sum_mul_sq_lt` (three angles in `(−π/2, π/2)` summing past `π/2`:
   `tan(∑β)(∑a)² < ∑ a² tan β`), `exists_rep_of_cos_pos`, `quad_tan_ne_zero`,
@@ -51,9 +51,9 @@ Family and connection conclusions.
   fold if `W = 0` and `K ≠ 0`, a non-strict minimum otherwise), its special case
   `not_localAsymptoticStable_of_zero_cut` (every line of the cut has zero weight),
   `not_localAsymptoticStable_of_flat` (a non-constant direction carrying no linearized flow
-  `Bᵢⱼ cos(θᵢ − θⱼ)(uᵢ − uⱼ)` on any line), `not_localAsymptoticStable_of_hessForm_neg` (a
-  negative Hessian value) and `not_localAsymptoticStable_of_cubicForm_ne_zero` (a nonzero cubic
-  term along a null direction of the Hessian form).
+  `Bᵢⱼ cos(θᵢ − θⱼ)(uᵢ − uⱼ)` on any line), from the form tests
+  `not_localAsymptoticStable_of_hessForm_neg`, `not_localAsymptoticStable_of_cubicForm_ne_zero`
+  of `theorem/PowerSystem/Network/Swing/Degenerate.lean`.
 * `not_localAsymptoticStable_four` — four machines with two uncoupled pairs (the lines form a
   subgraph of a four-cycle, or of a triangle with a pendant line): every power-balance point with
   a non-Hurwitz reduced Jacobian fails local asymptotic stability.
@@ -155,13 +155,6 @@ the lines leaving `X`. -/
   by_cases hk : k ∈ X <;> by_cases hj : j ∈ X <;> simp [hk, hj]
   rw [p.B_symm, show θ j - θ k = -(θ k - θ j) by ring, Real.cos_neg]
 
-@[tmio M, powerlib_domain] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
-    ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k
-  · simp [ground]
-  · simp only [ground_succ]; ring
-
 /-- **A cut of nonpositive total weight rules out local asymptotic stability** (any number of
 machines). If the lines between a nonempty proper group `X` of machines and the rest have total
 linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` rigidly changes the potential by
@@ -182,10 +175,10 @@ linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` r
   set v : Fin n → ℝ := fun i => groupIndicator X i.succ - groupIndicator X 0 with hv
   rcases hW.lt_or_eq with hneg | hzero
   · intro hLAS
-    refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal v (Or.inl ?_)
+    refine not_localAsymptoticStable_of_hessForm_neg ⟨p, θ⟩ hbal (groupIndicator X) ?_
       (mem_den_flow_iff_four.mpr hLAS)
-    show hessForm p θ (ground v) < 0
-    rw [hv, ground_sub_zero (groupIndicator X), hessForm_add_const, hessForm_groupIndicator]
+    show hessForm p θ (groupIndicator X) < 0
+    rw [hessForm_groupIndicator]
     linarith
   have hground : ∀ t : ℝ, θ + ground (t • v) =
       fun k => (θ + t • groupIndicator X) k + -(t * groupIndicator X 0) := by
@@ -305,60 +298,23 @@ off by zero-weight lines, so the model is not locally asymptotically stable. -/
   · exact h'
   · exact absurd (by linarith : u j = u i₀) hj
 
-@[tmio M, powerlib_domain] theorem cubicForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
-    (c : ℝ) : cubicForm p θ (fun k => u k + c) = cubicForm p θ u := by
-  simp [cubicForm]
-
 /-- Implementation evidence: at a locally asymptotically stable power-balance point the Hessian
 form is positive semidefinite. -/
 @[tmio TM, powerlib_domain] private theorem reducedSwing_hessForm_nonneg_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) (u : Fin (n + 1) → ℝ) :
-    0 ≤ hessForm p θ u := by
-  by_contra h
-  push Not at h
-  refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal (fun i => u i.succ - u 0) (Or.inl ?_)
+    0 ≤ hessForm p θ u :=
+  le_of_not_gt fun h => not_localAsymptoticStable_of_hessForm_neg ⟨p, θ⟩ hbal u h
     (mem_den_flow_iff_four.mpr hLAS)
-  show hessForm p θ (ground fun i => u i.succ - u 0) < 0
-  rw [ground_sub_zero, hessForm_add_const]
-  exact h
 
 /-- Implementation evidence: at a locally asymptotically stable power-balance point the cubic
 form vanishes on every null direction of the Hessian form. -/
 @[tmio TM, powerlib_domain] private theorem reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) (u : Fin (n + 1) → ℝ)
-    (h0 : hessForm p θ u = 0) : cubicForm p θ u = 0 := by
-  by_contra h
-  refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal (fun i => u i.succ - u 0)
-    (Or.inr ⟨?_, ?_⟩) (mem_den_flow_iff_four.mpr hLAS)
-  · show hessForm p θ (ground fun i => u i.succ - u 0) = 0
-    rw [ground_sub_zero, hessForm_add_const]; exact h0
-  · show cubicForm p θ (ground fun i => u i.succ - u 0) ≠ 0
-    rw [ground_sub_zero, cubicForm_add_const]; exact h
-
-/-- **A negative value of the Hessian form rules out local asymptotic stability**: at a
-power-balance point a locally asymptotically stable model has a positive semidefinite Hessian
-form. -/
-@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_hessForm_neg (m : Model n)
-    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
-    (h : hessForm m.params m.θ u < 0) :
-    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff_four]
-  exact fun hLAS => absurd
-    (reducedSwing_hessForm_nonneg_of_localAsymptoticStable hbal hLAS u) (not_le.mpr h)
-
-/-- **A nonzero cubic form along a null direction of the Hessian form rules out local asymptotic
-stability**: at a power-balance point a locally asymptotically stable model has a cubic form
-vanishing on every null direction of its Hessian form. -/
-@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_cubicForm_ne_zero (m : Model n)
-    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
-    (h0 : hessForm m.params m.θ u = 0) (h : cubicForm m.params m.θ u ≠ 0) :
-    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff_four]
-  exact fun hLAS => h (reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable hbal hLAS u h0)
+    (h0 : hessForm p θ u = 0) : cubicForm p θ u = 0 :=
+  by_contra fun h => not_localAsymptoticStable_of_cubicForm_ne_zero ⟨p, θ⟩ hbal u h0 h
+    (mem_den_flow_iff_four.mpr hLAS)
 
 /-! ## The four-cycle: superadditivity of `tan` -/
 
@@ -710,7 +666,8 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
     rw [← weightOf_swap] at this
     linear_combination -this
 
-/-- Node balances of a null direction of a positive semidefinite form on four machines. -/
+/-- Node balances of a null direction of a positive semidefinite form on four machines (the
+four-node reading of `Network.node_balance_eq_zero_of_form_eq_zero`). -/
 @[tmio T, powerlib_foundation] theorem null_four {w01 w02 w03 w12 w13 w23 g₀ g₁ g₂ g₃ : ℝ}
     (hQ : ∀ a b c d : ℝ, 0 ≤ w01 * (a - b) ^ 2 + w02 * (a - c) ^ 2 + w03 * (a - d) ^ 2 +
       w12 * (b - c) ^ 2 + w13 * (b - d) ^ 2 + w23 * (c - d) ^ 2)
@@ -720,31 +677,13 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
     w01 * (g₁ - g₀) + w12 * (g₁ - g₂) + w13 * (g₁ - g₃) = 0 ∧
     w02 * (g₂ - g₀) + w12 * (g₂ - g₁) + w23 * (g₂ - g₃) = 0 ∧
     w03 * (g₃ - g₀) + w13 * (g₃ - g₁) + w23 * (g₃ - g₂) = 0 := by
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · have := eq_zero_of_forall_linear_quadratic_nonneg
-      (L := 2 * (w01 * (g₀ - g₁) + w02 * (g₀ - g₂) + w03 * (g₀ - g₃)))
-      (Q := w01 + w02 + w03) fun x => by
-        have h := hQ (g₀ + x) g₁ g₂ g₃
-        linear_combination h + h0
-    linarith
-  · have := eq_zero_of_forall_linear_quadratic_nonneg
-      (L := 2 * (w01 * (g₁ - g₀) + w12 * (g₁ - g₂) + w13 * (g₁ - g₃)))
-      (Q := w01 + w12 + w13) fun x => by
-        have h := hQ g₀ (g₁ + x) g₂ g₃
-        linear_combination h + h0
-    linarith
-  · have := eq_zero_of_forall_linear_quadratic_nonneg
-      (L := 2 * (w02 * (g₂ - g₀) + w12 * (g₂ - g₁) + w23 * (g₂ - g₃)))
-      (Q := w02 + w12 + w23) fun x => by
-        have h := hQ g₀ g₁ (g₂ + x) g₃
-        linear_combination h + h0
-    linarith
-  · have := eq_zero_of_forall_linear_quadratic_nonneg
-      (L := 2 * (w03 * (g₃ - g₀) + w13 * (g₃ - g₁) + w23 * (g₃ - g₂)))
-      (Q := w03 + w13 + w23) fun x => by
-        have h := hQ g₀ g₁ g₂ (g₃ + x)
-        linear_combination h + h0
-    linarith
+  have h := node_balance_eq_zero_of_form_eq_zero (W := !![0, w01, w02, w03; w01, 0, w12, w13;
+      w02, w12, 0, w23; w03, w13, w23, 0]) (g := ![g₀, g₁, g₂, g₃])
+    (fun i j => by fin_cases i <;> fin_cases j <;> rfl)
+    (fun x => by simp [Fin.sum_univ_four]; nlinarith [hQ (x 0) (x 1) (x 2) (x 3)])
+    (by simp [Fin.sum_univ_four]; linear_combination 2 * h0)
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> [have := h 0; have := h 1; have := h 2; have := h 3] <;>
+    simpa [Fin.sum_univ_four] using this
 
 /-- **Four machines with two uncoupled pairs (at most four lines).** Label the machines by `σ` so
 that the pair `σ1, σ3` is uncoupled and so is `σ0, σ2` (the lines form a subgraph of the

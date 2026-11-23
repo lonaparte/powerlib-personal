@@ -146,10 +146,7 @@ local minimum at `(θ*, η*)`. -/
 @[tmio M, powerlib_domain] theorem pllPH_isStrictLocalMin {V Kp Ki ηs θ : ℝ} (hKp : 0 ≤ Kp)
     (hV : 0 < V) (hKi : 0 < Ki) (hθ : Real.cos θ = 1) :
     (pllPH V Kp Ki ηs hKp).IsStrictLocalMin (PhasePlane.mk θ ηs) := by
-  have hsθ : Real.sin θ = 0 := by
-    have := Real.sin_sq_add_cos_sq θ
-    rw [hθ] at this
-    exact pow_eq_zero_iff two_ne_zero |>.mp (by linarith)
+  have hsθ : Real.sin θ = 0 := Real.sin_eq_zero_iff_cos_eq.mpr (.inl hθ)
   have hball : Metric.ball (PhasePlane.mk θ ηs) Real.pi ∈ nhds (PhasePlane.mk θ ηs) :=
     Metric.ball_mem_nhds _ Real.pi_pos
   rw [PH.NonlinearModel.IsStrictLocalMin, eventually_nhdsWithin_iff]
@@ -333,19 +330,14 @@ the same flow sentences. -/
 same phase. -/
 private def toSRF (m : Model) : PIPLL.Model := srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ
 
-@[tmio T, powerlib_foundation] private theorem sin_eq_zero_of_cos_sq {θ : ℝ} (h : Real.cos θ ^ 2 = 1) : Real.sin θ = 0 := by
-  have := Real.sin_sq_add_cos_sq θ
-  exact pow_eq_zero_iff two_ne_zero |>.mp (by linarith)
-
-/-- With `V K_i > 0` at a well bottom or an anti-phase point (`cos² θ* = 1`) the SRF member is
+/-- With `V K_i > 0` at a well bottom or an anti-phase point (`cos θ* = ±1`) the SRF member is
 phase-locked. -/
 @[tmio M, powerlib_domain] private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
-    (hθ : Real.cos m.θ ^ 2 = 1) :
+    (hθ : Real.cos m.θ = 1 ∨ Real.cos m.θ = -1) :
     connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
-  refine ⟨show srfPD m.V m.θ = 0 by rw [srfPD, sin_eq_zero_of_cos_sq hθ, mul_zero, neg_zero],
-    Or.inl ?_⟩
+  refine ⟨show srfPD m.V m.θ = 0 from srfPD_eq_zero_of_cos_eq hθ, Or.inl ?_⟩
   show m.Ki ≠ 0
   rintro h0
   rw [h0, mul_zero] at hVKi
@@ -361,7 +353,7 @@ stability for the SRF member: phase-locked, with both slope-gain products `K_p (
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
-      toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
+      toSRF_phaseLocked hVKi (.inl hθ)
   · show m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧ m.Ki * deriv (toSRF m).h (toSRF m).θ < 0
     rw [toSRF, PIPLL.srf_deriv, hθ]
     constructor <;> linarith [mul_comm m.V m.Kp, mul_comm m.V m.Ki]
@@ -403,7 +395,7 @@ with the slope-gain product `K_i (−V cos θ*) = V K_i` positive. -/
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
-      toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
+      toSRF_phaseLocked hVKi (.inr hθ)
   · show 0 < m.Ki * deriv (toSRF m).h (toSRF m).θ ∨ 0 < m.Kp * deriv (toSRF m).h (toSRF m).θ
     rw [toSRF, PIPLL.srf_deriv, hθ]
     exact Or.inl (by linarith [mul_comm m.V m.Ki])
@@ -442,8 +434,7 @@ local minimum there, `pllPH_isStrictLocalMin`). -/
   change m ∈ family.den (.flow .lyapunovStable)
   refine (mem_den_flow_iff_srf m _).mpr
     (PIPLL.mem_den_lyapunovStable_of_slope (toSRF m) ?_ m.damping hKi ?_)
-  · show srfPD m.V m.θ = 0
-    rw [srfPD, sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num), mul_zero, neg_zero]
+  · exact srfPD_eq_zero_of_cos_eq (.inl hθ)
   · rw [toSRF, PIPLL.srf_deriv, hθ]
     linarith
 
