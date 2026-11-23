@@ -36,8 +36,8 @@ respect to the supply rate `u ⬝ y`; finite-time stability over a horizon with 
 Results.
 * `Port.System` (field and conjugate output), `System.supply`, `System.IsTrajectoryOn` (solutions
   under an input signal), `System.zeroInput`, `System.PassiveWith`, `System.Passive`,
-  `System.autonomous`; the envelope notions `System.Exceeds`, `System.reach`, `System.Solvable`,
-  `System.squareAt`.
+  `System.autonomous`; the envelope notions `System.reach`, `System.Exceeds` (a reached state
+  outside the safe set), `System.Solvable`, `System.squareAt`.
 * `Envelope.Sample`, `Envelope.Property` (`safe T ε`, `meanSquare T c`).
 * `Behaviour` (`continuous`, `discrete`, `disturbed`), `Behaviour.exceedance`, `Sentence`
   (`flow P`, `passive`, `envelope E`) and `Sentence.holds`.
@@ -89,17 +89,16 @@ def System.Passive (s : System n p) : Prop := ∃ V, s.PassiveWith V
 /-- The system of an autonomous field: no ports. -/
 def System.autonomous (f : ℝⁿ → ℝⁿ) : System n 0 := ⟨fun x _ => f x, fun _ _ => 0⟩
 
-/-- Some solution of the zero-input dynamics starting in `S` leaves `A` before the horizon `T`:
-a solution segment on `[0, t]`, `t < T`, with `x 0 ∈ S` and `x t ∉ A`. -/
-def System.Exceeds (s : System n p) (S A : Set ℝⁿ) (T : ℝ≥0∞) : Prop :=
-  ∃ (x : ℝ → ℝⁿ) (t : ℝ), 0 ≤ t ∧ ENNReal.ofReal t < T ∧ x 0 ∈ S ∧ s.IsTrajectoryOn 0 x 0 t ∧
-    x t ∉ A
-
 /-- The states reached before the horizon `T` by the solutions of the zero-input dynamics starting
-in `S`. -/
+in `S`: `x t` for a solution segment on `[0, t]`, `t < T`, with `x 0 ∈ S`. -/
 def System.reach (s : System n p) (S : Set ℝⁿ) (T : ℝ≥0∞) : Set ℝⁿ :=
   {y | ∃ (x : ℝ → ℝⁿ) (t : ℝ), 0 ≤ t ∧ ENNReal.ofReal t < T ∧ x 0 ∈ S ∧ s.IsTrajectoryOn 0 x 0 t ∧
     x t = y}
+
+/-- Some solution of the zero-input dynamics starting in `S` leaves `A` before the horizon `T`:
+some state reached before `T` lies outside `A`. -/
+def System.Exceeds (s : System n p) (S A : Set ℝⁿ) (T : ℝ≥0∞) : Prop :=
+  ∃ y ∈ s.reach S T, y ∉ A
 
 /-- Every state of `S` starts a solution segment of the zero-input dynamics on `[0, T]`. -/
 def System.Solvable (s : System n p) (S : Set ℝⁿ) (T : ℝ) : Prop :=

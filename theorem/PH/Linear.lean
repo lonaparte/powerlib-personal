@@ -12,10 +12,11 @@ Model boundary.
 * State `x : State n = EuclideanSpace ℝ (Fin n)`, input `u : Fin m → ℝ`, continuous time.
 * Constant matrices: `J` skew-symmetric, `R` symmetric positive semidefinite, `g` arbitrary,
   `Q` symmetric (not necessarily definite unless stated). Hamiltonian `H(x) = ½ xᵀ Q x`,
-  gradient `Q x`.
+  gradient `Q x`. The constructor `quadratic` keeps the constant `Q` and lets `J(x)`, `R(x)`,
+  `g(x)` depend on the state (same pointwise conditions).
 * Field `ẋ = (J − R) Q x + g u`, output `y = gᵀ Q x`; state matrix `A = (J − R) Q`.
   Lyapunov identity `Aᵀ Q + Q A = −2 Q R Q ⪯ 0`.
-* Excluded: state-dependent matrices (see `NonlinearModel`), linearization of a nonlinear
+* Excluded: non-quadratic Hamiltonians (see `NonlinearModel`), linearization of a nonlinear
   pH system (the Hessian bridge of T-ph §1.10), transfer functions and positive realness,
   delay, PWM, PLL, saturation.
 
@@ -31,6 +32,10 @@ Results.
   the port system of that plant (`linear_system_eq`).
 * The Hamiltonian is the quadratic energy `Linear.quadraticEnergy Q`
   (`theorem/Linear/Certificate.lean`), with gradient `Q x` (`hasGradientAt_quadraticEnergy`).
+  `quadratic J R g Q` is the pH model with that Hamiltonian and state-dependent `J(x)`, `R(x)`,
+  `g(x)`; its gradient field is the linear map `Q` (`quadratic_dH`). The constant-coefficient
+  system `linear J R g Q` and the synchronous-machine models `Synchronous.syncMachine7`,
+  `Synchronous.smib11` are instances.
 * With `Q ≻ 0` the model is the linear port-Hamiltonian plant `toPortHamiltonian J R g Q`
   (`theorem/Port/PortHamiltonian.lean`; its passivity certificate is the plant's KYP
   certificate `Q`, whose storage is the same quadratic energy by definition).
@@ -71,21 +76,35 @@ is `Q x`. -/
   rw [Linear.fderiv_quadraticEnergy_apply hQ, WithLp.ofLp_toLp,
     dotProduct_mulVec, ← mulVec_transpose, hQ]
 
+/-- The pH model with quadratic Hamiltonian `H = ½ xᵀ Q x` (`Q` symmetric, gradient `∇H = Q x`)
+and interconnection, dissipation and port matrices `J(x)`, `R(x)`, `g(x)`. -/
+def quadratic (J R : State n → Matrix (Fin n) (Fin n) ℝ) (g : State n → Matrix (Fin n) (Fin m) ℝ)
+    (Q : Matrix (Fin n) (Fin n) ℝ) (hJ : ∀ x, (J x)ᵀ = -J x) (hR : ∀ x, (R x).PosSemidef)
+    (hQ : Qᵀ = Q) : NonlinearModel n m where
+  J := J
+  R := R
+  g := g
+  H := Linear.quadraticEnergy Q
+  dH x := WithLp.toLp 2 (Q *ᵥ WithLp.ofLp x)
+  skew := hJ
+  dissipation_posSemidef := hR
+  hasGradient := hasGradientAt_quadraticEnergy hQ
+
+/-- The gradient field of a quadratic pH model is the linear map `x ↦ Q x`. -/
+@[tmio M, powerlib_foundation] theorem quadratic_dH {J R : State n → Matrix (Fin n) (Fin n) ℝ}
+    {g : State n → Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ}
+    {hJ : ∀ x, (J x)ᵀ = -J x} {hR : ∀ x, (R x).PosSemidef} {hQ : Qᵀ = Q} :
+    (quadratic J R g Q hJ hR hQ).dH = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) Q :=
+  funext fun _ => rfl
+
 /-! ### Constant-coefficient port-Hamiltonian systems -/
 
 /-- The constant-coefficient pH system `ẋ = (J − R) Q x + g u`, `y = gᵀ Q x`,
-`H = ½ xᵀ Q x`. -/
+`H = ½ xᵀ Q x`: the quadratic pH model with constant `J`, `R`, `g`. -/
 def linear (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fin m) ℝ)
     (Q : Matrix (Fin n) (Fin n) ℝ) (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Qᵀ = Q) :
-    NonlinearModel n m where
-  J _ := J
-  R _ := R
-  g _ := g
-  H := Linear.quadraticEnergy Q
-  dH x := WithLp.toLp 2 (Q *ᵥ WithLp.ofLp x)
-  skew _ := hJ
-  dissipation_posSemidef _ := hR
-  hasGradient := hasGradientAt_quadraticEnergy hQ
+    NonlinearModel n m :=
+  quadratic (fun _ => J) (fun _ => R) (fun _ => g) Q (fun _ => hJ) (fun _ => hR) hQ
 
 /-- The state matrix `A = (J − R) Q`. -/
 def linearStateMatrix (J R Q : Matrix (Fin n) (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ :=
@@ -109,12 +128,13 @@ include hJ hR hQ in
 @[tmio M, powerlib_foundation] theorem linear_field (x : State n) (u : Fin m → ℝ) :
     (linear J R g Q hJ hR hQ).field x u =
       WithLp.toLp 2 (linearStateMatrix J R Q *ᵥ WithLp.ofLp x + g *ᵥ u) := by
-  simp only [NonlinearModel.field, linear, linearStateMatrix, WithLp.ofLp_toLp, mulVec_mulVec]
+  simp only [NonlinearModel.field, linear, quadratic, linearStateMatrix, WithLp.ofLp_toLp,
+    mulVec_mulVec]
 
 include hJ hR hQ in
 @[tmio M, powerlib_foundation] theorem linear_output (x : State n) :
     (linear J R g Q hJ hR hQ).output x = (gᵀ * Q) *ᵥ WithLp.ofLp x := by
-  simp only [NonlinearModel.output, linear, WithLp.ofLp_toLp, mulVec_mulVec]
+  simp only [NonlinearModel.output, linear, quadratic, WithLp.ofLp_toLp, mulVec_mulVec]
 
 include hJ hR hQ in
 /-- The zero-input field is the linear map `x ↦ A x`. -/
@@ -261,7 +281,7 @@ variable (pm : DiagonalPH (Fin n) (Fin m))
 @[tmio M, powerlib_foundation] theorem ofDiagonal_dampingPower (x : State n) :
     (ofDiagonal pm).dampingPower x = pm.dampingPower (WithLp.ofLp x) := by
   simp only [NonlinearModel.dampingPower, ofLp_ofDiagonal_dH]
-  simp only [ofDiagonal, linear, dotProduct, mulVec_diagonal, DiagonalPH.dampingPower]
+  simp only [ofDiagonal, linear, quadratic, dotProduct, mulVec_diagonal, DiagonalPH.dampingPower]
   apply Finset.sum_congr rfl
   intro i _
   ring

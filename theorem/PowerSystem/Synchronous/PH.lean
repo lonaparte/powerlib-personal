@@ -968,19 +968,15 @@ def syncMachine7_g : Matrix (Fin 7) (Fin 4) ℝ :=
      0, 0, 0, 1;
      0, 0, 0, 0]
 
-/-- The seven-state dq synchronous machine of T-sync-machine §1.13 as a nonlinear pH model. -/
-def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
-  J := syncMachine7_J
-  R _ := syncMachine7_R p
-  g _ := syncMachine7_g
-  H := Linear.quadraticEnergy (syncMachine7_Q p)
-  dH x := WithLp.toLp 2 (syncMachine7_Q p *ᵥ WithLp.ofLp x)
-  skew x := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [syncMachine7_J]
-  dissipation_posSemidef _ := PosSemidef.diagonal (fun i => by
-    fin_cases i <;> simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg])
-  hasGradient := hasGradientAt_quadraticEnergy (syncMachine7_Q_symm p)
+/-- The seven-state dq synchronous machine of T-sync-machine §1.13 as a nonlinear pH model: the
+quadratic pH model (`PH.quadratic`) with storage matrix `syncMachine7_Q`. -/
+def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 :=
+  PH.quadratic syncMachine7_J (fun _ => syncMachine7_R p) (fun _ => syncMachine7_g)
+    (syncMachine7_Q p)
+    (fun x => by ext i j; fin_cases i <;> fin_cases j <;> simp [syncMachine7_J])
+    (fun _ => PosSemidef.diagonal fun i => by
+      fin_cases i <;> simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg])
+    (syncMachine7_Q_symm p)
 
 /-- The co-energy is `∇H = Q x = (i_d, i_q, i_f, i_kd, i_kq, ω_r, 0)`. -/
 @[tmio M, powerlib_domain] theorem syncMachine7_dH (p : SyncMachine7Params) (x : State 7) :
@@ -1012,8 +1008,8 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
   rw [NonlinearModel.ofLp_field, syncMachine7_dH]
   ext i
   fin_cases i <;>
-    simp [syncMachine7, syncMachine7_J, syncMachine7_R, syncMachine7_g, mulVec, dotProduct,
-      Fin.sum_univ_succ, Matrix.diagonal_apply]
+    simp [syncMachine7, PH.quadratic, syncMachine7_J, syncMachine7_R, syncMachine7_g, mulVec,
+      dotProduct, Fin.sum_univ_succ, Matrix.diagonal_apply]
   all_goals ring
 
 /-- Damping power `r_s(i_d² + i_q²) + r_f i_f² + r_kd i_kd² + r_kq i_kq² + D ω_r²`. -/
@@ -1023,7 +1019,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
         p.rf * syncMachine7_current p x 2 ^ 2 + p.rkd * syncMachine7_current p x 3 ^ 2 +
         p.rkq * syncMachine7_current p x 4 ^ 2 + p.D * syncMachine7_speed p x ^ 2 := by
   rw [NonlinearModel.dampingPower, syncMachine7_dH]
-  simp [syncMachine7, syncMachine7_R, mulVec, dotProduct, Fin.sum_univ_succ,
+  simp [syncMachine7, PH.quadratic, syncMachine7_R, mulVec, dotProduct, Fin.sum_univ_succ,
     Matrix.diagonal_apply]
   ring
 
@@ -1034,7 +1030,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
       u 0 * syncMachine7_current p x 0 + u 1 * syncMachine7_current p x 1 +
         u 2 * syncMachine7_current p x 2 + u 3 * syncMachine7_speed p x := by
   rw [NonlinearModel.supply, NonlinearModel.output, syncMachine7_dH]
-  simp [syncMachine7, syncMachine7_g, mulVec, dotProduct, Fin.sum_univ_succ]
+  simp [syncMachine7, PH.quadratic, syncMachine7_g, mulVec, dotProduct, Fin.sum_univ_succ]
   ring
 
 /-- `H = ½ Ψᵀ Γ Ψ + p² / (2M)`: magnetic plus kinetic energy, independent of `δ`. -/
@@ -1043,7 +1039,7 @@ def syncMachine7 (p : SyncMachine7Params) : NonlinearModel 7 4 where
       (1 / 2 : ℝ) * (syncMachine7_flux x ⬝ᵥ (p.Γ *ᵥ syncMachine7_flux x)) +
         x 5 ^ 2 / (2 * p.M) := by
   have hQ : syncMachine7_Q p *ᵥ WithLp.ofLp x = _ := syncMachine7_dH p x
-  simp only [syncMachine7, Linear.quadraticEnergy]
+  simp only [syncMachine7, PH.quadratic, Linear.quadraticEnergy]
   rw [hQ]
   simp [syncMachine7_current, syncMachine7_flux, syncMachine7_speed, dotProduct,
     Fin.sum_univ_succ]
@@ -1090,8 +1086,10 @@ exponential stability is therefore exact (`PassiveOnly.exact_flow`). -/
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isNonlinearPH.mem_den_flow)]
   have h := (syncMachine7 p).not_locallyExponentiallyStable_of_col_eq_zero (k := 6)
-    (Q := syncMachine7_Q p) (funext fun _ => rfl)
-    (fun i j => by fin_cases i <;> fin_cases j <;> simp [syncMachine7, syncMachine7_J] <;> fun_prop)
+    (Q := syncMachine7_Q p) PH.quadratic_dH
+    (fun i j => by
+      fin_cases i <;> fin_cases j <;>
+        simp [syncMachine7, PH.quadratic, syncMachine7_J] <;> fun_prop)
     (fun _ _ => contDiff_const)
     (by ext k; fin_cases k <;> simp [syncMachine7_Q]) 0
   intro h0

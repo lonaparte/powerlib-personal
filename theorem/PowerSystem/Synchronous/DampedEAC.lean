@@ -253,10 +253,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) {c : ℝ}
     (hc1 : c < p.potential p.deltaS p.deltaU)
     (hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi)) :
-    ∀ x₀ ∈ {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c},
-      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => p.field x) (Ici 0)) ∧
-      ∀ φ : ℝ → State 2, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => p.field x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (PhasePlane.mk p.deltaS 0)) := by
+    {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c} ⊆
+      Flow.regionOfAttraction p.field (PhasePlane.mk p.deltaS 0) := by
   have hω : ∀ x : State 2, fderiv ℝ (p.energy p.deltaS) x (p.field x) = 0 → x 1 = 0 := by
     intro x hx
     rw [p.field_eq_conservative,

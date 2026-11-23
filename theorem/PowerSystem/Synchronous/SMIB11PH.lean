@@ -194,20 +194,15 @@ def smib11_g : Matrix (Fin 11) (Fin 4) ℝ :=
     if i = 2 ∧ j = 0 then 1 else if i = 5 ∧ j = 1 then 1
     else if i = 9 ∧ j = 2 then -1 else if i = 10 ∧ j = 3 then -1 else 0
 
-/-- The 11-state SMIB test system of §1.5.1 as a nonlinear pH model (note's ODE, `δ̇ = ω_r`). -/
-def smib11 (p : SMIB11Params) : NonlinearModel 11 4 where
-  J := smib11_J p
-  R _ := smib11_R p
-  g _ := smib11_g
-  H := Linear.quadraticEnergy (smib11_Q p)
-  dH x := WithLp.toLp 2 (smib11_Q p *ᵥ WithLp.ofLp x)
-  skew x := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [smib11_J]
-  dissipation_posSemidef _ := PosSemidef.diagonal (fun i => by
-    fin_cases i <;>
-      simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg, p.rl_nonneg])
-  hasGradient := hasGradientAt_quadraticEnergy (smib11_Q_symm p)
+/-- The 11-state SMIB test system of §1.5.1 as a nonlinear pH model (note's ODE, `δ̇ = ω_r`): the
+quadratic pH model (`PH.quadratic`) with storage matrix `smib11_Q`. -/
+def smib11 (p : SMIB11Params) : NonlinearModel 11 4 :=
+  PH.quadratic (smib11_J p) (fun _ => smib11_R p) (fun _ => smib11_g) (smib11_Q p)
+    (fun x => by ext i j; fin_cases i <;> fin_cases j <;> simp [smib11_J])
+    (fun _ => PosSemidef.diagonal fun i => by
+      fin_cases i <;>
+        simp [p.rs_nonneg, p.rf_nonneg, p.rkd_nonneg, p.rkq_nonneg, p.D_nonneg, p.rl_nonneg])
+    (smib11_Q_symm p)
 
 /-- `∇H = Q x = (i, ω_r, 0, q_D/C, q_Q/C, φ_D/L_l, φ_Q/L_l)`. -/
 @[tmio M, powerlib_domain] theorem smib11_dH (p : SMIB11Params) (x : State 11) :
@@ -247,8 +242,8 @@ note). Notation: `i = Γ Ψ`, `ω_r = p/M`, `V = q/C`, `I = φ/L_l`. -/
   rw [NonlinearModel.ofLp_field, smib11_dH]
   ext i
   fin_cases i <;>
-    simp [smib11, smib11_J, smib11_R, smib11_g, mulVec, dotProduct, Fin.sum_univ_succ,
-      Matrix.diagonal_apply]
+    simp [smib11, PH.quadratic, smib11_J, smib11_R, smib11_g, mulVec, dotProduct,
+      Fin.sum_univ_succ, Matrix.diagonal_apply]
   all_goals field_simp
   all_goals ring
 
@@ -282,7 +277,8 @@ model, not a connection conclusion. -/
         p.rkq * smib11_current p x 4 ^ 2 + p.D * smib11_speed p x ^ 2 +
         p.rl * ((x 9 / p.Ll) ^ 2 + (x 10 / p.Ll) ^ 2) := by
   rw [NonlinearModel.dampingPower, smib11_dH]
-  simp [smib11, smib11_R, mulVec, dotProduct, Fin.sum_univ_succ, Matrix.diagonal_apply]
+  simp [smib11, PH.quadratic, smib11_R, mulVec, dotProduct, Fin.sum_univ_succ,
+    Matrix.diagonal_apply]
   ring
 
 /-- Port power `v_f i_f + T_m ω_r − V_D^∞ I_D − V_Q^∞ I_Q`; with `smib11_dampingPower` and
@@ -293,7 +289,7 @@ model, not a connection conclusion. -/
       u 0 * smib11_current p x 2 + u 1 * smib11_speed p x -
         u 2 * (x 9 / p.Ll) - u 3 * (x 10 / p.Ll) := by
   rw [NonlinearModel.supply, NonlinearModel.output, smib11_dH]
-  simp [smib11, smib11_g, mulVec, dotProduct, Fin.sum_univ_succ]
+  simp [smib11, PH.quadratic, smib11_g, mulVec, dotProduct, Fin.sum_univ_succ]
   ring
 
 /-- `H^tot` is the block sum of the machine energy (`syncMachine7` at the machine block), the
@@ -302,7 +298,7 @@ node-capacitor and the link energies (§1.4). -/
     (smib11 p).H x = (syncMachine7 p.toSyncMachine7Params).H (smib11_machine x) +
         (x 7 ^ 2 + x 8 ^ 2) / (2 * p.C) + (x 9 ^ 2 + x 10 ^ 2) / (2 * p.Ll) := by
   have hQ : smib11_Q p *ᵥ WithLp.ofLp x = _ := smib11_dH p x
-  simp only [smib11, Linear.quadraticEnergy]
+  simp only [smib11, PH.quadratic, Linear.quadraticEnergy]
   rw [hQ, syncMachine7_H]
   simp [smib11_current, smib11_speed, smib11_machine, syncMachine7_current,
     syncMachine7_flux, syncMachine7_speed, dotProduct, Fin.sum_univ_succ]
@@ -416,10 +412,7 @@ def smib11Rel_system (p : SMIB11Params) : Port.System 11 4 :=
 @[tmio M, powerlib_domain] private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
     ContDiff ℝ 1 (smib11 p).zeroInputField :=
   (smib11 p).contDiff_zeroInputField (smib11_contDiff_J p) (fun _ _ => contDiff_const)
-    (by
-      rw [show (smib11 p).dH = Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p) from
-        funext fun _ => rfl]
-      exact ContinuousLinearMap.contDiff _)
+    (by rw [show (smib11 p).dH = _ from PH.quadratic_dH]; exact ContinuousLinearMap.contDiff _)
 
 /-- `H^tot` does not depend on the rotor angle: no zero-input field of the 11-state system, with
 any constant drift `c`, has a locally exponentially stable origin
@@ -427,7 +420,7 @@ any constant drift `c`, has a locally exponentially stable origin
 @[tmio TM, powerlib_domain] private theorem smib11_not_les (p : SMIB11Params) (c : State 11) :
     ¬ LocallyExponentiallyStable (fun x => (smib11 p).zeroInputField x - c) 0 :=
   (smib11 p).not_locallyExponentiallyStable_of_col_eq_zero (k := 6) (Q := smib11_Q p)
-    (funext fun _ => rfl) (smib11_contDiff_J p) (fun _ _ => contDiff_const)
+    PH.quadratic_dH (smib11_contDiff_J p) (fun _ _ => contDiff_const)
     (by ext k; fin_cases k <;> simp [smib11_Q, smib11_w]) c
 
 /-- The corrected zero-input field is the note's minus the constant frame drift `ω_s e_δ`. -/

@@ -203,8 +203,8 @@ the family has no step threshold to state. -/
   have h3 := congrFun h 3
   simp only [NonlinearModel.output] at h3
   rw [syncMachine7_dH] at h3
-  simp [syncMachine7, syncMachine7_g, syncMachine7_speed, syncMachine7_current, syncMachine7_flux,
-    Matrix.mulVec, dotProduct, Fin.sum_univ_succ, p.M_pos.ne'] at h3
+  simp [syncMachine7, PH.quadratic, syncMachine7_g, syncMachine7_speed, syncMachine7_current,
+    syncMachine7_flux, Matrix.mulVec, dotProduct, Fin.sum_univ_succ, p.M_pos.ne'] at h3
 
 /-- **No Euler discretization of a seven-state machine is passive, whatever its step.** The
 outputs `(i_d, i_q, i_f, ω_r)` do not depend on the inputs, so one step from a unit momentum with
@@ -241,8 +241,8 @@ namespace powerlib.Synchronous
   have h1 := congrFun h 1
   simp only [NonlinearModel.output] at h1
   rw [smib11_dH] at h1
-  simp [smib11, smib11_g, smib11_speed, smib11_current, smib11_machine, syncMachine7_speed,
-    Matrix.mulVec, dotProduct, p.M_pos.ne'] at h1
+  simp [smib11, PH.quadratic, smib11_g, smib11_speed, smib11_current, smib11_machine,
+    syncMachine7_speed, Matrix.mulVec, dotProduct, p.M_pos.ne'] at h1
 
 /-- The 11-state system with `Γ = I`, `M = C = L_l = 1` and zero resistances, damping and
 frame speed. -/

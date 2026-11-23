@@ -27,6 +27,8 @@ Results.
 * Three further notions complete the sentence language: a decay rate on every solution segment
   (`Decay`), contraction of solutions sampled at an integer horizon (`SampledContraction`), and
   conservation of an energy with a strict minimum at the equilibrium (`Conservative`).
+* The region of attraction of an equilibrium, a set of initial states outside the sentence
+  language (`regionOfAttraction`).
 * The sentences `Property` and their interpretation `Property.holds`, fixed once; the sentences
   asserting convergence, `Property.Attractive` (`Property.attractive_locallyAsymptoticallyStable`
   and the three other attractive cases).
@@ -64,6 +66,15 @@ growth. -/
 def Decay (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) (a : ℝ) : Prop :=
   ∃ C : ℝ, ∀ (t₀ t₁ : ℝ) (φ : ℝ → ℝⁿ), IsTrajectoryOn φ f t₀ t₁ →
     ∀ t ∈ Icc t₀ t₁, ‖φ t - x_eq‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x_eq‖
+
+/-- The region of attraction of `x_eq`: the initial states from which a solution exists on the
+whole forward ray and every such solution converges to `x_eq`. It is a set of states, not a
+sentence about the equilibrium; no stability and no equilibrium property of `x_eq` is part of
+it. -/
+def regionOfAttraction (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) : Set ℝⁿ :=
+  {x₀ | (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
+    ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
+      Filter.Tendsto φ Filter.atTop (nhds x_eq)}
 
 /-- Sampled contraction: over some positive integer horizon every solution segment ends closer to
 the equilibrium by a fixed factor below one. -/

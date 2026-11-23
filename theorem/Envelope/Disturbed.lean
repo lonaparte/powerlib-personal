@@ -118,7 +118,7 @@ perturbation exceeds `W`. -/
       (Behaviour.disturbed (fun ω => s.perturb (σ • g ω)) S A ν) := by
   rw [Sentence.holds_safe_disturbed]
   refine le_trans (measure_mono fun ω hω => ?_) hbound
-  obtain ⟨x, t, ht, hT, hS, hx, hA⟩ := hω
+  obtain ⟨_, ⟨x, t, ht, hT, hS, hx, rfl⟩, hA⟩ := hω
   have htT : t < T₀ := (ENNReal.ofReal_lt_ofReal_iff'.mp hT).1
   show ∃ x, W < ‖g ω x‖
   by_contra hb

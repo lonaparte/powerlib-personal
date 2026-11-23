@@ -47,10 +47,11 @@ Results.
   preserving maps from sets of models; `le_certifiedHorizon_iff`, `gc_certifiedHorizon`,
   `generate_certifiedHorizon`, `gc_worstExceedance`, `generate_worstExceedance` (the generated
   adjoints are the safety denotations).
-* Safe sets: `exceedance_antitone_safe`, `holds_safe_iInter_null` (almost surely: countable
-  intersections), `holds_safe_undisturbed_iff`, `isLeast_safe_undisturbed` (the reachable set is
-  the least certified safe set); `not_holds_safe_inter`, `not_isLeast_safe` (at a positive level,
-  for the drift `ẋ = ω₀` from the origin with `ω₀ = ±1`, each with probability `1/2`);
+* Safe sets: `exceeds_antitone_safe`, `exceedance_antitone_safe`, `holds_safe_iInter_null`
+  (almost surely: countable intersections), `holds_safe_undisturbed_iff`,
+  `isLeast_safe_undisturbed` (the reachable set is the least certified safe set);
+  `not_holds_safe_inter`, `not_isLeast_safe` (at a positive level, for the drift `ẋ = ω₀` from
+  the origin with `ω₀ = ±1`, each with probability `1/2`);
   `drift_exceeds_iff` (the drift leaves a set exactly when the line `t ↦ c t` does).
 * Certificates: `exceedance_le_of_storage` (Kushner's bound), `holds_safe_of_storage`;
   `meas_ge_le_of_meanSquare` (a mean-square bound bounds the probability of a large state at each
@@ -76,16 +77,16 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-- A later horizon leaves more time to leave the safe set. -/
 @[tmio T, powerlib_foundation] theorem exceeds_mono {s : Port.System n p} {S A : Set ℝⁿ}
     {T T' : ℝ≥0∞} (h : T ≤ T') (he : s.Exceeds S A T) : s.Exceeds S A T' := by
-  obtain ⟨x, t, ht, hT, hS, hx, hA⟩ := he
-  exact ⟨x, t, ht, hT.trans_le h, hS, hx, hA⟩
+  obtain ⟨y, hy, hA⟩ := he
+  exact ⟨y, s.reach_mono S h hy, hA⟩
 
 /-- Leaving before the supremum of a set of horizons is leaving before one of them. -/
 @[tmio T, powerlib_foundation] theorem exceeds_sSup_iff {s : Port.System n p} {S A : Set ℝⁿ}
     {H : Set ℝ≥0∞} : s.Exceeds S A (sSup H) ↔ ∃ T ∈ H, s.Exceeds S A T := by
   constructor
-  · rintro ⟨x, t, ht, hT, hS, hx, hA⟩
+  · rintro ⟨y, ⟨x, t, ht, hT, hS, hx, hy⟩, hA⟩
     obtain ⟨T, hTH, hlt⟩ := lt_sSup_iff.mp hT
-    exact ⟨T, hTH, x, t, ht, hlt, hS, hx, hA⟩
+    exact ⟨T, hTH, y, ⟨x, t, ht, hlt, hS, hx, hy⟩, hA⟩
   · rintro ⟨T, hTH, he⟩
     exact exceeds_mono (le_sSup hTH) he
 
@@ -108,7 +109,7 @@ supremum of the exceedance probabilities. No measurability is needed. -/
     | discrete s => exact zero_le
     | disturbed s S A ν =>
       refine le_of_eq_of_le (measure_mono_null (fun ω hω => ?_) measure_empty) zero_le
-      obtain ⟨x, t, -, hT, -⟩ := hω
+      obtain ⟨-, ⟨x, t, -, hT, -⟩, -⟩ := hω
       rw [sSup_empty] at hT
       exact (not_lt_bot hT).elim
   · cases b with
@@ -117,9 +118,9 @@ supremum of the exceedance probabilities. No measurability is needed. -/
     | disturbed s S A ν =>
       obtain ⟨u, hmono, hlim, hmem⟩ := exists_seq_tendsto_sSup hH (OrderTop.bddAbove H)
       have hsub : {ω | (s ω).Exceeds S A (sSup H)} ⊆ ⋃ k, {ω | (s ω).Exceeds S A (u k)} := by
-        rintro ω ⟨x, t, ht, hT, hS, hx, hA⟩
+        rintro ω ⟨y, ⟨x, t, ht, hT, hS, hx, hy⟩, hA⟩
         obtain ⟨k, hk⟩ := (hlim.eventually (lt_mem_nhds hT)).exists
-        exact mem_iUnion.mpr ⟨k, x, t, ht, hk, hS, hx, hA⟩
+        exact mem_iUnion.mpr ⟨k, y, ⟨x, t, ht, hk, hS, hx, hy⟩, hA⟩
       calc ν {ω | (s ω).Exceeds S A (sSup H)}
           ≤ ν (⋃ k, {ω | (s ω).Exceeds S A (u k)}) := measure_mono hsub
         _ = ⨆ k, ν {ω | (s ω).Exceeds S A (u k)} :=
@@ -267,11 +268,17 @@ def worstExceedance {X Q : Type*} (F : Family X Q n p) (T : ℝ≥0∞) :
 
 /-! ## Safe sets -/
 
+/-- Leaving a safe set is leaving every smaller one. -/
+@[tmio T, powerlib_foundation] theorem exceeds_antitone_safe {s : Port.System n p} {S A A' : Set ℝⁿ}
+    {T : ℝ≥0∞} (h : A' ⊆ A) (he : s.Exceeds S A T) : s.Exceeds S A' T := by
+  obtain ⟨y, hy, hA⟩ := he
+  exact ⟨y, hy, fun h' => hA (h h')⟩
+
 /-- A larger safe set is left less often. -/
 @[tmio T, powerlib_foundation] theorem exceedance_antitone_safe (s : Sample → Port.System n p)
     (S : Set ℝⁿ) (ν : Measure Sample) (T : ℝ≥0∞) {A A' : Set ℝⁿ} (h : A ⊆ A') :
     (Behaviour.disturbed s S A' ν).exceedance T ≤ (Behaviour.disturbed s S A ν).exceedance T :=
-  measure_mono fun _ ⟨x, t, ht, hT, hS, hx, hA⟩ => ⟨x, t, ht, hT, hS, hx, fun h' => hA (h h')⟩
+  measure_mono fun _ => exceeds_antitone_safe h
 
 /-- Almost surely, safety in an intersection of countably many safe sets is safety in each. -/
 @[tmio T, powerlib_foundation] theorem holds_safe_iInter_null {ι : Type*} [Countable ι]
@@ -284,11 +291,11 @@ def worstExceedance {X Q : Type*} (F : Family X Q n p) (T : ℝ≥0∞) :
     ext ω
     simp only [mem_ofPred_eq, mem_iUnion]
     constructor
-    · rintro ⟨x, t, ht, hT, hS, hx, hA⟩
+    · rintro ⟨y, hy, hA⟩
       obtain ⟨i, hi⟩ := not_forall.mp (fun h => hA (mem_iInter.mpr h))
-      exact ⟨i, x, t, ht, hT, hS, hx, hi⟩
-    · rintro ⟨i, x, t, ht, hT, hS, hx, hA⟩
-      exact ⟨x, t, ht, hT, hS, hx, fun h => hA (mem_iInter.mp h i)⟩
+      exact ⟨i, y, hy, hi⟩
+    · rintro ⟨i, he⟩
+      exact exceeds_antitone_safe (iInter_subset A i) he
   rw [hU, measure_iUnion_null_iff]
 
 /-- An undisturbed system with an envelope (the same system for every sample) is safe at a level
@@ -301,11 +308,11 @@ below one exactly when the states it reaches before the horizon lie in the safe 
   by_cases h : s.Exceeds S A T
   · have hU : {_ω : Sample | s.Exceeds S A T} = univ := eq_univ_of_forall fun _ => h
     rw [hU, measure_univ]
-    exact iff_of_false (not_le.mpr hε) ((s.exceeds_iff_not_reach_subset S A T).mp h)
+    exact iff_of_false (not_le.mpr hε) (Set.not_subset.mpr h)
   · have hE : {_ω : Sample | s.Exceeds S A T} = ∅ := eq_empty_of_forall_notMem fun _ => h
     rw [hE, measure_empty]
     exact iff_of_true zero_le
-      (not_not.mp fun h' => h ((s.exceeds_iff_not_reach_subset S A T).mpr h'))
+      (not_not.mp fun h' => h (Set.not_subset.mp h'))
 
 /-- For an undisturbed system the reachable set is the least certified safe set: the certified
 safe sets are exactly its supersets. -/
@@ -345,12 +352,12 @@ does. -/
     {T : ℝ≥0∞} :
     (drift c).Exceeds {0} A T ↔ ∃ t, 0 ≤ t ∧ ENNReal.ofReal t < T ∧ (c * t) • e₁ ∉ A := by
   constructor
-  · rintro ⟨x, t, ht, hT, hS, hx, hA⟩
+  · rintro ⟨_, ⟨x, t, ht, hT, hS, hx, rfl⟩, hA⟩
     rw [drift_trajectory hS hx t ⟨ht, le_rfl⟩] at hA
     exact ⟨t, ht, hT, hA⟩
   · rintro ⟨t, ht, hT, hA⟩
-    exact ⟨fun τ => (c * τ) • e₁, t, ht, hT, by simp,
-      fun τ _ => (hasDerivAt_line c τ).hasDerivWithinAt, hA⟩
+    exact ⟨_, ⟨fun τ => (c * τ) • e₁, t, ht, hT, by simp,
+      fun τ _ => (hasDerivAt_line c τ).hasDerivWithinAt, rfl⟩, hA⟩
 
 /-- The random drift `ẋ = ω₀`: the drift read from the first coordinate of the sample. -/
 def randomDrift (ω : Sample) : Port.System 1 1 := drift (ω 0)
@@ -387,12 +394,6 @@ def above : Set (EuclideanSpace ℝ (Fin 1)) := {y | -1 / 2 < y 0}
   · intro hc
     exact ⟨-1 / c, div_nonneg_of_nonpos (by norm_num) hc.le, by
       rw [mul_div_assoc', mul_neg_one, neg_div, div_self hc.ne]; norm_num⟩
-
-/-- Leaving a safe set is leaving every smaller one. -/
-@[tmio T, powerlib_foundation] theorem exceeds_antitone_safe {s : Port.System n p} {S A A' : Set ℝⁿ}
-    {T : ℝ≥0∞} (h : A' ⊆ A) (he : s.Exceeds S A T) : s.Exceeds S A' T := by
-  obtain ⟨x, t, ht, hT, hS, hx, hA⟩ := he
-  exact ⟨x, t, ht, hT, hS, hx, fun h' => hA (h h')⟩
 
 @[tmio M, powerlib_foundation] theorem twoPoint_apply (E : Set Sample) :
     twoPoint E = 2⁻¹ * (E.indicator 1 (constSample 1) + E.indicator 1 (constSample (-1))) := by
@@ -459,7 +460,7 @@ rate `c ω` bounds the probability of leaving the safe set before the horizon `T
     (hmeas : AEMeasurable c ν) :
     (Behaviour.disturbed s S A ν).exceedance T ≤ (∫⁻ ω, c ω ∂ν) * T / (ℓ - v₀) := by
   have hsub : {ω | (s ω).Exceeds S A T} ⊆ {ω | ℓ - v₀ ≤ c ω * T} := by
-    rintro ω ⟨x, t, ht, hT, hx0, hx, hxA⟩
+    rintro ω ⟨_, ⟨x, t, ht, hT, hx0, hx, rfl⟩, hxA⟩
     calc ℓ - v₀ ≤ V (x t) - V (x 0) := tsub_le_tsub (hA _ hxA) (hS _ hx0)
       _ ≤ c ω * ENNReal.ofReal t := tsub_le_iff_left.mpr (hV ω x t ht hx)
       _ ≤ c ω * T := by gcongr

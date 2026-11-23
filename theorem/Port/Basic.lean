@@ -6,7 +6,8 @@ The general facts about passivity, proved once: a storage whose rate along solut
 by the supplied power proves passivity; a solution segment returning to its initial state while
 drawing net energy out of the ports refutes it; with the ports at zero the storage cannot increase;
 a storage between two positive quadratic bounds proves Lyapunov stability of the zero-input field
-in the Flow semantics; and a system without ports is passive with the zero storage.
+in the Flow semantics; and a system without ports is passive with the zero storage. The set of
+states reached before a horizon grows with the horizon.
 
 Scope.
 * Generic: an arbitrary continuous-time system with ports `Port.System n p`
@@ -28,6 +29,7 @@ Results.
   `Sentence.holds_envelope_discrete` (a system read without an envelope satisfies every envelope
   sentence), `Sentence.holds_flow_disturbed`, `Sentence.holds_passive_disturbed`,
   `Sentence.holds_safe_disturbed`, `Sentence.holds_meanSquare_disturbed`.
+* Reachable sets: `System.reach_mono` (a later horizon reaches more states).
 -/
 
 noncomputable section
@@ -172,16 +174,10 @@ end Port
     (Sentence.envelope (.safe T ε)).holds (Behaviour.disturbed s S A ν) ↔
       ν {ω | (s ω).Exceeds S A T} ≤ ε := Iff.rfl
 
-/-- A solution leaves the safe set exactly when the reached states are not all in it. -/
-@[tmio T, powerlib_foundation] theorem Port.System.exceeds_iff_not_reach_subset {n p : ℕ}
-    (s : Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n))) (T : ℝ≥0∞) :
-    s.Exceeds S A T ↔ ¬ s.reach S T ⊆ A := by
-  constructor
-  · rintro ⟨x, t, ht, hT, hS, hx, hA⟩ hsub
-    exact hA (hsub ⟨x, t, ht, hT, hS, hx, rfl⟩)
-  · intro h
-    obtain ⟨y, ⟨x, t, ht, hT, hS, hx, rfl⟩, hA⟩ := Set.not_subset.mp h
-    exact ⟨x, t, ht, hT, hS, hx, hA⟩
+/-- A later horizon reaches more states. -/
+@[tmio T, powerlib_foundation] theorem Port.System.reach_mono {n p : ℕ} (s : Port.System n p)
+    (S : Set (EuclideanSpace ℝ (Fin n))) : Monotone (s.reach S) :=
+  fun _ _ h _ ⟨x, t, ht, hT, hS, hx, hy⟩ => ⟨x, t, ht, hT.trans_le h, hS, hx, hy⟩
 
 /-- The safety sentence bounds the exceedance probability, on every kind of system. -/
 @[tmio T, powerlib_foundation] theorem Sentence.holds_safe_iff_exceedance {n p : ℕ} (T ε : ℝ≥0∞)

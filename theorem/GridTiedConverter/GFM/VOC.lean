@@ -565,7 +565,7 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
     (show ContDiff ℝ 1 a.realField from NormalForm.Hopf.field_contDiff a.toHopf)
     (show a.realField 0 = 0 from NormalForm.Hopf.field_zero a.toHopf)
     (show fderiv ℝ a.realField 0 = _ from NormalForm.Hopf.fderiv_field_zero a.toHopf),
-    NormalForm.Hopf.linPart, Criteria.isHurwitz_fin_two_of_iff]
+    NormalForm.Hopf.linPart, Transform.complexSymm, Criteria.isHurwitz_fin_two_of_iff]
   simp only [family, translate, Set.mem_singleton_iff, forall_eq, Meets, toHopf]
   constructor
   · intro hc

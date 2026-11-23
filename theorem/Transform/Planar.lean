@@ -27,11 +27,12 @@ Results.
 * Complex-symmetric matrices `complexSymm a b = [[a, −b], [b, a]]` over any commutative ring:
   the matrix of multiplication by `a + jb` (`toComplex_complexSymm_mulVec`); closed under sum,
   difference and product (`complexSymm_add`, `complexSymm_sub`, `complexSymm_mul`, `a + jb`
-  arithmetic), scalars `s • 1 = complexSymm s 0`, ring maps (`complexSymm_map`), determinant
-  `a² + b²` (`det_complexSymm`) and, over a field, inverse
+  arithmetic), scalars `s • 1 = complexSymm s 0`, ring maps (`complexSymm_map`), trace `2a`
+  (`trace_complexSymm`), determinant `a² + b²` (`det_complexSymm`) and, over a field, inverse
   `complexSymm (a/(a² + b²)) (−b/(a² + b²))` (`complexSymm_inv`). The rotation `rot θ` is
   `complexSymm (cos θ) (sin θ)` (`rot_eq_complexSymm`, `theorem/Transform/Park.lean`); dq
-  impedances, transfer functions and the line matrices of the GFL models are instances.
+  impedances, transfer functions, the line matrices of the GFL models and the linear part of the
+  Hopf normal form (`NormalForm.Hopf.linPart`) are instances.
 * `orthogonal_dotProduct`: a coordinate change `A` with `Aᵀ A = 1` preserves the dot product,
   `(A v)·(A w) = v·w` (power invariance of the orthogonal Park, Clarke and frame rotations).
 -/
@@ -132,6 +133,10 @@ variable {R : Type*} [CommRing R]
 @[tmio T, powerlib_foundation] theorem smul_one_eq_complexSymm (s : R) :
     s • (1 : Matrix (Fin 2) (Fin 2) R) = complexSymm s 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
+
+@[tmio T, powerlib_foundation] theorem trace_complexSymm (a b : R) :
+    (complexSymm a b).trace = 2 * a := by
+  rw [complexSymm, trace_fin_two_of]; ring
 
 @[tmio T, powerlib_foundation] theorem det_complexSymm (a b : R) :
     (complexSymm a b).det = a ^ 2 + b ^ 2 := by

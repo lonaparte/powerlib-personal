@@ -1,5 +1,6 @@
 import theorem.PhasePlane.Planar
 import theorem.NormalForm.Logistic
+import theorem.Transform.Planar
 
 /-! # Truncated Hopf normal form
 
@@ -32,12 +33,14 @@ projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md (幅值坐标
 archive/notes/concepts/forced-orbit-and-bandwidth.md (`ℓ₁ ∝ ‖q‖²`).
 
 Results.
-* Linearization at the origin `!![μ, −ω₀; ω₀, μ]` (`fderiv_field_zero`, `linPart`): every
-  eigenvalue has real part `μ`, and `μ + iω₀` is one (`eigenvalue_re`, `exists_eigenpair`); for
-  the linear part (`c = 0`) every solution has `‖x(t)‖ = e^{μ(t−a)}‖x(a)‖` (`linear_norm_eq`),
-  so the linear decay rate is exactly `|μ|` when `μ < 0`. The origin of the nonlinear field is
-  locally exponentially stable for `μ < 0` and unstable for `μ > 0` (`origin_stable`,
-  `origin_unstable`).
+* Linearization at the origin `!![μ, −ω₀; ω₀, μ]` (`fderiv_field_zero`, `linPart`), the
+  complex-symmetric matrix `Transform.complexSymm μ ω₀` of multiplication by `μ + iω₀` (trace
+  `2μ`, determinant `μ² + ω₀²`: `Transform.trace_complexSymm`, `Transform.det_complexSymm`,
+  `theorem/Transform/Planar.lean`): every eigenvalue has real part `μ`, and `μ + iω₀` is one
+  (`eigenvalue_re`, `exists_eigenpair`); for the linear part (`c = 0`) every solution has
+  `‖x(t)‖ = e^{μ(t−a)}‖x(a)‖` (`linear_norm_eq`), so the linear decay rate is exactly `|μ|` when
+  `μ < 0`. The origin of the nonlinear field is locally exponentially stable for `μ < 0` and
+  unstable for `μ > 0` (`origin_stable`, `origin_unstable`).
 * Polar form: along every solution `ρ̇ = 2μρ + 2l₁ρ²`, `ṙ = μr + l₁r³` (`r > 0`) and
   `x₀ẋ₁ − x₁ẋ₀ = (ω₀ + κρ)ρ`, i.e. `θ̇ = ω₀ + κr²` (`radial_identity`, `angular_identity`,
   `normSq_isIntegralCurveOn`, `radius_hasDerivWithinAt`).
@@ -113,8 +116,8 @@ abbrev toComplex (x : State 2) : ℂ := complexIso.symm x
 @[tmio M, powerlib_foundation] theorem field_zero (p : Params) : field p 0 = 0 := by
   rw [field, mk_eq_zero_iff]; simp only [PiLp.zero_apply]; constructor <;> ring
 
-/-- The linear part of the normal form. -/
-def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω₀, p.μ]
+/-- The linear part of the normal form, `[[μ, −ω₀], [ω₀, μ]]`: multiplication by `μ + iω₀`. -/
+abbrev linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := Transform.complexSymm p.μ p.ω₀
 
 @[tmio M, powerlib_foundation] theorem hasFDerivAt_field_zero (p : Params) :
     HasFDerivAt (field p) (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart p)) 0 := by
@@ -147,24 +150,18 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
       rw [hf]
       convert h using 1
       ext v; simp
-  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [linPart]; ring
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [linPart, Transform.complexSymm]; ring
 
 @[tmio M, powerlib_foundation] theorem fderiv_field_zero (p : Params) :
     fderiv ℝ (field p) 0 = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart p) :=
   (hasFDerivAt_field_zero p).fderiv
 
-@[tmio M, powerlib_foundation] theorem trace_linPart (p : Params) : (linPart p).trace = 2 * p.μ := by
-  simp [linPart, Matrix.trace_fin_two]; ring
-
-@[tmio M, powerlib_foundation] theorem det_linPart (p : Params) :
-    (linPart p).det = p.μ ^ 2 + p.ω₀ ^ 2 := by
-  simp [linPart, Matrix.det_fin_two]; ring
-
 /-- Every eigenvalue of the linear part has real part `μ`. -/
 @[tmio M, powerlib_foundation] theorem eigenvalue_re (p : Params) {s : ℂ} {v : Fin 2 → ℂ} (hv : v ≠ 0)
     (heig : (linPart p).map (algebraMap ℝ ℂ) *ᵥ v = s • v) : s.re = p.μ := by
   have h := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair (linPart p) hv heig
-  rw [Criteria.det_characteristicMatrix_fin_two, trace_linPart, det_linPart] at h
+  rw [Criteria.det_characteristicMatrix_fin_two, Transform.trace_complexSymm,
+    Transform.det_complexSymm] at h
   have hre := congrArg Complex.re h
   have him := congrArg Complex.im h
   simp [pow_two] at hre him
@@ -179,7 +176,8 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
     ∃ v : Fin 2 → ℂ, v ≠ 0 ∧
       (linPart p).map (algebraMap ℝ ℂ) *ᵥ v = ((p.μ : ℂ) + p.ω₀ * Complex.I) • v := by
   apply Linear.exists_eigenvector_of_root
-  rw [Criteria.det_characteristicMatrix_fin_two, trace_linPart, det_linPart]
+  rw [Criteria.det_characteristicMatrix_fin_two, Transform.trace_complexSymm,
+    Transform.det_complexSymm]
   push_cast
   ring_nf
   rw [Complex.I_sq]; ring
@@ -188,14 +186,15 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
 @[tmio TM, powerlib_foundation] theorem origin_stable (p : Params) (hμ : p.μ < 0) :
     LocallyExponentiallyStable (field p) 0 :=
   Criteria.locallyExponentiallyStable_of_jacobian_fin_two (linPart p) (field_contDiff p)
-    (field_zero p) (fderiv_field_zero p) (by rw [trace_linPart]; linarith)
-    (by rw [det_linPart]; nlinarith [sq_nonneg p.ω₀, mul_pos (neg_pos.mpr hμ) (neg_pos.mpr hμ)])
+    (field_zero p) (fderiv_field_zero p) (by rw [Transform.trace_complexSymm]; linarith)
+    (by rw [Transform.det_complexSymm]
+        nlinarith [sq_nonneg p.ω₀, mul_pos (neg_pos.mpr hμ) (neg_pos.mpr hμ)])
 
 /-- For `μ > 0` the origin is unstable. -/
 @[tmio TM, powerlib_foundation] theorem origin_unstable (p : Params) (hμ : 0 < p.μ) :
     Unstable (field p) 0 :=
   Criteria.unstable_of_jacobian_trace_pos (linPart p) (field_contDiff p)
-    (field_zero p) (fderiv_field_zero p) (by rw [trace_linPart]; linarith)
+    (field_zero p) (fderiv_field_zero p) (by rw [Transform.trace_complexSymm]; linarith)
 
 /-! ## Polar form -/
 

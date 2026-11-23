@@ -837,10 +837,8 @@ the energy well around the operating point — lies in its region of attraction:
 initial state a forward solution exists, and every forward solution converges to `x*`. -/
 @[tmio TM, powerlib_domain] private theorem basin (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hη : m.η ≠ 0) (hs : 0 < m.μ * m.ustar * m.v0) (hδ : 0 ≤ m.margin) :
-    ∀ x₀ ∈ {x : State 4 | |x 0| < Real.pi ∧ m.energy x < 2 * m.k},
-      (∃ φ : ℝ → State 4, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0)) ∧
-      ∀ φ : ℝ → State 4, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => m.field x) (Ici 0) →
-        Tendsto φ atTop (𝓝 m.point) := by
+    {x : State 4 | |x 0| < Real.pi ∧ m.energy x < 2 * m.k} ⊆
+      Flow.regionOfAttraction m.field m.point := by
   rintro x₀ ⟨hθ0, hE0⟩
   refine ⟨exists_solution m hC hL hR hδ x₀, fun φ hφ0 hφ => ?_⟩
   have hπ := Real.pi_pos

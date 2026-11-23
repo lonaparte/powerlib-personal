@@ -78,12 +78,8 @@ port-Hamiltonian energy lies in the region of attraction of the locked equilibri
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) {c : ℝ} (hc : c < 2 * V) :
-    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x ≤ c},
-      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
-        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0)) ∧
-      ∀ φ : ℝ → State 2, φ 0 = x₀ →
-        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
+    {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x ≤ c} ⊆
+      Flow.regionOfAttraction (srfField V Kp Ki δω) (PhasePlane.mk 0 (δω / Ki)) := by
   have hHc (ηs : ℝ) : ContDiff ℝ 1 (pllHamiltonian V Ki ηs) :=
     PhasePlane.Conservative.contDiff_separableEnergy
       (contDiff_const.mul (contDiff_const.sub Real.contDiff_cos)) Ki ηs
@@ -174,14 +170,10 @@ the region of attraction of the locked equilibrium.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem srf_regionOfAttraction_hamiltonian_lt {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
-    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x < 2 * V},
-      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
-        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0)) ∧
-      ∀ φ : ℝ → State 2, φ 0 = x₀ →
-        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
+    {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x < 2 * V} ⊆
+      Flow.regionOfAttraction (srfField V Kp Ki δω) (PhasePlane.mk 0 (δω / Ki)) := by
   intro x₀ hx₀
-  exact srf_regionOfAttraction_hamiltonian hV hKp hKi δω hx₀.2 x₀ ⟨hx₀.1, le_rfl⟩
+  exact srf_regionOfAttraction_hamiltonian hV hKp hKi δω hx₀.2 ⟨hx₀.1, le_rfl⟩
 
 /-! ## 2. Pendulum energy in `(θ, ξ)` coordinates -/
 
@@ -245,12 +237,8 @@ in the region of attraction of `(0, −Δω/b)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb : 0 < b)
     {c : ℝ} (hc : c < b) :
-    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x ≤ c},
-      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
-        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0)) ∧
-      ∀ φ : ℝ → State 2, φ 0 = x₀ →
-        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (-Δω / b))) := by
+    {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x ≤ c} ⊆
+      Flow.regionOfAttraction (xiField a b Δω) (PhasePlane.mk 0 (-Δω / b)) := by
   set E := pendulumEnergy a b Δω
   set W : Set (State 2) := {x | |x 0| < Real.pi / 2}
   have hW : IsOpen W :=
@@ -353,13 +341,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem xi_regionOfAttraction_pendulum_lt {a b Δω : ℝ} (ha : 0 < a)
     (hb : 0 < b) :
-    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x < b},
-      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
-        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0)) ∧
-      ∀ φ : ℝ → State 2, φ 0 = x₀ →
-        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (-Δω / b))) := by
+    {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x < b} ⊆
+      Flow.regionOfAttraction (xiField a b Δω) (PhasePlane.mk 0 (-Δω / b)) := by
   intro x₀ hx₀
-  exact xi_regionOfAttraction_pendulum ha hb hx₀.2 x₀ ⟨hx₀.1, le_rfl⟩
+  exact xi_regionOfAttraction_pendulum ha hb hx₀.2 ⟨hx₀.1, le_rfl⟩
 
 end powerlib.PLL

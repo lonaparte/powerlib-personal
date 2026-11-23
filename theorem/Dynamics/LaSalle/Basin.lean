@@ -19,12 +19,12 @@ Scope.
   predicates are the Flow / LeanForControl ones: `IsPositivelyInvariant`, `IsTrajectoryOn`,
   `LocalAsymptoticStable` from LeanForControl, `Flow.ForwardComplete` and
   `Flow.GloballyAsymptoticallyStable` (equilibrium, forward completeness and LeanForControl's
-  `GlobalAsymptoticStable`) from `theorem/Flow/Defs.lean`; forward completeness of a globally
-  Lipschitz field is `Flow.forwardComplete_of_lipschitzWith`.
-* A region-of-attraction estimate is outside the sentence language of the library (a basin is a
-  set of initial states, not a sentence about the equilibrium); model families that use it keep
-  their conclusions as connection statements on the sentences it implies, or as private
-  implementation evidence.
+  `GlobalAsymptoticStable`) and `Flow.regionOfAttraction` from `theorem/Flow/Defs.lean`; forward
+  completeness of a globally Lipschitz field is `Flow.forwardComplete_of_lipschitzWith`.
+* A region-of-attraction estimate (`Flow.regionOfAttraction`) is outside the sentence language
+  of the library (a basin is a set of initial states, not a sentence about the equilibrium);
+  model families that use it keep their conclusions as connection statements on the sentences
+  it implies, or as private implementation evidence.
 
 Source: work-sync `theory/T-lyapunov-function-method.md` §1.4 (LaSalle invariance principle);
 interface for later work-sync formalizations (PLL potential-well basins, equal-area estimates);
@@ -34,15 +34,11 @@ Results.
 * `isIntegralCurveOn_shift_Ici`: a forward solution on `[t₀, ∞)` shifted by `t₀` is one on
   `[0, ∞)` (time invariance of autonomous fields on a forward ray).
 * Region-of-attraction estimate. "**`S` is contained in the region of attraction** of `x_eq`"
-  is written out in every statement as
-  `∀ x₀ ∈ S, (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-    ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-      Tendsto φ atTop (𝓝 x_eq)`:
-  from every initial state in `S` a forward solution on `[0, ∞)` exists, and *every* forward
-  solution from such an initial state converges to `x_eq`. No stability (in the sense of
-  Lyapunov) and no equilibrium property of `x_eq` is part of this condition. (Behaviour is
-  defined only in the semantic layer, `theorem/Flow/Defs.lean`, so the condition is not a
-  definition; its time-invariance lemma `RegionOfAttraction.tendsto` is applied by full name.)
+  is `S ⊆ Flow.regionOfAttraction f x_eq` (`theorem/Flow/Defs.lean`): from every initial state
+  in `S` a forward solution on `[0, ∞)` exists, and *every* forward solution from such an
+  initial state converges to `x_eq`. No stability (in the sense of Lyapunov) and no equilibrium
+  property of `x_eq` is part of this condition. `RegionOfAttraction.tendsto`: time invariance, a
+  forward solution on `[t₀, ∞)` starting in `S` converges.
 * `lasalle_invariance_principle_of_contDiff`: LaSalle's principle for a `C¹` field **without**
   the global Lipschitz hypothesis of the upstream theorem; the field is globalized by a smooth
   cutoff that agrees with it near the compact set `Ω`.
@@ -86,15 +82,10 @@ shifted by `t₀`, is a forward solution on `[0, ∞)` (LeanForControl's `comp_a
 /-- Time invariance: if `S` lies in the region of attraction, a forward solution on `[t₀, ∞)`
 that starts in `S` converges. -/
 @[tmio T, powerlib_foundation] theorem RegionOfAttraction.tendsto {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
-    {S : Set ℝⁿ}
-    (h : ∀ x₀ ∈ S,
-      (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-      ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-        Tendsto φ atTop (𝓝 x_eq))
-    {t₀ : ℝ} {φ : ℝ → ℝⁿ}
+    {S : Set ℝⁿ} (h : S ⊆ Flow.regionOfAttraction f x_eq) {t₀ : ℝ} {φ : ℝ → ℝⁿ}
     (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici t₀)) (hφ0 : φ t₀ ∈ S) :
     Tendsto φ atTop (𝓝 x_eq) := by
-  have hconv := (h _ hφ0).2 (fun s => φ (s + t₀)) (by simp) (isIntegralCurveOn_shift_Ici hφ)
+  have hconv := (h hφ0).2 (fun s => φ (s + t₀)) (by simp) (isIntegralCurveOn_shift_Ici hφ)
   exact Tendsto.congr (fun x => by simp)
     (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
 
@@ -211,10 +202,7 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
     (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
     (hLie : ∀ x ∈ Ω, fderiv ℝ V x (f x) ≤ 0)
     (hLasalle : ∀ N ⊆ LieDerivZeroSet f V Ω, IsPositivelyInvariant N f → N ⊆ {x_eq}) :
-    ∀ x₀ ∈ Ω,
-      (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-      ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-        Tendsto φ atTop (𝓝 x_eq) := by
+    Ω ⊆ Flow.regionOfAttraction f x_eq := by
   obtain ⟨g, -, ⟨K, hglip⟩, hgfΩ, hΩ_inv_g⟩ := exists_globalization hf_c1 hΩ_compact hΩ_inv
   intro x₀ hx₀
   refine ⟨?_, fun φ hφ0 hφ => ?_⟩
@@ -235,10 +223,7 @@ Positive invariance of `Ω` is derived, not assumed. -/
     (hΩ_compact : IsCompact {x ∈ W | V x ≤ c})
     (hLasalle : ∀ N ⊆ LieDerivZeroSet f V {x ∈ W | V x ≤ c},
       IsPositivelyInvariant N f → N ⊆ {x_eq}) :
-    ∀ x₀ ∈ {x ∈ W | V x ≤ c},
-      (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-      ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-        Tendsto φ atTop (𝓝 x_eq) :=
+    {x ∈ W | V x ≤ c} ⊆ Flow.regionOfAttraction f x_eq :=
   regionOfAttraction_of_lasalle hΩ_compact
     (isPositivelyInvariant_sublevel_of_isOpen hW (hV_c1.differentiable (by norm_num)) hLie
       hΩ_compact.isClosed)
@@ -283,11 +268,7 @@ it starts at `x_eq`). -/
 region of attraction. -/
 @[tmio T, powerlib_foundation] theorem exists_ball_regionOfAttraction_of_localAsymptoticStable
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (h : LocalAsymptoticStable f x_eq) (hc : Flow.ForwardComplete f) :
-    ∃ r > 0,
-      ∀ x₀ ∈ ball x_eq r,
-        (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-        ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-          Tendsto φ atTop (𝓝 x_eq) := by
+    ∃ r > 0, ball x_eq r ⊆ Flow.regionOfAttraction f x_eq := by
   obtain ⟨-, r, hr, hconv⟩ := h
   refine ⟨r, hr, fun x₀ hx₀ => ⟨hc 0 x₀, fun φ hφ0 hφ => hconv 0 φ hφ ?_⟩⟩
   rw [hφ0, ← dist_eq_norm]
@@ -297,10 +278,7 @@ region of attraction. -/
 region of attraction. -/
 @[tmio T, powerlib_foundation] theorem regionOfAttraction_univ_of_globallyAsymptoticallyStable
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (h : Flow.GloballyAsymptoticallyStable f x_eq) :
-    ∀ x₀ ∈ (univ : Set ℝⁿ),
-      (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
-      ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-        Tendsto φ atTop (𝓝 x_eq) := by
+    univ ⊆ Flow.regionOfAttraction f x_eq := by
   obtain ⟨-, hc, -, hconv⟩ := h
   exact fun x₀ _ => ⟨hc 0 x₀, fun φ _ hφ => hconv 0 φ hφ⟩
 
