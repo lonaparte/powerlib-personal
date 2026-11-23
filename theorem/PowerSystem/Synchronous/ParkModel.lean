@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Transform.SpaceVector
+import theorem.Dynamics.Calculus
 
 /-! # Synchronous machine: Park-transform algebra of the stator
 
@@ -133,22 +134,15 @@ q-axis value `√(3/2) L_akq`. -/
 
 /-! ## Stator voltage equations in dq0 -/
 
-/-- Derivative of the phase flux `ψ_abc = T_P(θ)ᵀ ψ_dq0` along a trajectory. -/
+/-- Derivative of the phase flux `ψ_abc = T_P(θ)ᵀ ψ_dq0` along a trajectory (the matrix product
+rule `Dynamics.hasDerivAt_matrix_mulVec` with `d T_Pᵀ/dt = ω (dT_P/dθ)ᵀ`). -/
 @[tmio M, powerlib_domain] theorem park_flux_hasDerivAt (θ : ℝ → ℝ) (ω : ℝ) (ψ : ℝ → Fin 3 → ℝ)
     (dψ : Fin 3 → ℝ) (t : ℝ) (hθ : HasDerivAt θ ω t) (hψ : HasDerivAt ψ dψ t) :
     HasDerivAt (fun s => (parkMatrix (θ s))ᵀ *ᵥ ψ s)
       ((parkMatrix (θ t))ᵀ *ᵥ dψ + ω • ((parkDeriv (θ t))ᵀ *ᵥ ψ t)) t := by
-  rw [hasDerivAt_pi]
-  intro x
-  have hP : ∀ i, HasDerivAt (fun s => parkMatrix (θ s) i x) (parkDeriv (θ t) i x * ω) t :=
-    fun i => (parkMatrix_hasDerivAt (θ t) i x).comp t hθ
-  have hc : ∀ i, HasDerivAt (fun s => ψ s i) (dψ i) t := fun i => hasDerivAt_pi.mp hψ i
-  have h := (((hP 0).mul (hc 0)).add ((hP 1).mul (hc 1))).add ((hP 2).mul (hc 2))
-  convert h using 1
-  · funext s
-    simp [mulVec, dotProduct, Fin.sum_univ_three]
-  · simp [mulVec, dotProduct, Fin.sum_univ_three]
-    ring
+  simpa only [Matrix.smul_mulVec] using Dynamics.hasDerivAt_matrix_mulVec
+    (M := fun s => (parkMatrix (θ s))ᵀ) (M' := ω • (parkDeriv (θ t))ᵀ)
+    (fun i j => ((parkMatrix_hasDerivAt (θ t) j i).comp t hθ).congr_deriv (mul_comm _ _)) hψ
 
 /-- `T_P (d/dt)(T_Pᵀ ψ_dq0) = ψ̇_dq0 + ω J₀ ψ_dq0`. -/
 @[tmio M, powerlib_domain] theorem park_apply_flux_derivative (θ ω : ℝ) (ψ dψ : Fin 3 → ℝ) :

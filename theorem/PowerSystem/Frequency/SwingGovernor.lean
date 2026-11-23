@@ -247,8 +247,8 @@ At the poles both sides are `0` (Lean's `x / 0 = 0`), so the identity holds for 
 of the state matrix. -/
 @[tmio M, powerlib_domain] theorem natFreq_sq (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 ≤ D + K) :
     natFreq M D K Tg ^ 2 = (D + K) / (M * Tg) := by
-  rw [natFreq, Criteria.naturalFrequency, det_plant hM.ne' hTg.ne', add_comm K D]
-  exact Real.sq_sqrt (div_nonneg hKD (mul_pos hM hTg).le)
+  rw [natFreq, Criteria.naturalFrequency_sq] <;> rw [det_plant hM.ne' hTg.ne', add_comm K D]
+  exact div_nonneg hKD (mul_pos hM hTg).le
 
 @[tmio M, powerlib_domain] theorem natFreq_pos (hM : 0 < M) (hTg : 0 < Tg) (hKD : 0 < D + K) :
     0 < natFreq M D K Tg := by
@@ -274,13 +274,13 @@ of the state matrix. -/
 @[tmio M, powerlib_domain] theorem two_mul_dampingRatio_mul_natFreq (hM : 0 < M) (hTg : 0 < Tg)
     (hKD : 0 < D + K) :
     2 * dampingRatio M D K Tg * natFreq M D K Tg = (M + D * Tg) / (M * Tg) := by
-  have hn := (natFreq_pos hM hTg hKD).ne'
   have hM' := hM.ne'
   have hTg' := hTg.ne'
-  rw [natFreq] at hn
-  rw [dampingRatio, natFreq, Criteria.dampingRatio, ← Criteria.naturalFrequency, trace_plant]
-  field_simp
-  ring
+  rw [dampingRatio, natFreq, Criteria.two_mul_dampingRatio_mul_naturalFrequency, trace_plant]
+  · field_simp
+    ring
+  · rw [det_plant hM' hTg', add_comm K D]
+    exact div_pos hKD (mul_pos hM hTg)
 
 /-- §2.5: the damping ratio strictly decreases as the droop gain `K_R` increases. -/
 @[tmio M, powerlib_domain] theorem dampingRatio_strictAntiOn (hM : 0 < M) (hTg : 0 < Tg)
@@ -387,16 +387,14 @@ right half plane. -/
 @[tmio TM, powerlib_domain] theorem exists_root_of_unstable (hM : 0 < M) (hTg : 0 < Tg)
     (h : K + D < 0 ∨ M + D * Tg < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant M D K Tg).A s).det = 0 ∧ 0 < s.re := by
-  rcases h with h | h
-  · refine Criteria.exists_root_re_pos_of_det _ ?_
-    rw [neg_one_sq, one_mul, det_plant hM.ne' hTg.ne']
-    exact div_neg_of_neg_of_pos h (mul_pos hM hTg)
-  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
-    rw [trace_plant]
+  refine Criteria.exists_root_re_pos_of_violation_fin_two _ (h.symm.imp (fun h => ?_) fun h => ?_)
+  · rw [trace_plant]
     have : -D / M + -1 / Tg = -((M + D * Tg) / (M * Tg)) := by
       field_simp
       ring
     rw [this, neg_pos]
+    exact div_neg_of_neg_of_pos h (mul_pos hM hTg)
+  · rw [det_plant hM.ne' hTg.ne']
     exact div_neg_of_neg_of_pos h (mul_pos hM hTg)
 
 /-! ## The family -/

@@ -2,6 +2,7 @@ import theorem.Dynamics.Transport
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
 import theorem.Spectral.Global
+import theorem.Family.Reading
 import theorem.LTI.Plant
 import theorem.Dynamics.Shift
 import theorem.PowerSystem.Synchronous.GeneralSwing
@@ -56,13 +57,13 @@ Family and connection conclusions.
   (`Synchronous.GeneralSwing.family`) pulled back along `MatchingModel.toSwing`
   (`M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`, point `(θ*, η v*)`):
   the coordinate change `(θ, v) ↦ (θ, η v)` (`Dynamics.scaleCoord`) transports every sentence
-  (`Dynamics.holds_transport_iff`); read member-wise it gives every sentence-by-sentence
-  equivalence. The matched law `i_x(θ, ω/η)/η` depends on the speed whenever the load current
-  depends on the DC voltage, so the matching family reads through the swing family with an
-  arbitrary law, and through the canonical swing hub only on a speed-independent sinusoidal law
-  (`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`). The solution correspondence
-  `matching_trajectory_iff` (a trajectory-level statement outside the sentence language) is
-  private implementation evidence. Scaffold:
+  (`Spectral.mem_den_flow_iff_of_hub_transport`); read member-wise it gives every
+  sentence-by-sentence equivalence. The matched law `i_x(θ, ω/η)/η` depends on the speed whenever
+  the load current depends on the DC voltage, so the matching family reads through the swing
+  family with an arbitrary law, and through the canonical swing hub only on a speed-independent
+  sinusoidal law (`Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`). The solution
+  correspondence `matching_trajectory_iff` (a trajectory-level statement outside the sentence
+  language) is private implementation evidence. Scaffold:
   `theorem/GridTiedConverter/GFM/Matching/MatchingSwing.agda`.
 * Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
   `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian
@@ -369,9 +370,7 @@ satisfies it at its selected point exactly when its matched swing model
       MatchingModel.toSwing ⁻¹' Synchronous.GeneralSwing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext m
-  rw [Set.mem_preimage, matching_mem_den_flow, connection_proof% Spectral.mem_den_flow_iff_shift
-    (f := fun m : Synchronous.GeneralSwing.Model => Synchronous.GeneralSwing.field m.M m.D m.τ m.Pe)
-    (pt := Synchronous.GeneralSwing.Model.point) Synchronous.GeneralSwing.family_isAutonomous]
+  rw [Set.mem_preimage]
   have hpt : (m.toSwing).point = affineCoord (scaleCoord m.η_ne) 0 m.point := by
     rw [affineCoord_zero_apply]
     simp [Synchronous.GeneralSwing.Model.point, MatchingModel.toSwing, MatchingModel.point,
@@ -380,7 +379,11 @@ satisfies it at its selected point exactly when its matched swing model
       transportField (scaleCoord m.η_ne) 0 (matchingField m.C m.G m.η m.idc m.ix) := by
     rw [matching_eq_swing m.C_ne m.η_ne]
     rfl
-  rw [hpt, hfield, holds_transport_iff]
+  exact Spectral.mem_den_flow_iff_of_hub_transport (fun _ _ => matching_mem_den_flow)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun m : Synchronous.GeneralSwing.Model =>
+      Synchronous.GeneralSwing.field m.M m.D m.τ m.Pe) (pt := Synchronous.GeneralSwing.Model.point)
+      Synchronous.GeneralSwing.family_isAutonomous)
+    (scaleCoord m.η_ne) 0 hfield hpt P
 
 /-! ## Global stability of matching control: the sentence-language boundary -/
 

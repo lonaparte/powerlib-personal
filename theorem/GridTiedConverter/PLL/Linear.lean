@@ -457,9 +457,8 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
 @[tmio M, powerlib_domain] private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
-  rcases h with h | h
-  · exact Criteria.exists_root_re_pos_of_trace_pos _ (by rw [trace_linA]; linarith)
-  · exact Criteria.exists_root_re_pos_of_det _ (by rw [neg_one_sq, one_mul, det_linA]; exact h)
+  exact Criteria.exists_root_re_pos_of_violation_fin_two _
+    (h.imp (fun h => by rw [trace_linA]; linarith) fun h => by rwa [det_linA])
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its
 semantics connection (the rate law `Spectral.chain_le_semantics_of_rate`): both positive loop

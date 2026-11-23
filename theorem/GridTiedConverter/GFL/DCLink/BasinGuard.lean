@@ -365,28 +365,23 @@ def Model.toFourState (m : Model) : FourState.Model :=
 the PLL–DC image of the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of that of
 `⟨q, s, x*⟩`, for every sentence (in particular local exponential stability and instability at
 `s = 1`): the two carrier fields are conjugate by `S`
-(`CarrierParams.carrierField_neg_sign_eq_transport`, `Dynamics.holds_transport_iff`). -/
+(`CarrierParams.carrierField_neg_sign_eq_transport`, `Spectral.mem_den_flow_iff_of_transport`). -/
 @[tmio TM, powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0)
     (s : Sentence) :
     connection% (m.flip.toPLLDC ∈ PLLDC.family.den s ↔ m.toPLLDC ∈ PLLDC.family.den s) := by
   unfold powerlib.TMIO.Statement
-  rcases s with P | _ | E
-  · rw [(connection_proof% PLLDC.family_isAutonomous.mem_den_flow),
-      (connection_proof% PLLDC.family_isAutonomous.mem_den_flow)]
-    have h1 : m.flip.toPLLDC.field =
-        fun z => m.params.carrierField (-m.s) (z + carrierReflect m.point) :=
-      funext fun z => congrFun (m.params.carrierField_eq_PLLDC_field (-m.s)).symm _
-    have h2 : m.toPLLDC.field = fun z => m.params.carrierField m.s (z + m.point) :=
-      funext fun z => congrFun (m.params.carrierField_eq_PLLDC_field m.s).symm _
-    have hpt : carrierReflect m.point = Dynamics.affineCoord carrierReflect 0 m.point := by
-      simp [Dynamics.affineCoord]
-    rw [h1, h2, Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff, hpt,
-      m.params.carrierField_neg_sign_eq_transport hIq m.s]
-    exact Dynamics.holds_transport_iff carrierReflect 0 P
-  · rw [PLLDC.family_isAutonomous.den_passive]
-    simp
-  · rw [PLLDC.family_isAutonomous.den_envelope]
-    simp
+  have hden : ∀ (y : PLLDC.Model) (P : Flow.Property), y ∈ PLLDC.family.den (.flow P) ↔
+      P.holds y.p.field y.x := fun _ _ => Spectral.mem_den_flow_iff_shift
+    (f := fun y : PLLDC.Model => y.p.field) (pt := PLLDC.Model.x) PLLDC.family_isAutonomous
+  refine Spectral.mem_den_iff_of_flow (g := fun _ => m.toPLLDC) PLLDC.family_isAutonomous
+    PLLDC.family_isAutonomous (fun P => ?_) s
+  refine Spectral.mem_den_flow_iff_of_transport hden hden (g := fun _ => m.toPLLDC)
+    carrierReflect 0 ?_ (show carrierReflect m.point = Dynamics.affineCoord carrierReflect 0 m.point
+      by simp [Dynamics.affineCoord]) P
+  show (m.params.toPLLDC (-m.s)).field =
+    Dynamics.transportField carrierReflect 0 (m.params.toPLLDC m.s).field
+  rw [← m.params.carrierField_eq_PLLDC_field, ← m.params.carrierField_eq_PLLDC_field,
+    m.params.carrierField_neg_sign_eq_transport hIq m.s]
 
 /-! ### The four-state reading -/
 

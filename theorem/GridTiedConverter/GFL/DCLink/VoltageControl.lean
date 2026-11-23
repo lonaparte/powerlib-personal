@@ -114,14 +114,7 @@ open Matrix Filter
 open scoped Topology
 open powerlib.Dynamics LinearSystems
 
-/-! ## Scalar helpers -/
-
-@[tmio T, powerlib_foundation] private lemma eigenpair_fin_one (a : ℝ) :
-    (!![a] : Matrix (Fin 1) (Fin 1) ℝ).map (algebraMap ℝ ℂ) *ᵥ (fun _ => (1 : ℂ)) =
-      (a : ℂ) • (fun _ => (1 : ℂ)) := by
-  ext i
-  fin_cases i
-  simp [Matrix.mulVec, dotProduct]
+/-! ## Positive DC voltage -/
 
 /-- The open set `V_dc > 0` of DC states. -/
 def posDC (n : ℕ) [NeZero n] : Set (State n) := {x | 0 < x 0}
@@ -244,9 +237,8 @@ voltage is unstable. -/
   rw [open_mem_den_flow]
   refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 1)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _)
-    openField_eq_zero (openJacobian hV.ne')
-    ⟨_, _, fun h => one_ne_zero (congrFun h 0), eigenpair_fin_one _, ?_⟩
-  rw [Complex.ofReal_re, neg_div]
+    openField_eq_zero (openJacobian hV.ne') (Linear.exists_eigenpair_one_of_pos ?_)
+  rw [neg_div]
   exact neg_pos.mpr (div_neg_of_neg_of_pos hP (mul_pos hC hV))
 
 /-! ## PI outer loop -/

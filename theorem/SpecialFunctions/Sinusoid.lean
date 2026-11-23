@@ -22,7 +22,8 @@ Results.
   `−A cos(θ + φ)` is negative) and `saddleRoot` (where it is positive), and they differ
   (`stableRoot_ne_saddleRoot`).
 * `|c| = A`: exactly one zero, where the derivative vanishes (`ncard_sinusoidZeros_of_eq`).
-* `|c| > A`: no zero (`sinusoidZeros_eq_empty`).
+* `|c| > A`: no zero (`sinusoidZeros_eq_empty`). For any amplitude a zero exists iff
+  `|c| ≤ |A|` (`exists_sinusoid_zero_iff_abs`; `exists_sinusoid_zero_iff` for `A > 0`).
 * Explicitly `stableRoot ≡ arcsin(c/A) − φ` and `saddleRoot ≡ π − arcsin(c/A) − φ (mod 2π)`.
 * The power-angle law: `X i = −V sin θ` gives `V cos θ · i = −(V²/(2X)) sin 2θ`
   (`mul_cos_mul_eq_neg_sin_two_mul`); `K sin 2θ = c` is solvable iff `|c| ≤ K`
@@ -217,15 +218,27 @@ variable {c A φ a : ℝ}
     sinusoidZeros c A φ a = ∅ :=
   Set.eq_empty_iff_forall_notMem.mpr fun θ hθ => sinusoid_ne_zero_of_lt hA hc θ hθ.2
 
+/-- Existence of a zero for any amplitude: `(∃ θ, c − A sin(θ + φ) = 0) ↔ |c| ≤ |A|`
+(`θ = arcsin(c/A) − φ` for `A ≠ 0`). -/
+@[tmio T, powerlib_foundation] theorem exists_sinusoid_zero_iff_abs :
+    (∃ θ, c - A * sin (θ + φ) = 0) ↔ |c| ≤ |A| := by
+  constructor
+  · rintro ⟨θ, hθ⟩
+    rw [show c = A * sin (θ + φ) by linarith, abs_mul]
+    exact mul_le_of_le_one_right (abs_nonneg A) (abs_sin_le_one _)
+  · intro h
+    rcases eq_or_ne A 0 with rfl | hA
+    · exact ⟨0, by simpa using h⟩
+    · have h1 : |c / A| ≤ 1 := by rwa [abs_div, div_le_one (abs_pos.mpr hA)]
+      refine ⟨arcsin (c / A) - φ, ?_⟩
+      rw [sub_add_cancel, sin_arcsin (abs_le.mp h1).1 (abs_le.mp h1).2]
+      field_simp
+      ring
+
 /-- Existence of a zero: `(∃ θ, c − A sin(θ + φ) = 0) ↔ |c| ≤ A` (for `A > 0`). -/
 @[tmio T, powerlib_foundation] theorem exists_sinusoid_zero_iff (hA : 0 < A) :
     (∃ θ, c - A * sin (θ + φ) = 0) ↔ |c| ≤ A := by
-  constructor
-  · rintro ⟨θ, hθ⟩
-    by_contra h; rw [not_le] at h
-    exact sinusoid_ne_zero_of_lt hA.le h θ hθ
-  · intro hc
-    exact ⟨stableRoot c A φ 0, stableRoot_zero hc hA⟩
+  rw [exists_sinusoid_zero_iff_abs, abs_of_pos hA]
 
 /-! ## The power-angle law -/
 

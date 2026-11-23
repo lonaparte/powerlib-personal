@@ -79,21 +79,14 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
   ODE_solution_unique (v := fun _ x => m.inputField u x)
     (fun _ => m.inputField_lipschitzWith u) hf hf' hg hg' ha
 
-/-- First crossing time of a threshold for a signal continuous on `[0, ∞)`. -/
+/-- First crossing time of a threshold for a signal continuous on `[0, ∞)`
+(`Dynamics.exists_first_le` on `[0, τ]`). -/
 @[tmio T, powerlib_foundation] theorem exists_first_crossing {z : ℝ → ℝ} (hz : ContinuousOn z (Ici 0))
     (h : ∃ τ ≥ 0, z τ ≤ -θ) : ∃ T ≥ 0, z T ≤ -θ ∧ ∀ s ∈ Ico 0 T, -θ < z s := by
-  set S := {s | 0 ≤ s ∧ z s ≤ -θ}
-  have hS : S = Ici 0 ∩ z ⁻¹' Iic (-θ) := rfl
-  have hcl : IsClosed S := by
-    rw [hS]; exact hz.preimage_isClosed_of_isClosed isClosed_Ici isClosed_Iic
   obtain ⟨τ, hτ, hτz⟩ := h
-  have hne : S.Nonempty := ⟨τ, hτ, hτz⟩
-  have hbdd : BddBelow S := ⟨0, fun s hs => hs.1⟩
-  obtain ⟨hT0, hTz⟩ := hcl.csInf_mem hne hbdd
-  refine ⟨sInf S, hT0, hTz, fun s hs => ?_⟩
-  by_contra hc
-  push Not at hc
-  exact absurd (csInf_le hbdd ⟨hs.1, hc⟩) (not_le.2 hs.2)
+  obtain ⟨T, hT, hTz, hfirst⟩ :=
+    Dynamics.exists_first_le (hz.mono Icc_subset_Ici_self) ⟨τ, ⟨hτ, le_rfl⟩, hτz⟩
+  exact ⟨T, hT.1, hTz, hfirst⟩
 
 /-- With first crossing time `T`, the latched trip at `t ≥ 0` is `T ≤ t`. -/
 @[tmio T, powerlib_foundation] theorem latchedTrip_iff_of_first {z : ℝ → ℝ} {T : ℝ} (hT : 0 ≤ T)
@@ -401,7 +394,7 @@ latched relay trips and `Δω → −(ΔP_L − p P⁰)/(K_R + D)`. -/
       (SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ) (SwingGovernor.decayRate_nonneg hM hTg hD hKD)
       hφ 0 (a := ΔPL / (K + D)) (r := -ΔPL / M)
       (by rw [hφ0]; exact SwingGovernor.rest_deviation)
-      (by rw [hφ0]; exact SwingGovernor.rest_slope hKD.ne') hr
+      (by rw [hφ0]; exact SwingGovernor.field_zero) hr
     rw [← SwingGovernor.nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ] at hT0 hval
     rw [SwingGovernor.steadyState_zero, ← SwingGovernor.nadirValue_eq hM hTg hD hKD hP hζ] at hval
     have := hno _ hT0.le

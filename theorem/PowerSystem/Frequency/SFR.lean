@@ -337,13 +337,10 @@ right half plane. -/
     (hTR : 0 < TR) (h : coeff0 D K < 0 ∨ coeff2 M D Tg TR < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant M D K F Tg TR).A s).det = 0 ∧ 0 < s.re := by
   have h3 : 0 < coeff3 M Tg TR := by unfold coeff3; positivity
-  rcases h with h | h
-  · refine Criteria.exists_root_re_pos_of_det _ ?_
-    rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero,
-      det_A hM.ne' hTg.ne' hTR.ne', neg_div]
+  refine Criteria.exists_root_re_pos_of_violation_fin_three _ (h.symm.imp (fun h => ?_) fun h => ?_)
+  · rw [trace_A hM.ne' hTg.ne' hTR.ne', neg_div]
     exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
-  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
-    rw [trace_A hM.ne' hTg.ne' hTR.ne', neg_div]
+  · rw [det_A hM.ne' hTg.ne' hTR.ne', neg_div]
     exact neg_pos.2 (div_neg_of_neg_of_pos h h3)
 
 /-! ## Steady state (§1.7) -/

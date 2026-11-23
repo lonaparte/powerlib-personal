@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.SpecialFunctions.Elementary
 
 /-! # Multiplicative versus additive drive: discriminants, extended coordinates, amplitudes
 
@@ -36,7 +37,8 @@ Results.
   equals the additive one (`(χ, 0)`), exactly. This is the bit-exact oracle of an affine
   channel such as the dc-source current `I_dc`.
 * Amplitude conventions: `u = a cos ωt = û e^{jωt} + û* e^{−jωt}` with `û = a/2`, `|û|² = a²/4`
-  (`tone_coefficient`); the mean square over a period is `a²/2` (`tone_meanSquare`); the erosion
+  (`tone_coefficient`, from `SpecialFunctions.ofReal_mul_cos_eq_exp`); the mean square over a
+  period is `a²/2` (`tone_meanSquare`, from `SpecialFunctions.integral_cos_sq_period`); the erosion
   `α_eff = α − c_x a²/4` vanishes at the leading-order threshold `a*₍₂₎ = 2√(α/c_x)`
   (`erosion_threshold`); tone-wise erosion `c_x a²/4` is one half of `c_x` times the spectral
   mass `a²/2` (`multitone_erosion`).
@@ -313,14 +315,8 @@ end Extended
         (starRingEnd ℂ) (a / 2 : ℂ) * Complex.exp (-(θ * Complex.I)) ∧
       ‖(a / 2 : ℂ)‖ ^ 2 = a ^ 2 / 4 := by
   constructor
-  · have h1 : Complex.exp (θ * Complex.I) = Complex.cos θ + Complex.sin θ * Complex.I :=
-      Complex.exp_mul_I θ
-    have h2 : Complex.exp (-(θ * Complex.I)) = Complex.cos θ - Complex.sin θ * Complex.I := by
-      rw [show -((θ : ℂ) * Complex.I) = (-(θ : ℂ)) * Complex.I by ring, Complex.exp_mul_I,
-        Complex.cos_neg, Complex.sin_neg]; ring
-    rw [h1, h2, show (starRingEnd ℂ) (a / 2 : ℂ) = (a / 2 : ℂ) by
-      rw [map_div₀, Complex.conj_ofReal, map_ofNat]]
-    push_cast; ring
+  · rw [SpecialFunctions.ofReal_mul_cos_eq_exp, map_div₀, Complex.conj_ofReal, map_ofNat,
+      mul_add]
   · rw [norm_div, Complex.norm_real, Real.norm_eq_abs, div_pow, sq_abs]
     norm_num
 
@@ -328,24 +324,10 @@ end Extended
 @[tmio T, powerlib_foundation] theorem tone_meanSquare (a : ℝ) {ω T : ℝ} (hT : 0 < T)
     (hωT : ω * T = 2 * Real.pi) :
     (1 / T) * ∫ t in (0 : ℝ)..T, (a * Real.cos (ω * t)) ^ 2 = a ^ 2 / 2 := by
-  have hω : ω ≠ 0 := by
-    intro h; rw [h, zero_mul] at hωT; linarith [Real.pi_pos]
-  have hcos : ∀ t, (a * Real.cos (ω * t)) ^ 2 = a ^ 2 / 2 + a ^ 2 / 2 * Real.cos (2 * (ω * t)) := by
-    intro t; rw [Real.cos_two_mul]; ring
-  simp_rw [hcos]
-  rw [intervalIntegral.integral_add intervalIntegrable_const
-    (by apply Continuous.intervalIntegrable; fun_prop), intervalIntegral.integral_const,
-    intervalIntegral.integral_const_mul]
-  have hint : ∫ t in (0 : ℝ)..T, Real.cos (2 * (ω * t)) = 0 := by
-    have h := intervalIntegral.integral_comp_mul_left (a := 0) (b := T)
-      (fun t => Real.cos t) (c := 2 * ω) (by positivity)
-    simp only [mul_zero] at h
-    rw [show (fun t => Real.cos (2 * (ω * t))) = fun t => Real.cos (2 * ω * t) by
-      funext t; ring_nf, h, integral_cos, show 2 * ω * T = ((4 : ℕ) : ℝ) * Real.pi by
-        rw [mul_assoc, hωT]; push_cast; ring,
-      Real.sin_zero, sub_zero, Real.sin_nat_mul_pi]
-    simp
-  rw [hint, mul_zero, add_zero, smul_eq_mul, sub_zero]
+  have h := SpecialFunctions.integral_cos_sq_period 0 hωT
+  simp only [add_zero] at h
+  simp_rw [mul_pow]
+  rw [intervalIntegral.integral_const_mul, h]
   field_simp
 
 /-- The leading-order background threshold: `α − c_x a²/4 = 0` with `a ≥ 0` iff

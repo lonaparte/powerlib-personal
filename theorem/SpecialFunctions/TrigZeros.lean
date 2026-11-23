@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Dynamics.Calculus
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -287,51 +288,20 @@ variable {f : ℝ → ℝ}
     obtain ⟨c, hc, hfc⟩ := intermediate_value_Ioo' hab.le hf.continuousOn ⟨hb', ha'⟩
     exact hz c hc hfc
 
-/-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is negative on the left. -/
+/-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is negative on the left
+(`Dynamics.eventually_sign_of_hasDerivAt` for `f · g`, slope `g² > 0`). -/
 @[tmio T, powerlib_foundation] private lemma exists_sign_left_of_simple_zero {θ₀ g l : ℝ}
     (hzero : f θ₀ = 0) (hd : HasDerivAt f g θ₀) (hg : g ≠ 0) (hl : l < θ₀) :
-    ∃ d ∈ Ioo l θ₀, f d * g < 0 := by
-  have hslope := hasDerivAt_iff_tendsto_slope.mp hd
-  have hlim : Tendsto (fun x => slope f θ₀ x * g) (𝓝[≠] θ₀) (𝓝 (g * g)) :=
-    hslope.mul_const g
-  have hev : ∀ᶠ x in 𝓝[≠] θ₀, 0 < slope f θ₀ x * g :=
-    hlim.eventually (lt_mem_nhds (mul_self_pos.mpr hg))
-  have hsl (x : ℝ) : slope f θ₀ x = f x / (x - θ₀) := by
-    rw [slope_def_field, hzero, sub_zero]
-  have hev' : ∀ᶠ x in 𝓝[<] θ₀, 0 < slope f θ₀ x * g :=
-    hev.filter_mono (nhdsWithin_mono _ fun x hx => ne_of_lt hx)
-  obtain ⟨d, hd1, hd2⟩ := (hev'.and (Ioo_mem_nhdsLT hl)).exists
-  refine ⟨d, hd2, ?_⟩
-  rw [hsl] at hd1
-  have hneg : d - θ₀ < 0 := by linarith [hd2.2]
-  have hne : d - θ₀ ≠ 0 := hneg.ne
-  have : f d * g = (f d / (d - θ₀) * g) * (d - θ₀) := by
-    field_simp
-  rw [this]
-  exact mul_neg_of_pos_of_neg hd1 hneg
+    ∃ d ∈ Ioo l θ₀, f d * g < 0 :=
+  ((Dynamics.eventually_sign_of_hasDerivAt (hd.mul_const g) (by rw [hzero, zero_mul])
+    (mul_self_pos.mpr hg)).1.and (Ioo_mem_nhdsLT hl)).exists.imp fun _ h => ⟨h.2, h.1⟩
 
 /-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is positive on the right. -/
 @[tmio T, powerlib_foundation] private lemma exists_sign_right_of_simple_zero {θ₀ g r : ℝ}
     (hzero : f θ₀ = 0) (hd : HasDerivAt f g θ₀) (hg : g ≠ 0) (hr : θ₀ < r) :
-    ∃ c ∈ Ioo θ₀ r, 0 < f c * g := by
-  have hslope := hasDerivAt_iff_tendsto_slope.mp hd
-  have hlim : Tendsto (fun x => slope f θ₀ x * g) (𝓝[≠] θ₀) (𝓝 (g * g)) :=
-    hslope.mul_const g
-  have hev : ∀ᶠ x in 𝓝[≠] θ₀, 0 < slope f θ₀ x * g :=
-    hlim.eventually (lt_mem_nhds (mul_self_pos.mpr hg))
-  have hsl (x : ℝ) : slope f θ₀ x = f x / (x - θ₀) := by
-    rw [slope_def_field, hzero, sub_zero]
-  have hev' : ∀ᶠ x in 𝓝[>] θ₀, 0 < slope f θ₀ x * g :=
-    hev.filter_mono (nhdsWithin_mono _ fun x hx => ne_of_gt hx)
-  obtain ⟨c, hc1, hc2⟩ := (hev'.and (Ioo_mem_nhdsGT hr)).exists
-  refine ⟨c, hc2, ?_⟩
-  rw [hsl] at hc1
-  have hpos : 0 < c - θ₀ := by linarith [hc2.1]
-  have hne : c - θ₀ ≠ 0 := hpos.ne'
-  have : f c * g = (f c / (c - θ₀) * g) * (c - θ₀) := by
-    field_simp
-  rw [this]
-  exact mul_pos hc1 hpos
+    ∃ c ∈ Ioo θ₀ r, 0 < f c * g :=
+  ((Dynamics.eventually_sign_of_hasDerivAt (hd.mul_const g) (by rw [hzero, zero_mul])
+    (mul_self_pos.mpr hg)).2.and (Ioo_mem_nhdsGT hr)).exists.imp fun _ h => ⟨h.2, h.1⟩
 
 /-- Sign rule on an interval: with `n` zeros in `(a, b)`, all simple,
 `0 < f a · f b · (−1)ⁿ`. -/

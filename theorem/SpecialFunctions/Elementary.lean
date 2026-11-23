@@ -19,19 +19,23 @@ Source: elementary analysis, used by the swing-equation damping estimates
 (`theorem/PowerSystem/Synchronous/DampedEAC.lean`), the PLL–DC boundary analysis
 (`theorem/GridTiedConverter/GFL/DCLink/PLLDC/Boundary.lean`), the sensorless drive averaging
 (`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
-(`theorem/Grid/ModulationTransfer.lean`) and the SFR nadir-time
-correction (`theorem/PowerSystem/Frequency/SFR.lean`).
+(`theorem/Grid/ModulationTransfer.lean`), the SFR nadir-time
+correction (`theorem/PowerSystem/Frequency/SFR.lean`) and the single-tone pump bookkeeping
+(`theorem/ParametricResonance/Harmonics.lean`, `theorem/NormalForm/MultiplicativeDrive.lean`).
 
 Results.
 * Exponential: `exp_neg_lt_quadratic` (`e^{−u} < 1 − u + u²/2` for `u > 0`, by strict
   monotonicity of `1 − x + x²/2 − e^{−x}` on `[0, ∞)`), `exp_neg_le_quadratic` (`≤` for `u ≥ 0`).
 * Trigonometric: `one_sub_cos_le_sin_sq` (`1 − cos θ ≤ sin² θ` where `cos θ ≥ 0`),
   `cos_nonneg_of_abs_lt_one`, `eq_zero_of_cos_eq_one` (`cos θ = 1`, `|θ| < 1` force `θ = 0`),
-  `sin_ne_zero_of_cos` (`cos θ = 0` forces `sin θ ≠ 0`),
-  `carrier_mean_sin_sq` (the mean of `A sin²(ω t)` over one period `2π/ω` is `A/2`).
+  `sin_ne_zero_of_cos` (`cos θ = 0` forces `sin θ ≠ 0`);
+  `integral_cos_sq_period` (over one period `T`, `∫₀ᵀ cos²(ω t + φ) dt = T/2`: the mean square of
+  a sinusoid is half its squared amplitude) and its instance `carrier_mean_sin_sq` (the mean of
+  `A sin²(ω t)` over one period `2π/ω` is `A/2`).
 * Absolute values and signs: `mul_sign_eq_abs` (`x · sign x = |x|`), `abs_mul_pow_le`
   (`|w^i ξ^j| ≤ m^(i+j)` when `|w|, |ξ| ≤ m`), `sq_max_abs_le` (`max(|w|, |ξ|)² ≤ w² + ξ²`).
-* Complex exponential: `normSq_affine_exp` (`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`),
+* Complex exponential: `ofReal_mul_cos_eq_exp` (a real tone `a cos θ = (a/2)(e^{jθ} + e^{−jθ})`),
+  `normSq_affine_exp` (`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`),
   `im_logDeriv_affine_exp`
   (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`);
   `norm_affine_exp`, `hasDerivAt_norm_affine_exp` (`d|a e^{jδ} + b|/dδ = −ab sin δ/|a e^{jδ} + b|`),
@@ -116,22 +120,26 @@ end Exponential
   rw [h, hcos] at this
   norm_num at this
 
-/-- Mean of `A sin²(ω t)` over one carrier period is `A/2`. -/
+/-- Over one period `T` (`ω T = 2π`) a unit sinusoid has mean square `1/2`:
+`∫₀ᵀ cos²(ω t + φ) dt = T/2`. -/
+@[tmio T, powerlib_foundation] theorem integral_cos_sq_period {ω T : ℝ} (φ : ℝ)
+    (hωT : ω * T = 2 * Real.pi) : ∫ t in (0 : ℝ)..T, Real.cos (ω * t + φ) ^ 2 = T / 2 := by
+  have hω : ω ≠ 0 := by rintro rfl; rw [zero_mul] at hωT; linarith [Real.pi_pos]
+  rw [intervalIntegral.integral_comp_mul_add (fun x => Real.cos x ^ 2) hω, integral_cos_sq,
+    mul_zero, zero_add, hωT, add_comm _ φ, Real.cos_add_two_pi, Real.sin_add_two_pi,
+    smul_eq_mul]
+  field_simp
+  linarith
+
+/-- Mean of `A sin²(ω t)` over one carrier period is `A/2` (`integral_cos_sq_period` at the phase
+`−π/2`). -/
 @[tmio T, powerlib_foundation] theorem carrier_mean_sin_sq (A ω : ℝ) (hω : 0 < ω) :
     ω / (2 * Real.pi) * ∫ t in (0 : ℝ)..(2 * Real.pi / ω), A * Real.sin (ω * t) * Real.sin (ω * t) =
       A / 2 := by
-  have hpi := Real.pi_pos
-  have h1 : (∫ t in (0 : ℝ)..(2 * Real.pi / ω), A * Real.sin (ω * t) * Real.sin (ω * t)) =
-      A * ∫ t in (0 : ℝ)..(2 * Real.pi / ω), Real.sin (ω * t) ^ 2 := by
-    rw [← intervalIntegral.integral_const_mul]
-    congr 1; funext t; ring
-  have h2 : (∫ t in (0 : ℝ)..(2 * Real.pi / ω), Real.sin (ω * t) ^ 2) = Real.pi / ω := by
-    rw [intervalIntegral.integral_comp_mul_left (fun x => Real.sin x ^ 2) hω.ne', integral_sin_sq]
-    simp only [mul_zero, Real.sin_zero, Real.cos_zero, zero_mul, smul_eq_mul]
-    rw [show ω * (2 * Real.pi / ω) = 2 * Real.pi by field_simp, Real.sin_two_pi]
-    field_simp
-    ring
-  rw [h1, h2]
+  have h := integral_cos_sq_period (-(Real.pi / 2)) (mul_div_cancel₀ (2 * Real.pi) hω.ne')
+  simp only [← sub_eq_add_neg, Real.cos_sub_pi_div_two] at h
+  simp_rw [mul_assoc, ← sq]
+  rw [intervalIntegral.integral_const_mul, h]
   field_simp
 
 /-! ## Absolute values, signs and monomials -/
@@ -161,6 +169,12 @@ end Exponential
 section ComplexExp
 
 open Complex
+
+/-- A real tone in complex exponentials: `a cos θ = (a/2)(e^{jθ} + e^{−jθ})`. -/
+@[tmio T, powerlib_foundation] theorem ofReal_mul_cos_eq_exp (a θ : ℝ) :
+    ((a * Real.cos θ : ℝ) : ℂ) = a / 2 * (exp (θ * I) + exp (-(θ * I))) := by
+  rw [ofReal_mul, ofReal_cos, Complex.cos, neg_mul]
+  ring
 
 @[tmio T, powerlib_foundation] theorem normSq_affine_exp (a b δ : ℝ) :
     normSq ((a : ℂ) * exp (δ * I) + b) = a ^ 2 + b ^ 2 + 2 * a * b * Real.cos δ := by

@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # The overdamped washboard (Adler equation) `θ̇ = B − A sin θ`
 
@@ -16,7 +17,8 @@ Source: work-sync theory/T-nonlinear-phase-plane.md §1.5 (washboard; `B > A` �
 monotone running) and its code check "Adler running velocity = √(B² − A²)".
 
 Results.
-* `adler_equilibrium_iff`: an equilibrium exists iff `|B| ≤ |A|` (for `A > 0`: iff `|B| ≤ A`).
+* `adler_equilibrium_iff`: an equilibrium exists iff `|B| ≤ |A|` (for `A > 0`: iff `|B| ≤ A`;
+  the sinusoid law `SpecialFunctions.exists_sinusoid_zero_iff_abs`).
 * `hasDerivAt_adlerPrimitive`: for `B > |A|`, with `s = √(B² − A²)`, the smooth function
   `G(θ) = (θ − 2 arctan(A cos θ / (B + s − A sin θ)))/s` satisfies `G' = 1/(B − A sin θ)` on
   all of `ℝ`, and `G(θ + 2π) = G(θ) + 2π/s` (`adlerPrimitive_add_two_pi`).
@@ -36,25 +38,12 @@ namespace powerlib.PhasePlane.Adler
 
 open Real Filter Topology
 
-/-- An equilibrium of `θ̇ = B − A sin θ` exists iff `|B| ≤ |A|`. -/
+/-- An equilibrium of `θ̇ = B − A sin θ` exists iff `|B| ≤ |A|`
+(`SpecialFunctions.exists_sinusoid_zero_iff_abs` at `φ = 0`). -/
 @[tmio T, powerlib_foundation] theorem adler_equilibrium_iff (A B : ℝ) :
     (∃ θ, B - A * Real.sin θ = 0) ↔ |B| ≤ |A| := by
-  constructor
-  · rintro ⟨θ, h⟩
-    have hB : B = A * Real.sin θ := by linarith
-    rw [hB, abs_mul]
-    exact mul_le_of_le_one_right (abs_nonneg A) (abs_sin_le_one θ)
-  · intro h
-    rcases eq_or_ne A 0 with hA | hA
-    · subst hA
-      simp only [abs_zero] at h
-      exact ⟨0, by simp [abs_nonpos_iff.mp h]⟩
-    · refine ⟨Real.arcsin (B / A), ?_⟩
-      have h1 : |B / A| ≤ 1 := by
-        rw [abs_div, div_le_one (abs_pos.mpr hA)]; exact h
-      rw [Real.sin_arcsin (by linarith [neg_abs_le (B / A), abs_le.mp h1])
-        (abs_le.mp h1).2]
-      field_simp; ring
+  simpa only [add_zero] using
+    SpecialFunctions.exists_sinusoid_zero_iff_abs (c := B) (A := A) (φ := 0)
 
 variable {A B : ℝ}
 

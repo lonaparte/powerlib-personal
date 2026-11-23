@@ -118,15 +118,7 @@ abbrev momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := Dynamics.scaleMatrix p.M
     connection% (p.linearPH δ₀ hM hD hK ∈ Port.PortHamiltonian.family.den (.flow P) ↔
       Swing.Model.mk p δ₀ ∈ Swing.Linearized.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  have hM' := hM.ne'
-  have hTS : p.momentumCoord * Dynamics.scaleMatrix p.M⁻¹ = 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [momentumCoord, Dynamics.scaleMatrix, Matrix.mul_apply, Fin.sum_univ_two, hM']
-  have hST : Dynamics.scaleMatrix p.M⁻¹ * p.momentumCoord = 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [momentumCoord, Dynamics.scaleMatrix, Matrix.mul_apply, Fin.sum_univ_two, hM']
+  obtain ⟨hTS, hST⟩ := Dynamics.scaleMatrix_mul_inv hM.ne'
   rw [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow),
     (connection_proof% Swing.Linearized.family_isLinear.mem_den_flow), p.stateMatrix_eq_conj δ₀ hM hD hK]
   exact Linear.holds_conj P hTS hST _

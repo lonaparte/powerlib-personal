@@ -512,36 +512,13 @@ asymptotic stability). -/
   unfold TMIO.Statement
   rw [(connection_proof% (Family.mem_den (F := family)))]
   change Flow.GloballyExponentiallyStable m.system.zeroInput 0
-  obtain ⟨aW, haW, hW⟩ := Flow.quadratic_lower_bound m.dissipation (dissipation_continuous m)
-    (dissipation_homogeneous m) (fun z hz => dissipation_pos m hR hG hδ z hz)
-  obtain ⟨aV, haV, hVlo⟩ := Flow.quadratic_lower_bound m.energy (energy_smooth m).continuous
-    (energy_homogeneous m) (fun z hz => energy_pos m hCdc hL hC z hz)
-  obtain ⟨bV, hbVpos, hVhi⟩ := Flow.quadratic_upper_bound m.energy (energy_smooth m).continuous
-    (energy_homogeneous m) (fun z hz => energy_pos m hCdc hL hC z hz)
-  let c : Flow.QuadraticDecay m.system.zeroInput m.energy 0 :=
-    { lower := aV
-      upper := bV
-      rate := aW / bV
-      lower_pos := haV
-      upper_pos := hbVpos
-      rate_pos := div_pos haW hbVpos
-      smooth := energy_smooth m
-      equilibrium := by
-        show m.field (0 + m.point) 0 = 0
-        rw [zero_add]
-        exact he
-      lower_bound := fun x => by rw [sub_zero]; exact hVlo x
-      upper_bound := fun x => by rw [sub_zero]; exact hVhi x
-      dissipation := fun x => by
-        show fderiv ℝ m.energy x (m.system.field x 0) ≤ _
-        rw [energy_lie m hCdc.ne' hL.ne' hC.ne' he x 0]
-        simp only [Pi.zero_apply, zero_mul, add_zero]
-        have h1 := hW x
-        have h2 : aW / bV * m.energy x ≤ aW * ‖x‖ ^ 2 :=
-          calc aW / bV * m.energy x ≤ aW / bV * (bV * ‖x‖ ^ 2) :=
-                mul_le_mul_of_nonneg_left (hVhi x) (div_nonneg haW.le hbVpos.le)
-            _ = aW * ‖x‖ ^ 2 := by field_simp
-        linarith }
+  obtain ⟨c⟩ := Flow.nonempty_quadraticDecay_of_homogeneous (energy_smooth m)
+    (energy_homogeneous m) (energy_pos m hCdc hL hC) (dissipation_continuous m)
+    (dissipation_homogeneous m) (dissipation_pos m hR hG hδ)
+    (show m.field (0 + m.point) 0 = 0 by rw [zero_add]; exact he) fun x => by
+      show fderiv ℝ m.energy x (m.system.field x 0) ≤ _
+      rw [energy_lie m hCdc.ne' hL.ne' hC.ne' he x 0]
+      simp
   exact c.globallyExponentiallyStable ((field_smooth m 0).comp (contDiff_id.add contDiff_const))
 
 /-- The whole requirement language is inconsistent (`r ≤ 0` fails at `r = 1`). -/

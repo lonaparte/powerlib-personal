@@ -34,7 +34,8 @@ Results.
   results.
 * First extremum (nadir) of a damped response, for any such plant: every coordinate of a forward
   solution is `e_i + dampedResp σ ω_d a r t` with initial deviation `a = (x(0) − e)_i` and
-  initial slope `r = (A (x(0) − e))_i` (`trajectory_apply_eq_dampedResp`). The scalar response
+  initial slope `r = f(x(0))_i`, the plant field under `u` at the initial state
+  (`trajectory_apply_eq_dampedResp`). The scalar response
   has derivative `−ρ e^{−σt} sin(θ − ω_d t)`, `ρ e^{jθ} = dampedRespPhase σ ω_d a r`
   (`hasDerivAt_dampedResp`), vanishing at `θ/ω_d + kπ/ω_d` (`hasDerivAt_dampedResp_crit_add`),
   and the half-period law `g(t + π/ω_d) = −e^{−σπ/ω_d} g(t)` (`dampedResp_add_half_period`).
@@ -409,29 +410,27 @@ end DampedResponse
 
 /-- Every coordinate of a forward solution of a two-state plant with eigenvalues `−σ ± j ω_d`
 (constant input `u`, equilibrium `e`) is `e_i` plus the damped response with initial deviation
-`a = (x(0) − e)_i` and initial slope `r = (A (x(0) − e))_i`. -/
+`a = (x(0) − e)_i` and initial slope `r = f(x(0))_i`, `f` the plant field under `u`. -/
 @[tmio T, powerlib_foundation] theorem trajectory_apply_eq_dampedResp {p : ℕ}
     (M : Linear.Plant 2 p) {u : Fin p → ℝ} {e : ℝ²} (he : IsEquilibrium (M.inputField u) e)
     (htr : M.A.trace = -2 * σ) (hdet : M.A.det = σ ^ 2 + ωd ^ 2) (hωd : ωd ≠ 0)
     {x : ℝ → ℝ²} (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) (i : Fin 2)
     {t : ℝ} (ht : 0 ≤ t) :
-    x t i = e i + dampedResp σ ωd (WithLp.ofLp (x 0 - e) i)
-      ((M.A *ᵥ WithLp.ofLp (x 0 - e)) i) t := by
-  rw [trajectory_eq_osc2 M he htr hdet hωd hx ht]
+    x t i = e i + dampedResp σ ωd (WithLp.ofLp (x 0 - e) i) (M.inputField u (x 0) i) t := by
+  rw [trajectory_eq_osc2 M he htr hdet hωd hx ht, M.inputField_eq he, Linear.affine_apply]
   simp only [PiLp.add_apply, osc2, dampedResp, Pi.smul_apply, Pi.add_apply, smul_eq_mul,
-    Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]
+    Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.ofLp_toEuclideanCLM]
   ring
 
 /-- First extremum of a forward solution: if a coordinate starts downwards
-(`r = (A (x(0) − e))_i < 0`) and `σ ≥ 0`, it decreases strictly up to
+(`r = f(x(0))_i < 0`, `f` the plant field under `u`) and `σ ≥ 0`, it decreases strictly up to
 `T = dampedRespCrit σ ω_d a r > 0`, attains its minimum over `t ≥ 0` at `T`, and that minimum is
 `e_i − (ω_d ρ/(σ² + ω_d²)) e^{−σT}`, `ρ = ‖dampedRespPhase σ ω_d a r‖`. -/
 @[tmio T, powerlib_foundation] theorem trajectory_nadir_osc2 {p : ℕ} (M : Linear.Plant 2 p)
     {u : Fin p → ℝ} {e : ℝ²} (he : IsEquilibrium (M.inputField u) e)
     (htr : M.A.trace = -2 * σ) (hdet : M.A.det = σ ^ 2 + ωd ^ 2) (hωd : 0 < ωd) (hσ : 0 ≤ σ)
     {x : ℝ → ℝ²} (hx : IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)) (i : Fin 2)
-    {a r : ℝ} (ha : WithLp.ofLp (x 0 - e) i = a) (hra : (M.A *ᵥ WithLp.ofLp (x 0 - e)) i = r)
-    (hr : r < 0) :
+    {a r : ℝ} (ha : WithLp.ofLp (x 0 - e) i = a) (hra : M.inputField u (x 0) i = r) (hr : r < 0) :
     0 < dampedRespCrit σ ωd a r ∧
       StrictAntiOn (fun t => x t i) (Icc 0 (dampedRespCrit σ ωd a r)) ∧
       IsMinOn (fun t => x t i) (Ici 0) (dampedRespCrit σ ωd a r) ∧

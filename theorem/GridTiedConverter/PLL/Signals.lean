@@ -80,8 +80,8 @@ abbrev gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := posSeq V θg
 (`gridAlphaBeta`) this is `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))` (T-pll-dynamics §1.2). -/
 @[tmio M, powerlib_domain] theorem park_posSeq (A α θh : ℝ) :
     park θh *ᵥ posSeq A α = ![A * Real.cos (α - θh), A * Real.sin (α - θh)] := by
-  ext i; fin_cases i <;>
-    simp [posSeq, Transform.clarke_mulVec_balanced, Real.cos_sub, Real.sin_sub] <;> ring
+  rw [posSeq, mulVec_mulVec, ← Transform.parkABC, Transform.parkABC_mulVec_balanced_frame,
+    add_zero]
 
 /-- The SRF-PLL phase detector: the q-axis grid voltage in the PLL frame. -/
 def phaseDetector (V θg θh : ℝ) : ℝ := (park θh *ᵥ gridAlphaBeta V θg) 1

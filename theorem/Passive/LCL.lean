@@ -541,8 +541,7 @@ pole-stable, so its solutions converge. -/
     · simpa using h₀
     · simpa using h₁
     · simpa using h₂
-  exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 3 => ℝ)).symm.hasFDerivAt.comp_hasDerivAt t
-    hpi
+  exact Dynamics.hasDerivAt_toLp hpi
 
 /-- Over one period the power `r c² cos² t + q sin t cos t` delivers the energy `r c² π`. -/
 @[tmio T, powerlib_foundation] theorem integral_cycle (r c q : ℝ) :

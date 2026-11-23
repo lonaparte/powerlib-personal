@@ -61,9 +61,10 @@ Results (static evidence on the model).
   `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches; `hasDerivAt_Pe` — the
   synchronizing coefficient `K(δ) = k₂ cos(δ − k₃)` is the slope `P_e'(δ)`.
 * `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `dampingRatio_jacobian`,
-  `eigenvalues_real_iff` — the linearization has `M det(sI − J) = M s² + D s + K`,
-  `K = k₂ cos(δ₀ − k₃)`; it is Hurwitz iff `D > 0` and `K > 0`; its damping ratio
-  (`Criteria.dampingRatio`) is `D / (2 √(M K))`; exact overdamping threshold.
+  `eigenvalues_real_iff` — the mechanical-Jacobian laws of `PhasePlane.Conservative` at the
+  stiffness `K = k₂ cos(δ₀ − k₃)`: the linearization has `M det(sI − J) = M s² + D s + K`; it is
+  Hurwitz iff `D > 0` and `K > 0`; its damping ratio (`Criteria.dampingRatio`) is
+  `D / (2 √(M K))`; exact overdamping threshold.
 * `field_eq_conservative`, `energy_eq_conservative` — the swing field and the energy
   `W = ½ M ω² + U(δ)` are the conservative phase-plane field and energy
   (`theorem/PhasePlane/Conservative.lean`) with mass `M`, damping `D` and potential
@@ -407,30 +408,21 @@ period of the power-angle curve). Static evidence on the model, not a connection
 /-- `M · det(sI − J) = M s² + D s + K`, `K = k₂ cos(δ₀ − k₃)`. -/
 @[tmio M, powerlib_domain] theorem characteristic_polynomial (hM : p.M ≠ 0) (δ₀ : ℝ) (s : ℂ) :
     (p.M : ℂ) * (Linear.characteristicMatrix (p.jacobian δ₀) s).det =
-      (p.M : ℂ) * s ^ 2 + (p.D : ℂ) * s + (p.syncCoeff δ₀ : ℂ) := by
-  rw [Criteria.det_characteristicMatrix_fin_two, trace_jacobian, det_jacobian]
-  have hM' : (p.M : ℂ) ≠ 0 := by exact_mod_cast hM
-  push_cast
-  field_simp
-  ring
+      (p.M : ℂ) * s ^ 2 + (p.D : ℂ) * s + (p.syncCoeff δ₀ : ℂ) :=
+  PhasePlane.Conservative.characteristic_polynomial_jacobian hM p.D (p.syncCoeff δ₀) s
 
 /-- The linearization is Hurwitz iff all coefficients of `M s² + D s + K` are positive
-(`M > 0`; `Criteria.isHurwitz_iff_of_coeffs_quadratic`). -/
+(`M > 0`; `PhasePlane.Conservative.isHurwitz_jacobian_iff`). -/
 @[tmio TM, powerlib_domain] theorem isHurwitz_jacobian_iff (hM : 0 < p.M) (δ₀ : ℝ) :
     LinearSystems.IsHurwitz (p.jacobian δ₀) ↔ 0 < p.D ∧ 0 < p.syncCoeff δ₀ :=
-  Criteria.isHurwitz_iff_of_coeffs_quadratic _ hM (p.trace_jacobian δ₀) (p.det_jacobian δ₀)
+  PhasePlane.Conservative.isHurwitz_jacobian_iff hM p.D (p.syncCoeff δ₀)
 
 /-- Damping ratio of the linearization (`Criteria.dampingRatio`, `ζ = −tr J / (2 √det J)`):
 `ζ = D / (2 √(M K))`, `K = k₂ cos(δ − k₃)` (`M, K > 0`). -/
 @[tmio M, powerlib_domain] theorem dampingRatio_jacobian (hM : 0 < p.M) {δ : ℝ}
     (hK : 0 < p.syncCoeff δ) :
-    Criteria.dampingRatio (p.jacobian δ) = p.D / (2 * Real.sqrt (p.M * p.syncCoeff δ)) := by
-  have hs : Real.sqrt (p.syncCoeff δ / p.M) = Real.sqrt (p.M * p.syncCoeff δ) / p.M := by
-    rw [show p.syncCoeff δ / p.M = p.M * p.syncCoeff δ / p.M ^ 2 by field_simp,
-      Real.sqrt_div' _ (by positivity), Real.sqrt_sq hM.le]
-  have hpos : 0 < Real.sqrt (p.M * p.syncCoeff δ) := Real.sqrt_pos.mpr (mul_pos hM hK)
-  rw [Criteria.dampingRatio, trace_jacobian, det_jacobian, hs]
-  field_simp
+    Criteria.dampingRatio (p.jacobian δ) = p.D / (2 * Real.sqrt (p.M * p.syncCoeff δ)) :=
+  PhasePlane.Conservative.dampingRatio_jacobian hM hK p.D
 
 /-! ## Energy function -/
 
@@ -554,18 +546,8 @@ damped local response) iff `D² ≥ 4 M K`, `K = k₂ cos(δ₀ − k₃)` (`M >
 @[tmio M, powerlib_domain] theorem eigenvalues_real_iff (hM : 0 < p.M) (δ₀ : ℝ) :
     (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →
         (p.jacobian δ₀).map (algebraMap ℝ ℂ) *ᵥ v = μ • v → μ.im = 0) ↔
-      4 * p.M * p.syncCoeff δ₀ ≤ p.D ^ 2 := by
-  rw [Criteria.eigenvalues_real_iff_discriminant_nonneg, trace_jacobian, det_jacobian]
-  have hM2 : 0 < p.M ^ 2 := by positivity
-  have he : (-p.D / p.M) ^ 2 - 4 * (p.syncCoeff δ₀ / p.M) =
-      (p.D ^ 2 - 4 * p.M * p.syncCoeff δ₀) / p.M ^ 2 := by
-    field_simp
-  rw [he, div_nonneg_iff]
-  constructor
-  · rintro (⟨h, -⟩ | ⟨-, h⟩)
-    · linarith
-    · linarith
-  · intro h; left; exact ⟨by linarith, hM2.le⟩
+      4 * p.M * p.syncCoeff δ₀ ≤ p.D ^ 2 :=
+  PhasePlane.Conservative.eigenvalues_real_iff_jacobian hM p.D (p.syncCoeff δ₀)
 
 end SwingParams
 
@@ -839,11 +821,6 @@ conclusion. -/
       _ = 0 := by rw [hs, hK']; ring
   exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
 
-@[tmio M, powerlib_domain] private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
-    ‖PhasePlane.mk (m.δ + s) t - m.point‖ ≤ |s| + |t| := by
-  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans (le_of_eq ?_)
-  simp [Model.point]
-
 @[tmio M, powerlib_domain] private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :
     p.energy δ₀ (PhasePlane.mk (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
   simp [SwingParams.energy]
@@ -859,15 +836,15 @@ arbitrarily close to it (on the side where the accelerating power pushes). -/
   have hε2 : 0 < ε / 2 := by linarith
   rcases lt_or_gt_of_ne ha with hneg | hpos
   · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) 0, ?_, ?_⟩
-    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-      rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
+    · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
+      rw [add_sub_cancel_left, sub_zero, abs_zero, add_zero, abs_neg, abs_of_pos hε2]
       linarith
     · rw [energy_mkState, potential_fold m.p hb hK, Real.sin_neg]
       have := Real.sin_lt hε2
       nlinarith
   · refine ⟨PhasePlane.mk (m.δ + ε / 2) 0, ?_, ?_⟩
-    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-      rw [abs_zero, add_zero, abs_of_pos hε2]
+    · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
+      rw [add_sub_cancel_left, sub_zero, abs_zero, add_zero, abs_of_pos hε2]
       linarith
     · rw [energy_mkState, potential_fold m.p hb hK]
       have := Real.sin_lt hε2
@@ -897,8 +874,8 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
         (fun ε hε => ⟨PhasePlane.mk (m.δ + 0) (ε / 2), ?_, ?_⟩) hlas
       · rw [fderiv_fun_neg, m.p.energy_eq_conservative, m.p.field_eq_conservative]
         simp [PhasePlane.Conservative.energy_lie hM.ne' (m.p.hasDerivAt_potential m.δ), hD]
-      · refine (norm_mkState_sub_point m 0 (ε / 2)).trans_lt ?_
-        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
+      · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
+        rw [add_sub_cancel_left, sub_zero, abs_zero, zero_add, abs_of_pos (by linarith)]
         linarith
       · show -m.p.energy m.δ (PhasePlane.mk (m.δ + 0) (ε / 2)) < -m.p.energy m.δ m.point
         rw [hE0, neg_zero, neg_lt_zero]
@@ -917,8 +894,8 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
       · have := congrArg (fun y : State 2 => y 0) h
         simp [Model.point] at this
         linarith
-      · refine (norm_mkState_sub_point m (ε / 2) 0).trans_lt ?_
-        rw [abs_zero, add_zero, abs_of_pos (by linarith)]
+      · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
+        rw [add_sub_cancel_left, sub_zero, abs_zero, add_zero, abs_of_pos (by linarith)]
         linarith
       · rw [m.p.field_eq_zero_iff hM.ne']
         refine ⟨by simp, ?_⟩
@@ -1066,8 +1043,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
           refine Dynamics.unstable_of_chetaev (W := fun x : State 2 => (x 0 - m.δ) * x 1)
             (r := 1) hC hW one_pos (fun ε hε => ⟨PhasePlane.mk (m.δ + ε / 4) (ε / 4), ?_, ?_⟩)
             (fun x _ hWx => ?_) hls
-          · refine (norm_mkState_sub_point m _ _).trans_lt ?_
-            rw [abs_of_pos (by linarith)]
+          · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
+            rw [add_sub_cancel_left, sub_zero, abs_of_pos (by linarith)]
             linarith
           · simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, add_sub_cancel_left]
             positivity
@@ -1303,14 +1280,12 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
 @[tmio M, powerlib_domain] private theorem exists_root {m : Model} (hM : 0 < m.p.M)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) :
     ∃ s : ℂ, (Linear.characteristicMatrix (plant m).A s).det = 0 ∧ 0 < s.re := by
-  rcases hs with hK | hD
-  · refine Criteria.exists_root_re_pos_of_det _ ?_
-    rw [neg_one_sq, one_mul, show (plant m).A = m.p.jacobian m.δ from rfl,
-      SwingParams.det_jacobian]
+  refine Criteria.exists_root_re_pos_of_violation_fin_two _
+    (hs.symm.imp (fun hD => ?_) fun hK => ?_)
+  · rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.trace_jacobian, neg_div]
+    exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM)
+  · rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.det_jacobian]
     exact div_neg_of_neg_of_pos hK hM
-  · exact Criteria.exists_root_re_pos_of_trace_pos _
-      (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.trace_jacobian, neg_div]
-          exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
 
 /-- Every translation of the linearized swing family is sound (the linear table,
 `Spectral.chain_le_semantics_of_linearTable`): positive inertia, damping and synchronization make

@@ -2,6 +2,7 @@ import theorem.GridTiedConverter.PLL.PIPLLFamily
 import theorem.GridTiedConverter.PLL.Signals
 import theorem.GridTiedConverter.PLL.Linear
 import theorem.Dynamics.Transport
+import theorem.Family.Reading
 
 /-! # SRF-PLL: canonical nonlinear model, coordinate versions, equilibria, local stability
 
@@ -258,22 +259,18 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
     connection% (srf V Kp Ki δω θ ∈ PIPLL.family.den (.flow P) ↔
       srf 1 (V * Kp) (V * Ki) δω θ ∈ PIPLL.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  have hflow : ∀ m : PIPLL.Model, m ∈ PIPLL.family.den (.flow P) ↔
-      P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point := fun _ =>
+  have hflow : ∀ (m : PIPLL.Model) (P : Flow.Property), m ∈ PIPLL.family.den (.flow P) ↔
+      P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point := fun _ _ =>
     Spectral.mem_den_flow_iff_shift (f := fun m : PIPLL.Model => piPLLField m.h m.Kp m.Ki m.δω)
       (pt := PIPLL.Model.point) PIPLL.family_isAutonomous
-  rw [hflow, hflow]
-  change P.holds (piPLLField (srf V Kp Ki δω θ).h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) ↔
-    P.holds (piPLLField (srf 1 (V * Kp) (V * Ki) δω θ).h (V * Kp) (V * Ki) δω)
-      (PhasePlane.mk θ (δω / (V * Ki)))
-  rw [srf_piPLLField, srf_piPLLField, ← transport_scale_srfField hV,
-    ← Dynamics.holds_transport_iff (Dynamics.scaleCoord (inv_ne_zero hV)) 0 P]
-  have hpt : Dynamics.affineCoord (Dynamics.scaleCoord (inv_ne_zero hV)) 0
-      (PhasePlane.mk θ (δω / Ki)) = PhasePlane.mk θ (δω / (V * Ki)) := by
-    rw [PhasePlane.ext_iff']
-    simp [Dynamics.affineCoord]
-    field_simp
-  rw [hpt]
+  refine Spectral.mem_den_flow_iff_of_hub_transport hflow hflow (x := srf V Kp Ki δω θ)
+    (g := fun _ => srf 1 (V * Kp) (V * Ki) δω θ) (Dynamics.scaleCoord (inv_ne_zero hV)) 0
+    (transport_scale_srfField hV Kp Ki δω).symm ?_ P
+  show PhasePlane.mk θ (δω / (V * Ki)) =
+    Dynamics.affineCoord (Dynamics.scaleCoord (inv_ne_zero hV)) 0 (PhasePlane.mk θ (δω / Ki))
+  rw [PhasePlane.ext_iff']
+  simp [Dynamics.affineCoord]
+  field_simp
 
 /-! ## The `(e_θ, x_I)` coordinates of T-frequency-measurement §1.1 -/
 

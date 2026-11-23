@@ -197,16 +197,10 @@ section Members
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change ¬ LocalAsymptoticStable m.field 0
-  have hd : ∀ z : Dynamics.State 2, HasFDerivAt (fun z : Dynamics.State 2 => -(z 0))
-      (-(PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ)) z := fun z =>
-    ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
-      Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)).neg
-  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos m.field_contDiff
-    (fun z => (hd z).differentiableAt) (Eventually.of_forall fun z => ?_)
-    (Dynamics.frequently_of_forall_smul (EuclideanSpace.single 0 1) fun t ht => ?_)
-  · rw [(hd z).fderiv]
-    simp [model_field0, hD0]
-  · simp [ht]
+  refine Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos m.field_contDiff
+    (ℓ := -(PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ))
+    (fun h => by simpa using DFunLike.congr_fun h (EuclideanSpace.single 0 1))
+    (Eventually.of_forall fun z => by simp [model_field0, hD0])
 
 /-- A singular Jacobian (`det J = 0`) at a balanced point with `D₀ ≠ 0`: no local asymptotic
 stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0` otherwise). -/
@@ -259,28 +253,18 @@ stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0`
     have := Real.sin_sq_add_cos_sq m.θ
     rw [hs, hc] at this
     norm_num at this
-  have hd : ∀ z : Dynamics.State 2, HasFDerivAt (fun z : Dynamics.State 2 => -B * (z 1 - b * z 0))
-      ((-B) • ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ) -
-        b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ))) z := fun z => by
-    have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
-      Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
-    have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
-      Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
-    exact ((h1.sub (h0.const_mul b)).const_mul (-B)).congr_fderiv (by ext v; simp)
-  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos m.field_contDiff
-    (fun z => (hd z).differentiableAt) (Eventually.of_forall fun z => ?_)
-    (Dynamics.frequently_of_forall_smul (EuclideanSpace.single 1 B) fun t ht => ?_)
-  · rw [(hd z).fderiv]
-    have h1 := model_hg1 heq z
-    rw [hc, mul_zero, neg_zero, zero_mul, zero_add] at h1
-    have hcos := Real.cos_le_one (z 0)
-    simp only [smul_apply, sub_apply, PiLp.proj_apply, smul_eq_mul]
-    rw [h1]
-    unfold hopfN
-    nlinarith [sq_nonneg B]
-  · simp only [PiLp.zero_apply, mul_zero, sub_zero]
-    simp
-    nlinarith [sq_pos_of_ne_zero hBne]
+  refine Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos m.field_contDiff
+    (ℓ := (-B) • ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ) -
+        b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ)))
+    (fun h => hBne (by simpa using DFunLike.congr_fun h (EuclideanSpace.single 1 1)))
+    (Eventually.of_forall fun z => ?_)
+  have h1 := model_hg1 heq z
+  rw [hc, mul_zero, neg_zero, zero_mul, zero_add] at h1
+  have hcos := Real.cos_le_one (z 0)
+  simp only [smul_apply, sub_apply, PiLp.proj_apply, smul_eq_mul]
+  rw [h1]
+  unfold hopfN
+  nlinarith [sq_nonneg B]
 
 /-- A boundary point without proportional gain (`k_p = 0`) conserves an energy. -/
 @[tmio TM, powerlib_domain] private theorem not_las_of_hopf_kp_eq_zero {m : Model}

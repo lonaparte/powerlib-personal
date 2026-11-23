@@ -1,6 +1,7 @@
 import theorem.PowerSystem.Synchronous.GeneralSwing
 import theorem.Dynamics.Transport
 import theorem.Spectral.Local
+import theorem.Family.Reading
 
 /-! # Droop with a first-order power filter is exactly a virtual synchronous machine
 
@@ -45,9 +46,9 @@ Family and connection conclusions.
 * The large-signal equivalence is a comparison of connections: the droop family's semantics
   connection *is* the semantics connection of the VSM family read through `toVSM`
   (`semantics_eq_comap`), i.e. every sentence denotes the preimage of its VSM denotation
-  (`den_eq_preimage`); the proof is `vsmField_eq_transport` with the generic
-  `Dynamics.holds_transport_iff` (all nine flow sentences are invariant under the affine
-  coordinate change).  Read member-wise, `den_eq_preimage` gives every per-sentence
+  (`den_eq_preimage`); the proof is `vsmField_eq_transport` with the generic reading
+  `Spectral.mem_den_flow_iff_of_hub_transport` (all nine flow sentences are invariant under the
+  affine coordinate change).  Read member-wise, `den_eq_preimage` gives every per-sentence
   equivalence `m ∈ droopFamily.den s ↔ m.toVSM ∈ vsmFamily.den s` of the two families.
   Consequently the droop translation is sound
   (`droopFamily_chain_le_semantics`). Scaffold: `theorem/GridTiedConverter/GFM/DroopVSM.agda`.
@@ -476,16 +477,12 @@ def droopFamily : Family DroopModel VSMRequirement 2 0 :=
 
 /-- Every flow sentence of a droop + LPF model is the same sentence of its VSM image. -/
 @[tmio TM, powerlib_domain] private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
-    connection% (m ∈ droopFamily.den (.flow P) ↔ m.toVSM ∈ vsmFamily.den (.flow P)) := by
-  unfold TMIO.Statement
-  rw [connection_proof% droopFamily_isAutonomous.mem_den_flow,
-    connection_proof% vsmFamily_isAutonomous.mem_den_flow]
-  have h1 : P.holds m.field 0 ↔ P.holds m.d.droopField m.point := Flow.Property.holds_shift_iff P
-  have h2 : P.holds m.toVSM.field 0 ↔
-      P.holds (m.d.vsmField (m.d.τp * m.d.KR) m.d.KR)
-        (Dynamics.affineCoord (m.d.coord m.KR_ne) m.d.offset m.point) :=
-    Flow.Property.holds_shift_iff P
-  rw [h1, h2, m.d.vsmField_eq_transport m.KR_ne m.τp_ne, Dynamics.holds_transport_iff]
+    connection% (m ∈ droopFamily.den (.flow P) ↔ m.toVSM ∈ vsmFamily.den (.flow P)) :=
+  Spectral.mem_den_flow_iff_of_hub_transport (f := fun m : DroopModel => m.d.droopField)
+    (pt := DroopModel.point) (φ := VSMModel.vector) (ψ := VSMModel.point) (g := DroopModel.toVSM)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift droopFamily_isAutonomous)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift vsmFamily_isAutonomous)
+    _ _ (m.d.vsmField_eq_transport m.KR_ne m.τp_ne) rfl P
 
 /-- **Large-signal equivalence as a comparison of connections.** The semantics connection of the
 droop + LPF family is the semantics connection of the VSM family read through `toVSM`

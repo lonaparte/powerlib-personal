@@ -113,7 +113,7 @@ frequency of the forward solution from rest still goes below `−Δf_th/f₀` (a
     (SwingGovernor.trace_A hM hTg hKD) (SwingGovernor.det_A hM hTg hD hKD hζ)
     (SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ) (SwingGovernor.decayRate_nonneg hM hTg hD hKD)
     hx 0 (a := ΔP' / (K + D)) (r := -ΔP' / M) (by rw [h0]; exact SwingGovernor.rest_deviation)
-    (by rw [h0]; exact SwingGovernor.rest_slope hKD.ne') hr
+    (by rw [h0]; exact SwingGovernor.field_zero) hr
   rw [← SwingGovernor.nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ] at hT0 hval
   rw [SwingGovernor.steadyState_zero, ← SwingGovernor.nadirValue_eq hM hTg hD hKD hP hζ] at hval
   have hlt := SwingGovernor.nadirValue_lt hM hTg hD hKD hP hζ

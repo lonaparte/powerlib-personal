@@ -571,11 +571,8 @@ the origin), and passivity holds without requirement. -/
       fderiv_field m.params he.2 m.θ 0⟩
   · exact (Criteria.isHurwitz_fin_two_iff _).2 ((TMIO.mem_realize _ _ _).mp hm .jacobianStable
       (by simp))
-  · have hu : Meets m .jacobianUnstable :=
-      (TMIO.mem_realize _ _ _).mp hm .jacobianUnstable (by simp)
-    rcases hu with h | h
-    · exact Criteria.exists_root_re_pos_of_trace_pos _ h
-    · exact Criteria.exists_root_re_pos_of_det _ (by rw [neg_one_sq, one_mul]; exact h)
+  · exact Criteria.exists_root_re_pos_of_violation_fin_two _
+      ((TMIO.mem_realize _ _ _).mp hm .jacobianUnstable (by simp))
 
 /-! ### Exactness of the local exponential translation -/
 

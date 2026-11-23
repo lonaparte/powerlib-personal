@@ -19,8 +19,9 @@ module theorem.GridTiedConverter.CurrentControl.FeedforwardCurrentLoop where
 -- `pi-linear` is `CurrentControl.PIParams.family_isLinear` read by `Family.IsLinear.den_hurwitz`,
 -- `lpf-linear` is `CurrentControl.LPFLoop.lpfFamily_isLinear` read by
 -- `Family.IsLinear.den_hurwitz`, `block` is `CurrentControl.LPFLoop.isHurwitz_iff_stable` (from
--- `CurrentControl.PIParams.characteristic_root_iff`), `den-eq` is
--- `CurrentControl.LPFLoop.lpfDen_eq`. Nothing here is exported.
+-- `CurrentControl.PIParams.lpf_det_characteristicMatrix` and
+-- `Linear.spectrallyStable_iff_of_extra_pole`), `den-eq` is `CurrentControl.LPFLoop.lpfDen_eq`.
+-- Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

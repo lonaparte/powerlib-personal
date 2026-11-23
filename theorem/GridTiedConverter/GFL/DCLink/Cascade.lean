@@ -330,32 +330,13 @@ voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I
   simp [Linear.characteristicMatrix, stateMatrix, Matrix.det_fin_three]
   ring
 
-@[tmio M, powerlib_domain] theorem characteristic_root_iff (s : ℂ) :
-    (Linear.characteristicMatrix p.stateMatrix s).det = 0 ↔
-      (Linear.characteristicMatrix p.pi.model.A s).det = 0 ∨
-        s = ((-(p.Idc0 / (p.C * p.V0)) : ℝ) : ℂ) := by
-  rw [p.det_characteristicMatrix, mul_eq_zero]
-  apply or_congr_right
-  rw [add_eq_zero_iff_eq_neg]
-  push_cast
-  rfl
-
-/-- Hurwitz iff the current loop is Hurwitz and the DC node pole `−I_dc0/(C V0)` is stable. -/
+/-- Hurwitz iff the current loop is Hurwitz and the DC node pole `−I_dc0/(C V0)` is stable
+(`Linear.spectrallyStable_iff_of_extra_pole`). -/
 @[tmio TM, powerlib_domain] theorem isHurwitz_iff_pi :
     LinearSystems.IsHurwitz p.stateMatrix ↔
       LinearSystems.IsHurwitz p.pi.model.A ∧ 0 < p.Idc0 / (p.C * p.V0) := by
-  simp only [← Linear.spectrallyStable_iff_isHurwitz, Linear.SpectrallyStable,
-      p.characteristic_root_iff]
-  constructor
-  · intro h
-    refine ⟨fun s hs => h s (Or.inl hs), ?_⟩
-    have := h _ (Or.inr rfl)
-    rw [Complex.ofReal_re] at this
-    linarith
-  · rintro ⟨h, hb⟩ s (hs | hs)
-    · exact h s hs
-    · rw [hs, Complex.ofReal_re]
-      linarith
+  simp only [← Linear.spectrallyStable_iff_isHurwitz]
+  exact Linear.spectrallyStable_iff_of_extra_pole p.det_characteristicMatrix
 
 /-- With `L, C, V0 > 0`: Hurwitz iff `R + Kp > 0`, `Ki > 0` and `I_dc0 > 0` (rectifier). Static
 evidence on the model, not a connection conclusion. -/
@@ -506,12 +487,8 @@ def LinUnstable : Prop := p.pi.Unstable ∨ p.Idc0 / (p.C * p.V0) < 0
 @[tmio M, powerlib_domain] theorem exists_root_of_linUnstable (h : p.LinUnstable) :
     ∃ s : ℂ, (Linear.characteristicMatrix p.model.A s).det = 0 ∧ 0 < s.re := by
   change ∃ s : ℂ, (Linear.characteristicMatrix p.stateMatrix s).det = 0 ∧ 0 < s.re
-  rcases h with h | h
-  · obtain ⟨s, hs, hre⟩ := p.pi.exists_root_of_unstable h
-    exact ⟨s, (p.characteristic_root_iff s).mpr (Or.inl hs), hre⟩
-  · refine ⟨((-(p.Idc0 / (p.C * p.V0))) : ℝ), (p.characteristic_root_iff _).mpr (Or.inr rfl), ?_⟩
-    rw [Complex.ofReal_re]
-    linarith
+  exact Linear.exists_root_re_pos_of_extra_pole p.det_characteristicMatrix
+    (h.imp p.pi.exists_root_of_unstable id)
 
 
 /-- With no integral gain the field does not depend on `ξ`. -/
@@ -745,8 +722,8 @@ def loopEnergy (x : State 3) : ℝ :=
   unfold TMIO.Statement
   rw [mem_den_flow]
   obtain ⟨s, hs, hre⟩ := p.pi.exists_root_of_unstable h
-  obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root ((p.characteristic_root_iff s).mpr
-    (Or.inl hs))
+  obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root
+    (A := p.stateMatrix) (by rw [p.det_characteristicMatrix, hs, zero_mul])
   exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local isOpen_posV (p.eqState_mem hV) _
     (p.field_contDiffOn _) (p.field_eqState hKi) (p.jacobian_eq hKi hV.ne') ⟨s, v, hv, heig, hre⟩
 

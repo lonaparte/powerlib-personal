@@ -91,8 +91,8 @@ selected point is not phase-locked is unstable (`mem_den_unstable_of_not_phaseLo
 local asymptotic translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the
 cubic detector is locally asymptotically stable
 (`cubicDetector_mem_den_locallyAsymptoticallyStable`, LaSalle's principle through
-`Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at the rate `θ⁶`,
-and the only solution with `θ ≡ 0` is the locked point) although its slope is zero.
+`Dynamics.LaSalle.localAsymptoticStable_of_lasalle_detectable`: the PLL energy decreases at the
+rate `θ⁶`, and the only solution with `θ ≡ 0` is the locked point) although its slope is zero.
 -/
 
 noncomputable section
@@ -764,20 +764,18 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
   dsimp [cubicEnergy]
   nlinarith [sq_nonneg ((z 0) ^ 2 - 1 / 2), sq_nonneg (z 1)]
 
-open scoped Pointwise in
-/-- The cubic detector is locally asymptotically stable (LaSalle's principle): the PLL energy
-decreases at the rate `θ⁶`, and the only solution along which `θ ≡ 0` is the locked point (then
-`θ̇ = η` vanishes too). Its Jacobian `[[0, 1], [0, 0]]` is nilpotent, so the linearization decides
-nothing. -/
+/-- The cubic detector is locally asymptotically stable (LaSalle's principle,
+`Dynamics.LaSalle.localAsymptoticStable_of_lasalle_detectable`): the PLL energy decreases at the
+rate `θ⁶`, its sublevel `{V ≤ 1}` is compact, and the only solution along which `θ ≡ 0` is the
+locked point (then `θ̇ = η` vanishes too). Its Jacobian `[[0, 1], [0, 0]]` is nilpotent, so the
+linearization decides nothing. -/
 @[tmio TM, powerlib_domain] theorem cubicDetector_mem_den_locallyAsymptoticallyStable :
     connection% (cubicDetector ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
-  have hls := cubicDetector_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hls ⊢
-  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hls ⊢
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   set f := cubicDetector.field with hfdef
   have hf : ContDiff ℝ 1 f :=
     (contDiff_piPLLField cubicDetector.smooth).comp (contDiff_id.add contDiff_const)
-  have hVd : Differentiable ℝ cubicEnergy := cubicEnergy_contDiff.differentiable one_ne_zero
   have hdec : ∀ z, fderiv ℝ cubicEnergy z (f z) ≤ 0 := fun z => by
     rw [cubicEnergy_lie]
     nlinarith [pow_two_nonneg ((z 0) ^ 3)]
@@ -807,36 +805,16 @@ nothing. -/
     fin_cases i
     · exact (h0 t ht).symm
     · exact (h1 t ht).symm
-  refine ⟨hls, 1, one_pos, fun t₀ φ hφ _ => ?_⟩
-  have hψs : IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => f x) (Set.Ici 0) := by
-    have hset : -t₀ +ᵥ Set.Ici t₀ = Set.Ici (0 : ℝ) := by
-      ext x
-      simp only [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, Set.mem_Ici]
-      constructor <;> intro h <;> linarith
-    have h' := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
-    rwa [hset] at h'
-  have hclosed : IsClosed {x : ℝ² | cubicEnergy x ≤ cubicEnergy (φ t₀)} :=
-    isClosed_le hVd.continuous continuous_const
-  have hinv : IsPositivelyInvariant {x | cubicEnergy x ≤ cubicEnergy (φ t₀)} f := by
-    have h := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen (f := f)
-      (c := cubicEnergy (φ t₀)) isOpen_univ hVd (fun x _ => hdec x) (by simpa using hclosed)
-    simpa using h
-  have hΩ : IsCompact {x : ℝ² | cubicEnergy x ≤ cubicEnergy (φ t₀)} := by
-    refine Metric.isCompact_of_isClosed_isBounded hclosed ?_
-    refine (Metric.isBounded_iff_subset_closedBall (0 : ℝ²)).mpr
-      ⟨4 * cubicEnergy (φ t₀) + 1, fun x hx => ?_⟩
-    rw [Metric.mem_closedBall, dist_zero_right]
-    have h1 := norm_sq_le_cubicEnergy x
-    have h2 : cubicEnergy x ≤ cubicEnergy (φ t₀) := hx
-    have h3 : 0 ≤ cubicEnergy x := by
-      rcases eq_or_ne x 0 with rfl | hx0
-      · simp [cubicEnergy]
-      · exact (cubicEnergy_pos hx0).le
-    nlinarith [norm_nonneg x]
-  have hconv := Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable hf cubicEnergy_contDiff
-    (by simp [cubicEnergy]) (fun x hx => cubicEnergy_pos hx) hdec hdet hΩ hinv hψs (by simp)
-  exact Filter.Tendsto.congr (fun x => by simp)
-    (hconv.comp (Filter.tendsto_atTop_add_const_right Filter.atTop (-t₀) Filter.tendsto_id))
+  refine Dynamics.LaSalle.localAsymptoticStable_of_lasalle_detectable two_pos hf
+    cubicEnergy_contDiff (by simp [cubicEnergy]) (fun x hx => cubicEnergy_pos hx)
+    ⟨1, one_pos, ?_⟩ hdec hdet
+  refine Metric.isCompact_of_isClosed_isBounded
+    (isClosed_le cubicEnergy_contDiff.continuous continuous_const) ?_
+  refine (Metric.isBounded_iff_subset_closedBall (0 : ℝ²)).mpr ⟨3, fun x hx => ?_⟩
+  rw [Metric.mem_closedBall, dist_zero_right]
+  have h1 := norm_sq_le_cubicEnergy x
+  have h2 : cubicEnergy x ≤ 1 := hx
+  nlinarith [norm_nonneg x]
 
 /-- The local asymptotic translation is sound but not exact: the cubic detector is locally
 asymptotically stable at a phase-locked point with zero slope, which meets no slope-gain

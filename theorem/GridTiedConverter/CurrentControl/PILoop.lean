@@ -200,15 +200,11 @@ def family : Family PIParams Spectral.Requirement 2 1 :=
 @[tmio M, powerlib_domain] theorem exists_root_of_unstable
     (h : (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0) :
     ∃ s : ℂ, (characteristicMatrix p.model.A s).det = 0 ∧ 0 < s.re := by
-  change ∃ s : ℂ, (characteristicMatrix !![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] s).det = 0 ∧
-    0 < s.re
-  rcases h with h | h
-  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
-    rw [Matrix.trace_fin_two_of, neg_div]
-    linarith
-  · refine Criteria.exists_root_re_pos_of_det _ ?_
-    rw [neg_one_sq, one_mul]
-    exact (p.det_model_A).trans_lt h
+  refine Criteria.exists_root_re_pos_of_violation_fin_two _
+    (h.imp (fun h => ?_) fun h => p.det_model_A.trans_lt h)
+  change 0 < Matrix.trace !![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0]
+  rw [Matrix.trace_fin_two_of, neg_div]
+  linarith
 
 /-- Closed-loop reference-to-current transfer function. Static evidence on the model, not a
 connection conclusion. -/
@@ -290,13 +286,10 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
     ∃ s : ℂ, (characteristicMatrix (p.refFeedbackModel κ).A s).det = 0 ∧ 0 < s.re := by
   change ∃ s : ℂ, (characteristicMatrix
     !![-(p.R + p.Kp * (1 - κ)) / p.L, p.Ki / p.L; -(1 - κ), 0] s).det = 0 ∧ 0 < s.re
-  rcases h with h | h
-  · refine Criteria.exists_root_re_pos_of_trace_pos _ ?_
-    rw [Matrix.trace_fin_two_of, neg_div]
+  refine Criteria.exists_root_re_pos_of_violation_fin_two _ (h.imp (fun h => ?_) fun h => ?_)
+  · rw [Matrix.trace_fin_two_of, neg_div]
     linarith
-  · refine Criteria.exists_root_re_pos_of_det _ ?_
-    rw [neg_one_sq, one_mul, Matrix.det_fin_two_of, mul_zero, zero_sub, mul_neg, neg_neg,
-      div_mul_eq_mul_div]
+  · rw [Matrix.det_fin_two_of, mul_zero, zero_sub, mul_neg, neg_neg, div_mul_eq_mul_div]
     linarith
 
 /-- GFL reactive-power outer loop with `ξ_Q` frozen, PLL-aligned `v_q = 0` and `|v_g| = v_d`:

@@ -517,11 +517,6 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
 
 /-! ### The local asymptotic and Lyapunov translations -/
 
-@[tmio T, powerlib_foundation] private theorem norm_point_sub (θ ηs s w : ℝ) :
-    ‖PhasePlane.mk (θ + s) (ηs + w) - PhasePlane.mk θ ηs‖ ≤ |s| + |w| := by
-  refine ((Dynamics.norm_le_sum_abs _).trans_eq (Fin.sum_univ_two _)).trans (le_of_eq ?_)
-  simp [PhasePlane.mk]
-
 /-- Within nonnegative energy, local asymptotic stability at an equilibrium `(θ*, η*)` forces
 positive gains at a well bottom. The degenerate gains are decided by the model's structure: a dead
 grid (`V = 0`) or a missing integrator (`K_i = 0`) has a continuum of equilibria through
@@ -561,8 +556,9 @@ equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a s
       · rw [fderiv_fun_neg, _root_.neg_apply, srfField, piPLL_energy_rate (h := srfPD m.V) _ _ _ _
           (hasDerivAt_srfPotential m.V (x 0)), sub_self, mul_zero, add_zero, ← hKp0]
         simp
-      · refine (norm_point_sub _ _ _ _).trans_lt ?_
-        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
+      · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
+        rw [add_sub_cancel_left, add_sub_cancel_left, abs_zero, zero_add,
+          abs_of_pos (by linarith)]
         linarith
       · show -pllHamiltonian m.V m.Ki m.ηs (PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2)) <
           -pllHamiltonian m.V m.Ki m.ηs m.point

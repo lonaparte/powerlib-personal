@@ -26,8 +26,8 @@ Results.
 * `decayRate_eq`, `decayRate_nonneg`, `dampedFreq_pos`, `dampingRatio_pos`,
   `decayRate_sq_add_dampedFreq_sq`, `trace_A`, `det_A` (domain): in the underdamped case the
   state matrix has the eigenvalues `−σ ± j ω_d` (`tr A = −2σ`, `det A = σ² + ω_d²`).
-* `rest_deviation`, `rest_slope` (domain): from rest the deviation of `Δω` from the
-  quasi-steady state starts at `ΔP_L/(K_R + D)` with the slope `−ΔP_L/M`.
+* `rest_deviation` (domain): from rest the deviation of `Δω` from the quasi-steady state starts
+  at `ΔP_L/(K_R + D)`; its slope there is the field at rest, `−ΔP_L/M` (`field_zero`).
 * `dampedRespPhase_eq`, `nadirTime_eq_dampedRespCrit`, `nadirValue_eq` (domain): for a load
   increase the phase point of that damped response (`LTI.dampedRespPhase`) is
   `ΔP_L/(M ω_d) · (σ − 1/T_g + j ω_d)`, so `nadirTime` is its first critical time
@@ -57,7 +57,7 @@ Proof outline (no Laplace inversion is assumed).
   the equilibrium plus the damped response `LTI.dampedResp σ ω_d a r` with initial deviation `a`
   and initial slope `r` (`theorem/LTI/Oscillator2.lean`); its first critical time and value are
   `LTI.dampedRespCrit` and `LTI.dampedResp_crit`. Here `a = ΔP_L/(K_R + D)` and
-  `r = −ΔP_L/M` (`rest_deviation`, `rest_slope`), and the phase point is a positive multiple of
+  `r = −ΔP_L/M` (`rest_deviation`, `field_zero`), and the phase point is a positive multiple of
   `σ − 1/T_g + j ω_d` (`dampedRespPhase_eq`, `Complex.arg_real_mul`).
 -/
 
@@ -137,14 +137,6 @@ variable {M D K Tg ΔPL : ℝ}
 @[tmio M, powerlib_domain] theorem rest_deviation :
     WithLp.ofLp ((0 : ℝ²) - steadyState D K ΔPL) 0 = ΔPL / (K + D) := by
   simp [steadyState, neg_div]
-
-/-- From rest the deviation from the quasi-steady state has the initial `Δω` slope `−ΔP_L/M`
-(the initial RoCoF). -/
-@[tmio M, powerlib_domain] theorem rest_slope (hKD : K + D ≠ 0) :
-    ((plant M D K Tg).A *ᵥ WithLp.ofLp ((0 : ℝ²) - steadyState D K ΔPL)) 0 = -ΔPL / M := by
-  simp [plant, steadyState, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  field_simp
-  ring
 
 /-- For a load increase the phase point of the response from rest is
 `ΔP_L/(M ω_d) · (σ − 1/T_g + j ω_d)`. -/
@@ -241,7 +233,7 @@ over all `t ≥ 0`, and that minimum is the closed-form `nadirValue` (the generi
     ((isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl) (trace_A hM hTg hKD)
     (det_A hM hTg hD hKD hζ) (dampedFreq_pos hM hTg hD hKD hζ) (decayRate_nonneg hM hTg hD hKD)
     hx 0 (a := ΔPL / (K + D)) (r := -ΔPL / M) (by rw [h0]; exact rest_deviation)
-    (by rw [h0]; exact rest_slope hKD.ne') hr
+    (by rw [h0]; exact field_zero) hr
   rwa [steadyState_zero, ← nadirTime_eq_dampedRespCrit hM hTg hD hKD hP hζ,
     ← nadirValue_eq hM hTg hD hKD hP hζ] at h
 
@@ -266,7 +258,7 @@ from the quasi-steady state is multiplied by `(−e^{−σπ/ω_d})^k`. -/
     rw [LTI.trajectory_apply_eq_dampedResp (plant M D K Tg)
       ((isEquilibrium_iff hM.ne' hTg.ne' hKD.ne' _).2 rfl) (trace_A hM hTg hKD)
       (det_A hM hTg hD hKD hζ) hωd.ne' hx 0 ht, h0, rest_deviation,
-      rest_slope hKD.ne', steadyState_zero]
+      field_zero, steadyState_zero]
     ring
   have hpt : ∀ j : ℕ, 0 ≤ nadirTime M D K Tg + j * (Real.pi / dampedFreq M D K Tg) :=
     fun j => by have := Real.pi_pos; positivity

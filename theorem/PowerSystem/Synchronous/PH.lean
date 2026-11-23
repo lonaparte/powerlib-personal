@@ -645,9 +645,7 @@ the swing reading, a saddle). -/
 machine is passive. -/
 @[tmio TM, powerlib_domain] theorem mem_den_passive_of_Pm_zero (m : Model) (hPm : m.p.Pm = 0) :
     connection% (m ∈ family.den .passive) := by
-  unfold powerlib.TMIO.Statement
-  refine family_isNonlinearPH.mem_den_passive
-    ((classicalSM m.p).bddBelow_range_shift_H.mpr ⟨-m.p.b, ?_⟩)
+  refine family_isNonlinearPH.mem_den_passive_shift ⟨-m.p.b, ?_⟩
   rintro _ ⟨x, rfl⟩
   have hM := m.p.M_pos
   have hb := m.p.b_pos

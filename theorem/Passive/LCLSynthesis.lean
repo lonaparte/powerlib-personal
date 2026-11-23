@@ -29,7 +29,7 @@ certificates of `theorem/Linear/Certificate.lean`; the rational synthesizer
 Results.
 * Symmetric matrices: `SymmetricMatrix`, `SymmetricMatrix.minor2`, `SymmetricMatrix.det`,
   `SymmetricMatrix.toMatrix`, `SymmetricMatrix.form_pos` (positive leading minors make the form
-  positive; three Schur elimination steps of `Linear.Positive.posDef_schur_iff`).
+  positive; Sylvester's criterion `Linear.Positive.posDef_of_minors_fin_three`).
 * The symbolic witness (`PassiveWitness`): `coupling`, `gap`, `denominator`, the numerators
   `n11` … `n33`, `minorNumerator`, `detNumerator`, `matrix`; positivity (`coupling_pos`,
   `gap_pos`, `n11_pos`, `minorNumerator_pos`, `detNumerator_pos`), the minor and determinant
@@ -75,32 +75,18 @@ def SymmetricMatrix.det (p : SymmetricMatrix) : ℝ :=
 def SymmetricMatrix.toMatrix (p : SymmetricMatrix) : Matrix (Fin 3) (Fin 3) ℝ :=
   !![p.p11, p.p12, p.p13; p.p12, p.p22, p.p23; p.p13, p.p23, p.p33]
 
-/-- Positive leading minors make the quadratic form positive: three steps of Schur elimination
-(`Linear.Positive.posDef_schur_iff`), with pivots `p₁₁`, `m₂/p₁₁` and `det/m₂`. -/
+/-- Positive leading minors make the quadratic form positive (Sylvester's criterion,
+`Linear.Positive.posDef_of_minors_fin_three`). -/
 @[tmio T, powerlib_foundation] theorem SymmetricMatrix.form_pos (p : SymmetricMatrix)
     (h1 : 0 < p.p11) (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
     0 < x ⬝ᵥ (p.toMatrix *ᵥ x) := by
-  open Linear.Positive in
-  have h1' := h1.ne'
-  have h2' := h2.ne'
-  have hs : p.toMatrixᵀ = p.toMatrix := by
-    ext i j; fin_cases i <;> fin_cases j <;> rfl
-  have hs2 := schur_symmetric hs
-  have hs3 := schur_symmetric hs2
-  have hp2 : schurReal p.toMatrix 0 0 = p.minor2 / p.p11 := by
-    simp [schurReal, SymmetricMatrix.toMatrix, SymmetricMatrix.minor2]
-    field_simp
-  have hp3 : schurReal (schurReal p.toMatrix) 0 0 = p.det / p.minor2 := by
-    have hm : p.p11 * p.p22 - p.p12 ^ 2 ≠ 0 := h2'
-    simp [schurReal, SymmetricMatrix.toMatrix, SymmetricMatrix.minor2, SymmetricMatrix.det]
-    field_simp
+  have hdet : p.toMatrix.det = p.det := by
+    rw [det_fin_three]
+    simp [SymmetricMatrix.toMatrix, SymmetricMatrix.det]
     ring
-  have hP : p.toMatrix.PosDef := by
-    rw [posDef_schur_iff hs (by simpa [SymmetricMatrix.toMatrix] using h1),
-      posDef_schur_iff hs2 (by rw [hp2]; exact div_pos h2 h1),
-      posDef_schur_iff hs3 (by rw [hp3]; exact div_pos h3 h2)]
-    exact Matrix.posDef_iff_dotProduct_mulVec.mpr
-      ⟨by ext i; exact Fin.elim0 i, fun y hy => (hy (funext fun i => Fin.elim0 i)).elim⟩
+  have hP := Linear.Positive.posDef_of_minors_fin_three (P := p.toMatrix)
+    (by ext i j; fin_cases i <;> fin_cases j <;> rfl) h1
+    (by simpa [SymmetricMatrix.toMatrix, SymmetricMatrix.minor2, sq] using h2) (hdet ▸ h3)
   simpa using hP.dotProduct_mulVec_pos hx
 
 namespace PassiveWitness

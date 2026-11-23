@@ -605,39 +605,25 @@ def critical : AHO := ⟨0, 1, 1, 1⟩
 @[tmio M, powerlib_domain] theorem critical_c : critical.c = 0 := by
   simp [critical, AHO.c]
 
-/-- With `c = 0` and `κ_v > 0`, `|v|²` is a strict global Lyapunov function (derivative
-`−2 κ_v |v|⁴`). -/
-@[tmio M, powerlib_domain] private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
-    IsStrictLyapunovFunction a.realField energy 0 where
-  hcont := by unfold energy; fun_prop
-  hV_c1 := by unfold energy; fun_prop
-  hzero := by simp [energy]
-  hpos x hx := energy_pos hx
-  hequil := NormalForm.Hopf.field_zero a.toHopf
-  hLie_neg x hx := by
-    rw [energy_lie, hc]
-    have h := energy_pos hx
-    nlinarith [mul_pos hκ (mul_pos h h)]
-  hbounded_sublevel c := by
-    refine (isCompact_closedBall (0 : State 2) (Real.sqrt (max c 0))).of_isClosed_subset
-      (isClosed_le (by unfold energy; fun_prop) continuous_const) fun x hx => ?_
-    rw [Metric.mem_closedBall, dist_zero_right]
-    have hx' : ‖x‖ ^ 2 ≤ max c 0 := by
-      have := energy_eq x
-      rw [sub_zero] at this
-      rw [← this]
-      exact (Set.mem_ofPred_eq ▸ hx).trans (le_max_left _ _)
-    calc ‖x‖ = Real.sqrt (‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm
-      _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
+/-- With `c = 0` and `κ_v > 0` the field points inward, `⟪v, v̇⟫ = −κ_v |v|⁴ < 0` for `v ≠ 0`, so
+`|v|²` is a strict global Lyapunov function (`Flow.globallyAsymptoticallyStable_of_inner_neg`). -/
+@[tmio M, powerlib_domain] private theorem inner_neg_of_critical {a : AHO} (hc : a.c = 0)
+    (hκ : 0 < a.κv) (x : State 2) (hx : x ≠ 0) : inner ℝ x (a.realField x) < 0 := by
+  have e : inner ℝ x (a.realField x) = -(a.κv * energy x ^ 2) := by
+    rw [realField_apply, hc]
+    simp [PiLp.inner_apply, Fin.sum_univ_two, energy]
+    ring
+  rw [e]
+  linarith [mul_pos hκ (pow_pos (energy_pos hx) 2)]
 
 /-- The critical AHO is globally asymptotically stable (cubic damping). -/
 @[tmio TM, powerlib_domain] theorem critical_mem_den_globallyAsymptoticallyStable :
     connection% (critical ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr
-    (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos
-      (NormalForm.Hopf.field_contDiff critical.toHopf)
-      (strictLyapunov_of_critical critical_c (show (0 : ℝ) < critical.κv from one_pos)))
+    (Flow.globallyAsymptoticallyStable_of_inner_neg two_pos
+      (NormalForm.Hopf.field_contDiff critical.toHopf) (NormalForm.Hopf.field_zero critical.toHopf)
+      (inner_neg_of_critical critical_c (show (0 : ℝ) < critical.κv from one_pos)))
 
 @[tmio M, powerlib_domain] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
   unfold TMIO.Statement
@@ -726,9 +712,9 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
   · rintro (hc | ⟨hc, hκ⟩)
     · exact Flow.locallyExponentiallyStable_localAsymptoticStable
         (family_isAutonomous.mem_den_flow.mp (mem_den_locallyExponentiallyStable a hc))
-    · exact (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos
-        (NormalForm.Hopf.field_contDiff a.toHopf)
-        (strictLyapunov_of_critical hc hκ)).localAsymptoticStable
+    · exact (Flow.globallyAsymptoticallyStable_of_inner_neg two_pos
+        (NormalForm.Hopf.field_contDiff a.toHopf) (NormalForm.Hopf.field_zero a.toHopf)
+        (inner_neg_of_critical hc hκ)).localAsymptoticStable
 
 /-- The origin is Lyapunov stable exactly when it decays (`c < 0`) or `c = 0` with `κ_v ≥ 0`
 (the energy `|v|²` does not increase); at `c = 0` with `κ_v < 0` the energy grows at the rate

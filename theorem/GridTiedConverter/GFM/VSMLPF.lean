@@ -366,29 +366,12 @@ imaginary root `j ω_H`, `ω_H² = K/M − D²/M²`. -/
   have hK' : g.K0 * Real.cos g.δ0 = g.K := rfl
   rw [hK'] at hc
   have hM' : (g.M : ℂ) ≠ 0 := by exact_mod_cast hM
-  have hzero : (g.M : ℂ) * ((ωH : ℂ) * Complex.I) ^ 3 +
-      ((g.D + g.M * g.ωc : ℝ) : ℂ) * ((ωH : ℂ) * Complex.I) ^ 2 +
-      ((g.D * g.ωc : ℝ) : ℂ) * ((ωH : ℂ) * Complex.I) + ((g.ωc * g.K : ℝ) : ℂ) = 0 := by
-    have h2 : ((ωH : ℂ) * Complex.I) ^ 2 = -((ωH ^ 2 : ℝ) : ℂ) := by
-      push_cast; ring_nf; rw [Complex.I_sq]; ring
-    have h3 : ((ωH : ℂ) * Complex.I) ^ 3 = -((ωH ^ 2 : ℝ) : ℂ) * ((ωH : ℂ) * Complex.I) := by
-      rw [pow_succ, h2]
-    rw [h3, h2]
-    have e : (g.M : ℂ) * (-((ωH ^ 2 : ℝ) : ℂ) * ((ωH : ℂ) * Complex.I)) +
-        ((g.D + g.M * g.ωc : ℝ) : ℂ) * -((ωH ^ 2 : ℝ) : ℂ) +
-        ((g.D * g.ωc : ℝ) : ℂ) * ((ωH : ℂ) * Complex.I) + ((g.ωc * g.K : ℝ) : ℂ) =
-        ((g.ωc * g.K - (g.D + g.M * g.ωc) * ωH ^ 2 : ℝ) : ℂ) +
-          (((g.D * g.ωc - g.M * ωH ^ 2) * ωH : ℝ) : ℂ) * Complex.I := by
-      push_cast; ring
-    rw [e]
-    have hre : g.ωc * g.K - (g.D + g.M * g.ωc) * ωH ^ 2 = 0 := by
-      rw [hH, hωc]; field_simp; ring
-    have him : g.D * g.ωc - g.M * ωH ^ 2 = 0 := by
-      rw [hH, hωc]; field_simp; ring
-    rw [hre, him]
-    simp
-  rw [hzero] at hc
-  exact (mul_eq_zero.mp hc).resolve_left hM'
+  have hre : g.ωc * g.K - (g.D + g.M * g.ωc) * ωH ^ 2 = 0 := by
+    rw [hH, hωc]; field_simp; ring
+  have him : g.D * g.ωc - g.M * ωH ^ 2 = 0 := by
+    rw [hH, hωc]; field_simp; ring
+  rw [Criteria.cubic_eval_mul_I, hre, him] at hc
+  simpa [hM'] using hc
 
 /-- Exact `u → δ` transfer function of the three-state model,
 `T(s) = ω_c K / ((s + ω_c)(M s² + D s) + ω_c K)`. -/
@@ -1162,8 +1145,7 @@ Static evidence on the model, not a connection conclusion. -/
     simp [Model.point, Model.toSwing, Synchronous.Swing.Model.point, droopVSM]
 
 /-- With nonzero droop gain and bandwidth a droop + LPF model satisfies exactly the sentences of
-its swing reading (`swingField_eq_transport`, inverted by
-`Dynamics.transportField_symm_transportField`, and `Spectral.mem_den_flow_iff_of_transport`). A
+its swing reading (`swingField_eq_transport` and `Spectral.mem_den_flow_iff_of_hub_transport`). A
 comparison of the two semantics connections at the two members. -/
 @[tmio TM, powerlib_domain] theorem mem_den_iff_swing (m : Model) (hD : m.q.D ≠ 0) (hω : m.q.ωc ≠ 0)
     (s : Sentence) :
@@ -1171,21 +1153,14 @@ comparison of the two semantics connections at the two members. -/
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_iff_of_flow (g := Model.toSwing) family_isAutonomous
     Synchronous.Swing.family_isAutonomous (fun P => ?_) s
-  have hf : m.q.field = Dynamics.transportField (m.q.droopVSM.coord hD).symm
-      (-((m.q.droopVSM.coord hD).symm m.q.droopVSM.offset)) m.toSwing.p.field := by
-    rw [show m.toSwing.p = m.q.swingParams from rfl, m.q.swingField_eq_transport hD hω,
-      Dynamics.transportField_symm_transportField]
-  have hpt : m.point = Dynamics.affineCoord (m.q.droopVSM.coord hD).symm
-      (-((m.q.droopVSM.coord hD).symm m.q.droopVSM.offset)) m.toSwing.point := by
-    rw [← affineCoord_point m hD, Dynamics.affineCoord_symm_affineCoord]
-  exact Spectral.mem_den_flow_iff_of_transport (f := fun m : Model => m.q.field)
+  exact Spectral.mem_den_flow_iff_of_hub_transport (f := fun m : Model => m.q.field)
     (pt := Model.point) (φ := fun y : Synchronous.Swing.Model => y.p.field)
     (ψ := Synchronous.Swing.Model.point) (g := Model.toSwing)
     (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.q.field)
       (pt := Model.point) family_isAutonomous)
     (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun y : Synchronous.Swing.Model => y.p.field)
       (pt := Synchronous.Swing.Model.point) Synchronous.Swing.family_isAutonomous)
-    _ _ hf hpt P
+    _ _ (m.q.swingField_eq_transport hD hω) (affineCoord_point m hD).symm P
 
 @[tmio TM, powerlib_domain] private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by

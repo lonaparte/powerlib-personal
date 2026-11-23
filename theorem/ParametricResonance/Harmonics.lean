@@ -1,4 +1,5 @@
 import theorem.ParametricResonance.ForcedResponse
+import theorem.SpecialFunctions.Elementary
 
 /-! # Harmonic bookkeeping of the single-tone pump (third-order continuation)
 
@@ -13,7 +14,7 @@ Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contras
 gfl-gfm-parametric-contrast.md §10.
 
 Results.
-* `u = (δ/2)(e + e⁻¹)`, so `u|_{e¹} = δ/2`.
+* `u = (δ/2)(e + e⁻¹)` (`SpecialFunctions.ofReal_mul_cos_eq_exp`), so `u|_{e¹} = δ/2`.
 * `u² = δ² [1/2 + (e² + e⁻²)/4]`.
 * `u³ = δ³ [(3/8)(e + e⁻¹) + (1/8)(e³ + e⁻³)]`, so `u³|_{e¹} = 3δ³/8`, `u³|_{e³} = δ³/8`.
 * `harmonic_solvable` — for a Hurwitz `A₀` every harmonic equation
@@ -30,20 +31,11 @@ namespace powerlib.ParametricResonance
 
 open Complex Matrix
 
-/-- `δ cos θ = (δ/2)(e^{jθ} + e^{−jθ})`. -/
-@[tmio T, powerlib_foundation] theorem pump_harmonic1 (δ θ : ℝ) :
-    ((δ * Real.cos θ : ℝ) : ℂ) = δ / 2 * (exp (θ * I) + exp (-(θ * I))) := by
-  have h1 : exp (θ * I) = Complex.cos θ + Complex.sin θ * I := Complex.exp_mul_I θ
-  have h2 : exp (-(θ * I)) = Complex.cos θ - Complex.sin θ * I := by
-    rw [show -((θ : ℂ) * I) = (-(θ : ℂ)) * I by ring, Complex.exp_mul_I, Complex.cos_neg,
-      Complex.sin_neg]; ring
-  rw [h1, h2]; push_cast; ring
-
 /-- `u² = δ² [1/2 + (e² + e⁻²)/4]`. -/
 @[tmio T, powerlib_foundation] theorem pump_harmonic2 (δ θ : ℝ) :
     ((δ * Real.cos θ : ℝ) : ℂ) ^ 2 =
       δ ^ 2 * (1 / 2 + (exp (θ * I) ^ 2 + exp (-(θ * I)) ^ 2) / 4) := by
-  rw [pump_harmonic1]
+  rw [SpecialFunctions.ofReal_mul_cos_eq_exp]
   have h : exp (θ * I) * exp (-(θ * I)) = 1 := by rw [← Complex.exp_add]; simp
   linear_combination (δ ^ 2 / 2) * h
 
@@ -52,7 +44,7 @@ open Complex Matrix
     ((δ * Real.cos θ : ℝ) : ℂ) ^ 3 =
       δ ^ 3 * (3 / 8 * (exp (θ * I) + exp (-(θ * I))) +
         1 / 8 * (exp (θ * I) ^ 3 + exp (-(θ * I)) ^ 3)) := by
-  rw [pump_harmonic1]
+  rw [SpecialFunctions.ofReal_mul_cos_eq_exp]
   have h : exp (θ * I) * exp (-(θ * I)) = 1 := by rw [← Complex.exp_add]; simp
   linear_combination (3 * δ ^ 3 / 8 * (exp (θ * I) + exp (-(θ * I)))) * h
 

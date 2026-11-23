@@ -501,12 +501,8 @@ point, moved to the origin), and passivity holds without requirement. -/
       fderiv_field m.params m.θ 0 m.Id⟩
   · exact (Criteria.isHurwitz_fin_three_iff _).2 ((TMIO.mem_realize _ _ _).mp hm
       .jacobianStable (by simp))
-  · have hu : Meets m .jacobianUnstable :=
-      (TMIO.mem_realize _ _ _).mp hm .jacobianUnstable (by simp)
-    rcases hu with h | h
-    · exact Criteria.exists_root_re_pos_of_det _
-        (by rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero]; exact h)
-    · exact Criteria.exists_root_re_pos_of_trace_pos _ h
+  · exact Criteria.exists_root_re_pos_of_violation_fin_three _
+      (Or.symm ((TMIO.mem_realize _ _ _).mp hm .jacobianUnstable (by simp)))
 
 /-! ### Exactness of the local exponential translation -/
 
@@ -624,18 +620,11 @@ a nonzero purely imaginary eigenvalue. -/
     (hcos : 0 < Real.cos θ) (ω : ℝ) (hω : ω ≠ 0) :
     (Linear.characteristicMatrix (jac p θ Id) (Complex.I * ω)).det ≠ 0 := by
   intro h
-  rw [det_characteristicMatrix_jac p heq] at h
-  have hre := congrArg Complex.re h
-  have him := congrArg Complex.im h
-  simp [pow_succ, Complex.mul_re, Complex.mul_im] at hre him
-  -- `hre : a0 - a2 ω² = 0`, `him : a1 ω - ω³ = 0`
+  rw [det_characteristicMatrix_jac p heq, mul_comm] at h
+  obtain ⟨ha0, ha1⟩ := (Criteria.cubic_eval_mul_I_eq_zero_iff 1 (a2 p θ) (a1 p θ) (a0 p θ) hω).mp
+    (by rwa [Complex.ofReal_one, one_mul])
+  rw [one_mul] at ha1
   have hω2 : 0 < ω ^ 2 := by positivity
-  have ha1 : a1 p θ = ω ^ 2 := by
-    have : ω * (a1 p θ - ω ^ 2) = 0 := by linear_combination him
-    rcases mul_eq_zero.mp this with h0 | h0
-    · exact absurd h0 hω
-    · linarith
-  have ha0 : a0 p θ = a2 p θ * ω ^ 2 := by linear_combination hre
   have ha2 := a2_pos p hkp hkP (mul_pos hV hcos)
   rcases le_or_gt 0 (Real.cos (2 * θ)) with hc2 | hc2
   · have := a2_mul_a1_sub_a0_pos p hkp hki hkP (mul_pos hV hcos) hc2

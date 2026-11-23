@@ -27,8 +27,8 @@ Results.
   `PILoop.lean`.
 * `lpf_det_characteristicMatrix`: the closed loop is block triangular; its characteristic
   polynomial is the PI-loop polynomial times `(s + 1/τ)`, so the spectrum is the PI spectrum
-  together with `−1/τ` (`characteristic_root_iff`), so the state matrix is Hurwitz iff the PI
-  loop's is and `τ > 0` (read through the denotations in `lpfDen_eq`).
+  together with `−1/τ` (`Linear.spectrallyStable_iff_of_extra_pole`), so the state matrix is
+  Hurwitz iff the PI loop's is and `τ > 0` (read through the denotations in `lpfDen_eq`).
 
 Family and connection conclusions.
 `lpfFamily : Family LPFLoop Spectral.Requirement 3 2` reads a PI loop with filter time constant
@@ -168,27 +168,13 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
   simp [characteristicMatrix, lpfModel, Matrix.det_fin_three]
   ring
 
-/-- Spectrum: the PI-loop roots together with `−1/τ`. -/
-@[tmio M, powerlib_domain] theorem characteristic_root_iff (τ : ℝ) (s : ℂ) :
-    (characteristicMatrix (p.lpfModel τ).A s).det = 0 ↔
-      (characteristicMatrix p.model.A s).det = 0 ∨ s = ((-1 / τ : ℝ) : ℂ) := by
-  rw [p.lpf_det_characteristicMatrix, mul_eq_zero]
-  apply or_congr_right
-  rw [add_eq_zero_iff_eq_neg]
-  push_cast
-  ring_nf
-
 /-- A right-half-plane root of the PI loop or a negative time constant gives a right-half-plane
 root of the feedforward loop. -/
 @[tmio M, powerlib_domain] theorem lpf_exists_root_of_unstable {τ : ℝ}
     (h : ((p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0) ∨ τ < 0) :
-    ∃ s : ℂ, (characteristicMatrix (p.lpfModel τ).A s).det = 0 ∧ 0 < s.re := by
-  rcases h with h | h
-  · obtain ⟨s, hs, hre⟩ := p.exists_root_of_unstable h
-    exact ⟨s, (p.characteristic_root_iff τ s).mpr (Or.inl hs), hre⟩
-  · refine ⟨((-1 / τ : ℝ) : ℂ), (p.characteristic_root_iff τ _).mpr (Or.inr rfl), ?_⟩
-    rw [Complex.ofReal_re, neg_div, neg_pos]
-    exact one_div_neg.mpr h
+    ∃ s : ℂ, (characteristicMatrix (p.lpfModel τ).A s).det = 0 ∧ 0 < s.re :=
+  Linear.exists_root_re_pos_of_extra_pole (p.lpf_det_characteristicMatrix τ)
+    (h.imp p.exists_root_of_unstable one_div_neg.mpr)
 
 /-- Equilibrium for constant `i*`, `v`: `(i*, R i*/Ki, v)`. -/
 def lpfEquilibrium (iref v : ℝ) : ℝ³ := WithLp.toLp 2 ![iref, p.R * iref / p.Ki, v]
@@ -235,20 +221,9 @@ def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets]
   -- block triangular closed loop: the spectrum is the PI loop's together with `−1/τ`
   have h : IsHurwitz q.plant.A ↔ IsHurwitz q.pi.model.A ∧ 0 < q.τ := by
-    change IsHurwitz (q.pi.lpfModel q.τ).A ↔ _
-    simp only [← Linear.spectrallyStable_iff_isHurwitz, Linear.SpectrallyStable,
-        q.pi.characteristic_root_iff]
-    constructor
-    · intro h
-      refine ⟨fun s hs => h s (Or.inl hs), ?_⟩
-      have := h _ (Or.inr rfl)
-      simp only [Complex.ofReal_re] at this
-      have h1 : 0 < 1 / q.τ := by linarith [neg_div q.τ 1]
-      exact one_div_pos.mp h1
-    · rintro ⟨h, hτ⟩ s (hs | hs)
-      · exact h s hs
-      · rw [hs, Complex.ofReal_re, neg_div]
-        exact neg_neg_of_pos (one_div_pos.mpr hτ)
+    simp only [← Linear.spectrallyStable_iff_isHurwitz]
+    exact (Linear.spectrallyStable_iff_of_extra_pole
+      (q.pi.lpf_det_characteristicMatrix q.τ)).trans (and_congr_right' one_div_pos)
   rw [h, ← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
     (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl

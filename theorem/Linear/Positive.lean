@@ -21,6 +21,8 @@ Results.
 * Elimination: `quadratic_split` (completing the square is the invariant of one elimination
   step), `posDef_schur_iff` (positive pivots and a positive Schur complement are equivalent to a
   positive form).
+* `posDef_of_minors_fin_three`: Sylvester's criterion for symmetric `3 × 3` matrices (positive
+  leading principal minors).
 * `check_iff`: the executable rational check recognizes precisely the positive real forms.
 -/
 
@@ -139,6 +141,27 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
           (schurReal P *ᵥ (fun i : Fin n => x i.succ)) := by
         simpa using hS.dotProduct_mulVec_pos hy
       exact add_pos_of_nonneg_of_pos (mul_nonneg hp.le (sq_nonneg _)) hpos
+
+/-- Sylvester's criterion in dimension three: a symmetric `3 × 3` matrix with positive leading
+principal minors is positive definite (three steps of `posDef_schur_iff`). -/
+@[tmio T, powerlib_foundation] theorem posDef_of_minors_fin_three {P : Matrix (Fin 3) (Fin 3) ℝ}
+    (hs : Pᵀ = P) (h1 : 0 < P 0 0) (h2 : 0 < P 0 0 * P 1 1 - P 0 1 * P 1 0) (h3 : 0 < P.det) :
+    P.PosDef := by
+  have hs2 := schur_symmetric hs
+  have hp2 : schurReal P 0 0 = (P 0 0 * P 1 1 - P 0 1 * P 1 0) / P 0 0 := by
+    simp [schurReal]
+    field_simp
+  have hp3 : schurReal (schurReal P) 0 0 = P.det / (P 0 0 * P 1 1 - P 0 1 * P 1 0) := by
+    have := h1.ne'
+    have := h2.ne'
+    rw [det_fin_three]
+    simp [schurReal]
+    field_simp
+    ring
+  rw [posDef_schur_iff hs h1, posDef_schur_iff hs2 (by rw [hp2]; exact div_pos h2 h1),
+    posDef_schur_iff (schur_symmetric hs2) (by rw [hp3]; exact div_pos h3 h2)]
+  exact posDef_iff_dotProduct_mulVec.mpr
+    ⟨by ext i; exact Fin.elim0 i, fun y hy => (hy (funext fun i => Fin.elim0 i)).elim⟩
 
 /-- The executable rational check recognizes precisely the positive real forms. -/
 @[tmio T, powerlib_foundation] theorem check_iff (n : ℕ) (P : Matrix (Fin n) (Fin n) ℚ) :

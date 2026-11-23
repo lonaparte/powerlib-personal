@@ -39,7 +39,7 @@ No new family: connection conclusions on `VSMLPF.family`.
   `VSMLPF.mem_den_unstable_of_K_neg`); at `K = 0` (a fold, or a vanishing power curve)
   `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the rate `ω_c P₀ (1 − cos(δ − δ*))`, which
   has one sign, so states arbitrarily close with `S` of the other sign never reach the operating
-  point (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). No case is left open.
+  point (`Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos`). No case is left open.
 * `VSMLPF.not_exactUnder_locallyAsymptoticallyStable` (the local asymptotic translation is **not**
   exact within positive `M, D, ω_c`): it asks for the strict fast-filter condition, but the
   boundary model `VSMLPF.hopfBoundary` (`M = D = ω_c = 1`, `P₀ = 0`, `K₀ = 2`, `δ* = 0`, so
@@ -122,14 +122,6 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
   rw [Real.sin_add, ← hb, Model.K]
   ring
 
-/-- `‖(0, 0, t)‖ = |t|`. -/
-@[tmio T, powerlib_foundation] private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
-  have h : ‖mk3 0 0 t‖ ^ 2 = t ^ 2 := by
-    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
-    simp
-  rw [← abs_norm, ← sq_eq_sq_iff_abs_eq_abs]
-  exact h
-
 /-- With `K = 0` at a balanced angle, `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the
 rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is not attractive. -/
 @[tmio TM, powerlib_domain] private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
@@ -159,32 +151,17 @@ rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is no
     ring
   have hcos : ∀ z : State 3, 0 ≤ 1 - Real.cos (z 0) := fun z => by
     linarith [Real.cos_le_one (z 0)]
+  have hS0 : S ≠ 0 := fun h => by simpa [hSz] using DFunLike.congr_fun h (mk3 0 0 1)
   rcases le_or_gt 0 m.g.P0 with hP | hP
-  · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := ⇑(-S)) (ρ := 1) hC
-      (-S).differentiable one_pos (fun x _ => ?_) (fun ε hε => ⟨mk3 0 0 (-(ε / 2)), ?_, ?_⟩)
-    · rw [(-S).fderiv]
-      show -S (m.field x) ≤ 0
-      rw [hSlie]
-      have := mul_nonneg (mul_nonneg hω.le hP) (hcos x)
-      linarith
-    · rw [sub_zero, norm_mk3_zero_zero, abs_neg, abs_of_pos (by linarith)]; linarith
-    · show -S (mk3 0 0 (-(ε / 2))) < -S 0
-      rw [hSz, hSz]
-      simp
-      linarith
-  · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := ⇑S) (ρ := 1) hC
-      S.differentiable one_pos (fun x _ => ?_) (fun ε hε => ⟨mk3 0 0 (ε / 2), ?_, ?_⟩)
-    · rw [S.fderiv, hSlie]
-      have h1 : 0 ≤ m.g.ωc * -m.g.P0 * (1 - Real.cos (x 0)) :=
-        mul_nonneg (mul_nonneg hω.le (neg_nonneg.mpr hP.le)) (hcos x)
-      have e : m.g.ωc * m.g.P0 * (1 - Real.cos (x 0)) =
-          -(m.g.ωc * -m.g.P0 * (1 - Real.cos (x 0))) := by ring
-      rw [e]
-      linarith
-    · rw [sub_zero, norm_mk3_zero_zero, abs_of_pos (by linarith)]; linarith
-    · rw [hSz, hSz]
-      simp
-      linarith
+  · refine Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos hC (neg_ne_zero.mpr hS0)
+      (Filter.Eventually.of_forall fun x => ?_)
+    show -S (m.field x) ≤ 0
+    rw [hSlie]
+    linarith [mul_nonneg (mul_nonneg hω.le hP) (hcos x)]
+  · refine Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos hC hS0
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [hSlie]
+    linarith [mul_nonneg (mul_nonneg hω.le (neg_nonneg.mpr hP.le)) (hcos x)]
 
 /-! ### Connection conclusions -/
 

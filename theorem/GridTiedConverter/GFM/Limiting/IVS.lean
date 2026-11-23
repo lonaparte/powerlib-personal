@@ -61,19 +61,14 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
 @[tmio M, powerlib_domain] theorem iMag_hasDerivAt {E V X δ : ℝ} (hX : X ≠ 0)
     (hu : 0 < E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) :
     HasDerivAt (iMag E V X) (E * V * Real.sin δ / (X ^ 2 * iMag E V X δ)) δ := by
-  have hu' : HasDerivAt (fun d => E ^ 2 + V ^ 2 - 2 * E * V * Real.cos d)
-      (2 * E * V * Real.sin δ) δ := by
-    have := ((Real.hasDerivAt_cos δ).const_mul (2 * E * V)).const_sub (E ^ 2 + V ^ 2)
-    convert this using 1
-    ring
-  have h := (hu'.sqrt hu.ne').div_const X
-  have hs : 0 < Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) := Real.sqrt_pos.mpr hu
-  have hval : E * V * Real.sin δ / (X ^ 2 * iMag E V X δ) =
-      2 * E * V * Real.sin δ / (2 * Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ)) / X := by
-    rw [iMag]
-    field_simp
-  rw [hval]
-  exact h
+  have he (d : ℝ) :
+      iMag E V X d = ‖(E : ℂ) * Complex.exp (d * Complex.I) + ((-V : ℝ) : ℂ)‖ / X := by
+    rw [iMag, SpecialFunctions.norm_affine_exp]; ring_nf
+  have hn : 0 < ‖(E : ℂ) * Complex.exp (δ * Complex.I) + ((-V : ℝ) : ℂ)‖ := by
+    rw [SpecialFunctions.norm_affine_exp]; exact Real.sqrt_pos.mpr (by linarith)
+  rw [funext he]
+  convert (SpecialFunctions.hasDerivAt_norm_affine_exp hn.ne').div_const X using 1
+  field_simp
 
 /-- `I_omag` is strictly increasing in `δ` on `[0, π]`. -/
 @[tmio M, powerlib_domain] theorem iMag_strictMonoOn {E V X : ℝ} (hE : 0 < E) (hV : 0 < V)
