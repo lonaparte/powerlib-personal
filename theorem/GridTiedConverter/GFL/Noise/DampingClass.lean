@@ -43,14 +43,15 @@ Results.
   (`PLL.piPLLJacobian_trace_det_relation`: `K_i tr + K_p det = 0`, at every slope) and is nonzero
   nilpotent at a fold (`Params.reduced_jacobian_nilpotent`,
   `theorem/GridTiedConverter/GFL/LCLine/Reduced2D.lean`); the class-A Jacobian
-  `[[0, 1/M], [−g, −D/M]]` (`classAJacobian`, the swing Jacobian `Synchronous.SwingParams.jacobian`
-  in momentum coordinates, the classical machine's `Synchronous.classicalSM_linearization`) has
+  `[[0, 1/M], [−g, −D/M]]` (`classAJacobian`, the mechanical Jacobian
+  `PhasePlane.Conservative.jacobian M D g` (the swing Jacobian at synchronizing coefficient `g`) in
+  momentum coordinates, the classical machine's `Synchronous.classicalSM_linearization`) has
   constant trace `−D/M` (`classA_trace`), so at a fold it is never nilpotent
   (`classA_not_nilpotent`).
 * Damping ratio (`§3`, `Criteria.dampingRatio`): `ζ_B` is the PI-PLL damping ratio `PLL.zeta` at the
   slope `g` (`classB_zeta_eq`), `ζ_B = (K_p/2)√(g/K_i)` for `g > 0` (`zetaB_eq`),
-  `ζ_A = D/(2√(M g))` (`classA_zeta_eq`: the swing damping ratio
-  `Synchronous.SwingParams.dampingRatio_jacobian`, invariant under `Criteria.dampingRatio_conj`);
+  `ζ_A = D/(2√(M g))` (`classA_zeta_eq`: the mechanical damping ratio
+  `PhasePlane.Conservative.dampingRatio_jacobian`, invariant under `Criteria.dampingRatio_conj`);
   `ζ_B(λ g) = √λ ζ_B(g)`, `ζ_A(λ g) = ζ_A(g)/√λ`; `ζ_B → 0`,
   `ζ_A → ∞` as `g → 0⁺`; near the fold the class-A eigenvalues are real
   (`classA_eigenvalues_real_of_le`) and the class-B eigenvalues are non-real
@@ -68,6 +69,7 @@ noncomputable section
 namespace powerlib.GFL.Noise
 open Real Matrix Filter Topology
 open powerlib.Dynamics (State)
+open powerlib.NormalForm.BogdanovTakens (trace_proportionalMatrix det_proportionalMatrix)
 open powerlib.PLL
 open powerlib.GFL.LCLine
 
@@ -121,25 +123,23 @@ dissipation matrix is `R_A`. -/
 /-! ### Linearization invariants -/
 
 /-- Class-A Jacobian at a point with restoring slope `g = P_max cos δ`:
-`[[0, 1/M], [−g, −D/M]]`, the swing Jacobian (`Synchronous.SwingParams.jacobian`) with
-synchronizing coefficient `g` in the momentum coordinates `diag(1, M)` (`Dynamics.scaleMatrix`);
-at a point `δ*` of the classical machine it is the linearization
+`[[0, 1/M], [−g, −D/M]]`, the mechanical Jacobian `PhasePlane.Conservative.jacobian M D g` (the
+swing Jacobian with synchronizing coefficient `g`) in the momentum coordinates `diag(1, M)`
+(`Dynamics.scaleMatrix`); at a point `δ*` of the classical machine it is the linearization
 `Synchronous.classicalSM_linearization` (`g = b cos δ*`). -/
 def classAJacobian (M D g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  Dynamics.scaleMatrix M * (⟨M, D, 0, 0, g, 0⟩ : Synchronous.SwingParams).jacobian 0 *
-    Dynamics.scaleMatrix M⁻¹
+  Dynamics.scaleMatrix M * PhasePlane.Conservative.jacobian M D g * Dynamics.scaleMatrix M⁻¹
 
 @[tmio M, powerlib_domain] theorem classA_trace {M : ℝ} (D g : ℝ) (hM : M ≠ 0) :
     (classAJacobian M D g).trace = -(D * M⁻¹) := by
   rw [classAJacobian, Matrix.trace_mul_comm, ← Matrix.mul_assoc,
-    (Dynamics.scaleMatrix_mul_inv hM).2, Matrix.one_mul, Synchronous.SwingParams.trace_jacobian,
+    (Dynamics.scaleMatrix_mul_inv hM).2, Matrix.one_mul, PhasePlane.Conservative.trace_jacobian,
     neg_div, div_eq_mul_inv]
 
 @[tmio M, powerlib_domain] theorem classA_det {M : ℝ} (D g : ℝ) (hM : M ≠ 0) :
     (classAJacobian M D g).det = g * M⁻¹ := by
   rw [classAJacobian, Matrix.det_conj_of_mul_eq_one (Dynamics.scaleMatrix_mul_inv hM).1
-    (Dynamics.scaleMatrix_mul_inv hM).2, Synchronous.SwingParams.det_jacobian, div_eq_mul_inv]
-  simp [Synchronous.SwingParams.syncCoeff]
+    (Dynamics.scaleMatrix_mul_inv hM).2, PhasePlane.Conservative.det_jacobian, div_eq_mul_inv]
 
 /-- At a class-A fold (`g = 0`) the Jacobian is not nilpotent when `D/M ≠ 0`: one eigenvalue stays
 at `−D/M` (an ordinary saddle-node), unlike the class-B fold. -/
@@ -163,8 +163,8 @@ def zetaA (M D g : ℝ) : ℝ := D / (2 * √(M * g))
 is `ζ_B`. -/
 @[tmio M, powerlib_domain] theorem classB_zeta_eq (Kp Ki g : ℝ) :
     Criteria.dampingRatio (piPLLJacobian Kp Ki (-g)) = zetaB Kp Ki g := by
-  rw [Criteria.dampingRatio, zetaB, PLL.zeta, PLL.omegaN, piPLLJacobian_trace,
-    piPLLJacobian_det, show -(Ki * -g) = g * Ki by ring]
+  rw [Criteria.dampingRatio, zetaB, PLL.zeta, PLL.omegaN, trace_proportionalMatrix,
+    det_proportionalMatrix, show -(Ki * -g) = g * Ki by ring]
   ring
 
 /-- The closed form `ζ_B = (K_p/2) √(g/K_i)` for a positive slope `g` (`PLL.zeta_eq`; for
@@ -183,9 +183,7 @@ is `ζ_B`. -/
     Criteria.dampingRatio (classAJacobian M D g) = zetaA M D g := by
   obtain ⟨h1, h2⟩ := Dynamics.scaleMatrix_mul_inv hM.ne'
   rw [classAJacobian, Criteria.dampingRatio_conj h1 h2,
-    Synchronous.SwingParams.dampingRatio_jacobian ⟨M, D, 0, 0, g, 0⟩ hM
-      (by simpa [Synchronous.SwingParams.syncCoeff])]
-  simp [zetaA, Synchronous.SwingParams.syncCoeff]
+    PhasePlane.Conservative.dampingRatio_jacobian hM hg, zetaA]
 
 /-- Scaling law of class B: `ζ_B(λ g) = √λ ζ_B(g)`. -/
 @[tmio M, powerlib_domain] theorem zetaB_scale (Kp Ki g : ℝ) {l : ℝ} (hl : 0 ≤ l) :
@@ -251,7 +249,7 @@ is `ζ_B`. -/
       (piPLLJacobian Kp Ki (-g)).map (algebraMap ℝ ℂ) *ᵥ v = μ • v → μ.im = 0 :=
     fun μ v hv he => H μ v hv he
   have := (Criteria.eigenvalues_real_iff_discriminant_nonneg _).mp hreal
-  rw [piPLLJacobian_trace, piPLLJacobian_det] at this
+  rw [trace_proportionalMatrix, det_proportionalMatrix] at this
   nlinarith
 
 end powerlib.GFL.Noise

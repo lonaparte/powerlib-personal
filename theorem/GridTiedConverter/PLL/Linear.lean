@@ -83,6 +83,8 @@ sign of `Re Y_qq^pll` is guaranteed only under that tuning condition.
 noncomputable section
 namespace powerlib.PLL
 open Matrix
+open powerlib.NormalForm.BogdanovTakens (proportionalMatrix trace_proportionalMatrix
+  det_proportionalMatrix)
 
 /-! ## State matrix and models -/
 
@@ -119,7 +121,7 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
 @[tmio M, powerlib_domain] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
     Linear.characteristicMatrix (linA V Kp Ki) s = !![s + V * Kp, -(Ki : ℂ); V, s] := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, piPLLJacobian, mul_comm]
+  fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, proportionalMatrix, mul_comm]
 
 /-- Characteristic polynomial of the linearized PLL: `det(sI − A) = s² + V K_p s + V K_i`. -/
 @[tmio M, powerlib_domain] theorem det_characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
@@ -236,10 +238,10 @@ def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
     loopPoly V Kp Ki s = s ^ 2 + 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) * s +
       (omegaN V Ki : ℂ) ^ 2 := by
   have hω : omegaN V Ki = Criteria.naturalFrequency (linA V Kp Ki) := by
-    rw [Criteria.naturalFrequency, piPLLJacobian_det, omegaN, mul_neg, neg_neg, mul_comm Ki]
+    rw [Criteria.naturalFrequency, det_proportionalMatrix, omegaN, mul_neg, neg_neg, mul_comm Ki]
   rw [← det_characteristicMatrix_linA, zeta_eq_dampingRatio, hω]
   exact Criteria.det_characteristicMatrix_standard _
-    (by rwa [piPLLJacobian_det, mul_neg, neg_neg, mul_comm Ki]) s
+    (by rwa [det_proportionalMatrix, mul_neg, neg_neg, mul_comm Ki]) s
 
 /-- `ζ = (K_p/2) √(V/K_i)` for `V, K_i > 0` (T-pll-dynamics §1.3 boxed). -/
 @[tmio M, powerlib_domain] theorem zeta_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
@@ -457,8 +459,8 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
     ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
   exact Criteria.exists_root_re_pos_of_violation_fin_two _
-    (h.imp (fun h => by rw [piPLLJacobian_trace]; linarith)
-      fun h => by rw [piPLLJacobian_det]; linarith)
+    (h.imp (fun h => by rw [trace_proportionalMatrix]; linarith)
+      fun h => by rw [det_proportionalMatrix]; linarith)
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its
 semantics connection (the rate law `Spectral.chain_le_semantics_of_rate`): both positive loop
@@ -487,7 +489,7 @@ def frozen : Model := ⟨0, 0, 0, .phase⟩
 @[tmio M, powerlib_domain] theorem frozen_plant_A : frozen.plant.A = 0 := by
   rw [Model.plant_A]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [frozen, piPLLJacobian]
+  fin_cases i <;> fin_cases j <;> simp [frozen, proportionalMatrix]
 
 /-- The frozen loop conserves the energy `|x|²`. -/
 @[tmio TM, powerlib_domain] theorem frozen_mem_den_conservative :
@@ -542,13 +544,13 @@ gain is negative. -/
   have hAv : Linear.op jordan.plant.A v = 0 := by
     rw [Model.plant_A]
     ext i
-    fin_cases i <;> norm_num [v, Linear.op, jordan, piPLLJacobian, Matrix.mulVec, dotProduct,
+    fin_cases i <;> norm_num [v, Linear.op, jordan, proportionalMatrix, Matrix.mulVec, dotProduct,
       Fin.sum_univ_two]
   have hAw : Linear.op jordan.plant.A w = v := by
     rw [Model.plant_A]
     ext i
-    fin_cases i <;> norm_num [v, w, Linear.op, jordan, piPLLJacobian, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_two]
+    fin_cases i <;> norm_num [v, w, Linear.op, jordan, proportionalMatrix, Matrix.mulVec,
+      dotProduct, Fin.sum_univ_two]
   have hmem : jordan ∈ family.den (.flow .unstable) :=
     family_isLinear.mem_den_flow.mpr (Linear.unstable_of_zero_jordan_chain hv hAv hAw)
   refine Spectral.not_exact_of_witness hmem (q := .unstable) rfl fun h => ?_

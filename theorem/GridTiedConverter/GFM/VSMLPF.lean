@@ -103,7 +103,8 @@ Family and connection conclusions.
   `DroopLPF.not_exact_lyapunovStable`, the negative-damping model);
   `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) and `DroopLPF.unstable_atAntiLoading` are
   connection conclusions.
-  The loop is the swing machine `⟨D/ω_c, D, P₀, 0, K₀, 0⟩` in the coordinates `ω = (P₀ − P_f)/D`
+  The loop is the swing machine `SwingParams.sinusoid (D/ω_c) D P₀ K₀` in the coordinates
+  `ω = (P₀ − P_f)/D`
   (`DroopLPF.swingField_eq_transport`: the loop is the droop + LPF closed loop of
   `theorem/GridTiedConverter/GFM/DroopVSM.lean` on an infinite bus, `DroopLPF.field_eq_droopField`,
   and the swing field its VSM image), so for `D, ω_c ≠ 0` every sentence is read through the swing
@@ -924,8 +925,9 @@ end VSMLPF
 /-! ## Second-order swing reduction: the oscillation blind zone `B = 1 − √(1 − ζ₀⁴)` -/
 
 /-- Second-order (quasi-static filter, `ω_c → ∞`) GFM swing model at load `P ∈ [0, K₀)`:
-`M δ̈ + D δ̇ = P − K₀ sin δ`, an instance of `Synchronous.SwingParams`. -/
-def swingReduced (M D P K0 : ℝ) : Synchronous.SwingParams := ⟨M, D, P, 0, K0, 0⟩
+`M δ̈ + D δ̇ = P − K₀ sin δ`, the pure sine swing model `Synchronous.SwingParams.sinusoid`. -/
+abbrev swingReduced (M D P K0 : ℝ) : Synchronous.SwingParams :=
+  Synchronous.SwingParams.sinusoid M D P K0
 
 /-- Exact algebra on the second-order swing model: with `ζ₀ = D / (2√(M K₀))` the
 linearization at the loading angle `δ_s = arcsin(P/K₀)` has only real eigenvalues (no
@@ -941,11 +943,9 @@ without an oscillatory mode is `B = 1 − √(1 − ζ₀⁴)` (for `ζ₀ ≤ 1
   set x := P / K0 with hx
   have hx0 : 0 ≤ x := div_nonneg hP hK0.le
   have hx1 : x < 1 := (div_lt_one hK0).mpr hPK
-  have hK : (swingReduced M D P K0).syncCoeff (swingReduced M D P K0).deltaS =
-      K0 * Real.sqrt (1 - x ^ 2) := by
-    simp [Synchronous.SwingParams.syncCoeff, Synchronous.SwingParams.deltaS,
-      Synchronous.SwingParams.loadRatio, swingReduced, Real.cos_arcsin, hx]
-  rw [hK]
+  rw [Synchronous.SwingParams.syncCoeff_deltaS]
+  simp only [Synchronous.SwingParams.sinusoid_k₂, Synchronous.SwingParams.sinusoid_loadRatio,
+    ← hx]
   change 4 * M * (K0 * Real.sqrt (1 - x ^ 2)) ≤ D ^ 2 ↔ _
   have hz : (D / (2 * Real.sqrt (M * K0))) ^ 4 = (D ^ 2 / (4 * M * K0)) ^ 2 := by
     have hs2 := Real.sq_sqrt (show 0 ≤ M * K0 by positivity)
@@ -985,9 +985,9 @@ without an oscillatory mode is `B = 1 − √(1 − ζ₀⁴)` (for `ζ₀ ≤ 1
     (hK0 : 0 < K0) (hD : 0 ≤ D) (hc : 0 < Real.cos δ) :
     Criteria.dampingRatio ((swingReduced M D P K0).jacobian δ) = 1 ↔
       Real.cos δ = (D / (2 * Real.sqrt (M * K0))) ^ 2 := by
-  rw [Synchronous.SwingParams.dampingRatio_jacobian _ hM
-    (by simpa [swingReduced, Synchronous.SwingParams.syncCoeff] using mul_pos hK0 hc)]
-  simp only [swingReduced, Synchronous.SwingParams.syncCoeff, sub_zero, ← mul_assoc]
+  rw [Synchronous.SwingParams.dampingRatio_jacobian _ hM (by simpa using mul_pos hK0 hc)]
+  simp only [Synchronous.SwingParams.sinusoid_M, Synchronous.SwingParams.sinusoid_D,
+    Synchronous.SwingParams.sinusoid_syncCoeff, ← mul_assoc]
   have hs1 : 0 < Real.sqrt (M * K0 * Real.cos δ) := Real.sqrt_pos.mpr (by positivity)
   have hs2 : 0 < Real.sqrt (M * K0) := Real.sqrt_pos.mpr (by positivity)
   rw [div_eq_one_iff_eq (by positivity), div_pow, mul_pow, Real.sq_sqrt (by positivity)]
@@ -1119,7 +1119,7 @@ def family : Family Model Requirement 2 0 :=
 
 /-- The swing parameters of the loop: inertia `M = D/ω_c`, damping `D`, mechanical power `P₀` and
 the power curve `K₀ sin δ` (`k₁ = k₃ = 0`). -/
-def swingParams : Synchronous.SwingParams := ⟨q.D / q.ωc, q.D, q.P0, 0, q.K0, 0⟩
+def swingParams : Synchronous.SwingParams := .sinusoid (q.D / q.ωc) q.D q.P0 q.K0
 
 /-- A droop + LPF model read as the swing model of its parameters at the same angle. -/
 def Model.toSwing (m : Model) : Synchronous.Swing.Model := ⟨m.q.swingParams, m.δ⟩
@@ -1150,9 +1150,8 @@ Static evidence on the model, not a connection conclusion. -/
       Dynamics.transportField (q.droopVSM.coord hD) q.droopVSM.offset q.field := by
   rw [q.field_eq_droopField, ← q.droopVSM.vsmField_eq_transport hD (inv_ne_zero hω),
     q.droopVSM.vsmField_infiniteBus q.K0 rfl rfl]
-  show (⟨q.D / q.ωc, q.D, q.P0, 0, q.K0, 0⟩ : Synchronous.SwingParams).field =
-    (⟨q.ωc⁻¹ * q.D, q.D, q.P0, 0, q.K0, 0⟩ : Synchronous.SwingParams).field
-  rw [div_eq_inv_mul]
+  rw [swingParams, div_eq_inv_mul]
+  rfl
 
 /-- The coordinate change maps the operating point to the swing model's. -/
 @[tmio M, powerlib_domain] private theorem affineCoord_point (m : Model) (hD : m.q.D ≠ 0) :
@@ -1192,7 +1191,7 @@ comparison of the two semantics connections at the two members. -/
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced} ↔
       m.q.K0 * Real.sin m.δ = m.q.P0) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
-  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams]
 
 /-- The inertia requirement of the swing reading in the loop's terms. -/
 @[tmio M, powerlib_domain] private theorem swing_meets_inertia_iff (m : Model) :
@@ -1212,14 +1211,14 @@ comparison of the two semantics connections at the two members. -/
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.synchronizing} ↔
       0 < m.q.K0 * Real.cos m.δ) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
-  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams]
 
 /-- The destabilizing requirement of the swing reading in the loop's terms. -/
 @[tmio M, powerlib_domain] private theorem swing_meets_destabilizing_iff (m : Model) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.destabilizing} ↔
       m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
-  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff]
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams]
 
 @[tmio M, powerlib_domain] private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
     (hm : m ∈ TMIO.realize Meets A) :
@@ -1378,7 +1377,7 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
       by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
         swing_meets_balanced_iff q.atAntiLoading).mpr
       (SpecialFunctions.mul_sin_pi_sub_arcsin_div h.le hK0))
-    (by simpa [Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff, atAntiLoading]
+    (by simpa [Model.toSwing, swingParams, atAntiLoading]
       using mul_neg_of_pos_of_neg hK0 (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hK0))
   unfold powerlib.TMIO.Statement at hm
   exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
@@ -1396,7 +1395,7 @@ reading (`M = D/ω_c = 1`) is unbalanced, `K₀ sin 0 = 0 ≠ 1 = P₀`
   unfold powerlib.TMIO.Statement
   have hs := Synchronous.Swing.mem_den_unstable_of_not_balanced offEquilibrium.toSwing
     (by norm_num [offEquilibrium, Model.toSwing, swingParams])
-    (by norm_num [offEquilibrium, Model.toSwing, swingParams, Synchronous.SwingParams.Pe])
+    (by norm_num [offEquilibrium, Model.toSwing, swingParams])
   unfold powerlib.TMIO.Statement at hs
   exact (den_iff_swing (by norm_num [Meets, offEquilibrium]) _).mpr hs
 
@@ -1426,7 +1425,8 @@ def negativeDamping : Model := ⟨⟨-1, 1, 0, -1⟩, 0⟩
     (by norm_num [negativeDamping]) (.flow .locallyExponentiallyStable)
   unfold powerlib.TMIO.Statement at hm hr
   have he : negativeDamping.toSwing = Synchronous.Swing.negativeInertia := by
-    norm_num [negativeDamping, Model.toSwing, swingParams, Synchronous.Swing.negativeInertia]
+    norm_num [negativeDamping, Model.toSwing, swingParams, Synchronous.SwingParams.sinusoid,
+      Synchronous.Swing.negativeInertia]
   rw [hr, he]
   exact hm
 
@@ -1465,7 +1465,7 @@ Static evidence on the model, not a connection conclusion. -/
   rw [Function.comp_apply, DroopVSM.affineCoord_apply q.droopVSM hD]
   simp only [energy, PhasePlane.Conservative.energy, PhasePlane.Conservative.separableEnergy,
     PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, Synchronous.SwingParams.potential,
-    swingParams, droopVSM, sub_zero]
+    swingParams, Synchronous.SwingParams.sinusoid, droopVSM, sub_zero]
   rcases eq_or_ne q.ωc 0 with hω | hω
   · simp only [hω, mul_zero, div_zero, zero_mul, zero_div, zero_add]
     ring
@@ -1516,8 +1516,9 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
   have hiff := Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing (div_pos hD hω)
   unfold powerlib.TMIO.Statement at hiff
   rw [(connection_proof% den_iff_swing ⟨hD, hω⟩), hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
-  simp only [Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
-    Synchronous.SwingParams.syncCoeff, zero_add, sub_zero]
+  simp only [Model.toSwing, swingParams, Synchronous.SwingParams.sinusoid_Pe,
+    Synchronous.SwingParams.sinusoid_syncCoeff, Synchronous.SwingParams.sinusoid_Pm,
+    Synchronous.SwingParams.sinusoid_D, Synchronous.SwingParams.sinusoid_k₂]
   constructor
   · rintro ⟨hb, (⟨-, hK⟩ | ⟨hK0, -⟩)⟩
     exacts [⟨hb, Or.inl hK⟩, ⟨hb, Or.inr hK0⟩]

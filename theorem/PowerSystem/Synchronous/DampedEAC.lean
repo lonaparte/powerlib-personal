@@ -28,7 +28,7 @@ Source: work-sync `theory/T-transient-stability.md` §1.3, §1.5, §1.6, §1.8, 
 Results.
 * `D ≥ 0`: the energy `W = ½ M ω² + U(δ)` is non-increasing along every solution on any
   interval (`PhasePlane.Conservative.energy_antitone` through
-  `SwingParams.field_eq_conservative` and `SwingParams.energy_eq_conservative`).
+  `SwingParams.field_eq_conservative`; `SwingParams.energy` is the conservative energy).
 * `firstSwing_le_deltaU_of_damping` (`D ≥ 0`): the undamped equal-area condition
   `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)` still guarantees `δ(t) ≤ δ_u` for all `t ≥ t_c`;
   `faultTrajectory_firstSwing_of_areas`: for the switched model with damping in the fault and
@@ -127,9 +127,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [p.field_eq_conservative] at hφc
   have hdec := PhasePlane.Conservative.energy_antitone hM.ne' hD (p.hasDerivAt_potential δc)
     (convex_Ici tc) hφc (mem_Ici.mpr le_rfl) hts.1 hts.1
-  rw [← p.energy_eq_conservative] at hdec
-  simp only [h0, energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self,
-    add_zero, hδs] at hdec
+  simp only [h0, PhasePlane.Conservative.separableEnergy, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one, potential_self, sub_zero, zero_add, hδs] at hdec
   rw [← potential_eq_integral] at hE
   have hω : φ ts 1 = 0 := by
     have : p.M / 2 * φ ts 1 ^ 2 ≤ 0 := by linarith
@@ -160,7 +159,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
 @[tmio M, powerlib_domain] theorem potential_le_energy (hM : 0 < p.M) (δ₀ : ℝ) (x : State 2) :
     p.potential δ₀ (x 0) ≤ p.energy δ₀ x := by
   have : 0 ≤ p.M / 2 * x 1 ^ 2 := by positivity
-  simp only [energy]; linarith
+  simp only [PhasePlane.Conservative.separableEnergy, sub_zero]; linarith
 
 /-- Energy sublevel sets of the well below both saddle levels are compact. -/
 @[tmio M, powerlib_domain] theorem isCompact_wellSublevel (hM : 0 < p.M) {c : ℝ}
@@ -197,7 +196,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
     have hU := hδm (show x 0 ∈ Icc a b from ⟨h1, h2⟩)
     simp only [mem_ofPred_eq] at hU h3 h1 h2
     have hkin : p.M / 2 * x 1 ^ 2 ≤ c - p.potential p.deltaS δm := by
-      simp only [energy] at h3; linarith
+      simp only [PhasePlane.Conservative.separableEnergy, sub_zero] at h3; linarith
     have hx1 : x 1 ^ 2 ≤ 2 * (c - p.potential p.deltaS δm) / p.M := by
       rw [le_div_iff₀ hM]; nlinarith
     have hx0 : |x 0| ≤ |a| + |b| := by
@@ -260,7 +259,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
         Tendsto φ atTop (𝓝 (PhasePlane.mk p.deltaS 0)) := by
   have hω : ∀ x : State 2, fderiv ℝ (p.energy p.deltaS) x (p.field x) = 0 → x 1 = 0 := by
     intro x hx
-    rw [p.energy_eq_conservative, p.field_eq_conservative,
+    rw [p.field_eq_conservative,
       PhasePlane.Conservative.energy_lie hM.ne' (p.hasDerivAt_potential _)] at hx
     have : p.D * x 1 ^ 2 = 0 := by linarith
     rcases mul_eq_zero.mp this with h0 | h0
@@ -268,7 +267,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     · exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h0
   refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow
     p.contDiff_field (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
-  · rw [p.energy_eq_conservative, p.field_eq_conservative]
+  · rw [p.field_eq_conservative]
     exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (p.hasDerivAt_potential _) x
   · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem p.contDiff_field
       (h := fun x : State 2 => x 1) (Dynamics.contDiff_coord 1) ?_ ?_
@@ -301,7 +300,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
       p.potential p.deltaS p.deltaU - p.potential p.deltaS δc := by
     rw [← p.potential_eq_integral]; exact p.Adec_eq_potential_sub p.deltaS δc p.deltaU
   have hc1 : c < p.potential p.deltaS p.deltaU := by
-    simp only [c, energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]; linarith
+    simp only [c, PhasePlane.Conservative.separableEnergy, PhasePlane.mk_apply_zero,
+      PhasePlane.mk_apply_one, sub_zero]; linarith
   have hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi) := by
     rw [p.potential_sub_two_pi]
     have : 0 ≤ 2 * Real.pi * (p.Pm - p.k₁) := mul_nonneg (by positivity) (by linarith)
@@ -420,9 +420,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [fault.field_eq_conservative] at hφc
   have h := PhasePlane.Conservative.energy_antitone hM.ne' hD (fault.hasDerivAt_potential δ₀)
     (convex_Icc tf tc) hφc ⟨le_rfl, htc⟩ ⟨htc, le_rfl⟩ htc
-  rw [← fault.energy_eq_conservative] at h
-  simp only [h0, SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
-    SwingParams.potential_self, add_zero] at h
+  simp only [h0, PhasePlane.Conservative.separableEnergy, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one, SwingParams.potential_self, sub_zero, zero_add] at h
   rw [SwingParams.Aacc]
   norm_num at h
   linarith

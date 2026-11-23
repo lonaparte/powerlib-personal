@@ -27,7 +27,7 @@ Under the invertible affine change of coordinates
 trajectories (mapped one-to-one) and the same Lyapunov stability, local exponential stability,
 local asymptotic stability and instability of corresponding equilibria.  On an infinite bus
 (`P = K₀ sin θ`, `ω_s = 0`) the droop + LPF loop is the canonical swing model
-`⟨τ_p K_R, K_R, P_ref, 0, K₀, 0⟩`.
+`SwingParams.sinusoid (τ_p K_R) K_R P_ref K₀` (`vsmField_infiniteBus`).
 
 Family and connection conclusions.
 * `DroopVSM.vsmFamily`: a complete system (`VSMModel`) is a VSM closed loop `θ̇ = ω`,
@@ -168,15 +168,16 @@ Implementation evidence: trajectory-level result outside the sentence language (
   exact Dynamics.transportField_affineCoord_eq_zero_iff _ _ _ _
 
 /-- On an infinite bus in the synchronous frame (`P = K₀ sin θ`, `ω_s = 0`) the VSM image of
-droop + LPF is the canonical swing model `M = τ_p K_R`, `D = K_R`, `P_m = P_ref`. -/
+droop + LPF is the canonical pure sine swing model `Synchronous.SwingParams.sinusoid` with
+`M = τ_p K_R`, `D = K_R`, `P_m = P_ref`. -/
 @[tmio M, powerlib_domain] theorem vsmField_infiniteBus (K0 : ℝ) (hP : d.P = fun θ => K0 * Real.sin θ)
     (hω : d.ωs = 0) :
     d.vsmField (d.τp * d.KR) d.KR =
-      (⟨d.τp * d.KR, d.KR, d.Pref, 0, K0, 0⟩ : Synchronous.SwingParams).field := by
+      (Synchronous.SwingParams.sinusoid (d.τp * d.KR) d.KR d.Pref K0).field := by
   funext x
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp [vsmField]
-  · simp [vsmField, Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, hP, hω]
+  · simp [vsmField, Synchronous.SwingParams.accel, hP, hω]
 
 /-! ## Linear shadow: transfer functions (foundation) -/
 

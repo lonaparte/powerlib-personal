@@ -42,13 +42,13 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
   the real coordinates `(v_α, v_β) : Dynamics.State 2` (`AHO.realField`, identified with the
-  complex field by `realField_eq`); the equilibrium of the sentences is the origin `v = 0`. The
-  real field is, by definition, the Hopf normal form `NormalForm.Hopf.field` of the parameters
-  `AHO.toHopf = (μ, ω₀, l₁, κ) = (c, ω_s, −κ_v, 0)` (`theorem/NormalForm/Hopf.lean`): its
-  smoothness, its equilibrium at the origin, its Jacobian there and the local exponential stability
-  (`c < 0`) and instability (`c > 0`) of the origin are the normal form's
-  (`NormalForm.Hopf.field_contDiff`, `field_zero`, `fderiv_field_zero`, `origin_stable`,
-  `origin_unstable`).
+  complex field through `PhasePlane.complexIso` by `realField_eq`); the equilibrium of the
+  sentences is the origin `v = 0`. The real field is, by definition, the Hopf normal form
+  `NormalForm.Hopf.field` of the parameters `AHO.toHopf = (μ, ω₀, l₁, κ) = (c, ω_s, −κ_v, 0)`
+  (`theorem/NormalForm/Hopf.lean`): its smoothness, its equilibrium at the origin, its Jacobian
+  there and the local exponential stability (`c < 0`) and instability (`c > 0`) of the origin are
+  the normal form's (`NormalForm.Hopf.field_contDiff`, `field_zero`, `fderiv_field_zero`,
+  `origin_stable`, `origin_unstable`).
   Static requirements: growth `c = κ_v v*² − σ > 0`, decay `c < 0`, stiffness `κ_v ≥ 0`, and a
   decay-rate bound `r ≤ −c`.  Instability translates into growth (Jacobian `[[c, −ω_s], [ω_s, c]]`
   at the origin, trace `2c`); the local sentences into decay (linearization); the global
@@ -211,14 +211,16 @@ def realField (x : State 2) : State 2 := NormalForm.Hopf.field a.toHopf x
       PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, toHopf] <;> ring
 
 /-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
-`v = v_α + j v_β`. -/
-@[tmio M, powerlib_domain] theorem realField_eq (x : State 2) :
-    a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
-  rw [realField_apply]
+`v = v_α + j v_β` (`PhasePlane.complexIso`). -/
+@[tmio M, powerlib_domain] theorem realField_eq (z : ℂ) :
+    a.realField (PhasePlane.complexIso z) = PhasePlane.complexIso (a.field z) := by
+  rw [realField_apply, PhasePlane.complexIso_apply (a.field z)]
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp only [PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
+  · simp only [PhasePlane.mk_apply_zero, PhasePlane.complexIso_apply_zero,
+      PhasePlane.complexIso_apply_one, aho_re, Complex.normSq_apply, c]
     ring
-  · simp only [PhasePlane.mk_apply_one, aho_im, normSq_mk, c]
+  · simp only [PhasePlane.mk_apply_one, PhasePlane.complexIso_apply_zero,
+      PhasePlane.complexIso_apply_one, aho_im, Complex.normSq_apply, c]
     ring
 
 /-! ## Trajectories: the logistic amplitude and the limit cycle -/
@@ -235,31 +237,15 @@ def realField (x : State 2) : State 2 := NormalForm.Hopf.field a.toHopf x
       Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
     ring
 
-/-- The plane point `(Re z, Im z)` has the modulus of `z` as its Euclidean norm. -/
-@[tmio T, powerlib_foundation] private theorem norm_mk_re_im (z : ℂ) :
-    ‖PhasePlane.mk z.re z.im‖ = ‖z‖ := by
-  rw [PhasePlane.norm_mk, Complex.norm_def, Complex.normSq_apply, sq, sq]
-
-/-- A solution of the complex field, read in the coordinates `(v_α, v_β)`, solves the Hopf normal
-form of `toHopf`. -/
-@[tmio M, powerlib_domain] private theorem isIntegralCurveOn_hopf {φ : ℝ → ℂ} {s : Set ℝ}
-    (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) s) :
-    IsIntegralCurveOn (fun t => PhasePlane.mk (φ t).re (φ t).im)
-      (fun _ x => NormalForm.Hopf.field a.toHopf x) s := fun t ht => by
-  change HasDerivWithinAt _ (a.realField _) s t
-  rw [PhasePlane.hasDerivWithinAt_iff_components, realField_eq]
-  simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, Complex.eta]
-  exact ⟨Complex.reCLM.hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht),
-    Complex.imCLM.hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht)⟩
-
 /-- Along a solution, `|v|²` solves the logistic equation `ρ̇ = 2cρ − 2κ_v ρ²`
 (`NormalForm.Hopf.normSq_isIntegralCurveOn`). -/
 @[tmio M, powerlib_domain] private theorem normSq_logistic {φ : ℝ → ℂ} {s : Set ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) s) :
     IsIntegralCurveOn (fun t => normSq (φ t))
       (fun _ r => NormalForm.Logistic.field a.c (-a.κv) r) s := by
-  simpa only [norm_mk_re_im, ← Complex.normSq_eq_norm_sq, toHopf] using
-    NormalForm.Hopf.normSq_isIntegralCurveOn a.toHopf (a.isIntegralCurveOn_hopf hφ)
+  simpa only [LinearIsometryEquiv.norm_map, ← Complex.normSq_eq_norm_sq, toHopf] using
+    NormalForm.Hopf.normSq_isIntegralCurveOn a.toHopf
+      ((PhasePlane.isIntegralCurveOn_complexIso_iff a.realField_eq φ s).2 hφ)
 
 /-- Solutions starting away from the origin never reach it (`NormalForm.Logistic.pos`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -289,10 +275,10 @@ Implementation evidence: trajectory-level result outside the sentence language (
 @[tmio TM, powerlib_domain] private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 a.rstar) := by
-  have h0' : PhasePlane.mk (φ 0).re (φ 0).im ≠ 0 := by
-    rw [← norm_ne_zero_iff, norm_mk_re_im]; exact norm_ne_zero_iff.mpr h0
-  simpa only [norm_mk_re_im] using NormalForm.Hopf.supercritical_norm_tendsto a.toHopf
-    (sub_pos.mpr h.gap) (neg_neg_of_pos h.κv) (a.isIntegralCurveOn_hopf hφ) h0'
+  simpa only [LinearIsometryEquiv.norm_map] using NormalForm.Hopf.supercritical_norm_tendsto
+    a.toHopf (sub_pos.mpr h.gap) (neg_neg_of_pos h.κv)
+    ((PhasePlane.isIntegralCurveOn_complexIso_iff a.realField_eq φ _).2 hφ)
+    (PhasePlane.complexIso.map_eq_zero_iff.not.2 h0)
 
 /-- `d‖v‖/dt = gain · ‖v‖` along the field (away from the origin). -/
 @[tmio M, powerlib_domain] theorem hasDerivWithinAt_norm {φ : ℝ → ℂ} {s : Set ℝ} {t : ℝ}
@@ -381,9 +367,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
     rw [h.rstar_sq]; exact neg_div_neg_eq _ _
   intro t ht
   have key := NormalForm.Hopf.circle_invariant a.toHopf hc.ne' (neg_ne_zero.mpr h.κv.ne')
-    (hR ▸ pow_pos h.rstar_pos 2) ((a.isIntegralCurveOn_hopf hφ).mono Icc_subset_Ici_self)
-    (by rw [norm_mk_re_im, h0, hR]) t ⟨ht, le_rfl⟩
-  rw [norm_mk_re_im, hR] at key
+    (hR ▸ pow_pos h.rstar_pos 2)
+    (((PhasePlane.isIntegralCurveOn_complexIso_iff a.realField_eq φ _).2 hφ).mono
+      Icc_subset_Ici_self)
+    (by rw [LinearIsometryEquiv.norm_map, h0, hR]) t ⟨ht, le_rfl⟩
+  rw [LinearIsometryEquiv.norm_map, hR] at key
   exact (pow_left_inj₀ (norm_nonneg _) h.rstar_pos.le two_ne_zero).mp key
 
 /-- The limit-cycle solutions `r* e^{j(ω_s t + φ₀)}` solve the AHO.

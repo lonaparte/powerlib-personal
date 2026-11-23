@@ -85,7 +85,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
         IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
         Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
   have hHc (ηs : ℝ) : ContDiff ℝ 1 (pllHamiltonian V Ki ηs) :=
-    contDiff_piPLLEnergy (contDiff_const.mul (contDiff_const.sub Real.contDiff_cos)) Ki ηs
+    PhasePlane.Conservative.contDiff_separableEnergy
+      (contDiff_const.mul (contDiff_const.sub Real.contDiff_cos)) Ki ηs
   set H := pllHamiltonian V Ki (δω / Ki)
   set W : Set (State 2) := {x | |x 0| < Real.pi}
   have hW : IsOpen W :=
@@ -106,7 +107,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
       have hcos : Real.cos (x 0) = -1 := by
         rcases abs_eq (Real.pi_pos.le) |>.mp heq with h | h <;> rw [h] <;> simp
       have : 2 * V ≤ H x := by
-        simp only [H, pllHamiltonian, piPLLEnergy, srfPotential, hcos]
+        simp only [H, pllHamiltonian, piPLLEnergy, PhasePlane.Conservative.separableEnergy,
+          srfPotential, hcos]
         nlinarith [sq_nonneg (x 1 - δω / Ki)]
       linarith
   have hcompact : IsCompact {x ∈ W | H x ≤ c} := by
@@ -122,7 +124,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
       have hcos : 0 ≤ V * (1 - Real.cos (x 0)) := by
         have := Real.cos_le_one (x 0); nlinarith
       have hη : (x 1 - δω / Ki) ^ 2 ≤ 2 * |c| / Ki := by
-        simp only [H, pllHamiltonian, piPLLEnergy, srfPotential] at h2
+        simp only [H, pllHamiltonian, piPLLEnergy, PhasePlane.Conservative.separableEnergy,
+          srfPotential] at h2
         rw [le_div_iff₀ hKi]
         nlinarith [le_abs_self c]
       nlinarith [sq_nonneg (x 1 - 2 * (δω / Ki))]

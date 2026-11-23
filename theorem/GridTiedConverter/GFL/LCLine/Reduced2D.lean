@@ -2,6 +2,7 @@ import theorem.GridTiedConverter.GFL.LCLine.FullModel
 import theorem.GridTiedConverter.PLL.PIPLLFamily
 import theorem.GridTiedConverter.PLL.PIPLLPH
 import theorem.PH.Nonlinear
+import theorem.Potential.Barrier
 import theorem.Dynamics.Transport
 import theorem.Dynamics.Shift
 import theorem.Family.Reading
@@ -46,7 +47,8 @@ Results.
   `[[0, K_i], [0, 0]]` (`PLL.piPLLJacobian_zero_ne_zero`, `PLL.piPLLJacobian_zero_sq`). All by
   instantiating `theorem/GridTiedConverter/PLL/PIPLL.lean`.
 * `pHModel` : the pH model of the PI-PLL (`PLL.gflPHModel`, `theorem/GridTiedConverter/PLL/
-  PIPLLPH.lean`) with detector `h` and potential `V(θ) = −c₀θ − A cos(θ + φ)` (`V′ = −h`):
+  PIPLLPH.lean`) with detector `h` and potential `V(θ) = −c₀θ − A cos(θ + φ)` (`V′ = −h`; the
+  tilted washboard `Potential.Barrier.washboard c₀ A φ`):
   constant `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`, port matrix `(−1, 0)ᵀ` (input `δω_g`),
   non-quadratic Hamiltonian `H = V(θ) + ½ K_i η²`; its input field is
   `piPLLField h K_p K_i δω_g` (`PLL.gflPH_field`) and its zero-input field is `reducedField`
@@ -163,17 +165,14 @@ connection conclusion. -/
 /-! ### Port-Hamiltonian form with constant `J`, `R` and a non-quadratic Hamiltonian -/
 
 /-- Potential `V(θ) = −c₀ θ − A cos(θ + φ)`, an antiderivative of `−h`
-(`V = −∫ h` up to a constant; the tilted washboard). -/
-def pot (θ : ℝ) : ℝ := -(p.c0 * θ) - p.amp * cos (θ + p.phase)
+(`V = −∫ h` up to a constant): the tilted washboard `Potential.Barrier.washboard c₀ A φ`. -/
+abbrev pot : ℝ → ℝ := Potential.Barrier.washboard p.c0 p.amp p.phase
 
+/-- `V′ = −h` (`Potential.Barrier.hasDerivAt_washboard`, with `h = c₀ − A sin(θ + φ)`). -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_pot (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
     HasDerivAt p.pot (-p.h θ) θ := by
-  have h1 : HasDerivAt (fun θ : ℝ => θ + p.phase) 1 θ := (hasDerivAt_id θ).add_const _
-  have h2 := ((hasDerivAt_id θ).const_mul p.c0).neg.sub ((h1.cos).const_mul p.amp)
   rw [p.h_eq_polar hwC hΔ]
-  convert h2 using 1
-  · funext x; simp [pot]
-  · ring
+  exact Potential.Barrier.hasDerivAt_washboard θ
 
 /-- Hamiltonian `H(θ, η) = V(θ) + ½ K_i η²`: the PI-PLL energy of the potential `V`. -/
 def hamiltonian : State 2 → ℝ := piPLLEnergy p.pot p.Ki 0

@@ -1,5 +1,7 @@
 import theorem.GridTiedConverter.PLL.PIPLL
 import theorem.PH.Nonlinear
+import theorem.Potential.Barrier
+import theorem.SpecialFunctions.TrigZeros
 
 /-! # Port-Hamiltonian form of the reduced GFL PI-PLL (`T-gfl-ph`)
 
@@ -21,7 +23,9 @@ Source: work-sync `theory/T-gfl-ph.md` (1.1)–(1.4), §1.2 "复用 [[T-pll-ph]]
 
 Results.
 pH data (T-gfl-ph (1.2)), with an integrator set point `η*` (T-pll-ph (1.3)):
-`H(θ, η) = V(θ) + (K_i / 2)(η − η*)²` (`PLL.piPLLEnergy`), `∇H = (−h(θ), K_i (η − η*))`,
+`H(θ, η) = V(θ) + (K_i / 2)(η − η*)²` (`PLL.piPLLEnergy`, the separable energy
+`PhasePlane.Conservative.separableEnergy`), `∇H = (−h(θ), K_i (η − η*))`
+(`PhasePlane.Conservative.hasGradientAt_separableEnergy`),
 `J = [[0, 1], [−1, 0]]` (`pllJ`), `R = diag(K_p, 0) ⪰ 0` (`pllR`, `pllR_posSemidef`),
 `B = (−1, 0)ᵀ` (`pllB`), output `y = Bᵀ ∇H = h(θ)`. Every PI-PLL pH model of the library is this
 model: the SRF-PLL `PLL.pllPH` (`theorem/GridTiedConverter/PLL/PH.lean`, `h = srfPD V`), the reduced
@@ -34,10 +38,12 @@ matrices.
   `PLL.piPLL_energy_rate` (`theorem/GridTiedConverter/PLL/PIPLL.lean`), for any local primitive.
 * `gflPH_trajectory_energy` (private): the energy rate along every input/state solution.
 * Form-B characteristic `h = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ]`
-  (`formBH`), its potential (1.4) (`formBPotential`, proved to be a primitive of `−h` and equal to
-  `−∫₀^θ h`), and the fact that for `c₀ ≠ 0` the Hamiltonian is **unbounded below**
-  (`formBHamiltonian_not_bddBelow`); hence for no constant `c` is `H − c` a nonnegative storage,
-  and passivity cannot be obtained with storage `H − c`
+  (`formBH`, the scaled trigonometric polynomial `SpecialFunctions.trigPoly2 c₀ c₂ c₁ c₄ c₃`), its
+  potential (1.4) (`formBPotential`, proved to be a primitive of `−h` and equal to `−∫₀^θ h`), and
+  the fact that for `c₀ ≠ 0` the Hamiltonian is **unbounded below**
+  (`formBHamiltonian_not_bddBelow`: it lies below a tilted line,
+  `Potential.Barrier.not_bddBelow_of_le_tilt`); hence for no constant `c` is `H − c` a nonnegative
+  storage, and passivity cannot be obtained with storage `H − c`
   (`formB_not_passiveWithStorage`, private). This violates assumption 3 (`H ≥ H_min`) of the parent
   note `T-ph`, which `T-gfl-ph` §1.2 claims to inherit.
 
@@ -91,8 +97,7 @@ def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki
   dH := fun x => PhasePlane.mk (-h (x 0)) (Ki * (x 1 - ηs))
   skew := fun _ => PH.transpose_symplectic_two
   dissipation_posSemidef := fun _ => pllR_posSemidef hKp
-  hasGradient := fun x => PH.hasGradientAt_of_hasFDerivAt (hasFDerivAt_piPLLEnergy (hV (x 0)))
-    (fun v => by simp [dotProduct, Fin.sum_univ_two, PhasePlane.mk])
+  hasGradient x := PhasePlane.Conservative.hasGradientAt_separableEnergy (hV (x 0))
 
 variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki ηs : ℝ} {hKp : 0 ≤ Kp}
 
@@ -157,10 +162,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
 
 /-! ## Form-B characteristic and its potential (T-gfl-ph (1.3)–(1.4)) -/
 
-/-- `h(θ) = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ]` (T-gfl-ph (1.3)). -/
+/-- `h(θ) = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ]` (T-gfl-ph (1.3)):
+the trigonometric polynomial `SpecialFunctions.trigPoly2` (order constant, `cos θ`, `sin θ`,
+`cos 2θ`, `sin 2θ`) scaled by `1/(ω_g C_f)`. -/
 def formBH (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
-  1 / (ωg * Cf) * (c₀ + c₁ * Real.sin θ + c₂ * Real.cos θ + c₃ * Real.sin (2 * θ) +
-    c₄ * Real.cos (2 * θ))
+  1 / (ωg * Cf) * SpecialFunctions.trigPoly2 c₀ c₂ c₁ c₄ c₃ θ
 
 /-- The potential (1.4): `(1/(ω_g C_f)) [−c₀θ + c₁(cos θ − 1) − c₂ sin θ
 + (c₃/2)(cos 2θ − 1) − (c₄/2) sin 2θ]`. -/
@@ -180,17 +186,12 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
     (((Real.hasDerivAt_sin (2 * θ)).comp θ h2).const_mul (c₄ / 2))
   have h' := h.const_mul (1 / (ωg * Cf))
   refine HasDerivAt.congr_deriv h' ?_
-  simp only [formBH]
+  simp only [formBH, SpecialFunctions.trigPoly2]
   ring
 
 @[tmio M, powerlib_domain] theorem formBPotential_zero (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
     formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ 0 = 0 := by
   simp [formBPotential]
-
-@[tmio M, powerlib_domain] theorem continuous_formBH (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) :
-    Continuous (formBH ωg Cf c₀ c₁ c₂ c₃ c₄) := by
-  unfold formBH
-  fun_prop
 
 /-- (1.4) equals `−∫₀^θ h`. -/
 @[tmio M, powerlib_domain] theorem formBPotential_eq_neg_integral (ωg Cf c₀ c₁ c₂ c₃ c₄ θ : ℝ) :
@@ -199,7 +200,8 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
   have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt
     (f := formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄) (a := 0) (b := θ)
     (fun t _ => hasDerivAt_formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ t)
-    ((continuous_formBH ωg Cf c₀ c₁ c₂ c₃ c₄).neg.intervalIntegrable 0 θ)
+    ((continuous_const.mul (SpecialFunctions.continuous_trigPoly2 c₀ c₂ c₁ c₄ c₃)).neg
+      |>.intervalIntegrable 0 θ)
   rw [intervalIntegral.integral_neg, formBPotential_zero, sub_zero] at hint
   linarith
 
@@ -208,14 +210,14 @@ def formBPotential (ωg Cf c₀ c₁ c₂ c₃ c₄ : ℝ) (θ : ℝ) : ℝ :=
     formBH ωg Cf 0 (-(Vg * ωg * Cf)) 0 0 0 θ = -Vg * Real.sin θ := by
   have hω : ωg ≠ 0 := left_ne_zero_of_mul hωC
   have hC : Cf ≠ 0 := right_ne_zero_of_mul hωC
-  simp only [formBH]
+  simp only [formBH, SpecialFunctions.trigPoly2]
   field_simp
   ring
 
 /-- The note's choice `c₁ = −V_g` gives `h = −V_g sin θ / (ω_g C_f)`. -/
 @[tmio M, powerlib_domain] theorem formBH_barePLL_note (ωg Cf Vg θ : ℝ) :
     formBH ωg Cf 0 (-Vg) 0 0 0 θ = -Vg * Real.sin θ / (ωg * Cf) := by
-  simp only [formBH]
+  simp only [formBH, SpecialFunctions.trigPoly2]
   ring
 
 /-- The form-B pH model with the potential (1.4). -/
@@ -233,7 +235,7 @@ Static evidence on the model, not a connection conclusion. -/
   have hk0 : k ≠ 0 := one_div_ne_zero hωC
   set M := |k| * (2 * |c₁| + |c₂| + |c₃| + |c₄|) with hM
   -- the bounded part of the potential
-  have hbound (θ : ℝ) : formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ θ ≤ -(k * c₀) * θ + M := by
+  have hbound (θ : ℝ) : formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ θ ≤ -(k * c₀ * θ) + M := by
     set B := c₁ * (Real.cos θ - 1) - c₂ * Real.sin θ + c₃ / 2 * (Real.cos (2 * θ) - 1) -
         c₄ / 2 * Real.sin (2 * θ) with hBdef
     have hc1 : |Real.cos θ - 1| ≤ 2 := by
@@ -257,23 +259,14 @@ Static evidence on the model, not a connection conclusion. -/
       calc k * B ≤ |k * B| := le_abs_self _
         _ = |k| * |B| := abs_mul _ _
         _ ≤ M := mul_le_mul_of_nonneg_left hB (abs_nonneg _)
-    have e : formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ θ = -(k * c₀) * θ + k * B := by
+    have e : formBPotential ωg Cf c₀ c₁ c₂ c₃ c₄ θ = -(k * c₀ * θ) + k * B := by
       simp only [formBPotential, hk, hBdef]
       ring
     rw [e]
     linarith
-  have hkc : k * c₀ ≠ 0 := mul_ne_zero hk0 hc₀
-  -- choose `θ` with `−(k c₀) θ = c − M − 1`
-  set θ := (M - c + 1) / (k * c₀) with hθ
-  have hθ' : -(k * c₀) * θ = c - M - 1 := by
-    rw [hθ]
-    field_simp
-    ring
-  have h1 := hc (PhasePlane.mk θ 0)
-  simp only [formBPHModel, gflPHModel_H, piPLLEnergy, PhasePlane.mk_apply_zero,
-    PhasePlane.mk_apply_one] at h1
-  have h2 := hbound θ
-  nlinarith
+  refine Potential.Barrier.not_bddBelow_of_le_tilt (mul_ne_zero hk0 hc₀) hbound ⟨c, ?_⟩
+  rintro _ ⟨θ, rfl⟩
+  simpa [formBPHModel, PhasePlane.Conservative.separableEnergy] using hc (PhasePlane.mk θ 0)
 
 /-- Consequently no shifted Hamiltonian `H − c` is a nonnegative storage, so the passivity
 statement of `T-ph` (1.4) is not available for the form-B GFL PLL with `c₀ ≠ 0`.

@@ -321,7 +321,7 @@ potential is `PLL.formBPotential` with these coefficients (`PLL.hasDerivAt_formB
     p.h = PLL.formBH p.ωg p.Cf (p.idRef - p.βq) (-p.αq) (-p.αd) 0 0 := by
   funext θ
   rw [p.h_eq_formB θ]
-  simp only [PLL.formBH]
+  simp only [PLL.formBH, SpecialFunctions.trigPoly2]
   ring
 
 /-- With `V_g ≠ 0` (and `Δ ≠ 0`, `ω_g C_f ≠ 0`) the form-B coefficients of `h` do not all

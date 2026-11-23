@@ -42,7 +42,8 @@ Static evidence on the members (the behavioural results are the connection concl
   (`h = −θ`) and cubic (`h = −θ³`) detector members.
 * `cubicEnergy_lie`, `cubicEnergy_contDiff`, `cubicEnergy_pos`, `norm_sq_le_cubicEnergy`: the PLL
   energy `θ⁴/4 + η²/2` of the cubic detector, the PI-PLL energy `piPLLEnergy` of the potential
-  `θ⁴/4` (its derivative and smoothness are those of `piPLLEnergy`).
+  `θ⁴/4` (its derivative and smoothness are those of the separable energy,
+  `PhasePlane.Conservative.hasFDerivAt_separableEnergy`, `contDiff_separableEnergy`).
 * `Model.ramp`, `Model.ramp_deriv`, `ramp_hasDerivAt_iff`: the ramp model (detector `h − ρ/K_i`,
   with the slope of `h`, no offset) and the bridge from the loop under a frequency ramp to it.
 
@@ -104,6 +105,8 @@ noncomputable section
 namespace powerlib.PLL.PIPLL
 
 open Matrix Set
+open powerlib.NormalForm.BogdanovTakens (trace_proportionalMatrix det_proportionalMatrix)
+open powerlib.PhasePlane.Conservative (separableEnergy)
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
@@ -194,9 +197,9 @@ untranslated field is locally exponentially stable. -/
   refine Criteria.locallyExponentiallyStable_of_jacobian_fin_two (piPLLJacobian Kp Ki g)
     (contDiff_piPLLField hh) ((piPLLField_eq_zero_iff hKi _).mpr ⟨hzero, rfl⟩)
     (fderiv_piPLLField hderiv) ?_ ?_
-  · rw [piPLLJacobian_trace]
+  · rw [trace_proportionalMatrix]
     exact hKpg
-  · rw [piPLLJacobian_det]
+  · rw [det_proportionalMatrix]
     linarith
 
 /-- At an equilibrium (no hypothesis `K_i ≠ 0` needed), a negative determinant or a positive
@@ -211,11 +214,11 @@ trace of the Jacobian gives instability. -/
   rcases hg with hdet | htr
   · refine Criteria.unstable_of_jacobian_det (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
-    rw [neg_one_sq, one_mul, piPLLJacobian_det]
+    rw [neg_one_sq, one_mul, det_proportionalMatrix]
     linarith
   · refine Criteria.unstable_of_jacobian_trace_pos (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
-    rw [piPLLJacobian_trace]
+    rw [trace_proportionalMatrix]
     exact htr
 
 @[tmio TM, powerlib_domain] private theorem les_of_meets {m : Model} (hp : Meets m .phaseLocked)
@@ -430,27 +433,20 @@ energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at 
     (isOpen_lt (m.smooth.continuous_deriv le_rfl) continuous_const) m.θ hg
   have hr' : ∀ θ, |θ - m.θ| < r → deriv m.h θ < 0 := fun θ hθ =>
     hr (by simpa [Real.dist_eq] using hθ)
-  have hp0 : m.point 0 = m.θ := by simp [Model.point]
-  have hp1 : m.point 1 = m.δω / m.Ki := by simp [Model.point]
-  have hEd : Differentiable ℝ (piPLLEnergy (potential m) m.Ki (m.δω / m.Ki)) := fun x =>
-    (hasFDerivAt_piPLLEnergy (hasDerivAt_potential m (x 0))).differentiableAt
-  apply lyapunov_stable (D := {x : ℝ² | |x 0 - m.θ| < r})
-    (V := piPLLEnergy (potential m) m.Ki (m.δω / m.Ki)) (by norm_num)
-  refine ⟨?_, ?_, hEd.continuous, hEd, ?_, fun x hx hne => ?_, fun x _ => ?_⟩
-  · exact isOpen_lt (by fun_prop) continuous_const
-  · show |m.point 0 - m.θ| < r
-    simpa [hp0] using hr0
-  · simp [piPLLEnergy, potential, hp0, hp1]
-  · have hx' : |x 0 - m.θ| < r := hx
-    have hq : 0 ≤ m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2 := by positivity
-    by_cases h0 : x 0 = m.θ
-    · have h1 : x 1 - m.δω / m.Ki ≠ 0 := fun h1 => hne (PhasePlane.ext_iff'.2
-        ⟨by rw [h0, hp0], by rw [hp1]; linarith⟩)
-      have : 0 < m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2 := by positivity
-      simpa [piPLLEnergy, potential, h0] using this
-    · have hU := potential_pos m hzero hr' hx' h0
-      simp only [piPLLEnergy]
-      linarith
+  have hU : ∀ᶠ θ in nhdsWithin m.θ {m.θ}ᶜ, potential m m.θ < potential m θ := by
+    rw [eventually_nhdsWithin_iff]
+    filter_upwards [Metric.ball_mem_nhds m.θ hr0] with θ hθ hne
+    rw [potential, intervalIntegral.integral_same, neg_zero]
+    exact potential_pos m hzero hr' (by rwa [Metric.mem_ball, Real.dist_eq] at hθ) hne
+  obtain ⟨D, hD, hDo, hpD⟩ := eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp
+    (PhasePlane.Conservative.eventually_separableEnergy_lt (b := m.δω / m.Ki) hKi hU))
+  have hE0 : piPLLEnergy (potential m) m.Ki (m.δω / m.Ki) m.point = 0 := by
+    simp [separableEnergy, potential, Model.point]
+  have hEd : Differentiable ℝ (piPLLEnergy (potential m) m.Ki (m.δω / m.Ki)) :=
+    PhasePlane.Conservative.differentiable_separableEnergy
+      (fun θ => (hasDerivAt_potential m θ).differentiableAt) _ _
+  apply lyapunov_stable (D := D) (V := piPLLEnergy (potential m) m.Ki (m.δω / m.Ki)) (by norm_num)
+  refine ⟨hDo, hpD, hEd.continuous, hEd, hE0, fun x hx hne => hE0 ▸ hD x hx hne, fun x _ => ?_⟩
   · rw [piPLL_energy_rate _ _ _ _ (hasDerivAt_potential m (x 0)), mul_div_cancel₀ _ hKi.ne',
       sub_self, mul_zero, add_zero]
     nlinarith [sq_nonneg (m.h (x 0))]
@@ -685,13 +681,13 @@ abbrev cubicEnergy : ℝ² → ℝ := piPLLEnergy (fun θ => θ ^ 4 / 4) 1 0
 
 @[tmio M, powerlib_domain] theorem cubicEnergy_lie (z : ℝ²) :
     fderiv ℝ cubicEnergy z (cubicDetector.field z) = -(z 0) ^ 6 := by
-  rw [(hasFDerivAt_piPLLEnergy (Ki := 1) (ηs := 0) (hasDerivAt_cubicPotential (z 0))).fderiv,
-    cubicDetector_field]
+  rw [(PhasePlane.Conservative.hasFDerivAt_separableEnergy (k := 1) (b := 0)
+    (hasDerivAt_cubicPotential (z 0))).fderiv, cubicDetector_field]
   simp [cubicDetector]
   ring
 
 @[tmio M, powerlib_domain] theorem cubicEnergy_contDiff : ContDiff ℝ 1 cubicEnergy :=
-  contDiff_piPLLEnergy ((contDiff_id.pow 4).div_const 4) 1 0
+  PhasePlane.Conservative.contDiff_separableEnergy ((contDiff_id.pow 4).div_const 4) 1 0
 
 @[tmio M, powerlib_domain] theorem cubicEnergy_pos {z : ℝ²} (hz : z ≠ 0) : 0 < cubicEnergy z := by
   have hne : z 0 ≠ 0 ∨ z 1 ≠ 0 := by
@@ -702,7 +698,7 @@ abbrev cubicEnergy : ℝ² → ℝ := piPLLEnergy (fun θ => θ ^ 4 / 4) 1 0
     fin_cases i
     · exact h.1
     · exact h.2
-  simp only [piPLLEnergy, sub_zero]
+  simp only [separableEnergy, sub_zero]
   rcases hne with h | h
   · have : 0 < (z 0) ^ 4 := by positivity
     nlinarith [sq_nonneg (z 1)]
@@ -717,7 +713,7 @@ although its linearization is not Hurwitz. -/
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine lyapunov_stable (V := cubicEnergy) (D := Set.univ) two_pos
     ⟨isOpen_univ, Set.mem_univ _, cubicEnergy_contDiff.continuous,
-      fun z => cubicEnergy_contDiff.differentiable one_ne_zero z, by simp [piPLLEnergy],
+      fun z => cubicEnergy_contDiff.differentiable one_ne_zero z, by simp [separableEnergy],
       fun z _ hz => cubicEnergy_pos hz, fun z _ => ?_⟩
   rw [cubicEnergy_lie]
   nlinarith [pow_two_nonneg ((z 0) ^ 3)]
@@ -739,7 +735,7 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
     rw [PiLp.norm_sq_eq_of_L2]
     simp [Fin.sum_univ_succ, sq_abs]
   rw [hsq]
-  simp only [piPLLEnergy, sub_zero]
+  simp only [separableEnergy, sub_zero]
   nlinarith [sq_nonneg ((z 0) ^ 2 - 1 / 2), sq_nonneg (z 1)]
 
 /-- The cubic detector is locally asymptotically stable (LaSalle's principle,
@@ -784,7 +780,7 @@ linearization decides nothing. -/
     · exact (h0 t ht).symm
     · exact (h1 t ht).symm
   refine Dynamics.LaSalle.localAsymptoticStable_of_lasalle_detectable two_pos hf
-    cubicEnergy_contDiff (by simp [piPLLEnergy]) (fun x hx => cubicEnergy_pos hx)
+    cubicEnergy_contDiff (by simp [separableEnergy]) (fun x hx => cubicEnergy_pos hx)
     ⟨1, one_pos, ?_⟩ hdec hdet
   refine Metric.isCompact_of_isClosed_isBounded
     (isClosed_le cubicEnergy_contDiff.continuous continuous_const) ?_

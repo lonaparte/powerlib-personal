@@ -38,6 +38,7 @@ claimed about limit cycles of the nonlinear field.
 noncomputable section
 namespace powerlib.PLL
 open Matrix
+open powerlib.NormalForm.BogdanovTakens (trace_proportionalMatrix det_proportionalMatrix)
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- Characteristic equation `μ² − K_p g μ − K_i g = 0` of every eigenvalue of the Jacobian. -/
@@ -46,7 +47,8 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     (heig : (piPLLJacobian Kp Ki g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     μ ^ 2 - (Kp * g : ℝ) * μ - (Ki * g : ℝ) = 0 := by
   have h := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig
-  rw [Criteria.det_characteristicMatrix_fin_two, piPLLJacobian_trace, piPLLJacobian_det] at h
+  rw [Criteria.det_characteristicMatrix_fin_two, trace_proportionalMatrix,
+    det_proportionalMatrix] at h
   push_cast at h ⊢
   linear_combination h
 
@@ -54,7 +56,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 @[tmio M, powerlib_domain] theorem piPLLJacobian_discriminant (Kp Ki g : ℝ) :
     (piPLLJacobian Kp Ki g).trace ^ 2 - 4 * (piPLLJacobian Kp Ki g).det =
       Kp ^ 2 * g ^ 2 + 4 * Ki * g := by
-  simp only [piPLLJacobian_trace, piPLLJacobian_det]
+  simp only [trace_proportionalMatrix, det_proportionalMatrix]
   ring
 
 /-- Node/focus split at a slope `g < 0`: all eigenvalues are real (node) iff
@@ -100,8 +102,8 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 @[tmio M, powerlib_domain] theorem piPLLJacobian_not_hopf {Kp Ki g : ℝ} (hKp : Kp ≠ 0) :
     ¬ ((piPLLJacobian Kp Ki g).trace = 0 ∧ 0 < (piPLLJacobian Kp Ki g).det) := by
   rintro ⟨htr, hdet⟩
-  rw [piPLLJacobian_trace] at htr
-  rw [piPLLJacobian_det] at hdet
+  rw [trace_proportionalMatrix] at htr
+  rw [det_proportionalMatrix] at hdet
   rcases mul_eq_zero.mp htr with h | h
   · exact hKp h
   · rw [h, mul_zero, neg_zero] at hdet
@@ -115,7 +117,7 @@ imaginary eigenvalue `j √(−K_i g)`. -/
       (piPLLJacobian 0 Ki g).map (algebraMap ℝ ℂ) *ᵥ v =
         (⟨0, Real.sqrt (-(Ki * g))⟩ : ℂ) • v := by
   apply Linear.exists_eigenvector_of_root
-  rw [Criteria.det_characteristicMatrix_fin_two, piPLLJacobian_trace, piPLLJacobian_det]
+  rw [Criteria.det_characteristicMatrix_fin_two, trace_proportionalMatrix, det_proportionalMatrix]
   have hs := Real.sq_sqrt (show 0 ≤ -(Ki * g) by linarith)
   apply Complex.ext
   · simp only [pow_two, Complex.add_re, Complex.sub_re, Complex.mul_re, Complex.ofReal_re,

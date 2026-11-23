@@ -35,11 +35,11 @@ Results.
 * The saddle Jacobian is the PI-PLL Jacobian `PLL.piPLLJacobian K_p K_i c` at the slope
   `c = h'(θ_s)` (the derivative of the drift, `PLL.hasFDerivAt_piPLLField`; characteristic
   polynomial `λ² − K_p c λ − K_i c` by `Criteria.det_characteristicMatrix_fin_two` with
-  `PLL.piPLLJacobian_trace`, `PLL.piPLLJacobian_det`); its barrier frequency and damping ratio are
-  the PI-PLL's `ω_b = PLL.omegaN c K_i = √(c K_i)` and `ζ_b = PLL.zeta c K_p K_i`
-  (`= (K_p/2)√(c/K_i)`, `PLL.zeta_eq`). `lambdaB_eigen`, `saddle_stable_eigen_neg`,
-  `langer_factor`, `langer_factor_gt_one`, `langer_factor_mul_textbook`: its eigenvalues and the
-  Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`.
+  `NormalForm.BogdanovTakens.trace_proportionalMatrix`, `det_proportionalMatrix`); its barrier
+  frequency and damping ratio are the PI-PLL's `ω_b = PLL.omegaN c K_i = √(c K_i)` and
+  `ζ_b = PLL.zeta c K_p K_i` (`= (K_p/2)√(c/K_i)`, `PLL.zeta_eq`). `lambdaB_eigen`,
+  `saddle_stable_eigen_neg`, `langer_factor`, `langer_factor_gt_one`, `langer_factor_mul_textbook`:
+  its eigenvalues and the Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`.
 * `truncExp_mean`, `truncExp_mean_lt`: `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ}) < μ` for
   the exponential density with mean `μ`.
 
@@ -62,6 +62,7 @@ namespace powerlib.GFL.Noise.Escape
 
 open Real MeasureTheory Set Matrix
 open scoped ENNReal
+open powerlib.NormalForm.BogdanovTakens (proportionalMatrix)
 
 /-! ## Lyapunov pairing along trajectories (§0) -/
 
@@ -181,7 +182,7 @@ def lambdaB (Kp Ki c : ℝ) : ℝ := Kp * c / 2 + √(Kp ^ 2 * c ^ 2 / 4 + Ki * 
   have hs : 0 ≤ Kp ^ 2 * c ^ 2 / 4 + Ki * c := by positivity
   have hsq := Real.sq_sqrt hs
   ext i; fin_cases i <;>
-    simp [PLL.piPLLJacobian, lambdaB, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;>
+    simp [proportionalMatrix, lambdaB, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;>
     nlinarith [hsq]
 
 /-- The other eigenvalue `K_p c/2 − √(K_p² c²/4 + K_i c)` is negative (`K_i, c > 0`): the

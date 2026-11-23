@@ -16,8 +16,8 @@ double-well regimes, and the tilted washboard of `theorem/Potential/Barrier.lean
 
 Scope.
 * Algebraic and calculus facts about the potentials; no dynamics, noise model or engineering
-  system is formalized here (no model family). The Boltzmann weight `e^{−V/D}` (`D > 0`) is only
-  used as a function of `θ`.
+  system is formalized here (no model family). The Boltzmann weight `e^{−V/D}` (`D > 0`,
+  `Stochastic.FP.gibbs`) is only used as a function of `θ`.
 
 Source: work-sync theory/T-potential-wells.md §1.1–1.5, §1.7 (assumptions on the tilted
 washboard), theory/T-kramers-escape.md §1.4, §1.7–1.8, theory/T-nonlinear-phase-plane.md §1.4–1.5.
@@ -96,14 +96,14 @@ point `0` (`V' = −aθ + bθ³`, `hasDerivAt_doubleWell`), its strict global mi
     have : 0 < θ ^ 2 := by positivity
     nlinarith [sq_nonneg (θ ^ 2)]
 
-/-- Normalization of the Boltzmann weight of the harmonic well `kθ²/2 = doubleWell (−k) 0`:
-`Z = √(2πD/k)`. -/
+/-- Normalization of the Boltzmann weight (`Stochastic.FP.gibbs`) of the harmonic well
+`kθ²/2 = doubleWell (−k) 0`: `Z = √(2πD/k)`. -/
 @[tmio T, powerlib_foundation] theorem singleWell_normalization {k D : ℝ} (hk : 0 < k) (hD : 0 < D) :
-    ∫ θ, Real.exp (-doubleWell (-k) 0 θ / D) = √(2 * π * D / k) := by
+    ∫ θ, Stochastic.FP.gibbs (doubleWell (-k) 0) D θ = √(2 * π * D / k) := by
   have h := integral_gaussian (k / (2 * D))
-  have hfun : (fun θ => Real.exp (-doubleWell (-k) 0 θ / D)) =
+  have hfun : (fun θ => Stochastic.FP.gibbs (doubleWell (-k) 0) D θ) =
       fun θ => Real.exp (-(k / (2 * D)) * θ ^ 2) := by
-    funext θ; congr 1; simp only [doubleWell]; field_simp; ring
+    funext θ; rw [Stochastic.FP.gibbs]; congr 1; simp only [doubleWell]; field_simp; ring
   rw [hfun, h]
   congr 1
   field_simp
@@ -193,55 +193,51 @@ point `0` (`V' = −aθ + bθ³`, `hasDerivAt_doubleWell`), its strict global mi
 double well is strictly increasing on `(−∞, −√(a/b)]`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_weight_strictMonoOn_Iic {a b D : ℝ} (ha : 0 < a)
     (hb : 0 < b) (hD : 0 < D) :
-    let p := fun θ => Real.exp (-doubleWell a b θ / D)
-    StrictMonoOn p (Iic (-√(a / b))) := fun _ hx _ hy hxy =>
+    StrictMonoOn (Stochastic.FP.gibbs (doubleWell a b) D) (Iic (-√(a / b))) := fun _ hx _ hy hxy =>
   strictAnti_exp_neg_div hD (doubleWell_strictAntiOn_Iic ha hb hx hy hxy)
 
 /-- Correction (bimodality, second piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of
 the double well is strictly decreasing on `[−√(a/b), 0]`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_weight_strictAntiOn_Icc_neg {a b D : ℝ}
     (ha : 0 < a) (hb : 0 < b) (hD : 0 < D) :
-    let p := fun θ => Real.exp (-doubleWell a b θ / D)
-    StrictAntiOn p (Icc (-√(a / b)) 0) := fun _ hx _ hy hxy =>
-  strictAnti_exp_neg_div hD (doubleWell_strictMonoOn_Icc_neg ha hb hx hy hxy)
+    StrictAntiOn (Stochastic.FP.gibbs (doubleWell a b) D) (Icc (-√(a / b)) 0) :=
+  fun _ hx _ hy hxy =>
+    strictAnti_exp_neg_div hD (doubleWell_strictMonoOn_Icc_neg ha hb hx hy hxy)
 
 /-- Correction (bimodality, third piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of the
 double well is strictly increasing on `[0, √(a/b)]`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_weight_strictMonoOn_Icc_pos {a b D : ℝ}
     (ha : 0 < a) (hb : 0 < b) (hD : 0 < D) :
-    let p := fun θ => Real.exp (-doubleWell a b θ / D)
-    StrictMonoOn p (Icc 0 √(a / b)) := fun _ hx _ hy hxy =>
+    StrictMonoOn (Stochastic.FP.gibbs (doubleWell a b) D) (Icc 0 √(a / b)) := fun _ hx _ hy hxy =>
   strictAnti_exp_neg_div hD (doubleWell_strictAntiOn_Icc_pos ha hb hx hy hxy)
 
 /-- Correction (bimodality, fourth piece): for every `D > 0` the Boltzmann weight `e^{−V/D}` of
 the double well is strictly decreasing on `[√(a/b), ∞)`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_weight_strictAntiOn_Ici {a b D : ℝ} (ha : 0 < a)
     (hb : 0 < b) (hD : 0 < D) :
-    let p := fun θ => Real.exp (-doubleWell a b θ / D)
-    StrictAntiOn p (Ici √(a / b)) := fun _ hx _ hy hxy =>
+    StrictAntiOn (Stochastic.FP.gibbs (doubleWell a b) D) (Ici √(a / b)) := fun _ hx _ hy hxy =>
   strictAnti_exp_neg_div hD (doubleWell_strictMonoOn_Ici ha hb hx hy hxy)
 
 /-- For every `D > 0` the global maxima of the Boltzmann weight `e^{−V/D}` of the double well are
 exactly `±√(a/b)`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_weight_max {a b D : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hD : 0 < D) :
-    let p := fun θ => Real.exp (-doubleWell a b θ / D)
+    let p := Stochastic.FP.gibbs (doubleWell a b) D
     ∀ θ, p θ ≤ p √(a / b) ∧ (p θ = p √(a / b) ↔ θ = √(a / b) ∨ θ = -√(a / b)) := by
   intro p θ
   have hanti := strictAnti_exp_neg_div hD
   have hrval : doubleWell a b √(a / b) = -a ^ 2 / (4 * b) :=
     (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
-  refine ⟨hanti.antitone (by rw [hrval]; exact doubleWell_min hb θ), ?_⟩
-  rw [hanti.injective.eq_iff, hrval]
+  refine ⟨hanti.antitone (by rw [hrval]; exact doubleWell_min hb θ),
+    hanti.injective.eq_iff.trans ?_⟩
+  rw [hrval]
   exact doubleWell_eq_min_iff ha hb θ
 
 /-- For every `D > 0` the Boltzmann weight `e^{−V/D}` of the double well has a strict local minimum
 at `0`, below its maxima at `±√(a/b)`. -/
 @[tmio T, powerlib_foundation] theorem doubleWell_weight_zero_lt {a b D : ℝ} (ha : 0 < a)
     (hb : 0 < b) (hD : 0 < D) :
-    let p := fun θ => Real.exp (-doubleWell a b θ / D)
-    p 0 < p √(a / b) := by
-  intro p
+    Stochastic.FP.gibbs (doubleWell a b) D 0 < Stochastic.FP.gibbs (doubleWell a b) D √(a / b) := by
   apply strictAnti_exp_neg_div hD
   have hrval : doubleWell a b √(a / b) = -a ^ 2 / (4 * b) :=
     (doubleWell_eq_min_iff ha hb √(a / b)).mpr (Or.inl rfl)
@@ -325,7 +321,7 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
 (`V ≤ V₀` on the half-line along the tilt; `Stochastic.FP.gibbs_not_integrable`). -/
 @[tmio T, powerlib_foundation] theorem washboard_weight_not_integrable {V₀ α D : ℝ} (hV : 0 < V₀)
     (hα : α ≠ 0) (hD : 0 < D) :
-    ¬ Integrable (fun θ => Real.exp (-washboard V₀ α θ / D)) := by
+    ¬ Integrable (Stochastic.FP.gibbs (washboard V₀ α) D) := by
   -- on the half-line along the tilt `V ≤ V₀` (`Stochastic.FP.gibbs_not_integrable`)
   have key : ∀ θ, 0 ≤ α * θ → washboard V₀ α θ ≤ V₀ := fun θ h => by
     rw [washboard_eq]

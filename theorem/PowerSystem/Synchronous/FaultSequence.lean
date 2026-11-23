@@ -33,10 +33,10 @@ All are private implementation evidence (trajectory-level results outside the se
 of `Synchronous.Swing.family`, Rules §3a); the static areas are in
 `theorem/PowerSystem/Synchronous/EqualArea.lean`.
 * Single stage (kept next to the switched-model proofs that use them): energy conservation for
-  `D = 0` (`PhasePlane.Conservative.energy_conserved` through `SwingParams.field_eq_conservative`
-  and `SwingParams.energy_eq_conservative`) and the **exact first-swing equal-area criterion**
-  (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a post-fault trajectory
-  starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never exceeds the unstable
+  `D = 0` (`PhasePlane.Conservative.energy_conserved` through `SwingParams.field_eq_conservative`;
+  `SwingParams.energy` is the conservative energy) and the **exact first-swing equal-area
+  criterion** (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a post-fault
+  trajectory starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never exceeds the unstable
   equilibrium angle `δ_u` iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)`; bolted three-phase fault
   (`P_e^f ≡ 0`, `D = 0`): explicit during-fault trajectory (`boltedFault_speed`,
   `boltedFault_angle`) and the exact critical clearing time `t_cc = √(2M(δ_cc − δ₀)/P_m)`
@@ -83,8 +83,8 @@ variable (p : SwingParams)
 /-! ## Single stage: the exact first-swing criterion (`D = 0`)
 
 With `D = 0` the energy is conserved along every solution segment:
-`PhasePlane.Conservative.energy_conserved` through `field_eq_conservative` and
-`energy_eq_conservative`. -/
+`PhasePlane.Conservative.energy_conserved` through `field_eq_conservative` (`energy` is the
+conservative energy). -/
 
 /-- Sufficiency: if the clearing kinetic energy does not exceed the decelerating area up to the
 unstable angle, the post-fault trajectory never goes beyond `δ_u`.
@@ -107,9 +107,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [p.field_eq_conservative, hD] at hφc
   have hcons := PhasePlane.Conservative.energy_conserved hM.ne' (p.hasDerivAt_potential δc)
     (b := ts) (hφc.mono Icc_subset_Ici_self) ts ⟨hts.1, le_rfl⟩
-  rw [← p.energy_eq_conservative, h0] at hcons
-  simp only [energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self, add_zero,
-    hδs] at hcons
+  rw [h0] at hcons
+  simp only [PhasePlane.Conservative.separableEnergy, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one, potential_self, sub_zero, zero_add, hδs] at hcons
   rw [← potential_eq_integral] at hE
   have hω : φ ts 1 = 0 := by
     have : p.M / 2 * φ ts 1 ^ 2 ≤ 0 := by linarith
@@ -145,12 +145,12 @@ Implementation evidence: trajectory-level result outside the sentence language (
   have hc : 0 < c := lt_min hW0 (by linarith)
   have hφc := hφ
   rw [p.field_eq_conservative, hD] at hφc
-  have hcons : ∀ t ∈ Ici tc, p.M / 2 * φ t 1 ^ 2 + p.potential δc (φ t 0) = W0 := by
+  have hcons : ∀ t ∈ Ici tc, p.potential δc (φ t 0) + p.M / 2 * φ t 1 ^ 2 = W0 := by
     intro t ht
     have := PhasePlane.Conservative.energy_conserved hM.ne' (p.hasDerivAt_potential δc) (b := t)
       (hφc.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
-    rw [← p.energy_eq_conservative, h0] at this
-    simpa [energy] using this
+    rw [h0] at this
+    simpa [PhasePlane.Conservative.separableEnergy] using this
   -- inside the window `[δ_c, δ_u]` the kinetic energy is at least `c`
   have hkin : ∀ t ∈ Ici tc, φ t 0 ∈ Icc δc p.deltaU → c ≤ p.M / 2 * φ t 1 ^ 2 := by
     intro t ht hwin
@@ -469,9 +469,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
   rw [fault.field_eq_conservative, hD] at hφc
   have h := PhasePlane.Conservative.energy_conserved hM (fault.hasDerivAt_potential δ₀) hφc tc
     ⟨htc, le_rfl⟩
-  rw [← fault.energy_eq_conservative, h0] at h
-  simp only [SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
-    SwingParams.potential_self, add_zero] at h
+  rw [h0] at h
+  simp only [PhasePlane.Conservative.separableEnergy, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one, SwingParams.potential_self, sub_zero, zero_add] at h
   rw [SwingParams.Aacc]
   norm_num at h
   linarith

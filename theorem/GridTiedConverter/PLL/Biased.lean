@@ -26,8 +26,8 @@ Results.
   `(±π/2, δω/K_i)` (`piPLLField_eq_zero_iff`) has the Jacobian `piPLLJacobian K_p K_i 0`
   (`fderiv_piPLLField` at slope `0`), a nonzero nilpotent matrix (non-hyperbolic;
   `piPLLJacobian_zero_sq`, `piPLLJacobian_zero_ne_zero`).
-* `biasedPD` is the trigonometric detector `trigPD (−V) 0 0 0 μ` of
-  `theorem/GridTiedConverter/PLL/TrigPD.lean` and `biasedModel` its member `trigModel (−V) 0 0 0 μ`
+* `biasedPD` is the trigonometric polynomial `SpecialFunctions.trigPoly2 μ 0 (−V) 0 0` and
+  `biasedModel` the member `trigModel μ 0 (−V) 0 0` of `theorem/GridTiedConverter/PLL/TrigPD.lean`
   (definitions), so the stable and saddle equilibria are the trigonometric laws
   `trigPLL_mem_den_locallyExponentiallyStable`, `trigPLL_mem_den_unstable` at `θ₁`, `θ₂`;
   `biasedPD_apply`: `h(θ) = −V sin θ + μ`.
@@ -47,13 +47,13 @@ noncomputable section
 namespace powerlib.PLL
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
-/-- Biased sinusoidal phase detector `h(θ) = −V sin θ + μ`: the trigonometric detector of
-`theorem/GridTiedConverter/PLL/TrigPD.lean` with `a = −V`, `b = c = d = 0`, `e = μ`. -/
-abbrev biasedPD (V μ : ℝ) : ℝ → ℝ := trigPD (-V) 0 0 0 μ
+/-- Biased sinusoidal phase detector `h(θ) = −V sin θ + μ`: the trigonometric polynomial
+`SpecialFunctions.trigPoly2` with constant `μ`, `sin θ` coefficient `−V` and no other terms. -/
+abbrev biasedPD (V μ : ℝ) : ℝ → ℝ := SpecialFunctions.trigPoly2 μ 0 (-V) 0 0
 
 @[tmio M, powerlib_domain] theorem biasedPD_apply (V μ θ : ℝ) :
     biasedPD V μ θ = -(V * Real.sin θ) + μ := by
-  rw [biasedPD, trigPD_apply]
+  simp only [biasedPD, SpecialFunctions.trigPoly2]
   ring
 
 /-- `|μ| > V ≥ 0`: the biased PLL has no equilibrium.
@@ -106,8 +106,8 @@ Static evidence on the model, not a connection conclusion. -/
     · exact ⟨⟨by linarith, by linarith [Real.pi_pos]⟩, by rw [Real.sin_pi_sub, hsin]⟩
 
 /-- The PI-PLL model with the biased detector, read about the selected phase `θ*`
-(selected point `(θ*, δω / K_i)`): the trigonometric member `trigModel (−V) 0 0 0 μ`. -/
-abbrev biasedModel (V μ Kp Ki δω θ : ℝ) : PIPLL.Model := trigModel (-V) 0 0 0 μ Kp Ki δω θ
+(selected point `(θ*, δω / K_i)`): the trigonometric member `trigModel μ 0 (−V) 0 0`. -/
+abbrev biasedModel (V μ Kp Ki δω θ : ℝ) : PIPLL.Model := trigModel μ 0 (-V) 0 0 Kp Ki δω θ
 
 /-- `|μ| < V`, `K_p, K_i > 0`: the equilibrium at `θ₁ = arcsin(μ/V)` is locally
 exponentially stable, for every constant frequency offset `δω`. -/
@@ -119,7 +119,7 @@ exponentially stable, for every constant frequency offset `δω`. -/
   refine trigPLL_mem_den_locallyExponentiallyStable hKp hKi ?_ ?_
   · exact (biasedPD_apply V μ _).trans
       (by rw [SpecialFunctions.mul_sin_arcsin_div hμ.le hV, neg_add_cancel])
-  · rw [trigPDDeriv_apply]; nlinarith
+  · simp only [SpecialFunctions.trigPoly2Deriv]; nlinarith
 
 /-- `|μ| < V`, `K_i > 0`: the equilibrium at `θ₂ = π − arcsin(μ/V)` is unstable (saddle), for
 every `K_p` and every constant frequency offset `δω`. -/
@@ -131,7 +131,7 @@ every `K_p` and every constant frequency offset `δω`. -/
   refine trigPLL_mem_den_unstable hKi ?_ ?_
   · exact (biasedPD_apply V μ _).trans
       (by rw [SpecialFunctions.mul_sin_pi_sub_arcsin_div hμ.le hV, neg_add_cancel])
-  · rw [trigPDDeriv_apply]; nlinarith
+  · simp only [SpecialFunctions.trigPoly2Deriv]; nlinarith
 
 /-- `|μ| > V ≥ 0`: loss of lock on the requirement connection — no selected phase of the biased
 PLL meets the phase-locking requirement of the PI-PLL family. -/

@@ -48,6 +48,8 @@ namespace powerlib.GFL.Noise
 open Real Matrix Filter Topology
 open powerlib.PLL
 open powerlib.GFL.LCLine
+open powerlib.NormalForm.BogdanovTakens (proportionalMatrix trace_proportionalMatrix
+  det_proportionalMatrix)
 
 /-- Second-order oscillator form of the reduced PLL: if `θ̇ = K_p h(θ) + K_i η` and `η̇ = h(θ)`
 everywhere, then `θ̈ = K_p h′(θ) θ̇ + K_i h(θ)`. -/
@@ -92,7 +94,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j
   simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
     Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, piPLLJacobian, covV, portV] <;>
+  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, proportionalMatrix, covV, portV] <;>
     field_simp <;> ring
 
 /-- `covW` solves `A P + P Aᵀ + B_ω B_ωᵀ = 0`. -/
@@ -102,7 +104,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   ext i j
   simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
     Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, piPLLJacobian, covW, pllB] <;>
+  fin_cases i <;> fin_cases j <;> simp [Dynamics.signMatrix, proportionalMatrix, covW, pllB] <;>
     field_simp <;> ring
 
 /-- `tr A = −K_p g ≠ 0` and `det A = K_i g ≠ 0`: the Lyapunov operator of `A` is injective
@@ -111,7 +113,7 @@ def covW (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     (hKi : Ki ≠ 0) : (linA Kp Ki g).trace ≠ 0 ∧ (linA Kp Ki g).det ≠ 0 := by
   have h := Dynamics.signMatrix_mul_self ![1, -1]
   rw [linA, Matrix.trace_mul_cycle, h, one_mul, Matrix.det_mul, Matrix.det_mul, mul_right_comm,
-    ← Matrix.det_mul, h, Matrix.det_one, one_mul, piPLLJacobian_trace, piPLLJacobian_det]
+    ← Matrix.det_mul, h, Matrix.det_one, one_mul, trace_proportionalMatrix, det_proportionalMatrix]
   simp [hKp, hg, hKi]
 
 /-- The Lyapunov equation of the voltage channel has the unique solution `covV`. -/

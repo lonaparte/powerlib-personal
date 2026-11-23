@@ -93,11 +93,11 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
     · rintro (h | h | h) <;> rw [h] <;> norm_num
   rw [this]
 
-/-- `V''(x) = 3x² − 1`. -/
+/-- `V''(x) = 3x² − 1`: the double-well curvature `Potential.hasDerivAt_doubleWell_deriv`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_force (x : ℝ) :
-    HasDerivAt force (3 * x ^ 2 - 1) x := by
-  show HasDerivAt (fun y => y ^ 3 - y) _ x
-  convert (hasDerivAt_pow 3 x).fun_sub (hasDerivAt_id' x)
+    HasDerivAt force (3 * x ^ 2 - 1) x :=
+  ((Potential.hasDerivAt_doubleWell_deriv 1 1 x).congr_of_eventuallyEq
+    (.of_eq (funext fun y => by unfold force; ring))).congr_deriv (by ring)
 
 /-- The characteristic roots at the saddle are `(−δ ± √(δ² + 4))/2`. -/
 @[tmio T, powerlib_foundation] theorem saddle_eigenvalues (δ : ℝ) (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :

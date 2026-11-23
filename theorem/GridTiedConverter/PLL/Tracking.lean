@@ -52,6 +52,7 @@ namespace powerlib.PLL
 open Matrix Filter Set
 open scoped Topology
 open powerlib.LTI (plantOutput)
+open powerlib.NormalForm.BogdanovTakens (proportionalMatrix)
 
 /-! ## Trajectories of the linearized PLL
 
@@ -64,9 +65,9 @@ A forward trajectory of the linearized error dynamics for the grid-frequency dev
     (frequencyModel V Kp Ki).A *ᵥ x + (frequencyModel V Kp Ki).B *ᵥ u =
       ![-(V * Kp) * x 0 + Ki * x 1 - u 0, -V * x 0] := by
   ext i; fin_cases i
-  · simp [frequencyModel, piPLLJacobian, dotProduct, Fin.sum_univ_two]
+  · simp [frequencyModel, proportionalMatrix, dotProduct, Fin.sum_univ_two]
     ring
-  · simp [frequencyModel, piPLLJacobian, dotProduct, Fin.sum_univ_two]
+  · simp [frequencyModel, proportionalMatrix, dotProduct, Fin.sum_univ_two]
 
 @[tmio M, powerlib_domain] theorem frequencyModel_output (V Kp Ki : ℝ) (x : Fin 2 → ℝ)
     (u : Fin 1 → ℝ) :
@@ -107,7 +108,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
     apply HasDerivAt.hasDerivWithinAt
     convert hasDerivAt_const t (![Δφ, 0] : Fin 2 → ℝ) using 1
     ext i; fin_cases i <;>
-      simp [phaseModel, piPLLJacobian, mul_comm V]
+      simp [phaseModel, proportionalMatrix, mul_comm V]
   have h := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
   simpa using h.add_const Δφ
 

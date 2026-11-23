@@ -101,6 +101,7 @@ namespace powerlib.PLL
 open Matrix
 open powerlib.Dynamics (State)
 open powerlib.PLL.PIPLL (srf)
+open powerlib.PhasePlane.Conservative (separableEnergy)
 
 /-- Shifted PLL Hamiltonian `V(1 − cos θ) + ½ K_i (η − η*)²`: the PI-PLL energy of the SRF
 potential. -/
@@ -117,7 +118,7 @@ abbrev pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 :=
 
 @[tmio M, powerlib_domain] theorem pllHamiltonian_nonneg {V Ki : ℝ} (hV : 0 ≤ V) (hKi : 0 ≤ Ki)
     (ηs : ℝ) (x : State 2) : 0 ≤ pllHamiltonian V Ki ηs x := by
-  simp only [pllHamiltonian, piPLLEnergy, srfPotential]
+  simp only [pllHamiltonian, piPLLEnergy, separableEnergy, srfPotential]
   have h1 : 0 ≤ 1 - Real.cos (x 0) := by linarith [Real.cos_le_one (x 0)]
   positivity
 
@@ -129,7 +130,7 @@ there; static evidence on the model, not a connection conclusion (Lyapunov stabi
 `PLLPH.mem_den_lyapunovStable`). -/
 @[tmio M, powerlib_domain] theorem pllHamiltonian_shifted_eq_zero {V Ki : ℝ} (δω : ℝ) :
     pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 := by
-  simp [pllHamiltonian, piPLLEnergy, srfPotential, PhasePlane.mk]
+  simp [pllHamiltonian, piPLLEnergy, separableEnergy, srfPotential, PhasePlane.mk]
 
 /-- The shifted Hamiltonian is nonincreasing along the SRF-PLL with constant offset `δω`
 (`K_p ≥ 0`, `K_i > 0`): `Ḣ = −K_p h(θ)² ≤ 0`. -/
@@ -142,51 +143,23 @@ there; static evidence on the model, not a connection conclusion (Lyapunov stabi
   nlinarith [sq_nonneg (srfPD V (x 0))]
 
 /-- At a well bottom `cos θ* = 1` (`V, K_i > 0`) the Hamiltonian with set point `η*` has a strict
-local minimum at `(θ*, η*)`. -/
+local minimum at `(θ*, η*)`: `θ*` is a strict local minimum of the potential `V(1 − cos θ)`
+(`cos θ < 1` for `0 < |θ − θ*| < π`), so of the separable energy
+(`PhasePlane.Conservative.eventually_separableEnergy_lt`). -/
 @[tmio M, powerlib_domain] theorem pllPH_isStrictLocalMin {V Kp Ki ηs θ : ℝ} (hKp : 0 ≤ Kp)
     (hV : 0 < V) (hKi : 0 < Ki) (hθ : Real.cos θ = 1) :
     (pllPH V Kp Ki ηs hKp).IsStrictLocalMin (PhasePlane.mk θ ηs) := by
+  refine PhasePlane.Conservative.eventually_separableEnergy_lt hKi ?_
   have hsθ : Real.sin θ = 0 := Real.sin_eq_zero_iff_cos_eq.mpr (.inl hθ)
-  have hball : Metric.ball (PhasePlane.mk θ ηs) Real.pi ∈ nhds (PhasePlane.mk θ ηs) :=
-    Metric.ball_mem_nhds _ Real.pi_pos
-  rw [PH.NonlinearModel.IsStrictLocalMin, eventually_nhdsWithin_iff]
-  filter_upwards [hball] with x hx hne
-  have hx0 : |x 0 - θ| < Real.pi := by
-    have h1 : |x 0 - θ| ≤ dist x (PhasePlane.mk θ ηs) := by
-      have := PiLp.dist_apply_le (p := 2) x (PhasePlane.mk θ ηs) 0
-      rw [Real.dist_eq] at this
-      simpa [PhasePlane.mk] using this
-    rw [Metric.mem_ball] at hx
-    exact lt_of_le_of_lt h1 hx
-  show pllHamiltonian V Ki ηs (PhasePlane.mk θ ηs) < pllHamiltonian V Ki ηs x
-  have hzero : pllHamiltonian V Ki ηs (PhasePlane.mk θ ηs) = 0 := by
-    simp [pllHamiltonian, piPLLEnergy, srfPotential, PhasePlane.mk, hθ]
-  rw [hzero]
-  simp only [pllHamiltonian, piPLLEnergy, srfPotential]
-  have hcos_shift : Real.cos (x 0) = Real.cos (x 0 - θ) := by
-    rw [Real.cos_sub, hθ, hsθ]
-    ring
-  have hcos : Real.cos (x 0) ≤ 1 := Real.cos_le_one _
-  by_cases h0 : x 0 - θ = 0
-  · have h1 : x 1 ≠ ηs := by
-      intro h1; apply hne
-      rw [Set.mem_singleton_iff, PhasePlane.ext_iff']
-      simp [PhasePlane.mk, h1]
-      linarith
-    have : 0 < (x 1 - ηs) ^ 2 := by
-      have := sub_ne_zero.mpr h1; positivity
-    have hc1 : Real.cos (x 0) = 1 := by rw [hcos_shift, h0, Real.cos_zero]
-    rw [hc1]
-    nlinarith
-  · have hlt : Real.cos (x 0) < 1 := by
-      have hx0' := abs_lt.mp hx0
-      have hne1 : Real.cos (x 0 - θ) ≠ 1 := fun h1 =>
-        h0 ((Real.cos_eq_one_iff_of_lt_of_lt (by linarith [Real.pi_pos])
-          (by linarith [Real.pi_pos])).mp h1)
-      rw [hcos_shift]
-      exact lt_of_le_of_ne (Real.cos_le_one _) hne1
-    have : 0 ≤ (x 1 - ηs) ^ 2 := sq_nonneg _
-    nlinarith
+  rw [eventually_nhdsWithin_iff]
+  filter_upwards [Metric.ball_mem_nhds θ Real.pi_pos] with x hx hne
+  have hx' := abs_lt.mp (show |x - θ| < Real.pi by rwa [Metric.mem_ball, Real.dist_eq] at hx)
+  have hne1 : Real.cos (x - θ) ≠ 1 := fun h1 => sub_ne_zero.mpr hne
+    ((Real.cos_eq_one_iff_of_lt_of_lt (by linarith [Real.pi_pos])
+      (by linarith [Real.pi_pos])).mp h1)
+  have hcos : Real.cos x = Real.cos (x - θ) := by rw [Real.cos_sub, hθ, hsθ]; ring
+  rw [srfPotential, srfPotential, hθ, sub_self, mul_zero, hcos]
+  exact mul_pos hV (sub_pos.mpr (lt_of_le_of_ne (Real.cos_le_one _) hne1))
 
 /-- Lossless loop (`K_p = 0`, constant offset, `K_i ≠ 0`): the shifted Hamiltonian is a first
 integral, constant along every solution segment (T-invariant-coordinates §1.1 / §1.4: a strict
@@ -562,7 +535,7 @@ equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a s
         linarith
       · show -pllHamiltonian m.V m.Ki m.ηs (PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2)) <
           -pllHamiltonian m.V m.Ki m.ηs m.point
-        simp only [pllHamiltonian, piPLLEnergy, srfPotential, Model.point,
+        simp only [pllHamiltonian, piPLLEnergy, separableEnergy, srfPotential, Model.point,
           PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, add_zero, add_sub_cancel_left,
           sub_self]
         have : 0 < m.Ki / 2 * (ε / 2) ^ 2 := by positivity

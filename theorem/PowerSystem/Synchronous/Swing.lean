@@ -69,8 +69,8 @@ Results (static evidence on the model).
   stiffness `K = k₂ cos(δ₀ − k₃)`: the linearization has `M det(sI − J) = M s² + D s + K`; it is
   Hurwitz iff `D > 0` and `K > 0`; its damping ratio (`Criteria.dampingRatio`) is
   `D / (2 √(M K))`; exact overdamping threshold.
-* `field_eq_conservative`, `energy_eq_conservative` — the swing field and the energy
-  `W = ½ M ω² + U(δ)` are the conservative phase-plane field and energy
+* `field_eq_conservative`, `energy` — the swing field is the conservative phase-plane field and
+  the energy `W = ½ M ω² + U(δ)` is the conservative energy `PhasePlane.Conservative.energy`
   (`theorem/PhasePlane/Conservative.lean`) with mass `M`, damping `D` and potential
   `U(δ) = ∫_{δ₀}^{δ} (P_e − P_m)` (`hasDerivAt_potential`); the energy balance `Ẇ = −D ω²`,
   conservation and monotone decay are the conservative ones (`PhasePlane.Conservative.energy_lie`,
@@ -486,19 +486,12 @@ period of the power-angle curve). Static evidence on the model, not a connection
 def potential (δ₀ δ : ℝ) : ℝ :=
   -(p.Pm - p.k₁) * (δ - δ₀) - p.k₂ * (Real.cos (δ - p.k₃) - Real.cos (δ₀ - p.k₃))
 
-/-- Kinetic plus potential energy `W(δ, ω) = ½ M ω² + U(δ)`. -/
-def energy (δ₀ : ℝ) (x : State 2) : ℝ := p.M / 2 * x 1 ^ 2 + p.potential δ₀ (x 0)
-
-/-- The swing energy is the conservative energy `PhasePlane.Conservative.energy` with mass `M`
-and the potential `U = potential δ₀`; with `field_eq_conservative` and `hasDerivAt_potential`
-(`U' = P_e − P_m`) the energy balance `Ẇ = −D ω²`, its sign, conservation and monotone decay are
-`PhasePlane.Conservative.energy_lie`, `energy_lie_nonpos`, `energy_conserved` and
-`energy_antitone`. -/
-@[tmio M, powerlib_domain] theorem energy_eq_conservative (δ₀ : ℝ) :
-    p.energy δ₀ = PhasePlane.Conservative.energy p.M (p.potential δ₀) := by
-  funext x
-  simp only [energy, PhasePlane.Conservative.energy, PhasePlane.Conservative.separableEnergy]
-  ring
+/-- Kinetic plus potential energy `W(δ, ω) = U(δ) + ½ M ω²`: the conservative energy
+`PhasePlane.Conservative.energy` with mass `M` and the potential `U = potential δ₀`. With
+`field_eq_conservative` and `hasDerivAt_potential` (`U' = P_e − P_m`) the energy balance
+`Ẇ = −D ω²`, its sign, conservation and monotone decay are `PhasePlane.Conservative.energy_lie`,
+`energy_lie_nonpos`, `energy_conserved` and `energy_antitone`. -/
+abbrev energy (δ₀ : ℝ) : State 2 → ℝ := PhasePlane.Conservative.energy p.M (p.potential δ₀)
 
 @[tmio M, powerlib_domain] theorem hasDerivAt_potential (δ₀ δ : ℝ) :
     HasDerivAt (p.potential δ₀) (p.Pe δ - p.Pm) δ := by
@@ -513,9 +506,8 @@ and the potential `U = potential δ₀`; with `field_eq_conservative` and `hasDe
   simp [potential]
 
 @[tmio M, powerlib_domain] theorem contDiff_energy (δ₀ : ℝ) {k : WithTop ℕ∞} :
-    ContDiff ℝ k (p.energy δ₀) := by
-  unfold energy potential
-  fun_prop
+    ContDiff ℝ k (p.energy δ₀) :=
+  PhasePlane.Conservative.contDiff_separableEnergy (by unfold potential; fun_prop) _ _
 
 /-- The potential is positive on a punctured neighbourhood of an equilibrium angle where the
 synchronizing coefficient stays positive. -/
@@ -879,7 +871,7 @@ conclusion. -/
 
 @[tmio M, powerlib_domain] private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :
     p.energy δ₀ (PhasePlane.mk (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
-  simp [SwingParams.energy]
+  simp [PhasePlane.Conservative.separableEnergy]
 
 /-- At a fold of the power-angle curve the energy takes values below its value at `(δ*, 0)`
 arbitrarily close to it (on the side where the accelerating power pushes). -/
@@ -887,7 +879,8 @@ arbitrarily close to it (on the side where the accelerating power pushes). -/
     (hK : m.p.syncCoeff m.δ = 0) (ha : m.p.Pm - m.p.k₁ ≠ 0) :
     ∀ ε > 0, ∃ x, ‖x - m.point‖ < ε ∧ m.p.energy m.δ x < m.p.energy m.δ m.point := by
   intro ε hε
-  have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
+  have hE0 : m.p.energy m.δ m.point = 0 := by
+    simp [PhasePlane.Conservative.separableEnergy, Model.point]
   rw [hE0]
   have hε2 : 0 < ε / 2 := by linarith
   rcases lt_or_gt_of_ne ha with hneg | hpos
@@ -920,7 +913,8 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
   have hC : ContDiff ℝ 1 m.p.field := m.p.contDiff_field
   have hEd : Differentiable ℝ (m.p.energy m.δ) :=
     (m.p.contDiff_energy (k := 1) _).differentiable one_ne_zero
-  have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
+  have hE0 : m.p.energy m.δ m.point = 0 := by
+    simp [PhasePlane.Conservative.separableEnergy, Model.point]
   have hD : 0 < m.p.D := by
     rcases lt_trichotomy m.p.D 0 with hD | hD | hD
     · exact absurd hlas.1 ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inr hD))))
@@ -928,15 +922,15 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
         (V := fun x => -m.p.energy m.δ x) (ρ := 1) hC hEd.neg one_pos (fun x _ => ?_)
         (fun ε hε => ⟨PhasePlane.mk (m.δ + 0) (ε / 2), ?_, ?_⟩) hlas
-      · rw [fderiv_fun_neg, m.p.energy_eq_conservative, m.p.field_eq_conservative]
+      · rw [fderiv_fun_neg, m.p.field_eq_conservative]
         simp [PhasePlane.Conservative.energy_lie hM.ne' (m.p.hasDerivAt_potential m.δ), hD]
       · refine (PhasePlane.norm_mk_sub_mk_le _ _ _ _).trans_lt ?_
         rw [add_sub_cancel_left, sub_zero, abs_zero, zero_add, abs_of_pos (by linarith)]
         linarith
       · show -m.p.energy m.δ (PhasePlane.mk (m.δ + 0) (ε / 2)) < -m.p.energy m.δ m.point
         rw [hE0, neg_zero, neg_lt_zero]
-        simp only [SwingParams.energy, PhasePlane.mk_apply_one, PhasePlane.mk_apply_zero, add_zero,
-          SwingParams.potential_self]
+        simp only [PhasePlane.Conservative.separableEnergy, PhasePlane.mk_apply_one,
+          PhasePlane.mk_apply_zero, add_zero, SwingParams.potential_self, sub_zero, zero_add]
         positivity
     · exact hD
   refine ⟨hD, ?_⟩
@@ -959,7 +953,7 @@ equilibria; and at a fold of the curve the dissipated energy takes negative valu
         linarith
     · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := m.p.energy m.δ) (ρ := 1) hC
         hEd one_pos (fun x _ => ?_) (fold_seeds hb hK ha) hlas
-      rw [m.p.energy_eq_conservative, m.p.field_eq_conservative]
+      rw [m.p.field_eq_conservative]
       exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (m.p.hasDerivAt_potential _) x
   · exact hK
 
@@ -1130,7 +1124,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
           (W := fun x : State 2 => a * (m.p.M * x 1 + m.p.D * x 0)) (r := 1) hC
           (m.p.contDiff_energy _) hW one_pos (fun x _ => ?_) (fold_seeds hb hK ha)
           (fun x hx hEx => ?_) hls
-        · rw [m.p.energy_eq_conservative, m.p.field_eq_conservative]
+        · rw [m.p.field_eq_conservative]
           exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD (m.p.hasDerivAt_potential _) x
         · have hd : HasFDerivAt (fun y : State 2 => a * (m.p.M * y 1 + m.p.D * y 0))
               (a • (m.p.M • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
@@ -1153,10 +1147,11 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
             linarith
           have hs0 : s₀ ≠ 0 := by
             intro h
-            have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
+            have hE0 : m.p.energy m.δ m.point = 0 := by
+              simp [PhasePlane.Conservative.separableEnergy, Model.point]
             rw [hE0] at hEx
-            have hEx' : m.p.M / 2 * x 1 ^ 2 + m.p.potential m.δ (x 0) < 0 := hEx
-            rw [hx0, h, add_zero, SwingParams.potential_self] at hEx'
+            have hEx' : m.p.potential m.δ (x 0) + m.p.M / 2 * (x 1 - 0) ^ 2 < 0 := hEx
+            rw [hx0, h, add_zero, SwingParams.potential_self, sub_zero] at hEx'
             have : 0 ≤ m.p.M / 2 * x 1 ^ 2 := by positivity
             linarith
           have hc := cos_lt_one_of_abs_le_one hs0 hs1

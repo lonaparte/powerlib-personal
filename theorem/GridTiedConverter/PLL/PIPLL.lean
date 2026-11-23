@@ -1,5 +1,7 @@
 import theorem.Criteria.Hurwitz2
 import theorem.PhasePlane.Planar
+import theorem.PhasePlane.Conservative
+import theorem.NormalForm.BogdanovTakens
 import theorem.Linear.EigenMap
 
 /-! # PI phase-locked loop with a general phase-detector characteristic: the static model
@@ -35,8 +37,10 @@ Results.
 * Equilibria (`K_i ≠ 0`): exactly `{(θ*, δω / K_i) : h(θ*) = 0}`, for **every** constant `δω`.
   Hence existence of an equilibrium does not depend on `δω`. With `K_i = 0` an equilibrium needs
   `δω = 0` (`piPLLField_point_eq_zero_iff` covers both cases at the selected point).
-* Jacobian at any point: `[[K_p g, K_i], [g, 0]]` with `g = h'(θ)`; trace `K_p g`, determinant
-  `−K_i g` (so `K_i · tr + K_p · det = 0`); Hurwitz iff `K_p g < 0 ∧ K_i g < 0`.
+* Jacobian at any point: `[[K_p g, K_i], [g, 0]]` with `g = h'(θ)`, the proportional structure
+  `NormalForm.BogdanovTakens.proportionalMatrix K_p K_i g` (`piPLLJacobian`); trace `K_p g`,
+  determinant `−K_i g` (`trace_proportionalMatrix`, `det_proportionalMatrix`; so
+  `K_i · tr + K_p · det = 0`); Hurwitz iff `K_p g < 0 ∧ K_i g < 0`.
 * `h'(θ*) = 0` (`K_i ≠ 0`): the Jacobian at the equilibrium `(θ*, δω / K_i)` is
   `piPLLJacobian K_p K_i 0 = [[0, K_i], [0, 0]]` (`fderiv_piPLLField` at `g = 0`), a nonzero
   nilpotent matrix (`piPLLJacobian_zero_ne_zero`, `piPLLJacobian_zero_sq`): a double zero
@@ -64,6 +68,8 @@ inconsistent with §1.7–§1.10 and this module follows §1.7.
 noncomputable section
 namespace powerlib.PLL
 open Matrix
+open powerlib.NormalForm.BogdanovTakens (proportionalMatrix trace_proportionalMatrix
+  det_proportionalMatrix)
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-! ## The model -/
@@ -73,8 +79,11 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 def piPLLField (h : ℝ → ℝ) (Kp Ki δω : ℝ) (x : ℝ²) : ℝ² :=
   WithLp.toLp 2 ![Kp * h (x 0) + Ki * x 1 - δω, h (x 0)]
 
-/-- The Jacobian matrix `[[K_p g, K_i], [g, 0]]`, `g = h'(θ)`. -/
-def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki; g, 0]
+/-- The Jacobian matrix `[[K_p g, K_i], [g, 0]]`, `g = h'(θ)`: the proportional structure of
+`NormalForm.BogdanovTakens` (trace `trace_proportionalMatrix`, determinant
+`det_proportionalMatrix`). -/
+abbrev piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  NormalForm.BogdanovTakens.proportionalMatrix Kp Ki g
 
 @[tmio M, simp, powerlib_domain] theorem piPLLField_apply_zero (h : ℝ → ℝ) (Kp Ki δω : ℝ)
     (x : ℝ²) : piPLLField h Kp Ki δω x 0 = Kp * h (x 0) + Ki * x 1 - δω := rfl
@@ -136,9 +145,9 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
   ext v i
   rw [Matrix.ofLp_toEuclideanCLM]
   fin_cases i
-  · simp [piPLLJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  · simp [proportionalMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
     ring
-  · simp [piPLLJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  · simp [proportionalMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- The Jacobian of the field (as computed by `fderiv`). -/
 @[tmio M, powerlib_domain] theorem fderiv_piPLLField {h : ℝ → ℝ} {Kp Ki δω g : ℝ} {x : ℝ²}
@@ -147,25 +156,17 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki g) :=
   (hasFDerivAt_piPLLField hh).fderiv
 
-@[tmio M, simp, powerlib_domain] theorem piPLLJacobian_trace (Kp Ki g : ℝ) :
-    (piPLLJacobian Kp Ki g).trace = Kp * g := by
-  simp [piPLLJacobian, Matrix.trace_fin_two]
-
-@[tmio M, simp, powerlib_domain] theorem piPLLJacobian_det (Kp Ki g : ℝ) :
-    (piPLLJacobian Kp Ki g).det = -(Ki * g) := by
-  simp [piPLLJacobian, Matrix.det_fin_two]
-
 /-- Structural identity: trace and determinant are both proportional to `g`,
 `K_i · tr J + K_p · det J = 0` for every `g`. -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_trace_det_relation (Kp Ki g : ℝ) :
     Ki * (piPLLJacobian Kp Ki g).trace + Kp * (piPLLJacobian Kp Ki g).det = 0 := by
-  simp only [piPLLJacobian_trace, piPLLJacobian_det]
+  simp only [trace_proportionalMatrix, det_proportionalMatrix]
   ring
 
 /-- Hurwitz test of the Jacobian: `IsHurwitz ↔ K_p g < 0 ∧ K_i g < 0`. -/
 @[tmio TM, powerlib_domain] theorem piPLLJacobian_isHurwitz_iff (Kp Ki g : ℝ) :
     LinearSystems.IsHurwitz (piPLLJacobian Kp Ki g) ↔ Kp * g < 0 ∧ Ki * g < 0 := by
-  rw [Criteria.isHurwitz_fin_two_iff, piPLLJacobian_trace, piPLLJacobian_det, neg_pos]
+  rw [Criteria.isHurwitz_fin_two_iff, trace_proportionalMatrix, det_proportionalMatrix, neg_pos]
 
 /-- At `g = 0` the Jacobian is `[[0, K_i], [0, 0]]`, which squares to zero. -/
 @[tmio M, powerlib_domain] theorem piPLLJacobian_zero_sq (Kp Ki : ℝ) :
@@ -177,7 +178,7 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
     piPLLJacobian Kp Ki 0 ≠ 0 := by
   intro h
   have := congrFun (congrFun h 0) 1
-  simp [piPLLJacobian] at this
+  simp [proportionalMatrix] at this
   exact hKi this
 
 /-- At `g = 0` the Jacobian is not Hurwitz (its trace and determinant vanish). -/
@@ -310,28 +311,11 @@ def srfPotential (V θ : ℝ) : ℝ := V * (1 - Real.cos θ)
   (((Real.hasDerivAt_cos θ).const_sub 1).const_mul V).congr_deriv (by simp [srfPD])
 
 /-- The PI-PLL energy `E(θ, η) = V(θ) + (K_i / 2) (η − η*)²` for a potential `V` of the detector
-(`V′ = −h`) and an integrator set point `η*`. -/
-def piPLLEnergy (V : ℝ → ℝ) (Ki ηs : ℝ) (x : ℝ²) : ℝ := V (x 0) + Ki / 2 * (x 1 - ηs) ^ 2
-
-/-- Where `V′ = −h` at `θ`, the energy has the derivative `(−h(θ), K_i (η − η*))`. -/
-@[tmio M, powerlib_domain] theorem hasFDerivAt_piPLLEnergy {h V : ℝ → ℝ} {Ki ηs : ℝ} {x : ℝ²}
-    (hV : HasDerivAt V (-h (x 0)) (x 0)) :
-    HasFDerivAt (piPLLEnergy V Ki ηs)
-      ((-h (x 0)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
-        (Ki * (x 1 - ηs)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) x := by
-  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
-  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
-  refine ((hV.comp_hasFDerivAt x h0).add
-    (((h1.sub_const ηs).pow 2).const_mul (Ki / 2))).congr_fderiv ?_
-  ext v
-  simp
-  ring
-
-@[tmio M, powerlib_domain] theorem contDiff_piPLLEnergy {V : ℝ → ℝ} (hV : ContDiff ℝ 1 V)
-    (Ki ηs : ℝ) : ContDiff ℝ 1 (piPLLEnergy V Ki ηs) :=
-  (hV.comp ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).contDiff)).add
-    (contDiff_const.mul
-      ((((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).contDiff).sub contDiff_const).pow 2))
+(`V′ = −h`) and an integrator set point `η*`: the separable energy of
+`PhasePlane.Conservative` (derivative `hasFDerivAt_separableEnergy`, `∇E = (−h(θ), K_i (η − η*))`;
+smoothness `contDiff_separableEnergy`). -/
+abbrev piPLLEnergy (V : ℝ → ℝ) (Ki ηs : ℝ) : ℝ² → ℝ :=
+  PhasePlane.Conservative.separableEnergy V Ki ηs
 
 /-- **Energy rate of the PI-PLL** (T-gfl-ph §1.2, T-pll-ph §1.2), pointwise, for every
 phase-detector characteristic `h`, every gain and every set point `η*`: where `V′ = −h` at `θ`
@@ -345,7 +329,7 @@ conclusion. -/
     (hV : HasDerivAt V (-h (x 0)) (x 0)) :
     fderiv ℝ (piPLLEnergy V Ki ηs) x (piPLLField h Kp Ki δω x) =
       -(Kp * h (x 0) ^ 2) + h (x 0) * (δω - Ki * ηs) := by
-  rw [(hasFDerivAt_piPLLEnergy hV).fderiv]
+  rw [(PhasePlane.Conservative.hasFDerivAt_separableEnergy hV).fderiv]
   simp [piPLLField]
   ring
 

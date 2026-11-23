@@ -24,8 +24,9 @@ Classical machine (`classicalSM`, T-ph §1.7 (1.12)), continuous time:
 * State order `x = (δ, p)`: rotor angle `δ` (electrical radians, relative to the infinite bus)
   and angular momentum `p = M ω` (`ω` the speed deviation). Parameters `M > 0`, `D ≥ 0`,
   synchronizing coefficient `b > 0` (`b = E V / X`), mechanical power `P_m ∈ ℝ`.
-* Hamiltonian `H(δ, p) = p² / (2M) − P_m δ − b cos δ`, i.e. electrical potential
-  `V_el(δ) = −b cos δ` so that `P_e = ∂V_el/∂δ = b sin δ`. Gradient `(b sin δ − P_m, p / M)`.
+* Hamiltonian `H(δ, p) = p² / (2M) − P_m δ − b cos δ` (`PhasePlane.Conservative.separableEnergy`
+  with `k = 1/M`), i.e. electrical potential `V_el(δ) = −b cos δ` so that
+  `P_e = ∂V_el/∂δ = b sin δ`. Gradient `(b sin δ − P_m, p / M)`.
 * pH data `J = !![0, 1; −1, 0]`, `R = diag(0, D)` (the note's `R₂₂ = D`, no `M⁻²`),
   `g = (0, 1)ᵀ`; external torque/power input `u`, output `y = ω`.
   Dynamics `δ̇ = ω`, `ṗ = P_m − b sin δ − D ω + u` (swing equation).
@@ -174,23 +175,25 @@ structure ClassicalSMParams where
   D_nonneg : 0 ≤ D
   b_pos : 0 < b
 
-/-- `H(δ, p) = p² / (2M) − P_m δ − b cos δ`. -/
-def classicalSM_H (p : ClassicalSMParams) (x : State 2) : ℝ :=
-  1 / (2 * p.M) * x 1 ^ 2 - p.Pm * x 0 - p.b * Real.cos (x 0)
+/-- `H(δ, p) = −P_m δ − b cos δ + p² / (2M)`: the separable energy
+`PhasePlane.Conservative.separableEnergy` with potential `−P_m δ − b cos δ` and `k = 1/M`. -/
+abbrev classicalSM_H (p : ClassicalSMParams) : State 2 → ℝ :=
+  PhasePlane.Conservative.separableEnergy (fun δ => -p.Pm * δ - p.b * Real.cos δ) (1 / p.M) 0
 
 /-- `∇H = (b sin δ − P_m, p / M)`. -/
 def classicalSM_dH (p : ClassicalSMParams) (x : State 2) : State 2 :=
   WithLp.toLp 2 ![p.b * Real.sin (x 0) - p.Pm, x 1 / p.M]
 
+/-- The gradient of the separable energy (`PhasePlane.Conservative.hasGradientAt_separableEnergy`)
+with `(−P_m δ − b cos δ)' = b sin δ − P_m`. -/
 @[tmio M, powerlib_domain] theorem classicalSM_hasGradientAt (p : ClassicalSMParams) (x : State 2) :
     HasGradientAt (classicalSM_H p) (classicalSM_dH p x) x := by
-  have h1 := (((smCoord 1).hasFDerivAt (x := x)).pow 2).const_mul (1 / (2 * p.M))
-  have h0 := ((smCoord 0).hasFDerivAt (x := x)).const_mul p.Pm
-  have hc := ((Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x
-    ((smCoord 0).hasFDerivAt (x := x))).const_mul p.b
-  refine hasGradientAt_of_hasFDerivAt ((h1.sub h0).sub hc) (fun v => ?_)
-  simp [classicalSM_dH, dotProduct, Fin.sum_univ_two]
-  ring
+  have hU : HasDerivAt (fun δ => -p.Pm * δ - p.b * Real.cos δ)
+      (p.b * Real.sin (x 0) - p.Pm) (x 0) :=
+    (((hasDerivAt_id' _).const_mul _).sub ((Real.hasDerivAt_cos _).const_mul _)).congr_deriv
+      (by ring)
+  convert PhasePlane.Conservative.hasGradientAt_separableEnergy (k := 1 / p.M) (b := 0) hU using 1
+  simp [classicalSM_dH, PhasePlane.mk, div_eq_inv_mul]
 
 /-- The classical machine (T-ph (1.12)) as a nonlinear pH model. -/
 def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
@@ -239,7 +242,7 @@ so T-ph §1.1 structural assumption 3 fails for (1.12): at `p = 0` it is the til
   rintro ⟨c, hc⟩
   refine Potential.Barrier.washboard_not_bddBelow (A := p.b) (φ := 0) hPm ⟨c, ?_⟩
   rintro _ ⟨δ, rfl⟩
-  simpa [classicalSM, classicalSM_H, Potential.Barrier.washboard] using
+  simpa [classicalSM, PhasePlane.Conservative.separableEnergy, Potential.Barrier.washboard] using
     hc ⟨WithLp.toLp 2 ![δ, 0], rfl⟩
 
 /-- Equilibria of the unforced classical machine: `b sin δ = P_m` and `p = 0`. -/
@@ -310,39 +313,18 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     have := hmono ⟨le_rfl, hδs.2.le⟩ ⟨hgt.le, hδ.2.le⟩ hgt
     linarith
 
-/-- `(δ*, 0)` with `b sin δ* = P_m`, `|δ*| < π/2` is a strict local minimum of `H`. -/
+/-- `(δ*, 0)` with `b sin δ* = P_m`, `|δ*| < π/2` is a strict local minimum of `H`: `δ*` is a
+strict local minimum of the potential (`classicalSM_potential_pos`), hence `(δ*, 0)` one of the
+separable energy (`PhasePlane.Conservative.eventually_separableEnergy_lt`). -/
 @[tmio M, powerlib_domain] theorem classicalSM_isStrictLocalMin (p : ClassicalSMParams) {δs : ℝ}
     (hδs : δs ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)) (heq : p.b * Real.sin δs = p.Pm) :
     (classicalSM p).IsStrictLocalMin (classicalSM_equilibrium δs) := by
-  have hopen : IsOpen {x : State 2 | x 0 ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)} :=
-    isOpen_Ioo.preimage (smCoord 0).continuous
-  have hmem : classicalSM_equilibrium δs ∈
-      {x : State 2 | x 0 ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)} := by
-    simpa [classicalSM_equilibrium] using hδs
-  have hev := hopen.mem_nhds hmem
-  refine eventually_nhdsWithin_iff.mpr ?_
-  filter_upwards [hev] with x hx hne
-  have hM := p.M_pos
-  have hpot : 0 ≤ -p.Pm * (x 0 - δs) - p.b * (Real.cos (x 0) - Real.cos δs) := by
-    by_cases h0 : x 0 = δs
-    · simp [h0]
-    · exact (classicalSM_potential_pos p hδs heq hx h0).le
-  have hdiff : (classicalSM p).H x - (classicalSM p).H (classicalSM_equilibrium δs) =
-      (-p.Pm * (x 0 - δs) - p.b * (Real.cos (x 0) - Real.cos δs)) + 1 / (2 * p.M) * x 1 ^ 2 := by
-    simp [classicalSM, classicalSM_H, classicalSM_equilibrium]
-    ring
-  rw [← sub_pos, hdiff]
-  by_cases h0 : x 0 = δs
-  · have h1 : x 1 ≠ 0 := by
-      intro h1
-      apply hne
-      ext i
-      fin_cases i <;> simp [classicalSM_equilibrium, h0, h1]
-    have : 0 < 1 / (2 * p.M) * x 1 ^ 2 := by positivity
-    linarith
-  · have := classicalSM_potential_pos p hδs heq hx h0
-    have : 0 ≤ 1 / (2 * p.M) * x 1 ^ 2 := by positivity
-    linarith
+  have hU : ∀ᶠ δ in 𝓝[≠] δs, -p.Pm * δs - p.b * Real.cos δs < -p.Pm * δ - p.b * Real.cos δ := by
+    filter_upwards [mem_nhdsWithin_of_mem_nhds (isOpen_Ioo.mem_nhds hδs), self_mem_nhdsWithin]
+      with δ hδ hne
+    linarith [classicalSM_potential_pos p hδs heq hδ hne]
+  exact PhasePlane.Conservative.eventually_separableEnergy_lt
+    (U := fun δ => -p.Pm * δ - p.b * Real.cos δ) (b := 0) (one_div_pos.mpr p.M_pos) hU
 
 @[tmio M, powerlib_domain] theorem classicalSM_contDiff_dH (p : ClassicalSMParams) :
     ContDiff ℝ 1 (classicalSM p).dH := by
@@ -647,8 +629,9 @@ machine is passive. -/
   have hM := m.p.M_pos
   have hb := m.p.b_pos
   have hc := Real.cos_le_one (x 0)
-  have hx : 0 ≤ 1 / (2 * m.p.M) * x 1 ^ 2 := by positivity
-  simp only [classicalSM, classicalSM_H, hPm, zero_mul, sub_zero]
+  have hx : 0 ≤ 1 / m.p.M / 2 * x 1 ^ 2 := by positivity
+  simp only [classicalSM, PhasePlane.Conservative.separableEnergy, hPm, neg_zero, zero_mul,
+    zero_sub, sub_zero]
   nlinarith
 
 /-- Every translation of the classical-machine family is sound: the flow translations are the
@@ -692,7 +675,7 @@ Static evidence on the model, not a connection conclusion. -/
     (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) (s w : ℝ) :
     classicalSM_H p (WithLp.toLp 2 ![δs + s, w]) - classicalSM_H p (classicalSM_equilibrium δs) =
       1 / (2 * p.M) * w ^ 2 - p.Pm * (s - Real.sin s) := by
-  simp only [classicalSM_H, classicalSM_equilibrium]
+  simp only [PhasePlane.Conservative.separableEnergy, classicalSM_equilibrium]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [Real.cos_add, hcos, ← heq]
   ring

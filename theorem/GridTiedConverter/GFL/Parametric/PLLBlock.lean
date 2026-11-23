@@ -44,6 +44,7 @@ noncomputable section
 namespace powerlib.GFL.Parametric.PLLBlock
 open powerlib.GFL.DCLink
 open Matrix
+open powerlib.NormalForm.BogdanovTakens (proportionalMatrix)
 
 /-- The frozen PLL block as a SISO linear plant (input `θ_g`, output `θ`): the phase model of the
 linearized PLL (`PLL.phaseModel`, output `θ̂`) with the feedthrough `−θ_g`. -/
@@ -55,7 +56,7 @@ def pllBlock (v kp ki : ℝ) : Linear.Plant 2 1 :=
     (pllBlock (FourState.vd0 p θ0) p.kp p.ki).A i j =
       FourState.A0 p θ0 (Fin.castLE (by norm_num) i) (Fin.castLE (by norm_num) j) := by
   fin_cases i <;> fin_cases j <;>
-    simp [pllBlock, PLL.phaseModel, PLL.piPLLJacobian, FourState.A0, mul_comm]
+    simp [pllBlock, PLL.phaseModel, proportionalMatrix, FourState.A0, mul_comm]
 
 /-- Realization: with `ξ = θ + θ_g`, the block's state equation `A (ξ, x) + B θ_g` is the
 linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
@@ -64,7 +65,7 @@ linearized PLL and its output `C (ξ, x) + D θ_g` is the error angle `θ`. -/
         ![-kp * v * θ + ki * x, -v * θ] ∧
       (pllBlock v kp ki).C *ᵥ ![θ + θg, x] + (pllBlock v kp ki).D *ᵥ ![θg] = ![θ] := by
   constructor <;> ext i <;> fin_cases i <;>
-    simp [pllBlock, PLL.phaseModel, PLL.piPLLJacobian] <;> ring
+    simp [pllBlock, PLL.phaseModel, proportionalMatrix] <;> ring
 
 /-- `T_PLL(s) = −s² / L_PLL(s)`: the closed-loop transfer `H_pll` of the phase model
 (`PLL.transfer_phaseModel`) minus the feedthrough `1`. -/
