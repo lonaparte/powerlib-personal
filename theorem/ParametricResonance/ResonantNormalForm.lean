@@ -188,7 +188,7 @@ def rot (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := Real.cos θ • (1 : Matrix (
 
 /-! ## Floquet stability of the normal form -/
 
-@[tmio T, powerlib_foundation] private theorem schurStable_neg_iff (P : Matrix (Fin 2) (Fin 2) ℝ) :
+@[tmio T, powerlib_foundation] theorem schurStable_neg_iff (P : Matrix (Fin 2) (Fin 2) ℝ) :
     LTI.SchurStable (-P) ↔ LTI.SchurStable P := by
   have key : ∀ Q : Matrix (Fin 2) (Fin 2) ℝ, LTI.SchurStable Q → LTI.SchurStable (-Q) := by
     intro Q hQ μ v hv h

@@ -1,4 +1,5 @@
 import theorem.Criteria.Routh4
+import theorem.Modal.Sensitivity
 import theorem.Dynamics.Coordinates
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -41,6 +42,15 @@ Results.
   `κ = k_s/K`; `springSensitivity_mode` — `S = 1 − z_{θ_c} = (4 + 3κ)/(3(1 + κ))`.
 * `springSensitivity_bounds` — `1 < c_κ ≤ 4/3` for `κ ≥ 0`, and `c_κ` is strictly decreasing
   (`springSensitivity_strictAntiOn`).
+* The damping budget (14) as first-order derivatives at the spring-swing point (`C s² + k_s + W`,
+  `W = ω_b K`, roots `±jΩ`, `Ω² = (k_s + W)/C`, `κ = k_s/W`), from a differentiable root branch of
+  `P + p Q` (`exists_root_branch_affine`): `damping_dcSource` — along `ε₁ = 1/τ` (with
+  `k_dc = k_s τ`) the root branch has `dλ/dε₁ = −k_s/(2CΩ²)`, so `dσ/dε₁ = κ/(2(1 + κ))`;
+  `damping_filter` — along `ε₂ = 1/ω_f`, `dλ/dε₂ = W/(2C)`, so `dσ/dε₂ = −Ω²/(2(1 + κ))`;
+  `damping_conductance` — along `G`, `dλ/dG = −1/(2C)`, so `dσ/dG = 1/(2C)`. All three
+  derivatives are real: the mode frequency `Ω_m² = ω_b K (1 + κ)/C` holds to first order. These are
+  the first three terms of (14), `(1 + κ)σ/Ω ≈ κ/(2Ωτ) − Ω/(2ω_f) + (1 + κ)G/(2CΩ)`; the network
+  resistance term is outside this model.
 
 Family and connection conclusions.
 None: static evidence on the matching core (Jacobian, characteristic equation, limits, kinematic
@@ -282,5 +292,142 @@ def springForced (M ks K : ℝ) (s : ℂ) : ℂ := (K : ℂ) / (M * s ^ 2 + ks +
   simp only
   rw [div_lt_div_iff₀ (by positivity) (by positivity)]
   nlinarith
+
+/-! ## The damping budget (14) as first-order derivatives -/
+
+/-- A simple root `λ₀` of `P` with `Q(λ₀) ≠ 0` continues to a differentiable root branch of
+`P + p Q`, with `dλ/dp = −Q(λ₀)/P'(λ₀)`. -/
+@[tmio T, powerlib_foundation] theorem exists_root_branch_affine {P Q : ℂ → ℂ} {P' Q' lam0 : ℂ}
+    (hP : HasStrictDerivAt P P' lam0) (hQ : HasStrictDerivAt Q Q' lam0) (hP0 : P lam0 = 0)
+    (hQ0 : Q lam0 ≠ 0) (hP' : P' ≠ 0) :
+    ∃ lam : ℝ → ℂ, lam 0 = lam0 ∧ (∀ᶠ p in 𝓝 (0 : ℝ), P (lam p) + p * Q (lam p) = 0) ∧
+      HasDerivAt lam (-Q lam0 / P') 0 := by
+  have hf : HasStrictDerivAt (fun z => P z / Q z) (P' / Q lam0) lam0 := by
+    have := hP.div hQ hQ0
+    convert this using 1
+    rw [hP0]; field_simp; ring
+  have hf' : P' / Q lam0 ≠ 0 := div_ne_zero hP' hQ0
+  obtain ⟨lam, h0, hev, hd⟩ := Modal.exists_root_branch (c := 1) (K0 := 0) hf hf'
+    (by simp [hP0])
+  refine ⟨lam, h0, ?_, ?_⟩
+  · have hc : ContinuousAt (fun p => Q (lam p)) 0 := by
+      have := hQ.hasDerivAt.continuousAt
+      rw [← h0] at this
+      exact this.comp hd.continuousAt
+    have hne : ∀ᶠ p in 𝓝 (0 : ℝ), Q (lam p) ≠ 0 :=
+      hc.eventually_ne (by rw [h0]; exact hQ0)
+    filter_upwards [hev, hne] with p hp hq
+    have : P (lam p) / Q (lam p) + (p : ℂ) = 0 := by simpa using hp
+    field_simp at this
+    linear_combination this
+  · convert hd using 1
+    field_simp
+
+/-- (14), the DC-source term: along `ε₁ = 1/τ` the root branch of
+`s(Cs² + W + k_s) + ε₁(Cs² + W)` through `jΩ` has `dλ/dε₁ = −k_s/(2CΩ²)`, real, so
+`dσ/dε₁ = κ/(2(1 + κ))`. -/
+@[tmio T, powerlib_foundation] theorem damping_dcSource {C W ks Ω : ℝ} (hC : 0 < C) (hks : 0 < ks)
+    (hW : 0 < W) (hΩ : 0 < Ω) (hΩ2 : C * Ω ^ 2 = ks + W) :
+    ∃ lam : ℝ → ℂ, lam 0 = Ω * I ∧
+      (∀ᶠ ε₁ in 𝓝 (0 : ℝ), lam ε₁ * (C * lam ε₁ ^ 2 + W + ks) + ε₁ * (C * lam ε₁ ^ 2 + W) = 0) ∧
+      HasDerivAt lam ((-(ks / (2 * C * Ω ^ 2)) : ℝ) : ℂ) 0 ∧
+      -(-(ks / (2 * C * Ω ^ 2))) = (ks / W) / (2 * (1 + ks / W)) := by
+  have hΩc : (Ω : ℂ) ≠ 0 := by exact_mod_cast hΩ.ne'
+  have hC' : (C : ℂ) ≠ 0 := by exact_mod_cast hC.ne'
+  have hΩ2c : (C : ℂ) * Ω ^ 2 = ks + W := by exact_mod_cast hΩ2
+  have hP : HasStrictDerivAt (fun z : ℂ => z * (C * z ^ 2 + W + ks))
+      (3 * C * (Ω * I) ^ 2 + W + ks) (Ω * I) := by
+    have := ((hasStrictDerivAt_id (Ω * I : ℂ)).mul
+      (((hasStrictDerivAt_pow 2 (Ω * I : ℂ)).const_mul (C : ℂ)).add_const ((W : ℂ) + ks)))
+    convert this using 1
+    · funext z; simp only [Pi.mul_apply, id]; ring
+    · simp; ring
+  have hQ : HasStrictDerivAt (fun z : ℂ => C * z ^ 2 + W) (C * (2 * (Ω * I))) (Ω * I) := by
+    have := ((hasStrictDerivAt_pow 2 (Ω * I : ℂ)).const_mul (C : ℂ)).add_const (W : ℂ)
+    convert this using 1; simp
+  have hP0 : (Ω * I : ℂ) * (C * (Ω * I) ^ 2 + W + ks) = 0 := by
+    linear_combination (Ω * I : ℂ) * (C * Ω ^ 2 * I_sq) - (Ω * I : ℂ) * hΩ2c
+  have hQ0 : (C : ℂ) * (Ω * I) ^ 2 + W = -ks := by
+    linear_combination (C * Ω ^ 2 : ℂ) * I_sq - hΩ2c
+  have hP'v : 3 * (C : ℂ) * (Ω * I) ^ 2 + W + ks = -2 * C * Ω ^ 2 := by
+    linear_combination (3 * C * Ω ^ 2 : ℂ) * I_sq - hΩ2c
+  have hks' : (ks : ℂ) ≠ 0 := by exact_mod_cast hks.ne'
+  obtain ⟨lam, h0, hev, hd⟩ := exists_root_branch_affine hP hQ hP0
+    (by rw [hQ0]; exact neg_ne_zero.mpr hks')
+    (by rw [hP'v]; exact mul_ne_zero (mul_ne_zero (by norm_num) hC') (pow_ne_zero 2 hΩc))
+  refine ⟨lam, h0, hev, ?_, ?_⟩
+  · convert hd using 1
+    rw [hQ0, hP'v]; push_cast; ring
+  · have hsum : 0 < W + ks := by linarith
+    rw [neg_neg, show 2 * C * Ω ^ 2 = 2 * (ks + W) by linarith]
+    field_simp
+    ring
+
+/-- (14), the measurement-filter term: along `ε₂ = 1/ω_f` the root branch of
+`(Cs² + k_s + W) + ε₂ s(Cs² + k_s)` through `jΩ` has `dλ/dε₂ = W/(2C)`, real, so
+`dσ/dε₂ = −Ω²/(2(1 + κ))`. -/
+@[tmio T, powerlib_foundation] theorem damping_filter {C W ks Ω : ℝ} (hC : 0 < C) (hW : 0 < W)
+    (hΩ : 0 < Ω) (hΩ2 : C * Ω ^ 2 = ks + W) :
+    ∃ lam : ℝ → ℂ, lam 0 = Ω * I ∧
+      (∀ᶠ ε₂ in 𝓝 (0 : ℝ), (C * lam ε₂ ^ 2 + ks + W) + ε₂ * (lam ε₂ * (C * lam ε₂ ^ 2 + ks)) = 0) ∧
+      HasDerivAt lam (((W / (2 * C)) : ℝ) : ℂ) 0 ∧
+      -(W / (2 * C)) = -(Ω ^ 2 / (2 * (1 + ks / W))) := by
+  have hΩc : (Ω : ℂ) ≠ 0 := by exact_mod_cast hΩ.ne'
+  have hC' : (C : ℂ) ≠ 0 := by exact_mod_cast hC.ne'
+  have hΩ2c : (C : ℂ) * Ω ^ 2 = ks + W := by exact_mod_cast hΩ2
+  have hP : HasStrictDerivAt (fun z : ℂ => C * z ^ 2 + ks + W) (C * (2 * (Ω * I))) (Ω * I) := by
+    have := ((hasStrictDerivAt_pow 2 (Ω * I : ℂ)).const_mul (C : ℂ)).add_const ((ks : ℂ) + W)
+    convert this using 1
+    · funext z; ring
+    · simp
+  have hQ : HasStrictDerivAt (fun z : ℂ => z * (C * z ^ 2 + ks))
+      (3 * C * (Ω * I) ^ 2 + ks) (Ω * I) := by
+    have := ((hasStrictDerivAt_id (Ω * I : ℂ)).mul
+      (((hasStrictDerivAt_pow 2 (Ω * I : ℂ)).const_mul (C : ℂ)).add_const (ks : ℂ)))
+    convert this using 1
+    · funext z; simp
+    · simp; ring
+  have hP0 : (C : ℂ) * (Ω * I) ^ 2 + ks + W = 0 := by
+    linear_combination (C * Ω ^ 2 : ℂ) * I_sq - hΩ2c
+  have hQ0 : (Ω * I : ℂ) * (C * (Ω * I) ^ 2 + ks) = -(W : ℂ) * (Ω * I) := by
+    linear_combination (Ω * I : ℂ) * (C * Ω ^ 2 * I_sq) - (Ω * I : ℂ) * hΩ2c
+  have hW' : (W : ℂ) ≠ 0 := by exact_mod_cast hW.ne'
+  obtain ⟨lam, h0, hev, hd⟩ := exists_root_branch_affine hP hQ hP0
+    (by rw [hQ0]; exact mul_ne_zero (neg_ne_zero.mpr hW') (mul_ne_zero hΩc I_ne_zero))
+    (mul_ne_zero hC' (mul_ne_zero two_ne_zero (mul_ne_zero hΩc I_ne_zero)))
+  refine ⟨lam, h0, hev, ?_, ?_⟩
+  · convert hd using 1
+    rw [hQ0]; push_cast; field_simp
+  · have hΩ2' : Ω ^ 2 = (ks + W) / C := by field_simp; linarith
+    have hsum : 0 < W + ks := by nlinarith [mul_pos hC (sq_pos_of_pos hΩ)]
+    rw [hΩ2']
+    field_simp
+    ring
+
+/-- (14), the DC-conductance term: along `G` the root branch of `(Cs² + k_s + W) + G s` through
+`jΩ` has `dλ/dG = −1/(2C)`, real, so `dσ/dG = 1/(2C)`. -/
+@[tmio T, powerlib_foundation] theorem damping_conductance {C W ks Ω : ℝ} (hC : 0 < C)
+    (hΩ : 0 < Ω) (hΩ2 : C * Ω ^ 2 = ks + W) :
+    ∃ lam : ℝ → ℂ, lam 0 = Ω * I ∧
+      (∀ᶠ G in 𝓝 (0 : ℝ), (C * lam G ^ 2 + ks + W) + G * lam G = 0) ∧
+      HasDerivAt lam (((-(1 / (2 * C))) : ℝ) : ℂ) 0 := by
+  have hΩc : (Ω : ℂ) ≠ 0 := by exact_mod_cast hΩ.ne'
+  have hC' : (C : ℂ) ≠ 0 := by exact_mod_cast hC.ne'
+  have hΩ2c : (C : ℂ) * Ω ^ 2 = ks + W := by exact_mod_cast hΩ2
+  have hP : HasStrictDerivAt (fun z : ℂ => C * z ^ 2 + ks + W) (C * (2 * (Ω * I))) (Ω * I) := by
+    have := ((hasStrictDerivAt_pow 2 (Ω * I : ℂ)).const_mul (C : ℂ)).add_const ((ks : ℂ) + W)
+    convert this using 1
+    · funext z; ring
+    · simp
+  have hP0 : (C : ℂ) * (Ω * I) ^ 2 + ks + W = 0 := by
+    linear_combination (C * Ω ^ 2 : ℂ) * I_sq - hΩ2c
+  obtain ⟨lam, h0, hev, hd⟩ := exists_root_branch_affine hP (hasStrictDerivAt_id (Ω * I : ℂ)) hP0
+    (mul_ne_zero hΩc I_ne_zero)
+    (mul_ne_zero hC' (mul_ne_zero two_ne_zero (mul_ne_zero hΩc I_ne_zero)))
+  refine ⟨lam, h0, hev, ?_⟩
+  convert hd using 1
+  simp only [id]
+  push_cast
+  field_simp
 
 end powerlib.GFM.Matching

@@ -181,8 +181,10 @@ import theorem.GridTiedConverter.GFM.VSMLPF
 import theorem.GridTiedConverter.GFM.VSMLPFAlgebra
 import theorem.GridTiedConverter.GFM.DroopTwoFilter
 import theorem.GridTiedConverter.GFM.DroopPump
+import theorem.GridTiedConverter.GFM.DroopSideband
 import theorem.GridTiedConverter.GFM.DVOCPump
 import theorem.GridTiedConverter.GFM.PSCPump
+import theorem.GridTiedConverter.GFM.PSCActiveDamping
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber
@@ -292,6 +294,8 @@ import theorem.ParametricResonance.SlowFlow
 import theorem.ParametricResonance.SwingHarmonics
 import theorem.ParametricResonance.ThirdOrderCore
 import theorem.ParametricResonance.ResonantNormalForm
+import theorem.ParametricResonance.PeriodicAveraging
+import theorem.ParametricResonance.TwoToOneAveraging
 import theorem.ParametricResonance.TongueQuadratic
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
