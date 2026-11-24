@@ -396,3 +396,5 @@ import theorem.PowerSystem.Network.Swing.Four
 import theorem.PowerSystem.Network.Swing.FourDense
 import theorem.Grid.TwoPort
 import theorem.Passive.Coupled
+import theorem.WPT.Link
+import theorem.WPT.Compensation

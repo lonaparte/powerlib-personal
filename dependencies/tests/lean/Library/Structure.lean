@@ -95,8 +95,9 @@ def genericEntries : Array Name := #[
 
 /-- Engineering models of power electronics and power systems: model families, their connection
 conclusions and the static evidence about them, including the passive components of `Passive/`
-(RL branch, LCL filter, coupled windings, lines) with their generated parameter conversions, and the
-grid structure of `Grid/` (RL networks, grid impedance, power flow). -/
+(RL branch, LCL filter, coupled windings, lines) with their generated parameter conversions, the
+grid structure of `Grid/` (RL networks, grid impedance, power flow) and the inductive wireless
+power links of `WPT/` (coil pair, compensation). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
   `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,
@@ -110,7 +111,7 @@ def engineeringEntries : Array Name := #[
   `theorem.GridTiedConverter.GFM.Limiting, `theorem.Passive.Line,
   `theorem.PowerSystem.Network.FrequencyDivider, `theorem.Grid.PowerFlow,
   `theorem.PowerSystem.Network.Swing, `theorem.Numerics.EMT,
-  `theorem.GridTiedConverter.PLL, `theorem.PowerSystem.Synchronous]
+  `theorem.GridTiedConverter.PLL, `theorem.PowerSystem.Synchronous, `theorem.WPT]
 
 /-- The registrations of a module: its own name in any table, or its directory in the generic
 or engineering table. -/
