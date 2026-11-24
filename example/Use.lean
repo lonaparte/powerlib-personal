@@ -130,3 +130,26 @@ open powerlib LinearSystems
     (Nonlinear.Cubic.family (n := n)).den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Nonlinear.Cubic.mem_den_globallyExponentiallyStable ⟨1, one_pos⟩
+
+-- Wireless power transfer: the coil pair, the efficiency bound of the link and its optimal load,
+-- the load-independent output of the double-sided LCC network, the exact damping condition of the
+-- coupled resonators and their frequency response, the bifurcation of the zero-phase-angle
+-- frequencies and zero-phase-angle frequency tracking.
+#check powerlib.Passive.Coupled.magneticEnergy_pos_iff
+#check powerlib.WPT.Link.efficiency_eq
+#check powerlib.WPT.Link.eta_eq_maxEfficiency_iff
+#check powerlib.WPT.Link.maxEfficiency_eq_fom
+#check powerlib.WPT.ssLink_inputImpedance
+#check powerlib.WPT.LCC.outputCurrent_eq
+#check powerlib.WPT.Resonator.impedanceMatrix_mul_transfer
+#check powerlib.WPT.exists_split_iff
+#check powerlib.WPT.Tracking.exact_locallyExponentiallyStable
+#print axioms powerlib.WPT.Link.eta_eq_maxEfficiency_iff
+
+-- Coupled resonators: a lossy primary damps a lossless secondary, through the coupling alone.
+@[powerlib_domain] theorem wpt_lossy_primary (r : WPT.Resonator) (hM : r.coils.M ≠ 0)
+    (h₁ : 0 < r.coils.primary.R) :
+    connection% (r.ph ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact (connection_proof% r.mem_den_iff (P := .globallyExponentiallyStable)
+    (Or.inl trivial)).mpr (Or.inr ⟨hM, Or.inl h₁⟩)
