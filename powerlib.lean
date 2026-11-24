@@ -409,3 +409,5 @@ import theorem.WPT.Identification
 import theorem.WPT.Dynamic
 import theorem.SpecialFunctions.Fundamental
 import theorem.WPT.CurrentLimits
+import theorem.LTI.PeakGain
+import theorem.WPT.Gyrator

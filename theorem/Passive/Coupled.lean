@@ -49,7 +49,9 @@ Results.
   power `e₁ i₁ + e₂ i₂` delivered by the inductive voltages).
 * Flux–current algebra: `current₂_eq` (`i₂ = (ψ₂ − M i₁)/L₂`), `current₁_eq`
   (`i₁ = (ψ₁ − (M/L₂) ψ₂)/(σ L₁)`), `flux₂_eq_leakage` (`ψ₂ = (L₂/M)(ψ₁ − σ L₁ i₁)`),
-  `im_conj_flux₁_mul` (`Im(ψ̄₁ i₁) = (M/L₂) Im(ψ̄₂ i₁)`).
+  `im_conj_flux₁_mul` (`Im(ψ̄₁ i₁) = (M/L₂) Im(ψ̄₂ i₁)`), `normSq_flux₁`, `normSq_flux₂`
+  (`|ψ₁|² = L₁²|i₁|² + M²|i₂|² + 2L₁M Re(i₁ ī₂)` and its secondary counterpart: in-phase
+  currents add their flux, opposite currents cancel it).
 * Frequency domain: `impedanceMatrix_eq_tee` (the pair is the T network of the arms
   `(R₁, L₁ − M, S₁)`, `(R₂, L₂ − M, S₂)` and the shunt inductor `M`), `inputImpedance_jω` (with
   port 2 terminated by `Z_L`, `Z_in(jω) = Z₁(jω) + (ωM)²/(Z₂(jω) + Z_L)`: the reflected
@@ -239,6 +241,22 @@ def teeShunt : SeriesRLC := ⟨0, w.M, 0⟩
     Complex.add_re, Complex.add_im, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
     Complex.conj_re, Complex.conj_im]
   field_simp
+  ring
+
+/-- The magnitude of the primary flux: `|ψ₁|² = L₁²|i₁|² + M²|i₂|² + 2 L₁ M Re(i₁ ī₂)`. -/
+@[tmio M, powerlib_domain] theorem normSq_flux₁ (i₁ i₂ : ℂ) :
+    Complex.normSq (w.flux₁ i₁ i₂) = w.primary.L ^ 2 * Complex.normSq i₁ +
+      w.M ^ 2 * Complex.normSq i₂ + 2 * w.primary.L * w.M * (i₁ * conj i₂).re := by
+  simp only [flux₁, Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.mul_re,
+    Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+/-- The magnitude of the secondary flux: `|ψ₂|² = M²|i₁|² + L₂²|i₂|² + 2 M L₂ Re(i₁ ī₂)`. -/
+@[tmio M, powerlib_domain] theorem normSq_flux₂ (i₁ i₂ : ℂ) :
+    Complex.normSq (w.flux₂ i₁ i₂) = w.M ^ 2 * Complex.normSq i₁ +
+      w.secondary.L ^ 2 * Complex.normSq i₂ + 2 * w.M * w.secondary.L * (i₁ * conj i₂).re := by
+  simp only [flux₂, Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.mul_re,
+    Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.conj_re, Complex.conj_im]
   ring
 
 /-! ## The frequency domain -/
