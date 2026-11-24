@@ -441,3 +441,6 @@ import theorem.SpecialFunctions.Trapezoid
 import theorem.SpecialFunctions.OddHarmonicSums
 import theorem.SpecialFunctions.Parseval
 import theorem.WPT.HarmonicTotals
+import theorem.SpecialFunctions.Duality
+import theorem.SpecialFunctions.BoxQuadratic
+import theorem.WPT.LossyEnvelope
