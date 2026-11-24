@@ -32,8 +32,8 @@ Nondegeneracy: `L_f, C_f, L_g ≠ 0`, `ω_g C_f ≠ 0`, `Δ ≠ 0`, `K_i^cc ≠ 
 `K_i^dc ≠ 0`, `ω_f ≠ 0`, `C_dc ≠ 0`, `v_dc^ref ≠ 0`.
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/dc-link-dynamics.md` §1, §2,
-§7.2; code reference `simulation/src/.../models_dc.py` (`full_dynamics_dc`, `_alg_chain`,
-`_idref_const_power`).
+§7.2; code reference `simulation/src/.../models_dc.py` (the source's Python functions
+full_dynamics_dc, _alg_chain, _idref_const_power).
 
 Results.
 * Bridge-power invariant: `u = v_c + (R_f + jω L_f) i ⇒ u·i = v_c·i + R_f |i|²` is the filter's

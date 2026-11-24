@@ -8,6 +8,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Dynamics.Shift
 import theorem.Criteria.Hurwitz2
+import theorem.PhasePlane.Conservative
 import theorem.GridTiedConverter.GFL.DCLink.PowerBalance
 
 /-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop
@@ -738,25 +739,24 @@ namespace DCParams
 
 variable (p : DCParams)
 
+open PhasePlane.Conservative (separableEnergy)
+
 /-- The conserved energy of the boundary loop `Kp = −I_dc0/V_d`:
-`V_dc* v²/2 + v³/3 + (V_d Ki/(2C)) z²`, `v = V_dc − V_dc*`, `z = ζ − ζ0`. -/
-def centerEnergy (x : State 2) : ℝ :=
-  p.Vref / 2 * (x 0 - p.Vref) ^ 2 + 1 / 3 * (x 0 - p.Vref) ^ 3 +
-    p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2
+`V_dc* v²/2 + v³/3 + (V_d Ki/(2C)) z²`, `v = V_dc − V_dc*`, `z = ζ − ζ0` — the separable energy
+`U(V_dc) + (k/2)(ζ − ζ0)²` with `k = V_d Ki/C` (`PhasePlane.Conservative.separableEnergy`). -/
+def centerEnergy : State 2 → ℝ :=
+  separableEnergy (fun V => p.Vref / 2 * (V - p.Vref) ^ 2 + (V - p.Vref) ^ 3 / 3)
+    (p.Vd * p.Ki / p.C) ((p.iff - p.Id0) / p.Ki)
 
 @[tmio M, powerlib_domain] theorem hasFDerivAt_centerEnergy (x : State 2) :
     HasFDerivAt p.centerEnergy
       ((p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2) • Dynamics.coord 0 +
         (p.Vd * p.Ki / p.C * (x 1 - (p.iff - p.Id0) / p.Ki)) • Dynamics.coord 1) x := by
-  have h0 := (Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref
-  have h1 := (Dynamics.hasFDerivAt_coord 1 x).sub_const ((p.iff - p.Id0) / p.Ki)
-  have h := (((h0.pow 2).const_mul (p.Vref / 2)).add ((h0.pow 3).const_mul (1 / 3))).add
-    ((h1.pow 2).const_mul (p.Vd * p.Ki / (2 * p.C)))
-  convert h using 1
-  · funext y; simp [centerEnergy]
-  · ext v
-    simp
-    field_simp
+  have h := (hasDerivAt_id (x 0)).sub_const p.Vref
+  refine PhasePlane.Conservative.hasFDerivAt_separableEnergy ?_
+  convert ((h.pow 2).const_mul (p.Vref / 2)).add ((h.pow 3).div_const 3) using 1
+  · rfl
+  · simp; ring
 
 /-- On the boundary `Kp = −I_dc0/V_d` the energy is conserved on `V_dc ≠ 0`. -/
 @[tmio M, powerlib_domain] theorem centerEnergy_lie (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
@@ -777,7 +777,7 @@ def centerEnergy (x : State 2) : ℝ :=
   have hk : 0 < p.Vd * p.Ki / (2 * p.C) := by positivity
   have hform : p.centerEnergy x = (x 0 - p.Vref) ^ 2 * (p.Vref + 2 * x 0) / 6 +
       p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2 := by
-    simp only [centerEnergy]; ring
+    simp only [centerEnergy, separableEnergy]; ring
   rw [hform]
   by_cases h0 : x 0 = p.Vref
   · have h1 : x 1 ≠ (p.iff - p.Id0) / p.Ki := by
@@ -817,7 +817,7 @@ minimum. -/
     ⟨isOpen_posDC 0, p.eqState_mem hV,
       continuous_iff_continuousAt.mpr fun x => (p.hasFDerivAt_centerEnergy x).continuousAt,
       fun x => (p.hasFDerivAt_centerEnergy x).differentiableAt,
-      by simp [centerEnergy, eqState],
+      by simp [centerEnergy, separableEnergy, eqState],
       fun x hx hne => p.centerEnergy_pos hVd hV hC hKi hx hne,
       fun x hx => (p.centerEnergy_lie hVd.ne' hV.ne' hKi.ne' hkp (ne_of_gt hx)).le⟩
 
@@ -846,7 +846,7 @@ every nearby solution on its level. -/
         simp at this
         linarith
       have hpos := p.centerEnergy_pos hVd hV hC hKi (by simp [eqState]; positivity) hne
-      have h0 : p.centerEnergy p.eqState = 0 := by simp [centerEnergy, eqState]
+      have h0 : p.centerEnergy p.eqState = 0 := by simp [centerEnergy, separableEnergy, eqState]
       simp only [h0, neg_zero, neg_lt_zero]
       exact hpos
 

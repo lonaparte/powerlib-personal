@@ -38,9 +38,9 @@ Results.
   when it holds for `g` at `φ(x*)` (`holds_transport_iff`, read for one sentence as
   `holds_transport_iff T c P`; `P.holds` unfolds to the sentence). Scaffold:
   `theorem/Flow/FlowSemantics.agda` (satisfaction of the sentences by a field at a point, invariant
-  under affine changes of coordinates: `transportSystem`, `invariant`).
+  under affine changes of coordinates: its Agda definitions transportSystem and invariant).
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
-  `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
+  `Matrix.toEuclideanCLM` (`matrixCoord`). Example: the
   planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleMatrix_mul_inv`, `scaleCoord`,
   `scaleCoord_apply`, `scaleCoord_symm_apply`). Sign changes `x ↦ (σᵢ xᵢ)ᵢ`, `σ : Fin n → ℤˣ`
   (`signMatrix`, an involution: `signMatrix_mul_self`, `signMatrix_isUnit`, `signMatrix_inv`;
@@ -224,17 +224,6 @@ variable (P : Matrix (Fin n) (Fin n) ℝ) (hP : IsUnit P)
 @[tmio T, simp, powerlib_foundation] theorem matrixCoord_symm_apply (y : State n) :
     (matrixCoord P hP).symm y = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) P⁻¹ y := by
   rw [← coe_matrixCoord_symm P hP, ContinuousLinearEquiv.coe_coe]
-
-/-- Matrix form of the Jacobian transport: `Df(x*) = A` becomes `Dg(P x* + c) = P A P⁻¹`. -/
-@[tmio T, powerlib_foundation] theorem fderiv_transportField_matrix (c : State n)
-    {f : State n → State n} {x : State n} (A : Matrix (Fin n) (Fin n) ℝ)
-    (hf : DifferentiableAt ℝ f x)
-    (hJac : fderiv ℝ f x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) :
-    fderiv ℝ (transportField (matrixCoord P hP) c f) (affineCoord (matrixCoord P hP) c x) =
-      Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (P * A * P⁻¹) := by
-  rw [fderiv_transportField _ c hf, hJac, coe_matrixCoord, coe_matrixCoord_symm, map_mul,
-    map_mul]
-  rfl
 
 end MatrixCoord
 

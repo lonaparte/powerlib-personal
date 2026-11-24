@@ -105,8 +105,11 @@ def engineeringEntries : Array Name := #[
   `theorem.GridTiedConverter.GFL.LCLine, `theorem.GridTiedConverter.GFL.Noise,
   `theorem.GridTiedConverter.GFL.Parametric, `theorem.GridTiedConverter.GFL.PowerLoop,
   `theorem.GridTiedConverter.GFM, `theorem.GridTiedConverter.GFM.Matching,
-  `theorem.GridTiedConverter.GFM.Limiting, `theorem.Passive.Line,
-  `theorem.PowerSystem.Network.FrequencyDivider, `theorem.Grid.PowerFlow,
+  `theorem.GridTiedConverter.GFM.Limiting, `theorem.GridTiedConverter.GFM.DCLink,
+  `theorem.GridTiedConverter.GFM.Discrete, `theorem.GridTiedConverter.GFM.FullModel,
+  `theorem.GridTiedConverter.GFM.Line, `theorem.GridTiedConverter.GFM.Noise,
+  `theorem.GridTiedConverter.GFM.Port, `theorem.GridTiedConverter.GFM.Tracking,
+  `theorem.Passive.Line, `theorem.PowerSystem.Network.FrequencyDivider, `theorem.Grid.PowerFlow,
   `theorem.PowerSystem.Network.Swing, `theorem.Numerics.EMT,
   `theorem.GridTiedConverter.PLL, `theorem.PowerSystem.Synchronous]
 

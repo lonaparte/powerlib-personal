@@ -145,7 +145,7 @@ Family and connection conclusions.
   `theorem/PowerSystem/Synchronous/PH.lean`) is read through this family, the canonical one: its
   swing reading `ClassicalSM.Model.toSwing` is `⟨sinusoid M D P_m b, δ*⟩` (`M > 0`, `D ≥ 0`,
   `b > 0`), and on every flow sentence its denotation and its translation are the pullbacks of this
-  family's (`ClassicalSM.den_flow_eq_preimage`, `ClassicalSM.mem_den_flow_iff_swing`,
+  family's (`ClassicalSM.mem_den_flow_iff_swing`, member by member,
   `ClassicalSM.realize_translate_flow_eq_preimage`, `ClassicalSM.exact_flow_iff`; the zero-input
   pH field is the swing field under `diag(1, M)`, `Dynamics.holds_transport_iff`). Its flow
   conclusions are derived from `Swing.chain_le_semantics`, `Swing.mem_den_*` and

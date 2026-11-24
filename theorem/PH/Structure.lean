@@ -2,6 +2,7 @@ import theorem.PH.Linear
 import theorem.Flow.Certificate
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.Local
+import theorem.PhasePlane.Conservative
 
 /-! # Structural results for port-Hamiltonian systems
 
@@ -292,9 +293,10 @@ local minimum of `H_d` is Lyapunov stable. -/
 
 /-! ## Zero-input global asymptotic stability: counterexample and corrected statement -/
 
-/-- Tilted double well `H(x) = x₀⁴/4 + x₀³/3 − x₀² + x₁²/2`. -/
-def phLaSalle_H (x : State 2) : ℝ :=
-  1 / 4 * x 0 ^ 4 + 1 / 3 * x 0 ^ 3 - x 0 ^ 2 + 1 / 2 * x 1 ^ 2
+/-- Tilted double well `H(x) = x₀⁴/4 + x₀³/3 − x₀² + x₁²/2`: the separable energy with
+potential `U(u) = u⁴/4 + u³/3 − u²`, `k = 1`, `b = 0`. -/
+def phLaSalle_H : State 2 → ℝ :=
+  PhasePlane.Conservative.separableEnergy (fun u => 1 / 4 * u ^ 4 + 1 / 3 * u ^ 3 - u ^ 2) 1 0
 
 /-- Its gradient `(x₀³ + x₀² − 2 x₀, x₁) = (x₀ (x₀ − 1)(x₀ + 2), x₁)`. -/
 def phLaSalle_dH (x : State 2) : State 2 :=
@@ -302,14 +304,14 @@ def phLaSalle_dH (x : State 2) : State 2 :=
 
 @[tmio M, powerlib_foundation] theorem phLaSalle_hasGradientAt (x : State 2) :
     HasGradientAt phLaSalle_H (phLaSalle_dH x) x := by
-  let P : Fin 2 → State 2 →L[ℝ] ℝ := fun i => PiLp.proj 2 (fun _ : Fin 2 => ℝ) i
-  have h := (((((P 0).hasFDerivAt (x := x)).pow 4).const_mul (1 / 4)).add
-    ((((P 0).hasFDerivAt (x := x)).pow 3).const_mul (1 / 3))).sub
-    (((P 0).hasFDerivAt (x := x)).pow 2) |>.add
-      ((((P 1).hasFDerivAt (x := x)).pow 2).const_mul (1 / 2))
-  refine hasGradientAt_of_hasFDerivAt h (fun v => ?_)
-  simp [phLaSalle_dH, P, dotProduct, Fin.sum_univ_two]
-  ring
+  have hU : HasDerivAt (fun u : ℝ => 1 / 4 * u ^ 4 + 1 / 3 * u ^ 3 - u ^ 2)
+      (x 0 ^ 3 + x 0 ^ 2 - 2 * x 0) (x 0) := by
+    convert (((hasDerivAt_pow 4 (x 0)).const_mul (1 / 4)).add
+      ((hasDerivAt_pow 3 (x 0)).const_mul (1 / 3))).sub (hasDerivAt_pow 2 (x 0)) using 1
+    norm_num; ring
+  unfold phLaSalle_H
+  convert PhasePlane.Conservative.hasGradientAt_separableEnergy (k := 1) (b := 0) hU using 1
+  simp [phLaSalle_dH, PhasePlane.mk]
 
 /-- The counterexample model: `J = 0`, `R = I`, no inputs, `H` the tilted double well. -/
 def phLaSalle_counterexample : NonlinearModel 2 0 where
@@ -332,8 +334,8 @@ def phLaSalle_xo : State 2 := WithLp.toLp 2 ![1, 0]
 @[tmio M, powerlib_foundation] theorem phLaSalle_counterexample_unique_min (x : State 2)
     (hx : x ≠ phLaSalle_xs) :
     phLaSalle_counterexample.H phLaSalle_xs < phLaSalle_counterexample.H x := by
-  simp only [phLaSalle_counterexample, phLaSalle_H, phLaSalle_xs,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  simp only [phLaSalle_counterexample, phLaSalle_H, PhasePlane.Conservative.separableEnergy,
+    phLaSalle_xs, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, sub_zero]
   have hfac : 1 / 4 * x 0 ^ 4 + 1 / 3 * x 0 ^ 3 - x 0 ^ 2 + 8 / 3 =
       (x 0 + 2) ^ 2 * (3 * x 0 ^ 2 - 8 * x 0 + 8) / 12 := by ring
   have hq : 0 < 3 * x 0 ^ 2 - 8 * x 0 + 8 := by nlinarith [sq_nonneg (3 * x 0 - 4)]
@@ -377,10 +379,11 @@ def phLaSalle_xo : State 2 := WithLp.toLp 2 ![1, 0]
   have h := phLaSalle_counterexample_unique_min x
   by_cases hx : x = phLaSalle_xs
   · subst hx
-    norm_num [phLaSalle_H, phLaSalle_xs]
+    norm_num [phLaSalle_H, PhasePlane.Conservative.separableEnergy, phLaSalle_xs]
   · have := (h hx).le
     have hxs : phLaSalle_counterexample.H phLaSalle_xs = -(8 / 3) := by
-      norm_num [phLaSalle_counterexample, phLaSalle_H, phLaSalle_xs]
+      norm_num [phLaSalle_counterexample, phLaSalle_H, PhasePlane.Conservative.separableEnergy,
+        phLaSalle_xs]
     rw [hxs] at this
     exact this
 

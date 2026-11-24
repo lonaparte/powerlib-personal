@@ -1,0 +1,149 @@
+import dependencies.Mathlib
+import theorem.Attributes
+import Mathlib.Algebra.Polynomial.RuleOfSigns
+import Mathlib.Analysis.Polynomial.Basic
+
+/-! # Sign patterns and positive roots of real polynomials (foundation)
+
+The number of positive real roots of a real polynomial from the signs of its coefficients
+(Descartes' rule of signs, read from Mathlib) and its parity from the signs of the leading and
+constant coefficients.
+
+Scope.
+* Pure algebra of real polynomials; no model and no family. The reactive-power-droop
+  grid-forming model counts its equilibria through the positive roots of a quartic
+  (`theorem/GridTiedConverter/GFM/QVDroop.lean`).
+
+Source: Descartes' rule of signs (Mathlib `Polynomial.roots_countP_pos_le_signVariations`); the
+parity law from the factorization `P = ∏ (X − r) · Q` over the positive roots `r` and the
+intermediate value theorem for the factor `Q` without positive roots. Study note: GFM equilibrium
+counting (topic t6 (b), sign pattern of the Q–V droop quartic).
+
+Results.
+* `ncard_pos_isRoot_le_countP`: the number of distinct positive roots is at most the number of
+  positive roots counted with multiplicity (`P ≠ 0`).
+* `countP_pos_roots_le_two_of_quartic`: the quartic `a₄ X⁴ + a₃ X³ + a₂ X² + a₁ X + a₀` with
+  `a₄ > 0`, `a₃ ≥ 0`, `a₀ ≥ 0` has at most two positive roots counted with multiplicity: its
+  coefficient list has at most two sign variations (Descartes).
+* `even_countP_pos_roots_iff`: for `P(0) ≠ 0` the number of positive roots counted with
+  multiplicity is even iff the leading coefficient and `P(0)` have the same sign.
+-/
+
+noncomputable section
+namespace powerlib.SpecialFunctions
+open Polynomial Filter
+
+/-- The number of distinct positive roots is at most the number of positive roots counted with
+multiplicity. -/
+@[tmio T, powerlib_foundation] theorem ncard_pos_isRoot_le_countP {P : ℝ[X]} (hP : P ≠ 0) :
+    {x : ℝ | 0 < x ∧ P.IsRoot x}.ncard ≤ P.roots.countP (0 < ·) := by
+  classical
+  have hset : {x : ℝ | 0 < x ∧ P.IsRoot x} = ↑(P.roots.filter (0 < ·)).toFinset := by
+    ext x
+    simp only [Set.mem_ofPred_eq, Finset.mem_coe, Multiset.mem_toFinset, Multiset.mem_filter,
+      mem_roots hP]
+    exact and_comm
+  rw [hset, Set.ncard_coe_finset, Multiset.countP_eq_card_filter]
+  exact Multiset.toFinset_card_le _
+
+/-- **A quartic sign pattern.** If `a₄ > 0`, `a₃ ≥ 0` and `a₀ ≥ 0`, the quartic
+`a₄ X⁴ + a₃ X³ + a₂ X² + a₁ X + a₀` has at most two positive roots counted with multiplicity:
+its coefficient list `(+, ≥ 0, ?, ?, ≥ 0)` has at most two sign variations
+(`Polynomial.roots_countP_pos_le_signVariations`). -/
+@[tmio T, powerlib_foundation] theorem countP_pos_roots_le_two_of_quartic {a₄ a₃ a₂ a₁ a₀ : ℝ}
+    (h₄ : 0 < a₄) (h₃ : 0 ≤ a₃) (h₀ : 0 ≤ a₀) :
+    (C a₄ * X ^ 4 + C a₃ * X ^ 3 + C a₂ * X ^ 2 + C a₁ * X + C a₀).roots.countP (0 < ·) ≤ 2 := by
+  set P := C a₄ * X ^ 4 + C a₃ * X ^ 3 + C a₂ * X ^ 2 + C a₁ * X + C a₀ with hP
+  have hdeg : P.natDegree = 4 := by rw [hP]; compute_degree!; exact h₄.ne'
+  have hne : P ≠ 0 := by
+    intro h
+    rw [h, natDegree_zero] at hdeg
+    exact absurd hdeg (by norm_num)
+  have hlist : P.coeffList = [a₄, a₃, a₂, a₁, a₀] := by
+    rw [coeffList, withBotSucc_degree_eq_natDegree_add_one hne, hdeg]
+    simp [hP, List.range_succ, coeff_X_pow, coeff_X, coeff_C]
+  refine (roots_countP_pos_le_signVariations P).trans ?_
+  rw [Polynomial.signVariations, hlist, ← List.signVariations_map_sign]
+  have key : ∀ s₃ s₂ s₁ s₀ : SignType, s₃ ≠ -1 → s₀ ≠ -1 →
+      List.signVariations [1, s₃, s₂, s₁, s₀] ≤ 2 := by decide
+  have h₃' : SignType.sign a₃ ≠ -1 := by rw [Ne, sign_eq_neg_one_iff]; linarith
+  have h₀' : SignType.sign a₀ ≠ -1 := by rw [Ne, sign_eq_neg_one_iff]; linarith
+  simpa [sign_pos h₄] using key _ (SignType.sign a₂) (SignType.sign a₁) _ h₃' h₀'
+
+/-- A real polynomial without positive roots and with `Q(0) ≠ 0`: `Q(0)` has the sign of the
+leading coefficient (intermediate value theorem on `[0, x]` for large `x`). -/
+@[tmio T, powerlib_foundation] private theorem mul_eval_zero_pos_of_no_pos_root {Q : ℝ[X]}
+    (h0 : Q.eval 0 ≠ 0) (hpos : ∀ x, 0 < x → ¬ Q.IsRoot x) :
+    0 < Q.leadingCoeff * Q.eval 0 := by
+  wlog hl : 0 < Q.leadingCoeff generalizing Q
+  · have hQ : Q ≠ 0 := by rintro rfl; simp at h0
+    have hl' : Q.leadingCoeff < 0 :=
+      lt_of_le_of_ne (not_lt.mp hl) (leadingCoeff_ne_zero.mpr hQ)
+    have h := this (Q := -Q) (by simpa using h0)
+      (fun x hx hr => hpos x hx (by simpa using hr)) (by rw [leadingCoeff_neg]; linarith)
+    simpa [leadingCoeff_neg] using h
+  refine mul_pos hl ((lt_or_gt_of_ne h0).resolve_left fun hneg => ?_)
+  rcases Nat.eq_zero_or_pos Q.natDegree with hd | hd
+  · rw [eq_C_of_natDegree_eq_zero hd] at hneg hl
+    simp only [eval_C, leadingCoeff_C] at hneg hl
+    linarith
+  · have ht := tendsto_atTop_of_leadingCoeff_nonneg Q (natDegree_pos_iff_degree_pos.mp hd) hl.le
+    obtain ⟨x, hx, hx0⟩ := ((ht.eventually (eventually_gt_atTop 0)).and
+      (eventually_gt_atTop 0)).exists
+    obtain ⟨c, hc, hc0⟩ := intermediate_value_Icc hx0.le Q.continuous.continuousOn
+      ⟨hneg.le, hx.le⟩
+    have hcpos : 0 < c := lt_of_le_of_ne hc.1 (by rintro rfl; exact h0 hc0)
+    exact hpos c hcpos hc0
+
+/-- **Parity of the positive roots.** For a real polynomial with `P(0) ≠ 0`, the number of
+positive roots counted with multiplicity is even iff the leading coefficient and `P(0)` have the
+same sign: `P = ∏ (X − r) · Q` over the positive roots `r`, `P(0) = (−1)ᵏ (∏ r) Q(0)` and `Q(0)`
+has the sign of the leading coefficient. -/
+@[tmio T, powerlib_foundation] theorem even_countP_pos_roots_iff {P : ℝ[X]} (h0 : P.eval 0 ≠ 0) :
+    Even (P.roots.countP (0 < ·)) ↔ 0 < P.leadingCoeff * P.eval 0 := by
+  classical
+  have hP : P ≠ 0 := by rintro rfl; simp at h0
+  set s := P.roots.filter (0 < ·) with hs
+  have hmon : ((s.map fun a => X - C a).prod).Monic :=
+    monic_multiset_prod_of_monic _ _ fun a _ => monic_X_sub_C a
+  obtain ⟨Q, hQ⟩ := (Multiset.prod_X_sub_C_dvd_iff_le_roots hP s).mpr (Multiset.filter_le _ _)
+  have hQ0 : Q ≠ 0 := by rintro rfl; rw [mul_zero] at hQ; exact hP hQ
+  have hroots : P.roots = s + Q.roots := by
+    rw [hQ, roots_mul (hQ ▸ hP), roots_multiset_prod_X_sub_C]
+  have hcount : P.roots.countP (0 < ·) = Multiset.card s := by
+    rw [hs, Multiset.countP_eq_card_filter]
+  have hspos : ∀ a ∈ s, 0 < a := fun a ha => (Multiset.mem_filter.mp ha).2
+  have hQpos : ∀ x, 0 < x → ¬ Q.IsRoot x := by
+    intro x hx hr
+    have hlt : 0 < Q.roots.countP (0 < ·) :=
+      Multiset.countP_pos.mpr ⟨x, (mem_roots hQ0).mpr hr, hx⟩
+    have hss : s.countP (0 < ·) = Multiset.card s := Multiset.countP_eq_card.mpr hspos
+    have h := hcount
+    rw [hroots, Multiset.countP_add, hss] at h
+    omega
+  have hlead : P.leadingCoeff = Q.leadingCoeff := by
+    rw [hQ, leadingCoeff_mul, hmon.leadingCoeff, one_mul]
+  have heval : P.eval 0 = (-1) ^ Multiset.card s * s.prod * Q.eval 0 := by
+    rw [hQ, eval_mul, eval_multiset_prod, Multiset.map_map]
+    have hm : (s.map ((eval 0) ∘ fun a => X - C a)) = s.map Neg.neg := by
+      refine Multiset.map_congr rfl fun a _ => ?_
+      simp
+    rw [hm, Multiset.prod_map_neg]
+  have hQe : Q.eval 0 ≠ 0 := by
+    intro h
+    rw [heval, h, mul_zero] at h0
+    exact h0 rfl
+  have hB := mul_eval_zero_pos_of_no_pos_root hQe hQpos
+  have hA : 0 < s.prod := Multiset.prod_pos hspos
+  have hfac : P.leadingCoeff * P.eval 0 =
+      (-1) ^ Multiset.card s * (s.prod * (Q.leadingCoeff * Q.eval 0)) := by
+    rw [hlead, heval]; ring
+  rw [hcount, hfac]
+  rcases Nat.even_or_odd (Multiset.card s) with he | ho
+  · rw [he.neg_one_pow, one_mul]
+    exact ⟨fun _ => mul_pos hA hB, fun _ => he⟩
+  · rw [ho.neg_one_pow]
+    refine ⟨fun he => absurd ho (Nat.not_odd_iff_even.mpr he), fun h => ?_⟩
+    nlinarith [mul_pos hA hB]
+
+end powerlib.SpecialFunctions

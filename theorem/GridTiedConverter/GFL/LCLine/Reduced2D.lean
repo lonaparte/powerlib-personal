@@ -37,7 +37,8 @@ Model boundary.
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduced-2d-equation.md`
 §2–§4; `equilibria-and-bifurcation.md` §1, §3; `decisions.md` §D1.1–§D1.4;
-code reference `simulation/src/.../models.py` (`vcqc_exact`, `dynamics_v1`).
+code reference `simulation/src/.../models.py` (the source's Python functions vcqc_exact,
+dynamics_v1).
 
 Results.
 * `reducedField_eq_zero_iff` : equilibria are exactly `(θ*, 0)` with `h(θ*) = 0` (`K_i ≠ 0`).

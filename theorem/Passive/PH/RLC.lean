@@ -222,9 +222,8 @@ constant for all segments. -/
       seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
   have h := (seriesRLCPH_isHurwitz_iff p).mpr hr
-  rw [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow)] at h
-  obtain ⟨a, ha, hd⟩ := Flow.GloballyExponentiallyStable.exists_decay h
-  exact ⟨a, ha, Port.PortHamiltonian.family_isLinear.mem_den_flow.mpr hd⟩
+  simp only [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow)] at h ⊢
+  exact Flow.GloballyExponentiallyStable.exists_decay h
 
 /-- The lossless loop `r = 0` conserves its energy `H`. -/
 @[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_conservative (p : SeriesRLCParams)

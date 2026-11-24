@@ -71,39 +71,28 @@ Static evidence on the model, not a connection conclusion. -/
   rw [this] at hμ
   linarith
 
+open Real powerlib.SpecialFunctions in
 /-- `|μ| < V`: in the window `[−π/2, 3π/2)` the zeros of `h` are exactly
-`arcsin(μ/V)` and `π − arcsin(μ/V)`, and they are distinct. -/
+`arcsin(μ/V)` and `π − arcsin(μ/V)`, and they are distinct: the zeros of the sinusoid
+`μ − V sin θ` (`SpecialFunctions.sinusoidZeros_eq`, `stableRoot_ne_saddleRoot`). -/
 @[tmio M, powerlib_domain] theorem biasedPD_zeros {V μ : ℝ} (hV : 0 < V) (hμ : |μ| < V) :
-    {θ | θ ∈ Set.Ico (-(Real.pi / 2)) (3 * Real.pi / 2) ∧ biasedPD V μ θ = 0} =
+    SpecialFunctions.zerosIco (biasedPD V μ) (-(Real.pi / 2)) (2 * Real.pi) =
       {Real.arcsin (μ / V), Real.pi - Real.arcsin (μ / V)} ∧
       Real.arcsin (μ / V) ≠ Real.pi - Real.arcsin (μ / V) := by
-  have hx : |μ / V| < 1 := by rw [abs_div, abs_of_pos hV, div_lt_one hV]; exact hμ
-  have hx' := abs_lt.mp hx
-  have hlo := Real.neg_pi_div_two_lt_arcsin.mpr hx'.1
-  have hhi := Real.arcsin_lt_pi_div_two.mpr hx'.2
-  have hsin : Real.sin (Real.arcsin (μ / V)) = μ / V := Real.sin_arcsin hx'.1.le hx'.2.le
-  have hzero : ∀ θ, biasedPD V μ θ = 0 ↔ Real.sin θ = μ / V := by
-    intro θ
-    rw [biasedPD_apply]
-    constructor
-    · intro h; field_simp; linarith
-    · intro h; rw [h]; field_simp; ring
-  refine ⟨?_, by intro h; linarith⟩
-  ext θ
-  simp only [Set.mem_ofPred_eq, Set.mem_insert_iff, Set.mem_singleton_iff, Set.mem_Ico, hzero]
-  constructor
-  · rintro ⟨⟨h1, h2⟩, hs⟩
-    by_cases hθ : θ ≤ Real.pi / 2
-    · left
-      rw [← hs, Real.arcsin_sin h1 hθ]
-    · right
-      have h3 : Real.sin (Real.pi - θ) = μ / V := by rw [Real.sin_pi_sub, hs]
-      have := Real.arcsin_sin (x := Real.pi - θ) (by linarith) (by linarith)
-      rw [h3] at this
-      linarith
-  · rintro (rfl | rfl)
-    · exact ⟨⟨hlo.le, by linarith [Real.pi_pos]⟩, hsin⟩
-    · exact ⟨⟨by linarith, by linarith [Real.pi_pos]⟩, by rw [Real.sin_pi_sub, hsin]⟩
+  have hx := abs_lt.mp (show |μ / V| < 1 by rw [abs_div, abs_of_pos hV, div_lt_one hV]; exact hμ)
+  have hlo := neg_pi_div_two_lt_arcsin.mpr hx.1
+  have hhi := arcsin_lt_pi_div_two.mpr hx.2
+  have h1 : stableRoot μ V 0 (-(π / 2)) = arcsin (μ / V) := by
+    rw [stableRoot, sub_zero, toIcoMod_eq_self]; constructor <;> linarith [pi_pos]
+  have h2 : saddleRoot μ V 0 (-(π / 2)) = π - arcsin (μ / V) := by
+    rw [saddleRoot, sub_zero, toIcoMod_eq_self]; constructor <;> linarith [pi_pos]
+  have hz := sinusoidZeros_eq (φ := 0) (a := -(π / 2)) hμ.le hV
+  have hne := stableRoot_ne_saddleRoot (φ := 0) (a := -(π / 2)) hμ hV
+  rw [h1, h2] at hz hne
+  have hf : biasedPD V μ = fun θ => μ - V * sin (θ + 0) := by
+    funext θ; simp only [biasedPD_apply, add_zero]; ring
+  rw [hf]
+  exact ⟨hz, hne⟩
 
 /-- The PI-PLL model with the biased detector, read about the selected phase `θ*`
 (selected point `(θ*, δω / K_i)`): the trigonometric member `trigModel μ 0 (−V) 0 0`. -/

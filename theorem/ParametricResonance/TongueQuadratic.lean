@@ -418,24 +418,6 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
   (-(√(cα ^ 2 + cω ^ 2) * √(pumpQ α₀ cα g2 ^ 2 - 4 * cα ^ 2 * α₀ ^ 2)) - cω * pumpQ α₀ cα g2) /
     (2 * cα ^ 2)
 
-/-- Where `a > 0`, membership in `ℱ` is `a² < D`, i.e. the detuned quadratic
-`S y² − (Q − 2c_ωΔ) y + α₀² + Δ²` is negative. -/
-@[tmio M, powerlib_foundation] theorem mem_flipSet_of_damping_pos {y Δ : ℝ}
-    (ha : 0 < damping α₀ cα y) :
-    (y, Δ) ∈ flipSet α₀ cα cω g2 ↔
-      (cα ^ 2 + cω ^ 2) * y ^ 2 - (pumpQ α₀ cα g2 - 2 * cω * Δ) * y + (α₀ ^ 2 + Δ ^ 2) < 0 := by
-  have hk : (cα ^ 2 + cω ^ 2) * y ^ 2 - (pumpQ α₀ cα g2 - 2 * cω * Δ) * y + (α₀ ^ 2 + Δ ^ 2) =
-      damping α₀ cα y ^ 2 - detunedD cω g2 Δ y := by
-    simp only [damping, detunedD, pumpQ]; ring
-  rw [hk, flipSet, Set.mem_ofPred_eq]
-  simp only
-  constructor
-  · rintro ⟨hD, hlt⟩
-    have := (Real.lt_sqrt ha.le).mp hlt
-    linarith
-  · intro h
-    refine ⟨by nlinarith, (Real.lt_sqrt ha.le).mpr (by linarith)⟩
-
 /-- `Δ` lies in the projection iff `(y, Δ) ∈ ℱ` for some amplitude `y > 0`. -/
 @[tmio M, powerlib_foundation] theorem mem_flipProjection {Δ : ℝ} :
     Δ ∈ flipProjection α₀ cα cω g2 ↔ ∃ y, 0 < y ∧ (y, Δ) ∈ flipSet α₀ cα cω g2 := by

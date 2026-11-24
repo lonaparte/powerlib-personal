@@ -34,7 +34,7 @@ six-state and two-state carriers OUT-positive (`i_out = −i`); the six-state fo
 §D8 reading is `RatePLL.field_eq_literatureField`.
 
 Results.
-* Six-state carrier (`CCParams`, `GFLRateCC` with `R_f = R_g = 0`; states
+* Six-state carrier (`CCParams`; source model GFLRateCC with `R_f = R_g = 0`; states
   `(θ, x, i_d, i_q, ξ_d, ξ_q)`, IN-positive current, `ξ = ∫ (i* − i)`): L filter
   `L_f i̇ = v − e − ω₁ L_f J i`, line `v = v_g − ω₁ L_g J i − L_g i̇`, current loop with ideal PCC
   feed-forward and nominal decoupling, reversed as the IN-positive plant requires (§D8):
@@ -51,11 +51,11 @@ Results.
   `1 + k_p L_g i_d` contains neither `R_g` nor `i_q`; `rateRel_iq_zero_iff` — at `i_q = 0` the
   solution is exactly that of the `R_g`-free model for every `R_g` (exact insensitivity, not small
   sensitivity).
-* Four-state dc carrier (`DCParams`, `GFLDCFormC`; states `(θ, x, V_dc, η)`, ideal current loop
-  `i = i*`, `i_d* = i_{d0} + s_K (k_pv (V − 1) + k_iv η)`, constant `i_q`, constant-current dc
-  source `C V̇ = I_src + s_P P / V`, `P = (3/2)(v_d i_d + v_q i_q)` from `S̄ = V̄ Ī*`). The line
-  keeps `L_g i̇_d` and the speed EMF. `rel_iff`: the relations are solved sequentially — first the
-  PLL loop `D₀ = 1 − k_p s_L L_g i_d`, then the dc loop
+* Four-state dc carrier (`DCParams`; source model GFLDCFormC; states `(θ, x, V_dc, η)`,
+  ideal current loop `i = i*`, `i_d* = i_{d0} + s_K (k_pv (V − 1) + k_iv η)`, constant `i_q`,
+  constant-current dc source `C V̇ = I_src + s_P P / V`, `P = (3/2)(v_d i_d + v_q i_q)` from
+  `S̄ = V̄ Ī*`). The line keeps `L_g i̇_d` and the speed EMF. `rel_iff`: the relations are solved
+  sequentially — first the PLL loop `D₀ = 1 − k_p s_L L_g i_d`, then the dc loop
   `D₁ = 1 − s_K s_P s_L (3/2) k_pv L_g i_d/(C V)`; `i_q` enters neither loop factor (`D1_indep_iq`).
   `coordField` / `field` is the resulting four-state field.
 * Direction convention: OUT-positive writing of the source `s_L = 1, s_P = −1, s_K = 1`
@@ -84,7 +84,7 @@ open Real
 
 /-! ## Six-state carrier: L filter + current loop + PLL (`R_f = R_g = 0`) -/
 
-/-- Parameters of the six-state carrier (`GFLRateCC` with `R_f = R_g = 0`). -/
+/-- Parameters of the six-state carrier (source model GFLRateCC with `R_f = R_g = 0`). -/
 structure CCParams where
   /-- grid amplitude -/
   Vg : ℝ
@@ -238,7 +238,7 @@ def bwTuned (ζc ωcc : ℝ) : CCParams :=
 
 /-! ### The OUT-positive form of the source (conventions §D8) -/
 
-/-- The OUT-positive form of the source carrier `GFLRateCC` (`R_f = R_g = 0`; work-sync
+/-- The OUT-positive form of the source carrier GFLRateCC (`R_f = R_g = 0`; work-sync
 conventions §D8), coordinates `(θ, x, i_d, i_q, ξ_d, ξ_q)` with the currents flowing converter →
 grid and the references `idRef`, `iqRef`, integrators `ξ = ∫ (i* − i)` in the same direction:
 filter `L_f i̇ = e − v − ω₁ L_f J i`, line `v = v_g + ω₁ L_g J i + L_g i̇`, current loop
@@ -326,9 +326,9 @@ def loopFactor (sL sP sK kpv Lg C V id : ℝ) : ℝ :=
     loopFactor sL sP sK kpv Lg C V (-id) = 2 - loopFactor sL sP sK kpv Lg C V id := by
   unfold loopFactor; ring
 
-/-- Parameters of the four-state dc carrier (`GFLDCFormC`), written in a direction convention
-given by three sign flags: `s_L` (sign of the line-impedance drop in `v`), `s_P` (sign of the
-port power in the dc balance), `s_K` (sign of `∂i_d*/∂V_dc`). Currents are in the same
+/-- Parameters of the four-state dc carrier (source model GFLDCFormC), written in a direction
+convention given by three sign flags: `s_L` (sign of the line-impedance drop in `v`), `s_P` (sign
+of the port power in the dc balance), `s_K` (sign of `∂i_d*/∂V_dc`). Currents are in the same
 convention. -/
 structure DCParams where
   /-- grid amplitude -/

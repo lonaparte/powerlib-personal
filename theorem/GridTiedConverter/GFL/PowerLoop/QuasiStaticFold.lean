@@ -23,7 +23,8 @@ full nonlinear field translated to the selected point `(θ*, 0, i_d*)`
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V²/(4X_g)`, 折叠角 45°; 推论二 准静态无
-Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
+Hopf); the source's Python model class GFLQuasiStatic in
+`.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
 
 Results.
 The fold (static). At a balanced point write `A = V cos θ*`, `B = V sin θ* = −X_g i_d*`,

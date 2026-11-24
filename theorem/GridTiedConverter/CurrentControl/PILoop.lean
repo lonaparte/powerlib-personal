@@ -28,7 +28,7 @@ Model boundary.
 * The IMC-tuned instance is `theorem/GridTiedConverter/CurrentControl/IMC.lean`; the same IMC loop
   in a machine drive, `Drives.CascadeControl.IMCLoop` (`theorem/Drives/CascadeControl.lean`), is
   read through this family by its parameter map `IMCLoop.toPIParams`, and so is the drive speed
-  loop (`Drives.CascadeControl.speedLoopParams`).
+  loop (`Drives.CascadeControl.speedLoopModel`).
 
 Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impedance.md` §1.4
 (scalar sanity check); `theory/T-gfl-reduced-order-dynamics.md` §1.3 (`A_ci`);

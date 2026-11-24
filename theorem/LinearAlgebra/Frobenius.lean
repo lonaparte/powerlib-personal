@@ -11,8 +11,9 @@ Scope.
   (`Matrix.Norms.Frobenius`, a scoped instance); no model.
 
 Source: Mathlib's Frobenius matrix norm (`Mathlib.Analysis.Matrix.Normed`); the pinned Mathlib
-does not derive this structure from the scoped norm, and LeanForControl's `LyapunovEquation`
-supplies it as a local instance in the same way.
+does not derive this structure from the scoped norm, and the LeanForControl module
+`LinearSystems.Stability.Continuous.LyapunovEquation` supplies it as a local instance in the
+same way.
 
 Results.
 * `frobeniusENormedAddMonoid`: the `ENormedAddMonoid` structure of the Frobenius

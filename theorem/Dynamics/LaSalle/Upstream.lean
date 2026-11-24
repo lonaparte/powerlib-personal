@@ -53,9 +53,9 @@ instability criteria are in `theorem/Dynamics/Instability.lean`.
 The transitive LeanForControl imports of the upstream module are
 `Analysis.{Continuity, IntegralCurves, Integrals}`,
 `ODEs.{GronwallBellman, ODE_properties, PicardLindelof}`, `Stability.{Autonomous,
-DefsAutonomous}`; none of `LeanForControl.axioms`, `Comparison.*`, `LyapunovBounds`,
-`KLCharacterization*`, `ClassKDecay` is involved, and `#print axioms` of every upstream theorem
-used is `[propext, Classical.choice, Quot.sound]`.
+DefsAutonomous}`; none of the modules `LeanForControl.axioms`, `Comparison.*`,
+`Stability.{LyapunovBounds, KLCharacterization*, ClassKDecay}` is involved, and `#print axioms`
+of every upstream theorem used is `[propext, Classical.choice, Quot.sound]`.
 -/
 
 noncomputable section

@@ -103,33 +103,24 @@ def fpFreq (Kp Ki ε : ℝ) (h : ℝ → ℝ) (ρ : ℝ → ℝ → ℝ) (θ η 
   -dθ (fun x y => (Kp * h x + Ki * y) * ρ x y) θ η - dη (fun x y => h x * ρ x y) θ η +
     ε ^ 2 / 2 * dθ (dθ ρ) θ η
 
-/-- Gibbs function `e^{−𝓗/T}`, `𝓗 = 𝒱(θ) + ½ K_i η²`. -/
-def gibbs2 (V : ℝ → ℝ) (Ki T θ η : ℝ) : ℝ := exp (-(V θ + Ki / 2 * η ^ 2) / T)
+/-- Gibbs function `e^{−𝓗/T}`, `𝓗 = 𝒱(θ) + ½ K_i η²`: in `θ`, the Gibbs weight
+`Stochastic.FP.gibbs` of the potential `𝒱 + ½ K_i η²` at intensity `T`. -/
+def gibbs2 (V : ℝ → ℝ) (Ki T θ η : ℝ) : ℝ :=
+  Stochastic.FP.gibbs (fun x => V x + Ki / 2 * η ^ 2) T θ
 
 @[tmio M, powerlib_domain] theorem gibbs2_hasDerivAt_θ {V h : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (-h x) x)
     (Ki T η x : ℝ) :
     HasDerivAt (fun x => gibbs2 V Ki T x η) (h x / T * gibbs2 V Ki T x η) x := by
-  have hq : HasDerivAt (fun x => -(V x + Ki / 2 * η ^ 2) / T) (h x / T) x := by
-    have := ((hV x).add_const (Ki / 2 * η ^ 2)).neg.div_const T
-    convert! this using 1; rw [neg_neg]
-  have := hq.exp
-  unfold gibbs2
-  convert! this using 1
-  ring
+  have := Stochastic.FP.hasDerivAt_gibbs (D := T) ((hV x).add_const (Ki / 2 * η ^ 2))
+  rwa [neg_div, neg_neg] at this
 
 @[tmio M, powerlib_domain] theorem gibbs2_hasDerivAt_η (V : ℝ → ℝ) (Ki T θ y : ℝ) :
     HasDerivAt (fun y => gibbs2 V Ki T θ y) (-(Ki * y) / T * gibbs2 V Ki T θ y) y := by
   have hq : HasDerivAt (fun y : ℝ => V θ + Ki / 2 * y ^ 2) (Ki * y) y := by
-    have := ((hasDerivAt_pow 2 y).const_mul (Ki / 2)).const_add (V θ)
-    convert! this using 1; push_cast; ring
-  have hq' : HasDerivAt (fun y => -(V θ + Ki / 2 * y ^ 2) / T) (-(Ki * y) / T) y := by
-    have := hq.neg.div_const T
-    convert! this using 1
-  have := hq'.exp
-  unfold gibbs2
-  convert! this using 1
-  ring
+    convert! ((hasDerivAt_pow 2 y).const_mul (Ki / 2)).const_add (V θ) using 1; push_cast; ring
+  have := Stochastic.FP.hasDerivAt_gibbs (D := T) hq
+  rwa [← neg_div] at this
 
 /-- **Frequency-channel Gibbs law (§2)**: if `ε² = 2 K_p T` (i.e. `B Bᵀ = 2 T R`,
 `T = T_eff`), then `e^{−𝓗/T}` solves the stationary Fokker–Planck equation pointwise, for any

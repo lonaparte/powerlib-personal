@@ -21,6 +21,10 @@ Results.
   dissipation inequality holds (`discreteGradient_dissipation`).
 * `midpointDiscreteGradient` — the midpoint (average-vector-field) discrete gradient of a
   quadratic `H = ½ xᵀ Q x`, `Q` symmetric, is `Q (x + y) / 2`.
+* `separableDiscreteGradient` — the discrete gradient of a planar separable energy
+  `H(x) = U(x₀) + (k/2) x₁²`: the slope of `U` (a supplied `U'` on the diagonal) and the mean
+  `k (x₁ + y₁)/2`, for any `U`; consistent on the diagonal
+  (`separableDiscreteGradient_dg_self`).
 -/
 
 noncomputable section
@@ -78,5 +82,31 @@ def midpointDiscreteGradient {Q : Matrix (Fin n) (Fin n) ℝ} (hQ : Qᵀ = Q) :
     rw [dotProduct_comm (Q *ᵥ x) y, dotProduct_comm (Q *ᵥ x) x, dotProduct_comm (Q *ᵥ y) y,
       dotProduct_comm (Q *ᵥ y) x, hsym]
     ring
+
+/-- The separable discrete gradient of `H(x) = U(x₀) + (k/2) x₁²` on the plane: the slope of `U`
+between the two first coordinates (the supplied derivative `U'` when they agree) and the mean
+`k (x₁ + y₁)/2` of the gradients of the quadratic part. No smoothness of `U` is needed for the
+mean-value identity; with `U'` the derivative of `U` it is consistent
+(`separableDiscreteGradient_dg_self`). -/
+def separableDiscreteGradient (U U' : ℝ → ℝ) (k : ℝ) :
+    DiscreteGradient (fun x : Fin 2 → ℝ => U (x 0) + k / 2 * x 1 ^ 2) where
+  dg x y := ![if x 0 = y 0 then U' (x 0) else slope U (x 0) (y 0), k * (x 1 + y 1) / 2]
+  mean_value x y := by
+    simp only [dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Pi.sub_apply]
+    split_ifs with hxy
+    · rw [hxy]
+      ring
+    · have h := sub_smul_slope U (x 0) (y 0)
+      rw [smul_eq_mul, vsub_eq_sub] at h
+      linear_combination -h
+
+/-- On the diagonal the separable discrete gradient is `(U'(x₀), k x₁)`, the gradient of `H` when
+`U'` is the derivative of `U`. -/
+@[tmio T, powerlib_foundation] theorem separableDiscreteGradient_dg_self (U U' : ℝ → ℝ) (k : ℝ)
+    (x : Fin 2 → ℝ) : (separableDiscreteGradient U U' k).dg x x = ![U' (x 0), k * x 1] := by
+  simp only [separableDiscreteGradient, ite_true]
+  congr 2
+  ring
 
 end powerlib.Numerics

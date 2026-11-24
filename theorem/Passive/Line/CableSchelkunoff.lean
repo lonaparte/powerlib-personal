@@ -390,7 +390,7 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
 
 /-- The normalized tube determinant tends to `1` along every sector filter with `Re m → ∞`
 (`0 < a < b`). -/
-@[tmio T, powerlib_foundation] theorem tendsto_tubeDetNorm {a b K : ℝ} (ha : 0 < a) (hab : a < b)
+@[tmio M, powerlib_domain] theorem tendsto_tubeDetNorm {a b K : ℝ} (ha : 0 < a) (hab : a < b)
     (hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => tubeDetNorm a b (f i)) l (𝓝 1) := by

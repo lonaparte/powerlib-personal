@@ -2,6 +2,7 @@ import theorem.Numerics.EulerRealization
 import theorem.Numerics.DiscreteGradient
 import theorem.Map.LinearReading
 import theorem.Linear.Family
+import theorem.Linear.Coordinates
 import theorem.TMIO.ClaimElab
 
 /-! # The explicit Euler implementation of a model with ports: a realization (foundation)
@@ -23,7 +24,11 @@ nonnegative storage cannot pay for it (`Map.System.not_passive_of_supply_unbound
 integrator `ẋ = u`, `y = x` is passive with storage `x²/2`, and its Euler discretization
 `x⁺ = x + h u`, `y = x` is not passive for any storage at any step `h > 0`. The discrete gradient
 method of `theorem/Numerics/DiscreteGradient.lean`, whose output `gᵀ ∇̄H(x, x⁺)` sees the step,
-does realize passivity (`discreteGradient_passiveWith`). For linear plants `ẋ = Ax + Bu` the
+does realize passivity (`discreteGradient_passiveWith`). For a strictly proper linear plant the
+Euler discretization is passive only when the output map vanishes; the implicit midpoint rule
+keeps the passivity of a KYP certificate, with the same storage, at every step. The Euler step
+commutes with linear changes of state coordinates, which preserve passivity in both kinds of
+time, so passivity results read through such a change. For linear plants `ẋ = Ax + Bu` the
 Euler zero-input map is `I + hA`; a multiplier `1 + hλ` inside the unit disk forces `Re λ < 0`
 (`isHurwitz_of_forwardEuler_schurStable`), so the realization of the attractive sentences is
 complete at every positive step, and with the step threshold exact for small steps.
@@ -55,7 +60,10 @@ Source: `theorem/Numerics/EulerRealization.lean` (`eulerMap`, `eulerFamily`, `eu
 `theorem/Numerics/LinearSchemes.lean` (`forwardEuler_schurStable_iff`),
 `theorem/Map/LinearReading.lean` (`Map.holdsMap_op_iff_schurStable`),
 `theorem/Linear/Family.lean` (`Family.IsLinear.den_hurwitz`), `theorem/Port/Linear.lean` (KYP
-certificates), `theorem/Numerics/DiscreteGradient.lean` (`discreteGradient_dissipation`); the port
+certificates), `theorem/Numerics/DiscreteGradient.lean` (`discreteGradient_dissipation`,
+`midpointDiscreteGradient`), `theorem/Linear/Coordinates.lean` (`Port.System.conjugate`,
+`Port.System.passive_conjugate`); Brogliato, Lozano, Maschke and Egeland, *Dissipative Systems
+Analysis and Control* (2007), §3 (KYP lemma, the bilinear transform); the port
 and map semantics (`theorem/Port/Defs.lean`, `theorem/Map/Defs.lean`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7 and `theory/T-ph.md` §2.5.
 
@@ -63,7 +71,9 @@ Results.
 * `eulerSystem s h` (the Euler discretization of a port system), `eulerSystem_zeroInput` (its
   zero-input map is `eulerMap s.zeroInput h`).
 * Passivity: `Map.System.not_passive_of_supply_unbounded` (a discrete system that can draw
-  unboundedly much energy in one step from some state is not passive); `not_passive_eulerSystem`
+  unboundedly much energy in one step from some state is not passive),
+  `Map.System.not_passive_of_feedback_supply_unbounded` (nor one that draws unboundedly much
+  energy over finitely many steps of a closed loop with a state feedback); `not_passive_eulerSystem`
   (an output independent of the input and nonzero at some state makes the Euler discretization
   not passive at every step `h > 0`); the integrator `integrator` (`ẋ = u`, `y = x`),
   `integrator_passiveWith` (storage `x²/2`, a KYP certificate) and
@@ -71,9 +81,21 @@ Results.
   `discreteGradient_passiveWith` (contrast: a discrete system whose steps solve the
   discrete-gradient relation of a pH system and whose output is the discrete-gradient output is
   passive with storage `H`).
+* Changes of coordinates: `Map.System.conjugate` (a discrete system transported through a state
+  coordinate change), `Map.System.passiveWith_conjugate`, `Map.System.passive_conjugate_iff`,
+  `Port.System.passive_conjugate_iff` (an invertible change preserves passivity both ways, in
+  discrete and continuous time); `eulerSystem_conjugate` (the Euler discretization commutes with
+  a linear change of state coordinates).
 * Linear plants: `eulerMap_linear` (`eulerMap (Ax) h` is the linear map of `I + h A`),
   `isHurwitz_of_forwardEuler_schurStable` (a positive step with a Schur stable `I + h A` forces a
-  Hurwitz `A`).
+  Hurwitz `A`); `not_passive_eulerSystem_plant_iff` (with `D = 0` and `h > 0` the Euler
+  discretization is not passive, for any storage, exactly when `C ≠ 0`).
+* The implicit midpoint rule for plants: `midpointStep` (`x⁺` from
+  `(I − (h/2) A) x⁺ = (I + (h/2) A) x + h B u`), `midpointSystem` (output `C x̄ + D u` at the
+  midpoint `x̄ = (x + x⁺)/2`), `midpointStep_sub` (with `I − (h/2) A` invertible the step solves
+  `x⁺ − x = h (A x̄ + B u)`), `midpointSystem_passiveWith` (a KYP certificate makes the midpoint
+  discretization passive with the same storage at every step `h ≥ 0`, through the midpoint
+  discrete gradient `midpointDiscreteGradient`).
 
 Family and connection conclusions.
 * The zero-input family `zeroInputFamily F sys : Family X Q n 0`
@@ -106,7 +128,13 @@ Family and connection conclusions.
   has a step `h₀ > 0` below which its Euler implementations satisfy these sentences exactly when
   it does); `not_eulerPorts_realizationSoundUnder_of_large_step_linear` (`n > 0`: not sound
   without a step constraint, given a Hurwitz model with arbitrarily large steps); over the
-  integrations `EulerStep X`, `not_eulerStepPorts_realizationSoundUnder_linear`.
+  integrations `EulerStep X`, `not_eulerStepPorts_realizationSoundUnder_linear`;
+  `eulerPortFamily_not_mem_den_passive_linear` (an Euler implementation with a positive step of a
+  strictly proper plant with `C ≠ 0` is not passive).
+* The implicit midpoint template `midpointPortFamily F plant design step : Family Y Q n p`
+  (requirements and translation of the design model) and its passivity law
+  `midpointPortFamily_mem_den_passive` (a KYP certificate of the design plant and a well-posed
+  step `h ≥ 0` place the implementation in passivity).
 -/
 
 noncomputable section
@@ -130,6 +158,65 @@ most `V x`. -/
   obtain ⟨u, hu⟩ := h (-V x)
   linarith [hV x u, hV0 (s.step x u)]
 
+/-- A discrete-time system that, from some state `x₀` under some state feedback `u = κ(x)`,
+draws more energy over finitely many steps than any bound is not passive: along the orbit of the
+closed loop `x ↦ s.step x (κ x)` the storage telescopes, so with a nonnegative storage `V` the
+energy supplied over `N` steps is at least `−V x₀`. -/
+@[tmio T, powerlib_foundation] theorem Map.System.not_passive_of_feedback_supply_unbounded
+    (s : Map.System n p) (κ : ℝⁿ → Fin p → ℝ) (x₀ : ℝⁿ)
+    (h : ∀ c : ℝ, ∃ N : ℕ, ∑ k ∈ Finset.range N,
+      s.supply ((fun x => s.step x (κ x))^[k] x₀) (κ ((fun x => s.step x (κ x))^[k] x₀)) < c) :
+    ¬ s.Passive := by
+  rintro ⟨V, hV0, hV⟩
+  have key : ∀ N : ℕ, V ((fun x => s.step x (κ x))^[N] x₀) - V x₀ ≤ ∑ k ∈ Finset.range N,
+      s.supply ((fun x => s.step x (κ x))^[k] x₀) (κ ((fun x => s.step x (κ x))^[k] x₀)) := by
+    intro N
+    induction N with
+    | zero => simp
+    | succ N ih =>
+      rw [Finset.sum_range_succ, Function.iterate_succ_apply']
+      linarith [hV ((fun x => s.step x (κ x))^[N] x₀) (κ ((fun x => s.step x (κ x))^[N] x₀))]
+  obtain ⟨N, hN⟩ := h (-V x₀)
+  linarith [key N, hV0 ((fun x => s.step x (κ x))^[N] x₀)]
+
+/-- A discrete-time system transported through a change of state coordinates: the step
+`L ∘ s.step ∘ K` and the output read at `K x`, with the same step length. -/
+def Map.System.conjugate (s : Map.System n p) (L K : ℝⁿ → ℝⁿ) : Map.System n p :=
+  ⟨fun x u => L (s.step (K x) u), fun x u => s.output (K x) u, s.period⟩
+
+/-- The storage pulls back along the inverse coordinates; input, step length and supplied energy
+are preserved. -/
+@[tmio T, powerlib_foundation] theorem Map.System.passiveWith_conjugate (s : Map.System n p)
+    {L K : ℝⁿ → ℝⁿ} (hKL : ∀ x, K (L x) = x) {V : ℝⁿ → ℝ} (h : s.PassiveWith V) :
+    (s.conjugate L K).PassiveWith (V ∘ K) :=
+  ⟨fun x => h.1 _, fun x u => by
+    simpa [Map.System.conjugate, Map.System.supply, hKL] using h.2 (K x) u⟩
+
+/-- An invertible change of state coordinates preserves passivity both ways. -/
+@[tmio T, powerlib_foundation] theorem Map.System.passive_conjugate_iff (s : Map.System n p)
+    {L K : ℝⁿ → ℝⁿ} (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) :
+    (s.conjugate L K).Passive ↔ s.Passive := by
+  constructor
+  · rintro ⟨V, hV⟩
+    have hs : (s.conjugate L K).conjugate K L = s := by
+      cases s
+      simp only [Map.System.conjugate, hKL]
+    exact ⟨_, hs ▸ (s.conjugate L K).passiveWith_conjugate hLK hV⟩
+  · rintro ⟨V, hV⟩
+    exact ⟨_, s.passiveWith_conjugate hKL hV⟩
+
+/-- The continuous-time counterpart: an invertible linear change of state coordinates preserves
+passivity of a system with ports both ways (`Port.System.passive_conjugate` in each
+direction). -/
+@[tmio T, powerlib_foundation] theorem Port.System.passive_conjugate_iff (s : Port.System n p)
+    {L K : ℝⁿ →L[ℝ] ℝⁿ} (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) :
+    (s.conjugate L K).Passive ↔ s.Passive := by
+  refine ⟨fun h => ?_, s.passive_conjugate L K hKL⟩
+  have hs : (s.conjugate L K).conjugate K L = s := by
+    cases s
+    simp only [Port.System.conjugate, hKL]
+  exact hs ▸ (s.conjugate L K).passive_conjugate K L hLK h
+
 namespace Numerics
 
 /-! ## The Euler discretization of a port system -/
@@ -143,6 +230,13 @@ def eulerSystem (s : Port.System n p) (h : ℝ) : Map.System n p :=
 @[tmio T, simp, powerlib_foundation] theorem eulerSystem_zeroInput (s : Port.System n p) (h : ℝ) :
     (eulerSystem s h).zeroInput = eulerMap s.zeroInput h :=
   rfl
+
+/-- The Euler discretization commutes with a linear change of state coordinates `x = L z`,
+`z = K x`: discretizing the transported system is transporting the discretization. -/
+@[tmio T, powerlib_foundation] theorem eulerSystem_conjugate (s : Port.System n p)
+    (L K : ℝⁿ →L[ℝ] ℝⁿ) (hLK : ∀ x, L (K x) = x) (h : ℝ) :
+    eulerSystem (s.conjugate L K) h = (eulerSystem s h).conjugate L K := by
+  simp only [eulerSystem, Port.System.conjugate, Map.System.conjugate, map_add, map_smul, hLK]
 
 /-- **Explicit Euler loses passivity when the output does not see the input.** If at some state
 `x` the output of a port system is a nonzero `y` whatever the input, then for every step `h > 0`
@@ -426,6 +520,93 @@ Schur stable with `h > 0`, every eigenvalue `λ` of `A` has `|1 + hλ|² = 1 + h
   have hre : 0 ≤ μ.re := not_lt.mp hre
   nlinarith [sq_nonneg (h * μ.im), sq_nonneg (h * μ.re), mul_nonneg hh.le hre]
 
+/-- **The Euler discretization of a strictly proper plant is not passive exactly when its output
+map is nonzero**, at every step `h > 0`, whatever the storage (quadratic or not). With `D = 0` and
+`C x ≠ 0` at some state, the output does not see the input of the step
+(`not_passive_eulerSystem`); with `C = 0` the output and the supply vanish and the zero storage
+works. -/
+@[tmio T, powerlib_foundation] theorem not_passive_eulerSystem_plant_iff (M : Linear.Plant n p)
+    (hD : M.D = 0) {h : ℝ} (hh : 0 < h) :
+    ¬ (eulerSystem M.system h).Passive ↔ M.C ≠ 0 := by
+  constructor
+  · intro hn hC
+    refine hn ⟨fun _ => 0, fun _ => le_rfl, fun x u => ?_⟩
+    simp [Map.System.supply, eulerSystem, Linear.Plant.system, hC, hD]
+  · intro hC
+    obtain ⟨x, hx⟩ : ∃ x : Fin n → ℝ, M.C *ᵥ x ≠ 0 := by
+      by_contra hcon
+      push Not at hcon
+      exact hC (Matrix.ext_of_mulVec_single fun j => by
+        rw [Matrix.zero_mulVec]
+        exact hcon _)
+    exact not_passive_eulerSystem _ hh (x := WithLp.toLp 2 x) (y := M.C *ᵥ x)
+      (fun u => by simp [Linear.Plant.system, hD]) hx
+
+/-! ## Contrast: the implicit midpoint rule keeps a KYP certificate -/
+
+/-- One step of the implicit midpoint (Tustin) rule for a plant with step `h`: the solution `x⁺`
+of `(I − (h/2) A) x⁺ = (I + (h/2) A) x + h B u` through the inverse of `I − (h/2) A`. -/
+def midpointStep (M : Linear.Plant n p) (h : ℝ) (x : ℝⁿ) (u : Fin p → ℝ) : ℝⁿ :=
+  WithLp.toLp 2 ((1 - (h / 2) • M.A)⁻¹ *ᵥ ((1 + (h / 2) • M.A) *ᵥ WithLp.ofLp x + h • (M.B *ᵥ u)))
+
+/-- The implicit midpoint discretization of a plant with step `h`: the step `midpointStep`, the
+plant's output at the midpoint `x̄ = (x + x⁺)/2` with the input held, `C x̄ + D u`, and step length
+`h`. -/
+def midpointSystem (M : Linear.Plant n p) (h : ℝ) : Map.System n p :=
+  ⟨midpointStep M h, fun x u => M.C *ᵥ ((1 / 2 : ℝ) • (WithLp.ofLp x +
+    WithLp.ofLp (midpointStep M h x u))) + M.D *ᵥ u, h⟩
+
+/-- With `I − (h/2) A` invertible the midpoint step solves `x⁺ − x = h (A x̄ + B u)`,
+`x̄ = (x + x⁺)/2`. -/
+@[tmio T, powerlib_foundation] theorem midpointStep_sub (M : Linear.Plant n p) {h : ℝ}
+    (hw : IsUnit (1 - (h / 2) • M.A).det) (x : ℝⁿ) (u : Fin p → ℝ) :
+    WithLp.ofLp (midpointStep M h x u) - WithLp.ofLp x = h • (M.A *ᵥ ((1 / 2 : ℝ) •
+      (WithLp.ofLp x + WithLp.ofLp (midpointStep M h x u))) + M.B *ᵥ u) := by
+  have hy : (1 - (h / 2) • M.A) *ᵥ WithLp.ofLp (midpointStep M h x u) =
+      (1 + (h / 2) • M.A) *ᵥ WithLp.ofLp x + h • (M.B *ᵥ u) := by
+    simp only [midpointStep, WithLp.ofLp_toLp, Matrix.mulVec_mulVec,
+      Matrix.mul_nonsing_inv _ hw, Matrix.one_mulVec]
+  simp only [Matrix.sub_mulVec, Matrix.add_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
+    at hy
+  ext i
+  have hi := congrFun hy i
+  simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul] at hi
+  simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.mulVec_smul,
+    Matrix.mulVec_add]
+  linarith
+
+/-- **Contrast: the implicit midpoint rule keeps the passivity of a KYP certificate.** For a step
+`h ≥ 0` with `I − (h/2) A` invertible, the midpoint discretization of a plant with a KYP
+certificate `P` is passive with the same storage `xᵀ P x / 2`: over a step the storage changes by
+`(P x̄) · (x⁺ − x)` (the midpoint discrete gradient, `midpointDiscreteGradient`), that is
+`h (x̄ᵀ P A x̄ + (C x̄) · u)` with `x̄ᵀ P A x̄ ≤ 0`, and `uᵀ D u ≥ 0`. The explicit Euler
+discretization of the same plant is not passive when `D = 0` and `C ≠ 0`
+(`not_passive_eulerSystem_plant_iff`). -/
+@[tmio T, powerlib_foundation] theorem midpointSystem_passiveWith {M : Linear.Plant n p}
+    (c : Linear.KYP M) {h : ℝ} (hh : 0 ≤ h) (hw : IsUnit (1 - (h / 2) • M.A).det) :
+    (midpointSystem M h).PassiveWith c.storage := by
+  refine ⟨fun x => mul_nonneg (by norm_num) (c.nonneg _), fun x u => ?_⟩
+  set y := WithLp.ofLp (midpointStep M h x u)
+  set xb : Fin n → ℝ := (1 / 2 : ℝ) • (WithLp.ofLp x + y)
+  have hstep : y - WithLp.ofLp x = h • (M.A *ᵥ xb + M.B *ᵥ u) := midpointStep_sub M hw x u
+  have hmv := (midpointDiscreteGradient c.symmetric).mean_value (WithLp.ofLp x) y
+  have hdg : (midpointDiscreteGradient c.symmetric).dg (WithLp.ofLp x) y = c.P *ᵥ xb := by
+    simp only [midpointDiscreteGradient, xb, Matrix.mulVec_smul]
+  rw [hdg, hstep, dotProduct_smul, smul_eq_mul, dotProduct_add] at hmv
+  have hA : (c.P *ᵥ xb) ⬝ᵥ (M.A *ᵥ xb) ≤ 0 := by
+    have hd := c.dissipation xb
+    rw [Linear.quadratic_sym c.symmetric] at hd
+    rw [dotProduct_comm, Criteria.dotProduct_mulVec_comm_of_symm c.symmetric (M.A *ᵥ xb) xb]
+    linarith
+  have hB : (c.P *ᵥ xb) ⬝ᵥ (M.B *ᵥ u) = (M.C *ᵥ xb) ⬝ᵥ u := by
+    rw [dotProduct_comm, Criteria.dotProduct_mulVec_comm_of_symm c.symmetric (M.B *ᵥ u) xb]
+    exact c.output_dot xb u
+  have hDu := c.feedthrough u
+  change (1 / 2 : ℝ) * (y ⬝ᵥ (c.P *ᵥ y)) - (1 / 2 : ℝ) * (WithLp.ofLp x ⬝ᵥ
+      (c.P *ᵥ WithLp.ofLp x)) ≤ h * (u ⬝ᵥ (M.C *ᵥ xb + M.D *ᵥ u))
+  rw [hmv, hB, dotProduct_add, dotProduct_comm u (M.C *ᵥ xb)]
+  nlinarith [mul_nonneg hh hDu, mul_nonneg hh (neg_nonneg.mpr hA)]
+
 variable {plant : X → Linear.Plant n p}
 
 /-- **The linear reading of the Euler implementations.** For plants, the attractive sentences and
@@ -523,6 +704,45 @@ soundness of every attractive sentence and of sampled contraction
   unfold powerlib.TMIO.Statement
   exact not_eulerPorts_realizationSoundUnder_of_large_step_linear hF hn hP hx
     (EulerStep.exists_le_h x)
+
+/-- **Passivity of the Euler implementations of a linear family.** An Euler implementation with a
+positive step of a strictly proper plant (`D = 0`) with a nonzero output map is not passive
+(`not_passive_eulerSystem_plant_iff`): no storage, quadratic or not, rescues it. -/
+@[tmio TM, powerlib_foundation] theorem eulerPortFamily_not_mem_den_passive_linear {y : Y}
+    (hh : 0 < step y) (hD : (plant (design y)).D = 0) (hC : (plant (design y)).C ≠ 0) :
+    connection% (y ∉ (eulerPortFamily F (fun x => (plant x).system) design step).den .passive) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den)]
+  exact (not_passive_eulerSystem_plant_iff _ hD hh).mpr hC
+
+/-! ## The implicit midpoint implementation family -/
+
+section Midpoint
+
+variable {X' Y' Q' : Type*}
+
+/-- The implicit midpoint implementation family of a family of plants, over an implementation
+type `Y` whose members carry a design model `design y` and a step `step y`: every implementation
+read as the midpoint discretization of its design's plant with its step; requirements and
+translation are those of its design model. -/
+def midpointPortFamily (F : Family X' Q' n p) (plant : X' → Linear.Plant n p) (design : Y' → X')
+    (step : Y' → ℝ) : Family Y' Q' n p where
+  system y := .discrete (midpointSystem (plant (design y)) (step y))
+  meets y := F.meets (design y)
+  translate := F.translate
+
+end Midpoint
+
+/-- **A KYP certificate places a midpoint implementation in passivity.** An implicit midpoint
+implementation with a step `h ≥ 0` (`I − (h/2) A` invertible) of a plant with a KYP certificate is
+passive with the certificate's storage (`midpointSystem_passiveWith`). -/
+@[tmio TM, powerlib_foundation] theorem midpointPortFamily_mem_den_passive {y : Y}
+    (c : Linear.KYP (plant (design y))) (hh : 0 ≤ step y)
+    (hw : IsUnit (1 - (step y / 2) • (plant (design y)).A).det) :
+    connection% (y ∈ (midpointPortFamily F plant design step).den .passive) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den)]
+  exact ⟨_, midpointSystem_passiveWith c hh hw⟩
 
 end Numerics
 

@@ -38,9 +38,9 @@ notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论四 ζ 比)
 `.../archive/notes/concepts/disturbance-layer.md` (`X_g` 精确消去, `tan θ_H = ω_s ζ₀/(π f_{n0})`),
 `projects/gfl-gfm-stability-tree/notes/concepts/nonautonomous-criteria.md` (N1 冻结阈 `ε_frozen`);
 model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`. The source writes
-the frozen current OUT-positive, `I_d = −i_d` (`convention_override` there): that form is
-`literatureField`, and `field_eq_literatureField` reads it by the substitution `I_d = −i_d`
-(conventions §D8).
+the frozen current OUT-positive, `I_d = −i_d` (a convention override declared by the source):
+that form is `literatureField`, and `field_eq_literatureField` reads it by the substitution
+`I_d = −i_d` (conventions §D8).
 
 Results.
 * `field_eq_literatureField` (§D8 boundary translation): the field at `i_d` is the OUT-positive

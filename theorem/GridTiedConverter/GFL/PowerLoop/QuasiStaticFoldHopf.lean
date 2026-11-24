@@ -21,10 +21,10 @@ the field translated to its selected point.
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (推论二 准静态无 Hopf: stated for positive gains; the
 witness shows that the positivity of the gains is essential for both the absence of a Hopf pair
-and the exactness of the Routh–Hurwitz translation); model `GFLQuasiStatic` in
-`.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`. The first Lyapunov coefficient of the
-witness (`l₁ ≈ −0.51 < 0`, Kuznetsov's formula) and the normal form were computed in SymPy;
-only the Lyapunov argument is formal.
+and the exactness of the Routh–Hurwitz translation); the source's Python model class
+GFLQuasiStatic in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`. The first
+Lyapunov coefficient of the witness (`l₁ ≈ −0.51 < 0`, Kuznetsov's formula) and the normal form
+were computed in SymPy; only the Lyapunov argument is formal.
 
 Results.
 Witness. `supercriticalQS`: `V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`, `k_P = 4/3`,

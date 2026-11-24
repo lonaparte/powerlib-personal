@@ -1,5 +1,6 @@
 import theorem.PhasePlane.Planar
 import theorem.PH.Nonlinear
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Second-order mechanical systems `m ẍ + γ ẋ + V'(x) = 0`
 
@@ -34,7 +35,9 @@ Results.
   `energy_hasDerivWithinAt`); conservation for `γ = 0` (`energy_conserved`), monotone decay for
   `γ ≥ 0` (`energy_lie_nonpos`; `energy_antitone`, on every convex time set), read from the pH
   laws of `toPH`.
-* Equilibria are `(x*, 0)` with `V'(x*) = 0` (`field_eq_zero_iff`).
+* Equilibria are `(x*, 0)` with `V'(x*) = 0` (`field_eq_zero_iff`); those with `x*` in a window
+  `[a, a + T)` are the images of the zeros of `V'` there (`equilibria_window`,
+  `SpecialFunctions.zerosIco`), so the two counts agree (`ncard_equilibria_window`).
 * Linearization: the Jacobian at a point with `V'' = k` is `!![0, 1; −k/m, −γ/m]`
   (`jacobian`, `hasFDerivAt_field`; `tr = −γ/m`, `det = k/m`: `trace_jacobian`, `det_jacobian`);
   `m det(sI − J) = m s² + γ s + k` (`characteristic_polynomial_jacobian`), Hurwitz iff `γ, k > 0`
@@ -358,5 +361,31 @@ damping `γ ≥ 0`: `(x*, 0)` is a strict local minimum of the Hamiltonian of `t
   rw [eventually_nhdsWithin_iff]
   filter_upwards [Metric.ball_mem_nhds x₀ hr] with x hx hne
   exact hmin x (by rwa [Metric.mem_ball, Real.dist_eq] at hx) hne
+
+/-! ## Equilibria in a window -/
+
+/-- The equilibria with position in a window `[a, a + T)` are the points `(x*, 0)`, `x*` a zero
+of the restoring force `V'` in the window (`m ≠ 0`). -/
+@[tmio T, powerlib_foundation] theorem equilibria_window {m γ : ℝ} {dV : ℝ → ℝ} (hm : m ≠ 0)
+    (a T : ℝ) :
+    {y : State 2 | field m γ dV y = 0 ∧ y 0 ∈ Ico a (a + T)} =
+      (fun x => mk x 0) '' SpecialFunctions.zerosIco dV a T := by
+  ext y
+  simp only [Set.mem_ofPred_eq, Set.mem_image, SpecialFunctions.zerosIco, field_eq_zero_iff hm]
+  constructor
+  · rintro ⟨⟨h1, h0⟩, hw⟩
+    exact ⟨y 0, ⟨hw, h0⟩, by rw [← h1, mk_coords]⟩
+  · rintro ⟨x, ⟨hw, hz⟩, rfl⟩
+    exact ⟨⟨rfl, hz⟩, hw⟩
+
+/-- Counting law: there are as many equilibria with position in a window `[a, a + T)` as zeros
+of the restoring force `V'` there (`m ≠ 0`). -/
+@[tmio T, powerlib_foundation] theorem ncard_equilibria_window {m γ : ℝ} {dV : ℝ → ℝ}
+    (hm : m ≠ 0) (a T : ℝ) :
+    {y : State 2 | field m γ dV y = 0 ∧ y 0 ∈ Ico a (a + T)}.ncard =
+      (SpecialFunctions.zerosIco dV a T).ncard := by
+  rw [equilibria_window hm a T]
+  exact Set.ncard_image_of_injective _ fun x x' e => by
+    simpa using congrArg (fun y : State 2 => y 0) e
 
 end powerlib.PhasePlane.Conservative
