@@ -10,9 +10,12 @@ of both bridges, read in the fundamental-harmonic picture as an inductive bridge
 therefore paid for twice: it takes current magnitude away from the power, so with bridge radii
 `ρ₁`, `ρ₂` the power under a reactive margin `Q_min` is at most `√((ρ₁ρ₂/|ωM|)² − Q_min²)`, attained;
 and it adds flux, since `|ψ₁|² = L₁²|I₁|² + M²|I₂|² + 2(L₁/ω)Q`. With a flux limit `|ψ₁| ≤ Ψ₁` on
-the primary coil the power obeys `P² + Q_min² ≤ ((ωΨ₁² − 2L₁Q_min)/(2L₁))²`: at `Q_min = 0` the
-transferable power is at most `ωΨ₁²/(2L₁)`, whatever the coupling, attained by quadrature currents
-with `L₁|I₁| = |M||I₂|`.
+the primary coil and inductive bridge ports, `Q ≥ Q_min ≥ 0`, the power obeys
+`P² + Q_min² ≤ ((ωΨ₁² − 2L₁Q_min)/(2L₁))²`: at `Q_min = 0` the transferable power is at most
+`ωΨ₁²/(2L₁)`, whatever the coupling, attained by quadrature currents with `L₁|I₁| = |M||I₂|`. The
+premise `Q ≥ 0` is part of this bound: for capacitive ports (`Q < 0`) the term `2(L₁/ω)Q` lowers the
+primary flux, and no bound of this form is claimed; without a sign condition on `Q` the limits
+that remain are those of `theorem/WPT/CurrentLimits.lean`.
 
 Model boundary.
 * The lossless resonant link of `theorem/WPT/CurrentLimits.lean`: the coil pair
