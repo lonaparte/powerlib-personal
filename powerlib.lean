@@ -401,3 +401,9 @@ import theorem.WPT.Compensation
 import theorem.WPT.Resonator
 import theorem.WPT.Bifurcation
 import theorem.WPT.Tracking
+import theorem.Passive.CoupledParallel
+import theorem.WPT.MultiCoil
+import theorem.WPT.Capacitive
+import theorem.WPT.PTSymmetry
+import theorem.WPT.Identification
+import theorem.WPT.Dynamic
