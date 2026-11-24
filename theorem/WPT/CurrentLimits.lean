@@ -47,7 +47,9 @@ the impedance matrix of `theorem/Passive/Coupled.lean` and the two-port equation
 `theorem/Grid/TwoPort.lean`.
 
 Results.
-* `Driven`, `driven_iff` (the two phasor equations written out), `power_balance`
+* `Driven`, `driven_iff` (the two phasor equations written out), `reachable_iff_general` (at every
+  frequency and tuning the reachable currents are exactly those whose required voltages `Z(jω) I`
+  fit the bridges), `power_balance`
   (`Re(V₁ Ī₁) + Re(V₂ Ī₂) = R₁|I₁|² + R₂|I₂|²`, every frequency and tuning), `loss_le`
   (the ellipse `R₁‖I₁‖² + R₂‖I₂‖² ≤ ρ₁‖I₁‖ + ρ₂‖I₂‖`).
 * Resonant link: `determinant` (`R₁R₂ + (ωM)²`), `currents_eq` (`I₁ = (R₂V₁ − jωM V₂)/Δ`,
@@ -114,6 +116,28 @@ winding loss, `Re(V₁ Ī₁) + Re(V₂ Ī₂) = R₁|I₁|² + R₂|I₂|²`. -
       _ = ‖V₂‖ * ‖I₂‖ := by rw [norm_mul, Complex.norm_conj]
       _ ≤ ρ₂ * ‖I₂‖ := mul_le_mul_of_nonneg_right h₂ (norm_nonneg _)
   linarith
+
+/-- The exact reachable set at every frequency and tuning, lossy or not: bridge phasors with
+`‖V_k‖ ≤ ρ_k` drive the currents `(I₁, I₂)` **iff** the voltages these currents require,
+`Z(jω) I`, fit the bridges, `‖Z₁ I₁ + jωM I₂‖ ≤ ρ₁` and `‖jωM I₁ + Z₂ I₂‖ ≤ ρ₂`. Every further
+condition on the currents (soft switching, flux, capacitor voltage, current ratings) is a
+condition on `(I₁, I₂)` and cuts this set. -/
+@[tmio M, powerlib_domain] theorem reachable_iff_general (ρ₁ ρ₂ : ℝ) (I₁ I₂ : ℂ) :
+    (∃ V₁ V₂ : ℂ, ‖V₁‖ ≤ ρ₁ ∧ ‖V₂‖ ≤ ρ₂ ∧ Driven w ω V₁ V₂ I₁ I₂) ↔
+      ‖w.primary.impedance (ω * I) * I₁ + w.M * (ω * I) * I₂‖ ≤ ρ₁ ∧
+        ‖w.M * (ω * I) * I₁ + w.secondary.impedance (ω * I) * I₂‖ ≤ ρ₂ := by
+  have hD : ∀ V₁ V₂, Driven w ω V₁ V₂ I₁ I₂ ↔
+      V₁ = w.primary.impedance (ω * I) * I₁ + w.M * (ω * I) * I₂ ∧
+        V₂ = w.M * (ω * I) * I₁ + w.secondary.impedance (ω * I) * I₂ := fun V₁ V₂ => by
+    simp only [Driven, Grid.TwoPort.Equations, Passive.Coupled.impedanceMatrix, Matrix.of_apply,
+      Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
+      Matrix.cons_val_fin_one]
+  constructor
+  · rintro ⟨V₁, V₂, h₁, h₂, h⟩
+    obtain ⟨e1, e2⟩ := (hD V₁ V₂).mp h
+    exact ⟨e1 ▸ h₁, e2 ▸ h₂⟩
+  · rintro ⟨h₁, h₂⟩
+    exact ⟨_, _, h₁, h₂, (hD _ _).mpr ⟨rfl, rfl⟩⟩
 
 /-! ## The resonant link -/
 
