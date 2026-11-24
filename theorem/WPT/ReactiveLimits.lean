@@ -46,8 +46,9 @@ Results.
   `limit₂`, `arg₂`, `power_sq_le_limit₂`, `isGreatest_power₂` (secondary).
 * Both flux bounds: `power_sq_le_both` (`P² ≤ min(limit₁, limit₂)`), `isGreatest_power_both₁`,
   `isGreatest_power_both₂` (exact when the optimizer of one bound meets the other).
-* Not covered: both bounds binding at once (neither optimizer meets the other bound), and lossy
-  windings with flux bounds.
+* Not covered here: both bounds binding at once (neither optimizer meets the other bound), which
+  is in `theorem/WPT/EnvelopeLimits.lean` for coupling `k < 1`, and lossy windings with flux
+  bounds.
 -/
 
 noncomputable section
