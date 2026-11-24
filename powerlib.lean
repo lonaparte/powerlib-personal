@@ -413,3 +413,6 @@ import theorem.LTI.PeakGain
 import theorem.WPT.Gyrator
 import theorem.SpecialFunctions.ProductBound
 import theorem.WPT.JointLimits
+import theorem.SpecialFunctions.ReactiveProduct
+import theorem.WPT.ReactiveLimits
+import theorem.WPT.LossyLimits
