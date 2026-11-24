@@ -34,9 +34,11 @@ module theorem.GridTiedConverter.GFM.FullModel.FullModelSwing where
 --   `LinearAlgebra.det_eq_det_fast_mul_det_reduced`, `GFM.FullModel.Params.det_fastBlock_pos`).
 --   With Q–V droop the full model alone states the same instability under a negative
 --   droop-corrected slope (`GFM.FullModel.mem_den_unstable`); the swing reading needs no droop.
--- * The local stability sentences are not compared: the full family translates them into a
+-- * The local stability sentences are not compared here: the full family translates them into a
 --   requirement no model meets, and stability of the reduced stable branch is not a statement about
---   the full model. Nothing here is exported.
+--   the full model at fixed parameters (`GFM.FullModel.witness_mem_den_unstable`); its transfer to
+--   time-scaled parameters is `GFM.FullModel.exists_epsStar_mem_den_LES_of_swing`. Nothing here is
+--   exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

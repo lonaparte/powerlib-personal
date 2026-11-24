@@ -13,8 +13,10 @@ The 13-state model of `theorem/GridTiedConverter/GFM/FullModel/Basic.lean` (stat
 `(i, v_c, i_g, ξ, ζ, δ, Δω, Q_f)` in dq components, system frame for the plant, controller frame
 for the integrators, currents out of the converter positive, export-positive per-unit power).
 Continuous time, autonomous, no input. Level: the Jacobian of the field at an equilibrium and
-local instability of the equilibrium; no statement about the stable branch, about time-scale
-separation or about trajectories of the reduced model.
+local instability of the equilibrium; no statement about trajectories of the reduced model. The
+stable branch is treated elsewhere: its stability transfers under time-scale separation
+(`theorem/GridTiedConverter/GFM/FullModel/TimeScale.lean`) and fails to transfer at fixed
+parameters (`theorem/GridTiedConverter/GFM/FullModel/Counterexample.lean`).
 
 Scaffolds of the readings of the reduced models: the swing machine,
 `theorem/GridTiedConverter/GFM/FullModel/FullModelSwing.agda`; the reduced Q–V droop model,
@@ -33,7 +35,7 @@ Results.
 * `fastRows_add`: the ten fast rows are affine in the fast states, with the complex `5 × 5`
   coefficient matrix `fastMatrix δ` (rows and columns `i, v_c, i_g, ξ, ζ`) that depends on the
   angle only; `hasDerivAt_fast`: the fast–fast partial derivatives of the field are the real
-  `10 × 10` block `fastBlock δ`, the realification of `fastMatrix δ`.
+  `10 × 10` block `fastBlock δ`, the realification of `fastMatrix δ` (`fastBlock_apply`).
 * `det_fastMatrix`: `det fastMatrix δ = −K_ic K_iv Z_t/(L_f C_f L_g)`, `Z_t = Z_g + Z_v`;
   `det_fastBlock`: `det fastBlock δ = K_ic² K_iv² |Z_t|²/(L_f C_f L_g)²` (`Matrix.det_det`), so
   `det_fastBlock_pos`: it is positive under the nondegeneracy hypotheses, for every gain — no
@@ -43,22 +45,25 @@ Results.
   `LinearAlgebra.det_eq_det_fast_mul_det_reduced` — where `J_red = reducedJacobian δ Q_f` is the
   Jacobian of the reduced field (`hasFDerivAt_reducedField`; its `Q_f` column carries the
   `E`-partials `powerSlopeE`, `reactiveSlopeE` of the quasi-steady powers through
-  `∂E/∂Q_f = −n_q`); `det_reducedJacobian`: `det J_red = −ω_q droopSlope/M`, with the
-  droop-corrected slope `droopSlope = P_δ (1 + n_q Q_E) − n_q P_E Q_δ` (minus the Jacobian
-  determinant of the static balance in `(δ, Q_f)`; `droopSlope_eq_powerSlope`: `P_δ` without
-  droop).
+  `∂E/∂Q_f = −n_q`, from `hasFDerivAt_Pq_comp`, `hasFDerivAt_Qq_comp`); `det_reducedJacobian`:
+  `det J_red = −ω_q droopSlope/M`, with the droop-corrected slope
+  `droopSlope = P_δ (1 + n_q Q_E) − n_q P_E Q_δ` (minus the Jacobian determinant of the static
+  balance in `(δ, Q_f)`; `droopSlope_eq_powerSlope`: `P_δ` without droop).
 * `powerSlope_eq_syncCoeff` (`Z_v = 0`): the slope `∂P/∂δ` of the quasi-steady power–angle curve
   is the synchronizing coefficient of the reduced swing machine `Params.swingParams`;
   `reducedField_eq_qvDroop` (`Z_v = 0`, any droop): the reduced field is the field of the reduced
-  Q–V droop model `Params.qvDroop` (`theorem/GridTiedConverter/GFM/QVDroop.lean`).
+  Q–V droop model `Params.qvDroop` (`theorem/GridTiedConverter/GFM/QVDroop.lean`), its powers
+  being those of the droop model (`Pq_eq_qvDroop`, `Qq_eq_qvDroop`).
 * `contDiff_field`, `contDiff_graph`: the field and the quasi-steady graph `graph` are `C¹`.
 
 Family and connection conclusions.
 * `family : Family Model Spectral.Requirement 13 0`: a complete system is a parameter set with a
   selected quasi-steady point `qssState δ* 0 Q*` (`Model`), read as the field translated so that
   the point is the origin (`Spectral.localFamily`). Requirements: `stable` — none is claimed
-  (`False`: stability of the full model at the stable branch of the reduction is not established
-  here; the determinant identity decides only the sign of `det J`); `unstable` — `Model.Saddle`:
+  (`False`: the determinant identity decides only the sign of `det J`; stability at the stable
+  branch of the reduction holds for time-scaled parameters, `exists_epsStar_mem_den_LES` in
+  `theorem/GridTiedConverter/GFM/FullModel/TimeScale.lean`, and fails at fixed parameters,
+  `witness_mem_den_unstable`); `unstable` — `Model.Saddle`:
   nondegenerate fast block, `M, ω_q > 0`, a balanced point at the droop EMF and a negative
   droop-corrected slope (without droop: a negative slope of the power–angle curve). Local
   sentences translate into `stable` (no model meets it: unavailable coverage), instability into
@@ -181,6 +186,13 @@ K_iv ≠ 0` and `Z_g + Z_v ≠ 0`, for every value of the other gains and of the
   have : p.Lf * p.Cf * p.Lg ≠ 0 := mul_ne_zero (mul_ne_zero hLf hCf) hLg
   positivity
 
+/-- The entries of the fast block: entry `((a, c'), (b, c))` is the component `c'` of the complex
+entry `(a, b)` of `fastMatrix δ` times the unit `axisUnit c`. -/
+@[tmio M, powerlib_domain] theorem fastBlock_apply (δ : ℝ) (a b : Fin 5) (c' c : Fin 2) :
+    p.fastBlock δ (a, c') (b, c) = component c' (p.fastMatrix δ a b * axisUnit c) := by
+  simp only [fastBlock, Matrix.comp_apply, Matrix.map_apply, Algebra.leftMulMatrix_complex]
+  fin_cases c' <;> fin_cases c <;> simp [component, axisUnit]
+
 end Params
 
 /-- Component `c` of the fast phasor `a` is the coordinate `2a + c`. -/
@@ -230,11 +242,7 @@ fast block at its angle. -/
     rw [p.field_split_inl, p.fastRows_add x _ (hy t 10 (by norm_num)) (hy t 12 (by norm_num)),
       fastPart_single, Matrix.mulVec_single]
     fin_cases c' <;> simp [component] <;> ring
-  have hblock : p.fastBlock (x 10) (a, c') (b, c) =
-      component c' (p.fastMatrix (x 10) a b * axisUnit c) := by
-    simp only [fastBlock, Matrix.comp_apply, Matrix.map_apply, Algebra.leftMulMatrix_complex]
-    fin_cases c' <;> fin_cases c <;> simp [component, axisUnit]
-  rw [funext key, hblock]
+  rw [funext key, p.fastBlock_apply]
   simpa using ((hasDerivAt_id (0 : ℝ)).mul_const
     (component c' (p.fastMatrix (x 10) a b * axisUnit c))).const_add (component c' (p.fastRows x a))
 
@@ -343,9 +351,9 @@ def reactiveSlopeE (δ E : ℝ) : ℝ :=
 
 /-- The quasi-steady power along two `C¹` coordinates `δ = u`, `E = w` of the reduced state: its
 derivative has the partials `∂P/∂δ = powerSlope`, `∂P/∂E = powerSlopeE`. -/
-@[tmio M, powerlib_domain] private theorem hasFDerivAt_Pq_comp (hZt : p.Zt ≠ 0)
-    {u w : State 3 → ℝ} {u' w' : State 3 →L[ℝ] ℝ} {y : State 3} (hu : HasFDerivAt u u' y)
-    (hw : HasFDerivAt w w' y) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_Pq_comp (hZt : p.Zt ≠ 0)
+    {n : ℕ} {u w : State n → ℝ} {u' w' : State n →L[ℝ] ℝ} {y : State n}
+    (hu : HasFDerivAt u u' y) (hw : HasFDerivAt w w' y) :
     HasFDerivAt (fun z => p.Pq (u z) (w z))
       (p.powerSlope (u y) (w y) • u' + p.powerSlopeE (u y) (w y) • w') y := by
   have hf : (fun z => p.Pq (u z) (w z)) = fun z => (w z * w z * p.Rg + -(p.Rv * p.V ^ 2) +
@@ -365,9 +373,9 @@ derivative has the partials `∂P/∂δ = powerSlope`, `∂P/∂E = powerSlopeE`
 
 /-- The quasi-steady reactive power along two `C¹` coordinates `δ = u`, `E = w`: partials
 `∂Q/∂δ = reactiveSlope`, `∂Q/∂E = reactiveSlopeE`. -/
-@[tmio M, powerlib_domain] private theorem hasFDerivAt_Qq_comp (hZt : p.Zt ≠ 0)
-    {u w : State 3 → ℝ} {u' w' : State 3 →L[ℝ] ℝ} {y : State 3} (hu : HasFDerivAt u u' y)
-    (hw : HasFDerivAt w w' y) :
+@[tmio M, powerlib_domain] theorem hasFDerivAt_Qq_comp (hZt : p.Zt ≠ 0)
+    {n : ℕ} {u w : State n → ℝ} {u' w' : State n →L[ℝ] ℝ} {y : State n}
+    (hu : HasFDerivAt u u' y) (hw : HasFDerivAt w w' y) :
     HasFDerivAt (fun z => p.Qq (u z) (w z))
       (p.reactiveSlope (u y) (w y) • u' + p.reactiveSlopeE (u y) (w y) • w') y := by
   have hf : (fun z => p.Qq (u z) (w z)) = fun z => (w z * w z * (p.ω0 * p.Lg) +
@@ -539,7 +547,7 @@ def qvDroop : QVDroop := ⟨p.M, p.D, p.ωq, p.nq, p.E0, p.Qref, p.Pref, p.V, p.
   have h := Complex.ext_iff.mp hZv
   simpa [Zv] using h
 
-@[tmio M, powerlib_domain] private theorem Pq_eq_qvDroop (hZv : p.Zv = 0) (hZg : p.Zg ≠ 0)
+@[tmio M, powerlib_domain] theorem Pq_eq_qvDroop (hZv : p.Zv = 0) (hZg : p.Zg ≠ 0)
     (δ E : ℝ) : p.Pq δ E = p.qvDroop.P δ E := by
   have hZt : p.Zt ≠ 0 := by rwa [Zt, hZv, add_zero]
   obtain ⟨hR, hX⟩ := p.Rv_Xv_of_Zv hZv
@@ -547,7 +555,7 @@ def qvDroop : QVDroop := ⟨p.M, p.D, p.ωq, p.nq, p.E0, p.Qref, p.Pref, p.V, p.
   simp only [qvDroop, QVDroop.zsq, Rt, Xt, hR, hX]
   ring
 
-@[tmio M, powerlib_domain] private theorem Qq_eq_qvDroop (hZv : p.Zv = 0) (hZg : p.Zg ≠ 0)
+@[tmio M, powerlib_domain] theorem Qq_eq_qvDroop (hZv : p.Zv = 0) (hZg : p.Zg ≠ 0)
     (δ E : ℝ) : p.Qq δ E = p.qvDroop.Q δ E := by
   have hZt : p.Zt ≠ 0 := by rwa [Zt, hZv, add_zero]
   obtain ⟨hR, hX⟩ := p.Rv_Xv_of_Zv hZv

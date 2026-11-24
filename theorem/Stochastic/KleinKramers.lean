@@ -42,6 +42,9 @@ Results.
   `λ₊ = −D/(2M) + √(D²/(4M²) + κ/M)` with eigenvector `(1, M λ₊)`, and
   `λ₊/ω_b = √(1 + ζ²) − ζ` with `ω_b = √(κ/M)`, `ζ = D/(2√(M κ))` (Langer's momentum-damping
   factor, `≤ 1` for `ζ ≥ 0`, `kkLambda_div_le_one`).
+* With momentum diffusion `2 D T` the system satisfies generalized detailed balance under the
+  momentum flip with the Gibbs density: `Stochastic.DetailedBalance.kk_genDetailedBalance`
+  (`theorem/Stochastic/DetailedBalance.lean`).
 -/
 
 noncomputable section

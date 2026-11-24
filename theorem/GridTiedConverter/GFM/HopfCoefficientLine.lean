@@ -14,10 +14,10 @@ Model boundary.
   physical model.
 * Level: the Jacobian, its characteristic polynomial and Kuznetsov's first Lyapunov coefficient
   (`NormalForm.LyapunovCoefficient.firstLyapunov`) at one exhibited parameter point, in exact
-  rational arithmetic. No behavioural sentence is concluded: the instability of a subcritical
-  weak focus in four states needs a Chetaev function in centre–stable coordinates (or a
-  centre-manifold reduction), which the library does not provide; the `ε = 1/ω_b` expansion of
-  the source note is not formalized.
+  rational arithmetic. No behavioural sentence is concluded here: the instability of the witness
+  (a Chetaev function in centre–stable coordinates, `Line.VSM.hopfWitness_mem_den_unstable`) is
+  in `theorem/GridTiedConverter/GFM/HopfLineInstability.lean`. The `ε = 1/ω_b` expansion of the
+  source note is not formalized.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, "Subcritical EXISTS: VSM without
 filter on dynamic RL line") and its scripts `s5b_dynline.py`, `s5f_slow_manifold.py` (discovery

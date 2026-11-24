@@ -80,8 +80,13 @@ module theorem.Numerics.EulerPorts where
 -- `not-passive-aware`): the swing's averaged and end-of-step outputs are passive exactly on
 -- closed step conditions (`GFM.SwingPort.linearAverage_mem_den_passive_iff`,
 -- `GFM.SwingPort.linearEnd_mem_den_passive_iff`,
--- `theorem/GridTiedConverter/GFM/Discrete/StepAwareEuler.lean`), and the filter's averaged output
--- is refuted when `K (1 + h ω_c) > D ω_c` (`GFM.FilterPort.linearAverage_not_mem_den_passive`).
+-- `theorem/GridTiedConverter/GFM/Discrete/StepAwareEuler.lean`), and so are the filter's
+-- (`GFM.FilterPort.linearAverage_mem_den_passive_iff`,
+-- `GFM.FilterPort.linearEnd_mem_den_passive_iff`: `h ω_c < 2`, a damping condition and
+-- `(2 − h ω_c)(4 M − 2 D h) − K h³ ω_c ≥ 0`): a Schur stable step matrix with the damping
+-- condition lies inside (`GFM.FilterPort.linearAverage_mem_den_passive_of_schurStable`), and so
+-- does the boundary where that quantity vanishes and the step matrix has the eigenvalue `−1`
+-- (`GFM.FilterPort.not_schurStable_of_boundary`).
 -- The nonlinear grid-forming swing port reads its Euler law from the classical machine's
 -- (`theorem/GridTiedConverter/GFM/Discrete/SwingPortMachine.agda`), and its discrete-gradient
 -- discretizations are passive exactly at the matched set-point (`GFM.SwingPort.dg_passive`,

@@ -41,8 +41,11 @@ Model boundary.
   dq-asymmetric gains, harmonics and unbalance.
 * Level: algebraic statements about the field — the quasi-steady set, the power on it, the
   reduced field and the equilibrium set. No time-scale separation (Tikhonov) or trajectory
-  approximation is claimed. Behavioural conclusions are in
-  `theorem/GridTiedConverter/GFM/FullModel/Saddle.lean`.
+  approximation is claimed here. Behavioural conclusions are in
+  `theorem/GridTiedConverter/GFM/FullModel/Saddle.lean` (saddle branch),
+  `theorem/GridTiedConverter/GFM/FullModel/TimeScale.lean` (stable branch under time-scale
+  separation) and `theorem/GridTiedConverter/GFM/FullModel/Counterexample.lean` (no transfer at
+  fixed parameters).
 
 Scaffold of the reading of the reduced model (the swing machine `swingParams`):
 `theorem/GridTiedConverter/GFM/FullModel/FullModelSwing.agda`.

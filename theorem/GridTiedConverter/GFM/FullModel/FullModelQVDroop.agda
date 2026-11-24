@@ -22,9 +22,11 @@ module theorem.GridTiedConverter.GFM.FullModel.FullModelQVDroop where
 --   (`GFM.FullModel.Params.det_jacobian_qssState`, `GFM.FullModel.Params.det_fastBlock_pos`). The
 --   reduced model's own conclusion is `reduced-unstable` (Lean
 --   `GFM.QVDroop.mem_den_unstable_of_slope_neg`).
--- * The local stability sentences are not compared: the full family translates them into a
+-- * The local stability sentences are not compared here: the full family translates them into a
 --   requirement no model meets, and stability of the reduced ascending branch is not a statement
---   about the full model. Nothing here is exported.
+--   about the full model at fixed parameters (it fails, `GFM.FullModel.witness_mem_den_unstable`);
+--   its transfer to time-scaled parameters is the scaffold
+--   `theorem/GridTiedConverter/GFM/FullModel/FullModelTimeScale.agda`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

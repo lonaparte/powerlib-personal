@@ -17,7 +17,9 @@ Model boundary.
   with the set-point `P_ref` replaced by `P_ref(x)`.
 * Excluded: modulation limits and the dependence of `u` on `v_dc`, switching losses, DC-source
   dynamics, current limiting, PLL, delays, PWM. Level: the bridge power on the quasi-steady set
-  and the equilibrium set; no stability statement.
+  and the equilibrium set; no stability statement here (instability by the determinant sign:
+  `theorem/GridTiedConverter/GFM/FullModel/DCSaddle.lean`; stability under time-scale
+  separation: `theorem/GridTiedConverter/GFM/FullModel/TimeScale.lean`).
 
 Source: GFM counterpart study, full-order model note (t5 (d): the 16-state DC variant,
 `P_br = c_br + A_br sin(δ − α_br)`, two angle branches iff `|P_dc − c_br| ≤ A_br`); the DC-link
@@ -27,6 +29,8 @@ Results.
 * `Params.PbrQ_eq`: on the quasi-steady set the bridge power is a single harmonic of `δ`,
   `P_br = c_br(E) + E |κ| sin(δ + arg(jκ))` (`bridgeOffset`, `bridgeCoeff`): the PCC power plus
   the filter loss, both quadratic in the phasor `E e^{jδ}`, contain no `2δ` term.
+* `DCParams.field_castAdd`, `DCParams.field_fast`, `DCParams.field_11`, `DCParams.field_natAdd`,
+  `DCParams.field_13`, `DCParams.field_14`, `DCParams.field_15`: the rows of the 16-state field.
 * `DCParams.fastAtRest_iff`: the ten fast rows vanish iff the AC core of the state is the
   quasi-steady state of `theorem/GridTiedConverter/GFM/FullModel/Basic.lean`;
   `DCParams.Pbr_eq_PbrQ`: there the bridge power is the quasi-steady one.
@@ -159,13 +163,13 @@ def field (x : State 16) : State 16 :=
       ((q.powerRef x - Pe (core x) - q.D * x 11) / q.M))
     ![(q.Pdc - q.Pbr x) / (q.Cdc * x 13), x 15 - q.vref, q.ωf * (x 13 - x 15)])
 
-@[tmio M, powerlib_domain] private theorem field_castAdd (x : State 16) (j : Fin 13) :
+@[tmio M, powerlib_domain] theorem field_castAdd (x : State 16) (j : Fin 13) :
     q.field x (Fin.castAdd 3 j) = Function.update (fun i : Fin 13 => q.toParams.field (core x) i)
       11 ((q.powerRef x - Pe (core x) - q.D * x 11) / q.M) j := by
   show Fin.append _ _ (Fin.castAdd 3 j) = _
   exact Fin.append_left _ _ _
 
-@[tmio M, powerlib_domain] private theorem field_fast (x : State 16) (j : Fin 13)
+@[tmio M, powerlib_domain] theorem field_fast (x : State 16) (j : Fin 13)
     (hj : j ≠ 11) : q.field x (Fin.castAdd 3 j) = q.toParams.field (core x) j := by
   rw [field_castAdd, Function.update_of_ne hj]
 
@@ -202,21 +206,28 @@ its own slow coordinates (`Params.fastAtRest_iff`). -/
   rw [Pbr, hrow, hx]
   simp [convCurrent, capVoltage, phasor, Params.qssState, Params.PbrQ]
 
-@[tmio M, powerlib_domain] private theorem field_natAdd (x : State 16) (k : Fin 3) :
+/-- The frequency row of the 16-state field carries the DC-loop set-point `P_ref(x)`. -/
+@[tmio M, powerlib_domain] theorem field_11 (x : State 16) :
+    q.field x 11 = (q.powerRef x - Pe (core x) - q.D * x 11) / q.M := by
+  rw [show (11 : Fin 16) = Fin.castAdd 3 (11 : Fin 13) from rfl, field_castAdd,
+    Function.update_self]
+  rfl
+
+@[tmio M, powerlib_domain] theorem field_natAdd (x : State 16) (k : Fin 3) :
     q.field x (Fin.natAdd 13 k) =
       ![(q.Pdc - q.Pbr x) / (q.Cdc * x 13), x 15 - q.vref, q.ωf * (x 13 - x 15)] k := by
   show Fin.append _ _ (Fin.natAdd 13 k) = _
   exact Fin.append_right _ _ _
 
-@[tmio M, powerlib_domain] private theorem field_13 (x : State 16) :
+@[tmio M, powerlib_domain] theorem field_13 (x : State 16) :
     q.field x 13 = (q.Pdc - q.Pbr x) / (q.Cdc * x 13) := by
   exact q.field_natAdd x 0
 
-@[tmio M, powerlib_domain] private theorem field_14 (x : State 16) :
+@[tmio M, powerlib_domain] theorem field_14 (x : State 16) :
     q.field x 14 = x 15 - q.vref := by
   exact q.field_natAdd x 1
 
-@[tmio M, powerlib_domain] private theorem field_15 (x : State 16) :
+@[tmio M, powerlib_domain] theorem field_15 (x : State 16) :
     q.field x 15 = q.ωf * (x 13 - x 15) := by
   exact q.field_natAdd x 2
 

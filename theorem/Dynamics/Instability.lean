@@ -21,11 +21,17 @@ Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.3 (Chetaev) and Theorem 
 LeanForControl); needed by work-sync `theory/T-vsc-dc-voltage-control.md` §1.4.
 
 Results.
-* Classical forms for `C¹` fields: `unstable_of_chetaev` (Chetaev's instability theorem in its
-  classical, non-exponential form, for degenerate points where LeanForControl's exponential
-  criterion does not apply); `unstable_of_lie_nonpos_of_lie_pos` (its variant on the sublevel set
-  of a dissipated energy below the level of the point: fold points of dissipative mechanical
-  systems); `not_localAsymptoticStable_of_lie_nonpos` (a function that does not increase along the
+* Chetaev for Lipschitz fields: `exists_lipschitzWith_eqOn` (a field Lipschitz on a set agrees
+  there with a globally Lipschitz field: Mathlib's coordinatewise McShane extension
+  `LipschitzOnWith.extend_pi`), `unstable_of_chetaev_lipschitzWith` (Chetaev's instability
+  theorem in its classical, non-exponential form for a globally Lipschitz field, solutions from
+  LeanForControl's Picard–Lindelöf through `Flow.forwardComplete_of_lipschitzWith`) and
+  `unstable_of_chetaev_lipschitzOn` (a field Lipschitz on a neighbourhood of the point); they
+  serve degenerate points where LeanForControl's exponential criterion does not apply.
+* Classical forms for `C¹` fields: `unstable_of_chetaev` (a `C¹` field is Lipschitz near the
+  point, `ContDiffAt.exists_lipschitzOnWith`); `unstable_of_lie_nonpos_of_lie_pos` (its variant
+  on the sublevel set of a dissipated energy below the level of the point: fold points of
+  dissipative mechanical systems); `not_localAsymptoticStable_of_lie_nonpos` (a function that does not increase along the
   field near the point and takes values below its value at the point arbitrarily close to it rules
   out local asymptotic stability: conserved energies, fold points with a monotone coordinate);
   `not_localAsymptoticStable_of_equilibria` (accumulating equilibria rule it out) and
@@ -62,6 +68,101 @@ noncomputable section
 namespace powerlib.Dynamics
 
 /-! ## Classical Chetaev criteria and obstructions to attraction -/
+
+section ChetaevLipschitz
+
+open Set Filter Topology Metric
+
+variable {n : ℕ}
+
+local notation "ℝⁿ" => State n
+
+/-- A field Lipschitz on a set agrees there with a globally Lipschitz field (coordinatewise
+McShane extension, `LipschitzOnWith.extend_pi`). -/
+@[tmio T, powerlib_foundation] theorem exists_lipschitzWith_eqOn {f : ℝⁿ → ℝⁿ} {s : Set ℝⁿ}
+    {K : NNReal} (hf : LipschitzOnWith K f s) :
+    ∃ (G : ℝⁿ → ℝⁿ) (K' : NNReal), LipschitzWith K' G ∧ EqOn f G s := by
+  have h1 : LipschitzOnWith (1 * K) (fun x => WithLp.ofLp (f x)) s :=
+    (PiLp.lipschitzWith_ofLp 2 (fun _ : Fin n => ℝ)).comp_lipschitzOnWith hf
+  obtain ⟨g, hg, hgf⟩ := h1.extend_pi
+  refine ⟨fun x => WithLp.toLp 2 (g x), _,
+    (PiLp.lipschitzWith_toLp 2 (fun _ : Fin n => ℝ)).comp hg, fun x hx => ?_⟩
+  simp only
+  rw [← hgf hx]
+
+/-- **Chetaev's instability theorem for a globally Lipschitz field.** A `C¹` function `W` that is
+positive at states arbitrarily close to the point and strictly increases along the field wherever
+it is positive within distance `r` makes the point unstable. -/
+@[tmio T, powerlib_foundation] theorem unstable_of_chetaev_lipschitzWith {f : ℝⁿ → ℝⁿ}
+    {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} {K : NNReal} {r : ℝ} (hf : LipschitzWith K f)
+    (hW : ContDiff ℝ 1 W) (hr : 0 < r) (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ 0 < W x)
+    (hLie : ∀ x, ‖x - x_eq‖ ≤ r → 0 < W x → 0 < fderiv ℝ W x (f x)) :
+    Unstable f x_eq := by
+  intro hLS
+  have hWd : Differentiable ℝ W := hW.differentiable one_ne_zero
+  have hLc : Continuous fun x => fderiv ℝ W x (f x) :=
+    (hW.continuous_fderiv one_ne_zero).clm_apply hf.continuous
+  obtain ⟨δ, hδ, hb⟩ := hLS r hr
+  obtain ⟨x₀, hx₀, hW₀⟩ := hseed δ hδ
+  obtain ⟨φ, hφ0, hφ⟩ := Flow.forwardComplete_of_lipschitzWith hf 0 x₀
+  have hin : ∀ t, 0 ≤ t → ‖φ t - x_eq‖ < r := fun t ht =>
+    hb 0 t φ (hφ.mono Icc_subset_Ici_self) (by rw [hφ0]; exact hx₀) t ⟨ht, le_rfl⟩
+  -- the solution keeps `W ≥ W x₀`
+  have hkeep : ∀ T, 0 ≤ T → ∀ t ∈ Icc 0 T, W x₀ ≤ W (φ t) := by
+    intro T hT
+    have hc : ContinuousOn φ (Icc 0 T) := hφ.continuousOn.mono Icc_subset_Ici_self
+    refine forall_mem_Icc_of_local_step (Ω := {x | W x₀ ≤ W x}) hc
+      (isClosed_le continuous_const hW.continuous) (by simp [hφ0]) ?_
+    intro s hs hsΩ
+    have hpos : 0 < fderiv ℝ W (φ s) (f (φ s)) :=
+      hLie _ (hin s hs.1).le (hW₀.trans_le hsΩ)
+    obtain ⟨y, hsy, hyT, hy⟩ := exists_Icc_mem_of_isOpen hc
+      (isOpen_lt continuous_const hLc) hs hpos
+    have hseg : IsIntegralCurveOn φ (fun _ x => f x) (Icc s y) :=
+      hφ.mono fun t ht => le_trans hs.1 ht.1
+    have hanti := antitoneOn_V_comp_traj (V := fun x => -W x) hWd.neg hWd.continuous.neg
+      (convex_Icc s y) hseg fun t ht => by
+        have := hy t (interior_subset ht)
+        show fderiv ℝ (fun x => -W x) (φ t) (f (φ t)) ≤ 0
+        rw [fderiv_fun_neg]
+        simpa using this.le
+    refine ⟨y, hsy, fun t ht => ?_⟩
+    have := hanti ⟨le_rfl, hsy.le⟩ (Ioo_subset_Icc_self ht) ht.1.le
+    simp only [Function.comp_apply, neg_le_neg_iff] at this
+    exact (show W x₀ ≤ W (φ s) from hsΩ).trans this
+  -- `W` grows at a uniform rate on the compact set `{‖x − x_eq‖ ≤ r, W x ≥ W x₀}`
+  have hKc : IsCompact {x | ‖x - x_eq‖ ≤ r ∧ W x₀ ≤ W x} := by
+    refine (isCompact_closedBall x_eq r).of_isClosed_subset ?_ fun x hx => ?_
+    · exact (isClosed_le (continuous_norm.comp (continuous_sub_right x_eq))
+        continuous_const).inter (isClosed_le continuous_const hW.continuous)
+    · rw [Metric.mem_closedBall, dist_eq_norm]; exact hx.1
+  exact false_of_lie_pos_on_compact hKc hWd hLc.continuousOn
+    (fun x hx => hLie x hx.1 (hW₀.trans_le hx.2)) hφ fun t ht =>
+      ⟨(hin t ht).le, hkeep t ht t ⟨ht, le_rfl⟩⟩
+
+/-- **Chetaev's instability theorem for a field Lipschitz near the point**: a `C¹` function
+positive at states arbitrarily close to the point and strictly increasing along the field
+wherever it is positive within distance `r`. The field is replaced by a globally Lipschitz field
+that agrees with it near the point (`exists_lipschitzWith_eqOn`). -/
+@[tmio T, powerlib_foundation] theorem unstable_of_chetaev_lipschitzOn {f : ℝⁿ → ℝⁿ}
+    {x_eq : ℝⁿ} {U : Set ℝⁿ} {K : NNReal} {W : ℝⁿ → ℝ} {r : ℝ} (hU : U ∈ 𝓝 x_eq)
+    (hf : LipschitzOnWith K f U) (hW : ContDiff ℝ 1 W) (hr : 0 < r)
+    (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ 0 < W x)
+    (hLie : ∀ x, ‖x - x_eq‖ ≤ r → 0 < W x → 0 < fderiv ℝ W x (f x)) :
+    Unstable f x_eq := by
+  obtain ⟨G, K', hG, hGf⟩ := exists_lipschitzWith_eqOn hf
+  obtain ⟨σ, hσ, hσU⟩ := Metric.mem_nhds_iff.mp hU
+  have hev : f =ᶠ[𝓝 x_eq] G := Filter.mem_of_superset hU fun x hx => hGf hx
+  rw [unstable_congr_nhds hev]
+  refine unstable_of_chetaev_lipschitzWith (r := min r (σ / 2)) hG hW
+    (lt_min hr (half_pos hσ)) hseed fun x hx hWx => ?_
+  have hxU : x ∈ U := hσU (by
+    rw [mem_ball, dist_eq_norm]
+    linarith [min_le_right r (σ / 2)])
+  rw [← hGf hxU]
+  exact hLie x (hx.trans (min_le_left _ _)) hWx
+
+end ChetaevLipschitz
 
 section Classical
 
@@ -137,49 +238,8 @@ positive within distance `r` makes the point of a `C¹` field unstable. -/
     (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ 0 < W x)
     (hLie : ∀ x, ‖x - x_eq‖ ≤ r → 0 < W x → 0 < fderiv ℝ W x (f x)) :
     Unstable f x_eq := by
-  intro hLS
-  have hWd : Differentiable ℝ W := hW.differentiable one_ne_zero
-  have hLc : Continuous fun x => fderiv ℝ W x (f x) :=
-    (hW.continuous_fderiv one_ne_zero).clm_apply hf.continuous
-  obtain ⟨δ₁, hδ₁, hex⟩ := exists_forward_of_lyapunovStable hf hLS
-  obtain ⟨δ₂, hδ₂, hb⟩ := hLS r hr
-  obtain ⟨x₀, hx₀, hW₀⟩ := hseed (min δ₁ δ₂) (lt_min hδ₁ hδ₂)
-  obtain ⟨φ, hφ0, hφ, -⟩ := hex x₀ (hx₀.trans_le (min_le_left _ _))
-  have hin : ∀ t, 0 ≤ t → ‖φ t - x_eq‖ < r := fun t ht =>
-    hb 0 t φ (hφ.mono Icc_subset_Ici_self) (by rw [hφ0]; exact hx₀.trans_le (min_le_right _ _))
-      t ⟨ht, le_rfl⟩
-  -- the solution keeps `W ≥ W x₀`
-  have hkeep : ∀ T, 0 ≤ T → ∀ t ∈ Icc 0 T, W x₀ ≤ W (φ t) := by
-    intro T hT
-    have hc : ContinuousOn φ (Icc 0 T) := hφ.continuousOn.mono Icc_subset_Ici_self
-    refine forall_mem_Icc_of_local_step (Ω := {x | W x₀ ≤ W x}) hc
-      (isClosed_le continuous_const hW.continuous) (by simp [hφ0]) ?_
-    intro s hs hsΩ
-    have hpos : 0 < fderiv ℝ W (φ s) (f (φ s)) :=
-      hLie _ (hin s hs.1).le (hW₀.trans_le hsΩ)
-    obtain ⟨y, hsy, hyT, hy⟩ := exists_Icc_mem_of_isOpen hc
-      (isOpen_lt continuous_const hLc) hs hpos
-    have hseg : IsIntegralCurveOn φ (fun _ x => f x) (Icc s y) :=
-      hφ.mono fun t ht => le_trans hs.1 ht.1
-    have hanti := antitoneOn_V_comp_traj (V := fun x => -W x) hWd.neg hWd.continuous.neg
-      (convex_Icc s y) hseg fun t ht => by
-        have := hy t (interior_subset ht)
-        show fderiv ℝ (fun x => -W x) (φ t) (f (φ t)) ≤ 0
-        rw [fderiv_fun_neg]
-        simpa using this.le
-    refine ⟨y, hsy, fun t ht => ?_⟩
-    have := hanti ⟨le_rfl, hsy.le⟩ (Ioo_subset_Icc_self ht) ht.1.le
-    simp only [Function.comp_apply, neg_le_neg_iff] at this
-    exact (show W x₀ ≤ W (φ s) from hsΩ).trans this
-  -- `W` grows at a uniform rate on the compact set `{‖x − x_eq‖ ≤ r, W x ≥ W x₀}`
-  have hKc : IsCompact {x | ‖x - x_eq‖ ≤ r ∧ W x₀ ≤ W x} := by
-    refine (isCompact_closedBall x_eq r).of_isClosed_subset ?_ fun x hx => ?_
-    · exact (isClosed_le (continuous_norm.comp (continuous_sub_right x_eq)) continuous_const).inter
-        (isClosed_le continuous_const hW.continuous)
-    · rw [Metric.mem_closedBall, dist_eq_norm]; exact hx.1
-  exact false_of_lie_pos_on_compact hKc hWd hLc.continuousOn
-    (fun x hx => hLie x hx.1 (hW₀.trans_le hx.2)) hφ fun t ht =>
-      ⟨(hin t ht).le, hkeep t ht t ⟨ht, le_rfl⟩⟩
+  obtain ⟨K, U, hU, hfU⟩ := (hf.contDiffAt (x := x_eq)).exists_lipschitzOnWith
+  exact unstable_of_chetaev_lipschitzOn hU hfU hW hr hseed hLie
 
 /-- **Chetaev's theorem on a dissipated level set.** A `C¹` energy `E` that does not increase
 along the field near the point and takes values below `E x*` arbitrarily close to it, together with

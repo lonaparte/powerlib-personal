@@ -46,10 +46,16 @@ Results.
   (`GFM.Noise.Params.gibbs_stationary_iff`) extended by any dependence on `P_f` is not stationary;
   at linear order this is the broken equipartition `GFM.Noise.VSM3.cov3Pref_omega_ne` of the
   unique Lyapunov solution `GFM.Noise.VSM3.cov3Pref` (the linear Gaussian approximation).
-* Escape rate: not formalized; no exact rate is known. Langer's (Eyring–Kramers) prefactor is
-  built from the Gibbs density at the node and at the saddle (`GFM.Noise.Params.langer_factor` for
-  two states); without a Gibbs density in the swing energy (above) the barrier exponent is a
-  Freidlin–Wentzell quasi-potential, for which this model has no closed form.
+* Escape rate: "no closed form" is not a proposition; its exact replacements are in
+  `theorem/GridTiedConverter/GFM/Noise/FilterReversibility.lean`. Langer's (Eyring–Kramers) rate
+  presupposes generalized detailed balance, which the two-state model satisfies under
+  fluctuation–dissipation (`GFM.Noise.Params.genDetailedBalance_gibbs`, prefactor
+  `GFM.Noise.Params.langer_factor`); for the three-state model no positive differentiable density
+  satisfies detailed balance or generalized detailed balance under the momentum flip, for any
+  noise channel (`GFM.Noise.Params3.not_detailedBalance`,
+  `GFM.Noise.Params3.not_genDetailedBalance_momentumFlip`), and its saddle eigenvalue lies
+  strictly below the two-state one (`GFM.Noise.Params3.saddle_eigenvalue`). The rate itself (the
+  law of the exit time, the Freidlin–Wentzell quasi-potential) is not formalized.
 -/
 
 noncomputable section
