@@ -22,8 +22,9 @@ Model boundary.
   state. Balanced gain and loss: the primary resistance is `R₁ = −(R₂ + R_L)`, a linear negative
   resistance (`PT` hypotheses `hPT`).
 * The nonlinear saturable gain (amplifier or nonlinear resistor) that selects the oscillation and
-  balances gain and loss in a physical system is not modelled; the statements are about the
-  balanced linear circuit and its free oscillations. No transients, stability of the oscillation,
+  balances gain and loss in a physical system is not modelled here; the statements are about the
+  balanced linear circuit and its free oscillations (its realization by a bridge switching in
+  phase with its current is in `theorem/WPT/PTGain.lean`). No transients, stability of the oscillation,
   harmonics or source.
 * Equal reactances `X₁(ω) = X₂(ω)` for the amplitude and efficiency statements; identical coils
   `L₁ = L₂ = L` tuned at `ω₀ > 0` (`tunedCoils`) for the existence statement.

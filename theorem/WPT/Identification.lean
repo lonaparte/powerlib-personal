@@ -28,8 +28,9 @@ Model boundary.
   harmonics, inverter or rectifier. The module states what equal input impedances imply about the
   candidates and how the candidate is recovered from its reflected impedance; it defines no
   measurement record or I–O relation.
-* A foreign object or a misalignment is not modelled as such; only its effect on the candidate
-  parameters `(M, R_L)` of this model is covered. No estimator dynamics, convergence or detection
+* A foreign object or a misalignment is not modelled here; only its effect on the candidate
+  parameters `(M, R_L)` of this model is covered (a foreign object coupled to the transmitter is
+  modelled in `theorem/WPT/ForeignObject.lean`). No estimator dynamics, convergence or detection
   threshold.
 
 Source: the reflected impedance `(ωM)²/(Z₂(jω) + Z_L)` of `theorem/Passive/Coupled.lean`
