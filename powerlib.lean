@@ -435,3 +435,5 @@ import theorem.WPT.LossyDesign
 import theorem.WPT.LossyFlux
 import theorem.WPT.DCLink
 import theorem.WPT.Switching
+import theorem.SpecialFunctions.DescribingFunction
+import theorem.WPT.SaturatedWinding
