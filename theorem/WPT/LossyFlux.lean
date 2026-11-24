@@ -48,9 +48,10 @@ Model boundary.
   flux). The statements with bridges use the resonant tuning `X₁(ω) = X₂(ω) = 0` and
   `ρ₁, ρ₂ ≥ 0`: the smaller-limit bounds `R₁, R₂ > 0`; the exactness of `LossyLimits.outputLimit`
   `R₁ > 0`, `Δ > 0` and `ωM ≠ 0` as in `theorem/WPT/LossyLimits.lean`; the exactness of the flux
-  limits `R₂ > 0` with `M ≠ 0` (secondary) or `L₁ ≠ 0` (primary). Not covered: the exact limit
-  when the bridge and the flux bounds bind at once (neither exactness condition holds), and both
-  flux bounds together.
+  limits `R₂ > 0` with `M ≠ 0` (secondary) or `L₁ ≠ 0` (primary). Not covered here: the exact
+  limit when the bridge and the flux bounds bind at once (neither exactness condition holds), and
+  both flux bounds together; both are located exactly by Lagrangian duality in
+  `theorem/WPT/LossyEnvelope.lean`.
 
 Source: the coil pair and its flux linkages `Passive.Coupled.flux₁`, `Passive.Coupled.flux₂` of
 `theorem/Passive/Coupled.lean`; the driven two-port `CurrentLimits.Driven`,

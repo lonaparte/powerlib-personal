@@ -25,10 +25,11 @@ Model boundary.
   `ψ₂ = MI₁ + L₂I₂` and their waveforms `√2 Re(ψ_k e^{jωt})` (`SpecialFunctions.phasorWave`).
 * Saturation is specified per winding by a bound `Ψ_sat ≥ 0` on the instantaneous flux linkage
   (the usual design proxy for a core; the split into magnetizing and leakage flux of a shared core
-  is not modelled). The nonlinear winding is a static single-valued characteristic `i = h(ψ)`,
-  linear up to `Ψ_sat`: no hysteresis, no eddy currents, no dynamics of the magnetization.
-  Beyond `Ψ_sat` nothing is claimed about `h`: the operating points with saturated cores are
-  outside the linear model and are not described here.
+  is in `theorem/WPT/CoreFlux.lean`). The nonlinear winding is a static single-valued
+  characteristic `i = h(ψ)`, linear up to `Ψ_sat`: no hysteresis, no eddy currents, no dynamics of
+  the magnetization. Beyond `Ψ_sat` nothing is claimed about `h` here: the operating points with
+  saturated cores are outside the linear model (a two-slope curve beyond saturation is treated in
+  `theorem/WPT/SaturatedWinding.lean`).
 * The exact power limit transferred here is that of the lossless resonant link with bridge radii
   and the primary saturation bound (`ReactiveLimits.isGreatest_power₁`); its boundary applies.
 

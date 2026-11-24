@@ -444,3 +444,6 @@ import theorem.WPT.HarmonicTotals
 import theorem.SpecialFunctions.Duality
 import theorem.SpecialFunctions.BoxQuadratic
 import theorem.WPT.LossyEnvelope
+import theorem.SpecialFunctions.TripleEnvelope
+import theorem.WPT.CoreFlux
+import theorem.WPT.PerfectCoupling

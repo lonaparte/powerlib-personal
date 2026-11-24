@@ -40,7 +40,9 @@ Model boundary.
 * The bridge limits bound the fundamentals `‖V_k‖ ≤ ρ_k`; the flux limits bound the fundamental
   flux-linkage phasors (`Passive.Coupled.flux₁`, `flux₂`) as `normSq ψ_k ≤ Ψ_k²`; the nonlinear
   magnetization curve is not modelled. No sign condition on the reactive power (soft switching
-  is not required). Fundamental-harmonic approximation; lossy windings are not covered.
+  is not required). Fundamental-harmonic approximation; lossy windings are not covered here (they
+  are in `theorem/WPT/LossyEnvelope.lean`); perfect coupling `k = 1` is in
+  `theorem/WPT/PerfectCoupling.lean`.
 
 Source: the four relaxations `ReactiveLimits.isGreatest_power₁`, `ReactiveLimits.isGreatest_power₂`
 (`theorem/WPT/ReactiveLimits.lean`), `FluxLimits.isGreatest_power_bridge₁`,

@@ -27,7 +27,8 @@ Model boundary.
   fundamental voltage source `V_k` in series with a linear conduction resistance `r_k`; the
   terminal voltage `V_k − r_k I_k` is what drives the coil. The equivalence and the power
   accounting hold for all real `r_k`; the physical range is `r_k ≥ 0`.
-* Conduction loss is modelled, as a resistance. Switching losses (turn-on and turn-off energy,
+* Conduction loss is modelled, as a resistance (a turn-off loss linear in the switched current is
+  in `theorem/WPT/Switching.lean`). Switching losses (turn-on and turn-off energy,
   output-capacitance charge, reverse recovery), the forward voltage drop of IGBTs and diodes, dead
   time, the gate drive and the temperature dependence of `R_DS,on` are not modelled; neither are
   the harmonic currents, so `r‖I‖²` is the conduction loss of the fundamental current.

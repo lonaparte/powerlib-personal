@@ -162,6 +162,15 @@ open powerlib LinearSystems
 #check powerlib.WPT.ForeignObject.Circuit.inputImpedance_resonant_im_ne_zero_iff
 #check powerlib.WPT.PTGain.outputPower_eq
 #print axioms powerlib.WPT.EnvelopeLimits.isGreatest_power_envelope
+#check powerlib.WPT.LossyEnvelope.isGreatest_outputEnvelope
+#check powerlib.WPT.LossyEnvelope.outputPower_le_dualBound
+#check powerlib.WPT.CoreFlux.isGreatest_power_coreEnvelope
+#check powerlib.WPT.PerfectCoupling.isGreatest_power_perfect
+#check powerlib.WPT.SaturatedWinding.Curve.effInductance_eq_iff
+#check powerlib.WPT.HarmonicTotals.tsum_abs_power_le
+#check powerlib.WPT.DCLink.isLeast_chargeTime
+#check powerlib.WPT.Switching.zvs_iff
+#print axioms powerlib.WPT.LossyEnvelope.isGreatest_outputEnvelope
 
 -- Coupled resonators: a lossy primary damps a lossless secondary, through the coupling alone.
 @[powerlib_domain] theorem wpt_lossy_primary (r : WPT.Resonator) (hM : r.coils.M ≠ 0)

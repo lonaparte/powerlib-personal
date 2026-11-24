@@ -101,7 +101,8 @@ the wireless power links of `WPT/` (coil pair, compensation, coupled resonators,
 frequency tracking, relay and multiple receivers, capacitive links, parity–time symmetry,
 identification, in-motion transfer, current limits, soft switching and flux limits, joint,
 reactive, envelope, soft-switching and lossy limits, ratings, bridge losses, the DC side,
-saturation, harmonics, foreign objects and the gain of parity–time links). -/
+saturation and saturated windings, core flux, perfect coupling, harmonics and their totals, the
+DC link, switching, foreign objects and the gain of parity–time links). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
   `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,

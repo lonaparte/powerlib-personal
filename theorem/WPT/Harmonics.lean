@@ -41,7 +41,8 @@ Model boundary.
   periodic steady state is the superposition of these harmonic responses is the modelling premise
   of this module, not a theorem of it; the time-domain totals (RMS currents, total transferred
   power, capacitor and device stresses) are the Parseval sums of the harmonic terms over all `n`
-  and are not formalized here.
+  (`theorem/SpecialFunctions/Parseval.lean`); the sums are bounded in closed form in
+  `theorem/WPT/HarmonicTotals.lean`.
 * The bridges are ideal voltage sources of the given waveforms: no switching transients, dead-time
   commutation, device drops or DC-link ripple. The bound `‖V_k‖ ≤ ρ_k/n` is a hypothesis; its
   reading for square and quasi-square waves comes from the generic module cited above. Winding
