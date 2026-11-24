@@ -14,8 +14,13 @@ the primary coil and inductive bridge ports, `Q ≥ Q_min ≥ 0`, the power obey
 `P² + Q_min² ≤ ((ωΨ₁² − 2L₁Q_min)/(2L₁))²`: at `Q_min = 0` the transferable power is at most
 `ωΨ₁²/(2L₁)`, whatever the coupling, attained by quadrature currents with `L₁|I₁| = |M||I₂|`. The
 premise `Q ≥ 0` is part of this bound: for capacitive ports (`Q < 0`) the term `2(L₁/ω)Q` lowers the
-primary flux, and no bound of this form is claimed; without a sign condition on `Q` the limits
-that remain are those of `theorem/WPT/CurrentLimits.lean`.
+primary flux, and the primary flux limit alone then bounds no power at all
+(`exists_power_gt_of_flux₁`); the bridge voltages and the secondary flux are what remain.
+The phases of the currents are free (`exists_realization`): every `(|I₁|, |I₂|, P, Q)` with
+`P² + Q² = (ωM)²|I₁|²|I₂|²` inside the bridge bidisk is realized, so any combination of these
+conditions, with or without soft switching, has as its exact feasible set the one its inequalities
+cut out of these four quantities (the joint optimum of bridges, flux and soft switching is
+`theorem/WPT/JointLimits.lean`).
 
 Model boundary.
 * The lossless resonant link of `theorem/WPT/CurrentLimits.lean`: the coil pair
@@ -39,13 +44,18 @@ Results.
   `power₂_eq` (`Re(V₂Ī₂) = −ωM Im(I₁Ī₂)`: what one bridge delivers the other absorbs),
   `reactive₁_eq`, `reactive₂_eq` (both bridges see `Im(V_kĪ_k) = ωM Re(I₁Ī₂)`),
   `power_sq_add_reactive_sq` (`P² + Q² = (ωM)²|I₁|²|I₂|²`).
+* Realization: `exists_realization` (every `(a, b, P, Q)` with `0 ≤ a ≤ ρ₂/|ωM|`, `0 ≤ b ≤ ρ₁/|ωM|`
+  and `P² + Q² = (ωM)² a² b²` is realized by admissible bridge phasors with `‖I₁‖ = a`, `‖I₂‖ = b`).
 * Soft switching: `power_sq_le_of_reactive` (with `‖V_k‖ ≤ ρ_k` and `Q ≥ Q_min ≥ 0`:
-  `P² + Q_min² ≤ (ρ₁ρ₂/|ωM|)²`), `exists_power_reactive` (attained, with `Q = Q_min`).
+  `P² + Q_min² ≤ (ρ₁ρ₂/|ωM|)²`), `exists_power_reactive` (attained, with `Q = Q_min`, from
+  `exists_realization`).
 * Flux: `normSq_flux₁_eq`, `normSq_flux₂_eq` (`|ψ₁|² = L₁²|I₁|² + M²|I₂|² + 2(L₁/ω)Q` and the
   secondary counterpart: an inductive margin adds flux, a capacitive one removes it),
   `power_sq_le_of_flux₁` (`|ψ₁| ≤ Ψ₁`, `Q ≥ Q_min ≥ 0`, `ω, L₁ > 0`:
   `P² + Q_min² ≤ ((ωΨ₁² − 2L₁Q_min)/(2L₁))²`), `abs_power_eq_of_flux₁` (quadrature currents with
-  `L₁|I₁| = |M||I₂|` and `|ψ₁| = Ψ₁` transfer exactly `|P| = ωΨ₁²/(2L₁)`).
+  `L₁|I₁| = |M||I₂|` and `|ψ₁| = Ψ₁` transfer exactly `|P| = ωΨ₁²/(2L₁)`), `exists_power_gt_of_flux₁`
+  (without a sign condition on `Q`: for every `Ψ₁ > 0` and every level, capacitive currents with
+  `|ψ₁| = Ψ₁` transfer more).
 -/
 
 noncomputable section
@@ -146,6 +156,63 @@ variable {w : Passive.Coupled} {ω : ℝ} {V₁ V₂ I₁ I₂ : ℂ}
   have hQ2 : Qmin ^ 2 ≤ (V₁ * conj I₁).im ^ 2 := pow_le_pow_left₀ hQ0 hQ 2
   nlinarith [mul_le_mul_of_nonneg_left hprod (sq_nonneg (ω * w.M))]
 
+/-- Realization: every `(a, b, P, Q)` with `0 ≤ a ≤ ρ₂/|ωM|`, `0 ≤ b ≤ ρ₁/|ωM|` and
+`P² + Q² = (ωM)² a² b²` is realized by admissible bridge phasors: currents with `‖I₁‖ = a`,
+`‖I₂‖ = b`, transferred power `P` and reactive power `Q`. The phases are free, so the reachable
+set of `(|I₁|, |I₂|, P, Q)` is exactly the one cut out by these conditions, and every condition
+stated in these quantities (soft switching, flux, capacitor voltage, current ratings) adds only
+its own inequality. -/
+@[tmio M, powerlib_domain] theorem exists_realization {ρ₁ ρ₂ a b P Q : ℝ}
+    (hX₁ : w.primary.reactance ω = 0) (hX₂ : w.secondary.reactance ω = 0)
+    (hR₁ : w.primary.R = 0) (hR₂ : w.secondary.R = 0) (hm : ω * w.M ≠ 0)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (haA : a ≤ ρ₂ / |ω * w.M|) (hbB : b ≤ ρ₁ / |ω * w.M|)
+    (hPQ : P ^ 2 + Q ^ 2 = (ω * w.M) ^ 2 * (a ^ 2 * b ^ 2)) :
+    ∃ V₁ V₂ I₁ I₂ : ℂ, ‖V₁‖ ≤ ρ₁ ∧ ‖V₂‖ ≤ ρ₂ ∧ Driven w ω V₁ V₂ I₁ I₂ ∧
+      ‖I₁‖ = a ∧ ‖I₂‖ = b ∧ (V₁ * conj I₁).re = P ∧ (V₁ * conj I₁).im = Q := by
+  set m := ω * w.M with hmdef
+  have hma : 0 < |m| := abs_pos.mpr hm
+  -- the current pair: `I₁ = a`, `I₂ = conj z / a` with `z = (Q + jP)/m`, so `I₁ Ī₂ = z`
+  obtain ⟨J₁, J₂, hJ₁, hJ₂, hz⟩ : ∃ J₁ J₂ : ℂ, ‖J₁‖ = a ∧ ‖J₂‖ = b ∧
+      J₁ * conj J₂ = ((Q / m : ℝ) : ℂ) + ((P / m : ℝ) : ℂ) * I := by
+    rcases eq_or_lt_of_le ha with ha0 | hapos
+    · -- `a = 0` forces `P = Q = 0`
+      subst ha0
+      have hP : P = 0 := by nlinarith [sq_nonneg P, sq_nonneg Q]
+      have hQ : Q = 0 := by nlinarith [sq_nonneg P, sq_nonneg Q]
+      refine ⟨0, (b : ℂ), by simp, ?_, ?_⟩
+      · rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hb]
+      · simp [hP, hQ]
+    · have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast hapos.ne'
+      set z : ℂ := ((Q / m : ℝ) : ℂ) + ((P / m : ℝ) : ℂ) * I with hzdef
+      refine ⟨(a : ℂ), conj z / (a : ℂ), ?_, ?_, ?_⟩
+      · rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos hapos]
+      · have hnz : ‖z‖ ^ 2 = (a * b) ^ 2 := by
+          rw [← Complex.normSq_eq_norm_sq, hzdef, Complex.normSq_add_mul_I, div_pow, div_pow,
+            ← add_div, add_comm, hPQ]
+          field_simp
+        have hnz' : ‖z‖ = a * b :=
+          (sq_eq_sq₀ (norm_nonneg _) (mul_nonneg ha hb)).mp hnz
+        rw [norm_div, Complex.norm_conj, hnz', Complex.norm_real, Real.norm_eq_abs,
+          abs_of_pos hapos]
+        field_simp
+      · rw [map_div₀, Complex.conj_conj, Complex.conj_ofReal]
+        field_simp
+  have hJ₁A : ‖J₁‖ ≤ ρ₂ / |m| := hJ₁ ▸ haA
+  have hJ₂B : ‖J₂‖ ≤ ρ₁ / |m| := hJ₂ ▸ hbB
+  obtain ⟨V₁, V₂, h₁, h₂, h⟩ :=
+    (reachable_iff w ω J₁ J₂ hX₁ hX₂ hR₁ hR₂ hm).mpr ⟨hJ₁A, hJ₂B⟩
+  refine ⟨V₁, V₂, J₁, J₂, h₁, h₂, h, hJ₁, hJ₂, ?_, ?_⟩
+  · rw [power₁_eq hX₁ hX₂ hR₁ hR₂ h, hz, ← hmdef]
+    simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
+      Complex.I_re, Complex.I_im]
+    field_simp
+    ring
+  · rw [reactive₁_eq hX₁ hX₂ hR₁ hR₂ h, hz, ← hmdef]
+    simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im]
+    field_simp
+    ring
+
 /-- The soft-switching power limit is attained: for `0 ≤ Q_min ≤ ρ₁ρ₂/|ωM|` some admissible
 bridge phasors run at the reactive power `Q_min` and transfer `√((ρ₁ρ₂/|ωM|)² − Q_min²)`. -/
 @[tmio M, powerlib_domain] theorem exists_power_reactive {ρ₁ ρ₂ Qmin : ℝ}
@@ -155,52 +222,19 @@ bridge phasors run at the reactive power `Q_min` and transfer `√((ρ₁ρ₂/|
     ∃ V₁ V₂ I₁ I₂ : ℂ, ‖V₁‖ ≤ ρ₁ ∧ ‖V₂‖ ≤ ρ₂ ∧ Driven w ω V₁ V₂ I₁ I₂ ∧
       (V₁ * conj I₁).im = Qmin ∧
         (V₁ * conj I₁).re = Real.sqrt ((ρ₁ * ρ₂ / |ω * w.M|) ^ 2 - Qmin ^ 2) := by
-  set m := ω * w.M with hmdef
-  have hma : 0 < |m| := abs_pos.mpr hm
-  set Pv := Real.sqrt ((ρ₁ * ρ₂ / |m|) ^ 2 - Qmin ^ 2) with hPv
-  have hX : 0 ≤ (ρ₁ * ρ₂ / |m|) ^ 2 - Qmin ^ 2 := by
-    have : Qmin ^ 2 ≤ (ρ₁ * ρ₂ / |m|) ^ 2 := pow_le_pow_left₀ hQ0 hQ1 2
+  have hma : 0 < |ω * w.M| := abs_pos.mpr hm
+  have hX : 0 ≤ (ρ₁ * ρ₂ / |ω * w.M|) ^ 2 - Qmin ^ 2 := by
+    have : Qmin ^ 2 ≤ (ρ₁ * ρ₂ / |ω * w.M|) ^ 2 := pow_le_pow_left₀ hQ0 hQ1 2
     linarith
-  have hPv2 : Pv ^ 2 = (ρ₁ * ρ₂ / |m|) ^ 2 - Qmin ^ 2 := Real.sq_sqrt hX
-  set A := ρ₂ / |m| with hA
-  have hApos : 0 < A := div_pos hρ₂ hma
-  set z : ℂ := ((Qmin / m : ℝ) : ℂ) + ((Pv / m : ℝ) : ℂ) * I with hz
-  set J₁ : ℂ := (A : ℂ)
-  set J₂ : ℂ := conj z / (A : ℂ)
-  have hA' : (A : ℂ) ≠ 0 := by exact_mod_cast hApos.ne'
-  have hzJ : J₁ * conj J₂ = z := by
-    simp only [J₁, J₂, map_div₀, Complex.conj_conj, Complex.conj_ofReal]
-    field_simp
-  have hJ₁ : ‖J₁‖ ≤ ρ₂ / |m| := by
-    show ‖(A : ℂ)‖ ≤ ρ₂ / |m|
-    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos hApos]
-  have hJ₂ : ‖J₂‖ ≤ ρ₁ / |m| := by
-    have hnz : ‖z‖ ^ 2 = (ρ₁ * ρ₂ / |m|) ^ 2 / m ^ 2 := by
-      rw [← Complex.normSq_eq_norm_sq, hz, Complex.normSq_add_mul_I, div_pow, div_pow, hPv2]
-      field_simp
-      ring
-    have hn : ‖J₂‖ ^ 2 = (ρ₁ / |m|) ^ 2 := by
-      simp only [J₂, norm_div, Complex.norm_conj, Complex.norm_real, Real.norm_eq_abs,
-        div_pow, hnz, hA]
-      have hm2 : m ^ 2 = |m| ^ 2 := (sq_abs m).symm
-      rw [hm2]
-      field_simp
-      simp only [abs_abs, sq_abs]
-      ring
-    exact (sq_le_sq₀ (norm_nonneg _) (div_nonneg hρ₁.le hma.le)).mp hn.le
-  obtain ⟨V₁, V₂, h₁, h₂, h⟩ :=
-    (reachable_iff w ω J₁ J₂ hX₁ hX₂ hR₁ hR₂ hm).mpr ⟨hJ₁, hJ₂⟩
-  refine ⟨V₁, V₂, J₁, J₂, h₁, h₂, h, ?_, ?_⟩
-  · rw [reactive₁_eq hX₁ hX₂ hR₁ hR₂ h, hzJ, ← hmdef, hz]
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im]
+  have hPQ : Real.sqrt ((ρ₁ * ρ₂ / |ω * w.M|) ^ 2 - Qmin ^ 2) ^ 2 + Qmin ^ 2 =
+      (ω * w.M) ^ 2 * ((ρ₂ / |ω * w.M|) ^ 2 * (ρ₁ / |ω * w.M|) ^ 2) := by
+    rw [Real.sq_sqrt hX, ← sq_abs (ω * w.M)]
     field_simp
     ring
-  · rw [power₁_eq hX₁ hX₂ hR₁ hR₂ h, hzJ, ← hmdef, hz]
-    simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
-      Complex.I_re, Complex.I_im]
-    field_simp
-    ring
+  obtain ⟨V₁, V₂, I₁, I₂, h₁, h₂, h, -, -, hP, hQ⟩ :=
+    exists_realization hX₁ hX₂ hR₁ hR₂ hm (div_nonneg hρ₂.le hma.le)
+      (div_nonneg hρ₁.le hma.le) le_rfl le_rfl hPQ
+  exact ⟨V₁, V₂, I₁, I₂, h₁, h₂, h, hQ, hP⟩
 
 /-! ## Flux -/
 
@@ -294,5 +328,65 @@ and `|ψ₁| = Ψ₁` transfer exactly `|P| = ωΨ₁²/(2L₁)`. -/
     ring
   rw [← Real.sqrt_sq_eq_abs, hP2, Real.sqrt_sq (by positivity), ha2]
   field_simp
+
+/-- Without a sign condition on the reactive power the primary flux limit alone bounds no power:
+for every `Ψ₁ > 0` and every level `P_b` there are currents with `|ψ₁| = Ψ₁` that transfer more
+than `P_b`. They run at a capacitive reactive power `Q < 0`: `I₁ = −(M/L₁) b + j c` against
+`I₂ = b` cancels the mutual part of the primary flux, `ψ₁ = j L₁ c`, while the power
+`ω|M| b Ψ₁/L₁` grows with `b`. What bounds it then are the bridge voltages and the secondary
+flux. -/
+@[tmio M, powerlib_domain] theorem exists_power_gt_of_flux₁ {Ψ₁ : ℝ}
+    (hX₁ : w.primary.reactance ω = 0) (hX₂ : w.secondary.reactance ω = 0)
+    (hR₁ : w.primary.R = 0) (hR₂ : w.secondary.R = 0) (hω : 0 < ω) (hL₁ : 0 < w.primary.L)
+    (hM : w.M ≠ 0) (hΨ : 0 < Ψ₁) (Pb : ℝ) :
+    ∃ V₁ V₂ I₁ I₂ : ℂ, Driven w ω V₁ V₂ I₁ I₂ ∧ normSq (w.flux₁ I₁ I₂) = Ψ₁ ^ 2 ∧
+      (V₁ * conj I₁).im < 0 ∧ Pb < (V₁ * conj I₁).re := by
+  have hMa : 0 < |w.M| := abs_pos.mpr hM
+  set c := w.M / |w.M| * (Ψ₁ / w.primary.L) with hc
+  set b := (|Pb| + 1) * w.primary.L / (ω * |w.M| * Ψ₁) with hb
+  have hbpos : 0 < b := by positivity
+  set J₁ : ℂ := ((-(w.M / w.primary.L) * b : ℝ) : ℂ) + (c : ℂ) * I
+  set J₂ : ℂ := (b : ℂ)
+  have hD : Driven w ω (((ω * w.M : ℝ) : ℂ) * I * J₂) (((ω * w.M : ℝ) : ℂ) * I * J₁) J₁ J₂ := by
+    rw [driven_iff, hX₁, hX₂, hR₁, hR₂]
+    simp only [Complex.ofReal_zero, zero_mul, zero_add, add_zero]
+    exact ⟨trivial, trivial⟩
+  have hL' : (w.primary.L : ℂ) ≠ 0 := by exact_mod_cast hL₁.ne'
+  have hz : J₁ * conj J₂ = ((-(w.M / w.primary.L) * b * b : ℝ) : ℂ) + ((c * b : ℝ) : ℂ) * I := by
+    simp only [J₁, J₂, Complex.conj_ofReal]
+    push_cast
+    ring
+  refine ⟨_, _, J₁, J₂, hD, ?_, ?_, ?_⟩
+  · have hψ : w.flux₁ J₁ J₂ = ((w.primary.L * c : ℝ) : ℂ) * I := by
+      simp only [Passive.Coupled.flux₁, J₁, J₂]
+      push_cast
+      field_simp
+      ring
+    rw [hψ, Complex.normSq_mul, Complex.normSq_I, mul_one, Complex.normSq_ofReal]
+    have hsg : (w.M / |w.M|) * (w.M / |w.M|) = 1 := by
+      rw [div_mul_div_comm, ← sq, ← sq_abs, sq, div_self (mul_pos hMa hMa).ne']
+    have e : (w.primary.L * c) * (w.primary.L * c) = Ψ₁ ^ 2 * ((w.M / |w.M|) * (w.M / |w.M|)) := by
+      simp only [hc]
+      field_simp
+    rw [e, hsg, mul_one]
+  · rw [reactive₁_eq hX₁ hX₂ hR₁ hR₂ hD, hz]
+    simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
+      add_zero]
+    have : 0 < ω * w.M ^ 2 * b ^ 2 / w.primary.L := by positivity
+    have e : ω * w.M * (-(w.M / w.primary.L) * b * b) = -(ω * w.M ^ 2 * b ^ 2 / w.primary.L) := by
+      field_simp
+    linarith
+  · rw [power₁_eq hX₁ hX₂ hR₁ hR₂ hD, hz]
+    simp only [Complex.add_im, Complex.ofReal_im, Complex.im_ofReal_mul, Complex.I_im, mul_one,
+      zero_add]
+    have hMM : w.M * (w.M / |w.M|) = |w.M| := by
+      rw [← mul_div_assoc, ← sq, ← sq_abs, sq, mul_div_assoc, div_self hMa.ne', mul_one]
+    have e : ω * w.M * (c * b) = |Pb| + 1 := by
+      have : ω * w.M * (c * b) = ω * (w.M * (w.M / |w.M|)) * (Ψ₁ / w.primary.L) * b := by
+        rw [hc]; ring
+      rw [this, hMM, hb]
+      field_simp
+    rw [e]
+    linarith [le_abs_self Pb]
 
 end powerlib.WPT.Gyrator
