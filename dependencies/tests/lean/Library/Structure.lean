@@ -100,7 +100,8 @@ parameter conversions, the grid structure of `Grid/` (RL networks, grid impedanc
 the wireless power links of `WPT/` (coil pair, compensation, coupled resonators, bifurcation,
 frequency tracking, relay and multiple receivers, capacitive links, parity–time symmetry,
 identification, in-motion transfer, current limits, soft switching and flux limits, joint,
-reactive and lossy limits). -/
+reactive, envelope, soft-switching and lossy limits, ratings, bridge losses, the DC side,
+saturation, harmonics, foreign objects and the gain of parity–time links). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
   `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,
