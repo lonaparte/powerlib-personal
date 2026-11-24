@@ -41,7 +41,9 @@ Results.
   `(−ε, κ D ε/M)ᵀ`); `covFreq_solves`, `covFreq_unique`: the frequency-channel solution
   `Var δ = ε²(D²(1 − κ)² + K M)/(2 D K)`, `Cov = −ε²/2`, `Var ω = ε²(D² κ² + K M)/(2 D M)`
   (nominal damping `κ = 0`: `Var ω = K ε²/(2D)`; grid-referenced `κ = 1`: `Var δ = M ε²/(2D)`),
-  unique for `M, D, K ≠ 0` (`Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two`);
+  unique for `M, D, K ≠ 0` (`Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two`), read from
+  `covFreq_solves_swingA`, `covFreq_unique_swingA` (the mechanical Jacobian
+  `Frequency.FreqCov.swingA M D K` forced by the column `(−ε, κ D ε/M)ᵀ`, any `M, D, K ≠ 0`);
   `powerRow_cov_unique`: without the frequency channel the solution is the library's
   `Frequency.FreqCov.swingCov M D K a(θ*)` (`Frequency.FreqCov.swingCov_unique`, `a` the momentum
   diffusion of the power rows).
@@ -108,6 +110,32 @@ def covFreq (M D K κ ε : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![ε ^ 2 * (D ^ 2 * (1 - κ) ^ 2 + K * M) / (2 * D * K), -(ε ^ 2 / 2);
      -(ε ^ 2 / 2), ε ^ 2 * (D ^ 2 * κ ^ 2 + K * M) / (2 * D * M)]
 
+/-- `covFreq` solves the Lyapunov equation of the mechanical Jacobian `swingA M D K` forced by the
+column `(−ε, κ D ε/M)ᵀ` (`M, D, K ≠ 0`). -/
+@[tmio M, powerlib_domain] theorem covFreq_solves_swingA {M D K : ℝ} (hM : M ≠ 0) (hD : D ≠ 0)
+    (hK : K ≠ 0) (κ ε : ℝ) :
+    SolvesCovLyapunov (Frequency.FreqCov.swingA M D K) (covFreq M D K κ ε)
+      (!![-ε; κ * D * ε / M] * (!![-ε; κ * D * ε / M])ᵀ) := by
+  unfold SolvesCovLyapunov
+  ext i j
+  simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
+    Matrix.transpose_apply, Matrix.zero_apply]
+  fin_cases i <;> fin_cases j <;>
+    simp [Frequency.FreqCov.swingA, PhasePlane.Conservative.jacobian, covFreq] <;>
+    field_simp <;> ring
+
+/-- Uniqueness of the frequency-column solution (`tr = −D/M ≠ 0`, `det = K/M ≠ 0`,
+`Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two`). -/
+@[tmio M, powerlib_domain] theorem covFreq_unique_swingA {M D K κ ε : ℝ} (hM : M ≠ 0)
+    (hD : D ≠ 0) (hK : K ≠ 0) {P : Matrix (Fin 2) (Fin 2) ℝ}
+    (hP : SolvesCovLyapunov (Frequency.FreqCov.swingA M D K) P
+      (!![-ε; κ * D * ε / M] * (!![-ε; κ * D * ε / M])ᵀ)) :
+    P = covFreq M D K κ ε :=
+  Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two
+    (by rw [PhasePlane.Conservative.trace_jacobian]; exact div_ne_zero (neg_ne_zero.mpr hD) hM)
+    (by rw [PhasePlane.Conservative.det_jacobian]; exact div_ne_zero hK hM) hP
+    (covFreq_solves_swingA hM hD hK κ ε)
+
 namespace Params
 
 variable (p : Params)
@@ -118,17 +146,8 @@ variable (p : Params)
     SolvesCovLyapunov (p.toSM.toSwing.jacobian (δ - p.α))
       (covFreq p.M p.D (p.A * Real.cos (δ - p.α)) κ ε)
       (p.diffusionOmega κ (freqOnly ε) δ * (p.diffusionOmega κ (freqOnly ε) δ)ᵀ) := by
-  have hM := p.M_pos.ne'
-  have hA := left_ne_zero_of_mul hK
-  have hc := right_ne_zero_of_mul hK
   rw [jacobian_eq, diffusionOmega_freq]
-  unfold SolvesCovLyapunov
-  ext i j
-  simp only [Matrix.add_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one,
-    Matrix.transpose_apply, Matrix.zero_apply]
-  fin_cases i <;> fin_cases j <;>
-    simp [Frequency.FreqCov.swingA, PhasePlane.Conservative.jacobian, covFreq] <;>
-    field_simp <;> ring
+  exact covFreq_solves_swingA p.M_pos.ne' hD hK κ ε
 
 /-- Uniqueness of the frequency-channel solution (`tr A = −D/M ≠ 0`, `det A = K/M ≠ 0`). -/
 @[tmio M, powerlib_domain] theorem covFreq_unique {κ ε δ : ℝ} (hD : p.D ≠ 0)
@@ -136,13 +155,8 @@ variable (p : Params)
     (hP : SolvesCovLyapunov (p.toSM.toSwing.jacobian (δ - p.α)) P
       (p.diffusionOmega κ (freqOnly ε) δ * (p.diffusionOmega κ (freqOnly ε) δ)ᵀ)) :
     P = covFreq p.M p.D (p.A * Real.cos (δ - p.α)) κ ε := by
-  have hM := p.M_pos.ne'
-  refine Stochastic.Lyapunov.solvesCovLyapunov_unique_fin_two ?_ ?_ hP
-    (p.covFreq_solves κ ε δ hD hK)
-  · rw [jacobian_eq, PhasePlane.Conservative.trace_jacobian]
-    exact div_ne_zero (neg_ne_zero.mpr hD) hM
-  · rw [jacobian_eq, PhasePlane.Conservative.det_jacobian]
-    exact div_ne_zero hK hM
+  rw [jacobian_eq, diffusionOmega_freq] at hP
+  exact covFreq_unique_swingA p.M_pos.ne' hD hK hP
 
 /-- **Power rows**: without the frequency channel the unique solution is the library's swing
 covariance `Frequency.FreqCov.swingCov M D K a(θ*)` with the momentum diffusion

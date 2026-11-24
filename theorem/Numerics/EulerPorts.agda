@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.Numerics.EulerPorts where
--- Lean modules: theorem.Numerics.EulerPorts theorem.Passive.PortEuler theorem.GridTiedConverter.GFL.DCLink.PortEuler theorem.PowerSystem.Synchronous.PortEuler theorem.GridTiedConverter.PLL.PortEuler theorem.GridTiedConverter.GFM.Discrete.LinearPort
+-- Lean modules: theorem.Numerics.EulerPorts theorem.Passive.PortEuler theorem.GridTiedConverter.GFL.DCLink.PortEuler theorem.PowerSystem.Synchronous.PortEuler theorem.GridTiedConverter.PLL.PortEuler theorem.GridTiedConverter.GFM.Discrete.LinearPort theorem.Numerics.ImplicitPorts theorem.GridTiedConverter.GFM.Discrete.DualPort theorem.Numerics.EulerOutputs theorem.GridTiedConverter.GFM.Discrete.StepAwareEuler
 
 -- Scaffold of the explicit Euler implementation of models with ports: the model is a port system
 -- `ẋ = f(x, u)`, `y = g(x, u)`; its implementation with step `h > 0` is the discrete port system
@@ -53,6 +53,35 @@ module theorem.Numerics.EulerPorts where
 -- `GFM.FilterPort.linearEuler_not_mem_den_passive`) and the midpoint implementations of the
 -- passive plants are passive (`GFM.SwingPort.linearMidpoint_mem_den_passive`,
 -- `GFM.FilterPort.linearMidpoint_mem_den_passive`).
+-- When the design models have no certificate exactly where they are not passive and a passive
+-- midpoint implementation forces a certificate (a periodic input refutes the others,
+-- `Numerics.midpointSystem_not_passive_of_phasor`), the midpoint realization is exact
+-- (`Midpoint.Exact`, `exact-midpoint`): `GFM.FilterPort.linearMidpoint_mem_den_passive_iff` and
+-- `GFM.FilterPort.linearMidpoint_realizationExactUnder_passive` (the realization
+-- `Numerics.midpointPorts`). The backward Euler implementation `x⁺ − x = h (A x⁺ + B u)`, output
+-- `C x⁺` (`Numerics.backwardEulerPortFamily`, `Numerics.backwardEulerPorts`,
+-- `theorem/Numerics/ImplicitPorts.lean`) is passive with a certificate and a well-posed step
+-- (`BackwardEuler`, `passive-backward`: `Numerics.backwardEulerPortFamily_mem_den_passive`), and
+-- a design outside passivity with a passive backward Euler implementation refutes completeness
+-- (`Spurious`, `not-complete-passive`: `GFM.FilterPort.linearBackwardEuler_mem_den_passive`,
+-- `GFM.FilterPort.not_linearBackwardEuler_realizationCompleteUnder_passive`; soundness
+-- `GFM.FilterPort.linearBackwardEuler_realizationSoundUnder_passive`; swing
+-- `GFM.SwingPort.linearBackwardEuler_mem_den_passive`). Models whose output does not see the
+-- input (`Blind`) have a passive Euler implementation exactly when the output vanishes
+-- (`den-passive↔`: `Numerics.passive_eulerSystem_iff`,
+-- `Numerics.eulerPortFamily_mem_den_passive_iff`);
+-- the grid-forming swing with the grid-frequency port
+-- (`theorem/GridTiedConverter/GFM/Discrete/DualPort.lean`, output `P_ref − P(δ)`) is the
+-- instance, `GFM.DualPort.euler_mem_den_passive_iff` (`A = 0` and `c₀ = P_ref`) and
+-- `GFM.DualPort.euler_exact_passive`. The Euler state update read with an output that sees the
+-- step, `C (x + ν (x⁺ − x))` (`Numerics.eulerOutputSystem`, `Numerics.eulerOutputPortFamily`,
+-- `theorem/Numerics/EulerOutputs.lean`), is passive with a storage certificate and not passive
+-- under a refuting periodic or geometric input (`StepAware`, `passive-aware`,
+-- `not-passive-aware`): the swing's averaged and end-of-step outputs are passive exactly on
+-- closed step conditions (`GFM.SwingPort.linearAverage_mem_den_passive_iff`,
+-- `GFM.SwingPort.linearEnd_mem_den_passive_iff`,
+-- `theorem/GridTiedConverter/GFM/Discrete/StepAwareEuler.lean`), and the filter's averaged output
+-- is refuted when `K (1 + h ω_c) > D ω_c` (`GFM.FilterPort.linearAverage_not_mem_den_passive`).
 -- The nonlinear grid-forming swing port reads its Euler law from the classical machine's
 -- (`theorem/GridTiedConverter/GFM/Discrete/SwingPortMachine.agda`), and its discrete-gradient
 -- discretizations are passive exactly at the matched set-point (`GFM.SwingPort.dg_passive`,
@@ -155,3 +184,78 @@ module _ (S : Semantics) where
       passive-midpoint : (y : Model × Step) → Certificate (fst y) → WellPosed (snd y) (fst y) →
         den midpointImplementation passive y
       passive-midpoint (m , h) c w = midpoint-passive h m c w
+
+      -- Exactness on a context `Ctx`: the design models are passive exactly when certified, a
+      -- passive midpoint implementation forces a certificate of its design (a periodic input
+      -- refutes the others), and every step is well posed.
+      module Exact (Ctx : Model → Type)
+        (passive↔ : (m : Model) → Ctx m → holds (portSystem m) passive ↔ Certificate m)
+        (certificate-of-midpoint : (h : Step) (m : Model) → Ctx m →
+          holds (midpointSystem h m) passive → Certificate m)
+        (well-posed : (h : Step) (m : Model) → Ctx m → WellPosed h m)
+        where
+
+        exact-midpoint : (y : Model × Step) → Ctx (fst y) →
+          den model passive (fst y) ↔ den midpointImplementation passive y
+        exact-midpoint (m , h) c =
+          (λ p → midpoint-passive h m (fst (passive↔ m c) p) (well-posed h m c)) ,
+          (λ q → snd (passive↔ m c) (certificate-of-midpoint h m c q))
+
+    -- The backward Euler implementation of the plants: a certificate of the design plant and a
+    -- well-posed step make it passive; it can also be passive where its design is not.
+    module BackwardEuler (backwardSystem : Step → Model → System)
+      (Certificate : Model → Type) (WellPosed : Step → Model → Type)
+      (backward-passive : (h : Step) (m : Model) → Certificate m → WellPosed h m →
+        holds (backwardSystem h m) passive)
+      where
+
+      backwardImplementation : Family
+      backwardImplementation = record
+        { Model = Model × Step ; Req = ⊥ ; system = λ y → backwardSystem (snd y) (fst y)
+        ; meets = λ _ () ; translate = λ _ () }
+
+      passive-backward : (y : Model × Step) → Certificate (fst y) → WellPosed (snd y) (fst y) →
+        den backwardImplementation passive y
+      passive-backward (m , h) c w = backward-passive h m c w
+
+      -- Spurious passivity: a design outside passivity with a passive implementation refutes
+      -- the completeness of the realization.
+      module Spurious (m : Model) (h : Step) (hn : ¬ holds (portSystem m) passive)
+        (hp : holds (backwardSystem h m) passive)
+        where
+        open Design model backwardImplementation fst using () renaming (designed to backward)
+
+        not-complete-passive : ¬ CompleteUnder backward (λ _ → ⊥) passive
+        not-complete-passive c = hn (c (m , h) (λ _ ()) hp m refl)
+
+    -- The Euler state update with an output that sees the step: a certificate places an
+    -- implementation in passivity, a refuting input outside it.
+    module StepAware (awareSystem : Step → Model → System)
+      (Certificate Refuted : Step → Model → Type)
+      (aware-passive : (h : Step) (m : Model) → Certificate h m →
+        holds (awareSystem h m) passive)
+      (aware-refuted : (h : Step) (m : Model) → Refuted h m →
+        ¬ holds (awareSystem h m) passive)
+      where
+
+      awareImplementation : Family
+      awareImplementation = record
+        { Model = Model × Step ; Req = ⊥ ; system = λ y → awareSystem (snd y) (fst y)
+        ; meets = λ _ () ; translate = λ _ () }
+
+      passive-aware : (y : Model × Step) → Certificate (snd y) (fst y) →
+        den awareImplementation passive y
+      passive-aware (m , h) c = aware-passive h m c
+
+      not-passive-aware : (y : Model × Step) → Refuted (snd y) (fst y) →
+        ¬ den awareImplementation passive y
+      not-passive-aware (m , h) r = aware-refuted h m r
+
+    -- Models whose output does not see the input: an Euler implementation is passive exactly
+    -- when the output vanishes (`Flat`).
+    module Blind (Flat : Model → Type)
+      (euler-passive↔ : (h : Step) (m : Model) → holds (eulerSystem h m) passive ↔ Flat m)
+      where
+
+      den-passive↔ : (y : Model × Step) → den implementation passive y ↔ Flat (fst y)
+      den-passive↔ (m , h) = euler-passive↔ h m

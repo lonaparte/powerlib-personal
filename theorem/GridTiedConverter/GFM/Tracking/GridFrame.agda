@@ -16,12 +16,17 @@ module theorem.GridTiedConverter.GFM.Tracking.GridFrame where
 -- with a power filter (`GFM.VSMLPF.fieldU`, the grid angle in `Ṗ_f = ω_c (K₀ sin(θ − u) − P_f)`;
 -- `frame3` keeps `P_f`) gives the VSM + filter model with the power reference `P₀ − D c`
 -- (`offsetFilter`, `filterGridFrame`, a member of the family of
--- `theorem/GridTiedConverter/GFM/VSMLPF.agda`). The scaffold fixes the nominal-frame data, the
--- frame changes, the image models and the two identities Lean proves: `frameVelocity` (Lean
+-- `theorem/GridTiedConverter/GFM/VSMLPF.agda`), and on a lossy line (`GFM.Tracking.lossyFieldU`,
+-- the lossy field of `theorem/GridTiedConverter/GFM/VSMLPFLossy.agda` at `(θ − u, ω, P_f)`) the
+-- lossy model with the power reference `P_ref − D c` (`offsetLossy`, `lossyGridFrame`, a member
+-- of the lossy family). The scaffold fixes the nominal-frame data, the frame changes, the image
+-- models and the three identities Lean proves: `frameVelocity` (Lean
 -- `GFM.Tracking.gridFrame_hasDerivAt_iff`, componentwise along solutions, with
 -- `GFM.Tracking.gridFrame_vector`: the image field is the swing field with the power reference
--- `P_ref − D c`) and `filterFrameVelocity` (Lean `GFM.Tracking.filterGridFrame_hasDerivAt_iff`,
--- the image model `GFM.Tracking.offsetFilter`). The relation is one of solutions under a
+-- `P_ref − D c`), `filterFrameVelocity` (Lean `GFM.Tracking.filterGridFrame_hasDerivAt_iff`,
+-- the image model `GFM.Tracking.offsetFilter`) and `lossyFrameVelocity` (Lean
+-- `GFM.Tracking.lossyGridFrame_hasDerivAt_iff`, the image model `GFM.Tracking.offsetLossy`).
+-- The relation is one of solutions under a
 -- time-varying change of coordinates, not a conjugacy of two autonomous systems, so no sentence is
 -- transported here: the conclusions are stated on the image models in their families. In the VSM
 -- family the swing hub reads them (`DroopVSM.vsm_mem_den_iff_swing_of_sinusoid`): loss of
@@ -29,7 +34,10 @@ module theorem.GridTiedConverter.GFM.Tracking.GridFrame where
 -- synchronism iff `|P_ref − D c − c₀| < A` (`GFM.Tracking.gridFrame_synchronism_iff`); in the
 -- VSM + filter family they are its laws at `P₀ − D c`
 -- (`GFM.Tracking.filterGridFrame_mem_den_unstable`, `GFM.Tracking.filterGridFrame_synchronism_iff`,
--- through `VSMLPF.exactUnder_locallyExponentiallyStable`). Nothing here is exported.
+-- through `VSMLPF.exactUnder_locallyExponentiallyStable`); in the lossy family they are read
+-- through the lossless reading of the lossy family at `P_ref − D c − c₀` and `δ* − α`
+-- (`GFM.Tracking.lossyGridFrame_mem_den_unstable`, `GFM.Tracking.lossyGridFrame_synchronism_iff`,
+-- through `VSMLPFLossy.den_eq_preimage`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
@@ -38,6 +46,7 @@ open import theorem.Flow.FlowSemantics
 open import theorem.PowerSystem.Synchronous.Swing
 open import theorem.GridTiedConverter.GFM.VSMSwing
 open import theorem.GridTiedConverter.GFM.VSMLPF
+import theorem.GridTiedConverter.GFM.VSMLPFLossy as Lossy
 
 module _ (Sc : Scalars) where
   open Scalars Sc
@@ -89,6 +98,20 @@ module _ (Sc : Scalars) where
   filterGridFrame : LPF.VSMParams → ℝ → ℝ → LPF.VSMModel
   filterGridFrame q c δ = LPF.vsmModel (offsetFilter q c) δ
 
+  -- The three-state loop on a lossy line with the grid angle `u` as a parameter (Lean
+  -- `GFM.Tracking.lossyFieldU`): the lossy field at `(θ − u, ω, P_f)`.
+  lossyAngleField : Lossy.LossyParams Sc → ℝ → LPF.State3 → LPF.State3
+  lossyAngleField q u (θ , ω , pf) = Lossy.lossyField Sc q (θ - u , ω , pf)
+
+  -- The image parameters on a lossy line: the power reference `P_ref − D c` (Lean
+  -- `GFM.Tracking.offsetLossy`), and the image model about the selected power angle `δ*`.
+  offsetLossy : Lossy.LossyParams Sc → ℝ → Lossy.LossyParams Sc
+  offsetLossy q c = Lossy.lossyParams (lM q) (lD q) (lωc q) (Pref q - lD q * c) (c0 q) (A q) (α q)
+    where open Lossy.LossyParams
+
+  lossyGridFrame : Lossy.LossyParams Sc → ℝ → ℝ → Lossy.LossyModel Sc
+  lossyGridFrame q c δ = Lossy.lossyModel (offsetLossy q c) δ
+
   -- What Lean proves: in the new coordinates the image field equals the nominal-frame field minus
   -- the frame velocity `(c, 0)`, resp. `(c, 0, 0)` (the fields do not depend on the selected
   -- angle).
@@ -101,3 +124,7 @@ module _ (Sc : Scalars) where
         LPF.vsmField (offsetFilter q c) (Affine.point (frame3 θ₀ c t) x) ≡
           (fst (filterAngleField q (gridAngle θ₀ c t) x) - c ,
             snd (filterAngleField q (gridAngle θ₀ c t) x))
+      lossyFrameVelocity : (q : Lossy.LossyParams Sc) (θ₀ c t : ℝ) (x : LPF.State3) →
+        Lossy.lossyField Sc (offsetLossy q c) (Affine.point (frame3 θ₀ c t) x) ≡
+          (fst (lossyAngleField q (gridAngle θ₀ c t) x) - c ,
+            snd (lossyAngleField q (gridAngle θ₀ c t) x))

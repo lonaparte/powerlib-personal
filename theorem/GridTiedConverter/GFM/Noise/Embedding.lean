@@ -30,8 +30,9 @@ Model boundary.
   `½ tr(h hᵀ ∇²H)` (`Stochastic.SPH.itoCorrection`), the Stratonovich drift correction the
   expression `Stochastic.SPH.stratCorrection` with the derivatives of `h` computed by `fderiv`.
 * Excluded: line and filter dynamics, inner voltage/current loops, Q–V droop (constant `E`), power
-  filter (the three-state model, `theorem/GridTiedConverter/GFM/Noise/NoiseLyapunov.lean`), PLL,
-  delay, PWM, current limiting; continuous time.
+  filter (the three-state model, `theorem/GridTiedConverter/GFM/Noise/FilterEmbedding.lean` and
+  `theorem/GridTiedConverter/GFM/Noise/NoiseLyapunov.lean`), PLL, delay, PWM, current limiting;
+  continuous time.
 
 Source: GFM counterpart study, note t2-noise items 1–4 (SPHS embedding, Itô correction, Stratonovich
 correction, fluctuation–dissipation per channel; derived and checked symbolically, scratch notes

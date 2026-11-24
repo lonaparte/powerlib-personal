@@ -49,8 +49,10 @@ Results.
 * Linearization: the Jacobian `J(δ)` (`VSMLPF.jacobian`) is `(J − R) Q` with `J` skew, `R ≻ 0`,
   `Q ≻ 0` iff `0 < K₀ cos δ < D ω_c + D²/M` (`exists_linearPH_jacobian_iff`, the Routh region,
   through `PH.exists_linearPH_posDef_iff`); a form with `R ⪰ 0` forces
-  `0 ≤ K₀ cos δ ≤ D ω_c + D²/M` (`linearPH_jacobian_bounds`). The two boundary values are not
-  decided here.
+  `0 ≤ K₀ cos δ ≤ D ω_c + D²/M` (`linearPH_jacobian_bounds`), and conversely both boundary
+  values admit one: a form with `R ⪰ 0` exists iff `0 ≤ K₀ cos δ ≤ D ω_c + D²/M`
+  (`exists_linearPH_posSemidef_jacobian_iff`, through `PH.exists_linearPH_posSemidef_iff` with
+  explicit Lyapunov matrices at the fold `K₀ cos δ = 0` and the Hopf boundary).
 * The two-state swing reduction (no filter) is the library's classical machine
   `Synchronous.classicalSM` (`P_m = P_ref − c₀`, `b = A`, angle `δ − α`) and its linearization
   `Synchronous.SwingParams.linearPH`; they are not restated.
@@ -533,6 +535,135 @@ matrix has (`PH.phSpectral_det_ne_zero`). -/
   have hdet := PH.phSpectral_det_ne_zero hJ hR hQ hre
   rw [hA, Criteria.det_characteristicMatrix_fin_three'] at hdet
   exact hdet hs
+
+/-- At the fold boundary `K₀ cos δ = 0` the Jacobian has the Lyapunov matrix of
+`V = (D ω_c x₀ + M ω_c x₁ − x₂)² + M D ω_c x₁² + x₂²` (the first square is the conserved
+combination): `−(Aᵀ Q + Q A) = 2 ω_c [[0, 0, 0], [0, D², D/2], [0, D/2, 1]] ⪰ 0`. -/
+@[tmio M, powerlib_domain] private theorem lyapunov_jacobian_of_eq_zero (hM : 0 < g.M)
+    (hD : 0 < g.D) (hωc : 0 < g.ωc) {δ : ℝ} (hk : g.K0 * Real.cos δ = 0) :
+    ∃ Q : Matrix (Fin 3) (Fin 3) ℝ, Q.PosDef ∧
+      (-((g.jacobian δ)ᵀ * Q + Q * g.jacobian δ)).PosSemidef := by
+  have hM' : g.M ≠ 0 := hM.ne'
+  set Q : Matrix (Fin 3) (Fin 3) ℝ :=
+    !![g.D ^ 2 * g.ωc ^ 2, g.D * g.M * g.ωc ^ 2, -(g.D * g.ωc);
+      g.D * g.M * g.ωc ^ 2, g.M ^ 2 * g.ωc ^ 2 + g.M * g.D * g.ωc, -(g.M * g.ωc);
+      -(g.D * g.ωc), -(g.M * g.ωc), 2] with hQ
+  have hS : -((g.jacobian δ)ᵀ * Q + Q * g.jacobian δ) =
+      !![0, 0, 0; 0, 2 * g.ωc * g.D ^ 2, g.ωc * g.D; 0, g.ωc * g.D, 2 * g.ωc] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [hQ, jacobian, Matrix.mul_apply, Fin.sum_univ_three, hk] <;> field_simp <;> ring
+  refine ⟨Q, Matrix.PosDef.of_dotProduct_mulVec_pos ?_ fun x hx => ?_, ?_⟩
+  · ext i j
+    fin_cases i <;> fin_cases j <;> simp [hQ]
+  · simp only [star_trivial]
+    have e : x ⬝ᵥ (Q *ᵥ x) = (g.D * g.ωc * x 0 + g.M * g.ωc * x 1 - x 2) ^ 2 +
+        g.M * g.D * g.ωc * x 1 ^ 2 + x 2 ^ 2 := by
+      simp [hQ, dotProduct, mulVec, Fin.sum_univ_three]; ring
+    rw [e]
+    by_contra hle
+    have h1 : 0 ≤ (g.D * g.ωc * x 0 + g.M * g.ωc * x 1 - x 2) ^ 2 := sq_nonneg _
+    have h2 : 0 ≤ g.M * g.D * g.ωc * x 1 ^ 2 := by positivity
+    have h3 : 0 ≤ x 2 ^ 2 := sq_nonneg _
+    have hx2 : x 2 = 0 := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp (by linarith)
+    have hx1 : x 1 = 0 := by
+      have : g.M * g.D * g.ωc * x 1 ^ 2 = 0 := by linarith
+      have hc : g.M * g.D * g.ωc ≠ 0 := by positivity
+      exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp
+        ((mul_eq_zero.mp this).resolve_left hc)
+    have hx0 : x 0 = 0 := by
+      have h0 : (g.D * g.ωc * x 0 + g.M * g.ωc * x 1 - x 2) ^ 2 = 0 := by linarith
+      rw [hx1, hx2, pow_eq_zero_iff (by norm_num)] at h0
+      have hc : g.D * g.ωc ≠ 0 := by positivity
+      simpa [hc] using h0
+    exact hx (funext fun i => by fin_cases i <;> simp [hx0, hx1, hx2])
+  · rw [hS]
+    refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun x => ?_
+    · ext i j
+      fin_cases i <;> fin_cases j <;> simp
+    · simp only [star_trivial]
+      have e : x ⬝ᵥ (!![0, 0, 0; 0, 2 * g.ωc * g.D ^ 2, g.ωc * g.D; 0, g.ωc * g.D, 2 * g.ωc] *ᵥ
+          x) = 2 * g.ωc * ((g.D * x 1 + x 2 / 2) ^ 2 + 3 / 4 * x 2 ^ 2) := by
+        simp [dotProduct, mulVec, Fin.sum_univ_three]; ring
+      rw [e]
+      positivity
+
+/-- At the Hopf boundary `K₀ cos δ = D ω_c + D²/M` the Jacobian has the Lyapunov matrix
+`Q = M ℓ_r ℓ_rᵀ + D ω_c ℓ_i ℓ_iᵀ + M ℓ₃ ℓ₃ᵀ` built from the left eigenvectors
+(`ℓ_r = (0, −M ω_c, 1)`, `ℓ_i = (D + M ω_c, M, 0)` span the undamped pair `±j√(D ω_c/M)`,
+`ℓ₃ = (−D ω_c, D, 1)` the real root `−(D/M + ω_c)`):
+`−(Aᵀ Q + Q A) = 2 (D + M ω_c) ℓ₃ ℓ₃ᵀ ⪰ 0`. -/
+@[tmio M, powerlib_domain] private theorem lyapunov_jacobian_of_eq_routh (hM : 0 < g.M)
+    (hD : 0 < g.D) (hωc : 0 < g.ωc) {δ : ℝ}
+    (hk : g.K0 * Real.cos δ = g.D * g.ωc + g.D ^ 2 / g.M) :
+    ∃ Q : Matrix (Fin 3) (Fin 3) ℝ, Q.PosDef ∧
+      (-((g.jacobian δ)ᵀ * Q + Q * g.jacobian δ)).PosSemidef := by
+  have hM' : g.M ≠ 0 := hM.ne'
+  set Q : Matrix (Fin 3) (Fin 3) ℝ :=
+    !![g.D ^ 3 * g.ωc + 3 * g.D ^ 2 * g.M * g.ωc ^ 2 + g.D * g.M ^ 2 * g.ωc ^ 3,
+        g.D * g.M ^ 2 * g.ωc ^ 2, -(g.D * g.M * g.ωc);
+      g.D * g.M ^ 2 * g.ωc ^ 2, g.D ^ 2 * g.M + g.D * g.M ^ 2 * g.ωc + g.M ^ 3 * g.ωc ^ 2,
+        g.D * g.M - g.M ^ 2 * g.ωc;
+      -(g.D * g.M * g.ωc), g.D * g.M - g.M ^ 2 * g.ωc, 2 * g.M] with hQ
+  set ℓ : Fin 3 → ℝ := ![-(g.D * g.ωc), g.D, 1] with hℓ
+  have hS : -((g.jacobian δ)ᵀ * Q + Q * g.jacobian δ) =
+      (2 * (g.D + g.M * g.ωc)) • vecMulVec ℓ ℓ := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [hQ, hℓ, jacobian, Matrix.mul_apply, Fin.sum_univ_three, hk, vecMulVec] <;>
+      field_simp <;> ring
+  refine ⟨Q, Matrix.PosDef.of_dotProduct_mulVec_pos ?_ fun x hx => ?_, ?_⟩
+  · ext i j
+    fin_cases i <;> fin_cases j <;> simp [hQ]
+  · simp only [star_trivial]
+    set a := -(g.M * g.ωc) * x 1 + x 2
+    set b := (g.D + g.M * g.ωc) * x 0 + g.M * x 1
+    set c := -(g.D * g.ωc) * x 0 + g.D * x 1 + x 2
+    have e : x ⬝ᵥ (Q *ᵥ x) = g.M * a ^ 2 + g.D * g.ωc * b ^ 2 + g.M * c ^ 2 := by
+      simp [hQ, dotProduct, mulVec, Fin.sum_univ_three, a, b, c]; ring
+    rw [e]
+    by_contra hle
+    have h1 : 0 ≤ g.M * a ^ 2 := by positivity
+    have h2 : 0 ≤ g.D * g.ωc * b ^ 2 := by positivity
+    have h3 : 0 ≤ g.M * c ^ 2 := by positivity
+    have sq0 : ∀ {k t : ℝ}, 0 < k → k * t ^ 2 = 0 → t = 0 := fun hk ht =>
+      pow_eq_zero_iff (n := 2) (by norm_num) |>.mp ((mul_eq_zero.mp ht).resolve_left hk.ne')
+    have ha : a = 0 := sq0 hM (by linarith)
+    have hb : b = 0 := sq0 (k := g.D * g.ωc) (by positivity) (by linarith)
+    have hc : c = 0 := sq0 hM (by linarith)
+    have hx0' : x 0 * ((g.D + g.M * g.ωc) ^ 2 + g.D * g.M * g.ωc) = 0 := by
+      linear_combination (g.D + g.M * g.ωc) * hb - g.M * hc + g.M * ha
+    have hpos : 0 < (g.D + g.M * g.ωc) ^ 2 + g.D * g.M * g.ωc := by positivity
+    have hx0 : x 0 = 0 := (mul_eq_zero.mp hx0').resolve_right hpos.ne'
+    have hx1 : x 1 = 0 := by
+      have : g.M * x 1 = 0 := by rw [← hb]; simp [b, hx0]
+      exact (mul_eq_zero.mp this).resolve_left hM'
+    have hx2 : x 2 = 0 := by rw [← ha]; simp [a, hx1]
+    exact hx (funext fun i => by fin_cases i <;> simp [hx0, hx1, hx2])
+  · rw [hS]
+    have hv : (vecMulVec ℓ ℓ).PosSemidef := by
+      simpa using Matrix.posSemidef_vecMulVec_self_star ℓ
+    exact hv.smul (by positivity)
+
+/-- **Linear pH form with `R ⪰ 0` iff the closed Routh region.** For positive `M, D, ω_c`, the
+Jacobian at angle `δ` is `(J − R) Q` with `J` skew, `R ⪰ 0`, `Q ≻ 0` iff
+`0 ≤ K₀ cos δ ≤ D ω_c + D²/M`. Both boundary values are included: inside, the form with
+`R ≻ 0` (`exists_linearPH_jacobian_iff`); on the boundary, explicit Lyapunov matrices through
+`PH.exists_linearPH_posSemidef_iff`; outside, `linearPH_jacobian_bounds`. -/
+@[tmio M, powerlib_domain] theorem exists_linearPH_posSemidef_jacobian_iff (hM : 0 < g.M)
+    (hD : 0 < g.D) (hωc : 0 < g.ωc) (δ : ℝ) :
+    (∃ J R Q : Matrix (Fin 3) (Fin 3) ℝ, Jᵀ = -J ∧ R.PosSemidef ∧ Q.PosDef ∧
+      PH.linearStateMatrix J R Q = g.jacobian δ) ↔
+      0 ≤ g.K0 * Real.cos δ ∧ g.K0 * Real.cos δ ≤ g.D * g.ωc + g.D ^ 2 / g.M := by
+  refine ⟨g.linearPH_jacobian_bounds hM hωc, fun ⟨h0, h1⟩ => ?_⟩
+  rcases h0.eq_or_lt with h0 | h0
+  · exact (PH.exists_linearPH_posSemidef_iff _).mpr
+      (g.lyapunov_jacobian_of_eq_zero hM hD hωc h0.symm)
+  rcases h1.eq_or_lt with h1 | h1
+  · exact (PH.exists_linearPH_posSemidef_iff _).mpr
+      (g.lyapunov_jacobian_of_eq_routh hM hD hωc h1)
+  obtain ⟨J, R, Q, hJ, hR, hQ, hA⟩ := (g.exists_linearPH_jacobian_iff hM hD hωc δ).mpr ⟨h0, h1⟩
+  exact ⟨J, R, Q, hJ, hR.posSemidef, hQ, hA⟩
 
 end VSMLPF
 

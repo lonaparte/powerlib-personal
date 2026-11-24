@@ -154,7 +154,7 @@ winding equation `SpaceVector.VoltageEquation` (frame speed `ω_e`) of the trans
 `σL_s i` driven by `v + e`, is equivalent to the real pair
 `σL_s di_d/dt = v_d − r' i_d + ω_e σL_s i_q + e_d`,
 `σL_s di_q/dt = v_q − r' i_q − ω_e σL_s i_d + e_q` (FOC note §1.5). -/
-@[tmio T, powerlib_foundation] theorem complexVector_iff (σL r' ωe : ℝ) (i di v e : ℂ) :
+@[tmio M, powerlib_domain] theorem complexVector_iff (σL r' ωe : ℝ) (i di v e : ℂ) :
     Transform.SpaceVector.VoltageEquation r' ωe (v + e) i (σL * i) (σL * di) ↔
       σL * di.re = v.re - r' * i.re + ωe * σL * i.im + e.re ∧
       σL * di.im = v.im - r' * i.im - ωe * σL * i.re + e.im := by

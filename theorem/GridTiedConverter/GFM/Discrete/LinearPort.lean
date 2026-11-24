@@ -1,7 +1,9 @@
 import theorem.GridTiedConverter.GFM.Discrete.SwingPort
 import theorem.GridTiedConverter.GFM.VSMLPF
+import theorem.Numerics.ImplicitPorts
 
-/-! # Linearized grid-forming port models: passivity, explicit Euler and the implicit midpoint rule
+/-! # Linearized grid-forming port models: passivity, explicit Euler, the implicit midpoint rule
+and backward Euler
 
 The two grid-forming (GFM) synchronization models with the active-power set-point as input port
 and the frequency deviation as output, linearized about a selected angle: the two-state swing
@@ -16,7 +18,13 @@ the storage `½ K Δδ² + ½ M Δω²` whenever `K ≥ 0`; the filter plant is 
 input at a low frequency, where `Re G(jw) < 0`, draws energy over every period. Discretized with a
 step `h > 0`, the explicit Euler implementations are never passive, for any storage (the output
 `Δω` does not see the input of the step); the implicit midpoint implementations are passive with
-the continuous storage at every step whenever the continuous certificate exists. Scaffold:
+the continuous storage at every step whenever the continuous certificate exists, and for the
+filter exactly when the continuous loop is: for `K > D ω_c` a discrete periodic input at a
+frequency `θ = 2π/N` whose bilinear image `(2/h) tan(θ/2)` lies in the band `Re G(jw) < 0`
+draws energy over every period. The backward Euler implementations (output at the end of the
+step) keep the continuous storage, and for the filter they are passive exactly when
+`K (2 − h ω_c) ≤ 2 D ω_c`: a large step makes a mismatched filter passive, with a step-dependent
+storage, so the backward Euler realization of passivity is sound but not complete. Scaffold:
 `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
@@ -34,16 +42,22 @@ Model boundary.
 * Discretizations (I): over `Numerics.EulerStep` (a model and a step `h > 0`): explicit Euler
   `x⁺ = x + h (A x + B u)`, output `C x` (`Numerics.eulerPortFamily`); implicit midpoint
   `x⁺ − x = h (A x̄ + B u)`, `x̄ = (x + x⁺)/2`, output `C x̄` (`Numerics.midpointPortFamily`);
-  step length `h`, exact arithmetic, fixed step. Excluded: step-aware Euler outputs, backward
-  Euler, the nonlinear discrete gradient, step-size control, delays, PWM, inner loops, PLL, line
-  dynamics.
+  backward Euler `x⁺ − x = h (A x⁺ + B u)`, output `C x⁺` (`Numerics.backwardEulerPortFamily`);
+  step length `h`, exact arithmetic, fixed step. Excluded: step-aware Euler outputs (in
+  `theorem/GridTiedConverter/GFM/Discrete/StepAwareEuler.lean`), the nonlinear discrete gradient,
+  step-size control, delays, PWM, inner loops, PLL, line dynamics.
 
 Source: work-sync GFM study note t9 (scratchpad `gfm/t9-discrete/REPORT-coord.md`, (b) and (c):
 2-state storage `diag(K, M)`; 3-state passive iff `K ≤ D ω_c` with the storage above, from the
 real part `Re(1/G(jw)) = D − ω_c K/(w² + ω_c²)`; explicit Euler never passive; implicit midpoint
-passive with the continuous storage); `theorem/Numerics/EulerPorts.lean`
-(`Numerics.eulerPortFamily_not_mem_den_passive_linear`,
-`Numerics.midpointPortFamily_mem_den_passive`), `theorem/Linear/Family.lean`
+passive with the continuous storage; backward Euler passive iff `h ≥ (2/ω_c)(1 − D ω_c/K)` in
+the band `D ω_c < K < D ω_c + D²/M`, script `s4_passive_schemes_linear.py` (5));
+`theorem/Numerics/EulerPorts.lean` (`Numerics.eulerPortFamily_not_mem_den_passive_linear`,
+`Numerics.midpointPortFamily_mem_den_passive`), `theorem/Numerics/ImplicitPorts.lean`
+(`Numerics.midpointSystem_not_passive_of_phasor`, `Numerics.backwardEulerSystem_passiveWith_of`,
+`Numerics.backwardEulerSystem_not_passive_of_phasor`,
+`Numerics.backwardEulerPortFamily_mem_den_passive`), `theorem/Numerics/PeriodicInput.lean`
+(`Numerics.exists_periodic_frequency`), `theorem/Linear/Family.lean`
 (`Family.IsLinear.mem_den_passive`), `theorem/Port/Linear.lean` (KYP certificates); Willems,
 "Dissipative dynamical systems", Arch. Rational Mech. Anal. 45 (1972) (storage functions,
 periodic inputs); Brogliato, Lozano, Maschke and Egeland, *Dissipative Systems Analysis and
@@ -55,7 +69,8 @@ Results.
   `SwingPort.system_field_eq`, `SwingPort.system_output_eq` (input matrix `B`, output `C z`).
 * `FilterPort.system` (the VSM + filter loop with the set-point port), `FilterPort.plant`;
   `FilterPort.hasFDerivAt_zeroInput`, `FilterPort.system_field_eq`,
-  `FilterPort.system_output_eq`.
+  `FilterPort.system_output_eq`; `FilterPort.plant_phasor_complex` (the plant's phasor at a
+  complex frequency `s`, output phasor `Δω = 1`).
 
 Family and connection conclusions.
 * `SwingPort.linearFamily`: every model read as the port system of its plant; requirements
@@ -80,8 +95,33 @@ Family and connection conclusions.
   `SwingPort.linearMidpoint_mem_den_passive` (`K ≥ 0`) and
   `FilterPort.linearMidpoint_mem_den_passive` (`0 < K ≤ D ω_c`) — passive at every step, with
   the continuous storage (`Numerics.midpointPortFamily_mem_den_passive`; the step is well posed,
-  `det(I − (h/2) A) > 0`). The converse (`K > D ω_c` ⇒ no midpoint discretization is passive) is
-  not proved here.
+  `det(I − (h/2) A) > 0`); `FilterPort.linearMidpoint_not_mem_den_passive` (`K > D ω_c`: no
+  midpoint discretization is passive, at any step — the plant's phasor at a frequency `w` in the
+  band, `w = 2 sin θ/(h (1 + cos θ))` with `θ = 2π/N`, refutes it,
+  `Numerics.midpointSystem_not_passive_of_phasor`), `FilterPort.linearMidpoint_mem_den_passive_iff`
+  (within positive `M, D, ω_c, K`: passive iff `K ≤ D ω_c`, at every step); the realization
+  `FilterPort.linearMidpoint` (`Numerics.midpointPorts`) and
+  `FilterPort.linearMidpoint_realizationExactUnder_passive` (exact within `physical` and
+  `synchronizing`).
+* Backward Euler (I): `SwingPort.linearBackwardEulerFamily`,
+  `SwingPort.linearBackwardEuler_mem_den_passive` (`K ≥ 0`, every step, the continuous storage,
+  `Numerics.backwardEulerPortFamily_mem_den_passive`); `FilterPort.linearBackwardEulerFamily`, the
+  realization `FilterPort.linearBackwardEuler` (`Numerics.backwardEulerPorts`);
+  `FilterPort.linearBackwardEuler_mem_den_passive` (`K (2 − h ω_c) ≤ 2 D ω_c`, with the storage
+  `½ K Δδ² + ½ M Δω² + ½ b_h (ΔP_f − K Δδ)²`,
+  `b_h = (2 D ω_c (2 + h ω_c) + K (h² ω_c² − 2))/(2 K²)`,
+  `Numerics.backwardEulerSystem_passiveWith_of`),
+  `FilterPort.linearBackwardEuler_not_mem_den_passive` (`K (2 − h ω_c) > 2 D ω_c`: the plant's
+  phasor at `s = (1 − e^{−iθ})/h`, `θ = 2π/N` near zero,
+  `Numerics.backwardEulerSystem_not_passive_of_phasor`),
+  `FilterPort.linearBackwardEuler_mem_den_passive_iff` (within `M > 0`, `D ≥ 0`, `ω_c > 0`,
+  `K > 0`: passive iff `K (2 − h ω_c) ≤ 2 D ω_c`, i.e. `h ≥ (2/ω_c)(1 − D ω_c/K)` — for every
+  such `K`, not only in the stable band of the study);
+  `FilterPort.linearBackwardEuler_realizationSoundUnder_passive` (backward Euler preserves
+  passivity within `physical` and `synchronizing`) and
+  `FilterPort.not_linearBackwardEuler_realizationCompleteUnder_passive` (spurious passivity: the
+  mismatched model `M = D = ω_c = 1`, `K = 3/2` is not passive and its discretization with
+  `h = 1` is).
 -/
 
 noncomputable section
@@ -284,6 +324,25 @@ step and storage (`Numerics.eulerPortFamily_not_mem_den_passive_linear`: `D = 0`
     (plant := Model.plant) (design := Numerics.EulerStep.design) (step := Numerics.EulerStep.h)
     (y := (⟨m, h, hh⟩ : LinearStep)) (kyp m hK) hh.le (isUnit_det_midpoint m hK hh.le))
 
+/-- The backward Euler discretization family of the linearized swing port. -/
+def linearBackwardEulerFamily : Family LinearStep LinearRequirement 2 1 :=
+  Numerics.backwardEulerPortFamily linearFamily Model.plant Numerics.EulerStep.design
+    Numerics.EulerStep.h
+
+/-- **The backward Euler discretizations of the linearized swing port are passive** for `K ≥ 0`,
+at every step, with the continuous storage `½ K Δδ² + ½ M Δω²`
+(`Numerics.backwardEulerPortFamily_mem_den_passive`; the step is well posed,
+`det(I − h A) = 1 + h D/M + h² K/M > 0`). -/
+@[tmio TM, powerlib_domain] theorem linearBackwardEuler_mem_den_passive (m : Model)
+    (hK : 0 ≤ m.K) (h : ℝ) (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∈ linearBackwardEulerFamily.den .passive) := by
+  unfold powerlib.TMIO.Statement
+  have hw := isUnit_det_midpoint m hK (h := 2 * h) (by positivity)
+  rw [show 2 * h / 2 = h by ring] at hw
+  exact (connection_proof% Numerics.backwardEulerPortFamily_mem_den_passive (F := linearFamily)
+    (plant := Model.plant) (design := Numerics.EulerStep.design) (step := Numerics.EulerStep.h)
+    (y := (⟨m, h, hh⟩ : LinearStep)) (kyp m hK) hh.le hw)
+
 end SwingPort
 
 /-! ## The three-state VSM with a power filter -/
@@ -364,37 +423,44 @@ def linearFamily : Family VSMLPF.Model Requirement 3 1 :=
 /-- The coefficient `β = (2 D ω_c − K)/K²` of the filter term of the storage. -/
 private def β (m : VSMLPF.Model) : ℝ := (2 * m.g.D * m.g.ωc - m.K) / m.K ^ 2
 
-/-- The storage matrix of `½ K Δδ² + ½ M Δω² + ½ β (ΔP_f − K Δδ)²`. -/
-private def storageMatrix (m : VSMLPF.Model) : Matrix (Fin 3) (Fin 3) ℝ :=
-  !![m.K + β m * m.K ^ 2, 0, -(β m * m.K); 0, m.g.M, 0; -(β m * m.K), 0, β m]
+/-- The storage matrix of `½ K Δδ² + ½ M Δω² + ½ b (ΔP_f − K Δδ)²`, for a coefficient `b`. -/
+private def storageMatrix (m : VSMLPF.Model) (b : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
+  !![m.K + b * m.K ^ 2, 0, -(b * m.K); 0, m.g.M, 0; -(b * m.K), 0, b]
 
-@[tmio M, powerlib_domain] private theorem storageMatrix_symm (m : VSMLPF.Model) :
-    (storageMatrix m)ᵀ = storageMatrix m := by
+@[tmio M, powerlib_domain] private theorem storageMatrix_symm (m : VSMLPF.Model) (b : ℝ) :
+    (storageMatrix m b)ᵀ = storageMatrix m b := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [storageMatrix]
 
-@[tmio M, powerlib_domain] private theorem storage_quadratic (m : VSMLPF.Model) (x : Fin 3 → ℝ) :
-    x ⬝ᵥ (storageMatrix m *ᵥ x) =
-      m.K * x 0 ^ 2 + m.g.M * x 1 ^ 2 + β m * (x 2 - m.K * x 0) ^ 2 := by
+@[tmio M, powerlib_domain] private theorem storage_quadratic (m : VSMLPF.Model) (b : ℝ)
+    (x : Fin 3 → ℝ) :
+    x ⬝ᵥ (storageMatrix m b *ᵥ x) =
+      m.K * x 0 ^ 2 + m.g.M * x 1 ^ 2 + b * (x 2 - m.K * x 0) ^ 2 := by
   simp [storageMatrix, dotProduct, Matrix.mulVec, Fin.sum_univ_three]
   ring
 
-/-- `xᵀ P A x = −(D x₁² + (1 + β K) x₁ ξ + β ω_c ξ²)`, `ξ = x₂ − K x₀`. -/
-@[tmio M, powerlib_domain] private theorem storage_rate (m : VSMLPF.Model) (hM : m.g.M ≠ 0)
-    (x : Fin 3 → ℝ) :
-    x ⬝ᵥ (storageMatrix m *ᵥ ((plant m).A *ᵥ x)) =
-      -(m.g.D * x 1 ^ 2 + (1 + β m * m.K) * x 1 * (x 2 - m.K * x 0) +
-        β m * m.g.ωc * (x 2 - m.K * x 0) ^ 2) := by
+/-- `xᵀ P A x = −(D x₁² + (1 + b K) x₁ ξ + b ω_c ξ²)`, `ξ = x₂ − K x₀`. -/
+@[tmio M, powerlib_domain] private theorem storage_rate (m : VSMLPF.Model) (b : ℝ)
+    (hM : m.g.M ≠ 0) (x : Fin 3 → ℝ) :
+    x ⬝ᵥ (storageMatrix m b *ᵥ ((plant m).A *ᵥ x)) =
+      -(m.g.D * x 1 ^ 2 + (1 + b * m.K) * x 1 * (x 2 - m.K * x 0) +
+        b * m.g.ωc * (x 2 - m.K * x 0) ^ 2) := by
   simp [storageMatrix, plant, VSMLPF.jacobian, VSMLPF.Model.K, dotProduct, Matrix.mulVec,
     Fin.sum_univ_three]
   field_simp
   ring
 
+@[tmio M, powerlib_domain] private theorem storage_output (m : VSMLPF.Model) (b : ℝ)
+    (hM : m.g.M ≠ 0) : (plant m).Bᵀ * storageMatrix m b = (plant m).C := by
+  ext i j
+  fin_cases i
+  fin_cases j <;> simp [storageMatrix, plant, Matrix.mul_apply, Fin.sum_univ_three, hM]
+
 /-- The KYP certificate of the matched filter: `M > 0`, `D ≥ 0`, `ω_c > 0`, `0 < K ≤ D ω_c`. -/
 private def kyp (m : VSMLPF.Model) (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 < m.g.ωc)
     (hK : 0 < m.K) (hKD : m.K ≤ m.g.D * m.g.ωc) : Linear.KYP (plant m) where
-  P := storageMatrix m
-  symmetric := storageMatrix_symm m
+  P := storageMatrix m (β m)
+  symmetric := storageMatrix_symm m (β m)
   nonneg x := by
     rw [storage_quadratic]
     have hβ : 0 ≤ β m := by
@@ -404,7 +470,7 @@ private def kyp (m : VSMLPF.Model) (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 
     nlinarith [mul_nonneg hK.le (sq_nonneg (x 0)), mul_nonneg hM.le (sq_nonneg (x 1)),
       mul_nonneg hβ (sq_nonneg (x 2 - m.K * x 0))]
   dissipation x := by
-    rw [Linear.quadratic_sym (storageMatrix_symm m), storage_rate m hM.ne']
+    rw [Linear.quadratic_sym (storageMatrix_symm m _), storage_rate m _ hM.ne']
     have hK2 : m.K ^ 2 ≠ 0 := by positivity
     have hβ : β m * m.K ^ 2 = 2 * m.g.D * m.g.ωc - m.K := by
       unfold β
@@ -425,11 +491,7 @@ private def kyp (m : VSMLPF.Model) (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 
       push Not at hneg
       nlinarith
     linarith
-  output := by
-    have hM' := hM.ne'
-    ext i j
-    fin_cases i
-    fin_cases j <;> simp [storageMatrix, plant, Matrix.mul_apply, Fin.sum_univ_three, hM']
+  output := storage_output m _ hM.ne'
   feedthrough u := by simp [plant]
 
 /-- **The linearized VSM + filter port is passive when the filter is matched**, `K ≤ D ω_c`
@@ -692,6 +754,401 @@ with the certificate of `linear_mem_den_passive`). -/
     (plant := plant) (design := Numerics.EulerStep.design) (step := Numerics.EulerStep.h)
     (y := (⟨m, h, hh⟩ : LinearStep)) (kyp m hM hD hω hK hKD) hh.le
     (isUnit_det_midpoint m hM hD hω hK.le hh.le))
+
+/-! ### The mismatched filter: no midpoint discretization is passive -/
+
+/-- The phasor of the test motion of `linear_not_mem_den_passive` at the frequency `w`: the state
+`X_r = (0, 1, a)`, `X_i = (−r, 0, −b)` and input `U_r = D + a`, `U_i = M w − b`, with `r w = 1`,
+`b w = −ω_c a`, `a (w² + ω_c²) = −ω_c K`, solve `A X + B U = i w X`. -/
+@[tmio M, powerlib_domain] private theorem plant_phasor (m : VSMLPF.Model) (hM : m.g.M ≠ 0)
+    {w r a b : ℝ} (hr : r * w = 1) (hb : b * w = -(m.g.ωc * a))
+    (ha : a * (w ^ 2 + m.g.ωc ^ 2) = -(m.g.ωc * m.K)) :
+    (plant m).A *ᵥ ![0, 1, a] + (plant m).B *ᵥ ![m.g.D + a] = (-w) • ![-r, 0, -b] ∧
+      (plant m).A *ᵥ ![-r, 0, -b] + (plant m).B *ᵥ ![m.g.M * w - b] = w • ![0, 1, a] := by
+  have hK : m.g.K0 * Real.cos m.δ = m.K := rfl
+  constructor <;> ext i <;> fin_cases i <;>
+    simp [plant, VSMLPF.jacobian, hK]
+  · linear_combination -hr
+  · field_simp
+    ring
+  · linear_combination -hb
+  · field_simp
+    ring
+  · linear_combination (w * a - m.g.ωc * b) * hr + m.g.ωc * r * hb - r * ha
+
+/-- **No midpoint discretization of the mismatched linearized VSM + filter port is passive**,
+`D ω_c < K` (with `M > 0`, `D ≥ 0`, `ω_c > 0`), whatever the step `h > 0` and the storage. A
+discrete frequency `θ = 2π/N` whose bilinear image `w = 2 sin θ/(h (1 + cos θ))` lies in the
+band `D (w² + ω_c²) < ω_c K` exists (`Numerics.exists_periodic_frequency`: the band contains
+`w = 0`), and the plant's phasor at `w` of `linear_not_mem_den_passive`, whose mean supplied
+power is `D + a = D − ω_c K/(w² + ω_c²) < 0`, refutes passivity of the midpoint discretization
+(`Numerics.midpointSystem_not_passive_of_phasor`). -/
+@[tmio TM, powerlib_domain] theorem linearMidpoint_not_mem_den_passive (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 < m.g.ωc) (hKD : m.g.D * m.g.ωc < m.K) (h : ℝ)
+    (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∉ linearMidpointFamily.den .passive) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den)]
+  change ¬ (Numerics.midpointSystem (plant m) h).Passive
+  have hK : 0 < m.K := lt_of_le_of_lt (mul_nonneg hD hω.le) hKD
+  have hcont : ContinuousAt (fun θ => m.g.D * ((2 * Real.sin θ / (h * (1 + Real.cos θ))) ^ 2 +
+      m.g.ωc ^ 2) - m.g.ωc * m.K) 0 := by
+    have hden : h * (1 + Real.cos 0) ≠ 0 := by rw [Real.cos_zero]; positivity
+    exact (continuousAt_const.mul ((((by fun_prop : ContinuousAt
+      (fun θ => 2 * Real.sin θ) 0).div (by fun_prop) hden).pow 2).add continuousAt_const)).sub
+      continuousAt_const
+  obtain ⟨θ, N, hN, hper, hsin, hθ⟩ := Numerics.exists_periodic_frequency hcont (by
+    simp only [Real.sin_zero, mul_zero, zero_div]
+    nlinarith)
+  have hc : 0 < 1 + Real.cos θ := by
+    rcases (Real.neg_one_le_cos θ).lt_or_eq with h1 | h1
+    · linarith
+    · have := Real.sin_sq_add_cos_sq θ
+      rw [← h1] at this
+      nlinarith
+  set w := 2 * Real.sin θ / (h * (1 + Real.cos θ)) with hwdef
+  have hw0 : 0 < w := by positivity
+  have hwθ : h * w * (1 + Real.cos θ) = 2 * Real.sin θ := by
+    rw [hwdef]
+    field_simp
+  have hDw : m.g.D * (w ^ 2 + m.g.ωc ^ 2) < m.g.ωc * m.K := by linarith
+  have hwc : 0 < w ^ 2 + m.g.ωc ^ 2 := by positivity
+  obtain ⟨a, ha⟩ : ∃ a : ℝ, a * (w ^ 2 + m.g.ωc ^ 2) = -(m.g.ωc * m.K) :=
+    ⟨_, div_mul_cancel₀ _ hwc.ne'⟩
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, r * w = 1 := ⟨w⁻¹, inv_mul_cancel₀ hw0.ne'⟩
+  obtain ⟨b, hb⟩ : ∃ b : ℝ, b * w = -(m.g.ωc * a) := ⟨_, div_mul_cancel₀ _ hw0.ne'⟩
+  have hDa : m.g.D + a < 0 := by
+    have : (m.g.D + a) * (w ^ 2 + m.g.ωc ^ 2) < 0 := by nlinarith
+    by_contra hge
+    push Not at hge
+    nlinarith
+  obtain ⟨hr', hi'⟩ := plant_phasor m hM.ne' hr hb ha
+  refine Numerics.midpointSystem_not_passive_of_phasor (plant m) hh
+    (isUnit_det_midpoint m hM hD hω hK.le hh.le) hN hper hsin.ne' hwθ hr' hi' ?_
+  simpa [plant, Matrix.mulVec, dotProduct, Fin.sum_univ_three] using hDa
+
+/-- **Passivity of the midpoint discretizations of the linearized VSM + filter port**: within
+positive `M, D, ω_c` and `K > 0`, a midpoint discretization with any step `h > 0` is passive
+exactly when the filter is matched, `K ≤ D ω_c` — exactly when the continuous loop is
+(`linear_mem_den_passive_iff`). -/
+@[tmio TM, powerlib_domain] theorem linearMidpoint_mem_den_passive_iff (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hK : 0 < m.K) (h : ℝ) (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∈ linearMidpointFamily.den .passive ↔
+      m.K ≤ m.g.D * m.g.ωc) := by
+  have hp := linearMidpoint_mem_den_passive m hM hD.le hω hK
+  have hn := linearMidpoint_not_mem_den_passive m hM hD.le hω
+  unfold powerlib.TMIO.Statement at hp hn ⊢
+  exact ⟨fun hm => not_lt.mp fun hlt => hn hlt h hh hm, fun hle => hp hle h hh⟩
+
+/-- The implicit midpoint realization of the linearized VSM + filter port: every discretization
+realizes its model. -/
+def linearMidpoint : Implementation VSMLPF.Model Requirement LinearStep Requirement 3 1 3 1 :=
+  Numerics.midpointPorts linearFamily plant Numerics.EulerStep.design Numerics.EulerStep.h
+
+/-- The requirements `physical` and `synchronizing` of a discretization's model. -/
+@[tmio M, powerlib_domain] private theorem meets_of_realize {y : LinearStep}
+    (hy : y ∈ TMIO.realize (fun y q => Meets (Numerics.EulerStep.design y) q)
+      {.physical, .synchronizing}) :
+    (0 < y.design.g.M ∧ 0 < y.design.g.D ∧ 0 < y.design.g.ωc) ∧ 0 < y.design.K := by
+  rw [(connection_proof% TMIO.mem_realize)] at hy
+  exact ⟨hy .physical (by simp), hy .synchronizing (by simp)⟩
+
+/-- **The midpoint realization of passivity is exact within positive `M, D, ω_c` and `K > 0`**:
+a discretization is passive, at any step, exactly when its model is
+(`linearMidpoint_mem_den_passive_iff`, `linear_mem_den_passive_iff`). -/
+@[tmio MI, powerlib_domain] theorem linearMidpoint_realizationExactUnder_passive :
+    connection% (linearMidpoint.RealizationExactUnder {.physical, .synchronizing} .passive) := by
+  unfold powerlib.TMIO.Statement
+  refine (connection_proof% Implementation.realizationExactUnder_of_design
+    (I := linearMidpoint) (design := Numerics.EulerStep.design) rfl ?_)
+  ext y
+  constructor
+  · rintro ⟨hy, hΔ⟩
+    obtain ⟨⟨hM, hD, hω⟩, hK⟩ := meets_of_realize hΔ
+    have hi := linearMidpoint_mem_den_passive_iff y.design hM hD hω hK y.h y.pos
+    have hc := linear_mem_den_passive_iff y.design hM hD hω hK
+    unfold powerlib.TMIO.Statement at hi hc
+    exact ⟨hc.mpr (hi.mp hy), hΔ⟩
+  · rintro ⟨hy, hΔ⟩
+    obtain ⟨⟨hM, hD, hω⟩, hK⟩ := meets_of_realize hΔ
+    have hi := linearMidpoint_mem_den_passive_iff y.design hM hD hω hK y.h y.pos
+    have hc := linear_mem_den_passive_iff y.design hM hD hω hK
+    unfold powerlib.TMIO.Statement at hi hc
+    exact ⟨hi.mpr (hc.mp hy), hΔ⟩
+
+/-! ### Backward Euler: passivity preserved, and created by the step -/
+
+/-- The backward Euler discretization family of the linearized VSM + filter port. -/
+def linearBackwardEulerFamily : Family LinearStep Requirement 3 1 :=
+  Numerics.backwardEulerPortFamily linearFamily plant Numerics.EulerStep.design
+    Numerics.EulerStep.h
+
+/-- The backward Euler realization of the linearized VSM + filter port. -/
+def linearBackwardEuler :
+    Implementation VSMLPF.Model Requirement LinearStep Requirement 3 1 3 1 :=
+  Numerics.backwardEulerPorts linearFamily plant Numerics.EulerStep.design Numerics.EulerStep.h
+
+/-- The backward Euler step of the filter plant is well posed for `h ≥ 0`, `K ≥ 0`
+(`isUnit_det_midpoint` at the step `2 h`). -/
+@[tmio M, powerlib_domain] private theorem isUnit_det_backward (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 < m.g.ωc) (hK : 0 ≤ m.K) {h : ℝ} (hh : 0 ≤ h) :
+    IsUnit (1 - h • (plant m).A).det := by
+  have hw := isUnit_det_midpoint m hM hD hω hK (h := 2 * h) (by positivity)
+  rwa [show 2 * h / 2 = h by ring] at hw
+
+/-- The step-dependent storage coefficient
+`b_h = (2 D ω_c (2 + h ω_c) + K (h² ω_c² − 2)) / (2 K²)` of backward Euler. -/
+private def βBE (m : VSMLPF.Model) (h : ℝ) : ℝ :=
+  (2 * m.g.D * m.g.ωc * (2 + h * m.g.ωc) + m.K * ((h * m.g.ωc) ^ 2 - 2)) / (2 * m.K ^ 2)
+
+/-- **The backward Euler discretizations of the linearized VSM + filter port are passive when
+`K (2 − h ω_c) ≤ 2 D ω_c`**, i.e. `h ≥ (2/ω_c)(1 − D ω_c/K)` (with `M > 0`, `D ≥ 0`,
+`ω_c > 0`, `K > 0`, `h > 0`), with the storage `½ K Δδ² + ½ M Δω² + ½ b_h (ΔP_f − K Δδ)²`
+(`βBE`). The step-dependent dissipation inequality of `Numerics.backwardEulerSystem_passiveWith_of`
+reduces to the quadratic form
+`(D + h K/2 + h b K²/2) Δω² + (1 + b K (1 + h ω_c)) Δω ξ + b ω_c (1 + h ω_c/2) ξ² ≥ 0`,
+`ξ = ΔP_f − K Δδ`, whose discriminant condition is `−K² b² + L b − 1 ≥ 0`,
+`L = 2 D ω_c (2 + h ω_c) + K (h² ω_c² − 2)`; at `b = L/(2K²)` it is `L ≥ 2 K`, that is
+`(2 + h ω_c)(2 D ω_c + K (h ω_c − 2)) ≥ 0`. For `K ≤ D ω_c` this holds at every step; for
+`K > D ω_c` the continuous loop is not passive (`linear_not_mem_den_passive`) and the large steps
+are. -/
+@[tmio TM, powerlib_domain] theorem linearBackwardEuler_mem_den_passive (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 < m.g.ωc) (hK : 0 < m.K) (h : ℝ) (hh : 0 < h)
+    (hKh : m.K * (2 - h * m.g.ωc) ≤ 2 * m.g.D * m.g.ωc) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∈ linearBackwardEulerFamily.den .passive) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den)]
+  change (Numerics.backwardEulerSystem (plant m) h).Passive
+  set b := βBE m h with hbdef
+  set L := 2 * m.g.D * m.g.ωc * (2 + h * m.g.ωc) + m.K * ((h * m.g.ωc) ^ 2 - 2) with hL
+  have hK2 : 0 < m.K ^ 2 := by positivity
+  have hb : b * (2 * m.K ^ 2) = L := by
+    rw [hbdef, βBE, div_mul_cancel₀ _ (by positivity), hL]
+  have hL2 : 2 * m.K ≤ L := by
+    have : 0 ≤ (2 + h * m.g.ωc) * (2 * m.g.D * m.g.ωc + m.K * (h * m.g.ωc - 2)) :=
+      mul_nonneg (by positivity) (by linarith)
+    nlinarith
+  have hb0 : 0 ≤ b := by
+    have : 0 ≤ b * (2 * m.K ^ 2) := by rw [hb]; linarith
+    exact nonneg_of_mul_nonneg_left this (by positivity)
+  refine ⟨_, Numerics.backwardEulerSystem_passiveWith_of (storageMatrix_symm m b) (fun x => ?_)
+    (storage_output m b hM.ne') (fun u => by simp [plant]) hh.le
+    (isUnit_det_backward m hM hD hω hK.le hh.le) (fun ξ u => ?_)⟩
+  · rw [storage_quadratic]
+    nlinarith [mul_nonneg hK.le (sq_nonneg (x 0)), mul_nonneg hM.le (sq_nonneg (x 1)),
+      mul_nonneg hb0 (sq_nonneg (x 2 - m.K * x 0))]
+  · rw [storage_rate m b hM.ne', storage_quadratic]
+    have hK0 : m.g.K0 * Real.cos m.δ = m.K := rfl
+    set v := (plant m).A *ᵥ ξ + (plant m).B *ᵥ u
+    have hv0 : v 0 = ξ 1 := by
+      simp [v, plant, VSMLPF.jacobian, dotProduct, Fin.sum_univ_three]
+    have hv2 : v 2 - m.K * v 0 = -(m.g.ωc * (ξ 2 - m.K * ξ 0) + m.K * ξ 1) := by
+      simp [v, plant, VSMLPF.jacobian, dotProduct, Fin.sum_univ_three, hK0]
+      ring
+    rw [hv2, hv0]
+    set x1 := ξ 1
+    set η := ξ 2 - m.K * ξ 0
+    set A := m.g.D + h * m.K / 2 + h * b * m.K ^ 2 / 2
+    set C := b * m.g.ωc * (1 + h * m.g.ωc / 2)
+    set B := 1 + b * m.K * (1 + h * m.g.ωc)
+    have hA : 0 < A := by positivity
+    have hdisc : 0 ≤ 4 * A * C - B ^ 2 := by
+      have e : 4 * A * C - B ^ 2 = -(m.K ^ 2 * b ^ 2) + L * b - 1 := by
+        simp only [A, B, C, hL]
+        ring
+      have e2 : (-(m.K ^ 2 * b ^ 2) + L * b - 1) * (4 * m.K ^ 2) =
+          (L - 2 * m.K) * (L + 2 * m.K) := by
+        rw [← hb]
+        ring
+      have h5 : 0 ≤ (L - 2 * m.K) * (L + 2 * m.K) := mul_nonneg (by linarith) (by linarith)
+      rw [e]
+      rw [← e2] at h5
+      exact (mul_nonneg_iff_of_pos_right (by positivity)).mp h5
+    have hQ : 0 ≤ A * x1 ^ 2 + B * x1 * η + C * η ^ 2 := by
+      have key : 4 * A * (A * x1 ^ 2 + B * x1 * η + C * η ^ 2) =
+          (2 * A * x1 + B * η) ^ 2 + (4 * A * C - B ^ 2) * η ^ 2 := by ring
+      have : 0 ≤ 4 * A * (A * x1 ^ 2 + B * x1 * η + C * η ^ 2) := by
+        rw [key]
+        exact add_nonneg (sq_nonneg _) (mul_nonneg hdisc (sq_nonneg η))
+      exact (mul_nonneg_iff_of_pos_left (by positivity)).mp this
+    have hv : 0 ≤ h / 2 * (m.g.M * v 1 ^ 2) := by positivity
+    have : h / 2 * (m.K * x1 ^ 2 + m.g.M * v 1 ^ 2 + b * (-(m.g.ωc * η + m.K * x1)) ^ 2) +
+        (m.g.D * x1 ^ 2 + (1 + b * m.K) * x1 * η + b * m.g.ωc * η ^ 2) =
+        (A * x1 ^ 2 + B * x1 * η + C * η ^ 2) + h / 2 * (m.g.M * v 1 ^ 2) := by
+      simp only [A, B, C]
+      ring
+    linarith
+
+/-- **The phasor of the filter plant at a complex frequency** `s = σ + i ω`: the output phasor
+`Δω = 1`, the angle `1/s = p + i q`, the filter `ω_c K/(s (s + ω_c)) = a + i b` (in real form,
+`h1`–`h4`), the input `M s + D + a + i b` solve `A X + B U = s X`. Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem plant_phasor_complex (m : VSMLPF.Model)
+    (hM : m.g.M ≠ 0) {σ ω p q a b : ℝ} (h1 : σ * p - ω * q = 1) (h2 : ω * p + σ * q = 0)
+    (h3 : (σ + m.g.ωc) * a - ω * b = m.g.ωc * m.K * p)
+    (h4 : ω * a + (σ + m.g.ωc) * b = m.g.ωc * m.K * q) :
+    (plant m).A *ᵥ ![p, 1, a] + (plant m).B *ᵥ ![m.g.M * σ + m.g.D + a] =
+        σ • ![p, 1, a] - ω • ![q, 0, b] ∧
+      (plant m).A *ᵥ ![q, 0, b] + (plant m).B *ᵥ ![m.g.M * ω + b] =
+        ω • ![p, 1, a] + σ • ![q, 0, b] := by
+  have hK : m.g.K0 * Real.cos m.δ = m.K := rfl
+  constructor <;> ext i <;> fin_cases i <;>
+    simp [plant, VSMLPF.jacobian, hK]
+  · linear_combination -h1
+  · field_simp
+    ring
+  · linear_combination -h3
+  · linear_combination -h2
+  · field_simp
+    ring
+  · linear_combination -h4
+
+/-- **No backward Euler discretization of the linearized VSM + filter port with
+`K (2 − h ω_c) > 2 D ω_c` is passive** (with `M > 0`, `D ≥ 0`, `ω_c > 0`, `K > 0`, `h > 0`),
+whatever the storage. At the discrete frequency `θ` the end-of-step phasor is the plant's phasor
+at `s = (1 − e^{−iθ})/h`; with the output phasor `Δω = 1` its mean supplied power is
+`M σ + D + ω_c K (h ω_c − 2 cos θ)/(2 |s + ω_c|²)`, `σ = (1 − cos θ)/h`, continuous in `θ`, and at
+`θ = 0` equal to `D + K (h ω_c − 2)/(2 ω_c) < 0`; a frequency `θ = 2π/N` near zero keeps it
+negative (`Numerics.exists_periodic_frequency`,
+`Numerics.backwardEulerSystem_not_passive_of_phasor`). -/
+@[tmio TM, powerlib_domain] theorem linearBackwardEuler_not_mem_den_passive (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 < m.g.ωc) (hK : 0 < m.K) (h : ℝ) (hh : 0 < h)
+    (hKh : 2 * m.g.D * m.g.ωc < m.K * (2 - h * m.g.ωc)) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∉ linearBackwardEulerFamily.den .passive) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den)]
+  change ¬ (Numerics.backwardEulerSystem (plant m) h).Passive
+  set f : ℝ → ℝ := fun θ => m.g.M * ((1 - Real.cos θ) / h) + m.g.D +
+    m.g.ωc * m.K * (h * m.g.ωc - 2 * Real.cos θ) /
+      (2 * (((1 - Real.cos θ) / h + m.g.ωc) ^ 2 + (Real.sin θ / h) ^ 2)) with hfdef
+  have hden0 : 2 * (((1 - Real.cos 0) / h + m.g.ωc) ^ 2 + (Real.sin 0 / h) ^ 2) ≠ 0 := by
+    simp only [Real.cos_zero, Real.sin_zero, sub_self, zero_div, zero_add]
+    positivity
+  have hcont : ContinuousAt f 0 :=
+    ((continuousAt_const.mul (by fun_prop)).add continuousAt_const).add
+      ((by fun_prop : ContinuousAt (fun θ => m.g.ωc * m.K * (h * m.g.ωc - 2 * Real.cos θ)) 0).div
+        (by fun_prop) hden0)
+  have hf0 : f 0 < 0 := by
+    simp only [hfdef, Real.cos_zero, Real.sin_zero, sub_self, zero_div, mul_zero, zero_add]
+    have e : m.g.ωc * m.K * (h * m.g.ωc - 2 * 1) / (2 * (m.g.ωc ^ 2 + 0 ^ 2)) =
+        m.K * (h * m.g.ωc - 2) / (2 * m.g.ωc) := by
+      field_simp
+      ring
+    have e' : m.g.D + m.K * (h * m.g.ωc - 2) / (2 * m.g.ωc) =
+        (2 * m.g.D * m.g.ωc + m.K * (h * m.g.ωc - 2)) / (2 * m.g.ωc) := by
+      field_simp
+    rw [e, e']
+    exact div_neg_of_neg_of_pos (by linarith) (by positivity)
+  obtain ⟨θ, N, hN, hper, hsin, hθ⟩ := Numerics.exists_periodic_frequency hcont hf0
+  set c := Real.cos θ
+  set s := Real.sin θ
+  have hsc : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq θ
+  set σ := (1 - c) / h with hσdef
+  set ω := s / h with hωdef
+  have hσ : h * σ = 1 - c := by rw [hσdef]; field_simp
+  have hω' : h * ω = s := by rw [hωdef]; field_simp
+  have hσ0 : 0 ≤ σ := div_nonneg (by linarith [Real.cos_le_one θ]) hh.le
+  have hω0 : 0 < ω := div_pos hsin hh
+  have hS : 0 < σ ^ 2 + ω ^ 2 := by positivity
+  have hE : 0 < (σ + m.g.ωc) ^ 2 + ω ^ 2 := by positivity
+  set p := σ / (σ ^ 2 + ω ^ 2)
+  set q := -ω / (σ ^ 2 + ω ^ 2)
+  set a := m.g.ωc * m.K * (p * (σ + m.g.ωc) + q * ω) / ((σ + m.g.ωc) ^ 2 + ω ^ 2)
+  set b := m.g.ωc * m.K * (q * (σ + m.g.ωc) - p * ω) / ((σ + m.g.ωc) ^ 2 + ω ^ 2)
+  have h1 : σ * p - ω * q = 1 := by simp only [p, q]; field_simp; ring
+  have h2 : ω * p + σ * q = 0 := by simp only [p, q]; field_simp; ring
+  have h3 : (σ + m.g.ωc) * a - ω * b = m.g.ωc * m.K * p := by
+    simp only [a, b]; field_simp; ring
+  have h4 : ω * a + (σ + m.g.ωc) * b = m.g.ωc * m.K * q := by
+    simp only [a, b]; field_simp; ring
+  have ha : a = m.g.ωc * m.K * (h * m.g.ωc - 2 * c) / (2 * ((σ + m.g.ωc) ^ 2 + ω ^ 2)) := by
+    have key : 2 * (p * (σ + m.g.ωc) + q * ω) = h * m.g.ωc - 2 * c := by
+      have hh2 : h ^ 2 * (2 * (σ * (σ + m.g.ωc) - ω ^ 2) -
+          (h * m.g.ωc - 2 * c) * (σ ^ 2 + ω ^ 2)) = 0 := by
+        have e1 : h ^ 2 * σ ^ 2 = (1 - c) ^ 2 := by rw [← hσ]; ring
+        have e2 : h ^ 2 * ω ^ 2 = s ^ 2 := by rw [← hω']; ring
+        have e3 : h * σ * (h * m.g.ωc) = (1 - c) * (h * m.g.ωc) := by rw [hσ]
+        linear_combination (2 - (h * m.g.ωc - 2 * c)) * e1 - (2 + (h * m.g.ωc - 2 * c)) * e2 +
+          2 * e3 - (2 + (h * m.g.ωc - 2 * c)) * hsc
+      have hne : σ ^ 2 + ω ^ 2 ≠ 0 := hS.ne'
+      have : 2 * (σ * (σ + m.g.ωc) - ω ^ 2) = (h * m.g.ωc - 2 * c) * (σ ^ 2 + ω ^ 2) := by
+        have := (mul_eq_zero.mp hh2).resolve_left (by positivity)
+        linarith
+      simp only [p, q]
+      field_simp
+      linear_combination this
+    simp only [a]
+    rw [← key]
+    field_simp
+  obtain ⟨hr', hi'⟩ := plant_phasor_complex m hM.ne' h1 h2 h3 h4
+  refine Numerics.backwardEulerSystem_not_passive_of_phasor (plant m) hh
+    (isUnit_det_backward m hM hD hω hK.le hh.le) hN hper hsin.ne' hσ hω' hr' hi' ?_
+  have hfθ : f θ = m.g.M * σ + m.g.D + a := by rw [ha]
+  simp [plant, dotProduct]
+  linarith
+
+/-- **Passivity of the backward Euler discretizations of the linearized VSM + filter port**:
+within `M > 0`, `D ≥ 0`, `ω_c > 0`, `K > 0`, a discretization with step `h > 0` is passive
+exactly when `K (2 − h ω_c) ≤ 2 D ω_c`. -/
+@[tmio TM, powerlib_domain] theorem linearBackwardEuler_mem_den_passive_iff (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hD : 0 ≤ m.g.D) (hω : 0 < m.g.ωc) (hK : 0 < m.K) (h : ℝ) (hh : 0 < h) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∈ linearBackwardEulerFamily.den .passive ↔
+      m.K * (2 - h * m.g.ωc) ≤ 2 * m.g.D * m.g.ωc) := by
+  have hp := linearBackwardEuler_mem_den_passive m hM hD hω hK h hh
+  have hn := linearBackwardEuler_not_mem_den_passive m hM hD hω hK h hh
+  unfold powerlib.TMIO.Statement at hp hn ⊢
+  exact ⟨fun hm => not_lt.mp fun hlt => hn hlt hm, hp⟩
+
+/-- **Backward Euler preserves passivity of the linearized VSM + filter port**: within positive
+`M, D, ω_c` and `K > 0`, a passive model (`K ≤ D ω_c`) has passive backward Euler
+discretizations at every step, `K (2 − h ω_c) < 2 K ≤ 2 D ω_c`. -/
+@[tmio MI, powerlib_domain] theorem linearBackwardEuler_realizationSoundUnder_passive :
+    connection% (linearBackwardEuler.RealizationSoundUnder {.physical, .synchronizing}
+      .passive) := by
+  unfold powerlib.TMIO.Statement
+  rintro y ⟨hy, hΔ⟩
+  rw [(connection_proof% Implementation.certify_realizes_of_design (I := linearBackwardEuler)
+    (design := Numerics.EulerStep.design) rfl)] at hy
+  obtain ⟨⟨hM, hD, hω⟩, hK⟩ := meets_of_realize hΔ
+  have hc := linear_mem_den_passive_iff y.design hM hD hω hK
+  unfold powerlib.TMIO.Statement at hc
+  have hKD := hc.mp hy
+  have hp := linearBackwardEuler_mem_den_passive y.design hM hD.le hω hK y.h y.pos (by
+    nlinarith [mul_pos (mul_pos hK y.pos) hω])
+  unfold powerlib.TMIO.Statement at hp
+  exact hp
+
+/-- A mismatched model, `M = D = ω_c = 1`, `K₀ = 3/2`, `P₀ = 0`, `δ* = 0` (`K = 3/2 > D ω_c`). -/
+private def mismatchedModel : VSMLPF.Model := ⟨⟨1, 1, 1, 0, 3 / 2⟩, 0⟩
+
+/-- **Backward Euler creates passivity: its realization of passivity is not complete** within
+positive `M, D, ω_c` and `K > 0`. The mismatched model `mismatchedModel` is not passive
+(`linear_not_mem_den_passive`, `K = 3/2 > D ω_c = 1`), and its discretization with the step
+`h = 1` is (`K (2 − h ω_c) = 3/2 ≤ 2 D ω_c`, `linearBackwardEuler_mem_den_passive`): a spurious
+passivity window `h ≥ (2/ω_c)(1 − D ω_c/K) = 2/3`. -/
+@[tmio MI, powerlib_domain] theorem not_linearBackwardEuler_realizationCompleteUnder_passive :
+    connection% (¬ linearBackwardEuler.RealizationCompleteUnder {.physical, .synchronizing}
+      .passive) := by
+  have hK : mismatchedModel.K = 3 / 2 := by simp [mismatchedModel, VSMLPF.Model.K]
+  have hp := linearBackwardEuler_mem_den_passive mismatchedModel (by simp [mismatchedModel])
+    (by simp [mismatchedModel]) (by simp [mismatchedModel]) (by rw [hK]; norm_num) 1 one_pos
+    (by rw [hK]; simp [mismatchedModel]; norm_num)
+  have hn := linear_not_mem_den_passive mismatchedModel (by simp [mismatchedModel])
+    (by simp [mismatchedModel]) (by simp [mismatchedModel])
+    (by rw [hK]; simp [mismatchedModel]; norm_num)
+  unfold powerlib.TMIO.Statement at hp hn ⊢
+  refine (connection_proof% Implementation.not_realizationCompleteUnder_of_design
+    (I := linearBackwardEuler) (design := Numerics.EulerStep.design)
+    (y := (⟨mismatchedModel, 1, one_pos⟩ : LinearStep)) rfl hp ?_ hn)
+  rw [(connection_proof% TMIO.mem_realize)]
+  intro q hq
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl
+  · change 0 < mismatchedModel.g.M ∧ 0 < mismatchedModel.g.D ∧ 0 < mismatchedModel.g.ωc
+    simp [mismatchedModel]
+  · change 0 < mismatchedModel.K
+    rw [hK]
+    norm_num
 
 end FilterPort
 

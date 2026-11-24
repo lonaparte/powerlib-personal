@@ -15,12 +15,20 @@ Model boundary.
   boundary stated there (locked operating point, no pre-filter, sampling, delay or PWM; continuous
   time).
 
-Source: work-sync `theory/T-frequency-measurement.md` §1.1–§1.5.
+Source: work-sync `theory/T-frequency-measurement.md` §1.1–§1.5; the amplification band: GFM
+counterpart study note t8 (tracking), contrast (G) of the SymPy check `s2_frequency_response.py`
+(outside the repository).
 
 Results.
 * −3 dB bandwidth: for `V K_i > 0`, on `ω ≥ 0`, `|H(jω)|² = 1/2` holds exactly at
   `ω_b = ω_n √(1 + 2ζ² + √((1 + 2ζ²)² + 1))` (`ω_n = √(V K_i)`, `ζ = V K_p/(2ω_n)`), with
   `|H|² > 1/2` below and `< 1/2` above (`V K_p ≠ 0`).
+* Amplification band: `|H(jω)| > 1` iff `0 < ω² < 2ω_n²` (`V K_i > 0`, `V K_p ≠ 0`,
+  `one_lt_normSq_closedLoopTF_iff`), at every damping ratio: the zero of `H` makes the PLL
+  amplify every grid-frequency oscillation below `√2 ω_n`, whereas the grid-forming
+  synchronization transfer, a pure second-order low-pass, amplifies only for `ζ² < 1/2`
+  (`GFM.Tracking.normSq_transferFn_le_one_iff`,
+  `theorem/GridTiedConverter/GFM/Tracking/Measurement.lean`).
 * Phase: `arg H(jω) = −arctan(a ω³ / (ω_n²(ω_n² − ω²) + a² ω²))` whenever the denominator is
   positive, in particular for every `ω` when `ζ ≥ 1/2`.
 * ROCOF: the derivative-output realization `LTI.derivModel` `(A, B, C A, C B)` of a strictly
@@ -236,6 +244,30 @@ transfer function of `frequencyModel`, `transfer_frequencyModel`). -/
     have h6 : Real.sqrt 5 ^ 2 = 2 ^ 2 := by rw [h5]
     rw [Real.sq_sqrt (by norm_num)] at h6
     norm_num at h6
+
+/-! ## The band of amplification -/
+
+/-- **The PLL amplifies a band of grid-frequency oscillations, at every damping.** For
+`V K_i > 0` and `V K_p ≠ 0`, `|H(jω)| > 1` exactly on `0 < ω² < 2ω_n²` (`ω_n² = V K_i`):
+`|H|² − 1` has the sign of `b² − (b − ω²)² = ω²(2b − ω²)`, so `|H| = 1` at `ω = 0` and at
+`ω² = 2ω_n²`, and `|H| < 1` above. -/
+@[tmio M, powerlib_domain] theorem one_lt_normSq_closedLoopTF_iff {V Kp Ki : ℝ} (h : 0 < V * Ki)
+    (ha : V * Kp ≠ 0) (ω : ℝ) :
+    1 < normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) ↔
+      0 < ω ^ 2 ∧ ω ^ 2 < 2 * omegaN V Ki ^ 2 := by
+  have hD : 0 < (V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 := by
+    rcases closedLoop_den_pos_or (Kp := Kp) h ω with hD | ⟨-, -, h0⟩
+    · exact hD
+    · exact absurd h0 ha
+  have hn : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt h.le
+  rw [normSq_closedLoopTF, one_lt_div hD, hn]
+  constructor
+  · intro hlt
+    have hprod : 0 < ω ^ 2 * (2 * (V * Ki) - ω ^ 2) := by nlinarith
+    have h2 := pos_of_mul_pos_right hprod (sq_nonneg ω)
+    exact ⟨pos_of_mul_pos_left hprod h2.le, by linarith⟩
+  · rintro ⟨h0, h1⟩
+    nlinarith [mul_pos h0 (sub_pos.mpr h1)]
 
 /-! ## Phase -/
 

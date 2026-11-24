@@ -3,7 +3,10 @@ import dependencies.Mathlib
 
 /-! # Complex power, P/Q in dq, current references and the P/Q Jacobians
 
-Algebraic identities (foundation) of three-phase complex power in dq components.
+Three-phase complex power in the components of the chosen dq transform. The expansion of
+`V̄ Ī*` (`complexPower_expand`) is a generic complex identity (foundation). The power identities of
+the chosen transform are domain (Rules §3): `pq` with its sign convention, the amplitude-invariant
+`3/2`, the PLL-aligned current references and the P/Q Jacobians.
 
 Scope.
 Derivation method of work-sync `conventions.md` §D0: start from `S̄ = V̄ Ī*` with
@@ -50,7 +53,7 @@ current `i = (i_d, i_q)`: the real and imaginary parts of `V̄ Ī*` (`pq_eq_comp
 def pq (v i : Fin 2 → ℝ) : Fin 2 → ℝ := ![v 0 * i 0 + v 1 * i 1, v 1 * i 0 - v 0 * i 1]
 
 /-- `(P, Q) = (Re, Im)(V̄ Ī*)`. -/
-@[tmio T, powerlib_foundation] theorem pq_eq_complexPower (v i : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pq_eq_complexPower (v i : Fin 2 → ℝ) :
     pq v i = ![((⟨v 0, v 1⟩ : ℂ) * conj (⟨i 0, i 1⟩ : ℂ)).re,
       ((⟨v 0, v 1⟩ : ℂ) * conj (⟨i 0, i 1⟩ : ℂ)).im] := by
   rw [complexPower_expand]
@@ -64,19 +67,19 @@ def activePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * pq ![vd, vq] ![id, iq] 0
 per-unit `pq`. -/
 def reactivePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * pq ![vd, vq] ![id, iq] 1
 
-@[tmio T, powerlib_foundation] theorem activePower_eq_re (vd vq id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem activePower_eq_re (vd vq id iq : ℝ) :
     activePower vd vq id iq = 3 / 2 * ((⟨vd, vq⟩ : ℂ) * conj (⟨id, iq⟩ : ℂ)).re := by
   rw [activePower, pq_eq_complexPower]
   rfl
 
-@[tmio T, powerlib_foundation] theorem reactivePower_eq_im (vd vq id iq : ℝ) :
+@[tmio M, powerlib_domain] theorem reactivePower_eq_im (vd vq id iq : ℝ) :
     reactivePower vd vq id iq = 3 / 2 * ((⟨vd, vq⟩ : ℂ) * conj (⟨id, iq⟩ : ℂ)).im := by
   rw [reactivePower, pq_eq_complexPower]
   rfl
 
 /-- PLL-aligned current references: the currents achieve the absorbed set points exactly iff
 they are `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)`. -/
-@[tmio T, powerlib_foundation] theorem currentRef_iff {vd : ℝ} (hvd : vd ≠ 0)
+@[tmio M, powerlib_domain] theorem currentRef_iff {vd : ℝ} (hvd : vd ≠ 0)
     (id iq Pref Qref : ℝ) :
     activePower vd 0 id iq = Pref ∧ reactivePower vd 0 id iq = Qref ↔
       id = 2 * Pref / (3 * vd) ∧ iq = -(2 * Qref / (3 * vd)) := by
@@ -93,7 +96,7 @@ they are `i_d* = 2 P*/(3 v_d)`, `i_q* = −2 Q*/(3 v_d)`. -/
 
 /-- Sign check: with `v_d > 0`, absorbing reactive power (`Q* > 0`) means `i_q* < 0`, and
 absorbing active power (`P* > 0`) means `i_d* > 0`. -/
-@[tmio T, powerlib_foundation] theorem currentRef_sign {vd Pref Qref : ℝ} (hvd : 0 < vd) :
+@[tmio M, powerlib_domain] theorem currentRef_sign {vd Pref Qref : ℝ} (hvd : 0 < vd) :
     (0 < Qref ↔ -(2 * Qref / (3 * vd)) < 0) ∧ (0 < Pref ↔ 0 < 2 * Pref / (3 * vd)) := by
   have h3 : 0 < 3 * vd := by positivity
   constructor
@@ -110,22 +113,22 @@ def Gi (v : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![v 0, v 1; v 1, -v 
 /-- `∂(P,Q)/∂(v_d, v_q)`. -/
 def Gv (i : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![i 0, i 1; -i 1, i 0]
 
-@[tmio T, powerlib_foundation] theorem pq_mulVec_current (v i : Fin 2 → ℝ) : pq v i = Gi v *ᵥ i := by
+@[tmio M, powerlib_domain] theorem pq_mulVec_current (v i : Fin 2 → ℝ) : pq v i = Gi v *ᵥ i := by
   ext k
   fin_cases k <;> simp [pq, Gi, Matrix.mulVec, dotProduct, Fin.sum_univ_two, sub_eq_add_neg]
 
-@[tmio T, powerlib_foundation] theorem pq_mulVec_voltage (v i : Fin 2 → ℝ) : pq v i = Gv i *ᵥ v := by
+@[tmio M, powerlib_domain] theorem pq_mulVec_voltage (v i : Fin 2 → ℝ) : pq v i = Gv i *ᵥ v := by
   ext k
   fin_cases k <;> simp [pq, Gv, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- Exact expansion: `Δ(P,Q) = G_i(v₀) Δi + G_v(i₀) Δv + (P,Q)(Δv, Δi)`. -/
-@[tmio T, powerlib_foundation] theorem pq_expansion (v0 i0 dv di : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pq_expansion (v0 i0 dv di : Fin 2 → ℝ) :
     pq (v0 + dv) (i0 + di) - pq v0 i0 = Gi v0 *ᵥ di + Gv i0 *ᵥ dv + pq dv di := by
   ext k
   fin_cases k <;> simp [pq, Gi, Gv, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- Fréchet derivative of `(v, i) ↦ (P, Q)` at `(v₀, i₀)`. -/
-@[tmio T, powerlib_foundation] theorem pq_hasFDerivAt (v0 i0 : Fin 2 → ℝ) :
+@[tmio M, powerlib_domain] theorem pq_hasFDerivAt (v0 i0 : Fin 2 → ℝ) :
     HasFDerivAt (fun z : (Fin 2 → ℝ) × (Fin 2 → ℝ) => pq z.1 z.2)
       ((Matrix.toLin' (Gv i0)).toContinuousLinearMap.comp (ContinuousLinearMap.fst ℝ _ _) +
         (Matrix.toLin' (Gi v0)).toContinuousLinearMap.comp (ContinuousLinearMap.snd ℝ _ _))

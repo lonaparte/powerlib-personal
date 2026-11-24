@@ -32,15 +32,18 @@ Model boundary.
   `E₀ + n_q Q_ref > 0`; `R` and `D` are arbitrary unless stated. The formal model admits an EMF of
   either sign; equilibria with `E > 0` are the physical ones.
 * Level: the equilibrium set, its count per period window `[a, a + 2π)` of the angle, the
-  Jacobian at an equilibrium and the instability of an equilibrium. Excluded: the active-power
-  filter (`VSMLPF`), line dynamics, inner voltage and current loops, virtual impedance, current
-  limiting, PLL, delay, PWM.
+  Jacobian at an equilibrium, the shape of the quasi-static characteristic and the instability of
+  an equilibrium. Excluded: the active-power filter (`VSMLPF`), line dynamics, inner voltage and
+  current loops, virtual impedance (the terminal-measured variant is
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualImpedance.lean`), current limiting, PLL, delay,
+  PWM.
 
 Source: study note GFM equilibrium counting (topic t6 (b): the elimination, the droop quartic and
-its sign pattern, the parity, `det J` and the descending branch; checked numerically there,
-derived here); Descartes' rule of signs (Mathlib `Polynomial.roots_countP_pos_le_signVariations`,
-read through `theorem/SpecialFunctions/PolynomialSigns.lean`); injectivity of `θ ↦ e^{jθ}` on a
-window (`SpecialFunctions.injOn_cexp_mul_I_Ico`, `theorem/SpecialFunctions/TrigZeros.lean`).
+its sign pattern, the parity, `det J`, the descending branch and the one maximum and one minimum
+of `P̃` per period; checked numerically there, derived here); Descartes' rule of signs (Mathlib
+`Polynomial.roots_countP_pos_le_signVariations`, read through
+`theorem/SpecialFunctions/PolynomialSigns.lean`); injectivity of `θ ↦ e^{jθ}` on a window
+(`SpecialFunctions.injOn_cexp_mul_I_Ico`, `theorem/SpecialFunctions/TrigZeros.lean`).
 
 Results.
 * Elimination (`balance_iff`): with `u = E V cos δ`, `w = E V sin δ` both `P` and `Q` are affine
@@ -51,9 +54,9 @@ Results.
   coefficients `(1, 2β, β² − 2γ + ρ² − V², 2(ρκ − βγ), γ² + κ²)` (`quartic_eq`), degree four
   (`natDegree_quartic`) and `f(0) = γ² + κ² = |Z|² (P_ref² + q₀²)` (`eval_zero_quartic`).
 * Equilibria and roots: the EMF of every equilibrium is a root of `f`
-  (`quartic_isRoot_of_field_eq_zero`); in every window the equilibria whose EMF lies in a set
-  `T ∌ 0` are as many as the roots of `f` in `T` (`ncard_equilibriaWindow`, a bijection through the
-  EMF, `V ≠ 0`).
+  (`quartic_isRoot_of_field_eq_zero`); at a nonzero EMF the balance fixes the angle in a window
+  (`eq_of_balance`); in every window the equilibria whose EMF lies in a set `T ∌ 0` are as many as
+  the roots of `f` in `T` (`ncard_equilibriaWindow`, a bijection through the EMF, `V ≠ 0`).
 * At most two physical equilibria per window (`ncard_physical_le_two`): the coefficients of `f`
   have the sign pattern `(+, +, ?, ?, ≥ 0)` (`countP_pos_roots_le_two`, through
   `SpecialFunctions.countP_pos_roots_le_two_of_quartic`). Parity: in the physical range
@@ -63,8 +66,9 @@ Results.
   root of `f` as its EMF, the fold of the physical branch
   (`rootMultiplicity_eq_two_of_ncard_eq_one`).
 * Linearization, derived by `fderiv` (`hasFDerivAt_field`): the Jacobian `jacobian δ E` at a point
-  with angle `δ` and EMF `E` has the entries `P_δ, P_E, Q_δ, Q_E` (`Pδ`, `PE`, `Qδ`, `QE`) and
-  `det J = −(ω_q/M) ((1 + n_q Q_E) P_δ − n_q P_E Q_δ)` (`det_jacobian`).
+  with angle `δ` and EMF `E` has the entries `P_δ, P_E, Q_δ, Q_E` (`Pδ`, `PE`, `Qδ`, `QE`), the
+  pointwise partial derivatives of `P` and `Q` (`hasDerivAt_Pδ`, `hasDerivAt_PE`, `hasDerivAt_Qδ`,
+  `hasDerivAt_QE`), and `det J = −(ω_q/M) ((1 + n_q Q_E) P_δ − n_q P_E Q_δ)` (`det_jacobian`).
 * The physical droop branch: for `n_q X > 0` and `E₀ + n_q Q_ref > 0` the droop equation
   `E = E₀ − n_q (Q(δ, E) − Q_ref)` is the quadratic `a₂ E² + a₁(δ) E + a₀ = 0` (`droop_eq`) with
   exactly one positive root `E₊(δ)` (`Eplus`, `droop_Eplus`, `Eplus_pos`, `eq_Eplus`), every
@@ -73,6 +77,12 @@ Results.
   `P̃(δ) = P(δ, E₊(δ))` (`Ptilde`) has the slope `P̃' = P_δ − P_E n_q Q_δ / (1 + n_q Q_E)`
   (`hasDerivAt_Ptilde`, implicit differentiation of the droop) and on the branch
   `det J = −(ω_q/M) (1 + n_q Q_E) P̃'` (`det_jacobian_eq_slope`).
+* The shape of `P̃` (physical range, `V ≠ 0`): continuous and `2π`-periodic (`continuous_Ptilde`,
+  `Ptilde_periodic`), no level is met three times within one period (`Ptilde_not_three`: three
+  such angles would be three physical equilibria at `P_ref` equal to that level, `Q_Eplus`), hence
+  exactly one local maximum and exactly one local minimum per window
+  (`existsUnique_isLocalMax_Ptilde`, `existsUnique_isLocalMin_Ptilde`, through
+  `SpecialFunctions.existsUnique_isLocalMax_of_levels`).
 
 Family and connection conclusions.
 * `QVDroop.family`: a complete system (`QVDroop.Model`) is a parameter set with a selected point
@@ -87,7 +97,7 @@ Family and connection conclusions.
   physical equilibrium on the descending part of the quasi-static characteristic (`P̃'(δ*) < 0`)
   is unstable, for every damping `D`.
 * Static evidence on the model: the elimination, the quartic, the window bijection and the counts,
-  the parity and fold statements, the Jacobian and the branch identities.
+  the parity and fold statements, the Jacobian and the branch identities, the shape of `P̃`.
 
 Corrections and limits (study note, topic t6 (b)).
 * The bound of four zeros per period of a second-order trigonometric polynomial
@@ -344,6 +354,20 @@ Static evidence on the model, not a connection conclusion. -/
   · rw [hn', Real.cos_sub_int_mul_two_pi, Complex.cos_arg hz0, hn, div_one]
   · rw [hn', Real.sin_sub_int_mul_two_pi, Complex.sin_arg, hn, div_one]
 
+/-- At a nonzero EMF the balance fixes the angle in a window: `E V cos δ = u(E)` and
+`E V sin δ = w(E)` (`balance_iff`) fix `e^{jδ}`, injective on `[a, a + 2π)` (`V ≠ 0`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem eq_of_balance (hZ : q.zsq ≠ 0) (hV : q.V ≠ 0)
+    {a δ₁ δ₂ E : ℝ} (hE : E ≠ 0) (h₁ : δ₁ ∈ Ico a (a + 2 * π)) (h₂ : δ₂ ∈ Ico a (a + 2 * π))
+    (hb₁ : q.P δ₁ E = q.Pref ∧ q.Q δ₁ E = q.qOf E)
+    (hb₂ : q.P δ₂ E = q.Pref ∧ q.Q δ₂ E = q.qOf E) : δ₁ = δ₂ := by
+  obtain ⟨hc₁, hs₁⟩ := (q.balance_iff hZ δ₁ E).mp hb₁
+  obtain ⟨hc₂, hs₂⟩ := (q.balance_iff hZ δ₂ E).mp hb₂
+  have hEV : E * q.V ≠ 0 := mul_ne_zero hE hV
+  have hc : cos δ₁ = cos δ₂ := mul_left_cancel₀ hEV (hc₁.trans hc₂.symm)
+  have hs : sin δ₁ = sin δ₂ := mul_left_cancel₀ hEV (hs₁.trans hs₂.symm)
+  exact SpecialFunctions.injOn_cexp_mul_I_Ico a h₁ h₂ (Complex.ext (by simp [hc]) (by simp [hs]))
+
 /-- The equilibria with angle in the window `[a, a + 2π)` and EMF in `T`. -/
 def equilibriaWindow (T : Set ℝ) (a : ℝ) : Set (State 3) :=
   {x | q.field x = 0 ∧ x 0 ∈ Ico a (a + 2 * π) ∧ q.emf (x 2) ∈ T}
@@ -364,14 +388,9 @@ Static evidence on the model, not a connection conclusion. -/
     (fun x hx => ⟨hx.2.2, q.quartic_isRoot_of_balance hZ (hbal x hx.1)⟩) ?_ ?_
   · rintro x y ⟨hx, hxw, hxT⟩ ⟨hy, hyw, -⟩ hxy
     have hE0 : q.emf (x 2) ≠ 0 := fun h => hT (h ▸ hxT)
-    obtain ⟨hcx, hsx⟩ := (q.balance_iff hZ _ _).mp (hbal x hx)
-    obtain ⟨hcy, hsy⟩ := (q.balance_iff hZ _ _).mp (hbal y hy)
-    rw [hxy] at hcx hsx hE0
-    have hEV : q.emf (y 2) * q.V ≠ 0 := mul_ne_zero hE0 hV
-    have hc : cos (x 0) = cos (y 0) := mul_left_cancel₀ hEV (hcx.trans hcy.symm)
-    have hs : sin (x 0) = sin (y 0) := mul_left_cancel₀ hEV (hsx.trans hsy.symm)
-    refine state3_ext (SpecialFunctions.injOn_cexp_mul_I_Ico a hxw hyw
-      (Complex.ext (by simp [hc]) (by simp [hs]))) ?_ ?_
+    have hby := hbal y hy
+    rw [← hxy] at hby
+    refine state3_ext (q.eq_of_balance hZ hV hE0 hxw hyw (hbal x hx) hby) ?_ ?_
     · rw [((q.field_eq_zero_iff hM hω x).mp hx).1, ((q.field_eq_zero_iff hM hω y).mp hy).1]
     · rw [← q.qOf_emf hnq (x 2), ← q.qOf_emf hnq (y 2), hxy]
   · rintro E ⟨hET, hroot⟩
@@ -485,6 +504,54 @@ def Qδ (δ E : ℝ) : ℝ := (q.X * (E * q.V * sin δ) - q.R * (E * q.V * cos �
 
 /-- `∂Q/∂E` at `(δ, E)`. -/
 def QE (δ E : ℝ) : ℝ := (q.X * (2 * E - q.V * cos δ) - q.R * (q.V * sin δ)) / q.zsq
+
+/-- `P_δ` is the partial derivative of `P` in the angle at `(δ, E)`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_Pδ (δ E : ℝ) :
+    HasDerivAt (fun d => q.P d E) (q.Pδ δ E) δ := by
+  have h := (((((Real.hasDerivAt_cos δ).const_mul (E * q.V)).const_sub (E ^ 2)).const_mul
+    q.R).add ((Real.hasDerivAt_sin δ).const_mul (q.X * (E * q.V)))).div_const q.zsq
+  convert h using 1
+  · funext d
+    simp only [P_eq, Pi.add_apply]
+    ring
+  · simp only [Pδ]
+    ring
+
+/-- `P_E` is the partial derivative of `P` in the EMF at `(δ, E)`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_PE (δ E : ℝ) :
+    HasDerivAt (fun e => q.P δ e) (q.PE δ E) E := by
+  have h := (((((hasDerivAt_id E).pow 2).sub ((hasDerivAt_id E).mul_const (q.V * cos δ))).const_mul
+    q.R).add (((hasDerivAt_id E).mul_const (q.V * sin δ)).const_mul q.X)).div_const q.zsq
+  convert h using 1
+  · funext e
+    simp only [P_eq, Pi.add_apply, Pi.sub_apply, Pi.pow_apply, id]
+    ring
+  · simp only [PE, id]
+    ring
+
+/-- `Q_δ` is the partial derivative of `Q` in the angle at `(δ, E)`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_Qδ (δ E : ℝ) :
+    HasDerivAt (fun d => q.Q d E) (q.Qδ δ E) δ := by
+  have h := (((((Real.hasDerivAt_cos δ).const_mul (E * q.V)).const_sub (E ^ 2)).const_mul
+    q.X).sub ((Real.hasDerivAt_sin δ).const_mul (q.R * (E * q.V)))).div_const q.zsq
+  convert h using 1
+  · funext d
+    simp only [Q_eq, Pi.sub_apply]
+    ring
+  · simp only [Qδ]
+    ring
+
+/-- `Q_E` is the partial derivative of `Q` in the EMF at `(δ, E)`. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_QE (δ E : ℝ) :
+    HasDerivAt (fun e => q.Q δ e) (q.QE δ E) E := by
+  have h := (((((hasDerivAt_id E).pow 2).sub ((hasDerivAt_id E).mul_const (q.V * cos δ))).const_mul
+    q.X).sub (((hasDerivAt_id E).mul_const (q.V * sin δ)).const_mul q.R)).div_const q.zsq
+  convert h using 1
+  · funext e
+    simp only [Q_eq, Pi.sub_apply, Pi.pow_apply, id]
+    ring
+  · simp only [QE, id]
+    ring
 
 /-- The Jacobian at a point with angle `δ` and EMF `E`. -/
 def jacobian (δ E : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
@@ -719,6 +786,93 @@ Static evidence on the model, not a connection conclusion. -/
     rw [mul_sub, mul_div_assoc', mul_div_cancel_left₀ _ hK]
     ring
   linear_combination (q.ωq / q.M) * e
+
+/-! ## The shape of the quasi-static characteristic -/
+
+/-- Along the physical branch the droop holds at the unfiltered reactive power,
+`Q(δ, E₊(δ)) = Q_ref + (E₀ − E₊(δ))/n_q` (`droop_Eplus`). -/
+@[tmio M, powerlib_domain] theorem Q_Eplus (h2 : 0 < q.a2) (h0 : q.a0 < 0) (hnq : q.nq ≠ 0)
+    (δ : ℝ) : q.Q δ (q.Eplus δ) = q.qOf (q.Eplus δ) := by
+  have h := q.droop_Eplus h2 h0 δ
+  rw [droop, sub_eq_zero] at h
+  calc q.Q δ (q.Eplus δ) = q.qOf (q.emf (q.Q δ (q.Eplus δ))) := (q.qOf_emf hnq _).symm
+    _ = q.qOf (q.Eplus δ) := by rw [← h]
+
+@[tmio M, powerlib_domain] theorem continuous_Ptilde (h2 : 0 < q.a2) (h0 : q.a0 < 0) :
+    Continuous q.Ptilde :=
+  continuous_iff_continuousAt.mpr fun δ => (q.hasDerivAt_Ptilde h2 h0 δ).continuousAt
+
+@[tmio M, powerlib_domain] theorem Ptilde_periodic : Function.Periodic q.Ptilde (2 * π) := by
+  intro δ
+  simp only [Ptilde, Eplus, disc, a1, P_eq, cos_add_two_pi, sin_add_two_pi]
+
+/-- No level of `P̃` is met three times within one period (physical range, `V ≠ 0`): angles
+`δ₁ < δ₂ < δ₃ < δ₁ + 2π` with one value `c` of `P̃` would be three physical equilibria at
+`P_ref = c` with pairwise distinct EMFs (`eq_of_balance`), three positive roots of the droop
+quartic (`countP_pos_roots_le_two`). Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Ptilde_not_three (hnq : 0 < q.nq) (hX : 0 < q.X)
+    (hc : 0 < q.E0 + q.nq * q.Qref) (hV : q.V ≠ 0) {δ₁ δ₂ δ₃ : ℝ} (h₁₂ : δ₁ < δ₂)
+    (h₂₃ : δ₂ < δ₃) (h₃ : δ₃ < δ₁ + 2 * π) (e₁₂ : q.Ptilde δ₁ = q.Ptilde δ₂)
+    (e₂₃ : q.Ptilde δ₂ = q.Ptilde δ₃) : False := by
+  classical
+  set p : QVDroop := { q with Pref := q.Ptilde δ₁ } with hp
+  have h2 := q.a2_pos hnq hX
+  have h0 := q.a0_neg hc
+  have hZ : p.zsq ≠ 0 := (q.zsq_pos hX.ne').ne'
+  have hbal : ∀ δ, q.Ptilde δ = q.Ptilde δ₁ →
+      p.P δ (q.Eplus δ) = p.Pref ∧ p.Q δ (q.Eplus δ) = p.qOf (q.Eplus δ) :=
+    fun δ hδ => ⟨hδ, q.Q_Eplus h2 h0 hnq.ne' δ⟩
+  have b₁ := hbal δ₁ rfl
+  have b₂ := hbal δ₂ e₁₂.symm
+  have b₃ := hbal δ₃ (e₂₃.symm.trans e₁₂.symm)
+  have hmem : ∀ δ, δ₁ ≤ δ → δ < δ₁ + 2 * π → δ ∈ Ico δ₁ (δ₁ + 2 * π) := fun δ h h' => ⟨h, h'⟩
+  have hne : ∀ {d d'}, d ∈ Ico δ₁ (δ₁ + 2 * π) → d' ∈ Ico δ₁ (δ₁ + 2 * π) → d ≠ d' →
+      p.P d (q.Eplus d) = p.Pref ∧ p.Q d (q.Eplus d) = p.qOf (q.Eplus d) →
+      p.P d' (q.Eplus d') = p.Pref ∧ p.Q d' (q.Eplus d') = p.qOf (q.Eplus d') →
+      q.Eplus d ≠ q.Eplus d' := by
+    intro d d' hd hd' hdd' bd bd' he
+    rw [← he] at bd'
+    exact hdd' (p.eq_of_balance hZ hV (q.Eplus_pos h2 h0 d).ne' hd hd' bd bd')
+  have m₁ := hmem δ₁ le_rfl (by linarith [pi_pos])
+  have m₂ := hmem δ₂ h₁₂.le (by linarith)
+  have m₃ := hmem δ₃ (h₁₂.trans h₂₃).le h₃
+  have hsub : {q.Eplus δ₁, q.Eplus δ₂, q.Eplus δ₃} ⊆ {E : ℝ | 0 < E ∧ p.quartic.IsRoot E} := by
+    rintro E (rfl | rfl | rfl)
+    · exact ⟨q.Eplus_pos h2 h0 _, p.quartic_isRoot_of_balance hZ b₁⟩
+    · exact ⟨q.Eplus_pos h2 h0 _, p.quartic_isRoot_of_balance hZ b₂⟩
+    · exact ⟨q.Eplus_pos h2 h0 _, p.quartic_isRoot_of_balance hZ b₃⟩
+  have h3 : ({q.Eplus δ₁, q.Eplus δ₂, q.Eplus δ₃} : Set ℝ).ncard = 3 :=
+    Set.ncard_eq_three.mpr ⟨_, _, _, hne m₁ m₂ h₁₂.ne b₁ b₂, hne m₁ m₃ (h₁₂.trans h₂₃).ne b₁ b₃,
+      hne m₂ m₃ h₂₃.ne b₂ b₃, rfl⟩
+  have hfin : {E : ℝ | 0 < E ∧ p.quartic.IsRoot E}.Finite :=
+    (Polynomial.finite_setOfPred_isRoot p.quartic_ne_zero).subset fun E hE => hE.2
+  have hle := (Set.ncard_le_ncard hsub hfin).trans
+    ((SpecialFunctions.ncard_pos_isRoot_le_countP p.quartic_ne_zero).trans
+      (p.countP_pos_roots_le_two hnq hX))
+  omega
+
+/-- **One maximum of `P̃` per period.** In the physical range (`n_q, X > 0`,
+`E₀ + n_q Q_ref > 0`, `V ≠ 0`) the quasi-static characteristic has exactly one local maximum in
+every window `[a, a + 2π)` (`Ptilde_not_three`,
+`SpecialFunctions.existsUnique_isLocalMax_of_levels`). Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem existsUnique_isLocalMax_Ptilde (hnq : 0 < q.nq)
+    (hX : 0 < q.X) (hc : 0 < q.E0 + q.nq * q.Qref) (hV : q.V ≠ 0) (a : ℝ) :
+    ∃! δ, δ ∈ Ico a (a + 2 * π) ∧ IsLocalMax q.Ptilde δ :=
+  SpecialFunctions.existsUnique_isLocalMax_of_levels
+    (q.continuous_Ptilde (q.a2_pos hnq hX) (q.a0_neg hc)) q.Ptilde_periodic two_pi_pos
+    (fun _ _ _ h₁ h₂ h₃ e₁ e₂ => q.Ptilde_not_three hnq hX hc hV h₁ h₂ h₃ e₁ e₂) a
+
+/-- **One minimum of `P̃` per period.** In the physical range the quasi-static characteristic
+has exactly one local minimum in every window `[a, a + 2π)`
+(`SpecialFunctions.existsUnique_isLocalMin_of_levels`). Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem existsUnique_isLocalMin_Ptilde (hnq : 0 < q.nq)
+    (hX : 0 < q.X) (hc : 0 < q.E0 + q.nq * q.Qref) (hV : q.V ≠ 0) (a : ℝ) :
+    ∃! δ, δ ∈ Ico a (a + 2 * π) ∧ IsLocalMin q.Ptilde δ :=
+  SpecialFunctions.existsUnique_isLocalMin_of_levels
+    (q.continuous_Ptilde (q.a2_pos hnq hX) (q.a0_neg hc)) q.Ptilde_periodic two_pi_pos
+    (fun _ _ _ h₁ h₂ h₃ e₁ e₂ => q.Ptilde_not_three hnq hX hc hV h₁ h₂ h₃ e₁ e₂) a
 
 /-! ## The Q–V droop family -/
 

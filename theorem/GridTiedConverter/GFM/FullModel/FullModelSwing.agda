@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.GridTiedConverter.GFM.FullModel.FullModelSwing where
--- Lean modules: theorem.GridTiedConverter.GFM.FullModel.Basic theorem.GridTiedConverter.GFM.FullModel.Saddle
+-- Lean modules: theorem.GridTiedConverter.GFM.FullModel.Basic theorem.GridTiedConverter.GFM.FullModel.Saddle theorem.GridTiedConverter.GFM.FullModel.Equilibria
 
 -- Scaffold of the reading of the 13-state grid-forming converter (`GFM.FullModel.family` of
 -- `theorem/GridTiedConverter/GFM/FullModel/Saddle.lean`) through its quasi-steady reduction, the
@@ -19,13 +19,21 @@ module theorem.GridTiedConverter.GFM.FullModel.FullModelSwing where
 --   is balanced and the reactive-power filter sits at the quasi-steady reactive power
 --   (`GFM.FullModel.Params.field_eq_zero_iff`); an equilibrium exists exactly when the swing
 --   machine has one (`GFM.FullModel.Params.exists_equilibrium_iff`, read from
---   `Synchronous.SwingParams.exists_equilibrium_iff`).
+--   `Synchronous.SwingParams.exists_equilibrium_iff`). Per period window of the angle the
+--   equilibria of the full model are the lifts of those of the swing machine
+--   (`GFM.FullModel.Params.lift`, `GFM.FullModel.Params.equilibria_window`), so the reduced counts
+--   carry over: two at `|P_ref − c₀| < A`, one at the fold
+--   (`GFM.FullModel.Params.two_equilibria_per_period`,
+--   `GFM.FullModel.Params.fold_equilibrium_per_period`, read from
+--   `GFM.Reduced.two_equilibria_per_period`, `GFM.Reduced.fold_equilibrium_per_period`).
 -- * Instability transfers from the saddle branch of the reduction to the full model, for every
 --   choice of the controller gains (`saddle→`, Lean `GFM.FullModel.mem_den_unstable_of_swing`): at
 --   a balanced angle with negative synchronizing coefficient the Jacobian determinant of the full
 --   field is the positive determinant of the fast block times the determinant of the reduced
 --   Jacobian (`GFM.FullModel.Params.det_jacobian_qssState`, the generic Schur law
 --   `LinearAlgebra.det_eq_det_fast_mul_det_reduced`, `GFM.FullModel.Params.det_fastBlock_pos`).
+--   With Q–V droop the full model alone states the same instability under a negative
+--   droop-corrected slope (`GFM.FullModel.mem_den_unstable`); the swing reading needs no droop.
 -- * The local stability sentences are not compared: the full family translates them into a
 --   requirement no model meets, and stability of the reduced stable branch is not a statement about
 --   the full model. Nothing here is exported.

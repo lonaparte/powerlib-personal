@@ -4,11 +4,14 @@ import theorem.Transform.ParkABC
 
 /-! # Per-unit bases and per-unit identities
 
-Exact SI ↔ per-unit identities, including electrical-model conversions and algebraic helpers.
+Exact SI ↔ per-unit identities. The change-of-base laws and the PI rule for arbitrary bases
+(`pi_pu_iff`, `pi_gains_unique`) are generic algebra (foundation). The statements about selected
+electrical models are domain (Rules §3): the bases, Ohm's law and complex power, the ideal
+transformer, the swing equation, the half-bridge modulation and the PLL and power-loop gains.
 
 Scope.
 All statements are exact identities between SI quantities and per-unit quantities for
-explicitly given bases; there is no physical model or approximation in this module.
+explicitly given bases; there is no approximation in this module.
 The swing equations are differential equations along signals; they are written out in the
 statements that use them (no separate solution predicate), since
 behavioural notions are defined only in the semantic layer (`theorem/Flow/Defs.lean`).
@@ -171,7 +174,7 @@ end ThreePhaseBase
 
 /-- Ideal transformer of ratio `a = N₁/N₂` with voltage bases following the ratio
 (`V_B¹ = a V_B²`): the per-unit voltages agree. -/
-@[tmio T, powerlib_foundation] theorem transformer_pu_voltage {a V₂ v₂ : ℝ} (ha : a ≠ 0)
+@[tmio M, powerlib_domain] theorem transformer_pu_voltage {a V₂ v₂ : ℝ} (ha : a ≠ 0)
     (hV : V₂ ≠ 0) :
     let V₁ := a * V₂
     (a * v₂) / V₁ = v₂ / V₂ := by
@@ -181,7 +184,7 @@ end ThreePhaseBase
 
 /-- Ideal transformer of ratio `a = N₁/N₂` with voltage bases following the ratio and a common
 power base `S_B`: the per-unit currents agree. -/
-@[tmio T, powerlib_foundation] theorem transformer_pu_current {a S V₂ i₂ : ℝ} (ha : a ≠ 0)
+@[tmio M, powerlib_domain] theorem transformer_pu_current {a S V₂ i₂ : ℝ} (ha : a ≠ 0)
     (hS : S ≠ 0) (hV : V₂ ≠ 0) :
     let V₁ := a * V₂
     let I₁ := S / V₁
@@ -194,7 +197,7 @@ power base `S_B`: the per-unit currents agree. -/
 /-- Ideal transformer of ratio `a = N₁/N₂` with voltage bases following the ratio and a common
 power base `S_B`: an impedance referred through the transformer (`Z₁ = a² Z₂`) has the same
 per-unit value. -/
-@[tmio T, powerlib_foundation] theorem transformer_pu_impedance {a S V₂ z₂ : ℝ} (ha : a ≠ 0)
+@[tmio M, powerlib_domain] theorem transformer_pu_impedance {a S V₂ z₂ : ℝ} (ha : a ≠ 0)
     (hS : S ≠ 0) (hV : V₂ ≠ 0) :
     let V₁ := a * V₂
     let Z₁ := V₁ ^ 2 / S
@@ -287,7 +290,7 @@ def puField (Xb zb ωB : ℝ) (x : ℝ × ℝ → ℝ) : ℝ × ℝ → ℝ := f
 
 /-- Half-bridge modulation `v_conv = m V_dc / 2` in per unit:
 `v̂_conv = m (V̂_dc / 2)(V_B^dc / V_B^ac)`. -/
-@[tmio T, powerlib_foundation] theorem modulation_pu {m Vdc VBdc VBac : ℝ} (hdc : VBdc ≠ 0)
+@[tmio M, powerlib_domain] theorem modulation_pu {m Vdc VBdc VBac : ℝ} (hdc : VBdc ≠ 0)
     (hac : VBac ≠ 0) : (m * Vdc / 2) / VBac = m * ((Vdc / VBdc) / 2) * (VBdc / VBac) := by
   field_simp
 
@@ -332,7 +335,7 @@ gains. -/
 
 /-- PLL in convention (B): `U_B = V_B`, `Y_B = ω_B`, `W = ω_B` in `pi_pu_iff` gives
 `k̂_p = V_B k_p / ω_B`, `k̂_i = V_B k_i / ω_B²` (the §1.13.2 table). -/
-@[tmio T, powerlib_foundation] theorem pll_conventionB_gains {VB ωB kp ki : ℝ} (hV : VB ≠ 0)
+@[tmio M, powerlib_domain] theorem pll_conventionB_gains {VB ωB kp ki : ℝ} (hV : VB ≠ 0)
     (hω : ωB ≠ 0) {s : ℂ} (hs : s ≠ 0) (u y : ℂ) :
     y = (kp + ki / s) * u ↔
       y / ωB = (((VB * kp / ωB : ℝ) : ℂ) + ((VB * ki / ωB ^ 2 : ℝ) : ℂ) / (s / ωB)) *
@@ -344,7 +347,7 @@ gains. -/
 /-- The two convention-(A) statements for the power loop (`U_B = S_B`): the boxed formula
 (`Y_B = 1`) and the table row (`Y_B = I_B`) give the same proportional gain only if
 `I_B = 1` (for a nonzero SI gain). -/
-@[tmio T, powerlib_foundation] theorem pc_conventionA_rows_agree_iff {SB IB kp : ℝ} (hS : SB ≠ 0)
+@[tmio M, powerlib_domain] theorem pc_conventionA_rows_agree_iff {SB IB kp : ℝ} (hS : SB ≠ 0)
     (hI : IB ≠ 0) (hk : kp ≠ 0) : SB / 1 * kp = SB / IB * kp ↔ IB = 1 := by
   constructor
   · intro h

@@ -27,8 +27,10 @@ Model boundary.
   work-sync `conventions.md` §D1, as the GFL admittance), no feedthrough.
   `Q_c = Q_e(δ₀, i₀) = E (sin δ₀ i_d0 − cos δ₀ i_q0)` is the reactive power at the source,
   `v_c = E (cos δ₀, sin δ₀)` (`Network.emfC`), `J = [[0, −1], [1, 0]]`.
-* Excluded: reactive / voltage loop (constant `E`), inner loops, LC filter, limits, PLL, delay,
-  PWM. Frequency-domain statements at a fixed `s`; no time-domain or stability claim.
+* Excluded: reactive / voltage loop (constant `E`; the Q–V droop law and the PCC-measured powers
+  are `theorem/GridTiedConverter/GFM/Port/DroopAdmittance.lean`), inner loops, LC filter,
+  limits, PLL, delay, PWM. Frequency-domain statements at a fixed `s`; no time-domain or
+  stability claim.
 
 Source: GFM port-structure study note (t1-port, §(a) closed form, §(b) passivity; derivation and
 symbolic checks `a1_closed_form.py`); the GFL counterpart

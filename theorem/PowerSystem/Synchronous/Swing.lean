@@ -78,6 +78,14 @@ Results (static evidence on the model).
   positive on a punctured neighbourhood of an equilibrium angle where the synchronizing
   coefficient stays positive.
 * `lipschitzWith_field` — the field is globally Lipschitz.
+* Downstream, for every `SwingParams` with `M ≠ 0` and `k₂ > 0` (the reduced grid-forming model,
+  `theorem/GridTiedConverter/GFM/Equilibria.lean`): the equilibria with angle in a period window
+  `[a, a + 2π)` and their number, two for `|P_m − k₁| < k₂`, one at the fold `|P_m − k₁| = k₂`,
+  none for `|P_m − k₁| > k₂` (`GFM.Reduced.equilibria_window`,
+  `GFM.Reduced.ncard_equilibria_window`, `GFM.Reduced.two_equilibria_per_period`,
+  `GFM.Reduced.fold_equilibrium_per_period`, `GFM.Reduced.no_equilibrium_per_period`). For
+  `M ≠ 0` the eigenvalue `0` of the Jacobian is double iff `D = 0` and `K = 0`
+  (`GFM.swing_two_le_rootMultiplicity_zero_iff`, `theorem/GridTiedConverter/GFM/Bifurcation.lean`).
 
 Family and connection conclusions.
 * A complete system (`Swing.Model`) is a parameter set `p : SwingParams` together with a selected

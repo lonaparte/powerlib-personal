@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFM.Tracking.Linear
+import theorem.GridTiedConverter.GFM.VSMLPFLossy
 
 /-! # Grid-forming synchronization following a moving grid: tracking and loss of synchronism
 
@@ -10,7 +11,8 @@ Model boundary.
 * The reduced GFM of `theorem/GridTiedConverter/GFM/Tracking/Linear.lean`: two-state loop
   `θ̇ = Δω`, `M Δω̇ = P_ref − P_e(θ − θ_g) − D Δω`, `P_e(δ) = c₀ + A sin(δ − α)` (`SwingParams`
   with `k₁ = c₀`, `k₂ = A`, `k₃ = α`, `P_m = P_ref`); three-state loop with power filter on the
-  lossless line (`VSMLPF.fieldU`, `P_e = K₀ sin`). The damping acts on the frequency deviation
+  lossless line (`VSMLPF.fieldU`, `P_e = K₀ sin`) and, for the moving-frame laws, on the lossy
+  line (`lossyFieldU`, the field of `VSMLPFLossy`). The damping acts on the frequency deviation
   from the nominal frequency `ω₀` (droop: `D = K_R`), not on the deviation from the grid
   frequency (that would need a PLL). Per unit, export-positive power, continuous time; line
   dynamics, inner loops, Q–V droop, limits, delay and PWM excluded.
@@ -25,13 +27,19 @@ Model boundary.
   `DroopVSM.vsmFamily` with the nominal frequency `ω_s = −c` in that frame
   (`theorem/GridTiedConverter/GFM/DroopVSM.lean`), whose field is the swing field with the power
   reference `P_ref − D c` (`gridFrame_vector`); for three states the VSM + filter model
-  `offsetFilter g c` (`P₀ − D c`) of `VSMLPF.family`. Scaffold of this frame change:
+  `offsetFilter g c` (`P₀ − D c`) of `VSMLPF.family`; on a lossy line (`VSMLPFLossy`,
+  `P_e = c₀ + A sin(δ − α)`, grid angle in `Ṗ_f = ω_c (P_e(θ − θ_g) − P_f)`, `lossyFieldU`) the
+  lossy model `offsetLossy p c` (`P_ref − D c`) of `VSMLPFLossy.family`
+  (`theorem/GridTiedConverter/GFM/VSMLPFLossy.lean`). Scaffold of these frame changes:
   `theorem/GridTiedConverter/GFM/Tracking/GridFrame.agda`.
 
 Source: GFM counterpart study note t8 (tracking): derivation with the SymPy/SciPy check
 `s3_tracking.py` (outside the repository; particular solutions, 12 linear and 10 nonlinear
-simulations, the existence condition on both sides on 20 parameter sets); Kundur, *Power System
-Stability and Control* (1994) §5.1, §11.1 (frequency response of synchronous machines, droop).
+simulations, the existence condition on both sides on 20 parameter sets) and, for the lossy
+line, the translation of note t3-bifurcation (a) (`VSMLPFLossy.lean`) with the SciPy check
+`s6_lossy_offset.py` (loss of synchronism and locking on 20 parameter sets each); Kundur, *Power
+System Stability and Control* (1994) §5.1, §11.1 (frequency response of synchronous machines,
+droop).
 
 Results.
 * Linear tracking (implementation evidence, private, as in the PLL module): a grid-angle step is
@@ -50,12 +58,13 @@ Results.
   that lasts long enough, whereas the PI-PLL has locked phases under every ramp with
   `ρ/K_i` in the range of its detector (`PIPLL.ramp_phaseLocked_iff`).
 * Frame change (static): `gridFrame_hasDerivAt_iff`, `filterGridFrame_hasDerivAt_iff`,
-  `gridFrame_vector`; the shifted equilibrium exists iff `|P_ref − D c − c₀| ≤ A`
-  (`gridFrame_exists_equilibrium_iff`).
+  `lossyGridFrame_hasDerivAt_iff`, `gridFrame_vector`; the shifted equilibrium exists iff
+  `|P_ref − D c − c₀| ≤ A` (`gridFrame_exists_equilibrium_iff`).
 
 Family and connection conclusions.
-No new family: the moving-frame models are members of `DroopVSM.vsmFamily` (two states) and
-`VSMLPF.family` (three states), whose laws are read.
+No new family: the moving-frame models are members of `DroopVSM.vsmFamily` (two states),
+`VSMLPF.family` (three states) and `VSMLPFLossy.family` (three states, lossy line), whose laws
+are read.
 * Loss of synchronism (the GFM `Σ_FD`): when the demanded power leaves the band,
   `|P_ref − D c − c₀| > A`, every selected angle of the moving-frame model is unstable
   (`gridFrame_mem_den_unstable`); three states: `|P₀ − D c| > |K₀|`
@@ -69,6 +78,13 @@ No new family: the moving-frame models are members of `DroopVSM.vsmFamily` (two 
   and `DroopVSM.vsm_mem_den_iff_swing_of_sinusoid`); three states: iff `|P₀ − D c| < K₀` and the
   filter is fast at the shifted angle, `√(K₀² − (P₀ − D c)²) < D ω_c + D²/M`
   (`filterGridFrame_synchronism_iff`, through `VSMLPF.exactUnder_locallyExponentiallyStable`).
+* Lossy line (three states): every selected angle of the moving-frame lossy model is unstable
+  when `|P_ref − D c − c₀| > |A|` (`lossyGridFrame_mem_den_unstable`), and some selected angle is
+  locally exponentially stable iff `|P_ref − D c − c₀| < A` and
+  `√(A² − (P_ref − D c − c₀)²) < D ω_c + D²/M` (`lossyGridFrame_synchronism_iff`,
+  `M, D, ω_c, A > 0`): the lossless laws at `P₀ = P_ref − c₀`, read through the lossy reading
+  `VSMLPFLossy.den_eq_preimage` (the selected angles shift by `α`). The line loss `c₀` moves the
+  band of the demanded power, the line angle `α` only the angle.
 -/
 
 noncomputable section
@@ -750,5 +766,104 @@ angle, `√(K₀² − (P₀ − D c)²) < D ω_c + D²/M` (through the exactnes
     rw [sub_lt_iff_lt_add, div_lt_iff₀ hD]
     have : (g.ωc + g.D / g.M) * g.D = g.D * g.ωc + g.D ^ 2 / g.M := by ring
     linarith
+
+/-! ## The frame of a grid at a constant frequency offset (three states, lossy line) -/
+
+/-- The three-state loop on a lossy line with the grid angle `u` as an input: the lossy field of
+`VSMLPFLossy` at the power angle `θ − u`, `Ṗ_f = ω_c (c₀ + A sin(θ − u − α) − P_f)`. -/
+def lossyFieldU (p : VSMLPFLossy) (u : ℝ) (x : State 3) : State 3 := p.field (x - mk3 u 0 0)
+
+/-- The lossy VSM + filter model of the moving frame: power reference `P_ref − D c`. -/
+def offsetLossy (p : VSMLPFLossy) (c : ℝ) : VSMLPFLossy :=
+  ⟨p.M, p.D, p.ωc, p.Pref - p.D * c, p.c0, p.A, p.α⟩
+
+/-- Frame change on a lossy line: `(θ, Δω, P_f)` solves `lossyFieldU` with grid angle `θ₀ + c t`
+at `t` iff `(θ − θ_g, Δω − c, P_f)` solves the lossy field of `offsetLossy p c` at `t`,
+componentwise. -/
+@[tmio M, powerlib_domain] theorem lossyGridFrame_hasDerivAt_iff (p : VSMLPFLossy) (c θ₀ : ℝ)
+    (θ ω Pf : ℝ → ℝ) (t : ℝ) :
+    (HasDerivAt θ (lossyFieldU p (θ₀ + c * t) (mk3 (θ t) (ω t) (Pf t)) 0) t ∧
+        HasDerivAt ω (lossyFieldU p (θ₀ + c * t) (mk3 (θ t) (ω t) (Pf t)) 1) t ∧
+        HasDerivAt Pf (lossyFieldU p (θ₀ + c * t) (mk3 (θ t) (ω t) (Pf t)) 2) t) ↔
+      (HasDerivAt (fun s => θ s - (θ₀ + c * s))
+          ((offsetLossy p c).field (mk3 (θ t - (θ₀ + c * t)) (ω t - c) (Pf t)) 0) t ∧
+        HasDerivAt (fun s => ω s - c)
+          ((offsetLossy p c).field (mk3 (θ t - (θ₀ + c * t)) (ω t - c) (Pf t)) 1) t ∧
+        HasDerivAt Pf
+          ((offsetLossy p c).field (mk3 (θ t - (θ₀ + c * t)) (ω t - c) (Pf t)) 2) t) := by
+  have hg : HasDerivAt (fun s => θ₀ + c * s) c t := by
+    simpa using ((hasDerivAt_id t).const_mul c).const_add θ₀
+  have e0 : lossyFieldU p (θ₀ + c * t) (mk3 (θ t) (ω t) (Pf t)) 0 = ω t := by
+    simp [lossyFieldU, VSMLPFLossy.field]
+  have e1 : lossyFieldU p (θ₀ + c * t) (mk3 (θ t) (ω t) (Pf t)) 1 =
+      (offsetLossy p c).field (mk3 (θ t - (θ₀ + c * t)) (ω t - c) (Pf t)) 1 := by
+    simp [lossyFieldU, VSMLPFLossy.field, offsetLossy]; ring_nf
+  have e2 : lossyFieldU p (θ₀ + c * t) (mk3 (θ t) (ω t) (Pf t)) 2 =
+      (offsetLossy p c).field (mk3 (θ t - (θ₀ + c * t)) (ω t - c) (Pf t)) 2 := by
+    simp [lossyFieldU, VSMLPFLossy.field, VSMLPFLossy.Pe, offsetLossy]
+  have e3 : (offsetLossy p c).field (mk3 (θ t - (θ₀ + c * t)) (ω t - c) (Pf t)) 0 =
+      ω t - c := by simp [VSMLPFLossy.field]
+  rw [e0, e1, e2, e3, hasDerivAt_sub_const_iff]
+  constructor
+  · rintro ⟨h0, h1, h2⟩
+    exact ⟨h0.sub hg, h1, h2⟩
+  · rintro ⟨h0, h1, h2⟩
+    refine ⟨?_, h1, h2⟩
+    have h := h0.add hg
+    rw [sub_add_cancel] at h
+    convert h using 1
+    funext s
+    simp only [Pi.add_apply]
+    ring
+
+/-- The lossless reading of a moving-frame lossy model is the moving-frame lossless model of the
+reading: `⟨offsetFilter ⟨M, D, ω_c, P_ref − c₀, A⟩ c, δ − α⟩`. -/
+@[tmio M, powerlib_domain] private lemma offsetLossy_toVSMLPF (p : VSMLPFLossy) (c δ : ℝ) :
+    (⟨offsetLossy p c, δ⟩ : VSMLPFLossy.Model).toVSMLPF =
+      ⟨offsetFilter p.toVSMLPF c, δ - p.α⟩ := by
+  simp only [VSMLPFLossy.Model.toVSMLPF, VSMLPFLossy.toVSMLPF, offsetLossy, offsetFilter,
+    VSMLPF.Model.mk.injEq, VSMLPF.mk.injEq, true_and, and_true]
+  ring
+
+/-- Loss of synchronism on a lossy line: when the demanded power leaves the band,
+`|P_ref − D c − c₀| > |A|`, no angle balances the power and every selected angle of the
+moving-frame lossy model is unstable (`M, ω_c ≠ 0`; the lossless law
+`filterGridFrame_mem_den_unstable` at `P₀ = P_ref − c₀`, read through
+`VSMLPFLossy.den_eq_preimage`). -/
+@[tmio TM, powerlib_domain] theorem lossyGridFrame_mem_den_unstable (p : VSMLPFLossy)
+    (hM : p.M ≠ 0) (hω : p.ωc ≠ 0) {c : ℝ} (h : |p.A| < |p.Pref - p.D * c - p.c0|) :
+    connection% (∀ δ, (⟨offsetLossy p c, δ⟩ : VSMLPFLossy.Model) ∈
+      VSMLPFLossy.family.den (.flow .unstable)) := by
+  have hr := VSMLPFLossy.den_eq_preimage
+  have hu := filterGridFrame_mem_den_unstable p.toVSMLPF hM hω (c := c)
+    (by simpa only [VSMLPFLossy.toVSMLPF, sub_right_comm] using h)
+  unfold TMIO.Statement at hr hu ⊢
+  intro δ
+  rw [hr, Set.mem_preimage, offsetLossy_toVSMLPF]
+  exact hu _
+
+/-- Synchronism with an offset grid on a lossy line (`M, D, ω_c, A > 0`): some selected angle of
+the moving-frame lossy model is locally exponentially stable iff `|P_ref − D c − c₀| < A` and the
+filter is fast at the shifted loading angle, `√(A² − (P_ref − D c − c₀)²) < D ω_c + D²/M` (the
+lossless `filterGridFrame_synchronism_iff` at `P₀ = P_ref − c₀`, read through
+`VSMLPFLossy.den_eq_preimage`; the selected angles correspond by `δ ↦ δ − α`). -/
+@[tmio TM, powerlib_domain] theorem lossyGridFrame_synchronism_iff (p : VSMLPFLossy)
+    (hM : 0 < p.M) (hD : 0 < p.D) (hω : 0 < p.ωc) (hA : 0 < p.A) (c : ℝ) :
+    connection% ((∃ δ, (⟨offsetLossy p c, δ⟩ : VSMLPFLossy.Model) ∈
+        VSMLPFLossy.family.den (.flow .locallyExponentiallyStable)) ↔
+      |p.Pref - p.D * c - p.c0| < p.A ∧
+        Real.sqrt (p.A ^ 2 - (p.Pref - p.D * c - p.c0) ^ 2) < p.D * p.ωc + p.D ^ 2 / p.M) := by
+  have hr := VSMLPFLossy.den_eq_preimage
+  have hs := filterGridFrame_synchronism_iff p.toVSMLPF ⟨hM, hD, hω, hA⟩ c
+  unfold TMIO.Statement at hr hs ⊢
+  simp only [VSMLPFLossy.toVSMLPF] at hs
+  rw [sub_right_comm p.Pref p.c0] at hs
+  rw [← hs]
+  simp only [hr, Set.mem_preimage, offsetLossy_toVSMLPF]
+  constructor
+  · rintro ⟨δ, hδ⟩
+    exact ⟨δ - p.α, hδ⟩
+  · rintro ⟨δ, hδ⟩
+    exact ⟨δ + p.α, by rw [add_sub_cancel_right]; exact hδ⟩
 
 end powerlib.GFM.Tracking

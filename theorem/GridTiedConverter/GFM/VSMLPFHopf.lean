@@ -27,7 +27,10 @@ the loop is exactly `ȧ = b`, `ḃ = −H a − G`, `ċ = −λ c − G`, where
 Hence `g₂ = −ω_c P₀ / (2M)`, `g₃ = −ω_c K / (6M)` and the weak-focus coefficient of
 `Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus` is
 `κ = (ω_c P₀ / M)² (8H + λ²)/2 + H λ ω_c K (4H + λ²)/(2M) > 0`: every physical boundary model is a
-weak stable focus (a supercritical Hopf point), at every load.
+weak stable focus (a supercritical Hopf point), at every load. The third-order Liénard form of
+the lossy loop (`VSMLPFLossy.lienardField_eq_transport`, `λ`, `H` as here) and the absence of a
+Bogdanov–Takens point with damping (`VSMLPF.two_le_rootMultiplicity_zero_iff`) are in
+`theorem/GridTiedConverter/GFM/Bifurcation.lean`.
 
 Family and connection conclusions.
 No new family: connection conclusions on `VSMLPF.family`.
@@ -40,6 +43,10 @@ No new family: connection conclusions on `VSMLPF.family`.
   `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the rate `ω_c P₀ (1 − cos(δ − δ*))`, which
   has one sign, so states arbitrarily close with `S` of the other sign never reach the operating
   point (`Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos`). No case is left open.
+  For Lyapunov stability at `K = 0`, a fold (`K₀ ≠ 0`) is unstable and a vanishing power curve
+  is Lyapunov stable (`VSMLPF.mem_den_unstable_of_fold`,
+  `VSMLPF.mem_den_lyapunovStable_iff_of_physical`, in
+  `theorem/GridTiedConverter/GFM/VSMLPFFold.lean`).
 * `VSMLPF.not_exactUnder_locallyAsymptoticallyStable` (the local asymptotic translation is **not**
   exact within positive `M, D, ω_c`): it asks for the strict fast-filter condition, but the
   boundary model `VSMLPF.hopfBoundary` (`M = D = ω_c = 1`, `P₀ = 0`, `K₀ = 2`, `δ* = 0`, so
@@ -49,11 +56,17 @@ No new family: connection conclusions on `VSMLPF.family`.
 * `VSMLPF.locallyAsymptoticallyStable_iff`: at the loading angle (`|P₀| < K₀`, positive
   parameters) local asymptotic stability holds iff `K ≤ D ω_c + D²/M`, the boundary included
   (compare `VSMLPF.locallyExponentiallyStable_iff`: strict `K < D ω_c + D²/M`).
+* On a lossy line (`theorem/GridTiedConverter/GFM/VSMLPFLossy.lean`, read through
+  `VSMLPFLossy.den_eq_preimage` with `P₀ = P_ref − c₀`) the boundary is a weak stable focus at
+  every load and line angle (`VSMLPFLossy.mem_den_locallyAsymptoticallyStable_of_hopf`), with the
+  same denotation (`VSMLPFLossy.mem_den_locallyAsymptoticallyStable_iff_of_physical`) and
+  loading-angle boundary (`VSMLPFLossy.locallyAsymptoticallyStable_iff`).
 
-Scope note: a SymPy computation (untrusted, not a library result) gives the first Lyapunov
-coefficient on the boundary as a negative multiple of
-`D⁸ + 8D⁶M²h² + 14D⁴M⁴h⁴ + 8D²M⁶h⁶ + M⁸h⁸ + P₀² M² (D⁴ + 10 D²M²h² + M⁴h⁴)`, `h² = D ω_c / M`;
-the formal proof uses only the explicit Lyapunov function.
+Scope note: the first Lyapunov coefficient on the boundary is a negative multiple of
+`D⁸ + 8D⁶M²h² + 14D⁴M⁴h⁴ + 8D²M⁶h⁶ + M⁸h⁸ + P₀² M² (D⁴ + 10 D²M²h² + M⁴h⁴)`, `h² = D ω_c / M`
+(`VSMLPF.firstLyapunov_eq`, `VSMLPF.firstLyapunov_eq_neg_mul_hopfCoeff` in
+`theorem/GridTiedConverter/GFM/HopfCoefficient.lean`); the proof here uses only the explicit
+Lyapunov function.
 -/
 
 noncomputable section

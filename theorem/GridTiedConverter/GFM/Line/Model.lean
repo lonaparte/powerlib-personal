@@ -77,7 +77,8 @@ Results.
 Family and connection conclusions.
 The module defines no family and states no behaviour: every result is static evidence on the
 model. The families of the three laws and their connection conclusions are in
-`theorem/GridTiedConverter/GFM/Line/VSM.lean` and `theorem/GridTiedConverter/GFM/Line/PSC.lean`.
+`theorem/GridTiedConverter/GFM/Line/VSM.lean`, `theorem/GridTiedConverter/GFM/Line/PSC.lean` and
+`theorem/GridTiedConverter/GFM/Line/VSMLPF.lean`.
 -/
 
 noncomputable section

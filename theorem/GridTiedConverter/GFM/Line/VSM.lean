@@ -27,6 +27,9 @@ and its scripts `t4_02_charpoly.py`, `t4_04_vsm_boundary.py` (discovery evidence
 quartic Routh–Hurwitz criterion (`theorem/Criteria/Routh4.lean`).
 
 Results.
+* The fast-line limit of the critical damping, `VSM.Model.isBigO_Dcrit`
+  (`D_crit/D_line − 1 = O(ε²)`, `ε = 1/ω₀`), and its denotation form
+  `VSM.Model.atScale_mem_den_sandwich` are in `theorem/GridTiedConverter/GFM/Line/VSMLPF.lean`.
 * `VSM.characteristic_polynomial`: at every state,
   `M det(sI − J) = (M s² + D s − Q_e)(s² + 2σ s + ρ) + E² X/L²`; at the operating point
   (`Model.coeff0_eq`) the constant term is `ρ K/M`, i.e.

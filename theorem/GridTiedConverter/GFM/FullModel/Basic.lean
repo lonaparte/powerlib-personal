@@ -66,7 +66,8 @@ Results.
   `P = (E²R_g − R_v V² + EV((R_v − R_g) cos δ + X_t sin δ))/|Z_t|²`,
   `Q = (E²X_g − X_v V² + EV((X_v − X_g) cos δ − R_t sin δ))/|Z_t|²` (`Z_t = Z_g + Z_v`): the
   filter drops out. `Pq_eq_sinusoid` (`Z_v = 0`): `P = E²R_g/|Z_g|² + (EV/|Z_g|) sin(δ − α_g)`,
-  `α_g = π/2 − arg Z_g` (`Synchronous.electricalPower_eq`); `hasDerivAt_Pq` gives its slope.
+  `α_g = π/2 − arg Z_g` (`Synchronous.electricalPower_eq`); `hasDerivAt_Pq`, `hasDerivAt_Qq`:
+  the angle slopes `∂P/∂δ = powerSlope`, `∂Q/∂δ = reactiveSlope`.
   Other metering points: `re_vcQ_mul_conj_iQ`, `im_vcQ_mul_conj_iQ` (converter current: the same
   `P`, `Q − ω₀C_f |v_c|²`), `virtualPower_eq` (virtual EMF: the line power through
   `Z_t = Z_g + Z_v`).
@@ -79,7 +80,8 @@ Results.
 * `field_eq_zero_iff`: the equilibria are `qssState δ* 0 Q*` with `P(δ*, E*) = P_ref` and
   `Q(δ*, E*) = Q*`, `E* = E₀ − n_q (Q* − Q_ref)`; `exists_equilibrium_iff` (`n_q = 0`,
   `Z_v = 0`): an equilibrium exists iff `|P_ref − E₀²R_g/|Z_g|²| ≤ E₀V/|Z_g|`, read from the swing
-  law `Synchronous.SwingParams.exists_equilibrium_iff`.
+  law `Synchronous.SwingParams.exists_equilibrium_iff`; the count per period window is in
+  `theorem/GridTiedConverter/GFM/FullModel/Equilibria.lean`.
 
 Family and connection conclusions.
 The module states no behaviour of the field: it has no Family and every result is static

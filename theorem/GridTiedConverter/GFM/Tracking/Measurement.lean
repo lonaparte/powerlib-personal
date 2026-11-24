@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.Tracking.Linear
 import theorem.SpecialFunctions.Elementary
+import theorem.Transform.Park
 
 /-! # Grid-forming frequency following: bandwidth, phase, ROCOF and the power filter
 
@@ -15,13 +16,25 @@ Model boundary.
   `ω_n = √(K/M)` and damping ratio `ζ = D/(2√(MK))` are those of the Jacobian
   (`Criteria.naturalFrequency`, `Criteria.dampingRatio`).
 * Power filter: the first-order filter `Ṗ_f = ω_c (P_e − P_f)` of the three-state loop
-  (`VSMLPF.field`, third row) as a one-state plant with input `P_e`; a double-frequency ripple
-  `P_e = R cos(2ω₀ t)` (e.g. from a negative-sequence grid voltage) is a given input signal, its
-  origin is not modelled here.
+  (`VSMLPF.field`, third row) as a one-state plant with input `P_e`, driven by
+  `P_e = P + R cos(2ω₀ t + ψ)` (a mean and a double-frequency ripple).
+* Origin of the ripple (three-phase signals of `theorem/Transform/Park.lean`, amplitude-invariant
+  Clarke, electrical angle `θ = ω₀ t`, `ω₀` the nominal frequency): the source is a balanced
+  positive-sequence voltage `E∠δ`, the grid voltage `V∠0 + V⁻∠φ_v` has a negative-sequence part,
+  the line is one series `R–L` branch (`X = ω₀ L`) with its αβ law `L i̇ = (e − v) − R i`, the
+  current `i` flowing from the source to the grid (export-positive power `e · i`, as `P_e`);
+  steady sinusoidal state of the line (the quasi-static, per-sequence phasor line of the base
+  model). The grid-forming loop is not closed here: `δ`, `E` are constants, the power `e · i`
+  is the three-phase instantaneous power (`3/2` times the per-unit dq power of the VSM models).
 
 Source: GFM counterpart study note t8 (tracking): derivation with the SymPy/SciPy checks
-`s2_frequency_response.py`, `s4_filter.py` (outside the repository); Ogata, *Modern Control
-Engineering* (5th ed. 2010) §5-3, §7-2 (second-order low-pass: resonance, bandwidth).
+`s2_frequency_response.py`, `s4_filter.py`, and for the origin of the ripple
+`s5_ripple_origin.py` (outside the repository); Ogata, *Modern Control
+Engineering* (5th ed. 2010) §5-3, §7-2 (second-order low-pass: resonance, bandwidth); Akagi,
+Watanabe, Aredes, *Instantaneous Power Theory and Applications to Power Conditioning* (2007),
+Ch. 3 (the oscillating instantaneous power of a negative-sequence component); Fortescue,
+*Method of symmetrical co-ordinates applied to the solution of polyphase networks* (AIEE Trans.
+1918) (a balanced series impedance does not couple the sequences).
 
 Results.
 * `|H(jω)|² = K²/((K − Mω²)² + (Dω)²)` (`normSq_transferFn`). −3 dB bandwidth: for `M, K > 0`
@@ -33,19 +46,34 @@ Results.
   (`arg_transferFn`); exactly `−π/2` at `ω_n` (`arg_transferFn_naturalFrequency`).
 * No amplification: `|H(jω)| ≤ 1` at every `ω` iff `ζ² ≥ 1/2` (`M, K > 0`,
   `normSq_transferFn_le_one_iff`); below that damping the converter frequency amplifies a band
-  of grid-frequency oscillations.
+  of grid-frequency oscillations. The PLL amplifies the band `0 < ω² < 2ω_n²` at every damping
+  (`PLL.one_lt_normSq_closedLoopTF_iff`, `theorem/GridTiedConverter/PLL/Measurement.lean`).
 * ROCOF: the derivative-output model `rocofPlant` (`LTI.derivModel` of the frequency channel)
   has transfer `s H(s)` (`transfer_rocofPlant`; three states: `transfer_filterRocofPlant`),
   `|jω H(jω)|² = ω² |H(jω)|²` (`normSq_rocof`), and its gain never exceeds `K/D`
   (`normSq_rocof_le`), with equality at `ω_n` (`normSq_rocof_naturalFrequency`).
 * Power filter: `F(s) = ω_c/(s + ω_c)` (`transfer_powerFilterPlant`),
-  `|F(2jω₀)|² = ω_c²/(ω_c² + 4ω₀²)` (`normSq_powerFilter_ripple`), and the forced ripple
-  `R (ω_c² cos 2ω₀t + 2ω₀ω_c sin 2ω₀t)/(ω_c² + 4ω₀²) = R Re(F(2jω₀) e^{2jω₀t})` is a trajectory
-  (`rippleResponse_isTrajectory`, `rippleResponse_eq`).
+  `|F(2jω₀)|² = ω_c²/(ω_c² + 4ω₀²)` (`normSq_powerFilter_ripple`), and the forced response
+  `P + R (ω_c² cos(2ω₀t + ψ) + 2ω₀ω_c sin(2ω₀t + ψ))/(ω_c² + 4ω₀²) =
+  P + R Re(F(2jω₀) e^{j(2ω₀t + ψ)})` is a trajectory (`rippleResponse_isTrajectory`,
+  `rippleResponse_eq`).
+* Origin of the ripple: the sinusoidal current whose sequence phasors satisfy the per-sequence
+  line laws `(R + jX) I⁺e^{jφ⁺} = E e^{jδ} − V`, `(R + jX) I⁻e^{jφ⁻} = −V⁻e^{jφ_v}` solves the
+  line (`lineCurrent_hasDerivAt`): the negative-sequence current is driven by the grid's
+  negative-sequence voltage, with amplitude `I⁻ = V⁻/|Z|`. The instantaneous power of the source is
+  `(3/2) E I⁺ cos(δ − φ⁺) + (3/2) E I⁻ cos(2θ + δ + φ⁻)` (`instantaneousPower_negSeq`): the
+  ripple input of the filter, with `R = (3/2) E I⁻ = (3/2) E V⁻/|Z|` (`negSeqCurrent_amplitude`),
+  `ψ = δ + φ⁻`, is produced by the negative sequence alone.
+* Convergence (implementation evidence, private, as the tracking results of
+  `theorem/GridTiedConverter/GFM/Tracking/Synchronism.lean`): for `ω_c > 0` every forward
+  trajectory of the filter driven by the power of the source minus `rippleResponse` tends to `0`
+  (`filter_tendsto_rippleResponse`, through `LTI.tendsto_sub_of_isHurwitz`).
 
 Family and connection conclusions.
 No family and no connection conclusion: every result is a frequency-response identity on the
-plants, not a behaviour of a family's models.
+plants or a static identity of the signals, not a behaviour of a family's models; the
+convergence of the filter under the ripple is a statement about solutions under a time-varying
+input, which the sentence language cannot express.
 
 No GFM counterpart of the PLL signal layer (`theorem/GridTiedConverter/PLL/Signals.lean`): the
 phase detector, the DDSRF decoupling, the SOGI quadrature generator and the moving-average filter
@@ -408,40 +436,42 @@ def powerFilterPlant (ωc : ℝ) : Linear.Plant 1 1 := ⟨!![-ωc], !![ωc], !![
     Complex.normSq_mk]
   ring
 
-/-- The forced response of the filter to the ripple `P_e = R cos(2ω₀ t)`:
-`R (ω_c² cos 2ω₀t + 2ω₀ω_c sin 2ω₀t)/(ω_c² + 4ω₀²)`. -/
-def rippleResponse (ωc ω₀ R t : ℝ) : Fin 1 → ℝ :=
-  ![R * (ωc ^ 2 * Real.cos (2 * ω₀ * t) + 2 * ω₀ * ωc * Real.sin (2 * ω₀ * t)) /
+/-- The forced response of the filter to the power `P_e = P + R cos(2ω₀ t + ψ)` (mean `P`, a
+double-frequency ripple of amplitude `R` and phase `ψ`):
+`P + R (ω_c² cos(2ω₀t + ψ) + 2ω₀ω_c sin(2ω₀t + ψ))/(ω_c² + 4ω₀²)`. -/
+def rippleResponse (ωc ω₀ P R ψ t : ℝ) : Fin 1 → ℝ :=
+  ![P + R * (ωc ^ 2 * Real.cos (2 * ω₀ * t + ψ) + 2 * ω₀ * ωc * Real.sin (2 * ω₀ * t + ψ)) /
     (ωc ^ 2 + 4 * ω₀ ^ 2)]
 
-/-- The forced response is a forward trajectory of the filter under the ripple input
-(`ω_c ≠ 0`). -/
+/-- The forced response is a forward trajectory of the filter under the input
+`P + R cos(2ω₀ t + ψ)` (`ω_c ≠ 0`). -/
 @[tmio TM, powerlib_domain] theorem rippleResponse_isTrajectory {ωc : ℝ} (hωc : ωc ≠ 0)
-    (ω₀ R : ℝ) :
-    ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt (rippleResponse ωc ω₀ R)
-      ((powerFilterPlant ωc).A *ᵥ rippleResponse ωc ω₀ R t +
-        (powerFilterPlant ωc).B *ᵥ ![R * Real.cos (2 * ω₀ * t)]) (Set.Ici 0) t := by
+    (ω₀ P R ψ : ℝ) :
+    ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt (rippleResponse ωc ω₀ P R ψ)
+      ((powerFilterPlant ωc).A *ᵥ rippleResponse ωc ω₀ P R ψ t +
+        (powerFilterPlant ωc).B *ᵥ ![P + R * Real.cos (2 * ω₀ * t + ψ)]) (Set.Ici 0) t := by
   intro t _
   have hden : ωc ^ 2 + 4 * ω₀ ^ 2 ≠ 0 := by positivity
   apply HasDerivAt.hasDerivWithinAt
   refine hasDerivAt_pi.2 fun i => ?_
   fin_cases i
-  have hc := ((Real.hasDerivAt_cos (2 * ω₀ * t)).comp t
-    (((hasDerivAt_id t).const_mul (2 * ω₀)))).const_mul (ωc ^ 2)
-  have hs := ((Real.hasDerivAt_sin (2 * ω₀ * t)).comp t
-    (((hasDerivAt_id t).const_mul (2 * ω₀)))).const_mul (2 * ω₀ * ωc)
-  have h := ((hc.add hs).const_mul R).div_const (ωc ^ 2 + 4 * ω₀ ^ 2)
+  have ha : HasDerivAt (fun τ => 2 * ω₀ * τ + ψ) (2 * ω₀) t := by
+    simpa using ((hasDerivAt_id t).const_mul (2 * ω₀)).add_const ψ
+  have hc := ((Real.hasDerivAt_cos (2 * ω₀ * t + ψ)).comp t ha).const_mul (ωc ^ 2)
+  have hs := ((Real.hasDerivAt_sin (2 * ω₀ * t + ψ)).comp t ha).const_mul (2 * ω₀ * ωc)
+  have h := (((hc.add hs).const_mul R).div_const (ωc ^ 2 + 4 * ω₀ ^ 2)).const_add P
   refine (h.congr_deriv ?_).congr_of_eventuallyEq ?_
   · simp [powerFilterPlant, rippleResponse]
     field_simp
     ring
   · exact Filter.Eventually.of_forall fun τ => by simp [rippleResponse]
 
-/-- The forced ripple is `R Re(F(2jω₀) e^{2jω₀t})`: amplitude `|F(2jω₀)| R`, phase `arg F`. -/
-@[tmio M, powerlib_domain] theorem rippleResponse_eq {ωc : ℝ} (hωc : ωc ≠ 0) (ω₀ R t : ℝ) :
-    rippleResponse ωc ω₀ R t 0 =
-      R * (Linear.transfer (powerFilterPlant ωc) (2 * (ω₀ : ℂ) * I) 0 0 *
-        Complex.exp ((2 * ω₀ * t : ℝ) * I)).re := by
+/-- The forced response is `P + R Re(F(2jω₀) e^{j(2ω₀t + ψ)})`: the mean passes unchanged
+(`F(0) = 1`), the ripple with the amplitude `|F(2jω₀)| R` and the phase shift `arg F(2jω₀)`. -/
+@[tmio M, powerlib_domain] theorem rippleResponse_eq {ωc : ℝ} (hωc : ωc ≠ 0) (ω₀ P R ψ t : ℝ) :
+    rippleResponse ωc ω₀ P R ψ t 0 =
+      P + R * (Linear.transfer (powerFilterPlant ωc) (2 * (ω₀ : ℂ) * I) 0 0 *
+        Complex.exp ((2 * ω₀ * t + ψ : ℝ) * I)).re := by
   have hs : 2 * (ω₀ : ℂ) * I + ωc = ⟨ωc, 2 * ω₀⟩ := by apply Complex.ext <;> simp
   have hne : 2 * (ω₀ : ℂ) * I + ωc ≠ 0 := by
     rw [hs]; intro h; have := congrArg Complex.re h; simp at this; exact hωc this
@@ -453,5 +483,153 @@ def rippleResponse (ωc ω₀ R t : ℝ) : Fin 1 → ℝ :=
     ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   field_simp
   ring
+
+/-! ## The origin of the ripple: a negative-sequence current -/
+
+/-- **The quasi-static line under an unbalanced grid voltage.** A series `R–L` line from the
+source `e = E∠δ` (positive sequence) to the grid `v = V∠0 + V⁻∠φ_v` (a positive- and a
+negative-sequence part, `Transform.balanced`, `Transform.negSeq`) at the electrical angle `ω₀ t`:
+if the sequence phasors of the current satisfy the per-sequence line laws
+`(R + jω₀L) I⁺ e^{jφ⁺} = E e^{jδ} − V` and `(R + jω₀L) I⁻ e^{jφ⁻} = −V⁻ e^{jφ_v}`, then
+`i = I⁺∠φ⁺ + I⁻∠φ⁻` solves the αβ line law `L i̇ = (e − v) − R i` (the KVL of
+`theorem/Passive/DqRL.lean`, current from the source to the grid) at every time. The current of
+the quasi-static line is a solution of the line, and its negative-sequence part is driven by the
+grid's negative-sequence voltage alone (the source has none). -/
+@[tmio M, powerlib_domain] theorem lineCurrent_hasDerivAt {R L ω₀ E δ V Vn φv Ip φp In φn : ℝ}
+    (hL : L ≠ 0)
+    (hp : ((R : ℂ) + ((ω₀ * L : ℝ) : ℂ) * I) * ((Ip : ℂ) * Complex.exp ((φp : ℂ) * I)) =
+      (E : ℂ) * Complex.exp ((δ : ℂ) * I) - V)
+    (hn : ((R : ℂ) + ((ω₀ * L : ℝ) : ℂ) * I) * ((In : ℂ) * Complex.exp ((φn : ℂ) * I)) =
+      -((Vn : ℂ) * Complex.exp ((φv : ℂ) * I)))
+    (t : ℝ) :
+    HasDerivAt (fun t => Transform.clarke *ᵥ
+        (Transform.balanced Ip φp (ω₀ * t) + Transform.negSeq In φn (ω₀ * t)))
+      (L⁻¹ • (Transform.clarke *ᵥ (Transform.balanced E δ (ω₀ * t) -
+          (Transform.balanced V 0 (ω₀ * t) + Transform.negSeq Vn φv (ω₀ * t))) -
+        R • (Transform.clarke *ᵥ
+          (Transform.balanced Ip φp (ω₀ * t) + Transform.negSeq In φn (ω₀ * t))))) t := by
+  have hp1 := congrArg Complex.re hp
+  have hp2 := congrArg Complex.im hp
+  have hn1 := congrArg Complex.re hn
+  have hn2 := congrArg Complex.im hn
+  simp only [Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.sub_re,
+    Complex.sub_im, Complex.neg_re, Complex.neg_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.I_re, Complex.I_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+    at hp1 hp2 hn1 hn2
+  have hf : (fun t => Transform.clarke *ᵥ
+      (Transform.balanced Ip φp (ω₀ * t) + Transform.negSeq In φn (ω₀ * t))) =
+      fun t => ![Ip * Real.cos (ω₀ * t + φp) + In * Real.cos (ω₀ * t + φn),
+        Ip * Real.sin (ω₀ * t + φp) - In * Real.sin (ω₀ * t + φn)] := by
+    funext τ
+    rw [Matrix.mulVec_add, Transform.clarke_mulVec_balanced, Transform.clarke_mulVec_negSeq]
+    ext i; fin_cases i <;> simp [sub_eq_add_neg]
+  rw [hf, Matrix.mulVec_sub, Matrix.mulVec_add, Matrix.mulVec_add,
+    Transform.clarke_mulVec_balanced, Transform.clarke_mulVec_balanced,
+    Transform.clarke_mulVec_balanced, Transform.clarke_mulVec_negSeq,
+    Transform.clarke_mulVec_negSeq]
+  have hθ : ∀ φ : ℝ, HasDerivAt (fun τ => ω₀ * τ + φ) ω₀ t := fun φ => by
+    simpa using ((hasDerivAt_id t).const_mul ω₀).add_const φ
+  have hc : ∀ a φ : ℝ, HasDerivAt (fun τ => a * Real.cos (ω₀ * τ + φ))
+      (a * (-Real.sin (ω₀ * t + φ) * ω₀)) t := fun a φ =>
+    ((Real.hasDerivAt_cos _).comp t (hθ φ)).const_mul a
+  have hs : ∀ a φ : ℝ, HasDerivAt (fun τ => a * Real.sin (ω₀ * τ + φ))
+      (a * (Real.cos (ω₀ * t + φ) * ω₀)) t := fun a φ =>
+    ((Real.hasDerivAt_sin _).comp t (hθ φ)).const_mul a
+  set θ := ω₀ * t
+  refine hasDerivAt_pi.2 fun i => ?_
+  fin_cases i
+  · refine ((hc Ip φp).add (hc In φn)).congr_deriv ?_
+    simp only [Fin.zero_eta, Fin.isValue, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
+      Matrix.cons_val_zero, smul_eq_mul, add_zero]
+    rw [eq_inv_mul_iff_mul_eq₀ hL]
+    simp only [Real.cos_add, Real.sin_add]
+    linear_combination Real.cos θ * hp1 + Real.cos θ * hn1 - Real.sin θ * hp2 -
+      Real.sin θ * hn2
+  · refine ((hs Ip φp).sub (hs In φn)).congr_deriv ?_
+    simp only [Fin.mk_one, Fin.isValue, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
+      Matrix.cons_val_one, Matrix.cons_val_zero, smul_eq_mul, add_zero]
+    rw [eq_inv_mul_iff_mul_eq₀ hL]
+    simp only [Real.cos_add, Real.sin_add]
+    linear_combination Real.sin θ * hp1 - Real.sin θ * hn1 + Real.cos θ * hp2 -
+      Real.cos θ * hn2
+
+/-- The negative-sequence current of the quasi-static line has the amplitude `V⁻/|Z|`
+(`|Z|² = R² + X² > 0`, `I⁻, V⁻ ≥ 0`): the double-frequency ripple of the source power then has
+the amplitude `(3/2) E I⁻ = (3/2) E V⁻/|Z|` (`instantaneousPower_negSeq`). -/
+@[tmio M, powerlib_domain] theorem negSeqCurrent_amplitude {R X Vn φv In φn : ℝ}
+    (hZ : 0 < R ^ 2 + X ^ 2) (hIn : 0 ≤ In) (hVn : 0 ≤ Vn)
+    (hn : ((R : ℂ) + (X : ℂ) * I) * ((In : ℂ) * Complex.exp ((φn : ℂ) * I)) =
+      -((Vn : ℂ) * Complex.exp ((φv : ℂ) * I))) :
+    In = Vn / Real.sqrt (R ^ 2 + X ^ 2) := by
+  have h := congrArg (‖·‖) hn
+  simp only [norm_mul, norm_neg, Complex.norm_add_mul_I, Complex.norm_exp_ofReal_mul_I,
+    Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hIn, abs_of_nonneg hVn, mul_one] at h
+  have hs : 0 < Real.sqrt (R ^ 2 + X ^ 2) := Real.sqrt_pos.mpr hZ
+  rw [← h]
+  field_simp
+
+/-- **The instantaneous power of a grid-forming source on an unbalanced grid.** The source is a
+balanced (positive-sequence) voltage `e = E∠δ` at the electrical angle `θ`
+(`Transform.balanced E δ θ`); on a grid with a negative-sequence voltage its current has a
+positive- and a negative-sequence part, `i = I⁺∠φ⁺ + I⁻∠φ⁻` (`Transform.balanced`,
+`Transform.negSeq`). The three-phase instantaneous power is
+`e · i = (3/2) E I⁺ cos(δ − φ⁺) + (3/2) E I⁻ cos(2θ + δ + φ⁻)`: a mean and a ripple at twice the
+electrical angle whose amplitude `(3/2) E I⁻` is produced by the negative-sequence current
+alone. Static identity of the signals. -/
+@[tmio M, powerlib_domain] theorem instantaneousPower_negSeq (E δ Ip φp In φn θ : ℝ) :
+    Transform.balanced E δ θ ⬝ᵥ (Transform.balanced Ip φp θ + Transform.negSeq In φn θ) =
+      3 / 2 * (E * Ip * Real.cos (δ - φp)) +
+        3 / 2 * (E * In) * Real.cos (2 * θ + (δ + φn)) := by
+  have hi : (Transform.balanced Ip φp θ + Transform.negSeq In φn θ) 0 +
+      (Transform.balanced Ip φp θ + Transform.negSeq In φn θ) 1 +
+        (Transform.balanced Ip φp θ + Transform.negSeq In φn θ) 2 = 0 := by
+    have h1 := Transform.cvec_sum (θ + φp)
+    have h2 := Transform.cvec_sum (-(θ + φn))
+    simp only [Fin.sum_univ_three] at h1 h2
+    simp only [Pi.add_apply, Transform.balanced_eq_cvec, Transform.negSeq_eq_cvec, Pi.smul_apply,
+      smul_eq_mul]
+    linear_combination Ip * h1 + In * h2
+  rw [Transform.dotProduct_eq_three_halves_clarke _ _ hi, Matrix.mulVec_add,
+    Transform.clarke_mulVec_balanced, Transform.clarke_mulVec_balanced,
+    Transform.clarke_mulVec_negSeq]
+  have e1 : Real.cos (δ - φp) = Real.cos (θ + δ) * Real.cos (θ + φp) +
+      Real.sin (θ + δ) * Real.sin (θ + φp) := by
+    rw [← Real.cos_sub]; ring_nf
+  have e2 : Real.cos (2 * θ + (δ + φn)) = Real.cos (θ + δ) * Real.cos (θ + φn) -
+      Real.sin (θ + δ) * Real.sin (θ + φn) := by
+    rw [← Real.cos_add]; ring_nf
+  rw [e1, e2]
+  simp [dotProduct, Fin.sum_univ_two]
+  ring
+
+/-- The filter, driven by the power of the unbalanced source at `θ = ω₀ t`, converges to the
+forced response of the mean `P = (3/2) E I⁺ cos(δ − φ⁺)` and the ripple `R = (3/2) E I⁻`,
+`ψ = δ + φ⁻`: every forward trajectory minus `rippleResponse` tends to `0` (`ω_c > 0`; the filter
+is Hurwitz, `LTI.tendsto_sub_of_isHurwitz` with the particular solution
+`rippleResponse_isTrajectory`).
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio TM, powerlib_domain] private theorem filter_tendsto_rippleResponse {ωc : ℝ} (hωc : 0 < ωc)
+    (E δ Ip φp In φn ω₀ : ℝ) {x : ℝ → Fin 1 → ℝ}
+    (hx : ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt x
+      ((powerFilterPlant ωc).A *ᵥ x t + (powerFilterPlant ωc).B *ᵥ
+        ![Transform.balanced E δ (ω₀ * t) ⬝ᵥ
+          (Transform.balanced Ip φp (ω₀ * t) + Transform.negSeq In φn (ω₀ * t))]) (Set.Ici 0) t) :
+    Filter.Tendsto (fun t => x t 0 - rippleResponse ωc ω₀ (3 / 2 * (E * Ip * Real.cos (δ - φp)))
+      (3 / 2 * (E * In)) (δ + φn) t 0) Filter.atTop (nhds 0) := by
+  have hA : LinearSystems.IsHurwitz (powerFilterPlant ωc).A :=
+    (Linear.isHurwitz_one_iff _).mpr (by linarith)
+  have hx' : ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt x
+      ((powerFilterPlant ωc).A *ᵥ x t + (powerFilterPlant ωc).B *ᵥ
+        ![3 / 2 * (E * Ip * Real.cos (δ - φp)) +
+          3 / 2 * (E * In) * Real.cos (2 * ω₀ * t + (δ + φn))]) (Set.Ici 0) t := by
+    intro t ht
+    have e : Transform.balanced E δ (ω₀ * t) ⬝ᵥ
+        (Transform.balanced Ip φp (ω₀ * t) + Transform.negSeq In φn (ω₀ * t)) =
+          3 / 2 * (E * Ip * Real.cos (δ - φp)) +
+            3 / 2 * (E * In) * Real.cos (2 * ω₀ * t + (δ + φn)) := by
+      rw [instantaneousPower_negSeq, mul_assoc (2 : ℝ) ω₀ t]
+    rw [← e]
+    exact hx t ht
+  exact LTI.tendsto_sub_of_isHurwitz hA hx' (rippleResponse_isTrajectory hωc.ne' ω₀ _ _ _) 0
 
 end powerlib.GFM.Tracking

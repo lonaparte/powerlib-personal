@@ -21,7 +21,8 @@ Model boundary.
   claimed. The partition function is the Lebesgue integral over one period of the angle times the
   momentum line. The Langer statements are eigenvalue computations of the saddle linearization.
 * Excluded as in `GFM.Noise.Embedding` (no line or filter dynamics, constant `E`, continuous time);
-  the three-state (power-filter) escape rate is not formalized.
+  the three-state (power-filter) model has no Gibbs density in the swing energy and its escape
+  rate is not formalized (`theorem/GridTiedConverter/GFM/Noise/FilterEscape.lean`).
 
 Source: GFM counterpart study, note t2-noise items 5 and 7 (Gibbs density per channel,
 normalizability on the circle, Langer factor; derived and checked symbolically, scratch notes

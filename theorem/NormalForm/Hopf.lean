@@ -513,7 +513,8 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 
 /-- Kuznetsov's projection formula for the first Lyapunov coefficient, with the bilinear and
 trilinear forms `B`, `C`, the resolvents `A⁻¹`, `(2jω₀ − A)⁻¹`, the functional `x ↦ ⟨p, x⟩`, and
-`q̄` passed as an independent vector `qc`. -/
+`q̄` passed as an independent vector `qc`. Its reading at a vector field is
+`NormalForm.LyapunovCoefficient.firstLyapunov` (`theorem/NormalForm/LyapunovCoefficient.lean`). -/
 def lyap1 (B : V →ₗ[ℂ] V →ₗ[ℂ] V) (C : V →ₗ[ℂ] V →ₗ[ℂ] V →ₗ[ℂ] V) (Ainv R2 : V →ₗ[ℂ] V)
     (P : V →ₗ[ℂ] ℂ) (ω₀ : ℝ) (q qc : V) : ℝ :=
   (1 / (2 * ω₀)) * (P (C q q qc) - 2 * P (B q (Ainv (B q qc))) + P (B qc (R2 (B q q)))).re

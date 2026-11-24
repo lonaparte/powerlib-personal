@@ -7,18 +7,27 @@ import Mathlib.Analysis.Polynomial.Basic
 
 The number of positive real roots of a real polynomial from the signs of its coefficients
 (Descartes' rule of signs, read from Mathlib), its parity from the signs of the leading and
-constant coefficients, and the multiplicity of the root `0` from the two lowest coefficients.
+constant coefficients, and the multiplicity of the root `0` from the two lowest coefficients;
+and the step from such a count to the shape of a periodic function: a continuous periodic function
+that takes no level three times within one period has exactly one local maximum and one local
+minimum per period.
 
 Scope.
-* Pure algebra of polynomials (real ones, except the root-zero law over any commutative ring); no
-  model and no family. Example users: an equilibrium count through the positive roots of a
-  quartic (`theorem/GridTiedConverter/GFM/QVDroop.lean`), a double zero eigenvalue read from the
-  characteristic polynomial (`theorem/GridTiedConverter/GFM/Bifurcation.lean`).
+* Pure algebra of polynomials (real ones, except the root-zero law over any commutative ring) and
+  real analysis of one continuous periodic real function; no model and no family. Example users:
+  an equilibrium count through the positive roots of a quartic
+  (`theorem/GridTiedConverter/GFM/QVDroop.lean`,
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualImpedance.lean`), a double zero eigenvalue read
+  from the characteristic polynomial (`theorem/GridTiedConverter/GFM/Bifurcation.lean`), the one
+  maximum and one minimum per period of a quasi-static power characteristic whose levels are such
+  counts (`QVDroop.existsUnique_isLocalMax_Ptilde`).
 
 Source: Descartes' rule of signs (Mathlib `Polynomial.roots_countP_pos_le_signVariations`); the
 parity law from the factorization `P = ∏ (X − r) · Q` over the positive roots `r` and the
 intermediate value theorem for the factor `Q` without positive roots; the root-zero law from
-Mathlib `Polynomial.le_rootMultiplicity_iff` and `Polynomial.X_pow_dvd_iff`.
+Mathlib `Polynomial.le_rootMultiplicity_iff` and `Polynomial.X_pow_dvd_iff`; the extremum law from
+the extreme value theorem on a compact period and the intermediate value theorem
+(`intermediate_value_Ioo`): a level just below a second peak is crossed three times.
 
 Results.
 * `ncard_pos_isRoot_le_countP`: the number of distinct positive roots is at most the number of
@@ -30,6 +39,10 @@ Results.
   multiplicity is even iff the leading coefficient and `P(0)` have the same sign.
 * `two_le_rootMultiplicity_zero_iff`: a nonzero polynomial over a commutative ring has the root
   `0` with multiplicity at least two iff its linear and constant coefficients vanish (`X² ∣ P`).
+* `existsUnique_isLocalMax_of_levels`, `existsUnique_isLocalMin_of_levels`: a continuous
+  `T`-periodic real function (`T > 0`) that takes no value at three points `x < y < z < x + T`
+  has exactly one local maximum and exactly one local minimum in every window `[a, a + T)`; the
+  local maximum is the global one.
 -/
 
 noncomputable section
@@ -156,5 +169,112 @@ multiplicity at least two iff its linear and constant coefficients vanish: `X² 
   rw [le_rootMultiplicity_iff hP, map_zero, sub_zero, X_pow_dvd_iff]
   refine ⟨fun h => ⟨h 1 one_lt_two, h 0 two_pos⟩, fun ⟨h1, h0⟩ d hd => ?_⟩
   interval_cases d <;> assumption
+
+/-! ## Extrema of a periodic function from its level sets -/
+
+section Levels
+open Set Topology
+
+variable {f : ℝ → ℝ} {T : ℝ}
+
+/-- A function `f` with `f ≤ c` on `(u, v)`, `u < v ≤ u + T`, that takes no level three times
+within less than `T` lies strictly below `c` somewhere in `(u, v)`. -/
+@[tmio T, powerlib_foundation] private theorem exists_lt_of_forall_le
+    (h3 : ∀ x y z, x < y → y < z → z < x + T → f x = f y → f y = f z → False) {u v c : ℝ}
+    (huv : u < v) (hv : v ≤ u + T) (hle : ∀ x ∈ Ioo u v, f x ≤ c) : ∃ z ∈ Ioo u v, f z < c := by
+  by_contra h
+  simp only [not_exists, not_and, not_lt] at h
+  have e : ∀ x ∈ Ioo u v, f x = c := fun x hx => le_antisymm (hle x hx) (h x hx)
+  have m1 : u + (v - u) / 4 ∈ Ioo u v := ⟨by linarith, by linarith⟩
+  have m2 : u + (v - u) / 2 ∈ Ioo u v := ⟨by linarith, by linarith⟩
+  have m3 : u + 3 * (v - u) / 4 ∈ Ioo u v := ⟨by linarith, by linarith⟩
+  exact h3 _ _ _ (by linarith) (by linarith) (by linarith) ((e _ m1).trans (e _ m2).symm)
+    ((e _ m2).trans (e _ m3).symm)
+
+/-- A dip on both sides of a peak within less than one period crosses a level three times. -/
+@[tmio T, powerlib_foundation] private theorem false_of_dip (hf : Continuous f)
+    (h3 : ∀ x y z, x < y → y < z → z < x + T → f x = f y → f y = f z → False)
+    {y z₁ p z₂ : ℝ} (hy : y < z₁) (hz₁ : z₁ < p) (hp : p < z₂) (hz₂ : z₂ < y + T)
+    (h₁ : f z₁ < f y) (h₂ : f z₂ < f y) (hyp : f y ≤ f p) : False := by
+  set c := (max (f z₁) (f z₂) + f y) / 2
+  have hc₁ : f z₁ < c := by have := le_max_left (f z₁) (f z₂); simp only [c]; linarith
+  have hc₂ : f z₂ < c := by have := le_max_right (f z₁) (f z₂); simp only [c]; linarith
+  have hcy : c < f y := by
+    have := max_lt h₁ h₂; simp only [c]; linarith
+  obtain ⟨t₁, ht₁, e₁⟩ := intermediate_value_Ioo' hy.le hf.continuousOn ⟨hc₁, hcy⟩
+  obtain ⟨t₂, ht₂, e₂⟩ := intermediate_value_Ioo hz₁.le hf.continuousOn
+    ⟨hc₁, hcy.trans_le hyp⟩
+  obtain ⟨t₃, ht₃, e₃⟩ := intermediate_value_Ioo' hp.le hf.continuousOn
+    ⟨hc₂, hcy.trans_le hyp⟩
+  exact h3 t₁ t₂ t₃ (ht₁.2.trans ht₂.1) (ht₂.2.trans ht₃.1) (by linarith [ht₁.1, ht₃.2])
+    (e₁.trans e₂.symm) (e₂.trans e₃.symm)
+
+/-- **Extrema from level sets.** A continuous `T`-periodic function (`T > 0`) that takes no
+level three times within less than one period, `x < y < z < x + T`, has exactly one local
+maximum in every period window `[a, a + T)`: every local maximum is a global one (otherwise a
+level just below it is crossed three times), and two global maxima in one window would make a
+level just below the maximum be crossed three times. -/
+@[tmio T, powerlib_foundation] theorem existsUnique_isLocalMax_of_levels (hf : Continuous f)
+    (hper : Function.Periodic f T) (hT : 0 < T)
+    (h3 : ∀ x y z, x < y → y < z → z < x + T → f x = f y → f y = f z → False)
+    (a : ℝ) : ∃! x, x ∈ Ico a (a + T) ∧ IsLocalMax f x := by
+  obtain ⟨xM, -, hM⟩ := isCompact_Icc.exists_isMaxOn (nonempty_Icc.mpr (by linarith))
+    hf.continuousOn (s := Icc a (a + T))
+  obtain ⟨x₀, hx₀, e₀⟩ := hper.exists_mem_Ico hT xM a
+  have hglob : ∀ x, f x ≤ f x₀ := by
+    intro x
+    obtain ⟨y, hy, hxy⟩ := hper.exists_mem_Ico hT x a
+    rw [hxy, ← e₀]
+    exact hM (Ico_subset_Icc_self hy)
+  -- every local maximum is a global one
+  have hval : ∀ y, IsLocalMax f y → f y = f x₀ := by
+    intro y hy
+    refine le_antisymm (hglob y) (not_lt.mp fun hlt => ?_)
+    obtain ⟨p, hp, ep⟩ := hper.exists_mem_Ico hT x₀ y
+    have hyp : y < p := lt_of_le_of_ne hp.1 (by rintro rfl; exact hlt.ne ep.symm)
+    obtain ⟨ε, hε, hε'⟩ := Metric.eventually_nhds_iff.mp hy
+    have hball : ∀ x, |x - y| < ε → f x ≤ f y := fun x hx => hε' (by rwa [Real.dist_eq])
+    obtain ⟨z₁, hz₁, hf₁⟩ := exists_lt_of_forall_le h3 (u := y) (v := min (y + ε) p) (c := f y)
+      (lt_min (by linarith) hyp) ((min_le_right _ _).trans hp.2.le) fun x hx =>
+        hball x (by rw [abs_lt]; constructor <;> linarith [hx.1, hx.2.trans_le (min_le_left _ _)])
+    obtain ⟨z₂, hz₂, hf₂⟩ := exists_lt_of_forall_le h3 (u := max (y + T - ε) p) (v := y + T)
+      (c := f y) (max_lt (by linarith) hp.2) (by linarith [le_max_right (y + T - ε) p])
+      fun x hx => by
+        rw [← hper.sub_eq x]
+        exact hball _ (by
+          rw [abs_lt]; constructor <;> linarith [hx.2, (le_max_left (y + T - ε) p).trans_lt hx.1])
+    exact false_of_dip hf h3 hz₁.1 (hz₁.2.trans_le (min_le_right _ _))
+      ((le_max_right _ _).trans_lt hz₂.1) hz₂.2 hf₁ hf₂ (by rw [← ep]; exact hlt.le)
+  refine ⟨x₀, ⟨hx₀, IsMaxOn.isLocalMax (fun x _ => hglob x) univ_mem⟩, ?_⟩
+  -- two global maxima in one window are impossible
+  have huniq : ∀ y₁ y₂, y₁ ∈ Ico a (a + T) → y₂ ∈ Ico a (a + T) → y₁ < y₂ →
+      f y₁ = f x₀ → f y₂ = f x₀ → False := by
+    intro y₁ y₂ h₁ h₂ hlt e₁ e₂
+    have hb : ∀ x, f x ≤ f y₁ := fun x => e₁ ▸ hglob x
+    obtain ⟨z₁, hz₁, hf₁⟩ := exists_lt_of_forall_le h3 hlt (by linarith [h₁.1, h₂.2])
+      fun x _ => hb x
+    obtain ⟨z₂, hz₂, hf₂⟩ := exists_lt_of_forall_le h3 (u := y₂) (v := y₁ + T)
+      (by linarith [h₁.1, h₂.2]) (by linarith) fun x _ => hb x
+    exact false_of_dip hf h3 hz₁.1 hz₁.2 hz₂.1 hz₂.2 hf₁ hf₂ (by rw [e₁, e₂])
+  rintro y ⟨hy, hyl⟩
+  rcases lt_trichotomy y x₀ with h | h | h
+  · exact (huniq y x₀ hy hx₀ h (hval y hyl) rfl).elim
+  · exact h
+  · exact (huniq x₀ y hx₀ hy h rfl (hval y hyl)).elim
+
+/-- **Extrema from level sets, minimum.** Under the same hypotheses there is exactly one local
+minimum in every period window (`existsUnique_isLocalMax_of_levels` for `−f`). -/
+@[tmio T, powerlib_foundation] theorem existsUnique_isLocalMin_of_levels (hf : Continuous f)
+    (hper : Function.Periodic f T) (hT : 0 < T)
+    (h3 : ∀ x y z, x < y → y < z → z < x + T → f x = f y → f y = f z → False)
+    (a : ℝ) : ∃! x, x ∈ Ico a (a + T) ∧ IsLocalMin f x := by
+  have h := existsUnique_isLocalMax_of_levels (f := fun x => -f x) hf.neg
+    (fun x => by simp [hper x]) hT
+    (fun x y z hxy hyz hzx e₁ e₂ => h3 x y z hxy hyz hzx (neg_inj.mp e₁) (neg_inj.mp e₂)) a
+  have hiff : ∀ x, IsLocalMax (fun x => -f x) x ↔ IsLocalMin f x :=
+    fun x => ⟨fun h => by simpa using h.neg, fun h => h.neg⟩
+  simpa only [hiff] using h
+
+end Levels
 
 end powerlib.SpecialFunctions

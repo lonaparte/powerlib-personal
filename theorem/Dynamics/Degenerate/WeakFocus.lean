@@ -56,8 +56,8 @@ Results.
   injective linear map `T`, to this normal form with an `O(ξ⁴)` remainder has a locally
   asymptotically stable origin when `κ > 0`. The linearization is not Hurwitz, so the origin is a
   weak focus: asymptotically, not exponentially, stable. (`κ > 0` says that the averaged radial
-  rate of the normal form is negative; by a SymPy computation outside the library it is the sign
-  condition `l₁ < 0` on the first Lyapunov coefficient. Only the Lyapunov argument is formal.)
+  rate of the normal form is negative; it is the sign condition `l₁ < 0` on the first Lyapunov
+  coefficient, `NormalForm.LyapunovCoefficient.firstLyapunov_weakFocus`.)
 * Planar sine–Liénard weak focus (`φ̇ = αw + βN(φ)`, `ẇ = −Aφ + N(φ)` with
   `N(φ) = A(φ − sin φ) + B(1 − cos φ)`, `hopfN`, and its cubic Taylor polynomial `hopfN3`):
   `hopfN_sub_hopfN3_isBigO` (`N − N₃ = O(φ⁴)`); the polynomial `lyapPoly` (quadratic form plus six

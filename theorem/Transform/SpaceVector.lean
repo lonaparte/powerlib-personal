@@ -4,10 +4,12 @@ import theorem.Transform.Park
 
 /-! # Space vectors for three-phase machines
 
-Shared layer for the `theorem/Drives/` family. Nothing here is a statement about a
-particular machine or controller; the results are algebraic identities about complex space
-vectors that the machine modules reuse. Generic identities are foundation; those of the chosen
-Clarke transform, the inverter vectors and `torque_mul_mechanicalSpeed` are domain (Rules §3).
+Shared layer for the `theorem/Drives/` family: the identities about complex space vectors that the
+machine modules reuse. The generic complex identities (`a_sq`, `one_add_a_add_a_sq`,
+`cross_rotate`, `cross_eq`) are foundation. Domain (Rules §3): the chosen Clarke transform, the
+inverter vectors, the winding voltage equation `VoltageEquation` (`voltageEquation_iff`,
+`power_balance`) and the amplitude-invariant torque (`torque_mul_mechanicalSpeed`,
+`torque_coefficient_unique`).
 
 Scope.
 Conventions (shared by every `Drives` module unless a module states otherwise):
@@ -210,7 +212,7 @@ def VoltageEquation (r ω : ℝ) (v i ψ dψ : ℂ) : Prop :=
 
 /-- The voltage equation in components: `v_d = r i_d + ψ̇_d − ω ψ_q`,
 `v_q = r i_q + ψ̇_q + ω ψ_d`. -/
-@[tmio T, powerlib_foundation] theorem voltageEquation_iff (r ω : ℝ) (v i ψ dψ : ℂ) :
+@[tmio M, powerlib_domain] theorem voltageEquation_iff (r ω : ℝ) (v i ψ dψ : ℂ) :
     VoltageEquation r ω v i ψ dψ ↔
       v.re = r * i.re + dψ.re - ω * ψ.im ∧ v.im = r * i.im + dψ.im + ω * ψ.re := by
   rw [VoltageEquation, Complex.ext_iff]
@@ -221,7 +223,7 @@ def VoltageEquation (r ω : ℝ) (v i ψ dψ : ℂ) : Prop :=
 /-- Instantaneous power balance of a stator winding in a frame rotating at `ω`
 (`VoltageEquation`): input power = copper loss + magnetic-field term + speed-voltage term
 `ω Im(conj ψ · i)`. Multiply by `3/2` for the amplitude-invariant three-phase power. -/
-@[tmio T, powerlib_foundation] theorem power_balance (r ω : ℝ) (v i ψ dψ : ℂ)
+@[tmio M, powerlib_domain] theorem power_balance (r ω : ℝ) (v i ψ dψ : ℂ)
     (h : VoltageEquation r ω v i ψ dψ) :
     (v * conj i).re = r * Complex.normSq i + (dψ * conj i).re + ω * (conj ψ * i).im := by
   rw [VoltageEquation] at h
@@ -243,7 +245,7 @@ where `Ω_m = ω / np` is the mechanical speed. -/
 equals the speed-voltage power for some operating point with nonzero speed and torque
 current, then `c = (3/2) np`. In particular `(3/2)(np/2)` (the note's coefficient with `p`
 read as pole pairs) is wrong. -/
-@[tmio T, powerlib_foundation] theorem torque_coefficient_unique (np ω c : ℝ) (hnp : np ≠ 0)
+@[tmio M, powerlib_domain] theorem torque_coefficient_unique (np ω c : ℝ) (hnp : np ≠ 0)
     (ψ i : ℂ) (hω : ω ≠ 0) (hx : (conj ψ * i).im ≠ 0)
     (h : c * (conj ψ * i).im * (ω / np) = 3 / 2 * ω * (conj ψ * i).im) :
     c = 3 / 2 * np := by

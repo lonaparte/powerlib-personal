@@ -33,7 +33,9 @@ Results.
   (`vᵀ N⁻¹ v ≤ 0`).
 * `exists_linearPH_posDef_iff`: a real matrix is `(J − R) Q` with `J` skew, `R ≻ 0`, `Q ≻ 0`
   exactly when it is Hurwitz. With `R ⪰ 0` only the closed half plane follows
-  (`PH.phSpectral_det_ne_zero`, `theorem/PH/PositiveReal.lean`).
+  (`PH.phSpectral_det_ne_zero`, `theorem/PH/PositiveReal.lean`); exactly, a form with `R ⪰ 0`
+  exists iff the matrix has a quadratic Lyapunov matrix `Q ≻ 0`, `Aᵀ Q + Q A ⪯ 0`
+  (`exists_linearPH_posSemidef_iff`).
 
 Family and connection conclusions.
 * None: generic static facts. Models use them to decide whether their fields carry a pH structure
@@ -187,6 +189,51 @@ certificate `Aᵀ P + P A = −1` (`Linear.nonempty_certificate_iff`) gives `Q =
         rw [star_trivial, neg_mulVec, dotProduct_neg, smul_mulVec, dotProduct_smul, add_mulVec,
           dotProduct_add, hNt, hNw, hL, smul_eq_mul]
         linarith
+    · simp only [linearStateMatrix, N]
+      rw [sub_neg_eq_add, ← smul_add, show N - Nᵀ + (N + Nᵀ) = (2 : ℝ) • N by
+        rw [two_smul]; abel, smul_smul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, one_smul,
+        Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hdet, Matrix.mul_one]
+
+/-- **Linear pH form with positive semidefinite dissipation.** A real matrix is `(J − R) Q` with
+`J` skew, `R ⪰ 0` and `Q ≻ 0` exactly when it has a quadratic Lyapunov matrix: `Q ≻ 0` with
+`Aᵀ Q + Q A ⪯ 0`. Forward: `Aᵀ Q + Q A = −2 Q R Q`; backward: `J − R = A Q⁻¹`, whose symmetric
+part is `½ Q⁻¹ (Aᵀ Q + Q A) Q⁻¹`. -/
+@[tmio T, powerlib_foundation] theorem exists_linearPH_posSemidef_iff
+    (A : Matrix (Fin n) (Fin n) ℝ) :
+    (∃ J R Q : Matrix (Fin n) (Fin n) ℝ, Jᵀ = -J ∧ R.PosSemidef ∧ Q.PosDef ∧
+      linearStateMatrix J R Q = A) ↔
+      ∃ Q : Matrix (Fin n) (Fin n) ℝ, Q.PosDef ∧ (-(Aᵀ * Q + Q * A)).PosSemidef := by
+  constructor
+  · rintro ⟨J, R, Q, hJ, hR, hQ, rfl⟩
+    have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
+    have hRt : Rᵀ = R := hR.isHermitian.isSymm
+    refine ⟨Q, hQ, ?_⟩
+    have e : -((linearStateMatrix J R Q)ᵀ * Q + Q * linearStateMatrix J R Q) =
+        Qᴴ * R * Q + Qᴴ * R * Q := by
+      rw [conjTranspose_eq_transpose_of_trivial, hQt]
+      simp only [linearStateMatrix, transpose_mul, transpose_sub, hJ, hQt, hRt]
+      noncomm_ring
+    rw [e]
+    exact (hR.conjTranspose_mul_mul_same Q).add (hR.conjTranspose_mul_mul_same Q)
+  · rintro ⟨Q, hQ, hS⟩
+    have hdet : IsUnit Q.det := (Matrix.isUnit_iff_isUnit_det _).mp hQ.isUnit
+    have hQt : Qᵀ = Q := hQ.isHermitian.isSymm
+    have hPit : (Q⁻¹)ᵀ = Q⁻¹ := by rw [transpose_nonsing_inv, hQt]
+    set N := A * Q⁻¹
+    refine ⟨(1 / 2 : ℝ) • (N - Nᵀ), -((1 / 2 : ℝ) • (N + Nᵀ)), Q, ?_, ?_, hQ, ?_⟩
+    · rw [transpose_smul, transpose_sub, transpose_transpose, ← smul_neg, neg_sub]
+    · have e : -((1 / 2 : ℝ) • (N + Nᵀ)) =
+          (1 / 2 : ℝ) • ((Q⁻¹)ᴴ * -(Aᵀ * Q + Q * A) * Q⁻¹) := by
+        rw [conjTranspose_eq_transpose_of_trivial, hPit]
+        have h1 : Q⁻¹ * -(Aᵀ * Q + Q * A) * Q⁻¹ =
+            -(Q⁻¹ * Aᵀ * (Q * Q⁻¹) + Q⁻¹ * Q * (A * Q⁻¹)) := by noncomm_ring
+        rw [h1, Matrix.mul_nonsing_inv _ hdet, Matrix.nonsing_inv_mul _ hdet, Matrix.mul_one,
+          Matrix.one_mul, ← smul_neg]
+        congr 1
+        simp only [N, transpose_mul, hPit]
+        abel
+      rw [e]
+      exact (hS.conjTranspose_mul_mul_same Q⁻¹).smul (by norm_num)
     · simp only [linearStateMatrix, N]
       rw [sub_neg_eq_add, ← smul_add, show N - Nᵀ + (N + Nᵀ) = (2 : ℝ) • N by
         rw [two_smul]; abel, smul_smul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, one_smul,

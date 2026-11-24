@@ -75,7 +75,9 @@ Results.
   `Map.System.not_passive_of_feedback_supply_unbounded` (nor one that draws unboundedly much
   energy over finitely many steps of a closed loop with a state feedback); `not_passive_eulerSystem`
   (an output independent of the input and nonzero at some state makes the Euler discretization
-  not passive at every step `h > 0`); the integrator `integrator` (`ẋ = u`, `y = x`),
+  not passive at every step `h > 0`), `passive_eulerSystem_iff` (with an output independent of
+  the input, passive exactly when the output vanishes); the integrator `integrator`
+  (`ẋ = u`, `y = x`),
   `integrator_passiveWith` (storage `x²/2`, a KYP certificate) and
   `not_passive_eulerSystem_integrator` (not passive at any step `h > 0`);
   `discreteGradient_passiveWith` (contrast: a discrete system whose steps solve the
@@ -117,6 +119,8 @@ Family and connection conclusions.
 * M–I laws for passivity: `eulerPortFamily_not_mem_den_passive` (an Euler
   implementation with a positive step of a model whose output is independent of the input and
   nonzero at some state is not passive, whatever the step);
+  `eulerPortFamily_mem_den_passive_iff` (with an output independent of the input, an
+  implementation with a positive step is passive exactly when the output vanishes);
   `not_eulerPorts_realizationSoundUnder_passive` (so the passivity realization is not sound
   within any requirement context the passive design meets, at any step);
   `not_eulerPorts_realizationSoundUnder_passive_of_integrator` (the integrator, at any positive
@@ -258,6 +262,22 @@ energy `h t ‖y‖²` in one step from `x`, without bound in `t`. -/
     field_simp
   rw [hsupply]
   linarith [neg_abs_le c]
+
+/-- **Explicit Euler with an output blind to the input is passive exactly when the output
+vanishes.** For a port system whose output does not depend on the input, the Euler
+discretization with a step `h > 0` is passive, for some storage, exactly when the output is zero
+at every state: then nothing is supplied and the zero storage works; otherwise
+`not_passive_eulerSystem`. -/
+@[tmio T, powerlib_foundation] theorem passive_eulerSystem_iff (s : Port.System n p) {h : ℝ}
+    (hh : 0 < h) (hs : ∀ x u, s.output x u = s.output x 0) :
+    (eulerSystem s h).Passive ↔ ∀ x, s.output x 0 = 0 := by
+  constructor
+  · intro hp x
+    by_contra hx
+    exact not_passive_eulerSystem s hh (x := x) (fun u => hs x u) hx hp
+  · intro h0
+    refine ⟨fun _ => 0, fun _ => le_rfl, fun x u => ?_⟩
+    simp [Map.System.supply, eulerSystem, hs x u, h0 x]
 
 /-! ## The integrator -/
 
@@ -454,6 +474,16 @@ not passive (`not_passive_eulerSystem`). -/
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den)]
   exact not_passive_eulerSystem _ hh hv hv0
+
+/-- **Explicit Euler implementations of a model whose output is blind to the input are passive
+exactly when the output vanishes**, at every positive step (`passive_eulerSystem_iff`). -/
+@[tmio TM, powerlib_foundation] theorem eulerPortFamily_mem_den_passive_iff {y : Y}
+    (hh : 0 < step y) (hs : ∀ x u, (sys (design y)).output x u = (sys (design y)).output x 0) :
+    connection% (y ∈ (eulerPortFamily F sys design step).den .passive ↔
+      ∀ x, (sys (design y)).output x 0 = 0) := by
+  unfold powerlib.TMIO.Statement
+  rw [(connection_proof% Family.mem_den)]
+  exact passive_eulerSystem_iff _ hh hs
 
 /-- **The passivity realization of explicit Euler is not sound, at any step.** An Euler
 implementation with a positive step of a passive design whose output, at some state, is a

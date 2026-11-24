@@ -45,7 +45,14 @@ Results.
   unstable, and stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is
   the dangerous side.  On the boundary itself the equilibrium is asymptotically, not
   exponentially, stable (a supercritical Hopf point;
-  `theorem/GridTiedConverter/GFM/VSMLPFHopf.lean`).
+  `theorem/GridTiedConverter/GFM/VSMLPFHopf.lean`). At a fold (`K = 0`, `K₀ ≠ 0`) it is unstable
+  (`theorem/GridTiedConverter/GFM/VSMLPFFold.lean`).
+* Static results on this model in other modules: the characteristic polynomial
+  (`VSMLPF.charpoly_jacobian`) and no Bogdanov–Takens point with damping
+  (`VSMLPF.two_le_rootMultiplicity_zero_iff`, `VSMLPF.rootMultiplicity_zero_le_one`), in
+  `theorem/GridTiedConverter/GFM/Bifurcation.lean`; the fold `|P₀| = K₀` with the eigenvalues
+  `0, −D/M, −ω_c` (`VSMLPF.fold_characteristic_polynomial`, `VSMLPF.fold_jacobian`), in
+  `theorem/GridTiedConverter/GFM/Equilibria.lean`.
 
 Family and connection conclusions.
 * `VSMLPF.family`: a complete system (`VSMLPF.Model`) is a parameter set with a selected angle
@@ -71,6 +78,11 @@ Family and connection conclusions.
   negative-inertia model, via `Spectral.not_exact_of_den_subset`); the Lyapunov translation is not
   exact even within positive `M, D, ω_c` (`VSMLPF.not_exactUnder_lyapunovStable`: the flat curve
   `VSMLPF.flatCurve`, `K₀ = P₀ = 0`, is Lyapunov stable, `VSMLPF.flatCurve_mem_den_lyapunovStable`).
+  Its exact denotation within positive `M, D, ω_c` is
+  `VSMLPF.mem_den_lyapunovStable_iff_of_physical`
+  (`theorem/GridTiedConverter/GFM/VSMLPFFold.lean`): a balanced angle with
+  `0 < K ≤ D ω_c + D²/M`, or a vanishing power curve `K₀ = 0`; a fold (`K = 0`, `K₀ ≠ 0`) is
+  unstable (`VSMLPF.mem_den_unstable_of_fold`), so the flat curve is the only gap.
   The local asymptotic translation is not exact even within positive `M, D, ω_c`
   (`VSMLPF.not_exactUnder_locallyAsymptoticallyStable`, in
   `theorem/GridTiedConverter/GFM/VSMLPFHopf.lean`): on the Hopf boundary `K = D ω_c + D²/M` the
@@ -86,6 +98,9 @@ Family and connection conclusions.
   `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle) and, in
   `theorem/GridTiedConverter/GFM/VSMLPFHopf.lean`, `locallyAsymptoticallyStable_iff` (local
   asymptotic stability iff `K ≤ D ω_c + D²/M`, boundary included).
+* The lossy line `P(δ) = c₀ + A sin(δ − α)` is read as this family (`VSMLPFLossy.family`,
+  `VSMLPFLossy.den_eq_preimage`, `theorem/GridTiedConverter/GFM/VSMLPFLossy.lean`): the laws
+  above hold on a lossy line with `P₀ = P_ref − c₀` and `K = A cos(δ* − α)`.
 * `DroopLPF.family` (two states, the `M → 0` limit) with the same pattern (within positive
   `D, ω_c` the local exponential translation is exact,
   `DroopLPF.exactUnder_locallyExponentiallyStable`, and not exact without that range,
@@ -906,7 +921,9 @@ def flatCurve : Model := ⟨⟨1, 1, 1, 0, 0⟩, 0⟩
     nlinarith [sq_nonneg (z 1 + z 2), sq_nonneg (z 1), sq_nonneg (z 2)]
 
 /-- Within positive inertia, damping and bandwidth the Lyapunov translation is not exact: the
-flat-curve VSM is physical and Lyapunov stable with a zero synchronizing coefficient. -/
+flat-curve VSM is physical and Lyapunov stable with a zero synchronizing coefficient. The exact
+denotation in this range is `mem_den_lyapunovStable_iff_of_physical`
+(`theorem/GridTiedConverter/GFM/VSMLPFFold.lean`). -/
 @[tmio TM, powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
