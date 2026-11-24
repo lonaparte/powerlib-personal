@@ -159,7 +159,7 @@ open powerlib LinearSystems
 #check powerlib.WPT.LossyDesign.isGreatest_efficientOutputPower
 #check powerlib.WPT.LossyFlux.isGreatest_secondaryFluxLimit
 #check powerlib.WPT.Harmonics.forall_determinant_pos_iff
-#check powerlib.WPT.ForeignObject.inputImpedance_resonant_im_ne_zero_iff
+#check powerlib.WPT.ForeignObject.Circuit.inputImpedance_resonant_im_ne_zero_iff
 #check powerlib.WPT.PTGain.outputPower_eq
 #print axioms powerlib.WPT.EnvelopeLimits.isGreatest_power_envelope
 

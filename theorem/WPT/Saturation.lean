@@ -14,8 +14,9 @@ that `Ψ`.
 For a winding whose current is a static function `i = h(ψ)` of its flux linkage, linear,
 `h(ψ) = ψ/L`, up to the saturation flux `Ψ_sat`, the linear phasor model is exact at every instant
 precisely on this set: if `√2 ‖ψ‖ ≤ Ψ_sat` the current waveform is the waveform of the phasor
-`ψ/L`; if `√2 ‖ψ‖ > Ψ_sat` the flux leaves the linear range at some instant, where the linear model
-no longer describes the winding. The phasor flux limit is therefore the exact boundary of validity
+`ψ/L`; if `√2 ‖ψ‖ > Ψ_sat` the flux leaves the linear range at some instant
+(`SpecialFunctions.exists_abs_phasorWave_gt`), where the linear model no longer describes the
+winding. The phasor flux limit is therefore the exact boundary of validity
 of the linear coil model, not a heuristic margin.
 
 Model boundary.
@@ -40,8 +41,6 @@ Results.
   `|ψ(t)| ≤ Ψ_sat` at every instant iff `normSq ψ ≤ (Ψ_sat/√2)²`.
 * `current_eq_linear`: a winding with `h(ψ) = ψ/L` on `|ψ| ≤ Ψ_sat` and `√2 ‖ψ‖ ≤ Ψ_sat` carries
   the current waveform of the phasor `ψ/L` at every instant (the linear model is exact).
-* `exists_saturated`: for `ω ≠ 0` and `Ψ_sat < √2 ‖ψ‖`, the flux linkage exceeds `Ψ_sat` at some
-  instant (the linear model is left).
 * `isGreatest_power_saturation`: the exact largest power of the lossless resonant link with bridge
   radii `ρ₁, ρ₂` and the instantaneous primary saturation specification `|ψ₁(t)| ≤ Ψ_sat` at
   every instant is `√(limit₁ w ω ρ₁ ρ₂ (Ψ_sat/√2))`.
@@ -77,11 +76,6 @@ waveform of the phasor `ψ/L`. -/
   rw [phasorWave_div, map_phasorWave_of_le (f := h) (c := L⁻¹)
     (fun x hx => by rw [hlin x hx]; ring) hψ ω t]
   ring
-
-/-- Beyond the phasor bound the flux linkage exceeds `Ψ_sat` at some instant. -/
-@[tmio M, powerlib_domain] theorem exists_saturated (ψ : ℂ) {ω Ψsat : ℝ} (hω : ω ≠ 0)
-    (h : Ψsat < Real.sqrt 2 * ‖ψ‖) : ∃ t, Ψsat < |phasorWave ψ ω t| :=
-  exists_abs_phasorWave_gt ψ hω h
 
 /-- The exact largest power of the lossless resonant link under the bridge radii and the
 instantaneous primary saturation specification `|ψ₁(t)| ≤ Ψ_sat`. -/
