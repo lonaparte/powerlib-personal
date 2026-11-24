@@ -437,3 +437,7 @@ import theorem.WPT.DCLink
 import theorem.WPT.Switching
 import theorem.SpecialFunctions.DescribingFunction
 import theorem.WPT.SaturatedWinding
+import theorem.SpecialFunctions.Trapezoid
+import theorem.SpecialFunctions.OddHarmonicSums
+import theorem.SpecialFunctions.Parseval
+import theorem.WPT.HarmonicTotals
