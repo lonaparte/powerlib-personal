@@ -97,7 +97,7 @@ conclusions and the static evidence about them, including the passive components
 of `Grid/` (RL networks, grid impedance, power flow). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
-  `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,
+  `theorem.Grid.ModulationTransfer, `theorem.Grid.MeasurementPoint, `theorem.generated.Conversion,
   `theorem.generated.LCLConversion, `theorem.GridTiedConverter.CurrentControl, `theorem.Drives,
   `theorem.PowerSystem.Frequency, `theorem.GridTiedConverter.GFL,
   `theorem.GridTiedConverter.GFL.DCLink, `theorem.GridTiedConverter.GFL.DCLink.PLLDC,
