@@ -99,7 +99,7 @@ conclusions and the static evidence about them, including the passive components
 parameter conversions, the grid structure of `Grid/` (RL networks, grid impedance, power flow) and
 the wireless power links of `WPT/` (coil pair, compensation, coupled resonators, bifurcation,
 frequency tracking, relay and multiple receivers, capacitive links, parity–time symmetry,
-identification, in-motion transfer). -/
+identification, in-motion transfer, current limits). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
   `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,

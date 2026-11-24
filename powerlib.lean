@@ -407,3 +407,5 @@ import theorem.WPT.Capacitive
 import theorem.WPT.PTSymmetry
 import theorem.WPT.Identification
 import theorem.WPT.Dynamic
+import theorem.SpecialFunctions.Fundamental
+import theorem.WPT.CurrentLimits
