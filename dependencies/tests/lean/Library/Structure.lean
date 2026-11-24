@@ -97,7 +97,8 @@ def genericEntries : Array Name := #[
 conclusions and the static evidence about them, including the passive components of `Passive/`
 (RL branch, LCL filter, coupled windings, lines) with their generated parameter conversions, the
 grid structure of `Grid/` (RL networks, grid impedance, power flow) and the inductive wireless
-power links of `WPT/` (coil pair, compensation). -/
+power links of `WPT/` (coil pair, compensation, coupled resonators, bifurcation, frequency
+tracking). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
   `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,

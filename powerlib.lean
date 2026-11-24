@@ -398,3 +398,6 @@ import theorem.Grid.TwoPort
 import theorem.Passive.Coupled
 import theorem.WPT.Link
 import theorem.WPT.Compensation
+import theorem.WPT.Resonator
+import theorem.WPT.Bifurcation
+import theorem.WPT.Tracking
