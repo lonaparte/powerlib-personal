@@ -411,3 +411,5 @@ import theorem.SpecialFunctions.Fundamental
 import theorem.WPT.CurrentLimits
 import theorem.LTI.PeakGain
 import theorem.WPT.Gyrator
+import theorem.SpecialFunctions.ProductBound
+import theorem.WPT.JointLimits
