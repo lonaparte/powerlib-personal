@@ -42,7 +42,7 @@ Results.
 * SS: `tunedCoils` (the coil pair with both capacitors synthesized to resonate at `ω₀`), `ssLink`
   (the tuned pair operated at its resonance),
   `ssLink_inputImpedance` (the input impedance is the real `R₁ + (ωM)²/(R₂ + R_L)` for every load:
-  zero phase angle), `ssLink_secondaryCurrent` (with lossless coils the output current is
+  zero phase angle), `ssLink_secondaryCurrent` (with a lossless primary the output current is
   `−jV/(ωM)` for every load), `ssLink_efficiency_le` (the efficiency of every operating point is at
   most `η_max`, `theorem/WPT/Link.lean`).
 * SP: `spLoad` (the load in parallel with the secondary capacitor), `spPrimaryElastance`
@@ -86,7 +86,7 @@ def ssLink (w : Passive.Coupled) (RL ω : ℝ) : Link := ⟨tunedCoils w ω, RL,
       ((w.primary.R + (ω * w.M) ^ 2 / (w.secondary.R + RL) : ℝ) : ℂ) :=
   (ssLink w RL ω).inputImpedance_resonant (tuned_reactance _ _ hω) (tuned_reactance _ _ hω)
 
-/-- With lossless coils the SS link has the output current `−jV/(ωM)` for every load. -/
+/-- With a lossless primary the SS link has the output current `−jV/(ωM)` for every load. -/
 @[tmio M, powerlib_domain] theorem ssLink_secondaryCurrent (w : Passive.Coupled) (RL : ℝ) {ω : ℝ}
     (hω : ω ≠ 0) (hR₁ : w.primary.R = 0) (hM : ω * w.M ≠ 0) {V I₁ I₂ : ℂ}
     (h : (ssLink w RL ω).Solves V I₁ I₂) : I₂ = -(I * V) / ((ω * w.M : ℝ) : ℂ) := by

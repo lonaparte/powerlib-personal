@@ -12,7 +12,8 @@ design frequency `ω₀` of the tuned coil pair is always an equilibrium. It is 
 stable exactly when the slope `K N'(ω₀)` is positive, which for a positive gain and a positive
 design frequency is the coupling condition `k² Q² < 1` (`ω₀² M² L₂ < (R₂ + R_L)² L₁`), and
 unstable when `k² Q² > 1`: in the over-coupled regime the tracker does not lock at the resonant
-frequency of the coils but leaves it, toward the split zero-phase-angle frequencies.
+frequency of the coils. Where it goes instead (for example to the split zero-phase-angle
+frequencies of `theorem/WPT/Bifurcation.lean`) is not proved here.
 
 Model boundary.
 * Parameters (`Tracker`): the untuned coil pair `coils : Passive.Coupled`, tuned at the design

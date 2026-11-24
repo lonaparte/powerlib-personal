@@ -10,8 +10,9 @@ the efficiency and the delivered power are derived from them, and the design tar
 are theorems about these derived quantities: the secondary tuned to resonance maximizes the
 efficiency for every load, the efficiency is bounded by `η_max = U²/(1 + √(1 + U²))²` with the
 figure of merit `U² = (ωM)²/(R₁R₂) = k² Q₁ Q₂`, attained exactly at the load
-`R_opt = R₂ √(1 + U²)`; the load that maximizes the delivered power is `R₂ + (ωM)²/R₁ = R₂(1 + U²)`,
-always heavier than `R_opt`, and it delivers that power below 50 % efficiency.
+`R_opt = R₂ √(1 + U²)`; with both coils resonant, the load that maximizes the delivered power is
+`R₂ + (ωM)²/R₁ = R₂(1 + U²)`, always heavier than `R_opt`, and it delivers that power below 50 %
+efficiency.
 
 Model boundary.
 * Two coupled coils `coils : Passive.Coupled` (primary `(R₁, L₁, S₁)`, secondary
