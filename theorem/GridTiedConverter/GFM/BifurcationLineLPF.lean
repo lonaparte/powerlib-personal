@@ -29,7 +29,8 @@ Results.
   (`Line.VSM.Model.coeff0_eq`, `Line.VSM.Model.coeff1_eq`).
 * `Line.VSMLPF.Model.two_le_rootMultiplicity_zero_iff`: for `ω_c ≠ 0` the eigenvalue `0` is (at
   least) double exactly at a fold `K = 0` with `D = D_line`, the same damping as without the
-  filter: the filter does not move the Bogdanov–Takens point.
+  filter: the filter does not move the Bogdanov–Takens point (the two-lowest-coefficients law
+  `SpecialFunctions.two_le_rootMultiplicity_zero_iff`).
 * Jordan structure (`Line.VSMLPF.Model.btTangent` `q₀ = (1, 0, 0, i_s'(δ*))`,
   `Line.VSMLPF.Model.btChain` `q₁ = (0, 1, −D, w)` with the line part `w` of
   `Line.VSM.Model.chain`): `J q₀ = ω_c K e_P` (`Line.VSMLPF.Model.jac_mulVec_btTangent`),
@@ -41,39 +42,6 @@ Results.
 noncomputable section
 namespace powerlib.GFM.Line
 open Polynomial Matrix
-
-/-- The eigenvalue `0` of a monic quintic is (at least) double iff its two lowest coefficients
-vanish. -/
-@[tmio T, powerlib_foundation] private theorem two_le_rootMultiplicity_zero_quintic
-    (a4 a3 a2 a1 a0 : ℝ) :
-    2 ≤ (X ^ 5 + C a4 * X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 :
-      ℝ[X]).rootMultiplicity 0 ↔ a1 = 0 ∧ a0 = 0 := by
-  have hq : (X ^ 5 + C a4 * X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 : ℝ[X]) ≠ 0 :=
-    fun h => by
-      have := congrArg (fun q : ℝ[X] => q.coeff 5) h
-      simp at this
-  rw [le_rootMultiplicity_iff hq, map_zero, sub_zero, X_pow_dvd_iff]
-  constructor
-  · intro h
-    have h1 := h 1 (by norm_num)
-    have h0 := h 0 (by norm_num)
-    simp [coeff_X, coeff_C] at h1 h0
-    exact ⟨h1, h0⟩
-  · rintro ⟨h1, h0⟩ d hd
-    interval_cases d <;> simp [h1, h0]
-
-/-- The same test for the product form `(X³ + a X² + b X − c)(X² + p X + r) + e`: its two lowest
-coefficients are `b r − c p` and `e − c r`. -/
-@[tmio T, powerlib_foundation] private theorem two_le_rootMultiplicity_zero_prod
-    (a b c p r e : ℝ) :
-    2 ≤ ((X ^ 3 + C a * X ^ 2 + C b * X - C c) * (X ^ 2 + C p * X + C r) + C e :
-      ℝ[X]).rootMultiplicity 0 ↔ b * r - c * p = 0 ∧ e - c * r = 0 := by
-  have h : ((X ^ 3 + C a * X ^ 2 + C b * X - C c) * (X ^ 2 + C p * X + C r) + C e : ℝ[X]) =
-      X ^ 5 + C (a + p) * X ^ 4 + C (b + a * p + r) * X ^ 3 + C (-c + b * p + a * r) * X ^ 2 +
-        C (b * r - c * p) * X + C (e - c * r) := by
-    simp only [map_add, map_sub, map_mul, map_neg]
-    ring
-  rw [h, two_le_rootMultiplicity_zero_quintic]
 
 namespace VSMLPF
 
@@ -116,22 +84,22 @@ conclusion. -/
     have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
       simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
     rw [this]; exact div_ne_zero hZ.ne' (pow_ne_zero 2 hL)
-  have c1 : m.g.D * m.g.ωc / m.g.M * m.g.ρ - m.g.ωc * m.g.qssReactive m.δ / m.g.M *
-      (2 * m.g.σ) = m.g.ωc * ((m.g.ρ * (m.g.D - m.g.Dline) + 2 * m.g.σ * m.g.syncCoeff m.δ) /
-        m.g.M) := by
+  have c1 : m.jac.charpoly.coeff 1 = m.g.ωc * ((m.g.ρ * (m.g.D - m.g.Dline) +
+      2 * m.g.σ * m.g.syncCoeff m.δ) / m.g.M) := by
     have h := (lineVSM m).coeff1_eq hL hZ
     simp only [VSM.coeff1, VSM.Model.Q, VSM.Model.K, lineVSM] at h
-    rw [← h]
+    rw [← h, m.charpoly_jac]
+    simp [mul_coeff_one, coeff_X, coeff_C]
     ring
-  have c0 : m.g.ωc * m.g.E ^ 2 * m.g.X / (m.g.L ^ 2 * m.g.M) -
-      m.g.ωc * m.g.qssReactive m.δ / m.g.M * m.g.ρ =
-        m.g.ωc * (m.g.ρ * m.g.syncCoeff m.δ / m.g.M) := by
+  have c0 : m.jac.charpoly.coeff 0 = m.g.ωc * (m.g.ρ * m.g.syncCoeff m.δ / m.g.M) := by
     have h := (lineVSM m).coeff0_eq hL hZ
     simp only [VSM.coeff0, VSM.Model.Q, VSM.Model.K, lineVSM] at h
-    rw [← h]
+    rw [← h, m.charpoly_jac]
+    simp [coeff_X, coeff_C]
     field_simp
-  rw [m.charpoly_jac, two_le_rootMultiplicity_zero_prod, c1, c0, mul_eq_zero, mul_eq_zero,
-    or_iff_right hω, or_iff_right hω]
+    ring
+  rw [SpecialFunctions.two_le_rootMultiplicity_zero_iff (charpoly_monic _).ne_zero, c1, c0,
+    mul_eq_zero, mul_eq_zero, or_iff_right hω, or_iff_right hω]
   constructor
   · rintro ⟨h1, h0⟩
     have hK : m.g.syncCoeff m.δ = 0 := by

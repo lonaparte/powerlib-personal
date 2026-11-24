@@ -28,7 +28,8 @@ Model boundary.
   the Jacobian computed by `fderiv` and the three-state Routh–Hurwitz criterion.
 
 Scaffold of the reading of `DroopLPF` through the swing family:
-`theorem/GridTiedConverter/GFM/DroopSwing.agda`.
+`theorem/GridTiedConverter/GFM/DroopSwing.agda`. Scaffold content of the family `VSMLPF.family`,
+read by the lossy-line and grid-frame readings: `theorem/GridTiedConverter/GFM/VSMLPF.agda`.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md` §15–§16; `…/gfm-driven-gfl-parametric-resonance/notes/concepts/

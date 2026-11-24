@@ -219,7 +219,7 @@ def rampParticular (p : SwingParams) (δ ρ t : ℝ) : Fin 2 → ℝ :=
       simp only [rampParticular, Matrix.cons_val_one, Matrix.cons_val_zero]
       field_simp; ring)
 
-@[tmio M, powerlib_domain] private lemma isHurwitz_frequencyPlant (p : SwingParams) {δ : ℝ}
+@[tmio TM, powerlib_domain] private lemma isHurwitz_frequencyPlant (p : SwingParams) {δ : ℝ}
     (hM : 0 < p.M) (hD : 0 < p.D) (hK : 0 < p.syncCoeff δ) :
     LinearSystems.IsHurwitz (frequencyPlant p δ).A :=
   (p.isHurwitz_jacobian_iff hM δ).mpr ⟨hD, hK⟩
@@ -371,7 +371,7 @@ def filterRampParticular (g : VSMLPF) (δ ρ t : ℝ) : Fin 3 → ℝ :=
 
 /-- The three-state Jacobian is Hurwitz for `M, D, ω_c, K > 0` and `K < D ω_c + D²/M`
 (`Criteria.isHurwitz_iff_of_coeffs_cubic` on `M s³ + (D + M ω_c) s² + D ω_c s + ω_c K`). -/
-@[tmio M, powerlib_domain] private lemma isHurwitz_filterFrequencyPlant (g : VSMLPF) {δ : ℝ}
+@[tmio TM, powerlib_domain] private lemma isHurwitz_filterFrequencyPlant (g : VSMLPF) {δ : ℝ}
     (hM : 0 < g.M) (hD : 0 < g.D) (hω : 0 < g.ωc) (hK : 0 < g.K0 * Real.cos δ)
     (hf : g.K0 * Real.cos δ < g.D * g.ωc + g.D ^ 2 / g.M) :
     LinearSystems.IsHurwitz (filterFrequencyPlant g δ).A := by

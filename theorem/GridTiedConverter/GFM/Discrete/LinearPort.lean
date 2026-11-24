@@ -16,7 +16,8 @@ the storage `½ K Δδ² + ½ M Δω²` whenever `K ≥ 0`; the filter plant is 
 input at a low frequency, where `Re G(jw) < 0`, draws energy over every period. Discretized with a
 step `h > 0`, the explicit Euler implementations are never passive, for any storage (the output
 `Δω` does not see the input of the step); the implicit midpoint implementations are passive with
-the continuous storage at every step whenever the continuous certificate exists.
+the continuous storage at every step whenever the continuous certificate exists. Scaffold:
+`theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
 * Two-state swing (`SwingPort.linearFamily`): state `(Δδ, Δω)` about `(δ*, 0)`, plant
@@ -454,7 +455,7 @@ private def orbit (w r a b t : ℝ) : State 3 :=
 private def orbitInput (m : VSMLPF.Model) (w a b t : ℝ) : Fin 1 → ℝ :=
   ![-(m.g.M * w * Real.sin (w * t)) + (m.g.D + a) * Real.cos (w * t) + b * Real.sin (w * t)]
 
-@[tmio M, powerlib_domain] private theorem orbit_hasDerivAt (w r a b t : ℝ) :
+@[tmio T, powerlib_foundation] private theorem orbit_hasDerivAt (w r a b t : ℝ) :
     HasDerivAt (orbit w r a b)
       ((Real.cos (w * t) * w) • WithLp.toLp 2 ![r, 0, b] +
         (-Real.sin (w * t) * w) • WithLp.toLp 2 ![0, 1, a]) t := by
@@ -486,7 +487,7 @@ linearized loop under its input. -/
       (Real.sin (w * t) * (m.g.ωc * b - w * a)) * hr
 
 /-- The test motion returns to its initial state after one period, `w T = 2π`. -/
-@[tmio M, powerlib_domain] private theorem orbit_period {w r a b T : ℝ}
+@[tmio T, powerlib_foundation] private theorem orbit_period {w r a b T : ℝ}
     (hwT : w * T = 2 * Real.pi) : orbit w r a b T = orbit w r a b 0 := by
   simp [orbit, hwT]
 
@@ -500,7 +501,7 @@ linearized loop under its input. -/
 
 /-- The energy supplied over one period `T`, `w T = 2π` (`r w = 1`):
 `∫₀ᵀ (−M w sin + (D + a) cos + b sin) cos = (D + a) T/2`. -/
-@[tmio M, powerlib_domain] private theorem integral_orbit_supply (M D a b : ℝ) {w r T : ℝ}
+@[tmio T, powerlib_foundation] private theorem integral_orbit_supply (M D a b : ℝ) {w r T : ℝ}
     (hr : r * w = 1) (hwT : w * T = 2 * Real.pi) :
     ∫ t in (0 : ℝ)..T, (-(M * w * Real.sin (w * t)) + (D + a) * Real.cos (w * t) +
       b * Real.sin (w * t)) * Real.cos (w * t) = (D + a) * (T / 2) := by
@@ -528,7 +529,7 @@ linearized loop under its input. -/
 
 /-- A frequency below the passive band: with `D ≥ 0`, `ω_c > 0`, `D ω_c < K` some `w > 0` has
 `D (w² + ω_c²) < ω_c K`. -/
-@[tmio M, powerlib_domain] private theorem exists_frequency {D ωc K : ℝ} (hD : 0 ≤ D)
+@[tmio T, powerlib_foundation] private theorem exists_frequency {D ωc K : ℝ} (hD : 0 ≤ D)
     (hω : 0 < ωc) (hKD : D * ωc < K) : ∃ w : ℝ, 0 < w ∧ D * (w ^ 2 + ωc ^ 2) < ωc * K := by
   have hc : 0 < ωc * K - D * ωc ^ 2 := by nlinarith
   have hden : 0 < ωc * K - D * ωc ^ 2 + D + 1 := by linarith

@@ -21,8 +21,10 @@ module theorem.GridTiedConverter.GFM.VSMSwing where
 -- `exactUnder-pullback`: the VSM family keeps its own laws, which hold for an arbitrary `C¹` power
 -- map, outside the hub. The scaffold also fixes the VSM family (`VSMContent`,
 -- `VSMReading.vsmFamily`) through which `theorem/GridTiedConverter/GFM/DroopVSM.agda` reads the
--- droop + LPF loop. Lean: `sameGeneral` is `GFM.DroopVSM.VSMModel.field_eq_toSwing`,
--- `vsm-den-eq-preimage` is `GFM.DroopVSM.vsm_den_eq_preimage`, `hubField` is the field identity of
+-- droop + LPF loop and in which `theorem/GridTiedConverter/GFM/Tracking/GridFrame.agda` places the
+-- loop read in the frame of a grid at a constant frequency offset. Lean: `sameGeneral` is
+-- `GFM.DroopVSM.VSMModel.field_eq_toSwing`, `vsm-den-eq-preimage` is
+-- `GFM.DroopVSM.vsm_den_eq_preimage`, `hubField` is the field identity of
 -- `Synchronous.GeneralSwing.mem_den_iff_hub_of_sinusoid`, `den↔` is
 -- `GFM.DroopVSM.vsm_mem_den_iff_swing_of_sinusoid` (the composite), `busSinusoid` and `busImage`
 -- its instance `k₁ = k₃ = 0`, `ω_s = 0`, `den↔-bus` the same theorem there. The VSM family's own

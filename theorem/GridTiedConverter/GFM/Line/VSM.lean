@@ -60,8 +60,8 @@ Family and connection conclusions.
   (`VSM.not_mem_den_locallyExponentiallyStable_of_lossless`).
 * The phasor model is stable but the full model unstable
   (connection of `Line.VSM.family` and `Synchronous.Swing.family` through `VSM.Model.toSwing`,
-  scaffold `theorem/GridTiedConverter/GFM/Line/LineSwing.agda`): every lossless balanced physical
-  model with `K > 0` (`VSM.swing_stable_full_unstable_of_lossless`), and on the lossy line
+  scaffold `theorem/GridTiedConverter/GFM/Line/LineReduction.agda`): every lossless balanced
+  physical model with `K > 0` (`VSM.swing_stable_full_unstable_of_lossless`), and on the lossy line
   `E = V = R = L = ω₀ = M = 1` at zero load the boundary witnesses `VSM.lowDamping` (`D = 1/10`:
   reduced stable, full unstable, `VSM.lowDamping_swing_stable_full_unstable`) and
   `VSM.highDamping` (`D = 1`: the full model stable, `VSM.highDamping_stable`).

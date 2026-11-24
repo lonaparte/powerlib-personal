@@ -107,9 +107,8 @@ changes them by `fastMatrix δ` applied to its phasors. -/
 @[tmio M, powerlib_domain] theorem fastRows_add (x y : State 13) (h10 : y 10 = 0)
     (h12 : y 12 = 0) :
     p.fastRows (x + y) = p.fastRows x + p.fastMatrix (x 10) *ᵥ fastPart y := by
-  have he := ej_neg_mul (x 10)
-  have hne := ej_ne_zero (x 10)
-  have he' : ej (-x 10) = (ej (x 10))⁻¹ := eq_inv_of_mul_eq_one_left he
+  have hne : ej (x 10) ≠ 0 := Complex.exp_ne_zero _
+  have he' : ej (-x 10) = (ej (x 10))⁻¹ := by simp [ej, Complex.exp_neg]
   funext a
   fin_cases a <;>
     simp [fastRows, fastMatrix, fastPart, convRow, capRow, lineRow, currentIntRow,
@@ -128,7 +127,7 @@ independent of the angle and of `K_pv, K_pc, k_ff, k_dv`. -/
 @[tmio M, powerlib_domain] theorem det_fastMatrix (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (δ : ℝ) :
     (p.fastMatrix δ).det = -(p.Kic * p.Kiv * p.Zt / (p.Lf * p.Cf * p.Lg)) := by
-  have he := ej_neg_mul δ
+  have he : ej (-δ) * ej δ = 1 := by simp [ej, Complex.exp_neg]
   have hLf' : (p.Lf : ℂ) ≠ 0 := by exact_mod_cast hLf
   have hCf' : (p.Cf : ℂ) ≠ 0 := by exact_mod_cast hCf
   have hLg' : (p.Lg : ℂ) ≠ 0 := by exact_mod_cast hLg

@@ -3,21 +3,22 @@ import theorem.Attributes
 import Mathlib.Algebra.Polynomial.RuleOfSigns
 import Mathlib.Analysis.Polynomial.Basic
 
-/-! # Sign patterns and positive roots of real polynomials (foundation)
+/-! # Sign patterns, positive roots and the root zero of polynomials (foundation)
 
 The number of positive real roots of a real polynomial from the signs of its coefficients
-(Descartes' rule of signs, read from Mathlib) and its parity from the signs of the leading and
-constant coefficients.
+(Descartes' rule of signs, read from Mathlib), its parity from the signs of the leading and
+constant coefficients, and the multiplicity of the root `0` from the two lowest coefficients.
 
 Scope.
-* Pure algebra of real polynomials; no model and no family. The reactive-power-droop
-  grid-forming model counts its equilibria through the positive roots of a quartic
-  (`theorem/GridTiedConverter/GFM/QVDroop.lean`).
+* Pure algebra of polynomials (real ones, except the root-zero law over any commutative ring); no
+  model and no family. Example users: an equilibrium count through the positive roots of a
+  quartic (`theorem/GridTiedConverter/GFM/QVDroop.lean`), a double zero eigenvalue read from the
+  characteristic polynomial (`theorem/GridTiedConverter/GFM/Bifurcation.lean`).
 
 Source: Descartes' rule of signs (Mathlib `Polynomial.roots_countP_pos_le_signVariations`); the
 parity law from the factorization `P = ∏ (X − r) · Q` over the positive roots `r` and the
-intermediate value theorem for the factor `Q` without positive roots. Study note: GFM equilibrium
-counting (topic t6 (b), sign pattern of the Q–V droop quartic).
+intermediate value theorem for the factor `Q` without positive roots; the root-zero law from
+Mathlib `Polynomial.le_rootMultiplicity_iff` and `Polynomial.X_pow_dvd_iff`.
 
 Results.
 * `ncard_pos_isRoot_le_countP`: the number of distinct positive roots is at most the number of
@@ -27,6 +28,8 @@ Results.
   coefficient list has at most two sign variations (Descartes).
 * `even_countP_pos_roots_iff`: for `P(0) ≠ 0` the number of positive roots counted with
   multiplicity is even iff the leading coefficient and `P(0)` have the same sign.
+* `two_le_rootMultiplicity_zero_iff`: a nonzero polynomial over a commutative ring has the root
+  `0` with multiplicity at least two iff its linear and constant coefficients vanish (`X² ∣ P`).
 -/
 
 noncomputable section
@@ -145,5 +148,13 @@ has the sign of the leading coefficient. -/
   · rw [ho.neg_one_pow]
     refine ⟨fun he => absurd ho (Nat.not_odd_iff_even.mpr he), fun h => ?_⟩
     nlinarith [mul_pos hA hB]
+
+/-- **A double root at zero.** A nonzero polynomial over a commutative ring has the root `0` with
+multiplicity at least two iff its linear and constant coefficients vanish: `X² ∣ P`. -/
+@[tmio T, powerlib_foundation] theorem two_le_rootMultiplicity_zero_iff {R : Type*} [CommRing R]
+    {P : R[X]} (hP : P ≠ 0) : 2 ≤ P.rootMultiplicity 0 ↔ P.coeff 1 = 0 ∧ P.coeff 0 = 0 := by
+  rw [le_rootMultiplicity_iff hP, map_zero, sub_zero, X_pow_dvd_iff]
+  refine ⟨fun h => ⟨h 1 one_lt_two, h 0 two_pos⟩, fun ⟨h1, h0⟩ d hd => ?_⟩
+  interval_cases d <;> assumption
 
 end powerlib.SpecialFunctions

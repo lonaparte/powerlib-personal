@@ -300,7 +300,7 @@ swing block, `det(sI − S) = s² + (D/M) s + k/M`. Static evidence on the model
 
 /-- The open-loop Jacobian is Hurwitz iff `0 < D/M`, `0 < k/M` and `j < 0`. Static evidence on
 the model. -/
-@[tmio M, powerlib_domain] theorem isHurwitz_openJacobian_iff (δ V : ℝ) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_openJacobian_iff (δ V : ℝ) :
     LinearSystems.IsHurwitz (q.openJacobian δ V) ↔
       0 < q.D / q.M ∧ 0 < q.k δ / q.M ∧ q.nodeSlope δ V < 0 := by
   rw [← Linear.spectrallyStable_iff_isHurwitz,

@@ -1,26 +1,31 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.GridTiedConverter.GFM.Line.LineSwing where
+module theorem.GridTiedConverter.GFM.Line.LineReduction where
 -- Lean modules: theorem.GridTiedConverter.GFM.Line.VSM theorem.GridTiedConverter.GFM.Line.PSC
 
 -- Scaffold of the comparison of the grid-forming converter on a dynamic R–L line with its
--- quasi-static (phasor) reduction: the four-state VSM on the line (`Line.VSM.family` of
--- `theorem/GridTiedConverter/GFM/Line/VSM.lean`) against the swing family
--- (`Synchronous.Swing.family`), and the three-state PSC on the line (`Line.PSC.family` of
--- `theorem/GridTiedConverter/GFM/Line/PSC.lean`) against the quasi-static PSC family
--- (`GFM.PSC.family`). The two families live on different state spaces, so the map of models is
--- not a reading (no conjugacy relates the systems): it is the reduction, fixed by the
+-- quasi-static (phasor) reduction, for two synchronization laws: the four-state VSM on the line
+-- (`Line.VSM.family` of `theorem/GridTiedConverter/GFM/Line/VSM.lean`) against the swing family
+-- (`Synchronous.Swing.family`, content of `theorem/PowerSystem/Synchronous/Swing.agda`), and the
+-- three-state PSC on the line (`Line.PSC.family` of `theorem/GridTiedConverter/GFM/Line/PSC.lean`)
+-- against the quasi-static PSC family (`GFM.PSC.family`). The shape of the comparison is shared
+-- (`Comparison`). The two families of a pair live on different state spaces, so the map of models
+-- is not a reading (no conjugacy relates the systems): it is the reduction, fixed by the
 -- quasi-steady set `i = i_s(δ)` (`qssVSM`, `qssPSC`) on which the slow rows of the full field are
 -- the reduced field (`reducedVSM`, `reducedPSC`; Lean `VSM.reducedField_eq_swing` and
--- `PSC.reducedRhs_eq_shift`). The map of models sends a line model to the reduced model at the
--- same angle (`toSwing`; Lean `VSM.Model.toSwing`) or at the angle `δ* − α` (`toPSC`; Lean
--- `PSC.Model.toPSC`). The scaffold fixes the contexts in which the two denotations diverge
--- (`Divergence`): on a lossless line, and for the PSC above the critical gain, the reduced model is
--- locally exponentially stable and the full model unstable (Lean
--- `VSM.swing_stable_full_unstable_of_lossless`, `VSM.lowDamping_swing_stable_full_unstable`,
+-- `PSC.reducedRhs_eq_shift` of `theorem/GridTiedConverter/GFM/Line/Model.lean`). The map of models
+-- sends a line model to the reduced model at the same angle (`toSwing`; Lean `VSM.Model.toSwing`)
+-- or at the angle `δ* − α` (`toPSC`; Lean `PSC.Model.toPSC`). The scaffold fixes the contexts in
+-- which the two denotations diverge (`Divergence`): on a lossless line, and for the PSC above the
+-- critical gain, the reduced model is locally exponentially stable and the full model unstable
+-- (Lean `VSM.swing_stable_full_unstable_of_lossless`, `VSM.lowDamping_swing_stable_full_unstable`,
 -- `PSC.psc_stable_full_unstable_of_lossless`, `PSC.psc_stable_full_unstable_of_gain`,
 -- `PSC.highGain_psc_stable_full_unstable`), and derives that in those contexts the reduction does
 -- not carry local exponential stability back to the full model (`notCarried`), so no hub reading
--- along the reduction exists. Nothing here is exported.
+-- along the reduction exists. The direction is from the reduced model to the full one; nothing
+-- is compared outside the contexts. The five-state VSM + power filter on the line has the same
+-- reduction to the three-state model (`VSMLPF.reducedField_eq_vsmlpf`,
+-- `VSMLPF.reducedField_eq_lossy`), but no family and no comparison of denotations, so it is not
+-- recorded here. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

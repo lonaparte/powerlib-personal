@@ -48,7 +48,7 @@ Family and connection conclusions.
   locally exponentially stable (`PSC.not_mem_den_locallyExponentiallyStable_of_lossless`).
 * The phasor model stable, the full model unstable (connection of `Line.PSC.family` and
   `GFM.PSC.family` through `PSC.Model.toPSC`, the reduced law in the angle `δ − α`,
-  `PSC.reducedRhs_eq_shift`; scaffold `theorem/GridTiedConverter/GFM/Line/LineSwing.agda`):
+  `PSC.reducedRhs_eq_shift`; scaffold `theorem/GridTiedConverter/GFM/Line/LineReduction.agda`):
   every lossless model (`PSC.psc_stable_full_unstable_of_lossless`) and every zero-reactive-power
   model above the critical gain (`PSC.psc_stable_full_unstable_of_gain`); boundary witnesses on
   the line `E = V = R = L = ω₀ = 1` at zero load (`K_p,crit = 4`): `PSC.lowGain_stable`
@@ -230,7 +230,7 @@ def family : Family Model Requirement 3 0 :=
     (hb : Meets m .balanced) : m.g.field m.point = 0 :=
   (m.field_point_eq_zero_iff hp.2.ne' hp.1.L.ne' hp.1.absSq_pos.ne').mpr hb
 
-@[tmio M, powerlib_domain] private theorem isHurwitz_iff (m : Model) :
+@[tmio TM, powerlib_domain] private theorem isHurwitz_iff (m : Model) :
     LinearSystems.IsHurwitz m.jac ↔ m.Routh :=
   (Criteria.isHurwitz_iff_of_det_characteristicMatrix _
     (fun s => by rw [m.det_characteristicMatrix])).trans (Criteria.cubic_roots_re_neg_iff _ _ _)

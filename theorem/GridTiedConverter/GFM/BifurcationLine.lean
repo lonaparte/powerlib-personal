@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFM.Line.VSM
+import theorem.SpecialFunctions.PolynomialSigns
 
 /-! # The VSM on a dynamic R–L line: the Bogdanov–Takens point at the line damping
 
@@ -28,7 +29,8 @@ Results.
   `Line.VSM.Model.det_characteristicMatrix`.
 * `Line.VSM.Model.two_le_rootMultiplicity_zero_iff`: the eigenvalue `0` is (at least) double
   exactly at a fold `K = 0` with the damping `D = D_line` (`a₀ = ρK/M`, `a₁ = (ρ(D − D_line) +
-  2σK)/M`). On a lossless line `D_line = 0`, so a damped model (`D > 0`) never has a double zero
+  2σK)/M`; the two-lowest-coefficients law `SpecialFunctions.two_le_rootMultiplicity_zero_iff`).
+  On a lossless line `D_line = 0`, so a damped model (`D > 0`) never has a double zero
   eigenvalue; on a lossy line (`R > 0`, `E, X, L > 0`) `D_line > 0`
   (`Line.Network.Dline_pos`): the Bogdanov–Takens point lies at a physical damping, unlike the
   quasi-static model (`VSMLPF.rootMultiplicity_zero_le_one`,
@@ -46,25 +48,6 @@ Results.
 noncomputable section
 namespace powerlib.GFM.Line
 open Polynomial Matrix
-
-/-- The eigenvalue `0` of a monic quartic is (at least) double iff its two lowest coefficients
-vanish. -/
-@[tmio T, powerlib_foundation] private theorem two_le_rootMultiplicity_zero_quartic
-    (a3 a2 a1 a0 : ℝ) :
-    2 ≤ (X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 : ℝ[X]).rootMultiplicity 0 ↔
-      a1 = 0 ∧ a0 = 0 := by
-  have hq : (X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 : ℝ[X]) ≠ 0 := fun h => by
-    have := congrArg (fun q : ℝ[X] => q.coeff 4) h
-    simp at this
-  rw [le_rootMultiplicity_iff hq, map_zero, sub_zero, X_pow_dvd_iff]
-  constructor
-  · intro h
-    have h1 := h 1 (by norm_num)
-    have h0 := h 0 (by norm_num)
-    simp [coeff_X, coeff_C] at h1 h0
-    exact ⟨h1, h0⟩
-  · rintro ⟨h1, h0⟩ d hd
-    interval_cases d <;> simp [h1, h0]
 
 namespace Network
 
@@ -117,8 +100,10 @@ Static evidence on the model, not a connection conclusion. -/
     have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
       simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
     rw [this]; exact div_ne_zero hZ.ne' (pow_ne_zero 2 hL)
-  rw [m.charpoly_jac, two_le_rootMultiplicity_zero_quartic, m.coeff1_eq hL hZ,
-    m.coeff0_eq hL hZ]
+  rw [SpecialFunctions.two_le_rootMultiplicity_zero_iff (charpoly_monic _).ne_zero,
+    m.charpoly_jac]
+  simp [coeff_X, coeff_C]
+  rw [m.coeff1_eq hL hZ, m.coeff0_eq hL hZ]
   constructor
   · rintro ⟨h1, h0⟩
     have hK : m.K = 0 := by

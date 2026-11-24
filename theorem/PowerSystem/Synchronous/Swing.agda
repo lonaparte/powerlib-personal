@@ -10,7 +10,10 @@ module theorem.PowerSystem.Synchronous.Swing where
 -- `theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda` (the saturated converter),
 -- `theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda` (the classical machine) and
 -- `theorem/PowerSystem/Synchronous/GeneralSwing.agda` (the swing equation with an arbitrary law,
--- on a sinusoid). Nothing here is exported.
+-- on a sinusoid). Two families on larger state spaces are compared with it through a reduction,
+-- not read through it: the 13-state grid-forming converter
+-- (`theorem/GridTiedConverter/GFM/FullModel/FullModelSwing.agda`) and the VSM on a dynamic line
+-- (`theorem/GridTiedConverter/GFM/Line/LineReduction.agda`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

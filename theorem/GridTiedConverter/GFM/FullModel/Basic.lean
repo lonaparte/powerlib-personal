@@ -143,11 +143,6 @@ structure Params where
 /-- The unit phasor `e^{jθ}`. -/
 def ej (θ : ℝ) : ℂ := Complex.exp (θ * I)
 
-@[tmio T, powerlib_foundation] theorem ej_neg_mul (θ : ℝ) : ej (-θ) * ej θ = 1 := by
-  rw [ej, ej, ← Complex.exp_add]; push_cast; ring_nf; exact Complex.exp_zero
-
-@[tmio T, powerlib_foundation] theorem ej_ne_zero (θ : ℝ) : ej θ ≠ 0 := Complex.exp_ne_zero _
-
 /-- The complex dq phasor `x_a + j x_b` of two coordinates. -/
 def phasor (x : State 13) (a b : Fin 13) : ℂ := x a + x b * I
 
@@ -326,7 +321,7 @@ def FastAtRest (x : State 13) : Prop := ∀ i : Fin 13, i.val < 10 → p.field x
       lineCurrent x = p.igQ (x 10) (p.emf (x 12)) ∧
       currentInt x = p.xiQ (x 10) (p.emf (x 12)) ∧
       voltageInt x = p.zeQ (x 10) (p.emf (x 12))) := by
-  have he := ej_neg_mul (x 10)
+  have he : ej (-x 10) * ej (x 10) = 1 := by simp [ej, Complex.exp_neg]
   have hLf' : (p.Lf : ℂ) ≠ 0 := by exact_mod_cast hLf
   have hCf' : (p.Cf : ℂ) ≠ 0 := by exact_mod_cast hCf
   have hLg' : (p.Lg : ℂ) ≠ 0 := by exact_mod_cast hLg
@@ -361,7 +356,7 @@ def FastAtRest (x : State 13) : Prop := ∀ i : Fin 13, i.val < 10 → p.field x
   · rintro ⟨hi, hv, hg, hξ, hζ⟩
     rw [hi, hv, hg, hξ, hζ]
     have he' : e' = e⁻¹ := eq_inv_of_mul_eq_one_left he
-    have hne : e ≠ 0 := ej_ne_zero _
+    have hne : e ≠ 0 := Complex.exp_ne_zero _
     rw [he']
     refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> field_simp <;> ring
 
@@ -506,7 +501,7 @@ def reactiveSlope (δ E : ℝ) : ℝ :=
 controller frame is the virtual-impedance reference, `v_c^c = E − Z_v i_g^c`, for every gain. -/
 @[tmio M, powerlib_domain] theorem vcQ_ctrl (hZt : p.Zt ≠ 0) (δ E : ℝ) :
     ej (-δ) * p.vcQ δ E = E - p.Zv * (ej (-δ) * p.igQ δ E) := by
-  have he := ej_neg_mul δ
+  have he : ej (-δ) * ej δ = 1 := by simp [ej, Complex.exp_neg]
   have hZt' : p.Zg + p.Zv ≠ 0 := hZt
   rw [vcQ, igQ, Zt]
   field_simp

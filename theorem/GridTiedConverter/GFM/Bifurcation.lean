@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFM.VSMLPFLossy
+import theorem.SpecialFunctions.PolynomialSigns
 
 /-! # The quasi-static GFM: third-order Liénard form and no Bogdanov–Takens point
 
@@ -36,11 +37,13 @@ Results.
   slope of the characteristic, the GFM friction does not depend on the operating point.
 * Jacobian of the lossy field (`VSMLPFLossy.hasFDerivAt_field`): the lossless Jacobian
   `VSMLPF.jacobian` of `⟨M, D, ω_c, P_ref − c₀, A⟩` at `δ − α`.
-* Characteristic polynomial (`VSMLPF.charpoly_jacobian`):
+* Characteristic polynomial (`VSMLPF.charpoly_jacobian`, from the 3×3 law
+  `Criteria.det_characteristicMatrix_fin_three`):
   `χ(s) = s³ + (D/M + ω_c) s² + (D ω_c/M) s + ω_c K₀ cos δ / M`.
 * No Bogdanov–Takens point with damping (three states): the eigenvalue `0` has algebraic
   multiplicity at least two iff `D = 0` and `K₀ cos δ = 0` (`M, ω_c ≠ 0`,
-  `VSMLPF.two_le_rootMultiplicity_zero_iff`); with `D ≠ 0` it is at most simple
+  `VSMLPF.two_le_rootMultiplicity_zero_iff`, read through the two-lowest-coefficients law
+  `SpecialFunctions.two_le_rootMultiplicity_zero_iff`); with `D ≠ 0` it is at most simple
   (`VSMLPF.rootMultiplicity_zero_le_one`): the fold `K = 0` of a damped model is a simple zero
   eigenvalue (a saddle-node), never a double zero. The same holds on a lossy line through
   `VSMLPFLossy.hasFDerivAt_field` (its Jacobian is `VSMLPF.jacobian` at `δ − α`).
@@ -53,51 +56,6 @@ noncomputable section
 namespace powerlib.GFM
 open Polynomial Matrix
 open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext toEuclideanCLM_apply3)
-
-/-! ## Polynomial and matrix helpers (implementation evidence) -/
-
-/-- The characteristic polynomial of a `3 × 3` matrix:
-`χ = X³ − tr A · X² + Σ₂(A) X − det A` (`Criteria.principalMinorSum`). -/
-@[tmio T, powerlib_foundation] private theorem charpoly_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    A.charpoly = X ^ 3 - C A.trace * X ^ 2 + C (Criteria.principalMinorSum A) * X - C A.det := by
-  rw [Matrix.charpoly, Matrix.det_fin_three, Matrix.trace_fin_three, Matrix.det_fin_three]
-  simp only [charmatrix_apply, Matrix.diagonal_apply_eq, ne_eq, Fin.reduceEq, not_false_eq_true,
-    Matrix.diagonal_apply_ne, Criteria.principalMinorSum, map_add, map_sub, map_mul]
-  ring
-
-/-- The eigenvalue `0` of a monic cubic is (at least) double iff its two lowest coefficients
-vanish. -/
-@[tmio T, powerlib_foundation] private theorem two_le_rootMultiplicity_zero_cubic (a2 a1 a0 : ℝ) :
-    2 ≤ (X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 : ℝ[X]).rootMultiplicity 0 ↔
-      a1 = 0 ∧ a0 = 0 := by
-  have hq : (X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 : ℝ[X]) ≠ 0 := fun h => by
-    have := congrArg (fun q : ℝ[X] => q.coeff 3) h
-    simp at this
-  rw [le_rootMultiplicity_iff hq, map_zero, sub_zero, X_pow_dvd_iff]
-  constructor
-  · intro h
-    have h1 := h 1 (by norm_num)
-    have h0 := h 0 (by norm_num)
-    simp [coeff_X, coeff_C] at h1 h0
-    exact ⟨h1, h0⟩
-  · rintro ⟨h1, h0⟩ d hd
-    interval_cases d <;> simp [coeff_C, h1, h0]
-
-/-- The eigenvalue `0` of a monic quadratic is double iff both lower coefficients vanish. -/
-@[tmio T, powerlib_foundation] private theorem two_le_rootMultiplicity_zero_quadratic (a1 a0 : ℝ) :
-    2 ≤ (X ^ 2 + C a1 * X + C a0 : ℝ[X]).rootMultiplicity 0 ↔ a1 = 0 ∧ a0 = 0 := by
-  have hq : (X ^ 2 + C a1 * X + C a0 : ℝ[X]) ≠ 0 := fun h => by
-    have := congrArg (fun q : ℝ[X] => q.coeff 2) h
-    simp at this
-  rw [le_rootMultiplicity_iff hq, map_zero, sub_zero, X_pow_dvd_iff]
-  constructor
-  · intro h
-    have h1 := h 1 (by norm_num)
-    have h0 := h 0 (by norm_num)
-    simp [coeff_X, coeff_C] at h1 h0
-    exact ⟨h1, h0⟩
-  · rintro ⟨h1, h0⟩ d hd
-    interval_cases d <;> simp [h1, h0]
 
 /-! ## Three states: the third-order Liénard form -/
 
@@ -177,10 +135,13 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem charpoly_jacobian (δ : ℝ) :
     (g.jacobian δ).charpoly = X ^ 3 + C (g.D / g.M + g.ωc) * X ^ 2 + C (g.D * g.ωc / g.M) * X +
       C (g.ωc * (g.K0 * Real.cos δ) / g.M) := by
-  rw [charpoly_fin_three, trace_jacobian, principalMinorSum_jacobian, det_jacobian]
-  have e2 : -g.D / g.M - g.ωc = -(g.D / g.M + g.ωc) := by ring
-  have e0 : -(g.ωc * (g.K0 * Real.cos δ)) / g.M = -(g.ωc * (g.K0 * Real.cos δ) / g.M) := by ring
-  rw [e2, e0, map_neg, map_neg]
+  apply Polynomial.map_injective (algebraMap ℝ ℂ) (algebraMap ℝ ℂ).injective
+  apply Polynomial.funext
+  intro s
+  rw [← Matrix.charpoly_map, ← Linear.det_characteristicMatrix_eq_eval,
+    Criteria.det_characteristicMatrix_fin_three, trace_jacobian, principalMinorSum_jacobian,
+    det_jacobian]
+  simp
   ring
 
 /-- **The zero eigenvalue is double only without damping.** For `M, ω_c ≠ 0` the eigenvalue `0`
@@ -189,8 +150,9 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem two_le_rootMultiplicity_zero_iff (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
     (δ : ℝ) :
     2 ≤ (g.jacobian δ).charpoly.rootMultiplicity 0 ↔ g.D = 0 ∧ g.K0 * Real.cos δ = 0 := by
-  rw [charpoly_jacobian, two_le_rootMultiplicity_zero_cubic, div_eq_zero_iff, div_eq_zero_iff,
-    or_iff_left hM, or_iff_left hM, mul_eq_zero, or_iff_left hω, mul_eq_zero, or_iff_right hω]
+  rw [SpecialFunctions.two_le_rootMultiplicity_zero_iff (charpoly_monic _).ne_zero,
+    charpoly_jacobian]
+  simp [coeff_C, coeff_mul_X_pow', hM, hω]
 
 /-- **No Bogdanov–Takens point with damping.** For `M, D, ω_c ≠ 0` the eigenvalue `0` of the
 Jacobian is at most simple at every angle; at the fold `K₀ cos δ = 0` it is simple, the other two
@@ -209,12 +171,9 @@ end VSMLPF
 @[tmio M, powerlib_domain] theorem swing_two_le_rootMultiplicity_zero_iff
     (p : Synchronous.SwingParams) (hM : p.M ≠ 0) (δ : ℝ) :
     2 ≤ (p.jacobian δ).charpoly.rootMultiplicity 0 ↔ p.D = 0 ∧ p.syncCoeff δ = 0 := by
-  have e : (p.jacobian δ).charpoly =
-      X ^ 2 + C (p.D / p.M) * X + C (p.syncCoeff δ / p.M) := by
-    rw [Matrix.charpoly_fin_two, p.trace_jacobian, p.det_jacobian, neg_div, map_neg]
-    ring
-  rw [e, two_le_rootMultiplicity_zero_quadratic, div_eq_zero_iff, div_eq_zero_iff, or_iff_left hM,
-    or_iff_left hM]
+  rw [SpecialFunctions.two_le_rootMultiplicity_zero_iff (charpoly_monic _).ne_zero,
+    Matrix.charpoly_fin_two, p.trace_jacobian, p.det_jacobian]
+  simp [coeff_X, coeff_C, hM]
 
 /-- **No Bogdanov–Takens point in the damped two-state model**: with `M, D ≠ 0` the eigenvalue `0`
 of the swing Jacobian is at most simple. Static evidence on the model, not a connection

@@ -4,6 +4,7 @@ import theorem.Spectral.Family
 import theorem.Dynamics.Coordinates
 import theorem.Dynamics.Shift
 import theorem.SpecialFunctions.PolynomialSigns
+import theorem.SpecialFunctions.TrigZeros
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
@@ -38,7 +39,8 @@ Model boundary.
 Source: study note GFM equilibrium counting (topic t6 (b): the elimination, the droop quartic and
 its sign pattern, the parity, `det J` and the descending branch; checked numerically there,
 derived here); Descartes' rule of signs (Mathlib `Polynomial.roots_countP_pos_le_signVariations`,
-read through `theorem/SpecialFunctions/PolynomialSigns.lean`).
+read through `theorem/SpecialFunctions/PolynomialSigns.lean`); injectivity of `θ ↦ e^{jθ}` on a
+window (`SpecialFunctions.injOn_cexp_mul_I_Ico`, `theorem/SpecialFunctions/TrigZeros.lean`).
 
 Results.
 * Elimination (`balance_iff`): with `u = E V cos δ`, `w = E V sin δ` both `P` and `Q` are affine
@@ -322,33 +324,6 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-! ## Counting per period window -/
 
-/-- Two angles of one window with the same cosine and sine coincide. -/
-@[tmio T, powerlib_foundation] private theorem eq_of_cos_sin_window {a θ φ : ℝ}
-    (hθ : θ ∈ Ico a (a + 2 * π)) (hφ : φ ∈ Ico a (a + 2 * π)) (hc : cos θ = cos φ)
-    (hs : sin θ = sin φ) : θ = φ := by
-  obtain ⟨k, hk⟩ : ∃ k : ℤ, φ = 2 * k * π + θ := by
-    obtain ⟨k, hk | hk⟩ := Real.cos_eq_cos_iff.mp hc
-    · exact ⟨k, hk⟩
-    · obtain ⟨m, hm | hm⟩ := Real.sin_eq_sin_iff.mp hs
-      · exact ⟨m, hm⟩
-      · exfalso
-        have h0 : ((2 * k : ℝ) - (2 * m + 1)) * π = 0 := by linear_combination hm - hk
-        have h1 : (2 * k : ℝ) - (2 * m + 1) = 0 :=
-          (mul_eq_zero.mp h0).resolve_right Real.pi_ne_zero
-        have h2 : (2 * k : ℤ) = 2 * m + 1 := by exact_mod_cast sub_eq_zero.mp h1
-        omega
-  have hpi := Real.pi_pos
-  have hlt : (k : ℝ) * π < 1 * π := by linarith [hθ.1, hθ.2, hφ.1, hφ.2]
-  have hgt : (-1) * π < (k : ℝ) * π := by linarith [hθ.1, hθ.2, hφ.1, hφ.2]
-  have hk1 : (k : ℝ) < 1 := lt_of_mul_lt_mul_right hlt hpi.le
-  have hk2 : (-1 : ℝ) < k := lt_of_mul_lt_mul_right hgt hpi.le
-  have hk0 : k = 0 := by
-    have : k < 1 := by exact_mod_cast hk1
-    have : -1 < k := by exact_mod_cast hk2
-    omega
-  rw [hk, hk0]
-  simp
-
 /-- Every point `(c, s)` of the unit circle is `(cos θ, sin θ)` for an angle `θ` of each window. -/
 @[tmio T, powerlib_foundation] private theorem exists_cos_sin_window (a : ℝ) {c s : ℝ}
     (h : c ^ 2 + s ^ 2 = 1) : ∃ θ ∈ Ico a (a + 2 * π), cos θ = c ∧ sin θ = s := by
@@ -395,7 +370,8 @@ Static evidence on the model, not a connection conclusion. -/
     have hEV : q.emf (y 2) * q.V ≠ 0 := mul_ne_zero hE0 hV
     have hc : cos (x 0) = cos (y 0) := mul_left_cancel₀ hEV (hcx.trans hcy.symm)
     have hs : sin (x 0) = sin (y 0) := mul_left_cancel₀ hEV (hsx.trans hsy.symm)
-    refine state3_ext (eq_of_cos_sin_window hxw hyw hc hs) ?_ ?_
+    refine state3_ext (SpecialFunctions.injOn_cexp_mul_I_Ico a hxw hyw
+      (Complex.ext (by simp [hc]) (by simp [hs]))) ?_ ?_
     · rw [((q.field_eq_zero_iff hM hω x).mp hx).1, ((q.field_eq_zero_iff hM hω y).mp hy).1]
     · rw [← q.qOf_emf hnq (x 2), ← q.qOf_emf hnq (y 2), hxy]
   · rintro E ⟨hET, hroot⟩

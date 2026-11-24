@@ -49,7 +49,7 @@ variable (N : Network)
 /-- **Normal hyperbolicity**: the fast (line) subsystem is attracting — its Jacobian
 `[[−σ, X/L], [−X/L, −σ]]` is Hurwitz, poles `−R/L ± j X/L` — iff the line is resistive, `R > 0`.
 Uniformly in `ω₀` the slow manifold is normally hyperbolic exactly for a lossy line. -/
-@[tmio M, powerlib_domain] theorem isHurwitz_lineJacobian_iff (hL : 0 < N.L) (hX : N.X ≠ 0) :
+@[tmio TM, powerlib_domain] theorem isHurwitz_lineJacobian_iff (hL : 0 < N.L) (hX : N.X ≠ 0) :
     LinearSystems.IsHurwitz N.lineJacobian ↔ 0 < N.R := by
   rw [Criteria.isHurwitz_fin_two_iff, trace_lineJacobian, det_lineJacobian]
   have hXL : N.X / N.L ≠ 0 := div_ne_zero hX hL.ne'
