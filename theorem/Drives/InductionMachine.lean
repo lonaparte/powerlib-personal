@@ -15,6 +15,7 @@ import theorem.Linear.Stability
 import theorem.Dynamics.ConverseLinearization
 import theorem.Spectral.Global
 import theorem.Passive.DqRL
+import theorem.Passive.Coupled
 import theorem.LTI.Plant
 import theorem.PH.Nonlinear
 
@@ -53,12 +54,19 @@ Source: work-sync `theory/T-field-oriented-control.md` §1.1–§1.4 (and §1.3 
 `theory/T-sensorless-machine-control.md` §1.2 / §1.9 (voltage / current model).
 
 Results.
+* The windings: the stator and rotor windings are the coupled pair `Params.windings`
+  (`theorem/Passive/Coupled.lean`: stator `(r_s, L_s)`, rotor `(r_r, L_r)`, mutual inductance
+  `L_m`); `statorFlux`, `rotorFlux` are its flux linkages and `Params.sigma` its leakage
+  coefficient, so the flux–current algebra is that of every coupled pair: the rotor current
+  `Passive.Coupled.current₂_eq`, the voltage-model flux estimate
+  `ψ_r = (L_r/L_m)(ψ_s − σ L_s i_s)` (`Passive.Coupled.flux₂_eq_leakage`), the stator current from
+  stator and rotor flux `i_s = (ψ_s − (L_m/L_r) ψ_r)/(σ L_s)` (`Passive.Coupled.current₁_eq`, used
+  by DTC) and `Im(ψ̄_s i_s) = (L_m/L_r) Im(ψ̄_r i_s)` (`Passive.Coupled.im_conj_flux₁_mul`).
 * Domain model identities (algebra of §1.1–§1.4 of the FOC note): torque in rotor-flux form
   (`torque_rotorFlux`), the oriented torque `T_e = (3/2) np (L_m/L_r) ψ_r i_sq`
   (`torque_oriented`), slip relation and `T_r ψ̇_r + ψ_r = L_m i_sd` under orientation
-  (`oriented_slip_and_flux`, `oriented_steadyState`), the voltage-model flux estimate
-  (`rotorFlux_voltageModel`), the stator current from stator/rotor flux (`statorCurrent_of_fluxes`,
-  used by DTC), and the corrected current model (`currentModel`).
+  (`oriented_slip_and_flux`, `oriented_steadyState`) and the corrected current model
+  (`currentModel`).
 * The rotor as an R–L branch (`Params.rotorBranch`: `r_r`, `L_r`, no capacitor): the rotor-flux
   field is the field of its dq plant at the slip speed under the voltage `r_r L_m i_s`
   (`fluxField_eq_inputField`, `Passive.DqRL.dqRLPlant`); the state matrix `fluxMatrix` is its dq
@@ -127,34 +135,20 @@ structure Params where
 /-- Rotor time constant `T_r = L_r / r_r`. -/
 def Params.Tr (p : Params) : ℝ := p.Lr / p.rr
 
-/-- Leakage coefficient `σ = 1 − L_m² / (L_s L_r)`. -/
-def Params.sigma (p : Params) : ℝ := 1 - p.Lm ^ 2 / (p.Ls * p.Lr)
+/-- The stator and rotor windings as a coupled pair: stator `(r_s, L_s)`, rotor `(r_r, L_r)`, no
+series capacitors, mutual inductance `L_m`. -/
+def Params.windings (p : Params) : Passive.Coupled := ⟨⟨p.rs, p.Ls, 0⟩, ⟨p.rr, p.Lr, 0⟩, p.Lm⟩
+
+/-- Leakage coefficient `σ = 1 − L_m² / (L_s L_r)`, that of the windings. -/
+def Params.sigma (p : Params) : ℝ := p.windings.leakage
 
 /-- Stator flux linkage `ψ_s = L_s i_s + L_m i_r`. -/
-def statorFlux (p : Params) (is ir : ℂ) : ℂ := p.Ls * is + p.Lm * ir
+def statorFlux (p : Params) (is ir : ℂ) : ℂ := p.windings.flux₁ is ir
 
 /-- Rotor flux linkage `ψ_r = L_m i_s + L_r i_r`. -/
-def rotorFlux (p : Params) (is ir : ℂ) : ℂ := p.Lm * is + p.Lr * ir
+def rotorFlux (p : Params) (is ir : ℂ) : ℂ := p.windings.flux₂ is ir
 
 /-! ## Flux, current and torque algebra -/
-
-/-- Rotor current recovered from rotor flux and stator current. -/
-@[tmio M, powerlib_domain] theorem rotorCurrent_eq (p : Params) (hLr : p.Lr ≠ 0) (is ir : ℂ) :
-    ir = (rotorFlux p is ir - p.Lm * is) / p.Lr := by
-  have : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
-  unfold rotorFlux
-  field_simp
-  ring
-
-/-- `Im(conj ψ_s · i_s) = (L_m / L_r) Im(conj ψ_r · i_s)`: the torque can be written with
-the rotor flux. -/
-@[tmio M, powerlib_domain] theorem cross_statorFlux_eq (p : Params) (hLr : p.Lr ≠ 0) (is ir : ℂ) :
-    (conj (statorFlux p is ir) * is).im = p.Lm / p.Lr * (conj (rotorFlux p is ir) * is).im := by
-  rw [cross_eq, cross_eq]
-  simp only [statorFlux, rotorFlux, Complex.add_re, Complex.add_im,
-    Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im]
-  field_simp
-  ring
 
 /-- Torque in rotor-flux form:
 `T_e = (3/2) np (L_m / L_r) (ψ_rd i_sq − ψ_rq i_sd)` (FOC note §1.1, `p/2 = np`). -/
@@ -163,8 +157,10 @@ the rotor flux. -/
     torque np (statorFlux p is ir) is =
       3 / 2 * np * (p.Lm / p.Lr) *
         ((rotorFlux p is ir).re * is.im - (rotorFlux p is ir).im * is.re) := by
+  have h : (conj (statorFlux p is ir) * is).im = p.Lm / p.Lr * (conj (rotorFlux p is ir) * is).im :=
+    Passive.Coupled.im_conj_flux₁_mul (w := p.windings) hLr is ir
   unfold torque
-  rw [cross_statorFlux_eq p hLr, cross_eq]
+  rw [h, cross_eq]
   ring
 
 /-- Rotor-flux orientation (`ψ_rq = 0`, `ψ_rd = ψ_r`) linearises the torque in `i_sq`:
@@ -174,38 +170,6 @@ the rotor flux. -/
     torque np (statorFlux p is ir) is = 3 / 2 * np * (p.Lm / p.Lr) * ψr * is.im := by
   rw [torque_rotorFlux p hLr, horient]
   simp
-  ring
-
-/-- Voltage-model rotor flux (DFOC, sensorless MRAS reference model):
-`ψ_r = (L_r / L_m)(ψ_s − σ L_s i_s)`. -/
-@[tmio M, powerlib_domain] theorem rotorFlux_voltageModel (p : Params) (hLm : p.Lm ≠ 0)
-    (hLs : p.Ls ≠ 0) (hLr : p.Lr ≠ 0) (is ir : ℂ) :
-    rotorFlux p is ir = (p.Lr / p.Lm : ℝ) * (statorFlux p is ir - (p.sigma * p.Ls : ℝ) * is) := by
-  have h1 : (p.Lm : ℂ) ≠ 0 := by exact_mod_cast hLm
-  have h2 : (p.Ls : ℂ) ≠ 0 := by exact_mod_cast hLs
-  have h3 : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
-  unfold rotorFlux statorFlux Params.sigma
-  push_cast
-  field_simp
-  ring
-
-/-- Stator current from stator and rotor flux (DTC note §1.2):
-`i_s = (ψ_s − (L_m/L_r) ψ_r) / (σ L_s)`. -/
-@[tmio M, powerlib_domain] theorem statorCurrent_of_fluxes (p : Params) (hLr : p.Lr ≠ 0)
-    (hσ : p.sigma * p.Ls ≠ 0) (is ir : ℂ) :
-    is = (statorFlux p is ir - (p.Lm / p.Lr : ℝ) * rotorFlux p is ir) / (p.sigma * p.Ls : ℝ) := by
-  have h3 : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
-  have hσ' : ((p.sigma * p.Ls : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hσ
-  rw [eq_div_iff hσ']
-  have hs : p.sigma * p.Ls = p.Ls - p.Lm ^ 2 / p.Lr := by
-    unfold Params.sigma
-    by_cases hLs : p.Ls = 0
-    · simp [hLs] at hσ
-    · field_simp
-  rw [hs]
-  unfold statorFlux rotorFlux
-  push_cast
-  field_simp
   ring
 
 /-! ## Rotor voltage equation and the current model -/
@@ -239,7 +203,7 @@ def RotorVoltageEquation (p : Params) (ωe ωr : ℝ) (ir ψr dψr : ℂ) : Prop
   have hdψ : dψr = -(p.rr : ℂ) * ir - I * ((ωe - ωr : ℝ) : ℂ) * rotorFlux p is ir := by
     linear_combination -h
   rw [hTr, hdψ]
-  unfold rotorFlux
+  simp only [rotorFlux, Params.windings, Passive.Coupled.flux₂]
   field_simp
   ring
 

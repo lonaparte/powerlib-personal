@@ -87,7 +87,9 @@ open powerlib.Transform.SpaceVector
     (hr : InductionMachine.rotorFlux p is ir = ⟨ρr * Real.cos θr, ρr * Real.sin θr⟩) :
     torque np (InductionMachine.statorFlux p is ir) is =
       3 / 2 * np * (p.Lm / (p.sigma * p.Ls * p.Lr)) * ρs * ρr * Real.sin (θs - θr) := by
-  have hi := InductionMachine.statorCurrent_of_fluxes p hLr hσ is ir
+  have hi : is = (InductionMachine.statorFlux p is ir -
+      ((p.Lm / p.Lr : ℝ) : ℂ) * InductionMachine.rotorFlux p is ir) / ((p.sigma * p.Ls : ℝ) : ℂ) :=
+    Passive.Coupled.current₁_eq (w := p.windings) hLr hσ is ir
   set ψs := InductionMachine.statorFlux p is ir
   set ψr := InductionMachine.rotorFlux p is ir
   unfold torque

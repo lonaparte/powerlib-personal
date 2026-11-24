@@ -37,7 +37,8 @@ Results.
   `hf_current_aligned`) `î_d = (V_h/ω_h)(Σ + Δ' cos 2Δθ) sin ω_h t` (`= V_h/(ω_h L_d)` at
   `Δθ = 0`), `î_q = (V_h/ω_h) Δ' sin 2Δθ sin ω_h t`, and the demodulated error
   `(V_h/(4ω_h))(1/L_d − 1/L_q) sin 2Δθ` (`hf_demodulation`).
-* IM: voltage model (`InductionMachine.rotorFlux_voltageModel`), stationary-frame current model
+* IM: voltage model (`Passive.Coupled.flux₂_eq_leakage` of the windings
+  `InductionMachine.Params.windings`), stationary-frame current model
   `dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r` (`currentModel_stationary`).
 * Angle-tracking PI with a demodulation gain `k_ε`: the linearized loop `trackingLoopModel` is
   the linearized SRF-PLL phase model `PLL.phaseModel` with `k_ε` in place of the grid amplitude

@@ -394,3 +394,5 @@ import theorem.PowerSystem.Network.Swing.Degenerate
 import theorem.PowerSystem.Network.Swing.DegenerateRing
 import theorem.PowerSystem.Network.Swing.Four
 import theorem.PowerSystem.Network.Swing.FourDense
+import theorem.Grid.TwoPort
+import theorem.Passive.Coupled

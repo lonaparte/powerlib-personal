@@ -63,8 +63,9 @@ systems (`Linear`), the polynomial example families (`Nonlinear`), estimation (`
 and search (`Architecture`, `Attributes`, `LibrarySearch`). An entry is a directory (the modules
 directly in it) or a single module.
 * `Grid.Interconnection` (and its generated block matrices): the interconnection of a source and a
-  load plant with ports is linear-systems theory; the other modules of `Grid/` and the component
-  models of `Passive/` are engineering.
+  load plant with ports is linear-systems theory; `Grid.TwoPort`: the impedance-parameter algebra
+  of an arbitrary two-port (termination, inverters, the T network) is network algebra; the other
+  modules of `Grid/` and the component models of `Passive/` are engineering.
 * `Transform`: coordinate transformations and unit bases (Clarke, Park, space vectors, complex
   power in dq, per-unit scaling, circulant line matrices) are identities, not models.
 * `PowerSystem/Network`: only the graph and node-network modules (weighted Laplacians,
@@ -80,6 +81,7 @@ directly in it) or a single module.
 def genericEntries : Array Name := #[
   `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch, `theorem.Asymptotics,
   `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Grid.Interconnection,
+  `theorem.Grid.TwoPort,
   `theorem.Criteria, `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
   `theorem.Dynamics.LaSalle, `theorem.Envelope, `theorem.Estimation, `theorem.Family, `theorem.Flow,
   `theorem.Information, `theorem.LTI, `theorem.Linear, `theorem.LinearAlgebra, `theorem.Map,
@@ -93,8 +95,8 @@ def genericEntries : Array Name := #[
 
 /-- Engineering models of power electronics and power systems: model families, their connection
 conclusions and the static evidence about them, including the passive components of `Passive/`
-(RL branch, LCL filter, lines) with their generated parameter conversions, and the grid structure
-of `Grid/` (RL networks, grid impedance, power flow). -/
+(RL branch, LCL filter, coupled windings, lines) with their generated parameter conversions, and the
+grid structure of `Grid/` (RL networks, grid impedance, power flow). -/
 def engineeringEntries : Array Name := #[
   `theorem.Passive, `theorem.Passive.PH, `theorem.Grid.RLNetwork, `theorem.Grid.GridImpedance,
   `theorem.Grid.ModulationTransfer, `theorem.generated.Conversion,

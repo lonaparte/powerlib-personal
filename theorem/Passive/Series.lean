@@ -35,7 +35,8 @@ Results.
 * `decay_pos_iff`, `decay_neg_iff`: with `L > 0` the decay rate `R/L` has the sign of `R`;
   `impedance_of_noCap`, `impedance_eq`: without a capacitor `Z = R + L s = L (s + R/L)`.
 * `impedance_jω`, `norm_sq_impedance_jω`: `Z(jω) = R + jX`, `‖Z(jω)‖² = R² + X²`
-  (`Complex.sq_norm` for `Complex.normSq`); `series_impedance`, `series_reactance`: impedances
+  (`Complex.sq_norm` for `Complex.normSq`); `reactance_eq_zero_iff`: resonance at `ω ≠ 0`,
+  `X(ω) = 0`, is `S = ω² L`; `series_impedance`, `series_reactance`: impedances
   and reactances add in series; `parallel_inductors`: two inductors in parallel are the inductor
   `L₁L₂/(L₁ + L₂)`.
 * `inductorEnergy_nonneg`, `inductorEnergy_pos`, `capacitorEnergy_nonneg`, `energy_nonneg`;
@@ -125,6 +126,13 @@ def series (a b : SeriesRLC) : SeriesRLC := ⟨a.R + b.R, a.L + b.L, a.S + b.S�
     push_cast
     field_simp
     linear_combination ((b.S : ℝ) : ℂ) * Complex.I_sq
+
+/-- At `ω ≠ 0` the element is resonant, `X = ωL − S/ω = 0`, exactly when `S = ω² L`: the series
+capacitor `C = 1/S` resonates the inductor at `ω`. -/
+@[tmio M, powerlib_domain] theorem reactance_eq_zero_iff {b : SeriesRLC} {ω : ℝ} (hω : ω ≠ 0) :
+    b.reactance ω = 0 ↔ b.S = ω ^ 2 * b.L := by
+  rw [reactance, sub_eq_zero, eq_div_iff hω]
+  constructor <;> intro h <;> linear_combination -h
 
 /-- `‖Z(jω)‖² = R² + X²`. -/
 @[tmio M, powerlib_domain] theorem norm_sq_impedance_jω (ω : ℝ) :
