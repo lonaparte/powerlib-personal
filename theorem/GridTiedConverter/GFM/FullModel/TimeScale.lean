@@ -20,10 +20,14 @@ autonomous, no input. The small parameter `ε > 0` enters in two exactly equival
   integral gains `K_ic, K_iv ↦ K_ic/ε, K_iv/ε`; all other gains, the VSM, the droop and the
   filter `ω_q` unchanged. Its field is the `ε`-system in the coordinates
   `(ξ, ζ) ↦ (εξ, εζ)` (`Params.timeScaled_field`).
-The stability statements are local (equilibrium level) and hold for every `ε ∈ (0, ε*)` with an
-`ε*` that is not computed; nothing is claimed about the basin, its uniformity in `ε` or
-trajectory approximation. Fixed parameters (`ε = 1`) are not covered: see
-`theorem/GridTiedConverter/GFM/FullModel/Counterexample.lean`.
+The stability statements are local (equilibrium level) and hold for every `ε ∈ (0, ε*)`, with
+an explicit `ε*` computed from the Jacobian at the equilibrium and from Lyapunov matrices of the
+reduced Jacobian and of the fast block (`Params.epsStar`, `DCParams.epsStar`), or only shown to
+exist; nothing is claimed about the basin, its uniformity in `ε` or trajectory approximation.
+Fixed parameters (`ε = 1`) are not covered: see
+`theorem/GridTiedConverter/GFM/FullModel/Counterexample.lean`. The boundary-layer hypothesis (a
+spectrally stable fast block) is not implied by positive gains; it follows from them under a
+faster current loop: `theorem/GridTiedConverter/GFM/FullModel/BoundaryLayer.lean`.
 
 Scaffold of the reading of the reduced Q–V droop model:
 `theorem/GridTiedConverter/GFM/FullModel/FullModelTimeScale.agda`.
@@ -41,29 +45,42 @@ Results.
   locally exponentially stable at the equilibrium for every `ε ∈ (0, ε*)` (the generic law
   `SingularPerturbation.exists_epsStar_locallyExponentiallyStable_of_graph`, applied to the
   quasi-steady graph `Params.graph` with `Params.graph_slow`, `Params.fast_graph`,
-  `Params.slowRows_graph`).
+  `Params.slowRows_graph`). Explicitly: `Params.epsStar δ* Q* P₀ P₂` (`Params.epsStar_pos`), the
+  bound `1/(2c + 1)` of `SingularPerturbation.graphEpsStar` for the blocks of the Jacobian
+  `Params.jacobian` (`Params.hasFDerivAt_jacobian`) at the equilibrium, with positive definite
+  Lyapunov matrices `P₀ R + Rᵀ P₀ = −1` of the reduced Jacobian and `P₂ A + Aᵀ P₂ = −1` of the
+  fast block: every `ε ∈ (0, epsStar)` works. The Jacobian in closed form, hence `epsStar` as a
+  closed formula of the parameters, `P₀` and `P₂`: `Params.jacobian_eq_jacobianClosed`,
+  `Params.epsStar_eq_closed` in `theorem/GridTiedConverter/GFM/FullModel/Jacobian.lean`.
 * `Params.timeScaled_field`, `Params.timeScaled_qssState`: the time-scaled model is the
   `ε`-system in the coordinates `(εξ, εζ)` (`Params.integratorCoord`, `Params.scaledField_apply`),
   so the same stability holds for the time-scaled parameters (`Dynamics.holds_transport_iff`).
-* `Params.isHurwitz_reducedJacobian_of_swing` (`n_q = 0`, `Z_v = 0`): the reduced Jacobian is
-  Hurwitz at a balanced angle with positive synchronizing coefficient of `Params.swingParams`
-  and `M, D, ω_q > 0`.
+* `Params.isHurwitz_reducedJacobian_of_noDroop` (`n_q = 0`): the reduced Jacobian is Hurwitz at
+  an angle with positive power–angle slope and `M, D, ω_q > 0`;
+  `Params.isHurwitz_reducedJacobian_of_swing` (`n_q = 0`, `Z_v = 0`): the same with a positive
+  synchronizing coefficient of `Params.swingParams`.
 * DC variant: `DCParams.scaledField`, `DCParams.timeScaled`, `DCParams.timeScaled_field`; the same
   transfer with the six-state reduced Jacobian `DCParams.reducedJacobian δ* Q* v_ref` (the field
-  being `C¹` only on `v_dc ≠ 0`).
+  being `C¹` only on `v_dc ≠ 0`), with the explicit bound `DCParams.epsStar` (`DCParams.jacobian`,
+  `DCParams.hasFDerivAt_jacobian`, `DCParams.epsStar_pos`).
 * The saddle branch needs no time-scale separation: `FullModel.mem_den_unstable` holds for every
   parameter set.
 
 Family and connection conclusions.
-* `exists_epsStar_mem_den_LES` (connection, family `FullModel.family`): at a balanced quasi-steady
-  point with a spectrally stable fast block and a Hurwitz reduced Jacobian, the time-scaled full
-  model is in the denotation of local exponential stability for every `ε ∈ (0, ε*)`;
+* `mem_den_LES_of_lt_epsStar` (connection, family `FullModel.family`): at a balanced quasi-steady
+  point with positive definite Lyapunov matrices `P₀` of the reduced Jacobian and `P₂` of the fast
+  block, the time-scaled full model is in the denotation of local exponential stability for every
+  `ε ∈ (0, Params.epsStar δ* Q* P₀ P₂)`;
+  `exists_epsStar_mem_den_LES`: the same with a spectrally stable fast block and a Hurwitz reduced
+  Jacobian, for every `ε ∈ (0, ε*)` with some `ε* > 0`;
   `exists_epsStar_mem_den_LES_of_qvDroop` (connection, reading `QVDroop.family`): without virtual
   impedance, a reduced Q–V droop model that is locally exponentially stable at the selected point,
   with a spectrally stable boundary layer, transfers its stability to the time-scaled full model,
   for every small `ε`; `exists_epsStar_mem_den_LES_of_swing` (no droop, no virtual impedance): the
   same from a positive synchronizing coefficient of the swing reading.
-* `dcFamily_exists_epsStar_mem_den_LES` (connection, family `FullModel.dcFamily`): the DC variant.
+* `dcFamily_exists_epsStar_mem_den_LES`, `dcFamily_mem_den_LES_of_lt_epsStar` (connection, family
+  `FullModel.dcFamily`): the DC variant, with `ε*` shown to exist or explicit
+  (`DCParams.epsStar`).
 -/
 
 noncomputable section
@@ -107,10 +124,58 @@ def scaledField (ε : ℝ) : State 13 → State 13 :=
     p.qssState δ ω Qf = p.graph (Dynamics.mk3 δ ω Qf) := by
   simp [graph]
 
+/-- The Jacobian matrix of the 13-state field at a state (the matrix of its derivative). -/
+def jacobian (x : State 13) : Matrix (Fin 13) (Fin 13) ℝ :=
+  (Matrix.toEuclideanCLM (n := Fin 13) (𝕜 := ℝ)).symm (fderiv ℝ p.field x)
+
+@[tmio M, powerlib_domain] theorem hasFDerivAt_jacobian (x : State 13) :
+    HasFDerivAt p.field (Matrix.toEuclideanCLM (𝕜 := ℝ) (p.jacobian x)) x := by
+  simpa [jacobian] using (p.contDiff_field.differentiable (by norm_num) x).hasFDerivAt
+
+/-- **The explicit `ε*`** of the two-time-scale transfer at the quasi-steady point `(δ*, 0, Q*)`:
+Kokotović's bound `1/(2c + 1)` (`SingularPerturbation.graphEpsStar`) for the blocks of the
+Jacobian `jacobian (qssState δ* 0 Q*)` split fast/slow by `split`, with a Lyapunov matrix `P₀` of
+the reduced Jacobian and `P₂` of the fast block. -/
+def epsStar (δ Qf : ℝ) (P0 : Matrix (Fin 3) (Fin 3) ℝ)
+    (P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ) : ℝ :=
+  SingularPerturbation.graphEpsStar split (p.jacobian (p.qssState δ 0 Qf)) P0 P2
+
+@[tmio M, powerlib_domain] theorem epsStar_pos (δ Qf : ℝ) (P0 : Matrix (Fin 3) (Fin 3) ℝ)
+    (P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ) : 0 < p.epsStar δ Qf P0 P2 :=
+  SingularPerturbation.graphEpsStar_pos _ _ _ _
+
+/-- **Stability transfer with an explicit `ε*`.** At a quasi-steady equilibrium, with positive
+definite Lyapunov matrices `P₀` of the reduced Jacobian and `P₂` of the fast block, the
+`ε`-system is locally exponentially stable for every `ε ∈ (0, epsStar δ* Q* P₀ P₂)`. -/
+@[tmio TM, powerlib_domain] private theorem locallyExponentiallyStable_of_lt_epsStar
+    (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0) (hKic : p.Kic ≠ 0) (hKiv : p.Kiv ≠ 0)
+    (hZt : p.Zt ≠ 0) (hM : p.M ≠ 0) (hωq : p.ωq ≠ 0) {δ Qf : ℝ} (hP : p.Pq δ (p.emf Qf) = p.Pref)
+    (hQ : p.Qq δ (p.emf Qf) = Qf) {P0 : Matrix (Fin 3) (Fin 3) ℝ}
+    {P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ} (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * p.reducedJacobian δ Qf + (p.reducedJacobian δ Qf)ᵀ * P0 = -1)
+    (hL2 : P2 * p.fastBlock δ + (p.fastBlock δ)ᵀ * P2 = -1) {ε : ℝ} (hε : 0 < ε)
+    (hεs : ε < p.epsStar δ Qf P0 P2) :
+    LocallyExponentiallyStable (p.scaledField ε) (p.qssState δ 0 Qf) := by
+  have heq : p.field (p.qssState δ 0 Qf) = 0 :=
+    (p.field_eq_zero_iff hLf hCf hLg hKic hKiv hZt hM hωq _).mpr ⟨δ, Qf, rfl, hP, hQ⟩
+  have hJ := p.hasFDerivAt_jacobian (p.qssState δ 0 Qf)
+  rw [epsStar] at hεs
+  rw [p.qssState_eq_graph] at heq hJ hεs ⊢
+  have hRed := p.hasFDerivAt_reducedField hZt (Dynamics.mk3 δ 0 Qf)
+  rw [← p.slowRows_graph] at hRed
+  simp only [Dynamics.mk3_zero, Dynamics.mk3_two] at hRed
+  refine SingularPerturbation.locallyExponentiallyStable_of_lt_graphEpsStar
+    (A := p.fastBlock δ) split isOpen_univ (Set.mem_univ _) p.contDiff_field.contDiffOn heq hJ
+    (p.contDiff_graph.differentiable (by norm_num) _) p.graph_slow
+    (p.fast_graph hLf hCf hLg hKic hKiv hZt) (fun i j => ?_) hRed hP0 hP2 hL0 hL2 hε hεs
+  simpa [graph] using p.hasDerivAt_fast (p.graph (Dynamics.mk3 δ 0 Qf)) i j
+
 /-- **Stability transfer under time-scale separation.** At a quasi-steady equilibrium
 `qssState δ* 0 Q*` (`P(δ*, E*) = P_ref`, `Q(δ*, E*) = Q*`) with a spectrally stable fast block
 (boundary layer) and a Hurwitz reduced Jacobian, there is `ε* > 0` such that for every
-`ε ∈ (0, ε*)` the `ε`-system is locally exponentially stable at the equilibrium. -/
+`ε ∈ (0, ε*)` the `ε`-system is locally exponentially stable at the equilibrium
+(`locallyExponentiallyStable_of_lt_epsStar` with the Lyapunov matrices of
+`SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable`). -/
 @[tmio TM, powerlib_domain] private theorem exists_epsStar_locallyExponentiallyStable
     (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0) (hKic : p.Kic ≠ 0) (hKiv : p.Kiv ≠ 0)
     (hZt : p.Zt ≠ 0) (hM : p.M ≠ 0) (hωq : p.ωq ≠ 0) {δ Qf : ℝ} (hP : p.Pq δ (p.emf Qf) = p.Pref)
@@ -118,18 +183,12 @@ def scaledField (ε : ℝ) : State 13 → State 13 :=
     (hR : LinearSystems.IsHurwitz (p.reducedJacobian δ Qf)) :
     ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
       LocallyExponentiallyStable (p.scaledField ε) (p.qssState δ 0 Qf) := by
-  have heq : p.field (p.qssState δ 0 Qf) = 0 :=
-    (p.field_eq_zero_iff hLf hCf hLg hKic hKiv hZt hM hωq _).mpr ⟨δ, Qf, rfl, hP, hQ⟩
-  rw [p.qssState_eq_graph] at heq ⊢
-  have hRed := p.hasFDerivAt_reducedField hZt (Dynamics.mk3 δ 0 Qf)
-  rw [← p.slowRows_graph] at hRed
-  simp only [Dynamics.mk3_zero, Dynamics.mk3_two] at hRed
-  refine SingularPerturbation.exists_epsStar_locallyExponentiallyStable_of_graph
-    (A := p.fastBlock δ) split isOpen_univ (Set.mem_univ _) p.contDiff_field.contDiffOn heq
-    (p.contDiff_graph.differentiable (by norm_num) _) p.graph_slow
-    (p.fast_graph hLf hCf hLg hKic hKiv hZt) (fun i j => ?_) hRed hA
+  obtain ⟨P0, hP0, hL0⟩ := SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable
     ((Linear.spectrallyStable_iff_isHurwitz _).mpr hR)
-  simpa [graph] using p.hasDerivAt_fast (p.graph (Dynamics.mk3 δ 0 Qf)) i j
+  obtain ⟨P2, hP2, hL2⟩ := SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable hA
+  exact ⟨p.epsStar δ Qf P0 P2, p.epsStar_pos δ Qf P0 P2, fun ε hε hlt =>
+    p.locallyExponentiallyStable_of_lt_epsStar hLf hCf hLg hKic hKiv hZt hM hωq hP hQ hP0 hP2 hL0
+      hL2 hε hlt⟩
 
 /-! ### The time-scaled parameters -/
 
@@ -284,6 +343,19 @@ rescaled state is the rescaled `ε`-field. -/
   rw [integratorCoord_apply]
   fin_cases i <;> simp [qssState, hg, hv, hi, hξ, hζ]
 
+/-- Local exponential stability of the `ε`-system at a quasi-steady state is that of the
+time-scaled model at its quasi-steady state (the coordinates `(εξ, εζ)`). -/
+@[tmio TM, powerlib_domain] private theorem timeScaled_of_scaledField {ε : ℝ} (hε : ε ≠ 0)
+    {δ Qf : ℝ} (h : LocallyExponentiallyStable (p.scaledField ε) (p.qssState δ 0 Qf)) :
+    LocallyExponentiallyStable (p.timeScaled ε).field ((p.timeScaled ε).qssState δ 0 Qf) := by
+  have hf : (p.timeScaled ε).field =
+      Dynamics.transportField (integratorCoord hε) 0 (p.scaledField ε) :=
+    Dynamics.transportField_zero_eq_iff_comp.mpr (p.timeScaled_field hε)
+  have key := (Dynamics.holds_transport_iff (integratorCoord hε) 0
+    Flow.Property.locallyExponentiallyStable).mpr h
+  rw [Dynamics.affineCoord_zero_apply, ← hf, ← p.timeScaled_qssState hε] at key
+  exact key
+
 /-- **Stability transfer for the time-scaled parameters.** With a spectrally stable fast block and
 a Hurwitz reduced Jacobian of `p` at a balanced quasi-steady point, the
 quasi-steady equilibrium of the time-scaled model `timeScaled ε` is locally exponentially stable
@@ -298,24 +370,31 @@ for every `ε ∈ (0, ε*)`. -/
         ((p.timeScaled ε).qssState δ 0 Qf) := by
   obtain ⟨εs, hεs, h⟩ :=
     p.exists_epsStar_locallyExponentiallyStable hLf hCf hLg hKic hKiv hZt hM hωq hP hQ hA hR
-  refine ⟨εs, hεs, fun ε hε hlt => ?_⟩
-  have hf : (p.timeScaled ε).field =
-      Dynamics.transportField (integratorCoord hε.ne') 0 (p.scaledField ε) :=
-    Dynamics.transportField_zero_eq_iff_comp.mpr (p.timeScaled_field hε.ne')
-  have key := (Dynamics.holds_transport_iff (integratorCoord hε.ne') 0
-    Flow.Property.locallyExponentiallyStable).mpr (h ε hε hlt)
-  rw [Dynamics.affineCoord_zero_apply, ← hf, ← p.timeScaled_qssState hε.ne'] at key
-  exact key
+  exact ⟨εs, hεs, fun ε hε hlt => p.timeScaled_of_scaledField hε.ne' (h ε hε hlt)⟩
 
-/-- Without droop and virtual impedance the reduced Jacobian is Hurwitz at an angle with
-positive synchronizing coefficient of the swing reading, for `M, D, ω_q > 0`. -/
-@[tmio M, powerlib_domain] theorem isHurwitz_reducedJacobian_of_swing (hZv : p.Zv = 0)
-    (hZg : p.Zg ≠ 0) (hnq : p.nq = 0) (hM : 0 < p.M) (hD : 0 < p.D) (hωq : 0 < p.ωq) {δ : ℝ}
-    (Qf : ℝ) (hK : 0 < p.swingParams.syncCoeff δ) :
+/-- **Stability transfer for the time-scaled parameters, explicit `ε*`.** With positive definite
+Lyapunov matrices `P₀` of the reduced Jacobian and `P₂` of the fast block of `p` at a balanced
+quasi-steady point, the time-scaled model is locally exponentially stable at its quasi-steady
+equilibrium for every `ε ∈ (0, epsStar δ* Q* P₀ P₂)`. -/
+@[tmio TM, powerlib_domain] private theorem LES_timeScaled_of_lt_epsStar (hLf : p.Lf ≠ 0)
+    (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0) (hKic : p.Kic ≠ 0) (hKiv : p.Kiv ≠ 0) (hZt : p.Zt ≠ 0)
+    (hM : p.M ≠ 0) (hωq : p.ωq ≠ 0) {δ Qf : ℝ} (hP : p.Pq δ (p.emf Qf) = p.Pref)
+    (hQ : p.Qq δ (p.emf Qf) = Qf) {P0 : Matrix (Fin 3) (Fin 3) ℝ}
+    {P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ} (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * p.reducedJacobian δ Qf + (p.reducedJacobian δ Qf)ᵀ * P0 = -1)
+    (hL2 : P2 * p.fastBlock δ + (p.fastBlock δ)ᵀ * P2 = -1) {ε : ℝ} (hε : 0 < ε)
+    (hεs : ε < p.epsStar δ Qf P0 P2) :
+    LocallyExponentiallyStable (p.timeScaled ε).field ((p.timeScaled ε).qssState δ 0 Qf) :=
+  p.timeScaled_of_scaledField hε.ne' (p.locallyExponentiallyStable_of_lt_epsStar hLf hCf hLg
+    hKic hKiv hZt hM hωq hP hQ hP0 hP2 hL0 hL2 hε hεs)
+
+/-- Without droop the reduced Jacobian is Hurwitz at an angle with a positive slope
+`∂P/∂δ` of the quasi-steady power–angle curve, for `M, D, ω_q > 0` (it is block triangular:
+`s² + (D/M) s + K/M` and `s + ω_q`). -/
+@[tmio M, powerlib_domain] theorem isHurwitz_reducedJacobian_of_noDroop (hnq : p.nq = 0)
+    (hM : 0 < p.M) (hD : 0 < p.D) (hωq : 0 < p.ωq) {δ : ℝ} (Qf : ℝ)
+    (hK : 0 < p.powerSlope δ (p.emf Qf)) :
     LinearSystems.IsHurwitz (p.reducedJacobian δ Qf) := by
-  have hE : p.emf Qf = p.E0 := by simp [emf, hnq]
-  have hK' : 0 < p.powerSlope δ (p.emf Qf) := by
-    rw [hE, p.powerSlope_eq_syncCoeff hZv hZg]; exact hK
   set K := p.powerSlope δ (p.emf Qf)
   rw [Criteria.isHurwitz_fin_three_iff]
   simp only [reducedJacobian, hnq, zero_mul, zero_div, mul_zero, add_zero, mul_one, neg_div,
@@ -324,11 +403,22 @@ positive synchronizing coefficient of the swing reading, for `M, D, ω_q > 0`. -
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.empty_val',
     Matrix.cons_val_fin_one, Matrix.head_cons, Matrix.tail_cons, Matrix.head_fin_const]
   have hDM : 0 < p.D / p.M := div_pos hD hM
-  have hKM : 0 < K / p.M := div_pos hK' hM
+  have hKM : 0 < K / p.M := div_pos hK hM
   refine ⟨by linarith, ?_, ?_⟩
   · nlinarith [mul_pos hωq hKM]
   · nlinarith [mul_pos hωq hKM, mul_pos hDM hKM, mul_pos (mul_pos hDM hDM) hωq,
       mul_pos (mul_pos hωq hωq) hDM]
+
+/-- Without droop and virtual impedance the reduced Jacobian is Hurwitz at an angle with
+positive synchronizing coefficient of the swing reading, for `M, D, ω_q > 0`. -/
+@[tmio M, powerlib_domain] theorem isHurwitz_reducedJacobian_of_swing (hZv : p.Zv = 0)
+    (hZg : p.Zg ≠ 0) (hnq : p.nq = 0) (hM : 0 < p.M) (hD : 0 < p.D) (hωq : 0 < p.ωq) {δ : ℝ}
+    (Qf : ℝ) (hK : 0 < p.swingParams.syncCoeff δ) :
+    LinearSystems.IsHurwitz (p.reducedJacobian δ Qf) := by
+  have hE : p.emf Qf = p.E0 := by simp [emf, hnq]
+  refine p.isHurwitz_reducedJacobian_of_noDroop hnq hM hD hωq Qf ?_
+  rw [hE, p.powerSlope_eq_syncCoeff hZv hZg]
+  exact hK
 
 end Params
 
@@ -436,20 +526,46 @@ def integratorCoord {ε : ℝ} (hε : ε ≠ 0) : State 16 ≃L[ℝ] State 16 :=
   · rw [graph_natAdd, graph_natAdd]
     fin_cases k <;> simp
 
-/-- **Stability transfer for the time-scaled DC variant.** At a quasi-steady equilibrium of the
-DC variant (`P = P_ref + K_idc ξ_dc`, `Q = Q_f`, `P_br = P_dc`, `v_dc = v_f = v_ref`) with a
-spectrally stable fast block and a Hurwitz six-state reduced Jacobian, there is `ε* > 0` such that
-the time-scaled DC variant is locally exponentially stable at its equilibrium for every
-`ε ∈ (0, ε*)`. -/
-@[tmio TM, powerlib_domain] private theorem exists_epsStar_LES_timeScaled (hLf : q.Lf ≠ 0)
+/-- The Jacobian matrix of the 16-state field at a state (the matrix of its derivative). -/
+def jacobian (x : State 16) : Matrix (Fin 16) (Fin 16) ℝ :=
+  (Matrix.toEuclideanCLM (n := Fin 16) (𝕜 := ℝ)).symm (fderiv ℝ q.field x)
+
+@[tmio M, powerlib_domain] theorem hasFDerivAt_jacobian (hCdc : q.Cdc ≠ 0) {x : State 16}
+    (hx : x 13 ≠ 0) : HasFDerivAt q.field (Matrix.toEuclideanCLM (𝕜 := ℝ) (q.jacobian x)) x := by
+  have hU : IsOpen {x : State 16 | x 13 ≠ 0} :=
+    isOpen_ne_fun (Dynamics.contDiff_coord (k := 1) 13).continuous continuous_const
+  have hd := ((q.contDiffOn_field hCdc).contDiffAt (hU.mem_nhds hx)).differentiableAt
+    (by norm_num)
+  simpa [jacobian] using hd.hasFDerivAt
+
+/-- **The explicit `ε*`** of the two-time-scale transfer of the DC variant at the quasi-steady
+point with slow part `slowPoint δ* Q* ξ*`: `SingularPerturbation.graphEpsStar` for the Jacobian
+split fast/slow by `splitDC`, with a Lyapunov matrix `P₀` of the six-state reduced Jacobian and
+`P₂` of the fast block. -/
+def epsStar (δ Qf ξ : ℝ) (P0 : Matrix (Fin 6) (Fin 6) ℝ)
+    (P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ) : ℝ :=
+  SingularPerturbation.graphEpsStar splitDC (q.jacobian (q.graph (q.slowPoint δ Qf ξ))) P0 P2
+
+@[tmio M, powerlib_domain] theorem epsStar_pos (δ Qf ξ : ℝ) (P0 : Matrix (Fin 6) (Fin 6) ℝ)
+    (P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ) : 0 < q.epsStar δ Qf ξ P0 P2 :=
+  SingularPerturbation.graphEpsStar_pos _ _ _ _
+
+/-- **Stability transfer for the time-scaled DC variant, explicit `ε*`.** At a quasi-steady
+equilibrium of the DC variant (`P = P_ref + K_idc ξ_dc`, `Q = Q_f`, `P_br = P_dc`,
+`v_dc = v_f = v_ref`), with positive definite Lyapunov matrices `P₀` of the six-state reduced
+Jacobian and `P₂` of the fast block, the time-scaled DC variant is locally exponentially stable at
+its equilibrium for every `ε ∈ (0, epsStar δ* Q* ξ* P₀ P₂)`. -/
+@[tmio TM, powerlib_domain] private theorem LES_timeScaled_of_lt_epsStar (hLf : q.Lf ≠ 0)
     (hCf : q.Cf ≠ 0) (hLg : q.Lg ≠ 0) (hKic : q.Kic ≠ 0) (hKiv : q.Kiv ≠ 0) (hZt : q.Zt ≠ 0)
     (hM : q.M ≠ 0) (hωq : q.ωq ≠ 0) (hCdc : q.Cdc ≠ 0) (hvref : q.vref ≠ 0) (hωf : q.ωf ≠ 0)
     {δ Qf ξ : ℝ} (hP : q.Pq δ (q.emf Qf) = q.Pref + q.Kidc * ξ) (hQ : q.Qq δ (q.emf Qf) = Qf)
-    (hB : q.PbrQ δ (q.emf Qf) = q.Pdc) (hA : Linear.SpectrallyStable (q.fastBlock δ))
-    (hR : LinearSystems.IsHurwitz (q.reducedJacobian δ Qf q.vref)) :
-    ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
-      LocallyExponentiallyStable (q.timeScaled ε).field
-        ((q.timeScaled ε).graph ((q.timeScaled ε).slowPoint δ Qf ξ)) := by
+    (hB : q.PbrQ δ (q.emf Qf) = q.Pdc) {P0 : Matrix (Fin 6) (Fin 6) ℝ}
+    {P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ} (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * q.reducedJacobian δ Qf q.vref + (q.reducedJacobian δ Qf q.vref)ᵀ * P0 = -1)
+    (hL2 : P2 * q.fastBlock δ + (q.fastBlock δ)ᵀ * P2 = -1) {ε : ℝ} (hε : 0 < ε)
+    (hεs : ε < q.epsStar δ Qf ξ P0 P2) :
+    LocallyExponentiallyStable (q.timeScaled ε).field
+      ((q.timeScaled ε).graph ((q.timeScaled ε).slowPoint δ Qf ξ)) := by
   set s₀ := q.slowPoint δ Qf ξ
   have hs0 : s₀ 0 = δ ∧ s₀ 1 = 0 ∧ s₀ 2 = Qf ∧ s₀ 3 = q.vref ∧ s₀ 4 = ξ ∧ s₀ 5 = q.vref := by
     simp [s₀, slowPoint]
@@ -466,23 +582,43 @@ the time-scaled DC variant is locally exponentially stable at its equilibrium fo
   have hRed := q.hasFDerivAt_reducedField hLf hCf hLg hKic hKiv hZt hCdc s₀
     (by rw [h3]; exact hvref) (by rw [h0, h2]; exact hB)
   rw [h0, h2, h3] at hRed
-  obtain ⟨εs, hεs, h⟩ :=
-    SingularPerturbation.exists_epsStar_locallyExponentiallyStable_of_graph
+  have h := SingularPerturbation.locallyExponentiallyStable_of_lt_graphEpsStar
       (A := q.fastBlock δ) splitDC hU hx (q.contDiffOn_field hCdc) heq
-      ((q.contDiff_graph).differentiable (by norm_num) _) q.graph_slow
-      (q.fast_graph hLf hCf hLg hKic hKiv hZt)
-      (fun i j => by simpa [graph_10, h0] using q.hasDerivAt_fast (q.graph s₀) i j) hRed hA
-      ((Linear.spectrallyStable_iff_isHurwitz _).mpr hR)
-  refine ⟨εs, hεs, fun ε hε hlt => ?_⟩
+      (q.hasFDerivAt_jacobian hCdc hx) ((q.contDiff_graph).differentiable (by norm_num) _)
+      q.graph_slow (q.fast_graph hLf hCf hLg hKic hKiv hZt)
+      (fun i j => by simpa [graph_10, h0] using q.hasDerivAt_fast (q.graph s₀) i j) hRed hP0 hP2
+      hL0 hL2 hε hεs
   have hf : (q.timeScaled ε).field =
       Dynamics.transportField (integratorCoord hε.ne') 0 (q.scaledField ε) :=
     Dynamics.transportField_zero_eq_iff_comp.mpr (q.timeScaled_field hε.ne')
   have hs : (q.timeScaled ε).slowPoint δ Qf ξ = s₀ := rfl
   have key := (Dynamics.holds_transport_iff (integratorCoord hε.ne') 0
-    Flow.Property.locallyExponentiallyStable).mpr (h ε hε hlt)
+    Flow.Property.locallyExponentiallyStable).mpr h
   rw [Dynamics.affineCoord_zero_apply, show SingularPerturbation.splitScaledField splitDC ε q.field
     = q.scaledField ε from rfl, ← hf, ← q.graph_integratorCoord hε.ne', ← hs] at key
   exact key
+
+/-- **Stability transfer for the time-scaled DC variant.** At a quasi-steady equilibrium of the
+DC variant (`P = P_ref + K_idc ξ_dc`, `Q = Q_f`, `P_br = P_dc`, `v_dc = v_f = v_ref`) with a
+spectrally stable fast block and a Hurwitz six-state reduced Jacobian, there is `ε* > 0` such that
+the time-scaled DC variant is locally exponentially stable at its equilibrium for every
+`ε ∈ (0, ε*)` (`LES_timeScaled_of_lt_epsStar` with the Lyapunov matrices of
+`SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable`). -/
+@[tmio TM, powerlib_domain] private theorem exists_epsStar_LES_timeScaled (hLf : q.Lf ≠ 0)
+    (hCf : q.Cf ≠ 0) (hLg : q.Lg ≠ 0) (hKic : q.Kic ≠ 0) (hKiv : q.Kiv ≠ 0) (hZt : q.Zt ≠ 0)
+    (hM : q.M ≠ 0) (hωq : q.ωq ≠ 0) (hCdc : q.Cdc ≠ 0) (hvref : q.vref ≠ 0) (hωf : q.ωf ≠ 0)
+    {δ Qf ξ : ℝ} (hP : q.Pq δ (q.emf Qf) = q.Pref + q.Kidc * ξ) (hQ : q.Qq δ (q.emf Qf) = Qf)
+    (hB : q.PbrQ δ (q.emf Qf) = q.Pdc) (hA : Linear.SpectrallyStable (q.fastBlock δ))
+    (hR : LinearSystems.IsHurwitz (q.reducedJacobian δ Qf q.vref)) :
+    ∃ εs > 0, ∀ ε, 0 < ε → ε < εs →
+      LocallyExponentiallyStable (q.timeScaled ε).field
+        ((q.timeScaled ε).graph ((q.timeScaled ε).slowPoint δ Qf ξ)) := by
+  obtain ⟨P0, hP0, hL0⟩ := SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable
+    ((Linear.spectrallyStable_iff_isHurwitz _).mpr hR)
+  obtain ⟨P2, hP2, hL2⟩ := SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable hA
+  exact ⟨q.epsStar δ Qf ξ P0 P2, q.epsStar_pos δ Qf ξ P0 P2, fun ε hε hlt =>
+    q.LES_timeScaled_of_lt_epsStar hLf hCf hLg hKic hKiv hZt hM hωq hCdc hvref hωf hP hQ hB hP0 hP2
+      hL0 hL2 hε hlt⟩
 
 end DCParams
 
@@ -511,6 +647,26 @@ denotation of local exponential stability for every `ε ∈ (0, ε*)`. -/
   obtain ⟨εs, hεs, h⟩ :=
     m.p.exists_epsStar_LES_timeScaled hLf hCf hLg hKic hKiv hZt hM hωq hP hQ hA hR
   exact ⟨εs, hεs, fun ε hε hlt => mem_den_flow'.mpr (h ε hε hlt)⟩
+
+/-- **Stability transfer with an explicit `ε*` (connection).** At a balanced quasi-steady point,
+with positive definite Lyapunov matrices `P₀ R + Rᵀ P₀ = −1` of the reduced Jacobian
+`R = reducedJacobian δ* Q*` and `P₂ A + Aᵀ P₂ = −1` of the fast block `A = fastBlock δ*`, the
+time-scaled full model is in the denotation of local exponential stability for every
+`ε ∈ (0, Params.epsStar δ* Q* P₀ P₂)`, Kokotović's bound `1/(2c + 1)` computed from the blocks of
+the Jacobian at the point. -/
+@[tmio TM, powerlib_domain] theorem mem_den_LES_of_lt_epsStar (m : Model) (hLf : m.p.Lf ≠ 0)
+    (hCf : m.p.Cf ≠ 0) (hLg : m.p.Lg ≠ 0) (hKic : m.p.Kic ≠ 0) (hKiv : m.p.Kiv ≠ 0)
+    (hZt : m.p.Zt ≠ 0) (hM : m.p.M ≠ 0) (hωq : m.p.ωq ≠ 0)
+    (hP : m.p.Pq m.δ (m.p.emf m.Qf) = m.p.Pref) (hQ : m.p.Qq m.δ (m.p.emf m.Qf) = m.Qf)
+    {P0 : Matrix (Fin 3) (Fin 3) ℝ} {P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ}
+    (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * m.p.reducedJacobian m.δ m.Qf + (m.p.reducedJacobian m.δ m.Qf)ᵀ * P0 = -1)
+    (hL2 : P2 * m.p.fastBlock m.δ + (m.p.fastBlock m.δ)ᵀ * P2 = -1) :
+    connection% (∀ ε, 0 < ε → ε < m.p.epsStar m.δ m.Qf P0 P2 →
+      m.timeScaled ε ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact fun ε hε hlt => mem_den_flow'.mpr (m.p.LES_timeScaled_of_lt_epsStar hLf hCf hLg hKic hKiv
+    hZt hM hωq hP hQ hP0 hP2 hL0 hL2 hε hlt)
 
 /-- **Reading the reduced Q–V droop model (connection).** Without virtual impedance, if the
 reduced Q–V droop model `Params.qvDroop` is locally exponentially stable at the selected point
@@ -586,5 +742,30 @@ exponential stability for every `ε ∈ (0, ε*)`. -/
   refine ⟨εs, hεs, fun ε hε hlt => ?_⟩
   exact (Spectral.mem_den_flow_iff_shift (f := fun m : DCModel => m.q.field)
     (pt := DCModel.point) (Spectral.localFamily_isAutonomous _ _ _)).mpr (h ε hε hlt)
+
+/-- **Stability transfer of the DC variant with an explicit `ε*` (connection).** At a balanced
+quasi-steady point of the DC variant, with positive definite Lyapunov matrices `P₀` of the
+six-state reduced Jacobian `DCParams.reducedJacobian δ* Q* v_ref` and `P₂` of the fast block, the
+time-scaled DC variant is in the denotation of local exponential stability for every
+`ε ∈ (0, DCParams.epsStar δ* Q* ξ* P₀ P₂)`. -/
+@[tmio TM, powerlib_domain] theorem dcFamily_mem_den_LES_of_lt_epsStar (m : DCModel)
+    (hLf : m.q.Lf ≠ 0) (hCf : m.q.Cf ≠ 0) (hLg : m.q.Lg ≠ 0) (hKic : m.q.Kic ≠ 0)
+    (hKiv : m.q.Kiv ≠ 0) (hZt : m.q.Zt ≠ 0) (hM : m.q.M ≠ 0) (hωq : m.q.ωq ≠ 0)
+    (hCdc : m.q.Cdc ≠ 0) (hvref : m.q.vref ≠ 0) (hωf : m.q.ωf ≠ 0)
+    (hP : m.q.Pq m.δ (m.q.emf m.Qf) = m.q.Pref + m.q.Kidc * m.ξ)
+    (hQ : m.q.Qq m.δ (m.q.emf m.Qf) = m.Qf) (hB : m.q.PbrQ m.δ (m.q.emf m.Qf) = m.q.Pdc)
+    {P0 : Matrix (Fin 6) (Fin 6) ℝ} {P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ}
+    (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * m.q.reducedJacobian m.δ m.Qf m.q.vref +
+      (m.q.reducedJacobian m.δ m.Qf m.q.vref)ᵀ * P0 = -1)
+    (hL2 : P2 * m.q.fastBlock m.δ + (m.q.fastBlock m.δ)ᵀ * P2 = -1) :
+    connection% (∀ ε, 0 < ε → ε < m.q.epsStar m.δ m.Qf m.ξ P0 P2 →
+      m.timeScaled ε ∈ dcFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro ε hε hlt
+  exact (Spectral.mem_den_flow_iff_shift (f := fun m : DCModel => m.q.field)
+    (pt := DCModel.point) (Spectral.localFamily_isAutonomous _ _ _)).mpr
+    (m.q.LES_timeScaled_of_lt_epsStar hLf hCf hLg hKic hKiv hZt hM hωq hCdc hvref hωf hP hQ hB
+      hP0 hP2 hL0 hL2 hε hlt)
 
 end powerlib.GFM.FullModel

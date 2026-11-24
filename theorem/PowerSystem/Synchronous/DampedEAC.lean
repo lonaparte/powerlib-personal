@@ -58,7 +58,9 @@ Results.
   value.
 * Public domain model identities: the well geometry (`wellWindow`, `isOpen_wellWindow`,
   `isCompact_wellSublevel`, `potential_le_energy`, `eq_deltaS_of_field_eq_zero`: the only
-  equilibrium in the window).
+  equilibrium in the window), and the LaSalle obligations of the well, `eq_zero_of_lie_energy`
+  (`Ẇ = 0` forces `ω = 0`, `D > 0`) and `eq_deltaS_of_rest` (at rest with `ω̇ = 0` in the window,
+  the state is `(δ_s, 0)`).
 
 Family and connection conclusions.
 * None: energy dissipation along solutions, first-swing bounds, region-of-attraction estimates
@@ -245,9 +247,35 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
     have h2' : n < 0 := by exact_mod_cast hhi
     omega
 
+/-- **The energy is stationary only at rest** (`M, D > 0`): `Ẇ(x) = 0` forces `ω = 0`. -/
+@[tmio M, powerlib_domain] theorem eq_zero_of_lie_energy (hM : 0 < p.M) (hD : 0 < p.D)
+    (δ₀ : ℝ) {x : State 2} (hx : fderiv ℝ (p.energy δ₀) x (p.field x) = 0) : x 1 = 0 := by
+  rw [p.field_eq_conservative,
+    PhasePlane.Conservative.energy_lie hM.ne' (p.hasDerivAt_potential _)] at hx
+  have : p.D * x 1 ^ 2 = 0 := by linarith
+  rcases mul_eq_zero.mp this with h0 | h0
+  · exact absurd h0 hD.ne'
+  · exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h0
+
+/-- **At rest in the well, a stationary frequency means the stable equilibrium**: in the well
+window, `ω = 0` and `ω̇ = 0` give `x = (δ_s, 0)` (`M, k₂ > 0`, `|P_m − k₁| < k₂`). -/
+@[tmio M, powerlib_domain] theorem eq_deltaS_of_rest (hM : 0 < p.M) (hk : 0 < p.k₂)
+    (h : |p.Pm - p.k₁| < p.k₂) {x : State 2} (hx : x ∈ p.wellWindow) (hx1 : x 1 = 0)
+    (hder : fderiv ℝ (fun y : State 2 => y 1) x (p.field x) = 0) :
+    x = PhasePlane.mk p.deltaS 0 := by
+  have hfd : fderiv ℝ (fun y : State 2 => y 1) x =
+      (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) :=
+    (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).fderiv
+  rw [hfd, PiLp.proj_apply, field_apply_one] at hder
+  have hbal : p.Pe (x 0) = p.Pm := by
+    simp only [accel, hx1, mul_zero, sub_zero, div_eq_zero_iff, hM.ne', or_false] at hder
+    linarith
+  exact p.eq_deltaS_of_field_eq_zero hM.ne' hk h hx ((p.field_eq_zero_iff hM.ne' x).mpr ⟨hx1, hbal⟩)
+
 /-- **LaSalle on the potential well** (`M, D, k₂ > 0`, `|P_m − k₁| < k₂`): every energy
 sublevel set of the well window below both saddle levels lies in the region of attraction of
-`(δ_s, 0)`.
+`(δ_s, 0)` (the generic `Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel` with the
+obligations `eq_zero_of_lie_energy`, `eq_deltaS_of_rest`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 @[tmio TM, powerlib_domain] private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) {c : ℝ}
@@ -255,33 +283,15 @@ Implementation evidence: trajectory-level result outside the sentence language (
     (hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi)) :
     {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c} ⊆
       Flow.regionOfAttraction p.field (PhasePlane.mk p.deltaS 0) := by
-  have hω : ∀ x : State 2, fderiv ℝ (p.energy p.deltaS) x (p.field x) = 0 → x 1 = 0 := by
-    intro x hx
-    rw [p.field_eq_conservative,
-      PhasePlane.Conservative.energy_lie hM.ne' (p.hasDerivAt_potential _)] at hx
-    have : p.D * x 1 ^ 2 = 0 := by linarith
-    rcases mul_eq_zero.mp this with h0 | h0
-    · exact absurd h0 hD.ne'
-    · exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h0
   refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow
-    p.contDiff_field (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
-  · rw [p.field_eq_conservative]
-    exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (p.hasDerivAt_potential _) x
-  · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem p.contDiff_field
-      (h := fun x : State 2 => x 1) (Dynamics.contDiff_coord 1) ?_ ?_
-    · intro x hx
-      exact hω x hx.2
-    · intro x hx hder
-      have hx1 := hω x hx.2
-      have hfd : fderiv ℝ (fun y : State 2 => y 1) x =
-          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) :=
-        (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).fderiv
-      rw [hfd, PiLp.proj_apply, field_apply_one] at hder
-      have hbal : p.Pe (x 0) = p.Pm := by
-        simp only [accel, hx1, mul_zero, sub_zero, div_eq_zero_iff, hM.ne', or_false] at hder
-        linarith
-      exact p.eq_deltaS_of_field_eq_zero hM.ne' hk h hx.1.1
-        ((p.field_eq_zero_iff hM.ne' x).mpr ⟨hx1, hbal⟩)
+    p.contDiff_field (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2)
+    (Dynamics.LaSalle.lasalle_condition_of_lieDeriv_mem p.contDiff_field
+      (h := fun x : State 2 => x 1) (Dynamics.contDiff_coord 1)
+      (fun x hx => p.eq_zero_of_lie_energy hM hD _ hx.2)
+      (fun x hx hder => p.eq_deltaS_of_rest hM hk h hx.1.1 (p.eq_zero_of_lie_energy hM hD _ hx.2)
+        hder))
+  rw [p.field_eq_conservative]
+  exact PhasePlane.Conservative.energy_lie_nonpos hM.ne' hD.le (p.hasDerivAt_potential _) x
 
 /-- **Strict equal-area margin ⇒ convergence** (`M, D, k₂ > 0`, `|P_m − k₁| < k₂`,
 `P_m ≥ k₁`): a post-fault trajectory whose clearing state lies in the well window with

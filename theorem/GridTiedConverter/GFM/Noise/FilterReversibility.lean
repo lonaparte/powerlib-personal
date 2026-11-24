@@ -43,12 +43,15 @@ Model boundary.
 * The escape rate itself stays outside the library. (i) That the operator governs the law of the
   diffusion (Kolmogorov / Itô) is not formalized. (ii) The Kramers–Langer asymptotics need the
   detailed balance refuted here. (iii) Without it the exponent is the Freidlin–Wentzell
-  quasi-potential at the saddle. `Stochastic.LargeDeviations` defines the action for a positive
-  definite diffusion (here the diffusion has rank one with set-point noise alone) and evaluates the
-  quasi-potential (`2ΔU`) only for a gradient drift with unit diffusion; the large-deviation
-  theorem for diffusions is not formalized, and this model's quasi-potential, the value of a
-  Hamiltonian boundary-value problem, has no known closed form. "No closed form" describes the
-  state of knowledge; it is not a theorem.
+  quasi-potential at the saddle. With set-point noise alone the diffusion has rank one;
+  `theorem/Stochastic/ControlledAction.lean` defines the quasi-potential for such degenerate noise
+  and `theorem/GridTiedConverter/GFM/Noise/FilterQuasiPotential.lean` bounds this one from
+  below by the two-state value `2D ΔU/σ_P²` with `D` replaced by `D − A/ω_c` (a Hamilton–Jacobi
+  subsolution) and shows that the exact two-state solution has no separable three-state extension;
+  `theorem/GridTiedConverter/GFM/Noise/EscapeExponent.lean` proves that it tends to the two-state
+  value as `ω_c → ∞`. The large-deviation theorem for diffusions is not formalized, and no closed
+  form at finite `ω_c` is known. "No closed form" describes the state of knowledge; it is
+  not a theorem.
 
 Source: GFM counterpart study, note t2-noise items 6 and 7 (no constant-structure pH form,
 broken equipartition, Monte-Carlo rates departing from the two-state Kramers–Langer rate as

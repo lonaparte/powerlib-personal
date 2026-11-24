@@ -7,6 +7,8 @@ import theorem.GridTiedConverter.GFL.DCLink.PowerBalance
 import theorem.Dynamics.Degenerate.PlaneCollapse
 import theorem.Dynamics.Instability
 import theorem.GridTiedConverter.GFM.DCLink.InvariantPlane
+import theorem.Dynamics.Degenerate.RelaxedExtension
+import theorem.PowerSystem.Synchronous.Swing
 
 /-! # Grid-forming VSM with a DC link, DC-voltage loop open (three states)
 
@@ -35,7 +37,8 @@ Model boundary.
   invariant-plane statements below are made there (the physical limit, overmodulation, is
   reached before `V = 0` and is not modelled).
 * Level: equilibria and local exponential stability or instability of an equilibrium, from the
-  Jacobian computed by `fderiv`.
+  Jacobian computed by `fderiv`; on the invariant singular plane also Lyapunov and local
+  asymptotic stability, from the swing it carries.
 
 Source: GFM counterpart study, note T7 (`t7-dcside`: part (a), the VSM + DC-link model, its
 Jacobian and the open-DC sign obstruction; part (c), the singular plane, there derived and not
@@ -45,10 +48,18 @@ are `theorem/GridTiedConverter/GFL/DCLink/Cascade.lean` (`mem_den_unstable_of_in
 of the degenerate balance `P_s = P_e(δ*)` is new and follows
 `theorem/GridTiedConverter/GFL/DCLink/PLLDC/Collapse.lean` and `CollapseDegenerate.lean`; the
 analysis of the invariant plane (`I_s/C = 0`) is new and reads the generic reduction of
-`theorem/GridTiedConverter/GFM/DCLink/InvariantPlane.lean`; Lyapunov's theorem is LeanForControl's
-`lyapunov_stable` (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.1).
+`theorem/GridTiedConverter/GFM/DCLink/InvariantPlane.lean` and
+`theorem/Dynamics/Degenerate/RelaxedExtension.lean`, the swing it carries being decided by the
+laws of `theorem/PowerSystem/Synchronous/Swing.lean` (energy function, fold and flat-curve
+Chetaev functions; Khalil, *Nonlinear Systems*, 3rd ed., Theorems 4.1 and 4.3).
 Routh–Hurwitz for 2×2 matrices and the extra-pole factorization are
 `Criteria.isHurwitz_fin_two_iff` and `Linear.spectrallyStable_iff_of_extra_pole`.
+
+Scaffold: `theorem/GridTiedConverter/GFM/DCLink/OpenLoopSwing.agda` (the comparison of a model on
+its invariant singular plane with the swing machine `Plant.swingParams` of
+`Synchronous.Swing.family` at the same angle: the angle rows of the field on the plane are the
+swing field, and on the plane, within positive inertia, the two agree on Lyapunov stability and,
+under the collapse, on local asymptotic stability).
 
 Results.
 * `Plant.openField_eq_zero_iff`: `(δ, ω, V)` is an equilibrium iff `ω = 0`,
@@ -66,9 +77,11 @@ Results.
   [0, 0, −1]]` (`Plant.hasFDerivAt_planeField`), `det(sI − J) = (s² + (D/M) s + k/M)(s + 1)`
   (`Plant.det_characteristicMatrix_planeJacobian`), Hurwitz iff `0 < D/M` and `0 < k/M`
   (`Plant.isHurwitz_planeJacobian_iff`).
-* `Plant.swingPotential`: `U(δ) = (c₀ − P_ff)(δ − δ*) − A (cos(δ − α) − cos(δ* − α))`, `U' = P_e −
-  P_ff` (`Plant.hasDerivAt_swingPotential`); at a balanced `δ*` it is positive away from `δ*`
-  where `k > 0` (`Plant.swingPotential_pos`).
+* `Plant.swingParams`: the swing carried by the plane as the canonical swing parameters
+  `⟨M, D, P_ff, c₀, A, α⟩` of `theorem/PowerSystem/Synchronous/Swing.lean`;
+  `Plant.planeField_eq_swing`: `planeField y = ι f(π y) − (y − ι π y)`, `f` its swing field,
+  `ι = Dynamics.Degenerate.incl23`, `π = Dynamics.Degenerate.proj32` (the swing on `(δ, ω)`, `V`
+  relaxed at unit rate).
 
 Family and connection conclusions.
 * `OpenLoop.family := Spectral.localFamily Model.field Model.Stable Model.Unstable`: a model
@@ -111,7 +124,8 @@ Family and connection conclusions.
   `I_s/C = 0` and an unbalanced swing `(P_ff − P_e(δ*))/M ≠ 0` ⇒ unstable (an instance of
   `OpenLoop.mem_den_unstable_of_invariant`, below);
   `OpenLoop.not_mem_den_locallyAsymptoticallyStable_of_degenerate_of_rest` — `I_s/C = 0` and a
-  balanced swing ⇒ a line of equilibria `(δ*, 0, V)`, not locally asymptotically stable. Hence
+  balanced swing ⇒ a line of equilibria `(δ*, 0, V)`, not locally asymptotically stable (its
+  Lyapunov stability is decided by `OpenLoop.mem_den_lyapunovStable_iff_of_invariant`). Hence
   `OpenLoop.not_mem_den_locallyExponentiallyStable_of_degenerate`: the degenerate balance is never
   locally exponentially stable, and `OpenLoop.mem_den_locallyExponentiallyStable_iff_of_V_eq_zero`:
   for `I_s/C ≠ 0` a point of the plane is locally exponentially stable iff
@@ -120,22 +134,37 @@ Family and connection conclusions.
   plane (Lean's `x / 0 = 0`), which carries the swing with `V ≡ 0`, while off it
   `V V̇ = (P_s − P_e(δ))/C`. The generic reduction
   (`Dynamics.Degenerate.lyapunovStable_of_invariantPlane`,
+  `Dynamics.Degenerate.localAsymptoticStable_of_invariantPlane`,
   `Dynamics.Degenerate.locallyExponentiallyStable_iff_of_invariantPlane`,
   `Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane`) reads the stability of `(δ*, 0, 0)`
-  from `Plant.planeField`. `OpenLoop.mem_den_unstable_of_invariant` — unstable, for every sign of
-  `(P_s − P_e(δ*))/C`, if the swing drifts (`(P_ff − P_e(δ*))/M ≠ 0`) or `D/M < 0` or `k/M < 0`;
+  from `Plant.planeField`, which is the swing `Plant.swingParams` at `(δ*, 0)` with `V` relaxed
+  (`Plant.planeField_eq_swing`, `Dynamics.Degenerate.lyapunovStable_relaxed_iff`,
+  `Dynamics.Degenerate.localAsymptoticStable_relaxed_iff`); the swing is decided by
+  `Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia` and
+  `Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`, for `M < 0` on the same field with
+  every coefficient negated, and for `M = 0` the frequency is frozen (Lean's `x / 0 = 0`) and
+  the angle drifts. `OpenLoop.mem_den_unstable_of_invariant` — unstable, for every sign of
+  `(P_s − P_e(δ*))/C`, if the swing drifts (`(P_ff − P_e(δ*))/M ≠ 0`), `D/M < 0`, or
+  `k(δ*)/M ≤ 0` unless `A = 0` with `0 < D/M` (a saddle; a fold `k(δ*) = 0 ≠ A` of the power
+  curve, for every `M` and `D`; an undamped flat curve; `M = 0`);
   `OpenLoop.mem_den_locallyExponentiallyStable_iff_of_invariant` — locally exponentially stable
   iff `(P_s − P_e(δ*))/C < 0`, `(P_ff − P_e(δ*))/M = 0`, `0 < D/M` and `0 < k(δ*)/M` (off the
   plane, as with the crossing current, the estimate holds because segments last at most
   `V(t₀)²/a`, not because `V` converges; on the plane it is the swing's estimate);
-  `OpenLoop.mem_den_lyapunovStable_of_invariant` — Lyapunov stable if `(P_s − P_e(δ*))/C < 0`,
-  `P_ff = P_e(δ*)`, `0 < M`, `0 ≤ D`, `0 < k(δ*)` (swing energy plus `V²/2`); with `D = 0` such a
-  point is Lyapunov stable and not locally exponentially stable. With these the singular plane is
-  decided for local exponential stability for every `I_s/C`. For `I_s/C = 0`,
-  `(P_s − P_e(δ*))/C < 0` and a balanced swing with `D/M, k/M ≥ 0` the remaining cases,
-  `k(δ*)/M = 0`, or `D = 0` with `M < 0`, have the Lyapunov stability of the swing at `δ*`
-  (`Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane`), a question about the swing alone
-  that is not decided here.
+  `OpenLoop.mem_den_locallyAsymptoticallyStable_iff_of_invariant` — locally asymptotically
+  stable under exactly the same conditions; `OpenLoop.mem_den_lyapunovStable_iff_of_invariant` —
+  Lyapunov stable iff `(P_s − P_e(δ*))/C ≤ 0`, `(P_ff − P_e(δ*))/M = 0` and either `0 ≤ D/M`,
+  `0 < k(δ*)/M` (with `D = 0` a centre of the conservative swing, for either sign of `M`: Lyapunov
+  stable, not locally asymptotically stable) or `A = 0`, `0 < D/M` (a constant exported power: a
+  line of equilibria `(δ, 0, 0)`, Lyapunov stable, not locally asymptotically stable); otherwise
+  unstable. For `(P_s − P_e(δ*))/C < 0` the collapse carries the stability of the plane flow to
+  the model; for `(P_s − P_e(δ*))/C = 0` (the degenerate balance `P_s = P_e(δ*) = P_ff`, or
+  `C = 0`, where Lean's `x / 0 = 0` gives `V̇ = 0`) the quantity `V²/2 − (M ω + D δ)/C` is
+  conserved off the plane (`V V̇ = (P_ff − P_e(δ))/C = (M ω̇ + D ω)/C`), so `V²` stays within twice
+  the oscillation of `(M ω + D δ)/C` along the swing
+  (`Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane_firstIntegral`). With these, every
+  selected point of the singular plane is decided for local exponential stability, local
+  asymptotic stability, Lyapunov stability and instability.
 * Static evidence on the model: the equilibrium, Jacobian, characteristic-polynomial and Hurwitz
   identities above.
 -/
@@ -553,61 +582,36 @@ onto the singular plane, with `V` relaxed at unit rate. -/
     Linear.spectrallyStable_iff_isHurwitz, Criteria.isHurwitz_fin_two_iff]
   simp [swingJacobian, Matrix.trace_fin_two, Matrix.det_fin_two, neg_div]
 
-/-- The swing potential about `δ*`: `U(δ) = (c₀ − P_ff)(δ − δ*) − A (cos(δ − α) − cos(δ* − α))`,
-with `U' = P_e − P_ff` (`Plant.hasDerivAt_swingPotential`) and `U(δ*) = 0`. -/
-def swingPotential (δs δ : ℝ) : ℝ :=
-  (q.c0 - q.Pff) * (δ - δs) - q.A * (Real.cos (δ - q.α) - Real.cos (δs - q.α))
+/-- The swing carried by the singular plane, read as the canonical swing parameters
+`⟨M, D, P_ff, c₀, A, α⟩` of `theorem/PowerSystem/Synchronous/Swing.lean`:
+`M ω̇ = P_ff − (c₀ + A sin(δ − α)) − D ω` (`Plant.planeField_eq_swing`). -/
+def swingParams : Synchronous.SwingParams := ⟨q.M, q.D, q.Pff, q.c0, q.A, q.α⟩
 
-@[tmio M, powerlib_domain] theorem hasDerivAt_swingPotential (δs δ : ℝ) :
-    HasDerivAt (q.swingPotential δs) (q.Pe δ - q.Pff) δ := by
-  have h := ((hasDerivAt_id' δ).sub_const δs |>.const_mul (q.c0 - q.Pff)).sub
-    ((((hasDerivAt_id' δ).sub_const q.α).cos.sub_const (Real.cos (δs - q.α))).const_mul q.A)
-  unfold swingPotential Pe
-  convert h using 1
+/-- The plane field is the swing field of `Plant.swingParams` on `(δ, ω)` with `V` relaxed at unit
+rate: `planeField y = ι f(π y) − (y − ι π y)` with `ι = incl23`, `π = proj32` (the relaxed
+extension of `theorem/Dynamics/Degenerate/RelaxedExtension.lean`). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem planeField_eq_swing (y : State 3) :
+    q.planeField y = Dynamics.Degenerate.incl23
+        (q.swingParams.field (Dynamics.Degenerate.proj32 y)) -
+      (y - Dynamics.Degenerate.incl23 (Dynamics.Degenerate.proj32 y)) := by
+  apply state3_ext <;>
+    simp [planeField, swingRate, Pe, swingParams, Synchronous.SwingParams.accel,
+      Synchronous.SwingParams.Pe]
+
+/-- The same swing with every coefficient negated, `⟨−M, −D, −P_ff, −c₀, −A, α⟩`: positive inertia
+when `M < 0`, and the same field (`field_swingParamsNeg`). -/
+private def swingParamsNeg : Synchronous.SwingParams := ⟨-q.M, -q.D, -q.Pff, -q.c0, -q.A, q.α⟩
+
+@[tmio M, powerlib_domain] private theorem field_swingParamsNeg :
+    q.swingParamsNeg.field = q.swingParams.field := by
+  funext x
+  refine PhasePlane.ext_iff'.2 ⟨by simp, ?_⟩
+  simp only [Synchronous.SwingParams.field_apply_one, Synchronous.SwingParams.accel,
+    Synchronous.SwingParams.Pe, swingParams, swingParamsNeg]
+  rw [← neg_div_neg_eq (q.Pff - _ - _)]
+  congr 1
   ring
-
-/-- At a balanced angle (`P_ff = P_e(δ*)`) the swing potential is positive away from `δ*` on an
-interval `|δ − δ*| < r` where `k > 0`. Static evidence on the model. -/
-@[tmio M, powerlib_domain] theorem swingPotential_pos {δs r : ℝ} (hbal : q.Pff = q.Pe δs)
-    (hk : ∀ δ, |δ - δs| < r → 0 < q.k δ) {δ : ℝ} (hδ : |δ - δs| < r) (hne : δ ≠ δs) :
-    0 < q.swingPotential δs δ := by
-  have hU := q.hasDerivAt_swingPotential δs
-  have hcU : Continuous (q.swingPotential δs) :=
-    continuous_iff_continuousAt.mpr fun y => (hU y).continuousAt
-  have hd : ∀ y, HasDerivAt (fun y => q.Pe y - q.Pff) (q.k y) y :=
-    fun y => (q.hasDerivAt_Pe y).sub_const _
-  have hI : ∀ y, δs - r < y → y < δs + r → |y - δs| < r := fun y h1 h2 =>
-    abs_sub_lt_iff.mpr ⟨by linarith, by linarith⟩
-  have hmono : StrictMonoOn (fun y => q.Pe y - q.Pff) (Set.Ioo (δs - r) (δs + r)) := by
-    apply strictMonoOn_of_deriv_pos (convex_Ioo _ _)
-      (continuous_iff_continuousAt.mpr fun y => (hd y).continuousAt).continuousOn
-    intro y hy
-    rw [interior_Ioo] at hy
-    rw [(hd y).deriv]
-    exact hk y (hI y hy.1 hy.2)
-  obtain ⟨hδ1, hδ2⟩ := abs_sub_lt_iff.mp hδ
-  have hs : δs ∈ Set.Ioo (δs - r) (δs + r) := ⟨by linarith, by linarith⟩
-  have h0 : q.swingPotential δs δs = 0 := by simp [swingPotential]
-  rw [← h0]
-  rcases lt_or_gt_of_ne hne with hlt | hgt
-  · have hanti : StrictAntiOn (q.swingPotential δs) (Set.Icc δ δs) := by
-      apply strictAntiOn_of_deriv_neg (convex_Icc _ _) hcU.continuousOn
-      intro y hy
-      rw [interior_Icc] at hy
-      rw [(hU y).deriv]
-      have := hmono ⟨by linarith [hy.1], by linarith [hy.2]⟩ hs hy.2
-      simp only at this
-      linarith
-    exact hanti ⟨le_rfl, hlt.le⟩ ⟨hlt.le, le_rfl⟩ hlt
-  · have hmono' : StrictMonoOn (q.swingPotential δs) (Set.Icc δs δ) := by
-      apply strictMonoOn_of_deriv_pos (convex_Icc _ _) hcU.continuousOn
-      intro y hy
-      rw [interior_Icc] at hy
-      rw [(hU y).deriv]
-      have := hmono hs ⟨by linarith [hy.1], by linarith [hy.2]⟩ hy.1
-      simp only at this
-      linarith
-    exact hmono' ⟨le_rfl, hgt.le⟩ ⟨hgt.le, le_rfl⟩ hgt
 
 end Plant
 
@@ -918,66 +922,170 @@ balanced with `0 < D/M` and `0 < k/M` (converse linearization; `planeField` is `
   · rintro ⟨h0, h⟩
     exact ⟨by apply state3_ext <;> simp [h0], h⟩
 
-/-- The plane field at the selected point is unstable when the swing drifts or has `D/M < 0` or
-`k/M < 0`. -/
-@[tmio TM, powerlib_domain] private theorem planeField_unstable (m : Model) (hV : m.V = 0)
-    (h : (m.q.Pff - m.q.Pe m.δ) / m.q.M ≠ 0 ∨ m.q.D / m.q.M < 0 ∨ m.q.k m.δ / m.q.M < 0) :
-    Unstable m.q.planeField m.point := by
-  by_cases hw : (m.q.Pff - m.q.Pe m.δ) / m.q.M = 0
-  · have heq : m.q.planeField m.point = 0 := by
-      rw [planeField_point m hV, hw]
-      apply state3_ext <;> simp
-    refine unstable_of_exists_complex_eigenvalue_re_pos (m.q.planeJacobian m.δ)
-      m.q.contDiff_planeField heq (fderiv_planeField_point m) ?_
-    obtain ⟨s, hs, hre⟩ := Linear.exists_root_re_pos_of_extra_pole
-      (m.q.det_characteristicMatrix_planeJacobian m.δ) (by
-        rcases h.resolve_left (not_not.mpr hw) with hu | hu
-        · refine Or.inl (Criteria.exists_root_re_pos_of_violation_fin_two _ (Or.inl ?_))
-          simp [Plant.swingJacobian, Matrix.trace_fin_two, neg_div]
-          linarith
-        · refine Or.inl (Criteria.exists_root_re_pos_of_violation_fin_two _ (Or.inr ?_))
-          simp [Plant.swingJacobian, Matrix.det_fin_two, neg_div]
-          linarith)
-    exact Criteria.exists_eigenpair_re_pos_of_characteristic_root _ hs hre
-  · refine Dynamics.unstable_of_ne_zero m.q.contDiff_planeField fun h0 => hw ?_
-    have := congrArg (fun v : State 3 => v 1) h0
-    simpa [planeField_point m hV] using this
+/-- A flow sentence of a swing model (`Synchronous.Swing.family`) is the sentence of its field at
+`(δ*, 0)`. -/
+@[tmio TM, powerlib_domain] private theorem swing_mem_den_flow_iff
+    {m : Synchronous.Swing.Model} {P : Flow.Property} :
+    m ∈ Synchronous.Swing.family.den (.flow P) ↔ P.holds m.p.field m.point :=
+  Spectral.mem_den_flow_iff_shift (f := fun m : Synchronous.Swing.Model => m.p.field)
+    (pt := Synchronous.Swing.Model.point) Synchronous.Swing.family_isAutonomous
 
-/-- Without capacitance (`C = 0`, so `V̇ = 0` in Lean's `x / 0 = 0` reading) `V` is a linear first
-integral of the `C¹` open-loop field, which then has no locally exponentially stable point. -/
-@[tmio TM, powerlib_domain] private theorem not_les_of_C_eq_zero (m : Model) (hC : m.q.C = 0) :
-    ¬ LocallyExponentiallyStable m.q.openField m.point := by
+/-- Lyapunov stability of a swing with positive inertia at `(δ, 0)`
+(`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia`), its coefficients read relative to
+`M`. -/
+@[tmio TM, powerlib_domain] private theorem swing_ls_iff_of_pos (p : Synchronous.SwingParams)
+    (hM : 0 < p.M) (δ : ℝ) :
+    LyapunovStable p.field (PhasePlane.mk δ 0) ↔ (p.Pm - p.Pe δ) / p.M = 0 ∧
+      ((0 ≤ p.D / p.M ∧ 0 < p.syncCoeff δ / p.M) ∨ (p.k₂ = 0 ∧ 0 < p.D / p.M)) := by
+  have h := Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia ⟨p, δ⟩ hM
+  unfold TMIO.Statement at h
+  rw [swing_mem_den_flow_iff, Set.mem_ofPred_eq] at h
+  refine h.trans ?_
+  dsimp only
+  rw [div_eq_zero_iff, or_iff_left hM.ne', sub_eq_zero, eq_comm, le_div_iff₀ hM, zero_mul,
+    div_pos_iff_of_pos_right hM, div_pos_iff_of_pos_right hM]
+
+/-- Local asymptotic stability of a swing with positive inertia at `(δ, 0)`
+(`Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`), its coefficients read relative to
+`M`. -/
+@[tmio TM, powerlib_domain] private theorem swing_las_iff_of_pos (p : Synchronous.SwingParams)
+    (hM : 0 < p.M) (δ : ℝ) :
+    LocalAsymptoticStable p.field (PhasePlane.mk δ 0) ↔ (p.Pm - p.Pe δ) / p.M = 0 ∧
+      0 < p.D / p.M ∧ 0 < p.syncCoeff δ / p.M := by
+  have h := Synchronous.Swing.exactUnder_locallyAsymptoticallyStable
+  unfold TMIO.Statement at h
+  have h2 := Spectral.exactUnder_iff_forall.mp h ⟨p, δ⟩ (by
+    simpa [TMIO.mem_realize, Synchronous.Swing.family, Synchronous.Swing.Meets] using hM)
+  rw [swing_mem_den_flow_iff] at h2
+  refine h2.symm.trans ?_
+  simp only [TMIO.mem_realize, Synchronous.Swing.family, Synchronous.Swing.translate,
+    Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
+    Synchronous.Swing.Meets]
+  rw [div_eq_zero_iff, or_iff_left hM.ne', sub_eq_zero, eq_comm, div_pos_iff_of_pos_right hM,
+    div_pos_iff_of_pos_right hM]
+  exact ⟨fun ⟨hb, _, hD, hK⟩ => ⟨hb, hD, hK⟩, fun ⟨hb, hD, hK⟩ => ⟨hb, hM, hD, hK⟩⟩
+
+/-- Without inertia (`M = 0`, so `ω̇ = 0` in Lean's `x / 0 = 0` reading) the frequency is frozen
+and the angle drifts: `(δ, 0)` is unstable (`Dynamics.unstable_of_conserved_drive_local`). -/
+@[tmio TM, powerlib_domain] private theorem swing_unstable_of_M_eq_zero
+    (p : Synchronous.SwingParams) (hM : p.M = 0) (δ : ℝ) :
+    Unstable p.field (PhasePlane.mk δ 0) :=
+  Dynamics.unstable_of_conserved_drive_local (U := Set.univ) (i := 1) (j := 0) (g := id)
+    isOpen_univ (Set.mem_univ _) p.contDiff_field.contDiffOn (by decide) contDiff_id
+    (fun ε hε => ⟨ε / 2, by simp [abs_of_pos (half_pos hε)]; linarith, (half_pos hε).ne'⟩)
+    (fun x _ => by simp [Synchronous.SwingParams.accel, hM])
+    (fun x _ => by simp)
+
+/-- Lyapunov stability of the plant's swing at `(δ, 0)`, for every inertia: with `M < 0` it is
+the swing with every coefficient negated (`field_swingParamsNeg`), with `M = 0` it is unstable. -/
+@[tmio TM, powerlib_domain] private theorem swing_ls_iff (q : Plant) (δ : ℝ) :
+    LyapunovStable q.swingParams.field (PhasePlane.mk δ 0) ↔ (q.Pff - q.Pe δ) / q.M = 0 ∧
+      ((0 ≤ q.D / q.M ∧ 0 < q.k δ / q.M) ∨ (q.A = 0 ∧ 0 < q.D / q.M)) := by
+  rcases lt_trichotomy q.M 0 with hM | hM | hM
+  · have hp : 0 < q.swingParamsNeg.M := by simp [Plant.swingParamsNeg]; linarith
+    rw [← q.field_swingParamsNeg, swing_ls_iff_of_pos _ hp]
+    simp only [Plant.swingParamsNeg, Synchronous.SwingParams.Pe,
+      Synchronous.SwingParams.syncCoeff, Plant.Pe, Plant.k, neg_div_neg_eq, neg_eq_zero]
+    rw [show -q.Pff - (-q.c0 + -q.A * Real.sin (δ - q.α)) =
+      -(q.Pff - (q.c0 + q.A * Real.sin (δ - q.α))) by ring, neg_mul, neg_div_neg_eq,
+      neg_div_neg_eq]
+  · refine iff_of_false (swing_unstable_of_M_eq_zero _ hM δ) ?_
+    simp [hM]
+  · exact swing_ls_iff_of_pos q.swingParams hM δ
+
+/-- Local asymptotic stability of the plant's swing at `(δ, 0)`, for every inertia. -/
+@[tmio TM, powerlib_domain] private theorem swing_las_iff (q : Plant) (δ : ℝ) :
+    LocalAsymptoticStable q.swingParams.field (PhasePlane.mk δ 0) ↔
+      (q.Pff - q.Pe δ) / q.M = 0 ∧ 0 < q.D / q.M ∧ 0 < q.k δ / q.M := by
+  rcases lt_trichotomy q.M 0 with hM | hM | hM
+  · have hp : 0 < q.swingParamsNeg.M := by simp [Plant.swingParamsNeg]; linarith
+    rw [← q.field_swingParamsNeg, swing_las_iff_of_pos _ hp]
+    simp only [Plant.swingParamsNeg, Synchronous.SwingParams.Pe,
+      Synchronous.SwingParams.syncCoeff, Plant.Pe, Plant.k, neg_div_neg_eq]
+    rw [show -q.Pff - (-q.c0 + -q.A * Real.sin (δ - q.α)) =
+      -(q.Pff - (q.c0 + q.A * Real.sin (δ - q.α))) by ring, neg_mul, neg_div_neg_eq,
+      neg_div_neg_eq]
+  · refine iff_of_false (fun h => swing_unstable_of_M_eq_zero _ hM δ h.1) ?_
+    simp [hM]
+  · exact swing_las_iff_of_pos q.swingParams hM δ
+
+@[tmio M, powerlib_domain] private theorem point_eq_incl (m : Model) (hV : m.V = 0) :
+    m.point = Dynamics.Degenerate.incl23 (PhasePlane.mk m.δ 0) := by
+  apply state3_ext <;> simp [Model.point, hV]
+
+/-- The plane field at a selected point of the plane is Lyapunov stable iff the swing is
+(`Dynamics.Degenerate.lyapunovStable_relaxed_iff` with `Plant.planeField_eq_swing`). -/
+@[tmio TM, powerlib_domain] private theorem planeField_ls_iff (m : Model) (hV : m.V = 0) :
+    LyapunovStable m.q.planeField m.point ↔ (m.q.Pff - m.q.Pe m.δ) / m.q.M = 0 ∧
+      ((0 ≤ m.q.D / m.q.M ∧ 0 < m.q.k m.δ / m.q.M) ∨ (m.q.A = 0 ∧ 0 < m.q.D / m.q.M)) := by
+  rw [point_eq_incl m hV, Dynamics.Degenerate.lyapunovStable_relaxed_iff
+    Dynamics.Degenerate.proj32_incl23 Dynamics.Degenerate.norm_incl23
+    Dynamics.Degenerate.norm_proj32_le Dynamics.Degenerate.norm_sub_incl23_proj32_le
+    m.q.planeField_eq_swing]
+  exact swing_ls_iff m.q m.δ
+
+/-- The plane field at a selected point of the plane is locally asymptotically stable iff the
+swing is (`Dynamics.Degenerate.localAsymptoticStable_relaxed_iff`). -/
+@[tmio TM, powerlib_domain] private theorem planeField_las_iff (m : Model) (hV : m.V = 0) :
+    LocalAsymptoticStable m.q.planeField m.point ↔ (m.q.Pff - m.q.Pe m.δ) / m.q.M = 0 ∧
+      0 < m.q.D / m.q.M ∧ 0 < m.q.k m.δ / m.q.M := by
+  rw [point_eq_incl m hV, Dynamics.Degenerate.localAsymptoticStable_relaxed_iff
+    Dynamics.Degenerate.proj32_incl23 Dynamics.Degenerate.norm_incl23
+    Dynamics.Degenerate.norm_proj32_le Dynamics.Degenerate.norm_sub_incl23_proj32_le
+    m.q.planeField_eq_swing]
+  exact swing_las_iff m.q m.δ
+
+/-- Without capacitance (`C = 0`, so `V̇ = 0` in Lean's `x / 0 = 0` reading) `V` never changes along
+the `C¹` open-loop field, which then has no locally asymptotically stable point
+(`Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos` with `ℓ = V`). -/
+@[tmio TM, powerlib_domain] private theorem not_las_of_C_eq_zero (m : Model) (hC : m.q.C = 0) :
+    ¬ LocalAsymptoticStable m.q.openField m.point := by
   have hfeq : m.q.openField =
       fun y => m.q.planeField y + y 2 • EuclideanSpace.single 2 (1 : ℝ) := by
     funext y
     apply state3_ext <;>
       simp [Plant.openField, Plant.planeField, Plant.nodeRate, GFL.DCLink.nodeRate, hC]
-  refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral ?_ (Dynamics.coord 2) ?_ ?_
+  refine Dynamics.not_localAsymptoticStable_of_linear_lie_nonpos ?_ (ℓ := Dynamics.coord 2) ?_
+    (Eventually.of_forall fun y => ?_)
   · rw [hfeq]
     exact m.q.contDiff_planeField.add ((Dynamics.contDiff_coord 2).smul contDiff_const)
   · intro h0
     have := congrArg (fun L : State 3 →L[ℝ] ℝ => L (EuclideanSpace.single 2 1)) h0
     simp at this
-  · intro y
-    simp [Plant.openField, Plant.nodeRate, GFL.DCLink.nodeRate, hC]
+  · simp [Plant.openField, Plant.nodeRate, GFL.DCLink.nodeRate, hC]
 
 /-- **Invariant singular plane: instability from the swing.** A selected point on the singular
 plane (`V* = 0`) with a source current that does not cross it (`I_s / C = 0`) is unstable,
 whatever the sign of `(P_s − P_e(δ*))/C`, when the swing carried by the plane drifts
-(`(P_ff − P_e(δ*))/M ≠ 0`: the point is not an equilibrium of the plane flow) or is unstable
-there (`D/M < 0` or `k/M < 0`): the solutions on the plane are solutions of the model, and the
-instability of `Plant.planeField` passes to the model
-(`Dynamics.Degenerate.lyapunovStable_of_invariantPlane`). -/
+(`(P_ff − P_e(δ*))/M ≠ 0`: the point is not an equilibrium of the plane flow), is negatively
+damped (`D/M < 0`), or has `k(δ*)/M ≤ 0` unless the power curve is flat (`A = 0`) with positive
+damping: a saddle `k(δ*)/M < 0`; a fold of the power curve, `k(δ*) = 0 ≠ A` (for every `M` and
+`D`); an undamped flat curve; no inertia, `M = 0` (frozen frequency, drifting angle). The
+solutions on the plane are solutions of the model, and the instability of the swing
+(`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia`, read through
+`Plant.planeField_eq_swing` and `Dynamics.Degenerate.lyapunovStable_relaxed_iff`) passes to the
+model (`Dynamics.Degenerate.lyapunovStable_of_invariantPlane`). For `(P_s − P_e(δ*))/C ≤ 0` the
+condition is exactly the failure of `mem_den_lyapunovStable_iff_of_invariant`. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_invariant (m : Model) (hV : m.V = 0)
     (hI : m.q.Is / m.q.C = 0)
-    (h : (m.q.Pff - m.q.Pe m.δ) / m.q.M ≠ 0 ∨ m.q.D / m.q.M < 0 ∨ m.q.k m.δ / m.q.M < 0) :
+    (h : (m.q.Pff - m.q.Pe m.δ) / m.q.M ≠ 0 ∨ m.q.D / m.q.M < 0 ∨
+      (m.q.k m.δ / m.q.M ≤ 0 ∧ (m.q.A ≠ 0 ∨ m.q.D / m.q.M ≤ 0))) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
   have hx2 : m.point 2 = 0 := by simp [Model.point, hV]
-  exact fun hs => planeField_unstable m hV h
+  intro hs
+  obtain ⟨hb, hc⟩ := (planeField_ls_iff m hV).mp
     (Dynamics.Degenerate.lyapunovStable_of_invariantPlane 2 hx2
       (fun y hy => m.q.openField_two_of_V_eq_zero hI hy) (m.q.planeField_eq hI) hs)
+  rcases h with h | h | ⟨hk, h⟩
+  · exact h hb
+  · rcases hc with ⟨hD, -⟩ | ⟨-, hD⟩ <;> linarith
+  · rcases hc with ⟨-, hk'⟩ | ⟨hA, hD⟩
+    · linarith
+    · rcases h with h | h
+      · exact h hA
+      · linarith
 
 /-! ### The degenerate balance `P_s = P_e(δ*)` on the singular plane
 
@@ -1169,7 +1277,8 @@ and converse linearization). `(P_s − P_e(δ*))/C > 0` repels (`mem_den_unstabl
     rcases lt_trichotomy ((m.q.Ps - m.q.Pe m.δ) / m.q.C) 0 with h | h | h
     · exact h
     · by_cases hC : m.q.C = 0
-      · exact absurd hf (not_les_of_C_eq_zero m hC)
+      · exact absurd (Flow.locallyExponentiallyStable_localAsymptoticStable hf)
+          (not_las_of_C_eq_zero m hC)
       · rw [div_eq_zero_iff, or_iff_left hC, sub_eq_zero] at h
         exact absurd ((mem_den_flow_iff (P := .locallyExponentiallyStable)).mpr hf) (hdeg h)
     · have hr := mem_den_unstable_of_repel m hV h
@@ -1180,84 +1289,141 @@ and converse linearization). `(P_s − P_e(δ*))/C > 0` repels (`mem_den_unstabl
     exact (Dynamics.Degenerate.locallyExponentiallyStable_iff_of_invariantPlane 2 hx2 hρ ha hcol
       hbound hplane (m.q.planeField_eq hI)).mpr ((planeField_les_iff m hV).mpr hs)
 
-/-- **Invariant singular plane: Lyapunov stability.** For a selected point with `V* = 0`,
-`I_s / C = 0`, `(P_s − P_e(δ*))/C < 0`, a balanced swing `P_ff = P_e(δ*)`, `0 < M`, `0 ≤ D` and
-`0 < k(δ*)`, the point is Lyapunov stable: the swing energy `M ω²/2 + U(δ)`
-(`Plant.swingPotential`, `U' = P_e − P_ff`, a strict minimum at `δ*`,
-`Plant.swingPotential_pos`) plus `V²/2` does not increase along `Plant.planeField`
-(its rate is `−D ω² − V²`), and the collapse carries the stability of the plane flow to the model
-(`Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane`). With `D = 0` the point is therefore
-Lyapunov stable but not locally exponentially stable
-(`mem_den_locallyExponentiallyStable_iff_of_invariant`). -/
-@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_invariant (m : Model)
-    (hV : m.V = 0) (hI : m.q.Is / m.q.C = 0) (hP : (m.q.Ps - m.q.Pe m.δ) / m.q.C < 0)
-    (hM : 0 < m.q.M) (hD : 0 ≤ m.q.D) (hbal : m.q.Pff = m.q.Pe m.δ) (hk : 0 < m.q.k m.δ) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
-  unfold TMIO.Statement
-  rw [mem_den_flow_iff]
-  change LyapunovStable _ _
+/-- At a degenerate balance on the invariant plane (`I_s / C = 0`, `(P_s − P_e(δ*))/C = 0`) with a
+balanced swing (`P_ff = P_e(δ*)`, `M ≠ 0`) the quantity `V²/2 − (M ω + D δ)/C` is conserved off
+the plane: there `V V̇ = (P_s − P_e(δ))/C = (P_ff − P_e(δ))/C = (M ω̇ + D ω)/C` (with `C = 0`
+both sides vanish in Lean's `x / 0 = 0` reading). So Lyapunov stability is that of the plane field
+(`Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane_firstIntegral`). -/
+@[tmio TM, powerlib_domain] private theorem lyapunovStable_iff_planeField_of_balance (m : Model)
+    (hV : m.V = 0) (hI : m.q.Is / m.q.C = 0) (hP : (m.q.Ps - m.q.Pe m.δ) / m.q.C = 0)
+    (hM : m.q.M ≠ 0) (hbal : m.q.Pff = m.q.Pe m.δ) :
+    LyapunovStable m.q.openField m.point ↔ LyapunovStable m.q.planeField m.point := by
   have hx2 : m.point 2 = 0 := by simp [Model.point, hV]
-  obtain ⟨ρ, a, B, hρ, ha, hcol, hbound⟩ := exists_collapse m hV hP
-  refine (Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane 2 hx2 hρ ha hcol hbound
-    (fun y hy => m.q.openField_two_of_V_eq_zero hI hy) (m.q.planeField_eq hI)).mpr ?_
-  have hkc : Continuous m.q.k := by
-    unfold Plant.k
-    fun_prop
-  obtain ⟨r, hr, hkr⟩ := Metric.continuous_iff.mp hkc m.δ (m.q.k m.δ) hk
-  have hk' : ∀ δ, |δ - m.δ| < r → 0 < m.q.k δ := fun δ hδ => by
-    have h1 := hkr δ (by rwa [Real.dist_eq])
-    rw [Real.dist_eq] at h1
-    linarith [(abs_lt.mp h1).1]
-  set W : State 3 → ℝ := fun y =>
-    m.q.M / 2 * y 1 ^ 2 + m.q.swingPotential m.δ (y 0) + 1 / 2 * y 2 ^ 2 with hW
-  have hWd : ∀ y : State 3, HasFDerivAt W ((m.q.M * y 1) • Dynamics.coord 1 +
-      (m.q.Pe (y 0) - m.q.Pff) • Dynamics.coord 0 + y 2 • Dynamics.coord 2) y := by
-    intro y
-    have h1 := ((Dynamics.hasFDerivAt_coord (1 : Fin 3) y).pow 2).const_mul (m.q.M / 2)
-    have h0 := (m.q.hasDerivAt_swingPotential m.δ (y 0)).comp_hasFDerivAt y
-      (Dynamics.hasFDerivAt_coord 0 y)
-    have h2 := ((Dynamics.hasFDerivAt_coord (2 : Fin 3) y).pow 2).const_mul (1 / 2)
-    refine ((h1.add h0).add h2).congr_fderiv ?_
-    ext v
-    simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
-    simp
-    ring
-  refine lyapunov_stable (V := W) (D := {y : State 3 | |y 0 - m.δ| < r}) (by norm_num)
-    ⟨isOpen_lt (continuous_abs.comp ((Dynamics.contDiff_coord (k := 1) 0).continuous.sub
-      continuous_const)) continuous_const, by simp [Model.point, hr],
-      continuous_iff_continuousAt.mpr fun y => (hWd y).continuousAt,
-      fun y => (hWd y).differentiableAt, by simp [hW, Model.point, Plant.swingPotential, hV],
-      fun y hy hne => ?_, fun y _ => ?_⟩
-  · have hU0 : 0 ≤ m.q.swingPotential m.δ (y 0) := by
-      by_cases h0 : y 0 = m.δ
-      · simp [h0, Plant.swingPotential]
-      · exact (m.q.swingPotential_pos hbal hk' hy h0).le
-    by_cases h0 : y 0 = m.δ
-    · have h12 : y 1 ≠ 0 ∨ y 2 ≠ 0 := by
-        by_contra hc
-        push Not at hc
-        exact hne (state3_ext (by simp [Model.point, h0]) (by simp [Model.point, hc.1])
-          (by simp [Model.point, hc.2, hV]))
-      have hM2 : 0 ≤ m.q.M / 2 * y 1 ^ 2 := by positivity
-      rcases h12 with h | h
-      · have : 0 < m.q.M / 2 * y 1 ^ 2 := by positivity
-        simp only [hW]
-        nlinarith [sq_nonneg (y 2)]
-      · have : 0 < y 2 ^ 2 := by positivity
-        simp only [hW]
-        nlinarith
-    · have hU := m.q.swingPotential_pos hbal hk' hy h0
-      simp only [hW]
-      nlinarith [sq_nonneg (y 1), sq_nonneg (y 2), mul_nonneg hM.le (sq_nonneg (y 1))]
-  · rw [(hWd y).fderiv]
+  set G : State 3 → ℝ := fun y => (m.q.M * y 1 + m.q.D * y 0) * m.q.C⁻¹ with hGdef
+  have hGd : ∀ y : State 3, HasFDerivAt G
+      (m.q.C⁻¹ • (m.q.M • Dynamics.coord 1 + m.q.D • Dynamics.coord 0)) y := fun y =>
+    (((Dynamics.hasFDerivAt_coord (1 : Fin 3) y).const_mul m.q.M).add
+      ((Dynamics.hasFDerivAt_coord (0 : Fin 3) y).const_mul m.q.D)).mul_const m.q.C⁻¹
+  refine Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane_firstIntegral 2 hx2
+    (fun y => ?_) (G := G) (fun y => (hGd y).differentiableAt) (fun y => ?_) (fun y hy => ?_)
+    (m.q.planeField_eq hI)
+  · apply state3_ext <;> simp [Plant.openField, Plant.nodeRate_zero, hI]
+  · simp [hGdef]
+  · rw [(hGd y).fderiv]
+    have h2 := m.q.two_mul_nodeRate (δ := y 0) hy
+    have hf2 : m.q.openField y 2 = m.q.nodeRate (y 0) (y 2) := by simp [Plant.openField]
+    have hl : y 2 * m.q.openField y 2 = (m.q.Is * y 2 + m.q.Ps - m.q.Pe (y 0)) / m.q.C := by
+      rw [hf2]
+      rw [mul_div_assoc] at h2
+      linarith
+    rw [hl]
     simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul,
-      Plant.planeField, mk3_zero, mk3_one, mk3_two, Plant.swingRate]
-    have e : m.q.M * y 1 * ((m.q.Pff - m.q.Pe (y 0) - m.q.D * y 1) / m.q.M) +
-        (m.q.Pe (y 0) - m.q.Pff) * y 1 + y 2 * -y 2 = -(m.q.D * y 1 ^ 2) - y 2 ^ 2 := by
+      Plant.openField, mk3_zero, mk3_one, Plant.swingRate]
+    by_cases hC : m.q.C = 0
+    · simp [hC]
+    · have hIs : m.q.Is = 0 := by
+        rw [div_eq_zero_iff, or_iff_left hC] at hI
+        exact hI
+      have hPs : m.q.Ps = m.q.Pe m.δ := by
+        rw [div_eq_zero_iff, or_iff_left hC, sub_eq_zero] at hP
+        exact hP
+      rw [hIs, hPs, ← hbal]
       field_simp
       ring
-    rw [e]
-    nlinarith [mul_nonneg hD (sq_nonneg (y 1)), sq_nonneg (y 2)]
+
+/-- **Invariant singular plane: Lyapunov stability, exactly.** For a selected point with
+`V* = 0` and a source current that does not cross the plane (`I_s / C = 0`), the point is
+Lyapunov stable iff the power term does not push `V` off the plane, `(P_s − P_e(δ*))/C ≤ 0`, the
+swing carried by the plane is balanced, `(P_ff − P_e(δ*))/M = 0`, and either `0 ≤ D/M` with
+`0 < k(δ*)/M` (`D = 0`: a centre of the conservative swing, for either sign of `M`), or the power
+curve is flat, `A = 0`, with `0 < D/M` (a line of equilibria `(δ, 0, 0)` attracting the
+frequency). Every other case is unstable (`mem_den_unstable_of_repel`,
+`mem_den_unstable_of_invariant`): a fold `k(δ*) = 0 ≠ A` for every `M` and `D`, an undamped flat
+curve, a saddle, negative damping, `M = 0`. Lyapunov stability passes to the plane field
+(`Dynamics.Degenerate.lyapunovStable_of_invariantPlane`) and back: for `(P_s − P_e(δ*))/C < 0`
+through the collapse (`Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane`); for
+`(P_s − P_e(δ*))/C = 0` (the degenerate balance, or `C = 0`) through the first integral
+`V²/2 − (M ω + D δ)/C` off the plane
+(`Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane_firstIntegral`). The plane field is the
+swing `Plant.swingParams` with `V` relaxed (`Plant.planeField_eq_swing`,
+`Dynamics.Degenerate.lyapunovStable_relaxed_iff`), decided by
+`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia` (energy, fold and flat-curve Chetaev
+functions); for `M < 0` that law is read on the same field with every coefficient negated, and
+`M = 0` freezes the frequency and lets the angle drift. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff_of_invariant (m : Model)
+    (hV : m.V = 0) (hI : m.q.Is / m.q.C = 0) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      (m.q.Ps - m.q.Pe m.δ) / m.q.C ≤ 0 ∧ (m.q.Pff - m.q.Pe m.δ) / m.q.M = 0 ∧
+        ((0 ≤ m.q.D / m.q.M ∧ 0 < m.q.k m.δ / m.q.M) ∨ (m.q.A = 0 ∧ 0 < m.q.D / m.q.M))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
+  change LyapunovStable _ _ ↔ _
+  have hx2 : m.point 2 = 0 := by simp [Model.point, hV]
+  have hplane : ∀ y : State 3, y 2 = 0 → m.q.openField y 2 = 0 :=
+    fun y hy => m.q.openField_two_of_V_eq_zero hI hy
+  constructor
+  · intro hs
+    refine ⟨not_lt.mp fun hP => ?_, (planeField_ls_iff m hV).mp
+      (Dynamics.Degenerate.lyapunovStable_of_invariantPlane 2 hx2 hplane (m.q.planeField_eq hI)
+        hs)⟩
+    have hr := mem_den_unstable_of_repel m hV hP
+    unfold TMIO.Statement at hr
+    exact (mem_den_flow_iff.mp hr) hs
+  · rintro ⟨hP, hs⟩
+    have hpl := (planeField_ls_iff m hV).mpr hs
+    rcases lt_or_eq_of_le hP with hP | hP
+    · obtain ⟨ρ, a, B, hρ, ha, hcol, hbound⟩ := exists_collapse m hV hP
+      exact (Dynamics.Degenerate.lyapunovStable_iff_of_invariantPlane 2 hx2 hρ ha hcol hbound
+        hplane (m.q.planeField_eq hI)).mpr hpl
+    · have hM : m.q.M ≠ 0 := by
+        rintro hM
+        simp [hM] at hs
+      have hbal : m.q.Pff = m.q.Pe m.δ := by
+        have h := hs.1
+        rw [div_eq_zero_iff, or_iff_left hM, sub_eq_zero] at h
+        exact h
+      exact (lyapunovStable_iff_planeField_of_balance m hV hI hP hM hbal).mpr hpl
+
+/-- **Invariant singular plane: local asymptotic stability is local exponential stability.** For
+a selected point with `V* = 0` and `I_s / C = 0`, local asymptotic stability holds iff
+`(P_s − P_e(δ*))/C < 0`, `(P_ff − P_e(δ*))/M = 0`, `0 < D/M` and `0 < k(δ*)/M`, the conditions of
+`mem_den_locallyExponentiallyStable_iff_of_invariant`. Local asymptotic stability passes to the
+plane field (`Dynamics.Degenerate.localAsymptoticStable_of_invariantPlane`) and to the swing
+(`Dynamics.Degenerate.localAsymptoticStable_relaxed_iff`), where it needs damping and
+synchronization (`Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`, for `M < 0` on the
+negated coefficients): the Lyapunov stable centre (`D = 0`) and flat curve (`A = 0`) of
+`mem_den_lyapunovStable_iff_of_invariant` are not attracting. `(P_s − P_e(δ*))/C > 0` repels
+(`mem_den_unstable_of_repel`); `= 0` is the degenerate balance
+(`not_mem_den_locallyAsymptoticallyStable_of_degenerate_of_rest`, `mem_den_unstable_of_invariant`)
+or `C = 0`, where `V` is conserved. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_invariant
+    (m : Model) (hV : m.V = 0) (hI : m.q.Is / m.q.C = 0) :
+    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      (m.q.Ps - m.q.Pe m.δ) / m.q.C < 0 ∧ (m.q.Pff - m.q.Pe m.δ) / m.q.M = 0 ∧
+        0 < m.q.D / m.q.M ∧ 0 < m.q.k m.δ / m.q.M) := by
+  have hles := mem_den_locallyExponentiallyStable_iff_of_invariant m hV hI
+  unfold TMIO.Statement at hles ⊢
+  refine ⟨fun hm => ?_, fun h => Spectral.den_locallyExponentiallyStable_subset_las (hles.mpr h)⟩
+  have hf : LocalAsymptoticStable m.q.openField m.point := mem_den_flow_iff.mp hm
+  rcases lt_trichotomy ((m.q.Ps - m.q.Pe m.δ) / m.q.C) 0 with hP | hP | hP
+  · have hx2 : m.point 2 = 0 := by simp [Model.point, hV]
+    exact ⟨hP, (planeField_las_iff m hV).mp
+      (Dynamics.Degenerate.localAsymptoticStable_of_invariantPlane 2 hx2
+        (fun y hy => m.q.openField_two_of_V_eq_zero hI hy) (m.q.planeField_eq hI) hf)⟩
+  · exfalso
+    by_cases hC : m.q.C = 0
+    · exact not_las_of_C_eq_zero m hC hf
+    · rw [div_eq_zero_iff, or_iff_left hC, sub_eq_zero] at hP
+      by_cases hw : (m.q.Pff - m.q.Pe m.δ) / m.q.M = 0
+      · have h := not_mem_den_locallyAsymptoticallyStable_of_degenerate_of_rest m hV hP hI hw
+        unfold TMIO.Statement at h
+        exact h hm
+      · have h := mem_den_unstable_of_invariant m hV hI (Or.inl hw)
+        unfold TMIO.Statement at h
+        exact (mem_den_flow_iff.mp h) hf.1
+  · have hr := mem_den_unstable_of_repel m hV hP
+    unfold TMIO.Statement at hr
+    exact absurd hf.1 (mem_den_flow_iff.mp hr)
 
 end OpenLoop
 

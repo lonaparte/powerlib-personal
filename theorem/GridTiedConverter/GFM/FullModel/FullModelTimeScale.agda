@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.GridTiedConverter.GFM.FullModel.FullModelTimeScale where
--- Lean modules: theorem.GridTiedConverter.GFM.FullModel.TimeScale theorem.GridTiedConverter.GFM.FullModel.Counterexample
+-- Lean modules: theorem.GridTiedConverter.GFM.FullModel.TimeScale theorem.GridTiedConverter.GFM.FullModel.Counterexample theorem.GridTiedConverter.GFM.FullModel.BoundaryLayer
 
 -- Scaffold of the reading of the time-scaled 13-state grid-forming converter
 -- (`GFM.FullModel.family` of `theorem/GridTiedConverter/GFM/FullModel/Saddle.lean`, at the
@@ -30,7 +30,16 @@ module theorem.GridTiedConverter.GFM.FullModel.FullModelTimeScale where
 --   certificate), a locally exponentially stable reduction
 --   (`GFM.FullModel.witness_reduced_mem_den_LES`) and an unstable full model at the same point
 --   (`GFM.FullModel.witness_mem_den_unstable`: the characteristic determinant of the full Jacobian
---   is nonpositive at `s = 2`, so it has a real eigenvalue `μ ≥ 2`). Nothing here is exported.
+--   is nonpositive at `s = 2`, so it has a real eigenvalue `μ ≥ 2`).
+-- * The boundary-layer part of the context follows from the gains under a second time scale
+--   (`stable→gains`, Lean `GFM.FullModel.exists_muStar_epsStar_mem_den_LES_of_qvDroop`): in the
+--   design with partial or full line-current feed-forward (`k_ff ≤ 1`) and no virtual impedance,
+--   with positive filter, line resistance and gains (`GainContext`), the current loop accelerated by `μ⁻¹`
+--   (`currentScale`, Lean `GFM.FullModel.Model.currentScaled`) makes the boundary layer stable
+--   for every `μ < μ*` (`GFM.FullModel.Params.exists_muStar_spectrallyStable_fastBlock_of_gains`),
+--   so the transfer holds for every `μ < μ*` and every `ε < ε*(μ)`. Positive gains alone do not
+--   give a stable boundary layer (`GFM.FullModel.not_forall_spectrallyStable_fastBlock`, a static
+--   statement about the fast block). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
@@ -50,6 +59,10 @@ module _ (Sc : Scalars) where
     (DroopModel : Type) (toDroop : Params → ℝ → ℝ → DroopModel)
     -- The context: nondegenerate fast block, no virtual impedance, stable boundary layer.
     (Context : Params → ℝ → Type)
+    -- The current loop accelerated by `μ⁻¹` (Lean `GFM.FullModel.Params.currentScaled`), and the
+    -- gain context: `k_ff ≤ 1`, no virtual impedance, positive filter, line resistance and
+    -- gains, nonzero `M, ω_q`.
+    (currentScaled : Params → ℝ → Params) (GainContext : Params → Type)
     where
 
     -- A full-order model: parameters and a selected quasi-steady point `(δ*, Q*)`.
@@ -64,6 +77,10 @@ module _ (Sc : Scalars) where
     -- The time-scaled model at the same point.
     timeScale : Model → ℝ → Model
     timeScale m ε = model (timeScaled (p m) ε) (δ m) (Qf m)
+
+    -- The model with its current loop accelerated, at the same point.
+    currentScale : Model → ℝ → Model
+    currentScale m μ = model (currentScaled (p m) μ) (δ m) (Qf m)
 
     -- The reduction: the droop model of the parameters at the same point.
     reduce : Model → DroopModel
@@ -93,6 +110,10 @@ module _ (Sc : Scalars) where
             stable→ : (m : Model) → Context (p m) (δ m) → den reduced stable (reduce m) →
               Σ ℝ λ εs → (0r < εs) ×
                 ((ε : ℝ) → 0r < ε → ε < εs → den full stable (timeScale m ε))
+            stable→gains : (m : Model) → GainContext (p m) → den reduced stable (reduce m) →
+              Σ ℝ λ μs → (0r < μs) × ((μ : ℝ) → 0r < μ → μ < μs →
+                Σ ℝ λ εs → (0r < εs) ×
+                  ((ε : ℝ) → 0r < ε → ε < εs → den full stable (timeScale (currentScale m μ) ε)))
 
         module _ (ob : Obligations) where
           open Obligations ob
@@ -102,6 +123,14 @@ module _ (Sc : Scalars) where
             Σ ℝ λ εs → (0r < εs) ×
               ((ε : ℝ) → 0r < ε → ε < εs → den full stable (timeScale m ε))
           stable-transfer = stable→
+
+          -- With the gain context, a stable reduction stays stable for every fast enough current
+          -- loop and every sufficiently time-scaled full model.
+          stable-transfer-gains : (m : Model) → GainContext (p m) → den reduced stable (reduce m) →
+            Σ ℝ λ μs → (0r < μs) × ((μ : ℝ) → 0r < μ → μ < μs →
+              Σ ℝ λ εs → (0r < εs) ×
+                ((ε : ℝ) → 0r < ε → ε < εs → den full stable (timeScale (currentScale m μ) ε)))
+          stable-transfer-gains = stable→gains
 
         -- What Lean proves at fixed parameters: a model in the context of `stable→` (stable
         -- boundary layer included) with a stable reduction and an unstable full model.

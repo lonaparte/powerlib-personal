@@ -48,7 +48,9 @@ Results.
   (`norm_lpMap_le`, `gapConst_pos`); integrability: `integrableOn_stable`,
   `integrableOn_stableInit`.
 * Fixed points for a `δ`-Lipschitz `g` with `g 0 = 0` and `K δ κ < 1`: existence
-  (`exists_fixedPoint`, the contraction principle on bounded continuous functions),
+  (`exists_fixedPoint_timeDep` for a time-dependent nonlinearity `G(s, ·)`, `δ`-Lipschitz for
+  every `s`, by the contraction principle on bounded continuous functions; its autonomous case
+  `exists_fixedPoint`),
   Lipschitz dependence on the centre datum (`norm_sub_fixedPoint_le`) and uniqueness
   (`fixedPoint_unique`), with the iteration bound `le_of_contract` and the weight
   `continuous_weight`.
@@ -503,14 +505,18 @@ variable {K ε β η : ℝ} {g : E → E} {δ : NNReal}
     Continuous fun t : ℝ => Real.exp (η * |t|) :=
   Real.continuous_exp.comp (continuous_const.mul continuous_abs)
 
-/-- Existence of a fixed point `x = lpMap u (g ∘ x)` of weighted growth `e^{η|t|}`, by the
-contraction principle in the space of bounded continuous functions `y = e^{−η|t|} x`. -/
-@[tmio T, powerlib_foundation] theorem exists_fixedPoint (hε : 0 ≤ ε) (hεη : ε < η)
+/-- **Time-dependent Lyapunov–Perron fixed points.** For `G(s, ·)` `δ`-Lipschitz for every `s`
+with `G(s, 0) = 0`, jointly continuous, and `K δ κ < 1`, there is a fixed point
+`x = lpMap u (G(·, x(·)))` of weighted growth `e^{η|t|}` (the contraction principle on bounded
+continuous functions `y = e^{−η|t|} x`). The autonomous case is `exists_fixedPoint`. -/
+@[tmio T, powerlib_foundation] theorem exists_fixedPoint_timeDep (hε : 0 ≤ ε) (hεη : ε < η)
     (hηβ : η < β) (hcen : ∀ t, ‖expFlow A t * P‖ ≤ K * Real.exp (ε * |t|))
     (hst : ∀ t, 0 ≤ t → ‖expFlow A t * (1 - P)‖ ≤ K * Real.exp (-(β * t)))
-    (hg : LipschitzWith δ g) (hg0 : g 0 = 0) (hk : K * δ * gapConst ε η β < 1) (u : E) :
+    {G : ℝ → E → E} (hGc : Continuous (Function.uncurry G))
+    (hG : ∀ s, LipschitzWith δ (G s)) (hG0 : ∀ s, G s 0 = 0)
+    (hk : K * δ * gapConst ε η β < 1) (u : E) :
     ∃ x : ℝ → E, Continuous x ∧ (∃ C, 0 ≤ C ∧ ∀ t, ‖x t‖ ≤ C * Real.exp (η * |t|)) ∧
-      ∀ t, x t = lpMap A P u (fun s => g (x s)) t := by
+      ∀ t, x t = lpMap A P u (fun s => G s (x s)) t := by
   have hK := nonneg_of_stable_bound hst
   have hκ := (gapConst_pos hεη hηβ).le
   set κ := gapConst ε η β
@@ -521,14 +527,15 @@ contraction principle in the space of bounded continuous functions `y = e^{−η
     simp only [W, norm_smul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
     rw [mul_comm]
     exact mul_le_mul_of_nonneg_right (y.norm_coe_le_norm t) (Real.exp_pos _).le
-  have hgc : ∀ y, Continuous fun s => g (W y s) := fun y => hg.continuous.comp (hWc y)
-  have hgb : ∀ y s, ‖g (W y s)‖ ≤ (δ * ‖y‖) * Real.exp (η * |s|) := by
+  have hgc : ∀ y, Continuous fun s => G s (W y s) := fun y =>
+    hGc.comp (continuous_id.prodMk (hWc y))
+  have hgb : ∀ y s, ‖G s (W y s)‖ ≤ (δ * ‖y‖) * Real.exp (η * |s|) := by
     intro y s
-    calc ‖g (W y s)‖ ≤ δ * ‖W y s‖ := hg.norm_le_mul hg0 _
+    calc ‖G s (W y s)‖ ≤ δ * ‖W y s‖ := (hG s).norm_le_mul (hG0 s) _
       _ ≤ δ * (‖y‖ * Real.exp (η * |s|)) := by gcongr; exact hWb y s
       _ = _ := by ring
   let F : (BoundedContinuousFunction ℝ E) → ℝ → E := fun y t =>
-    Real.exp (-(η * |t|)) • lpMap A P u (fun s => g (W y s)) t
+    Real.exp (-(η * |t|)) • lpMap A P u (fun s => G s (W y s)) t
   have hFc : ∀ y, Continuous (F y) := fun y =>
     (Real.continuous_exp.comp (continuous_const.mul continuous_abs).neg).smul
       (continuous_lpMap (hgc y) u)
@@ -549,20 +556,20 @@ contraction principle in the space of bounded continuous functions `y = e^{−η
     change dist (S y₁) (S y₂) ≤ (K * δ * κ) * dist y₁ y₂
     rw [BoundedContinuousFunction.dist_le (by positivity)]
     intro t
-    have hd : ∀ s, ‖g (W y₁ s) - g (W y₂ s)‖ ≤ (δ * dist y₁ y₂) * Real.exp (η * |s|) := by
+    have hd : ∀ s, ‖G s (W y₁ s) - G s (W y₂ s)‖ ≤ (δ * dist y₁ y₂) * Real.exp (η * |s|) := by
       intro s
-      calc ‖g (W y₁ s) - g (W y₂ s)‖ ≤ δ * ‖W y₁ s - W y₂ s‖ := by
-            simpa [dist_eq_norm] using hg.dist_le_mul (W y₁ s) (W y₂ s)
+      calc ‖G s (W y₁ s) - G s (W y₂ s)‖ ≤ δ * ‖W y₁ s - W y₂ s‖ := by
+            simpa [dist_eq_norm] using (hG s).dist_le_mul (W y₁ s) (W y₂ s)
         _ = δ * (Real.exp (η * |s|) * dist (y₁ s) (y₂ s)) := by
             simp only [W, ← smul_sub, norm_smul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _),
               dist_eq_norm]
         _ ≤ δ * (Real.exp (η * |s|) * dist y₁ y₂) := by
             gcongr; exact BoundedContinuousFunction.dist_coe_le_dist s
         _ = _ := by ring
-    have hsub := lpMap_sub (A := A) (P := P) (b₁ := fun s => g (W y₁ s))
-      (b₂ := fun s => g (W y₂ s)) (hgc y₁) (hgc y₂) (by positivity) (by positivity)
+    have hsub := lpMap_sub (A := A) (P := P) (b₁ := fun s => G s (W y₁ s))
+      (b₂ := fun s => G s (W y₂ s)) (hgc y₁) (hgc y₂) (by positivity) (by positivity)
       (hgb y₁) (hgb y₂) (hε.trans hεη.le) hηβ hst u u t
-    have hbd := norm_lpMap_le (A := A) (P := P) (b := fun s => g (W y₁ s) - g (W y₂ s))
+    have hbd := norm_lpMap_le (A := A) (P := P) (b := fun s => G s (W y₁ s) - G s (W y₂ s))
       ((hgc y₁).sub (hgc y₂)) (by positivity) hd hε hεη hηβ hcen hst (u - u) t
     change dist (F y₁ t) (F y₂ t) ≤ _
     rw [dist_eq_norm]
@@ -576,9 +583,20 @@ contraction principle in the space of bounded continuous functions `y = e^{−η
   have hy : S y = y := hS.fixedPoint_isFixedPt
   refine ⟨W y, hWc y, ⟨‖y‖, norm_nonneg _, hWb y⟩, fun t => ?_⟩
   have h := congrArg (fun z : BoundedContinuousFunction ℝ E => z t) hy
-  change Real.exp (-(η * |t|)) • lpMap A P u (fun s => g (W y s)) t = y t at h
+  change Real.exp (-(η * |t|)) • lpMap A P u (fun s => G s (W y s)) t = y t at h
   change Real.exp (η * |t|) • y t = _
   rw [← h, smul_smul, mul_comm, hcancel, one_smul]
+
+/-- Existence of a fixed point `x = lpMap u (g ∘ x)` of weighted growth `e^{η|t|}`: the
+autonomous case `G(s, y) = g(y)` of `exists_fixedPoint_timeDep`. -/
+@[tmio T, powerlib_foundation] theorem exists_fixedPoint (hε : 0 ≤ ε) (hεη : ε < η)
+    (hηβ : η < β) (hcen : ∀ t, ‖expFlow A t * P‖ ≤ K * Real.exp (ε * |t|))
+    (hst : ∀ t, 0 ≤ t → ‖expFlow A t * (1 - P)‖ ≤ K * Real.exp (-(β * t)))
+    (hg : LipschitzWith δ g) (hg0 : g 0 = 0) (hk : K * δ * gapConst ε η β < 1) (u : E) :
+    ∃ x : ℝ → E, Continuous x ∧ (∃ C, 0 ≤ C ∧ ∀ t, ‖x t‖ ≤ C * Real.exp (η * |t|)) ∧
+      ∀ t, x t = lpMap A P u (fun s => g (x s)) t :=
+  exists_fixedPoint_timeDep hε hεη hηβ hcen hst (G := fun _ y => g y)
+    (hg.continuous.comp continuous_snd) (fun _ => hg) (fun _ => hg0) hk u
 
 /-- Fixed points depend Lipschitz-continuously on the centre datum:
 `‖x_u(t) − x_v(t)‖ ≤ K ‖u − v‖ e^{η|t|}/(1 − Kδκ)`. -/

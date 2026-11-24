@@ -19,15 +19,16 @@ Scope.
   (`f_k = 0` on it): a solution of `g` is then a solution of `f` on the plane, its projection,
   plus a `k`-th coordinate decaying as `e^{−t}`.
 
-Source: Khalil, *Nonlinear Systems* (3rd ed.), Definition 4.1 (stability) and Definition 4.5
-(exponential stability); the reduction is new (it answers the case left open in
+Source: Khalil, *Nonlinear Systems* (3rd ed.), Definition 4.1 (stability, asymptotic stability)
+and Definition 4.5 (exponential stability); the reductions are new (it answers the case left open in
 `theorem/GridTiedConverter/GFM/DCLink/OpenLoop.lean`: a source current that does not cross the
 singular plane).
 
 Results.
-* `lyapunovStable_of_invariantPlane`, `locallyExponentiallyStable_of_invariantPlane`: with an
-  invariant plane and `g` as above, Lyapunov stability, or local exponential stability, of `x`
-  for `f` passes to `g`. So instability of `g` (for instance at a point where `g` does not
+* `lyapunovStable_of_invariantPlane`, `locallyExponentiallyStable_of_invariantPlane`,
+  `localAsymptoticStable_of_invariantPlane`: with an invariant plane and `g` as above, Lyapunov
+  stability, local exponential stability, or local asymptotic stability, of `x` for `f` passes to
+  `g`. So instability of `g` (for instance at a point where `g` does not
   vanish, or from a Jacobian eigenvalue of `g`) is instability of `f`.
 * `lyapunovStable_of_invariantPlane_collapse`,
   `locallyExponentiallyStable_of_invariantPlane_collapse`: conversely, if near `x` the field
@@ -40,6 +41,12 @@ Results.
 * `lyapunovStable_iff_of_invariantPlane`, `locallyExponentiallyStable_iff_of_invariantPlane`: the
   two directions together. Under the collapse the stability of `x` is exactly that of the flow on
   the plane.
+* `lyapunovStable_iff_of_invariantPlane_firstIntegral`: without collapse, a first integral off the
+  plane. If the components of `f` off `k` do not depend on `y_k` and off the plane
+  `y_k f_k = Ġ` for a differentiable `G` independent of `y_k` (`y_k²/2 − G` conserved), Lyapunov
+  stability of `x` for `f` is that for `g`: since its last visit to the plane, `y_k²` along a
+  segment grows by at most twice the oscillation of `G` along the projection (mean value
+  theorem, `sSup` of the closed set of visits).
 -/
 
 noncomputable section
@@ -49,6 +56,39 @@ open Set Filter Topology
 variable {n : ℕ}
 
 /-! ## A solution of the plane field splits -/
+
+/-- With `f_k = 0` on the plane, the `k`-th component of `g(y) = f(y − y_k e_k) − y_k e_k` is
+`−y_k`. -/
+@[tmio T, powerlib_foundation] private theorem plane_apply_k {f g : State n → State n}
+    (k : Fin n) (hplane : ∀ y : State n, y k = 0 → f y k = 0)
+    (hg : ∀ y : State n, g y = f (y - y k • EuclideanSpace.single k (1 : ℝ)) -
+      y k • EuclideanSpace.single k (1 : ℝ)) (y : State n) : g y k = -y k := by
+  have hek : EuclideanSpace.single k (1 : ℝ) k = 1 := by simp
+  rw [hg, PiLp.sub_apply, hplane _ (by simp), PiLp.smul_apply, hek, smul_eq_mul, mul_one,
+    zero_sub]
+
+/-- The projection onto the plane of a solution of `g(y) = f(y − y_k e_k) − y_k e_k`, on any set
+of times, is a solution of `f` when `f_k = 0` on the plane. -/
+@[tmio T, powerlib_foundation] private theorem isIntegralCurveOn_proj {f g : State n → State n}
+    (k : Fin n) (hplane : ∀ y : State n, y k = 0 → f y k = 0)
+    (hg : ∀ y : State n, g y = f (y - y k • EuclideanSpace.single k (1 : ℝ)) -
+      y k • EuclideanSpace.single k (1 : ℝ))
+    {ψ : ℝ → State n} {s : Set ℝ} (hψ : IsIntegralCurveOn ψ (fun _ y => g y) s) :
+    IsIntegralCurveOn (fun t => ψ t - ψ t k • EuclideanSpace.single k (1 : ℝ))
+      (fun _ y => f y) s := by
+  set e := EuclideanSpace.single k (1 : ℝ) with he
+  set P : State n →L[ℝ] State n := ContinuousLinearMap.id ℝ (State n) -
+    (EuclideanSpace.proj k : State n →L[ℝ] ℝ).smulRight e with hPdef
+  have hP : ∀ v, P v = v - v k • e := fun v => by simp [hPdef]
+  have hPg : ∀ y : State n, P (g y) = f (y - y k • e) := fun y => by
+    rw [hP, plane_apply_k k hplane hg, hg]
+    module
+  intro t ht
+  have h := P.hasFDerivAt.comp_hasDerivWithinAt t (hψ t ht)
+  rw [hPg] at h
+  convert h using 1
+  funext s
+  simp only [Function.comp_apply, hP]
 
 /-- A solution segment of `g(y) = f(y − y_k e_k) − y_k e_k` splits, when `f_k = 0` on the plane,
 into its projection onto the plane, a solution segment of `f`, and a `k`-th coordinate decaying
@@ -60,24 +100,8 @@ as `e^{−t}`. -/
     {ψ : ℝ → State n} {t₀ t₁ : ℝ} (hψ : IsTrajectoryOn ψ g t₀ t₁) :
     IsTrajectoryOn (fun t => ψ t - ψ t k • EuclideanSpace.single k (1 : ℝ)) f t₀ t₁ ∧
       ∀ t ∈ Icc t₀ t₁, ψ t k = ψ t₀ k * Real.exp (-(t - t₀)) := by
-  set e := EuclideanSpace.single k (1 : ℝ) with he
-  set P : State n →L[ℝ] State n := ContinuousLinearMap.id ℝ (State n) -
-    (EuclideanSpace.proj k : State n →L[ℝ] ℝ).smulRight e with hPdef
-  have hP : ∀ v, P v = v - v k • e := fun v => by simp [hPdef]
-  have hek : e k = 1 := by simp [he]
-  have hPk : ∀ v : State n, (v - v k • e) k = 0 := fun v => by simp [hek]
-  have hgk : ∀ y : State n, g y k = -y k := fun y => by
-    rw [hg, PiLp.sub_apply, hplane _ (hPk y), PiLp.smul_apply, hek, smul_eq_mul, mul_one,
-      zero_sub]
-  have hPg : ∀ y : State n, P (g y) = f (y - y k • e) := fun y => by
-    rw [hP, hgk, hg]
-    module
-  refine ⟨fun t ht => ?_, ?_⟩
-  · have h := P.hasFDerivAt.comp_hasDerivWithinAt t (hψ t ht)
-    rw [hPg] at h
-    convert h using 1
-    funext s
-    simp only [Function.comp_apply, hP]
+  have hgk := plane_apply_k k hplane hg
+  refine ⟨isIntegralCurveOn_proj k hplane hg hψ, ?_⟩
   · have hd : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt (fun t => ψ t k) (-ψ t k) (Icc t₀ t₁) t :=
       fun t ht => by
         have h := (EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t
@@ -174,6 +198,32 @@ with `C + 1` and `min a 1`. -/
     exact mul_le_mul (mul_le_mul_of_nonneg_left he1 hC0) h1 (norm_nonneg _)
       (mul_nonneg hC0 (Real.exp_pos _).le)
   nlinarith
+
+/-- **Local asymptotic stability passes to the plane field** (as
+`lyapunovStable_of_invariantPlane`): the projection of a forward-complete solution of `g` is one
+of `f`, which converges to `x`, and the `k`-th coordinate decays as `e^{−t}`. -/
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_invariantPlane
+    {f g : State n → State n} {x : State n} (k : Fin n) (hxk : x k = 0)
+    (hplane : ∀ y : State n, y k = 0 → f y k = 0)
+    (hg : ∀ y : State n, g y = f (y - y k • EuclideanSpace.single k (1 : ℝ)) -
+      y k • EuclideanSpace.single k (1 : ℝ))
+    (h : LocalAsymptoticStable f x) : LocalAsymptoticStable g x := by
+  obtain ⟨hs, c, hc, hconv⟩ := h
+  refine ⟨lyapunovStable_of_invariantPlane k hxk hplane hg hs, c, hc, fun t₀ ψ hψ h0 => ?_⟩
+  obtain ⟨h1, -, -⟩ := norm_sub_le_proj k hxk (ψ t₀)
+  have hlim := hconv t₀ _ (isIntegralCurveOn_proj k hplane hg hψ) (lt_of_le_of_lt h1 h0)
+  have hk : ∀ t, t₀ ≤ t → ψ t k = ψ t₀ k * Real.exp (-(t - t₀)) := fun t ht =>
+    (isTrajectoryOn_proj k hplane hg (hψ.mono Icc_subset_Ici_self)).2 t ⟨ht, le_rfl⟩
+  have hexp : Tendsto (fun t => ψ t₀ k * Real.exp (-(t - t₀))) atTop (𝓝 0) := by
+    have h3 := (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (tendsto_atTop_add_const_right _ (-t₀) tendsto_id)).const_mul (ψ t₀ k)
+    rw [mul_zero] at h3
+    exact h3
+  have h2 := hlim.add (hexp.smul_const (EuclideanSpace.single k (1 : ℝ)))
+  rw [zero_smul, add_zero] at h2
+  refine h2.congr' (eventually_atTop.mpr ⟨t₀, fun t ht => ?_⟩)
+  simp only
+  rw [← hk t ht, sub_add_cancel]
 
 /-! ## From the plane field to `f`, under the collapse -/
 
@@ -479,5 +529,124 @@ plane** (the hypotheses of `locallyExponentiallyStable_iff_of_invariantPlane`). 
   ⟨lyapunovStable_of_invariantPlane k hxk hplane hg,
     lyapunovStable_of_invariantPlane_collapse k hxk hρ ha hcol hbound
       fun y _ hy => by rw [hg, hy, zero_smul, sub_zero, sub_zero]⟩
+
+/-! ## An invariant plane with a first integral off it -/
+
+/-- Along a segment of `f`, on an interval `[a, b]` whose interior stays off the plane, the
+quantity `y_k²/2 − G(y)` is conserved when `y_k f_k = Ġ` off the plane (mean value theorem). -/
+@[tmio T, powerlib_foundation] private theorem firstIntegral_eq {f : State n → State n}
+    (k : Fin n) {G : State n → ℝ} (hG : Differentiable ℝ G)
+    (hlie : ∀ y : State n, y k ≠ 0 → y k * f y k = fderiv ℝ G y (f y))
+    {φ : ℝ → State n} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ f t₀ t₁) {a b : ℝ} (ha : t₀ ≤ a)
+    (hab : a ≤ b) (hb : b ≤ t₁) (hne : ∀ s ∈ Ioo a b, φ s k ≠ 0) :
+    φ b k ^ 2 / 2 - G (φ b) = φ a k ^ 2 / 2 - G (φ a) := by
+  rcases eq_or_lt_of_le hab with rfl | hlt
+  · rfl
+  have hc : ContinuousOn φ (Icc a b) := hφ.continuousOn.mono (Icc_subset_Icc ha hb)
+  have hFc : ContinuousOn (fun s => φ s k ^ 2 / 2 - G (φ s)) (Icc a b) :=
+    ((((EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous.comp_continuousOn hc).pow 2).div_const
+      2).sub (hG.continuous.comp_continuousOn hc)
+  obtain ⟨c, hcI, hslope⟩ := exists_hasDerivAt_eq_slope (fun s => φ s k ^ 2 / 2 - G (φ s))
+    (fun _ => (0 : ℝ)) hlt hFc fun c hcI => by
+      have hct : c ∈ Ioo t₀ t₁ := ⟨lt_of_le_of_lt ha hcI.1, lt_of_lt_of_le hcI.2 hb⟩
+      have hd : HasDerivAt φ (f (φ c)) c :=
+        (hφ c (Ioo_subset_Icc_self hct)).hasDerivAt (Icc_mem_nhds hct.1 hct.2)
+      have hk := (coord k).hasFDerivAt.comp_hasDerivAt c hd
+      have hGd := (hG (φ c)).hasFDerivAt.comp_hasDerivAt c hd
+      refine (((hk.pow 2).div_const 2).sub hGd).congr_deriv ?_
+      simp only [Function.comp_apply, coord_apply]
+      rw [← hlie _ (hne c hcI), show (2 : ℕ) - 1 = 1 from rfl, pow_one]
+      push_cast
+      ring
+  have hba : b - a ≠ 0 := sub_ne_zero.mpr hlt.ne'
+  rw [eq_div_iff hba, zero_mul] at hslope
+  linarith
+
+/-- Along a segment of `f`, `y_k²` at a time `t` exceeds its initial value by at most twice the
+increase of `G` since some earlier time `a` (the last visit to the plane, or `t₀`). -/
+@[tmio T, powerlib_foundation] private theorem sq_le_of_firstIntegral {f : State n → State n}
+    (k : Fin n) {G : State n → ℝ} (hG : Differentiable ℝ G)
+    (hlie : ∀ y : State n, y k ≠ 0 → y k * f y k = fderiv ℝ G y (f y))
+    {φ : ℝ → State n} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ f t₀ t₁) {t : ℝ}
+    (ht : t ∈ Icc t₀ t₁) :
+    ∃ a ∈ Icc t₀ t, φ t k ^ 2 ≤ φ t₀ k ^ 2 + 2 * (G (φ t) - G (φ a)) := by
+  by_cases htk : φ t k = 0
+  · exact ⟨t, ⟨ht.1, le_rfl⟩, by rw [htk, sub_self]; nlinarith [sq_nonneg (φ t₀ k)]⟩
+  have hcont : ContinuousOn (fun s => φ s k) (Icc t₀ t) :=
+    (EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous.comp_continuousOn
+      (hφ.continuousOn.mono (Icc_subset_Icc le_rfl ht.2))
+  set Z := Icc t₀ t ∩ (fun s => φ s k) ⁻¹' {0} with hZ
+  by_cases hZn : Z.Nonempty
+  · have hZc : IsClosed Z := hcont.preimage_isClosed_of_isClosed isClosed_Icc isClosed_singleton
+    have hZb : BddAbove Z := ⟨t, fun s hs => hs.1.2⟩
+    have haZ : sSup Z ∈ Z := hZc.csSup_mem hZn hZb
+    have ha0 : φ (sSup Z) k = 0 := haZ.2
+    have hne : ∀ s ∈ Ioo (sSup Z) t, φ s k ≠ 0 := fun s hs h0 =>
+      (not_le.mpr hs.1) (le_csSup hZb ⟨⟨haZ.1.1.trans hs.1.le, hs.2.le⟩, h0⟩)
+    have h := firstIntegral_eq k hG hlie hφ haZ.1.1 haZ.1.2 ht.2 hne
+    rw [ha0] at h
+    refine ⟨sSup Z, haZ.1, ?_⟩
+    nlinarith [sq_nonneg (φ t₀ k)]
+  · have hne : ∀ s ∈ Ioo t₀ t, φ s k ≠ 0 := fun s hs h0 =>
+      hZn ⟨s, ⟨hs.1.le, hs.2.le⟩, h0⟩
+    have h := firstIntegral_eq k hG hlie hφ le_rfl ht.1 ht.2 hne
+    exact ⟨t₀, ⟨le_rfl, ht.1⟩, by linarith⟩
+
+/-- **Lyapunov stability with a first integral off an invariant plane.** Suppose the components
+of `f` off `k` do not depend on `y_k`, `f(y − y_k e_k) = f(y) − f_k(y) e_k` (so the plane
+`y_k = 0` is invariant), and off the plane `y_k f_k(y) = Ġ(y)` for a differentiable `G` that does
+not depend on `y_k` (`y_k²/2 − G` is conserved off the plane). Then a point `x` of the plane is
+Lyapunov stable for `f` iff it is for the plane field `g(y) = f(y − y_k e_k) − y_k e_k`: the
+projection of a segment of `f` is a segment of `g`, and since its last visit to the plane (or
+from `t₀`) `y_k²` has grown by at most twice the oscillation of `G` along that projection. No
+collapse onto the plane and no regularity of `f` are needed. -/
+@[tmio T, powerlib_foundation] theorem lyapunovStable_iff_of_invariantPlane_firstIntegral
+    {f g : State n → State n} {x : State n} (k : Fin n) (hxk : x k = 0)
+    (hoff : ∀ y : State n, f (y - y k • EuclideanSpace.single k (1 : ℝ)) =
+      f y - f y k • EuclideanSpace.single k (1 : ℝ))
+    {G : State n → ℝ} (hG : Differentiable ℝ G)
+    (hGP : ∀ y : State n, G (y - y k • EuclideanSpace.single k (1 : ℝ)) = G y)
+    (hlie : ∀ y : State n, y k ≠ 0 → y k * f y k = fderiv ℝ G y (f y))
+    (hg : ∀ y : State n, g y = f (y - y k • EuclideanSpace.single k (1 : ℝ)) -
+      y k • EuclideanSpace.single k (1 : ℝ)) :
+    LyapunovStable f x ↔ LyapunovStable g x := by
+  set e := EuclideanSpace.single k (1 : ℝ) with he
+  have hek : e k = 1 := by simp [he]
+  have hPk : ∀ v : State n, (v - v k • e) k = 0 := fun v => by simp [hek]
+  have hplane : ∀ y : State n, y k = 0 → f y k = 0 := fun y hy => by
+    have h := congrArg (fun v : State n => v k) (hoff y)
+    simp only [hy, zero_smul, sub_zero, PiLp.sub_apply, PiLp.smul_apply, hek, smul_eq_mul,
+      mul_one, sub_self] at h
+    exact h
+  refine ⟨lyapunovStable_of_invariantPlane k hxk hplane hg, fun h ε hε => ?_⟩
+  set P : State n →L[ℝ] State n := ContinuousLinearMap.id ℝ (State n) -
+    (EuclideanSpace.proj k : State n →L[ℝ] ℝ).smulRight e with hPdef
+  have hP : ∀ v, P v = v - v k • e := fun v => by simp [hPdef]
+  obtain ⟨rG, hrG, hGc⟩ := Metric.continuous_iff.mp hG.continuous x (ε ^ 2 / 16) (by positivity)
+  obtain ⟨δ, hδ, hb⟩ := h (min (ε / 4) rG) (lt_min (by positivity) hrG)
+  refine ⟨min δ (ε / 4), lt_min hδ (by positivity), fun t₀ t₁ φ hφ h0 t ht => ?_⟩
+  have hχ : IsTrajectoryOn (fun s => φ s - φ s k • e) g t₀ t₁ := fun s hs => by
+    have hd := P.hasFDerivAt.comp_hasDerivWithinAt s (hφ s hs)
+    show HasDerivWithinAt _ (g (φ s - φ s k • e)) _ s
+    rw [hg, hPk, zero_smul, sub_zero, sub_zero, hoff, ← hP]
+    exact hd
+  obtain ⟨h1, -, h3⟩ := norm_sub_le_proj k hxk (φ t₀)
+  have hstay : ∀ s ∈ Icc t₀ t₁, ‖(φ s - φ s k • e) - x‖ < min (ε / 4) rG := fun s hs =>
+    hb t₀ t₁ _ hχ (lt_of_le_of_lt h1 (lt_of_lt_of_le h0 (min_le_left _ _))) s hs
+  have hGs : ∀ s ∈ Icc t₀ t₁, |G (φ s) - G x| < ε ^ 2 / 16 := fun s hs => by
+    rw [← hGP]
+    have h2 := hGc _ (by rw [dist_eq_norm]; exact lt_of_lt_of_le (hstay s hs) (min_le_right _ _))
+    rwa [Real.dist_eq] at h2
+  obtain ⟨a, ha, hsq⟩ := sq_le_of_firstIntegral k hG hlie hφ ht
+  have hGt := abs_lt.mp (hGs t ht)
+  have hGa := abs_lt.mp (hGs a ⟨ha.1, ha.2.trans ht.2⟩)
+  have h0k : |φ t₀ k| < ε / 4 := lt_of_le_of_lt h3 (lt_of_lt_of_le h0 (min_le_right _ _))
+  have h0k2 : φ t₀ k ^ 2 < (ε / 4) ^ 2 := by
+    rw [← sq_abs]
+    exact pow_lt_pow_left₀ h0k (abs_nonneg _) two_ne_zero
+  have hkt : |φ t k| < 3 * ε / 4 := abs_lt_of_sq_lt_sq (by nlinarith) (by positivity)
+  obtain ⟨-, h5, -⟩ := norm_sub_le_proj k hxk (φ t)
+  have h6 := lt_of_lt_of_le (hstay t ht) (min_le_left _ _)
+  linarith
 
 end powerlib.Dynamics.Degenerate

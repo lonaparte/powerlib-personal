@@ -35,11 +35,23 @@ Results.
   `LinearAlgebra.reducedJacobian_eq_schur` of `theorem/LinearAlgebra/SchurDeterminant.lean`), is
   the input of the laws below; `isUnit_det_of_spectrallyStable`: a spectrally stable matrix on any
   finite index is invertible.
-* `exists_epsStar_locallyExponentiallyStable_of_graph`: if the fast block and the reduced
-  Jacobian are spectrally stable, there is `ε* > 0` such that for every `ε ∈ (0, ε*)` the field
-  with its fast rows multiplied by `ε⁻¹` is locally exponentially stable at the point (Kokotović's
-  theorem `LinearSP.exists_epsStar_isHurwitz` and the local indirect method
-  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local`).
+* `locallyExponentiallyStable_of_lt_graphEpsStar`: with positive definite Lyapunov matrices
+  `P₀ R + Rᵀ P₀ = −1` of the reduced Jacobian and `P₂ A + Aᵀ P₂ = −1` of the fast block, the
+  field with its fast rows multiplied by `ε⁻¹` is locally exponentially stable at the point for
+  every `ε ∈ (0, graphEpsStar e J P₀ P₂)`, an explicit bound computed from the blocks of the
+  Jacobian `J` (Kokotović's composite Lyapunov bound `LinearSP.isHurwitz_of_lt_epsStar` and the
+  local indirect method `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local`);
+  `graphEpsStar_pos`. Its matrix core, on any finite index:
+  `spectrallyStable_splitScale_mul_of_lt_graphEpsStar` (a matrix whose blocks admit `H` with
+  `A H + B = 0`, `C H + D = R` is spectrally stable with its fast rows times `ε⁻¹` for every
+  `ε ∈ (0, graphEpsStar …)`) and `exists_epsStar_spectrallyStable_splitScale_mul`.
+  `graphEpsStar_eq_of_blocks`: the bound in the original index types,
+  `1/(2c + 1)`, `c = S (2S + 1)/2 + |P₂ H C|₁`, `S = |P₀ C|₁ + |P₂ H R|₁` (`absSum_reindex`,
+  `absSum_neg`). `exists_posDef_lyapunov_of_spectrallyStable`: such `P` exist for spectrally
+  stable matrices on any finite index, and `posDef_of_lyapunov_of_spectrallyStable`: every
+  solution of `P A + Aᵀ P = −1` is then positive definite (uniqueness); hence
+  `exists_epsStar_locallyExponentiallyStable_of_graph`: if the fast block and the reduced
+  Jacobian are spectrally stable, there is `ε* > 0` with the same conclusion.
 * `unstable_of_det_fast_mul_det_reduced`: `(−1)^N det A · det R < 0` gives instability (a
   positive real eigenvalue, `Criteria.exists_pos_real_eigenvalue_of_det`), for a field `C¹` near
   the point only.
@@ -131,6 +143,221 @@ omit [Fintype ι] [DecidableEq ι] [DecidableEq S] in
     Matrix.submatrix_mul_equiv]
   rfl
 
+/-- **The explicit `ε*` of a split Jacobian.** Kokotović's bound `ε* = 1/(2c + 1)`
+(`LinearSP.epsStar`) for the blocks of `J` split by `e` (`splitSP`, slow coordinates first), with
+a Lyapunov matrix `P₀` of the reduced (slow) block and `P₂` of the fast block, both on their own
+index types (relabelled by `Fintype.equivFin`). Written out: `c = S (2S + 1)/2 + |P₂ L B'|₁`,
+`S = |P₀ B'|₁ + |P₂ L R|₁`, where `B'` is the slow-from-fast block of `J`, `L = A⁻¹ C'` the
+quasi-steady gain (`A` the fast block, `C'` the fast-from-slow block), `R` the reduced matrix and
+`|N|₁ = Σᵢⱼ |Nᵢⱼ|`. -/
+def graphEpsStar (e : ι ≃ F ⊕ S) (J : Matrix ι ι ℝ) (P0 : Matrix S S ℝ) (P2 : Matrix F F ℝ) : ℝ :=
+  (splitSP e J).epsStar (P0.reindex (Fintype.equivFin S) (Fintype.equivFin S))
+    (P2.reindex (Fintype.equivFin F) (Fintype.equivFin F))
+
+omit [Fintype ι] [DecidableEq ι] [DecidableEq F] [DecidableEq S] in
+@[tmio T, powerlib_foundation] theorem graphEpsStar_pos (e : ι ≃ F ⊕ S) (J : Matrix ι ι ℝ)
+    (P0 : Matrix S S ℝ) (P2 : Matrix F F ℝ) : 0 < graphEpsStar e J P0 P2 := by
+  set sp := splitSP e J
+  set P0' := P0.reindex (Fintype.equivFin S) (Fintype.equivFin S)
+  set P2' := P2.reindex (Fintype.equivFin F) (Fintype.equivFin F)
+  have hc : 0 ≤ sp.couplingConst P0' P2' := by
+    simp only [LinearSP.couplingConst]
+    have := absSum_nonneg (P0' * sp.A12)
+    have := absSum_nonneg (P2' * sp.gain * sp.reducedMatrix)
+    have := absSum_nonneg (P2' * sp.gain * sp.A12)
+    positivity
+  simp only [graphEpsStar, LinearSP.epsStar]
+  positivity
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- A Lyapunov equation `P M + Mᵀ P = −1` survives a relabelling of the index. -/
+@[tmio T, powerlib_foundation] private theorem lyapunov_reindex {k k' : Type*} [Fintype k]
+    [DecidableEq k] [Fintype k'] [DecidableEq k'] (σ : k ≃ k') {P M : Matrix k k ℝ}
+    (h : P * M + Mᵀ * P = -1) :
+    P.reindex σ σ * M.reindex σ σ + (M.reindex σ σ)ᵀ * P.reindex σ σ = -1 := by
+  have h' := congrArg (fun X : Matrix k k ℝ => X.reindex σ σ) h
+  ext i j
+  have hij := congrFun (congrFun h' i) j
+  simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.add_apply, Matrix.neg_apply,
+    Matrix.one_apply, EmbeddingLike.apply_eq_iff_eq] at hij ⊢
+  rw [← hij, Matrix.mul_apply, Matrix.mul_apply, Matrix.mul_apply, Matrix.mul_apply,
+    ← σ.symm.sum_comp, ← σ.symm.sum_comp]
+  simp [Matrix.transpose_apply]
+
+omit [Fintype ι] [DecidableEq ι] [Fintype S] [DecidableEq S] in
+/-- A spectrally stable matrix on any finite index has a positive definite Lyapunov matrix,
+`P A + Aᵀ P = −1` (LeanForControl's continuous Lyapunov theorem, after relabelling). -/
+@[tmio T, powerlib_foundation] theorem exists_posDef_lyapunov_of_spectrallyStable
+    {A : Matrix F F ℝ} (hA : Linear.SpectrallyStable A) :
+    ∃ P : Matrix F F ℝ, P.PosDef ∧ P * A + Aᵀ * P = -1 := by
+  set σ := Fintype.equivFin F
+  have hH : LinearSystems.IsHurwitz (A.reindex σ σ) :=
+    (Linear.spectrallyStable_iff_isHurwitz _).mp ((Linear.spectrallyStable_reindex σ A).mpr hA)
+  obtain ⟨P, hP, hL, -⟩ :=
+    hH.exists_posDef_unique_solution_continuous_lyapunov 1 Matrix.PosDef.one
+  refine ⟨P.reindex σ.symm σ.symm, hP.submatrix σ.injective, ?_⟩
+  have h := lyapunov_reindex σ.symm hL
+  simpa using h
+
+omit [Fintype ι] [DecidableEq ι] [Fintype S] [DecidableEq S] in
+/-- For a spectrally stable matrix, every solution of `P A + Aᵀ P = −1` is positive definite (it
+is the unique solution of LeanForControl's continuous Lyapunov theorem). -/
+@[tmio T, powerlib_foundation] theorem posDef_of_lyapunov_of_spectrallyStable
+    {A P : Matrix F F ℝ} (hA : Linear.SpectrallyStable A) (hL : P * A + Aᵀ * P = -1) :
+    P.PosDef := by
+  set σ := Fintype.equivFin F
+  have hH : LinearSystems.IsHurwitz (A.reindex σ σ) :=
+    (Linear.spectrallyStable_iff_isHurwitz _).mp ((Linear.spectrallyStable_reindex σ A).mpr hA)
+  obtain ⟨P', hP', -, huniq⟩ :=
+    hH.exists_posDef_unique_solution_continuous_lyapunov 1 Matrix.PosDef.one
+  have hPe : P.reindex σ σ = P' := huniq _ (lyapunov_reindex σ hL)
+  have := hP'.submatrix σ.injective
+  rw [← hPe] at this
+  simpa using this
+
+omit [Fintype ι] [DecidableEq ι] [DecidableEq F] [DecidableEq S] in
+/-- `Σᵢⱼ |Nᵢⱼ|` does not depend on the labelling. -/
+@[tmio T, powerlib_foundation] theorem absSum_reindex {k l k' l' : Type*} [Fintype k] [Fintype l]
+    [Fintype k'] [Fintype l'] (e₁ : k ≃ k') (e₂ : l ≃ l') (N : Matrix k l ℝ) :
+    absSum (N.reindex e₁ e₂) = absSum N := by
+  simp only [absSum, Matrix.reindex_apply, Matrix.submatrix_apply]
+  rw [← e₁.symm.sum_comp]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [← e₂.symm.sum_comp]
+
+omit [Fintype ι] [DecidableEq ι] [DecidableEq F] [DecidableEq S] in
+@[tmio T, powerlib_foundation] theorem absSum_neg {k l : Type*} [Fintype k] [Fintype l]
+    (N : Matrix k l ℝ) : absSum (-N) = absSum N := by
+  simp [absSum]
+
+omit [Fintype ι] [DecidableEq ι] [DecidableEq F] [DecidableEq S] in
+@[tmio T, powerlib_foundation] private theorem reindex_mul_reindex {k l m k' l' m' : Type*}
+    [Fintype l] [Fintype l'] (e₁ : k ≃ k') (e₂ : l ≃ l') (e₃ : m ≃ m') (X : Matrix k l ℝ)
+    (Y : Matrix l m ℝ) : X.reindex e₁ e₂ * Y.reindex e₂ e₃ = (X * Y).reindex e₁ e₃ := by
+  simp only [Matrix.reindex_apply, Matrix.submatrix_mul_equiv]
+
+omit [Fintype ι] [DecidableEq ι] [DecidableEq S] in
+/-- **The explicit `ε*` from the blocks.** For `J` split by `e` with blocks `[[A, B], [C, D]]`
+(fast first), invertible `A`, `A H + B = 0` and `C H + D = R`:
+`graphEpsStar e J P₀ P₂ = 1/(2c + 1)` with `c = S (2S + 1)/2 + |P₂ H C|₁` and
+`S = |P₀ C|₁ + |P₂ H R|₁` (`|N|₁ = Σᵢⱼ |Nᵢⱼ|`), all in the original index types. -/
+@[tmio T, powerlib_foundation] theorem graphEpsStar_eq_of_blocks (e : ι ≃ F ⊕ S)
+    {J : Matrix ι ι ℝ} {A : Matrix F F ℝ} {R : Matrix S S ℝ} {H : Matrix F S ℝ}
+    (hA11 : (J.reindex e e).toBlocks₁₁ = A) (hAu : IsUnit A.det)
+    (hH : A * H + (J.reindex e e).toBlocks₁₂ = 0)
+    (hHR : (J.reindex e e).toBlocks₂₁ * H + (J.reindex e e).toBlocks₂₂ = R)
+    (P0 : Matrix S S ℝ) (P2 : Matrix F F ℝ) :
+    graphEpsStar e J P0 P2 =
+      1 / (2 * ((absSum (P0 * (J.reindex e e).toBlocks₂₁) + absSum (P2 * H * R)) *
+        (2 * (absSum (P0 * (J.reindex e e).toBlocks₂₁) + absSum (P2 * H * R)) + 1) / 2 +
+          absSum (P2 * H * (J.reindex e e).toBlocks₂₁)) + 1) := by
+  set σF := Fintype.equivFin F with hσF
+  set σS := Fintype.equivFin S with hσS
+  set sp := splitSP e J
+  have hRS := LinearAlgebra.reducedJacobian_eq_schur hAu hH hHR
+  have h0 : sp.reducedMatrix = R.reindex σS σS := by
+    rw [reducedMatrix_splitSP, hA11, ← hRS]
+  have hAinvB : A⁻¹ * (J.reindex e e).toBlocks₁₂ = -H := by
+    have : (J.reindex e e).toBlocks₁₂ = -(A * H) := eq_neg_of_add_eq_zero_right hH
+    rw [this, Matrix.mul_neg, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hAu, Matrix.one_mul]
+  have hgain : sp.gain = (-H).reindex σF σS := by
+    show (((J.reindex e e).toBlocks₁₁).reindex σF σF)⁻¹ *
+      ((J.reindex e e).toBlocks₁₂).reindex σF σS = _
+    rw [hA11, Matrix.inv_reindex, ← hAinvB, reindex_mul_reindex]
+  have hA12 : sp.A12 = ((J.reindex e e).toBlocks₂₁).reindex σS σF := rfl
+  simp only [graphEpsStar, LinearSP.epsStar, LinearSP.couplingConst]
+  rw [hgain, h0, hA12, ← hσF, ← hσS]
+  simp only [reindex_mul_reindex, absSum_reindex, Matrix.neg_mul, Matrix.mul_neg, absSum_neg]
+
+/-- **Matrix form, explicit `ε*`.** A real matrix `J` on any finite index, split by `e`, whose
+blocks `[[A, B], [C, D]]` (fast first) admit `H` with `A H + B = 0` and `C H + D = R` (the
+quasi-steady gain and the reduced matrix `R = D − C A⁻¹ B`): with positive definite Lyapunov
+matrices `P₀ R + Rᵀ P₀ = −1`, `P₂ A + Aᵀ P₂ = −1`, the matrix with its fast rows multiplied by
+`ε⁻¹` is spectrally stable for every `ε ∈ (0, graphEpsStar e J P₀ P₂)`
+(`LinearSP.isHurwitz_of_lt_epsStar`). -/
+@[tmio T, powerlib_foundation] theorem spectrallyStable_splitScale_mul_of_lt_graphEpsStar
+    (e : ι ≃ F ⊕ S) {J : Matrix ι ι ℝ} {A : Matrix F F ℝ} {R : Matrix S S ℝ} {H : Matrix F S ℝ}
+    (hA11 : (J.reindex e e).toBlocks₁₁ = A) (hH : A * H + (J.reindex e e).toBlocks₁₂ = 0)
+    (hHR : (J.reindex e e).toBlocks₂₁ * H + (J.reindex e e).toBlocks₂₂ = R)
+    {P0 : Matrix S S ℝ} {P2 : Matrix F F ℝ} (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * R + Rᵀ * P0 = -1) (hL2 : P2 * A + Aᵀ * P2 = -1) {ε : ℝ} (hε : 0 < ε)
+    (hεs : ε < graphEpsStar e J P0 P2) :
+    Linear.SpectrallyStable (splitScale e ε * J) := by
+  set σF := Fintype.equivFin F
+  set σS := Fintype.equivFin S
+  set sp := splitSP e J
+  have h22 : sp.A22 = A.reindex σF σF := by
+    show ((J.reindex e e).toBlocks₁₁).reindex σF σF = _
+    rw [hA11]
+  have hP2' : (P2.reindex σF σF).PosDef := hP2.submatrix σF.symm.injective
+  have hP0' : (P0.reindex σS σS).PosDef := hP0.submatrix σS.symm.injective
+  have hcert : Linear.Certificate (A.reindex σF σF) :=
+    ⟨P2.reindex σF σF, hP2'.isHermitian.isSymm, fun x hx => by
+      simpa using hP2'.dotProduct_mulVec_pos hx, by
+      rw [add_comm]; exact lyapunov_reindex σF hL2⟩
+  have hAu' : IsUnit (A.reindex σF σF).det := Criteria.isUnit_det_of_isHurwitz hcert.isHurwitz
+  have hAu : IsUnit A.det := by rwa [Matrix.det_reindex_self] at hAu'
+  have hRS := LinearAlgebra.reducedJacobian_eq_schur hAu hH hHR
+  have h0 : sp.reducedMatrix = R.reindex σS σS := by
+    rw [reducedMatrix_splitSP, hA11, ← hRS]
+  have h := sp.isHurwitz_of_lt_epsStar (by rw [h22]; exact hAu') hP0' hP2'
+    (by rw [h0]; exact lyapunov_reindex σS hL0) (by rw [h22]; exact lyapunov_reindex σF hL2)
+    hε hεs
+  rw [← Linear.spectrallyStable_iff_isHurwitz, LinearSP.stateMatrix,
+    Linear.spectrallyStable_reindex, ← reindex_splitScale_mul,
+    Linear.spectrallyStable_reindex] at h
+  exact h
+
+/-- **Matrix form.** With the block data of `spectrallyStable_splitScale_mul_of_lt_graphEpsStar`
+and spectrally stable `A` and `R`, there is `ε* > 0` such that the matrix with its fast rows
+multiplied by `ε⁻¹` is spectrally stable for every `ε ∈ (0, ε*)`. -/
+@[tmio T, powerlib_foundation] theorem exists_epsStar_spectrallyStable_splitScale_mul
+    (e : ι ≃ F ⊕ S) {J : Matrix ι ι ℝ} {A : Matrix F F ℝ} {R : Matrix S S ℝ} {H : Matrix F S ℝ}
+    (hA11 : (J.reindex e e).toBlocks₁₁ = A) (hH : A * H + (J.reindex e e).toBlocks₁₂ = 0)
+    (hHR : (J.reindex e e).toBlocks₂₁ * H + (J.reindex e e).toBlocks₂₂ = R)
+    (hAs : Linear.SpectrallyStable A) (hRs : Linear.SpectrallyStable R) :
+    ∃ εs > 0, ∀ ε, 0 < ε → ε < εs → Linear.SpectrallyStable (splitScale e ε * J) := by
+  obtain ⟨P0, hP0, hL0⟩ := exists_posDef_lyapunov_of_spectrallyStable hRs
+  obtain ⟨P2, hP2, hL2⟩ := exists_posDef_lyapunov_of_spectrallyStable hAs
+  exact ⟨graphEpsStar e J P0 P2, graphEpsStar_pos e J P0 P2, fun ε hε hεs =>
+    spectrallyStable_splitScale_mul_of_lt_graphEpsStar e hA11 hH hHR hP0 hP2 hL0 hL2 hε hεs⟩
+
+/-- **Two-time-scale stability on a quasi-steady graph with an explicit `ε*`.** With the data of
+`exists_epsStar_locallyExponentiallyStable_of_graph` (a field `C¹` near the point whose fast rows
+vanish on the graph `Φ`, fast block `A`, reduced Jacobian `R`), the Jacobian `J` of the field at
+`Φ s₀`, and positive definite Lyapunov matrices `P₀ R + Rᵀ P₀ = −1`, `P₂ A + Aᵀ P₂ = −1`: for every
+`ε ∈ (0, graphEpsStar e J P₀ P₂)` the `ε`-system is locally exponentially stable at `Φ s₀`
+(Kokotović's composite Lyapunov bound `LinearSP.isHurwitz_of_lt_epsStar`). -/
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_lt_graphEpsStar {N : ℕ}
+    (e : Fin N ≃ F ⊕ S) {f : Dynamics.State N → Dynamics.State N} {U : Set (Dynamics.State N)}
+    (hU : IsOpen U) {Φ : EuclideanSpace ℝ S → Dynamics.State N} {s₀ : EuclideanSpace ℝ S}
+    (hx : Φ s₀ ∈ U) (hf : ContDiffOn ℝ 1 f U) (heq : f (Φ s₀) = 0) {J : Matrix (Fin N) (Fin N) ℝ}
+    (hJ : HasFDerivAt f (Matrix.toEuclideanCLM (𝕜 := ℝ) J) (Φ s₀)) {A : Matrix F F ℝ}
+    {R : Matrix S S ℝ} (hΦ : DifferentiableAt ℝ Φ s₀)
+    (hslow : ∀ s k, Φ s (e.symm (.inr k)) = s k) (hfast : ∀ s i, f (Φ s) (e.symm (.inl i)) = 0)
+    (hA : ∀ i j, HasDerivAt
+      (fun t : ℝ => f (Φ s₀ + t • EuclideanSpace.single (e.symm (.inl j)) 1) (e.symm (.inl i)))
+      (A i j) 0)
+    (hR : HasFDerivAt (fun s => (WithLp.toLp 2 fun k => f (Φ s) (e.symm (.inr k)) :
+      EuclideanSpace ℝ S)) (Matrix.toEuclideanCLM (𝕜 := ℝ) R) s₀)
+    {P0 : Matrix S S ℝ} {P2 : Matrix F F ℝ} (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * R + Rᵀ * P0 = -1) (hL2 : P2 * A + Aᵀ * P2 = -1) {ε : ℝ} (hε : 0 < ε)
+    (hεs : ε < graphEpsStar e J P0 P2) :
+    LocallyExponentiallyStable (splitScaledField e ε f) (Φ s₀) := by
+  obtain ⟨hA11, H, hH, hHR⟩ := LinearAlgebra.exists_blocks_of_graph e hJ hΦ hslow hfast hA hR
+  have hHur : LinearSystems.IsHurwitz (splitScale e ε * J) :=
+    (Linear.spectrallyStable_iff_isHurwitz _).mp
+      (spectrallyStable_splitScale_mul_of_lt_graphEpsStar e hA11 hH hHR hP0 hP2 hL0 hL2 hε hεs)
+  set L := Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ) (splitScale e ε)
+  have hderiv : fderiv ℝ (splitScaledField e ε f) (Φ s₀) =
+      Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ) (splitScale e ε * J) := by
+    have h := (L.hasFDerivAt.comp (Φ s₀) hJ).fderiv
+    rw [← ContinuousLinearMap.mul_def, ← map_mul] at h
+    exact h
+  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local hU hx _
+    (L.contDiff.comp_contDiffOn hf) ?_ hderiv hHur
+  simp [splitScaledField, heq]
+
 /-- **Two-time-scale stability on a quasi-steady graph.** Let the fast rows of `f` (`C¹` on an
 open neighbourhood `U` of the point) vanish on a graph `Φ` over the slow coordinates, with
 equilibrium `Φ s₀`, fast block `A` and reduced Jacobian `R`. If `A` and `R` are spectrally stable
@@ -154,39 +381,13 @@ stable at `Φ s₀`. -/
   have hdiff : DifferentiableAt ℝ f (Φ s₀) :=
     (hf.contDiffAt (hU.mem_nhds hx)).differentiableAt (by norm_num)
   set J := (Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ)).symm (fderiv ℝ f (Φ s₀)) with hJdef
-  have hJac : fderiv ℝ f (Φ s₀) = Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ) J := by simp [J]
   have hJ : HasFDerivAt f (Matrix.toEuclideanCLM (𝕜 := ℝ) J) (Φ s₀) := by
-    rw [← hJac]; exact hdiff.hasFDerivAt
-  obtain ⟨hA11, H, hH, hHR⟩ := LinearAlgebra.exists_blocks_of_graph e hJ hΦ hslow hfast hA hR
-  have hAu : IsUnit A.det := isUnit_det_of_spectrallyStable hAs
-  have hRS := LinearAlgebra.reducedJacobian_eq_schur hAu hH hHR
-  set sp := splitSP e J
-  have h22 : LinearSystems.IsHurwitz sp.A22 := by
-    rw [← Linear.spectrallyStable_iff_isHurwitz]
-    show Linear.SpectrallyStable (((J.reindex e e).toBlocks₁₁).reindex _ _)
-    rw [Linear.spectrallyStable_reindex, hA11]
-    exact hAs
-  have h0 : LinearSystems.IsHurwitz sp.reducedMatrix := by
-    rw [← Linear.spectrallyStable_iff_isHurwitz, reducedMatrix_splitSP, hA11, ← hRS,
-      Linear.spectrallyStable_reindex]
-    exact hRs
-  obtain ⟨εs, hεs, hε⟩ := sp.exists_epsStar_isHurwitz h22 h0
-  refine ⟨εs, hεs, fun ε hε0 hεlt => ?_⟩
-  set L := Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ) (splitScale e ε)
-  have hHur : LinearSystems.IsHurwitz (splitScale e ε * J) := by
-    have h := hε ε hε0 hεlt
-    rw [← Linear.spectrallyStable_iff_isHurwitz] at h ⊢
-    rw [LinearSP.stateMatrix, Linear.spectrallyStable_reindex, ← reindex_splitScale_mul,
-      Linear.spectrallyStable_reindex] at h
-    exact h
-  have hderiv : fderiv ℝ (splitScaledField e ε f) (Φ s₀) =
-      Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ) (splitScale e ε * J) := by
-    have h := (L.hasFDerivAt.comp (Φ s₀) hJ).fderiv
-    rw [← ContinuousLinearMap.mul_def, ← map_mul] at h
-    exact h
-  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local hU hx _
-    (L.contDiff.comp_contDiffOn hf) ?_ hderiv hHur
-  simp [splitScaledField, heq]
+    simpa [J] using hdiff.hasFDerivAt
+  obtain ⟨P0, hP0, hL0⟩ := exists_posDef_lyapunov_of_spectrallyStable hRs
+  obtain ⟨P2, hP2, hL2⟩ := exists_posDef_lyapunov_of_spectrallyStable hAs
+  exact ⟨graphEpsStar e J P0 P2, graphEpsStar_pos e J P0 P2, fun ε hε hεs =>
+    locallyExponentiallyStable_of_lt_graphEpsStar e hU hx hf heq hJ hΦ hslow hfast hA hR hP0 hP2
+      hL0 hL2 hε hεs⟩
 
 end Scaled
 

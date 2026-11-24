@@ -26,8 +26,9 @@ Scope.
   `chartField`); stability notions are LeanForControl's, read on `ℝᵐ`. Expansions are exact
   asymptotic statements (`IsBigO`, `IsLittleO` as `u → 0` in `range P`). The dichotomy is
   `‖e^{tA}(1 − P)‖ ≤ K e^{−βt}`, `‖e^{−tA}P‖ ≤ K e^{εt}` (`t ≥ 0`), `2ε < β`.
-* Only instability is transferred; the stability half of the reduction principle (attraction of
-  the stable directions) is not proved here.
+* Only instability is transferred here; the stability half of the reduction principle (attraction
+  of the stable directions, asymptotic phase) is in `theorem/Dynamics/CenterReductionStability.lean`
+  (`localAsymptoticStable_of_firstLyapunov_neg`).
 * Nothing here describes a physical system (foundation).
 
 Source: Carr, *Applications of Centre Manifold Theory* (1981), §2.4 (Theorem 2: the reduction

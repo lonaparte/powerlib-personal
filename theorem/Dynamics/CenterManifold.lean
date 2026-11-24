@@ -48,8 +48,10 @@ Results.
   (`Stability/LyapunovIndirect/Chetaev.lean`) and `Flow.exists_lipschitz_cutoff` give a Lipschitz
   constant without a bound, which the contraction cannot use.
 * Tangency (`tangent_of_stableInit`): `h(u) = o(‖P u‖)` from `g(y) = o(‖y‖)`; a tangent graph
-  map is differentiable at `0` with `Dh(0) = 0` (`IsGraphMap.hasFDerivAt_zero`). That `h` is `C¹`
-  is not proved (it needs the fibre-contraction argument).
+  map is differentiable at `0` with `Dh(0) = 0` (`IsGraphMap.hasFDerivAt_zero`). A `C¹` centre
+  manifold is `CenterManifoldSmooth.exists_centerManifold_contDiff`
+  (`theorem/Dynamics/CenterManifoldSmooth.lean`): a separately constructed `h`, built with a
+  `C¹` cutoff of `f` instead of the piecewise linear one used here.
 * The construction with its parameters (`exists_centerManifold_data`: weight `η`, Lipschitz
   bound `δ`, the cutoff field and the whole-line solutions on the graph), used by the
   approximation theorem.

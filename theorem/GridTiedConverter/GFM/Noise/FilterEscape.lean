@@ -54,8 +54,12 @@ Results.
   satisfies detailed balance or generalized detailed balance under the momentum flip, for any
   noise channel (`GFM.Noise.Params3.not_detailedBalance`,
   `GFM.Noise.Params3.not_genDetailedBalance_momentumFlip`), and its saddle eigenvalue lies
-  strictly below the two-state one (`GFM.Noise.Params3.saddle_eigenvalue`). The rate itself (the
-  law of the exit time, the Freidlin–Wentzell quasi-potential) is not formalized.
+  strictly below the two-state one (`GFM.Noise.Params3.saddle_eigenvalue`). The law of the exit
+  time is not formalized; its Freidlin–Wentzell exponent (the quasi-potential at the saddle) is
+  bounded below in `theorem/GridTiedConverter/GFM/Noise/FilterQuasiPotential.lean`
+  (`GFM.Noise.Params3.setPointQP_rest_ge`: the two-state value with `D` replaced by
+  `D − A/ω_c`) and tends to the two-state value as `ω_c → ∞`
+  (`GFM.Noise.Params.tendsto_setPointQP`).
 -/
 
 noncomputable section

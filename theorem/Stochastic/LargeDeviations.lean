@@ -38,7 +38,10 @@ Results.
   bound is Mathlib's `ProbabilityTheory.measure_ge_le_exp_mul_mgf`.
 * `fwAction`, `fwAction_nonneg` — the Freidlin–Wentzell action for `C¹` paths with a positive
   definite diffusion matrix (the note's hypothesis "`a` invertible, `φ` absolutely continuous"
-  is replaced by the explicit `C¹`/positive-definite class used here).
+  is replaced by the explicit `C¹`/positive-definite class used here). Degenerate noise (some
+  rows noiseless, e.g. a swing equation driven through its frequency row): the controlled action
+  `½∫|u|²` of `ẋ = b(x) + σ(x) u`, its quasi-potential and the Hamilton–Jacobi verification
+  theorem are in `theorem/Stochastic/ControlledAction.lean`.
 * `gradient_action_identity`, `gradient_action_ge`, `gradient_action_eq_iff` — for a gradient
   drift `b = −∇U` and unit diffusion, completing the square gives
   `S_{0T}(φ) = ½∫‖φ̇ − ∇U(φ)‖² + 2(U(φ(T)) − U(φ(0)))`, hence `S ≥ 2ΔU` with equality iff `φ`

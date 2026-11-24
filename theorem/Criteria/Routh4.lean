@@ -1,4 +1,5 @@
 import theorem.Criteria.Routh3
+import theorem.Criteria.RouthHurwitz
 
 /-! # Routh–Hurwitz criterion for monic real quartics and real 4×4 matrices
 
@@ -12,8 +13,9 @@ Scope.
   engineering conclusions as connection statements (pattern:
   `theorem/GridTiedConverter/PLL/PIPLLFamily.lean`).
 
-Source: standard Routh–Hurwitz criterion for degree four (shared criteria interface for the
-work-sync formalization).
+Source: standard Routh–Hurwitz criterion for degree four, through the Routh step of every
+degree (`theorem/Criteria/RouthHurwitz.lean`; shared criteria interface for the work-sync
+formalization).
 
 Results.
 * Monic real quartic `s ^ 4 + a3 * s ^ 3 + a2 * s ^ 2 + a1 * s + a0`. Every complex root has
@@ -57,17 +59,15 @@ Results.
   `x' = A (x - e)` are the linear hub `Linear.holds_iff_isHurwitz` with
   `isHurwitz_iff_of_det_characteristicMatrix_quartic` or `isHurwitz_fin_four_iff`.
 
-Proof of the sufficient direction: for a root `x + i y` with `x ≥ 0`, the imaginary part forces
-`y = 0` (impossible: all terms positive) or `y² (4x + a3) = 4x³ + 3a3x² + 2a2x + a1`;
-substituting into the real part gives a degree-six polynomial in `x` whose coefficients are all
-nonpositive and whose constant term `a3²a0 − a3a2a1 + a1²` is negative.
-
-Proof of the necessary direction: factor the quartic as `(s² + b s + c)(s² + p s + q)` over ℝ
-(a complex root `x + i y` with `y ≠ 0` gives the factor `s² − 2x s + x² + y²`; a real root `r`
-leaves a real cubic, which has a real root `r'`, giving the factor `(s − r)(s − r')`). Each
-factor's roots are roots of the quartic, so the quadratic criterion
-`quadratic_roots_re_neg_iff` gives `b, c, p, q > 0`; then `a3, a1, a0 > 0` and the Hurwitz
-determinant identity gives the last condition.
+Proof of the criterion: one Routh step (`Criteria.hurwitz_iff_routhStep`,
+`theorem/Criteria/RouthHurwitz.lean`) reduces the quartic to `a3 s³ + (a2 − a1/a3) s² + a1 s + a0`,
+decided by the cubic criterion `cubic_roots_re_neg_iff`; the cubic conditions are the quartic ones
+after clearing the positive denominators. The factorization serves the closed-half-plane
+statement: factor the quartic as `(s² + b s + c)(s² + p s + q)` over ℝ (a complex root
+`x + i y` with `y ≠ 0` gives the factor `s² − 2x s + x² + y²`; a real root `r` leaves a real
+cubic, which has a real root `r'`, giving `(s − r)(s − r')`); each factor's roots are roots of
+the quartic, so nonpositive real parts give nonnegative `b, c, p, q`, and the Hurwitz determinant
+identity gives the last condition.
 -/
 
 noncomputable section
@@ -107,48 +107,67 @@ section Quartic
   push Not at h2
   nlinarith
 
+/-- **Routh–Hurwitz, degree four, both directions** (minimal Routh list): one Routh step
+(`Criteria.hurwitz_iff_routhStep`) to the cubic `a₃ s³ + (a₂ − a₁/a₃) s² + a₁ s + a₀`, decided by
+`cubic_roots_re_neg_iff`. -/
+@[tmio T, powerlib_foundation] theorem quartic_hurwitz_iff (a3 a2 a1 a0 : ℝ) :
+    (∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
+      s.re < 0) ↔
+      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  set f : ℝ[X] := X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 with hf
+  have hd : f.natDegree = 4 := by rw [hf]; compute_degree!
+  have hm : f.Monic := by rw [hf]; monicity!
+  have hnc : f.nextCoeff = a3 := by
+    rw [nextCoeff_of_natDegree_pos (by rw [hd]; norm_num), hd]
+    simp [hf, coeff_X_pow]
+  have hev : ∀ s : ℂ, aeval s f =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) := fun s => by
+    simp [hf]
+  have hstep := hurwitz_iff_routhStep (p := f) (by rw [hd]; norm_num)
+    (by rw [hm.leadingCoeff]; exact one_pos)
+  simp only [hev, hnc] at hstep
+  rw [hstep]
+  by_cases h3 : 0 < a3
+  swap
+  · simp only [h3, false_and]
+  have h3' : (a3 : ℂ) ≠ 0 := by exact_mod_cast h3.ne'
+  have hq : ∀ s : ℂ, aeval s (routhStep f) = (a3 : ℂ) * (s ^ 3 +
+      (((a3 * a2 - a1) / a3 ^ 2 : ℝ) : ℂ) * s ^ 2 + ((a1 / a3 : ℝ) : ℂ) * s +
+        ((a0 / a3 : ℝ) : ℂ)) := by
+    intro s
+    rw [aeval_routhStep_eq, hm.leadingCoeff, hnc, hd, hev, hev]
+    push_cast
+    field_simp
+    ring
+  have hcub : (∀ s : ℂ, aeval s (routhStep f) = 0 → s.re < 0) ↔
+      ∀ s : ℂ, s ^ 3 + (((a3 * a2 - a1) / a3 ^ 2 : ℝ) : ℂ) * s ^ 2 + ((a1 / a3 : ℝ) : ℂ) * s +
+        ((a0 / a3 : ℝ) : ℂ) = 0 → s.re < 0 :=
+    forall_congr' fun s => imp_congr_left (by rw [hq, mul_eq_zero, or_iff_right h3'])
+  rw [hcub, cubic_roots_re_neg_iff]
+  have e : (a3 * a2 - a1) / a3 ^ 2 * (a1 / a3) - a0 / a3 =
+      ((a3 * a2 - a1) * a1 - a3 ^ 2 * a0) / a3 ^ 3 := by field_simp
+  simp only [h3, true_and]
+  constructor
+  · rintro ⟨h2, h0, hg⟩
+    have k2 : 0 < a3 * a2 - a1 := (div_pos_iff_of_pos_right (pow_pos h3 2)).mp h2
+    have k0 : 0 < a0 := (div_pos_iff_of_pos_right h3).mp h0
+    have kg : 0 < (a3 * a2 - a1) * a1 - a3 ^ 2 * a0 :=
+      (div_pos_iff_of_pos_right (pow_pos h3 3)).mp (by rw [← e]; linarith)
+    have k1 : 0 < a1 := pos_of_mul_pos_right (by nlinarith [pow_pos h3 2]) k2.le
+    exact ⟨k1, k0, by nlinarith⟩
+  · rintro ⟨h1, h0, hg⟩
+    have k2 : 0 < a3 * a2 - a1 := by linarith [quartic_routh_a1_lt h3 h1 h0 hg]
+    refine ⟨div_pos k2 (pow_pos h3 2), div_pos h0 h3, ?_⟩
+    have : 0 < (a3 * a2 - a1) / a3 ^ 2 * (a1 / a3) - a0 / a3 := by
+      rw [e]; exact div_pos (by nlinarith) (pow_pos h3 3)
+    linarith
+
 /-- **Routh–Hurwitz (sufficient), degree four.** -/
 @[tmio T, powerlib_foundation] theorem quartic_roots_re_neg_of {a3 a2 a1 a0 : ℝ} (h3 : 0 < a3)
     (h1 : 0 < a1) (h0 : 0 < a0) (hg : a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1) (s : ℂ)
     (hs : s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
-    s.re < 0 := by
-  have h2 := quartic_routh_a2_pos h3 h1 h0 hg
-  obtain ⟨hr, hi⟩ := quartic_root_re_im hs
-  set x := s.re
-  set y := s.im
-  by_contra hx
-  push Not at hx
-  rcases mul_eq_zero.mp hi with hy | hq
-  · rw [hy] at hr
-    have : 0 < x ^ 4 + a3 * x ^ 3 + a2 * x ^ 2 + a1 * x + a0 := by positivity
-    linarith
-  · -- Coefficients of the eliminated degree-six polynomial.
-    have hc0 : a3 ^ 2 * a0 - a3 * a2 * a1 + a1 ^ 2 < 0 := by linarith
-    have h4 : 4 * a0 ≤ a3 * a1 + a2 ^ 2 := by
-      have hsq : a3 ^ 2 * (4 * a0) ≤ a3 ^ 2 * (a3 * a1 + a2 ^ 2) := by
-        nlinarith [sq_nonneg (a3 * a2 - 2 * a1), mul_pos (pow_pos h3 3) h1]
-      exact le_of_mul_le_mul_left hsq (pow_pos h3 2)
-    have hc1 : -2 * a3 ^ 2 * a1 - 2 * a3 * a2 ^ 2 + 8 * a3 * a0 ≤ 0 := by nlinarith
-    have hc2 : -8 * a3 ^ 2 * a2 - 4 * a3 * a1 - 4 * a2 ^ 2 + 16 * a0 ≤ 0 := by
-      nlinarith [mul_pos (pow_pos h3 2) h2]
-    have hc3 : -8 * a3 ^ 3 - 32 * a3 * a2 ≤ 0 := by nlinarith [pow_pos h3 3, mul_pos h3 h2]
-    have hc4 : -48 * a3 ^ 2 - 32 * a2 ≤ 0 := by nlinarith [pow_pos h3 2]
-    have hc5 : -96 * a3 ≤ 0 := by linarith
-    have t1 := mul_nonpos_of_nonpos_of_nonneg hc1 hx
-    have t2 := mul_nonpos_of_nonpos_of_nonneg hc2 (pow_nonneg hx 2)
-    have t3 := mul_nonpos_of_nonpos_of_nonneg hc3 (pow_nonneg hx 3)
-    have t4 := mul_nonpos_of_nonpos_of_nonneg hc4 (pow_nonneg hx 4)
-    have t5 := mul_nonpos_of_nonpos_of_nonneg hc5 (pow_nonneg hx 5)
-    have t6 : 0 ≤ x ^ 6 := pow_nonneg hx 6
-    have key : (a3 ^ 2 * a0 - a3 * a2 * a1 + a1 ^ 2) +
-        (-2 * a3 ^ 2 * a1 - 2 * a3 * a2 ^ 2 + 8 * a3 * a0) * x +
-        (-8 * a3 ^ 2 * a2 - 4 * a3 * a1 - 4 * a2 ^ 2 + 16 * a0) * x ^ 2 +
-        (-8 * a3 ^ 3 - 32 * a3 * a2) * x ^ 3 + (-48 * a3 ^ 2 - 32 * a2) * x ^ 4 +
-        (-96 * a3) * x ^ 5 - 64 * x ^ 6 = 0 := by
-      linear_combination (4 * x + a3) ^ 2 * hr +
-        ((4 * x ^ 3 + 3 * a3 * x ^ 2 + 2 * a2 * x + a1) + (4 * x + a3) * y ^ 2 -
-          (6 * x ^ 2 + 3 * a3 * x + a2) * (4 * x + a3)) * hq
-    linarith
+    s.re < 0 :=
+  (quartic_hurwitz_iff a3 a2 a1 a0).mpr ⟨h3, h1, h0, hg⟩ s hs
 
 /-! ### Necessary direction and instability -/
 
@@ -214,30 +233,8 @@ the Routh conditions hold. -/
 @[tmio T, powerlib_foundation] theorem quartic_routh_of_roots_re_neg {a3 a2 a1 a0 : ℝ}
     (H : ∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
       s.re < 0) :
-    0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
-  obtain ⟨b, c, p, q, h3, h2, h1, h0⟩ := quartic_factor_quadratics a3 a2 a1 a0
-  have hbc : 0 < b ∧ 0 < c := by
-    rw [← quadratic_roots_re_neg_iff]
-    intro s hs
-    exact H s (by rw [quartic_eq_mul_quadratics h3 h2 h1 h0, hs, zero_mul])
-  have hpq : 0 < p ∧ 0 < q := by
-    rw [← quadratic_roots_re_neg_iff]
-    intro s hs
-    exact H s (by rw [quartic_eq_mul_quadratics h3 h2 h1 h0, hs, mul_zero])
-  obtain ⟨hb, hc⟩ := hbc
-  obtain ⟨hp, hq⟩ := hpq
-  have hdet := quartic_hurwitzDet_eq h3 h2 h1 h0
-  have ha1 : 0 < a1 := by rw [h1]; positivity
-  refine ⟨by rw [h3]; positivity, ha1, by rw [h0]; positivity, ?_⟩
-  have : 0 < b * p * ((b + p) * (b * q + c * p) + (c - q) ^ 2) := by positivity
-  linarith
-
-/-- **Routh–Hurwitz, degree four, both directions** (minimal Routh list). -/
-@[tmio T, powerlib_foundation] theorem quartic_hurwitz_iff (a3 a2 a1 a0 : ℝ) :
-    (∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
-      s.re < 0) ↔
-      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 :=
-  ⟨quartic_routh_of_roots_re_neg, fun ⟨h3, h1, h0, hg⟩ => quartic_roots_re_neg_of h3 h1 h0 hg⟩
+    0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 :=
+  (quartic_hurwitz_iff a3 a2 a1 a0).mp H
 
 /-- Closed-half-plane version: if every root has nonpositive real part, all coefficients and
 the third Hurwitz determinant are nonnegative. -/

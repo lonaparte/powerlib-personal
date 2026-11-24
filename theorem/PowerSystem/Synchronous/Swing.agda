@@ -12,8 +12,10 @@ module theorem.PowerSystem.Synchronous.Swing where
 -- `theorem/PowerSystem/Synchronous/GeneralSwing.agda` (the swing equation with an arbitrary law,
 -- on a sinusoid). Two families on larger state spaces are compared with it through a reduction,
 -- not read through it: the 13-state grid-forming converter
--- (`theorem/GridTiedConverter/GFM/FullModel/FullModelSwing.agda`) and the VSM on a dynamic line
--- (`theorem/GridTiedConverter/GFM/Line/LineReduction.agda`). Nothing here is exported.
+-- (`theorem/GridTiedConverter/GFM/FullModel/FullModelSwing.agda`), the VSM on a dynamic line
+-- (`theorem/GridTiedConverter/GFM/Line/LineReduction.agda`) and the open-loop VSM–DC model on its
+-- singular plane (`theorem/GridTiedConverter/GFM/DCLink/OpenLoopSwing.agda`). Nothing here is
+-- exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

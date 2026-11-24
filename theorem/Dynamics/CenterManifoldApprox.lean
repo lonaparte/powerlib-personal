@@ -19,9 +19,11 @@ Scope.
 * A candidate `φ : E → E` is `C¹` near `0`, `φ(0) = 0`, `Dφ(0) = 0`, with values in `ker P`; its
   invariance defect is `invarianceDefect A P f φ` (Carr's `(Mφ)(u)`), its order on `range P` is
   `IsOrder` (`theorem/Dynamics/CenterManifoldDefs.lean`).
-* The approximation holds for the centre manifold that the theorem constructs (centre manifolds
-  are not unique; the constructed one is built with a weight adapted to `q`). Generic; nothing
-  here describes a physical system (foundation).
+* The approximation is proved here for the centre manifold that the theorem constructs (built
+  with a weight adapted to `q`). Centre manifolds are not unique: for every graph map with strict
+  derivative `0` at `0` whose graph is locally invariant it is `isOrder_sub_of_invariantGraph`
+  (`theorem/Dynamics/CenterManifoldApproxAny.lean`). Generic; nothing here describes a physical
+  system (foundation).
 
 Source: Carr, *Applications of Centre Manifold Theory* (1981), Ch. 2, Theorem 3 (approximation);
 the proof here works along the solutions of the Lyapunov–Perron construction instead of Carr's
@@ -37,6 +39,8 @@ Results.
   of `range P` (equal to the defect of `φ` near `0`, linear growth away from `0`).
 * `IsCommutingProjection.compl_expFlow`, `IsCommutingProjection.compl_lpMap` (the stable
   component of the Lyapunov–Perron transform is `∫_{−∞}^t e^{(t−s)A}(1 − P) b(s) ds`).
+* `exists_forcing_graphDeviation`: along a solution of `ẋ = A x + g(x)` the deviation
+  `z = (1 − P)x − ψ(P x)` solves `ż = A z + b`, `‖b‖ ≤ M ‖P x‖^q + (‖1 − P‖ + ‖P‖) δ ‖z‖`.
 * `norm_sub_cutoff_le` (Carr's estimate): `‖h u − ψ(P u)‖ ≤ C ‖P u‖^q` for every `u`.
 * **The theorem**: `exists_centerManifold_approx_of_hasStrictFDerivAt` (finite-dimensional inner
   product space) and `exists_centerManifold_approx` (`ℝⁿ`, `C¹`, canonical local-invariance
@@ -276,6 +280,83 @@ omit [CompleteSpace E] in
     rw [hP.compl_expFlow, compl_apply P ((1 - P) (b s)), hP.proj_compl, sub_zero]
   simp only [h1, h2, intervalIntegral.integral_zero, zero_add]
 
+omit [CompleteSpace E] in
+/-- **The deviation from a candidate graph along a solution.** If `x` solves
+`ẋ = A x + g(x)` on a set of times `s` (`g` `δ`-Lipschitz) and `ψ` is a `C¹` map into `ker P`
+with `‖Dψ‖ ≤ 1` whose invariance defect for `g` is at most `M ‖v‖^q` on `range P`, then the
+deviation `z = (1 − P)x − ψ(P x)` solves `ż = A z + b` on `s` with a forcing `b` continuous on
+`s` and `‖b‖ ≤ M ‖P x‖^q + (‖1 − P‖ + ‖P‖) δ ‖z‖`: the defect at `P x` plus a Lipschitz
+remainder, `b = (1 − P) g(x) + A ψ(P x) − Dψ(P x)(A P x + P g(x))`. -/
+@[tmio T, powerlib_foundation] theorem exists_forcing_graphDeviation
+    (hP : IsCommutingProjection A P) {g ψ : E → E} {δ : NNReal} (hg : LipschitzWith δ g)
+    (hψ : ContDiff ℝ 1 ψ) (hψd : ∀ x, ‖fderiv ℝ ψ x‖ ≤ 1) (hψP : ∀ x, P (ψ x) = 0) {M q : ℝ}
+    (hdef : ∀ v, P v = v → ‖invarianceDefect A P g ψ v‖ ≤ M * ‖v‖ ^ q)
+    {x : ℝ → E} {s : Set ℝ} (hx : ∀ t ∈ s, HasDerivWithinAt x (A (x t) + g (x t)) s t) :
+    ∃ b : ℝ → E, ContinuousOn b s ∧
+      (∀ t ∈ s, HasDerivWithinAt (fun t => (1 - P) (x t) - ψ (P (x t)))
+        (A ((1 - P) (x t) - ψ (P (x t))) + b t) s t) ∧
+      ∀ t, ‖b t‖ ≤ M * ‖P (x t)‖ ^ q + (‖1 - P‖ + ‖P‖) * δ * ‖(1 - P) (x t) - ψ (P (x t))‖ := by
+  have hxc : ContinuousOn x s := fun t ht => (hx t ht).continuousWithinAt
+  set v : ℝ → E := fun t => P (x t) with hv
+  set z : ℝ → E := fun t => (1 - P) (x t) - ψ (v t) with hz
+  set b : ℝ → E := fun t =>
+    (1 - P) (g (x t)) + A (ψ (v t)) - fderiv ℝ ψ (v t) (A (v t) + P (g (x t))) with hb
+  have hcA : ∀ y, (1 - P) (A y) = A ((1 - P) y) := fun y => by
+    rw [compl_apply, compl_apply, map_sub, hP.comm]
+  have hPA : ∀ y, P (A y) = A (P y) := fun y => (hP.comm y).symm
+  have hvc : ContinuousOn v s := P.continuous.comp_continuousOn hxc
+  have hgc : ContinuousOn (fun t => g (x t)) s := hg.continuous.comp_continuousOn hxc
+  have hbc : ContinuousOn b s := by
+    have h1 : ContinuousOn (fun t => (1 - P) (g (x t))) s :=
+      (1 - P).continuous.comp_continuousOn hgc
+    have h2 : ContinuousOn (fun t => A (ψ (v t))) s :=
+      A.continuous.comp_continuousOn (hψ.continuous.comp_continuousOn hvc)
+    have h3 : ContinuousOn (fun t => fderiv ℝ ψ (v t) (A (v t) + P (g (x t)))) s :=
+      ((hψ.continuous_fderiv one_ne_zero).comp_continuousOn hvc).clm_apply
+        ((A.continuous.comp_continuousOn hvc).add (P.continuous.comp_continuousOn hgc))
+    exact (h1.add h2).sub h3
+  -- the equation of `z`
+  have hzd : ∀ t ∈ s, HasDerivWithinAt z (A (z t) + b t) s t := fun t ht => by
+    have h1 : HasDerivWithinAt (fun t => (1 - P) (x t)) ((1 - P) (A (x t) + g (x t))) s t :=
+      (1 - P).hasFDerivAt.comp_hasDerivWithinAt t (hx t ht)
+    have hvd : HasDerivWithinAt v (P (A (x t) + g (x t))) s t :=
+      P.hasFDerivAt.comp_hasDerivWithinAt t (hx t ht)
+    have h2 : HasDerivWithinAt (fun t => ψ (v t)) (fderiv ℝ ψ (v t) (P (A (x t) + g (x t))))
+        s t := ((hψ.differentiable one_ne_zero (v t)).hasFDerivAt).comp_hasDerivWithinAt t hvd
+    refine (h1.sub h2).congr_deriv ?_
+    simp only [hz, hb, hv, map_add, map_sub, hcA, hPA]
+    abel
+  -- the forcing: defect plus a Lipschitz remainder
+  set y : ℝ → E := fun t => v t + ψ (v t) with hy
+  have hxy : ∀ t, x t - y t = z t := fun t => by
+    simp only [hy, hz, hv, compl_apply]; abel
+  have hbN : ∀ t, b t = -(invarianceDefect A P g ψ (v t)) + (1 - P) (g (x t) - g (y t)) -
+      fderiv ℝ ψ (v t) (P (g (x t) - g (y t))) := fun t => by
+    have hPv : P (A (v t)) = A (v t) := by simp only [hv]; rw [hPA, hP.idem]
+    have hQψ : (1 - P) (A (ψ (v t))) = A (ψ (v t)) := by
+      rw [hcA, compl_apply, hψP, sub_zero]
+    simp only [invarianceDefect, reducedField, normalField, hPv, hQψ, hb, hy, map_add, map_sub]
+    abel
+  refine ⟨b, hbc, hzd, fun t => ?_⟩
+  change ‖b t‖ ≤ M * ‖v t‖ ^ q + (‖1 - P‖ + ‖P‖) * δ * ‖z t‖
+  rw [hbN t]
+  have hN := hdef (v t) (hP.idem (x t))
+  have hgz : ‖g (x t) - g (y t)‖ ≤ δ * ‖z t‖ := by
+    rw [← hxy t]; simpa [dist_eq_norm] using hg.dist_le_mul (x t) (y t)
+  have e1 : ‖(1 - P) (g (x t) - g (y t))‖ ≤ ‖1 - P‖ * (δ * ‖z t‖) :=
+    ((1 - P).le_opNorm _).trans (mul_le_mul_of_nonneg_left hgz (norm_nonneg _))
+  have e2 : ‖fderiv ℝ ψ (v t) (P (g (x t) - g (y t)))‖ ≤ 1 * (‖P‖ * (δ * ‖z t‖)) :=
+    (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul (hψd _)
+      ((P.le_opNorm _).trans (mul_le_mul_of_nonneg_left hgz (norm_nonneg _))) (norm_nonneg _)
+      zero_le_one)
+  calc _ ≤ ‖-(invarianceDefect A P g ψ (v t)) + (1 - P) (g (x t) - g (y t))‖ +
+        ‖fderiv ℝ ψ (v t) (P (g (x t) - g (y t)))‖ := norm_sub_le _ _
+    _ ≤ ‖invarianceDefect A P g ψ (v t)‖ + ‖(1 - P) (g (x t) - g (y t))‖ +
+        ‖fderiv ℝ ψ (v t) (P (g (x t) - g (y t)))‖ := by
+        gcongr; exact (norm_add_le _ _).trans_eq (by rw [norm_neg])
+    _ ≤ M * ‖v t‖ ^ q + ‖1 - P‖ * (δ * ‖z t‖) + 1 * (‖P‖ * (δ * ‖z t‖)) := by gcongr
+    _ = M * ‖v t‖ ^ q + (‖1 - P‖ + ‖P‖) * δ * ‖z t‖ := by ring
+
 /-- **Carr's estimate.** Let `h` be the graph map of the Lyapunov–Perron construction for a
 `δ`-Lipschitz `g` (through every point `P u + h u` a solution of `ẋ = A x + g(x)` of growth
 `C₁ ‖P u‖ e^{η|t|}`), and `ψ` a `C¹` map into `ker P` with `‖Dψ‖ ≤ 1`, `‖ψ x‖ ≤ ‖x‖`, whose
@@ -307,34 +388,14 @@ and its stable integral representation on `t ≤ 0` contracts in the weight `e^{
   have hκ'0 : 0 ≤ κ' := by positivity
   set k := K * κ' / (β - q * η) with hk
   have hk0 : 0 ≤ k := by positivity
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t => (hxd t).continuousAt
   set v : ℝ → E := fun t => P (x t) with hv
   set z : ℝ → E := fun t => (1 - P) (x t) - ψ (v t) with hz
-  set b : ℝ → E := fun t =>
-    (1 - P) (g (x t)) + A (ψ (v t)) - fderiv ℝ ψ (v t) (A (v t) + P (g (x t))) with hb
-  have hcA : ∀ y, (1 - P) (A y) = A ((1 - P) y) := fun y => by
-    rw [compl_apply, compl_apply, map_sub, hP.comm]
-  have hPA : ∀ y, P (A y) = A (P y) := fun y => (hP.comm y).symm
-  have hvc : Continuous v := P.continuous.comp hxc
-  have hbc : Continuous b := by
-    have h1 : Continuous fun t => (1 - P) (g (x t)) :=
-      (1 - P).continuous.comp (hg.continuous.comp hxc)
-    have h2 : Continuous fun t => A (ψ (v t)) := A.continuous.comp (hψ.continuous.comp hvc)
-    have h3 : Continuous fun t => fderiv ℝ ψ (v t) (A (v t) + P (g (x t))) :=
-      ((hψ.continuous_fderiv one_ne_zero).comp hvc).clm_apply
-        ((A.continuous.comp hvc).add (P.continuous.comp (hg.continuous.comp hxc)))
-    exact (h1.add h2).sub h3
+  obtain ⟨b, hbc', hzd', hbb'⟩ := exists_forcing_graphDeviation hP hg hψ hψd hψP hdef
+    (s := univ) fun t _ => (hxd t).hasDerivWithinAt
+  have hbc : Continuous b := continuousOn_univ.1 hbc'
   -- the equation of `z`
-  have hzd : ∀ t, HasDerivAt z (A (z t) + b t) t := fun t => by
-    have h1 : HasDerivAt (fun t => (1 - P) (x t)) ((1 - P) (A (x t) + g (x t))) t :=
-      (1 - P).hasFDerivAt.comp_hasDerivAt t (hxd t)
-    have hvd : HasDerivAt v (P (A (x t) + g (x t))) t :=
-      P.hasFDerivAt.comp_hasDerivAt t (hxd t)
-    have h2 : HasDerivAt (fun t => ψ (v t)) (fderiv ℝ ψ (v t) (P (A (x t) + g (x t)))) t :=
-      ((hψ.differentiable one_ne_zero (v t)).hasFDerivAt).comp_hasDerivAt t hvd
-    refine (h1.sub h2).congr_deriv ?_
-    simp only [hz, hb, hv, map_add, map_sub, hcA, hPA]
-    abel
+  have hzd : ∀ t, HasDerivAt z (A (z t) + b t) t := fun t =>
+    hasDerivWithinAt_univ.1 (hzd' t (mem_univ t))
   have hPz : ∀ t, P (z t) = 0 := fun t => by
     simp only [hz, map_sub, hP.proj_compl, hψP, sub_zero]
   -- growth bounds
@@ -348,34 +409,7 @@ and its stable integral representation on `t ≤ 0` contracts in the weight `e^{
       _ ≤ (‖1 - P‖ + ‖P‖) * (C₁ * a * Real.exp (η * |t|)) := by gcongr; exact hxb t
       _ = _ := by ring
   -- the forcing: defect plus a Lipschitz remainder
-  set y : ℝ → E := fun t => v t + ψ (v t) with hy
-  have hxy : ∀ t, x t - y t = z t := fun t => by
-    simp only [hy, hz, hv, compl_apply]; abel
-  have hbN : ∀ t, b t = -(invarianceDefect A P g ψ (v t)) + (1 - P) (g (x t) - g (y t)) -
-      fderiv ℝ ψ (v t) (P (g (x t) - g (y t))) := fun t => by
-    have hPv : P (A (v t)) = A (v t) := by simp only [hv]; rw [hPA, hP.idem]
-    have hQψ : (1 - P) (A (ψ (v t))) = A (ψ (v t)) := by
-      rw [hcA, compl_apply, hψP, sub_zero]
-    simp only [invarianceDefect, reducedField, normalField, hPv, hQψ, hb, hy, map_add, map_sub]
-    abel
-  have hbb : ∀ t, ‖b t‖ ≤ M * ‖v t‖ ^ q + κ' * ‖z t‖ := fun t => by
-    rw [hbN t]
-    have hN := hdef (v t) (hP.idem (x t))
-    have hgz : ‖g (x t) - g (y t)‖ ≤ δ * ‖z t‖ := by
-      rw [← hxy t]; simpa [dist_eq_norm] using hg.dist_le_mul (x t) (y t)
-    have e1 : ‖(1 - P) (g (x t) - g (y t))‖ ≤ ‖1 - P‖ * (δ * ‖z t‖) :=
-      ((1 - P).le_opNorm _).trans (mul_le_mul_of_nonneg_left hgz (norm_nonneg _))
-    have e2 : ‖fderiv ℝ ψ (v t) (P (g (x t) - g (y t)))‖ ≤ 1 * (‖P‖ * (δ * ‖z t‖)) :=
-      (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul (hψd _)
-        ((P.le_opNorm _).trans (mul_le_mul_of_nonneg_left hgz (norm_nonneg _))) (norm_nonneg _)
-        zero_le_one)
-    calc _ ≤ ‖-(invarianceDefect A P g ψ (v t)) + (1 - P) (g (x t) - g (y t))‖ +
-          ‖fderiv ℝ ψ (v t) (P (g (x t) - g (y t)))‖ := norm_sub_le _ _
-      _ ≤ ‖invarianceDefect A P g ψ (v t)‖ + ‖(1 - P) (g (x t) - g (y t))‖ +
-          ‖fderiv ℝ ψ (v t) (P (g (x t) - g (y t)))‖ := by
-          gcongr; exact (norm_add_le _ _).trans_eq (by rw [norm_neg])
-      _ ≤ M * ‖v t‖ ^ q + ‖1 - P‖ * (δ * ‖z t‖) + 1 * (‖P‖ * (δ * ‖z t‖)) := by gcongr
-      _ = M * ‖v t‖ ^ q + κ' * ‖z t‖ := by rw [hκ']; ring
+  have hbb : ∀ t, ‖b t‖ ≤ M * ‖v t‖ ^ q + κ' * ‖z t‖ := hbb'
   have hexpq : ∀ t, Real.exp (η * |t|) ≤ Real.exp (q * η * |t|) := fun t =>
     Real.exp_le_exp.2
       (by nlinarith [mul_nonneg (sub_nonneg.2 hq) (mul_nonneg hη (abs_nonneg t))])

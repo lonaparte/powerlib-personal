@@ -1,4 +1,5 @@
 import theorem.Criteria.Routh4
+import theorem.Criteria.RouthHurwitz
 
 /-! # Routh–Hurwitz criterion for monic real quintics
 
@@ -13,8 +14,8 @@ Scope.
 
 Source: the Routh–Hurwitz criterion (A. Hurwitz, *Math. Ann.* 46 (1895); F. R. Gantmacher,
 *The Theory of Matrices*, vol. 2, Ch. XV), degree five, with the Routh reduction step to degree
-four (`theorem/Criteria/Routh4.lean`) and Orlando's formula for the last Hurwitz determinant
-(shared criteria interface for the work-sync formalization).
+four (`theorem/Criteria/RouthHurwitz.lean`, `theorem/Criteria/Routh4.lean`) and Orlando's formula
+for the last Hurwitz determinant (shared criteria interface for the work-sync formalization).
 
 Results.
 * Hurwitz determinants of the monic quintic `s⁵ + a₄ s⁴ + a₃ s³ + a₂ s² + a₁ s + a₀`: `Δ₁ = a₄`,
@@ -50,19 +51,14 @@ Results.
   (`exists_eigenvalue_re_pos_of_det_characteristicMatrix_quintic_violation`, in the shape of
   `unstable_of_exists_complex_eigenvalue_re_pos`).
 
-Proof of the sufficient direction (no continuity of roots): write `⟨z, w⟩ = Re z Re w + Im z Im w`.
-For a quartic `(s² + b s + c)(s² + p s + q)` with nonnegative coefficients, even part `u` and
-odd part `v`, `⟨u, v⟩ = (|s² + c|² + b²|s|²) p Re s (|s|² + q) + (|s² + q|² + p²|s|²) b Re s
-(|s|² + c) ≥ 0` on `Re s ≥ 0`. The quintic conditions make the Routh-reduced quartic `u + v`
-Hurwitz (`quartic_roots_re_neg_of`), hence a product of two quadratics with positive coefficients.
-A root `s` of the quintic with `Re s ≥ 0` has `a₄ v = −(s + a₄) u`, so
-`0 ≤ a₄ ⟨u, v⟩ = −(Re s + a₄) |u|² ≤ 0`; then `u = v = 0` and `s` is a root of the reduced
-quartic with `Re s ≥ 0`, a contradiction.
-
-Proof of the necessary direction: factor the quintic as `(s + r)(s² + b s + c)(s² + p s + q)`;
-each factor's roots are roots of the quintic, so `r > 0` and the quadratic criterion
-`quadratic_roots_re_neg_iff` gives `b, c, p, q > 0`; in these factors `Δ₂`, `Δ₃`, `Δ₄` are sums
-of products of positive terms (`Δ₃` up to the square `b p (c − q)²`).
+Proof of the criterion: one Routh step (`Criteria.hurwitz_iff_routhStep`,
+`theorem/Criteria/RouthHurwitz.lean`) reduces the quintic to `a₄` times the quartic
+`s⁴ + c₃ s³ + c₂ s² + c₁ s + c₀` of `quintic_routhStep_hurwitzDet`, decided by
+`quartic_hurwitz_iff`; its conditions are `Δ₁, …, Δ₅ > 0` by `c₃ c₂ − c₁ = Δ₃/a₄³` and
+`c₃ c₂ c₁ − c₁² − c₃² c₀ = Δ₄/a₄⁴`. The factorization serves the closed-half-plane statement:
+factor the quintic as `(s + r)(s² + b s + c)(s² + p s + q)`; nonpositive real parts give
+nonnegative `r, b, c, p, q`, and in these factors `Δ₂`, `Δ₃`, `Δ₄` are sums of products of
+nonnegative terms (`Δ₃` up to the square `b p (c − q)²`).
 -/
 
 noncomputable section
@@ -162,75 +158,74 @@ of the Routh-reduced quartic `u + v`. -/
   · field_simp
   · field_simp; ring
 
-/-- The even part `u = s⁴ + c₂ s² + c₀` and the odd part `v = c₃ s³ + c₁ s` of a monic real
-quartic whose roots lie in the open left half plane satisfy `Re u Re v + Im u Im v ≥ 0` on the
-closed right half plane: factored as `(s² + b s + c)(s² + p s + q)` with `b, c, p, q > 0`, the sum
-is `(|s² + c|² + b²|s|²) p Re s (|s|² + q) + (|s² + q|² + p²|s|²) b Re s (|s|² + c)`. -/
-@[tmio T, powerlib_foundation] private theorem quartic_even_odd_nonneg {c3 c2 c1 c0 : ℝ}
-    (hQ : ∀ z : ℂ, z ^ 4 + (c3 : ℂ) * z ^ 3 + (c2 : ℂ) * z ^ 2 + (c1 : ℂ) * z + (c0 : ℂ) = 0 →
-      z.re < 0) {s : ℂ} (hs : 0 ≤ s.re) :
-    0 ≤ (s ^ 4 + (c2 : ℂ) * s ^ 2 + (c0 : ℂ)).re * ((c3 : ℂ) * s ^ 3 + (c1 : ℂ) * s).re +
-      (s ^ 4 + (c2 : ℂ) * s ^ 2 + (c0 : ℂ)).im * ((c3 : ℂ) * s ^ 3 + (c1 : ℂ) * s).im := by
-  obtain ⟨b, c, p, q, e3, e2, e1, e0⟩ := quartic_factor_quadratics c3 c2 c1 c0
-  obtain ⟨hb, hc⟩ : 0 < b ∧ 0 < c := by
-    rw [← quadratic_roots_re_neg_iff]
-    intro z hz
-    exact hQ z (by rw [quartic_eq_mul_quadratics e3 e2 e1 e0, hz, zero_mul])
-  obtain ⟨hp, hq⟩ : 0 < p ∧ 0 < q := by
-    rw [← quadratic_roots_re_neg_iff]
-    intro z hz
-    exact hQ z (by rw [quartic_eq_mul_quadratics e3 e2 e1 e0, hz, mul_zero])
-  subst e3 e2 e1 e0
-  have key : (s ^ 4 + ((c + q + b * p : ℝ) : ℂ) * s ^ 2 + ((c * q : ℝ) : ℂ)).re *
-          (((b + p : ℝ) : ℂ) * s ^ 3 + ((b * q + c * p : ℝ) : ℂ) * s).re +
-        (s ^ 4 + ((c + q + b * p : ℝ) : ℂ) * s ^ 2 + ((c * q : ℝ) : ℂ)).im *
-          (((b + p : ℝ) : ℂ) * s ^ 3 + ((b * q + c * p : ℝ) : ℂ) * s).im =
-      ((s.re ^ 2 - s.im ^ 2 + c) ^ 2 + (2 * s.re * s.im) ^ 2 + b ^ 2 * (s.re ^ 2 + s.im ^ 2)) *
-          (p * s.re * (s.re ^ 2 + s.im ^ 2 + q)) +
-        ((s.re ^ 2 - s.im ^ 2 + q) ^ 2 + (2 * s.re * s.im) ^ 2 + p ^ 2 * (s.re ^ 2 + s.im ^ 2)) *
-          (b * s.re * (s.re ^ 2 + s.im ^ 2 + c)) := by
-    simp only [pow_succ, pow_zero, one_mul, Complex.add_re, Complex.mul_re, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.add_im, Complex.mul_im]
+/-- **Routh–Hurwitz, degree five, both directions**: every complex root of the monic real quintic
+has negative real part iff its Hurwitz determinants `Δ₁, …, Δ₅` are positive. One Routh step
+(`Criteria.hurwitz_iff_routhStep`) gives `a₄` times the quartic `s⁴ + c₃ s³ + c₂ s² + c₁ s + c₀`
+of `quintic_routhStep_hurwitzDet`, decided by `quartic_hurwitz_iff`. -/
+@[tmio T, powerlib_foundation] theorem quintic_hurwitz_iff (a4 a3 a2 a1 a0 : ℝ) :
+    (∀ s : ℂ, s ^ 5 + (a4 : ℂ) * s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 +
+      (a1 : ℂ) * s + (a0 : ℂ) = 0 → s.re < 0) ↔ QuinticRouth a4 a3 a2 a1 a0 := by
+  set f : ℝ[X] := X ^ 5 + C a4 * X ^ 4 + C a3 * X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0 with hf
+  have hd : f.natDegree = 5 := by rw [hf]; compute_degree!
+  have hm : f.Monic := by rw [hf]; monicity!
+  have hnc : f.nextCoeff = a4 := by
+    rw [nextCoeff_of_natDegree_pos (by rw [hd]; norm_num), hd]
+    simp [hf, coeff_X_pow]
+  have hev : ∀ s : ℂ, aeval s f = s ^ 5 + (a4 : ℂ) * s ^ 4 + (a3 : ℂ) * s ^ 3 +
+      (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) := fun s => by simp [hf]
+  have hstep := hurwitz_iff_routhStep (p := f) (by rw [hd]; norm_num)
+    (by rw [hm.leadingCoeff]; exact one_pos)
+  simp only [hev, hnc] at hstep
+  rw [hstep]
+  by_cases h4 : 0 < a4
+  swap
+  · simp only [h4, false_and, QuinticRouth]
+  have h4' : (a4 : ℂ) ≠ 0 := by exact_mod_cast h4.ne'
+  have hq : ∀ s : ℂ, aeval s (routhStep f) = (a4 : ℂ) * (s ^ 4 +
+      ((quinticHurwitzDet2 a4 a3 a2 / a4 ^ 2 : ℝ) : ℂ) * s ^ 3 + ((a2 / a4 : ℝ) : ℂ) * s ^ 2 +
+        (((a4 * a1 - a0) / a4 ^ 2 : ℝ) : ℂ) * s + ((a0 / a4 : ℝ) : ℂ)) := by
+    intro s
+    rw [aeval_routhStep_eq, hm.leadingCoeff, hnc, hd, hev, hev]
+    simp only [quinticHurwitzDet2]
+    push_cast
+    field_simp
     ring
-  rw [key]
-  positivity
-
-/-- The Routh step excludes roots in the closed right half plane: if the reduced quartic
-`u + v` (`u = s⁴ + c₂ s² + c₀`, `v = c₃ s³ + c₁ s`) has all its roots in the open left half plane
-and `a₄ > 0`, then `(s + a₄) u(s) + a₄ v(s) ≠ 0` for `Re s ≥ 0`: a zero would give
-`0 ≤ a₄ (Re u Re v + Im u Im v) = −(Re s + a₄) |u|² ≤ 0`, hence `u = v = 0`. -/
-@[tmio T, powerlib_foundation] private theorem routhStep_ne_zero {a4 c3 c2 c1 c0 : ℝ}
-    (h1 : 0 < a4)
-    (hQ : ∀ z : ℂ, z ^ 4 + (c3 : ℂ) * z ^ 3 + (c2 : ℂ) * z ^ 2 + (c1 : ℂ) * z + (c0 : ℂ) = 0 →
-      z.re < 0) {s : ℂ} (hx : 0 ≤ s.re) :
-    (s + a4) * (s ^ 4 + (c2 : ℂ) * s ^ 2 + (c0 : ℂ)) + a4 * ((c3 : ℂ) * s ^ 3 + (c1 : ℂ) * s) ≠
-      0 := by
-  intro hsplit
-  have hinner := quartic_even_odd_nonneg hQ hx
-  have hQs : ∀ u v : ℂ, u = s ^ 4 + (c2 : ℂ) * s ^ 2 + (c0 : ℂ) →
-      v = (c3 : ℂ) * s ^ 3 + (c1 : ℂ) * s → u + v ≠ 0 := by
-    intro u v hu hv huv
-    have := hQ s (by rw [← huv, hu, hv]; ring)
-    linarith
-  generalize s ^ 4 + (c2 : ℂ) * s ^ 2 + (c0 : ℂ) = u at hsplit hinner hQs
-  generalize (c3 : ℂ) * s ^ 3 + (c1 : ℂ) * s = v at hsplit hinner hQs
-  have hre := congrArg Complex.re hsplit
-  have him := congrArg Complex.im hsplit
-  simp only [Complex.add_re, Complex.mul_re, Complex.add_im, Complex.mul_im, Complex.ofReal_re,
-    Complex.ofReal_im, Complex.zero_re, Complex.zero_im, zero_mul, sub_zero, add_zero] at hre him
-  have key : a4 * (u.re * v.re + u.im * v.im) = -((s.re + a4) * (u.re ^ 2 + u.im ^ 2)) := by
-    linear_combination u.re * hre + u.im * him
-  have hpos : 0 < s.re + a4 := by linarith
-  have hl : 0 ≤ a4 * (u.re * v.re + u.im * v.im) := mul_nonneg h1.le hinner
-  have hsq : u.re ^ 2 + u.im ^ 2 = 0 := by
-    nlinarith [sq_nonneg u.re, sq_nonneg u.im, mul_nonneg hpos.le
-      (add_nonneg (sq_nonneg u.re) (sq_nonneg u.im))]
-  have hu0 : u = 0 := Complex.ext (by simp; nlinarith [sq_nonneg u.re, sq_nonneg u.im])
-    (by simp; nlinarith [sq_nonneg u.re, sq_nonneg u.im])
-  have hv0 : v = 0 := by
-    have h' : (a4 : ℂ) * v = 0 := by linear_combination hsplit - (s + a4) * hu0
-    exact (mul_eq_zero.mp h').resolve_left (by exact_mod_cast h1.ne')
-  exact hQs u v rfl rfl (by rw [hu0, hv0, add_zero])
+  rw [show (∀ s : ℂ, aeval s (routhStep f) = 0 → s.re < 0) ↔ ∀ s : ℂ, s ^ 4 +
+      ((quinticHurwitzDet2 a4 a3 a2 / a4 ^ 2 : ℝ) : ℂ) * s ^ 3 + ((a2 / a4 : ℝ) : ℂ) * s ^ 2 +
+        (((a4 * a1 - a0) / a4 ^ 2 : ℝ) : ℂ) * s + ((a0 / a4 : ℝ) : ℂ) = 0 → s.re < 0 from
+    forall_congr' fun s => imp_congr_left (by rw [hq, mul_eq_zero, or_iff_right h4']),
+    quartic_hurwitz_iff]
+  obtain ⟨g2, g3⟩ := quintic_routhStep_hurwitzDet (a3 := a3) (a2 := a2) (a1 := a1) (a0 := a0)
+    h4.ne'
+  simp only [h4, true_and]
+  generalize hc3 : quinticHurwitzDet2 a4 a3 a2 / a4 ^ 2 = c3 at g2 g3 ⊢
+  generalize hc2 : a2 / a4 = c2 at g2 g3 ⊢
+  generalize hc1 : (a4 * a1 - a0) / a4 ^ 2 = c1 at g2 g3 ⊢
+  generalize hc0 : a0 / a4 = c0 at g3 ⊢
+  have e1 : c1 * (c3 * c2 - c1) = (c3 * c2 * c1 - c1 ^ 2 - c3 ^ 2 * c0) + c3 ^ 2 * c0 := by ring
+  constructor
+  · rintro ⟨k3, k1, k0, kg⟩
+    have d2 : 0 < quinticHurwitzDet2 a4 a3 a2 :=
+      (div_pos_iff_of_pos_right (pow_pos h4 2)).mp (hc3 ▸ k3)
+    have d4 : 0 < quinticHurwitzDet4 a4 a3 a2 a1 a0 :=
+      (div_pos_iff_of_pos_right (pow_pos h4 4)).mp (by rw [← g3]; linarith)
+    have d0 : 0 < a0 := (div_pos_iff_of_pos_right h4).mp (hc0 ▸ k0)
+    have d3 : 0 < quinticHurwitzDet3 a4 a3 a2 a1 a0 := by
+      have : 0 < c1 * (c3 * c2 - c1) := by rw [e1]; nlinarith [sq_nonneg c3]
+      exact (div_pos_iff_of_pos_right (pow_pos h4 3)).mp (g2 ▸ pos_of_mul_pos_right this k1.le)
+    exact ⟨h4, d2, d3, d4, mul_pos d0 d4⟩
+  · rintro ⟨-, d2, d3, d4, d5⟩
+    have d0 : 0 < a0 := by
+      by_contra h0
+      push Not at h0
+      have : quinticHurwitzDet5 a4 a3 a2 a1 a0 ≤ 0 := mul_nonpos_of_nonpos_of_nonneg h0 d4.le
+      linarith
+    have k3 : 0 < c3 := hc3 ▸ div_pos d2 (pow_pos h4 2)
+    have k0 : 0 < c0 := hc0 ▸ div_pos d0 h4
+    have kg : 0 < c3 * c2 * c1 - c1 ^ 2 - c3 ^ 2 * c0 := by rw [g3]; positivity
+    have kd : 0 < c3 * c2 - c1 := by rw [g2]; positivity
+    have k1 : 0 < c1 := pos_of_mul_pos_left (by rw [e1]; positivity) kd.le
+    exact ⟨k3, k1, k0, by linarith⟩
 
 /-- **Routh–Hurwitz (sufficient), degree five.** Positive Hurwitz determinants place every
 complex root in the open left half plane. -/
@@ -238,33 +233,8 @@ complex root in the open left half plane. -/
     (h : QuinticRouth a4 a3 a2 a1 a0) (s : ℂ)
     (hs : s ^ 5 + (a4 : ℂ) * s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s +
       (a0 : ℂ) = 0) :
-    s.re < 0 := by
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  have h0 : 0 < a0 := by
-    by_contra h0
-    push Not at h0
-    have : quinticHurwitzDet5 a4 a3 a2 a1 a0 ≤ 0 := mul_nonpos_of_nonpos_of_nonneg h0 h4.le
-    linarith
-  obtain ⟨g2, g3⟩ := quintic_routhStep_hurwitzDet (a3 := a3) (a2 := a2) (a1 := a1) (a0 := a0)
-    h1.ne'
-  have hsplit := quintic_eq_routhStep (a3 := a3) (a2 := a2) (a1 := a1) (a0 := a0) h1.ne' s
-  rw [hs] at hsplit
-  have hc3 : 0 < quinticHurwitzDet2 a4 a3 a2 / a4 ^ 2 := by positivity
-  have hc0 : 0 < a0 / a4 := div_pos h0 h1
-  generalize quinticHurwitzDet2 a4 a3 a2 / a4 ^ 2 = c3 at g2 g3 hsplit hc3
-  generalize a2 / a4 = c2 at g2 g3 hsplit
-  generalize (a4 * a1 - a0) / a4 ^ 2 = c1 at g2 g3 hsplit
-  generalize a0 / a4 = c0 at g3 hsplit hc0
-  have hd3 : 0 < c3 * c2 * c1 - c1 ^ 2 - c3 ^ 2 * c0 := by rw [g3]; positivity
-  have hd2 : 0 < c3 * c2 - c1 := by rw [g2]; positivity
-  have hc1 : 0 < c1 := by
-    have e : c1 * (c3 * c2 - c1) = (c3 * c2 * c1 - c1 ^ 2 - c3 ^ 2 * c0) + c3 ^ 2 * c0 := by ring
-    have : 0 < c1 * (c3 * c2 - c1) := by rw [e]; positivity
-    exact pos_of_mul_pos_left this hd2.le
-  have hQ := quartic_roots_re_neg_of (a2 := c2) hc3 hc1 hc0 (by linarith)
-  by_contra hx
-  push Not at hx
-  exact routhStep_ne_zero h1 hQ hx hsplit.symm
+    s.re < 0 :=
+  (quintic_hurwitz_iff a4 a3 a2 a1 a0).mpr h s hs
 
 /-! ### Factorization and the necessary direction -/
 
@@ -339,32 +309,8 @@ the Hurwitz determinants are positive. -/
 @[tmio T, powerlib_foundation] theorem quintic_routh_of_roots_re_neg {a4 a3 a2 a1 a0 : ℝ}
     (H : ∀ s : ℂ, s ^ 5 + (a4 : ℂ) * s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 +
       (a1 : ℂ) * s + (a0 : ℂ) = 0 → s.re < 0) :
-    QuinticRouth a4 a3 a2 a1 a0 := by
-  obtain ⟨r, b, c, p, q, h4, h3, h2, h1, h0⟩ := quintic_factor a4 a3 a2 a1 a0
-  have hmul := quintic_eq_mul h4 h3 h2 h1 h0
-  have hr : 0 < r := by
-    have := H (-(r : ℂ)) (by rw [hmul]; ring)
-    simpa using this
-  obtain ⟨hb, hc⟩ : 0 < b ∧ 0 < c := by
-    rw [← quadratic_roots_re_neg_iff]
-    intro z hz
-    exact H z (by rw [hmul, hz, zero_mul, mul_zero])
-  obtain ⟨hp, hq⟩ : 0 < p ∧ 0 < q := by
-    rw [← quadratic_roots_re_neg_iff]
-    intro z hz
-    exact H z (by rw [hmul, hz, mul_zero, mul_zero])
-  obtain ⟨d2, d3⟩ := quinticHurwitzDet23_eq_factors h4 h3 h2 h1 h0
-  have d4 := quinticHurwitzDet4_eq_factors h4 h3 h2 h1 h0
-  have hΔ4 : 0 < quinticHurwitzDet4 a4 a3 a2 a1 a0 := by rw [d4]; positivity
-  refine ⟨by rw [h4]; positivity, by rw [d2]; positivity, by rw [d3]; positivity, hΔ4, ?_⟩
-  exact mul_pos (by rw [h0]; positivity) hΔ4
-
-/-- **Routh–Hurwitz, degree five, both directions**: every complex root of the monic real quintic
-has negative real part iff its Hurwitz determinants `Δ₁, …, Δ₅` are positive. -/
-@[tmio T, powerlib_foundation] theorem quintic_hurwitz_iff (a4 a3 a2 a1 a0 : ℝ) :
-    (∀ s : ℂ, s ^ 5 + (a4 : ℂ) * s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 +
-      (a1 : ℂ) * s + (a0 : ℂ) = 0 → s.re < 0) ↔ QuinticRouth a4 a3 a2 a1 a0 :=
-  ⟨quintic_routh_of_roots_re_neg, quintic_roots_re_neg_of⟩
+    QuinticRouth a4 a3 a2 a1 a0 :=
+  (quintic_hurwitz_iff a4 a3 a2 a1 a0).mp H
 
 /-! ### Instability -/
 
