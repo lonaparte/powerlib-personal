@@ -22,7 +22,8 @@ Scope.
 * Not formalized: the near-identity (averaging) transformation that removes the non-resonant
   terms of the modal equation (`e z`, `ē z`, `ē z̄` and the coupling to `w`); it changes the
   Floquet exponents of the full system by `O(ε²)` in the classical theory. The exact statements
-  here concern the projection identity and the normal form.
+  here concern the projection identity and the normal form. For a two-state system (no `w`) the
+  averaging step itself is formalized in `theorem/ParametricResonance/TwoToOneAveraging.lean`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (`J_p = A₀ + ε Re{A₁ e^{jω_p t}}`, `g_m = l_mᴴ A₁ r_m*`,
@@ -143,7 +144,7 @@ def rot (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := Real.cos θ • (1 : Matrix (
     ext i j; fin_cases i <;> fin_cases j <;> simp [quarter, Matrix.mul_apply, Fin.sum_univ_two]
   refine h.congr_deriv ?_
   simp only [rot, Matrix.add_mul, Matrix.smul_mul, Matrix.one_mul, hJ, smul_neg, smul_add,
-    smul_smul, Function.comp_apply]
+    smul_smul]
   module
 
 /-- The transition matrix of the normal form: `Φ(t, 0) = R(ωt/2) exp(t M)`. -/

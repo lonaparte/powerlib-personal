@@ -21,8 +21,11 @@ Scope.
 * The passage from a converter model to `A₀`, `A₁` (forced orbit, `A₁ = Σ_l ∂A/∂x_l z_l + G û`)
   is represented only generically (`modulation`: the entrywise derivative of a real
   matrix-valued map along a complex direction). The passage from the periodic variational
-  equation to the first-order slow flow (projection on the mode, averaging, truncation) is **not**
-  formalized; the threshold statements hold inside the slow flow of
+  equation to the first-order slow flow is formalized for two states in
+  `theorem/ParametricResonance/TwoToOneAveraging.lean` (`averaging_stable`,
+  `averaging_unstable`: for small `ε` the Floquet stability is that of the slow flow with pump
+  `g/2`, `g = pump A₁ u r`); for more states (projection on the mode and elimination of the other
+  modes) it is **not** formalized, and the threshold statements here hold inside the slow flow of
   `theorem/ParametricResonance/SlowFlow.lean`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的

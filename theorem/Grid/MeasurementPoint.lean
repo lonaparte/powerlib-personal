@@ -55,9 +55,11 @@ Corrections.
   `arctan x ≈ x`.
 
 Not formalized.
-* The reduced, full-order sideband ratio (22) and its PCC form (21): they combine the network
-  sideband with the Floquet coefficient of a specific control loop and are approximations
-  (the source reports 1–15% deviations); only their exact network ingredients are stated here.
+* The reduced, full-order sideband ratio (22): it combines the network sideband with the Floquet
+  coefficient of a specific control loop and is an approximation (the source reports 1–15%
+  deviations); only its exact network ingredients are stated here. The PCC form (21) is derived
+  exactly inside the first-order network model of the droop core in
+  `theorem/GridTiedConverter/GFM/DroopSideband.lean`.
 -/
 
 noncomputable section

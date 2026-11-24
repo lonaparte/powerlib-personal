@@ -9,9 +9,11 @@ correction of its Hopf boundary and the 2:1 kinematic factor at the Hopf point.
 
 Scope.
 * Real cubics and complex rational functions only; no converter model is fixed here. The
-  readings of droop, VSG and dVOC as such cubics (the source's reduced, quasi-static models
-  (8)–(10) and Table 3) are **not** formalized, and neither is the passage from network dynamics
-  to the lag `p ≈ K_s δ − K_d δ̇` (`d₁ ↦ d₁ − d₀ τ`, source §4.4).
+  readings of droop, VSG and dVOC as such cubics are stated with the converter models in
+  `theorem/GridTiedConverter/GFM/` (`DroopPump.charPoly`, `DroopTwoFilter` for VSG,
+  `DVOCPump.charPoly_hopf`), and the first-order network expansion behind the lag
+  `p ≈ K_s δ − K_d δ̇` (`d₁ ↦ d₁ − d₀ τ`, source §4.4) in `NetworkLag.lean` and
+  `DroopSideband.charPoly` there.
 * Root parametrization: `(s + p)((s + σ)² + Ω²) = s³ + d₂ s² + d₁ s + d₀` with
   `d₂ = p + 2σ`, `d₁ = σ² + Ω² + 2σp`, `d₀ = p (σ² + Ω²)` (`coeff2`, `coeff1`, `coeff0`).
   Hopf margin `κ_H = 1 − d₀/(d₂ d₁)` (`hopfMargin`), bandwidth ratio `β_L = Ω/d₂`, and the
