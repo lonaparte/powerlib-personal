@@ -431,3 +431,5 @@ import theorem.WPT.Harmonics
 import theorem.SpecialFunctions.ComplexProduct
 import theorem.WPT.FluxLimits
 import theorem.WPT.EnvelopeLimits
+import theorem.WPT.LossyDesign
+import theorem.WPT.LossyFlux

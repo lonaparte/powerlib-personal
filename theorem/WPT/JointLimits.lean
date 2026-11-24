@@ -25,7 +25,8 @@ Model boundary.
 * Not covered here: the joint optimum with capacitive operation allowed (`Q < 0`) when the flux
   limit binds, which is no longer a product over a box and an ellipse (with `Q < 0` the primary
   flux limit alone bounds no power, `Gyrator.exists_power_gt_of_flux₁`), and the secondary flux
-  limit; both are in `theorem/WPT/ReactiveLimits.lean`. Lossy windings are not covered.
+  limit; both are in `theorem/WPT/ReactiveLimits.lean`; both flux limits with the margin are in
+  `theorem/WPT/SoftLimits.lean`. Lossy windings are not covered.
 
 Source: the realization of currents of the gyrator, `Gyrator.exists_realization`, the flux identity
 `Gyrator.normSq_flux₁_eq`, the box–ellipse optimum `SpecialFunctions.isGreatest_productMax`

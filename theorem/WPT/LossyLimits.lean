@@ -33,7 +33,8 @@ Model boundary.
 * Resonant tuning `X₁(ω) = X₂(ω) = 0`, a lossy primary winding `R₁ > 0` and
   `Δ = R₁R₂ + (ωM)² > 0` (which holds when `R₂ ≥ 0` and `ωM ≠ 0`); attainment uses `ωM ≠ 0` and
   `ρ₁, ρ₂ ≥ 0`, the vertex efficiency `R₂ ≥ 0` and `ρ₁ > 0`. A lossless primary, `R₁ = 0`, is not
-  covered (with `R₂ = 0` as well it is the gyrator of `theorem/WPT/CurrentLimits.lean`).
+  covered here (it is in `theorem/WPT/LossyDesign.lean`; with `R₂ = 0` as well it is the gyrator
+  of `theorem/WPT/CurrentLimits.lean`).
 
 Source: the fundamental-harmonic analysis of the series–series resonant link driven by two active
 bridges, maximized over the magnitude and phase of the secondary bridge phasor; the resonant-link

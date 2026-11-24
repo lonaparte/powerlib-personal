@@ -146,6 +146,23 @@ open powerlib LinearSystems
 #check powerlib.WPT.Tracking.exact_locallyExponentiallyStable
 #print axioms powerlib.WPT.Link.eta_eq_maxEfficiency_iff
 
+-- Exact operating envelopes of the resonant link: both bridges and both flux limits (the smallest
+-- of the four relaxations dropping one constraint), soft switching with both flux limits, ratings,
+-- the DC side, saturation, lossy and detuned links, the efficiency trade-off, flux-limited output,
+-- harmonics, a foreign object and the bridge realization of parity–time gain.
+#check powerlib.WPT.EnvelopeLimits.isGreatest_power_envelope
+#check powerlib.WPT.SoftLimits.isGreatest_power_soft
+#check powerlib.WPT.Ratings.isGreatest_ratedPower
+#check powerlib.WPT.DCSide.isGreatest_power
+#check powerlib.WPT.Saturation.isGreatest_power_saturation
+#check powerlib.WPT.LossyDesign.isGreatest_detunedOutputPower
+#check powerlib.WPT.LossyDesign.isGreatest_efficientOutputPower
+#check powerlib.WPT.LossyFlux.isGreatest_secondaryFluxLimit
+#check powerlib.WPT.Harmonics.forall_determinant_pos_iff
+#check powerlib.WPT.ForeignObject.inputImpedance_resonant_im_ne_zero_iff
+#check powerlib.WPT.PTGain.outputPower_eq
+#print axioms powerlib.WPT.EnvelopeLimits.isGreatest_power_envelope
+
 -- Coupled resonators: a lossy primary damps a lossless secondary, through the coupling alone.
 @[powerlib_domain] theorem wpt_lossy_primary (r : WPT.Resonator) (hM : r.coils.M ≠ 0)
     (h₁ : 0 < r.coils.primary.R) :

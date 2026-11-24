@@ -48,7 +48,8 @@ Results.
   `isGreatest_power_both₂` (exact when the optimizer of one bound meets the other).
 * Not covered here: both bounds binding at once (neither optimizer meets the other bound), which
   is in `theorem/WPT/EnvelopeLimits.lean` for coupling `k < 1`, and lossy windings with flux
-  bounds.
+  bounds (their flux-limited output and the regimes where one bound dominates are in
+  `theorem/WPT/LossyFlux.lean`).
 -/
 
 noncomputable section
