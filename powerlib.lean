@@ -179,6 +179,7 @@ import theorem.GridTiedConverter.GFM.PSC
 import theorem.GridTiedConverter.GFM.VOC
 import theorem.GridTiedConverter.GFM.VSMLPF
 import theorem.GridTiedConverter.GFM.VSMLPFAlgebra
+import theorem.GridTiedConverter.GFM.DroopTwoFilter
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber
 import theorem.Information.MaxEnt
