@@ -36,6 +36,12 @@ Results.
 * `weight_eq_logDeriv` — `w_ik = ∂λ/∂ln (A₀)_ik`: along a differentiable eigen-branch of the
   family that scales the entry `(i, k)` by `e^s` (`scaleEntry`), `λ'(0) (u ⬝ᵥ r) = w_ik`
   (`Modal.eigenvalue_deriv_left_of_eventually`).
+* Coordinate independence: `pump_similar` — under a real invertible change of coordinates
+  `x ↦ P x` (`A₁ ↦ P A₁ P⁻¹`, `r ↦ P r`, `u ↦ u P⁻¹`) the pump coefficient is unchanged, while
+  single contributions `Γ_ik` are not invariant in general (source §2.3). `pump_rescale`,
+  `norm_pump_rescale` — rescaling the eigenvectors `r ↦ c r`, `u ↦ c⁻¹ u` (the normalization
+  `u ⬝ᵥ r = 1` is kept) multiplies `g` by the unimodular `c̄/c`: the phase of `g` is a convention
+  (eigenvector phase, pump time origin), its modulus `|g|` is not.
 * Lemma 1: `modulation_eq_zero_of_const`, `contribution_modulation_eq_zero_of_const` — an entry
   of the Jacobian that does not depend on state and input has `(A₁)_ik = 0`, hence `Γ_ik = 0`.
 * Lemma 2: `dotProduct_star_eq_zero` — for a real `A₀` and a non-real eigenvalue
@@ -160,6 +166,38 @@ scales the entry `(i, k)` by `e^s`, `λ'(0) (u ⬝ᵥ v(0)) = w_ik`. -/
   rw [Finset.sum_eq_single i (fun a _ ha => by simp [ha]) (by simp),
     Finset.sum_eq_single k (fun b _ hb => by simp [hb]) (by simp)]
   simp [weight, mul_assoc]
+
+/-! ## Coordinate independence of the pump coefficient -/
+
+/-- The pump coefficient does not depend on real linear coordinates: `g` of `(P A₁ P⁻¹, u P⁻¹, P r)`
+equals `g` of `(A₁, u, r)`. -/
+@[tmio T, powerlib_foundation] theorem pump_similar {P : Matrix (Fin n) (Fin n) ℝ} (hP : IsUnit P)
+    (A₁ : Matrix (Fin n) (Fin n) ℂ) (u r : Fin n → ℂ) :
+    pump (Linear.complexify P * A₁ * Linear.complexify P⁻¹) (vecMul u (Linear.complexify P⁻¹))
+        (Linear.complexify P *ᵥ r) = pump A₁ u r := by
+  have hinv : Linear.complexify P⁻¹ * Linear.complexify P = 1 := by
+    rw [Linear.complexify, Linear.complexify, ← Matrix.map_mul,
+      Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det P).mp hP)]
+    simp
+  rw [pump, pump, ← Modal.complexify_mulVec_star, ← dotProduct_mulVec, Matrix.mulVec_mulVec,
+    Matrix.mulVec_mulVec, Matrix.mul_assoc, Matrix.mul_assoc, hinv, Matrix.mul_one,
+    ← Matrix.mul_assoc, hinv, Matrix.one_mul]
+
+/-- Rescaling the eigenvectors (`r ↦ c r`, `u ↦ c⁻¹ u`) multiplies `g` by `c̄/c`. -/
+@[tmio T, powerlib_foundation] theorem pump_rescale (A₁ : Matrix (Fin n) (Fin n) ℂ)
+    (u r : Fin n → ℂ) (c : ℂ) :
+    pump A₁ (c⁻¹ • u) (c • r) = (starRingEnd ℂ) c / c * pump A₁ u r := by
+  rw [pump, pump, star_smul, Matrix.mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
+    smul_eq_mul]
+  rw [show star c = (starRingEnd ℂ) c from rfl]
+  ring
+
+/-- The modulus of `g` does not depend on the eigenvector phase (`c ≠ 0`). -/
+@[tmio T, powerlib_foundation] theorem norm_pump_rescale (A₁ : Matrix (Fin n) (Fin n) ℂ)
+    (u r : Fin n → ℂ) {c : ℂ} (hc : c ≠ 0) :
+    ‖pump A₁ (c⁻¹ • u) (c • r)‖ = ‖pump A₁ u r‖ := by
+  rw [pump_rescale, norm_mul, norm_div, Complex.norm_conj, div_self (norm_ne_zero_iff.mpr hc),
+    one_mul]
 
 /-! ## Lemma 1: constant elements are not modulated -/
 
