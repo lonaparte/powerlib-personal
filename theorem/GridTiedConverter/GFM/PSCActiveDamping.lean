@@ -54,17 +54,16 @@ Results.
 * `jac_modeVec` — every root of `λ(λ + ω_f) + k ω_f K(λ) = 0` off the branch poles is an
   eigenvalue of the linearization (`jac`) with eigenvector `k (1, −λ/k, c(λ), conj c(conj λ))`.
 
-Corrections.
-* (13) is exact in the following sense: `σ/Ω = ω_f/(2Ω) + (k ω_f/Ω²) Im K(λ)/2` with no remainder,
-  and at no load `−Im K(jΩ) = ΔK F_i(Ω/α_d, α)` exactly. The approximations are only
-  `k ω_f/Ω² ≈ 1/K_r` and `K(λ) ≈ K(jΩ)`.
-* At load, `ΔK = E V sin α sin(α − δ₀)/X` (not `V² sin²α/X`), and the lag is not `ΔK F_i`
-  (`im_syncClosed`; at `δ₀ = α` the exact `ΔK` vanishes while the lag does not,
-  `im_syncClosed_load_alpha`). With the source's light-load `ΔK ≈ V² sin²α/X` and `F_i`, the
-  active-damping term of (13) is the `δ₀ → 0` value of the exact lag.
+Comparison with the source.
+* The source's check model feeds the PCC power `Re(u ī)` to the low-pass; it is formalized in
+  `PSCFull.lean`, where `ΔK = V² sin²α/X` and `−Im K(jΩ) = ΔK F_i` hold exactly for every load angle
+  (`PSCFull.Model.Kl_zero`, `PSCFull.Model.neg_im_K`). The EMF-power variant of this module agrees
+  with it at no load (`neg_im_syncClosed_noLoad`); at load its `ΔK = E V sin α sin(α − δ₀)/X` and
+  its lag differ (`im_syncClosed_load_alpha`). The load dependence found here is a property of the
+  power measurement point, not of (13).
+* In both models (13) is exact up to `k ω_f/Ω² ≈ 1/K_r` and `K(λ) ≈ K(jΩ)` (`relDamping_eq`).
 * `F_i` uses the pole `α_d cos α e^{±jα}` of the lossless network (`R = 0`). With `R ≠ 0` the pole
-  is `α_d (R + jX)/Z` (`pole`), not a function of `α = arctan((R + r_a)/X)` alone; the lag then
-  follows from `syncTransfer_eq` and is not evaluated in closed form here.
+  is `α_d (R + jX)/Z` (`pole`), not a function of `α = arctan((R + r_a)/X)` alone.
 
 Family and connection conclusions.
 None: static evidence on the active-damping PSC (linearization, transfers, damping identity,
