@@ -192,6 +192,7 @@ import theorem.GridTiedConverter.GFM.MatchingNetwork
 import theorem.GridTiedConverter.GFM.MatchingResistance
 import theorem.GridTiedConverter.GFM.NetworkLagPCC
 import theorem.GridTiedConverter.GFM.VSGRow
+import theorem.GridTiedConverter.GFM.VoltageModulation
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber
