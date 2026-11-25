@@ -14,8 +14,8 @@ Model boundary.
   (`current0`), first-order correction `i₁ = −(X/ω_b) i₀'/Z` (`current1`); terms of second order in
   `d/dt ÷ ω_b` (the residual `(X/ω_b) i₁'`) are excluded. Port power `p = Re(E e^{jδ} ī)`
   (`portPower`).
-* The PCC (measurement behind `x_up`) case is covered only for a lossless link
-  (`lagRatio_lossless`); the resistive PCC terms of (16) are not formalized.
+* The PCC (measurement behind `x_up`) case is covered here only for a lossless link
+  (`lagRatio_lossless`); the resistive PCC terms of (16) are derived in `NetworkLagPCC.lean`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §4.4 (`p ≈ K_s δ − K_d δ̇`, `d₁ ↦ d₁ − d₀ τ_net`, (16)
