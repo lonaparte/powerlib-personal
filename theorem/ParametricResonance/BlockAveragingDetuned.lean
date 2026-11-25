@@ -19,8 +19,9 @@ Scope.
   A_s)`) and the stable block enters through `‖e^{TA_s}‖ < 1` (`T = 2π/ω`), as in `BlockAveraging`.
 * `modal_three` builds `P`, `Q` for three states from right/left eigenvectors of `jΩ` and of a real
   pole `λ₃`; `norm_expS_one` gives `‖e^{Tλ₃}‖ = e^{λ₃T} < 1` for `λ₃ < 0`.
-* The variational matrix is taken to first order in `ε`: terms `O(ε²)` of a physical orbit's
-  variational equation, and the existence of the forced orbit, are not covered.
+* The variational matrix is taken to first order in `ε`; the `O(ε²)` terms of a physical orbit's
+  variational equation are added in `BlockAveragingRemainder`, and the forced orbit itself is
+  constructed in `ForcedOrbit` (composition: `ForcedOrbitFloquet`).
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (`J_p = A₀ + ε Re{A₁ e^{jω_p t}}`, `g_m = l_mᴴ A₁ r_m*`,

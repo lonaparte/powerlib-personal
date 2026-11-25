@@ -16,8 +16,8 @@ Model boundary.
   pole `−d₂ < 0`. The family `A₀(ε) = A₀c + ε A₀'` (any real `A₀'`: damping and detuning away from
   the Hopf point) and the grid voltage `V₀ + ε Re{V̂ e^{2jΩt}}`; the variational matrix is taken
   to first order in `ε` (`BlockAveraging.physJ`).
-* The forced response is that of `A₀c` at `2jΩ`; the existence of the forced periodic orbit and
-  its `O(ε²)` terms are not covered.
+* The forced response is that of `A₀c` at `2jΩ`; the variational matrix is taken to first order.
+  The nonlinear model with its forced orbit and the `O(ε²)` terms is `VoltageModulationOrbit`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (first-order averaging, `ε_crit = 4(σ_m/Ω_m)/ĝ_m`), §3

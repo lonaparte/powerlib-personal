@@ -196,6 +196,7 @@ import theorem.GridTiedConverter.GFM.VoltageModulation
 import theorem.GridTiedConverter.GFM.VoltageModulationQV
 import theorem.GridTiedConverter.GFM.VoltageModulationNetwork
 import theorem.GridTiedConverter.GFM.VoltageModulationFloquet
+import theorem.GridTiedConverter.GFM.VoltageModulationOrbit
 import theorem.GridTiedConverter.GFM.DVOCVoltage
 import theorem.GridTiedConverter.GFM.PSCVoltage
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
@@ -311,6 +312,9 @@ import theorem.ParametricResonance.PeriodicAveraging
 import theorem.ParametricResonance.TwoToOneAveraging
 import theorem.ParametricResonance.BlockAveraging
 import theorem.ParametricResonance.BlockAveragingDetuned
+import theorem.ParametricResonance.BlockAveragingRemainder
+import theorem.ParametricResonance.ForcedOrbit
+import theorem.ParametricResonance.ForcedOrbitFloquet
 import theorem.ParametricResonance.TongueQuadratic
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
