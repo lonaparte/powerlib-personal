@@ -23,8 +23,8 @@ Model boundary.
   of the Jacobian along the forced response (`line_pwδ`, `line_pwℓ`, `line_pwm`, `line_curδ0`,
   `line_curtδ0`). The real-coordinate pump of the source equals the pump in these coordinates with
   the conjugation `swapConj` (`pump_realify`, `swapConj_right`), for Jacobians related by
-  `realify`; that relation of the two Jacobians is the definition of the coordinates and is not
-  re-derived from the real field.
+  `realify`; that relation of the two Jacobians is the definition of the coordinates here; it is
+  derived from the real field in `PSCOrbit` (`matX_rfield_eq`).
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §3 (PSC core, `D_PSC`, `K(s) = K_hf + K_ℓ(s)`,

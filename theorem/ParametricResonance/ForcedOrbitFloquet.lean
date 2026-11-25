@@ -14,7 +14,8 @@ variational equation of the actual forced orbit obey the first-order criterion `
 Scope.
 * The forced system `ẏ = A y + ε b(t) + N_ε(t, y)` with the hypotheses of
   `ForcedOrbit.forced_orbit`, and a matrix field `J_ε(t, y)` (the Jacobian of the vector field for a
-  concrete model) with its first-order Taylor bound, on any finite state space; the variational
+  concrete model), continuous on `ℝ × {‖y‖ ≤ ρ}`, with its first-order Taylor bound, on any
+  finite state space; the variational
   matrix along a solution is `t ↦ J_ε(t, y(t))`. The solution conditions are written out in the
   statements.
 * The Floquet statements need real modal coordinates of `A` with the pair `±jω/2` and a
@@ -104,13 +105,15 @@ omit [Fintype X] [DecidableEq X] in
 omit [DecidableEq X] in
 @[tmio T, powerlib_foundation] theorem continuous_jacRem {Jf : ℝ → ℝ → (X → ℝ) → Matrix X X ℝ}
     (A : Matrix X X ℝ) (Dx : (X → ℝ) →ₗ[ℝ] Matrix X X ℝ) {Du : ℝ → Matrix X X ℝ}
-    {y yp : ℝ → X → ℝ} (ε : ℝ) (hJc : Continuous (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2))
-    (hy : Continuous y) (hyp : Continuous yp) (hDu : Continuous Du) :
+    {y yp : ℝ → X → ℝ} (ε : ℝ) {ρ : ℝ}
+    (hJc : ContinuousOn (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2) (Set.univ ×ˢ Metric.closedBall 0 ρ))
+    (hy : Continuous y) (hyb : ∀ t, ‖y t‖ ≤ ρ) (hyp : Continuous yp) (hDu : Continuous Du) :
     Continuous (jacRem Jf A Dx Du y yp ε) := by
-  have h1 : Continuous fun t => Jf ε t (y t) := hJc.comp (continuous_id.prodMk hy)
+  have h1 : Continuous fun t => Jf ε t (y t) := hJc.comp_continuous (continuous_id.prodMk hy)
+    (fun s => Set.mk_mem_prod (Set.mem_univ _) (mem_closedBall_zero_iff.2 (hyb s)))
   have h2 : Continuous fun t => Dx (yp t) := (LinearMap.continuous_of_finiteDimensional Dx).comp hyp
   show Continuous fun t => (ε ^ 2)⁻¹ • (Jf ε t (y t) - A - ε • (Dx (yp t) + Du t))
-  fun_prop
+  exact ((h1.sub continuous_const).sub ((h2.add hDu).const_smul ε)).const_smul ((ε ^ 2)⁻¹ : ℝ)
 
 /-! ### The harmonic first-order orbit -/
 
@@ -300,7 +303,8 @@ is `A + ε(A₀' + Re{A₁ e^{jωt}}) + ε² R_ε(t)` with `R_ε` continuous and
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1)
     {b : ℝ → X → ℝ} (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t)
     {N : ℝ → ℝ → (X → ℝ) → X → ℝ} {K ρ ε0 : ℝ} (hK : 0 ≤ K) (hρ : 0 < ρ) (hε0 : 0 < ε0)
-    (hNc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => N ε p.1 p.2))
+    (hNc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => N ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hNp : ∀ ε t y, N ε (t + T) y = N ε t y)
     (hN0 : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t, ‖N ε t 0‖ ≤ K * ε ^ 2)
     (hNL : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y1 y2, ‖y1‖ ≤ ρ → ‖y2‖ ≤ ρ →
@@ -308,7 +312,8 @@ is `A + ε(A₀' + Re{A₁ e^{jωt}}) + ε² R_ε(t)` with `R_ε` continuous and
     {Jf : ℝ → ℝ → (X → ℝ) → Matrix X X ℝ} {Dx : (X → ℝ) →ₗ[ℝ] Matrix X X ℝ}
     {Du : ℝ → Matrix X X ℝ} {KJ KD : ℝ} (hKJ : 0 ≤ KJ) (hKD : 0 ≤ KD)
     (hDx : ∀ v, ‖Dx v‖ ≤ KD * ‖v‖) (hDu : Continuous Du)
-    (hJc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2))
+    (hJc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hJ : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y, ‖y‖ ≤ ρ →
       ‖Jf ε t y - A - Dx y - ε • Du t‖ ≤ KJ * (‖y‖ ^ 2 + ε ^ 2))
     {yp : ℝ → X → ℝ} (hpp : ∀ t, yp (t + T) = yp t)
@@ -339,8 +344,10 @@ is `A + ε(A₀' + Re{A₁ e^{jωt}}) + ε² R_ε(t)` with `R_ε` continuous and
   refine ⟨c, ε1, KJ * (c ^ 2 + 1) + KD * C, hc, hε1, Rm, ?_, ?_, ?_⟩
   · intro ε h0 h1
     have hy := horbS ε h0 h1
-    exact continuous_jacRem A Dx ε (hJc ε)
-      (continuous_iff_continuousAt.2 fun t => (hy.2.2 t).continuousAt) hypc hDu
+    have hcρε : c * ε ≤ ρ := (mul_le_mul_of_nonneg_left h1 hc).trans hcρ
+    exact continuous_jacRem A Dx ε (hJc ε h0.le (h1.trans hε1e))
+      (continuous_iff_continuousAt.2 fun t => (hy.2.2 t).continuousAt)
+      (fun t => (hy.2.1 t).trans hcρε) hypc hDu
   · intro ε h0 h1 t
     have hy := horbS ε h0 h1
     have hcρε : c * ε ≤ ρ := (mul_le_mul_of_nonneg_left h1 hc).trans hcρ
@@ -361,7 +368,8 @@ equation `ξ̇ = J_ε(t, y(t)) ξ` lies inside the unit circle. -/
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1)
     {b : ℝ → X → ℝ} (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t)
     {N : ℝ → ℝ → (X → ℝ) → X → ℝ} {K ρ ε0 : ℝ} (hK : 0 ≤ K) (hρ : 0 < ρ) (hε0 : 0 < ε0)
-    (hNc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => N ε p.1 p.2))
+    (hNc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => N ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hNp : ∀ ε t y, N ε (t + T) y = N ε t y)
     (hN0 : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t, ‖N ε t 0‖ ≤ K * ε ^ 2)
     (hNL : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y1 y2, ‖y1‖ ≤ ρ → ‖y2‖ ≤ ρ →
@@ -369,7 +377,8 @@ equation `ξ̇ = J_ε(t, y(t)) ξ` lies inside the unit circle. -/
     {Jf : ℝ → ℝ → (X → ℝ) → Matrix X X ℝ} {Dx : (X → ℝ) →ₗ[ℝ] Matrix X X ℝ}
     {Du : ℝ → Matrix X X ℝ} {KJ KD : ℝ} (hKJ : 0 ≤ KJ) (hKD : 0 ≤ KD)
     (hDx : ∀ v, ‖Dx v‖ ≤ KD * ‖v‖) (hDu : Continuous Du)
-    (hJc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2))
+    (hJc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hJ : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y, ‖y‖ ≤ ρ →
       ‖Jf ε t y - A - Dx y - ε • Du t‖ ≤ KJ * (‖y‖ ^ 2 + ε ^ 2))
     {yp : ℝ → X → ℝ} (hpp : ∀ t, yp (t + T) = yp t)
@@ -408,7 +417,8 @@ forced orbit is Floquet unstable for all small `ε > 0`. -/
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1)
     {b : ℝ → X → ℝ} (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t)
     {N : ℝ → ℝ → (X → ℝ) → X → ℝ} {K ρ ε0 : ℝ} (hK : 0 ≤ K) (hρ : 0 < ρ) (hε0 : 0 < ε0)
-    (hNc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => N ε p.1 p.2))
+    (hNc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => N ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hNp : ∀ ε t y, N ε (t + T) y = N ε t y)
     (hN0 : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t, ‖N ε t 0‖ ≤ K * ε ^ 2)
     (hNL : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y1 y2, ‖y1‖ ≤ ρ → ‖y2‖ ≤ ρ →
@@ -416,7 +426,8 @@ forced orbit is Floquet unstable for all small `ε > 0`. -/
     {Jf : ℝ → ℝ → (X → ℝ) → Matrix X X ℝ} {Dx : (X → ℝ) →ₗ[ℝ] Matrix X X ℝ}
     {Du : ℝ → Matrix X X ℝ} {KJ KD : ℝ} (hKJ : 0 ≤ KJ) (hKD : 0 ≤ KD)
     (hDx : ∀ v, ‖Dx v‖ ≤ KD * ‖v‖) (hDu : Continuous Du)
-    (hJc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2))
+    (hJc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => Jf ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hJ : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y, ‖y‖ ≤ ρ →
       ‖Jf ε t y - A - Dx y - ε • Du t‖ ≤ KJ * (‖y‖ ^ 2 + ε ^ 2))
     {yp : ℝ → X → ℝ} (hpp : ∀ t, yp (t + T) = yp t)
@@ -455,7 +466,8 @@ circle for all small `ε > 0`. -/
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1)
     {b : ℝ → (Fin 3) → ℝ} (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t)
     {N : ℝ → ℝ → ((Fin 3) → ℝ) → (Fin 3) → ℝ} {K ρ ε0 : ℝ} (hK : 0 ≤ K) (hρ : 0 < ρ) (hε0 : 0 < ε0)
-    (hNc : ∀ ε, Continuous (fun p : ℝ × ((Fin 3) → ℝ) => N ε p.1 p.2))
+    (hNc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × ((Fin 3) → ℝ) => N ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hNp : ∀ ε t y, N ε (t + T) y = N ε t y)
     (hN0 : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t, ‖N ε t 0‖ ≤ K * ε ^ 2)
     (hNL : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y1 y2, ‖y1‖ ≤ ρ → ‖y2‖ ≤ ρ →
@@ -463,7 +475,8 @@ circle for all small `ε > 0`. -/
     {Jf : ℝ → ℝ → ((Fin 3) → ℝ) → Matrix (Fin 3) (Fin 3) ℝ} {Dx : ((Fin 3) → ℝ) →ₗ[ℝ] Matrix (Fin 3) (Fin 3) ℝ}
     {Du : ℝ → Matrix (Fin 3) (Fin 3) ℝ} {KJ KD : ℝ} (hKJ : 0 ≤ KJ) (hKD : 0 ≤ KD)
     (hDx : ∀ v, ‖Dx v‖ ≤ KD * ‖v‖) (hDu : Continuous Du)
-    (hJc : ∀ ε, Continuous (fun p : ℝ × ((Fin 3) → ℝ) => Jf ε p.1 p.2))
+    (hJc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × ((Fin 3) → ℝ) => Jf ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hJ : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y, ‖y‖ ≤ ρ →
       ‖Jf ε t y - A - Dx y - ε • Du t‖ ≤ KJ * (‖y‖ ^ 2 + ε ^ 2))
     {yp : ℝ → (Fin 3) → ℝ} (hpp : ∀ t, yp (t + T) = yp t)
@@ -499,7 +512,8 @@ circle for all small `ε > 0`. -/
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1)
     {b : ℝ → (Fin 3) → ℝ} (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t)
     {N : ℝ → ℝ → ((Fin 3) → ℝ) → (Fin 3) → ℝ} {K ρ ε0 : ℝ} (hK : 0 ≤ K) (hρ : 0 < ρ) (hε0 : 0 < ε0)
-    (hNc : ∀ ε, Continuous (fun p : ℝ × ((Fin 3) → ℝ) => N ε p.1 p.2))
+    (hNc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × ((Fin 3) → ℝ) => N ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hNp : ∀ ε t y, N ε (t + T) y = N ε t y)
     (hN0 : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t, ‖N ε t 0‖ ≤ K * ε ^ 2)
     (hNL : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y1 y2, ‖y1‖ ≤ ρ → ‖y2‖ ≤ ρ →
@@ -507,7 +521,8 @@ circle for all small `ε > 0`. -/
     {Jf : ℝ → ℝ → ((Fin 3) → ℝ) → Matrix (Fin 3) (Fin 3) ℝ} {Dx : ((Fin 3) → ℝ) →ₗ[ℝ] Matrix (Fin 3) (Fin 3) ℝ}
     {Du : ℝ → Matrix (Fin 3) (Fin 3) ℝ} {KJ KD : ℝ} (hKJ : 0 ≤ KJ) (hKD : 0 ≤ KD)
     (hDx : ∀ v, ‖Dx v‖ ≤ KD * ‖v‖) (hDu : Continuous Du)
-    (hJc : ∀ ε, Continuous (fun p : ℝ × ((Fin 3) → ℝ) => Jf ε p.1 p.2))
+    (hJc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × ((Fin 3) → ℝ) => Jf ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hJ : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y, ‖y‖ ≤ ρ →
       ‖Jf ε t y - A - Dx y - ε • Du t‖ ≤ KJ * (‖y‖ ^ 2 + ε ^ 2))
     {yp : ℝ → (Fin 3) → ℝ} (hpp : ∀ t, yp (t + T) = yp t)

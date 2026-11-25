@@ -445,12 +445,13 @@ nonlinear model has, for all small `ε > 0`, a `2π/(2Ω)`-periodic forced orbit
     (KJ := |p.ωc * (p.E / p.X)| * (|V0| + |Vh|) * ‖E20‖) (KD := |p.ωc * (p.core δ0 V0).Pδδ| * ‖E20‖)
     (ρ := 1) (ε0 := 1) (by positivity) hL hR (ForcedOrbit.continuous_harm _ _)
     (ForcedOrbit.harm_periodic _ hΩ2) (by positivity) one_pos one_pos
-    (p.continuous_orbN δ0 V0 Vh (2 * Ω) A0')
+    (fun ε _ _ => (p.continuous_orbN δ0 V0 Vh (2 * Ω) A0' ε).continuousOn)
     (fun ε t y => by simp only [orbN, p.nl_periodic δ0 V0 Vh hΩ2])
     (fun ε _ _ t => by rw [p.orbN_zero, norm_zero]; positivity)
     (fun ε hε _ t y1 y2 _ _ => p.orbN_lip δ0 V0 Vh (2 * Ω) A0' hε t y1 y2)
     (by positivity) (by positivity) (fun v => p.orbDx_bound δ0 V0 v)
-    (p.continuous_orbDu δ0 V0 Vh (2 * Ω) A0') (p.continuous_orbJ δ0 V0 Vh (2 * Ω) A0')
+    (p.continuous_orbDu δ0 V0 Vh (2 * Ω) A0')
+    (fun ε _ _ => (p.continuous_orbJ δ0 V0 Vh (2 * Ω) A0' ε).continuousOn)
     (fun ε hε _ t y _ => p.orbJ_taylor δ0 V0 Vh (2 * Ω) A0' hε t y) hpp hpd
     hΩ (neg_neg_of_pos hd2) rfl hr hu hur hr3 hu3 hur3 A0' _ hlink hs hg'
 
@@ -485,12 +486,13 @@ variational equation along the forced orbit is Floquet unstable for all small `�
     (KJ := |p.ωc * (p.E / p.X)| * (|V0| + |Vh|) * ‖E20‖) (KD := |p.ωc * (p.core δ0 V0).Pδδ| * ‖E20‖)
     (ρ := 1) (ε0 := 1) (by positivity) hL hR (ForcedOrbit.continuous_harm _ _)
     (ForcedOrbit.harm_periodic _ hΩ2) (by positivity) one_pos one_pos
-    (p.continuous_orbN δ0 V0 Vh (2 * Ω) A0')
+    (fun ε _ _ => (p.continuous_orbN δ0 V0 Vh (2 * Ω) A0' ε).continuousOn)
     (fun ε t y => by simp only [orbN, p.nl_periodic δ0 V0 Vh hΩ2])
     (fun ε _ _ t => by rw [p.orbN_zero, norm_zero]; positivity)
     (fun ε hε _ t y1 y2 _ _ => p.orbN_lip δ0 V0 Vh (2 * Ω) A0' hε t y1 y2)
     (by positivity) (by positivity) (fun v => p.orbDx_bound δ0 V0 v)
-    (p.continuous_orbDu δ0 V0 Vh (2 * Ω) A0') (p.continuous_orbJ δ0 V0 Vh (2 * Ω) A0')
+    (p.continuous_orbDu δ0 V0 Vh (2 * Ω) A0')
+    (fun ε _ _ => (p.continuous_orbJ δ0 V0 Vh (2 * Ω) A0' ε).continuousOn)
     (fun ε hε _ t y _ => p.orbJ_taylor δ0 V0 Vh (2 * Ω) A0' hε t y) hpp hpd
     hΩ (neg_neg_of_pos hd2) rfl hr hu hur hr3 hu3 hur3 A0' _ hlink hg'
 

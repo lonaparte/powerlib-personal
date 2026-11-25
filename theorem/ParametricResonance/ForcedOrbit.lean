@@ -14,7 +14,8 @@ on a closed ball of bounded continuous periodic functions.
 
 Scope.
 * Finite state space `X → ℝ` (sup norm), constant `A`, continuous `T`-periodic `b`, and `N`
-  jointly continuous in `(t, y)`, `T`-periodic in `t`, with
+  jointly continuous in `(t, y)` on `ℝ × {‖y‖ ≤ ρ}` (for each `0 ≤ ε ≤ ε₀`), `T`-periodic in `t`,
+  with
   `‖N_ε(t, 0)‖ ≤ K ε²` and `‖N_ε(t, y₁) − N_ε(t, y₂)‖ ≤ K(‖y₁‖ + ‖y₂‖ + ε)‖y₁ − y₂‖` on a ball
   `‖yᵢ‖ ≤ ρ`, for `0 ≤ ε ≤ ε₀` (a `C²` vector field with `f(x₀, u₀) = 0` and a smooth input).
 * `I − e^{TA}` is given with a two-sided inverse `M` (constructed from modal coordinates in
@@ -305,8 +306,9 @@ functions: `y = G(εb + N(·, y))`. -/
 @[tmio T, powerlib_foundation] theorem orbit_contraction {A Minv : Matrix X X ℝ} {T : ℝ}
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1) {b : ℝ → X → ℝ}
     (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t) {N : ℝ → (X → ℝ) → X → ℝ}
-    (hNc : Continuous (fun p : ℝ × (X → ℝ) => N p.1 p.2)) (hNp : ∀ t y, N (t + T) y = N t y)
     {CL K ρ r ε Bb : ℝ}
+    (hNc : ContinuousOn (fun p : ℝ × (X → ℝ) => N p.1 p.2) (Set.univ ×ˢ Metric.closedBall 0 ρ))
+    (hNp : ∀ t y, N (t + T) y = N t y)
     (hCL : ∀ (h : ℝ → X → ℝ) (H : ℝ), Continuous h → (∀ s, ‖h s‖ ≤ H) →
       ∀ t, ‖green A Minv T h t‖ ≤ CL * H)
     (hCL0 : 0 ≤ CL) (hK : 0 ≤ K) (hε : 0 ≤ ε) (hr0 : 0 ≤ r) (hrρ : r ≤ ρ)
@@ -322,8 +324,9 @@ functions: `y = G(εb + N(·, y))`. -/
   have hρ : 0 ≤ ρ := hr0.trans hrρ
   set Hb := ε * Bb + (K * ε ^ 2 + K * (r + ε) * r) with hHb
   set F : (ℝ → X → ℝ) → ℝ → X → ℝ := fun y s => ε • b s + N s (y s) with hF
-  have hFc : ∀ y : ℝ → X → ℝ, Continuous y → Continuous (F y) := fun y hy =>
-    (hb.const_smul ε).add (hNc.comp (continuous_id.prodMk hy))
+  have hFc : ∀ y : ℝ → X → ℝ, Continuous y → (∀ t, ‖y t‖ ≤ r) → Continuous (F y) :=
+    fun y hy hyb => (hb.const_smul ε).add (hNc.comp_continuous (continuous_id.prodMk hy)
+      (fun s => Set.mk_mem_prod (Set.mem_univ _) (mem_closedBall_zero_iff.2 ((hyb s).trans hrρ))))
   have hFp : ∀ y : ℝ → X → ℝ, (∀ t, y (t + T) = y t) → ∀ s, F y (s + T) = F y s := by
     intro y hy s; simp only [hF, hbp, hNp, hy]
   have hFb : ∀ y : ℝ → X → ℝ, (∀ t, ‖y t‖ ≤ r) → ∀ s, ‖F y s‖ ≤ Hb := by
@@ -344,9 +347,9 @@ functions: `y = G(εb + N(·, y))`. -/
       have := h1 s; have := h2 s; gcongr; linarith
     exact mul_le_mul this (hd s) (norm_nonneg _) (by positivity)
   -- the operator on solutions
-  have hGsol : ∀ y : ℝ → X → ℝ, Continuous y → (∀ t, y (t + T) = y t) → ∀ t,
-      HasDerivAt (green A Minv T (F y)) (A *ᵥ green A Minv T (F y) t + F y t) t := fun y hy hyp t =>
-    green_hasDerivAt hL hR (hFc y hy) (hFp y hyp) t
+  have hGsol : ∀ y : ℝ → X → ℝ, Continuous y → (∀ t, y (t + T) = y t) → (∀ t, ‖y t‖ ≤ r) → ∀ t,
+      HasDerivAt (green A Minv T (F y)) (A *ᵥ green A Minv T (F y) t + F y t) t :=
+    fun y hy hyp hyb t => green_hasDerivAt hL hR (hFc y hy hyb) (hFp y hyp) t
   -- the closed set
   set S : Set (ℝ →ᵇ (X → ℝ)) := {y | (∀ t, y (t + T) = y t) ∧ ∀ t, ‖y t‖ ≤ r} with hS
   have hev : ∀ t, Continuous fun y : ℝ →ᵇ (X → ℝ) => y t := fun t =>
@@ -361,12 +364,12 @@ functions: `y = G(εb + N(·, y))`. -/
   have : CompleteSpace S := hSc.completeSpace_coe
   have : Nonempty S := ⟨⟨0, fun t => rfl, fun t => by simpa using hr0⟩⟩
   have hGc : ∀ y : ℝ →ᵇ (X → ℝ), y ∈ S → Continuous (green A Minv T (F y)) := fun y hy =>
-    continuous_iff_continuousAt.2 fun t => (hGsol y y.continuous hy.1 t).continuousAt
+    continuous_iff_continuousAt.2 fun t => (hGsol y y.continuous hy.1 hy.2 t).continuousAt
   have hGb : ∀ y : ℝ →ᵇ (X → ℝ), y ∈ S → ∀ t, ‖green A Minv T (F y) t‖ ≤ r := fun y hy t =>
-    (hCL _ _ (hFc y y.continuous) (hFb y hy.2) t).trans hmap
+    (hCL _ _ (hFc y y.continuous hy.2) (hFb y hy.2) t).trans hmap
   let Φ : S → S := fun y => ⟨BoundedContinuousFunction.ofNormedAddCommGroup
     (green A Minv T (F y.1)) (hGc y.1 y.2) r (hGb y.1 y.2),
-    fun t => green_periodic A Minv T (hFc y.1 y.1.continuous) (hFp y.1 y.2.1) t, hGb y.1 y.2⟩
+    fun t => green_periodic A Minv T (hFc y.1 y.1.continuous y.2.2) (hFp y.1 y.2.1) t, hGb y.1 y.2⟩
   have hΦ : ∀ y : S, ⇑(Φ y).1 = green A Minv T (F y.1) := fun y => rfl
   set q := CL * K * (2 * r + ε) with hqd
   have hq0 : 0 ≤ q := by positivity
@@ -376,10 +379,11 @@ functions: `y = G(εb + N(·, y))`. -/
     show dist (Φ y1).1 (Φ y2).1 ≤ q * dist y1.1 y2.1
     have hD := dist_nonneg (x := y1.1) (y := y2.1)
     refine (BoundedContinuousFunction.dist_le (by positivity)).2 fun t => ?_
-    rw [hΦ, hΦ, dist_eq_norm, green_sub A Minv T (hFc _ y1.1.continuous) (hFc _ y2.1.continuous)]
+    rw [hΦ, hΦ, dist_eq_norm, green_sub A Minv T (hFc _ y1.1.continuous y1.2.2)
+      (hFc _ y2.1.continuous y2.2.2)]
     have hd : ∀ t, ‖y1.1 t - y2.1 t‖ ≤ dist y1.1 y2.1 := fun t => by
       rw [← dist_eq_norm]; exact BoundedContinuousFunction.dist_coe_le_dist t
-    have := hCL _ _ ((hFc _ y1.1.continuous).sub (hFc _ y2.1.continuous))
+    have := hCL _ _ ((hFc _ y1.1.continuous y1.2.2).sub (hFc _ y2.1.continuous y2.2.2))
       (hFL _ _ y1.2.2 y2.2.2 _ hD hd) t
     calc ‖green A Minv T (fun s => F y1.1 s - F y2.1 s) t‖
         ≤ CL * (K * (2 * r + ε) * dist y1.1 y2.1) := this
@@ -395,13 +399,13 @@ functions: `y = G(εb + N(·, y))`. -/
     apply BoundedContinuousFunction.ext
     intro t
     show green A Minv T (F y) t = y t
-    exact (periodic_eq_green hL hR (hFc y hyc) (hFp y hyp) hyd hyp t).symm
+    exact (periodic_eq_green hL hR (hFc y hyc hyb) (hFp y hyp) hyd hyp t).symm
   refine ⟨?_, ?_⟩
   · set z := ContractingWith.fixedPoint Φ hcontr
     have hz : Φ z = z := ContractingWith.fixedPoint_isFixedPt (f := Φ) hcontr
     have hzf : ⇑z.1 = green A Minv T (F z.1) := by rw [← hΦ, hz]
     refine ⟨z.1, z.1.continuous, z.2.1, z.2.2, fun t => ?_⟩
-    have := hGsol z.1 z.1.continuous z.2.1 t
+    have := hGsol z.1 z.1.continuous z.2.1 z.2.2 t
     rw [← hzf] at this
     exact this
   · intro y1 y2 h1p h1b h1d h2p h2b h2d
@@ -415,8 +419,9 @@ where `y_p` is the periodic solution of `ẏ_p = A y_p + b`. -/
 @[tmio T, powerlib_foundation] theorem orbit_expansion {A Minv : Matrix X X ℝ} {T : ℝ}
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1) {b : ℝ → X → ℝ}
     (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t) {N : ℝ → (X → ℝ) → X → ℝ}
-    (hNc : Continuous (fun p : ℝ × (X → ℝ) => N p.1 p.2)) (hNp : ∀ t y, N (t + T) y = N t y)
     {CL K ρ r ε : ℝ}
+    (hNc : ContinuousOn (fun p : ℝ × (X → ℝ) => N p.1 p.2) (Set.univ ×ˢ Metric.closedBall 0 ρ))
+    (hNp : ∀ t y, N (t + T) y = N t y)
     (hCL : ∀ (h : ℝ → X → ℝ) (H : ℝ), Continuous h → (∀ s, ‖h s‖ ≤ H) →
       ∀ t, ‖green A Minv T h t‖ ≤ CL * H)
     (hK : 0 ≤ K) (hε : 0 ≤ ε) (hrρ : r ≤ ρ) (hr0 : 0 ≤ r) (hN0 : ∀ t, ‖N t 0‖ ≤ K * ε ^ 2)
@@ -427,11 +432,12 @@ where `y_p` is the periodic solution of `ẏ_p = A y_p + b`. -/
     (t : ℝ) : ‖y t - ε • yp t‖ ≤ CL * (K * ε ^ 2 + K * (r + ε) * r) := by
   have hρ : 0 ≤ ρ := hr0.trans hrρ
   have hyc : Continuous y := continuous_iff_continuousAt.2 fun t => (hyd t).continuousAt
-  have hFc : Continuous (fun s => ε • b s + N s (y s)) :=
-    (hb.const_smul ε).add (hNc.comp (continuous_id.prodMk hyc))
+  have hyin : ∀ s, (s, y s) ∈ Set.univ ×ˢ Metric.closedBall (0 : X → ℝ) ρ := fun s =>
+    Set.mk_mem_prod (Set.mem_univ _) (mem_closedBall_zero_iff.2 ((hyb s).trans hrρ))
+  have hNyc : Continuous (fun s => N s (y s)) := hNc.comp_continuous (continuous_id.prodMk hyc) hyin
+  have hFc : Continuous (fun s => ε • b s + N s (y s)) := (hb.const_smul ε).add hNyc
   have hFp : ∀ s, ε • b (s + T) + N (s + T) (y (s + T)) = ε • b s + N s (y s) := fun s => by
     rw [hbp, hNp, hyp]
-  have hNyc : Continuous (fun s => N s (y s)) := hNc.comp (continuous_id.prodMk hyc)
   rw [periodic_eq_green hL hR hFc hFp hyd hyp t, periodic_eq_green hL hR hb hbp hpd hpp t,
     ← green_smul A Minv T ε hb, green_sub A Minv T (h2 := fun s => ε • b s) hFc (hb.const_smul ε)]
   have e : (fun s => ε • b s + N s (y s) - ε • b s) = fun s => N s (y s) := by
@@ -457,7 +463,8 @@ there, and the first-order expansion `‖y − ε y_p‖ ≤ C ε²`. -/
     (hL : Minv * (1 - expS A T) = 1) (hR : (1 - expS A T) * Minv = 1) {b : ℝ → X → ℝ}
     (hb : Continuous b) (hbp : ∀ t, b (t + T) = b t) {N : ℝ → ℝ → (X → ℝ) → X → ℝ}
     {K ρ ε0 : ℝ} (hK : 0 ≤ K) (hρ : 0 < ρ) (hε0 : 0 < ε0)
-    (hNc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => N ε p.1 p.2))
+    (hNc : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ContinuousOn (fun p : ℝ × (X → ℝ) => N ε p.1 p.2)
+      (Set.univ ×ˢ Metric.closedBall 0 ρ))
     (hNp : ∀ ε t y, N ε (t + T) y = N ε t y)
     (hN0 : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t, ‖N ε t 0‖ ≤ K * ε ^ 2)
     (hNL : ∀ ε, 0 ≤ ε → ε ≤ ε0 → ∀ t y1 y2, ‖y1‖ ≤ ρ → ‖y2‖ ≤ ρ →
@@ -519,13 +526,13 @@ there, and the first-order expansion `‖y − ε y_p‖ ≤ C ε²`. -/
   have hq : CL * K * (2 * (c * ε) + ε) < 1 := by
     have : CL * K * (2 * (c * ε) + ε) = a * ε := by rw [ha]; ring
     rw [this]; exact hεa
-  obtain ⟨hex, huniq⟩ := orbit_contraction (N := N ε) hL hR hb hbp (hNc ε) (hNp ε) hCL hCL0 hK
+  obtain ⟨hex, huniq⟩ := orbit_contraction (N := N ε) hL hR hb hbp (hNc ε hε.le hε0') (hNp ε) hCL hCL0 hK
     hε.le hr0 hrρ hBb (hN0 ε hε.le hε0') (hNL ε hε.le hε0') hmap hq
   refine ⟨?_, huniq, ?_⟩
   · obtain ⟨y, -, hyp, hyb, hyd⟩ := hex
     exact ⟨y, hyp, hyb, hyd⟩
   · intro y hyp hyb hyd yp hpp hpd t
-    refine (orbit_expansion hL hR hb hbp (hNc ε) (hNp ε) hCL hK hε.le hrρ hr0
+    refine (orbit_expansion hL hR hb hbp (hNc ε hε.le hε0') (hNp ε) hCL hK hε.le hrρ hr0
       (hN0 ε hε.le hε0') (hNL ε hε.le hε0') hyp hyb hyd hpp hpd t).trans (le_of_eq ?_)
     rw [hκ]; ring
 
