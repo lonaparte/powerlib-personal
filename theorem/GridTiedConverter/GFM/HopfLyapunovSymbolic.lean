@@ -21,9 +21,14 @@ Model boundary.
   `a₃ = 2σ + d`, `a₂ = ρ + 2σd`, `a₁ = dρ`, `a₀ = a b ω₀`.
 * Level: exact identities and signs for all parameters of the slice (no sample points), and
   Lyapunov instability / local asymptotic stability (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`) of the operating point. Not stated: the bifurcating cycles, the
-  stability of the degenerate points `𝔅 = 0` themselves (second Lyapunov coefficient), the
-  `ε = 1/ω_b` law of the source note.
+  `LocalAsymptoticStable`) of the operating point. Not stated: the bifurcating cycles (their
+  existence is the generic `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the
+  transversality `τ ≠ 0`, instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the
+  transversality computation and the instance are missing, and uniqueness and orbital stability
+  are not proved), the
+  stability of the degenerate points `𝔅 = 0` off the lines `w = 1, 2, 3` (second Lyapunov
+  coefficient: `HopfBautinPoint`, `HopfBautinW2Point`, `HopfBautinW3Point`). The `ε = 1/ω_b`
+  law of the source note is `theorem/GridTiedConverter/GFM/HopfLineScale.lean`.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, the VSM without filter on a dynamic
 R–L line); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4;

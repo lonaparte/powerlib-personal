@@ -45,8 +45,10 @@ Results.
   `integrable_gibbs_circle`, `partition_circle`: then it is normalizable with
   `Z = 2π I₀(A/T) √(2π M T)`; `gibbs_not_integrable_plane`: on the whole plane it is never
   normalizable (`GFL.Noise.Escape.gibbs2_not_integrable`, the potential being bounded above on a
-  half-line). Otherwise the stationary state, if any, carries a probability current
-  (not formalized).
+  half-line). Otherwise no positive differentiable density on the circle is in generalized
+  detailed balance: a stationary state, if any, carries an irreversible probability current
+  (`GFM.Noise.Params.not_genDetailedBalance_of_periodic` in
+  `theorem/GridTiedConverter/GFM/Noise/FilterReversibility.lean`).
 * `linearization_eq`, `langer_eigen`, `langer_factor`: at a saddle (`cos(δ − α) < 0`,
   `κ_b = −A cos(δ − α)`) the linearization `(J − R)∇²H` is `kkJacobian M D κ_b`, with unstable
   eigenvalue `λ₊` and `λ₊/ω_b = √(1 + ζ_b²) − ζ_b`, `ω_b = √(κ_b/M)`,

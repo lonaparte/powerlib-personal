@@ -52,7 +52,17 @@ Results.
   (`VSMLPF.two_le_rootMultiplicity_zero_iff`, `VSMLPF.rootMultiplicity_zero_le_one`), in
   `theorem/GridTiedConverter/GFM/Bifurcation.lean`; the fold `|P₀| = K₀` with the eigenvalues
   `0, −D/M, −ω_c` (`VSMLPF.fold_characteristic_polynomial`, `VSMLPF.fold_jacobian`), in
-  `theorem/GridTiedConverter/GFM/Equilibria.lean`.
+  `theorem/GridTiedConverter/GFM/Equilibria.lean`; the Hurwitz region `0 < K₀ cos δ < D ω_c + D²/M`
+  of the Jacobian at any angle and the frozen-coefficient thresholds of the grid-amplitude,
+  `P_ref` and grid-angle channels (`VSMLPF.isHurwitz_jacobian_iff`,
+  `VSMLPF.frozen_hurwitz_forall_iff`, `VSMLPF.frozen_pref_hurwitz_forall_iff`,
+  `VSMLPF.frozen_angle_hurwitz_forall_iff`), in
+  `theorem/GridTiedConverter/GFM/VSMLPFAlgebra.lean`;
+  Barbashin's function `VSMLPF.barbashin` with `Ḃ = −(D² + D M ω_c − K₀ M cos δ) ω²`
+  (`VSMLPF.barbashin_lie`), its well potential and well geometry, in
+  `theorem/GridTiedConverter/GFM/VSMConvergence.lean`, where under `|K₀| < D ω_c + D²/M` bounded
+  forward solutions are shown to converge to an equilibrium and the well sublevel sets to lie in
+  the region of attraction of the loading equilibrium (private trajectory-level evidence).
 
 Family and connection conclusions.
 * `VSMLPF.family`: a complete system (`VSMLPF.Model`) is a parameter set with a selected angle

@@ -19,8 +19,9 @@ Scope.
 * `splitScaledField e ε f` is the `ε`-system `ε ż = f_fast`, `ẋ = f_slow` written as one field:
   the fast rows are multiplied by `ε⁻¹`, the slow rows are unchanged (the field
   `SingularPerturbation.scaledField` of `theorem/SingularPerturbation/Nonlinear.lean` for an
-  arbitrary coordinate order). Equilibrium-level (local) statements; no claim about the basin,
-  its uniformity in `ε` or finite-horizon approximation.
+  arbitrary coordinate order). Equilibrium-level (local) statements; no claim here about the
+  basin or finite-horizon approximation (a basin uniform in `ε` with an explicit `ε*` is
+  `theorem/SingularPerturbation/UniformBasin.lean`).
 
 Source: Kokotović–Khalil–O'Reilly, *Singular Perturbation Methods in Control* (1986), Ch. 2
 (two-time-scale stability with Hurwitz boundary-layer and reduced matrices) and §2.1 (the reduced

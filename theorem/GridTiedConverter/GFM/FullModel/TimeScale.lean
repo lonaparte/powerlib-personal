@@ -2,6 +2,7 @@ import theorem.GridTiedConverter.GFM.FullModel.DCSaddle
 import theorem.Dynamics.Transport
 import theorem.Dynamics.ConverseLinearization
 import theorem.Criteria.Routh3
+import theorem.SingularPerturbation.UniformBasin
 
 /-! # The full-order grid-forming converter under time-scale separation: stability transfer
 
@@ -23,7 +24,12 @@ autonomous, no input. The small parameter `ε > 0` enters in two exactly equival
 The stability statements are local (equilibrium level) and hold for every `ε ∈ (0, ε*)`, with
 an explicit `ε*` computed from the Jacobian at the equilibrium and from Lyapunov matrices of the
 reduced Jacobian and of the fast block (`Params.epsStar`, `DCParams.epsStar`), or only shown to
-exist; nothing is claimed about the basin, its uniformity in `ε` or trajectory approximation.
+exist. For the 13-state `ε`-system a region of attraction and an exponential decay uniform in `ε`
+are proved (`Params.basinEpsStar`, below): one ball, one overshoot constant and one rate for every
+`ε ∈ (0, ε*)`; in the coordinates of the time-scaled parameters that ball is mapped by
+`(ξ, ζ) ↦ (εξ, εζ)` (`Params.integratorCoord`), so it is not uniform there. Not claimed: the size
+of the ball (it comes from continuity at the equilibrium), basins of the DC variant, and
+finite-horizon trajectory approximation (Tikhonov `O(ε)` estimates) of the nonlinear model.
 Fixed parameters (`ε = 1`) are not covered: see
 `theorem/GridTiedConverter/GFM/FullModel/Counterexample.lean`. The boundary-layer hypothesis (a
 spectrally stable fast block) is not implied by positive gains; it follows from them under a
@@ -34,7 +40,9 @@ Scaffold of the reading of the reduced Q–V droop model:
 
 Source: GFM counterpart study, full-order model note (t5: "UNPROVED: stability of δ+ in full
 model; Tikhonov error; DC stability") and equilibria note (t6 §c); Kokotović–Khalil–O'Reilly,
-*Singular Perturbation Methods in Control* (1986), Ch. 2 (two-time-scale stability); Sauer–Pai,
+*Singular Perturbation Methods in Control* (1986), Ch. 2 (two-time-scale stability) and Ch. 7
+(region of attraction independent of `ε`); Khalil, *Nonlinear Systems* (3rd ed., 2002),
+Thm. 11.4; Sauer–Pai,
 *Power System Dynamics and Stability* (1998), §6 (network transients as the fast subsystem,
 `ε ∝ 1/ω₀`).
 
@@ -52,6 +60,18 @@ Results.
   fast block: every `ε ∈ (0, epsStar)` works. The Jacobian in closed form, hence `epsStar` as a
   closed formula of the parameters, `P₀` and `P₂`: `Params.jacobian_eq_jacobianClosed`,
   `Params.epsStar_eq_closed` in `theorem/GridTiedConverter/GFM/FullModel/Jacobian.lean`.
+* Region of attraction and decay uniform in `ε` (private implementation evidence, the generic
+  law `SingularPerturbation.uniform_basin_of_lt_basinEpsStar` on the quasi-steady graph):
+  `Params.uniform_basin_of_lt_basinEpsStar` — at a quasi-steady equilibrium with positive definite
+  Lyapunov matrices `P₀` of the reduced Jacobian and `P₂` of the fast block there are `r > 0`,
+  `C ≥ 1`, `a > 0` such that for every `ε ∈ (0, Params.basinEpsStar δ* Q* P₀ P₂)` the ball of
+  radius `r` about the equilibrium lies in the region of attraction of the `ε`-system and every
+  solution segment from it satisfies `|x(t) − x*| ≤ C e^{−a(t − t₀)} |x(t₀) − x*|`, with `r`,
+  `C`, `a` independent of `ε`; `Params.basinEpsStar` (`Params.basinEpsStar_pos`) is the explicit
+  `SingularPerturbation.basinEpsStar` of the field, the graph and the reduced Jacobian (operator
+  norms of `P₀`, `P₂`, of the Jacobian of the field and of the graph at the equilibrium and of the
+  reduced Jacobian); `Params.exists_epsStar_uniform_basin`: the same with a spectrally stable fast
+  block and a Hurwitz reduced Jacobian, for some `ε* > 0`.
 * `Params.timeScaled_field`, `Params.timeScaled_qssState`: the time-scaled model is the
   `ε`-system in the coordinates `(εξ, εζ)` (`Params.integratorCoord`, `Params.scaledField_apply`),
   so the same stability holds for the time-scaled parameters (`Dynamics.holds_transport_iff`).
@@ -81,6 +101,10 @@ Family and connection conclusions.
 * `dcFamily_exists_epsStar_mem_den_LES`, `dcFamily_mem_den_LES_of_lt_epsStar` (connection, family
   `FullModel.dcFamily`): the DC variant, with `ε*` shown to exist or explicit
   (`DCParams.epsStar`).
+* The uniform region of attraction and decay (`Params.uniform_basin_of_lt_basinEpsStar`,
+  `Params.exists_epsStar_uniform_basin`) are private implementation evidence: a region of
+  attraction is a set of initial states and constants uniform over a family of systems are not
+  sentences of `FullModel.family`; each fixed `ε` gives the connection conclusions above.
 -/
 
 noncomputable section
@@ -189,6 +213,78 @@ definite Lyapunov matrices `P₀` of the reduced Jacobian and `P₂` of the fast
   exact ⟨p.epsStar δ Qf P0 P2, p.epsStar_pos δ Qf P0 P2, fun ε hε hlt =>
     p.locallyExponentiallyStable_of_lt_epsStar hLf hCf hLg hKic hKiv hZt hM hωq hP hQ hP0 hP2 hL0
       hL2 hε hlt⟩
+
+/-! ### A region of attraction and a decay uniform in `ε` -/
+
+/-- **The explicit `ε*` of the uniform region of attraction** at the quasi-steady point
+`(δ*, 0, Q*)`: the bound `SingularPerturbation.basinEpsStar` of the field on its quasi-steady graph
+`graph`, with a Lyapunov matrix `P₀` of the reduced Jacobian and `P₂` of the fast block. -/
+def basinEpsStar (δ Qf : ℝ) (P0 : Matrix (Fin 3) (Fin 3) ℝ)
+    (P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ) : ℝ :=
+  SingularPerturbation.basinEpsStar p.field p.graph (Dynamics.mk3 δ 0 Qf) P0
+    (p.reducedJacobian δ Qf) P2
+
+@[tmio M, powerlib_domain] theorem basinEpsStar_pos (δ Qf : ℝ) (P0 : Matrix (Fin 3) (Fin 3) ℝ)
+    (P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ) : 0 < p.basinEpsStar δ Qf P0 P2 :=
+  SingularPerturbation.basinEpsStar_pos _ _ _ _ _ _
+
+/-- **Region of attraction and decay uniform in `ε`, explicit `ε*`.** At a quasi-steady
+equilibrium with positive definite Lyapunov matrices `P₀` of the reduced Jacobian and `P₂` of the
+fast block there are `r > 0`, `C ≥ 1`, `a > 0` such that for every `ε ∈ (0, basinEpsStar δ* Q* P₀
+P₂)` the ball of radius `r` about the equilibrium lies in the region of attraction of the
+`ε`-system and every solution segment from it decays as `C e^{−a(t − t₀)}`; `r`, `C`, `a` do not
+depend on `ε` (`SingularPerturbation.uniform_basin_of_lt_basinEpsStar` on the quasi-steady
+graph). Private implementation evidence: a region of attraction and decay constants uniform over
+a family of systems are outside the sentence language. -/
+@[tmio TM, powerlib_domain] private theorem uniform_basin_of_lt_basinEpsStar
+    (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0) (hKic : p.Kic ≠ 0) (hKiv : p.Kiv ≠ 0)
+    (hZt : p.Zt ≠ 0) (hM : p.M ≠ 0) (hωq : p.ωq ≠ 0) {δ Qf : ℝ} (hP : p.Pq δ (p.emf Qf) = p.Pref)
+    (hQ : p.Qq δ (p.emf Qf) = Qf) {P0 : Matrix (Fin 3) (Fin 3) ℝ}
+    {P2 : Matrix (Fin 5 × Fin 2) (Fin 5 × Fin 2) ℝ} (hP0 : P0.PosDef) (hP2 : P2.PosDef)
+    (hL0 : P0 * p.reducedJacobian δ Qf + (p.reducedJacobian δ Qf)ᵀ * P0 = -1)
+    (hL2 : P2 * p.fastBlock δ + (p.fastBlock δ)ᵀ * P2 = -1) :
+    ∃ r > 0, ∃ C ≥ 1, ∃ a > 0, ∀ ε, 0 < ε → ε < p.basinEpsStar δ Qf P0 P2 →
+      Metric.ball (p.qssState δ 0 Qf) r ⊆
+        Flow.regionOfAttraction (p.scaledField ε) (p.qssState δ 0 Qf) ∧
+      ∀ (t₀ t₁ : ℝ) (φ : ℝ → State 13), IsTrajectoryOn φ (p.scaledField ε) t₀ t₁ →
+        ‖φ t₀ - p.qssState δ 0 Qf‖ < r → ∀ t ∈ Set.Icc t₀ t₁,
+          ‖φ t - p.qssState δ 0 Qf‖ ≤ C * Real.exp (-a * (t - t₀)) *
+            ‖φ t₀ - p.qssState δ 0 Qf‖ := by
+  have heq : p.field (p.qssState δ 0 Qf) = 0 :=
+    (p.field_eq_zero_iff hLf hCf hLg hKic hKiv hZt hM hωq _).mpr ⟨δ, Qf, rfl, hP, hQ⟩
+  rw [p.qssState_eq_graph] at heq ⊢
+  have hRed := p.hasFDerivAt_reducedField hZt (Dynamics.mk3 δ 0 Qf)
+  rw [← p.slowRows_graph] at hRed
+  simp only [Dynamics.mk3_zero, Dynamics.mk3_two] at hRed
+  exact SingularPerturbation.uniform_basin_of_lt_basinEpsStar (A := p.fastBlock δ) split
+    p.contDiff_field p.contDiff_graph heq p.graph_slow (p.fast_graph hLf hCf hLg hKic hKiv hZt)
+    (fun i j => by simpa [graph] using p.hasDerivAt_fast (p.graph (Dynamics.mk3 δ 0 Qf)) i j)
+    hRed hP0 hP2 hL0 hL2
+
+/-- **Region of attraction and decay uniform in `ε`.** At a quasi-steady equilibrium with a
+spectrally stable fast block (boundary layer) and a Hurwitz reduced Jacobian there are `ε* > 0`,
+`r > 0`, `C ≥ 1`, `a > 0` such that for every `ε ∈ (0, ε*)` the ball of radius `r` about the
+equilibrium lies in the region of attraction of the `ε`-system and every solution segment from it
+decays as `C e^{−a(t − t₀)}` (`uniform_basin_of_lt_basinEpsStar` with the Lyapunov matrices of
+`SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable`). Private implementation
+evidence, as above. -/
+@[tmio TM, powerlib_domain] private theorem exists_epsStar_uniform_basin
+    (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0) (hLg : p.Lg ≠ 0) (hKic : p.Kic ≠ 0) (hKiv : p.Kiv ≠ 0)
+    (hZt : p.Zt ≠ 0) (hM : p.M ≠ 0) (hωq : p.ωq ≠ 0) {δ Qf : ℝ} (hP : p.Pq δ (p.emf Qf) = p.Pref)
+    (hQ : p.Qq δ (p.emf Qf) = Qf) (hA : Linear.SpectrallyStable (p.fastBlock δ))
+    (hR : LinearSystems.IsHurwitz (p.reducedJacobian δ Qf)) :
+    ∃ εs > 0, ∃ r > 0, ∃ C ≥ 1, ∃ a > 0, ∀ ε, 0 < ε → ε < εs →
+      Metric.ball (p.qssState δ 0 Qf) r ⊆
+        Flow.regionOfAttraction (p.scaledField ε) (p.qssState δ 0 Qf) ∧
+      ∀ (t₀ t₁ : ℝ) (φ : ℝ → State 13), IsTrajectoryOn φ (p.scaledField ε) t₀ t₁ →
+        ‖φ t₀ - p.qssState δ 0 Qf‖ < r → ∀ t ∈ Set.Icc t₀ t₁,
+          ‖φ t - p.qssState δ 0 Qf‖ ≤ C * Real.exp (-a * (t - t₀)) *
+            ‖φ t₀ - p.qssState δ 0 Qf‖ := by
+  obtain ⟨P0, hP0, hL0⟩ := SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable
+    ((Linear.spectrallyStable_iff_isHurwitz _).mpr hR)
+  obtain ⟨P2, hP2, hL2⟩ := SingularPerturbation.exists_posDef_lyapunov_of_spectrallyStable hA
+  exact ⟨p.basinEpsStar δ Qf P0 P2, p.basinEpsStar_pos δ Qf P0 P2,
+    p.uniform_basin_of_lt_basinEpsStar hLf hCf hLg hKic hKiv hZt hM hωq hP hQ hP0 hP2 hL0 hL2⟩
 
 /-! ### The time-scaled parameters -/
 

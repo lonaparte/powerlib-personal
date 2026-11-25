@@ -32,7 +32,7 @@ Model boundary.
   `ω₀ = 1/ε` (`VSM.Model.atScale`); `ε → 0⁺` only, for `R, X, M > 0`, `E ≠ 0`, `K > 0`.
 * Level: local exponential stability / instability of the operating point by linearization
   (Routh–Hurwitz, degrees five and four) and its converse; static evidence on the reduced model
-  (filter limits); an asymptotic order of the four-state boundary (`Asymptotics.IsBigO`); no
+  (filter limits); the first two orders of the four-state boundary (`Asymptotics.IsBigO`); no
   global or transient claim.
 
 Source: study note `gfm/t4-timescale/REPORT.md` ("Exact linear structure", (c) mechanisms 1 and
@@ -68,8 +68,25 @@ Results.
   quartic Routh conditions and every positive `D ≤ D_line(ε)(1 − C ε²)` strictly violates them
   (`VSM.Model.exists_routh_sandwich`); hence the critical damping `VSM.Model.Dcrit` (infimum of
   the positive dampings meeting them) has `D_crit/D_line − 1 = O(ε²)` as `ε → 0⁺`
-  (`VSM.Model.isBigO_Dcrit`). The study's second-order coefficient
-  `2 (K/M)(1 − r²)/(1 + r²)²`, `r = R/X`, is not asserted.
+  (`VSM.Model.isBigO_Dcrit`).
+* Second order of the fast-line limit: with the study's coefficient
+  `c₂ = 2 (K/M)(1 − r²)/(1 + r²)²`, `r = R/X` (`VSM.Model.DcritCoeff`), every positive
+  `D ≥ D_line(ε)(1 + c₂ ε² + C ε⁴)` meets the quartic Routh conditions and every positive
+  `D ≤ D_line(ε)(1 + c₂ ε² − C ε⁴)` strictly violates them for `ε ∈ (0, ε₀)`
+  (`VSM.Model.exists_routh_sandwich_two`; the first-order sandwich is its corollary), so
+  `D_crit/D_line − 1 − c₂ ε² = O(ε⁴)` (`VSM.Model.isBigO_Dcrit_sub`): on a fast line the
+  critical damping exceeds `D_line` when `R < X` and falls below it when `R > X`.
+* Hopf points of the five-state model (`theorem/GridTiedConverter/GFM/HopfLineLPF.lean`): the
+  family laws `VSMLPF.mem_den_unstable_of_firstLyapunov_pos`,
+  `VSMLPF.mem_den_locallyAsymptoticallyStable_of_firstLyapunov_neg`, a supercritical and a
+  subcritical witness and the non-exactness of the local asymptotic and instability translations.
+  On the zero-current slice `δ* = 0`, `V = E`: the closed form of `ℓ₁`, its sign law and the
+  complete local asymptotic membership (`theorem/GridTiedConverter/GFM/HopfLineLPFSlice.lean`).
+  Not decided: a closed form of `ℓ₁` for all parameters (the exact real-part numerator in the
+  frame rotated with `δ*` has thousands of terms before the Gröbner reduction modulo the two
+  frequency relations; the four-state and the PSC laws are in
+  `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean` and
+  `theorem/GridTiedConverter/GFM/HopfLinePSC.lean`).
 
 Family and connection conclusions.
 * `Line.VSMLPF.family`: static requirements `balanced` (`P(δ*) = P_ref`), `physical`
@@ -647,120 +664,203 @@ quasi-static (swing) reduction is stable for every positive damping. -/
 namespace VSM
 open Filter Topology Asymptotics
 
-/-- A polynomial `α t + ε² (b₀ + b₁ t + b₂ t²) + ε⁴ (g₀ + g₁ t + g₂ t² + g₃ t³)` with `α, b₂ > 0`,
-`g₃ ≥ 0` is positive for `t ≥ C ε²` and negative for `−1 ≤ t ≤ −C ε²`, for one `C > 0` and every
-small `ε > 0`. -/
-@[tmio T, powerlib_foundation] private theorem cubic_sandwich {α b0 b1 b2 g0 g1 g2 g3 : ℝ}
-    (hα : 0 < α) (hb2 : 0 < b2) (hg3 : 0 ≤ g3) :
-    ∃ C ε0 : ℝ, 0 < C ∧ 0 < ε0 ∧ ∀ ε : ℝ, 0 < ε → ε < ε0 →
-      (∀ t : ℝ, C * ε ^ 2 ≤ t → 0 < α * t + ε ^ 2 * (b0 + b1 * t + b2 * t ^ 2) +
-        ε ^ 4 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3)) ∧
-      (∀ t : ℝ, -1 ≤ t → t ≤ -(C * ε ^ 2) → α * t + ε ^ 2 * (b0 + b1 * t + b2 * t ^ 2) +
-        ε ^ 4 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) < 0) := by
-  set B := |b0| + |b1| + |b2| with hB
-  set G := |g0| + |g1| + |g2| + |g3| with hG
-  refine ⟨(2 * (|b0| + |g0|) + B + G + 1) / α,
-    min 1 (min (α / (2 * (|b1| + |g1| + 1))) (b2 / (|g2| + 1))), by positivity, by positivity,
-    fun ε hε hε0 => ⟨fun t ht => ?_, fun t ht1 ht2 => ?_⟩⟩
-  all_goals
-    have hε1 : ε < 1 := lt_of_lt_of_le hε0 (min_le_left _ _)
-    have he2 : ε ^ 2 ≤ ε := by nlinarith
-    have he4 : ε ^ 4 ≤ ε ^ 2 := by nlinarith [pow_pos hε 2]
-    have hC : 0 < (2 * (|b0| + |g0|) + B + G + 1) / α := by positivity
-  · have hA : ε < α / (2 * (|b1| + |g1| + 1)) :=
-      lt_of_lt_of_le hε0 ((min_le_right _ _).trans (min_le_left _ _))
-    have hB2 : ε < b2 / (|g2| + 1) :=
-      lt_of_lt_of_le hε0 ((min_le_right _ _).trans (min_le_right _ _))
-    have ht0 : 0 ≤ t := le_trans (by positivity) ht
-    have k1 : ε ^ 2 * (|b1| + |g1|) ≤ α / 2 := by
-      have h := (lt_div_iff₀ (by positivity)).mp hA
-      nlinarith [abs_nonneg b1, abs_nonneg g1]
-    have k2 : ε ^ 2 * |g2| ≤ b2 := by
-      have h := (lt_div_iff₀ (by positivity)).mp hB2
-      nlinarith [abs_nonneg g2]
-    have e1 : -|b1| * t ≤ b1 * t := mul_le_mul_of_nonneg_right (neg_abs_le b1) ht0
-    have e2 : -|g1| * t ≤ g1 * t := mul_le_mul_of_nonneg_right (neg_abs_le g1) ht0
-    have e3 : -|g2| * t ^ 2 ≤ g2 * t ^ 2 :=
-      mul_le_mul_of_nonneg_right (neg_abs_le g2) (sq_nonneg t)
-    have e4 : 0 ≤ g3 * t ^ 3 := mul_nonneg hg3 (pow_nonneg ht0 3)
-    have e5 : -|b0| ≤ b0 := neg_abs_le b0
-    have e6 : -|g0| ≤ g0 := neg_abs_le g0
-    have hlow : α * t + ε ^ 2 * (b0 + b1 * t + b2 * t ^ 2) +
-        ε ^ 4 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) ≥
-          α / 2 * t - ε ^ 2 * (|b0| + |g0|) := by
-      have q1 : ε ^ 4 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) ≥
-          -(ε ^ 4 * |g0|) - ε ^ 4 * |g1| * t - ε ^ 4 * |g2| * t ^ 2 := by
-        nlinarith [pow_pos hε 4]
-      have q2 : ε ^ 4 * |g0| ≤ ε ^ 2 * |g0| := mul_le_mul_of_nonneg_right he4 (abs_nonneg _)
-      have q3 : ε ^ 4 * |g1| * t ≤ ε ^ 2 * |g1| * t :=
-        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right he4 (abs_nonneg _)) ht0
-      have q4 : ε ^ 4 * |g2| * t ^ 2 ≤ ε ^ 2 * b2 * t ^ 2 := by
-        have : ε ^ 4 * |g2| = ε ^ 2 * (ε ^ 2 * |g2|) := by ring
-        rw [this]
-        exact mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_left k2 (pow_nonneg hε.le 2)) (sq_nonneg t)
-      have q5 : ε ^ 2 * (b0 + b1 * t + b2 * t ^ 2) ≥
-          -(ε ^ 2 * |b0|) - ε ^ 2 * |b1| * t + ε ^ 2 * b2 * t ^ 2 := by
-        nlinarith [pow_pos hε 2]
-      have q6 : ε ^ 2 * (|b1| + |g1|) * t ≤ α / 2 * t := mul_le_mul_of_nonneg_right k1 ht0
-      nlinarith
-    have : α / 2 * ((2 * (|b0| + |g0|) + B + G + 1) / α * ε ^ 2) ≤ α / 2 * t :=
-      mul_le_mul_of_nonneg_left ht (by positivity)
-    have hcalc : α / 2 * ((2 * (|b0| + |g0|) + B + G + 1) / α * ε ^ 2) =
-        ε ^ 2 * (|b0| + |g0|) + ε ^ 2 * (B + G + 1) / 2 := by
-      field_simp; ring
-    have hBG : 0 < ε ^ 2 * (B + G + 1) / 2 := by positivity
+/-- The increment identity of
+`P(t) = α t + e (b₀ + b₁ t + b₂ t²) + e² (g₀ + g₁ t + g₂ t² + g₃ t³)`. -/
+@[tmio T, powerlib_foundation] private theorem sandwich_increment
+    (α b0 b1 b2 g0 g1 g2 g3 e s t : ℝ) :
+    (α * t + e * (b0 + b1 * t + b2 * t ^ 2) + e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3)) -
+        (α * s + e * (b0 + b1 * s + b2 * s ^ 2) + e ^ 2 * (g0 + g1 * s + g2 * s ^ 2 + g3 * s ^ 3)) =
+      (t - s) * (α + e * (b1 + b2 * (s + t)) + e ^ 2 * (g1 + g2 * (s + t) +
+        g3 * (s ^ 2 + s * t + t ^ 2))) := by
+  ring
+
+/-- The increment factor is at least `α/2` on `[−1, ∞)` for small `e`. -/
+@[tmio T, powerlib_foundation] private theorem sandwich_factor {α b1 b2 g1 g2 g3 e s t : ℝ}
+    (hb2 : 0 < b2) (hg3 : 0 ≤ g3)
+    (he : 0 ≤ e) (he1 : e ≤ 1) (hA : e * (|b1| + |g1| + 2 * b2 + 2 * |g2|) ≤ α / 2)
+    (hB : e * |g2| ≤ b2) (hs : -1 ≤ s) (ht : -1 ≤ t) :
+    α / 2 ≤ α + e * (b1 + b2 * (s + t)) + e ^ 2 * (g1 + g2 * (s + t) +
+      g3 * (s ^ 2 + s * t + t ^ 2)) := by
+  have hq : 0 ≤ e ^ 2 * (g3 * (s ^ 2 + s * t + t ^ 2)) :=
+    mul_nonneg (sq_nonneg e) (mul_nonneg hg3 (by nlinarith [sq_nonneg (s + t), sq_nonneg s]))
+  have h1 : -(e * |b1|) ≤ e * b1 := by
+    have := mul_le_mul_of_nonneg_left (neg_abs_le b1) he; linarith
+  have hee : e ^ 2 ≤ e := by nlinarith
+  have h2 : -(e * |g1|) ≤ e ^ 2 * g1 := by
+    have a := mul_le_mul_of_nonneg_left (neg_abs_le g1) (sq_nonneg e)
+    have b := mul_le_mul_of_nonneg_right hee (abs_nonneg g1)
     linarith
-  · have htn : t ≤ 0 := le_trans ht2 (by nlinarith [pow_pos hε 2])
-    have hta : |t| ≤ 1 := abs_le.mpr ⟨ht1, by linarith⟩
-    have ht2' : t ^ 2 ≤ 1 := by nlinarith
-    have ht3' : |t ^ 3| ≤ 1 := by
-      rw [abs_pow]; exact pow_le_one₀ (abs_nonneg t) hta
-    have hbt : b0 + b1 * t + b2 * t ^ 2 ≤ B := by
-      have f1 : b1 * t ≤ |b1| := by
-        calc b1 * t ≤ |b1 * t| := le_abs_self _
-          _ = |b1| * |t| := abs_mul _ _
-          _ ≤ |b1| * 1 := mul_le_mul_of_nonneg_left hta (abs_nonneg _)
-          _ = |b1| := mul_one _
-      have f2 : b2 * t ^ 2 ≤ |b2| := by
-        calc b2 * t ^ 2 ≤ |b2| * t ^ 2 := mul_le_mul_of_nonneg_right (le_abs_self _) (sq_nonneg t)
-          _ ≤ |b2| * 1 := mul_le_mul_of_nonneg_left ht2' (abs_nonneg _)
-          _ = |b2| := mul_one _
-      have f0 : b0 ≤ |b0| := le_abs_self _
-      linarith
-    have hgt : g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3 ≤ G := by
-      have f1 : g1 * t ≤ |g1| := by
-        calc g1 * t ≤ |g1 * t| := le_abs_self _
-          _ = |g1| * |t| := abs_mul _ _
-          _ ≤ |g1| * 1 := mul_le_mul_of_nonneg_left hta (abs_nonneg _)
-          _ = |g1| := mul_one _
-      have f2 : g2 * t ^ 2 ≤ |g2| := by
-        calc g2 * t ^ 2 ≤ |g2| * t ^ 2 := mul_le_mul_of_nonneg_right (le_abs_self _) (sq_nonneg t)
-          _ ≤ |g2| * 1 := mul_le_mul_of_nonneg_left ht2' (abs_nonneg _)
-          _ = |g2| := mul_one _
-      have f3 : g3 * t ^ 3 ≤ |g3| := by
-        calc g3 * t ^ 3 ≤ |g3 * t ^ 3| := le_abs_self _
-          _ = |g3| * |t ^ 3| := abs_mul _ _
-          _ ≤ |g3| * 1 := mul_le_mul_of_nonneg_left ht3' (abs_nonneg _)
-          _ = |g3| := mul_one _
-      have f0 : g0 ≤ |g0| := le_abs_self _
-      linarith
-    have hG0 : 0 ≤ G := by positivity
-    have q1 : ε ^ 2 * (b0 + b1 * t + b2 * t ^ 2) ≤ ε ^ 2 * B :=
-      mul_le_mul_of_nonneg_left hbt (pow_nonneg hε.le 2)
-    have q2 : ε ^ 4 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) ≤ ε ^ 2 * G :=
-      (mul_le_mul_of_nonneg_left hgt (pow_nonneg hε.le 4)).trans
-        (mul_le_mul_of_nonneg_right he4 hG0)
-    have q3 : α * t ≤ -(α * ((2 * (|b0| + |g0|) + B + G + 1) / α * ε ^ 2)) := by
+  have h3 : -(2 * (e * b2)) - 2 * (e * |g2|) ≤ e * (b2 * (s + t)) + e ^ 2 * (g2 * (s + t)) := by
+    have hge : |e ^ 2 * (g2 * (s + t))| = e * (e * |g2|) * |s + t| := by
+      rw [abs_mul, abs_mul, abs_of_nonneg (sq_nonneg e)]; ring
+    have hlow := neg_abs_le (e ^ 2 * (g2 * (s + t)))
+    rcases le_or_gt 0 (s + t) with hu | hu
+    · rw [abs_of_nonneg hu] at hge
+      have k1 : e * (e * |g2|) * (s + t) ≤ e * b2 * (s + t) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hB he) hu
+      have k2 : 0 ≤ e * b2 := mul_nonneg he hb2.le
+      have k3 : 0 ≤ e * |g2| := mul_nonneg he (abs_nonneg _)
       nlinarith
-    have hcalc : α * ((2 * (|b0| + |g0|) + B + G + 1) / α * ε ^ 2) =
-        ε ^ 2 * (2 * (|b0| + |g0|) + B + G + 1) := by
-      field_simp
-    have : 0 < ε ^ 2 * (2 * (|b0| + |g0|) + 1) := by positivity
-    rw [hcalc] at q3
-    have h := add_le_add (add_le_add q3 q1) q2
-    have e : -(ε ^ 2 * (2 * (|b0| + |g0|) + B + G + 1)) + ε ^ 2 * B + ε ^ 2 * G =
-        -(ε ^ 2 * (2 * (|b0| + |g0|) + 1)) := by ring
+    · have hu2 : |s + t| ≤ 2 := abs_le.mpr ⟨by linarith, by linarith⟩
+      have k1 : e * (e * |g2|) * |s + t| ≤ e * |g2| * 2 := by
+        have : e * (e * |g2|) ≤ e * |g2| := by
+          have := mul_le_mul_of_nonneg_right hee (abs_nonneg g2); nlinarith
+        exact (mul_le_mul_of_nonneg_left hu2 (by positivity)).trans' (by
+          have := mul_le_mul_of_nonneg_right this (abs_nonneg (s + t)); linarith)
+      have k2 : -(2 * (e * b2)) ≤ e * (b2 * (s + t)) := by
+        have h := mul_nonneg (mul_nonneg he hb2.le) (show (0 : ℝ) ≤ s + t + 2 by linarith)
+        linarith
+      linarith
+  have hsum : e * (|b1| + |g1| + 2 * b2 + 2 * |g2|) =
+      e * |b1| + e * |g1| + 2 * (e * b2) + 2 * (e * |g2|) := by ring
+  nlinarith
+
+/-- Near `c e`, `c = −b₀/α`, the polynomial is `α s` up to `K₀ e²`. -/
+@[tmio T, powerlib_foundation] private theorem sandwich_value {α b0 b1 b2 g0 g1 g2 g3 e s : ℝ}
+    (hα : 0 < α) (he : 0 < e) (he1 : e ≤ 1) (hs : |s| ≤ e) :
+    |(α * (-b0 / α * e + s) + e * (b0 + b1 * (-b0 / α * e + s) + b2 * (-b0 / α * e + s) ^ 2) +
+        e ^ 2 * (g0 + g1 * (-b0 / α * e + s) + g2 * (-b0 / α * e + s) ^ 2 +
+          g3 * (-b0 / α * e + s) ^ 3)) - α * s| ≤
+      ((|b1| + |b2| * (|-b0 / α| + 1)) * (|-b0 / α| + 1) + (|g0| + |g1| * (|-b0 / α| + 1) +
+        |g2| * (|-b0 / α| + 1) ^ 2 + |g3| * (|-b0 / α| + 1) ^ 3)) * e ^ 2 := by
+  set c := -b0 / α with hc
+  set T0 := |c| + 1 with hT0
+  set t := c * e + s with ht
+  have hαc : α * c = -b0 := by rw [hc]; field_simp
+  have hid : α * t + e * (b0 + b1 * t + b2 * t ^ 2) +
+      e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) - α * s =
+      e * (b1 * t + b2 * t ^ 2) + e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) := by
+    rw [ht]; linear_combination e * hαc
+  rw [hid]
+  have hT0p : 1 ≤ T0 := by rw [hT0]; linarith [abs_nonneg c]
+  have htb : |t| ≤ T0 * e := by
+    rw [ht]
+    calc |c * e + s| ≤ |c * e| + |s| := abs_add_le _ _
+      _ = |c| * e + |s| := by rw [abs_mul, abs_of_pos he]
+      _ ≤ |c| * e + e := by linarith
+      _ = T0 * e := by rw [hT0]; ring
+  have htT : |t| ≤ T0 := htb.trans (by nlinarith)
+  have hq1 : |b1 * t + b2 * t ^ 2| ≤ (|b1| + |b2| * T0) * T0 * e := by
+    have k : |b2| * |t| * |t| ≤ |b2| * T0 * |t| :=
+      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left htT (abs_nonneg _)) (abs_nonneg _)
+    have k2 : (|b1| + |b2| * T0) * |t| ≤ (|b1| + |b2| * T0) * (T0 * e) :=
+      mul_le_mul_of_nonneg_left htb (by positivity)
+    calc |b1 * t + b2 * t ^ 2| ≤ |b1 * t| + |b2 * t ^ 2| := abs_add_le _ _
+      _ = |b1| * |t| + |b2| * |t| * |t| := by rw [abs_mul, abs_mul, abs_pow, sq]; ring
+      _ ≤ (|b1| + |b2| * T0) * (T0 * e) := by nlinarith
+      _ = (|b1| + |b2| * T0) * T0 * e := by ring
+  have hq2 : |g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3| ≤
+      |g0| + |g1| * T0 + |g2| * T0 ^ 2 + |g3| * T0 ^ 3 := by
+    have a1 : |g1 * t| ≤ |g1| * T0 := by
+      rw [abs_mul]; exact mul_le_mul_of_nonneg_left htT (abs_nonneg _)
+    have a2 : |g2 * t ^ 2| ≤ |g2| * T0 ^ 2 := by
+      rw [abs_mul, abs_pow]
+      exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (abs_nonneg _) htT 2) (abs_nonneg _)
+    have a3 : |g3 * t ^ 3| ≤ |g3| * T0 ^ 3 := by
+      rw [abs_mul, abs_pow]
+      exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (abs_nonneg _) htT 3) (abs_nonneg _)
+    have b1' := abs_add_le (g0 + g1 * t + g2 * t ^ 2) (g3 * t ^ 3)
+    have b2' := abs_add_le (g0 + g1 * t) (g2 * t ^ 2)
+    have b3' := abs_add_le g0 (g1 * t)
+    linarith
+  have he2 : 0 < e ^ 2 := by positivity
+  calc |e * (b1 * t + b2 * t ^ 2) + e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3)|
+      ≤ |e * (b1 * t + b2 * t ^ 2)| + |e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3)| :=
+        abs_add_le _ _
+    _ = e * |b1 * t + b2 * t ^ 2| + e ^ 2 * |g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3| := by
+        rw [abs_mul, abs_mul, abs_of_pos he, abs_of_pos he2]
+    _ ≤ e * ((|b1| + |b2| * T0) * T0 * e) +
+        e ^ 2 * (|g0| + |g1| * T0 + |g2| * T0 ^ 2 + |g3| * T0 ^ 3) := by
+        gcongr
+    _ = ((|b1| + |b2| * T0) * T0 + (|g0| + |g1| * T0 + |g2| * T0 ^ 2 + |g3| * T0 ^ 3)) *
+        e ^ 2 := by ring
+
+/-- A polynomial `α t + e (b₀ + b₁ t + b₂ t²) + e² (g₀ + g₁ t + g₂ t² + g₃ t³)` with `α, b₂ > 0`,
+`g₃ ≥ 0` changes sign on `[−1, ∞)` within `C e²` of `c e`, `c = −b₀/α`: for one `C > 0` and every
+small `e > 0` it is positive for `t ≥ c e + C e²` and negative for `−1 ≤ t ≤ c e − C e²`. -/
+@[tmio T, powerlib_foundation] private theorem quadratic_sandwich {α b0 b1 b2 g0 g1 g2 g3 : ℝ}
+    (hα : 0 < α) (hb2 : 0 < b2) (hg3 : 0 ≤ g3) :
+    ∃ C e0 : ℝ, 0 < C ∧ 0 < e0 ∧ ∀ e : ℝ, 0 < e → e < e0 →
+      (∀ t : ℝ, -b0 / α * e + C * e ^ 2 ≤ t → 0 < α * t + e * (b0 + b1 * t + b2 * t ^ 2) +
+        e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3)) ∧
+      (∀ t : ℝ, -1 ≤ t → t ≤ -b0 / α * e - C * e ^ 2 → α * t + e * (b0 + b1 * t + b2 * t ^ 2) +
+        e ^ 2 * (g0 + g1 * t + g2 * t ^ 2 + g3 * t ^ 3) < 0) := by
+  set c := -b0 / α with hc
+  set K0 := (|b1| + |b2| * (|c| + 1)) * (|c| + 1) + (|g0| + |g1| * (|c| + 1) +
+    |g2| * (|c| + 1) ^ 2 + |g3| * (|c| + 1) ^ 3) with hK0
+  have hK0n : 0 ≤ K0 := by positivity
+  set C := 2 * K0 / α + 1 with hCdef
+  have hCpos : 0 < C := by positivity
+  set B := |b1| + |g1| + 2 * b2 + 2 * |g2| + 1 with hB
+  refine ⟨C, min 1 (min (α / (2 * B)) (min (b2 / (|g2| + 1)) (1 / (C + |c| + 1)))), hCpos,
+    by positivity, fun e he he0 => ?_⟩
+  have he1 : e < 1 := lt_of_lt_of_le he0 (min_le_left _ _)
+  have heA : e < α / (2 * B) :=
+    lt_of_lt_of_le he0 ((min_le_right _ _).trans (min_le_left _ _))
+  have heB : e < b2 / (|g2| + 1) :=
+    lt_of_lt_of_le he0 ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _)))
+  have heC : e < 1 / (C + |c| + 1) :=
+    lt_of_lt_of_le he0 ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_right _ _)))
+  have hBpos : 0 < B := by positivity
+  have kA : e * (|b1| + |g1| + 2 * b2 + 2 * |g2|) ≤ α / 2 := by
+    have h := (lt_div_iff₀ (by positivity)).mp heA
+    have h2 : e * (|b1| + |g1| + 2 * b2 + 2 * |g2|) ≤ e * B :=
+      mul_le_mul_of_nonneg_left (by rw [hB]; linarith) he.le
+    linarith
+  have kB : e * |g2| ≤ b2 := by
+    have h := (lt_div_iff₀ (by positivity)).mp heB
+    have h2 : e * |g2| ≤ e * (|g2| + 1) := mul_le_mul_of_nonneg_left (by linarith) he.le
+    linarith
+  have kC : e * (C + |c| + 1) ≤ 1 := by
+    have h := (lt_div_iff₀ (by positivity)).mp heC
+    linarith
+  have hCe1 : C * e ≤ 1 := by
+    have h2 : e * C ≤ e * (C + |c| + 1) :=
+      mul_le_mul_of_nonneg_left (by linarith [abs_nonneg c]) he.le
+    linarith
+  have hCe : C * e ^ 2 ≤ e := by
+    have h2 : C * e * e ≤ 1 * e := mul_le_mul_of_nonneg_right hCe1 he.le
+    have : C * e ^ 2 = C * e * e := by ring
+    linarith
+  have hce : |c| * e + C * e ^ 2 ≤ 1 := by
+    have h2 : C * e ^ 2 ≤ C * e := by
+      have : e ^ 2 ≤ e := by nlinarith
+      exact mul_le_mul_of_nonneg_left this hCpos.le
+    have : e * (C + |c| + 1) = C * e + |c| * e + e := by ring
+    linarith
+  have hc1 : -(|c| * e) ≤ c * e := by
+    have := mul_le_mul_of_nonneg_right (neg_abs_le c) he.le
+    linarith
+  have hlow : -1 ≤ c * e - C * e ^ 2 := by linarith
+  have hup : -1 ≤ c * e + C * e ^ 2 := by
+    have : 0 ≤ C * e ^ 2 := by positivity
+    linarith
+  have hpos := sandwich_value (b0 := b0) (b1 := b1) (b2 := b2) (g0 := g0) (g1 := g1) (g2 := g2)
+    (g3 := g3) hα he he1.le (s := C * e ^ 2) (by rw [abs_of_pos (by positivity)]; exact hCe)
+  have hneg := sandwich_value (b0 := b0) (b1 := b1) (b2 := b2) (g0 := g0) (g1 := g1) (g2 := g2)
+    (g3 := g3) hα he he1.le (s := -(C * e ^ 2))
+    (by rw [abs_neg, abs_of_pos (by positivity)]; exact hCe)
+  rw [← hc, ← hK0] at hpos hneg
+  have hαC : α * (C * e ^ 2) = (2 * K0 + α) * e ^ 2 := by
+    rw [hCdef]; field_simp
+  have hKa : 0 < (K0 + α) * e ^ 2 := by positivity
+  refine ⟨fun t ht => ?_, fun t ht1 ht2 => ?_⟩
+  · have hinc := sandwich_increment α b0 b1 b2 g0 g1 g2 g3 e (c * e + C * e ^ 2) t
+    have hf := sandwich_factor (g3 := g3) hb2 hg3 he.le he1.le kA kB hup (by linarith)
+      (t := t)
+    have hP0 := (abs_le.mp hpos).1
+    have hm := mul_nonneg (sub_nonneg.mpr ht) (show (0 : ℝ) ≤ α + e * (b1 + b2 *
+      (c * e + C * e ^ 2 + t)) + e ^ 2 * (g1 + g2 * (c * e + C * e ^ 2 + t) +
+        g3 * ((c * e + C * e ^ 2) ^ 2 + (c * e + C * e ^ 2) * t + t ^ 2)) by linarith)
+    linarith
+  · have hinc := sandwich_increment α b0 b1 b2 g0 g1 g2 g3 e t (c * e - C * e ^ 2)
+    have hf := sandwich_factor (g3 := g3) hb2 hg3 he.le he1.le kA kB ht1 hlow
+    have hP0 := (abs_le.mp hneg).2
+    rw [show c * e + -(C * e ^ 2) = c * e - C * e ^ 2 by ring] at hP0
+    have hm := mul_nonneg (sub_nonneg.mpr ht2) (show (0 : ℝ) ≤ α + e * (b1 + b2 *
+      (t + (c * e - C * e ^ 2))) + e ^ 2 * (g1 + g2 * (t + (c * e - C * e ^ 2)) +
+        g3 * (t ^ 2 + t * (c * e - C * e ^ 2) + (c * e - C * e ^ 2) ^ 2)) by linarith)
+    have hαC' : α * -(C * e ^ 2) = -((2 * K0 + α) * e ^ 2) := by linarith
     linarith
 
 /-- The model `m` with damping `D` on a line of time scale `ε = 1/ω₀`: nominal frequency `1/ε`
@@ -866,17 +966,59 @@ end
   ring
 
 
-/-- **Routh boundary at `D_line(1 + O(ε²))`, static form.** For `E ≠ 0`, `R, X, M > 0` and `K > 0`
-there are `C > 0` and `ε₀ > 0` such that on every line of time scale `ε ∈ (0, ε₀)` a positive
-damping `D ≥ D_line(ε)(1 + C ε²)` meets the quartic Routh conditions and a positive damping
-`D ≤ D_line(ε)(1 − C ε²)` strictly violates them (negative third Hurwitz determinant). The
-determinant at `D = D_line(ε)(1 + t)` is `ε⁻⁴` times a polynomial
-`α t + ε² (…) + ε⁴ (…)` with `α > 0`. -/
-@[tmio M, powerlib_domain] theorem Model.exists_routh_sandwich (m : Model) (hE : m.g.E ≠ 0)
+/-- The second-order coefficient of the critical damping on fast lines,
+`c₂ = 2 (K/M)(1 − r²)/(1 + r²)²`, `r = R/X` (`VSM.Model.isBigO_Dcrit_sub`). -/
+def Model.DcritCoeff (m : Model) : ℝ :=
+  2 * (m.K / m.g.M) * (1 - (m.g.R / m.g.X) ^ 2) / (1 + (m.g.R / m.g.X) ^ 2) ^ 2
+
+/-- The shift `c ε² + C ε⁴` keeps `κ t + K` and `1 + t` positive on small scales. -/
+@[tmio T, powerlib_foundation] private theorem small_shift {c κ K ε C t : ℝ} (hκ : 0 < κ)
+    (hK : 0 < K) (hε : 0 < ε) (hε1 : ε < 1) (hεK : ε * ((|c| + 1) * (κ + K)) < K) (hC : 0 ≤ C)
+    (ht : c * ε ^ 2 + C * ε ^ 4 ≤ t) : 0 < κ * t + K ∧ 0 < 1 + t := by
+  have he2 : ε ^ 2 ≤ ε := pow_le_of_le_one hε.le hε1.le (by norm_num)
+  obtain ⟨y, hydef⟩ : ∃ y, y = |c| * ε ^ 2 := ⟨_, rfl⟩
+  have hy0 : 0 ≤ y := by rw [hydef]; positivity
+  have hyε : y ≤ |c| * ε := by rw [hydef]; exact mul_le_mul_of_nonneg_left he2 (abs_nonneg c)
+  have hy : y * (κ + K) < K := by
+    have h1 : y * (κ + K) ≤ |c| * ε * (κ + K) :=
+      mul_le_mul_of_nonneg_right hyε (by positivity)
+    have h2 : |c| * ε * (κ + K) ≤ ε * ((|c| + 1) * (κ + K)) := by
+      have e : |c| * ε * (κ + K) = ε * (|c| * (κ + K)) := by ring
+      rw [e]
+      exact mul_le_mul_of_nonneg_left
+        (mul_le_mul_of_nonneg_right (by linarith) (by positivity)) hε.le
+    linarith
+  have htc : -y ≤ t := by
+    have h1 : -|c| * ε ^ 2 ≤ c * ε ^ 2 := mul_le_mul_of_nonneg_right (neg_abs_le c) (sq_nonneg ε)
+    have h2 : 0 ≤ C * ε ^ 4 := by positivity
+    rw [hydef]
+    linarith
+  have hKy : 0 ≤ K * y := mul_nonneg hK.le hy0
+  have hκy : 0 ≤ κ * y := mul_nonneg hκ.le hy0
+  have hexp : y * (κ + K) = κ * y + K * y := by ring
+  constructor
+  · have h1 : κ * -y ≤ κ * t := mul_le_mul_of_nonneg_left htc hκ.le
+    linarith
+  · have hy1 : y < 1 := by
+      by_contra h
+      push Not at h
+      have := mul_le_mul_of_nonneg_left h hK.le
+      linarith
+    linarith
+
+/-- **Routh boundary at `D_line(1 + c₂ ε² + O(ε⁴))`, static form.** For `E ≠ 0`, `R, X, M > 0`
+and `K > 0` there are `C > 0` and `ε₀ > 0` such that on every line of time scale `ε ∈ (0, ε₀)` a
+positive damping `D ≥ D_line(ε)(1 + c₂ ε² + C ε⁴)` meets the quartic Routh conditions and a
+positive damping `D ≤ D_line(ε)(1 + c₂ ε² − C ε⁴)` strictly violates them,
+`c₂ = Model.DcritCoeff = 2 (K/M)(1 − r²)/(1 + r²)²`. The determinant at
+`D = D_line(ε)(1 + t)` is `ε⁻⁴` times a polynomial `α t + ε² (b₀ + …) + ε⁴ (…)`, `α > 0`,
+`c₂ = −b₀/α`. -/
+@[tmio M, powerlib_domain] theorem Model.exists_routh_sandwich_two (m : Model) (hE : m.g.E ≠ 0)
     (hR : 0 < m.g.R) (hX : 0 < m.g.X) (hM : 0 < m.g.M) (hK : 0 < m.K) :
     ∃ C : ℝ, 0 < C ∧ ∃ ε0 : ℝ, 0 < ε0 ∧ ∀ ε : ℝ, 0 < ε → ε < ε0 → ∀ D : ℝ, 0 < D →
-      (m.DlineAt ε * (1 + C * ε ^ 2) ≤ D → (m.atScale ε D).Routh) ∧
-      (D ≤ m.DlineAt ε * (1 - C * ε ^ 2) → (m.atScale ε D).RouthViolation) := by
+      (m.DlineAt ε * (1 + m.DcritCoeff * ε ^ 2 + C * ε ^ 4) ≤ D → (m.atScale ε D).Routh) ∧
+      (D ≤ m.DlineAt ε * (1 + m.DcritCoeff * ε ^ 2 - C * ε ^ 4) →
+        (m.atScale ε D).RouthViolation) := by
   have hZ : 0 < m.g.absSq := by unfold Network.absSq; positivity
   obtain ⟨r, hr⟩ : ∃ r, r = m.g.R / m.g.X := ⟨_, rfl⟩
   obtain ⟨κ, hκdef⟩ : ∃ κ, κ = m.g.κ := ⟨_, rfl⟩
@@ -890,14 +1032,29 @@ determinant at `D = D_line(ε)(1 + t)` is `ε⁻⁴` times a polynomial
   have hQ : m.Q = κ - K := by
     have := m.g.syncCoeff_add_qssReactive hZ m.δ
     rw [hκdef, hKdef, Model.Q, Model.K]; linarith
-  obtain ⟨C, ε0, hC, hε0, H⟩ := cubic_sandwich (α := M ^ 2 * (1 + r ^ 2) ^ 3)
+  obtain ⟨C, e0, hC, he0, H⟩ := quadratic_sandwich (α := M ^ 2 * (1 + r ^ 2) ^ 3)
     (b0 := 2 * K * M * (1 + r ^ 2) * (r ^ 2 - 1))
     (b1 := 2 * M * (1 + r ^ 2) * (K * (r ^ 2 - 1) + 2 * κ * r ^ 2))
     (b2 := 4 * M * κ * r ^ 2 * (1 + r ^ 2)) (g0 := K * (K * (1 + r ^ 2) + 2 * κ * (r ^ 2 - 1)))
     (g1 := K ^ 2 * (1 + r ^ 2) + 6 * K * κ * r ^ 2 - 2 * K * κ + 3 * κ ^ 2 * r ^ 2 - κ ^ 2)
     (g2 := κ * (4 * K * r ^ 2 + 7 * κ * r ^ 2 - κ)) (g3 := 4 * κ ^ 2 * r ^ 2)
     (by positivity) (by positivity) (by positivity)
-  refine ⟨C, hC, ε0, hε0, fun ε hε hεε0 D hD => ?_⟩
+  set c := m.DcritCoeff with hcdef
+  have hc2 : -(2 * K * M * (1 + r ^ 2) * (r ^ 2 - 1)) / (M ^ 2 * (1 + r ^ 2) ^ 3) = c := by
+    rw [hcdef, Model.DcritCoeff, ← hr, ← hKdef, ← hMdef]
+    field_simp
+    ring
+  rw [hc2] at H
+  refine ⟨C, hC, min 1 (min e0 (K / ((|c| + 1) * (κ + K)))), by positivity,
+    fun ε hε hεε0 D hD => ?_⟩
+  have hε1 : ε < 1 := lt_of_lt_of_le hεε0 (min_le_left _ _)
+  have hεe : ε < e0 := lt_of_lt_of_le hεε0 ((min_le_right _ _).trans (min_le_left _ _))
+  have hεK : ε < K / ((|c| + 1) * (κ + K)) :=
+    lt_of_lt_of_le hεε0 ((min_le_right _ _).trans (min_le_right _ _))
+  have he2 : ε ^ 2 ≤ ε := pow_le_of_le_one hε.le hε1.le (by norm_num)
+  obtain ⟨Hup, Hdn⟩ := H (ε ^ 2) (by positivity) (lt_of_le_of_lt he2 hεe)
+  have h4 : (ε ^ 2) ^ 2 = ε ^ 4 := by ring
+  rw [h4] at Hup Hdn
   have hdl0 : 0 < ε * (2 * r * κ / (1 + r ^ 2)) := by positivity
   have hDl : m.DlineAt ε = ε * (2 * r * κ / (1 + r ^ 2)) := by
     rw [Model.DlineAt, hr, hκdef, Network.κ]
@@ -928,14 +1085,14 @@ determinant at `D = D_line(ε)(1 + t)` is `ε⁻⁴` times a polynomial
     rw [Model.coeff0_eq _ hL hZ', hρ, atScale_K m D hε', ← hKdef, hMdef]; rfl
   have hid := hurwitzDet_scaled_eq (M := M) (K := K) (κ := κ) (r := r) (t := t) hM.ne' hε'
   have hF : 0 < 4 * κ * r ^ 2 / ((1 + r ^ 2) ^ 2 * M ^ 3 * ε ^ 4) := by positivity
-  obtain ⟨Hup, Hdn⟩ := H ε hε hεε0
   constructor
   · intro hup
-    have htC : C * ε ^ 2 ≤ t := by
+    have htC : c * ε ^ 2 + C * ε ^ 4 ≤ t := by
       rw [hDl] at hup
       rw [ht, le_sub_iff_add_le, le_div_iff₀ hdl0]; linarith
     have hP := Hup t htC
-    have ht0 : 0 ≤ t := le_trans (by positivity) htC
+    obtain ⟨hKt, ht1⟩ := small_shift hκ hK hε hε1 ((lt_div_iff₀ (by positivity)).mp hεK)
+      hC.le htC
     unfold Model.Routh
     rw [e3, e2, e1, e0]
     refine ⟨by positivity, ?_, by positivity, ?_⟩
@@ -946,7 +1103,7 @@ determinant at `D = D_line(ε)(1 + t)` is `ε⁻⁴` times a polynomial
       rw [this]; positivity
     · linarith [mul_pos hF hP, hid]
   · intro hdn
-    have htC : t ≤ -(C * ε ^ 2) := by
+    have htC : t ≤ c * ε ^ 2 - C * ε ^ 4 := by
       rw [hDl] at hdn
       rw [ht, sub_le_iff_le_add, div_le_iff₀ hdl0]; linarith
     have ht1 : -1 ≤ t := by
@@ -958,44 +1115,127 @@ determinant at `D = D_line(ε)(1 + t)` is `ε⁻⁴` times a polynomial
     refine Or.inr (Or.inr (Or.inr (Or.inr ?_)))
     linarith [mul_neg_of_pos_of_neg hF hP, hid]
 
+/-- **Routh boundary at `D_line(1 + O(ε²))`, static form.** For `E ≠ 0`, `R, X, M > 0` and
+`K > 0` there are `C > 0` and `ε₀ > 0` such that on every line of time scale `ε ∈ (0, ε₀)` a
+positive damping `D ≥ D_line(ε)(1 + C ε²)` meets the quartic Routh conditions and a positive
+damping `D ≤ D_line(ε)(1 − C ε²)` strictly violates them (the first-order form of
+`VSM.Model.exists_routh_sandwich_two`). -/
+@[tmio M, powerlib_domain] theorem Model.exists_routh_sandwich (m : Model) (hE : m.g.E ≠ 0)
+    (hR : 0 < m.g.R) (hX : 0 < m.g.X) (hM : 0 < m.g.M) (hK : 0 < m.K) :
+    ∃ C : ℝ, 0 < C ∧ ∃ ε0 : ℝ, 0 < ε0 ∧ ∀ ε : ℝ, 0 < ε → ε < ε0 → ∀ D : ℝ, 0 < D →
+      (m.DlineAt ε * (1 + C * ε ^ 2) ≤ D → (m.atScale ε D).Routh) ∧
+      (D ≤ m.DlineAt ε * (1 - C * ε ^ 2) → (m.atScale ε D).RouthViolation) := by
+  obtain ⟨C, hC, ε0, hε0, H⟩ := m.exists_routh_sandwich_two hE hR hX hM hK
+  refine ⟨|m.DcritCoeff| + C, by positivity, min ε0 1, by positivity,
+    fun ε hε hεε0 D hD => ?_⟩
+  have hε1 : ε < 1 := lt_of_lt_of_le hεε0 (min_le_right _ _)
+  obtain ⟨Hup, Hdn⟩ := H ε hε (lt_of_lt_of_le hεε0 (min_le_left _ _)) D hD
+  have hZ : 0 < m.g.absSq := by unfold Network.absSq; positivity
+  have hDl : 0 ≤ m.DlineAt ε := by
+    have := pow_pos (abs_pos.mpr hE) 2; rw [sq_abs] at this
+    unfold Model.DlineAt; positivity
+  have h4 : C * ε ^ 4 ≤ C * ε ^ 2 :=
+    mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hε.le hε1.le (by norm_num)) hC.le
+  have hc1 : m.DcritCoeff * ε ^ 2 ≤ |m.DcritCoeff| * ε ^ 2 :=
+    mul_le_mul_of_nonneg_right (le_abs_self _) (sq_nonneg ε)
+  have hc2 : -(|m.DcritCoeff| * ε ^ 2) ≤ m.DcritCoeff * ε ^ 2 := by
+    have := mul_le_mul_of_nonneg_right (neg_abs_le m.DcritCoeff) (sq_nonneg ε); linarith
+  constructor
+  · intro h
+    refine Hup (le_trans (mul_le_mul_of_nonneg_left ?_ hDl) h)
+    linarith
+  · intro h
+    refine Hdn (le_trans h (mul_le_mul_of_nonneg_left ?_ hDl))
+    linarith
 
 /-- The critical damping at scale `ε`: the infimum of the positive dampings whose model meets
 the quartic Routh conditions (by `VSM.mem_den_locallyExponentiallyStable_iff` the boundary of
 local exponential stability of a balanced physical model). -/
 def Model.Dcrit (m : Model) (ε : ℝ) : ℝ := sInf {D : ℝ | 0 < D ∧ (m.atScale ε D).Routh}
 
-/-- **`D_crit = D_line (1 + O(ε²))` as `ε = 1/ω₀ → 0⁺`** (`R, X` fixed, `L = ε X`): for
-`E ≠ 0`, `R, X, M > 0` and `K > 0`, `D_crit(ε)/D_line(ε) − 1 = O(ε²)`
-(`VSM.Model.exists_routh_sandwich`). The second-order coefficient is not asserted. -/
-@[tmio M, powerlib_domain] theorem Model.isBigO_Dcrit (m : Model) (hE : m.g.E ≠ 0)
+/-- **`D_crit = D_line (1 + c₂ ε² + O(ε⁴))` as `ε = 1/ω₀ → 0⁺`** (`R, X` fixed, `L = ε X`): for
+`E ≠ 0`, `R, X, M > 0` and `K > 0`,
+`D_crit(ε)/D_line(ε) − 1 − c₂ ε² = O(ε⁴)` with the second-order coefficient
+`c₂ = 2 (K/M)(1 − r²)/(1 + r²)²`, `r = R/X` (`VSM.Model.DcritCoeff`;
+`VSM.Model.exists_routh_sandwich_two`). In particular the full model needs more damping than
+`D_line` on a fast line with `R < X` and less with `R > X`. -/
+@[tmio M, powerlib_domain] theorem Model.isBigO_Dcrit_sub (m : Model) (hE : m.g.E ≠ 0)
     (hR : 0 < m.g.R) (hX : 0 < m.g.X) (hM : 0 < m.g.M) (hK : 0 < m.K) :
-    (fun ε => m.Dcrit ε / m.DlineAt ε - 1) =O[𝓝[>] 0] (fun ε => ε ^ 2) := by
-  obtain ⟨C, hC, ε0, hε0, H⟩ := m.exists_routh_sandwich hE hR hX hM hK
+    (fun ε => m.Dcrit ε / m.DlineAt ε - 1 - m.DcritCoeff * ε ^ 2) =O[𝓝[>] 0]
+      (fun ε => ε ^ 4) := by
+  obtain ⟨C, hC, ε0, hε0, H⟩ := m.exists_routh_sandwich_two hE hR hX hM hK
+  set c := m.DcritCoeff with hc
   refine IsBigO.of_bound C ?_
-  filter_upwards [Ioo_mem_nhdsGT hε0] with ε ⟨hε, hεε0⟩
+  filter_upwards [Ioo_mem_nhdsGT (show 0 < min ε0 (min 1 (1 / (|c| + C + 1))) by positivity)]
+    with ε ⟨hε, hεε0⟩
+  have hε1 : ε < 1 := lt_of_lt_of_le hεε0 ((min_le_right _ _).trans (min_le_left _ _))
+  have hεc : ε < 1 / (|c| + C + 1) :=
+    lt_of_lt_of_le hεε0 ((min_le_right _ _).trans (min_le_right _ _))
+  obtain ⟨Hs⟩ : Nonempty (∀ D : ℝ, 0 < D →
+      (m.DlineAt ε * (1 + c * ε ^ 2 + C * ε ^ 4) ≤ D → (m.atScale ε D).Routh) ∧
+      (D ≤ m.DlineAt ε * (1 + c * ε ^ 2 - C * ε ^ 4) → (m.atScale ε D).RouthViolation)) :=
+    ⟨H ε hε (lt_of_lt_of_le hεε0 (min_le_left _ _))⟩
   have hZ : 0 < m.g.absSq := by unfold Network.absSq; positivity
   have hDl : 0 < m.DlineAt ε := by
     have := pow_pos (abs_pos.mpr hE) 2; rw [sq_abs] at this
     unfold Model.DlineAt; positivity
-  have hup : m.DlineAt ε * (1 + C * ε ^ 2) ∈ {D : ℝ | 0 < D ∧ (m.atScale ε D).Routh} :=
-    ⟨by positivity, (H ε hε hεε0 _ (by positivity)).1 le_rfl⟩
+  have hsmall : |c| * ε ^ 2 + C * ε ^ 4 < 1 := by
+    have h := (lt_div_iff₀ (by positivity)).mp hεc
+    have e2 : ε ^ 2 ≤ ε := pow_le_of_le_one hε.le hε1.le (by norm_num)
+    have e4 : ε ^ 4 ≤ ε := pow_le_of_le_one hε.le hε1.le (by norm_num)
+    have : |c| * ε ^ 2 ≤ |c| * ε := mul_le_mul_of_nonneg_left e2 (abs_nonneg c)
+    have : C * ε ^ 4 ≤ C * ε := mul_le_mul_of_nonneg_left e4 hC.le
+    linarith
+  have hc1 : -(|c| * ε ^ 2) ≤ c * ε ^ 2 := by
+    have := mul_le_mul_of_nonneg_right (neg_abs_le c) (sq_nonneg ε); linarith
+  have hpos : 0 < m.DlineAt ε * (1 + c * ε ^ 2 + C * ε ^ 4) := by
+    apply mul_pos hDl
+    have : 0 ≤ C * ε ^ 4 := by positivity
+    linarith
+  have hup : m.DlineAt ε * (1 + c * ε ^ 2 + C * ε ^ 4) ∈
+      {D : ℝ | 0 < D ∧ (m.atScale ε D).Routh} :=
+    ⟨hpos, (Hs _ hpos).1 le_rfl⟩
   have hlow : ∀ D ∈ {D : ℝ | 0 < D ∧ (m.atScale ε D).Routh},
-      m.DlineAt ε * (1 - C * ε ^ 2) ≤ D := by
+      m.DlineAt ε * (1 + c * ε ^ 2 - C * ε ^ 4) ≤ D := by
     rintro D ⟨hD, hr⟩
     by_contra h
     push Not at h
-    have hv := (H ε hε hεε0 D hD).2 h.le
+    have hv := (Hs D hD).2 h.le
     obtain ⟨h3, h1, h0, hg⟩ := hr
     have h2 := Criteria.quartic_routh_a2_pos h3 h1 h0 hg
     rcases hv with v | v | v | v | v <;> linarith
-  have h1 : m.Dcrit ε ≤ m.DlineAt ε * (1 + C * ε ^ 2) :=
+  have h1 : m.Dcrit ε ≤ m.DlineAt ε * (1 + c * ε ^ 2 + C * ε ^ 4) :=
     csInf_le ⟨0, fun D hD => hD.1.le⟩ hup
-  have h2 : m.DlineAt ε * (1 - C * ε ^ 2) ≤ m.Dcrit ε := le_csInf ⟨_, hup⟩ hlow
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ε ^ 2),
+  have h2 : m.DlineAt ε * (1 + c * ε ^ 2 - C * ε ^ 4) ≤ m.Dcrit ε := le_csInf ⟨_, hup⟩ hlow
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ε ^ 4),
     abs_le]
   constructor
-  · rw [le_sub_iff_add_le, le_div_iff₀ hDl]; linarith
-  · rw [sub_le_iff_le_add, div_le_iff₀ hDl]; linarith
+  · have : m.DlineAt ε * (1 + c * ε ^ 2 - C * ε ^ 4) / m.DlineAt ε ≤ m.Dcrit ε / m.DlineAt ε :=
+      div_le_div_of_nonneg_right h2 hDl.le
+    rw [mul_div_cancel_left₀ _ hDl.ne'] at this
+    linarith
+  · have : m.Dcrit ε / m.DlineAt ε ≤ m.DlineAt ε * (1 + c * ε ^ 2 + C * ε ^ 4) / m.DlineAt ε :=
+      div_le_div_of_nonneg_right h1 hDl.le
+    rw [mul_div_cancel_left₀ _ hDl.ne'] at this
+    linarith
+
+/-- **`D_crit = D_line (1 + O(ε²))` as `ε = 1/ω₀ → 0⁺`** (`R, X` fixed, `L = ε X`): for
+`E ≠ 0`, `R, X, M > 0` and `K > 0`, `D_crit(ε)/D_line(ε) − 1 = O(ε²)` (the first-order form of
+`VSM.Model.isBigO_Dcrit_sub`). -/
+@[tmio M, powerlib_domain] theorem Model.isBigO_Dcrit (m : Model) (hE : m.g.E ≠ 0)
+    (hR : 0 < m.g.R) (hX : 0 < m.g.X) (hM : 0 < m.g.M) (hK : 0 < m.K) :
+    (fun ε => m.Dcrit ε / m.DlineAt ε - 1) =O[𝓝[>] 0] (fun ε => ε ^ 2) := by
+  have h := m.isBigO_Dcrit_sub hE hR hX hM hK
+  have h42 : (fun ε : ℝ => ε ^ 4) =O[𝓝[>] 0] (fun ε : ℝ => ε ^ 2) := by
+    refine IsBigO.of_bound 1 ?_
+    filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < 1 by norm_num)] with ε ⟨hε, hε1⟩
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by positivity),
+      abs_of_nonneg (by positivity), one_mul]
+    exact pow_le_pow_of_le_one hε.le hε1.le (by norm_num)
+  have hc : (fun ε : ℝ => m.DcritCoeff * ε ^ 2) =O[𝓝[>] 0] (fun ε : ℝ => ε ^ 2) :=
+    isBigO_const_mul_self _ _ _
+  refine ((h.trans h42).add hc).congr_left fun ε => ?_
+  ring
 
 /-- **The full model's boundary is `D_line (1 + O(ε²))`.** For a balanced physical model with
 `R > 0` and `K > 0` there are `C > 0` and `ε₀ > 0` such that on every line of time scale

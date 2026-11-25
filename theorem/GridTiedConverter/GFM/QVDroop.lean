@@ -33,10 +33,11 @@ Model boundary.
   either sign; equilibria with `E > 0` are the physical ones.
 * Level: the equilibrium set, its count per period window `[a, a + 2π)` of the angle, the
   Jacobian at an equilibrium, the shape of the quasi-static characteristic and the instability of
-  an equilibrium. Excluded: the active-power filter (`VSMLPF`), line dynamics, inner voltage and
-  current loops, virtual impedance (the terminal-measured variant is
-  `theorem/GridTiedConverter/GFM/QVDroopVirtualImpedance.lean`), current limiting, PLL, delay,
-  PWM.
+  an equilibrium (the exact stability boundary is
+  `theorem/GridTiedConverter/GFM/QVDroopStability.lean`). Excluded: the active-power filter
+  (`VSMLPF`), line dynamics, inner voltage and current loops, virtual impedance (the
+  terminal-measured variant is `theorem/GridTiedConverter/GFM/QVDroopVirtualImpedance.lean`),
+  current limiting, PLL, delay, PWM.
 
 Source: study note GFM equilibrium counting (topic t6 (b): the elimination, the droop quartic and
 its sign pattern, the parity, `det J`, the descending branch and the one maximum and one minimum
@@ -98,14 +99,24 @@ Family and connection conclusions.
   is unstable, for every damping `D`.
 * Static evidence on the model: the elimination, the quartic, the window bijection and the counts,
   the parity and fold statements, the Jacobian and the branch identities, the shape of `P̃`.
+* The exact stability boundary of every equilibrium (both directions of the cubic Routh–Hurwitz
+  criterion, explicit polynomials in the EMF, the stable/saddle alternation of two physical
+  equilibria, local asymptotic and Lyapunov stability off the fold and Hopf surfaces) is proved in
+  `theorem/GridTiedConverter/GFM/QVDroopStability.lean` on this family.
 
 Corrections and limits (study note, topic t6 (b)).
 * The bound of four zeros per period of a second-order trigonometric polynomial
   (`theorem/SpecialFunctions/TrigZeros.lean`, used by `theorem/GridTiedConverter/PLL/TrigPD.lean`)
   is not the physical count here: the Q–V droop GFM has at most two physical equilibria per period
   (`ncard_physical_le_two`).
-* Not formalized (observations of the study only): that the ascending-branch equilibria
-  (`P̃' > 0`) were Hurwitz in the sampled cases, and that no sampled `E < 0` equilibrium was.
+* The study's sampled observations, decided in
+  `theorem/GridTiedConverter/GFM/QVDroopStability.lean`: that ascending-branch equilibria
+  (`P̃' > 0`) are Hurwitz is refuted (`QVDroop.not_forall_mem_den_LES_of_slope_pos`, a lossy
+  no-load point with positive damping; it holds with a nonnegative P–Q coupling,
+  `QVDroop.mem_den_locallyExponentiallyStable_of_slope_pos`, and is exact on a lossless line with
+  `D > 0`); that no `E < 0` equilibrium is Hurwitz is refuted
+  (`QVDroop.not_forall_not_mem_den_LES_of_emf_neg`; such an equilibrium needs `D > M ω_q |K|`,
+  `QVDroop.not_mem_den_LES_of_emf_neg`).
 -/
 
 noncomputable section

@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFM.Discrete.LinearPort
 import theorem.Numerics.EulerOutputs
-import theorem.Numerics.SchurStable
+import theorem.Criteria.Jury
 
 /-! # Linearized grid-forming port models: explicit Euler with an output that sees the step
 
@@ -15,13 +15,15 @@ exactly when `K h ≤ D` and `4 M − 2 D h + K h² ≥ 0`, with the storage
 when `3 K h ≤ 2 D` and `4 M − 2 D h + K h² ≥ 0`, with the storage
 `½ K (Δδ + h Δω)² + ½ (M − K h²/2) Δω²`. The refutations are a discrete periodic input (the
 damping conditions) and a real mode of `I + h A` with a multiplier `r ≤ −1` driven by `r^k U`
-(the condition `4 M − 2 D h + K h² ≥ 0`). By the Jury criterion (not formalized here) the strict
-conditions `4 M − 2 D h + K h² > 0`, `K h < D` are the Schur stability of `I + h A`: the study's
-conditions with `ρ(I + h A) < 1` are the interiors of these regions, and on their boundary the
-averaged output is lossless or the mode `z = −1` is hidden. Three-state VSM + filter, with
-`Δ = (2 − h ω_c)(4 M − 2 D h) − K h³ ω_c` (`−M` times the characteristic polynomial of `I + h A`
-at `z = −1`): averaged output passive exactly when `h ω_c < 2`, `K (1 + h ω_c) ≤ D ω_c` and
-`Δ ≥ 0`, with the storage `½ (K (Δδ + h Δω/2)² + (ε ξ − K h Δω)²/(2 K ε) + Δ Δω²/(4 ε))`,
+(the condition `4 M − 2 D h + K h² ≥ 0`). By the Jury criterion (`Criteria.schurStable_fin_two_iff`,
+`SwingPort.eulerStep_schurStable_iff`) the strict conditions `K > 0`, `4 M − 2 D h + K h² > 0`,
+`K h < D` are the Schur stability of `I + h A`: the study's conditions with `ρ(I + h A) < 1` are the
+interiors of these regions (`SwingPort.linearAverage_mem_den_passive_of_schurStable`), and on their
+boundary the averaged output is lossless or the mode `z = −1` is hidden. Three-state VSM +
+filter, with `Δ = (2 − h ω_c)(4 M − 2 D h) − K h³ ω_c` (`−M` times the characteristic polynomial
+of `I + h A` at `z = −1`): averaged output passive exactly when `h ω_c < 2`,
+`K (1 + h ω_c) ≤ D ω_c` and `Δ ≥ 0`, with the storage
+`½ (K (Δδ + h Δω/2)² + (ε ξ − K h Δω)²/(2 K ε) + Δ Δω²/(4 ε))`,
 `ξ = ΔP_f − K Δδ`, `ε = 2 − h ω_c`; end-of-step output passive exactly when `h ω_c < 2`,
 `K (2 + 3 h ω_c) ≤ 2 D ω_c` and `Δ ≥ 0`, with the storage
 `½ (K (Δδ + h Δω)² + (M − K h²/2) Δω² + ξ²/K)`. The refutations are a discrete periodic input at
@@ -31,6 +33,10 @@ a low frequency (the damping conditions) and real modes of `I + h A` with multip
 `1 − h ω_c` and `−1`, `Numerics.SchurStable.cubic_pos`, `Numerics.SchurStable.cubic_neg`), so the
 study's sufficient condition — Schur stability with `K (1 + h ω_c) ≤ D ω_c` — holds; it is not
 necessary: on `Δ = 0` the step matrix has the eigenvalue `−1` and the discretization is passive.
+Exactly (Jury, `FilterPort.eulerStep_schurStable_iff`): `I + h A` is Schur stable iff `K > 0`,
+`Δ > 0`, `4 (D + M ω_c − D h ω_c) + 3 K h² ω_c > 0` and
+`E = D (D + M ω_c) − K M − h (D² ω_c + K D + K M ω_c) + 2 D K ω_c h² − K² ω_c h³ > 0`, the discrete
+fast-filter margin (`E = D (D + M ω_c) − K M` at `h = 0`).
 Scaffold: `theorem/Numerics/EulerPorts.agda`.
 
 Model boundary.
@@ -56,6 +62,8 @@ three-state storages, the end-of-step three-state condition and the exact region
 for this module, SymPy discovery evidence only);
 `theorem/Numerics/SchurStable.lean` (`Numerics.SchurStable`, `Numerics.SchurStable.cubic_pos`,
 `Numerics.SchurStable.cubic_neg`, `Numerics.not_schurStable_of_det_eq_zero`);
+`theorem/Criteria/Jury.lean` (`Criteria.schurStable_fin_two_iff`,
+`Criteria.cubic_roots_norm_lt_one_iff_cayley`: the Jury criterion);
 `theorem/Numerics/EulerOutputs.lean` (`Numerics.eulerOutputSystem_passiveWith_of`,
 `Numerics.eulerOutputSystem_not_passive_of_phasor`,
 `Numerics.eulerOutputSystem_not_passive_of_geometric`), `theorem/Numerics/PeriodicInput.lean`
@@ -66,9 +74,14 @@ Systems Analysis and Control* (2007), §3 (positive real discrete-time transfer 
 Results.
 * `SwingPort.plant_phasor` (the swing plant's phasor at a complex frequency, output phasor
   `Δω = 1`).
-* `FilterPort.eulerStep_charDet` (the characteristic polynomial of the filter's Euler step matrix
-  `I + h A` on the real axis, computed from the plant), `FilterPort.not_schurStable_of_boundary`
-  (`Δ = 0`: `z = −1` is a characteristic root, `I + h A` is not Schur stable).
+* `SwingPort.eulerStep_schurStable_iff` (Jury: with `h > 0`, `I + h A` is Schur stable iff
+  `K > 0`, `K h < D` and `4 M − 2 D h + K h² > 0`).
+* `FilterPort.eulerStep_charDet_complex`, `FilterPort.eulerStep_charDet` (the characteristic
+  polynomial of the filter's Euler step matrix `I + h A`, computed from the plant, at every complex
+  point and as a real cubic on the real axis), `FilterPort.eulerStep_schurStable_iff` (Jury: with
+  `M, ω_c, h > 0`, Schur stable iff `K > 0`, `Δ > 0`, `4 (D + M ω_c − D h ω_c) + 3 K h² ω_c > 0`
+  and `E > 0`), `FilterPort.not_schurStable_of_boundary` (`Δ = 0`: `z = −1` is a characteristic
+  root, `I + h A` is not Schur stable).
 
 Family and connection conclusions.
 * Two-state swing, averaged output: `SwingPort.linearAverageFamily`,
@@ -78,7 +91,8 @@ Family and connection conclusions.
   `SwingPort.linearAverage_not_mem_den_passive_of_mode` (`4 M − 2 D h + K h² < 0`: a real mode
   with multiplier `r < −1` draws energy at every step),
   `SwingPort.linearAverage_mem_den_passive_iff` (`K ≥ 0`: passive iff `K h ≤ D` and
-  `4 M − 2 D h + K h² ≥ 0`).
+  `4 M − 2 D h + K h² ≥ 0`), `SwingPort.linearAverage_mem_den_passive_of_schurStable` (a Schur
+  stable `I + h A`, the interior of that region with `K > 0`: passive).
 * Two-state swing, end-of-step output: `SwingPort.linearEndFamily`,
   `SwingPort.linearEnd_mem_den_passive` (`3 K h ≤ 2 D`, `4 M − 2 D h + K h² ≥ 0`),
   `SwingPort.linearEnd_not_mem_den_passive_of_damping` (`3 K h > 2 D`: a low closing frequency),
@@ -300,6 +314,60 @@ mode at `σ` driven by `r^k U` draws `(M σ² + D σ + K)(2 + h σ)/(2 σ) < 0` 
   unfold powerlib.TMIO.Statement at hp hd hm ⊢
   exact ⟨fun hy => ⟨not_lt.mp fun hlt => hd hlt hy, not_lt.mp fun hlt => hm hlt hy⟩,
     fun ⟨h1, h2⟩ => hp h1 h2⟩
+
+/-- **Jury for the Euler step of the linearized swing** (`Criteria.schurStable_fin_two_iff`):
+with a step `h > 0`, `I + h A` is Schur stable iff `K > 0`, `K h < D` and
+`4 M − 2 D h + K h² > 0` (`M det(I + h A) = M − D h + K h²`, `M tr(I + h A) = 2 M − D h`). Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem eulerStep_schurStable_iff (m : Model) {h : ℝ} (hh : 0 < h) :
+    Numerics.SchurStable (1 + h • m.plant.A) ↔
+      0 < m.K ∧ m.K * h < m.p.D ∧ 0 < 4 * m.p.M - 2 * m.p.D * h + m.K * h ^ 2 := by
+  have hM := m.p.M_pos
+  have hdet : (1 + h • m.plant.A).det * m.p.M = m.p.M - h * m.p.D + h ^ 2 * m.K := by
+    simp [Model.plant, Matrix.det_fin_two]
+    field_simp
+    ring
+  have htr : (1 + h • m.plant.A).trace * m.p.M = 2 * m.p.M - h * m.p.D := by
+    simp [Model.plant, Matrix.trace_fin_two]
+    field_simp
+    ring
+  rw [Criteria.schurStable_fin_two_iff, abs_lt, abs_lt]
+  set d := (1 + h • m.plant.A).det
+  set t := (1 + h • m.plant.A).trace
+  constructor
+  · rintro ⟨⟨-, d2⟩, t1, t2⟩
+    have hK : 0 < m.K := by
+      have : 0 < (1 + d - t) * m.p.M := mul_pos (by linarith) hM
+      nlinarith
+    have hKh : m.K * h < m.p.D := by
+      have : 0 < (1 - d) * m.p.M := mul_pos (by linarith) hM
+      have : 0 < h * (m.p.D - m.K * h) := by nlinarith
+      nlinarith [pos_of_mul_pos_right this hh.le]
+    refine ⟨hK, hKh, ?_⟩
+    have : 0 < (1 + d + t) * m.p.M := mul_pos (by linarith) hM
+    nlinarith
+  · rintro ⟨hK, hKh, h4⟩
+    have hd2 : d < 1 := by
+      have : d * m.p.M < 1 * m.p.M := by nlinarith [mul_pos hh (sub_pos.mpr hKh)]
+      exact lt_of_mul_lt_mul_right this hM.le
+    have ht2 : t < 1 + d := by
+      have : t * m.p.M < (1 + d) * m.p.M := by nlinarith [mul_pos (pow_pos hh 2) hK]
+      exact lt_of_mul_lt_mul_right this hM.le
+    have ht1 : -(1 + d) < t := by
+      have : -(1 + d) * m.p.M < t * m.p.M := by nlinarith
+      exact lt_of_mul_lt_mul_right this hM.le
+    exact ⟨⟨by linarith, hd2⟩, ht1, ht2⟩
+
+/-- **A Schur stable Euler step makes the averaged-output discretization of the linearized swing
+port passive**: Schur stability of `I + h A` is `K > 0`, `K h < D` and `4 M − 2 D h + K h² > 0`
+(`eulerStep_schurStable_iff`), the interior of the passivity region of
+`linearAverage_mem_den_passive_iff`; on its boundary (`K h = D` or `4 M − 2 D h + K h² = 0`) the
+discretization is passive without being Schur stable. -/
+@[tmio TM, powerlib_domain] theorem linearAverage_mem_den_passive_of_schurStable (m : Model)
+    (h : ℝ) (hh : 0 < h) (hS : Numerics.SchurStable (1 + h • m.plant.A)) :
+    connection% ((⟨m, h, hh⟩ : LinearStep) ∈ linearAverageFamily.den .passive) := by
+  obtain ⟨hK, hKh, h4⟩ := (eulerStep_schurStable_iff m hh).mp hS
+  exact linearAverage_mem_den_passive m hK.le h hh hKh.le h4.le
 
 /-! ### The end-of-step output -/
 
@@ -719,15 +787,27 @@ port**: within `M, ω_c, K > 0`, a discretization with step `h > 0` is passive e
 /-- **The characteristic polynomial of the Euler step matrix** `I + h A` on the real axis:
 `det(r I − (I + h A)) = r³ + c₂ r² + c₁ r + c₀`, the cubic `h³ det((r − 1)/h · I − A)`, computed
 from the plant. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem eulerStep_charDet_complex (m : VSMLPF.Model) (h : ℝ)
+    (z : ℂ) :
+    (Linear.characteristicMatrix (1 + h • (plant m).A) z).det =
+      z ^ 3 + ((h * (m.g.D / m.g.M + m.g.ωc) - 3 : ℝ) : ℂ) * z ^ 2 +
+        ((3 - 2 * h * (m.g.D / m.g.M + m.g.ωc) + h ^ 2 * m.g.D * m.g.ωc / m.g.M : ℝ) : ℂ) * z +
+        ((-1 + h * (m.g.D / m.g.M + m.g.ωc) - h ^ 2 * m.g.D * m.g.ωc / m.g.M +
+          h ^ 3 * m.g.ωc * m.K / m.g.M : ℝ) : ℂ) := by
+  have hK : m.g.K0 * Real.cos m.δ = m.K := rfl
+  simp [Linear.characteristicMatrix, Matrix.det_fin_three, plant, VSMLPF.jacobian, hK]
+  ring
+
+/-- The same characteristic polynomial on the real axis, as a real cubic (the form of
+`Numerics.SchurStable.cubic_pos`). Static evidence on the model. -/
 @[tmio M, powerlib_domain] theorem eulerStep_charDet (m : VSMLPF.Model) (h r : ℝ) :
     (Linear.characteristicMatrix (1 + h • (plant m).A) (r : ℂ)).det =
       ((r ^ 3 + (h * (m.g.D / m.g.M + m.g.ωc) - 3) * r ^ 2 +
         (3 - 2 * h * (m.g.D / m.g.M + m.g.ωc) + h ^ 2 * m.g.D * m.g.ωc / m.g.M) * r +
         (-1 + h * (m.g.D / m.g.M + m.g.ωc) - h ^ 2 * m.g.D * m.g.ωc / m.g.M +
           h ^ 3 * m.g.ωc * m.K / m.g.M) : ℝ) : ℂ) := by
-  have hK : m.g.K0 * Real.cos m.δ = m.K := rfl
-  simp [Linear.characteristicMatrix, Matrix.det_fin_three, plant, VSMLPF.jacobian, hK]
-  field_simp
+  rw [eulerStep_charDet_complex]
+  push_cast
   ring
 
 /-- The value of the Euler step's characteristic cubic at `−1`: `−Δ/M`. -/
@@ -793,6 +873,62 @@ study's sufficient condition. Schur stability of `I + h A` gives `K > 0`, `h ω_
     connection% ((⟨m, h, hh⟩ : LinearStep) ∈ linearAverageFamily.den .passive) := by
   obtain ⟨hK, ht, hΔ⟩ := schur_conditions m hM hω hh hS
   exact linearAverage_mem_den_passive m hM hω hK h hh ht hKh hΔ.le
+
+/-- **Jury for the Euler step of the linearized VSM + filter port** (the Cayley form
+`Criteria.cubic_roots_norm_lt_one_iff_cayley` of the characteristic cubic
+`eulerStep_charDet_complex`): with `M, ω_c > 0` and `h > 0`, `I + h A` is Schur stable iff `K > 0`,
+`Δ = (2 − h ω_c)(4 M − 2 D h) − K h³ ω_c > 0`, `4 (D + M ω_c − D h ω_c) + 3 K h² ω_c > 0` and
+`E = D (D + M ω_c) − K M − h (D² ω_c + K D + K M ω_c) + 2 D K ω_c h² − K² ω_c h³ > 0`. The cubic
+is `h³ ω_c K/M` at `1` and `−Δ/M` at `−1`, the second coefficient of its Cayley transform is
+`h (4 (D + M ω_c − D h ω_c) + 3 K h² ω_c)/M`, and `1 − a₀² + a₀ a₂ − a₁ = h³ ω_c E/M²`; at
+`h = 0`, `E` is the fast-filter margin `D (D + M ω_c) − K M` of the continuous model. Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem eulerStep_schurStable_iff (m : VSMLPF.Model)
+    (hM : 0 < m.g.M) (hω : 0 < m.g.ωc) {h : ℝ} (hh : 0 < h) :
+    Numerics.SchurStable (1 + h • (plant m).A) ↔
+      0 < m.K ∧ 0 < (2 - h * m.g.ωc) * (4 * m.g.M - 2 * m.g.D * h) - m.K * h ^ 3 * m.g.ωc ∧
+      0 < 4 * (m.g.D + m.g.M * m.g.ωc - m.g.D * h * m.g.ωc) + 3 * m.K * h ^ 2 * m.g.ωc ∧
+      0 < m.g.D * (m.g.D + m.g.M * m.g.ωc) - m.K * m.g.M -
+        h * (m.g.D ^ 2 * m.g.ωc + m.K * m.g.D + m.K * m.g.M * m.g.ωc) +
+        2 * m.g.D * m.K * m.g.ωc * h ^ 2 - m.K ^ 2 * m.g.ωc * h ^ 3 := by
+  unfold Numerics.SchurStable
+  simp only [eulerStep_charDet_complex]
+  rw [Criteria.cubic_roots_norm_lt_one_iff_cayley]
+  have hMne := hM.ne'
+  have e0 : 1 + (h * (m.g.D / m.g.M + m.g.ωc) - 3) +
+      (3 - 2 * h * (m.g.D / m.g.M + m.g.ωc) + h ^ 2 * m.g.D * m.g.ωc / m.g.M) +
+      (-1 + h * (m.g.D / m.g.M + m.g.ωc) - h ^ 2 * m.g.D * m.g.ωc / m.g.M +
+        h ^ 3 * m.g.ωc * m.K / m.g.M) = h ^ 3 * m.g.ωc * m.K / m.g.M := by ring
+  have e3 : 1 - (h * (m.g.D / m.g.M + m.g.ωc) - 3) +
+      (3 - 2 * h * (m.g.D / m.g.M + m.g.ωc) + h ^ 2 * m.g.D * m.g.ωc / m.g.M) -
+      (-1 + h * (m.g.D / m.g.M + m.g.ωc) - h ^ 2 * m.g.D * m.g.ωc / m.g.M +
+        h ^ 3 * m.g.ωc * m.K / m.g.M) =
+      ((2 - h * m.g.ωc) * (4 * m.g.M - 2 * m.g.D * h) - m.K * h ^ 3 * m.g.ωc) / m.g.M := by
+    field_simp
+    ring
+  have e2 : 3 - (h * (m.g.D / m.g.M + m.g.ωc) - 3) -
+      (3 - 2 * h * (m.g.D / m.g.M + m.g.ωc) + h ^ 2 * m.g.D * m.g.ωc / m.g.M) +
+      3 * (-1 + h * (m.g.D / m.g.M + m.g.ωc) - h ^ 2 * m.g.D * m.g.ωc / m.g.M +
+        h ^ 3 * m.g.ωc * m.K / m.g.M) =
+      h * (4 * (m.g.D + m.g.M * m.g.ωc - m.g.D * h * m.g.ωc) + 3 * m.K * h ^ 2 * m.g.ωc) /
+        m.g.M := by
+    field_simp
+    ring
+  set a2 := h * (m.g.D / m.g.M + m.g.ωc) - 3
+  set a1 := 3 - 2 * h * (m.g.D / m.g.M + m.g.ωc) + h ^ 2 * m.g.D * m.g.ωc / m.g.M
+  set a0 := -1 + h * (m.g.D / m.g.M + m.g.ωc) - h ^ 2 * m.g.D * m.g.ωc / m.g.M +
+    h ^ 3 * m.g.ωc * m.K / m.g.M
+  have eA : 1 - a0 ^ 2 - (a1 - a0 * a2) = h ^ 3 * m.g.ωc * (m.g.D * (m.g.D + m.g.M * m.g.ωc) -
+      m.K * m.g.M - h * (m.g.D ^ 2 * m.g.ωc + m.K * m.g.D + m.K * m.g.M * m.g.ωc) +
+      2 * m.g.D * m.K * m.g.ωc * h ^ 2 - m.K ^ 2 * m.g.ωc * h ^ 3) / m.g.M ^ 2 := by
+    simp only [a2, a1, a0]
+    field_simp
+    ring
+  have hc : 0 < h ^ 3 * m.g.ωc := by positivity
+  rw [e0, e3, e2, ← sub_pos (a := 1 - a0 ^ 2) (b := a1 - a0 * a2), eA,
+    div_pos_iff_of_pos_right hM, div_pos_iff_of_pos_right hM, div_pos_iff_of_pos_right hM,
+    div_pos_iff_of_pos_right (pow_pos hM 2), mul_pos_iff_of_pos_left hc,
+    mul_pos_iff_of_pos_left hh, mul_pos_iff_of_pos_left hc]
 
 /-- **On the boundary `Δ = 0` the Euler step matrix is not Schur stable**: `z = −1` is a root of
 its characteristic polynomial, whose value there is `−Δ/M` (`eulerStep_charDet`). With

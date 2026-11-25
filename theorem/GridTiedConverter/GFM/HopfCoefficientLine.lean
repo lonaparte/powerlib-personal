@@ -19,8 +19,16 @@ Model boundary.
   rational arithmetic. No behavioural sentence is concluded here: the instability of every
   boundary point with `ℓ₁ > 0` and the local asymptotic stability of every boundary point with
   `ℓ₁ < 0` (centre-manifold reduction), and their instances at the witnesses, are in
-  `theorem/GridTiedConverter/GFM/HopfLineInstability.lean`. The `ε = 1/ω_b` expansion of the
-  source note is not formalized.
+  `theorem/GridTiedConverter/GFM/HopfLineInstability.lean`. The `ε = 1/ω_b` law of the source
+  note — the boundary damping `D_line(1 + O(ε²))` and `sign ℓ₁ = sign((X² − R²)(5K² − P''²))` on
+  every line of time scale `ε` below an `ε₀` — is
+  `theorem/GridTiedConverter/GFM/HopfLineScale.lean` (`Line.VSM.Model.exists_atScale_hopf`,
+  `Line.VSM.Model.exists_atScale_sign_firstLyapunov`), with the leading coefficient
+  `ℓ₁/(|q₀|² ε³) → L₃` (`Line.VSM.Model.exists_atScale_firstLyapunov_div_cube`). The bifurcating
+  cycles are not stated for this model: their existence is the generic
+  `Dynamics.HopfCycle.exists_hopfCycle` (given `ℓ₁ ≠ 0` and the transversality `τ ≠ 0`),
+  instantiated only for `VSMLPF` (`VSMLPFHopfCycle`); here the transversality computation and
+  the instance are missing, and uniqueness and orbital stability are not proved.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, "Subcritical EXISTS: VSM without
 filter on dynamic RL line") and its scripts `s5b_dynline.py`, `s5f_slow_manifold.py` (discovery

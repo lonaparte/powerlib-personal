@@ -1,6 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.DetailedBalance
+import theorem.Stochastic.DetailedBalanceUnique
 import theorem.GridTiedConverter.GFM.Noise.FilterEmbedding
 import theorem.GridTiedConverter.GFM.Noise.FilterEscape
 import theorem.GridTiedConverter.GFM.Noise.Escape
@@ -49,9 +50,17 @@ Model boundary.
   below by the two-state value `2D ΔU/σ_P²` with `D` replaced by `D − A/ω_c` (a Hamilton–Jacobi
   subsolution) and shows that the exact two-state solution has no separable three-state extension;
   `theorem/GridTiedConverter/GFM/Noise/EscapeExponent.lean` proves that it tends to the two-state
-  value as `ω_c → ∞`. The large-deviation theorem for diffusions is not formalized, and no closed
-  form at finite `ω_c` is known. "No closed form" describes the state of knowledge; it is
-  not a theorem.
+  value as `ω_c → ∞`. The large-deviation principle of the noisy models is proved
+  (`GFM.Noise.Params3.isLDP_setPoint`), the quasi-potential of its rate equals this exponent
+  (`GFM.Noise.Params3.fwQP_eq_setPointQP`) and the mean exit time from a compact set obeys the
+  Freidlin–Wentzell upper bound (`GFM.Noise.Params3.limsup_log_exitTime_le`); the matching lower
+  bound (strong Markov property at hitting times), the exit place and the exponential law of
+  `τ/E τ` are not formalized, and no closed form at finite `ω_c` is known. "No closed form"
+  describes the state of knowledge; it is not a theorem.
+* Two-state stationary states: positive differentiable densities on `Fin 2 → ℝ` in the
+  coordinates `(δ − α, M Δω)` of `Params.genDetailedBalance_gibbs`, nominal damping, any noise
+  intensities; "on the circle" means `2π`-periodic in the angle. Existence of a stationary
+  density on the circle (a hypoelliptic problem) is not formalized.
 
 Source: GFM counterpart study, note t2-noise items 6 and 7 (no constant-structure pH form,
 broken equipartition, Monte-Carlo rates departing from the two-state Kramers–Langer rate as
@@ -80,6 +89,15 @@ Results.
   frequency noise, with isotropic voltage noise and `σ_P² + k² σ_q² = 2 D T`, satisfies
   generalized detailed balance under the momentum flip with `e^{−H/T}`
   (`Stochastic.DetailedBalance.kk_genDetailedBalance`).
+* `Params.eq_gibbs_of_genDetailedBalance` (converse, `D > 0`): a positive differentiable
+  density in generalized detailed balance under the momentum flip exists only without
+  grid-frequency noise and with isotropic voltage noise, and it is the Gibbs density
+  `ρ(0, 0) e^{V(0)/T} e^{−H/T}`, `T = (σ_P² + k² σ_q²)/(2D)`
+  (`Stochastic.DetailedBalance.eq_gibbs_of_kk_genDetailedBalance`).
+* `Params.not_genDetailedBalance_of_periodic` (**non-Gibbs stationary states**): for `D > 0` and
+  `P_ref ≠ c₀` no positive differentiable density on the circle satisfies generalized detailed
+  balance under the momentum flip, for any noise: a stationary density on the circle, if any,
+  carries an irreversible probability current; the Kramers–Langer rate does not apply.
 * `not_exists_constPH`: for `D > 0` the drift is `(J − R)∇H` for no constant `J`, `R ⪰ 0` and
   no `H` (`VSMLPF.not_exists_constPH` through `VSMLPFLossy.field_eq`); `exists_constPH_iff`: such
   a form (without ports) exists iff `D = 0`. With the non-Gibbs result
@@ -766,6 +784,82 @@ three-state model never satisfies (`Params3.not_genDetailedBalance_momentumFlip`
     linear_combination hfdt + p.k ^ 2 * σ 3 ^ 2 * hsc
   rw [hA, hB]
   exact kk_genDetailedBalance p.hasDerivAt_potential p.M_pos.ne' hT
+
+/-- **The generalized detailed-balance density of the two-state model is the Gibbs density.**
+In the coordinates of `Params.genDetailedBalance_gibbs` (nominal damping, any noise intensities
+`σ`), with `D > 0`, a positive differentiable density in generalized detailed balance under the
+momentum flip forces no grid-frequency noise, isotropic voltage noise, a nonzero momentum
+diffusion `σ_P² + k² σ_q²`, and `ρ = ρ(0, 0) e^{V(0)/T} e^{−H/T}` with
+`T = (σ_P² + k² σ_q²)/(2D)` (`Stochastic.DetailedBalance.eq_gibbs_of_kk_genDetailedBalance`). -/
+@[tmio M, powerlib_domain] theorem eq_gibbs_of_genDetailedBalance (hD : 0 < p.D)
+    (σ : Fin 4 → ℝ) {ρ : (Fin 2 → ℝ) → ℝ} (hρ : Differentiable ℝ ρ)
+    (h : GenDetailedBalance
+      (fun x => WithLp.ofLp ((Synchronous.classicalSM p.toSM).field (WithLp.toLp 2 x) 0))
+      (fun x => p.diffusion 0 σ (x 0 + p.α) * (p.diffusion 0 σ (x 0 + p.α))ᵀ) kkFlip ρ) :
+    σ 1 = 0 ∧ σ 2 ^ 2 = σ 3 ^ 2 ∧ σ 0 ^ 2 + p.k ^ 2 * σ 3 ^ 2 ≠ 0 ∧
+      ∀ θ q, ρ ![θ, q] = ρ ![0, 0] *
+        Real.exp (p.potential 0 / ((σ 0 ^ 2 + p.k ^ 2 * σ 3 ^ 2) / (2 * p.D))) *
+          gibbs p.potential p.M ((σ 0 ^ 2 + p.k ^ 2 * σ 3 ^ 2) / (2 * p.D)) θ q := by
+  have hA : (fun x : Fin 2 → ℝ =>
+      WithLp.ofLp ((Synchronous.classicalSM p.toSM).field (WithLp.toLp 2 x) 0)) =
+        kkDrift p.M p.D p.potentialDeriv := by
+    funext x
+    have hx : x = ![x 0, x 1] := by funext i; fin_cases i <;> rfl
+    rw [hx, ← p.kkDrift_eq_field]
+    rfl
+  have hB : (fun x : Fin 2 → ℝ => p.diffusion 0 σ (x 0 + p.α) * (p.diffusion 0 σ (x 0 + p.α))ᵀ) =
+      fun x => !![σ 1 ^ 2, 0; 0, p.momentumDiffusion σ (x 0)] := by
+    funext x
+    rw [p.diffusion_eq_diag]
+  rw [hA, hB] at h
+  obtain ⟨hs, ha, ha0, hρg⟩ := eq_gibbs_of_kk_genDetailedBalance p.hasDerivAt_potential
+    p.M_pos.ne' hD.ne' hρ h
+  have hm0 : p.momentumDiffusion σ 0 = σ 0 ^ 2 + p.k ^ 2 * σ 3 ^ 2 := by
+    simp [momentumDiffusion]
+  have hσ1 : σ 1 = 0 := by
+    rcases hs with hs | hs
+    · exact pow_eq_zero_iff (n := 2) two_ne_zero |>.mp hs
+    · have h1 := hs (π / 2)
+      have h2 := hs (-(π / 2))
+      simp only [potentialDeriv, Real.sin_pi_div_two, Real.sin_neg] at h1 h2
+      have hb : p.toSM.b = p.A := rfl
+      have := p.A_pos
+      rw [hb] at h1 h2
+      linarith
+  have hσ23 : σ 2 ^ 2 = σ 3 ^ 2 := by
+    have h := ha (π / 2)
+    rw [hm0] at h
+    simp only [momentumDiffusion, Real.sin_pi_div_two, Real.cos_pi_div_two] at h
+    have hk := pow_ne_zero 2 p.k_pos.ne'
+    have : p.k ^ 2 * (σ 2 ^ 2 - σ 3 ^ 2) = 0 := by linarith
+    have := (mul_eq_zero.mp this).resolve_left hk
+    linarith
+  refine ⟨hσ1, hσ23, hm0 ▸ ha0, fun θ q => ?_⟩
+  rw [hρg θ q, hm0]
+
+/-- **No density on the circle is in generalized detailed balance unless `P_ref = c₀`**: with
+`D > 0` and `P_ref ≠ c₀`, for every noise intensity `σ` (nominal damping), no positive
+differentiable density `2π`-periodic in the angle satisfies generalized detailed balance under
+the momentum flip. The only candidate is the Gibbs density
+(`Params.eq_gibbs_of_genDetailedBalance`), which is periodic only for `P_ref = c₀`
+(`Params.gibbs_periodic_iff`): a stationary density on the circle, if any, carries an
+irreversible probability current (it is not of Kramers–Langer type). -/
+@[tmio M, powerlib_domain] theorem not_genDetailedBalance_of_periodic (hD : 0 < p.D)
+    (hP : p.Pref ≠ p.c0) (σ : Fin 4 → ℝ) {ρ : (Fin 2 → ℝ) → ℝ} (hρ : Differentiable ℝ ρ)
+    (hper : ∀ θ q, ρ ![θ + 2 * π, q] = ρ ![θ, q]) :
+    ¬ GenDetailedBalance
+      (fun x => WithLp.ofLp ((Synchronous.classicalSM p.toSM).field (WithLp.toLp 2 x) 0))
+      (fun x => p.diffusion 0 σ (x 0 + p.α) * (p.diffusion 0 σ (x 0 + p.α))ᵀ) kkFlip ρ := by
+  intro h
+  obtain ⟨-, -, ha0, hρg⟩ := p.eq_gibbs_of_genDetailedBalance hD σ hρ h
+  set T := (σ 0 ^ 2 + p.k ^ 2 * σ 3 ^ 2) / (2 * p.D) with hT
+  have hT0 : T ≠ 0 := div_ne_zero ha0 (mul_ne_zero two_ne_zero hD.ne')
+  have hc : 0 < ρ ![0, 0] * Real.exp (p.potential 0 / T) :=
+    mul_pos (h.pos _) (Real.exp_pos _)
+  refine hP ((p.gibbs_periodic_iff hT0).mp fun θ q => ?_)
+  have e := hper θ q
+  rw [hρg (θ + 2 * π) q, hρg θ q] at e
+  exact mul_left_cancel₀ hc.ne' e
 
 end Params
 

@@ -1,4 +1,9 @@
 import theorem.Passive.Series
+import theorem.Criteria.DroopJacobian
+import theorem.Criteria.Hurwitz
+import theorem.Dynamics.Linearization
+import theorem.Spectral.Family
+import theorem.Spectral.Local
 import theorem.Dynamics.Coordinates
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.SpecialFunctions.PolynomialSigns
@@ -6,7 +11,7 @@ import theorem.SpecialFunctions.Sinusoid
 import theorem.SpecialFunctions.TrigZeros
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 
-/-! # Grid-forming converter with Q–V droop and a virtual impedance: the terminal quartic
+/-! # Grid-forming converter with Q–V droop and a virtual impedance: equilibria and stability
 
 Domain module.
 
@@ -32,9 +37,12 @@ Model boundary.
   `V > 0` and `E₀ + n_q Q_ref > 0`; `R_g`, `R_v` and `D` are arbitrary. The formal model admits an
   EMF of either sign; equilibria with `E > 0` are the physical ones. `dz = |Z_g|² − |Z_v|²`
   separates the generic case `|Z_v| ≠ |Z_g|` from the degenerate one `|Z_v| = |Z_g|`.
-* Level: the equilibrium set and its count per period window `[a, a + 2π)` of the angle.
-  Excluded: linearization and stability, the active-power filter, line dynamics, inner voltage
-  and current loops, current limiting, PLL, delay, PWM.
+* Level: the equilibrium set and its count per period window `[a, a + 2π)` of the angle; the
+  linearization (derived by `fderiv`) and local exponential stability and instability of an
+  equilibrium from the cubic Routh–Hurwitz criterion, both directions; local asymptotic and
+  Lyapunov stability off the fold and Hopf surfaces. Excluded: the boundary itself (fold and Hopf
+  surface: no centre-manifold or first-Lyapunov computation), the active-power filter, line
+  dynamics, inner voltage and current loops, current limiting, PLL, delay, PWM.
 
 Source: study note GFM equilibrium counting (topic t6 (b), virtual impedance: the terminal-power
 identity `|Z_t|² S̄_t = Z_g E² − Z_v V² − Z_g ζ + Z_v ζ*` with `ζ = E V e^{jδ}`, the R-linear map of
@@ -43,7 +51,10 @@ checked numerically there, derived here); Descartes' rule of signs (Mathlib
 `Polynomial.roots_countP_pos_le_signVariations`, read through
 `theorem/SpecialFunctions/PolynomialSigns.lean`); the zeros of a shifted sinusoid
 (`theorem/SpecialFunctions/Sinusoid.lean`); injectivity of `θ ↦ e^{jθ}` on a window
-(`SpecialFunctions.injOn_cexp_mul_I_Ico`).
+(`SpecialFunctions.injOn_cexp_mul_I_Ico`); the Routh–Hurwitz criterion of the droop-loop Jacobian
+(`Criteria.isHurwitz_droopJacobian_iff`, `theorem/Criteria/DroopJacobian.lean`). The
+balanced-point identities of the linearization (`gain_of_balance`, `PtE_of_balance`,
+`coupling_of_lossless`) were derived with exact computer algebra and are proved by `ring`.
 
 Results.
 * Terminal power, derived from the circuit: the identity
@@ -75,18 +86,71 @@ Results.
   with at most two zeros per window (`encard_physical_le_two_of_dz_eq_zero`).
 * Parity for `dz ≠ 0` in the physical range: `F(0) > 0` (`eval_zero_quartic_pos`), so the positive
   roots of `F` counted with multiplicity are `0` or `2` (`countP_pos_roots_eq_zero_or_two`).
+* Linearization, derived by `fderiv` (`hasFDerivAt_field`, `fderiv_field`, `contDiff_field`): the
+  Jacobian `jacobian δ E` has the terminal partials `∂P_t/∂δ`, `∂P_t/∂E`, `∂Q_t/∂δ`, `∂Q_t/∂E`
+  (`Ptδ`, `PtE`, `Qtδ`, `QtE`) and is the droop-loop pattern `Criteria.droopJacobian`
+  (`jacobian_eq_droopJacobian`). With `K_t = 1 + n_q ∂Q_t/∂E` (`gain`),
+  `h_t = n_q ∂P_t/∂E ∂Q_t/∂δ` (`coupling`), `A = D + M ω_q K_t` (`routhTrace`),
+  `C = K_t ∂P_t/∂δ − h_t` (`routhFold`) and `G = D (∂P_t/∂δ + D ω_q K_t + M ω_q² K_t²) + M ω_q h_t`
+  (`routhHopf`), for `M, ω_q > 0` the Jacobian is Hurwitz iff `A, C, G > 0`
+  (`isHurwitz_jacobian_iff`).
+* At a balanced point with EMF `E ≠ 0`: `E |Z_t|² K_t = n_q X_g E² + n_q X_v V² + c |Z_t|²`
+  (`gain_of_balance`, `c = E₀ + n_q Q_ref`; the virtual reactance adds `n_q X_v V²`), and
+  `E |Z_t|² ∂P_t/∂E = R_g E² + R_v V² + |Z_t|² P_ref` (`PtE_of_balance`); on a lossless grid branch
+  with a reactive virtual impedance (`R_g = R_v = 0`) the coupling is
+  `h_t = n_q P_ref² (X_g − X_v)/(E (X_g + X_v))` (`coupling_of_lossless`), of the sign of
+  `X_g − X_v`.
+* Closed forms for every branch with `dz ≠ 0` (lossy grid branch, resistive virtual impedance),
+  through the elimination `dz E V cos δ = U(E)`, `dz E V sin δ = W(E)`: at a balanced point
+  `dz |Z_t|² ∂P_t/∂δ = PtδPoly E`, `dz |Z_t|² ∂Q_t/∂δ = QtδPoly E` (`Ptδ_of_balance`,
+  `Qtδ_of_balance`), and with `E ≠ 0`: `E |Z_t|² A = tracePoly E`, `dz E |Z_t|⁴ C = foldPoly E`
+  (degree four in `E`) and `dz E² |Z_t|⁴ G = hopfPoly E` (degree five) (`routhTrace_of_balance`,
+  `routhFold_of_balance`, `routhHopf_of_balance`).
+
+Family and connection conclusions.
+* `QVDroopVirtual.family`: a complete system (`QVDroopVirtual.Model`) is a parameter set with a
+  selected point `(δ*, 0, Q_f*)`, read as the field translated so that the point is the origin
+  (`Flow.Property.holds_shift_iff`); the local spectral family `Spectral.localFamily` with the
+  stability condition an equilibrium with a Hurwitz Jacobian (`Model.Stable`) and the instability
+  condition an equilibrium with `det J > 0` (`Model.Saddle`). `chain_le_semantics` proves every
+  translation sound; the local exponential translation is exact
+  (`exact_locallyExponentiallyStable`, converse linearization).
+* `mem_den_locallyExponentiallyStable_iff` (every model with `M, ω_q > 0`): locally
+  exponentially stable iff the selected point is an equilibrium with `A, C, G > 0`;
+  `mem_den_unstable_of_violation`: an equilibrium with `A < 0`, `C < 0` or `G < 0` is unstable;
+  off `C = 0` and `G = 0` the Lyapunov and local asymptotic translations are exact too
+  (`mem_den_lyapunovStable_iff_of_ne`, `mem_den_locallyAsymptoticallyStable_iff_of_ne`).
+* `mem_den_locallyExponentiallyStable_iff_emf` (every virtual impedance with `dz ≠ 0`,
+  `n_q ≠ 0`, `|Z_t| ≠ 0`): an equilibrium with EMF `E* ≠ 0` is locally exponentially stable iff
+  `E* tracePoly E* > 0`, `dz E* foldPoly E* > 0` and `dz hopfPoly E* > 0`.
+* How the virtual reactance moves the boundary (lossless grid branch, `R_g = R_v = 0`): for
+  `0 ≤ X_v ≤ X_g` and `D > 0` (or `D ≥ 0` with `X_v < X_g`, `P_ref ≠ 0`) a physical equilibrium is
+  locally exponentially stable iff `C > 0` — the fold is the only boundary, as without virtual
+  impedance (`mem_den_locallyExponentiallyStable_iff_of_virtual_le`); for `X_v > X_g`, `D = 0` and
+  `P_ref ≠ 0` every physical equilibrium is unstable (`G = M ω_q h_t < 0`,
+  `mem_den_unstable_of_virtual_gt`): a virtual reactance above the grid reactance creates a
+  Hopf boundary that only damping removes. Without damping (`D = 0`, `P_ref ≠ 0`) a physical
+  equilibrium is locally exponentially stable iff `X_v < X_g` and `C > 0`
+  (`mem_den_locallyExponentiallyStable_iff_of_undamped`).
+* Static evidence on the model: the terminal-power identity, the elimination, the quartic, the
+  counts, the parity, the linearization and the balanced-point identities.
 
 Corrections and limits (study note, topic t6 (b)).
 * The bound of four zeros per period of a second-order trigonometric polynomial
   (`theorem/SpecialFunctions/TrigZeros.lean`) is not the physical count here: at most two.
-* Not formalized: the Jacobian and stability of these equilibria (the study tested them only for
-  `Z_v = 0`, `theorem/GridTiedConverter/GFM/QVDroop.lean`).
+* The Jacobian and the stability of these equilibria (the study tested them only for `Z_v = 0`)
+  are formalized here, with closed forms of `A`, `C`, `G` in the EMF for `dz ≠ 0`. Not
+  formalized: closed forms for the degenerate `dz = 0` (the elimination gives only `U(E) = 0`,
+  `W(E) = 0`; `cos δ`, `sin δ` stay free up to the active-power sinusoid); the boundary itself
+  (fold `C = 0`, Hopf surface `G = 0`) for the virtual-impedance model.
 -/
 
 noncomputable section
 namespace powerlib.GFM
 open Real Set Polynomial
-open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext)
+open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext toEuclideanCLM_apply3)
+open powerlib.Criteria (droopJacobian isHurwitz_droopJacobian_iff
+  exists_root_re_pos_droopJacobian droopJacobian_routh_or_violation)
 
 /-- Parameters of the reduced grid-forming converter with Q–V droop and a virtual impedance. -/
 structure QVDroopVirtual where
@@ -722,6 +786,563 @@ conclusion. -/
   have h2 := q.countP_pos_roots_le_two hnq hXg hXv
   obtain ⟨k, hk⟩ := he
   omega
+
+/-! ## Linearization -/
+
+@[tmio M, powerlib_domain] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k q.field := by
+  rw [contDiff_euclidean]
+  intro i
+  fin_cases i
+  · simpa using Dynamics.contDiff_coord (k := k) 1
+  · simp only [Fin.mk_one, Fin.isValue, field_apply_one, Pt_eq, emf]; fun_prop
+  · simp only [Fin.reduceFinMk, Fin.isValue, field_apply_two, Qt_eq, emf]; fun_prop
+
+/-- `∂P_t/∂δ` at `(δ, E)`. -/
+def Ptδ (δ E : ℝ) : ℝ :=
+  ((q.Xg + q.Xv) * (E * q.V * cos δ) - (q.Rv - q.Rg) * (E * q.V * sin δ)) / q.ztsq
+
+/-- `∂P_t/∂E` at `(δ, E)`. -/
+def PtE (δ E : ℝ) : ℝ :=
+  (2 * q.Rg * E + (q.Rv - q.Rg) * (q.V * cos δ) + (q.Xg + q.Xv) * (q.V * sin δ)) / q.ztsq
+
+/-- `∂Q_t/∂δ` at `(δ, E)`. -/
+def Qtδ (δ E : ℝ) : ℝ :=
+  ((q.Xg - q.Xv) * (E * q.V * sin δ) - (q.Rg + q.Rv) * (E * q.V * cos δ)) / q.ztsq
+
+/-- `∂Q_t/∂E` at `(δ, E)`. -/
+def QtE (δ E : ℝ) : ℝ :=
+  (2 * q.Xg * E + (q.Xv - q.Xg) * (q.V * cos δ) - (q.Rg + q.Rv) * (q.V * sin δ)) / q.ztsq
+
+/-- The Jacobian at a point with angle `δ` and EMF `E`. -/
+def jacobian (δ E : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
+  !![0, 1, 0;
+    -q.Ptδ δ E / q.M, -q.D / q.M, q.nq * q.PtE δ E / q.M;
+    q.ωq * q.Qtδ δ E, 0, -(q.ωq * (1 + q.nq * q.QtE δ E))]
+
+/-- The linearization, derived by `fderiv`: the Jacobian of the field at `x` is `jacobian` at the
+angle `x 0` and the EMF `E₀ − n_q (x 2 − Q_ref)`. -/
+@[tmio M, powerlib_domain] theorem hasFDerivAt_field (x : State 3) :
+    HasFDerivAt q.field
+      (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (q.jacobian (x 0) (q.emf (x 2)))) x := by
+  rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
+  intro i
+  rw [hasFDerivWithinAt_univ]
+  have h0 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) : State 3 →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (1 : Fin 3) : State 3 →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have h2 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (2 : Fin 3) : State 3 →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have hE := ((h2.sub_const q.Qref).const_mul q.nq).const_sub q.E0
+  have hc := (Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x h0
+  have hs := (Real.hasDerivAt_sin (x 0)).comp_hasFDerivAt x h0
+  have hEc := (hE.mul_const q.V).mul hc
+  have hEs := (hE.mul_const q.V).mul hs
+  fin_cases i
+  · simp only [Fin.zero_eta, Fin.isValue, field_apply_zero]
+    convert h1 using 1
+    · rfl
+    apply ContinuousLinearMap.ext; intro v
+    simp [jacobian, toEuclideanCLM_apply3]
+  · simp only [Fin.mk_one, Fin.isValue, field_apply_one]
+    have hP := (((((hE.mul hE).const_mul q.Rg).sub_const (q.Rv * q.V ^ 2)).add
+      (hEc.const_mul (q.Rv - q.Rg))).add (hEs.const_mul (q.Xg + q.Xv))).const_mul q.ztsq⁻¹
+    have h := (((hasFDerivAt_const q.Pref x).sub hP).sub (h1.const_mul q.D)).const_mul q.M⁻¹
+    convert h using 1
+    · funext y
+      simp only [Pt_eq, emf, PiLp.proj_apply, Pi.add_apply, Pi.sub_apply, Pi.mul_apply,
+        Function.comp_apply]
+      ring
+    · apply ContinuousLinearMap.ext; intro v
+      simp [jacobian, toEuclideanCLM_apply3, Ptδ, PtE, emf]
+      ring
+  · simp only [Fin.reduceFinMk, Fin.isValue, field_apply_two]
+    have hQ := (((((hE.mul hE).const_mul q.Xg).sub_const (q.Xv * q.V ^ 2)).add
+      (hEc.const_mul (q.Xv - q.Xg))).sub (hEs.const_mul (q.Rg + q.Rv))).const_mul q.ztsq⁻¹
+    have h := (hQ.sub h2).const_mul q.ωq
+    convert h using 1
+    · funext y
+      simp only [Qt_eq, emf, PiLp.proj_apply, Pi.add_apply, Pi.sub_apply, Pi.mul_apply,
+        Function.comp_apply]
+      ring
+    · apply ContinuousLinearMap.ext; intro v
+      simp [jacobian, toEuclideanCLM_apply3, Qtδ, QtE, emf]
+      ring
+
+@[tmio M, powerlib_domain] theorem fderiv_field (x : State 3) :
+    fderiv ℝ q.field x =
+      Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (q.jacobian (x 0) (q.emf (x 2))) :=
+  (q.hasFDerivAt_field x).fderiv
+
+/-! ## The Routh quantities -/
+
+/-- The voltage-loop gain `K_t = 1 + n_q ∂Q_t/∂E` at `(δ, E)`. -/
+def gain (δ E : ℝ) : ℝ := 1 + q.nq * q.QtE δ E
+
+/-- The P–Q coupling `h_t = n_q (∂P_t/∂E)(∂Q_t/∂δ)` at `(δ, E)`. -/
+def coupling (δ E : ℝ) : ℝ := q.nq * q.PtE δ E * q.Qtδ δ E
+
+/-- The trace quantity `A = D + M ω_q K_t = −M tr J`. -/
+def routhTrace (δ E : ℝ) : ℝ := q.D + q.M * q.ωq * q.gain δ E
+
+/-- The fold quantity `C = K_t ∂P_t/∂δ − h_t`, `det J = −(ω_q/M) C`. -/
+def routhFold (δ E : ℝ) : ℝ := q.gain δ E * q.Ptδ δ E - q.coupling δ E
+
+/-- The Hopf quantity `G = D (∂P_t/∂δ + D ω_q K_t + M ω_q² K_t²) + M ω_q h_t`. -/
+def routhHopf (δ E : ℝ) : ℝ :=
+  q.D * (q.Ptδ δ E + q.D * q.ωq * q.gain δ E + q.M * q.ωq ^ 2 * q.gain δ E ^ 2) +
+    q.M * q.ωq * q.coupling δ E
+
+/-- The Jacobian is the droop-loop pattern (`Criteria.droopJacobian`) with `a = ∂P_t/∂δ`,
+`b = n_q ∂P_t/∂E`, `c = ∂Q_t/∂δ`, `k = K_t`. -/
+@[tmio M, powerlib_domain] theorem jacobian_eq_droopJacobian (δ E : ℝ) :
+    q.jacobian δ E =
+      droopJacobian q.M q.D q.ωq (q.Ptδ δ E) (q.nq * q.PtE δ E) (q.Qtδ δ E) (q.gain δ E) :=
+  rfl
+
+/-- **Routh–Hurwitz for the terminal-measured droop Jacobian.** For `M, ω_q > 0`: `J` is
+Hurwitz iff `A > 0`, `C > 0` and `G > 0` (`Criteria.isHurwitz_droopJacobian_iff`). -/
+@[tmio M, powerlib_domain] theorem isHurwitz_jacobian_iff (hM : 0 < q.M) (hω : 0 < q.ωq)
+    (δ E : ℝ) :
+    LinearSystems.IsHurwitz (q.jacobian δ E) ↔
+      0 < q.routhTrace δ E ∧ 0 < q.routhFold δ E ∧ 0 < q.routhHopf δ E := by
+  rw [jacobian_eq_droopJacobian]
+  exact isHurwitz_droopJacobian_iff hM hω
+
+/-- At a balanced point with EMF `E ≠ 0` the voltage-loop gain is
+`K_t = (n_q X_g E² + n_q X_v V² + c |Z_t|²)/(E |Z_t|²)` (`c = E₀ + n_q Q_ref`): the virtual
+reactance adds `n_q X_v V²/(E |Z_t|²)`. -/
+@[tmio M, powerlib_domain] theorem gain_of_balance (hZ : q.ztsq ≠ 0) (hnq : q.nq ≠ 0)
+    {δ E : ℝ} (hE : E ≠ 0) (h : q.Qt δ E = q.qOf E) :
+    q.gain δ E = (q.nq * q.Xg * E ^ 2 + q.nq * q.Xv * q.V ^ 2 +
+      (q.E0 + q.nq * q.Qref) * q.ztsq) / (E * q.ztsq) := by
+  have hQ : q.QtE δ E * q.ztsq = 2 * q.Xg * E + (q.Xv - q.Xg) * (q.V * cos δ) -
+      (q.Rg + q.Rv) * (q.V * sin δ) := div_mul_cancel₀ _ hZ
+  have hQt : q.Qt δ E * q.ztsq = q.Xg * E ^ 2 - q.Xv * q.V ^ 2 +
+      (q.Xv - q.Xg) * (E * q.V * cos δ) - (q.Rg + q.Rv) * (E * q.V * sin δ) := by
+    rw [Qt_eq]; exact div_mul_cancel₀ _ hZ
+  have hq : q.nq * q.qOf E = q.nq * q.Qref + q.E0 - E := by
+    simp only [qOf]; field_simp; ring
+  rw [h] at hQt
+  rw [eq_div_iff (mul_ne_zero hE hZ),
+    show q.gain δ E * (E * q.ztsq) = E * q.ztsq + q.nq * E * (q.QtE δ E * q.ztsq) by
+      unfold gain; ring, hQ]
+  linear_combination (-q.nq) * hQt + q.ztsq * hq
+
+/-- At a balanced point with EMF `E ≠ 0`: `E |Z_t|² ∂P_t/∂E = R_g E² + R_v V² + |Z_t|² P_ref`. -/
+@[tmio M, powerlib_domain] theorem PtE_of_balance (hZ : q.ztsq ≠ 0) {δ E : ℝ} (hE : E ≠ 0)
+    (h : q.Pt δ E = q.Pref) :
+    q.PtE δ E = (q.Rg * E ^ 2 + q.Rv * q.V ^ 2 + q.ztsq * q.Pref) / (E * q.ztsq) := by
+  have hP : q.PtE δ E * q.ztsq = 2 * q.Rg * E + (q.Rv - q.Rg) * (q.V * cos δ) +
+      (q.Xg + q.Xv) * (q.V * sin δ) := div_mul_cancel₀ _ hZ
+  have hPt : q.Pt δ E * q.ztsq = q.Rg * E ^ 2 - q.Rv * q.V ^ 2 +
+      (q.Rv - q.Rg) * (E * q.V * cos δ) + (q.Xg + q.Xv) * (E * q.V * sin δ) := by
+    rw [Pt_eq]; exact div_mul_cancel₀ _ hZ
+  rw [h] at hPt
+  rw [eq_div_iff (mul_ne_zero hE hZ),
+    show q.PtE δ E * (E * q.ztsq) = E * (q.PtE δ E * q.ztsq) by ring, hP]
+  linear_combination (-1 : ℝ) * hPt
+
+/-- **The coupling on a lossless grid branch with a reactive virtual impedance.** For
+`R_g = R_v = 0`, at a balanced point with EMF `E ≠ 0`,
+`h_t = n_q P_ref² (X_g − X_v)/(E (X_g + X_v))`: its sign is that of `X_g − X_v` (for `Z_v = 0`
+it is the coupling `n_q P_ref²/E` of `QVDroop.coupling_of_balance`). -/
+@[tmio M, powerlib_domain] theorem coupling_of_lossless (hRg : q.Rg = 0) (hRv : q.Rv = 0)
+    (hX : q.Xg + q.Xv ≠ 0) {δ E : ℝ} (hE : E ≠ 0) (h : q.Pt δ E = q.Pref) :
+    q.coupling δ E = q.nq * q.Pref ^ 2 * (q.Xg - q.Xv) / (E * (q.Xg + q.Xv)) := by
+  have hZ : q.ztsq = (q.Xg + q.Xv) ^ 2 := by simp only [ztsq, hRg, hRv]; ring
+  have hZ0 : q.ztsq ≠ 0 := by rw [hZ]; exact pow_ne_zero 2 hX
+  have hPE := q.PtE_of_balance hZ0 hE h
+  have hPt : q.Pt δ E * q.ztsq = q.Rg * E ^ 2 - q.Rv * q.V ^ 2 +
+      (q.Rv - q.Rg) * (E * q.V * cos δ) + (q.Xg + q.Xv) * (E * q.V * sin δ) := by
+    rw [Pt_eq]; exact div_mul_cancel₀ _ hZ0
+  rw [h, hRg, hRv, hZ] at hPt
+  have hs : E * q.V * sin δ = (q.Xg + q.Xv) * q.Pref := by
+    have h1 : (q.Xg + q.Xv) * (E * q.V * sin δ - (q.Xg + q.Xv) * q.Pref) = 0 := by
+      linear_combination (-1 : ℝ) * hPt
+    exact sub_eq_zero.mp ((mul_eq_zero.mp h1).resolve_left hX)
+  rw [coupling, hPE, Qtδ, hs, hRg, hRv, hZ]
+  field_simp
+  ring
+
+/-! ## Closed forms through the elimination (`dz ≠ 0`) -/
+
+/-- `E |Z_t|² K_t` as a polynomial: `n_q X_g E² + n_q X_v V² + c |Z_t|²`. -/
+def gainPoly (E : ℝ) : ℝ :=
+  q.nq * q.Xg * E ^ 2 + q.nq * q.Xv * q.V ^ 2 + (q.E0 + q.nq * q.Qref) * q.ztsq
+
+/-- `E |Z_t|² ∂P_t/∂E` as a polynomial: `R_g E² + R_v V² + |Z_t|² P_ref`. -/
+def PtEPoly (E : ℝ) : ℝ := q.Rg * E ^ 2 + q.Rv * q.V ^ 2 + q.ztsq * q.Pref
+
+/-- `dz |Z_t|² ∂P_t/∂δ` as a polynomial: `(X_g + X_v) U(E) − (R_v − R_g) W(E)`. -/
+def PtδPoly (E : ℝ) : ℝ := (q.Xg + q.Xv) * q.U E - (q.Rv - q.Rg) * q.W E
+
+/-- `dz |Z_t|² ∂Q_t/∂δ` as a polynomial: `(X_g − X_v) W(E) − (R_g + R_v) U(E)`. -/
+def QtδPoly (E : ℝ) : ℝ := (q.Xg - q.Xv) * q.W E - (q.Rg + q.Rv) * q.U E
+
+/-- The trace polynomial `E |Z_t|² A = D E |Z_t|² + M ω_q gainPoly E`. -/
+def tracePoly (E : ℝ) : ℝ := q.D * E * q.ztsq + q.M * q.ωq * q.gainPoly E
+
+/-- The fold polynomial `dz E |Z_t|⁴ C = gainPoly · PtδPoly − n_q PtEPoly · QtδPoly`. -/
+def foldPoly (E : ℝ) : ℝ := q.gainPoly E * q.PtδPoly E - q.nq * q.PtEPoly E * q.QtδPoly E
+
+/-- The Hopf polynomial `dz E² |Z_t|⁴ G`. -/
+def hopfPoly (E : ℝ) : ℝ :=
+  q.D * E ^ 2 * q.ztsq * q.PtδPoly E + q.D ^ 2 * q.ωq * q.dz * E * q.ztsq * q.gainPoly E +
+    q.D * q.M * q.ωq ^ 2 * q.dz * q.gainPoly E ^ 2 +
+    q.M * q.ωq * q.nq * E * q.PtEPoly E * q.QtδPoly E
+
+/-- At a balanced point (`|Z_t| ≠ 0`): `dz |Z_t|² ∂P_t/∂δ = PtδPoly E`, from the elimination
+`dz E V cos δ = U(E)`, `dz E V sin δ = W(E)` (`balance_imp`). -/
+@[tmio M, powerlib_domain] theorem Ptδ_of_balance (hZ : q.ztsq ≠ 0) {δ E : ℝ}
+    (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    q.dz * q.ztsq * q.Ptδ δ E = q.PtδPoly E := by
+  obtain ⟨hc, hs⟩ := q.balance_imp hZ h
+  have hP : q.Ptδ δ E * q.ztsq = (q.Xg + q.Xv) * (E * q.V * cos δ) -
+      (q.Rv - q.Rg) * (E * q.V * sin δ) := div_mul_cancel₀ _ hZ
+  rw [show q.dz * q.ztsq * q.Ptδ δ E = q.dz * (q.Ptδ δ E * q.ztsq) by ring, hP, PtδPoly]
+  linear_combination (q.Xg + q.Xv) * hc - (q.Rv - q.Rg) * hs
+
+/-- At a balanced point (`|Z_t| ≠ 0`): `dz |Z_t|² ∂Q_t/∂δ = QtδPoly E`. -/
+@[tmio M, powerlib_domain] theorem Qtδ_of_balance (hZ : q.ztsq ≠ 0) {δ E : ℝ}
+    (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    q.dz * q.ztsq * q.Qtδ δ E = q.QtδPoly E := by
+  obtain ⟨hc, hs⟩ := q.balance_imp hZ h
+  have hQ : q.Qtδ δ E * q.ztsq = (q.Xg - q.Xv) * (E * q.V * sin δ) -
+      (q.Rg + q.Rv) * (E * q.V * cos δ) := div_mul_cancel₀ _ hZ
+  rw [show q.dz * q.ztsq * q.Qtδ δ E = q.dz * (q.Qtδ δ E * q.ztsq) by ring, hQ, QtδPoly]
+  linear_combination (q.Xg - q.Xv) * hs - (q.Rg + q.Rv) * hc
+
+/-- At a balanced point with EMF `E ≠ 0`: `E |Z_t|² A = tracePoly E`. -/
+@[tmio M, powerlib_domain] theorem routhTrace_of_balance (hZ : q.ztsq ≠ 0) (hnq : q.nq ≠ 0)
+    {δ E : ℝ} (hE : E ≠ 0) (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    E * q.ztsq * q.routhTrace δ E = q.tracePoly E := by
+  rw [routhTrace, q.gain_of_balance hZ hnq hE h.2, tracePoly, gainPoly]
+  field_simp
+
+/-- **The fold quantity in closed form** (lossy branch, resistive virtual impedance, `dz ≠ 0`):
+at a balanced point with EMF `E ≠ 0`, `dz E |Z_t|⁴ C = foldPoly E`, a polynomial of degree four
+in `E` (and `V`) through the adjugate combinations `U`, `W`. -/
+@[tmio M, powerlib_domain] theorem routhFold_of_balance (hZ : q.ztsq ≠ 0) (hnq : q.nq ≠ 0)
+    {δ E : ℝ} (hE : E ≠ 0) (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    q.dz * E * q.ztsq ^ 2 * q.routhFold δ E = q.foldPoly E := by
+  have hK := q.gain_of_balance hZ hnq hE h.2
+  have hPE := q.PtE_of_balance hZ hE h.1
+  have hPd := q.Ptδ_of_balance hZ h
+  have hQd := q.Qtδ_of_balance hZ h
+  have e1 : E * q.ztsq * q.gain δ E = q.gainPoly E := by
+    rw [hK, gainPoly]; field_simp
+  have e2 : E * q.ztsq * q.PtE δ E = q.PtEPoly E := by
+    rw [hPE, PtEPoly]; field_simp
+  rw [foldPoly, ← e1, ← e2, ← hPd, ← hQd, routhFold, coupling]
+  ring
+
+/-- **The Hopf quantity in closed form** (`dz ≠ 0`): at a balanced point with EMF `E ≠ 0`,
+`dz E² |Z_t|⁴ G = hopfPoly E`. -/
+@[tmio M, powerlib_domain] theorem routhHopf_of_balance (hZ : q.ztsq ≠ 0) (hnq : q.nq ≠ 0)
+    {δ E : ℝ} (hE : E ≠ 0) (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    q.dz * E ^ 2 * q.ztsq ^ 2 * q.routhHopf δ E = q.hopfPoly E := by
+  have hK := q.gain_of_balance hZ hnq hE h.2
+  have hPE := q.PtE_of_balance hZ hE h.1
+  have hPd := q.Ptδ_of_balance hZ h
+  have hQd := q.Qtδ_of_balance hZ h
+  have e1 : E * q.ztsq * q.gain δ E = q.gainPoly E := by
+    rw [hK, gainPoly]; field_simp
+  have e2 : E * q.ztsq * q.PtE δ E = q.PtEPoly E := by
+    rw [hPE, PtEPoly]; field_simp
+  rw [hopfPoly, ← e1, ← e2, ← hPd, ← hQd, routhHopf, coupling]
+  ring
+
+/-! ## The terminal-measured Q–V droop family -/
+
+/-- A Q–V droop model with a virtual impedance read about a selected point `(δ*, 0, Q_f*)`. -/
+structure Model where
+  /-- The parameters. -/
+  q : QVDroopVirtual
+  /-- The selected angle `δ*`. -/
+  δ : ℝ
+  /-- The selected filtered reactive power `Q_f*` (EMF `E* = E₀ − n_q (Q_f* − Q_ref)`). -/
+  Qf : ℝ
+
+/-- The selected point `(δ*, 0, Q_f*)`. -/
+def Model.point (m : Model) : State 3 := mk3 m.δ 0 m.Qf
+
+/-- The closed-loop field translated so that the selected point is the origin. -/
+def Model.field (m : Model) (z : State 3) : State 3 := m.q.field (z + m.point)
+
+/-- The Jacobian at the selected point. -/
+def Model.jacobian (m : Model) : Matrix (Fin 3) (Fin 3) ℝ := m.q.jacobian m.δ (m.q.emf m.Qf)
+
+/-- The stability condition: an equilibrium at the selected point with a Hurwitz Jacobian. -/
+def Model.Stable (m : Model) : Prop :=
+  m.q.field m.point = 0 ∧ LinearSystems.IsHurwitz m.jacobian
+
+/-- The instability condition: an equilibrium at the selected point with `det J > 0`. -/
+def Model.Saddle (m : Model) : Prop := m.q.field m.point = 0 ∧ 0 < m.jacobian.det
+
+/-- The terminal-measured Q–V droop family: the local spectral family of the translated
+field. -/
+def family : Family Model Spectral.Requirement 3 0 :=
+  Spectral.localFamily Model.field Model.Stable Model.Saddle
+
+@[tmio M, powerlib_domain] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+  Spectral.localFamily_isAutonomous _ _ _
+
+@[tmio TM, powerlib_domain] private theorem mem_den_flow {m : Model} {P : Flow.Property} :
+    m ∈ family.den (.flow P) ↔ P.holds m.q.field m.point :=
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.q.field) (pt := Model.point)
+    family_isAutonomous
+
+@[tmio M, powerlib_domain] private theorem fderiv_at_point (m : Model) :
+    fderiv ℝ m.q.field m.point = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) m.jacobian := by
+  rw [m.q.fderiv_field]
+  simp [Model.point, Model.jacobian]
+
+/-- Every translation of the family is sound: a Hurwitz Jacobian at an equilibrium gives local
+exponential stability (converse linearization), `det J > 0` at an equilibrium a positive real
+eigenvalue, hence instability. -/
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
+    connection% (∀ P, family.chain P ≤ family.semantics P) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.local_chain_le_semantics (fun m hm => ?_) (fun m hm => ?_)
+  · refine (Flow.Property.holds_shift_iff _).mpr ?_
+    exact (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.q.contDiff_field
+      (fderiv_at_point m)).mpr hm
+  · refine (Flow.Property.holds_shift_iff _).mpr ?_
+    refine Criteria.unstable_of_jacobian_det m.jacobian m.q.contDiff_field hm.1
+      (fderiv_at_point m) ?_
+    rw [show ((-1 : ℝ) ^ 3) = -1 by norm_num, neg_one_mul, neg_lt_zero]
+    exact hm.2
+
+/-- **The local exponential translation is exact** (converse linearization,
+`Spectral.local_exact_of_jacobian`). -/
+@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.local_exact_of_jacobian (fun m : Model => m.jacobian)
+    (fun m => m.q.contDiff_field.comp (contDiff_id.add contDiff_const)) (fun m => ?_)
+    fun m => ?_
+  · change fderiv ℝ (fun z => m.q.field (z + m.point)) 0 = _
+    rw [fderiv_comp_add_right, zero_add, fderiv_at_point]
+  · simp [Model.Stable, Model.field]
+
+/-- **The exact stability boundary with a virtual impedance.** For `M, ω_q > 0` the model is
+locally exponentially stable at its selected point iff the point is an equilibrium and `A > 0`,
+`C > 0`, `G > 0` at its angle and EMF. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : Model | m.q.field m.point = 0 ∧ 0 < m.q.routhTrace m.δ (m.q.emf m.Qf) ∧
+        0 < m.q.routhFold m.δ (m.q.emf m.Qf) ∧ 0 < m.q.routhHopf m.δ (m.q.emf m.Qf)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow, Set.mem_ofPred_eq, ← m.q.isHurwitz_jacobian_iff hM hω]
+  exact Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.q.contDiff_field
+    (fderiv_at_point m)
+
+/-- **A strict violation is unstable.** For `M, ω_q > 0` an equilibrium with `A < 0`, `C < 0`
+or `G < 0` is unstable (a characteristic root in the open right half plane). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_violation (m : Model) (hM : 0 < m.q.M)
+    (hω : 0 < m.q.ωq) (heq : m.q.field m.point = 0)
+    (h : m.q.routhTrace m.δ (m.q.emf m.Qf) < 0 ∨ m.q.routhFold m.δ (m.q.emf m.Qf) < 0 ∨
+      m.q.routhHopf m.δ (m.q.emf m.Qf) < 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow]
+  obtain ⟨s, hs, hre⟩ := exists_root_re_pos_droopJacobian (M := m.q.M) (D := m.q.D)
+    (ω := m.q.ωq) (a := m.q.Ptδ m.δ (m.q.emf m.Qf)) (b := m.q.nq * m.q.PtE m.δ (m.q.emf m.Qf))
+    (c := m.q.Qtδ m.δ (m.q.emf m.Qf)) (k := m.q.gain m.δ (m.q.emf m.Qf)) hM hω h
+  exact Dynamics.unstable_of_characteristic_root_re_pos m.jacobian m.q.contDiff_field heq
+    (fderiv_at_point m) hs hre
+
+/-- **Lyapunov stability off the fold and the Hopf surface.** For `M, ω_q > 0`, `C ≠ 0` and
+`G ≠ 0`: Lyapunov stable iff an equilibrium with `A, C, G > 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff_of_ne (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hC : m.q.routhFold m.δ (m.q.emf m.Qf) ≠ 0)
+    (hG : m.q.routhHopf m.δ (m.q.emf m.Qf) ≠ 0) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : Model | m.q.field m.point = 0 ∧ 0 < m.q.routhTrace m.δ (m.q.emf m.Qf) ∧
+        0 < m.q.routhFold m.δ (m.q.emf m.Qf) ∧ 0 < m.q.routhHopf m.δ (m.q.emf m.Qf)}) := by
+  have hles := mem_den_locallyExponentiallyStable_iff m hM hω
+  unfold powerlib.TMIO.Statement at hles ⊢
+  constructor
+  · intro hl
+    have heq : m.q.field m.point = 0 :=
+      Dynamics.isEquilibrium_of_lyapunovStable m.q.contDiff_field (mem_den_flow.mp hl)
+    rcases droopJacobian_routh_or_violation hM hω hC hG with h | h
+    · exact ⟨heq, h⟩
+    · exact absurd hl (Spectral.not_mem_den_lyapunovStable_of_unstable
+        (mem_den_unstable_of_violation m hM hω heq h))
+  · intro h
+    exact Spectral.den_locallyExponentiallyStable_subset_lyapunovStable (hles.mpr h)
+
+/-- **Local asymptotic stability off the fold and the Hopf surface**: for `M, ω_q > 0`, `C ≠ 0`
+and `G ≠ 0`, iff an equilibrium with `A, C, G > 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_ne (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hC : m.q.routhFold m.δ (m.q.emf m.Qf) ≠ 0)
+    (hG : m.q.routhHopf m.δ (m.q.emf m.Qf) ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      m ∈ {m : Model | m.q.field m.point = 0 ∧ 0 < m.q.routhTrace m.δ (m.q.emf m.Qf) ∧
+        0 < m.q.routhFold m.δ (m.q.emf m.Qf) ∧ 0 < m.q.routhHopf m.δ (m.q.emf m.Qf)}) := by
+  have hles := mem_den_locallyExponentiallyStable_iff m hM hω
+  have hly := mem_den_lyapunovStable_iff_of_ne m hM hω hC hG
+  unfold powerlib.TMIO.Statement at hles hly ⊢
+  exact ⟨fun h => hly.mp (Spectral.den_las_subset_lyapunovStable h),
+    fun h => Spectral.den_locallyExponentiallyStable_subset_las (hles.mpr h)⟩
+
+/-- The terminal balance at an equilibrium: `P_t = P_ref`, `Q_t = Q_ref + (E₀ − E)/n_q`. -/
+@[tmio M, powerlib_domain] private theorem balance_at {m : Model} (hM : m.q.M ≠ 0)
+    (hω : m.q.ωq ≠ 0) (hnq : m.q.nq ≠ 0) (heq : m.q.field m.point = 0) :
+    m.q.Pt m.δ (m.q.emf m.Qf) = m.q.Pref ∧
+      m.q.Qt m.δ (m.q.emf m.Qf) = m.q.qOf (m.q.emf m.Qf) := by
+  simpa [Model.point] using m.q.balance_of_field_eq_zero hM hω hnq heq
+
+/-- **The exact boundary in explicit form, every virtual impedance with `dz ≠ 0`.** For
+`M, ω_q > 0`, `n_q ≠ 0`, `|Z_t| ≠ 0` and `|Z_v| ≠ |Z_g|`, an equilibrium with EMF `E* ≠ 0` is
+locally exponentially stable iff `E* tracePoly E* > 0`, `dz E* foldPoly E* > 0` and
+`dz hopfPoly E* > 0` (polynomials in `E*`, `V` and the parameters; lossy branch and resistive
+virtual impedance included). -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_emf (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : m.q.nq ≠ 0) (hZ : m.q.ztsq ≠ 0)
+    (hD : m.q.dz ≠ 0) (heq : m.q.field m.point = 0) (hE : m.q.emf m.Qf ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      (0 < m.q.emf m.Qf * m.q.tracePoly (m.q.emf m.Qf) ∧
+        0 < m.q.dz * m.q.emf m.Qf * m.q.foldPoly (m.q.emf m.Qf) ∧
+        0 < m.q.dz * m.q.hopfPoly (m.q.emf m.Qf))) := by
+  have hles := mem_den_locallyExponentiallyStable_iff m hM hω
+  unfold powerlib.TMIO.Statement at hles ⊢
+  rw [hles, Set.mem_ofPred_eq]
+  have hb := balance_at hM.ne' hω.ne' hnq heq
+  set E := m.q.emf m.Qf
+  have hA := m.q.routhTrace_of_balance hZ hnq hE hb
+  have hC := m.q.routhFold_of_balance hZ hnq hE hb
+  have hG := m.q.routhHopf_of_balance hZ hnq hE hb
+  have hZp : 0 < m.q.ztsq := lt_of_le_of_ne (by unfold ztsq; positivity) (Ne.symm hZ)
+  have hZ2 : 0 < m.q.ztsq ^ 2 := by positivity
+  have hE2 : 0 < E ^ 2 := by positivity
+  have hd2 : 0 < m.q.dz ^ 2 := by positivity
+  have k1 : ∀ r : ℝ, 0 < r ↔ 0 < E * (E * m.q.ztsq * r) := fun r => by
+    rw [show E * (E * m.q.ztsq * r) = (E ^ 2 * m.q.ztsq) * r by ring]
+    exact (mul_pos_iff_of_pos_left (mul_pos hE2 hZp)).symm
+  have k2 : ∀ r : ℝ, 0 < r ↔ 0 < m.q.dz * E * (m.q.dz * E * m.q.ztsq ^ 2 * r) := fun r => by
+    rw [show m.q.dz * E * (m.q.dz * E * m.q.ztsq ^ 2 * r) =
+      (m.q.dz ^ 2 * E ^ 2 * m.q.ztsq ^ 2) * r by ring]
+    exact (mul_pos_iff_of_pos_left (by positivity)).symm
+  have k3 : ∀ r : ℝ, 0 < r ↔ 0 < m.q.dz * (m.q.dz * E ^ 2 * m.q.ztsq ^ 2 * r) := fun r => by
+    rw [show m.q.dz * (m.q.dz * E ^ 2 * m.q.ztsq ^ 2 * r) =
+      (m.q.dz ^ 2 * E ^ 2 * m.q.ztsq ^ 2) * r by ring]
+    exact (mul_pos_iff_of_pos_left (by positivity)).symm
+  rw [k1 (m.q.routhTrace _ _), k2 (m.q.routhFold _ _), k3 (m.q.routhHopf _ _), hA, hC, hG]
+  exact ⟨fun h => h.2, fun h => ⟨heq, h⟩⟩
+
+/-! ## How the virtual reactance moves the boundary (lossless grid branch) -/
+
+/-- **A virtual reactance not above the grid reactance keeps the fold as the only boundary.**
+On a lossless grid branch with a reactive virtual impedance (`R_g = R_v = 0`,
+`0 ≤ X_v ≤ X_g`, `X_g > 0`), in the physical range (`M, ω_q, n_q > 0`, `E₀ + n_q Q_ref > 0`) with
+`D ≥ 0`, and `D > 0` or `X_v < X_g` with `P_ref ≠ 0`, an equilibrium with a positive EMF is
+locally exponentially stable iff `C > 0` (`det J < 0`): the coupling
+`h_t = n_q P_ref² (X_g − X_v)/(E (X_g + X_v)) ≥ 0` (`coupling_of_lossless`) leaves no Hopf
+boundary, as for `Z_v = 0` (`QVDroop.mem_den_locallyExponentiallyStable_iff_slope_pos_of_lossless`).
+-/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_virtual_le
+    (m : Model) (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : 0 < m.q.nq) (hXg : 0 < m.q.Xg)
+    (hXv : 0 ≤ m.q.Xv) (hle : m.q.Xv ≤ m.q.Xg) (hRg : m.q.Rg = 0) (hRv : m.q.Rv = 0)
+    (hc : 0 < m.q.E0 + m.q.nq * m.q.Qref) (hD : 0 ≤ m.q.D)
+    (hpos : 0 < m.q.D ∨ (m.q.Xv < m.q.Xg ∧ m.q.Pref ≠ 0))
+    (heq : m.q.field m.point = 0) (hE : 0 < m.q.emf m.Qf) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : Model | 0 < m.q.routhFold m.δ (m.q.emf m.Qf)}) := by
+  have hles := mem_den_locallyExponentiallyStable_iff m hM hω
+  unfold powerlib.TMIO.Statement at hles ⊢
+  rw [hles, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
+  have hZ := m.q.ztsq_pos hXg hXv
+  obtain ⟨hbP, hbQ⟩ := balance_at hM.ne' hω.ne' hnq.ne' heq
+  set E := m.q.emf m.Qf
+  have hK : 0 < m.q.gain m.δ E := by
+    rw [m.q.gain_of_balance hZ.ne' hnq.ne' hE.ne' hbQ]
+    exact div_pos (by positivity) (mul_pos hE hZ)
+  have hS : 0 < m.q.Xg + m.q.Xv := by linarith
+  have hcpl := m.q.coupling_of_lossless hRg hRv hS.ne' hE.ne' hbP
+  have hh0 : 0 ≤ m.q.coupling m.δ E := by
+    rw [hcpl]
+    exact div_nonneg (mul_nonneg (mul_nonneg hnq.le (sq_nonneg _)) (by linarith))
+      (mul_pos hE hS).le
+  refine ⟨fun h => h.2.2.1, fun hC => ⟨heq, ?_, hC, ?_⟩⟩
+  · unfold routhTrace
+    exact add_pos_of_nonneg_of_pos hD (mul_pos (mul_pos hM hω) hK)
+  have hPδ : 0 < m.q.Ptδ m.δ E := by
+    have e : m.q.gain m.δ E * m.q.Ptδ m.δ E = m.q.routhFold m.δ E + m.q.coupling m.δ E := by
+      unfold routhFold; ring
+    exact pos_of_mul_pos_right (by rw [e]; linarith) hK.le
+  have hrest : 0 < m.q.Ptδ m.δ E + m.q.D * m.q.ωq * m.q.gain m.δ E +
+      m.q.M * m.q.ωq ^ 2 * m.q.gain m.δ E ^ 2 := by
+    have := mul_nonneg (mul_nonneg hD hω.le) hK.le
+    have := mul_nonneg (mul_nonneg hM.le (sq_nonneg m.q.ωq)) (sq_nonneg (m.q.gain m.δ E))
+    linarith
+  unfold routhHopf
+  rcases hpos with hD' | ⟨hlt, hP⟩
+  · nlinarith [mul_pos hD' hrest, mul_nonneg (mul_pos hM hω).le hh0]
+  · have hh1 : 0 < m.q.coupling m.δ E := by
+      rw [hcpl]
+      exact div_pos (mul_pos (mul_pos hnq (pow_pos (abs_pos.mpr hP) 2 |>.trans_eq
+        (sq_abs _))) (by linarith)) (mul_pos hE hS)
+    nlinarith [mul_nonneg hD hrest.le, mul_pos (mul_pos hM hω) hh1]
+
+/-- **A virtual reactance above the grid reactance creates a damping requirement.** On a
+lossless grid branch with a reactive virtual impedance larger than the grid reactance
+(`R_g = R_v = 0`, `X_v > X_g > 0`), with no damping (`D = 0`) and a nonzero power set-point,
+every equilibrium with a positive EMF is unstable, whatever its fold quantity:
+`G = M ω_q h_t < 0` (`coupling_of_lossless`). Without the virtual impedance (or with
+`X_v < X_g`) the undamped ascending equilibria are stable
+(`mem_den_locallyExponentiallyStable_iff_of_virtual_le`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_virtual_gt (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : 0 < m.q.nq) (hXg : 0 < m.q.Xg)
+    (hgt : m.q.Xg < m.q.Xv) (hRg : m.q.Rg = 0) (hRv : m.q.Rv = 0) (hD : m.q.D = 0)
+    (hP : m.q.Pref ≠ 0) (heq : m.q.field m.point = 0) (hE : 0 < m.q.emf m.Qf) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  refine mem_den_unstable_of_violation m hM hω heq (Or.inr (Or.inr ?_))
+  obtain ⟨hbP, -⟩ := balance_at hM.ne' hω.ne' hnq.ne' heq
+  have hS : 0 < m.q.Xg + m.q.Xv := by linarith
+  rw [routhHopf, hD, zero_mul, zero_add, m.q.coupling_of_lossless hRg hRv hS.ne' hE.ne' hbP]
+  have hP2 : 0 < m.q.Pref ^ 2 := pow_pos (abs_pos.mpr hP) 2 |>.trans_eq (sq_abs _)
+  have : m.q.nq * m.q.Pref ^ 2 * (m.q.Xg - m.q.Xv) / (m.q.emf m.Qf * (m.q.Xg + m.q.Xv)) < 0 :=
+    div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg (mul_pos hnq hP2) (by linarith))
+      (mul_pos hE hS)
+  exact mul_neg_of_pos_of_neg (mul_pos hM hω) this
+
+/-- **Without damping the virtual reactance decides.** On a lossless grid branch with a reactive
+virtual impedance (`R_g = R_v = 0`, `X_g > 0`, `X_v ≥ 0`), in the physical range with `D = 0` and
+`P_ref ≠ 0`, an equilibrium with a positive EMF is locally exponentially stable iff the virtual
+reactance is below the grid reactance and the fold quantity is positive: `X_v < X_g` and `C > 0`
+(`X_v > X_g`: `mem_den_unstable_of_virtual_gt`; `X_v = X_g`: `h_t = 0`, so `G = 0`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_undamped
+    (m : Model) (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : 0 < m.q.nq) (hXg : 0 < m.q.Xg)
+    (hXv : 0 ≤ m.q.Xv) (hRg : m.q.Rg = 0) (hRv : m.q.Rv = 0)
+    (hc : 0 < m.q.E0 + m.q.nq * m.q.Qref) (hD : m.q.D = 0) (hP : m.q.Pref ≠ 0)
+    (heq : m.q.field m.point = 0) (hE : 0 < m.q.emf m.Qf) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      (m.q.Xv < m.q.Xg ∧ 0 < m.q.routhFold m.δ (m.q.emf m.Qf))) := by
+  have hles := mem_den_locallyExponentiallyStable_iff m hM hω
+  unfold powerlib.TMIO.Statement at hles ⊢
+  constructor
+  · intro h
+    obtain ⟨-, -, hC, hG⟩ := hles.mp h
+    refine ⟨?_, hC⟩
+    rcases lt_trichotomy m.q.Xv m.q.Xg with hlt | heqX | hgt
+    · exact hlt
+    · exfalso
+      obtain ⟨hbP, -⟩ := balance_at hM.ne' hω.ne' hnq.ne' heq
+      have hS : 0 < m.q.Xg + m.q.Xv := by linarith
+      rw [routhHopf, hD, zero_mul, zero_add,
+        m.q.coupling_of_lossless hRg hRv hS.ne' hE.ne' hbP, heqX, sub_self, mul_zero,
+        zero_div, mul_zero] at hG
+      exact lt_irrefl 0 hG
+    · have hu := mem_den_unstable_of_virtual_gt m hM hω hnq hXg hgt hRg hRv hD hP heq hE
+      unfold powerlib.TMIO.Statement at hu
+      exact absurd (Spectral.den_locallyExponentiallyStable_subset_lyapunovStable h)
+        (Spectral.not_mem_den_lyapunovStable_of_unstable hu)
+  · rintro ⟨hlt, hC⟩
+    have hiff := mem_den_locallyExponentiallyStable_iff_of_virtual_le m hM hω hnq hXg hXv hlt.le
+      hRg hRv hc hD.ge (Or.inr ⟨hlt, hP⟩) heq hE
+    unfold powerlib.TMIO.Statement at hiff
+    exact hiff.mpr hC
 
 end QVDroopVirtual
 

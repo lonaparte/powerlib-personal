@@ -49,9 +49,19 @@ Family and connection conclusions.
   `DCModel.Saddle` (nondegenerate fast block, `C_dc, v_ref, ω_f, M, ω_q ≠ 0`, a balanced point,
   negative `det J_red`). `dcFamily_chain_le_semantics` proves every translation sound.
 * `dcFamily_mem_den_unstable` (connection): the saddle condition places the model in
-  instability, for every AC controller gain; `dcFamily_mem_den_unstable_of_bridgeSlope_neg`
-  (no droop, `K_idc, ω_f, ω_q, M, C_dc, v_ref > 0`): a balanced angle on the descending branch of
-  the quasi-steady bridge power, `∂P_br/∂δ < 0`, is unstable.
+  instability, for every AC controller gain; `dcFamily_not_mem_den_locallyExponentiallyStable`
+  (connection, boundary included): at a quasi-steady point with `P_br = P_dc` and the
+  nondegeneracy conditions, `K_idc ω_f ω_q dcSlope/(M C_dc v_ref) ≤ 0` excludes local exponential
+  stability (a Hurwitz Jacobian has `det J > 0` in dimension 16, `det fastBlock > 0`), so the
+  sign of the reduced determinant decides all but its positive side. An exact local exponential
+  decision for the 16-state model is the Hurwitz condition of its `16 × 16` Jacobian, whose
+  Hurwitz determinants are not expanded (size obstruction, as in
+  `theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerRouth.lean`); the exact cascade decision
+  is made for the five-state dynamic line feeding the DC link,
+  `theorem/GridTiedConverter/GFM/DCLink/LineCascade.lean`;
+  `dcFamily_mem_den_unstable_of_bridgeSlope_neg` (no droop, `K_idc, ω_f, ω_q, M, C_dc,
+  v_ref > 0`): a balanced angle on the descending branch of the quasi-steady bridge power,
+  `∂P_br/∂δ < 0`, is unstable.
 -/
 
 noncomputable section
@@ -476,6 +486,62 @@ gains and with or without droop: at a quasi-steady equilibrium (`P = P_ref + K_i
     norm_num
     exact mul_neg_of_pos_of_neg hA hs
 
+/-- A Hurwitz real matrix has `(−1)^N det > 0`: the constant coefficient of its characteristic
+polynomial, `(−1)^N det`, is positive (`Criteria.charpoly_coeff_pos_of_isHurwitz`). -/
+@[tmio T, powerlib_foundation] private theorem neg_one_pow_mul_det_pos {N : ℕ}
+    {J : Matrix (Fin N) (Fin N) ℝ} (h : LinearSystems.IsHurwitz J) : 0 < (-1) ^ N * J.det := by
+  have hc := Criteria.charpoly_coeff_pos_of_isHurwitz h (Nat.zero_le N)
+  rw [Matrix.det_eq_sign_charpoly_coeff, Fintype.card_fin, ← mul_assoc, ← pow_add, ← two_mul,
+    pow_mul]
+  simpa using hc
+
+/-- **The reduced determinant sign is necessary, boundary included.** At a quasi-steady point
+with `P_br = P_dc` (the data of `unstable_of_dcSlope`), local exponential stability forces a
+Hurwitz Jacobian (converse linearization, the field being `C¹` on `v_dc ≠ 0`), hence `det J > 0`
+in dimension 16, and `det J = det fastBlock · det J_red` with `det fastBlock > 0`: so
+`K_idc ω_f ω_q dcSlope/(M C_dc v_ref) > 0`. A nonpositive reduced determinant excludes local
+exponential stability, for every AC controller gain. -/
+@[tmio TM, powerlib_domain] private theorem not_les_of_dcSlope_nonpos (hLf : q.Lf ≠ 0)
+    (hCf : q.Cf ≠ 0) (hLg : q.Lg ≠ 0) (hKic : q.Kic ≠ 0) (hKiv : q.Kiv ≠ 0) (hZt : q.Zt ≠ 0)
+    (hCdc : q.Cdc ≠ 0) (hvref : q.vref ≠ 0) {δ Qf ξ : ℝ} (hB : q.PbrQ δ (q.emf Qf) = q.Pdc)
+    (hs : q.Kidc * q.ωf * q.ωq * q.dcSlope δ Qf / (q.M * (q.Cdc * q.vref)) ≤ 0) :
+    ¬ LocallyExponentiallyStable q.field (q.graph (q.slowPoint δ Qf ξ)) := by
+  intro hles
+  set s₀ := q.slowPoint δ Qf ξ
+  have hs0 : s₀ 0 = δ ∧ s₀ 1 = 0 ∧ s₀ 2 = Qf ∧ s₀ 3 = q.vref ∧ s₀ 4 = ξ ∧ s₀ 5 = q.vref := by
+    simp [s₀, slowPoint]
+  obtain ⟨h0, h1, h2, h3, h4, h5⟩ := hs0
+  have hx13 : q.graph s₀ 13 = q.vref := by rw [graph_13, h3]
+  have hx10 : q.graph s₀ 10 = δ := by rw [graph_10, h0]
+  have hU : IsOpen {x : State 16 | x 13 ≠ 0} :=
+    isOpen_ne_fun (Dynamics.contDiff_coord (k := 1) 13).continuous continuous_const
+  have hxU : q.graph s₀ ∈ {x : State 16 | x 13 ≠ 0} := by
+    show q.graph s₀ 13 ≠ 0
+    rw [hx13]; exact hvref
+  have hdiff : DifferentiableAt ℝ q.field (q.graph s₀) :=
+    ((q.contDiffOn_field hCdc).contDiffAt (hU.mem_nhds hxU)).differentiableAt (by norm_num)
+  set J := (Matrix.toEuclideanCLM (n := Fin 16) (𝕜 := ℝ)).symm (fderiv ℝ q.field (q.graph s₀))
+    with hJdef
+  have hJac : fderiv ℝ q.field (q.graph s₀) = Matrix.toEuclideanCLM (n := Fin 16) (𝕜 := ℝ) J :=
+    by simp [J]
+  have hJ : HasFDerivAt q.field (Matrix.toEuclideanCLM (𝕜 := ℝ) J) (q.graph s₀) := by
+    rw [← hJac]; exact hdiff.hasFDerivAt
+  have hH := Dynamics.isHurwitz_of_locallyExponentiallyStable_local hU hxU J
+    (q.contDiffOn_field hCdc) hJac hles
+  have hR := q.hasFDerivAt_reducedField hLf hCf hLg hKic hKiv hZt hCdc s₀
+    (by rw [h3]; exact hvref) (by rw [h0, h2]; exact hB)
+  rw [h0, h2, h3] at hR
+  have hdetJ := LinearAlgebra.det_eq_det_fast_mul_det_reduced (A := q.fastBlock δ) splitDC hJ
+    ((q.contDiff_graph).differentiable (by norm_num) _) q.graph_slow
+    (q.fast_graph hLf hCf hLg hKic hKiv hZt) (fun i j => by
+      have := q.hasDerivAt_fast (q.graph s₀) i j
+      rwa [hx10] at this) hR
+  have hpos := neg_one_pow_mul_det_pos hH
+  rw [hdetJ, q.det_reducedJacobian] at hpos
+  have hA := q.toParams.det_fastBlock_pos hLf hCf hLg hKic hKiv hZt δ
+  norm_num at hpos
+  nlinarith [mul_nonpos_iff.mpr (Or.inl ⟨hA.le, hs⟩)]
+
 end DCParams
 
 /-! ## The family of the DC variant -/
@@ -538,6 +604,23 @@ gains and of the droop gain: `det J = det fastBlock · det J_red < 0` in dimensi
 @[tmio TM, powerlib_domain] theorem dcFamily_mem_den_unstable (m : DCModel) (h : m.Saddle) :
     connection% (m ∈ dcFamily.den (.flow .unstable)) :=
   dc_unstable_of_saddle h
+
+/-- **Local exponential stability needs a positive reduced determinant** (boundary included):
+at a quasi-steady point with `P_br = P_dc` and the nondegeneracy conditions of `DCModel.Saddle`, a
+nonpositive `K_idc ω_f ω_q dcSlope/(M C_dc v_ref)` excludes local exponential stability, for every
+AC controller gain and droop gain (`det J = det fastBlock · det J_red`, `det fastBlock > 0`, and a
+Hurwitz Jacobian has `det J > 0` in dimension 16). With `dcFamily_mem_den_unstable` the sign of the
+reduced determinant decides everything except its positive side. -/
+@[tmio TM, powerlib_domain] theorem dcFamily_not_mem_den_locallyExponentiallyStable
+    (m : DCModel) (hLf : m.q.Lf ≠ 0) (hCf : m.q.Cf ≠ 0) (hLg : m.q.Lg ≠ 0) (hKic : m.q.Kic ≠ 0)
+    (hKiv : m.q.Kiv ≠ 0) (hZt : m.q.Zt ≠ 0) (hCdc : m.q.Cdc ≠ 0) (hvref : m.q.vref ≠ 0)
+    (hB : m.q.PbrQ m.δ (m.q.emf m.Qf) = m.q.Pdc)
+    (hs : m.q.Kidc * m.q.ωf * m.q.ωq * m.q.dcSlope m.δ m.Qf / (m.q.M * (m.q.Cdc * m.q.vref)) ≤ 0) :
+    connection% (m ∉ dcFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro hm
+  exact m.q.not_les_of_dcSlope_nonpos hLf hCf hLg hKic hKiv hZt hCdc hvref hB hs
+    (dc_mem_den_flow.mp hm)
 
 /-- Without droop and with `K_idc, ω_f, ω_q, M, C_dc, v_ref > 0`, a balanced angle on the
 descending branch of the quasi-steady bridge power, `∂P_br/∂δ (δ*, E₀) < 0`

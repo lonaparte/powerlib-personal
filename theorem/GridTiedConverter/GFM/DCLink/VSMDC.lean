@@ -17,12 +17,14 @@ Model boundary.
   when the DC link is overcharged.
 * Continuous time, autonomous, no input; active power export-positive, source power positive
   into the DC node. Parameters are arbitrary reals. The field contains `1/V` and is used on the
-  open set `V ≠ 0`, which contains every equilibrium when `V* ≠ 0`; the singular plane `V = 0`
-  is excluded.
+  open set `V ≠ 0`, which contains every equilibrium when `V* ≠ 0`; selected points on the
+  singular plane `V = 0` (`V* = 0`) are treated in
+  `theorem/GridTiedConverter/GFM/DCLink/VSMDCPlane.lean`.
 * Excluded, as for the open loop: reactive-power and amplitude loops, inner voltage and current
   loops, line dynamics, limits, PLL, delay, PWM, DC-link losses.
 * Level: equilibria and local exponential stability or instability of an equilibrium, from the
-  Jacobian computed by `fderiv` and the quartic Routh–Hurwitz criterion.
+  Jacobian computed by `fderiv` and the quartic Routh–Hurwitz criterion; Lyapunov and local
+  asymptotic stability in `theorem/GridTiedConverter/GFM/DCLink/VSMDCBoundary.lean`.
 
 Source: GFM counterpart study, note T7 (`t7-dcside`, part (a): characteristic polynomial,
 DC-PI threshold, the bounds `b < D/M`, `b < k/D`, the upper gain window and the existence of
@@ -36,6 +38,9 @@ Results.
 * `Params.field_eq_zero_iff`: the equilibria are `ω = 0`, `V = V*`, `P_ff + K_i ζ = P_e(δ)`
   and `P_src(V*) = P_e(δ)` (`M, C, V* ≠ 0`); `Params.exists_equilibrium_iff`: an equilibrium
   exists iff `|P_src(V*) − c₀| ≤ |A|` (`K_i ≠ 0`, `SpecialFunctions.exists_sinusoid_zero_iff_abs`).
+* `VSMDC.Model.point_mem`, `VSMDC.Model.fderiv_point`, `VSMDC.Model.field_point_of_balanced`:
+  with `V* ≠ 0` the selected point lies off the singular plane, the Jacobian there is
+  `Params.jacobian`, and a balanced point is an equilibrium.
 * `Params.hasFDerivAt_field`: on `V ≠ 0` the Jacobian is `Params.jacobian`
   `[[0, 1, 0, 0], [−k/M, −D/M, K_p/M, K_i/M], [−k/(C V), 0, j, 0], [0, 0, 1, 0]]`,
   `k = A cos(δ − α)`, `j = Plant.nodeSlope`.
@@ -74,6 +79,20 @@ Family and connection conclusions.
   making the equilibrium locally exponentially stable exist iff `b < D/M` and `b < k/D`.
 * Static evidence on the model: the equilibrium, Jacobian, characteristic-polynomial and
   coefficient identities above.
+* Lyapunov and local asymptotic stability (`V* ≠ 0`) are in
+  `theorem/GridTiedConverter/GFM/DCLink/VSMDCBoundary.lean`: the closed Routh conditions are
+  necessary (`VSMDC.closedRouth_of_mem_den_lyapunovStable`), both sentences are exact off the
+  Routh boundary (`VSMDC.mem_den_lyapunovStable_iff_of_offBoundary`,
+  `VSMDC.mem_den_locallyAsymptoticallyStable_iff_of_offBoundary`), and on it a Lyapunov stable
+  and an unstable witness (`VSMDC.flatOpen`, `VSMDC.flatIntegral`) make the Lyapunov and the
+  instability sentences inexpressible in the requirement language; two Hopf points of the
+  boundary (`theorem/GridTiedConverter/GFM/DCLink/VSMDCHopf.lean`, `VSMDC.hopfSup`,
+  `VSMDC.hopfSub`) do the same for local asymptotic stability. The singular plane `V* = 0`
+  is decided for local exponential and asymptotic stability in
+  `theorem/GridTiedConverter/GFM/DCLink/VSMDCPlane.lean`
+  (`VSMDC.mem_den_locallyExponentiallyStable_iff_of_V_eq_zero`), and for Lyapunov stability
+  except at the balance `P_s = P_e(δ*)` of an invariant plane with DC gains
+  (`VSMDC.mem_den_lyapunovStable_iff_of_invariant`).
 -/
 
 noncomputable section
@@ -298,16 +317,19 @@ def family : Family Model Spectral.Requirement 4 0 :=
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.point)
     (Spectral.localFamily_isAutonomous _ _ _)
 
-@[tmio M, powerlib_domain] private theorem point_mem (m : Model) (hV : m.p.Vref ≠ 0) :
+/-- The selected point lies off the singular plane when `V* ≠ 0`. -/
+@[tmio M, powerlib_domain] theorem Model.point_mem (m : Model) (hV : m.p.Vref ≠ 0) :
     m.point ∈ nonzeroDC (2 : Fin 4) := by
   simpa [Model.point, nonzeroDC] using hV
 
-@[tmio M, powerlib_domain] private theorem fderiv_point (m : Model) (hV : m.p.Vref ≠ 0) :
+/-- The Jacobian at the selected point, from the field (`V* ≠ 0`). -/
+@[tmio M, powerlib_domain] theorem Model.fderiv_point (m : Model) (hV : m.p.Vref ≠ 0) :
     fderiv ℝ m.p.field m.point =
       Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (m.p.jacobian m.point) :=
   m.p.fderiv_field (by simpa [Model.point] using hV)
 
-@[tmio M, powerlib_domain] private theorem field_point_of_balanced {m : Model}
+/-- A balanced selected point with `V* ≠ 0` is an equilibrium. -/
+@[tmio M, powerlib_domain] theorem Model.field_point_of_balanced {m : Model}
     (hV : m.p.Vref ≠ 0) (hb : m.Balanced) : m.p.field m.point = 0 := by
   ext i
   fin_cases i
@@ -389,9 +411,9 @@ is locally exponentially stable. -/
   obtain ⟨hV, hb, h3, h1, h0, hg⟩ := h
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
-  have hx := field_point_of_balanced hV hb
+  have hx := Model.field_point_of_balanced hV hb
   exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_nonzeroDC 2)
-    (point_mem m hV) _ m.p.field_contDiffOn hx (fderiv_point m hV)
+    (m.point_mem hV) _ m.p.field_contDiffOn hx (m.fderiv_point hV)
     ((Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
       (m.det_characteristicMatrix_quartic hV hx)).2 ⟨h3, h1, h0, hg⟩)
 
@@ -403,9 +425,9 @@ the open right half plane: the converter is unstable. -/
   obtain ⟨hV, hb, hu⟩ := h
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
-  have hx := field_point_of_balanced hV hb
+  have hx := Model.field_point_of_balanced hV hb
   exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_nonzeroDC 2)
-    (point_mem m hV) _ m.p.field_contDiffOn hx (fderiv_point m hV)
+    (m.point_mem hV) _ m.p.field_contDiffOn hx (m.fderiv_point hV)
     (Criteria.exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation _
       (m.det_characteristicMatrix_quartic hV hx) hu)
 
@@ -434,7 +456,7 @@ linearization for the field `C¹` on `V ≠ 0`,
     rw [mem_den_flow_iff] at h
     change LocallyExponentiallyStable _ _ at h
     rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local (isOpen_nonzeroDC 2)
-      (point_mem m hV) _ m.p.field_contDiffOn (fderiv_point m hV)] at h
+      (m.point_mem hV) _ m.p.field_contDiffOn (m.fderiv_point hV)] at h
     obtain ⟨hx, hH⟩ := h
     obtain ⟨h3, h1, h0, hg⟩ := (Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
       (m.det_characteristicMatrix_quartic hV hx)).1 hH

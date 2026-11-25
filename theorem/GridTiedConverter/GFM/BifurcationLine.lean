@@ -1,7 +1,7 @@
 import theorem.GridTiedConverter.GFM.Line.VSM
 import theorem.SpecialFunctions.PolynomialSigns
 
-/-! # The VSM on a dynamic R–L line: the Bogdanov–Takens point at the line damping
+/-! # The VSM on a dynamic R–L line: the Bogdanov–Takens point at the line damping and its unfolding
 
 Static linear algebra of the four-state VSM on a dynamic line at its operating point.
 
@@ -13,7 +13,13 @@ inner loops, LC filter, limiting, PLL, delay or PWM. A model `Line.VSM.Model` is
 operating point `(δ*, 0, i_s(δ*))`; `K = A cos(δ* − α) = P'(δ*)`, `Q = Q(δ*)`, `κ = K + Q =
 E² X/|Z|²`, `D_line = 2 E² R X L/|Z|⁴` (`Line.Network.Dline`). Statements are about the Jacobian
 `Line.VSM.Model.jac` (from `fderiv`, `Line.VSM.Model.fderiv_point`), not about the nonlinear flow:
-no normal form, unfolding or bifurcation diagram is asserted.
+the unfolding is the linear one, in the parameter plane of the synchronizing coefficient (or
+the angle `δ*`) and the damping, with the network and the inertia fixed — the fold line, the
+Hopf curve and the regularity of the two lowest coefficients. Not stated: the homoclinic curve,
+Kuznetsov's nonlinear transversality condition of the reduced two-parameter family, the phase
+portraits; the normal form on the centre manifold at the Bogdanov–Takens point is
+`theorem/GridTiedConverter/GFM/BTCoefficientLine.lean`
+(`Line.VSM.Model.exists_centerManifold_btNormalForm_of_bt`).
 
 Source: GFM counterpart study, note t3-bifurcation (b) (the BT point of the dynamic line at
 `D_BT = 2 E² R X²/(ω_b |Z|⁴)`, `ω_b = X/L = ω₀`, i.e. `D_BT = D_line`; scripts s2b, s2c, derived
@@ -21,7 +27,9 @@ and checked numerically there; scratch notes outside the repository); the charac
 polynomial and the line damping of `theorem/GridTiedConverter/GFM/Line/VSM.lean`
 (`Line.VSM.Model.coeff0_eq`, `Line.VSM.Model.coeff1_eq`); Kuznetsov, *Elements of Applied
 Bifurcation Theory* (3rd ed., 2004), §8.4 (a Bogdanov–Takens point is a double zero eigenvalue
-with a single Jordan block).
+with a single Jordan block; its fold and Hopf curves); Arnold, *Geometrical Methods in the Theory
+of Ordinary Differential Equations* (1983), §30 (versal deformations of a Jordan block). The Hopf
+curve was solved with SymPy (exact, untrusted) and is proved here by `linear_combination`.
 
 Results.
 * `Line.VSM.Model.charpoly_jac`: the characteristic polynomial of the Jacobian at the operating
@@ -43,11 +51,29 @@ Results.
   multiple of `q₀` (`Line.VSM.Model.eq_smul_tangent_of_mulVec_eq_zero`). At `K = 0`,
   `D = D_line` the eigenvalue `0` therefore has the Jordan chain `J q₁ = q₀ ≠ 0`, `J q₀ = 0` and a
   one-dimensional kernel: a single Jordan block (`Line.VSM.Model.jordan_chain_of_bt`).
+* **The unfolding** (network and inertia fixed, `M, L, R ≠ 0`, `|Z|² > 0`):
+  the fold line — `0` is an eigenvalue iff `K = 0`
+  (`Line.VSM.Model.det_characteristicMatrix_zero_eq_zero_iff`); the Hopf curve — `iω`, `ω > 0`,
+  is an eigenvalue iff `(K, D) = (K_H(ω), D_H(ω))` (`Line.VSM.hopfK`, `Line.VSM.hopfD`, rational
+  in `ω²`: Cramer's rule for `a₁ = a₃ω²`, `a₀ = ω²(a₂ − ω²)`, which are linear in `(K, D)`;
+  `Line.VSM.Model.det_characteristicMatrix_I_eq_zero_iff`); the Hopf curve ends at the
+  Bogdanov–Takens point, `(K_H(ω), D_H(ω)) → (0, D_line)` as `ω → 0`
+  (`Line.VSM.tendsto_hopf_bt`), with the tangent `K_H(ω)/ω² → n = M + E² L² X (3R² − X²)/|Z|⁶`
+  (`Line.VSM.tendsto_hopfK_div_sq`; `n` is the effective inertia `Line.VSM.btInertia` of
+  `theorem/GridTiedConverter/GFM/BTCoefficientLine.lean`): near the Bogdanov–Takens point the Hopf
+  frequency is `ω² ≈ K/n`, so for `n > 0` the Hopf curve leaves it into the synchronizing side
+  `K > 0`.
+* Linear versality: the map `(δ*, D) ↦ (a₀, a₁)` (`Line.VSM.unfoldingMap`,
+  `Line.VSM.unfoldingMap_eq`) has the derivative `(u, v) ↦ (ρK'u/M, (2σK'u + ρv)/M)`,
+  `K' = −A sin(δ* − α) = P''(δ*)` (`Line.VSM.hasFDerivAt_unfoldingMap`), injective at a fold
+  with `A ≠ 0` (`Line.VSM.unfolding_derivative_injective`): the two lowest coefficients are
+  regular coordinates of the parameter plane at the Bogdanov–Takens point.
 -/
 
 noncomputable section
 namespace powerlib.GFM.Line
 open Polynomial Matrix
+open Filter Topology
 
 namespace Network
 
@@ -260,6 +286,251 @@ Static evidence on the model, not a connection conclusion. -/
   · intro h
     have := congrFun h 0
     simp [Model.tangent] at this
+
+/-! ## The unfolding of the Bogdanov–Takens point -/
+
+/-- **The synchronizing coefficient of the Hopf curve** at frequency `ω` (`w = ω²`):
+`K_H = (2σw(2σκ + 2σMw) + (ρ − w)w(M(ρ − w) − κ))/(4σ²w + (ρ − w)²)`. -/
+def hopfK (g : VSM) (ω : ℝ) : ℝ :=
+  (2 * g.σ * ω ^ 2 * (2 * g.σ * g.κ + 2 * g.σ * g.M * ω ^ 2) +
+      (g.ρ - ω ^ 2) * ω ^ 2 * (g.M * (g.ρ - ω ^ 2) - g.κ)) /
+    (4 * g.σ ^ 2 * ω ^ 2 + (g.ρ - ω ^ 2) ^ 2)
+
+/-- **The damping of the Hopf curve** at frequency `ω` (`w = ω²`):
+`D_H = ((ρ − w)(2σκ + 2σMw) − 2σw(M(ρ − w) − κ))/(4σ²w + (ρ − w)²)`. -/
+def hopfD (g : VSM) (ω : ℝ) : ℝ :=
+  ((g.ρ - ω ^ 2) * (2 * g.σ * g.κ + 2 * g.σ * g.M * ω ^ 2) -
+      2 * g.σ * ω ^ 2 * (g.M * (g.ρ - ω ^ 2) - g.κ)) /
+    (4 * g.σ ^ 2 * ω ^ 2 + (g.ρ - ω ^ 2) ^ 2)
+
+/-- The characteristic determinant at `iω` through its real and imaginary parts. -/
+@[tmio M, powerlib_domain] private theorem charDet_I (m : Model) (ω : ℝ) :
+    (Linear.characteristicMatrix m.jac ((ω : ℂ) * Complex.I)).det =
+      ((ω ^ 4 - m.g.coeff2 m.Q * ω ^ 2 + m.g.coeff0 m.Q : ℝ) : ℂ) +
+        ((ω * (m.g.coeff1 m.Q - m.g.coeff3 * ω ^ 2) : ℝ) : ℂ) * Complex.I := by
+  rw [m.det_characteristicMatrix]
+  push_cast
+  ring_nf
+  rw [Complex.I_sq, show Complex.I ^ 3 = -Complex.I by rw [pow_succ, Complex.I_sq]; ring,
+    show Complex.I ^ 4 = 1 by rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, Complex.I_sq]; ring]
+  ring
+
+/-- Cramer's rule for the two linear equations of the Hopf curve. -/
+@[tmio T, powerlib_foundation] private theorem hopf_cramer {s ρ κ M w K D : ℝ}
+    (hΔ : 4 * s ^ 2 * w + (ρ - w) ^ 2 ≠ 0) :
+    (2 * s * K + (ρ - w) * D - (2 * s * M * w + 2 * s * κ) = 0 ∧
+        (ρ - w) * K - 2 * s * w * D - w * (M * (ρ - w) - κ) = 0) ↔
+      (K = (2 * s * w * (2 * s * κ + 2 * s * M * w) + (ρ - w) * w * (M * (ρ - w) - κ)) /
+          (4 * s ^ 2 * w + (ρ - w) ^ 2) ∧
+        D = ((ρ - w) * (2 * s * κ + 2 * s * M * w) - 2 * s * w * (M * (ρ - w) - κ)) /
+          (4 * s ^ 2 * w + (ρ - w) ^ 2)) := by
+  constructor
+  · rintro ⟨e1, e2⟩
+    constructor
+    · rw [eq_div_iff hΔ]; linear_combination 2 * s * w * e1 + (ρ - w) * e2
+    · rw [eq_div_iff hΔ]; linear_combination (ρ - w) * e1 - 2 * s * e2
+  · rintro ⟨eK, eD⟩
+    have hK : K * (4 * s ^ 2 * w + (ρ - w) ^ 2) =
+        2 * s * w * (2 * s * κ + 2 * s * M * w) + (ρ - w) * w * (M * (ρ - w) - κ) := by
+      rw [eK, div_mul_cancel₀ _ hΔ]
+    have hD : D * (4 * s ^ 2 * w + (ρ - w) ^ 2) =
+        (ρ - w) * (2 * s * κ + 2 * s * M * w) - 2 * s * w * (M * (ρ - w) - κ) := by
+      rw [eD, div_mul_cancel₀ _ hΔ]
+    constructor
+    · apply mul_right_cancel₀ hΔ
+      linear_combination 2 * s * hK + (ρ - w) * hD
+    · apply mul_right_cancel₀ hΔ
+      linear_combination (ρ - w) * hK - 2 * s * w * hD
+
+/-- **The fold line.** The eigenvalue `0` occurs exactly at a fold `K = 0` (`M ≠ 0`, `L ≠ 0`,
+`|Z|² > 0`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.det_characteristicMatrix_zero_eq_zero_iff (m : Model)
+    (hM : m.g.M ≠ 0) (hL : m.g.L ≠ 0) (hZ : 0 < m.g.absSq) :
+    (Linear.characteristicMatrix m.jac 0).det = 0 ↔ m.K = 0 := by
+  have hρ : m.g.ρ ≠ 0 := by
+    have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+      simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+    rw [this]; exact div_ne_zero hZ.ne' (pow_ne_zero 2 hL)
+  rw [m.det_characteristicMatrix, m.coeff0_eq hL hZ]
+  simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero, add_zero,
+    zero_add, Complex.ofReal_eq_zero, div_eq_zero_iff, mul_eq_zero, hρ, hM, false_or, or_false]
+
+/-- **The Hopf curve.** For `M, L, R ≠ 0` and `|Z|² > 0` (so `σ ≠ 0`), the Jacobian at the
+operating point has the eigenvalue `iω`, `ω > 0`, exactly when `(K, D) = (K_H(ω), D_H(ω))`
+(`hopfK`, `hopfD`): the curve of Hopf points in the plane of the synchronizing coefficient and
+the damping is the rational curve `ω ↦ (K_H(ω), D_H(ω))`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.det_characteristicMatrix_I_eq_zero_iff (m : Model)
+    (hM : m.g.M ≠ 0) (hL : m.g.L ≠ 0) (hR : m.g.R ≠ 0) (hZ : 0 < m.g.absSq) {ω : ℝ}
+    (hω : 0 < ω) :
+    (Linear.characteristicMatrix m.jac ((ω : ℂ) * Complex.I)).det = 0 ↔
+      m.K = hopfK m.g ω ∧ m.g.D = hopfD m.g ω := by
+  have hσ : m.g.σ ≠ 0 := div_ne_zero hR hL
+  have hQ : m.Q = m.g.κ - m.K := by
+    have h := m.g.syncCoeff_add_qssReactive hZ m.δ
+    rw [Model.Q, Model.K] at *; linarith
+  have h0 := m.coeff0_eq hL hZ
+  have hΔ : 0 < 4 * m.g.σ ^ 2 * ω ^ 2 + (m.g.ρ - ω ^ 2) ^ 2 := by
+    have : 0 < 4 * m.g.σ ^ 2 * ω ^ 2 := by positivity
+    positivity
+  rw [charDet_I, Complex.ext_iff]
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, Complex.zero_re, Complex.add_im, Complex.mul_im, Complex.zero_im]
+  simp only [mul_zero, mul_one, sub_zero, zero_add, add_zero]
+  rw [h0, coeff3, coeff2, coeff1, hQ]
+  set K := m.K
+  set D := m.g.D
+  set s := m.g.σ
+  set ρ := m.g.ρ
+  set κ := m.g.κ
+  set M := m.g.M
+  -- the two linear equations in `(K, D)`
+  have key : (ω ^ 4 - (ρ + (2 * s * D - (κ - K)) / M) * ω ^ 2 + ρ * K / M = 0 ∧
+        ω * ((D * ρ - 2 * s * (κ - K)) / M - (2 * s + D / M) * ω ^ 2) = 0) ↔
+      (2 * s * K + (ρ - ω ^ 2) * D - (2 * s * M * ω ^ 2 + 2 * s * κ) = 0 ∧
+        (ρ - ω ^ 2) * K - 2 * s * ω ^ 2 * D - ω ^ 2 * (M * (ρ - ω ^ 2) - κ) = 0) := by
+    constructor
+    · rintro ⟨e2, e1⟩
+      have e1' : (D * ρ - 2 * s * (κ - K)) / M - (2 * s + D / M) * ω ^ 2 = 0 :=
+        (mul_eq_zero.mp e1).resolve_left hω.ne'
+      constructor
+      · field_simp at e1'; linear_combination e1'
+      · field_simp at e2; linear_combination e2
+    · rintro ⟨e1, e2⟩
+      constructor
+      · field_simp; linear_combination e2
+      · field_simp; linear_combination ω * e1
+  rw [key, hopfK, hopfD]
+  exact hopf_cramer (w := ω ^ 2) hΔ.ne'
+
+/-- **The Hopf curve ends at the Bogdanov–Takens point**: as `ω → 0`,
+`(K_H(ω), D_H(ω)) → (0, D_line)` (`L ≠ 0`, `|Z|² > 0`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem tendsto_hopf_bt (g : VSM) (hL : g.L ≠ 0)
+    (hZ : 0 < g.absSq) :
+    Tendsto (fun ω => (hopfK g ω, hopfD g ω)) (𝓝 0) (𝓝 (0, g.Dline)) := by
+  have hρ : g.ρ ≠ 0 := by
+    have : g.ρ = g.absSq / g.L ^ 2 := by
+      simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+    rw [this]; exact div_ne_zero hZ.ne' (pow_ne_zero 2 hL)
+  have hden : (4 * g.σ ^ 2 * (0:ℝ) ^ 2 + (g.ρ - (0:ℝ) ^ 2) ^ 2) ≠ 0 := by simpa using hρ
+  have hcK : ContinuousAt (hopfK g) 0 := by
+    unfold hopfK; exact (by fun_prop : Continuous _).continuousAt.div
+      (by fun_prop : Continuous _).continuousAt hden
+  have hcD : ContinuousAt (hopfD g) 0 := by
+    unfold hopfD; exact (by fun_prop : Continuous _).continuousAt.div
+      (by fun_prop : Continuous _).continuousAt hden
+  have hK0 : hopfK g 0 = 0 := by simp [hopfK]
+  have hD0 : hopfD g 0 = g.Dline := by
+    rw [g.Dline_eq hL hZ.ne', hopfD]; field_simp; ring
+  have := hcK.tendsto.prodMk_nhds hcD.tendsto
+  rwa [hK0, hD0] at this
+
+/-- **The tangent of the Hopf curve at the Bogdanov–Takens point**: `K_H(ω)/ω² → n` as `ω → 0`
+(`ω ≠ 0`), `n = M + E² L² X (3R² − X²)/|Z|⁶` the effective inertia of
+`theorem/GridTiedConverter/GFM/BTCoefficientLine.lean` (`Line.VSM.btInertia`): near the
+Bogdanov–Takens point the Hopf frequency is `ω² ≈ K/n`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem tendsto_hopfK_div_sq (g : VSM) (hL : g.L ≠ 0)
+    (hZ : 0 < g.absSq) :
+    Tendsto (fun ω => hopfK g ω / ω ^ 2) (𝓝[≠] 0)
+      (𝓝 (g.M + g.E ^ 2 * g.L ^ 2 * g.X * (3 * g.R ^ 2 - g.X ^ 2) / g.absSq ^ 3)) := by
+  have hρ : g.ρ ≠ 0 := by
+    have : g.ρ = g.absSq / g.L ^ 2 := by
+      simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+    rw [this]; exact div_ne_zero hZ.ne' (pow_ne_zero 2 hL)
+  set F : ℝ → ℝ := fun ω => (2 * g.σ * (2 * g.σ * g.κ + 2 * g.σ * g.M * ω ^ 2) +
+      (g.ρ - ω ^ 2) * (g.M * (g.ρ - ω ^ 2) - g.κ)) /
+    (4 * g.σ ^ 2 * ω ^ 2 + (g.ρ - ω ^ 2) ^ 2) with hF
+  have hden : (4 * g.σ ^ 2 * (0:ℝ) ^ 2 + (g.ρ - (0:ℝ) ^ 2) ^ 2) ≠ 0 := by simpa using hρ
+  have hc : ContinuousAt F 0 := by
+    rw [hF]; exact (by fun_prop : Continuous _).continuousAt.div
+      (by fun_prop : Continuous _).continuousAt hden
+  have hF0 : F 0 = g.M + g.E ^ 2 * g.L ^ 2 * g.X * (3 * g.R ^ 2 - g.X ^ 2) / g.absSq ^ 3 := by
+    rw [hF]
+    simp only [Network.σ, Network.ρ, Network.κ, Network.absSq] at hZ ⊢
+    have hX : g.X = g.ω0 * g.L := rfl
+    field_simp
+    rw [hX]
+    ring
+  rw [← hF0]
+  refine (hc.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with ω hω
+  have hω2 : ω ^ 2 ≠ 0 := pow_ne_zero 2 hω
+  have e : hopfK g ω = ω ^ 2 * F ω := by rw [hF, hopfK]; ring
+  rw [e, mul_div_cancel_left₀ _ hω2]
+
+/-- The unfolding map `(δ*, D) ↦ (a₀, a₁) = (ρK(δ*)/M, (ρ(D − D_line) + 2σK(δ*))/M)` of the two
+lowest coefficients of the characteristic polynomial at the operating point (network and inertia
+fixed; `Model.coeff0_eq`, `Model.coeff1_eq`). -/
+def unfoldingMap (g : VSM) (p : ℝ × ℝ) : ℝ × ℝ :=
+  (g.ρ * g.syncCoeff p.1 / g.M, (g.ρ * (p.2 - g.Dline) + 2 * g.σ * g.syncCoeff p.1) / g.M)
+
+/-- The unfolding map reads the two lowest coefficients of every model with the network and the
+inertia of `g`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem unfoldingMap_eq (g : VSM) (hL : g.L ≠ 0) (hZ : 0 < g.absSq)
+    (δ D : ℝ) :
+    unfoldingMap g (δ, D) =
+      (({ g with D := D } : VSM).coeff0 (Model.Q ⟨{ g with D := D }, δ⟩),
+        ({ g with D := D } : VSM).coeff1 (Model.Q ⟨{ g with D := D }, δ⟩)) := by
+  rw [Model.coeff0_eq ⟨{ g with D := D }, δ⟩ hL hZ, Model.coeff1_eq ⟨{ g with D := D }, δ⟩ hL hZ]
+  rfl
+
+/-- **Linear versality of the Bogdanov–Takens point.** The unfolding map has at `(δ*, D)` the
+derivative `(u, v) ↦ (ρK'u/M, (2σK'u + ρv)/M)`, `K'(δ*) = −A sin(δ* − α) = P''(δ*)`; at a fold
+`K(δ*) = 0` with `A ≠ 0` (and `ρ, M ≠ 0`) it is injective (determinant `ρ²K'/M² ≠ 0`): the two
+lowest coefficients are regular coordinates of the parameter plane `(δ*, D)` at the
+Bogdanov–Takens point. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem hasFDerivAt_unfoldingMap (g : VSM) (p : ℝ × ℝ) :
+    HasFDerivAt (unfoldingMap g)
+      (((g.ρ * -(g.A * Real.sin (p.1 - g.α)) / g.M) • ContinuousLinearMap.fst ℝ ℝ ℝ).prod
+        ((2 * g.σ * -(g.A * Real.sin (p.1 - g.α)) / g.M) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+          (g.ρ / g.M) • ContinuousLinearMap.snd ℝ ℝ ℝ)) p := by
+  have hK : HasDerivAt g.syncCoeff (-(g.A * Real.sin (p.1 - g.α))) p.1 := by
+    have h := ((Real.hasDerivAt_cos (p.1 - g.α)).comp p.1
+      ((hasDerivAt_id p.1).sub_const g.α)).const_mul g.A
+    convert h using 1
+    · funext x; simp [Network.syncCoeff]
+    · simp
+  have hK' := hK.hasFDerivAt.comp p (hasFDerivAt_fst (p := p))
+  refine HasFDerivAt.prodMk ?_ ?_
+  · have := (hK'.const_mul g.ρ).mul_const g.M⁻¹
+    convert this using 1
+    · funext q; simp [div_eq_mul_inv]
+    · refine ContinuousLinearMap.ext fun q => ?_
+      simp; ring
+  · have h2 := (((hasFDerivAt_snd (p := p)).sub_const g.Dline).const_mul g.ρ).add
+      (hK'.const_mul (2 * g.σ))
+    have := h2.mul_const g.M⁻¹
+    convert this using 1
+    · funext q; simp [div_eq_mul_inv]
+    · refine ContinuousLinearMap.ext fun q => ?_
+      simp; ring
+
+/-- At a fold with `A, ρ, M ≠ 0` the derivative of the unfolding map is injective. Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem unfolding_derivative_injective (g : VSM) {δ : ℝ}
+    (hA : g.A ≠ 0) (hρ : g.ρ ≠ 0) (hM : g.M ≠ 0) (hK : g.syncCoeff δ = 0) :
+    Function.Injective (((g.ρ * -(g.A * Real.sin (δ - g.α)) / g.M) •
+        ContinuousLinearMap.fst ℝ ℝ ℝ).prod
+      ((2 * g.σ * -(g.A * Real.sin (δ - g.α)) / g.M) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+        (g.ρ / g.M) • ContinuousLinearMap.snd ℝ ℝ ℝ)) := by
+  have hc : Real.cos (δ - g.α) = 0 :=
+    (mul_eq_zero.mp (show g.A * Real.cos (δ - g.α) = 0 from hK)).resolve_left hA
+  have hs : Real.sin (δ - g.α) ≠ 0 := by
+    intro h0
+    have := Real.sin_sq_add_cos_sq (δ - g.α)
+    rw [h0, hc] at this; norm_num at this
+  have hc0 : g.ρ * -(g.A * Real.sin (δ - g.α)) / g.M ≠ 0 :=
+    div_ne_zero (mul_ne_zero hρ (neg_ne_zero.mpr (mul_ne_zero hA hs))) hM
+  have hd : g.ρ / g.M ≠ 0 := div_ne_zero hρ hM
+  rintro ⟨u₁, v₁⟩ ⟨u₂, v₂⟩ hxy
+  have h1 := congrArg Prod.fst hxy
+  have h2 := congrArg Prod.snd hxy
+  simp only [ContinuousLinearMap.prod_apply, _root_.add_apply,
+    _root_.smul_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+    smul_eq_mul] at h1 h2
+  have hu : u₁ = u₂ := mul_left_cancel₀ hc0 h1
+  subst hu
+  have hv : v₁ = v₂ := mul_left_cancel₀ hd (by linarith)
+  rw [hv]
 
 end VSM
 end powerlib.GFM.Line

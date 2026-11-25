@@ -17,8 +17,17 @@ Model boundary.
   there (`NormalForm.LyapunovCoefficient.IsCriticalPair`), and `ℓ₁` is Kuznetsov's first Lyapunov
   coefficient `firstLyapunov` of the model field with that pair.
 * Level: Lyapunov instability and local asymptotic stability (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`) of the operating point. Not stated: the bifurcating cycle, the
-  degenerate points `ℓ₁ = 0`, the `ε = 1/ω_b` law of the source note.
+  `LocalAsymptoticStable`) of the operating point. Not stated: the bifurcating cycles (their
+  existence is the generic `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the
+  transversality `τ ≠ 0`, instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the
+  transversality computation and the instance are missing, and uniqueness and orbital stability
+  are not proved), the degenerate points `ℓ₁ = 0`
+  (`theorem/GridTiedConverter/GFM/HopfBautinLine.lean`, `HopfBautinPoint.lean`). The
+  `ε = 1/ω_b` law of the source note — on every line of time scale `ε < ε₀` the Hopf boundary is
+  nonempty and every boundary point is unstable if `(X² − R²)(5K² − P''²) > 0`, locally
+  asymptotically stable if it is negative — is `theorem/GridTiedConverter/GFM/HopfLineScale.lean`
+  (`Line.VSM.Model.atScale_mem_den_unstable`,
+  `Line.VSM.Model.atScale_mem_den_locallyAsymptoticallyStable`), through the family laws below.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, "Subcritical EXISTS: VSM without
 filter on dynamic RL line"); Carr, *Applications of Centre Manifold Theory* (1981), §2.4 (the

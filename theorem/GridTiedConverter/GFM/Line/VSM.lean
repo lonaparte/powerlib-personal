@@ -28,8 +28,18 @@ quartic Routh–Hurwitz criterion (`theorem/Criteria/Routh4.lean`).
 
 Results.
 * The fast-line limit of the critical damping, `VSM.Model.isBigO_Dcrit`
-  (`D_crit/D_line − 1 = O(ε²)`, `ε = 1/ω₀`), and its denotation form
-  `VSM.Model.atScale_mem_den_sandwich` are in `theorem/GridTiedConverter/GFM/Line/VSMLPF.lean`.
+  (`D_crit/D_line − 1 = O(ε²)`, `ε = 1/ω₀`), its second order `VSM.Model.isBigO_Dcrit_sub`
+  (`D_crit/D_line − 1 − c₂ ε² = O(ε⁴)`, `c₂ = 2 (K/M)(1 − r²)/(1 + r²)²`, `r = R/X`) and the
+  denotation form `VSM.Model.atScale_mem_den_sandwich` are in
+  `theorem/GridTiedConverter/GFM/Line/VSMLPF.lean`.
+* Beyond the strict Routh conditions (other modules): the Hopf points and the sign of `ℓ₁` at
+  every angle (`theorem/GridTiedConverter/GFM/HopfLineInstability.lean`,
+  `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean`), the fold location
+  `VSM.Model.det_jac_eq_zero_iff`, the fold as a saddle-node (`K = 0`, `a₁ ≠ 0`, `a₃ a₂ ≠ a₁`:
+  unstable, `VSM.mem_den_unstable_of_fold_of_ne`) and the complete local asymptotic membership off
+  the degenerate set (fold points with `D = D_line` or a zero–Hopf pair, Bautin-type points)
+  `VSM.mem_den_locallyAsymptoticallyStable_iff`
+  (`theorem/GridTiedConverter/GFM/HopfLineMembership.lean`).
 * `VSM.characteristic_polynomial`: at every state,
   `M det(sI − J) = (M s² + D s − Q_e)(s² + 2σ s + ρ) + E² X/L²`; at the operating point
   (`Model.coeff0_eq`) the constant term is `ρ K/M`, i.e.

@@ -2,6 +2,7 @@ import theorem.GridTiedConverter.GFM.Line.Model
 import theorem.Grid.GridImpedance
 import theorem.LTI.Plant
 import theorem.PH.PositiveReal
+import theorem.PH.PositiveRealFinTwo
 
 /-! # Small-signal dq admittance of the grid-forming VSM on an R–L line
 
@@ -28,9 +29,10 @@ Model boundary.
   `Q_c = Q_e(δ₀, i₀) = E (sin δ₀ i_d0 − cos δ₀ i_q0)` is the reactive power at the source,
   `v_c = E (cos δ₀, sin δ₀)` (`Network.emfC`), `J = [[0, −1], [1, 0]]`.
 * Excluded: reactive / voltage loop (constant `E`; the Q–V droop law and the PCC-measured powers
-  are `theorem/GridTiedConverter/GFM/Port/DroopAdmittance.lean`), inner loops, LC filter,
-  limits, PLL, delay, PWM. Frequency-domain statements at a fixed `s`; no time-domain or
-  stability claim.
+  are `theorem/GridTiedConverter/GFM/Port/DroopAdmittance.lean`; this is Layer 0 of the port:
+  virtual impedance, PI voltage and current loops, LC filter and delay are the 15-state
+  realization of `theorem/GridTiedConverter/GFM/Port/CascadeAdmittance.lean`), limits, PLL,
+  PWM. Frequency-domain statements at a fixed `s`; no time-domain or stability claim.
 
 Source: GFM port-structure study note (t1-port, §(a) closed form, §(b) passivity; derivation and
 symbolic checks `a1_closed_form.py`); the GFL counterpart
@@ -38,11 +40,22 @@ symbolic checks `a1_closed_form.py`); the GFL counterpart
 `theory/T-gfl-impedance.md` §1.7 (network side).
 
 Results.
+* The two-channel port law `PH.syncY` of `theorem/PH/PositiveRealFinTwo.lean` (used by every
+  layer of the port): a source behind its line with `N i + T v = B c` and channels
+  `c = −K (C_i i + C_v v)` has the admittance `(N + B K C_i)⁻¹ (T + B K C_v)`
+  (`PH.syncY_spec`). Layer 0 (this module)
+  is the one-channel instance `N = Z_oc`, `T = I`, `B = J v_c v_cᵀ`, `K = g I`, `C_i = I`,
+  `C_v = 0` (`Network.inv_portZ_eq_syncY`, `Network.portZ_mul_syncY`, through which
+  `VSM.transfer_portModel` and `VSMLPF.transfer_portModel` are proved); the Q–V droop and the
+  inner cascade are the instances of `theorem/GridTiedConverter/GFM/Port/DroopAdmittance.lean`
+  and `theorem/GridTiedConverter/GFM/Port/CascadeAdmittance.lean`.
 * `Network.portZ δ γ s = Z_oc(s) + γ J v_c v_cᵀ` (`Z_oc` the dq impedance of the line branch,
   `Passive.SeriesRLC.dqImpedance`). Passivity at one frequency (`PH.PositiveRealAt`,
-  `Re uᴴ (Z + Zᴴ) u ≥ 0`): the Hermitian part at `jω` is `2R + (rank-one traceless part)`, with
-  eigenvalues `2R ± E² |γ|`, so `Network.portZ δ γ (jω)` is positive real iff `E² |γ| ≤ 2R`
-  (`Network.positiveRealAt_portZ_iff`).
+  `Re uᴴ (Z + Zᴴ) u ≥ 0`): in the frame of the source angle the impedance is
+  `Z_oc + γ E² J e₁ e₁ᵀ`, the Hermitian part at `jω` is `2R + (traceless part)` with eigenvalues
+  `2R ± E² |γ|`, so `Network.portZ δ γ (jω)` is positive real iff `E² |γ| ≤ 2R`, for every `E`
+  (`Network.positiveRealAt_portZ_iff`, from the generic laws `PH.positiveRealAt_orthogonal_iff`
+  and `PH.positiveRealAt_complexSymm_add_iff` of `theorem/PH/PositiveRealFinTwo.lean`).
 * VSM (four states): `VSM.portField_eq`, `VSM.portField_grid`, `VSM.hasFDerivAt_portField`;
   `VSM.portModel` and `VSM.transfer_portModel`: off the poles (`M s² + D s ≠ Q_c`,
   `det (Z_oc + Z_c) ≠ 0`, `det (sI − A) ≠ 0`) the transfer matrix is `VSM.portY`, the closed form
@@ -70,6 +83,8 @@ namespace powerlib.GFM.Line
 open Matrix Linear
 open powerlib.Dynamics (State)
 open powerlib.Grid (withNetwork networkModel networkModel_transfer Zext)
+open powerlib.PH (syncY syncY_spec positiveRealAt_orthogonal_iff
+  positiveRealAt_complexSymm_add_iff)
 
 namespace Network
 
@@ -100,122 +115,68 @@ def portZ (δ : ℝ) (γ s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     simp [portZ, emfC, Network.branch, Passive.SeriesRLC.dqImpedance,
       Transform.complexSymm, vecMulVec, Network.X, Matrix.vecHead, Matrix.vecTail] <;> ring
 
-/-- The quadratic form of the port impedance at `jω`:
-`Re uᴴ Z(jω) u = R |u|² + Re(γ a b̄)`, `a = v_cᵀ u`, `b = (J v_c)ᵀ u`. -/
-@[tmio M, powerlib_domain] private theorem portZ_form (δ : ℝ) (γ : ℂ) (ω : ℝ) (u : Fin 2 → ℂ) :
-    (star u ⬝ᵥ (N.portZ δ γ (ω * Complex.I) *ᵥ u)).re =
-      N.R * (Complex.normSq (u 0) + Complex.normSq (u 1)) +
-        (γ *
-          ((((N.E * Real.cos δ : ℝ) : ℂ) * u 0 + ((N.E * Real.sin δ : ℝ) : ℂ) * u 1) *
-            (starRingEnd ℂ) (-(((N.E * Real.sin δ : ℝ) : ℂ) * u 0) +
-              ((N.E * Real.cos δ : ℝ) : ℂ) * u 1))).re := by
-  set c := ((N.E * Real.cos δ : ℝ) : ℂ) with hc
-  set sn := ((N.E * Real.sin δ : ℝ) : ℂ) with hsn
-  have hcc : (starRingEnd ℂ) c = c := Complex.conj_ofReal _
-  have hss : (starRingEnd ℂ) sn = sn := Complex.conj_ofReal _
-  have key : star u ⬝ᵥ (N.portZ δ γ (ω * Complex.I) *ᵥ u) =
-      ((N.R : ℂ) + ω * N.L * Complex.I) * (u 0 * (starRingEnd ℂ) (u 0) +
-        u 1 * (starRingEnd ℂ) (u 1)) +
-      (N.X : ℂ) * ((starRingEnd ℂ) (u 1) * u 0 - (starRingEnd ℂ) ((starRingEnd ℂ) (u 1) * u 0)) +
-      γ * ((c * u 0 + sn * u 1) * (starRingEnd ℂ) (-(sn * u 0) + c * u 1)) := by
-    rw [portZ_apply]
-    simp only [← hc, ← hsn]
-    simp only [dotProduct, mulVec, Fin.sum_univ_two, Pi.star_apply, Complex.star_def, map_add,
-      map_mul, map_neg, hcc, hss, Complex.conj_conj, Matrix.of_apply, Matrix.cons_val',
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
-    ring
-  rw [key, Complex.mul_conj, Complex.mul_conj]
-  simp [Complex.mul_re, Complex.conj_re, Complex.conj_im]
+/-- **Layer 0 of the port law.** The inverse port impedance is `syncY` with one channel:
+`N = Z_oc`, `T = I`, `B = J v_c v_cᵀ`, `K = γ I`, `C_i = I`, `C_v = 0`. -/
+@[tmio M, powerlib_domain] theorem inv_portZ_eq_syncY (δ : ℝ) (γ s : ℂ) :
+    (N.portZ δ γ s)⁻¹ = syncY (N.branch.dqImpedance N.ω0 s) 1
+      (Transform.complexSymm (0 : ℂ) 1 * vecMulVec (N.emfC δ) (N.emfC δ)) (γ • 1) 1 0 := by
+  simp [portZ, syncY]
 
-/-- The rotation `(a, b) = (v_cᵀ u, (J v_c)ᵀ u)` scales `|u|²` by `E²`. -/
-@[tmio M, powerlib_domain] private theorem normSq_rot (δ : ℝ) (u : Fin 2 → ℂ) :
-    Complex.normSq (((N.E * Real.cos δ : ℝ) : ℂ) * u 0 + ((N.E * Real.sin δ : ℝ) : ℂ) * u 1) +
-      Complex.normSq (-(((N.E * Real.sin δ : ℝ) : ℂ) * u 0) +
-        ((N.E * Real.cos δ : ℝ) : ℂ) * u 1) =
-      N.E ^ 2 * (Complex.normSq (u 0) + Complex.normSq (u 1)) := by
-  have h := Real.sin_sq_add_cos_sq δ
-  simp only [Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.mul_re,
-    Complex.mul_im, Complex.neg_re, Complex.neg_im, Complex.ofReal_re, Complex.ofReal_im]
-  linear_combination (N.E ^ 2 * ((u 0).re ^ 2 + (u 0).im ^ 2 + (u 1).re ^ 2 + (u 1).im ^ 2)) * h
+/-- The port equation of Layer 0, read from the port law (`PH.syncY_spec`). -/
+@[tmio M, powerlib_domain] theorem portZ_mul_syncY {δ : ℝ} {γ s : ℂ}
+    (hZ : (N.portZ δ γ s).det ≠ 0) :
+    N.portZ δ γ s * syncY (N.branch.dqImpedance N.ω0 s) 1
+      (Transform.complexSymm (0 : ℂ) 1 * vecMulVec (N.emfC δ) (N.emfC δ)) (γ • 1) 1 0 = 1 := by
+  have e : N.branch.dqImpedance N.ω0 s + Transform.complexSymm (0 : ℂ) 1 *
+      vecMulVec (N.emfC δ) (N.emfC δ) * (γ • 1) * 1 = N.portZ δ γ s := by
+    simp [portZ]
+  have h := syncY_spec (T := 1) (Cv := 0) (by rw [e]; exact hZ)
+  rwa [e, Matrix.mul_zero, add_zero] at h
+
+/-- **The port impedance in the frame of the source angle.** `Rᵀ (Z_oc + γ J v_c v_cᵀ) R` is
+`Z_oc + γ E² J e₁ e₁ᵀ` (`Z_oc` commutes with the rotation, `Rᵀ v_c = E e₁`). -/
+@[tmio M, powerlib_domain] private theorem rot_portZ (δ : ℝ) (γ s : ℂ) :
+    complexify (Transform.rot δ)ᵀ * N.portZ δ γ s * complexify (Transform.rot δ) =
+      Transform.complexSymm ((N.R : ℂ) + N.L * s) ((N.X : ℝ) : ℂ) + !![0, 0; γ * N.E ^ 2, 0] := by
+  have hcs : Complex.cos (δ : ℂ) ^ 2 + Complex.sin (δ : ℂ) ^ 2 = 1 := Complex.cos_sq_add_sin_sq _
+  rw [← Transform.park_eq_transpose_rot, portZ_apply]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Transform.park, Transform.rot, Transform.complexSymm, Matrix.mul_apply,
+      Fin.sum_univ_two]
+  · linear_combination ((N.R : ℂ) + N.L * s) * hcs
+  · linear_combination (-(N.X : ℂ)) * hcs
+  · linear_combination ((N.X : ℂ) + γ * N.E ^ 2 *
+      (Complex.cos (δ : ℂ) ^ 2 + Complex.sin (δ : ℂ) ^ 2 + 1)) * hcs
+  · linear_combination ((N.R : ℂ) + N.L * s) * hcs
 
 /-- **Passivity of the port impedance at one frequency.** The Hermitian part of
 `Z_oc(jω) + γ J v_c v_cᵀ` has the eigenvalues `2R ± E² |γ|` (`Z_oc` contributes `2R`, the
-rank-one term is traceless); it is positive real iff `E² |γ| ≤ 2R`. -/
-@[tmio M, powerlib_domain] theorem positiveRealAt_portZ_iff (hE : N.E ≠ 0) (δ : ℝ) (γ : ℂ) (ω : ℝ) :
+rank-one term is traceless); it is positive real iff `E² |γ| ≤ 2R`. Read in the frame of the
+source angle (`PH.positiveRealAt_orthogonal_iff`) through the generic law
+`PH.positiveRealAt_complexSymm_add_iff`. -/
+@[tmio M, powerlib_domain] theorem positiveRealAt_portZ_iff (δ : ℝ) (γ : ℂ) (ω : ℝ) :
     PH.PositiveRealAt (N.portZ δ γ (ω * Complex.I)) ↔ N.E ^ 2 * ‖γ‖ ≤ 2 * N.R := by
-  rw [PH.positiveRealAt_iff_re]
-  set c := ((N.E * Real.cos δ : ℝ) : ℂ) with hc
-  set sn := ((N.E * Real.sin δ : ℝ) : ℂ) with hsn
-  have hE2 : 0 < N.E ^ 2 := by positivity
-  have hcs : c * c + sn * sn = ((N.E ^ 2 : ℝ) : ℂ) := by
-    have h : N.E * Real.cos δ * (N.E * Real.cos δ) + N.E * Real.sin δ * (N.E * Real.sin δ) =
-        N.E ^ 2 := by linear_combination N.E ^ 2 * Real.sin_sq_add_cos_sq δ
-    rw [hc, hsn]; exact_mod_cast h
+  rw [← positiveRealAt_orthogonal_iff (Q := Transform.rot δ)
+    (by rw [← Transform.park_eq_transpose_rot, Transform.rot_mul_park]), N.rot_portZ,
+    positiveRealAt_complexSymm_add_iff _ _ (by simp)]
+  have hre : ((N.R : ℂ) + N.L * (ω * Complex.I)).re = N.R := by simp
+  have hn : Complex.normSq ((0 : ℂ) + (starRingEnd ℂ) (γ * N.E ^ 2)) =
+      (N.E ^ 2 * ‖γ‖) ^ 2 := by
+    rw [zero_add, Complex.normSq_conj, Complex.normSq_mul, Complex.normSq_eq_norm_sq,
+      Complex.normSq_eq_norm_sq, norm_pow, Complex.norm_real, Real.norm_eq_abs, pow_abs]
+    rw [abs_of_nonneg (by positivity)]
+    ring
+  simp only [hre, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.empty_val', Matrix.cons_val_fin_one, Complex.zero_re, hn]
+  have hg : 0 ≤ N.E ^ 2 * ‖γ‖ := by positivity
   constructor
+  · rintro ⟨h0, h1⟩
+    have h2 : (N.E ^ 2 * ‖γ‖) ^ 2 ≤ (2 * N.R) ^ 2 := by nlinarith
+    exact (pow_le_pow_iff_left₀ hg (by linarith) two_ne_zero).mp h2
   · intro h
-    by_cases hγ0 : γ = 0
-    · have h1 := h ![1, 0]
-      rw [N.portZ_form] at h1
-      simp [hγ0] at h1
-      rw [hγ0, norm_zero, mul_zero]
-      linarith
-    · have hn : 0 < ‖γ‖ := norm_pos_iff.mpr hγ0
-      set t : ℂ := -(γ / (‖γ‖ : ℂ)) with ht
-      have h1 := h ![c - sn * t, sn + c * t]
-      rw [N.portZ_form] at h1
-      simp only [← hc, ← hsn, Matrix.cons_val_zero, Matrix.cons_val_one] at h1
-      have ha : c * (c - sn * t) + sn * (sn + c * t) = ((N.E ^ 2 : ℝ) : ℂ) := by
-        rw [← hcs]; ring
-      have hb : -(sn * (c - sn * t)) + c * (sn + c * t) = ((N.E ^ 2 : ℝ) : ℂ) * t := by
-        rw [← hcs]; ring
-      have hrot := N.normSq_rot δ ![c - sn * t, sn + c * t]
-      simp only [← hc, ← hsn, Matrix.cons_val_zero, Matrix.cons_val_one, ha, hb] at hrot
-      have hnt : Complex.normSq t = 1 := by
-        rw [ht, Complex.normSq_neg, Complex.normSq_div, Complex.normSq_ofReal,
-          Complex.normSq_eq_norm_sq]
-        field_simp
-      rw [Complex.normSq_mul, Complex.normSq_ofReal, hnt] at hrot
-      have hN : Complex.normSq (c - sn * t) + Complex.normSq (sn + c * t) = 2 * N.E ^ 2 := by
-        have : N.E ^ 2 * (Complex.normSq (c - sn * t) + Complex.normSq (sn + c * t)) =
-            N.E ^ 2 * (2 * N.E ^ 2) := by
-          rw [← hrot]; ring
-        exact mul_left_cancel₀ hE2.ne' this
-      have hγt : γ * (((N.E ^ 2 : ℝ) : ℂ) * (starRingEnd ℂ) (((N.E ^ 2 : ℝ) : ℂ) * t)) =
-          -(((N.E ^ 2 * N.E ^ 2 * ‖γ‖ : ℝ)) : ℂ) := by
-        have hγγ : γ * (starRingEnd ℂ) γ = ((‖γ‖ ^ 2 : ℝ) : ℂ) := by
-          rw [Complex.mul_conj, Complex.normSq_eq_norm_sq]
-        have hn' : (‖γ‖ : ℂ) ≠ 0 := by exact_mod_cast hn.ne'
-        have e1 : γ * (((N.E ^ 2 : ℝ) : ℂ) * (starRingEnd ℂ) (((N.E ^ 2 : ℝ) : ℂ) * t)) =
-            -(((N.E ^ 2 : ℝ) : ℂ) * ((N.E ^ 2 : ℝ) : ℂ) * (γ * (starRingEnd ℂ) γ) /
-              (‖γ‖ : ℂ)) := by
-          rw [ht, map_mul, map_neg, map_div₀, Complex.conj_ofReal, Complex.conj_ofReal]
-          ring
-        rw [e1, hγγ]
-        field_simp
-        push_cast
-        ring
-      rw [ha, hb, hγt, hN] at h1
-      simp only [Complex.neg_re, Complex.ofReal_re] at h1
-      have h2 : 0 ≤ N.E ^ 2 * (2 * N.R - N.E ^ 2 * ‖γ‖) := by linarith
-      linarith [(mul_nonneg_iff_of_pos_left hE2).mp h2]
-  · intro h u
-    rw [N.portZ_form]
-    simp only [← hc, ← hsn]
-    set a := c * u 0 + sn * u 1
-    set b := -(sn * u 0) + c * u 1
-    have hrot : Complex.normSq a + Complex.normSq b =
-        N.E ^ 2 * (Complex.normSq (u 0) + Complex.normSq (u 1)) := N.normSq_rot δ u
-    have hre : -(‖γ‖ * (‖a‖ * ‖b‖)) ≤ (γ * (a * (starRingEnd ℂ) b)).re := by
-      have := Complex.abs_re_le_norm (γ * (a * (starRingEnd ℂ) b))
-      rw [norm_mul, norm_mul, Complex.norm_conj] at this
-      linarith [neg_abs_le (γ * (a * (starRingEnd ℂ) b)).re]
-    have hab : 2 * (‖a‖ * ‖b‖) ≤ Complex.normSq a + Complex.normSq b := by
-      rw [Complex.normSq_eq_norm_sq, Complex.normSq_eq_norm_sq]
-      nlinarith [sq_nonneg (‖a‖ - ‖b‖)]
-    have hN : 0 ≤ Complex.normSq (u 0) + Complex.normSq (u 1) :=
-      add_nonneg (Complex.normSq_nonneg _) (Complex.normSq_nonneg _)
-    have hγn : 0 ≤ ‖γ‖ := norm_nonneg _
-    nlinarith [mul_le_mul_of_nonneg_left hab hγn, mul_le_mul_of_nonneg_right h hN]
+    have h0 : 0 ≤ N.R := by linarith
+    exact ⟨h0, by nlinarith [pow_le_pow_left₀ hg h 2]⟩
 
 end Network
 
@@ -286,8 +247,9 @@ port model is `(Z_oc + Z_c)⁻¹`. Proof: the state response `(Δδ, s Δδ, −
     (hA : (characteristicMatrix (g.portModel δ id iq).A s).det ≠ 0) :
     transfer (g.portModel δ id iq) s = g.portY δ id iq s := by
   set Y := g.portY δ id iq s with hYdef
-  have hY : g.portZ δ (g.syncGain δ id iq s) s * Y = 1 :=
-    Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hZ)
+  have hY : g.portZ δ (g.syncGain δ id iq s) s * Y = 1 := by
+    rw [hYdef, portY, Network.inv_portZ_eq_syncY]
+    exact g.portZ_mul_syncY hZ
   set γ := g.syncGain δ id iq s with hγ
   have hγd : γ * ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s - (g.reactive δ id iq : ℂ)) = 1 := by
     rw [hγ, syncGain, one_div, inv_mul_cancel₀ hden]
@@ -359,7 +321,7 @@ def gfmOnNetwork (line : Passive.SeriesRLC) (shunt : Passive.ParallelRLC) (δ id
 GFM at `jω` is positive real iff `E² |g(jω)| ≤ 2R` (`positiveRealAt_portZ_iff` through
 `PH.positiveRealAt_inv_iff`). -/
 @[tmio M, powerlib_domain] theorem positiveRealAt_transfer_iff (hM : g.M ≠ 0) (hL : g.L ≠ 0)
-    (hE : g.E ≠ 0) {δ id iq ω : ℝ}
+    {δ id iq ω : ℝ}
     (hden : (g.M : ℂ) * (ω * Complex.I) ^ 2 + (g.D : ℂ) * (ω * Complex.I) -
       (g.reactive δ id iq : ℂ) ≠ 0)
     (hZ : (g.portZ δ (g.syncGain δ id iq (ω * Complex.I)) (ω * Complex.I)).det ≠ 0)
@@ -368,13 +330,13 @@ GFM at `jω` is positive real iff `E² |g(jω)| ≤ 2R` (`positiveRealAt_portZ_i
       g.E ^ 2 * ‖g.syncGain δ id iq (ω * Complex.I)‖ ≤ 2 * g.R := by
   rw [g.transfer_portModel hM hL hden hZ hA, portY,
     PH.positiveRealAt_inv_iff (isUnit_iff_ne_zero.mpr hZ)]
-  exact g.positiveRealAt_portZ_iff hE δ _ ω
+  exact g.positiveRealAt_portZ_iff δ _ ω
 
 /-- **DC passivity.** With `g(0) = −1/Q_c`, the port admittance at `s = 0` is positive real iff
 `E² ≤ 2R |Q_c|`: the power regulation makes the port non-passive at DC unless the source carries
 reactive power `|Q_c| ≥ E²/(2R)`, whatever the exported active power. -/
 @[tmio M, powerlib_domain] theorem positiveRealAt_transfer_zero_iff (hM : g.M ≠ 0)
-    (hL : g.L ≠ 0) (hE : g.E ≠ 0) {δ id iq : ℝ} (hQ : g.reactive δ id iq ≠ 0)
+    (hL : g.L ≠ 0) {δ id iq : ℝ} (hQ : g.reactive δ id iq ≠ 0)
     (hZ : (g.portZ δ (g.syncGain δ id iq 0) 0).det ≠ 0)
     (hA : (characteristicMatrix (g.portModel δ id iq).A 0).det ≠ 0) :
     PH.PositiveRealAt (transfer (g.portModel δ id iq) 0) ↔
@@ -383,7 +345,7 @@ reactive power `|Q_c| ≥ E²/(2R)`, whatever the exported active power. -/
   have hden : (g.M : ℂ) * (((0 : ℝ) : ℂ) * Complex.I) ^ 2 +
       (g.D : ℂ) * (((0 : ℝ) : ℂ) * Complex.I) - (g.reactive δ id iq : ℂ) ≠ 0 := by
     simpa using hQ
-  have h := g.positiveRealAt_transfer_iff hM hL hE hden (by rwa [h0]) (by rwa [h0])
+  have h := g.positiveRealAt_transfer_iff hM hL hden (by rwa [h0]) (by rwa [h0])
   rw [h0] at h
   rw [h]
   have hg : ‖g.syncGain δ id iq 0‖ = 1 / |g.reactive δ id iq| := by
@@ -401,7 +363,7 @@ admittance is not positive real at any `jω` off the poles (`E² |g(jω)| > 0`).
     (hZ : (g.portZ δ (g.syncGain δ id iq (ω * Complex.I)) (ω * Complex.I)).det ≠ 0)
     (hA : (characteristicMatrix (g.portModel δ id iq).A (ω * Complex.I)).det ≠ 0) :
     ¬ PH.PositiveRealAt (transfer (g.portModel δ id iq) (ω * Complex.I)) := by
-  rw [g.positiveRealAt_transfer_iff hM hL hE hden hZ hA, hR, mul_zero, not_le]
+  rw [g.positiveRealAt_transfer_iff hM hL hden hZ hA, hR, mul_zero, not_le]
   have hγ : g.syncGain δ id iq (ω * Complex.I) ≠ 0 := by
     simp only [syncGain, one_div, ne_eq, inv_eq_zero]
     exact hden
@@ -478,8 +440,9 @@ state response is `(Δδ, s Δδ, −(M s² + D s) Δδ, −Y e_c)`, `Δδ = g(s
     (hA : (characteristicMatrix (g.portModel δ id iq).A s).det ≠ 0) :
     transfer (g.portModel δ id iq) s = g.portY δ id iq s := by
   set Y := g.portY δ id iq s with hYdef
-  have hY : g.portZ δ (g.syncGain δ id iq s) s * Y = 1 :=
-    Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hZ)
+  have hY : g.portZ δ (g.syncGain δ id iq s) s * Y = 1 := by
+    rw [hYdef, portY, Network.inv_portZ_eq_syncY]
+    exact g.portZ_mul_syncY hZ
   set γ := g.syncGain δ id iq s with hγ
   have hγd : γ * ((s + g.ωc) * ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s) -
       (g.ωc : ℂ) * (g.reactive δ id iq : ℂ)) = g.ωc := by
@@ -527,7 +490,7 @@ state response is `(Δδ, s Δδ, −(M s² + D s) Δδ, −Y e_c)`, `Δδ = g(s
 /-- **Passivity of the five-state realization at one frequency**: positive real at `jω` iff
 `E² |g(jω)| ≤ 2R`, with the filtered gain (`Network.positiveRealAt_portZ_iff`). -/
 @[tmio M, powerlib_domain] theorem positiveRealAt_transfer_iff (hM : g.M ≠ 0) (hL : g.L ≠ 0)
-    (hE : g.E ≠ 0) {δ id iq ω : ℝ}
+    {δ id iq ω : ℝ}
     (hden : ((ω : ℂ) * Complex.I + g.ωc) * ((g.M : ℂ) * (ω * Complex.I) ^ 2 +
       (g.D : ℂ) * (ω * Complex.I)) - (g.ωc : ℂ) * (g.reactive δ id iq : ℂ) ≠ 0)
     (hZ : (g.portZ δ (g.syncGain δ id iq (ω * Complex.I)) (ω * Complex.I)).det ≠ 0)
@@ -536,7 +499,7 @@ state response is `(Δδ, s Δδ, −(M s² + D s) Δδ, −Y e_c)`, `Δδ = g(s
       g.E ^ 2 * ‖g.syncGain δ id iq (ω * Complex.I)‖ ≤ 2 * g.R := by
   rw [g.transfer_portModel hM hL hden hZ hA, portY,
     PH.positiveRealAt_inv_iff (isUnit_iff_ne_zero.mpr hZ)]
-  exact g.positiveRealAt_portZ_iff hE δ _ ω
+  exact g.positiveRealAt_portZ_iff δ _ ω
 
 end VSMLPF
 

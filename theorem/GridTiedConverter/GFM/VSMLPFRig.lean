@@ -18,7 +18,11 @@ Model boundary.
 * Excluded at the implementation layer: the sampling and discretization themselves (only their
   first-order equivalent is kept), PWM harmonics, limits, tolerances of the hardware parameters
   against the design, measurement noise. Every exclusion of the design model (voltage loop, inner
-  loops, PLL, network dynamics) stays excluded.
+  loops, PLL, network dynamics) stays excluded. The delay is that of the outer (synchronization)
+  loop only; the sampling and computation delay of the inner voltage/current cascade, and its
+  modulation limit, are the platforms `GFM.DigitalCascade` and `GFM.LimitedCascade` over the
+  cascade design `GFM.InnerCascade` (`theorem/GridTiedConverter/GFM/DigitalCascade.lean`,
+  `theorem/GridTiedConverter/GFM/LimitedCascade.lean`).
 * Observation layer (O). A record `VSMLPF.Record` is the result of one identification
   experiment: intervals `[M_lo, M_hi]`, `[D_lo, D_hi]`, `[ω_lo, ω_hi]`, `[K_lo, K_hi]` for the
   inertia, damping, filter bandwidth and synchronizing coefficient `K = K₀ cos δ*`, and an upper

@@ -64,11 +64,27 @@ Results.
   whatever the sign of the active power (the GFL rectifier zero needs `I_d0 > 0`); on the stable
   branch `K(δ*) > 0` iff `Q(δ*) > 0`
   (`DynamicLine.exists_transfer_model_eq_zero_re_pos_iff_of_syncCoeff_pos`).
+* **The two line models related.** `DynamicLine.toPlant`: the quasi-static reading of a dynamic
+  line (the plant of `OpenLoop.lean` with the line's quasi-steady power curve
+  `c₀ + A sin(δ − α)`, `DynamicLine.toPlant_Pe`, the same swing, DC link and source; its
+  synchronizing coefficient and DC-node slope are the line's, `DynamicLine.toPlant_k`,
+  `DynamicLine.dcPole_eq_nodeSlope`). `DynamicLine.field_qssLift`: on the quasi-steady current set
+  `i = i_s(δ)` (`DynamicLine.qssLift`) the five-state field is the quasi-static open-loop field,
+  the line rows vanishing (`DynamicLine.slowEmbed`); hence the two models have the same operating
+  points (`DynamicLine.field_point_eq_zero_iff`).
+  `DynamicLine.transfer_model_sub_transfer_refPlant`: off the poles of both plants the two
+  transfers `ΔV/ΔP_ref` differ by exactly
+  `E² X L s² (M s + D)(2R + L s) / (C V* (s − j)((R + L s)² + X²)|Z|²(M s² + D s + G(s))
+  (M s² + D s + K))` (SymPy-checked identity, proved here); they agree at `s = 0`
+  (`DynamicLine.transfer_model_zero_eq`). `DynamicLine.tendsto_transfer_withL`: letting the line
+  inductance `L → 0⁺` at fixed reactance (`DynamicLine.withL`), the dynamic-line transfer converges
+  at every `s` off the quasi-static poles to the quasi-static one.
 
 Family and connection conclusions.
 The module defines no family and states no behaviour: every result is static evidence on the
-two small-signal plants. The two line models are not related here (no reduction statement);
-`DynamicLine.angleGain_zero` compares two quantities of the same dynamic line.
+two small-signal plants and the identities relating them. The behaviour of the nonlinear
+five-state model (exact local exponential stability, local asymptotic stability off the line-VSM
+Routh boundary) is `theorem/GridTiedConverter/GFM/DCLink/LineCascade.lean`.
 -/
 
 noncomputable section
@@ -666,6 +682,277 @@ the quasi-static plant `Plant.refPlant`. -/
   rw [angleGain, hl, show g.syncCoeff δ = g.κ - g.qssReactive δ by linarith, Line.Network.κ]
   push_cast
   ring
+
+/-! ### The two line models related -/
+
+/-- **The quasi-static reading of the dynamic line**: the open-loop plant of `OpenLoop.lean` with
+the same swing (`M`, `D`, `P_ff = P_ref`), DC link and source, and the power curve of the line's
+quasi-steady current, `c₀ = E² R/|Z|²`, `A = E V_g/|Z|`, `α = arg(X + jR)`
+(`Line.Network.qssPower_eq_polar`). -/
+def toPlant : Plant := ⟨g.M, g.D, g.C, g.Pref, g.c0, g.A, g.α, g.Ps, g.Is⟩
+
+/-- The power curve of the quasi-static reading is the quasi-steady power of the line. -/
+@[tmio M, powerlib_domain] theorem toPlant_Pe (hZ : 0 < g.absSq) (δ : ℝ) :
+    g.toPlant.Pe δ = g.qssPower δ := by
+  rw [Line.Network.qssPower_eq_polar _ hZ]
+  rfl
+
+/-- The synchronizing coefficient of the quasi-static reading is that of the line. -/
+@[tmio M, powerlib_domain] theorem toPlant_k (δ : ℝ) : g.toPlant.k δ = g.syncCoeff δ := rfl
+
+/-- The DC-node pole of the dynamic line is the DC-node slope of its quasi-static reading. -/
+@[tmio M, powerlib_domain] theorem dcPole_eq_nodeSlope (hZ : 0 < g.absSq) (δ Vdc : ℝ) :
+    g.dcPole δ Vdc = g.toPlant.nodeSlope δ Vdc := by
+  rw [dcPole, nodeSlope, Plant.nodeSlope, g.toPlant_Pe hZ]
+  rfl
+
+/-- The quasi-steady current set: `(δ, ω, V) ↦ (δ, ω, i_s(δ), V)`. -/
+def qssLift (y : State 3) : State 5 :=
+  WithLp.toLp 2 ![y 0, y 1, (g.is (y 0)).re, (g.is (y 0)).im, y 2]
+
+/-- The slow coordinates `(δ, ω, V)` placed in the five-state space, zero line coordinates. -/
+def slowEmbed (y : State 3) : State 5 := WithLp.toLp 2 ![y 0, y 1, 0, 0, y 2]
+
+@[tmio M, powerlib_domain] theorem slowEmbed_eq_zero_iff (y : State 3) :
+    slowEmbed y = 0 ↔ y = 0 := by
+  constructor
+  · intro h
+    have h0 := congrArg (fun z : State 5 => z 0) h
+    have h1 := congrArg (fun z : State 5 => z 1) h
+    have h4 := congrArg (fun z : State 5 => z 4) h
+    simp [slowEmbed] at h0 h1 h4
+    exact Dynamics.state3_ext (by simpa using h0) (by simpa using h1) (by simpa using h4)
+  · rintro rfl
+    ext i
+    fin_cases i <;> simp [slowEmbed]
+
+/-- **The quasi-static plant is the dynamic line's field on its quasi-steady current set.** At
+`(δ, ω, i_s(δ), V)` the line rates vanish (`Line.Network.rate_eq_zero_iff`) and the angle,
+frequency and DC rows are those of the open-loop field of the quasi-static reading `toPlant` at
+`(δ, ω, V)` (`P_e(δ, i_s(δ)) = c₀ + A sin(δ − α)`). Static evidence on the two models. -/
+@[tmio M, powerlib_domain] theorem field_qssLift (hL : g.L ≠ 0) (hZ : 0 < g.absSq)
+    (y : State 3) : g.field g.Pref (g.qssLift y) = slowEmbed (g.toPlant.openField y) := by
+  have hr := (g.rate_eq_zero_iff hL hZ.ne' (y 0) (g.is (y 0)).re (g.is (y 0)).im).mpr
+    ⟨rfl, rfl⟩
+  have hP := g.toPlant_Pe hZ (y 0)
+  simp only [Line.Network.qssPower] at hP
+  ext i
+  fin_cases i
+  · simp [field, qssLift, slowEmbed, Plant.openField]
+  · simp [field, qssLift, slowEmbed, Plant.openField, Plant.swingRate, hP]
+    rfl
+  · simpa [field, qssLift, slowEmbed] using hr.1
+  · simpa [field, qssLift, slowEmbed] using hr.2
+  · simp [field, qssLift, slowEmbed, Plant.openField, Plant.nodeRate, hP]
+    rfl
+
+@[tmio M, powerlib_domain] theorem point_eq_qssLift (δ Vdc : ℝ) :
+    g.point δ Vdc = g.qssLift (Dynamics.mk3 δ 0 Vdc) := by
+  ext i
+  fin_cases i <;> simp [point, qssLift]
+
+/-- **The two line models have the same operating points**: `(δ*, 0, i_s(δ*), V*)` is an
+equilibrium of the dynamic line iff `(δ*, 0, V*)` is one of its quasi-static reading. Static
+evidence on the two models. -/
+@[tmio M, powerlib_domain] theorem field_point_eq_zero_iff (hL : g.L ≠ 0) (hZ : 0 < g.absSq)
+    (δ Vdc : ℝ) :
+    g.field g.Pref (g.point δ Vdc) = 0 ↔ g.toPlant.openField (Dynamics.mk3 δ 0 Vdc) = 0 := by
+  rw [point_eq_qssLift, g.field_qssLift hL hZ, slowEmbed_eq_zero_iff]
+
+/-- Off the poles of the quasi-static plant: `M s² + D s + k ≠ 0` and `s − j ≠ 0`. -/
+@[tmio M, powerlib_domain] private theorem ne_zero_of_det_toPlant (hM : g.M ≠ 0) {δ Vdc : ℝ}
+    {s : ℂ} (hs : (Linear.characteristicMatrix (g.toPlant.openJacobian δ Vdc) s).det ≠ 0) :
+    (g.M : ℂ) * s ^ 2 + g.D * s + g.syncCoeff δ ≠ 0 ∧ s - g.toPlant.nodeSlope δ Vdc ≠ 0 := by
+  have hM' : (g.M : ℂ) ≠ 0 := by exact_mod_cast hM
+  rw [Plant.det_characteristicMatrix_openJacobian] at hs
+  have hsw : (Linear.characteristicMatrix (g.toPlant.swingJacobian δ) s).det =
+      ((g.M : ℂ) * s ^ 2 + g.D * s + g.syncCoeff δ) / g.M := by
+    simp [Linear.characteristicMatrix, Plant.swingJacobian, Matrix.det_fin_two, toPlant,
+      Plant.k, Line.Network.syncCoeff]
+    field_simp
+    ring
+  rw [hsw] at hs
+  refine ⟨fun h => hs (by rw [h, zero_div, zero_mul]), fun h => hs ?_⟩
+  rw [show s + ((-g.toPlant.nodeSlope δ Vdc : ℝ) : ℂ) = s - g.toPlant.nodeSlope δ Vdc by
+    push_cast; ring, h, mul_zero]
+
+/-- **The exact difference of the two transfers `ΔV/ΔP_ref`.** Off the poles of both plants,
+the dynamic-line transfer minus that of the quasi-static reading is
+`E² X L s² (M s + D)(2R + L s) / (C V* (s − j)((R + L s)² + X²) |Z|²
+(M s² + D s + G(s))(M s² + D s + K))`, `G` the angle gain, `K = G(0)` the synchronizing
+coefficient (`G(s) − K = −E² X L s (2R + L s)/(((R + L s)² + X²) |Z|²)`). The two transfers agree
+at `s = 0` and their difference carries the line inductance `L` as a factor. Static evidence on
+the two models. -/
+@[tmio M, powerlib_domain] theorem transfer_model_sub_transfer_refPlant (hM : g.M ≠ 0)
+    (hL : g.L ≠ 0) (hC : g.C ≠ 0) (hZ : 0 < g.absSq) {δ Vdc : ℝ} (hV : Vdc ≠ 0) {s : ℂ}
+    (hs : (Linear.characteristicMatrix (g.model δ Vdc).A s).det ≠ 0) (hl : g.lineDen s ≠ 0)
+    (hs' : (Linear.characteristicMatrix (g.toPlant.openJacobian δ Vdc) s).det ≠ 0) :
+    Linear.transfer (g.model δ Vdc) s 0 0 - Linear.transfer (g.toPlant.refPlant δ Vdc) s 0 0 =
+      (g.E : ℂ) ^ 2 * g.X * g.L * s ^ 2 * (g.M * s + g.D) * (2 * g.R + g.L * s) /
+        (g.C * Vdc * (s - g.dcPole δ Vdc) * g.lineDen s * g.absSq *
+          (g.M * s ^ 2 + g.D * s + g.angleGain (g.qssReactive δ) s) *
+          (g.M * s ^ 2 + g.D * s + g.syncCoeff δ)) := by
+  obtain ⟨he0, hP0⟩ := g.ne_zero_of_det hM hL hs hl
+  obtain ⟨hK0, -⟩ := g.ne_zero_of_det_toPlant hM hs'
+  have hC' : (g.C : ℂ) ≠ 0 := by exact_mod_cast hC
+  have hV' : (Vdc : ℂ) ≠ 0 := by exact_mod_cast hV
+  have hZ' : (g.absSq : ℂ) ≠ 0 := by exact_mod_cast hZ.ne'
+  rw [g.transfer_model hM hL hC hV hs hl, g.toPlant.transfer_refPlant hM hC hV hs',
+    ← g.dcPole_eq_nodeSlope hZ, g.toPlant_k]
+  have hK : (g.syncCoeff δ : ℂ) = (g.E : ℂ) ^ 2 * g.X / g.absSq - g.qssReactive δ := by
+    have h := g.syncCoeff_add_qssReactive hZ δ
+    rw [Line.Network.κ] at h
+    rw [show g.syncCoeff δ = g.E ^ 2 * g.X / g.absSq - g.qssReactive δ by linarith]
+    push_cast
+    ring
+  have hZs : (g.absSq : ℂ) = (g.R : ℂ) ^ 2 + (g.X : ℂ) ^ 2 := by
+    simp [Line.Network.absSq]
+  obtain ⟨G, hG⟩ : ∃ G, G = g.angleGain (g.qssReactive δ) s := ⟨_, rfl⟩
+  obtain ⟨K, hK'⟩ : ∃ K : ℂ, K = g.syncCoeff δ := ⟨_, rfl⟩
+  obtain ⟨e, he⟩ : ∃ e : ℂ, e = s - g.dcPole δ Vdc := ⟨_, rfl⟩
+  rw [← hG] at hP0 ⊢
+  rw [← hK'] at hK0 hK
+  rw [← he] at he0 ⊢
+  change -G / (g.C * Vdc * e * (g.M * s ^ 2 + g.D * s + G)) -
+      -((g.syncCoeff δ / (g.C * Vdc) : ℝ) : ℂ) / ((g.M * s ^ 2 + g.D * s + g.syncCoeff δ) * e) = _
+  push_cast
+  rw [← hK']
+  obtain ⟨P, hP⟩ : ∃ P : ℂ, P = g.M * s ^ 2 + g.D * s := ⟨_, rfl⟩
+  rw [← hP] at hP0 hK0 ⊢
+  have hc : (g.C : ℂ) * Vdc ≠ 0 := mul_ne_zero hC' hV'
+  have h1 : -G / (g.C * Vdc * e * (P + G)) - -(K / (g.C * Vdc)) / ((P + K) * e) =
+      P * (K - G) / (g.C * Vdc * e * (P + G) * (P + K)) := by
+    field_simp
+    ring
+  have h2 : K - G = (g.E : ℂ) ^ 2 * g.X * g.L * s * (2 * g.R + g.L * s) /
+      (g.absSq * g.lineDen s) := by
+    rw [hK, hG, angleGain]
+    rw [hZs] at hZ' ⊢
+    simp only [lineDen] at hl ⊢
+    field_simp
+    ring
+  rw [h1, h2, hP]
+  field_simp
+
+/-- **Equal static gains.** Where both plants are defined at `s = 0`, the two transfers
+`ΔV/ΔP_ref` coincide there (`transfer_model_sub_transfer_refPlant`). Static evidence on the two
+models. -/
+@[tmio M, powerlib_domain] theorem transfer_model_zero_eq (hM : g.M ≠ 0) (hL : g.L ≠ 0)
+    (hC : g.C ≠ 0) (hZ : 0 < g.absSq) {δ Vdc : ℝ} (hV : Vdc ≠ 0)
+    (hs : (Linear.characteristicMatrix (g.model δ Vdc).A 0).det ≠ 0)
+    (hs' : (Linear.characteristicMatrix (g.toPlant.openJacobian δ Vdc) 0).det ≠ 0) :
+    Linear.transfer (g.model δ Vdc) 0 0 0 = Linear.transfer (g.toPlant.refPlant δ Vdc) 0 0 0 := by
+  have hl : g.lineDen 0 ≠ 0 := by
+    simp only [lineDen, mul_zero, add_zero]
+    exact_mod_cast (show g.R ^ 2 + g.X ^ 2 ≠ 0 from hZ.ne')
+  have h := g.transfer_model_sub_transfer_refPlant hM hL hC hZ hV hs hl hs'
+  rw [sub_eq_iff_eq_add] at h
+  rw [h]
+  simp
+
+/-- The dynamic line with inductance `L'` at the same reactance `X` (nominal frequency `X/L'`):
+the quasi-static data `E`, `V_g`, `R`, `X` are unchanged. -/
+def withL (L' : ℝ) : DynamicLine := { g with L := L', ω0 := g.X / L' }
+
+@[tmio M, powerlib_domain] theorem withL_X {L' : ℝ} (h : L' ≠ 0) : (g.withL L').X = g.X := by
+  simp only [withL, Line.Network.X]
+  field_simp
+
+@[tmio M, powerlib_domain] private theorem withL_absSq {L' : ℝ} (h : L' ≠ 0) :
+    (g.withL L').absSq = g.absSq := by
+  simp only [Line.Network.absSq, g.withL_X h]
+  rfl
+
+@[tmio M, powerlib_domain] private theorem withL_qssPower {L' : ℝ} (h : L' ≠ 0)
+    (hZ : 0 < g.absSq) (δ : ℝ) : (g.withL L').qssPower δ = g.qssPower δ := by
+  rw [Line.Network.qssPower_eq _ (by rw [g.withL_absSq h]; exact hZ.ne'),
+    Line.Network.qssPower_eq _ hZ.ne', g.withL_absSq h, g.withL_X h]
+  rfl
+
+@[tmio M, powerlib_domain] private theorem withL_qssReactive {L' : ℝ} (h : L' ≠ 0)
+    (hZ : 0 < g.absSq) (δ : ℝ) : (g.withL L').qssReactive δ = g.qssReactive δ := by
+  rw [Line.Network.qssReactive_eq _ (by rw [g.withL_absSq h]; exact hZ.ne'),
+    Line.Network.qssReactive_eq _ hZ.ne', g.withL_absSq h, g.withL_X h]
+  rfl
+
+@[tmio M, powerlib_domain] private theorem withL_dcPole {L' : ℝ} (h : L' ≠ 0)
+    (hZ : 0 < g.absSq) (δ Vdc : ℝ) : (g.withL L').dcPole δ Vdc = g.dcPole δ Vdc := by
+  rw [dcPole, dcPole, nodeSlope, nodeSlope, g.withL_qssPower h hZ]
+  rfl
+
+/-- **The quasi-static line is the limit of the dynamic line.** Letting the line inductance
+`L → 0⁺` at fixed reactance `X` (`withL`), the transfer `ΔV/ΔP_ref` of the dynamic line
+converges, at every `s` off the poles of the quasi-static plant, to that of the quasi-static
+reading `toPlant` (the angle gain `G(s) = −Q + E² X/((R + L s)² + X²)` tends to `K = G(0)`).
+Exact asymptotic statement on the two models (`M, C, V* ≠ 0`, `|Z|² > 0`). -/
+@[tmio M, powerlib_domain] theorem tendsto_transfer_withL (hM : g.M ≠ 0) (hC : g.C ≠ 0)
+    (hZ : 0 < g.absSq) {δ Vdc : ℝ} (hV : Vdc ≠ 0) {s : ℂ}
+    (hs : (Linear.characteristicMatrix (g.toPlant.openJacobian δ Vdc) s).det ≠ 0) :
+    Tendsto (fun L' => Linear.transfer ((g.withL L').model δ Vdc) s 0 0) (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (Linear.transfer (g.toPlant.refPlant δ Vdc) s 0 0)) := by
+  obtain ⟨hK0, he0⟩ := g.ne_zero_of_det_toPlant hM hs
+  rw [← g.dcPole_eq_nodeSlope hZ] at he0
+  have hM' : (g.M : ℂ) ≠ 0 := by exact_mod_cast hM
+  have hC' : (g.C : ℂ) ≠ 0 := by exact_mod_cast hC
+  have hV' : (Vdc : ℂ) ≠ 0 := by exact_mod_cast hV
+  have hZ' : ((g.R : ℂ) + 0 * s) ^ 2 + (g.X : ℂ) ^ 2 ≠ 0 := by
+    rw [zero_mul, add_zero]
+    exact_mod_cast (show g.R ^ 2 + g.X ^ 2 ≠ 0 from hZ.ne')
+  -- the line factor and the angle gain as functions of `L'`
+  set den : ℝ → ℂ := fun L' => ((g.R : ℂ) + L' * s) ^ 2 + (g.X : ℂ) ^ 2 with hden
+  set Gf : ℝ → ℂ := fun L' => -(g.qssReactive δ : ℂ) + (g.E : ℂ) ^ 2 * g.X / den L' with hGf
+  have hdc : Continuous den := by
+    simp only [hden]
+    fun_prop
+  have hden0 : Tendsto den (nhds 0) (nhds (den 0)) := hdc.tendsto 0
+  have hG0 : Tendsto Gf (nhds 0) (nhds (Gf 0)) :=
+    tendsto_const_nhds.add (tendsto_const_nhds.div hden0 (by simpa [hden] using hZ'))
+  have hGK : Gf 0 = g.syncCoeff δ := by
+    have h := g.angleGain_zero hZ δ
+    simp only [angleGain, lineDen] at h
+    simpa [hGf, hden] using h
+  -- the closed form and its limit
+  set F : ℝ → ℂ := fun L' => -Gf L' / (g.C * Vdc * (s - g.dcPole δ Vdc) *
+    (g.M * s ^ 2 + g.D * s + Gf L')) with hF
+  have hF0 : Tendsto F (nhds 0) (nhds (F 0)) := by
+    refine hG0.neg.div (tendsto_const_nhds.mul (tendsto_const_nhds.add hG0)) ?_
+    rw [hGK]
+    exact mul_ne_zero (mul_ne_zero (mul_ne_zero hC' hV') he0) hK0
+  have hlim : F 0 = Linear.transfer (g.toPlant.refPlant δ Vdc) s 0 0 := by
+    rw [g.toPlant.transfer_refPlant hM hC hV hs, ← g.dcPole_eq_nodeSlope hZ, g.toPlant_k]
+    simp only [hF, hGK, toPlant]
+    push_cast
+    field_simp
+  rw [← hlim]
+  refine (hF0.mono_left nhdsWithin_le_nhds).congr' ?_
+  -- eventually the plant of `withL L'` is defined at `s` and its transfer is `F L'`
+  have hev1 : ∀ᶠ L' in nhds (0 : ℝ), den L' ≠ 0 :=
+    hden0.eventually_ne (by simpa [hden] using hZ')
+  have hev2 : ∀ᶠ L' in nhds (0 : ℝ), (g.M : ℂ) * s ^ 2 + g.D * s + Gf L' ≠ 0 :=
+    (tendsto_const_nhds.add hG0).eventually_ne (by rw [hGK]; exact hK0)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hev1.and hev2)] with L' hpos hL'
+  obtain ⟨hd, hp⟩ := hL'
+  have hL0 : L' ≠ 0 := ne_of_gt hpos
+  set h := g.withL L' with hh
+  have hhL : h.L = L' := rfl
+  have hhM : h.M = g.M := rfl
+  have hhC : h.C = g.C := rfl
+  have hl : h.lineDen s = den L' := by
+    simp only [lineDen, hden, hh, g.withL_X hL0]
+    rfl
+  have hG : h.angleGain (h.qssReactive δ) s = Gf L' := by
+    rw [angleGain, hl, hh, g.withL_qssReactive hL0 hZ, g.withL_X hL0]
+    rfl
+  have hj : h.dcPole δ Vdc = g.dcPole δ Vdc := g.withL_dcPole hL0 hZ δ Vdc
+  have hdet : (Linear.characteristicMatrix (h.model δ Vdc).A s).det ≠ 0 := by
+    have hfac := h.det_characteristicMatrix_model_eq_mul hM (by rw [hhL]; exact hL0) δ Vdc
+      (by rw [hl]; exact hd)
+    rw [hl, hG, hj] at hfac
+    intro h0
+    rw [h0, mul_zero] at hfac
+    exact mul_ne_zero (mul_ne_zero hd hp) he0 hfac.symm
+  rw [h.transfer_model hM (by rw [hhL]; exact hL0) hC hV hdet (by rw [hl]; exact hd), hG, hj]
+  rfl
 
 end DynamicLine
 

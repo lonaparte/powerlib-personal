@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFM.Port.Admittance
+import theorem.PH.PositiveRealFinTwo
 
 /-! # Small-signal dq admittance of the grid-forming VSM with Q–V droop on an R–L line
 
@@ -29,7 +30,10 @@ Model boundary.
   gains `K_n = diag(1, −ω_q)` (`chanGain`).
 * Parameters free reals; each theorem lists what it uses (`M ≠ 0`, `L ≠ 0` and nonsingularity
   off the poles). Frequency-wise statements at a fixed `s`; no time-domain or stability claim.
-  Excluded: active-power filter, inner loops, virtual impedance, limits, PLL, delay, PWM.
+  Excluded: active-power filter, limits, PLL, PWM; the inner cascade (virtual impedance, PI
+  voltage and current loops, LC filter, delay) is
+  `theorem/GridTiedConverter/GFM/Port/CascadeAdmittance.lean`, built on the same port law
+  `PH.syncY`.
 
 Source: GFM port-structure study note (t1-port, §(a) closed form with Q–V droop and the
 PCC-measured variant; the study's symbolic check was unfinished; the closed forms are derived
@@ -54,6 +58,25 @@ Results.
   `Y(s) = (Z_oc(s) + B_c K C_p)⁻¹ (I + B_c K C_v)` (`pccY`, `transfer_pccModel`): the powers do
   not see the EMF, so the loop does not close through `B_c`, and the PCC voltage enters the
   channels directly (`I + B_c K C_v`).
+* The two-channel port law `PH.syncY` of `theorem/PH/PositiveRealFinTwo.lean`:
+  the PCC-measured admittance is its instance `(N, T, B, K, C_i, C_v) =
+  (Z_oc, I, B_c, pccGain, C_p, curC)` (`pccY_eq_syncY`, through which `transfer_pccModel` is
+  proved), the source-measured one `(Z_oc, I, B_c, W⁻¹ K_n, C_i, 0)` (`droopY_eq_syncY`).
+* **Positive-real criterion of the source-measured droop admittance** (exact, at every `s` off
+  the poles, every operating point): with `P_c`, `Q_c` the powers at the source,
+  `E' = E(Q_f)` and `ρ = R + L Re s`, the admittance is positive real at `s` iff `ρ ≥ 0` and
+  `E'² ((2 n_q ω_q P_c)² + |n_q ω_q (M s² + D s − 2 Q_c) − E' (s̄ + ω_q)|²) ≤ 4 ρ² |det W(s)|²`
+  (`hermDefect`, `positiveRealAt_droopZ_iff`, `positiveRealAt_transfer_iff`). In the frame of
+  the source angle (`rot_droopZ`) `Z_c = (det W)⁻¹ N̂` with `det N̂ = n_q ω_q E'³ det W`; the
+  proof reads the generic positive-real laws of `theorem/PH/PositiveRealFinTwo.lean`.
+  Instances: `n_q = 0` gives `E² |g(s)| ≤ 2 ρ`, `g = 1/(M s² + D s − Q_c)`
+  (`positiveRealAt_transfer_iff_of_nq_eq_zero`, at `s = jω` the constant-EMF criterion
+  `Line.VSM.positiveRealAt_transfer_iff`); DC: `R ≥ 0` and `E'⁴ (E'² + 4 n_q σ) ≤ 4 R² σ²`,
+  `σ = E' Q_c + n_q (P_c² + Q_c²)` (`dcSigma`, `positiveRealAt_transfer_zero_iff`; at `n_q = 0`
+  `E'² ≤ 2R |Q_c|`); a lossless line is non-passive at every `jω ≠ 0` with
+  `n_q ω_q D + E' ≠ 0` (`not_positiveRealAt_transfer_of_lossless`). Not formalized: a
+  criterion for the PCC-measured `pccY` (not of the form `Z⁻¹`), and passivity on the whole
+  imaginary axis beyond the pointwise iff.
 
 Family and connection conclusions.
 * None: realization identities and frequency-wise static facts (static evidence). The model is
@@ -64,6 +87,8 @@ noncomputable section
 namespace powerlib.GFM.Line
 open Matrix Linear
 open powerlib.Dynamics (State coord hasFDerivAt_coord hasFDerivAt_toEuclideanCLM_of_components)
+open powerlib.PH (syncY syncY_spec positiveRealAt_orthogonal_iff
+  positiveRealAt_complexSymm_add_iff normSq_mul_hermDefect)
 
 /-- The VSM with Q–V droop on the line: the VSM data, the droop gain `n_q`, the reactive filter
 bandwidth `ω_q` and the reactive set point `Q_ref` (`E` is the no-load EMF `E₀`). -/
@@ -330,6 +355,13 @@ power), the state response `(C₀, s C₀, −Y, C₁)` solves `(sI − A) X = B
   fin_cases i <;> fin_cases k <;>
     simp [portModel, portC, complexify, hX, Matrix.mul_apply, Fin.sum_univ_five]
 
+/-- **Layer 0 of the port law, source-measured.** `droopY` is `syncY` with the bare line
+`(N, T) = (Z_oc, I)`, `B = B_c`, `K = W⁻¹ K_n`, `C_i = C_i` and no voltage channel. -/
+@[tmio M, powerlib_domain] theorem droopY_eq_syncY (δ id iq qf : ℝ) (s : ℂ) :
+    g.droopY δ id iq qf s = syncY (g.branch.dqImpedance g.ω0 s) 1 (complexify (g.syncB δ qf))
+      ((g.chanW δ id iq qf s)⁻¹ * g.chanGain) (complexify (g.syncCi δ qf)) 0 := by
+  simp [droopY, droopZ, droopZc, syncY, Matrix.mul_assoc]
+
 /-! ## Powers measured at the PCC -/
 
 /-- The PCC-measured field: `P_m + j Q_m = v conj i` (`Transform.pq` of the PCC voltage and the
@@ -417,6 +449,12 @@ def pccY (δ id iq qf : ℝ) (v : Fin 2 → ℝ) (s : ℂ) : Matrix (Fin 2) (Fin
       complexify (g.syncB δ qf) * g.pccGain s * complexify (pccCi v))⁻¹ *
     (1 + complexify (g.syncB δ qf) * g.pccGain s * complexify (curC id iq))
 
+/-- **Layer 0 of the port law.** The PCC-measured admittance is `syncY` with the bare line
+`(N, T) = (Z_oc, I)`, the channel input `B_c`, `K = pccGain`, `C_i = C_p`, `C_v = curC`. -/
+@[tmio M, powerlib_domain] theorem pccY_eq_syncY (δ id iq qf : ℝ) (v : Fin 2 → ℝ) (s : ℂ) :
+    g.pccY δ id iq qf v s = syncY (g.branch.dqImpedance g.ω0 s) 1 (complexify (g.syncB δ qf))
+      (g.pccGain s) (complexify (pccCi v)) (complexify (curC id iq)) := rfl
+
 /-- **The PCC-measured realization has the closed-form admittance.** Off the poles
 (`M s² + D s ≠ 0`, `s + ω_q ≠ 0`, `det (Z_oc + B_c K C_p) ≠ 0`, `det (sI − A) ≠ 0`) the transfer
 matrix of the PCC-measured port model is `(Z_oc + B_c K C_p)⁻¹ (I + B_c K C_v)`. Proof: with
@@ -435,8 +473,8 @@ matrix of the PCC-measured port model is `(Z_oc + B_c K C_p)⁻¹ (I + B_c K C_v
   set Y := g.pccY δ id iq qf v s with hYdef
   set Cm := K * (complexify (pccCi v) * Y - complexify (curC id iq)) with hCm
   have hY : Zp * Y = 1 + Bc * K * complexify (curC id iq) := by
-    rw [hYdef, pccY, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hZ),
-      Matrix.one_mul]
+    rw [hYdef, pccY_eq_syncY]
+    exact syncY_spec hZ
   have hline : g.branch.dqImpedance g.ω0 s * Y + Bc * Cm = 1 := by
     have e : Bc * Cm = Bc * K * complexify (pccCi v) * Y - Bc * K * complexify (curC id iq) := by
       rw [hCm, Matrix.mul_sub, Matrix.mul_sub]
@@ -497,6 +535,319 @@ matrix of the PCC-measured port model is `(Z_oc + B_c K C_p)⁻¹ (I + B_c K C_v
   ext i k
   fin_cases i <;> fin_cases k <;>
     simp [pccModel, portC, complexify, hX, Matrix.mul_apply, Fin.sum_univ_five]
+
+/-! ## Positive realness of the source-measured admittance -/
+
+/-- The loop matrix in closed form, with the current components along the EMF,
+`i_a = cos δ i_d + sin δ i_q`, and across it, `i_b = cos δ i_q − sin δ i_d`:
+`W = [[M s² + D s + E' i_b, −n_q i_a], [−ω_q E' i_a, s + ω_q − ω_q n_q i_b]]`. -/
+@[tmio M, powerlib_domain] private theorem chanW_apply (δ id iq qf : ℝ) (s : ℂ) :
+    g.chanW δ id iq qf s = !![(g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s +
+        (g.emfMag qf : ℂ) * ((Real.cos δ : ℂ) * iq - (Real.sin δ : ℂ) * id),
+      -((g.nq : ℂ) * ((Real.cos δ : ℂ) * id + (Real.sin δ : ℂ) * iq));
+      -((g.ωq : ℂ) * ((g.emfMag qf : ℂ) * ((Real.cos δ : ℂ) * id + (Real.sin δ : ℂ) * iq))),
+      s + (g.ωq : ℂ) - (g.ωq : ℂ) * ((g.nq : ℂ) * ((Real.cos δ : ℂ) * iq -
+        (Real.sin δ : ℂ) * id))] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [chanW, chanGain, curC, syncB, complexify, Matrix.mul_apply, Matrix.vecMul, dotProduct,
+      Fin.sum_univ_two] <;> first | ring1 | (left; ring1)
+
+/-- The channel input in the frame of the source angle: `Rᵀ B_c = [[0, −n_q], [E', 0]]`. -/
+@[tmio M, powerlib_domain] private theorem park_mul_syncB (δ qf : ℝ) :
+    Transform.park δ * g.syncB δ qf = !![0, -g.nq; g.emfMag qf, 0] := by
+  have h := Real.sin_sq_add_cos_sq δ
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Transform.park, syncB, Matrix.mul_apply, Fin.sum_univ_two]
+  · ring
+  · linear_combination (-g.nq) * h
+  · linear_combination g.emfMag qf * h
+  · ring
+
+/-- The source output rows in the frame of the source angle: `C_i R = diag(E', −E')`. -/
+@[tmio M, powerlib_domain] private theorem syncCi_mul_rot (δ qf : ℝ) :
+    g.syncCi δ qf * Transform.rot δ = !![g.emfMag qf, 0; 0, -g.emfMag qf] := by
+  have h := Real.sin_sq_add_cos_sq δ
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Transform.rot, syncCi, Matrix.mul_apply, Fin.sum_univ_two]
+  · linear_combination g.emfMag qf * h
+  · ring
+  · ring
+  · linear_combination (-g.emfMag qf) * h
+
+/-- The numerator of the synchronization impedance in the frame of the source angle:
+`Rᵀ Z_c R = (det W)⁻¹ N̂`, `N̂ = [[n_q E' W₁₀, −n_q ω_q E' W₀₀], [E'² W₁₁, −ω_q E'² W₀₁]]`. -/
+def rotZcNum (δ id iq qf : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
+  !![g.nq * g.emfMag qf * g.chanW δ id iq qf s 1 0,
+      -(g.nq * g.ωq * g.emfMag qf * g.chanW δ id iq qf s 0 0);
+    g.emfMag qf ^ 2 * g.chanW δ id iq qf s 1 1,
+      -(g.ωq * g.emfMag qf ^ 2 * g.chanW δ id iq qf s 0 1)]
+
+/-- **The port impedance in the frame of the source angle.** `Rᵀ (Z_oc + Z_c) R` is
+`Z_oc + (det W)⁻¹ N̂` (`Z_oc` commutes with the rotation). -/
+@[tmio M, powerlib_domain] private theorem rot_droopZ (δ id iq qf : ℝ) (s : ℂ) :
+    complexify (Transform.rot δ)ᵀ * g.droopZ δ id iq qf s * complexify (Transform.rot δ) =
+      Transform.complexSymm ((g.R : ℂ) + g.L * s) ((g.X : ℝ) : ℂ) +
+        (g.chanW δ id iq qf s).det⁻¹ • g.rotZcNum δ id iq qf s := by
+  have hcs : Complex.cos (δ : ℂ) ^ 2 + Complex.sin (δ : ℂ) ^ 2 = 1 := Complex.cos_sq_add_sin_sq _
+  have hB : complexify (Transform.park δ) * complexify (g.syncB δ qf) =
+      complexify !![0, -g.nq; g.emfMag qf, 0] := by
+    rw [← Matrix.map_mul, park_mul_syncB]
+  have hC : complexify (g.syncCi δ qf) * complexify (Transform.rot δ) =
+      complexify !![g.emfMag qf, 0; 0, -g.emfMag qf] := by
+    rw [← Matrix.map_mul, syncCi_mul_rot]
+  rw [← Transform.park_eq_transpose_rot, droopZ, Matrix.mul_add, Matrix.add_mul]
+  congr 1
+  · rw [dqImpedance_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [Transform.park, Transform.rot, Transform.complexSymm, Matrix.mul_apply,
+        Fin.sum_univ_two]
+    · linear_combination ((g.R : ℂ) + g.L * s) * hcs
+    · linear_combination (-(g.X : ℂ)) * hcs
+    · linear_combination (g.X : ℂ) * hcs
+    · linear_combination ((g.R : ℂ) + g.L * s) * hcs
+  · simp only [droopZc, Matrix.mul_assoc, hC]
+    rw [← Matrix.mul_assoc (complexify (Transform.park δ)), hB, Matrix.inv_def,
+      Ring.inverse_eq_inv', Matrix.adjugate_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [rotZcNum, chanGain, complexify, Matrix.mul_apply, Matrix.vecMul, dotProduct,
+        Fin.sum_univ_two] <;> ring
+
+/-- The Hermitian defect of the synchronization impedance in closed form,
+`E'² ((2 n_q ω_q P_c)² + |n_q ω_q (M s² + D s − 2 Q_c) − E' (s̄ + ω_q)|²)` (`P_c`, `Q_c` the
+powers at the source and `E' = E(Q_f)`). -/
+def hermDefect (δ id iq qf : ℝ) (s : ℂ) : ℝ :=
+  g.emfMag qf ^ 2 * ((2 * g.nq * g.ωq * (g.net qf).power δ id iq) ^ 2 +
+    Complex.normSq (g.nq * g.ωq * (g.M * s ^ 2 + g.D * s - 2 * (g.net qf).reactive δ id iq) -
+      g.emfMag qf * ((starRingEnd ℂ) s + g.ωq)))
+
+/-- **Positive realness of the droop port impedance at one `s`.** Off `det W = 0`, the port
+impedance `Z_oc(s) + Z_c(s)` of the Q–V droop VSM is positive real iff
+`R + L Re s ≥ 0` and `hermDefect ≤ 4 (R + L Re s)² |det W(s)|²`: the Hermitian part is
+`2 (R + L Re s) I` plus a traceless part whose eigenvalues are `± √hermDefect / |det W|`. -/
+@[tmio M, powerlib_domain] theorem positiveRealAt_droopZ_iff {δ id iq qf : ℝ} {s : ℂ}
+    (hW : (g.chanW δ id iq qf s).det ≠ 0) :
+    PH.PositiveRealAt (g.droopZ δ id iq qf s) ↔ 0 ≤ g.R + g.L * s.re ∧
+      g.hermDefect δ id iq qf s ≤
+        4 * (g.R + g.L * s.re) ^ 2 * Complex.normSq (g.chanW δ id iq qf s).det := by
+  set Δ := (g.chanW δ id iq qf s).det with hΔ
+  set K := Δ⁻¹ • g.rotZcNum δ id iq qf s with hK
+  have hW' := g.chanW_apply δ id iq qf s
+  have e : ∀ i j, Δ * K i j = g.rotZcNum δ id iq qf s i j := fun i j => by
+    rw [hK, Matrix.smul_apply, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hW, one_mul]
+  have e00 := e 0 0
+  have e01 := e 0 1
+  have e10 := e 1 0
+  have e11 := e 1 1
+  have hK11 : K 1 1 = -K 0 0 := by
+    apply mul_left_cancel₀ hW
+    rw [e11, mul_neg, e00]
+    simp only [rotZcNum, hW', Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
+    ring
+  rw [← positiveRealAt_orthogonal_iff (Q := Transform.rot δ)
+    (by rw [← Transform.park_eq_transpose_rot, Transform.rot_mul_park]), rot_droopZ, ← hK,
+    positiveRealAt_complexSymm_add_iff _ _ hK11]
+  have hre : ((g.R : ℂ) + g.L * s).re = g.R + g.L * s.re := by simp
+  rw [hre]
+  have hP : (g.net qf).power δ id iq = g.emfMag qf * (Real.cos δ * id + Real.sin δ * iq) :=
+    (g.net qf).power_eq δ id iq
+  have hQ : (g.net qf).reactive δ id iq = g.emfMag qf * (Real.sin δ * id - Real.cos δ * iq) :=
+    (g.net qf).reactive_eq δ id iq
+  have hid : Complex.normSq Δ * (4 * (K 0 0).re ^ 2 +
+      Complex.normSq (K 0 1 + (starRingEnd ℂ) (K 1 0))) = g.hermDefect δ id iq qf s := by
+    rw [normSq_mul_hermDefect (r := -(g.nq * g.ωq * g.emfMag qf * (g.net qf).power δ id iq))
+      (l := g.nq * g.ωq * g.emfMag qf ^ 3) ?_ ?_]
+    · rw [e01, e10, hermDefect]
+      have hin : g.rotZcNum δ id iq qf s 0 1 + (starRingEnd ℂ) (g.rotZcNum δ id iq qf s 1 0) =
+          -((g.emfMag qf : ℂ) * (g.nq * g.ωq * (g.M * s ^ 2 + g.D * s -
+            2 * ((g.net qf).reactive δ id iq : ℂ)) -
+              g.emfMag qf * ((starRingEnd ℂ) s + g.ωq))) := by
+        simp only [rotZcNum, hW', Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+          Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, map_mul, map_add,
+          map_sub, map_pow, Complex.conj_ofReal, hQ]
+        push_cast
+        ring
+      rw [hin, Complex.normSq_neg, Complex.normSq_mul, Complex.normSq_ofReal]
+      ring
+    · rw [e00]
+      simp only [rotZcNum, hW', Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+        Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, hP]
+      push_cast
+      ring
+    · have h2 : Δ * (K 0 0 ^ 2 + K 0 1 * K 1 0) * Δ =
+          (Δ * K 0 0) ^ 2 + (Δ * K 0 1) * (Δ * K 1 0) := by
+        ring
+      apply mul_right_cancel₀ hW
+      rw [h2, e00, e01, e10]
+      simp only [rotZcNum, hΔ, Matrix.det_fin_two, hW', Matrix.of_apply, Matrix.cons_val',
+        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
+      push_cast
+      ring
+  have hpos : 0 < Complex.normSq Δ := Complex.normSq_pos.mpr hW
+  constructor
+  · rintro ⟨h0, h1⟩
+    refine ⟨h0, ?_⟩
+    rw [← hid]
+    nlinarith [mul_le_mul_of_nonneg_left h1 hpos.le]
+  · rintro ⟨h0, h1⟩
+    refine ⟨h0, ?_⟩
+    rw [← hid] at h1
+    nlinarith
+
+/-- **Positive realness of the source-measured realization at one `s`.** Off the poles, the
+port admittance of the Q–V droop VSM is positive real at `s` iff `R + L Re s ≥ 0` and
+`hermDefect ≤ 4 (R + L Re s)² |det W(s)|²` (`positiveRealAt_droopZ_iff` through
+`PH.positiveRealAt_inv_iff`). -/
+@[tmio M, powerlib_domain] theorem positiveRealAt_transfer_iff (hM : g.M ≠ 0) (hL : g.L ≠ 0)
+    {δ id iq qf : ℝ} {s : ℂ} (hW : (g.chanW δ id iq qf s).det ≠ 0)
+    (hZ : (g.droopZ δ id iq qf s).det ≠ 0)
+    (hA : (characteristicMatrix (g.portModel δ id iq qf).A s).det ≠ 0) :
+    PH.PositiveRealAt (transfer (g.portModel δ id iq qf) s) ↔ 0 ≤ g.R + g.L * s.re ∧
+      g.hermDefect δ id iq qf s ≤
+        4 * (g.R + g.L * s.re) ^ 2 * Complex.normSq (g.chanW δ id iq qf s).det := by
+  rw [g.transfer_portModel hM hL hW hZ hA, droopY,
+    PH.positiveRealAt_inv_iff (isUnit_iff_ne_zero.mpr hZ)]
+  exact g.positiveRealAt_droopZ_iff hW
+
+/-- **The constant-EMF instance of the criterion.** Without droop (`n_q = 0`), off the poles
+and `s ≠ −ω_q`, the port admittance is positive real at `s` iff
+`E² |g(s)| ≤ 2 (R + L Re s)`, `g = 1/(M s² + D s − Q_c)` (`VSM.syncGain`): the reactive
+channel drops out of `hermDefect` and `det W = (M s² + D s − Q_c)(s + ω_q)`. At `s = jω` this
+is the criterion `VSM.positiveRealAt_transfer_iff` of the four-state constant-EMF port. -/
+@[tmio M, powerlib_domain] theorem positiveRealAt_transfer_iff_of_nq_eq_zero (hn : g.nq = 0)
+    (hM : g.M ≠ 0) (hL : g.L ≠ 0) {δ id iq qf : ℝ} {s : ℂ}
+    (hden : (g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s - (g.reactive δ id iq : ℂ) ≠ 0)
+    (hq : s + (g.ωq : ℂ) ≠ 0) (hZ : (g.droopZ δ id iq qf s).det ≠ 0)
+    (hA : (characteristicMatrix (g.portModel δ id iq qf).A s).det ≠ 0) :
+    PH.PositiveRealAt (transfer (g.portModel δ id iq qf) s) ↔
+      g.E ^ 2 * ‖g.toVSM.syncGain δ id iq s‖ ≤ 2 * (g.R + g.L * s.re) := by
+  have hE : g.emfMag qf = g.E := by simp [emfMag, hn]
+  set w := (g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s - (g.reactive δ id iq : ℂ) with hw_def
+  have hdet : (g.chanW δ id iq qf s).det = w * (s + g.ωq) := by
+    rw [g.chanW_of_nq_eq_zero hn, Matrix.det_fin_two_of]; ring
+  have hW : (g.chanW δ id iq qf s).det ≠ 0 := by rw [hdet]; exact mul_ne_zero hden hq
+  have hH : g.hermDefect δ id iq qf s = g.E ^ 4 * Complex.normSq (s + g.ωq) := by
+    have hc : (starRingEnd ℂ) s + (g.ωq : ℂ) = (starRingEnd ℂ) (s + g.ωq) := by simp
+    simp only [hermDefect, hn, hE, mul_zero, zero_mul, zero_sub, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, zero_pow, zero_add, Complex.ofReal_zero, hc, Complex.normSq_neg,
+      Complex.normSq_mul, Complex.normSq_ofReal, Complex.normSq_conj]
+    ring
+  rw [g.positiveRealAt_transfer_iff hM hL hW hZ hA, hdet, hH, Complex.normSq_mul,
+    Complex.normSq_eq_norm_sq w]
+  have hsync : ‖g.toVSM.syncGain δ id iq s‖ = ‖w‖⁻¹ := by
+    simp [VSM.syncGain, hw_def]
+  rw [hsync]
+  have hq' : 0 < Complex.normSq (s + g.ωq) := Complex.normSq_pos.mpr hq
+  have hw : 0 < ‖w‖ := norm_pos_iff.mpr hden
+  set ρ := g.R + g.L * s.re
+  rw [mul_inv_le_iff₀ hw]
+  constructor
+  · rintro ⟨h0, h1⟩
+    have h2 : (g.E ^ 2) ^ 2 ≤ (2 * ρ * ‖w‖) ^ 2 := by
+      have := le_of_mul_le_mul_right (a := Complex.normSq (s + g.ωq))
+        (by nlinarith [h1]) hq'
+      nlinarith [this]
+    have := (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).mp h2
+    linarith
+  · intro h
+    have h0 : 0 ≤ ρ := by
+      by_contra hneg
+      rw [not_le] at hneg
+      nlinarith [sq_nonneg g.E, mul_pos (neg_pos.mpr hneg) hw]
+    refine ⟨h0, ?_⟩
+    have h2 : (g.E ^ 2) ^ 2 ≤ (2 * ρ * ‖w‖) ^ 2 :=
+      pow_le_pow_left₀ (by positivity) (by linarith) 2
+    nlinarith [mul_le_mul_of_nonneg_right h2 hq'.le]
+
+/-- The DC loop determinant factor `σ = E' Q_c + n_q (P_c² + Q_c²)` (`det W(0) = −ω_q σ/E'`). -/
+def dcSigma (δ id iq qf : ℝ) : ℝ :=
+  g.emfMag qf * (g.net qf).reactive δ id iq +
+    g.nq * ((g.net qf).power δ id iq ^ 2 + (g.net qf).reactive δ id iq ^ 2)
+
+/-- **DC passivity with Q–V droop.** At `s = 0`, with `E' = E(Q_f) ≠ 0`, `ω_q ≠ 0` and
+`σ = E' Q_c + n_q (P_c² + Q_c²) ≠ 0` (`dcSigma`; then `det W(0) = −ω_q σ/E'`), the port
+admittance is positive real iff `R ≥ 0` and `E'⁴ (E'² + 4 n_q σ) ≤ 4 R² σ²`, where
+`E'² + 4 n_q σ = (E' + 2 n_q Q_c)² + (2 n_q P_c)² ≥ 0`. At `n_q = 0` it reads `E'² ≤ 2R |Q_c|`
+(`Line.VSM.positiveRealAt_transfer_zero_iff`). -/
+@[tmio M, powerlib_domain] theorem positiveRealAt_transfer_zero_iff (hM : g.M ≠ 0)
+    (hL : g.L ≠ 0) {δ id iq qf : ℝ} (hE : g.emfMag qf ≠ 0) (hq : g.ωq ≠ 0)
+    (hσ : g.dcSigma δ id iq qf ≠ 0) (hZ : (g.droopZ δ id iq qf 0).det ≠ 0)
+    (hA : (characteristicMatrix (g.portModel δ id iq qf).A 0).det ≠ 0) :
+    PH.PositiveRealAt (transfer (g.portModel δ id iq qf) 0) ↔ 0 ≤ g.R ∧
+      g.emfMag qf ^ 4 * (g.emfMag qf ^ 2 + 4 * g.nq * g.dcSigma δ id iq qf) ≤
+        4 * g.R ^ 2 * g.dcSigma δ id iq qf ^ 2 := by
+  have hP : (g.net qf).power δ id iq = g.emfMag qf * (Real.cos δ * id + Real.sin δ * iq) :=
+    (g.net qf).power_eq δ id iq
+  have hQ : (g.net qf).reactive δ id iq = g.emfMag qf * (Real.sin δ * id - Real.cos δ * iq) :=
+    (g.net qf).reactive_eq δ id iq
+  have hE' : (g.emfMag qf : ℂ) ≠ 0 := by exact_mod_cast hE
+  have hdet : (g.chanW δ id iq qf 0).det =
+      ((-(g.ωq * g.dcSigma δ id iq qf / g.emfMag qf)) : ℝ) := by
+    rw [Matrix.det_fin_two, g.chanW_apply]
+    simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.empty_val', Matrix.cons_val_fin_one, dcSigma, hP, hQ]
+    push_cast
+    field_simp
+    ring
+  have hW : (g.chanW δ id iq qf 0).det ≠ 0 := by
+    rw [hdet]
+    exact_mod_cast neg_ne_zero.mpr (div_ne_zero (mul_ne_zero hq hσ) hE)
+  have hH : g.hermDefect δ id iq qf 0 = g.emfMag qf ^ 2 * g.ωq ^ 2 *
+      (g.emfMag qf ^ 2 + 4 * g.nq * g.dcSigma δ id iq qf) := by
+    have hz : (g.nq : ℂ) * g.ωq * (g.M * 0 ^ 2 + g.D * 0 - 2 * ((g.net qf).reactive δ id iq : ℂ)) -
+        g.emfMag qf * ((starRingEnd ℂ) 0 + g.ωq) =
+        ((-(2 * g.nq * g.ωq * (g.net qf).reactive δ id iq) - g.emfMag qf * g.ωq : ℝ) : ℂ) := by
+      simp only [map_zero]; push_cast; ring
+    rw [hermDefect, hz, Complex.normSq_ofReal, dcSigma]
+    ring
+  rw [g.positiveRealAt_transfer_iff hM hL hW hZ hA, hdet, hH, Complex.normSq_ofReal]
+  simp only [Complex.zero_re, mul_zero, add_zero]
+  have e1 : 4 * g.R ^ 2 * (-(g.ωq * g.dcSigma δ id iq qf / g.emfMag qf) *
+      -(g.ωq * g.dcSigma δ id iq qf / g.emfMag qf)) =
+      g.ωq ^ 2 / g.emfMag qf ^ 2 * (4 * g.R ^ 2 * g.dcSigma δ id iq qf ^ 2) := by
+    field_simp
+  have e2 : g.emfMag qf ^ 2 * g.ωq ^ 2 * (g.emfMag qf ^ 2 + 4 * g.nq * g.dcSigma δ id iq qf) =
+      g.ωq ^ 2 / g.emfMag qf ^ 2 *
+        (g.emfMag qf ^ 4 * (g.emfMag qf ^ 2 + 4 * g.nq * g.dcSigma δ id iq qf)) := by
+    field_simp
+  rw [e1, e2, mul_le_mul_iff_of_pos_left (by positivity)]
+
+/-- **A lossless line is non-passive at every nonzero frequency** unless the reactive channel
+cancels: with `R = 0`, `E' ≠ 0`, `ω ≠ 0` and `n_q ω_q D + E' ≠ 0`, the port admittance is not
+positive real at `jω` off the poles (`Im` of the defect's second term is
+`ω (n_q ω_q D + E')`). -/
+@[tmio M, powerlib_domain] theorem not_positiveRealAt_transfer_of_lossless (hM : g.M ≠ 0)
+    (hL : g.L ≠ 0) (hR : g.R = 0) {δ id iq qf ω : ℝ} (hω : ω ≠ 0) (hE : g.emfMag qf ≠ 0)
+    (hD : g.nq * g.ωq * g.D + g.emfMag qf ≠ 0)
+    (hW : (g.chanW δ id iq qf (ω * Complex.I)).det ≠ 0)
+    (hZ : (g.droopZ δ id iq qf (ω * Complex.I)).det ≠ 0)
+    (hA : (characteristicMatrix (g.portModel δ id iq qf).A (ω * Complex.I)).det ≠ 0) :
+    ¬ PH.PositiveRealAt (transfer (g.portModel δ id iq qf) (ω * Complex.I)) := by
+  rw [g.positiveRealAt_transfer_iff hM hL hW hZ hA]
+  rintro ⟨-, h⟩
+  set z : ℂ := g.nq * g.ωq * (g.M * (ω * Complex.I) ^ 2 + g.D * (ω * Complex.I) -
+    2 * ((g.net qf).reactive δ id iq : ℂ)) - g.emfMag qf * ((starRingEnd ℂ) (ω * Complex.I) + g.ωq)
+  have hz : z.im = ω * (g.nq * g.ωq * g.D + g.emfMag qf) := by
+    simp [z, Complex.mul_im, Complex.mul_re, pow_two]
+    ring
+  have hzpos : 0 < Complex.normSq z := by
+    rw [Complex.normSq_apply, hz]
+    have : 0 < (ω * (g.nq * g.ωq * g.D + g.emfMag qf)) ^ 2 := by positivity
+    nlinarith [sq_nonneg z.re]
+  have hpos : 0 < g.hermDefect δ id iq qf (ω * Complex.I) := by
+    rw [hermDefect]
+    have : 0 < g.emfMag qf ^ 2 := by positivity
+    have h2 := sq_nonneg (2 * g.nq * g.ωq * (g.net qf).power δ id iq)
+    change 0 < g.emfMag qf ^ 2 * ((2 * g.nq * g.ωq * (g.net qf).power δ id iq) ^ 2 +
+      Complex.normSq z)
+    positivity
+  simp [hR] at h
+  linarith
 
 end VSMQ
 

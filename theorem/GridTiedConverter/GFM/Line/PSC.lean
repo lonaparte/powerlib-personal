@@ -53,6 +53,14 @@ Family and connection conclusions.
   model above the critical gain (`PSC.psc_stable_full_unstable_of_gain`); boundary witnesses on
   the line `E = V = R = L = ω₀ = 1` at zero load (`K_p,crit = 4`): `PSC.lowGain_stable`
   (`K_p = 1`) and `PSC.highGain_psc_stable_full_unstable` (`K_p = 5`).
+* On the Routh boundary itself (`theorem/GridTiedConverter/GFM/HopfLinePSC.lean`): the Hopf
+  boundary `a₂ a₁ = a₀`, the first Lyapunov coefficient in closed form at every angle
+  (`PSC.Model.firstLyapunov_crit`), its sign law (`PSC.Model.sign_firstLyapunov_crit`), the
+  supercritical / subcritical connection theorems, the non-exactness of the local asymptotic and
+  of the instability translations (`PSC.not_exactUnder_locallyAsymptoticallyStable`: the
+  zero-load model at the critical gain `K_p = 4` is locally asymptotically stable;
+  `PSC.not_exactUnder_unstable`) and the complete local asymptotic membership off the degenerate
+  set (`PSC.mem_den_locallyAsymptoticallyStable_iff`).
 -/
 
 noncomputable section

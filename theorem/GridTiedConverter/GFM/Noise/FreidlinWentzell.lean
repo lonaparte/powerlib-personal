@@ -29,11 +29,16 @@ Model boundary.
 * The noise: `B` a Brownian motion (Mathlib's `IsBrownianReal`) and `X` a measurable path-space
   version of it on `[0, T]` (`Stochastic.LDP.exists_version`); Schilder's theorem for `√ε X` is
   `Stochastic.LDP.isLDP_schilder`.
-* The exit-time asymptotics (`ε log E τ → V`) are not formalized. Their ingredients proved
-  elsewhere: the principle uniform over compact sets of initial points and the exit exponent
-  through an energy level (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellExit.lean`), the
-  flow property of the solution (`theorem/Stochastic/SolutionFlow.lean`); missing: the Markov
-  property of the solution given the past and the exit-time bounds.
+* The exit-time asymptotics (`ε log E τ → V`): proved elsewhere are the principle uniform over
+  compact sets of initial points, the exit exponent through an energy level and the upper bound
+  `limsup ε log E τ_ε ≤ sup_{x ∈ K} inf_{φ leaves K} J_x^T(φ)` for the mean exit time from a
+  compact set (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellExit.lean`), the flow
+  property (`theorem/Stochastic/SolutionFlow.lean`) and the Markov property at deterministic
+  times (`theorem/Stochastic/AdditiveMarkov.lean`); for the two-state potential well below the
+  level `H(x_u) − η` the bound is the boundary-level value `2D(ΔU − η)/σ_P²`, which also bounds
+  the exit before a fixed time
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`); missing: the lower bound
+  for the mean exit time (strong Markov property at hitting times) and the exit place.
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 3 §1–2 (additive noise; the action functional `½∫|u|²` of the controlled skeleton) and Ch. 4

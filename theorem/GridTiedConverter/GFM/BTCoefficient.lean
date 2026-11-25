@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.Bifurcation
 import theorem.NormalForm.BogdanovTakens
+import theorem.Dynamics.CenterReductionBT
 
 /-! # Bogdanov–Takens and fold coefficients of the quasi-static GFM
 
@@ -23,14 +24,19 @@ Model boundary.
 * Level: the coefficients are Kuznetsov's projection formulas at the operating point, from the
   first and second `fderiv` of the field (`VSMLPFLossy.hasFDerivAt_field`,
   `VSMLPFLossy.fderiv_fderiv_field`, `Synchronous.SwingParams.fderiv_field`,
-  `swing_fderiv_fderiv_field`). No normal-form transformation, unfolding or bifurcation
-  diagram is asserted and no family is defined: every result is static evidence on the model.
+  `swing_fderiv_fderiv_field`). At the three-state corner they are also the coefficients of the
+  reduced dynamics: a centre manifold exists and carries the truncated Bogdanov–Takens normal
+  form up to `o(‖y‖²)` (the generic reduction `theorem/Dynamics/CenterReductionBT.lean`); the
+  corner has `D = 0`, outside the physical range `D > 0` of `VSMLPFLossy.Meets`. No unfolding,
+  bifurcation diagram or criticality is asserted and no family is defined: every result is
+  static evidence on the model.
 
 Source: GFM counterpart study, note t3-bifurcation (b) `B3` (the coefficients of the corners
 `D = K = 0`: three states `a b < 0`, two states `b = 0`) and (d) `F1`, `F2` (the fold coefficient
 `(P_ref − c₀)/(2D)` and the transversality `1/D`), derived symbolically and checked there
 (scratch notes outside the repository); Kuznetsov, *Elements of Applied Bifurcation Theory*
-(3rd ed., 2004), §5.4 (fold), §8.4 and §8.7 (Bogdanov–Takens).
+(3rd ed., 2004), §5.4 (fold), §8.4 (Lemma 8.7, the normal form at second order) and §8.7
+(Bogdanov–Takens).
 
 Results.
 * `VSMLPFLossy.fderiv_fderiv_field`: the second derivative `B(u, v) = (0, 0, −ω_c A sin(δ − α)
@@ -44,6 +50,15 @@ Results.
   power balance; `a b = −A²/(2 M² ω_c) < 0` for `ω_c > 0`, `A ≠ 0`
   (`VSMLPFLossy.Model.coeffA_mul_coeffB_of_corner`); compare the PI-PLL Liénard form, whose
   quadratic coefficients are `b₂₀ = K_i h''`, `b₁₁ = K_p h''` (`PLL.bt_b20`, `PLL.bt_b11`).
+* **The centre-manifold reduction at the corner**
+  (`VSMLPFLossy.Model.exists_centerManifold_btNormalForm_of_corner`): at `D = 0`, `K = 0` with
+  power balance (`M, ω_c > 0`) there is a Lipschitz, `C¹`, tangent centre manifold satisfying the
+  invariance equation, over the plane of the chain above, and on it the field, in the coordinates
+  `w = (⟨p₀, x⟩, ⟨p₁, x⟩)` and after Kuznetsov's quadratic change of coordinates
+  (`NormalForm.BogdanovTakens.btCoordChange`), is `ẏ₀ = y₁`,
+  `ẏ₁ = ((P(δ*) − c₀)/(2M)) y₀² − ((P(δ*) − c₀)/(M ω_c)) y₀y₁ + o(‖y‖²)`: the instance of
+  `NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm` (characteristic
+  polynomial `s²(s + ω_c)`, `VSMLPF.charpoly_jacobian`; one-dimensional kernel).
 * The damped fold `K = 0`, `D ≠ 0`, where the zero eigenvalue is simple
   (`VSMLPF.rootMultiplicity_zero_le_one`): the normalised null pair `q = (1, 0, 0)`,
   `p = (1, M/D, −1/(D ω_c))` (`VSMLPFLossy.Model.isNullPair_of_fold`); for every normalised
@@ -216,6 +231,115 @@ Static evidence on the model, not a connection conclusion. -/
   have : 0 < 2 * m.p.M ^ 2 * m.p.ωc := by positivity
   rw [neg_div]
   exact neg_neg_of_pos (by positivity)
+
+/-! ## The centre-manifold reduction at the corner -/
+
+section Reduction
+
+open Polynomial Filter Topology Asymptotics
+open powerlib.Dynamics.CenterManifold (IsGraphMap IsLittleOrder IsInvariantGraph)
+open powerlib.NormalForm.LyapunovCoefficient (cmat cmat_toEuclideanCLM)
+
+@[tmio M, powerlib_domain] private theorem model_fderiv (m : Model) :
+    fderiv ℝ m.field 0 = fderiv ℝ m.p.field m.point := by
+  show fderiv ℝ (fun z => m.p.field (z + m.point)) 0 = _
+  rw [fderiv_comp_add_right, zero_add]
+
+@[tmio M, powerlib_domain] private theorem model_fderiv2 (m : Model) :
+    fderiv ℝ (fderiv ℝ m.field) 0 = fderiv ℝ (fderiv ℝ m.p.field) m.point := by
+  have h : fderiv ℝ m.field = fun z => fderiv ℝ m.p.field (z + m.point) := by
+    funext z
+    show fderiv ℝ (fun z => m.p.field (z + m.point)) z = _
+    rw [fderiv_comp_add_right]
+  rw [h, fderiv_comp_add_right, zero_add]
+
+/-- **The centre-manifold reduction at the corner.** At `D = 0`, `K = 0` with power balance
+(`M, ω_c > 0`) the three-state model has a Lipschitz, `C¹`, tangent centre manifold satisfying
+the invariance equation near `0` (the static form of local invariance; the trajectory form is in
+`NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm`) over the plane of the
+chain `q₀ = (1, 0, 0)`, `q₁ = (0, 1, 0)`, `p₀ = (1, 0, 1/(M ω_c²))`,
+`p₁ = (0, 1, −1/(M ω_c))`, and on it the field, in the coordinates `w = π x` and after Kuznetsov's
+quadratic change of coordinates, is the Bogdanov–Takens normal form
+`ẏ₀ = y₁`, `ẏ₁ = a y₀² + b y₀ y₁ + o(‖y‖²)` with `a = (P(δ*) − c₀)/(2M)`,
+`b = −(P(δ*) − c₀)/(M ω_c)`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.exists_centerManifold_btNormalForm_of_corner
+    (m : Model) (hM : 0 < m.p.M) (hω : 0 < m.p.ωc) (hD : m.p.D = 0) (hK : m.K = 0)
+    (hb : m.p.Pe m.δ = m.p.Pref) :
+    ∃ h : State 3 → State 3, ∃ L : NNReal,
+      IsGraphMap (btP (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+        (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) h ∧ LipschitzWith L h ∧
+      IsLittleOrder (btP (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+        (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) h 1 ∧ ContDiff ℝ 1 h ∧
+      IsInvariantGraph (fderiv ℝ m.field 0) (btP (mk3 1 0 0) (mk3 0 1 0)
+        (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))))
+        (fun x => m.field x - fderiv ℝ m.field 0 x) h ∧
+      (fun w => fderiv ℝ (btCoordChange m.field (mk3 1 0 0) (mk3 0 1 0)
+            (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) w
+          (btπ (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))
+            (m.field (btι (mk3 1 0 0) (mk3 0 1 0) w +
+              h (btι (mk3 1 0 0) (mk3 0 1 0) w)))) -
+        NormalForm.BogdanovTakens.field ⟨0, 0, (m.p.Pe m.δ - m.p.c0) / (2 * m.p.M),
+          -(m.p.Pe m.δ - m.p.c0) / (m.p.M * m.p.ωc)⟩
+          (btCoordChange m.field (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+            (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) w)) =o[𝓝 0] fun w => ‖w‖ ^ 2 := by
+  have hK' : m.p.A * Real.cos (m.δ - m.p.α) = 0 := hK
+  have hF : ContDiff ℝ 2 m.field := m.p.contDiff_field.comp (contDiff_id.add contDiff_const)
+  have hF0 : m.field 0 = 0 := by
+    show m.p.field (0 + m.point) = 0
+    rw [zero_add, m.p.field_eq_zero_iff hM.ne' hω.ne']
+    simp [Model.point, hb]
+  have hch : IsBTChain (fderiv ℝ m.field 0) (mk3 1 0 0) (mk3 0 1 0)
+      (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) := by
+    rw [model_fderiv]; exact m.isBTChain_of_corner hM.ne' hω.ne' hD hK
+  have hJ : ∀ v : State 3, fderiv ℝ m.field 0 v = mk3 (v 1) (-v 2 / m.p.M) (-(m.p.ωc * v 2)) := by
+    intro v
+    rw [model_fderiv, fderiv_eq]
+    apply state3_ext
+    · simp [toEuclideanCLM_apply3, VSMLPF.jacobian, VSMLPFLossy.toVSMLPF, Model.point, hD, hK']
+    · simp [toEuclideanCLM_apply3, VSMLPF.jacobian, VSMLPFLossy.toVSMLPF, Model.point, hD, hK']
+      ring
+    · simp [toEuclideanCLM_apply3, VSMLPF.jacobian, VSMLPFLossy.toVSMLPF, Model.point, hD, hK']
+  have hker : ∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • mk3 1 0 0 := by
+    intro v hv
+    rw [hJ] at hv
+    have h1 : v 1 = 0 := by simpa using congrArg (fun x : State 3 => x 0) hv
+    have h2 : v 2 = 0 := by
+      have := congrArg (fun x : State 3 => x 2) hv
+      simp at this
+      rcases this with h | h
+      · exact absurd h hω.ne'
+      · exact h
+    refine ⟨v 0, ?_⟩
+    apply state3_ext <;> simp [h1, h2]
+  have hchar : (cmat (fderiv ℝ m.field 0)).charpoly = X ^ 2 * (X + C (m.p.ωc : ℂ)) := by
+    rw [model_fderiv, fderiv_eq, cmat_toEuclideanCLM]
+    rw [show (fun x : ℝ => (x : ℂ)) = ⇑(algebraMap ℝ ℂ) from rfl, Matrix.charpoly_map,
+      VSMLPF.charpoly_jacobian]
+    simp only [VSMLPFLossy.toVSMLPF, Model.point, mk3_zero, hD, hK']
+    simp
+    ring
+  have hr : ∀ s : ℂ, (X + C (m.p.ωc : ℂ)).eval s = 0 → s.re < 0 := by
+    intro s hs
+    simp only [eval_add, eval_X, eval_C] at hs
+    have : s = -(m.p.ωc : ℂ) := by linear_combination hs
+    rw [this]; simp [hω]
+  obtain ⟨-, -, h, L, hgm, hL, hh, hC1, hieq, -, hnf⟩ :=
+    hch.exists_centerManifold_btNormalForm hF hF0 hker hchar hr
+  refine ⟨h, L, hgm, hL, hh, hC1, hieq, ?_⟩
+  have hch' : IsBTChain (fderiv ℝ m.p.field m.point) (mk3 1 0 0) (mk3 0 1 0)
+      (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) :=
+    m.isBTChain_of_corner hM.ne' hω.ne' hD hK
+  obtain ⟨ha, hb'⟩ := m.coeff_of_corner hM.ne' hω.ne' hD hK hch'
+  have eA : coeffA m.field 0 (mk3 1 0 0) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) =
+      (m.p.Pe m.δ - m.p.c0) / (2 * m.p.M) := by
+    rw [coeffA, model_fderiv2, ← ha, coeffA]
+  have eB : coeffB m.field 0 (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+      (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) = -(m.p.Pe m.δ - m.p.c0) / (m.p.M * m.p.ωc) := by
+    rw [coeffB, model_fderiv2, ← hb', coeffB]
+  rw [eA, eB] at hnf
+  exact hnf
+
+end Reduction
 
 /-! ## The damped fold `K = 0`, `D ≠ 0` -/
 

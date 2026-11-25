@@ -7,8 +7,9 @@ import theorem.Dynamics.Instability
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import theorem.Dynamics.Calculus
 import theorem.Spectral.Global
+import theorem.Dynamics.DiffusiveSync
 
-/-! # Andronov–Hopf virtual oscillator (AHO-VOC) at no load
+/-! # Andronov–Hopf virtual oscillator (AHO-VOC): no load, admittance load, oscillator networks
 
 Model boundary.
 * Stationary `αβ` frame; the oscillator state `v = v_α + j v_β ∈ ℂ` (i.e. the state pair
@@ -19,8 +20,14 @@ Model boundary.
   `v̇_β = ω_s v_α − σ v_β + κ_v (v*² − |v|²) v_β` (`aho_re`, `aho_im`).
 * Parameters `κ_v > 0`, `σ < κ_v v*²`; write `c = κ_v v*² − σ > 0` and `r* = √(v*² − σ/κ_v)`
   (`rstar_eq`; `rstar` is the radius `NormalForm.Hopf.radius` of `AHO.toHopf`).
-* Excluded: output current coupling `−κ_i i` (zero load), filters, inner loops, PWM, delays,
-  multi-converter networks (no dVOC network result is claimed).
+* Loaded oscillator: output current `i = Y v` of a constant admittance load `Y = g + jb` through
+  the gain `κ_i`, `v̇ = (j ω_s − σ + κ_v (v*² − |v|²)) v − κ_i Y v` (`loadedField`).
+* Networks: `n` identical oscillators with the current coupling `−η ∑ⱼ Lₖⱼ vⱼ`, `L` a real
+  matrix, `η ≥ 0` (`networkField`): the dispatchable VOC with a rotation matched to a uniform
+  line angle (`R(κ) Y` real) and no power set-points, or AHOs on a network seen through a real
+  Laplacian current. Two units: one line of weight `w` (`twoLine`).
+* Excluded: grid connections (infinite bus), line dynamics, dVOC power set-points
+  (`K(κ) ≠ 0`) and mismatched rotations, filters, inner loops, PWM, delays.
 
 Source: work-sync `theory/T-voc-dvoc.md` §1.2, §1.3, §1.8; `theory/T-gfm-control.md` §1.5.
 
@@ -38,6 +45,21 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
 * The circle `|v| = r*` is invariant and carries exactly the solutions `r* e^{j(ω_s t + φ₀)}`.
 * Algebra: polar decomposition of the loaded AHO (domain) and the dVOC complex frequency
   (foundation).
+* Loaded oscillator (static): `loadedField_eq` — under a constant admittance load the AHO is the
+  AHO `load` with frequency `ω_s − κ_i b` and damping `σ + κ_i g` (`load_c`: growth `c − κ_i g`);
+  `load_admissible_iff` (the loaded limit cycle exists iff `κ_v > 0` and `κ_i g < c`),
+  `load_rstar_sq` (`r*² = (c − κ_i g)/κ_v`).
+* Networks: `inner_field_sub_le` (static: for `κ_v ≥ 0` the node field is one-sided Lipschitz,
+  `⟪x − y, f(x) − f(y)⟫ ≤ c ‖x − y‖²`). Trajectory level (private implementation evidence, Rules
+  §3a), through the foundation law `Dynamics.DiffusiveSync.disagreement_le`: every global solution
+  of a network whose real coupling contracts the disagreement at the rate `λ` (`λ₂` for a
+  symmetric Laplacian) has `∑ₖ ∑ⱼ |vₖ − vⱼ|² ≤ e^{2(c − ηλ)t}` times its initial value
+  (`network_disagreement_le`; exponential synchronization for `ηλ > c`); two units synchronize
+  for `2ηw > c` (`two_disagreement_le`) and, with `κ_v > 0`, have the anti-phase periodic solution
+  `±r e^{jω_s t}`, `r² = (c − 2ηw)/κ_v`, for `2ηw < c` (`two_antiPhase`): the threshold
+  `2ηw = c` is exact except at equality. Not formalized: almost-global synchronization with
+  power set-points (Colombino et al. 2019), which needs the set-point consistency and a Lyapunov
+  argument on the synchronous manifold with its unstable anti-phase equilibria.
 
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
@@ -71,6 +93,14 @@ Family and connection conclusions.
 * Connection conclusion for the module's own regime: under the standing assumptions the
   origin is unstable (`Admissible.mem_den_unstable`): solutions leave the origin, towards the limit
   cycle of the trajectory-level results.
+* The loaded oscillator is read as the family member `load κ_i Y` (`loadedField_eq`; same family,
+  no change of representation): its origin is locally asymptotically stable — the oscillation is
+  quenched — exactly when `c < κ_i g`, or `κ_i g = c` with `κ_v > 0`
+  (`load_mem_den_locallyAsymptoticallyStable_iff`), Lyapunov stable exactly when `c < κ_i g`, or
+  `κ_i g = c` with `κ_v ≥ 0` (`load_mem_den_lyapunovStable_iff`), locally exponentially stable
+  exactly when `c < κ_i g` (`load_mem_den_locallyExponentiallyStable_iff`), and unstable for
+  `κ_i g < c` (`load_mem_den_unstable`): a passive load larger than the growth margin quenches the
+  oscillator, a reactive load only shifts its frequency to `ω_s − κ_i b`.
 * The limit-cycle results above (`normSq_solution_pos`, `normSq_formula`, `norm_tendsto_rstar`,
   `phase_rotation`, `norm_eq_rstar_of_start`, `limitCycle_isSolution`) are trajectory level and
   outside the sentence language (Rules §3a): they are private implementation evidence (the
@@ -83,8 +113,9 @@ Corrections.
 * T-voc-dvoc §1.8 writes the dVOC complex frequency as
   `η̄ = jω_s + (η/v)(K e_θ / v + α(v*² − |v|²))`; from `v̇ = jω_s v + η(e_θ + α(v*² − |v|²) v)`
   the correct expression is `v̇/v = jω_s + η e_θ / v + η α (v*² − |v|²)` (`dvoc_complexFrequency`).
-* The dVOC control law of §1.3 differs from Colombino et al. 2019; no dVOC multi-converter
-  statement is formalized.
+* The dVOC control law of §1.3 differs from Colombino et al. 2019. The multi-converter statement
+  formalized here is the set-point-free network (synchronization for `ηλ > c`, exact for two
+  units up to `2ηw = c`); §1.5's almost-global certificate with set-points is not formalized.
 -/
 
 noncomputable section
@@ -543,7 +574,9 @@ contraction and decay rates, and passivity without requirement (the global table
     · cases P <;> rfl
     · rfl
     · rfl
-  all_goals rw [(connection_proof% TMIO.mem_realize)] at ha; rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  all_goals
+    rw [(connection_proof% TMIO.mem_realize)] at ha
+    rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   · exact family_isAutonomous.mem_den_flow.mp
       (mem_den_locallyExponentiallyStable a (ha .decaying rfl))
   · exact family_isAutonomous.mem_den_flow.mp
@@ -616,7 +649,8 @@ def critical : AHO := ⟨0, 1, 1, 1⟩
       (NormalForm.Hopf.field_contDiff critical.toHopf) (NormalForm.Hopf.field_zero critical.toHopf)
       (inner_neg_of_critical critical_c (show (0 : ℝ) < critical.κv from one_pos)))
 
-@[tmio M, powerlib_domain] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
+@[tmio M, powerlib_domain] private theorem critical_not_decaying :
+    connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   change ¬ critical.c < 0
@@ -629,7 +663,9 @@ asymptotically stable without decay at the origin (`c = 0`). -/
     connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness critical_mem_den_globallyAsymptoticallyStable
-    (q := .decaying) (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
+    (q := .decaying) (by simp [family, translate])
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family]
+      using critical_not_decaying)
 
 /-- The local asymptotic translation is sound but not exact (the same witness): local asymptotic
 stability is not decided by the linearization. -/
@@ -641,7 +677,9 @@ stability is not decided by the linearization. -/
   exact Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr
     (Flow.GloballyAsymptoticallyStable.localAsymptoticStable
       (family_isAutonomous.mem_den_flow.mp hmem))) (q := .decaying)
-    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
+    (by simp [family, translate])
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family]
+      using critical_not_decaying)
 
 /-- The Lyapunov translation is sound but not exact (the same witness). -/
 @[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
@@ -651,7 +689,9 @@ stability is not decided by the linearization. -/
   unfold powerlib.TMIO.Statement at hmem
   exact Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr
     (family_isAutonomous.mem_den_flow.mp hmem).2.2.1) (q := .decaying)
-    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
+    (by simp [family, translate])
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family]
+      using critical_not_decaying)
 
 /-! ### The local asymptotic and Lyapunov denotations -/
 
@@ -796,6 +836,265 @@ with `v = r e^{jϕ}`, `ṙ = (κ_v(v*² − r²) − σ) r − Re(κ_i i e^{−j
   field_simp
   push_cast
   ring
+
+/-! ## The AHO under a constant admittance load -/
+
+variable (a)
+
+/-- The loaded AHO field `v̇ = (jω_s − σ + κ_v (v*² − |v|²)) v − κ_i i` with the output current of a
+constant admittance load, `i = Y v` (`Y = g + jb`; a passive load has `g ≥ 0`). -/
+def loadedField (κi : ℝ) (Y v : ℂ) : ℂ := a.field v - κi * (Y * v)
+
+/-- The AHO parameters of the loaded oscillator: frequency `ω_s − κ_i b`, damping `σ + κ_i g`. -/
+def load (κi : ℝ) (Y : ℂ) : AHO := ⟨a.ωs - κi * Y.im, a.σ + κi * Y.re, a.κv, a.vstar⟩
+
+/-- **The loaded oscillator is an AHO**: the loaded field is the no-load field of `load`. Static
+evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem loadedField_eq (κi : ℝ) (Y v : ℂ) :
+    a.loadedField κi Y v = (a.load κi Y).field v := by
+  apply Complex.ext <;>
+    simp only [loadedField, load, field, gain, c, Complex.sub_re, Complex.sub_im, Complex.mul_re,
+      Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im] <;> ring
+
+/-- The growth coefficient of the loaded oscillator, `c − κ_i g`. Static evidence on the model. -/
+@[tmio M, simp, powerlib_domain] theorem load_c (κi : ℝ) (Y : ℂ) :
+    (a.load κi Y).c = a.c - κi * Y.re := by
+  simp only [load, c]
+  ring
+
+/-- The loaded oscillator meets the standing assumptions exactly when `κ_v > 0` and the load
+damping stays below the growth, `κ_i g < c`; then its limit cycle has radius
+`r*² = (c − κ_i g)/κ_v` (and frequency `ω_s − κ_i b`, the `ω_s` of `load`). Static evidence on the
+model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem load_admissible_iff (κi : ℝ) (Y : ℂ) :
+    (a.load κi Y).Admissible ↔ 0 < a.κv ∧ κi * Y.re < a.c := by
+  constructor
+  · intro h
+    refine ⟨h.κv, ?_⟩
+    have := h.gap
+    simp only [load, c] at this ⊢
+    linarith
+  · rintro ⟨hk, hg⟩
+    refine ⟨hk, ?_⟩
+    simp only [load, c] at hg ⊢
+    linarith
+
+/-- Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem load_rstar_sq {κi : ℝ} {Y : ℂ}
+    (h : (a.load κi Y).Admissible) :
+    (a.load κi Y).rstar ^ 2 = (a.c - κi * Y.re) / a.κv := by
+  rw [h.rstar_sq, load_c]
+  rfl
+
+/-- **Quenching by a load, exact.** The origin of the loaded oscillator is locally asymptotically
+stable (the oscillation is quenched near the origin) exactly when the load damping reaches the
+growth: `κ_i g > c`, or `κ_i g = c` with `κ_v > 0` (`mem_den_locallyAsymptoticallyStable_iff` of
+`load`). -/
+@[tmio TM, powerlib_domain] theorem load_mem_den_locallyAsymptoticallyStable_iff (κi : ℝ)
+    (Y : ℂ) :
+    connection% (a.load κi Y ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      (a.c < κi * Y.re ∨ (κi * Y.re = a.c ∧ 0 < a.κv))) := by
+  have h := mem_den_locallyAsymptoticallyStable_iff (a.load κi Y)
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h, Set.mem_ofPred_eq, load_c]
+  constructor <;> rintro (h | ⟨h1, h2⟩)
+  · exact Or.inl (by linarith)
+  · exact Or.inr ⟨by linarith, h2⟩
+  · exact Or.inl (by linarith)
+  · exact Or.inr ⟨by linarith, h2⟩
+
+/-- **Oscillation under a load, exact.** The origin of the loaded oscillator is Lyapunov stable
+exactly when `κ_i g > c`, or `κ_i g = c` with `κ_v ≥ 0`; otherwise (`κ_i g < c`, the standing
+assumption of the limit cycle) it is unstable (`load_mem_den_unstable`). -/
+@[tmio TM, powerlib_domain] theorem load_mem_den_lyapunovStable_iff (κi : ℝ) (Y : ℂ) :
+    connection% (a.load κi Y ∈ family.den (.flow .lyapunovStable) ↔
+      (a.c < κi * Y.re ∨ (κi * Y.re = a.c ∧ 0 ≤ a.κv))) := by
+  have h := mem_den_lyapunovStable_iff (a.load κi Y)
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h, Set.mem_ofPred_eq, load_c]
+  constructor <;> rintro (h | ⟨h1, h2⟩)
+  · exact Or.inl (by linarith)
+  · exact Or.inr ⟨by linarith, h2⟩
+  · exact Or.inl (by linarith)
+  · exact Or.inr ⟨by linarith, h2⟩
+
+/-- The origin of the loaded oscillator is locally exponentially stable exactly when the load
+damping exceeds the growth, `c < κ_i g` (`exact_locallyExponentiallyStable` at `load`). -/
+@[tmio TM, powerlib_domain] theorem load_mem_den_locallyExponentiallyStable_iff (κi : ℝ)
+    (Y : ℂ) :
+    connection% (a.load κi Y ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      a.c < κi * Y.re) := by
+  have h := exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [← h, (connection_proof% TMIO.mem_realize)]
+  simp only [family, translate, Set.mem_singleton_iff, forall_eq, Meets, load_c]
+  constructor <;> intro h <;> linarith
+
+/-- With the load damping below the growth (`κ_i g < c`) the origin of the loaded oscillator is
+unstable: solutions leave it towards the loaded limit cycle. -/
+@[tmio TM, powerlib_domain] theorem load_mem_den_unstable {κi : ℝ} {Y : ℂ}
+    (h : κi * Y.re < a.c) :
+    connection% (a.load κi Y ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable (a.load κi Y) (by rw [load_c]; linarith)
+
+/-! ## Networks of oscillators with a Laplacian current coupling -/
+
+/-- **The AHO node is one-sided Lipschitz** (`κ_v ≥ 0`): `⟪x − y, f(x) − f(y)⟫ ≤ c ‖x − y‖²`;
+the rotation `j ω_s` is skew and the cubic term is monotone,
+`Re((x − y)* (|x|² x − |y|² y)) ≥ (|x|² − |y|²)²/2`. Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem inner_field_sub_le (hκ : 0 ≤ a.κv) (x y : ℂ) :
+    inner ℝ (x - y) (a.field x - a.field y) ≤ a.c * ‖x - y‖ ^ 2 := by
+  rw [Complex.inner, ← Complex.normSq_eq_norm_sq]
+  simp only [field, gain, Complex.mul_re, Complex.mul_im, Complex.sub_re, Complex.sub_im,
+    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, Complex.conj_re, Complex.conj_im, Complex.normSq_apply]
+  set p := x.re
+  set q := x.im
+  set r := y.re
+  set w := y.im
+  have hmono : 0 ≤ (p ^ 2 + q ^ 2) ^ 2 + (r ^ 2 + w ^ 2) ^ 2 -
+      (p ^ 2 + q ^ 2 + (r ^ 2 + w ^ 2)) * (p * r + q * w) := by
+    nlinarith [sq_nonneg (p - r), sq_nonneg (q - w), sq_nonneg (p ^ 2 + q ^ 2 - r ^ 2 - w ^ 2),
+      mul_nonneg (add_nonneg (add_nonneg (sq_nonneg p) (sq_nonneg q))
+        (add_nonneg (sq_nonneg r) (sq_nonneg w))) (add_nonneg (sq_nonneg (p - r))
+          (sq_nonneg (q - w)))]
+  nlinarith [mul_nonneg hκ hmono]
+
+/-- `n` identical oscillators with the current coupling `−η ∑ⱼ Lₖⱼ vⱼ` (the matched-rotation dVOC
+without power set-points, or the AHO with a Laplacian network current `i = L v`). -/
+def networkField {ι : Type*} [Fintype ι] (η : ℝ) (L : Matrix ι ι ℝ) (v : ι → ℂ) : ι → ℂ :=
+  Dynamics.DiffusiveSync.netField a.field L η v
+
+/-- The real coupling bound gives the complex one: the real and imaginary parts are coupled by
+the same real matrix. -/
+@[tmio T, powerlib_foundation] private theorem coupling_complex {ι : Type*} [Fintype ι]
+    {L : Matrix ι ι ℝ} {lam : ℝ}
+    (hL : ∀ u : ι → ℝ, lam * ∑ k, ∑ j, (u k - u j) ^ 2 ≤
+      ∑ k, ∑ j, (u k - u j) * (∑ l, L k l * u l - ∑ l, L j l * u l)) (X : ι → ℂ) :
+    lam * Dynamics.DiffusiveSync.disagreement X ≤
+      ∑ k, ∑ j, inner ℝ (X k - X j) (∑ l, L k l • X l - ∑ l, L j l • X l) := by
+  have hre := hL fun k => (X k).re
+  have him := hL fun k => (X k).im
+  have hW : Dynamics.DiffusiveSync.disagreement X =
+      ∑ k, ∑ j, ((X k).re - (X j).re) ^ 2 + ∑ k, ∑ j, ((X k).im - (X j).im) ^ 2 := by
+    simp only [Dynamics.DiffusiveSync.disagreement, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.sub_re, Complex.sub_im]
+    ring
+  have hI : ∑ k, ∑ j, inner ℝ (X k - X j) (∑ l, L k l • X l - ∑ l, L j l • X l) =
+      ∑ k, ∑ j, ((X k).re - (X j).re) *
+          (∑ l, L k l * (X l).re - ∑ l, L j l * (X l).re) +
+        ∑ k, ∑ j, ((X k).im - (X j).im) *
+          (∑ l, L k l * (X l).im - ∑ l, L j l * (X l).im) := by
+    simp only [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [Complex.inner]
+    simp only [Complex.mul_re, Complex.sub_re, Complex.sub_im, Complex.conj_re, Complex.conj_im,
+      Complex.re_sum, Complex.im_sum, Complex.real_smul, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.mul_im, zero_mul, sub_zero, add_zero]
+    ring
+  rw [hW, hI, mul_add]
+  exact add_le_add hre him
+
+/-- **Synchronization of an oscillator network** (implementation evidence: trajectory level,
+Rules §3a). With `κ_v ≥ 0`, `η ≥ 0` and a real coupling contracting the disagreement at the rate
+`λ` (for a symmetric Laplacian, `λ = λ₂`, the algebraic connectivity), every global solution has
+`W(t) ≤ e^{2(c − η λ) t} W(0)`: the units synchronize exponentially when `η λ > c`
+(`Dynamics.DiffusiveSync.disagreement_le` with `inner_field_sub_le`). -/
+@[tmio TM, powerlib_domain] private theorem network_disagreement_le {ι : Type*} [Fintype ι]
+    (hκ : 0 ≤ a.κv) {η lam : ℝ} (hη : 0 ≤ η) {L : Matrix ι ι ℝ}
+    (hL : ∀ u : ι → ℝ, lam * ∑ k, ∑ j, (u k - u j) ^ 2 ≤
+      ∑ k, ∑ j, (u k - u j) * (∑ l, L k l * u l - ∑ l, L j l * u l))
+    {X : ℝ → ι → ℂ} (hX : ∀ t, HasDerivAt X (a.networkField η L (X t)) t) {t : ℝ} (ht : 0 ≤ t) :
+    Dynamics.DiffusiveSync.disagreement (X t) ≤
+      Real.exp (2 * (a.c - η * lam) * t) * Dynamics.DiffusiveSync.disagreement (X 0) :=
+  Dynamics.DiffusiveSync.disagreement_le hη (a.inner_field_sub_le hκ) (coupling_complex hL) hX ht
+
+/-- Two units coupled by one line of weight `w`. -/
+def twoLine (w : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![w, -w; -w, w]
+
+/-- **Two units, synchronization** (implementation evidence: trajectory level). With `κ_v ≥ 0`,
+`η ≥ 0` and `2 η w > c`, the disagreement of every global solution of two coupled units decays
+exponentially at the rate `2(2ηw − c)` (the coupling contracts at `λ = 2w`). -/
+@[tmio TM, powerlib_domain] private theorem two_disagreement_le (hκ : 0 ≤ a.κv) {η w : ℝ}
+    (hη : 0 ≤ η) {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) {t : ℝ} (ht : 0 ≤ t) :
+    Dynamics.DiffusiveSync.disagreement (X t) ≤
+      Real.exp (2 * (a.c - η * (2 * w)) * t) * Dynamics.DiffusiveSync.disagreement (X 0) :=
+  a.network_disagreement_le hκ hη (fun u => by
+    simp only [Fin.sum_univ_two, twoLine, Matrix.of_apply, Matrix.cons_val_zero,
+      Matrix.cons_val_one]
+    exact le_of_eq (by ring)) hX ht
+
+/-- **Two units, anti-phase oscillation** (implementation evidence: trajectory level). With
+`κ_v > 0` and `2 η w < c` the anti-phase pair `v₀ = r e^{jω_s t} = −v₁`,
+`r² = (c − 2ηw)/κ_v`, is a global solution whose disagreement stays `8 r² > 0`: the units never
+synchronize, so `2 η w ≥ c` is necessary for synchronization of every solution and the threshold
+of `two_disagreement_le` is exact up to the boundary `2 η w = c`. -/
+@[tmio TM, powerlib_domain] private theorem two_antiPhase (hκ : 0 < a.κv) {η w : ℝ}
+    (hc : 2 * η * w < a.c) :
+    let r := Real.sqrt ((a.c - 2 * η * w) / a.κv)
+    let X : ℝ → Fin 2 → ℂ := fun t => ![r * exp (a.ωs * t * I), -(r * exp (a.ωs * t * I))]
+    (∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) ∧
+      ∀ t, Dynamics.DiffusiveSync.disagreement (X t) = 8 * r ^ 2 ∧ 0 < r := by
+  intro r X
+  have hr2 : r ^ 2 = (a.c - 2 * η * w) / a.κv :=
+    Real.sq_sqrt (div_nonneg (by linarith) hκ.le)
+  have hrpos : 0 < r := Real.sqrt_pos.mpr (div_pos (by linarith) hκ)
+  have hnorm : ∀ t : ℝ, normSq ((r : ℂ) * exp (a.ωs * t * I)) = r ^ 2 := by
+    intro t
+    rw [Complex.normSq_mul, Complex.normSq_ofReal,
+      show (a.ωs : ℂ) * (t : ℂ) * I = ((a.ωs * t : ℝ) : ℂ) * I by push_cast; ring,
+      Complex.normSq_eq_norm_sq, Complex.norm_exp_ofReal_mul_I]
+    ring
+  refine ⟨fun t => ?_, fun t => ⟨?_, hrpos⟩⟩
+  · have hz : HasDerivAt (fun t : ℝ => (r : ℂ) * exp (a.ωs * t * I))
+        ((r : ℂ) * (exp (a.ωs * t * I) * (a.ωs * I))) t := by
+      have h1 : HasDerivAt (fun t : ℝ => (a.ωs : ℂ) * t * I) (a.ωs * I) t := by
+        have := ((hasDerivAt_id (t : ℝ)).ofReal_comp.const_mul (a.ωs : ℂ)).mul_const I
+        simpa using this
+      exact h1.cexp.const_mul _
+    have hfz : a.field ((r : ℂ) * exp (a.ωs * t * I)) =
+        (I * a.ωs + ((2 * η * w : ℝ) : ℂ)) * ((r : ℂ) * exp (a.ωs * t * I)) := by
+      rw [field, gain, hnorm, hr2]
+      congr 3
+      field_simp
+      ring
+    have hfz' : a.field (-((r : ℂ) * exp (a.ωs * t * I))) =
+        -((I * a.ωs + ((2 * η * w : ℝ) : ℂ)) * ((r : ℂ) * exp (a.ωs * t * I))) := by
+      rw [field, gain, Complex.normSq_neg, ← gain, ← hfz, field]
+      ring
+    refine hasDerivAt_pi.mpr fun k => ?_
+    fin_cases k
+    · change HasDerivAt (fun t : ℝ => (r : ℂ) * exp (a.ωs * t * I)) _ t
+      convert hz using 1
+      change a.field (X t 0) - η • ∑ j, twoLine w 0 j • X t j = _
+      simp only [Fin.sum_univ_two]
+      change a.field ((r : ℂ) * exp (a.ωs * t * I)) -
+        η • (w • ((r : ℂ) * exp (a.ωs * t * I)) + (-w) • -((r : ℂ) * exp (a.ωs * t * I))) = _
+      rw [hfz]
+      simp only [Complex.real_smul]
+      push_cast
+      ring
+    · change HasDerivAt (fun t : ℝ => -((r : ℂ) * exp (a.ωs * t * I))) _ t
+      convert hz.neg using 1
+      change a.field (X t 1) - η • ∑ j, twoLine w 1 j • X t j = _
+      simp only [Fin.sum_univ_two]
+      change a.field (-((r : ℂ) * exp (a.ωs * t * I))) -
+        η • ((-w) • ((r : ℂ) * exp (a.ωs * t * I)) + w • -((r : ℂ) * exp (a.ωs * t * I))) = _
+      rw [hfz']
+      simp only [Complex.real_smul]
+      push_cast
+      ring
+  · simp only [Dynamics.DiffusiveSync.disagreement, Fin.sum_univ_two, X, Matrix.cons_val_zero,
+      Matrix.cons_val_one, sub_self, sub_neg_eq_add, ← Complex.normSq_eq_norm_sq]
+    have h2 : ∀ z : ℂ, z + z = 2 * z := fun z => by ring
+    have h2' : ∀ z : ℂ, -z - z = -(2 * z) := fun z => by ring
+    rw [h2, h2', Complex.normSq_neg, Complex.normSq_mul, hnorm]
+    norm_num
+    ring
 
 end AHO
 end powerlib.GFM

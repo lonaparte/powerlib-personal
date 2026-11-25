@@ -39,6 +39,17 @@ Family and connection conclusions.
   smoothness, balance, inertia and a destabilizing sign, passivity into nothing (exact), the
   remaining sentences into the whole, inconsistent, language.  `vsmFamily_chain_le_semantics`
   proves soundness.
+* Exact local decisions for an arbitrary `C¹` power map (the counterparts of the PI-PLL family's
+  `PLL.PIPLL.exact_locallyExponentiallyStable`, `PLL.PIPLL.mem_den_las_iff_of_nondegenerate`):
+  a VSM model is locally exponentially stable at its selected state exactly when the state is
+  balanced with `M D > 0` and `M P'(θ*) > 0`, no sign assumed on `M`, `D`
+  (`vsm_mem_den_locallyExponentiallyStable_iff`, converse linearization of the conservative
+  Jacobian `!![0, 1; −P'(θ*)/M, −D/M]`); at a hyperbolic slope (`M D ≠ 0`, `M P'(θ*) ≠ 0`) local
+  asymptotic stability holds exactly then as well (`vsm_mem_den_las_iff_of_nondegenerate`); within
+  `C¹` power maps and positive inertia the local exponential translation is exact
+  (`vsmFamily_exactUnder_locallyExponentiallyStable`). Bounded forward solutions of a VSM with a
+  `C¹` power map and isolated balance points converge to a balanced state (private trajectory-level
+  evidence in `theorem/GridTiedConverter/GFM/VSMConvergence.lean`).
 * `DroopVSM.droopFamily`: a complete system (`DroopModel`) is a droop + LPF closed loop with an
   arbitrary power map, `K_R ≠ 0`, `τ_p ≠ 0`, read about a selected state `y*`; its requirements are
   those of its VSM image `DroopModel.toVSM` (`M = τ_p K_R`, `D = K_R`, `x* = (θ*, ω_s − (P_f* −
@@ -147,7 +158,8 @@ Static evidence on the model, not a connection conclusion. -/
 /-- On an infinite bus in the synchronous frame (`P = K₀ sin θ`, `ω_s = 0`) the VSM image of
 droop + LPF is the canonical pure sine swing model `Synchronous.SwingParams.sinusoid` with
 `M = τ_p K_R`, `D = K_R`, `P_m = P_ref`. -/
-@[tmio M, powerlib_domain] theorem vsmField_infiniteBus (K0 : ℝ) (hP : d.P = fun θ => K0 * Real.sin θ)
+@[tmio M, powerlib_domain] theorem vsmField_infiniteBus (K0 : ℝ)
+    (hP : d.P = fun θ => K0 * Real.sin θ)
     (hω : d.ωs = 0) :
     d.vsmField (d.τp * d.KR) d.KR =
       (Synchronous.SwingParams.sinusoid (d.τp * d.KR) d.KR d.Pref K0).field := by
@@ -280,7 +292,8 @@ def vsmFamily : Family VSMModel VSMRequirement 2 0 :=
 @[tmio M, powerlib_domain] theorem vsmFamily_isAutonomous : vsmFamily.IsAutonomous VSMModel.field :=
   fun _ => rfl
 
-@[tmio TM, powerlib_domain] private theorem vsm_mem_den_flow_iff {m : VSMModel} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem vsm_mem_den_flow_iff {m : VSMModel}
+    {P : Flow.Property} :
     m ∈ vsmFamily.den (.flow P) ↔ P.holds m.vector m.point :=
   Spectral.mem_den_flow_iff_shift (f := VSMModel.vector) (pt := VSMModel.point)
     vsmFamily_isAutonomous
@@ -355,6 +368,114 @@ place a VSM model in local exponential stability: the conservative linearization
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
       (hm .inertia (by simp)) (hm .destabilizing (by simp))
+
+/-! ### Exact local decisions at a hyperbolic slope -/
+
+/-- With a `C¹` power map the VSM field is `C¹`. -/
+@[tmio M, powerlib_domain] private theorem contDiff_vector {m : VSMModel} (hs : ContDiff ℝ 1 m.P) :
+    ContDiff ℝ 1 m.vector := by
+  rw [m.vector_eq_conservative]
+  exact PhasePlane.Conservative.field_contDiff (hs.sub contDiff_const)
+
+/-- The Jacobian of the VSM field at the selected state is the conservative Jacobian
+`!![0, 1; −P'(θ*)/M, −D/M]` (`PhasePlane.Conservative.hasFDerivAt_field`). -/
+@[tmio M, powerlib_domain] private theorem fderiv_vector {m : VSMModel} (hs : ContDiff ℝ 1 m.P) :
+    fderiv ℝ m.vector m.point = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
+      (PhasePlane.Conservative.jacobian m.M m.D (deriv m.P (m.point 0))) := by
+  rw [m.vector_eq_conservative]
+  exact (PhasePlane.Conservative.hasFDerivAt_field
+    (((hs.differentiable one_ne_zero) _).hasDerivAt.sub_const _)).fderiv
+
+@[tmio T, powerlib_foundation] private theorem div_pos_iff_mul_pos {a b : ℝ} :
+    0 < a / b ↔ 0 < b * a := by
+  rw [div_pos_iff, mul_pos_iff]; tauto
+
+@[tmio T, powerlib_foundation] private theorem div_neg_iff_mul_neg {a b : ℝ} :
+    a / b < 0 ↔ b * a < 0 := by
+  rw [div_neg_iff, mul_neg_iff]; tauto
+
+/-- **Exact local exponential stability for an arbitrary power map.** A VSM model with a `C¹`
+power map is locally exponentially stable at its selected state exactly when the state is
+balanced (`ω* = 0`, `P(θ*) = P_ref + D ω_s`) and `M D > 0`, `M P'(θ*) > 0` (no sign is assumed
+on `M`, `D`). Converse linearization (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`):
+local exponential stability of the `C¹` field is an equilibrium with a Hurwitz Jacobian
+`!![0, 1; −P'(θ*)/M, −D/M]`, i.e. `tr = −D/M < 0`, `det = P'(θ*)/M > 0`. -/
+@[tmio TM, powerlib_domain] theorem vsm_mem_den_locallyExponentiallyStable_iff (m : VSMModel)
+    (hs : ContDiff ℝ 1 m.P) :
+    connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable) ↔
+      m.point 1 = 0 ∧ m.P (m.point 0) = m.Pref + m.D * m.ωs ∧ 0 < m.M * m.D ∧
+        0 < m.M * deriv m.P (m.point 0)) := by
+  unfold powerlib.TMIO.Statement
+  rw [vsm_mem_den_flow_iff]
+  change LocallyExponentiallyStable m.vector m.point ↔ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_vector hs)
+    (fderiv_vector hs), Criteria.isHurwitz_fin_two_iff, PhasePlane.Conservative.trace_jacobian,
+    PhasePlane.Conservative.det_jacobian, neg_div, neg_lt_zero, div_pos_iff_mul_pos,
+    div_pos_iff_mul_pos]
+  constructor
+  · rintro ⟨heq, hD, hK⟩
+    have hM : m.M ≠ 0 := left_ne_zero_of_mul hD.ne'
+    obtain ⟨h1, h2⟩ := (m.vector_eq_zero_iff hM _).mp heq
+    exact ⟨h1, h2, hD, hK⟩
+  · rintro ⟨h1, h2, hD, hK⟩
+    exact ⟨(m.vector_eq_zero_iff (left_ne_zero_of_mul hD.ne') _).mpr ⟨h1, h2⟩, hD, hK⟩
+
+/-- **Local asymptotic stability at a hyperbolic slope.** When `M D ≠ 0` and `M P'(θ*) ≠ 0` the
+Jacobian `!![0, 1; −P'(θ*)/M, −D/M]` has nonzero trace and determinant, so no eigenvalue on the
+imaginary axis, and local asymptotic stability is decided by the linearization: it holds exactly
+when the state is balanced with `M D > 0`, `M P'(θ*) > 0`. A locally asymptotically stable state of
+the `C¹` field is an equilibrium (`Dynamics.isEquilibrium_of_lyapunovStable`), and there a positive
+trace (`M D < 0`) or a negative determinant (`M P'(θ*) < 0`, a saddle) is unstable. -/
+@[tmio TM, powerlib_domain] theorem vsm_mem_den_las_iff_of_nondegenerate (m : VSMModel)
+    (hs : ContDiff ℝ 1 m.P) (hD : m.M * m.D ≠ 0) (hK : m.M * deriv m.P (m.point 0) ≠ 0) :
+    connection% (m ∈ vsmFamily.den (.flow .locallyAsymptoticallyStable) ↔
+      m.point 1 = 0 ∧ m.P (m.point 0) = m.Pref + m.D * m.ωs ∧ 0 < m.M * m.D ∧
+        0 < m.M * deriv m.P (m.point 0)) := by
+  have hles := vsm_mem_den_locallyExponentiallyStable_iff m hs
+  unfold powerlib.TMIO.Statement at hles ⊢
+  refine ⟨fun hd => ?_, fun h => Spectral.den_locallyExponentiallyStable_subset_las (hles.mpr h)⟩
+  have hlas : LocalAsymptoticStable m.vector m.point := vsm_mem_den_flow_iff.mp hd
+  have heq : m.vector m.point = 0 :=
+    Dynamics.isEquilibrium_of_lyapunovStable (contDiff_vector hs) hlas.1
+  obtain ⟨h1, h2⟩ := (m.vector_eq_zero_iff (left_ne_zero_of_mul hD) _).mp heq
+  refine ⟨h1, h2, (lt_or_gt_of_ne hD).resolve_left fun hneg => ?_,
+    (lt_or_gt_of_ne hK).resolve_left fun hneg => ?_⟩
+  · refine Criteria.unstable_of_jacobian_trace_pos _ (contDiff_vector hs) heq (fderiv_vector hs)
+      ?_ hlas.1
+    rw [PhasePlane.Conservative.trace_jacobian, neg_div, neg_pos, div_neg_iff_mul_neg]
+    exact hneg
+  · refine Criteria.unstable_of_jacobian_det _ (contDiff_vector hs) heq (fderiv_vector hs)
+      ?_ hlas.1
+    rw [neg_one_sq, one_mul, PhasePlane.Conservative.det_jacobian, div_neg_iff_mul_neg]
+    exact hneg
+
+/-- **The local exponential translation is exact within `C¹` power maps and positive inertia**:
+a VSM model with a `C¹` power map and `M > 0` meets the local requirements (balance, damping,
+synchronizing slope) exactly when it is locally exponentially stable
+(`vsm_mem_den_locallyExponentiallyStable_iff`). -/
+@[tmio TM, powerlib_domain] theorem vsmFamily_exactUnder_locallyExponentiallyStable :
+    connection% (vsmFamily.ExactUnder {.smooth, .inertia} (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_iff_forall.mpr fun m hΔ => ?_
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
+  have hs : ContDiff ℝ 1 m.P := hΔ .smooth (by simp)
+  have hM : 0 < m.M := hΔ .inertia (by simp)
+  have h := vsm_mem_den_locallyExponentiallyStable_iff m hs
+  unfold powerlib.TMIO.Statement at h
+  rw [h, (connection_proof% TMIO.mem_realize)]
+  constructor
+  · intro hm
+    obtain ⟨h1, h2⟩ : vsmMeets m .balanced := hm .balanced (by simp [vsmFamily, vsmTranslate])
+    exact ⟨h1, h2, mul_pos hM (hm .damped (by simp [vsmFamily, vsmTranslate])),
+      mul_pos hM (hm .synchronizing (by simp [vsmFamily, vsmTranslate]))⟩
+  · rintro ⟨h1, h2, hD, hK⟩ q hq
+    simp only [vsmFamily, vsmTranslate, Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+    rcases hq with rfl | rfl | rfl | rfl | rfl
+    · exact hs
+    · exact ⟨h1, h2⟩
+    · exact hM
+    · exact pos_of_mul_pos_right hD hM.le
+    · exact pos_of_mul_pos_right hK hM.le
 
 /-- **The VSM family is the swing family with an arbitrary law read through `toSwing`**: every
 sentence of a VSM model denotes the preimage of the denotation of its swing image

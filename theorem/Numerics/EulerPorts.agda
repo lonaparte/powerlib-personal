@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.Numerics.EulerPorts where
--- Lean modules: theorem.Numerics.EulerPorts theorem.Passive.PortEuler theorem.GridTiedConverter.GFL.DCLink.PortEuler theorem.PowerSystem.Synchronous.PortEuler theorem.GridTiedConverter.PLL.PortEuler theorem.GridTiedConverter.GFM.Discrete.LinearPort theorem.Numerics.ImplicitPorts theorem.GridTiedConverter.GFM.Discrete.DualPort theorem.Numerics.EulerOutputs theorem.GridTiedConverter.GFM.Discrete.StepAwareEuler
+-- Lean modules: theorem.Numerics.EulerPorts theorem.Passive.PortEuler theorem.GridTiedConverter.GFL.DCLink.PortEuler theorem.PowerSystem.Synchronous.PortEuler theorem.GridTiedConverter.PLL.PortEuler theorem.GridTiedConverter.GFM.Discrete.LinearPort theorem.Numerics.ImplicitPorts theorem.GridTiedConverter.GFM.Discrete.DualPort theorem.Numerics.EulerOutputs theorem.GridTiedConverter.GFM.Discrete.StepAwareEuler theorem.GridTiedConverter.GFM.Matching.Euler
 
 -- Scaffold of the explicit Euler implementation of models with ports: the model is a port system
 -- `ẋ = f(x, u)`, `y = g(x, u)`; its implementation with step `h > 0` is the discrete port system

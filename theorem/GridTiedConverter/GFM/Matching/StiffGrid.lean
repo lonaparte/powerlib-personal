@@ -22,13 +22,26 @@ Model boundary.
 * Analysis frame of the source: grid `dq` frame, `θ_dq = θ − θ_g`, `i_dq = R_{θ_g}ᵀ i_s`
   (`Z_s = R_s I + ω₀ L_s J`, `‖Z_s‖² = N = R_s² + ω₀² L_s²`). The stationary-frame model is
   non-autonomous (`θ_g = ω₀ t`) and is not formalized; the grid-frame model is the source's.
+  Obstruction (precise): the families read autonomous fields at a point
+  (`Port.System.autonomous`, `Spectral.localFamily`) and the transport laws exclude time-varying
+  coordinate changes (`theorem/Dynamics/Transport.lean`, Scope); with the grid angle adjoined as
+  a state (`θ_g' = ω₀`) the stationary-frame model is autonomous but has no equilibrium
+  (`θ_g' = ω₀ ≠ 0`), its operating state is a periodic orbit, and orbital stability is not a
+  sentence of the library. The grid frame is the frame in which the operating state is a point.
   State, in this order: `x = (θ_dq, u_dc, i_d, i_q) ∈ ℝ⁴` (`Model.field`):
   `θ_dq' = η u_dc − ω₀`, `C_dc u_dc' = −G_dc u_dc + i_dc(x) + μ (−sin θ_dq, cos θ_dq)ᵀ i_dq`,
   `L_s i_dq' = −Z_s i_dq + v₀ e₂ − μ (−sin θ_dq, cos θ_dq) u_dc`, with `i_dc` given by (18).
   Continuous time, autonomous. The operating point is `x* = (0, u*_dc, î_dq(0))`
   (`Model.point`, an equilibrium when `N ≠ 0`, `field_point`). Excluded: the power-tracking
   variant `S(θ_dq − θ*_dq)` with `μ = μ*`, direct angle control (24), the weak-grid controllers
-  of §IV and the time-scale-separated pendulum (21).
+  of §IV and the time-scale-separated pendulum (21). Obstruction (precise): their control laws
+  are not written in the readable sources of the library (the work-sync notes and
+  `theory/papers/@arghir2020matching.md` name only the shifted potential, `θ̇ = η u_dc − κ'∇S`
+  and a Bregman divergence `W` of `Q̂_f`, without the DC-current law, the set-point `μ*` or the
+  weak-grid model); the source equations (24) and §IV are needed before a model can be stated.
+  (For the reading `i_dc = (18)` with `∇S(θ_dq − θ*_dq)` the current-error dynamics do not
+  involve `θ*_dq`, so the energy balance `energy_lie` would carry over with the shifted potential;
+  this reading is not confirmed by the sources and is not formalized.)
 * Parameter ranges: `C_dc, L_s, R_s > 0`; `G_dc`, `K_p`, `η`, `μ`, `u*_dc`, `v₀` real.
 
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
@@ -260,7 +273,8 @@ conclusion. -/
   · ring
 
 /-- Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem energy_differentiable (m : Model) : Differentiable ℝ m.energy := by
+@[tmio M, powerlib_domain] theorem energy_differentiable
+    (m : Model) : Differentiable ℝ m.energy := by
   have h := fun j : Fin 4 => (PiLp.proj 2 (fun _ : Fin 4 => ℝ) j : State 4 →L[ℝ] ℝ).differentiable
   have h0 : Differentiable ℝ (fun x : State 4 => x 0) := h 0
   have h1 : Differentiable ℝ (fun x : State 4 => x 1) := h 1
@@ -349,7 +363,8 @@ Static evidence on the model, not a connection conclusion. -/
   field_simp
   ring
 
-@[tmio T, powerlib_foundation] private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
+@[tmio T, powerlib_foundation] private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R)
+    (hN : 0 < N)
     (hz : z1 ^ 2 + z2 ^ 2 = N) :
     -G * u ^ 2 - R * (e1 ^ 2 + e2 ^ 2) - B / N * u * (e1 * z1 + e2 * z2) ≤
       -(G - B ^ 2 / (4 * R * N)) * u ^ 2 := by
@@ -417,7 +432,8 @@ model, not a connection conclusion. -/
   field_eq_zero_of_kappa_mul_sin_eq_zero m hN (by rw [hθ, mul_zero])
 
 /-- The operating point is an equilibrium. An equivalent form of the damping requirement. -/
-@[tmio M, powerlib_domain] theorem field_point (m : Model) (hN : m.N ≠ 0) : m.field m.point = 0 := by
+@[tmio M, powerlib_domain] theorem field_point (m : Model)
+    (hN : m.N ≠ 0) : m.field m.point = 0 := by
   simpa [Model.point] using field_eq_zero_of_sin_eq_zero m hN (θ := 0) Real.sin_zero
 
 /-- The closed loop is `2π`-periodic in `θ_dq`. An equivalent form of the damping requirement. -/
@@ -430,7 +446,8 @@ model, not a connection conclusion. -/
 @[tmio M, powerlib_domain] theorem energy_point (m : Model) : m.energy m.point = 0 := by
   simp [Model.energy, Model.point]
 
-@[tmio M, powerlib_domain] private theorem energy_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hk : 0 < m.k)
+@[tmio M, powerlib_domain] private theorem energy_pos (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hk : 0 < m.k)
     {x : State 4} (hx : |x 0| < 2 * Real.pi) (hne : x ≠ m.point) : 0 < m.energy x := by
   unfold Model.energy
   by_contra hle
@@ -558,13 +575,15 @@ end Model
   field_simp
   ring
 
-@[tmio T, powerlib_foundation] private theorem sq_add_sq_eq_zero {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
+@[tmio T, powerlib_foundation] private theorem sq_add_sq_eq_zero {x y : ℝ}
+    (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
   have hx : x ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   have hy : y ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   exact ⟨pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hx,
     pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hy⟩
 
-@[tmio T, powerlib_foundation] private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fin 4 → ℂ}
+@[tmio T, powerlib_foundation] private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ}
+    {lam : ℂ} {v : Fin 4 → ℂ}
     (h : Matrix.mulVec (A.map (algebraMap ℝ ℂ)) v = lam • v) (i : Fin 4) :
     A i 0 * (v 0).re + A i 1 * (v 1).re + A i 2 * (v 2).re + A i 3 * (v 3).re =
         lam.re * (v i).re - lam.im * (v i).im ∧
@@ -844,8 +863,8 @@ def Meets (m : Model) : Requirement → Prop
 /-- For `η ≠ 0`, `margin > 0` is the source's (and the note's) condition
 `(G_dc+K_p)/η² > L_s²μ²u*²/(4R_s‖Z_s‖²)`. An equivalent form of the damping requirement. -/
 @[tmio M, powerlib_domain] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
-    connection% (m ∈ TMIO.realize Meets {.damped} ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
-      (m.Gdc + m.Kp) / m.η ^ 2) := by
+    connection% (m ∈ TMIO.realize Meets {.damped} ↔
+      m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) < (m.Gdc + m.Kp) / m.η ^ 2) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   have hη2 : 0 < m.η ^ 2 := by positivity
   rw [lt_div_iff₀ hη2, Model.margin, Model.ω0, sub_pos]

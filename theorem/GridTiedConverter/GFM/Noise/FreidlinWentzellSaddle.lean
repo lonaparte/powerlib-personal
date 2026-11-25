@@ -16,8 +16,12 @@ Model boundary.
   `P(δ) = c₀ + A sin(δ − α)`, per unit, set-point noise `σ_P ≠ 0`), with `D > 0` and
   `c₀ ≤ P_ref < c₀ + A`: stable equilibrium `δ_s = arcsin s + α`, saddle
   `δ_u = π − arcsin s + α`, `s = (P_ref − c₀)/A`.
-* Deterministic variational statements on the rate; the exit-time law (`ε log E τ → V`) is not
-  formalized.
+* Deterministic variational statements on the rate. For the exit time only upper bounds are
+  proved: by the sup–inf of the rate over a compact set
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellExit.lean`) and, from the two-state
+  potential well below the level `H(x_u) − η`, by `2D(ΔU − η)/σ_P²`, which tends to this saddle
+  value as `η → 0` (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`); the law
+  `ε log E τ → V` is not formalized.
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 4 (the quasi-potential of the action functional is the escape exponent); the upper bounds

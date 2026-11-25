@@ -2,14 +2,17 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.UniformLDP
 import theorem.Stochastic.QuasiPotentialLevel
+import theorem.Stochastic.ExitTime
 import theorem.GridTiedConverter.GFM.Noise.FreidlinWentzellExact
 import theorem.GridTiedConverter.GFM.Noise.FreidlinWentzellSaddle
 
-/-! # Ingredients of the exit-time asymptotics for the noisy two-state GFM
+/-! # The exit-time asymptotics of the noisy GFM: proved ingredients and the upper bound
 
-Domain module: the two-state GFM swing with set-point noise
-(`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzell.lean`). Two of the ingredients of the
-Freidlin–Wentzell exit theorem `ε log E τ_ε → V̄` are proved here.
+Domain module: the two-state and three-state GFM models with set-point noise
+(`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzell.lean`). The ingredients of the
+Freidlin–Wentzell exit theorem `ε log E τ_ε → V̄` proved here, and its upper half for the mean
+exit time from a compact set (the generic law `Stochastic.LDP.limsup_log_lintegral_exitTime_le`,
+through the Markov property at deterministic times `Stochastic.LDP.measure_solMap_markov`).
 * The large-deviation principle of the solutions `x^{ε, x₀}` holds **uniformly over initial points
   in a compact set** (`Stochastic.LDP.IsLDP.limsup_iSup_solMap_le`,
   `Stochastic.LDP.IsLDP.le_liminf_iInf_solMap` applied to Schilder's theorem); the noise is
@@ -22,24 +25,42 @@ Freidlin–Wentzell exit theorem `ε log E τ_ε → V̄` are proved here.
   level from below.
 
 Model boundary.
-* The two-state model of `FreidlinWentzell.lean`, `D > 0`, `c₀ ≤ P_ref < c₀ + A`: stable
-  equilibrium `δ_s = arcsin s + α`, saddle `δ_u = π − arcsin s + α`, `s = (P_ref − c₀)/A`.
+* The two-state model of `FreidlinWentzell.lean` (for the exit-time bound also its three-state
+  model, any parameters), `D > 0`, `c₀ ≤ P_ref < c₀ + A`: stable equilibrium
+  `δ_s = arcsin s + α`, saddle `δ_u = π − arcsin s + α`, `s = (P_ref − c₀)/A`.
   `H(δ, p) = p²/(2M) + U(δ − α)` (`Params.swingEnergy`). The level set is the whole level set of
   `H` (all wells of the periodic potential); the boundary of the well containing `x_s` is the part
   of it in the strip `δ_u − 2π < δ < δ_u`.
-* Not formalized: the Markov property of the solution at deterministic or hitting times and the
-  exit-time bounds themselves (`limsup ε log E τ_ε ≤ V̄`, `liminf ε log E τ_ε ≥ V̄`).
+* Exit time (`Params.limsup_log_exitTime_le`, `Params3.limsup_log_exitTime_le`): `B` a Brownian
+  motion all of whose paths are continuous, `τ_ε = Stochastic.LDP.exitTime` the first time the
+  solution leaves a compact `K` (`⊤` if never), `E τ_ε` its lower Lebesgue integral; the bound is
+  the Freidlin–Wentzell sup–inf `sup_{x ∈ K} inf {J_x^T(φ) : φ leaves K on [0, T]}`, any `T > 0`.
+* (i) The lower bound and the exponential law: for the two-state potential well
+  `Params.energyWell η`, `ε log E τ_ε → 2D(ΔU − η)/σ_P²`
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellLower.lean`, through the generic chain
+  of deterministic time blocks `theorem/Stochastic/ExitTimeLower.lean`; the strong Markov
+  property is `theorem/Stochastic/StrongMarkov.lean`). The sup–inf is evaluated there to
+  `2D(ΔU − η)/σ_P²` in `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`, which
+  also bounds the exit before a fixed time, `limsup ε log P(τ_ε ≤ T) ≤ −2D(ΔU − η)/σ_P²`.
+* Not formalized: (ii) the exit place — on the boundary level of the well the Hamilton–Jacobi
+  value is constant, so no concentration near the saddle follows (`FreidlinWentzellLower.lean`,
+  model boundary); the law of `τ_ε/E τ_ε` (exponential limit); for the three-state model the
+  sup–inf and the lower bound.
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 3 §3 (uniformity in the initial point), Ch. 4 §2 (exit from a domain, the quasi-potential on
 its boundary); A. Dembo, O. Zeitouni, *Large Deviations Techniques and Applications*, 2nd ed.
-(1998), Cor. 5.6.15 and §5.7 (exit problem).
+(1998), Cor. 5.6.15 and §5.7 (exit problem; Lemma 5.7.18 and Thm 5.7.11(a), the upper bound by
+geometric trials).
 
 Results.
 * `Params.limsup_iSup_setPoint_le`, `Params.le_liminf_iInf_setPoint` (**uniform
   Freidlin–Wentzell bounds over compact sets of initial points**).
 * `Params.escapeLevel_ge`, `Params.escapeLevel_le`, `Params.tendsto_escapeLevel` (**the exit
   exponent through the energy level `H(x_u) − η` tends to `2DΔU/σ_P²`**).
+* `Params.limsup_log_exitTime_le`, `Params3.limsup_log_exitTime_le` (**upper bound for the mean
+  exit time**: `limsup ε log E τ_ε ≤ sup_{x ∈ K} inf_{φ leaves K} J_x^T(φ)`, two and three
+  states).
 -/
 
 noncomputable section
@@ -207,6 +228,41 @@ to the saddle crosses the level). -/
     filter_upwards [hev, self_mem_nhdsWithin] with η hη hη0
     exact p.escapeLevel_le hσ hD h0 h1 (le_of_lt hη0) hη.le
 
+/-- **Mean exit time, upper bound** (two states): for a Brownian motion with continuous paths, a
+compact set `K ∋ x₀` of states and every horizon `T > 0`, the exit time `τ_ε` of the noisy
+two-state model from `K` satisfies
+`limsup_{ε→0⁺} ε log E τ_ε ≤ sup_{x ∈ K} inf {J_x^T(φ) : φ leaves K on [0, T]}`
+(`Stochastic.LDP.limsup_log_lintegral_exitTime_le`). -/
+@[tmio M, powerlib_domain] theorem limsup_log_exitTime_le {σP : ℝ} {Ω : Type*}
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbabilityMeasure P] {B : ℝ≥0 → Ω → ℝ}
+    (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω) {K : Set (Fin 2 → ℝ)}
+    (hK : IsCompact K) {x₀ : Fin 2 → ℝ} (hx₀ : x₀ ∈ K) {T : ℝ≥0} (hT : 0 < (T : ℝ)) :
+    limsup (fun ε : ℝ => (ε : EReal) * ENNReal.log (∫⁻ ω, exitTime p.swingDrift
+        (columnsCLM fun _ : Fin 1 => swingColumn σP) x₀ K (√ε) B hBc ω ∂P)) (𝓝[>] 0) ≤
+      (((⨆ x ∈ K, ⨅ φ ∈ {φ : C(Icc (0 : ℝ) T, Fin 2 → ℝ) | ∃ t, φ t ∉ K},
+        fwRate p.swingDrift (fun _ : Fin 1 => swingColumn σP) x T φ : ℝ≥0∞)) : EReal) := by
+  obtain ⟨L, hL⟩ := p.lipschitzWith_swingDrift
+  exact limsup_log_lintegral_exitTime_le hB hBc hK hx₀ hT hL _
+
 end Params
+
+namespace Params3
+
+variable (p : Params3)
+
+/-- **Mean exit time, upper bound** (three states, VSM + power filter): as
+`Params.limsup_log_exitTime_le`, for the noisy three-state model. -/
+@[tmio M, powerlib_domain] theorem limsup_log_exitTime_le {σP : ℝ} {Ω : Type*}
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbabilityMeasure P] {B : ℝ≥0 → Ω → ℝ}
+    (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω) {K : Set (Fin 3 → ℝ)}
+    (hK : IsCompact K) {x₀ : Fin 3 → ℝ} (hx₀ : x₀ ∈ K) {T : ℝ≥0} (hT : 0 < (T : ℝ)) :
+    limsup (fun ε : ℝ => (ε : EReal) * ENNReal.log (∫⁻ ω, exitTime p.sdeDrift
+        (columnsCLM fun _ : Fin 1 => p.setPointColumn σP) x₀ K (√ε) B hBc ω ∂P)) (𝓝[>] 0) ≤
+      (((⨆ x ∈ K, ⨅ φ ∈ {φ : C(Icc (0 : ℝ) T, Fin 3 → ℝ) | ∃ t, φ t ∉ K},
+        fwRate p.sdeDrift (fun _ : Fin 1 => p.setPointColumn σP) x T φ : ℝ≥0∞)) : EReal) := by
+  obtain ⟨L, hL⟩ := p.lipschitzWith_sdeDrift
+  exact limsup_log_lintegral_exitTime_le hB hBc hK hx₀ hT hL _
+
+end Params3
 
 end powerlib.GFM.Noise

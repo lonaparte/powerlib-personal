@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.BifurcationLine
 import theorem.NormalForm.BogdanovTakens
+import theorem.Dynamics.CenterReductionBT
 
 /-! # The Bogdanov–Takens coefficients of the VSM on a dynamic R–L line
 
@@ -16,15 +17,18 @@ operating point `(δ*, 0, i_s(δ*))`; `P(δ*)` is the quasi-steady power there (
 balance), `c₀ = E² R/|Z|²`, `K = A cos(δ* − α)`, `D_line = 2 E² R X L/|Z|⁴`; the Jordan chain is
 `q₀ = (1, 0, i_s'(δ*))`, `q₁ = (0, 1, w)` of `Line.VSM.Model.jordan_chain_of_bt`
 (`theorem/GridTiedConverter/GFM/BifurcationLine.lean`). Level: the coefficients are Kuznetsov's
-projection formulas from the first and second `fderiv` of the field at the operating point; no
-normal-form transformation, unfolding, Hopf or homoclinic curve or criticality is asserted and
-no family is defined: every result is static evidence on the model.
+projection formulas from the first and second `fderiv` of the field at the operating point, and
+(for a positive effective inertia) the coefficients of the dynamics on a centre manifold, which
+carries the truncated normal form up to `o(‖y‖²)` (`theorem/Dynamics/CenterReductionBT.lean`).
+The unfolding (fold line, Hopf curve, linear versality) is in
+`theorem/GridTiedConverter/GFM/BifurcationLine.lean`; no homoclinic curve or criticality is
+asserted and no family is defined: every result is static evidence on the model.
 
 Source: GFM counterpart study, note t3-bifurcation (b) (the BT point of the dynamic line at
 `D_BT = D_line`, its coefficients and the sign of `a b` computed numerically on 20 random sets,
 script s2b); the closed forms below were derived for this module and checked with exact rational
 arithmetic on 24 parameter sets (scratch notes outside the repository); Kuznetsov, *Elements of
-Applied Bifurcation Theory* (3rd ed., 2004), §8.4 and §8.7.
+Applied Bifurcation Theory* (3rd ed., 2004), §8.4 (Lemma 8.7) and §8.7.
 
 Results.
 * `Line.VSM.fderiv_fderiv_field`: the second derivative of the field at every state,
@@ -42,6 +46,16 @@ Results.
   (`theorem/GridTiedConverter/GFM/BTCoefficient.lean`) has `M` in place of `n`.
 * `Line.VSM.Model.exists_isBTChain_of_bt`: at `D = D_line` the chain exists, with
   `p₁ = (D_line, M, L E (X sin δ* − R cos δ*)/|Z|², 0)/n` (`IsBTChain.exists_of_left`).
+* **The centre-manifold reduction at the Bogdanov–Takens point**
+  (`Line.VSM.Model.exists_centerManifold_btNormalForm_of_bt`): a balanced physical model at a
+  fold `K = 0` with `D = D_line` and `n > 0` has an adjoint chain and a Lipschitz, `C¹`, tangent
+  centre manifold satisfying the invariance equation over the plane of `(q₀, q₁)` on which the
+  field, after
+  Kuznetsov's quadratic change of coordinates, is `ẏ₀ = y₁`, `ẏ₁ = a y₀² + b y₀ y₁ + o(‖y‖²)`
+  with the `a`, `b` above (the instance of
+  `NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm`; the characteristic
+  polynomial is `s²(s² + a₃ s + a₂)` with `a₂ = |Z|² n/(L² M) > 0`, so the other two eigenvalues
+  are stable exactly when `n > 0`).
 * `Line.VSM.Model.coeffA_mul_coeffB_pos_iff`: for `R, X, L > 0`, `E V ≠ 0`, `n > 0`,
   `a b = (P(δ*) − c₀)² L² (R² − X²) D_line/(|Z|⁴ n³)`, so `a b > 0` iff `X < R` and `a b < 0`
   iff `R < X`.
@@ -390,6 +404,142 @@ conclusion. -/
   · constructor
     · intro h2; nlinarith
     · intro h2; nlinarith
+
+section Reduction
+
+open Polynomial Filter Topology Asymptotics
+open powerlib.Dynamics.CenterManifold (IsGraphMap IsLittleOrder IsInvariantGraph)
+open powerlib.NormalForm.LyapunovCoefficient (cmat cmat_toEuclideanCLM)
+
+@[tmio M, powerlib_domain] private theorem model_fderiv (m : Model) :
+    fderiv ℝ m.field 0 = fderiv ℝ m.g.field m.point := by
+  show fderiv ℝ (fun z => m.g.field (z + m.point)) 0 = _
+  rw [fderiv_comp_add_right, zero_add]
+
+@[tmio M, powerlib_domain] private theorem model_fderiv2 (m : Model) :
+    fderiv ℝ (fderiv ℝ m.field) 0 = fderiv ℝ (fderiv ℝ m.g.field) m.point := by
+  have h : fderiv ℝ m.field = fun z => fderiv ℝ m.g.field (z + m.point) := by
+    funext z
+    show fderiv ℝ (fun z => m.g.field (z + m.point)) z = _
+    rw [fderiv_comp_add_right]
+  rw [h, fderiv_comp_add_right, zero_add]
+
+/-- At the Bogdanov–Takens point `a₂ = |Z|² n/(L² M)` (`n = btInertia`). -/
+@[tmio M, powerlib_domain] private theorem coeff2_of_bt (m : Model) (hp : Meets m .physical)
+    (hK : m.K = 0) (hD : m.g.D = m.g.Dline) :
+    m.g.coeff2 m.Q = m.g.absSq * m.g.btInertia / (m.g.L ^ 2 * m.g.M) := by
+  have hZ := hp.1.absSq_pos
+  have hL := hp.1.L
+  have hM := hp.2.1
+  have hQ : m.Q = m.g.κ := by
+    have h := m.g.syncCoeff_add_qssReactive hZ m.δ
+    rw [Model.Q]; rw [Model.K] at hK; linarith
+  rw [coeff2, hQ, hD, btInertia, Network.ρ, Network.σ, Network.Dline, Network.κ]
+  have habs : m.g.absSq = m.g.R ^ 2 + m.g.X ^ 2 := rfl
+  have hX : m.g.X / m.g.L = m.g.ω0 := by simp only [Network.X]; field_simp
+  rw [hX]
+  have hXd : m.g.X = m.g.ω0 * m.g.L := rfl
+  rw [habs] at hZ ⊢
+  field_simp
+  rw [hXd]
+  ring
+
+/-- **The centre-manifold reduction at the Bogdanov–Takens point of the dynamic line.** For a
+balanced physical model at a fold `K = 0` with the line damping `D = D_line` and a positive
+effective inertia `n = btInertia > 0` there is an adjoint chain `(p₀, p₁)` of
+`q₀ = (1, 0, i_s'(δ*))`, `q₁ = (0, 1, w)`, and a Lipschitz, `C¹`, tangent centre manifold
+satisfying the invariance equation near `0` (the static form of local invariance; the trajectory
+form is in `NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm`) over their
+plane on which the field, in the coordinates `w = (⟨p₀, x⟩, ⟨p₁, x⟩)` and
+after Kuznetsov's quadratic change of coordinates, is the Bogdanov–Takens normal form
+`ẏ₀ = y₁`, `ẏ₁ = a y₀² + b y₀ y₁ + o(‖y‖²)` with `a = (P(δ*) − c₀)/(2n)` and
+`b = 2 (P(δ*) − c₀) L² (R² − X²) D_line/(|Z|⁴ n²)`. Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.exists_centerManifold_btNormalForm_of_bt (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hK : m.K = 0) (hD : m.g.D = m.g.Dline)
+    (hn : 0 < m.g.btInertia) :
+    ∃ p₀ p₁ : State 4,
+      IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ ∧
+      ∃ h : State 4 → State 4, ∃ L : NNReal,
+        IsGraphMap (btP (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁) h ∧
+        LipschitzWith L h ∧
+        IsLittleOrder (btP (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁) h 1 ∧
+        ContDiff ℝ 1 h ∧
+        IsInvariantGraph (fderiv ℝ m.field 0)
+          (btP (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁)
+          (fun x => m.field x - fderiv ℝ m.field 0 x) h ∧
+        (fun w => fderiv ℝ (btCoordChange m.field (WithLp.toLp 2 m.tangent)
+              (WithLp.toLp 2 m.chain) p₀ p₁) w
+            (btπ p₀ p₁ (m.field (btι (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) w +
+              h (btι (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) w)))) -
+          NormalForm.BogdanovTakens.field ⟨0, 0,
+            (m.g.qssPower m.δ - m.g.c0) / (2 * m.g.btInertia),
+            2 * (m.g.qssPower m.δ - m.g.c0) * m.g.L ^ 2 * (m.g.R ^ 2 - m.g.X ^ 2) * m.g.Dline /
+              (m.g.absSq ^ 2 * m.g.btInertia ^ 2)⟩
+            (btCoordChange m.field (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ w))
+          =o[𝓝 0] fun w => ‖w‖ ^ 2 := by
+  have hZ := hp.1.absSq_pos
+  have hL := hp.1.L
+  have hM := hp.2.1
+  have hV : m.g.E * m.g.V ≠ 0 := (mul_pos hp.1.E hp.1.V).ne'
+  obtain ⟨p₀, p₁, hch'⟩ := m.exists_isBTChain_of_bt hM.ne' hL.ne' hZ hV hK hD hn.ne'
+  have hch : IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain)
+      p₀ p₁ := by rw [model_fderiv]; exact hch'
+  refine ⟨p₀, p₁, hch, ?_⟩
+  have hF : ContDiff ℝ 2 m.field := (m.g.contDiff_field (k := 2)).comp
+    (contDiff_id.add contDiff_const)
+  have hF0 : m.field 0 = 0 := by
+    show m.g.field (0 + m.point) = 0
+    rw [zero_add]
+    exact (m.field_point_eq_zero_iff hM.ne' hL.ne' hZ.ne').mpr hb
+  have hker : ∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • WithLp.toLp 2 m.tangent := by
+    intro v hv
+    rw [model_fderiv, m.fderiv_point] at hv
+    have hv' : m.jac *ᵥ (WithLp.ofLp v) = 0 := by
+      have := congrArg WithLp.ofLp hv
+      simpa [Matrix.ofLp_toEuclideanCLM] using this
+    have he := m.eq_smul_tangent_of_mulVec_eq_zero hL.ne' hZ hv'
+    refine ⟨v 0, ?_⟩
+    ext i
+    have := congrFun he i
+    simpa using this
+  have h1 : m.g.coeff1 m.Q = 0 := by
+    rw [m.coeff1_eq hL.ne' hZ, hK, hD, sub_self]; simp
+  have h0 : m.g.coeff0 m.Q = 0 := by
+    rw [m.coeff0_eq hL.ne' hZ, hK]; simp
+  have h2 := coeff2_of_bt m hp hK hD
+  have hchar : (cmat (fderiv ℝ m.field 0)).charpoly =
+      X ^ 2 * (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X + C ((m.g.coeff2 m.Q : ℝ) : ℂ)) := by
+    rw [model_fderiv, m.fderiv_point, cmat_toEuclideanCLM,
+      show (fun x : ℝ => (x : ℂ)) = ⇑(algebraMap ℝ ℂ) from rfl, Matrix.charpoly_map,
+      m.charpoly_jac, h1, h0]
+    simp
+    ring
+  have h3p : 0 < m.g.coeff3 := by
+    have : 0 ≤ m.g.σ := div_nonneg hp.1.R hL.le
+    have := hp.2.2
+    unfold coeff3; positivity
+  have h2p : 0 < m.g.coeff2 m.Q := by rw [h2]; positivity
+  have hr : ∀ s : ℂ, (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X +
+      C ((m.g.coeff2 m.Q : ℝ) : ℂ)).eval s = 0 → s.re < 0 := by
+    intro s hs
+    simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at hs
+    exact (Criteria.quadratic_roots_re_neg_iff _ _).mpr ⟨h3p, h2p⟩ s hs
+  obtain ⟨-, -, h, L, hgm, hL', hh, hC1, hieq, -, hnf⟩ :=
+    hch.exists_centerManifold_btNormalForm hF hF0 hker hchar hr
+  refine ⟨h, L, hgm, hL', hh, hC1, hieq, ?_⟩
+  obtain ⟨ha, hb'⟩ := m.coeff_of_bt hM.ne' hL.ne' hZ hV hK hn.ne' hch'
+  have eA : coeffA m.field 0 (WithLp.toLp 2 m.tangent) p₁ =
+      (m.g.qssPower m.δ - m.g.c0) / (2 * m.g.btInertia) := by
+    rw [coeffA, model_fderiv2, ← ha, coeffA]
+  have eB : coeffB m.field 0 (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ =
+      2 * (m.g.qssPower m.δ - m.g.c0) * m.g.L ^ 2 * (m.g.R ^ 2 - m.g.X ^ 2) * m.g.Dline /
+        (m.g.absSq ^ 2 * m.g.btInertia ^ 2) := by
+    rw [coeffB, model_fderiv2, ← hb', coeffB]
+  rw [eA, eB] at hnf
+  exact hnf
+
+end Reduction
 
 end VSM
 end powerlib.GFM.Line

@@ -89,7 +89,10 @@ ROCOF `−η ΔP/(C v*)` `= −ω_s ΔP/(C v*²)` (`matching_rocof`). With the n
 (`rocof_note_data`), not `∼10⁴ rad/s²`. The note's own formula `ΔP ω_s²/(C v*³)` evaluates to
 `400π²/27 ≈ 146` (`note_formula_value`) but is dimensionally inconsistent (one factor
 `η = ω_s/v*` too many).
-The ViSynC equivalence of §1.3 is not derived in the note and is not formalized.
+ViSynC (§1.3) is formalized in `theorem.GridTiedConverter.GFM.Matching.ViSynC`: with a constant
+modulation amplitude on a lossless line it is exactly the VSM with a first-order power filter
+(inertia `K_J`, damping `K_D`, the DC link as the filter, `ω_c = (G + K_p)/C`), not the swing
+equation `M = K_J C/2`, `D = K_D C/2` the note states (`ViSynC.slowLink_mem_den_unstable`).
 -/
 
 noncomputable section
@@ -124,7 +127,8 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
 
 /-- Matching control: `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x` makes the converter
 frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η`. -/
-@[tmio T, powerlib_foundation] theorem matching_swing {η C G idc : ℝ} {u : ℝ → ℝ} {ix : ℝ → ℝ} {t : ℝ}
+@[tmio T, powerlib_foundation] theorem matching_swing {η C G idc : ℝ} {u : ℝ → ℝ} {ix : ℝ → ℝ}
+    {t : ℝ}
     (hη : η ≠ 0) (hC : C ≠ 0) (hu : HasDerivAt u ((idc - G * u t - ix t) / C) t) :
     HasDerivAt (fun s => η * u s)
       ((idc / η - G / η ^ 2 * (η * u t) - ix t / η) / (C / η ^ 2)) t := by
@@ -143,7 +147,8 @@ frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/�
   field_simp
 
 /-- With `η = ω_s/v*`: `|ROCOF| = ω_s ΔP/(C v*²)`. -/
-@[tmio T, powerlib_foundation] theorem matching_rocof_omega {C ωs v ΔP : ℝ} (hC : C ≠ 0) (hv : v ≠ 0) :
+@[tmio T, powerlib_foundation] theorem matching_rocof_omega {C ωs v ΔP : ℝ} (hC : C ≠ 0)
+    (hv : v ≠ 0) :
     ωs / v * ΔP / (C * v) = ωs * ΔP / (C * v ^ 2) := by
   field_simp
 
@@ -237,8 +242,10 @@ def droopFamily : Family DroopNode Spectral.Requirement 1 1 :=
   Spectral.linearFamily (fun m => droopModel m.C m.G m.K m.vref) (fun m => 0 < m.G / m.C)
     (fun m => m.G / m.C < 0)
 
-@[tmio TM, powerlib_domain] private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    connection% (droopFamily.den (.flow P) = {m | 0 < m.G / m.C}) := show droopFamily.den (.flow P) = {m | 0 < m.G / m.C} from
+@[tmio TM, powerlib_domain] private theorem droopDen_flow {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (droopFamily.den (.flow P) = {m | 0 < m.G / m.C}) :=
+  show droopFamily.den (.flow P) = {m | 0 < m.G / m.C} from
   Spectral.linear_den (U := fun m : DroopNode => m.G / m.C < 0)
     (fun _ => (droop_isHurwitz_iff _ _ _ _).symm) hP
 
@@ -251,14 +258,16 @@ def droopFamily : Family DroopNode Spectral.Requirement 1 1 :=
 
 /-- The attractive sentences and sampled contraction of the droop node are carved out exactly by
 `G/C > 0`. -/
-@[tmio TM, powerlib_domain] theorem droopExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem droopExact {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
     connection% (droopFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_exact (fun m => (droop_isHurwitz_iff _ _ _ _).symm) hP
 
 /-- The droop small-signal DC node with `C > 0` satisfies an attractive sentence (in particular
 exponential stability) iff `G > 0`. -/
-@[tmio TM, powerlib_domain] theorem droop_mem_den_iff (m : DroopNode) (hC : 0 < m.C) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem droop_mem_den_iff (m : DroopNode) (hC : 0 < m.C)
+    {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ droopFamily.den (.flow P) ↔ m ∈ {m : DroopNode | 0 < m.G}) := by
   unfold powerlib.TMIO.Statement
@@ -312,7 +321,8 @@ semantics. -/
 def matchingFamily : Family MatchingModel Spectral.Requirement 2 0 :=
   Spectral.localFamily MatchingModel.field (fun _ => False) (fun _ => False)
 
-@[tmio TM, powerlib_domain] private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
+@[tmio TM, powerlib_domain] private theorem matching_mem_den_flow {m : MatchingModel}
+    {P : Flow.Property} :
     m ∈ matchingFamily.den (.flow P) ↔ P.holds (matchingField m.C m.G m.η m.idc m.ix) m.point :=
   Spectral.mem_den_flow_iff_shift
     (f := fun m : MatchingModel => matchingField m.C m.G m.η m.idc m.ix)
@@ -362,7 +372,8 @@ A load law `2π`-periodic in the modulation angle — every AC network seen thro
 the matching model the equilibria `(θ* + 2πk, v*)`, so no selected point is globally
 asymptotically stable on `ℝ²`, whatever the gains. The global result of the source is stability
 of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of the library. -/
-@[tmio TM, powerlib_domain] theorem matching_not_mem_den_globallyAsymptoticallyStable (m : MatchingModel)
+@[tmio TM, powerlib_domain] theorem matching_not_mem_den_globallyAsymptoticallyStable
+    (m : MatchingModel)
     (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
     connection% (m ∉ matchingFamily.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -378,7 +389,8 @@ of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of 
     simp [MatchingModel.point] at h0
 
 /-- The same boundary for global exponential stability. -/
-@[tmio TM, powerlib_domain] theorem matching_not_mem_den_globallyExponentiallyStable (m : MatchingModel)
+@[tmio TM, powerlib_domain] theorem matching_not_mem_den_globallyExponentiallyStable
+    (m : MatchingModel)
     (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
     connection% (m ∉ matchingFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
