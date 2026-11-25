@@ -66,7 +66,10 @@ Results.
   `GFM.Noise.Params.tendsto_setPointQP` (`V₃ → 2D ΔU/σ_P²` as `ω_c → ∞`),
   `GFM.Noise.Params.setPointQP_lt_swingQP` (`V₃ < V₂` for every `ω_c` above the explicit
   threshold `escThreshold`), `GFM.Noise.Params.setPointQP_lt_swingQP_slow` (`V₃ < V₂` below an
-  explicit small bandwidth). Not formalized: `V₃ < V₂` between the two.
+  explicit small bandwidth), and for the balanced set point `P_ref = c₀` at every bandwidth
+  `GFM.Noise.Params.setPointQP_lt_swingQP_balanced`
+  (`theorem/GridTiedConverter/GFM/Noise/BalancedEscape.lean`). Not formalized: `V₃ < V₂`
+  between the two explicit ranges when `P_ref ≠ c₀`.
 -/
 
 noncomputable section

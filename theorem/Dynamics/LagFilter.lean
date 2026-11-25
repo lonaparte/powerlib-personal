@@ -37,7 +37,10 @@ Results.
   + (2/ω)(e(0)² − e(T)²)` (certificate `(w'/ω − e)² + 2(e + g/ω)² ≥ 0`, integration by parts):
   the action of a control perturbed by the lag is the unperturbed action minus `(2/ω)∫w g` up to
   `O(1/ω²)`.
-* `sq_le_of_zero_end`: `x(a)² ≤ λ∫x² + ∫x'²/λ` on `[a, b]` when `x(b) = 0`, every `λ > 0`.
+* `abs_sq_sub_sq_le`: `|x(b)² − x(a)²| ≤ λ∫x² + ∫x'²/λ` on `[a, b]`, every `λ > 0`;
+  `sq_le_of_zero_end`: `x(a)² ≤ λ∫x² + ∫x'²/λ` when `x(b) = 0`.
+* `lagFilter_const_add_mul` (`z_{c + k f} = z_c + k z_f`, the last from `z₀ = 0`),
+  `lagFilter_endBump_ge` (`z_b(1) ≥ ω e^{−ω}/30` from rest, `∫₀¹ b = 1/30`).
 * `lagFilter_eq_add` (`z(t) = e^{−ωt} z₀ + z_{z₀ = 0}(t)`), `lagFilter_mono` (`h ≤ k` on `[0, t]`
   gives `z_h(t) ≤ z_k(t)`), `abs_lagFilter_sub_const_le` (`|z(t) − c| ≤ |z₀ − c| + ωtB` for
   `|h − c| ≤ B`).
@@ -445,32 +448,55 @@ of `(w e)'` and `(e²)'`). -/
       intervalIntegral.integral_div, intervalIntegral.integral_const_mul, hIwe, hIee] at hle
     linarith
 
-/-- **Interpolation at a zero end**: if `x(b) = 0` (`x` with right derivative `x'` on `[a, b]`,
-both continuous there), then for every `λ > 0`, `x(a)² ≤ λ ∫ x² + (∫ x'²)/λ` over `[a, b]`
-(`−2 x x' ≤ λ x² + x'²/λ`). -/
-@[tmio T, powerlib_foundation] theorem sq_le_of_zero_end {a b l : ℝ} (hab : a ≤ b) (hl : 0 < l)
+/-- **Interpolation**: for `x` with right derivative `x'` on `[a, b]` (both continuous there) and
+every `λ > 0`, `|x(b)² − x(a)²| ≤ λ ∫ x² + (∫ x'²)/λ` over `[a, b]` (`±2 x x' ≤ λ x² + x'²/λ`). -/
+@[tmio T, powerlib_foundation] theorem abs_sq_sub_sq_le {a b l : ℝ} (hab : a ≤ b) (hl : 0 < l)
     {x x' : ℝ → ℝ} (hx : ∀ t ∈ Ico a b, HasDerivWithinAt x (x' t) (Ici t) t)
-    (hxc : ContinuousOn x (Icc a b)) (hx'c : ContinuousOn x' (Icc a b)) (hb : x b = 0) :
-    x a ^ 2 ≤ l * (∫ t in a..b, x t ^ 2) + (∫ t in a..b, x' t ^ 2) / l := by
+    (hxc : ContinuousOn x (Icc a b)) (hx'c : ContinuousOn x' (Icc a b)) :
+    |x b ^ 2 - x a ^ 2| ≤ l * (∫ t in a..b, x t ^ 2) + (∫ t in a..b, x' t ^ 2) / l := by
   have hI : ∫ t in a..b, 2 * x t * x' t = x b ^ 2 - x a ^ 2 := by
     refine intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hab (hxc.pow 2)
       (fun t ht => ?_) (((continuousOn_const.mul hxc).mul hx'c).intervalIntegrable_of_Icc hab)
     have := ((hx t (Ioo_subset_Ico_self ht)).pow 2).mono Ioi_subset_Ici_self
     convert this using 1; simp
+  have i0 : IntervalIntegrable (fun t => 2 * x t * x' t) MeasureTheory.volume a b :=
+    ((continuousOn_const.mul hxc).mul hx'c).intervalIntegrable_of_Icc hab
   have i1 : IntervalIntegrable (fun t => x t ^ 2) MeasureTheory.volume a b :=
     (hxc.pow 2).intervalIntegrable_of_Icc hab
   have i2 : IntervalIntegrable (fun t => x' t ^ 2) MeasureTheory.volume a b :=
     (hx'c.pow 2).intervalIntegrable_of_Icc hab
-  have hle : ∫ t in a..b, -(2 * x t * x' t) ≤ ∫ t in a..b, (l * x t ^ 2 + x' t ^ 2 / l) := by
-    refine intervalIntegral.integral_mono_on hab
-      (((continuousOn_const.mul hxc).mul hx'c).neg.intervalIntegrable_of_Icc hab)
-      ((i1.const_mul l).add (i2.div_const l)) fun t _ => ?_
-    have key : l * x t ^ 2 + x' t ^ 2 / l + 2 * x t * x' t = (l * x t + x' t) ^ 2 / l := by
-      field_simp; ring
-    have : 0 ≤ (l * x t + x' t) ^ 2 / l := by positivity
-    linarith
-  rw [intervalIntegral.integral_neg, hI, hb, intervalIntegral.integral_add (i1.const_mul l)
-    (i2.div_const l), intervalIntegral.integral_const_mul, intervalIntegral.integral_div] at hle
+  have hsum : ∫ t in a..b, (l * x t ^ 2 + x' t ^ 2 / l) =
+      l * (∫ t in a..b, x t ^ 2) + (∫ t in a..b, x' t ^ 2) / l := by
+    rw [intervalIntegral.integral_add (i1.const_mul l) (i2.div_const l),
+      intervalIntegral.integral_const_mul, intervalIntegral.integral_div]
+  have hsq : ∀ t, 0 ≤ (l * x t + x' t) ^ 2 / l ∧ 0 ≤ (l * x t - x' t) ^ 2 / l := fun t =>
+    ⟨by positivity, by positivity⟩
+  have hup : ∫ t in a..b, 2 * x t * x' t ≤ ∫ t in a..b, (l * x t ^ 2 + x' t ^ 2 / l) :=
+    intervalIntegral.integral_mono_on hab i0 ((i1.const_mul l).add (i2.div_const l))
+      fun t _ => by
+        have key : l * x t ^ 2 + x' t ^ 2 / l - 2 * x t * x' t = (l * x t - x' t) ^ 2 / l := by
+          field_simp; ring
+        linarith [(hsq t).2]
+  have hlo : ∫ t in a..b, -(2 * x t * x' t) ≤ ∫ t in a..b, (l * x t ^ 2 + x' t ^ 2 / l) :=
+    intervalIntegral.integral_mono_on hab i0.neg ((i1.const_mul l).add (i2.div_const l))
+      fun t _ => by
+        have key : l * x t ^ 2 + x' t ^ 2 / l + 2 * x t * x' t = (l * x t + x' t) ^ 2 / l := by
+          field_simp; ring
+        linarith [(hsq t).1]
+  rw [intervalIntegral.integral_neg, hI, hsum] at hlo
+  rw [hI, hsum] at hup
+  exact abs_le.2 ⟨by linarith, hup⟩
+
+/-- **Interpolation at a zero end**: if `x(b) = 0` (`x` with right derivative `x'` on `[a, b]`,
+both continuous there), then for every `λ > 0`, `x(a)² ≤ λ ∫ x² + (∫ x'²)/λ` over `[a, b]`
+(`abs_sq_sub_sq_le`). -/
+@[tmio T, powerlib_foundation] theorem sq_le_of_zero_end {a b l : ℝ} (hab : a ≤ b) (hl : 0 < l)
+    {x x' : ℝ → ℝ} (hx : ∀ t ∈ Ico a b, HasDerivWithinAt x (x' t) (Ici t) t)
+    (hxc : ContinuousOn x (Icc a b)) (hx'c : ContinuousOn x' (Icc a b)) (hb : x b = 0) :
+    x a ^ 2 ≤ l * (∫ t in a..b, x t ^ 2) + (∫ t in a..b, x' t ^ 2) / l := by
+  have h := abs_sq_sub_sq_le hab hl hx hxc hx'c
+  rw [hb] at h
+  have h1 := (abs_le.mp h).1
   linarith
 
 /-! ## Comparison and drift of the filter -/
@@ -491,6 +517,50 @@ both continuous there), then for every `λ > 0`, `x(a)² ≤ λ ∫ x² + (∫ x
     Real.exp (ω * s) * h s).intervalIntegrable _ _) ((by fun_prop : Continuous fun s =>
       Real.exp (ω * s) * k s).intervalIntegrable _ _)
     fun s hs => mul_le_mul_of_nonneg_left (hhk s hs) (Real.exp_pos _).le
+
+/-- The filter is affine in an affine signal: `z_{c + k f}(t) = z_c(t) + k z_{f}(t)`, the last one
+from `z₀ = 0` (`f` continuous). -/
+@[tmio T, powerlib_foundation] theorem lagFilter_const_add_mul (ω z₀ c k : ℝ) {f : ℝ → ℝ}
+    (hf : Continuous f) (t : ℝ) :
+    lagFilter ω z₀ (fun s => c + k * f s) t =
+      lagFilter ω z₀ (fun _ => c) t + k * lagFilter ω 0 f t := by
+  simp only [lagFilter]
+  have e : (fun s => Real.exp (ω * s) * (c + k * f s)) =
+      fun s => Real.exp (ω * s) * c + k * (Real.exp (ω * s) * f s) := by funext s; ring
+  rw [e, intervalIntegral.integral_add
+    ((by fun_prop : Continuous fun s => Real.exp (ω * s) * c).intervalIntegrable _ _)
+    (((by fun_prop : Continuous fun s => Real.exp (ω * s) * f s).intervalIntegrable _ _).const_mul
+      k), intervalIntegral.integral_const_mul]
+  ring
+
+/-- The end bump has mean `∫₀¹ b = 1/30`, so its filter from rest ends at
+`z_b(1) ≥ ω e^{−ω}/30` (`ω ≥ 0`). -/
+@[tmio T, powerlib_foundation] theorem lagFilter_endBump_ge {ω : ℝ} (hω : 0 ≤ ω) :
+    ω * Real.exp (-ω) / 30 ≤ lagFilter ω 0 endBump 1 := by
+  have hint : ∫ s in (0 : ℝ)..1, endBump s = 1 / 30 := by
+    have e : endBump = fun s : ℝ => s ^ 2 - 2 * s ^ 3 + s ^ 4 := by
+      funext s; simp only [endBump]; ring
+    rw [e, intervalIntegral.integral_add, intervalIntegral.integral_sub,
+      intervalIntegral.integral_const_mul]
+    · norm_num [integral_pow]
+    all_goals first
+      | exact (continuous_pow _).intervalIntegrable _ _
+      | exact ((continuous_pow _).const_mul _).intervalIntegrable _ _
+      | exact ((continuous_pow _).sub ((continuous_pow _).const_mul _)).intervalIntegrable _ _
+  have hle : ∫ s in (0 : ℝ)..1, endBump s ≤ ∫ s in (0 : ℝ)..1, Real.exp (ω * s) * endBump s := by
+    refine intervalIntegral.integral_mono_on zero_le_one
+      ((by unfold endBump; fun_prop : Continuous endBump).intervalIntegrable _ _)
+      ((by unfold endBump; fun_prop : Continuous fun s => Real.exp (ω * s) * endBump s
+        ).intervalIntegrable _ _) fun s hs => ?_
+    have hb : 0 ≤ endBump s := by unfold endBump; positivity
+    have he : 1 ≤ Real.exp (ω * s) := Real.one_le_exp (mul_nonneg hω hs.1)
+    nlinarith
+  rw [hint] at hle
+  simp only [lagFilter, zero_add, mul_one]
+  have he : 0 < Real.exp (-ω) := Real.exp_pos _
+  calc ω * Real.exp (-ω) / 30 = Real.exp (-ω) * (ω * (1 / 30)) := by ring
+    _ ≤ Real.exp (-ω) * (ω * ∫ s in (0 : ℝ)..1, Real.exp (ω * s) * endBump s) := by
+      gcongr
 
 /-- **Drift of the filter**: if `|h − c| ≤ B` on `[0, t]` (`ω, t ≥ 0`), then
 `|z(t) − c| ≤ |z₀ − c| + ω t B`. -/

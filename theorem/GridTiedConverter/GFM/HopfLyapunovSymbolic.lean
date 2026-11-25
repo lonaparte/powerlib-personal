@@ -15,7 +15,8 @@ Model boundary.
   range `E, L, ω₀, M, D > 0`, `R ≥ 0`. It is the instance `V = E` of the slice `δ* = 0` of
   `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean` (`zeroCurrent_eq_angleZero`), whose laws
   give the results here; it contains `Line.VSM.hopfWitness`, `Line.VSM.hopfWitnessSup` and every
-  point of `Line.VSM.bautinPath`. Not covered: `δ* ≠ 0`.
+  point of `Line.VSM.bautinPath`. Every operating angle `δ*` (the Bautin form `𝔅_δ`) is treated
+  in `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean`.
 * Notation: `a = E/M`, `b = E/L`, `d = D/M`, `σ = R/L`, `ρ = σ² + ω₀²`; the monic quartic has
   `a₃ = 2σ + d`, `a₂ = ρ + 2σd`, `a₁ = dρ`, `a₀ = a b ω₀`.
 * Level: exact identities and signs for all parameters of the slice (no sample points), and
@@ -185,7 +186,7 @@ every ratio `d > 0` the model `zeroCurrent E R L ω₀ M(d) (d M(d))` is the bou
   constructor <;> intro h <;> linarith
 
 /-- **The boundary forces a resistive line**: a physical zero-current model on the Hopf boundary
-has `R > 0` (`angleZero_R_pos`). Static evidence on the model. -/
+has `R > 0` (`Line.VSM.Model.R_pos_of_boundary`). Static evidence on the model. -/
 @[tmio M, powerlib_domain] theorem zeroCurrent_R_pos {E R L w M D : ℝ}
     (hp : Meets (zeroCurrent E R L w M D) .physical)
     (hH : (zeroCurrent E R L w M D).g.coeff3 * (zeroCurrent E R L w M D).g.coeff2
@@ -194,8 +195,7 @@ has `R > 0` (`angleZero_R_pos`). Static evidence on the model. -/
         (zeroCurrent E R L w M D).g.coeff1 (zeroCurrent E R L w M D).Q ^ 2 +
           (zeroCurrent E R L w M D).g.coeff3 ^ 2 * (zeroCurrent E R L w M D).g.coeff0
             (zeroCurrent E R L w M D).Q) : 0 < R := by
-  rw [zeroCurrent_eq_angleZero] at hp hH
-  exact angleZero_R_pos hp hH
+  exact Model.R_pos_of_boundary hp hH
 
 /-! ## The polynomials of the closed form -/
 
@@ -381,9 +381,8 @@ evidence on the model. -/
   rw [zeroCurrent_firstLyapunov_eq_bautinForm hp hH hω hω2, eq_comm]
   have hR := zeroCurrent_R_pos hp hH
   have hf1 : D / M * ((R / L) ^ 2 + w ^ 2 - ω ^ 2) = 2 * (R / L) * ω ^ 2 := by
-    have h := (angleZero_freq_relations (by rwa [zeroCurrent_eq_angleZero] at hp)
-      (by rwa [zeroCurrent_eq_angleZero] at hH) (by rwa [zeroCurrent_eq_angleZero] at hω2)).1
-    rw [zeroCurrent_Q_div, zero_add] at h
+    have h := (Model.freq_relations_of_boundary hp hH hω2).1
+    rw [zeroCurrent_Q, zero_div, zero_add] at h
     exact h
   obtain ⟨hN, hM', hD'⟩ := hp
   have hL : 0 < L := hN.L

@@ -513,3 +513,12 @@ import theorem.Stochastic.QuasiPotentialLevel
 import theorem.Stochastic.SolutionFlow
 import theorem.GridTiedConverter.GFM.Noise.FreidlinWentzellExact
 import theorem.GridTiedConverter.GFM.Noise.FreidlinWentzellExit
+import theorem.Dynamics.PolySign
+import theorem.GridTiedConverter.GFM.HopfBautinSurface
+import theorem.GridTiedConverter.GFM.HopfBautinW3Data
+import theorem.GridTiedConverter.GFM.HopfBautinW3Point
+import theorem.GridTiedConverter.GFM.HopfBautinW2Data
+import theorem.GridTiedConverter.GFM.HopfBautinW2Point
+import theorem.Dynamics.OrbitLaSalle
+import theorem.GridTiedConverter.GFM.Noise.UphillAction
+import theorem.GridTiedConverter.GFM.Noise.BalancedEscape

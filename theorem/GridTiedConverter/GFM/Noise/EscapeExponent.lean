@@ -2,6 +2,7 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.ControlledAction
 import theorem.GridTiedConverter.GFM.Noise.FilterQuasiPotential
+import theorem.GridTiedConverter.GFM.Noise.UphillAction
 import theorem.PowerSystem.Synchronous.DampedEAC
 import theorem.Dynamics.LagFilter
 
@@ -79,15 +80,18 @@ Results.
   `3DΔU/(2σ_P²)` (`Dynamics.abs_lagFilter_sub_const_le`).
 * Generic helpers (lag filter, quadratic action and tracking estimates, comparison and drift,
   end bump) are in `theorem/Dynamics/LagFilter.lean`.
-* Not formalized: `V₃ < V₂` for `ω_c` between the two explicit ranges, i.e. for
-  `min(1/τ₁, √(DΔU/(8A² t_max³))) < ω_c < escThreshold`. No exact three-state solution of the
-  Hamilton–Jacobi equation is available (`Params3.hj_separable_const`), so every upper bound
-  needs an admissible pair; the two pairs above carry explicit but crude error terms
-  (`O(1/ω_c²)` remainders, frozen-filter transit and drift costs) that exceed the deficit
-  `V₂ − V₃` in that range (for `M = D = A = 1`, `P_ref = c₀`, exactly:
-  `√186/(233523 π³) < ω_c < 2 + 34078720/π⁴`). Closing it needs admissible pairs within the
-  true deficit of the optimum, i.e. certified approximations of the minimizing three-state path
-  at each `ω_c`.
+* Every bandwidth, balanced set point: for `P_ref = c₀`,
+  `GFM.Noise.Params.setPointQP_lt_swingQP_balanced` (`V₃ < V₂` for every `ω_c > 0`, with an
+  explicit deficit) in `theorem/GridTiedConverter/GFM/Noise/BalancedEscape.lean`: an exact
+  trajectory of the uphill field (`theorem/GridTiedConverter/GFM/Noise/UphillAction.lean`,
+  action `(2D/σ_P²)(ΔF − (M/ω_c)∫ω̇²)`) found by shooting on the time-reversed field, whose
+  reflection symmetry about the saddle needs `P_ref = c₀`.
+* Not formalized: `V₃ < V₂` for `c₀ < P_ref < c₀ + A` and `ω_c` between the two explicit ranges
+  above, `min(1/τ₁, √(DΔU/(8A² t_max³))) < ω_c < escThreshold`. The pairs of this module carry
+  crude error terms there; the uphill-trajectory route of `GFM.Noise.BalancedEscape` lacks the
+  reflection symmetry, and its right/left exit dichotomy is not available in general (for weak
+  damping all orbits leaving the stable equilibrium on the uphill field exit over the saddle,
+  the heteroclinic sitting at a jump of the exit time: an observation, not used).
 -/
 
 noncomputable section
@@ -520,15 +524,6 @@ end Params
 
 namespace Params3
 
-/-- The controlled three-state field in coordinates. -/
-@[tmio M, powerlib_domain] private theorem controlField_filter (p3 : Params3) (σP v : ℝ)
-    (x : Fin 3 → ℝ) :
-    controlField p3.sdeDrift (fun _ (_ : Fin 1) => p3.setPointColumn σP) x ![v] =
-      ![x 1, (p3.Pref - x 2 - p3.D * x 1) / p3.M + v * (σP / p3.M),
-        p3.ωc * (p3.c0 + p3.A * Real.sin (x 0 - p3.α) - x 2)] := by
-  ext i; fin_cases i <;>
-    simp [controlField, sdeDrift_apply, setPointColumn, VSMLPFLossy.Pe, toLossy]
-
 /-- **Following a two-state path**: a two-state admissible pair `(φ, u)` on `[0, T]` (momentum
 coordinates) and the filter driven by `h = P(δ)` give a three-state admissible pair from
 `(δ(0), p(0)/M, z₀)` to `(δ(T), p(T)/M, z(T))`, with control `u + (z − P(δ))/σ_P`. -/
@@ -572,7 +567,7 @@ coordinates) and the filter driven by `h = P(δ)` give a three-state admissible 
         Real.sin (φ t 0 - p3.α)) - p3.D * (φ t 1 / p3.M) + u t 0 * σP) (Ici t) t := by
       simpa using hasDerivWithinAt_pi.1 h2 1
     have hht := hhφ t (Ico_subset_Icc_self ht)
-    rw [controlField_filter]
+    rw [controlField_setPoint]
     convert hasDerivWithinAt_vec_three d0 (d1.div_const p3.M) (hZ t).hasDerivWithinAt using 1
     ext i; fin_cases i
     · simp
