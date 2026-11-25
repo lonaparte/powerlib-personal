@@ -17,11 +17,13 @@ Model boundary.
 * `F : ℝ^X × ℝ → ℝ^X` (finite `X`, sup norms), `ContDiffAt ℝ 3 F q₀`, `F q₀ = 0`; scalar input;
   drive `w₀ + ε V̂ cos ωt`; state perturbation `ε A₀'` with a constant real `A₀'`.
 * The Floquet statements need real modal coordinates of `∂ₓF(q₀)` with the pair `±jω/2` and a
-  stable block `A_s` with `‖e^{TA_s}‖ < 1` in the `∞`-operator norm (`T = 2π/ω`), or the
-  eigen-data of a three-state core with a real pole `λ₃ < 0`. The norm condition depends on the
-  basis of the stable subspace.
-* As in `ForcedOrbitFloquet`, orbital stability of the nonlinear solutions near the orbit is not
-  derived from the multipliers.
+  stable block `A_s` with one-period spectral radius `ρ(e^{TA_s}) < 1` (`T = 2π/ω`), or the
+  eigen-data of a three-state core with a real pole `λ₃ < 0`. The spectral condition does not
+  depend on the basis of the stable subspace; `StableBasis` constructs the basis from the critical
+  eigenvectors.
+* The exponential stability of the nonlinear solutions near the orbit is derived from the
+  multipliers in `SmoothOrbitStability`; parameter changes `p → p + εp₁` and limiters inactive at
+  the operating point are covered by `FieldTransfer`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (`J_p = A₀ + ε Re{A₁ e^{jω_p t}}` along the forced
@@ -382,7 +384,7 @@ unit circle. -/
     {q0 : (X → ℝ) × ℝ} (hF : ContDiffAt ℝ 3 F q0) (hF0 : F q0 = 0) {Vh ω : ℝ} (hω : 0 < ω)
     {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
     (As : Matrix Y Y ℝ) (hA0 : Q * matX F q0 * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) {z : X → ℂ}
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
     (hz : ((ω : ℂ) * I) • z - (matX F q0).map (algebraMap ℝ ℂ) *ᵥ z =
       (Vh : ℂ) • fun i => ((fderiv ℝ F q0 (0, 1) i : ℝ) : ℂ))
     (A0' : Matrix X X ℝ)
@@ -400,10 +402,10 @@ unit circle. -/
             (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1 := by
   obtain ⟨K, ρ, ε0, KJ, KD, hK, hρ, hε0, hKJ, hKD, hNc, hN0, hNL, hDx, hJc, hJ⟩ :=
     smooth_estimates hF hF0 Vh ω A0'
-  obtain ⟨Minv, hL, hR⟩ := exists_minv_of_modal hω hPQ hQP As hA0 hq
+  obtain ⟨Minv, hL, hR⟩ := exists_minv_of_modal hω hPQ hQP As hA0 hsr
   obtain ⟨hb, hbp, hNp, hDu, hpp, hpd, hlink⟩ := smooth_link F q0 hω.ne' hz A0'
   have h := orbit_floquet_stable (by positivity) hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD
-    hDx hDu hJc hJ hpp hpd hω rfl hPQ hQP As hA0 hq A0' (smA1 F q0 Vh z) hlink hs hg
+    hDx hDu hJc hJ hpp hpd hω rfl hPQ hQP As hA0 hsr A0' (smA1 F q0 Vh z) hlink hs hg
   simp only [smN_rhs] at h
   exact h
 
@@ -413,7 +415,7 @@ unit circle. -/
     {q0 : (X → ℝ) × ℝ} (hF : ContDiffAt ℝ 3 F q0) (hF0 : F q0 = 0) {Vh ω : ℝ} (hω : 0 < ω)
     {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
     (As : Matrix Y Y ℝ) (hA0 : Q * matX F q0 * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) {z : X → ℂ}
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
     (hz : ((ω : ℂ) * I) • z - (matX F q0).map (algebraMap ℝ ℂ) *ᵥ z =
       (Vh : ℂ) • fun i => ((fderiv ℝ F q0 (0, 1) i : ℝ) : ℂ))
     (A0' : Matrix X X ℝ)
@@ -428,10 +430,10 @@ unit circle. -/
         Periodic.FloquetUnstable (fun t => smJ F q0 Vh ω A0' ε t (y t)) (2 * Real.pi / ω) := by
   obtain ⟨K, ρ, ε0, KJ, KD, hK, hρ, hε0, hKJ, hKD, hNc, hN0, hNL, hDx, hJc, hJ⟩ :=
     smooth_estimates hF hF0 Vh ω A0'
-  obtain ⟨Minv, hL, hR⟩ := exists_minv_of_modal hω hPQ hQP As hA0 hq
+  obtain ⟨Minv, hL, hR⟩ := exists_minv_of_modal hω hPQ hQP As hA0 hsr
   obtain ⟨hb, hbp, hNp, hDu, hpp, hpd, hlink⟩ := smooth_link F q0 hω.ne' hz A0'
   have h := orbit_floquet_unstable (by positivity) hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD
-    hDx hDu hJc hJ hpp hpd hω rfl hPQ hQP As hA0 hq A0' (smA1 F q0 Vh z) hlink hg
+    hDx hDu hJc hJ hpp hpd hω rfl hPQ hQP As hA0 hsr A0' (smA1 F q0 Vh z) hlink hg
   simp only [smN_rhs] at h
   exact h
 
@@ -467,7 +469,7 @@ real pole `λ₃ < 0`; drive at `2Ω`). -/
   have hq : ‖expS (!![l3] : Matrix (Fin 1) (Fin 1) ℝ) (2 * Real.pi / (2 * Ω))‖ < 1 := by
     rw [norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) hl3
-  exact smooth_orbit_floquet_stable hF hF0 hω hPQ hQP _ hA0 hq hz A0'
+  exact smooth_orbit_floquet_stable hF hF0 hω hPQ hQP _ hA0 (BlockAveraging.spectralRadius_lt_one_of_norm _ hq) hz A0'
     (by rw [hLu, hRr]; exact hs) (by rw [hLu, hRr]; exact hg)
 
 /-- Three-state `C³` vector fields, end-to-end parametric instability. -/
@@ -499,7 +501,7 @@ real pole `λ₃ < 0`; drive at `2Ω`). -/
   have hq : ‖expS (!![l3] : Matrix (Fin 1) (Fin 1) ℝ) (2 * Real.pi / (2 * Ω))‖ < 1 := by
     rw [norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) hl3
-  exact smooth_orbit_floquet_unstable hF hF0 hω hPQ hQP _ hA0 hq hz A0'
+  exact smooth_orbit_floquet_unstable hF hF0 hω hPQ hQP _ hA0 (BlockAveraging.spectralRadius_lt_one_of_norm _ hq) hz A0'
     (by rw [hLu, hRr]; exact hg)
 
 end Smooth

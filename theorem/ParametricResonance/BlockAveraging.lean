@@ -1,4 +1,6 @@
 import theorem.ParametricResonance.TwoToOneAveraging
+import theorem.LTI.Discrete
+import theorem.Linear.EigenMap
 
 /-! # First-order averaging with a stable remainder: Floquet multipliers of `n`-state cores
 
@@ -17,8 +19,10 @@ Scope.
   modulation `A₁` coupling all states (`modN`, `fullN`). A constant real similarity brings every
   `A₀` with a simple non-real pair to this block form; it changes neither the Floquet multipliers
   nor the pump coefficient (`Element.pump_similar`).
-* The stable block enters through `‖e^{TA_s}‖ < 1` in the operator `∞`-norm, `T = 2π/ω` (`expS`):
-  a contraction of the stable modes over one period in the chosen coordinates.
+* The stable block enters through the spectral radius `ρ(e^{TA_s}) < 1`, `T = 2π/ω` (`expS`):
+  every eigenvalue of the one-period map of the stable modes lies inside the unit circle. The
+  condition does not depend on the basis of the stable subspace; no norm of `e^{TA_s}` is
+  assumed (`StableBlockNorm` shows a norm condition can fail in every real basis).
 * The pump coefficient is `g = u A₁₁ r̄` (`Element.pump`, `TwoToOne.left`, `TwoToOne.right`) of
   the critical block of `A₁` only.
 * The scaling `σ = εs`, `ω/2 − Ω = εd` is the distinguished limit of `TwoToOneAveraging`; the
@@ -37,8 +41,15 @@ Results.
 * Average: the critical block of `(1/T)∫₀ᵀ F_z` is the slow-flow matrix
   `M_slow(s, d, g/2)` (`Fz_toBlocks₁₁`, `average_toBlocks₁₁`).
 * `monodromy_blocks` — the monodromy is `[[P, Q], [R, S]]` with
-  `P = −(I + εT M_slow) + O(ε²)`, `Q, R = O(ε)`, `‖S‖ ≤ ‖e^{TA_s}‖ + O(ε)`
+  `P = −(I + εT M_slow) + O(ε²)`, `Q, R = O(ε)`, `S = e^{TA_s} + O(ε)`
   (`Averaging.monodromy_expansion`, `norm_toBlocks_le`).
+* Spectral condition through odd powers: `exists_odd_pow_norm_lt_one` (Gelfand: `ρ(E) < 1` gives
+  an odd `n` with `‖Eⁿ‖ < 1`), `block_pow_id11`, `block_pow_estimate` (the `n`-th power of the
+  block monodromy has critical block `(−1)ⁿ(I + εnT M_slow) + O(ε²)` and stable block
+  `Sⁿ = Eⁿ + O(ε)`), `odd_block_identity`, `Linear.mulVec_pow_of_eigen`;
+  `block_stable_spec`, `block_unstable_spec` — the conclusions of `block_stable` and
+  `block_unstable` under `ρ(E) < 1`; `spectralRadius_lt_one_of_norm` — the earlier norm
+  condition is a special case.
 * `block_stable` — eigenvalues of such block matrices with `M_slow` Hurwitz lie inside the unit
   circle (`stable_part_le`, `pseudo_eig`, `det_norm_le`, `quad_lower`,
   `norm_eps_mul_sub_one_lt`).
@@ -50,8 +61,9 @@ Results.
   unscaled variables `ε|g_m| ≶ 2√(σ_m² + Δ_m²)`.
 
 Corrections.
-None: the first-order 2:1 criterion of §2.2 holds for the complete `n`-state systems with a
-contracting stable block, not only for the two-state reduction.
+None: the first-order 2:1 criterion of §2.2 holds for the complete `n`-state systems whose
+stable block has all one-period eigenvalues inside the unit circle, not only for the two-state
+reduction.
 
 Family and connection conclusions.
 None: static evidence on linear periodic systems (Floquet multipliers).
@@ -680,6 +692,302 @@ set_option maxHeartbeats 1000000 in
 
 /-! ### The `n`-state model: a critical pair and a stable block -/
 
+/-! ### Spectral condition on the stable block: odd powers -/
+
+omit [Fintype Y] [DecidableEq Y] in
+@[tmio T, powerlib_foundation] theorem block_pow_id11 (A P X : Matrix (Fin 2) (Fin 2) ℝ)
+    (B : Matrix (Fin 2) Y ℝ) (R : Matrix Y (Fin 2) ℝ) (s κ : ℝ) [Fintype Y] :
+    A * P + B * R - (-s) • (1 + (κ + 1) • X) =
+      (A - s • (1 + κ • X)) * P + s • ((1 + κ • X) * (P + 1 + X)) - s • (κ • (X * X)) +
+        B * R := by
+  simp only [Matrix.sub_mul, Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul,
+    Matrix.one_mul, Matrix.mul_one, smul_add, add_smul, one_smul, smul_smul, neg_smul]
+  module
+
+/-- Block estimates of the powers of a block matrix close to `diag(−(I + εT M), E)`:
+`(M^k)₁₁ = (−1)^k(I + kεT M) + O(ε²)`, `(M^k)₁₂, (M^k)₂₁ = O(ε)`, `(M^k)₂₂ = E^k + O(ε)`. -/
+@[tmio T, powerlib_foundation] theorem block_pow_estimate (T : ℝ) (Ms : Matrix (Fin 2) (Fin 2) ℝ)
+    (E : Matrix Y Y ℝ) {C : ℝ} (hC : 0 ≤ C) (k : ℕ) :
+    ∃ c, 0 ≤ c ∧ ∀ ε, 0 < ε → ε ≤ 1 → ∀ (P : Matrix (Fin 2) (Fin 2) ℝ) (Q : Matrix (Fin 2) Y ℝ)
+      (R : Matrix Y (Fin 2) ℝ) (S : Matrix Y Y ℝ),
+      ‖P + 1 + (ε * T) • Ms‖ ≤ C * ε ^ 2 → ‖Q‖ ≤ C * ε → ‖R‖ ≤ C * ε → ‖S - E‖ ≤ C * ε →
+      ‖(fromBlocks P Q R S ^ k).toBlocks₁₁ - (-1 : ℝ) ^ k • (1 + ((k : ℝ) * (ε * T)) • Ms)‖ ≤
+          c * ε ^ 2 ∧
+        ‖(fromBlocks P Q R S ^ k).toBlocks₁₂‖ ≤ c * ε ∧
+        ‖(fromBlocks P Q R S ^ k).toBlocks₂₁‖ ≤ c * ε ∧
+        ‖(fromBlocks P Q R S ^ k).toBlocks₂₂ - E ^ k‖ ≤ c * ε := by
+  set a := ‖(1 : Matrix (Fin 2) (Fin 2) ℝ)‖ with ha
+  set t := |T| * ‖Ms‖ with ht
+  set e := ‖E‖ with he
+  have ha0 : 0 ≤ a := norm_nonneg _
+  have ht0 : 0 ≤ t := by positivity
+  have he0 : 0 ≤ e := norm_nonneg _
+  clear_value a t e
+  induction k with
+  | zero =>
+    refine ⟨0, le_rfl, fun ε _ _ P Q R S _ _ _ _ => ?_⟩
+    have h1 : (fromBlocks P Q R S) ^ 0 = fromBlocks 1 0 0 1 := by
+      rw [pow_zero, fromBlocks_one]
+    rw [h1, toBlocks_fromBlocks₁₁, toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₁,
+      toBlocks_fromBlocks₂₂]
+    simp
+  | succ k ih =>
+    obtain ⟨c, hc, hk⟩ := ih
+    set dk := ‖E ^ k‖ with hdk
+    have hdk0 : 0 ≤ dk := norm_nonneg _
+    clear_value dk
+    refine ⟨c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C + ((a + k * t) + c) * C +
+        c * (e + C) + c * (a + t + C) + (dk + c) * C + c * C + c * (e + C) + dk * C,
+        by positivity, fun ε hε hε1 P Q R S hP hQ hR hS => ?_⟩
+    obtain ⟨h11, h12, h21, h22⟩ := hk ε hε hε1 P Q R S hP hQ hR hS
+    set M := fromBlocks P Q R S with hM
+    set A := (M ^ k).toBlocks₁₁
+    set B := (M ^ k).toBlocks₁₂
+    set Cc := (M ^ k).toBlocks₂₁
+    set D := (M ^ k).toBlocks₂₂
+    have hpow : M ^ (k + 1) = fromBlocks (A * P + B * R) (A * Q + B * S) (Cc * P + D * R)
+        (Cc * Q + D * S) := by
+      rw [pow_succ, ← fromBlocks_toBlocks (M ^ k), hM, fromBlocks_multiply]
+    rw [hpow, toBlocks_fromBlocks₁₁, toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₁,
+      toBlocks_fromBlocks₂₂]
+    clear_value A B Cc D
+    set X : Matrix (Fin 2) (Fin 2) ℝ := (ε * T) • Ms with hX
+    have hXn : ‖X‖ ≤ ε * t := by
+      rw [hX, norm_smul, Real.norm_eq_abs, abs_mul, abs_of_pos hε, ht, mul_assoc]
+    clear_value X
+    have hε2 : ε ^ 2 ≤ ε := by nlinarith
+    have hεt : ε * t ≤ t := by nlinarith
+    have hCε : C * ε ≤ C := by nlinarith
+    set Δ := P + 1 + X with hΔ
+    clear_value Δ
+    have hPn : ‖P‖ ≤ a + t + C := by
+      have : P = Δ - 1 - X := by rw [hΔ]; abel
+      rw [this]
+      have h3 : ‖Δ - 1 - X‖ ≤ ‖Δ‖ + a + ‖X‖ := by
+        have n1 := norm_sub_le (Δ - 1) X
+        have n2 := norm_sub_le Δ (1 : Matrix (Fin 2) (Fin 2) ℝ)
+        rw [← ha] at n2; linarith
+      refine h3.trans ?_
+      nlinarith [hP, hXn]
+    have hSn : ‖S‖ ≤ e + C := by
+      have : S = (S - E) + E := by abel
+      rw [this]; exact (norm_add_le _ _).trans (by nlinarith [hS])
+    set Yk : Matrix (Fin 2) (Fin 2) ℝ := 1 + ((k : ℝ) * (ε * T)) • Ms with hYk
+    have hYkX : Yk = 1 + (k : ℝ) • X := by rw [hYk, hX, smul_smul]
+    clear_value Yk
+    have hYn : ‖Yk‖ ≤ a + k * t := by
+      rw [hYkX]
+      refine (norm_add_le _ _).trans (add_le_add ha.symm.le ?_)
+      rw [norm_smul, Real.norm_of_nonneg (Nat.cast_nonneg k)]
+      exact mul_le_mul_of_nonneg_left (hXn.trans hεt) (Nat.cast_nonneg k)
+    have hAn : ‖A‖ ≤ (a + k * t) + c := by
+      have : A = (-1 : ℝ) ^ k • Yk + (A - (-1 : ℝ) ^ k • Yk) := by abel
+      rw [this]
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · rw [norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul]; exact hYn
+      · exact h11.trans (mul_le_of_le_one_right hc (by nlinarith))
+    have hDn : ‖D‖ ≤ dk + c := by
+      have : D = (D - E ^ k) + E ^ k := by abel
+      rw [this]; exact (norm_add_le _ _).trans (by nlinarith [h22])
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · have hid : A * P + B * R - (-1 : ℝ) ^ (k + 1) • (1 + (((k + 1 : ℕ) : ℝ) * (ε * T)) • Ms) =
+          (A - (-1 : ℝ) ^ k • Yk) * P + (-1 : ℝ) ^ k • (Yk * Δ) -
+            (-1 : ℝ) ^ k • ((k : ℝ) • (X * X)) + B * R := by
+        have e : (-1 : ℝ) ^ (k + 1) • (1 + (((k + 1 : ℕ) : ℝ) * (ε * T)) • Ms) =
+            (-((-1 : ℝ) ^ k)) • (1 + ((k : ℝ) + 1) • X) := by
+          rw [pow_succ, mul_neg_one, hX, smul_smul]; push_cast; rfl
+        rw [e, hYkX, hΔ]
+        exact block_pow_id11 A P X B R _ _
+      rw [hid]
+      have e1 : ‖(A - (-1 : ℝ) ^ k • Yk) * P‖ ≤ c * ε ^ 2 * (a + t + C) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul h11 hPn (norm_nonneg _) (by positivity))
+      have e2 : ‖(-1 : ℝ) ^ k • (Yk * Δ)‖ ≤ (a + k * t) * (C * ε ^ 2) := by
+        rw [norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+        exact (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul hYn hP (norm_nonneg _) (by positivity))
+      have e3 : ‖(-1 : ℝ) ^ k • ((k : ℝ) • (X * X))‖ ≤ k * (ε * t) ^ 2 := by
+        rw [norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_smul,
+          Real.norm_of_nonneg (Nat.cast_nonneg k)]
+        refine mul_le_mul_of_nonneg_left ((Matrix.linfty_opNorm_mul _ _).trans ?_) (Nat.cast_nonneg k)
+        rw [sq]; exact mul_le_mul hXn hXn (norm_nonneg _) (mul_nonneg hε.le ht0)
+      have e4 : ‖B * R‖ ≤ c * ε * (C * ε) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul h12 hR (norm_nonneg _) (by positivity))
+      have n1 := norm_add_le ((A - (-1 : ℝ) ^ k • Yk) * P + (-1 : ℝ) ^ k • (Yk * Δ) -
+        (-1 : ℝ) ^ k • ((k : ℝ) • (X * X))) (B * R)
+      have n2 := norm_sub_le ((A - (-1 : ℝ) ^ k • Yk) * P + (-1 : ℝ) ^ k • (Yk * Δ))
+        ((-1 : ℝ) ^ k • ((k : ℝ) • (X * X)))
+      have n3 := norm_add_le ((A - (-1 : ℝ) ^ k • Yk) * P) ((-1 : ℝ) ^ k • (Yk * Δ))
+      have hsum : c * ε ^ 2 * (a + t + C) + (a + k * t) * (C * ε ^ 2) + k * (ε * t) ^ 2 +
+          c * ε * (C * ε) = (c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C) * ε ^ 2 := by
+        ring
+      have hrest : 0 ≤ ((a + k * t) + c) * C + c * (e + C) + c * (a + t + C) + (dk + c) * C +
+          c * C + c * (e + C) + dk * C := by positivity
+      have hfin : (c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C) * ε ^ 2 ≤
+          (c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C + ((a + k * t) + c) * C +
+            c * (e + C) + c * (a + t + C) + (dk + c) * C + c * C + c * (e + C) + dk * C) *
+              ε ^ 2 := mul_le_mul_of_nonneg_right (by linarith) (sq_nonneg ε)
+      linarith
+    · have e1 : ‖A * Q‖ ≤ ((a + k * t) + c) * (C * ε) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul hAn hQ (norm_nonneg _) (by positivity))
+      have e2 : ‖B * S‖ ≤ c * ε * (e + C) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul h12 hSn (norm_nonneg _) (by positivity))
+      refine (norm_add_le _ _).trans ((add_le_add e1 e2).trans ?_)
+      have : 0 ≤ c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C + c * (a + t + C) +
+          (dk + c) * C + c * C + c * (e + C) + dk * C := by positivity
+      rw [show ((a + k * t) + c) * (C * ε) + c * ε * (e + C) =
+        (((a + k * t) + c) * C + c * (e + C)) * ε by ring]
+      exact mul_le_mul_of_nonneg_right (by linarith) hε.le
+    · have e1 : ‖Cc * P‖ ≤ c * ε * (a + t + C) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul h21 hPn (norm_nonneg _) (by positivity))
+      have e2 : ‖D * R‖ ≤ (dk + c) * (C * ε) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul hDn hR (norm_nonneg _) (by positivity))
+      refine (norm_add_le _ _).trans ((add_le_add e1 e2).trans ?_)
+      have : 0 ≤ c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C + ((a + k * t) + c) * C +
+          c * (e + C) + c * C + c * (e + C) + dk * C := by positivity
+      rw [show c * ε * (a + t + C) + (dk + c) * (C * ε) = (c * (a + t + C) + (dk + c) * C) * ε by
+        ring]
+      exact mul_le_mul_of_nonneg_right (by linarith) hε.le
+    · have hid : Cc * Q + D * S - E ^ (k + 1) = Cc * Q + (D - E ^ k) * S + E ^ k * (S - E) := by
+        rw [pow_succ]; noncomm_ring
+      rw [hid]
+      have e1 : ‖Cc * Q‖ ≤ c * ε * (C * ε) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul h21 hQ (norm_nonneg _) (by positivity))
+      have e2 : ‖(D - E ^ k) * S‖ ≤ c * ε * (e + C) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul h22 hSn (norm_nonneg _) (by positivity))
+      have e3 : ‖E ^ k * (S - E)‖ ≤ dk * (C * ε) :=
+        (Matrix.linfty_opNorm_mul _ _).trans (mul_le_mul hdk.symm.le hS (norm_nonneg _) hdk0)
+      refine (norm_add_le _ _).trans ((add_le_add ((norm_add_le _ _).trans (add_le_add e1 e2))
+        e3).trans ?_)
+      have : 0 ≤ c * (a + t + C) + (a + k * t) * C + k * t ^ 2 + c * C + ((a + k * t) + c) * C +
+          c * (e + C) + c * (a + t + C) + (dk + c) * C := by positivity
+      have e4 : c * ε * (C * ε) ≤ c * C * ε := by
+        rw [show c * ε * (C * ε) = c * C * ε * ε by ring]
+        exact mul_le_of_le_one_right (by positivity) hε1
+      calc c * ε * (C * ε) + c * ε * (e + C) + dk * (C * ε) ≤
+            c * C * ε + c * ε * (e + C) + dk * (C * ε) := by linarith
+        _ = (c * C + c * (e + C) + dk * C) * ε := by ring
+        _ ≤ _ := mul_le_mul_of_nonneg_right (by linarith) hε.le
+
+/-- A spectral radius below one gives an odd contracting power. -/
+@[tmio T, powerlib_foundation] theorem exists_odd_pow_norm_lt_one (E : Matrix Y Y ℝ)
+    (hρ : spectralRadius ℂ (E.map (algebraMap ℝ ℂ)) < 1) : ∃ m : ℕ, ‖E ^ (2 * m + 1)‖ < 1 := by
+  obtain ⟨n, hn, hlt⟩ := LTI.exists_pow_norm_lt_one E hρ
+  set q := ‖E ^ n‖ with hqd
+  have hq0 : 0 ≤ q := norm_nonneg _
+  have he0 : 0 ≤ ‖E‖ := norm_nonneg _
+  obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one (show 0 < 1 / (‖E‖ + 1) by positivity) hlt
+  have hj0 : j ≠ 0 := by
+    rintro rfl
+    rw [pow_zero, lt_div_iff₀ (by positivity)] at hj
+    linarith
+  refine ⟨n * j, ?_⟩
+  have e : E ^ (2 * (n * j) + 1) = (E ^ n) ^ (2 * j) * E := by
+    rw [← pow_mul, pow_succ]; ring_nf
+  rw [e]
+  have h1 : ‖(E ^ n) ^ (2 * j)‖ ≤ q ^ (2 * j) := norm_pow_le' _ (by omega)
+  have h2 : q ^ (2 * j) ≤ q ^ j := pow_le_pow_of_le_one hq0 hlt.le (by omega)
+  have h3 : q ^ j * (‖E‖ + 1) < 1 := by rwa [lt_div_iff₀ (by positivity)] at hj
+  calc ‖(E ^ n) ^ (2 * j) * E‖ ≤ ‖(E ^ n) ^ (2 * j)‖ * ‖E‖ := norm_mul_le _ _
+    _ ≤ q ^ j * ‖E‖ := mul_le_mul_of_nonneg_right (h1.trans h2) he0
+    _ < 1 := by nlinarith [pow_nonneg hq0 j]
+
+@[tmio T, powerlib_foundation] private theorem map_pow_real {Z : Type*} [Fintype Z] [DecidableEq Z]
+    (M : Matrix Z Z ℝ) (n : ℕ) : (M ^ n).map (algebraMap ℝ ℂ) = M.map (algebraMap ℝ ℂ) ^ n := by
+  have h := (RingHom.mapMatrix (algebraMap ℝ ℂ) : Matrix Z Z ℝ →+* Matrix Z Z ℂ).map_pow M n
+  simpa [RingHom.mapMatrix_apply] using h
+
+omit [DecidableEq Y] in
+@[tmio T, powerlib_foundation] theorem odd_block_identity (P : Matrix (Fin 2) (Fin 2) ℝ)
+    (Ms : Matrix (Fin 2) (Fin 2) ℝ) (m : ℕ) (ε T : ℝ) :
+    P + 1 + (ε * ((2 * m + 1 : ℕ) * T)) • Ms =
+      P - (-1 : ℝ) ^ (2 * m + 1) • (1 + (((2 * m + 1 : ℕ) : ℝ) * (ε * T)) • Ms) := by
+  rw [Odd.neg_one_pow ⟨m, rfl⟩, neg_one_smul, sub_neg_eq_add, add_assoc]
+  congr 2
+  ring_nf
+
+/-- A contracting norm bounds the spectral radius: `‖E‖ < 1 ⇒ ρ(E) < 1`. -/
+@[tmio T, powerlib_foundation] theorem spectralRadius_lt_one_of_norm {Z : Type*} [Fintype Z]
+    [DecidableEq Z] [Nonempty Z] (E : Matrix Z Z ℝ) (h : ‖E‖ < 1) :
+    spectralRadius ℂ (E.map (algebraMap ℝ ℂ)) < 1 := by
+  refine (spectralRadius_le_nnnorm _).trans_lt ?_
+  have e : ‖E.map (algebraMap ℝ ℂ)‖₊ = ‖E‖₊ := NNReal.eq (norm_map_real E)
+  rw [e]
+  have h' : ‖E‖₊ < 1 := by rw [← NNReal.coe_lt_coe]; simpa using h
+  exact_mod_cast h'
+
+/-- `block_stable` with the spectral condition on the stable block: `S = E + O(ε)` with
+`ρ(E) < 1` (instead of `‖S‖ ≤ q + O(ε)`, `q < 1`). The proof applies `block_stable` to an odd
+power. -/
+@[tmio T, powerlib_foundation] theorem block_stable_spec {T : ℝ} (hT : 0 < T)
+    {Ms : Matrix (Fin 2) (Fin 2) ℝ} (htr : Ms.trace < 0) (hdet : 0 < Ms.det) {E : Matrix Y Y ℝ}
+    (hρ : spectralRadius ℂ (E.map (algebraMap ℝ ℂ)) < 1) {C : ℝ} (hC : 0 ≤ C) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ (P : Matrix (Fin 2) (Fin 2) ℝ) (Q : Matrix (Fin 2) Y ℝ)
+      (R : Matrix Y (Fin 2) ℝ) (S : Matrix Y Y ℝ),
+      ‖P + 1 + (ε * T) • Ms‖ ≤ C * ε ^ 2 → ‖Q‖ ≤ C * ε → ‖R‖ ≤ C * ε → ‖S - E‖ ≤ C * ε →
+      ∀ (μ : ℂ) (v : Fin 2 ⊕ Y → ℂ), v ≠ 0 →
+        (fromBlocks P Q R S).map (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1 := by
+  obtain ⟨m, hm⟩ := exists_odd_pow_norm_lt_one E hρ
+  obtain ⟨c, hc, hpow⟩ := block_pow_estimate T Ms E hC (2 * m + 1)
+  have hTn : 0 < ((2 * m + 1 : ℕ) : ℝ) * T := by positivity
+  have h := block_stable (Y := Y) hTn htr hdet hc hm
+  filter_upwards [h, eventually_lt_nhdsGT one_pos] with ε hε ⟨hε0, hε1⟩
+  intro P Q R S hP hQ hR hS μ v hv heq
+  obtain ⟨h11, h12, h21, h22⟩ := hpow ε hε0 hε1.le P Q R S hP hQ hR hS
+  set Mk := fromBlocks P Q R S ^ (2 * m + 1) with hMk
+  have hP' : ‖Mk.toBlocks₁₁ + 1 + (ε * (((2 * m + 1 : ℕ) : ℝ) * T)) • Ms‖ ≤ c * ε ^ 2 := by
+    rw [odd_block_identity]; exact h11
+  have hS' : ‖Mk.toBlocks₂₂‖ ≤ ‖E ^ (2 * m + 1)‖ + c * ε := by
+    have : Mk.toBlocks₂₂ = (Mk.toBlocks₂₂ - E ^ (2 * m + 1)) + E ^ (2 * m + 1) := by abel
+    rw [this]; exact (norm_add_le _ _).trans (by linarith)
+  have heq' : (fromBlocks Mk.toBlocks₁₁ Mk.toBlocks₁₂ Mk.toBlocks₂₁ Mk.toBlocks₂₂).map
+      (algebraMap ℝ ℂ) *ᵥ v = μ ^ (2 * m + 1) • v := by
+    rw [fromBlocks_toBlocks, hMk, map_pow_real]
+    exact Linear.mulVec_pow_of_eigen heq _
+  have := hε _ _ _ _ hP' h12 h21 hS' _ v hv heq'
+  rw [norm_pow] at this
+  exact (pow_lt_one_iff_of_nonneg (norm_nonneg _) (by omega)).1 this
+
+/-- `block_unstable` with the spectral condition on the stable block: some eigenvalue lies
+strictly outside the unit circle. -/
+@[tmio T, powerlib_foundation] theorem block_unstable_spec {T : ℝ} (hT : 0 < T)
+    {Ms : Matrix (Fin 2) (Fin 2) ℝ} (hdet : Ms.det < 0) {E : Matrix Y Y ℝ}
+    (hρ : spectralRadius ℂ (E.map (algebraMap ℝ ℂ)) < 1) {C : ℝ} (hC : 0 ≤ C) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ (P : Matrix (Fin 2) (Fin 2) ℝ) (Q : Matrix (Fin 2) Y ℝ)
+      (R : Matrix Y (Fin 2) ℝ) (S : Matrix Y Y ℝ),
+      ‖P + 1 + (ε * T) • Ms‖ ≤ C * ε ^ 2 → ‖Q‖ ≤ C * ε → ‖R‖ ≤ C * ε → ‖S - E‖ ≤ C * ε →
+      ∃ ρ ∈ spectrum ℂ ((fromBlocks P Q R S).map (algebraMap ℝ ℂ)), 1 < ‖ρ‖ := by
+  obtain ⟨m, hm⟩ := exists_odd_pow_norm_lt_one E hρ
+  obtain ⟨c, hc, hpow⟩ := block_pow_estimate T Ms E hC (2 * m + 1)
+  have hTn : 0 < ((2 * m + 1 : ℕ) : ℝ) * T := by positivity
+  have h := block_unstable (Y := Y) hTn hdet hc hm
+  filter_upwards [h, eventually_lt_nhdsGT one_pos] with ε hε ⟨hε0, hε1⟩
+  intro P Q R S hP hQ hR hS
+  obtain ⟨h11, h12, h21, h22⟩ := hpow ε hε0 hε1.le P Q R S hP hQ hR hS
+  set Mk := fromBlocks P Q R S ^ (2 * m + 1) with hMk
+  have hP' : ‖Mk.toBlocks₁₁ + 1 + (ε * (((2 * m + 1 : ℕ) : ℝ) * T)) • Ms‖ ≤ c * ε ^ 2 := by
+    rw [odd_block_identity]; exact h11
+  have hS' : ‖Mk.toBlocks₂₂‖ ≤ ‖E ^ (2 * m + 1)‖ + c * ε := by
+    have : Mk.toBlocks₂₂ = (Mk.toBlocks₂₂ - E ^ (2 * m + 1)) + E ^ (2 * m + 1) := by abel
+    rw [this]; exact (norm_add_le _ _).trans (by linarith)
+  obtain ⟨ν, hν, hdetν⟩ := hε _ _ _ _ hP' h12 h21 hS'
+  rw [fromBlocks_toBlocks] at hdetν
+  have hmem : (ν : ℂ) ∈ spectrum ℂ (Mk.map (algebraMap ℝ ℂ)) := by
+    rw [spectrum.mem_iff, Algebra.algebraMap_eq_smul_one, Matrix.isUnit_iff_isUnit_det]
+    have hmap : (ν : ℂ) • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ) - Mk.map (algebraMap ℝ ℂ) =
+        (ν • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ) - Mk).map (algebraMap ℝ ℂ) := by
+      ext i j
+      simp [Matrix.one_apply]
+      split_ifs <;> simp
+    rw [hmap, ← RingHom.mapMatrix_apply, ← RingHom.map_det, hdetν, map_zero]
+    exact not_isUnit_zero
+  rw [hMk, map_pow_real, spectrum.map_pow_of_pos _ (by omega)] at hmem
+  obtain ⟨ρ, hρmem, hρν⟩ := hmem
+  refine ⟨ρ, hρmem, ?_⟩
+  have hn : ‖ρ‖ ^ (2 * m + 1) = |ν| := by
+    rw [← norm_pow]; simp only at hρν; rw [hρν, Complex.norm_real, Real.norm_eq_abs]
+  have h1 : 1 < ‖ρ‖ ^ (2 * m + 1) := by rw [hn, abs_of_neg (by linarith)]; linarith
+  exact (one_lt_pow_iff_of_nonneg (norm_nonneg _) (by omega)).1 h1
+
+
 /-- The real modulation `Re{A₁ e^{jωt}}` of an `n`-state system. -/
 def modN (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ) (ω t : ℝ) : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ :=
   fun i j => (A i j).re * Real.cos (ω * t) - (A i j).im * Real.sin (ω * t)
@@ -934,14 +1242,13 @@ critical block: `F̄₁₁ = M_slow(s, d, g/2)`, `g = u A₁₁ r̄`. -/
 /-- The monodromy of the full system in blocks: `P = −(I + εT M_slow) + O(ε²)`, `Q, R = O(ε)`,
 `S = e^{TA_s} + O(ε)`, `T = 2π/ω`. -/
 @[tmio T, powerlib_foundation] theorem monodromy_blocks (s d : ℝ) {ω : ℝ} (hω : 0 < ω)
-    (As : Matrix Y Y ℝ) (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ)
-    (hq1 : ‖expS As (2 * Real.pi / ω)‖ ≤ 1) :
+    (As : Matrix Y Y ℝ) (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ) :
     ∃ C, 0 ≤ C ∧ ∀ ε, 0 < ε → ε ≤ 1 → ∃ (P : Matrix (Fin 2) (Fin 2) ℝ) (Q : Matrix (Fin 2) Y ℝ)
       (R : Matrix Y (Fin 2) ℝ) (S : Matrix Y Y ℝ),
       Periodic.monodromy (fullN s d ω As A ε) (2 * Real.pi / ω) 0 = fromBlocks P Q R S ∧
       ‖P + 1 + (ε * (2 * Real.pi / ω)) •
           slowFlowMatrix s d (Element.pump A.toBlocks₁₁ left right / 2)‖ ≤ C * ε ^ 2 ∧
-      ‖Q‖ ≤ C * ε ∧ ‖R‖ ≤ C * ε ∧ ‖S‖ ≤ ‖expS As (2 * Real.pi / ω)‖ + C * ε := by
+      ‖Q‖ ≤ C * ε ∧ ‖R‖ ≤ C * ε ∧ ‖S - expS As (2 * Real.pi / ω)‖ ≤ C * ε := by
   set T := 2 * Real.pi / ω with hTdef
   have hT : 0 < T := by positivity
   obtain ⟨M, hM0, hM⟩ := exists_bound_Fzc s d ω hT.le As A
@@ -954,7 +1261,14 @@ critical block: `F̄₁₁ = M_slow(s, d, g/2)`, `g = u A₁₁ r̄`. -/
   set K := M * T * (M * T * (‖(1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ)‖ * Real.exp (M * T)))
     with hK
   have hK0 : 0 ≤ K := by rw [hK]; positivity
-  refine ⟨T * M + K, by positivity, fun ε hε hε1 => ?_⟩
+  set C0 := T * M + K with hC0
+  have hC00 : 0 ≤ C0 := by positivity
+  set e := ‖expS As T‖ with he
+  have he0 : 0 ≤ e := norm_nonneg _
+  have hCC : C0 ≤ C0 * (1 + e) := le_mul_of_one_le_right hC00 (by linarith)
+  have hCe : e * C0 ≤ C0 * (1 + e) := by
+    rw [mul_comm e C0]; exact mul_le_mul_of_nonneg_left (by linarith) hC00
+  refine ⟨C0 * (1 + e), by positivity, fun ε hε hε1 => ?_⟩
   have hexp := Averaging.monodromy_expansion (continuous_Fzc s d ω T As A) hM hM0 hT.le havg
     hε.le hε1
   set Φz := Periodic.monodromy (fun t => ε • Fzc s d ω T As A t) T 0 with hΦz
@@ -996,49 +1310,55 @@ critical block: `F̄₁₁ = M_slow(s, d, g/2)`, `g = u A₁₁ r̄`. -/
     nlinarith
   refine ⟨_, _, _, _, hmono, ?_, ?_, ?_, ?_⟩
   · rw [h11, norm_neg]
-    exact b11.trans (hR2n.trans (by nlinarith [sq_nonneg ε, mul_nonneg hT.le hM0]))
+    refine b11.trans (hR2n.trans ?_)
+    have h1 : K * ε ^ 2 ≤ C0 * ε ^ 2 :=
+      mul_le_mul_of_nonneg_right (by rw [hC0]; exact le_add_of_nonneg_left (mul_nonneg hT.le hM0))
+        (sq_nonneg ε)
+    exact h1.trans (mul_le_mul_of_nonneg_right hCC (sq_nonneg ε))
   · rw [h12, norm_neg]
     refine (norm_add_le _ _).trans ?_
     rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    exact hblk _ _ (f12.trans hFb) (b12.trans hR2n)
+    exact (hblk _ _ (f12.trans hFb) (b12.trans hR2n)).trans
+      (mul_le_mul_of_nonneg_right hCC hε.le)
   · rw [h21]
     refine (linfty_opNorm_mul _ _).trans ?_
     have h : ‖(ε * T) • Fbar.toBlocks₂₁ + R2.toBlocks₂₁‖ ≤ (T * M + K) * ε := by
       refine (norm_add_le _ _).trans ?_
       rw [norm_smul, Real.norm_of_nonneg (by positivity)]
       exact hblk _ _ (f21.trans hFb) (b21.trans hR2n)
-    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₁ + R2.toBlocks₂₁‖ ≤ 1 * ((T * M + K) * ε) :=
-          mul_le_mul hq1 h (norm_nonneg _) zero_le_one
-      _ = (T * M + K) * ε := one_mul _
-  · rw [h22, Matrix.mul_add, Matrix.mul_one]
-    refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
+    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₁ + R2.toBlocks₂₁‖ ≤ e * (C0 * ε) :=
+          mul_le_mul_of_nonneg_left h he0
+      _ = e * C0 * ε := by ring
+      _ ≤ C0 * (1 + e) * ε := mul_le_mul_of_nonneg_right hCe hε.le
+  · rw [h22, Matrix.mul_add, Matrix.mul_one, add_sub_cancel_left]
     refine (linfty_opNorm_mul _ _).trans ?_
     have h : ‖(ε * T) • Fbar.toBlocks₂₂ + R2.toBlocks₂₂‖ ≤ (T * M + K) * ε := by
       refine (norm_add_le _ _).trans ?_
       rw [norm_smul, Real.norm_of_nonneg (by positivity)]
       exact hblk _ _ (f22.trans hFb) (b22.trans hR2n)
-    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₂ + R2.toBlocks₂₂‖ ≤ 1 * ((T * M + K) * ε) :=
-          mul_le_mul hq1 h (norm_nonneg _) zero_le_one
-      _ = (T * M + K) * ε := one_mul _
+    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₂ + R2.toBlocks₂₂‖ ≤ e * (C0 * ε) :=
+          mul_le_mul_of_nonneg_left h he0
+      _ = e * C0 * ε := by ring
+      _ ≤ C0 * (1 + e) * ε := mul_le_mul_of_nonneg_right hCe hε.le
 
 /-! ### First-order averaging for `n` states -/
 
 /-- First-order averaging with a stable remainder, stability: if the slow flow of the critical
-pair is exponentially stable (`s > 0`, `|g/2|² < s² + d²`, `g = u A₁₁ r̄`) and the stable block
-contracts over one period (`‖e^{TA_s}‖ < 1`), every Floquet multiplier of the complete `n`-state
-system lies inside the unit circle for all small `ε > 0`. -/
+pair is exponentially stable (`s > 0`, `|g/2|² < s² + d²`, `g = u A₁₁ r̄`) and the one-period
+map of the stable block has spectral radius `ρ(e^{TA_s}) < 1`, every Floquet multiplier of the
+complete `n`-state system lies inside the unit circle for all small `ε > 0`. -/
 @[tmio T, powerlib_foundation] theorem averagingN_stable {s d ω : ℝ} (hω : 0 < ω)
     (As : Matrix Y Y ℝ) (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ) (hs : 0 < s)
     (hg : ‖Element.pump A.toBlocks₁₁ left right / 2‖ ^ 2 < s ^ 2 + d ^ 2)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hρ : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ (μ : ℂ) (v : Fin 2 ⊕ Y → ℂ), v ≠ 0 →
       (Periodic.monodromy (fullN s d ω As A ε) (2 * Real.pi / ω) 0).map (algebraMap ℝ ℂ) *ᵥ v =
         μ • v → ‖μ‖ < 1 := by
-  obtain ⟨C, hC, hblk⟩ := monodromy_blocks s d hω As A hq.le
+  obtain ⟨C, hC, hblk⟩ := monodromy_blocks s d hω As A
   have hT : 0 < 2 * Real.pi / ω := by positivity
-  have h := block_stable (Y := Y) hT
+  have h := block_stable_spec (Y := Y) hT
     (Ms := slowFlowMatrix s d (Element.pump A.toBlocks₁₁ left right / 2))
-    (by rw [trace_slowFlowMatrix]; linarith) (by rw [det_slowFlowMatrix]; linarith) hC hq
+    (by rw [trace_slowFlowMatrix]; linarith) (by rw [det_slowFlowMatrix]; linarith) hρ hC
   filter_upwards [h, eventually_lt_nhdsGT one_pos] with ε hε ⟨hε0, hε1⟩
   obtain ⟨P, Q, R, S, heq, hP, hQ, hR, hS⟩ := hblk ε hε0 hε1.le
   rw [heq]
@@ -1051,27 +1371,16 @@ small `ε > 0`. -/
 @[tmio T, powerlib_foundation] theorem averagingN_unstable {s d ω : ℝ} (hω : 0 < ω)
     (As : Matrix Y Y ℝ) (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ)
     (hg : s ^ 2 + d ^ 2 < ‖Element.pump A.toBlocks₁₁ left right / 2‖ ^ 2)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hρ : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), Periodic.FloquetUnstable (fullN s d ω As A ε) (2 * Real.pi / ω) := by
-  obtain ⟨C, hC, hblk⟩ := monodromy_blocks s d hω As A hq.le
+  obtain ⟨C, hC, hblk⟩ := monodromy_blocks s d hω As A
   have hT : 0 < 2 * Real.pi / ω := by positivity
-  have h := block_unstable (Y := Y) hT
+  have h := block_unstable_spec (Y := Y) hT
     (Ms := slowFlowMatrix s d (Element.pump A.toBlocks₁₁ left right / 2))
-    (by rw [det_slowFlowMatrix]; linarith) hC hq
+    (by rw [det_slowFlowMatrix]; linarith) hρ hC
   filter_upwards [h, eventually_lt_nhdsGT one_pos] with ε hε ⟨hε0, hε1⟩
   obtain ⟨P, Q, R, S, heq, hP, hQ, hR, hS⟩ := hblk ε hε0 hε1.le
-  obtain ⟨μ, hμ, hdet⟩ := hε P Q R S hP hQ hR hS
-  refine ⟨(μ : ℂ), ?_, ?_⟩
-  · rw [spectrum.mem_iff, Algebra.algebraMap_eq_smul_one, Matrix.isUnit_iff_isUnit_det, heq]
-    have hmap : (μ : ℂ) • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ) -
-        (fromBlocks P Q R S).map (algebraMap ℝ ℂ) =
-        (μ • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ) - fromBlocks P Q R S).map (algebraMap ℝ ℂ) := by
-      ext i j
-      simp [Matrix.one_apply]
-      split_ifs <;> simp
-    rw [hmap, ← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet, map_zero]
-    exact not_isUnit_zero
-  · rw [Complex.norm_real, Real.norm_eq_abs, abs_of_neg (by linarith)]
-    linarith
+  obtain ⟨ρ, hρm, hρ1⟩ := hε P Q R S hP hQ hR hS
+  exact ⟨ρ, by rw [heq]; exact hρm, hρ1⟩
 
 end powerlib.ParametricResonance.BlockAveraging

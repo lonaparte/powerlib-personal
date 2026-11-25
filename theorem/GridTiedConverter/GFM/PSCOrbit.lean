@@ -1,5 +1,5 @@
 import theorem.GridTiedConverter.GFM.PSCVoltage
-import theorem.ParametricResonance.SmoothForcedOrbit
+import theorem.ParametricResonance.StableBasis
 
 /-! # PSC with active damping under grid-voltage modulation: the real model, its forced orbit and Floquet multipliers
 
@@ -19,10 +19,14 @@ Model boundary.
 * Operating point `x₀ = (δ₀, p*, Re ℓ₀, Im ℓ₀)` with `p* = Re(u ī)` at `(δ₀, ℓ₀)` (`xeq`, `Peq`);
   drive `V = V + ε V̂ cos 2Ωt`; state perturbation `ε A₀'` with any real `A₀'`; the core at a Hopf
   point `D(jΩ) = 0` (`D`, `D'` and the branch denominators nonzero at `jΩ`, and `D(2jΩ) ≠ 0`).
-* The stable two-dimensional subspace of `Jreal` is given by a real basis `W` with
-  `Jreal W = W A_s`, a left inverse `W'` annihilating the critical pair, and
-  `‖e^{T A_s}‖ < 1` (`∞`-operator norm, `T = π/Ω`): these are hypotheses, not computed in closed
-  form. Orbital stability of the nonlinear solutions is not derived.
+* The stable two-dimensional subspace of `Jreal` enters either through a real basis `W` with
+  `Jreal W = W A_s`, a left inverse `W'` annihilating the critical pair and `ρ(e^{T A_s}) < 1`
+  (`T = π/Ω`; `orbit_voltage_stable`, `orbit_voltage_unstable`), or, with no basis among the
+  hypotheses, through `ρ(e^{T Jreal}(I − Π)) < 1`, `Π` the real projector onto the critical plane
+  (`orbit_voltage_stable_spec`, `orbit_voltage_unstable_spec`; the basis is built by
+  `StableBasis`). The exponential stability of the nonlinear solutions near the orbit is in
+  `GFMOrbitStability`, and the gain change `k → k + εk₁` as the source of `A₀'` in
+  `GFMParameterShift`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (first-order averaging along the forced trajectory), §3 (PSC
@@ -41,7 +45,9 @@ Results.
 * `Coeffs.A1lin`, `rmode`, `umode`, `shift`, `pumpV`, `zorb`, `modes`, `zorb_eq`, `smA1_rfield`,
   `pump_rfield` — eigen-data, first-order orbit and `u A₁ r̄ = g_V`; `modal_rfield` — real modal
   coordinates.
-* `orbit_voltage_stable`, `orbit_voltage_unstable` — the end-to-end Floquet statements.
+* `orbit_voltage_stable`, `orbit_voltage_unstable` — the end-to-end Floquet statements;
+  `orbit_voltage_stable_spec`, `orbit_voltage_unstable_spec` — the same without a stable basis
+  among the hypotheses.
 
 Corrections.
 None: an extension. The relation between the real Jacobian and the Jacobian in the coordinates
@@ -524,7 +530,7 @@ and a real basis `W` of the stable subspace of `Jreal`. -/
 model `rfield` at the equilibrium `x₀ = xeq δ₀` (`p* = Peq δ₀`), with the core at its Hopf point
 (`D(jΩ) = 0`), is driven by `V = V₀ + ε V̂ cos 2Ωt` and perturbed by `ε A₀'`. With a real basis
 `W` of the stable subspace of `Jreal` (`Jreal W = W A_s`, `W' W = I`, `u W = 0`, `W' r = 0`,
-`‖e^{T A_s}‖ < 1`): if `Re λ₁ < 0` and `|g_V/2| < |λ₁|` (`λ₁ = shift`, `g_V = pumpV`, the exact
+`ρ(e^{T A_s}) < 1`): if `Re λ₁ < 0` and `|g_V/2| < |λ₁|` (`λ₁ = shift`, `g_V = pumpV`, the exact
 closed form of `PSCVoltage`), then for all small `ε > 0` the forced periodic orbit exists (unique
 in the ball of radius `cε`) and all its Floquet multipliers lie inside the unit circle. -/
 @[tmio M, powerlib_domain] theorem orbit_voltage_stable (δ0 : ℝ) (hZ : p.Z ≠ 0) (hZ0 : p.Z0 ≠ 0)
@@ -539,7 +545,8 @@ in the ball of radius `cε`) and all its Floquet multipliers lie inside the unit
     (hW : p.Jreal δ0 * W = W * As) (hWW : W' * W = 1)
     (huW : p.umode δ0 Ω ᵥ* W.map (algebraMap ℝ ℂ) = 0)
     (hWr : W'.map (algebraMap ℝ ℂ) *ᵥ p.rmode δ0 Ω = 0)
-    (hq : ‖ParametricResonance.BlockAveraging.expS As (2 * Real.pi / (2 * Ω))‖ < 1)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS As
+      (2 * Real.pi / (2 * Ω))).map (algebraMap ℝ ℂ)) < 1)
     (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ) (hs : (p.shift δ0 Ω A0').re < 0)
     (hg : ‖p.pumpV δ0 Ω Vh / 2‖ ^ 2 < ‖p.shift δ0 Ω A0'‖ ^ 2) :
     ∃ c, 0 ≤ c ∧
@@ -560,7 +567,7 @@ in the ball of radius `cε`) and all its Floquet multipliers lie inside the unit
   have hz := p.zorb_eq (p.Peq δ0) δ0 Ω Vh hk hD2 h12 h22
   refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_stable
     (p.contDiff_rfield (p.Peq δ0)).contDiffAt (p.rfield_eq_zero δ0 hZ hZ0)
-    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hq hz A0' ?_ ?_
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hsr hz A0' ?_ ?_
   · rw [hL, hR]; exact hs
   · rw [hL, hR, p.pump_rfield]; exact hg
 
@@ -579,7 +586,8 @@ equation is Floquet unstable. -/
     (hW : p.Jreal δ0 * W = W * As) (hWW : W' * W = 1)
     (huW : p.umode δ0 Ω ᵥ* W.map (algebraMap ℝ ℂ) = 0)
     (hWr : W'.map (algebraMap ℝ ℂ) *ᵥ p.rmode δ0 Ω = 0)
-    (hq : ‖ParametricResonance.BlockAveraging.expS As (2 * Real.pi / (2 * Ω))‖ < 1)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS As
+      (2 * Real.pi / (2 * Ω))).map (algebraMap ℝ ℂ)) < 1)
     (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ)
     (hg : ‖p.shift δ0 Ω A0'‖ ^ 2 < ‖p.pumpV δ0 Ω Vh / 2‖ ^ 2) :
     ∃ c, 0 ≤ c ∧
@@ -599,8 +607,89 @@ equation is Floquet unstable. -/
   have hz := p.zorb_eq (p.Peq δ0) δ0 Ω Vh hk hD2 h12 h22
   refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_unstable
     (p.contDiff_rfield (p.Peq δ0)).contDiffAt (p.rfield_eq_zero δ0 hZ hZ0)
-    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hq hz A0' ?_
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hsr hz A0' ?_
   rw [hL, hR, p.pump_rfield]; exact hg
+
+/-- PSC end-to-end without a stable basis among the hypotheses: the basis is constructed from
+the critical eigenvectors (`ForcedOrbit.stable_modal_of_eig`), and the stable part enters only
+through the spectral radius of `e^{T Jreal}(I − Π)` (`Π` the real projector onto the critical
+plane, `T = π/Ω`), stability. -/
+@[tmio M, powerlib_domain] theorem orbit_voltage_stable_spec (δ0 : ℝ) (hZ : p.Z ≠ 0)
+    (hZ0 : p.Z0 ≠ 0) {Ω : ℝ} (hΩ : 0 < Ω) (hk : p.k ≠ 0)
+    (h1 : (Ω : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).b) ≠ 0)
+    (h2 : (Ω : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).bb) ≠ 0)
+    (hD : (p.coeffs δ0).D ((Ω : ℂ) * I) = 0) (hDd : (p.coeffs δ0).Dd ((Ω : ℂ) * I) ≠ 0)
+    (hD2 : (p.coeffs δ0).D (((2 * Ω : ℝ) : ℂ) * I) ≠ 0)
+    (h12 : ((2 * Ω : ℝ) : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).b) ≠ 0)
+    (h22 : ((2 * Ω : ℝ) : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).bb) ≠ 0)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS (p.Jreal δ0)
+      (2 * Real.pi / (2 * Ω)) * (1 - ParametricResonance.ForcedOrbit.critP (p.rmode δ0 Ω) *
+        ParametricResonance.ForcedOrbit.critQ (p.umode δ0 Ω))).map (algebraMap ℝ ℂ)) < 1)
+    (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ) (hs : (p.shift δ0 Ω A0').re < 0)
+    (hg : ‖p.pumpV δ0 Ω Vh / 2‖ ^ 2 < ‖p.shift δ0 Ω A0'‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧
+      (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 4 → ℝ,
+        (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+        ∀ t, HasDerivAt y (p.rfield (p.Peq δ0)
+          (p.xeq δ0 + y t, p.V + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → Fin 4 → ℝ, (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+        (∀ t, HasDerivAt y (p.rfield (p.Peq δ0)
+          (p.xeq δ0 + y t, p.V + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) →
+        ∀ (μ : ℂ) (v : Fin 4 → ℂ), v ≠ 0 →
+          (Periodic.monodromy (fun t => ParametricResonance.ForcedOrbit.smJ (p.rfield (p.Peq δ0))
+            (p.xeq δ0, p.V) Vh (2 * Ω) A0' ε t (y t)) (2 * Real.pi / (2 * Ω)) 0).map
+            (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1 := by
+  obtain ⟨hr, hu, hur⟩ := p.modes (p.Peq δ0) δ0 Ω hk h1 h2 hD hDd
+  rw [p.matX_eq_Jreal] at hr hu
+  obtain ⟨P, Q, As, hPQ, hQP, hA0, hL, hR, hsrs⟩ :=
+    ParametricResonance.ForcedOrbit.stable_modal_of_eig (n := 4) (m := 2) rfl hΩ.ne' hr hu hur
+      _ hsr
+  have hz := p.zorb_eq (p.Peq δ0) δ0 Ω Vh hk hD2 h12 h22
+  refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_stable
+    (p.contDiff_rfield (p.Peq δ0)).contDiffAt (p.rfield_eq_zero δ0 hZ hZ0)
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As ?_ hsrs hz A0' ?_ ?_
+  · rw [p.matX_eq_Jreal, hA0, mul_div_cancel_left₀ Ω two_ne_zero]
+  · rw [hL, hR]; exact hs
+  · rw [hL, hR, p.pump_rfield]; exact hg
+
+/-- PSC end-to-end without a stable basis among the hypotheses, parametric instability. -/
+@[tmio M, powerlib_domain] theorem orbit_voltage_unstable_spec (δ0 : ℝ) (hZ : p.Z ≠ 0)
+    (hZ0 : p.Z0 ≠ 0) {Ω : ℝ} (hΩ : 0 < Ω) (hk : p.k ≠ 0)
+    (h1 : (Ω : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).b) ≠ 0)
+    (h2 : (Ω : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).bb) ≠ 0)
+    (hD : (p.coeffs δ0).D ((Ω : ℂ) * I) = 0) (hDd : (p.coeffs δ0).Dd ((Ω : ℂ) * I) ≠ 0)
+    (hD2 : (p.coeffs δ0).D (((2 * Ω : ℝ) : ℂ) * I) ≠ 0)
+    (h12 : ((2 * Ω : ℝ) : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).b) ≠ 0)
+    (h22 : ((2 * Ω : ℝ) : ℂ) * I + (p.coeffs δ0).αd * (1 - (p.coeffs δ0).bb) ≠ 0)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS (p.Jreal δ0)
+      (2 * Real.pi / (2 * Ω)) * (1 - ParametricResonance.ForcedOrbit.critP (p.rmode δ0 Ω) *
+        ParametricResonance.ForcedOrbit.critQ (p.umode δ0 Ω))).map (algebraMap ℝ ℂ)) < 1)
+    (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ)
+    (hg : ‖p.shift δ0 Ω A0'‖ ^ 2 < ‖p.pumpV δ0 Ω Vh / 2‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧
+      (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 4 → ℝ,
+        (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+        ∀ t, HasDerivAt y (p.rfield (p.Peq δ0)
+          (p.xeq δ0 + y t, p.V + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → Fin 4 → ℝ, (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+        (∀ t, HasDerivAt y (p.rfield (p.Peq δ0)
+          (p.xeq δ0 + y t, p.V + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) →
+        Periodic.FloquetUnstable (fun t => ParametricResonance.ForcedOrbit.smJ
+          (p.rfield (p.Peq δ0)) (p.xeq δ0, p.V) Vh (2 * Ω) A0' ε t (y t))
+          (2 * Real.pi / (2 * Ω)) := by
+  obtain ⟨hr, hu, hur⟩ := p.modes (p.Peq δ0) δ0 Ω hk h1 h2 hD hDd
+  rw [p.matX_eq_Jreal] at hr hu
+  obtain ⟨P, Q, As, hPQ, hQP, hA0, hL, hR, hsrs⟩ :=
+    ParametricResonance.ForcedOrbit.stable_modal_of_eig (n := 4) (m := 2) rfl hΩ.ne' hr hu hur
+      _ hsr
+  have hz := p.zorb_eq (p.Peq δ0) δ0 Ω Vh hk hD2 h12 h22
+  refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_unstable
+    (p.contDiff_rfield (p.Peq δ0)).contDiffAt (p.rfield_eq_zero δ0 hZ hZ0)
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As ?_ hsrs hz A0' ?_
+  · rw [p.matX_eq_Jreal, hA0, mul_div_cancel_left₀ Ω two_ne_zero]
+  · rw [hL, hR, p.pump_rfield]; exact hg
 
 end Model
 

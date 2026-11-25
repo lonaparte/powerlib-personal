@@ -18,10 +18,12 @@ Scope.
   finite state space; the variational
   matrix along a solution is `t ↦ J_ε(t, y(t))`. The solution conditions are written out in the
   statements.
-* The Floquet statements need real modal coordinates of `A` with the pair `±jω/2` and a
-  contracting stable block (general `X`), or the eigen-data of a three-state core.
-* Behaviour of the nonlinear solutions near the orbit (orbital stability) is not derived from the
-  Floquet multipliers here.
+* The Floquet statements need real modal coordinates of `A` with the pair `±jω/2` and a stable
+  block with one-period spectral radius `ρ(e^{TA_s}) < 1` (general `X`), or the eigen-data of a
+  three-state core.
+* The statements here concern the Floquet multipliers; the exponential stability of the nonlinear
+  solutions near the orbit that follows from them is `Periodic.OrbitalStability` and
+  `SmoothOrbitStability`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (`J_p = A₀ + ε Re{A₁ e^{jω_p t}}` along the forced
@@ -227,13 +229,13 @@ def conjHom {X : Type*} [Fintype X] [DecidableEq X] (P : Matrix X (Fin 2 ⊕ Y) 
   map_zero' := by simp
   map_add' M N := by rw [Matrix.mul_add, Matrix.add_mul]
 
-/-- With real modal coordinates `Q A P = diag(base(0, ω/2), A_s)` and `‖e^{TA_s}‖ < 1`
+/-- With real modal coordinates `Q A P = diag(base(0, ω/2), A_s)` and `ρ(e^{TA_s}) < 1`
 (`T = 2π/ω`), `I − e^{TA}` is invertible: the monodromy of the linear part has no multiplier `1`. -/
 @[tmio T, powerlib_foundation] theorem exists_minv_of_modal {X : Type*} [Fintype X] [DecidableEq X]
     {ω : ℝ} (hω : 0 < ω) {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ}
     (hPQ : P * Q = 1) (hQP : Q * P = 1) {A : Matrix X X ℝ} (As : Matrix Y Y ℝ)
     (hA0 : Q * A * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∃ Minv : Matrix X X ℝ, Minv * (1 - expS A (2 * Real.pi / ω)) = 1 ∧
       (1 - expS A (2 * Real.pi / ω)) * Minv = 1 := by
   set T := 2 * Real.pi / ω with hT
@@ -258,10 +260,29 @@ def conjHom {X : Type*} [Fintype X] [DecidableEq X] (P : Matrix X (Fin 2 ⊕ Y) 
     rw [h]
     congr 1
     simp [rot]
-  set U := Units.oneSub (expS As T) hq
+  have hunit : IsUnit (1 - expS As T) := by
+    have h1 : (1 : ℂ) ∉ spectrum ℂ ((expS As T).map (algebraMap ℝ ℂ)) := by
+      intro hmem
+      have hle : ((‖(1 : ℂ)‖₊ : NNReal) : ENNReal) ≤
+          spectralRadius ℂ ((expS As T).map (algebraMap ℝ ℂ)) := by
+        rw [spectralRadius_eq_of_unital]
+        exact le_iSup₂ (f := fun k (_ : k ∈ spectrum ℂ ((expS As T).map (algebraMap ℝ ℂ))) =>
+          ((‖k‖₊ : NNReal) : ENNReal)) 1 hmem
+      rw [nnnorm_one, ENNReal.coe_one] at hle
+      exact absurd hsr (not_lt.2 hle)
+    rw [spectrum.notMem_iff, Algebra.algebraMap_eq_smul_one, one_smul,
+      Matrix.isUnit_iff_isUnit_det] at h1
+    have hmap : (1 : Matrix Y Y ℂ) - (expS As T).map (algebraMap ℝ ℂ) =
+        (1 - expS As T).map (algebraMap ℝ ℂ) := by
+      ext i j; simp [Matrix.one_apply]; split_ifs <;> simp
+    rw [hmap, ← RingHom.mapMatrix_apply, ← RingHom.map_det, isUnit_iff_ne_zero,
+      map_ne_zero] at h1
+    rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
+    exact h1
+  set U := hunit.unit
   set W : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ := fromBlocks ((1 / 2 : ℝ) • 1) 0 0 ↑U⁻¹ with hW
   have hsub : 1 - expS B T = fromBlocks ((2 : ℝ) • 1) 0 0 ↑U := by
-    rw [hpsiT, Units.val_oneSub, ← fromBlocks_one, sub_eq_add_neg, fromBlocks_neg, fromBlocks_add]
+    rw [hpsiT, IsUnit.unit_spec, ← fromBlocks_one, sub_eq_add_neg, fromBlocks_neg, fromBlocks_add]
     congr 1 <;> simp [two_smul]
   have hWl : W * (1 - expS B T) = 1 := by
     rw [hsub, hW, fromBlocks_multiply, ← fromBlocks_one]
@@ -387,7 +408,7 @@ equation `ξ̇ = J_ε(t, y(t)) ξ` lies inside the unit circle. -/
     {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ}
     (hPQ : P * Q = 1) (hQP : Q * P = 1) (As : Matrix Y Y ℝ)
     (hA0 : Q * A * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1)
     (A0' : Matrix X X ℝ) (A1 : Matrix X X ℂ)
     (hlink : ∀ t, Dx (yp t) + Du t = A0' + modX A1 ω t)
     (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
@@ -402,7 +423,7 @@ equation `ξ̇ = J_ε(t, y(t)) ξ` lies inside the unit circle. -/
             ‖μ‖ < 1 := by
   obtain ⟨c, ε1, CR, hc, hε1, Rm, hRc, hRb, hmain⟩ :=
     orbit_variational hT hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD hDx hDu hJc hJ hpp hpd A0' A1 hlink
-  have h := physical_stable_R hω hPQ hQP As hA0 A0' A1 Rm hε1 hRc hRb hs hg hq
+  have h := physical_stable_R hω hPQ hQP As hA0 A0' A1 Rm hε1 hRc hRb hs hg hsr
   refine ⟨c, hc, ?_, ?_⟩
   · filter_upwards [eventually_lt_nhdsGT hε1] with ε ⟨h0, h1⟩
     exact (hmain ε h0 h1.le).1
@@ -436,7 +457,7 @@ forced orbit is Floquet unstable for all small `ε > 0`. -/
     {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ}
     (hPQ : P * Q = 1) (hQP : Q * P = 1) (As : Matrix Y Y ℝ)
     (hA0 : Q * A * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1)
     (A0' : Matrix X X ℝ) (A1 : Matrix X X ℂ)
     (hlink : ∀ t, Dx (yp t) + Du t = A0' + modX A1 ω t)
     (hg : ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2 <
@@ -448,7 +469,7 @@ forced orbit is Floquet unstable for all small `ε > 0`. -/
         Periodic.FloquetUnstable (fun t => Jf ε t (y t)) T := by
   obtain ⟨c, ε1, CR, hc, hε1, Rm, hRc, hRb, hmain⟩ :=
     orbit_variational hT hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD hDx hDu hJc hJ hpp hpd A0' A1 hlink
-  have h := physical_unstable_R hω hPQ hQP As hA0 A0' A1 Rm hε1 hRc hRb hg hq
+  have h := physical_unstable_R hω hPQ hQP As hA0 A0' A1 Rm hε1 hRc hRb hg hsr
   refine ⟨c, hc, ?_, ?_⟩
   · filter_upwards [eventually_lt_nhdsGT hε1] with ε ⟨h0, h1⟩
     exact (hmain ε h0 h1.le).1
@@ -504,7 +525,7 @@ circle for all small `ε > 0`. -/
   have hq : ‖expS (!![l3] : Matrix (Fin 1) (Fin 1) ℝ) (2 * Real.pi / (2 * Ω))‖ < 1 := by
     rw [norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) hl3
-  exact orbit_floquet_stable hT hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD hDx hDu hJc hJ hpp hpd hω hTΩ hPQ hQP _ hA0 hq A0' A1 hlink
+  exact orbit_floquet_stable hT hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD hDx hDu hJc hJ hpp hpd hω hTΩ hPQ hQP _ hA0 (BlockAveraging.spectralRadius_lt_one_of_norm _ hq) A0' A1 hlink
     (by rw [hLu, hRr]; exact hs) (by rw [hLu, hRr]; exact hg)
 
 /-- Three-state cores, end-to-end parametric instability: `|λ₁| < |g/2|`. -/
@@ -547,7 +568,7 @@ circle for all small `ε > 0`. -/
   have hq : ‖expS (!![l3] : Matrix (Fin 1) (Fin 1) ℝ) (2 * Real.pi / (2 * Ω))‖ < 1 := by
     rw [norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) hl3
-  exact orbit_floquet_unstable hT hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD hDx hDu hJc hJ hpp hpd hω hTΩ hPQ hQP _ hA0 hq A0' A1 hlink
+  exact orbit_floquet_unstable hT hL hR hb hbp hK hρ hε0 hNc hNp hN0 hNL hKJ hKD hDx hDu hJc hJ hpp hpd hω hTΩ hPQ hQP _ hA0 (BlockAveraging.spectralRadius_lt_one_of_norm _ hq) A0' A1 hlink
     (by rw [hLu, hRr]; exact hg)
 
 end Orbit

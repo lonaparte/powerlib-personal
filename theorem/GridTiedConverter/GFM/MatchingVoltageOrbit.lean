@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.GridTiedConverter.GFM.VoltageModulationSmooth
+import theorem.ParametricResonance.StableBasis
 
 /-! # Matching control under grid-voltage modulation: forced orbit and Floquet multipliers
 
@@ -9,9 +10,10 @@ the operating point is `jacobian K`, `K = ∂i_x/∂δ`; the voltage enters only
 and the modulation along the first-order orbit has the single element
 `(v, δ): −(K_δδ z_δ + K_δV V̂)/C`. The forced response has a closed form through
 `Cτ det(sI − A₀)` (`charPoly`), and the pump is `g_V = −(u_v r̄_δ/C) V̂ (K_δV + K_δδ z_δ(2jΩ))`.
-With the eigenvectors of the pair `±jΩ` and a real basis of the stable subspace (hypotheses: the
-four-state core has no closed-form eigen-data), `SmoothForcedOrbit` gives the forced orbit and the
-Floquet criterion `|g_V/2| ≶ |λ₁|`.
+With the eigenvectors of the pair `±jΩ` (hypotheses: the four-state core has no closed-form
+eigen-data) and either a real basis of the stable subspace or the basis-free spectral condition
+of `StableBasis`, `SmoothForcedOrbit` gives the forced orbit and the Floquet criterion
+`|g_V/2| ≶ |λ₁|`.
 
 Model boundary.
 * States `(δ, v_f, v, i_s)`: `δ̇ = ω_b(v_f − 1)`, `v̇_f = ω_f(v − v_f)`,
@@ -19,9 +21,13 @@ Model boundary.
   network through `i_x`; operating point `(δ₀, 1, 1, G + i_x(δ₀, V₀))` with
   `I* = G + i_x(δ₀, V₀)` (`meq`).
 * `K`, `K_V`, `K_δδ`, `K_δV` the partial derivatives of `i_x` at `(δ₀, V₀)`; `ω_b, ω_f, C, τ ≠ 0`,
-  `det(2jΩ − A₀) ≠ 0`; the pair `±jΩ` and the stable basis `W` (`‖e^{TA_s}‖ < 1`) are hypotheses;
-  drive `V₀ + ε V̂ cos 2Ωt`; state perturbation `ε A₀'` with any real `A₀'`. Network dynamics and
-  the `E = m_a v` effects are excluded; orbital stability is not derived.
+  `det(2jΩ − A₀) ≠ 0`; the pair `±jΩ` is a hypothesis; the stable part enters through a basis `W`
+  with `ρ(e^{TA_s}) < 1` (`orbit_matching_stable`, `orbit_matching_unstable`) or through
+  `ρ(e^{T A₀}(I − Π)) < 1` with no basis (`orbit_matching_stable_spec`,
+  `orbit_matching_unstable_spec`); drive `V₀ + ε V̂ cos 2Ωt`; state perturbation `ε A₀'` with any
+  real `A₀'`. Network dynamics and the `E = m_a v` effects are excluded. The exponential stability
+  of the nonlinear solutions near the orbit is in `GFMOrbitStability`; the `k_dc` change and a
+  saturated DC current are in `GFMParameterShift`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2, §3 (matching core); the voltage excitation is new.
@@ -33,7 +39,8 @@ Results.
 * `Dm`, `mforced`, `mforced_eq` — the forced response
   `z_δ = −K_V ω_f ω_b(1 + τs)/(Cτ det(sI − A₀))`; `mpumpV`, `pump_mfield` — `u A₁ r̄ = g_V`.
 * `matching_data`, `orbit_matching_stable`, `orbit_matching_unstable` — the end-to-end Floquet
-  statements.
+  statements; `orbit_matching_stable_spec`, `orbit_matching_unstable_spec` — the same without a
+  stable basis among the hypotheses.
 
 Corrections.
 None: an extension.
@@ -278,7 +285,7 @@ modal coordinates from the eigenvectors and a basis of the stable subspace. -/
 /-- Matching control with a voltage-dependent DC current `i_x(δ, V)` (`C³`), grid-voltage
 modulation, end-to-end, stability. At an operating point whose core `A₀ = jacobian K`
 (`K = ∂i_x/∂δ`) has the pair `±jΩ` (eigenvectors `r`, `u`, `u r = 1`) and a real basis `W` of its
-stable subspace (`A₀ W = W A_s`, `W' W = I`, `u W = 0`, `W' r = 0`, `‖e^{T A_s}‖ < 1`), with
+stable subspace (`A₀ W = W A_s`, `W' W = I`, `u W = 0`, `W' r = 0`, `ρ(e^{T A_s}) < 1`), with
 `V = V₀ + ε V̂ cos 2Ωt` and `ε A₀'`: `Re λ₁ < 0` and `|g_V/2| < |λ₁|`
 (`g_V = −(u_v r̄_δ/C) V̂ (K_δV + K_δδ z_δ(2jΩ))`, `mpumpV`) give, for all small `ε > 0`, the forced
 periodic orbit with all Floquet multipliers inside the unit circle. -/
@@ -293,7 +300,8 @@ periodic orbit with all Floquet multipliers inside the unit circle. -/
     {W : Matrix (Fin 4) (Fin 2) ℝ} {W' : Matrix (Fin 2) (Fin 4) ℝ} {As : Matrix (Fin 2) (Fin 2) ℝ}
     (hW : d.jacobian K * W = W * As) (hWW : W' * W = 1)
     (huW : u ᵥ* W.map (algebraMap ℝ ℂ) = 0) (hWr : W'.map (algebraMap ℝ ℂ) *ᵥ r = 0)
-    (hq : ‖ParametricResonance.BlockAveraging.expS As (2 * Real.pi / (2 * Ω))‖ < 1)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS As
+      (2 * Real.pi / (2 * Ω))).map (algebraMap ℝ ℂ)) < 1)
     (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ)
     (hs : (u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)).re < 0)
     (hg : ‖d.mpumpV u r K Kδδ KδV KV Ω Vh / 2‖ ^ 2 < ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2) :
@@ -314,7 +322,7 @@ periodic orbit with all Floquet multipliers inside the unit circle. -/
     hr hu hur hW hWW huW hWr Vh
   refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_stable
     (d.contDiff_mfield hP _).contDiffAt (d.mfield_eq_zero ixV δ0 V0)
-    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hq hz A0' ?_ ?_
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hsr hz A0' ?_ ?_
   · rw [hL, hR]; exact hs
   · rw [hL, hR, d.pump_mfield hP hKδδ hKδV]; exact hg
 
@@ -332,7 +340,8 @@ periodic orbit with all Floquet multipliers inside the unit circle. -/
     {W : Matrix (Fin 4) (Fin 2) ℝ} {W' : Matrix (Fin 2) (Fin 4) ℝ} {As : Matrix (Fin 2) (Fin 2) ℝ}
     (hW : d.jacobian K * W = W * As) (hWW : W' * W = 1)
     (huW : u ᵥ* W.map (algebraMap ℝ ℂ) = 0) (hWr : W'.map (algebraMap ℝ ℂ) *ᵥ r = 0)
-    (hq : ‖ParametricResonance.BlockAveraging.expS As (2 * Real.pi / (2 * Ω))‖ < 1)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS As
+      (2 * Real.pi / (2 * Ω))).map (algebraMap ℝ ℂ)) < 1)
     (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ)
     (hg : ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2 < ‖d.mpumpV u r K Kδδ KδV KV Ω Vh / 2‖ ^ 2) :
     ∃ c, 0 ≤ c ∧
@@ -350,7 +359,118 @@ periodic orbit with all Floquet multipliers inside the unit circle. -/
     hr hu hur hW hWW huW hWr Vh
   refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_unstable
     (d.contDiff_mfield hP _).contDiffAt (d.mfield_eq_zero ixV δ0 V0)
-    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hq hz A0' ?_
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0 hsr hz A0' ?_
+  rw [hL, hR, d.pump_mfield hP hKδδ hKδV]; exact hg
+
+/-- Matching control end-to-end without a stable basis among the hypotheses: the basis is
+constructed from the eigenvectors, and the stable part enters through the spectral radius of
+`e^{T A₀}(I − Π)` (`T = π/Ω`), stability. -/
+@[tmio M, powerlib_domain] theorem orbit_matching_stable_spec {ixV : ℝ × ℝ → ℝ}
+    (hP : ContDiff ℝ 3 ixV)
+    {δ0 V0 Ω K KV Kδδ KδV : ℝ} (hΩ : 0 < Ω) (hωb : d.ωb ≠ 0) (hωf : d.ωf ≠ 0) (hC : d.C ≠ 0)
+    (hτ : d.τ ≠ 0) (hK : Pd ixV (δ0, V0) = K) (hKV : fderiv ℝ ixV (δ0, V0) (0, 1) = KV)
+    (hKδδ : fderiv ℝ (Pd ixV) (δ0, V0) (1, 0) = Kδδ)
+    (hKδV : fderiv ℝ (Pd ixV) (δ0, V0) (0, 1) = KδV)
+    (hD2 : d.Dm K (((2 * Ω : ℝ) : ℂ) * I) ≠ 0) {r u : Fin 4 → ℂ}
+    (hr : (d.jacobian K).map (algebraMap ℝ ℂ) *ᵥ r = ((Ω : ℂ) * I) • r)
+    (hu : u ᵥ* (d.jacobian K).map (algebraMap ℝ ℂ) = ((Ω : ℂ) * I) • u) (hur : u ⬝ᵥ r = 1)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS (d.jacobian K)
+      (2 * Real.pi / (2 * Ω)) * (1 - ParametricResonance.ForcedOrbit.critP r *
+        ParametricResonance.ForcedOrbit.critQ u)).map (algebraMap ℝ ℂ)) < 1)
+    (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ)
+    (hs : (u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)).re < 0)
+    (hg : ‖d.mpumpV u r K Kδδ KδV KV Ω Vh / 2‖ ^ 2 < ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧
+      (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 4 → ℝ,
+        (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+        ∀ t, HasDerivAt y (d.mfield ixV (d.G + ixV (δ0, V0)) (d.meq ixV δ0 V0 + y t,
+          V0 + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → Fin 4 → ℝ, (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+        (∀ t, HasDerivAt y (d.mfield ixV (d.G + ixV (δ0, V0)) (d.meq ixV δ0 V0 + y t,
+          V0 + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) →
+        ∀ (μ : ℂ) (v : Fin 4 → ℂ), v ≠ 0 →
+          (Periodic.monodromy (fun t => smJ (d.mfield ixV (d.G + ixV (δ0, V0)))
+            (d.meq ixV δ0 V0, V0) Vh (2 * Ω) A0' ε t (y t)) (2 * Real.pi / (2 * Ω)) 0).map
+            (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1 := by
+  have hm : matX (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0) = d.jacobian K := by
+    rw [d.matX_mfield hP]; simp [meq, hK]
+  have h1 : 1 + (d.τ : ℂ) * (((2 * Ω : ℝ) : ℂ) * I) ≠ 0 := by
+    intro h; have := congrArg Complex.re h; simp at this
+  have hf := d.mforced_eq K KV hωb hωf hC hτ h1 hD2
+  have hb : (fun i => ((fderiv ℝ (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0)
+      (0, 1) i : ℝ) : ℂ)) = ![0, 0, -((KV : ℂ) / d.C), 0] := by
+    rw [d.fderivW_mfield hP hKV]
+    funext i; fin_cases i <;> simp
+  have hz : (((2 * Ω : ℝ) : ℂ) * I) • ((Vh : ℂ) • d.mforced K KV (((2 * Ω : ℝ) : ℂ) * I)) -
+      (matX (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0)).map (algebraMap ℝ ℂ) *ᵥ
+        ((Vh : ℂ) • d.mforced K KV (((2 * Ω : ℝ) : ℂ) * I)) =
+      (Vh : ℂ) • (fun i => ((fderiv ℝ (d.mfield ixV (d.G + ixV (δ0, V0)))
+        (d.meq ixV δ0 V0, V0) (0, 1) i : ℝ) : ℂ)) := by
+    rw [hm, hb, ← hf, smul_sub, Matrix.mulVec_smul, smul_comm]
+  obtain ⟨P, Q, As, hPQ, hQP, hA0, hL, hR, hsrs⟩ :=
+    ParametricResonance.ForcedOrbit.stable_modal_of_eig (n := 4) (m := 2) rfl hΩ.ne' hr hu hur
+      _ hsr
+  have hA0' : Q * matX (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0) * P =
+      Matrix.fromBlocks (ParametricResonance.TwoToOne.base 0 (2 * Ω / 2)) 0 0 As := by
+    rw [hm, hA0, mul_div_cancel_left₀ Ω two_ne_zero]
+  refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_stable
+    (d.contDiff_mfield hP _).contDiffAt (d.mfield_eq_zero ixV δ0 V0)
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0' hsrs hz A0' ?_ ?_
+  · rw [hL, hR]; exact hs
+  · rw [hL, hR, d.pump_mfield hP hKδδ hKδV]; exact hg
+
+/-- Matching control end-to-end without a stable basis among the hypotheses, parametric
+instability. -/
+@[tmio M, powerlib_domain] theorem orbit_matching_unstable_spec {ixV : ℝ × ℝ → ℝ}
+    (hP : ContDiff ℝ 3 ixV)
+    {δ0 V0 Ω K KV Kδδ KδV : ℝ} (hΩ : 0 < Ω) (hωb : d.ωb ≠ 0) (hωf : d.ωf ≠ 0) (hC : d.C ≠ 0)
+    (hτ : d.τ ≠ 0) (hK : Pd ixV (δ0, V0) = K) (hKV : fderiv ℝ ixV (δ0, V0) (0, 1) = KV)
+    (hKδδ : fderiv ℝ (Pd ixV) (δ0, V0) (1, 0) = Kδδ)
+    (hKδV : fderiv ℝ (Pd ixV) (δ0, V0) (0, 1) = KδV)
+    (hD2 : d.Dm K (((2 * Ω : ℝ) : ℂ) * I) ≠ 0) {r u : Fin 4 → ℂ}
+    (hr : (d.jacobian K).map (algebraMap ℝ ℂ) *ᵥ r = ((Ω : ℂ) * I) • r)
+    (hu : u ᵥ* (d.jacobian K).map (algebraMap ℝ ℂ) = ((Ω : ℂ) * I) • u) (hur : u ⬝ᵥ r = 1)
+    (hsr : spectralRadius ℂ ((ParametricResonance.BlockAveraging.expS (d.jacobian K)
+      (2 * Real.pi / (2 * Ω)) * (1 - ParametricResonance.ForcedOrbit.critP r *
+        ParametricResonance.ForcedOrbit.critQ u)).map (algebraMap ℝ ℂ)) < 1)
+    (Vh : ℝ) (A0' : Matrix (Fin 4) (Fin 4) ℝ)
+    (hg : ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2 < ‖d.mpumpV u r K Kδδ KδV KV Ω Vh / 2‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧
+      (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 4 → ℝ,
+        (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+        ∀ t, HasDerivAt y (d.mfield ixV (d.G + ixV (δ0, V0)) (d.meq ixV δ0 V0 + y t,
+          V0 + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → Fin 4 → ℝ, (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+        (∀ t, HasDerivAt y (d.mfield ixV (d.G + ixV (δ0, V0)) (d.meq ixV δ0 V0 + y t,
+          V0 + ε * (Vh * Real.cos (2 * Ω * t))) + ε • (A0' *ᵥ y t)) t) →
+        Periodic.FloquetUnstable (fun t => smJ (d.mfield ixV (d.G + ixV (δ0, V0)))
+          (d.meq ixV δ0 V0, V0) Vh (2 * Ω) A0' ε t (y t)) (2 * Real.pi / (2 * Ω)) := by
+  have hm : matX (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0) = d.jacobian K := by
+    rw [d.matX_mfield hP]; simp [meq, hK]
+  have h1 : 1 + (d.τ : ℂ) * (((2 * Ω : ℝ) : ℂ) * I) ≠ 0 := by
+    intro h; have := congrArg Complex.re h; simp at this
+  have hf := d.mforced_eq K KV hωb hωf hC hτ h1 hD2
+  have hb : (fun i => ((fderiv ℝ (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0)
+      (0, 1) i : ℝ) : ℂ)) = ![0, 0, -((KV : ℂ) / d.C), 0] := by
+    rw [d.fderivW_mfield hP hKV]
+    funext i; fin_cases i <;> simp
+  have hz : (((2 * Ω : ℝ) : ℂ) * I) • ((Vh : ℂ) • d.mforced K KV (((2 * Ω : ℝ) : ℂ) * I)) -
+      (matX (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0)).map (algebraMap ℝ ℂ) *ᵥ
+        ((Vh : ℂ) • d.mforced K KV (((2 * Ω : ℝ) : ℂ) * I)) =
+      (Vh : ℂ) • (fun i => ((fderiv ℝ (d.mfield ixV (d.G + ixV (δ0, V0)))
+        (d.meq ixV δ0 V0, V0) (0, 1) i : ℝ) : ℂ)) := by
+    rw [hm, hb, ← hf, smul_sub, Matrix.mulVec_smul, smul_comm]
+  obtain ⟨P, Q, As, hPQ, hQP, hA0, hL, hR, hsrs⟩ :=
+    ParametricResonance.ForcedOrbit.stable_modal_of_eig (n := 4) (m := 2) rfl hΩ.ne' hr hu hur
+      _ hsr
+  have hA0' : Q * matX (d.mfield ixV (d.G + ixV (δ0, V0))) (d.meq ixV δ0 V0, V0) * P =
+      Matrix.fromBlocks (ParametricResonance.TwoToOne.base 0 (2 * Ω / 2)) 0 0 As := by
+    rw [hm, hA0, mul_div_cancel_left₀ Ω two_ne_zero]
+  refine ParametricResonance.ForcedOrbit.smooth_orbit_floquet_unstable
+    (d.contDiff_mfield hP _).contDiffAt (d.mfield_eq_zero ixV δ0 V0)
+    (by positivity : (0 : ℝ) < 2 * Ω) hPQ hQP As hA0' hsrs hz A0' ?_
   rw [hL, hR, d.pump_mfield hP hKδδ hKδV]; exact hg
 
 end MatchingCore

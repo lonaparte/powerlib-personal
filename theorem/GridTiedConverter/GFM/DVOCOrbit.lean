@@ -17,7 +17,8 @@ Model boundary.
 * Operating point `x₀ = (Ψ₀, 1, 0)` with `p(Ψ₀) = P₀`; normalized Hopf point (time unit `1/Ω_m`,
   `Ω = 1`, drive `V₀ + ε V̂ cos 2t`) with `ν_δ = ηK`, `ν_P = P₀/C`, `ν_K = K/C`, the PI gains of
   `hopfMatrix`, `p'' = −τK`, and `ν_P < ν_δ`; state perturbation `ε A₀'` with any real `A₀'`.
-* Orbital stability of the nonlinear solutions is not derived.
+* The exponential stability of the nonlinear solutions near the orbit is in `GFMOrbitStability`,
+  and the gain change `k_p → k_p + εk_{p1}` as the source of `A₀'` in `GFMParameterShift`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2, §3 (dVOC core), (25); the voltage excitation is new.

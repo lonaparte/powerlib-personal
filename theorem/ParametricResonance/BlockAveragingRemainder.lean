@@ -232,13 +232,13 @@ omit [Fintype Y] [DecidableEq Y] in
     (As : Matrix Y Y ℝ) (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ)
     (B : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ) (Rm : ℝ → ℝ → Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ)
     {ε1 CR : ℝ} (hRc : ∀ ε, 0 < ε → ε ≤ ε1 → Continuous (Rm ε))
-    (hRb : ∀ ε, 0 < ε → ε ≤ ε1 → ∀ t, ‖Rm ε t‖ ≤ CR) (hq1 : ‖expS As (2 * Real.pi / ω)‖ ≤ 1) :
+    (hRb : ∀ ε, 0 < ε → ε ≤ ε1 → ∀ t, ‖Rm ε t‖ ≤ CR) :
     ∃ C, 0 ≤ C ∧ ∀ ε, 0 < ε → ε ≤ 1 → ε ≤ ε1 → ∃ (P : Matrix (Fin 2) (Fin 2) ℝ) (Q : Matrix (Fin 2) Y ℝ)
       (R : Matrix Y (Fin 2) ℝ) (S : Matrix Y Y ℝ),
       Periodic.monodromy (fullR s d ω As A B Rm ε) (2 * Real.pi / ω) 0 = fromBlocks P Q R S ∧
       ‖P + 1 + (ε * (2 * Real.pi / ω)) •
           slowFlowMatrix (s - shiftRe B) (d - shiftIm B) (Element.pump A.toBlocks₁₁ left right / 2)‖ ≤ C * ε ^ 2 ∧
-      ‖Q‖ ≤ C * ε ∧ ‖R‖ ≤ C * ε ∧ ‖S‖ ≤ ‖expS As (2 * Real.pi / ω)‖ + C * ε := by
+      ‖Q‖ ≤ C * ε ∧ ‖R‖ ≤ C * ε ∧ ‖S - expS As (2 * Real.pi / ω)‖ ≤ C * ε := by
   set T := 2 * Real.pi / ω with hTdef
   have hT : 0 < T := by positivity
   obtain ⟨M, hM0, hM⟩ := exists_bound_FzcB s d ω hT.le As A B
@@ -254,7 +254,14 @@ omit [Fintype Y] [DecidableEq Y] in
   set K := (M + MG) * T * ((M + MG) * T * (‖(1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ)‖ *
     Real.exp ((M + MG) * T))) + T * MG with hK
   have hK0 : 0 ≤ K := by rw [hK]; positivity
-  refine ⟨T * M + K, by positivity, fun ε hε hε1 hεε1 => ?_⟩
+  set C0 := T * M + K with hC0
+  have hC00 : 0 ≤ C0 := by positivity
+  set e := ‖expS As T‖ with he
+  have he0 : 0 ≤ e := norm_nonneg _
+  have hCC : C0 ≤ C0 * (1 + e) := le_mul_of_one_le_right hC00 (by linarith)
+  have hCe : e * C0 ≤ C0 * (1 + e) := by
+    rw [mul_comm e C0]; exact mul_le_mul_of_nonneg_left (by linarith) hC00
+  refine ⟨C0 * (1 + e), by positivity, fun ε hε hε1 hεε1 => ?_⟩
   have hG : ∀ t, ‖GzcR ω T As Rm ε t‖ ≤ MG := fun t =>
     bound_GzcR ω As Rm hT.le hCP0 hCP
       (fun t => (hRb ε hε hεε1 t).trans (le_max_left _ _)) t
@@ -301,36 +308,42 @@ omit [Fintype Y] [DecidableEq Y] in
     nlinarith
   refine ⟨_, _, _, _, hmono, ?_, ?_, ?_, ?_⟩
   · rw [h11, norm_neg]
-    exact b11.trans (hR2n.trans (by nlinarith [sq_nonneg ε, mul_nonneg hT.le hM0]))
+    refine b11.trans (hR2n.trans ?_)
+    have h1 : K * ε ^ 2 ≤ C0 * ε ^ 2 :=
+      mul_le_mul_of_nonneg_right (by rw [hC0]; exact le_add_of_nonneg_left (mul_nonneg hT.le hM0))
+        (sq_nonneg ε)
+    exact h1.trans (mul_le_mul_of_nonneg_right hCC (sq_nonneg ε))
   · rw [h12, norm_neg]
     refine (norm_add_le _ _).trans ?_
     rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    exact hblk _ _ (f12.trans hFb) (b12.trans hR2n)
+    exact (hblk _ _ (f12.trans hFb) (b12.trans hR2n)).trans
+      (mul_le_mul_of_nonneg_right hCC hε.le)
   · rw [h21]
     refine (linfty_opNorm_mul _ _).trans ?_
     have h : ‖(ε * T) • Fbar.toBlocks₂₁ + R2.toBlocks₂₁‖ ≤ (T * M + K) * ε := by
       refine (norm_add_le _ _).trans ?_
       rw [norm_smul, Real.norm_of_nonneg (by positivity)]
       exact hblk _ _ (f21.trans hFb) (b21.trans hR2n)
-    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₁ + R2.toBlocks₂₁‖ ≤ 1 * ((T * M + K) * ε) :=
-          mul_le_mul hq1 h (norm_nonneg _) zero_le_one
-      _ = (T * M + K) * ε := one_mul _
-  · rw [h22, Matrix.mul_add, Matrix.mul_one]
-    refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
+    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₁ + R2.toBlocks₂₁‖ ≤ e * (C0 * ε) :=
+          mul_le_mul_of_nonneg_left h he0
+      _ = e * C0 * ε := by ring
+      _ ≤ C0 * (1 + e) * ε := mul_le_mul_of_nonneg_right hCe hε.le
+  · rw [h22, Matrix.mul_add, Matrix.mul_one, add_sub_cancel_left]
     refine (linfty_opNorm_mul _ _).trans ?_
     have h : ‖(ε * T) • Fbar.toBlocks₂₂ + R2.toBlocks₂₂‖ ≤ (T * M + K) * ε := by
       refine (norm_add_le _ _).trans ?_
       rw [norm_smul, Real.norm_of_nonneg (by positivity)]
       exact hblk _ _ (f22.trans hFb) (b22.trans hR2n)
-    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₂ + R2.toBlocks₂₂‖ ≤ 1 * ((T * M + K) * ε) :=
-          mul_le_mul hq1 h (norm_nonneg _) zero_le_one
-      _ = (T * M + K) * ε := one_mul _
+    calc ‖expS As T‖ * ‖(ε * T) • Fbar.toBlocks₂₂ + R2.toBlocks₂₂‖ ≤ e * (C0 * ε) :=
+          mul_le_mul_of_nonneg_left h he0
+      _ = e * C0 * ε := by ring
+      _ ≤ C0 * (1 + e) * ε := mul_le_mul_of_nonneg_right hCe hε.le
 
 /-! ### Averaging with the remainder -/
 
 /-- First-order averaging with a stable remainder, stability: if the slow flow of the critical
 pair is exponentially stable (`s > 0`, `|g/2|² < s² + d²`, `g = u A₁₁ r̄`) and the stable block
-contracts over one period (`‖e^{TA_s}‖ < 1`), every Floquet multiplier of the complete `n`-state
+has one-period spectral radius `ρ(e^{TA_s}) < 1`, every Floquet multiplier of the complete `n`-state
 system lies inside the unit circle for all small `ε > 0`. -/
 @[tmio T, powerlib_foundation] theorem averagingR_stable {s d ω : ℝ} (hω : 0 < ω)
     (As : Matrix Y Y ℝ) (A : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ)
@@ -340,15 +353,15 @@ system lies inside the unit circle for all small `ε > 0`. -/
     (hRb : ∀ ε, 0 < ε → ε ≤ ε1 → ∀ t, ‖Rm ε t‖ ≤ CR) (hs : 0 < s - shiftRe B)
     (hg : ‖Element.pump A.toBlocks₁₁ left right / 2‖ ^ 2 <
       (s - shiftRe B) ^ 2 + (d - shiftIm B) ^ 2)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hρ : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ (μ : ℂ) (v : Fin 2 ⊕ Y → ℂ), v ≠ 0 →
       (Periodic.monodromy (fullR s d ω As A B Rm ε) (2 * Real.pi / ω) 0).map (algebraMap ℝ ℂ) *ᵥ v =
         μ • v → ‖μ‖ < 1 := by
-  obtain ⟨C, hC, hblk⟩ := monodromy_blocks_R s d hω As A B Rm hRc hRb hq.le
+  obtain ⟨C, hC, hblk⟩ := monodromy_blocks_R s d hω As A B Rm hRc hRb
   have hT : 0 < 2 * Real.pi / ω := by positivity
-  have h := block_stable (Y := Y) hT
+  have h := block_stable_spec (Y := Y) hT
     (Ms := slowFlowMatrix (s - shiftRe B) (d - shiftIm B) (Element.pump A.toBlocks₁₁ left right / 2))
-    (by rw [trace_slowFlowMatrix]; linarith) (by rw [det_slowFlowMatrix]; linarith) hC hq
+    (by rw [trace_slowFlowMatrix]; linarith) (by rw [det_slowFlowMatrix]; linarith) hρ hC
   filter_upwards [h, eventually_lt_nhdsGT one_pos, eventually_lt_nhdsGT hε1] with ε hε ⟨hε0, hεo⟩ ⟨_, hεe⟩
   obtain ⟨P, Q, R, S, heq, hP, hQ, hR, hS⟩ := hblk ε hε0 hεo.le hεe.le
   rw [heq]
@@ -365,28 +378,17 @@ small `ε > 0`. -/
     (hRc : ∀ ε, 0 < ε → ε ≤ ε1 → Continuous (Rm ε))
     (hRb : ∀ ε, 0 < ε → ε ≤ ε1 → ∀ t, ‖Rm ε t‖ ≤ CR)
     (hg : (s - shiftRe B) ^ 2 + (d - shiftIm B) ^ 2 < ‖Element.pump A.toBlocks₁₁ left right / 2‖ ^ 2)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hρ : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), Periodic.FloquetUnstable (fullR s d ω As A B Rm ε) (2 * Real.pi / ω) := by
-  obtain ⟨C, hC, hblk⟩ := monodromy_blocks_R s d hω As A B Rm hRc hRb hq.le
+  obtain ⟨C, hC, hblk⟩ := monodromy_blocks_R s d hω As A B Rm hRc hRb
   have hT : 0 < 2 * Real.pi / ω := by positivity
-  have h := block_unstable (Y := Y) hT
+  have h := block_unstable_spec (Y := Y) hT
     (Ms := slowFlowMatrix (s - shiftRe B) (d - shiftIm B) (Element.pump A.toBlocks₁₁ left right / 2))
-    (by rw [det_slowFlowMatrix]; linarith) hC hq
+    (by rw [det_slowFlowMatrix]; linarith) hρ hC
   filter_upwards [h, eventually_lt_nhdsGT one_pos, eventually_lt_nhdsGT hε1] with ε hε ⟨hε0, hεo⟩ ⟨_, hεe⟩
   obtain ⟨P, Q, R, S, heq, hP, hQ, hR, hS⟩ := hblk ε hε0 hεo.le hεe.le
-  obtain ⟨μ, hμ, hdet⟩ := hε P Q R S hP hQ hR hS
-  refine ⟨(μ : ℂ), ?_, ?_⟩
-  · rw [spectrum.mem_iff, Algebra.algebraMap_eq_smul_one, Matrix.isUnit_iff_isUnit_det, heq]
-    have hmap : (μ : ℂ) • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℂ) -
-        (fromBlocks P Q R S).map (algebraMap ℝ ℂ) =
-        (μ • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ) - fromBlocks P Q R S).map (algebraMap ℝ ℂ) := by
-      ext i j
-      simp [Matrix.one_apply]
-      split_ifs <;> simp
-    rw [hmap, ← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet, map_zero]
-    exact not_isUnit_zero
-  · rw [Complex.norm_real, Real.norm_eq_abs, abs_of_neg (by linarith)]
-    linarith
+  obtain ⟨ρ, hρm, hρ1⟩ := hε P Q R S hP hQ hR hS
+  exact ⟨ρ, by rw [heq]; exact hρm, hρ1⟩
 
 /-! ### Physical coordinates and three-state cores with the remainder -/
 
@@ -440,7 +442,7 @@ omit [DecidableEq Y] in
     (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
     (hg : ‖physLeft Q ⬝ᵥ (A1 *ᵥ star (physRight P)) / 2‖ ^ 2 <
       ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hρ : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ (μ : ℂ) (v : X → ℂ), v ≠ 0 →
       (Periodic.monodromy (physJR A0c A0' A1 Rm ω ε) (2 * Real.pi / ω) 0).map
           (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1 := by
@@ -456,7 +458,7 @@ omit [DecidableEq Y] in
       left right / 2‖ ^ 2 < (0 - shiftRe (Q * A0' * P)) ^ 2 + (0 - shiftIm (Q * A0' * P)) ^ 2 := by
     simpa using hg
   obtain ⟨hRc', hRb'⟩ := modal_remainder (P := P) (Q := Q) hRc hRb
-  have h := averagingR_stable hω As _ _ (fun ε t => Q * Rm ε t * P) hε1 hRc' hRb' hs' hg' hq
+  have h := averagingR_stable hω As _ _ (fun ε t => Q * Rm ε t * P) hε1 hRc' hRb' hs' hg' hρ
   have hT : 0 ≤ 2 * Real.pi / ω := by positivity
   filter_upwards [h, eventually_lt_nhdsGT hε1] with ε hε ⟨hε0, hεe⟩
   intro μ v hv hμ
@@ -479,7 +481,7 @@ omit [DecidableEq Y] in
     (hRb : ∀ ε, 0 < ε → ε ≤ ε1 → ∀ t, ‖Rm ε t‖ ≤ CR)
     (hg : ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2 <
       ‖physLeft Q ⬝ᵥ (A1 *ᵥ star (physRight P)) / 2‖ ^ 2)
-    (hq : ‖expS As (2 * Real.pi / ω)‖ < 1) :
+    (hρ : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ),
       Periodic.FloquetUnstable (physJR A0c A0' A1 Rm ω ε) (2 * Real.pi / ω) := by
   have hshift := shift_conj P Q A0'
@@ -493,7 +495,7 @@ omit [DecidableEq Y] in
         left right / 2‖ ^ 2 := by
     simpa using hg
   obtain ⟨hRc', hRb'⟩ := modal_remainder (P := P) (Q := Q) hRc hRb
-  have h := averagingR_unstable hω As _ _ (fun ε t => Q * Rm ε t * P) hε1 hRc' hRb' hg' hq
+  have h := averagingR_unstable hω As _ _ (fun ε t => Q * Rm ε t * P) hε1 hRc' hRb' hg' hρ
   have hT : 0 ≤ 2 * Real.pi / ω := by positivity
   filter_upwards [h, eventually_lt_nhdsGT hε1] with ε hε ⟨hε0, hεe⟩
   obtain ⟨ρ, hρ, hn1⟩ := hε
@@ -533,7 +535,7 @@ end Physical
     rw [norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) hl3
   exact physical_stable_R hω hPQ hQP _ hA0 A0' A1 Rm hε1 hRc hRb (by rw [hL, hR]; exact hs)
-    (by rw [hL, hR]; exact hg) hq
+    (by rw [hL, hR]; exact hg) (spectralRadius_lt_one_of_norm _ hq)
 
 /-- Three-state cores with remainder, parametric instability. -/
 @[tmio T, powerlib_foundation] theorem three_unstable_R {Ω l3 : ℝ} (hΩ : 0 < Ω) (hl3 : l3 < 0)
@@ -555,6 +557,6 @@ end Physical
   have hq : ‖expS (!![l3] : Matrix (Fin 1) (Fin 1) ℝ) (2 * Real.pi / (2 * Ω))‖ < 1 := by
     rw [norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) hl3
-  exact physical_unstable_R hω hPQ hQP _ hA0 A0' A1 Rm hε1 hRc hRb (by rw [hL, hR]; exact hg) hq
+  exact physical_unstable_R hω hPQ hQP _ hA0 A0' A1 Rm hε1 hRc hRb (by rw [hL, hR]; exact hg) (spectralRadius_lt_one_of_norm _ hq)
 
 end powerlib.ParametricResonance.BlockAveraging

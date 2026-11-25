@@ -16,7 +16,9 @@ Model boundary.
   `(δ₀, P*, P*)`; quasi-static network (no network dynamics), no Q–V loop dynamics or limits.
 * `P_δ`, `P_V`, `P_δδ`, `P_δV` the partial derivatives of `P` at `(δ₀, V₀)`; Hopf point
   `ω₁ω_m = Ω²`, `m_p ω₁ ω_m P_δ = (ω₁ + ω_m)Ω²`, `ω₁ + ω_m > 0`; drive `V₀ + ε V̂ cos 2Ωt`; state
-  perturbation `ε A₀'` with any real `A₀'`. Orbital stability is not derived.
+  perturbation `ε A₀'` with any real `A₀'`. The exponential stability of the nonlinear solutions
+  near the orbit is in `GFMOrbitStability`; the droop-gain change and a saturated power map are in
+  `GFMParameterShift`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2, §3 (droop core, correspondence (8)); the voltage excitation

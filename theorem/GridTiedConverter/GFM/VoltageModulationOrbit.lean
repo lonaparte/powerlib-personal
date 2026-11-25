@@ -380,7 +380,8 @@ def orbDu (δ0 V0 Vh ω : ℝ) (A0' : Matrix (Fin 3) (Fin 3) ℝ) (t : ℝ) : Ma
       (2 * Real.pi / (2 * Ω))‖ < 1 := by
     rw [BlockAveraging.norm_expS_one, Real.exp_lt_one_iff]
     exact mul_neg_of_pos_of_neg (by positivity) (neg_neg_of_pos hd2)
-  obtain ⟨Minv, hL, hR⟩ := ForcedOrbit.exists_minv_of_modal hω hPQ hQP _ hA0 hq
+  obtain ⟨Minv, hL, hR⟩ := ForcedOrbit.exists_minv_of_modal hω hPQ hQP _ hA0
+    (BlockAveraging.spectralRadius_lt_one_of_norm _ hq)
   have hΩ2 : (2 * Ω) ≠ 0 := by positivity
   have hΩc : (Ω : ℂ) ≠ 0 := by exact_mod_cast hΩ.ne'
   have hchar : cr.charP (2 * Ω * I) ≠ 0 := by
