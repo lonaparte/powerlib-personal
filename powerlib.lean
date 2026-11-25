@@ -187,6 +187,7 @@ import theorem.GridTiedConverter.GFM.DVOCPump
 import theorem.GridTiedConverter.GFM.PSCPump
 import theorem.GridTiedConverter.GFM.PSCActiveDamping
 import theorem.GridTiedConverter.GFM.PSCFull
+import theorem.GridTiedConverter.GFM.DroopNetwork
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber
