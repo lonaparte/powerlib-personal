@@ -18,9 +18,11 @@ the Freidlin–Wentzell action and the quasi-potential of a gradient drift.
 
 Scope.
 * Probability theory / calculus of variations, not an engineering result.
-* No statement here asserts that a particular diffusion satisfies an LDP (Freidlin–Wentzell's
-  theorem is not formalized); the action and the quasi-potential are deterministic variational
-  objects.
+* No statement here asserts that a particular diffusion satisfies an LDP; the action and the
+  quasi-potential are deterministic variational objects. The principle as a predicate and the
+  contraction principle are in `theorem/Stochastic/LDPContraction.lean`, Schilder's theorem in
+  `theorem/Stochastic/Schilder.lean`, the Freidlin–Wentzell principle for additive noise in
+  `theorem/Stochastic/AdditiveNoise.lean`.
 
 Source: work-sync theory/T-large-deviations.md (LDP definition with rate function `I`, upper
 bound over `cl A`, lower bound over `int A`; Cramér / Chernoff), theory/T-freidlin-wentzell.md

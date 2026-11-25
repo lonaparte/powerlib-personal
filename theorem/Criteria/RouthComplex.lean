@@ -28,7 +28,8 @@ Results.
   `complexCubicDet a₂ a₁ a₀ > 0` (one complex Routh step to the quadratic
   `c₁ s² + d₁ s + a₀`, `c₁ = a₂ − j Im a₁/Re a₂`, `d₁ = a₁ − Re a₀/Re a₂`, then
   `Criteria.complexQuadratic_roots_re_neg_iff`; for real coefficients the conditions are
-  `a₂ > 0`, `a₂ a₁ − a₀ > 0`, `a₀ (a₂ a₁ − a₀)² > 0`).
+  `a₂ > 0`, `a₂ a₁ − a₀ > 0`, `a₀ (a₂ a₁ − a₀)² > 0`). The determinant (Bilharz) form for complex
+  cubics, quartics and quintics is in `theorem/Criteria/Bilharz.lean`.
 * Complex matrices: `charpoly_realify` (`χ(realify M) = χ(M) χ(M)‾`, from Silvester's
   `det realify N = |det N|²` at real points), `spectrallyStable_realify_iff_charpoly` (the real
   form is spectrally stable iff every root of `χ(M)` has negative real part) and

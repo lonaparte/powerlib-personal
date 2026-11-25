@@ -19,9 +19,9 @@ Model boundary.
   `Line.VSM.Model.sign_firstLyapunov_eq_of_boundary`).
 * Level: exact rational-function identities along the path, the sign of `ℓ₁`, the existence of
   its zero, and Lyapunov instability / local asymptotic stability (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`) where `ℓ₁ ≠ 0`. Not stated: the stability of the degenerate point
-  itself (it needs the second Lyapunov coefficient of the reduced field, see below), the
-  bifurcating cycles, the `ε = 1/ω_b` law of the source note.
+  `LocalAsymptoticStable`) where `ℓ₁ ≠ 0`; the stability of the degenerate point itself is in
+  `theorem/GridTiedConverter/GFM/HopfBautinPoint.lean`. Not stated: the bifurcating cycles, the
+  `ε = 1/ω_b` law of the source note.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, the VSM without filter on a dynamic
 R–L line; both signs of `ℓ₁` on the boundary,
@@ -50,12 +50,13 @@ Results.
   one transition, `sign ℓ₁(s) = sign(s − s*)` (`exists_sign_firstLyapunov_eq_sign_sub`). The zero is
   algebraic (`t = s*²` is the positive root of `t⁵ + 12t⁴ − 22t³ − 132t² − 160t − 64`); a
   search found no rational zero-current point with `ℓ₁ = 0` (SymPy, small heights).
-* Not proved: the stability of the degenerate point. Its second Lyapunov coefficient, computed in
-  floating point (SymPy, centre manifold to order four, untrusted), is positive (`l₂ ≈ 8.9·10³`
-  in the chart of `bautinPathQ`), i.e. an unstable weak focus of the second order; the Lean
-  decision needs the order-four approximate centre manifold `φ` of the model at `s*` with
-  invariance defect `O(‖u‖⁵)` and the 5-jet of its chart field in exact arithmetic over
-  `ℚ(s*)`: the hypotheses of `Line.VSM.mem_den_unstable_of_secondLyapunov_pos`.
+* The stability of the degenerate point is decided in
+  `theorem/GridTiedConverter/GFM/HopfBautinPoint.lean`
+  (`Line.VSM.bautinPath_mem_den_unstable_of_bautinNum_eq_zero`: unstable, `l₂ > 0`), from the
+  exact order-four approximate centre manifold and the quintic jet of its chart field
+  (`theorem/GridTiedConverter/GFM/HopfBautinData.lean`), through
+  `Line.VSM.mem_den_unstable_of_secondLyapunov_pos` below.
+* `bautinPath_boundary`: every point of the path is on the Hopf boundary.
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.VSM.family`.
@@ -425,7 +426,9 @@ whose first Lyapunov coefficient vanishes (a point of the path, `s* ∈ (2, 21/1
 
 /-! ## Connection conclusions along the path -/
 
-@[tmio M, powerlib_domain] private theorem bautinPath_boundary {s : ℝ} (hs : 0 < s) :
+/-- Every point of the path lies on the Hopf boundary of the quartic (`a₃, a₁, a₀ > 0`,
+`a₃ a₂ a₁ = a₁² + a₃² a₀`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem bautinPath_boundary {s : ℝ} (hs : 0 < s) :
     0 < (bautinPath s).g.coeff3 ∧ 0 < (bautinPath s).g.coeff1 (bautinPath s).Q ∧
       0 < (bautinPath s).g.coeff0 (bautinPath s).Q ∧
       (bautinPath s).g.coeff3 * (bautinPath s).g.coeff2 (bautinPath s).Q *

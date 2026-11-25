@@ -2,7 +2,6 @@ import theorem.GridTiedConverter.GFM.FullModel.TimeScale
 import theorem.SingularPerturbation.Converse
 import theorem.Criteria.ComplexQuadratic
 import theorem.Criteria.RouthComplex
-import theorem.Linear.Synthesis
 
 /-! # The 13-state grid-forming converter: the boundary layer and the controller gains
 
@@ -22,10 +21,10 @@ The current-loop time scale `μ` (`Params.currentScaled μ`): `L_f ↦ μ L_f`, 
 the current-loop characteristic polynomial `L_f s² + (K_pc + R_f) s + K_ic` has its roots
 multiplied by `μ⁻¹` and the decoupling `ω₀L_f` follows `L_f`; all other parameters unchanged
 (the quasi-steady set, the powers and the reduced model do not change).
-Excluded: a closed form of the characteristic polynomial of the fast block for symbolic gains
-(its Routh table decides it at fixed gains:
-`theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerRouth.lean`), and everything excluded by
-the full-order model.
+The exact decision of the fast block for every parameter value (its characteristic polynomial
+for symbolic gains and its Bilharz determinants) is in
+`theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerRouth.lean`. Excluded: everything excluded
+by the full-order model.
 
 Source: GFM counterpart study, full-order model note (t5: "fast block Hurwitz only numerically";
 "UNPROVED: stability of δ+ in full model"); the cascaded control of S. D'Arco, J. A. Suul and
@@ -106,12 +105,9 @@ Results.
   strictly violated block condition makes the boundary layer unstable for every small `μ`. So for
   a fast current loop the boundary layer is decided by the block conditions, up to boundary cases.
   Closed-form `μ*`: `theorem/GridTiedConverter/GFM/FullModel/ExplicitScales.lean`.
-* At the witness: `blWitness_currentScaled_spectrallyStable`, the boundary layer of
-  `blWitness.currentScaled (1/10)` is spectrally stable at every angle (its real fast block is the
-  rational `blFastA10` built from `blFastRe`, `blFastIm`, `blFast_fastBlock_reindex`, with the
-  kernel-checked rational Lyapunov certificate `blFastCertificate` of
-  `theorem/Linear/Synthesis.lean`): a ten times faster current loop turns the unstable boundary
-  layer of `blWitness` into a stable one.
+* At the witness with a ten times faster current loop the boundary layer is stable
+  (`blWitness_currentScaled_spectrallyStable`, read from the symbolic decision in
+  `theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerRouth.lean`).
 
 Family and connection conclusions.
 * `Model.currentScaled`: the full model at the parameters `currentScaled μ`, same point.
@@ -826,62 +822,6 @@ coefficient, or `K_iv/C_f < 0` with `K_pv = 0`). -/
       hlw
 
 end Params
-
-/-! ### The witness with a faster current loop -/
-
-/-- The real part of the fast matrix of `blWitness.currentScaled (1/10)` at `δ = 0`
-(`L_f = 1/10`, `K_ic = 20`). -/
-def blFastRe : Matrix (Fin 5) (Fin 5) ℚ :=
-  !![-11, -56 / 3, 10, 200, 240; 1, 0, -1, 0, 0; 0, 10, -1, 0, 0; -1, -28 / 15, 1, 0, 24;
-    0, -1, 0, 0, 0]
-
-/-- The imaginary part of the fast matrix of `blWitness.currentScaled (1/10)` at `δ = 0`. -/
-def blFastIm : Matrix (Fin 5) (Fin 5) ℚ :=
-  !![0, 10, 0, 0, 0; 0, -1, 0, 0, 0; 0, 0, -1, 0, 0; 0, 1, 0, 0, 0; 0, 0, 0, 0, 0]
-
-/-- The rational `10 × 10` real fast block of `blWitness.currentScaled (1/10)`, coordinates
-`2a + c` (`finProdFinEquiv`). -/
-def blFastA10 : Matrix (Fin 10) (Fin 10) ℚ := Matrix.of fun i j =>
-  let a := finProdFinEquiv.symm i
-  let b := finProdFinEquiv.symm j
-  !![blFastRe a.1 b.1, -blFastIm a.1 b.1; blFastIm a.1 b.1, blFastRe a.1 b.1] a.2 b.2
-
-@[tmio M, powerlib_domain] private theorem blFast_fastMatrix_apply (a b : Fin 5) :
-    (blWitness.currentScaled (1 / 10)).fastMatrix 0 a b =
-      ((blFastRe a b : ℝ) : ℂ) + ((blFastIm a b : ℝ) : ℂ) * I := by
-  have h0 : ej 0 = 1 := by simp [ej]
-  fin_cases a <;> fin_cases b <;>
-    simp [Params.fastMatrix, Params.currentScaled, blFastRe, blFastIm, h0, Params.Bf,
-      Params.Zg_eq, Params.Zv, blWitness] <;>
-    norm_num [Complex.ext_iff]
-
-/-- The fast block of `blWitness.currentScaled (1/10)`, relabelled by `finProdFinEquiv`, is the
-real image of the rational matrix `blFastA10`. -/
-@[tmio M, powerlib_domain] theorem blFast_fastBlock_reindex :
-    ((blWitness.currentScaled (1 / 10)).fastBlock 0).reindex finProdFinEquiv finProdFinEquiv =
-      Linear.Positive.real blFastA10 := by
-  ext i j
-  obtain ⟨⟨a, c'⟩, rfl⟩ := finProdFinEquiv.surjective i
-  obtain ⟨⟨b, c⟩, rfl⟩ := finProdFinEquiv.surjective j
-  simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_apply_apply,
-    Linear.Positive.real, Matrix.map_apply, blFastA10, Matrix.of_apply,
-    Params.fastBlock_apply, blFast_fastMatrix_apply]
-  fin_cases c' <;> fin_cases c <;> simp [component, axisUnit]
-
-/-- A rational Lyapunov certificate of the fast block of `blWitness.currentScaled (1/10)`,
-produced by the verified synthesizer of `theorem/Linear/Synthesis.lean` and checked by the
-kernel. -/
-def blFastCertificate : Linear.Certificate (Linear.Positive.real blFastA10) :=
-  lyapunov_certificate% blFastA10
-
-/-- **A ten times faster current loop stabilizes the witness's boundary layer**: the fast block
-of `blWitness.currentScaled (1/10)` is spectrally stable at every angle (the rational certificate
-`blFastCertificate`), while that of `blWitness` is not (`blWitness_not_spectrallyStable`). -/
-@[tmio M, powerlib_domain] theorem blWitness_currentScaled_spectrallyStable (δ : ℝ) :
-    Linear.SpectrallyStable ((blWitness.currentScaled (1 / 10)).fastBlock δ) := by
-  rw [Params.spectrallyStable_fastBlock_iff, ← Linear.spectrallyStable_reindex finProdFinEquiv,
-    blFast_fastBlock_reindex, Linear.spectrallyStable_iff_isHurwitz]
-  exact blFastCertificate.isHurwitz
 
 /-! ### Beyond `k_ff ≤ 1`, `Z_v = 0`: positive gains do not suffice -/
 

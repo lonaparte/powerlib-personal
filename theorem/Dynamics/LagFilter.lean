@@ -6,7 +6,8 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 
 Generic calculus for constructing controlled paths that follow a reference: the explicit solution
 of the scalar lag filter `ż = ω (h − z)` driven by a continuous signal `h`, its lag bound for a
-Lipschitz signal, a quadratic estimate for the action of a perturbed control, a quartic bump with
+Lipschitz signal, quadratic estimates for the action of a control perturbed by the lag (crude,
+and to first order in `1/ω`), an interpolation bound at a zero end, a quartic bump with
 vanishing value and slope at both ends of `[0, 1]`, and two elementary bounds (a sine increment
 near a point where `cos < 0`, a lower bound for `∫₀¹ e^{ωs} t²(1 − t)²`).
 
@@ -18,8 +19,10 @@ Scope.
   defined here.
 
 Source: the variation-of-constants formula for `ż = ω(h − z)` (any ODE text, e.g. Hespanha,
-*Linear Systems Theory*, Ch. 5); used by `theorem/GridTiedConverter/GFM/Noise/EscapeExponent.lean`
-for the fast-filter limit of the escape exponent.
+*Linear Systems Theory*, Ch. 5); the tracking certificate is an exact polynomial identity (checked
+with sympy in the audit scratch notes); used by
+`theorem/GridTiedConverter/GFM/Noise/EscapeExponent.lean` for the fast-filter limit and the
+first-order deficit of the escape exponent.
 
 Results.
 * `lagFilter ω z₀ h t = e^{−ωt}(z₀ + ω ∫₀ᵗ e^{ωs} h(s) ds)`: `hasDerivAt_lagFilter`
@@ -27,6 +30,17 @@ Results.
   (`|z(t) − h(t)| ≤ |z₀ − h(0)| + 2G/ω` on `[0, T]` when `h` is `G`-Lipschitz there, `ω > 0`).
 * `integral_sq_add_le`: `½∫₀ᵀ (f + w/σ)² ≤ ½∫₀ᵀ f² + T (U E/|σ| + E²/σ²)` for `|f| ≤ U`,
   `|w| ≤ E`.
+* `lagFilter_const` (`z(t) = c + (z₀ − c) e^{−ωt}` for a constant signal) and
+  `lagFilter_tracking`: for the lag `e = z − h` (`h` of right derivative `g`) and a weight `w`
+  (right derivative `w'`), `e(T)² ≤ e(0)² + ∫g²/ω` and
+  `∫(w + e)² ≤ ∫w² − (2/ω)∫w g + ∫w'²/ω² + 2∫g²/ω² + (2/ω)(w(0)e(0) − w(T)e(T))
+  + (2/ω)(e(0)² − e(T)²)` (certificate `(w'/ω − e)² + 2(e + g/ω)² ≥ 0`, integration by parts):
+  the action of a control perturbed by the lag is the unperturbed action minus `(2/ω)∫w g` up to
+  `O(1/ω²)`.
+* `sq_le_of_zero_end`: `x(a)² ≤ λ∫x² + ∫x'²/λ` on `[a, b]` when `x(b) = 0`, every `λ > 0`.
+* `lagFilter_eq_add` (`z(t) = e^{−ωt} z₀ + z_{z₀ = 0}(t)`), `lagFilter_mono` (`h ≤ k` on `[0, t]`
+  gives `z_h(t) ≤ z_k(t)`), `abs_lagFilter_sub_const_le` (`|z(t) − c| ≤ |z₀ − c| + ωtB` for
+  `|h − c| ≤ B`).
 * `hasDerivAt_vec_two`, `hasDerivWithinAt_vec_three`: derivatives of `![f, g]`, `![f, g, k]`
   from those of the components.
 * `endBump t = t²(1 − t)²` with `endBumpVel`, `endBumpAcc` (`hasDerivAt_endBump`,
@@ -314,5 +328,215 @@ def endBumpAcc (t : ℝ) : ℝ := 2 - 12 * t + 12 * t ^ 2
       Real.exp ω / 12 * (1 - s) ^ 2).intervalIntegrable _ _)]
     field_simp; ring
   linarith
+
+/-! ## Quadratic tracking estimates -/
+
+/-- The filter driven by a constant: `lagFilter ω z₀ (fun _ => c) t = c + (z₀ − c) e^{−ωt}`. -/
+@[tmio T, powerlib_foundation] theorem lagFilter_const (ω z₀ c t : ℝ) :
+    lagFilter ω z₀ (fun _ => c) t = c + (z₀ - c) * Real.exp (-(ω * t)) := by
+  by_cases hω : ω = 0
+  · subst hω; simp [lagFilter]
+  have hd : ∀ s ∈ uIcc 0 t, HasDerivAt (fun s => Real.exp (ω * s) * c / ω)
+      (Real.exp (ω * s) * c) s := fun s _ => by
+    have := ((((hasDerivAt_id' s).const_mul ω).exp).mul_const c).div_const ω
+    convert this using 1; field_simp
+  rw [lagFilter, intervalIntegral.integral_eq_sub_of_hasDerivAt hd ((by fun_prop :
+    Continuous fun s => Real.exp (ω * s) * c).intervalIntegrable 0 t)]
+  have e : Real.exp (-(ω * t)) * Real.exp (ω * t) = 1 := by rw [← Real.exp_add]; simp
+  simp only [mul_zero, Real.exp_zero, one_mul]
+  field_simp
+  linear_combination c * e
+
+/-- **Quadratic tracking estimate for the lag filter**: for the lag `e = z − h` of
+`z = lagFilter ω z₀ h` (`ω > 0`), with `h` of right derivative `g` and a weight `w` of right
+derivative `w'` on `[0, T]` (`g`, `w`, `w'` continuous there), the end lag satisfies
+`e(T)² ≤ e(0)² + ∫g²/ω` and
+`∫(w + e)² ≤ ∫w² − (2/ω)∫w g + ∫w'²/ω² + 2∫g²/ω² + (2/ω)(w(0)e(0) − w(T)e(T))
+  + (2/ω)(e(0)² − e(T)²)`
+(`ė = −ωe − g`; pointwise certificate `(w'/ω − e)² + 2(e + g/ω)² ≥ 0`, then integration by parts
+of `(w e)'` and `(e²)'`). -/
+@[tmio T, powerlib_foundation] theorem lagFilter_tracking {ω z₀ T : ℝ} (hω : 0 < ω)
+    (hT : 0 ≤ T) {h g w w' : ℝ → ℝ} (hh : Continuous h)
+    (hg : ∀ t ∈ Ico 0 T, HasDerivWithinAt h (g t) (Ici t) t) (hgc : ContinuousOn g (Icc 0 T))
+    (hw : ∀ t ∈ Ico 0 T, HasDerivWithinAt w (w' t) (Ici t) t) (hwc : ContinuousOn w (Icc 0 T))
+    (hw'c : ContinuousOn w' (Icc 0 T)) :
+    (lagFilter ω z₀ h T - h T) ^ 2 ≤ (z₀ - h 0) ^ 2 + (∫ t in (0 : ℝ)..T, g t ^ 2) / ω ∧
+      ∫ t in (0 : ℝ)..T, (w t + (lagFilter ω z₀ h t - h t)) ^ 2 ≤
+        (∫ t in (0 : ℝ)..T, w t ^ 2) - 2 / ω * (∫ t in (0 : ℝ)..T, w t * g t) +
+          (∫ t in (0 : ℝ)..T, w' t ^ 2) / ω ^ 2 + 2 * (∫ t in (0 : ℝ)..T, g t ^ 2) / ω ^ 2 +
+          2 / ω * (w 0 * (z₀ - h 0) - w T * (lagFilter ω z₀ h T - h T)) +
+          2 / ω * ((z₀ - h 0) ^ 2 - (lagFilter ω z₀ h T - h T) ^ 2) := by
+  set Z := lagFilter ω z₀ h with hZdef
+  set e : ℝ → ℝ := fun t => Z t - h t with hedef
+  have hZ : ∀ t, HasDerivAt Z (ω * (h t - Z t)) t := hasDerivAt_lagFilter hh
+  have hZc : Continuous Z := continuous_iff_continuousAt.2 fun t => (hZ t).continuousAt
+  have he0 : z₀ - h 0 = e 0 := by simp [e, Z, lagFilter_zero]
+  have hec : ContinuousOn e (Icc 0 T) := (hZc.sub hh).continuousOn
+  have he : ∀ t ∈ Ico 0 T, HasDerivWithinAt e (-ω * e t - g t) (Ici t) t := by
+    intro t ht
+    have := (hZ t).hasDerivWithinAt.sub (hg t ht)
+    convert this using 1; simp only [e]; ring
+  show e T ^ 2 ≤ (z₀ - h 0) ^ 2 + _ ∧ ∫ t in (0 : ℝ)..T, (w t + e t) ^ 2 ≤ _
+  rw [he0]
+  have hD : ContinuousOn (fun t => -ω * e t - g t) (Icc 0 T) :=
+    (continuousOn_const.mul hec).sub hgc
+  -- the two exact integrals
+  have hIee : ∫ t in (0 : ℝ)..T, 2 * e t * (-ω * e t - g t) = e T ^ 2 - e 0 ^ 2 := by
+    refine intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hT (hec.pow 2)
+      (fun t ht => ?_) (((continuousOn_const.mul hec).mul hD).intervalIntegrable_of_Icc hT)
+    have := ((he t (Ioo_subset_Ico_self ht)).pow 2).mono Ioi_subset_Ici_self
+    convert this using 1; simp
+  have hIwe : ∫ t in (0 : ℝ)..T, (w' t * e t + w t * (-ω * e t - g t)) =
+      w T * e T - w 0 * e 0 :=
+    intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hT (hwc.mul hec)
+      (fun t ht => ((hw t (Ioo_subset_Ico_self ht)).mul (he t (Ioo_subset_Ico_self ht))).mono
+        Ioi_subset_Ici_self)
+      (((hw'c.mul hec).add (hwc.mul hD)).intervalIntegrable_of_Icc hT)
+  have ig2 : IntervalIntegrable (fun t => g t ^ 2) MeasureTheory.volume 0 T :=
+    (hgc.pow 2).intervalIntegrable_of_Icc hT
+  constructor
+  · -- `(e²)' ≤ g²/ω`
+    have hle : ∫ t in (0 : ℝ)..T, 2 * e t * (-ω * e t - g t) ≤
+        ∫ t in (0 : ℝ)..T, g t ^ 2 / ω := by
+      refine intervalIntegral.integral_mono_on hT
+        (((continuousOn_const.mul hec).mul hD).intervalIntegrable_of_Icc hT) (ig2.div_const ω)
+        fun t _ => ?_
+      have key : g t ^ 2 / ω - 2 * e t * (-ω * e t - g t) =
+          (ω * e t + g t) ^ 2 / ω + ω * e t ^ 2 := by field_simp; ring
+      have : 0 ≤ (ω * e t + g t) ^ 2 / ω + ω * e t ^ 2 := by positivity
+      linarith
+    rw [hIee, intervalIntegral.integral_div] at hle
+    linarith
+  · -- the pointwise certificate, integrated
+    have iw2 : IntervalIntegrable (fun t => w t ^ 2) MeasureTheory.volume 0 T :=
+      (hwc.pow 2).intervalIntegrable_of_Icc hT
+    have iwg : IntervalIntegrable (fun t => w t * g t) MeasureTheory.volume 0 T :=
+      (hwc.mul hgc).intervalIntegrable_of_Icc hT
+    have iw'2 : IntervalIntegrable (fun t => w' t ^ 2) MeasureTheory.volume 0 T :=
+      (hw'c.pow 2).intervalIntegrable_of_Icc hT
+    have iwe : IntervalIntegrable (fun t => w' t * e t + w t * (-ω * e t - g t))
+        MeasureTheory.volume 0 T := ((hw'c.mul hec).add (hwc.mul hD)).intervalIntegrable_of_Icc hT
+    have iee : IntervalIntegrable (fun t => 2 * e t * (-ω * e t - g t)) MeasureTheory.volume 0 T :=
+      ((continuousOn_const.mul hec).mul hD).intervalIntegrable_of_Icc hT
+    have hle : ∫ t in (0 : ℝ)..T, (w t + e t) ^ 2 ≤ ∫ t in (0 : ℝ)..T,
+        ((w t ^ 2 - 2 / ω * (w t * g t)) + (w' t ^ 2 / ω ^ 2 + 2 * g t ^ 2 / ω ^ 2) -
+          (2 / ω * (w' t * e t + w t * (-ω * e t - g t)) +
+            2 / ω * (2 * e t * (-ω * e t - g t)))) := by
+      refine intervalIntegral.integral_mono_on hT
+        (((hwc.add hec).pow 2).intervalIntegrable_of_Icc hT)
+        (((iw2.sub (iwg.const_mul _)).add ((iw'2.div_const _).add
+          ((ig2.const_mul 2).div_const _))).sub ((iwe.const_mul _).add (iee.const_mul _)))
+        fun t _ => ?_
+      have key : (w' t / ω - e t) ^ 2 + 2 * (e t + g t / ω) ^ 2 =
+          ((w t ^ 2 - 2 / ω * (w t * g t)) + (w' t ^ 2 / ω ^ 2 + 2 * g t ^ 2 / ω ^ 2) -
+            (2 / ω * (w' t * e t + w t * (-ω * e t - g t)) +
+              2 / ω * (2 * e t * (-ω * e t - g t)))) - (w t + e t) ^ 2 := by
+        field_simp; ring
+      nlinarith [sq_nonneg (w' t / ω - e t), sq_nonneg (e t + g t / ω)]
+    rw [intervalIntegral.integral_sub ((iw2.sub (iwg.const_mul _)).add ((iw'2.div_const _).add
+        ((ig2.const_mul 2).div_const _))) ((iwe.const_mul _).add (iee.const_mul _)),
+      intervalIntegral.integral_add (iw2.sub (iwg.const_mul _)) ((iw'2.div_const _).add
+        ((ig2.const_mul 2).div_const _)),
+      intervalIntegral.integral_add (iwe.const_mul _) (iee.const_mul _),
+      intervalIntegral.integral_sub iw2 (iwg.const_mul _),
+      intervalIntegral.integral_add (iw'2.div_const _) ((ig2.const_mul 2).div_const _),
+      intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
+      intervalIntegral.integral_const_mul, intervalIntegral.integral_div,
+      intervalIntegral.integral_div, intervalIntegral.integral_const_mul, hIwe, hIee] at hle
+    linarith
+
+/-- **Interpolation at a zero end**: if `x(b) = 0` (`x` with right derivative `x'` on `[a, b]`,
+both continuous there), then for every `λ > 0`, `x(a)² ≤ λ ∫ x² + (∫ x'²)/λ` over `[a, b]`
+(`−2 x x' ≤ λ x² + x'²/λ`). -/
+@[tmio T, powerlib_foundation] theorem sq_le_of_zero_end {a b l : ℝ} (hab : a ≤ b) (hl : 0 < l)
+    {x x' : ℝ → ℝ} (hx : ∀ t ∈ Ico a b, HasDerivWithinAt x (x' t) (Ici t) t)
+    (hxc : ContinuousOn x (Icc a b)) (hx'c : ContinuousOn x' (Icc a b)) (hb : x b = 0) :
+    x a ^ 2 ≤ l * (∫ t in a..b, x t ^ 2) + (∫ t in a..b, x' t ^ 2) / l := by
+  have hI : ∫ t in a..b, 2 * x t * x' t = x b ^ 2 - x a ^ 2 := by
+    refine intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hab (hxc.pow 2)
+      (fun t ht => ?_) (((continuousOn_const.mul hxc).mul hx'c).intervalIntegrable_of_Icc hab)
+    have := ((hx t (Ioo_subset_Ico_self ht)).pow 2).mono Ioi_subset_Ici_self
+    convert this using 1; simp
+  have i1 : IntervalIntegrable (fun t => x t ^ 2) MeasureTheory.volume a b :=
+    (hxc.pow 2).intervalIntegrable_of_Icc hab
+  have i2 : IntervalIntegrable (fun t => x' t ^ 2) MeasureTheory.volume a b :=
+    (hx'c.pow 2).intervalIntegrable_of_Icc hab
+  have hle : ∫ t in a..b, -(2 * x t * x' t) ≤ ∫ t in a..b, (l * x t ^ 2 + x' t ^ 2 / l) := by
+    refine intervalIntegral.integral_mono_on hab
+      (((continuousOn_const.mul hxc).mul hx'c).neg.intervalIntegrable_of_Icc hab)
+      ((i1.const_mul l).add (i2.div_const l)) fun t _ => ?_
+    have key : l * x t ^ 2 + x' t ^ 2 / l + 2 * x t * x' t = (l * x t + x' t) ^ 2 / l := by
+      field_simp; ring
+    have : 0 ≤ (l * x t + x' t) ^ 2 / l := by positivity
+    linarith
+  rw [intervalIntegral.integral_neg, hI, hb, intervalIntegral.integral_add (i1.const_mul l)
+    (i2.div_const l), intervalIntegral.integral_const_mul, intervalIntegral.integral_div] at hle
+  linarith
+
+/-! ## Comparison and drift of the filter -/
+
+/-- The filter is affine in its initial value: `z(t) = e^{−ωt} z₀ + z_{z₀=0}(t)`. -/
+@[tmio T, powerlib_foundation] theorem lagFilter_eq_add (ω z₀ : ℝ) (h : ℝ → ℝ) (t : ℝ) :
+    lagFilter ω z₀ h t = Real.exp (-(ω * t)) * z₀ + lagFilter ω 0 h t := by
+  simp only [lagFilter]; ring
+
+/-- **Comparison**: `h ≤ k` on `[0, t]` (`ω, t ≥ 0`, both continuous) gives
+`lagFilter ω z₀ h t ≤ lagFilter ω z₀ k t`. -/
+@[tmio T, powerlib_foundation] theorem lagFilter_mono {ω z₀ t : ℝ} (hω : 0 ≤ ω) (ht : 0 ≤ t)
+    {h k : ℝ → ℝ} (hh : Continuous h) (hk : Continuous k) (hhk : ∀ s ∈ Icc 0 t, h s ≤ k s) :
+    lagFilter ω z₀ h t ≤ lagFilter ω z₀ k t := by
+  simp only [lagFilter]
+  gcongr
+  exact intervalIntegral.integral_mono_on ht ((by fun_prop : Continuous fun s =>
+    Real.exp (ω * s) * h s).intervalIntegrable _ _) ((by fun_prop : Continuous fun s =>
+      Real.exp (ω * s) * k s).intervalIntegrable _ _)
+    fun s hs => mul_le_mul_of_nonneg_left (hhk s hs) (Real.exp_pos _).le
+
+/-- **Drift of the filter**: if `|h − c| ≤ B` on `[0, t]` (`ω, t ≥ 0`), then
+`|z(t) − c| ≤ |z₀ − c| + ω t B`. -/
+@[tmio T, powerlib_foundation] theorem abs_lagFilter_sub_const_le {ω z₀ t c B : ℝ} (hω : 0 ≤ ω)
+    (ht : 0 ≤ t) {h : ℝ → ℝ} (hh : Continuous h) (hB : ∀ s ∈ Icc 0 t, |h s - c| ≤ B) :
+    |lagFilter ω z₀ h t - c| ≤ |z₀ - c| + ω * t * B := by
+  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0 ⟨le_rfl, ht⟩)
+  have hc : lagFilter ω c (fun _ => c) t = c := by rw [lagFilter_const]; ring
+  have hint : ∀ f : ℝ → ℝ, Continuous f →
+      IntervalIntegrable (fun s => Real.exp (ω * s) * f s) MeasureTheory.volume 0 t :=
+    fun f hf => (by fun_prop : Continuous fun s => Real.exp (ω * s) * f s).intervalIntegrable _ _
+  have hsplit : lagFilter ω z₀ h t - c = Real.exp (-(ω * t)) * (z₀ - c) +
+      Real.exp (-(ω * t)) * (ω * ∫ s in (0 : ℝ)..t, Real.exp (ω * s) * (h s - c)) := by
+    have e : ∫ s in (0 : ℝ)..t, Real.exp (ω * s) * (h s - c) =
+        (∫ s in (0 : ℝ)..t, Real.exp (ω * s) * h s) - ∫ s in (0 : ℝ)..t, Real.exp (ω * s) * c := by
+      rw [← intervalIntegral.integral_sub (hint h hh) (hint _ continuous_const)]
+      congr 1; funext s; ring
+    have key : lagFilter ω z₀ h t - lagFilter ω c (fun _ => c) t =
+        Real.exp (-(ω * t)) * (z₀ - c) +
+          Real.exp (-(ω * t)) * (ω * ∫ s in (0 : ℝ)..t, Real.exp (ω * s) * (h s - c)) := by
+      simp only [lagFilter]; rw [e]; ring
+    rwa [hc] at key
+  have hJ : |∫ s in (0 : ℝ)..t, Real.exp (ω * s) * (h s - c)| ≤ Real.exp (ω * t) * t * B := by
+    rw [← Real.norm_eq_abs]
+    have := intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := t)
+      (C := Real.exp (ω * t) * B) (f := fun s => Real.exp (ω * s) * (h s - c)) fun s hs => by
+        rw [uIoc_of_le ht] at hs
+        rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+        exact mul_le_mul (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hs.2 hω))
+          (hB s ⟨hs.1.le, hs.2⟩) (abs_nonneg _) (Real.exp_pos _).le
+    rw [sub_zero, abs_of_nonneg ht] at this
+    linarith
+  rw [hsplit]
+  have he : Real.exp (-(ω * t)) * Real.exp (ω * t) = 1 := by rw [← Real.exp_add]; simp
+  have he1 : Real.exp (-(ω * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
+  calc |Real.exp (-(ω * t)) * (z₀ - c) + Real.exp (-(ω * t)) *
+        (ω * ∫ s in (0 : ℝ)..t, Real.exp (ω * s) * (h s - c))|
+      ≤ Real.exp (-(ω * t)) * |z₀ - c| + Real.exp (-(ω * t)) *
+          (ω * |∫ s in (0 : ℝ)..t, Real.exp (ω * s) * (h s - c)|) := by
+        refine (abs_add_le _ _).trans (le_of_eq ?_)
+        rw [abs_mul, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_of_nonneg hω]
+    _ ≤ 1 * |z₀ - c| + Real.exp (-(ω * t)) * (ω * (Real.exp (ω * t) * t * B)) := by
+        gcongr
+    _ = |z₀ - c| + ω * t * B := by
+        have : Real.exp (-(ω * t)) * (ω * (Real.exp (ω * t) * t * B)) =
+            (Real.exp (-(ω * t)) * Real.exp (ω * t)) * (ω * t * B) := by ring
+        rw [this, he]; ring
 
 end powerlib.Dynamics

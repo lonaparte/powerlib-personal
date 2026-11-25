@@ -28,15 +28,16 @@ Model boundary.
 * Only the power set-point channel (the grid-frequency and voltage channels are excluded); any
   damping reference (it does not enter at zero grid-frequency disturbance).
 * The escape exponent is the deterministic quasi-potential `V(x_A, x)` (admissible pairs of
-  `Stochastic.LDP.controlQuasiPotential`). Freidlin–Wentzell's theorem — that
-  `ε log E[τ_exit] → V(stable equilibrium, saddle)` for the diffusion with noise `√ε σ` — is not
-  in Mathlib and not formalized; no statement here concerns the law of the exit time.
+  `Stochastic.LDP.controlQuasiPotential`). The path-space large-deviation principle of the
+  noisy model with this action as rate (Schilder, `theorem/Stochastic/Schilder.lean`, and the
+  Freidlin–Wentzell LDP, `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzell.lean`) is proved;
+  the exit-time asymptotics `ε log E[τ_exit] → V(stable equilibrium, saddle)` are not formalized,
+  and no statement here concerns the law of the exit time.
 * Excluded as in `GFM.Noise.FilterEmbedding`.
 
-Source: GFM counterpart study, note t2-noise item 7 (escape of the three-state model; the
-quasi-potential computed numerically by a discretized minimum-action method, scratch notes
-outside the repository; e.g. `M = D = A = σ_P = 1`, `P_ref = c₀`: `V₃/V₂ ≈ 0.997, 0.97, 0.88,
-0.59` at `ω_c = 100, 10, 3, 1`, above the bound `1 − A/(D ω_c)` and below `1`);
+Source: GFM counterpart study, note t2-noise item 7 (escape of the three-state model; its
+minimum-action numerics, scratch notes outside the repository, are observations only and are not
+used);
 M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984), Ch. 4
 (quasi-potential, Hamilton–Jacobi characterization); W. H. Fleming,
 R. W. Rishel, *Deterministic and Stochastic Optimal Control* (1975), Ch. IV (verification
@@ -62,8 +63,10 @@ Results.
   two-state solution has no three-state extension by a function of the filter state.
 * Upper bounds and limits are in `theorem/GridTiedConverter/GFM/Noise/EscapeExponent.lean`:
   `GFM.Noise.Params.swingQP_saddle_eq` (the two-state exponent equals `2D ΔU/σ_P²`) and
-  `GFM.Noise.Params.tendsto_setPointQP` (`V₃ → 2D ΔU/σ_P²` as `ω_c → ∞`). Not formalized:
-  `V₃ ≤ V₂` at finite `ω_c` (numerically `V₃ < V₂`).
+  `GFM.Noise.Params.tendsto_setPointQP` (`V₃ → 2D ΔU/σ_P²` as `ω_c → ∞`),
+  `GFM.Noise.Params.setPointQP_lt_swingQP` (`V₃ < V₂` for every `ω_c` above the explicit
+  threshold `escThreshold`), `GFM.Noise.Params.setPointQP_lt_swingQP_slow` (`V₃ < V₂` below an
+  explicit small bandwidth). Not formalized: `V₃ < V₂` between the two.
 -/
 
 noncomputable section

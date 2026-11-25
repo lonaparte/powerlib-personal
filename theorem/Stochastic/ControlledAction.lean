@@ -17,7 +17,10 @@ Scope.
 * Calculus of variations / optimal control on a real normed space; no engineering import.
 * Deterministic variational objects only: that `V` is the large-deviation rate of the exit
   problem of the diffusion `dx = b dt + √ε σ dw` (Freidlin–Wentzell's theorem, for degenerate
-  noise under a controllability hypothesis) is not formalized and not claimed.
+  noise under a controllability hypothesis) is not formalized and not claimed. For constant
+  columns (additive noise) the large-deviation principle of the solution laws, with this action
+  as rate on admissible pairs, is in `theorem/Stochastic/AdditiveNoise.lean` (`IsLDP.map_solMap`,
+  `fwRate_eq_controlAction`) with `theorem/Stochastic/Schilder.lean`.
 * Admissible pairs: `T ≥ 0`, `φ(0) = x_A`, `φ(T) = x`, `φ` continuous on `[0, T]` with right
   derivative `b(φ) + Σⱼ uⱼ σⱼ(φ)` at every point of `[0, T)`, and `|u|²` integrable on `[0, T]`
   (piecewise paths are admissible, so pairs concatenate).
